@@ -1378,11 +1378,6 @@ void PU::getInterMergeCandidates( const PredictionUnit &pu, MergeCtx& mrgCtx,
       mrgCtx.mvFieldNeighbours  [(uiArrayAddr << 1) + 1].setMvField(Mv(0, 0), r);
     }
 
-    if ( mrgCtx.interDirNeighbours[uiArrayAddr] == 1 && pu.cs->slice->getRefPic(REF_PIC_LIST_0, mrgCtx.mvFieldNeighbours[uiArrayAddr << 1].refIdx)->getPOC() == pu.cs->slice->getPOC())
-    {
-      mrgCtx.mrgTypeNeighbours[uiArrayAddr] = MRG_TYPE_IBC;
-    }
-
     uiArrayAddr++;
 
     if (refcnt == iNumRefIdx - 1)
@@ -1495,34 +1490,31 @@ void PU::getInterMMVDMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx,
 
   for (k = 0; k < maxNumMergeCand; k++)
   {
-    if (mrgCtx.mrgTypeNeighbours[k] == MRG_TYPE_DEFAULT_N)
+    refIdxList0 = mrgCtx.mvFieldNeighbours[(k << 1)].refIdx;
+    refIdxList1 = mrgCtx.mvFieldNeighbours[(k << 1) + 1].refIdx;
+
+    if ((refIdxList0 >= 0) && (refIdxList1 >= 0))
     {
-      refIdxList0 = mrgCtx.mvFieldNeighbours[(k << 1)].refIdx;
-      refIdxList1 = mrgCtx.mvFieldNeighbours[(k << 1) + 1].refIdx;
+      mrgCtx.mmvdBaseMv[currBaseNum][0] = mrgCtx.mvFieldNeighbours[(k << 1)];
+      mrgCtx.mmvdBaseMv[currBaseNum][1] = mrgCtx.mvFieldNeighbours[(k << 1) + 1];
+    }
+    else if (refIdxList0 >= 0)
+    {
+      mrgCtx.mmvdBaseMv[currBaseNum][0] = mrgCtx.mvFieldNeighbours[(k << 1)];
+      mrgCtx.mmvdBaseMv[currBaseNum][1] = MvField(Mv(0, 0), -1);
+    }
+    else if (refIdxList1 >= 0)
+    {
+      mrgCtx.mmvdBaseMv[currBaseNum][0] = MvField(Mv(0, 0), -1);
+      mrgCtx.mmvdBaseMv[currBaseNum][1] = mrgCtx.mvFieldNeighbours[(k << 1) + 1];
+    }
+    mrgCtx.mmvdUseAltHpelIf[currBaseNum] = mrgCtx.useAltHpelIf[k];
 
-      if ((refIdxList0 >= 0) && (refIdxList1 >= 0))
-      {
-        mrgCtx.mmvdBaseMv[currBaseNum][0] = mrgCtx.mvFieldNeighbours[(k << 1)];
-        mrgCtx.mmvdBaseMv[currBaseNum][1] = mrgCtx.mvFieldNeighbours[(k << 1) + 1];
-      }
-      else if (refIdxList0 >= 0)
-      {
-        mrgCtx.mmvdBaseMv[currBaseNum][0] = mrgCtx.mvFieldNeighbours[(k << 1)];
-        mrgCtx.mmvdBaseMv[currBaseNum][1] = MvField(Mv(0, 0), -1);
-      }
-      else if (refIdxList1 >= 0)
-      {
-        mrgCtx.mmvdBaseMv[currBaseNum][0] = MvField(Mv(0, 0), -1);
-        mrgCtx.mmvdBaseMv[currBaseNum][1] = mrgCtx.mvFieldNeighbours[(k << 1) + 1];
-      }
-      mrgCtx.mmvdUseAltHpelIf[currBaseNum] = mrgCtx.useAltHpelIf[k];
+    currBaseNum++;
 
-      currBaseNum++;
-
-      if (currBaseNum == MMVD_BASE_MV_NUM)
-      {
-        break;
-      }
+    if (currBaseNum == MMVD_BASE_MV_NUM)
+    {
+      break;
     }
   }
 }
