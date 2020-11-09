@@ -506,6 +506,10 @@ uint32_t DecApp::decode()
       m_cDecLib.checkSEIInAccessUnit();
 #endif
       m_cDecLib.resetAccessUnitSeiPayLoadTypes();
+#if JVET_T0055_ASPECT4
+      m_cDecLib.checkSeiContentInAccessUnit();
+      m_cDecLib.resetAccessUnitSeiNalus();
+#endif
       m_cDecLib.resetAccessUnitNals();
       m_cDecLib.resetAccessUnitApsNals();
       m_cDecLib.resetAccessUnitPicInfo();

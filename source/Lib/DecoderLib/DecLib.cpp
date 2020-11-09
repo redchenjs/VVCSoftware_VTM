@@ -1439,6 +1439,172 @@ void DecLib::resetPictureSeiNalus()
   }
 }
 
+#if JVET_T0055_ASPECT4
+void DecLib::checkSeiContentInAccessUnit()
+{
+  std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*>> seiList;
+
+  // get the OLSs that cover all layers
+  std::vector<uint32_t> olsIds;
+  for (uint32_t i = 0; i < m_vps->getNumOutputLayerSets(); i++)
+  {
+    bool olsIncludeAllLayersFind = false;
+    for (auto pic = m_firstAccessUnitPicInfo.begin(); pic != m_firstAccessUnitPicInfo.end(); pic++)
+    {
+      int targetLayerId = pic->m_nuhLayerId;
+      for (int j = 0; j < m_vps->getNumLayersInOls(i); j++)
+      {
+        olsIncludeAllLayersFind = m_vps->getLayerIdInOls(i, j) == targetLayerId ? true : false;
+        if (olsIncludeAllLayersFind)
+        {
+          break;
+        }
+      }
+      if (!olsIncludeAllLayersFind)
+      {
+        break;
+      }
+    }
+    if (olsIncludeAllLayersFind)
+    {
+      olsIds.push_back(i);
+    }
+  }
+
+  // extract SEI messages from NAL units
+  for (auto &sei : m_accessUnitSeiNalus)
+  {
+    InputBitstream bs = sei->getBitstream();
+
+    do
+    {
+      int payloadType = 0;
+      int payloadLayerId = sei->m_nuhLayerId;
+      uint32_t val = 0;
+
+      do
+      {
+        bs.readByte(val);
+        payloadType += val;
+      } while (val==0xFF);
+
+      uint32_t payloadSize = 0;
+      do
+      {
+        bs.readByte(val);
+        payloadSize += val;
+      } while (val==0xFF);
+
+      if (payloadType != SEI::SCALABLE_NESTING && payloadType != SEI::USER_DATA_REGISTERED_ITU_T_T35 && payloadType != SEI::USER_DATA_UNREGISTERED)
+      {
+        if (payloadType == SEI::BUFFERING_PERIOD || payloadType == SEI::PICTURE_TIMING || payloadType == SEI::DECODING_UNIT_INFO || payloadType == SEI::SUBPICTURE_LEVEL_INFO)
+        {
+          uint8_t *payload = new uint8_t[payloadSize];
+          for (uint32_t i = 0; i < payloadSize; i++)
+          {
+            bs.readByte(val);
+            payload[i] = (uint8_t)val;
+          }
+          for (uint32_t i = 0; i < olsIds.size(); i++)
+          {
+            if (i == 0)
+            {
+              seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*>(payloadType, olsIds.at(i), false, payloadSize, payload));
+            }
+            else
+            {
+              uint8_t *payloadTemp = new uint8_t[payloadSize];
+              memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
+              seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*>(payloadType, olsIds.at(i), false, payloadSize, payloadTemp));
+            }
+          }
+        }
+        else
+        {
+          uint8_t *payload = new uint8_t[payloadSize];
+          for (uint32_t i = 0; i < payloadSize; i++)
+          {
+            bs.readByte(val);
+            payload[i] = (uint8_t)val;
+          }
+          seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*>(payloadType, payloadLayerId, false, payloadSize, payload));
+        }
+      }
+      else
+      {
+        const SPS *sps = m_parameterSetManager.getActiveSPS();
+        const VPS *vps = m_parameterSetManager.getVPS(sps->getVPSId());
+        m_seiReader.parseAndExtractSEIScalableNesting(&bs, sei->m_nalUnitType, payloadLayerId, vps, sps, m_HRD, payloadSize, &seiList);
+      }
+    }
+    while (bs.getNumBitsLeft() > 8);
+  }
+
+  // check contents of the repeated messages in list
+  for (uint32_t i = 0; i < seiList.size(); i++)
+  {
+    int      payloadType1 = std::get<0>(seiList[i]);
+    int      payLoadLayerId1 = std::get<1>(seiList[i]);
+    bool     payLoadNested1 = std::get<2>(seiList[i]);
+    uint32_t payloadSize1 = std::get<3>(seiList[i]);
+    uint8_t  *payload1    = std::get<4>(seiList[i]);
+
+    // compare current SEI message with remaining messages in the list
+    for (uint32_t j = i+1; j < seiList.size(); j++)
+    {
+      int      payloadType2 = std::get<0>(seiList[j]);
+      int      payLoadLayerId2 = std::get<1>(seiList[j]);
+      bool     payLoadNested2 = std::get<2>(seiList[j]);
+      uint32_t payloadSize2 = std::get<3>(seiList[j]);
+      uint8_t  *payload2    = std::get<4>(seiList[j]);
+
+      // check for identical SEI type, olsId or layerId, size, and payload
+      if (payloadType1 == SEI::BUFFERING_PERIOD || payloadType1 == SEI::PICTURE_TIMING || payloadType1 == SEI::DECODING_UNIT_INFO || payloadType1 == SEI::SUBPICTURE_LEVEL_INFO)
+      {
+        CHECK((payloadType1 == payloadType2) && (payLoadLayerId1 == payLoadLayerId2) && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
+      }
+      else
+      {
+        bool bSameLayer = false;
+        if (!payLoadNested1 && !payLoadNested2)
+        {
+          bSameLayer = (payLoadLayerId1 == payLoadLayerId2);
+        }
+        else if (payLoadNested1 && payLoadNested2)
+        {
+          bSameLayer = true;
+        }
+        else
+        {
+          bSameLayer = payLoadNested1 ? payLoadLayerId2 >= payLoadLayerId1 : payLoadLayerId1 >= payLoadLayerId2;
+        }
+        CHECK(payloadType1 == payloadType2 && bSameLayer && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
+      }
+    }
+  }
+
+  // free SEI message list memory
+  for (uint32_t i = 0; i < seiList.size(); i++)
+  {
+    uint8_t *payload = std::get<4>(seiList[i]);
+    delete[] payload;
+  }
+  seiList.clear();
+}
+
+/**
+ - Reset list of SEI NAL units from the current access unit
+ */
+void DecLib::resetAccessUnitSeiNalus()
+{
+  while (!m_accessUnitSeiNalus.empty())
+  {
+    delete m_accessUnitSeiNalus.front();
+    m_accessUnitSeiNalus.pop_front();
+  }
+}
+#endif
+
 /**
  - Process buffered list of suffix APS NALUs
  */
@@ -2230,6 +2396,9 @@ void DecLib::xParsePrefixSEImessages()
   while (!m_prefixSEINALUs.empty())
   {
     InputNALUnit &nalu=*m_prefixSEINALUs.front();
+#if JVET_T0055_ASPECT4
+    m_accessUnitSeiNalus.push_back(new InputNALUnit(nalu));
+#endif
     m_accessUnitSeiTids.push_back(nalu.m_temporalId);
     const SPS *sps = m_parameterSetManager.getActiveSPS();
     const VPS *vps = m_parameterSetManager.getVPS(sps->getVPSId());
@@ -3449,6 +3618,9 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
           return false;
         }
         m_pictureSeiNalus.push_back(new InputNALUnit(nalu));
+#if JVET_T0055_ASPECT4
+        m_accessUnitSeiNalus.push_back(new InputNALUnit(nalu));
+#endif
         m_accessUnitSeiTids.push_back(nalu.m_temporalId);
         const SPS *sps = m_parameterSetManager.getActiveSPS();
         const VPS *vps = m_parameterSetManager.getVPS(sps->getVPSId());
