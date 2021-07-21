@@ -631,10 +631,14 @@ void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking& sei
   {
     int numBits = 0;
     numBits += getUESENumBits("ue", sei.m_arrangementId);
-    if (!sei.m_arrangementCancelFlag)
+    if (!sei.m_arrangementCancelFlag) 
+    {
       numBits += 9;
+    }
     else
+    {
       numBits += 2;
+    }
     WRITE_CODE(numBits - 1, 16, "num_bits_in_prefix_indication_minus1");
   }
 #endif 
@@ -728,11 +732,11 @@ void SEIWriter::xWriteSEIManifest(const SEIManifest &sei)
 //SEI prefix indication
 void SEIWriter::xWriteSEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd, const uint32_t temporalId)
 {
-  
   WRITE_CODE(sei.m_prefixSeiPayloadType, 16, "prefix_sei_payload_type");
   int idx = sei.m_numSeiPrefixIndicationsMinus1 + 1;
   //If num_sei_prefix_indication cannot be determined during initialization, then determine when writing prefix databits
-  if (idx <= 1) {
+  if (idx <= 1) 
+  {
     WRITE_CODE(sei.m_numSeiPrefixIndicationsMinus1, 8, "num_sei_prefix_indications_minus1"); 
   }
   // By writing SEI prefix indication recursively, you only need to pass in SEIPrefixIndicationIdx in the corresponding
@@ -745,23 +749,34 @@ int SEIWriter::getUESENumBits(std::string str, int codeNum) {
   CHECK(!(str == "ue" || str == "se"), "Unknown type of codeNum");
   if (str == "ue") {
     if (codeNum <= 0)
+    {
       return 1;
+    }
     else if (codeNum <= 2)
+    {
       return 3;
+    }
     else if (codeNum <= 6)
+    {
       return 5;
+    }
     else if (codeNum <= 14)
+    {
       return 7;
+    }
     else if (codeNum <= 30)
+    {
       return 9;
+    }
     else
+    {
       return 11;
+    }
   }
   else if (str == "se")
   {
     return getUESENumBits("ue", 2 * std::abs(codeNum));
   }
-  assert(0);
   return -1;
 }
 void SEIWriter::xWriteSPIByteAlign() {
@@ -892,8 +907,10 @@ void SEIWriter::xWriteSEIEquirectangularProjection(const SEIEquirectangularProje
   if (SEIPrefixIndicationIdx)
   {
     int numBits = 5;
-    if (sei.m_erpGuardBandFlag)
+    if (sei.m_erpGuardBandFlag) 
+    {
       numBits += 19;
+    }   
     WRITE_CODE(numBits - 1, 16, "num_bits_in_prefix_indication_minus1");
   }
 #endif
@@ -992,8 +1009,10 @@ void SEIWriter::xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei
       WRITE_CODE(sei.m_numPackedRegions,                          8,        "num_sei_prefix_indications_minus1");
     }
     int numBits = 1;
-    if (!sei.m_rwpCancelFlag)
+    if (!sei.m_rwpCancelFlag) 
+    {
       numBits += 111;
+    }
     WRITE_CODE(numBits - 1,                                       16,       "num_bits_in_prefix_indication_minus1");
   }
 #endif
@@ -1014,8 +1033,10 @@ void SEIWriter::xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei
       if (SEIPrefixIndicationIdx >= 2)
       {
         int numBits = 200;
-        if (sei.m_rwpGuardBandFlag[i])
+        if (sei.m_rwpGuardBandFlag[i]) 
+        {
           numBits += 48;
+        }  
         WRITE_CODE(numBits - 1,                                   16,       "num_bits_in_prefix_indication_minus1");
       }
 #endif 
@@ -1057,8 +1078,10 @@ void SEIWriter::xWriteSEIGeneralizedCubemapProjection(const SEIGeneralizedCubema
   if (SEIPrefixIndicationIdx)
   {
     int numBits = 1;
-    if (!sei.m_gcmpCancelFlag)
+    if (!sei.m_gcmpCancelFlag) 
+    {
       numBits += 6;
+    }
     WRITE_CODE(numBits - 1, 16, "num_bits_in_prefix_indication_minus1");
   }
 #endif 

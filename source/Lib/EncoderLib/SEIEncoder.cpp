@@ -1102,7 +1102,6 @@ void SEIEncoder::initSEISeiManifest(SEIManifest *seiSeiManifest, const SEIMessag
   assert(m_isInitialized);
   assert(seiSeiManifest != NULL);
   seiSeiManifest->m_manifestNumSeiMsgTypes = 0;
-  int i                                    = 0;
   for (auto &it: seiMessages)
   {
     seiSeiManifest->m_manifestNumSeiMsgTypes += 1;
@@ -1110,7 +1109,6 @@ void SEIEncoder::initSEISeiManifest(SEIManifest *seiSeiManifest, const SEIMessag
     seiSeiManifest->m_manifestSeiPayloadType.push_back(tempPayloadType);
     auto description = seiSeiManifest->getSEIMessageDescription(tempPayloadType);
     seiSeiManifest->m_manifestSeiDescription.push_back(description);
-    i++;
   }
   CHECK(seiSeiManifest->m_manifestNumSeiMsgTypes == 0, "No SEI messages available");
 }
@@ -1121,8 +1119,11 @@ void SEIEncoder::initSEISeiPrefixIndication(SEIPrefixIndication *seiSeiPrefixInd
 {
   assert(m_isInitialized);
   assert(seiSeiPrefixIndications != NULL);
-  seiSeiPrefixIndications->m_prefixSeiPayloadType = sei->payloadType();
+  seiSeiPrefixIndications->m_prefixSeiPayloadType = sei->payloadType(); 
   seiSeiPrefixIndications->m_numSeiPrefixIndicationsMinus1 = seiSeiPrefixIndications->getNumsOfSeiPrefixIndications(sei) - 1; 
+  seiSeiPrefixIndications->m_numBitsInPrefixIndicationMinus1.resize(seiSeiPrefixIndications->m_numSeiPrefixIndicationsMinus1 + 1);
+  seiSeiPrefixIndications->m_seiPrefixDataBit.resize(seiSeiPrefixIndications->m_numSeiPrefixIndicationsMinus1 + 1);                
+  seiSeiPrefixIndications->m_byteAlignmentBitEqualToOne    = 1;
   seiSeiPrefixIndications->m_payload = sei;
 }
 #endif   

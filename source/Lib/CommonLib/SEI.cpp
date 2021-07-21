@@ -423,13 +423,17 @@ SEIManifest::SEIManifestDescription SEIManifest::getSEIMessageDescription(const 
   std::vector<PayloadType> undetermined = { USER_DATA_REGISTERED_ITU_T_T35, USER_DATA_UNREGISTERED };
 
   for (auto pt : nessary) {
-    if (payloadType == pt)
+    if (payloadType == pt) 
+    {
       return NESSARY_SEI_MESSAGE;
+    }
   }
   for (auto pt: undetermined)
   {
-    if (payloadType == pt)
+    if (payloadType == pt) 
+     {
       return UNDETERMINED_SEI_MESSAGE;
+    } 
   }
   return UNNESSARY_SEI_MESSAGE;
 }
@@ -449,13 +453,17 @@ uint8_t SEIPrefixIndication::getNumsOfSeiPrefixIndications(const SEI *sei)
 
   for (auto pt: indicationN)
   {
-    if (payloadType == pt)
+    if (payloadType == pt) 
+    {
       return 3;
+    }
   }
   for (auto pt: indication2)
   {
     if (payloadType == pt)
+    {
       return 2;
+    }
   }
   return 1;
 }
