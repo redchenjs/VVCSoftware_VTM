@@ -844,6 +844,10 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     int NumOfSEIPrefixMsg = 0;
     for (auto &it: seiMessages)
     {
+      if (it->payloadType() == 200) 
+      {
+        break;
+      }
       NumOfSEIPrefixMsg++;
     }
     for (auto &it: seiMessages)
