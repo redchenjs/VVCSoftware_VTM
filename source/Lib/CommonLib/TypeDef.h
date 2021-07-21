@@ -52,6 +52,9 @@
 
 // clang-format off
 
+#define JVET_T0056_SEI_MANIFEST                           1 // JVET-T0056: SEI manifest SEI message
+#define JVET_T0056_SEI_PREFIX_INDICATION                  1 // JVET-T0056: SEI prefix indication SEI message
+
 //########### place macros to be removed in next cycle below this line ###############
 
 //########### place macros to be be kept below this line ###############

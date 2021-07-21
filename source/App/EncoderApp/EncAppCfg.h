@@ -700,6 +700,13 @@ protected:
   int                   m_sariSarWidth;
   int                   m_sariSarHeight;
 
+#if JVET_T0056_SEI_MANIFEST
+  bool      m_SEIManifestEnabled;
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  bool      m_SEIPrefixIndicationEnabled;
+#endif 
+
   bool      m_MCTSEncConstraint;
 
   // weighted prediction

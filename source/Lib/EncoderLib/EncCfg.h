@@ -735,6 +735,13 @@ protected:
   int       m_driSEINonlinearNumMinus1;
   std::vector<uint32_t> m_driSEINonlinearModel;
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
+
+#if JVET_T0056_SEI_MANIFEST
+  bool m_SEIManifestEnabled;
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  bool m_SEIPrefixIndicationEnabled;
+#endif
   //====== Weighted Prediction ========
   bool      m_useWeightedPred;       //< Use of Weighting Prediction (P_SLICE)
   bool      m_useWeightedBiPred;    //< Use of Bi-directional Weighting Prediction (B_SLICE)
@@ -2004,6 +2011,18 @@ public:
   int      getDriSEINonlinearNumMinus1() const                       { return m_driSEINonlinearNumMinus1; }
   void     setDriSEINonlinearModel(const std::vector<uint32_t>& driSEINonLinearModel) { m_driSEINonlinearModel = driSEINonLinearModel; }
   uint32_t getDriSEINonlinearModel(int idx) const                                                    { return m_driSEINonlinearModel[idx]; }
+ 
+#if JVET_T0056_SEI_MANIFEST
+  //SEI manifest
+  void setSEIManifestEnabled(bool b) { m_SEIManifestEnabled = b; }
+  bool getSmSeiManifestSeiEnabled() { return m_SEIManifestEnabled; }
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  //SEI prefix indication
+  void setSEIPrefixIndicationEnabled(bool b) { m_SEIPrefixIndicationEnabled = b; }
+  bool getSpiPrefixIndicationSeiEnabled() { return m_SEIPrefixIndicationEnabled; }
+#endif
+  
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
   void         setWPBiPred            ( bool b )                     { m_useWeightedBiPred = b;    }
   bool         getUseWP               ()                             { return m_useWeightedPred;   }

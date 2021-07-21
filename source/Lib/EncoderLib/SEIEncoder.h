@@ -94,6 +94,13 @@ public:
   bool initSEIAnnotatedRegions(SEIAnnotatedRegions *sei, int currPOC);
   void initSEIColourTransformInfo(SEIColourTransformInfo* sei);
   void readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *seiAnnoRegion, bool &failed);
+#if JVET_T0056_SEI_MANIFEST
+  void initSEISeiManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessage);
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  void initSEISeiPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei);
+#endif
+
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;

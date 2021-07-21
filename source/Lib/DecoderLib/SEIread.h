@@ -95,6 +95,12 @@ protected:
   void xParseSEIContentColourVolume           (SEIContentColourVolume& sei,           uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIExtendedDrapIndication        (SEIExtendedDrapIndication& sei,        uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIColourTransformInfo           (SEIColourTransformInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
+  #if JVET_T0056_SEI_MANIFEST
+  void xParseSEISeiManifest                   (SEIManifest& sei,                      uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  void xParseSEISeiPrefixIndication           (SEIPrefixIndication& sei,              uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
+#endif
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);
   void sei_read_code(std::ostream *pOS, uint32_t uiLength, uint32_t& ruiCode, const char *pSymbolName);

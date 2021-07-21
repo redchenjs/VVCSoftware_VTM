@@ -84,6 +84,12 @@ public:
     ALTERNATIVE_TRANSFER_CHARACTERISTICS = 147,
     AMBIENT_VIEWING_ENVIRONMENT          = 148,
     CONTENT_COLOUR_VOLUME                = 149,
+#if JVET_T0056_SEI_MANIFEST
+    SEI_MANIFEST                         = 200,
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+    SEI_PREFIX_INDICATION                = 201,
+#endif
     ANNOTATED_REGIONS                    = 202,
     SCALABILITY_DIMENSION_INFO           = 205,
     EXTENDED_DRAP_INDICATION             = 206,
@@ -888,6 +894,52 @@ public:
   std::vector<std::vector<Level::Name>>      m_refLevelIdc;
   std::vector<std::vector<std::vector<int>>> m_refLevelFraction;
 };
+
+#if JVET_T0056_SEI_MANIFEST
+class SEIManifest : public SEI
+{
+public:
+  PayloadType payloadType() const { return SEI_MANIFEST; }
+
+  SEIManifest() {}
+  virtual ~SEIManifest() {}
+
+  enum SEIManifestDescription
+  {
+    NO_SEI_MESSAGE           = 0,
+    NESSARY_SEI_MESSAGE      = 1,
+    UNNESSARY_SEI_MESSAGE    = 2,
+    UNDETERMINED_SEI_MESSAGE = 3,
+
+    NUM_OF_DESCROPTION       = 255,
+  };
+  uint16_t                    m_manifestNumSeiMsgTypes;
+  std::vector<uint16_t>       m_manifestSeiPayloadType;
+  std::vector<uint8_t>        m_manifestSeiDescription;
+
+  SEIManifestDescription getSEIMessageDescription(const PayloadType payloadType);
+};
+#endif
+
+#if JVET_T0056_SEI_PREFIX_INDICATION
+class SEIPrefixIndication : public SEI
+{
+public:
+  PayloadType payloadType() const { return SEI_PREFIX_INDICATION; }
+
+  SEIPrefixIndication() {}
+  virtual ~SEIPrefixIndication() {}
+
+  uint16_t                      m_prefixSeiPayloadType;
+  uint8_t                       m_numSeiPrefixIndicationsMinus1;
+  std::vector<uint16_t>         m_numBitsInPrefixIndicationMinus1;
+  std::vector<std::vector<int>> m_seiPrefixDataBit;
+  int                           m_byteAlignmentBitEqualToOne;
+  const SEI*                    m_payload;
+
+  uint8_t getNumsOfSeiPrefixIndications(const SEI *sei);
+};
+#endif  
 
 class SEIAnnotatedRegions : public SEI
 {

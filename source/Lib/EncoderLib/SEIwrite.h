@@ -61,18 +61,38 @@ protected:
   void xWriteSEIDependentRAPIndication(const SEIDependentRAPIndication& sei);
   void xWriteSEIEdrapIndication(const SEIExtendedDrapIndication& sei);
   void xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableNesting& sei);
-  void xWriteSEIFramePacking(const SEIFramePacking& sei);
+  void xWriteSEIFramePacking(const SEIFramePacking& sei
+#if JVET_T0056_SEI_PREFIX_INDICATION
+    , int SEIPrefixIndicationIdx = 0
+#endif 
+  );
   void xWriteSEIDisplayOrientation(const SEIDisplayOrientation& sei);
   void xWriteSEIParameterSetsInclusionIndication(const SEIParameterSetsInclusionIndication& sei);
   void xWriteSEIMasteringDisplayColourVolume( const SEIMasteringDisplayColourVolume& sei);
 #if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   void xWriteSEIAlternativeTransferCharacteristics(const SEIAlternativeTransferCharacteristics& sei);
 #endif
-  void xWriteSEIEquirectangularProjection         (const SEIEquirectangularProjection &sei);
-  void xWriteSEISphereRotation                    (const SEISphereRotation &sei);
+  void xWriteSEIEquirectangularProjection         (const SEIEquirectangularProjection &sei
+#if JVET_T0056_SEI_PREFIX_INDICATION
+    , int SEIPrefixIndicationIdx = 0
+#endif 
+  );
+  void xWriteSEISphereRotation                    (const SEISphereRotation &sei
+#if JVET_T0056_SEI_PREFIX_INDICATION
+    , int SEIPrefixIndicationIdx = 0
+#endif 
+  );
   void xWriteSEIOmniViewport                      (const SEIOmniViewport& sei);
-  void xWriteSEIRegionWisePacking                 (const SEIRegionWisePacking &sei);
-  void xWriteSEIGeneralizedCubemapProjection      (const SEIGeneralizedCubemapProjection &sei);
+  void xWriteSEIRegionWisePacking                 (const SEIRegionWisePacking &sei
+#if JVET_T0056_SEI_PREFIX_INDICATION
+    , int SEIPrefixIndicationIdx = 0
+#endif 
+  );
+  void xWriteSEIGeneralizedCubemapProjection      (const SEIGeneralizedCubemapProjection &sei
+#if JVET_T0056_SEI_PREFIX_INDICATION
+    , int SEIPrefixIndicationIdx = 0
+#endif 
+  );
   void xWriteSEIScalabilityDimensionInfo          (const SEIScalabilityDimensionInfo& sei);
   void xWriteSEIMultiviewAcquisitionInfo          (const SEIMultiviewAcquisitionInfo& sei);
   void xWriteSEIAlphaChannelInfo                  (const SEIAlphaChannelInfo& sei);
@@ -86,9 +106,25 @@ protected:
   void xWriteSEIContentLightLevelInfo(const SEIContentLightLevelInfo& sei);
   void xWriteSEIAmbientViewingEnvironment(const SEIAmbientViewingEnvironment& sei);
   void xWriteSEIContentColourVolume(const SEIContentColourVolume &sei);
+
+#if JVET_T0056_SEI_MANIFEST
+  //SEI manifest
+  void xWriteSEIManifest(const SEIManifest &sei);
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  //SEI prefix indication
+  void xWriteSEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd, const uint32_t temporalId);
+  int  getUESENumBits(std::string str, int codeNum);
+  void xWriteSPIByteAlign();
+#endif 
+
   void xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei);
   void xWriteSEIAnnotatedRegions                  (const SEIAnnotatedRegions& sei);
-  void xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &hrd, const uint32_t temporalId);
+  void xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &hrd, const uint32_t temporalId
+  #if JVET_T0056_SEI_PREFIX_INDICATION
+  , int SEIPrefixIndicationIdx = 0
+#endif 
+  );
   void xWriteByteAlign();
 protected:
   HRD m_nestingHrd;
