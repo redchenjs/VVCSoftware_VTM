@@ -649,13 +649,13 @@ void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking& sei
   if( sei.m_arrangementCancelFlag == 0 )
   {
     WRITE_CODE( sei.m_arrangementType, 7,           "fp_arrangement_type" );
-    WRITE_FLAG( sei.m_quincunxSamplingFlag,         "fp_quincunx_sampling_flag" );
 #if JVET_T0056_SEI_PREFIX_INDICATION
-    if (SEIPrefixIndicationIdx) 
+    if (SEIPrefixIndicationIdx)
     {
       return;
-    }  
+    }
 #endif
+    WRITE_FLAG( sei.m_quincunxSamplingFlag,         "fp_quincunx_sampling_flag" );
     WRITE_CODE( sei.m_contentInterpretationType, 6, "fp_content_interpretation_type" );
     WRITE_FLAG( sei.m_spatialFlippingFlag,          "fp_spatial_flipping_flag" );
     WRITE_FLAG( sei.m_frame0FlippedFlag,            "fp_frame0_flipped_flag" );
