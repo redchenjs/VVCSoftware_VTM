@@ -417,25 +417,26 @@ bool SEIMultiviewAcquisitionInfo::isMAISameContent(SEIMultiviewAcquisitionInfo *
 #if JVET_T0056_SEI_MANIFEST
 SEIManifest::SEIManifestDescription SEIManifest::getSEIMessageDescription(const PayloadType payloadType)
 {
-  std::vector<PayloadType> nessary = { FRAME_PACKING, EQUIRECTANGULAR_PROJECTION, GENERALIZED_CUBEMAP_PROJECTION,
+  std::vector<PayloadType> necessary = { FRAME_PACKING, EQUIRECTANGULAR_PROJECTION, GENERALIZED_CUBEMAP_PROJECTION,
                                        SPHERE_ROTATION, REGION_WISE_PACKING };
 
   std::vector<PayloadType> undetermined = { USER_DATA_REGISTERED_ITU_T_T35, USER_DATA_UNREGISTERED };
 
-  for (auto pt : nessary) {
+  for (auto pt : necessary) 
+  {
     if (payloadType == pt) 
     {
-      return NESSARY_SEI_MESSAGE;
+      return NECESSARY_SEI_MESSAGE;
     }
   }
   for (auto pt: undetermined)
   {
     if (payloadType == pt) 
-     {
+    {
       return UNDETERMINED_SEI_MESSAGE;
     } 
   }
-  return UNNESSARY_SEI_MESSAGE;
+  return UNNECESSARY_SEI_MESSAGE;
 }
 #endif
 

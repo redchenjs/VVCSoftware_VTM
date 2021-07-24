@@ -549,7 +549,7 @@ void EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duI
 #if JVET_T0056_SEI_MANIFEST
   // When SEI Manifest SEI message is present in an SEI NAL unit, the SEI Manifest SEI message shall be the first SEI
   // message in the SEI NAL unit (D3.45 in ISO/IEC 23008-2).
-  if (m_pcCfg->getSmSeiManifestSeiEnabled())
+  if (m_pcCfg->getSEIManifestSEIEnabled())
   {
     currentMessages = extractSeisByType(localMessages, SEI::SEI_MANIFEST);
     CHECK(!(currentMessages.size() <= 1), "Unspecified error");
@@ -558,7 +558,7 @@ void EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duI
   }
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
-  if (m_pcCfg->getSpiPrefixIndicationSeiEnabled())
+  if (m_pcCfg->getSEIPrefixIndicationSEIEnabled())
   {
     //There may be multiple SEI prefix indication messages at the same time
     currentMessages = extractSeisByType(localMessages, SEI::SEI_PREFIX_INDICATION);
@@ -831,15 +831,15 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
 #if JVET_T0056_SEI_MANIFEST
   // Make sure that sei_manifest and sei_prefix are the last two initialized sei_msg, otherwise it will cause these two
   // Sei messages to not be able to enter all SEI messages
-  if (m_pcCfg->getSmSeiManifestSeiEnabled())
+  if (m_pcCfg->getSEIManifestSEIEnabled())
   {
     SEIManifest *seiSEIManifest = new SEIManifest;
-    m_seiEncoder.initSEISeiManifest(seiSEIManifest, seiMessages);
+    m_seiEncoder.initSEISEIManifest(seiSEIManifest, seiMessages);
     seiMessages.push_back(seiSEIManifest);
   }
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
-  if (m_pcCfg->getSpiPrefixIndicationSeiEnabled())
+  if (m_pcCfg->getSEIPrefixIndicationSEIEnabled())
   {
     int NumOfSEIPrefixMsg = 0;
     for (auto &it: seiMessages)
@@ -857,7 +857,7 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
         break;
       }
       SEIPrefixIndication *seiSEIPrefixIndication = new SEIPrefixIndication;
-      m_seiEncoder.initSEISeiPrefixIndication(seiSEIPrefixIndication, it);
+      m_seiEncoder.initSEISEIPrefixIndication(seiSEIPrefixIndication, it);
       seiMessages.push_back(seiSEIPrefixIndication);
       NumOfSEIPrefixMsg--;
     }

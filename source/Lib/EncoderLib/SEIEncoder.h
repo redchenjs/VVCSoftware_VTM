@@ -95,10 +95,10 @@ public:
   void initSEIColourTransformInfo(SEIColourTransformInfo* sei);
   void readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *seiAnnoRegion, bool &failed);
 #if JVET_T0056_SEI_MANIFEST
-  void initSEISeiManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessage);
+  void initSEISEIManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessage);
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
-  void initSEISeiPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei);
+  void initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei);
 #endif
 
 private:

@@ -907,8 +907,8 @@ public:
   enum SEIManifestDescription
   {
     NO_SEI_MESSAGE           = 0,
-    NESSARY_SEI_MESSAGE      = 1,
-    UNNESSARY_SEI_MESSAGE    = 2,
+    NECESSARY_SEI_MESSAGE      = 1,
+    UNNECESSARY_SEI_MESSAGE    = 2,
     UNDETERMINED_SEI_MESSAGE = 3,
 
     NUM_OF_DESCROPTION       = 255,
@@ -934,7 +934,6 @@ public:
   uint8_t                       m_numSeiPrefixIndicationsMinus1;
   std::vector<uint16_t>         m_numBitsInPrefixIndicationMinus1;
   std::vector<std::vector<int>> m_seiPrefixDataBit;
-  int                           m_byteAlignmentBitEqualToOne;
   const SEI*                    m_payload;
 
   uint8_t getNumsOfSeiPrefixIndications(const SEI *sei);

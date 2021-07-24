@@ -3537,6 +3537,8 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   168 & Frame-field information                  & Table \ref{tab:sei-frame-field} \\  
   177 & Depth Representation Information         & Table \ref{tab:sei-dri} \\
   179 & Multiview Acquisition Information        & Table \ref{tab:sei-mai} \\
+  200 & SEI manifest                             & Table \ref{tab:sei-sei-manifest} \\
+  201 & SEI prefix indication				 & Table \ref{tab:sei-sei-prefix-indication} \\
   202 & Annotated regions information            & Table \ref{tab:sei-annotated-regions} \\  
   203 & Subpicture Level Information             & Table \ref{tab:sei-subpic-level} \\  
   204 & Sample Aspect Ratio Information          & Table \ref{tab:sei-sari} \\  
@@ -4843,6 +4845,20 @@ Specifies the exponent of the maximum allowable truncation error for translation
 \Option{SEIFrameFieldInfo} &
 \Default{false} &
 Enables (true) or disables (false) the insertion of Frame-Field Information SEI message.
+\\
+\end{OptionTableNoShorthand}
+
+\begin{OptionTableNoShorthand}{SEI manifest SEI message encoder parameters}{tab:sei-sei-manifest}
+\Option{SEISEIManifestEnabled} &
+\Default{false} &
+Enables (true) or disables (false) the SEI manifest SEI message.
+\\
+\end{OptionTableNoShorthand}
+
+\begin{OptionTableNoShorthand}{SEI prefix indication SEI message encoder parameters}{tab:sei-sei-prefix-indication}
+\Option{SEISEIPrefixIndicationEnabled} &
+\Default{false} &
+Enables (true) or disables (false) the SEI prefix indication SEI message.
 \\
 \end{OptionTableNoShorthand}
 

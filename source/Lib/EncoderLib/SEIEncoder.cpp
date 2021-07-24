@@ -1097,7 +1097,7 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SP
 }
 
 #if JVET_T0056_SEI_MANIFEST
-void SEIEncoder::initSEISeiManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessages)
+void SEIEncoder::initSEISEIManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessages)
 {
   assert(m_isInitialized);
   assert(seiSeiManifest != NULL);
@@ -1115,15 +1115,12 @@ void SEIEncoder::initSEISeiManifest(SEIManifest *seiSeiManifest, const SEIMessag
 #endif
 
 #if JVET_T0056_SEI_PREFIX_INDICATION
-void SEIEncoder::initSEISeiPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei)
+void SEIEncoder::initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei)
 {
   assert(m_isInitialized);
   assert(seiSeiPrefixIndications != NULL);
   seiSeiPrefixIndications->m_prefixSeiPayloadType = sei->payloadType(); 
   seiSeiPrefixIndications->m_numSeiPrefixIndicationsMinus1 = seiSeiPrefixIndications->getNumsOfSeiPrefixIndications(sei) - 1; 
-  seiSeiPrefixIndications->m_numBitsInPrefixIndicationMinus1.resize(seiSeiPrefixIndications->m_numSeiPrefixIndicationsMinus1 + 1);
-  seiSeiPrefixIndications->m_seiPrefixDataBit.resize(seiSeiPrefixIndications->m_numSeiPrefixIndicationsMinus1 + 1);                
-  seiSeiPrefixIndications->m_byteAlignmentBitEqualToOne    = 1;
   seiSeiPrefixIndications->m_payload = sei;
 }
 #endif   

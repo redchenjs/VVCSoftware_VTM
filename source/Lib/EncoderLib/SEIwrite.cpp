@@ -178,13 +178,13 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &h
 #if JVET_T0056_SEI_MANIFEST
   case SEI::SEI_MANIFEST:
     CHECK((SEIPrefixIndicationIdx), "wrong SEI prefix indication message");
-    xWriteSEIManifest(*static_cast<const SEIManifest *>(&sei));
+    xWriteSEISEIManifest(*static_cast<const SEIManifest *>(&sei));
     break;
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
   case SEI::SEI_PREFIX_INDICATION:
     CHECK((SEIPrefixIndicationIdx), "wrong SEI prefix indication message");
-    xWriteSEIPrefixIndication(bs, *static_cast<const SEIPrefixIndication *>(&sei), hrd, temporalId);
+    xWriteSEISEIPrefixIndication(bs, *static_cast<const SEIPrefixIndication *>(&sei), hrd, temporalId);
     break;
 #endif
 
@@ -717,7 +717,7 @@ void SEIWriter::xWriteSEIMasteringDisplayColourVolume(const SEIMasteringDisplayC
 }
 
 #if JVET_T0056_SEI_MANIFEST
-void SEIWriter::xWriteSEIManifest(const SEIManifest &sei)
+void SEIWriter::xWriteSEISEIManifest(const SEIManifest &sei)
 {
   WRITE_CODE(sei.m_manifestNumSeiMsgTypes, 16, "manifest_num_sei_msg_types");
   for (int i = 0; i < sei.m_manifestNumSeiMsgTypes; i++)
@@ -730,7 +730,7 @@ void SEIWriter::xWriteSEIManifest(const SEIManifest &sei)
 
 #if JVET_T0056_SEI_PREFIX_INDICATION
 //SEI prefix indication
-void SEIWriter::xWriteSEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd, const uint32_t temporalId)
+void SEIWriter::xWriteSEISEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd, const uint32_t temporalId)
 {
   WRITE_CODE(sei.m_prefixSeiPayloadType, 16, "prefix_sei_payload_type");
   int idx = sei.m_numSeiPrefixIndicationsMinus1 + 1;
@@ -743,7 +743,7 @@ void SEIWriter::xWriteSEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIn
   // function and add the SEI prefix syntax elements. At present, only part of SEI can be written in SEI prefix
   // indication. If it needs to be added later, the corresponding databit should be determined
   xWriteSEIpayloadData(bs, *static_cast<const SEI *>(sei.m_payload), hrd, temporalId, idx);
-  xWriteSPIByteAlign();
+  xWriteSEIPrefixIndicationByteAlign();
 }
 int SEIWriter::getUESENumBits(std::string str, int codeNum) {
   CHECK(!(str == "ue" || str == "se"), "Unknown type of codeNum");
@@ -779,7 +779,7 @@ int SEIWriter::getUESENumBits(std::string str, int codeNum) {
   }
   return -1;
 }
-void SEIWriter::xWriteSPIByteAlign() {
+void SEIWriter::xWriteSEIPrefixIndicationByteAlign() {
   while (m_pcBitIf->getNumberOfWrittenBits() % 8 != 0)
   {
     WRITE_FLAG(1, "byte_alignment_bit_equal_to_one");
@@ -959,7 +959,7 @@ void SEIWriter::xWriteSEISphereRotation(const SEISphereRotation &sei
 #if JVET_T0056_SEI_PREFIX_INDICATION
     if (SEIPrefixIndicationIdx >= 2)
     {
-      xWriteSPIByteAlign();
+      xWriteSEIPrefixIndicationByteAlign();
       int numBits2 = 32 + 32 + 32;
       WRITE_CODE(numBits2 - 1,                      16, "num_bits_in_prefix_indication_minus1");
     }

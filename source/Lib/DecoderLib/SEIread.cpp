@@ -331,13 +331,13 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
 #if JVET_T0056_SEI_MANIFEST
     case SEI::SEI_MANIFEST:
       sei = new SEIManifest;
-      xParseSEISeiManifest((SEIManifest&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEISEIManifest((SEIManifest&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
     case SEI::SEI_PREFIX_INDICATION:
       sei = new SEIPrefixIndication;
-      xParseSEISeiPrefixIndication((SEIPrefixIndication&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEISEIPrefixIndication((SEIPrefixIndication&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif 
     default:
@@ -2161,7 +2161,7 @@ void SeiCfgFileDump::xDumpSEIGeneralizedCubemapProjection  (SEIGeneralizedCubema
 #endif
 
 #if JVET_T0056_SEI_MANIFEST
-void SEIReader::xParseSEISeiManifest(SEIManifest &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+void SEIReader::xParseSEISEIManifest(SEIManifest &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
   unsigned int val;
@@ -2183,7 +2183,7 @@ void SEIReader::xParseSEISeiManifest(SEIManifest &sei, uint32_t payloadSize, std
 #endif
 
 #if JVET_T0056_SEI_PREFIX_INDICATION
-void SEIReader::xParseSEISeiPrefixIndication(SEIPrefixIndication &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+void SEIReader::xParseSEISEIPrefixIndication(SEIPrefixIndication &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
   unsigned int val;
@@ -2210,8 +2210,7 @@ void SEIReader::xParseSEISeiPrefixIndication(SEIPrefixIndication &sei, uint32_t 
       while (bitsRead % 8 != 0)
       {
         sei_read_code(pDecodedMessageOutputStream, 1, val, "byte_alignment_bit_equal_to_one"); 
-        sei.m_byteAlignmentBitEqualToOne = val;
-        CHECK(!sei.m_byteAlignmentBitEqualToOne, "error to read/write SEI_prefix_indication::byte_alignment_bit_equal_to_one");
+        CHECK(!val, "error to read/write SEI_prefix_indication::byte_alignment_bit_equal_to_one");
         bitsRead += 1;
       }
     }

@@ -109,13 +109,13 @@ protected:
 
 #if JVET_T0056_SEI_MANIFEST
   //SEI manifest
-  void xWriteSEIManifest(const SEIManifest &sei);
+  void xWriteSEISEIManifest(const SEIManifest &sei);
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
   //SEI prefix indication
-  void xWriteSEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd, const uint32_t temporalId);
+  void xWriteSEISEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd, const uint32_t temporalId);
   int  getUESENumBits(std::string str, int codeNum);
-  void xWriteSPIByteAlign();
+  void xWriteSEIPrefixIndicationByteAlign();
 #endif 
 
   void xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei);

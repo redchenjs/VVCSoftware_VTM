@@ -1499,11 +1499,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
 #if JVET_T0056_SEI_MANIFEST
   //SEI manifest
-  ("SEISMEnabled",                                    m_SEIManifestEnabled,                              false, "Controls if SEI Manifest SEI messages enabled")
+  ("SEISEIManifestEnabled",                           m_SEIManifestSEIEnabled,                           false, "Controls if SEI Manifest SEI messages enabled")
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
   //SEI prefix indication
-  ("SEISPIEnabled",                                   m_SEIPrefixIndicationEnabled,                      false, "Controls if SEI Prefix Indications SEI messages enabled")
+  ("SEISEIPrefixIndicationEnabled",                   m_SEIPrefixIndicationSEIEnabled,                   false, "Controls if SEI Prefix Indications SEI messages enabled")
 #endif
 
   ("DebugBitstream",                                  m_decodeBitstreams[0],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )

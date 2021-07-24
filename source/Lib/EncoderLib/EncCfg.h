@@ -737,10 +737,10 @@ protected:
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
 
 #if JVET_T0056_SEI_MANIFEST
-  bool m_SEIManifestEnabled;
+  bool m_SEIManifestSEIEnabled;
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
-  bool m_SEIPrefixIndicationEnabled;
+  bool m_SEIPrefixIndicationSEIEnabled;
 #endif
   //====== Weighted Prediction ========
   bool      m_useWeightedPred;       //< Use of Weighting Prediction (P_SLICE)
@@ -2014,13 +2014,13 @@ public:
  
 #if JVET_T0056_SEI_MANIFEST
   //SEI manifest
-  void setSEIManifestEnabled(bool b) { m_SEIManifestEnabled = b; }
-  bool getSmSeiManifestSeiEnabled() { return m_SEIManifestEnabled; }
+  void setSEIManifestSEIEnabled(bool b) { m_SEIManifestSEIEnabled = b; }
+  bool getSEIManifestSEIEnabled() { return m_SEIManifestSEIEnabled; }
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
   //SEI prefix indication
-  void setSEIPrefixIndicationEnabled(bool b) { m_SEIPrefixIndicationEnabled = b; }
-  bool getSpiPrefixIndicationSeiEnabled() { return m_SEIPrefixIndicationEnabled; }
+  void setSEIPrefixIndicationSEIEnabled(bool b) { m_SEIPrefixIndicationSEIEnabled = b; }
+  bool getSEIPrefixIndicationSEIEnabled() { return m_SEIPrefixIndicationSEIEnabled; }
 #endif
   
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
