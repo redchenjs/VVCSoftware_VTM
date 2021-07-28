@@ -1,4 +1,4 @@
-\documentclass[a4paper,11pt]{jvetdoc}
+﻿\documentclass[a4paper,11pt]{jvetdoc}
 
 \usepackage{geometry}[2010/02/12]
 
@@ -955,10 +955,15 @@ Strength for every * frame in GOP based temporal filter, where * is an integer. 
 enable GOP based temporal filter at every 8th frame with strength 0.95. Longer intervals overrides shorter when there are
 multiple matches.
 \\
-\Option{AlfSaoTrueOrg} &
+\Option{AlfTrueOrg} &
+%\ShortOption{\None} &
+\Default{true} &
+When GOP based temporal filter is enabled, enable or disable using true original samples for ALF optimization .
+\\
+\Option{SaoTrueOrg} &
 %\ShortOption{\None} &
 \Default{false} &
-When GOP based temporal filter is enabled, enable or disable using true original samples for ALF and SAO optimization .
+When GOP based temporal filter is enabled, enable or disable using true original samples for SAO optimization .
 \\
 \end{OptionTableNoShorthand}
 
@@ -2211,32 +2216,50 @@ For Cr component with BT.2020 container use 1.79; for BT.709 material and 1.39 f
 \Default{0} &
 Enable QP reduction for smooth blocks according to a QP reduction model:
 $Clip3(SmoothQPReductionLimit, 0, SmoothQPReductionModelScale*QP+SmoothQPReductionModelOffset)$.
-The QP reduction model is used when SAD is less than SmoothQPReductionThreshold * number of samples in block.
+The QP reduction model is used when SAD is less than SmoothQPReductionThreshold * number of samples in block. Separate parameters for intra and inter pictures.
 Where SAD is defined as the sum of absolute differences between original luma samples and luma samples predicted by a 2nd order polynomial model.
 The model parameters are determined by a least square fit to original luma samples on a granularity of 64x64 samples.
-MaxCuDQPSubdiv is preferably set to 1 or 2 to achieve best subjective performance.
 \\
 
-\Option{SmoothQPReductionThreshold} &
+\Option{SmoothQPReductionThresholdIntra} &
 \Default{3.0} &
-Threshold parameter for smoothness.
+Threshold parameter for smoothness for intra pictures.
 \\
 
-\Option{SmoothQPReductionModelScale} &
+\Option{SmoothQPReductionModelScaleIntra} &
 \Default{-1.0} &
-Scale parameter of the QP reduction model.
+Scale parameter of the QP reduction model for intra pictures.
 \\
 
-\Option{SmoothQPReductionModelOffset} &
+\Option{SmoothQPReductionModelOffsetIntra} &
 \Default{27.0} &
-Offset parameter of the QP reduction model.
+Offset parameter of the QP reduction model for intra pictures.
 \\
 
-\Option{SmoothQPReductionLimit} &
+\Option{SmoothQPReductionLimitIntra} &
 \Default{-16.0} &
-Threshold parameter for controlling amount of QP reduction by the QP reduction model.
+Threshold parameter for controlling amount of QP reduction by the QP reduction model for intra pictures.
 \\
 
+\Option{SmoothQPReductionThresholdInter} &
+\Default{3.0} &
+Threshold parameter for smoothness for inter pictures.
+\\
+
+\Option{SmoothQPReductionModelScaleInter} &
+\Default{-1.0} &
+Scale parameter of the QP reduction model for inter pictures.
+\\
+
+\Option{SmoothQPReductionModelOffsetInter} &
+\Default{27.0} &
+Offset parameter of the QP reduction model for inter pictures.
+\\
+
+\Option{SmoothQPReductionLimitInter} &
+\Default{-16.0} &
+Threshold parameter for controlling amount of QP reduction by the QP reduction model for inter pictures.
+\\
 
 \Option{SmoothQPReductionPeriodicity} &
 \Default{1} &
@@ -3537,8 +3560,6 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   168 & Frame-field information                  & Table \ref{tab:sei-frame-field} \\  
   177 & Depth Representation Information         & Table \ref{tab:sei-dri} \\
   179 & Multiview Acquisition Information        & Table \ref{tab:sei-mai} \\
-  200 & SEI manifest                             & Table \ref{tab:sei-sei-manifest} \\
-  201 & SEI prefix indication				 & Table \ref{tab:sei-sei-prefix-indication} \\
   202 & Annotated regions information            & Table \ref{tab:sei-annotated-regions} \\  
   203 & Subpicture Level Information             & Table \ref{tab:sei-subpic-level} \\  
   204 & Sample Aspect Ratio Information          & Table \ref{tab:sei-sari} \\  
@@ -4845,20 +4866,6 @@ Specifies the exponent of the maximum allowable truncation error for translation
 \Option{SEIFrameFieldInfo} &
 \Default{false} &
 Enables (true) or disables (false) the insertion of Frame-Field Information SEI message.
-\\
-\end{OptionTableNoShorthand}
-
-\begin{OptionTableNoShorthand}{SEI manifest SEI message encoder parameters}{tab:sei-sei-manifest}
-\Option{SEISEIManifestEnabled} &
-\Default{false} &
-Enables (true) or disables (false) the SEI manifest SEI message.
-\\
-\end{OptionTableNoShorthand}
-
-\begin{OptionTableNoShorthand}{SEI prefix indication SEI message encoder parameters}{tab:sei-sei-prefix-indication}
-\Option{SEISEIPrefixIndicationEnabled} &
-\Default{false} &
-Enables (true) or disables (false) the SEI prefix indication SEI message.
 \\
 \end{OptionTableNoShorthand}
 
