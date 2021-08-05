@@ -1,4 +1,4 @@
-﻿\documentclass[a4paper,11pt]{jvetdoc}
+\documentclass[a4paper,11pt]{jvetdoc}
 
 \usepackage{geometry}[2010/02/12]
 
@@ -955,15 +955,10 @@ Strength for every * frame in GOP based temporal filter, where * is an integer. 
 enable GOP based temporal filter at every 8th frame with strength 0.95. Longer intervals overrides shorter when there are
 multiple matches.
 \\
-\Option{AlfTrueOrg} &
-%\ShortOption{\None} &
-\Default{true} &
-When GOP based temporal filter is enabled, enable or disable using true original samples for ALF optimization .
-\\
-\Option{SaoTrueOrg} &
+\Option{AlfSaoTrueOrg} &
 %\ShortOption{\None} &
 \Default{false} &
-When GOP based temporal filter is enabled, enable or disable using true original samples for SAO optimization .
+When GOP based temporal filter is enabled, enable or disable using true original samples for ALF and SAO optimization .
 \\
 \end{OptionTableNoShorthand}
 
@@ -2216,50 +2211,32 @@ For Cr component with BT.2020 container use 1.79; for BT.709 material and 1.39 f
 \Default{0} &
 Enable QP reduction for smooth blocks according to a QP reduction model:
 $Clip3(SmoothQPReductionLimit, 0, SmoothQPReductionModelScale*QP+SmoothQPReductionModelOffset)$.
-The QP reduction model is used when SAD is less than SmoothQPReductionThreshold * number of samples in block. Separate parameters for intra and inter pictures.
+The QP reduction model is used when SAD is less than SmoothQPReductionThreshold * number of samples in block.
 Where SAD is defined as the sum of absolute differences between original luma samples and luma samples predicted by a 2nd order polynomial model.
 The model parameters are determined by a least square fit to original luma samples on a granularity of 64x64 samples.
+MaxCuDQPSubdiv is preferably set to 1 or 2 to achieve best subjective performance.
 \\
 
-\Option{SmoothQPReductionThresholdIntra} &
+\Option{SmoothQPReductionThreshold} &
 \Default{3.0} &
-Threshold parameter for smoothness for intra pictures.
+Threshold parameter for smoothness.
 \\
 
-\Option{SmoothQPReductionModelScaleIntra} &
+\Option{SmoothQPReductionModelScale} &
 \Default{-1.0} &
-Scale parameter of the QP reduction model for intra pictures.
+Scale parameter of the QP reduction model.
 \\
 
-\Option{SmoothQPReductionModelOffsetIntra} &
+\Option{SmoothQPReductionModelOffset} &
 \Default{27.0} &
-Offset parameter of the QP reduction model for intra pictures.
+Offset parameter of the QP reduction model.
 \\
 
-\Option{SmoothQPReductionLimitIntra} &
+\Option{SmoothQPReductionLimit} &
 \Default{-16.0} &
-Threshold parameter for controlling amount of QP reduction by the QP reduction model for intra pictures.
+Threshold parameter for controlling amount of QP reduction by the QP reduction model.
 \\
 
-\Option{SmoothQPReductionThresholdInter} &
-\Default{3.0} &
-Threshold parameter for smoothness for inter pictures.
-\\
-
-\Option{SmoothQPReductionModelScaleInter} &
-\Default{-1.0} &
-Scale parameter of the QP reduction model for inter pictures.
-\\
-
-\Option{SmoothQPReductionModelOffsetInter} &
-\Default{27.0} &
-Offset parameter of the QP reduction model for inter pictures.
-\\
-
-\Option{SmoothQPReductionLimitInter} &
-\Default{-16.0} &
-Threshold parameter for controlling amount of QP reduction by the QP reduction model for inter pictures.
-\\
 
 \Option{SmoothQPReductionPeriodicity} &
 \Default{1} &
