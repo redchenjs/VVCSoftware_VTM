@@ -1565,20 +1565,20 @@ void DecLib::checkSeiContentInAccessUnit()
       }
       else
       {
-        bool bSameLayer = false;
+        bool sameLayer = false;
         if (!payLoadNested1 && !payLoadNested2)
         {
-          bSameLayer = (payLoadLayerId1 == payLoadLayerId2);
+          sameLayer = (payLoadLayerId1 == payLoadLayerId2);
         }
         else if (payLoadNested1 && payLoadNested2)
         {
-          bSameLayer = true;
+          sameLayer = true;
         }
         else
         {
-          bSameLayer = payLoadNested1 ? payLoadLayerId2 >= payLoadLayerId1 : payLoadLayerId1 >= payLoadLayerId2;
+          sameLayer = payLoadNested1 ? payLoadLayerId2 >= payLoadLayerId1 : payLoadLayerId1 >= payLoadLayerId2;
         }
-        CHECK(payloadType1 == payloadType2 && bSameLayer && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
+        CHECK(payloadType1 == payloadType2 && sameLayer && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
       }
     }
   }
