@@ -479,7 +479,7 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
     case SEI::EXTENDED_DRAP_INDICATION:             return "Extended DRAP indication";
     case SEI::CONSTRAINED_RASL_ENCODING:            return "Constrained RASL encoding";
 #if JVET_Y0044_SEI_TYPES
-    case SEI::VIDEO_DECODING_INTERFACE:             return "Video decoding interface";
+    case SEI::VDI_SEI_ENVELOPE:                     return "Video decoding interface SEI envelope";
 #endif
     default:                                        return "Unknown";
   }

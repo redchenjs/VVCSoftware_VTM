@@ -93,7 +93,7 @@ public:
     EXTENDED_DRAP_INDICATION             = 206,
     CONSTRAINED_RASL_ENCODING            = 207,
 #if JVET_Y0044_SEI_TYPES
-    VIDEO_DECODING_INTERFACE             = 208,
+    VDI_SEI_ENVELOPE             = 208,
 #endif
   };
 
@@ -1011,13 +1011,13 @@ public:
 };
 
 #if JVET_Y0044_SEI_TYPES
-class SEIVideoDecodingInterface : public SEI
+class SEIVDISeiEnvelope : public SEI
 {
 public:
-  PayloadType payloadType() const { return VIDEO_DECODING_INTERFACE; }
+  PayloadType payloadType() const { return VDI_SEI_ENVELOPE; }
 
-  SEIVideoDecodingInterface() {}
-  virtual ~SEIVideoDecodingInterface() {}
+  SEIVDISeiEnvelope() {}
+  virtual ~SEIVDISeiEnvelope() {}
 };
 #endif
 //! \}
