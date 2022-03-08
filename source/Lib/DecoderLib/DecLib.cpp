@@ -943,7 +943,7 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
   m_puCounter++;
 }
 
-void DecLib::checkNoOutputPriorPics(PicList *pcListPic)
+void DecLib::checkNoOutputPriorPics (PicList* pcListPic)
 {
   if (!pcListPic || !m_isNoOutputPriorPics)
   {
@@ -2591,7 +2591,7 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
         m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR) &&
       getNoOutputPriorPicsFlag())
 #endif
-    {
+  {
       checkNoOutputPriorPics(&m_cListPic);
       setNoOutputPriorPicsFlag (false);
     }
