@@ -72,7 +72,7 @@
 #define GDR_DEC_TRACE  0
 #endif
 
-#define JVET_S0078_NOOUTPUT_PRIOR_PICS_FLAG               1 // Apply no output of prior pics only once per AU for all layers or once per picture in AU for each layer.
+#define JVET_S0078_NOOUTPUT_PRIOR_PICS_FLAG               1 // Apply no output of prior pics only once per AU.
 
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
 
