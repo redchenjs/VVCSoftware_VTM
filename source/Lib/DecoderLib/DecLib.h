@@ -244,7 +244,7 @@ public:
   void  executeLoopFilters();
   void finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl = INFO, bool associatedWithNewClvs = false);
   void  finishPictureLight(int& poc, PicList*& rpcListPic );
-  void  checkNoOutputPriorPics (PicList* rpcListPic);
+  void checkNoOutputPriorPics(PicList *rpcListPic);
   void  checkNalUnitConstraints( uint32_t naluType );
   void  checkPicTypeAfterEos();
   void  updateAssociatedIRAP();
