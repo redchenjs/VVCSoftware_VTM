@@ -1324,7 +1324,6 @@ private:
   bool             m_transformSkipContextEnabledFlag;
   bool             m_extendedPrecisionProcessingFlag;
   bool             m_tsrcRicePresentFlag;
-  bool             m_intraSmoothingDisabledFlag;
   bool             m_highPrecisionOffsetsEnabledFlag;
   bool             m_rrcRiceExtensionEnableFlag;
   bool             m_persistentRiceAdaptationEnabledFlag;
@@ -1341,7 +1340,6 @@ public:
         || getTransformSkipContextEnabledFlag()
         || getExtendedPrecisionProcessingFlag()
         || getTSRCRicePresentFlag()
-        || getIntraSmoothingDisabledFlag()
         || getHighPrecisionOffsetsEnabledFlag()
         || getRrcRiceExtensionEnableFlag()
         || getPersistentRiceAdaptationEnabledFlag()
@@ -1361,9 +1359,6 @@ public:
 
   bool getTSRCRicePresentFlag() const                                                  { return m_tsrcRicePresentFlag;                  }
   void setTSRCRicePresentFlag(bool b)                                                  { m_tsrcRicePresentFlag = b;                     }
-
-  bool getIntraSmoothingDisabledFlag() const                                           { return m_intraSmoothingDisabledFlag;           }
-  void setIntraSmoothingDisabledFlag(bool value) { m_intraSmoothingDisabledFlag = value; }
 
   bool getHighPrecisionOffsetsEnabledFlag() const                                      { return m_highPrecisionOffsetsEnabledFlag;      }
   void setHighPrecisionOffsetsEnabledFlag(bool value)                                  { m_highPrecisionOffsetsEnabledFlag = value;     }

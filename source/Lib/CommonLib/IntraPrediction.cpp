@@ -410,40 +410,28 @@ void IntraPrediction::initPredIntraParams(const PredictionUnit & pu, const CompA
   }
 
   // high level conditions and DC intra prediction
-  if(   sps.getSpsRangeExtension().getIntraSmoothingDisabledFlag()
-    || !isLuma( chType )
-    || useISP
-    || PU::isMIP( pu, chType )
-    || m_ipaParam.multiRefIndex
-    || DC_IDX == dirMode
-    )
+  if (isLuma(chType) && !useISP && !PU::isMIP(pu, chType) && m_ipaParam.multiRefIndex == 0 && DC_IDX != dirMode
+      && !pu.cu->bdpcmMode)
   {
-  }
-  else if ((isLuma(chType) && pu.cu->bdpcmMode) || (!isLuma(chType) && pu.cu->bdpcmModeChroma)) // BDPCM
-  {
-    m_ipaParam.refFilterFlag = false;
-  }
-  else if (dirMode == PLANAR_IDX) // Planar intra prediction
-  {
-    m_ipaParam.refFilterFlag = puSize.width * puSize.height > 32 ? true : false;
-  }
-  else if (!useISP)// HOR, VER and angular modes (MDIS)
-  {
-    bool filterFlag = false;
+    if (dirMode == PLANAR_IDX)   // Planar intra prediction
     {
-      const int diff = std::min<int>( abs( predMode - HOR_IDX ), abs( predMode - VER_IDX ) );
-      const int log2Size = ((floorLog2(puSize.width) + floorLog2(puSize.height)) >> 1);
-      CHECK( log2Size >= MAX_INTRA_FILTER_DEPTHS, "Size not supported" );
-      filterFlag = (diff > m_aucIntraFilter[log2Size]);
+      m_ipaParam.refFilterFlag = puSize.width * puSize.height > 32 ? true : false;
     }
-
-    // Selelection of either ([1 2 1] / 4 ) refrence filter OR Gaussian 4-tap interpolation filter
-    if (filterFlag)
+    else
     {
-      const bool isRefFilter       =  isIntegerSlope(absAng);
-      CHECK( puSize.width * puSize.height <= 32, "DCT-IF interpolation filter is always used for 4x4, 4x8, and 8x4 luma CB" );
-      m_ipaParam.refFilterFlag     =  isRefFilter;
-      m_ipaParam.interpolationFlag = !isRefFilter;
+      const int diff     = std::min<int>(abs(predMode - HOR_IDX), abs(predMode - VER_IDX));
+      const int log2Size = (floorLog2(puSize.width) + floorLog2(puSize.height)) >> 1;
+      CHECK(log2Size >= MAX_INTRA_FILTER_DEPTHS, "Size not supported");
+
+      // Selelection of either ([1 2 1] / 4 ) refrence filter OR Gaussian 4-tap interpolation filter
+      if (diff > m_aucIntraFilter[log2Size])
+      {
+        const bool isRefFilter = isIntegerSlope(absAng);
+        CHECK(puSize.width * puSize.height <= 32,
+              "DCT-IF interpolation filter is always used for 4x4, 4x8, and 8x4 luma CB");
+        m_ipaParam.refFilterFlag     = isRefFilter;
+        m_ipaParam.interpolationFlag = !isRefFilter;
+      }
     }
   }
 }
