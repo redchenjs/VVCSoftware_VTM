@@ -447,6 +447,9 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
     case SEI::FILM_GRAIN_CHARACTERISTICS:           return "Film grain characteristics";           // not currently decoded
     case SEI::FRAME_PACKING:                        return "Frame packing arrangement";
     case SEI::DISPLAY_ORIENTATION:                  return "Display orientation";
+#if JVET_Y0044_SEI_TYPES
+    case SEI::GREEN_METADATA:                       return "Green metadata";
+#endif
     case SEI::PARAMETER_SETS_INCLUSION_INDICATION:  return "Parameter sets inclusion indication";
     case SEI::DECODING_UNIT_INFO:                   return "Decoding unit information";
     case SEI::SCALABLE_NESTING:                     return "Scalable nesting";
@@ -475,6 +478,9 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
     case SEI::SCALABILITY_DIMENSION_INFO:           return "Scalability dimension information";
     case SEI::EXTENDED_DRAP_INDICATION:             return "Extended DRAP indication";
     case SEI::CONSTRAINED_RASL_ENCODING:            return "Constrained RASL encoding";
+#if JVET_Y0044_SEI_TYPES
+    case SEI::VDI_SEI_ENVELOPE:                     return "Video decoding interface SEI envelope";
+#endif
     default:                                        return "Unknown";
   }
 }
