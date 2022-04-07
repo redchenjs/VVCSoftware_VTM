@@ -773,7 +773,9 @@ void SEIReader::xParseSEIBufferingPeriod(SEIBufferingPeriod& sei, uint32_t paylo
   }
   if (sei.m_cpbRemovalDelayDeltasPresentFlag)
   {
-    sei_read_uvlc( pDecodedMessageOutputStream, code, "num_cpb_removal_delay_deltas_minus1" );               sei.m_numCpbRemovalDelayDeltas = code + 1;
+    sei_read_uvlc( pDecodedMessageOutputStream, code, "num_cpb_removal_delay_deltas_minus1" );
+    CHECK(code>15, "The value of num_cpb_removal_offsets_minus1 shall be in the range of 0 to 15, inclusive.")
+    sei.m_numCpbRemovalDelayDeltas = code + 1;
     for( i = 0; i < sei.m_numCpbRemovalDelayDeltas; i ++ )
     {
       sei_read_code( pDecodedMessageOutputStream, ( sei.m_cpbRemovalDelayLength ), code, "cpb_removal_delay_delta[i]" );
