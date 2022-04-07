@@ -522,7 +522,7 @@ public:
   bool m_cpbRemovalDelayDeltasPresentFlag;
   int  m_numCpbRemovalDelayDeltas;
   int  m_bpMaxSubLayers;
-  uint32_t m_cpbRemovalDelayDelta    [15];
+  uint32_t m_cpbRemovalDelayDelta    [16];
   bool m_bpDecodingUnitHrdParamsPresentFlag;
   bool m_decodingUnitCpbParamsInPicTimingSeiFlag;
   bool m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
