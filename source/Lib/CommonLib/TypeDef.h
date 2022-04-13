@@ -72,6 +72,8 @@
 #define GDR_DEC_TRACE  0
 #endif
 
+#define JVET_S0078_NOOUTPUT_PRIOR_PICS_FLAG               1 // JVET-S0078: applying no output of prior pics flag only once per AU
+
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
 
 #define JVET_R0351_HIGH_BIT_DEPTH_ENABLED                 0 // JVET-R0351: high bit depth coding enabled (increases accuracies of some calculations, e.g. transforms)
