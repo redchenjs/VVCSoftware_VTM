@@ -54,14 +54,15 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 #define JVET_Y0056_MINCR                                     1 // JVET-Y0056 clear MinCR definition for high tier for levels below 4
-#define JVET_Y0126_PERFORMANCE                               1  // JVET-Y0126 SW changes and configuration for improved performacnce
+#define JVET_Y0126_PERFORMANCE                               1 // JVET-Y0126 SW changes and configuration for improved performacnce
 #define JVET_Y0152_TT_ENC_SPEEDUP                            1 // TT encoding speedup based on ABT_ENC_SPEEDUP in ECM-2.0
 #define JVET_Y0273_GCI_BUGFIX                                1 // JVET-Y0273 option C bugfix for GCI signalling
 #define JVET_X0143_ALF_APS_ID_OFFSET                         0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.
 #define JVET_Y0105_SW_AND_QDF                                1 // An adaptive smooth window (SW) size and extension of quality dependency factor (QDF) to low frame rate in rate control 
 #define JVET_Y0077_BIM                                       1 // JVET-Y0077: Block Importance Mapping
 #define JVET_Y0044_SEI_TYPES                                 1 // JVET-Y0044: Green metadata and VDI SEI payload type
-#define JVET_Y0060_ADD_AFFINE_AMVP_MODE                   1 // JVET-Y0060: Add AffineAmvp mode to enable/disable separate from AffineMerge mode
+#define JVET_Y0060_ADD_AFFINE_AMVP_MODE                      1 // JVET-Y0060: Add AffineAmvp mode to enable/disable separate from AffineMerge mode
+#define JVET_Y0072_UNLIMITED_LEVEL                           1 // JVET-Y0072: Add unlimited level support for all video profiles
 
 //########### place macros to be be kept below this line ###############
 #define GDR_ENABLED   1
