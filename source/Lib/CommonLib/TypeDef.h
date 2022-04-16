@@ -74,6 +74,7 @@
 #endif
 
 #define JVET_S0078_NOOUTPUT_PRIOR_PICS_FLAG               1 // JVET-S0078: applying no output of prior pics flag only once per AU
+#define CHECK_NOOUTPUTBEFORERECOVERYFLAG_PRIOR_NOTOUTPUT  1 // Apply the check to ensure that marking the existing pictures in the DPB not needed for output only when the current picture is a CVSS or CLVSS
 
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
 
