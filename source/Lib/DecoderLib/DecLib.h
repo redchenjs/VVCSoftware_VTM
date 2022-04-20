@@ -269,7 +269,7 @@ public:
   int  getDebugPOC( )               const { return m_debugPOC; };
   void setDebugPOC( int debugPOC )        { m_debugPOC = debugPOC; };
   void resetAccessUnitNals()              { m_accessUnitNals.clear();    }
-  void resetAccessUnitPicInfo()              { m_accessUnitPicInfo.clear();    }
+  void resetAccessUnitPicInfo()           { m_accessUnitPicInfo.clear(); }
   void resetAccessUnitApsNals()           { m_accessUnitApsNals.clear(); }
   void resetAccessUnitSeiTids()           { m_accessUnitSeiTids.clear(); }
   void resetAudIrapOrGdrAuFlag()          { m_audIrapOrGdrAuFlag = false; }
