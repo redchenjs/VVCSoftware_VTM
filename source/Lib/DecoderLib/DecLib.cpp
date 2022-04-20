@@ -1084,6 +1084,11 @@ void DecLib::checkPicTypeAfterEos()
 
 void DecLib::checkLayerIdIncludedInCvss()
 {
+  if (m_accessUnitPicInfo.empty())
+  {
+    // don't try to access, if there are no entries (e.g. bitstreams ends after skipping leading pictures)
+    return;
+  }
   if ((getVPS()->getMaxLayers() == 1 || m_audIrapOrGdrAuFlag) && (m_isFirstAuInCvs || m_accessUnitPicInfo.begin()->m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP || m_accessUnitPicInfo.begin()->m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL))
   {
     // store layerIDs in the first AU
@@ -1131,7 +1136,6 @@ void DecLib::checkLayerIdIncludedInCvss()
       }
     }
   }
-
 }
 
 void DecLib::resetIsFirstAuInCvs()
