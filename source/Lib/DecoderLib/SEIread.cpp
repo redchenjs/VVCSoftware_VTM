@@ -142,7 +142,7 @@ void SEIReader::parseSEImessage(InputBitstream* bs, SEIMessages& seis, const Nal
 }
 
 #if JVET_T0055_ASPECT4
-void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream* bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const VPS* vps, const SPS* sps, HRD &hrd, uint32_t payloadSize, std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*>> *seiList)
+void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream* bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const VPS* vps, const SPS* sps, HRD &hrd, uint32_t payloadSize, std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>> *seiList)
 {
   SEI *sei = NULL;
   sei = new SEIScalableNesting;
@@ -180,6 +180,27 @@ void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream* bs, const NalU
     }
   }
   delete sei;
+}
+
+void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, HRD &hrd, uint32_t payloadSize, int& duiIdx)
+{
+  const SEIBufferingPeriod *bp = NULL;
+  bp = hrd.getBufferingPeriodSEI();
+  if (!bp)
+  {
+    // msg( WARNING, "Warning: Found Decoding unit information SEI message, but no active buffering period is available. Ignoring.");
+  }
+  else
+  {
+    InputBitstream bs2(*bs);
+    setBitstream(&bs2);
+    SEI *sei = NULL;
+    sei = new SEIDecodingUnitInfo;
+    xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo&) *sei, payloadSize, *bp, nuh_layer_id, NULL);
+    duiIdx = ((SEIDecodingUnitInfo&)*sei).m_decodingUnitIdx;
+    delete sei;
+    setBitstream(bs);
+  }
 }
 #endif
 
@@ -666,7 +687,7 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
 }
 
 #if JVET_T0055_ASPECT4
-void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD &hrd, std::ostream* decodedMessageOutputStream, std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*>> *seiList)
+void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD &hrd, std::ostream* decodedMessageOutputStream, std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>> *seiList)
 {
   uint32_t symbol;
   SEIMessages seis;
@@ -762,6 +783,29 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
     } while (val==0xFF);
 
     uint8_t *payload = new uint8_t[payloadSize];
+    int duiIdx = 0;
+    if (payloadType == SEI::DECODING_UNIT_INFO)
+    {
+      const SEIBufferingPeriod *bp = NULL;
+      bp = hrd.getBufferingPeriodSEI();
+      if (!bp)
+      {
+        //msg( WARNING, "Warning: Found Decoding unit information SEI message, but no active buffering period is available. Ignoring.");
+      }
+      else
+      {
+        InputBitstream *bs = getBitstream();
+        InputBitstream bs2(*bs);
+        setBitstream(&bs2);
+        SEI *sei = NULL;
+        sei = new SEIDecodingUnitInfo;
+        xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo&) *sei, payloadSize, *bp, nuhLayerId, NULL);
+        duiIdx = ((SEIDecodingUnitInfo&)*sei).m_decodingUnitIdx;
+        delete sei;
+        setBitstream(bs);
+      }
+    }
+    uint32_t numSubPics = sei.m_snSubpicFlag ? sei.m_snNumSubpics : 1;
     for (uint32_t j = 0; j < payloadSize; j++)
     {
       sei_read_code(NULL, 8, val, "payload_content");
@@ -771,35 +815,53 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
     {
       for (uint32_t j = 0; j <= sei.m_snNumOlssMinus1; j++)
       {
-        if (j == 0)
+        for (uint32_t k = 0; k < numSubPics; k++)
         {
-          seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*>(payloadType, sei.m_snOlsIdx[j], false, payloadSize, payload));
-        }
-        else
-        {
-          uint8_t *payloadTemp = new uint8_t[payloadSize];
-          memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-          seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*>(payloadType, sei.m_snOlsIdx[j], false, payloadSize, payloadTemp));
+          if (j == 0 && k == 0)
+          {
+            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snOlsIdx[j], false, payloadSize, payload, duiIdx, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
+          }
+          else
+          {
+            uint8_t *payloadTemp = new uint8_t[payloadSize];
+            memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
+            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snOlsIdx[j], false, payloadSize, payloadTemp, duiIdx, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
+          }
         }
       }
     }
     else if (sei.m_snAllLayersFlag)
     {
-      seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*>(payloadType, nuhLayerId, true, payloadSize, payload));
-    }
-    else // !sei.m_snOlsFlag && !sei.m_snAllLayersFlag
-    {
-      for (uint32_t j = 0; j <= sei.m_snNumLayersMinus1; j++)
+      for (uint32_t k = 0; k < numSubPics; k++)
       {
-        if (j == 0)
+        if (k == 0)
         {
-          seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*>(payloadType, sei.m_snLayerId[j], false, payloadSize, payload));
+          seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, nuhLayerId, true, payloadSize, payload, duiIdx, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
         }
         else
         {
           uint8_t *payloadTemp = new uint8_t[payloadSize];
           memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-          seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*>(payloadType, sei.m_snLayerId[j], false, payloadSize, payloadTemp));
+          seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, nuhLayerId, true, payloadSize, payloadTemp, duiIdx, sei.m_snSubpicId[k]));
+        }
+      }
+    }
+    else // !sei.m_snOlsFlag && !sei.m_snAllLayersFlag
+    {
+      for (uint32_t j = 0; j <= sei.m_snNumLayersMinus1; j++)
+      {
+        for (uint32_t k = 0; k < numSubPics; k++)
+        {
+          if (j == 0 && k == 0)
+          {
+            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snLayerId[j], false, payloadSize, payload, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
+          }
+          else
+          {
+            uint8_t *payloadTemp = new uint8_t[payloadSize];
+            memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
+            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snLayerId[j], false, payloadSize, payloadTemp, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
+          }
         }
       }
     }

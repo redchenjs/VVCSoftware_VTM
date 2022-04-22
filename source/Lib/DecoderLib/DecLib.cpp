@@ -1442,7 +1442,11 @@ void DecLib::resetPictureSeiNalus()
 #if JVET_T0055_ASPECT4
 void DecLib::checkSeiContentInAccessUnit()
 {
-  std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*>> seiList;
+  if (m_accessUnitSeiNalus.empty())
+  {
+    return;
+  }
+  std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>> seiList; //payloadType, olsId, isNestedSEI, payloadSize, payload, duiIdx, subPicId
 
   // get the OLSs that cover all layers
   std::vector<uint32_t> olsIds;
@@ -1500,6 +1504,11 @@ void DecLib::checkSeiContentInAccessUnit()
         if (payloadType == SEI::BUFFERING_PERIOD || payloadType == SEI::PICTURE_TIMING || payloadType == SEI::DECODING_UNIT_INFO || payloadType == SEI::SUBPICTURE_LEVEL_INFO)
         {
           uint8_t *payload = new uint8_t[payloadSize];
+          int duiIdx = 0;
+          if (payloadType == SEI::DECODING_UNIT_INFO)
+          {
+            m_seiReader.getSEIDecodingUnitInfoDuiIdx(&bs, sei->m_nalUnitType, payloadLayerId, m_HRD, payloadSize, duiIdx);
+          }
           for (uint32_t i = 0; i < payloadSize; i++)
           {
             bs.readByte(val);
@@ -1509,13 +1518,13 @@ void DecLib::checkSeiContentInAccessUnit()
           {
             if (i == 0)
             {
-              seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*>(payloadType, olsIds.at(i), false, payloadSize, payload));
+              seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, olsIds.at(i), false, payloadSize, payload, duiIdx, 0));
             }
             else
             {
               uint8_t *payloadTemp = new uint8_t[payloadSize];
               memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-              seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*>(payloadType, olsIds.at(i), false, payloadSize, payloadTemp));
+              seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, olsIds.at(i), false, payloadSize, payloadTemp, duiIdx, 0));
             }
           }
         }
@@ -1527,7 +1536,7 @@ void DecLib::checkSeiContentInAccessUnit()
             bs.readByte(val);
             payload[i] = (uint8_t)val;
           }
-          seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*>(payloadType, payloadLayerId, false, payloadSize, payload));
+          seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, payloadLayerId, false, payloadSize, payload, 0, 0));
         }
       }
       else
@@ -1548,6 +1557,8 @@ void DecLib::checkSeiContentInAccessUnit()
     bool     payLoadNested1 = std::get<2>(seiList[i]);
     uint32_t payloadSize1 = std::get<3>(seiList[i]);
     uint8_t  *payload1    = std::get<4>(seiList[i]);
+    int      duiIdx1 = std::get<5>(seiList[i]);
+    int      subPicId1 = std::get<6>(seiList[i]);
 
     // compare current SEI message with remaining messages in the list
     for (uint32_t j = i+1; j < seiList.size(); j++)
@@ -1557,11 +1568,13 @@ void DecLib::checkSeiContentInAccessUnit()
       bool     payLoadNested2 = std::get<2>(seiList[j]);
       uint32_t payloadSize2 = std::get<3>(seiList[j]);
       uint8_t  *payload2    = std::get<4>(seiList[j]);
+      int      duiIdx2 = std::get<5>(seiList[j]);
+      int      subPicId2 = std::get<6>(seiList[j]);
 
-      // check for identical SEI type, olsId or layerId, size, and payload
+      // check for identical SEI type, olsId or layerId, size, payload, duiIdx, and subPicId
       if (payloadType1 == SEI::BUFFERING_PERIOD || payloadType1 == SEI::PICTURE_TIMING || payloadType1 == SEI::DECODING_UNIT_INFO || payloadType1 == SEI::SUBPICTURE_LEVEL_INFO)
       {
-        CHECK((payloadType1 == payloadType2) && (payLoadLayerId1 == payLoadLayerId2) && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
+        CHECK((payloadType1 == payloadType2) && (payLoadLayerId1 == payLoadLayerId2) && (duiIdx1 == duiIdx2) && (subPicId1 == subPicId2) && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
       }
       else
       {
@@ -1578,7 +1591,7 @@ void DecLib::checkSeiContentInAccessUnit()
         {
           sameLayer = payLoadNested1 ? payLoadLayerId2 >= payLoadLayerId1 : payLoadLayerId1 >= payLoadLayerId2;
         }
-        CHECK(payloadType1 == payloadType2 && sameLayer && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
+        CHECK(payloadType1 == payloadType2 && sameLayer && (duiIdx1 == duiIdx2) && (subPicId1 == subPicId2)  && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
       }
     }
   }
