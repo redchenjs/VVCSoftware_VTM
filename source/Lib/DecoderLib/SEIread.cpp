@@ -854,13 +854,13 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
         {
           if (j == 0 && k == 0)
           {
-            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snLayerId[j], false, payloadSize, payload, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
+            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snLayerId[j], false, payloadSize, payload, duiIdx, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
           }
           else
           {
             uint8_t *payloadTemp = new uint8_t[payloadSize];
             memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snLayerId[j], false, payloadSize, payloadTemp, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
+            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snLayerId[j], false, payloadSize, payloadTemp, duiIdx, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
           }
         }
       }
