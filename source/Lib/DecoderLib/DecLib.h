@@ -203,6 +203,9 @@ private:
   std::vector<NalUnitType> m_pictureUnitNals;
   std::list<InputNALUnit*> m_pictureSeiNalus; 
   std::list<InputNALUnit*> m_suffixApsNalus; 
+#if JVET_T0055_ASPECT4
+  std::list<InputNALUnit*> m_accessUnitSeiNalus;
+#endif
 
   OPI*                    m_opi;
   bool                    m_mTidExternalSet;
@@ -277,6 +280,10 @@ public:
   void checkTidLayerIdInAccessUnit();
   void resetAccessUnitSeiPayLoadTypes()   { m_accessUnitSeiPayLoadTypes.clear(); }
   void checkSEIInAccessUnit();
+#if JVET_T0055_ASPECT4
+  void checkSeiContentInAccessUnit();
+  void resetAccessUnitSeiNalus();
+#endif
   void checkLayerIdIncludedInCvss();
   void CheckNoOutputPriorPicFlagsInAccessUnit();
   void resetAccessUnitNoOutputPriorPicFlags() { m_accessUnitNoOutputPriorPicFlags.clear(); }
