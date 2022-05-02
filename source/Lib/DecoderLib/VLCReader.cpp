@@ -4640,11 +4640,7 @@ void HLSyntaxReader::parseConstraintInfo(ConstraintInfo *cinfo, const ProfileTie
     READ_CODE(8, symbol, "gci_num_additional_bits");
     uint32_t const numAdditionalBits = symbol;
     int numAdditionalBitsUsed;
-#if JVET_Y0273_GCI_BUGFIX
     if (numAdditionalBits > 5)
-#else
-    if (numAdditionalBits > 0)
-#endif
     {
       READ_FLAG(symbol, "gci_all_rap_pictures_flag");                    cinfo->setAllRapPicturesFlag(symbol > 0 ? true : false);
       READ_FLAG(symbol, "gci_no_extended_precision_processing_constraint_flag");  cinfo->setNoExtendedPrecisionProcessingConstraintFlag(symbol > 0 ? true : false);
@@ -4654,24 +4650,18 @@ void HLSyntaxReader::parseConstraintInfo(ConstraintInfo *cinfo, const ProfileTie
       READ_FLAG(symbol, "gci_no_reverse_last_sig_coeff_constraint_flag");         cinfo->setNoReverseLastSigCoeffConstraintFlag(symbol > 0 ? true : false);
       numAdditionalBitsUsed = 6;
     }
-#if JVET_Y0273_GCI_BUGFIX
     else if (numAdditionalBits > 0)
     {
       msg(ERROR, "Invalid bitstream: gci_num_additional_bits set to value %d (must be 0 or >= 6)\n", numAdditionalBits);
       numAdditionalBitsUsed = 0;
     }
-#endif
     else
     {
       numAdditionalBitsUsed = 0;
     }
     for (int i = 0; i < numAdditionalBits - numAdditionalBitsUsed; i++)
     {
-#if JVET_Y0273_GCI_BUGFIX
       READ_FLAG(symbol, "gci_reserved_bit");
-#else
-      READ_FLAG(symbol, "gci_reserved_zero_bit");                    CHECK(symbol != 0, "gci_reserved_zero_bit not equal to zero");
-#endif
     }
   }
   while (!isByteAligned())
