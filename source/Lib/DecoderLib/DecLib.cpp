@@ -2764,16 +2764,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
 
   DTRACE_UPDATE( g_trace_ctx, std::make_pair( "poc", m_apcSlicePilot->getPOC() ) );
 
-#if !CHECK_NOOUTPUTBEFORERECOVERYFLAG_PRIOR_NOTOUTPUT
-  if (m_bFirstSliceInPicture && m_apcSlicePilot->getPOC() != m_prevPOC &&
-       (m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA
-       || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR) &&
-      getNoOutputPriorPicsFlag())
-  {
-      checkNoOutputPriorPics(&m_cListPic);
-      setNoOutputPriorPicsFlag (false);
-  }
-#endif
 
   xUpdatePreviousTid0POC(m_apcSlicePilot);
 
@@ -2834,7 +2824,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     }
   }
 
-#if CHECK_NOOUTPUTBEFORERECOVERYFLAG_PRIOR_NOTOUTPUT
   if (m_bFirstSliceInPicture && m_apcSlicePilot->getPOC() != m_prevPOC
       && (m_apcSlicePilot->getRapPicFlag() || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR)
       && m_picHeader.getNoOutputBeforeRecoveryFlag()
@@ -2843,7 +2832,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     checkNoOutputPriorPics(&m_cListPic);
     setNoOutputPriorPicsFlag(false);
   }
-#endif
 
   //For inference of PicOutputFlag
   if( !pps->getMixedNaluTypesInPicFlag() && ( m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_RASL ) )

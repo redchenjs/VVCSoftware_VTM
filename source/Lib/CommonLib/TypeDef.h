@@ -66,7 +66,6 @@
 #define GDR_DEC_TRACE  0
 #endif
 
-#define CHECK_NOOUTPUTBEFORERECOVERYFLAG_PRIOR_NOTOUTPUT  1 // Apply the check to ensure that marking the existing pictures in the DPB not needed for output only when the current picture is a CVSS or CLVSS
 
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
 
