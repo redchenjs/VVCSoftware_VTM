@@ -142,14 +142,12 @@ void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& c
     int deltaQP = m_pcEncCfg->getMaxDeltaQP();
     minQP = Clip3( -sps.getQpBDOffset( CHANNEL_TYPE_LUMA ), MAX_QP, baseQP - deltaQP );
     maxQP = Clip3( -sps.getQpBDOffset( CHANNEL_TYPE_LUMA ), MAX_QP, baseQP + deltaQP );
-#if JVET_Y0077_BIM
     Position pos = partitioner.currQgPos;
     const int ctuSize = sps.getCTUSize();
     const int ctuId = ( pos.y / ctuSize ) * ( ( cs.picture->lwidth() + ctuSize - 1 ) / ctuSize ) + ( pos.x / ctuSize );
     const int bimOffset = getBIMOffset( m_slice->getPOC(), ctuId );
     minQP += bimOffset;
     maxQP += bimOffset;
-#endif
   }
   else if( qgEnableChildren ) // more splits and not the deepest QG level
   {
@@ -1812,7 +1810,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
             return false;
           }
         }
-#if JVET_Y0152_TT_ENC_SPEEDUP
         if (m_pcEncCfg->getFastTTskip() && split == CU_TRIH_SPLIT)
         {
           bool skipTtSplitMode = xSkipTreeCandidate(getPartSplit(encTestmode), cs.splitRdCostBest, m_slice->getSliceType());
@@ -1821,7 +1818,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
             return false;
           }
         }
-#endif
         break;
       case CU_VERT_SPLIT:
       case CU_TRIV_SPLIT:
@@ -1836,7 +1832,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
             return false;
           }
         }
-#if JVET_Y0152_TT_ENC_SPEEDUP
         if (m_pcEncCfg->getFastTTskip() && split == CU_TRIV_SPLIT) {
           bool skipTtSplitMode = xSkipTreeCandidate(getPartSplit(encTestmode), cs.splitRdCostBest, m_slice->getSliceType());
           if (skipTtSplitMode)
@@ -1844,7 +1839,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
             return false;
           }
         }
-#endif
         break;
       default:
         break;
@@ -1998,7 +1992,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
   }
 }
 
-#if JVET_Y0152_TT_ENC_SPEEDUP
 bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double* splitRdCostBest, const SliceType& sliceType) const
 {
   if (!splitRdCostBest)
@@ -2075,7 +2068,6 @@ bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double*
   }
   return res;
 }
-#endif
 
 bool EncModeCtrlMTnoRQT::checkSkipOtherLfnst( const EncTestMode& encTestmode, CodingStructure*& tempCS, Partitioner& partitioner )
 {
@@ -2162,10 +2154,8 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
     }
     cuECtx.set( MAX_QT_SUB_DEPTH, maxQtD );
   }
-#if JVET_Y0126_PERFORMANCE
   if( !m_pcEncCfg->getDisableFastDecisionTT() )
   {
-#endif
     int maxMtD = tempCS->pcv->getMaxBtDepth( *tempCS->slice, partitioner.chType ) + partitioner.currImplicitBtDepth;
 
     if( encTestmode.type == ETM_SPLIT_BT_H )
@@ -2190,9 +2180,7 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
         cuECtx.set( DO_TRIV_SPLIT, cu1_w < w_2 || cu2_w < w_2 || partitioner.currMtDepth + 1 == maxMtD );
       }
     }
-#if JVET_Y0126_PERFORMANCE
   }
-#endif
   // for now just a simple decision based on RD-cost or choose tempCS if bestCS is not yet coded
   if( tempCS->features[ENC_FT_RD_COST] != MAX_DOUBLE && ( !cuECtx.bestCS || ( ( tempCS->features[ENC_FT_RD_COST] + ( tempCS->useDbCost ? tempCS->costDbOffset : 0 ) ) < ( cuECtx.bestCS->features[ENC_FT_RD_COST] + ( tempCS->useDbCost ? cuECtx.bestCS->costDbOffset : 0 ) ) ) ) )
   {

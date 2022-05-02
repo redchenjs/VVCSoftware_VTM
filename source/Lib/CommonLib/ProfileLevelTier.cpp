@@ -57,19 +57,11 @@ static const uint64_t MAX_CNFUINT64 = std::numeric_limits<uint64_t>::max();
 static const LevelTierFeatures mainLevelTierInfo[] =
 {
       //  level,       maxlumaps,      maxcpb[tier],,  maxSlicesPerAu,maxTilesPerAu,cols, maxLumaSr,       maxBr[tier],,    minCr[tier],,
-#if JVET_Y0056_MINCR
     { Level::LEVEL1  ,    36864, {      350,        0 },       16,        1,        1,     552960ULL, {     128,        0 }, { 2, 0} },
     { Level::LEVEL2  ,   122880, {     1500,        0 },       16,        1,        1,    3686400ULL, {    1500,        0 }, { 2, 0} },
     { Level::LEVEL2_1,   245760, {     3000,        0 },       20,        1,        1,    7372800ULL, {    3000,        0 }, { 2, 0} },
     { Level::LEVEL3  ,   552960, {     6000,        0 },       30,        4,        2,   16588800ULL, {    6000,        0 }, { 2, 0} },
     { Level::LEVEL3_1,   983040, {    10000,        0 },       40,        9,        3,   33177600ULL, {   10000,        0 }, { 2, 0} },
-#else
-    { Level::LEVEL1  ,    36864, {      350,        0 },       16,        1,        1,     552960ULL, {     128,        0 }, { 2, 2} },
-    { Level::LEVEL2  ,   122880, {     1500,        0 },       16,        1,        1,    3686400ULL, {    1500,        0 }, { 2, 2} },
-    { Level::LEVEL2_1,   245760, {     3000,        0 },       20,        1,        1,    7372800ULL, {    3000,        0 }, { 2, 2} },
-    { Level::LEVEL3  ,   552960, {     6000,        0 },       30,        4,        2,   16588800ULL, {    6000,        0 }, { 2, 2} },
-    { Level::LEVEL3_1,   983040, {    10000,        0 },       40,        9,        3,   33177600ULL, {   10000,        0 }, { 2, 2} },
-#endif
     { Level::LEVEL4  ,  2228224, {    12000,    30000 },       75,       25,        5,   66846720ULL, {   12000,    30000 }, { 4, 4} },
     { Level::LEVEL4_1,  2228224, {    20000,    50000 },       75,       25,        5,  133693440ULL, {   20000,    50000 }, { 4, 4} },
     { Level::LEVEL5  ,  8912896, {    25000,   100000 },      200,      110,       10,  267386880ULL, {   25000,   100000 }, { 6, 4} },
@@ -94,21 +86,12 @@ static const ProfileFeatures validProfiles[] = {
     mainLevelTierInfo, true },
   { Profile::MULTILAYER_MAIN_10_444_STILL_PICTURE, "Multilayer_Main_444_10_Still_Picture", 10, CHROMA_444, true, 2500,
     2750, 3750, 75, mainLevelTierInfo, true },
-#if JVET_Y0072_UNLIMITED_LEVEL  
   { Profile::MAIN_10, "Main_10", 10, CHROMA_420, true, 1000, 1100, 1875, 100, mainLevelTierInfo, false },
   { Profile::MULTILAYER_MAIN_10, "Multilayer_Main_10", 10, CHROMA_420, true, 1000, 1100, 1875, 100, mainLevelTierInfo,
     false },
   { Profile::MAIN_10_444, "Main_444_10", 10, CHROMA_444, true, 2500, 2750, 3750, 75, mainLevelTierInfo, false },
   { Profile::MULTILAYER_MAIN_10_444, "Multilayer_Main_444_10", 10, CHROMA_444, true, 2500, 2750, 3750, 75,
     mainLevelTierInfo, false },
-#else
-  { Profile::MAIN_10, "Main_10", 10, CHROMA_420, false, 1000, 1100, 1875, 100, mainLevelTierInfo, false },
-  { Profile::MULTILAYER_MAIN_10, "Multilayer_Main_10", 10, CHROMA_420, false, 1000, 1100, 1875, 100, mainLevelTierInfo,
-    false },
-  { Profile::MAIN_10_444, "Main_444_10", 10, CHROMA_444, false, 2500, 2750, 3750, 75, mainLevelTierInfo, false },
-  { Profile::MULTILAYER_MAIN_10_444, "Multilayer_Main_444_10", 10, CHROMA_444, false, 2500, 2750, 3750, 75,
-    mainLevelTierInfo, false },
-#endif
   { Profile::MAIN_12, "Main_12", 12, CHROMA_420, true, 1200, 1320, 1875, 100, mainLevelTierInfo, false },
   { Profile::MAIN_12_INTRA, "Main_12_Intra", 12, CHROMA_420, true, 2400, 2640, 1875, 100, mainLevelTierInfo, false },
   { Profile::MAIN_12_STILL_PICTURE, "Main_12_Still_Picture", 12, CHROMA_420, true, 2400, 2640, 1875, 100, mainLevelTierInfo, false },

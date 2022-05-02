@@ -946,9 +946,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
   const int shift = iBit - 4 + MV_FRACTIONAL_BITS_INTERNAL;
   bool      wrapRef = false;
   const bool subblkMVSpreadOverLimit = isSubblockVectorSpreadOverLimit( iDMvHorX, iDMvHorY, iDMvVerX, iDMvVerY, pu.interDir );
-#if JVET_Y0126_PERFORMANCE
   const bool isRefScaled = refPic->isRefScaled( pu.cs->pps );
-#endif
 
   bool enablePROF = (sps.getUsePROF()) && (!m_skipPROF) && (compID == COMPONENT_Y);
   enablePROF &= (!pu.cs->picHeader->getProfDisabledFlag());
@@ -956,11 +954,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
   enablePROF &= !subblkMVSpreadOverLimit;
   const int profThres = 1 << (iBit + (m_isBi ? 1 : 0));
   enablePROF &= !m_encOnly || pu.cu->slice->getCheckLDC() || iDMvHorX > profThres || iDMvHorY > profThres || iDMvVerX > profThres || iDMvVerY > profThres || iDMvHorX < -profThres || iDMvHorY < -profThres || iDMvVerX < -profThres || iDMvVerY < -profThres;
-#if JVET_Y0126_PERFORMANCE
   enablePROF &= (isRefScaled == false);
-#else
-  enablePROF &= (refPic->isRefScaled( pu.cs->pps ) == false);
-#endif
 
   bool isLast = enablePROF ? false : !bi;
 
@@ -1131,11 +1125,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
         {
           wrapRef = false;
           m_storedMv[h / AFFINE_MIN_BLOCK_SIZE * MVBUFFER_SIZE + w / AFFINE_MIN_BLOCK_SIZE].set(iMvScaleTmpHor, iMvScaleTmpVer);
-#if JVET_Y0126_PERFORMANCE
           if (isRefScaled == false)
-#else
-          if (refPic->isRefScaled(pu.cs->pps) == false)
-#endif
           {
             clipMv(tmpMv, pu.lumaPos(), pu.lumaSize(), *pu.cs->sps, *pu.cs->pps);
             iMvScaleTmpHor = tmpMv.getHor();
@@ -1165,11 +1155,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
         else
         {
           wrapRef = false;
-#if JVET_Y0126_PERFORMANCE
           if (isRefScaled == false)
-#else
-          if (refPic->isRefScaled(pu.cs->pps) == false)
-#endif
           {
             clipMv(curMv, pu.lumaPos(), pu.lumaSize(), *pu.cs->sps, *pu.cs->pps);
           }
@@ -1189,18 +1175,11 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 #endif
       }
 
-#if JVET_Y0126_PERFORMANCE
       if( isRefScaled )
       {
         xPredInterBlkRPR( scalingRatio, *pu.cs->pps, CompArea( compID, chFmt, pu.blocks[compID].offset( w, h ), Size( blockWidth, blockHeight ) ), refPic, Mv( iMvScaleTmpHor, iMvScaleTmpVer ), dstBuf.buf + w + h * dstBuf.stride, dstBuf.stride, bi, wrapRef, clpRng, 2 );
         CHECK( enablePROF, "PROF should be disabled with RPR" );
       }
-#else
-      if( xPredInterBlkRPR( scalingRatio, *pu.cs->pps, CompArea( compID, chFmt, pu.blocks[compID].offset( w, h ), Size( blockWidth, blockHeight ) ), refPic, Mv( iMvScaleTmpHor, iMvScaleTmpVer ), dstBuf.buf + w + h * dstBuf.stride, dstBuf.stride, bi, wrapRef, clpRng, 2 ) )
-      {
-        CHECK( enablePROF, "PROF should be disabled with RPR" );
-      }
-#endif
       else
       {
         // get the MV in high precision

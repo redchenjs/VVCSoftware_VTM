@@ -388,13 +388,11 @@ static const int    NUM_AFF_MRG_SATD_CAND =                         2;
 static const double AMAXBT_TH32 =                                  15.0;
 static const double AMAXBT_TH64 =                                  30.0;
 
-#if JVET_Y0152_TT_ENC_SPEEDUP
 static constexpr int FAST_METHOD_TT_ENC_SPEEDUP = 0x0001;  ///< Embedding flag, which, if false, de-activates all the following ABT_ENC_SPEEDUP_* modes
 static constexpr int FAST_METHOD_HOR_XOR_VER = 0x0002;
 static constexpr int FAST_METHOD_ENC_SPEEDUP_BT_BASED = 0x0004;
 static constexpr int FAST_METHOD_TT_ENC_SPEEDUP_BSLICE = 0x0008;
 static constexpr int FAST_METHOD_TT_ENC_SPEEDUP_ISLICE = 0x0010;
-#endif
 
 // need to know for static memory allocation
 static const int MAX_DELTA_QP   =                                   7;      ///< maximum supported delta QP value

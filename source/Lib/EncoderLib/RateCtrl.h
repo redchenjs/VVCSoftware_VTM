@@ -57,12 +57,8 @@ using namespace std;
 #include <list>
 
 const int g_RCInvalidQPValue = -999;
-#if JVET_Y0105_SW_AND_QDF
 const int g_RCSmoothWindowSizeAlpha = 20;
 const int g_RCSmoothWindowSizeBeta = 60;
-#else
-const int g_RCSmoothWindowSize = 40;
-#endif
 const int g_RCMaxPicListSize = 32;
 const double g_RCWeightPicTargetBitInGOP    = 0.9;
 const double g_RCWeightPicRargetBitInBuffer = 1.0 - g_RCWeightPicTargetBitInGOP;
@@ -108,11 +104,7 @@ public:
   ~EncRCSeq();
 
 public:
-#if JVET_Y0105_SW_AND_QDF
   void create(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel, bool useLCUSeparateModel, int adaptiveBit);
-#else
-  void create(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel, bool useLCUSeparateModel, int adaptiveBit);
-#endif
   void destroy();
   void initBitsRatio( int bitsRatio[] );
   void initGOPID2Level( int GOPID2Level[] );
@@ -126,9 +118,7 @@ public:
   int  getTargetRate()                  { return m_targetRate; }
   int  getFrameRate()                   { return m_frameRate; }
   int  getGOPSize()                     { return m_GOPSize; }
-#if JVET_Y0105_SW_AND_QDF
   int  getIntraPeriod()                 { return m_intraPeriod; }
-#endif
   int  getPicWidth()                    { return m_picWidth; }
   int  getPicHeight()                   { return m_picHeight; }
   int  getLCUWidth()                    { return m_LCUWidth; }
@@ -171,9 +161,7 @@ private:
   int m_targetRate;
   int m_frameRate;
   int m_GOPSize;
-#if JVET_Y0105_SW_AND_QDF
   int m_intraPeriod;
-#endif
   int m_picWidth;
   int m_picHeight;
   int m_LCUWidth;
@@ -208,11 +196,7 @@ public:
   ~EncRCGOP();
 
 public:
-#if JVET_Y0105_SW_AND_QDF
   void create(EncRCSeq *encRCSeq, int numPic, bool useAdaptiveBitsRatio);
-#else
-  void create(EncRCSeq* encRCSeq, int numPic);
-#endif
   void destroy();
   void updateAfterPicture( int bitsCost );
 
@@ -354,11 +338,7 @@ public:
   ~RateCtrl();
 
 public:
-#if JVET_Y0105_SW_AND_QDF
   void init(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits, bool useLCUSeparateModel, GOPEntry GOPList[MAX_GOP]);
-#else
-  void init(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits, bool useLCUSeparateModel, GOPEntry GOPList[MAX_GOP]);
-#endif
   void destroy();
   void initRCPic( int frameLevel );
   void initRCGOP( int numberOfPictures );

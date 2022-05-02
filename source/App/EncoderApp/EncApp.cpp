@@ -704,10 +704,8 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setMaxMTTHierarchyDepth                              ( m_uiMaxMTTHierarchyDepth, m_uiMaxMTTHierarchyDepthI, m_uiMaxMTTHierarchyDepthIChroma );
   m_cEncLib.setMaxBTSizes                                        ( m_uiMaxBT );
   m_cEncLib.setMaxTTSizes                                        ( m_uiMaxTT );
-#if JVET_Y0152_TT_ENC_SPEEDUP
   m_cEncLib.setFastTTskip                                        ( m_ttFastSkip );
   m_cEncLib.setFastTTskipThr                                     ( m_ttFastSkipThr );
-#endif
   m_cEncLib.setDualITree                                         ( m_dualTree );
   m_cEncLib.setLFNST                                             ( m_LFNST );
   m_cEncLib.setUseFastLFNST                                      ( m_useFastLFNST );
@@ -749,9 +747,7 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setAllowDisFracMMVD                                  ( m_allowDisFracMMVD );
   m_cEncLib.setUseAffineAmvr                                     ( m_AffineAmvr );
   m_cEncLib.setUseAffineAmvrEncOpt                               ( m_AffineAmvrEncOpt );
-#if JVET_Y0060_ADD_AFFINE_AMVP_MODE
   m_cEncLib.setUseAffineAmvp                                     ( m_AffineAmvp );
-#endif
   m_cEncLib.setDMVR                                              ( m_DMVR );
   m_cEncLib.setMMVD                                              ( m_MMVD );
   m_cEncLib.setMmvdDisNum                                        (m_MmvdDisNum);
@@ -825,10 +821,8 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setUseBLambdaForNonKeyLowDelayPictures               ( m_bUseBLambdaForNonKeyLowDelayPictures );
   m_cEncLib.setUseISP                                            ( m_ISP );
   m_cEncLib.setUseFastISP                                        ( m_useFastISP );
-#if JVET_Y0126_PERFORMANCE
   m_cEncLib.setFastAdaptCostPredMode                             (m_fastAdaptCostPredMode);
   m_cEncLib.setDisableFastDecisionTT                             (m_disableFastDecisionTT);
-#endif
 
   // set internal bit-depth and constants
   for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
@@ -1245,9 +1239,7 @@ void EncApp::xInitLibCfg()
   }
 
   m_cEncLib.setGopBasedTemporalFilterEnabled(m_gopBasedTemporalFilterEnabled);
-#if JVET_Y0077_BIM
   m_cEncLib.setBIM                                               ( m_bimEnabled );
-#endif
   m_cEncLib.setNumRefLayers                                       ( m_numRefLayers );
 
   m_cEncLib.setVPSParameters(m_cfgVPSParameters);
@@ -1330,11 +1322,7 @@ void EncApp::createLib( const int layerIdx )
   m_trueOrgPic = new PelStorage;
   m_orgPic->create( unitArea );
   m_trueOrgPic->create( unitArea );
-#if JVET_Y0077_BIM
   if ( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
-#else
-  if (m_gopBasedTemporalFilterEnabled)
-#endif
   {
     m_filteredOrgPic = new PelStorage;
     m_filteredOrgPic->create( unitArea );
@@ -1344,13 +1332,11 @@ void EncApp::createLib( const int layerIdx )
     m_filteredOrgPicForFG = new PelStorage;
     m_filteredOrgPicForFG->create( unitArea );
   }
-#if JVET_Y0077_BIM
   if ( m_cEncLib.getBIM() )
   {
     std::map<int, int*> adaptQPmap;
     m_cEncLib.setAdaptQPmap(adaptQPmap);
   }
-#endif
 
   if( !m_bitstream.is_open() )
   {
@@ -1373,20 +1359,14 @@ void EncApp::createLib( const int layerIdx )
   m_ext360 = new TExt360AppEncTop( *this, m_cEncLib.getGOPEncoder()->getExt360Data(), *( m_cEncLib.getGOPEncoder() ), *m_orgPic );
 #endif
 
-#if JVET_Y0077_BIM
   if( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
-#else
-  if( m_gopBasedTemporalFilterEnabled )
-#endif
   {
     m_temporalFilter.init(m_FrameSkip, m_inputBitDepth, m_MSBExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
                           sourceHeight, m_sourcePadding, m_bClipInputVideoToRec709Range, m_inputFileName,
                           m_chromaFormatIDC, m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
                           m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs, m_firstValidFrame,
                           m_lastValidFrame
-#if JVET_Y0077_BIM
                           , m_gopBasedTemporalFilterEnabled, m_cEncLib.getAdaptQPmap(), m_cEncLib.getBIM(), m_uiCTUSize
-#endif
                           );
   }
   if ( m_fgcSEIAnalysisEnabled )
@@ -1405,9 +1385,7 @@ void EncApp::createLib( const int layerIdx )
                                m_chromaFormatIDC, m_inputColourSpaceConvert, m_iQP, filteredFramesAndStrengths,
                                m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs, m_firstValidFrame,
                                m_lastValidFrame
-#if JVET_Y0077_BIM
                                , m_gopBasedTemporalFilterEnabled, m_cEncLib.getAdaptQPmap(), m_cEncLib.getBIM(), m_uiCTUSize
-#endif
                                );
   }
 }
@@ -1438,16 +1416,11 @@ void EncApp::destroyLib()
   m_trueOrgPic->destroy();
   delete m_trueOrgPic;
   delete m_orgPic;
-#if JVET_Y0077_BIM
   if ( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
-#else
-  if (m_gopBasedTemporalFilterEnabled)
-#endif
   {
     m_filteredOrgPic->destroy();
     delete m_filteredOrgPic;
   }
-#if JVET_Y0077_BIM
   if ( m_bimEnabled )
   {
     auto map = m_cEncLib.getAdaptQPmap();
@@ -1457,7 +1430,6 @@ void EncApp::destroyLib()
       delete p;
     }
   }
-#endif
   if (m_fgcSEIAnalysisEnabled)
   {
     m_filteredOrgPicForFG->destroy();
@@ -1495,11 +1467,7 @@ bool EncApp::encodePrep( bool& eos )
   {
     m_filteredOrgPicForFG->copyFrom(*m_orgPic);
   }
-#if JVET_Y0077_BIM
   if ( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
-#else
-  if (m_gopBasedTemporalFilterEnabled)
-#endif
   {
     m_temporalFilter.filter(m_orgPic, m_iFrameRcvd);
     m_filteredOrgPic->copyFrom(*m_orgPic);

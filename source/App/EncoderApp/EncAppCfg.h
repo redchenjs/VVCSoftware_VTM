@@ -255,10 +255,8 @@ protected:
   bool      m_cabacBypassAlignmentEnabledFlag;
   bool      m_ISP;
   bool      m_useFastISP;                                    ///< flag for enabling fast methods for ISP
-#if JVET_Y0126_PERFORMANCE
   int       m_fastAdaptCostPredMode;                         ///< mode for cost prediction, 0..2
   bool      m_disableFastDecisionTT;                         ///< flag for disabling fast decision for TT from BT
-#endif
 
   // coding quality
 #if QP_SWITCHING_FOR_PARALLEL
@@ -342,10 +340,8 @@ protected:
   unsigned  m_uiMaxMTTHierarchyDepthIChroma;
   unsigned  m_uiMaxBT[3];
   unsigned  m_uiMaxTT[3];
-#if JVET_Y0152_TT_ENC_SPEEDUP
   int       m_ttFastSkip;
   double    m_ttFastSkipThr;
-#endif
   bool      m_dualTree;
   bool      m_LFNST;
   bool      m_useFastLFNST;
@@ -382,9 +378,7 @@ protected:
   bool      m_allowDisFracMMVD;
   bool      m_AffineAmvr;
   bool      m_AffineAmvrEncOpt;
-#if JVET_Y0060_ADD_AFFINE_AMVP_MODE
   bool      m_AffineAmvp;
-#endif
   bool      m_DMVR;
   bool      m_MMVD;
   int       m_MmvdDisNum;
@@ -853,9 +847,7 @@ protected:
   int                   m_gopBasedTemporalFilterPastRefs;
   int                   m_gopBasedTemporalFilterFutureRefs;
   std::map<int, double> m_gopBasedTemporalFilterStrengths;             ///< Filter strength per frame for the GOP-based Temporal Filter
-#if JVET_Y0077_BIM
   bool                  m_bimEnabled;
-#endif
 
   int         m_maxLayers;
   int         m_targetOlsIdx;

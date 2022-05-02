@@ -74,10 +74,8 @@ const double EncTemporalFilter::m_refStrengths[2][4] = {
   { 0.85, 0.57, 0.41, 0.33 },   // random access
   { 1.13, 0.97, 0.81, 0.57 },   // low delay
 };
-#if JVET_Y0077_BIM
 const int EncTemporalFilter::m_cuTreeThresh[4] =
   { 75, 60, 30, 15 };
-#endif
 
 EncTemporalFilter::EncTemporalFilter() :
   m_FrameSkip(0),
@@ -96,9 +94,7 @@ void EncTemporalFilter::init(const int frameSkip, const int inputBitDepth[MAX_NU
                              const ChromaFormat inputChromaFormatIDC, const InputColourSpaceConversion colorSpaceConv,
                              const int qp, const std::map<int, double> &temporalFilterStrengths, const int pastRefs,
                              const int futureRefs, const int firstValidFrame, const int lastValidFrame
-#if JVET_Y0077_BIM
                              , const bool mctfEnabled, std::map<int, int*> *adaptQPmap, const bool bimEnabled, const int ctuSize
-#endif
                              )
 {
   m_FrameSkip = frameSkip;
@@ -127,13 +123,11 @@ void EncTemporalFilter::init(const int frameSkip, const int inputBitDepth[MAX_NU
   m_futureRefs      = futureRefs;
   m_firstValidFrame = firstValidFrame;
   m_lastValidFrame  = lastValidFrame;
-#if JVET_Y0077_BIM
   m_mctfEnabled = mctfEnabled;
   m_bimEnabled = bimEnabled;
   m_numCtu = ((width + ctuSize - 1) / ctuSize) * ((height + ctuSize - 1) / ctuSize);
   m_ctuSize = ctuSize;
   m_ctuAdaptedQP = adaptQPmap;
-#endif
 }
 
 // ====================================================================================================================
@@ -221,7 +215,6 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
         overallStrength = strength;
       }
     }
-#if JVET_Y0077_BIM
     const int numRefs = int(srcFrameInfo.size());
     if ( m_bimEnabled && ( numRefs > 0 ) )
     {
@@ -289,11 +282,8 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
       }
       m_ctuAdaptedQP->insert({ receivedPoc, qpMap });
     }
-#endif
 
-#if JVET_Y0077_BIM
     if ( m_mctfEnabled && ( numRefs > 0 ) )
-#endif
     {
       bilateralFilter(origPadded, srcFrameInfo, newOrgPic, overallStrength);
 

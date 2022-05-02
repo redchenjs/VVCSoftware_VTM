@@ -189,9 +189,7 @@ public:
 
   static_vector<double, NUM_ENC_FEATURES> features;
 
-#if JVET_Y0152_TT_ENC_SPEEDUP
   double     *splitRdCostBest; //[Partition::NUM_PART_SPLIT];
-#endif
   double      cost;
   bool        useDbCost;
   double      costDbOffset;

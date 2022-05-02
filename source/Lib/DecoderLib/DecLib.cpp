@@ -1429,7 +1429,6 @@ void DecLib::resetPictureSeiNalus()
   }
 }
 
-#if JVET_T0055_ASPECT4
 void DecLib::checkSeiContentInAccessUnit()
 {
   if (m_accessUnitSeiNalus.empty())
@@ -1606,7 +1605,6 @@ void DecLib::resetAccessUnitSeiNalus()
     m_accessUnitSeiNalus.pop_front();
   }
 }
-#endif
 
 /**
  - Process buffered list of suffix APS NALUs
@@ -2411,9 +2409,7 @@ void DecLib::xParsePrefixSEImessages()
   while (!m_prefixSEINALUs.empty())
   {
     InputNALUnit &nalu=*m_prefixSEINALUs.front();
-#if JVET_T0055_ASPECT4
     m_accessUnitSeiNalus.push_back(new InputNALUnit(nalu));
-#endif
     m_accessUnitSeiTids.push_back(nalu.m_temporalId);
     const SPS *sps = m_parameterSetManager.getActiveSPS();
     const VPS *vps = m_parameterSetManager.getVPS(sps->getVPSId());
@@ -2768,23 +2764,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
 
   DTRACE_UPDATE( g_trace_ctx, std::make_pair( "poc", m_apcSlicePilot->getPOC() ) );
 
-#if !CHECK_NOOUTPUTBEFORERECOVERYFLAG_PRIOR_NOTOUTPUT
-#if JVET_S0078_NOOUTPUT_PRIOR_PICS_FLAG
-  if (m_bFirstSliceInPicture && m_apcSlicePilot->getPOC() != m_prevPOC &&
-       (m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA
-       || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR) &&
-      getNoOutputPriorPicsFlag())
-#else
-  if ((m_bFirstSliceInPicture ||
-        m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA ||
-        m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR) &&
-      getNoOutputPriorPicsFlag())
-#endif
-  {
-      checkNoOutputPriorPics(&m_cListPic);
-      setNoOutputPriorPicsFlag (false);
-  }
-#endif
 
   xUpdatePreviousTid0POC(m_apcSlicePilot);
 
@@ -2845,7 +2824,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     }
   }
 
-#if CHECK_NOOUTPUTBEFORERECOVERYFLAG_PRIOR_NOTOUTPUT
   if (m_bFirstSliceInPicture && m_apcSlicePilot->getPOC() != m_prevPOC
       && (m_apcSlicePilot->getRapPicFlag() || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR)
       && m_picHeader.getNoOutputBeforeRecoveryFlag()
@@ -2854,7 +2832,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     checkNoOutputPriorPics(&m_cListPic);
     setNoOutputPriorPicsFlag(false);
   }
-#endif
 
   //For inference of PicOutputFlag
   if( !pps->getMixedNaluTypesInPicFlag() && ( m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_RASL ) )
@@ -3644,9 +3621,7 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
           return false;
         }
         m_pictureSeiNalus.push_back(new InputNALUnit(nalu));
-#if JVET_T0055_ASPECT4
         m_accessUnitSeiNalus.push_back(new InputNALUnit(nalu));
-#endif
         m_accessUnitSeiTids.push_back(nalu.m_temporalId);
         const SPS *sps = m_parameterSetManager.getActiveSPS();
         const VPS *vps = m_parameterSetManager.getVPS(sps->getVPSId());

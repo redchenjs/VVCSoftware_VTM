@@ -325,10 +325,8 @@ protected:
   unsigned  m_uiMaxMTTHierarchyDepth;
   unsigned  m_uiMaxMTTHierarchyDepthI;
   unsigned  m_uiMaxMTTHierarchyDepthIChroma;
-#if JVET_Y0152_TT_ENC_SPEEDUP
   int       m_ttFastSkip;
   double    m_ttFastSkipThr;
-#endif
   bool      m_dualITree;
   unsigned  m_maxCUWidth;
   unsigned  m_maxCUHeight;
@@ -370,9 +368,7 @@ protected:
   bool      m_AffineAmvr;
   bool      m_HashME;
   bool      m_AffineAmvrEncOpt;
-#if JVET_Y0060_ADD_AFFINE_AMVP_MODE
   bool      m_AffineAmvp;
-#endif
   bool      m_DMVR;
   bool      m_MMVD;
   int       m_MmvdDisNum;
@@ -417,10 +413,8 @@ protected:
   bool      m_MIP;
   bool      m_useFastMIP;
   int       m_fastLocalDualTreeMode;
-#if JVET_Y0126_PERFORMANCE
   int       m_fastAdaptCostPredMode;
   bool      m_disableFastDecisionTT;
-#endif
   uint32_t  m_log2MaxTbSize;
 
   //====== Loop/Deblock Filter ========
@@ -537,10 +531,8 @@ protected:
   bool      m_bFastMEForGenBLowDelayEnabled;
   bool      m_bUseBLambdaForNonKeyLowDelayPictures;
   bool      m_gopBasedTemporalFilterEnabled;
-#if JVET_Y0077_BIM
   bool      m_bimEnabled;
   std::map<int, int*> m_adaptQPmap;
-#endif
   bool      m_noPicPartitionFlag;                             ///< no picture partitioning flag (single tile, single slice)
   bool      m_mixedLossyLossless;                             ///< enable mixed lossy/lossless coding
 
@@ -1171,12 +1163,10 @@ public:
   int       getCTUSize                      ()         const { return m_CTUSize; }
   void      setUseSplitConsOverride         (bool  n)        { m_useSplitConsOverride = n; }
   bool      getUseSplitConsOverride         ()         const { return m_useSplitConsOverride; }
-#if JVET_Y0152_TT_ENC_SPEEDUP
   void      setFastTTskip                   (int val)        { m_ttFastSkip = val; }
   int       getFastTTskip                   ()         const { return m_ttFastSkip; }
   void      setFastTTskipThr                (double val)     { m_ttFastSkipThr = val; }
   double    getFastTTskipThr                ()         const { return m_ttFastSkipThr; }
-#endif
   void      setDualITree                    ( bool b )       { m_dualITree = b; }
   bool      getDualITree                    ()         const { return m_dualITree; }
   void      setSubPicInfoPresentFlag                        (bool b)                    { m_subPicInfoPresentFlag = b; }
@@ -1292,10 +1282,8 @@ public:
   bool      getUseAffineAmvr                ()         const { return m_AffineAmvr; }
   void      setUseAffineAmvrEncOpt          ( bool b )       { m_AffineAmvrEncOpt = b;    }
   bool      getUseAffineAmvrEncOpt          ()         const { return m_AffineAmvrEncOpt; }
-#if JVET_Y0060_ADD_AFFINE_AMVP_MODE
   void      setUseAffineAmvp                ( bool b )       { m_AffineAmvp = b;    }
   bool      getUseAffineAmvp                ()         const { return m_AffineAmvp; }
-#endif
   void      setDMVR                      ( bool b )       { m_DMVR = b; }
   bool      getDMVR                      ()         const { return m_DMVR; }
   void      setMMVD                         (bool b)         { m_MMVD = b;    }
@@ -1391,12 +1379,10 @@ public:
   bool      getUseFastMIP                   () const         { return m_useFastMIP; }
   void      setFastLocalDualTreeMode        ( int i )        { m_fastLocalDualTreeMode = i; }
   int       getFastLocalDualTreeMode        () const         { return m_fastLocalDualTreeMode; }
-#if JVET_Y0126_PERFORMANCE
   void      setFastAdaptCostPredMode        (int i)          { m_fastAdaptCostPredMode = i; }
   int       getFastAdaptCostPredMode        () const         { return m_fastAdaptCostPredMode; }
   void      setDisableFastDecisionTT        (bool i)         { m_disableFastDecisionTT = i; }
   bool      getDisableFastDecisionTT        () const         { return m_disableFastDecisionTT; }
-#endif
 
   void      setLog2MaxTbSize                ( uint32_t  u )   { m_log2MaxTbSize = u; }
 
@@ -1613,13 +1599,11 @@ public:
 
   void setGopBasedTemporalFilterEnabled(const bool b) { m_gopBasedTemporalFilterEnabled = b; }
   bool getGopBasedTemporalFilterEnabled() const { return m_gopBasedTemporalFilterEnabled; }
-#if JVET_Y0077_BIM
   void      setBIM                          (bool flag)               { m_bimEnabled = flag; }
   bool      getBIM                          ()                        { return m_bimEnabled; }
   void      setAdaptQPmap                   (std::map<int, int*> map) { m_adaptQPmap = map; }
   int*      getAdaptQPmap                   (int poc)                 { return m_adaptQPmap[poc]; }
   std::map<int, int*> *getAdaptQPmap        ()                        { return &m_adaptQPmap; }
-#endif
 
   bool      getUseReconBasedCrossCPredictionEstimate ()                const { return m_reconBasedCrossCPredictionEstimate;  }
   void      setUseReconBasedCrossCPredictionEstimate (const bool value)      { m_reconBasedCrossCPredictionEstimate = value; }

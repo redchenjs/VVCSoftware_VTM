@@ -66,10 +66,8 @@ public:
   Array2D() : m_width(0), m_height(0), v() { }
   Array2D(int width, int height, const T& value=T()) : m_width(0), m_height(0), v() { allocate(width, height, value); }
 
-#if JVET_Y0077_BIM
   int w() const { return m_width;  }
   int h() const { return m_height; }
-#endif
 
   void allocate(int width, int height, const T& value=T())
   {
@@ -115,9 +113,7 @@ public:
             const ChromaFormat inputChroma, const InputColourSpaceConversion colorSpaceConv, const int qp,
             const std::map<int, double> &temporalFilterStrengths, const int pastRefs, const int futureRefs,
             const int firstValidFrame, const int lastValidFrame
-#if JVET_Y0077_BIM
             , const bool bMCTFenabled, std::map<int, int*> *adaptQPmap, const bool bBIMenabled, const int ctuSize
-#endif
             );
 
   bool filter(PelStorage *orgPic, int frame);
@@ -131,9 +127,7 @@ private:
   static const int m_padding;
   static const int m_interpolationFilter[16][8];
   static const double m_refStrengths[2][4];
-#if JVET_Y0077_BIM
   static const int m_cuTreeThresh[4];
-#endif
 
   // Private member variables
   int m_FrameSkip;
@@ -155,13 +149,11 @@ private:
   int m_futureRefs;
   int m_firstValidFrame;
   int m_lastValidFrame;
-#if JVET_Y0077_BIM
   bool m_mctfEnabled;
   bool m_bimEnabled;
   int m_numCtu;
   int m_ctuSize;
   std::map<int, int*> *m_ctuAdaptedQP;
-#endif
 
   // Private functions
   void subsampleLuma(const PelStorage &input, PelStorage &output, const int factor = 2) const;

@@ -949,10 +949,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MaxTTLumaISlice",                                 m_uiMaxTT[0],                                       32u, "MaxTTLumaISlice")
   ("MaxTTChromaISlice",                               m_uiMaxTT[2],                                       32u, "MaxTTChromaISlice")
   ("MaxTTNonISlice",                                  m_uiMaxTT[1],                                       64u, "MaxTTNonISlice")
-#if JVET_Y0152_TT_ENC_SPEEDUP
   ("TTFastSkip",                                      m_ttFastSkip,                                        31, "fast skip method for TT split partition")
   ("TTFastSkipThr",                                   m_ttFastSkipThr,                                  1.075, "Threshold value of fast skip method for TT split partition")
-#endif
   ("DualITree",                                       m_dualTree,                                       false, "Use separate QTBT trees for intra slice luma and chroma channel types")
   ( "LFNST",                                          m_LFNST,                                          false, "Enable LFNST (0:off, 1:on)  [default: off]" )
   ( "FastLFNST",                                      m_useFastLFNST,                                   false, "Fast methods for LFNST" )
@@ -1004,9 +1002,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("AllowDisFracMMVD",                                m_allowDisFracMMVD,                               false, "Disable fractional MVD in MMVD mode adaptively")
   ("AffineAmvr",                                      m_AffineAmvr,                                     false, "Eanble AMVR for affine inter mode")
   ("AffineAmvrEncOpt",                                m_AffineAmvrEncOpt,                               false, "Enable encoder optimization of affine AMVR")
-#if JVET_Y0060_ADD_AFFINE_AMVP_MODE
   ("AffineAmvp",                                      m_AffineAmvp,                                      true, "Enable AMVP for affine inter mode")
-#endif
   ("DMVR",                                            m_DMVR,                                           false, "Decoder-side Motion Vector Refinement")
   ("MmvdDisNum",                                      m_MmvdDisNum,                                     8,     "Number of MMVD Distance Entries")
   ("ColorTransform",                                  m_useColorTrans,                                  false, "Enable the color transform")
@@ -1053,10 +1049,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MIP",                                             m_MIP,                                             true,  "Enable MIP (matrix-based intra prediction)")
   ("FastMIP",                                         m_useFastMIP,                                     false,  "Fast encoder search for MIP (matrix-based intra prediction)")
   ("FastLocalDualTreeMode",                           m_fastLocalDualTreeMode,                              0,  "Fast intra pass coding for local dual-tree in intra coding region, 0: off, 1: use threshold, 2: one intra mode only")
-#if JVET_Y0126_PERFORMANCE
   ("SplitPredictAdaptMode",                           m_fastAdaptCostPredMode,                              0,  "Mode for split cost prediction, 0..2 (Default: 0)" )
   ("DisableFastTTfromBT",                             m_disableFastDecisionTT,                          false,  "Disable fast decision for TT from BT")
-#endif
   // Unit definition parameters
   ("MaxCUWidth",                                      m_uiMaxCUWidth,                                     64u)
   ("MaxCUHeight",                                     m_uiMaxCUHeight,                                    64u)
@@ -1141,9 +1135,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SmoothQPReductionModelScaleInter",                m_smoothQPReductionModelScaleInter,                 -1.0, "Scale parameter of the QP reduction model for inter pictures")
   ("SmoothQPReductionModelOffsetInter",               m_smoothQPReductionModelOffsetInter,                27.0, "Offset parameter of the QP reduction model for inter pictures")
   ("SmoothQPReductionLimitInter",                     m_smoothQPReductionLimitInter,                        -4, "Threshold parameter for controlling maximum amount of QP reduction by the QP reduction model for inter pictures")
-#if JVET_Y0077_BIM
   ("BIM",                                             m_bimEnabled,                                      false, "Block Importance Mapping QP adaptation depending on estimated propagation of reference samples.")
-#endif  
   ("UseIdentityTableForNon420Chroma",                 m_useIdentityTableForNon420Chroma,                  true, "True: Indicates that 422/444 chroma uses identity chroma QP mapping tables; False: explicit Qp table may be specified in config")
   ("SameCQPTablesForAllChroma",                       m_chromaQpMappingTableParams.m_sameCQPTableForAllChromaFlag,                        true, "0: Different tables for Cb, Cr and joint Cb-Cr components, 1 (default): Same tables for all three chroma components")
   ("QpInValCb",                                       cfg_qpInValCb,                            cfg_qpInValCb, "Input coordinates for the QP table for Cb component")
@@ -3272,9 +3264,7 @@ bool EncAppCfg::xCheckParameter()
     const ProfileFeatures *features = ProfileFeatures::getProfileFeatures(m_profile);
     CHECK(features->profile != m_profile, "Profile not found");
     xConfirmPara(m_level == Level::LEVEL15_5 && !features->canUseLevel15p5, "Profile does not support level 15.5");
-#if JVET_Y0056_MINCR
     xConfirmPara(m_level < Level::LEVEL4 && m_levelTier == Level::HIGH, "High tier not defined for levels below 4.");
-#endif
   }
 
   xConfirmPara( m_iQP < -6 * (m_internalBitDepth[CHANNEL_TYPE_LUMA] - 8) || m_iQP > MAX_QP, "QP exceeds supported range (-QpBDOffsety to 63)" );
@@ -3614,9 +3604,7 @@ bool EncAppCfg::xCheckParameter()
 
   xConfirmPara( m_fastLocalDualTreeMode < 0 || m_fastLocalDualTreeMode > 2, "FastLocalDualTreeMode must be in range [0..2]" );
 
-#if JVET_Y0126_PERFORMANCE
   xConfirmPara( m_fastAdaptCostPredMode < 0 || m_fastAdaptCostPredMode > 2, "FastAdaptCostPredMode must be in range [0..2]" );
-#endif  
 
   int extraRPLs = 0;
   bool hasFutureRef = false;
@@ -4405,7 +4393,6 @@ bool EncAppCfg::xCheckParameter()
       msg(WARNING, "Number of frames used for temporal prefilter is different from default.\n");
     }
   }
-#if JVET_Y0077_BIM
   if (m_bimEnabled)
   {
     xConfirmPara(m_temporalSubsampleRatio != 1, "Block Importance Mapping only support Temporal sub-sample ratio 1");
@@ -4413,7 +4400,6 @@ bool EncAppCfg::xCheckParameter()
       m_gopBasedTemporalFilterPastRefs <= 0 && m_gopBasedTemporalFilterFutureRefs <= 0,
       "Either TemporalFilterPastRefs or TemporalFilterFutureRefs must be larger than 0 when Block Importance Mapping is enabled" );
   }
-#endif
 #if EXTENSION_360_VIDEO
   check_failed |= m_ext360.verifyParameters();
 #endif
@@ -4702,9 +4688,7 @@ void EncAppCfg::xPrintParameter()
     msg( VERBOSE, "AffineAmvr:%d ", m_AffineAmvr );
     m_AffineAmvrEncOpt = m_AffineAmvr ? m_AffineAmvrEncOpt : false;
     msg( VERBOSE, "AffineAmvrEncOpt:%d ", m_AffineAmvrEncOpt );
-#if JVET_Y0060_ADD_AFFINE_AMVP_MODE
     msg(VERBOSE, "AffineAmvp:%d ", m_AffineAmvp);
-#endif
     msg(VERBOSE, "DMVR:%d ", m_DMVR);
     msg(VERBOSE, "MmvdDisNum:%d ", m_MmvdDisNum);
     msg(VERBOSE, "JointCbCr:%d ", m_JointCbCrMode);
@@ -4766,10 +4750,8 @@ void EncAppCfg::xPrintParameter()
   msg( VERBOSE, "UseNonLinearAlfChroma:%d ", m_useNonLinearAlfChroma );
   msg( VERBOSE, "MaxNumAlfAlternativesChroma:%d ", m_maxNumAlfAlternativesChroma );
   if( m_MIP ) msg(VERBOSE, "FastMIP:%d ", m_useFastMIP);
-#if JVET_Y0152_TT_ENC_SPEEDUP
   msg( VERBOSE, "TTFastSkip:%d ", m_ttFastSkip);
   msg( VERBOSE, "TTFastSkipThr:%.3f ", m_ttFastSkipThr);
-#endif
   msg( VERBOSE, "FastLocalDualTree:%d ", m_fastLocalDualTreeMode );
 
   if (m_resChangeInClvsEnabled)
@@ -4782,9 +4764,7 @@ void EncAppCfg::xPrintParameter()
   }
   msg(VERBOSE, "TemporalFilter:%d/%d ", m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs);
   msg(VERBOSE, "SEI CTI:%d ", m_ctiSEIEnabled);
-#if JVET_Y0077_BIM
   msg(VERBOSE, "BIM:%d ", m_bimEnabled);
-#endif
 #if EXTENSION_360_VIDEO
   m_ext360.outputConfigurationSummary();
 #endif
