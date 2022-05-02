@@ -325,10 +325,8 @@ protected:
   unsigned  m_uiMaxMTTHierarchyDepth;
   unsigned  m_uiMaxMTTHierarchyDepthI;
   unsigned  m_uiMaxMTTHierarchyDepthIChroma;
-#if JVET_Y0152_TT_ENC_SPEEDUP
   int       m_ttFastSkip;
   double    m_ttFastSkipThr;
-#endif
   bool      m_dualITree;
   unsigned  m_maxCUWidth;
   unsigned  m_maxCUHeight;
@@ -1169,12 +1167,10 @@ public:
   int       getCTUSize                      ()         const { return m_CTUSize; }
   void      setUseSplitConsOverride         (bool  n)        { m_useSplitConsOverride = n; }
   bool      getUseSplitConsOverride         ()         const { return m_useSplitConsOverride; }
-#if JVET_Y0152_TT_ENC_SPEEDUP
   void      setFastTTskip                   (int val)        { m_ttFastSkip = val; }
   int       getFastTTskip                   ()         const { return m_ttFastSkip; }
   void      setFastTTskipThr                (double val)     { m_ttFastSkipThr = val; }
   double    getFastTTskipThr                ()         const { return m_ttFastSkipThr; }
-#endif
   void      setDualITree                    ( bool b )       { m_dualITree = b; }
   bool      getDualITree                    ()         const { return m_dualITree; }
   void      setSubPicInfoPresentFlag                        (bool b)                    { m_subPicInfoPresentFlag = b; }

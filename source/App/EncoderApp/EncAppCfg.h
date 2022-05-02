@@ -340,10 +340,8 @@ protected:
   unsigned  m_uiMaxMTTHierarchyDepthIChroma;
   unsigned  m_uiMaxBT[3];
   unsigned  m_uiMaxTT[3];
-#if JVET_Y0152_TT_ENC_SPEEDUP
   int       m_ttFastSkip;
   double    m_ttFastSkipThr;
-#endif
   bool      m_dualTree;
   bool      m_LFNST;
   bool      m_useFastLFNST;

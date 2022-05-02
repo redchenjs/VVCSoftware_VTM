@@ -1812,7 +1812,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
             return false;
           }
         }
-#if JVET_Y0152_TT_ENC_SPEEDUP
         if (m_pcEncCfg->getFastTTskip() && split == CU_TRIH_SPLIT)
         {
           bool skipTtSplitMode = xSkipTreeCandidate(getPartSplit(encTestmode), cs.splitRdCostBest, m_slice->getSliceType());
@@ -1821,7 +1820,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
             return false;
           }
         }
-#endif
         break;
       case CU_VERT_SPLIT:
       case CU_TRIV_SPLIT:
@@ -1836,7 +1834,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
             return false;
           }
         }
-#if JVET_Y0152_TT_ENC_SPEEDUP
         if (m_pcEncCfg->getFastTTskip() && split == CU_TRIV_SPLIT) {
           bool skipTtSplitMode = xSkipTreeCandidate(getPartSplit(encTestmode), cs.splitRdCostBest, m_slice->getSliceType());
           if (skipTtSplitMode)
@@ -1844,7 +1841,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
             return false;
           }
         }
-#endif
         break;
       default:
         break;
@@ -1998,7 +1994,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
   }
 }
 
-#if JVET_Y0152_TT_ENC_SPEEDUP
 bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double* splitRdCostBest, const SliceType& sliceType) const
 {
   if (!splitRdCostBest)
@@ -2075,7 +2070,6 @@ bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double*
   }
   return res;
 }
-#endif
 
 bool EncModeCtrlMTnoRQT::checkSkipOtherLfnst( const EncTestMode& encTestmode, CodingStructure*& tempCS, Partitioner& partitioner )
 {

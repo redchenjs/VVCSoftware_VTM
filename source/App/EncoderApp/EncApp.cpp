@@ -704,10 +704,8 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setMaxMTTHierarchyDepth                              ( m_uiMaxMTTHierarchyDepth, m_uiMaxMTTHierarchyDepthI, m_uiMaxMTTHierarchyDepthIChroma );
   m_cEncLib.setMaxBTSizes                                        ( m_uiMaxBT );
   m_cEncLib.setMaxTTSizes                                        ( m_uiMaxTT );
-#if JVET_Y0152_TT_ENC_SPEEDUP
   m_cEncLib.setFastTTskip                                        ( m_ttFastSkip );
   m_cEncLib.setFastTTskipThr                                     ( m_ttFastSkipThr );
-#endif
   m_cEncLib.setDualITree                                         ( m_dualTree );
   m_cEncLib.setLFNST                                             ( m_LFNST );
   m_cEncLib.setUseFastLFNST                                      ( m_useFastLFNST );

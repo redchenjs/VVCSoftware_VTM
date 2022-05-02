@@ -949,10 +949,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MaxTTLumaISlice",                                 m_uiMaxTT[0],                                       32u, "MaxTTLumaISlice")
   ("MaxTTChromaISlice",                               m_uiMaxTT[2],                                       32u, "MaxTTChromaISlice")
   ("MaxTTNonISlice",                                  m_uiMaxTT[1],                                       64u, "MaxTTNonISlice")
-#if JVET_Y0152_TT_ENC_SPEEDUP
   ("TTFastSkip",                                      m_ttFastSkip,                                        31, "fast skip method for TT split partition")
   ("TTFastSkipThr",                                   m_ttFastSkipThr,                                  1.075, "Threshold value of fast skip method for TT split partition")
-#endif
   ("DualITree",                                       m_dualTree,                                       false, "Use separate QTBT trees for intra slice luma and chroma channel types")
   ( "LFNST",                                          m_LFNST,                                          false, "Enable LFNST (0:off, 1:on)  [default: off]" )
   ( "FastLFNST",                                      m_useFastLFNST,                                   false, "Fast methods for LFNST" )
@@ -4760,10 +4758,8 @@ void EncAppCfg::xPrintParameter()
   msg( VERBOSE, "UseNonLinearAlfChroma:%d ", m_useNonLinearAlfChroma );
   msg( VERBOSE, "MaxNumAlfAlternativesChroma:%d ", m_maxNumAlfAlternativesChroma );
   if( m_MIP ) msg(VERBOSE, "FastMIP:%d ", m_useFastMIP);
-#if JVET_Y0152_TT_ENC_SPEEDUP
   msg( VERBOSE, "TTFastSkip:%d ", m_ttFastSkip);
   msg( VERBOSE, "TTFastSkipThr:%.3f ", m_ttFastSkipThr);
-#endif
   msg( VERBOSE, "FastLocalDualTree:%d ", m_fastLocalDualTreeMode );
 
   if (m_resChangeInClvsEnabled)
