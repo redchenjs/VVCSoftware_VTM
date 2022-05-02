@@ -747,9 +747,7 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setAllowDisFracMMVD                                  ( m_allowDisFracMMVD );
   m_cEncLib.setUseAffineAmvr                                     ( m_AffineAmvr );
   m_cEncLib.setUseAffineAmvrEncOpt                               ( m_AffineAmvrEncOpt );
-#if JVET_Y0060_ADD_AFFINE_AMVP_MODE
   m_cEncLib.setUseAffineAmvp                                     ( m_AffineAmvp );
-#endif
   m_cEncLib.setDMVR                                              ( m_DMVR );
   m_cEncLib.setMMVD                                              ( m_MMVD );
   m_cEncLib.setMmvdDisNum                                        (m_MmvdDisNum);

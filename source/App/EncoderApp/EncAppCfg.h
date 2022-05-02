@@ -378,9 +378,7 @@ protected:
   bool      m_allowDisFracMMVD;
   bool      m_AffineAmvr;
   bool      m_AffineAmvrEncOpt;
-#if JVET_Y0060_ADD_AFFINE_AMVP_MODE
   bool      m_AffineAmvp;
-#endif
   bool      m_DMVR;
   bool      m_MMVD;
   int       m_MmvdDisNum;
