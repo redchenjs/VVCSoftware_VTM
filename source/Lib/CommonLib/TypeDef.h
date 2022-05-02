@@ -56,7 +56,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 #define JVET_X0143_ALF_APS_ID_OFFSET                         0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.
-#define JVET_Y0072_UNLIMITED_LEVEL                           1 // JVET-Y0072: Add unlimited level support for all video profiles
 
 //########### place macros to be be kept below this line ###############
 #define GDR_ENABLED   1

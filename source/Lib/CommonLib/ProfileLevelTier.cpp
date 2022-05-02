@@ -86,21 +86,12 @@ static const ProfileFeatures validProfiles[] = {
     mainLevelTierInfo, true },
   { Profile::MULTILAYER_MAIN_10_444_STILL_PICTURE, "Multilayer_Main_444_10_Still_Picture", 10, CHROMA_444, true, 2500,
     2750, 3750, 75, mainLevelTierInfo, true },
-#if JVET_Y0072_UNLIMITED_LEVEL  
   { Profile::MAIN_10, "Main_10", 10, CHROMA_420, true, 1000, 1100, 1875, 100, mainLevelTierInfo, false },
   { Profile::MULTILAYER_MAIN_10, "Multilayer_Main_10", 10, CHROMA_420, true, 1000, 1100, 1875, 100, mainLevelTierInfo,
     false },
   { Profile::MAIN_10_444, "Main_444_10", 10, CHROMA_444, true, 2500, 2750, 3750, 75, mainLevelTierInfo, false },
   { Profile::MULTILAYER_MAIN_10_444, "Multilayer_Main_444_10", 10, CHROMA_444, true, 2500, 2750, 3750, 75,
     mainLevelTierInfo, false },
-#else
-  { Profile::MAIN_10, "Main_10", 10, CHROMA_420, false, 1000, 1100, 1875, 100, mainLevelTierInfo, false },
-  { Profile::MULTILAYER_MAIN_10, "Multilayer_Main_10", 10, CHROMA_420, false, 1000, 1100, 1875, 100, mainLevelTierInfo,
-    false },
-  { Profile::MAIN_10_444, "Main_444_10", 10, CHROMA_444, false, 2500, 2750, 3750, 75, mainLevelTierInfo, false },
-  { Profile::MULTILAYER_MAIN_10_444, "Multilayer_Main_444_10", 10, CHROMA_444, false, 2500, 2750, 3750, 75,
-    mainLevelTierInfo, false },
-#endif
   { Profile::MAIN_12, "Main_12", 12, CHROMA_420, true, 1200, 1320, 1875, 100, mainLevelTierInfo, false },
   { Profile::MAIN_12_INTRA, "Main_12_Intra", 12, CHROMA_420, true, 2400, 2640, 1875, 100, mainLevelTierInfo, false },
   { Profile::MAIN_12_STILL_PICTURE, "Main_12_Still_Picture", 12, CHROMA_420, true, 2400, 2640, 1875, 100, mainLevelTierInfo, false },
