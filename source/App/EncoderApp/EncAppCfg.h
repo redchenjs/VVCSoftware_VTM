@@ -255,10 +255,8 @@ protected:
   bool      m_cabacBypassAlignmentEnabledFlag;
   bool      m_ISP;
   bool      m_useFastISP;                                    ///< flag for enabling fast methods for ISP
-#if JVET_Y0126_PERFORMANCE
   int       m_fastAdaptCostPredMode;                         ///< mode for cost prediction, 0..2
   bool      m_disableFastDecisionTT;                         ///< flag for disabling fast decision for TT from BT
-#endif
 
   // coding quality
 #if QP_SWITCHING_FOR_PARALLEL

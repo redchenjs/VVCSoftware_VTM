@@ -1053,10 +1053,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MIP",                                             m_MIP,                                             true,  "Enable MIP (matrix-based intra prediction)")
   ("FastMIP",                                         m_useFastMIP,                                     false,  "Fast encoder search for MIP (matrix-based intra prediction)")
   ("FastLocalDualTreeMode",                           m_fastLocalDualTreeMode,                              0,  "Fast intra pass coding for local dual-tree in intra coding region, 0: off, 1: use threshold, 2: one intra mode only")
-#if JVET_Y0126_PERFORMANCE
   ("SplitPredictAdaptMode",                           m_fastAdaptCostPredMode,                              0,  "Mode for split cost prediction, 0..2 (Default: 0)" )
   ("DisableFastTTfromBT",                             m_disableFastDecisionTT,                          false,  "Disable fast decision for TT from BT")
-#endif
   // Unit definition parameters
   ("MaxCUWidth",                                      m_uiMaxCUWidth,                                     64u)
   ("MaxCUHeight",                                     m_uiMaxCUHeight,                                    64u)
@@ -3612,9 +3610,7 @@ bool EncAppCfg::xCheckParameter()
 
   xConfirmPara( m_fastLocalDualTreeMode < 0 || m_fastLocalDualTreeMode > 2, "FastLocalDualTreeMode must be in range [0..2]" );
 
-#if JVET_Y0126_PERFORMANCE
   xConfirmPara( m_fastAdaptCostPredMode < 0 || m_fastAdaptCostPredMode > 2, "FastAdaptCostPredMode must be in range [0..2]" );
-#endif  
 
   int extraRPLs = 0;
   bool hasFutureRef = false;

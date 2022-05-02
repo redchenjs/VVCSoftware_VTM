@@ -55,7 +55,6 @@
 #define JVET_T0055_ASPECT4                               1 // JVET-T0055 aspect4: When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_Y0126_PERFORMANCE                               1 // JVET-Y0126 SW changes and configuration for improved performacnce
 #define JVET_Y0152_TT_ENC_SPEEDUP                            1 // TT encoding speedup based on ABT_ENC_SPEEDUP in ECM-2.0
 #define JVET_Y0273_GCI_BUGFIX                                1 // JVET-Y0273 option C bugfix for GCI signalling
 #define JVET_X0143_ALF_APS_ID_OFFSET                         0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.

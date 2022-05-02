@@ -1172,7 +1172,6 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
   m_CABACEstimator->split_cu_mode( split, *tempCS, partitioner );
   m_CABACEstimator->mode_constraint( split, *tempCS, partitioner, modeTypeChild );
 
-#if JVET_Y0126_PERFORMANCE
   double costTemp = 0;
   if( m_pcEncCfg->getFastAdaptCostPredMode() == 2 )
   {
@@ -1201,10 +1200,8 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
   }
   else
   {
-#endif
     const double factor = ( tempCS->currQP[partitioner.chType] > 30 ? 1.1 : 1.075 );
     costTemp = m_pcRdCost->calcRdCost( uint64_t( m_CABACEstimator->getEstFracBits() + ( ( bestCS->fracBits ) / factor ) ), Distortion( bestCS->dist / factor ) ) + bestCS->costDbOffset / factor;
-#if JVET_Y0126_PERFORMANCE
   }
   tempCS->useDbCost = m_pcEncCfg->getUseEncDbOpt();
   if( !tempCS->useDbCost )
@@ -1212,7 +1209,6 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
     CHECK( bestCS->costDbOffset != 0, "error" );
   }
   const double cost = costTemp;	
-#endif
 
   m_CABACEstimator->getCtx() = SubCtx( Ctx::SplitFlag,   ctxStartSP );
   m_CABACEstimator->getCtx() = SubCtx( Ctx::SplitQtFlag, ctxStartQt );
