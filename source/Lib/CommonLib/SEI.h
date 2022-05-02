@@ -62,9 +62,7 @@ public:
     FILM_GRAIN_CHARACTERISTICS           = 19,
     FRAME_PACKING                        = 45,
     DISPLAY_ORIENTATION                  = 47,
-#if JVET_Y0044_SEI_TYPES
     GREEN_METADATA                       = 56,
-#endif
     PARAMETER_SETS_INCLUSION_INDICATION  = 129,
     DECODING_UNIT_INFO                   = 130,
     DECODED_PICTURE_HASH                 = 132,
@@ -92,9 +90,7 @@ public:
     SCALABILITY_DIMENSION_INFO           = 205,
     EXTENDED_DRAP_INDICATION             = 206,
     CONSTRAINED_RASL_ENCODING            = 207,
-#if JVET_Y0044_SEI_TYPES
     VDI_SEI_ENVELOPE             = 208,
-#endif
   };
 
   SEI() {}
@@ -676,7 +672,6 @@ public:
   int                   m_doTransformType;
 };
 
-#if JVET_Y0044_SEI_TYPES
 class SEIGreenMetadata : public SEI
 {
 public:
@@ -685,7 +680,6 @@ public:
   SEIGreenMetadata() {}
   virtual ~SEIGreenMetadata() {}
 };
-#endif
 
 class SEIParameterSetsInclusionIndication : public SEI
 {
@@ -1010,7 +1004,6 @@ public:
   virtual ~SEIConstrainedRaslIndication() { }
 };
 
-#if JVET_Y0044_SEI_TYPES
 class SEIVDISeiEnvelope : public SEI
 {
 public:
@@ -1019,7 +1012,6 @@ public:
   SEIVDISeiEnvelope() {}
   virtual ~SEIVDISeiEnvelope() {}
 };
-#endif
 //! \}
 
 
