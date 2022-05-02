@@ -56,7 +56,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 #define JVET_X0143_ALF_APS_ID_OFFSET                         0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.
-#define JVET_Y0105_SW_AND_QDF                                1 // An adaptive smooth window (SW) size and extension of quality dependency factor (QDF) to low frame rate in rate control 
 #define JVET_Y0077_BIM                                       1 // JVET-Y0077: Block Importance Mapping
 #define JVET_Y0044_SEI_TYPES                                 1 // JVET-Y0044: Green metadata and VDI SEI payload type
 #define JVET_Y0060_ADD_AFFINE_AMVP_MODE                      1 // JVET-Y0060: Add AffineAmvp mode to enable/disable separate from AffineMerge mode

@@ -51,9 +51,7 @@ EncRCSeq::EncRCSeq()
   m_frameRate           = 0;
   m_targetBits          = 0;
   m_GOPSize             = 0;
-#if JVET_Y0105_SW_AND_QDF
   m_intraPeriod         = 0;
-#endif
   m_picWidth            = 0;
   m_picHeight           = 0;
   m_LCUWidth            = 0;
@@ -79,20 +77,14 @@ EncRCSeq::~EncRCSeq()
   destroy();
 }
 
-#if JVET_Y0105_SW_AND_QDF
 void EncRCSeq::create(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel, bool useLCUSeparateModel, int adaptiveBit)
-#else
-void EncRCSeq::create(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel, bool useLCUSeparateModel, int adaptiveBit)
-#endif
 {
   destroy();
   m_totalFrames         = totalFrames;
   m_targetRate          = targetBitrate;
   m_frameRate           = frameRate;
   m_GOPSize             = GOPSize;
-#if JVET_Y0105_SW_AND_QDF
   m_intraPeriod         = intraPeriod;
-#endif
   m_picWidth            = picWidth;
   m_picHeight           = picHeight;
   m_LCUWidth            = LCUWidth;
@@ -325,11 +317,7 @@ EncRCGOP::~EncRCGOP()
   destroy();
 }
 
-#if JVET_Y0105_SW_AND_QDF
 void EncRCGOP::create(EncRCSeq *encRCSeq, int numPic, bool useAdaptiveBitsRatio)
-#else
-void EncRCGOP::create(EncRCSeq *encRCSeq, int numPic)
-#endif
 {
   destroy();
   int targetBits = xEstGOPTargetBits( encRCSeq, numPic );
@@ -339,11 +327,7 @@ void EncRCGOP::create(EncRCSeq *encRCSeq, int numPic)
   m_minEstLambda = 0.1;
   m_maxEstLambda = 10000.0 * pow(2.0, bitdepth_luma_scale);
 
-#if JVET_Y0105_SW_AND_QDF
   if (useAdaptiveBitsRatio)
-#else
-  if (encRCSeq->getAdaptiveBits() > 0 && encRCSeq->getLastLambda() > 0.1)
-#endif
   {
     double targetBpp = (double)targetBits / encRCSeq->getNumPixel();
     double basicLambda = 0.0;
@@ -634,11 +618,7 @@ void EncRCGOP::updateAfterPicture( int bitsCost )
 
 int EncRCGOP::xEstGOPTargetBits( EncRCSeq* encRCSeq, int GOPSize )
 {
-#if JVET_Y0105_SW_AND_QDF
   int realInfluencePicture = min(g_RCSmoothWindowSizeAlpha * GOPSize / max(encRCSeq->getIntraPeriod(), 32) + g_RCSmoothWindowSizeBeta, encRCSeq->getFramesLeft());
-#else
-  int realInfluencePicture = min(g_RCSmoothWindowSize, encRCSeq->getFramesLeft());
-#endif
   int averageTargetBitsPerPic = (int)( encRCSeq->getTargetBits() / encRCSeq->getTotalFrames() );
   int currentTargetBitsPerPic = (int)( ( encRCSeq->getBitsLeft() - averageTargetBitsPerPic * (encRCSeq->getFramesLeft() - realInfluencePicture) ) / realInfluencePicture );
   int targetBits = currentTargetBitsPerPic * GOPSize;
@@ -1475,11 +1455,7 @@ void RateCtrl::destroy()
   }
 }
 
-#if JVET_Y0105_SW_AND_QDF
 void RateCtrl::init(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits, bool useLCUSeparateModel, GOPEntry  GOPList[MAX_GOP])
-#else
-void RateCtrl::init(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits, bool useLCUSeparateModel, GOPEntry  GOPList[MAX_GOP])
-#endif
 {
   destroy();
 
@@ -1912,11 +1888,7 @@ void RateCtrl::init(int totalFrames, int targetBitrate, int frameRate, int GOPSi
   }
 
   m_encRCSeq = new EncRCSeq;
-#if JVET_Y0105_SW_AND_QDF
   m_encRCSeq->create(totalFrames, targetBitrate, frameRate, GOPSize, intraPeriod, picWidth, picHeight, LCUWidth, LCUHeight, numberOfLevel, useLCUSeparateModel, adaptiveBit);
-#else
-  m_encRCSeq->create(totalFrames, targetBitrate, frameRate, GOPSize, picWidth, picHeight, LCUWidth, LCUHeight, numberOfLevel, useLCUSeparateModel, adaptiveBit);
-#endif
   m_encRCSeq->initBitsRatio( bitsRatio );
   m_encRCSeq->initGOPID2Level( GOPID2Level );
   m_encRCSeq->setBitDepth(bitDepth);
@@ -1945,12 +1917,8 @@ void RateCtrl::initRCPic( int frameLevel )
 void RateCtrl::initRCGOP( int numberOfPictures )
 {
   m_encRCGOP = new EncRCGOP;
-#if JVET_Y0105_SW_AND_QDF
   bool useAdaptiveBitsRatio = (m_encRCSeq->getAdaptiveBits() > 0) && (m_listRCPictures.size() >= m_encRCSeq->getGOPSize());
   m_encRCGOP->create(m_encRCSeq, numberOfPictures, useAdaptiveBitsRatio);
-#else
-  m_encRCGOP->create(m_encRCSeq, numberOfPictures);
-#endif
 }
 
 #if U0132_TARGET_BITS_SATURATION
