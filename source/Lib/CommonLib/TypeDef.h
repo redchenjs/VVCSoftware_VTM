@@ -52,7 +52,6 @@
 
 // clang-format off
 
-#define JVET_T0055_ASPECT4                               1 // JVET-T0055 aspect4: When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.
 
 //########### place macros to be removed in next cycle below this line ###############
 

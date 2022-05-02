@@ -1429,7 +1429,6 @@ void DecLib::resetPictureSeiNalus()
   }
 }
 
-#if JVET_T0055_ASPECT4
 void DecLib::checkSeiContentInAccessUnit()
 {
   if (m_accessUnitSeiNalus.empty())
@@ -1606,7 +1605,6 @@ void DecLib::resetAccessUnitSeiNalus()
     m_accessUnitSeiNalus.pop_front();
   }
 }
-#endif
 
 /**
  - Process buffered list of suffix APS NALUs
@@ -2411,9 +2409,7 @@ void DecLib::xParsePrefixSEImessages()
   while (!m_prefixSEINALUs.empty())
   {
     InputNALUnit &nalu=*m_prefixSEINALUs.front();
-#if JVET_T0055_ASPECT4
     m_accessUnitSeiNalus.push_back(new InputNALUnit(nalu));
-#endif
     m_accessUnitSeiTids.push_back(nalu.m_temporalId);
     const SPS *sps = m_parameterSetManager.getActiveSPS();
     const VPS *vps = m_parameterSetManager.getVPS(sps->getVPSId());
@@ -3644,9 +3640,7 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
           return false;
         }
         m_pictureSeiNalus.push_back(new InputNALUnit(nalu));
-#if JVET_T0055_ASPECT4
         m_accessUnitSeiNalus.push_back(new InputNALUnit(nalu));
-#endif
         m_accessUnitSeiTids.push_back(nalu.m_temporalId);
         const SPS *sps = m_parameterSetManager.getActiveSPS();
         const VPS *vps = m_parameterSetManager.getVPS(sps->getVPSId());
