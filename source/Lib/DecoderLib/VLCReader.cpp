@@ -4691,10 +4691,8 @@ void HLSyntaxReader::parseProfileTierLevel(ProfileTierLevel *ptl, bool profileTi
   }
 
   READ_CODE( 8, symbol, "general_level_idc" ); ptl->setLevelIdc( Level::Name( symbol ) );
-#if JVET_Y0056_MINCR
   CHECK(ptl->getProfileIdc() != Profile::NONE && ptl->getLevelIdc() < Level::LEVEL4 && ptl->getTierFlag() == Level::HIGH,
         "High tier not defined for levels below 4");
-#endif
 
   READ_FLAG(      symbol,   "ptl_frame_only_constraint_flag"   ); ptl->setFrameOnlyConstraintFlag(symbol);
   READ_FLAG(      symbol,   "ptl_multilayer_enabled_flag"      ); ptl->setMultiLayerEnabledFlag(symbol);

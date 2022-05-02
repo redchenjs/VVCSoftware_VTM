@@ -3272,9 +3272,7 @@ bool EncAppCfg::xCheckParameter()
     const ProfileFeatures *features = ProfileFeatures::getProfileFeatures(m_profile);
     CHECK(features->profile != m_profile, "Profile not found");
     xConfirmPara(m_level == Level::LEVEL15_5 && !features->canUseLevel15p5, "Profile does not support level 15.5");
-#if JVET_Y0056_MINCR
     xConfirmPara(m_level < Level::LEVEL4 && m_levelTier == Level::HIGH, "High tier not defined for levels below 4.");
-#endif
   }
 
   xConfirmPara( m_iQP < -6 * (m_internalBitDepth[CHANNEL_TYPE_LUMA] - 8) || m_iQP > MAX_QP, "QP exceeds supported range (-QpBDOffsety to 63)" );
