@@ -849,9 +849,7 @@ protected:
   int                   m_gopBasedTemporalFilterPastRefs;
   int                   m_gopBasedTemporalFilterFutureRefs;
   std::map<int, double> m_gopBasedTemporalFilterStrengths;             ///< Filter strength per frame for the GOP-based Temporal Filter
-#if JVET_Y0077_BIM
   bool                  m_bimEnabled;
-#endif
 
   int         m_maxLayers;
   int         m_targetOlsIdx;

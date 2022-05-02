@@ -142,14 +142,12 @@ void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& c
     int deltaQP = m_pcEncCfg->getMaxDeltaQP();
     minQP = Clip3( -sps.getQpBDOffset( CHANNEL_TYPE_LUMA ), MAX_QP, baseQP - deltaQP );
     maxQP = Clip3( -sps.getQpBDOffset( CHANNEL_TYPE_LUMA ), MAX_QP, baseQP + deltaQP );
-#if JVET_Y0077_BIM
     Position pos = partitioner.currQgPos;
     const int ctuSize = sps.getCTUSize();
     const int ctuId = ( pos.y / ctuSize ) * ( ( cs.picture->lwidth() + ctuSize - 1 ) / ctuSize ) + ( pos.x / ctuSize );
     const int bimOffset = getBIMOffset( m_slice->getPOC(), ctuId );
     minQP += bimOffset;
     maxQP += bimOffset;
-#endif
   }
   else if( qgEnableChildren ) // more splits and not the deepest QG level
   {

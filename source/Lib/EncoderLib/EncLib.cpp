@@ -1509,12 +1509,10 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     bUseDQP = (getBaseQP() < 38) && (getSourceWidth() > 512 || getSourceHeight() > 320);
   }
 #endif
-#if JVET_Y0077_BIM
   if (m_bimEnabled)
   {
     bUseDQP = true;
   }
-#endif
 
   if (m_costMode==COST_SEQUENCE_LEVEL_LOSSLESS || m_costMode==COST_LOSSLESS_CODING)
   {

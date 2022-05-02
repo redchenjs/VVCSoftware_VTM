@@ -246,9 +246,7 @@ void EncCu::init( EncLib* pcEncLib, const SPS& sps )
   DecCu::init( m_pcTrQuant, m_pcIntraSearch, m_pcInterSearch );
 
   m_modeCtrl->init( m_pcEncCfg, m_pcRateCtrl, m_pcRdCost );
-#if JVET_Y0077_BIM
   m_modeCtrl->setBIMQPMap( m_pcEncCfg->getAdaptQPmap() );
-#endif
 
   m_pcInterSearch->setModeCtrl( m_modeCtrl );
   m_modeCtrl->setInterSearch(m_pcInterSearch);
@@ -744,9 +742,7 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
 
 #if SHARP_LUMA_DELTA_QP || ENABLE_QPA_SUB_CTU
     if (partitioner.currQgEnable() && (
-#if JVET_Y0077_BIM
         (m_pcEncCfg->getBIM()) ||
-#endif
 #if SHARP_LUMA_DELTA_QP
         (m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()) ||
 #endif
