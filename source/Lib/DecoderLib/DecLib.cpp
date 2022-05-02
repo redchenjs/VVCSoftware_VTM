@@ -2765,17 +2765,10 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   DTRACE_UPDATE( g_trace_ctx, std::make_pair( "poc", m_apcSlicePilot->getPOC() ) );
 
 #if !CHECK_NOOUTPUTBEFORERECOVERYFLAG_PRIOR_NOTOUTPUT
-#if JVET_S0078_NOOUTPUT_PRIOR_PICS_FLAG
   if (m_bFirstSliceInPicture && m_apcSlicePilot->getPOC() != m_prevPOC &&
        (m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA
        || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR) &&
       getNoOutputPriorPicsFlag())
-#else
-  if ((m_bFirstSliceInPicture ||
-        m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA ||
-        m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR) &&
-      getNoOutputPriorPicsFlag())
-#endif
   {
       checkNoOutputPriorPics(&m_cListPic);
       setNoOutputPriorPicsFlag (false);
