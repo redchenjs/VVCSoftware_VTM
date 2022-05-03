@@ -348,6 +348,9 @@ protected:
   bool      m_sbTmvpEnableFlag;
   bool      m_Affine;
   bool      m_AffineType;
+#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
+  bool      m_adaptBypassAffineMe;
+#endif
   bool      m_PROF;
   bool      m_BIO;
   int       m_LMChroma;

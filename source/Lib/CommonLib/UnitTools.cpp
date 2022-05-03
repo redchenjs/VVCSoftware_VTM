@@ -4455,6 +4455,32 @@ void PU::spanGeoMotionInfo( PredictionUnit &pu, MergeCtx &geoMrgCtx, const uint8
   }
 }
 
+#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
+void PU::getNeighborAffineInfo(const PredictionUnit& pu, int& numNeighborAvai, int& numNeighborAffine)
+{
+  const Position& posLT = pu.Y().topLeft();
+  const Position& posRT = pu.Y().topRight();
+  const Position& posLB = pu.Y().bottomLeft();
+  const int neighborNum = 5;
+  const PredictionUnit* neighbor[neighborNum];
+  neighbor[0] = pu.cs->getPURestricted(posRT.offset(0, -1), pu, pu.chType); // above
+  neighbor[1] = pu.cs->getPURestricted(posLB.offset(-1, 0), pu, pu.chType); // left
+  neighbor[2] = pu.cs->getPURestricted(posRT.offset(1, -1), pu, pu.chType); // above-right
+  neighbor[3] = pu.cs->getPURestricted(posLB.offset(-1, 1), pu, pu.chType); // left-bottom
+  neighbor[4] = pu.cs->getPURestricted(posLT.offset(-1, -1), pu, pu.chType); // above-left
+  numNeighborAvai = 0;
+  numNeighborAffine = 0;
+  for (int i = 0; i < neighborNum; i++)
+  {
+    if (neighbor[i] != nullptr)
+    {
+      numNeighborAvai++;
+      numNeighborAffine += neighbor[i]->cu->affine;
+    }
+  }
+}
+#endif
+
 bool CU::hasSubCUNonZeroMVd( const CodingUnit& cu )
 {
   bool bNonZeroMvd = false;
