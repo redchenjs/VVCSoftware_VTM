@@ -712,6 +712,9 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setSbTmvpEnabledFlag(m_sbTmvpEnableFlag);
   m_cEncLib.setAffine                                            ( m_Affine );
   m_cEncLib.setAffineType                                        ( m_AffineType );
+#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
+  m_cEncLib.setAdaptBypassAffineMe                               ( m_adaptBypassAffineMe );
+#endif
   m_cEncLib.setPROF                                              ( m_PROF );
   m_cEncLib.setBIO                                               (m_BIO);
   m_cEncLib.setUseLMChroma                                       ( m_LMChroma );
