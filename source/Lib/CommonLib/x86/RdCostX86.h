@@ -709,12 +709,12 @@ static Distortion xCalcHAD8x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, cons
 
   m1[0][0] = _mm_add_epi32(m1[0][0], m1[2][0]);
   m1[4][0] = _mm_add_epi32(m1[4][0], m1[6][0]);
-  __m128i iSum = _mm_add_epi32(m1[0][0], m1[4][0]);
+  __m128i sum = _mm_add_epi32(m1[0][0], m1[4][0]);
 
-  iSum = _mm_hadd_epi32(iSum, iSum);
-  iSum = _mm_hadd_epi32(iSum, iSum);
+  sum = _mm_hadd_epi32(sum, sum);
+  sum = _mm_hadd_epi32(sum, sum);
 
-  Distortion sad = _mm_cvtsi128_si32(iSum);
+  Distortion sad = _mm_cvtsi128_si32(sum);
 #if JVET_R0164_MEAN_SCALED_SATD
   Distortion absDc = _mm_cvtsi128_si32(n1[0][0]);
   sad -= absDc;
@@ -808,11 +808,11 @@ static Distortion xCalcHAD4x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, cons
   m1[0] = _mm_add_epi32(m1[0], m1[1]);
   m1[2] = _mm_add_epi32(m1[2], m1[3]);
 
-  __m128i iSum = _mm_add_epi32(m1[0], m1[2]);
-  iSum = _mm_hadd_epi32(iSum, iSum);
-  iSum = _mm_hadd_epi32(iSum, iSum);
+  __m128i sum = _mm_add_epi32(m1[0], m1[2]);
+  sum         = _mm_hadd_epi32(sum, sum);
+  sum         = _mm_hadd_epi32(sum, sum);
 
-  Distortion sad = _mm_cvtsi128_si32(iSum);
+  Distortion sad = _mm_cvtsi128_si32(sum);
 #if JVET_R0164_MEAN_SCALED_SATD
   sad -= absDc;
   sad += absDc >> 2;
@@ -907,11 +907,11 @@ static Distortion xCalcHAD8x4_HBD_SSE(const Torg *piOrg, const Tcur *piCur, cons
   n1[0] = _mm_add_epi32(n1[0], n1[1]);
   n1[1] = _mm_add_epi32(n1[2], n1[3]);
 
-  __m128i iSum = _mm_add_epi32(n1[0], n1[1]);
-  iSum = _mm_hadd_epi32(iSum, iSum);
-  iSum = _mm_hadd_epi32(iSum, iSum);
+  __m128i sum = _mm_add_epi32(n1[0], n1[1]);
+  sum         = _mm_hadd_epi32(sum, sum);
+  sum         = _mm_hadd_epi32(sum, sum);
 
-  Distortion sad = _mm_cvtsi128_si32(iSum);
+  Distortion sad = _mm_cvtsi128_si32(sum);
 #if JVET_R0164_MEAN_SCALED_SATD
   sad -= absDc;
   sad += absDc >> 2;
@@ -923,7 +923,7 @@ static Distortion xCalcHAD8x4_HBD_SSE(const Torg *piOrg, const Tcur *piCur, cons
 static Distortion xCalcHAD16x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const int iStrideOrg, const int iStrideCur)
 {
   __m128i m1[16][2][2], m2[16][2][2];
-  __m128i iSum = _mm_setzero_si128();
+  __m128i sum = _mm_setzero_si128();
 
   for (int l = 0; l < 2; l++)
   {
@@ -1117,13 +1117,13 @@ static Distortion xCalcHAD16x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, con
     n1[8] = _mm_add_epi32(n1[8], n1[12]);
 
     n1[0] = _mm_add_epi32(n1[0], n1[8]);
-    iSum = _mm_add_epi32(iSum, n1[0]);
+    sum   = _mm_add_epi32(sum, n1[0]);
   }
 
-  iSum = _mm_hadd_epi32(iSum, iSum);
-  iSum = _mm_hadd_epi32(iSum, iSum);
+  sum = _mm_hadd_epi32(sum, sum);
+  sum = _mm_hadd_epi32(sum, sum);
 
-  Distortion sad = _mm_cvtsi128_si32(iSum);
+  Distortion sad = _mm_cvtsi128_si32(sum);
 
 #if JVET_R0164_MEAN_SCALED_SATD
   sad -= absDc;
@@ -1137,7 +1137,7 @@ static Distortion xCalcHAD16x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, con
 static Distortion xCalcHAD8x16_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const int iStrideOrg, const int iStrideCur)
 {
   __m128i m1[2][16], m2[2][16];
-  __m128i iSum = _mm_setzero_si128();
+  __m128i sum = _mm_setzero_si128();
 
   for (int k = 0; k < 16; k++)
   {
@@ -1308,13 +1308,13 @@ static Distortion xCalcHAD8x16_HBD_SSE(const Torg *piOrg, const Tcur *piCur, con
 
     n2[0][0] = _mm_add_epi32(n2[0][0], n2[0][2]);
     n2[0][4] = _mm_add_epi32(n2[0][4], n2[0][6]);
-    iSum = _mm_add_epi32(iSum, _mm_add_epi32(n2[0][0], n2[0][4]));
+    sum      = _mm_add_epi32(sum, _mm_add_epi32(n2[0][0], n2[0][4]));
   }
 
-  iSum = _mm_hadd_epi32(iSum, iSum);
-  iSum = _mm_hadd_epi32(iSum, iSum);
+  sum = _mm_hadd_epi32(sum, sum);
+  sum = _mm_hadd_epi32(sum, sum);
 
-  Distortion sad = _mm_cvtsi128_si32(iSum);
+  Distortion sad = _mm_cvtsi128_si32(sum);
 #if JVET_R0164_MEAN_SCALED_SATD
   sad -= absDc;
   sad += absDc >> 2;
@@ -1517,13 +1517,13 @@ static Distortion xCalcHAD8x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, con
 
   m2[0] = _mm256_add_epi32(m2[0], m2[2]);
   m2[4] = _mm256_add_epi32(m2[4], m2[6]);
-  __m256i iSum = _mm256_add_epi32(m2[0], m2[4]);
+  __m256i sum = _mm256_add_epi32(m2[0], m2[4]);
 
-  iSum = _mm256_hadd_epi32(iSum, iSum);
-  iSum = _mm256_hadd_epi32(iSum, iSum);
+  sum = _mm256_hadd_epi32(sum, sum);
+  sum = _mm256_hadd_epi32(sum, sum);
 
-  Distortion sad = _mm_cvtsi128_si32(_mm256_castsi256_si128(iSum));
-  sad += _mm_cvtsi128_si32(_mm256_castsi256_si128(_mm256_permute4x64_epi64(iSum, 0xee)));
+  Distortion sad = _mm_cvtsi128_si32(_mm256_castsi256_si128(sum));
+  sad += _mm_cvtsi128_si32(_mm256_castsi256_si128(_mm256_permute4x64_epi64(sum, 0xee)));
 #if JVET_R0164_MEAN_SCALED_SATD
   Distortion absDc = _mm_cvtsi128_si32(_mm256_castsi256_si128(m1[0]));
   sad -= absDc;
@@ -1604,12 +1604,12 @@ static Distortion xCalcHAD4x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, con
   m1[0] = _mm256_add_epi32(n1[0], n1[1]);
   m1[2] = _mm256_add_epi32(n1[2], n1[3]);
 
-  __m256i iSum = _mm256_add_epi32(m1[0], m1[2]);
-  iSum = _mm256_hadd_epi32(iSum, iSum);
-  iSum = _mm256_hadd_epi32(iSum, iSum);
+  __m256i sum = _mm256_add_epi32(m1[0], m1[2]);
+  sum         = _mm256_hadd_epi32(sum, sum);
+  sum         = _mm256_hadd_epi32(sum, sum);
 
-  Distortion sad = _mm_cvtsi128_si32(_mm256_castsi256_si128(iSum));
-  sad += _mm_cvtsi128_si32(_mm256_castsi256_si128(_mm256_permute4x64_epi64(iSum, 0xee)));
+  Distortion sad = _mm_cvtsi128_si32(_mm256_castsi256_si128(sum));
+  sad += _mm_cvtsi128_si32(_mm256_castsi256_si128(_mm256_permute4x64_epi64(sum, 0xee)));
 
 #if JVET_R0164_MEAN_SCALED_SATD
   sad -= absDc;
@@ -1701,11 +1701,11 @@ static Distortion xCalcHAD8x4_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, con
   m1[0] = _mm256_add_epi32(m1[0], m1[1]);
   m1[1] = _mm256_add_epi32(m1[2], m1[3]);
 
-  __m256i iSum = _mm256_add_epi32(m1[0], m1[1]);
-  iSum = _mm256_hadd_epi32(iSum, iSum);
-  iSum = _mm256_hadd_epi32(iSum, iSum);
+  __m256i sum = _mm256_add_epi32(m1[0], m1[1]);
+  sum         = _mm256_hadd_epi32(sum, sum);
+  sum         = _mm256_hadd_epi32(sum, sum);
 
-  Distortion sad = _mm_cvtsi128_si32(_mm256_castsi256_si128(iSum));
+  Distortion sad = _mm_cvtsi128_si32(_mm256_castsi256_si128(sum));
 #if JVET_R0164_MEAN_SCALED_SATD
   sad -= absDc;
   sad += absDc >> 2;
@@ -1931,12 +1931,12 @@ static Distortion xCalcHAD16x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, co
   m1[0] = _mm256_add_epi32(m1[0], m1[4]);
   m1[8] = _mm256_add_epi32(m1[8], m1[12]);
 
-  __m256i iSum = _mm256_add_epi32(m1[0], m1[8]);
-  iSum = _mm256_hadd_epi32(iSum, iSum);
-  iSum = _mm256_hadd_epi32(iSum, iSum);
-  iSum = _mm256_add_epi32(iSum, _mm256_permute2x128_si256(iSum, iSum, 0x11));
+  __m256i sum = _mm256_add_epi32(m1[0], m1[8]);
+  sum         = _mm256_hadd_epi32(sum, sum);
+  sum         = _mm256_hadd_epi32(sum, sum);
+  sum         = _mm256_add_epi32(sum, _mm256_permute2x128_si256(sum, sum, 0x11));
 
-  Distortion sad = _mm_cvtsi128_si32(_mm256_castsi256_si128(iSum));
+  Distortion sad = _mm_cvtsi128_si32(_mm256_castsi256_si128(sum));
 #if JVET_R0164_MEAN_SCALED_SATD
   sad -= absDc;
   sad += absDc >> 2;
@@ -2164,12 +2164,12 @@ static Distortion xCalcHAD8x16_HBD_AVX2(const Pel* piOrg, const Pel* piCur, cons
   m1[0] = _mm256_add_epi32(m1[0], m1[1]);
   m1[1] = _mm256_add_epi32(m1[2], m1[3]);
 
-  __m256i iSum = _mm256_add_epi32(m1[0], m1[1]);
-  iSum = _mm256_hadd_epi32(iSum, iSum);
-  iSum = _mm256_hadd_epi32(iSum, iSum);
-  iSum = _mm256_add_epi32(iSum, _mm256_permute2x128_si256(iSum, iSum, 0x11));
+  __m256i sum = _mm256_add_epi32(m1[0], m1[1]);
+  sum         = _mm256_hadd_epi32(sum, sum);
+  sum         = _mm256_hadd_epi32(sum, sum);
+  sum         = _mm256_add_epi32(sum, _mm256_permute2x128_si256(sum, sum, 0x11));
 
-  Distortion sad2 = _mm_cvtsi128_si32(_mm256_castsi256_si128(iSum));
+  Distortion sad2 = _mm_cvtsi128_si32(_mm256_castsi256_si128(sum));
 #if JVET_R0164_MEAN_SCALED_SATD
   sad2 -= absDc;
   sad2 += absDc >> 2;
@@ -2388,12 +2388,12 @@ static uint32_t xCalcHAD8x8_SSE( const Torg *piOrg, const Tcur *piCur, const int
 
   m1[0][0] = _mm_add_epi32( m1[0][0], m1[2][0] );
   m1[4][0] = _mm_add_epi32( m1[4][0], m1[6][0] );
-  __m128i iSum = _mm_add_epi32( m1[0][0], m1[4][0] );
+  __m128i sum = _mm_add_epi32(m1[0][0], m1[4][0]);
 
-  iSum = _mm_hadd_epi32( iSum, iSum );
-  iSum = _mm_hadd_epi32( iSum, iSum );
+  sum = _mm_hadd_epi32(sum, sum);
+  sum = _mm_hadd_epi32(sum, sum);
 
-  uint32_t sad = _mm_cvtsi128_si32( iSum );
+  uint32_t sad   = _mm_cvtsi128_si32(sum);
 #if JVET_R0164_MEAN_SCALED_SATD
   uint32_t absDc = _mm_cvtsi128_si32( n1[0][0] );
   sad -= absDc;
@@ -2409,7 +2409,7 @@ static uint32_t xCalcHAD8x8_SSE( const Torg *piOrg, const Tcur *piCur, const int
 static uint32_t xCalcHAD16x8_SSE( const Torg *piOrg, const Tcur *piCur, const int iStrideOrg, const int iStrideCur, const int iBitDepth )
 {
   __m128i m1[16][2][2], m2[16][2][2];
-  __m128i iSum = _mm_setzero_si128();
+  __m128i sum = _mm_setzero_si128();
 
   for( int l = 0; l < 2; l++ )
   {
@@ -2604,13 +2604,13 @@ static uint32_t xCalcHAD16x8_SSE( const Torg *piOrg, const Tcur *piCur, const in
     n1[8] = _mm_add_epi32( n1[8], n1[12] );
 
     n1[0] = _mm_add_epi32( n1[0], n1[8] );
-    iSum = _mm_add_epi32( iSum, n1[0] );
+    sum   = _mm_add_epi32(sum, n1[0]);
   }
 
-  iSum = _mm_hadd_epi32( iSum, iSum );
-  iSum = _mm_hadd_epi32( iSum, iSum );
+  sum = _mm_hadd_epi32(sum, sum);
+  sum = _mm_hadd_epi32(sum, sum);
 
-  uint32_t sad = _mm_cvtsi128_si32( iSum );
+  uint32_t sad = _mm_cvtsi128_si32(sum);
 
 #if JVET_R0164_MEAN_SCALED_SATD
   sad -= absDc;
@@ -2626,7 +2626,7 @@ static uint32_t xCalcHAD16x8_SSE( const Torg *piOrg, const Tcur *piCur, const in
 static uint32_t xCalcHAD8x16_SSE( const Torg *piOrg, const Tcur *piCur, const int iStrideOrg, const int iStrideCur, const int iBitDepth )
 {
   __m128i m1[2][16], m2[2][16];
-  __m128i iSum = _mm_setzero_si128();
+  __m128i sum = _mm_setzero_si128();
 
   for( int k = 0; k < 16; k++ )
   {
@@ -2801,13 +2801,13 @@ static uint32_t xCalcHAD8x16_SSE( const Torg *piOrg, const Tcur *piCur, const in
 
     n2[0][0] = _mm_add_epi32( n2[0][0], n2[0][2] );
     n2[0][4] = _mm_add_epi32( n2[0][4], n2[0][6] );
-    iSum = _mm_add_epi32( iSum, _mm_add_epi32( n2[0][0], n2[0][4] ) );
+    sum      = _mm_add_epi32(sum, _mm_add_epi32(n2[0][0], n2[0][4]));
   }
 
-  iSum = _mm_hadd_epi32( iSum, iSum );
-  iSum = _mm_hadd_epi32( iSum, iSum );
+  sum = _mm_hadd_epi32(sum, sum);
+  sum = _mm_hadd_epi32(sum, sum);
 
-  uint32_t sad = _mm_cvtsi128_si32( iSum );
+  uint32_t sad = _mm_cvtsi128_si32(sum);
 
 #if JVET_R0164_MEAN_SCALED_SATD
   sad -= absDc;
@@ -2952,12 +2952,12 @@ static uint32_t xCalcHAD8x4_SSE( const Torg *piOrg, const Tcur *piCur, const int
   m1[0] = _mm_add_epi32( m1[0], m1[1] );
   m1[1] = _mm_add_epi32( m1[2], m1[3] );
 
-  __m128i iSum = _mm_add_epi32( m1[0], m1[1] );
+  __m128i sum = _mm_add_epi32(m1[0], m1[1]);
 
-  iSum = _mm_hadd_epi32( iSum, iSum );
-  iSum = _mm_hadd_epi32( iSum, iSum );
+  sum = _mm_hadd_epi32(sum, sum);
+  sum = _mm_hadd_epi32(sum, sum);
 
-  uint32_t sad = _mm_cvtsi128_si32( iSum );
+  uint32_t sad = _mm_cvtsi128_si32(sum);
   //sad = ((sad + 2) >> 2);
 #if JVET_R0164_MEAN_SCALED_SATD
   sad -= absDc;
@@ -3097,12 +3097,12 @@ static uint32_t xCalcHAD4x8_SSE( const Torg *piOrg, const Tcur *piCur, const int
   m1[0] = _mm_add_epi32( m1[0], m1[1] );
   m1[2] = _mm_add_epi32( m1[2], m1[3] );
 
-  __m128i iSum = _mm_add_epi32( m1[0], m1[2] );
+  __m128i sum = _mm_add_epi32(m1[0], m1[2]);
 
-  iSum = _mm_hadd_epi32( iSum, iSum );
-  iSum = _mm_hadd_epi32( iSum, iSum );
+  sum = _mm_hadd_epi32(sum, sum);
+  sum = _mm_hadd_epi32(sum, sum);
 
-  uint32_t sad = _mm_cvtsi128_si32( iSum );
+  uint32_t sad = _mm_cvtsi128_si32(sum);
 
   //sad = ((sad + 2) >> 2);
 #if JVET_R0164_MEAN_SCALED_SATD
@@ -3266,13 +3266,13 @@ static uint32_t xCalcHAD16x16_AVX2( const Torg *piOrg, const Tcur *piCur, const 
     m1[0][0] = _mm256_add_epi32( m1[0][0], m1[0][2] );
     m1[0][4] = _mm256_add_epi32( m1[0][4], m1[0][6] );
 
-    __m256i iSum = _mm256_add_epi32( m1[0][0], m1[0][4] );
+    __m256i sum = _mm256_add_epi32(m1[0][0], m1[0][4]);
 
-    iSum = _mm256_hadd_epi32( iSum, iSum );
-    iSum = _mm256_hadd_epi32( iSum, iSum );
+    sum = _mm256_hadd_epi32(sum, sum);
+    sum = _mm256_hadd_epi32(sum, sum);
 
     uint32_t tmp;
-    tmp  = _mm_cvtsi128_si32( _mm256_castsi256_si128( iSum ) );
+    tmp = _mm_cvtsi128_si32(_mm256_castsi256_si128(sum));
 #if JVET_R0164_MEAN_SCALED_SATD
     tmp -= absDc0;
     tmp += absDc0 >> 2;
@@ -3280,7 +3280,7 @@ static uint32_t xCalcHAD16x16_AVX2( const Torg *piOrg, const Tcur *piCur, const 
     tmp  = ( ( tmp + 2 ) >> 2 );
     sad += tmp;
 
-    tmp  = _mm_cvtsi128_si32( _mm256_castsi256_si128( _mm256_permute2x128_si256( iSum, iSum, 0x11 ) ) );
+    tmp = _mm_cvtsi128_si32(_mm256_castsi256_si128(_mm256_permute2x128_si256(sum, sum, 0x11)));
 #if JVET_R0164_MEAN_SCALED_SATD
     tmp -= absDc1;
     tmp += absDc1 >> 2;
@@ -3521,12 +3521,12 @@ static uint32_t xCalcHAD16x8_AVX2( const Torg *piOrg, const Tcur *piCur, const i
     m1[0] = _mm256_add_epi32( m1[0], m1[ 4] );
     m1[8] = _mm256_add_epi32( m1[8], m1[12] );
 
-    __m256i iSum = _mm256_add_epi32( m1[0], m1[8] );
-    iSum = _mm256_hadd_epi32( iSum, iSum );
-    iSum = _mm256_hadd_epi32( iSum, iSum );
-    iSum = _mm256_add_epi32( iSum, _mm256_permute2x128_si256( iSum, iSum, 0x11 ) );
+    __m256i sum = _mm256_add_epi32(m1[0], m1[8]);
+    sum         = _mm256_hadd_epi32(sum, sum);
+    sum         = _mm256_hadd_epi32(sum, sum);
+    sum         = _mm256_add_epi32(sum, _mm256_permute2x128_si256(sum, sum, 0x11));
 
-    sad  = _mm_cvtsi128_si32( _mm256_castsi256_si128( iSum ) );
+    sad = _mm_cvtsi128_si32(_mm256_castsi256_si128(sum));
 #if JVET_R0164_MEAN_SCALED_SATD
     sad -= absDc;
     sad += absDc >> 2;
@@ -3767,13 +3767,13 @@ static uint32_t xCalcHAD8x16_AVX2( const Pel* piOrg, const Pel* piCur, const int
     m1[ 0] = _mm256_add_epi32( m1[ 0], m1[ 1] );
     m1[ 1] = _mm256_add_epi32( m1[ 2], m1[ 3] );
 
-    __m256i iSum = _mm256_add_epi32( m1[0], m1[1] );
+    __m256i sum = _mm256_add_epi32(m1[0], m1[1]);
 
-    iSum = _mm256_hadd_epi32( iSum, iSum );
-    iSum = _mm256_hadd_epi32( iSum, iSum );
-    iSum = _mm256_add_epi32( iSum, _mm256_permute2x128_si256( iSum, iSum, 0x11 ) );
+    sum = _mm256_hadd_epi32(sum, sum);
+    sum = _mm256_hadd_epi32(sum, sum);
+    sum = _mm256_add_epi32(sum, _mm256_permute2x128_si256(sum, sum, 0x11));
 
-    int sad2 = _mm_cvtsi128_si32( _mm256_castsi256_si128( iSum ) );
+    int sad2 = _mm_cvtsi128_si32(_mm256_castsi256_si128(sum));
 
 #if JVET_R0164_MEAN_SCALED_SATD
     sad2 -= absDc;
