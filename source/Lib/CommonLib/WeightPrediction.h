@@ -55,40 +55,25 @@ class WeightPrediction
 public:
   WeightPrediction();
 
-  void getWpScaling(Slice *slice, const int &refIdx0, const int &refIdx1, WPScalingParam *&wp0, WPScalingParam *&wp1,
+  void getWpScaling(Slice *slice, const int refIdx0, const int refIdx1, WPScalingParam *&wp0, WPScalingParam *&wp1,
                     const ComponentID maxNumComp = MAX_NUM_COMPONENT);
 
   void addWeightBi(const CPelUnitBuf &pcYuvSrc0, const CPelUnitBuf &pcYuvSrc1, const ClpRngs &clpRngs,
                    const WPScalingParam *const wp0, const WPScalingParam *const wp1, PelUnitBuf &rpcYuvDst,
-                   const bool roundLuma = true, const ComponentID maxNumComp = MAX_NUM_COMPONENT, bool lumaOnly = false,
-                   bool chromaOnly = false);
+                   const ComponentID maxNumComp = MAX_NUM_COMPONENT, bool lumaOnly = false, bool chromaOnly = false);
 
-  void addWeightBiComponent(const CPelUnitBuf &pcYuvSrc0, const CPelUnitBuf &pcYuvSrc1, const ClpRngs &clpRngs,
-                            const WPScalingParam *const wp0, const WPScalingParam *const wp1, PelUnitBuf &rpcYuvDst,
-                            const bool roundLuma = true, const ComponentID Comp = COMPONENT_Y);
-
-  void  addWeightUni(           const CPelUnitBuf          &pcYuvSrc0,
-                                const ClpRngs              &clpRngs,
-                                const WPScalingParam *const wp0,
-                                      PelUnitBuf           &rpcYuvDst,
-                                const ComponentID           maxNumComp = MAX_NUM_COMPONENT
-                                , bool                      lumaOnly = false
-                                , bool                      chromaOnly = false
-                                );
+  void addWeightUni(const CPelUnitBuf &pcYuvSrc0, const ClpRngs &clpRngs, const WPScalingParam *const wp0,
+                    PelUnitBuf &rpcYuvDst, const ComponentID maxNumComp = MAX_NUM_COMPONENT, bool lumaOnly = false,
+                    bool chromaOnly = false);
 
   void xWeightedPredictionUni(const PredictionUnit &pu, const CPelUnitBuf &pcYuvSrc, const RefPicList &eRefPicList,
                               PelUnitBuf &pcYuvPred, const int refIdx = -1,
                               const ComponentID maxNumComp = MAX_NUM_COMPONENT, bool lumaOnly = false,
                               bool chromaOnly = false);
 
-  void  xWeightedPredictionBi(  const PredictionUnit       &pu,
-                                const CPelUnitBuf          &pcYuvSrc0,
-                                const CPelUnitBuf          &pcYuvSrc1,
-                                      PelUnitBuf           &pcYuvDst,
-                                const ComponentID           maxNumComp = MAX_NUM_COMPONENT
-                                , bool                      lumaOnly = false
-                                , bool                      chromaOnly = false
-                                );
+  void xWeightedPredictionBi(const PredictionUnit &pu, const CPelUnitBuf &pcYuvSrc0, const CPelUnitBuf &pcYuvSrc1,
+                             PelUnitBuf &pcYuvDst, const ComponentID maxNumComp = MAX_NUM_COMPONENT,
+                             bool lumaOnly = false, bool chromaOnly = false);
 };
 
 #endif
