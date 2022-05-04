@@ -165,8 +165,8 @@ ProfileTierLevel::ProfileTierLevel()
   , m_frameOnlyConstraintFlag(1)
   , m_multiLayerEnabledFlag(0)
 {
-  ::memset(m_subLayerLevelPresentFlag,   0, sizeof(m_subLayerLevelPresentFlag  ));
-  ::memset(m_subLayerLevelIdc, Level::NONE, sizeof(m_subLayerLevelIdc          ));
+  m_subLayerLevelPresentFlag.fill(false);
+  m_subLayerLevelIdc.fill(Level::NONE);
 }
 
 void calculateParameterSetChangedFlag(bool &changed, const std::vector<uint8_t> *oldData, const std::vector<uint8_t> *newData)
