@@ -38,6 +38,7 @@
 #ifndef __SLICE__
 #define __SLICE__
 
+#include <array>
 #include <cstring>
 #include <list>
 #include <map>
@@ -564,8 +565,8 @@ class ProfileTierLevel
   bool              m_frameOnlyConstraintFlag;
   bool              m_multiLayerEnabledFlag;
   ConstraintInfo    m_constraintInfo;
-  bool              m_subLayerLevelPresentFlag[MAX_TLAYER - 1];
-  Level::Name       m_subLayerLevelIdc[MAX_TLAYER];
+  std::array<bool, MAX_TLAYER - 1>    m_subLayerLevelPresentFlag;
+  std::array<Level::Name, MAX_TLAYER> m_subLayerLevelIdc;
 
 public:
                 ProfileTierLevel();

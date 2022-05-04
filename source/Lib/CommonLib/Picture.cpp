@@ -270,7 +270,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   {
     m_ctuNums = cs->pcv->sizeInCtus;
     m_spliceIdx = new int[m_ctuNums];
-    memset(m_spliceIdx, 0, m_ctuNums * sizeof(int));
+    std::fill_n(m_spliceIdx, m_ctuNums, 0);
   }
 }
 
