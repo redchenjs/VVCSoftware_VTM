@@ -2257,7 +2257,7 @@ void  Slice::resetWpScaling()
 //! init WP table
 void  Slice::initWpScaling(const SPS *sps)
 {
-  const bool bUseHighPrecisionPredictionWeighting = sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag();
+  const bool useHighPrecisionPredictionWeighting = sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag();
   for ( int e=0 ; e<NUM_REF_PIC_LIST_01 ; e++ )
   {
     for ( int i=0 ; i<MAX_NUM_REF ; i++ )
@@ -2272,7 +2272,8 @@ void  Slice::initWpScaling(const SPS *sps)
           pwp->codedOffset = 0;
         }
 
-        const int offsetScalingFactor = bUseHighPrecisionPredictionWeighting ? 1 : (1 << (sps->getBitDepth(toChannelType(ComponentID(yuv)))-8));
+        const int offsetScalingFactor =
+          useHighPrecisionPredictionWeighting ? 1 : (1 << (sps->getBitDepth(toChannelType(ComponentID(yuv))) - 8));
 
         pwp->w = pwp->codedWeight;
         pwp->o = pwp->codedOffset * offsetScalingFactor;   // NOTE: This value of the ".o" variable is never used - .o
