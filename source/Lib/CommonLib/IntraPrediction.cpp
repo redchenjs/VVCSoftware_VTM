@@ -220,10 +220,11 @@ void IntraPrediction::predIntraAng( const ComponentID compId, PelBuf &piPred, co
   const int            height       = piPred.height;
   CHECK(width == 2, "Width of 2 is not supported");
   CHECK(PU::isMIP(pu, toChannelType(compId)), "We should not get here for MIP.");
-  const uint32_t       uiDirMode    = isLuma( compId ) && pu.cu->bdpcmMode ? BDPCM_IDX : !isLuma(compId) && pu.cu->bdpcmModeChroma ? BDPCM_IDX : PU::getFinalIntraMode(pu, channelType);
+  const uint32_t dirMode =
+    (isLuma(compId) ? pu.cu->bdpcmMode : pu.cu->bdpcmModeChroma) ? BDPCM_IDX : PU::getFinalIntraMode(pu, channelType);
 
   CHECK(floorLog2(width) < 2 && pu.cs->pcv->noChroma2x2, "Size not allowed");
-  CHECK(floorLog2(width) > 7, "Size not allowed");
+  CHECK(floorLog2(width) > MAX_CU_DEPTH, "Size not allowed");
 
   const int srcStride  = m_refBufferStride[compID];
   const int srcHStride = 2;
@@ -231,7 +232,7 @@ void IntraPrediction::predIntraAng( const ComponentID compId, PelBuf &piPred, co
   const CPelBuf & srcBuf = CPelBuf(getPredictorPtr(compID), srcStride, srcHStride);
   const ClpRng& clpRng(pu.cu->cs->slice->clpRng(compID));
 
-  switch (uiDirMode)
+  switch (dirMode)
   {
     case(PLANAR_IDX): xPredIntraPlanar(srcBuf, piPred); break;
     case(DC_IDX):     xPredIntraDc(srcBuf, piPred, channelType, false); break;
@@ -245,7 +246,7 @@ void IntraPrediction::predIntraAng( const ComponentID compId, PelBuf &piPred, co
     const int scale  = ((floorLog2(width) - 2 + floorLog2(height) - 2 + 2) >> 2);
     CHECK(scale < 0 || scale > 31, "PDPC: scale < 0 || scale > 31");
 
-    if (uiDirMode == PLANAR_IDX || uiDirMode == DC_IDX)
+    if (dirMode == PLANAR_IDX || dirMode == DC_IDX)
     {
       for (int y = 0; y < height; y++)
       {
@@ -265,30 +266,32 @@ void IntraPrediction::predIntraAng( const ComponentID compId, PelBuf &piPred, co
 
 void IntraPrediction::predIntraChromaLM(const ComponentID compID, PelBuf &piPred, const PredictionUnit &pu, const CompArea& chromaArea, int intraDir)
 {
-  int  iLumaStride = 0;
-  PelBuf Temp;
-  if ((intraDir == MDLM_L_IDX) || (intraDir == MDLM_T_IDX))
+  int    lumaStride = 0;
+  PelBuf temp;
+
+  if (intraDir == MDLM_L_IDX || intraDir == MDLM_T_IDX)
   {
-    iLumaStride = 2 * MAX_CU_SIZE + 1;
-    Temp = PelBuf(m_pMdlmTemp + iLumaStride + 1, iLumaStride, Size(chromaArea));
+    lumaStride = 2 * MAX_CU_SIZE + 1;
+    temp       = PelBuf(m_pMdlmTemp + lumaStride + 1, lumaStride, Size(chromaArea));
   }
   else
   {
-    iLumaStride = MAX_CU_SIZE + 1;
-    Temp = PelBuf(m_piTemp + iLumaStride + 1, iLumaStride, Size(chromaArea));
+    lumaStride = MAX_CU_SIZE + 1;
+    temp       = PelBuf(m_piTemp + lumaStride + 1, lumaStride, Size(chromaArea));
   }
+
   int a, b, shift;
   xGetLMParameters(pu, compID, chromaArea, a, b, shift);
 
-  ////// final prediction
-  piPred.copyFrom(Temp);
+  // final prediction
+  piPred.copyFrom(temp);
   piPred.linearTransform(a, shift, b, true, pu.cs->slice->clpRng(compID));
 }
 
 /** Function for deriving planar intra prediction. This function derives the prediction samples for planar mode (intra coding).
  */
 
-//NOTE: Bit-Limit - 24-bit source
+// NOTE: Bit-Limit - 24-bit source
 void IntraPrediction::xPredIntraPlanar( const CPelBuf &pSrc, PelBuf &pDst )
 {
   const uint32_t width  = pDst.width;
@@ -359,22 +362,22 @@ void IntraPrediction::initPredIntraParams(const PredictionUnit & pu, const CompA
   const ComponentID compId = area.compID;
   const ChannelType chType = toChannelType(compId);
 
-  const bool        useISP = NOT_INTRA_SUBPARTITIONS != pu.cu->ispMode && isLuma( chType );
+  const bool useISP = NOT_INTRA_SUBPARTITIONS != pu.cu->ispMode && isLuma(chType);
 
-  const Size   cuSize    = Size( pu.cu->blocks[compId].width, pu.cu->blocks[compId].height );
-  const Size   puSize    = Size( area.width, area.height );
-  const Size&  blockSize = useISP ? cuSize : puSize;
-  const int      dirMode = PU::getFinalIntraMode(pu, chType);
-  const int     predMode = getModifiedWideAngle( blockSize.width, blockSize.height, dirMode );
+  const Size  cuSize    = Size(pu.cu->blocks[compId].width, pu.cu->blocks[compId].height);
+  const Size  puSize    = Size(area.width, area.height);
+  const Size &blockSize = useISP ? cuSize : puSize;
+  const int   dirMode   = PU::getFinalIntraMode(pu, chType);
+  const int   predMode  = getModifiedWideAngle(blockSize.width, blockSize.height, dirMode);
 
-  m_ipaParam.isModeVer            = predMode >= DIA_IDX;
-  m_ipaParam.multiRefIndex        = isLuma (chType) ? pu.multiRefIdx : 0 ;
-  m_ipaParam.refFilterFlag        = false;
-  m_ipaParam.interpolationFlag    = false;
-  m_ipaParam.applyPDPC            = (puSize.width >= MIN_TB_SIZEY && puSize.height >= MIN_TB_SIZEY) && m_ipaParam.multiRefIndex == 0;
+  m_ipaParam.isModeVer         = predMode >= DIA_IDX;
+  m_ipaParam.multiRefIndex     = isLuma(chType) ? pu.multiRefIdx : 0;
+  m_ipaParam.refFilterFlag     = false;
+  m_ipaParam.interpolationFlag = false;
+  m_ipaParam.applyPDPC =
+    (puSize.width >= MIN_TB_SIZEY && puSize.height >= MIN_TB_SIZEY) && m_ipaParam.multiRefIndex == 0;
 
-  const int    intraPredAngleMode = (m_ipaParam.isModeVer) ? predMode - VER_IDX : -(predMode - HOR_IDX);
-
+  const int intraPredAngleMode = (m_ipaParam.isModeVer) ? predMode - VER_IDX : -(predMode - HOR_IDX);
 
   int absAng = 0;
   if (dirMode > DC_IDX && dirMode < NUM_LUMA_MODE) // intraPredAngle for directional modes
@@ -385,12 +388,13 @@ void IntraPrediction::initPredIntraParams(const PredictionUnit & pu, const CompA
       512, 468,   420,  364,  321,  287,  256,  224,  191,  161,  128,  96,  64,  48,  32,  16
     };   // (512 * 32) / Angle
 
-    const int     absAngMode         = abs(intraPredAngleMode);
-    const int     signAng            = intraPredAngleMode < 0 ? -1 : 1;
-                  absAng             = angTable  [absAngMode];
+    const int absAngMode = abs(intraPredAngleMode);
+    const int signAng    = intraPredAngleMode < 0 ? -1 : 1;
+    absAng               = angTable[absAngMode];
 
-    m_ipaParam.absInvAngle           = invAngTable[absAngMode];
-    m_ipaParam.intraPredAngle        = signAng * absAng;
+    m_ipaParam.absInvAngle    = invAngTable[absAngMode];
+    m_ipaParam.intraPredAngle = signAng * absAng;
+
     if (intraPredAngleMode < 0)
     {
       m_ipaParam.applyPDPC = false;
@@ -459,10 +463,10 @@ void IntraPrediction::initPredIntraParams(const PredictionUnit & pu, const CompA
 
 void IntraPrediction::xPredIntraAng( const CPelBuf &pSrc, PelBuf &pDst, const ChannelType channelType, const ClpRng& clpRng)
 {
-  int width =int(pDst.width);
-  int height=int(pDst.height);
+  int width  = int(pDst.width);
+  int height = int(pDst.height);
 
-  const bool bIsModeVer     = m_ipaParam.isModeVer;
+  const bool isModeVer      = m_ipaParam.isModeVer;
   const int  multiRefIdx    = m_ipaParam.multiRefIndex;
   const int  intraPredAngle = m_ipaParam.intraPredAngle;
   const int  absInvAngle    = m_ipaParam.absInvAngle;
@@ -484,11 +488,11 @@ void IntraPrediction::xPredIntraAng( const CPelBuf &pSrc, PelBuf &pDst, const Ch
     {
       refLeft[y + width] = pSrc.at(y, 1);
     }
-    refMain = bIsModeVer ? refAbove + height : refLeft + width;
-    refSide = bIsModeVer ? refLeft + width : refAbove + height;
+    refMain = isModeVer ? refAbove + height : refLeft + width;
+    refSide = isModeVer ? refLeft + width : refAbove + height;
 
     // Extend the Main reference to the left.
-    int sizeSide = bIsModeVer ? height : width;
+    int sizeSide = isModeVer ? height : width;
     for (int k = -sizeSide; k <= -1; k++)
     {
       refMain[k] = refSide[std::min((-k * absInvAngle + 256) >> 9, sizeSide)];
@@ -505,14 +509,14 @@ void IntraPrediction::xPredIntraAng( const CPelBuf &pSrc, PelBuf &pDst, const Ch
       refLeft[y] = pSrc.at(y, 1);
     }
 
-    refMain = bIsModeVer ? refAbove : refLeft;
-    refSide = bIsModeVer ? refLeft : refAbove;
+    refMain = isModeVer ? refAbove : refLeft;
+    refSide = isModeVer ? refLeft : refAbove;
 
     // Extend main reference to right using replication
     const int log2Ratio = floorLog2(width) - floorLog2(height);
-    const int s         = std::max<int>(0, bIsModeVer ? log2Ratio : -log2Ratio);
+    const int s         = std::max<int>(0, isModeVer ? log2Ratio : -log2Ratio);
     const int maxIndex  = (multiRefIdx << s) + 2;
-    const int refLength = bIsModeVer ? m_topRefLength : m_leftRefLength;
+    const int refLength = isModeVer ? m_topRefLength : m_leftRefLength;
     const Pel val       = refMain[refLength + multiRefIdx];
     for (int z = 1; z <= maxIndex; z++)
     {
@@ -521,13 +525,13 @@ void IntraPrediction::xPredIntraAng( const CPelBuf &pSrc, PelBuf &pDst, const Ch
   }
 
   // swap width/height if we are doing a horizontal mode:
-  if (!bIsModeVer)
+  if (!isModeVer)
   {
     std::swap(width, height);
   }
   Pel       tempArray[MAX_CU_SIZE * MAX_CU_SIZE];
-  const int dstStride = bIsModeVer ? pDst.stride : width;
-  Pel *     pDstBuf   = bIsModeVer ? pDst.buf : tempArray;
+  const int dstStride = isModeVer ? pDst.stride : width;
+  Pel *     pDstBuf   = isModeVer ? pDst.buf : tempArray;
 
   // compensate for line offset in reference line buffers
   refMain += multiRefIdx;
@@ -630,7 +634,7 @@ void IntraPrediction::xPredIntraAng( const CPelBuf &pSrc, PelBuf &pDst, const Ch
   }
 
   // Flip the block if this is the horizontal mode
-  if( !bIsModeVer )
+  if (!isModeVer)
   {
     for( int y = 0; y < height; y++ )
     {
@@ -682,13 +686,13 @@ void IntraPrediction::xPredIntraBDPCM(const CPelBuf &pSrc, PelBuf &pDst, const u
 
 void IntraPrediction::geneWeightedPred(const ComponentID compId, PelBuf &pred, const PredictionUnit &pu, Pel *srcBuf)
 {
-  const int            width = pred.width;
+  const int width = pred.width;
   CHECK(width == 2, "Width of 2 is not supported");
-  const int            height = pred.height;
-  const int            srcStride = width;
-  const int            dstStride = pred.stride;
+  const int height    = pred.height;
+  const int srcStride = width;
+  const int dstStride = pred.stride;
 
-  Pel*                 dstBuf = pred.buf;
+  Pel *dstBuf = pred.buf;
   int wIntra, wMerge;
 
   const Position posBL = pu.Y().bottomLeft();
@@ -713,6 +717,7 @@ void IntraPrediction::geneWeightedPred(const ComponentID compId, PelBuf &pred, c
       wIntra = 2; wMerge = 2;
     }
   }
+
   for (int y = 0; y < height; y++)
   {
     for (int x = 0; x < width; x++)
@@ -724,12 +729,14 @@ void IntraPrediction::geneWeightedPred(const ComponentID compId, PelBuf &pred, c
 
 void IntraPrediction::switchBuffer(const PredictionUnit &pu, ComponentID compID, PelBuf srcBuff, Pel *dst)
 {
-  Pel  *src = srcBuff.bufAt(0, 0);
+  Pel *src = srcBuff.bufAt(0, 0);
+
   int compWidth = compID == COMPONENT_Y ? pu.Y().width : pu.Cb().width;
   int compHeight = compID == COMPONENT_Y ? pu.Y().height : pu.Cb().height;
+
   for (int i = 0; i < compHeight; i++)
   {
-    memcpy(dst, src, compWidth * sizeof(Pel));
+    std::copy_n(src, compWidth, dst);
     src += srcBuff.stride;
     dst += compWidth;
   }
@@ -772,10 +779,14 @@ void IntraPrediction::geneIntrainterPred(const CodingUnit &cu)
 }
 
 inline bool isAboveLeftAvailable  ( const CodingUnit &cu, const ChannelType &chType, const Position &posLT );
-inline int  isAboveAvailable      ( const CodingUnit &cu, const ChannelType &chType, const Position &posLT, const uint32_t uiNumUnitsInPU, const uint32_t unitWidth, bool *validFlags );
-inline int  isLeftAvailable       ( const CodingUnit &cu, const ChannelType &chType, const Position &posLT, const uint32_t uiNumUnitsInPU, const uint32_t unitWidth, bool *validFlags );
-inline int  isAboveRightAvailable ( const CodingUnit &cu, const ChannelType &chType, const Position &posRT, const uint32_t uiNumUnitsInPU, const uint32_t unitHeight, bool *validFlags );
-inline int  isBelowLeftAvailable  ( const CodingUnit &cu, const ChannelType &chType, const Position &posLB, const uint32_t uiNumUnitsInPU, const uint32_t unitHeight, bool *validFlags );
+inline int  isAboveAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posLT,
+                             const uint32_t numUnitsInPu, const uint32_t unitWidth, bool *validFlags);
+inline int  isLeftAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posLT,
+                            const uint32_t numUnitsInPu, const uint32_t unitWidth, bool *validFlags);
+inline int  isAboveRightAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posRT,
+                                  const uint32_t numUnitsInPu, const uint32_t unitHeight, bool *validFlags);
+inline int  isBelowLeftAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posLB,
+                                 const uint32_t numUnitsInPu, const uint32_t unitHeight, bool *validFlags);
 
 void IntraPrediction::initIntraPatternChType(const CodingUnit &cu, const CompArea &area, const bool forceRefFilterFlag)
 {
@@ -831,7 +842,6 @@ void IntraPrediction::initIntraPatternChTypeISP(const CodingUnit& cu, const Comp
       m_leftRefLength = cu.Y().height + area.height;
       m_topRefLength = cu.Y().width << 1;
     }
-
 
     xFillReferenceSamples(cs.picture->getRecoBuf(cu.Y()), refBufUnfiltered, cu.Y(), cu);
 
@@ -920,7 +930,6 @@ void IntraPrediction::initIntraPatternChTypeISP(const CodingUnit& cu, const Comp
   }
 }
 
-
 void IntraPrediction::xFillReferenceSamples( const CPelBuf &recoBuf, Pel* refBufUnfiltered, const CompArea &area, const CodingUnit &cu )
 {
   const ChannelType      chType = toChannelType( area.compID );
@@ -928,18 +937,24 @@ void IntraPrediction::xFillReferenceSamples( const CPelBuf &recoBuf, Pel* refBuf
   const SPS             &sps    = *cs.sps;
   const PreCalcValues   &pcv    = *cs.pcv;
 
-  const int multiRefIdx         = (area.compID == COMPONENT_Y) ? cu.firstPU->multiRefIdx : 0;
+  const int multiRefIdx = (area.compID == COMPONENT_Y) ? cu.firstPU->multiRefIdx : 0;
 
-  const int  tuWidth            = area.width;
-  const int  tuHeight           = area.height;
-  const int  predSize           = m_topRefLength;
-  const int  predHSize          = m_leftRefLength;
+  const int tuWidth    = area.width;
+  const int tuHeight   = area.height;
+  const int predSize   = m_topRefLength;
+  const int predHSize  = m_leftRefLength;
   const int predStride = predSize + 1 + multiRefIdx;
+
   m_refBufferStride[area.compID] = predStride;
 
-  const bool noShift            = pcv.noChroma2x2 && area.width == 4; // don't shift on the lowest level (chroma not-split)
-  const int  unitWidth          = tuWidth  <= 2 && cu.ispMode && isLuma(area.compID) ? tuWidth  : pcv.minCUWidth  >> (noShift ? 0 : getComponentScaleX(area.compID, sps.getChromaFormatIdc()));
-  const int  unitHeight         = tuHeight <= 2 && cu.ispMode && isLuma(area.compID) ? tuHeight : pcv.minCUHeight >> (noShift ? 0 : getComponentScaleY(area.compID, sps.getChromaFormatIdc()));
+  const bool noShift   = pcv.noChroma2x2 && area.width == 4;   // don't shift on the lowest level (chroma not-split)
+  const int  unitWidth = tuWidth <= 2 && cu.ispMode && isLuma(area.compID)
+                           ? tuWidth
+                           : pcv.minCUWidth >> (noShift ? 0 : getComponentScaleX(area.compID, sps.getChromaFormatIdc()));
+  const int  unitHeight =
+    tuHeight <= 2 && cu.ispMode && isLuma(area.compID)
+       ? tuHeight
+       : pcv.minCUHeight >> (noShift ? 0 : getComponentScaleY(area.compID, sps.getChromaFormatIdc()));
 
   const int  totalAboveUnits    = (predSize + (unitWidth - 1)) / unitWidth;
   const int  totalLeftUnits     = (predHSize + (unitHeight - 1)) / unitHeight;
@@ -952,14 +967,14 @@ void IntraPrediction::xFillReferenceSamples( const CPelBuf &recoBuf, Pel* refBuf
   CHECK( numAboveUnits <= 0 || numLeftUnits <= 0 || numAboveRightUnits <= 0 || numLeftBelowUnits <= 0, "Size not supported" );
 
   // ----- Step 1: analyze neighborhood -----
-  const Position posLT          = area;
-  const Position posRT          = area.topRight();
-  const Position posLB          = area.bottomLeft();
+  const Position posLT = area;
+  const Position posRT = area.topRight();
+  const Position posLB = area.bottomLeft();
 
-  bool  neighborFlags[4 * MAX_NUM_PART_IDXS_IN_CTU_WIDTH + 1];
-  int   numIntraNeighbor = 0;
+  bool neighborFlags[4 * MAX_NUM_PART_IDXS_IN_CTU_WIDTH + 1];
+  int  numIntraNeighbor = 0;
 
-  memset( neighborFlags, 0, totalUnits );
+  std::fill_n(neighborFlags, totalUnits, false);
 
   neighborFlags[totalLeftUnits] = isAboveLeftAvailable( cu, chType, posLT );
   numIntraNeighbor += neighborFlags[totalLeftUnits] ? 1 : 0;
@@ -1180,7 +1195,8 @@ void IntraPrediction::xFilterReferenceSamples(const Pel *refBufUnfiltered, Pel *
   }
   const int predSize = m_topRefLength + multiRefIdx;
   const int predHSize = m_leftRefLength + multiRefIdx;
-  const size_t predStride = m_refBufferStride[area.compID];
+
+  const ptrdiff_t predStride = m_refBufferStride[area.compID];
 
   const Pel topLeft =
     (refBufUnfiltered[0] + refBufUnfiltered[1] + refBufUnfiltered[predStride] + refBufUnfiltered[predStride + 1] + 2)
@@ -1219,13 +1235,13 @@ bool isAboveLeftAvailable(const CodingUnit &cu, const ChannelType &chType, const
   return (cs.getCURestricted(refPos, cu, chType) != nullptr);
 }
 
-int isAboveAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posLT, const uint32_t uiNumUnitsInPU, const uint32_t unitWidth, bool *bValidFlags)
+int isAboveAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posLT,
+                     const uint32_t numUnitsInPu, const uint32_t unitWidth, bool *validFlags)
 {
   const CodingStructure& cs = *cu.cs;
 
-  bool *    validFlags = bValidFlags;
   int       numIntra   = 0;
-  const int maxDx      = uiNumUnitsInPU * unitWidth;
+  const int maxDx      = numUnitsInPu * unitWidth;
 
   for (int dx = 0; dx < maxDx; dx += unitWidth)
   {
@@ -1246,13 +1262,13 @@ int isAboveAvailable(const CodingUnit &cu, const ChannelType &chType, const Posi
   return numIntra;
 }
 
-int isLeftAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posLT, const uint32_t uiNumUnitsInPU, const uint32_t unitHeight, bool *bValidFlags)
+int isLeftAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posLT, const uint32_t numUnitsInPu,
+                    const uint32_t unitHeight, bool *validFlags)
 {
   const CodingStructure& cs = *cu.cs;
 
-  bool *    validFlags = bValidFlags;
-  int       numIntra   = 0;
-  const int maxDy      = uiNumUnitsInPU * unitHeight;
+  int       numIntra = 0;
+  const int maxDy    = numUnitsInPu * unitHeight;
 
   for (int dy = 0; dy < maxDy; dy += unitHeight)
   {
@@ -1273,13 +1289,13 @@ int isLeftAvailable(const CodingUnit &cu, const ChannelType &chType, const Posit
   return numIntra;
 }
 
-int isAboveRightAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posRT, const uint32_t uiNumUnitsInPU, const uint32_t unitWidth, bool *bValidFlags )
+int isAboveRightAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posRT,
+                          const uint32_t numUnitsInPu, const uint32_t unitWidth, bool *validFlags)
 {
   const CodingStructure& cs = *cu.cs;
 
-  bool *    validFlags = bValidFlags;
-  int       numIntra   = 0;
-  const int maxDx      = uiNumUnitsInPU * unitWidth;
+  int       numIntra = 0;
+  const int maxDx    = numUnitsInPu * unitWidth;
 
   for (int dx = 0; dx < maxDx; dx += unitWidth)
   {
@@ -1300,13 +1316,13 @@ int isAboveRightAvailable(const CodingUnit &cu, const ChannelType &chType, const
   return numIntra;
 }
 
-int isBelowLeftAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posLB, const uint32_t uiNumUnitsInPU, const uint32_t unitHeight, bool *bValidFlags )
+int isBelowLeftAvailable(const CodingUnit &cu, const ChannelType &chType, const Position &posLB,
+                         const uint32_t numUnitsInPu, const uint32_t unitHeight, bool *validFlags)
 {
   const CodingStructure& cs = *cu.cs;
 
-  bool *    validFlags = bValidFlags;
-  int       numIntra   = 0;
-  const int maxDy      = uiNumUnitsInPU * unitHeight;
+  int       numIntra = 0;
+  const int maxDy    = numUnitsInPu * unitHeight;
 
   for (int dy = 0; dy < maxDy; dy += unitHeight)
   {
@@ -1350,70 +1366,76 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
   CHECK(lumaArea.width == chromaArea.width && CHROMA_444 != pu.chromaFormat, "");
   CHECK(lumaArea.height == chromaArea.height && CHROMA_444 != pu.chromaFormat && CHROMA_422 != pu.chromaFormat, "");
 
-  const SizeType uiCWidth = chromaArea.width;
-  const SizeType uiCHeight = chromaArea.height;
+  const SizeType chromaWidth  = chromaArea.width;
+  const SizeType chromaHeight = chromaArea.height;
 
-  const CPelBuf Src = pu.cs->picture->getRecoBuf( lumaArea );
-  Pel const* pRecSrc0   = Src.bufAt( 0, 0 );
-  int iRecStride        = Src.stride;
+  const CPelBuf srcBuf    = pu.cs->picture->getRecoBuf(lumaArea);
+  Pel const *   pRecSrc0  = srcBuf.bufAt(0, 0);
+  ptrdiff_t     recStride = srcBuf.stride;
+
   int logSubWidthC  = getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, pu.chromaFormat);
   int logSubHeightC = getChannelTypeScaleY(CHANNEL_TYPE_CHROMA, pu.chromaFormat);
 
-  int iRecStride2       = iRecStride << logSubHeightC;
+  ptrdiff_t recStride2 = recStride << logSubHeightC;
 
   const CodingUnit& lumaCU = isChroma( pu.chType ) ? *pu.cs->picture->cs->getCU( lumaArea.pos(), CH_L ) : *pu.cu;
   const CodingUnit&     cu = *pu.cu;
 
   const CompArea& area = isChroma( pu.chType ) ? chromaArea : lumaArea;
 
-  const uint32_t uiTuWidth  = area.width;
-  const uint32_t uiTuHeight = area.height;
+  const uint32_t tuWidth  = area.width;
+  const uint32_t tuHeight = area.height;
 
-  int iBaseUnitSize = ( 1 << MIN_CU_LOG2 );
+  const int baseUnitSize = 1 << MIN_CU_LOG2;
 
-  const int  iUnitWidth       = iBaseUnitSize >> getComponentScaleX( area.compID, area.chromaFormat );
-  const int  iUnitHeight = iBaseUnitSize >> getComponentScaleY(area.compID, area.chromaFormat);
+  const int unitWidth  = baseUnitSize >> getComponentScaleX(area.compID, area.chromaFormat);
+  const int unitHeight = baseUnitSize >> getComponentScaleY(area.compID, area.chromaFormat);
 
-  const int  iTUWidthInUnits = uiTuWidth / iUnitWidth;
-  const int  iTUHeightInUnits = uiTuHeight / iUnitHeight;
-  const int  iAboveUnits      = iTUWidthInUnits;
-  const int  iLeftUnits       = iTUHeightInUnits;
-  const int  chromaUnitWidth = iBaseUnitSize >> getComponentScaleX(COMPONENT_Cb, area.chromaFormat);
-  const int  chromaUnitHeight = iBaseUnitSize >> getComponentScaleY(COMPONENT_Cb, area.chromaFormat);
-  const int  topTemplateSampNum = 2 * uiCWidth; // for MDLM, the number of template samples is 2W or 2H.
-  const int  leftTemplateSampNum = 2 * uiCHeight;
+  const int tuWidthInUnits      = tuWidth / unitWidth;
+  const int tuHeightInUnits     = tuHeight / unitHeight;
+  const int aboveUnits          = tuWidthInUnits;
+  const int leftUnits           = tuHeightInUnits;
+  const int chromaUnitWidth     = baseUnitSize >> getComponentScaleX(COMPONENT_Cb, area.chromaFormat);
+  const int chromaUnitHeight    = baseUnitSize >> getComponentScaleY(COMPONENT_Cb, area.chromaFormat);
+  const int topTemplateSampNum  = 2 * chromaWidth;   // for MDLM, the number of template samples is 2W or 2H.
+  const int leftTemplateSampNum = 2 * chromaHeight;
   assert(m_topRefLength >= topTemplateSampNum);
   assert(m_leftRefLength >= leftTemplateSampNum);
-  const int  totalAboveUnits = (topTemplateSampNum + (chromaUnitWidth - 1)) / chromaUnitWidth;
-  const int  totalLeftUnits = (leftTemplateSampNum + (chromaUnitHeight - 1)) / chromaUnitHeight;
-  const int  totalUnits = totalLeftUnits + totalAboveUnits + 1;
-  const int  aboveRightUnits = totalAboveUnits - iAboveUnits;
-  const int  leftBelowUnits = totalLeftUnits - iLeftUnits;
+
+  const int totalAboveUnits = (topTemplateSampNum + (chromaUnitWidth - 1)) / chromaUnitWidth;
+  const int totalLeftUnits  = (leftTemplateSampNum + (chromaUnitHeight - 1)) / chromaUnitHeight;
+  const int totalUnits      = totalLeftUnits + totalAboveUnits + 1;
+  const int aboveRightUnits = totalAboveUnits - aboveUnits;
+  const int leftBelowUnits  = totalLeftUnits - leftUnits;
 
   int avaiAboveRightUnits = 0;
   int avaiLeftBelowUnits = 0;
-  bool  bNeighborFlags[4 * MAX_NUM_PART_IDXS_IN_CTU_WIDTH + 1];
-  memset(bNeighborFlags, 0, totalUnits);
+  bool neighborFlags[4 * MAX_NUM_PART_IDXS_IN_CTU_WIDTH + 1];
+  std::fill_n(neighborFlags, totalUnits, false);
   bool aboveIsAvailable, leftIsAvailable;
 
-  int availlableUnit = isLeftAvailable(isChroma(pu.chType) ? cu : lumaCU, toChannelType(area.compID), area.pos(),
-                                       iLeftUnits, iUnitHeight, (bNeighborFlags + iLeftUnits + leftBelowUnits - 1));
+  int availableUnit = isLeftAvailable(isChroma(pu.chType) ? cu : lumaCU, toChannelType(area.compID), area.pos(),
+                                      leftUnits, unitHeight, (neighborFlags + leftUnits + leftBelowUnits - 1));
 
-  leftIsAvailable = availlableUnit == iTUHeightInUnits;
+  leftIsAvailable = availableUnit == tuHeightInUnits;
 
-  availlableUnit = isAboveAvailable(isChroma(pu.chType) ? cu : lumaCU, toChannelType(area.compID), area.pos(),
-                                    iAboveUnits, iUnitWidth, (bNeighborFlags + iLeftUnits + leftBelowUnits + 1));
+  availableUnit = isAboveAvailable(isChroma(pu.chType) ? cu : lumaCU, toChannelType(area.compID), area.pos(),
+                                   aboveUnits, unitWidth, (neighborFlags + leftUnits + leftBelowUnits + 1));
 
-  aboveIsAvailable = availlableUnit == iTUWidthInUnits;
+  aboveIsAvailable = availableUnit == tuWidthInUnits;
 
   if (leftIsAvailable)   // if left is not available, then the below left is not available
   {
-    avaiLeftBelowUnits = isBelowLeftAvailable(isChroma(pu.chType) ? cu : lumaCU, toChannelType(area.compID), area.bottomLeftComp(area.compID), leftBelowUnits, iUnitHeight, (bNeighborFlags + leftBelowUnits - 1));
+    avaiLeftBelowUnits = isBelowLeftAvailable(isChroma(pu.chType) ? cu : lumaCU, toChannelType(area.compID),
+                                              area.bottomLeftComp(area.compID), leftBelowUnits, unitHeight,
+                                              (neighborFlags + leftBelowUnits - 1));
   }
 
   if (aboveIsAvailable)   // if above is not available, then  the above right is not available.
   {
-    avaiAboveRightUnits = isAboveRightAvailable(isChroma(pu.chType) ? cu : lumaCU, toChannelType(area.compID), area.topRightComp(area.compID), aboveRightUnits, iUnitWidth, (bNeighborFlags + iLeftUnits + leftBelowUnits + iAboveUnits + 1));
+    avaiAboveRightUnits = isAboveRightAvailable(isChroma(pu.chType) ? cu : lumaCU, toChannelType(area.compID),
+                                                area.topRightComp(area.compID), aboveRightUnits, unitWidth,
+                                                (neighborFlags + leftUnits + leftBelowUnits + aboveUnits + 1));
   }
 
   Pel*       pDst  = nullptr;
@@ -1426,26 +1448,26 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
     pDst = pDst0 - dstStride;
 
     int addedAboveRight = 0;
-    if ((curChromaMode == MDLM_L_IDX) || (curChromaMode == MDLM_T_IDX))
+    if (curChromaMode == MDLM_L_IDX || curChromaMode == MDLM_T_IDX)
     {
       addedAboveRight = avaiAboveRightUnits*chromaUnitWidth;
     }
-    for (int i = 0; i < uiCWidth + addedAboveRight; i++)
+    for (int i = 0; i < chromaWidth + addedAboveRight; i++)
     {
       const bool leftPadding = i == 0 && !leftIsAvailable;
       if (pu.chromaFormat == CHROMA_444)
       {
-        src     = pRecSrc0 - iRecStride;
+        src     = pRecSrc0 - recStride;
         pDst[i] = src[i];
       }
       else if (isFirstRowOfCtu)
       {
-        src     = pRecSrc0 - iRecStride;
+        src     = pRecSrc0 - recStride;
         pDst[i] = (src[2 * i] * 2 + src[2 * i - (leftPadding ? 0 : 1)] + src[2 * i + 1] + 2) >> 2;
       }
       else if (pu.chromaFormat == CHROMA_422)
       {
-        src = pRecSrc0 - iRecStride2;
+        src = pRecSrc0 - recStride2;
 
         int s = 2;
         s += src[2 * i] * 2;
@@ -1455,26 +1477,26 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
       }
       else if (pu.cs->sps->getCclmCollocatedChromaFlag())
       {
-        src = pRecSrc0 - iRecStride2;
+        src = pRecSrc0 - recStride2;
 
         int s = 4;
-        s += src[2 * i - iRecStride];
+        s += src[2 * i - recStride];
         s += src[2 * i] * 4;
         s += src[2 * i - (leftPadding ? 0 : 1)];
         s += src[2 * i + 1];
-        s += src[2 * i + iRecStride];
+        s += src[2 * i + recStride];
         pDst[i] = s >> 3;
       }
       else
       {
-        src   = pRecSrc0 - iRecStride2;
+        src   = pRecSrc0 - recStride2;
         int s = 4;
         s += src[2 * i] * 2;
         s += src[2 * i + 1];
         s += src[2 * i - (leftPadding ? 0 : 1)];
-        s += src[2 * i + iRecStride] * 2;
-        s += src[2 * i + 1 + iRecStride];
-        s += src[2 * i + iRecStride - (leftPadding ? 0 : 1)];
+        s += src[2 * i + recStride] * 2;
+        s += src[2 * i + 1 + recStride];
+        s += src[2 * i + recStride - (leftPadding ? 0 : 1)];
         pDst[i] = s >> 3;
       }
     }
@@ -1491,7 +1513,7 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
       addedLeftBelow = avaiLeftBelowUnits*chromaUnitHeight;
     }
 
-    for (int j = 0; j < uiCHeight + addedLeftBelow; j++)
+    for (int j = 0; j < chromaHeight + addedLeftBelow; j++)
     {
       if (pu.chromaFormat == CHROMA_444)
       {
@@ -1510,11 +1532,11 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
         const bool abovePadding = j == 0 && !aboveIsAvailable;
 
         int s = 4;
-        s += src[-(abovePadding ? 0 : iRecStride)];
+        s += src[-(abovePadding ? 0 : recStride)];
         s += src[0] * 4;
         s += src[-1];
         s += src[1];
-        s += src[iRecStride];
+        s += src[recStride];
         pDst[0] = s >> 3;
       }
       else
@@ -1523,21 +1545,21 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
         s += src[0] * 2;
         s += src[1];
         s += src[-1];
-        s += src[iRecStride] * 2;
-        s += src[iRecStride + 1];
-        s += src[iRecStride - 1];
+        s += src[recStride] * 2;
+        s += src[recStride + 1];
+        s += src[recStride - 1];
         pDst[0] = s >> 3;
       }
 
-      src += iRecStride2;
+      src += recStride2;
       pDst += dstStride;
     }
   }
 
   // inner part from reconstructed picture buffer
-  for( int j = 0; j < uiCHeight; j++ )
+  for (int j = 0; j < chromaHeight; j++)
   {
-    for( int i = 0; i < uiCWidth; i++ )
+    for (int i = 0; i < chromaWidth; i++)
     {
       if (pu.chromaFormat == CHROMA_444)
       {
@@ -1559,11 +1581,11 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
         const bool abovePadding = j == 0 && !aboveIsAvailable;
 
         int s = 4;
-        s += pRecSrc0[2 * i - (abovePadding ? 0 : iRecStride)];
+        s += pRecSrc0[2 * i - (abovePadding ? 0 : recStride)];
         s += pRecSrc0[2 * i] * 4;
         s += pRecSrc0[2 * i - (leftPadding ? 0 : 1)];
         s += pRecSrc0[2 * i + 1];
-        s += pRecSrc0[2 * i + iRecStride];
+        s += pRecSrc0[2 * i + recStride];
         pDst0[i] = s >> 3;
       }
       else
@@ -1575,17 +1597,18 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
         s += pRecSrc0[2 * i] * 2;
         s += pRecSrc0[2 * i + 1];
         s += pRecSrc0[2 * i - (leftPadding ? 0 : 1)];
-        s += pRecSrc0[2 * i + iRecStride] * 2;
-        s += pRecSrc0[2 * i + 1 + iRecStride];
-        s += pRecSrc0[2 * i + iRecStride - (leftPadding ? 0 : 1)];
+        s += pRecSrc0[2 * i + recStride] * 2;
+        s += pRecSrc0[2 * i + 1 + recStride];
+        s += pRecSrc0[2 * i + recStride - (leftPadding ? 0 : 1)];
         pDst0[i] = s >> 3;
       }
     }
 
     pDst0 += dstStride;
-    pRecSrc0 += iRecStride2;
+    pRecSrc0 += recStride2;
   }
 }
+
 void IntraPrediction::xGetLMParameters(const PredictionUnit &pu, const ComponentID compID, const CompArea &chromaArea,
                                        int &a, int &b, int &shift)
 {
@@ -1628,7 +1651,7 @@ void IntraPrediction::xGetLMParameters(const PredictionUnit &pu, const Component
 
   int curChromaMode = pu.intraDir[1];
   bool neighborFlags[4 * MAX_NUM_PART_IDXS_IN_CTU_WIDTH + 1];
-  memset(neighborFlags, 0, totalUnits);
+  std::fill_n(neighborFlags, totalUnits, false);
 
   bool aboveAvailable, leftAvailable;
 
@@ -1655,7 +1678,7 @@ void IntraPrediction::xGetLMParameters(const PredictionUnit &pu, const Component
   int srcStride;
 
   PelBuf temp;
-  if ((curChromaMode == MDLM_L_IDX) || (curChromaMode == MDLM_T_IDX))
+  if (curChromaMode == MDLM_L_IDX || curChromaMode == MDLM_T_IDX)
   {
     srcStride = 2 * MAX_CU_SIZE + 1;
     temp = PelBuf(m_pMdlmTemp + srcStride + 1, srcStride, Size(chromaArea));
@@ -1663,12 +1686,12 @@ void IntraPrediction::xGetLMParameters(const PredictionUnit &pu, const Component
   else
   {
     srcStride = MAX_CU_SIZE + 1;
-    temp        = PelBuf(m_piTemp + srcStride + 1, srcStride, Size(chromaArea));
+    temp      = PelBuf(m_piTemp + srcStride + 1, srcStride, Size(chromaArea));
   }
   srcColor0 = temp.bufAt(0, 0);
   curChroma0 = getPredictorPtr(compID);
 
-  unsigned internalBitDepth = sps.getBitDepth(CHANNEL_TYPE_CHROMA);
+  const int internalBitDepth = sps.getBitDepth(CHANNEL_TYPE_CHROMA);
 
   int minLuma[2] = {  MAX_INT, 0 };
   int maxLuma[2] = { -MAX_INT, 0 };
@@ -1708,9 +1731,9 @@ void IntraPrediction::xGetLMParameters(const PredictionUnit &pu, const Component
   Pel selectLumaPix[4] = { 0, 0, 0, 0 };
   Pel selectChromaPix[4] = { 0, 0, 0, 0 };
 
-  int cntT, cntL;
-  cntT = cntL = 0;
-  int cnt = 0;
+  int cntT = 0;
+  int cntL = 0;
+  int cnt  = 0;
   if (aboveAvailable)
   {
     cntT = std::min(actualTopTemplateSampNum, (1 + aboveIs4) << 1);
@@ -1870,10 +1893,10 @@ void IntraPrediction::reorderPLT(CodingStructure& cs, Partitioner& partitioner, 
 {
   CodingUnit &cu = *cs.getCU(partitioner.chType);
 
-  uint8_t        reusePLTSizetmp = 0;
-  uint8_t        pltSizetmp = 0;
-  Pel            curPLTtmp[MAX_NUM_COMPONENT][MAXPLTSIZE];
-  bool           curPLTpred[MAXPLTPREDSIZE];
+  uint8_t reusePLTSizetmp = 0;
+  uint8_t pltSizetmp      = 0;
+  Pel     curPLTtmp[MAX_NUM_COMPONENT][MAXPLTSIZE];
+  bool    curPLTpred[MAXPLTPREDSIZE];
 
   for (int idx = 0; idx < MAXPLTPREDSIZE; idx++)
   {
