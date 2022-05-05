@@ -345,6 +345,12 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIScalabilityDimensionInfo;
       xParseSEIScalabilityDimensionInfo((SEIScalabilityDimensionInfo&) *sei, payloadSize, pDecodedMessageOutputStream );
       break;
+#ifdef JVET_Z0046_Green_Metadata
+    case SEI::GREEN_METADATA:
+      sei = new SEIGreenMetadataInfo;
+      xParseSEIGreenMetadataInfo((SEIGreenMetadataInfo&) *sei,  payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     case SEI::MULTIVIEW_ACQUISITION_INFO:
       sei = new SEIMultiviewAcquisitionInfo;
       xParseSEIMultiviewAcquisitionInfo((SEIMultiviewAcquisitionInfo&) *sei, payloadSize, pDecodedMessageOutputStream );
@@ -679,6 +685,155 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
     (*decodedMessageOutputStream) << "End of scalable nesting SEI message\n";
   }
 }
+
+
+#ifdef JVET_Z0046_Green_Metadata
+void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+{
+  uint32_t code;
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  sei_read_code(pDecodedMessageOutputStream, 8, code, "green_metadata_type");
+  sei.m_greenMetadataType = code;
+  printf("GREEN MPEG Output: \n");
+  printf("Metadata Type: %i\n", sei.m_greenMetadataType);
+
+  switch (sei.m_greenMetadataType)
+  {
+  case 0:
+    sei_read_code(pDecodedMessageOutputStream, 4, code, "period_type");
+    sei.m_periodType = code;
+    sei_read_code(pDecodedMessageOutputStream, 3, code, "granularity_type");
+    sei.m_greenMetadataGranularityType = code;
+    sei_read_code(pDecodedMessageOutputStream, 1, code, "extended_representation_flag");
+    sei.m_greenMetadataExtendedRepresentation = code;
+
+    printf ("Period Type: %i\n",sei.m_periodType);
+    printf ("Granularity Type: %i\n",sei.m_greenMetadataGranularityType);
+    printf ("Extended Representation Flag Type: %i\n",sei.m_greenMetadataExtendedRepresentation);
+
+    if (sei.m_periodType == 2)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 16, code, "num_seconds");
+      sei.m_numSeconds = code;
+      printf ("Number of Seconds: %i\n",sei.m_numSeconds);
+    }
+    else if (sei.m_periodType == 3)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 16, code, "num_pictures");
+      sei.m_numPictures = code;
+      printf ("Number of Pictures: %i\n",sei.m_numPictures);
+    }
+
+    if (sei.m_greenMetadataGranularityType == 0)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_non_zero_blocks_area");
+      sei.m_greenComplexityMetrics.portionNonZeroBlocksArea = code;
+      sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_non_zero_transform_coefficients_area");
+      sei.m_greenComplexityMetrics.portionNonZeroTransformCoefficientsArea = code;
+      sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_intra_predicted_blocks_area");
+      sei.m_greenComplexityMetrics.portionIntraPredictedBlocksArea = code;
+      sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_deblocking_instances");
+      sei.m_greenComplexityMetrics.portionDeblockingInstances = code;
+      sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_alf_instances");
+      sei.m_greenComplexityMetrics.portionAlfInstances = code;
+
+      printf ("Portion Non Zero Blocks Area: %i\n",sei.m_greenComplexityMetrics.portionNonZeroBlocksArea);
+      printf ("Portion Non Zero Transform Coefficients Area: %i\n",sei.m_greenComplexityMetrics.portionNonZeroTransformCoefficientsArea);
+      printf ("Portion Intra Predicted Blocks Area: %i\n",sei.m_greenComplexityMetrics.portionIntraPredictedBlocksArea);
+      printf ("Portion Deblocking Instances: %i\n",sei.m_greenComplexityMetrics.portionDeblockingInstances);
+      printf ("Portion ALF Instances: %i\n",sei.m_greenComplexityMetrics.portionAlfInstances);
+
+      if(sei.m_greenMetadataExtendedRepresentation == 1)
+      {
+        if(sei.m_greenComplexityMetrics.portionNonZeroBlocksArea != 0)
+        {
+          sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_non_zero_4_8_16_blocks_area");
+          sei.m_greenComplexityMetrics.portionNonZero_4_8_16BlocksArea = code;
+          sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_non_zero_32_64_128_blocks_area");
+          sei.m_greenComplexityMetrics.portionNonZero_32_64_128BlocksArea = code;
+          sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_non_zero_256_512_1024_blocks_area");
+          sei.m_greenComplexityMetrics.portionNonZero_256_512_1024BlocksArea = code;
+          sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_non_zero_2048_4096_blocks_area");
+          sei.m_greenComplexityMetrics.portionNonZero_2048_4096BlocksArea = code;
+          printf ("Portion Non Zero 4/8/16 Blocks Area: %i\n",sei.m_greenComplexityMetrics.portionNonZero_4_8_16BlocksArea);
+          printf ("Portion Non Zero 32/64/128 Blocks Area: %i\n",sei.m_greenComplexityMetrics.portionNonZero_32_64_128BlocksArea);
+          printf ("Portion Non Zero 256/512/1024 Blocks Area: %i\n",sei.m_greenComplexityMetrics.portionNonZero_256_512_1024BlocksArea);
+          printf ("Portion Non Zero 2048/4096 Blocks Area: %i\n",sei.m_greenComplexityMetrics.portionNonZero_2048_4096BlocksArea);
+        }
+
+        if(sei.m_greenComplexityMetrics.portionIntraPredictedBlocksArea < 255)
+        {
+          sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_bi_and_gpm_predicted_blocks_area");
+          sei.m_greenComplexityMetrics.portionBiAndGpmPredictedBlocksArea = code;
+          sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_bdof_blocks_area");
+          sei.m_greenComplexityMetrics.portionBdofBlocksArea = code;
+          printf ("Portion BI and GPM Predicted Blocks Area: %i\n",sei.m_greenComplexityMetrics.portionBiAndGpmPredictedBlocksArea);
+          printf ("Portion BDOF Blocks Area: %i\n",sei.m_greenComplexityMetrics.portionBdofBlocksArea);
+        }
+
+        sei_read_code(pDecodedMessageOutputStream, 8, code, "portion_sao_instances");
+        sei.m_greenComplexityMetrics.portionSaoInstances = code;
+        printf ("Portion SAO Instances: %i\n",sei.m_greenComplexityMetrics.portionSaoInstances);
+      }
+    }
+    break;
+  case 1:
+    sei_read_code(pDecodedMessageOutputStream, 16, code, "xsd_subpic_number_minus1");
+    sei.m_xsdSubpicNumberMinus1 = code;
+    printf("XSD Subpic Number of Metrics: %i\n", sei.m_xsdSubpicNumberMinus1 + 1);
+
+    int xsdSubpicIdc;
+    int xsdMetricNumberMinus1;
+
+    for (int i = 0; i <= sei.m_xsdSubpicNumberMinus1; i++)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 16, code, "xsd_subpic_idc[i]");
+      xsdSubpicIdc = code;
+      printf("XSD Subpic Idc[i]: %i\n", xsdSubpicIdc);
+
+      sei_read_code(pDecodedMessageOutputStream, 8, code, "xsd_metric_number_minus1[i]");
+      xsdMetricNumberMinus1 = code;
+      printf("XSD Metric Number Minus1[i]: %i\n", xsdMetricNumberMinus1);
+
+      int xsdMetricType;
+      int xsdMetricValue;
+      for (int j = 0; j <= xsdMetricNumberMinus1; j++)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 8, code, "xsd_metric_type[i][j]");
+        xsdMetricType = code;
+
+        sei_read_code(pDecodedMessageOutputStream, 16, code, "xsd_metric_value[i][j]");
+        xsdMetricValue = code;
+
+        switch (xsdMetricType)
+        {
+        case 0: //PSNR
+          sei.m_xsdMetricValuePSNR = code;
+          printf("PSNR value: %0.2f\n", (double(xsdMetricValue)/100.0));
+          break;
+        case 1: //SSIM
+          sei.m_xsdMetricValueSSIM = code;
+          printf("SSIM value: %0.2f\n", double(xsdMetricValue/100.0));
+          break;
+        case 2:  //W-PSNR
+          sei.m_xsdMetricValueWPSNR = code;
+          printf("W-PSNR value: %0.2f\n", double(xsdMetricValue/100.0));
+          break;
+        case 3: //WS-PSNR
+          sei.m_xsdMetricValueWSPSNR = code;
+          printf("WS-PSNR value: %0.2f\n", double(xsdMetricValue/100.0));
+          break;
+        default: //User Defined
+          break;
+        }
+      }
+    }
+    break;
+  }
+}
+
+#endif
+
 
 void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD &hrd, std::ostream* decodedMessageOutputStream, std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>> *seiList)
 {

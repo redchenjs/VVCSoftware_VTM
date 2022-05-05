@@ -55,6 +55,7 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 #define JVET_Z0111_ADAPT_BYPASS_AFFINE_ME                 1 // JVET-Z0111 
+#define JVET_Z0046_Green_Metadata                         1 // JVET-Z0046
 
 //########### place macros to be be kept below this line ###############
 #define JVET_X0143_ALF_APS_ID_OFFSET                      0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.
@@ -983,6 +984,33 @@ struct SEIMasteringDisplay
   uint16_t    primaries[3][2];
   uint16_t    whitePoint[2];
 };
+
+#ifdef JVET_Z0046_Green_Metadata
+struct SEIQualityMetrics
+{
+  double psnr = 0;
+  double ssim = 0;
+  double wpsnr = 0;
+  double wspsnr = 0;
+};
+
+struct SEIComplexityMetrics
+{
+  uint32_t portionNonZeroBlocksArea = 0;
+  uint32_t portionNonZero_4_8_16BlocksArea = 0;
+  uint32_t portionNonZero_32_64_128BlocksArea = 0;
+  uint32_t portionNonZero_256_512_1024BlocksArea = 0;
+  uint32_t portionNonZero_2048_4096BlocksArea = 0;
+  uint32_t portionNonZeroTransformCoefficientsArea = 0;
+  uint32_t portionIntraPredictedBlocksArea = 0;
+  uint32_t portionBdofBlocksArea = 0;
+  uint32_t portionBiAndGpmPredictedBlocksArea = 0;
+  uint32_t portionDeblockingInstances = 0;
+  uint32_t portionSaoInstances = 0;
+  uint32_t portionAlfInstances = 0;
+};
+#endif
+
 
 #if SHARP_LUMA_DELTA_QP
 struct LumaLevelToDeltaQPMapping
