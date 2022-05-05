@@ -473,7 +473,6 @@ protected:
 #else
   bool      m_DeblockingFilterMetric;                         ///< blockiness metric in encoder
 #endif
-  bool      m_enableIntraReferenceSmoothing;                  ///< flag for enabling(default)/disabling intra reference smoothing/filtering
 
   // coding tools (encoder-only parameters)
   bool      m_bUseASR;                                        ///< flag for using adaptive motion search range
