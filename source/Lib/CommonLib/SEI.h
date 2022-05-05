@@ -681,6 +681,39 @@ public:
   virtual ~SEIGreenMetadata() {}
 };
 
+
+#ifdef JVET_Z0046_Green_Metadata
+class SEIGreenMetadataInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return GREEN_METADATA; }
+  SEIGreenMetadataInfo() {}
+
+  virtual ~SEIGreenMetadataInfo() {}
+  int m_greenMetadataType =-1;
+  // Metrics for quality recovery after low-power encoding
+  int m_xsdSubpicNumberMinus1 = -1; //xsd_metric_number_minus1 plus 1 indicates the number of objective quality metrics contained in the SEI message.
+
+  int     m_xsdMetricValuePSNR;
+  int     m_xsdMetricValueSSIM;
+  int     m_xsdMetricValueWPSNR;
+  int    m_xsdMetricValueWSPSNR;
+
+  bool     m_xsdMetricTypePSNR;
+  bool     m_xsdMetricTypeSSIM;
+  bool     m_xsdMetricTypeWPSNR;
+  bool     m_xsdMetricTypeWSPSNR;
+
+  int      m_greenMetadataGranularityType = 0;
+  int      m_greenMetadataExtendedRepresentation = 0;
+  int m_periodType= -1;
+  int m_numPictures= -1;
+  int m_numSeconds = -1;
+  SEIComplexityMetrics m_greenComplexityMetrics;
+};
+#endif
+
+
 class SEIParameterSetsInclusionIndication : public SEI
 {
 public:
