@@ -143,6 +143,10 @@ void InterPrediction::destroy()
   xFree(m_gradY0);   m_gradY0 = nullptr;
   xFree(m_gradX1);   m_gradX1 = nullptr;
   xFree(m_gradY1);   m_gradY1 = nullptr;
+
+  xFree(m_filteredBlockTmpRPR);
+  m_filteredBlockTmpRPR = nullptr;
+
   xFree(m_cYuvPredTempDMVRL0);
   m_cYuvPredTempDMVRL0 = nullptr;
   xFree(m_cYuvPredTempDMVRL1);
@@ -206,6 +210,8 @@ void InterPrediction::init( RdCost* pcRdCost, ChromaFormat chromaFormatIDC, cons
     m_gradY0 = (Pel*)xMalloc(Pel, BIO_TEMP_BUFFER_SIZE);
     m_gradX1 = (Pel*)xMalloc(Pel, BIO_TEMP_BUFFER_SIZE);
     m_gradY1 = (Pel*)xMalloc(Pel, BIO_TEMP_BUFFER_SIZE);
+
+    m_filteredBlockTmpRPR = (Pel *) xMalloc(Pel, TMP_RPR_WIDTH * TMP_RPR_HEIGHT);
   }
 
   if (m_cYuvPredTempDMVRL0 == nullptr && m_cYuvPredTempDMVRL1 == nullptr)
@@ -2489,9 +2495,9 @@ bool InterPrediction::xPredInterBlkRPR( const std::pair<int, int>& scalingRatio,
     int refHeight = ((((int32_t)y0Int + (height-1) * stepY) + offY ) >> posShift) - ((((int32_t)y0Int + 0 * stepY) + offY ) >> posShift) + 1;
     refHeight = std::max<int>( 1, refHeight );
 
-    CHECK( MAX_CU_SIZE * MAX_SCALING_RATIO + 16 < refHeight + vFilterSize - 1 + extSize, "Buffer is not large enough, increase MAX_SCALING_RATIO" );
+    CHECK(TMP_RPR_HEIGHT < refHeight + vFilterSize - 1 + extSize,
+          "Buffer is not large enough, increase MAX_SCALING_RATIO");
 
-    Pel buffer[( MAX_CU_SIZE + 16 ) * ( MAX_CU_SIZE * MAX_SCALING_RATIO + 16 )];
     int tmpStride = width;
     int xInt = 0, yInt = 0;
 
@@ -2506,7 +2512,8 @@ bool InterPrediction::xPredInterBlkRPR( const std::pair<int, int>& scalingRatio,
 
       Position offset = Position( xInt, yInt0 );
       refBuf = refPic->getRecoBuf( CompArea( compID, chFmt, offset, Size( 1, refHeight ) ), wrapRef );
-      Pel* tempBuf = buffer + col;
+
+      Pel *const tempBuf = m_filteredBlockTmpRPR + col;
 
       m_if.filterHor(compID, (Pel *) refBuf.buf - ((vFilterSize >> 1) - 1) * refBuf.stride, refBuf.stride, tempBuf,
                      tmpStride, 1, refHeight + vFilterSize - 1 + extSize, xFrac, false, clpRng, xFilter, false,
@@ -2522,7 +2529,7 @@ bool InterPrediction::xPredInterBlkRPR( const std::pair<int, int>& scalingRatio,
 
       CHECK( yInt0 > yInt, "Wrong vertical starting point" );
 
-      Pel* tempBuf = buffer + ( yInt - yInt0 ) * tmpStride;
+      const Pel *const tempBuf = m_filteredBlockTmpRPR + (yInt - yInt0) * tmpStride;
 
       JVET_J0090_SET_CACHE_ENABLE( false );
       m_if.filterVer(compID, tempBuf + ((vFilterSize >> 1) - 1) * tmpStride, tmpStride, dst + row * dstStride,

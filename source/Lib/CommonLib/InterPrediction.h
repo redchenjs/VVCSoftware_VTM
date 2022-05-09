@@ -73,6 +73,10 @@ protected:
   Pel*                 m_filteredBlock        [LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS_SIGNAL][LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS_SIGNAL][MAX_NUM_COMPONENT];
   Pel*                 m_filteredBlockTmp     [LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS_SIGNAL][MAX_NUM_COMPONENT];
 
+  static constexpr int TMP_RPR_WIDTH  = MAX_CU_SIZE + 16;
+  static constexpr int TMP_RPR_HEIGHT = MAX_CU_SIZE * MAX_SCALING_RATIO + 16;
+
+  Pel *m_filteredBlockTmpRPR;
 
   ChromaFormat         m_currChromaFormat;
 
