@@ -3310,16 +3310,14 @@ void CABACReader::residual_coding_subblock( CoeffCodingContext& cctx, TCoeff* co
   firstPosMode2 = nextSigPos;
   cctx.regBinLimit = remRegBins;
 
-
   //===== 2nd PASS: Go-rice codes =====
-  unsigned ricePar = 0;
   for( int scanPos = firstSigPos; scanPos > firstPosMode2; scanPos-- )
   {
-    ricePar = (cctx.*(cctx.deriveRiceRRC))(scanPos, coeff, baseLevel);
-
     TCoeff& tcoeff = coeff[ cctx.blockPos( scanPos ) ];
     if( tcoeff >= 4 )
     {
+      const unsigned ricePar = (cctx.*(cctx.deriveRiceRRC))(scanPos, coeff, baseLevel);
+
       RExt__DECODER_DEBUG_BIT_STATISTICS_SET( ctype_escs );
       int rem = m_binDecoder.decodeRemAbsEP(ricePar, COEF_REMAIN_BIN_REDUCTION, cctx.maxLog2TrDRange());
       DTRACE( g_trace_ctx, D_SYNTAX_RESI, "rem_val() bin=%d ctx=%d\n", rem, ricePar );
@@ -3411,7 +3409,7 @@ void CABACReader::residual_codingTS( TransformUnit& tu, ComponentID compID )
   }
 }
 
-void CABACReader::residual_coding_subblockTS( CoeffCodingContext& cctx, TCoeff* coeff, int riceParam)
+void CABACReader::residual_coding_subblockTS(CoeffCodingContext &cctx, TCoeff *coeff, const int riceParam)
 {
   // NOTE: All coefficients of the subblock must be set to zero before calling this function
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
