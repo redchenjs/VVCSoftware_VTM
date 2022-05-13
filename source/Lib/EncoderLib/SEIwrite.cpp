@@ -157,6 +157,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &h
   case SEI::CONSTRAINED_RASL_ENCODING:
     xWriteSEIConstrainedRaslIndication(*static_cast<const SEIConstrainedRaslIndication*>(&sei));
     break;
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  case SEI::SHUTTER_INTERVAL_INFO:
+    xWriteSEIShutterInterval(*static_cast<const SEIShutterIntervalInfo*>(&sei));
+    break;
+#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -1352,6 +1357,26 @@ void SEIWriter::xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei)
     }
   }
 }
+
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
+{
+  WRITE_CODE(sei.m_siiTimeScale, 32, "sii_time_scale");
+  WRITE_FLAG(sei.m_siiFixedSIwithinCLVS, "fixed_shutter_interval_within_clvs_flag");
+  if (sei.m_siiFixedSIwithinCLVS)
+  {
+    WRITE_CODE(sei.m_siiNumUnitsInShutterInterval, 32, "sii_num_units_in_shutter_interval");
+  }
+  else
+  {
+    WRITE_CODE(sei.m_siiMaxSubLayersMinus1, 3, "sii_max_sub_layers_minus1");
+    for (unsigned i = 0; i <= sei.m_siiMaxSubLayersMinus1; i++)
+    {
+      WRITE_CODE(sei.m_siiSubLayerNumUnitsInSI[i], 32, "sub_layer_num_units_in_shutter_interval[ i ]");
+    }
+  }
+}
+#endif
 
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)
 {

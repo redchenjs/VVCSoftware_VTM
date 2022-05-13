@@ -138,6 +138,12 @@ uint32_t DecApp::decode()
 
   bool bPicSkipped = false;
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool openedPostFile = false;
+  setShutterFilterFlag(!m_shutterIntervalPostFileName.empty());   // not apply shutter interval SEI processing if filename is not specified.
+  m_cDecLib.setShutterFilterFlag(getShutterFilterFlag());
+#endif
+
   bool isEosPresentInPu = false;
   bool isEosPresentInLastPu = false;
 
@@ -515,6 +521,177 @@ uint32_t DecApp::decode()
       {
         xOutputAnnotatedRegions(pcListPic);
       }
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+      PicList::iterator iterPic = pcListPic->begin();
+      Picture* pcPic = *(iterPic);
+      SEIMessages shutterIntervalInfo = getSeisByType(pcPic->SEIs, SEI::SHUTTER_INTERVAL_INFO);
+
+      if (!m_shutterIntervalPostFileName.empty())
+      {
+        int32_t hasValidSII = 1;
+        SEIShutterIntervalInfo *curSIIInfo = NULL;
+        if ((pcPic->getPictureType() == NAL_UNIT_CODED_SLICE_IDR_W_RADL ||
+          pcPic->getPictureType() == NAL_UNIT_CODED_SLICE_IDR_N_LP) && m_newCLVS[nalu.m_nuhLayerId])
+        {
+          IdrSiiInfo_s curSII;
+          curSII.m_picPoc = pcPic->getPOC();
+
+          curSII.m_isValidSii = 0;
+          curSII.m_siiInfo.m_siiEnabled = 0;
+          curSII.m_siiInfo.m_siiNumUnitsInShutterInterval = 0;
+          curSII.m_siiInfo.m_siiTimeScale = 0;
+          curSII.m_siiInfo.m_siiMaxSubLayersMinus1 = 0;
+          curSII.m_siiInfo.m_siiFixedSIwithinCLVS = 0;
+
+          if (shutterIntervalInfo.size() > 0) 
+          {
+            SEIShutterIntervalInfo *seiShutterIntervalInfo = (SEIShutterIntervalInfo*) *(shutterIntervalInfo.begin());
+            curSII.m_isValidSii = 1;
+
+            curSII.m_siiInfo.m_siiEnabled = seiShutterIntervalInfo->m_siiEnabled;
+            curSII.m_siiInfo.m_siiNumUnitsInShutterInterval = seiShutterIntervalInfo->m_siiNumUnitsInShutterInterval;
+            curSII.m_siiInfo.m_siiTimeScale = seiShutterIntervalInfo->m_siiTimeScale;
+            curSII.m_siiInfo.m_siiMaxSubLayersMinus1 = seiShutterIntervalInfo->m_siiMaxSubLayersMinus1;
+            curSII.m_siiInfo.m_siiFixedSIwithinCLVS = seiShutterIntervalInfo->m_siiFixedSIwithinCLVS;
+            curSII.m_siiInfo.m_siiSubLayerNumUnitsInSI.clear();
+            for (int i = 0; i < seiShutterIntervalInfo->m_siiSubLayerNumUnitsInSI.size(); i++)
+              curSII.m_siiInfo.m_siiSubLayerNumUnitsInSI.push_back(seiShutterIntervalInfo->m_siiSubLayerNumUnitsInSI[i]);
+
+            uint32_t tmpInfo = (uint32_t)(m_activeSiiInfo.size() + 1);
+            m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo_s>(tmpInfo, curSII));
+            curSIIInfo = seiShutterIntervalInfo;
+          }
+          else 
+          {
+            curSII.m_isValidSii = 0;
+            hasValidSII = 0;
+            uint32_t tmpInfo = (uint32_t)(m_activeSiiInfo.size() + 1);
+            m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo_s>(tmpInfo, curSII));
+          }
+        }
+        else 
+        {
+          if (m_activeSiiInfo.size() == 1) 
+          {
+            curSIIInfo = &(m_activeSiiInfo.begin()->second.m_siiInfo);
+          }
+          else 
+          {
+            uint8_t isLast = 1;
+            for (int i = 1; i < m_activeSiiInfo.size() + 1; i++) 
+            {
+              if (pcPic->getPOC() <= m_activeSiiInfo.at(i).m_picPoc) 
+              {
+                if (m_activeSiiInfo[i - 1].m_isValidSii) 
+                {
+                  curSIIInfo = &(m_activeSiiInfo.at(i - 1).m_siiInfo);
+                }
+                else 
+                {
+                  hasValidSII = 0;
+                }
+                isLast = 0;
+                break;
+              }
+            }
+            if (isLast) 
+            {
+              uint32_t tmpInfo = (uint32_t)(m_activeSiiInfo.size());
+              curSIIInfo = &(m_activeSiiInfo.at(tmpInfo).m_siiInfo);
+            }
+          }
+        }
+
+        if (hasValidSII)
+        {
+          if (!curSIIInfo->m_siiFixedSIwithinCLVS)
+          {
+            uint32_t siiMaxSubLayersMinus1 = curSIIInfo->m_siiMaxSubLayersMinus1;
+            uint32_t numUnitsLFR = curSIIInfo->m_siiSubLayerNumUnitsInSI[0];
+            uint32_t numUnitsHFR = curSIIInfo->m_siiSubLayerNumUnitsInSI[siiMaxSubLayersMinus1];
+
+            int blending_ratio = (numUnitsLFR / numUnitsHFR);
+            bool checkEqualValuesOfSFR = 1;
+            bool checkSubLayerSI = 0;
+            int i;
+
+            //supports only the case of SFR = HFR / 2
+            if (curSIIInfo->m_siiSubLayerNumUnitsInSI[siiMaxSubLayersMinus1] <
+                        curSIIInfo->m_siiSubLayerNumUnitsInSI[siiMaxSubLayersMinus1 - 1])
+            {
+              checkSubLayerSI = 1;
+            }
+            else
+            {
+              fprintf(stderr, "Warning: Shutter Interval SEI message processing is disabled due to SFR != (HFR / 2) \n");
+            }
+            //check shutter interval for all sublayer remains same for SFR pictures
+            for (i = 1; i < siiMaxSubLayersMinus1; i++)
+            {
+              if (curSIIInfo->m_siiSubLayerNumUnitsInSI[0] != curSIIInfo->m_siiSubLayerNumUnitsInSI[i])
+              {
+                checkEqualValuesOfSFR = 0;
+              }
+            }
+            if (!checkEqualValuesOfSFR)
+            {
+              fprintf(stderr, "Warning: Shutter Interval SEI message processing is disabled when shutter interval is not same for SFR sublayers \n");
+            }
+            if (checkSubLayerSI && checkEqualValuesOfSFR)
+            {
+              setShutterFilterFlag(numUnitsLFR == blending_ratio * numUnitsHFR);
+              setBlendingRatio(blending_ratio);
+            }
+            else
+            {
+              setShutterFilterFlag(false);
+            }
+
+            const SPS* activeSPS = pcListPic->front()->cs->sps;
+
+            if (numUnitsLFR == blending_ratio * numUnitsHFR && activeSPS->getMaxTLayers() == 1 && activeSPS->getMaxDecPicBuffering(0) == 1)
+            {
+              fprintf(stderr, "Warning: Shutter Interval SEI message processing is disabled for single TempLayer and single frame in DPB\n");
+              setShutterFilterFlag(false);
+            }
+          }
+          else
+          {
+            fprintf(stderr, "Warning: Shutter Interval SEI message processing is disabled for fixed shutter interval case\n");
+            setShutterFilterFlag(false);
+          }
+        }
+        else 
+        {
+          fprintf(stderr, "Warning: Shutter Interval information should be specified in SII-SEI message\n");
+          setShutterFilterFlag(false);
+        }
+      }
+
+
+      if ((!m_shutterIntervalPostFileName.empty()) && (!openedPostFile) && getShutterFilterFlag())
+      {
+        const BitDepths &bitDepths = pcListPic->front()->cs->sps->getBitDepths();
+        for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
+        {
+          if (m_outputBitDepth[channelType] == 0)
+          {
+            m_outputBitDepth[channelType] = bitDepths.recon[channelType];
+          }
+        }
+
+        std::ofstream ofile(m_shutterIntervalPostFileName.c_str());
+        if (!ofile.good() || !ofile.is_open())
+        {
+          fprintf(stderr, "\nUnable to open file '%s' for writing shutter-interval-SEI video\n", m_shutterIntervalPostFileName.c_str());
+          exit(EXIT_FAILURE);
+        }
+        m_cTVideoIOYuvSIIPostFile.open(m_shutterIntervalPostFileName, true, m_outputBitDepth, m_outputBitDepth, bitDepths.recon); // write mode
+        openedPostFile = true;
+      }
+#endif
+
       // write reconstruction to file
       if( bNewPicture )
       {
@@ -585,6 +762,13 @@ uint32_t DecApp::decode()
   CHECK(!outputPicturePresentInBitstream, "It is required that there shall be at least one picture with PictureOutputFlag equal to 1 in the bitstream")
 
   xFlushOutput( pcListPic );
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (!m_shutterIntervalPostFileName.empty() && getShutterFilterFlag())
+  {
+    m_cTVideoIOYuvSIIPostFile.close();
+  }
+#endif
 
   // get the number of checksum errors
   uint32_t nRet = m_cDecLib.getNumberOfChecksumErrorsDetected();
@@ -869,6 +1053,32 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
                                     NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
           }
         }
+
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+        if (!m_shutterIntervalPostFileName.empty() && getShutterFilterFlag())
+        {
+          int blendingRatio = getBlendingRatio();
+          pcPic->xOutputPostFilteredPic(pcPic, pcListPic, blendingRatio);
+
+          const Window &conf = pcPic->getConformanceWindow();
+          const SPS* sps = pcPic->cs->sps;
+          ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+
+          m_cTVideoIOYuvSIIPostFile.write(
+            pcPic->getPostRecBuf().get(COMPONENT_Y).width,
+            pcPic->getPostRecBuf().get(COMPONENT_Y).height,
+            pcPic->getPostRecBuf(),
+            m_outputColourSpaceConvert,
+            m_packedYUVMode,
+            conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+            conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+            conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+            conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
+            NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+        }
+#endif
+
         // Perform CTI on decoded frame and write to output CTI file
         if (!m_SEICTIFileName.empty())
         {
@@ -1043,6 +1253,30 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
                                       NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
             }
           }
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+          if (!m_shutterIntervalPostFileName.empty() && getShutterFilterFlag())
+          {
+            int blendingRatio = getBlendingRatio();
+            pcPic->xOutputPostFilteredPic(pcPic, pcListPic, blendingRatio);
+
+            const Window &conf = pcPic->getConformanceWindow();
+            const SPS* sps = pcPic->cs->sps;
+            ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+
+            m_cTVideoIOYuvSIIPostFile.write(
+              pcPic->getPostRecBuf().get(COMPONENT_Y).width,
+              pcPic->getPostRecBuf().get(COMPONENT_Y).height,
+              pcPic->getPostRecBuf(),
+              m_outputColourSpaceConvert, m_packedYUVMode,
+              conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
+              NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+          }
+#endif
+
           // Perform CTI on decoded frame and write to output CTI file
           if (!m_SEICTIFileName.empty())
           {
@@ -1075,7 +1309,11 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
         }
         pcPic->neededForOutput = false;
       }
-      if (pcPic != nullptr)
+#if JVET_Z0120_SII_SEI_PROCESSING
+      if (pcPic != nullptr && (m_shutterIntervalPostFileName.empty() || !getShutterFilterFlag()))
+#else
+      if(pcPic != nullptr)
+#endif
       {
         pcPic->destroy();
         delete pcPic;

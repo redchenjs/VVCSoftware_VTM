@@ -90,6 +90,9 @@ public:
   void initSEIColourTransformInfo(SEIColourTransformInfo* sei);
   void readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *seiAnnoRegion, bool &failed);
   void initSEIMultiviewViewPosition(SEIMultiviewViewPosition *sei);
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  void initSEIShutterIntervalInfo(SEIShutterIntervalInfo *sei);
+#endif
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;

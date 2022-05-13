@@ -180,6 +180,10 @@ protected:
   bool      m_printMSSSIM;
   bool      m_printWPSNR;
   bool      m_cabacZeroWordPaddingEnabled;
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool      m_ShutterFilterEnable;                          ///< enable Pre-Filtering with Shutter Interval SEI
+  int       m_SII_BlendingRatio;
+#endif
 
   bool      m_gciPresentFlag;
   bool      m_onePictureOnlyConstraintFlag;
@@ -654,6 +658,14 @@ protected:
   bool      m_alternativeTransferCharacteristicsSEIEnabled;
   uint8_t     m_preferredTransferCharacteristics;
 #endif
+
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  bool                    m_siiSEIEnabled;
+  uint32_t                m_siiSEINumUnitsInShutterInterval;
+  uint32_t                m_siiSEITimeScale;
+  std::vector<uint32_t>   m_siiSEISubLayerNumUnitsInSI;
+#endif
+
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
   bool      m_fgcSEICancelFlag;
@@ -1086,6 +1098,14 @@ public:
 
   bool      getCabacZeroWordPaddingEnabled()           const { return m_cabacZeroWordPaddingEnabled;  }
   void      setCabacZeroWordPaddingEnabled(bool value)       { m_cabacZeroWordPaddingEnabled = value; }
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool      getShutterFilterFlag()              const { return m_ShutterFilterEnable; }
+  void      setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
+
+  int       getBlendingRatioSII()             const { return m_SII_BlendingRatio; }
+  void      setBlendingRatioSII(int value) { m_SII_BlendingRatio = value; }
+#endif
 
   //====== Coding Structure ========
   void      setIntraPeriod                  (int   i)        { m_intraPeriod = i;                   }
@@ -1696,6 +1716,18 @@ public:
   void  setSubpicDecodedPictureHashType(HashType m)                  { m_subpicDecodedPictureHashType = m; }
   HashType getSubpicDecodedPictureHashType() const                   { return m_subpicDecodedPictureHashType; }
 
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  void     setSiiSEIEnabled(bool b) { m_siiSEIEnabled = b; }
+  bool     getSiiSEIEnabled() { return m_siiSEIEnabled; }
+  void     setSiiSEINumUnitsInShutterInterval(uint32_t value) { m_siiSEINumUnitsInShutterInterval = value; }
+  uint32_t getSiiSEINumUnitsInShutterInterval() { return m_siiSEINumUnitsInShutterInterval; }
+  void     setSiiSEITimeScale(uint32_t value) { m_siiSEITimeScale = value; }
+  uint32_t getSiiSEITimeScale() { return m_siiSEITimeScale; }
+  uint32_t getSiiSEIMaxSubLayersMinus1() { return uint32_t(std::max(1u, uint32_t(m_siiSEISubLayerNumUnitsInSI.size())) - 1); }
+  bool     getSiiSEIFixedSIwithinCLVS() { return m_siiSEISubLayerNumUnitsInSI.empty(); }
+  void     setSiiSEISubLayerNumUnitsInSI(const std::vector<uint32_t>& b) { m_siiSEISubLayerNumUnitsInSI = b; }
+  uint32_t getSiiSEISubLayerNumUnitsInSI(uint32_t idx) const { return m_siiSEISubLayerNumUnitsInSI[idx]; }
+#endif
   void  setBufferingPeriodSEIEnabled(bool b)                         { m_bufferingPeriodSEIEnabled = b; }
   bool  getBufferingPeriodSEIEnabled() const                         { return m_bufferingPeriodSEIEnabled; }
   void  setPictureTimingSEIEnabled(bool b)                           { m_pictureTimingSEIEnabled = b; }

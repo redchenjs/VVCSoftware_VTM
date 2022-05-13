@@ -40,6 +40,8 @@
 
 #include "CommonLib/CommonDef.h"
 #include "EncoderLib/EncCfgParam.h"
+#include "CommonLib/Picture.h"
+#include "EncCfg.h"
 
 #include <map>
 template <class T1, class T2>
@@ -804,6 +806,19 @@ protected:
   bool      m_videoFullRangeFlag;                             ///< Indicates the black level and range of luma and chroma signals
   int       m_ImvMode;                                        ///< imv mode
   int       m_Imv4PelFast;                                    ///< imv 4-Pel fast mode
+
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  bool      m_siiSEIEnabled;
+  uint32_t  m_siiSEINumUnitsInShutterInterval;
+  uint32_t  m_siiSEITimeScale;
+  std::vector<uint32_t>     m_siiSEISubLayerNumUnitsInSI;
+#endif
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool        m_ShutterFilterEnable;                          ///< enable Pre-Filtering with Shutter Interval SEI
+  std::string m_shutterIntervalPreFileName;                   ///< output Pre-Filtering video
+  int         m_SII_BlendingRatio;
+  void        setBlendingRatioSII(int value) { m_SII_BlendingRatio = value; }
+#endif
 
   std::string m_summaryOutFilename;                           ///< filename to use for producing summary output file.
   std::string m_summaryPicFilenameBase;                       ///< Base filename to use for producing summary picture output files. The actual filenames used will have I.txt, P.txt and B.txt appended.

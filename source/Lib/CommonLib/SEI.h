@@ -91,6 +91,9 @@ public:
     EXTENDED_DRAP_INDICATION             = 206,
     CONSTRAINED_RASL_ENCODING            = 207,
     VDI_SEI_ENVELOPE             = 208,
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+    SHUTTER_INTERVAL_INFO                = 209,
+#endif
   };
 
   SEI() {}
@@ -101,6 +104,22 @@ public:
   virtual PayloadType payloadType() const = 0;
 };
 
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+class SEIShutterIntervalInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return SHUTTER_INTERVAL_INFO; }
+  SEIShutterIntervalInfo() {}
+  virtual ~SEIShutterIntervalInfo() {}
+
+  bool                  m_siiEnabled;
+  unsigned              m_siiNumUnitsInShutterInterval;
+  unsigned              m_siiTimeScale;
+  unsigned              m_siiMaxSubLayersMinus1;
+  bool                  m_siiFixedSIwithinCLVS;
+  std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
+};
+#endif
 
 class SEIEquirectangularProjection : public SEI
 {

@@ -56,6 +56,7 @@
 //########### place macros to be removed in next cycle below this line ###############
 #define JVET_Z0111_ADAPT_BYPASS_AFFINE_ME                 1 // JVET-Z0111 
 #define JVET_Z0046_Green_Metadata                         1 // JVET-Z0046
+#define JVET_Z0120_SHUTTER_INTERVAL_SEI                   1 // JVET-Z0120
 
 //########### place macros to be be kept below this line ###############
 #define JVET_X0143_ALF_APS_ID_OFFSET                      0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.
@@ -102,6 +103,12 @@ typedef std::pair<int, int>  TrCost;
 #define JVET_O0756_CONFIG_HDRMETRICS                      1
 #if EXTENSION_HDRTOOLS
 #define JVET_O0756_CALCULATE_HDRMETRICS                   1
+#endif
+
+#define JVET_Z0120_SII_SEI_PROCESSING                     1 // This is an example illustration of using SII SEI messages for backwards-compatible HFR video
+#if JVET_Z0120_SII_SEI_PROCESSING
+#define DISABLE_PRE_POST_FILTER_FOR_IDR_CRA               1
+#define ENABLE_USER_DEFINED_WEIGHTS                       0 // User can specify weights for both current and previous picture, such that their sum = 1
 #endif
 
 // clang-format on

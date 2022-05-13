@@ -1112,6 +1112,10 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setDriSEIDisparityRefViewId                          (m_driSEIDisparityRefViewId);
   m_cEncLib.setDriSEINonlinearNumMinus1                          (m_driSEINonlinearNumMinus1);
   m_cEncLib.setDriSEINonlinearModel                              (m_driSEINonlinearModel);
+#if JVET_Z0120_SII_SEI_PROCESSING
+  m_cEncLib.setShutterFilterFlag(m_ShutterFilterEnable);
+  m_cEncLib.setBlendingRatioSII(m_SII_BlendingRatio);
+#endif
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );
   m_cEncLib.setEntryPointPresentFlag                             ( m_entryPointPresentFlag );
   m_cEncLib.setTMVPModeId                                        ( m_TMVPModeId );
@@ -1153,6 +1157,12 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setTSRCdisableLL                                     ( m_TSRCdisableLL );
   m_cEncLib.setUseRecalculateQPAccordingToLambda                 ( m_recalculateQPAccordingToLambda );
   m_cEncLib.setDCIEnabled                                        ( m_DCIEnabled );
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  m_cEncLib.setSiiSEIEnabled(m_siiSEIEnabled);
+  m_cEncLib.setSiiSEINumUnitsInShutterInterval(m_siiSEINumUnitsInShutterInterval);
+  m_cEncLib.setSiiSEITimeScale(m_siiSEITimeScale);
+  m_cEncLib.setSiiSEISubLayerNumUnitsInSI(m_siiSEISubLayerNumUnitsInSI);
+#endif
   m_cEncLib.setVuiParametersPresentFlag                          ( m_vuiParametersPresentFlag );
   m_cEncLib.setSamePicTimingInAllOLS                             (m_samePicTimingInAllOLS);
   m_cEncLib.setAspectRatioInfoPresentFlag                        ( m_aspectRatioInfoPresentFlag);
@@ -1286,6 +1296,12 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
     m_cVideoIOYuvReconFile.open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, m_internalBitDepth );  // write mode
   }
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (m_ShutterFilterEnable && !m_shutterIntervalPreFileName.empty())
+  {
+    m_cTVideoIOYuvSIIPreFile.open(m_shutterIntervalPreFileName, true, m_outputBitDepth, m_outputBitDepth, m_internalBitDepth);  // write mode
+  }
+#endif
   // create the encoder
   m_cEncLib.create( layerId );
 
@@ -1301,6 +1317,12 @@ void EncApp::xDestroyLib()
   // Video I/O
   m_cVideoIOYuvInputFile.close();
   m_cVideoIOYuvReconFile.close();
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (m_ShutterFilterEnable && !m_shutterIntervalPreFileName.empty())
+  {
+    m_cTVideoIOYuvSIIPreFile.close();
+  }
+#endif
 
   // Neo Decoder
   m_cEncLib.destroy();
@@ -1504,6 +1526,14 @@ bool EncApp::encodePrep( bool& eos )
   {
     keepDoing = m_cEncLib.encodePrep( eos, m_flush ? 0 : m_orgPic, m_flush ? 0 : m_trueOrgPic, m_flush ? 0 : m_filteredOrgPic, m_flush ? 0 : m_filteredOrgPicForFG, snrCSC, m_recBufList, m_numEncoded );
   }
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (m_ShutterFilterEnable && !m_shutterIntervalPreFileName.empty())
+  {
+    m_cTVideoIOYuvSIIPreFile.write(m_orgPic->get(COMPONENT_Y).width, m_orgPic->get(COMPONENT_Y).height, *m_orgPic, m_inputColourSpaceConvert, m_packedYUVMode,
+      m_confWinLeft, m_confWinRight, m_confWinTop, m_confWinBottom, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+  }
+#endif
 
   return keepDoing;
 }

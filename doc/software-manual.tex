@@ -3730,6 +3730,7 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   204 & Sample Aspect Ratio Information          & Table \ref{tab:sei-sari} \\  
   205 & Scalability Dimension Information        & Table \ref{tab:sei-sdi} \\
   207 & Constrained RASL encoding                & Table \ref{tab:sei-constrained-rasl-encoding} \\
+  209 & Shutter Interval Information             & Table \ref{tab:sei-sii} \\
 \end{SEIListTable}
 %%
 %% SEI messages
@@ -5307,6 +5308,20 @@ When true (non-zero), the SEI enables several restrictions for encoding RASL fra
 \\
 \end{OptionTableNoShorthand}
 
+\begin{OptionTableNoShorthand}{Shutter Interval Information SEI message encoder parameters}{tab:sei-sii}
+\Option{SEIShutterIntervalEnabled} &
+\Default{false} &
+Enables (true) or disables (false) the insertion of Shutter Interval Information SEI message.
+\\
+\Option{SEISiiTimeScale} &
+\Default{27000000} &
+Specifies sii_time_scale.
+\\
+\Option{SEISiiInputNumUnitsInShutterInterval} &
+\Default{false} &
+Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries, the values are set to sub_layer_num_units_in_shutter_interval[ ] corresponding to each temporal sub layer starting from temporal layer id 0.
+\\
+\end{OptionTableNoShorthand}
 
 
 %\Option{SEITimeCode} &

@@ -81,6 +81,9 @@ protected:
   std::string   m_outputDecoded360SEIMessagesFilename;   ///< filename to output decoded 360 SEI messages to.
 #endif
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+  std::string   m_shutterIntervalPostFileName;        ///< output Post Filtering file name
+#endif
 
   bool          m_bClipOutputVideoToRec709Range;      ///< If true, clip the output video to the Rec 709 range on saving.
   bool          m_packedYUVMode;                      ///< If true, output 10-bit and 12-bit YUV data as 5-byte and 3-byte (respectively) packed YUV data
