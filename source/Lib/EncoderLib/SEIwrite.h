@@ -89,6 +89,9 @@ protected:
   void xWriteSEIContentColourVolume(const SEIContentColourVolume &sei);
   void xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei);
   void xWriteSEIAnnotatedRegions                  (const SEIAnnotatedRegions& sei);
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  void xWriteSEIShutterInterval(const SEIShutterIntervalInfo& sei);
+#endif
   void xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &hrd, const uint32_t temporalId);
   void xWriteByteAlign();
 protected:

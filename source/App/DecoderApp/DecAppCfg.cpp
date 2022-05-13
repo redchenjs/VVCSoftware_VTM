@@ -90,6 +90,9 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
   ("OutputColourSpaceConvert",  outputColourSpaceConvert,              string(""), "Colour space conversion to apply to input 444 video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(false))
   ("MaxTemporalLayer,t",        m_iMaxTemporalLayer,                   500,    "Maximum Temporal Layer to be decoded. -1 to decode all layers")
   ("TargetOutputLayerSet,p",    m_targetOlsIdx,                        500,    "Target output layer set index")
+#if JVET_Z0120_SII_SEI_PROCESSING
+  ("SEIShutterIntervalPostFilename,-sii", m_shutterIntervalPostFileName, string(""), "Post Filtering with Shutter Interval SEI. If empty, no filtering is applied (ignore SEI message)\n")
+#endif
   ("SEIDecodedPictureHash,-dph",m_decodedPictureHashSEIEnabled,        1,          "Control handling of decoded picture hash SEI messages\n"
                                                                                    "\t1: check hash in SEI messages if available in the bitstream\n"
                                                                                    "\t0: ignore SEI message")

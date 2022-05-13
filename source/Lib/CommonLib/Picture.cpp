@@ -80,7 +80,11 @@ Picture::Picture()
   m_grainBuf            = nullptr;
 }
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId, const bool enablePostFilteringForHFR, const bool gopBasedTemporalFilterEnabled, const bool fgcSEIAnalysisEnabled)
+#else
 void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId, const bool gopBasedTemporalFilterEnabled, const bool fgcSEIAnalysisEnabled )
+#endif
 {
   layerId = _layerId;
   UnitArea::operator=( UnitArea( _chromaFormat, Area( Position{ 0, 0 }, size ) ) );
@@ -88,6 +92,13 @@ void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const
   const Area a      = Area( Position(), size );
   M_BUFS( 0, PIC_RECONSTRUCTION ).create( _chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE );
   M_BUFS( 0, PIC_RECON_WRAP ).create( _chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE );
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (enablePostFilteringForHFR)
+  {
+    M_BUFS(0, PIC_YUV_POST_REC).create(_chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE);
+  }
+#endif
 
   if( !_decoder )
   {
@@ -222,6 +233,11 @@ const CPelBuf     Picture::getRecoBuf(const CompArea &blk, bool wrap)      const
 const CPelUnitBuf Picture::getRecoBuf(const UnitArea &unit, bool wrap)     const { return getBuf(unit,                      wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION); }
        PelUnitBuf Picture::getRecoBuf(bool wrap)                                 { return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION); }
 const CPelUnitBuf Picture::getRecoBuf(bool wrap)                           const { return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION); }
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+       PelUnitBuf Picture::getPostRecBuf()                           { return M_BUFS(scheduler.getSplitPicId(), PIC_YUV_POST_REC); }
+const CPelUnitBuf Picture::getPostRecBuf()                     const { return M_BUFS(scheduler.getSplitPicId(), PIC_YUV_POST_REC); }
+#endif
 
 void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHeader *picHeader, APS** alfApss, APS* lmcsAps, APS* scalingListAps )
 {
@@ -1332,3 +1348,244 @@ PelUnitBuf Picture::getDisplayBuf()
 
   return *m_invColourTransfBuf;
 }
+
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+void Picture::copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcPicYuvDst)
+{
+  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+  int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+
+  Pel *srcPxl, *dstPxl;
+  int iSrcStride, iSrcHeight, iSrcWidth;
+  int iDstStride;
+
+  for (int comp = 0; comp < numValidComponents; comp++)
+  {
+
+    if (comp == COMPONENT_Y) {
+      srcPxl = pcPicYuvSrc->Y().buf;
+      dstPxl = pcPicYuvDst->Y().buf;
+      iSrcStride = pcPicYuvSrc->Y().stride;
+      iSrcHeight = pcPicYuvSrc->Y().height;
+      iSrcWidth = pcPicYuvSrc->Y().width;
+      iDstStride = pcPicYuvSrc->Y().stride;
+    }
+    else if (comp == COMPONENT_Cb) {
+      srcPxl = pcPicYuvSrc->Cb().buf;
+      dstPxl = pcPicYuvDst->Cb().buf;
+      iSrcStride = pcPicYuvSrc->Cb().stride;
+      iSrcHeight = pcPicYuvSrc->Cb().height;
+      iSrcWidth = pcPicYuvSrc->Cb().width;
+      iDstStride = pcPicYuvSrc->Cb().stride;
+    }
+    else {
+      srcPxl = pcPicYuvSrc->Cr().buf;
+      dstPxl = pcPicYuvDst->Cr().buf;
+      iSrcStride = pcPicYuvSrc->Cr().stride;
+      iSrcHeight = pcPicYuvSrc->Cr().height;
+      iSrcWidth = pcPicYuvSrc->Cr().width;
+      iDstStride = pcPicYuvSrc->Cr().stride;
+    }
+
+    if (iSrcStride == iDstStride)
+    {
+      ::memcpy(dstPxl, srcPxl, sizeof(Pel) * iSrcStride * iSrcHeight /*getTotalHeight(compId)*/);
+    }
+    else
+    {
+      for (int y = 0; y < iSrcHeight; y++, srcPxl += iSrcStride, dstPxl += iDstStride)
+      {
+        ::memcpy(dstPxl, srcPxl, iSrcWidth * sizeof(Pel));
+      }
+    }
+  }
+}
+
+Picture* Picture::findNextPicPOC(Picture* pcPic, PicList* pcListPic)
+{
+  Picture*  nextPic = NULL;
+  Picture*  listPic = NULL;
+  PicList::iterator  iterListPic = pcListPic->begin();
+  for (int i = 0; i < (int)(pcListPic->size()); i++)
+  {
+    listPic = *(iterListPic);
+    if (listPic->getPOC() == pcPic->getPOC() + 1)
+    {
+      nextPic = *(iterListPic);
+    }
+    iterListPic++;
+  }
+  return nextPic;
+}
+
+
+Picture* Picture::findPrevPicPOC(Picture* pcPic, PicList* pcListPic)
+{
+  Picture*  prevPic = NULL;
+  Picture*  listPic = NULL;
+  PicList::iterator  iterListPic = pcListPic->begin();
+  for (int i = 0; i < (int)(pcListPic->size()); i++)
+  {
+    listPic = *(iterListPic);
+    if (listPic->getPOC() == pcPic->getPOC() - 1)
+    {
+      prevPic = *(iterListPic);
+    }
+    iterListPic++;
+  }
+  return prevPic;
+}
+
+void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio)
+{
+  const SPS *sps = pcPic->cs->sps;
+  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+
+  if ((pcPic->getPOC()) % blendingRatio != 0 || pcPic->getPOC() == 0)
+    pcPic->getPostRecBuf().copyFrom(pcPic->getRecoBuf());
+
+  if ((pcPic->getPOC() + 1) % blendingRatio == 0)
+  {
+    Picture* nextPic = findNextPicPOC(pcPic, pcListPic);
+    if (nextPic)
+    {
+#if DISABLE_PRE_POST_FILTER_FOR_IDR_CRA
+      if((nextPic->m_pictureType == NAL_UNIT_CODED_SLICE_IDR_W_RADL) ||
+        (nextPic->m_pictureType == NAL_UNIT_CODED_SLICE_IDR_N_LP) ||
+        (nextPic->m_pictureType == NAL_UNIT_CODED_SLICE_CRA))
+      {
+        nextPic->getPostRecBuf().copyFrom(nextPic->getRecoBuf());
+        return;
+      }
+#endif
+      PelUnitBuf currTmp = pcPic->getRecoBuf();
+      PelUnitBuf nextTmp = nextPic->getRecoBuf();
+      PelUnitBuf postTmp = nextPic->getPostRecBuf();
+
+      PelUnitBuf* currYuv = &currTmp;
+      PelUnitBuf* nextYuv = &nextTmp;
+      PelUnitBuf* postYuv = &postTmp;
+
+      int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+      for (int chan = 0; chan < numValidComponents; chan++)
+      {
+        const ComponentID ch = ComponentID(chan);
+        const ChannelType cType = (ch == COMPONENT_Y) ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA;
+        const int bitDepth = pcPic->cs->sps->getBitDepth(cType);
+        const int maxOutputValue = (1 << bitDepth) - 1;
+
+        Pel *currPxl, *nextPxl, *postPxl;
+        int iStride, iHeight, iWidth;
+        if (ch == COMPONENT_Y) {
+          currPxl = currYuv->Y().buf;
+          nextPxl = nextYuv->Y().buf;
+          postPxl = postYuv->Y().buf;
+          iStride = currYuv->Y().stride;
+          iHeight = currYuv->Y().height;
+          iWidth = currYuv->Y().width;
+        }
+        else if (ch == COMPONENT_Cb) {
+          nextPxl = nextYuv->Cb().buf;
+          currPxl = currYuv->Cb().buf;
+          postPxl = postYuv->Cb().buf;
+          iStride = currYuv->Cb().stride;
+          iHeight = currYuv->Cb().height;
+          iWidth = currYuv->Cb().width;
+        }
+        else {
+          nextPxl = nextYuv->Cr().buf;
+          currPxl = currYuv->Cr().buf;
+          postPxl = postYuv->Cr().buf;
+          iStride = currYuv->Cr().stride;
+          iHeight = currYuv->Cr().height;
+          iWidth = currYuv->Cr().width;
+        }
+        for (int y = 0; y < iHeight; y++)
+        {
+          for (int x = 0; x < iWidth; x++)
+          {
+#if ENABLE_USER_DEFINED_WEIGHTS
+            postPxl[x] = std::min(maxOutputValue, std::max(0, (int)(((nextPxl[x]) / SII_PF_W2) - ((currPxl[x] * SII_PF_W1) / SII_PF_W2))));
+#else
+            postPxl[x] = std::min(maxOutputValue, std::max(0, (((nextPxl[x] * (blendingRatio + 1)) / blendingRatio) - (currPxl[x] / blendingRatio))));
+#endif
+          }
+          currPxl += iStride;
+          nextPxl += iStride;
+          postPxl += iStride;
+        }
+      }
+    }
+  }
+}
+
+void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio, int intraPeriod)
+{
+  const SPS *sps = pcPic->cs->sps;
+  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+#if DISABLE_PRE_POST_FILTER_FOR_IDR_CRA
+  if (pcPic->getPOC() == 0 ||
+    (pcPic->getPOC() % intraPeriod == 0))
+  {
+    return;
+  }
+#endif
+  if (pcPic->getPOC() % blendingRatio == 0)
+  {
+    Picture* prevPic = findPrevPicPOC(pcPic, pcListPic);
+    if (prevPic)
+    {
+      PelStorage* currYuv = &pcPic->m_bufs[PIC_ORIGINAL];
+      PelStorage* prevYuv = &prevPic->m_bufs[PIC_ORIGINAL];
+      int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+      for (int chan = 0; chan < numValidComponents; chan++)
+      {
+        const ComponentID ch = ComponentID(chan);
+        const ChannelType cType = (ch == COMPONENT_Y) ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA;
+        const int bitDepth = pcPic->cs->sps->getBitDepth(cType);
+        const int maxOutputValue = (1 << bitDepth) - 1;
+
+        Pel *currPxl, *prevPxl;
+        int iStride, iHeight, iWidth;
+        if (ch == COMPONENT_Y) {
+          currPxl = currYuv->Y().buf;
+          prevPxl = prevYuv->Y().buf;
+          iStride = currYuv->Y().stride;
+          iHeight = currYuv->Y().height;
+          iWidth = currYuv->Y().width;
+        }
+        else if (ch == COMPONENT_Cb) {
+          prevPxl = prevYuv->Cb().buf;
+          currPxl = currYuv->Cb().buf;
+          iStride = currYuv->Cb().stride;
+          iHeight = currYuv->Cb().height;
+          iWidth = currYuv->Cb().width;
+        }
+        else {
+          prevPxl = prevYuv->Cr().buf;
+          currPxl = currYuv->Cr().buf;
+          iStride = currYuv->Cr().stride;
+          iHeight = currYuv->Cr().height;
+          iWidth = currYuv->Cr().width;
+        }
+
+        for (int y = 0; y < iHeight; y++)
+        {
+          for (int x = 0; x < iWidth; x++)
+          {
+#if ENABLE_USER_DEFINED_WEIGHTS
+            currPxl[x] = std::min(maxOutputValue, std::max(0, (int)((currPxl[x] * SII_PF_W2) + (prevPxl[x] * SII_PF_W1));
+#else
+            currPxl[x] = std::min(maxOutputValue, std::max(0, (((currPxl[x] * blendingRatio) / (blendingRatio + 1)) + (prevPxl[x] / (blendingRatio + 1)))));
+#endif
+          }
+          currPxl += iStride;
+          prevPxl += iStride;
+        }
+      }
+    }
+  }
+}
+#endif
+

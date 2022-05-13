@@ -403,6 +403,12 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIConstrainedRaslIndication;
       xParseSEIConstrainedRaslIndication((SEIConstrainedRaslIndication&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+    case SEI::SHUTTER_INTERVAL_INFO:
+      sei = new SEIShutterIntervalInfo;
+      xParseSEIShutterInterval((SEIShutterIntervalInfo&)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -532,6 +538,31 @@ void SEIReader::xParseSEIuserDataUnregistered(SEIuserDataUnregistered &sei, uint
     (*pDecodedMessageOutputStream) << "  User data payload size: " << sei.userDataLength << "\n";
   }
 }
+
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+{
+  int32_t i;
+  uint32_t val;
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  sei_read_code(pDecodedMessageOutputStream, 32, val, "sii_time_scale");                      sei.m_siiTimeScale = val;
+  sei_read_flag(pDecodedMessageOutputStream, val, "fixed_shutter_interval_within_clvs_flag"); sei.m_siiFixedSIwithinCLVS = val;
+  if (sei.m_siiFixedSIwithinCLVS)
+  {
+    sei_read_code(pDecodedMessageOutputStream, 32, val, "sii_num_units_in_shutter_interval");   sei.m_siiNumUnitsInShutterInterval = val;
+  }
+  else
+  {
+    sei_read_code(pDecodedMessageOutputStream, 3, val, "sii_max_sub_layers_minus1 ");          sei.m_siiMaxSubLayersMinus1 = val;
+    sei.m_siiSubLayerNumUnitsInSI.resize(sei.m_siiMaxSubLayersMinus1 + 1);
+    for (i = 0; i <= sei.m_siiMaxSubLayersMinus1; i++)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 32, val, "sub_layer_num_units_in_shutter_interval[ i ]");
+      sei.m_siiSubLayerNumUnitsInSI[i] = val;
+    }
+  }
+}
+#endif
 
 /**
  * parse bitstream bs and unpack a decoded picture hash SEI message

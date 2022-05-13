@@ -738,6 +738,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp0              (0, 65535,  0, 256 * 6);
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp1              (0, 65535,  0, 256 * 6);
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
+#endif
 
 #if ENABLE_TRACING
   string sTracingRule;
@@ -765,6 +768,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("InputPathPrefix,-ipp",                            inputPathPrefix,                             string(""), "pathname to prepend to input filename")
   ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
   ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
+#if JVET_Z0120_SII_SEI_PROCESSING
+  ("SEIShutterIntervalPreFilename,-sii",              m_shutterIntervalPreFileName, string(""), "File name of Pre-Filtering video. If empty, not output video\n")
+#endif  
   ("SourceWidth,-wdt",                                m_sourceWidth,                                       0, "Source picture width")
   ("SourceHeight,-hgt",                               m_sourceHeight,                                      0, "Source picture height")
   ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")
@@ -1418,6 +1424,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEISARISarWidth",                                 m_sariSarWidth,                           0, "Specifies the Sample Aspect Ratio Width of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
   ("SEISARISarHeight",                                m_sariSarHeight,                          0, "Specifies the Sample Aspect Ratio Height of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
   ("MCTSEncConstraint",                               m_MCTSEncConstraint,                               false, "For MCTS, constrain motion vectors at tile boundaries")
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  ("SEIShutterIntervalEnabled",                       m_siiSEIEnabled,                          false, "Controls if shutter interval information SEI message is enabled")
+  ("SEISiiTimeScale",                                 m_siiSEITimeScale,                        27000000u, "Specifies sii_time_scale")
+  ("SEISiiInputNumUnitsInShutterInterval",            cfg_siiSEIInputNumUnitsInSI,              cfg_siiSEIInputNumUnitsInSI, "Specifies sub_layer_num_units_in_shutter_interval")
+#endif
+
 #if ENABLE_TRACING
   ("TraceChannelsList",                               bTracingChannelsList,                              false, "List all available tracing channels")
   ("TraceRule",                                       sTracingRule,                               string( "" ), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")")
@@ -2988,6 +3000,86 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif // ENABLE_QPA
 
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+  m_ShutterFilterEnable = false;
+#endif
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  if (m_siiSEIEnabled)
+  {
+    assert(m_siiSEITimeScale >= 0 && m_siiSEITimeScale <= MAX_UINT);
+    uint32_t sii_max_sub_layers = (uint32_t)cfg_siiSEIInputNumUnitsInSI.values.size();
+    assert(sii_max_sub_layers > 0);
+    if (sii_max_sub_layers > 1)
+    {
+      m_siiSEISubLayerNumUnitsInSI.resize(sii_max_sub_layers);
+      for (int32_t i = 0; i < sii_max_sub_layers; i++)
+      {
+        m_siiSEISubLayerNumUnitsInSI[i] = cfg_siiSEIInputNumUnitsInSI.values[i];
+        assert(m_siiSEISubLayerNumUnitsInSI[i] >= 0 && m_siiSEISubLayerNumUnitsInSI[i] <= MAX_UINT);
+      }
+    }
+    else
+    {
+      m_siiSEINumUnitsInShutterInterval = cfg_siiSEIInputNumUnitsInSI.values[0];
+      assert(m_siiSEINumUnitsInShutterInterval >= 0 && m_siiSEINumUnitsInShutterInterval <= MAX_UINT);
+    }
+#if JVET_Z0120_SII_SEI_PROCESSING
+    uint32_t siiMaxSubLayersMinus1 = sii_max_sub_layers - 1;
+    int blending_ratio = (m_siiSEISubLayerNumUnitsInSI[0] / m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1]);
+
+    if (sii_max_sub_layers > 1 && m_siiSEISubLayerNumUnitsInSI[0] ==
+                                (blending_ratio * m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1]))
+    {
+      m_ShutterFilterEnable = true;
+      double fpsHFR = (double)m_iFrameRate;
+      int32_t i;
+      bool checkEqualValuesOfSFR = 1;
+      bool checkSubLayerSI = 0;
+
+      double shutterAngleFactor = (fpsHFR * ((double)(m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1])))/((double)m_siiSEITimeScale);
+
+      // If shutterAngleFactor = 1 indicates that shutterAngle = 360  
+      // If shutterAngleFactor = 0.5 indicates that shutterAngle = 180
+      // If shutterAngleFactor = 0.25 indicates that shutterAngle = 90
+
+      if (shutterAngleFactor < 0.5)
+      {
+        for (int i = 0; i < siiMaxSubLayersMinus1; i++)
+        {
+          m_siiSEISubLayerNumUnitsInSI[i] = m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1];
+        }
+        m_ShutterFilterEnable = false;
+        printf("Warning: For the shutterAngle = %d, the blending can't be applied\n", (int)(shutterAngleFactor * 360));
+      }
+      // supports only the case of SFR = HFR / 2 
+      if (m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1] < m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1 - 1])
+      {
+        checkSubLayerSI = 1;
+      }
+      // check shutter interval for all sublayer remains same for LFR pictures
+      for (i = 1; i < siiMaxSubLayersMinus1; i++)
+      {
+        if (m_siiSEISubLayerNumUnitsInSI[0] != m_siiSEISubLayerNumUnitsInSI[i])
+        {
+          checkEqualValuesOfSFR = 0;
+        }
+      }
+      if (checkSubLayerSI && checkEqualValuesOfSFR)
+      {
+        setBlendingRatioSII(blending_ratio);
+      }
+      else
+      {
+        m_ShutterFilterEnable = false;
+      }
+    }
+    else
+    {
+      printf("Warning: SII-processing is applied for multiple shutter intervals and number of LFR units should be 2 times of number of HFR units\n");
+    }
+#endif
+  }
+#endif
 
 
   if( m_costMode == COST_LOSSLESS_CODING )
@@ -4368,6 +4460,14 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara( m_gcmpSEIGuardBandSamplesMinus1 < 0 || m_gcmpSEIGuardBandSamplesMinus1 > 15, "SEIGcmpGuardBandSamplesMinus1 must be in the range of 0 to 15");
     }
   }
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (m_siiSEIEnabled && m_ShutterFilterEnable)
+  {
+    xConfirmPara(m_maxTempLayer == 1 || m_maxDecPicBuffering[0] == 1,"Shutter Interval SEI message processing is disabled for single TempLayer and single frame in DPB\n");
+  }
+#endif
+
   xConfirmPara(m_log2ParallelMergeLevel < 2, "Log2ParallelMergeLevel should be larger than or equal to 2");
   xConfirmPara(m_log2ParallelMergeLevel > m_uiCTUSize, "Log2ParallelMergeLevel should be less than or equal to CTU size");
 #if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
@@ -4437,6 +4537,12 @@ void EncAppCfg::xPrintParameter()
   msg( DETAILS, "Input          File                    : %s\n", m_inputFileName.c_str() );
   msg( DETAILS, "Bitstream      File                    : %s\n", m_bitstreamFileName.c_str() );
   msg( DETAILS, "Reconstruction File                    : %s\n", m_reconFileName.c_str() );
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (m_ShutterFilterEnable && !m_shutterIntervalPreFileName.empty())
+  {
+    msg(DETAILS,"SII Pre-processed File                 : %s\n", m_shutterIntervalPreFileName.c_str());
+  }
+#endif
   msg( DETAILS, "Real     Format                        : %dx%d %gHz\n", m_sourceWidth - m_confWinLeft - m_confWinRight, m_sourceHeight - m_confWinTop - m_confWinBottom, (double)m_iFrameRate / m_temporalSubsampleRatio );
   msg( DETAILS, "Internal Format                        : %dx%d %gHz\n", m_sourceWidth, m_sourceHeight, (double)m_iFrameRate / m_temporalSubsampleRatio );
   msg( DETAILS, "Sequence PSNR output                   : %s\n", ( m_printMSEBasedSequencePSNR ? "Linear average, MSE-based" : "Linear average only" ) );

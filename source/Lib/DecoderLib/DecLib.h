@@ -158,6 +158,9 @@ private:
   bool                    m_warningMessageSkipPicture;
 
   std::list<InputNALUnit*> m_prefixSEINALUs; /// Buffered up prefix SEI NAL Units.
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool                                m_ShutterFilterEnable;          ///< enable Post-processing with Shutter Interval SEI
+#endif
   int                     m_debugPOC;
   int                     m_debugCTU;
 
@@ -317,6 +320,11 @@ public:
   const OPI* getOPI()                     { return m_opi; }
 
   bool      getMixedNaluTypesInPicFlag();
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool  getShutterFilterFlag()        const { return m_ShutterFilterEnable; }
+  void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
+#endif
 
 protected:
   void  xUpdateRasInit(Slice* slice);

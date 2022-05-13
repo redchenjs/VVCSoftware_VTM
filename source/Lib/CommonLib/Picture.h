@@ -64,7 +64,11 @@ struct Picture : public UnitArea
   uint32_t margin;
   Picture();
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+  void create(const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned margin, const bool bDecoder, const int layerId, const bool enablePostFilteringForHFR, const bool gopBasedTemporalFilterEnabled = false, const bool fgcSEIAnalysisEnabled = false);
+#else
   void create(const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned margin, const bool bDecoder, const int layerId, const bool gopBasedTemporalFilterEnabled = false, const bool fgcSEIAnalysisEnabled = false);
+#endif
   void destroy();
 
   void createTempBuffers( const unsigned _maxCUSize );
@@ -81,6 +85,14 @@ struct Picture : public UnitArea
   PelStorage*              m_invColourTransfBuf;
   void              createColourTransfProcessor(bool firstPictureInSequence, SEIColourTransformApply* ctiCharacteristics, PelStorage* ctiBuf, int width, int height, ChromaFormat fmt, int bitDepth);
   PelUnitBuf        getDisplayBuf();
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  void copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcPicYuvDst);
+  Picture*  findPrevPicPOC(Picture* pcPic, PicList* pcListPic);
+  Picture*  findNextPicPOC(Picture* pcPic, PicList* pcListPic);
+  void  xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio);
+  void  xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio, int intraPeriod);
+#endif
 
          PelBuf     getOrigBuf(const CompArea &blk);
   const CPelBuf     getOrigBuf(const CompArea &blk) const;
@@ -127,6 +139,11 @@ struct Picture : public UnitArea
   const CPelBuf     getBuf(const CompArea &blk,      const PictureType &type) const;
          PelUnitBuf getBuf(const UnitArea &unit,     const PictureType &type);
   const CPelUnitBuf getBuf(const UnitArea &unit,     const PictureType &type) const;
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+        PelUnitBuf getPostRecBuf();
+  const CPelUnitBuf getPostRecBuf() const;
+#endif
 
   void extendPicBorder( const PPS *pps );
   void extendWrapBorder( const PPS *pps );

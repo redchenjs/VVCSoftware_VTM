@@ -844,6 +844,14 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     SEIConstrainedRaslIndication* seiConstrainedRasl = new SEIConstrainedRaslIndication;
     seiMessages.push_back(seiConstrainedRasl);
   }
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  if (m_pcCfg->getSiiSEIEnabled())
+  {
+    SEIShutterIntervalInfo *seiShutterInterval = new SEIShutterIntervalInfo;
+    m_seiEncoder.initSEIShutterIntervalInfo(seiShutterInterval);
+    seiMessages.push_back(seiShutterInterval);
+  }
+#endif
 }
 
 void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice)

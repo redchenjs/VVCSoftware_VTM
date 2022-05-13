@@ -507,6 +507,28 @@ void SEIEncoder::initSEIExtendedDrapIndication(SEIExtendedDrapIndication *sei)
   }
 }
 
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIntervalInfo)
+{
+  assert(m_isInitialized);
+  assert(seiShutterIntervalInfo != NULL);
+  seiShutterIntervalInfo->m_siiTimeScale = m_pcCfg->getSiiSEITimeScale();
+  seiShutterIntervalInfo->m_siiFixedSIwithinCLVS = m_pcCfg->getSiiSEIFixedSIwithinCLVS();
+  if (seiShutterIntervalInfo->m_siiFixedSIwithinCLVS == true)
+  {
+    seiShutterIntervalInfo->m_siiNumUnitsInShutterInterval = m_pcCfg->getSiiSEINumUnitsInShutterInterval();
+  }
+  else
+  {
+    seiShutterIntervalInfo->m_siiMaxSubLayersMinus1 = m_pcCfg->getSiiSEIMaxSubLayersMinus1();
+    seiShutterIntervalInfo->m_siiSubLayerNumUnitsInSI.resize(seiShutterIntervalInfo->m_siiMaxSubLayersMinus1 + 1);
+    for (int32_t i = 0; i <= seiShutterIntervalInfo->m_siiMaxSubLayersMinus1; i++)
+    {
+      seiShutterIntervalInfo->m_siiSubLayerNumUnitsInSI[i] = m_pcCfg->getSiiSEISubLayerNumUnitsInSI(i);
+    }
+  }
+}
+#endif
 
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned
