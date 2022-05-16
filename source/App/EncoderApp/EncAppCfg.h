@@ -40,8 +40,6 @@
 
 #include "CommonLib/CommonDef.h"
 #include "EncoderLib/EncCfgParam.h"
-#include "CommonLib/Picture.h"
-#include "EncCfg.h"
 
 #include <map>
 template <class T1, class T2>
