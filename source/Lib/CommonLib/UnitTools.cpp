@@ -1683,13 +1683,6 @@ void PU::getInterMergeCandidates( const PredictionUnit &pu, MergeCtx& mrgCtx,
 #endif
     }
 
-    if (mrgCtx.interDirNeighbours[arrayAddr] == 1
-        && pu.cs->slice->getRefPic(REF_PIC_LIST_0, mrgCtx.mvFieldNeighbours[arrayAddr << 1].refIdx)->getPOC()
-             == pu.cs->slice->getPOC())
-    {
-      mrgCtx.mrgTypeNeighbours[arrayAddr] = MRG_TYPE_IBC;
-    }
-
     arrayAddr++;
 
     if (refcnt == iNumRefIdx - 1)
@@ -1816,55 +1809,52 @@ void PU::getInterMMVDMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx,
 #endif
   for (k = 0; k < maxNumMergeCand; k++)
   {
-    if (mrgCtx.mrgTypeNeighbours[k] == MRG_TYPE_DEFAULT_N)
+    refIdxList0 = mrgCtx.mvFieldNeighbours[(k << 1)].refIdx;
+    refIdxList1 = mrgCtx.mvFieldNeighbours[(k << 1) + 1].refIdx;
+
+    if ((refIdxList0 >= 0) && (refIdxList1 >= 0))
     {
-      refIdxList0 = mrgCtx.mvFieldNeighbours[(k << 1)].refIdx;
-      refIdxList1 = mrgCtx.mvFieldNeighbours[(k << 1) + 1].refIdx;
-
-      if ((refIdxList0 >= 0) && (refIdxList1 >= 0))
-      {
-        mrgCtx.mmvdBaseMv[currBaseNum][0] = mrgCtx.mvFieldNeighbours[(k << 1)];
-        mrgCtx.mmvdBaseMv[currBaseNum][1] = mrgCtx.mvFieldNeighbours[(k << 1) + 1];
+      mrgCtx.mmvdBaseMv[currBaseNum][0] = mrgCtx.mvFieldNeighbours[(k << 1)];
+      mrgCtx.mmvdBaseMv[currBaseNum][1] = mrgCtx.mvFieldNeighbours[(k << 1) + 1];
 #if GDR_ENABLED
-        if (isEncodeGdrClean)
-        {
-          mrgCtx.mmvdSolid[currBaseNum][0] = mrgCtx.mvSolid[(k << 1) + 0];
-          mrgCtx.mmvdSolid[currBaseNum][1] = mrgCtx.mvSolid[(k << 1) + 1];
-        }
-#endif
-      }
-      else if (refIdxList0 >= 0)
+      if (isEncodeGdrClean)
       {
-        mrgCtx.mmvdBaseMv[currBaseNum][0] = mrgCtx.mvFieldNeighbours[(k << 1)];
-        mrgCtx.mmvdBaseMv[currBaseNum][1] = MvField(Mv(0, 0), -1);
+        mrgCtx.mmvdSolid[currBaseNum][0] = mrgCtx.mvSolid[(k << 1) + 0];
+        mrgCtx.mmvdSolid[currBaseNum][1] = mrgCtx.mvSolid[(k << 1) + 1];
+      }
+#endif
+    }
+    else if (refIdxList0 >= 0)
+    {
+      mrgCtx.mmvdBaseMv[currBaseNum][0] = mrgCtx.mvFieldNeighbours[(k << 1)];
+      mrgCtx.mmvdBaseMv[currBaseNum][1] = MvField(Mv(0, 0), -1);
 #if GDR_ENABLED
-        if (isEncodeGdrClean)
-        {
-          mrgCtx.mmvdSolid[currBaseNum][0] = mrgCtx.mvSolid[(k << 1) + 0];
-          mrgCtx.mmvdSolid[currBaseNum][1] = true;
-        }
-#endif
-      }
-      else if (refIdxList1 >= 0)
+      if (isEncodeGdrClean)
       {
-        mrgCtx.mmvdBaseMv[currBaseNum][0] = MvField(Mv(0, 0), -1);
-        mrgCtx.mmvdBaseMv[currBaseNum][1] = mrgCtx.mvFieldNeighbours[(k << 1) + 1];
+        mrgCtx.mmvdSolid[currBaseNum][0] = mrgCtx.mvSolid[(k << 1) + 0];
+        mrgCtx.mmvdSolid[currBaseNum][1] = true;
+      }
+#endif
+    }
+    else if (refIdxList1 >= 0)
+    {
+      mrgCtx.mmvdBaseMv[currBaseNum][0] = MvField(Mv(0, 0), -1);
+      mrgCtx.mmvdBaseMv[currBaseNum][1] = mrgCtx.mvFieldNeighbours[(k << 1) + 1];
 #if GDR_ENABLED
-        if (isEncodeGdrClean)
-        {
-          mrgCtx.mmvdSolid[currBaseNum][0] = true;
-          mrgCtx.mmvdSolid[currBaseNum][1] = mrgCtx.mvSolid[(k << 1) + 1];
-        }
-#endif
-      }
-      mrgCtx.mmvdUseAltHpelIf[currBaseNum] = mrgCtx.useAltHpelIf[k];
-
-      currBaseNum++;
-
-      if (currBaseNum == MMVD_BASE_MV_NUM)
+      if (isEncodeGdrClean)
       {
-        break;
+        mrgCtx.mmvdSolid[currBaseNum][0] = true;
+        mrgCtx.mmvdSolid[currBaseNum][1] = mrgCtx.mvSolid[(k << 1) + 1];
       }
+#endif
+    }
+    mrgCtx.mmvdUseAltHpelIf[currBaseNum] = mrgCtx.useAltHpelIf[k];
+
+    currBaseNum++;
+
+    if (currBaseNum == MMVD_BASE_MV_NUM)
+    {
+      break;
     }
   }
 }
