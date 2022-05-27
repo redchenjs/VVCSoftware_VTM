@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,9 +52,10 @@ using namespace std;
 
 IbcHashMap::IbcHashMap()
 {
-  m_picWidth = 0;
+  m_picWidth  = 0;
   m_picHeight = 0;
-  m_pos2Hash = NULL;
+  m_pos2Hash  = nullptr;
+
   m_computeCrc32c = xxComputeCrc32c16bit;
 
 #if ENABLE_SIMD_OPT_IBC
@@ -62,7 +63,6 @@ IbcHashMap::IbcHashMap()
   initIbcHashMapX86();
 #endif
 #endif
-
 }
 
 IbcHashMap::~IbcHashMap()
@@ -89,15 +89,15 @@ void IbcHashMap::init(const int picWidth, const int picHeight)
 
 void IbcHashMap::destroy()
 {
-  if (m_pos2Hash != NULL)
+  if (m_pos2Hash != nullptr)
   {
-    if (m_pos2Hash[0] != NULL)
+    if (m_pos2Hash[0] != nullptr)
     {
       delete[] m_pos2Hash[0];
     }
     delete[] m_pos2Hash;
   }
-  m_pos2Hash = NULL;
+  m_pos2Hash = nullptr;
 }
 ////////////////////////////////////////////////////////
 // CRC32C calculation in C code, same results as SSE 4.2's implementation
@@ -204,9 +204,10 @@ void IbcHashMap::xxBuildPicHashMap(const PelUnitBuf& pic)
   const int chromaScalingY = getChannelTypeScaleY(CHANNEL_TYPE_CHROMA, chromaFormat);
   const int chromaMinBlkWidth = MIN_PU_SIZE >> chromaScalingX;
   const int chromaMinBlkHeight = MIN_PU_SIZE >> chromaScalingY;
-  const Pel* pelY = NULL;
-  const Pel* pelCb = NULL;
-  const Pel* pelCr = NULL;
+
+  const Pel *pelY  = nullptr;
+  const Pel *pelCb = nullptr;
+  const Pel *pelCr = nullptr;
 
   Position pos;
   for (pos.y = 0; pos.y + MIN_PU_SIZE <= pic.Y().height; pos.y++)

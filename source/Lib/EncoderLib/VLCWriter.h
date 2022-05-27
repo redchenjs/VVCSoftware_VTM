@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -73,15 +73,15 @@ protected:
 
   OutputBitstream*    m_pcBitIf;
 
-  VLCWriter() : m_pcBitIf(NULL) {}
+  VLCWriter() : m_pcBitIf(nullptr) {}
   virtual ~VLCWriter() {}
 
   void  setBitstream          ( OutputBitstream* p )  { m_pcBitIf = p;  }
-#if JVET_S0266_VUI_length
   OutputBitstream* getBitstream( )                    { return m_pcBitIf; }
-#endif
-  void  xWriteSCode           ( int  code,  uint32_t length );
-  void  xWriteCode            ( uint32_t uiCode, uint32_t uiLength );
+
+  void xWriteSCode(int code, uint32_t length);
+  void xWriteCode(uint32_t uiCode, uint32_t length);
+
   void  xWriteUvlc            ( uint32_t uiCode );
   void  xWriteSvlc            ( int  iCode   );
   void  xWriteFlag            ( uint32_t uiCode );
@@ -127,7 +127,7 @@ private:
   void xCodeRefPicList( const ReferencePictureList* rpl, bool isLongTermPresent, uint32_t ltLsbBitsCount, const bool isForbiddenZeroDeltaPoc, int rplIdx);
   bool xFindMatchingLTRP        ( Slice* pcSlice, uint32_t *ltrpsIndex, int ltrpPOC, bool usedFlag );
   void xCodePredWeightTable     ( Slice* pcSlice );
-  void xCodePredWeightTable     ( PicHeader *picHeader, const SPS *sps );
+  void xCodePredWeightTable     ( PicHeader *picHeader, const PPS *pps, const SPS *sps );
   void xCodeScalingList         ( const ScalingList* scalingList, uint32_t scalinListId, bool isPredictor);
 public:
   void  setBitstream            ( OutputBitstream* p )  { m_pcBitIf = p;  }
@@ -141,19 +141,16 @@ public:
   void  codeScalingListAps      ( APS* pcAPS );
   void  codeVPS                 ( const VPS* pcVPS );
   void  codeDCI                 ( const DCI* dci );
-  void  codePictureHeader       ( PicHeader* picHeader, bool writeRbspTrailingBits );
-  void  codeSliceHeader         ( Slice* pcSlice );
-  void  codeConstraintInfo      ( const ConstraintInfo* cinfo );
+  void  codePictureHeader       ( PicHeader* picHeader, bool writeRbspTrailingBits, Slice *slice = 0 );
+  void  codeSliceHeader         ( Slice* pcSlice, PicHeader *picheader = 0 );
+  void  codeOPI                 ( const OPI* opi );
+  void  codeConstraintInfo      ( const ConstraintInfo* cinfo, const ProfileTierLevel* ptl );
   void  codeProfileTierLevel    ( const ProfileTierLevel* ptl, bool profileTierPresentFlag, int maxNumSubLayersMinus1 );
   void  codeOlsHrdParameters(const GeneralHrdParams * generalHrd, const OlsHrdParams *olsHrd , const uint32_t firstSubLayer, const uint32_t maxNumSubLayersMinus1);
 
   void codeGeneralHrdparameters(const GeneralHrdParams *hrd);
   void  codeTilesWPPEntryPoint  ( Slice* pSlice );
-#if JVET_R0433
   void codeScalingList(const ScalingList &scalingList, bool aps_chromaPresentFlag);
-#else
-  void  codeScalingList         ( const ScalingList &scalingList );
-#endif
   void alfFilter( const AlfParam& alfParam, const bool isChroma, const int altIdx );
   void dpb_parameters(int maxSubLayersMinus1, bool subLayerInfoFlag, const SPS *pcSPS);
 private:

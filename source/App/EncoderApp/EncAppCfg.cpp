@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,9 +49,7 @@
 #include "EncoderLib/RateCtrl.h"
 
 #include "CommonLib/dtrace_next.h"
-#if JVET_S_PROFILES
 #include "CommonLib/ProfileLevelTier.h"
-#endif
 
 #define MACRO_TO_STRING_HELPER(val) #val
 #define MACRO_TO_STRING(val) MACRO_TO_STRING_HELPER(val)
@@ -63,7 +61,6 @@ enum ExtendedProfileName   // this is used for determining profile strings, wher
                            // profile idc with various constraint flag combinations
 {
   NONE,
-#if JVET_S_PROFILES
   MAIN_10,
   MAIN_10_STILL_PICTURE,
   MAIN_10_444,
@@ -72,14 +69,19 @@ enum ExtendedProfileName   // this is used for determining profile strings, wher
   MULTILAYER_MAIN_10_STILL_PICTURE,
   MULTILAYER_MAIN_10_444,
   MULTILAYER_MAIN_10_444_STILL_PICTURE,
-#else
-  MAIN_10,
-  MAIN_10_STILL_PICTURE,
-  MAIN_444_10,
-  MAIN_444_10_STILL_PICTURE,
-#endif
+  MAIN_12,
+  MAIN_12_444,
+  MAIN_16_444,
+  MAIN_12_INTRA,
+  MAIN_12_444_INTRA,
+  MAIN_16_444_INTRA,
+  MAIN_12_STILL_PICTURE,
+  MAIN_12_444_STILL_PICTURE,
+  MAIN_16_444_STILL_PICTURE,
   AUTO = -1
 };
+
+constexpr int TF_DEFAULT_REFS = 4;
 
 //! \ingroup EncoderApp
 //! \{
@@ -97,7 +99,7 @@ EncAppCfg::EncAppCfg()
 , m_ext360(*this)
 #endif
 {
-  m_aidQP = NULL;
+  m_aidQP = nullptr;
 }
 
 EncAppCfg::~EncAppCfg()
@@ -109,6 +111,7 @@ EncAppCfg::~EncAppCfg()
 
 #if ENABLE_TRACING
   tracing_uninit(g_trace_ctx);
+  g_trace_ctx = nullptr;
 #endif
 }
 
@@ -179,7 +182,6 @@ static const struct MapStrToProfile
   Profile::Name value;
 } strToProfile[] = {
   { "none", Profile::NONE },
-#if JVET_S_PROFILES
   { "main_10", Profile::MAIN_10 },
   { "main_10_444", Profile::MAIN_10_444 },
   { "main_10_still_picture", Profile::MAIN_10_STILL_PICTURE },
@@ -188,10 +190,15 @@ static const struct MapStrToProfile
   { "multilayer_main_10_444", Profile::MULTILAYER_MAIN_10_444 },
   { "multilayer_main_10_still_picture", Profile::MULTILAYER_MAIN_10_STILL_PICTURE },
   { "multilayer_main_10_444_still_picture", Profile::MULTILAYER_MAIN_10_444_STILL_PICTURE },
-#else
-  { "main_10", Profile::MAIN_10 },
-  { "main_444_10", Profile::MAIN_444_10 },
-#endif
+  { "main_12", Profile::MAIN_12 },
+  { "main_12_444", Profile::MAIN_12_444 },
+  { "main_16_444", Profile::MAIN_16_444 },
+  { "main_12_intra", Profile::MAIN_12_INTRA },
+  { "main_12_444_intra", Profile::MAIN_12_444_INTRA },
+  { "main_16_444_intra", Profile::MAIN_16_444_INTRA },
+  { "main_12_still_picture", Profile::MAIN_12_STILL_PICTURE },
+  { "main_12_444_still_picture", Profile::MAIN_12_444_STILL_PICTURE },
+  { "main_16_444_still_picture", Profile::MAIN_16_444_STILL_PICTURE },
 };
 
 static const struct MapStrToExtendedProfile
@@ -200,7 +207,6 @@ static const struct MapStrToExtendedProfile
   ExtendedProfileName value;
 } strToExtendedProfile[] = {
   { "none", NONE },
-#if JVET_S_PROFILES
   { "main_10", MAIN_10 },
   { "main_10_444", MAIN_10_444 },
   { "main_10_still_picture", MAIN_10_STILL_PICTURE },
@@ -209,12 +215,15 @@ static const struct MapStrToExtendedProfile
   { "multilayer_main_10_444", MULTILAYER_MAIN_10_444 },
   { "multilayer_main_10_still_picture", MULTILAYER_MAIN_10_STILL_PICTURE },
   { "multilayer_main_10_444_still_picture", MULTILAYER_MAIN_10_444_STILL_PICTURE },
-#else
-  { "main_10", MAIN_10 },
-  { "main_444_10", MAIN_444_10 },
-  { "main_10_still_picture", MAIN_10_STILL_PICTURE },
-  { "main_444_10_still_picture", MAIN_444_10_STILL_PICTURE },
-#endif
+  { "main_12", MAIN_12 },
+  { "main_12_444", MAIN_12_444 },
+  { "main_16_444", MAIN_16_444 },
+  { "main_12_intra", MAIN_12_INTRA },
+  { "main_12_444_intra", MAIN_12_444_INTRA },
+  { "main_16_444_intra", MAIN_16_444_INTRA },
+  { "main_12_still_picture", MAIN_12_STILL_PICTURE },
+  { "main_12_444_still_picture", MAIN_12_444_STILL_PICTURE },
+  { "main_16_444_still_picture", MAIN_16_444_STILL_PICTURE },
   { "auto", AUTO },
 };
 
@@ -250,15 +259,16 @@ strToLevel[] =
   {"6",   Level::LEVEL6},
   {"6.1", Level::LEVEL6_1},
   {"6.2", Level::LEVEL6_2},
+  {"6.3", Level::LEVEL6_3},
   {"15.5", Level::LEVEL15_5},
 };
 
 #if U0132_TARGET_BITS_SATURATION
-uint32_t g_uiMaxCpbSize[2][21] =
+uint32_t g_uiMaxCpbSize[2][28] =
 {
-  //         LEVEL1,        LEVEL2,LEVEL2_1,     LEVEL3, LEVEL3_1,      LEVEL4, LEVEL4_1,       LEVEL5,  LEVEL5_1,  LEVEL5_2,    LEVEL6,  LEVEL6_1,  LEVEL6_2
-  { 0, 0, 0, 350000, 0, 0, 1500000, 3000000, 0, 6000000, 10000000, 0, 12000000, 20000000, 0,  25000000,  40000000,  60000000,  60000000, 120000000, 240000000 },
-  { 0, 0, 0,      0, 0, 0,       0,       0, 0,       0,        0, 0, 30000000, 50000000, 0, 100000000, 160000000, 240000000, 240000000, 480000000, 800000000 }
+  //            LEVEL1,          LEVEL2,  LEVEL2_1,      LEVEL3,  LEVEL3_1,       LEVEL4,   LEVEL4_1,       LEVEL5,    LEVEL5_1,  LEVEL5_2,     LEVEL6,    LEVEL6_1,  LEVEL6_2   LEVEL6_3
+  { 0, 0, 0, 0, 350000, 0, 0, 0, 1500000, 3000000, 0, 0, 6000000, 10000000, 0, 0, 12000000, 20000000, 0, 0,  25000000,  40000000,  60000000, 0,  80000000, 120000000, 240000000,  240000000 },
+  { 0, 0, 0, 0,      0, 0, 0, 0,       0,       0, 0, 0,       0,        0, 0, 0, 30000000, 50000000, 0, 0, 100000000, 160000000, 240000000, 0, 240000000, 480000000, 800000000, 1600000000 }
 };
 #endif
 
@@ -353,27 +363,6 @@ static inline istream& operator >> (istream &in, ScalingListMode &mode)
   return readStrToEnum(strToScalingListMode, sizeof(strToScalingListMode)/sizeof(*strToScalingListMode), in, mode);
 }
 
-template <class T>
-struct SMultiValueInput
-{
-  const T              minValIncl;
-  const T              maxValIncl;
-  const std::size_t    minNumValuesIncl;
-  const std::size_t    maxNumValuesIncl; // Use 0 for unlimited
-        std::vector<T> values;
-  SMultiValueInput() : minValIncl(0), maxValIncl(0), minNumValuesIncl(0), maxNumValuesIncl(0), values() { }
-  SMultiValueInput(std::vector<T> &defaults) : minValIncl(0), maxValIncl(0), minNumValuesIncl(0), maxNumValuesIncl(0), values(defaults) { }
-  SMultiValueInput(const T &minValue, const T &maxValue, std::size_t minNumberValues=0, std::size_t maxNumberValues=0)
-    : minValIncl(minValue), maxValIncl(maxValue), minNumValuesIncl(minNumberValues), maxNumValuesIncl(maxNumberValues), values()  { }
-  SMultiValueInput(const T &minValue, const T &maxValue, std::size_t minNumberValues, std::size_t maxNumberValues, const T* defValues, const uint32_t numDefValues)
-    : minValIncl(minValue), maxValIncl(maxValue), minNumValuesIncl(minNumberValues), maxNumValuesIncl(maxNumberValues), values(defValues, defValues+numDefValues)  { }
-  SMultiValueInput<T> &operator=(const std::vector<T> &userValues) { values=userValues; return *this; }
-  SMultiValueInput<T> &operator=(const SMultiValueInput<T> &userValues) { values=userValues.values; return *this; }
-
-  T readValue(const char *&pStr, bool &bSuccess);
-
-  istream& readValues(std::istream &in);
-};
 
 template <class T>
 static inline istream& operator >> (std::istream &in, SMultiValueInput<T> &values)
@@ -505,8 +494,11 @@ static uint32_t getMaxTileColsByLevel( Level::Name level )
     case Level::LEVEL6:
     case Level::LEVEL6_1:
     case Level::LEVEL6_2:
-    default:
       return 20;
+    case Level::LEVEL6_3:
+      return 30;
+    default:
+      return MAX_TILE_COLS;
   }
 }
 
@@ -532,12 +524,11 @@ static uint32_t getMaxTileRowsByLevel( Level::Name level )
     case Level::LEVEL6:
     case Level::LEVEL6_1:
     case Level::LEVEL6_2:
-    default:
-#if JVET_S0156_LEVEL_DEFINITION
       return 22;
-#else
-      return 21;
-#endif
+    case Level::LEVEL6_3:
+      return 33;
+    default:
+      return MAX_TILES / MAX_TILE_COLS;
   }
 }
 
@@ -564,8 +555,11 @@ static uint32_t getMaxSlicesByLevel( Level::Name level )
     case Level::LEVEL6:
     case Level::LEVEL6_1:
     case Level::LEVEL6_2:
-    default:
       return 600;
+    case Level::LEVEL6_3:
+      return 1000;
+    default:
+      return MAX_SLICES;
   }
 }
 
@@ -588,9 +582,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   int tmpFastInterSearchMode;
   int tmpMotionEstimationSearchMethod;
   int tmpDecodedPictureHashSEIMappedType;
-#if JVET_R0294_SUBPIC_HASH
   int tmpSubpicDecodedPictureHashMappedType;
-#endif
   string inputColourSpaceConvert;
   string inputPathPrefix;
   ExtendedProfileName extendedProfile;
@@ -623,15 +615,30 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<int> cfg_qpOutValCr                  (MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1);
   SMultiValueInput<int> cfg_qpInValCbCr                 (MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1);
   SMultiValueInput<int> cfg_qpOutValCbCr                (MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1);
+  const int cQpOffsets[] = { 6 };
+  SMultiValueInput<int> cfg_cbQpOffsetList              (-12, 12, 0, 6, cQpOffsets, 0);
+  SMultiValueInput<int> cfg_crQpOffsetList              (-12, 12, 0, 6, cQpOffsets, 0);
+  SMultiValueInput<int> cfg_cbCrQpOffsetList            (-12, 12, 0, 6, cQpOffsets, 0);
+
   const uint32_t defaultInputKneeCodes[3]  = { 600, 800, 900 };
   const uint32_t defaultOutputKneeCodes[3] = { 100, 250, 450 };
   SMultiValueInput<uint32_t> cfg_kneeSEIInputKneePointValue      (1,  999, 0, 999, defaultInputKneeCodes,  sizeof(defaultInputKneeCodes )/sizeof(uint32_t));
   SMultiValueInput<uint32_t> cfg_kneeSEIOutputKneePointValue     (0, 1000, 0, 999, defaultOutputKneeCodes, sizeof(defaultOutputKneeCodes)/sizeof(uint32_t));
   const int defaultPrimaryCodes[6]     = { 0,50000, 0,0, 50000,0 };
   const int defaultWhitePointCode[2]   = { 16667, 16667 };
+
   SMultiValueInput<int>  cfg_DisplayPrimariesCode            (0, 50000, 6, 6, defaultPrimaryCodes,   sizeof(defaultPrimaryCodes  )/sizeof(int));
   SMultiValueInput<int>  cfg_DisplayWhitePointCode           (0, 50000, 2, 2, defaultWhitePointCode, sizeof(defaultWhitePointCode)/sizeof(int));
 
+#if RExt__HIGH_BIT_DEPTH_SUPPORT
+  SMultiValueInput<Pel>  cfg_SEICTILut0(0, ((1 << (2 + 16 - 1)) - 1), 0, MAX_CTI_LUT_SIZE + 1);
+  SMultiValueInput<Pel>  cfg_SEICTILut1(0, ((1 << (2 + 16 - 1)) - 1), 0, MAX_CTI_LUT_SIZE + 1);
+  SMultiValueInput<Pel>  cfg_SEICTILut2(0, ((1 << (2 + 16 - 1)) - 1), 0, MAX_CTI_LUT_SIZE + 1);
+#else
+  SMultiValueInput<Pel>  cfg_SEICTILut0(0, ((1 << (2 + 12 - 1)) - 1), 0, MAX_CTI_LUT_SIZE + 1);
+  SMultiValueInput<Pel>  cfg_SEICTILut1(0, ((1 << (2 + 12 - 1)) - 1), 0, MAX_CTI_LUT_SIZE + 1);
+  SMultiValueInput<Pel>  cfg_SEICTILut2(0, ((1 << (2 + 12 - 1)) - 1), 0, MAX_CTI_LUT_SIZE + 1);
+#endif
   SMultiValueInput<bool> cfg_timeCodeSeiTimeStampFlag        (0,  1, 0, MAX_TIMECODE_SEI_SETS);
   SMultiValueInput<bool> cfg_timeCodeSeiNumUnitFieldBasedFlag(0,  1, 0, MAX_TIMECODE_SEI_SETS);
   SMultiValueInput<int>  cfg_timeCodeSeiCountingType         (0,  6, 0, MAX_TIMECODE_SEI_SETS);
@@ -674,6 +681,28 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_gcmpSEIFunctionUAffectedByVFlag   (0, 1, 5, 6);
   SMultiValueInput<double>     cfg_gcmpSEIFunctionCoeffV             (0.0, 1.0, 5, 6);
   SMultiValueInput<uint32_t>   cfg_gcmpSEIFunctionVAffectedByUFlag   (0, 1, 5, 6);
+  SMultiValueInput<uint32_t>        cfg_sdiSEILayerId                  (0, 63, 0, 63);
+  SMultiValueInput<uint32_t>        cfg_sdiSEIViewIdVal                (0, 63, 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_sdiSEIAuxId                    (0, 255, 0, 63);
+  SMultiValueInput<uint32_t>        cfg_sdiSEINumAssociatedPrimaryLayersMinus1 (0, 63, 0, 63);
+  SMultiValueInput<bool>            cfg_maiSEISignFocalLengthX         (0, 1,   0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_maiSEIExponentFocalLengthX     (0, 63, 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_maiSEIMantissaFocalLengthX     (0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<bool>            cfg_maiSEISignFocalLengthY         (0, 1,   0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_maiSEIExponentFocalLengthY     (0, 63, 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_maiSEIMantissaFocalLengthY     (0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<bool>            cfg_maiSEISignPrincipalPointX      (0, 1,   0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_maiSEIExponentPrincipalPointX  (0, 63, 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_maiSEIMantissaPrincipalPointX  (0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<bool>            cfg_maiSEISignPrincipalPointY      (0, 1,   0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_maiSEIExponentPrincipalPointY  (0, 63, 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_maiSEIMantissaPrincipalPointY  (0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<bool>            cfg_maiSEISignSkewFactor           (0, 1,   0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_maiSEIExponentSkewFactor       (0, 63, 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_maiSEIMantissaSkewFactor       (0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t>        cfg_mvpSEIViewPosition             (0, 63, 0, std::numeric_limits<uint32_t>::max());
+
+  SMultiValueInput<uint32_t>        cfg_driSEINonlinearModel           (0, 31, 0, std::numeric_limits<uint32_t>::max());
 #if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   const int defaultLadfQpOffset[3] = { 1, 0, 1 };
   const int defaultLadfIntervalLowerBound[2] = { 350, 833 };
@@ -683,7 +712,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosX       (0, std::numeric_limits<uint32_t>::max(), 0, 3);
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosY       (0, std::numeric_limits<uint32_t>::max(), 0, 3);
 
-  SMultiValueInput<uint8_t> cfg_SubProfile(0, std::numeric_limits<uint8_t>::max(), 0, std::numeric_limits<uint8_t>::max());
+  SMultiValueInput<uint32_t>  cfg_SubProfile(0, std::numeric_limits<uint8_t>::max(), 0,
+                                            std::numeric_limits<uint8_t>::max());
   SMultiValueInput<uint32_t>  cfg_subPicCtuTopLeftX(0, std::numeric_limits<uint32_t>::max(), 0, MAX_NUM_SUB_PICS);
   SMultiValueInput<uint32_t>  cfg_subPicCtuTopLeftY(0, std::numeric_limits<uint32_t>::max(), 0, MAX_NUM_SUB_PICS);
   SMultiValueInput<uint32_t>  cfg_subPicWidth(1, std::numeric_limits<uint32_t>::max(), 0, MAX_NUM_SUB_PICS);
@@ -692,18 +722,25 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<bool>      cfg_loopFilterAcrossSubpicEnabledFlag(0, 1, 0, MAX_NUM_SUB_PICS);
   SMultiValueInput<uint32_t>  cfg_subPicId(0, std::numeric_limits<uint16_t>::max(), 0, MAX_NUM_SUB_PICS);
 
-  SMultiValueInput<int>       cfg_sliFractions(0, 100, 0, std::numeric_limits<int>::max());
-#if JVET_S0098_SLI_FRACTION
-  SMultiValueInput<int>       cfg_sliNonSubpicLayersFractions(0, 100, 0, std::numeric_limits<int>::max());
-#endif
+  SMultiValueInput<int>       cfg_sliFractions(0, 255, 0, std::numeric_limits<int>::max());
+  SMultiValueInput<int>       cfg_sliNonSubpicLayersFractions(0, 255, 0, std::numeric_limits<int>::max());
 
-#if  JVET_S0176_SLI_SEI
   SMultiValueInput<Level::Name>  cfg_sliRefLevels(Level::NONE, Level::LEVEL15_5, 0, 8 * MAX_VPS_SUBLAYERS);
-#else
-  SMultiValueInput<Level::Name>  cfg_sliRefLevels(Level::NONE, Level::LEVEL15_5,  0, 8);
-#endif
 
   int warnUnknowParameter = 0;
+
+  SMultiValueInput<uint32_t>   cfg_FgcSEIIntensityIntervalLowerBoundComp0 (0, 255, 0, 256);
+  SMultiValueInput<uint32_t>   cfg_FgcSEIIntensityIntervalLowerBoundComp1 (0, 255, 0, 256);
+  SMultiValueInput<uint32_t>   cfg_FgcSEIIntensityIntervalLowerBoundComp2 (0, 255, 0, 256);
+  SMultiValueInput<uint32_t>   cfg_FgcSEIIntensityIntervalUpperBoundComp0 (0, 255, 0, 256);
+  SMultiValueInput<uint32_t>   cfg_FgcSEIIntensityIntervalUpperBoundComp1 (0, 255, 0, 256);
+  SMultiValueInput<uint32_t>   cfg_FgcSEIIntensityIntervalUpperBoundComp2 (0, 255, 0, 256);
+  SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp0              (0, 65535,  0, 256 * 6);
+  SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp1              (0, 65535,  0, 256 * 6);
+  SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
+#endif
 
 #if ENABLE_TRACING
   string sTracingRule;
@@ -731,8 +768,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("InputPathPrefix,-ipp",                            inputPathPrefix,                             string(""), "pathname to prepend to input filename")
   ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
   ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
-  ("SourceWidth,-wdt",                                m_iSourceWidth,                                       0, "Source picture width")
-  ("SourceHeight,-hgt",                               m_iSourceHeight,                                      0, "Source picture height")
+#if JVET_Z0120_SII_SEI_PROCESSING
+  ("SEIShutterIntervalPreFilename,-sii",              m_shutterIntervalPreFileName, string(""), "File name of Pre-Filtering video. If empty, not output video\n")
+#endif  
+  ("SourceWidth,-wdt",                                m_sourceWidth,                                       0, "Source picture width")
+  ("SourceHeight,-hgt",                               m_sourceHeight,                                      0, "Source picture height")
   ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")
   ("OutputBitDepth",                                  m_outputBitDepth[CHANNEL_TYPE_LUMA],                  0, "Bit-depth of output file (default:InternalBitDepth)")
   ("MSBExtendedBitDepth",                             m_MSBExtendedBitDepth[CHANNEL_TYPE_LUMA],             0, "bit depth of luma component after addition of MSBs of value 0 (used for synthesising High Dynamic Range source material). (default:InputBitDepth)")
@@ -741,6 +781,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("OutputBitDepthC",                                 m_outputBitDepth[CHANNEL_TYPE_CHROMA],                0, "As per OutputBitDepth but for chroma component. (default: use luma output bit-depth)")
   ("MSBExtendedBitDepthC",                            m_MSBExtendedBitDepth[CHANNEL_TYPE_CHROMA],           0, "As per MSBExtendedBitDepth but for chroma component. (default:MSBExtendedBitDepth)")
   ("ExtendedPrecision",                               m_extendedPrecisionProcessingFlag,                false, "Increased internal accuracies to support high bit depths (not valid in V1 profiles)")
+  ("TSRCRicePresent",                                 m_tsrcRicePresentFlag,                            false, "Indicate that TSRC Rice information is present in slice header (not valid in V1 profiles)")
+  ("ReverseLastSigCoeff",                             m_reverseLastSigCoeffEnabledFlag,                 false, "enable reverse last significant coefficient postion in RRC (not valid in V1 profiles)")  
   ("HighPrecisionPredictionWeighting",                m_highPrecisionOffsetsEnabledFlag,                false, "Use high precision option for weighted prediction (not valid in V1 profiles)")
   ("InputColourSpaceConvert",                         inputColourSpaceConvert,                     string(""), "Colour space conversion to apply to input video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(true))
   ("SNRInternalColourSpace",                          m_snrInternalColourSpace,                         false, "If true, then no colour space conversion is applied prior to SNR, otherwise inverse of input is applied.")
@@ -750,16 +792,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("PrintHexPSNR",                                    m_printHexPsnr,                                   false, "0 (default) don't emit hexadecimal PSNR for each frame, 1 = also emit hexadecimal PSNR values")
   ("PrintFrameMSE",                                   m_printFrameMSE,                                  false, "0 (default) emit only bit count and PSNRs for each frame, 1 = also emit MSE values")
   ("PrintSequenceMSE",                                m_printSequenceMSE,                               false, "0 (default) emit only bit rate and PSNRs for the whole sequence, 1 = also emit MSE values")
+  ("PrintMSSSIM",                                     m_printMSSSIM,                                    false, "0 (default) do not print MS-SSIM scores, 1 = print MS-SSIM scores for each frame and for the whole sequence")
+  ("PrintWPSNR",                                      m_printWPSNR,                                     false, "0 (default) do not print HDR-PQ based wPSNR, 1 = print HDR-PQ based wPSNR")
   ("CabacZeroWordPaddingEnabled",                     m_cabacZeroWordPaddingEnabled,                     true, "0 do not add conforming cabac-zero-words to bit streams, 1 (default) = add cabac-zero-words as required")
   ("ChromaFormatIDC,-cf",                             tmpChromaFormat,                                      0, "ChromaFormatIDC (400|420|422|444 or set 0 (default) for same as InputChromaFormat)")
-  ("ConformanceMode",                                 m_conformanceWindowMode,                              0, "Deprecated alias of ConformanceWindowMode")
-  ("ConformanceWindowMode",                           m_conformanceWindowMode,                              0, "Window conformance mode (0: no window, 1:automatic padding, 2:padding, 3:conformance")
-  ("HorizontalPadding,-pdx",                          m_aiPad[0],                                           0, "Horizontal source padding for conformance window mode 2")
-  ("VerticalPadding,-pdy",                            m_aiPad[1],                                           0, "Vertical source padding for conformance window mode 2")
-  ("ConfLeft",                                        m_confWinLeft,                                        0, "Deprecated alias of ConfWinLeft")
-  ("ConfRight",                                       m_confWinRight,                                       0, "Deprecated alias of ConfWinRight")
-  ("ConfTop",                                         m_confWinTop,                                         0, "Deprecated alias of ConfWinTop")
-  ("ConfBottom",                                      m_confWinBottom,                                      0, "Deprecated alias of ConfWinBottom")
+  ("ConformanceWindowMode",                           m_conformanceWindowMode,                              1, "Window conformance mode (0: no window, 1:automatic padding (default), 2:padding parameters specified, 3:conformance window parameters specified")
+  ("HorizontalPadding,-pdx",                          m_sourcePadding[0],                                   0, "Horizontal source padding for conformance window mode 2")
+  ("VerticalPadding,-pdy",                            m_sourcePadding[1],                                   0, "Vertical source padding for conformance window mode 2")
   ("ConfWinLeft",                                     m_confWinLeft,                                        0, "Left offset for window conformance mode 3")
   ("ConfWinRight",                                    m_confWinRight,                                       0, "Right offset for window conformance mode 3")
   ("ConfWinTop",                                      m_confWinTop,                                         0, "Top offset for window conformance mode 3")
@@ -798,21 +837,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   //Field coding parameters
   ("FieldCoding",                                     m_isField,                                        false, "Signals if it's a field based coding")
   ("TopFieldFirst, Tff",                              m_isTopFieldFirst,                                false, "In case of field based coding, signals whether if it's a top field first or not")
-  ("EfficientFieldIRAPEnabled",                       m_bEfficientFieldIRAPEnabled,                      true, "Enable to code fields in a specific, potentially more efficient, order.")
-  ("HarmonizeGopFirstFieldCoupleEnabled",             m_bHarmonizeGopFirstFieldCoupleEnabled,            true, "Enables harmonization of Gop first field couple")
+  ("EfficientFieldIRAPEnabled",                       m_efficientFieldIRAPEnabled,                      true, "Enable to code fields in a specific, potentially more efficient, order.")
+  ("HarmonizeGopFirstFieldCoupleEnabled",             m_harmonizeGopFirstFieldCoupleEnabled,            true, "Enables harmonization of Gop first field couple")
 
   // Profile and level
-#if JVET_S_PROFILES
   ("Profile",                                         extendedProfile,              ExtendedProfileName::NONE, "Profile name to use for encoding. Use [multilayer_]main_10[_444][_still_picture], auto, or none")
-#else
-  ("Profile",                                         extendedProfile,              ExtendedProfileName::NONE, "Profile name to use for encoding. Use main_10, main_10_still_picture, main_444_10, main_444_10_still_picture, auto, or none")
-#endif
   ("Level",                                           m_level,                                    Level::NONE, "Level limit to be used, eg 5.1, or none")
   ("Tier",                                            m_levelTier,                                Level::MAIN, "Tier to use for interpretation of --Level (main or high only)")
-#if JVET_S0138_GCI_PTL
   ("FrameOnlyConstraintFlag",                         m_frameOnlyConstraintFlag,                        true, "Bitstream contains only frames")
   ("MultiLayerEnabledFlag",                           m_multiLayerEnabledFlag,                         false, "Bitstream might contain more than one layer")
-#endif
   ("SubProfile",                                      cfg_SubProfile,                          cfg_SubProfile,  "Sub-profile idc")
   ("EnableDecodingCapabilityInformation",             m_DCIEnabled,                                     false, "Enables writing of Decoding Capability Information")
   ("MaxBitDepthConstraint",                           m_bitDepthConstraint,                                0u, "Bit depth to use for profile-constraint for RExt profiles. 0=automatically choose based upon other parameters")
@@ -835,21 +868,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("OneTilePerPicConstraintFlag",                     m_oneTilePerPicConstraintFlag,                    false, "Indicate that each picture shall contain only one tile")
   ("PicHeaderInSliceHeaderConstraintFlag",            m_picHeaderInSliceHeaderConstraintFlag,           false, "Indicate that picture header is present in slice header")
   ("OneSlicePerPicConstraintFlag",                    m_oneSlicePerPicConstraintFlag,                   false, "Indicate that each picture shall contain only one slice")
-#if JVET_S0113_S0195_GCI
   ("NoIdrRplConstraintFlag",                          m_noIdrRplConstraintFlag,                         false, "Indicate that RPL is not present in SH of IDR slices")
   ("NoRectSliceConstraintFlag",                       m_noRectSliceConstraintFlag,                      false, "Indicate that rectagular slice is deactivated")
   ("OneSlicePerSubpicConstraintFlag",                 m_oneSlicePerSubpicConstraintFlag,                false, "Indicate that each subpicture shall contain only one slice")
   ("NoSubpicInfoConstraintFlag",                      m_noSubpicInfoConstraintFlag,                     false, "Indicate that subpicture information is not present")
-#else
-  ("OneSubpicPerPicConstraintFlag",                   m_oneSubpicPerPicConstraintFlag,                  false, "Indicate that each picture shall contain only one subpicture")
-#endif
-#if JVET_S0066_GCI
   ("MaxLog2CtuSizeConstraintIdc",                     m_maxLog2CtuSizeConstraintIdc,                        8, "Indicate that Log2CtuSize shall be in the range of 0 to m_maxLog2CtuSizeConstraintIdc")
-#endif
   ("NoPartitionConstraintsOverrideConstraintFlag",    m_noPartitionConstraintsOverrideConstraintFlag,   false, "Indicate that Partition Override is deactivated")
-  #if JVET_S0058_GCI
   ("MttConstraintFlag",                               m_noMttConstraintFlag,                            false, "Indicate that Mtt is deactivated")
-#endif
   ("NoQtbttDualTreeIntraConstraintFlag",              m_noQtbttDualTreeIntraConstraintFlag,            false, "Indicate that Qtbtt DualTree Intra is deactivated")
   ("NoPaletteConstraintFlag",                         m_noPaletteConstraintFlag,                        false, "Indicate that PLT is deactivated")
   ("NoIbcConstraintFlag",                             m_noIbcConstraintFlag,                            false, "Indicate that IBC is deactivated")
@@ -857,13 +882,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("NoMrlConstraintFlag",                             m_noMrlConstraintFlag,                            false, "Indicate that MRL is deactivated")
   ("NoMipConstraintFlag",                             m_noMipConstraintFlag,                            false, "Indicate that MIP is deactivated")
   ("NoCclmConstraintFlag",                            m_noCclmConstraintFlag,                          false, "Indicate that CCLM is deactivated")
-#if JVET_Q0114_ASPECT5_GCI_FLAG
   ("NoRprConstraintFlag",                             m_noRprConstraintFlag,                            false, "Indicate that reference picture resampling is deactivated")
-#endif
   ("NoResChangeInClvsConstraintFlag",                 m_noResChangeInClvsConstraintFlag,                false, "Indicate that the picture spatial resolution does not change within any CLVS referring to the SPS")
-  #if JVET_S0058_GCI
   ("WeightedPredictionConstraintFlag",                m_noWeightedPredictionConstraintFlag,             false, "Indicate that Weighted Prediction is deactivated")
-#endif
   ("NoRefWraparoundConstraintFlag",                   m_noRefWraparoundConstraintFlag,                 false, "Indicate that Reference Wraparound is deactivated")
   ("NoTemporalMvpConstraintFlag",                     m_noTemporalMvpConstraintFlag,                   false, "Indicate that temporal MVP is deactivated")
   ("NoSbtmvpConstraintFlag",                          m_noSbtmvpConstraintFlag,                        false, "Indicate that SbTMVP is deactivated")
@@ -878,52 +899,36 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("NoCiipConstraintFlag",                            m_noCiipConstraintFlag,                          false, "Indicate that CIIP is deactivated")
   ("NoGpmConstraintFlag",                             m_noGeoConstraintFlag,                            false, "Indicate that GPM is deactivated")
   ("NoTransformSkipConstraintFlag",                   m_noTransformSkipConstraintFlag,                  false, "Indicate that Transform Skip is deactivated")
-#if JVET_S0066_GCI
   ("NoLumaTransformSize64ConstraintFlag",             m_noLumaTransformSize64ConstraintFlag,            false, "Indicate that Luma Transform Size 64 is deactivated")
-#endif
   ("NoBDPCMConstraintFlag",                           m_noBDPCMConstraintFlag,                          false, "Indicate that BDPCM is deactivated")
   ("NoMtsConstraintFlag",                             m_noMtsConstraintFlag,                           false, "Indicate that MTS is deactivated")
   ("NoLfnstConstraintFlag",                           m_noLfnstConstraintFlag,                          false, "Indicate that LFNST is deactivated")
   ("NoJointCbCrConstraintFlag",                       m_noJointCbCrConstraintFlag,                      false, "Indicate that JCCR is deactivated")
   ("NoSbtConstraintFlag",                             m_noSbtConstraintFlag,                            false, "Indicate that SBT is deactivated")
   ("NoActConstraintFlag",                             m_noActConstraintFlag,                            false, "Indicate that ACT is deactivated")
-#if JVET_S0050_GCI
   ("NoExplicitScaleListConstraintFlag",               m_noExplicitScaleListConstraintFlag,              false, "Indicate that explicit scaling list is deactivated")
-#endif
-#if JVET_R0341_GCI
   ("NoChromaQpOffsetConstraintFlag",                  m_noChromaQpOffsetConstraintFlag,                 false, "Indicate that chroma qp offset is zero")
-#endif
   ("NoDepQuantConstraintFlag",                        m_noDepQuantConstraintFlag,                      false, "Indicate that DQ is deactivated")
   ("NoSignDataHidingConstraintFlag",                  m_noSignDataHidingConstraintFlag,                false, "Indicate that SDH is deactivated")
-#if JVET_R0227_ASPECT3
   ("NoCuQpDeltaConstraintFlag",                       m_noCuQpDeltaConstraintFlag,                     false, "Indicate that CU QP delta is deactivated")
-#else
-  ("NoQpDeltaConstraintFlag",                         m_noQpDeltaConstraintFlag,                       false, "Indicate that QPdelta is deactivated")
-#endif
   ("NoSaoConstraintFlag",                             m_noSaoConstraintFlag,                           false, "Indicate that SAO is deactivated")
   ("NoAlfConstraintFlag",                             m_noAlfConstraintFlag,                           false, "Indicate that ALF is deactivated")
   ("NoCCAlfConstraintFlag",                           m_noCCAlfConstraintFlag,                          false, "Indicate that CCALF is deactivated")
   ("NoLmcsConstraintFlag",                            m_noLmcsConstraintFlag,                           false, "Indicate that LMCS is deactivated")
   ("NoLadfConstraintFlag",                            m_noLadfConstraintFlag,                          false, "Indicate that LADF is deactivated")
-#if JVET_S0050_GCI
   ("NoVirtualBoundaryConstraintFlag",                 m_noVirtualBoundaryConstraintFlag,                false, "Indicate that virtual boundary is deactivated")
-#endif
-#if !JVET_S0138_GCI_PTL
-  ("SingleLayerConstraintFlag",                       m_singleLayerConstraintFlag,                      false, "Indicate that the bitstream contains only one layer")
-  ("FrameOnlyConstraintFlag",                         m_frameOnlyConstraintFlag,                        false, "Indicate that the bitstream contains only frames")
-#endif
- #if !JVET_S0266_VUI_length
-  ("NonPackedSourceConstraintFlag",                   m_nonPackedConstraintFlag,                        false, "Indicate that source does not contain frame packing")
-  ("NonProjectedConstraintFlag",                      m_nonProjectedConstraintFlag,                     false, "Indicate that the bitstream contains projection SEI messages")
-#endif
+  ("AllRapPicturesFlag",                              m_allRapPicturesFlag,                             false, "Indicate that all pictures in OlsInScope are IRAP pictures or GDR pictures with ph_recovery_poc_cnt equal to 0")
+  ("NoExtendedPrecisionProcessingConstraintFlag",     m_noExtendedPrecisionProcessingConstraintFlag,    false, "Indicate that ExtendedPrecision is deactivated")
+  ("NoTsResidualCodingRiceConstraintFlag",            m_noTsResidualCodingRiceConstraintFlag,           false, "Indicate that TSRCRicePresent is deactivated")
+  ("NoRrcRiceExtensionConstraintFlag",                m_noRrcRiceExtensionConstraintFlag,               false, "Indicate that ExtendedRiceRRC is deactivated")
+  ("NoPersistentRiceAdaptationConstraintFlag",        m_noPersistentRiceAdaptationConstraintFlag,       false, "Indicate that GolombRiceParameterAdaptation is deactivated")
+  ("NoReverseLastSigCoeffConstraintFlag",             m_noReverseLastSigCoeffConstraintFlag,            false, "Indicate that ReverseLastSigCoeff is deactivated")
 
   ("CTUSize",                                         m_uiCTUSize,                                       128u, "CTUSize (specifies the CTU size if QTBT is on) [default: 128]")
   ("Log2MinCuSize",                                   m_log2MinCuSize,                                     2u, "Log2 min CU size")
   ("SubPicInfoPresentFlag",                           m_subPicInfoPresentFlag,                          false, "equal to 1 specifies that subpicture parameters are present in in the SPS RBSP syntax")
   ("NumSubPics",                                      m_numSubPics,                                        0u, "specifies the number of subpictures")
-#if JVET_S0071_SAME_SIZE_SUBPIC_LAYOUT
   ("SubPicSameSizeFlag",                              m_subPicSameSizeFlag,                             false, "equal to 1 specifies that all subpictures in the CLVS have the same width specified by sps_subpic_width_minus1[ 0 ] and the same height specified by sps_subpic_height_minus1[ 0 ].")
-#endif
   ("SubPicCtuTopLeftX",                               cfg_subPicCtuTopLeftX,            cfg_subPicCtuTopLeftX, "specifies horizontal position of top left CTU of i-th subpicture in unit of CtbSizeY")
   ("SubPicCtuTopLeftY",                               cfg_subPicCtuTopLeftY,            cfg_subPicCtuTopLeftY, "specifies vertical position of top left CTU of i-th subpicture in unit of CtbSizeY")
   ("SubPicWidth",                                     cfg_subPicWidth,                        cfg_subPicWidth, "specifies the width of the i-th subpicture in units of CtbSizeY")
@@ -950,6 +955,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MaxTTLumaISlice",                                 m_uiMaxTT[0],                                       32u, "MaxTTLumaISlice")
   ("MaxTTChromaISlice",                               m_uiMaxTT[2],                                       32u, "MaxTTChromaISlice")
   ("MaxTTNonISlice",                                  m_uiMaxTT[1],                                       64u, "MaxTTNonISlice")
+  ("TTFastSkip",                                      m_ttFastSkip,                                        31, "fast skip method for TT split partition")
+  ("TTFastSkipThr",                                   m_ttFastSkipThr,                                  1.075, "Threshold value of fast skip method for TT split partition")
   ("DualITree",                                       m_dualTree,                                       false, "Use separate QTBT trees for intra slice luma and chroma channel types")
   ( "LFNST",                                          m_LFNST,                                          false, "Enable LFNST (0:off, 1:on)  [default: off]" )
   ( "FastLFNST",                                      m_useFastLFNST,                                   false, "Fast methods for LFNST" )
@@ -957,6 +964,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MMVD",                                            m_MMVD,                                            true, "Enable Merge mode with Motion Vector Difference (0:off, 1:on)  [default: 1]")
   ("Affine",                                          m_Affine,                                         false, "Enable affine prediction (0:off, 1:on)  [default: off]")
   ("AffineType",                                      m_AffineType,                                      true,  "Enable affine type prediction (0:off, 1:on)  [default: on]" )
+#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
+  ("AdaptBypassAffineMe",                             m_adaptBypassAffineMe,                            false, "Adaptively bypass affine ME (0: off, 1:on, defaul: off]")
+#endif
   ("PROF",                                            m_PROF,                                           false, "Enable Prediction refinement with optical flow for affine mode (0:off, 1:on)  [default: off]")
   ("BIO",                                             m_BIO,                                            false, "Enable bi-directional optical flow")
   ("IMV",                                             m_ImvMode,                                            1, "Adaptive MV precision Mode (IMV)\n"
@@ -972,14 +982,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("VerCollocatedChroma",                             m_verCollocatedChromaFlag,                        false, "Specifies location of a chroma sample relatively to the luma sample in vertical direction in the cross-component linear model intra prediction and the reference picture resampling\n"
                                                                                                                "\t0:  horizontally co-sited, vertically shifted by 0.5 units of luma samples\n"
                                                                                                                "\t1:  collocated\n")
-  ("MTS",                                             m_MTS,                                                0, "Multiple Transform Set (MTS)\n"
+  ("MTS",                                             m_mtsMode,                                            0, "Multiple Transform Set (MTS)\n"
     "\t0:  Disable MTS\n"
-    "\t1:  Enable only Intra MTS\n"
-    "\t2:  Enable only Inter MTS\n"
-    "\t3:  Enable both Intra & Inter MTS\n")
+    "\t1:  Enable explicit Intra MTS\n"
+    "\t2:  Enable implicit Intra and explicit Inter MTS\n"
+    "\t3:  Enable explicit Intra and explicit Inter MTS\n"
+    "\t4:  Enable implicit Intra MTS\n")
   ("MTSIntraMaxCand",                                 m_MTSIntraMaxCand,                                    3, "Number of additional candidates to test in encoder search for MTS in intra slices\n")
   ("MTSInterMaxCand",                                 m_MTSInterMaxCand,                                    4, "Number of additional candidates to test in encoder search for MTS in inter slices\n")
-  ("MTSImplicit",                                     m_MTSImplicit,                                        0, "Enable implicit MTS (when explicit MTS is off)\n")
+  ("MTSImplicit",                                     m_mtsImplicitIntra,                                   0, "Enable implicit Intra MTS (when MTS is 0)\n")
   ( "SBT",                                            m_SBT,                                            false, "Enable Sub-Block Transform for inter blocks\n" )
   ( "SBTFast64WidthTh",                               m_SBTFast64WidthTh,                                1920, "Picture width threshold for testing size-64 SBT in RDO (now for HD and above sequences)\n")
   ( "ISP",                                            m_ISP,                                            false, "Enable Intra Sub-Partitions\n" )
@@ -1000,6 +1011,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("AllowDisFracMMVD",                                m_allowDisFracMMVD,                               false, "Disable fractional MVD in MMVD mode adaptively")
   ("AffineAmvr",                                      m_AffineAmvr,                                     false, "Eanble AMVR for affine inter mode")
   ("AffineAmvrEncOpt",                                m_AffineAmvrEncOpt,                               false, "Enable encoder optimization of affine AMVR")
+  ("AffineAmvp",                                      m_AffineAmvp,                                      true, "Enable AMVP for affine inter mode")
   ("DMVR",                                            m_DMVR,                                           false, "Decoder-side Motion Vector Refinement")
   ("MmvdDisNum",                                      m_MmvdDisNum,                                     8,     "Number of MMVD Distance Entries")
   ("ColorTransform",                                  m_useColorTrans,                                  false, "Enable the color transform")
@@ -1046,6 +1058,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MIP",                                             m_MIP,                                             true,  "Enable MIP (matrix-based intra prediction)")
   ("FastMIP",                                         m_useFastMIP,                                     false,  "Fast encoder search for MIP (matrix-based intra prediction)")
   ("FastLocalDualTreeMode",                           m_fastLocalDualTreeMode,                              0,  "Fast intra pass coding for local dual-tree in intra coding region, 0: off, 1: use threshold, 2: one intra mode only")
+  ("SplitPredictAdaptMode",                           m_fastAdaptCostPredMode,                              0,  "Mode for split cost prediction, 0..2 (Default: 0)" )
+  ("DisableFastTTfromBT",                             m_disableFastDecisionTT,                          false,  "Disable fast decision for TT from BT")
   // Unit definition parameters
   ("MaxCUWidth",                                      m_uiMaxCUWidth,                                     64u)
   ("MaxCUHeight",                                     m_uiMaxCUHeight,                                    64u)
@@ -1057,9 +1071,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   // Coding structure paramters
   ("IntraPeriod,-ip",                                 m_iIntraPeriod,                                      -1, "Intra period in frames, (-1: only first frame)")
+#if GDR_ENABLED
+  ("GdrEnabled",                                      m_gdrEnabled,                                     false, "GDR enabled")
+  ("GdrPocStart",                                     m_gdrPocStart,                                       -1, "GDR poc start")
+  ("GdrPeriod",                                       m_gdrPeriod,                                         -1, "Number of frames between GDR picture to the next GDR picture")
+  ("GdrInterval",                                     m_gdrInterval,                                       -1, "Number of frames from GDR picture to the recovery point picture")
+  ("GdrNoHash",                                       m_gdrNoHash,                                       true, "Do not generate decode picture hash SEI messages for GDR and recovering pictures")
+#endif
   ("DecodingRefreshType,-dr",                         m_iDecodingRefreshType,                               0, "Intra refresh type (0:none 1:CRA 2:IDR 3:RecPointSEI)")
   ("GOPSize,g",                                       m_iGOPSize,                                           1, "GOP size of temporal structure")
   ("DRAPPeriod",                                      m_drapPeriod,                                         0, "DRAP period in frames (0: disable Dependent RAP indication SEI messages)")
+  ("EDRAPPeriod",                                     m_edrapPeriod,                                        0, "EDRAP period in frames (0: disable Extended Dependent RAP indication SEI messages)")
   ("ReWriteParamSets",                                m_rewriteParamSets,                           false, "Enable rewriting of Parameter sets before every (intra) random access point")
   ("IDRRefParamList",                                 m_idrRefParamList,                            false, "Enable indication of reference picture list syntax elements in slice headers of IDR pictures")
   // motion search options
@@ -1101,7 +1123,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("DeltaQpRD,-dqr",                                  m_uiDeltaQpRD,                                       0u, "max dQp offset for slice")
   ("MaxDeltaQP,d",                                    m_iMaxDeltaQP,                                        0, "max dQp offset for block")
   ("MaxCuDQPSubdiv,-dqd",                             m_cuQpDeltaSubdiv,                                    0, "Maximum subdiv for CU luma Qp adjustment")
-  ("MaxCuChromaQpOffsetSubdiv",                       m_cuChromaQpOffsetSubdiv,                            -1, "Maximum subdiv for CU chroma Qp adjustment - set less than 0 to disable")
+  ("MaxCuChromaQpOffsetSubdiv",                       m_cuChromaQpOffsetSubdiv,                             0, "Maximum subdiv for CU chroma Qp adjustment")
+  ("SliceCuChromaQpOffsetEnabled",                    m_cuChromaQpOffsetEnabled,                         true, "Enable local chroma QP offsets (slice level flag)")
   ("FastDeltaQP",                                     m_bFastDeltaQP,                                   false, "Fast Delta QP Algorithm")
 #if SHARP_LUMA_DELTA_QP
   ("LumaLevelToDeltaQPMode",                          lumaLevelToDeltaQPMode,                              0u, "Luma based Delta QP 0(default): not used. 1: Based on CTU average, 2: Based on Max luma in CTU")
@@ -1111,7 +1134,18 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("LumaLevelToDeltaQPMappingLuma",                   cfg_lumaLeveltoDQPMappingLuma,  cfg_lumaLeveltoDQPMappingLuma, "Luma to Delta QP Mapping - luma thresholds")
   ("LumaLevelToDeltaQPMappingDQP",                    cfg_lumaLeveltoDQPMappingQP,  cfg_lumaLeveltoDQPMappingQP, "Luma to Delta QP Mapping - DQP values")
 #endif
-  ("UseIdentityTableForNon420Chroma",                 m_useIdentityTableForNon420Chroma,                 true, "True: Indicates that 422/444 chroma uses identity chroma QP mapping tables; False: explicit Qp table may be specified in config")
+  ("SmoothQPReductionEnable",                         m_smoothQPReductionEnable,                         false, "Enable QP reduction for smooth blocks according to: Clip3(SmoothQPReductionLimit, 0, SmoothQPReductionModelScale*baseQP+SmoothQPReductionModelOffset)")
+  ("SmoothQPReductionPeriodicity",                    m_smoothQPReductionPeriodicity,                        0, "Periodicity parameter of the QP reduction model, 1: all frames, 0: only intra pictures, 2: every second frame, etc")
+  ("SmoothQPReductionThresholdIntra",                 m_smoothQPReductionThresholdIntra,                   3.0, "Threshold parameter for smoothness for intra pictures (SmoothQPReductionThresholdIntra * number of samples in block)")
+  ("SmoothQPReductionModelScaleIntra",                m_smoothQPReductionModelScaleIntra,                 -1.0, "Scale parameter of the QP reduction model for intra pictures ")
+  ("SmoothQPReductionModelOffsetIntra",               m_smoothQPReductionModelOffsetIntra,                27.0, "Offset parameter of the QP reduction model for intra pictures ")
+  ("SmoothQPReductionLimitIntra",                     m_smoothQPReductionLimitIntra,                       -16, "Threshold parameter for controlling maximum amount of QP reduction by the QP reduction model for intra pictures ")
+  ("SmoothQPReductionThresholdInter",                 m_smoothQPReductionThresholdInter,                   3.0, "Threshold parameter for smoothness for inter pictures (SmoothQPReductionThresholdInter * number of samples in block)")
+  ("SmoothQPReductionModelScaleInter",                m_smoothQPReductionModelScaleInter,                 -1.0, "Scale parameter of the QP reduction model for inter pictures")
+  ("SmoothQPReductionModelOffsetInter",               m_smoothQPReductionModelOffsetInter,                27.0, "Offset parameter of the QP reduction model for inter pictures")
+  ("SmoothQPReductionLimitInter",                     m_smoothQPReductionLimitInter,                        -4, "Threshold parameter for controlling maximum amount of QP reduction by the QP reduction model for inter pictures")
+  ("BIM",                                             m_bimEnabled,                                      false, "Block Importance Mapping QP adaptation depending on estimated propagation of reference samples.")
+  ("UseIdentityTableForNon420Chroma",                 m_useIdentityTableForNon420Chroma,                  true, "True: Indicates that 422/444 chroma uses identity chroma QP mapping tables; False: explicit Qp table may be specified in config")
   ("SameCQPTablesForAllChroma",                       m_chromaQpMappingTableParams.m_sameCQPTableForAllChromaFlag,                        true, "0: Different tables for Cb, Cr and joint Cb-Cr components, 1 (default): Same tables for all three chroma components")
   ("QpInValCb",                                       cfg_qpInValCb,                            cfg_qpInValCb, "Input coordinates for the QP table for Cb component")
   ("QpOutValCb",                                      cfg_qpOutValCb,                          cfg_qpOutValCb, "Output coordinates for the QP table for Cb component")
@@ -1137,6 +1171,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SliceCbQpOffsetIntraOrPeriodic",                  m_sliceChromaQpOffsetIntraOrPeriodic[0],              0, "Chroma Cb QP Offset at slice level for I slice or for periodic inter slices as defined by SliceChromaQPOffsetPeriodicity. Replaces offset in the GOP table.")
   ("SliceCrQpOffsetIntraOrPeriodic",                  m_sliceChromaQpOffsetIntraOrPeriodic[1],              0, "Chroma Cr QP Offset at slice level for I slice or for periodic inter slices as defined by SliceChromaQPOffsetPeriodicity. Replaces offset in the GOP table.")
 #endif
+  ("CbQpOffsetList",                                  cfg_cbQpOffsetList,                  cfg_cbQpOffsetList, "Chroma Cb QP offset list for local adjustment")
+  ("CrQpOffsetList",                                  cfg_crQpOffsetList,                  cfg_crQpOffsetList, "Chroma Cb QP offset list for local adjustment")
+  ("CbCrQpOffsetList",                                cfg_cbCrQpOffsetList,              cfg_cbCrQpOffsetList, "Chroma joint Cb-Cr QP offset list for local adjustment")
 
   ("AdaptiveQP,-aq",                                  m_bUseAdaptiveQP,                                 false, "QP adaptation based on a psycho-visual model")
   ("MaxQPAdaptationRange,-aqr",                       m_iQPAdaptationRange,                                 6, "QP adaptation range")
@@ -1147,20 +1184,18 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("dQPFile,m",                                       m_dQPFileName,                               string(""), "dQP file name")
   ("RDOQ",                                            m_useRDOQ,                                         true)
   ("RDOQTS",                                          m_useRDOQTS,                                       true)
-#if T0196_SELECTIVE_RDOQ
   ("SelectiveRDOQ",                                   m_useSelectiveRDOQ,                               false, "Enable selective RDOQ")
-#endif
   ("RDpenalty",                                       m_rdPenalty,                                          0, "RD-penalty for 32x32 TU for intra in non-intra slices. 0:disabled  1:RD-penalty  2:maximum RD-penalty")
 
   // Deblocking filter parameters
-  ("LoopFilterDisable",                               m_bLoopFilterDisable,                             false)
-  ("LoopFilterOffsetInPPS",                           m_loopFilterOffsetInPPS,                           true)
-  ("LoopFilterBetaOffset_div2",                       m_loopFilterBetaOffsetDiv2,                           0)
-  ("LoopFilterTcOffset_div2",                         m_loopFilterTcOffsetDiv2,                             0)
-  ("LoopFilterCbBetaOffset_div2",                     m_loopFilterCbBetaOffsetDiv2,                         0)
-  ("LoopFilterCbTcOffset_div2",                       m_loopFilterCbTcOffsetDiv2,                           0)
-  ("LoopFilterCrBetaOffset_div2",                     m_loopFilterCrBetaOffsetDiv2,                         0)
-  ("LoopFilterCrTcOffset_div2",                       m_loopFilterCrTcOffsetDiv2,                           0)
+  ("DeblockingFilterDisable",                         m_deblockingFilterDisable,                        false)
+  ("DeblockingFilterOffsetInPPS",                     m_deblockingFilterOffsetInPPS,                     true)
+  ("DeblockingFilterBetaOffset_div2",                 m_deblockingFilterBetaOffsetDiv2,                     0)
+  ("DeblockingFilterTcOffset_div2",                   m_deblockingFilterTcOffsetDiv2,                       0)
+  ("DeblockingFilterCbBetaOffset_div2",               m_deblockingFilterCbBetaOffsetDiv2,                   0)
+  ("DeblockingFilterCbTcOffset_div2",                 m_deblockingFilterCbTcOffsetDiv2,                     0)
+  ("DeblockingFilterCrBetaOffset_div2",               m_deblockingFilterCrBetaOffsetDiv2,                   0)
+  ("DeblockingFilterCrTcOffset_div2",                 m_deblockingFilterCrTcOffsetDiv2,                     0)
 #if W0038_DB_OPT
   ("DeblockingFilterMetric",                          m_deblockingFilterMetric,                             0)
 #else
@@ -1176,9 +1211,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ISPFast",                                         m_useFastISP,                                     false, "Fast encoder search for ISP")
   ("ResidualRotation",                                m_transformSkipRotationEnabledFlag,               false, "Enable rotation of transform-skipped and transquant-bypassed TUs through 180 degrees prior to entropy coding (not valid in V1 profiles)")
   ("SingleSignificanceMapContext",                    m_transformSkipContextEnabledFlag,                false, "Enable, for transform-skipped and transquant-bypassed TUs, the selection of a single significance map context variable for all coefficients (not valid in V1 profiles)")
+  ("ExtendedRiceRRC",                                 m_rrcRiceExtensionEnableFlag,                     false, "Enable the extention of the Golomb-Rice parameter derivation for RRC")
   ("GolombRiceParameterAdaptation",                   m_persistentRiceAdaptationEnabledFlag,            false, "Enable the adaptation of the Golomb-Rice parameter over the course of each slice")
   ("AlignCABACBeforeBypass",                          m_cabacBypassAlignmentEnabledFlag,                false, "Align the CABAC engine to a defined fraction of a bit prior to coding bypass data. Must be 1 in high bit rate profile, 0 otherwise")
   ("SAO",                                             m_bUseSAO,                                         true, "Enable Sample Adaptive Offset")
+  ("SaoTrueOrg",                                      m_saoTrueOrg,                                     false, "Using true original samples for SAO optimization when MCTF is enabled\n")
   ("TestSAODisableAtPictureLevel",                    m_bTestSAODisableAtPictureLevel,                  false, "Enables the testing of disabling SAO at the picture level after having analysed all blocks")
   ("SaoEncodingRate",                                 m_saoEncodingRate,                                 0.75, "When >0 SAO early picture termination is enabled for luma and chroma")
   ("SaoEncodingRateChroma",                           m_saoEncodingRateChroma,                            0.5, "The SAO early picture termination rate to use for chroma (when m_SaoEncodingRate is >0). If <=0, use results for luma")
@@ -1200,7 +1237,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("FastUDIUseMPMEnabled",                            m_bFastUDIUseMPMEnabled,                           true, "If enabled, adapt intra direction search, accounting for MPM")
   ("FastMEForGenBLowDelayEnabled",                    m_bFastMEForGenBLowDelayEnabled,                   true, "If enabled use a fast ME for generalised B Low Delay slices")
   ("UseBLambdaForNonKeyLowDelayPictures",             m_bUseBLambdaForNonKeyLowDelayPictures,            true, "Enables use of B-Lambda for non-key low-delay pictures")
-  ("IntraReferenceSmoothing",                         m_enableIntraReferenceSmoothing,                   true, "0: Disable use of intra reference smoothing (not valid in V1 profiles). 1: Enable use of intra reference smoothing (same as V1)")
   ("WeightedPredP,-wpP",                              m_useWeightedPred,                                false, "Use weighted prediction in P slices")
   ("WeightedPredB,-wpB",                              m_useWeightedBiPred,                              false, "Use weighted (bidirectional) prediction in B slices")
   ("WeightedPredMethod,-wpM",                         tmpWeightedPredictionMethod, int(WP_PER_PICTURE_WITH_SIMPLE_DC_COMBINED_COMPONENT), "Weighted prediction method")
@@ -1224,13 +1260,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
                                                                                                                "\t2: CRC\n"
                                                                                                                "\t1: use MD5\n"
                                                                                                                "\t0: disable")
-#if JVET_R0294_SUBPIC_HASH
   ("SubpicDecodedPictureHash",                        tmpSubpicDecodedPictureHashMappedType,                0, "Control generation of decode picture hash SEI messages for each subpicture\n"
                                                                                                                "\t3: checksum\n"
                                                                                                                "\t2: CRC\n"
                                                                                                                "\t1: use MD5\n"
                                                                                                                "\t0: disable")
-#endif
   ("TMVPMode",                                        m_TMVPModeId,                                         1, "TMVP mode 0: TMVP disable for all slices. 1: TMVP enable for all slices (default) 2: TMVP enable for certain slices only")
   ("SliceLevelRpl",                                   m_sliceLevelRpl,                                   true, "Code reference picture lists in slice headers rather than picture header.")
   ("SliceLevelDblk",                                  m_sliceLevelDblk,                                  true, "Code deblocking filter parameters in slice headers rather than picture header.")
@@ -1270,10 +1304,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MatrixCoefficients",                              m_matrixCoefficients,                                 2, "Describes the matrix coefficients used in deriving luma and chroma from RGB primaries")
   ("ProgressiveSource",                               m_progressiveSourceFlag,                          false, "Indicate that source is progressive")
   ("InterlacedSource",                                m_interlacedSourceFlag,                           false, "Indicate that source is interlaced")
-#if JVET_S0266_VUI_length
   ("NonPackedSourceConstraintFlag",                   m_nonPackedConstraintFlag,                        false, "Indicate that source does not contain frame packing")
   ("NonProjectedConstraintFlag",                      m_nonProjectedConstraintFlag,                     false, "Indicate that the bitstream contains projection SEI messages")
-#endif
   ("ChromaLocInfoPresent",                            m_chromaLocInfoPresentFlag,                       false, "Signals whether chroma_sample_loc_type_top_field and chroma_sample_loc_type_bottom_field are present")
   ("ChromaSampleLocTypeTopField",                     m_chromaSampleLocTypeTopField,                        0, "Specifies the location of chroma samples for top field")
   ("ChromaSampleLocTypeBottomField",                  m_chromaSampleLocTypeBottomField,                     0, "Specifies the location of chroma samples for bottom field")
@@ -1298,6 +1330,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
                                                                                                                "\t0: unspecified\n"
                                                                                                                "\t1: stereo pair, frame0 represents left view\n"
                                                                                                                "\t2: stereo pair, frame0 represents right view")
+  ("SEIDisplayOrientationEnabled",                    m_doSEIEnabled,                                   false, "Controls if display orientation packing SEI message enabled")
+  ("SEIDisplayOrientationCancelFlag",                 m_doSEICancelFlag,                                 true, "Specifies the persistence of any previous display orientation SEI message in output order.")
+  ("SEIDisplayOrientationPersistenceFlag",            m_doSEIPersistenceFlag,                           false, "Specifies the persistence of the display orientation packing SEI message for the current layer.")
+  ("SEIDisplayOrientationTransformType",              m_doSEITransformType,                                 0, "specifies the rotation and mirroring to be applied to the picture.")
   ("SEIParameterSetsInclusionIndication",             m_parameterSetsInclusionIndicationSEIEnabled,      false, "Control generation of Parameter sets inclusion indication SEI messages")
   ("SEISelfContainedClvsFlag",                        m_selfContainedClvsFlag,                               0, "Self contained CLVS indication flag value")
   ("SEIMasteringDisplayColourVolume",                 m_masteringDisplay.colourVolumeSEIEnabled,         false, "Control generation of mastering display colour volume SEI messages")
@@ -1306,7 +1342,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIMasteringDisplayPrimaries",                    cfg_DisplayPrimariesCode,       cfg_DisplayPrimariesCode, "Mastering display primaries for all three colour planes in CIE xy coordinates in increments of 1/50000 (results in the ranges 0 to 50000 inclusive)")
   ("SEIMasteringDisplayWhitePoint",                   cfg_DisplayWhitePointCode,     cfg_DisplayWhitePointCode, "Mastering display white point CIE xy coordinates in normalised increments of 1/50000 (e.g. 0.333 = 16667)")
 #if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
-  ("SEIPreferredTransferCharacterisics",              m_preferredTransferCharacteristics,                   -1, "Value for the preferred_transfer_characteristics field of the Alternative transfer characteristics SEI which will override the corresponding entry in the VUI. If negative, do not produce the respective SEI message")
+  ("SEIPreferredTransferCharacteristics",              m_preferredTransferCharacteristics,                   -1, "Value for the preferred_transfer_characteristics field of the Alternative transfer characteristics SEI which will override the corresponding entry in the VUI. If negative, do not produce the respective SEI message")
 #endif
 
   ("SEIErpEnabled",                                   m_erpSEIEnabled,                                   false, "Control generation of equirectangular projection SEI messages")
@@ -1376,14 +1412,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEISubpicLevelInfoRefLevels",                     cfg_sliRefLevels,                                  cfg_sliRefLevels, "List of reference levels for Subpicture Level Information SEI messages")
   ("SEISubpicLevelInfoExplicitFraction",              m_cfgSubpictureLevelInfoSEI.m_explicitFraction,    false,            "Enable sending of explicit fractions in Subpicture Level Information SEI messages")
   ("SEISubpicLevelInfoNumSubpics",                    m_cfgSubpictureLevelInfoSEI.m_numSubpictures,      1,                "Number of subpictures for Subpicture Level Information SEI messages")
-#if JVET_S0176_SLI_SEI
+  ("SEIAnnotatedRegionsFileRoot,-ar",                 m_arSEIFileRoot,                                 string(""), "Annotated region SEI parameters root file name (wo num ext); only the file name base is to be added. Underscore and POC would be automatically addded to . E.g. \"-ar ar\" will search for files ar_0.txt, ar_1.txt, ...")
   ("SEISubpicLevelInfoMaxSublayers",                  m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers,               1,                    "Number of sublayers for Subpicture Level Information SEI messages")
   ("SEISubpicLevelInfoSublayerInfoPresentFlag",       m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag,    false,                "Enable sending of level information for all sublayers in Subpicture Level Information SEI messages")
-#endif
   ("SEISubpicLevelInfoRefLevelFractions",             cfg_sliFractions,                                  cfg_sliFractions, "List of subpicture level fractions for Subpicture Level Information SEI messages")
-#if JVET_S0098_SLI_FRACTION
   ("SEISubpicLevelInfoNonSubpicLayersFractions",      cfg_sliNonSubpicLayersFractions,                   cfg_sliNonSubpicLayersFractions, "List of level fractions for non-subpicture layers in Subpicture Level Information SEI messages")
-#endif
   ("SEISampleAspectRatioInfo",                        m_sampleAspectRatioInfoSEIEnabled,        false, "Control generation of Sample Aspect Ratio Information SEI messages")
   ("SEISARICancelFlag",                               m_sariCancelFlag,                         false, "Indicates that Sample Aspect Ratio Information SEI message cancels the persistence or follows")
   ("SEISARIPersistenceFlag",                          m_sariPersistenceFlag,                    true, "Specifies the persistence of the Sample Aspect Ratio Information SEI message")
@@ -1391,6 +1424,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEISARISarWidth",                                 m_sariSarWidth,                           0, "Specifies the Sample Aspect Ratio Width of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
   ("SEISARISarHeight",                                m_sariSarHeight,                          0, "Specifies the Sample Aspect Ratio Height of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
   ("MCTSEncConstraint",                               m_MCTSEncConstraint,                               false, "For MCTS, constrain motion vectors at tile boundaries")
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  ("SEIShutterIntervalEnabled",                       m_siiSEIEnabled,                          false, "Controls if shutter interval information SEI message is enabled")
+  ("SEISiiTimeScale",                                 m_siiSEITimeScale,                        27000000u, "Specifies sii_time_scale")
+  ("SEISiiInputNumUnitsInShutterInterval",            cfg_siiSEIInputNumUnitsInSI,              cfg_siiSEIInputNumUnitsInSI, "Specifies sub_layer_num_units_in_shutter_interval")
+#endif
+
 #if ENABLE_TRACING
   ("TraceChannelsList",                               bTracingChannelsList,                              false, "List all available tracing channels")
   ("TraceRule",                                       sTracingRule,                               string( "" ), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")")
@@ -1407,7 +1446,23 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIFGCCompModelPresentComp0",                     m_fgcSEICompModelPresent[0],                       false, "Specifies the presence of film grain modelling on colour component 0.")
   ("SEIFGCCompModelPresentComp1",                     m_fgcSEICompModelPresent[1],                       false, "Specifies the presence of film grain modelling on colour component 1.")
   ("SEIFGCCompModelPresentComp2",                     m_fgcSEICompModelPresent[2],                       false, "Specifies the presence of film grain modelling on colour component 2.")
-
+  ("SEIFGCAnalysisEnabled",                           m_fgcSEIAnalysisEnabled,                           false, "Control adaptive film grain parameter estimation - film grain analysis")
+  ("SEIFGCPerPictureSEI",                             m_fgcSEIPerPictureSEI,                             false, "Film Grain SEI is added for each picture as speciffied in RDD5 to ensure bit accurate synthesis in tricky mode")
+  ("SEIFGCNumIntensityIntervalMinus1Comp0",           m_fgcSEINumIntensityIntervalMinus1[0],                0u, "Specifies the number of intensity intervals minus1 on colour component 0.")
+  ("SEIFGCNumIntensityIntervalMinus1Comp1",           m_fgcSEINumIntensityIntervalMinus1[1],                0u, "Specifies the number of intensity intervals minus1 on colour component 1.")
+  ("SEIFGCNumIntensityIntervalMinus1Comp2",           m_fgcSEINumIntensityIntervalMinus1[2],                0u, "Specifies the number of intensity intervals minus1 on colour component 2.")
+  ("SEIFGCNumModelValuesMinus1Comp0",                 m_fgcSEINumModelValuesMinus1[0],                      0u, "Specifies the number of component model values minus1 on colour component 0.")
+  ("SEIFGCNumModelValuesMinus1Comp1",                 m_fgcSEINumModelValuesMinus1[1],                      0u, "Specifies the number of component model values minus1 on colour component 1.")
+  ("SEIFGCNumModelValuesMinus1Comp2",                 m_fgcSEINumModelValuesMinus1[2],                      0u, "Specifies the number of component model values minus1 on colour component 2.")
+  ("SEIFGCIntensityIntervalLowerBoundComp0", cfg_FgcSEIIntensityIntervalLowerBoundComp0, cfg_FgcSEIIntensityIntervalLowerBoundComp0, "Specifies the lower bound for the intensity intervals on colour component 0.")
+  ("SEIFGCIntensityIntervalLowerBoundComp1", cfg_FgcSEIIntensityIntervalLowerBoundComp1, cfg_FgcSEIIntensityIntervalLowerBoundComp1, "Specifies the lower bound for the intensity intervals on colour component 1.")
+  ("SEIFGCIntensityIntervalLowerBoundComp2", cfg_FgcSEIIntensityIntervalLowerBoundComp2, cfg_FgcSEIIntensityIntervalLowerBoundComp2, "Specifies the lower bound for the intensity intervals on colour component 2.")
+  ("SEIFGCIntensityIntervalUpperBoundComp0", cfg_FgcSEIIntensityIntervalUpperBoundComp0, cfg_FgcSEIIntensityIntervalUpperBoundComp0, "Specifies the upper bound for the intensity intervals on colour component 0.")
+  ("SEIFGCIntensityIntervalUpperBoundComp1", cfg_FgcSEIIntensityIntervalUpperBoundComp1, cfg_FgcSEIIntensityIntervalUpperBoundComp1, "Specifies the upper bound for the intensity intervals on colour component 1.")
+  ("SEIFGCIntensityIntervalUpperBoundComp2", cfg_FgcSEIIntensityIntervalUpperBoundComp2, cfg_FgcSEIIntensityIntervalUpperBoundComp2, "Specifies the upper bound for the intensity intervals on colour component 2.")
+  ("SEIFGCCompModelValuesComp0",             cfg_FgcSEICompModelValueComp0,              cfg_FgcSEICompModelValueComp0,              "Specifies the component model values on colour component 0.")
+  ("SEIFGCCompModelValuesComp1",             cfg_FgcSEICompModelValueComp1,              cfg_FgcSEICompModelValueComp1,              "Specifies the component model values on colour component 1.")
+  ("SEIFGCCompModelValuesComp2",             cfg_FgcSEICompModelValueComp2,              cfg_FgcSEICompModelValueComp2,              "Specifies the component model values on colour component 2.")
 // content light level SEI
   ("SEICLLEnabled",                                   m_cllSEIEnabled,                                   false, "Control generation of the content light level SEI message")
   ("SEICLLMaxContentLightLevel",                      m_cllSEIMaxContentLevel,                              0u, "When not equal to 0, specifies an upper bound on the maximum light level among all individual samples in a 4:4:4 representation "
@@ -1421,6 +1476,21 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIAVEAmbientIlluminance",                        m_aveSEIAmbientIlluminance,                      100000u, "Specifies the environmental illluminance of the ambient viewing environment in units of 1/10000 lux for the ambient viewing environment SEI message")
   ("SEIAVEAmbientLightX",                             m_aveSEIAmbientLightX,                            15635u, "Specifies the normalized x chromaticity coordinate of the environmental ambient light in the nominal viewing enviornment according to the CIE 1931 definition in units of 1/50000 lux for the ambient viewing enviornment SEI message")
   ("SEIAVEAmbientLightY",                             m_aveSEIAmbientLightY,                            16450u, "Specifies the normalized y chromaticity coordinate of the environmental ambient light in the nominal viewing enviornment according to the CIE 1931 definition in units of 1/50000 lux for the ambient viewing enviornment SEI message")
+// colour tranform information SEI
+  ("SEICTIEnabled",                                   m_ctiSEIEnabled,                                   false, "Control generation of the Colour transform information SEI message")
+  ("SEICTIId",                                        m_ctiSEIId,                                           0u, "Id of the Colour transform information SEI message")
+  ("SEICTISignalInfoFlag",                            m_ctiSEISignalInfoFlag,                            false, "indicates if signal information are present in the Colour transform information SEI message")
+  ("SEICTIFullRangeFlag",                             m_ctiSEIFullRangeFlag,                             false, "specifies signal range after applying the Colour transform information SEI message")
+  ("SEICTIPrimaries",                                 m_ctiSEIPrimaries,                                    0u, "indicates the signal primaries after applying the Colour transform information SEI message")
+  ("SEICTITransferFunction",                          m_ctiSEITransferFunction,                             0u, "indicates the signal transfer function after applying the Colour transform information SEI message")
+  ("SEICTIMatrixCoefs",                               m_ctiSEIMatrixCoefs,                                  0u, "indicates the signal matrix coefficients after applying the Colour transform information SEI message")
+  ("SEICTICrossCompFlag",                             m_ctiSEICrossComponentFlag,                         true, "Specifies if cross-component transform mode is enabled in SEI CTI")
+  ("SEICTICrossCompInferred",                         m_ctiSEICrossComponentInferred,                     true, "Specifies if cross-component transform LUT is inferred in SEI CTI")
+  ("SEICTINbChromaLut",                               m_ctiSEINumberChromaLut,                              0u, "Specifies the number of chroma LUTs in SEI CTI")
+  ("SEICTIChromaOffset",                              m_ctiSEIChromaOffset,                                  0, "Specifies the chroma offset of SEI CTI")
+  ("SEICTILut0",                                      cfg_SEICTILut0,                           cfg_SEICTILut0, "slope values for component 0 of SEI CTI")
+  ("SEICTILut1",                                      cfg_SEICTILut1,                           cfg_SEICTILut1, "slope values for component 1 of SEI CTI")
+  ("SEICTILut2",                                      cfg_SEICTILut2,                           cfg_SEICTILut2, "slope values for component 2 of SEI CTI")
 // content colour volume SEI
   ("SEICCVEnabled",                                   m_ccvSEIEnabled,                                   false, "Control generation of the Content Colour Volume SEI message")
   ("SEICCVCancelFlag",                                m_ccvSEICancelFlag,                                 true, "Specifies the persistence of any previous content colour volume SEI message in output order.")
@@ -1438,7 +1508,72 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEICCVMaxLuminanceValue",                         m_ccvSEIMaxLuminanceValue,                           0.1, "specifies the CCV max luminance value  in the content colour volume SEI message")
   ("SEICCVAvgLuminanceValuePresent",                  m_ccvSEIAvgLuminanceValuePresentFlag,               true, "Specifies whether the CCV avg luminance value is present in the content colour volume SEI message")
   ("SEICCVAvgLuminanceValue",                         m_ccvSEIAvgLuminanceValue,                          0.01, "specifies the CCV avg luminance value  in the content colour volume SEI message")
-
+  // scalability dimension information SEI
+  ("SEISDIEnabled",                                   m_sdiSEIEnabled,                          false, "Control generation of scalaibility dimension information SEI message")
+  ("SEISDIMaxLayersMinus1",                           m_sdiSEIMaxLayersMinus1,                      0, "Specifies the maximum number of layers minus 1 in the current CVS")
+  ("SEISDIMultiviewInfoFlag",                         m_sdiSEIMultiviewInfoFlag,                false, "Specifies the current CVS may have multiple views and the sdi_view_id_val[ ] syntax elements are present in the scalaibility dimension information SEI message")
+  ("SEISDIAuxiliaryInfoFlag",                         m_sdiSEIAuxiliaryInfoFlag,                false, "Specifies that one or more layers in the current CVS may be auxiliary layers, which carry auxiliary information, and the sdi_aux_id[ ] syntax elements are present in the scalaibility dimension information SEI message")
+  ("SEISDIViewIdLenMinus1",                           m_sdiSEIViewIdLenMinus1,                      0, "Specifies the length, in bits, of the sdi_view_id_val[ i ] syntax element minus 1 in the scalaibility dimension information SEI message")
+  ("SEISDILayerId",                                   cfg_sdiSEILayerId,            cfg_sdiSEILayerId, "List of the layer identifiers that may be present in the scalaibility dimension information SEI message in the current CVS")
+  ("SEISDIViewIdVal",                                 cfg_sdiSEIViewIdVal,        cfg_sdiSEIViewIdVal, "List of the view identifiers in the scalaibility dimension information SEI message")
+  ("SEISDIAuxId",                                     cfg_sdiSEIAuxId,                cfg_sdiSEIAuxId, "List of the auxiliary identifiers in the scalaibility dimension information SEI message")
+  ("SEISDINumAssociatedPrimaryLayersMinus1",          cfg_sdiSEINumAssociatedPrimaryLayersMinus1, cfg_sdiSEINumAssociatedPrimaryLayersMinus1, "List of the numbers of associated primary layers of i-th layer, which is an auxiliary layer.")
+  // multiview acquisition information SEI
+  ("SEIMAIEnabled",                                   m_maiSEIEnabled,                                    false, "Control generation of multiview acquisition information SEI message")
+  ("SEIMAIIntrinsicParamFlag",                        m_maiSEIIntrinsicParamFlag,                         false, "Specifies the presence of intrinsic camera parameters in the multiview acquisition information SEI message")
+  ("SEIMAIExtrinsicParamFlag",                        m_maiSEIExtrinsicParamFlag,                         false, "Specifies the presence of extrinsic camera parameters in the multiview acquisition information SEI message")
+  ("SEIMAINumViewsMinus1",                            m_maiSEINumViewsMinus1,                                 0, "Specifies the number of views minus 1 in the multiview acquisition information SEI message")
+  ("SEIMAIIntrinsicParamsEqualFlag",                  m_maiSEIIntrinsicParamsEqualFlag,                   false, "Specifies the intrinsic camera parameters are equal for all cameras in the multiview acquisition information SEI message")
+  ("SEIMAIPrecFocalLength",                           m_maiSEIPrecFocalLength,                                0, "Specifies the exponent of the maximum allowable truncation error for focal_length_x[i] and focal_length_y[i] in the multiview acquisition information SEI message")
+  ("SEIMAIPrecPrincipalPoint",                        m_maiSEIPrecPrincipalPoint,                             0, "Specifies the exponent of the maximum allowable truncation error for principal_point_x[i] and principal_point_y[i] in the multiview acquisition information SEI message")
+  ("SEIMAIPrecSkewFactor",                            m_maiSEIPrecSkewFactor,                                 0, "Specifies the exponent of the maximum allowable truncation error for skew factor in the multiview acquisition information SEI message")
+  ("SEIMAISignFocalLengthX",                          cfg_maiSEISignFocalLengthX,    cfg_maiSEISignFocalLengthX, "List of the signs of the focal length of the camera in the horizontal direction in the multiview acquisition information SEI message")
+  ("SEIMAIExponentFocalLengthX",                      cfg_maiSEIExponentFocalLengthX, cfg_maiSEIExponentFocalLengthX, "List of the exponent parts of the focal length of the camera in the horizontal direction. in the multiview acquisition information SEI message")
+  ("SEIMAIMantissaFocalLengthX",                      cfg_maiSEIMantissaFocalLengthX, cfg_maiSEIMantissaFocalLengthX, "List of the mantissa parts of the focal length of the camera in the horizontal direction in the multiview acquisition information SEI message")
+  ("SEIMAISignFocalLengthY",                          cfg_maiSEISignFocalLengthY,    cfg_maiSEISignFocalLengthY, "List of the signs of the focal length of the camera in the vertical direction in the multiview acquisition information SEI message")
+  ("SEIMAIExponentFocalLengthY",                      cfg_maiSEIExponentFocalLengthY, cfg_maiSEIExponentFocalLengthY, "List of the exponent parts of the focal length of the camera in the vertical direction in the multiview acquisition information SEI message")
+  ("SEIMAIMantissaFocalLengthY",                      cfg_maiSEIMantissaFocalLengthY, cfg_maiSEIMantissaFocalLengthY, "List of the mantissa parts of the focal length of the camera in the vertical direction in the multiview acquisition information SEI message")
+  ("SEIMAISignPrincipalPointX",                       cfg_maiSEISignPrincipalPointX, cfg_maiSEISignPrincipalPointX, "List of the signs of the principal point of the camera in the horizontal direction in the multiview acquisition information SEI message")
+  ("SEIMAIExponentPrincipalPointX",                   cfg_maiSEIExponentPrincipalPointX, cfg_maiSEIExponentPrincipalPointX, "List of the exponent parts of the principal point of the camera in the horizontal direction in the multiview acquisition information SEI message")
+  ("SEIMAIMantissaPrincipalPointX",                   cfg_maiSEIMantissaPrincipalPointX, cfg_maiSEIMantissaPrincipalPointX, "List of the mantissa parts of the principal point of the camera in the horizontal direction in the multiview acquisition information SEI message")
+  ("SEIMAISignPrincipalPointY",                       cfg_maiSEISignPrincipalPointY, cfg_maiSEISignPrincipalPointY, "List of the signs of the principal point of the camera in the vertical direction in the multiview acquisition information SEI message")
+  ("SEIMAIExponentPrincipalPointY",                   cfg_maiSEIExponentPrincipalPointY, cfg_maiSEIExponentPrincipalPointY, "List of the exponent parts of the principal point of the camera in the vertical direction in the multiview acquisition information SEI message")
+  ("SEIMAIMantissaPrincipalPointY",                   cfg_maiSEIMantissaPrincipalPointY, cfg_maiSEIMantissaPrincipalPointY, "List of the mantissa parts of the principal point of the camera in the vertical direction in the multiview acquisition information SEI message")
+  ("SEIMAISignSkewFactor",                            cfg_maiSEISignSkewFactor,     cfg_maiSEISignSkewFactor, "List of the signs of the skew factor of the camera in the multiview acquisition information SEI message")
+  ("SEIMAIExponentSkewFactor",                        cfg_maiSEIExponentSkewFactor, cfg_maiSEIExponentSkewFactor, "List of the exponent parts of the skew factor of the camera in the multiview acquisition information SEI message")
+  ("SEIMAIMantissaSkewFactor",                        cfg_maiSEIMantissaSkewFactor, cfg_maiSEIMantissaSkewFactor, "List of the mantissa parts of the skew factor of the camera in the multiview acquisition information SEI message")
+  ("SEIMAIPrecRotationParam",                         m_maiSEIPrecRotationParam,                            0, "Specifies the exponent of the maximum allowable truncation error for rotation in the multiview acquisition information SEI message")
+  ("SEIMAIPrecTranslationParam",                      m_maiSEIPrecTranslationParam,                         0, "Specifies the exponent of the maximum allowable truncation error for translation in the multiview acquisition information SEI message")
+// multiview view position SEI
+  ("SEIMVPEnabled",                                   m_mvpSEIEnabled,                                  false, "Control generation of multiview view position SEI message")
+  ("SEIMVPNumViewsMinus1",                            m_mvpSEINumViewsMinus1,                               0, "Specifies the number of views minus 1 in the multiview view postion SEI message")
+  ("SEIMVPViewPosition",                              cfg_mvpSEIViewPosition,           cfg_mvpSEIViewPosition, "List of View Positions in the multiview view postion SEI message")
+// alpha channel information SEI
+  ("SEIACIEnabled",                                   m_aciSEIEnabled,                                   false, "Control generation of alpha channel information SEI message")
+  ("SEIACICancelFlag",                                m_aciSEICancelFlag,                                false, "Specifies the persistence of any previous alpha channel information SEI message in output order")
+  ("SEIACIUseIdc",                                    m_aciSEIUseIdc,                                        0, "Specifies the usage of the auxiliary picture in the alpha channel information SEI message")
+  ("SEIACIBitDepthMinus8",                            m_aciSEIBitDepthMinus8,                                0, "Specifies the bit depth of the samples of the auxiliary picture in the alpha channel information SEI message")
+  ("SEIACITransparentValue",                          m_aciSEITransparentValue,                              0, "Specifies the interpretation sample value of an auxiliary coded picture luma sample for which the associated luma and chroma samples of the primary coded picture are considered transparent for purposes of alpha blending in the alpha channel information SEI message")
+  ("SEIACIOpaqueValue",                               m_aciSEIOpaqueValue,                                   0, "Specifies the interpretation sample value of an auxiliary coded picture luma sample for which the associated luma and chroma samples of the primary coded picture are considered opaque for purposes of alpha blending in the alpha channel information SEI message")
+  ("SEIACIIncrFlag",                                  m_aciSEIIncrFlag,                                  false, "Specifies the interpretation sample value for each decoded auxiliary picture luma sample value is equal to the decoded auxiliary picture sample value for purposes of alpha blending in the alpha channel information SEI message")
+  ("SEIACIClipFlag",                                  m_aciSEIClipFlag,                                  false, "Specifies whether clipping operation is applied in the alpha channel information SEI message")
+  ("SEIACIClipTypeFlag",                              m_aciSEIClipTypeFlag,                              false, "Specifies the type of clipping operation in the alpha channel information SEI message")
+  // depth representation information SEI
+  ("SEIDRIEnabled",                                   m_driSEIEnabled,                                   false, "Control generation of depth representation information SEI message")
+  ("SEIDRIZNearFlag",                                 m_driSEIZNearFlag,                                 false, "Specifies the presence of the nearest depth value in the depth representation information SEI message")
+  ("SEIDRIZFarFlag",                                  m_driSEIZFarFlag,                                  false, "Specifies the presence of the farthest depth value in the depth representation information SEI message")
+  ("SEIDRIDMinFlag",                                  m_driSEIDMinFlag,                                  false, "Specifies the presence of the minimum disparity value in the depth representation information SEI message")
+  ("SEIDRIDMaxFlag",                                  m_driSEIDMaxFlag,                                  false, "Specifies the presence of the maximum disparity value in the depth representation information SEI message")
+  ("SEIDRIZNear",                                     m_driSEIZNear,                                       0.0, "Specifies the nearest depth value in the depth representation information SEI message")
+  ("SEIDRIZFar",                                      m_driSEIZFar,                                        0.0, "Specifies the farest depth value in the depth representation information SEI message")
+  ("SEIDRIDMin",                                      m_driSEIDMin,                                        0.0, "Specifies the minimum disparity value in the depth representation information SEI message")
+  ("SEIDRIDMax",                                      m_driSEIDMax,                                        0.0, "Specifies the maximum disparity value in the depth representation information SEI message")
+  ("SEIDRIDepthRepresentationType",                   m_driSEIDepthRepresentationType,                       0, "Specifies the the representation definition of decoded luma samples of auxiliary pictures in the depth representation information SEI message")
+  ("SEIDRIDisparityRefViewId",                        m_driSEIDisparityRefViewId,                            0, "Specifies the ViewId value against which the disparity values are derived in the depth representation information SEI message")
+  ("SEIDRINonlinearNumMinus1",                        m_driSEINonlinearNumMinus1,                            0, "Specifies the number of piece-wise linear segments minus 2 for mapping of depth values to a scale that is uniformly quantized in terms of disparity  in the depth representation information SEI message")
+  ("SEIDRINonlinearModel",                            cfg_driSEINonlinearModel,       cfg_driSEINonlinearModel, "List of the piece-wise linear segments for mapping of decoded luma sample values of an auxiliary picture to a scale that is uniformly quantized in terms of disparity in the depth representation information SEI message")
+  ("SEIConstrainedRASL",                              m_constrainedRaslEncoding,                         false, "Control generation of constrained RASL encoding SEI message")
+  
   ("DebugBitstream",                                  m_decodeBitstreams[0],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
   ("DebugPOC",                                        m_switchPOC,                                 -1, "If DebugBitstream is present, load frames up to this POC from this bitstream. Starting with DebugPOC, return to normal encoding." )
   ("DecodeBitstream1",                                m_decodeBitstreams[0],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
@@ -1449,32 +1584,38 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("StopAfterFFtoPOC",                                m_stopAfterFFtoPOC,                       false, "If using fast forward to POC, after the POC of interest has been hit, stop further encoding.")
   ("ForceDecodeBitstream1",                           m_forceDecodeBitstream1,                  false, "force decoding of bitstream 1 - use this only if you are realy sure about what you are doing ")
   ("DecodeBitstream2ModPOCAndType",                   m_bs2ModPOCAndType,                       false, "Modify POC and NALU-type of second input bitstream, to use second BS as closing I-slice")
-  ("NumSplitThreads",                                 m_numSplitThreads,                            1, "Number of threads used to parallelize splitting")
-  ("ForceSingleSplitThread",                          m_forceSplitSequential,                   false, "Force single thread execution even if taking the parallelized path")
-  ("NumWppThreads",                                   m_numWppThreads,                              1, "Number of threads used to run WPP-style parallelization")
-  ("NumWppExtraLines",                                m_numWppExtraLines,                           0, "Number of additional wpp lines to switch when threads are blocked")
+
   ("DebugCTU",                                        m_debugCTU,                                  -1, "If DebugBitstream is present, load frames up to this POC from this bitstream. Starting with DebugPOC-frame at CTUline containin debug CTU.")
-  ("EnsureWppBitEqual",                               m_ensureWppBitEqual,                      false, "Ensure the results are equal to results with WPP-style parallelism, even if WPP is off")
+  ("AlfTrueOrg",                                      m_alfTrueOrg,                              true, "Using true original samples for ALF optimization when MCTF is enabled\n")
   ( "ALF",                                             m_alf,                                    true, "Adaptive Loop Filter\n" )
+  ("MaxNumALFAPS",                                    m_maxNumAlfAps,                           8, "Maximum number of ALF APSs" )
+  ("ConstantJointCbCrSignFlag",                       m_constantJointCbCrSignFlag,              0, "Constant JointCbCr sign flag" )
+  ("ALFStrengthLuma",                                  m_alfStrengthLuma,                         1.0, "Adaptive Loop Filter strength for luma. The parameter scales the magnitudes of the ALF filter coefficients for luma. Valid range is 0.0 <= ALFStrengthLuma <= 1.0")
+  ("ALFAllowPredefinedFilters",                        m_alfAllowPredefinedFilters,              true, "Allow use of predefined filters for ALF")
+  ("CCALFStrength",                                    m_ccalfStrength,                           1.0, "Cross-component Adaptive Loop Filter strength. The parameter scales the magnitudes of the CCALF filter coefficients. Valid range is 0.0 <= CCALFStrength <= 1.0")
+  ("ALFStrengthChroma",                                m_alfStrengthChroma,                       1.0, "Adaptive Loop Filter strength for chroma. The parameter scales the magnitudes of the ALF filter coefficients for chroma. Valid range is 0.0 <= ALFStrengthChroma <= 1.0")
+  ("ALFStrengthTargetLuma",                            m_alfStrengthTargetLuma,                   1.0, "Adaptive Loop Filter strength target for ALF luma filter optimization. The parameter scales the auto-correlation matrix E and the cross-correlation vector y for luma. Valid range is 0.0 <= ALFStrengthTargetLuma <= 1.0")
+  ("ALFStrengthTargetChroma",                          m_alfStrengthTargetChroma,                 1.0, "Adaptive Loop Filter strength target for ALF chroma filter optimization. The parameter scales the auto-correlation matrix E and the cross-correlation vector y for chroma. Valid range is 0.0 <= ALFStrengthTargetChroma <= 1.0")
+  ("CCALFStrengthTarget",                              m_ccalfStrengthTarget,                     1.0, "Cross-component Adaptive Loop Filter strength target for filter optimization. The parameter scales the auto-correlation matrix E and the cross-correlation vector y. Valid range is 0.0 <= CCALFStrengthTarget <= 1.0")
   ( "CCALF",                                           m_ccalf,                                  true, "Cross-component Adaptive Loop Filter" )
   ( "CCALFQpTh",                                       m_ccalfQpThreshold,                         37, "QP threshold above which encoder reduces CCALF usage")
-#if JVET_Q0114_ASPECT5_GCI_FLAG
   ( "RPR",                                            m_rprEnabledFlag,                          true, "Reference Sample Resolution" )
-#endif
   ( "ScalingRatioHor",                                m_scalingRatioHor,                          1.0, "Scaling ratio in hor direction" )
   ( "ScalingRatioVer",                                m_scalingRatioVer,                          1.0, "Scaling ratio in ver direction" )
   ( "FractionNumFrames",                              m_fractionOfFrames,                         1.0, "Encode a fraction of the specified in FramesToBeEncoded frames" )
   ( "SwitchPocPeriod",                                m_switchPocPeriod,                            0, "Switch POC period for RPR" )
   ( "UpscaledOutput",                                 m_upscaledOutput,                             0, "Output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for RPR" )
   ( "MaxLayers",                                      m_maxLayers,                                  1, "Max number of layers" )
-  ( "TargetOutputLayerSet,p",                         m_targetOlsIdx,                              -1, "Target output layer set index" )
+  ( "EnableOperatingPointInformation",                m_OPIEnabled,                             false, "Enables writing of Operating Point Information (OPI)" )
+  ( "MaxTemporalLayer",                               m_maxTemporalLayer,                         500, "Maximum temporal layer to be signalled in OPI" )
+  ( "TargetOutputLayerSet",                           m_targetOlsIdx,                             500, "Target output layer set index to be signalled in OPI" )
   ;
   opts.addOptions()
   ( "MaxSublayers",                                   m_maxSublayers,                               7, "Max number of Sublayers")
-  ( "AllLayersSameNumSublayersFlag",                  m_allLayersSameNumSublayersFlag,           true, "All layers same num sublayersflag")
+  ( "DefaultPtlDpbHrdMaxTidFlag",                     m_defaultPtlDpbHrdMaxTidFlag,              true, "specifies that the syntax elements vps_ptl_max_tid[ i ], vps_dpb_max_tid[ i ], and vps_hrd_max_tid[ i ] are not present and are inferred to be equal to the default value vps_max_sublayers_minus1")
   ( "AllIndependentLayersFlag",                       m_allIndependentLayersFlag,                true, "All layers are independent layer")
   ("AllowablePredDirection",                          m_predDirectionArray, string(""),                "prediction directions allowed for i-th temporal layer")
-  ( "LayerId%d",                                      m_layerId,                    0, MAX_VPS_LAYERS, "Max number of Sublayers")
+  ( "LayerId%d",                                      m_layerId,                    0, MAX_VPS_LAYERS, "Layer ID")
   ( "NumRefLayers%d",                                 m_numRefLayers,               0, MAX_VPS_LAYERS, "Number of direct reference layer index of i-th layer")
   ( "RefLayerIdx%d",                                  m_refLayerIdxStr,    string(""), MAX_VPS_LAYERS, "Reference layer index(es)")
   ( "EachLayerIsAnOlsFlag",                           m_eachLayerIsAnOlsFlag,                    true, "Each layer is an OLS layer flag")
@@ -1483,13 +1624,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "OlsOutputLayer%d",                               m_olsOutputLayerStr, string(""), MAX_VPS_LAYERS, "Output layer index of i-th OLS")
   ( "NumPTLsInVPS",                                   m_numPtlsInVps,                               1, "Number of profile_tier_level structures in VPS" )
   ( "AvoidIntraInDepLayers",                          m_avoidIntraInDepLayer,                    true, "Replaces I pictures in dependent layers with B pictures" )
-  ( "MaxTidILRefPicsPlus1",                           m_cfgVPSParameters.m_maxTidILRefPicsPlus1,   -1, "Maximum temporal ID for inter-layer reference pictures plus 1, 0 for IRAP only" )
+  ( "MaxTidILRefPicsPlusOneLayerId%d",                m_maxTidILRefPicsPlus1Str, string(""), MAX_VPS_LAYERS, "Maximum temporal ID for inter-layer reference pictures plus 1 of i-th layer, 0 for IRAP only")
     ;
 
   opts.addOptions()
-    ("TemporalFilter",                                m_gopBasedTemporalFilterEnabled,          false,            "Enable GOP based temporal filter. Disabled per default")
-    ("TemporalFilterFutureReference",                 m_gopBasedTemporalFilterFutureReference,   true,            "Enable referencing of future frames in the GOP based temporal filter. This is typically disabled for Low Delay configurations.")
-    ("TemporalFilterStrengthFrame*",                  m_gopBasedTemporalFilterStrengths, std::map<int, double>(), "Strength for every * frame in GOP based temporal filter, where * is an integer."
+    ("TemporalFilter",               m_gopBasedTemporalFilterEnabled,                     false, "Enable GOP based temporal filter. Disabled per default")
+    ("TemporalFilterPastRefs",       m_gopBasedTemporalFilterPastRefs,          TF_DEFAULT_REFS, "Number of past references for temporal prefilter")
+    ("TemporalFilterFutureRefs",     m_gopBasedTemporalFilterFutureRefs,        TF_DEFAULT_REFS, "Number of future references for temporal prefilter")
+    ("FirstValidFrame",              m_firstValidFrame,                                       0, "First valid frame")
+    ("LastValidFrame",               m_lastValidFrame,                                  MAX_INT, "Last valid frame")
+    ("TemporalFilterStrengthFrame*", m_gopBasedTemporalFilterStrengths, std::map<int, double>(), "Strength for every * frame in GOP based temporal filter, where * is an integer."
                                                                                                                   " E.g. --TemporalFilterStrengthFrame8 0.95 will enable GOP based temporal filter at every 8th frame with strength 0.95");
   // clang-format on
 
@@ -1521,9 +1665,19 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   const list<const char*>& argv_unhandled = po::scanArgv(opts, argc, (const char**) argv, err);
 
   m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0;
-#if JVET_Q0114_ASPECT5_GCI_FLAG
   m_resChangeInClvsEnabled = m_resChangeInClvsEnabled && m_rprEnabledFlag;
-#endif
+  
+  if( m_constrainedRaslEncoding )
+  {
+    m_craAPSreset            = true;
+    m_rprRASLtoolSwitch      = true;
+  }
+  else
+  {
+    m_craAPSreset            = false;
+    m_rprRASLtoolSwitch      = false;
+  }
+  
   if( m_fractionOfFrames != 1.0 )
   {
     m_framesToBeEncoded = int( m_framesToBeEncoded * m_fractionOfFrames );
@@ -1543,6 +1697,81 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     m_iIntraPeriod = -1;
   }
+
+#if GDR_ENABLED
+  if ( m_gdrEnabled )
+  {
+    m_iDecodingRefreshType = 3;
+    m_intraQPOffset = 0;
+    for (int i = 1; i < m_iGOPSize; i++)
+    {
+      m_GOPList[i].m_POC = -1;
+    }
+    m_iGOPSize = 1;
+
+    int8_t sliceType = m_GOPList[0].m_sliceType;
+
+    m_GOPList[0].m_POC = 1;    
+    m_GOPList[0].m_QPOffset = 0;
+    m_GOPList[0].m_QPOffsetModelOffset = 0;
+    m_GOPList[0].m_QPOffsetModelScale = 0;
+    m_GOPList[0].m_CbQPoffset = 0;
+    m_GOPList[0].m_CrQPoffset = 0;
+    m_GOPList[0].m_QPFactor = 1.0;
+    m_GOPList[0].m_tcOffsetDiv2 = 0;
+    m_GOPList[0].m_betaOffsetDiv2 = 0;
+    m_GOPList[0].m_CbTcOffsetDiv2 = 0;
+    m_GOPList[0].m_CbBetaOffsetDiv2 = 0;
+    m_GOPList[0].m_CrTcOffsetDiv2 = 0;
+    m_GOPList[0].m_CrBetaOffsetDiv2 = 0;
+    m_GOPList[0].m_temporalId = 0;
+
+    m_GOPList[0].m_numRefPicsActive0 = 4;
+    m_GOPList[0].m_numRefPics0 = 4;
+    m_GOPList[0].m_deltaRefPics0[0] = 1;
+    m_GOPList[0].m_deltaRefPics0[1] = 2;
+    m_GOPList[0].m_deltaRefPics0[2] = 3;
+    m_GOPList[0].m_deltaRefPics0[3] = 4;
+
+    if (sliceType == 'B')
+    {
+      m_GOPList[0].m_numRefPicsActive1 = 4;
+      m_GOPList[0].m_numRefPics1 = 4;
+      m_GOPList[0].m_deltaRefPics1[0] = 1;
+      m_GOPList[0].m_deltaRefPics1[1] = 2;
+      m_GOPList[0].m_deltaRefPics1[2] = 3;
+      m_GOPList[0].m_deltaRefPics1[3] = 4;
+    }
+
+    m_BIO  = false;
+    m_DMVR = false;
+    m_SMVD = false;
+
+    if (m_gdrPeriod < 0)
+    {
+      m_gdrPeriod = m_iFrameRate * 2;
+    }
+
+    if (m_gdrInterval < 0)
+    {
+      m_gdrInterval = m_iFrameRate;
+    }
+
+    if (m_gdrPocStart < 0)
+    {
+      m_gdrPocStart = m_gdrPeriod;
+    }
+
+    if (m_iIntraPeriod == -1)
+    {
+      m_iFrameRate = (m_iFrameRate == 0) ? 30 : m_iFrameRate;
+      if (m_gdrPocStart % m_iFrameRate != 0)
+        m_iIntraPeriod = -1;
+      else
+        m_iIntraPeriod = m_gdrPeriod;
+    }
+  }
+#endif
 
   m_bpDeltasGOPStructure = false;
   if(m_iGOPSize == 16)
@@ -1651,8 +1880,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
    * Set any derived parameters
    */
 #if EXTENSION_360_VIDEO
-  m_inputFileWidth = m_iSourceWidth;
-  m_inputFileHeight = m_iSourceHeight;
+  m_inputFileWidth = m_sourceWidth;
+  m_inputFileHeight = m_sourceHeight;
   m_ext360.setMaxCUInfo(m_uiCTUSize, 1 << MIN_CU_LOG2);
 #endif
 
@@ -1661,6 +1890,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     inputPathPrefix += "/";
   }
   m_inputFileName   = inputPathPrefix + m_inputFileName;
+
+  if (m_firstValidFrame < 0)
+  {
+    m_firstValidFrame = m_FrameSkip;
+  }
+  if (m_lastValidFrame < 0)
+  {
+    m_lastValidFrame = m_firstValidFrame + m_framesToBeEncoded - 1;
+  }
 
   if( m_temporalSubsampleRatio < 1)
   {
@@ -1672,16 +1910,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   if(m_isField)
   {
     //Frame height
-    m_iSourceHeightOrg = m_iSourceHeight;
+    m_iSourceHeightOrg = m_sourceHeight;
     //Field height
-    m_iSourceHeight = m_iSourceHeight >> 1;
+    m_sourceHeight = m_sourceHeight >> 1;
     //number of fields to encode
     m_framesToBeEncoded *= 2;
   }
   if ( m_subPicInfoPresentFlag )
   {
     CHECK( m_numSubPics > MAX_NUM_SUB_PICS || m_numSubPics < 1, "Number of subpicture must be within 1 to 2^16" )
-#if JVET_S0071_SAME_SIZE_SUBPIC_LAYOUT
     if (!m_subPicSameSizeFlag)
     {
       CHECK(cfg_subPicCtuTopLeftX.values.size() != m_numSubPics, "Number of SubPicCtuTopLeftX values must be equal to NumSubPics");
@@ -1696,12 +1933,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       CHECK(cfg_subPicWidth.values.size() != 1, "Number of SubPicWidth values must be equal to 1");
       CHECK(cfg_subPicHeight.values.size() != 1, "Number of SubPicHeight values must be equal to 1");
     }
-#else
-    CHECK( cfg_subPicCtuTopLeftX.values.size() != m_numSubPics, "Number of SubPicCtuTopLeftX values must be equal to NumSubPics");
-    CHECK( cfg_subPicCtuTopLeftY.values.size() != m_numSubPics, "Number of SubPicCtuTopLeftY values must be equal to NumSubPics");
-    CHECK( cfg_subPicWidth.values.size() != m_numSubPics, "Number of SubPicWidth values must be equal to NumSubPics");
-    CHECK( cfg_subPicHeight.values.size() != m_numSubPics, "Number of SubPicHeight values must be equal to NumSubPics");
-#endif
     CHECK( cfg_subPicTreatedAsPicFlag.values.size() != m_numSubPics, "Number of SubPicTreatedAsPicFlag values must be equal to NumSubPics");
     CHECK( cfg_loopFilterAcrossSubpicEnabledFlag.values.size() != m_numSubPics, "Number of LoopFilterAcrossSubpicEnabledFlag values must be equal to NumSubPics");
     if (m_subPicIdMappingExplicitlySignalledFlag)
@@ -1721,9 +1952,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         m_subPicId[i]                   = cfg_subPicId.values[i];
       }
     }
-#if JVET_S0071_SAME_SIZE_SUBPIC_LAYOUT
-    uint32_t tmpWidthVal = (m_iSourceWidth + m_uiCTUSize - 1) / m_uiCTUSize;
-    uint32_t tmpHeightVal = (m_iSourceHeight + m_uiCTUSize - 1) / m_uiCTUSize;
+    uint32_t tmpWidthVal = (m_sourceWidth + m_uiCTUSize - 1) / m_uiCTUSize;
+    uint32_t tmpHeightVal = (m_sourceHeight + m_uiCTUSize - 1) / m_uiCTUSize;
     if (!m_subPicSameSizeFlag)
     {
       for (int i = 0; i < m_numSubPics; i++)
@@ -1739,13 +1969,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       CHECK(tmpHeightVal % m_subPicHeight[0] != 0, "sps_subpic_height_minus1[0] is invalid.");
       CHECK(numSubpicCols * (tmpHeightVal / m_subPicHeight[0]) != m_numSubPics, "when sps_subpic_same_size_flag is equal to, sps_num_subpics_minus1 is invalid");
     }
-#else
-    for(int i = 0; i < m_numSubPics; i++)
-    {
-      CHECK(m_subPicCtuTopLeftX[i] + m_subPicWidth[i] > (m_iSourceWidth + m_uiCTUSize - 1) / m_uiCTUSize, "Subpicture must not exceed picture boundary");
-      CHECK(m_subPicCtuTopLeftY[i] + m_subPicHeight[i] > (m_iSourceHeight + m_uiCTUSize - 1) / m_uiCTUSize, "Subpicture must not exceed picture boundary");
-    }
-#endif
     // automatically determine subpicture ID lenght in case it is not specified
     if (m_subPicIdLen == 0)
     {
@@ -1766,21 +1989,18 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     CHECK(m_resChangeInClvsEnabled, "resolution change in CLVS and subpictures cannot be enabled together");
   }
 
-#if JVET_S0221_NUM_VB_CHECK
   if (m_virtualBoundariesPresentFlag)
   {
-    if (m_iSourceWidth <= 8)
+    if (m_sourceWidth <= 8)
       CHECK(m_numVerVirtualBoundaries != 0, "The number of vertical virtual boundaries shall be 0 when the picture width is less than or equal to 8");
 
-    if (m_iSourceHeight <= 8)
+    if (m_sourceHeight <= 8)
       CHECK(m_numHorVirtualBoundaries != 0, "The number of horizontal virtual boundaries shall be 0 when the picture height is less than or equal to 8");
   }
-#endif
 
   if (m_cfgSubpictureLevelInfoSEI.m_enabled)
   {
     CHECK (m_numSubPics != m_cfgSubpictureLevelInfoSEI.m_numSubpictures, "NumSubPics must be equal to SEISubpicLevelInfoNumSubpics" );
-#if JVET_S0176_SLI_SEI
     CHECK (m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers != m_maxSublayers, "SEISubpicLevelInfoMaxSublayers must be equal to vps_max_sublayers");
     if (m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag)
     {
@@ -1800,7 +2020,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         CHECK((int)cfg_sliRefLevels.values.size() * m_cfgSubpictureLevelInfoSEI.m_numSubpictures != cfg_sliFractions.values.size(), "when sliSublayerInfoPresentFlag = 0, the number  of subpicture level fractions must be equal to the numer of subpictures times the number of reference levels");
       }
     }
-#if JVET_S0098_SLI_FRACTION
     m_cfgSubpictureLevelInfoSEI.m_nonSubpicLayersFraction = cfg_sliNonSubpicLayersFractions.values;
     if (m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag)
     {
@@ -1812,15 +2031,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       CHECK((int)cfg_sliNonSubpicLayersFractions.values.size() != ( cfg_sliRefLevels.values.size() ),
         "when sliSublayerInfoPresentFlag = 0, the number  of non-subpicture level fractions must be equal to the numer of reference levels");
     }
-#endif
-#else
-    if (m_cfgSubpictureLevelInfoSEI.m_explicitFraction)
-    {
-        m_cfgSubpictureLevelInfoSEI.m_fractions = cfg_sliFractions.values;
-        m_cfgSubpictureLevelInfoSEI.m_refLevels = cfg_sliRefLevels.values;
-      CHECK (cfg_sliRefLevels.values.size() * m_cfgSubpictureLevelInfoSEI.m_numSubpictures != cfg_sliFractions.values.size(), "when sliSublayerInfoPresentFlag = 0, the number  of subpicture level fractions must be equal to the numer of subpictures times the number of reference levels.");
-    }
-#endif
   }
 
   if (m_costMode != COST_LOSSLESS_CODING && m_mixedLossyLossless)
@@ -1954,7 +2164,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     switch (extendedProfile)
     {
-#if JVET_S_PROFILES
     case ExtendedProfileName::NONE: m_profile = Profile::NONE; break;
     case ExtendedProfileName::MAIN_10: m_profile = Profile::MAIN_10; break;
     case ExtendedProfileName::MAIN_10_444: m_profile = Profile::MAIN_10_444; break;
@@ -1968,19 +2177,24 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     case ExtendedProfileName::MULTILAYER_MAIN_10_444_STILL_PICTURE:
       m_profile = Profile::MULTILAYER_MAIN_10_444_STILL_PICTURE;
       break;
-#else
-    case ExtendedProfileName::NONE: m_profile = Profile::NONE; break;
-    case ExtendedProfileName::MAIN_10: m_profile = Profile::MAIN_10; break;
-    case ExtendedProfileName::MAIN_444_10: m_profile = Profile::MAIN_444_10; break;
-    case ExtendedProfileName::MAIN_10_STILL_PICTURE:
-      m_profile = Profile::MAIN_10;
-      m_onePictureOnlyConstraintFlag = true;
-      break;
-    case ExtendedProfileName::MAIN_444_10_STILL_PICTURE:
-      m_profile = Profile::MAIN_444_10;
-      m_onePictureOnlyConstraintFlag = true;
-      break;
-#endif
+    case ExtendedProfileName::MAIN_12:
+      m_profile = Profile::MAIN_12; break;
+    case ExtendedProfileName::MAIN_12_444:
+      m_profile = Profile::MAIN_12_444; break;
+    case ExtendedProfileName::MAIN_16_444:
+      m_profile = Profile::MAIN_16_444; break;
+    case ExtendedProfileName::MAIN_12_INTRA:
+      m_profile = Profile::MAIN_12_INTRA; break;
+    case ExtendedProfileName::MAIN_12_444_INTRA:
+      m_profile = Profile::MAIN_12_444_INTRA; break;
+    case ExtendedProfileName::MAIN_16_444_INTRA:
+      m_profile = Profile::MAIN_16_444_INTRA; break;
+    case ExtendedProfileName::MAIN_12_STILL_PICTURE:
+      m_profile = Profile::MAIN_12_STILL_PICTURE; break;
+    case ExtendedProfileName::MAIN_12_444_STILL_PICTURE:
+      m_profile = Profile::MAIN_12_444_STILL_PICTURE; break;
+    case ExtendedProfileName::MAIN_16_444_STILL_PICTURE:
+      m_profile = Profile::MAIN_16_444_STILL_PICTURE; break;
     default: EXIT("Unable to determine profile from configured settings"); break;
     }
   }
@@ -1989,88 +2203,97 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_chromaFormatConstraint       = (tmpConstraintChromaFormat == 0) ? m_chromaFormatIDC : numberToChromaFormat(tmpConstraintChromaFormat);
     if (m_bitDepthConstraint == 0)
     {
-#if JVET_S_PROFILES
       if (m_profile != Profile::NONE)
       {
         const ProfileFeatures *features = ProfileFeatures::getProfileFeatures(m_profile);
         CHECK(features->profile != m_profile, "Profile not found");
         m_bitDepthConstraint = features->maxBitDepth;
       }
-#else
-      if (m_profile == Profile::MAIN_10 || m_profile == Profile::MAIN_444_10)
-      {
-        m_bitDepthConstraint = 10;
-      }
-#endif
       else // m_profile == Profile::NONE
       {
-#if JVET_S0094_CHROMAFORMAT_BITDEPTH_CONSTRAINT
         m_bitDepthConstraint = 16; // max value - unconstrained.
-#else
-        m_bitDepthConstraint = 8+15; // max value - unconstrained.
-#endif
       }
     }
-#if JVET_S0094_CHROMAFORMAT_BITDEPTH_CONSTRAINT
     CHECK(m_bitDepthConstraint < m_internalBitDepth[CHANNEL_TYPE_LUMA], "MaxBitDepthConstraint setting does not allow the specified luma bit depth to be coded.");
     CHECK(m_bitDepthConstraint < m_internalBitDepth[CHANNEL_TYPE_CHROMA], "MaxBitDepthConstraint setting does not allow the specified chroma bit depth to be coded.");
     CHECK(m_chromaFormatConstraint < m_chromaFormatIDC, "MaxChromaFormatConstraint setting does not allow the specified chroma format to be coded.");
     CHECK(m_chromaFormatConstraint >= NUM_CHROMA_FORMAT, "Bad value given for MaxChromaFormatConstraint setting.")
     CHECK(m_bitDepthConstraint < 8 || m_bitDepthConstraint>16, "MaxBitDepthConstraint setting must be in the range 8 to 16 (inclusive)");
-#endif
   }
-
 
   m_inputColourSpaceConvert = stringToInputColourSpaceConvert(inputColourSpaceConvert, true);
   m_rgbFormat = (m_inputColourSpaceConvert == IPCOLOURSPACE_RGBtoGBR && m_chromaFormatIDC == CHROMA_444) ? true : false;
+  if (m_profile == Profile::MAIN_12 || m_profile == Profile::MAIN_12_INTRA || m_profile == Profile::MAIN_12_STILL_PICTURE ||
+      m_profile == Profile::MAIN_12_444 || m_profile == Profile::MAIN_12_444_INTRA || m_profile == Profile::MAIN_12_444_STILL_PICTURE ||
+      m_profile == Profile::MAIN_16_444 || m_profile == Profile::MAIN_16_444_INTRA || m_profile == Profile::MAIN_16_444_STILL_PICTURE)
+  {
+    m_gciPresentFlag = true;
+  }
+  if (m_profile == Profile::MAIN_12_INTRA || m_profile == Profile::MAIN_12_444_INTRA || m_profile == Profile::MAIN_16_444_INTRA)
+  {
+    CHECK(m_iIntraPeriod != 1, "IntraPeriod setting must be 1 for Intra profiles")
+  }
+  if (m_profile == Profile::MULTILAYER_MAIN_10_STILL_PICTURE || m_profile == Profile::MAIN_10_STILL_PICTURE ||
+      m_profile == Profile::MAIN_12_STILL_PICTURE || m_profile == Profile::MAIN_12_444_STILL_PICTURE || m_profile == Profile::MAIN_16_444_STILL_PICTURE)
+  {
+    CHECK(m_framesToBeEncoded != 1, "FramesToBeEncoded setting must be 1 for Still Picture profiles")
+  }
 
   // Picture width and height must be multiples of 8 and minCuSize
   const int minResolutionMultiple = std::max(8, 1 << m_log2MinCuSize);
-  CHECK(((m_iSourceWidth% minResolutionMultiple) || (m_iSourceHeight % minResolutionMultiple)) && m_conformanceWindowMode != 1, "Picture width or height is not a multiple of 8 or minCuSize, please use ConformanceMode 1!");
+
   switch (m_conformanceWindowMode)
   {
   case 0:
     {
       // no conformance or padding
       m_confWinLeft = m_confWinRight = m_confWinTop = m_confWinBottom = 0;
-      m_aiPad[1] = m_aiPad[0] = 0;
+      m_sourcePadding[1] = m_sourcePadding[0] = 0;
       break;
     }
   case 1:
     {
       // automatic padding to minimum CU size
-      if (m_iSourceWidth % minResolutionMultiple)
+      if (m_sourceWidth % minResolutionMultiple)
       {
-        m_aiPad[0] = m_confWinRight  = ((m_iSourceWidth / minResolutionMultiple) + 1) * minResolutionMultiple - m_iSourceWidth;
-        m_iSourceWidth  += m_confWinRight;
+        m_sourcePadding[0] = m_confWinRight  = ((m_sourceWidth / minResolutionMultiple) + 1) * minResolutionMultiple - m_sourceWidth;
+        m_sourceWidth  += m_confWinRight;
       }
-      if (m_iSourceHeight % minResolutionMultiple)
+      if (m_sourceHeight % minResolutionMultiple)
       {
-        m_aiPad[1] = m_confWinBottom = ((m_iSourceHeight / minResolutionMultiple) + 1) * minResolutionMultiple - m_iSourceHeight;
-        m_iSourceHeight += m_confWinBottom;
+        m_sourcePadding[1] = m_confWinBottom = ((m_sourceHeight / minResolutionMultiple) + 1) * minResolutionMultiple - m_sourceHeight;
+        m_sourceHeight += m_confWinBottom;
         if ( m_isField )
         {
           m_iSourceHeightOrg += m_confWinBottom << 1;
-          m_aiPad[1] = m_confWinBottom << 1;
+          m_sourcePadding[1] = m_confWinBottom << 1;
         }
       }
-      if (m_aiPad[0] % SPS::getWinUnitX(m_chromaFormatIDC) != 0)
+      if (m_sourcePadding[0] % SPS::getWinUnitX(m_chromaFormatIDC) != 0)
       {
         EXIT( "Error: picture width is not an integer multiple of the specified chroma subsampling");
       }
-      if (m_aiPad[1] % SPS::getWinUnitY(m_chromaFormatIDC) != 0)
+      if (m_sourcePadding[1] % SPS::getWinUnitY(m_chromaFormatIDC) != 0)
       {
         EXIT( "Error: picture height is not an integer multiple of the specified chroma subsampling");
+      }
+      if (m_sourcePadding[0])
+      {
+        msg( INFO, "Info: Conformance window automatically enabled. Adding %i lumal pel horizontally\n", m_sourcePadding[0]);
+      }
+      if (m_sourcePadding[1])
+      {
+        msg( INFO, "Info: Conformance window automatically enabled. Adding %i lumal pel vertically\n", m_sourcePadding[1]);
       }
       break;
     }
   case 2:
     {
       //padding
-      m_iSourceWidth  += m_aiPad[0];
-      m_iSourceHeight += m_aiPad[1];
-      m_confWinRight  = m_aiPad[0];
-      m_confWinBottom = m_aiPad[1];
+      m_sourceWidth  += m_sourcePadding[0];
+      m_sourceHeight += m_sourcePadding[1];
+      m_confWinRight  = m_sourcePadding[0];
+      m_confWinBottom = m_sourcePadding[1];
       break;
     }
   case 3:
@@ -2080,31 +2303,30 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       {
         msg( ERROR, "Warning: Conformance window enabled, but all conformance window parameters set to zero\n");
       }
-      if ((m_aiPad[1] != 0) || (m_aiPad[0]!=0))
+      if ((m_sourcePadding[1] != 0) || (m_sourcePadding[0]!=0))
       {
         msg( ERROR, "Warning: Conformance window enabled, padding parameters will be ignored\n");
       }
-      m_aiPad[1] = m_aiPad[0] = 0;
+      m_sourcePadding[1] = m_sourcePadding[0] = 0;
       break;
     }
   }
+  CHECK(((m_sourceWidth% minResolutionMultiple) || (m_sourceHeight % minResolutionMultiple)), "Picture width or height (after padding) is not a multiple of 8 or minCuSize, please use ConformanceWindowMode=1 for automatic adjustment or ConformanceWindowMode=2 to specify padding manually!!");
 
-#if JVET_R0093_SUBPICS_AND_CONF_WINDOW
   if( m_conformanceWindowMode > 0 && m_subPicInfoPresentFlag )
   {
     for(int i = 0; i < m_numSubPics; i++)
     {
-      CHECK( (m_subPicCtuTopLeftX[i] * m_uiCTUSize) >= (m_iSourceWidth - m_confWinRight * SPS::getWinUnitX(m_chromaFormatIDC)),
+      CHECK( (m_subPicCtuTopLeftX[i] * m_uiCTUSize) >= (m_sourceWidth - m_confWinRight * SPS::getWinUnitX(m_chromaFormatIDC)),
           "No subpicture can be located completely outside of the conformance cropping window");
       CHECK( ((m_subPicCtuTopLeftX[i] + m_subPicWidth[i]) * m_uiCTUSize) <= (m_confWinLeft * SPS::getWinUnitX(m_chromaFormatIDC)),
 	  "No subpicture can be located completely outside of the conformance cropping window" );
-      CHECK( (m_subPicCtuTopLeftY[i] * m_uiCTUSize) >= (m_iSourceHeight  - m_confWinBottom * SPS::getWinUnitY(m_chromaFormatIDC)),
+      CHECK( (m_subPicCtuTopLeftY[i] * m_uiCTUSize) >= (m_sourceHeight  - m_confWinBottom * SPS::getWinUnitY(m_chromaFormatIDC)),
           "No subpicture can be located completely outside of the conformance cropping window");
       CHECK( ((m_subPicCtuTopLeftY[i] + m_subPicHeight[i]) * m_uiCTUSize) <= (m_confWinTop * SPS::getWinUnitY(m_chromaFormatIDC)),
           "No subpicture can be located completely outside of the conformance cropping window");
     }
   }
-#endif
 
   if (tmpDecodedPictureHashSEIMappedType<0 || tmpDecodedPictureHashSEIMappedType>=int(NUMBER_OF_HASHTYPES))
   {
@@ -2119,7 +2341,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     m_decodedPictureHashSEIType=HashType(tmpDecodedPictureHashSEIMappedType-1);
   }
-#if JVET_R0294_SUBPIC_HASH
   // Need to map values to match those of the SEI message:
   if (tmpSubpicDecodedPictureHashMappedType==0)
   {
@@ -2129,7 +2350,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     m_subpicDecodedPictureHashType=HashType(tmpSubpicDecodedPictureHashMappedType-1);
   }
-#endif
   // allocate slice-based dQP values
   m_aidQP = new int[ m_framesToBeEncoded + m_iGOPSize + 1 ];
   ::memset( m_aidQP, 0, sizeof(int)*( m_framesToBeEncoded + m_iGOPSize + 1 ) );
@@ -2259,6 +2479,22 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
+  /* Local chroma QP offsets configuration */
+  CHECK(m_cuChromaQpOffsetSubdiv < 0, "MaxCuChromaQpOffsetSubdiv shall be >= 0");
+  CHECK(cfg_crQpOffsetList.values.size() != cfg_cbQpOffsetList.values.size(), "Chroma QP offset lists shall be the same size");
+  CHECK(cfg_cbCrQpOffsetList.values.size() != cfg_cbQpOffsetList.values.size() && cfg_cbCrQpOffsetList.values.size() > 0, "Chroma QP offset list for joint CbCr shall be either the same size as Cb and Cr or empty");
+  if (m_cuChromaQpOffsetSubdiv > 0 && !cfg_cbQpOffsetList.values.size())
+  {
+    msg(WARNING, "MaxCuChromaQpOffsetSubdiv has no effect when chroma QP offset lists are empty\n");
+  }
+  m_cuChromaQpOffsetList.resize(cfg_cbQpOffsetList.values.size());
+  for (int i=0; i < cfg_cbQpOffsetList.values.size(); i++)
+  {
+    m_cuChromaQpOffsetList[i].u.comp.CbOffset = cfg_cbQpOffsetList.values[i];
+    m_cuChromaQpOffsetList[i].u.comp.CrOffset = cfg_crQpOffsetList.values[i];
+    m_cuChromaQpOffsetList[i].u.comp.JointCbCrOffset = cfg_cbCrQpOffsetList.values.size() ? cfg_cbCrQpOffsetList.values[i] : 0;
+  }
+
 #if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   if ( m_LadfEnabed )
   {
@@ -2294,7 +2530,20 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 #endif
 
+#if GDR_ENABLED
+  if (m_gdrEnabled)
+  {
+    m_virtualBoundariesEnabledFlag = 1;
+    m_virtualBoundariesPresentFlag = 0;
+  }
+  else
+  {
+    m_virtualBoundariesEnabledFlag = 0;
+  }
+#else
   m_virtualBoundariesEnabledFlag = 0;
+#endif
+
   if( m_numVerVirtualBoundaries > 0 || m_numHorVirtualBoundaries > 0 )
     m_virtualBoundariesEnabledFlag = 1;
 
@@ -2315,7 +2564,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
       for (unsigned i = 0; i < m_numVerVirtualBoundaries; i++)
       {
-        CHECK( m_virtualBoundariesPosX[i] == 0 || m_virtualBoundariesPosX[i] >= m_iSourceWidth, "The vertical virtual boundary must be within the picture" );
+        CHECK( m_virtualBoundariesPosX[i] == 0 || m_virtualBoundariesPosX[i] >= m_sourceWidth, "The vertical virtual boundary must be within the picture" );
         CHECK( m_virtualBoundariesPosX[i] % 8, "The vertical virtual boundary must be a multiple of 8 luma samples" );
         if (i > 0)
         {
@@ -2329,7 +2578,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
       for (unsigned i = 0; i < m_numHorVirtualBoundaries; i++)
       {
-        CHECK( m_virtualBoundariesPosY[i] == 0 || m_virtualBoundariesPosY[i] >= m_iSourceHeight, "The horizontal virtual boundary must be within the picture" );
+        CHECK( m_virtualBoundariesPosY[i] == 0 || m_virtualBoundariesPosY[i] >= m_sourceHeight, "The horizontal virtual boundary must be within the picture" );
         CHECK( m_virtualBoundariesPosY[i] % 8, "The horizontal virtual boundary must be a multiple of 8 luma samples" );
         if (i > 0)
         {
@@ -2374,6 +2623,133 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     for(uint32_t idx=0; idx<2; idx++)
     {
       m_masteringDisplay.whitePoint[idx] = uint16_t((cfg_DisplayWhitePointCode.values.size() > idx) ? cfg_DisplayWhitePointCode.values[idx] : 0);
+    }
+  }
+  // set sei film grain parameters.
+  CHECK(!m_fgcSEIEnabled && m_fgcSEIAnalysisEnabled, "FGC SEI must be enabled in order to perform film grain analysis!");
+  if (m_fgcSEIEnabled)
+  {
+    if (m_iQP < 17 && m_fgcSEIAnalysisEnabled == true) {
+      msg(WARNING, "*************************************************************************\n");
+      msg(WARNING, "* WARNING: Film Grain Estimation is disabled for Qp<17! FGC SEI will use default parameters for film grain! *\n");
+      msg(WARNING, "*************************************************************************\n");
+      m_fgcSEIAnalysisEnabled = false;
+    }
+    if (m_iIntraPeriod < 1) { // low delay configuration
+      msg(WARNING, "*************************************************************************\n");
+      msg(WARNING, "* WARNING: For low delay configuration, FGC SEI is inserted for first frame only!*\n");
+      msg(WARNING, "*************************************************************************\n");
+      m_fgcSEIPerPictureSEI   = false;
+      m_fgcSEIPersistenceFlag = true;
+    }
+    else if (m_iIntraPeriod == 1) { // all intra configuration
+        msg(WARNING, "*************************************************************************\n");
+        msg(WARNING, "* WARNING: For Intra Period = 1, FGC SEI is inserted per frame!*\n");
+        msg(WARNING, "*************************************************************************\n");
+        m_fgcSEIPerPictureSEI   = true;
+        m_fgcSEIPersistenceFlag = false;
+    }
+    if (!m_fgcSEIPerPictureSEI && !m_fgcSEIPersistenceFlag) {
+      msg(WARNING, "*************************************************************************\n");
+      msg(WARNING, "* WARNING: SEIPerPictureSEI is set to 0, SEIPersistenceFlag needs to be set to 1! *\n");
+      msg(WARNING, "*************************************************************************\n");
+      m_fgcSEIPersistenceFlag = true;
+    }
+    else if (m_fgcSEIPerPictureSEI && m_fgcSEIPersistenceFlag) {
+      msg(WARNING, "*************************************************************************\n");
+      msg(WARNING, "* WARNING: SEIPerPictureSEI is set to 1, SEIPersistenceFlag needs to be set to 0! *\n");
+      msg(WARNING, "*************************************************************************\n");
+      m_fgcSEIPersistenceFlag = false;
+    }
+    uint32_t numModelCtr;
+    if (m_fgcSEICompModelPresent[0])
+    {
+      numModelCtr = 0;
+      for (uint8_t i = 0; i <= m_fgcSEINumIntensityIntervalMinus1[0]; i++)
+      {
+        m_fgcSEIIntensityIntervalLowerBound[0][i] = uint32_t((cfg_FgcSEIIntensityIntervalLowerBoundComp0.values.size() > i) ? cfg_FgcSEIIntensityIntervalLowerBoundComp0.values[i] : 10);
+        m_fgcSEIIntensityIntervalUpperBound[0][i] = uint32_t((cfg_FgcSEIIntensityIntervalUpperBoundComp0.values.size() > i) ? cfg_FgcSEIIntensityIntervalUpperBoundComp0.values[i] : 250);
+        for (uint8_t j = 0; j <= m_fgcSEINumModelValuesMinus1[0]; j++)
+        {
+          m_fgcSEICompModelValue[0][i][j] = uint32_t((cfg_FgcSEICompModelValueComp0.values.size() > numModelCtr) ? cfg_FgcSEICompModelValueComp0.values[numModelCtr] : 24);
+          numModelCtr++;
+        }
+      }
+    }
+    if (m_fgcSEICompModelPresent[1])
+    {
+      numModelCtr = 0;
+      for (uint8_t i = 0; i <= m_fgcSEINumIntensityIntervalMinus1[1]; i++)
+      {
+        m_fgcSEIIntensityIntervalLowerBound[1][i] = uint32_t((cfg_FgcSEIIntensityIntervalLowerBoundComp1.values.size() > i) ? cfg_FgcSEIIntensityIntervalLowerBoundComp1.values[i] : 60);
+        m_fgcSEIIntensityIntervalUpperBound[1][i] = uint32_t((cfg_FgcSEIIntensityIntervalUpperBoundComp1.values.size() > i) ? cfg_FgcSEIIntensityIntervalUpperBoundComp1.values[i] : 200);
+
+        for (uint8_t j = 0; j <= m_fgcSEINumModelValuesMinus1[1]; j++)
+        {
+          m_fgcSEICompModelValue[1][i][j] = uint32_t((cfg_FgcSEICompModelValueComp1.values.size() > numModelCtr) ? cfg_FgcSEICompModelValueComp1.values[numModelCtr] : 16);
+          numModelCtr++;
+        }
+      }
+    }
+    if (m_fgcSEICompModelPresent[2])
+    {
+      numModelCtr = 0;
+      for (uint8_t i = 0; i <= m_fgcSEINumIntensityIntervalMinus1[2]; i++)
+      {
+        m_fgcSEIIntensityIntervalLowerBound[2][i] = uint32_t((cfg_FgcSEIIntensityIntervalLowerBoundComp2.values.size() > i) ? cfg_FgcSEIIntensityIntervalLowerBoundComp2.values[i] : 60);
+        m_fgcSEIIntensityIntervalUpperBound[2][i] = uint32_t((cfg_FgcSEIIntensityIntervalUpperBoundComp2.values.size() > i) ? cfg_FgcSEIIntensityIntervalUpperBoundComp2.values[i] : 250);
+
+        for (uint8_t j = 0; j <= m_fgcSEINumModelValuesMinus1[2]; j++)
+        {
+          m_fgcSEICompModelValue[2][i][j] = uint32_t((cfg_FgcSEICompModelValueComp2.values.size() > numModelCtr) ? cfg_FgcSEICompModelValueComp2.values[numModelCtr] : 12);
+          numModelCtr++;
+        }
+      }
+    }
+    m_fgcSEILog2ScaleFactor = m_fgcSEILog2ScaleFactor ? m_fgcSEILog2ScaleFactor : 2;
+  }
+  if (m_ctiSEIEnabled) 
+  {
+    CHECK(!m_ctiSEICrossComponentFlag && m_ctiSEICrossComponentInferred, "CTI CrossComponentFlag is 0, but CTI CrossComponentInferred is 1 (must be 0 for CrossComponentFlag 0)");
+    CHECK(!m_ctiSEICrossComponentFlag && !m_ctiSEICrossComponentInferred && !m_ctiSEINumberChromaLut, "For CTI CrossComponentFlag = 0, CTI NumberChromaLut needs to be specified (1 or 2) ");
+    CHECK(m_ctiSEICrossComponentFlag && !m_ctiSEICrossComponentInferred && !m_ctiSEINumberChromaLut, "For CTI CrossComponentFlag = 1 and CrossComponentInferred = 0, CTI NumberChromaLut needs to be specified (1 or 2) ");
+
+    CHECK(cfg_SEICTILut0.values.empty(), "SEI CTI (SEICTIEnabled) but no LUT0 specified");
+    m_ctiSEILut[0].presentFlag = true;
+    m_ctiSEILut[0].numLutValues = (int)cfg_SEICTILut0.values.size();
+    m_ctiSEILut[0].lutValues = cfg_SEICTILut0.values;
+
+    if (!m_ctiSEICrossComponentFlag || (m_ctiSEICrossComponentFlag && !m_ctiSEICrossComponentInferred)) 
+    {
+      CHECK(cfg_SEICTILut1.values.empty(), "SEI CTI LUT1 not specified");
+      m_ctiSEILut[1].presentFlag = true;
+      m_ctiSEILut[1].numLutValues = (int)cfg_SEICTILut1.values.size();
+      m_ctiSEILut[1].lutValues = cfg_SEICTILut1.values;
+
+      if (m_ctiSEINumberChromaLut == 1) 
+      { // Cb lut the same as Cr lut
+        m_ctiSEILut[2].presentFlag = true;
+        m_ctiSEILut[2].numLutValues = m_ctiSEILut[1].numLutValues;
+        m_ctiSEILut[2].lutValues = m_ctiSEILut[1].lutValues;
+      }
+      else if (m_ctiSEINumberChromaLut == 2) 
+      { // read from cfg
+        CHECK(cfg_SEICTILut2.values.empty(), "SEI CTI LUT2 not specified");
+        m_ctiSEILut[2].presentFlag = true;
+        m_ctiSEILut[2].numLutValues = (int)cfg_SEICTILut2.values.size();
+        m_ctiSEILut[2].lutValues = cfg_SEICTILut2.values;
+      }
+      else 
+      {
+        CHECK(m_ctiSEINumberChromaLut < 1 && m_ctiSEINumberChromaLut > 2, "Number of chroma LUTs is missing or out of range!");
+      }
+    }
+    //  check if lut size is power of 2
+    for (int idx = 0; idx < MAX_NUM_COMPONENT; idx++) 
+    {
+      int n = m_ctiSEILut[idx].numLutValues - 1;
+      CHECK(n > 0 && (n & (n - 1)) != 0, "Size of LUT minus 1 should be power of 2!");
+      CHECK(n > MAX_CTI_LUT_SIZE, "LUT size minus 1 is larger than MAX_CTI_LUT_SIZE (64)!");
     }
   }
   if ( m_omniViewportSEIEnabled && !m_omniViewportSEICancelFlag )
@@ -2484,9 +2860,92 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
   }
+  if ( m_sdiSEIEnabled )
+  {
+    if (m_sdiSEIMultiviewInfoFlag || m_sdiSEIAuxiliaryInfoFlag)
+    {
+      m_sdiSEILayerId.resize(m_sdiSEIMaxLayersMinus1 + 1);
+      m_sdiSEIViewIdVal.resize(m_sdiSEIMaxLayersMinus1 + 1);
+      m_sdiSEIAuxId.resize(m_sdiSEIMaxLayersMinus1 + 1);
+      m_sdiSEINumAssociatedPrimaryLayersMinus1.resize(m_sdiSEIMaxLayersMinus1 + 1);
+      for (int i = 0; i <= m_sdiSEIMaxLayersMinus1; i++)
+      {
+        m_sdiSEILayerId[i] = cfg_sdiSEILayerId.values[i];
+        if (m_sdiSEIMultiviewInfoFlag)
+        {
+          m_sdiSEIViewIdVal[i] = cfg_sdiSEIViewIdVal.values[i];
+        }
+        if (m_sdiSEIAuxiliaryInfoFlag)
+        {
+          m_sdiSEIAuxId[i] = cfg_sdiSEIAuxId.values[i];
+          if (m_sdiSEIAuxId[i] > 0)
+          {
+            m_sdiSEINumAssociatedPrimaryLayersMinus1[i] = cfg_sdiSEINumAssociatedPrimaryLayersMinus1.values[i];
+          }
+        }
+      }
+    }
+  }
+  if ( m_maiSEIEnabled )
+  {
+    if (m_maiSEIIntrinsicParamFlag)
+    {
+      int numViews = m_maiSEIIntrinsicParamsEqualFlag ? 1 : m_maiSEINumViewsMinus1 + 1;
+      m_maiSEISignFocalLengthX       .resize( numViews );
+      m_maiSEIExponentFocalLengthX   .resize( numViews );
+      m_maiSEIMantissaFocalLengthX   .resize( numViews );
+      m_maiSEISignFocalLengthY       .resize( numViews );
+      m_maiSEIExponentFocalLengthY   .resize( numViews );
+      m_maiSEIMantissaFocalLengthY   .resize( numViews );
+      m_maiSEISignPrincipalPointX    .resize( numViews );
+      m_maiSEIExponentPrincipalPointX.resize( numViews );
+      m_maiSEIMantissaPrincipalPointX.resize( numViews );
+      m_maiSEISignPrincipalPointY    .resize( numViews );
+      m_maiSEIExponentPrincipalPointY.resize( numViews );
+      m_maiSEIMantissaPrincipalPointY.resize( numViews );
+      m_maiSEISignSkewFactor         .resize( numViews );
+      m_maiSEIExponentSkewFactor     .resize( numViews );
+      m_maiSEIMantissaSkewFactor     .resize( numViews );
+      for( int i = 0; i  <=  ( m_maiSEIIntrinsicParamsEqualFlag ? 0 : m_maiSEINumViewsMinus1 ); i++ )
+      {
+        m_maiSEISignFocalLengthX       [i] = cfg_maiSEISignFocalLengthX.values[i];
+        m_maiSEIExponentFocalLengthX   [i] = cfg_maiSEIExponentFocalLengthX.values[i];
+        m_maiSEIMantissaFocalLengthX   [i] = cfg_maiSEIMantissaFocalLengthX.values[i];
+        m_maiSEISignFocalLengthY       [i] = cfg_maiSEISignFocalLengthY.values[i];
+        m_maiSEIExponentFocalLengthY   [i] = cfg_maiSEIExponentFocalLengthY.values[i];
+        m_maiSEIMantissaFocalLengthY   [i] = cfg_maiSEIMantissaFocalLengthY.values[i];
+        m_maiSEISignPrincipalPointX    [i] = cfg_maiSEISignPrincipalPointX.values[i];
+        m_maiSEIExponentPrincipalPointX[i] = cfg_maiSEIExponentPrincipalPointX.values[i];
+        m_maiSEIMantissaPrincipalPointX[i] = cfg_maiSEIMantissaPrincipalPointX.values[i];
+        m_maiSEISignPrincipalPointY    [i] = cfg_maiSEISignPrincipalPointY.values[i];
+        m_maiSEIExponentPrincipalPointY[i] = cfg_maiSEIExponentPrincipalPointY.values[i];
+        m_maiSEIMantissaPrincipalPointY[i] = cfg_maiSEIMantissaPrincipalPointY.values[i];
+        m_maiSEISignSkewFactor         [i] = cfg_maiSEISignSkewFactor.values[i];
+        m_maiSEIExponentSkewFactor     [i] = cfg_maiSEIExponentSkewFactor.values[i];
+        m_maiSEIMantissaSkewFactor     [i] = cfg_maiSEIMantissaSkewFactor.values[i];
+      }
+    }
+  }
+  if (m_mvpSEIEnabled)
+  {
+    int numViews = m_mvpSEINumViewsMinus1 + 1;
+    m_mvpSEIViewPosition.resize(numViews);
+    for (int i = 0; i <= m_mvpSEINumViewsMinus1; i++)
+    {
+      m_mvpSEIViewPosition[i] = cfg_mvpSEIViewPosition.values[i];
+    }
+  }
+  if ( m_driSEIEnabled )
+  {
+    m_driSEINonlinearModel.resize(m_driSEINonlinearNumMinus1+1);
+    for(int i=0; i<(m_driSEINonlinearNumMinus1+1); i++)
+    {
+      m_driSEINonlinearModel[i]   = cfg_driSEINonlinearModel.values.size() > i ? cfg_driSEINonlinearModel.values[i] : 0;
+    }
+  }
   m_reshapeCW.binCW.resize(3);
   m_reshapeCW.rspFps = m_iFrameRate;
-  m_reshapeCW.rspPicSize = m_iSourceWidth*m_iSourceHeight;
+  m_reshapeCW.rspPicSize = m_sourceWidth*m_sourceHeight;
   m_reshapeCW.rspFpsToIp = std::max(16, 16 * (int)(round((double)m_iFrameRate /16.0)));
   m_reshapeCW.rspBaseQP = m_iQP;
   m_reshapeCW.updateCtrl = m_updateCtrl;
@@ -2512,22 +2971,22 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
 #if ENABLE_QPA_SUB_CTU
  #if QP_SWITCHING_FOR_PARALLEL
-  if ((m_iQP < 38) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && (m_iSourceWidth <= 2048) && (m_iSourceHeight <= 1280)
+  if ((m_iQP < 38) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && (m_sourceWidth <= 2048) && (m_sourceHeight <= 1280)
  #else
-  if (((int)m_fQP < 38) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && (m_iSourceWidth <= 2048) && (m_iSourceHeight <= 1280)
+  if (((int)m_fQP < 38) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && (m_sourceWidth <= 2048) && (m_sourceHeight <= 1280)
  #endif
  #if WCG_EXT && ER_CHROMA_QP_WCG_PPS
       && (!m_wcgChromaQpControl.enabled)
  #endif
-      && ((1 << (m_log2MaxTbSize + 1)) == m_uiCTUSize) && (m_iSourceWidth > 512 || m_iSourceHeight > 320))
+      && ((1 << (m_log2MaxTbSize + 1)) == m_uiCTUSize) && (m_sourceWidth > 512 || m_sourceHeight > 320))
   {
     m_cuQpDeltaSubdiv = 2;
   }
 #else
  #if QP_SWITCHING_FOR_PARALLEL
-  if( ( m_iQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_iSourceHeight <= 1280 ) && ( m_iSourceWidth <= 2048 ) )
+  if( ( m_iQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_sourceHeight <= 1280 ) && ( m_sourceWidth <= 2048 ) )
  #else
-  if( ( ( int ) m_fQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_iSourceHeight <= 1280 ) && ( m_iSourceWidth <= 2048 ) )
+  if( ( ( int ) m_fQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_sourceHeight <= 1280 ) && ( m_sourceWidth <= 2048 ) )
  #endif
   {
     msg( WARNING, "*************************************************************************\n" );
@@ -2541,6 +3000,86 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif // ENABLE_QPA
 
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+  m_ShutterFilterEnable = false;
+#endif
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  if (m_siiSEIEnabled)
+  {
+    assert(m_siiSEITimeScale >= 0 && m_siiSEITimeScale <= MAX_UINT);
+    uint32_t sii_max_sub_layers = (uint32_t)cfg_siiSEIInputNumUnitsInSI.values.size();
+    assert(sii_max_sub_layers > 0);
+    if (sii_max_sub_layers > 1)
+    {
+      m_siiSEISubLayerNumUnitsInSI.resize(sii_max_sub_layers);
+      for (int32_t i = 0; i < sii_max_sub_layers; i++)
+      {
+        m_siiSEISubLayerNumUnitsInSI[i] = cfg_siiSEIInputNumUnitsInSI.values[i];
+        assert(m_siiSEISubLayerNumUnitsInSI[i] >= 0 && m_siiSEISubLayerNumUnitsInSI[i] <= MAX_UINT);
+      }
+    }
+    else
+    {
+      m_siiSEINumUnitsInShutterInterval = cfg_siiSEIInputNumUnitsInSI.values[0];
+      assert(m_siiSEINumUnitsInShutterInterval >= 0 && m_siiSEINumUnitsInShutterInterval <= MAX_UINT);
+    }
+#if JVET_Z0120_SII_SEI_PROCESSING
+    uint32_t siiMaxSubLayersMinus1 = sii_max_sub_layers - 1;
+    int blending_ratio = (m_siiSEISubLayerNumUnitsInSI[0] / m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1]);
+
+    if (sii_max_sub_layers > 1 && m_siiSEISubLayerNumUnitsInSI[0] ==
+                                (blending_ratio * m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1]))
+    {
+      m_ShutterFilterEnable = true;
+      double fpsHFR = (double)m_iFrameRate;
+      int32_t i;
+      bool checkEqualValuesOfSFR = 1;
+      bool checkSubLayerSI = 0;
+
+      double shutterAngleFactor = (fpsHFR * ((double)(m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1])))/((double)m_siiSEITimeScale);
+
+      // If shutterAngleFactor = 1 indicates that shutterAngle = 360  
+      // If shutterAngleFactor = 0.5 indicates that shutterAngle = 180
+      // If shutterAngleFactor = 0.25 indicates that shutterAngle = 90
+
+      if (shutterAngleFactor < 0.5)
+      {
+        for (int i = 0; i < siiMaxSubLayersMinus1; i++)
+        {
+          m_siiSEISubLayerNumUnitsInSI[i] = m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1];
+        }
+        m_ShutterFilterEnable = false;
+        printf("Warning: For the shutterAngle = %d, the blending can't be applied\n", (int)(shutterAngleFactor * 360));
+      }
+      // supports only the case of SFR = HFR / 2 
+      if (m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1] < m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1 - 1])
+      {
+        checkSubLayerSI = 1;
+      }
+      // check shutter interval for all sublayer remains same for LFR pictures
+      for (i = 1; i < siiMaxSubLayersMinus1; i++)
+      {
+        if (m_siiSEISubLayerNumUnitsInSI[0] != m_siiSEISubLayerNumUnitsInSI[i])
+        {
+          checkEqualValuesOfSFR = 0;
+        }
+      }
+      if (checkSubLayerSI && checkEqualValuesOfSFR)
+      {
+        setBlendingRatioSII(blending_ratio);
+      }
+      else
+      {
+        m_ShutterFilterEnable = false;
+      }
+    }
+    else
+    {
+      printf("Warning: SII-processing is applied for multiple shutter intervals and number of LFR units should be 2 times of number of HFR units\n");
+    }
+#endif
+  }
+#endif
 
 
   if( m_costMode == COST_LOSSLESS_CODING )
@@ -2564,7 +3103,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     {
       firstSliceLossless = true;
     }
-    if (firstSliceLossless) // if first slice is lossless 
+    if (firstSliceLossless) // if first slice is lossless
     m_iQP = LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP - ( ( m_internalBitDepth[CHANNEL_TYPE_LUMA] - 8 ) * 6 );
   }
 
@@ -2596,7 +3135,6 @@ int EncAppCfg::xAutoDetermineProfile()
   const int maxBitDepth= std::max(m_internalBitDepth[CHANNEL_TYPE_LUMA], m_internalBitDepth[m_chromaFormatIDC==ChromaFormat::CHROMA_400 ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA]);
   m_profile=Profile::NONE;
 
-#if JVET_S_PROFILES
   switch (m_chromaFormatIDC)
   {
   case ChromaFormat::CHROMA_400:
@@ -2611,6 +3149,15 @@ int EncAppCfg::xAutoDetermineProfile()
       {
         m_profile = m_maxLayers > 1 ? Profile::MULTILAYER_MAIN_10 : Profile::MAIN_10;
       }
+    }
+    else if (maxBitDepth <= 12)
+    {
+      m_profile = (m_level == Level::LEVEL15_5 && m_framesToBeEncoded == 1) ? Profile::MAIN_12_STILL_PICTURE : (m_iIntraPeriod == 1) ? Profile::MAIN_12_INTRA : Profile::MAIN_12;
+    }
+    else if (maxBitDepth <= 16)
+    {
+      // Since there's no 16bit 420 profiles in VVC, we use 444 profiles.
+      m_profile = (m_level == Level::LEVEL15_5 && m_framesToBeEncoded == 1) ? Profile::MAIN_16_444_STILL_PICTURE : (m_iIntraPeriod == 1) ? Profile::MAIN_16_444_INTRA : Profile::MAIN_16_444;
     }
     break;
 
@@ -2628,31 +3175,23 @@ int EncAppCfg::xAutoDetermineProfile()
         m_profile = m_maxLayers > 1 ? Profile::MULTILAYER_MAIN_10_444 : Profile::MAIN_10_444;
       }
     }
+    else if (maxBitDepth <= 12)
+    {
+      m_profile = (m_level == Level::LEVEL15_5 && m_framesToBeEncoded == 1) ? Profile::MAIN_12_444_STILL_PICTURE : (m_iIntraPeriod == 1) ? Profile::MAIN_12_444_INTRA : Profile::MAIN_12_444;
+    }
+    else if (maxBitDepth <= 16)
+    {
+      m_profile = (m_level == Level::LEVEL15_5 && m_framesToBeEncoded == 1) ? Profile::MAIN_16_444_STILL_PICTURE : (m_iIntraPeriod == 1) ? Profile::MAIN_16_444_INTRA : Profile::MAIN_16_444;
+    }
     break;
 
   default: return 1;
   }
-
-#else
-  if (m_chromaFormatIDC==ChromaFormat::CHROMA_400 || m_chromaFormatIDC==ChromaFormat::CHROMA_420)
+  if (m_profile == Profile::MAIN_12_INTRA || m_profile == Profile::MAIN_12_444_INTRA || m_profile == Profile::MAIN_16_444_INTRA ||
+      m_profile == Profile::MAIN_12_STILL_PICTURE || m_profile == Profile::MAIN_12_444_STILL_PICTURE || m_profile == Profile::MAIN_16_444_STILL_PICTURE)
   {
-    if (maxBitDepth<=10)
-    {
-      m_profile=Profile::MAIN_10;
-    }
+    m_allRapPicturesFlag = 1;
   }
-  else if (m_chromaFormatIDC==ChromaFormat::CHROMA_422 || m_chromaFormatIDC==ChromaFormat::CHROMA_444)
-  {
-    if (maxBitDepth<=10)
-    {
-      m_profile=Profile::MAIN_444_10;
-    }
-  }
-  else
-  {
-    return 1; // unknown chroma format
-  }
-#endif
   return 0;
 }
 
@@ -2683,6 +3222,7 @@ bool EncAppCfg::xCheckParameter()
   bool check_failed = false; /* abort if there is a fatal configuration problem */
 #define xConfirmPara(a,b) check_failed |= confirmPara(a,b)
 
+  xConfirmPara(m_maxNumAlfAps > ALF_CTB_MAX_NUM_APS, "The number of ALF APSs should not be more than ALF_CTB_MAX_NUM_APS");
 
   if( m_depQuantEnabledFlag )
   {
@@ -2694,19 +3234,9 @@ bool EncAppCfg::xCheckParameter()
   {
     const int minCUSize = 1 << m_log2MinCuSize;
     xConfirmPara(m_wrapAroundOffset <= m_uiCTUSize + minCUSize, "Wrap-around offset must be greater than CtbSizeY + MinCbSize");
-    xConfirmPara(m_wrapAroundOffset > m_iSourceWidth, "Wrap-around offset must not be greater than the source picture width");
+    xConfirmPara(m_wrapAroundOffset > m_sourceWidth, "Wrap-around offset must not be greater than the source picture width");
     xConfirmPara( m_wrapAroundOffset % minCUSize != 0, "Wrap-around offset must be an integer multiple of the specified minimum CU size" );
   }
-
-#if ENABLE_SPLIT_PARALLELISM
-  xConfirmPara( m_numSplitThreads < 1, "Number of used threads cannot be smaller than 1" );
-  xConfirmPara( m_numSplitThreads > PARL_SPLIT_MAX_NUM_THREADS, "Number of used threads cannot be higher than the number of actual jobs" );
-#else
-  xConfirmPara( m_numSplitThreads != 1, "ENABLE_SPLIT_PARALLELISM is disabled, numSplitThreads has to be 1" );
-#endif
-
-  xConfirmPara( m_numWppThreads != 1, "ENABLE_WPP_PARALLELISM is disabled, numWppThreads has to be 1" );
-  xConfirmPara( m_ensureWppBitEqual, "ENABLE_WPP_PARALLELISM is disabled, cannot ensure being WPP bit-equal" );
 
 
 #if SHARP_LUMA_DELTA_QP && ENABLE_QPA
@@ -2727,20 +3257,21 @@ bool EncAppCfg::xCheckParameter()
 
   xConfirmPara(m_bitstreamFileName.empty(), "A bitstream file name must be specified (BitstreamFile)");
   xConfirmPara(m_internalBitDepth[CHANNEL_TYPE_CHROMA] != m_internalBitDepth[CHANNEL_TYPE_LUMA], "The internalBitDepth must be the same for luma and chroma");
-#if JVET_S_PROFILES
   if (m_profile != Profile::NONE)
-#else
-  if (m_profile==Profile::MAIN_10 || m_profile==Profile::MAIN_444_10)
-#endif
   {
     xConfirmPara(m_log2MaxTransformSkipBlockSize>=6, "Transform Skip Log2 Max Size must be less or equal to 5 for given profile.");
     xConfirmPara(m_transformSkipRotationEnabledFlag==true, "UseResidualRotation must not be enabled for given profile.");
     xConfirmPara(m_transformSkipContextEnabledFlag==true, "UseSingleSignificanceMapContext must not be enabled for given profile.");
+    xConfirmPara(m_highPrecisionOffsetsEnabledFlag==true, "UseHighPrecisionPredictionWeighting must not be enabled for given profile.");
+    xConfirmPara(m_cabacBypassAlignmentEnabledFlag, "AlignCABACBeforeBypass cannot be enabled for given profile.");
+  }
+  if (m_profile != Profile::NONE && m_profile != Profile::MAIN_12_444 && m_profile != Profile::MAIN_16_444 && m_profile != Profile::MAIN_12_444_INTRA && m_profile != Profile::MAIN_16_444_INTRA && m_profile != Profile::MAIN_12_444_STILL_PICTURE && m_profile != Profile::MAIN_12_444_STILL_PICTURE && m_profile != Profile::MAIN_16_444_STILL_PICTURE)
+  {
+    xConfirmPara(m_rrcRiceExtensionEnableFlag == true, "Extention of the Golomb-Rice parameter derivation for RRC must not be enabled for given profile.");
     xConfirmPara(m_persistentRiceAdaptationEnabledFlag==true, "GolombRiceParameterAdaption must not be enabled for given profile.");
     xConfirmPara(m_extendedPrecisionProcessingFlag==true, "UseExtendedPrecision must not be enabled for given profile.");
-    xConfirmPara(m_highPrecisionOffsetsEnabledFlag==true, "UseHighPrecisionPredictionWeighting must not be enabled for given profile.");
-    xConfirmPara(m_enableIntraReferenceSmoothing==false, "EnableIntraReferenceSmoothing must be enabled for given profile.");
-    xConfirmPara(m_cabacBypassAlignmentEnabledFlag, "AlignCABACBeforeBypass cannot be enabled for given profile.");
+    xConfirmPara(m_tsrcRicePresentFlag == true, "TSRCRicePresent must not be enabled for given profile.");
+    xConfirmPara(m_reverseLastSigCoeffEnabledFlag == true, "ReverseLastSigCoeff must not be enabled for given profile.");
   }
 
 
@@ -2776,6 +3307,13 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara( (m_MSBExtendedBitDepth[CHANNEL_TYPE_LUMA  ] < m_inputBitDepth[CHANNEL_TYPE_LUMA  ]), "MSB-extended bit depth for luma channel (--MSBExtendedBitDepth) must be greater than or equal to input bit depth for luma channel (--InputBitDepth)" );
   xConfirmPara( (m_MSBExtendedBitDepth[CHANNEL_TYPE_CHROMA] < m_inputBitDepth[CHANNEL_TYPE_CHROMA]), "MSB-extended bit depth for chroma channel (--MSBExtendedBitDepthC) must be greater than or equal to input bit depth for chroma channel (--InputBitDepthC)" );
 
+  bool check_sps_range_extension_flag = m_extendedPrecisionProcessingFlag || 
+                                  m_rrcRiceExtensionEnableFlag ||
+                                  m_persistentRiceAdaptationEnabledFlag || 
+                                  m_tsrcRicePresentFlag;
+  if (m_internalBitDepth[CHANNEL_TYPE_LUMA] <= 10)
+    xConfirmPara( (check_sps_range_extension_flag == 1) ,
+                 "RExt tools (Extended Precision Processing, RRC Rice Extension, Persistent Rice Adaptation and TSRC Rice Extension) must be disabled for BitDepth is less than or equal to 10 (the value of sps_range_extension_flag shall be 0 when BitDepth is less than or equal to 10.)");
 
   xConfirmPara( m_chromaFormatIDC >= NUM_CHROMA_FORMAT,                                     "ChromaFormatIDC must be either 400, 420, 422 or 444" );
   std::string sTempIPCSC="InputColourSpaceConvert must be empty, "+getListOfColourSpaceConverts(true);
@@ -2789,6 +3327,7 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara( m_iGOPSize > 1 &&  m_iGOPSize % 2,                                          "GOP Size must be a multiple of 2, if GOP Size is greater than 1" );
   xConfirmPara( (m_iIntraPeriod > 0 && m_iIntraPeriod < m_iGOPSize) || m_iIntraPeriod == 0, "Intra period must be more than GOP size, or -1 , not 0" );
   xConfirmPara( m_drapPeriod < 0,                                                           "DRAP period must be greater or equal to 0" );
+  xConfirmPara( m_edrapPeriod < 0,                                                          "EDRAP period must be greater or equal to 0" );
   xConfirmPara( m_iDecodingRefreshType < 0 || m_iDecodingRefreshType > 3,                   "Decoding Refresh Type must be comprised between 0 and 3 included" );
 
   if (m_isField)
@@ -2813,32 +3352,26 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara (m_log2MaxTransformSkipBlockSize < 2, "Transform Skip Log2 Max Size must be at least 2 (4x4)");
 
   xConfirmPara ( m_onePictureOnlyConstraintFlag && m_framesToBeEncoded!=1, "When onePictureOnlyConstraintFlag is true, the number of frames to be encoded must be 1" );
-#if JVET_S_PROFILES
   if (m_profile != Profile::NONE)
   {
     const ProfileFeatures *features = ProfileFeatures::getProfileFeatures(m_profile);
     CHECK(features->profile != m_profile, "Profile not found");
     xConfirmPara(m_level == Level::LEVEL15_5 && !features->canUseLevel15p5, "Profile does not support level 15.5");
+    xConfirmPara(m_level < Level::LEVEL4 && m_levelTier == Level::HIGH, "High tier not defined for levels below 4.");
   }
-#else
-  if (m_profile == Profile::MAIN_10 || m_profile==Profile::MAIN_444_10)
-  {
-    xConfirmPara ( m_level==Level::LEVEL15_5 && !m_onePictureOnlyConstraintFlag, "Currently the only profiles that support level 15.5 are still pictures, which require onePictureOnlyConstraintFlag to be 1" );
-  }
-#endif
 
   xConfirmPara( m_iQP < -6 * (m_internalBitDepth[CHANNEL_TYPE_LUMA] - 8) || m_iQP > MAX_QP, "QP exceeds supported range (-QpBDOffsety to 63)" );
 #if W0038_DB_OPT
-  xConfirmPara( m_deblockingFilterMetric!=0 && (m_bLoopFilterDisable || m_loopFilterOffsetInPPS), "If DeblockingFilterMetric is non-zero then both LoopFilterDisable and LoopFilterOffsetInPPS must be 0");
+  xConfirmPara( m_deblockingFilterMetric!=0 && (m_deblockingFilterDisable || m_deblockingFilterOffsetInPPS), "If DeblockingFilterMetric is non-zero then both LoopFilterDisable and LoopFilterOffsetInPPS must be 0");
 #else
   xConfirmPara( m_DeblockingFilterMetric && (m_bLoopFilterDisable || m_loopFilterOffsetInPPS), "If DeblockingFilterMetric is true then both LoopFilterDisable and LoopFilterOffsetInPPS must be 0");
 #endif
-  xConfirmPara( m_loopFilterBetaOffsetDiv2 < -12 || m_loopFilterBetaOffsetDiv2 > 12,          "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
-  xConfirmPara( m_loopFilterTcOffsetDiv2 < -12 || m_loopFilterTcOffsetDiv2 > 12,              "Loop Filter Tc Offset div. 2 exceeds supported range (-12 to 12)" );
-  xConfirmPara( m_loopFilterCbBetaOffsetDiv2 < -12 || m_loopFilterCbBetaOffsetDiv2 > 12,      "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
-  xConfirmPara( m_loopFilterCbTcOffsetDiv2 < -12 || m_loopFilterCbTcOffsetDiv2 > 12,          "Loop Filter Tc Offset div. 2 exceeds supported range (-12 to 12)" );
-  xConfirmPara( m_loopFilterCrBetaOffsetDiv2 < -12 || m_loopFilterCrBetaOffsetDiv2 > 12,      "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
-  xConfirmPara( m_loopFilterCrTcOffsetDiv2 < -12 || m_loopFilterCrTcOffsetDiv2 > 12,          "Loop Filter Tc Offset div. 2 exceeds supported range (-12 to 12)" );
+  xConfirmPara( m_deblockingFilterBetaOffsetDiv2 < -12 || m_deblockingFilterBetaOffsetDiv2 > 12,          "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
+  xConfirmPara( m_deblockingFilterTcOffsetDiv2 < -12 || m_deblockingFilterTcOffsetDiv2 > 12,              "Loop Filter Tc Offset div. 2 exceeds supported range (-12 to 12)" );
+  xConfirmPara( m_deblockingFilterCbBetaOffsetDiv2 < -12 || m_deblockingFilterCbBetaOffsetDiv2 > 12,      "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
+  xConfirmPara( m_deblockingFilterCbTcOffsetDiv2 < -12 || m_deblockingFilterCbTcOffsetDiv2 > 12,          "Loop Filter Tc Offset div. 2 exceeds supported range (-12 to 12)" );
+  xConfirmPara( m_deblockingFilterCrBetaOffsetDiv2 < -12 || m_deblockingFilterCrBetaOffsetDiv2 > 12,      "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
+  xConfirmPara( m_deblockingFilterCrTcOffsetDiv2 < -12 || m_deblockingFilterCrTcOffsetDiv2 > 12,          "Loop Filter Tc Offset div. 2 exceeds supported range (-12 to 12)" );
   xConfirmPara( m_iSearchRange < 0 ,                                                        "Search Range must be more than 0" );
   xConfirmPara( m_bipredSearchRange < 0 ,                                                   "Bi-prediction refinement search range must be more than 0" );
   xConfirmPara( m_minSearchWindow < 0,                                                      "Minimum motion search window size for the adaptive window ME must be greater than or equal to 0" );
@@ -2885,6 +3418,10 @@ bool EncAppCfg::xCheckParameter()
     if (m_updateCtrl > 0 && m_adpOption > 2) { m_adpOption -= 2; }
   }
 
+  if (m_ctiSEIEnabled)
+  {
+    xConfirmPara(m_ctiSEINumberChromaLut < 0 || m_ctiSEINumberChromaLut > 2, "CTI number of chroma LUTs is out of range");
+  }
   xConfirmPara( m_cbQpOffset < -12,   "Min. Chroma Cb QP Offset is -12" );
   xConfirmPara( m_cbQpOffset >  12,   "Max. Chroma Cb QP Offset is  12" );
   xConfirmPara( m_crQpOffset < -12,   "Min. Chroma Cr QP Offset is -12" );
@@ -2899,6 +3436,30 @@ bool EncAppCfg::xCheckParameter()
     msg( WARNING, "** WARNING: --DualITree has been disabled because the chromaFormat is 400 **\n");
     msg( WARNING, "****************************************************************************\n");
     m_dualTree = false;
+  }
+  if (m_alf)
+  {
+    xConfirmPara(m_alfStrengthLuma < 0.0, "ALFStrengthLuma is less than 0. Valid range is 0.0 <= ALFStrengthLuma <= 1.0");
+    xConfirmPara(m_alfStrengthLuma > 1.0, "ALFStrengthLuma is greater than 1. Valid range is 0.0 <= ALFStrengthLuma <= 1.0");
+  }
+  if (m_ccalf)
+  {
+    xConfirmPara(m_ccalfStrength < 0.0, "CCALFStrength is less than 0. Valid range is 0.0 <= CCALFStrength <= 1.0");
+    xConfirmPara(m_ccalfStrength > 1.0, "CCALFStrength is greater than 1. Valid range is 0.0 <= CCALFStrength <= 1.0");
+  }
+  if (m_alf)
+  {
+    xConfirmPara(m_alfStrengthChroma < 0.0, "ALFStrengthChroma is less than 0. Valid range is 0.0 <= ALFStrengthChroma <= 1.0");
+    xConfirmPara(m_alfStrengthChroma > 1.0, "ALFStrengthChroma is greater than 1. Valid range is 0.0 <= ALFStrengthChroma <= 1.0");
+    xConfirmPara(m_alfStrengthTargetLuma < 0.0, "ALFStrengthTargetLuma is less than 0. Valid range is 0.0 <= ALFStrengthTargetLuma <= 1.0");
+    xConfirmPara(m_alfStrengthTargetLuma > 1.0, "ALFStrengthTargetLuma is greater than 1. Valid range is 0.0 <= ALFStrengthTargetLuma <= 1.0");
+    xConfirmPara(m_alfStrengthTargetChroma < 0.0, "ALFStrengthTargetChroma is less than 0. Valid range is 0.0 <= ALFStrengthTargetChroma <= 1.0");
+    xConfirmPara(m_alfStrengthTargetChroma > 1.0, "ALFStrengthTargetChroma is greater than 1. Valid range is 0.0 <= ALFStrengthTargetChroma <= 1.0");
+  }
+  if (m_ccalf)
+  {
+    xConfirmPara(m_ccalfStrengthTarget < 0.0, "CCALFStrengthTarget is less than 0. Valid range is 0.0 <= CCALFStrengthTarget <= 1.0");
+    xConfirmPara(m_ccalfStrengthTarget > 1.0, "CCALFStrengthTarget is greater than 1. Valid range is 0.0 <= CCALFStrengthTarget <= 1.0");
   }
   if (m_ccalf && (m_chromaFormatIDC == CHROMA_400))
   {
@@ -2937,7 +3498,7 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara( m_uiMaxTT[2] > 64,                                                          "Maximum TT size for chroma block in I slice should be smaller than or equal to 64");
   xConfirmPara( m_uiMinQT[0] < minCuSize,                                                   "Min Luma QT size in I slices should be larger than or equal to minCuSize");
   xConfirmPara( m_uiMinQT[1] < minCuSize,                                                   "Min Luma QT size in non-I slices should be larger than or equal to minCuSize");
-  xConfirmPara((m_iSourceWidth % minCuSize ) || (m_iSourceHeight % minCuSize),              "Picture width or height is not a multiple of minCuSize");
+  xConfirmPara((m_sourceWidth % minCuSize ) || (m_sourceHeight % minCuSize),              "Picture width or height is not a multiple of minCuSize");
   const int minDiff = (int)floorLog2(m_uiMinQT[2]) - std::max(MIN_CU_LOG2, (int)m_log2MinCuSize - (int)getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, m_chromaFormatIDC));
   xConfirmPara( minDiff < 0 ,                                                               "Min Chroma QT size in I slices is smaller than Min Luma CU size even considering color format");
   xConfirmPara( (m_uiMinQT[2] << (int)getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, m_chromaFormatIDC)) > std::min(64, (int)m_uiCTUSize),
@@ -2961,8 +3522,8 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara( m_uiMaxTT[2] < (m_uiMinQT[2] << (int)getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, m_chromaFormatIDC)),
                                                                                             "Maximum TT size for chroma block in I slice should be larger than minimum QT size");
   xConfirmPara( m_uiMaxTT[2] > m_uiCTUSize,                                                 "Maximum TT size for chroma block in I slice should be smaller than or equal to CTUSize");
-  xConfirmPara( (m_iSourceWidth  % (std::max(8u, m_log2MinCuSize))) != 0,                   "Resulting coded frame width must be a multiple of Max(8, the minimum CU size)");
-  xConfirmPara( (m_iSourceHeight % (std::max(8u, m_log2MinCuSize))) != 0,                   "Resulting coded frame height must be a multiple of Max(8, the minimum CU size)");
+  xConfirmPara( (m_sourceWidth  % (std::max(8u, m_log2MinCuSize))) != 0,                   "Resulting coded frame width must be a multiple of Max(8, the minimum CU size)");
+  xConfirmPara( (m_sourceHeight % (std::max(8u, m_log2MinCuSize))) != 0,                   "Resulting coded frame height must be a multiple of Max(8, the minimum CU size)");
   if (m_uiMaxMTTHierarchyDepthI == 0)
   {
     xConfirmPara(m_uiMaxBT[0] != m_uiMinQT[0], "MaxBTLumaISlice shall be equal to MinQTLumaISlice when MaxMTTHierarchyDepthISliceL is 0.");
@@ -2997,28 +3558,36 @@ bool EncAppCfg::xCheckParameter()
     m_PROF = false;
   }
 
-  xConfirmPara( m_MTS < 0 || m_MTS > 3, "MTS must be greater than 0 smaller than 4" );
+  xConfirmPara(m_mtsMode < 0 || m_mtsMode > 4, "MTS must in the range 0..4");
   xConfirmPara( m_MTSIntraMaxCand < 0 || m_MTSIntraMaxCand > 5, "m_MTSIntraMaxCand must be greater than 0 and smaller than 6" );
   xConfirmPara( m_MTSInterMaxCand < 0 || m_MTSInterMaxCand > 5, "m_MTSInterMaxCand must be greater than 0 and smaller than 6" );
-  xConfirmPara( m_MTS != 0 && m_MTSImplicit != 0, "Both explicit and implicit MTS cannot be enabled at the same time" );
+  xConfirmPara(m_mtsMode != 0 && m_mtsImplicitIntra != 0, "MTSImplicit may be enabled only when MTS is 0");
 
   if (m_useBDPCM)
   {
     xConfirmPara(!m_useTransformSkip, "BDPCM cannot be used when transform skip is disabled.");
   }
 
+  if (m_tsrcRicePresentFlag)
+  {
+    xConfirmPara(!m_useTransformSkip, "TSRCRicePresent cannot be enabled when transform skip is disabled.");
+  }
 
   if (!m_alf)
   {
     xConfirmPara( m_ccalf, "CCALF cannot be enabled when ALF is disabled" );
   }
 
+  if (m_maxNumAlfAps == 0) 
+  {
+    xConfirmPara(m_ccalf, "CCALF cannot be enabled when ALF APS is disabled");
+  }
 
-  xConfirmPara( m_iSourceWidth  % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Picture width must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_iSourceHeight % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Picture height must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara( m_sourceWidth  % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Picture width must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara( m_sourceHeight % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Picture height must be an integer multiple of the specified chroma subsampling");
 
-  xConfirmPara( m_aiPad[0] % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Horizontal padding must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_aiPad[1] % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Vertical padding must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara( m_sourcePadding[0] % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Horizontal padding must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara( m_sourcePadding[1] % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Vertical padding must be an integer multiple of the specified chroma subsampling");
 
   xConfirmPara( m_confWinLeft   % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Left conformance window offset must be an integer multiple of the specified chroma subsampling");
   xConfirmPara( m_confWinRight  % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Right conformance window offset must be an integer multiple of the specified chroma subsampling");
@@ -3096,16 +3665,16 @@ bool EncAppCfg::xCheckParameter()
     }
   }
 
-  if ( (m_iIntraPeriod != 1) && !m_loopFilterOffsetInPPS && (!m_bLoopFilterDisable) )
+  if ( (m_iIntraPeriod != 1) && !m_deblockingFilterOffsetInPPS && (!m_deblockingFilterDisable) )
   {
     for(int i=0; i<m_iGOPSize; i++)
     {
-      xConfirmPara( (m_GOPList[i].m_betaOffsetDiv2 + m_loopFilterBetaOffsetDiv2) < -12 || (m_GOPList[i].m_betaOffsetDiv2 + m_loopFilterBetaOffsetDiv2) > 12, "Loop Filter Beta Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
-      xConfirmPara( (m_GOPList[i].m_tcOffsetDiv2 + m_loopFilterTcOffsetDiv2) < -12 || (m_GOPList[i].m_tcOffsetDiv2 + m_loopFilterTcOffsetDiv2) > 12, "Loop Filter Tc Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
-      xConfirmPara( (m_GOPList[i].m_CbBetaOffsetDiv2 + m_loopFilterCbBetaOffsetDiv2) < -12 || (m_GOPList[i].m_CbBetaOffsetDiv2 + m_loopFilterCbBetaOffsetDiv2) > 12, "Loop Filter Beta Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
-      xConfirmPara( (m_GOPList[i].m_CbTcOffsetDiv2 + m_loopFilterCbTcOffsetDiv2) < -12 || (m_GOPList[i].m_CbTcOffsetDiv2 + m_loopFilterCbTcOffsetDiv2) > 12, "Loop Filter Tc Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
-      xConfirmPara( (m_GOPList[i].m_CrBetaOffsetDiv2 + m_loopFilterCrBetaOffsetDiv2) < -12 || (m_GOPList[i].m_CrBetaOffsetDiv2 + m_loopFilterCrBetaOffsetDiv2) > 12, "Loop Filter Beta Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
-      xConfirmPara( (m_GOPList[i].m_CrTcOffsetDiv2 + m_loopFilterCrTcOffsetDiv2) < -12 || (m_GOPList[i].m_CrTcOffsetDiv2 + m_loopFilterCrTcOffsetDiv2) > 12, "Loop Filter Tc Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
+      xConfirmPara( (m_GOPList[i].m_betaOffsetDiv2 + m_deblockingFilterBetaOffsetDiv2) < -12 || (m_GOPList[i].m_betaOffsetDiv2 + m_deblockingFilterBetaOffsetDiv2) > 12, "Loop Filter Beta Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
+      xConfirmPara( (m_GOPList[i].m_tcOffsetDiv2 + m_deblockingFilterTcOffsetDiv2) < -12 || (m_GOPList[i].m_tcOffsetDiv2 + m_deblockingFilterTcOffsetDiv2) > 12, "Loop Filter Tc Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
+      xConfirmPara( (m_GOPList[i].m_CbBetaOffsetDiv2 + m_deblockingFilterCbBetaOffsetDiv2) < -12 || (m_GOPList[i].m_CbBetaOffsetDiv2 + m_deblockingFilterCbBetaOffsetDiv2) > 12, "Loop Filter Beta Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
+      xConfirmPara( (m_GOPList[i].m_CbTcOffsetDiv2 + m_deblockingFilterCbTcOffsetDiv2) < -12 || (m_GOPList[i].m_CbTcOffsetDiv2 + m_deblockingFilterCbTcOffsetDiv2) > 12, "Loop Filter Tc Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
+      xConfirmPara( (m_GOPList[i].m_CrBetaOffsetDiv2 + m_deblockingFilterCrBetaOffsetDiv2) < -12 || (m_GOPList[i].m_CrBetaOffsetDiv2 + m_deblockingFilterCrBetaOffsetDiv2) > 12, "Loop Filter Beta Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
+      xConfirmPara( (m_GOPList[i].m_CrTcOffsetDiv2 + m_deblockingFilterCrTcOffsetDiv2) < -12 || (m_GOPList[i].m_CrTcOffsetDiv2 + m_deblockingFilterCrTcOffsetDiv2) > 12, "Loop Filter Tc Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
     }
   }
 
@@ -3128,7 +3697,10 @@ bool EncAppCfg::xCheckParameter()
 
   xConfirmPara( m_fastLocalDualTreeMode < 0 || m_fastLocalDualTreeMode > 2, "FastLocalDualTreeMode must be in range [0..2]" );
 
+  xConfirmPara( m_fastAdaptCostPredMode < 0 || m_fastAdaptCostPredMode > 2, "FastAdaptCostPredMode must be in range [0..2]" );
+
   int extraRPLs = 0;
+  bool hasFutureRef = false;
   //start looping through frames in coding order until we can verify that the GOP structure is correct.
   while (!verifiedGOP && !errorGOP)
   {
@@ -3338,6 +3910,7 @@ bool EncAppCfg::xCheckParameter()
       for (int i = 0; i< m_RPLList0[curGOP].m_numRefPics; i++)
       {
         int absPOC = curPOC - m_RPLList0[curGOP].m_deltaRefPics[i];
+        hasFutureRef |= (m_RPLList0[curGOP].m_deltaRefPics[i] < 0);
         if (absPOC >= 0)
         {
           refList[numRefs] = absPOC;
@@ -3347,6 +3920,7 @@ bool EncAppCfg::xCheckParameter()
       for (int i = 0; i< m_RPLList1[curGOP].m_numRefPics; i++)
       {
         int absPOC = curPOC - m_RPLList1[curGOP].m_deltaRefPics[i];
+        hasFutureRef |= (m_RPLList1[curGOP].m_deltaRefPics[i] < 0);
         if (absPOC >= 0)
         {
           bool alreadyExist = false;
@@ -3369,6 +3943,7 @@ bool EncAppCfg::xCheckParameter()
     }
     checkGOP++;
   }
+  m_isLowDelay = !hasFutureRef && m_iIntraPeriod != 1;
   xConfirmPara(errorGOP, "Invalid GOP structure given");
 
   m_maxTempLayer = 1;
@@ -3456,8 +4031,8 @@ bool EncAppCfg::xCheckParameter()
     uint32_t colIdx, rowIdx;
     uint32_t remSize;
 
-    pps.setPicWidthInLumaSamples( m_iSourceWidth );
-    pps.setPicHeightInLumaSamples( m_iSourceHeight );
+    pps.setPicWidthInLumaSamples( m_sourceWidth );
+    pps.setPicHeightInLumaSamples( m_sourceHeight );
     pps.setLog2CtuSize( floorLog2(m_uiCTUSize) );
 
     // set default tile column if not provided
@@ -3748,7 +4323,7 @@ bool EncAppCfg::xCheckParameter()
 #if U0132_TARGET_BITS_SATURATION
     if ((m_RCCpbSaturationEnabled) && (m_level!=Level::NONE) && (m_profile!=Profile::NONE))
     {
-      uint32_t uiLevelIdx = (m_level / 10) + (uint32_t)((m_level % 10) / 3);    // (m_level / 30)*3 + ((m_level % 10) / 3);
+      uint32_t uiLevelIdx = (m_level / 16) * 4 + (uint32_t)((m_level % 16) / 3);
       xConfirmPara(m_RCCpbSize > g_uiMaxCpbSize[m_levelTier][uiLevelIdx], "RCCpbSize should be smaller than or equal to Max CPB size according to tier and level");
       xConfirmPara(m_RCInitialCpbFullness > 1, "RCInitialCpbFullness should be smaller than or equal to 1");
     }
@@ -3764,6 +4339,11 @@ bool EncAppCfg::xCheckParameter()
   if (m_framePackingSEIEnabled)
   {
     xConfirmPara(m_framePackingSEIType < 3 || m_framePackingSEIType > 5 , "SEIFramePackingType must be in rage 3 to 5");
+  }
+
+  if (m_doSEIEnabled)
+  {
+    xConfirmPara(m_doSEITransformType < 0 || m_doSEITransformType > 7, "SEIDisplayOrientationTransformType must be in rage 0 to 7");
   }
 
   if( m_erpSEIEnabled && !m_erpSEICancelFlag )
@@ -3807,7 +4387,6 @@ bool EncAppCfg::xCheckParameter()
         xConfirmPara( m_gcmpSEIFunctionCoeffU[i] <= 0.0 || m_gcmpSEIFunctionCoeffU[i] > 1.0, "SEIGcmpFunctionCoeffU must be in the range (0, 1]");
         xConfirmPara( m_gcmpSEIFunctionCoeffV[i] <= 0.0 || m_gcmpSEIFunctionCoeffV[i] > 1.0, "SEIGcmpFunctionCoeffV must be in the range (0, 1]");
       }
-#if JVET_S0172_ITEM2_GCMP_CONSTRAINT
       if (i != 2 && (m_gcmpSEIPackingType == 4 || m_gcmpSEIPackingType == 5))
       {
         if (m_gcmpSEIFaceIndex[2] == 0 || m_gcmpSEIFaceIndex[2] == 1)
@@ -3875,13 +4454,20 @@ bool EncAppCfg::xCheckParameter()
           }
         }
       }
-#endif
     }
     if (m_gcmpSEIGuardBandFlag)
     {
       xConfirmPara( m_gcmpSEIGuardBandSamplesMinus1 < 0 || m_gcmpSEIGuardBandSamplesMinus1 > 15, "SEIGcmpGuardBandSamplesMinus1 must be in the range of 0 to 15");
     }
   }
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (m_siiSEIEnabled && m_ShutterFilterEnable)
+  {
+    xConfirmPara(m_maxTempLayer == 1 || m_maxDecPicBuffering[0] == 1,"Shutter Interval SEI message processing is disabled for single TempLayer and single frame in DPB\n");
+  }
+#endif
+
   xConfirmPara(m_log2ParallelMergeLevel < 2, "Log2ParallelMergeLevel should be larger than or equal to 2");
   xConfirmPara(m_log2ParallelMergeLevel > m_uiCTUSize, "Log2ParallelMergeLevel should be less than or equal to CTU size");
 #if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
@@ -3898,6 +4484,22 @@ bool EncAppCfg::xCheckParameter()
   if (m_gopBasedTemporalFilterEnabled)
   {
     xConfirmPara(m_temporalSubsampleRatio != 1, "GOP Based Temporal Filter only support Temporal sub-sample ratio 1");
+    xConfirmPara(
+      m_gopBasedTemporalFilterPastRefs <= 0 && m_gopBasedTemporalFilterFutureRefs <= 0,
+      "Either TemporalFilterPastRefs or TemporalFilterFutureRefs must be larger than 0 when TemporalFilter is enabled");
+
+    if ((m_gopBasedTemporalFilterPastRefs != 0 && m_gopBasedTemporalFilterPastRefs != TF_DEFAULT_REFS)
+        || (m_gopBasedTemporalFilterFutureRefs != 0 && m_gopBasedTemporalFilterFutureRefs != TF_DEFAULT_REFS))
+    {
+      msg(WARNING, "Number of frames used for temporal prefilter is different from default.\n");
+    }
+  }
+  if (m_bimEnabled)
+  {
+    xConfirmPara(m_temporalSubsampleRatio != 1, "Block Importance Mapping only support Temporal sub-sample ratio 1");
+    xConfirmPara(
+      m_gopBasedTemporalFilterPastRefs <= 0 && m_gopBasedTemporalFilterFutureRefs <= 0,
+      "Either TemporalFilterPastRefs or TemporalFilterFutureRefs must be larger than 0 when Block Importance Mapping is enabled" );
   }
 #if EXTENSION_360_VIDEO
   check_failed |= m_ext360.verifyParameters();
@@ -3935,12 +4537,19 @@ void EncAppCfg::xPrintParameter()
   msg( DETAILS, "Input          File                    : %s\n", m_inputFileName.c_str() );
   msg( DETAILS, "Bitstream      File                    : %s\n", m_bitstreamFileName.c_str() );
   msg( DETAILS, "Reconstruction File                    : %s\n", m_reconFileName.c_str() );
-  msg( DETAILS, "Real     Format                        : %dx%d %gHz\n", m_iSourceWidth - m_confWinLeft - m_confWinRight, m_iSourceHeight - m_confWinTop - m_confWinBottom, (double)m_iFrameRate / m_temporalSubsampleRatio );
-  msg( DETAILS, "Internal Format                        : %dx%d %gHz\n", m_iSourceWidth, m_iSourceHeight, (double)m_iFrameRate / m_temporalSubsampleRatio );
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (m_ShutterFilterEnable && !m_shutterIntervalPreFileName.empty())
+  {
+    msg(DETAILS,"SII Pre-processed File                 : %s\n", m_shutterIntervalPreFileName.c_str());
+  }
+#endif
+  msg( DETAILS, "Real     Format                        : %dx%d %gHz\n", m_sourceWidth - m_confWinLeft - m_confWinRight, m_sourceHeight - m_confWinTop - m_confWinBottom, (double)m_iFrameRate / m_temporalSubsampleRatio );
+  msg( DETAILS, "Internal Format                        : %dx%d %gHz\n", m_sourceWidth, m_sourceHeight, (double)m_iFrameRate / m_temporalSubsampleRatio );
   msg( DETAILS, "Sequence PSNR output                   : %s\n", ( m_printMSEBasedSequencePSNR ? "Linear average, MSE-based" : "Linear average only" ) );
   msg( DETAILS, "Hexadecimal PSNR output                : %s\n", ( m_printHexPsnr ? "Enabled" : "Disabled" ) );
   msg( DETAILS, "Sequence MSE output                    : %s\n", ( m_printSequenceMSE ? "Enabled" : "Disabled" ) );
   msg( DETAILS, "Frame MSE output                       : %s\n", ( m_printFrameMSE ? "Enabled" : "Disabled" ) );
+  msg( DETAILS, "MS-SSIM output                         : %s\n", ( m_printMSSSIM ? "Enabled" : "Disabled") );
   msg( DETAILS, "Cabac-zero-word-padding                : %s\n", ( m_cabacZeroWordPaddingEnabled ? "Enabled" : "Disabled" ) );
   if (m_isField)
   {
@@ -3957,13 +4566,13 @@ void EncAppCfg::xPrintParameter()
   {
     msg( DETAILS, "Profile                                : %s\n", profileToString(m_profile) );
   }
+  msg( DETAILS,"AllRapPicturesFlag                     : %d\n", m_allRapPicturesFlag );
   msg(DETAILS, "CTU size / min CU size                 : %d / %d \n", m_uiMaxCUWidth, 1 << m_log2MinCuSize);
 
   msg(DETAILS, "subpicture info present flag           : %s\n", m_subPicInfoPresentFlag ? "Enabled" : "Disabled");
   if (m_subPicInfoPresentFlag)
   {
     msg(DETAILS, "number of subpictures                  : %d\n", m_numSubPics);
-#if JVET_S0071_SAME_SIZE_SUBPIC_LAYOUT
     msg(DETAILS, "subpicture size same flag              : %d\n", m_subPicSameSizeFlag);
     if (m_subPicSameSizeFlag)
     {
@@ -3982,17 +4591,6 @@ void EncAppCfg::xPrintParameter()
       msg(DETAILS, "loop filter across [%d]th subpicture    : %d\n", i,
           m_loopFilterAcrossSubpicEnabledFlag[i] ? "Enabled" : "Disabled");
     }
-#else
-    for (int i = 0; i < m_numSubPics; i++)
-    {
-      msg(DETAILS, "[%d]th subpictures location             :[%d %d]\n", i, m_subPicCtuTopLeftX[i],
-          m_subPicCtuTopLeftY[i]);
-      msg(DETAILS, "[%d]th subpictures size                 :[%d %d]\n", i, m_subPicWidth[i], m_subPicHeight[i]);
-      msg(DETAILS, "[%d]th subpictures treated as picture flag :%d\n", i, m_subPicTreatedAsPicFlag[i]);
-      msg(DETAILS, "loop filter cross [%d]th subpictures enabled flag :%d\n", i,
-          m_loopFilterAcrossSubpicEnabledFlag[i]);
-    }
-#endif
   }
 
   msg(DETAILS, "subpicture ID present flag             : %s\n",
@@ -4011,6 +4609,7 @@ void EncAppCfg::xPrintParameter()
   msg( DETAILS, "Intra period                           : %d\n", m_iIntraPeriod );
   msg( DETAILS, "Decoding refresh type                  : %d\n", m_iDecodingRefreshType );
   msg( DETAILS, "DRAP period                            : %d\n", m_drapPeriod );
+  msg( DETAILS, "EDRAP period                           : %d\n", m_edrapPeriod );
 #if QP_SWITCHING_FOR_PARALLEL
   if (m_qpIncrementAtSourceFrame.bPresent)
   {
@@ -4032,12 +4631,28 @@ void EncAppCfg::xPrintParameter()
   msg( DETAILS, "Input bit depth                        : (Y:%d, C:%d)\n", m_inputBitDepth[CHANNEL_TYPE_LUMA], m_inputBitDepth[CHANNEL_TYPE_CHROMA] );
   msg( DETAILS, "MSB-extended bit depth                 : (Y:%d, C:%d)\n", m_MSBExtendedBitDepth[CHANNEL_TYPE_LUMA], m_MSBExtendedBitDepth[CHANNEL_TYPE_CHROMA] );
   msg( DETAILS, "Internal bit depth                     : (Y:%d, C:%d)\n", m_internalBitDepth[CHANNEL_TYPE_LUMA], m_internalBitDepth[CHANNEL_TYPE_CHROMA] );
-  msg( DETAILS, "Intra reference smoothing              : %s\n", (m_enableIntraReferenceSmoothing           ? "Enabled" : "Disabled") );
-  msg( DETAILS, "cu_chroma_qp_offset_subdiv             : %d\n", m_cuChromaQpOffsetSubdiv);
+  if (m_cuChromaQpOffsetList.size() > 0)
+  {
+    msg( DETAILS, "Chroma QP offset list                  : (" );
+    for (int i=0; i < m_cuChromaQpOffsetList.size(); i++)
+    {
+      msg( DETAILS, "%d %d %d%s", m_cuChromaQpOffsetList[i].u.comp.CbOffset, m_cuChromaQpOffsetList[i].u.comp.CrOffset, m_cuChromaQpOffsetList[i].u.comp.JointCbCrOffset,
+        (i+1 < m_cuChromaQpOffsetList.size() ? ", " : ")\n") );
+    }
+    msg( DETAILS, "cu_chroma_qp_offset_subdiv             : %d\n", m_cuChromaQpOffsetSubdiv);
+    msg( DETAILS, "cu_chroma_qp_offset_enabled_flag       : %s\n", (m_cuChromaQpOffsetEnabled ? "Enabled" : "Disabled") );
+  }
+  else
+  {
+    msg( DETAILS, "Chroma QP offset list                  : Disabled\n" );
+  }
   msg( DETAILS, "extended_precision_processing_flag     : %s\n", (m_extendedPrecisionProcessingFlag         ? "Enabled" : "Disabled") );
+  msg( DETAILS, "TSRC_Rice_present_flag                 : %s\n", (m_tsrcRicePresentFlag                     ? "Enabled" : "Disabled") );
+  msg( DETAILS, "reverse_last_sig_coeff_enabled_flag    : %s\n", (m_reverseLastSigCoeffEnabledFlag          ? "Enabled" : "Disabled") );
   msg( DETAILS, "transform_skip_rotation_enabled_flag   : %s\n", (m_transformSkipRotationEnabledFlag        ? "Enabled" : "Disabled") );
   msg( DETAILS, "transform_skip_context_enabled_flag    : %s\n", (m_transformSkipContextEnabledFlag         ? "Enabled" : "Disabled") );
   msg( DETAILS, "high_precision_offsets_enabled_flag    : %s\n", (m_highPrecisionOffsetsEnabledFlag         ? "Enabled" : "Disabled") );
+  msg( DETAILS, "rrc_rice_extension_flag                : %s\n", (m_rrcRiceExtensionEnableFlag                 ? "Enabled" : "Disabled") );
   msg( DETAILS, "persistent_rice_adaptation_enabled_flag: %s\n", (m_persistentRiceAdaptationEnabledFlag     ? "Enabled" : "Disabled") );
   msg( DETAILS, "cabac_bypass_alignment_enabled_flag    : %s\n", (m_cabacBypassAlignmentEnabledFlag         ? "Enabled" : "Disabled") );
 
@@ -4070,6 +4685,17 @@ void EncAppCfg::xPrintParameter()
     }
 #endif
   }
+
+#if GDR_ENABLED
+  msg(DETAILS, "GDREnabled                             : %d\n", m_gdrEnabled);
+
+  if (m_gdrEnabled)
+  {
+    msg(DETAILS, "GDR Start                              : %d\n", m_gdrPocStart);
+    msg(DETAILS, "GDR Interval                           : %d\n", m_gdrInterval);
+    msg(DETAILS, "GDR Period                             : %d\n", m_gdrPeriod);
+  }
+#endif
 
   msg( DETAILS, "Max Num Merge Candidates               : %d\n", m_maxNumMergeCand );
   msg( DETAILS, "Max Num Affine Merge Candidates        : %d\n", m_maxNumAffineMergeCand );
@@ -4105,11 +4731,12 @@ void EncAppCfg::xPrintParameter()
   msg( VERBOSE, "SAO:%d ", (m_bUseSAO)?(1):(0));
   msg( VERBOSE, "ALF:%d ", m_alf ? 1 : 0 );
   msg( VERBOSE, "CCALF:%d ", m_ccalf ? 1 : 0 );
-
+  msg(VERBOSE, "MaxNumALFAPS", m_maxNumAlfAps);
+  msg(VERBOSE, "ConstantJointCbCrSignFlag", m_constantJointCbCrSignFlag);
   msg( VERBOSE, "WPP:%d ", (int)m_useWeightedPred);
   msg( VERBOSE, "WPB:%d ", (int)m_useWeightedBiPred);
   msg( VERBOSE, "PME:%d ", m_log2ParallelMergeLevel);
-  const int iWaveFrontSubstreams = m_entropyCodingSyncEnabledFlag ? (m_iSourceHeight + m_uiMaxCUHeight - 1) / m_uiMaxCUHeight : 1;
+  const int iWaveFrontSubstreams = m_entropyCodingSyncEnabledFlag ? (m_sourceHeight + m_uiMaxCUHeight - 1) / m_uiMaxCUHeight : 1;
   msg( VERBOSE, " WaveFrontSynchro:%d WaveFrontSubstreams:%d", m_entropyCodingSyncEnabledFlag?1:0, iWaveFrontSubstreams);
   msg( VERBOSE, " ScalingList:%d ", m_useScalingListId );
   msg( VERBOSE, "TMVPMode:%d ", m_TMVPModeId );
@@ -4125,6 +4752,9 @@ void EncAppCfg::xPrintParameter()
     if ( m_Affine )
     {
       msg( VERBOSE, "AffineType:%d ", m_AffineType );
+#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
+      msg( VERBOSE, "AdaptBypassAffineMe:%d ", m_adaptBypassAffineMe);
+#endif
     }
     msg(VERBOSE, "PROF:%d ", m_PROF);
     msg(VERBOSE, "SbTMVP:%d ", m_sbTmvpEnableFlag);
@@ -4134,7 +4764,22 @@ void EncAppCfg::xPrintParameter()
     msg( VERBOSE, "LMChroma:%d ", m_LMChroma );
     msg( VERBOSE, "HorCollocatedChroma:%d ", m_horCollocatedChromaFlag );
     msg( VERBOSE, "VerCollocatedChroma:%d ", m_verCollocatedChromaFlag );
-    msg( VERBOSE, "MTS: %1d(intra) %1d(inter) ", m_MTS & 1, ( m_MTS >> 1 ) & 1 );
+
+    {
+      std::string s;
+      const int   m = m_mtsMode + 4 * m_mtsImplicitIntra;
+      if (m != 0)
+      {
+        s = "(";
+        s += (m & 1) != 0 ? "explicit intra" : "implicit intra";
+        if (m & 2)
+        {
+          s += ", explicit inter";
+        }
+        s += ")";
+      }
+      msg(VERBOSE, "MTS:%d%s ", m != 0, s.c_str());
+    }
     msg( VERBOSE, "SBT:%d ", m_SBT );
     msg( VERBOSE, "ISP:%d ", m_ISP );
     msg( VERBOSE, "SMVD:%d ", m_SMVD );
@@ -4152,6 +4797,7 @@ void EncAppCfg::xPrintParameter()
     msg( VERBOSE, "AffineAmvr:%d ", m_AffineAmvr );
     m_AffineAmvrEncOpt = m_AffineAmvr ? m_AffineAmvrEncOpt : false;
     msg( VERBOSE, "AffineAmvrEncOpt:%d ", m_AffineAmvrEncOpt );
+    msg(VERBOSE, "AffineAmvp:%d ", m_AffineAmvp);
     msg(VERBOSE, "DMVR:%d ", m_DMVR);
     msg(VERBOSE, "MmvdDisNum:%d ", m_MmvdDisNum);
     msg(VERBOSE, "JointCbCr:%d ", m_JointCbCrMode);
@@ -4200,7 +4846,10 @@ void EncAppCfg::xPrintParameter()
   msg( VERBOSE, "FastMrg:%d ", m_useFastMrg );
   msg( VERBOSE, "PBIntraFast:%d ", m_usePbIntraFast );
   if( m_ImvMode ) msg( VERBOSE, "IMV4PelFast:%d ", m_Imv4PelFast );
-  if( m_MTS ) msg( VERBOSE, "MTSMaxCand: %1d(intra) %1d(inter) ", m_MTSIntraMaxCand, m_MTSInterMaxCand );
+  if (m_mtsMode)
+  {
+    msg(VERBOSE, "MTSMaxCand: %1d(intra) %1d(inter) ", m_MTSIntraMaxCand, m_MTSInterMaxCand);
+  }
   if( m_ISP ) msg( VERBOSE, "ISPFast:%d ", m_useFastISP );
   if( m_LFNST ) msg( VERBOSE, "FastLFNST:%d ", m_useFastLFNST );
   msg( VERBOSE, "AMaxBT:%d ", m_useAMaxBT );
@@ -4210,15 +4859,9 @@ void EncAppCfg::xPrintParameter()
   msg( VERBOSE, "UseNonLinearAlfChroma:%d ", m_useNonLinearAlfChroma );
   msg( VERBOSE, "MaxNumAlfAlternativesChroma:%d ", m_maxNumAlfAlternativesChroma );
   if( m_MIP ) msg(VERBOSE, "FastMIP:%d ", m_useFastMIP);
+  msg( VERBOSE, "TTFastSkip:%d ", m_ttFastSkip);
+  msg( VERBOSE, "TTFastSkipThr:%.3f ", m_ttFastSkipThr);
   msg( VERBOSE, "FastLocalDualTree:%d ", m_fastLocalDualTreeMode );
-
-  msg( VERBOSE, "NumSplitThreads:%d ", m_numSplitThreads );
-  if( m_numSplitThreads > 1 )
-  {
-    msg( VERBOSE, "ForceSingleSplitThread:%d ", m_forceSplitSequential );
-  }
-  msg( VERBOSE, "NumWppThreads:%d+%d ", m_numWppThreads, m_numWppExtraLines );
-  msg( VERBOSE, "EnsureWppBitEqual:%d ", m_ensureWppBitEqual );
 
   if (m_resChangeInClvsEnabled)
   {
@@ -4228,10 +4871,21 @@ void EncAppCfg::xPrintParameter()
   {
     msg( VERBOSE, "RPR:%d ", 0 );
   }
-  msg(VERBOSE, "TemporalFilter:%d ", m_gopBasedTemporalFilterEnabled);
+  msg(VERBOSE, "TemporalFilter:%d/%d ", m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs);
+  msg(VERBOSE, "SEI CTI:%d ", m_ctiSEIEnabled);
+  msg(VERBOSE, "BIM:%d ", m_bimEnabled);
 #if EXTENSION_360_VIDEO
   m_ext360.outputConfigurationSummary();
 #endif
+
+  if( m_constrainedRaslEncoding )
+  {
+    msg(VERBOSE, "\n\nWarning: with SEIConstrainedRASL enabled, LMChroma estimation is skipped in RASL frames" );
+    if( m_wrapAround )
+    {
+      msg(VERBOSE,   "\n         and wrap-around motion compensation is disabled in RASL frames" );
+    }
+  }
 
   msg( VERBOSE, "\n\n");
 

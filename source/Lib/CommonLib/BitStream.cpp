@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -107,14 +107,14 @@ void OutputBitstream::clear()
   m_num_held_bits = 0;
 }
 
-void OutputBitstream::write   ( uint32_t uiBits, uint32_t uiNumberOfBits )
+void OutputBitstream::write(uint32_t bits, uint32_t numberOfBits)
 {
-  CHECK( uiNumberOfBits > 32, "Number of bits is exceeds '32'" );
-  CHECK( uiNumberOfBits != 32 && (uiBits & (~0 << uiNumberOfBits)) != 0, "Unsupported parameters" );
+  CHECK(numberOfBits > 32, "Number of bits is exceeds '32'");
+  CHECK(numberOfBits != 32 && (bits & (~0u << numberOfBits)) != 0, "Unsupported parameters");
 
   /* any modulo 8 remainder of num_total_bits cannot be written this time,
    * and will be held until next time. */
-  uint32_t num_total_bits = uiNumberOfBits + m_num_held_bits;
+  uint32_t num_total_bits     = numberOfBits + m_num_held_bits;
   uint32_t next_num_held_bits = num_total_bits % 8;
 
   /* form a byte aligned word (write_bits), by concatenating any held bits
@@ -123,7 +123,7 @@ void OutputBitstream::write   ( uint32_t uiBits, uint32_t uiNumberOfBits )
    * len(H)=7, len(V)=1: ... ---- HHHH HHHV . 0000 0000, next_num_held_bits=0
    * len(H)=7, len(V)=2: ... ---- HHHH HHHV . V000 0000, next_num_held_bits=1
    * if total_bits < 8, the value of v_ is not used */
-  uint8_t next_held_bits = uiBits << (8 - next_num_held_bits);
+  uint8_t next_held_bits = bits << (8 - next_num_held_bits);
 
   if (!(num_total_bits >> 3))
   {
@@ -135,9 +135,9 @@ void OutputBitstream::write   ( uint32_t uiBits, uint32_t uiNumberOfBits )
     return;
   }
 
-  /* topword serves to justify held_bits to align with the msb of uiBits */
-  uint32_t topword = (uiNumberOfBits - next_num_held_bits) & ~((1 << 3) -1);
-  uint32_t write_bits = (m_held_bits << topword) | (uiBits >> next_num_held_bits);
+  /* topword serves to justify held_bits to align with the msb of bits */
+  uint32_t topword    = (numberOfBits - next_num_held_bits) & ~((1 << 3) - 1);
+  uint32_t write_bits = (m_held_bits << topword) | (bits >> next_num_held_bits);
 
   switch (num_total_bits >> 3)
   {
@@ -228,45 +228,44 @@ int OutputBitstream::countStartCodeEmulations()
 }
 
 /**
- * read uiNumberOfBits from bitstream without updating the bitstream
+ * read numberOfBits from bitstream without updating the bitstream
  * state, storing the result in ruiBits.
  *
- * If reading uiNumberOfBits would overrun the bitstream buffer,
+ * If reading numberOfBits would overrun the bitstream buffer,
  * the bitstream is effectively padded with sufficient zero-bits to
  * avoid the overrun.
  */
-void InputBitstream::pseudoRead ( uint32_t uiNumberOfBits, uint32_t& ruiBits )
+void InputBitstream::pseudoRead(uint32_t numberOfBits, uint32_t &ruiBits)
 {
   uint32_t saved_num_held_bits = m_num_held_bits;
   uint8_t saved_held_bits = m_held_bits;
   uint32_t saved_fifo_idx = m_fifo_idx;
 
-  uint32_t num_bits_to_read = min(uiNumberOfBits, getNumBitsLeft());
+  uint32_t num_bits_to_read = min(numberOfBits, getNumBitsLeft());
   read(num_bits_to_read, ruiBits);
-  ruiBits <<= (uiNumberOfBits - num_bits_to_read);
+  ruiBits <<= (numberOfBits - num_bits_to_read);
 
   m_fifo_idx = saved_fifo_idx;
   m_held_bits = saved_held_bits;
   m_num_held_bits = saved_num_held_bits;
 }
 
-
-void InputBitstream::read (uint32_t uiNumberOfBits, uint32_t& ruiBits)
+void InputBitstream::read(uint32_t numberOfBits, uint32_t &ruiBits)
 {
-  CHECK( uiNumberOfBits > 32, "Too many bits read" );
+  CHECK(numberOfBits > 32, "Too many bits read");
 
-  m_numBitsRead += uiNumberOfBits;
+  m_numBitsRead += numberOfBits;
 
   /* NB, bits are extracted from the MSB of each byte. */
   uint32_t retval = 0;
-  if (uiNumberOfBits <= m_num_held_bits)
+  if (numberOfBits <= m_num_held_bits)
   {
     /* n=1, len(H)=7:   -VHH HHHH, shift_down=6, mask=0xfe
      * n=3, len(H)=7:   -VVV HHHH, shift_down=4, mask=0xf8
      */
-    retval = m_held_bits >> (m_num_held_bits - uiNumberOfBits);
-    retval &= ~(0xff << uiNumberOfBits);
-    m_num_held_bits -= uiNumberOfBits;
+    retval = m_held_bits >> (m_num_held_bits - numberOfBits);
+    retval &= ~(0xff << numberOfBits);
+    m_num_held_bits -= numberOfBits;
     ruiBits = retval;
     return;
   }
@@ -276,9 +275,9 @@ void InputBitstream::read (uint32_t uiNumberOfBits, uint32_t& ruiBits)
    *   => align retval with top of extracted word */
   /* n=5, len(H)=3: ---- -VVV, mask=0x07, shift_up=5-3=2,
    * n=9, len(H)=3: ---- -VVV, mask=0x07, shift_up=9-3=6 */
-  uiNumberOfBits -= m_num_held_bits;
+  numberOfBits -= m_num_held_bits;
   retval = m_held_bits & ~(0xff << m_num_held_bits);
-  retval <<= uiNumberOfBits;
+  retval <<= numberOfBits;
 
   /* number of whole bytes that need to be loaded to form retval */
   /* n=32, len(H)=0, load 4bytes, shift_down=0
@@ -289,7 +288,7 @@ void InputBitstream::read (uint32_t uiNumberOfBits, uint32_t& ruiBits)
    * n=5,  len(H)=1, load 1byte,  shift_down=1+3
    */
   uint32_t aligned_word = 0;
-  uint32_t num_bytes_to_load = (uiNumberOfBits - 1) >> 3;
+  uint32_t num_bytes_to_load = (numberOfBits - 1) >> 3;
   CHECK(m_fifo_idx + num_bytes_to_load >= m_fifo.size(), "Exceeded FIFO size");
 
   switch (num_bytes_to_load)
@@ -301,7 +300,7 @@ void InputBitstream::read (uint32_t uiNumberOfBits, uint32_t& ruiBits)
   }
 
   /* resolve remainder bits */
-  uint32_t next_num_held_bits = (32 - uiNumberOfBits) % 8;
+  uint32_t next_num_held_bits = (32 - numberOfBits) % 8;
 
   /* copy required part of aligned_word into retval */
   retval |= aligned_word >> next_num_held_bits;
@@ -328,12 +327,12 @@ void OutputBitstream::insertAt(const OutputBitstream& src, uint32_t pos)
 uint32_t InputBitstream::readOutTrailingBits ()
 {
   uint32_t count=0;
-  uint32_t uiBits = 0;
+  uint32_t bits = 0;
 
   while ( ( getNumBitsLeft() > 0 ) && (getNumBitsUntilByteAligned()!=0) )
   {
     count++;
-    read ( 1, uiBits );
+    read(1, bits);
   }
   return count;
 }

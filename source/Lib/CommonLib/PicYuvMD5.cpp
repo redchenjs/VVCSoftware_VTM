@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -253,6 +253,7 @@ int calcAndPrintHashStatus(const CPelUnitBuf& pic, const SEIDecodedPictureHash* 
 
   if (pictureHashSEI)
   {
+    CHECK ((uint32_t)pic.bufs.size() != ( pictureHashSEI->singleCompFlag ? 1 : 3 ), "The value of dph_sei_single_component_flag shall be equal to (ChromaFormatIdc == 0).");
     switch (pictureHashSEI->method)
     {
       case HASHTYPE_MD5:

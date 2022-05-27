@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -176,7 +176,6 @@ public:
 
 };
 
-#if JVET_S0102_ASPECT4
 inline void checkBPSyntaxElementLength(const SEIBufferingPeriod* bp1, const SEIBufferingPeriod* bp2)
 {
   CHECK(bp1->m_initialCpbRemovalDelayLength != bp2->m_initialCpbRemovalDelayLength ||
@@ -189,7 +188,6 @@ inline void checkBPSyntaxElementLength(const SEIBufferingPeriod* bp1, const SEIB
         "bp_dpb_output_delay_length_minus1, bp_du_cpb_removal_delay_increment_length_minus1, "
         "and bp_dpb_output_delay_du_length_minus1");
 }
-#endif
 
 class HRD
 {
@@ -210,7 +208,6 @@ public:
   OlsHrdParams*          getOlsHrdParametersAddr() { return m_olsHrdParams; }
   const OlsHrdParams&    getOlsHrdParameters(int idx) const { return m_olsHrdParams[idx]; }
 
-#if JVET_S0102_ASPECT4
   void                       setBufferingPeriodSEI(const SEIBufferingPeriod* bp)
   {
     if (m_bufferingPeriodInitialized)
@@ -221,9 +218,6 @@ public:
     m_bufferingPeriodInitialized = true;
   }
 
-#else
-  void                       setBufferingPeriodSEI(const SEIBufferingPeriod* bp)  { bp->copyTo(m_bufferingPeriodSEI); m_bufferingPeriodInitialized = true; }
-#endif
   const SEIBufferingPeriod*  getBufferingPeriodSEI() const                        { return m_bufferingPeriodInitialized ? &m_bufferingPeriodSEI : nullptr; }
 
   void                       setPictureTimingSEI(const SEIPictureTiming* pt)  { pt->copyTo(m_pictureTimingSEI); m_pictureTimingAvailable = true; }

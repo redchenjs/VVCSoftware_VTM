@@ -27,11 +27,6 @@ build_macos:
    tags:
       - macos
 
-build_ubuntu1604:
-   extends: .build_template_linux
-   tags:
-      - ubuntu1604
-
 build_ubuntu1804:
    extends: .build_template_linux
    tags:
@@ -46,6 +41,11 @@ build_ubuntu1804-gcc8:
       - make linuxbuild enable-tracing=true toolset=gcc-8
    tags:
       - ubuntu1804-gcc8
+
+build_ubuntu2004:
+   extends: .build_template_linux
+   tags:
+      - ubuntu2004
 
 build_vc191x:
    extends: .build_template

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,20 +72,13 @@ public:
                     const uint32_t uiMaxTrSize,
                     const bool bUseRDOQ,
                     const bool bUseRDOQTS,
-#if T0196_SELECTIVE_RDOQ
                     const bool useSelectiveRDOQ,
-#endif
                     const bool bEnc
   );
   void getTrTypes(const TransformUnit tu, const ComponentID compID, int &trTypeHor, int &trTypeVer);
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
   void fwdLfnstNxN( TCoeff* src, TCoeff* dst, const uint32_t mode, const uint32_t index, const uint32_t size, int zeroOutSize );
   void invLfnstNxN( TCoeff* src, TCoeff* dst, const uint32_t mode, const uint32_t index, const uint32_t size, int zeroOutSize, const int maxLog2TrDynamicRange );
-#else
-  void fwdLfnstNxN( int* src, int* dst, const uint32_t mode, const uint32_t index, const uint32_t size, int zeroOutSize );
-  void invLfnstNxN( int* src, int* dst, const uint32_t mode, const uint32_t index, const uint32_t size, int zeroOutSize );
-#endif
 
   uint32_t getLFNSTIntraMode( int wideAngPredMode );
   bool     getTransposeFlag ( uint32_t intraMode  );
@@ -119,10 +112,6 @@ public:
   DepQuant* getQuant() { return m_quant; }
   void   lambdaAdjustColorTrans(bool forward) { m_quant->lambdaAdjustColorTrans(forward); }
   void   resetStore() { m_quant->resetStore(); }
-
-#if ENABLE_SPLIT_PARALLELISM
-  void    copyState( const TrQuant& other );
-#endif
 
 protected:
   TCoeff   m_tempCoeff[MAX_TB_SIZEY * MAX_TB_SIZEY];

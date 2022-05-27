@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -125,7 +125,10 @@ _byteStreamNALUnit(
   statBits.bits+=24; statBits.count+=3;
 #endif
 #endif
-  if(start_code_prefix_one_3bytes != 0x000001) { THROW( "Invalid code prefix" );}
+  if (start_code_prefix_one_3bytes != 0x000001)
+  {
+    THROW("Invalid code prefix");
+  }
   stats.m_numStartCodePrefixBytes += 3;
 
   /* 3. NumBytesInNALunit is set equal to the number of bytes starting with

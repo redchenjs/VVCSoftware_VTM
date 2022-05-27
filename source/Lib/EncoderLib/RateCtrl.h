@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,8 @@ using namespace std;
 #include <list>
 
 const int g_RCInvalidQPValue = -999;
-const int g_RCSmoothWindowSize = 40;
+const int g_RCSmoothWindowSizeAlpha = 20;
+const int g_RCSmoothWindowSizeBeta = 60;
 const int g_RCMaxPicListSize = 32;
 const double g_RCWeightPicTargetBitInGOP    = 0.9;
 const double g_RCWeightPicRargetBitInBuffer = 1.0 - g_RCWeightPicTargetBitInGOP;
@@ -103,12 +104,12 @@ public:
   ~EncRCSeq();
 
 public:
-  void create( int totalFrames, int targetBitrate, int frameRate, int GOPSize, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel, bool useLCUSeparateModel, int adaptiveBit );
+  void create(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel, bool useLCUSeparateModel, int adaptiveBit);
   void destroy();
   void initBitsRatio( int bitsRatio[] );
   void initGOPID2Level( int GOPID2Level[] );
-  void initPicPara( TRCParameter* picPara  = NULL );    // NULL to initial with default value
-  void initLCUPara( TRCParameter** LCUPara = NULL );    // NULL to initial with default value
+  void initPicPara(TRCParameter *picPara = nullptr);    // nullptr to initial with default value
+  void initLCUPara(TRCParameter **LCUPara = nullptr);   // nullptr to initial with default value
   void updateAfterPic ( int bits );
   void setAllBitRatio( double basicLambda, double* equaCoeffA, double* equaCoeffB );
 
@@ -117,6 +118,7 @@ public:
   int  getTargetRate()                  { return m_targetRate; }
   int  getFrameRate()                   { return m_frameRate; }
   int  getGOPSize()                     { return m_GOPSize; }
+  int  getIntraPeriod()                 { return m_intraPeriod; }
   int  getPicWidth()                    { return m_picWidth; }
   int  getPicHeight()                   { return m_picHeight; }
   int  getLCUWidth()                    { return m_LCUWidth; }
@@ -159,6 +161,7 @@ private:
   int m_targetRate;
   int m_frameRate;
   int m_GOPSize;
+  int m_intraPeriod;
   int m_picWidth;
   int m_picHeight;
   int m_LCUWidth;
@@ -193,7 +196,7 @@ public:
   ~EncRCGOP();
 
 public:
-  void create( EncRCSeq* encRCSeq, int numPic );
+  void create(EncRCSeq *encRCSeq, int numPic, bool useAdaptiveBitsRatio);
   void destroy();
   void updateAfterPicture( int bitsCost );
 
@@ -335,7 +338,7 @@ public:
   ~RateCtrl();
 
 public:
-  void init(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits, bool useLCUSeparateModel, GOPEntry GOPList[MAX_GOP]);
+  void init(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits, bool useLCUSeparateModel, GOPEntry GOPList[MAX_GOP]);
   void destroy();
   void initRCPic( int frameLevel );
   void initRCGOP( int numberOfPictures );
@@ -344,9 +347,21 @@ public:
 public:
   void       setRCQP ( int QP ) { m_RCQP = QP;   }
   int        getRCQP () const   { return m_RCQP; }
-  EncRCSeq* getRCSeq()          { CHECK( m_encRCSeq == NULL, "Object does not exist" ); return m_encRCSeq; }
-  EncRCGOP* getRCGOP()          { CHECK( m_encRCGOP == NULL, "Object does not exist" ); return m_encRCGOP; }
-  EncRCPic* getRCPic()          { CHECK( m_encRCPic == NULL, "Object does not exist" ); return m_encRCPic; }
+  EncRCSeq  *getRCSeq()
+  {
+    CHECK(m_encRCSeq == nullptr, "Object does not exist");
+    return m_encRCSeq;
+  }
+  EncRCGOP *getRCGOP()
+  {
+    CHECK(m_encRCGOP == nullptr, "Object does not exist");
+    return m_encRCGOP;
+  }
+  EncRCPic *getRCPic()
+  {
+    CHECK(m_encRCPic == nullptr, "Object does not exist");
+    return m_encRCPic;
+  }
   list<EncRCPic*>& getPicList() { return m_listRCPictures; }
 #if U0132_TARGET_BITS_SATURATION
   bool       getCpbSaturationEnabled()  { return m_CpbSaturationEnabled;  }

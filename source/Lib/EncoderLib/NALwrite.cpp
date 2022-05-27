@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@ static const uint8_t emulation_prevention_three_byte = 3;
 
 void writeNalUnitHeader(ostream& out, OutputNALUnit& nalu)       // nal_unit_header()
 {
-OutputBitstream bsNALUHeader;
+  OutputBitstream bsNALUHeader;
   int forbiddenZero = 0;
   bsNALUHeader.write(forbiddenZero, 1);   // forbidden_zero_bit
   int nuhReservedZeroBit = 0;

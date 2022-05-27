@@ -4,7 +4,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,12 +48,11 @@ class CfgVPSParameters
 {
 public:
   CfgVPSParameters()
-  : m_maxTidILRefPicsPlus1(-1)
   {}
 
   virtual ~CfgVPSParameters(){}
 
-  int m_maxTidILRefPicsPlus1;
+  std::vector<std::vector<uint32_t>> m_maxTidILRefPicsPlus1;
 };
 
 class CfgSEISubpictureLevel
@@ -64,10 +63,8 @@ public:
   : m_enabled (false)
   , m_explicitFraction (false)
   , m_numSubpictures (1)
-#if JVET_S0176_SLI_SEI
   , m_sliMaxSublayers(1)
   , m_sliSublayerInfoPresentFlag (false)
-#endif
   {}
 
   virtual ~CfgSEISubpictureLevel(){}
@@ -76,14 +73,10 @@ public:
   std::vector<Level::Name>  m_refLevels;
   bool                      m_explicitFraction;
   int                       m_numSubpictures;
-#if JVET_S0098_SLI_FRACTION
   std::vector<int>          m_nonSubpicLayersFraction;
-#endif
   std::vector<int>          m_fractions;
-#if JVET_S0176_SLI_SEI
   int                       m_sliMaxSublayers;
   bool                      m_sliSublayerInfoPresentFlag;
-#endif
 };
 
 }

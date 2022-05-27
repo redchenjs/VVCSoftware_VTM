@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,11 +83,7 @@ void RdCost::setLambda( double dLambda, const BitDepths &bitDepths )
   m_dLambdaMotionSAD    = sqrt(m_dLambda);
 }
 
-#if JVET_S0234_ACT_CRS_FIX
 void RdCost::lambdaAdjustColorTrans(bool forward, ComponentID componentID, bool applyChromaScale, int* resScaleInv)
-#else
-void RdCost::lambdaAdjustColorTrans(bool forward, ComponentID componentID)
-#endif
 {
   if (m_resetStore)
   {
@@ -119,7 +115,6 @@ void RdCost::lambdaAdjustColorTrans(bool forward, ComponentID componentID)
 
   m_dLambda = m_lambdaStore[m_pairCheck][componentID];
   m_DistScale = m_DistScaleStore[m_pairCheck][componentID];
-#if JVET_S0234_ACT_CRS_FIX
   if (applyChromaScale)
   {
     CHECK(m_pairCheck == 0 || componentID == COMPONENT_Y, "wrong lambda adjustment for CS");
@@ -127,7 +122,6 @@ void RdCost::lambdaAdjustColorTrans(bool forward, ComponentID componentID)
     m_dLambda = m_dLambda / (cResScale*cResScale);
     m_DistScale = double(1 << SCALE_BITS) / m_dLambda;
   }
-#endif
   if (m_pairCheck == 0)
   {
     CHECK(m_DistScale != m_DistScaleUnadjusted, "lambda should be adjusted to the original value");
@@ -227,26 +221,6 @@ void RdCost::init()
   m_resetStore = true;
   m_pairCheck    = 0;
 }
-
-
-#if ENABLE_SPLIT_PARALLELISM
-
-void RdCost::copyState( const RdCost& other )
-{
-  m_costMode      = other.m_costMode;
-  m_dLambda       = other.m_dLambda;
-  m_DistScale     = other.m_DistScale;
-  memcpy( m_distortionWeight, other.m_distortionWeight, sizeof( m_distortionWeight ) );
-  m_mvPredictor   = other.m_mvPredictor;
-  m_motionLambda  = other.m_motionLambda;
-  m_iCostScale    = other.m_iCostScale;
-  m_dLambdaMotionSAD = other.m_dLambdaMotionSAD;
-#if WCG_EXT
-  m_dLambda_unadjusted  = other.m_dLambda_unadjusted ;
-  m_DistScaleUnadjusted = other.m_DistScaleUnadjusted;
-#endif
-}
-#endif
 
 void RdCost::setDistParam( DistParam &rcDP, const CPelBuf &org, const Pel* piRefY, int iRefStride, int bitDepth, ComponentID compID, int subShiftMode, int step, bool useHadamard )
 {
@@ -489,9 +463,9 @@ Distortion RdCost::xGetSAD_full( const DistParam& rcDtParam )
   int  iStrideCur  = rcDtParam.cur.stride * iSubStep;
   int  iStrideOrg  = rcDtParam.org.stride * iSubStep;
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
-#define SAD_OP( ADDR ) uiSum += abs( piOrg[ADDR] - piCur[ADDR] );
+#define SAD_OP(ADDR) sum += abs(piOrg[ADDR] - piCur[ADDR]);
 #define SAD_INC piOrg += iStrideOrg; piCur += iStrideCur;
 
   SIZE_AWARE_PER_EL_OP( SAD_OP, SAD_INC )
@@ -499,8 +473,8 @@ Distortion RdCost::xGetSAD_full( const DistParam& rcDtParam )
 #undef SAD_OP
 #undef SAD_INC
 
-  uiSum <<= iSubShift;
-  return uiSum;
+  sum <<= iSubShift;
+  return sum;
 }
 
 Distortion RdCost::xGetSAD( const DistParam& rcDtParam )
@@ -520,24 +494,24 @@ Distortion RdCost::xGetSAD( const DistParam& rcDtParam )
   const int  iStrideOrg      = rcDtParam.org.stride * iSubStep;
   const uint32_t distortionShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth);
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
   for( ; iRows != 0; iRows -= iSubStep )
   {
     for (int n = 0; n < iCols; n++ )
     {
-      uiSum += abs( piOrg[n] - piCur[n] );
+      sum += abs(piOrg[n] - piCur[n]);
     }
-    if (rcDtParam.maximumDistortionForEarlyExit < ( uiSum >> distortionShift ))
+    if (rcDtParam.maximumDistortionForEarlyExit < (sum >> distortionShift))
     {
-      return ( uiSum >> distortionShift );
+      return (sum >> distortionShift);
     }
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return ( uiSum >> distortionShift );
+  sum <<= iSubShift;
+  return (sum >> distortionShift);
 }
 
 Distortion RdCost::xGetSAD4( const DistParam& rcDtParam )
@@ -555,21 +529,21 @@ Distortion RdCost::xGetSAD4( const DistParam& rcDtParam )
   int  iStrideCur    = rcDtParam.cur.stride * iSubStep;
   int  iStrideOrg    = rcDtParam.org.stride * iSubStep;
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
   for( ; iRows != 0; iRows -= iSubStep )
   {
-    uiSum += abs( piOrg[0] - piCur[0] );
-    uiSum += abs( piOrg[1] - piCur[1] );
-    uiSum += abs( piOrg[2] - piCur[2] );
-    uiSum += abs( piOrg[3] - piCur[3] );
+    sum += abs(piOrg[0] - piCur[0]);
+    sum += abs(piOrg[1] - piCur[1]);
+    sum += abs(piOrg[2] - piCur[2]);
+    sum += abs(piOrg[3] - piCur[3]);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetSAD8( const DistParam& rcDtParam )
@@ -587,25 +561,25 @@ Distortion RdCost::xGetSAD8( const DistParam& rcDtParam )
   int  iStrideCur       = rcDtParam.cur.stride * iSubStep;
   int  iStrideOrg       = rcDtParam.org.stride * iSubStep;
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[0] - piCur[0] );
-    uiSum += abs( piOrg[1] - piCur[1] );
-    uiSum += abs( piOrg[2] - piCur[2] );
-    uiSum += abs( piOrg[3] - piCur[3] );
-    uiSum += abs( piOrg[4] - piCur[4] );
-    uiSum += abs( piOrg[5] - piCur[5] );
-    uiSum += abs( piOrg[6] - piCur[6] );
-    uiSum += abs( piOrg[7] - piCur[7] );
+    sum += abs(piOrg[0] - piCur[0]);
+    sum += abs(piOrg[1] - piCur[1]);
+    sum += abs(piOrg[2] - piCur[2]);
+    sum += abs(piOrg[3] - piCur[3]);
+    sum += abs(piOrg[4] - piCur[4]);
+    sum += abs(piOrg[5] - piCur[5]);
+    sum += abs(piOrg[6] - piCur[6]);
+    sum += abs(piOrg[7] - piCur[7]);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetSAD16( const DistParam& rcDtParam )
@@ -623,33 +597,33 @@ Distortion RdCost::xGetSAD16( const DistParam& rcDtParam )
   int  iStrideCur       = rcDtParam.cur.stride * iSubStep;
   int  iStrideOrg       = rcDtParam.org.stride * iSubStep;
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
   for( ; iRows != 0; iRows -= iSubStep )
   {
-    uiSum += abs( piOrg[0] - piCur[0] );
-    uiSum += abs( piOrg[1] - piCur[1] );
-    uiSum += abs( piOrg[2] - piCur[2] );
-    uiSum += abs( piOrg[3] - piCur[3] );
-    uiSum += abs( piOrg[4] - piCur[4] );
-    uiSum += abs( piOrg[5] - piCur[5] );
-    uiSum += abs( piOrg[6] - piCur[6] );
-    uiSum += abs( piOrg[7] - piCur[7] );
-    uiSum += abs( piOrg[8] - piCur[8] );
-    uiSum += abs( piOrg[9] - piCur[9] );
-    uiSum += abs( piOrg[10] - piCur[10] );
-    uiSum += abs( piOrg[11] - piCur[11] );
-    uiSum += abs( piOrg[12] - piCur[12] );
-    uiSum += abs( piOrg[13] - piCur[13] );
-    uiSum += abs( piOrg[14] - piCur[14] );
-    uiSum += abs( piOrg[15] - piCur[15] );
+    sum += abs(piOrg[0] - piCur[0]);
+    sum += abs(piOrg[1] - piCur[1]);
+    sum += abs(piOrg[2] - piCur[2]);
+    sum += abs(piOrg[3] - piCur[3]);
+    sum += abs(piOrg[4] - piCur[4]);
+    sum += abs(piOrg[5] - piCur[5]);
+    sum += abs(piOrg[6] - piCur[6]);
+    sum += abs(piOrg[7] - piCur[7]);
+    sum += abs(piOrg[8] - piCur[8]);
+    sum += abs(piOrg[9] - piCur[9]);
+    sum += abs(piOrg[10] - piCur[10]);
+    sum += abs(piOrg[11] - piCur[11]);
+    sum += abs(piOrg[12] - piCur[12]);
+    sum += abs(piOrg[13] - piCur[13]);
+    sum += abs(piOrg[14] - piCur[14]);
+    sum += abs(piOrg[15] - piCur[15]);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetSAD12( const DistParam& rcDtParam )
@@ -667,29 +641,29 @@ Distortion RdCost::xGetSAD12( const DistParam& rcDtParam )
   int  iStrideCur       = rcDtParam.cur.stride * iSubStep;
   int  iStrideOrg       = rcDtParam.org.stride * iSubStep;
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[0] - piCur[0] );
-    uiSum += abs( piOrg[1] - piCur[1] );
-    uiSum += abs( piOrg[2] - piCur[2] );
-    uiSum += abs( piOrg[3] - piCur[3] );
-    uiSum += abs( piOrg[4] - piCur[4] );
-    uiSum += abs( piOrg[5] - piCur[5] );
-    uiSum += abs( piOrg[6] - piCur[6] );
-    uiSum += abs( piOrg[7] - piCur[7] );
-    uiSum += abs( piOrg[8] - piCur[8] );
-    uiSum += abs( piOrg[9] - piCur[9] );
-    uiSum += abs( piOrg[10] - piCur[10] );
-    uiSum += abs( piOrg[11] - piCur[11] );
+    sum += abs(piOrg[0] - piCur[0]);
+    sum += abs(piOrg[1] - piCur[1]);
+    sum += abs(piOrg[2] - piCur[2]);
+    sum += abs(piOrg[3] - piCur[3]);
+    sum += abs(piOrg[4] - piCur[4]);
+    sum += abs(piOrg[5] - piCur[5]);
+    sum += abs(piOrg[6] - piCur[6]);
+    sum += abs(piOrg[7] - piCur[7]);
+    sum += abs(piOrg[8] - piCur[8]);
+    sum += abs(piOrg[9] - piCur[9]);
+    sum += abs(piOrg[10] - piCur[10]);
+    sum += abs(piOrg[11] - piCur[11]);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetSAD16N( const DistParam &rcDtParam )
@@ -703,35 +677,35 @@ Distortion RdCost::xGetSAD16N( const DistParam &rcDtParam )
   int  iStrideCur   = rcDtParam.cur.stride * iSubStep;
   int  iStrideOrg   = rcDtParam.org.stride * iSubStep;
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
   for( ; iRows != 0; iRows-=iSubStep )
   {
     for (int n = 0; n < iCols; n+=16 )
     {
-      uiSum += abs( piOrg[n+ 0] - piCur[n+ 0] );
-      uiSum += abs( piOrg[n+ 1] - piCur[n+ 1] );
-      uiSum += abs( piOrg[n+ 2] - piCur[n+ 2] );
-      uiSum += abs( piOrg[n+ 3] - piCur[n+ 3] );
-      uiSum += abs( piOrg[n+ 4] - piCur[n+ 4] );
-      uiSum += abs( piOrg[n+ 5] - piCur[n+ 5] );
-      uiSum += abs( piOrg[n+ 6] - piCur[n+ 6] );
-      uiSum += abs( piOrg[n+ 7] - piCur[n+ 7] );
-      uiSum += abs( piOrg[n+ 8] - piCur[n+ 8] );
-      uiSum += abs( piOrg[n+ 9] - piCur[n+ 9] );
-      uiSum += abs( piOrg[n+10] - piCur[n+10] );
-      uiSum += abs( piOrg[n+11] - piCur[n+11] );
-      uiSum += abs( piOrg[n+12] - piCur[n+12] );
-      uiSum += abs( piOrg[n+13] - piCur[n+13] );
-      uiSum += abs( piOrg[n+14] - piCur[n+14] );
-      uiSum += abs( piOrg[n+15] - piCur[n+15] );
+      sum += abs(piOrg[n + 0] - piCur[n + 0]);
+      sum += abs(piOrg[n + 1] - piCur[n + 1]);
+      sum += abs(piOrg[n + 2] - piCur[n + 2]);
+      sum += abs(piOrg[n + 3] - piCur[n + 3]);
+      sum += abs(piOrg[n + 4] - piCur[n + 4]);
+      sum += abs(piOrg[n + 5] - piCur[n + 5]);
+      sum += abs(piOrg[n + 6] - piCur[n + 6]);
+      sum += abs(piOrg[n + 7] - piCur[n + 7]);
+      sum += abs(piOrg[n + 8] - piCur[n + 8]);
+      sum += abs(piOrg[n + 9] - piCur[n + 9]);
+      sum += abs(piOrg[n + 10] - piCur[n + 10]);
+      sum += abs(piOrg[n + 11] - piCur[n + 11]);
+      sum += abs(piOrg[n + 12] - piCur[n + 12]);
+      sum += abs(piOrg[n + 13] - piCur[n + 13]);
+      sum += abs(piOrg[n + 14] - piCur[n + 14]);
+      sum += abs(piOrg[n + 15] - piCur[n + 15]);
     }
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetSAD32( const DistParam &rcDtParam )
@@ -749,49 +723,49 @@ Distortion RdCost::xGetSAD32( const DistParam &rcDtParam )
   int  iStrideCur       = rcDtParam.cur.stride * iSubStep;
   int  iStrideOrg       = rcDtParam.org.stride * iSubStep;
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[0] - piCur[0] );
-    uiSum += abs( piOrg[1] - piCur[1] );
-    uiSum += abs( piOrg[2] - piCur[2] );
-    uiSum += abs( piOrg[3] - piCur[3] );
-    uiSum += abs( piOrg[4] - piCur[4] );
-    uiSum += abs( piOrg[5] - piCur[5] );
-    uiSum += abs( piOrg[6] - piCur[6] );
-    uiSum += abs( piOrg[7] - piCur[7] );
-    uiSum += abs( piOrg[8] - piCur[8] );
-    uiSum += abs( piOrg[9] - piCur[9] );
-    uiSum += abs( piOrg[10] - piCur[10] );
-    uiSum += abs( piOrg[11] - piCur[11] );
-    uiSum += abs( piOrg[12] - piCur[12] );
-    uiSum += abs( piOrg[13] - piCur[13] );
-    uiSum += abs( piOrg[14] - piCur[14] );
-    uiSum += abs( piOrg[15] - piCur[15] );
-    uiSum += abs( piOrg[16] - piCur[16] );
-    uiSum += abs( piOrg[17] - piCur[17] );
-    uiSum += abs( piOrg[18] - piCur[18] );
-    uiSum += abs( piOrg[19] - piCur[19] );
-    uiSum += abs( piOrg[20] - piCur[20] );
-    uiSum += abs( piOrg[21] - piCur[21] );
-    uiSum += abs( piOrg[22] - piCur[22] );
-    uiSum += abs( piOrg[23] - piCur[23] );
-    uiSum += abs( piOrg[24] - piCur[24] );
-    uiSum += abs( piOrg[25] - piCur[25] );
-    uiSum += abs( piOrg[26] - piCur[26] );
-    uiSum += abs( piOrg[27] - piCur[27] );
-    uiSum += abs( piOrg[28] - piCur[28] );
-    uiSum += abs( piOrg[29] - piCur[29] );
-    uiSum += abs( piOrg[30] - piCur[30] );
-    uiSum += abs( piOrg[31] - piCur[31] );
+    sum += abs(piOrg[0] - piCur[0]);
+    sum += abs(piOrg[1] - piCur[1]);
+    sum += abs(piOrg[2] - piCur[2]);
+    sum += abs(piOrg[3] - piCur[3]);
+    sum += abs(piOrg[4] - piCur[4]);
+    sum += abs(piOrg[5] - piCur[5]);
+    sum += abs(piOrg[6] - piCur[6]);
+    sum += abs(piOrg[7] - piCur[7]);
+    sum += abs(piOrg[8] - piCur[8]);
+    sum += abs(piOrg[9] - piCur[9]);
+    sum += abs(piOrg[10] - piCur[10]);
+    sum += abs(piOrg[11] - piCur[11]);
+    sum += abs(piOrg[12] - piCur[12]);
+    sum += abs(piOrg[13] - piCur[13]);
+    sum += abs(piOrg[14] - piCur[14]);
+    sum += abs(piOrg[15] - piCur[15]);
+    sum += abs(piOrg[16] - piCur[16]);
+    sum += abs(piOrg[17] - piCur[17]);
+    sum += abs(piOrg[18] - piCur[18]);
+    sum += abs(piOrg[19] - piCur[19]);
+    sum += abs(piOrg[20] - piCur[20]);
+    sum += abs(piOrg[21] - piCur[21]);
+    sum += abs(piOrg[22] - piCur[22]);
+    sum += abs(piOrg[23] - piCur[23]);
+    sum += abs(piOrg[24] - piCur[24]);
+    sum += abs(piOrg[25] - piCur[25]);
+    sum += abs(piOrg[26] - piCur[26]);
+    sum += abs(piOrg[27] - piCur[27]);
+    sum += abs(piOrg[28] - piCur[28]);
+    sum += abs(piOrg[29] - piCur[29]);
+    sum += abs(piOrg[30] - piCur[30]);
+    sum += abs(piOrg[31] - piCur[31]);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetSAD24( const DistParam &rcDtParam )
@@ -809,41 +783,41 @@ Distortion RdCost::xGetSAD24( const DistParam &rcDtParam )
   int  iStrideCur       = rcDtParam.cur.stride * iSubStep;
   int  iStrideOrg       = rcDtParam.org.stride * iSubStep;
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[0] - piCur[0] );
-    uiSum += abs( piOrg[1] - piCur[1] );
-    uiSum += abs( piOrg[2] - piCur[2] );
-    uiSum += abs( piOrg[3] - piCur[3] );
-    uiSum += abs( piOrg[4] - piCur[4] );
-    uiSum += abs( piOrg[5] - piCur[5] );
-    uiSum += abs( piOrg[6] - piCur[6] );
-    uiSum += abs( piOrg[7] - piCur[7] );
-    uiSum += abs( piOrg[8] - piCur[8] );
-    uiSum += abs( piOrg[9] - piCur[9] );
-    uiSum += abs( piOrg[10] - piCur[10] );
-    uiSum += abs( piOrg[11] - piCur[11] );
-    uiSum += abs( piOrg[12] - piCur[12] );
-    uiSum += abs( piOrg[13] - piCur[13] );
-    uiSum += abs( piOrg[14] - piCur[14] );
-    uiSum += abs( piOrg[15] - piCur[15] );
-    uiSum += abs( piOrg[16] - piCur[16] );
-    uiSum += abs( piOrg[17] - piCur[17] );
-    uiSum += abs( piOrg[18] - piCur[18] );
-    uiSum += abs( piOrg[19] - piCur[19] );
-    uiSum += abs( piOrg[20] - piCur[20] );
-    uiSum += abs( piOrg[21] - piCur[21] );
-    uiSum += abs( piOrg[22] - piCur[22] );
-    uiSum += abs( piOrg[23] - piCur[23] );
+    sum += abs(piOrg[0] - piCur[0]);
+    sum += abs(piOrg[1] - piCur[1]);
+    sum += abs(piOrg[2] - piCur[2]);
+    sum += abs(piOrg[3] - piCur[3]);
+    sum += abs(piOrg[4] - piCur[4]);
+    sum += abs(piOrg[5] - piCur[5]);
+    sum += abs(piOrg[6] - piCur[6]);
+    sum += abs(piOrg[7] - piCur[7]);
+    sum += abs(piOrg[8] - piCur[8]);
+    sum += abs(piOrg[9] - piCur[9]);
+    sum += abs(piOrg[10] - piCur[10]);
+    sum += abs(piOrg[11] - piCur[11]);
+    sum += abs(piOrg[12] - piCur[12]);
+    sum += abs(piOrg[13] - piCur[13]);
+    sum += abs(piOrg[14] - piCur[14]);
+    sum += abs(piOrg[15] - piCur[15]);
+    sum += abs(piOrg[16] - piCur[16]);
+    sum += abs(piOrg[17] - piCur[17]);
+    sum += abs(piOrg[18] - piCur[18]);
+    sum += abs(piOrg[19] - piCur[19]);
+    sum += abs(piOrg[20] - piCur[20]);
+    sum += abs(piOrg[21] - piCur[21]);
+    sum += abs(piOrg[22] - piCur[22]);
+    sum += abs(piOrg[23] - piCur[23]);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetSAD64( const DistParam &rcDtParam )
@@ -861,81 +835,81 @@ Distortion RdCost::xGetSAD64( const DistParam &rcDtParam )
   int  iStrideCur       = rcDtParam.cur.stride * iSubStep;
   int  iStrideOrg       = rcDtParam.org.stride * iSubStep;
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[0] - piCur[0] );
-    uiSum += abs( piOrg[1] - piCur[1] );
-    uiSum += abs( piOrg[2] - piCur[2] );
-    uiSum += abs( piOrg[3] - piCur[3] );
-    uiSum += abs( piOrg[4] - piCur[4] );
-    uiSum += abs( piOrg[5] - piCur[5] );
-    uiSum += abs( piOrg[6] - piCur[6] );
-    uiSum += abs( piOrg[7] - piCur[7] );
-    uiSum += abs( piOrg[8] - piCur[8] );
-    uiSum += abs( piOrg[9] - piCur[9] );
-    uiSum += abs( piOrg[10] - piCur[10] );
-    uiSum += abs( piOrg[11] - piCur[11] );
-    uiSum += abs( piOrg[12] - piCur[12] );
-    uiSum += abs( piOrg[13] - piCur[13] );
-    uiSum += abs( piOrg[14] - piCur[14] );
-    uiSum += abs( piOrg[15] - piCur[15] );
-    uiSum += abs( piOrg[16] - piCur[16] );
-    uiSum += abs( piOrg[17] - piCur[17] );
-    uiSum += abs( piOrg[18] - piCur[18] );
-    uiSum += abs( piOrg[19] - piCur[19] );
-    uiSum += abs( piOrg[20] - piCur[20] );
-    uiSum += abs( piOrg[21] - piCur[21] );
-    uiSum += abs( piOrg[22] - piCur[22] );
-    uiSum += abs( piOrg[23] - piCur[23] );
-    uiSum += abs( piOrg[24] - piCur[24] );
-    uiSum += abs( piOrg[25] - piCur[25] );
-    uiSum += abs( piOrg[26] - piCur[26] );
-    uiSum += abs( piOrg[27] - piCur[27] );
-    uiSum += abs( piOrg[28] - piCur[28] );
-    uiSum += abs( piOrg[29] - piCur[29] );
-    uiSum += abs( piOrg[30] - piCur[30] );
-    uiSum += abs( piOrg[31] - piCur[31] );
-    uiSum += abs( piOrg[32] - piCur[32] );
-    uiSum += abs( piOrg[33] - piCur[33] );
-    uiSum += abs( piOrg[34] - piCur[34] );
-    uiSum += abs( piOrg[35] - piCur[35] );
-    uiSum += abs( piOrg[36] - piCur[36] );
-    uiSum += abs( piOrg[37] - piCur[37] );
-    uiSum += abs( piOrg[38] - piCur[38] );
-    uiSum += abs( piOrg[39] - piCur[39] );
-    uiSum += abs( piOrg[40] - piCur[40] );
-    uiSum += abs( piOrg[41] - piCur[41] );
-    uiSum += abs( piOrg[42] - piCur[42] );
-    uiSum += abs( piOrg[43] - piCur[43] );
-    uiSum += abs( piOrg[44] - piCur[44] );
-    uiSum += abs( piOrg[45] - piCur[45] );
-    uiSum += abs( piOrg[46] - piCur[46] );
-    uiSum += abs( piOrg[47] - piCur[47] );
-    uiSum += abs( piOrg[48] - piCur[48] );
-    uiSum += abs( piOrg[49] - piCur[49] );
-    uiSum += abs( piOrg[50] - piCur[50] );
-    uiSum += abs( piOrg[51] - piCur[51] );
-    uiSum += abs( piOrg[52] - piCur[52] );
-    uiSum += abs( piOrg[53] - piCur[53] );
-    uiSum += abs( piOrg[54] - piCur[54] );
-    uiSum += abs( piOrg[55] - piCur[55] );
-    uiSum += abs( piOrg[56] - piCur[56] );
-    uiSum += abs( piOrg[57] - piCur[57] );
-    uiSum += abs( piOrg[58] - piCur[58] );
-    uiSum += abs( piOrg[59] - piCur[59] );
-    uiSum += abs( piOrg[60] - piCur[60] );
-    uiSum += abs( piOrg[61] - piCur[61] );
-    uiSum += abs( piOrg[62] - piCur[62] );
-    uiSum += abs( piOrg[63] - piCur[63] );
+    sum += abs(piOrg[0] - piCur[0]);
+    sum += abs(piOrg[1] - piCur[1]);
+    sum += abs(piOrg[2] - piCur[2]);
+    sum += abs(piOrg[3] - piCur[3]);
+    sum += abs(piOrg[4] - piCur[4]);
+    sum += abs(piOrg[5] - piCur[5]);
+    sum += abs(piOrg[6] - piCur[6]);
+    sum += abs(piOrg[7] - piCur[7]);
+    sum += abs(piOrg[8] - piCur[8]);
+    sum += abs(piOrg[9] - piCur[9]);
+    sum += abs(piOrg[10] - piCur[10]);
+    sum += abs(piOrg[11] - piCur[11]);
+    sum += abs(piOrg[12] - piCur[12]);
+    sum += abs(piOrg[13] - piCur[13]);
+    sum += abs(piOrg[14] - piCur[14]);
+    sum += abs(piOrg[15] - piCur[15]);
+    sum += abs(piOrg[16] - piCur[16]);
+    sum += abs(piOrg[17] - piCur[17]);
+    sum += abs(piOrg[18] - piCur[18]);
+    sum += abs(piOrg[19] - piCur[19]);
+    sum += abs(piOrg[20] - piCur[20]);
+    sum += abs(piOrg[21] - piCur[21]);
+    sum += abs(piOrg[22] - piCur[22]);
+    sum += abs(piOrg[23] - piCur[23]);
+    sum += abs(piOrg[24] - piCur[24]);
+    sum += abs(piOrg[25] - piCur[25]);
+    sum += abs(piOrg[26] - piCur[26]);
+    sum += abs(piOrg[27] - piCur[27]);
+    sum += abs(piOrg[28] - piCur[28]);
+    sum += abs(piOrg[29] - piCur[29]);
+    sum += abs(piOrg[30] - piCur[30]);
+    sum += abs(piOrg[31] - piCur[31]);
+    sum += abs(piOrg[32] - piCur[32]);
+    sum += abs(piOrg[33] - piCur[33]);
+    sum += abs(piOrg[34] - piCur[34]);
+    sum += abs(piOrg[35] - piCur[35]);
+    sum += abs(piOrg[36] - piCur[36]);
+    sum += abs(piOrg[37] - piCur[37]);
+    sum += abs(piOrg[38] - piCur[38]);
+    sum += abs(piOrg[39] - piCur[39]);
+    sum += abs(piOrg[40] - piCur[40]);
+    sum += abs(piOrg[41] - piCur[41]);
+    sum += abs(piOrg[42] - piCur[42]);
+    sum += abs(piOrg[43] - piCur[43]);
+    sum += abs(piOrg[44] - piCur[44]);
+    sum += abs(piOrg[45] - piCur[45]);
+    sum += abs(piOrg[46] - piCur[46]);
+    sum += abs(piOrg[47] - piCur[47]);
+    sum += abs(piOrg[48] - piCur[48]);
+    sum += abs(piOrg[49] - piCur[49]);
+    sum += abs(piOrg[50] - piCur[50]);
+    sum += abs(piOrg[51] - piCur[51]);
+    sum += abs(piOrg[52] - piCur[52]);
+    sum += abs(piOrg[53] - piCur[53]);
+    sum += abs(piOrg[54] - piCur[54]);
+    sum += abs(piOrg[55] - piCur[55]);
+    sum += abs(piOrg[56] - piCur[56]);
+    sum += abs(piOrg[57] - piCur[57]);
+    sum += abs(piOrg[58] - piCur[58]);
+    sum += abs(piOrg[59] - piCur[59]);
+    sum += abs(piOrg[60] - piCur[60]);
+    sum += abs(piOrg[61] - piCur[61]);
+    sum += abs(piOrg[62] - piCur[62]);
+    sum += abs(piOrg[63] - piCur[63]);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetSAD48( const DistParam &rcDtParam )
@@ -953,65 +927,65 @@ Distortion RdCost::xGetSAD48( const DistParam &rcDtParam )
   int  iStrideCur       = rcDtParam.cur.stride * iSubStep;
   int  iStrideOrg       = rcDtParam.org.stride * iSubStep;
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[0] - piCur[0] );
-    uiSum += abs( piOrg[1] - piCur[1] );
-    uiSum += abs( piOrg[2] - piCur[2] );
-    uiSum += abs( piOrg[3] - piCur[3] );
-    uiSum += abs( piOrg[4] - piCur[4] );
-    uiSum += abs( piOrg[5] - piCur[5] );
-    uiSum += abs( piOrg[6] - piCur[6] );
-    uiSum += abs( piOrg[7] - piCur[7] );
-    uiSum += abs( piOrg[8] - piCur[8] );
-    uiSum += abs( piOrg[9] - piCur[9] );
-    uiSum += abs( piOrg[10] - piCur[10] );
-    uiSum += abs( piOrg[11] - piCur[11] );
-    uiSum += abs( piOrg[12] - piCur[12] );
-    uiSum += abs( piOrg[13] - piCur[13] );
-    uiSum += abs( piOrg[14] - piCur[14] );
-    uiSum += abs( piOrg[15] - piCur[15] );
-    uiSum += abs( piOrg[16] - piCur[16] );
-    uiSum += abs( piOrg[17] - piCur[17] );
-    uiSum += abs( piOrg[18] - piCur[18] );
-    uiSum += abs( piOrg[19] - piCur[19] );
-    uiSum += abs( piOrg[20] - piCur[20] );
-    uiSum += abs( piOrg[21] - piCur[21] );
-    uiSum += abs( piOrg[22] - piCur[22] );
-    uiSum += abs( piOrg[23] - piCur[23] );
-    uiSum += abs( piOrg[24] - piCur[24] );
-    uiSum += abs( piOrg[25] - piCur[25] );
-    uiSum += abs( piOrg[26] - piCur[26] );
-    uiSum += abs( piOrg[27] - piCur[27] );
-    uiSum += abs( piOrg[28] - piCur[28] );
-    uiSum += abs( piOrg[29] - piCur[29] );
-    uiSum += abs( piOrg[30] - piCur[30] );
-    uiSum += abs( piOrg[31] - piCur[31] );
-    uiSum += abs( piOrg[32] - piCur[32] );
-    uiSum += abs( piOrg[33] - piCur[33] );
-    uiSum += abs( piOrg[34] - piCur[34] );
-    uiSum += abs( piOrg[35] - piCur[35] );
-    uiSum += abs( piOrg[36] - piCur[36] );
-    uiSum += abs( piOrg[37] - piCur[37] );
-    uiSum += abs( piOrg[38] - piCur[38] );
-    uiSum += abs( piOrg[39] - piCur[39] );
-    uiSum += abs( piOrg[40] - piCur[40] );
-    uiSum += abs( piOrg[41] - piCur[41] );
-    uiSum += abs( piOrg[42] - piCur[42] );
-    uiSum += abs( piOrg[43] - piCur[43] );
-    uiSum += abs( piOrg[44] - piCur[44] );
-    uiSum += abs( piOrg[45] - piCur[45] );
-    uiSum += abs( piOrg[46] - piCur[46] );
-    uiSum += abs( piOrg[47] - piCur[47] );
+    sum += abs(piOrg[0] - piCur[0]);
+    sum += abs(piOrg[1] - piCur[1]);
+    sum += abs(piOrg[2] - piCur[2]);
+    sum += abs(piOrg[3] - piCur[3]);
+    sum += abs(piOrg[4] - piCur[4]);
+    sum += abs(piOrg[5] - piCur[5]);
+    sum += abs(piOrg[6] - piCur[6]);
+    sum += abs(piOrg[7] - piCur[7]);
+    sum += abs(piOrg[8] - piCur[8]);
+    sum += abs(piOrg[9] - piCur[9]);
+    sum += abs(piOrg[10] - piCur[10]);
+    sum += abs(piOrg[11] - piCur[11]);
+    sum += abs(piOrg[12] - piCur[12]);
+    sum += abs(piOrg[13] - piCur[13]);
+    sum += abs(piOrg[14] - piCur[14]);
+    sum += abs(piOrg[15] - piCur[15]);
+    sum += abs(piOrg[16] - piCur[16]);
+    sum += abs(piOrg[17] - piCur[17]);
+    sum += abs(piOrg[18] - piCur[18]);
+    sum += abs(piOrg[19] - piCur[19]);
+    sum += abs(piOrg[20] - piCur[20]);
+    sum += abs(piOrg[21] - piCur[21]);
+    sum += abs(piOrg[22] - piCur[22]);
+    sum += abs(piOrg[23] - piCur[23]);
+    sum += abs(piOrg[24] - piCur[24]);
+    sum += abs(piOrg[25] - piCur[25]);
+    sum += abs(piOrg[26] - piCur[26]);
+    sum += abs(piOrg[27] - piCur[27]);
+    sum += abs(piOrg[28] - piCur[28]);
+    sum += abs(piOrg[29] - piCur[29]);
+    sum += abs(piOrg[30] - piCur[30]);
+    sum += abs(piOrg[31] - piCur[31]);
+    sum += abs(piOrg[32] - piCur[32]);
+    sum += abs(piOrg[33] - piCur[33]);
+    sum += abs(piOrg[34] - piCur[34]);
+    sum += abs(piOrg[35] - piCur[35]);
+    sum += abs(piOrg[36] - piCur[36]);
+    sum += abs(piOrg[37] - piCur[37]);
+    sum += abs(piOrg[38] - piCur[38]);
+    sum += abs(piOrg[39] - piCur[39]);
+    sum += abs(piOrg[40] - piCur[40]);
+    sum += abs(piOrg[41] - piCur[41]);
+    sum += abs(piOrg[42] - piCur[42]);
+    sum += abs(piOrg[43] - piCur[43]);
+    sum += abs(piOrg[44] - piCur[44]);
+    sum += abs(piOrg[45] - piCur[45]);
+    sum += abs(piOrg[46] - piCur[46]);
+    sum += abs(piOrg[47] - piCur[47]);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 
@@ -1045,22 +1019,22 @@ Distortion RdCost::xGetMRSAD( const DistParam& rcDtParam )
   const Pel offset  = Pel( deltaSum / ( iCols * ( iRows >> iSubShift ) ) );
   piOrg             = rcDtParam.org.buf;
   piCur             = rcDtParam.cur.buf;
-  Distortion uiSum = 0;
+  Distortion sum    = 0;
   for( ; iRows != 0; iRows -= iSubStep )
   {
     for (int n = 0; n < iCols; n++ )
     {
-      uiSum += abs( piOrg[n] - piCur[n] - offset );
+      sum += abs(piOrg[n] - piCur[n] - offset);
     }
-    if (rcDtParam.maximumDistortionForEarlyExit < ( uiSum >> distortionShift ))
+    if (rcDtParam.maximumDistortionForEarlyExit < (sum >> distortionShift))
     {
-      return ( uiSum >> distortionShift );
+      return (sum >> distortionShift);
     }
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
-  uiSum <<= iSubShift;
-  return ( uiSum >> distortionShift );
+  sum <<= iSubShift;
+  return (sum >> distortionShift);
 }
 
 
@@ -1086,20 +1060,20 @@ Distortion RdCost::xGetMRSAD4( const DistParam& rcDtParam )
   const Pel offset  = Pel( deltaSum / ( 4 * ( iRows >> iSubShift ) ) );
   piOrg             = rcDtParam.org.buf;
   piCur             = rcDtParam.cur.buf;
-  Distortion uiSum  = 0;
+  Distortion sum    = 0;
   for( ; iRows != 0; iRows -= iSubStep )
   {
-    uiSum += abs( piOrg[0] - piCur[0] - offset );
-    uiSum += abs( piOrg[1] - piCur[1] - offset );
-    uiSum += abs( piOrg[2] - piCur[2] - offset );
-    uiSum += abs( piOrg[3] - piCur[3] - offset );
+    sum += abs(piOrg[0] - piCur[0] - offset);
+    sum += abs(piOrg[1] - piCur[1] - offset);
+    sum += abs(piOrg[2] - piCur[2] - offset);
+    sum += abs(piOrg[3] - piCur[3] - offset);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 
@@ -1129,24 +1103,24 @@ Distortion RdCost::xGetMRSAD8( const DistParam& rcDtParam )
   const Pel offset  = Pel( deltaSum / ( 8 * ( iRows >> iSubShift ) ) );
   piOrg             = rcDtParam.org.buf;
   piCur             = rcDtParam.cur.buf;
-  Distortion uiSum  = 0;
+  Distortion sum    = 0;
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[0] - piCur[0] - offset );
-    uiSum += abs( piOrg[1] - piCur[1] - offset );
-    uiSum += abs( piOrg[2] - piCur[2] - offset );
-    uiSum += abs( piOrg[3] - piCur[3] - offset );
-    uiSum += abs( piOrg[4] - piCur[4] - offset );
-    uiSum += abs( piOrg[5] - piCur[5] - offset );
-    uiSum += abs( piOrg[6] - piCur[6] - offset );
-    uiSum += abs( piOrg[7] - piCur[7] - offset );
+    sum += abs(piOrg[0] - piCur[0] - offset);
+    sum += abs(piOrg[1] - piCur[1] - offset);
+    sum += abs(piOrg[2] - piCur[2] - offset);
+    sum += abs(piOrg[3] - piCur[3] - offset);
+    sum += abs(piOrg[4] - piCur[4] - offset);
+    sum += abs(piOrg[5] - piCur[5] - offset);
+    sum += abs(piOrg[6] - piCur[6] - offset);
+    sum += abs(piOrg[7] - piCur[7] - offset);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetMRSAD16( const DistParam& rcDtParam )
@@ -1183,32 +1157,32 @@ Distortion RdCost::xGetMRSAD16( const DistParam& rcDtParam )
   const Pel offset  = Pel( deltaSum / ( 16 * ( iRows >> iSubShift ) ) );
   piOrg             = rcDtParam.org.buf;
   piCur             = rcDtParam.cur.buf;
-  Distortion uiSum  = 0;
+  Distortion sum    = 0;
   for( ; iRows != 0; iRows -= iSubStep )
   {
-    uiSum += abs( piOrg[ 0] - piCur[ 0] - offset );
-    uiSum += abs( piOrg[ 1] - piCur[ 1] - offset );
-    uiSum += abs( piOrg[ 2] - piCur[ 2] - offset );
-    uiSum += abs( piOrg[ 3] - piCur[ 3] - offset );
-    uiSum += abs( piOrg[ 4] - piCur[ 4] - offset );
-    uiSum += abs( piOrg[ 5] - piCur[ 5] - offset );
-    uiSum += abs( piOrg[ 6] - piCur[ 6] - offset );
-    uiSum += abs( piOrg[ 7] - piCur[ 7] - offset );
-    uiSum += abs( piOrg[ 8] - piCur[ 8] - offset );
-    uiSum += abs( piOrg[ 9] - piCur[ 9] - offset );
-    uiSum += abs( piOrg[10] - piCur[10] - offset );
-    uiSum += abs( piOrg[11] - piCur[11] - offset );
-    uiSum += abs( piOrg[12] - piCur[12] - offset );
-    uiSum += abs( piOrg[13] - piCur[13] - offset );
-    uiSum += abs( piOrg[14] - piCur[14] - offset );
-    uiSum += abs( piOrg[15] - piCur[15] - offset );
+    sum += abs(piOrg[0] - piCur[0] - offset);
+    sum += abs(piOrg[1] - piCur[1] - offset);
+    sum += abs(piOrg[2] - piCur[2] - offset);
+    sum += abs(piOrg[3] - piCur[3] - offset);
+    sum += abs(piOrg[4] - piCur[4] - offset);
+    sum += abs(piOrg[5] - piCur[5] - offset);
+    sum += abs(piOrg[6] - piCur[6] - offset);
+    sum += abs(piOrg[7] - piCur[7] - offset);
+    sum += abs(piOrg[8] - piCur[8] - offset);
+    sum += abs(piOrg[9] - piCur[9] - offset);
+    sum += abs(piOrg[10] - piCur[10] - offset);
+    sum += abs(piOrg[11] - piCur[11] - offset);
+    sum += abs(piOrg[12] - piCur[12] - offset);
+    sum += abs(piOrg[13] - piCur[13] - offset);
+    sum += abs(piOrg[14] - piCur[14] - offset);
+    sum += abs(piOrg[15] - piCur[15] - offset);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetMRSAD12( const DistParam& rcDtParam )
@@ -1241,28 +1215,28 @@ Distortion RdCost::xGetMRSAD12( const DistParam& rcDtParam )
   const Pel offset  = Pel( deltaSum / ( 12 * ( iRows >> iSubShift ) ) );
   piOrg             = rcDtParam.org.buf;
   piCur             = rcDtParam.cur.buf;
-  Distortion uiSum  = 0;
+  Distortion sum    = 0;
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[ 0] - piCur[ 0] - offset );
-    uiSum += abs( piOrg[ 1] - piCur[ 1] - offset );
-    uiSum += abs( piOrg[ 2] - piCur[ 2] - offset );
-    uiSum += abs( piOrg[ 3] - piCur[ 3] - offset );
-    uiSum += abs( piOrg[ 4] - piCur[ 4] - offset );
-    uiSum += abs( piOrg[ 5] - piCur[ 5] - offset );
-    uiSum += abs( piOrg[ 6] - piCur[ 6] - offset );
-    uiSum += abs( piOrg[ 7] - piCur[ 7] - offset );
-    uiSum += abs( piOrg[ 8] - piCur[ 8] - offset );
-    uiSum += abs( piOrg[ 9] - piCur[ 9] - offset );
-    uiSum += abs( piOrg[10] - piCur[10] - offset );
-    uiSum += abs( piOrg[11] - piCur[11] - offset );
+    sum += abs(piOrg[0] - piCur[0] - offset);
+    sum += abs(piOrg[1] - piCur[1] - offset);
+    sum += abs(piOrg[2] - piCur[2] - offset);
+    sum += abs(piOrg[3] - piCur[3] - offset);
+    sum += abs(piOrg[4] - piCur[4] - offset);
+    sum += abs(piOrg[5] - piCur[5] - offset);
+    sum += abs(piOrg[6] - piCur[6] - offset);
+    sum += abs(piOrg[7] - piCur[7] - offset);
+    sum += abs(piOrg[8] - piCur[8] - offset);
+    sum += abs(piOrg[9] - piCur[9] - offset);
+    sum += abs(piOrg[10] - piCur[10] - offset);
+    sum += abs(piOrg[11] - piCur[11] - offset);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetMRSAD16N( const DistParam &rcDtParam )
@@ -1303,34 +1277,34 @@ Distortion RdCost::xGetMRSAD16N( const DistParam &rcDtParam )
   const Pel offset  = Pel( deltaSum / ( iCols * ( iRows >> iSubShift ) ) );
   piOrg             = rcDtParam.org.buf;
   piCur             = rcDtParam.cur.buf;
-  Distortion uiSum  = 0;
+  Distortion sum    = 0;
   for( ; iRows != 0; iRows-=iSubStep )
   {
     for (int n = 0; n < iCols; n+=16 )
     {
-      uiSum += abs( piOrg[n+ 0] - piCur[n+ 0] - offset );
-      uiSum += abs( piOrg[n+ 1] - piCur[n+ 1] - offset );
-      uiSum += abs( piOrg[n+ 2] - piCur[n+ 2] - offset );
-      uiSum += abs( piOrg[n+ 3] - piCur[n+ 3] - offset );
-      uiSum += abs( piOrg[n+ 4] - piCur[n+ 4] - offset );
-      uiSum += abs( piOrg[n+ 5] - piCur[n+ 5] - offset );
-      uiSum += abs( piOrg[n+ 6] - piCur[n+ 6] - offset );
-      uiSum += abs( piOrg[n+ 7] - piCur[n+ 7] - offset );
-      uiSum += abs( piOrg[n+ 8] - piCur[n+ 8] - offset );
-      uiSum += abs( piOrg[n+ 9] - piCur[n+ 9] - offset );
-      uiSum += abs( piOrg[n+10] - piCur[n+10] - offset );
-      uiSum += abs( piOrg[n+11] - piCur[n+11] - offset );
-      uiSum += abs( piOrg[n+12] - piCur[n+12] - offset );
-      uiSum += abs( piOrg[n+13] - piCur[n+13] - offset );
-      uiSum += abs( piOrg[n+14] - piCur[n+14] - offset );
-      uiSum += abs( piOrg[n+15] - piCur[n+15] - offset );
+      sum += abs(piOrg[n + 0] - piCur[n + 0] - offset);
+      sum += abs(piOrg[n + 1] - piCur[n + 1] - offset);
+      sum += abs(piOrg[n + 2] - piCur[n + 2] - offset);
+      sum += abs(piOrg[n + 3] - piCur[n + 3] - offset);
+      sum += abs(piOrg[n + 4] - piCur[n + 4] - offset);
+      sum += abs(piOrg[n + 5] - piCur[n + 5] - offset);
+      sum += abs(piOrg[n + 6] - piCur[n + 6] - offset);
+      sum += abs(piOrg[n + 7] - piCur[n + 7] - offset);
+      sum += abs(piOrg[n + 8] - piCur[n + 8] - offset);
+      sum += abs(piOrg[n + 9] - piCur[n + 9] - offset);
+      sum += abs(piOrg[n + 10] - piCur[n + 10] - offset);
+      sum += abs(piOrg[n + 11] - piCur[n + 11] - offset);
+      sum += abs(piOrg[n + 12] - piCur[n + 12] - offset);
+      sum += abs(piOrg[n + 13] - piCur[n + 13] - offset);
+      sum += abs(piOrg[n + 14] - piCur[n + 14] - offset);
+      sum += abs(piOrg[n + 15] - piCur[n + 15] - offset);
     }
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetMRSAD32( const DistParam &rcDtParam )
@@ -1383,48 +1357,48 @@ Distortion RdCost::xGetMRSAD32( const DistParam &rcDtParam )
   const Pel offset  = Pel( deltaSum / ( 32 * ( iRows >> iSubShift ) ) );
   piOrg             = rcDtParam.org.buf;
   piCur             = rcDtParam.cur.buf;
-  Distortion uiSum  = 0;
+  Distortion sum    = 0;
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[ 0] - piCur[ 0] - offset );
-    uiSum += abs( piOrg[ 1] - piCur[ 1] - offset );
-    uiSum += abs( piOrg[ 2] - piCur[ 2] - offset );
-    uiSum += abs( piOrg[ 3] - piCur[ 3] - offset );
-    uiSum += abs( piOrg[ 4] - piCur[ 4] - offset );
-    uiSum += abs( piOrg[ 5] - piCur[ 5] - offset );
-    uiSum += abs( piOrg[ 6] - piCur[ 6] - offset );
-    uiSum += abs( piOrg[ 7] - piCur[ 7] - offset );
-    uiSum += abs( piOrg[ 8] - piCur[ 8] - offset );
-    uiSum += abs( piOrg[ 9] - piCur[ 9] - offset );
-    uiSum += abs( piOrg[10] - piCur[10] - offset );
-    uiSum += abs( piOrg[11] - piCur[11] - offset );
-    uiSum += abs( piOrg[12] - piCur[12] - offset );
-    uiSum += abs( piOrg[13] - piCur[13] - offset );
-    uiSum += abs( piOrg[14] - piCur[14] - offset );
-    uiSum += abs( piOrg[15] - piCur[15] - offset );
-    uiSum += abs( piOrg[16] - piCur[16] - offset );
-    uiSum += abs( piOrg[17] - piCur[17] - offset );
-    uiSum += abs( piOrg[18] - piCur[18] - offset );
-    uiSum += abs( piOrg[19] - piCur[19] - offset );
-    uiSum += abs( piOrg[20] - piCur[20] - offset );
-    uiSum += abs( piOrg[21] - piCur[21] - offset );
-    uiSum += abs( piOrg[22] - piCur[22] - offset );
-    uiSum += abs( piOrg[23] - piCur[23] - offset );
-    uiSum += abs( piOrg[24] - piCur[24] - offset );
-    uiSum += abs( piOrg[25] - piCur[25] - offset );
-    uiSum += abs( piOrg[26] - piCur[26] - offset );
-    uiSum += abs( piOrg[27] - piCur[27] - offset );
-    uiSum += abs( piOrg[28] - piCur[28] - offset );
-    uiSum += abs( piOrg[29] - piCur[29] - offset );
-    uiSum += abs( piOrg[30] - piCur[30] - offset );
-    uiSum += abs( piOrg[31] - piCur[31] - offset );
+    sum += abs(piOrg[0] - piCur[0] - offset);
+    sum += abs(piOrg[1] - piCur[1] - offset);
+    sum += abs(piOrg[2] - piCur[2] - offset);
+    sum += abs(piOrg[3] - piCur[3] - offset);
+    sum += abs(piOrg[4] - piCur[4] - offset);
+    sum += abs(piOrg[5] - piCur[5] - offset);
+    sum += abs(piOrg[6] - piCur[6] - offset);
+    sum += abs(piOrg[7] - piCur[7] - offset);
+    sum += abs(piOrg[8] - piCur[8] - offset);
+    sum += abs(piOrg[9] - piCur[9] - offset);
+    sum += abs(piOrg[10] - piCur[10] - offset);
+    sum += abs(piOrg[11] - piCur[11] - offset);
+    sum += abs(piOrg[12] - piCur[12] - offset);
+    sum += abs(piOrg[13] - piCur[13] - offset);
+    sum += abs(piOrg[14] - piCur[14] - offset);
+    sum += abs(piOrg[15] - piCur[15] - offset);
+    sum += abs(piOrg[16] - piCur[16] - offset);
+    sum += abs(piOrg[17] - piCur[17] - offset);
+    sum += abs(piOrg[18] - piCur[18] - offset);
+    sum += abs(piOrg[19] - piCur[19] - offset);
+    sum += abs(piOrg[20] - piCur[20] - offset);
+    sum += abs(piOrg[21] - piCur[21] - offset);
+    sum += abs(piOrg[22] - piCur[22] - offset);
+    sum += abs(piOrg[23] - piCur[23] - offset);
+    sum += abs(piOrg[24] - piCur[24] - offset);
+    sum += abs(piOrg[25] - piCur[25] - offset);
+    sum += abs(piOrg[26] - piCur[26] - offset);
+    sum += abs(piOrg[27] - piCur[27] - offset);
+    sum += abs(piOrg[28] - piCur[28] - offset);
+    sum += abs(piOrg[29] - piCur[29] - offset);
+    sum += abs(piOrg[30] - piCur[30] - offset);
+    sum += abs(piOrg[31] - piCur[31] - offset);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetMRSAD24( const DistParam &rcDtParam )
@@ -1469,40 +1443,40 @@ Distortion RdCost::xGetMRSAD24( const DistParam &rcDtParam )
   const Pel offset  = Pel( deltaSum / ( 24 * ( iRows >> iSubShift ) ) );
   piOrg             = rcDtParam.org.buf;
   piCur             = rcDtParam.cur.buf;
-  Distortion uiSum  = 0;
+  Distortion sum    = 0;
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[ 0] - piCur[ 0] - offset );
-    uiSum += abs( piOrg[ 1] - piCur[ 1] - offset );
-    uiSum += abs( piOrg[ 2] - piCur[ 2] - offset );
-    uiSum += abs( piOrg[ 3] - piCur[ 3] - offset );
-    uiSum += abs( piOrg[ 4] - piCur[ 4] - offset );
-    uiSum += abs( piOrg[ 5] - piCur[ 5] - offset );
-    uiSum += abs( piOrg[ 6] - piCur[ 6] - offset );
-    uiSum += abs( piOrg[ 7] - piCur[ 7] - offset );
-    uiSum += abs( piOrg[ 8] - piCur[ 8] - offset );
-    uiSum += abs( piOrg[ 9] - piCur[ 9] - offset );
-    uiSum += abs( piOrg[10] - piCur[10] - offset );
-    uiSum += abs( piOrg[11] - piCur[11] - offset );
-    uiSum += abs( piOrg[12] - piCur[12] - offset );
-    uiSum += abs( piOrg[13] - piCur[13] - offset );
-    uiSum += abs( piOrg[14] - piCur[14] - offset );
-    uiSum += abs( piOrg[15] - piCur[15] - offset );
-    uiSum += abs( piOrg[16] - piCur[16] - offset );
-    uiSum += abs( piOrg[17] - piCur[17] - offset );
-    uiSum += abs( piOrg[18] - piCur[18] - offset );
-    uiSum += abs( piOrg[19] - piCur[19] - offset );
-    uiSum += abs( piOrg[20] - piCur[20] - offset );
-    uiSum += abs( piOrg[21] - piCur[21] - offset );
-    uiSum += abs( piOrg[22] - piCur[22] - offset );
-    uiSum += abs( piOrg[23] - piCur[23] - offset );
+    sum += abs(piOrg[0] - piCur[0] - offset);
+    sum += abs(piOrg[1] - piCur[1] - offset);
+    sum += abs(piOrg[2] - piCur[2] - offset);
+    sum += abs(piOrg[3] - piCur[3] - offset);
+    sum += abs(piOrg[4] - piCur[4] - offset);
+    sum += abs(piOrg[5] - piCur[5] - offset);
+    sum += abs(piOrg[6] - piCur[6] - offset);
+    sum += abs(piOrg[7] - piCur[7] - offset);
+    sum += abs(piOrg[8] - piCur[8] - offset);
+    sum += abs(piOrg[9] - piCur[9] - offset);
+    sum += abs(piOrg[10] - piCur[10] - offset);
+    sum += abs(piOrg[11] - piCur[11] - offset);
+    sum += abs(piOrg[12] - piCur[12] - offset);
+    sum += abs(piOrg[13] - piCur[13] - offset);
+    sum += abs(piOrg[14] - piCur[14] - offset);
+    sum += abs(piOrg[15] - piCur[15] - offset);
+    sum += abs(piOrg[16] - piCur[16] - offset);
+    sum += abs(piOrg[17] - piCur[17] - offset);
+    sum += abs(piOrg[18] - piCur[18] - offset);
+    sum += abs(piOrg[19] - piCur[19] - offset);
+    sum += abs(piOrg[20] - piCur[20] - offset);
+    sum += abs(piOrg[21] - piCur[21] - offset);
+    sum += abs(piOrg[22] - piCur[22] - offset);
+    sum += abs(piOrg[23] - piCur[23] - offset);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetMRSAD64( const DistParam &rcDtParam )
@@ -1587,80 +1561,80 @@ Distortion RdCost::xGetMRSAD64( const DistParam &rcDtParam )
   const Pel offset  = Pel( deltaSum / ( 64 * ( iRows >> iSubShift ) ) );
   piOrg             = rcDtParam.org.buf;
   piCur             = rcDtParam.cur.buf;
-  Distortion uiSum  = 0;
+  Distortion sum    = 0;
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[ 0] - piCur[ 0] - offset );
-    uiSum += abs( piOrg[ 1] - piCur[ 1] - offset );
-    uiSum += abs( piOrg[ 2] - piCur[ 2] - offset );
-    uiSum += abs( piOrg[ 3] - piCur[ 3] - offset );
-    uiSum += abs( piOrg[ 4] - piCur[ 4] - offset );
-    uiSum += abs( piOrg[ 5] - piCur[ 5] - offset );
-    uiSum += abs( piOrg[ 6] - piCur[ 6] - offset );
-    uiSum += abs( piOrg[ 7] - piCur[ 7] - offset );
-    uiSum += abs( piOrg[ 8] - piCur[ 8] - offset );
-    uiSum += abs( piOrg[ 9] - piCur[ 9] - offset );
-    uiSum += abs( piOrg[10] - piCur[10] - offset );
-    uiSum += abs( piOrg[11] - piCur[11] - offset );
-    uiSum += abs( piOrg[12] - piCur[12] - offset );
-    uiSum += abs( piOrg[13] - piCur[13] - offset );
-    uiSum += abs( piOrg[14] - piCur[14] - offset );
-    uiSum += abs( piOrg[15] - piCur[15] - offset );
-    uiSum += abs( piOrg[16] - piCur[16] - offset );
-    uiSum += abs( piOrg[17] - piCur[17] - offset );
-    uiSum += abs( piOrg[18] - piCur[18] - offset );
-    uiSum += abs( piOrg[19] - piCur[19] - offset );
-    uiSum += abs( piOrg[20] - piCur[20] - offset );
-    uiSum += abs( piOrg[21] - piCur[21] - offset );
-    uiSum += abs( piOrg[22] - piCur[22] - offset );
-    uiSum += abs( piOrg[23] - piCur[23] - offset );
-    uiSum += abs( piOrg[24] - piCur[24] - offset );
-    uiSum += abs( piOrg[25] - piCur[25] - offset );
-    uiSum += abs( piOrg[26] - piCur[26] - offset );
-    uiSum += abs( piOrg[27] - piCur[27] - offset );
-    uiSum += abs( piOrg[28] - piCur[28] - offset );
-    uiSum += abs( piOrg[29] - piCur[29] - offset );
-    uiSum += abs( piOrg[30] - piCur[30] - offset );
-    uiSum += abs( piOrg[31] - piCur[31] - offset );
-    uiSum += abs( piOrg[32] - piCur[32] - offset );
-    uiSum += abs( piOrg[33] - piCur[33] - offset );
-    uiSum += abs( piOrg[34] - piCur[34] - offset );
-    uiSum += abs( piOrg[35] - piCur[35] - offset );
-    uiSum += abs( piOrg[36] - piCur[36] - offset );
-    uiSum += abs( piOrg[37] - piCur[37] - offset );
-    uiSum += abs( piOrg[38] - piCur[38] - offset );
-    uiSum += abs( piOrg[39] - piCur[39] - offset );
-    uiSum += abs( piOrg[40] - piCur[40] - offset );
-    uiSum += abs( piOrg[41] - piCur[41] - offset );
-    uiSum += abs( piOrg[42] - piCur[42] - offset );
-    uiSum += abs( piOrg[43] - piCur[43] - offset );
-    uiSum += abs( piOrg[44] - piCur[44] - offset );
-    uiSum += abs( piOrg[45] - piCur[45] - offset );
-    uiSum += abs( piOrg[46] - piCur[46] - offset );
-    uiSum += abs( piOrg[47] - piCur[47] - offset );
-    uiSum += abs( piOrg[48] - piCur[48] - offset );
-    uiSum += abs( piOrg[49] - piCur[49] - offset );
-    uiSum += abs( piOrg[50] - piCur[50] - offset );
-    uiSum += abs( piOrg[51] - piCur[51] - offset );
-    uiSum += abs( piOrg[52] - piCur[52] - offset );
-    uiSum += abs( piOrg[53] - piCur[53] - offset );
-    uiSum += abs( piOrg[54] - piCur[54] - offset );
-    uiSum += abs( piOrg[55] - piCur[55] - offset );
-    uiSum += abs( piOrg[56] - piCur[56] - offset );
-    uiSum += abs( piOrg[57] - piCur[57] - offset );
-    uiSum += abs( piOrg[58] - piCur[58] - offset );
-    uiSum += abs( piOrg[59] - piCur[59] - offset );
-    uiSum += abs( piOrg[60] - piCur[60] - offset );
-    uiSum += abs( piOrg[61] - piCur[61] - offset );
-    uiSum += abs( piOrg[62] - piCur[62] - offset );
-    uiSum += abs( piOrg[63] - piCur[63] - offset );
+    sum += abs(piOrg[0] - piCur[0] - offset);
+    sum += abs(piOrg[1] - piCur[1] - offset);
+    sum += abs(piOrg[2] - piCur[2] - offset);
+    sum += abs(piOrg[3] - piCur[3] - offset);
+    sum += abs(piOrg[4] - piCur[4] - offset);
+    sum += abs(piOrg[5] - piCur[5] - offset);
+    sum += abs(piOrg[6] - piCur[6] - offset);
+    sum += abs(piOrg[7] - piCur[7] - offset);
+    sum += abs(piOrg[8] - piCur[8] - offset);
+    sum += abs(piOrg[9] - piCur[9] - offset);
+    sum += abs(piOrg[10] - piCur[10] - offset);
+    sum += abs(piOrg[11] - piCur[11] - offset);
+    sum += abs(piOrg[12] - piCur[12] - offset);
+    sum += abs(piOrg[13] - piCur[13] - offset);
+    sum += abs(piOrg[14] - piCur[14] - offset);
+    sum += abs(piOrg[15] - piCur[15] - offset);
+    sum += abs(piOrg[16] - piCur[16] - offset);
+    sum += abs(piOrg[17] - piCur[17] - offset);
+    sum += abs(piOrg[18] - piCur[18] - offset);
+    sum += abs(piOrg[19] - piCur[19] - offset);
+    sum += abs(piOrg[20] - piCur[20] - offset);
+    sum += abs(piOrg[21] - piCur[21] - offset);
+    sum += abs(piOrg[22] - piCur[22] - offset);
+    sum += abs(piOrg[23] - piCur[23] - offset);
+    sum += abs(piOrg[24] - piCur[24] - offset);
+    sum += abs(piOrg[25] - piCur[25] - offset);
+    sum += abs(piOrg[26] - piCur[26] - offset);
+    sum += abs(piOrg[27] - piCur[27] - offset);
+    sum += abs(piOrg[28] - piCur[28] - offset);
+    sum += abs(piOrg[29] - piCur[29] - offset);
+    sum += abs(piOrg[30] - piCur[30] - offset);
+    sum += abs(piOrg[31] - piCur[31] - offset);
+    sum += abs(piOrg[32] - piCur[32] - offset);
+    sum += abs(piOrg[33] - piCur[33] - offset);
+    sum += abs(piOrg[34] - piCur[34] - offset);
+    sum += abs(piOrg[35] - piCur[35] - offset);
+    sum += abs(piOrg[36] - piCur[36] - offset);
+    sum += abs(piOrg[37] - piCur[37] - offset);
+    sum += abs(piOrg[38] - piCur[38] - offset);
+    sum += abs(piOrg[39] - piCur[39] - offset);
+    sum += abs(piOrg[40] - piCur[40] - offset);
+    sum += abs(piOrg[41] - piCur[41] - offset);
+    sum += abs(piOrg[42] - piCur[42] - offset);
+    sum += abs(piOrg[43] - piCur[43] - offset);
+    sum += abs(piOrg[44] - piCur[44] - offset);
+    sum += abs(piOrg[45] - piCur[45] - offset);
+    sum += abs(piOrg[46] - piCur[46] - offset);
+    sum += abs(piOrg[47] - piCur[47] - offset);
+    sum += abs(piOrg[48] - piCur[48] - offset);
+    sum += abs(piOrg[49] - piCur[49] - offset);
+    sum += abs(piOrg[50] - piCur[50] - offset);
+    sum += abs(piOrg[51] - piCur[51] - offset);
+    sum += abs(piOrg[52] - piCur[52] - offset);
+    sum += abs(piOrg[53] - piCur[53] - offset);
+    sum += abs(piOrg[54] - piCur[54] - offset);
+    sum += abs(piOrg[55] - piCur[55] - offset);
+    sum += abs(piOrg[56] - piCur[56] - offset);
+    sum += abs(piOrg[57] - piCur[57] - offset);
+    sum += abs(piOrg[58] - piCur[58] - offset);
+    sum += abs(piOrg[59] - piCur[59] - offset);
+    sum += abs(piOrg[60] - piCur[60] - offset);
+    sum += abs(piOrg[61] - piCur[61] - offset);
+    sum += abs(piOrg[62] - piCur[62] - offset);
+    sum += abs(piOrg[63] - piCur[63] - offset);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 Distortion RdCost::xGetMRSAD48( const DistParam &rcDtParam )
@@ -1729,64 +1703,64 @@ Distortion RdCost::xGetMRSAD48( const DistParam &rcDtParam )
   const Pel offset  = Pel( deltaSum / ( 48 * ( iRows >> iSubShift ) ) );
   piOrg             = rcDtParam.org.buf;
   piCur             = rcDtParam.cur.buf;
-  Distortion uiSum  = 0;
+  Distortion sum    = 0;
   for( ; iRows != 0; iRows-=iSubStep )
   {
-    uiSum += abs( piOrg[ 0] - piCur[ 0] - offset );
-    uiSum += abs( piOrg[ 1] - piCur[ 1] - offset );
-    uiSum += abs( piOrg[ 2] - piCur[ 2] - offset );
-    uiSum += abs( piOrg[ 3] - piCur[ 3] - offset );
-    uiSum += abs( piOrg[ 4] - piCur[ 4] - offset );
-    uiSum += abs( piOrg[ 5] - piCur[ 5] - offset );
-    uiSum += abs( piOrg[ 6] - piCur[ 6] - offset );
-    uiSum += abs( piOrg[ 7] - piCur[ 7] - offset );
-    uiSum += abs( piOrg[ 8] - piCur[ 8] - offset );
-    uiSum += abs( piOrg[ 9] - piCur[ 9] - offset );
-    uiSum += abs( piOrg[10] - piCur[10] - offset );
-    uiSum += abs( piOrg[11] - piCur[11] - offset );
-    uiSum += abs( piOrg[12] - piCur[12] - offset );
-    uiSum += abs( piOrg[13] - piCur[13] - offset );
-    uiSum += abs( piOrg[14] - piCur[14] - offset );
-    uiSum += abs( piOrg[15] - piCur[15] - offset );
-    uiSum += abs( piOrg[16] - piCur[16] - offset );
-    uiSum += abs( piOrg[17] - piCur[17] - offset );
-    uiSum += abs( piOrg[18] - piCur[18] - offset );
-    uiSum += abs( piOrg[19] - piCur[19] - offset );
-    uiSum += abs( piOrg[20] - piCur[20] - offset );
-    uiSum += abs( piOrg[21] - piCur[21] - offset );
-    uiSum += abs( piOrg[22] - piCur[22] - offset );
-    uiSum += abs( piOrg[23] - piCur[23] - offset );
-    uiSum += abs( piOrg[24] - piCur[24] - offset );
-    uiSum += abs( piOrg[25] - piCur[25] - offset );
-    uiSum += abs( piOrg[26] - piCur[26] - offset );
-    uiSum += abs( piOrg[27] - piCur[27] - offset );
-    uiSum += abs( piOrg[28] - piCur[28] - offset );
-    uiSum += abs( piOrg[29] - piCur[29] - offset );
-    uiSum += abs( piOrg[30] - piCur[30] - offset );
-    uiSum += abs( piOrg[31] - piCur[31] - offset );
-    uiSum += abs( piOrg[32] - piCur[32] - offset );
-    uiSum += abs( piOrg[33] - piCur[33] - offset );
-    uiSum += abs( piOrg[34] - piCur[34] - offset );
-    uiSum += abs( piOrg[35] - piCur[35] - offset );
-    uiSum += abs( piOrg[36] - piCur[36] - offset );
-    uiSum += abs( piOrg[37] - piCur[37] - offset );
-    uiSum += abs( piOrg[38] - piCur[38] - offset );
-    uiSum += abs( piOrg[39] - piCur[39] - offset );
-    uiSum += abs( piOrg[40] - piCur[40] - offset );
-    uiSum += abs( piOrg[41] - piCur[41] - offset );
-    uiSum += abs( piOrg[42] - piCur[42] - offset );
-    uiSum += abs( piOrg[43] - piCur[43] - offset );
-    uiSum += abs( piOrg[44] - piCur[44] - offset );
-    uiSum += abs( piOrg[45] - piCur[45] - offset );
-    uiSum += abs( piOrg[46] - piCur[46] - offset );
-    uiSum += abs( piOrg[47] - piCur[47] - offset );
+    sum += abs(piOrg[0] - piCur[0] - offset);
+    sum += abs(piOrg[1] - piCur[1] - offset);
+    sum += abs(piOrg[2] - piCur[2] - offset);
+    sum += abs(piOrg[3] - piCur[3] - offset);
+    sum += abs(piOrg[4] - piCur[4] - offset);
+    sum += abs(piOrg[5] - piCur[5] - offset);
+    sum += abs(piOrg[6] - piCur[6] - offset);
+    sum += abs(piOrg[7] - piCur[7] - offset);
+    sum += abs(piOrg[8] - piCur[8] - offset);
+    sum += abs(piOrg[9] - piCur[9] - offset);
+    sum += abs(piOrg[10] - piCur[10] - offset);
+    sum += abs(piOrg[11] - piCur[11] - offset);
+    sum += abs(piOrg[12] - piCur[12] - offset);
+    sum += abs(piOrg[13] - piCur[13] - offset);
+    sum += abs(piOrg[14] - piCur[14] - offset);
+    sum += abs(piOrg[15] - piCur[15] - offset);
+    sum += abs(piOrg[16] - piCur[16] - offset);
+    sum += abs(piOrg[17] - piCur[17] - offset);
+    sum += abs(piOrg[18] - piCur[18] - offset);
+    sum += abs(piOrg[19] - piCur[19] - offset);
+    sum += abs(piOrg[20] - piCur[20] - offset);
+    sum += abs(piOrg[21] - piCur[21] - offset);
+    sum += abs(piOrg[22] - piCur[22] - offset);
+    sum += abs(piOrg[23] - piCur[23] - offset);
+    sum += abs(piOrg[24] - piCur[24] - offset);
+    sum += abs(piOrg[25] - piCur[25] - offset);
+    sum += abs(piOrg[26] - piCur[26] - offset);
+    sum += abs(piOrg[27] - piCur[27] - offset);
+    sum += abs(piOrg[28] - piCur[28] - offset);
+    sum += abs(piOrg[29] - piCur[29] - offset);
+    sum += abs(piOrg[30] - piCur[30] - offset);
+    sum += abs(piOrg[31] - piCur[31] - offset);
+    sum += abs(piOrg[32] - piCur[32] - offset);
+    sum += abs(piOrg[33] - piCur[33] - offset);
+    sum += abs(piOrg[34] - piCur[34] - offset);
+    sum += abs(piOrg[35] - piCur[35] - offset);
+    sum += abs(piOrg[36] - piCur[36] - offset);
+    sum += abs(piOrg[37] - piCur[37] - offset);
+    sum += abs(piOrg[38] - piCur[38] - offset);
+    sum += abs(piOrg[39] - piCur[39] - offset);
+    sum += abs(piOrg[40] - piCur[40] - offset);
+    sum += abs(piOrg[41] - piCur[41] - offset);
+    sum += abs(piOrg[42] - piCur[42] - offset);
+    sum += abs(piOrg[43] - piCur[43] - offset);
+    sum += abs(piOrg[44] - piCur[44] - offset);
+    sum += abs(piOrg[45] - piCur[45] - offset);
+    sum += abs(piOrg[46] - piCur[46] - offset);
+    sum += abs(piOrg[47] - piCur[47] - offset);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  uiSum <<= iSubShift;
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  sum <<= iSubShift;
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1807,23 +1781,23 @@ Distortion RdCost::xGetSSE( const DistParam &rcDtParam )
   int  iStrideCur       = rcDtParam.cur.stride;
   int  iStrideOrg       = rcDtParam.org.stride;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
 
-  Intermediate_Int iTemp;
+  Intermediate_Int temp;
 
   for( ; iRows != 0; iRows-- )
   {
     for (int n = 0; n < iCols; n++ )
     {
-      iTemp = piOrg[n  ] - piCur[n  ];
-      uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+      temp = piOrg[n] - piCur[n];
+      sum += Distortion((temp * temp) >> shift);
     }
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE4( const DistParam &rcDtParam )
@@ -1840,24 +1814,27 @@ Distortion RdCost::xGetSSE4( const DistParam &rcDtParam )
   int  iStrideOrg    = rcDtParam.org.stride;
   int  iStrideCur    = rcDtParam.cur.stride;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
 
-  Intermediate_Int  iTemp;
+  Intermediate_Int temp;
 
   for( ; iRows != 0; iRows-- )
   {
-
-    iTemp = piOrg[0] - piCur[0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[1] - piCur[1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[2] - piCur[2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[3] - piCur[3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+    temp = piOrg[0] - piCur[0];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[1] - piCur[1];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[2] - piCur[2];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[3] - piCur[3];
+    sum += Distortion((temp * temp) >> shift);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE8( const DistParam &rcDtParam )
@@ -1874,27 +1851,35 @@ Distortion RdCost::xGetSSE8( const DistParam &rcDtParam )
   int  iStrideOrg    = rcDtParam.org.stride;
   int  iStrideCur    = rcDtParam.cur.stride;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
 
-  Intermediate_Int  iTemp;
+  Intermediate_Int temp;
 
   for( ; iRows != 0; iRows-- )
   {
-    iTemp = piOrg[0] - piCur[0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[1] - piCur[1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[2] - piCur[2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[3] - piCur[3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[4] - piCur[4]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[5] - piCur[5]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[6] - piCur[6]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[7] - piCur[7]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+    temp = piOrg[0] - piCur[0];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[1] - piCur[1];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[2] - piCur[2];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[3] - piCur[3];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[4] - piCur[4];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[5] - piCur[5];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[6] - piCur[6];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[7] - piCur[7];
+    sum += Distortion((temp * temp) >> shift);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE16( const DistParam &rcDtParam )
@@ -1911,35 +1896,51 @@ Distortion RdCost::xGetSSE16( const DistParam &rcDtParam )
   int  iStrideOrg    = rcDtParam.org.stride;
   int  iStrideCur    = rcDtParam.cur.stride;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
 
-  Intermediate_Int  iTemp;
+  Intermediate_Int temp;
 
   for( ; iRows != 0; iRows-- )
   {
-    iTemp = piOrg[ 0] - piCur[ 0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 1] - piCur[ 1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 2] - piCur[ 2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 3] - piCur[ 3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 4] - piCur[ 4]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 5] - piCur[ 5]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 6] - piCur[ 6]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 7] - piCur[ 7]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 8] - piCur[ 8]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 9] - piCur[ 9]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[10] - piCur[10]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[11] - piCur[11]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[12] - piCur[12]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[13] - piCur[13]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[14] - piCur[14]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[15] - piCur[15]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+    temp = piOrg[0] - piCur[0];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[1] - piCur[1];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[2] - piCur[2];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[3] - piCur[3];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[4] - piCur[4];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[5] - piCur[5];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[6] - piCur[6];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[7] - piCur[7];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[8] - piCur[8];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[9] - piCur[9];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[10] - piCur[10];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[11] - piCur[11];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[12] - piCur[12];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[13] - piCur[13];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[14] - piCur[14];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[15] - piCur[15];
+    sum += Distortion((temp * temp) >> shift);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE16N( const DistParam &rcDtParam )
@@ -1955,37 +1956,53 @@ Distortion RdCost::xGetSSE16N( const DistParam &rcDtParam )
   int  iStrideOrg    = rcDtParam.org.stride;
   int  iStrideCur    = rcDtParam.cur.stride;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
 
-  Intermediate_Int  iTemp;
+  Intermediate_Int temp;
 
   for( ; iRows != 0; iRows-- )
   {
     for (int n = 0; n < iCols; n+=16 )
     {
-      iTemp = piOrg[n+ 0] - piCur[n+ 0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+ 1] - piCur[n+ 1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+ 2] - piCur[n+ 2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+ 3] - piCur[n+ 3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+ 4] - piCur[n+ 4]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+ 5] - piCur[n+ 5]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+ 6] - piCur[n+ 6]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+ 7] - piCur[n+ 7]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+ 8] - piCur[n+ 8]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+ 9] - piCur[n+ 9]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+10] - piCur[n+10]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+11] - piCur[n+11]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+12] - piCur[n+12]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+13] - piCur[n+13]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+14] - piCur[n+14]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      iTemp = piOrg[n+15] - piCur[n+15]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+      temp = piOrg[n + 0] - piCur[n + 0];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 1] - piCur[n + 1];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 2] - piCur[n + 2];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 3] - piCur[n + 3];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 4] - piCur[n + 4];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 5] - piCur[n + 5];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 6] - piCur[n + 6];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 7] - piCur[n + 7];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 8] - piCur[n + 8];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 9] - piCur[n + 9];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 10] - piCur[n + 10];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 11] - piCur[n + 11];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 12] - piCur[n + 12];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 13] - piCur[n + 13];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 14] - piCur[n + 14];
+      sum += Distortion((temp * temp) >> shift);
+      temp = piOrg[n + 15] - piCur[n + 15];
+      sum += Distortion((temp * temp) >> shift);
     }
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE32( const DistParam &rcDtParam )
@@ -2002,51 +2019,83 @@ Distortion RdCost::xGetSSE32( const DistParam &rcDtParam )
   int  iStrideOrg    = rcDtParam.org.stride;
   int  iStrideCur    = rcDtParam.cur.stride;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
 
-  Intermediate_Int  iTemp;
+  Intermediate_Int temp;
 
   for( ; iRows != 0; iRows-- )
   {
-    iTemp = piOrg[ 0] - piCur[ 0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 1] - piCur[ 1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 2] - piCur[ 2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 3] - piCur[ 3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 4] - piCur[ 4]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 5] - piCur[ 5]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 6] - piCur[ 6]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 7] - piCur[ 7]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 8] - piCur[ 8]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 9] - piCur[ 9]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[10] - piCur[10]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[11] - piCur[11]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[12] - piCur[12]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[13] - piCur[13]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[14] - piCur[14]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[15] - piCur[15]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[16] - piCur[16]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[17] - piCur[17]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[18] - piCur[18]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[19] - piCur[19]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[20] - piCur[20]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[21] - piCur[21]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[22] - piCur[22]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[23] - piCur[23]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[24] - piCur[24]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[25] - piCur[25]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[26] - piCur[26]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[27] - piCur[27]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[28] - piCur[28]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[29] - piCur[29]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[30] - piCur[30]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[31] - piCur[31]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+    temp = piOrg[0] - piCur[0];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[1] - piCur[1];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[2] - piCur[2];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[3] - piCur[3];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[4] - piCur[4];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[5] - piCur[5];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[6] - piCur[6];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[7] - piCur[7];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[8] - piCur[8];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[9] - piCur[9];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[10] - piCur[10];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[11] - piCur[11];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[12] - piCur[12];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[13] - piCur[13];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[14] - piCur[14];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[15] - piCur[15];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[16] - piCur[16];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[17] - piCur[17];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[18] - piCur[18];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[19] - piCur[19];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[20] - piCur[20];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[21] - piCur[21];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[22] - piCur[22];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[23] - piCur[23];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[24] - piCur[24];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[25] - piCur[25];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[26] - piCur[26];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[27] - piCur[27];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[28] - piCur[28];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[29] - piCur[29];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[30] - piCur[30];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[31] - piCur[31];
+    sum += Distortion((temp * temp) >> shift);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE64( const DistParam &rcDtParam )
@@ -2063,83 +2112,147 @@ Distortion RdCost::xGetSSE64( const DistParam &rcDtParam )
   int  iStrideOrg    = rcDtParam.org.stride;
   int  iStrideCur    = rcDtParam.cur.stride;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
 
-  Intermediate_Int  iTemp;
+  Intermediate_Int temp;
 
   for( ; iRows != 0; iRows-- )
   {
-    iTemp = piOrg[ 0] - piCur[ 0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 1] - piCur[ 1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 2] - piCur[ 2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 3] - piCur[ 3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 4] - piCur[ 4]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 5] - piCur[ 5]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 6] - piCur[ 6]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 7] - piCur[ 7]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 8] - piCur[ 8]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[ 9] - piCur[ 9]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[10] - piCur[10]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[11] - piCur[11]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[12] - piCur[12]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[13] - piCur[13]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[14] - piCur[14]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[15] - piCur[15]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[16] - piCur[16]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[17] - piCur[17]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[18] - piCur[18]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[19] - piCur[19]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[20] - piCur[20]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[21] - piCur[21]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[22] - piCur[22]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[23] - piCur[23]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[24] - piCur[24]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[25] - piCur[25]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[26] - piCur[26]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[27] - piCur[27]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[28] - piCur[28]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[29] - piCur[29]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[30] - piCur[30]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[31] - piCur[31]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[32] - piCur[32]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[33] - piCur[33]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[34] - piCur[34]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[35] - piCur[35]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[36] - piCur[36]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[37] - piCur[37]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[38] - piCur[38]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[39] - piCur[39]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[40] - piCur[40]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[41] - piCur[41]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[42] - piCur[42]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[43] - piCur[43]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[44] - piCur[44]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[45] - piCur[45]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[46] - piCur[46]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[47] - piCur[47]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[48] - piCur[48]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[49] - piCur[49]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[50] - piCur[50]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[51] - piCur[51]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[52] - piCur[52]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[53] - piCur[53]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[54] - piCur[54]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[55] - piCur[55]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[56] - piCur[56]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[57] - piCur[57]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[58] - piCur[58]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[59] - piCur[59]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[60] - piCur[60]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[61] - piCur[61]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[62] - piCur[62]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    iTemp = piOrg[63] - piCur[63]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+    temp = piOrg[0] - piCur[0];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[1] - piCur[1];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[2] - piCur[2];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[3] - piCur[3];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[4] - piCur[4];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[5] - piCur[5];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[6] - piCur[6];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[7] - piCur[7];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[8] - piCur[8];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[9] - piCur[9];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[10] - piCur[10];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[11] - piCur[11];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[12] - piCur[12];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[13] - piCur[13];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[14] - piCur[14];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[15] - piCur[15];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[16] - piCur[16];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[17] - piCur[17];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[18] - piCur[18];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[19] - piCur[19];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[20] - piCur[20];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[21] - piCur[21];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[22] - piCur[22];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[23] - piCur[23];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[24] - piCur[24];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[25] - piCur[25];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[26] - piCur[26];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[27] - piCur[27];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[28] - piCur[28];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[29] - piCur[29];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[30] - piCur[30];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[31] - piCur[31];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[32] - piCur[32];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[33] - piCur[33];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[34] - piCur[34];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[35] - piCur[35];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[36] - piCur[36];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[37] - piCur[37];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[38] - piCur[38];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[39] - piCur[39];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[40] - piCur[40];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[41] - piCur[41];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[42] - piCur[42];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[43] - piCur[43];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[44] - piCur[44];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[45] - piCur[45];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[46] - piCur[46];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[47] - piCur[47];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[48] - piCur[48];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[49] - piCur[49];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[50] - piCur[50];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[51] - piCur[51];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[52] - piCur[52];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[53] - piCur[53];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[54] - piCur[54];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[55] - piCur[55];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[56] - piCur[56];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[57] - piCur[57];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[58] - piCur[58];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[59] - piCur[59];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[60] - piCur[60];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[61] - piCur[61];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[62] - piCur[62];
+    sum += Distortion((temp * temp) >> shift);
+    temp = piOrg[63] - piCur[63];
+    sum += Distortion((temp * temp) >> shift);
 
     piOrg += iStrideOrg;
     piCur += iStrideCur;
   }
 
-  return ( uiSum );
+  return (sum);
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -2841,7 +2954,7 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
 
   int  x = 0, y = 0;
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
   if( iCols > iRows && ( iRows & 7 ) == 0 && ( iCols & 15 ) == 0 )
   {
@@ -2849,7 +2962,7 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
     {
       for( x = 0; x < iCols; x += 16 )
       {
-        uiSum += xCalcHADs16x8( &piOrg[x], &piCur[x], iStrideOrg, iStrideCur );
+        sum += xCalcHADs16x8(&piOrg[x], &piCur[x], iStrideOrg, iStrideCur);
       }
       piOrg += iStrideOrg * 8;
       piCur += iStrideCur * 8;
@@ -2861,7 +2974,7 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
     {
       for( x = 0; x < iCols; x += 8 )
       {
-        uiSum += xCalcHADs8x16( &piOrg[x], &piCur[x], iStrideOrg, iStrideCur );
+        sum += xCalcHADs8x16(&piOrg[x], &piCur[x], iStrideOrg, iStrideCur);
       }
       piOrg += iStrideOrg * 16;
       piCur += iStrideCur * 16;
@@ -2873,7 +2986,7 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
     {
       for( x = 0; x < iCols; x += 8 )
       {
-        uiSum += xCalcHADs8x4( &piOrg[x], &piCur[x], iStrideOrg, iStrideCur );
+        sum += xCalcHADs8x4(&piOrg[x], &piCur[x], iStrideOrg, iStrideCur);
       }
       piOrg += iStrideOrg * 4;
       piCur += iStrideCur * 4;
@@ -2885,7 +2998,7 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
     {
       for( x = 0; x < iCols; x += 4 )
       {
-        uiSum += xCalcHADs4x8( &piOrg[x], &piCur[x], iStrideOrg, iStrideCur );
+        sum += xCalcHADs4x8(&piOrg[x], &piCur[x], iStrideOrg, iStrideCur);
       }
       piOrg += iStrideOrg * 8;
       piCur += iStrideCur * 8;
@@ -2899,7 +3012,7 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
     {
       for( x = 0; x < iCols; x += 8 )
       {
-        uiSum += xCalcHADs8x8( &piOrg[x], &piCur[x*iStep], iStrideOrg, iStrideCur, iStep );
+        sum += xCalcHADs8x8(&piOrg[x], &piCur[x * iStep], iStrideOrg, iStrideCur, iStep);
       }
       piOrg += iOffsetOrg;
       piCur += iOffsetCur;
@@ -2914,7 +3027,7 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
     {
       for( x = 0; x < iCols; x += 4 )
       {
-        uiSum += xCalcHADs4x4( &piOrg[x], &piCur[x*iStep], iStrideOrg, iStrideCur, iStep );
+        sum += xCalcHADs4x4(&piOrg[x], &piCur[x * iStep], iStrideOrg, iStrideCur, iStep);
       }
       piOrg += iOffsetOrg;
       piCur += iOffsetCur;
@@ -2928,7 +3041,7 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
     {
       for( x = 0; x < iCols; x += 2 )
       {
-        uiSum += xCalcHADs2x2( &piOrg[x], &piCur[x*iStep], iStrideOrg, iStrideCur, iStep );
+        sum += xCalcHADs2x2(&piOrg[x], &piCur[x * iStep], iStrideOrg, iStrideCur, iStep);
       }
       piOrg += iOffsetOrg;
       piCur += iOffsetCur;
@@ -2939,7 +3052,7 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
     THROW( "Invalid size" );
   }
 
-  return (uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
+  return (sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth));
 }
 
 
@@ -2956,11 +3069,16 @@ void RdCost::saveUnadjustedLambda()
   m_DistScaleUnadjusted = m_DistScale;
 }
 
-void RdCost::initLumaLevelToWeightTable()
+void RdCost::initLumaLevelToWeightTable(int bitDepth)
 {
-  for (int i = 0; i < LUMA_LEVEL_TO_DQP_LUT_MAXSIZE; i++)
+  int lutSize = 1 << bitDepth;
+  if (m_lumaLevelToWeightPLUT.empty())
   {
-    double x = i;
+    m_lumaLevelToWeightPLUT.resize(lutSize, 1.0);
+  }
+  for (int i = 0; i < lutSize; i++)
+  {
+    double x = bitDepth < 10 ? i << (10 - bitDepth) : bitDepth > 10 ? i >> (bitDepth - 10) : i;
     double y;
 
     y = 0.015 * x - 1.5
@@ -3059,10 +3177,10 @@ void RdCost::updateReshapeLumaLevelToWeightTable(SliceReshapeInfo &sliceReshape,
   }
 }
 
-Distortion RdCost::getWeightedMSE(int compIdx, const Pel org, const Pel cur, const uint32_t uiShift, const Pel orgLuma)
+Distortion RdCost::getWeightedMSE(int compIdx, const Pel org, const Pel cur, const uint32_t shift, const Pel orgLuma)
 {
   Distortion distortionVal = 0;
-  Intermediate_Int iTemp = org - cur;
+  Intermediate_Int temp          = org - cur;
   CHECK( org<0, "");
 
   if (compIdx == COMPONENT_Y)
@@ -3087,8 +3205,8 @@ Distortion RdCost::getWeightedMSE(int compIdx, const Pel org, const Pel cur, con
     weight = m_reshapeLumaLevelToWeightPLUT[orgLuma];
   }
   int64_t fixedPTweight = (int64_t)(weight * (double)(1 << 16));
-  Intermediate_Int mse = Intermediate_Int((fixedPTweight*(iTemp*iTemp) + (1 << 15)) >> 16);
-  distortionVal = Distortion( mse >> uiShift);
+  Intermediate_Int mse           = Intermediate_Int((fixedPTweight * (temp * temp) + (1 << 15)) >> 16);
+  distortionVal                  = Distortion(mse >> shift);
   return distortionVal;
 }
 
@@ -3109,20 +3227,20 @@ Distortion RdCost::xGetSSE_WTD( const DistParam &rcDtParam )
   const size_t  cShift  = rcDtParam.cShiftX;
   const size_t  cShiftY = rcDtParam.cShiftY;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
   for( ; iRows != 0; iRows-- )
   {
     for (int n = 0; n < iCols; n++ )
     {
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n  ], piCur[n  ], uiShift, piOrgLuma[n<<cShift]);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n], piCur[n], shift, piOrgLuma[n << cShift]);
     }
     piOrg += iStrideOrg;
     piCur += iStrideCur;
 
     piOrgLuma += iStrideOrgLuma<<cShiftY;
   }
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE2_WTD( const DistParam &rcDtParam )
@@ -3143,17 +3261,21 @@ Distortion RdCost::xGetSSE2_WTD( const DistParam &rcDtParam )
   const size_t  cShift  = rcDtParam.cShiftX;
   const size_t  cShiftY = rcDtParam.cShiftY;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
   for( ; iRows != 0; iRows-- )
   {
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[0  ], piCur[0  ], uiShift, piOrgLuma[size_t(0)<<cShift]);   // piOrg[0] - piCur[0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[1  ], piCur[1  ], uiShift, piOrgLuma[size_t(1)<<cShift]);   // piOrg[1] - piCur[1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[0], piCur[0], shift,
+      piOrgLuma[size_t(0) << cShift]);   // piOrg[0] - piCur[0]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[1], piCur[1], shift,
+      piOrgLuma[size_t(1) << cShift]);   // piOrg[1] - piCur[1]; sum += Distortion(( temp * temp ) >> shift);
     piOrg += iStrideOrg;
     piCur += iStrideCur;
     piOrgLuma += iStrideOrgLuma<<cShiftY;
   }
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE4_WTD( const DistParam &rcDtParam )
@@ -3174,19 +3296,27 @@ Distortion RdCost::xGetSSE4_WTD( const DistParam &rcDtParam )
   const size_t  cShift  = rcDtParam.cShiftX;
   const size_t  cShiftY = rcDtParam.cShiftY;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
   for( ; iRows != 0; iRows-- )
   {
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[0  ], piCur[0  ], uiShift, piOrgLuma[size_t(0)<<cShift]);   // piOrg[0] - piCur[0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[1  ], piCur[1  ], uiShift, piOrgLuma[size_t(1)<<cShift] );   // piOrg[1] - piCur[1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[2  ], piCur[2  ], uiShift, piOrgLuma[size_t(2)<<cShift] );   // piOrg[2] - piCur[2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[3  ], piCur[3  ], uiShift, piOrgLuma[size_t(3)<<cShift] );   // piOrg[3] - piCur[3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[0], piCur[0], shift,
+      piOrgLuma[size_t(0) << cShift]);   // piOrg[0] - piCur[0]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[1], piCur[1], shift,
+      piOrgLuma[size_t(1) << cShift]);   // piOrg[1] - piCur[1]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[2], piCur[2], shift,
+      piOrgLuma[size_t(2) << cShift]);   // piOrg[2] - piCur[2]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[3], piCur[3], shift,
+      piOrgLuma[size_t(3) << cShift]);   // piOrg[3] - piCur[3]; sum += Distortion(( temp * temp ) >> shift);
     piOrg += iStrideOrg;
     piCur += iStrideCur;
     piOrgLuma += iStrideOrgLuma<<cShiftY;
   }
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE8_WTD( const DistParam &rcDtParam )
@@ -3207,23 +3337,38 @@ Distortion RdCost::xGetSSE8_WTD( const DistParam &rcDtParam )
   const size_t  cShift  = rcDtParam.cShiftX;
   const size_t  cShiftY = rcDtParam.cShiftY;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
   for( ; iRows != 0; iRows-- )
   {
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[0  ], piCur[0  ], uiShift, piOrgLuma[0  ]);   // piOrg[0] - piCur[0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[1  ], piCur[1  ], uiShift, piOrgLuma[size_t(1)<<cShift  ]);  // piOrg[1] - piCur[1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[2  ], piCur[2  ], uiShift, piOrgLuma[size_t(2)<<cShift  ]);  //piOrg[2] - piCur[2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[3  ], piCur[3  ], uiShift, piOrgLuma[size_t(3)<<cShift  ]);  // piOrg[3] - piCur[3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[4  ], piCur[4  ], uiShift, piOrgLuma[size_t(4)<<cShift  ]);  // piOrg[4] - piCur[4]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[5  ], piCur[5  ], uiShift, piOrgLuma[size_t(5)<<cShift  ]);  // piOrg[5] - piCur[5]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[6  ], piCur[6  ], uiShift, piOrgLuma[size_t(6)<<cShift  ]);  // piOrg[6] - piCur[6]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[7  ], piCur[7  ], uiShift, piOrgLuma[size_t(7)<<cShift  ]);  // piOrg[7] - piCur[7]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[0], piCur[0], shift,
+                          piOrgLuma[0]);   // piOrg[0] - piCur[0]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[1], piCur[1], shift,
+      piOrgLuma[size_t(1) << cShift]);   // piOrg[1] - piCur[1]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[2], piCur[2], shift,
+      piOrgLuma[size_t(2) << cShift]);   // piOrg[2] - piCur[2]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[3], piCur[3], shift,
+      piOrgLuma[size_t(3) << cShift]);   // piOrg[3] - piCur[3]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[4], piCur[4], shift,
+      piOrgLuma[size_t(4) << cShift]);   // piOrg[4] - piCur[4]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[5], piCur[5], shift,
+      piOrgLuma[size_t(5) << cShift]);   // piOrg[5] - piCur[5]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[6], piCur[6], shift,
+      piOrgLuma[size_t(6) << cShift]);   // piOrg[6] - piCur[6]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[7], piCur[7], shift,
+      piOrgLuma[size_t(7) << cShift]);   // piOrg[7] - piCur[7]; sum += Distortion(( temp * temp ) >> shift);
     piOrg += iStrideOrg;
     piCur += iStrideCur;
     piOrgLuma += iStrideOrgLuma<<cShiftY;
   }
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE16_WTD( const DistParam &rcDtParam )
@@ -3242,32 +3387,63 @@ Distortion RdCost::xGetSSE16_WTD( const DistParam &rcDtParam )
   const size_t  iStrideOrgLuma   = rcDtParam.orgLuma.stride;
   const size_t  cShift  = rcDtParam.cShiftX;
   const size_t  cShiftY = rcDtParam.cShiftY;
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion    sum              = 0;
+  uint32_t      shift            = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
   for( ; iRows != 0; iRows-- )
   {
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[0  ], piCur[0  ], uiShift, piOrgLuma[0  ]);  // piOrg[ 0] - piCur[ 0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[1  ], piCur[1  ], uiShift, piOrgLuma[size_t(1)<<cShift  ]);  //piOrg[ 1] - piCur[ 1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[2  ], piCur[2  ], uiShift, piOrgLuma[size_t(2)<<cShift  ]);  //piOrg[ 2] - piCur[ 2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[3  ], piCur[3  ], uiShift, piOrgLuma[size_t(3)<<cShift  ]);  //piOrg[ 3] - piCur[ 3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[4  ], piCur[4  ], uiShift, piOrgLuma[size_t(4)<<cShift  ]);  //piOrg[ 4] - piCur[ 4]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[5  ], piCur[5  ], uiShift, piOrgLuma[size_t(5)<<cShift  ]);  //piOrg[ 5] - piCur[ 5]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[6  ], piCur[6  ], uiShift, piOrgLuma[size_t(6)<<cShift  ]);  //piOrg[ 6] - piCur[ 6]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[7  ], piCur[7  ], uiShift, piOrgLuma[size_t(7)<<cShift  ]);  //piOrg[ 7] - piCur[ 7]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[8  ], piCur[8  ], uiShift, piOrgLuma[size_t(8)<<cShift  ]);  //piOrg[ 8] - piCur[ 8]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[9  ], piCur[9  ], uiShift, piOrgLuma[size_t(9)<<cShift  ]);  //piOrg[ 9] - piCur[ 9]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[10 ], piCur[10 ], uiShift, piOrgLuma[size_t(10)<<cShift  ]);  //piOrg[10] - piCur[10]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[11 ], piCur[11 ], uiShift, piOrgLuma[size_t(11)<<cShift  ]);  //piOrg[11] - piCur[11]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[12 ], piCur[12 ], uiShift, piOrgLuma[size_t(12)<<cShift  ]);  //piOrg[12] - piCur[12]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[13 ], piCur[13 ], uiShift, piOrgLuma[size_t(13)<<cShift  ]);  //piOrg[13] - piCur[13]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[14 ], piCur[14 ], uiShift, piOrgLuma[size_t(14)<<cShift  ]);  //piOrg[14] - piCur[14]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[15 ], piCur[15 ], uiShift, piOrgLuma[size_t(15)<<cShift  ]);  //piOrg[15] - piCur[15]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[0], piCur[0], shift,
+                          piOrgLuma[0]);   // piOrg[ 0] - piCur[ 0]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[1], piCur[1], shift,
+      piOrgLuma[size_t(1) << cShift]);   // piOrg[ 1] - piCur[ 1]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[2], piCur[2], shift,
+      piOrgLuma[size_t(2) << cShift]);   // piOrg[ 2] - piCur[ 2]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[3], piCur[3], shift,
+      piOrgLuma[size_t(3) << cShift]);   // piOrg[ 3] - piCur[ 3]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[4], piCur[4], shift,
+      piOrgLuma[size_t(4) << cShift]);   // piOrg[ 4] - piCur[ 4]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[5], piCur[5], shift,
+      piOrgLuma[size_t(5) << cShift]);   // piOrg[ 5] - piCur[ 5]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[6], piCur[6], shift,
+      piOrgLuma[size_t(6) << cShift]);   // piOrg[ 6] - piCur[ 6]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[7], piCur[7], shift,
+      piOrgLuma[size_t(7) << cShift]);   // piOrg[ 7] - piCur[ 7]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[8], piCur[8], shift,
+      piOrgLuma[size_t(8) << cShift]);   // piOrg[ 8] - piCur[ 8]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[9], piCur[9], shift,
+      piOrgLuma[size_t(9) << cShift]);   // piOrg[ 9] - piCur[ 9]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[10], piCur[10], shift,
+      piOrgLuma[size_t(10) << cShift]);   // piOrg[10] - piCur[10]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[11], piCur[11], shift,
+      piOrgLuma[size_t(11) << cShift]);   // piOrg[11] - piCur[11]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[12], piCur[12], shift,
+      piOrgLuma[size_t(12) << cShift]);   // piOrg[12] - piCur[12]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[13], piCur[13], shift,
+      piOrgLuma[size_t(13) << cShift]);   // piOrg[13] - piCur[13]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[14], piCur[14], shift,
+      piOrgLuma[size_t(14) << cShift]);   // piOrg[14] - piCur[14]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[15], piCur[15], shift,
+      piOrgLuma[size_t(15) << cShift]);   // piOrg[15] - piCur[15]; sum += Distortion(( temp * temp ) >> shift);
     piOrg += iStrideOrg;
     piCur += iStrideCur;
 
     piOrgLuma += iStrideOrgLuma<<cShiftY;
   }
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE16N_WTD( const DistParam &rcDtParam )
@@ -3286,34 +3462,66 @@ Distortion RdCost::xGetSSE16N_WTD( const DistParam &rcDtParam )
   const size_t  iStrideOrgLuma   = rcDtParam.orgLuma.stride;
   const size_t  cShift  = rcDtParam.cShiftX;
   const size_t  cShiftY = rcDtParam.cShiftY;
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion    sum              = 0;
+  uint32_t      shift            = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
   for( ; iRows != 0; iRows-- )
   {
     for (int n = 0; n < iCols; n+=16 )
     {
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+0 ], piCur[n+0 ], uiShift, piOrgLuma[size_t(n+0)<<cShift ]);  // iTemp = piOrg[n+ 0] - piCur[n+ 0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+1 ], piCur[n+1 ], uiShift, piOrgLuma[size_t(n+1)<<cShift ]);  // iTemp = piOrg[n+ 1] - piCur[n+ 1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+2 ], piCur[n+2 ], uiShift, piOrgLuma[size_t(n+2)<<cShift ]);  // iTemp = piOrg[n+ 2] - piCur[n+ 2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+3 ], piCur[n+3 ], uiShift, piOrgLuma[size_t(n+3)<<cShift ]);  // iTemp = piOrg[n+ 3] - piCur[n+ 3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+4 ], piCur[n+4 ], uiShift, piOrgLuma[size_t(n+4)<<cShift ]);  // iTemp = piOrg[n+ 4] - piCur[n+ 4]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+5 ], piCur[n+5 ], uiShift, piOrgLuma[size_t(n+5)<<cShift ]);  // iTemp = piOrg[n+ 5] - piCur[n+ 5]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+6 ], piCur[n+6 ], uiShift, piOrgLuma[size_t(n+6)<<cShift ]);  // iTemp = piOrg[n+ 6] - piCur[n+ 6]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+7 ], piCur[n+7 ], uiShift, piOrgLuma[size_t(n+7)<<cShift ]);  // iTemp = piOrg[n+ 7] - piCur[n+ 7]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+8 ], piCur[n+8 ], uiShift, piOrgLuma[size_t(n+8)<<cShift ]);  // iTemp = piOrg[n+ 8] - piCur[n+ 8]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+9 ], piCur[n+9 ], uiShift, piOrgLuma[size_t(n+9)<<cShift ]);  // iTemp = piOrg[n+ 9] - piCur[n+ 9]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+10], piCur[n+10], uiShift, piOrgLuma[size_t(n+10)<<cShift ]);  // iTemp = piOrg[n+10] - piCur[n+10]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+11], piCur[n+11], uiShift, piOrgLuma[size_t(n+11)<<cShift ]);  // iTemp = piOrg[n+11] - piCur[n+11]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+12], piCur[n+12], uiShift, piOrgLuma[size_t(n+12)<<cShift]);  // iTemp = piOrg[n+12] - piCur[n+12]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+13], piCur[n+13], uiShift, piOrgLuma[size_t(n+13)<<cShift ]);  // iTemp = piOrg[n+13] - piCur[n+13]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+14], piCur[n+14], uiShift, piOrgLuma[size_t(n+14)<<cShift ]);  // iTemp = piOrg[n+14] - piCur[n+14]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-      uiSum += getWeightedMSE(rcDtParam.compID, piOrg[n+15], piCur[n+15], uiShift, piOrgLuma[size_t(n+15)<<cShift ]);  // iTemp = piOrg[n+15] - piCur[n+15]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 0], piCur[n + 0], shift,
+                            piOrgLuma[size_t(n + 0) << cShift]);   // temp = piOrg[n+ 0] - piCur[n+ 0]; sum +=
+                                                                   // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 1], piCur[n + 1], shift,
+                            piOrgLuma[size_t(n + 1) << cShift]);   // temp = piOrg[n+ 1] - piCur[n+ 1]; sum +=
+                                                                   // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 2], piCur[n + 2], shift,
+                            piOrgLuma[size_t(n + 2) << cShift]);   // temp = piOrg[n+ 2] - piCur[n+ 2]; sum +=
+                                                                   // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 3], piCur[n + 3], shift,
+                            piOrgLuma[size_t(n + 3) << cShift]);   // temp = piOrg[n+ 3] - piCur[n+ 3]; sum +=
+                                                                   // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 4], piCur[n + 4], shift,
+                            piOrgLuma[size_t(n + 4) << cShift]);   // temp = piOrg[n+ 4] - piCur[n+ 4]; sum +=
+                                                                   // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 5], piCur[n + 5], shift,
+                            piOrgLuma[size_t(n + 5) << cShift]);   // temp = piOrg[n+ 5] - piCur[n+ 5]; sum +=
+                                                                   // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 6], piCur[n + 6], shift,
+                            piOrgLuma[size_t(n + 6) << cShift]);   // temp = piOrg[n+ 6] - piCur[n+ 6]; sum +=
+                                                                   // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 7], piCur[n + 7], shift,
+                            piOrgLuma[size_t(n + 7) << cShift]);   // temp = piOrg[n+ 7] - piCur[n+ 7]; sum +=
+                                                                   // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 8], piCur[n + 8], shift,
+                            piOrgLuma[size_t(n + 8) << cShift]);   // temp = piOrg[n+ 8] - piCur[n+ 8]; sum +=
+                                                                   // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 9], piCur[n + 9], shift,
+                            piOrgLuma[size_t(n + 9) << cShift]);   // temp = piOrg[n+ 9] - piCur[n+ 9]; sum +=
+                                                                   // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 10], piCur[n + 10], shift,
+                            piOrgLuma[size_t(n + 10) << cShift]);   // temp = piOrg[n+10] - piCur[n+10]; sum +=
+                                                                    // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 11], piCur[n + 11], shift,
+                            piOrgLuma[size_t(n + 11) << cShift]);   // temp = piOrg[n+11] - piCur[n+11]; sum +=
+                                                                    // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 12], piCur[n + 12], shift,
+                            piOrgLuma[size_t(n + 12) << cShift]);   // temp = piOrg[n+12] - piCur[n+12]; sum +=
+                                                                    // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 13], piCur[n + 13], shift,
+                            piOrgLuma[size_t(n + 13) << cShift]);   // temp = piOrg[n+13] - piCur[n+13]; sum +=
+                                                                    // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 14], piCur[n + 14], shift,
+                            piOrgLuma[size_t(n + 14) << cShift]);   // temp = piOrg[n+14] - piCur[n+14]; sum +=
+                                                                    // Distortion(( temp * temp ) >> shift);
+      sum += getWeightedMSE(rcDtParam.compID, piOrg[n + 15], piCur[n + 15], shift,
+                            piOrgLuma[size_t(n + 15) << cShift]);   // temp = piOrg[n+15] - piCur[n+15]; sum +=
+                                                                    // Distortion(( temp * temp ) >> shift);
     }
     piOrg += iStrideOrg;
     piCur += iStrideCur;
     piOrgLuma += iStrideOrgLuma<<cShiftY;
   }
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE32_WTD( const DistParam &rcDtParam )
@@ -3333,47 +3541,111 @@ Distortion RdCost::xGetSSE32_WTD( const DistParam &rcDtParam )
   const size_t  cShift  = rcDtParam.cShiftX;
   const size_t  cShiftY = rcDtParam.cShiftY;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
   for( ; iRows != 0; iRows-- )
   {
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[0 ], piCur[0 ], uiShift, piOrgLuma[size_t(0) ]);  // iTemp = piOrg[ 0] - piCur[ 0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[1 ], piCur[1 ], uiShift, piOrgLuma[size_t(1)<<cShift ]);  // iTemp = piOrg[ 1] - piCur[ 1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[2 ], piCur[2 ], uiShift, piOrgLuma[size_t(2)<<cShift ]);  // iTemp = piOrg[ 2] - piCur[ 2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[3 ], piCur[3 ], uiShift, piOrgLuma[size_t(3)<<cShift ]);  // iTemp = piOrg[ 3] - piCur[ 3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[4 ], piCur[4 ], uiShift, piOrgLuma[size_t(4)<<cShift ]);  // iTemp = piOrg[ 4] - piCur[ 4]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[5 ], piCur[5 ], uiShift, piOrgLuma[size_t(5)<<cShift ]);  // iTemp = piOrg[ 5] - piCur[ 5]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[6 ], piCur[6 ], uiShift, piOrgLuma[size_t(6)<<cShift ]);  // iTemp = piOrg[ 6] - piCur[ 6]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[7 ], piCur[7 ], uiShift, piOrgLuma[size_t(7)<<cShift ]);  // iTemp = piOrg[ 7] - piCur[ 7]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[8 ], piCur[8 ], uiShift, piOrgLuma[size_t(8)<<cShift ]);  // iTemp = piOrg[ 8] - piCur[ 8]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[9 ], piCur[9 ], uiShift, piOrgLuma[size_t(9)<<cShift ]);  // iTemp = piOrg[ 9] - piCur[ 9]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[10], piCur[10], uiShift, piOrgLuma[size_t(10)<<cShift ]);  // iTemp = piOrg[10] - piCur[10]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[11], piCur[11], uiShift, piOrgLuma[size_t(11)<<cShift ]);  // iTemp = piOrg[11] - piCur[11]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[12], piCur[12], uiShift, piOrgLuma[size_t(12)<<cShift ]);  // iTemp = piOrg[12] - piCur[12]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[13], piCur[13], uiShift, piOrgLuma[size_t(13)<<cShift ]);  // iTemp = piOrg[13] - piCur[13]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[14], piCur[14], uiShift, piOrgLuma[size_t(14)<<cShift ]);  // iTemp = piOrg[14] - piCur[14]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[15], piCur[15], uiShift, piOrgLuma[size_t(15)<<cShift ]);  // iTemp = piOrg[15] - piCur[15]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[16], piCur[16], uiShift, piOrgLuma[size_t(16)<<cShift ]);  //  iTemp = piOrg[16] - piCur[16]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[17], piCur[17], uiShift, piOrgLuma[size_t(17)<<cShift ]);  //  iTemp = piOrg[17] - piCur[17]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[18], piCur[18], uiShift, piOrgLuma[size_t(18)<<cShift ]);  //  iTemp = piOrg[18] - piCur[18]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[19], piCur[19], uiShift, piOrgLuma[size_t(19)<<cShift ]);  //  iTemp = piOrg[19] - piCur[19]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[20], piCur[20], uiShift, piOrgLuma[size_t(20)<<cShift ]);  //  iTemp = piOrg[20] - piCur[20]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[21], piCur[21], uiShift, piOrgLuma[size_t(21)<<cShift ]);  //  iTemp = piOrg[21] - piCur[21]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[22], piCur[22], uiShift, piOrgLuma[size_t(22)<<cShift ]);  //  iTemp = piOrg[22] - piCur[22]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[23], piCur[23], uiShift, piOrgLuma[size_t(23)<<cShift ]);  //  iTemp = piOrg[23] - piCur[23]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[24], piCur[24], uiShift, piOrgLuma[size_t(24)<<cShift ]);  //  iTemp = piOrg[24] - piCur[24]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[25], piCur[25], uiShift, piOrgLuma[size_t(25)<<cShift ]);  //  iTemp = piOrg[25] - piCur[25]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[26], piCur[26], uiShift, piOrgLuma[size_t(26)<<cShift ]);  //  iTemp = piOrg[26] - piCur[26]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[27], piCur[27], uiShift, piOrgLuma[size_t(27)<<cShift ]);  //  iTemp = piOrg[27] - piCur[27]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[28], piCur[28], uiShift, piOrgLuma[size_t(28)<<cShift ]);  //  iTemp = piOrg[28] - piCur[28]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[29], piCur[29], uiShift, piOrgLuma[size_t(29)<<cShift ]);  //  iTemp = piOrg[29] - piCur[29]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[30], piCur[30], uiShift, piOrgLuma[size_t(30)<<cShift ]);  //  iTemp = piOrg[30] - piCur[30]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[31], piCur[31], uiShift, piOrgLuma[size_t(31)<<cShift ]);  //  iTemp = piOrg[31] - piCur[31]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[0], piCur[0], shift,
+      piOrgLuma[size_t(0)]);   // temp = piOrg[ 0] - piCur[ 0]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[1], piCur[1], shift,
+                          piOrgLuma[size_t(1) << cShift]);   // temp = piOrg[ 1] - piCur[ 1]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[2], piCur[2], shift,
+                          piOrgLuma[size_t(2) << cShift]);   // temp = piOrg[ 2] - piCur[ 2]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[3], piCur[3], shift,
+                          piOrgLuma[size_t(3) << cShift]);   // temp = piOrg[ 3] - piCur[ 3]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[4], piCur[4], shift,
+                          piOrgLuma[size_t(4) << cShift]);   // temp = piOrg[ 4] - piCur[ 4]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[5], piCur[5], shift,
+                          piOrgLuma[size_t(5) << cShift]);   // temp = piOrg[ 5] - piCur[ 5]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[6], piCur[6], shift,
+                          piOrgLuma[size_t(6) << cShift]);   // temp = piOrg[ 6] - piCur[ 6]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[7], piCur[7], shift,
+                          piOrgLuma[size_t(7) << cShift]);   // temp = piOrg[ 7] - piCur[ 7]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[8], piCur[8], shift,
+                          piOrgLuma[size_t(8) << cShift]);   // temp = piOrg[ 8] - piCur[ 8]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[9], piCur[9], shift,
+                          piOrgLuma[size_t(9) << cShift]);   // temp = piOrg[ 9] - piCur[ 9]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[10], piCur[10], shift,
+                          piOrgLuma[size_t(10) << cShift]);   // temp = piOrg[10] - piCur[10]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[11], piCur[11], shift,
+                          piOrgLuma[size_t(11) << cShift]);   // temp = piOrg[11] - piCur[11]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[12], piCur[12], shift,
+                          piOrgLuma[size_t(12) << cShift]);   // temp = piOrg[12] - piCur[12]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[13], piCur[13], shift,
+                          piOrgLuma[size_t(13) << cShift]);   // temp = piOrg[13] - piCur[13]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[14], piCur[14], shift,
+                          piOrgLuma[size_t(14) << cShift]);   // temp = piOrg[14] - piCur[14]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[15], piCur[15], shift,
+                          piOrgLuma[size_t(15) << cShift]);   // temp = piOrg[15] - piCur[15]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[16], piCur[16], shift,
+                          piOrgLuma[size_t(16) << cShift]);   //  temp = piOrg[16] - piCur[16]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[17], piCur[17], shift,
+                          piOrgLuma[size_t(17) << cShift]);   //  temp = piOrg[17] - piCur[17]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[18], piCur[18], shift,
+                          piOrgLuma[size_t(18) << cShift]);   //  temp = piOrg[18] - piCur[18]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[19], piCur[19], shift,
+                          piOrgLuma[size_t(19) << cShift]);   //  temp = piOrg[19] - piCur[19]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[20], piCur[20], shift,
+                          piOrgLuma[size_t(20) << cShift]);   //  temp = piOrg[20] - piCur[20]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[21], piCur[21], shift,
+                          piOrgLuma[size_t(21) << cShift]);   //  temp = piOrg[21] - piCur[21]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[22], piCur[22], shift,
+                          piOrgLuma[size_t(22) << cShift]);   //  temp = piOrg[22] - piCur[22]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[23], piCur[23], shift,
+                          piOrgLuma[size_t(23) << cShift]);   //  temp = piOrg[23] - piCur[23]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[24], piCur[24], shift,
+                          piOrgLuma[size_t(24) << cShift]);   //  temp = piOrg[24] - piCur[24]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[25], piCur[25], shift,
+                          piOrgLuma[size_t(25) << cShift]);   //  temp = piOrg[25] - piCur[25]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[26], piCur[26], shift,
+                          piOrgLuma[size_t(26) << cShift]);   //  temp = piOrg[26] - piCur[26]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[27], piCur[27], shift,
+                          piOrgLuma[size_t(27) << cShift]);   //  temp = piOrg[27] - piCur[27]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[28], piCur[28], shift,
+                          piOrgLuma[size_t(28) << cShift]);   //  temp = piOrg[28] - piCur[28]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[29], piCur[29], shift,
+                          piOrgLuma[size_t(29) << cShift]);   //  temp = piOrg[29] - piCur[29]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[30], piCur[30], shift,
+                          piOrgLuma[size_t(30) << cShift]);   //  temp = piOrg[30] - piCur[30]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[31], piCur[31], shift,
+                          piOrgLuma[size_t(31) << cShift]);   //  temp = piOrg[31] - piCur[31]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
     piOrg += iStrideOrg;
     piCur += iStrideCur;
     piOrgLuma += iStrideOrgLuma<<cShiftY;
   }
-  return ( uiSum );
+  return (sum);
 }
 
 Distortion RdCost::xGetSSE64_WTD( const DistParam &rcDtParam )
@@ -3393,80 +3665,208 @@ Distortion RdCost::xGetSSE64_WTD( const DistParam &rcDtParam )
   const size_t  cShift  = rcDtParam.cShiftX;
   const size_t  cShiftY = rcDtParam.cShiftY;
 
-  Distortion uiSum   = 0;
-  uint32_t uiShift = DISTORTION_PRECISION_ADJUSTMENT((rcDtParam.bitDepth)) << 1;
+  Distortion sum     = 0;
+  uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT((rcDtParam.bitDepth)) << 1;
   for( ; iRows != 0; iRows-- )
   {
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[0 ], piCur[0 ], uiShift, piOrgLuma[size_t(0) ]);  // iTemp = piOrg[ 0] - piCur[ 0]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[1 ], piCur[1 ], uiShift, piOrgLuma[size_t(1)<<cShift ]);  // iTemp = piOrg[ 1] - piCur[ 1]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[2 ], piCur[2 ], uiShift, piOrgLuma[size_t(2)<<cShift ]);  // iTemp = piOrg[ 2] - piCur[ 2]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[3 ], piCur[3 ], uiShift, piOrgLuma[size_t(3)<<cShift ]);  // iTemp = piOrg[ 3] - piCur[ 3]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[4 ], piCur[4 ], uiShift, piOrgLuma[size_t(4)<<cShift ]);  // iTemp = piOrg[ 4] - piCur[ 4]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[5 ], piCur[5 ], uiShift, piOrgLuma[size_t(5)<<cShift ]);  // iTemp = piOrg[ 5] - piCur[ 5]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[6 ], piCur[6 ], uiShift, piOrgLuma[size_t(6)<<cShift ]);  // iTemp = piOrg[ 6] - piCur[ 6]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[7 ], piCur[7 ], uiShift, piOrgLuma[size_t(7)<<cShift ]);  // iTemp = piOrg[ 7] - piCur[ 7]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[8 ], piCur[8 ], uiShift, piOrgLuma[size_t(8)<<cShift ]);  // iTemp = piOrg[ 8] - piCur[ 8]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[9 ], piCur[9 ], uiShift, piOrgLuma[size_t(9)<<cShift ]);  // iTemp = piOrg[ 9] - piCur[ 9]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[10], piCur[10], uiShift, piOrgLuma[size_t(10)<<cShift]);  // iTemp = piOrg[10] - piCur[10]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[11], piCur[11], uiShift, piOrgLuma[size_t(11)<<cShift]);  // iTemp = piOrg[11] - piCur[11]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[12], piCur[12], uiShift, piOrgLuma[size_t(12)<<cShift]);  // iTemp = piOrg[12] - piCur[12]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[13], piCur[13], uiShift, piOrgLuma[size_t(13)<<cShift]);  // iTemp = piOrg[13] - piCur[13]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[14], piCur[14], uiShift, piOrgLuma[size_t(14)<<cShift]);  // iTemp = piOrg[14] - piCur[14]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[15], piCur[15], uiShift, piOrgLuma[size_t(15)<<cShift]);  // iTemp = piOrg[15] - piCur[15]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[16], piCur[16], uiShift, piOrgLuma[size_t(16)<<cShift]);  //  iTemp = piOrg[16] - piCur[16]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[17], piCur[17], uiShift, piOrgLuma[size_t(17)<<cShift]);  //  iTemp = piOrg[17] - piCur[17]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[18], piCur[18], uiShift, piOrgLuma[size_t(18)<<cShift]);  //  iTemp = piOrg[18] - piCur[18]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[19], piCur[19], uiShift, piOrgLuma[size_t(19)<<cShift]);  //  iTemp = piOrg[19] - piCur[19]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[20], piCur[20], uiShift, piOrgLuma[size_t(20)<<cShift]);  //  iTemp = piOrg[20] - piCur[20]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[21], piCur[21], uiShift, piOrgLuma[size_t(21)<<cShift]);  //  iTemp = piOrg[21] - piCur[21]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[22], piCur[22], uiShift, piOrgLuma[size_t(22)<<cShift]);  //  iTemp = piOrg[22] - piCur[22]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[23], piCur[23], uiShift, piOrgLuma[size_t(23)<<cShift]);  //  iTemp = piOrg[23] - piCur[23]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[24], piCur[24], uiShift, piOrgLuma[size_t(24)<<cShift]);  //  iTemp = piOrg[24] - piCur[24]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[25], piCur[25], uiShift, piOrgLuma[size_t(25)<<cShift]);  //  iTemp = piOrg[25] - piCur[25]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[26], piCur[26], uiShift, piOrgLuma[size_t(26)<<cShift]);  //  iTemp = piOrg[26] - piCur[26]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[27], piCur[27], uiShift, piOrgLuma[size_t(27)<<cShift]);  //  iTemp = piOrg[27] - piCur[27]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[28], piCur[28], uiShift, piOrgLuma[size_t(28)<<cShift]);  //  iTemp = piOrg[28] - piCur[28]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[29], piCur[29], uiShift, piOrgLuma[size_t(29)<<cShift]);  //  iTemp = piOrg[29] - piCur[29]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[30], piCur[30], uiShift, piOrgLuma[size_t(30)<<cShift]);  //  iTemp = piOrg[30] - piCur[30]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[31], piCur[31], uiShift, piOrgLuma[size_t(31)<<cShift]);  //  iTemp = piOrg[31] - piCur[31]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[32], piCur[32], uiShift, piOrgLuma[size_t(32)<<cShift]);  // iTemp = piOrg[32] - piCur[32]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[33], piCur[33], uiShift, piOrgLuma[size_t(33)<<cShift]);  // iTemp = piOrg[33] - piCur[33]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[34], piCur[34], uiShift, piOrgLuma[size_t(34)<<cShift]);  // iTemp = piOrg[34] - piCur[34]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[35], piCur[35], uiShift, piOrgLuma[size_t(35)<<cShift]);  // iTemp = piOrg[35] - piCur[35]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[36], piCur[36], uiShift, piOrgLuma[size_t(36)<<cShift]);  // iTemp = piOrg[36] - piCur[36]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[37], piCur[37], uiShift, piOrgLuma[size_t(37)<<cShift]);  // iTemp = piOrg[37] - piCur[37]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[38], piCur[38], uiShift, piOrgLuma[size_t(38)<<cShift]);  // iTemp = piOrg[38] - piCur[38]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[39], piCur[39], uiShift, piOrgLuma[size_t(39)<<cShift]);  // iTemp = piOrg[39] - piCur[39]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[40], piCur[40], uiShift, piOrgLuma[size_t(40)<<cShift]);  // iTemp = piOrg[40] - piCur[40]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[41], piCur[41], uiShift, piOrgLuma[size_t(41)<<cShift]);  // iTemp = piOrg[41] - piCur[41]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[42], piCur[42], uiShift, piOrgLuma[size_t(42)<<cShift]);  // iTemp = piOrg[42] - piCur[42]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[43], piCur[43], uiShift, piOrgLuma[size_t(43)<<cShift]);  // iTemp = piOrg[43] - piCur[43]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[44], piCur[44], uiShift, piOrgLuma[size_t(44)<<cShift]);  // iTemp = piOrg[44] - piCur[44]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[45], piCur[45], uiShift, piOrgLuma[size_t(45)<<cShift]);  // iTemp = piOrg[45] - piCur[45]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[46], piCur[46], uiShift, piOrgLuma[size_t(46)<<cShift]);  // iTemp = piOrg[46] - piCur[46]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[47], piCur[47], uiShift, piOrgLuma[size_t(47)<<cShift]);  // iTemp = piOrg[47] - piCur[47]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[48], piCur[48], uiShift, piOrgLuma[size_t(48)<<cShift]);  // iTemp = piOrg[48] - piCur[48]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[49], piCur[49], uiShift, piOrgLuma[size_t(49)<<cShift]);  // iTemp = piOrg[49] - piCur[49]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[50], piCur[50], uiShift, piOrgLuma[size_t(50)<<cShift]);  // iTemp = piOrg[50] - piCur[50]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[51], piCur[51], uiShift, piOrgLuma[size_t(51)<<cShift]);  // iTemp = piOrg[51] - piCur[51]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[52], piCur[52], uiShift, piOrgLuma[size_t(52)<<cShift]);  // iTemp = piOrg[52] - piCur[52]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[53], piCur[53], uiShift, piOrgLuma[size_t(53)<<cShift]);  // iTemp = piOrg[53] - piCur[53]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[54], piCur[54], uiShift, piOrgLuma[size_t(54)<<cShift]);  // iTemp = piOrg[54] - piCur[54]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[55], piCur[55], uiShift, piOrgLuma[size_t(55)<<cShift]);  // iTemp = piOrg[55] - piCur[55]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[56], piCur[56], uiShift, piOrgLuma[size_t(56)<<cShift]);  // iTemp = piOrg[56] - piCur[56]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[57], piCur[57], uiShift, piOrgLuma[size_t(57)<<cShift]);  // iTemp = piOrg[57] - piCur[57]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[58], piCur[58], uiShift, piOrgLuma[size_t(58)<<cShift]);  // iTemp = piOrg[58] - piCur[58]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[59], piCur[59], uiShift, piOrgLuma[size_t(59)<<cShift]);  // iTemp = piOrg[59] - piCur[59]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[60], piCur[60], uiShift, piOrgLuma[size_t(60)<<cShift]);  // iTemp = piOrg[60] - piCur[60]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[61], piCur[61], uiShift, piOrgLuma[size_t(61)<<cShift]);  // iTemp = piOrg[61] - piCur[61]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[62], piCur[62], uiShift, piOrgLuma[size_t(62)<<cShift]);  // iTemp = piOrg[62] - piCur[62]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
-    uiSum += getWeightedMSE(rcDtParam.compID, piOrg[63], piCur[63], uiShift, piOrgLuma[size_t(63)<<cShift]);  // iTemp = piOrg[63] - piCur[63]; uiSum += Distortion(( iTemp * iTemp ) >> uiShift);
+    sum += getWeightedMSE(
+      rcDtParam.compID, piOrg[0], piCur[0], shift,
+      piOrgLuma[size_t(0)]);   // temp = piOrg[ 0] - piCur[ 0]; sum += Distortion(( temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[1], piCur[1], shift,
+                          piOrgLuma[size_t(1) << cShift]);   // temp = piOrg[ 1] - piCur[ 1]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[2], piCur[2], shift,
+                          piOrgLuma[size_t(2) << cShift]);   // temp = piOrg[ 2] - piCur[ 2]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[3], piCur[3], shift,
+                          piOrgLuma[size_t(3) << cShift]);   // temp = piOrg[ 3] - piCur[ 3]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[4], piCur[4], shift,
+                          piOrgLuma[size_t(4) << cShift]);   // temp = piOrg[ 4] - piCur[ 4]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[5], piCur[5], shift,
+                          piOrgLuma[size_t(5) << cShift]);   // temp = piOrg[ 5] - piCur[ 5]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[6], piCur[6], shift,
+                          piOrgLuma[size_t(6) << cShift]);   // temp = piOrg[ 6] - piCur[ 6]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[7], piCur[7], shift,
+                          piOrgLuma[size_t(7) << cShift]);   // temp = piOrg[ 7] - piCur[ 7]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[8], piCur[8], shift,
+                          piOrgLuma[size_t(8) << cShift]);   // temp = piOrg[ 8] - piCur[ 8]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[9], piCur[9], shift,
+                          piOrgLuma[size_t(9) << cShift]);   // temp = piOrg[ 9] - piCur[ 9]; sum += Distortion((
+                                                             // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[10], piCur[10], shift,
+                          piOrgLuma[size_t(10) << cShift]);   // temp = piOrg[10] - piCur[10]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[11], piCur[11], shift,
+                          piOrgLuma[size_t(11) << cShift]);   // temp = piOrg[11] - piCur[11]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[12], piCur[12], shift,
+                          piOrgLuma[size_t(12) << cShift]);   // temp = piOrg[12] - piCur[12]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[13], piCur[13], shift,
+                          piOrgLuma[size_t(13) << cShift]);   // temp = piOrg[13] - piCur[13]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[14], piCur[14], shift,
+                          piOrgLuma[size_t(14) << cShift]);   // temp = piOrg[14] - piCur[14]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[15], piCur[15], shift,
+                          piOrgLuma[size_t(15) << cShift]);   // temp = piOrg[15] - piCur[15]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[16], piCur[16], shift,
+                          piOrgLuma[size_t(16) << cShift]);   //  temp = piOrg[16] - piCur[16]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[17], piCur[17], shift,
+                          piOrgLuma[size_t(17) << cShift]);   //  temp = piOrg[17] - piCur[17]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[18], piCur[18], shift,
+                          piOrgLuma[size_t(18) << cShift]);   //  temp = piOrg[18] - piCur[18]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[19], piCur[19], shift,
+                          piOrgLuma[size_t(19) << cShift]);   //  temp = piOrg[19] - piCur[19]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[20], piCur[20], shift,
+                          piOrgLuma[size_t(20) << cShift]);   //  temp = piOrg[20] - piCur[20]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[21], piCur[21], shift,
+                          piOrgLuma[size_t(21) << cShift]);   //  temp = piOrg[21] - piCur[21]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[22], piCur[22], shift,
+                          piOrgLuma[size_t(22) << cShift]);   //  temp = piOrg[22] - piCur[22]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[23], piCur[23], shift,
+                          piOrgLuma[size_t(23) << cShift]);   //  temp = piOrg[23] - piCur[23]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[24], piCur[24], shift,
+                          piOrgLuma[size_t(24) << cShift]);   //  temp = piOrg[24] - piCur[24]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[25], piCur[25], shift,
+                          piOrgLuma[size_t(25) << cShift]);   //  temp = piOrg[25] - piCur[25]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[26], piCur[26], shift,
+                          piOrgLuma[size_t(26) << cShift]);   //  temp = piOrg[26] - piCur[26]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[27], piCur[27], shift,
+                          piOrgLuma[size_t(27) << cShift]);   //  temp = piOrg[27] - piCur[27]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[28], piCur[28], shift,
+                          piOrgLuma[size_t(28) << cShift]);   //  temp = piOrg[28] - piCur[28]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[29], piCur[29], shift,
+                          piOrgLuma[size_t(29) << cShift]);   //  temp = piOrg[29] - piCur[29]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[30], piCur[30], shift,
+                          piOrgLuma[size_t(30) << cShift]);   //  temp = piOrg[30] - piCur[30]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[31], piCur[31], shift,
+                          piOrgLuma[size_t(31) << cShift]);   //  temp = piOrg[31] - piCur[31]; sum += Distortion((
+                                                              //  temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[32], piCur[32], shift,
+                          piOrgLuma[size_t(32) << cShift]);   // temp = piOrg[32] - piCur[32]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[33], piCur[33], shift,
+                          piOrgLuma[size_t(33) << cShift]);   // temp = piOrg[33] - piCur[33]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[34], piCur[34], shift,
+                          piOrgLuma[size_t(34) << cShift]);   // temp = piOrg[34] - piCur[34]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[35], piCur[35], shift,
+                          piOrgLuma[size_t(35) << cShift]);   // temp = piOrg[35] - piCur[35]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[36], piCur[36], shift,
+                          piOrgLuma[size_t(36) << cShift]);   // temp = piOrg[36] - piCur[36]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[37], piCur[37], shift,
+                          piOrgLuma[size_t(37) << cShift]);   // temp = piOrg[37] - piCur[37]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[38], piCur[38], shift,
+                          piOrgLuma[size_t(38) << cShift]);   // temp = piOrg[38] - piCur[38]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[39], piCur[39], shift,
+                          piOrgLuma[size_t(39) << cShift]);   // temp = piOrg[39] - piCur[39]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[40], piCur[40], shift,
+                          piOrgLuma[size_t(40) << cShift]);   // temp = piOrg[40] - piCur[40]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[41], piCur[41], shift,
+                          piOrgLuma[size_t(41) << cShift]);   // temp = piOrg[41] - piCur[41]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[42], piCur[42], shift,
+                          piOrgLuma[size_t(42) << cShift]);   // temp = piOrg[42] - piCur[42]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[43], piCur[43], shift,
+                          piOrgLuma[size_t(43) << cShift]);   // temp = piOrg[43] - piCur[43]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[44], piCur[44], shift,
+                          piOrgLuma[size_t(44) << cShift]);   // temp = piOrg[44] - piCur[44]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[45], piCur[45], shift,
+                          piOrgLuma[size_t(45) << cShift]);   // temp = piOrg[45] - piCur[45]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[46], piCur[46], shift,
+                          piOrgLuma[size_t(46) << cShift]);   // temp = piOrg[46] - piCur[46]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[47], piCur[47], shift,
+                          piOrgLuma[size_t(47) << cShift]);   // temp = piOrg[47] - piCur[47]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[48], piCur[48], shift,
+                          piOrgLuma[size_t(48) << cShift]);   // temp = piOrg[48] - piCur[48]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[49], piCur[49], shift,
+                          piOrgLuma[size_t(49) << cShift]);   // temp = piOrg[49] - piCur[49]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[50], piCur[50], shift,
+                          piOrgLuma[size_t(50) << cShift]);   // temp = piOrg[50] - piCur[50]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[51], piCur[51], shift,
+                          piOrgLuma[size_t(51) << cShift]);   // temp = piOrg[51] - piCur[51]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[52], piCur[52], shift,
+                          piOrgLuma[size_t(52) << cShift]);   // temp = piOrg[52] - piCur[52]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[53], piCur[53], shift,
+                          piOrgLuma[size_t(53) << cShift]);   // temp = piOrg[53] - piCur[53]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[54], piCur[54], shift,
+                          piOrgLuma[size_t(54) << cShift]);   // temp = piOrg[54] - piCur[54]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[55], piCur[55], shift,
+                          piOrgLuma[size_t(55) << cShift]);   // temp = piOrg[55] - piCur[55]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[56], piCur[56], shift,
+                          piOrgLuma[size_t(56) << cShift]);   // temp = piOrg[56] - piCur[56]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[57], piCur[57], shift,
+                          piOrgLuma[size_t(57) << cShift]);   // temp = piOrg[57] - piCur[57]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[58], piCur[58], shift,
+                          piOrgLuma[size_t(58) << cShift]);   // temp = piOrg[58] - piCur[58]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[59], piCur[59], shift,
+                          piOrgLuma[size_t(59) << cShift]);   // temp = piOrg[59] - piCur[59]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[60], piCur[60], shift,
+                          piOrgLuma[size_t(60) << cShift]);   // temp = piOrg[60] - piCur[60]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[61], piCur[61], shift,
+                          piOrgLuma[size_t(61) << cShift]);   // temp = piOrg[61] - piCur[61]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[62], piCur[62], shift,
+                          piOrgLuma[size_t(62) << cShift]);   // temp = piOrg[62] - piCur[62]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
+    sum += getWeightedMSE(rcDtParam.compID, piOrg[63], piCur[63], shift,
+                          piOrgLuma[size_t(63) << cShift]);   // temp = piOrg[63] - piCur[63]; sum += Distortion((
+                                                              // temp * temp ) >> shift);
     piOrg += iStrideOrg;
     piCur += iStrideCur;
 
     piOrgLuma += iStrideOrgLuma<<cShiftY;
   }
-  return ( uiSum );
+  return (sum);
 }
 #endif
 

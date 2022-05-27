@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -94,32 +94,16 @@ void addBIOAvgCore(const Pel* src0, int src0Stride, const Pel* src1, int src1Str
     for (int x = 0; x < width; x += 4)
     {
       b = tmpx * (gradX0[x] - gradX1[x]) + tmpy * (gradY0[x] - gradY1[x]);
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
       dst[x] = ClipPel(rightShift((src0[x] + src1[x] + b + offset), shift), clpRng);
-#else
-      dst[x] = ClipPel((int16_t)rightShift((src0[x] + src1[x] + b + offset), shift), clpRng);
-#endif
 
       b = tmpx * (gradX0[x + 1] - gradX1[x + 1]) + tmpy * (gradY0[x + 1] - gradY1[x + 1]);
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
       dst[x + 1] = ClipPel(rightShift((src0[x + 1] + src1[x + 1] + b + offset), shift), clpRng);
-#else
-      dst[x + 1] = ClipPel((int16_t)rightShift((src0[x + 1] + src1[x + 1] + b + offset), shift), clpRng);
-#endif
 
       b = tmpx * (gradX0[x + 2] - gradX1[x + 2]) + tmpy * (gradY0[x + 2] - gradY1[x + 2]);
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
       dst[x + 2] = ClipPel(rightShift((src0[x + 2] + src1[x + 2] + b + offset), shift), clpRng);
-#else
-      dst[x + 2] = ClipPel((int16_t)rightShift((src0[x + 2] + src1[x + 2] + b + offset), shift), clpRng);
-#endif
 
       b = tmpx * (gradX0[x + 3] - gradX1[x + 3]) + tmpy * (gradY0[x + 3] - gradY1[x + 3]);
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
       dst[x + 3] = ClipPel(rightShift((src0[x + 3] + src1[x + 3] + b + offset), shift), clpRng);
-#else
-      dst[x + 3] = ClipPel((int16_t)rightShift((src0[x + 3] + src1[x + 3] + b + offset), shift), clpRng);
-#endif
     }
     dst += dstStride;       src0 += src0Stride;     src1 += src1Stride;
     gradX0 += gradStride; gradX1 += gradStride; gradY0 += gradStride; gradY1 += gradStride;
@@ -148,25 +132,27 @@ void gradFilterCore(Pel* pSrc, int srcStride, int width, int height, int gradStr
 
   if (PAD)
   {
-  gradXTmp = gradX + gradStride + 1;
-  gradYTmp = gradY + gradStride + 1;
-  for (int y = 0; y < (height - 2 * BIO_EXTEND_SIZE); y++)
-  {
-    gradXTmp[-1] = gradXTmp[0];
-    gradXTmp[width - 2 * BIO_EXTEND_SIZE] = gradXTmp[width - 2 * BIO_EXTEND_SIZE - 1];
-    gradXTmp += gradStride;
+    gradXTmp = gradX + gradStride + 1;
+    gradYTmp = gradY + gradStride + 1;
+    for (int y = 0; y < (height - 2 * BIO_EXTEND_SIZE); y++)
+    {
+      gradXTmp[-1]                          = gradXTmp[0];
+      gradXTmp[width - 2 * BIO_EXTEND_SIZE] = gradXTmp[width - 2 * BIO_EXTEND_SIZE - 1];
+      gradXTmp += gradStride;
 
-    gradYTmp[-1] = gradYTmp[0];
-    gradYTmp[width - 2 * BIO_EXTEND_SIZE] = gradYTmp[width - 2 * BIO_EXTEND_SIZE - 1];
-    gradYTmp += gradStride;
-  }
+      gradYTmp[-1]                          = gradYTmp[0];
+      gradYTmp[width - 2 * BIO_EXTEND_SIZE] = gradYTmp[width - 2 * BIO_EXTEND_SIZE - 1];
+      gradYTmp += gradStride;
+    }
 
-  gradXTmp = gradX + gradStride;
-  gradYTmp = gradY + gradStride;
-  ::memcpy(gradXTmp - gradStride, gradXTmp, sizeof(Pel)*(width));
-  ::memcpy(gradXTmp + (height - 2 * BIO_EXTEND_SIZE)*gradStride, gradXTmp + (height - 2 * BIO_EXTEND_SIZE - 1)*gradStride, sizeof(Pel)*(width));
-  ::memcpy(gradYTmp - gradStride, gradYTmp, sizeof(Pel)*(width));
-  ::memcpy(gradYTmp + (height - 2 * BIO_EXTEND_SIZE)*gradStride, gradYTmp + (height - 2 * BIO_EXTEND_SIZE - 1)*gradStride, sizeof(Pel)*(width));
+    gradXTmp = gradX + gradStride;
+    gradYTmp = gradY + gradStride;
+    ::memcpy(gradXTmp - gradStride, gradXTmp, sizeof(Pel) * (width));
+    ::memcpy(gradXTmp + (height - 2 * BIO_EXTEND_SIZE) * gradStride,
+             gradXTmp + (height - 2 * BIO_EXTEND_SIZE - 1) * gradStride, sizeof(Pel) * (width));
+    ::memcpy(gradYTmp - gradStride, gradYTmp, sizeof(Pel) * (width));
+    ::memcpy(gradYTmp + (height - 2 * BIO_EXTEND_SIZE) * gradStride,
+             gradYTmp + (height - 2 * BIO_EXTEND_SIZE - 1) * gradStride, sizeof(Pel) * (width));
   }
 }
 
@@ -265,6 +251,40 @@ void removeHighFreq(int16_t* dst, int dstStride, const int16_t* src, int srcStri
 #undef REM_HF_OP
 #undef REM_HF_OP_CLIP
 }
+#if RExt__HIGH_BIT_DEPTH_SUPPORT
+void removeWeightHighFreq_HBD(Pel* dst, int dstStride, const Pel* src, int srcStride, int width, int height, int shift, int bcwWeight)
+{
+  Intermediate_Int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
+  Intermediate_Int weight0 = normalizer << g_BcwLog2WeightBase;
+  Intermediate_Int weight1 = (g_BcwWeightBase - bcwWeight)*normalizer;
+#define REM_HF_INC  \
+  src += srcStride; \
+  dst += dstStride; \
+
+#define REM_HF_OP( ADDR )      dst[ADDR] =             (Pel)((dst[ADDR]*weight0 - src[ADDR]*weight1 + (1<<15))>>16)
+
+  SIZE_AWARE_PER_EL_OP(REM_HF_OP, REM_HF_INC);
+
+#undef REM_HF_INC
+#undef REM_HF_OP
+#undef REM_HF_OP_CLIP
+}
+
+void removeHighFreq_HBD(Pel* dst, int dstStride, const Pel* src, int srcStride, int width, int height)
+{
+#define REM_HF_INC  \
+  src += srcStride; \
+  dst += dstStride; \
+
+#define REM_HF_OP( ADDR )      dst[ADDR] =             2 * dst[ADDR] - src[ADDR]
+
+  SIZE_AWARE_PER_EL_OP(REM_HF_OP, REM_HF_INC);
+
+#undef REM_HF_INC
+#undef REM_HF_OP
+#undef REM_HF_OP_CLIP
+}
+#endif
 #endif
 
 template<typename T>
@@ -315,10 +335,17 @@ PelBufferOps::PelBufferOps()
   copyBuffer = copyBufferCore;
   padding = paddingCore;
 #if ENABLE_SIMD_OPT_BCW
+#if RExt__HIGH_BIT_DEPTH_SUPPORT
+  removeWeightHighFreq8 = removeWeightHighFreq_HBD;
+  removeWeightHighFreq4 = removeWeightHighFreq_HBD;
+  removeHighFreq8 = removeHighFreq_HBD;
+  removeHighFreq4 = removeHighFreq_HBD;
+#else
   removeWeightHighFreq8 = removeWeightHighFreq;
   removeWeightHighFreq4 = removeWeightHighFreq;
   removeHighFreq8 = removeHighFreq;
   removeHighFreq4 = removeHighFreq;
+#endif
 #endif
 
   profGradFilter = gradFilterCore <false>;
@@ -377,11 +404,7 @@ void AreaBuf<Pel>::addWeightedAvg(const AreaBuf<const Pel> &other1, const AreaBu
   const unsigned src2Stride = other2.stride;
   const unsigned destStride = stride;
   const int clipbd = clpRng.bd;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
   const int shiftNum = IF_INTERNAL_FRAC_BITS(clipbd) + log2WeightBase;
-#else
-  const int shiftNum = std::max<int>(2, (IF_INTERNAL_PREC - clipbd)) + log2WeightBase;
-#endif
   const int offset = (1 << (shiftNum - 1)) + (IF_INTERNAL_OFFS << log2WeightBase);
 
 #define ADD_AVG_OP( ADDR ) dest[ADDR] = ClipPel( rightShift( ( src0[ADDR]*w0 + src2[ADDR]*w1 + offset ), shiftNum ), clpRng )
@@ -401,15 +424,15 @@ void AreaBuf<Pel>::rspSignal(std::vector<Pel>& pLUT)
 {
   Pel* dst = buf;
   Pel* src = buf;
-    for (unsigned y = 0; y < height; y++)
+  for (unsigned y = 0; y < height; y++)
+  {
+    for (unsigned x = 0; x < width; x++)
     {
-      for (unsigned x = 0; x < width; x++)
-      {
-        dst[x] = pLUT[src[x]];
-      }
-      dst += stride;
-      src += stride;
+      dst[x] = pLUT[src[x]];
     }
+    dst += stride;
+    src += stride;
+  }
 }
 
 template<>
@@ -464,6 +487,62 @@ void AreaBuf<Pel>::scaleSignal(const int scale, const bool dir, const ClpRng& cl
 }
 
 template<>
+void AreaBuf<Pel>::applyLumaCTI(std::vector<Pel>& pLUTY)
+{
+  Pel* dst = buf;
+  Pel* src = buf;
+  for (unsigned y = 0; y < height; y++)
+  {
+    for (unsigned x = 0; x < width; x++)
+    {
+      dst[x] = pLUTY[src[x]];
+    }
+    dst += stride;
+    src += stride;
+  }
+}
+
+template<>
+void AreaBuf<Pel>::applyChromaCTI(Pel* bufY, int strideY, std::vector<Pel>& pLUTC, int bitDepth, ChromaFormat chrFormat, bool fwdMap)
+{
+  int range = 1 << bitDepth;
+  int offset = range / 2;
+  int sx = 1 << getComponentScaleX(COMPONENT_Cb, chrFormat);
+  int sy = 1 << getComponentScaleY(COMPONENT_Cb, chrFormat);
+
+  Pel* dst = buf;
+  Pel* src = buf;
+  if (fwdMap)
+  {
+    for (unsigned y = 0; y < height; y++)
+    {
+      for (unsigned x = 0; x < width; x++)
+      {
+        int pelY = bufY[sy * y * strideY + sx * x];
+        double scale = (double)pLUTC[pelY] / (double)(1 << CSCALE_FP_PREC);
+        dst[x] = Clip3((Pel)0, (Pel)(range - 1), (Pel)(offset + (double)(src[x] - offset) / scale + .5));
+      }
+      dst += stride;
+      src += stride;
+    }
+  }
+  else
+  {
+    for (unsigned y = 0; y < height; y++)
+    {
+      for (unsigned x = 0; x < width; x++)
+      {
+        int pelY = bufY[sy * y * strideY + sx * x];
+        int scal = pLUTC[pelY];
+        dst[x] = Clip3(0, range - 1, ((offset << CSCALE_FP_PREC) + (src[x] - offset) * scal + (1 << (CSCALE_FP_PREC - 1))) >> CSCALE_FP_PREC);
+      }
+      dst += stride;
+      src += stride;
+    }
+  }
+}
+
+template<>
 void AreaBuf<Pel>::addAvg( const AreaBuf<const Pel> &other1, const AreaBuf<const Pel> &other2, const ClpRng& clpRng)
 {
   const Pel* src0 = other1.buf;
@@ -474,11 +553,7 @@ void AreaBuf<Pel>::addAvg( const AreaBuf<const Pel> &other1, const AreaBuf<const
   const unsigned src2Stride = other2.stride;
   const unsigned destStride =        stride;
   const int     clipbd      = clpRng.bd;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
   const int shiftNum = IF_INTERNAL_FRAC_BITS(clipbd) + 1;
-#else
-  const int     shiftNum    = std::max<int>(2, (IF_INTERNAL_PREC - clipbd)) + 1;
-#endif
   const int     offset      = (1 << (shiftNum - 1)) + 2 * IF_INTERNAL_OFFS;
 
 #if ENABLE_SIMD_OPT_BUFFER && defined(TARGET_SIMD_X86)
@@ -513,11 +588,7 @@ void AreaBuf<Pel>::toLast( const ClpRng& clpRng )
   const uint32_t srcStride = stride;
 
   const int  clipbd    = clpRng.bd;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
   const int shiftNum = IF_INTERNAL_FRAC_BITS(clipbd);
-#else
-  const int  shiftNum  = std::max<int>(2, (IF_INTERNAL_PREC - clipbd));
-#endif
   const int  offset    = ( 1 << ( shiftNum - 1 ) ) + IF_INTERNAL_OFFS;
 
   if (width == 1)
@@ -590,11 +661,7 @@ void AreaBuf<Pel>::roundToOutputBitdepth( const AreaBuf<const Pel> &src, const C
   const unsigned destStride = stride;
 
   const int32_t clipbd            = clpRng.bd;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
   const int32_t shiftDefault      = IF_INTERNAL_FRAC_BITS(clipbd);
-#else
-  const int32_t shiftDefault      = std::max<int>(2, (IF_INTERNAL_PREC - clipbd));
-#endif
   const int32_t offsetDefault     = (1<<(shiftDefault-1)) + IF_INTERNAL_OFFS;
 
   if( width == 1 )
@@ -863,57 +930,57 @@ void UnitBuf<Pel>::colorSpaceConvert(const UnitBuf<Pel> &other, const bool forwa
   CHECK(other.bufs[COMPONENT_Y].stride != other.bufs[COMPONENT_Cb].stride || other.bufs[COMPONENT_Y].stride != other.bufs[COMPONENT_Cr].stride, "unequal stride for 444 content");
   CHECK(bufs[COMPONENT_Y].width != other.bufs[COMPONENT_Y].width || bufs[COMPONENT_Y].height != other.bufs[COMPONENT_Y].height, "unequal block size")
 
-    if (forward)
+  if (forward)
+  {
+    for (int y = 0; y < height; y++)
     {
-      for (int y = 0; y < height; y++)
+      for (int x = 0; x < width; x++)
       {
-        for (int x = 0; x < width; x++)
-        {
-          r = pOrg2[x];
-          g = pOrg0[x];
-          b = pOrg1[x];
+        r = pOrg2[x];
+        g = pOrg0[x];
+        b = pOrg1[x];
 
-          co = r - b;
-          int t = b + (co >> 1);
-          cg = g - t;
-          pDst0[x] = t + (cg >> 1);
-          pDst1[x] = cg;
-          pDst2[x] = co;
-        }
-        pOrg0 += strideOrg;
-        pOrg1 += strideOrg;
-        pOrg2 += strideOrg;
-        pDst0 += strideDst;
-        pDst1 += strideDst;
-        pDst2 += strideDst;
+        co       = r - b;
+        int t    = b + (co >> 1);
+        cg       = g - t;
+        pDst0[x] = t + (cg >> 1);
+        pDst1[x] = cg;
+        pDst2[x] = co;
       }
+      pOrg0 += strideOrg;
+      pOrg1 += strideOrg;
+      pOrg2 += strideOrg;
+      pDst0 += strideDst;
+      pDst1 += strideDst;
+      pDst2 += strideDst;
     }
-    else
+  }
+  else
+  {
+    for (int y = 0; y < height; y++)
     {
-      for (int y = 0; y < height; y++)
+      for (int x = 0; x < width; x++)
       {
-        for (int x = 0; x < width; x++)
-        {
-          y0 = pOrg0[x];
-          cg = pOrg1[x];
-          co = pOrg2[x];
+        y0 = pOrg0[x];
+        cg = pOrg1[x];
+        co = pOrg2[x];
 
-          y0 = Clip3((-maxAbsclipBD - 1), maxAbsclipBD, y0);
-          cg = Clip3((-maxAbsclipBD - 1), maxAbsclipBD, cg);
-          co = Clip3((-maxAbsclipBD - 1), maxAbsclipBD, co);
+        y0 = Clip3((-maxAbsclipBD - 1), maxAbsclipBD, y0);
+        cg = Clip3((-maxAbsclipBD - 1), maxAbsclipBD, cg);
+        co = Clip3((-maxAbsclipBD - 1), maxAbsclipBD, co);
 
-          int t = y0 - (cg >> 1);
-          pDst0[x] = cg + t;
-          pDst1[x] = t - (co >> 1);
-          pDst2[x] = co + pDst1[x];
-        }
-
-        pOrg0 += strideOrg;
-        pOrg1 += strideOrg;
-        pOrg2 += strideOrg;
-        pDst0 += strideDst;
-        pDst1 += strideDst;
-        pDst2 += strideDst;
+        int t    = y0 - (cg >> 1);
+        pDst0[x] = cg + t;
+        pDst1[x] = t - (co >> 1);
+        pDst2[x] = co + pDst1[x];
       }
+
+      pOrg0 += strideOrg;
+      pOrg1 += strideOrg;
+      pOrg2 += strideOrg;
+      pDst0 += strideDst;
+      pDst1 += strideDst;
+      pDst2 += strideDst;
     }
+  }
 }

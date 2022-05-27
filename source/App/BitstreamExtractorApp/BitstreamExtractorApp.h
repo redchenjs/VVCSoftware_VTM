@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,9 +50,7 @@
 #include "VLCWriter.h"
 
 #include "SEIread.h"
-#if JVET_R0294_SUBPIC_HASH
 #include "SEIwrite.h"
-#endif
 class BitstreamExtractorApp : public BitstreamExtractorAppCfg
 {
 
@@ -66,30 +64,14 @@ protected:
   void xPrintVPSInfo (VPS *vps);
   void xPrintSubPicInfo (PPS *pps);
   void xRewriteSPS (SPS &targetSPS, const SPS &sourceSPS, SubPic &subPic);
-#if JVET_S0154_R0068_ASPECT5
   void xRewritePPS (PPS &targetPPS, const PPS &sourcePPS, const SPS &sourceSPS, SubPic &subPic);
-  bool xCheckSeiSubpicture(SEIMessages SEIs, int targetSubPicId, bool &rmAllFillerInSubpicExt, bool lastSliceWritten, bool isVclNalUnitRemoved);
-#else
-  void xRewritePPS (PPS &targetPPS, const PPS &sourcePPS, SubPic &subPic);
-#endif
+  bool xCheckSEIFiller(SEIMessages SEIs, int targetSubPicId, bool &rmAllFillerInSubpicExt, bool lastSliceWritten);
 
-#if JVET_R0107_BITSTREAM_EXTACTION
   Slice xParseSliceHeader(InputNALUnit &nalu);
   bool  xCheckSliceSubpicture(Slice &slice, int subPicId);
-#else
-  bool xCheckSliceSubpicture(InputNALUnit &nalu, int subPicId);
-#endif
   void xReadPicHeader(InputNALUnit &nalu);
-#if JVET_R0294_SUBPIC_HASH
-#if JVET_S0154_R0068_ASPECT5
-  bool xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit& nalu, std::ostream& out, int subpicId);
-#else
-  bool xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit& nalu, std::ostream& out);
-#endif
-#endif
-#if JVET_S0158_SUB_BITSTREAM_EXT
-  bool xCheckScalableNestingSEI(SEIScalableNesting *seiNesting, InputNALUnit& nalu, VPS *vps);
-#endif
+  bool xIsTargetOlsIncludeAllVclLayers();
+  bool xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit& nalu, std::ostream& out, int subpicId, VPS *vps);
 
   void xSetSPSUpdated(int spsId)   { return m_updatedSPSList.push_back(spsId); }
   bool xIsSPSUpdate(int spsId)     { return (std::find(m_updatedSPSList.begin(),m_updatedSPSList.end(), spsId) != m_updatedSPSList.end()); }
@@ -105,10 +87,8 @@ protected:
   HLSyntaxReader        m_hlSynaxReader;
   HLSWriter             m_hlSyntaxWriter;
   SEIReader             m_seiReader;
-#if JVET_R0294_SUBPIC_HASH
   SEIWriter             m_seiWriter;
   HRD                   m_hrd;
-#endif
 
   int                   m_vpsId;
   bool                  m_removeTimingSEI;

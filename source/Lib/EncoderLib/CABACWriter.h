@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,11 @@ class EncCu;
 class CABACWriter
 {
 public:
-  CABACWriter(BinEncIf& binEncoder)   : m_BinEncoder(binEncoder), m_Bitstream(0) { m_TestCtx = m_BinEncoder.getCtx(); m_EncCu = NULL; }
+  CABACWriter(BinEncIf &binEncoder) : m_BinEncoder(binEncoder), m_Bitstream(0)
+  {
+    m_TestCtx = m_BinEncoder.getCtx();
+    m_EncCu   = nullptr;
+  }
   virtual ~CABACWriter() {}
 
 public:
@@ -149,7 +153,7 @@ public:
   void        last_sig_coeff            ( CoeffCodingContext&           cctx,     const TransformUnit& tu, ComponentID       compID );
   void        residual_coding_subblock  ( CoeffCodingContext&           cctx,     const TCoeff*     coeff, const int stateTransTable, int& state );
   void        residual_codingTS         ( const TransformUnit&          tu,       ComponentID       compID );
-  void        residual_coding_subblockTS( CoeffCodingContext&           cctx,     const TCoeff*     coeff  );
+  void        residual_coding_subblockTS( CoeffCodingContext&           cctx,     const TCoeff*     coeff, unsigned (&RiceBit)[8], int riceParam, bool ricePresentFlag);
   void        joint_cb_cr               ( const TransformUnit&          tu,       const int cbfMask );
 
 
@@ -160,7 +164,8 @@ public:
 
   void        codeAlfCtuAlternatives     ( CodingStructure& cs, ChannelType channel, AlfParam* alfParam);
   void        codeAlfCtuAlternatives     ( CodingStructure& cs, ComponentID compID, AlfParam* alfParam);
-  void        codeAlfCtuAlternative      ( CodingStructure& cs, uint32_t ctuRsAddr, const int compIdx, const AlfParam* alfParam = NULL );
+  void        codeAlfCtuAlternative(CodingStructure &cs, uint32_t ctuRsAddr, const int compIdx,
+                                    const AlfParam *alfParam = nullptr);
   void codeCcAlfFilterControlIdc(uint8_t idcVal, CodingStructure &cs, const ComponentID compID, const int curIdx,
                                  const uint8_t *filterControlIdc, Position lumaPos, const int filterCount);
 

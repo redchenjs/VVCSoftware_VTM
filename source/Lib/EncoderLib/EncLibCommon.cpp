@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,7 @@ EncLibCommon::EncLibCommon()
   , m_ppsMap( MAX_NUM_PPS )
   , m_apsMap( MAX_NUM_APS * MAX_NUM_APS_TYPE )
 {
+  std::memset( m_layerDecPicBuffering, 0, sizeof( m_layerDecPicBuffering ) );
 }
 
 EncLibCommon::~EncLibCommon()

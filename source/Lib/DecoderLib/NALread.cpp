@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -111,7 +111,8 @@ static void xTraceNalUnitHeader(InputNALUnit& nalu)
 {
   DTRACE( g_trace_ctx, D_NALUNITHEADER, "*********** NAL UNIT (%s) ***********\n", nalUnitTypeToString(nalu.m_nalUnitType) );
   bool zeroTidRequiredFlag = 0;
-  if((nalu.m_nalUnitType >= 16) && (nalu.m_nalUnitType <= 31)) {
+  if ((nalu.m_nalUnitType >= 16) && (nalu.m_nalUnitType <= 31))
+  {
     zeroTidRequiredFlag = 1;
   }
   DTRACE( g_trace_ctx, D_NALUNITHEADER, "%-50s u(%d)  : %u\n", "zero_tid_required_flag", 1, zeroTidRequiredFlag );
@@ -163,10 +164,12 @@ void read(InputNALUnit& nalu)
   InputBitstream &bitstream = nalu.getBitstream();
   vector<uint8_t>& nalUnitBuf=bitstream.getFifo();
   // perform anti-emulation prevention
-  convertPayloadToRBSP(nalUnitBuf, &bitstream, (nalUnitBuf[0] & 64) == 0);
+  const NalUnitType nut = (NalUnitType)(nalUnitBuf[1] >> 3);
+  convertPayloadToRBSP(nalUnitBuf, &bitstream, nut <= NAL_UNIT_RESERVED_IRAP_VCL_11);
   bitstream.resetToStart();
   readNalUnitHeader(nalu);
 }
+
 bool checkPictureHeaderInSliceHeaderFlag(InputNALUnit& nalu)
 {
   InputBitstream& bitstream = nalu.getBitstream();

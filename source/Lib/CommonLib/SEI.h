@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,24 +61,39 @@ public:
     USER_DATA_UNREGISTERED               = 5,
     FILM_GRAIN_CHARACTERISTICS           = 19,
     FRAME_PACKING                        = 45,
+    DISPLAY_ORIENTATION                  = 47,
+    GREEN_METADATA                       = 56,
     PARAMETER_SETS_INCLUSION_INDICATION  = 129,
     DECODING_UNIT_INFO                   = 130,
     DECODED_PICTURE_HASH                 = 132,
     SCALABLE_NESTING                     = 133,
     MASTERING_DISPLAY_COLOUR_VOLUME      = 137,
+    COLOUR_TRANSFORM_INFO                = 142,
     DEPENDENT_RAP_INDICATION             = 145,
     EQUIRECTANGULAR_PROJECTION           = 150,
     SPHERE_ROTATION                      = 154,
     REGION_WISE_PACKING                  = 155,
     OMNI_VIEWPORT                        = 156,
     GENERALIZED_CUBEMAP_PROJECTION       = 153,
+    ALPHA_CHANNEL_INFO                   = 165,
     FRAME_FIELD_INFO                     = 168,
+    DEPTH_REPRESENTATION_INFO            = 177,
+    MULTIVIEW_ACQUISITION_INFO           = 179,
+    MULTIVIEW_VIEW_POSITION              = 180,
     SUBPICTURE_LEVEL_INFO                = 203,
     SAMPLE_ASPECT_RATIO_INFO             = 204,
     CONTENT_LIGHT_LEVEL_INFO             = 144,
     ALTERNATIVE_TRANSFER_CHARACTERISTICS = 147,
     AMBIENT_VIEWING_ENVIRONMENT          = 148,
     CONTENT_COLOUR_VOLUME                = 149,
+    ANNOTATED_REGIONS                    = 202,
+    SCALABILITY_DIMENSION_INFO           = 205,
+    EXTENDED_DRAP_INDICATION             = 206,
+    CONSTRAINED_RASL_ENCODING            = 207,
+    VDI_SEI_ENVELOPE             = 208,
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+    SHUTTER_INTERVAL_INFO                = 209,
+#endif
   };
 
   SEI() {}
@@ -89,6 +104,22 @@ public:
   virtual PayloadType payloadType() const = 0;
 };
 
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+class SEIShutterIntervalInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return SHUTTER_INTERVAL_INFO; }
+  SEIShutterIntervalInfo() {}
+  virtual ~SEIShutterIntervalInfo() {}
+
+  bool                  m_siiEnabled;
+  unsigned              m_siiNumUnitsInShutterInterval;
+  unsigned              m_siiTimeScale;
+  unsigned              m_siiMaxSubLayersMinus1;
+  bool                  m_siiFixedSIwithinCLVS;
+  std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
+};
+#endif
 
 class SEIEquirectangularProjection : public SEI
 {
@@ -201,6 +232,199 @@ public:
   uint8_t              m_gcmpGuardBandSamplesMinus1;
 };
 
+class SEIScalabilityDimensionInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return SCALABILITY_DIMENSION_INFO; }
+  SEIScalabilityDimensionInfo()
+  : m_sdiNumViews (0)
+  , m_sdiMaxLayersMinus1 (0)
+  , m_sdiMultiviewInfoFlag (false)
+  , m_sdiAuxiliaryInfoFlag (false)
+  , m_sdiViewIdLenMinus1 (0)
+  {
+  }
+  virtual ~SEIScalabilityDimensionInfo() {}
+  bool isSDISameContent(SEIScalabilityDimensionInfo* sdiB);
+
+  int                   m_sdiNumViews;
+  int                   m_sdiMaxLayersMinus1;
+  bool                  m_sdiMultiviewInfoFlag;
+  bool                  m_sdiAuxiliaryInfoFlag;
+  int                   m_sdiViewIdLenMinus1;
+  std::vector<int>      m_sdiLayerId;
+  std::vector<int>      m_sdiViewIdVal;
+  std::vector<int>      m_sdiAuxId;
+  std::vector<int>      m_sdiNumAssociatedPrimaryLayersMinus1;
+  std::vector<std::vector<int>> m_sdiAssociatedPrimaryLayerIdx;
+};
+
+class SEIMultiviewAcquisitionInfo : public SEI
+{
+public:
+  PayloadType payloadType( ) const { return MULTIVIEW_ACQUISITION_INFO; }
+  SEIMultiviewAcquisitionInfo ( ) { };
+  ~SEIMultiviewAcquisitionInfo( ) { };
+  SEI* getCopy( ) const { return new SEIMultiviewAcquisitionInfo(*this); };
+  bool isMAISameContent(SEIMultiviewAcquisitionInfo* maiB);
+
+  void resizeArrays( )
+  {
+    int numViews = m_maiIntrinsicParamsEqualFlag ? 1 : m_maiNumViewsMinus1 + 1;
+    m_maiSignFocalLengthX       .resize( numViews );
+    m_maiExponentFocalLengthX   .resize( numViews );
+    m_maiMantissaFocalLengthX   .resize( numViews );
+    m_maiSignFocalLengthY       .resize( numViews );
+    m_maiExponentFocalLengthY   .resize( numViews );
+    m_maiMantissaFocalLengthY   .resize( numViews );
+    m_maiSignPrincipalPointX    .resize( numViews );
+    m_maiExponentPrincipalPointX.resize( numViews );
+    m_maiMantissaPrincipalPointX.resize( numViews );
+    m_maiSignPrincipalPointY    .resize( numViews );
+    m_maiExponentPrincipalPointY.resize( numViews );
+    m_maiMantissaPrincipalPointY.resize( numViews );
+    m_maiSignSkewFactor         .resize( numViews );
+    m_maiExponentSkewFactor     .resize( numViews );
+    m_maiMantissaSkewFactor     .resize( numViews );
+
+    m_maiSignR                  .resize( m_maiNumViewsMinus1 + 1 );
+    m_maiExponentR              .resize( m_maiNumViewsMinus1 + 1 );
+    m_maiMantissaR              .resize( m_maiNumViewsMinus1 + 1 );
+    m_maiSignT                  .resize( m_maiNumViewsMinus1 + 1 );
+    m_maiExponentT              .resize( m_maiNumViewsMinus1 + 1 );
+    m_maiMantissaT              .resize( m_maiNumViewsMinus1 + 1 );
+
+    for( int i = 0; i <= m_maiNumViewsMinus1 ; i++ )
+    {
+      m_maiSignR    [i].resize( 3 );
+      m_maiExponentR[i].resize( 3 );
+      m_maiMantissaR[i].resize( 3 );
+      m_maiSignT    [i].resize( 3 );
+      m_maiExponentT[i].resize( 3 );
+      m_maiMantissaT[i].resize( 3 );
+
+      for (int j = 0; j < 3; j++)
+      {
+        m_maiSignR    [i][j].resize( 3 );
+        m_maiExponentR[i][j].resize( 3 );
+        m_maiMantissaR[i][j].resize( 3 );
+      }
+    }
+  }
+
+  uint32_t getMantissaFocalLengthXLen   (int i) const;
+  uint32_t getMantissaFocalLengthYLen   (int i) const;
+  uint32_t getMantissaPrincipalPointXLen(int i) const;
+  uint32_t getMantissaPrincipalPointYLen(int i) const;
+  uint32_t getMantissaSkewFactorLen     (int i) const;
+  uint32_t getMantissaRLen              (int i, int j, int k ) const;
+  uint32_t getMantissaTLen              (int i, int j )        const;
+
+  bool              m_maiIntrinsicParamFlag;
+  bool              m_maiExtrinsicParamFlag;
+  int               m_maiNumViewsMinus1;
+  bool              m_maiIntrinsicParamsEqualFlag;
+  int               m_maiPrecFocalLength;
+  int               m_maiPrecPrincipalPoint;
+  int               m_maiPrecSkewFactor;
+  std::vector<bool> m_maiSignFocalLengthX;
+  std::vector<int>  m_maiExponentFocalLengthX;
+  std::vector<int>  m_maiMantissaFocalLengthX;
+  std::vector<bool> m_maiSignFocalLengthY;
+  std::vector<int>  m_maiExponentFocalLengthY;
+  std::vector<int>  m_maiMantissaFocalLengthY;
+  std::vector<bool> m_maiSignPrincipalPointX;
+  std::vector<int>  m_maiExponentPrincipalPointX;
+  std::vector<int>  m_maiMantissaPrincipalPointX;
+  std::vector<bool> m_maiSignPrincipalPointY;
+  std::vector<int>  m_maiExponentPrincipalPointY;
+  std::vector<int>  m_maiMantissaPrincipalPointY;
+  std::vector<bool> m_maiSignSkewFactor;
+  std::vector<int>  m_maiExponentSkewFactor;
+  std::vector<int>  m_maiMantissaSkewFactor;
+  int               m_maiPrecRotationParam;
+  int               m_maiPrecTranslationParam;
+  std::vector< std::vector<std::vector<bool>>> m_maiSignR;
+  std::vector< std::vector<std::vector<int>>>  m_maiExponentR;
+  std::vector< std::vector<std::vector<int>>>  m_maiMantissaR;
+  std::vector< std::vector<bool>> m_maiSignT;
+  std::vector< std::vector<int>>  m_maiExponentT;
+  std::vector< std::vector<int>>  m_maiMantissaT;
+private:
+  uint32_t xGetSyntaxElementLen( int expo, int prec, int val ) const;
+};
+
+class SEIMultiviewViewPosition : public SEI
+{
+public:
+  PayloadType payloadType() const { return MULTIVIEW_VIEW_POSITION; }
+  SEIMultiviewViewPosition() { };
+  ~SEIMultiviewViewPosition() { };
+  bool isMVPSameContent(SEIMultiviewViewPosition* mvpB);
+
+  int               m_mvpNumViewsMinus1;
+  std::vector<int>  m_mvpViewPosition;
+};
+
+class SEIAlphaChannelInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return ALPHA_CHANNEL_INFO; }
+  SEIAlphaChannelInfo()
+  : m_aciCancelFlag (false)
+  , m_aciUseIdc (0)
+  , m_aciBitDepthMinus8 (0)
+  , m_aciTransparentValue (0)
+  , m_aciOpaqueValue (255)
+  , m_aciIncrFlag (false)
+  , m_aciClipFlag (false)
+  , m_aciClipTypeFlag (false)
+  {};
+  virtual ~SEIAlphaChannelInfo() {};
+
+  bool m_aciCancelFlag;
+  int  m_aciUseIdc;
+  int  m_aciBitDepthMinus8;
+  int  m_aciTransparentValue;
+  int  m_aciOpaqueValue;
+  bool m_aciIncrFlag;
+  bool m_aciClipFlag;
+  bool m_aciClipTypeFlag;
+};
+
+class SEIDepthRepresentationInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return DEPTH_REPRESENTATION_INFO; }
+  SEIDepthRepresentationInfo()
+  : m_driZNearFlag (false)
+  , m_driZFarFlag (false)
+  , m_driDMinFlag (false)
+  , m_driDMaxFlag (false)
+  , m_driZNear (0.0)
+  , m_driZFar (0.0)
+  , m_driDMin (0.0)
+  , m_driDMax (0.0)
+  , m_driDepthRepresentationType (0)
+  , m_driDisparityRefViewId (0)
+  , m_driDepthNonlinearRepresentationNumMinus1 (0)
+  {};
+  virtual ~SEIDepthRepresentationInfo() {};
+
+  bool m_driZNearFlag;
+  bool m_driZFarFlag;
+  bool m_driDMinFlag;
+  bool m_driDMaxFlag;
+  double m_driZNear;
+  double m_driZFar;
+  double m_driDMin;
+  double m_driDMax;
+  int m_driDepthRepresentationType;
+  int m_driDisparityRefViewId;
+  int m_driDepthNonlinearRepresentationNumMinus1;
+  std::vector<int> m_driDepthNonlinearRepresentationModel;
+};
+
 class SEISampleAspectRatioInfo : public SEI
 {
 public:
@@ -244,6 +468,7 @@ public:
   virtual ~SEIDecodedPictureHash() {}
 
   HashType method;
+  bool     singleCompFlag;
 
   PictureHash m_pictureHash;
 };
@@ -312,7 +537,7 @@ public:
   bool m_cpbRemovalDelayDeltasPresentFlag;
   int  m_numCpbRemovalDelayDeltas;
   int  m_bpMaxSubLayers;
-  uint32_t m_cpbRemovalDelayDelta    [15];
+  uint32_t m_cpbRemovalDelayDelta    [16];
   bool m_bpDecodingUnitHrdParamsPresentFlag;
   bool m_decodingUnitCpbParamsInPicTimingSeiFlag;
   bool m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
@@ -381,7 +606,7 @@ public:
   SEIDecodingUnitInfo()
     : m_decodingUnitIdx(0)
     , m_dpbOutputDuDelayPresentFlag(false)
-    , m_picSptDpbOutputDuDelay(0)
+    , m_picSptDpbOutputDuDelay(-1)
   {
     ::memset(m_duiSubLayerDelaysPresentFlag, 0, sizeof(m_duiSubLayerDelaysPresentFlag));
     ::memset(m_duSptCpbRemovalDelayIncrement, 0, sizeof(m_duSptCpbRemovalDelayIncrement));
@@ -452,6 +677,61 @@ public:
   bool m_arrangementPersistenceFlag;
   bool m_upsampledAspectRatio;
 };
+
+class SEIDisplayOrientation : public SEI
+{
+public:
+  PayloadType payloadType() const { return DISPLAY_ORIENTATION; }
+
+  SEIDisplayOrientation() {}
+  virtual ~SEIDisplayOrientation() {}
+
+  bool                  m_doCancelFlag;
+  bool                  m_doPersistenceFlag;
+  int                   m_doTransformType;
+};
+
+class SEIGreenMetadata : public SEI
+{
+public:
+  PayloadType payloadType() const { return GREEN_METADATA; }
+
+  SEIGreenMetadata() {}
+  virtual ~SEIGreenMetadata() {}
+};
+
+
+#ifdef JVET_Z0046_Green_Metadata
+class SEIGreenMetadataInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return GREEN_METADATA; }
+  SEIGreenMetadataInfo() {}
+
+  virtual ~SEIGreenMetadataInfo() {}
+  int m_greenMetadataType =-1;
+  // Metrics for quality recovery after low-power encoding
+  int m_xsdSubpicNumberMinus1 = -1; //xsd_metric_number_minus1 plus 1 indicates the number of objective quality metrics contained in the SEI message.
+
+  int     m_xsdMetricValuePSNR;
+  int     m_xsdMetricValueSSIM;
+  int     m_xsdMetricValueWPSNR;
+  int    m_xsdMetricValueWSPSNR;
+
+  bool     m_xsdMetricTypePSNR;
+  bool     m_xsdMetricTypeSSIM;
+  bool     m_xsdMetricTypeWPSNR;
+  bool     m_xsdMetricTypeWSPSNR;
+
+  int      m_greenMetadataGranularityType = 0;
+  int      m_greenMetadataExtendedRepresentation = 0;
+  int m_periodType= -1;
+  int m_numPictures= -1;
+  int m_numSeconds = -1;
+  SEIComplexityMetrics m_greenComplexityMetrics;
+};
+#endif
+
 
 class SEIParameterSetsInclusionIndication : public SEI
 {
@@ -584,6 +864,7 @@ public:
   {
     bool  presentFlag;
     uint8_t numModelValues;
+    uint8_t numIntensityIntervals;
     std::vector<CompModelIntensityValues> intensityValues;
   };
 
@@ -616,6 +897,28 @@ public:
   uint16_t m_ambientLightY;
 };
 
+class SEIColourTransformInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return COLOUR_TRANSFORM_INFO; }
+  SEIColourTransformInfo() { }
+
+  virtual ~SEIColourTransformInfo() { }
+
+  uint16_t m_id;
+  bool     m_signalInfoFlag;
+  bool     m_fullRangeFlag;
+  uint16_t m_primaries;
+  uint16_t m_transferFunction;
+  uint16_t m_matrixCoefs;
+  bool     m_crossComponentFlag;
+  bool     m_crossComponentInferred;
+  uint16_t m_numberChromaLutMinus1;
+  int      m_chromaOffset;
+  uint16_t m_bitdepth;
+  uint16_t m_log2NumberOfPointsPerLut;
+  LutModel m_lut[MAX_NUM_COMPONENT];
+};
 class SEIContentColourVolume : public SEI
 {
 public:
@@ -648,10 +951,8 @@ public:
   , m_explicitFractionPresentFlag (false)
   , m_cbrConstraintFlag (false)
   , m_numSubpics(0)
-#if JVET_S0176_SLI_SEI
   , m_sliMaxSublayers(1)
   , m_sliSublayerInfoPresentFlag(false)
-#endif
   {}
   virtual ~SEISubpicureLevelInfo() {}
 
@@ -659,23 +960,110 @@ public:
   bool      m_explicitFractionPresentFlag;
   bool      m_cbrConstraintFlag;
   int       m_numSubpics;
-#if JVET_S0176_SLI_SEI
   int       m_sliMaxSublayers;
   bool      m_sliSublayerInfoPresentFlag;
-#if JVET_S0098_SLI_FRACTION
   std::vector<std::vector<int>>              m_nonSubpicLayersFraction;
-#endif
   std::vector<std::vector<Level::Name>>      m_refLevelIdc;
   std::vector<std::vector<std::vector<int>>> m_refLevelFraction;
-#else
-  std::vector<Level::Name>      m_refLevelIdc;
-  std::vector<std::vector<int>> m_refLevelFraction;
-#endif
 };
 
+class SEIAnnotatedRegions : public SEI
+{
+public:
+  PayloadType payloadType() const { return ANNOTATED_REGIONS; }
+  SEIAnnotatedRegions() {}
+  virtual ~SEIAnnotatedRegions() {}
 
+  void copyFrom(const SEIAnnotatedRegions &seiAnnotatedRegions)
+  {
+    (*this) = seiAnnotatedRegions;
+  }
 
+  struct AnnotatedRegionObject
+  {
+    AnnotatedRegionObject() :
+      objectCancelFlag(false),
+      objectLabelValid(false),
+      boundingBoxValid(false)
+    { }
+    bool objectCancelFlag;
 
+    bool objectLabelValid;
+    uint32_t objLabelIdx;            // only valid if bObjectLabelValid
+
+    bool boundingBoxValid;
+    bool boundingBoxCancelFlag;
+    uint32_t boundingBoxTop;         // only valid if bBoundingBoxValid
+    uint32_t boundingBoxLeft;
+    uint32_t boundingBoxWidth;
+    uint32_t boundingBoxHeight;
+
+    bool partialObjectFlag;        // only valid if bPartialObjectFlagValid
+    uint32_t objectConfidence;
+  };
+  struct AnnotatedRegionLabel
+  {
+    AnnotatedRegionLabel() : labelValid(false) { }
+    bool        labelValid;
+    std::string label;           // only valid if bLabelValid
+  };
+
+  struct AnnotatedRegionHeader
+  {
+    AnnotatedRegionHeader() : m_cancelFlag(true), m_receivedSettingsOnce(false) { }
+    bool      m_cancelFlag;
+    bool      m_receivedSettingsOnce; // used for decoder conformance checking. Other confidence flags must be unchanged once this flag is set.
+
+    bool      m_notOptimizedForViewingFlag;
+    bool      m_trueMotionFlag;
+    bool      m_occludedObjectFlag;
+    bool      m_partialObjectFlagPresentFlag;
+    bool      m_objectLabelPresentFlag;
+    bool      m_objectConfidenceInfoPresentFlag;
+    uint32_t      m_objectConfidenceLength;         // Only valid if m_objectConfidenceInfoPresentFlag
+    bool      m_objectLabelLanguagePresentFlag; // Only valid if m_objectLabelPresentFlag
+    std::string m_annotatedRegionsObjectLabelLang;
+  };
+  typedef uint32_t AnnotatedRegionObjectIndex;
+  typedef uint32_t AnnotatedRegionLabelIndex;
+
+  AnnotatedRegionHeader m_hdr;
+  std::vector<std::pair<AnnotatedRegionObjectIndex, AnnotatedRegionObject> > m_annotatedRegions;
+  std::vector<std::pair<AnnotatedRegionLabelIndex,  AnnotatedRegionLabel>  > m_annotatedLabels;
+};
+
+class SEIExtendedDrapIndication : public SEI
+{
+public:
+  PayloadType payloadType() const { return EXTENDED_DRAP_INDICATION; }
+
+  SEIExtendedDrapIndication() {}
+  virtual ~SEIExtendedDrapIndication() {}
+
+  int               m_edrapIndicationRapIdMinus1;
+  bool              m_edrapIndicationLeadingPicturesDecodableFlag;
+  int               m_edrapIndicationReservedZero12Bits;
+  int               m_edrapIndicationNumRefRapPicsMinus1;
+  std::vector<int>  m_edrapIndicationRefRapId;
+};
+
+class SEIConstrainedRaslIndication : public SEI
+{
+public:
+  PayloadType payloadType() const { return CONSTRAINED_RASL_ENCODING; }
+  SEIConstrainedRaslIndication() { }
+
+  virtual ~SEIConstrainedRaslIndication() { }
+};
+
+class SEIVDISeiEnvelope : public SEI
+{
+public:
+  PayloadType payloadType() const { return VDI_SEI_ENVELOPE; }
+
+  SEIVDISeiEnvelope() {}
+  virtual ~SEIVDISeiEnvelope() {}
+};
 //! \}
 
 

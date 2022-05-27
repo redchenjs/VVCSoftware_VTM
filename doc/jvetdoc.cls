@@ -106,7 +106,7 @@
 	\IfFileExists{logos/iec}{\includegraphics[height=0.74cm]{logos/iec}}{}
 	\\
 	\textbf{Joint Video Experts Team (JVET)}\\[0ex]
-	\textbf{of ITU-T SG16 WP3 and ISO/IEC JTC1/SC29/WG11}
+	\textbf{of ITU-T SG16 WP3 and ISO/IEC JTC1/SC29/WG5}
 		\hfill Document: JVET-\@jvetdocnum\\[0ex]
 	\@jvetmeeting
 

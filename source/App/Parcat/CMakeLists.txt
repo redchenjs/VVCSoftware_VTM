@@ -10,7 +10,7 @@ file( GLOB INC_FILES "*.h" )
 # add executable
 add_executable( ${EXE_NAME} ${SRC_FILES} ${INC_FILES} )
 
-target_link_libraries( ${EXE_NAME} CommonLib DecoderLib Utilities Threads::Threads ${ADDITIONAL_LIBS} )
+target_link_libraries( ${EXE_NAME} CommonLib DecoderLib Utilities ${ADDITIONAL_LIBS} )
 
 # include the output directory, where the svnrevision.h file is generated
 include_directories(${CMAKE_CURRENT_BINARY_DIR})

@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -126,19 +126,19 @@ namespace CU
 // PU tools
 namespace PU
 {
-  int  getLMSymbolList(const PredictionUnit &pu, int *modeList);
-  int  getIntraMPMs(const PredictionUnit &pu, unsigned *mpm, const ChannelType &channelType = CHANNEL_TYPE_LUMA);
-  bool          isMIP                 (const PredictionUnit &pu, const ChannelType &chType = CHANNEL_TYPE_LUMA);
-  bool          isDMChromaMIP         (const PredictionUnit &pu);
-  uint32_t      getIntraDirLuma       (const PredictionUnit &pu);
-  void getIntraChromaCandModes        (const PredictionUnit &pu, unsigned modeList[NUM_CHROMA_MODE]);
+  int      getLMSymbolList(const PredictionUnit &pu, int *modeList);
+  int      getIntraMPMs(const PredictionUnit &pu, unsigned *mpm);
+  bool     isMIP(const PredictionUnit &pu, const ChannelType &chType = CHANNEL_TYPE_LUMA);
+  bool     isDMChromaMIP(const PredictionUnit &pu);
+  uint32_t getIntraDirLuma(const PredictionUnit &pu);
+  void     getIntraChromaCandModes(const PredictionUnit &pu, unsigned modeList[NUM_CHROMA_MODE]);
+  uint32_t getFinalIntraMode(const PredictionUnit &pu, const ChannelType &chType);
+  uint32_t getCoLocatedIntraLumaMode(const PredictionUnit &pu);
+  int      getWideAngle(const TransformUnit &tu, const uint32_t dirMode, const ComponentID compID);
+
   const PredictionUnit &getCoLocatedLumaPU(const PredictionUnit &pu);
-  uint32_t getFinalIntraMode              (const PredictionUnit &pu, const ChannelType &chType);
-  uint32_t getCoLocatedIntraLumaMode      (const PredictionUnit &pu);
-  int  getWideAngle                   ( const TransformUnit &tu, const uint32_t dirMode, const ComponentID compID );
-  void getInterMergeCandidates        (const PredictionUnit &pu, MergeCtx& mrgCtx,
-    int mmvdList,
-    const int& mrgCandIdx = -1 );
+
+  void getInterMergeCandidates(const PredictionUnit &pu, MergeCtx &mrgCtx, int mmvdList, const int &mrgCandIdx = -1);
   void getIBCMergeCandidates          (const PredictionUnit &pu, MergeCtx& mrgCtx, const int& mrgCandIdx = -1);
   void getInterMMVDMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const int& mrgCandIdx = -1);
   int getDistScaleFactor(const int &currPOC, const int &currRefPOC, const int &colPOC, const int &colRefPOC);
@@ -147,19 +147,31 @@ namespace PU
   void fillMvpCand                    (      PredictionUnit &pu, const RefPicList &eRefPicList, const int &refIdx, AMVPInfo &amvpInfo );
   void fillIBCMvpCand                 (PredictionUnit &pu, AMVPInfo &amvpInfo);
   void fillAffineMvpCand              (      PredictionUnit &pu, const RefPicList &eRefPicList, const int &refIdx, AffineAMVPInfo &affiAMVPInfo);
-  bool addMVPCandUnscaled             (const PredictionUnit &pu, const RefPicList &eRefPicList, const int &iRefIdx, const Position &pos, const MvpDir &eDir, AMVPInfo &amvpInfo);
+  bool addMVPCandUnscaled(const PredictionUnit &pu, const RefPicList &eRefPicList, const int &refIdx,
+                          const Position &pos, const MvpDir &eDir, AMVPInfo &amvpInfo);
+#if GDR_ENABLED
+  void xInheritedAffineMv(const PredictionUnit &pu, const PredictionUnit* puNeighbour, RefPicList eRefPicList, Mv rcMv[3], bool rcMvSolid[3], MvpType rcMvType[3], Position rcMvPos[3]);  
+#endif
   void xInheritedAffineMv             ( const PredictionUnit &pu, const PredictionUnit* puNeighbour, RefPicList eRefPicList, Mv rcMv[3] );
   bool addMergeHMVPCand               (const CodingStructure &cs, MergeCtx& mrgCtx, const int& mrgCandIdx, const uint32_t maxNumMergeCandMin1, int &cnt
     , const bool isAvailableA1, const MotionInfo miLeft, const bool isAvailableB1, const MotionInfo miAbove
     , const bool ibcFlag
     , const bool isGt4x4
+#if GDR_ENABLED
+    , const PredictionUnit &pu
+    , bool &allCandSolidInAbove  
+#endif
   );
   void addAMVPHMVPCand                (const PredictionUnit &pu, const RefPicList eRefPicList, const int currRefPOC, AMVPInfo &info);
   bool addAffineMVPCandUnscaled       ( const PredictionUnit &pu, const RefPicList &refPicList, const int &refIdx, const Position &pos, const MvpDir &dir, AffineAMVPInfo &affiAmvpInfo );
   bool isBipredRestriction            (const PredictionUnit &pu);
   void spanMotionInfo                 (      PredictionUnit &pu, const MergeCtx &mrgCtx = MergeCtx() );
-  void applyImv                       (      PredictionUnit &pu, MergeCtx &mrgCtx, InterPrediction *interPred = NULL );
+  void applyImv(PredictionUnit &pu, MergeCtx &mrgCtx, InterPrediction *interPred = nullptr);
+#if GDR_ENABLED
+  void getAffineControlPointCand(const PredictionUnit& pu, MotionInfo mi[4], bool isAvailable[4], int verIdx[4], int8_t bcwIdx, int modelIdx, int verNum, AffineMergeCtx& affMrgCtx, bool isEncodeGdrClean, bool modelSolid[6]);
+#else
   void getAffineControlPointCand(const PredictionUnit &pu, MotionInfo mi[4], bool isAvailable[4], int verIdx[4], int8_t bcwIdx, int modelIdx, int verNum, AffineMergeCtx& affMrgCtx);
+#endif
   void getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx, const int mrgCandIdx = -1 );
   void setAllAffineMvField            (      PredictionUnit &pu, MvField *mvField, RefPicList eRefList );
   void setAllAffineMv                 (      PredictionUnit &pu, Mv affLT, Mv affRT, Mv affLB, RefPicList eRefList, bool clipCPMVs = false );
@@ -177,6 +189,9 @@ namespace PU
   void getIbcMVPsEncOnly(PredictionUnit &pu, Mv* mvPred, int& nbPred);
   bool getDerivedBV(PredictionUnit &pu, const Mv& currentMv, Mv& derivedMv);
   bool checkDMVRCondition(const PredictionUnit& pu);
+#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
+  void getNeighborAffineInfo(const PredictionUnit& pu, int& numNeighborAvai, int& numNeighborAffine);
+#endif
 
 }
 
@@ -203,8 +218,8 @@ int getMipSizeId      (const Size& block);
 bool allowLfnstWithMip(const Size& block);
 
 template<typename T, size_t N>
-uint32_t updateCandList(T uiMode, double uiCost, static_vector<T, N>& candModeList, static_vector<double, N>& candCostList
-  , size_t uiFastCandNum = N, int* iserttPos = nullptr)
+uint32_t updateCandList(T mode, double uiCost, static_vector<T, N> &candModeList,
+                        static_vector<double, N> &candCostList, size_t uiFastCandNum = N, int *iserttPos = nullptr)
 {
   CHECK( std::min( uiFastCandNum, candModeList.size() ) != std::min( uiFastCandNum, candCostList.size() ), "Sizes do not match!" );
   CHECK( uiFastCandNum > candModeList.capacity(), "The vector is to small to hold all the candidates!" );
@@ -225,7 +240,7 @@ uint32_t updateCandList(T uiMode, double uiCost, static_vector<T, N>& candModeLi
       candModeList[currSize - i] = candModeList[currSize - 1 - i];
       candCostList[currSize - i] = candCostList[currSize - 1 - i];
     }
-    candModeList[currSize - shift] = uiMode;
+    candModeList[currSize - shift] = mode;
     candCostList[currSize - shift] = uiCost;
     if (iserttPos != nullptr)
     {
@@ -235,7 +250,7 @@ uint32_t updateCandList(T uiMode, double uiCost, static_vector<T, N>& candModeLi
   }
   else if( currSize < uiFastCandNum )
   {
-    candModeList.insert( candModeList.end() - shift, uiMode );
+    candModeList.insert(candModeList.end() - shift, mode);
     candCostList.insert( candCostList.end() - shift, uiCost );
     if (iserttPos != nullptr)
     {

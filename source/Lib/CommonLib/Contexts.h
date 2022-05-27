@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -382,6 +382,22 @@ public:
     }
   }
 
+  void riceStatReset(int bitDepth, bool persistentRiceAdaptationEnabledFlag)
+  {
+    for (std::size_t k = 0; k < RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS; k++)
+    {
+      if (persistentRiceAdaptationEnabledFlag)
+      {
+          CHECK(bitDepth <= 10,"BitDepth shall be larger than 10.");
+          m_GRAdaptStats[k] = 2 * floorLog2(bitDepth - 10);
+      } 
+      else 
+      {
+          m_GRAdaptStats[k] = 0;
+      }
+    }
+  }
+
   void  loadPStates( const std::vector<uint16_t>& probStates )
   {
     switch( m_BPMType )
@@ -416,6 +432,9 @@ public:
   const unsigned&     getGRAdaptStats ( unsigned      id )      const { return m_GRAdaptStats[id]; }
   unsigned&           getGRAdaptStats ( unsigned      id )            { return m_GRAdaptStats[id]; }
 
+  const unsigned           getBaseLevel()                     const { return m_baseLevel; }
+  void                setBaseLevel(int value)                         { m_baseLevel = value; }
+
 public:
   unsigned            getBPMType      ()                        const { return m_BPMType; }
   const Ctx&          getCtx          ()                        const { return *this; }
@@ -438,12 +457,8 @@ private:
   CtxStore<BinProbModel_Std>    m_CtxStore_Std;
 protected:
   unsigned                      m_GRAdaptStats[RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS];
-#if ENABLE_SPLIT_PARALLELISM
+  int m_baseLevel;
 
-public:
-  int64_t cacheId;
-  bool    cacheUsed;
-#endif
 };
 
 

@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -138,7 +138,7 @@ public:
   int         last_sig_coeff            ( CoeffCodingContext&           cctx,   TransformUnit& tu, ComponentID   compID );
   void        residual_coding_subblock  ( CoeffCodingContext&           cctx,   TCoeff*         coeff, const int stateTransTable, int& state );
   void        residual_codingTS         ( TransformUnit&                tu,     ComponentID     compID );
-  void        residual_coding_subblockTS( CoeffCodingContext&           cctx,   TCoeff*         coeff  );
+  void        residual_coding_subblockTS( CoeffCodingContext&           cctx,   TCoeff*         coeff, int riceParam);
   void        joint_cb_cr               ( TransformUnit&                tu,     const int cbfMask );
 
 

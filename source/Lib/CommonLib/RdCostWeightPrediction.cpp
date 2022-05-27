@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,7 +72,7 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
   const int             round      = wpCur.round;
   const int distortionShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth);
 
-  Distortion uiSum = 0;
+  Distortion sum = 0;
 
 #if !U0040_MODIFIED_WEIGHTEDPREDICTION_WITH_BIPRED_AND_CLIPPING
   for(int iRows = rcDtParam.org.height; iRows != 0; iRows-- )
@@ -81,11 +81,11 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
     {
       const Pel pred = ( (w0*piCur[n] + round) >> shift ) + offset ;
 
-      uiSum += abs( piOrg[n] - pred );
+      sum += abs(piOrg[n] - pred);
     }
-    if (rcDtParam.maximumDistortionForEarlyExit <  ( uiSum >> distortionShift))
+    if (rcDtParam.maximumDistortionForEarlyExit < (sum >> distortionShift))
     {
-      return uiSum >> distortionShift;
+      return sum >> distortionShift;
     }
     piOrg += iStrideOrg;
     piCur += iStrideCur;
@@ -107,11 +107,11 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
       {
         for (int n = 0; n < iCols; n++ )
         {
-          uiSum += abs( piOrg[n] - piCur[n] );
+          sum += abs(piOrg[n] - piCur[n]);
         }
-        if (rcDtParam.maximumDistortionForEarlyExit <  ( uiSum >> distortionShift))
+        if (rcDtParam.maximumDistortionForEarlyExit < (sum >> distortionShift))
         {
-          return uiSum >> distortionShift;
+          return sum >> distortionShift;
         }
         piOrg += iStrideOrg;
         piCur += iStrideCur;
@@ -128,11 +128,11 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
         {
           for (int n = 0; n < iCols; n++ )
           {
-            uiSum += abs( piOrg[n] - (piCur[n] + offset) );
+            sum += abs(piOrg[n] - (piCur[n] + offset));
           }
-          if (rcDtParam.maximumDistortionForEarlyExit <  ( uiSum >> distortionShift))
+          if (rcDtParam.maximumDistortionForEarlyExit < (sum >> distortionShift))
           {
-            return uiSum >> distortionShift;
+            return sum >> distortionShift;
           }
 
           piOrg += iStrideOrg;
@@ -147,11 +147,11 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
           {
             const Pel pred = ClipPel( piCur[n] + offset, clpRng);
 
-            uiSum += abs( piOrg[n] - pred );
+            sum += abs(piOrg[n] - pred);
           }
-          if (rcDtParam.maximumDistortionForEarlyExit <  ( uiSum >> distortionShift))
+          if (rcDtParam.maximumDistortionForEarlyExit < (sum >> distortionShift))
           {
-            return uiSum >> distortionShift;
+            return sum >> distortionShift;
           }
           piOrg += iStrideOrg;
           piCur += iStrideCur;
@@ -171,11 +171,11 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
         for (int n = 0; n < iCols; n++ )
         {
           const Pel pred = ( (w0*piCur[n] + round) >> shift ) + offset ;
-          uiSum += abs( piOrg[n] - pred );
+          sum += abs(piOrg[n] - pred);
         }
-        if (rcDtParam.maximumDistortionForEarlyExit <  ( uiSum >> distortionShift))
+        if (rcDtParam.maximumDistortionForEarlyExit < (sum >> distortionShift))
         {
-          return uiSum >> distortionShift;
+          return sum >> distortionShift;
         }
 
         piOrg += iStrideOrg;
@@ -192,11 +192,11 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
           {
             const Pel pred = ClipPel( (w0*piCur[n] + round) >> shift, clpRng);
 
-            uiSum += abs( piOrg[n] - pred );
+            sum += abs(piOrg[n] - pred);
           }
-          if (rcDtParam.maximumDistortionForEarlyExit <  ( uiSum >> distortionShift))
+          if (rcDtParam.maximumDistortionForEarlyExit < (sum >> distortionShift))
           {
-            return uiSum >> distortionShift;
+            return sum >> distortionShift;
           }
           piOrg += iStrideOrg;
           piCur += iStrideCur;
@@ -210,11 +210,11 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
           {
             const Pel pred = ClipPel(((w0*piCur[n] + round) >> shift ) + offset,  clpRng) ;
 
-            uiSum += abs( piOrg[n] - pred );
+            sum += abs(piOrg[n] - pred);
           }
-          if (rcDtParam.maximumDistortionForEarlyExit <  ( uiSum >> distortionShift))
+          if (rcDtParam.maximumDistortionForEarlyExit < (sum >> distortionShift))
           {
-            return uiSum >> distortionShift;
+            return sum >> distortionShift;
           }
           piOrg += iStrideOrg;
           piCur += iStrideCur;
@@ -225,7 +225,7 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
   //rcDtParam.compIdx = MAX_NUM_COMPONENT;  // reset for DEBUG (assert test)
 #endif
 
-  return uiSum >> distortionShift;
+  return sum >> distortionShift;
 }
 
 
@@ -593,8 +593,7 @@ Distortion RdCostWeightPrediction::xGetHADsw( const DistParam &rcDtParam )
   CHECK(compIdx>=MAX_NUM_COMPONENT, "Invalid component");
   const WPScalingParam &wpCur  = rcDtParam.wpCur[compIdx];
 
-  Distortion uiSum = 0;
-
+  Distortion sum = 0;
 
   if( ( iRows % 8 == 0) && (iCols % 8 == 0) )
   {
@@ -604,7 +603,7 @@ Distortion RdCostWeightPrediction::xGetHADsw( const DistParam &rcDtParam )
     {
       for (int x=0; x<iCols; x+= 8 )
       {
-        uiSum += xCalcHADs8x8w( wpCur, &piOrg[x], &piCur[x*iStep], iStrideOrg, iStrideCur, iStep );
+        sum += xCalcHADs8x8w(wpCur, &piOrg[x], &piCur[x * iStep], iStrideOrg, iStrideCur, iStep);
       }
       piOrg += iOffsetOrg;
       piCur += iOffsetCur;
@@ -619,7 +618,7 @@ Distortion RdCostWeightPrediction::xGetHADsw( const DistParam &rcDtParam )
     {
       for (int x=0; x<iCols; x+= 4 )
       {
-        uiSum += xCalcHADs4x4w( wpCur, &piOrg[x], &piCur[x*iStep], iStrideOrg, iStrideCur, iStep );
+        sum += xCalcHADs4x4w(wpCur, &piOrg[x], &piCur[x * iStep], iStrideOrg, iStrideCur, iStep);
       }
       piOrg += iOffsetOrg;
       piCur += iOffsetCur;
@@ -631,12 +630,12 @@ Distortion RdCostWeightPrediction::xGetHADsw( const DistParam &rcDtParam )
     {
       for (int x=0; x<iCols; x+=2 )
       {
-        uiSum += xCalcHADs2x2w( wpCur, &piOrg[x], &piCur[x*iStep], iStrideOrg, iStrideCur, iStep );
+        sum += xCalcHADs2x2w(wpCur, &piOrg[x], &piCur[x * iStep], iStrideOrg, iStrideCur, iStep);
       }
       piOrg += iStrideOrg;
       piCur += iStrideCur;
     }
   }
 
-  return uiSum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth);
+  return sum >> DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth);
 }

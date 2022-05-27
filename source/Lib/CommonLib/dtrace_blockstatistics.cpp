@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -684,8 +684,8 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
                 {
                   const Mv mv = pixMi.mv[REF_PIC_LIST_0];
 #if BLOCK_STATS_AS_CSV
-                  g_trace_ctx->dtrace<false>( 
-                    D_BLOCK_STATISTICS_ALL, 
+                  g_trace_ctx->dtrace<false>(
+                    D_BLOCK_STATISTICS_ALL,
                     "BlockStat;%d;%4d;%4d;%2d;%2d;%s;%4d;%4d\n",
                      cs.picture->poc,
                      pu.lx() + 4*x,
@@ -713,8 +713,8 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
                 {
                   const Mv mv = pixMi.mv[REF_PIC_LIST_1];
 #if BLOCK_STATS_AS_CSV
-                  g_trace_ctx->dtrace<false>( 
-                    D_BLOCK_STATISTICS_ALL, 
+                  g_trace_ctx->dtrace<false>(
+                    D_BLOCK_STATISTICS_ALL,
                     "BlockStat;%d;%4d;%4d;%2d;%2d;%s;%4d;%4d\n",
                      cs.picture->poc,
                      pu.lx() + 4*x,
@@ -743,8 +743,8 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
                   {
                     const Mv mv = pixMi.mv[REF_PIC_LIST_0];
 #if BLOCK_STATS_AS_CSV
-                  g_trace_ctx->dtrace<false>( 
-                    D_BLOCK_STATISTICS_ALL, 
+                  g_trace_ctx->dtrace<false>(
+                    D_BLOCK_STATISTICS_ALL,
                     "BlockStat;%d;%4d;%4d;%2d;%2d;%s;%4d;%4d\n",
                      cs.picture->poc,
                      pu.lx() + 4*x,
@@ -767,12 +767,12 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
                      mv.hor,
                      mv.ver);
 #endif
-                  }                
+                  }
                   {
                     const Mv mv = pixMi.mv[REF_PIC_LIST_1];
 #if BLOCK_STATS_AS_CSV
-                  g_trace_ctx->dtrace<false>( 
-                    D_BLOCK_STATISTICS_ALL, 
+                  g_trace_ctx->dtrace<false>(
+                    D_BLOCK_STATISTICS_ALL,
                     "BlockStat;%d;%4d;%4d;%2d;%2d;%s;%4d;%4d\n",
                      cs.picture->poc,
                      pu.lx() + 4*x,
@@ -795,7 +795,7 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
                      mv.hor,
                      mv.ver);
 #endif
-                  }                                    
+                  }
                 }
               }
             }
@@ -1140,7 +1140,7 @@ void writeAllCodedData(const CodingStructure & cs, const UnitArea & ctuArea)
           }
           default:
           {
-            CHECK(1, "Invalid prediction mode");
+            THROW("Invalid prediction mode");
             break;
           }
         }

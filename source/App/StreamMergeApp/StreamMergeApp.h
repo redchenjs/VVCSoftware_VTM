@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,30 +45,71 @@
 #include <stdio.h>
 #include <fstream>
 #include <iostream>
-#include "CommonLib/CommonDef.h"
-#include "VLCWriter.h"
+#include "CommonDef.h" 
+#include "NALread.h"
 #include "CABACWriter.h"
 #include "AnnexBread.h"
+#include "VLCReader.h"
+#include "VLCWriter.h"
 #include "StreamMergeAppCfg.h"
 
 using namespace std;
+
+
+
+struct MergeLayer;
+class SingleLayerStream;
+typedef map<uint32_t, uint32_t> OldToNewIdMapping;
 
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
 
-/// decoder application class
+/// stream merger application class
 class StreamMergeApp : public StreamMergeAppCfg
 {
 
 public:
   StreamMergeApp();
-  virtual ~StreamMergeApp         ()  {}
+  virtual ~StreamMergeApp() {}
 
   VPS vps;
 
-  uint32_t  mergeStreams            (); ///< main stream merging function
-  void      writeNewVPS             (ostream& out, int nNumLayers, int nTemporalId);
+  uint32_t mergeStreams();   ///< main stream merging function
+
+private:
+  bool isNewPicture(std::ifstream *bitstreamFile, InputByteStream *bytestream, bool firstSliceInPicture);
+  bool isNewAccessUnit(bool newPicture, std::ifstream *bitstreamFile, InputByteStream *bytestream);
+  void inputNaluHeaderToOutputNalu(InputNALUnit &inNalu, OutputNALUnit &outNalu);
+  bool preInjectNalu(MergeLayer &layer, InputNALUnit &inNalu, OutputNALUnit &outNalu);
+  void decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNalu, OutputNALUnit &outNalu);
+
+  int vpsId = -1;
+  int idIncrement = 0;
+};
+
+
+
+
+struct MergeLayer
+{
+  int id;
+
+  ifstream *                 fp;
+  InputByteStream *          bs;
+  bool                       firstSliceInPicture = true;
+  bool                       doneReading = false;
+  vector<AnnexBStats>        stats;
+  ParameterSetManager        oldIDsPsManager;
+  ParameterSetManager        psManager;
+  vector<int>                vpsIds;
+  vector<int>                spsIds;
+  vector<int>                ppsIds;
+
+  OldToNewIdMapping vpsIdMapping;
+  OldToNewIdMapping spsIdMapping;
+  OldToNewIdMapping ppsIdMapping;
+  OldToNewIdMapping apsIdMapping;
 };
 
 

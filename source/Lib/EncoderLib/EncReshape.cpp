@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -228,7 +228,7 @@ void EncReshape::calcSeqStats(Picture *pcPic, SeqInfo &stats)
         {
           for (bx = x1; bx <= x2; bx++)
           {
-            tempSq = pWinY[bx] * pWinY[bx];
+            tempSq = (int64_t)pWinY[bx] * (int64_t)pWinY[bx];
             leftSum += pWinY[bx];
             leftSumSq += tempSq;
             leftColSum[bx] += pWinY[bx];
@@ -255,7 +255,7 @@ void EncReshape::calcSeqStats(Picture *pcPic, SeqInfo &stats)
           for (bx = x1; bx <= x2; bx++)
           {
             topRowSum[y + winLens] += pWinY[bx];
-            topRowSumSq[y + winLens] += pWinY[bx] * pWinY[bx];
+            topRowSumSq[y + winLens] += (int64_t)pWinY[bx] * (int64_t)pWinY[bx];
           }
           topSum += topRowSum[y + winLens];
           topSumSq += topRowSumSq[y + winLens];
@@ -274,7 +274,7 @@ void EncReshape::calcSeqStats(Picture *pcPic, SeqInfo &stats)
           for (bx = x1; bx <= x2; bx++)
           {
             leftColSum[bx] += pWinY[bx];
-            leftColSumSq[bx] += pWinY[bx] * pWinY[bx];
+            leftColSumSq[bx] += (int64_t)pWinY[bx] * (int64_t)pWinY[bx];
           }
           pWinY += stride;
         }
@@ -295,7 +295,7 @@ void EncReshape::calcSeqStats(Picture *pcPic, SeqInfo &stats)
             for (by = y1; by <= y2; by++)
             {
               leftColSum[x + winLens] += pWinY[x + winLens];
-              leftColSumSq[x + winLens] += pWinY[x + winLens] * pWinY[x + winLens];
+              leftColSumSq[x + winLens] += (int64_t)pWinY[x + winLens] * (int64_t)pWinY[x + winLens];
               pWinY += stride;
             }
           }
@@ -308,14 +308,14 @@ void EncReshape::calcSeqStats(Picture *pcPic, SeqInfo &stats)
               pWinY = &picY.buf[0];
               pWinY += winLens * stride;
               leftColSum[x + winLens] += pWinY[x + winLens];
-              leftColSumSq[x + winLens] += pWinY[x + winLens] * pWinY[x + winLens];
+              leftColSumSq[x + winLens] += (int64_t)pWinY[x + winLens] * (int64_t)pWinY[x + winLens];
             }
             if (y > winLens)
             {
               pWinY = &picY.buf[0];
               pWinY -= (winLens + 1) * stride;
               leftColSum[x + winLens] -= pWinY[x + winLens];
-              leftColSumSq[x + winLens] -= pWinY[x + winLens] * pWinY[x + winLens];
+              leftColSumSq[x + winLens] -= (int64_t)pWinY[x + winLens] * (int64_t)pWinY[x + winLens];
             }
           }
           topColSum[x + winLens] = leftColSum[x + winLens];
@@ -399,7 +399,7 @@ void EncReshape::calcSeqStats(Picture *pcPic, SeqInfo &stats)
     for (int x = 0; x < width; x++)
     {
       avgY += picY.buf[x];
-      varY += picY.buf[x] * picY.buf[x];
+      varY += (double)picY.buf[x] * (double)picY.buf[x];
     }
     picY.buf += stride;
   }
@@ -421,8 +421,8 @@ void EncReshape::calcSeqStats(Picture *pcPic, SeqInfo &stats)
       {
         avgU += picU.buf[x];
         avgV += picV.buf[x];
-        varU += picU.buf[x] * picU.buf[x];
-        varV += picV.buf[x] * picV.buf[x];
+        varU += (int64_t)picU.buf[x] * (int64_t)picU.buf[x];
+        varV += (int64_t)picV.buf[x] * (int64_t)picV.buf[x];
       }
       picU.buf += strideC;
       picV.buf += strideC;
@@ -444,6 +444,9 @@ void EncReshape::preAnalyzerLMCS(Picture *pcPic, const uint32_t signalType, cons
   m_sliceReshapeInfo.sliceReshaperModelPresentFlag = true;
   m_sliceReshapeInfo.sliceReshaperEnableFlag = true;
   int modIP = pcPic->getPOC() - pcPic->getPOC() / reshapeCW.rspFpsToIp * reshapeCW.rspFpsToIp;
+#if GDR_ENABLED
+  if (pcPic->cs->slice->isInterGDR()) modIP = 0;
+#endif
   if (sliceType == I_SLICE || (reshapeCW.updateCtrl == 2 && modIP == 0))
   {
     if (m_sliceReshapeInfo.sliceReshaperModelPresentFlag == true)
@@ -678,6 +681,96 @@ void EncReshape::preAnalyzerLMCS(Picture *pcPic, const uint32_t signalType, cons
       const int cTid = m_reshapeCW.rspTid;
       bool enableRsp = m_tcase == 5 ? false : (m_tcase < 5 ? (cTid < m_tcase + 1 ? false : true) : (cTid <= 10 - m_tcase ? true : false));
       m_sliceReshapeInfo.sliceReshaperEnableFlag = enableRsp;
+
+      if (m_sliceReshapeInfo.sliceReshaperEnableFlag)
+      {
+        m_binNum = PIC_CODE_CW_BINS;
+        PelBuf picY = pcPic->getOrigBuf(COMPONENT_Y);
+        const int width = picY.width;
+        const int height = picY.height;
+        const int stride = picY.stride;
+        uint32_t binCnt[PIC_CODE_CW_BINS];
+        std::fill_n(binCnt, m_binNum, 0);
+
+        initSeqStats(m_srcSeqStats);
+        for (uint32_t y = 0; y < height; y++)
+        {
+          for (uint32_t x = 0; x < width; x++)
+          {
+            const Pel pxlY = picY.buf[x];
+            int binLen = m_reshapeLUTSize / m_binNum;
+            uint32_t binIdx = (uint32_t)(pxlY / binLen);
+            binCnt[binIdx]++;
+          }
+          picY.buf += stride;
+        }
+
+        for (int b = 0; b < m_binNum; b++)
+        {
+          m_srcSeqStats.binHist[b] = (double)binCnt[b] / (double)(m_reshapeCW.rspPicSize);
+        }
+
+        double avgY = 0.0;
+        double varY = 0.0;
+        picY = pcPic->getOrigBuf(COMPONENT_Y);
+        for (int y = 0; y < height; y++)
+        {
+          for (int x = 0; x < width; x++)
+          {
+            avgY += picY.buf[x];
+            varY += (double)picY.buf[x] * (double)picY.buf[x];
+          }
+          picY.buf += stride;
+        }
+        avgY = avgY / (width * height);
+        varY = varY / (width * height) - avgY * avgY;
+
+        if (isChromaEnabled(pcPic->chromaFormat))
+        {
+          PelBuf picU = pcPic->getOrigBuf(COMPONENT_Cb);
+          PelBuf picV = pcPic->getOrigBuf(COMPONENT_Cr);
+          const int widthC = picU.width;
+          const int heightC = picU.height;
+          const int strideC = picU.stride;
+          double avgU = 0.0, avgV = 0.0;
+          double varU = 0.0, varV = 0.0;
+          for (int y = 0; y < heightC; y++)
+          {
+            for (int x = 0; x < widthC; x++)
+            {
+              avgU += picU.buf[x];
+              avgV += picV.buf[x];
+              varU += (int64_t)picU.buf[x] * (int64_t)picU.buf[x];
+              varV += (int64_t)picV.buf[x] * (int64_t)picV.buf[x];
+            }
+            picU.buf += strideC;
+            picV.buf += strideC;
+          }
+          avgU = avgU / (widthC * heightC);
+          avgV = avgV / (widthC * heightC);
+          varU = varU / (widthC * heightC) - avgU * avgU;
+          varV = varV / (widthC * heightC) - avgV * avgV;
+          if (varY > 0)
+          {
+            m_srcSeqStats.ratioStdU = sqrt(varU) / sqrt(varY);
+            m_srcSeqStats.ratioStdV = sqrt(varV) / sqrt(varY);
+          }
+        }
+
+        if (m_srcSeqStats.binHist[m_binNum - 1] > 0.0003)
+        {
+          m_sliceReshapeInfo.sliceReshaperEnableFlag = false;
+        }
+        if (m_srcSeqStats.binHist[0] > 0.03)
+        {
+          m_sliceReshapeInfo.sliceReshaperEnableFlag = false;
+        }
+
+        if ((m_srcSeqStats.ratioStdU + m_srcSeqStats.ratioStdV) > 1.5 && m_srcSeqStats.binHist[1] > 0.5)
+        {
+          m_sliceReshapeInfo.sliceReshaperEnableFlag = false;
+        }
+      }
     }
   }
 }
@@ -1211,6 +1304,8 @@ void EncReshape::initLUTfromdQPModel()
     }
     else
     {
+      CHECK((m_binCW[i] + m_sliceReshapeInfo.chrResScalingOffset) < (m_initCW >> 3) || (m_binCW[i] + m_sliceReshapeInfo.chrResScalingOffset) > ((m_initCW << 3) - 1),
+        "It is a requirement of bitstream conformance that, when lmcsCW[ i ] is not equal to 0, ( lmcsCW[ i ] + lmcsDeltaCrs ) shall be in the range of ( OrgCW >> 3 ) to ( ( OrgCW << 3 ) - 1 ), inclusive.");
       m_invScaleCoef[i] = (int32_t)(m_initCW * (1 << FP_PREC) / m_binCW[i]);
       m_chromaAdjHelpLUT[i] = (int32_t)(m_initCW * (1 << FP_PREC) / (m_binCW[i] + m_sliceReshapeInfo.chrResScalingOffset));
     }
@@ -1306,6 +1401,8 @@ void EncReshape::constructReshaperLMCS()
     }
     else
     {
+      CHECK((m_binCW[i] + m_sliceReshapeInfo.chrResScalingOffset) < (m_initCW >> 3) || (m_binCW[i] + m_sliceReshapeInfo.chrResScalingOffset) > ((m_initCW << 3) - 1),
+        "It is a requirement of bitstream conformance that, when lmcsCW[ i ] is not equal to 0, ( lmcsCW[ i ] + lmcsDeltaCrs ) shall be in the range of ( OrgCW >> 3 ) to ( ( OrgCW << 3 ) - 1 ), inclusive.");
       m_invScaleCoef[i] = (int32_t)(m_initCW * (1 << FP_PREC) / m_binCW[i]);
       m_chromaAdjHelpLUT[i] = (int32_t)(m_initCW * (1 << FP_PREC) / (m_binCW[i] + m_sliceReshapeInfo.chrResScalingOffset));
     }
@@ -1396,45 +1493,5 @@ void EncReshape::adjustLmcsPivot()
     }
   }
 }
-
-#if ENABLE_SPLIT_PARALLELISM
-void EncReshape::copyState(const EncReshape &other)
-{
-  m_srcReshaped     = other.m_srcReshaped;
-  m_picWidth        = other.m_picWidth;
-  m_picHeight       = other.m_picHeight;
-  m_maxCUWidth      = other.m_maxCUWidth;
-  m_maxCUHeight     = other.m_maxCUHeight;
-  m_widthInCtus     = other.m_widthInCtus;
-  m_heightInCtus    = other.m_heightInCtus;
-  m_numCtuInFrame   = other.m_numCtuInFrame;
-  m_exceedSTD       = other.m_exceedSTD;
-  m_binImportance   = other.m_binImportance;
-  m_tcase           = other.m_tcase;
-  m_rateAdpMode     = other.m_rateAdpMode;
-  m_useAdpCW        = other.m_useAdpCW;
-  m_initCWAnalyze   = other.m_initCWAnalyze;
-  m_reshapeCW       = other.m_reshapeCW;
-  memcpy( m_cwLumaWeight, other.m_cwLumaWeight, sizeof( m_cwLumaWeight ) );
-  m_chromaWeight    = other.m_chromaWeight;
-  m_chromaAdj       = other.m_chromaAdj;
-
-  m_sliceReshapeInfo = other.m_sliceReshapeInfo;
-  m_CTUFlag          = other.m_CTUFlag;
-  m_recReshaped      = other.m_recReshaped;
-  m_invLUT           = other.m_invLUT;
-  m_fwdLUT           = other.m_fwdLUT;
-  m_chromaAdjHelpLUT = other.m_chromaAdjHelpLUT;
-  m_binCW            = other.m_binCW;
-  m_initCW           = other.m_initCW;
-  m_reshape          = other.m_reshape;
-  m_reshapePivot     = other.m_reshapePivot;
-  m_inputPivot       = other.m_inputPivot;
-  m_fwdScaleCoef     = other.m_fwdScaleCoef;
-  m_invScaleCoef     = other.m_invScaleCoef;
-  m_lumaBD           = other.m_lumaBD;
-  m_reshapeLUTSize   = other.m_reshapeLUTSize;
-}
-#endif
 //
 //! \}

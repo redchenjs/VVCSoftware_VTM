@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -363,11 +363,11 @@ private:
   int                                                m_numSavedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2];
   int                                                m_savedRdModeIdx;
 
-  static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_uiSavedRdModeListLFNST;
-  static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_uiSavedHadModeListLFNST;
-  uint32_t                                         m_uiSavedNumRdModesLFNST;
-  static_vector<double,   FAST_UDI_MAX_RDMODE_NUM> m_dSavedModeCostLFNST;
-  static_vector<double,   FAST_UDI_MAX_RDMODE_NUM> m_dSavedHadListLFNST;
+  static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_savedRdModeListLFNST;
+  static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_savedHadModeListLFNST;
+  uint32_t                                         m_savedNumRdModesLFNST;
+  static_vector<double, FAST_UDI_MAX_RDMODE_NUM>   m_savedModeCostLFNST;
+  static_vector<double, FAST_UDI_MAX_RDMODE_NUM>   m_savedHadListLFNST;
 
   PelStorage      m_tmpStorageLCU;
   PelStorage      m_colorTransResiBuf;
@@ -385,9 +385,6 @@ protected:
   CtxCache*       m_CtxCache;
 
   bool            m_isInitialized;
-  uint32_t        m_symbolSize;
-  uint16_t**      m_truncBinBits;
-  uint16_t*       m_escapeNumBins;
   bool            m_bestEscape;
   double*         m_indexError[MAXPLTSIZE + 1];
   uint8_t*        m_minErrorIndexMap; // store the best index in terms of distortion for each pixel
@@ -430,16 +427,23 @@ public:
   double findInterCUCost          ( CodingUnit &cu );
 
 public:
-  bool estIntraPredLumaQT(CodingUnit &cu, Partitioner& pm, const double bestCostSoFar = MAX_DOUBLE, bool mtsCheckRangeFlag = false, int mtsFirstCheckId = 0, int mtsLastCheckId = 0, bool moreProbMTSIdxFirst = false, CodingStructure* bestCS = NULL);
+  bool     estIntraPredLumaQT(CodingUnit &cu, Partitioner &pm, const double bestCostSoFar = MAX_DOUBLE,
+                              bool mtsCheckRangeFlag = false, int mtsFirstCheckId = 0, int mtsLastCheckId = 0,
+                              bool moreProbMTSIdxFirst = false, CodingStructure *bestCS = nullptr);
   void estIntraPredChromaQT       ( CodingUnit &cu, Partitioner& pm, const double maxCostAllowed = MAX_DOUBLE );
   void PLTSearch                  ( CodingStructure &cs, Partitioner& partitioner, ComponentID compBegin, uint32_t numComp);
-  uint64_t xFracModeBitsIntra     (PredictionUnit &pu, const uint32_t &uiMode, const ChannelType &compID);
+  uint64_t xFracModeBitsIntra(PredictionUnit &pu, const uint32_t &mode, const ChannelType &compID);
   void invalidateBestModeCost     () { for( int i = 0; i < NUM_LFNST_NUM_PER_SET; i++ ) m_bestModeCostValid[ i ] = false; };
 
   void sortRdModeListFirstColorSpace(ModeInfo mode, double cost, char bdpcmMode, ModeInfo* rdModeList, double* rdCostList, char* bdpcmModeList, int& candNum);
   void invalidateBestRdModeFirstColorSpace();
   void setSavedRdModeIdx(int idx) { m_savedRdModeIdx = idx; }
 
+#if GDR_ENABLED
+  int  getNumTopRecons(PredictionUnit &pu, int luma_dirMode, bool isChroma);
+  bool isValidIntraPredLuma(PredictionUnit &pu, int luma_dirMode);
+  bool isValidIntraPredChroma(PredictionUnit &pu, int luma_dirMode, int chroma_dirMode);
+#endif
 protected:
 
   // -------------------------------------------------------------------------------------------------------------------
@@ -459,11 +463,14 @@ protected:
   uint64_t xGetIntraFracBitsQTChroma(TransformUnit& tu, const ComponentID &compID);
   void xEncCoeffQT                                 ( CodingStructure &cs, Partitioner& pm, const ComponentID compID, const int subTuIdx = -1, const PartSplit ispType = TU_NO_ISP, CUCtx * cuCtx = nullptr );
 
-  void xIntraCodingTUBlock        (TransformUnit &tu, const ComponentID &compID, Distortion& ruiDist, const int &default0Save1Load2 = 0, uint32_t* numSig = nullptr, std::vector<TrMode>* trModes=nullptr, const bool loadTr=false );
-  void xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &compID, Distortion& ruiDist, std::vector<TrMode>* trModes = nullptr, const bool loadTr = false);
+  void xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &compID, Distortion &dist,
+                           const int &default0Save1Load2 = 0, uint32_t *numSig = nullptr,
+                           std::vector<TrMode> *trModes = nullptr, const bool loadTr = false);
+  void xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &compID, Distortion &dist,
+                              std::vector<TrMode> *trModes = nullptr, const bool loadTr = false);
 
   ChromaCbfs xRecurIntraChromaCodingQT( CodingStructure &cs, Partitioner& pm, const double bestCostSoFar = MAX_DOUBLE,                          const PartSplit ispType = TU_NO_ISP );
-  bool       xRecurIntraCodingLumaQT  ( CodingStructure &cs, Partitioner& pm, const double bestCostSoFar = MAX_DOUBLE, const int subTuIdx = -1, const PartSplit ispType = TU_NO_ISP, const bool ispIsCurrentWinner = false, bool mtsCheckRangeFlag = false, int mtsFirstCheckId = 0, int mtsLastCheckId = 0, bool moreProbMTSIdxFirst = false );
+  bool       xRecurIntraCodingLumaQT  ( CodingStructure &cs, Partitioner& pm, bool mtsCheckRangeFlag = false, int mtsFirstCheckId = 0, int mtsLastCheckId = 0, bool moreProbMTSIdxFirst = false );
   bool       xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner& pm, bool mtsCheckRangeFlag = false, int mtsFirstCheckId = 0, int mtsLastCheckId = 0, bool moreProbMTSIdxFirst = false);
   bool       xIntraCodingLumaISP      ( CodingStructure& cs, Partitioner& pm, const double bestCostSoFar = MAX_DOUBLE );
 
@@ -476,7 +483,6 @@ protected:
   void     deriveIndexMap         (CodingStructure& cs, Partitioner& partitioner, ComponentID compBegin, uint32_t numComp, PLTScanMode pltScanMode, double& dCost, bool* idxExist);
   bool     deriveSubblockIndexMap(CodingStructure& cs, Partitioner& partitioner, ComponentID compBegin, PLTScanMode pltScanMode, int minSubPos, int maxSubPos, const BinFracBits& fracBitsPltRunType, const BinFracBits* fracBitsPltIndexINDEX, const BinFracBits* fracBitsPltIndexCOPY, const double minCost, bool useRotate);
   double   rateDistOptPLT         (bool RunType, uint8_t RunIndex, bool prevRunType, uint8_t prevRunIndex, uint8_t aboveRunIndex, bool& prevCodedRunType, int& prevCodedRunPos, int scanPos, uint32_t width, int dist, int indexMaxValue, const BinFracBits* IndexfracBits, const BinFracBits& TypefracBits);
-  void     initTBCTable           (int bitDepth);
   uint32_t getTruncBinBits        (uint32_t symbol, uint32_t maxSymbol);
   uint32_t getEpExGolombNumBins   (uint32_t symbol, uint32_t count);
   void xGetNextISPMode                    ( ModeInfo& modeInfo, const ModeInfo* lastMode, const Size cuSize );

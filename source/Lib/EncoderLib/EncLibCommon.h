@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,7 @@ private:
   ParameterSetMap<APS>      m_apsMap;             ///< APS, it is shared across all layers
   PicList                   m_cListPic;           ///< DPB, it is shared across all layers
   VPS                       m_vps;
+  int                       m_layerDecPicBuffering[MAX_VPS_LAYERS*MAX_TLAYER];  // to store number of required DPB pictures per layer
 
 public:
   EncLibCommon();
@@ -61,5 +62,6 @@ public:
   ParameterSetMap<PPS>&    getPpsMap()             { return m_ppsMap;     }
   ParameterSetMap<APS>&    getApsMap()             { return m_apsMap;     }
   VPS*                     getVPS()                { return &m_vps;       }
+  int*                     getDecPicBuffering()    { return m_layerDecPicBuffering; }
 };
 

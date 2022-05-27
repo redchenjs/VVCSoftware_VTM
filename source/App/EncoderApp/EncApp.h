@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,6 +71,9 @@ private:
   EncLib            m_cEncLib;                    ///< encoder class
   VideoIOYuv        m_cVideoIOYuvInputFile;       ///< input YUV file
   VideoIOYuv        m_cVideoIOYuvReconFile;       ///< output reconstruction file
+#if JVET_Z0120_SII_SEI_PROCESSING
+  VideoIOYuv        m_cTVideoIOYuvSIIPreFile;      ///< output pre-filtered file
+#endif
   int               m_iFrameRcvd;                 ///< number of received frames
   uint32_t          m_essentialBytes;
   uint32_t          m_totalBytes;
@@ -83,7 +86,7 @@ private:
   // initialization
   void xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId );         ///< create files & encoder class
   void xInitLibCfg ();                           ///< initialize internal variables
-  void xInitLib    (bool isFieldCoding);         ///< initialize encoder class
+  void xInitLib();                               ///< initialize encoder class
   void xDestroyLib ();                           ///< destroy encoder class
 
   // file I/O
@@ -97,10 +100,13 @@ private:
   int                    m_numEncoded;
   PelStorage*            m_trueOrgPic;
   PelStorage*            m_orgPic;
+  PelStorage*            m_filteredOrgPic;
 #if EXTENSION_360_VIDEO
   TExt360AppEncTop*      m_ext360;
 #endif
   EncTemporalFilter      m_temporalFilter;
+  PelStorage*            m_filteredOrgPicForFG;
+  EncTemporalFilter      m_temporalFilterForFG;
   bool m_flush;
 
 public:

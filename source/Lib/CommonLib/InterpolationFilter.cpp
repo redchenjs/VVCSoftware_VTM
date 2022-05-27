@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -289,26 +289,6 @@ const TFilterCoeff InterpolationFilter::m_chromaFilterRPR2[CHROMA_INTERPOLATION_
   { -1, 18, 30, 17 }
 };
 
-const TFilterCoeff InterpolationFilter::m_bilinearFilter[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_BILINEAR] =
-{
-  { 64,  0, },
-  { 60,  4, },
-  { 56,  8, },
-  { 52, 12, },
-  { 48, 16, },
-  { 44, 20, },
-  { 40, 24, },
-  { 36, 28, },
-  { 32, 32, },
-  { 28, 36, },
-  { 24, 40, },
-  { 20, 44, },
-  { 16, 48, },
-  { 12, 52, },
-  { 8, 56, },
-  { 4, 60, },
-};
-
 const TFilterCoeff InterpolationFilter::m_bilinearFilterPrec4[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_BILINEAR] =
 {
   { 16,  0, },
@@ -415,11 +395,7 @@ void InterpolationFilter::filterCopy( const ClpRng& clpRng, const Pel *src, int 
   }
   else if ( isFirst )
   {
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
     const int shift = IF_INTERNAL_FRAC_BITS(clpRng.bd);
-#else
-    const int shift = std::max<int>(2, (IF_INTERNAL_PREC - clpRng.bd));
-#endif
 
     if (biMCForDMVR)
     {
@@ -468,11 +444,7 @@ void InterpolationFilter::filterCopy( const ClpRng& clpRng, const Pel *src, int 
   }
   else
   {
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
     const int shift = IF_INTERNAL_FRAC_BITS(clpRng.bd);
-#else
-    const int shift = std::max<int>(2, (IF_INTERNAL_PREC - clpRng.bd));
-#endif
 
     if (biMCForDMVR)
     {
@@ -577,11 +549,7 @@ void InterpolationFilter::filter(const ClpRng& clpRng, Pel const *src, int srcSt
   src -= ( N/2 - 1 ) * cStride;
 
   int offset;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
   int headRoom = IF_INTERNAL_FRAC_BITS(clpRng.bd);
-#else
-  int headRoom = std::max<int>(2, (IF_INTERNAL_PREC - clpRng.bd));
-#endif
   int shift    = IF_FILTER_PREC;
   // with the current settings (IF_INTERNAL_PREC = 14 and IF_FILTER_PREC = 6), though headroom can be
   // negative for bit depths greater than 14, shift will remain non-negative for bit depths of 8->20
@@ -745,10 +713,11 @@ void InterpolationFilter::filterVer(const ClpRng& clpRng, Pel const *src, int sr
  * \param  height     Height of block
  * \param  frac       Fractional sample offset
  * \param  isLast     Flag indicating whether it is the last filtering operation
- * \param  fmt        Chroma format
  * \param  bitDepth   Bit depth
  */
-void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, int frac, bool isLast, const ChromaFormat fmt, const ClpRng& clpRng, int nFilterIdx, bool biMCForDMVR, bool useAltHpelIf)
+void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride,
+                                    int width, int height, int frac, bool isLast, const ClpRng &clpRng, int nFilterIdx,
+                                    bool biMCForDMVR, bool useAltHpelIf)
 {
   if( frac == 0 && nFilterIdx < 2 )
   {
@@ -796,19 +765,21 @@ void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, in
   }
   else
   {
-    const uint32_t csx = getComponentScaleX( compID, fmt );
-    CHECK( frac < 0 || csx >= 2 || ( frac << ( 1 - csx ) ) >= CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction" );
+    CHECK(frac < 0 || frac >= CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction");
     if( nFilterIdx == 3 )
     {
-      filterHor<NTAPS_CHROMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilterRPR1[frac << ( 1 - csx )], biMCForDMVR );
+      filterHor<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilterRPR1[frac],
+                              biMCForDMVR);
     }
     else if( nFilterIdx == 4 )
     {
-      filterHor<NTAPS_CHROMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilterRPR2[frac << ( 1 - csx )], biMCForDMVR );
+      filterHor<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilterRPR2[frac],
+                              biMCForDMVR);
     }
     else
     {
-      filterHor<NTAPS_CHROMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilter[frac << ( 1 - csx )], biMCForDMVR );
+      filterHor<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilter[frac],
+                              biMCForDMVR);
     }
   }
 }
@@ -827,10 +798,11 @@ void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, in
  * \param  frac       Fractional sample offset
  * \param  isFirst    Flag indicating whether it is the first filtering operation
  * \param  isLast     Flag indicating whether it is the last filtering operation
- * \param  fmt        Chroma format
  * \param  bitDepth   Bit depth
  */
-void InterpolationFilter::filterVer(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, int frac, bool isFirst, bool isLast, const ChromaFormat fmt, const ClpRng& clpRng, int nFilterIdx, bool biMCForDMVR, bool useAltHpelIf)
+void InterpolationFilter::filterVer(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride,
+                                    int width, int height, int frac, bool isFirst, bool isLast, const ClpRng &clpRng,
+                                    int nFilterIdx, bool biMCForDMVR, bool useAltHpelIf)
 {
   if( frac == 0 && nFilterIdx < 2 )
   {
@@ -878,19 +850,21 @@ void InterpolationFilter::filterVer(const ComponentID compID, Pel const *src, in
   }
   else
   {
-    const uint32_t csy = getComponentScaleY( compID, fmt );
-    CHECK( frac < 0 || csy >= 2 || ( frac << ( 1 - csy ) ) >= CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction" );
+    CHECK(frac < 0 || frac >= CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction");
     if( nFilterIdx == 3 )
     {
-      filterVer<NTAPS_CHROMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_chromaFilterRPR1[frac << ( 1 - csy )], biMCForDMVR );
+      filterVer<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                              m_chromaFilterRPR1[frac], biMCForDMVR);
     }
     else if( nFilterIdx == 4 )
     {
-      filterVer<NTAPS_CHROMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_chromaFilterRPR2[frac << ( 1 - csy )], biMCForDMVR );
+      filterVer<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                              m_chromaFilterRPR2[frac], biMCForDMVR);
     }
     else
     {
-      filterVer<NTAPS_CHROMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_chromaFilter[frac << ( 1 - csy )], biMCForDMVR );
+      filterVer<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                              m_chromaFilter[frac], biMCForDMVR);
     }
   }
 }
@@ -912,11 +886,7 @@ void InterpolationFilter::xWeightedGeoBlk(const PredictionUnit &pu, const uint32
   const char    log2WeightBase = 3;
   const ClpRng  clipRng = pu.cu->slice->clpRngs().comp[compIdx];
   const int32_t clipbd = clipRng.bd;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
   const int32_t shiftWeighted = IF_INTERNAL_FRAC_BITS(clipbd) + log2WeightBase;
-#else
-  const int32_t shiftWeighted = std::max<int>(2, (IF_INTERNAL_PREC - clipbd)) + log2WeightBase;
-#endif
   const int32_t offsetWeighted = (1 << (shiftWeighted - 1)) + (IF_INTERNAL_OFFS << log2WeightBase);
   const uint32_t scaleX = getComponentScaleX(compIdx, pu.chromaFormat);
   const uint32_t scaleY = getComponentScaleY(compIdx, pu.chromaFormat);

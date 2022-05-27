@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -345,7 +345,7 @@
   {  b, -d,  f, -h,  j, -l,  n, -p,  r, -t,  v, -x,  z, -B,  D, -F,  E, -C,  A, -y,  w, -u,  s, -q,  o, -m,  k, -i,  g, -e,  c, -a,}, \
 }
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT && RExt__HIGH_PRECISION_FORWARD_TRANSFORM
+#if RExt__HIGH_PRECISION_FORWARD_TRANSFORM
 //--------------------------------------------------------------------------------------------------
 // DCT-2
 const TMatrixCoeff g_trCoreDCT2P2[TRANSFORM_NUMBER_OF_DIRECTIONS][2][2] =
@@ -387,7 +387,7 @@ const TMatrixCoeff g_trCoreDCT2P64[TRANSFORM_NUMBER_OF_DIRECTIONS][64][64] =
 // DCT-8
 const TMatrixCoeff g_trCoreDCT8P4[TRANSFORM_NUMBER_OF_DIRECTIONS][4][4] =
 {
-  DEFINE_DCT8_P4_MATRIX(21505, 18893, 14081,  7425),
+  DEFINE_DCT8_P4_MATRIX(21505, 18893, 14081,  7424),
   DEFINE_DCT8_P4_MATRIX(84,     74,     55,     29)
 };
 const TMatrixCoeff g_trCoreDCT8P8[TRANSFORM_NUMBER_OF_DIRECTIONS][8][8] =
@@ -409,7 +409,7 @@ const TMatrixCoeff g_trCoreDCT8P32[TRANSFORM_NUMBER_OF_DIRECTIONS][32][32] =
 // DST-7
 const TMatrixCoeff g_trCoreDST7P4[TRANSFORM_NUMBER_OF_DIRECTIONS][4][4] =
 {
-  DEFINE_DST7_P4_MATRIX( 7425, 14081, 18893, 21505),
+  DEFINE_DST7_P4_MATRIX(7424, 14081, 18893, 21505),
   DEFINE_DST7_P4_MATRIX(   29,    55,    74,    84)
 };
 const TMatrixCoeff g_trCoreDST7P8[TRANSFORM_NUMBER_OF_DIRECTIONS][8][8] =

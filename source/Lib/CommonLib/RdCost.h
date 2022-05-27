@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -293,10 +293,6 @@ public:
     return length;
   }
 
-#if ENABLE_SPLIT_PARALLELISM
-  void copyState( const RdCost& other );
-#endif
-
   // for motion cost
   static uint32_t    xGetExpGolombNumberOfBits( int iVal )
   {
@@ -312,10 +308,14 @@ public:
     return uiLength2 + ( floorLog2(uiTemp2) << 1 );
   }
   Distortion     getCostOfVectorWithPredictor( const int x, const int y, const unsigned imvShift )  { return Distortion( m_motionLambda * getBitsOfVectorWithPredictor(x, y, imvShift )); }
-  uint32_t           getBitsOfVectorWithPredictor( const int x, const int y, const unsigned imvShift )  { return xGetExpGolombNumberOfBits(((x << m_iCostScale) - m_mvPredictor.getHor())>>imvShift) + xGetExpGolombNumberOfBits(((y << m_iCostScale) - m_mvPredictor.getVer())>>imvShift); }
+  uint32_t       getBitsOfVectorWithPredictor(const int x, const int y, const unsigned imvShift)
+  {
+    return xGetExpGolombNumberOfBits(((x * (1 << m_iCostScale)) - m_mvPredictor.getHor()) >> imvShift)
+           + xGetExpGolombNumberOfBits(((y * (1 << m_iCostScale)) - m_mvPredictor.getVer()) >> imvShift);
+  }
 #if WCG_EXT
          void    saveUnadjustedLambda       ();
-         void    initLumaLevelToWeightTable ();
+         void    initLumaLevelToWeightTable (int bitDepth);
   inline double  getWPSNRLumaLevelWeight    (int val) { return m_lumaLevelToWeightPLUT[val]; }
   void           initLumaLevelToWeightTableReshape();
   void           updateReshapeLumaLevelToWeightTableChromaMD (std::vector<Pel>& ILUT);
@@ -326,11 +326,8 @@ public:
   inline std::vector<double>& getLumaLevelWeightTable        ()                   { return m_lumaLevelToWeightPLUT; }
 #endif
 
-#if JVET_S0234_ACT_CRS_FIX
-  void           lambdaAdjustColorTrans(bool forward, ComponentID compID, bool applyChromaScale = false, int* resScaleInv = NULL);
-#else
-  void           lambdaAdjustColorTrans(bool forward, ComponentID compID);
-#endif
+  void           lambdaAdjustColorTrans(bool forward, ComponentID compID, bool applyChromaScale = false,
+                                        int *resScaleInv = nullptr);
   void           resetStore() { m_resetStore = true; }
 
 private:
@@ -344,7 +341,7 @@ private:
   static Distortion xGetSSE16N        ( const DistParam& pcDtParam );
 
 #if WCG_EXT
-  static Distortion getWeightedMSE    (int compIdx, const Pel org, const Pel cur, const uint32_t uiShift, const Pel orgLuma);
+  static Distortion getWeightedMSE(int compIdx, const Pel org, const Pel cur, const uint32_t shift, const Pel orgLuma);
   static Distortion xGetSSE_WTD       ( const DistParam& pcDtParam );
   static Distortion xGetSSE2_WTD      ( const DistParam& pcDtParam );
   static Distortion xGetSSE4_WTD      ( const DistParam& pcDtParam );
@@ -395,27 +392,41 @@ private:
 #ifdef TARGET_SIMD_X86
   template<X86_VEXT vext>
   static Distortion xGetSSE_SIMD    ( const DistParam& pcDtParam );
-  template<int iWidth, X86_VEXT vext>
-  static Distortion xGetSSE_NxN_SIMD( const DistParam& pcDtParam );
+  template<int width, X86_VEXT vext> static Distortion xGetSSE_NxN_SIMD(const DistParam &pcDtParam);
+#if RExt__HIGH_BIT_DEPTH_SUPPORT
+  template<X86_VEXT vext>
+  static Distortion xGetSSE_HBD_SIMD(const DistParam& pcDtParam);
+#endif
 
   template<X86_VEXT vext>
   static Distortion xGetSAD_SIMD    ( const DistParam& pcDtParam );
-  template<int iWidth, X86_VEXT vext>
-  static Distortion xGetSAD_NxN_SIMD( const DistParam& pcDtParam );
+  template<int width, X86_VEXT vext> static Distortion xGetSAD_NxN_SIMD(const DistParam &pcDtParam);
   template<X86_VEXT vext>
   static Distortion xGetSAD_IBD_SIMD( const DistParam& pcDtParam );
-
+#if RExt__HIGH_BIT_DEPTH_SUPPORT
+  template<X86_VEXT vext>
+  static Distortion xGetHADs_HBD_SIMD(const DistParam& pcDtParam);
+#else
   template<X86_VEXT vext>
   static Distortion xGetHADs_SIMD   ( const DistParam& pcDtParam );
+#endif
 
   template< X86_VEXT vext >
   static Distortion xGetSADwMask_SIMD( const DistParam& pcDtParam );
+#if RExt__HIGH_BIT_DEPTH_SUPPORT
+  template<X86_VEXT vext>
+  static Distortion xGetSAD_HBD_SIMD(const DistParam& pcDtParam);
+
+  template< X86_VEXT vext >
+  static Distortion xGetSADwMask_HBD_SIMD(const DistParam& pcDtParam);
+#endif
 #endif
 
 public:
 
 #if WCG_EXT
-  Distortion   getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc, const CPelBuf *orgLuma = NULL );
+  Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc,
+                         const CPelBuf *orgLuma = nullptr);
 #else
   Distortion   getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc );
 #endif

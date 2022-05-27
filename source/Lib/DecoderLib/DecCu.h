@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,7 +81,6 @@ protected:
   void xReconInter        ( CodingUnit&      cu );
   void xDecodeInterTexture( CodingUnit&      cu );
   void xReconIntraQT      ( CodingUnit&      cu );
-  void xFillPCMBuffer     ( CodingUnit&      cu );
 
   void xIntraRecBlk       ( TransformUnit&   tu, const ComponentID compID );
   void xIntraRecACTBlk(TransformUnit&   tu);

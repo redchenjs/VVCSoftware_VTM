@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,12 +48,6 @@
 
 //! \ingroup CommonLib
 //! \{
-
-// ====================================================================================================================
-// Constants
-// ====================================================================================================================
-
-#define QP_BITS                 15
 
 // ====================================================================================================================
 // Class definition
@@ -106,9 +100,7 @@ public:
   virtual void init( uint32_t uiMaxTrSize,
                      bool useRDOQ = false,
                      bool useRDOQTS = false,
-#if T0196_SELECTIVE_RDOQ
                      bool useSelectiveRDOQ = false
-#endif
                      );
 
 public:
@@ -146,23 +138,15 @@ public:
   // de-quantization
   virtual void dequant           ( const TransformUnit &tu, CoeffBuf &dstCoeff, const ComponentID &compID, const QpParam &cQP );
 
-#if ENABLE_SPLIT_PARALLELISM
-  virtual void copyState         ( const Quant& other );
-#endif
-
 protected:
 
-#if T0196_SELECTIVE_RDOQ
   bool xNeedRDOQ                 ( TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, const QpParam &cQP );
-#endif
 
   double   m_dLambda;
   uint32_t     m_uiMaxTrSize;
   bool     m_useRDOQ;
   bool     m_useRDOQTS;
-#if T0196_SELECTIVE_RDOQ
   bool     m_useSelectiveRDOQ;
-#endif
 private:
   void xInitScalingList   ( const Quant* other );
   void xDestroyScalingList();

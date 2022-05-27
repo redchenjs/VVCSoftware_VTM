@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -108,13 +108,10 @@ const SAOBlkParam& SAOBlkParam::operator= (const SAOBlkParam& src)
 }
 
 
-
-
 SampleAdaptiveOffset::SampleAdaptiveOffset()
 {
   m_numberOfComponents = 0;
 }
-
 
 SampleAdaptiveOffset::~SampleAdaptiveOffset()
 {
@@ -167,7 +164,6 @@ void SampleAdaptiveOffset::invertQuantOffsets(ComponentID compIdx, int typeIdc, 
     }
     CHECK(dstOffsets[SAO_CLASS_EO_PLAIN] != 0, "EO offset is not '0'"); //keep EO plain offset as zero
   }
-
 }
 
 int SampleAdaptiveOffset::getMergeList(CodingStructure& cs, int ctuRsAddr, SAOBlkParam* blkParams, SAOBlkParam* mergeList[NUM_SAO_MERGE_TYPES])
@@ -182,7 +178,7 @@ int SampleAdaptiveOffset::getMergeList(CodingStructure& cs, int ctuRsAddr, SAOBl
 
   for(int mergeType=0; mergeType< NUM_SAO_MERGE_TYPES; mergeType++)
   {
-    SAOBlkParam* mergeCandidate = NULL;
+    SAOBlkParam *mergeCandidate = nullptr;
 
     switch(mergeType)
     {
@@ -217,7 +213,7 @@ int SampleAdaptiveOffset::getMergeList(CodingStructure& cs, int ctuRsAddr, SAOBl
     }
 
     mergeList[mergeType]=mergeCandidate;
-    if (mergeCandidate != NULL)
+    if (mergeCandidate != nullptr)
     {
       numValidMergeCandidates++;
     }
@@ -250,7 +246,7 @@ void SampleAdaptiveOffset::reconstructBlkSAOParam(SAOBlkParam& recParam, SAOBlkP
     case SAO_MODE_MERGE:
       {
         SAOBlkParam* mergeTarget = mergeList[offsetParam.typeIdc];
-        CHECK(mergeTarget == NULL, "Merge target does not exist");
+        CHECK(mergeTarget == nullptr, "Merge target does not exist");
 
         offsetParam = (*mergeTarget)[component];
       }
@@ -274,7 +270,7 @@ void SampleAdaptiveOffset::xReconstructBlkSAOParams(CodingStructure& cs, SAOBlkP
 
   for(int ctuRsAddr=0; ctuRsAddr< cs.pcv->sizeInCtus; ctuRsAddr++)
   {
-    SAOBlkParam* mergeList[NUM_SAO_MERGE_TYPES] = { NULL };
+    SAOBlkParam *mergeList[NUM_SAO_MERGE_TYPES] = { nullptr };
     getMergeList(cs, ctuRsAddr, saoBlkParams, mergeList);
 
     reconstructBlkSAOParam(saoBlkParams[ctuRsAddr], mergeList);
@@ -521,7 +517,6 @@ void SampleAdaptiveOffset::offsetBlock(const int channelBitDepth, const ClpRng& 
         }
         edgeType = sgn(srcLine[x] - srcLineBelow[x-1]) + signUpLine[x];
         resLine[x] = ClipPel<int>(srcLine[x] + offset[edgeType], clpRng);
-
       }
     }
     break;
@@ -661,9 +656,7 @@ void SampleAdaptiveOffset::SAOProcess( CodingStructure& cs, SAOBlkParam* saoBlkP
 
   DTRACE    ( g_trace_ctx, D_CRC, "SAO" );
   DTRACE_CRC( g_trace_ctx, D_CRC, cs, cs.getRecoBuf() );
-
 }
-
 
 void SampleAdaptiveOffset::deriveLoopFilterBoundaryAvailibility(CodingStructure& cs, const Position &pos,
   bool& isLeftAvail,
@@ -692,25 +685,25 @@ void SampleAdaptiveOffset::deriveLoopFilterBoundaryAvailibility(CodingStructure&
   const bool isLoopFilterAcrossSlicePPS = cs.pps->getLoopFilterAcrossSlicesEnabledFlag();
   if (!isLoopFilterAcrossSlicePPS)
   {
-    isLeftAvail       = (cuLeft == NULL)       ? false : CU::isSameSlice(*cuCurr, *cuLeft);
-    isAboveAvail      = (cuAbove == NULL)      ? false : CU::isSameSlice(*cuCurr, *cuAbove);
-    isRightAvail      = (cuRight == NULL)      ? false : CU::isSameSlice(*cuCurr, *cuRight);
-    isBelowAvail      = (cuBelow == NULL)      ? false : CU::isSameSlice(*cuCurr, *cuBelow);
-    isAboveLeftAvail  = (cuAboveLeft == NULL)  ? false : CU::isSameSlice(*cuCurr, *cuAboveLeft);
-    isAboveRightAvail = (cuAboveRight == NULL) ? false : CU::isSameSlice(*cuCurr, *cuAboveRight);
-    isBelowLeftAvail  = (cuBelowLeft == NULL)  ? false : CU::isSameSlice(*cuCurr, *cuBelowLeft);
-    isBelowRightAvail = (cuBelowRight == NULL) ? false : CU::isSameSlice(*cuCurr, *cuBelowRight);
+    isLeftAvail       = (cuLeft == nullptr) ? false : CU::isSameSlice(*cuCurr, *cuLeft);
+    isAboveAvail      = (cuAbove == nullptr) ? false : CU::isSameSlice(*cuCurr, *cuAbove);
+    isRightAvail      = (cuRight == nullptr) ? false : CU::isSameSlice(*cuCurr, *cuRight);
+    isBelowAvail      = (cuBelow == nullptr) ? false : CU::isSameSlice(*cuCurr, *cuBelow);
+    isAboveLeftAvail  = (cuAboveLeft == nullptr) ? false : CU::isSameSlice(*cuCurr, *cuAboveLeft);
+    isAboveRightAvail = (cuAboveRight == nullptr) ? false : CU::isSameSlice(*cuCurr, *cuAboveRight);
+    isBelowLeftAvail  = (cuBelowLeft == nullptr) ? false : CU::isSameSlice(*cuCurr, *cuBelowLeft);
+    isBelowRightAvail = (cuBelowRight == nullptr) ? false : CU::isSameSlice(*cuCurr, *cuBelowRight);
   }
   else
   {
-    isLeftAvail       = (cuLeft != NULL);
-    isAboveAvail      = (cuAbove != NULL);
-    isRightAvail      = (cuRight != NULL);
-    isBelowAvail      = (cuBelow != NULL);
-    isAboveLeftAvail  = (cuAboveLeft != NULL);
-    isAboveRightAvail = (cuAboveRight != NULL);
-    isBelowLeftAvail  = (cuBelowLeft != NULL);
-    isBelowRightAvail = (cuBelowRight != NULL);
+    isLeftAvail       = (cuLeft != nullptr);
+    isAboveAvail      = (cuAbove != nullptr);
+    isRightAvail      = (cuRight != nullptr);
+    isBelowAvail      = (cuBelow != nullptr);
+    isAboveLeftAvail  = (cuAboveLeft != nullptr);
+    isAboveRightAvail = (cuAboveRight != nullptr);
+    isBelowLeftAvail  = (cuBelowLeft != nullptr);
+    isBelowRightAvail = (cuBelowRight != nullptr);
   }
 
   // check cross tile flags
@@ -749,7 +742,7 @@ bool SampleAdaptiveOffset::isCrossedByVirtualBoundaries(const int xPos, const in
   {
     for (int i = 0; i < picHeader->getNumHorVirtualBoundaries(); i++)
     {
-     if (yPos <= picHeader->getVirtualBoundariesPosY(i) && picHeader->getVirtualBoundariesPosY(i) <= yPos + height)
+      if (yPos <= picHeader->getVirtualBoundariesPosY(i) && picHeader->getVirtualBoundariesPosY(i) <= yPos + height)
       {
         horVirBndryPos[numHorVirBndry++] = picHeader->getVirtualBoundariesPosY(i);
       }

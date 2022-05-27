@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 
 #include <bitset>
 
-
+#include "ContextModelling.h"
 
 
 
@@ -386,9 +386,13 @@ namespace DQIntern
     scanInfo.eosbb      = ( scanInfo.insidePos == 0 );
     scanInfo.spt        = SCAN_ISCSBB;
     if(  scanInfo.insidePos == m_sbbMask && scanIdx > scanInfo.sbbSize && scanIdx < m_numCoeff - 1 )
+    {
       scanInfo.spt      = SCAN_SOCSBB;
+    }
     else if( scanInfo.eosbb && scanIdx > 0 && scanIdx < m_numCoeff - m_sbbSize )
+    {
       scanInfo.spt      = SCAN_EOCSBB;
+    }
     scanInfo.posX = m_scanId2BlkPos[scanIdx].x;
     scanInfo.posY = m_scanId2BlkPos[scanIdx].y;
     if( scanIdx )
@@ -433,9 +437,16 @@ namespace DQIntern
       return m_sigFracBits[std::max(((int) stateId) - 1, 0)];
     }
     inline const CoeffFracBits *gtxFracBits(unsigned stateId) const { return m_gtxFracBits; }
-    inline int32_t              lastOffset(unsigned scanIdx) const
+    inline int32_t lastOffset(unsigned scanIdx, int effWidth, int effHeight, bool reverseLast) const
     {
-      return m_lastBitsX[m_scanId2Pos[scanIdx].x] + m_lastBitsY[m_scanId2Pos[scanIdx].y];
+      if (reverseLast)
+      {
+        return m_lastBitsX[effWidth - 1 - m_scanId2Pos[scanIdx].x] + m_lastBitsY[effHeight - 1 - m_scanId2Pos[scanIdx].y];
+      }
+      else
+      {
+        return m_lastBitsX[m_scanId2Pos[scanIdx].x] + m_lastBitsY[m_scanId2Pos[scanIdx].y];
+      }
     }
 
   private:
@@ -528,7 +539,7 @@ namespace DQIntern
       const unsigned      lastShift   = ( compID == COMPONENT_Y ? (log2Size+1)>>2 : Clip3<unsigned>(0,2,size>>3) );
       const unsigned      lastOffset  = ( compID == COMPONENT_Y ? ( prefixCtx[log2Size] ) : 0 );
       uint32_t            sumFBits    = 0;
-      unsigned            maxCtxId    = g_uiGroupIdx[std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, size) - 1];
+      unsigned            maxCtxId    = g_groupIdx[std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, size) - 1];
       for( unsigned ctxId = 0; ctxId < maxCtxId; ctxId++ )
       {
         const BinFracBits bits  = fracBitsAccess.getFracBitsArray( ctxSetLast( lastOffset + ( ctxId >> lastShift ) ) );
@@ -538,7 +549,7 @@ namespace DQIntern
       ctxBits  [ maxCtxId ]     = sumFBits + ( maxCtxId>3 ? ((maxCtxId-2)>>1)<<SCALE_BITS : 0 ) + bitOffset;
       for (unsigned pos = 0; pos < std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, size); pos++)
       {
-        lastBits[ pos ]         = ctxBits[ g_uiGroupIdx[ pos ] ];
+        lastBits[pos] = ctxBits[g_groupIdx[pos]];
       }
     }
   }
@@ -629,11 +640,7 @@ namespace DQIntern
     Quantizer() {}
     void  dequantBlock         ( const TransformUnit& tu, const ComponentID compID, const QpParam& cQP, CoeffBuf& recCoeff, bool enableScalingLists, int* piDequantCoef ) const;
     void  initQuantBlock       ( const TransformUnit& tu, const ComponentID compID, const QpParam& cQP, const double lambda, int gValue );
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
     inline void   preQuantCoeff( const TCoeff absCoeff, PQData *pqData, TCoeff quanCoeff ) const;
-#else
-    inline void   preQuantCoeff( const TCoeff absCoeff, PQData *pqData, int quanCoeff ) const;
-#endif
     inline TCoeff getLastThreshold() const { return m_thresLast; }
     inline TCoeff getSSbbThreshold() const { return m_thresSSbb; }
 
@@ -686,11 +693,7 @@ namespace DQIntern
     // quant parameters
     m_QShift                    = QUANT_SHIFT  - 1 + qpPer + transformShift;
     m_QAdd                      = -( ( 3 << m_QShift ) >> 1 );
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
     int               invShift  = IQUANT_SHIFT + 1 - qpPer - transformShift;
-#else
-    Intermediate_Int  invShift  = IQUANT_SHIFT + 1 - qpPer - transformShift;
-#endif
     m_QScale                    = g_quantScales[needsSqrt2ScaleAdjustment?1:0][ qpRem ];
     const unsigned    qIdxBD    = std::min<unsigned>( maxLog2TrDynamicRange + 1, 8*sizeof(Intermediate_Int) + invShift - IQUANT_SHIFT - 1 );
     m_maxQIdx                   = ( 1 << (qIdxBD-1) ) - 4;
@@ -764,12 +767,15 @@ namespace DQIntern
       if( level )
       {
         if (enableScalingLists)
+        {
           invQScale = piDequantCoef[rasterPos];//scalingfactor*levelScale
+        }
         if (shift < 0 && (enableScalingLists || scanIdx == lastScanIdx))
         {
           invQScale <<= -shift;
         }
-        Intermediate_Int  qIdx      = ( level << 1 ) + ( level > 0 ? -(state>>1) : (state>>1) );
+        Intermediate_Int qIdx = 2 * level + (level > 0 ? -(state >> 1) : (state >> 1));
+
         int64_t  nomTCoeff          = ((int64_t)qIdx * (int64_t)invQScale + add) >> ((shift < 0) ? 0 : shift);
         tCoeff[rasterPos]           = (TCoeff)Clip3<int64_t>(minTCoeff, maxTCoeff, nomTCoeff);
       }
@@ -777,11 +783,7 @@ namespace DQIntern
     }
   }
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
   inline void Quantizer::preQuantCoeff(const TCoeff absCoeff, PQData *pqData, TCoeff quanCoeff) const
-#else
-  inline void Quantizer::preQuantCoeff(const TCoeff absCoeff, PQData *pqData, int quanCoeff) const
-#endif
   {
     int64_t scaledOrg = int64_t( absCoeff ) * quanCoeff;
     TCoeff  qIdx      = std::max<TCoeff>( 1, std::min<TCoeff>( m_maxQIdx, TCoeff( ( scaledOrg + m_QAdd ) >> m_QShift ) ) );
@@ -855,13 +857,38 @@ namespace DQIntern
     uint8_t                     m_memory[ 8 * ( MAX_TB_SIZEY * MAX_TB_SIZEY + MLS_GRP_NUM ) ];
   };
 
+#if JVET_V0106_DEP_QUANT_ENC_OPT
+#define RICEMAX 64
+#define RICE_ORDER_MAX 16
+  const int32_t g_goRiceBits[RICE_ORDER_MAX][RICEMAX] =
+#else
 #define RICEMAX 32
   const int32_t g_goRiceBits[4][RICEMAX] =
+#endif
   {
+#if JVET_V0106_DEP_QUANT_ENC_OPT
+    { 32768, 65536, 98304, 131072, 163840, 196608, 262144, 262144, 327680, 327680, 327680, 327680, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288 },
+    { 65536, 65536, 98304, 98304, 131072, 131072, 163840, 163840, 196608, 196608, 229376, 229376, 294912, 294912, 294912, 294912, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520 },
+    { 98304, 98304, 98304, 98304, 131072, 131072, 131072, 131072, 163840, 163840, 163840, 163840, 196608, 196608, 196608, 196608, 229376, 229376, 229376, 229376, 262144, 262144, 262144, 262144, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752 },
+    { 131072, 131072, 131072, 131072, 131072, 131072, 131072, 131072, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448 },
+    { 163840, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144 },
+    { 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376 },
+    { 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376 },
+    { 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144 },
+    { 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912, 294912 },
+    { 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680 },
+    { 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448 },
+    { 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216 },
+    { 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984 },
+    { 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752 },
+    { 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520, 491520 },
+    { 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288, 524288 },
+#else
     { 32768,  65536,  98304, 131072, 163840, 196608, 262144, 262144, 327680, 327680, 327680, 327680, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752, 458752},
     { 65536,  65536,  98304,  98304, 131072, 131072, 163840, 163840, 196608, 196608, 229376, 229376, 294912, 294912, 294912, 294912, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 360448, 425984, 425984, 425984, 425984, 425984, 425984, 425984, 425984},
     { 98304,  98304,  98304,  98304, 131072, 131072, 131072, 131072, 163840, 163840, 163840, 163840, 196608, 196608, 196608, 196608, 229376, 229376, 229376, 229376, 262144, 262144, 262144, 262144, 327680, 327680, 327680, 327680, 327680, 327680, 327680, 327680},
     {131072, 131072, 131072, 131072, 131072, 131072, 131072, 131072, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 163840, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 196608, 229376, 229376, 229376, 229376, 229376, 229376, 229376, 229376}
+#endif
   };
 
   class State
@@ -871,7 +898,7 @@ namespace DQIntern
     State( const RateEstimator& rateEst, CommonCtx& commonCtx, const int stateId );
 
     template<uint8_t numIPos>
-    inline void updateState(const ScanInfo &scanInfo, const State *prevStates, const Decision &decision);
+    inline void updateState(const ScanInfo &scanInfo, const State *prevStates, const Decision &decision, const int baseLevel, const bool extRiceFlag);
     inline void updateStateEOS(const ScanInfo &scanInfo, const State *prevStates, const State *skipStates,
                                const Decision &decision);
 
@@ -892,78 +919,82 @@ namespace DQIntern
       int64_t         rdCostA   = m_rdCost + pqDataA.deltaDist;
       int64_t         rdCostB   = m_rdCost + pqDataB.deltaDist;
       int64_t         rdCostZ   = m_rdCost;
-        if( m_remRegBins >= 4 )
+      if (m_remRegBins >= 4)
+      {
+        if (pqDataA.absLevel < 4)
         {
-          if( pqDataA.absLevel < 4 )
-            rdCostA += m_coeffFracBits.bits[ pqDataA.absLevel ];
-          else
-          {
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
-            const TCoeff value = ( pqDataA.absLevel - 4 ) >> 1;
-#else
-            const unsigned value = ( pqDataA.absLevel - 4 ) >> 1;
-#endif
-            rdCostA += m_coeffFracBits.bits[ pqDataA.absLevel - ( value << 1 ) ] + goRiceTab[ value < RICEMAX ? value : RICEMAX - 1 ];
-          }
-          if( pqDataB.absLevel < 4 )
-            rdCostB += m_coeffFracBits.bits[ pqDataB.absLevel ];
-          else
-          {
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
-            const TCoeff value = ( pqDataB.absLevel - 4 ) >> 1;
-#else
-            const unsigned value = ( pqDataB.absLevel - 4 ) >> 1;
-#endif
-            rdCostB += m_coeffFracBits.bits[ pqDataB.absLevel - ( value << 1 ) ] + goRiceTab[ value < RICEMAX ? value : RICEMAX - 1 ];
-          }
-          if( spt == SCAN_ISCSBB )
-          {
-            rdCostA += m_sigFracBits.intBits[ 1 ];
-            rdCostB += m_sigFracBits.intBits[ 1 ];
-            rdCostZ += m_sigFracBits.intBits[ 0 ];
-          }
-          else if( spt == SCAN_SOCSBB )
-          {
-            rdCostA += m_sbbFracBits.intBits[ 1 ] + m_sigFracBits.intBits[ 1 ];
-            rdCostB += m_sbbFracBits.intBits[ 1 ] + m_sigFracBits.intBits[ 1 ];
-            rdCostZ += m_sbbFracBits.intBits[ 1 ] + m_sigFracBits.intBits[ 0 ];
-          }
-          else if( m_numSigSbb )
-          {
-            rdCostA += m_sigFracBits.intBits[ 1 ];
-            rdCostB += m_sigFracBits.intBits[ 1 ];
-            rdCostZ += m_sigFracBits.intBits[ 0 ];
-          }
-          else
-          {
-            rdCostZ = decisionA.rdCost;
-          }
+          rdCostA += m_coeffFracBits.bits[pqDataA.absLevel];
         }
         else
         {
-          rdCostA += ( 1 << SCALE_BITS ) + goRiceTab[ pqDataA.absLevel <= m_goRiceZero ? pqDataA.absLevel - 1 : ( pqDataA.absLevel < RICEMAX ? pqDataA.absLevel : RICEMAX - 1 ) ];
-          rdCostB += ( 1 << SCALE_BITS ) + goRiceTab[ pqDataB.absLevel <= m_goRiceZero ? pqDataB.absLevel - 1 : ( pqDataB.absLevel < RICEMAX ? pqDataB.absLevel : RICEMAX - 1 ) ];
-          rdCostZ += goRiceTab[ m_goRiceZero ];
+          const TCoeff value = (pqDataA.absLevel - 4) >> 1;
+          rdCostA +=
+            m_coeffFracBits.bits[pqDataA.absLevel - (value << 1)] + goRiceTab[value < RICEMAX ? value : RICEMAX - 1];
         }
-        if( rdCostA < decisionA.rdCost )
+        if (pqDataB.absLevel < 4)
         {
-          decisionA.rdCost = rdCostA;
-          decisionA.absLevel = pqDataA.absLevel;
-          decisionA.prevId = m_stateId;
+          rdCostB += m_coeffFracBits.bits[pqDataB.absLevel];
         }
-        if( rdCostZ < decisionA.rdCost )
+        else
         {
-          decisionA.rdCost = rdCostZ;
-          decisionA.absLevel = 0;
-          decisionA.prevId = m_stateId;
+          const TCoeff value = (pqDataB.absLevel - 4) >> 1;
+          rdCostB +=
+            m_coeffFracBits.bits[pqDataB.absLevel - (value << 1)] + goRiceTab[value < RICEMAX ? value : RICEMAX - 1];
         }
-        if( rdCostB < decisionB.rdCost )
+        if (spt == SCAN_ISCSBB)
         {
-          decisionB.rdCost = rdCostB;
-          decisionB.absLevel = pqDataB.absLevel;
-          decisionB.prevId = m_stateId;
+          rdCostA += m_sigFracBits.intBits[1];
+          rdCostB += m_sigFracBits.intBits[1];
+          rdCostZ += m_sigFracBits.intBits[0];
+        }
+        else if (spt == SCAN_SOCSBB)
+        {
+          rdCostA += m_sbbFracBits.intBits[1] + m_sigFracBits.intBits[1];
+          rdCostB += m_sbbFracBits.intBits[1] + m_sigFracBits.intBits[1];
+          rdCostZ += m_sbbFracBits.intBits[1] + m_sigFracBits.intBits[0];
+        }
+        else if (m_numSigSbb)
+        {
+          rdCostA += m_sigFracBits.intBits[1];
+          rdCostB += m_sigFracBits.intBits[1];
+          rdCostZ += m_sigFracBits.intBits[0];
+        }
+        else
+        {
+          rdCostZ = decisionA.rdCost;
         }
       }
+      else
+      {
+        rdCostA +=
+          (1 << SCALE_BITS)
+          + goRiceTab[pqDataA.absLevel <= m_goRiceZero ? pqDataA.absLevel - 1
+                                                       : (pqDataA.absLevel < RICEMAX ? pqDataA.absLevel : RICEMAX - 1)];
+        rdCostB +=
+          (1 << SCALE_BITS)
+          + goRiceTab[pqDataB.absLevel <= m_goRiceZero ? pqDataB.absLevel - 1
+                                                       : (pqDataB.absLevel < RICEMAX ? pqDataB.absLevel : RICEMAX - 1)];
+        rdCostZ += goRiceTab[m_goRiceZero];
+      }
+      if (rdCostA < decisionA.rdCost)
+      {
+        decisionA.rdCost   = rdCostA;
+        decisionA.absLevel = pqDataA.absLevel;
+        decisionA.prevId   = m_stateId;
+      }
+      if (rdCostZ < decisionA.rdCost)
+      {
+        decisionA.rdCost   = rdCostZ;
+        decisionA.absLevel = 0;
+        decisionA.prevId   = m_stateId;
+      }
+      if (rdCostB < decisionB.rdCost)
+      {
+        decisionB.rdCost   = rdCostB;
+        decisionB.absLevel = pqDataB.absLevel;
+        decisionB.prevId   = m_stateId;
+      }
+    }
 
     inline void checkRdCostStart(int32_t lastOffset, const PQData &pqData, Decision &decision) const
     {
@@ -974,11 +1005,7 @@ namespace DQIntern
       }
       else
       {
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
         const TCoeff value = (pqData.absLevel - 4) >> 1;
-#else
-        const unsigned value = (pqData.absLevel - 4) >> 1;
-#endif
         rdCost += m_coeffFracBits.bits[pqData.absLevel - (value << 1)] + g_goRiceBits[m_goRicePar][value < RICEMAX ? value : RICEMAX-1];
       }
       if( rdCost < decision.rdCost )
@@ -1028,6 +1055,31 @@ namespace DQIntern
     unsigned                  effHeight;
   };
 
+  unsigned templateAbsCompare(TCoeff sum)
+  {
+    int rangeIdx = 0;
+    if (sum < g_riceT[0])
+    {
+      rangeIdx = 0;
+    }
+    else if (sum < g_riceT[1])
+    {
+      rangeIdx = 1;
+    }
+    else if (sum < g_riceT[2])
+    {
+      rangeIdx = 2;
+    }
+    else if (sum < g_riceT[3])
+    {
+      rangeIdx = 3;
+    }
+    else
+    {
+      rangeIdx = 4;
+    }
+    return g_riceShift[rangeIdx];
+  }
 
   State::State( const RateEstimator& rateEst, CommonCtx& commonCtx, const int stateId )
     : m_sbbFracBits     { { 0, 0 } }
@@ -1039,7 +1091,7 @@ namespace DQIntern
   }
 
   template<uint8_t numIPos>
-  inline void State::updateState(const ScanInfo &scanInfo, const State *prevStates, const Decision &decision)
+  inline void State::updateState(const ScanInfo &scanInfo, const State *prevStates, const Decision &decision, const int baseLevel, const bool extRiceFlag)
   {
     m_rdCost = decision.rdCost;
     if( decision.prevId > -2 )
@@ -1054,11 +1106,7 @@ namespace DQIntern
         m_goRicePar             = prvState->m_goRicePar;
         if( m_remRegBins >= 4 )
         {
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
           m_remRegBins -= (decision.absLevel < 2 ? (unsigned)decision.absLevel : 3);
-#else
-          m_remRegBins -= (decision.absLevel < 2 ? decision.absLevel : 3);
-#endif
         }
         ::memcpy( m_absLevelsAndCtxInit, prvState->m_absLevelsAndCtxInit, 48*sizeof(uint8_t) );
       }
@@ -1067,11 +1115,7 @@ namespace DQIntern
         m_numSigSbb     =  1;
         m_refSbbCtxId   = -1;
         int ctxBinSampleRatio = (scanInfo.chType == CHANNEL_TYPE_LUMA) ? MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_LUMA : MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_CHROMA;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
         m_remRegBins = (effWidth * effHeight *ctxBinSampleRatio) / 16 - (decision.absLevel < 2 ? (unsigned)decision.absLevel : 3);
-#else
-        m_remRegBins = (effWidth * effHeight *ctxBinSampleRatio) / 16 - (decision.absLevel < 2 ? decision.absLevel : 3);
-#endif
         ::memset( m_absLevelsAndCtxInit, 0, 48*sizeof(uint8_t) );
       }
 
@@ -1116,11 +1160,7 @@ namespace DQIntern
         }
 #undef UPDATE
         TCoeff sumGt1 = sumAbs1 - sumNum;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
         m_sigFracBits = m_sigFracBitsArray[scanInfo.sigCtxOffsetNext + std::min<TCoeff>( (sumAbs1+1)>>1, 3 )];
-#else
-        m_sigFracBits = m_sigFracBitsArray[scanInfo.sigCtxOffsetNext + std::min( (sumAbs1+1)>>1, 3 )];
-#endif
         m_coeffFracBits = m_gtxFracBitsArray[scanInfo.gtxCtxOffsetNext + (sumGt1 < 4 ? sumGt1 : 4)];
 
         TCoeff  sumAbs = m_absLevelsAndCtxInit[8 + scanInfo.nextInsidePos] >> 8;
@@ -1156,8 +1196,19 @@ namespace DQIntern
           UPDATE(4);
         }
 #undef UPDATE
-        int sumAll = std::max(std::min(31, (int)sumAbs - 4 * 5), 0);
-        m_goRicePar = g_auiGoRiceParsCoeff[sumAll];
+        if (extRiceFlag)
+        {
+          unsigned currentShift = templateAbsCompare(sumAbs);
+          sumAbs = sumAbs >> currentShift;
+          int sumAll = std::max(std::min(31, (int)sumAbs - (int)baseLevel), 0);
+          m_goRicePar = g_goRiceParsCoeff[sumAll];
+          m_goRicePar += currentShift;
+        }
+        else
+        {
+          int sumAll = std::max(std::min(31, (int)sumAbs - 4 * 5), 0);
+          m_goRicePar = g_goRiceParsCoeff[sumAll];
+        }
       }
       else
       {
@@ -1194,9 +1245,20 @@ namespace DQIntern
           UPDATE(4);
         }
 #undef UPDATE
-        sumAbs = std::min<TCoeff>(31, sumAbs);
-        m_goRicePar = g_auiGoRiceParsCoeff[sumAbs];
-        m_goRiceZero = g_auiGoRicePosCoeff0(m_stateId, m_goRicePar);
+        if (extRiceFlag)
+        {
+          unsigned currentShift = templateAbsCompare(sumAbs);
+          sumAbs = sumAbs >> currentShift;
+          sumAbs = std::min<TCoeff>(31, sumAbs);
+          m_goRicePar = g_goRiceParsCoeff[sumAbs];
+          m_goRicePar += currentShift;
+        }
+        else
+        {
+          sumAbs = std::min<TCoeff>(31, sumAbs);
+          m_goRicePar = g_goRiceParsCoeff[sumAbs];
+        }
+        m_goRiceZero = g_goRicePosCoeff0(m_stateId, m_goRicePar);
       }
     }
   }
@@ -1234,11 +1296,7 @@ namespace DQIntern
       TCoeff  sumNum  =   tinit        & 7;
       TCoeff  sumAbs1 = ( tinit >> 3 ) & 31;
       TCoeff  sumGt1  = sumAbs1        - sumNum;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
       m_sigFracBits   = m_sigFracBitsArray[ scanInfo.sigCtxOffsetNext + std::min<TCoeff>( (sumAbs1+1)>>1, 3 ) ];
-#else
-      m_sigFracBits   = m_sigFracBitsArray[ scanInfo.sigCtxOffsetNext + std::min( (sumAbs1+1)>>1, 3 ) ];
-#endif
       m_coeffFracBits = m_gtxFracBitsArray[ scanInfo.gtxCtxOffsetNext + ( sumGt1  < 4 ? sumGt1  : 4 ) ];
     }
   }
@@ -1330,14 +1388,12 @@ namespace DQIntern
     void    quant   ( TransformUnit& tu, const CCoeffBuf& srcCoeff, const ComponentID compID, const QpParam& cQP, const double lambda, const Ctx& ctx, TCoeff& absSum, bool enableScalingLists, int* quantCoeff );
     void    dequant ( const TransformUnit& tu, CoeffBuf& recCoeff, const ComponentID compID, const QpParam& cQP, bool enableScalingLists, int* quantCoeff );
 
+    int m_baseLevel;
+    bool m_extRiceRRCFlag;
+
   private:
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
-    void    xDecideAndUpdate  ( const TCoeff absCoeff, const ScanInfo& scanInfo, bool zeroOut, TCoeff quantCoeff);
+    void    xDecideAndUpdate  ( const TCoeff absCoeff, const ScanInfo &scanInfo, bool zeroOut, TCoeff quantCoeff, int effWidth, int effHeight, bool reverseLast );
     void    xDecide           ( const ScanPosType spt, const TCoeff absCoeff, const int lastOffset, Decision* decisions, bool zeroOut, TCoeff quantCoeff );
-#else
-    void    xDecideAndUpdate  ( const TCoeff absCoeff, const ScanInfo& scanInfo, bool zeroOut, int quantCoeff);
-    void    xDecide           ( const ScanPosType spt, const TCoeff absCoeff, const int lastOffset, Decision* decisions, bool zeroOut, int quantCoeff );
-#endif
 
   private:
     CommonCtx   m_commonCtx;
@@ -1375,11 +1431,7 @@ namespace DQIntern
 #undef  DINIT
 
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
   void DepQuant::xDecide( const ScanPosType spt, const TCoeff absCoeff, const int lastOffset, Decision* decisions, bool zeroOut, TCoeff quanCoeff)
-#else
-  void DepQuant::xDecide( const ScanPosType spt, const TCoeff absCoeff, const int lastOffset, Decision* decisions, bool zeroOut, int quanCoeff)
-#endif
   {
     ::memcpy( decisions, startDec, 8*sizeof(Decision) );
 
@@ -1403,27 +1455,23 @@ namespace DQIntern
     m_prevStates[3].checkRdCosts( spt, pqData[3], pqData[1], decisions[3], decisions[1]);
     if( spt==SCAN_EOCSBB )
     {
-        m_skipStates[0].checkRdCostSkipSbb( decisions[0] );
-        m_skipStates[1].checkRdCostSkipSbb( decisions[1] );
-        m_skipStates[2].checkRdCostSkipSbb( decisions[2] );
-        m_skipStates[3].checkRdCostSkipSbb( decisions[3] );
+      m_skipStates[0].checkRdCostSkipSbb(decisions[0]);
+      m_skipStates[1].checkRdCostSkipSbb(decisions[1]);
+      m_skipStates[2].checkRdCostSkipSbb(decisions[2]);
+      m_skipStates[3].checkRdCostSkipSbb(decisions[3]);
     }
 
     m_startState.checkRdCostStart( lastOffset, pqData[0], decisions[0] );
     m_startState.checkRdCostStart( lastOffset, pqData[2], decisions[2] );
   }
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
-  void DepQuant::xDecideAndUpdate( const TCoeff absCoeff, const ScanInfo& scanInfo, bool zeroOut, TCoeff quantCoeff )
-#else
-  void DepQuant::xDecideAndUpdate( const TCoeff absCoeff, const ScanInfo& scanInfo, bool zeroOut, int quantCoeff )
-#endif
+  void DepQuant::xDecideAndUpdate( const TCoeff absCoeff, const ScanInfo &scanInfo, bool zeroOut, TCoeff quantCoeff, int effWidth, int effHeight, bool reverseLast )
   {
     Decision* decisions = m_trellis[ scanInfo.scanIdx ];
 
     std::swap( m_prevStates, m_currStates );
 
-    xDecide( scanInfo.spt, absCoeff, lastOffset(scanInfo.scanIdx), decisions, zeroOut, quantCoeff );
+    xDecide( scanInfo.spt, absCoeff, lastOffset(scanInfo.scanIdx, effWidth, effHeight, reverseLast), decisions, zeroOut, quantCoeff );
 
     if( scanInfo.scanIdx )
     {
@@ -1441,40 +1489,40 @@ namespace DQIntern
         switch( scanInfo.nextNbInfoSbb.num )
         {
         case 0:
-          m_currStates[0].updateState<0>( scanInfo, m_prevStates, decisions[0] );
-          m_currStates[1].updateState<0>( scanInfo, m_prevStates, decisions[1] );
-          m_currStates[2].updateState<0>( scanInfo, m_prevStates, decisions[2] );
-          m_currStates[3].updateState<0>( scanInfo, m_prevStates, decisions[3] );
+          m_currStates[0].updateState<0>(scanInfo, m_prevStates, decisions[0], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[1].updateState<0>(scanInfo, m_prevStates, decisions[1], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[2].updateState<0>(scanInfo, m_prevStates, decisions[2], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[3].updateState<0>(scanInfo, m_prevStates, decisions[3], m_baseLevel, m_extRiceRRCFlag);
           break;
         case 1:
-          m_currStates[0].updateState<1>( scanInfo, m_prevStates, decisions[0] );
-          m_currStates[1].updateState<1>( scanInfo, m_prevStates, decisions[1] );
-          m_currStates[2].updateState<1>( scanInfo, m_prevStates, decisions[2] );
-          m_currStates[3].updateState<1>( scanInfo, m_prevStates, decisions[3] );
+          m_currStates[0].updateState<1>(scanInfo, m_prevStates, decisions[0], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[1].updateState<1>(scanInfo, m_prevStates, decisions[1], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[2].updateState<1>(scanInfo, m_prevStates, decisions[2], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[3].updateState<1>(scanInfo, m_prevStates, decisions[3], m_baseLevel, m_extRiceRRCFlag);
           break;
         case 2:
-          m_currStates[0].updateState<2>( scanInfo, m_prevStates, decisions[0] );
-          m_currStates[1].updateState<2>( scanInfo, m_prevStates, decisions[1] );
-          m_currStates[2].updateState<2>( scanInfo, m_prevStates, decisions[2] );
-          m_currStates[3].updateState<2>( scanInfo, m_prevStates, decisions[3] );
+          m_currStates[0].updateState<2>(scanInfo, m_prevStates, decisions[0], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[1].updateState<2>(scanInfo, m_prevStates, decisions[1], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[2].updateState<2>(scanInfo, m_prevStates, decisions[2], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[3].updateState<2>(scanInfo, m_prevStates, decisions[3], m_baseLevel, m_extRiceRRCFlag);
           break;
         case 3:
-          m_currStates[0].updateState<3>( scanInfo, m_prevStates, decisions[0] );
-          m_currStates[1].updateState<3>( scanInfo, m_prevStates, decisions[1] );
-          m_currStates[2].updateState<3>( scanInfo, m_prevStates, decisions[2] );
-          m_currStates[3].updateState<3>( scanInfo, m_prevStates, decisions[3] );
+          m_currStates[0].updateState<3>(scanInfo, m_prevStates, decisions[0], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[1].updateState<3>(scanInfo, m_prevStates, decisions[1], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[2].updateState<3>(scanInfo, m_prevStates, decisions[2], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[3].updateState<3>(scanInfo, m_prevStates, decisions[3], m_baseLevel, m_extRiceRRCFlag);
           break;
         case 4:
-          m_currStates[0].updateState<4>( scanInfo, m_prevStates, decisions[0] );
-          m_currStates[1].updateState<4>( scanInfo, m_prevStates, decisions[1] );
-          m_currStates[2].updateState<4>( scanInfo, m_prevStates, decisions[2] );
-          m_currStates[3].updateState<4>( scanInfo, m_prevStates, decisions[3] );
+          m_currStates[0].updateState<4>(scanInfo, m_prevStates, decisions[0], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[1].updateState<4>(scanInfo, m_prevStates, decisions[1], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[2].updateState<4>(scanInfo, m_prevStates, decisions[2], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[3].updateState<4>(scanInfo, m_prevStates, decisions[3], m_baseLevel, m_extRiceRRCFlag);
           break;
         default:
-          m_currStates[0].updateState<5>( scanInfo, m_prevStates, decisions[0] );
-          m_currStates[1].updateState<5>( scanInfo, m_prevStates, decisions[1] );
-          m_currStates[2].updateState<5>( scanInfo, m_prevStates, decisions[2] );
-          m_currStates[3].updateState<5>( scanInfo, m_prevStates, decisions[3] );
+          m_currStates[0].updateState<5>(scanInfo, m_prevStates, decisions[0], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[1].updateState<5>(scanInfo, m_prevStates, decisions[1], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[2].updateState<5>(scanInfo, m_prevStates, decisions[2], m_baseLevel, m_extRiceRRCFlag);
+          m_currStates[3].updateState<5>(scanInfo, m_prevStates, decisions[3], m_baseLevel, m_extRiceRRCFlag);
         }
       }
 
@@ -1493,6 +1541,8 @@ namespace DQIntern
     //===== reset / pre-init =====
     const TUParameters& tuPars  = *g_Rom.getTUPars( tu.blocks[compID], compID );
     m_quant.initQuantBlock    ( tu, compID, cQP, lambda );
+    m_baseLevel = ctx.getBaseLevel();
+    m_extRiceRRCFlag = tu.cs->sps->getSpsRangeExtension().getRrcRiceExtensionEnableFlag();
     TCoeff*       qCoeff      = tu.getCoeffs( compID ).buf;
     const TCoeff* tCoeff      = srcCoeff.buf;
     const int     numCoeff    = tu.blocks[compID].area();
@@ -1512,7 +1562,9 @@ namespace DQIntern
     bool zeroOut = false;
     bool zeroOutforThres = false;
     int effWidth = tuPars.m_width, effHeight = tuPars.m_height;
-    if( ( tu.mtsIdx[compID] > MTS_SKIP || (tu.cs->sps->getUseMTS() && tu.cu->sbtInfo != 0 && tuPars.m_height <= 32 && tuPars.m_width <= 32)) && compID == COMPONENT_Y)
+    if ((tu.mtsIdx[compID] > MTS_SKIP
+         || (tu.cs->sps->getMtsEnabled() && tu.cu->sbtInfo != 0 && tuPars.m_height <= 32 && tuPars.m_width <= 32))
+        && compID == COMPONENT_Y)
     {
       effHeight = (tuPars.m_height == 32) ? 16 : tuPars.m_height;
       effWidth = (tuPars.m_width == 32) ? 16 : tuPars.m_width;
@@ -1531,7 +1583,9 @@ namespace DQIntern
     {
       if (zeroOutforThres && (tuPars.m_scanId2BlkPos[firstTestPos].x >= ((tuPars.m_width == 32 && zeroOut) ? 16 : 32)
                            || tuPars.m_scanId2BlkPos[firstTestPos].y >= ((tuPars.m_height == 32 && zeroOut) ? 16 : 32)))
+      {
         continue;
+      }
       TCoeff thresTmp = (enableScalingLists) ? TCoeff(thres / (4 * quantCoeff[tuPars.m_scanId2BlkPos[firstTestPos].idx]))
                                              : TCoeff(thres / (4 * defaultQuantisationCoefficient));
 
@@ -1572,10 +1626,12 @@ namespace DQIntern
       if (enableScalingLists)
       {
         m_quant.initQuantBlock(tu, compID, cQP, lambda, quantCoeff[scanInfo.rasterPos]);
-        xDecideAndUpdate( abs( tCoeff[scanInfo.rasterPos]), scanInfo, (zeroOut && (scanInfo.posX >= effWidth || scanInfo.posY >= effHeight)), quantCoeff[scanInfo.rasterPos] );
+        xDecideAndUpdate( abs( tCoeff[scanInfo.rasterPos]), scanInfo, (zeroOut && (scanInfo.posX >= effWidth || scanInfo.posY >= effHeight)), quantCoeff[scanInfo.rasterPos], effectWidth, effectHeight, tu.cu->slice->getReverseLastSigCoeffFlag() );
       }
       else
-        xDecideAndUpdate( abs( tCoeff[scanInfo.rasterPos]), scanInfo, (zeroOut && (scanInfo.posX >= effWidth || scanInfo.posY >= effHeight)), defaultQuantisationCoefficient );
+      {
+        xDecideAndUpdate( abs( tCoeff[scanInfo.rasterPos]), scanInfo, (zeroOut && (scanInfo.posX >= effWidth || scanInfo.posY >= effHeight)), defaultQuantisationCoefficient, effectWidth, effectHeight, tu.cu->slice->getReverseLastSigCoeffFlag() );
+      }
     }
 
     //===== find best path =====

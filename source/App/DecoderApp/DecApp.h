@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,6 +61,24 @@ private:
   // class interface
   DecLib          m_cDecLib;                     ///< decoder class
   std::unordered_map<int, VideoIOYuv>      m_cVideoIOYuvReconFile;        ///< reconstruction YUV class
+  std::unordered_map<int, VideoIOYuv>      m_videoIOYuvSEIFGSFile;       ///< reconstruction YUV with FGS class
+  std::unordered_map<int, VideoIOYuv>      m_cVideoIOYuvSEICTIFile;       ///< reconstruction YUV with CTI class
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool                                    m_ShutterFilterEnable;          ///< enable Post-processing with Shutter Interval SEI
+  VideoIOYuv                              m_cTVideoIOYuvSIIPostFile;      ///< post-filtered YUV class
+  int                                     m_SII_BlendingRatio;
+
+  typedef struct 
+  {
+    SEIShutterIntervalInfo m_siiInfo;
+    uint32_t               m_picPoc;
+    uint8_t                m_isValidSii;
+  }IdrSiiInfo_s;
+
+  std::map<uint32_t, IdrSiiInfo_s>      m_activeSiiInfo;
+
+#endif
 
   // for output control
   int             m_iPOCLastDisplay;              ///< last POC in display order
@@ -68,10 +86,11 @@ private:
 
   std::ofstream   m_oplFileStream;                ///< Used to output log file for confomance testing
 
-#if JVET_R0270
   bool            m_newCLVS[MAX_NUM_LAYER_IDS];   ///< used to record a new CLVSS
-#endif
 
+  SEIAnnotatedRegions::AnnotatedRegionHeader                 m_arHeader; ///< AR header
+  std::map<uint32_t, SEIAnnotatedRegions::AnnotatedRegionObject> m_arObjects; ///< AR object pool
+  std::map<uint32_t, std::string>                                m_arLabels; ///< AR label pool
 
 private:
   bool  xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit* nalu ) const; ///< check whether given Nalu is within targetDecLayerIdSet
@@ -82,6 +101,12 @@ public:
   virtual ~DecApp         ()  {}
 
   uint32_t  decode            (); ///< main decoding function
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool  getShutterFilterFlag()        const { return m_ShutterFilterEnable; }
+  void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
+  int   getBlendingRatio()             const { return m_SII_BlendingRatio; }
+  void  setBlendingRatio(int value) { m_SII_BlendingRatio = value; }
+#endif
 
 private:
   void  xCreateDecLib     (); ///< create internal classes
@@ -92,6 +117,7 @@ private:
   bool  isNewAccessUnit(bool newPicture, ifstream *bitstreamFile, class InputByteStream *bytestream);  ///< check if next NAL unit will be the first NAL unit from a new access unit
 
   void  writeLineToOutputLog(Picture * pcPic);
+  void xOutputAnnotatedRegions(PicList* pcListPic);
 
 };
 

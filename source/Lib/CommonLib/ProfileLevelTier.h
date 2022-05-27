@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,13 +52,8 @@ struct LevelTierFeatures
   Level::Name level;
   uint32_t    maxLumaPs;
   uint32_t    maxCpb[Level::NUMBER_OF_TIERS];    // in units of CpbVclFactor or CpbNalFactor bits
-#if JVET_S0156_LEVEL_DEFINITION
   uint32_t    maxSlicesPerAu;
   uint32_t    maxTilesPerAu;
-#else
-  uint32_t    maxSliceSegmentsPerPicture;
-  uint32_t    maxTileRows;
-#endif
   uint32_t    maxTileCols;
   uint64_t    maxLumaSr;
   uint32_t    maxBr[Level::NUMBER_OF_TIERS];     // in units of BrVclFactor or BrNalFactor bits/s
@@ -83,9 +78,7 @@ struct ProfileFeatures
   const LevelTierFeatures *pLevelTiersListInfo;
   bool                     onePictureOnlyFlagMustBe1;
 
-#if JVET_S_PROFILES
   static const ProfileFeatures *getProfileFeatures(const Profile::Name p);
-#endif
 };
 
 
@@ -95,6 +88,7 @@ class ProfileLevelTierFeatures
     const ProfileFeatures   *m_pProfile;
     const LevelTierFeatures *m_pLevelTier;
     Level::Tier              m_tier;
+    int                      m_hbrFactor;
   public:
     ProfileLevelTierFeatures() : m_pProfile(nullptr), m_pLevelTier(nullptr), m_tier(Level::MAIN) {}
 

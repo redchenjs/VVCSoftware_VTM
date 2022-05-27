@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -131,9 +131,6 @@ void BinProbModel_Std::init( int qp, int initId )
   m_state[1]   = p1 & MASK_1;
 }
 
-
-
-
 CtxSet::CtxSet( std::initializer_list<CtxSet> ctxSets )
 {
   uint16_t  minOffset = std::numeric_limits<uint16_t>::max();
@@ -147,17 +144,12 @@ CtxSet::CtxSet( std::initializer_list<CtxSet> ctxSets )
   Size    = maxOffset - minOffset;
 }
 
-
-
-
-
 const std::vector<uint8_t>& ContextSetCfg::getInitTable( unsigned initId )
 {
   CHECK( initId >= (unsigned)sm_InitTables.size(),
          "Invalid initId (" << initId << "), only " << sm_InitTables.size() << " tables defined." );
   return sm_InitTables[initId];
 }
-
 
 CtxSet ContextSetCfg::addCtxSet( std::initializer_list<std::initializer_list<uint8_t>> initSet2d )
 {
@@ -958,15 +950,7 @@ void CtxStore<BinProbModel>::savePStates( std::vector<uint16_t>& probStates ) co
   }
 }
 
-
-
-
-
 template class CtxStore<BinProbModel_Std>;
-
-
-
-
 
 Ctx::Ctx()                                  : m_BPMType( BPM_Undefined )                        {}
 Ctx::Ctx( const BinProbModel_Std*   dummy ) : m_BPMType( BPM_Std   ), m_CtxStore_Std  ( true )  {}

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,7 +49,7 @@
 #include "CommonLib/TrQuant.h"
 #include "CommonLib/InterPrediction.h"
 #include "CommonLib/IntraPrediction.h"
-#include "CommonLib/LoopFilter.h"
+#include "CommonLib/DeblockingFilter.h"
 #include "CommonLib/AdaptiveLoopFilter.h"
 #include "CommonLib/SEI.h"
 #include "CommonLib/Unit.h"
@@ -73,6 +73,7 @@ private:
   GeneralHrdParams        m_prevGeneralHrdParams;
 
   int                     m_prevGDRInSameLayerPOC[MAX_VPS_LAYERS]; ///< POC number of the latest GDR picture
+  int                     m_prevGDRInSameLayerRecoveryPOC[MAX_VPS_LAYERS]; ///< Recovery POC number of the latest GDR picture
   NalUnitType             m_associatedIRAPType[MAX_VPS_LAYERS]; ///< NAL unit type of the previous IRAP picture
   int                     m_pocCRA[MAX_VPS_LAYERS];            ///< POC number of the previous CRA picture
   int                     m_associatedIRAPDecodingOrderNumber[MAX_VPS_LAYERS]; ///< Decoding order number of the previous IRAP picture
@@ -85,9 +86,7 @@ private:
   int                     m_prevIRAPSubpicDecOrderNo[MAX_VPS_LAYERS][MAX_NUM_SUB_PICS];
   int                     m_pocRandomAccess;   ///< POC number of the random access point (the first IDR or CRA picture)
   int                     m_lastRasPoc;
-#if JVET_S0155_EOS_NALU_CHECK
   bool                    m_prevEOS[MAX_VPS_LAYERS];
-#endif
 
   PicList                 m_cListPic;         //  Dynamic buffer
   ParameterSetManager     m_parameterSetManager;  // storage for parameter sets
@@ -96,7 +95,9 @@ private:
 
 
   SEIMessages             m_SEIs; ///< List of SEI messages that have been received before the first slice and between slices, excluding prefix SEIs...
-
+  SEIScalabilityDimensionInfo* m_sdiSEIInFirstAU;
+  SEIMultiviewAcquisitionInfo* m_maiSEIInFirstAU;
+  SEIMultiviewViewPosition*    m_mvpSEIInFirstAU;
 
   // functional classes
   IntraPrediction         m_cIntraPred;
@@ -111,7 +112,7 @@ private:
 #if JVET_S0257_DUMP_360SEI_MESSAGE
   SeiCfgFileDump          m_seiCfgDump;
 #endif
-  LoopFilter              m_cLoopFilter;
+  DeblockingFilter        m_deblockingFilter;
   SampleAdaptiveOffset    m_cSAO;
   AdaptiveLoopFilter      m_cALF;
   Reshape                 m_cReshaper;                        ///< reshaper class
@@ -121,7 +122,7 @@ private:
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
   CacheModel              m_cacheModel;
 #endif
-  bool isRandomAccessSkipPicture(int& iSkipFrame,  int& iPOCLastDisplay);
+  bool isRandomAccessSkipPicture(int& iSkipFrame, int& iPOCLastDisplay, bool mixedNaluInPicFlag, uint32_t layerId);
   Picture*                m_pcPic;
   uint32_t                m_uiSliceSegmentIdx;
   uint32_t                m_prevLayerID;
@@ -129,12 +130,18 @@ private:
   int                     m_prevPicPOC;
   int                     m_prevTid0POC;
   bool                    m_bFirstSliceInPicture;
+  bool                    m_firstPictureInSequence;
+  SEIFilmGrainSynthesizer m_grainCharacteristic;
+  PelStorage              m_grainBuf;
+  SEIColourTransformApply m_colourTranfParams;
+  PelStorage              m_invColourTransfBuf;
   bool                    m_firstSliceInSequence[MAX_VPS_LAYERS];
   bool                    m_firstSliceInBitstream;
   bool                    m_isFirstAuInCvs;
   bool                    m_accessUnitEos[MAX_VPS_LAYERS];
   bool                    m_prevSliceSkipped;
   int                     m_skippedPOC;
+  uint32_t                m_skippedLayerID;
   int                     m_lastPOCNoOutputPriorPics;
   bool                    m_isNoOutputPriorPics;
   bool                    m_lastNoOutputBeforeRecoveryFlag[MAX_VPS_LAYERS];    //value of variable NoOutputBeforeRecoveryFlag of the assocated CRA/GDR pic
@@ -151,6 +158,9 @@ private:
   bool                    m_warningMessageSkipPicture;
 
   std::list<InputNALUnit*> m_prefixSEINALUs; /// Buffered up prefix SEI NAL Units.
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool                                m_ShutterFilterEnable;          ///< enable Post-processing with Shutter Interval SEI
+#endif
   int                     m_debugPOC;
   int                     m_debugCTU;
 
@@ -170,6 +180,14 @@ private:
   };
   std::vector<AccessUnitPicInfo> m_accessUnitPicInfo;
   std::vector<AccessUnitPicInfo> m_firstAccessUnitPicInfo;
+  struct AccessUnitNestedSliSeiInfo
+  {
+    bool m_nestedSliPresent;
+    uint32_t m_numOlssNestedSli;
+    uint32_t m_olsIdxNestedSLI[MAX_NUM_OLSS];
+  };
+  std::vector<AccessUnitNestedSliSeiInfo> m_accessUnitNestedSliSeiInfo;
+  int m_accessUnitSpsNumSubpic[MAX_VPS_LAYERS];
   struct NalUnitInfo
   {
     NalUnitType     m_nalUnitType; ///< nal_unit_type
@@ -187,7 +205,14 @@ private:
 
   std::vector<NalUnitType> m_pictureUnitNals;
   std::list<InputNALUnit*> m_pictureSeiNalus; 
+  std::list<InputNALUnit*> m_suffixApsNalus; 
+  std::list<InputNALUnit*> m_accessUnitSeiNalus;
 
+  OPI*                    m_opi;
+  bool                    m_mTidExternalSet;
+  bool                    m_mTidOpiSet;
+  bool                    m_tOlsIdxTidExternalSet;
+  bool                    m_tOlsIdxTidOpiSet;
   VPS*                    m_vps;
   int                     m_maxDecSubPicIdx;
   int                     m_maxDecSliceAddrInSubPic;
@@ -198,6 +223,11 @@ public:
 
   DCI*                    m_dci;
   ParameterSetMap<APS>*   m_apsMapEnc;
+#if GDR_LEAK_TEST
+public:
+  int                     m_gdrPocRandomAccess;
+#endif // GDR_LEAK_TEST
+
 public:
   DecLib();
   virtual ~DecLib();
@@ -216,20 +246,15 @@ public:
   void  deletePicBuffer();
 
   void  executeLoopFilters();
-#if JVET_R0270
   void finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl = INFO, bool associatedWithNewClvs = false);
-#else
-  void  finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl = INFO);
-#endif
   void  finishPictureLight(int& poc, PicList*& rpcListPic );
   void  checkNoOutputPriorPics (PicList* rpcListPic);
   void  checkNalUnitConstraints( uint32_t naluType );
-#if JVET_S0155_EOS_NALU_CHECK
   void  checkPicTypeAfterEos();
-#endif
   void  updateAssociatedIRAP();
   void  updatePrevGDRInSameLayer();
   void  updatePrevIRAPAndGDRSubpic();
+  bool  getGDRRecoveryPocReached()          { return ( m_pcPic->getPOC() >= m_prevGDRInSameLayerRecoveryPOC[m_pcPic->layerId] ); }
 
   bool  getNoOutputPriorPicsFlag () const   { return m_isNoOutputPriorPics; }
   void  setNoOutputPriorPicsFlag (bool val) { m_isNoOutputPriorPics = val; }
@@ -248,7 +273,7 @@ public:
   int  getDebugPOC( )               const { return m_debugPOC; };
   void setDebugPOC( int debugPOC )        { m_debugPOC = debugPOC; };
   void resetAccessUnitNals()              { m_accessUnitNals.clear();    }
-  void resetAccessUnitPicInfo()              { m_accessUnitPicInfo.clear();    }
+  void resetAccessUnitPicInfo()           { m_accessUnitPicInfo.clear(); }
   void resetAccessUnitApsNals()           { m_accessUnitApsNals.clear(); }
   void resetAccessUnitSeiTids()           { m_accessUnitSeiTids.clear(); }
   void resetAudIrapOrGdrAuFlag()          { m_audIrapOrGdrAuFlag = false; }
@@ -256,12 +281,18 @@ public:
   void checkTidLayerIdInAccessUnit();
   void resetAccessUnitSeiPayLoadTypes()   { m_accessUnitSeiPayLoadTypes.clear(); }
   void checkSEIInAccessUnit();
+  void checkSeiContentInAccessUnit();
+  void resetAccessUnitSeiNalus();
   void checkLayerIdIncludedInCvss();
   void CheckNoOutputPriorPicFlagsInAccessUnit();
   void resetAccessUnitNoOutputPriorPicFlags() { m_accessUnitNoOutputPriorPicFlags.clear(); }
+  void checkMultiSubpicNum(int olsIdx);
+  void resetAccessUnitNestedSliSeiInfo()  { m_accessUnitNestedSliSeiInfo.clear(); }
+  void resetIsFirstAuInCvs();
   void checkSeiInPictureUnit();
   void resetPictureSeiNalus();
   bool isSliceNaluFirstInAU( bool newPicture, InputNALUnit &nalu );
+  void processSuffixApsNalus();
 
   void checkAPSInPictureUnit();
   void resetPictureUnitNals() { m_pictureUnitNals.clear(); }
@@ -278,27 +309,40 @@ public:
   bool  isNewPicture( std::ifstream *bitstreamFile, class InputByteStream *bytestream );
   bool  isNewAccessUnit( bool newPicture, std::ifstream *bitstreamFile, class InputByteStream *bytestream );
 
+  bool      getHTidExternalSetFlag()               const { return m_mTidExternalSet; }
+  void      setHTidExternalSetFlag(bool mTidExternalSet)  { m_mTidExternalSet = mTidExternalSet; }
+  bool      getHTidOpiSetFlag()               const { return m_mTidOpiSet; }
+  void      setHTidOpiSetFlag(bool mTidOpiSet)  { m_mTidOpiSet = mTidOpiSet; }
+  bool      getTOlsIdxExternalFlag()               const { return m_tOlsIdxTidExternalSet; }
+  void      setTOlsIdxExternalFlag (bool tOlsIdxExternalSet)  { m_tOlsIdxTidExternalSet = tOlsIdxExternalSet; }
+  bool      getTOlsIdxOpiFlag()               const { return m_tOlsIdxTidOpiSet; }
+  void      setTOlsIdxOpiFlag(bool tOlsIdxOpiSet)  { m_tOlsIdxTidOpiSet = tOlsIdxOpiSet; }
+  const OPI* getOPI()                     { return m_opi; }
+
+  bool      getMixedNaluTypesInPicFlag();
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool  getShutterFilterFlag()        const { return m_ShutterFilterEnable; }
+  void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
+#endif
+
 protected:
   void  xUpdateRasInit(Slice* slice);
 
   Picture * xGetNewPicBuffer( const SPS &sps, const PPS &pps, const uint32_t temporalLayer, const int layerId );
   void  xCreateLostPicture( int iLostPOC, const int layerId );
-#if JVET_S0124_UNAVAILABLE_REFERENCE
   void  xCreateUnavailablePicture( const PPS *pps, const int iUnavailablePoc, const bool longTermFlag, const int temporalId, const int layerId, const bool interLayerRefPicFlag );
-#else
-  void  xCreateUnavailablePicture(int iUnavailablePoc, bool longTermFlag, const int layerId, const bool interLayerRefPicFlag);
-#endif
   void  checkParameterSetsInclusionSEIconstraints(const InputNALUnit nalu);
   void  xActivateParameterSets( const InputNALUnit nalu );
   void  xCheckParameterSetConstraints( const int layerId );
   void      xDecodePicHeader( InputNALUnit& nalu );
   bool      xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDisplay);
+  void      xDecodeOPI( InputNALUnit& nalu );
   void      xDecodeVPS( InputNALUnit& nalu );
   void      xDecodeDCI( InputNALUnit& nalu );
   void      xDecodeSPS( InputNALUnit& nalu );
   void      xDecodePPS( InputNALUnit& nalu );
   void      xDecodeAPS(InputNALUnit& nalu);
-#if JVET_S0081_NON_REFERENCED_PIC
   void      xUpdatePreviousTid0POC(Slice *pSlice)
   {
     if( (pSlice->getTLayer() == 0) && (pSlice->getNalUnitType() != NAL_UNIT_CODED_SLICE_RASL) && (pSlice->getNalUnitType() != NAL_UNIT_CODED_SLICE_RADL) && !pSlice->getPicHeader()->getNonReferencePictureFlag() )
@@ -306,11 +350,11 @@ protected:
       m_prevTid0POC = pSlice->getPOC(); 
     }  
   }
-#else
-  void      xUpdatePreviousTid0POC(Slice *pSlice) { if ((pSlice->getTLayer() == 0) && (pSlice->getNalUnitType()!=NAL_UNIT_CODED_SLICE_RASL) && (pSlice->getNalUnitType()!=NAL_UNIT_CODED_SLICE_RADL))  { m_prevTid0POC = pSlice->getPOC(); }  }
-#endif
   void      xParsePrefixSEImessages();
   void      xParsePrefixSEIsForUnknownVCLNal();
+  void      xCheckPrefixSEIMessages( SEIMessages& prefixSEIs );
+  void      xCheckDUISEIMessages(SEIMessages &prefixSEIs);
+
 
   void  xCheckNalUnitConstraintFlags( const ConstraintInfo *cInfo, uint32_t naluType );
   void     xCheckMixedNalUnit(Slice* pcSlice, SPS *sps, InputNALUnit &nalu);

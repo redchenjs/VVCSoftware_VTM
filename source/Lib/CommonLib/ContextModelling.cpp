@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,60 +40,60 @@
 #include "CodingStructure.h"
 #include "Picture.h"
 
-
-CoeffCodingContext::CoeffCodingContext( const TransformUnit& tu, ComponentID component, bool signHide, bool bdpcm )
-  : m_compID                    (component)
-  , m_chType                    (toChannelType(m_compID))
-  , m_width                     (tu.block(m_compID).width)
-  , m_height                    (tu.block(m_compID).height)
-  , m_log2CGWidth               ( g_log2SbbSize[ floorLog2(m_width) ][ floorLog2(m_height) ][0] )
-  , m_log2CGHeight              ( g_log2SbbSize[ floorLog2(m_width) ][ floorLog2(m_height) ][1] )
-  , m_log2CGSize                (m_log2CGWidth + m_log2CGHeight)
+CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID component, bool signHide, bool bdpcm)
+  : m_compID(component)
+  , m_chType(toChannelType(m_compID))
+  , m_width(tu.block(m_compID).width)
+  , m_height(tu.block(m_compID).height)
+  , m_log2CGWidth(g_log2SbbSize[floorLog2(m_width)][floorLog2(m_height)][0])
+  , m_log2CGHeight(g_log2SbbSize[floorLog2(m_width)][floorLog2(m_height)][1])
+  , m_log2CGSize(m_log2CGWidth + m_log2CGHeight)
   , m_widthInGroups(std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_width) >> m_log2CGWidth)
   , m_heightInGroups(std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_height) >> m_log2CGHeight)
-  , m_log2BlockWidth            ((unsigned)floorLog2(m_width))
-  , m_log2BlockHeight           ((unsigned)floorLog2(m_height))
-  , m_maxNumCoeff               (m_width * m_height)
-  , m_signHiding                (signHide)
-  , m_extendedPrecision         (tu.cs->sps->getSpsRangeExtension().getExtendedPrecisionProcessingFlag())
-  , m_maxLog2TrDynamicRange     (tu.cs->sps->getMaxLog2TrDynamicRange(m_chType))
-  , m_scanType                  (SCAN_DIAG)
-  , m_scan                      (g_scanOrder     [SCAN_GROUPED_4x4][m_scanType][gp_sizeIdxInfo->idxFrom(m_width        )][gp_sizeIdxInfo->idxFrom(m_height        )])
-  , m_scanCG                    (g_scanOrder     [SCAN_UNGROUPED  ][m_scanType][gp_sizeIdxInfo->idxFrom(m_widthInGroups)][gp_sizeIdxInfo->idxFrom(m_heightInGroups)])
-  , m_CtxSetLastX               (Ctx::LastX[m_chType])
-  , m_CtxSetLastY               (Ctx::LastY[m_chType])
-  , m_maxLastPosX(g_uiGroupIdx[std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_width) - 1])
-  , m_maxLastPosY(g_uiGroupIdx[std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_height) - 1])
-  , m_lastOffsetX               (0)
-  , m_lastOffsetY               (0)
-  , m_lastShiftX                (0)
-  , m_lastShiftY                (0)
-  , m_TrafoBypass               (tu.cs->sps->getSpsRangeExtension().getTransformSkipContextEnabledFlag() && (tu.mtsIdx[m_compID] == MTS_SKIP))
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
-  , m_minCoeff                  (-(1 << tu.cs->sps->getMaxLog2TrDynamicRange(m_chType)))
-  , m_maxCoeff                  ((1 << tu.cs->sps->getMaxLog2TrDynamicRange(m_chType)) - 1)
-#endif
-  , m_scanPosLast               (-1)
-  , m_subSetId                  (-1)
-  , m_subSetPos                 (-1)
-  , m_subSetPosX                (-1)
-  , m_subSetPosY                (-1)
-  , m_minSubPos                 (-1)
-  , m_maxSubPos                 (-1)
-  , m_sigGroupCtxId             (-1)
-  , m_tmplCpSum1                (-1)
-  , m_tmplCpDiag                (-1)
-  , m_sigFlagCtxSet             { Ctx::SigFlag[m_chType], Ctx::SigFlag[m_chType+2], Ctx::SigFlag[m_chType+4] }
-  , m_parFlagCtxSet             ( Ctx::ParFlag[m_chType] )
-  , m_gtxFlagCtxSet             { Ctx::GtxFlag[m_chType], Ctx::GtxFlag[m_chType+2] }
-  , m_sigGroupCtxIdTS           (-1)
-  , m_tsSigFlagCtxSet           ( Ctx::TsSigFlag )
-  , m_tsParFlagCtxSet           ( Ctx::TsParFlag )
-  , m_tsGtxFlagCtxSet           ( Ctx::TsGtxFlag )
-  , m_tsLrg1FlagCtxSet          (Ctx::TsLrg1Flag)
-  , m_tsSignFlagCtxSet          (Ctx::TsResidualSign)
-  , m_sigCoeffGroupFlag         ()
-  , m_bdpcm                     (bdpcm)
+  , m_log2BlockWidth((unsigned) floorLog2(m_width))
+  , m_log2BlockHeight((unsigned) floorLog2(m_height))
+  , m_maxNumCoeff(m_width * m_height)
+  , m_signHiding(signHide)
+  , m_extendedPrecision(tu.cs->sps->getSpsRangeExtension().getExtendedPrecisionProcessingFlag())
+  , m_maxLog2TrDynamicRange(tu.cs->sps->getMaxLog2TrDynamicRange(m_chType))
+  , m_scanType(SCAN_DIAG)
+  , m_scan(
+      g_scanOrder[SCAN_GROUPED_4x4][m_scanType][gp_sizeIdxInfo->idxFrom(m_width)][gp_sizeIdxInfo->idxFrom(m_height)])
+  , m_scanCG(g_scanOrder[SCAN_UNGROUPED][m_scanType][gp_sizeIdxInfo->idxFrom(m_widthInGroups)]
+                        [gp_sizeIdxInfo->idxFrom(m_heightInGroups)])
+  , m_CtxSetLastX(Ctx::LastX[m_chType])
+  , m_CtxSetLastY(Ctx::LastY[m_chType])
+  , m_maxLastPosX(g_groupIdx[std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_width) - 1])
+  , m_maxLastPosY(g_groupIdx[std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_height) - 1])
+  , m_lastOffsetX(0)
+  , m_lastOffsetY(0)
+  , m_lastShiftX(0)
+  , m_lastShiftY(0)
+  , m_TrafoBypass(tu.cs->sps->getSpsRangeExtension().getTransformSkipContextEnabledFlag()
+                  && (tu.mtsIdx[m_compID] == MTS_SKIP))
+  , m_minCoeff(-(1 << tu.cs->sps->getMaxLog2TrDynamicRange(m_chType)))
+  , m_maxCoeff((1 << tu.cs->sps->getMaxLog2TrDynamicRange(m_chType)) - 1)
+  , m_scanPosLast(-1)
+  , m_subSetId(-1)
+  , m_subSetPos(-1)
+  , m_subSetPosX(-1)
+  , m_subSetPosY(-1)
+  , m_minSubPos(-1)
+  , m_maxSubPos(-1)
+  , m_sigGroupCtxId(-1)
+  , m_tmplCpSum1(-1)
+  , m_tmplCpDiag(-1)
+  , m_sigFlagCtxSet{ Ctx::SigFlag[m_chType], Ctx::SigFlag[m_chType + 2], Ctx::SigFlag[m_chType + 4] }
+  , m_parFlagCtxSet(Ctx::ParFlag[m_chType])
+  , m_gtxFlagCtxSet{ Ctx::GtxFlag[m_chType], Ctx::GtxFlag[m_chType + 2] }
+  , m_sigGroupCtxIdTS(-1)
+  , m_tsSigFlagCtxSet(Ctx::TsSigFlag)
+  , m_tsParFlagCtxSet(Ctx::TsParFlag)
+  , m_tsGtxFlagCtxSet(Ctx::TsGtxFlag)
+  , m_tsLrg1FlagCtxSet(Ctx::TsLrg1Flag)
+  , m_tsSignFlagCtxSet(Ctx::TsResidualSign)
+  , m_sigCoeffGroupFlag()
+  , m_bdpcm(bdpcm)
 {
   // LOGTODO
   unsigned log2sizeX = m_log2BlockWidth;
@@ -110,6 +110,19 @@ CoeffCodingContext::CoeffCodingContext( const TransformUnit& tu, ComponentID com
     const_cast<int&>(m_lastOffsetY) = prefix_ctx[ log2sizeY ];;
     const_cast<int&>(m_lastShiftX)  = (log2sizeX + 1) >> 2;
     const_cast<int&>(m_lastShiftY)  = (log2sizeY + 1) >> 2;
+  }
+
+  m_cctxBaseLevel = 4; // default value for RRC rice derivation in VVCv1, is updated for extended RRC rice derivation
+  m_histValue = 0;  // default value for RRC rice derivation in VVCv1, is updated for history-based extention of RRC rice derivation
+  m_updateHist = 0;  // default value for RRC rice derivation (history update is disabled), is updated for history-based extention of RRC rice derivation
+
+  if (tu.cs->sps->getSpsRangeExtension().getRrcRiceExtensionEnableFlag())
+  {
+    deriveRiceRRC = &CoeffCodingContext::deriveRiceExt;
+  }
+  else
+  {
+    deriveRiceRRC = &CoeffCodingContext::deriveRice;
   }
 }
 
@@ -307,6 +320,7 @@ unsigned DeriveCtx::CtxAffineFlag( const CodingUnit& cu )
 
   return ctxId;
 }
+
 unsigned DeriveCtx::CtxSkipFlag( const CodingUnit& cu )
 {
   const CodingStructure *cs = cu.cs;
@@ -322,8 +336,6 @@ unsigned DeriveCtx::CtxSkipFlag( const CodingUnit& cu )
 
   return ctxId;
 }
-
-
 
 unsigned DeriveCtx::CtxPredModeFlag( const CodingUnit& cu )
 {
@@ -368,6 +380,25 @@ void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
   pu.mvpIdx [REF_PIC_LIST_1] = NOT_VALID;
   pu.mvpNum [REF_PIC_LIST_0] = NOT_VALID;
   pu.mvpNum [REF_PIC_LIST_1] = NOT_VALID;
+#if GDR_ENABLED
+  CodingStructure &cs = *pu.cs;
+  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+
+  if (isEncodeGdrClean)
+  {
+    Mv mv0 = pu.mv[REF_PIC_LIST_0];
+    Mv mv1 = pu.mv[REF_PIC_LIST_1];
+
+    int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
+    int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
+
+    pu.mvSolid[REF_PIC_LIST_0] = mvSolid[(candIdx << 1) + 0];
+    pu.mvSolid[REF_PIC_LIST_1] = mvSolid[(candIdx << 1) + 1];
+    pu.mvValid[REF_PIC_LIST_0] = cs.isClean(pu.Y().topRight(), mv0, REF_PIC_LIST_0, refIdx0);
+    pu.mvValid[REF_PIC_LIST_1] = cs.isClean(pu.Y().topRight(), mv1, REF_PIC_LIST_1, refIdx1);
+  }
+#endif
+
   if (CU::isIBC(*pu.cu))
   {
     pu.bv = pu.mv[REF_PIC_LIST_0];
@@ -379,6 +410,7 @@ void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
   PU::restrictBiPredMergeCandsOne(pu);
   pu.mmvdEncOptMode = 0;
 }
+
 void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
 {
   const Slice &slice = *pu.cs->slice;
@@ -390,6 +422,11 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
   int tempIdx = 0;
   int fPosPosition = 0;
   Mv tempMv[2];
+
+#if GDR_ENABLED
+  const CodingStructure &cs = *pu.cs;
+  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+#endif
 
   tempIdx = candIdx;
   fPosGroup = tempIdx / (MMVD_BASE_MV_NUM * MMVD_MAX_REFINE_NUM);
@@ -449,7 +486,9 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
         }
       }
       else
-      tempMv[0] = tempMv[1].scaleMv(scale);
+      {
+        tempMv[0] = tempMv[1].scaleMv(scale);
+      }
     }
     else
     {
@@ -468,7 +507,9 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
         }
       }
       else
-      tempMv[1] = tempMv[0].scaleMv(scale);
+      {
+        tempMv[1] = tempMv[0].scaleMv(scale);
+      }
     }
 
     pu.interDir = 3;
@@ -476,6 +517,25 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
     pu.refIdx[REF_PIC_LIST_0] = refList0;
     pu.mv[REF_PIC_LIST_1] = mmvdBaseMv[fPosBaseIdx][1].mv + tempMv[1];
     pu.refIdx[REF_PIC_LIST_1] = refList1;
+#if GDR_ENABLED
+    if (isEncodeGdrClean)
+    {
+      Mv mv0 = pu.mv[REF_PIC_LIST_0];
+      Mv mv1 = pu.mv[REF_PIC_LIST_1];
+
+      int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
+      int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
+
+      mmvdValid[fPosBaseIdx][0] = cs.isClean(pu.Y().topRight(), mv0, REF_PIC_LIST_0, refIdx0);
+      mmvdValid[fPosBaseIdx][1] = cs.isClean(pu.Y().topRight(), mv1, REF_PIC_LIST_1, refIdx1);
+
+      pu.mvSolid[REF_PIC_LIST_0] = mmvdSolid[fPosBaseIdx][0];
+      pu.mvSolid[REF_PIC_LIST_1] = mmvdSolid[fPosBaseIdx][1];
+
+      pu.mvValid[REF_PIC_LIST_0] = mmvdValid[fPosBaseIdx][0];
+      pu.mvValid[REF_PIC_LIST_1] = mmvdValid[fPosBaseIdx][1];
+    }
+#endif
   }
   else if (refList0 != -1)
   {
@@ -500,6 +560,26 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
     pu.refIdx[REF_PIC_LIST_0] = refList0;
     pu.mv[REF_PIC_LIST_1] = Mv(0, 0);
     pu.refIdx[REF_PIC_LIST_1] = -1;
+
+#if GDR_ENABLED
+    if (isEncodeGdrClean)
+    {
+      Mv mv0 = pu.mv[REF_PIC_LIST_0];
+      //Mv mv1 = pu.mv[REF_PIC_LIST_1];
+
+      int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
+      //int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
+
+      pu.mvSolid[REF_PIC_LIST_0] = mmvdSolid[fPosBaseIdx][0];
+      pu.mvSolid[REF_PIC_LIST_1] = true;
+
+      mmvdValid[fPosBaseIdx][0] = cs.isClean(pu.Y().topRight(), mv0, REF_PIC_LIST_0, refIdx0);
+      mmvdValid[fPosBaseIdx][1] = true;
+
+      pu.mvValid[REF_PIC_LIST_0] = mmvdValid[fPosBaseIdx][0];
+      pu.mvValid[REF_PIC_LIST_1] = true;
+    }
+#endif
   }
   else if (refList1 != -1)
   {
@@ -524,6 +604,25 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
     pu.refIdx[REF_PIC_LIST_0] = -1;
     pu.mv[REF_PIC_LIST_1] = mmvdBaseMv[fPosBaseIdx][1].mv + tempMv[1];
     pu.refIdx[REF_PIC_LIST_1] = refList1;
+#if GDR_ENABLED
+    if (isEncodeGdrClean)
+    {
+      // Mv mv0 = pu.mv[REF_PIC_LIST_0];
+      Mv mv1 = pu.mv[REF_PIC_LIST_1];
+
+      // int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
+      int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
+
+      mmvdValid[fPosBaseIdx][0] = true;
+      mmvdValid[fPosBaseIdx][1] = cs.isClean(pu.Y().topRight(), mv1, REF_PIC_LIST_1, refIdx1);
+
+      pu.mvSolid[REF_PIC_LIST_0] = true;
+      pu.mvSolid[REF_PIC_LIST_1] = mmvdSolid[fPosBaseIdx][1];
+
+      pu.mvValid[REF_PIC_LIST_0] = true;
+      pu.mvValid[REF_PIC_LIST_1] = mmvdValid[fPosBaseIdx][1];
+    }
+#endif
   }
 
   pu.mmvdMergeFlag = true;
@@ -550,7 +649,6 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
     }
   }
 
-
   PU::restrictBiPredMergeCandsOne(pu);
 }
 
@@ -575,7 +673,7 @@ unsigned DeriveCtx::CtxPltCopyFlag( const unsigned prevRunType, const unsigned d
   uint8_t *ucCtxLut = (prevRunType == PLT_RUN_INDEX) ? g_paletteRunLeftLut : g_paletteRunTopLut;
   if ( dist <= RUN_IDX_THRE )
   {
-     return ucCtxLut[dist];
+    return ucCtxLut[dist];
   }
   else
   {

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,11 +72,7 @@ namespace po = df::program_options_lite;
   ("BitstreamFileOut,o",        m_bitstreamFileNameOut,                string(""), "bitstream output file name")
   ("MaxTemporalLayer,t",        m_maxTemporalLayer,                    -1,         "Maximum Temporal Layer to be decoded. -1 to decode all layers")
   ("TargetOutputLayerSet,p",    m_targetOlsIdx,                        -1,         "Target output layer set index")
-#if JVET_S0154_R0068_ASPECT5
   ("SubPicIdx,s",               m_subPicIdx,                           -1,         "Target subpic index for target output layers that containing multiple subpictures. -1 to decode all subpictures")
-#else
-  ("SubPicId,s",                m_subPicId,                            -1,         "Target subpic ID")
-#endif
 
 #if ENABLE_TRACING
   ("TraceChannelsList",         printTracingChannelsList,              false,        "List all available tracing channels" )
@@ -125,9 +121,6 @@ namespace po = df::program_options_lite;
     }
   }
 
-#if !JVET_S0158_SUB_BITSTREAM_EXT
-  CHECK(m_maxTemporalLayer < -1 || m_maxTemporalLayer > 6, "MaxTemporalLayer shall either be equal -1 (for diabled) or in the range of 0 to 6, inclusive");
-#endif
 
   if (m_bitstreamFileNameIn.empty())
   {
@@ -149,11 +142,7 @@ BitstreamExtractorAppCfg::BitstreamExtractorAppCfg()
 , m_bitstreamFileNameOut()
 , m_maxTemporalLayer( 0 )
 , m_targetOlsIdx( 0 )
-#if JVET_S0154_R0068_ASPECT5
 , m_subPicIdx( -1 )
-#else
-, m_subPicId( -1 )
-#endif
 {
 }
 

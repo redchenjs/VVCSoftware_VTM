@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,8 @@
 #include <fcntl.h>
 
 #include "StreamMergeApp.h"
-#include "DecoderLib/AnnexBread.h"
-#include "DecoderLib/NALread.h"
+#include "AnnexBwrite.h"
+#include "NALwrite.h"
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
 #include "CommonLib/CodingStatistics.h"
 #endif
@@ -62,26 +62,6 @@ StreamMergeApp::StreamMergeApp()
 // ====================================================================================================================
 // Public member functions
 // ====================================================================================================================
-
-/**
- - create internal class
- - initialize internal class
- - until the end of the bitstream, call decoding function in StreamMergeApp class
- - delete allocated buffers
- - destroy internal class
- - returns the number of mismatching pictures
- */
-
-void read2(InputNALUnit& nalu)
-{
-  InputBitstream& bs = nalu.getBitstream();
-
-  nalu.m_forbiddenZeroBit   = bs.read(1);                 // forbidden zero bit
-  nalu.m_nuhReservedZeroBit = bs.read(1);                 // nuh_reserved_zero_bit
-  nalu.m_nuhLayerId         = bs.read(6);                 // nuh_layer_id
-  nalu.m_nalUnitType        = (NalUnitType) bs.read(5);   // nal_unit_type
-  nalu.m_temporalId         = bs.read(3) - 1;             // nuh_temporal_id_plus1
-}
 
 static void
 _byteStreamNALUnit(
@@ -224,121 +204,440 @@ byteStreamNALUnit(
   return eof;
 }
 
-void StreamMergeApp::writeNewVPS(ostream& out, int nLayerId, int nTemporalId)
+/**
+ - lookahead through next NAL units to determine if current NAL unit is the first NAL unit in a new picture
+ */
+bool StreamMergeApp::isNewPicture(std::ifstream *bitstreamFile, InputByteStream *bytestream, bool firstSliceInPicture)
 {
-  //write NALU header
-  OutputBitstream bsNALUHeader;
-  static const uint8_t start_code_prefix[] = { 0,0,0,1 };
+  bool ret      = false;
+  bool finished = false;
 
-  int forbiddenZero = 0;
-  bsNALUHeader.write(forbiddenZero, 1);   // forbidden_zero_bit
-  int nuhReservedZeroBit = 0;
-  bsNALUHeader.write(nuhReservedZeroBit, 1);   // nuh_reserved_zero_bit
-  bsNALUHeader.write(nLayerId, 6);             // nuh_layer_id
-  bsNALUHeader.write(NAL_UNIT_VPS, 5);         // nal_unit_type
-  bsNALUHeader.write(nTemporalId + 1, 3);      // nuh_temporal_id_plus1
+  // cannot be a new picture if there haven't been any slices yet
+  if (firstSliceInPicture)
+  {
+    return false;
+  }
 
-  out.write(reinterpret_cast<const char*>(start_code_prefix), 4);
-  out.write(reinterpret_cast<const char*>(bsNALUHeader.getByteStream()), bsNALUHeader.getByteStreamLength());
+  // save stream position for backup
+  std::streampos location = bitstreamFile->tellg();
 
-  //write VPS
-  OutputBitstream bsVPS;
-  HLSWriter       m_HLSWriter;
+  // look ahead until picture start location is determined
+  while (!finished && !!(*bitstreamFile))
+  {
+    AnnexBStats  stats = AnnexBStats();
+    InputNALUnit nalu;
+    byteStreamNALUnit(*bytestream, nalu.getBitstream().getFifo(), stats);
+    if (nalu.getBitstream().getFifo().empty())
+    {
+      msg(ERROR, "Warning: Attempt to decode an empty NAL unit\n");
+    }
+    else
+    {
+      // get next NAL unit type
+      read(nalu);
+      switch (nalu.m_nalUnitType)
+      {
+      // NUT that indicate the start of a new picture
+      case NAL_UNIT_ACCESS_UNIT_DELIMITER:
+      case NAL_UNIT_OPI:
+      case NAL_UNIT_DCI:
+      case NAL_UNIT_VPS:
+      case NAL_UNIT_SPS:
+      case NAL_UNIT_PPS:
+      case NAL_UNIT_PH:
+        ret      = true;
+        finished = true;
+        break;
 
-  m_HLSWriter.setBitstream(&bsVPS);
-  m_HLSWriter.codeVPS(&vps);
+      // NUT that are not the start of a new picture
+      case NAL_UNIT_CODED_SLICE_TRAIL:
+      case NAL_UNIT_CODED_SLICE_STSA:
+      case NAL_UNIT_CODED_SLICE_RASL:
+      case NAL_UNIT_CODED_SLICE_RADL:
+      case NAL_UNIT_RESERVED_VCL_4:
+      case NAL_UNIT_RESERVED_VCL_5:
+      case NAL_UNIT_RESERVED_VCL_6:
+      case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
+      case NAL_UNIT_CODED_SLICE_IDR_N_LP:
+      case NAL_UNIT_CODED_SLICE_CRA:
+      case NAL_UNIT_CODED_SLICE_GDR:
+      case NAL_UNIT_RESERVED_IRAP_VCL_11:
+        ret      = checkPictureHeaderInSliceHeaderFlag(nalu);
+        finished = true;
+        break;
 
-  out.write(reinterpret_cast<const char*>(bsVPS.getByteStream()), bsVPS.getByteStreamLength());
+        // NUT that are not the start of a new picture
+      case NAL_UNIT_EOS:
+      case NAL_UNIT_EOB:
+      case NAL_UNIT_SUFFIX_APS:
+      case NAL_UNIT_SUFFIX_SEI:
+      case NAL_UNIT_FD:
+        ret      = false;
+        finished = true;
+        break;
 
-  return;
+      // NUT that might indicate the start of a new picture - keep looking
+      case NAL_UNIT_PREFIX_APS:
+      case NAL_UNIT_PREFIX_SEI:
+      case NAL_UNIT_RESERVED_NVCL_26:
+      case NAL_UNIT_RESERVED_NVCL_27:
+      case NAL_UNIT_UNSPECIFIED_28:
+      case NAL_UNIT_UNSPECIFIED_29:
+      case NAL_UNIT_UNSPECIFIED_30:
+      case NAL_UNIT_UNSPECIFIED_31:
+      default:
+        break;
+      }
+    }
+  }
+
+  // restore previous stream location - minus 3 due to the need for the annexB parser to read three extra bytes
+  bitstreamFile->clear();
+  bitstreamFile->seekg(location - std::streamoff(3));
+  bytestream->reset();
+
+  // return TRUE if next NAL unit is the start of a new picture
+  return ret;
+}
+
+/**
+- lookahead through next NAL units to determine if current NAL unit is the first NAL unit in a new access unit
+*/
+bool StreamMergeApp::isNewAccessUnit(bool newPicture, std::ifstream *bitstreamFile, class InputByteStream *bytestream)
+{
+  bool ret      = false;
+  bool finished = false;
+
+  // can only be the start of an AU if this is the start of a new picture
+  if (newPicture == false)
+  {
+    return false;
+  }
+
+  // save stream position for backup
+  std::streampos location = bitstreamFile->tellg();
+
+  // look ahead until access unit start location is determined
+  while (!finished && !!(*bitstreamFile))
+  {
+    AnnexBStats  stats = AnnexBStats();
+    InputNALUnit nalu;
+    byteStreamNALUnit(*bytestream, nalu.getBitstream().getFifo(), stats);
+    if (nalu.getBitstream().getFifo().empty())
+    {
+      msg(ERROR, "Warning: Attempt to decode an empty NAL unit\n");
+    }
+    else
+    {
+      // get next NAL unit type
+      read(nalu);
+      switch (nalu.m_nalUnitType)
+      {
+      // AUD always indicates the start of a new access unit
+      case NAL_UNIT_ACCESS_UNIT_DELIMITER:
+        ret      = true;
+        finished = true;
+        break;
+
+      // slice types - check layer ID and POC
+      case NAL_UNIT_CODED_SLICE_TRAIL:
+      case NAL_UNIT_CODED_SLICE_STSA:
+      case NAL_UNIT_CODED_SLICE_RASL:
+      case NAL_UNIT_CODED_SLICE_RADL:
+      case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
+      case NAL_UNIT_CODED_SLICE_IDR_N_LP:
+      case NAL_UNIT_CODED_SLICE_CRA:
+      case NAL_UNIT_CODED_SLICE_GDR:
+        ret      = true; // isSliceNaluFirstInAU(newPicture, nalu); // TODO: according to DecLib::isSliceNaluFirstInAU(), true if layerID==prevLayerID, otherwise true if POC!=prevPOC.
+        finished = true;
+        break;
+
+      // NUT that are not the start of a new access unit
+      case NAL_UNIT_EOS:
+      case NAL_UNIT_EOB:
+      case NAL_UNIT_SUFFIX_APS:
+      case NAL_UNIT_SUFFIX_SEI:
+      case NAL_UNIT_FD:
+        ret      = false;
+        finished = true;
+        break;
+
+      // all other NUT - keep looking to find first VCL
+      default: break;
+      }
+    }
+  }
+
+  // restore previous stream location
+  bitstreamFile->clear();
+  bitstreamFile->seekg(location);
+  bytestream->reset();
+
+  // return TRUE if next NAL unit is the start of a new picture
+  return ret;
+}
+
+void StreamMergeApp::inputNaluHeaderToOutputNalu(InputNALUnit& inNalu, OutputNALUnit& outNalu) {
+  outNalu.m_forbiddenZeroBit   = inNalu.m_forbiddenZeroBit;
+  outNalu.m_nalUnitType        = inNalu.m_nalUnitType;
+  outNalu.m_nuhLayerId         = inNalu.m_nuhLayerId;
+  outNalu.m_nuhReservedZeroBit = inNalu.m_nuhReservedZeroBit;
+  outNalu.m_temporalId         = inNalu.m_temporalId;
+}
+
+bool StreamMergeApp::preInjectNalu(MergeLayer &layer, InputNALUnit &inNalu, OutputNALUnit &outNalu)
+{
+  HLSyntaxReader hlsReader;
+  HLSWriter      hlsWriter;
+  hlsReader.setBitstream(&inNalu.getBitstream());
+  hlsWriter.setBitstream(&outNalu.m_Bitstream);
+
+  switch (inNalu.m_nalUnitType)
+  {
+  case NAL_UNIT_SPS:
+  {
+    VPS *vps = new VPS();
+    if (vpsId == -1)
+    {
+      vpsId = ++idIncrement;
+    }
+    vps->setVPSId(vpsId);
+    for (int i = 0; i < m_numInputStreams; i++)
+    {
+      vps->setLayerId(i, i);   // Because we use layer IDs that are layer indices.
+    }
+    vps->setMaxLayers(m_numInputStreams);
+    vector<ProfileTierLevel> ptls;
+    ptls.push_back(ProfileTierLevel());
+    vps->setProfileTierLevel(ptls);
+    layer.vpsIdMapping[0] = vps->getVPSId();
+    layer.psManager.storeVPS(vps, hlsReader.getBitstream()->getFifo());
+    hlsWriter.codeVPS(vps);
+    outNalu.m_nalUnitType = NAL_UNIT_VPS;
+    msg(INFO, " layer %i, nalu type VPS%i injected\n", layer.id, vps->getVPSId());
+    return true;
+  }
+  default:
+    break;
+  }
+  return false;
+}
+
+/**
+  - Decode NAL unit if it is parameter set or picture header, or decode slice header of VLC NAL unit
+ */
+void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNalu, OutputNALUnit &outNalu)
+{
+  HLSyntaxReader hlsReader;
+  HLSWriter      hlsWriter;
+  hlsReader.setBitstream(&inNalu.getBitstream());
+  hlsWriter.setBitstream(&outNalu.m_Bitstream);
+
+  msg(INFO, " layer %i, nalu type ", layer.id);
+  switch (inNalu.m_nalUnitType)
+  {
+  case NAL_UNIT_SPS:
+  {
+    SPS *oldSps = new SPS();
+    SPS *newSps = new SPS();
+    hlsReader.parseSPS(oldSps);
+    inNalu.getBitstream().resetToStart();
+    uint32_t uiCode;
+    inNalu.getBitstream().read(16, uiCode);
+    hlsReader.parseSPS(newSps);
+    // Set new values.
+    newSps->setSPSId(++idIncrement);
+    newSps->setVPSId(layer.vpsIdMapping.at(oldSps->getVPSId()));
+    newSps->setLayerId(layer.id);
+    // Store values for later reference.
+    layer.spsIdMapping.insert({ oldSps->getSPSId(), newSps->getSPSId() });
+    layer.oldIDsPsManager.storeSPS(oldSps, hlsReader.getBitstream()->getFifo());
+    layer.psManager.storeSPS(newSps, hlsReader.getBitstream()->getFifo());
+    hlsWriter.codeSPS(newSps);
+    msg(INFO, "SPS%i", newSps->getSPSId());
+    break;
+  }
+  case NAL_UNIT_PPS:
+  {
+    PPS *oldPps = new PPS();
+    PPS *newPps = new PPS();
+    hlsReader.parsePPS(oldPps);
+    inNalu.getBitstream().resetToStart();
+    uint32_t uiCode;
+    inNalu.getBitstream().read(16, uiCode);
+    hlsReader.parsePPS(newPps);
+    // Set new values.
+    newPps->setPPSId(++idIncrement);
+    newPps->setSPSId(layer.spsIdMapping.at(oldPps->getSPSId()));
+    newPps->setLayerId(layer.id);
+    // Store values for later reference.
+    layer.ppsIdMapping.insert({ oldPps->getPPSId(), newPps->getPPSId() });
+    layer.oldIDsPsManager.storePPS(oldPps, hlsReader.getBitstream()->getFifo());
+    layer.psManager.storePPS(newPps, hlsReader.getBitstream()->getFifo());
+    hlsWriter.codePPS(newPps);
+    msg(INFO, "PPS%i", newPps->getPPSId());
+    break;
+  }
+  case NAL_UNIT_PREFIX_APS:
+  case NAL_UNIT_SUFFIX_APS:
+  {
+    APS *aps = new APS();
+    hlsReader.parseAPS(aps);
+    layer.apsIdMapping.insert({ aps->getAPSId(), ++idIncrement });
+    aps->setLayerId(layer.id);
+    aps->setAPSId(idIncrement);
+    layer.psManager.storeAPS(aps, hlsReader.getBitstream()->getFifo());
+    hlsWriter.codeAPS(aps);
+    msg(INFO, "APS%s%i", inNalu.m_nalUnitType == NAL_UNIT_PREFIX_APS ? "p" : "s", aps->getAPSId());
+    break;
+  }
+  case NAL_UNIT_PH:
+  {
+    PicHeader ph = PicHeader();
+    hlsReader.parsePictureHeader(&ph, &layer.oldIDsPsManager, true);
+    Slice slice = Slice();
+    slice.setPPS(layer.psManager.getPPS(layer.ppsIdMapping.at(ph.getPPSId())));
+    slice.setSPS(layer.psManager.getSPS(layer.spsIdMapping.at(ph.getSPSId())));
+    slice.setPOC(ph.getPocLsb());
+    ph.setPPSId(layer.ppsIdMapping.at(ph.getPPSId()));
+    hlsWriter.codePictureHeader(&ph, true, &slice);
+    msg(INFO, "PH");
+    break;
+  }
+  default:
+  {
+    if (inNalu.isVcl())
+    {
+      msg(INFO, "VCL");
+    }
+    else if (inNalu.isSei())
+    {
+      msg(INFO, "SEI");
+    }
+    else
+    {
+      msg(INFO, "NNN");   // Any other NAL unit that is not handled above
+    }
+    msg(INFO, " with index %i", inNalu.m_nalUnitType);
+    // Copy payload from input nalu to output nalu. Code copied from SubpicMergeApp::copyInputNaluToOutputNalu().
+    vector<uint8_t> &inFifo  = inNalu.getBitstream().getFifo();
+    vector<uint8_t> &outFifo = outNalu.m_Bitstream.getFIFO();
+    outFifo                  = vector<uint8_t>(inFifo.begin() + 2, inFifo.end());
+    break;
+  }
+  }
+  msg(INFO, "\n");
 }
 
 uint32_t StreamMergeApp::mergeStreams()
 {
-  ifstream bitstreamFileIn[MAX_VPS_LAYERS];
-  ofstream bitstreamFileOut(m_bitstreamFileNameOut.c_str(), ifstream::out | ifstream::binary);
-  int nNumValidStr = m_numInputStreams;
+  ofstream outputStream(m_bitstreamFileNameOut, ifstream::out | ifstream::binary);
 
-  for (int i = 0; i < m_numInputStreams; i++)
+  vector<MergeLayer> *layers = new vector<MergeLayer>;
+  layers->resize(m_numInputStreams);
+
+  // Prepare merge layers.
+  for (int i = 0; i < layers->size(); i++)
   {
-    bitstreamFileIn[i].open(m_bitstreamFileNameIn[i].c_str(), ifstream::in | ifstream::binary);
+    MergeLayer &layer = layers->at(i);
+    layer.id          = i;
 
-    if (!bitstreamFileIn[i])
+    // Open input file.
+    layer.fp = new ifstream();
+    layer.fp->open(m_bitstreamFileNameIn[i], ifstream::in | ifstream::binary);
+    if (!layer.fp->is_open())
     {
-      EXIT("failed to open bitstream file " << m_bitstreamFileNameIn[i].c_str() << " for reading");
+      EXIT("failed to open bitstream file " << m_bitstreamFileNameIn[i] << " for reading");
     }
+    layer.fp->clear();
+    layer.fp->seekg(0, ios::beg);
 
-    bitstreamFileIn[i].clear();
-    bitstreamFileIn[i].seekg(0, ios::beg);
+    // Prep other values.
+    layer.bs = new InputByteStream(*(layer.fp));
+
+    VPS vps;
+    vps.setMaxLayers((uint32_t) layers->size());
+    vps.setLayerId(layer.id, layer.id);   // Layer ID is rewritten here.
+    layer.vpsIdMapping.insert({ vps.getVPSId(), 0 });
+    vps.setVPSId(0);
+    layer.psManager.storeVPS(&vps, std::vector<uint8_t>()); // Create VPS with default values (VTM slice header parser needs this)
   }
 
-  SingleLayerStream bytestream[MAX_VPS_LAYERS];
-
-  for (int i = 0; i < m_numInputStreams; i++)
-    bytestream[i].init(bitstreamFileIn[i]);
-
-  //set VPS which will be replicated for all layers but with differnt nul_layer_id
-  vps.setMaxLayers(m_numInputStreams);
-  vps.setVPSExtensionFlag(false);
-
-  //Loop all input bitstreams to interleave their NALUs
-  while (nNumValidStr)
+  // Loop over layers until every one is entirely read.
+  uint32_t layersStillToRead = (uint32_t) layers->size();
+  while (layersStillToRead > 0)
   {
-    //loop over all input streams
-    for (int i = 0; i < m_numInputStreams; i++)
+    // Loop over every layer.
+    for (auto &layer: *layers)
     {
-      uint8_t layerId = i < 63 ? i : i + 1;
+      if (layer.doneReading) continue;
 
-      if (!bitstreamFileIn[i])
-        continue;
+      //vector<OutputNALUnit> outNalus; // collection of nalus of this interleave part.
+      AccessUnit outAccessUnit;
+      // Read until eof or after first vcl nalu.
+      bool eoi = false; // end of interleave part.
+      while (!eoi) {
+        AnnexBStats  stats;
+        InputNALUnit inNalu;
+        inNalu.m_nalUnitType = NAL_UNIT_INVALID;
 
-      AnnexBStats stats = AnnexBStats();
+        // Find next nalu in stream.
+        bool eof = byteStreamNALUnit(*layer.bs, inNalu.getBitstream().getFifo(), stats);
 
-      InputNALUnit nalu;
+        // End of file reached.
+        if (eof) {
+          eoi = true;
+          layersStillToRead--;
+          layer.doneReading = true;
+        }
 
-      byteStreamNALUnit(bytestream[i], bitstreamFileIn[i], nalu.getBitstream().getFifo(), stats);
-
-      // call actual decoding function
-      if (nalu.getBitstream().getFifo().empty())
-      {
-        /* this can happen if the following occur:
-         *  - empty input file
-         *  - two back-to-back start_code_prefixes
-         *  - start_code_prefix immediately followed by EOF
-         */
-        std::cerr << "Warning: Attempt to decode an empty NAL unit" << std::endl;
-      }
-      else
-      {
-        read2(nalu);
-
-        if (nalu.m_nalUnitType == NAL_UNIT_VPS)
+        if (inNalu.getBitstream().getFifo().empty())
         {
-          writeNewVPS(bitstreamFileOut, layerId, nalu.m_temporalId);
-          printf("Write new VPS for stream %d\n", i);
-
+          msg(ERROR, "Warning: Attempt to decode an empty NAL unit\n");
           continue;
         }
 
-        int iNumZeros = stats.m_numLeadingZero8BitsBytes + stats.m_numZeroByteBytes + stats.m_numStartCodePrefixBytes - 1;
-        char ch = 0;
-        for (int i = 0; i < iNumZeros; i++) { bitstreamFileOut.write(&ch, 1); }
-        ch = 1; bitstreamFileOut.write(&ch, 1);
 
-        //update the nul_layer_id
-        uint8_t *p = (uint8_t*)nalu.getBitstream().getFifo().data();
-        p[1] = ((layerId + 1) << 1) & 0xff;
+        read(inNalu);   // Convert nalu payload to RBSP and parse nalu header
 
-        bitstreamFileOut.write((const char*)p, nalu.getBitstream().getFifo().size());
+        // NALU to optionally inject before the main output NALU.
+        OutputNALUnit injectedOutNalu((NalUnitType) inNalu.m_nalUnitType);
+        inputNaluHeaderToOutputNalu(inNalu, injectedOutNalu);
+        injectedOutNalu.m_nuhLayerId = layer.id;
+        if (preInjectNalu(layer, inNalu, injectedOutNalu))
+        {
+          outAccessUnit.push_back(new NALUnitEBSP(injectedOutNalu));
+        }
 
-        printf("Merge NALU type %d from stream %d\n", nalu.m_nalUnitType, i);
+        // Change input NALU to output NALU.
+        OutputNALUnit outNalu((NalUnitType) inNalu.m_nalUnitType);
+        inputNaluHeaderToOutputNalu(inNalu, outNalu);
+        outNalu.m_nuhLayerId = layer.id;
+        decodeAndRewriteNalu(layer, inNalu, outNalu);
+        outAccessUnit.push_back(new NALUnitEBSP(outNalu));
+
+        if (inNalu.isVcl())
+        {
+          layer.firstSliceInPicture = false;
+        }
+
+        try
+        {
+          bool bIsNewPicture = isNewPicture(layer.fp, layer.bs, layer.firstSliceInPicture);
+          if (isNewAccessUnit(bIsNewPicture, layer.fp, layer.bs))
+          {
+            layer.firstSliceInPicture = bIsNewPicture;
+            eoi                       = true;
+          }
+        }
+        catch (std::ios_base::failure&)
+        {
+          eoi = true;
+        }
       }
-
-      if (!bitstreamFileIn[i])
-        nNumValidStr--;
+      writeAnnexBAccessUnit(outputStream, outAccessUnit);
     }
   }
-
   return 0;
 }
 

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -115,10 +115,6 @@ public:
   Pel * getWeightTable() { return m_cwLumaWeight; }
   double getCWeight() { return m_chromaWeight; }
   void adjustLmcsPivot();
-
-#if ENABLE_SPLIT_PARALLELISM
-  void copyState(const EncReshape& other);
-#endif
 };// END CLASS DEFINITION EncReshape
 
 //! \}

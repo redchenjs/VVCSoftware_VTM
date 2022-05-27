@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -40,130 +40,6 @@
 #include "ChromaFormat.h"
 #include "CommonLib/InterpolationFilter.h"
 
-
-#if ENABLE_SPLIT_PARALLELISM
-
-int g_wppThreadId( 0 );
-#pragma omp threadprivate(g_wppThreadId)
-
-#if ENABLE_SPLIT_PARALLELISM
-int g_splitThreadId( 0 );
-#pragma omp threadprivate(g_splitThreadId)
-
-int g_splitJobId( 0 );
-#pragma omp threadprivate(g_splitJobId)
-#endif
-
-Scheduler::Scheduler() :
-#if ENABLE_SPLIT_PARALLELISM
-  m_numSplitThreads( 1 )
-#endif
-{
-}
-
-Scheduler::~Scheduler()
-{
-}
-
-#if ENABLE_SPLIT_PARALLELISM
-unsigned Scheduler::getSplitDataId( int jobId ) const
-{
-  if( m_numSplitThreads > 1 && m_hasParallelBuffer )
-  {
-    int splitJobId = jobId == CURR_THREAD_ID ? g_splitJobId : jobId;
-
-    return ( g_wppThreadId * NUM_RESERVERD_SPLIT_JOBS ) + splitJobId;
-  }
-  else
-  {
-    return 0;
-  }
-}
-
-unsigned Scheduler::getSplitPicId( int tId /*= CURR_THREAD_ID */ ) const
-{
-  if( m_numSplitThreads > 1 && m_hasParallelBuffer )
-  {
-    int threadId = tId == CURR_THREAD_ID ? g_splitThreadId : tId;
-
-    return ( g_wppThreadId * m_numSplitThreads ) + threadId;
-  }
-  else
-  {
-    return 0;
-  }
-}
-
-unsigned Scheduler::getSplitJobId() const
-{
-  if( m_numSplitThreads > 1 )
-  {
-    return g_splitJobId;
-  }
-  else
-  {
-    return 0;
-  }
-}
-
-void Scheduler::setSplitJobId( const int jobId )
-{
-  CHECK( g_splitJobId != 0 && jobId != 0, "Need to reset the jobId after usage!" );
-  g_splitJobId = jobId;
-}
-
-void Scheduler::startParallel()
-{
-  m_hasParallelBuffer = true;
-}
-
-void Scheduler::finishParallel()
-{
-  m_hasParallelBuffer = false;
-}
-
-void Scheduler::setSplitThreadId( const int tId )
-{
-  g_splitThreadId = tId == CURR_THREAD_ID ? omp_get_thread_num() : tId;
-}
-
-#endif
-
-
-
-unsigned Scheduler::getDataId() const
-{
-#if ENABLE_SPLIT_PARALLELISM
-  if( m_numSplitThreads > 1 )
-  {
-    return getSplitDataId();
-  }
-#endif
-  return 0;
-}
-
-bool Scheduler::init( const int ctuYsize, const int ctuXsize, const int numWppThreadsRunning, const int numWppExtraLines, const int numSplitThreads )
-{
-#if ENABLE_SPLIT_PARALLELISM
-  m_numSplitThreads = numSplitThreads;
-#endif
-
-  return true;
-}
-
-
-int Scheduler::getNumPicInstances() const
-{
-#if !ENABLE_SPLIT_PARALLELISM
-  return 1;
-#else
-  return ( m_numSplitThreads > 1 ? m_numSplitThreads : 1 );
-#endif
-}
-
-#endif
-
-
 // ---------------------------------------------------------------------------
 // picture methods
 // ---------------------------------------------------------------------------
@@ -186,25 +62,29 @@ Picture::Picture()
   fieldPic             = false;
   topField             = false;
   precedingDRAP        = false;
-#if JVET_S0124_UNAVAILABLE_REFERENCE
+  edrapRapId           = -1;
+  m_colourTranfParams     = nullptr;
   nonReferencePictureFlag = false;
-#endif
 
   for( int i = 0; i < MAX_NUM_CHANNEL_TYPE; i++ )
   {
     m_prevQP[i] = -1;
   }
-  m_spliceIdx = NULL;
+  m_spliceIdx           = nullptr;
   m_ctuNums = 0;
   layerId = NOT_VALID;
-#if !JVET_S0258_SUBPIC_CONSTRAINTS
-  numSubpics = 1;
-#endif
   numSlices = 1;
   unscaledPic = nullptr;
+  m_isMctfFiltered      = false;
+  m_grainCharacteristic = nullptr;
+  m_grainBuf            = nullptr;
 }
 
-void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId )
+#if JVET_Z0120_SII_SEI_PROCESSING
+void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId, const bool enablePostFilteringForHFR, const bool gopBasedTemporalFilterEnabled, const bool fgcSEIAnalysisEnabled)
+#else
+void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId, const bool gopBasedTemporalFilterEnabled, const bool fgcSEIAnalysisEnabled )
+#endif
 {
   layerId = _layerId;
   UnitArea::operator=( UnitArea( _chromaFormat, Area( Position{ 0, 0 }, size ) ) );
@@ -213,10 +93,25 @@ void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const
   M_BUFS( 0, PIC_RECONSTRUCTION ).create( _chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE );
   M_BUFS( 0, PIC_RECON_WRAP ).create( _chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE );
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (enablePostFilteringForHFR)
+  {
+    M_BUFS(0, PIC_YUV_POST_REC).create(_chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE);
+  }
+#endif
+
   if( !_decoder )
   {
     M_BUFS( 0, PIC_ORIGINAL ).    create( _chromaFormat, a );
     M_BUFS( 0, PIC_TRUE_ORIGINAL ). create( _chromaFormat, a );
+    if(gopBasedTemporalFilterEnabled)
+    {
+      M_BUFS( 0, PIC_FILTERED_ORIGINAL ). create( _chromaFormat, a );
+    }
+    if ( fgcSEIAnalysisEnabled )
+    {
+      M_BUFS( 0, PIC_FILTERED_ORIGINAL_FG ).create( _chromaFormat, a );
+    }
   }
 #if !KEEP_PRED_AND_RESI_SIGNALS
   m_ctuArea = UnitArea( _chromaFormat, Area( Position{ 0, 0 }, Size( _maxCUSize, _maxCUSize ) ) );
@@ -226,40 +121,44 @@ void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const
 
 void Picture::destroy()
 {
-#if ENABLE_SPLIT_PARALLELISM
-  for( int jId = 0; jId < PARL_SPLIT_MAX_NUM_THREADS; jId++ )
-#endif
+  for (uint32_t t = 0; t < NUM_PIC_TYPES; t++)
   {
-    for (uint32_t t = 0; t < NUM_PIC_TYPES; t++)
-    {
-      M_BUFS(jId, t).destroy();
-    }
-    m_hashMap.clearAll();
-    if (cs)
-    {
-      cs->destroy();
-      delete cs;
-      cs = nullptr;
-    }
-
-    for (auto &ps: slices)
-    {
-      delete ps;
-    }
-    slices.clear();
-
-    for (auto &psei: SEIs)
-    {
-      delete psei;
-    }
-    SEIs.clear();
-
-    if (m_spliceIdx)
-    {
-      delete[] m_spliceIdx;
-      m_spliceIdx = NULL;
-    }
+    M_BUFS(jId, t).destroy();
   }
+  m_hashMap.clearAll();
+  if (cs)
+  {
+#if GDR_ENABLED
+    if (cs->picHeader)
+    {
+      delete cs->picHeader;
+    }
+    cs->picHeader = nullptr;
+#endif
+    cs->destroy();
+    delete cs;
+    cs = nullptr;
+  }
+
+  for (auto &ps: slices)
+  {
+    delete ps;
+  }
+  slices.clear();
+
+  for (auto &psei: SEIs)
+  {
+    delete psei;
+  }
+  SEIs.clear();
+
+  if (m_spliceIdx)
+  {
+    delete[] m_spliceIdx;
+    m_spliceIdx = nullptr;
+  }
+  m_invColourTransfBuf = nullptr;
+  m_grainBuf           = nullptr;
 }
 
 void Picture::createTempBuffers( const unsigned _maxCUSize )
@@ -270,21 +169,8 @@ void Picture::createTempBuffers( const unsigned _maxCUSize )
   const Area a = m_ctuArea.Y();
 #endif
 
-#if ENABLE_SPLIT_PARALLELISM
-  scheduler.startParallel();
-
-  for( int jId = 0; jId < scheduler.getNumPicInstances(); jId++ )
-#endif
-  {
-    M_BUFS( jId, PIC_PREDICTION                   ).create( chromaFormat, a,   _maxCUSize );
-    M_BUFS( jId, PIC_RESIDUAL                     ).create( chromaFormat, a,   _maxCUSize );
-#if ENABLE_SPLIT_PARALLELISM
-    if (jId > 0)
-    {
-      M_BUFS(jId, PIC_RECONSTRUCTION).create(chromaFormat, Y(), _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE);
-    }
-#endif
-  }
+  M_BUFS( jId, PIC_PREDICTION                   ).create( chromaFormat, a,   _maxCUSize );
+  M_BUFS( jId, PIC_RESIDUAL                     ).create( chromaFormat, a,   _maxCUSize );
 
   if (cs)
   {
@@ -294,24 +180,11 @@ void Picture::createTempBuffers( const unsigned _maxCUSize )
 
 void Picture::destroyTempBuffers()
 {
-#if ENABLE_SPLIT_PARALLELISM
-  scheduler.finishParallel();
-
-  for( int jId = 0; jId < scheduler.getNumPicInstances(); jId++ )
-#endif
+  for (uint32_t t = 0; t < NUM_PIC_TYPES; t++)
   {
-    for (uint32_t t = 0; t < NUM_PIC_TYPES; t++)
+    if (t == PIC_RESIDUAL || t == PIC_PREDICTION)
     {
-      if (t == PIC_RESIDUAL || t == PIC_PREDICTION)
-      {
-        M_BUFS(jId, t).destroy();
-      }
-#if ENABLE_SPLIT_PARALLELISM
-      if (t == PIC_RECONSTRUCTION && jId > 0)
-      {
-        M_BUFS(jId, t).destroy();
-      }
-#endif
+      M_BUFS(0, t).destroy();
     }
   }
 
@@ -330,10 +203,18 @@ const CPelUnitBuf Picture::getOrigBuf()                     const { return M_BUF
 
        PelBuf     Picture::getOrigBuf(const ComponentID compID)       { return getBuf(compID, PIC_ORIGINAL); }
 const CPelBuf     Picture::getOrigBuf(const ComponentID compID) const { return getBuf(compID, PIC_ORIGINAL); }
+       PelBuf     Picture::getTrueOrigBuf(const ComponentID compID)       { return getBuf(compID, PIC_TRUE_ORIGINAL); }
+const CPelBuf     Picture::getTrueOrigBuf(const ComponentID compID) const { return getBuf(compID, PIC_TRUE_ORIGINAL); }
        PelUnitBuf Picture::getTrueOrigBuf()                           { return M_BUFS(0, PIC_TRUE_ORIGINAL); }
 const CPelUnitBuf Picture::getTrueOrigBuf()                     const { return M_BUFS(0, PIC_TRUE_ORIGINAL); }
        PelBuf     Picture::getTrueOrigBuf(const CompArea &blk)        { return getBuf(blk, PIC_TRUE_ORIGINAL); }
 const CPelBuf     Picture::getTrueOrigBuf(const CompArea &blk)  const { return getBuf(blk, PIC_TRUE_ORIGINAL); }
+
+       PelUnitBuf Picture::getFilteredOrigBuf()                           { return M_BUFS(0, PIC_FILTERED_ORIGINAL); }
+const CPelUnitBuf Picture::getFilteredOrigBuf()                     const { return M_BUFS(0, PIC_FILTERED_ORIGINAL); }
+       PelBuf     Picture::getFilteredOrigBuf(const CompArea &blk)        { return getBuf(blk, PIC_FILTERED_ORIGINAL); }
+const CPelBuf     Picture::getFilteredOrigBuf(const CompArea &blk)  const { return getBuf(blk, PIC_FILTERED_ORIGINAL); }
+
        PelBuf     Picture::getPredBuf(const CompArea &blk)        { return getBuf(blk,  PIC_PREDICTION); }
 const CPelBuf     Picture::getPredBuf(const CompArea &blk)  const { return getBuf(blk,  PIC_PREDICTION); }
        PelUnitBuf Picture::getPredBuf(const UnitArea &unit)       { return getBuf(unit, PIC_PREDICTION); }
@@ -353,6 +234,11 @@ const CPelUnitBuf Picture::getRecoBuf(const UnitArea &unit, bool wrap)     const
        PelUnitBuf Picture::getRecoBuf(bool wrap)                                 { return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION); }
 const CPelUnitBuf Picture::getRecoBuf(bool wrap)                           const { return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION); }
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+       PelUnitBuf Picture::getPostRecBuf()                           { return M_BUFS(scheduler.getSplitPicId(), PIC_YUV_POST_REC); }
+const CPelUnitBuf Picture::getPostRecBuf()                     const { return M_BUFS(scheduler.getSplitPicId(), PIC_YUV_POST_REC); }
+#endif
+
 void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHeader *picHeader, APS** alfApss, APS* lmcsAps, APS* scalingListAps )
 {
   for( auto &sei : SEIs )
@@ -363,8 +249,8 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   clearSliceBuffer();
 
   const ChromaFormat chromaFormatIDC = sps.getChromaFormatIdc();
-  const int          iWidth = pps.getPicWidthInLumaSamples();
-  const int          iHeight = pps.getPicHeightInLumaSamples();
+  const int          width           = pps.getPicWidthInLumaSamples();
+  const int          height          = pps.getPicHeightInLumaSamples();
 
   if( cs )
   {
@@ -374,7 +260,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   {
     cs = new CodingStructure( g_globalUnitCache.cuCache, g_globalUnitCache.puCache, g_globalUnitCache.tuCache );
     cs->sps = &sps;
-    cs->create(chromaFormatIDC, Area(0, 0, iWidth, iHeight), true, (bool)sps.getPLTMode());
+    cs->create(chromaFormatIDC, Area(0, 0, width, height), true, (bool) sps.getPLTMode());
   }
 
   cs->vps = vps;
@@ -383,6 +269,9 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   cs->pps     = &pps;
   picHeader->setSPSId( sps.getSPSId() );
   picHeader->setPPSId( pps.getPPSId() );
+#if GDR_ENABLED
+  picHeader->setPic(this);
+#endif
   cs->picHeader = picHeader;
   memcpy(cs->alfApss, alfApss, sizeof(cs->alfApss));
   cs->lmcsAps = lmcsAps;
@@ -390,12 +279,14 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   cs->pcv     = pps.pcv;
   m_conformanceWindow = pps.getConformanceWindow();
   m_scalingWindow = pps.getScalingWindow();
+  mixedNaluTypesInPicFlag = pps.getMixedNaluTypesInPicFlag();
+  nonReferencePictureFlag = picHeader->getNonReferencePictureFlag();
 
-  if (m_spliceIdx == NULL)
+  if (m_spliceIdx == nullptr)
   {
     m_ctuNums = cs->pcv->sizeInCtus;
     m_spliceIdx = new int[m_ctuNums];
-    memset(m_spliceIdx, 0, m_ctuNums * sizeof(int));
+    std::fill_n(m_spliceIdx, m_ctuNums, 0);
   }
 }
 
@@ -419,19 +310,20 @@ void Picture::fillSliceLossyLosslessArray(std::vector<uint16_t> sliceLosslessInd
 {
   uint16_t numElementsinsliceLosslessIndexArray = (uint16_t)sliceLosslessIndexArray.size();
   uint32_t numSlices = this->cs->pps->getNumSlicesInPic();
-  m_lossylosslessSliceArray.assign(numSlices, true); // initialize to all slices are lossless 
+  m_lossylosslessSliceArray.assign(numSlices, true); // initialize to all slices are lossless
   if (mixedLossyLossless)
   {
-    m_lossylosslessSliceArray.assign(numSlices, false); // initialize to all slices are lossless 
+    m_lossylosslessSliceArray.assign(numSlices, false); // initialize to all slices are lossless
     CHECK(numElementsinsliceLosslessIndexArray == 0 , "sliceLosslessArray is empty, must need to configure for mixed lossy/lossless");
 
     // mixed lossy/lossless slices, set only lossless slices;
     for (uint16_t i = 0; i < numElementsinsliceLosslessIndexArray; i++)
     {
-        CHECK(sliceLosslessIndexArray[i] >= numSlices || sliceLosslessIndexArray[i] < 0, "index of lossless slice is out of slice index bound");
-        m_lossylosslessSliceArray[sliceLosslessIndexArray[i]] = true;
+      CHECK(sliceLosslessIndexArray[i] >= numSlices || sliceLosslessIndexArray[i] < 0,
+            "index of lossless slice is out of slice index bound");
+      m_lossylosslessSliceArray[sliceLosslessIndexArray[i]] = true;
     }
-  } 
+  }
   CHECK(m_lossylosslessSliceArray.size() < numSlices, "sliceLosslessArray size is less than number of slices");
 }
 
@@ -461,23 +353,6 @@ void Picture::clearSliceBuffer()
   }
   slices.clear();
 }
-
-#if ENABLE_SPLIT_PARALLELISM
-void Picture::finishParallelPart( const UnitArea& area )
-{
-  const UnitArea clipdArea = clipArea( area, *this );
-  const int      sourceID  = scheduler.getSplitPicId( 0 );
-  CHECK( scheduler.getSplitJobId() > 0, "Finish-CU cannot be called from within a mode- or split-parallelized block!" );
-
-  // distribute the reconstruction across all of the parallel workers
-  for( int tId = 1; tId < scheduler.getNumSplitThreads(); tId++ )
-  {
-    const int destID = scheduler.getSplitPicId( tId );
-
-    M_BUFS( destID, PIC_RECONSTRUCTION ).subBuf( clipdArea ).copyFrom( M_BUFS( sourceID, PIC_RECONSTRUCTION ).subBuf( clipdArea ) );
-  }
-}
-#endif
 
 const TFilterCoeff DownsamplingFilterSRC[8][16][12] =
 {
@@ -1217,12 +1092,12 @@ void Picture::extendWrapBorder( const PPS *pps )
 
 PelBuf Picture::getBuf( const ComponentID compID, const PictureType &type )
 {
-  return M_BUFS( ( type == PIC_ORIGINAL || type == PIC_TRUE_ORIGINAL || type == PIC_ORIGINAL_INPUT || type == PIC_TRUE_ORIGINAL_INPUT ) ? 0 : scheduler.getSplitPicId(), type ).getBuf( compID );
+  return M_BUFS( ( type == PIC_ORIGINAL || type == PIC_TRUE_ORIGINAL || type == PIC_FILTERED_ORIGINAL || type == PIC_ORIGINAL_INPUT || type == PIC_TRUE_ORIGINAL_INPUT || type == PIC_FILTERED_ORIGINAL_INPUT ) ? 0 : scheduler.getSplitPicId(), type ).getBuf( compID );
 }
 
 const CPelBuf Picture::getBuf( const ComponentID compID, const PictureType &type ) const
 {
-  return M_BUFS( ( type == PIC_ORIGINAL || type == PIC_TRUE_ORIGINAL || type == PIC_ORIGINAL_INPUT || type == PIC_TRUE_ORIGINAL_INPUT ) ? 0 : scheduler.getSplitPicId(), type ).getBuf( compID );
+  return M_BUFS( ( type == PIC_ORIGINAL || type == PIC_TRUE_ORIGINAL || type == PIC_FILTERED_ORIGINAL || type == PIC_ORIGINAL_INPUT || type == PIC_TRUE_ORIGINAL_INPUT || type == PIC_FILTERED_ORIGINAL_INPUT ) ? 0 : scheduler.getSplitPicId(), type ).getBuf( compID );
 }
 
 PelBuf Picture::getBuf( const CompArea &blk, const PictureType &type )
@@ -1232,9 +1107,6 @@ PelBuf Picture::getBuf( const CompArea &blk, const PictureType &type )
     return PelBuf();
   }
 
-#if ENABLE_SPLIT_PARALLELISM
-  const int jId = ( type == PIC_ORIGINAL || type == PIC_TRUE_ORIGINAL || type == PIC_ORIGINAL_INPUT || type == PIC_TRUE_ORIGINAL_INPUT ) ? 0 : scheduler.getSplitPicId();
-#endif
 #if !KEEP_PRED_AND_RESI_SIGNALS
   if( type == PIC_RESIDUAL || type == PIC_PREDICTION )
   {
@@ -1256,10 +1128,6 @@ const CPelBuf Picture::getBuf( const CompArea &blk, const PictureType &type ) co
     return PelBuf();
   }
 
-#if ENABLE_SPLIT_PARALLELISM
-  const int jId = ( type == PIC_ORIGINAL || type == PIC_TRUE_ORIGINAL ) ? 0 : scheduler.getSplitPicId();
-
-#endif
 #if !KEEP_PRED_AND_RESI_SIGNALS
   if( type == PIC_RESIDUAL || type == PIC_PREDICTION )
   {
@@ -1300,9 +1168,6 @@ const CPelUnitBuf Picture::getBuf( const UnitArea &unit, const PictureType &type
 
 Pel* Picture::getOrigin( const PictureType &type, const ComponentID compID ) const
 {
-#if ENABLE_SPLIT_PARALLELISM
-  const int jId = ( type == PIC_ORIGINAL || type == PIC_TRUE_ORIGINAL ) ? 0 : scheduler.getSplitPicId();
-#endif
   return M_BUFS( jId, type ).getOrigin( compID );
 }
 
@@ -1381,3 +1246,346 @@ void Picture::addPictureToHashMapForInter()
     }
   }
 }
+
+void Picture::createGrainSynthesizer(bool firstPictureInSequence, SEIFilmGrainSynthesizer *grainCharacteristics, PelStorage *grainBuf, int width, int height, ChromaFormat fmt, int bitDepth)
+{
+  m_grainCharacteristic = grainCharacteristics;
+  m_grainBuf            = grainBuf;
+
+  // Padding to make wd and ht multiple of max fgs window size(64)
+  int paddedWdFGS = ((width - 1) | 0x3F) + 1 - width;
+  int paddedHtFGS = ((height - 1) | 0x3F) + 1 - height;
+  m_padValue      = (paddedWdFGS > paddedHtFGS) ? paddedWdFGS : paddedHtFGS;
+
+  if (firstPictureInSequence)
+  {
+    // Create and initialize the Film Grain Synthesizer
+    m_grainCharacteristic->create(width, height, fmt, bitDepth, 1);
+
+    // Frame level PelStorage buffer created to blend Film Grain Noise into it
+    m_grainBuf->create(chromaFormat, Area(0, 0, width, height), 0, m_padValue, 0, false);
+	
+    m_grainCharacteristic->fgsInit();
+  }
+}
+
+PelUnitBuf Picture::getDisplayBufFG(bool wrap)
+{
+  int                        payloadType = 0;
+  std::list<SEI *>::iterator message;
+
+  for (message = SEIs.begin(); message != SEIs.end(); ++message)
+  {
+    payloadType = (*message)->payloadType();
+    if (payloadType == SEI::FILM_GRAIN_CHARACTERISTICS)
+    {
+      m_grainCharacteristic->m_errorCode       = -1;
+      *m_grainCharacteristic->m_fgcParameters = *static_cast<SEIFilmGrainCharacteristics *>(*message);
+      /* Validation of Film grain characteristic parameters for the constrains of SMPTE-RDD5*/
+      m_grainCharacteristic->m_errorCode = m_grainCharacteristic->grainValidateParams();
+      break;
+    }
+  }
+
+  if (FGS_SUCCESS == m_grainCharacteristic->m_errorCode)
+  {
+    m_grainBuf->copyFrom(getRecoBuf());
+    m_grainBuf->extendBorderPel(m_padValue); // Padding to make wd and ht multiple of max fgs window size(64)
+	
+    m_grainCharacteristic->m_poc = getPOC();
+    m_grainCharacteristic->grainSynthesizeAndBlend(m_grainBuf, slices[0]->getIdrPicFlag());
+
+    return *m_grainBuf;
+  }
+  else
+  {
+    if (payloadType == SEI::FILM_GRAIN_CHARACTERISTICS)
+    {
+      msg(WARNING, "Film Grain synthesis is not performed. Error code: 0x%x \n", m_grainCharacteristic->m_errorCode);
+    }
+    return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION);
+  }
+}
+
+void Picture::createColourTransfProcessor(bool firstPictureInSequence, SEIColourTransformApply* ctiCharacteristics, PelStorage* ctiBuf, int width, int height, ChromaFormat fmt, int bitDepth)
+{
+  m_colourTranfParams = ctiCharacteristics;
+  m_invColourTransfBuf = ctiBuf;
+  if (firstPictureInSequence)
+  {
+    // Create and initialize the Colour Transform Processor
+    m_colourTranfParams->create(width, height, fmt, bitDepth);
+
+    //Frame level PelStorage buffer created to apply the Colour Transform
+    m_invColourTransfBuf->create(UnitArea(chromaFormat, Area(0, 0, width, height)));
+  }
+}
+
+PelUnitBuf Picture::getDisplayBuf()
+{
+  int payloadType = 0;
+  std::list<SEI*>::iterator message;
+
+  for (message = SEIs.begin(); message != SEIs.end(); ++message)
+  {
+    payloadType = (*message)->payloadType();
+    if (payloadType == SEI::COLOUR_TRANSFORM_INFO)
+    {
+      // re-init parameters
+      *m_colourTranfParams->m_pColourTransfParams = *static_cast<SEIColourTransformInfo*>(*message);
+      //m_colourTranfParams->m_pColourTransfParams = static_cast<SEIColourTransformInfo*>(*message);
+      break;
+    }
+  }
+
+  m_invColourTransfBuf->copyFrom(getRecoBuf());
+
+  if (m_colourTranfParams->m_pColourTransfParams != nullptr)
+  {
+    m_colourTranfParams->generateColourTransfLUTs();
+    m_colourTranfParams->inverseColourTransform(m_invColourTransfBuf);
+  }
+
+  return *m_invColourTransfBuf;
+}
+
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+void Picture::copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcPicYuvDst)
+{
+  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+  int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+
+  Pel *srcPxl, *dstPxl;
+  int iSrcStride, iSrcHeight, iSrcWidth;
+  int iDstStride;
+
+  for (int comp = 0; comp < numValidComponents; comp++)
+  {
+
+    if (comp == COMPONENT_Y) {
+      srcPxl = pcPicYuvSrc->Y().buf;
+      dstPxl = pcPicYuvDst->Y().buf;
+      iSrcStride = pcPicYuvSrc->Y().stride;
+      iSrcHeight = pcPicYuvSrc->Y().height;
+      iSrcWidth = pcPicYuvSrc->Y().width;
+      iDstStride = pcPicYuvSrc->Y().stride;
+    }
+    else if (comp == COMPONENT_Cb) {
+      srcPxl = pcPicYuvSrc->Cb().buf;
+      dstPxl = pcPicYuvDst->Cb().buf;
+      iSrcStride = pcPicYuvSrc->Cb().stride;
+      iSrcHeight = pcPicYuvSrc->Cb().height;
+      iSrcWidth = pcPicYuvSrc->Cb().width;
+      iDstStride = pcPicYuvSrc->Cb().stride;
+    }
+    else {
+      srcPxl = pcPicYuvSrc->Cr().buf;
+      dstPxl = pcPicYuvDst->Cr().buf;
+      iSrcStride = pcPicYuvSrc->Cr().stride;
+      iSrcHeight = pcPicYuvSrc->Cr().height;
+      iSrcWidth = pcPicYuvSrc->Cr().width;
+      iDstStride = pcPicYuvSrc->Cr().stride;
+    }
+
+    if (iSrcStride == iDstStride)
+    {
+      ::memcpy(dstPxl, srcPxl, sizeof(Pel) * iSrcStride * iSrcHeight /*getTotalHeight(compId)*/);
+    }
+    else
+    {
+      for (int y = 0; y < iSrcHeight; y++, srcPxl += iSrcStride, dstPxl += iDstStride)
+      {
+        ::memcpy(dstPxl, srcPxl, iSrcWidth * sizeof(Pel));
+      }
+    }
+  }
+}
+
+Picture* Picture::findNextPicPOC(Picture* pcPic, PicList* pcListPic)
+{
+  Picture*  nextPic = NULL;
+  Picture*  listPic = NULL;
+  PicList::iterator  iterListPic = pcListPic->begin();
+  for (int i = 0; i < (int)(pcListPic->size()); i++)
+  {
+    listPic = *(iterListPic);
+    if (listPic->getPOC() == pcPic->getPOC() + 1)
+    {
+      nextPic = *(iterListPic);
+    }
+    iterListPic++;
+  }
+  return nextPic;
+}
+
+
+Picture* Picture::findPrevPicPOC(Picture* pcPic, PicList* pcListPic)
+{
+  Picture*  prevPic = NULL;
+  Picture*  listPic = NULL;
+  PicList::iterator  iterListPic = pcListPic->begin();
+  for (int i = 0; i < (int)(pcListPic->size()); i++)
+  {
+    listPic = *(iterListPic);
+    if (listPic->getPOC() == pcPic->getPOC() - 1)
+    {
+      prevPic = *(iterListPic);
+    }
+    iterListPic++;
+  }
+  return prevPic;
+}
+
+void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio)
+{
+  const SPS *sps = pcPic->cs->sps;
+  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+
+  if ((pcPic->getPOC()) % blendingRatio != 0 || pcPic->getPOC() == 0)
+    pcPic->getPostRecBuf().copyFrom(pcPic->getRecoBuf());
+
+  if ((pcPic->getPOC() + 1) % blendingRatio == 0)
+  {
+    Picture* nextPic = findNextPicPOC(pcPic, pcListPic);
+    if (nextPic)
+    {
+#if DISABLE_PRE_POST_FILTER_FOR_IDR_CRA
+      if((nextPic->m_pictureType == NAL_UNIT_CODED_SLICE_IDR_W_RADL) ||
+        (nextPic->m_pictureType == NAL_UNIT_CODED_SLICE_IDR_N_LP) ||
+        (nextPic->m_pictureType == NAL_UNIT_CODED_SLICE_CRA))
+      {
+        nextPic->getPostRecBuf().copyFrom(nextPic->getRecoBuf());
+        return;
+      }
+#endif
+      PelUnitBuf currTmp = pcPic->getRecoBuf();
+      PelUnitBuf nextTmp = nextPic->getRecoBuf();
+      PelUnitBuf postTmp = nextPic->getPostRecBuf();
+
+      PelUnitBuf* currYuv = &currTmp;
+      PelUnitBuf* nextYuv = &nextTmp;
+      PelUnitBuf* postYuv = &postTmp;
+
+      int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+      for (int chan = 0; chan < numValidComponents; chan++)
+      {
+        const ComponentID ch = ComponentID(chan);
+        const ChannelType cType = (ch == COMPONENT_Y) ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA;
+        const int bitDepth = pcPic->cs->sps->getBitDepth(cType);
+        const int maxOutputValue = (1 << bitDepth) - 1;
+
+        Pel *currPxl, *nextPxl, *postPxl;
+        int iStride, iHeight, iWidth;
+        if (ch == COMPONENT_Y) {
+          currPxl = currYuv->Y().buf;
+          nextPxl = nextYuv->Y().buf;
+          postPxl = postYuv->Y().buf;
+          iStride = currYuv->Y().stride;
+          iHeight = currYuv->Y().height;
+          iWidth = currYuv->Y().width;
+        }
+        else if (ch == COMPONENT_Cb) {
+          nextPxl = nextYuv->Cb().buf;
+          currPxl = currYuv->Cb().buf;
+          postPxl = postYuv->Cb().buf;
+          iStride = currYuv->Cb().stride;
+          iHeight = currYuv->Cb().height;
+          iWidth = currYuv->Cb().width;
+        }
+        else {
+          nextPxl = nextYuv->Cr().buf;
+          currPxl = currYuv->Cr().buf;
+          postPxl = postYuv->Cr().buf;
+          iStride = currYuv->Cr().stride;
+          iHeight = currYuv->Cr().height;
+          iWidth = currYuv->Cr().width;
+        }
+        for (int y = 0; y < iHeight; y++)
+        {
+          for (int x = 0; x < iWidth; x++)
+          {
+#if ENABLE_USER_DEFINED_WEIGHTS
+            postPxl[x] = std::min(maxOutputValue, std::max(0, (int)(((nextPxl[x]) / SII_PF_W2) - ((currPxl[x] * SII_PF_W1) / SII_PF_W2))));
+#else
+            postPxl[x] = std::min(maxOutputValue, std::max(0, (((nextPxl[x] * (blendingRatio + 1)) / blendingRatio) - (currPxl[x] / blendingRatio))));
+#endif
+          }
+          currPxl += iStride;
+          nextPxl += iStride;
+          postPxl += iStride;
+        }
+      }
+    }
+  }
+}
+
+void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio, int intraPeriod)
+{
+  const SPS *sps = pcPic->cs->sps;
+  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+#if DISABLE_PRE_POST_FILTER_FOR_IDR_CRA
+  if (pcPic->getPOC() == 0 ||
+    (pcPic->getPOC() % intraPeriod == 0))
+  {
+    return;
+  }
+#endif
+  if (pcPic->getPOC() % blendingRatio == 0)
+  {
+    Picture* prevPic = findPrevPicPOC(pcPic, pcListPic);
+    if (prevPic)
+    {
+      PelStorage* currYuv = &pcPic->m_bufs[PIC_ORIGINAL];
+      PelStorage* prevYuv = &prevPic->m_bufs[PIC_ORIGINAL];
+      int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+      for (int chan = 0; chan < numValidComponents; chan++)
+      {
+        const ComponentID ch = ComponentID(chan);
+        const ChannelType cType = (ch == COMPONENT_Y) ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA;
+        const int bitDepth = pcPic->cs->sps->getBitDepth(cType);
+        const int maxOutputValue = (1 << bitDepth) - 1;
+
+        Pel *currPxl, *prevPxl;
+        int iStride, iHeight, iWidth;
+        if (ch == COMPONENT_Y) {
+          currPxl = currYuv->Y().buf;
+          prevPxl = prevYuv->Y().buf;
+          iStride = currYuv->Y().stride;
+          iHeight = currYuv->Y().height;
+          iWidth = currYuv->Y().width;
+        }
+        else if (ch == COMPONENT_Cb) {
+          prevPxl = prevYuv->Cb().buf;
+          currPxl = currYuv->Cb().buf;
+          iStride = currYuv->Cb().stride;
+          iHeight = currYuv->Cb().height;
+          iWidth = currYuv->Cb().width;
+        }
+        else {
+          prevPxl = prevYuv->Cr().buf;
+          currPxl = currYuv->Cr().buf;
+          iStride = currYuv->Cr().stride;
+          iHeight = currYuv->Cr().height;
+          iWidth = currYuv->Cr().width;
+        }
+
+        for (int y = 0; y < iHeight; y++)
+        {
+          for (int x = 0; x < iWidth; x++)
+          {
+#if ENABLE_USER_DEFINED_WEIGHTS
+            currPxl[x] = std::min(maxOutputValue, std::max(0, (int)((currPxl[x] * SII_PF_W2) + (prevPxl[x] * SII_PF_W1));
+#else
+            currPxl[x] = std::min(maxOutputValue, std::max(0, (((currPxl[x] * blendingRatio) / (blendingRatio + 1)) + (prevPxl[x] / (blendingRatio + 1)))));
+#endif
+          }
+          currPxl += iStride;
+          prevPxl += iStride;
+        }
+      }
+    }
+  }
+}
+#endif
+

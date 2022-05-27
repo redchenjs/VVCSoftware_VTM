@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -65,22 +65,32 @@ void  Reshape::createDec(int bitDepth)
   m_lumaBD = bitDepth;
   m_reshapeLUTSize = 1 << m_lumaBD;
   m_initCW = m_reshapeLUTSize / PIC_CODE_CW_BINS;
-  if (m_fwdLUT.empty())
-    m_fwdLUT.resize(m_reshapeLUTSize, 0);
-  if (m_invLUT.empty())
-    m_invLUT.resize(m_reshapeLUTSize, 0);
+  m_fwdLUT.resize(m_reshapeLUTSize, 0);
+  m_invLUT.resize(m_reshapeLUTSize, 0);
   if (m_binCW.empty())
+  {
     m_binCW.resize(PIC_CODE_CW_BINS, 0);
+  }
   if (m_inputPivot.empty())
+  {
     m_inputPivot.resize(PIC_CODE_CW_BINS + 1, 0);
+  }
   if (m_fwdScaleCoef.empty())
+  {
     m_fwdScaleCoef.resize(PIC_CODE_CW_BINS, 1 << FP_PREC);
+  }
   if (m_invScaleCoef.empty())
+  {
     m_invScaleCoef.resize(PIC_CODE_CW_BINS, 1 << FP_PREC);
+  }
   if (m_reshapePivot.empty())
+  {
     m_reshapePivot.resize(PIC_CODE_CW_BINS + 1, 0);
+  }
   if (m_chromaAdjHelpLUT.empty())
+  {
     m_chromaAdjHelpLUT.resize(PIC_CODE_CW_BINS, 1<<CSCALE_FP_PREC);
+  }
 }
 
 void  Reshape::destroy()
@@ -205,7 +215,10 @@ int Reshape::getPWLIdxInv(int lumaVal)
   int idxS = 0;
   for (idxS = m_sliceReshapeInfo.reshaperModelMinBinIdx; (idxS <= m_sliceReshapeInfo.reshaperModelMaxBinIdx); idxS++)
   {
-    if (lumaVal < m_reshapePivot[idxS + 1])     break;
+    if (lumaVal < m_reshapePivot[idxS + 1])
+    {
+      break;
+    }
   }
   return std::min(idxS, PIC_CODE_CW_BINS-1);
 }
@@ -228,9 +241,13 @@ void Reshape::copySliceReshaperInfo(SliceReshapeInfo& tInfo, SliceReshapeInfo& s
   }
   tInfo.sliceReshaperEnableFlag = sInfo.sliceReshaperEnableFlag;
   if (sInfo.sliceReshaperEnableFlag)
+  {
     tInfo.enableChromaAdj = sInfo.enableChromaAdj;
+  }
   else
+  {
     tInfo.enableChromaAdj = 0;
+  }
 }
 
 /** Construct reshaper from syntax
@@ -243,11 +260,17 @@ void Reshape::constructReshaper()
   int pwlFwdBinLen = m_reshapeLUTSize / PIC_CODE_CW_BINS;
 
   for (int i = 0; i < m_sliceReshapeInfo.reshaperModelMinBinIdx; i++)
+  {
     m_binCW[i] = 0;
+  }
   for (int i = m_sliceReshapeInfo.reshaperModelMaxBinIdx + 1; i < PIC_CODE_CW_BINS; i++)
+  {
     m_binCW[i] = 0;
+  }
   for (int i = m_sliceReshapeInfo.reshaperModelMinBinIdx; i <= m_sliceReshapeInfo.reshaperModelMaxBinIdx; i++)
+  {
     m_binCW[i] = (uint16_t)(m_sliceReshapeInfo.reshaperModelBinCWDelta[i] + (int)m_initCW);
+  }
 
   for (int i = 0; i < pwlFwdLUTsize; i++)
   {
@@ -265,6 +288,22 @@ void Reshape::constructReshaper()
       m_chromaAdjHelpLUT[i] = (int32_t)(m_initCW * (1 << FP_PREC) / ( m_binCW[i] + m_sliceReshapeInfo.chrResScalingOffset ) );
     }
   }
+
+  int sumBinCW = 0;
+  for (int i = m_sliceReshapeInfo.reshaperModelMinBinIdx; i <= m_sliceReshapeInfo.reshaperModelMaxBinIdx; i++)
+  {
+    sumBinCW += m_binCW[i];
+    if (m_binCW[i] != 0)
+    {
+      CHECK((m_binCW[i] + m_sliceReshapeInfo.chrResScalingOffset) < (m_initCW >> 3) || (m_binCW[i] + m_sliceReshapeInfo.chrResScalingOffset) > ((m_initCW << 3) - 1),
+        "It is a requirement of bitstream conformance that, when lmcsCW[ i ] is not equal to 0, ( lmcsCW[ i ] + lmcsDeltaCrs ) shall be in the range of ( OrgCW >> 3 ) to ( ( OrgCW << 3 ) - 1 ), inclusive.");
+    }
+    CHECK(m_binCW[i] < (m_initCW >> 3) || m_binCW[i] > ((m_initCW << 3) - 1), " lmcsCW[ i ] shall be in the range of ( OrgCW >> 3 ) to ( ( OrgCW << 3 ) - 1 if not equal to 0 ).");
+    CHECK((((m_reshapePivot[i] % (1 << (m_lumaBD - 5))) != 0) && ((m_reshapePivot[i] >> (m_lumaBD - 5)) == (m_reshapePivot[i + 1] >> (m_lumaBD - 5)))),
+      "It is a requirement of bitstream conformance that, for i = lmcs_min_bin_idx..LmcsMaxBinIdx, when the value of LmcsPivot[ i ] is not a multiple of 1 << ( BitDepth - 5 ), the value of(LmcsPivot[i] >> (BitDepth - 5)) shall not be equal to the value of(LmcsPivot[i + 1] >> (BitDepth - 5)).");
+  }
+  CHECK(sumBinCW > ((1 << m_lumaBD) - 1), "It is a requirement of bitstream conformance that the following condition is true: Sum_(i = 0) ^ 15 [lmcsCW[i]] <= (1 << BitDepth) - 1.");
+
   for (int lumaSample = 0; lumaSample < m_reshapeLUTSize; lumaSample++)
   {
     int idxY = lumaSample / m_initCW;

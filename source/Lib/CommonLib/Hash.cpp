@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -107,23 +107,24 @@ void TCRCCalculatorLight::processData(unsigned char* curData, uint32_t dataLengt
 
 TComHash::TComHash()
 {
-  m_lookupTable = NULL;
+  m_lookupTable   = nullptr;
   tableHasContent = false;
   for (int i = 0; i < 5; i++)
   {
-    hashPic[i] = NULL;
+    hashPic[i] = nullptr;
   }
 }
 
 TComHash::~TComHash()
 {
   clearAll();
-  if (m_lookupTable != NULL)
+  if (m_lookupTable != nullptr)
   {
     delete[] m_lookupTable;
-    m_lookupTable = NULL;
+    m_lookupTable = nullptr;
   }
 }
+
 void TComHash::create(int picWidth, int picHeight)
 {
   if (m_lookupTable)
@@ -154,28 +155,28 @@ void TComHash::clearAll()
     for (int k = 0; k < 5; k++)
     {
       delete[] hashPic[k];
-      hashPic[k] = NULL;
+      hashPic[k] = nullptr;
     }
   }
   tableHasContent = false;
-  if (m_lookupTable == NULL)
+  if (m_lookupTable == nullptr)
   {
     return;
   }
   int maxAddr = 1 << (m_CRCBits + m_blockSizeBits);
   for (int i = 0; i < maxAddr; i++)
   {
-    if (m_lookupTable[i] != NULL)
+    if (m_lookupTable[i] != nullptr)
     {
       delete m_lookupTable[i];
-      m_lookupTable[i] = NULL;
+      m_lookupTable[i] = nullptr;
     }
   }
 }
 
 void TComHash::addToTable(uint32_t hashValue, const BlockHash& blockHash)
 {
-  if (m_lookupTable[hashValue] == NULL)
+  if (m_lookupTable[hashValue] == nullptr)
   {
     m_lookupTable[hashValue] = new std::vector<BlockHash>;
     m_lookupTable[hashValue]->push_back(blockHash);
@@ -188,7 +189,7 @@ void TComHash::addToTable(uint32_t hashValue, const BlockHash& blockHash)
 
 int TComHash::count(uint32_t hashValue)
 {
-  if (m_lookupTable[hashValue] == NULL)
+  if (m_lookupTable[hashValue] == nullptr)
   {
     return 0;
   }
@@ -200,7 +201,7 @@ int TComHash::count(uint32_t hashValue)
 
 int TComHash::count(uint32_t hashValue) const
 {
-  if (m_lookupTable[hashValue] == NULL)
+  if (m_lookupTable[hashValue] == nullptr)
   {
     return 0;
   }
@@ -222,7 +223,7 @@ const MapIterator TComHash::getFirstIterator(uint32_t hashValue) const
 
 bool TComHash::hasExactMatch(uint32_t hashValue1, uint32_t hashValue2)
 {
-  if (m_lookupTable[hashValue1] == NULL)
+  if (m_lookupTable[hashValue1] == nullptr)
   {
     return false;
   }
@@ -502,6 +503,7 @@ bool TComHash::isBlock2x2ColSameValue(unsigned char* p, bool includeAllComponent
 
   return true;
 }
+
 bool TComHash::isHorizontalPerfectLuma(const Pel* srcPel, int stride, int width, int height)
 {
   for (int i = 0; i < height; i++)
@@ -532,6 +534,7 @@ bool TComHash::isVerticalPerfectLuma(const Pel* srcPel, int stride, int width, i
   }
   return true;
 }
+
 bool TComHash::getBlockHashValue(const PelUnitBuf &curPicBuf, int width, int height, int xStart, int yStart, const BitDepths bitDepths, uint32_t& hashValue1, uint32_t& hashValue2)
 {
   int addValue = m_blockSizeToIndex[width][height];

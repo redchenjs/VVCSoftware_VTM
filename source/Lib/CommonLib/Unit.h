@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -350,11 +350,7 @@ struct CodingUnit : public UnitArea
 
   TransformUnit *firstTU;
   TransformUnit *lastTU;
-#if ENABLE_SPLIT_PARALLELISM
 
-  int64_t cacheId;
-  bool    cacheUsed;
-#endif
   const uint8_t     getSbtIdx() const { assert( ( ( sbtInfo >> 0 ) & 0xf ) < NUMBER_SBT_IDX ); return ( sbtInfo >> 0 ) & 0xf; }
   const uint8_t     getSbtPos() const { return ( sbtInfo >> 4 ) & 0x3; }
   void              setSbtIdx( uint8_t idx ) { CHECK( idx >= NUMBER_SBT_IDX, "sbt_idx wrong" ); sbtInfo = ( idx << 0 ) + ( sbtInfo & 0xf0 ); }
@@ -394,12 +390,25 @@ struct InterPredictionData
   uint8_t     mvpNum  [NUM_REF_PIC_LIST_01];
   Mv        mvd     [NUM_REF_PIC_LIST_01];
   Mv        mv      [NUM_REF_PIC_LIST_01];
+#if GDR_ENABLED 
+  bool      mvSolid[NUM_REF_PIC_LIST_01];
+  bool      mvValid[NUM_REF_PIC_LIST_01];
+  bool      mvpSolid[NUM_REF_PIC_LIST_01];
+  MvpType   mvpType[NUM_REF_PIC_LIST_01];
+  Position  mvpPos[NUM_REF_PIC_LIST_01];
+#endif
   int16_t     refIdx  [NUM_REF_PIC_LIST_01];
   MergeType mergeType;
   bool      mvRefine;
   Mv        mvdL0SubPu[MAX_NUM_SUBCU_DMVR];
   Mv        mvdAffi [NUM_REF_PIC_LIST_01][3];
   Mv        mvAffi[NUM_REF_PIC_LIST_01][3];
+#if GDR_ENABLED
+  bool      mvAffiSolid[NUM_REF_PIC_LIST_01][3];
+  bool      mvAffiValid[NUM_REF_PIC_LIST_01][3];
+  MvpType   mvAffiType[NUM_REF_PIC_LIST_01][3];
+  Position  mvAffiPos[NUM_REF_PIC_LIST_01][3];
+#endif
   bool      ciipFlag;
 
   Mv        bv;                             // block vector for IBC
@@ -434,12 +443,6 @@ struct PredictionUnit : public UnitArea, public IntraPredictionData, public Inte
   const MotionInfo& getMotionInfo( const Position& pos ) const;
   MotionBuf         getMotionBuf();
   CMotionBuf        getMotionBuf() const;
-
-#if ENABLE_SPLIT_PARALLELISM
-
-  int64_t cacheId;
-  bool    cacheUsed;
-#endif
 };
 
 // ---------------------------------------------------------------------------
@@ -490,11 +493,6 @@ struct TransformUnit : public UnitArea
         Pel*      getPLTIndex(const ComponentID id);
         bool*     getRunTypes(const ComponentID id);
 
-#if ENABLE_SPLIT_PARALLELISM
-  int64_t cacheId;
-  bool    cacheUsed;
-
-#endif
 private:
   TCoeff *m_coeffs[ MAX_NUM_TBLOCKS ];
   Pel    *m_pcmbuf[ MAX_NUM_TBLOCKS ];

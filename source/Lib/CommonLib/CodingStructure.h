@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -54,12 +54,18 @@ enum PictureType
   PIC_RECONSTRUCTION = 0,
   PIC_ORIGINAL,
   PIC_TRUE_ORIGINAL,
+  PIC_FILTERED_ORIGINAL,
+  PIC_FILTERED_ORIGINAL_FG,
   PIC_PREDICTION,
   PIC_RESIDUAL,
   PIC_ORG_RESI,
   PIC_RECON_WRAP,
   PIC_ORIGINAL_INPUT,
   PIC_TRUE_ORIGINAL_INPUT,
+  PIC_FILTERED_ORIGINAL_INPUT,
+#if JVET_Z0120_SII_SEI_PROCESSING
+  PIC_YUV_POST_REC,
+#endif
   NUM_PIC_TYPES
 };
 extern XUCache g_globalUnitCache;
@@ -102,6 +108,34 @@ public:
   void destroy();
   void releaseIntermediateData();
 
+#if GDR_ENABLED
+  bool containRefresh(int begX, int endX) const;
+  bool overlapRefresh() const;
+  bool overlapRefresh(int begX, int endX) const;
+  bool withinRefresh(int begX, int endX) const;
+
+  bool refreshCrossTTV(int begX, int endX) const;
+  bool refreshCrossBTV(int begX, int endX) const;
+
+  bool overlapDirty() const;
+  bool dirtyCrossTTV() const;  
+  bool dirtyCrossBTV() const;
+#endif
+
+#if GDR_ENABLED
+  bool isClean(const ChannelType effChType) const;
+  bool isClean(const Position &IntPos, RefPicList e, int refIdx) const;
+  bool isClean(const Position &IntPos, const Picture* const ref_pic) const;
+  bool isClean(const Position &IntPos, Mv FracMv) const;  
+  bool isClean(const Position &IntPos, Mv FracMv, const Picture* const refPic) const;
+  bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, int isProf=0) const;
+  bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, bool ibc) const;
+  bool isClean(const Position &IntPos, const ChannelType effChType) const;  
+  bool isClean(const int x, const int y, const ChannelType effChType) const;  
+  bool isClean(const Area &area, const ChannelType effChType) const;
+  
+  bool isSubPuClean(PredictionUnit &pu, const Mv *mv) const;
+#endif
   void rebindPicBufs();
 
   void createCoeffs(const bool isPLTused);
@@ -158,6 +192,7 @@ public:
 
   static_vector<double, NUM_ENC_FEATURES> features;
 
+  double     *splitRdCostBest; //[Partition::NUM_PART_SPLIT];
   double      cost;
   bool        useDbCost;
   double      costDbOffset;
@@ -291,7 +326,8 @@ public:
   const CPelBuf       getOrgBuf(const ComponentID &compID) const;
          PelUnitBuf   getOrgBuf();
   const CPelUnitBuf   getOrgBuf() const;
-
+         PelUnitBuf   getTrueOrgBuf();
+  const CPelUnitBuf   getTrueOrgBuf() const;
 
   // pred buffer
          PelBuf       getPredBuf(const ComponentID &compID)       { return m_pred.get(compID); }

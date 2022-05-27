@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,12 +38,38 @@
 
 #define JVET_O0549_ENCODER_ONLY_FILTER_POL 1 // JVET-O0549: Encoder-only GOP-based temporal filter. Program Options Lite related changes.
 
+#include <vector>
+
 #ifndef __PROGRAM_OPTIONS_LITE__
 #define __PROGRAM_OPTIONS_LITE__
 
 //! \ingroup TAppCommon
 //! \{
+using namespace std;
 
+template <class T>
+struct SMultiValueInput
+{
+  static_assert(!std::is_same<T, uint8_t>::value, "SMultiValueInput<uint8_t> is not supported");
+  static_assert(!std::is_same<T, int8_t>::value, "SMultiValueInput<int8_t> is not supported");
+  const T              minValIncl;
+  const T              maxValIncl;
+  const std::size_t    minNumValuesIncl;
+  const std::size_t    maxNumValuesIncl; // Use 0 for unlimited
+  std::vector<T> values;
+  SMultiValueInput() : minValIncl(0), maxValIncl(0), minNumValuesIncl(0), maxNumValuesIncl(0), values() { }
+  SMultiValueInput(std::vector<T> &defaults) : minValIncl(0), maxValIncl(0), minNumValuesIncl(0), maxNumValuesIncl(0), values(defaults) { }
+  SMultiValueInput(const T &minValue, const T &maxValue, std::size_t minNumberValues = 0, std::size_t maxNumberValues = 0)
+    : minValIncl(minValue), maxValIncl(maxValue), minNumValuesIncl(minNumberValues), maxNumValuesIncl(maxNumberValues), values() { }
+  SMultiValueInput(const T &minValue, const T &maxValue, std::size_t minNumberValues, std::size_t maxNumberValues, const T* defValues, const uint32_t numDefValues)
+    : minValIncl(minValue), maxValIncl(maxValue), minNumValuesIncl(minNumberValues), maxNumValuesIncl(maxNumberValues), values(defValues, defValues + numDefValues) { }
+  SMultiValueInput<T> &operator=(const std::vector<T> &userValues) { values = userValues; return *this; }
+  SMultiValueInput<T> &operator=(const SMultiValueInput<T> &userValues) { values = userValues.values; return *this; }
+
+  T readValue(const char *&pStr, bool &bSuccess);
+
+  istream& readValues(std::istream &in);
+};
 
 namespace df
 {

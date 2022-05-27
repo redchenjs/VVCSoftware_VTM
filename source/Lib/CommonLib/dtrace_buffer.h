@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,12 +45,12 @@
 #include "CommonLib/Buffer.h"
 #include "CommonLib/Unit.h"
 
-inline unsigned calcCheckSum( const int iWidth, const int iHeight,  const Pel* p,  const uint32_t stride,  const int bitdepth )
+inline unsigned calcCheckSum(const int width, const int height, const Pel *p, const uint32_t stride, const int bitdepth)
 {
   unsigned checksum = 0;
-  for( unsigned y = 0; y < iHeight; y++)
+  for (unsigned y = 0; y < height; y++)
   {
-    for( unsigned  x = 0; x < iWidth; x++)
+    for (unsigned x = 0; x < width; x++)
     {
       uint8_t xor_mask = (x & 0xff) ^ (y & 0xff) ^ (x >> 8) ^ (y >> 8);
       checksum = (checksum + ((p[y*stride+x] & 0xff) ^ xor_mask)) & 0xffffffff;
@@ -143,7 +143,8 @@ inline void dtraceUnitComp( DTRACE_CHANNEL channel, CPelUnitBuf& pelUnitBuf, con
   DTRACE_BLOCK( g_trace_ctx, channel, piReco, uiStride, uiWidth, uiHeight );
 }
 
-inline void dtraceCRC( CDTrace *trace_ctx, DTRACE_CHANNEL channel, const CodingStructure& cs, const CPelUnitBuf& pelUnitBuf, const Area* parea = NULL )
+inline void dtraceCRC(CDTrace *trace_ctx, DTRACE_CHANNEL channel, const CodingStructure &cs,
+                      const CPelUnitBuf &pelUnitBuf, const Area *parea = nullptr)
 {
   const Area& area = parea ? *parea : cs.area.Y();
   DTRACE( trace_ctx, channel, " CRC: %6lld %3d @(%4d,%4d) [%2dx%2d] ,Checksum(%x %x %x)\n",
@@ -155,7 +156,8 @@ inline void dtraceCRC( CDTrace *trace_ctx, DTRACE_CHANNEL channel, const CodingS
       calcCheckSum( pelUnitBuf.bufs[COMPONENT_Cr], cs.sps->getBitDepth (CHANNEL_TYPE_CHROMA)));
 }
 
-inline void dtraceCCRC( CDTrace *trace_ctx, DTRACE_CHANNEL channel, const CodingStructure& cs, const CPelBuf& pelBuf, ComponentID compId, const Area* parea = NULL )
+inline void dtraceCCRC(CDTrace *trace_ctx, DTRACE_CHANNEL channel, const CodingStructure &cs, const CPelBuf &pelBuf,
+                       ComponentID compId, const Area *parea = nullptr)
 {
   const Area& area = parea ? *parea : cs.area.Y();
   DTRACE( trace_ctx, channel, "CRC: %6lld %3d @(%4d,%4d) [%2dx%2d] ,comp %d Checksum(%x)\n",

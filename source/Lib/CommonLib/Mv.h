@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -137,8 +137,8 @@ public:
 
   const Mv& operator<<= (const int i)
   {
-    hor <<= i;
-    ver <<= i;
+    hor *= 1 << i;
+    ver *= 1 << i;
     return  *this;
   }
 
@@ -272,15 +272,12 @@ public:
 
 namespace std
 {
-  template <>
-  struct hash<Mv> : public unary_function<Mv, uint64_t>
+  template<> struct hash<Mv>
   {
-    uint64_t operator()(const Mv& value) const
-    {
-      return (((uint64_t)value.hor << 32) + value.ver);
-    }
+    size_t operator()(const Mv &value) const { return (((size_t) value.hor << 32) + value.ver); }
   };
 };
+
 extern void(*clipMv) ( Mv& rcMv, const struct Position& pos, const struct Size& size, const class SPS& sps, const class PPS& pps );
 void clipMvInPic ( Mv& rcMv, const struct Position& pos, const struct Size& size, const class SPS& sps, const class PPS& pps );
 void clipMvInSubpic ( Mv& rcMv, const struct Position& pos, const struct Size& size, const class SPS& sps, const class PPS& pps );

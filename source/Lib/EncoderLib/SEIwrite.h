@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,8 +59,10 @@ protected:
   void xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBufferingPeriod& bp, const uint32_t temporalId);
   void xWriteSEIFrameFieldInfo(const SEIFrameFieldInfo& sei);
   void xWriteSEIDependentRAPIndication(const SEIDependentRAPIndication& sei);
+  void xWriteSEIEdrapIndication(const SEIExtendedDrapIndication& sei);
   void xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableNesting& sei);
   void xWriteSEIFramePacking(const SEIFramePacking& sei);
+  void xWriteSEIDisplayOrientation(const SEIDisplayOrientation& sei);
   void xWriteSEIParameterSetsInclusionIndication(const SEIParameterSetsInclusionIndication& sei);
   void xWriteSEIMasteringDisplayColourVolume( const SEIMasteringDisplayColourVolume& sei);
 #if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
@@ -71,14 +73,25 @@ protected:
   void xWriteSEIOmniViewport                      (const SEIOmniViewport& sei);
   void xWriteSEIRegionWisePacking                 (const SEIRegionWisePacking &sei);
   void xWriteSEIGeneralizedCubemapProjection      (const SEIGeneralizedCubemapProjection &sei);
+  void xWriteSEIScalabilityDimensionInfo          (const SEIScalabilityDimensionInfo& sei);
+  void xWriteSEIMultiviewAcquisitionInfo          (const SEIMultiviewAcquisitionInfo& sei);
+  void xWriteSEIMultiviewViewPosition             (const SEIMultiviewViewPosition& sei);
+  void xWriteSEIAlphaChannelInfo                  (const SEIAlphaChannelInfo& sei);
+  void xWriteSEIDepthRepresentationInfo           (const SEIDepthRepresentationInfo& sei);
+  void xWriteSEIDepthRepInfoElement               (double f);
   void xWriteSEISubpictureLevelInfo               (const SEISubpicureLevelInfo &sei);
   void xWriteSEISampleAspectRatioInfo             (const SEISampleAspectRatioInfo &sei);
-
+  void xWriteSEIConstrainedRaslIndication         (const SEIConstrainedRaslIndication &sei);
   void xWriteSEIUserDataRegistered(const SEIUserDataRegistered& sei);
   void xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacteristics& sei);
   void xWriteSEIContentLightLevelInfo(const SEIContentLightLevelInfo& sei);
   void xWriteSEIAmbientViewingEnvironment(const SEIAmbientViewingEnvironment& sei);
   void xWriteSEIContentColourVolume(const SEIContentColourVolume &sei);
+  void xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei);
+  void xWriteSEIAnnotatedRegions                  (const SEIAnnotatedRegions& sei);
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  void xWriteSEIShutterInterval(const SEIShutterIntervalInfo& sei);
+#endif
   void xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &hrd, const uint32_t temporalId);
   void xWriteByteAlign();
 protected:

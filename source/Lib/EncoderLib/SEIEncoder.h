@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,12 +48,7 @@ class EncGOP;
 class SEIEncoder
 {
 public:
-  SEIEncoder()
-    :m_pcCfg(NULL)
-    ,m_pcEncLib(NULL)
-    ,m_pcEncGOP(NULL)
-  ,m_isInitialized(false)
-  {};
+  SEIEncoder() : m_pcCfg(nullptr), m_pcEncLib(nullptr), m_pcEncGOP(nullptr), m_isInitialized(false){};
   virtual ~SEIEncoder(){};
 
   void init(EncCfg* encCfg, EncLib *encTop, EncGOP *encGOP)
@@ -68,15 +63,12 @@ public:
   void initSEIFramePacking(SEIFramePacking *sei, int currPicNum);
   void initSEIParameterSetsInclusionIndication(SEIParameterSetsInclusionIndication* sei);
   void initSEIDependentRAPIndication(SEIDependentRAPIndication *sei);
+  void initSEIExtendedDrapIndication(SEIExtendedDrapIndication *sei);
   void initSEIBufferingPeriod(SEIBufferingPeriod *sei, bool noLeadingPictures);
 #if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   void initSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics *sei);
 #endif
-#if JVET_R0294_SUBPIC_HASH
-  void initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, SEIMessages &nestedSEIs, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t> &subpictureIDs);
-#else
-  void initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, SEIMessages &nestedSEIs, const std::vector<uint16_t> &subpictureIDs);
-#endif
+  void initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, SEIMessages &nestedSEIs, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t> &subpictureIDs, uint16_t maxSubpicIdInPic);
   void initDecodedPictureHashSEI(SEIDecodedPictureHash *sei, PelUnitBuf& pic, std::string &rHashString, const BitDepths &bitDepths);
   void initSEIErp(SEIEquirectangularProjection *sei);
   void initSEISphereRotation(SEISphereRotation *sei);
@@ -90,6 +82,17 @@ public:
   void initSEIContentLightLevel(SEIContentLightLevelInfo *sei);
   void initSEIAmbientViewingEnvironment(SEIAmbientViewingEnvironment *sei);
   void initSEIContentColourVolume(SEIContentColourVolume *sei);
+  void initSEIScalabilityDimensionInfo(SEIScalabilityDimensionInfo *sei);
+  void initSEIMultiviewAcquisitionInfo(SEIMultiviewAcquisitionInfo *sei);
+  void initSEIAlphaChannelInfo(SEIAlphaChannelInfo *sei);
+  void initSEIDepthRepresentationInfo(SEIDepthRepresentationInfo *sei);
+  bool initSEIAnnotatedRegions(SEIAnnotatedRegions *sei, int currPOC);
+  void initSEIColourTransformInfo(SEIColourTransformInfo* sei);
+  void readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *seiAnnoRegion, bool &failed);
+  void initSEIMultiviewViewPosition(SEIMultiviewViewPosition *sei);
+#if JVET_Z0120_SHUTTER_INTERVAL_SEI
+  void initSEIShutterIntervalInfo(SEIShutterIntervalInfo *sei);
+#endif
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;

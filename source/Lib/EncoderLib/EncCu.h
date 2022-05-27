@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 #include "CommonLib/Unit.h"
 #include "CommonLib/UnitPartitioner.h"
 #include "CommonLib/IbcHashMap.h"
-#include "CommonLib/LoopFilter.h"
+#include "CommonLib/DeblockingFilter.h"
 
 #include "DecoderLib/DecCu.h"
 
@@ -88,16 +88,18 @@ struct SmallerThanComboCost
 {
   inline bool operator() (const GeoMergeCombo& first, const GeoMergeCombo& second)
   {
-      return (first.cost < second.cost);
+    return (first.cost < second.cost);
   }
 };
+
 class GeoComboCostList
 {
 public:
   GeoComboCostList() {};
   ~GeoComboCostList() {};
-  std::vector<GeoMergeCombo> list;
-  void sortByCost() { std::sort(list.begin(), list.end(), SmallerThanComboCost()); };
+  std::vector<GeoMergeCombo> list;  
+  
+  void sortByCost() { std::stable_sort(list.begin(), list.end(), SmallerThanComboCost()); };
 };
 struct SingleGeoMergeEntry
 {
@@ -161,10 +163,6 @@ private:
   CtxPair*              m_CurrCtx;
   CtxCache*             m_CtxCache;
 
-#if ENABLE_SPLIT_PARALLELISM
-  int                   m_dataId;
-#endif
-
   //  Data : encoder control
   int                   m_cuChromaQpOffsetIdxPlus1; // if 0, then cu_chroma_qp_offset_flag will be 0, otherwise cu_chroma_qp_offset_flag will be 1.
 
@@ -181,7 +179,7 @@ private:
   TrQuant*              m_pcTrQuant;
   RdCost*               m_pcRdCost;
   EncSlice*             m_pcSliceEncoder;
-  LoopFilter*           m_pcLoopFilter;
+  DeblockingFilter*     m_deblockingFilter;
 
   CABACWriter*          m_CABACEstimator;
   RateCtrl*             m_pcRateCtrl;
@@ -199,9 +197,6 @@ private:
 
   int                   m_ctuIbcSearchRangeX;
   int                   m_ctuIbcSearchRangeY;
-#if ENABLE_SPLIT_PARALLELISM
-  EncLib*               m_pcEncLib;
-#endif
   int                   m_bestBcwIdx[2];
   double                m_bestBcwCost[2];
   GeoMotionInfo         m_GeoModeTest[GEO_MAX_NUM_CANDS];
@@ -215,7 +210,7 @@ private:
   double                m_sbtCostSave[2];
 public:
   /// copy parameters from encoder class
-  void  init                ( EncLib* pcEncLib, const SPS& sps PARL_PARAM( const int jId = 0 ) );
+  void  init                ( EncLib* pcEncLib, const SPS& sps );
 
   void setDecCuReshaperInEncCU(EncReshape* pcReshape, ChromaFormat chromaFormatIDC) { initDecCuReshaper((Reshape*) pcReshape, chromaFormatIDC); }
   /// create internal buffers
@@ -248,21 +243,16 @@ protected:
   Distortion getDistortionDb  ( CodingStructure &cs, CPelBuf org, CPelBuf reco, ComponentID compID, const CompArea& compArea, bool afterDb );
 
   void xCompressCU            ( CodingStructure*& tempCS, CodingStructure*& bestCS, Partitioner& pm, double maxCostAllowed = MAX_DOUBLE );
-#if ENABLE_SPLIT_PARALLELISM
-  void xCompressCUParallel    ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm );
-  void copyState              ( EncCu* other, Partitioner& pm, const UnitArea& currArea, const bool isDist );
-#endif
 
   bool
     xCheckBestMode         ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestmode );
 
-  void xCheckModeSplit        ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode, const ModeType modeTypeParent, bool &skipInterPass );
+  void xCheckModeSplit        ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode, const ModeType modeTypeParent, bool &skipInterPass, double *splitRdCostBest);
 
   bool xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode, bool adaptiveColorTrans);
 
   void xCheckDQP              ( CodingStructure& cs, Partitioner& partitioner, bool bKeepCtx = false);
   void xCheckChromaQPOffset   ( CodingStructure& cs, Partitioner& partitioner);
-  void xFillPCMBuffer         ( CodingUnit &cu);
 
   void xCheckRDCostHashInter  ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode );
   void xCheckRDCostAffineMerge2Nx2N
@@ -275,14 +265,9 @@ protected:
 
   void xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode);
 
-  void xEncodeInterResidual(   CodingStructure *&tempCS
-                             , CodingStructure *&bestCS
-                             , Partitioner &partitioner
-                             , const EncTestMode& encTestMode
-                             , int residualPass       = 0
-                             , bool* bestHasNonResi   = NULL
-                             , double* equBcwCost     = NULL
-                           );
+  void xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner,
+                            const EncTestMode &encTestMode, int residualPass = 0, bool *bestHasNonResi = nullptr,
+                            double *equBcwCost = nullptr);
 #if REUSE_CU_RESULTS
   void xReuseCachedResult     ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &Partitioner );
 #endif

@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -74,11 +74,7 @@ protected:
   int                     m_vpduY;
 public:
   Reshape();
-#if ENABLE_SPLIT_PARALLELISM
-  virtual ~Reshape();
-#else
   ~Reshape();
-#endif
 
   void createDec(int bitDepth);
   void destroy();

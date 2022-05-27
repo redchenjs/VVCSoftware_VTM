@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -87,7 +87,7 @@ class VLCReader
 protected:
   InputBitstream*   m_pcBitstream;
 
-  VLCReader() : m_pcBitstream (NULL) {};
+  VLCReader() : m_pcBitstream(nullptr){};
   virtual ~VLCReader() {};
 
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
@@ -146,6 +146,11 @@ public:
 
 class HLSyntaxReader : public VLCReader
 {
+#if GDR_ENABLED
+  int m_lastGdrPoc;
+  int m_lastGdrRecoveryPocCnt;
+#endif
+
 public:
   HLSyntaxReader();
   virtual ~HLSyntaxReader();
@@ -155,7 +160,14 @@ protected:
   void  parseRefPicList(SPS* pcSPS, ReferencePictureList* rpl, int rplIdx);
 
 public:
+#if GDR_ENABLED
+  void setLastGdrPoc(int poc) { m_lastGdrPoc = poc;  }
+  int  getLastGdrPoc()        { return m_lastGdrPoc; }
+  void setLastGdrRecoveryPocCnt(int recoveryPocCnt) { m_lastGdrRecoveryPocCnt = recoveryPocCnt; }
+  int  getLastGdrRecoveryPocCnt()                     { return m_lastGdrRecoveryPocCnt; }
+#endif
   void  setBitstream        ( InputBitstream* p )   { m_pcBitstream = p; }
+  void  parseOPI            ( OPI* opi );
   void  parseVPS            ( VPS* pcVPS );
   void  parseDCI            ( DCI* dci );
   void  parseSPS            ( SPS* pcSPS );
@@ -165,7 +177,7 @@ public:
   void  parseLmcsAps        ( APS* pcAPS );
   void  parseScalingListAps ( APS* pcAPS );
   void  parseVUI            ( VUI* pcVUI, SPS* pcSPS );
-  void  parseConstraintInfo   (ConstraintInfo *cinfo);
+  void  parseConstraintInfo (ConstraintInfo *cinfo, const ProfileTierLevel* ptl );
   void  parseProfileTierLevel(ProfileTierLevel *ptl, bool profileTierPresentFlag, int maxNumSubLayersMinus1);
   void  parseOlsHrdParameters(GeneralHrdParams* generalHrd, OlsHrdParams *olsHrd, uint32_t firstSubLayer, uint32_t tempLevelHigh);
   void parseGeneralHrdParameters(GeneralHrdParams *generalHrd);
@@ -177,19 +189,13 @@ public:
   void  parseRemainingBytes ( bool noTrailingBytesExpected );
 
   void  parsePredWeightTable( Slice* pcSlice, const SPS *sps );
-  void parsePredWeightTable ( PicHeader *picHeader, const SPS *sps );
-#if JVET_R0433
+  void parsePredWeightTable ( PicHeader *picHeader, const PPS *pps, const SPS *sps );
   void parseScalingList     ( ScalingList *scalingList, bool aps_chromaPresentFlag );
-#else
-  void  parseScalingList    ( ScalingList *scalingList );
-#endif
   void  decodeScalingList   ( ScalingList *scalingList, uint32_t scalingListId, bool isPredictor);
   void parseReshaper        ( SliceReshapeInfo& sliceReshaperInfo, const SPS* pcSPS, const bool isIntra );
   void alfFilter( AlfParam& alfParam, const bool isChroma, const int altIdx );
   void ccAlfFilter( Slice *pcSlice );
   void dpb_parameters(int maxSubLayersMinus1, bool subLayerInfoFlag, SPS *pcSPS);
-  void parseExtraPHBitsStruct( SPS *sps, int numBytes );
-  void parseExtraSHBitsStruct( SPS *sps, int numBytes );
 private:
 
 protected:

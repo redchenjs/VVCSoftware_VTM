@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -83,6 +83,8 @@ void CABACReader::initCtxModels( Slice& slice )
     }
   }
   m_BinDecoder.reset( qp, (int)sliceType );
+  m_BinDecoder.setBaseLevel(slice.getRiceBaseLevel());
+  m_BinDecoder.riceStatReset(slice.getSPS()->getBitDepth(CHANNEL_TYPE_LUMA), slice.getSPS()->getSpsRangeExtension().getPersistentRiceAdaptationEnabledFlag());
 }
 
 
@@ -144,7 +146,7 @@ void CABACReader::coding_tree_unit( CodingStructure& cs, const UnitArea& area, i
 
 
   sao( cs, ctuRsAddr );
-  if (cs.sps->getALFEnabledFlag() && (cs.slice->getTileGroupAlfEnabledFlag(COMPONENT_Y)))
+  if (cs.sps->getALFEnabledFlag() && (cs.slice->getAlfEnabledFlag(COMPONENT_Y)))
   {
     const PreCalcValues& pcv = *cs.pcv;
     int                 frame_width_in_ctus = pcv.widthInCtus;
@@ -161,7 +163,7 @@ void CABACReader::coding_tree_unit( CodingStructure& cs, const UnitArea& area, i
 
     for( int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++ )
     {
-      if (cs.slice->getTileGroupAlfEnabledFlag((ComponentID)compIdx))
+      if (cs.slice->getAlfEnabledFlag((ComponentID)compIdx))
       {
         uint8_t* ctbAlfFlag = cs.slice->getPic()->getAlfCtuEnableFlag( compIdx );
         int ctx = 0;
@@ -177,7 +179,7 @@ void CABACReader::coding_tree_unit( CodingStructure& cs, const UnitArea& area, i
         }
         if( isChroma( (ComponentID)compIdx ) )
         {
-          int apsIdx = cs.slice->getTileGroupApsIdChroma();
+          int apsIdx = cs.slice->getAlfApsIdChroma();
           CHECK(cs.slice->getAlfAPSs()[apsIdx] == nullptr, "APS not initialized");
           const AlfParam& alfParam = cs.slice->getAlfAPSs()[apsIdx]->getAlfAPSParam();
           const int numAlts = alfParam.numAlternativesChroma;
@@ -243,7 +245,7 @@ void CABACReader::coding_tree_unit( CodingStructure& cs, const UnitArea& area, i
 void CABACReader::readAlfCtuFilterIndex(CodingStructure& cs, unsigned ctuRsAddr)
 {
   short* alfCtbFilterSetIndex = cs.slice->getPic()->getAlfCtbFilterIndex();
-  unsigned numAps = cs.slice->getTileGroupNumAps();
+  unsigned numAps = cs.slice->getNumAlfApsIdsLuma();
   unsigned numAvailableFiltSets = numAps + NUM_FIXED_FILTER_SETS;
   uint32_t filtIndex = 0;
   if (numAvailableFiltSets > NUM_FIXED_FILTER_SETS)
@@ -1140,7 +1142,7 @@ void CABACReader::pred_mode( CodingUnit& cu )
     else
     {
       cu.predMode = m_BinDecoder.decodeBin(Ctx::PredMode(DeriveCtx::CtxPredModeFlag(cu))) ? MODE_INTRA : MODE_INTER;
-      if (CU::isIntra(cu) && cu.cs->slice->getSPS()->getPLTMode() && cu.lwidth() <= 64 && ( ( (!isLuma(cu.chType)) && (cu.chromaSize().width * cu.chromaSize().height > 16) ) || ((isLuma(cu.chType)) && ((cu.lumaSize().width * cu.lumaSize().height) > 16 ) )  ) && (!cu.isLocalSepTree() || isLuma(cu.chType)  )  )
+      if (CU::isIntra(cu) && cu.cs->slice->getSPS()->getPLTMode() && cu.lwidth() <= 64 &&  cu.lheight() <= 64 && ( ( (!isLuma(cu.chType)) && (cu.chromaSize().width * cu.chromaSize().height > 16) ) || ((isLuma(cu.chType)) && ((cu.lumaSize().width * cu.lumaSize().height) > 16 ) )  ) && (!cu.isLocalSepTree() || isLuma(cu.chType)  )  )
       {
         if (m_BinDecoder.decodeBin(Ctx::PLTFlag(0)))
         {
@@ -1930,11 +1932,7 @@ void CABACReader::cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, u
           if (compID == COMPONENT_Y || compBegin != COMPONENT_Y)
           {
             escapeValue.at(posx, posy) = exp_golomb_eqprob(5);
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
             assert(escapeValue.at(posx, posy) < (TCoeff(1) << (cu.cs->sps->getBitDepth(toChannelType((ComponentID)comp)) + 1)));
-#else
-            assert(escapeValue.at(posx, posy) < (1 << (cu.cs->sps->getBitDepth(toChannelType((ComponentID)comp)) + 1)));
-#endif
             DTRACE(g_trace_ctx, D_SYNTAX, "plt_escape_val() value=%d etype=%d sp=%d\n", escapeValue.at(posx, posy), comp, curPos);
           }
           if (compBegin == COMPONENT_Y && compID != COMPONENT_Y && posy % (1 << scaleY) == 0 && posx % (1 << scaleX) == 0)
@@ -1942,11 +1940,7 @@ void CABACReader::cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, u
             uint32_t posxC = posx >> scaleX;
             uint32_t posyC = posy >> scaleY;
             escapeValue.at(posxC, posyC) = exp_golomb_eqprob(5);
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
             assert(escapeValue.at(posxC, posyC) < (TCoeff(1) << (cu.cs->sps->getBitDepth(toChannelType(compID)) + 1)));
-#else
-            assert(escapeValue.at(posxC, posyC) < (1 << (cu.cs->sps->getBitDepth(toChannelType(compID)) + 1)));
-#endif
             DTRACE(g_trace_ctx, D_SYNTAX, "plt_escape_val() value=%d etype=%d sp=%d\n", escapeValue.at(posx, posy), comp, curPos);
           }
       }
@@ -2151,8 +2145,6 @@ void CABACReader::prediction_unit( PredictionUnit& pu, MergeCtx& mrgCtx )
     CHECK(!((pu.mvd[1 - eCurRefList].getHor() >= MVD_MIN) && (pu.mvd[1 - eCurRefList].getHor() <= MVD_MAX)) || !((pu.mvd[1 - eCurRefList].getVer() >= MVD_MIN) && (pu.mvd[1 - eCurRefList].getVer() <= MVD_MAX)), "Illegal MVD value");
     pu.refIdx[1 - eCurRefList] = pu.cs->slice->getSymRefIdx( 1 - eCurRefList );
   }
-
-  PU::spanMotionInfo( pu, mrgCtx );
 }
 
 void CABACReader::smvd_mode( PredictionUnit& pu )
@@ -2520,10 +2512,10 @@ void CABACReader::mvp_flag( PredictionUnit& pu, RefPicList eRefList )
 {
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET( STATS__CABAC_BITS__MVP_IDX );
 
-  unsigned mvp_idx = m_BinDecoder.decodeBin( Ctx::MVPIdx() );
-  DTRACE( g_trace_ctx, D_SYNTAX, "mvp_flag() value=%d pos=(%d,%d)\n", mvp_idx, pu.lumaPos().x, pu.lumaPos().y );
-  pu.mvpIdx [eRefList] = mvp_idx;
-  DTRACE( g_trace_ctx, D_SYNTAX, "mvpIdx(refList:%d)=%d\n", eRefList, mvp_idx );
+  unsigned mvpIdx = m_BinDecoder.decodeBin(Ctx::MVPIdx());
+  DTRACE(g_trace_ctx, D_SYNTAX, "mvp_flag() value=%d pos=(%d,%d)\n", mvpIdx, pu.lumaPos().x, pu.lumaPos().y);
+  pu.mvpIdx[eRefList] = mvpIdx;
+  DTRACE(g_trace_ctx, D_SYNTAX, "mvpIdx(refList:%d)=%d\n", eRefList, mvpIdx);
 }
 
 void CABACReader::Ciip_flag(PredictionUnit& pu)
@@ -2971,11 +2963,20 @@ void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID, CUCtx&
   int ctxBinSampleRatio = (compID == COMPONENT_Y) ? MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_LUMA : MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_CHROMA;
   cctx.regBinLimit = (tu.getTbAreaAfterCoefZeroOut(compID) * ctxBinSampleRatio) >> 4;
 
+  int baseLevel = m_BinDecoder.getCtx().getBaseLevel();
+  cctx.setBaseLevel(baseLevel);
+  if (tu.cs->slice->getSPS()->getSpsRangeExtension().getPersistentRiceAdaptationEnabledFlag())
+  {
+    cctx.setUpdateHist(1);
+    unsigned riceStats = m_BinDecoder.getCtx().getGRAdaptStats((unsigned)compID);
+    TCoeff historyValue = (TCoeff)1 << riceStats;
+    cctx.setHistValue(historyValue);
+  }
   for (int subSetId = (cctx.scanPosLast() >> cctx.log2CGSize()); subSetId >= 0; subSetId--)
   {
     cctx.initSubblock(subSetId);
 
-    if (tu.cs->sps->getUseMTS() && tu.cu->sbtInfo != 0 && tu.blocks[compID].height <= 32
+    if (tu.cs->sps->getMtsEnabled() && tu.cu->sbtInfo != 0 && tu.blocks[compID].height <= 32
         && tu.blocks[compID].width <= 32 && compID == COMPONENT_Y)
     {
       if ((tu.blocks[compID].height == 32 && cctx.cgPosY() >= (16 >> cctx.log2CGHeight()))
@@ -3127,11 +3128,16 @@ int CABACReader::last_sig_coeff( CoeffCodingContext& cctx, TransformUnit& tu, Co
   unsigned PosLastX = 0, PosLastY = 0;
   unsigned maxLastPosX = cctx.maxLastPosX();
   unsigned maxLastPosY = cctx.maxLastPosY();
+  unsigned zoTbWdith  = std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, cctx.width());
+  unsigned zoTbHeight = std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, cctx.height());
 
-  if( tu.cs->sps->getUseMTS() && tu.cu->sbtInfo != 0 && tu.blocks[ compID ].width <= 32 && tu.blocks[ compID ].height <= 32 && compID == COMPONENT_Y )
+  if (tu.cs->sps->getMtsEnabled() && tu.cu->sbtInfo != 0 && tu.blocks[compID].width <= 32
+      && tu.blocks[compID].height <= 32 && compID == COMPONENT_Y)
   {
-    maxLastPosX = ( tu.blocks[ compID ].width  == 32 ) ? g_uiGroupIdx[ 15 ] : maxLastPosX;
-    maxLastPosY = ( tu.blocks[ compID ].height == 32 ) ? g_uiGroupIdx[ 15 ] : maxLastPosY;
+    maxLastPosX = (tu.blocks[compID].width == 32) ? g_groupIdx[15] : maxLastPosX;
+    maxLastPosY = (tu.blocks[compID].height == 32) ? g_groupIdx[15] : maxLastPosY;
+    zoTbWdith  = (tu.blocks[compID].width == 32) ? 16 : zoTbWdith;
+    zoTbHeight = (tu.blocks[compID].height == 32) ? 16 : zoTbHeight;
   }
 
   for( ; PosLastX < maxLastPosX; PosLastX++ )
@@ -3150,25 +3156,30 @@ int CABACReader::last_sig_coeff( CoeffCodingContext& cctx, TransformUnit& tu, Co
   }
   if( PosLastX > 3 )
   {
-    uint32_t uiTemp  = 0;
+    uint32_t temp    = 0;
     uint32_t uiCount = ( PosLastX - 2 ) >> 1;
     for ( int i = uiCount - 1; i >= 0; i-- )
     {
-      uiTemp += m_BinDecoder.decodeBinEP( ) << i;
+      temp += m_BinDecoder.decodeBinEP() << i;
     }
-    PosLastX = g_uiMinInGroup[ PosLastX ] + uiTemp;
+    PosLastX = g_minInGroup[PosLastX] + temp;
   }
   if( PosLastY > 3 )
   {
-    uint32_t uiTemp  = 0;
+    uint32_t temp    = 0;
     uint32_t uiCount = ( PosLastY - 2 ) >> 1;
     for ( int i = uiCount - 1; i >= 0; i-- )
     {
-      uiTemp += m_BinDecoder.decodeBinEP( ) << i;
+      temp += m_BinDecoder.decodeBinEP() << i;
     }
-    PosLastY = g_uiMinInGroup[ PosLastY ] + uiTemp;
+    PosLastY = g_minInGroup[PosLastY] + temp;
   }
 
+  if (tu.cu->slice->getReverseLastSigCoeffFlag())
+  {
+    PosLastX = zoTbWdith - 1 - PosLastX;
+    PosLastY = zoTbHeight - 1 - PosLastY;
+  }
   int blkPos;
   blkPos = PosLastX + (PosLastY * cctx.width());
 
@@ -3183,19 +3194,10 @@ int CABACReader::last_sig_coeff( CoeffCodingContext& cctx, TransformUnit& tu, Co
   return scanPos;
 }
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
 static void check_coeff_conformance(const CoeffCodingContext& cctx, const TCoeff coeff)
-#else
-static void check_coeff_conformance(TCoeff coeff)
-#endif
 {
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
   CHECK( coeff < cctx.minCoeff() || coeff > cctx.maxCoeff(),
          "TransCoeffLevel outside allowable range" );
-#else
-  CHECK( coeff < COEFF_MIN || coeff > COEFF_MAX,
-         "TransCoeffLevel should be in the range [-32768, 32767]" );
-#endif
 }
 
 void CABACReader::residual_coding_subblock( CoeffCodingContext& cctx, TCoeff* coeff, const int stateTransTable, int& state )
@@ -3215,6 +3217,8 @@ void CABACReader::residual_coding_subblock( CoeffCodingContext& cctx, TCoeff* co
   const bool  isLast      = cctx.isLast();
   int         firstSigPos = ( isLast ? cctx.scanPosLast() : cctx.maxSubPos() );
   int         nextSigPos  = firstSigPos;
+  int baseLevel = cctx.getBaseLevel();
+  bool updateHistory = cctx.getUpdateHist();
 
   //===== decode significant_coeffgroup_flag =====
   RExt__DECODER_DEBUG_BIT_STATISTICS_SET( ctype_group );
@@ -3300,8 +3304,8 @@ void CABACReader::residual_coding_subblock( CoeffCodingContext& cctx, TCoeff* co
   unsigned ricePar = 0;
   for( int scanPos = firstSigPos; scanPos > firstPosMode2; scanPos-- )
   {
-    int       sumAll = cctx.templateAbsSum(scanPos, coeff, 4);
-    ricePar = g_auiGoRiceParsCoeff[sumAll];
+    ricePar = (cctx.*(cctx.deriveRiceRRC))(scanPos, coeff, baseLevel);
+
     TCoeff& tcoeff = coeff[ cctx.blockPos( scanPos ) ];
     if( tcoeff >= 4 )
     {
@@ -3309,20 +3313,33 @@ void CABACReader::residual_coding_subblock( CoeffCodingContext& cctx, TCoeff* co
       int       rem     = m_BinDecoder.decodeRemAbsEP( ricePar, COEF_REMAIN_BIN_REDUCTION, cctx.maxLog2TrDRange() );
       DTRACE( g_trace_ctx, D_SYNTAX_RESI, "rem_val() bin=%d ctx=%d\n", rem, ricePar );
       tcoeff += (rem<<1);
+      if ((updateHistory) && (rem > 0))
+      {
+        unsigned &riceStats = m_BinDecoder.getCtx().getGRAdaptStats((unsigned)(cctx.compID()));
+        cctx.updateRiceStat(riceStats, rem, 1);
+        cctx.setUpdateHist(0);
+        updateHistory = 0;
+      }
     }
   }
 
   //===== coeff bypass ====
   for( int scanPos = firstPosMode2; scanPos >= minSubPos; scanPos-- )
   {
-    int       sumAll = cctx.templateAbsSum(scanPos, coeff, 0);
-    int       rice      = g_auiGoRiceParsCoeff                        [sumAll];
-    int       pos0      = g_auiGoRicePosCoeff0(state, rice);
+    int rice = (cctx.*(cctx.deriveRiceRRC))(scanPos, coeff, 0);
+    int       pos0   = g_goRicePosCoeff0(state, rice);
     RExt__DECODER_DEBUG_BIT_STATISTICS_SET(ctype_escs);
     int       rem       = m_BinDecoder.decodeRemAbsEP( rice, COEF_REMAIN_BIN_REDUCTION, cctx.maxLog2TrDRange() );
     DTRACE( g_trace_ctx, D_SYNTAX_RESI, "rem_val() bin=%d ctx=%d\n", rem, rice );
     TCoeff    tcoeff  = ( rem == pos0 ? 0 : rem < pos0 ? rem+1 : rem );
     state = ( stateTransTable >> ((state<<2)+((tcoeff&1)<<1)) ) & 3;
+    if ((updateHistory) && (rem > 0))
+    {
+      unsigned &riceStats = m_BinDecoder.getCtx().getGRAdaptStats((unsigned)(cctx.compID()));
+      cctx.updateRiceStat(riceStats, rem, 0);
+      cctx.setUpdateHist(0);
+      updateHistory = 0;
+    }
     if( tcoeff )
     {
       int        blkPos         = cctx.blockPos( scanPos );
@@ -3336,45 +3353,25 @@ void CABACReader::residual_coding_subblock( CoeffCodingContext& cctx, TCoeff* co
   //===== decode sign's =====
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET_SIZE2( STATS__CABAC_BITS__SIGN_BIT, Size( cctx.width(), cctx.height() ), cctx.compID() );
   const unsigned  numSigns    = ( cctx.hideSign( firstNZPos, lastNZPos ) ? numNonZero - 1 : numNonZero );
-  unsigned        signPattern = m_BinDecoder.decodeBinsEP( numSigns ) << ( 32 - numSigns );
+  unsigned        signPattern = numSigns > 0 ? m_BinDecoder.decodeBinsEP(numSigns) << (32 - numSigns) : 0;
 
   //===== set final coefficents =====
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
   TCoeff sumAbs = 0;
-#else
-  int sumAbs = 0;
-#endif
   for( unsigned k = 0; k < numSigns; k++ )
   {
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
     TCoeff AbsCoeff       = coeff[ sigBlkPos[ k ] ];
-#else
-    int AbsCoeff          = coeff[ sigBlkPos[ k ] ];
-#endif
     sumAbs               += AbsCoeff;
     coeff[ sigBlkPos[k] ] = ( signPattern & ( 1u << 31 ) ? -AbsCoeff : AbsCoeff );
     signPattern         <<= 1;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
     check_coeff_conformance( cctx, coeff[ sigBlkPos[k] ] );
-#else
-    check_coeff_conformance( coeff[ sigBlkPos[k] ] );
-#endif
   }
   if( numNonZero > numSigns )
   {
     int k                 = numSigns;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
     TCoeff AbsCoeff       = coeff[ sigBlkPos[ k ] ];
-#else
-    int AbsCoeff          = coeff[ sigBlkPos[ k ] ];
-#endif
     sumAbs               += AbsCoeff;
     coeff[ sigBlkPos[k] ] = ( sumAbs & 1 ? -AbsCoeff : AbsCoeff );
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
     check_coeff_conformance( cctx, coeff[ sigBlkPos[k] ] );
-#else
-    check_coeff_conformance( coeff[ sigBlkPos[k] ] );
-#endif
   }
 }
 
@@ -3391,11 +3388,16 @@ void CABACReader::residual_codingTS( TransformUnit& tu, ComponentID compID )
   for( int subSetId = 0; subSetId <= ( cctx.maxNumCoeff() - 1 ) >> cctx.log2CGSize(); subSetId++ )
   {
     cctx.initSubblock         ( subSetId );
-    residual_coding_subblockTS( cctx, coeff );
+    int goRiceParam = 1;
+    if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MTS_SKIP)
+    {
+      goRiceParam = goRiceParam + tu.cu->slice->get_tsrc_index();
+    }
+    residual_coding_subblockTS( cctx, coeff, goRiceParam);
   }
 }
 
-void CABACReader::residual_coding_subblockTS( CoeffCodingContext& cctx, TCoeff* coeff )
+void CABACReader::residual_coding_subblockTS( CoeffCodingContext& cctx, TCoeff* coeff, int riceParam)
 {
   // NOTE: All coefficients of the subblock must be set to zero before calling this function
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
@@ -3491,11 +3493,7 @@ void CABACReader::residual_coding_subblockTS( CoeffCodingContext& cctx, TCoeff* 
         DTRACE(g_trace_ctx, D_SYNTAX_RESI, "ts_par_flag() bin=%d ctx=%d\n", parFlag, cctx.parityCtxIdAbsTS());
         cctx.decimateNumCtxBins(1);
       }
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
       coeff[ blkPos ] = (sign ? -1 : 1 ) * (TCoeff)(1 + parFlag + gt1Flag);
-#else
-      coeff[ blkPos ] = (sign ? -1 : 1 ) * (1 + parFlag + gt1Flag);
-#endif
     }
     lastScanPosPass1 = nextSigPos;
   }
@@ -3541,7 +3539,7 @@ void CABACReader::residual_coding_subblockTS( CoeffCodingContext& cctx, TCoeff* 
     }
     if( tcoeff >= cutoffVal )
     {
-      int       rice = cctx.templateAbsSumTS( scanPos, coeff );
+      int       rice = riceParam;
       int       rem  = m_BinDecoder.decodeRemAbsEP( rice, COEF_REMAIN_BIN_REDUCTION, cctx.maxLog2TrDRange() );
       DTRACE( g_trace_ctx, D_SYNTAX_RESI, "ts_rem_val() bin=%d ctx=%d sp=%d\n", rem, rice, scanPos );
       tcoeff += (scanPos <= lastScanPosPass1) ? (rem << 1) : rem;
@@ -3567,18 +3565,10 @@ void CABACReader::residual_coding_subblockTS( CoeffCodingContext& cctx, TCoeff* 
   //===== set final coefficents =====
   for( unsigned k = 0; k < numNonZero; k++ )
   {
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
     TCoeff AbsCoeff       = coeff[ sigBlkPos[ k ] ];
-#else
-    int AbsCoeff          = coeff[ sigBlkPos[ k ] ];
-#endif
     coeff[ sigBlkPos[k] ] = ( signPattern & 1 ? -AbsCoeff : AbsCoeff );
     signPattern         >>= 1;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
     check_coeff_conformance( cctx, coeff[ sigBlkPos[k] ] );
-#else
-    check_coeff_conformance( coeff[ sigBlkPos[k] ] );
-#endif
   }
 }
 

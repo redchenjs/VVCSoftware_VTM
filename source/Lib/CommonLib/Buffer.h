@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,7 +98,7 @@ struct AreaBuf : public Size
   // the proper type causes awful lot of errors
   //ptrdiff_t stride;
 
-  AreaBuf()                                                                               : Size(),                  buf( NULL ), stride( 0 )          { }
+  AreaBuf() : Size(), buf(nullptr), stride(0) {}
   AreaBuf( T *_buf, const Size &size )                                                    : Size( size ),            buf( _buf ), stride( size.width ) { }
   AreaBuf( T *_buf, const int &_stride, const Size &size )                                : Size( size ),            buf( _buf ), stride( _stride )    { }
   AreaBuf( T *_buf, const SizeType &_width, const SizeType &_height )                     : Size( _width, _height ), buf( _buf ), stride( _width )     { }
@@ -137,6 +137,8 @@ struct AreaBuf : public Size
 
   void rspSignal            ( std::vector<Pel>& pLUT );
   void scaleSignal          ( const int scale, const bool dir , const ClpRng& clpRng);
+  void applyLumaCTI(std::vector<Pel>& pLUTY);
+  void applyChromaCTI(Pel* bufY, int strideY, std::vector<Pel>& pLUTUV, int bitDepth, ChromaFormat chrFormat, bool fwdMap);
   T    computeAvg           ( ) const;
 
         T& at( const int &x, const int &y )          { return buf[y * stride + x]; }
@@ -430,38 +432,30 @@ void AreaBuf<T>::removeWeightHighFreq(const AreaBuf<T>& other, const bool bClip,
   if(!bClip)
   {
     if(!(width & 7))
+    {
       g_pelBufOP.removeWeightHighFreq8(dst, dstStride, src, srcStride, width, height, 16, bcwWeight);
+    }
     else if(!(width & 3))
+    {
       g_pelBufOP.removeWeightHighFreq4(dst, dstStride, src, srcStride, width, height, 16, bcwWeight);
+    }
     else
-      CHECK(true, "Not supported");
+    {
+      THROW("Not supported");
+    }
   }
   else
   {
 #endif
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
     Intermediate_Int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-#else
-    int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-#endif
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
     Intermediate_Int weight0 = normalizer << log2WeightBase;
     Intermediate_Int weight1 = bcwWeightOther * normalizer;
-#else
-    int weight0 = normalizer << log2WeightBase;
-    int weight1 = bcwWeightOther * normalizer;
-#endif
 #define REM_HF_INC  \
   src += srcStride; \
   dst += dstStride; \
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
 #define REM_HF_OP_CLIP( ADDR ) dst[ADDR] = ClipPel<T>( T((dst[ADDR]*weight0 - src[ADDR]*weight1 + (1<<15))>>16), clpRng )
 #define REM_HF_OP( ADDR )      dst[ADDR] =             T((dst[ADDR]*weight0 - src[ADDR]*weight1 + (1<<15))>>16)
-#else
-#define REM_HF_OP_CLIP( ADDR ) dst[ADDR] = ClipPel<T>( (dst[ADDR]*weight0 - src[ADDR]*weight1 + (1<<15))>>16, clpRng )
-#define REM_HF_OP( ADDR )      dst[ADDR] =             (dst[ADDR]*weight0 - src[ADDR]*weight1 + (1<<15))>>16
-#endif
 
     if(bClip)
     {
@@ -493,11 +487,17 @@ void AreaBuf<T>::removeHighFreq( const AreaBuf<T>& other, const bool bClip, cons
   if (!bClip)
   {
     if(!(width & 7))
+    {
       g_pelBufOP.removeHighFreq8(dst, dstStride, src, srcStride, width, height);
+    }
     else if (!(width & 3))
+    {
       g_pelBufOP.removeHighFreq4(dst, dstStride, src, srcStride, width, height);
+    }
     else
-      CHECK(true, "Not supported");
+    {
+      THROW("Not supported");
+    }
   }
   else
   {

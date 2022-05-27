@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -48,62 +48,51 @@
 #include "CodingStructure.h"
 #include "Hash.h"
 #include "MCTS.h"
+#include "SEIColourTransform.h"
 #include <deque>
-
-#if ENABLE_SPLIT_PARALLELISM
-
-#define CURR_THREAD_ID -1
-
-class Scheduler
-{
-public:
-  Scheduler();
-  ~Scheduler();
-
-#if ENABLE_SPLIT_PARALLELISM
-  unsigned getSplitDataId( int jobId = CURR_THREAD_ID ) const;
-  unsigned getSplitPicId ( int tId   = CURR_THREAD_ID ) const;
-  unsigned getSplitJobId () const;
-  void     setSplitJobId ( const int jobId );
-  void     startParallel ();
-  void     finishParallel();
-  void     setSplitThreadId( const int tId = CURR_THREAD_ID );
-  unsigned getNumSplitThreads() const { return m_numSplitThreads; };
-#endif
-  unsigned getDataId     () const;
-  bool init              ( const int ctuYsize, const int ctuXsize, const int numWppThreadsRunning, const int numWppExtraLines, const int numSplitThreads );
-  int  getNumPicInstances() const;
-#if ENABLE_SPLIT_PARALLELISM
-
-  int   m_numSplitThreads;
-  bool  m_hasParallelBuffer;
-#endif
-};
-#endif
+#include "SEIFilmGrainSynthesizer.h"
 
 class SEI;
 class AQpLayer;
 
 typedef std::list<SEI*> SEIMessages;
 
-
-
-#if ENABLE_SPLIT_PARALLELISM
-#define M_BUFS(JID,PID) m_bufs[JID][PID]
-#else
 #define M_BUFS(JID,PID) m_bufs[PID]
-#endif
 
 struct Picture : public UnitArea
 {
   uint32_t margin;
   Picture();
 
-  void create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned margin, const bool bDecoder, const int layerId );
+#if JVET_Z0120_SII_SEI_PROCESSING
+  void create(const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned margin, const bool bDecoder, const int layerId, const bool enablePostFilteringForHFR, const bool gopBasedTemporalFilterEnabled = false, const bool fgcSEIAnalysisEnabled = false);
+#else
+  void create(const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned margin, const bool bDecoder, const int layerId, const bool gopBasedTemporalFilterEnabled = false, const bool fgcSEIAnalysisEnabled = false);
+#endif
   void destroy();
 
   void createTempBuffers( const unsigned _maxCUSize );
   void destroyTempBuffers();
+
+  int                       m_padValue;
+  bool                      m_isMctfFiltered;
+  SEIFilmGrainSynthesizer*  m_grainCharacteristic;
+  PelStorage*               m_grainBuf;
+  void              createGrainSynthesizer(bool firstPictureInSequence, SEIFilmGrainSynthesizer* grainCharacteristics, PelStorage* grainBuf, int width, int height, ChromaFormat fmt, int bitDepth);
+  PelUnitBuf        getDisplayBufFG       (bool wrap = false);
+
+  SEIColourTransformApply* m_colourTranfParams;
+  PelStorage*              m_invColourTransfBuf;
+  void              createColourTransfProcessor(bool firstPictureInSequence, SEIColourTransformApply* ctiCharacteristics, PelStorage* ctiBuf, int width, int height, ChromaFormat fmt, int bitDepth);
+  PelUnitBuf        getDisplayBuf();
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  void copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcPicYuvDst);
+  Picture*  findPrevPicPOC(Picture* pcPic, PicList* pcListPic);
+  Picture*  findNextPicPOC(Picture* pcPic, PicList* pcListPic);
+  void  xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio);
+  void  xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio, int intraPeriod);
+#endif
 
          PelBuf     getOrigBuf(const CompArea &blk);
   const CPelBuf     getOrigBuf(const CompArea &blk) const;
@@ -113,10 +102,17 @@ struct Picture : public UnitArea
   const CPelUnitBuf getOrigBuf() const;
          PelBuf     getOrigBuf(const ComponentID compID);
   const CPelBuf     getOrigBuf(const ComponentID compID) const;
+         PelBuf     getTrueOrigBuf(const ComponentID compID);
+  const CPelBuf     getTrueOrigBuf(const ComponentID compID) const;
          PelUnitBuf getTrueOrigBuf();
   const CPelUnitBuf getTrueOrigBuf() const;
         PelBuf      getTrueOrigBuf(const CompArea &blk);
   const CPelBuf     getTrueOrigBuf(const CompArea &blk) const;
+
+         PelUnitBuf getFilteredOrigBuf();
+  const CPelUnitBuf getFilteredOrigBuf() const;
+         PelBuf     getFilteredOrigBuf(const CompArea &blk);
+  const CPelBuf     getFilteredOrigBuf(const CompArea &blk) const;
 
          PelBuf     getPredBuf(const CompArea &blk);
   const CPelBuf     getPredBuf(const CompArea &blk) const;
@@ -144,6 +140,11 @@ struct Picture : public UnitArea
          PelUnitBuf getBuf(const UnitArea &unit,     const PictureType &type);
   const CPelUnitBuf getBuf(const UnitArea &unit,     const PictureType &type) const;
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+        PelUnitBuf getPostRecBuf();
+  const CPelUnitBuf getPostRecBuf() const;
+#endif
+
   void extendPicBorder( const PPS *pps );
   void extendWrapBorder( const PPS *pps );
   void finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHeader *picHeader, APS** alfApss, APS* lmcsAps, APS* scalingListAps );
@@ -155,6 +156,8 @@ struct Picture : public UnitArea
   void setPictureType(const NalUnitType val)        { m_pictureType = val;          }
   void setBorderExtension( bool bFlag)              { m_bIsBorderExtended = bFlag;}
   Pel* getOrigin( const PictureType &type, const ComponentID compID ) const;
+  int  getEdrapRapId()                        const { return edrapRapId ; }
+  void setEdrapRapId(const int val)                 { edrapRapId = val; }
 
   void setLossyQPValue(int i)                 { m_lossyQP = i; }
   int getLossyQPValue()                       const { return m_lossyQP; }
@@ -212,24 +215,14 @@ public:
   bool fieldPic;
   int  m_prevQP[MAX_NUM_CHANNEL_TYPE];
   bool precedingDRAP; // preceding a DRAP picture in decoding order
-#if JVET_S0124_UNAVAILABLE_REFERENCE
+  int  edrapRapId;
   bool nonReferencePictureFlag;
-#endif
 
   int  poc;
   uint32_t temporalId;
   int      layerId;
-#if JVET_S0258_SUBPIC_CONSTRAINTS
   std::vector<SubPic> subPictures;
   int numSlices;
-#else
-  int  numSubpics;
-  std::vector<int> subpicWidthInCTUs;
-  std::vector<int> subpicHeightInCTUs;
-  std::vector<int> subpicCtuTopLeftX;
-  std::vector<int> subpicCtuTopLeftY;
-  int numSlices;
-#endif
   std::vector<int> sliceSubpicIdx;
 
   bool subLayerNonReferencePictureDueToSTSA;
@@ -239,16 +232,9 @@ public:
   int m_lossyQP;
   std::vector<bool> m_lossylosslessSliceArray;
   bool interLayerRefPicFlag;
+  bool mixedNaluTypesInPicFlag;
 
-#if !JVET_S0258_SUBPIC_CONSTRAINTS
-  std::vector<int> subPicIDs;
-#endif
-
-#if ENABLE_SPLIT_PARALLELISM
-  PelStorage m_bufs[PARL_SPLIT_MAX_NUM_JOBS][NUM_PIC_TYPES];
-#else
   PelStorage m_bufs[NUM_PIC_TYPES];
-#endif
   const Picture*           unscaledPic;
 
   TComHash           m_hashMap;
@@ -284,15 +270,6 @@ public:
 #if !KEEP_PRED_AND_RESI_SIGNALS
 private:
   UnitArea m_ctuArea;
-#endif
-
-#if ENABLE_SPLIT_PARALLELISM
-public:
-  void finishParallelPart   ( const UnitArea& ctuArea );
-#endif
-#if ENABLE_SPLIT_PARALLELISM
-public:
-  Scheduler                  scheduler;
 #endif
 
 public:

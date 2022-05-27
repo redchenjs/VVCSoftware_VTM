@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -127,11 +127,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
   DTRACE( g_trace_ctx, D_HEADER, "=========== POC: %d ===========\n", slice->getPOC() );
 
 
-#if JVET_S0258_SUBPIC_CONSTRAINTS
   if( slice->getSliceType() != I_SLICE && slice->getRefPic( REF_PIC_LIST_0, 0 )->subPictures.size() > 1 )
-#else
-  if (slice->getSliceType() != I_SLICE && slice->getRefPic(REF_PIC_LIST_0, 0)->numSubpics > 1)
-#endif
   {
     clipMv = clipMvInSubpic;
   }
@@ -171,11 +167,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
         {
           Picture *refPic = slice->getRefPic((RefPicList)rlist, idx);
 
-#if JVET_S0258_SUBPIC_CONSTRAINTS
           if( !refPic->getSubPicSaved() && refPic->subPictures.size() > 1 )
-#else
-          if (!refPic->getSubPicSaved() && refPic->numSubpics > 1)
-#endif
           {
             refPic->saveSubPicBorder(refPic->getPOC(), subPicX, subPicY, subPicWidth, subPicHeight);
             refPic->extendSubPicBorder(refPic->getPOC(), subPicX, subPicY, subPicWidth, subPicHeight);
@@ -211,6 +203,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
       {
         // Top is available, so use it.
         cabacReader.getCtx() = m_entropyCodingSyncContextState;
+        cabacReader.getCtx().riceStatReset(slice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA), slice->getSPS()->getSpsRangeExtension().getPersistentRiceAdaptationEnabledFlag());
         cs.setPrevPLT(m_palettePredictorSyncState);
       }
       pic->m_prevQP[0] = pic->m_prevQP[1] = slice->getSliceQp();

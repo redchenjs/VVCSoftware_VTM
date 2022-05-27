@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -88,14 +88,20 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
   ("OutputBitDepth,d",          m_outputBitDepth[CHANNEL_TYPE_LUMA],   0,          "bit depth of YUV output luma component (default: use 0 for native depth)")
   ("OutputBitDepthC,d",         m_outputBitDepth[CHANNEL_TYPE_CHROMA], 0,          "bit depth of YUV output chroma component (default: use luma output bit-depth)")
   ("OutputColourSpaceConvert",  outputColourSpaceConvert,              string(""), "Colour space conversion to apply to input 444 video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(false))
-  ("MaxTemporalLayer,t",        m_iMaxTemporalLayer,                   -1,         "Maximum Temporal Layer to be decoded. -1 to decode all layers")
-  ("TargetOutputLayerSet,p",    m_targetOlsIdx,                          -1,       "Target output layer set index")
+  ("MaxTemporalLayer,t",        m_iMaxTemporalLayer,                   500,    "Maximum Temporal Layer to be decoded. -1 to decode all layers")
+  ("TargetOutputLayerSet,p",    m_targetOlsIdx,                        500,    "Target output layer set index")
+#if JVET_Z0120_SII_SEI_PROCESSING
+  ("SEIShutterIntervalPostFilename,-sii", m_shutterIntervalPostFileName, string(""), "Post Filtering with Shutter Interval SEI. If empty, no filtering is applied (ignore SEI message)\n")
+#endif
   ("SEIDecodedPictureHash,-dph",m_decodedPictureHashSEIEnabled,        1,          "Control handling of decoded picture hash SEI messages\n"
                                                                                    "\t1: check hash in SEI messages if available in the bitstream\n"
                                                                                    "\t0: ignore SEI message")
   ("SEINoDisplay",              m_decodedNoDisplaySEIEnabled,          true,       "Control handling of decoded no display SEI messages")
   ("TarDecLayerIdSetFile,l",    cfg_TargetDecLayerIdSetFile,           string(""), "targetDecLayerIdSet file name. The file should include white space separated LayerId values to be decoded. Omitting the option or a value of -1 in the file decodes all layers.")
   ("SEIColourRemappingInfoFilename",  m_colourRemapSEIFileName,        string(""), "Colour Remapping YUV output file name. If empty, no remapping is applied (ignore SEI message)\n")
+  ("SEICTIFilename",            m_SEICTIFileName,                      string(""), "CTI YUV output file name. If empty, no Colour Transform is applied (ignore SEI message)\n")
+  ("SEIFGSFilename",            m_SEIFGSFileName,                      string(""), "FGS YUV output file name. If empty, no film grain is applied (ignore SEI message)\n")
+  ("SEIAnnotatedRegionsInfoFilename",  m_annotatedRegionsSEIFileName,   string(""), "Annotated regions output file name. If empty, no object information will be saved (ignore SEI message)\n")
   ("OutputDecodedSEIMessagesFilename",  m_outputDecodedSEIMessagesFilename,    string(""), "When non empty, output decoded SEI messages to the indicated file. If file is '-', then output to stdout\n")
 #if JVET_S0257_DUMP_360SEI_MESSAGE
   ("360DumpFile",  m_outputDecoded360SEIMessagesFilename, string(""), "When non empty, output decoded 360 SEI messages to the indicated file.\n")
@@ -120,6 +126,9 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
   ("MCTSCheck",                m_mctsCheck,                           false,       "If enabled, the decoder checks for violations of mc_exact_sample_value_match_flag in Temporal MCTS ")
   ("targetSubPicIdx",          m_targetSubPicIdx,                     0,           "Specify which subpicture shall be written to output, using subpic index, 0: disabled, subpicIdx=m_targetSubPicIdx-1 \n" )
   ( "UpscaledOutput",          m_upscaledOutput,                          0,       "Upscaled output for RPR" )
+#if GDR_LEAK_TEST
+  ("RandomAccessPos",          m_gdrPocRandomAccess,                    0,         "POC of GDR Random access picture\n" )
+#endif // GDR_LEAK_TEST
   ;
 
   po::setDefaults(opts);
@@ -220,6 +229,22 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
       msg( ERROR, "File %s could not be opened. Using all LayerIds as default.\n", cfg_TargetDecLayerIdSetFile.c_str() );
     }
   }
+  if (m_iMaxTemporalLayer != 500)
+  {
+    m_mTidExternalSet = true;
+  }
+  else
+  {
+    m_iMaxTemporalLayer = -1;
+  }
+  if ( m_targetOlsIdx != 500)
+  {
+    m_tOlsIdxTidExternalSet = true;
+  }
+  else
+  {
+    m_targetOlsIdx = -1;
+  }
   return true;
 }
 
@@ -233,9 +258,14 @@ DecAppCfg::DecAppCfg()
 , m_outputColourSpaceConvert(IPCOLOURSPACE_UNCHANGED)
 , m_targetOlsIdx(0)
 , m_iMaxTemporalLayer(-1)
+, m_mTidExternalSet(false)
+, m_tOlsIdxTidExternalSet(false)
 , m_decodedPictureHashSEIEnabled(0)
 , m_decodedNoDisplaySEIEnabled(false)
 , m_colourRemapSEIFileName()
+, m_SEICTIFileName()
+, m_SEIFGSFileName()
+, m_annotatedRegionsSEIFileName()
 , m_targetDecLayerIdSet()
 , m_outputDecodedSEIMessagesFilename()
 #if JVET_S0257_DUMP_360SEI_MESSAGE

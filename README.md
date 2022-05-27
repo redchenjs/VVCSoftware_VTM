@@ -1,13 +1,19 @@
 VTM reference software for VVC
 ==============================
 
-This software package is the reference software for Versatile Video Coding (VVC). The reference software includes both encoder and decoder functionality.
+This software package is the reference software for Rec. ITU-T H.266 | ISO/IEC 23090-3 Versatile Video Coding (VVC). The reference software includes both encoder and decoder functionality.
 
 Reference software is useful in aiding users of a video coding standard to establish and test conformance and interoperability, and to educate users and demonstrate the capabilities of the standard. For these purposes, this software is provided as an aid for the study and implementation of Versatile Video Coding.
 
-The software has been jointly developed by the ITU-T Video Coding Experts Group (VCEG, Question 6 of ITU-T Study Group 16) and the ISO/IEC Moving Picture Experts Group (MPEG, Working Group 11 of Subcommittee 29 of ISO/IEC Joint Technical Committee 1).
+The software has been jointly developed by the ITU-T Video Coding Experts Group (VCEG, Question 6 of ITU-T Study Group 16) and the ISO/IEC Moving Picture Experts Group (MPEG Joint Video Coding Team(s) with ITU-T SG 16, Working Group 5 of Subcommittee 29 of ISO/IEC Joint Technical Committee 1).
 
 A software manual, which contains usage instructions, can be found in the "doc" subdirectory of this software package.
+
+The source code is stored in a Git repository. The most recent version can be retrieved using the following commands:
+```bash
+git clone https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM.git
+cd VVCSoftware_VTM
+```
 
 Build instructions
 ==================

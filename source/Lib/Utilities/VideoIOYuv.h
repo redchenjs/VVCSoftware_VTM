@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -96,6 +96,9 @@ public:
   bool  isEof ();                                           ///< check for end-of-file
   bool  isFail();                                           ///< check for failure
   bool  isOpen() { return m_cHandle.is_open(); }
+  void  setBitdepthShift( int ch, int bd )  { m_bitdepthShift[ch] = bd;   }
+  int   getBitdepthShift( int ch )          { return m_bitdepthShift[ch]; }
+  int   getFileBitdepth( int ch )           { return m_fileBitdepth[ch];  }
 
   bool  writeUpscaledPicture( const SPS& sps, const PPS& pps, const CPelUnitBuf& pic,
     const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode, int outputChoice = 0, ChromaFormat format = NUM_CHROMA_FORMAT, const bool bClipToRec709 = false ); ///< write one upsaled YUV frame

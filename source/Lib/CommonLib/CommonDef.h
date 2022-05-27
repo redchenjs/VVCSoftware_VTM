@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,8 @@
 // disable bool coercion "performance warning"
 #pragma warning( disable : 4800 )
 #endif // _MSC_VER > 1000
+
+#include "CommonSimdCfg.h"
 #include "TypeDef.h"
 #include "version.h"
 
@@ -109,10 +111,6 @@
 
 #define NVM_BITS          "[%d bit] ", (sizeof(void*) == 8 ? 64 : 32) ///< used for checking 64-bit O/S
 
-#ifndef NULL
-#define NULL              0
-#endif
-
 typedef enum
 {
   AFFINEMODEL_4PARAM,
@@ -163,19 +161,12 @@ static const int MAX_TB_LOG2_SIZEY = 6;
 static const int MIN_TB_SIZEY = 1 << MIN_TB_LOG2_SIZEY;
 static const int MAX_TB_SIZEY = 1 << MAX_TB_LOG2_SIZEY;
 
-static const int MAX_NUM_PICS_IN_SOP =                           1024;
-
-static const int MAX_NESTING_NUM_OPS =                           1024;
 static const int MAX_NESTING_NUM_LAYER =                           64;
 
-static const int MAX_VPS_NUM_HRD_PARAMETERS =                       1;
 static const int MAX_VPS_LAYERS =                                  64;
 static const int MAX_VPS_SUBLAYERS =                                7;
-static const int MAX_NUM_REF_LAYERS =                               7;
 static const int MAX_NUM_OLSS =                                   256;
 static const int MAX_VPS_OLS_MODE_IDC =                             2;
-static const int MAXIMUM_INTRA_FILTERED_WIDTH =                    16;
-static const int MAXIMUM_INTRA_FILTERED_HEIGHT =                   16;
 
 static const int MIP_MAX_WIDTH =                                   MAX_TB_SIZEY;
 static const int MIP_MAX_HEIGHT =                                  MAX_TB_SIZEY;
@@ -185,7 +176,6 @@ static const int MAX_NUM_ALF_CLASSES         =                     25;
 static const int MAX_NUM_ALF_LUMA_COEFF      =                     13;
 static const int MAX_NUM_ALF_CHROMA_COEFF    =                      7;
 static const int MAX_ALF_FILTER_LENGTH       =                      7;
-static const int MAX_NUM_ALF_COEFF           =                     MAX_ALF_FILTER_LENGTH * MAX_ALF_FILTER_LENGTH / 2 + 1;
 static const int MAX_ALF_PADDING_SIZE        =                      4;
 #define MAX_NUM_CC_ALF_FILTERS                                      4
 static constexpr int MAX_NUM_CC_ALF_CHROMA_COEFF    =               8;
@@ -195,39 +185,28 @@ static constexpr int CCALF_BITS_PER_COEFF_LEVEL     =               3;
 static const int ALF_FIXED_FILTER_NUM        =                     64;
 static const int ALF_CTB_MAX_NUM_APS         =                      8;
 static const int NUM_FIXED_FILTER_SETS       =                     16;
-static const int NUM_TOTAL_FILTER_SETS       =                     NUM_FIXED_FILTER_SETS + ALF_CTB_MAX_NUM_APS;
-
 
 static const int MAX_BDOF_APPLICATION_REGION =                     16;
 
 static const int MAX_CPB_CNT =                                     32; ///< Upper bound of (cpb_cnt_minus1 + 1)
 static const int MAX_NUM_LAYER_IDS =                               64;
 static const int COEF_REMAIN_BIN_REDUCTION =                        5; ///< indicates the level at which the VLC transitions from Golomb-Rice to TU+EG(k)
-#if !JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
-static const int COEFF_MIN =                                   -32768;
-static const int COEFF_MAX =                                    32767;
-#endif
 static const int CU_DQP_TU_CMAX =                                   5; ///< max number bins for truncated unary
 static const int CU_DQP_EG_k =                                      0; ///< expgolomb order
 
 static const int SBH_THRESHOLD =                                    4; ///< value of the fixed SBH controlling threshold
 
 static const int MAX_NUM_VPS =                                     16;
-static const int MAX_NUM_DPS =                                     16;
 static const int MAX_NUM_SPS =                                     16;
 static const int MAX_NUM_PPS =                                     64;
 static const int MAX_NUM_APS =                                     32;  //Currently APS ID has 5 bits
 static const int NUM_APS_TYPE_LEN =                                 3;  //Currently APS Type has 3 bits
 static const int MAX_NUM_APS_TYPE =                                 8;  //Currently APS Type has 3 bits so the max type is 8
 
-static const int MAX_TILE_COLS =                                   20;  ///< Maximum number of tile columns
-#if JVET_S0156_LEVEL_DEFINITION
-static const int MAX_TILES =                                      440;  ///< Maximum number of tiles
-#else
-static const int MAX_TILE_ROWS =                                   22;  ///< Maximum number of tile rows
-static const int MAX_TILES =            MAX_TILE_COLS * MAX_TILE_ROWS;  ///< Maximum number of tiles
-#endif
-static const int MAX_SLICES =                                     600;  ///< Maximum number of slices per picture
+static constexpr int MAX_TILE_COLS = 30;   // Maximum number of tile columns
+static constexpr int MAX_TILES     = 990;  // Maximum number of tiles
+static constexpr int MAX_SLICES    = 1000; // Maximum number of slices per picture
+
 static const int MLS_GRP_NUM =                                   1024; ///< Max number of coefficient groups, max(16, 256)
 
 static const int MLS_CG_SIZE =                                      4; ///< Coefficient group size of 4x4; = MLS_CG_LOG2_WIDTH + MLS_CG_LOG2_HEIGHT
@@ -241,21 +220,23 @@ static const int MULTI_REF_LINE_IDX[4] =               { 0, 1, 2, 0 };
 
 static const int PRED_REG_MIN_WIDTH =                               4;  // Minimum prediction region width for ISP subblocks
 
-static const int NUM_LUMA_MODE =                                   67; ///< Planar + DC + 65 directional mode (4*16 + 1)
-static const int NUM_LMC_MODE =                                    1 + 2; ///< LMC + MDLM_T + MDLM_L
-static const int NUM_INTRA_MODE = (NUM_LUMA_MODE + NUM_LMC_MODE);
+static constexpr int NUM_DIR                 = 16;
+static constexpr int NUM_INTRA_ANGULAR_MODES = 4 * NUM_DIR + 1;
+static constexpr int ANGULAR_BASE            = 2;   // First two modes and planar and DC
+static constexpr int NUM_LUMA_MODE           = ANGULAR_BASE + NUM_INTRA_ANGULAR_MODES;
+static constexpr int NUM_LMC_MODE            = 1 + 2;   // LMC + MDLM_T + MDLM_L
+static constexpr int NUM_INTRA_MODE          = NUM_LUMA_MODE + NUM_LMC_MODE;
 
 static const int NUM_EXT_LUMA_MODE =                               28;
 
-static const int NUM_DIR =           (((NUM_LUMA_MODE - 3) >> 2) + 1);
-static const int PLANAR_IDX =                                       0; ///< index for intra PLANAR mode
-static const int DC_IDX =                                           1; ///< index for intra DC     mode
-static const int HOR_IDX =                    (1 * (NUM_DIR - 1) + 2); ///< index for intra HORIZONTAL mode
-static const int DIA_IDX =                    (2 * (NUM_DIR - 1) + 2); ///< index for intra DIAGONAL   mode
-static const int VER_IDX =                    (3 * (NUM_DIR - 1) + 2); ///< index for intra VERTICAL   mode
-static const int VDIA_IDX =                   (4 * (NUM_DIR - 1) + 2); ///< index for intra VDIAGONAL  mode
-static const int BDPCM_IDX =                  (5 * (NUM_DIR - 1) + 2); ///< index for intra VDIAGONAL  mode
-static const int NOMODE_IDX =                               MAX_UCHAR; ///< indicating uninitialized elements
+static const int PLANAR_IDX = 0;                              ///< index for intra PLANAR mode
+static const int DC_IDX     = 1;                              ///< index for intra DC     mode
+static const int HOR_IDX    = (1 * NUM_DIR + ANGULAR_BASE);   ///< index for intra HORIZONTAL mode
+static const int DIA_IDX    = (2 * NUM_DIR + ANGULAR_BASE);   ///< index for intra DIAGONAL   mode
+static const int VER_IDX    = (3 * NUM_DIR + ANGULAR_BASE);   ///< index for intra VERTICAL   mode
+static const int VDIA_IDX   = (4 * NUM_DIR + ANGULAR_BASE);   ///< index for intra VDIAGONAL  mode
+static const int BDPCM_IDX  = (5 * NUM_DIR + ANGULAR_BASE);   ///< index for intra BDPCM  mode
+static const int NOMODE_IDX = MAX_UCHAR;                      ///< indicating uninitialized elements
 
 static const int NUM_CHROMA_MODE = (5 + NUM_LMC_MODE); ///< total number of chroma modes
 static const int LM_CHROMA_IDX = NUM_LUMA_MODE; ///< chroma mode index for derived from LM mode
@@ -279,9 +260,6 @@ static const int LFNST_LAST_SIG_CHROMA =                            1;
 
 static const int NUM_LFNST_NUM_PER_SET =                            3;
 
-static const int LOG2_MAX_NUM_COLUMNS_MINUS1 =                      7;
-static const int LOG2_MAX_NUM_ROWS_MINUS1 =                         7;
-
 static const int CABAC_INIT_PRESENT_FLAG =                          1;
 
 static const int MV_FRACTIONAL_BITS_INTERNAL                      = 4;
@@ -304,8 +282,7 @@ static const int MAX_NUM_QP_VALUES =    MAX_QP + 1 - MIN_QP_VALUE_FOR_16_BIT; //
 // Cost mode support
 static const int LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP =      0; ///< QP to use for lossless coding.
 static const int LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP_PRIME =4; ///< QP' to use for mixed_lossy_lossless coding.
-
-static const int RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS =     4;
+static const int RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS = MAX_NUM_COMPONENT;
 
 static const int RExt__PREDICTION_WEIGHTING_ANALYSIS_DC_PRECISION = 0; ///< Additional fixed bit precision used during encoder-side weighting prediction analysis. Currently only used when high_precision_prediction_weighting_flag is set, for backwards compatibility reasons.
 
@@ -319,6 +296,8 @@ static const int MAX_NUM_PARTS_IN_CTU =                         ( ( MAX_CU_SIZE 
 static const int MAX_NUM_TUS =                                     16; ///< Maximum number of TUs within one CU. When max TB size is 32x32, up to 16 TUs within one CU (128x128) is supported
 static const int MAX_LOG2_DIFF_CU_TR_SIZE =                         3;
 static const int MAX_CU_TILING_PARTITIONS = 1 << ( MAX_LOG2_DIFF_CU_TR_SIZE << 1 );
+
+static constexpr int PIC_MARGIN = 16;
 
 static const int JVET_C0024_ZERO_OUT_TH =                          32;
 
@@ -409,6 +388,12 @@ static const int    NUM_AFF_MRG_SATD_CAND =                         2;
 static const double AMAXBT_TH32 =                                  15.0;
 static const double AMAXBT_TH64 =                                  30.0;
 
+static constexpr int FAST_METHOD_TT_ENC_SPEEDUP = 0x0001;  ///< Embedding flag, which, if false, de-activates all the following ABT_ENC_SPEEDUP_* modes
+static constexpr int FAST_METHOD_HOR_XOR_VER = 0x0002;
+static constexpr int FAST_METHOD_ENC_SPEEDUP_BT_BASED = 0x0004;
+static constexpr int FAST_METHOD_TT_ENC_SPEEDUP_BSLICE = 0x0008;
+static constexpr int FAST_METHOD_TT_ENC_SPEEDUP_ISLICE = 0x0010;
+
 // need to know for static memory allocation
 static const int MAX_DELTA_QP   =                                   7;      ///< maximum supported delta QP value
 static const int MAX_TESTED_QPs =   ( 1 + 1 + ( MAX_DELTA_QP << 1 ) );      ///< dqp=0 +- max_delta_qp + lossless mode
@@ -473,8 +458,6 @@ static const int PIC_CODE_CW_BINS =                              16;
 static const int LMCS_SEG_NUM =                                  32;
 static const int FP_PREC =                                       11;
 static const int CSCALE_FP_PREC =                                11;
-static const int  NEIG_NUM_LOG  =                                 6;
-static const int  NEIG_NUM =                      1 << NEIG_NUM_LOG;
 static const int LOG2_PALETTE_CG_SIZE =                           4;
 static const int RUN_IDX_THRE =                                   4;
 static const int MAX_CU_BLKSIZE_PLT =                            64;
@@ -495,17 +478,36 @@ static const int SCALE_RATIO_BITS =                              14;
 static const int MAX_SCALING_RATIO =                              2;  // max downsampling ratio for RPR
 static const std::pair<int, int> SCALE_1X = std::pair<int, int>( 1 << SCALE_RATIO_BITS, 1 << SCALE_RATIO_BITS );  // scale ratio 1x
 static const int DELTA_QP_ACT[4] =                  { -5, 1, 3, 1 };
-
+static const int MAX_TSRC_RICE =                                  8;  ///<Maximum supported TSRC Rice parameter
+static const int MIN_TSRC_RICE =                                  1;  ///<Minimum supported TSRC Rice parameter
+static const int MAX_CTI_LUT_SIZE =                              64;  ///<Maximum colour transform LUT size for CTI SEI
+static const int MAX_NUM_INTENSITIES =                          256;  ///<Maximum number of intensity intervals supported in FGC SEI
+static const int MAX_NUM_MODEL_VALUES =                           6;  ///<Maximum number of model values supported in FGC SEI
+static const int MAX_ALLOWED_MODEL_VALUES =                       3;
+static const int MAX_ALLOWED_COMP_MODEL_PAIRS =                  10;
+static const int MAX_STANDARD_DEVIATION =                       255;  // for 8-bit format; for higher bit depths, internal scaling is performed
+static const int DATA_BASE_SIZE =                                64;
+static const int BLK_8 =                                          8;
+static const int BLK_16 =                                        16;
+static const int BLK_32 =                                        32;
+static const int BIT_DEPTH_8 =                                    8;
+// ====================================================================================================================
+// SEI and related constants
+// ====================================================================================================================
+#if JVET_Z0120_SII_SEI_PROCESSING
+static const double SII_PF_W2 =                                       0.6; // weight for current picture
+static const double SII_PF_W1 =                                       0.4; // weight for previous picture , it must be equal to 1.0 - SII_PF_W2
+#endif
 // ====================================================================================================================
 // Macro functions
 // ====================================================================================================================
 
 struct ClpRng
 {
-  int min;
-  int max;
-  int bd;
-  int n;
+  int min {0};
+  int max {0};
+  int bd  {0};
+  int n   {0};
 };
 
 struct ClpRngs
@@ -561,7 +563,7 @@ void cache_mem_align_free(void *ptr);
 namespace detail {
 template<typename T>
 T* aligned_malloc(size_t len, size_t alignement) {
-  T* p = NULL;
+  T *p = nullptr;
   if( posix_memalign( (void**)&p, alignement, sizeof(T)*(len) ) )
   {
     THROW("posix_memalign failed");
@@ -608,9 +610,7 @@ T* aligned_malloc(size_t len, size_t alignement) {
 #endif
 
 #if ENABLE_SIMD_OPT
-
-#if defined(__i386__) || defined(i386) || defined(__x86_64__) || defined(_M_X64) || defined (_WIN32) || defined (_MSC_VER)
-#define TARGET_SIMD_X86
+#ifdef TARGET_SIMD_X86
 typedef enum{
   SCALAR = 0,
   SSE41,
@@ -619,27 +619,16 @@ typedef enum{
   AVX2,
   AVX512
 } X86_VEXT;
-#elif defined (__ARM_NEON__)
-#define TARGET_SIMD_ARM 1
-#else
-#error no simd target
-#endif
 
-#ifdef TARGET_SIMD_X86
 X86_VEXT read_x86_extension_flags(const std::string &extStrId = std::string());
 const char* read_x86_extension(const std::string &extStrId);
-#endif
-
+#endif //TARGET_SIMD_X86
 #endif //ENABLE_SIMD_OPT
 
 template <typename ValueType> inline ValueType leftShift       (const ValueType value, const int shift) { return (shift >= 0) ? ( value                                  << shift) : ( value                                   >> -shift); }
 template <typename ValueType> inline ValueType rightShift      (const ValueType value, const int shift) { return (shift >= 0) ? ( value                                  >> shift) : ( value                                   << -shift); }
 template <typename ValueType> inline ValueType leftShift_round (const ValueType value, const int shift) { return (shift >= 0) ? ( value                                  << shift) : ((value + (ValueType(1) << (-shift - 1))) >> -shift); }
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
 template <typename ValueType> inline ValueType rightShift_round(const ValueType value, const int shift) { return (shift > 0) ? ((value + (ValueType(1) << (shift - 1))) >> shift) : ( value                                   << -shift); }
-#else
-template <typename ValueType> inline ValueType rightShift_round(const ValueType value, const int shift) { return (shift >= 0) ? ((value + (ValueType(1) << (shift - 1))) >> shift) : ( value                                   << -shift); }
-#endif
 
 static inline int floorLog2(uint32_t x)
 {
@@ -706,16 +695,6 @@ static inline int ceilLog2(uint32_t x)
 #define _AREA_AT(...)
 #define _AREA_CONTAINS(_a,_x,_y)
 #define _UNIT_AREA_AT(_a,_x,_y,_w,_h)
-#endif
-
-#if ENABLE_SPLIT_PARALLELISM
-#include <omp.h>
-
-#define PARL_PARAM(DEF) , DEF
-#define PARL_PARAM0(DEF) DEF
-#else
-#define PARL_PARAM(DEF)
-#define PARL_PARAM0(DEF)
 #endif
 
 static const uint32_t CCALF_CANDS_COEFF_NR = 8;

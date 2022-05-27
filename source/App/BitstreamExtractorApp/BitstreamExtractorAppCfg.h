@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,11 +50,7 @@ protected:
   std::string   m_bitstreamFileNameOut;               //  input bitstream file name
   int           m_maxTemporalLayer;
   int           m_targetOlsIdx;
-#if JVET_S0154_R0068_ASPECT5
   int           m_subPicIdx;
-#else
-  int           m_subPicId;
-#endif
 
 public:
   BitstreamExtractorAppCfg();

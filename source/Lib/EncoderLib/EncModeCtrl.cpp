@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,15 +64,6 @@ void EncModeCtrl::init( EncCfg *pCfg, RateCtrl *pRateCtrl, RdCost* pRdCost )
 
 bool EncModeCtrl::tryModeMaster( const EncTestMode& encTestmode, const CodingStructure &cs, Partitioner& partitioner )
 {
-#if ENABLE_SPLIT_PARALLELISM
-  if( m_ComprCUCtxList.back().isLevelSplitParallel )
-  {
-    if( !parallelJobSelector( encTestmode, cs, partitioner ) )
-    {
-      return false;
-    }
-  }
-#endif
   return tryMode( encTestmode, cs, partitioner );
 }
 
@@ -151,6 +142,12 @@ void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& c
     int deltaQP = m_pcEncCfg->getMaxDeltaQP();
     minQP = Clip3( -sps.getQpBDOffset( CHANNEL_TYPE_LUMA ), MAX_QP, baseQP - deltaQP );
     maxQP = Clip3( -sps.getQpBDOffset( CHANNEL_TYPE_LUMA ), MAX_QP, baseQP + deltaQP );
+    Position pos = partitioner.currQgPos;
+    const int ctuSize = sps.getCTUSize();
+    const int ctuId = ( pos.y / ctuSize ) * ( ( cs.picture->lwidth() + ctuSize - 1 ) / ctuSize ) + ( pos.x / ctuSize );
+    const int bimOffset = getBIMOffset( m_slice->getPOC(), ctuId );
+    minQP += bimOffset;
+    maxQP += bimOffset;
   }
   else if( qgEnableChildren ) // more splits and not the deepest QG level
   {
@@ -248,24 +245,93 @@ int EncModeCtrl::calculateLumaDQP( const CPelBuf& rcOrg )
 }
 #endif
 
-#if ENABLE_SPLIT_PARALLELISM
-void EncModeCtrl::copyState( const EncModeCtrl& other, const UnitArea& area )
+int EncModeCtrl::calculateLumaDQPsmooth(const CPelBuf& rcOrg, int baseQP, double threshold, double scale, double offset, int limit)
 {
-  m_slice          = other.m_slice;
-  m_fastDeltaQP    = other.m_fastDeltaQP;
-  m_lumaQPOffset   = other.m_lumaQPOffset;
-  m_runNextInParallel
-                   = other.m_runNextInParallel;
-  m_ComprCUCtxList = other.m_ComprCUCtxList;
+  double avg = 0;
+  double diff = 0;
+  double thr = (double)threshold*rcOrg.height*rcOrg.width;
+  int qp = 0;
+  if (rcOrg.height >= 64 && rcOrg.width >= 64)
+  {
+    const int numBasis = 6;
+
+    double invb[numBasis][numBasis] = { {0.001*0.244140625000000,                         0,                         0,                        0,                        0,                        0},
+                                      {                      0,   0.001*0.013204564833946,   0.001*0.002080251479290, -0.001*0.000066039729501, -0.001*0.000165220364313,        0.000000000000000},
+                                      {                      0,   0.001*0.002080251479290,   0.001*0.013204564833946, -0.001*0.000066039729501,        0.000000000000000, -0.001*0.000165220364313},
+                                      {                      0,  -0.001*0.000066039729501,  -0.001*0.000066039729501,  0.001*0.000002096499349,        0.000000000000000,        0.000000000000000},
+                                      {                      0,  -0.001*0.000165220364313,         0.000000000000000,        0.000000000000000,  0.001*0.000002622545465,        0.000000000000000},
+                                      {                      0,         0.000000000000000,  -0.001*0.000165220364313,        0.000000000000000,        0.000000000000000,  0.001*0.000002622545465} };
+    double boffset[5] = { -31.5, -31.5, -992.25, -1333.5, -1333.5 };
+
+    int listQuadrantsX[4] = { 0, 64, 0, 64 };
+    int listQuadrantsY[4] = { 0, 0, 64, 64 };
+
+    double b1sum;
+    double b2sum;
+    double b3sum;
+    double b4sum;
+    double b5sum;
+    double b6sum;
+    int numQuadrantsX = (rcOrg.width == 128) ? 2 : 1;
+    int numQuadrantsY = (rcOrg.height == 128) ? 2 : 1;
+    //loop over quadrants
+    for (int posy = 0; posy < numQuadrantsY; posy++)
+    {
+      for (int posx = 0; posx < numQuadrantsX; posx++)
+      {
+        b2sum = 0.0;
+        b3sum = 0.0;
+        b4sum = 0.0;
+        b5sum = 0.0;
+        b6sum = 0.0;
+        avg = 0.0;
+        for (uint32_t y = 0; y < 64; y++)
+        {
+          for (uint32_t x = 0; x < 64; x++)
+          {
+            const Pel& v = rcOrg.at(x + listQuadrantsX[posx + 2 * posy], y + listQuadrantsY[posx + 2 * posy]);
+            b2sum += ((double)v)*((double)x + boffset[0]);
+            b3sum += ((double)v)*((double)y + boffset[1]);
+            b4sum += ((double)v)*((double)x*(double)y + boffset[2]);
+            b5sum += ((double)v)*((double)x*(double)x + boffset[3]);
+            b6sum += ((double)v)*((double)y*(double)y + boffset[4]);
+            avg += (double)v;
+          }
+        }
+        b1sum = avg;
+        double r[numBasis];
+        for (uint32_t b = 0; b < numBasis; b++)
+        {
+          r[b] = invb[b][0] * b1sum + invb[b][1] * b2sum + invb[b][2] * b3sum + invb[b][3] * b4sum + invb[b][4] * b5sum + invb[b][5] * b6sum;
+        }
+        // compute SAD for model
+        for (uint32_t y = 0; y < 64; y++)
+        {
+          for (uint32_t x = 0; x < 64; x++)
+          {
+            const Pel& v = rcOrg.at(x + listQuadrantsX[posx + 2 * posy], y + listQuadrantsY[posx + 2 * posy]);
+
+            diff += abs((int)v - (int)(r[0] + r[1] * ((double)x + boffset[0]) + r[2] * ((double)y + boffset[1]) + r[3] * ((double)x*(double)y + boffset[2]) + r[4] * ((double)x*(double)x + boffset[3]) + r[5] * ((double)y*(double)y + boffset[4])));
+          }
+        }
+      }
+    }
+    if (diff < thr)
+    {
+      qp = max(limit, min(0, (int)(scale*(double)baseQP + offset)));
+    }
+  }
+  return qp;
 }
 
-#endif
 void CacheBlkInfoCtrl::create()
 {
   const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
 
   m_numWidths  = gp_sizeIdxInfo->numWidths();
   m_numHeights = gp_sizeIdxInfo->numHeights();
+
+  bool isLog2MttPartitioning = !!dynamic_cast<SizeIndexInfoLog2*>( gp_sizeIdxInfo );
 
   for( unsigned x = 0; x < numPos; x++ )
   {
@@ -275,25 +341,39 @@ void CacheBlkInfoCtrl::create()
 
       for( int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++ )
       {
-        if( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) )
-        {
-          m_codedCUInfo[x][y][wIdx] = new CodedCUInfo*[gp_sizeIdxInfo->numHeights()];
-
-          for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ )
-          {
-            if( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) )
-            {
-              m_codedCUInfo[x][y][wIdx][hIdx] = new CodedCUInfo;
-            }
-            else
-            {
-              m_codedCUInfo[x][y][wIdx][hIdx] = nullptr;
-            }
-          }
-        }
-        else
+        if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
         {
           m_codedCUInfo[x][y][wIdx] = nullptr;
+          continue;
+        }
+
+        const int wLog2 = floorLog2( gp_sizeIdxInfo->sizeFrom( wIdx ) );
+
+        if( isLog2MttPartitioning && ( ( x << MIN_CU_LOG2 ) & ( ( 1 << ( wLog2 - 1 ) ) - 1 ) ) != 0 )
+        {
+          m_codedCUInfo[x][y][wIdx] = nullptr;
+          continue;
+        }
+
+        m_codedCUInfo[x][y][wIdx] = new CodedCUInfo*[gp_sizeIdxInfo->numHeights()];
+
+        for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ )
+        {
+          if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
+          {
+            m_codedCUInfo[x][y][wIdx][hIdx] = nullptr;
+            continue;
+          }
+
+          const int hLog2 = floorLog2( gp_sizeIdxInfo->sizeFrom( hIdx ) );
+
+          if( isLog2MttPartitioning && ( ( ( y << MIN_CU_LOG2 ) & ( ( 1 << ( hLog2 - 1 ) ) - 1 ) ) != 0 ) )
+          {
+            m_codedCUInfo[x][y][wIdx][hIdx] = nullptr;
+            continue;
+          }
+
+          m_codedCUInfo[x][y][wIdx][hIdx] = new CodedCUInfo;
         }
       }
     }
@@ -354,71 +434,7 @@ void CacheBlkInfoCtrl::init( const Slice &slice )
   }
 
   m_slice_chblk = &slice;
-#if ENABLE_SPLIT_PARALLELISM
-
-  m_currTemporalId = 0;
-#endif
 }
-#if ENABLE_SPLIT_PARALLELISM
-
-void CacheBlkInfoCtrl::touch( const UnitArea& area )
-{
-  CodedCUInfo& cuInfo = getBlkInfo( area );
-  cuInfo.temporalId = m_currTemporalId;
-}
-
-void CacheBlkInfoCtrl::copyState( const CacheBlkInfoCtrl &other, const UnitArea& area )
-{
-  m_slice_chblk = other.m_slice_chblk;
-
-  m_currTemporalId = other.m_currTemporalId;
-
-  if( m_slice_chblk->isIntra() ) return;
-
-  const int cuSizeMask = m_slice_chblk->getSPS()->getMaxCUWidth() - 1;
-
-  const int minPosX = ( area.lx() & cuSizeMask ) >> MIN_CU_LOG2;
-  const int minPosY = ( area.ly() & cuSizeMask ) >> MIN_CU_LOG2;
-  const int maxPosX = ( area.Y().bottomRight().x & cuSizeMask ) >> MIN_CU_LOG2;
-  const int maxPosY = ( area.Y().bottomRight().y & cuSizeMask ) >> MIN_CU_LOG2;
-
-  for( unsigned x = minPosX; x <= maxPosX; x++ )
-  {
-    for( unsigned y = minPosY; y <= maxPosY; y++ )
-    {
-      for( int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++ )
-      {
-        const int width = gp_sizeIdxInfo->sizeFrom( wIdx );
-
-        if( m_codedCUInfo[x][y][wIdx] && width <= area.lwidth() && x + ( width >> MIN_CU_LOG2 ) <= ( maxPosX + 1 ) )
-        {
-          for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ )
-          {
-            const int height = gp_sizeIdxInfo->sizeFrom( hIdx );
-
-            if( gp_sizeIdxInfo->isCuSize( height ) && height <= area.lheight() && y + ( height >> MIN_CU_LOG2 ) <= ( maxPosY + 1 ) )
-            {
-              if( other.m_codedCUInfo[x][y][wIdx][hIdx]->temporalId > m_codedCUInfo[x][y][wIdx][hIdx]->temporalId )
-              {
-                *m_codedCUInfo[x][y][wIdx][hIdx] = *other.m_codedCUInfo[x][y][wIdx][hIdx];
-                m_codedCUInfo[x][y][wIdx][hIdx]->temporalId = m_currTemporalId;
-              }
-            }
-            else if( y + ( height >> MIN_CU_LOG2 ) > maxPosY + 1 )
-            {
-              break;;
-            }
-          }
-        }
-        else if( x + ( width >> MIN_CU_LOG2 ) > maxPosX + 1 )
-        {
-          break;
-        }
-      }
-    }
-  }
-}
-#endif
 
 CodedCUInfo& CacheBlkInfoCtrl::getBlkInfo( const UnitArea& area )
 {
@@ -452,34 +468,31 @@ bool CacheBlkInfoCtrl::isMMVDSkip(const UnitArea& area)
   return m_codedCUInfo[idx1][idx2][idx3][idx4]->isMMVDSkip;
 }
 
-void CacheBlkInfoCtrl::setMv( const UnitArea& area, const RefPicList refPicList, const int iRefIdx, const Mv& rMv )
+void CacheBlkInfoCtrl::setMv(const UnitArea &area, const RefPicList refPicList, const int refIdx, const Mv &rMv)
 {
-  if( iRefIdx >= MAX_STORED_CU_INFO_REFS ) return;
+  if (refIdx >= MAX_STORED_CU_INFO_REFS)
+    return;
 
   unsigned idx1, idx2, idx3, idx4;
   getAreaIdx( area.Y(), *m_slice_chblk->getPPS()->pcv, idx1, idx2, idx3, idx4 );
 
-  m_codedCUInfo[idx1][idx2][idx3][idx4]->saveMv [refPicList][iRefIdx] = rMv;
-  m_codedCUInfo[idx1][idx2][idx3][idx4]->validMv[refPicList][iRefIdx] = true;
-#if ENABLE_SPLIT_PARALLELISM
-
-  touch( area );
-#endif
+  m_codedCUInfo[idx1][idx2][idx3][idx4]->saveMv[refPicList][refIdx]  = rMv;
+  m_codedCUInfo[idx1][idx2][idx3][idx4]->validMv[refPicList][refIdx] = true;
 }
 
-bool CacheBlkInfoCtrl::getMv( const UnitArea& area, const RefPicList refPicList, const int iRefIdx, Mv& rMv ) const
+bool CacheBlkInfoCtrl::getMv(const UnitArea &area, const RefPicList refPicList, const int refIdx, Mv &rMv) const
 {
   unsigned idx1, idx2, idx3, idx4;
   getAreaIdx( area.Y(), *m_slice_chblk->getPPS()->pcv, idx1, idx2, idx3, idx4 );
 
-  if( iRefIdx >= MAX_STORED_CU_INFO_REFS )
+  if (refIdx >= MAX_STORED_CU_INFO_REFS)
   {
     rMv = m_codedCUInfo[idx1][idx2][idx3][idx4]->saveMv[refPicList][0];
     return false;
   }
 
-  rMv = m_codedCUInfo[idx1][idx2][idx3][idx4]->saveMv[refPicList][iRefIdx];
-  return m_codedCUInfo[idx1][idx2][idx3][idx4]->validMv[refPicList][iRefIdx];
+  rMv = m_codedCUInfo[idx1][idx2][idx3][idx4]->saveMv[refPicList][refIdx];
+  return m_codedCUInfo[idx1][idx2][idx3][idx4]->validMv[refPicList][refIdx];
 }
 
 void SaveLoadEncInfoSbt::init( const Slice &slice )
@@ -562,13 +575,6 @@ bool SaveLoadEncInfoSbt::saveBestSbt( const UnitArea& area, const uint32_t curPu
   pSbtSave->numPuInfoStored++;
   return true;
 }
-
-#if ENABLE_SPLIT_PARALLELISM
-void SaveLoadEncInfoSbt::copyState(const SaveLoadEncInfoSbt &other)
-{
-  m_sliceSbt = other.m_sliceSbt;
-}
-#endif
 
 void SaveLoadEncInfoSbt::resetSaveloadSbt( int maxSbtSize )
 {
@@ -653,6 +659,8 @@ void BestEncInfoCache::create( const ChromaFormat chFmt )
   m_numWidths  = gp_sizeIdxInfo->numWidths();
   m_numHeights = gp_sizeIdxInfo->numHeights();
 
+  bool isLog2MttPartitioning = !!dynamic_cast<SizeIndexInfoLog2*>( gp_sizeIdxInfo );
+
   for( unsigned x = 0; x < numPos; x++ )
   {
     for( unsigned y = 0; y < numPos; y++ )
@@ -661,45 +669,59 @@ void BestEncInfoCache::create( const ChromaFormat chFmt )
 
       for( int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++ )
       {
-        if( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) )
-        {
-          m_bestEncInfo[x][y][wIdx] = new BestEncodingInfo*[gp_sizeIdxInfo->numHeights()];
-
-          for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ )
-          {
-            if( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) )
-            {
-              m_bestEncInfo[x][y][wIdx][hIdx] = new BestEncodingInfo;
-
-              int w = gp_sizeIdxInfo->sizeFrom( wIdx );
-              int h = gp_sizeIdxInfo->sizeFrom( hIdx );
-
-              const UnitArea area( chFmt, Area( 0, 0, w, h ) );
-
-              new ( &m_bestEncInfo[x][y][wIdx][hIdx]->cu ) CodingUnit    ( area );
-              new ( &m_bestEncInfo[x][y][wIdx][hIdx]->pu ) PredictionUnit( area );
-#if REUSE_CU_RESULTS_WITH_MULTIPLE_TUS
-              m_bestEncInfo[x][y][wIdx][hIdx]->numTus = 0;
-              for( int i = 0; i < MAX_NUM_TUS; i++ )
-              {
-                new ( &m_bestEncInfo[x][y][wIdx][hIdx]->tus[i] ) TransformUnit( area );
-              }
-#else
-              new ( &m_bestEncInfo[x][y][wIdx][hIdx]->tu ) TransformUnit( area );
-#endif
-
-              m_bestEncInfo[x][y][wIdx][hIdx]->poc      = -1;
-              m_bestEncInfo[x][y][wIdx][hIdx]->testMode = EncTestMode();
-            }
-            else
-            {
-              m_bestEncInfo[x][y][wIdx][hIdx] = nullptr;
-            }
-          }
-        }
-        else
+        if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
         {
           m_bestEncInfo[x][y][wIdx] = nullptr;
+          continue;
+        }
+
+        const int wLog2 = floorLog2( gp_sizeIdxInfo->sizeFrom( wIdx ) );
+
+        if( isLog2MttPartitioning && ( ( x << MIN_CU_LOG2 ) & ( ( 1 << ( wLog2 - 1 ) ) - 1 ) ) != 0 )
+        {
+          m_bestEncInfo[x][y][wIdx] = nullptr;
+          continue;
+        }
+
+        m_bestEncInfo[x][y][wIdx] = new BestEncodingInfo*[gp_sizeIdxInfo->numHeights()];
+
+        for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ )
+        {
+          if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
+          {
+            m_bestEncInfo[x][y][wIdx][hIdx] = nullptr;
+            continue;
+          }
+
+          const int hLog2 = floorLog2( gp_sizeIdxInfo->sizeFrom( hIdx ) );
+
+          if( isLog2MttPartitioning && ( ( ( y << MIN_CU_LOG2 ) & ( ( 1 << ( hLog2 - 1 ) ) - 1 ) ) != 0 ) )
+          {
+            m_bestEncInfo[x][y][wIdx][hIdx] = nullptr;
+            continue;
+          }
+
+          m_bestEncInfo[x][y][wIdx][hIdx] = new BestEncodingInfo;
+
+          int w = gp_sizeIdxInfo->sizeFrom( wIdx );
+          int h = gp_sizeIdxInfo->sizeFrom( hIdx );
+
+          const UnitArea area( chFmt, Area( 0, 0, w, h ) );
+
+          new ( &m_bestEncInfo[x][y][wIdx][hIdx]->cu ) CodingUnit    ( area );
+          new ( &m_bestEncInfo[x][y][wIdx][hIdx]->pu ) PredictionUnit( area );
+#if REUSE_CU_RESULTS_WITH_MULTIPLE_TUS
+          m_bestEncInfo[x][y][wIdx][hIdx]->numTus = 0;
+          for( int i = 0; i < MAX_NUM_TUS; i++ )
+          {
+            new ( &m_bestEncInfo[x][y][wIdx][hIdx]->tus[i] ) TransformUnit( area );
+          }
+#else
+          new ( &m_bestEncInfo[x][y][wIdx][hIdx]->tu ) TransformUnit( area );
+#endif
+
+          m_bestEncInfo[x][y][wIdx][hIdx]->poc      = -1;
+          m_bestEncInfo[x][y][wIdx][hIdx]->testMode = EncTestMode();
         }
       }
     }
@@ -750,7 +772,10 @@ void BestEncInfoCache::init( const Slice &slice )
 
   m_slice_bencinf = &slice;
 
-  if( isInitialized ) return;
+  if (isInitialized)
+  {
+    return;
+  }
 
   const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
 
@@ -826,7 +851,8 @@ void BestEncInfoCache::init( const Slice &slice )
                 pcmbf[i] = pcmPtr;   pcmPtr += area.blocks[i].area();
                 if (i < 2)
                 {
-                  runType[i]   = runTypePtr;   runTypePtr   += area.blocks[i].area();
+                  runType[i] = runTypePtr;
+                  runTypePtr += runTypePtr ? area.blocks[i].area() : 0;
                 }
               }
 
@@ -852,10 +878,6 @@ void BestEncInfoCache::init( const Slice &slice )
       }
     }
   }
-#if ENABLE_SPLIT_PARALLELISM
-
-  m_currTemporalId = 0;
-#endif
 }
 
 bool BestEncInfoCache::setFromCs( const CodingStructure& cs, const Partitioner& partitioner )
@@ -891,7 +913,9 @@ bool BestEncInfoCache::setFromCs( const CodingStructure& cs, const Partitioner& 
     for( auto &blk : tu->blocks )
     {
       if( blk.valid() )
+      {
         encInfo.tus[tuIdx].copyComponentFrom( *tu, blk.compID );
+      }
     }
     tuIdx++;
   }
@@ -900,7 +924,10 @@ bool BestEncInfoCache::setFromCs( const CodingStructure& cs, const Partitioner& 
 #else
   for( auto &blk : cs.tus.front()->blocks )
   {
-    if( blk.valid() ) encInfo.tu.copyComponentFrom( *cs.tus.front(), blk.compID );
+    if (blk.valid())
+    {
+      encInfo.tu.copyComponentFrom(*cs.tus.front(), blk.compID);
+    }
   }
 #endif
   encInfo.testMode       = getCSEncMode( cs );
@@ -923,14 +950,14 @@ bool BestEncInfoCache::isValid( const CodingStructure& cs, const Partitioner& pa
   {
     return false;
   }
-  if( encInfo.cu.qp != qp )
+  if( encInfo.cu.qp != qp || cs.slice->getUseChromaQpAdj())
+  {
     return false;
-  if( cs.picture->poc != encInfo.poc || CS::getArea( cs, cs.area, partitioner.chType ) != CS::getArea( cs, encInfo.cu, partitioner.chType ) || !isTheSameNbHood( encInfo.cu, cs, partitioner
-    , encInfo.pu, (cs.picture->Y().width), (cs.picture->Y().height)
-)
-    || CU::isIBC(encInfo.cu)
-    || partitioner.currQgEnable() || cs.currQP[partitioner.chType] != encInfo.cu.qp
-    )
+  }
+  if (cs.picture->poc != encInfo.poc
+      || CS::getArea(cs, cs.area, partitioner.chType) != CS::getArea(cs, encInfo.cu, partitioner.chType)
+      || !isTheSameNbHood(encInfo.cu, cs, partitioner, encInfo.pu, (cs.picture->Y().width), (cs.picture->Y().height))
+      || CU::isIBC(encInfo.cu) || partitioner.currQgEnable() || cs.currQP[partitioner.chType] != encInfo.cu.qp)
   {
     return false;
   }
@@ -947,11 +974,10 @@ bool BestEncInfoCache::setCsFrom( CodingStructure& cs, EncTestMode& testMode, co
 
   BestEncodingInfo& encInfo = *m_bestEncInfo[idx1][idx2][idx3][idx4];
 
-  if( cs.picture->poc != encInfo.poc || CS::getArea( cs, cs.area, partitioner.chType ) != CS::getArea( cs, encInfo.cu, partitioner.chType ) || !isTheSameNbHood( encInfo.cu, cs, partitioner
-    , encInfo.pu, (cs.picture->Y().width), (cs.picture->Y().height)
-    )
-    || partitioner.currQgEnable() || cs.currQP[partitioner.chType] != encInfo.cu.qp
-    )
+  if (cs.picture->poc != encInfo.poc
+      || CS::getArea(cs, cs.area, partitioner.chType) != CS::getArea(cs, encInfo.cu, partitioner.chType)
+      || !isTheSameNbHood(encInfo.cu, cs, partitioner, encInfo.pu, (cs.picture->Y().width), (cs.picture->Y().height))
+      || partitioner.currQgEnable() || cs.currQP[partitioner.chType] != encInfo.cu.qp)
   {
     return false;
   }
@@ -993,75 +1019,6 @@ bool BestEncInfoCache::setCsFrom( CodingStructure& cs, EncTestMode& testMode, co
   return true;
 }
 
-#if ENABLE_SPLIT_PARALLELISM
-void BestEncInfoCache::copyState(const BestEncInfoCache &other, const UnitArea &area)
-{
-  m_slice_bencinf  = other.m_slice_bencinf;
-  m_currTemporalId = other.m_currTemporalId;
-
-  if( m_slice_bencinf->isIntra() ) return;
-
-  const int cuSizeMask = m_slice_bencinf->getSPS()->getMaxCUWidth() - 1;
-
-  const int minPosX = ( area.lx() & cuSizeMask ) >> MIN_CU_LOG2;
-  const int minPosY = ( area.ly() & cuSizeMask ) >> MIN_CU_LOG2;
-  const int maxPosX = ( area.Y().bottomRight().x & cuSizeMask ) >> MIN_CU_LOG2;
-  const int maxPosY = ( area.Y().bottomRight().y & cuSizeMask ) >> MIN_CU_LOG2;
-
-  for( unsigned x = minPosX; x <= maxPosX; x++ )
-  {
-    for( unsigned y = minPosY; y <= maxPosY; y++ )
-    {
-      for( int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++ )
-      {
-        const int width = gp_sizeIdxInfo->sizeFrom( wIdx );
-
-        if( m_bestEncInfo[x][y][wIdx] && width <= area.lwidth() && x + ( width >> MIN_CU_LOG2 ) <= ( maxPosX + 1 ) )
-        {
-          for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ )
-          {
-            const int height = gp_sizeIdxInfo->sizeFrom( hIdx );
-
-            if( gp_sizeIdxInfo->isCuSize( height ) && height <= area.lheight() && y + ( height >> MIN_CU_LOG2 ) <= ( maxPosY + 1 ) )
-            {
-              if( other.m_bestEncInfo[x][y][wIdx][hIdx]->temporalId > m_bestEncInfo[x][y][wIdx][hIdx]->temporalId )
-              {
-                m_bestEncInfo[x][y][wIdx][hIdx]->cu       = other.m_bestEncInfo[x][y][wIdx][hIdx]->cu;
-                m_bestEncInfo[x][y][wIdx][hIdx]->pu       = other.m_bestEncInfo[x][y][wIdx][hIdx]->pu;
-                m_bestEncInfo[x][y][wIdx][hIdx]->numTus   = other.m_bestEncInfo[x][y][wIdx][hIdx]->numTus;
-                m_bestEncInfo[x][y][wIdx][hIdx]->poc      = other.m_bestEncInfo[x][y][wIdx][hIdx]->poc;
-                m_bestEncInfo[x][y][wIdx][hIdx]->testMode = other.m_bestEncInfo[x][y][wIdx][hIdx]->testMode;
-
-                for( int i = 0; i < m_bestEncInfo[x][y][wIdx][hIdx]->numTus; i++ )
-                  m_bestEncInfo[x][y][wIdx][hIdx]->tus[i] = other.m_bestEncInfo[x][y][wIdx][hIdx]->tus[i];
-              }
-            }
-            else if( y + ( height >> MIN_CU_LOG2 ) > maxPosY + 1 )
-            {
-              break;;
-            }
-          }
-        }
-        else if( x + ( width >> MIN_CU_LOG2 ) > maxPosX + 1 )
-        {
-          break;
-        }
-      }
-    }
-  }
-}
-
-void BestEncInfoCache::touch(const UnitArea &area)
-{
-  unsigned idx1, idx2, idx3, idx4;
-  getAreaIdx(area.Y(), *m_slice_bencinf->getPPS()->pcv, idx1, idx2, idx3, idx4);
-  BestEncodingInfo &encInfo = *m_bestEncInfo[idx1][idx2][idx3][idx4];
-
-  encInfo.temporalId = m_currTemporalId;
-}
-
-#endif
-
 #endif
 
 static bool interHadActive( const ComprCUCtx& ctx )
@@ -1075,6 +1032,9 @@ static bool interHadActive( const ComprCUCtx& ctx )
 
 void EncModeCtrlMTnoRQT::create( const EncCfg& cfg )
 {
+#if GDR_ENABLED
+  m_encCfg = cfg;
+#endif
   CacheBlkInfoCtrl::create();
 #if REUSE_CU_RESULTS
   BestEncInfoCache::create( cfg.getChromaFormatIdc() );
@@ -1102,17 +1062,17 @@ void EncModeCtrlMTnoRQT::initCTUEncoding( const Slice &slice )
   CHECK( !m_ComprCUCtxList.empty(), "Mode list is not empty at the beginning of a CTU" );
 
   m_slice             = &slice;
-#if ENABLE_SPLIT_PARALLELISM
-  m_runNextInParallel      = false;
-#endif
 
   if( m_pcEncCfg->getUseE0023FastEnc() )
   {
     if (m_pcEncCfg->getUseCompositeRef())
+    {
       m_skipThreshold = ( ( slice.getMinPictureDistance() <= PICTURE_DISTANCE_TH * 2 ) ? FAST_SKIP_DEPTH : SKIP_DEPTH );
+    }
     else
+    {
       m_skipThreshold = ((slice.getMinPictureDistance() <= PICTURE_DISTANCE_TH) ? FAST_SKIP_DEPTH : SKIP_DEPTH);
-
+    }
   }
   else
   {
@@ -1136,19 +1096,6 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
 
   m_ComprCUCtxList.push_back( ComprCUCtx( cs, minDepth, maxDepth, NUM_EXTRA_FEATURES ) );
 
-#if ENABLE_SPLIT_PARALLELISM
-  if( m_runNextInParallel )
-  {
-    for( auto &level : m_ComprCUCtxList )
-    {
-      CHECK( level.isLevelSplitParallel, "Tring to parallelize a level within parallel execution!" );
-    }
-    CHECK( cs.picture->scheduler.getSplitJobId() == 0, "Trying to run a parallel level although jobId is 0!" );
-    m_runNextInParallel                          = false;
-    m_ComprCUCtxList.back().isLevelSplitParallel = true;
-  }
-
-#endif
   const CodingUnit* cuLeft  = cs.getCU( cs.area.blocks[partitioner.chType].pos().offset( -1, 0 ), partitioner.chType );
   const CodingUnit* cuAbove = cs.getCU( cs.area.blocks[partitioner.chType].pos().offset( 0, -1 ), partitioner.chType );
 
@@ -1207,6 +1154,36 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
       baseQP = Clip3 (-cs.sps->getQpBDOffset (CHANNEL_TYPE_LUMA), MAX_QP, baseQP - m_lumaQPOffset);
     }
 #endif
+    if (m_pcEncCfg->getSmoothQPReductionEnable())
+    {
+      int smoothQPoffset = 0;
+      if (partitioner.currQgEnable())
+      {
+        // enable smooth QP reduction on selected frames
+        bool checkSmoothQP = false;
+        if (m_pcEncCfg->getSmoothQPReductionPeriodicity() != 0)
+        {
+          checkSmoothQP = ((m_pcEncCfg->getSmoothQPReductionPeriodicity() == 0) && cs.slice->isIntra()) || (m_pcEncCfg->getSmoothQPReductionPeriodicity() == 1) || ((cs.slice->getPOC() % m_pcEncCfg->getSmoothQPReductionPeriodicity()) == 0);
+        }
+        else
+        {
+          checkSmoothQP = ((m_pcEncCfg->getSmoothQPReductionPeriodicity() == 0) && cs.slice->isIntra());
+        }
+        if (checkSmoothQP)
+        {
+          bool isIntraSlice = cs.slice->isIntra();
+          if (isIntraSlice)
+          {
+            smoothQPoffset = calculateLumaDQPsmooth(cs.getOrgBuf(clipArea(cs.area.Y(), cs.picture->Y())), baseQP, m_pcEncCfg->getSmoothQPReductionThresholdIntra(), m_pcEncCfg->getSmoothQPReductionModelScaleIntra(), m_pcEncCfg->getSmoothQPReductionModelOffsetIntra(), m_pcEncCfg->getSmoothQPReductionLimitIntra());
+          }
+          else
+          {
+            smoothQPoffset = calculateLumaDQPsmooth(cs.getOrgBuf(clipArea(cs.area.Y(), cs.picture->Y())), baseQP, m_pcEncCfg->getSmoothQPReductionThresholdInter(), m_pcEncCfg->getSmoothQPReductionModelScaleInter(), m_pcEncCfg->getSmoothQPReductionModelOffsetInter(), m_pcEncCfg->getSmoothQPReductionLimitInter());
+          }
+        }
+      }
+      baseQP = Clip3(-cs.sps->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, baseQP + smoothQPoffset);
+    }
   }
   int minQP = baseQP;
   int maxQP = baseQP;
@@ -1324,15 +1301,19 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
     // add intra modes
     if( tryIntraRdo )
     {
-    if (cs.slice->getSPS()->getPLTMode() && (partitioner.treeType != TREE_D || cs.slice->isIntra() || (cs.area.lwidth() == 4 && cs.area.lheight() == 4)) && getPltEnc())
-    {
-      m_ComprCUCtxList.back().testModes.push_back({ ETM_PALETTE, ETO_STANDARD, qp });
-    }
-    m_ComprCUCtxList.back().testModes.push_back( { ETM_INTRA, ETO_STANDARD, qp } );
-    if (cs.slice->getSPS()->getPLTMode() && partitioner.treeType == TREE_D && !cs.slice->isIntra() && !(cs.area.lwidth() == 4 && cs.area.lheight() == 4) && getPltEnc())
-    {
-      m_ComprCUCtxList.back().testModes.push_back({ ETM_PALETTE,  ETO_STANDARD, qp });
-    }
+      if (cs.slice->getSPS()->getPLTMode()
+          && (partitioner.treeType != TREE_D || cs.slice->isIntra()
+              || (cs.area.lwidth() == 4 && cs.area.lheight() == 4))
+          && getPltEnc())
+      {
+        m_ComprCUCtxList.back().testModes.push_back({ ETM_PALETTE, ETO_STANDARD, qp });
+      }
+      m_ComprCUCtxList.back().testModes.push_back({ ETM_INTRA, ETO_STANDARD, qp });
+      if (cs.slice->getSPS()->getPLTMode() && partitioner.treeType == TREE_D && !cs.slice->isIntra()
+          && !(cs.area.lwidth() == 4 && cs.area.lheight() == 4) && getPltEnc())
+      {
+        m_ComprCUCtxList.back().testModes.push_back({ ETM_PALETTE, ETO_STANDARD, qp });
+      }
     }
     // add ibc mode to intra path
     if (cs.sps->getIBCFlag() && checkIbc)
@@ -1369,7 +1350,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
           m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_GEO, ETO_STANDARD, qp } );
         }
         m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_SKIP,  ETO_STANDARD, qp } );
-        if (cs.sps->getUseAffine() || cs.sps->getSbTMVPEnabledFlag())
+        if (cs.sps->getUseAffine() || (cs.sps->getSbTMVPEnabledFlag() && cs.slice->getPicHeader()->getEnableTMVPFlag()))
         {
           m_ComprCUCtxList.back().testModes.push_back( { ETM_AFFINE,    ETO_STANDARD, qp } );
         }
@@ -1383,7 +1364,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
           m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_GEO, ETO_STANDARD, qp } );
         }
         m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_SKIP,  ETO_STANDARD, qp } );
-        if (cs.sps->getUseAffine() || cs.sps->getSbTMVPEnabledFlag())
+        if (cs.sps->getUseAffine() || (cs.sps->getSbTMVPEnabledFlag() && cs.slice->getPicHeader()->getEnableTMVPFlag()))
         {
           m_ComprCUCtxList.back().testModes.push_back( { ETM_AFFINE,    ETO_STANDARD, qp } );
         }
@@ -1511,7 +1492,9 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
 
     // INTRA MODES
     if (cs.sps->getIBCFlag() && !cuECtx.bestTU)
+    {
       return true;
+    }
     if( partitioner.isConsIntra() && !cuECtx.bestTU )
     {
       return true;
@@ -1570,7 +1553,7 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
   {
     if (partitioner.currArea().lumaSize().width > 64 || partitioner.currArea().lumaSize().height > 64
         || ((partitioner.currArea().lumaSize().width * partitioner.currArea().lumaSize().height <= 16) && (isLuma(partitioner.chType)) )
-        || ((partitioner.currArea().chromaSize().width * partitioner.currArea().chromaSize().height <= 16) && (!isLuma(partitioner.chType)) && partitioner.isSepTree(cs) ) 
+        || ((partitioner.currArea().chromaSize().width * partitioner.currArea().chromaSize().height <= 16) && (!isLuma(partitioner.chType)) && partitioner.isSepTree(cs) )
       || (partitioner.isLocalSepTree(cs)  && (!isLuma(partitioner.chType)) ) )
     {
       return false;
@@ -1678,10 +1661,18 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
     const PartSplit split = getPartSplit( encTestmode );
     if( !partitioner.canSplit( split, cs ) || skipScore >= 2 )
     {
-      if( split == CU_HORZ_SPLIT ) cuECtx.set( DID_HORZ_SPLIT, false );
-      if( split == CU_VERT_SPLIT ) cuECtx.set( DID_VERT_SPLIT, false );
-      if( split == CU_QUAD_SPLIT ) cuECtx.set( DID_QUAD_SPLIT, false );
-
+      if (split == CU_HORZ_SPLIT)
+      {
+        cuECtx.set(DID_HORZ_SPLIT, false);
+      }
+      if (split == CU_VERT_SPLIT)
+      {
+        cuECtx.set(DID_VERT_SPLIT, false);
+      }
+      if (split == CU_QUAD_SPLIT)
+      {
+        cuECtx.set(DID_QUAD_SPLIT, false);
+      }
       return false;
     }
 
@@ -1746,9 +1737,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
     {
       case CU_QUAD_SPLIT:
         {
-#if ENABLE_SPLIT_PARALLELISM
-          if( !cuECtx.isLevelSplitParallel )
-#endif
           if( !cuECtx.get<bool>( QT_BEFORE_BT ) && bestCU )
           {
             unsigned maxBTD        = cs.pcv->getMaxBtDepth( slice, partitioner.chType );
@@ -1815,7 +1803,18 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
         {
           if( cuECtx.get<int>( MAX_QT_SUB_DEPTH ) > partitioner.currQtDepth + 1 )
           {
-            if( featureToSet >= 0 ) cuECtx.set( featureToSet, false );
+            if (featureToSet >= 0)
+            {
+              cuECtx.set(featureToSet, false);
+            }
+            return false;
+          }
+        }
+        if (m_pcEncCfg->getFastTTskip() && split == CU_TRIH_SPLIT)
+        {
+          bool skipTtSplitMode = xSkipTreeCandidate(getPartSplit(encTestmode), cs.splitRdCostBest, m_slice->getSliceType());
+          if (skipTtSplitMode)
+          {
             return false;
           }
         }
@@ -1826,7 +1825,17 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
         {
           if( cuECtx.get<int>( MAX_QT_SUB_DEPTH ) > partitioner.currQtDepth + 1 )
           {
-            if( featureToSet >= 0 ) cuECtx.set( featureToSet, false );
+            if (featureToSet >= 0)
+            {
+              cuECtx.set(featureToSet, false);
+            }
+            return false;
+          }
+        }
+        if (m_pcEncCfg->getFastTTskip() && split == CU_TRIV_SPLIT) {
+          bool skipTtSplitMode = xSkipTreeCandidate(getPartSplit(encTestmode), cs.splitRdCostBest, m_slice->getSliceType());
+          if (skipTtSplitMode)
+          {
             return false;
           }
         }
@@ -1835,7 +1844,10 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
         break;
     }
 
-    if( split == CU_QUAD_SPLIT ) cuECtx.set( DID_QUAD_SPLIT, true );
+    if (split == CU_QUAD_SPLIT)
+    {
+      cuECtx.set(DID_QUAD_SPLIT, true);
+    }
     if (cs.sps->getLog2ParallelMergeLevelMinus2())
     {
       const CompArea& area = partitioner.currArea().Y();
@@ -1971,18 +1983,90 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
             relatedCU.relatedCuIsValid   = true;
           }
         }
-#if ENABLE_SPLIT_PARALLELISM
-#if REUSE_CU_RESULTS
-        BestEncInfoCache::touch(partitioner.currArea());
-#endif
-        CacheBlkInfoCtrl::touch(partitioner.currArea());
-#endif
+
         cuECtx.set( IS_BEST_NOSPLIT_SKIP, bestCU->skip );
       }
     }
 
     return false;
   }
+}
+
+bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double* splitRdCostBest, const SliceType& sliceType) const
+{
+  if (!splitRdCostBest)
+  {
+    return false;
+  }
+  double ttEncSpeedRate = m_pcEncCfg->getFastTTskipThr();
+  double horXorVerRate = m_pcEncCfg->getFastTTskipThr();
+
+  if (!(m_pcEncCfg->getFastTTskip() & FAST_METHOD_TT_ENC_SPEEDUP_ISLICE))
+  {
+    if (sliceType == I_SLICE) 
+    {
+      return false;
+    }
+  }
+
+  if (!(m_pcEncCfg->getFastTTskip() & FAST_METHOD_TT_ENC_SPEEDUP_BSLICE))
+  {
+    if (sliceType == B_SLICE) 
+    { 
+      return false;
+    }
+  }
+  bool res = false;
+
+  if (split == CU_TRIH_SPLIT)
+  {
+    if (m_pcEncCfg->getFastTTskip() & FAST_METHOD_ENC_SPEEDUP_BT_BASED)
+    {
+      if (splitRdCostBest[CTU_LEVEL] < MAX_DOUBLE && splitRdCostBest[CU_HORZ_SPLIT] < MAX_DOUBLE)
+      {
+        if (splitRdCostBest[CU_HORZ_SPLIT] > ttEncSpeedRate * splitRdCostBest[CTU_LEVEL]) 
+        {
+          res = true;
+        }
+      }
+    }
+
+    if (m_pcEncCfg->getFastTTskip() & FAST_METHOD_HOR_XOR_VER)
+    {
+      if (splitRdCostBest[CU_HORZ_SPLIT] < MAX_DOUBLE && splitRdCostBest[CU_VERT_SPLIT] < MAX_DOUBLE)
+      {
+        if (splitRdCostBest[CU_HORZ_SPLIT] > horXorVerRate * splitRdCostBest[CU_VERT_SPLIT]) 
+        {
+          res = true;
+        }
+      }
+    }
+  }
+  if (split == CU_TRIV_SPLIT)
+  {
+    if (m_pcEncCfg->getFastTTskip() & FAST_METHOD_ENC_SPEEDUP_BT_BASED)
+    {
+      if (splitRdCostBest[CTU_LEVEL] < MAX_DOUBLE && splitRdCostBest[CU_VERT_SPLIT] < MAX_DOUBLE)
+      {
+        if (splitRdCostBest[CU_VERT_SPLIT] > ttEncSpeedRate * splitRdCostBest[CTU_LEVEL])
+        {
+          res = true;
+        }
+      }
+    }
+
+    if (m_pcEncCfg->getFastTTskip() & FAST_METHOD_HOR_XOR_VER)
+    {
+      if (splitRdCostBest[CU_HORZ_SPLIT] < MAX_DOUBLE && splitRdCostBest[CU_VERT_SPLIT] < MAX_DOUBLE)
+      {
+        if (splitRdCostBest[CU_VERT_SPLIT] > horXorVerRate * splitRdCostBest[CU_HORZ_SPLIT])
+        {
+          res = true;
+        }
+      }
+    }
+  }
+  return res;
 }
 
 bool EncModeCtrlMTnoRQT::checkSkipOtherLfnst( const EncTestMode& encTestmode, CodingStructure*& tempCS, Partitioner& partitioner )
@@ -2070,32 +2154,33 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
     }
     cuECtx.set( MAX_QT_SUB_DEPTH, maxQtD );
   }
-
-  int maxMtD = tempCS->pcv->getMaxBtDepth( *tempCS->slice, partitioner.chType ) + partitioner.currImplicitBtDepth;
-
-  if( encTestmode.type == ETM_SPLIT_BT_H )
+  if( !m_pcEncCfg->getDisableFastDecisionTT() )
   {
-    if( tempCS->cus.size() > 2 )
-    {
-      int h_2   = tempCS->area.blocks[partitioner.chType].height / 2;
-      int cu1_h = tempCS->cus.front()->blocks[partitioner.chType].height;
-      int cu2_h = tempCS->cus.back() ->blocks[partitioner.chType].height;
+    int maxMtD = tempCS->pcv->getMaxBtDepth( *tempCS->slice, partitioner.chType ) + partitioner.currImplicitBtDepth;
 
-      cuECtx.set( DO_TRIH_SPLIT, cu1_h < h_2 || cu2_h < h_2 || partitioner.currMtDepth + 1 == maxMtD );
+    if( encTestmode.type == ETM_SPLIT_BT_H )
+    {
+      if( tempCS->cus.size() > 2 )
+      {
+        int h_2 = tempCS->area.blocks[partitioner.chType].height / 2;
+        int cu1_h = tempCS->cus.front()->blocks[partitioner.chType].height;
+        int cu2_h = tempCS->cus.back()->blocks[partitioner.chType].height;
+
+        cuECtx.set( DO_TRIH_SPLIT, cu1_h < h_2 || cu2_h < h_2 || partitioner.currMtDepth + 1 == maxMtD );
+      }
+    }
+    else if( encTestmode.type == ETM_SPLIT_BT_V )
+    {
+      if( tempCS->cus.size() > 2 )
+      {
+        int w_2 = tempCS->area.blocks[partitioner.chType].width / 2;
+        int cu1_w = tempCS->cus.front()->blocks[partitioner.chType].width;
+        int cu2_w = tempCS->cus.back()->blocks[partitioner.chType].width;
+
+        cuECtx.set( DO_TRIV_SPLIT, cu1_w < w_2 || cu2_w < w_2 || partitioner.currMtDepth + 1 == maxMtD );
+      }
     }
   }
-  else if( encTestmode.type == ETM_SPLIT_BT_V )
-  {
-    if( tempCS->cus.size() > 2 )
-    {
-      int w_2   = tempCS->area.blocks[partitioner.chType].width / 2;
-      int cu1_w = tempCS->cus.front()->blocks[partitioner.chType].width;
-      int cu2_w = tempCS->cus.back() ->blocks[partitioner.chType].width;
-
-      cuECtx.set( DO_TRIV_SPLIT, cu1_w < w_2 || cu2_w < w_2 || partitioner.currMtDepth + 1 == maxMtD );
-    }
-  }
-
   // for now just a simple decision based on RD-cost or choose tempCS if bestCS is not yet coded
   if( tempCS->features[ENC_FT_RD_COST] != MAX_DOUBLE && ( !cuECtx.bestCS || ( ( tempCS->features[ENC_FT_RD_COST] + ( tempCS->useDbCost ? tempCS->costDbOffset : 0 ) ) < ( cuECtx.bestCS->features[ENC_FT_RD_COST] + ( tempCS->useDbCost ? cuECtx.bestCS->costDbOffset : 0 ) ) ) ) )
   {
@@ -2116,106 +2201,4 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
     return false;
   }
 }
-
-#if ENABLE_SPLIT_PARALLELISM
-void EncModeCtrlMTnoRQT::copyState( const EncModeCtrl& other, const UnitArea& area )
-{
-  const EncModeCtrlMTnoRQT* pOther = dynamic_cast<const EncModeCtrlMTnoRQT*>( &other );
-
-  CHECK( !pOther, "Trying to copy state from a different type of controller" );
-
-  this->EncModeCtrl        ::copyState( *pOther, area );
-  this->CacheBlkInfoCtrl   ::copyState( *pOther, area );
-#if REUSE_CU_RESULTS
-  this->BestEncInfoCache   ::copyState( *pOther, area );
-#endif
-  this->SaveLoadEncInfoSbt ::copyState( *pOther );
-
-  m_skipThreshold = pOther->m_skipThreshold;
-}
-
-int EncModeCtrlMTnoRQT::getNumParallelJobs( const CodingStructure &cs, Partitioner& partitioner ) const
-{
-  int numJobs = 0;
-
-  if(      partitioner.canSplit( CU_TRIH_SPLIT, cs ) )
-  {
-    numJobs = 6;
-  }
-  else if( partitioner.canSplit( CU_TRIV_SPLIT, cs ) )
-  {
-    numJobs = 5;
-  }
-  else if( partitioner.canSplit( CU_HORZ_SPLIT, cs ) )
-  {
-    numJobs = 4;
-  }
-  else if( partitioner.canSplit( CU_VERT_SPLIT, cs ) )
-  {
-    numJobs = 3;
-  }
-  else if( partitioner.canSplit( CU_QUAD_SPLIT, cs ) )
-  {
-    numJobs = 2;
-  }
-  else if( partitioner.canSplit( CU_DONT_SPLIT, cs ) )
-  {
-    numJobs = 1;
-  }
-
-  CHECK( numJobs >= NUM_RESERVERD_SPLIT_JOBS, "More jobs specified than allowed" );
-
-  return numJobs;
-}
-
-bool EncModeCtrlMTnoRQT::isParallelSplit( const CodingStructure &cs, Partitioner& partitioner ) const
-{
-  if( partitioner.getImplicitSplit( cs ) != CU_DONT_SPLIT || cs.picture->scheduler.getSplitJobId() != 0 ) return false;
-  if( cs.pps->getUseDQP() && partitioner.currQgEnable() ) return false;
-  const int numJobs = getNumParallelJobs( cs, partitioner );
-  const int numPxl  = partitioner.currArea().Y().area();
-  const int parlAt  = m_pcEncCfg->getNumSplitThreads() <= 3 ? 1024 : 256;
-  if(  cs.slice->isIntra() && numJobs > 2 && ( numPxl == parlAt || !partitioner.canSplit( CU_QUAD_SPLIT, cs ) ) ) return true;
-  if( !cs.slice->isIntra() && numJobs > 1 && ( numPxl == parlAt || !partitioner.canSplit( CU_QUAD_SPLIT, cs ) ) ) return true;
-  return false;
-}
-
-bool EncModeCtrlMTnoRQT::parallelJobSelector( const EncTestMode& encTestmode, const CodingStructure &cs, Partitioner& partitioner ) const
-{
-  // Job descriptors
-  //  - 1: all non-split modes
-  //  - 2: QT-split
-  //  - 3: all vertical modes but TT_V
-  //  - 4: all horizontal modes but TT_H
-  //  - 5: TT_V
-  //  - 6: TT_H
-  switch( cs.picture->scheduler.getSplitJobId() )
-  {
-  case 1:
-    // be sure to execute post dont split
-    return !isModeSplit( encTestmode );
-    break;
-  case 2:
-    return encTestmode.type == ETM_SPLIT_QT;
-    break;
-  case 3:
-    return encTestmode.type == ETM_SPLIT_BT_V;
-    break;
-  case 4:
-    return encTestmode.type == ETM_SPLIT_BT_H;
-    break;
-  case 5:
-    return encTestmode.type == ETM_SPLIT_TT_V;
-    break;
-  case 6:
-    return encTestmode.type == ETM_SPLIT_TT_H;
-    break;
-  default:
-    THROW( "Unknown job-ID for parallelization of EncModeCtrlMTnoRQT: " << cs.picture->scheduler.getSplitJobId() );
-    break;
-  }
-}
-
-#endif
-
 

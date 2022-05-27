@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2020, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -208,13 +208,6 @@ TrQuant::~TrQuant()
   }
 }
 
-#if ENABLE_SPLIT_PARALLELISM
-void TrQuant::copyState( const TrQuant& other )
-{
-  m_quant->copyState( *other.m_quant );
-}
-#endif
-
 void TrQuant::xDeQuant(const TransformUnit &tu,
                              CoeffBuf      &dstCoeff,
                        const ComponentID   &compID,
@@ -227,9 +220,7 @@ void TrQuant::init( const Quant* otherQuant,
                     const uint32_t uiMaxTrSize,
                     const bool bUseRDOQ,
                     const bool bUseRDOQTS,
-#if T0196_SELECTIVE_RDOQ
                     const bool useSelectiveRDOQ,
-#endif
                     const bool bEnc
 )
 {
@@ -244,30 +235,17 @@ void TrQuant::init( const Quant* otherQuant,
   }
 }
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
 void TrQuant::fwdLfnstNxN( TCoeff* src, TCoeff* dst, const uint32_t mode, const uint32_t index, const uint32_t size, int zeroOutSize )
-#else
-void TrQuant::fwdLfnstNxN( int* src, int* dst, const uint32_t mode, const uint32_t index, const uint32_t size, int zeroOutSize )
-#endif
 {
   const int8_t* trMat  = ( size > 4 ) ? g_lfnst8x8[ mode ][ index ][ 0 ] : g_lfnst4x4[ mode ][ index ][ 0 ];
   const int     trSize = ( size > 4 ) ? 48 : 16;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
   TCoeff           coef;
   TCoeff*          out    = dst;
-#else
-  int           coef;
-  int*          out    = dst;
-#endif
   assert( index < 3 );
 
   for( int j = 0; j < zeroOutSize; j++ )
   {
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
     TCoeff*          srcPtr   = src;
-#else
-    int*          srcPtr   = src;
-#endif
     const int8_t* trMatTmp = trMat;
     coef = 0;
     for( int i = 0; i < trSize; i++ )
@@ -278,49 +256,30 @@ void TrQuant::fwdLfnstNxN( int* src, int* dst, const uint32_t mode, const uint32
     trMat += trSize;
   }
 
-  ::memset( out, 0, ( trSize - zeroOutSize ) * sizeof( int ) );
+  std::fill_n( out, trSize - zeroOutSize, 0 );
 }
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
 void TrQuant::invLfnstNxN( TCoeff* src, TCoeff* dst, const uint32_t mode, const uint32_t index, const uint32_t size, int zeroOutSize, const int maxLog2TrDynamicRange )
 {
-#else
-void TrQuant::invLfnstNxN( int* src, int* dst, const uint32_t mode, const uint32_t index, const uint32_t size, int zeroOutSize )
-{
-  int             maxLog2TrDynamicRange =  15;
-#endif
   const TCoeff    outputMinimum         = -( 1 << maxLog2TrDynamicRange );
   const TCoeff    outputMaximum         =  ( 1 << maxLog2TrDynamicRange ) - 1;
   const int8_t*   trMat                 =  ( size > 4 ) ? g_lfnst8x8[ mode ][ index ][ 0 ] : g_lfnst4x4[ mode ][ index ][ 0 ];
   const int       trSize                =  ( size > 4 ) ? 48 : 16;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
   TCoeff          resi;
   TCoeff*         out                   =  dst;
-#else
-  int             resi;
-  int*            out                   =  dst;
-#endif
   assert( index < 3 );
 
   for( int j = 0; j < trSize; j++ )
   {
     resi = 0;
     const int8_t* trMatTmp = trMat;
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
     TCoeff*       srcPtr   = src;
-#else
-    int*          srcPtr   = src;
-#endif
     for( int i = 0; i < zeroOutSize; i++ )
     {
       resi += *srcPtr++ * *trMatTmp;
       trMatTmp += trSize;
     }
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
     *out++ = Clip3<TCoeff>( outputMinimum, outputMaximum, ( resi + 64 ) >> 7 );
-#else
-    *out++ = Clip3( outputMinimum, outputMaximum, ( int ) ( resi + 64 ) >> 7 );
-#endif
     trMat++;
   }
 }
@@ -353,9 +312,7 @@ bool TrQuant::getTransposeFlag( uint32_t intraMode )
 
 void TrQuant::xInvLfnst( const TransformUnit &tu, const ComponentID compID )
 {
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
   const int maxLog2TrDynamicRange = tu.cs->sps->getMaxLog2TrDynamicRange(toChannelType(compID));
-#endif
   const CompArea& area     = tu.blocks[ compID ];
   const uint32_t  width    = area.width;
   const uint32_t  height   = area.height;
@@ -400,13 +357,8 @@ void TrQuant::xInvLfnst( const TransformUnit &tu, const ComponentID compID )
         scanPtr++;
       }
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT
       invLfnstNxN(m_tempInMatrix, m_tempOutMatrix, g_lfnstLut[intraMode], lfnstIdx - 1, sbSize,
                   (tu4x4Flag || tu8x8Flag) ? 8 : 16, maxLog2TrDynamicRange);
-#else
-      invLfnstNxN(m_tempInMatrix, m_tempOutMatrix, g_lfnstLut[intraMode], lfnstIdx - 1, sbSize,
-                  (tu4x4Flag || tu8x8Flag) ? 8 : 16);
-#endif
       lfnstTemp = m_tempOutMatrix;   // inverse spectral rearrangement
 
       if (transposeFlag)
@@ -667,8 +619,11 @@ std::vector<int> TrQuant::selectICTCandidates( const TransformUnit &tu, CompStor
 
 void TrQuant::getTrTypes(const TransformUnit tu, const ComponentID compID, int &trTypeHor, int &trTypeVer)
 {
-  const bool isExplicitMTS = (CU::isIntra(*tu.cu) ? tu.cs->sps->getUseIntraMTS() : tu.cs->sps->getUseInterMTS() && CU::isInter(*tu.cu)) && isLuma(compID);
-  const bool isImplicitMTS = CU::isIntra(*tu.cu) && tu.cs->sps->getUseImplicitMTS() && isLuma(compID) && tu.cu->lfnstIdx == 0 && tu.cu->mipFlag == 0;
+  const bool isExplicitMTS = (CU::isIntra(*tu.cu) ? tu.cs->sps->getExplicitMtsIntraEnabled()
+                                                  : tu.cs->sps->getExplicitMtsInterEnabled() && CU::isInter(*tu.cu))
+                             && isLuma(compID);
+  const bool isImplicitMTS = CU::isIntra(*tu.cu) && tu.cs->sps->getImplicitMTSIntraEnabled() && isLuma(compID)
+                             && tu.cu->lfnstIdx == 0 && tu.cu->mipFlag == 0;
   const bool isISP = CU::isIntra(*tu.cu) && tu.cu->ispMode && isLuma(compID);
   const bool isSBT = CU::isInter(*tu.cu) && tu.cu->sbtInfo && isLuma(compID);
 
@@ -680,7 +635,7 @@ void TrQuant::getTrTypes(const TransformUnit tu, const ComponentID compID, int &
     return;
   }
 
-  if (!tu.cs->sps->getUseMTS())
+  if (!tu.cs->sps->getMtsEnabled())
   {
     return;
   }
@@ -833,7 +788,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
     CHECKD( ( transformWidthIndex < 0 ), "There is a problem with the width." );
     fastFwdTrans[trTypeHor][transformWidthIndex]( block, dstCoeff.buf, shift, 1, 0, skipWidth );
   }
-  else //if (iWidth == 1) //1-D vertical transform
+  else   // if (width == 1) //1-D vertical transform
   {
     int shift = ( ( floorLog2(height) ) + bitDepth + TRANSFORM_MATRIX_SHIFT ) - maxLog2TrDynamicRange + COM16_C806_TRANS_PREC;
     CHECK( shift < 0, "Negative shift" );
@@ -851,6 +806,8 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   const int      TRANSFORM_MATRIX_SHIFT = g_transformMatrixShift[TRANSFORM_INVERSE];
   const TCoeff   clipMinimum            = -( 1 << maxLog2TrDynamicRange );
   const TCoeff   clipMaximum            =  ( 1 << maxLog2TrDynamicRange ) - 1;
+  const TCoeff   pelMinimum             = std::numeric_limits<Pel>::min();
+  const TCoeff   pelMaximum             = std::numeric_limits<Pel>::max();
   const uint32_t transformWidthIndex    = floorLog2(width ) - 1;                                // nLog2WidthMinus1, since transform start from 2-point
   const uint32_t transformHeightIndex   = floorLog2(height) - 1;                                // nLog2HeightMinus1, since transform start from 2-point
 
@@ -883,22 +840,22 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
     CHECK( shift_1st < 0, "Negative shift" );
     CHECK( shift_2nd < 0, "Negative shift" );
     TCoeff *tmp = ( TCoeff * ) alloca( width * height * sizeof( TCoeff ) );
-  fastInvTrans[trTypeVer][transformHeightIndex](pCoeff.buf, tmp, shift_1st, width, skipWidth, skipHeight, clipMinimum, clipMaximum);
-  fastInvTrans[trTypeHor][transformWidthIndex] (tmp,      block, shift_2nd, height,         0, skipWidth, clipMinimum, clipMaximum);
+    fastInvTrans[trTypeVer][transformHeightIndex](pCoeff.buf, tmp, shift_1st, width, skipWidth, skipHeight, clipMinimum, clipMaximum);
+    fastInvTrans[trTypeHor][transformWidthIndex] (tmp,      block, shift_2nd, height,        0, skipWidth,  pelMinimum,  pelMaximum);
   }
   else if( width == 1 ) //1-D vertical transform
   {
     int shift = ( TRANSFORM_MATRIX_SHIFT + maxLog2TrDynamicRange - 1 ) - bitDepth + COM16_C806_TRANS_PREC;
     CHECK( shift < 0, "Negative shift" );
     CHECK( ( transformHeightIndex < 0 ), "There is a problem with the height." );
-    fastInvTrans[trTypeVer][transformHeightIndex]( pCoeff.buf, block, shift + 1, 1, 0, skipHeight, clipMinimum, clipMaximum );
+    fastInvTrans[trTypeVer][transformHeightIndex]( pCoeff.buf, block, shift + 1, 1, 0, skipHeight, pelMinimum, pelMaximum );
   }
-  else //if(iHeight == 1) //1-D horizontal transform
+  else   // if(height == 1) //1-D horizontal transform
   {
     const int      shift              = ( TRANSFORM_MATRIX_SHIFT + maxLog2TrDynamicRange - 1 ) - bitDepth + COM16_C806_TRANS_PREC;
     CHECK( shift < 0, "Negative shift" );
     CHECK( ( transformWidthIndex < 0 ), "There is a problem with the width." );
-    fastInvTrans[trTypeHor][transformWidthIndex]( pCoeff.buf, block, shift + 1, 1, 0, skipWidth, clipMinimum, clipMaximum );
+    fastInvTrans[trTypeHor][transformWidthIndex]( pCoeff.buf, block, shift + 1, 1, 0, skipWidth, pelMinimum, pelMaximum );
   }
 
   Pel *resiBuf    = pResidual.buf;
@@ -974,11 +931,7 @@ void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const 
       xT( tu, compID, resiBuf, tempCoeff, width, height );
     }
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
     TCoeff sumAbs = 0;
-#else
-    int sumAbs = 0;
-#endif
     for( int pos = 0; pos < width*height; pos++ )
     {
       sumAbs += abs( tempCoeff.buf[pos] );
@@ -996,11 +949,7 @@ void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const 
       scaleSAD *= pow(2, trShift);
     }
 
-#if JVET_R0351_HIGH_BIT_DEPTH_SUPPORT_VS
     trCosts.push_back( TrCost( int(std::min<double>(sumAbs*scaleSAD, std::numeric_limits<int>::max())), pos++ ) );
-#else
-    trCosts.push_back( TrCost( int(sumAbs*scaleSAD), pos++ ) );
-#endif
     it++;
   }
 

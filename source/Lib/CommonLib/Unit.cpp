@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2020, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,8 @@
 /** \file     Unit.cpp
  *  \brief    defines unit as a set of blocks and basic unit types (coding, prediction, transform)
  */
+
+#include <array>
 
 #include "Unit.h"
 
@@ -280,7 +282,9 @@ CodingUnit& CodingUnit::operator=( const CodingUnit& other )
   imvNumCand        = other.imvNumCand;
   BcwIdx            = other.BcwIdx;
   for (int i = 0; i<2; i++)
+  {
     refIdxBi[i] = other.refIdxBi[i];
+  }
 
   smvdMode        = other.smvdMode;
   ispMode           = other.ispMode;
@@ -295,7 +299,7 @@ CodingUnit& CodingUnit::operator=( const CodingUnit& other )
     lastPLTSize[idx]  = other.lastPLTSize[idx];
     if (slice->getSPS()->getPLTMode())
     {
-      memcpy(reuseflag[idx], other.reuseflag[idx], MAXPLTPREDSIZE * sizeof(bool));
+      std::copy_n(other.reuseflag[idx], MAXPLTPREDSIZE, reuseflag[idx]);
     }
   }
 
@@ -303,7 +307,7 @@ CodingUnit& CodingUnit::operator=( const CodingUnit& other )
   {
     for (int idx = 0; idx < MAX_NUM_COMPONENT; idx++)
     {
-      memcpy(curPLT[idx], other.curPLT[idx], MAXPLTSIZE * sizeof(Pel));
+      std::copy_n(other.curPLT[idx], MAXPLTSIZE, curPLT[idx]);
     }
   }
 
@@ -340,7 +344,9 @@ void CodingUnit::initData()
   imvNumCand        = 0;
   BcwIdx            = BCW_DEFAULT;
   for (int i = 0; i < 2; i++)
+  {
     refIdxBi[i] = -1;
+  }
   smvdMode        = 0;
   ispMode           = 0;
   mipFlag           = false;
@@ -352,12 +358,12 @@ void CodingUnit::initData()
     lastPLTSize[idx]  = 0;
     useEscape[idx]    = false;
     useRotation[idx]  = false;
-    memset(reuseflag[idx], false, MAXPLTPREDSIZE * sizeof(bool));
+    std::fill_n(reuseflag[idx], MAXPLTPREDSIZE, false);
   }
 
   for (int idx = 0; idx < MAX_NUM_COMPONENT; idx++)
   {
-    memset(curPLT[idx], 0, MAXPLTSIZE * sizeof(Pel));
+    std::fill_n(curPLT[idx], MAXPLTSIZE, 0);
   }
 
   treeType          = TREE_D;
@@ -464,15 +470,12 @@ const uint8_t CodingUnit::checkAllowedSbt() const
     return 0;
   }
 
-  uint8_t sbtAllowed = 0;
-  int cuWidth  = lwidth();
-  int cuHeight = lheight();
-  bool allow_type[NUMBER_SBT_IDX];
-  memset( allow_type, false, NUMBER_SBT_IDX * sizeof( bool ) );
+  const int cuWidth  = lwidth();
+  const int cuHeight = lheight();
 
   //parameter
-  int maxSbtCUSize = cs->sps->getMaxTbSize();
-  int minSbtCUSize = 1 << ( MIN_CU_LOG2 + 1 );
+  const int maxSbtCUSize = cs->sps->getMaxTbSize();
+  const int minSbtCUSize = 1 << (MIN_CU_LOG2 + 1);
 
   //check on size
   if( cuWidth > maxSbtCUSize || cuHeight > maxSbtCUSize )
@@ -480,14 +483,19 @@ const uint8_t CodingUnit::checkAllowedSbt() const
     return 0;
   }
 
-  allow_type[SBT_VER_HALF] = cuWidth  >= minSbtCUSize;
-  allow_type[SBT_HOR_HALF] = cuHeight >= minSbtCUSize;
-  allow_type[SBT_VER_QUAD] = cuWidth  >= ( minSbtCUSize << 1 );
-  allow_type[SBT_HOR_QUAD] = cuHeight >= ( minSbtCUSize << 1 );
+  std::array<bool, NUMBER_SBT_IDX> allowType;
 
-  for( int i = 0; i < NUMBER_SBT_IDX; i++ )
+  allowType.fill(false);
+  allowType[SBT_VER_HALF] = cuWidth >= minSbtCUSize;
+  allowType[SBT_HOR_HALF] = cuHeight >= minSbtCUSize;
+  allowType[SBT_VER_QUAD] = cuWidth >= 2 * minSbtCUSize;
+  allowType[SBT_HOR_QUAD] = cuHeight >= 2 * minSbtCUSize;
+
+  uint8_t sbtAllowed = 0;
+
+  for (int i = 0; i < allowType.size(); i++)
   {
-    sbtAllowed += (uint8_t)allow_type[i] << i;
+    sbtAllowed += (uint8_t) allowType[i] << i;
   }
 
   return sbtAllowed;
@@ -557,6 +565,10 @@ void PredictionUnit::initData()
     for ( uint32_t j = 0; j < 3; j++ )
     {
       mvAffi[i][j].setZero();
+#if GDR_ENABLED
+      mvAffiSolid[i][j] = true;
+      mvAffiValid[i][j] = true;
+#endif
     }
   }
   ciipFlag = false;
@@ -743,6 +755,7 @@ void TransformUnit::initData()
   jointCbCr          = 0;
   m_chromaResScaleInv = 0;
 }
+
 void TransformUnit::init(TCoeff **coeffs, Pel **pcmbuf, bool **runType)
 {
   uint32_t numBlocks = getNumberValidTBlocks(*cs->pcv);
@@ -764,48 +777,73 @@ TransformUnit& TransformUnit::operator=(const TransformUnit& other)
 {
   CHECK( chromaFormat != other.chromaFormat, "Incompatible formats" );
 
-  unsigned numBlocks = ::getNumberValidTBlocks(*cs->pcv);
-  for( unsigned i = 0; i < numBlocks; i++ )
+  const int numBlocks = ::getNumberValidTBlocks(*cs->pcv);
+
+  for (int i = 0; i < numBlocks; i++)
   {
     CHECKD( blocks[i].area() != other.blocks[i].area(), "Transformation units cover different areas" );
 
-    uint32_t area = blocks[i].area();
+    const uint32_t area = blocks[i].area();
 
-    if (m_coeffs[i] && other.m_coeffs[i] && m_coeffs[i] != other.m_coeffs[i]) memcpy(m_coeffs[i], other.m_coeffs[i], sizeof(TCoeff) * area);
-    if (m_pcmbuf[i] && other.m_pcmbuf[i] && m_pcmbuf[i] != other.m_pcmbuf[i]) memcpy(m_pcmbuf[i], other.m_pcmbuf[i], sizeof(Pel   ) * area);
-    if (cu->slice->getSPS()->getPLTMode() && i < 2)
+    if (m_coeffs[i] && other.m_coeffs[i] && m_coeffs[i] != other.m_coeffs[i])
     {
-      if (m_runType[i]   && other.m_runType[i]   && m_runType[i]   != other.m_runType[i]  ) memcpy(m_runType[i],   other.m_runType[i],   sizeof(bool) * area);
+      std::copy_n(other.m_coeffs[i], area, m_coeffs[i]);
     }
-    cbf[i]           = other.cbf[i];
+
+    if (m_pcmbuf[i] && other.m_pcmbuf[i] && m_pcmbuf[i] != other.m_pcmbuf[i])
+    {
+      std::copy_n(other.m_pcmbuf[i], area, m_pcmbuf[i]);
+    }
+
+    if (cu->slice->getSPS()->getPLTMode() && i < MAX_NUM_CHANNEL_TYPE)
+    {
+      if (m_runType[i] && other.m_runType[i] && m_runType[i] != other.m_runType[i])
+      {
+        std::copy_n(other.m_runType[i], area, m_runType[i]);
+      }
+    }
+
+    cbf[i]    = other.cbf[i];
     mtsIdx[i] = other.mtsIdx[i];
   }
-  depth              = other.depth;
-  noResidual         = other.noResidual;
-  jointCbCr          = other.jointCbCr;
+
+  depth      = other.depth;
+  noResidual = other.noResidual;
+  jointCbCr  = other.jointCbCr;
+
   return *this;
 }
 
 void TransformUnit::copyComponentFrom(const TransformUnit& other, const ComponentID i)
 {
   CHECK( chromaFormat != other.chromaFormat, "Incompatible formats" );
-
   CHECKD( blocks[i].area() != other.blocks[i].area(), "Transformation units cover different areas" );
 
-  uint32_t area = blocks[i].area();
+  const uint32_t area = blocks[i].area();
 
-  if (m_coeffs[i] && other.m_coeffs[i] && m_coeffs[i] != other.m_coeffs[i]) memcpy(m_coeffs[i], other.m_coeffs[i], sizeof(TCoeff) * area);
-  if (m_pcmbuf[i] && other.m_pcmbuf[i] && m_pcmbuf[i] != other.m_pcmbuf[i]) memcpy(m_pcmbuf[i], other.m_pcmbuf[i], sizeof(Pel   ) * area);
-  if ((i == COMPONENT_Y || i == COMPONENT_Cb))
+  if (m_coeffs[i] && other.m_coeffs[i] && m_coeffs[i] != other.m_coeffs[i])
   {
-    if (m_runType[i] && other.m_runType[i] && m_runType[i] != other.m_runType[i])   memcpy(m_runType[i], other.m_runType[i], sizeof(bool) * area);
+    std::copy_n(other.m_coeffs[i], area, m_coeffs[i]);
   }
 
-  cbf[i]           = other.cbf[i];
-  depth            = other.depth;
-  mtsIdx[i]        = other.mtsIdx[i];
-  noResidual       = other.noResidual;
-  jointCbCr        = isChroma( i ) ? other.jointCbCr : jointCbCr;
+  if (m_pcmbuf[i] && other.m_pcmbuf[i] && m_pcmbuf[i] != other.m_pcmbuf[i])
+  {
+    std::copy_n(other.m_pcmbuf[i], area, m_pcmbuf[i]);
+  }
+
+  if (i == COMPONENT_Y || i == COMPONENT_Cb)
+  {
+    if (m_runType[i] && other.m_runType[i] && m_runType[i] != other.m_runType[i])
+    {
+      std::copy_n(other.m_runType[i], area, m_runType[i]);
+    }
+  }
+
+  cbf[i]     = other.cbf[i];
+  mtsIdx[i]  = other.mtsIdx[i];
+  depth      = other.depth;
+  noResidual = other.noResidual;
+  jointCbCr  = isChroma(i) ? other.jointCbCr : jointCbCr;
 }
 
        CoeffBuf TransformUnit::getCoeffs(const ComponentID id)       { return  CoeffBuf(m_coeffs[id], blocks[id]); }
@@ -845,7 +883,8 @@ int TransformUnit::getTbAreaAfterCoefZeroOut(ComponentID compID) const
   int tbZeroOutWidth = blocks[compID].width;
   int tbZeroOutHeight = blocks[compID].height;
 
-  if ( cs->sps->getUseMTS() && cu->sbtInfo != 0 && blocks[compID].width <= 32 && blocks[compID].height <= 32 && compID == COMPONENT_Y )
+  if (cs->sps->getMtsEnabled() && cu->sbtInfo != 0 && blocks[compID].width <= 32 && blocks[compID].height <= 32
+      && compID == COMPONENT_Y)
   {
     tbZeroOutWidth = (blocks[compID].width == 32) ? 16 : tbZeroOutWidth;
     tbZeroOutHeight = (blocks[compID].height == 32) ? 16 : tbZeroOutHeight;
