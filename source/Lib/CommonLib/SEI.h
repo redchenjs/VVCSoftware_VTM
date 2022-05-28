@@ -94,6 +94,10 @@ public:
 #if JVET_Z0120_SHUTTER_INTERVAL_SEI
     SHUTTER_INTERVAL_INFO                = 209,
 #endif
+#if JVET_Z0244
+    NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS = 210,
+    NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
+#endif
   };
 
   SEI() {}
@@ -1064,6 +1068,90 @@ public:
   SEIVDISeiEnvelope() {}
   virtual ~SEIVDISeiEnvelope() {}
 };
+
+#if JVET_Z0244
+class SEINeuralNetworkPostFilterCharacteristics : public SEI
+{
+public:
+  PayloadType payloadType() const override { return NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS; }
+  SEINeuralNetworkPostFilterCharacteristics()
+  : m_id(0)
+  , m_modeIdc(0)
+  , m_purpose(0)
+  , m_outSubWidthCFlag(false)
+  , m_outSubHeightCFlag(false)
+  , m_picWidthInLumaSamples(0)
+  , m_picHeightInLumaSamples(0)
+  , m_inpTensorBitDepthMinus8(0)
+  , m_outTensorBitDepthMinus8(0)
+  , m_componentLastFlag(false)
+  , m_inpSampleIdc(0)
+  , m_inpOrderIdc(0)
+  , m_outSampleIdc(0)
+  , m_outOrderIdc(0)
+  , m_constantPatchSizeFlag(false)
+  , m_patchWidthMinus1(0)
+  , m_patchHeightMinus1(0)
+  , m_overlap(0)
+  , m_paddingType(0)
+  , m_payloadByte(nullptr)
+  , m_complexityIdc(0)
+  , m_parameterTypeFlag(false)
+  , m_log2ParameterBitLengthMinus3(0)
+  , m_numParametersIdc(0)
+  , m_numKmacOperationsIdc(0)
+  {}
+
+  ~SEINeuralNetworkPostFilterCharacteristics() override
+  {
+    if (m_payloadByte)
+    {
+      delete m_payloadByte;
+      m_payloadByte = nullptr;
+    }
+  }
+
+  uint32_t       m_id;
+  uint32_t       m_modeIdc;
+  uint32_t       m_purpose;
+  bool           m_outSubWidthCFlag;
+  bool           m_outSubHeightCFlag;
+  uint32_t       m_picWidthInLumaSamples;
+  uint32_t       m_picHeightInLumaSamples;
+  uint32_t       m_inpTensorBitDepthMinus8;
+  uint32_t       m_outTensorBitDepthMinus8;
+  bool           m_componentLastFlag;
+  uint32_t       m_inpSampleIdc;
+  uint32_t       m_inpOrderIdc;
+  uint32_t       m_outSampleIdc;
+  uint32_t       m_outOrderIdc;
+  bool           m_constantPatchSizeFlag;
+  uint32_t       m_patchWidthMinus1;
+  uint32_t       m_patchHeightMinus1;
+  uint32_t       m_overlap;
+  uint32_t       m_paddingType;
+  uint64_t       m_payloadLength;
+  char*          m_payloadByte;
+  uint32_t       m_complexityIdc;
+  bool           m_parameterTypeFlag;
+  uint32_t       m_log2ParameterBitLengthMinus3;
+  uint32_t       m_numParametersIdc;
+  uint32_t       m_numKmacOperationsIdc;
+};
+
+class SEINeuralNetworkPostFilterActivation : public SEI
+{
+public:
+  PayloadType payloadType() const { return NEURAL_NETWORK_POST_FILTER_ACTIVATION; }
+  SEINeuralNetworkPostFilterActivation()
+    : m_id(0)
+  {}
+  virtual ~SEINeuralNetworkPostFilterActivation() {}
+
+  uint32_t       m_id;
+};
+#endif
+
 //! \}
 
 

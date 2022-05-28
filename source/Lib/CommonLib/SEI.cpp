@@ -480,6 +480,10 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
 #if JVET_Z0120_SHUTTER_INTERVAL_SEI
     case SEI::SHUTTER_INTERVAL_INFO:                return "Shutter interval information";
 #endif
+#if JVET_Z0244
+    case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS: return "Neural network post-filter characteristics";
+    case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:      return "Neural network post-filter activation";
+#endif
     default:                                        return "Unknown";
   }
 }

@@ -1154,5 +1154,89 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SP
   }
 }
 
+#if JVET_Z0244
+void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx)
+{
+  CHECK(!(m_isInitialized), "Unspecified error");
+  CHECK(!(sei != NULL), "Unspecified error");
+  sei->m_id = m_pcCfg->getNNPostFilterSEICharacteristicsId(filterIdx);
+  sei->m_modeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsModeIdc(filterIdx);
+  if (sei->m_modeIdc == 1)
+  {
+    sei->m_purpose = m_pcCfg->getNNPostFilterSEICharacteristicsPurpose(filterIdx);
+
+    if(sei->m_purpose == 2 || sei->m_purpose == 4)
+    {
+      sei->m_outSubWidthCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubWidthCFlag(filterIdx);
+      sei->m_outSubHeightCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubHeightCFlag(filterIdx);
+    }
+    if(sei->m_purpose == 3 || sei->m_purpose == 4)
+    {
+      sei->m_picWidthInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(filterIdx);
+      sei->m_picHeightInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightInLumaSamples(filterIdx);
+    }
+
+    sei->m_componentLastFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComponentLastFlag(filterIdx);
+    sei->m_inpSampleIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpSampleIdc(filterIdx);
+
+    if(sei->m_inpSampleIdc == 4)
+    {
+      sei->m_inpTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(filterIdx);
+    }
+
+    sei->m_inpOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpOrderIdc(filterIdx);
+    sei->m_outSampleIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutSampleIdc(filterIdx);
+
+    if(sei->m_outSampleIdc == 4)
+    {
+      sei->m_outTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(filterIdx);
+    }
+
+    sei->m_outOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutOrderIdc(filterIdx);
+    sei->m_constantPatchSizeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(filterIdx);
+    sei->m_patchWidthMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchWidthMinus1(filterIdx);
+    sei->m_patchHeightMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchHeightMinus1(filterIdx);
+    sei->m_overlap = m_pcCfg->getNNPostFilterSEICharacteristicsOverlap(filterIdx);
+    sei->m_paddingType = m_pcCfg->getNNPostFilterSEICharacteristicsPaddingType(filterIdx);
+
+    sei->m_complexityIdc = m_pcCfg->getNNPostFilterSEICharacteristicsComplexityIdc(filterIdx);
+    if(sei->m_complexityIdc > 0)
+    {
+      if(sei->m_complexityIdc == 1)
+      {
+        sei->m_parameterTypeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsParameterTypeFlag(filterIdx);
+        sei->m_log2ParameterBitLengthMinus3 = m_pcCfg->getNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3(filterIdx);
+        sei->m_numParametersIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumParametersIdc(filterIdx);
+        sei->m_numKmacOperationsIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(filterIdx);
+      }
+    }
+  }
+  if (sei->m_modeIdc == 1)
+  {
+    const string payloadFilename = m_pcCfg->getNNPostFilterSEICharacteristicsPayloadFilename(filterIdx);
+    ifstream bitstreamFile(payloadFilename.c_str(), ifstream::in | ifstream::binary);
+    if (!bitstreamFile)
+    {
+      EXIT( "Failed to open bitstream file " << payloadFilename.c_str() << " for reading" ) ;
+    }
+
+    bitstreamFile.seekg(0, std::ifstream::end);
+    sei->m_payloadLength = bitstreamFile.tellg();
+    bitstreamFile.seekg(0, std::ifstream::beg);
+
+    sei->m_payloadByte = new char[sei->m_payloadLength];
+    bitstreamFile.read(sei->m_payloadByte, sei->m_payloadLength);
+    bitstreamFile.close();
+  }
+}
+
+void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei)
+{
+  CHECK(!(m_isInitialized), "Unspecified error");
+  CHECK(!(sei != NULL), "Unspecified error");
+  sei->m_id = m_pcCfg->getNnPostFilterSEIActivationId();
+}
+#endif
+
 
 //! \}

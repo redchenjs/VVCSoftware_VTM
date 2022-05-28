@@ -57,6 +57,7 @@
 #define JVET_Z0111_ADAPT_BYPASS_AFFINE_ME                 1 // JVET-Z0111 
 #define JVET_Z0046_Green_Metadata                         1 // JVET-Z0046
 #define JVET_Z0120_SHUTTER_INTERVAL_SEI                   1 // JVET-Z0120
+#define JVET_Z0244                                        1 // JVET-Z0244
 
 //########### place macros to be be kept below this line ###############
 #define JVET_X0143_ALF_APS_ID_OFFSET                      0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.
