@@ -168,6 +168,10 @@ static const int MAX_VPS_SUBLAYERS =                                7;
 static const int MAX_NUM_OLSS =                                   256;
 static const int MAX_VPS_OLS_MODE_IDC =                             2;
 
+#if JVET_Z0244
+static const int MAX_NUM_NN_POST_FILTERS =                          8;
+#endif
+
 static const int MIP_MAX_WIDTH =                                   MAX_TB_SIZEY;
 static const int MIP_MAX_HEIGHT =                                  MAX_TB_SIZEY;
 

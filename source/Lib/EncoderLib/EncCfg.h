@@ -666,6 +666,39 @@ protected:
   std::vector<uint32_t>   m_siiSEISubLayerNumUnitsInSI;
 #endif
 
+#if JVET_Z0244
+  bool                    m_nnPostFilterSEICharacteristicsEnabled;
+  int                     m_nnPostFilterSEICharacteristicsNumFilters;
+  uint32_t                m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
+  bool                    m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[MAX_NUM_NN_POST_FILTERS];
+  bool                    m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
+  bool                    m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsInpSampleIdc[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsInpOrderIdc[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsOutSampleIdc[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsOutOrderIdc[MAX_NUM_NN_POST_FILTERS];
+  bool                    m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsPatchWidthMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsOverlap[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsPaddingType[MAX_NUM_NN_POST_FILTERS];
+  std::string             m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsComplexityIdc[MAX_NUM_NN_POST_FILTERS];
+  bool                    m_nnPostFilterSEICharacteristicsParameterTypeFlag [MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsNumParametersIdc[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[MAX_NUM_NN_POST_FILTERS];
+
+  bool                    m_nnPostFilterSEIActivationEnabled;
+  uint32_t                m_nnPostFilterSEIActivationId;
+#endif
+
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
   bool      m_fgcSEICancelFlag;
@@ -1728,6 +1761,72 @@ public:
   void     setSiiSEISubLayerNumUnitsInSI(const std::vector<uint32_t>& b) { m_siiSEISubLayerNumUnitsInSI = b; }
   uint32_t getSiiSEISubLayerNumUnitsInSI(uint32_t idx) const { return m_siiSEISubLayerNumUnitsInSI[idx]; }
 #endif
+
+#if JVET_Z0244
+  void        setNNPostFilterSEICharacteristicsEnabled(bool enabledFlag)                                                { m_nnPostFilterSEICharacteristicsEnabled = enabledFlag; }
+  bool        getNNPostFilterSEICharacteristicsEnabled() const                                                          { return m_nnPostFilterSEICharacteristicsEnabled; }
+  void        setNNPostFilterSEICharacteristicsNumFilters(int numFilters)                                               { m_nnPostFilterSEICharacteristicsNumFilters = numFilters; }
+  int         getNNPostFilterSEICharacteristicsNumFilters() const                                                       { return m_nnPostFilterSEICharacteristicsNumFilters; }
+  void        setNNPostFilterSEICharacteristicsId(uint32_t id, int filterIdx)                                           { m_nnPostFilterSEICharacteristicsId[filterIdx] = id; }
+  uint32_t    getNNPostFilterSEICharacteristicsId(int filterIdx) const                                                  { return m_nnPostFilterSEICharacteristicsId[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsModeIdc(uint32_t idc, int filterIdx)                                     { m_nnPostFilterSEICharacteristicsModeIdc[filterIdx] = idc; }
+  uint32_t    getNNPostFilterSEICharacteristicsModeIdc(int filterIdx) const                                             { return m_nnPostFilterSEICharacteristicsModeIdc[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsPurpose(uint32_t purpose, int filterIdx)                                 { m_nnPostFilterSEICharacteristicsPurpose[filterIdx] = purpose; }
+  uint32_t    getNNPostFilterSEICharacteristicsPurpose(int filterIdx) const                                             { return m_nnPostFilterSEICharacteristicsPurpose[filterIdx]; }
+
+  void        setNNPostFilterSEICharacteristicsOutSubWidthCFlag(bool outSubWidthCFlag, int filterIdx)                   { m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[filterIdx] = outSubWidthCFlag; }
+  bool        getNNPostFilterSEICharacteristicsOutSubWidthCFlag(int filterIdx) const                                    { return m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsOutSubHeightCFlag(bool outSubHeightCFlag, int filterIdx)                 { m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[filterIdx] = outSubHeightCFlag; }
+  bool        getNNPostFilterSEICharacteristicsOutSubHeightCFlag(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsPicWidthInLumaSamples(uint32_t picWidthInLumaSamples, int filterIdx)     { m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[filterIdx] = picWidthInLumaSamples; }
+  uint32_t    getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsPicHeightInLumaSamples(uint32_t picHeightInLumaSamples, int filterIdx)   { m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[filterIdx] = picHeightInLumaSamples; }
+  uint32_t    getNNPostFilterSEICharacteristicsPicHeightInLumaSamples(int filterIdx) const                              { return m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(uint32_t inpTensorBitDepthMinus8, int filterIdx) { m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[filterIdx] = inpTensorBitDepthMinus8; }
+  uint32_t    getNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(uint32_t outTensorBitDepthMinus8, int filterIdx) { m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx] = outTensorBitDepthMinus8; }
+  uint32_t    getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx]; }
+
+  void        setNNPostFilterSEICharacteristicsComponentLastFlag(bool componentLastFlag, int filterIdx)                 { m_nnPostFilterSEICharacteristicsComponentLastFlag[filterIdx] = componentLastFlag; }
+  bool        getNNPostFilterSEICharacteristicsComponentLastFlag(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsComponentLastFlag[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsInpSampleIdc(uint32_t inpSampleIdc, int filterIdx)                       { m_nnPostFilterSEICharacteristicsInpSampleIdc[filterIdx] = inpSampleIdc; }
+  uint32_t    getNNPostFilterSEICharacteristicsInpSampleIdc(int filterIdx) const                                        { return m_nnPostFilterSEICharacteristicsInpSampleIdc[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsInpOrderIdc(uint32_t inpOrderIdc, int filterIdx)                         { m_nnPostFilterSEICharacteristicsInpOrderIdc[filterIdx] = inpOrderIdc; }
+  uint32_t    getNNPostFilterSEICharacteristicsInpOrderIdc(int filterIdx) const                                         { return m_nnPostFilterSEICharacteristicsInpOrderIdc[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsOutSampleIdc(uint32_t outSampleIdc, int filterIdx)                       { m_nnPostFilterSEICharacteristicsOutSampleIdc[filterIdx] = outSampleIdc; }
+  uint32_t    getNNPostFilterSEICharacteristicsOutSampleIdc(int filterIdx) const                                        { return m_nnPostFilterSEICharacteristicsOutSampleIdc[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsOutOrderIdc(uint32_t outOrderIdc, int filterIdx)                         { m_nnPostFilterSEICharacteristicsOutOrderIdc[filterIdx] = outOrderIdc; }
+  uint32_t    getNNPostFilterSEICharacteristicsOutOrderIdc(int filterIdx) const                                         { return m_nnPostFilterSEICharacteristicsOutOrderIdc[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsConstantPatchSizeFlag(bool constantPatchSizeFlag, int filterIdx)         { m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[filterIdx] = constantPatchSizeFlag; }
+  bool        getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsPatchWidthMinus1(uint32_t patchWidthMinus1, int filterIdx)               { m_nnPostFilterSEICharacteristicsPatchWidthMinus1[filterIdx] = patchWidthMinus1; }
+  uint32_t    getNNPostFilterSEICharacteristicsPatchWidthMinus1(int filterIdx) const                                    { return m_nnPostFilterSEICharacteristicsPatchWidthMinus1[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsPatchHeightMinus1(uint32_t patchHeightMinus1, int filterIdx)             { m_nnPostFilterSEICharacteristicsPatchHeightMinus1[filterIdx] = patchHeightMinus1; }
+  uint32_t    getNNPostFilterSEICharacteristicsPatchHeightMinus1(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsPatchHeightMinus1[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsOverlap(uint32_t overlap, int filterIdx)                                 { m_nnPostFilterSEICharacteristicsOverlap[filterIdx] = overlap; }
+  uint32_t    getNNPostFilterSEICharacteristicsOverlap(int filterIdx) const                                             { return m_nnPostFilterSEICharacteristicsOverlap[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsPaddingType(uint32_t paddingType, int filterIdx)                         { m_nnPostFilterSEICharacteristicsPaddingType[filterIdx] = paddingType; }
+  uint32_t    getNNPostFilterSEICharacteristicsPaddingType(int filterIdx) const                                         { return m_nnPostFilterSEICharacteristicsPaddingType[filterIdx]; }
+
+  void        setNNPostFilterSEICharacteristicsComplexityIdc (uint32_t complexityIdc , int filterIdx)                   { m_nnPostFilterSEICharacteristicsComplexityIdc[filterIdx] = complexityIdc ; }
+  uint32_t    getNNPostFilterSEICharacteristicsComplexityIdc (int filterIdx) const                                      { return m_nnPostFilterSEICharacteristicsComplexityIdc[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsParameterTypeFlag(bool parameterTypeFlag, int filterIdx)                 { m_nnPostFilterSEICharacteristicsParameterTypeFlag[filterIdx] = parameterTypeFlag; }
+  bool        getNNPostFilterSEICharacteristicsParameterTypeFlag(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsParameterTypeFlag[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3 (uint32_t log2ParameterBitLengthMinus3 , int filterIdx) { m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[filterIdx] = log2ParameterBitLengthMinus3 ; }
+  uint32_t    getNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3 (int filterIdx) const                       { return m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsNumParametersIdc  (uint32_t numParametersIdc  , int filterIdx)           { m_nnPostFilterSEICharacteristicsNumParametersIdc[filterIdx] = numParametersIdc  ; }
+  uint32_t    getNNPostFilterSEICharacteristicsNumParametersIdc  (int filterIdx) const                                  { return m_nnPostFilterSEICharacteristicsNumParametersIdc[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsNumKmacOperationsIdc(uint32_t numKmacOperationsIdc   , int filterIdx)    { m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[filterIdx] = numKmacOperationsIdc   ; }
+  uint32_t    getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(int filterIdx) const                                { return m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[filterIdx]; }
+
+  void        setNNPostFilterSEICharacteristicsPayloadFilename(std::string payloadFilename, int filterIdx)              { m_nnPostFilterSEICharacteristicsPayloadFilename[filterIdx] = payloadFilename; }
+  std::string getNNPostFilterSEICharacteristicsPayloadFilename(int filterIdx) const                                     { return m_nnPostFilterSEICharacteristicsPayloadFilename[filterIdx]; }
+  void        setNnPostFilterSEIActivationEnabled(bool enabledFlag)                                                     { m_nnPostFilterSEIActivationEnabled = enabledFlag; }
+  bool        getNnPostFilterSEIActivationEnabled() const                                                               { return m_nnPostFilterSEIActivationEnabled; }
+  void        setNnPostFilterSEIActivationId(uint32_t id)                                                               { m_nnPostFilterSEIActivationId = id; }
+  uint32_t    getNnPostFilterSEIActivationId() const                                                                    { return m_nnPostFilterSEIActivationId; }
+#endif
+
   void  setBufferingPeriodSEIEnabled(bool b)                         { m_bufferingPeriodSEIEnabled = b; }
   bool  getBufferingPeriodSEIEnabled() const                         { return m_bufferingPeriodSEIEnabled; }
   void  setPictureTimingSEIEnabled(bool b)                           { m_pictureTimingSEIEnabled = b; }

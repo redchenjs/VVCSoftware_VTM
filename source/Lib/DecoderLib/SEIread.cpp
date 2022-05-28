@@ -409,6 +409,16 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIShutterInterval((SEIShutterIntervalInfo&)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
+#if JVET_Z0244
+    case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
+      sei = new SEINeuralNetworkPostFilterCharacteristics;
+      xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics&)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+    case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
+      sei = new SEINeuralNetworkPostFilterActivation;
+      xParseSEINNPostFilterActivation((SEINeuralNetworkPostFilterActivation&)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -2465,6 +2475,135 @@ void SEIReader::xParseSEIConstrainedRaslIndication( SEIConstrainedRaslIndication
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
 }
+
+#if JVET_Z0244
+void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+{
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  uint32_t val;
+
+  sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfc_id" );
+  sei.m_id = val;
+
+  sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfc_mode_idc" );
+  sei.m_modeIdc = val;
+
+  if (sei.m_modeIdc == 1)
+  {
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_purpose");
+    sei.m_purpose = val;
+
+    if(sei.m_purpose == 2 || sei.m_purpose == 4)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_out_sub_width_c_flag");
+      sei.m_outSubWidthCFlag = val;
+      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_out_sub_height_c_flag");
+      sei.m_outSubHeightCFlag = val;
+    }
+    if(sei.m_purpose == 3 || sei.m_purpose == 4)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_width_in_luma_samples");
+      sei.m_picWidthInLumaSamples = val;
+      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_height_in_luma_samples");
+      sei.m_picHeightInLumaSamples = val;
+    }
+
+    sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");
+    sei.m_componentLastFlag = val;
+
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_sample_idc");
+    sei.m_inpSampleIdc = val;
+
+    if(sei.m_inpSampleIdc == 4)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_minus8");
+      sei.m_inpTensorBitDepthMinus8 = val;
+    }
+
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
+    sei.m_inpOrderIdc = val;
+
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_sample_idc");
+    sei.m_outSampleIdc = val;
+
+    if(sei.m_outSampleIdc == 4)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_minus8");
+      sei.m_outTensorBitDepthMinus8 = val;
+    }
+
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
+    sei.m_outOrderIdc = val;
+
+    sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_constant_patch_size_flag");
+    sei.m_constantPatchSizeFlag = val;
+
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_patch_width_minus1");
+    sei.m_patchWidthMinus1 = val;
+
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_patch_height_minus1");
+    sei.m_patchHeightMinus1 = val;
+
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_overlap");
+    sei.m_overlap = val;
+
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_padding_type");
+    sei.m_paddingType = val;
+
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_complexity_idc");
+    sei.m_complexityIdc = val;
+
+    if(sei.m_complexityIdc > 0)
+    {
+      if(sei.m_complexityIdc == 1)
+      {
+        sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_parameter_type_flag");
+        sei.m_parameterTypeFlag = val;
+
+        sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_log2_parameter_bit_length_minus3");
+        sei.m_log2ParameterBitLengthMinus3 = val;
+
+        sei_read_code(pDecodedMessageOutputStream, 8, val, "nnpfc_num_parameters_idc");
+        sei.m_numParametersIdc = val;
+
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_num_kmac_operations_idc");
+        sei.m_numKmacOperationsIdc = val;
+      }
+    }
+  }
+  if (sei.m_modeIdc == 1)
+  {
+    while (!isByteAligned())
+    {
+      sei_read_flag( pDecodedMessageOutputStream,   val,    "nnpfc_reserved_zero_bit");
+      CHECK (val != 0, "nnpfc_reserved_zero_bit not equal to zero");
+    }
+
+    int payloadBytesRemaining = getBitstream()->getNumBitsLeft() / 8;
+    int code;
+
+    std::string filename = "payloadByte" + std::to_string(sei.m_id) + ".nnr";
+
+    std::ofstream outFile(filename.c_str(), std::ofstream::binary);
+
+    for (int i = 0; i < payloadBytesRemaining; i++)
+    {
+      sei_read_scode ( pDecodedMessageOutputStream, 8, code, "nnpfc_payload_byte[i]");
+      outFile.write((char*)&code, 1);
+    }
+    outFile.close();
+  }
+}
+
+void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActivation &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+{
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  uint32_t val;
+
+  sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_id" );
+  sei.m_id =val;
+}
+#endif
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE
 void SeiCfgFileDump::write360SeiDump (std::string decoded360MessageFileName, SEIMessages& seis, const SPS* sps)

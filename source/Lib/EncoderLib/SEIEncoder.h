@@ -93,6 +93,10 @@ public:
 #if JVET_Z0120_SHUTTER_INTERVAL_SEI
   void initSEIShutterIntervalInfo(SEIShutterIntervalInfo *sei);
 #endif
+#if JVET_Z0244
+  void initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx);
+  void initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei);
+#endif
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;
