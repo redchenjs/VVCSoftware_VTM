@@ -2319,6 +2319,7 @@ void HLSyntaxReader::parseVPS(VPS* pcVPS)
   }
   else
   {
+    uiCode = 0;
     pcVPS->setNumPtls(1);
   }
   pcVPS->deriveOutputLayerSets();
