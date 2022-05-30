@@ -2319,11 +2319,10 @@ void HLSyntaxReader::parseVPS(VPS* pcVPS)
   }
   else
   {
-    uiCode = 0;
     pcVPS->setNumPtls(1);
   }
   pcVPS->deriveOutputLayerSets();
-  CHECK( uiCode >= pcVPS->getTotalNumOLSs(),"The value of vps_num_ptls_minus1 shall be less than TotalNumOlss");
+  CHECK( pcVPS->getNumPtls() > pcVPS->getTotalNumOLSs(),"The value of vps_num_ptls_minus1 shall be less than TotalNumOlss");
   std::vector<bool> isPTLReferred( pcVPS->getNumPtls(), false);
 
   for (int i = 0; i < pcVPS->getNumPtls(); i++)
