@@ -607,7 +607,7 @@ public:
 class MergeCtx
 {
 public:
-  MergeCtx() : numValidMergeCand( 0 ), hasMergedCandList( false ) { for( unsigned i = 0; i < MRG_MAX_NUM_CANDS; i++ ) mrgTypeNeighbours[i] = MRG_TYPE_DEFAULT_N; }
+  MergeCtx() : numValidMergeCand(0), hasMergedCandList(false) {}
   ~MergeCtx() {}
 public:
   MvField       mvFieldNeighbours [ MRG_MAX_NUM_CANDS << 1 ]; // double length for mv of both lists
@@ -620,7 +620,6 @@ public:
 #endif
   uint8_t       BcwIdx            [ MRG_MAX_NUM_CANDS      ];
   unsigned char interDirNeighbours[ MRG_MAX_NUM_CANDS      ];
-  MergeType     mrgTypeNeighbours [ MRG_MAX_NUM_CANDS      ];
   int           numValidMergeCand;
   bool          hasMergedCandList;
 

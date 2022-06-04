@@ -950,7 +950,6 @@ void PU::getIBCMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const
   {
     mrgCtx.BcwIdx[ui] = BCW_DEFAULT;
     mrgCtx.interDirNeighbours[ui] = 0;
-    mrgCtx.mrgTypeNeighbours[ui] = MRG_TYPE_IBC;
     mrgCtx.mvFieldNeighbours[ui * 2].refIdx = NOT_VALID;
     mrgCtx.mvFieldNeighbours[ui * 2 + 1].refIdx = NOT_VALID;
 #if GDR_ENABLED
@@ -1096,7 +1095,6 @@ void PU::getInterMergeCandidates( const PredictionUnit &pu, MergeCtx& mrgCtx,
   {
     mrgCtx.BcwIdx[ui] = BCW_DEFAULT;
     mrgCtx.interDirNeighbours[ui] = 0;
-    mrgCtx.mrgTypeNeighbours [ui] = MRG_TYPE_DEFAULT_N;
     mrgCtx.mvFieldNeighbours[(ui << 1)    ].refIdx = NOT_VALID;
     mrgCtx.mvFieldNeighbours[(ui << 1) + 1].refIdx = NOT_VALID;
 #if GDR_ENABLED
@@ -4263,7 +4261,6 @@ void PU::getGeoMergeCandidates( const PredictionUnit &pu, MergeCtx& geoMrgCtx )
   {
     geoMrgCtx.BcwIdx[i] = BCW_DEFAULT;
     geoMrgCtx.interDirNeighbours[i] = 0;
-    geoMrgCtx.mrgTypeNeighbours[i] = MRG_TYPE_DEFAULT_N;
     geoMrgCtx.mvFieldNeighbours[(i << 1)].refIdx = NOT_VALID;
     geoMrgCtx.mvFieldNeighbours[(i << 1) + 1].refIdx = NOT_VALID;
     geoMrgCtx.mvFieldNeighbours[(i << 1)].mv = Mv();
@@ -4286,7 +4283,6 @@ void PU::getGeoMergeCandidates( const PredictionUnit &pu, MergeCtx& geoMrgCtx )
     if( tmpMergeCtx.interDirNeighbours[i] & (0x01 + parity) )
     {
       geoMrgCtx.interDirNeighbours[geoMrgCtx.numValidMergeCand] = 1 + parity;
-      geoMrgCtx.mrgTypeNeighbours[geoMrgCtx.numValidMergeCand] = MRG_TYPE_DEFAULT_N;
       geoMrgCtx.mvFieldNeighbours[(geoMrgCtx.numValidMergeCand << 1) + !parity].mv = Mv(0, 0);
       geoMrgCtx.mvFieldNeighbours[(geoMrgCtx.numValidMergeCand << 1) + parity].mv = tmpMergeCtx.mvFieldNeighbours[(i << 1) + parity].mv;
       geoMrgCtx.mvFieldNeighbours[(geoMrgCtx.numValidMergeCand << 1) + !parity].refIdx = -1;
@@ -4314,7 +4310,6 @@ void PU::getGeoMergeCandidates( const PredictionUnit &pu, MergeCtx& geoMrgCtx )
     if (tmpMergeCtx.interDirNeighbours[i] & (0x02 - parity))
     {
       geoMrgCtx.interDirNeighbours[geoMrgCtx.numValidMergeCand] = 2 - parity;
-      geoMrgCtx.mrgTypeNeighbours[geoMrgCtx.numValidMergeCand] = MRG_TYPE_DEFAULT_N;
       geoMrgCtx.mvFieldNeighbours[(geoMrgCtx.numValidMergeCand << 1) + !parity].mv = tmpMergeCtx.mvFieldNeighbours[(i << 1) + !parity].mv;
       geoMrgCtx.mvFieldNeighbours[(geoMrgCtx.numValidMergeCand << 1) + parity].mv = Mv(0, 0);
       geoMrgCtx.mvFieldNeighbours[(geoMrgCtx.numValidMergeCand << 1) + !parity].refIdx = tmpMergeCtx.mvFieldNeighbours[(i << 1) + !parity].refIdx;

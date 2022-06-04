@@ -2363,7 +2363,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         acMergeBuffer[uiMergeCand] = m_acRealMergeBuffer[uiMergeCand].getBuf(localUnitArea);
         acMergeBuffer[uiMergeCand].copyFrom(*singleMergeTempBuffer);
         pu.mvRefine = false;
-        if( mergeCtx.interDirNeighbours[uiMergeCand] == 3 && mergeCtx.mrgTypeNeighbours[uiMergeCand] == MRG_TYPE_DEFAULT_N )
+        if (mergeCtx.interDirNeighbours[uiMergeCand] == 3)
         {
           mergeCtx.mvFieldNeighbours[2*uiMergeCand].mv   = pu.mv[0];
           mergeCtx.mvFieldNeighbours[2*uiMergeCand+1].mv = pu.mv[1];
@@ -3934,7 +3934,6 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
             mergeCtx.setMergeInfo(pu, mergeCand);
             PU::spanMotionInfo(pu, mergeCtx);
 
-            assert(mergeCtx.mrgTypeNeighbours[mergeCand] == MRG_TYPE_IBC); //  should be IBC candidate at this round
             const bool chroma = !pu.cu->isSepTree();
 #if GDR_ENABLED
             // redo validation again for Skip
