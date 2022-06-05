@@ -1,0 +1,22 @@
+name: repo-sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+
+jobs:
+  repo-sync:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        persist-credentials: false
+    - name: repo-sync
+      uses: repo-sync/github-sync@v2
+      with:
+        sync_tags: "true"
+        source_repo: "https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM"
+        source_branch: "*"
+        destination_branch: "*"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
