@@ -206,10 +206,10 @@ uint32_t SEIFilmGrainApp::process()
         insertSEI = true;
       } // end PPS UnitType
 
-      if (nalu.m_nalUnitType == NAL_UNIT_PREFIX_SEI && m_parameterSetManager.getActiveSPS())
+      if (nalu.m_nalUnitType == NAL_UNIT_PREFIX_SEI)
       {
         // parse FGC SEI
-        m_seiReader.parseSEImessage(&(nalu.getBitstream()), SEIs, nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId, vps, m_parameterSetManager.getActiveSPS(), m_hrd, &std::cout);
+        m_seiReader.parseSEImessage(&(nalu.getBitstream()), SEIs, nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId, vps, nullptr, m_hrd, &std::cout);
 
         int payloadType = 0;
         std::list<SEI*>::iterator message;

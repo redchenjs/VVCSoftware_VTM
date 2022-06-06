@@ -45,19 +45,36 @@
 #include "Utilities/VideoIOYuv.h"
 #include "CommonLib/CommonDef.h"
 
-#include "TrQuant_EMT.h"
-
 #include <numeric>
 #include <cmath>
 #include <algorithm>
 
 
-static const int      MAX_REAL_SCALE                =     32;
 static const double   PI                            =     3.14159265358979323846;
 
 // POLYFIT
 static const int      MAXPAIRS                                  = 256;
 static const int      MAXORDER                                  = 8;     // maximum order of polinomial fitting
+#if JVET_Z0047_FG_IMPROVEMENT
+static const int      MAX_REAL_SCALE                            = 16;
+static const int      ORDER                                     = 4;     // order of polinomial function
+static const int      QUANT_LEVELS                              = 4;     // number of quantization levels in lloyd max quantization
+static const int      INTERVAL_SIZE                             = 16;
+static const int      MIN_ELEMENT_NUMBER_PER_INTENSITY_INTERVAL = 8;
+static const int      MIN_POINTS_FOR_INTENSITY_ESTIMATION       = 40;    // 5*8 = 40; 5 intervals with at least 8 points
+static const int      MIN_BLOCKS_FOR_CUTOFF_ESTIMATION          = 2;     // 2 blocks of 64 x 64 size
+static const int      POINT_STEP                                = 16;    // step size in point extension
+static const int      MAX_NUM_POINT_TO_EXTEND                   = 4;     // max point in extension
+static const double   POINT_SCALE                               = 1.25;  // scaling in point extension
+static const double   VAR_SCALE_DOWN                            = 1.2;   // filter out large points
+static const double   VAR_SCALE_UP                              = 0.6;   // filter out large points
+static const int      NUM_PASSES                                = 2;     // number of passes when fitting the function
+static const int      NBRS                                      = 1;     // minimum number of surrounding points in order to keep it for further analysis (within the widnow range)
+static const int      WINDOW                                    = 1;     // window to check surrounding points
+static const int      MIN_INTENSITY                             = 40;
+static const int      MAX_INTENSITY                             = 950;
+#else
+static const int      MAX_REAL_SCALE                            = 32;
 static const int      ORDER                                     = 3;     // order of polinomial function
 static const int      QUANT_LEVELS                              = 4;     // number of quantization levels in lloyd max quantization
 static const int      INTERVAL_SIZE                             = 16;
@@ -68,6 +85,8 @@ static const int      POINT_STEP                                = 8;     // step
 static const double   POINT_SCALE                               = 1.5;   // scaling in point extension
 static const double   VAR_SCALE_DOWN                            = 1.5;   // filter out large points
 static const double   VAR_SCALE_UP                              = 0.5;   // filter out large points
+static const int      NUM_PASSES                                = 2;     // number of passes when fitting the function
+#endif
 
 //! \ingroup SEIFilmGrainAnalyzer
 //! \{
@@ -135,11 +154,27 @@ public:
   FGAnalyser();
   ~FGAnalyser();
 
+#if JVET_Z0047_FG_IMPROVEMENT
+  void init(const int width,
+            const int height,
+            const int sourcePaddingWidth,
+            const int sourcePaddingHeight,
+            const InputColourSpaceConversion ipCSC,
+            const bool         clipInputVideoToRec709Range,
+            const ChromaFormat inputChroma,
+            const BitDepths& inputBitDepths,
+            const BitDepths& outputBitDepths,
+            const int frameSkip,
+            const bool doAnalysis[],
+            std::string filmGrainExternalMask,
+            std::string filmGrainExternalDenoised);
+#else
   void init(const int width,
             const int height,
             const ChromaFormat inputChroma,
             const BitDepths& inputBitDepths,
             const bool doAnalysis[]);
+#endif
   void destroy        ();
   void initBufs       (Picture* pic);
   void estimate_grain (Picture* pic);
@@ -148,6 +183,15 @@ public:
   SEIFilmGrainCharacteristics::CompModel  getCompModel(int idx) { return m_compModel[idx];  };
 
 private:
+#if JVET_Z0047_FG_IMPROVEMENT
+  std::string                      m_filmGrainExternalMask     = "";
+  std::string                      m_filmGrainExternalDenoised = "";
+  int                              m_sourcePadding[2];
+  InputColourSpaceConversion       m_ipCSC;
+  bool                             m_clipInputVideoToRec709Range;
+  BitDepths                        m_bitDepthsIn;
+  int                              m_frameSkip;
+#endif
   ChromaFormat  m_chromaFormatIDC;
   BitDepths     m_bitDepths;
   bool          m_doAnalysis[MAX_NUM_COMPONENT] = { false, false, false };
@@ -166,8 +210,10 @@ private:
   PelStorage *m_workingBuf  = nullptr;
   PelStorage *m_maskBuf     = nullptr;
 
-  int  denoise                  (Picture* pic);
-  void findMask                 ();
+#if !JVET_Z0047_FG_IMPROVEMENT   // to be deleted - unused function
+  int  denoise                      (Picture* pic);
+#endif
+  void findMask                     ();
 
   void estimate_grain_parameters    ();
   void block_transform              (const PelStorage& buff1, std::vector<PelMatrix>& squared_dct_grain_block_list, int offsetX, int offsetY, unsigned int bitDepth, ComponentID compID);

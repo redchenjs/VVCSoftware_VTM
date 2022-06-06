@@ -615,7 +615,11 @@ bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* cPicYu
       {
         pcPicCurr->M_BUFS( 0, PIC_FILTERED_ORIGINAL ).swap( *pcPicYuvFilteredOrg );
       }
+#if JVET_Z0047_FG_IMPROVEMENT
+      if (m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty())
+#else
       if (m_fgcSEIAnalysisEnabled)
+#endif
       {
         pcPicCurr->M_BUFS( 0, PIC_FILTERED_ORIGINAL_FG ).swap( *pcPicYuvFilteredOrgForFG );
       }
@@ -918,14 +922,18 @@ void EncLib::xGetNewPicBuffer ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Pict
   if (rpcPic==0)
   {
     rpcPic = new Picture;
-
+#if JVET_Z0047_FG_IMPROVEMENT
+    bool fgAnalysisEnabled = m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty();
+#else
+    bool fgAnalysisEnabled = m_fgcSEIAnalysisEnabled;
+#endif
 #if JVET_Z0120_SII_SEI_PROCESSING
     rpcPic->create(sps.getChromaFormatIdc(), Size(pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples()),
       sps.getMaxCUWidth(), sps.getMaxCUWidth() + PIC_MARGIN, false, m_layerId, getShutterFilterFlag(),
-                   getGopBasedTemporalFilterEnabled(), m_fgcSEIAnalysisEnabled);
+                   getGopBasedTemporalFilterEnabled(), fgAnalysisEnabled);
 #else
     rpcPic->create( sps.getChromaFormatIdc(), Size( pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples() ), sps.getMaxCUWidth(), sps.getMaxCUWidth() + PIC_MARGIN, false, m_layerId, getGopBasedTemporalFilterEnabled()
-                   , m_fgcSEIAnalysisEnabled);
+                   , fgAnalysisEnabled);
 #endif
 
     if (m_resChangeInClvsEnabled)

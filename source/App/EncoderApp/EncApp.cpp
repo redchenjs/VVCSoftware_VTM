@@ -991,6 +991,13 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setFilmGrainCharactersticsSEIBlendingModeID          ((uint8_t)m_fgcSEIBlendingModeID);
   m_cEncLib.setFilmGrainCharactersticsSEILog2ScaleFactor         ((uint8_t)m_fgcSEILog2ScaleFactor);
   m_cEncLib.setFilmGrainAnalysisEnabled                          (m_fgcSEIAnalysisEnabled);
+#if JVET_Z0047_FG_IMPROVEMENT
+  m_cEncLib.setFilmGrainExternalMask                             (m_fgcSEIExternalMask);
+  m_cEncLib.setFilmGrainExternalDenoised                         (m_fgcSEIExternalDenoised);
+  m_cEncLib.setFilmGrainTemporalFilterPastRefs                   (m_fgcSEITemporalFilterPastRefs);  
+  m_cEncLib.setFilmGrainTemporalFilterFutureRefs                 (m_fgcSEITemporalFilterFutureRefs);
+  m_cEncLib.setFilmGrainTemporalFilterStrengths                  (m_fgcSEITemporalFilterStrengths); 
+#endif
   m_cEncLib.setFilmGrainCharactersticsSEIPerPictureSEI           (m_fgcSEIPerPictureSEI);
   for (int i = 0; i < MAX_NUM_COMPONENT; i++) {
     m_cEncLib.setFGCSEICompModelPresent                          (m_fgcSEICompModelPresent[i], i);
@@ -1385,7 +1392,11 @@ void EncApp::createLib( const int layerIdx )
     m_filteredOrgPic = new PelStorage;
     m_filteredOrgPic->create( unitArea );
   }
+#if JVET_Z0047_FG_IMPROVEMENT
+  if (m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty())
+#else
   if ( m_fgcSEIAnalysisEnabled )
+#endif
   {
     m_filteredOrgPicForFG = new PelStorage;
     m_filteredOrgPicForFG->create( unitArea );
@@ -1427,6 +1438,18 @@ void EncApp::createLib( const int layerIdx )
                           , m_gopBasedTemporalFilterEnabled, m_cEncLib.getAdaptQPmap(), m_cEncLib.getBIM(), m_uiCTUSize
                           );
   }
+#if JVET_Z0047_FG_IMPROVEMENT
+  if ( m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty() )
+  {
+    m_temporalFilterForFG.init(m_FrameSkip, m_inputBitDepth, m_MSBExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
+                               sourceHeight, m_sourcePadding, m_bClipInputVideoToRec709Range, m_inputFileName,
+                               m_chromaFormatIDC, m_inputColourSpaceConvert, m_iQP, m_fgcSEITemporalFilterStrengths,
+                               m_fgcSEITemporalFilterPastRefs, m_fgcSEITemporalFilterFutureRefs, m_firstValidFrame,
+                               m_lastValidFrame
+                               , true, m_cEncLib.getAdaptQPmap(), m_cEncLib.getBIM(), m_uiCTUSize
+                               );
+  }
+#else
   if ( m_fgcSEIAnalysisEnabled )
   {
     int  filteredFrame                 = 0;
@@ -1446,6 +1469,7 @@ void EncApp::createLib( const int layerIdx )
                                , m_gopBasedTemporalFilterEnabled, m_cEncLib.getAdaptQPmap(), m_cEncLib.getBIM(), m_uiCTUSize
                                );
   }
+#endif
 }
 
 void EncApp::destroyLib()
@@ -1488,7 +1512,11 @@ void EncApp::destroyLib()
       delete p;
     }
   }
+#if JVET_Z0047_FG_IMPROVEMENT
+  if (m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty())
+#else
   if (m_fgcSEIAnalysisEnabled)
+#endif
   {
     m_filteredOrgPicForFG->destroy();
     delete m_filteredOrgPicForFG;
@@ -1521,19 +1549,28 @@ bool EncApp::encodePrep( bool& eos )
   m_cVideoIOYuvInputFile.read( *m_orgPic, *m_trueOrgPic, ipCSC, m_sourcePadding, m_InputChromaFormatIDC, m_bClipInputVideoToRec709Range );
 #endif
 
+#if JVET_Z0047_FG_IMPROVEMENT
+  if (m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty())
+#else
   if (m_fgcSEIAnalysisEnabled)
+#endif
   {
     m_filteredOrgPicForFG->copyFrom(*m_orgPic);
+#if JVET_Z0047_FG_IMPROVEMENT
+    m_temporalFilterForFG.filter(m_filteredOrgPicForFG, m_iFrameRcvd);
+#endif
   }
   if ( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
   {
     m_temporalFilter.filter(m_orgPic, m_iFrameRcvd);
     m_filteredOrgPic->copyFrom(*m_orgPic);
   }
+#if !JVET_Z0047_FG_IMPROVEMENT // moved up
   if (m_fgcSEIAnalysisEnabled)
   {
     m_temporalFilterForFG.filter(m_filteredOrgPicForFG, m_iFrameRcvd);
   }
+#endif
 
   // increase number of received frames
   m_iFrameRcvd++;

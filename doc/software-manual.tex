@@ -3778,8 +3778,47 @@ Control generation of the film grain characteristics SEI message.
 \\
 \Option{SEIFGCAnalysisEnabled} &
 \Default{0} &
-Control adaptive film grain parameter estimation - film grain analysis.
+Control adaptive film grain parameter estimation - film grain analysis. If
+enabled, log2ScaleFactor, intensity intervals and model parameters will be
+determined by the encoder, based on a denoised input and a flat area mask,
+either internally generated or externally provided (see SEIFGCExternalDenoised
+and SEIFGCExternalMask)
 \\
+\Option{SEIFGCExternalMask} &
+\Default{""} &
+For film grain analysis, use this mask (yuv file) instead of internally
+generated. Zero values represent flat areas. Must be the same bit depth and
+chroma format as output.
+\\
+\Option{SEIFGCExternalDenoised} &
+\Default{""} &
+For film grain analysis, use this denoised video (yuv file) instead of
+internally generated. Must be the same bit depth and chroma format as output.
+\\
+\Option{SEIFGCTemporalFilterPastRefs} &
+\Default{"4"} &
+When internally generating a denoised picture for film grain analysis, use this
+number of past reference frames for the denoiser (specific to FGC analysis).
+\\
+\Option{SEIFGCTemporalFilterFutureRefs} &
+\Default{"4"} &
+When internally generating a denoised picture for film grain analysis, use this
+number of future reference frames for the denoiser (specific to FGC analysis).
+This should be set to zero in low-delay context.
+\\
+\Option{SEIFGCTemporalFilterStrengthFrame*} &
+\Default{""} &
+When internally generating a denoised picture for film grain analysis, use this
+filtering strength every * frame for the denoiser (specific to FGC analysis),
+where * is an integer. E.g. SEIFGCTemporalFilterStrengthFrame64 1.5 will
+enable the denoiser at every 64th frame with strength 1.5. Longer intervals
+overrides shorter when there are multiple matches.
+If nothing is specified, the strength is set by default to 1.5 for
+- every intra period in random-access mode
+- every frame in all-intra
+- every 2s in low-delay (i.e. intraPeriod < 1)
+\\
+
 \Option{SEIFGCCancelFlag} &
 \Default{0} &
 Specifies the persistence of any previous film grain characteristics SEI message in output order.

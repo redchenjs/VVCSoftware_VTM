@@ -56,7 +56,7 @@
 #if EXTENSION_360_VIDEO
 #include "AppEncHelper360/TExt360EncGop.h"
 #endif
-#include "CommonLib/SEIFilmGrainAnalyzer.h"
+#include "SEIFilmGrainAnalyzer.h"
 
 #include "Analyze.h"
 #include "RateCtrl.h"
