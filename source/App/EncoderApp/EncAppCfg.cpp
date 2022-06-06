@@ -1447,6 +1447,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIFGCCompModelPresentComp1",                     m_fgcSEICompModelPresent[1],                       false, "Specifies the presence of film grain modelling on colour component 1.")
   ("SEIFGCCompModelPresentComp2",                     m_fgcSEICompModelPresent[2],                       false, "Specifies the presence of film grain modelling on colour component 2.")
   ("SEIFGCAnalysisEnabled",                           m_fgcSEIAnalysisEnabled,                           false, "Control adaptive film grain parameter estimation - film grain analysis")
+#if JVET_Z0047_FG_IMPROVEMENT
+  ("SEIFGCExternalMask",                              m_fgcSEIExternalMask,                       string( "" ), "Read external file with mask for film grain analysis. If empty string, use internally calculated mask.")
+  ("SEIFGCExternalDenoised",                          m_fgcSEIExternalDenoised,                   string( "" ), "Read external file with denoised sequence for film grain analysis. If empty string, use MCTF for denoising.")
+  ("SEIFGCTemporalFilterPastRefs",                    m_fgcSEITemporalFilterPastRefs,          TF_DEFAULT_REFS, "Number of past references for temporal prefilter")
+  ("SEIFGCTemporalFilterFutureRefs",                  m_fgcSEITemporalFilterFutureRefs,        TF_DEFAULT_REFS, "Number of future references for temporal prefilter")
+  ("SEIFGCTemporalFilterStrengthFrame*",              m_fgcSEITemporalFilterStrengths, std::map<int, double>(), "Strength for every * frame in FGC-specific temporal filter, where * is an integer.")
+#endif
   ("SEIFGCPerPictureSEI",                             m_fgcSEIPerPictureSEI,                             false, "Film Grain SEI is added for each picture as speciffied in RDD5 to ensure bit accurate synthesis in tricky mode")
   ("SEIFGCNumIntensityIntervalMinus1Comp0",           m_fgcSEINumIntensityIntervalMinus1[0],                0u, "Specifies the number of intensity intervals minus1 on colour component 0.")
   ("SEIFGCNumIntensityIntervalMinus1Comp1",           m_fgcSEINumIntensityIntervalMinus1[1],                0u, "Specifies the number of intensity intervals minus1 on colour component 1.")
@@ -2739,7 +2746,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   CHECK(!m_fgcSEIEnabled && m_fgcSEIAnalysisEnabled, "FGC SEI must be enabled in order to perform film grain analysis!");
   if (m_fgcSEIEnabled)
   {
-    if (m_iQP < 17 && m_fgcSEIAnalysisEnabled == true) {
+    if (m_iQP < 17 && m_fgcSEIAnalysisEnabled == true) { // TODO: JVET_Z0047_FG_IMPROVEMENT: check this; the constraint may have gone 
       msg(WARNING, "*************************************************************************\n");
       msg(WARNING, "* WARNING: Film Grain Estimation is disabled for Qp<17! FGC SEI will use default parameters for film grain! *\n");
       msg(WARNING, "*************************************************************************\n");
@@ -2771,6 +2778,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       msg(WARNING, "*************************************************************************\n");
       m_fgcSEIPersistenceFlag = false;
     }
+#if JVET_Z0047_FG_IMPROVEMENT
+    if (m_fgcSEIAnalysisEnabled && m_fgcSEITemporalFilterStrengths.empty())
+    {
+      // By default: in random-acces = filter RAPs, in all-intra = filter every frame, otherwise = filter every 2s 
+      int filteredFrame = m_iIntraPeriod < 1 ? 2 * m_iFrameRate : m_iIntraPeriod;
+      m_fgcSEITemporalFilterStrengths[filteredFrame] = 1.5;
+    }
+#endif
     uint32_t numModelCtr;
     if (m_fgcSEICompModelPresent[0])
     {
@@ -5014,6 +5029,10 @@ void EncAppCfg::xPrintParameter()
   msg(VERBOSE, "TemporalFilter:%d/%d ", m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs);
   msg(VERBOSE, "SEI CTI:%d ", m_ctiSEIEnabled);
   msg(VERBOSE, "BIM:%d ", m_bimEnabled);
+#if JVET_Z0047_FG_IMPROVEMENT
+  msg(VERBOSE, "SEI FGC:%d ", m_fgcSEIEnabled);
+#endif
+
 #if EXTENSION_360_VIDEO
   m_ext360.outputConfigurationSummary();
 #endif

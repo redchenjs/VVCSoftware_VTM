@@ -235,7 +235,16 @@ void EncGOP::init ( EncLib* pcEncLib )
 
   if (m_pcCfg->getFilmGrainAnalysisEnabled())
   {
-    m_FGAnalyser.init(m_pcCfg->getSourceWidth(), m_pcCfg->getSourceHeight(), m_pcCfg->getChromaFormatIdc(), *(BitDepths *) pcEncLib->getBitDepth(), m_pcCfg->getFGCSEICompModelPresent());
+#if JVET_Z0047_FG_IMPROVEMENT
+    m_FGAnalyser.init(m_pcCfg->getSourceWidth(), m_pcCfg->getSourceHeight(), m_pcCfg->getSourcePadding(0),
+                      m_pcCfg->getSourcePadding(1), IPCOLOURSPACE_UNCHANGED, false, m_pcCfg->getChromaFormatIdc(),
+                      *(BitDepths *) m_pcCfg->getInputBitDepth(), *(BitDepths *) m_pcCfg->getBitDepth(),
+                      m_pcCfg->getFrameSkip(), m_pcCfg->getFGCSEICompModelPresent(),
+                      m_pcCfg->getFilmGrainExternalMask(), m_pcCfg->getFilmGrainExternalDenoised());
+#else
+    m_FGAnalyser.init(m_pcCfg->getSourceWidth(), m_pcCfg->getSourceHeight(), m_pcCfg->getChromaFormatIdc(),
+                      *(BitDepths *) pcEncLib->getBitDepth(), m_pcCfg->getFGCSEICompModelPresent());
+#endif
   }
 
 #if WCG_EXT
@@ -3704,6 +3713,15 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
 
     if (m_pcCfg->getFilmGrainAnalysisEnabled())
     {
+#if JVET_Z0047_FG_IMPROVEMENT
+      int  filteredFrame    = m_pcCfg->getIntraPeriod() < 1 ? 2 * m_pcCfg->getFrameRate() : m_pcCfg->getIntraPeriod();
+      bool ready_to_analyze = pcPic->getPOC() % filteredFrame ? false : true; // either it is mctf denoising or external source for film grain analysis. note: if mctf is used, it is different from mctf for encoding.
+      if (ready_to_analyze)
+      {
+        m_FGAnalyser.initBufs(pcPic);
+        m_FGAnalyser.estimate_grain(pcPic);
+      }
+#else
       int picPoc        = pcPic->getPOC();
       int filteredFrame = 0;
 
@@ -3730,6 +3748,7 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
         m_FGAnalyser.initBufs(pcPic);
         m_FGAnalyser.estimate_grain(pcPic);
       }
+#endif
     }
 
     if( encPic || decPic )
