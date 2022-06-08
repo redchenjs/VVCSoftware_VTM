@@ -81,6 +81,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
 
   // setup coding structure
   CodingStructure& cs = *pic->cs;
+  pic->m_chromaFormatIDC = sps->getChromaFormatIdc();
   cs.slice            = slice;
   cs.sps              = sps;
   cs.pps              = slice->getPPS();

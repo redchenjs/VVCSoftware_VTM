@@ -1214,10 +1214,10 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
           if (!m_reconFileName.empty())
           {
             const Window &conf = pcPic->getConformanceWindow();
-            const SPS* sps = pcPic->cs->sps;
-            ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+            ChromaFormat chromaFormatIDC = pcPic->m_chromaFormatIDC;
             if( m_upscaledOutput )
             {
+              const SPS* sps = pcPic->cs->sps;
               m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture( *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
             }
             else
