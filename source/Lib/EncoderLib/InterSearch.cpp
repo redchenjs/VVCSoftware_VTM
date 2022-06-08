@@ -9749,7 +9749,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       const bool mtsAllowed = CU::isMTSAllowed( *tu.cu, compID );
 
       uint8_t nNumTransformCands = 1 + ( tsAllowed ? 1 : 0 ) + ( mtsAllowed ? 4 : 0 ); // DCT + TS + 4 MTS = 6 tests
-      std::vector<TrMode> trModes;
+      TrModeList trModes;
       if (m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless())
       {
         nNumTransformCands = 0;
@@ -9860,7 +9860,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
         {
           if (transformMode == 0)
           {
-            m_pcTrQuant->transformNxN(tu, compID, cQP, &trModes, m_pcEncCfg->getMTSInterMaxCand());
+            m_pcTrQuant->transformNxN(tu, compID, cQP, trModes, m_pcEncCfg->getMTSInterMaxCand());
             tu.mtsIdx[compID] = trModes[0].first;
           }
           if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[compID] == 0))
@@ -10059,7 +10059,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       }
 
       CompStorage      orgResiCb[4], orgResiCr[4];   // 0:std, 1-3:jointCbCr
-      std::vector<int> jointCbfMasksToTest;
+      CbfMaskList      jointCbfMasksToTest;
       if ( checkJointCbCr )
       {
         orgResiCb[0].create(cbArea);
@@ -10079,7 +10079,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
           orgResiCb[0].scaleSignal(tu.getChromaAdj(), 1, tu.cu->cs->slice->clpRng(COMPONENT_Cb));
           orgResiCr[0].scaleSignal(tu.getChromaAdj(), 1, tu.cu->cs->slice->clpRng(COMPONENT_Cr));
         }
-        jointCbfMasksToTest = m_pcTrQuant->selectICTCandidates(tu, orgResiCb, orgResiCr);
+        m_pcTrQuant->selectICTCandidates(tu, orgResiCb, orgResiCr, jointCbfMasksToTest);
       }
 
       for (int cbfMask: jointCbfMasksToTest)
@@ -10090,7 +10090,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
         uint8_t     numTransformCands = 1 + (tsAllowed ? 1 : 0); // DCT + TS = 2 tests
         bool        cbfDCT2 = true;
 
-        std::vector<TrMode> trModes;
+        TrModeList trModes;
         if (checkDCTOnly || checkTSOnly)
         {
           numTransformCands = 1;
@@ -10170,7 +10170,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
           {
             if (modeId == 0)
             {
-              m_pcTrQuant->transformNxN(tu, codeCompId, qpCbCr, &trModes, m_pcEncCfg->getMTSInterMaxCand());
+              m_pcTrQuant->transformNxN(tu, codeCompId, qpCbCr, trModes, m_pcEncCfg->getMTSInterMaxCand());
               tu.mtsIdx[codeCompId]  = trModes[modeId].first;
               tu.mtsIdx[otherCompId] = MTS_DCT2_DCT2;
             }

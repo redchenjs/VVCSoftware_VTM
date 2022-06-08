@@ -464,10 +464,10 @@ protected:
   void xEncCoeffQT                                 ( CodingStructure &cs, Partitioner& pm, const ComponentID compID, const int subTuIdx = -1, const PartSplit ispType = TU_NO_ISP, CUCtx * cuCtx = nullptr );
 
   void xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &compID, Distortion &dist,
-                           const int &default0Save1Load2 = 0, uint32_t *numSig = nullptr,
-                           std::vector<TrMode> *trModes = nullptr, const bool loadTr = false);
+                           const int &default0Save1Load2 = 0, uint32_t *numSig = nullptr, TrModeList *trModes = nullptr,
+                           const bool loadTr = false);
   void xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &compID, Distortion &dist,
-                              std::vector<TrMode> *trModes = nullptr, const bool loadTr = false);
+                              TrModeList *trModes = nullptr, const bool loadTr = false);
 
   ChromaCbfs xRecurIntraChromaCodingQT( CodingStructure &cs, Partitioner& pm, const double bestCostSoFar = MAX_DOUBLE,                          const PartSplit ispType = TU_NO_ISP );
   bool       xRecurIntraCodingLumaQT  ( CodingStructure &cs, Partitioner& pm, bool mtsCheckRangeFlag = false, int mtsFirstCheckId = 0, int mtsLastCheckId = 0, bool moreProbMTSIdxFirst = false );

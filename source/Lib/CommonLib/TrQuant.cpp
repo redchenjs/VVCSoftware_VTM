@@ -555,19 +555,21 @@ void TrQuant::invTransformICT( const TransformUnit &tu, PelBuf &resCb, PelBuf &r
   (*m_invICT[ TU::getICTMode(tu) ])( resCb, resCr );
 }
 
-std::vector<int> TrQuant::selectICTCandidates( const TransformUnit &tu, CompStorage* resCb, CompStorage* resCr )
+void TrQuant::selectICTCandidates(const TransformUnit &tu, CompStorage *resCb, CompStorage *resCr,
+                                  CbfMaskList &cbfMasksToTest)
 {
   CHECK( !resCb[0].valid() || !resCr[0].valid(), "standard components are not valid" );
+
+  cbfMasksToTest.clear();
 
   if( !CU::isIntra( *tu.cu ) )
   {
     int cbfMask = 3;
     resCb[cbfMask].create( tu.blocks[COMPONENT_Cb] );
     resCr[cbfMask].create( tu.blocks[COMPONENT_Cr] );
-    fwdTransformICT( tu, resCb[0], resCr[0], resCb[cbfMask], resCr[cbfMask], cbfMask );
-    std::vector<int> cbfMasksToTest;
+    fwdTransformICT(tu, resCb[0], resCr[0], resCb[cbfMask], resCr[cbfMask], cbfMask);
     cbfMasksToTest.push_back( cbfMask );
-    return cbfMasksToTest;
+    return;
   }
 
   std::pair<int64_t,int64_t> pairDist[4];
@@ -582,7 +584,6 @@ std::vector<int> TrQuant::selectICTCandidates( const TransformUnit &tu, CompStor
     pairDist[cbfMask] = fwdTransformICT( tu, resCb[0], resCr[0], resCb[cbfMask], resCr[cbfMask], cbfMask );
   }
 
-  std::vector<int> cbfMasksToTest;
   int64_t minDist1  = std::min<int64_t>( pairDist[0].first, pairDist[0].second );
   int64_t minDist2  = std::numeric_limits<int64_t>::max();
   int     cbfMask1  = 0;
@@ -607,8 +608,6 @@ std::vector<int> TrQuant::selectICTCandidates( const TransformUnit &tu, CompStor
   {
     cbfMasksToTest.push_back( cbfMask2 );
   }
-
-  return cbfMasksToTest;
 }
 
 
@@ -896,7 +895,8 @@ void TrQuant::xQuant(TransformUnit &tu, const ComponentID &compID, const CCoeffB
   m_quant->quant(tu, compID, pSrc, absSum, cQP, ctx);
 }
 
-void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const QpParam& cQP, std::vector<TrMode>* trModes, const int maxCand )
+void TrQuant::transformNxN(TransformUnit &tu, const ComponentID &compID, const QpParam &cQP, TrModeList &trModes,
+                           const int maxCand)
 {
         CodingStructure &cs = *tu.cs;
   const CompArea &rect      = tu.blocks[compID];
@@ -908,18 +908,16 @@ void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const 
   CHECK( cs.sps->getMaxTbSize() < width, "Unsupported transformation size" );
 
   int pos = 0;
-  std::vector<TrCost> trCosts;
-  std::vector<TrMode>::iterator it = trModes->begin();
+  static_vector<TrCost, TrModeList::max_num_elements> trCosts;
   const double facBB[] = { 1.2, 1.3, 1.3, 1.4, 1.5 };
-  while( it != trModes->end() )
+  for (auto &it: trModes)
   {
-    tu.mtsIdx[compID] = it->first;
+    tu.mtsIdx[compID] = it.first;
     CoeffBuf tempCoeff( m_mtsCoeffs[tu.mtsIdx[compID]], rect);
     if( tu.noResidual )
     {
       int sumAbs = 0;
-      trCosts.push_back( TrCost( sumAbs, pos++ ) );
-      it++;
+      trCosts.push_back(TrCost(sumAbs, pos++));
       continue;
     }
 
@@ -933,9 +931,9 @@ void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const 
     }
 
     TCoeff sumAbs = 0;
-    for( int pos = 0; pos < width*height; pos++ )
+    for (int k = 0; k < width * height; k++)
     {
-      sumAbs += abs( tempCoeff.buf[pos] );
+      sumAbs += abs(tempCoeff.buf[k]);
     }
 
     double scaleSAD=1.0;
@@ -950,21 +948,20 @@ void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const 
       scaleSAD *= pow(2, trShift);
     }
 
-    trCosts.push_back( TrCost( int(std::min<double>(sumAbs*scaleSAD, std::numeric_limits<int>::max())), pos++ ) );
-    it++;
+    trCosts.push_back(TrCost(int(std::min<double>(sumAbs * scaleSAD, std::numeric_limits<int>::max())), pos++));
   }
 
-  int numTests = 0;
-  std::vector<TrCost>::iterator itC = trCosts.begin();
   const double fac   = facBB[std::max(0, floorLog2(std::max(width, height)) - 2)];
   const double thr   = fac * trCosts.begin()->first;
   const double thrTS = trCosts.begin()->first;
-  while( itC != trCosts.end() )
+
+  int numTests = 0;
+  for (auto &itC: trCosts)
   {
-    const bool testTr = itC->first <= ( itC->second == 1 ? thrTS : thr ) && numTests <= maxCand;
-    trModes->at( itC->second ).second = testTr;
+    const bool testTr = itC.first <= (itC.second == 1 ? thrTS : thr) && numTests <= maxCand;
+
+    trModes.at(itC.second).second = testTr;
     numTests += testTr;
-    itC++;
   }
 }
 
