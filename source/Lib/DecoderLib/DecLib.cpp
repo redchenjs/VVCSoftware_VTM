@@ -2729,7 +2729,11 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   }
   CHECK((sps->getVPSId() > 0) && (vps == 0), "Invalid VPS");
 
-  if ((sps->getProfileTierLevel()->getMultiLayerEnabledFlag() == 0) && (m_prevLayerID != MAX_INT))
+  const ProfileTierLevel &profileTierLevel = sps->getPtlDpbHrdParamsPresentFlag()
+    ? *sps->getProfileTierLevel()
+    : vps->getProfileTierLevel(vps->getOlsPtlIdx(vps->m_targetOlsIdx));
+
+  if ((profileTierLevel.getMultiLayerEnabledFlag() == 0) && (m_prevLayerID != MAX_INT))
   {
     CHECK(m_prevLayerID != nalu.m_nuhLayerId, "All slices in OlsInScope shall have the same value of nuh_layer_id when ptl_multilayer_enabled_flag is equal to 0" );
   }
