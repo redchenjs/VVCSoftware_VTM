@@ -1093,7 +1093,7 @@ public:
   void              setOlsModeIdc(uint32_t t) { m_vpsOlsModeIdc = t; }
 
   uint32_t          getNumOutputLayerSets() const { return m_vpsNumOutputLayerSets; }
-  void              setNumOutputLayerSets(uint8_t t) { m_vpsNumOutputLayerSets = t; }
+  void              setNumOutputLayerSets(uint32_t t) { m_vpsNumOutputLayerSets = t; }
 
   bool              getOlsOutputLayerFlag(uint32_t ols, uint32_t layer) const { return m_vpsOlsOutputLayerFlag[ols][layer]; }
   void              setOlsOutputLayerFlag(uint32_t ols, uint32_t layer, bool t) { m_vpsOlsOutputLayerFlag[ols][layer] = t; }
