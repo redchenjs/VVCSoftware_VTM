@@ -2760,7 +2760,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   int          bestBiPMvpL1    = 0;
   Distortion   biPDistTemp     = std::numeric_limits<Distortion>::max();
 
-  uint8_t      bcwIdx          = (cu.cs->slice->isInterB() ? cu.BcwIdx : BCW_DEFAULT);
+  uint8_t      bcwIdx         = (cu.cs->slice->isInterB() ? cu.bcwIdx : BCW_DEFAULT);
   bool         enforceBcwPred = false;
   MergeCtx     mergeCtx;
 
@@ -3084,7 +3084,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
             }
 #endif
           }
-          if( cu.cs->sps->getUseBcw() && cu.BcwIdx == BCW_DEFAULT && cu.cs->slice->isInterB() )
+          if (cu.cs->sps->getUseBcw() && cu.bcwIdx == BCW_DEFAULT && cu.cs->slice->isInterB())
           {
             const bool checkIdentical = true;
             m_uniMotions.setReadMode(checkIdentical, (uint32_t) refList, (uint32_t) refIdxTemp);
@@ -4175,7 +4175,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 
       if( bcwIdx != BCW_DEFAULT )
       {
-        cu.BcwIdx = BCW_DEFAULT; // Reset to default for the Non-NormalMC modes.
+        cu.bcwIdx = BCW_DEFAULT;   // Reset to default for the Non-NormalMC modes.
       }
 
       uiHevcCost = (uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1])
@@ -4531,7 +4531,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
     {
       if (bcwIdx != BCW_DEFAULT)
       {
-        cu.BcwIdx = bcwIdx;
+        cu.bcwIdx = bcwIdx;
       }
     }
     m_maxCompIDToPred = MAX_NUM_COMPONENT;
@@ -4919,10 +4919,10 @@ void InterSearch::xMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, Ref
 #endif
 {
 #if GDR_ENABLED
-  if (pu.cu->cs->sps->getUseBcw() && pu.cu->BcwIdx != BCW_DEFAULT && !bBi
+  if (pu.cu->cs->sps->getUseBcw() && pu.cu->bcwIdx != BCW_DEFAULT && !bBi
       && xReadBufferedUniMv(pu, eRefPicList, refIdxPred, rcMvPred, rcMv, rcMvSolid, ruiBits, ruiCost))
 #else
-  if (pu.cu->cs->sps->getUseBcw() && pu.cu->BcwIdx != BCW_DEFAULT && !bBi
+  if (pu.cu->cs->sps->getUseBcw() && pu.cu->bcwIdx != BCW_DEFAULT && !bBi
       && xReadBufferedUniMv(pu, eRefPicList, refIdxPred, rcMvPred, rcMv, ruiBits, ruiCost))
 #endif
   {
@@ -4946,12 +4946,11 @@ void InterSearch::xMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, Ref
     // NOTE: Other buf contains predicted signal from another direction
     PelUnitBuf otherBuf = m_tmpPredStorage[1 - (int)eRefPicList].getBuf( UnitAreaRelative(*pu.cu, pu ));
     origBufTmp.copyFrom(origBuf);
-    origBufTmp.removeHighFreq( otherBuf, m_pcEncCfg->getClipForBiPredMeEnabled(), pu.cu->slice->clpRngs()
-                              ,getBcwWeight( pu.cu->BcwIdx, eRefPicList )
-                              );
+    origBufTmp.removeHighFreq(otherBuf, m_pcEncCfg->getClipForBiPredMeEnabled(), pu.cu->slice->clpRngs(),
+                              getBcwWeight(pu.cu->bcwIdx, eRefPicList));
     pBuf = &origBufTmp;
 
-    fWeight = xGetMEDistortionWeight( pu.cu->BcwIdx, eRefPicList );
+    fWeight = xGetMEDistortionWeight(pu.cu->bcwIdx, eRefPicList);
   }
   m_cDistParam.isBiPred = bBi;
 
@@ -6159,8 +6158,9 @@ Distortion InterSearch::xGetSymmetricCost( PredictionUnit& pu, PelUnitBuf& origB
 
   PelUnitBuf bufTmp = m_tmpStorageLCU.getBuf( UnitAreaRelative( *pu.cu, pu ) );
   bufTmp.copyFrom( origBuf );
-  bufTmp.removeHighFreq( predBufA, m_pcEncCfg->getClipForBiPredMeEnabled(), pu.cu->slice->clpRngs(), getBcwWeight( pu.cu->BcwIdx, eTarRefPicList ) );
-  double fWeight = xGetMEDistortionWeight( pu.cu->BcwIdx, eTarRefPicList );
+  bufTmp.removeHighFreq(predBufA, m_pcEncCfg->getClipForBiPredMeEnabled(), pu.cu->slice->clpRngs(),
+                        getBcwWeight(pu.cu->bcwIdx, eTarRefPicList));
+  double fWeight = xGetMEDistortionWeight(pu.cu->bcwIdx, eTarRefPicList);
 
   // calc distortion
   DFunc distFunc = (!pu.cu->slice->getDisableSATDForRD()) ? DF_HAD : DF_SAD;
@@ -6529,7 +6529,7 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
   pu.regularMergeFlag = false;
   if( bcwIdx != BCW_DEFAULT )
   {
-    pu.cu->BcwIdx = bcwIdx;
+    pu.cu->bcwIdx = bcwIdx;
   }
 
   // Uni-directional prediction
@@ -7080,7 +7080,7 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
         }
 #endif
       }
-      if(pu.cu->cs->sps->getUseBcw() && pu.cu->BcwIdx == BCW_DEFAULT && pu.cu->slice->isInterB())
+      if (pu.cu->cs->sps->getUseBcw() && pu.cu->bcwIdx == BCW_DEFAULT && pu.cu->slice->isInterB())
       {
         m_uniMotions.setReadModeAffine(true, (uint8_t) refList, (uint8_t) refIdxTemp, pu.cu->affineType);
 #if GDR_ENABLED
@@ -8098,7 +8098,7 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
   }
   if( bcwIdx != BCW_DEFAULT )
   {
-    pu.cu->BcwIdx = BCW_DEFAULT;
+    pu.cu->bcwIdx = BCW_DEFAULT;
   }
 }
 
@@ -8276,11 +8276,11 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
 #endif
 {
 #if GDR_ENABLED
-  if (pu.cu->cs->sps->getUseBcw() && pu.cu->BcwIdx != BCW_DEFAULT && !bBi
+  if (pu.cu->cs->sps->getUseBcw() && pu.cu->bcwIdx != BCW_DEFAULT && !bBi
       && xReadBufferedAffineUniMv(pu, eRefPicList, refIdxPred, acMvPred, acMv, acMvSolid, ruiBits, ruiCost, mvpIdx,
                                   aamvpi))
 #else
-  if (pu.cu->cs->sps->getUseBcw() && pu.cu->BcwIdx != BCW_DEFAULT && !bBi
+  if (pu.cu->cs->sps->getUseBcw() && pu.cu->bcwIdx != BCW_DEFAULT && !bBi
       && xReadBufferedAffineUniMv(pu, eRefPicList, refIdxPred, acMvPred, acMv, ruiBits, ruiCost, mvpIdx, aamvpi))
 #endif
   {
@@ -8313,12 +8313,11 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
     // NOTE: Other buf contains predicted signal from another direction
     PelUnitBuf otherBuf = m_tmpPredStorage[1 - (int)eRefPicList].getBuf( UnitAreaRelative( *pu.cu, pu ) );
     origBufTmp.copyFrom(origBuf);
-    origBufTmp.removeHighFreq(otherBuf, m_pcEncCfg->getClipForBiPredMeEnabled(), pu.cu->slice->clpRngs()
-                             ,getBcwWeight(pu.cu->BcwIdx, eRefPicList)
-                             );
+    origBufTmp.removeHighFreq(otherBuf, m_pcEncCfg->getClipForBiPredMeEnabled(), pu.cu->slice->clpRngs(),
+                              getBcwWeight(pu.cu->bcwIdx, eRefPicList));
     pBuf = &origBufTmp;
 
-    fWeight = xGetMEDistortionWeight( pu.cu->BcwIdx, eRefPicList );
+    fWeight = xGetMEDistortionWeight(pu.cu->bcwIdx, eRefPicList);
   }
 
   // pred YUV
@@ -11181,9 +11180,10 @@ void InterSearch::symmvdCheckBestMvp(
   }
   PelUnitBuf bufTmp = m_tmpStorageLCU.getBuf( UnitAreaRelative( *pu.cu, pu ) );
   bufTmp.copyFrom( origBuf );
-  bufTmp.removeHighFreq( predBufA, m_pcEncCfg->getClipForBiPredMeEnabled(), pu.cu->slice->clpRngs(), getBcwWeight( pu.cu->BcwIdx, tarRefList ) );
+  bufTmp.removeHighFreq(predBufA, m_pcEncCfg->getClipForBiPredMeEnabled(), pu.cu->slice->clpRngs(),
+                        getBcwWeight(pu.cu->bcwIdx, tarRefList));
 
-  double fWeight = xGetMEDistortionWeight( pu.cu->BcwIdx, tarRefList );
+  double fWeight = xGetMEDistortionWeight(pu.cu->bcwIdx, tarRefList);
 
   int32_t skipMvpIdx[2];
   skipMvpIdx[0] = skip ? mvpIdxSym[0] : -1;

@@ -393,7 +393,7 @@ const CtxSet ContextSetCfg::AffMergeIdx = ContextSetCfg::addCtxSet
   {   0, },
 });
 
-const CtxSet ContextSetCfg::BcwIdx = ContextSetCfg::addCtxSet
+const CtxSet ContextSetCfg::bcwIdx = ContextSetCfg::addCtxSet
 ({
   {   5, },
   {   4, },

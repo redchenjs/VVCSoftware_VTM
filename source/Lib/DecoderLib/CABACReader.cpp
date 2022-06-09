@@ -1245,7 +1245,7 @@ void CABACReader::cu_bcw_flag(CodingUnit& cu)
 
   uint32_t idx = 0;
 
-  uint32_t symbol = m_BinDecoder.decodeBin(Ctx::BcwIdx(0));
+  uint32_t symbol = m_BinDecoder.decodeBin(Ctx::bcwIdx(0));
 
   int32_t numBcw = (cu.slice->getCheckLDC()) ? 5 : 3;
   if(symbol == 1)
@@ -1269,7 +1269,7 @@ void CABACReader::cu_bcw_flag(CodingUnit& cu)
   uint8_t bcwIdx = (uint8_t)g_BcwParsingOrder[idx];
   CU::setBcwIdx(cu, bcwIdx);
 
-  DTRACE(g_trace_ctx, D_SYNTAX, "cu_bcw_flag() bcw_idx=%d\n", cu.BcwIdx ? 1 : 0);
+  DTRACE(g_trace_ctx, D_SYNTAX, "cu_bcw_flag() bcw_idx=%d\n", cu.bcwIdx ? 1 : 0);
 }
 
 void CABACReader::xReadTruncBinCode(uint32_t& symbol, uint32_t maxSymbol)
@@ -2135,7 +2135,7 @@ void CABACReader::prediction_unit( PredictionUnit& pu, MergeCtx& mrgCtx )
     pu.mv    [REF_PIC_LIST_1] = Mv(0, 0);
     pu.refIdx[REF_PIC_LIST_1] = -1;
     pu.interDir               =  1;
-    pu.cu->BcwIdx = BCW_DEFAULT;
+    pu.cu->bcwIdx             = BCW_DEFAULT;
   }
 
   if ( pu.cu->smvdMode )

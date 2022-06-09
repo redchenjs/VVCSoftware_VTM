@@ -293,13 +293,14 @@ struct CodingUnit : public UnitArea
 
   PredMode       predMode;
 
-  uint8_t          depth;   // number of all splits, applied with generalized splits
-  uint8_t          qtDepth; // number of applied quad-splits, before switching to the multi-type-tree (mtt)
-  // a triple split would increase the mtDepth by 1, but the qtDepth by 2 in the first and last part and by 1 in the middle part (because of the 1-2-1 split proportions)
-  uint8_t          btDepth; // number of applied binary splits, after switching to the mtt (or it's equivalent)
-  uint8_t          mtDepth; // the actual number of splits after switching to mtt (equals btDepth if only binary splits are allowed)
-  int8_t          chromaQpAdj;
-  int8_t          qp;
+  uint8_t depth;     // number of all splits, applied with generalized splits
+  uint8_t qtDepth;   // number of applied quad-splits, before switching to the multi-type-tree (mtt)
+  // a triple split would increase the mtDepth by 1, but the qtDepth by 2 in the first and last part and by 1 in the
+  // middle part (because of the 1-2-1 split proportions)
+  uint8_t        btDepth;   // number of binary splits after switching to MTT
+  uint8_t        mtDepth;   // number of splits after switching to MTT (equals btDepth if only binary splits)
+  int8_t         chromaQpAdj;
+  int8_t         qp;
   SplitSeries    splitSeries;
   TreeType       treeType;
   ModeType       modeType;
@@ -312,19 +313,19 @@ struct CodingUnit : public UnitArea
   bool           geoFlag;
   int            bdpcmMode;
   int            bdpcmModeChroma;
-  uint8_t          imv;
+  uint8_t        imv;
   bool           rootCbf;
   uint8_t        sbtInfo;
-  uint32_t           tileIdx;
-  uint8_t         mtsFlag;
-  uint32_t        lfnstIdx;
-  uint8_t         BcwIdx;
-  int             refIdxBi[2];
+  uint32_t       tileIdx;
+  uint8_t        mtsFlag;
+  uint32_t       lfnstIdx;
+  uint8_t        bcwIdx;
+  int            refIdxBi[2];
   bool           mipFlag;
 
   // needed for fast imv mode decisions
-  int8_t          imvNumCand;
-  uint8_t          smvdMode;
+  int8_t         imvNumCand;
+  uint8_t        smvdMode;
   uint8_t        ispMode;
   bool           useEscape[MAX_NUM_CHANNEL_TYPE];
   bool           useRotation[MAX_NUM_CHANNEL_TYPE];

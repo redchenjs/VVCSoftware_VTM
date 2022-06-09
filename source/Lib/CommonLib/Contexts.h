@@ -256,7 +256,7 @@ public:
   static const CtxSet   ChromaQpAdjFlag;
   static const CtxSet   ChromaQpAdjIdc;
   static const CtxSet   ImvFlag;
-  static const CtxSet   BcwIdx;
+  static const CtxSet   bcwIdx;
   static const CtxSet   ctbAlfFlag;
   static const CtxSet   ctbAlfAlternative;
   static const CtxSet   AlfUseTemporalFilt;

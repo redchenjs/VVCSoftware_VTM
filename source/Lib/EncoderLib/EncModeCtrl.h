@@ -800,8 +800,9 @@ struct CodedCUInfo
   bool validMv[NUM_REF_PIC_LIST_01][MAX_STORED_CU_INFO_REFS];
   Mv   saveMv [NUM_REF_PIC_LIST_01][MAX_STORED_CU_INFO_REFS];
 
-  uint8_t BcwIdx;
-  char    selectColorSpaceOption;  // 0 - test both two color spaces; 1 - only test the first color spaces; 2 - only test the second color spaces
+  uint8_t bcwIdx;
+  char selectColorSpaceOption;   // 0 - test both two color spaces; 1 - only test the first color spaces; 2 - only test
+                                 // the second color spaces
   uint16_t ispPredModeVal;
   double   bestDCT2NonISPCost;
   double   bestCost;

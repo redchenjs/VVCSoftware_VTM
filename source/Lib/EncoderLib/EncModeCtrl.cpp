@@ -605,14 +605,14 @@ void CacheBlkInfoCtrl::setBcwIdx(const UnitArea& area, uint8_t gBiIdx)
   unsigned idx1, idx2, idx3, idx4;
   getAreaIdx(area.Y(), *m_slice_chblk->getPPS()->pcv, idx1, idx2, idx3, idx4);
 
-  m_codedCUInfo[idx1][idx2][idx3][idx4]->BcwIdx = gBiIdx;
+  m_codedCUInfo[idx1][idx2][idx3][idx4]->bcwIdx = gBiIdx;
 }
 uint8_t CacheBlkInfoCtrl::getBcwIdx(const UnitArea& area)
 {
   unsigned idx1, idx2, idx3, idx4;
   getAreaIdx(area.Y(), *m_slice_chblk->getPPS()->pcv, idx1, idx2, idx3, idx4);
 
-  return m_codedCUInfo[idx1][idx2][idx3][idx4]->BcwIdx;
+  return m_codedCUInfo[idx1][idx2][idx3][idx4]->bcwIdx;
 }
 
 #if REUSE_CU_RESULTS
@@ -1896,7 +1896,7 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
           relatedCU.isInter   = true;
           relatedCU.isSkip   |= bestCU->skip;
           relatedCU.isMMVDSkip |= bestCU->mmvdSkip;
-          relatedCU.BcwIdx    = bestCU->BcwIdx;
+          relatedCU.bcwIdx = bestCU->bcwIdx;
           if (bestCU->slice->getSPS()->getUseColorTrans())
           {
             if (m_pcEncCfg->getRGBFormatFlag())
