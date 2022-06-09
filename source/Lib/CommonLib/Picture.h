@@ -267,6 +267,8 @@ public:
   MCTSInfo     mctsInfo;
   std::vector<AQpLayer*> aqlayer;
 
+  ChromaFormat m_chromaFormatIDC;
+
 #if !KEEP_PRED_AND_RESI_SIGNALS
 private:
   UnitArea m_ctuArea;
