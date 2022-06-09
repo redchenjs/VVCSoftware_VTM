@@ -1068,8 +1068,8 @@ void AdaptiveLoopFilter::filterBlk(AlfClassifier **classifier, const PelUnitBuf 
 {
   CHECK((vbCTUHeight & (vbCTUHeight - 1)) != 0, "vbCTUHeight must be a power of 2");
 
-  const bool bChroma = isChroma( compId );
-  if( bChroma )
+  const bool hasChroma = isChroma(compId);
+  if (hasChroma)
   {
     CHECK( filtType != 0, "Chroma needs to have filtType == 0" );
   }
@@ -1127,14 +1127,14 @@ void AdaptiveLoopFilter::filterBlk(AlfClassifier **classifier, const PelUnitBuf 
 
   for( int i = 0; i < endHeight - startHeight; i += clsSizeY )
   {
-    if( !bChroma )
+    if (!hasChroma)
     {
       pClass = classifier[blkDst.y + i] + blkDst.x;
     }
 
     for( int j = 0; j < endWidth - startWidth; j += clsSizeX )
     {
-      if( !bChroma )
+      if (!hasChroma)
       {
         AlfClassifier& cl = pClass[j];
         transposeIdx = cl.transposeIdx;
@@ -1202,7 +1202,7 @@ void AdaptiveLoopFilter::filterBlk(AlfClassifier **classifier, const PelUnitBuf 
         pRec1 = pRec0 + j + ii * dstStride;
 
         const int yVb = (blkDst.y + i + ii) & (vbCTUHeight - 1);
-        if (yVb < vbPos && (yVb >= vbPos - (bChroma ? 2 : 4)))   // above
+        if (yVb < vbPos && (yVb >= vbPos - (hasChroma ? 2 : 4)))   // above
         {
           pImg1 = (yVb == vbPos - 1) ? pImg0 : pImg1;
           pImg3 = (yVb >= vbPos - 2) ? pImg1 : pImg3;
@@ -1212,7 +1212,7 @@ void AdaptiveLoopFilter::filterBlk(AlfClassifier **classifier, const PelUnitBuf 
           pImg4 = (yVb >= vbPos - 2) ? pImg2 : pImg4;
           pImg6 = (yVb >= vbPos - 3) ? pImg4 : pImg6;
         }
-        else if (yVb >= vbPos && (yVb <= vbPos + (bChroma ? 1 : 3)))   // bottom
+        else if (yVb >= vbPos && (yVb <= vbPos + (hasChroma ? 1 : 3)))   // bottom
         {
           pImg2 = (yVb == vbPos) ? pImg0 : pImg2;
           pImg4 = (yVb <= vbPos + 1) ? pImg2 : pImg4;

@@ -1680,7 +1680,8 @@ DepQuant::~DepQuant()
   delete static_cast<DQIntern::DepQuant*>(p);
 }
 
-void DepQuant::quant( TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &uiAbsSum, const QpParam &cQP, const Ctx& ctx )
+void DepQuant::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum,
+                     const QpParam &cQP, const Ctx &ctx)
 {
   const bool useRegularResidualCoding = tu.cu->slice->getTSResidualCodingDisabledFlag() || tu.mtsIdx[compID] != MTS_SKIP;
   if( tu.cs->slice->getDepQuantEnabledFlag() && useRegularResidualCoding )
@@ -1701,11 +1702,13 @@ void DepQuant::quant( TransformUnit &tu, const ComponentID &compID, const CCoeff
     const bool        isLfnstApplied = tu.cu->lfnstIdx > 0 && (tu.cu->isSepTree() ? true : isLuma(compID));
     const bool        disableSMForACT = tu.cs->slice->getSPS()->getScalingMatrixForAlternativeColourSpaceDisabledFlag() && (tu.cs->slice->getSPS()->getScalingMatrixDesignatedColourSpaceFlag() == tu.cu->colorTransform);
     const bool        enableScalingLists = getUseScalingList(width, height, (tu.mtsIdx[compID] == MTS_SKIP), isLfnstApplied, disableSMForLFNST, disableSMForACT);
-    static_cast<DQIntern::DepQuant*>(p)->quant( tu, pSrc, compID, cQP, Quant::m_dLambda, ctx, uiAbsSum, enableScalingLists, Quant::getQuantCoeff(scalingListType, qpRem, log2TrWidth, log2TrHeight) );
+    static_cast<DQIntern::DepQuant *>(p)->quant(
+      tu, pSrc, compID, cQP, Quant::m_dLambda, ctx, absSum, enableScalingLists,
+      Quant::getQuantCoeff(scalingListType, qpRem, log2TrWidth, log2TrHeight));
   }
   else
   {
-    QuantRDOQ::quant( tu, compID, pSrc, uiAbsSum, cQP, ctx );
+    QuantRDOQ::quant(tu, compID, pSrc, absSum, cQP, ctx);
   }
 }
 

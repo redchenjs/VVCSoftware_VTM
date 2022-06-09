@@ -2845,42 +2845,42 @@ void  HLSWriter::codeTilesWPPEntryPoint( Slice* pSlice )
 void HLSWriter::xCodePredWeightTable( Slice* pcSlice )
 {
   WPScalingParam  *wp;
-  const ChromaFormat    format                = pcSlice->getSPS()->getChromaFormatIdc();
-  const uint32_t            numberValidComponents = getNumberValidComponents(format);
-  const bool            bChroma               = isChromaEnabled(format);
-  const int             iNbRef                = (pcSlice->getSliceType() == B_SLICE ) ? (2) : (1);
-  bool            bDenomCoded           = false;
-  uint32_t            uiTotalSignalledWeightFlags = 0;
+  const ChromaFormat format                    = pcSlice->getSPS()->getChromaFormatIdc();
+  const uint32_t     numberValidComponents     = getNumberValidComponents(format);
+  const bool         hasChroma                 = isChromaEnabled(format);
+  const int          numLists                  = (pcSlice->getSliceType() == B_SLICE) ? 2 : 1;
+  bool               denomCoded                = false;
+  uint32_t           totalSignalledWeightFlags = 0;
 
   if ( (pcSlice->getSliceType()==P_SLICE && pcSlice->getPPS()->getUseWP()) || (pcSlice->getSliceType()==B_SLICE && pcSlice->getPPS()->getWPBiPred()) )
   {
-    for ( int iNumRef=0 ; iNumRef<iNbRef ; iNumRef++ ) // loop over l0 and l1 syntax elements
+    for (int listIdx = 0; listIdx < numLists; listIdx++)   // loop over l0 and l1 syntax elements
     {
-      RefPicList  eRefPicList = ( iNumRef ? REF_PIC_LIST_1 : REF_PIC_LIST_0 );
+      RefPicList eRefPicList = listIdx ? REF_PIC_LIST_1 : REF_PIC_LIST_0;
 
       // NOTE: wp[].log2WeightDenom and wp[].presentFlag are actually per-channel-type settings.
 
       for (int refIdx = 0; refIdx < pcSlice->getNumRefIdx(eRefPicList); refIdx++)
       {
         wp = pcSlice->getWpScaling(eRefPicList, refIdx);
-        if ( !bDenomCoded )
+        if (!denomCoded)
         {
-          int iDeltaDenom;
+          int deltaDenom;
           WRITE_UVLC(wp[COMPONENT_Y].log2WeightDenom, "luma_log2_weight_denom");
 
-          if( bChroma )
+          if (hasChroma)
           {
             CHECK(wp[COMPONENT_Cb].log2WeightDenom != wp[COMPONENT_Cr].log2WeightDenom,
                   "Chroma blocks of different size not supported");
-            iDeltaDenom = (wp[COMPONENT_Cb].log2WeightDenom - wp[COMPONENT_Y].log2WeightDenom);
-            WRITE_SVLC( iDeltaDenom, "delta_chroma_log2_weight_denom" );
+            deltaDenom = (wp[COMPONENT_Cb].log2WeightDenom - wp[COMPONENT_Y].log2WeightDenom);
+            WRITE_SVLC(deltaDenom, "delta_chroma_log2_weight_denom");
           }
-          bDenomCoded = true;
+          denomCoded = true;
         }
-        WRITE_FLAG(wp[COMPONENT_Y].presentFlag, iNumRef == 0 ? "luma_weight_l0_flag[i]" : "luma_weight_l1_flag[i]");
-        uiTotalSignalledWeightFlags += wp[COMPONENT_Y].presentFlag;
+        WRITE_FLAG(wp[COMPONENT_Y].presentFlag, listIdx == 0 ? "luma_weight_l0_flag[i]" : "luma_weight_l1_flag[i]");
+        totalSignalledWeightFlags += wp[COMPONENT_Y].presentFlag;
       }
-      if (bChroma)
+      if (hasChroma)
       {
         for (int refIdx = 0; refIdx < pcSlice->getNumRefIdx(eRefPicList); refIdx++)
         {
@@ -2888,8 +2888,8 @@ void HLSWriter::xCodePredWeightTable( Slice* pcSlice )
           CHECK(wp[COMPONENT_Cb].presentFlag != wp[COMPONENT_Cr].presentFlag,
                 "Inconsistent settings for chroma channels");
           WRITE_FLAG(wp[COMPONENT_Cb].presentFlag,
-                     iNumRef == 0 ? "chroma_weight_l0_flag[i]" : "chroma_weight_l1_flag[i]");
-          uiTotalSignalledWeightFlags += 2 * wp[COMPONENT_Cb].presentFlag;
+                     listIdx == 0 ? "chroma_weight_l0_flag[i]" : "chroma_weight_l1_flag[i]");
+          totalSignalledWeightFlags += 2 * wp[COMPONENT_Cb].presentFlag;
         }
       }
 
@@ -2898,12 +2898,12 @@ void HLSWriter::xCodePredWeightTable( Slice* pcSlice )
         wp = pcSlice->getWpScaling(eRefPicList, refIdx);
         if (wp[COMPONENT_Y].presentFlag)
         {
-          int iDeltaWeight = (wp[COMPONENT_Y].codedWeight - (1 << wp[COMPONENT_Y].log2WeightDenom));
-          WRITE_SVLC( iDeltaWeight, iNumRef==0?"delta_luma_weight_l0[i]":"delta_luma_weight_l1[i]" );
-          WRITE_SVLC(wp[COMPONENT_Y].codedOffset, iNumRef == 0 ? "luma_offset_l0[i]" : "luma_offset_l1[i]");
+          int deltaWeight = (wp[COMPONENT_Y].codedWeight - (1 << wp[COMPONENT_Y].log2WeightDenom));
+          WRITE_SVLC(deltaWeight, listIdx == 0 ? "delta_luma_weight_l0[i]" : "delta_luma_weight_l1[i]");
+          WRITE_SVLC(wp[COMPONENT_Y].codedOffset, listIdx == 0 ? "luma_offset_l0[i]" : "luma_offset_l1[i]");
         }
 
-        if ( bChroma )
+        if (hasChroma)
         {
           if (wp[COMPONENT_Cb].presentFlag)
           {
@@ -2911,19 +2911,19 @@ void HLSWriter::xCodePredWeightTable( Slice* pcSlice )
             {
               CHECK(wp[COMPONENT_Cb].log2WeightDenom != wp[COMPONENT_Cr].log2WeightDenom,
                     "Chroma blocks of different size not supported");
-              int iDeltaWeight = (wp[j].codedWeight - (1 << wp[COMPONENT_Cb].log2WeightDenom));
-              WRITE_SVLC( iDeltaWeight, iNumRef==0?"delta_chroma_weight_l0[i]":"delta_chroma_weight_l1[i]" );
+              int deltaWeight = (wp[j].codedWeight - (1 << wp[COMPONENT_Cb].log2WeightDenom));
+              WRITE_SVLC(deltaWeight, listIdx == 0 ? "delta_chroma_weight_l0[i]" : "delta_chroma_weight_l1[i]");
 
               int range=pcSlice->getSPS()->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag() ? (1<<pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_CHROMA))/2 : 128;
               int pred         = (range - ((range * wp[j].codedWeight) >> (wp[j].log2WeightDenom)));
-              int iDeltaChroma = (wp[j].codedOffset - pred);
-              WRITE_SVLC( iDeltaChroma, iNumRef==0?"delta_chroma_offset_l0[i]":"delta_chroma_offset_l1[i]" );
+              int deltaChroma  = (wp[j].codedOffset - pred);
+              WRITE_SVLC(deltaChroma, listIdx == 0 ? "delta_chroma_offset_l0[i]" : "delta_chroma_offset_l1[i]");
             }
           }
         }
       }
     }
-    CHECK(uiTotalSignalledWeightFlags>24, "Too many signalled weight flags");
+    CHECK(totalSignalledWeightFlags > 24, "Too many signalled weight flags");
   }
 }
 

@@ -890,9 +890,10 @@ void TrQuant::xITransformSkip(const CCoeffBuf     &pCoeff,
   }
 }
 
-void TrQuant::xQuant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &uiAbsSum, const QpParam &cQP, const Ctx& ctx)
+void TrQuant::xQuant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum,
+                     const QpParam &cQP, const Ctx &ctx)
 {
-  m_quant->quant( tu, compID, pSrc, uiAbsSum, cQP, ctx );
+  m_quant->quant(tu, compID, pSrc, absSum, cQP, ctx);
 }
 
 void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const QpParam& cQP, std::vector<TrMode>* trModes, const int maxCand )
@@ -967,7 +968,8 @@ void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const 
   }
 }
 
-void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const QpParam& cQP, TCoeff& uiAbsSum, const Ctx& ctx, const bool loadTr )
+void TrQuant::transformNxN(TransformUnit &tu, const ComponentID &compID, const QpParam &cQP, TCoeff &absSum,
+                           const Ctx &ctx, const bool loadTr)
 {
         CodingStructure &cs = *tu.cs;
   const SPS &sps            = *cs.sps;
@@ -979,8 +981,8 @@ void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const 
 
   if( tu.noResidual )
   {
-    uiAbsSum = 0;
-    TU::setCbfAtDepth( tu, compID, tu.depth, uiAbsSum > 0 );
+    absSum = 0;
+    TU::setCbfAtDepth(tu, compID, tu.depth, absSum > 0);
     return;
   }
 
@@ -989,7 +991,7 @@ void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const 
     tu.mtsIdx[compID] = MTS_SKIP;
   }
 
-  uiAbsSum = 0;
+  absSum = 0;
 
   // transform and quantize
   CHECK(cs.sps->getMaxTbSize() < uiWidth, "Unsupported transformation size");
@@ -1017,12 +1019,12 @@ void TrQuant::transformNxN( TransformUnit& tu, const ComponentID& compID, const 
 
   DTRACE_COEFF_BUF(D_TCOEFF, tempCoeff, tu, tu.cu->predMode, compID);
 
-  xQuant(tu, compID, tempCoeff, uiAbsSum, cQP, ctx);
+  xQuant(tu, compID, tempCoeff, absSum, cQP, ctx);
 
   DTRACE_COEFF_BUF(D_TCOEFF, tu.getCoeffs(compID), tu, tu.cu->predMode, compID);
 
   // set coded block flag (CBF)
-  TU::setCbfAtDepth (tu, compID, tu.depth, uiAbsSum > 0);
+  TU::setCbfAtDepth(tu, compID, tu.depth, absSum > 0);
 }
 
 
