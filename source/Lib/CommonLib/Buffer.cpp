@@ -748,8 +748,8 @@ void AreaBuf<Pel>::linearTransform( const int scale, const int shift, const int 
 
     SIZE_AWARE_PER_EL_OP( LINTF_OP, LINTF_INC );
 
-#undef RECO_OP
-#undef RECO_INC
+#undef LINTF_OP
+#undef LINTF_INC
   }
 }
 
