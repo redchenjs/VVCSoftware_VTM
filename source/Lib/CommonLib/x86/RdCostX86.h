@@ -2180,6 +2180,8 @@ static Distortion xCalcHAD8x16_HBD_AVX2(const Pel* piOrg, const Pel* piCur, cons
 }
 #endif
 #else
+static constexpr uint64_t INV_SQRT_2 = 0xb504f334U;   // 2^32 / sqrt(2.0)
+
 static uint32_t xCalcHAD4x4_SSE( const Torg *piOrg, const Tcur *piCur, const int iStrideOrg, const int iStrideCur )
 {
   __m128i r0 = ( sizeof( Torg ) > 1 ) ? ( _mm_loadl_epi64( ( const __m128i* )&piOrg[0] ) ) : ( _mm_unpacklo_epi8( _mm_cvtsi32_si128( *(const int*)&piOrg[0] ), _mm_setzero_si128() ) );
@@ -2616,7 +2618,8 @@ static uint32_t xCalcHAD16x8_SSE( const Torg *piOrg, const Tcur *piCur, const in
   sad -= absDc;
   sad += absDc >> 2;
 #endif
-  sad  = (uint32_t)(sad / sqrt(16.0 * 8) * 2);
+  sad = sad * INV_SQRT_2 >> 32;
+  sad >>= 2;
 
   return sad;
 }
@@ -2813,7 +2816,8 @@ static uint32_t xCalcHAD8x16_SSE( const Torg *piOrg, const Tcur *piCur, const in
   sad -= absDc;
   sad += absDc >> 2;
 #endif
-  sad  = (uint32_t)(sad / sqrt(16.0 * 8) * 2);
+  sad = sad * INV_SQRT_2 >> 32;
+  sad >>= 2;
 
   return sad;
 }
@@ -2963,7 +2967,9 @@ static uint32_t xCalcHAD8x4_SSE( const Torg *piOrg, const Tcur *piCur, const int
   sad -= absDc;
   sad += absDc >> 2;
 #endif
-  sad  = (uint32_t)(sad / sqrt(4.0 * 8) * 2);
+  sad = sad * INV_SQRT_2 >> 32;
+  sad >>= 1;
+
   return sad;
 }
 
@@ -3109,7 +3115,8 @@ static uint32_t xCalcHAD4x8_SSE( const Torg *piOrg, const Tcur *piCur, const int
   sad -= absDc;
   sad += absDc >> 2;
 #endif
-  sad  = (uint32_t)(sad / sqrt(4.0 * 8) * 2);
+  sad = sad * INV_SQRT_2 >> 32;
+  sad >>= 1;
 
   return sad;
 }
@@ -3531,7 +3538,8 @@ static uint32_t xCalcHAD16x8_AVX2( const Torg *piOrg, const Tcur *piCur, const i
     sad -= absDc;
     sad += absDc >> 2;
 #endif
-    sad  = (uint32_t)(sad / sqrt(16.0 * 8) * 2);
+    sad = sad * INV_SQRT_2 >> 32;
+    sad >>= 2;
   }
 
 #endif //USE_AVX2
@@ -3773,13 +3781,14 @@ static uint32_t xCalcHAD8x16_AVX2( const Pel* piOrg, const Pel* piCur, const int
     sum = _mm256_hadd_epi32(sum, sum);
     sum = _mm256_add_epi32(sum, _mm256_permute2x128_si256(sum, sum, 0x11));
 
-    int sad2 = _mm_cvtsi128_si32(_mm256_castsi256_si128(sum));
+    uint32_t sad2 = _mm_cvtsi128_si32(_mm256_castsi256_si128(sum));
 
 #if JVET_R0164_MEAN_SCALED_SATD
     sad2 -= absDc;
     sad2 += absDc >> 2;
 #endif
-    sad   = (uint32_t)(sad2 / sqrt(16.0 * 8) * 2);
+    sad = sad2 * INV_SQRT_2 >> 32;
+    sad >>= 2;
   }
 
 #endif //USE_AVX2
