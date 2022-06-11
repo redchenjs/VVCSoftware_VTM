@@ -280,7 +280,7 @@ CodingUnit& CodingUnit::operator=( const CodingUnit& other )
   tileIdx           = other.tileIdx;
   imv               = other.imv;
   imvNumCand        = other.imvNumCand;
-  BcwIdx            = other.BcwIdx;
+  bcwIdx            = other.bcwIdx;
   for (int i = 0; i<2; i++)
   {
     refIdxBi[i] = other.refIdxBi[i];
@@ -342,7 +342,7 @@ void CodingUnit::initData()
   tileIdx           = 0;
   imv               = 0;
   imvNumCand        = 0;
-  BcwIdx            = BCW_DEFAULT;
+  bcwIdx            = BCW_DEFAULT;
   for (int i = 0; i < 2; i++)
   {
     refIdxBi[i] = -1;

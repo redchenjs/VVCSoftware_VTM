@@ -618,7 +618,7 @@ public:
   Position      mvPos             [MRG_MAX_NUM_CANDS << 1];
   MvpType       mvType            [MRG_MAX_NUM_CANDS << 1];
 #endif
-  uint8_t       BcwIdx            [ MRG_MAX_NUM_CANDS      ];
+  uint8_t       bcwIdx[MRG_MAX_NUM_CANDS];
   unsigned char interDirNeighbours[ MRG_MAX_NUM_CANDS      ];
   int           numValidMergeCand;
   bool          hasMergedCandList;
@@ -649,7 +649,7 @@ public:
 #endif
   unsigned char interDirNeighbours[AFFINE_MRG_MAX_NUM_CANDS];
   EAffineModel  affineType[AFFINE_MRG_MAX_NUM_CANDS];
-  uint8_t       BcwIdx[AFFINE_MRG_MAX_NUM_CANDS];
+  uint8_t       bcwIdx[AFFINE_MRG_MAX_NUM_CANDS];
   int           numValidMergeCand;
   int           maxNumMergeCand;
 

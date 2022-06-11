@@ -2925,20 +2925,20 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
 
   CodingUnit &cu = tempCS->addCU(tempCS->area, pm.chType);
   pm.setCUData(cu);
-  cu.predMode = MODE_INTER;
-  cu.slice = tempCS->slice;
-  cu.tileIdx = tempCS->pps->getTileIdx(tempCS->area.lumaPos());
+  cu.predMode    = MODE_INTER;
+  cu.slice       = tempCS->slice;
+  cu.tileIdx     = tempCS->pps->getTileIdx(tempCS->area.lumaPos());
   cu.chromaQpAdj = m_cuChromaQpOffsetIdxPlus1;
-  cu.qp = encTestMode.qp;
-  cu.affine = false;
-  cu.mtsFlag = false;
-  cu.BcwIdx = BCW_DEFAULT;
-  cu.geoFlag = true;
-  cu.imv = 0;
-  cu.mmvdSkip = false;
-  cu.skip = false;
-  cu.mipFlag = false;
-  cu.bdpcmMode = 0;
+  cu.qp          = encTestMode.qp;
+  cu.affine      = false;
+  cu.mtsFlag     = false;
+  cu.bcwIdx      = BCW_DEFAULT;
+  cu.geoFlag     = true;
+  cu.imv         = 0;
+  cu.mmvdSkip    = false;
+  cu.skip        = false;
+  cu.mipFlag     = false;
+  cu.bdpcmMode   = 0;
 
   PredictionUnit &pu = tempCS->addPU(cu, pm.chType);
 #if GDR_ENABLED
@@ -3247,20 +3247,21 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
       }
       CodingUnit &cu = tempCS->addCU(tempCS->area, pm.chType);
       pm.setCUData(cu);
-      cu.predMode = MODE_INTER;
-      cu.slice = tempCS->slice;
-      cu.tileIdx = tempCS->pps->getTileIdx(tempCS->area.lumaPos());
+      cu.predMode    = MODE_INTER;
+      cu.slice       = tempCS->slice;
+      cu.tileIdx     = tempCS->pps->getTileIdx(tempCS->area.lumaPos());
       cu.chromaQpAdj = m_cuChromaQpOffsetIdxPlus1;
-      cu.qp = encTestMode.qp;
-      cu.affine = false;
-      cu.mtsFlag = false;
-      cu.BcwIdx = BCW_DEFAULT;
-      cu.geoFlag = true;
-      cu.imv = 0;
-      cu.mmvdSkip = false;
-      cu.skip = false;
-      cu.mipFlag = false;
-      cu.bdpcmMode = 0;
+      cu.qp          = encTestMode.qp;
+      cu.affine      = false;
+      cu.mtsFlag     = false;
+      cu.bcwIdx      = BCW_DEFAULT;
+      cu.geoFlag     = true;
+      cu.imv         = 0;
+      cu.mmvdSkip    = false;
+      cu.skip        = false;
+      cu.mipFlag     = false;
+      cu.bdpcmMode   = 0;
+
       PredictionUnit &pu = tempCS->addPU(cu, pm.chType);
       pu.mergeFlag = true;
       pu.regularMergeFlag = false;
@@ -3436,12 +3437,12 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
         acMergeBuffer[uiMergeCand] = m_acMergeBuffer[uiMergeCand].getBuf( localUnitArea );
 
         // set merge information
-        pu.interDir = affineMergeCtx.interDirNeighbours[uiMergeCand];
-        pu.mergeFlag = true;
+        pu.interDir         = affineMergeCtx.interDirNeighbours[uiMergeCand];
+        pu.mergeFlag        = true;
         pu.regularMergeFlag = false;
-        pu.mergeIdx = uiMergeCand;
-        cu.affineType = affineMergeCtx.affineType[uiMergeCand];
-        cu.BcwIdx = affineMergeCtx.BcwIdx[uiMergeCand];
+        pu.mergeIdx         = uiMergeCand;
+        cu.affineType       = affineMergeCtx.affineType[uiMergeCand];
+        cu.bcwIdx           = affineMergeCtx.bcwIdx[uiMergeCand];
 
         pu.mergeType = affineMergeCtx.mergeType[uiMergeCand];
         if ( pu.mergeType == MRG_TYPE_SUBPU_ATMVP )
@@ -3558,7 +3559,7 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
       pu.mergeIdx = uiMergeCand;
       pu.interDir = affineMergeCtx.interDirNeighbours[uiMergeCand];
       cu.affineType = affineMergeCtx.affineType[uiMergeCand];
-      cu.BcwIdx = affineMergeCtx.BcwIdx[uiMergeCand];
+      cu.bcwIdx     = affineMergeCtx.bcwIdx[uiMergeCand];
 
       pu.mergeType = affineMergeCtx.mergeType[uiMergeCand];
       if ( pu.mergeType == MRG_TYPE_SUBPU_ATMVP )
@@ -4190,8 +4191,8 @@ void EncCu::xCheckRDCostInter( CodingStructure *&tempCS, CodingStructure *&bestC
     cu.qp          = encTestMode.qp;
     CU::addPUs(cu);
 
-    cu.BcwIdx       = g_BcwSearchOrder[bcwLoopIdx];
-    uint8_t bcwIdx  = cu.BcwIdx;
+    cu.bcwIdx       = g_BcwSearchOrder[bcwLoopIdx];
+    uint8_t bcwIdx  = cu.bcwIdx;
     bool    testBcw = (bcwIdx != BCW_DEFAULT);
 
 #if GDR_ENABLED
@@ -4422,8 +4423,8 @@ bool EncCu::xCheckRDCostInterIMV(CodingStructure *&tempCS, CodingStructure *&bes
     uint8_t bcwIdx;
     bool    affineAmvrEanbledFlag = !testAltHpelFilter && cu.slice->getSPS()->getAffineAmvrEnabledFlag();
 
-    cu.BcwIdx = g_BcwSearchOrder[bcwLoopIdx];
-    bcwIdx    = cu.BcwIdx;
+    cu.bcwIdx = g_BcwSearchOrder[bcwLoopIdx];
+    bcwIdx    = cu.bcwIdx;
     testBcw   = (bcwIdx != BCW_DEFAULT);
 
     cu.firstPU->interDir = 10;
@@ -5148,7 +5149,7 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
   {
     if (equBcwCost != nullptr)
     {
-      if( tempCS->cost < ( *equBcwCost ) && cu->BcwIdx == BCW_DEFAULT )
+      if (tempCS->cost < (*equBcwCost) && cu->bcwIdx == BCW_DEFAULT)
       {
         ( *equBcwCost ) = tempCS->cost;
       }
@@ -5157,19 +5158,19 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
     {
       CHECK(equBcwCost == nullptr, "equBcwCost == nullptr");
     }
-    if( tempCS->slice->getCheckLDC() && !cu->imv && cu->BcwIdx != BCW_DEFAULT && tempCS->cost < m_bestBcwCost[1] )
+    if (tempCS->slice->getCheckLDC() && !cu->imv && cu->bcwIdx != BCW_DEFAULT && tempCS->cost < m_bestBcwCost[1])
     {
       if( tempCS->cost < m_bestBcwCost[0] )
       {
         m_bestBcwCost[1] = m_bestBcwCost[0];
         m_bestBcwCost[0] = tempCS->cost;
         m_bestBcwIdx[1] = m_bestBcwIdx[0];
-        m_bestBcwIdx[0] = cu->BcwIdx;
+        m_bestBcwIdx[0]  = cu->bcwIdx;
       }
       else
       {
         m_bestBcwCost[1] = tempCS->cost;
-        m_bestBcwIdx[1] = cu->BcwIdx;
+        m_bestBcwIdx[1]  = cu->bcwIdx;
       }
     }
   }

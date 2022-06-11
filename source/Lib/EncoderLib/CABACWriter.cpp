@@ -875,7 +875,7 @@ void CABACWriter::cu_bcw_flag(const CodingUnit& cu)
   const uint8_t bcwCodingIdx = (uint8_t)g_BcwCodingOrder[CU::getValidBcwIdx(cu)];
 
   const int32_t numBcw = (cu.slice->getCheckLDC()) ? 5 : 3;
-  m_BinEncoder.encodeBin((bcwCodingIdx == 0 ? 0 : 1), Ctx::BcwIdx(0));
+  m_BinEncoder.encodeBin((bcwCodingIdx == 0 ? 0 : 1), Ctx::bcwIdx(0));
   if(numBcw > 2 && bcwCodingIdx != 0)
   {
     const uint32_t prefixNumBits = numBcw - 2;
@@ -897,7 +897,7 @@ void CABACWriter::cu_bcw_flag(const CodingUnit& cu)
     }
   }
 
-  DTRACE(g_trace_ctx, D_SYNTAX, "cu_bcw_flag() bcw_idx=%d\n", cu.BcwIdx ? 1 : 0);
+  DTRACE(g_trace_ctx, D_SYNTAX, "cu_bcw_flag() bcw_idx=%d\n", cu.bcwIdx ? 1 : 0);
 }
 
 void CABACWriter::xWriteTruncBinCode(uint32_t symbol, uint32_t maxSymbol)
