@@ -925,7 +925,8 @@ void Quant::xDestroyScalingList()
   delete[] m_quantCoef[0][0][0][0];
 }
 
-void Quant::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &uiAbsSum, const QpParam &cQP, const Ctx& ctx)
+void Quant::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum,
+                  const QpParam &cQP, const Ctx &ctx)
 {
   const SPS &sps            = *tu.cs->sps;
   const CompArea &rect      = tu.blocks[compID];
@@ -990,7 +991,7 @@ void Quant::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf 
       const TCoeff quantisedMagnitude = TCoeff((tmpLevel + iAdd ) >> iQBits);
       deltaU[uiBlockPos] = (TCoeff)((tmpLevel - ((int64_t)quantisedMagnitude<<iQBits) )>> qBits8);
 
-      uiAbsSum += quantisedMagnitude;
+      absSum += quantisedMagnitude;
       const TCoeff quantisedCoefficient = quantisedMagnitude * iSign;
 
       piQCoef.buf[uiBlockPos] = Clip3<TCoeff>( entropyCodingMinimum, entropyCodingMaximum, quantisedCoefficient );
@@ -1001,7 +1002,7 @@ void Quant::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf 
     }
     if( cctx.signHiding() )
     {
-      if(uiAbsSum >= 2) //this prevents TUs with only one coefficient of value 1 from being tested
+      if (absSum >= 2)   // this prevents TUs with only one coefficient of value 1 from being tested
       {
         xSignBitHidingHDQ(piQCoef.buf, piCoef.buf, deltaU, cctx, maxLog2TrDynamicRange);
       }

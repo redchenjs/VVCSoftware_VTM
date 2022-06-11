@@ -790,17 +790,17 @@ bool PU::isChromaIntraModeCrossCheckMode( const PredictionUnit &pu )
 
 uint32_t PU::getFinalIntraMode( const PredictionUnit &pu, const ChannelType &chType )
 {
-  uint32_t uiIntraMode = pu.intraDir[chType];
+  uint32_t intraMode = pu.intraDir[chType];
 
-  if( uiIntraMode == DM_CHROMA_IDX && !isLuma( chType ) )
+  if (intraMode == DM_CHROMA_IDX && !isLuma(chType))
   {
-    uiIntraMode = getCoLocatedIntraLumaMode(pu);
+    intraMode = getCoLocatedIntraLumaMode(pu);
   }
-  if( pu.chromaFormat == CHROMA_422 && !isLuma( chType ) && uiIntraMode < NUM_LUMA_MODE ) // map directional, planar and dc
+  if (pu.chromaFormat == CHROMA_422 && !isLuma(chType) && intraMode < NUM_LUMA_MODE)   // map directional, planar and dc
   {
-    uiIntraMode = g_chroma422IntraAngleMappingTable[uiIntraMode];
+    intraMode = g_chroma422IntraAngleMappingTable[intraMode];
   }
-  return uiIntraMode;
+  return intraMode;
 }
 
 const PredictionUnit &PU::getCoLocatedLumaPU(const PredictionUnit &pu)

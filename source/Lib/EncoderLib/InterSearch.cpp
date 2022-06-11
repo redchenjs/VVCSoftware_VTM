@@ -5908,7 +5908,7 @@ void InterSearch::xPatternSearchIntRefine(PredictionUnit& pu, IntTZSearchStruct&
   m_pcRdCost->setCostScale ( 0 );
 
   Distortion  dist, uiSATD = 0;
-  Distortion  uiBestDist  = std::numeric_limits<Distortion>::max();
+  Distortion  bestDist = std::numeric_limits<Distortion>::max();
   // subtract old MVP costs because costs for all newly tested MVPs are added in here
   ruiBits -= m_auiMVPIdxCost[riMVPIdx][AMVP_MAX_NUM_CANDS];
 
@@ -5981,7 +5981,7 @@ void InterSearch::xPatternSearchIntRefine(PredictionUnit& pu, IntTZSearchStruct&
       dist += m_pcRdCost->getCost(iMvBits);
 
 #if GDR_ENABLED
-      allOk = (dist < uiBestDist);
+      allOk = (dist < bestDist);
       if (isEncodeGdrClean)
       {
         bool isSolid = amvpInfo.mvSolid[iMVPIdx];
@@ -5990,7 +5990,7 @@ void InterSearch::xPatternSearchIntRefine(PredictionUnit& pu, IntTZSearchStruct&
         diskOk = isSolid && isValid;
         if (diskOk)
         {
-          allOk = (uiBestDistOk) ? (dist < uiBestDist) : true;
+          allOk = (uiBestDistOk) ? (dist < bestDist) : true;
         }
         else
         {
@@ -6002,10 +6002,10 @@ void InterSearch::xPatternSearchIntRefine(PredictionUnit& pu, IntTZSearchStruct&
 #if GDR_ENABLED
       if (allOk)
 #else
-      if (dist < uiBestDist)
+      if (dist < bestDist)
 #endif
       {
-        uiBestDist  = dist;
+        bestDist    = dist;
         cBestMv = cTestMv[iMVPIdx];
         iBestMVPIdx = iMVPIdx;
         iBestBits = iMvBits;
@@ -6019,7 +6019,7 @@ void InterSearch::xPatternSearchIntRefine(PredictionUnit& pu, IntTZSearchStruct&
       }
     }
   }
-  if( uiBestDist == std::numeric_limits<Distortion>::max() )
+  if (bestDist == std::numeric_limits<Distortion>::max())
   {
     ruiCost = std::numeric_limits<Distortion>::max();
     return;
@@ -6035,7 +6035,7 @@ void InterSearch::xPatternSearchIntRefine(PredictionUnit& pu, IntTZSearchStruct&
   // verify since it makes no sence to subtract Lamda*(Rmvd+Rmvpidx) from D+Lamda(Rmvd)
   // this would take the rate for the MVP idx out of the cost calculation
   // however this rate is always 1 so impact is small
-  ruiCost = uiBestDist - m_pcRdCost->getCost(iBestBits) + m_pcRdCost->getCost(ruiBits);
+  ruiCost = bestDist - m_pcRdCost->getCost(iBestBits) + m_pcRdCost->getCost(ruiBits);
   // taken from JEM 5.0
   // verify since it makes no sense to add rate for MVDs twicce
 
@@ -9653,21 +9653,21 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
   const unsigned currDepth = partitioner.currTrDepth;
   const bool colorTransFlag = cs.cus[0]->colorTransform;
 
-  bool bCheckFull  = !partitioner.canSplit( TU_MAX_TR_SPLIT, cs );
+  bool checkFull = !partitioner.canSplit(TU_MAX_TR_SPLIT, cs);
   if( cu.sbtInfo && partitioner.canSplit( PartSplit( cu.getSbtTuSplit() ), cs ) )
   {
-    bCheckFull = false;
+    checkFull = false;
   }
-  bool bCheckSplit = !bCheckFull;
+  bool checkSplit = !checkFull;
 
   // get temporary data
   CodingStructure *csSplit = nullptr;
   CodingStructure *csFull  = nullptr;
-  if (bCheckSplit)
+  if (checkSplit)
   {
     csSplit = &cs;
   }
-  else if (bCheckFull)
+  else if (checkFull)
   {
     csFull = &cs;
   }
@@ -9679,7 +9679,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
   const TempCtx ctxStart  ( m_CtxCache, m_CABACEstimator->getCtx() );
   TempCtx       ctxBest   ( m_CtxCache );
 
-  if (bCheckFull)
+  if (checkFull)
   {
     TransformUnit &tu = csFull->addTU(CS::getArea(cs, currArea, partitioner.chType), partitioner.chType);
     tu.depth          = currDepth;
@@ -10380,9 +10380,9 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
   } // check full
 
   // code sub-blocks
-  if( bCheckSplit )
+  if (checkSplit)
   {
-    if( bCheckFull )
+    if (checkFull)
     {
       m_CABACEstimator->getCtx() = ctxStart;
     }
@@ -10402,7 +10402,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
 
     do
     {
-      xEstimateInterResidualQT(*csSplit, partitioner, bCheckFull ? nullptr : puiZeroDist, luma, chroma, orgResi);
+      xEstimateInterResidualQT(*csSplit, partitioner, checkFull ? nullptr : puiZeroDist, luma, chroma, orgResi);
 
       csSplit->cost = m_pcRdCost->calcRdCost( csSplit->fracBits, csSplit->dist );
     } while( partitioner.nextPart( *csSplit ) );
@@ -10412,7 +10412,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
     unsigned        anyCbfSet   =   0;
     unsigned        compCbf[3]  = { 0, 0, 0 };
 
-    if( !bCheckFull )
+    if (!checkFull)
     {
       for( auto &currTU : csSplit->traverseTUs( currArea, partitioner.chType ) )
       {
@@ -10457,7 +10457,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       csSplit->fracBits = m_CABACEstimator->getEstFracBits();
       csSplit->cost     = m_pcRdCost->calcRdCost(csSplit->fracBits, csSplit->dist);
 
-      if( bCheckFull && anyCbfSet && csSplit->cost < csFull->cost )
+      if (checkFull && anyCbfSet && csSplit->cost < csFull->cost)
       {
         cs.useSubStructure( *csSplit, partitioner.chType, currArea, false, false, false, true, true );
         cs.cost = csSplit->cost;

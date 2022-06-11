@@ -198,7 +198,8 @@ namespace PU
 // TU tools
 namespace TU
 {
-  uint32_t getNumNonZeroCoeffsNonTSCorner8x8( const TransformUnit &tu, const bool bLuma = true, const bool bChroma = true );
+  uint32_t getNumNonZeroCoeffsNonTSCorner8x8(const TransformUnit &tu, const bool hasLuma = true,
+                                             const bool hasChroma = true);
   bool isNonTransformedResidualRotated(const TransformUnit &tu, const ComponentID &compID);
   bool getCbf                         (const TransformUnit &tu, const ComponentID &compID);
   bool getCbfAtDepth                  (const TransformUnit &tu, const ComponentID &compID, const unsigned &depth);

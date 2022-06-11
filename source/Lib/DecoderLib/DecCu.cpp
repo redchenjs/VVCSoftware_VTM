@@ -184,8 +184,9 @@ void DecCu::xIntraRecBlk( TransformUnit& tu, const ComponentID compID )
         PelBuf piPred       = cs.getPredBuf( area );
 
   const PredictionUnit &pu  = *tu.cs->getPU( area.pos(), chType );
-  const uint32_t uiChFinalMode  = PU::getFinalIntraMode( pu, chType );
-  PelBuf pReco              = cs.getRecoBuf(area);
+
+  const uint32_t chFinalMode = PU::getFinalIntraMode(pu, chType);
+  PelBuf         pReco       = cs.getRecoBuf(area);
 
   //===== init availability pattern =====
   bool predRegDiffFromTB = CU::isPredRegDiffFromTB(*tu.cu, compID);
@@ -212,11 +213,11 @@ void DecCu::xIntraRecBlk( TransformUnit& tu, const ComponentID compID )
   }
 
   //===== get prediction signal =====
-  if( compID != COMPONENT_Y && PU::isLMCMode( uiChFinalMode ) )
+  if (compID != COMPONENT_Y && PU::isLMCMode(chFinalMode))
   {
     const PredictionUnit& pu = *tu.cu->firstPU;
     m_pcIntraPred->xGetLumaRecPixels( pu, area );
-    m_pcIntraPred->predIntraChromaLM( compID, piPred, pu, area, uiChFinalMode );
+    m_pcIntraPred->predIntraChromaLM(compID, piPred, pu, area, chFinalMode);
   }
   else
   {

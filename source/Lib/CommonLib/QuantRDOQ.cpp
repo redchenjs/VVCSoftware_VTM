@@ -507,8 +507,8 @@ void QuantRDOQ::xDestroyScalingList()
   delete[] m_errScale[0][0][0][0];
 }
 
-
-void QuantRDOQ::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &uiAbsSum, const QpParam &cQP, const Ctx& ctx)
+void QuantRDOQ::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum,
+                      const QpParam &cQP, const Ctx &ctx)
 {
   const CompArea &rect      = tu.blocks[compID];
   const uint32_t uiWidth        = rect.width;
@@ -540,33 +540,32 @@ void QuantRDOQ::quant(TransformUnit &tu, const ComponentID &compID, const CCoeff
       {
         if( (tu.cu->bdpcmMode && isLuma(compID)) || (isChroma(compID) && tu.cu->bdpcmModeChroma ) )
         {
-          forwardBDPCM(tu, compID, pSrc, uiAbsSum, cQP, ctx);
+          forwardBDPCM(tu, compID, pSrc, absSum, cQP, ctx);
         }
         else
         {
-          xRateDistOptQuantTS( tu, compID, pSrc, uiAbsSum, cQP, ctx );
+          xRateDistOptQuantTS(tu, compID, pSrc, absSum, cQP, ctx);
         }
       }
       else
       {
-        xRateDistOptQuant( tu, compID, pSrc, uiAbsSum, cQP, ctx );
+        xRateDistOptQuant(tu, compID, pSrc, absSum, cQP, ctx);
       }
     }
     else
     {
       piQCoef.fill(0);
-      uiAbsSum = 0;
+      absSum = 0;
     }
   }
   else
   {
-    Quant::quant( tu, compID, pSrc, uiAbsSum, cQP, ctx );
+    Quant::quant(tu, compID, pSrc, absSum, cQP, ctx);
   }
 }
 
-
-
-void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &uiAbsSum, const QpParam &cQP, const Ctx &ctx)
+void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum,
+                                  const QpParam &cQP, const Ctx &ctx)
 {
   const FracBitsAccess& fracBits = ctx.getFracBitsAcess();
 
@@ -1056,7 +1055,7 @@ void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, 
   {
     int blkPos = cctx.blockPos( scanPos );
     TCoeff level = piDstCoeff[ blkPos ];
-    uiAbsSum += level;
+    absSum += level;
     piDstCoeff[ blkPos ] = ( plSrcCoeff[ blkPos ] < 0 ) ? -level : level;
   }
 
@@ -1066,7 +1065,7 @@ void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, 
     piDstCoeff[ cctx.blockPos( scanPos ) ] = 0;
   }
 
-  if( cctx.signHiding() && uiAbsSum>=2)
+  if (cctx.signHiding() && absSum >= 2)
   {
     const double inverseQuantScale = double(g_invQuantScales[0][cQP.rem(isTransformSkip)]);
     int64_t rdFactor = (int64_t)(inverseQuantScale * inverseQuantScale * (1 << (2 * cQP.per(isTransformSkip))) / m_dLambda / 16
