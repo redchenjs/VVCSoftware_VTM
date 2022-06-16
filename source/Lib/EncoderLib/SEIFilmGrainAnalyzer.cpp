@@ -136,13 +136,21 @@ void Canny::gradient(PelStorage *buff1, PelStorage *buff2, unsigned int width, u
 
       /* Convert actual edge direction to approximate value - quantize directions */
       if (((-edge_threshold_22_5 < theta) && (theta <= edge_threshold_22_5)) || ((edge_threshold_157_5 < theta) || (theta <= -edge_threshold_157_5)))
+      {
         buff2->get(ComponentID(0)).at(i, j) = 0;
+      }
       if (((-edge_threshold_157_5 < theta) && (theta <= -edge_threshold_112_5)) || ((edge_threshold_22_5 < theta) && (theta <= edge_threshold_67_5)))
+      {
         buff2->get(ComponentID(0)).at(i, j) = 45;
+      }
       if (((-edge_threshold_112_5 < theta) && (theta <= -edge_threshold_67_5)) || ((edge_threshold_67_5 < theta) && (theta <= edge_threshold_112_5)))
+      {
         buff2->get(ComponentID(0)).at(i, j) = 90;
+      }
       if (((-edge_threshold_67_5 < theta) && (theta <= -edge_threshold_22_5)) || ((edge_threshold_112_5 < theta) && (theta <= edge_threshold_157_5)))
+      {
         buff2->get(ComponentID(0)).at(i, j) = 135;
+      }
     }
   }
 
@@ -225,11 +233,17 @@ void Canny::doubleThreshold(PelStorage *buff, unsigned int width, unsigned int h
     for (int j = 0; j < height; j++)
     {
       if (buff->get(compID).at(i, j) > highThreshold)
+      {
         buff->get(compID).at(i, j) = strongPel;
+      }
       else if (buff->get(compID).at(i, j) <= highThreshold && buff->get(compID).at(i, j) > lowThreshold)
+      {
         buff->get(compID).at(i, j) = weekPel;
+      }
       else
+      {
         buff->get(compID).at(i, j) = 0;
+      }
     }
   }
 
@@ -326,7 +340,9 @@ Morph::~Morph()
 int Morph::dilation(PelStorage *buff, unsigned int bitDepth, ComponentID compID, int numIter, int iter)
 {
   if (iter == numIter)
+  {
     return iter;
+  }
 
   unsigned int width      = buff->get(compID).width,
                height     = buff->get(compID).height;   // Width and Height of current frame
@@ -377,7 +393,9 @@ int Morph::dilation(PelStorage *buff, unsigned int bitDepth, ComponentID compID,
 int Morph::erosion(PelStorage *buff, unsigned int bitDepth, ComponentID compID, int numIter, int iter)
 {
   if (iter == numIter)
+  {
     return iter;
+  }
 
   unsigned int width      = buff->get(compID).width,
                height     = buff->get(compID).height;   // Width and Height of current frame
@@ -564,7 +582,8 @@ void FGAnalyser::initBufs(Picture *pic)
 // delete picture buffers
 void FGAnalyser::destroy()
 {
-  if (m_originalBuf != nullptr) {
+  if (m_originalBuf != nullptr)
+  {
     m_originalBuf->destroy();
     delete m_originalBuf;
     m_originalBuf = nullptr;
@@ -626,7 +645,9 @@ void FGAnalyser::findMask()
     int         bitDepth  = m_bitDepths[channelId];
 
     if (!m_doAnalysis[compID])
+    {
       continue;
+    }
 
     // subsample original picture
     subsample(*m_workingBuf, *workingBufSubsampled2, compID, 2, padding);
@@ -706,7 +727,9 @@ void FGAnalyser::suppressLowIntensity(const PelStorage &buff1, PelStorage &buff2
     for (int j = 0; j < height; j++)
     {
       if (buff1.get(compID).at(i, j) < lowIntensityThreshold)
+      {
         buff2.get(compID).at(i, j) = maxIntensity;
+      }
     }
   }
 }
@@ -790,7 +813,9 @@ void FGAnalyser::combineMasks(PelStorage &buff1, PelStorage &buff2, ComponentID 
 int FGAnalyser::denoise(Picture *pic)
 {
   if (pic->m_isMctfFiltered)
+  {
     return 0;
+  }
 
   // add custom denoising algorithm
   return 1;
@@ -826,7 +851,9 @@ void FGAnalyser::estimate_grain_parameters()
     ChannelType channelId = toChannelType(compID);
 
     if (!m_doAnalysis[compID])
+    {
       continue;
+    }
 
     unsigned int width       = m_workingBuf->getBuf(compID).width;   // Width of current frame
     unsigned int height      = m_workingBuf->getBuf(compID).height;   // Height of current frame
@@ -894,7 +921,10 @@ void FGAnalyser::estimate_grain_parameters()
 void FGAnalyser::estimate_scaling_factors(std::vector<int> &data_x, std::vector<int> &data_y, unsigned int bitDepth, ComponentID compID)
 {
   if (!m_compModel[compID].presentFlag || data_x.size() < MIN_POINTS_FOR_INTENSITY_ESTIMATION)   // if cutoff frequencies are not estimated previously, do not proceed since presentFlag is set to false in a previous step
-    return;                                                                                      // also if there is no enough points to estimate film grain intensities, default or previously estimated parameters are used
+  {
+    return;   // also if there is no enough points to estimate film grain intensities, default or previously estimated
+              // parameters are used
+  }
 
   // estimate intensity regions
   std::vector<double> coeffs;
@@ -913,7 +943,9 @@ void FGAnalyser::estimate_scaling_factors(std::vector<int> &data_x, std::vector<
   {
     valid = fit_function(data_x, data_y, coeffs, scalingVec, ORDER, bitDepth, i);   // n-th order polynomial regression for scaling function estimation
     if (!valid)
+    {
       break;
+    }
   }
   if (valid)
   {
@@ -923,7 +955,9 @@ void FGAnalyser::estimate_scaling_factors(std::vector<int> &data_x, std::vector<
 
   // Based on quantized intervals, set intensity region and scaling parameter
   if (valid)   // if not valid, reuse previous parameters (for example, if var is all zero)
+  {
     setEstimatedParameters(quantVec, bitDepth, compID);
+  }
 }
 
 // Horizontal and Vertical cutoff frequencies estimation. Assumption is that for complete sequence there is only one set of the cut-off frequencies (implementation decision)
@@ -936,7 +970,9 @@ void FGAnalyser::estimate_cutoff_freq(const std::vector<PelMatrix> &blocks, Comp
 
   int num_blocks = (int) blocks.size();
   if (num_blocks < MIN_BLOCKS_FOR_CUTOFF_ESTIMATION)   // if there is no enough 64 x 64 blocks to estimate cut-off freq, skip cut-off freq estimation and use previous parameters
+  {
     return;
+  }
 
   // iterate over the block and find avarage block
   for (int x = 0; x < DATA_BASE_SIZE; x++)
@@ -989,10 +1025,14 @@ void FGAnalyser::estimate_cutoff_freq(const std::vector<PelMatrix> &blocks, Comp
     }
 
     if (m_compModel[compID].intensityValues[0].compModelValue[1] != 8 || m_compModel[compID].intensityValues[0].compModelValue[2] != 8)   // default is 8
+    {
       m_compModel[compID].numModelValues++;
+    }
 
     if (m_compModel[compID].intensityValues[0].compModelValue[1] != m_compModel[compID].intensityValues[0].compModelValue[2])
+    {
       m_compModel[compID].numModelValues++;
+    }
   }
 }
 
@@ -1010,7 +1050,9 @@ int FGAnalyser::cutoff_frequency(std::vector<double> &mean)
 
   double target = 0;
   for (int j = 0; j < DATA_BASE_SIZE; j++)
+  {
     target += sum[j];
+  }
   target /= DATA_BASE_SIZE;
 
   // find final cut-off frequency
@@ -1261,7 +1303,10 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
 
   // There needs to be at least ORDER+1 points to fit the function
   if (tmp_data_x.size() < (order + 1))
-    return false;   // if there is no enough blocks to estimate film grain parameters, default or previously estimated parameters are used
+  {
+    return false;   // if there is no enough blocks to estimate film grain parameters, default or previously estimated
+                    // parameters are used
+  }
 
 #if JVET_Z0047_FG_IMPROVEMENT
   for (i = 0; i < tmp_data_x.size(); i++) // remove single points before extending and fitting
@@ -1287,7 +1332,9 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
   extend_points(tmp_data_x, tmp_data_y, bitDepth);   // find the most left and the most right point, and extend edges
 #else
   if (second_pass)
+  {
     extend_points(tmp_data_x, tmp_data_y, bitDepth);   // find the most left and the most right point, and extend edges
+  }
 #endif
 
   CHECK(tmp_data_x.size() > MAXPAIRS, "Maximum dataset size exceeded.");
@@ -1300,13 +1347,21 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
   for (i = 0; i < tmp_data_x.size(); i++)
   {
     if (tmp_data_x[i] < xmin)
+    {
       xmin = tmp_data_x[i];
+    }
     if (tmp_data_x[i] > xmax)
+    {
       xmax = tmp_data_x[i];
+    }
     if (tmp_data_y[i] < ymin)
+    {
       ymin = tmp_data_y[i];
+    }
     if (tmp_data_y[i] > ymax)
+    {
       ymax = tmp_data_y[i];
+    }
   }
 
   long double xlow = xmax;
@@ -1336,24 +1391,40 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
   for (i = 1; i <= data_pairs; i++)
   {
     if (data_array[0][i] < xlow && data_array[0][i] != 0)
+    {
       xlow = data_array[0][i];
+    }
     if (data_array[1][i] < ylow && data_array[1][i] != 0)
+    {
       ylow = data_array[1][i];
+    }
   }
 
   if (xlow < .001 && xmax < 1000)
+  {
     xscale = 1 / xlow;
+  }
   else if (xmax > 1000 && xlow > .001)
+  {
     xscale = 1 / xmax;
+  }
   else
+  {
     xscale = 1;
+  }
 
   if (ylow < .001 && ymax < 1000)
+  {
     yscale = 1 / ylow;
+  }
   else if (ymax > 1000 && ylow > .001)
+  {
     yscale = 1 / ymax;
+  }
   else
+  {
     yscale = 1;
+  }
 
   // initialise array variables
   for (i = 0; i <= MAXPAIRS; i++)
@@ -1362,11 +1433,15 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
     C[i] = 0;
     S[i] = 0;
     for (j = 0; j < MAXPAIRS; j++)
+    {
       a[i][j] = 0;
+    }
   }
 
   for (i = 0; i <= MAXORDER; i++)
+  {
     polycoefs[i] = 0;
+  }
 
   Y1 = 0;
   for (j = 1; j <= data_pairs; j++)
@@ -1375,20 +1450,28 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
     {
       B[i] = B[i] + data_array[1][j] * yscale * ldpow(data_array[0][j] * xscale, i);
       if (B[i] == std::numeric_limits<long double>::max())
+      {
         return false;
+      }
       for (k = 1; k <= order; k++)
       {
         a[i][k] = a[i][k] + ldpow(data_array[0][j] * xscale, (i + k));
         if (a[i][k] == std::numeric_limits<long double>::max())
+        {
           return false;
+        }
       }
       S[i] = S[i] + ldpow(data_array[0][j] * xscale, i);
       if (S[i] == std::numeric_limits<long double>::max())
+      {
         return false;
+      }
     }
     Y1 = Y1 + data_array[1][j] * yscale;
     if (Y1 == std::numeric_limits<long double>::max())
+    {
       return false;
+    }
   }
 
   for (i = 1; i <= order; i++)
@@ -1397,11 +1480,15 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
     {
       a[i][j] = a[i][j] - S[i] * S[j] / (long double) data_pairs;
       if (a[i][j] == std::numeric_limits<long double>::max())
+      {
         return false;
+      }
     }
     B[i] = B[i] - Y1 * S[i] / (long double) data_pairs;
     if (B[i] == std::numeric_limits<long double>::max())
+    {
       return false;
+    }
   }
 
   for (k = 1; k <= order; k++)
@@ -1418,9 +1505,13 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
       }
     }
     if (A1 == 0)
+    {
       return false;
+    }
     if (R == k)
+    {
       goto polfit1;
+    }
     for (j = k; j <= order; j++)
     {
       x1      = a[R][j];
@@ -1437,14 +1528,22 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
       for (j = k; j <= order; j++)
       {
         if (i == k)
+        {
           a[i][j] = a[i][j] / m;
+        }
         else
+        {
           a[i][j] = a[i][j] - m * a[k][j];
+        }
       }
       if (i == k)
+      {
         B[i] = B[i] / m;
+      }
       else
+      {
         B[i] = B[i] - m * B[k];
+      }
     }
   }
 
@@ -1457,7 +1556,9 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
     {
       S1 = S1 + a[i][j] * polycoefs[j];
       if (S1 == std::numeric_limits<long double>::max())
+      {
         return false;
+      }
     }
     polycoefs[i] = B[i] - S1;
   }
@@ -1467,14 +1568,20 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
   {
     S1 = S1 + polycoefs[i] * S[i] / (long double) data_pairs;
     if (S1 == std::numeric_limits<long double>::max())
+    {
       return false;
+    }
   }
   polycoefs[0] = (Y1 / (long double) data_pairs - S1);
 
   // zero all coeficient values smaller than +/- .00000000001 (avoids -0)
   for (i = 0; i <= order; i++)
+  {
     if (fabsl(polycoefs[i] * 100000000000) < 1)
+    {
       polycoefs[i] = 0;
+    }
+  }
 
   // rescale parameters
   for (i = 0; i <= order; i++)
@@ -1517,34 +1624,50 @@ void FGAnalyser::avg_scaling_vec(std::vector<double> &scalingVec, ComponentID co
   if (isFirstScalingEst[compID])
   {
     for (int i = xmin; i <= xmax; i++)
-      scalingVecAvg[compID][i] = scalingVec[i-xmin];
+    {
+      scalingVecAvg[compID][i] = scalingVec[i - xmin];
+    }
 
     isFirstScalingEst[compID] = false;
   }
   else
   {
     for (int i = 0; i < scalingVec.size(); i++)
+    {
       scalingVecAvg[compID][i + xmin] += scalingVec[i];
+    }
     for (int i = 0; i < scalingVecAvg[compID].size(); i++)
+    {
       scalingVecAvg[compID][i] /= 2;
+    }
   }
 
   // re-init scaling vec and add new min and max to be used in other functions
   int index = 0;
   for (; index < scalingVecAvg[compID].size(); index++)
+  {
     if (scalingVecAvg[compID][index])
+    {
       break;
+    }
+  }
   xmin = index;
 
   index = (int) scalingVecAvg[compID].size() - 1;
   for (; index >=0 ; index--)
+  {
     if (scalingVecAvg[compID][index])
+    {
       break;
+    }
+  }
   xmax = index;
 
   scalingVec.resize(xmax - xmin + 1);
   for (int i = xmin; i <= xmax; i++)
-    scalingVec[i-xmin] = scalingVecAvg[compID][i];
+  {
+    scalingVec[i - xmin] = scalingVecAvg[compID][i];
+  }
 
   scalingVec.push_back(xmax);
   scalingVec.push_back(xmin);
@@ -1577,9 +1700,13 @@ bool FGAnalyser::lloyd_max(std::vector<double> &scalingVec, std::vector<int> &qu
   for (int i = 0; i < scalingVec.size(); i++)
   {
     if (scalingVec[i] < ymin)
+    {
       ymin = scalingVec[i];
+    }
     if (scalingVec[i] > ymax)
+    {
       ymax = scalingVec[i];
+    }
   }
 
   init_training = (ymax - ymin) / numQuantizedLevels;
@@ -1608,9 +1735,13 @@ bool FGAnalyser::lloyd_max(std::vector<double> &scalingVec, std::vector<int> &qu
 
   double tolerance2 = std::numeric_limits<double>::epsilon() * ymax;
   if (distortion > tolerance2)
+  {
     rel_distor = abs(distortion - last_distor) / distortion;
+  }
   else
+  {
     rel_distor = distortion;
+  }
 
   // optimization: find optimal codebook and partition
   while ((rel_distor > tolerance) && (rel_distor > tolerance2))
@@ -1709,15 +1840,21 @@ bool FGAnalyser::lloyd_max(std::vector<double> &scalingVec, std::vector<int> &qu
     quantize(scalingVec, tmpVec, distortion, partition, codebook);
 
     if (distortion > tolerance2)
+    {
       rel_distor = abs(distortion - last_distor) / distortion;
+    }
     else
+    {
       rel_distor = distortion;
+    }
   }
 
   // fill the final quantized vector
   quantizedVec.resize((int) (1 << bitDepth), 0);
   for (int i = 0; i < tmpVec.size(); i++)
+  {
     quantizedVec[i + xmin] = Clip3(0, MAX_STANDARD_DEVIATION << (bitDepth - BIT_DEPTH_8), (int) (tmpVec[i] + .5));
+  }
 
   return true;
 }
@@ -1784,7 +1921,9 @@ void FGAnalyser::setEstimatedParameters(std::vector<int> &quantizedVec, unsigned
         finalIntervalsandScalingFactors[1][i - 1] = finalIntervalsandScalingFactors[1][i];
         finalIntervalsandScalingFactors[2][i - 1] = newScale;
         for (int j = 0; j < 3; j++)
+        {
           finalIntervalsandScalingFactors[j].erase(finalIntervalsandScalingFactors[j].begin() + i);
+        }
         i--;
       }
       else   // merge with right
@@ -1795,7 +1934,9 @@ void FGAnalyser::setEstimatedParameters(std::vector<int> &quantizedVec, unsigned
         finalIntervalsandScalingFactors[1][i] = finalIntervalsandScalingFactors[1][i + 1];
         finalIntervalsandScalingFactors[2][i] = newScale;
         for (int j = 0; j < 3; j++)
+        {
           finalIntervalsandScalingFactors[j].erase(finalIntervalsandScalingFactors[j].begin() + i + 1);
+        }
         i--;
       }
     }
@@ -1862,7 +2003,9 @@ void FGAnalyser::setEstimatedParameters(std::vector<int> &quantizedVec, unsigned
       finalIntervalsandScalingFactors[1][minIntervalIdx - 1] = finalIntervalsandScalingFactors[1][minIntervalIdx];
       finalIntervalsandScalingFactors[2][minIntervalIdx - 1] = newScale;
       for (int i = 0; i < 3; i++)
+      {
         finalIntervalsandScalingFactors[i].erase(finalIntervalsandScalingFactors[i].begin() + minIntervalIdx);
+      }
     }
     else
     {
@@ -1878,7 +2021,9 @@ void FGAnalyser::setEstimatedParameters(std::vector<int> &quantizedVec, unsigned
       finalIntervalsandScalingFactors[1][minIntervalIdx] = finalIntervalsandScalingFactors[1][minIntervalIdx + 1];
       finalIntervalsandScalingFactors[2][minIntervalIdx] = newScale;
       for (int i = 0; i < 3; i++)
+      {
         finalIntervalsandScalingFactors[i].erase(finalIntervalsandScalingFactors[i].begin() + minIntervalIdx + 1);
+      }
     }
 
     m_compModel[compID].numIntensityIntervals--;
@@ -1911,7 +2056,9 @@ long double FGAnalyser::ldpow(long double n, unsigned p)
   unsigned    i;
 
   for (i = 0; i < p; i++)
+  {
     x = x * n;
+  }
 
   return x;
 }
@@ -1958,7 +2105,9 @@ void FGAnalyser::confirm_intervals(std::vector<std::vector<int>> &parameters)
   for (int i = 0; i < tmp.size() - 1; i++)
   {
     if (tmp[i] == tmp[i + 1])
+    {
       tmp[i + 1]++;
+    }
   }
   for (int i = 0; i < parameters[2].size(); i++)
   {
