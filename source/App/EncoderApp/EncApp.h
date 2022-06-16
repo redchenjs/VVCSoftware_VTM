@@ -90,8 +90,7 @@ private:
   void xDestroyLib ();                           ///< destroy encoder class
 
   // file I/O
-  void xWriteOutput     ( int iNumEncoded, std::list<PelUnitBuf*>& recBufList
-                         );                      ///< write bitstream to file
+  void xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList);   ///< write bitstream to file
   void rateStatsAccum   ( const AccessUnit& au, const std::vector<uint32_t>& stats);
   void printRateSummary ();
   void printChromaFormat();

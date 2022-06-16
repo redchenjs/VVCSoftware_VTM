@@ -4137,7 +4137,7 @@ bool EncAppCfg::xCheckParameter()
     {
       m_maxDecPicBuffering[i] = m_maxNumReorderPics[i] + 1;
     }
-    // a lower layer can not have higher value of m_uiMaxDecPicBuffering than a higher layer
+    // a lower layer can not have higher value of m_maxDecPicBuffering than a higher layer
     if(m_maxDecPicBuffering[i+1] < m_maxDecPicBuffering[i])
     {
       m_maxDecPicBuffering[i+1] = m_maxDecPicBuffering[i];

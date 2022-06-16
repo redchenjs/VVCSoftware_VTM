@@ -3006,8 +3006,8 @@ SPS::SPS()
 
   for ( int i = 0; i < MAX_TLAYER; i++ )
   {
-    m_uiMaxLatencyIncreasePlus1[i] = 0;
-    m_uiMaxDecPicBuffering[i] = 1;
+    m_maxLatencyIncreasePlus1[i] = 0;
+    m_maxDecPicBuffering[i]      = 1;
     m_maxNumReorderPics[i]    = 0;
   }
 

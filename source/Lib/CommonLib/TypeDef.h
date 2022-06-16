@@ -864,7 +864,6 @@ enum ImvMode
 // ====================================================================================================================
 
 /// parameters for adaptive loop filter
-class PicSym;
 
 #define MAX_NUM_SAO_CLASSES  32  //(NUM_SAO_EO_GROUPS > NUM_SAO_BO_GROUPS)?NUM_SAO_EO_GROUPS:NUM_SAO_BO_GROUPS
 

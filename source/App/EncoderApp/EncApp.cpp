@@ -1658,16 +1658,16 @@ bool EncApp::encode()
 /**
   Write access units to output file.
   \param bitstreamFile  target bitstream file
-  \param iNumEncoded    number of encoded frames
+  \param numEncoded    number of encoded frames
   \param accessUnits    list of access units to be written
  */
-void EncApp::xWriteOutput( int iNumEncoded, std::list<PelUnitBuf*>& recBufList )
+void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
 {
   const InputColourSpaceConversion ipCSC = (!m_outputInternalColourSpace) ? m_inputColourSpaceConvert : IPCOLOURSPACE_UNCHANGED;
   std::list<PelUnitBuf*>::iterator iterPicYuvRec = recBufList.end();
   int i;
 
-  for ( i = 0; i < iNumEncoded; i++ )
+  for (i = 0; i < numEncoded; i++)
   {
     --iterPicYuvRec;
   }
@@ -1675,7 +1675,7 @@ void EncApp::xWriteOutput( int iNumEncoded, std::list<PelUnitBuf*>& recBufList )
   if (m_isField)
   {
     //Reinterlace fields
-    for ( i = 0; i < iNumEncoded/2; i++ )
+    for (i = 0; i < numEncoded / 2; i++)
     {
       const PelUnitBuf*  pcPicYuvRecTop     = *(iterPicYuvRec++);
       const PelUnitBuf*  pcPicYuvRecBottom  = *(iterPicYuvRec++);
@@ -1691,7 +1691,7 @@ void EncApp::xWriteOutput( int iNumEncoded, std::list<PelUnitBuf*>& recBufList )
   }
   else
   {
-    for ( i = 0; i < iNumEncoded; i++ )
+    for (i = 0; i < numEncoded; i++)
     {
       const PelUnitBuf* pcPicYuvRec = *(iterPicYuvRec++);
       if (!m_reconFileName.empty())

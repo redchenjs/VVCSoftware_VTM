@@ -68,7 +68,7 @@ bool tryDecodePicture( Picture* pcPic, const int expectedPoc, const std::string&
 class DecLib
 {
 private:
-  int                     m_iMaxRefPicNum;
+  int                     m_maxRefPicNum;
   bool m_isFirstGeneralHrd;
   GeneralHrdParams        m_prevGeneralHrdParams;
 

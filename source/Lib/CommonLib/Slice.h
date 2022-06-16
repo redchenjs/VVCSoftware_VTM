@@ -1486,9 +1486,8 @@ private:
   unsigned          m_numHorVirtualBoundaries;                         //!< number of horizontal virtual boundaries
   unsigned          m_virtualBoundariesPosX[3];                        //!< horizontal position of each vertical virtual boundary
   unsigned          m_virtualBoundariesPosY[3];                        //!< vertical position of each horizontal virtual boundary
-  uint32_t          m_uiMaxDecPicBuffering[MAX_TLAYER];
-  uint32_t          m_uiMaxLatencyIncreasePlus1[MAX_TLAYER];
-
+  uint32_t          m_maxDecPicBuffering[MAX_TLAYER];
+  uint32_t          m_maxLatencyIncreasePlus1[MAX_TLAYER];
 
   bool              m_generalHrdParametersPresentFlag;
   GeneralHrdParams m_generalHrdParams;
@@ -1806,10 +1805,28 @@ void                    setCCALFEnabledFlag( bool b )                           
   unsigned                getVirtualBoundariesPosX(unsigned idx) const                                    { CHECK( idx >= 3, "vitrual boundary index exceeds valid range" ); return m_virtualBoundariesPosX[idx]; }
   void                    setVirtualBoundariesPosY(unsigned u, unsigned idx)                              { CHECK( idx >= 3, "vitrual boundary index exceeds valid range" ); m_virtualBoundariesPosY[idx] = u;    }
   unsigned                getVirtualBoundariesPosY(unsigned idx) const                                    { CHECK( idx >= 3, "vitrual boundary index exceeds valid range" ); return m_virtualBoundariesPosY[idx]; }
-  uint32_t                getMaxDecPicBuffering(uint32_t tlayer) const                                    { return m_uiMaxDecPicBuffering[tlayer];                               }
-  void                    setMaxDecPicBuffering( uint32_t ui, uint32_t tlayer )                           { CHECK(tlayer >= MAX_TLAYER, "Invalid T-layer"); m_uiMaxDecPicBuffering[tlayer] = ui;    }
-  uint32_t                getMaxLatencyIncreasePlus1(uint32_t tlayer) const                               { return m_uiMaxLatencyIncreasePlus1[tlayer];                          }
-  void                    setMaxLatencyIncreasePlus1( uint32_t ui , uint32_t tlayer)                      { m_uiMaxLatencyIncreasePlus1[tlayer] = ui;                            }
+
+  uint32_t getMaxDecPicBuffering(uint32_t tlayer) const
+  {
+    return m_maxDecPicBuffering[tlayer];
+  }
+
+  void setMaxDecPicBuffering(uint32_t val, uint32_t tlayer)
+  {
+    CHECK(tlayer >= MAX_TLAYER, "Invalid T-layer");
+    m_maxDecPicBuffering[tlayer] = val;
+  }
+
+  uint32_t getMaxLatencyIncreasePlus1(uint32_t tlayer) const
+  {
+    return m_maxLatencyIncreasePlus1[tlayer];
+  }
+
+  void setMaxLatencyIncreasePlus1(uint32_t val, uint32_t tlayer)
+  {
+    m_maxLatencyIncreasePlus1[tlayer] = val;
+  }
+
   uint32_t                getMaxNumMergeCand() const { return m_maxNumMergeCand; }
   void                    setMaxNumMergeCand(uint32_t u) { m_maxNumMergeCand = u; }
   uint32_t                getMaxNumAffineMergeCand() const { return m_maxNumAffineMergeCand; }

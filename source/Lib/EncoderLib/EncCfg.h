@@ -296,8 +296,8 @@ protected:
   bool      m_AccessUnitDelimiter;               ///< add Access Unit Delimiter NAL units
   bool      m_enablePictureHeaderInSliceHeader;  ///< Enable Picture Header in Slice Header
 
-  int       m_iMaxRefPicNum;                     ///< this is used to mimic the sliding mechanism used by the decoder
-                                                 // TODO: We need to have a common sliding mechanism used by both the encoder and decoder
+  int m_maxRefPicNum;   ///< this is used to mimic the sliding mechanism used by the decoder
+                        // TODO: We need to have a common sliding mechanism used by both the encoder and decoder
 
   int       m_maxTempLayer;                      ///< Max temporal layer
   bool      m_isLowDelay;
@@ -1191,8 +1191,14 @@ public:
 
   void      setSourcePadding                ( int*  padding)                { for ( int i = 0; i < 2; i++ ) m_sourcePadding[i] = padding[i]; }
 
-  int       getMaxRefPicNum                 ()                              { return m_iMaxRefPicNum;           }
-  void      setMaxRefPicNum                 ( int iMaxRefPicNum )           { m_iMaxRefPicNum = iMaxRefPicNum;  }
+  int getMaxRefPicNum()
+  {
+    return m_maxRefPicNum;
+  }
+  void setMaxRefPicNum(int maxRefPicNum)
+  {
+    m_maxRefPicNum = maxRefPicNum;
+  }
 
   int       getMaxTempLayer                 ()                              { return m_maxTempLayer;              }
   void      setMaxTempLayer                 ( int maxTempLayer )            { m_maxTempLayer = maxTempLayer;      }

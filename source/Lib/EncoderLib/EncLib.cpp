@@ -69,11 +69,11 @@ EncLib::EncLib( EncLibCommon* encLibCommon )
   , m_vps( encLibCommon->getVPS() )
   , m_layerDecPicBuffering( encLibCommon->getDecPicBuffering() )
 {
-  m_iPOCLast          = -1;
-  m_iNumPicRcvd       =  0;
-  m_uiNumAllPicCoded  =  0;
+  m_pocLast          = -1;
+  m_receivedPicCount = 0;
+  m_codedPicCount    = 0;
 
-  m_iMaxRefPicNum     = 0;
+  m_maxRefPicNum = 0;
 
 #if ENABLE_SIMD_OPT_BUFFER
   g_pelBufOP.initPelBufOpsX86();
@@ -96,7 +96,7 @@ EncLib::~EncLib()
 void EncLib::create( const int layerId )
 {
   m_layerId = layerId;
-  m_iPOCLast = m_compositeRefEnabled ? -2 : -1;
+  m_pocLast = m_compositeRefEnabled ? -2 : -1;
   // create processing unit classes
   m_cGOPEncoder.        create( );
   m_cCuEncoder.         create( this );
@@ -334,7 +334,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
   // link temporary buffets from intra search with inter search to avoid unneccessary memory overhead
   m_cInterSearch.setTempBuffers( m_cIntraSearch.getSplitCSBuf(), m_cIntraSearch.getFullCSBuf(), m_cIntraSearch.getSaveCSBuf() );
 
-  m_iMaxRefPicNum = 0;
+  m_maxRefPicNum = 0;
 
 #if ER_CHROMA_QP_WCG_PPS
   if( m_wcgChromaQpControl.isEnabled() )
@@ -468,9 +468,13 @@ void EncLib::deletePicBuffer()
   m_cListPic.clear();
 }
 
-bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* cPicYuvTrueOrg, PelStorage* pcPicYuvFilteredOrg, PelStorage* pcPicYuvFilteredOrgForFG, const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf*>& rcListPicYuvRecOut, int& iNumEncoded )
+bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuvTrueOrg,
+                        PelStorage *pcPicYuvFilteredOrg, PelStorage *pcPicYuvFilteredOrgForFG,
+                        const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut,
+                        int &numEncoded)
 {
-  if( m_compositeRefEnabled && m_cGOPEncoder.getPicBg()->getSpliceFull() && m_iPOCLast >= 10 && m_iNumPicRcvd == 0 && m_cGOPEncoder.getEncodedLTRef() == false )
+  if (m_compositeRefEnabled && m_cGOPEncoder.getPicBg()->getSpliceFull() && m_pocLast >= 10 && m_receivedPicCount == 0
+      && m_cGOPEncoder.getEncodedLTRef() == false)
   {
     Picture *picCurr = nullptr;
     xGetNewPicBuffer( rcListPicYuvRecOut, picCurr, 2 );
@@ -485,8 +489,8 @@ bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* cPicYu
 #else
     picCurr->finalInit( m_vps, *sps, *pps, &m_picHeader, m_apss, m_lmcsAPS, m_scalinglistAPS );
 #endif
-    picCurr->poc = m_iPOCLast - 1;
-    m_iPOCLast -= 2;
+    picCurr->poc = m_pocLast - 1;
+    m_pocLast -= 2;
 
 #if JVET_Z0120_SII_SEI_PROCESSING
     if (getShutterFilterFlag())
@@ -503,10 +507,10 @@ bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* cPicYu
     }
     if( m_RCEnableRateControl )
     {
-      m_cRateCtrl.initRCGOP( m_iNumPicRcvd );
+      m_cRateCtrl.initRCGOP(m_receivedPicCount);
     }
 
-    m_cGOPEncoder.compressGOP(m_iPOCLast, m_iNumPicRcvd, m_cListPic, rcListPicYuvRecOut, false, false, snrCSC,
+    m_cGOPEncoder.compressGOP(m_pocLast, m_receivedPicCount, m_cListPic, rcListPicYuvRecOut, false, false, snrCSC,
                               m_printFrameMSE, m_printMSSSIM, true, 0);
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
@@ -518,8 +522,8 @@ bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* cPicYu
       m_cRateCtrl.destroyRCGOP();
     }
 
-    iNumEncoded = 0;
-    m_iNumPicRcvd = 0;
+    numEncoded         = 0;
+    m_receivedPicCount = 0;
   }
 
   //PROF_ACCUM_AND_START_NEW_SET( getProfilerPic(), P_GOP_LEVEL );
@@ -532,14 +536,14 @@ bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* cPicYu
 #if ER_CHROMA_QP_WCG_PPS
     if( getWCGChromaQPControl().isEnabled() )
     {
-      ppsID = getdQPs()[m_iPOCLast / ( m_compositeRefEnabled ? 2 : 1 ) + 1];
-      ppsID += ( getSwitchPOC() != -1 && ( m_iPOCLast + 1 >= getSwitchPOC() ) ? 1 : 0 );
+      ppsID = getdQPs()[m_pocLast / (m_compositeRefEnabled ? 2 : 1) + 1];
+      ppsID += (getSwitchPOC() != -1 && (m_pocLast + 1 >= getSwitchPOC()) ? 1 : 0);
     }
 #endif
 
     if( m_resChangeInClvsEnabled && m_intraPeriod == -1 )
     {
-      const int poc = m_iPOCLast + ( m_compositeRefEnabled ? 2 : 1 );
+      const int poc = m_pocLast + (m_compositeRefEnabled ? 2 : 1);
 
       if( poc / m_switchPocPeriod % 2 )
       {
@@ -632,7 +636,7 @@ bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* cPicYu
     pcPicCurr->finalInit( m_vps, *pSPS, *pPPS, &m_picHeader, m_apss, m_lmcsAPS, m_scalinglistAPS );
 #endif
 
-    pcPicCurr->poc = m_iPOCLast;
+    pcPicCurr->poc = m_pocLast;
 
 #if JVET_Z0120_SII_SEI_PROCESSING
     if (getShutterFilterFlag())
@@ -650,15 +654,16 @@ bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* cPicYu
     }
   }
 
-  if( ( m_iNumPicRcvd == 0 ) || ( !flush && ( m_iPOCLast != 0 ) && ( m_iNumPicRcvd != m_iGOPSize ) && ( m_iGOPSize != 0 ) ) )
+  if ((m_receivedPicCount == 0)
+      || (!flush && (m_pocLast != 0) && (m_receivedPicCount != m_iGOPSize) && (m_iGOPSize != 0)))
   {
-    iNumEncoded = 0;
+    numEncoded = 0;
     return true;
   }
 
   if( m_RCEnableRateControl )
   {
-    m_cRateCtrl.initRCGOP( m_iNumPicRcvd );
+    m_cRateCtrl.initRCGOP(m_receivedPicCount);
   }
 
   m_picIdInGOP = 0;
@@ -677,19 +682,20 @@ bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* cPicYu
  \param   snrCSC
  \retval  rcListPicYuvRecOut  list of reconstruction YUV pictures
  \retval  accessUnitsOut      list of output access units
- \retval  iNumEncoded         number of encoded pictures
+ \retval  numEncoded         number of encoded pictures
  */
 
-bool EncLib::encode( const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf*>& rcListPicYuvRecOut, int& iNumEncoded )
+bool EncLib::encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut,
+                    int &numEncoded)
 {
   // compress GOP
-  m_cGOPEncoder.compressGOP(m_iPOCLast, m_iNumPicRcvd, m_cListPic, rcListPicYuvRecOut, false, false, snrCSC,
+  m_cGOPEncoder.compressGOP(m_pocLast, m_receivedPicCount, m_cListPic, rcListPicYuvRecOut, false, false, snrCSC,
                             m_printFrameMSE, m_printMSSSIM, false, m_picIdInGOP);
 
   m_picIdInGOP++;
 
   // go over all pictures in a GOP excluding the first IRAP
-  if( m_picIdInGOP != m_iGOPSize && m_iPOCLast )
+  if (m_picIdInGOP != m_iGOPSize && m_pocLast)
   {
     return true;
   }
@@ -703,9 +709,9 @@ bool EncLib::encode( const InputColourSpaceConversion snrCSC, std::list<PelUnitB
     m_cRateCtrl.destroyRCGOP();
   }
 
-  iNumEncoded = m_iNumPicRcvd;
-  m_iNumPicRcvd = 0;
-  m_uiNumAllPicCoded += iNumEncoded;
+  numEncoded         = m_receivedPicCount;
+  m_receivedPicCount = 0;
+  m_codedPicCount += numEncoded;
 
   return false;
 }
@@ -732,10 +738,11 @@ void separateFields(Pel* org, Pel* dstField, uint32_t stride, uint32_t width, ui
 
 }
 
-bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* pcPicYuvTrueOrg, PelStorage* pcPicYuvFilteredOrg, const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-  int& iNumEncoded, bool isTff )
+bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYuvTrueOrg,
+                        PelStorage *pcPicYuvFilteredOrg, const InputColourSpaceConversion snrCSC,
+                        std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded, bool isTff)
 {
-  iNumEncoded = 0;
+  numEncoded     = 0;
   bool keepDoing = true;
 
   for( int fieldNum = 0; fieldNum < 2; fieldNum++ )
@@ -792,7 +799,7 @@ bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* pcPicY
       pcField->finalInit( m_vps, *pSPS, *pPPS, &m_picHeader, m_apss, m_lmcsAPS, m_scalinglistAPS );
 #endif
 
-      pcField->poc = m_iPOCLast;
+      pcField->poc           = m_pocLast;
       pcField->reconstructed = false;
 
       pcField->setBorderExtension( false );// where is this normally?
@@ -817,7 +824,7 @@ bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* pcPicY
 
   }
 
-  if( m_iNumPicRcvd && ( flush || m_iPOCLast == 1 || m_iNumPicRcvd == m_iGOPSize ) )
+  if (m_receivedPicCount && (flush || m_pocLast == 1 || m_receivedPicCount == m_iGOPSize))
   {
     m_picIdInGOP = 0;
     keepDoing = false;
@@ -826,17 +833,19 @@ bool EncLib::encodePrep( bool flush, PelStorage* pcPicYuvOrg, PelStorage* pcPicY
   return keepDoing;
 }
 
-bool EncLib::encode( const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf*>& rcListPicYuvRecOut, int& iNumEncoded, bool isTff )
+bool EncLib::encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut,
+                    int &numEncoded, bool isTff)
 {
-  iNumEncoded = 0;
+  numEncoded = 0;
 
   for( int fieldNum = 0; fieldNum < 2; fieldNum++ )
   {
-    m_iPOCLast = m_iPOCLast < 2 ? fieldNum : m_iPOCLast;
+    m_pocLast = m_pocLast < 2 ? fieldNum : m_pocLast;
 
     // compress GOP
-    m_cGOPEncoder.compressGOP( m_iPOCLast, m_iPOCLast < 2 ? m_iPOCLast + 1 : m_iNumPicRcvd, m_cListPic,
-      rcListPicYuvRecOut, true, isTff, snrCSC, m_printFrameMSE, m_printMSSSIM, false, m_picIdInGOP );
+    m_cGOPEncoder.compressGOP(m_pocLast, m_pocLast < 2 ? m_pocLast + 1 : m_receivedPicCount, m_cListPic,
+                              rcListPicYuvRecOut, true, isTff, snrCSC, m_printFrameMSE, m_printMSSSIM, false,
+                              m_picIdInGOP);
 #if JVET_O0756_CALCULATE_HDRMETRICS
     m_metricTime = m_cGOPEncoder.getMetricTime();
 #endif
@@ -845,14 +854,14 @@ bool EncLib::encode( const InputColourSpaceConversion snrCSC, std::list<PelUnitB
   }
 
   // go over all pictures in a GOP excluding first top field and first bottom field
-  if( m_picIdInGOP != m_iGOPSize && m_iPOCLast > 1 )
+  if (m_picIdInGOP != m_iGOPSize && m_pocLast > 1)
   {
     return true;
   }
 
-  iNumEncoded += m_iNumPicRcvd;
-  m_uiNumAllPicCoded += m_iNumPicRcvd;
-  m_iNumPicRcvd = 0;
+  numEncoded += m_receivedPicCount;
+  m_codedPicCount += m_receivedPicCount;
+  m_receivedPicCount = 0;
 
   return false;
 }
@@ -964,8 +973,8 @@ void EncLib::xGetNewPicBuffer ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Pict
   rpcPic->referenced = true;
   rpcPic->getHashMap()->clearAll();
 
-  m_iPOCLast += (m_compositeRefEnabled ? 2 : 1);
-  m_iNumPicRcvd++;
+  m_pocLast += (m_compositeRefEnabled ? 2 : 1);
+  m_receivedPicCount++;
 }
 
 void EncLib::xInitVPS( const SPS& sps )
