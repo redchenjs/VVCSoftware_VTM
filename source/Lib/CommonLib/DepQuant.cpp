@@ -775,6 +775,7 @@ namespace DQIntern
           invQScale <<= -shift;
         }
         Intermediate_Int qIdx = 2 * level + (level > 0 ? -(state >> 1) : (state >> 1));
+        CHECK(qIdx < minTCoeff || qIdx > maxTCoeff, "TransCoeffLevel outside allowable range");
 
         int64_t  nomTCoeff          = ((int64_t)qIdx * (int64_t)invQScale + add) >> ((shift < 0) ? 0 : shift);
         tCoeff[rasterPos]           = (TCoeff)Clip3<int64_t>(minTCoeff, maxTCoeff, nomTCoeff);

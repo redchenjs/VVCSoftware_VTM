@@ -3194,7 +3194,7 @@ int CABACReader::last_sig_coeff( CoeffCodingContext& cctx, TransformUnit& tu, Co
   return scanPos;
 }
 
-static void check_coeff_conformance(const CoeffCodingContext& cctx, const TCoeff coeff)
+static void checkCoeffInRange(const CoeffCodingContext &cctx, const TCoeff coeff)
 {
   CHECK( coeff < cctx.minCoeff() || coeff > cctx.maxCoeff(),
          "TransCoeffLevel outside allowable range" );
@@ -3363,7 +3363,10 @@ void CABACReader::residual_coding_subblock( CoeffCodingContext& cctx, TCoeff* co
     sumAbs               += AbsCoeff;
     coeff[ sigBlkPos[k] ] = ( signPattern & ( 1u << 31 ) ? -AbsCoeff : AbsCoeff );
     signPattern         <<= 1;
-    check_coeff_conformance( cctx, coeff[ sigBlkPos[k] ] );
+
+    checkCoeffInRange(cctx, coeff[sigBlkPos[k]]);
+    // NOTE: when Slice::getDepQuantEnabledFlag() is true, additional checks are required to determine
+    // whether coeff is in valid range (see DQIntern::Quantizer::dequantBlock)
   }
   if( numNonZero > numSigns )
   {
@@ -3371,7 +3374,7 @@ void CABACReader::residual_coding_subblock( CoeffCodingContext& cctx, TCoeff* co
     TCoeff AbsCoeff       = coeff[ sigBlkPos[ k ] ];
     sumAbs               += AbsCoeff;
     coeff[ sigBlkPos[k] ] = ( sumAbs & 1 ? -AbsCoeff : AbsCoeff );
-    check_coeff_conformance( cctx, coeff[ sigBlkPos[k] ] );
+    checkCoeffInRange(cctx, coeff[sigBlkPos[k]]);
   }
 }
 
@@ -3568,7 +3571,7 @@ void CABACReader::residual_coding_subblockTS( CoeffCodingContext& cctx, TCoeff* 
     TCoeff AbsCoeff       = coeff[ sigBlkPos[ k ] ];
     coeff[ sigBlkPos[k] ] = ( signPattern & 1 ? -AbsCoeff : AbsCoeff );
     signPattern         >>= 1;
-    check_coeff_conformance( cctx, coeff[ sigBlkPos[k] ] );
+    checkCoeffInRange(cctx, coeff[sigBlkPos[k]]);
   }
 }
 
