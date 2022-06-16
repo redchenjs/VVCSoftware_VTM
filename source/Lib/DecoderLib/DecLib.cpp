@@ -403,7 +403,7 @@ bool tryDecodePicture( Picture* pcEncPic, const int expectedPoc, const std::stri
 //! \{
 
 DecLib::DecLib()
-  : m_iMaxRefPicNum(0)
+  : m_maxRefPicNum(0)
   , m_isFirstGeneralHrd(true)
   , m_prevGeneralHrdParams()
   , m_associatedIRAPDecodingOrderNumber{ 0 }
@@ -582,8 +582,11 @@ void DecLib::deletePicBuffer ( )
 Picture* DecLib::xGetNewPicBuffer( const SPS &sps, const PPS &pps, const uint32_t temporalLayer, const int layerId )
 {
   Picture * pcPic = nullptr;
-  m_iMaxRefPicNum = ( m_vps == nullptr || m_vps->m_numLayersInOls[m_vps->m_targetOlsIdx] == 1 ) ? sps.getMaxDecPicBuffering( temporalLayer ) : m_vps->getMaxDecPicBuffering( temporalLayer );     // m_uiMaxDecPicBuffering has the space for the picture currently being decoded
-  if (m_cListPic.size() < (uint32_t)m_iMaxRefPicNum)
+  // getMaxDecPicBuffering() has space for the picture currently being decoded
+  m_maxRefPicNum = (m_vps == nullptr || m_vps->m_numLayersInOls[m_vps->m_targetOlsIdx] == 1)
+                     ? sps.getMaxDecPicBuffering(temporalLayer)
+                     : m_vps->getMaxDecPicBuffering(temporalLayer);
+  if (m_cListPic.size() < (uint32_t) m_maxRefPicNum)
   {
     pcPic = new Picture();
 
@@ -622,7 +625,7 @@ Picture* DecLib::xGetNewPicBuffer( const SPS &sps, const PPS &pps, const uint32_
   if( ! bBufferIsAvailable )
   {
     //There is no room for this picture, either because of faulty encoder or dropped NAL. Extend the buffer.
-    m_iMaxRefPicNum++;
+    m_maxRefPicNum++;
 
     pcPic = new Picture();
 

@@ -72,9 +72,9 @@ class EncLib : public EncCfg
 {
 private:
   // picture
-  int                       m_iPOCLast;                           ///< time index (POC)
-  int                       m_iNumPicRcvd;                        ///< number of received pictures
-  uint32_t                  m_uiNumAllPicCoded;                   ///< number of coded pictures
+  int                       m_pocLast;                            ///< time index (POC)
+  int                       m_receivedPicCount;                   ///< number of received pictures
+  uint32_t                  m_codedPicCount;                      ///< number of coded pictures
   PicList&                  m_cListPic;                           ///< dynamic list of pictures
   int                       m_layerId;
 
@@ -96,9 +96,9 @@ private:
   EncSlice                  m_cSliceEncoder;                      ///< slice encoder
   EncCu                     m_cCuEncoder;                         ///< CU encoder
   // SPS
-  ParameterSetMap<SPS>&     m_spsMap;                             ///< SPS. This is the base value. This is copied to PicSym
-  ParameterSetMap<PPS>&     m_ppsMap;                             ///< PPS. This is the base value. This is copied to PicSym
-  ParameterSetMap<APS>&     m_apsMap;                             ///< APS. This is the base value. This is copied to PicSym
+  ParameterSetMap<SPS>     &m_spsMap;                             ///< SPS. This is the base value
+  ParameterSetMap<PPS>     &m_ppsMap;                             ///< PPS. This is the base value
+  ParameterSetMap<APS>     &m_apsMap;                             ///< APS. This is the base value
   PicHeader                 m_picHeader;                          ///< picture header
   // RD cost computation
   RdCost                    m_cRdCost;                            ///< RD cost computation class
@@ -207,37 +207,27 @@ public:
   // encoder function
   // -------------------------------------------------------------------------------------------------------------------
 
-  /// encode several number of pictures until end-of-sequence
-  bool encodePrep( bool bEos,
-                PelStorage* pcPicYuvOrg,
-                PelStorage* pcPicYuvTrueOrg,
-                PelStorage* pcPicYuvFilteredOrg,
-                PelStorage* pcPicYuvFilteredOrgForFG,
-                const InputColourSpaceConversion snrCSC, // used for SNR calculations. Picture in original colour space.
-                std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-                int& iNumEncoded );
+  // encode several number of pictures until end-of-sequence
+  // snrCSC used for SNR calculations. Picture in original colour space.
+  bool encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYuvTrueOrg, PelStorage *pcPicYuvFilteredOrg,
+                  PelStorage *pcPicYuvFilteredOrgForFG, const InputColourSpaceConversion snrCSC,
+                  std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded);
 
-  bool encode( const InputColourSpaceConversion snrCSC, // used for SNR calculations. Picture in original colour space.
-               std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-               int& iNumEncoded );
+  bool encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded);
 
-  bool encodePrep( bool bEos,
-               PelStorage* pcPicYuvOrg,
-               PelStorage* pcPicYuvTrueOrg,
-               PelStorage* pcPicYuvFilteredOrg,
-               const InputColourSpaceConversion snrCSC, // used for SNR calculations. Picture in original colour space.
-               std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-               int& iNumEncoded, bool isTff );
+  bool encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYuvTrueOrg, PelStorage *pcPicYuvFilteredOrg,
+                  const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded,
+                  bool isTff);
 
-  bool encode( const InputColourSpaceConversion snrCSC, // used for SNR calculations. Picture in original colour space.
-               std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-               int& iNumEncoded, bool isTff );
+  bool encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded,
+              bool isTff);
 
-
-  void printSummary(bool isField) { m_cGOPEncoder.printOutSummary(m_uiNumAllPicCoded, isField, m_printMSEBasedSequencePSNR, 
-    m_printSequenceMSE, m_printMSSSIM, m_printHexPsnr, m_resChangeInClvsEnabled, m_spsMap.getFirstPS()->getBitDepths()
-                                  , m_layerId
-                                  ); }
+  void printSummary(bool isField)
+  {
+    m_cGOPEncoder.printOutSummary(m_codedPicCount, isField, m_printMSEBasedSequencePSNR, m_printSequenceMSE,
+                                  m_printMSSSIM, m_printHexPsnr, m_resChangeInClvsEnabled,
+                                  m_spsMap.getFirstPS()->getBitDepths(), m_layerId);
+  }
 
   int getLayerId() const { return m_layerId; }
   VPS* getVPS()          { return m_vps;     }
