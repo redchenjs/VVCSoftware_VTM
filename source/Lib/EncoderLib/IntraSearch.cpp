@@ -3307,7 +3307,7 @@ uint64_t IntraSearch::xGetIntraFracBitsQTChroma(TransformUnit& currTU, const Com
 }
 
 void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &compID, Distortion &dist,
-                                      const int &default0Save1Load2, uint32_t *numSig, std::vector<TrMode> *trModes,
+                                      const int &default0Save1Load2, uint32_t *numSig, TrModeList *trModes,
                                       const bool loadTr)
 {
   if (!tu.blocks[compID].valid())
@@ -3480,7 +3480,7 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
   {
     if (trModes)
     {
-      m_pcTrQuant->transformNxN(tu, compID, cQP, trModes, m_pcEncCfg->getMTSIntraMaxCand());
+      m_pcTrQuant->transformNxN(tu, compID, cQP, *trModes, m_pcEncCfg->getMTSIntraMaxCand());
       tu.mtsIdx[compID] = trModes->at(0).first;
     }
     if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[compID] == 0) || tu.cu->bdpcmMode != 0)
@@ -3532,7 +3532,7 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
 
     if (trModes)
     {
-      m_pcTrQuant->transformNxN(tu, codeCompId, qpCbCr, trModes, m_pcEncCfg->getMTSIntraMaxCand());
+      m_pcTrQuant->transformNxN(tu, codeCompId, qpCbCr, *trModes, m_pcEncCfg->getMTSIntraMaxCand());
       tu.mtsIdx[codeCompId] = trModes->at(0).first;
       if (tu.jointCbCr)
       {
@@ -3643,7 +3643,7 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
 }
 
 void IntraSearch::xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &compID, Distortion &dist,
-                                         std::vector<TrMode> *trModes, const bool loadTr)
+                                         TrModeList *trModes, const bool loadTr)
 {
   if (!tu.blocks[compID].valid())
   {
@@ -3705,7 +3705,7 @@ void IntraSearch::xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &c
 
     if (trModes)
     {
-      m_pcTrQuant->transformNxN(tu, compID, cQP, trModes, m_pcEncCfg->getMTSIntraMaxCand());
+      m_pcTrQuant->transformNxN(tu, compID, cQP, *trModes, m_pcEncCfg->getMTSIntraMaxCand());
       tu.mtsIdx[compID] = trModes->at(0).first;
     }
     if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[compID] == 0) || tu.cu->bdpcmMode != 0)
@@ -3745,7 +3745,7 @@ void IntraSearch::xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &c
     absSum           = 0;
     if (trModes)
     {
-      m_pcTrQuant->transformNxN(tu, codeCompId, qpCbCr, trModes, m_pcEncCfg->getMTSIntraMaxCand());
+      m_pcTrQuant->transformNxN(tu, codeCompId, qpCbCr, *trModes, m_pcEncCfg->getMTSIntraMaxCand());
       tu.mtsIdx[codeCompId] = trModes->at(0).first;
       if (tu.jointCbCr)
       {
@@ -3962,7 +3962,7 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
 
     const bool tsAllowed  = TU::isTSAllowed( tu, COMPONENT_Y );
     const bool mtsAllowed = CU::isMTSAllowed( cu, COMPONENT_Y );
-    std::vector<TrMode> trModes;
+    TrModeList trModes;
 
     if( sps.getUseLFNST() )
     {
@@ -4470,7 +4470,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
     const bool tsAllowed = TU::isTSAllowed(tu, COMPONENT_Y);
     const bool mtsAllowed = CU::isMTSAllowed(cu, COMPONENT_Y);
     const bool lossless = m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless();
-    std::vector<TrMode> trModes;
+    TrModeList trModes;
 
     if (sps.getUseLFNST())
     {
@@ -4944,10 +4944,10 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
     int        bestJointCbCr = tu.jointCbCr; assert(!bestJointCbCr);
 
     bool       lastIsBest = false;
-    std::vector<int>  jointCbfMasksToTest;
+    CbfMaskList jointCbfMasksToTest;
     if (sps.getJointCbCrEnabledFlag() && (TU::getCbf(tu, COMPONENT_Cb) || TU::getCbf(tu, COMPONENT_Cr)))
     {
-      jointCbfMasksToTest = m_pcTrQuant->selectICTCandidates(tu, orgResiCb, orgResiCr);
+      m_pcTrQuant->selectICTCandidates(tu, orgResiCb, orgResiCr, jointCbfMasksToTest);
     }
 
     for (int cbfMask : jointCbfMasksToTest)
@@ -5302,8 +5302,7 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
 
       const bool tsAllowed = TU::isTSAllowed(currTU, compID) && m_pcEncCfg->getUseChromaTS() && !currTU.cu->lfnstIdx;
       uint8_t    nNumTransformCands = 1 + (tsAllowed ? 1 : 0);   // DCT + TS = 2 tests
-
-      std::vector<TrMode> trModes;
+      TrModeList trModes;
       if (m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless())
       {
         nNumTransformCands = 1;
@@ -5476,10 +5475,10 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
       double     bestCostCbCr   = bestCostCb + bestCostCr;
       Distortion bestDistCbCr   = bestDistCb + bestDistCr;
       int        bestJointCbCr  = 0;
-      std::vector<int>  jointCbfMasksToTest;
+      CbfMaskList jointCbfMasksToTest;
       if ( cs.sps->getJointCbCrEnabledFlag() && (TU::getCbf(tmpTU, COMPONENT_Cb) || TU::getCbf(tmpTU, COMPONENT_Cr)))
       {
-        jointCbfMasksToTest = m_pcTrQuant->selectICTCandidates(currTU, orgResiCb, orgResiCr);
+        m_pcTrQuant->selectICTCandidates(currTU, orgResiCb, orgResiCr, jointCbfMasksToTest);
       }
       bool checkDCTOnly = (TU::getCbf(tmpTU, COMPONENT_Cb) && tmpTU.mtsIdx[COMPONENT_Cb] == MTS_DCT2_DCT2 && !TU::getCbf(tmpTU, COMPONENT_Cr)) ||
                           (TU::getCbf(tmpTU, COMPONENT_Cr) && tmpTU.mtsIdx[COMPONENT_Cr] == MTS_DCT2_DCT2 && !TU::getCbf(tmpTU, COMPONENT_Cb)) ||
@@ -5503,7 +5502,7 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
         uint8_t     numTransformCands = 1 + (tsAllowed ? 1 : 0); // DCT + TS = 2 tests
         bool        cbfDCT2 = true;
 
-        std::vector<TrMode> trModes;
+        TrModeList trModes;
         if (checkDCTOnly || checkTSOnly)
         {
           numTransformCands = 1;

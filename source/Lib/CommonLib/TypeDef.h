@@ -1153,7 +1153,7 @@ public:
   typedef T*        iterator;
   typedef T const*  const_iterator;
 
-  static const size_type max_num_elements = N;
+  static constexpr size_type max_num_elements = N;
 
   static_vector() : _size( 0 )                                 { }
   static_vector( size_t N_ ) : _size( N_ )                     { }

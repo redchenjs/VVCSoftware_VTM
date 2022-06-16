@@ -58,6 +58,8 @@ typedef void InvTrans(const TCoeff*, TCoeff*, int, int, int, int, const TCoeff, 
 // Class definition
 // ====================================================================================================================
 
+using CbfMaskList = static_vector<int, 3>;
+using TrModeList  = static_vector<TrMode, NUM_TRAFO_MODES_MTS>;
 
 /// transform and quantization class
 class TrQuant
@@ -91,7 +93,8 @@ protected:
 public:
 
   void invTransformNxN  (TransformUnit &tu, const ComponentID &compID, PelBuf &pResi, const QpParam &cQPs);
-  void transformNxN     ( TransformUnit& tu, const ComponentID& compID, const QpParam& cQP, std::vector<TrMode>* trModes, const int maxCand );
+  void transformNxN(TransformUnit &tu, const ComponentID &compID, const QpParam &cQP, TrModeList &trModes,
+                    const int maxCand);
   void transformNxN(TransformUnit &tu, const ComponentID &compID, const QpParam &cQP, TCoeff &absSum, const Ctx &ctx,
                     const bool loadTr = false);
 
@@ -100,7 +103,9 @@ public:
 
   void                        invTransformICT     ( const TransformUnit &tu, PelBuf &resCb, PelBuf &resCr );
   std::pair<int64_t,int64_t>  fwdTransformICT     ( const TransformUnit &tu, const PelBuf &resCb, const PelBuf &resCr, PelBuf& resC1, PelBuf& resC2, int jointCbCr = -1 );
-  std::vector<int>            selectICTCandidates ( const TransformUnit &tu, CompStorage* resCb, CompStorage* resCr );
+
+  void selectICTCandidates(const TransformUnit &tu, CompStorage *resCb, CompStorage *resCr,
+                           CbfMaskList &cbfMasksToTest);
 
 #if RDOQ_CHROMA_LAMBDA
   void   setLambdas  ( const double lambdas[MAX_NUM_COMPONENT] )   { m_quant->setLambdas( lambdas ); }
