@@ -1508,20 +1508,18 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
     {
       return false;
     }
-    if (R == k)
+    if (R != k)
     {
-      goto polfit1;
+      for (j = k; j <= order; j++)
+      {
+        x1      = a[R][j];
+        a[R][j] = a[k][j];
+        a[k][j] = x1;
+      }
+      x1   = B[R];
+      B[R] = B[k];
+      B[k] = x1;
     }
-    for (j = k; j <= order; j++)
-    {
-      x1      = a[R][j];
-      a[R][j] = a[k][j];
-      a[k][j] = x1;
-    }
-    x1   = B[R];
-    B[R] = B[k];
-    B[k] = x1;
-  polfit1:
     for (i = k; i <= order; i++)
     {
       m = a[i][k];
