@@ -418,6 +418,14 @@ uint32_t DecApp::decode()
         }
         if( ( m_cDecLib.getVPS() != nullptr && ( m_cDecLib.getVPS()->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet( &nalu ) ) ) || m_cDecLib.getVPS() == nullptr )
         {
+          if (isY4mFileExt(reconFileName))
+          {
+            const auto sps = pcListPic->front()->cs->sps;
+            const auto pps = pcListPic->front()->cs->pps;
+            m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(
+              pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(), m_outputFrameRate, m_outputBitDepth[0],
+              sps->getChromaFormatIdc());
+          }
           m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, bitDepths.recon ); // write mode
         }
       }

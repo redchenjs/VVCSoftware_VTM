@@ -63,6 +63,7 @@ protected:
 
   int           m_iSkipFrame;                           ///< counter for frames prior to the random access point to skip
   int           m_outputBitDepth[MAX_NUM_CHANNEL_TYPE]; ///< bit depth used for writing output
+  int           m_outputFrameRate = 0;                  ///< used to generate decoded Y4M
   InputColourSpaceConversion m_outputColourSpaceConvert;
   int           m_targetOlsIdx;                       ///< target output layer set
   std::vector<int> m_targetOutputLayerIdSet;          ///< set of LayerIds to be outputted

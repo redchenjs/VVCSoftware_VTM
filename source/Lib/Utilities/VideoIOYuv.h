@@ -61,13 +61,26 @@ private:
   int       m_fileBitdepth[MAX_NUM_CHANNEL_TYPE]; ///< bitdepth of input/output video file
   int       m_MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];  ///< bitdepth after addition of MSBs (with value 0)
   int       m_bitdepthShift[MAX_NUM_CHANNEL_TYPE];  ///< number of bits to increase or decrease image by before/after write/read
+  int          m_inY4mFileHeaderLength = 0;
+  int          m_outPicWidth           = 0;
+  int          m_outPicHeight          = 0;
+  int          m_outBitDepth           = 0;
+  int          m_outFrameRate          = 0;
+  ChromaFormat m_outChromaFormat       = CHROMA_420;
+  bool         m_outY4m                = false;
 
 public:
   VideoIOYuv()           {}
   virtual ~VideoIOYuv()  {}
 
-  void  open  ( const std::string &fileName, bool bWriteMode, const int fileBitDepth[MAX_NUM_CHANNEL_TYPE], const int MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE], const int internalBitDepth[MAX_NUM_CHANNEL_TYPE] ); ///< open or create file
-  void  close ();                                           ///< close file
+  void parseY4mFileHeader(const std::string &fileName, int &width, int &height, int &frameRate, int &bitDepth,
+                          ChromaFormat &chromaFormat);
+  void setOutputY4mInfo(int width, int height, int frameRate, int bitDepth, ChromaFormat chromaFormat);
+  void writeY4mFileHeader();
+  void open(const std::string &fileName, bool bWriteMode, const int fileBitDepth[MAX_NUM_CHANNEL_TYPE],
+            const int MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE],
+            const int internalBitDepth[MAX_NUM_CHANNEL_TYPE]);   ///< open or create file
+  void close();                                                  ///< close file
 #if EXTENSION_360_VIDEO
   void skipFrames(int numFrames, uint32_t width, uint32_t height, ChromaFormat format);
 #else
@@ -104,6 +117,8 @@ public:
     const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode, int outputChoice = 0, ChromaFormat format = NUM_CHROMA_FORMAT, const bool bClipToRec709 = false ); ///< write one upsaled YUV frame
 
 };
+
+bool isY4mFileExt(const std::string &fileName);
 
 #endif // __VIDEOIOYUV__
 
