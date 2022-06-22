@@ -301,6 +301,7 @@ void VideoIOYuv::writeY4mFileHeader()
   case CHROMA_420: header += "C420"; break;
   case CHROMA_422: header += "C422"; break;
   case CHROMA_444: header += "C444"; break;
+  default: CHECK(true, "Unknow chroma format");
   }
   if (m_outBitDepth > 8)
   {
