@@ -54,7 +54,7 @@ constexpr int Y4M_SIGNATURE_LENGTH    = 10;
 const char    y4mSignature[]          = "YUV4MPEG2 ";
 constexpr int Y4M_MAX_HEADER_LENGTH   = 128;
 constexpr int Y4M_FRAME_HEADER_LENGTH = 6;   // basic Y4m frame header, "FRAME" + '\n'
-const char    y4mFrameHeader[]        = { 'F', 'R', 'A', 'M', 'E', '\n' };
+const char    y4mFrameHeader[]        = "FRAME\n";
 
 // ====================================================================================================================
 // Local Functions
@@ -1489,7 +1489,7 @@ bool VideoIOYuv::writeUpscaledPicture( const SPS& sps, const PPS& pps, const CPe
 
 bool isY4mFileExt(const std::string &fileName)
 {
-  auto pos = fileName.find(".y4m");
+  auto pos = fileName.rfind(".y4m");
   // ".y4m" must be at the end of the file name
   return (pos != std::string::npos && pos + 4 == fileName.length());
 }
