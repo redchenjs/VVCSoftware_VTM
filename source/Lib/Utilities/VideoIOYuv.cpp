@@ -277,12 +277,13 @@ void VideoIOYuv::parseY4mFileHeader(const std::string &fileName, int &width, int
   m_cHandle.close();
 }
 
-void VideoIOYuv::setOutputY4mInfo(int width, int height, int frameRate, int bitDepth, ChromaFormat chromaFormat)
+void VideoIOYuv::setOutputY4mInfo(int width, int height, int frameRate, int frameScale, int bitDepth, ChromaFormat chromaFormat)
 {
   m_outPicWidth     = width;
   m_outPicHeight    = height;
   m_outBitDepth     = bitDepth;
   m_outFrameRate    = frameRate;
+  m_outFrameScale   = frameScale;
   m_outChromaFormat = chromaFormat;
 }
 
@@ -293,7 +294,7 @@ void VideoIOYuv::writeY4mFileHeader()
   std::string header = y4mSignature;
   header += "W" + std::to_string(m_outPicWidth) + " ";
   header += "H" + std::to_string(m_outPicHeight) + " ";
-  header += "F" + std::to_string(m_outFrameRate) + ":1 ";
+  header += "F" + std::to_string(m_outFrameRate) + ":" + std::to_string(m_outFrameScale) + " ";
   header += "Ip A0:0 ";
   switch (m_outChromaFormat)
   {

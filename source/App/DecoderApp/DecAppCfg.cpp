@@ -88,7 +88,6 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
   ("SkipFrames,s",              m_iSkipFrame,                          0,          "number of frames to skip before random access")
   ("OutputBitDepth,d",          m_outputBitDepth[CHANNEL_TYPE_LUMA],   0,          "bit depth of YUV output luma component (default: use 0 for native depth)")
   ("OutputBitDepthC,d",         m_outputBitDepth[CHANNEL_TYPE_CHROMA], 0,          "bit depth of YUV output chroma component (default: use luma output bit-depth)")
-  ("OutputFrameRate",           m_outputFrameRate,                     0,          "output frame rate, used to generate decoded Y4M")
   ("OutputColourSpaceConvert",  outputColourSpaceConvert,              string(""), "Colour space conversion to apply to input 444 video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(false))
   ("MaxTemporalLayer,t",        m_iMaxTemporalLayer,                   500,    "Maximum Temporal Layer to be decoded. -1 to decode all layers")
   ("TargetOutputLayerSet,p",    m_targetOlsIdx,                        500,    "Target output layer set index")
@@ -248,11 +247,6 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
     m_targetOlsIdx = -1;
   }
 
-  if (m_outputFrameRate == 0 && isY4mFileExt(m_reconFileName))
-  {
-    msg(ERROR, "OutputFrameRate needs to be set when outputting to Y4M file\n");
-    return false;
-  }
   return true;
 }
 

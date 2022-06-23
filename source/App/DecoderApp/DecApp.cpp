@@ -421,9 +421,28 @@ uint32_t DecApp::decode()
           if (isY4mFileExt(reconFileName))
           {
             const auto sps = pcListPic->front()->cs->sps;
+            int frameRate = 50;
+            int frameScale = 1;
+            if(sps->getGeneralHrdParametersPresentFlag())
+            {
+              const auto hrd = sps->getGeneralHrdParameters();
+              if(hrd->getNumUnitsInTick() != 1001)
+              {
+                frameRate = hrd->getTimeScale() / hrd->getNumUnitsInTick();
+              }
+              else
+              {
+                frameRate = hrd->getTimeScale();
+                frameScale = hrd->getNumUnitsInTick();
+              }
+            }
+            else
+            {
+              msg(WARNING, "Warning: No frame rate info found in the bitstream, default 50 fps is used.\n");
+            }
             const auto pps = pcListPic->front()->cs->pps;
             m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(
-              pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(), m_outputFrameRate, m_outputBitDepth[0],
+              pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(), frameRate, frameScale, m_outputBitDepth[0],
               sps->getChromaFormatIdc());
           }
           m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, bitDepths.recon ); // write mode

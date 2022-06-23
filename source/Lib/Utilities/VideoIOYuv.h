@@ -66,6 +66,7 @@ private:
   int          m_outPicHeight          = 0;
   int          m_outBitDepth           = 0;
   int          m_outFrameRate          = 0;
+  int          m_outFrameScale         = 1;
   ChromaFormat m_outChromaFormat       = CHROMA_420;
   bool         m_outY4m                = false;
 
@@ -75,7 +76,7 @@ public:
 
   void parseY4mFileHeader(const std::string &fileName, int &width, int &height, int &frameRate, int &bitDepth,
                           ChromaFormat &chromaFormat);
-  void setOutputY4mInfo(int width, int height, int frameRate, int bitDepth, ChromaFormat chromaFormat);
+  void setOutputY4mInfo(int width, int height, int frameRate, int frameScale, int bitDepth, ChromaFormat chromaFormat);
   void writeY4mFileHeader();
   void open(const std::string &fileName, bool bWriteMode, const int fileBitDepth[MAX_NUM_CHANNEL_TYPE],
             const int MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE],
