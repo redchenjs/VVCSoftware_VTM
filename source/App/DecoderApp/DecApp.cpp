@@ -433,11 +433,19 @@ uint32_t DecApp::decode()
             if(sps->getGeneralHrdParametersPresentFlag())
             {
               const auto hrd = sps->getGeneralHrdParameters();
-              const auto vps = m_cDecLib.getVPS();
-              frameRate =
-                hrd->getTimeScale() * (vps->getOlsHrdParameters(nalu.m_nuhLayerId)->getElementDurationInTcMinus1() + 1);
+              const auto olsHrdParam = sps->getOlsHrdParameters()[nalu.m_nuhLayerId];
+              int        elementDurationInTc = 1;
+              if (olsHrdParam.getFixedPicRateWithinCvsFlag())
+              {
+                elementDurationInTc = olsHrdParam.getElementDurationInTcMinus1() + 1;
+              }
+              else
+              {
+                msg(WARNING, "Warning: No fixed picture rate info is found in the bitstream, best guess is used.\n");
+              }
+              frameRate  = hrd->getTimeScale() * elementDurationInTc;
               frameScale = hrd->getNumUnitsInTick();
-              int gcd    = calcGcd(frameRate, frameScale);
+              int gcd    = calcGcd(max(frameRate, frameScale), min(frameRate, frameScale));
               frameRate /= gcd;
               frameScale /= gcd;
             }
