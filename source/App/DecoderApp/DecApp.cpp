@@ -51,6 +51,13 @@
 //! \ingroup DecoderApp
 //! \{
 
+static int calcGcd(int a, int b)
+{
+  // assume that a >= b
+  return b == 0 ? a : calcGcd(b, a % b);
+}
+
+
 // ====================================================================================================================
 // Constructor / destructor / initialization / destroy
 // ====================================================================================================================
@@ -420,21 +427,19 @@ uint32_t DecApp::decode()
         {
           if (isY4mFileExt(reconFileName))
           {
-            const auto sps = pcListPic->front()->cs->sps;
-            int frameRate = 50;
-            int frameScale = 1;
+            const auto sps        = pcListPic->front()->cs->sps;
+            int        frameRate  = 50;            
+            int        frameScale = 1;
             if(sps->getGeneralHrdParametersPresentFlag())
             {
               const auto hrd = sps->getGeneralHrdParameters();
-              if(hrd->getNumUnitsInTick() != 1001)
-              {
-                frameRate = hrd->getTimeScale() / hrd->getNumUnitsInTick();
-              }
-              else
-              {
-                frameRate = hrd->getTimeScale();
-                frameScale = hrd->getNumUnitsInTick();
-              }
+              const auto vps = m_cDecLib.getVPS();
+              frameRate =
+                hrd->getTimeScale() * (vps->getOlsHrdParameters(nalu.m_nuhLayerId)->getElementDurationInTcMinus1() + 1);
+              frameScale = hrd->getNumUnitsInTick();
+              int gcd    = calcGcd(frameRate, frameScale);
+              frameRate /= gcd;
+              frameScale /= gcd;
             }
             else
             {
