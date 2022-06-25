@@ -433,7 +433,7 @@ uint32_t DecApp::decode()
             if(sps->getGeneralHrdParametersPresentFlag())
             {
               const auto hrd = sps->getGeneralHrdParameters();
-              const auto olsHrdParam = sps->getOlsHrdParameters()[nalu.m_nuhLayerId];
+              const auto olsHrdParam = sps->getOlsHrdParameters()[nalu.m_temporalId];
               int        elementDurationInTc = 1;
               if (olsHrdParam.getFixedPicRateWithinCvsFlag())
               {
