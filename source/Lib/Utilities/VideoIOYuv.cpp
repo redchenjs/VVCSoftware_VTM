@@ -1064,9 +1064,13 @@ bool VideoIOYuv::read ( PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSp
 
   if (m_inY4mFileHeaderLength)
   {
-    char y4mFrameHeader[Y4M_FRAME_HEADER_LENGTH];
-    m_cHandle.read(y4mFrameHeader, Y4M_FRAME_HEADER_LENGTH);
-    CHECK(strncmp(y4mFrameHeader, "FRAME", Y4M_FRAME_HEADER_LENGTH - 1), "Wrong Y4M frame header!");
+    char frameHeader[Y4M_FRAME_HEADER_LENGTH+1];
+    m_cHandle.read(frameHeader, Y4M_FRAME_HEADER_LENGTH);
+    if (m_cHandle.eof() || m_cHandle.fail())
+    {
+      return false;
+    }
+    CHECK(strncmp(frameHeader, y4mFrameHeader, Y4M_FRAME_HEADER_LENGTH), "Wrong Y4M frame header!");
   }
 
   const PelBuf areaBufY = picOrg.get(COMPONENT_Y);
