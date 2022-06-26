@@ -1385,25 +1385,6 @@ void EncApp::xInitLib()
 
 void EncApp::createLib( const int layerIdx )
 {
-  if (isY4mFileExt(m_inputFileName))
-  {
-    int          width = 0, height = 0, frameRate = 0, inputBitDepth = 0;
-    ChromaFormat chromaFormat = CHROMA_420;
-    m_cVideoIOYuvInputFile.parseY4mFileHeader(m_inputFileName, width, height, frameRate, inputBitDepth, chromaFormat);
-    if (width != m_sourceWidth || height != m_sourceHeight || frameRate != m_iFrameRate
-        || inputBitDepth != m_inputBitDepth[0] || chromaFormat != m_chromaFormatIDC)
-    {
-      printf("Warning: Y4M file info is different from input.\n");
-      m_sourceWidth            = width;
-      m_sourceHeight           = height;
-      m_iFrameRate             = frameRate;
-      m_inputBitDepth[0]       = inputBitDepth;
-      m_inputBitDepth[1]       = inputBitDepth;
-      m_chromaFormatIDC        = chromaFormat;
-      m_MSBExtendedBitDepth[0] = m_inputBitDepth[0];
-      m_MSBExtendedBitDepth[1] = m_inputBitDepth[1];
-    }
-  }
   const int sourceHeight = m_isField ? m_iSourceHeightOrg : m_sourceHeight;
   UnitArea unitArea( m_chromaFormatIDC, Area( 0, 0, m_sourceWidth, sourceHeight ) );
 
