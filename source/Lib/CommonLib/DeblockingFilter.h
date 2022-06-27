@@ -54,18 +54,32 @@
 /// deblocking filter class
 class DeblockingFilter
 {
+  static constexpr int LOG_GRID_SIZE = 2;
+  static constexpr int GRID_SIZE     = 1 << LOG_GRID_SIZE;
+
 private:
   static_vector<char, MAX_NUM_PARTS_IN_CTU> m_aapucBS       [NUM_EDGE_DIR];         ///< Bs for [Ver/Hor][Y/U/V][Blk_Idx]
   static_vector<bool, MAX_NUM_PARTS_IN_CTU> m_aapbEdgeFilter[NUM_EDGE_DIR];
   LFCUParam m_stLFCUParam;                   ///< status structure
   int     m_ctuXLumaSamples, m_ctuYLumaSamples;                            // location of left-edge and top-edge of CTU
   int     m_shiftHor, m_shiftVer;                                          // shift values to convert location from luma sample units to chroma sample units
-  uint8_t m_maxFilterLengthP[MAX_NUM_COMPONENT][MAX_CU_SIZE][MAX_CU_SIZE]; // maxFilterLengthP for [component][luma/chroma sample distance from left edge of CTU][luma/chroma sample distance from top edge of CTU]
-  uint8_t m_maxFilterLengthQ[MAX_NUM_COMPONENT][MAX_CU_SIZE][MAX_CU_SIZE]; // maxFilterLengthQ for [component][luma/chroma sample distance from left edge of CTU][luma/chroma sample distance from top edge of CTU]
-  bool    m_transformEdge[MAX_NUM_COMPONENT][MAX_CU_SIZE][MAX_CU_SIZE];    // transform edge flag for [component][luma/chroma sample distance from left edge of CTU][luma/chroma sample distance from top edge of CTU]
+
+  // maxFilterLengthP for [component][luma/chroma sample distance from left edge of CTU]
+  // [luma/chroma sample distance from top edge of CTU]
+  uint8_t m_maxFilterLengthP[MAX_NUM_COMPONENT][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
+
+  // maxFilterLengthQ for [component][luma/chroma sample distance from left edge of CTU]
+  // [luma/chroma sample distance from top edge of CTU]
+  uint8_t m_maxFilterLengthQ[MAX_NUM_COMPONENT][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
+
+  // transform edge flag for [component][luma/chroma sample distance from left edge of CTU]
+  // [luma/chroma sample distance from top edge of CTU]
+  bool m_transformEdge[MAX_NUM_COMPONENT][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
+
   PelStorage                   m_encPicYuvBuffer;
   bool                         m_enc;
 private:
+  void clearFilterLengthAndTransformEdge();
 
   // set / get functions
   void xSetDeblockingFilterParam        ( const CodingUnit& cu );
