@@ -432,8 +432,8 @@ uint32_t DecApp::decode()
             int        frameScale = 1;
             if(sps->getGeneralHrdParametersPresentFlag())
             {
-              const auto hrd = sps->getGeneralHrdParameters();
-              const auto olsHrdParam = sps->getOlsHrdParameters()[nalu.m_temporalId];
+              const auto hrd                 = sps->getGeneralHrdParameters();
+              const auto olsHrdParam         = sps->getOlsHrdParameters()[sps->getMaxTLayers() - 1];
               int        elementDurationInTc = 1;
               if (olsHrdParam.getFixedPicRateWithinCvsFlag())
               {
@@ -441,7 +441,7 @@ uint32_t DecApp::decode()
               }
               else
               {
-                msg(WARNING, "Warning: No fixed picture rate info is found in the bitstream, best guess is used.\n");
+                msg(WARNING, "\nWarning: No fixed picture rate info is found in the bitstream, best guess is used.\n");
               }
               frameRate  = hrd->getTimeScale() * elementDurationInTc;
               frameScale = hrd->getNumUnitsInTick();
@@ -451,7 +451,7 @@ uint32_t DecApp::decode()
             }
             else
             {
-              msg(WARNING, "Warning: No frame rate info found in the bitstream, default 50 fps is used.\n");
+              msg(WARNING, "\nWarning: No frame rate info found in the bitstream, default 50 fps is used.\n");
             }
             const auto pps = pcListPic->front()->cs->pps;
             m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(
