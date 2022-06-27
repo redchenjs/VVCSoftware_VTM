@@ -51,6 +51,13 @@
 //! \ingroup DecoderApp
 //! \{
 
+static int calcGcd(int a, int b)
+{
+  // assume that a >= b
+  return b == 0 ? a : calcGcd(b, a % b);
+}
+
+
 // ====================================================================================================================
 // Constructor / destructor / initialization / destroy
 // ====================================================================================================================
@@ -418,6 +425,39 @@ uint32_t DecApp::decode()
         }
         if( ( m_cDecLib.getVPS() != nullptr && ( m_cDecLib.getVPS()->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet( &nalu ) ) ) || m_cDecLib.getVPS() == nullptr )
         {
+          if (isY4mFileExt(reconFileName))
+          {
+            const auto sps        = pcListPic->front()->cs->sps;
+            int        frameRate  = 50;            
+            int        frameScale = 1;
+            if(sps->getGeneralHrdParametersPresentFlag())
+            {
+              const auto hrd                 = sps->getGeneralHrdParameters();
+              const auto olsHrdParam         = sps->getOlsHrdParameters()[sps->getMaxTLayers() - 1];
+              int        elementDurationInTc = 1;
+              if (olsHrdParam.getFixedPicRateWithinCvsFlag())
+              {
+                elementDurationInTc = olsHrdParam.getElementDurationInTcMinus1() + 1;
+              }
+              else
+              {
+                msg(WARNING, "\nWarning: No fixed picture rate info is found in the bitstream, best guess is used.\n");
+              }
+              frameRate  = hrd->getTimeScale() * elementDurationInTc;
+              frameScale = hrd->getNumUnitsInTick();
+              int gcd    = calcGcd(max(frameRate, frameScale), min(frameRate, frameScale));
+              frameRate /= gcd;
+              frameScale /= gcd;
+            }
+            else
+            {
+              msg(WARNING, "\nWarning: No frame rate info found in the bitstream, default 50 fps is used.\n");
+            }
+            const auto pps = pcListPic->front()->cs->pps;
+            m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(
+              pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(), frameRate, frameScale, m_outputBitDepth[0],
+              sps->getChromaFormatIdc());
+          }
           m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, bitDepths.recon ); // write mode
         }
       }

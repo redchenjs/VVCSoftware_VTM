@@ -40,6 +40,7 @@
 #include <string>
 #include "DecAppCfg.h"
 #include "Utilities/program_options_lite.h"
+#include "Utilities/VideoIOYuv.h"
 #include "CommonLib/ChromaFormat.h"
 #include "CommonLib/dtrace_next.h"
 
@@ -245,6 +246,7 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
   {
     m_targetOlsIdx = -1;
   }
+
   return true;
 }
 
