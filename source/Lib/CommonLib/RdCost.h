@@ -119,11 +119,14 @@ private:
 #if WCG_EXT
   double                  m_dLambda_unadjusted; // TODO: check is necessary
   double                  m_DistScaleUnadjusted;
-  static std::vector<double> m_reshapeLumaLevelToWeightPLUT;
-  static std::vector<double> m_lumaLevelToWeightPLUT;
-  static uint32_t         m_signalType;
-  static double           m_chromaWeight;
-  static int              m_lumaBD;
+
+  static std::vector<int32_t> m_reshapeLumaLevelToWeightPLUT;   // scaled by MSE_WEIGHT_ONE
+  static std::vector<double>  m_lumaLevelToWeightPLUT;
+
+  static int32_t  m_chromaWeight;   // scaled by MSE_WEIGHT_ONE
+  static uint32_t m_signalType;
+  static int      m_lumaBD;
+
   ChromaFormat            m_cf;
 #endif
   double                  m_DistScale;
@@ -319,8 +322,9 @@ public:
   inline double  getWPSNRLumaLevelWeight    (int val) { return m_lumaLevelToWeightPLUT[val]; }
   void           initLumaLevelToWeightTableReshape();
   void           updateReshapeLumaLevelToWeightTableChromaMD (std::vector<Pel>& ILUT);
-  void           restoreReshapeLumaLevelToWeightTable        ();
-  inline double  getWPSNRReshapeLumaLevelWeight              (int val)                   { return m_reshapeLumaLevelToWeightPLUT[val]; }
+
+  void restoreReshapeLumaLevelToWeightTable();
+
   void           setReshapeInfo                              (uint32_t type, int lumaBD) { m_signalType = type; m_lumaBD = lumaBD; }
   void           updateReshapeLumaLevelToWeightTable         (SliceReshapeInfo &sliceReshape, Pel *wtTable, double cwt);
   inline std::vector<double>& getLumaLevelWeightTable        ()                   { return m_lumaLevelToWeightPLUT; }

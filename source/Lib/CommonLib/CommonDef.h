@@ -495,6 +495,9 @@ static const int BLK_8 =                                          8;
 static const int BLK_16 =                                        16;
 static const int BLK_32 =                                        32;
 static const int BIT_DEPTH_8 =                                    8;
+
+static constexpr int MSE_WEIGHT_FRAC_BITS = 16;
+static constexpr int MSE_WEIGHT_ONE       = 1 << MSE_WEIGHT_FRAC_BITS;
 // ====================================================================================================================
 // SEI and related constants
 // ====================================================================================================================

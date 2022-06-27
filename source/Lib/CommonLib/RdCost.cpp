@@ -3057,10 +3057,11 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
 
 
 #if WCG_EXT
-uint32_t   RdCost::m_signalType                 = RESHAPE_SIGNAL_NULL;
-double     RdCost::m_chromaWeight               = 1.0;
-int        RdCost::m_lumaBD                     = 10;
-std::vector<double> RdCost::m_reshapeLumaLevelToWeightPLUT;
+uint32_t RdCost::m_signalType   = RESHAPE_SIGNAL_NULL;
+int32_t  RdCost::m_chromaWeight = MSE_WEIGHT_ONE;
+int      RdCost::m_lumaBD       = 10;
+
+std::vector<int32_t> RdCost::m_reshapeLumaLevelToWeightPLUT;
 std::vector<double> RdCost::m_lumaLevelToWeightPLUT;
 
 void RdCost::saveUnadjustedLambda()
@@ -3094,7 +3095,7 @@ void RdCost::initLumaLevelToWeightTableReshape()
   int lutSize = 1 << m_lumaBD;
   if (m_reshapeLumaLevelToWeightPLUT.empty())
   {
-    m_reshapeLumaLevelToWeightPLUT.resize(lutSize, 1.0);
+    m_reshapeLumaLevelToWeightPLUT.resize(lutSize, MSE_WEIGHT_ONE);
   }
   if (m_lumaLevelToWeightPLUT.empty())
   {
@@ -3108,8 +3109,9 @@ void RdCost::initLumaLevelToWeightTableReshape()
       double y;
       y = 0.015*x - 1.5 - 6;
       y = y < -3 ? -3 : (y > 6 ? 6 : y);
-      m_reshapeLumaLevelToWeightPLUT[i] = pow(2.0, y / 3.0);
-      m_lumaLevelToWeightPLUT[i] = m_reshapeLumaLevelToWeightPLUT[i];
+      const double weight               = pow(2.0, y / 3.0);
+      m_reshapeLumaLevelToWeightPLUT[i] = (int) (weight * MSE_WEIGHT_ONE);
+      m_lumaLevelToWeightPLUT[i]        = weight;
     }
   }
 }
@@ -3118,7 +3120,7 @@ void RdCost::updateReshapeLumaLevelToWeightTableChromaMD(std::vector<Pel>& ILUT)
 {
   for (int i = 0; i < (1 << m_lumaBD); i++)
   {
-    m_reshapeLumaLevelToWeightPLUT[i] = m_lumaLevelToWeightPLUT[ILUT[i]];
+    m_reshapeLumaLevelToWeightPLUT[i] = (int) (m_lumaLevelToWeightPLUT[ILUT[i]] * MSE_WEIGHT_ONE);
   }
 }
 
@@ -3126,7 +3128,7 @@ void RdCost::restoreReshapeLumaLevelToWeightTable()
 {
   for (int i = 0; i < (1 << m_lumaBD); i++)
   {
-    m_reshapeLumaLevelToWeightPLUT.at(i) = m_lumaLevelToWeightPLUT.at(i);
+    m_reshapeLumaLevelToWeightPLUT.at(i) = (int) (m_lumaLevelToWeightPLUT.at(i) * MSE_WEIGHT_ONE);
   }
 }
 
@@ -3161,10 +3163,10 @@ void RdCost::updateReshapeLumaLevelToWeightTable(SliceReshapeInfo &sliceReshape,
         for (int j = 0; j < histLens; j++)
         {
           int ii = i*histLens + j;
-          m_reshapeLumaLevelToWeightPLUT[ii] = weight;
+          m_reshapeLumaLevelToWeightPLUT[ii] = (int) (weight * MSE_WEIGHT_ONE);
         }
       }
-      m_chromaWeight = cwt;
+      m_chromaWeight = (int) (cwt * MSE_WEIGHT_ONE);
     }
     else
     {
@@ -3179,16 +3181,17 @@ void RdCost::updateReshapeLumaLevelToWeightTable(SliceReshapeInfo &sliceReshape,
 
 Distortion RdCost::getWeightedMSE(int compIdx, const Pel org, const Pel cur, const uint32_t shift, const Pel orgLuma)
 {
-  Distortion distortionVal = 0;
-  Intermediate_Int temp          = org - cur;
-  CHECK( org<0, "");
+  CHECKD(org < 0, "Sample value must be positive");
 
   if (compIdx == COMPONENT_Y)
   {
-    CHECK(org != orgLuma, "");
+    CHECKD(org != orgLuma, "Luma sample values must be equal to each other");
   }
+
+  Pel diff = org - cur;
+
   // use luma to get weight
-  double weight = 1.0;
+  int64_t weight = MSE_WEIGHT_ONE;
   if (m_signalType == RESHAPE_SIGNAL_SDR || m_signalType == RESHAPE_SIGNAL_HLG)
   {
     if (compIdx == COMPONENT_Y)
@@ -3204,10 +3207,8 @@ Distortion RdCost::getWeightedMSE(int compIdx, const Pel org, const Pel cur, con
   {
     weight = m_reshapeLumaLevelToWeightPLUT[orgLuma];
   }
-  int64_t fixedPTweight = (int64_t)(weight * (double)(1 << 16));
-  Intermediate_Int mse           = Intermediate_Int((fixedPTweight * (temp * temp) + (1 << 15)) >> 16);
-  distortionVal                  = Distortion(mse >> shift);
-  return distortionVal;
+
+  return (weight * (diff * diff) + (1 << MSE_WEIGHT_FRAC_BITS >> 1)) >> (MSE_WEIGHT_FRAC_BITS + shift);
 }
 
 Distortion RdCost::xGetSSE_WTD( const DistParam &rcDtParam )
