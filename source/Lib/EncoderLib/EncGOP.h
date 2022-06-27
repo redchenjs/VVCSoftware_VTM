@@ -223,9 +223,9 @@ public:
 
   void  init        ( EncLib* pcEncLib );
 
-  void  compressGOP ( int iPOCLast, int iNumPicRcvd, PicList& rcListPic, std::list<PelUnitBuf*>& rcListPicYuvRec,
-                      bool isField, bool isTff, const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
-                      bool printMSSSIM, bool isEncodeLtRef, const int picIdInGOP);
+  void  compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::list<PelUnitBuf *> &rcListPicYuvRec,
+                    bool isField, bool isTff, const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
+                    bool printMSSSIM, bool isEncodeLtRef, const int picIdInGOP);
   void  xAttachSliceDataToNalUnit (OutputNALUnit& rNalu, OutputBitstream* pcBitstreamRedirect);
 
 
@@ -280,15 +280,12 @@ protected:
   RateCtrl* getRateCtrl()       { return m_pcRateCtrl;  }
 
 protected:
-
-  void  xInitGOP          ( int iPOCLast, int iNumPicRcvd, bool isField
-    , bool isEncodeLtRef
-  );
+  void  xInitGOP(int pocLast, int numPicRcvd, bool isField, bool isEncodeLtRef);
   void  xPicInitHashME( Picture *pic, const PPS *pps, PicList &rcListPic );
   void  xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, Picture *pic, Slice *slice);
   void  xPicInitLMCS       (Picture *pic, PicHeader *picHeader, Slice *slice);
-  void  xGetBuffer        ( PicList& rcListPic, std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-                            int iNumPicRcvd, int iTimeOffset, Picture*& rpcPic, int pocCurr, bool isField );
+  void  xGetBuffer(PicList &rcListPic, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int numPicRcvd, int timeOffset,
+                   Picture *&rpcPic, int pocCurr, bool isField);
   void xGetSubpicIdsInPic(std::vector<uint16_t>& subpicIDs, const SPS* sps, const PPS* pps);
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
@@ -296,9 +293,10 @@ protected:
   void copyBuftoFrame       ( Picture* pcPic );
 #endif
 
-  void  xCalculateAddPSNRs(const bool isField, const bool isFieldTopFieldFirst, const int iGOPid, Picture* pcPic, 
-    const AccessUnit&accessUnit, PicList &rcListPic, int64_t dEncTime, const InputColourSpaceConversion snr_conversion, 
-    const bool printFrameMSE, const bool printMSSSIM, double* PSNR_Y, bool isEncodeLtRef);
+  void     xCalculateAddPSNRs(const bool isField, const bool isFieldTopFieldFirst, const int gopId, Picture *pcPic,
+                              const AccessUnit &accessUnit, PicList &rcListPic, int64_t dEncTime,
+                              const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
+                              const bool printMSSSIM, double *PSNR_Y, bool isEncodeLtRef);
   void  xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUnit&, double dEncTime, const InputColourSpaceConversion snr_conversion, 
     const bool printFrameMSE, const bool printMSSSIM, double* PSNR_Y, bool isEncodeLtRef);
   void  xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture* pcPicOrgSecondField,

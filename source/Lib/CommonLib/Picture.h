@@ -154,7 +154,10 @@ struct Picture : public UnitArea
   void setDecodingOrderNumber(const int val)        { m_decodingOrderNumber = val;  }
   NalUnitType getPictureType()                const { return m_pictureType;         }
   void setPictureType(const NalUnitType val)        { m_pictureType = val;          }
-  void setBorderExtension( bool bFlag)              { m_bIsBorderExtended = bFlag;}
+  void        setBorderExtension(bool flag)
+  {
+    m_extendedBorder = flag;
+  }
   Pel* getOrigin( const PictureType &type, const ComponentID compID ) const;
   int  getEdrapRapId()                        const { return edrapRapId ; }
   void setEdrapRapId(const int val)                 { edrapRapId = val; }
@@ -203,7 +206,7 @@ public:
 
   bool getSubPicSaved()          { return m_isSubPicBorderSaved; }
   void setSubPicSaved(bool bVal) { m_isSubPicBorderSaved = bVal; }
-  bool m_bIsBorderExtended;
+  bool     m_extendedBorder;
   bool m_wrapAroundValid;
   unsigned m_wrapAroundOffset;
   bool referenced;

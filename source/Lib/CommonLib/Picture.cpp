@@ -50,7 +50,7 @@ Picture::Picture()
 {
   cs                   = nullptr;
   m_isSubPicBorderSaved = false;
-  m_bIsBorderExtended  = false;
+  m_extendedBorder        = false;
   m_wrapAroundValid    = false;
   m_wrapAroundOffset   = 0;
   usedByCurr           = false;
@@ -987,7 +987,7 @@ void Picture::restoreSubPicBorder(int POC, int subPicX0, int subPicY0, int subPi
 
 void Picture::extendPicBorder( const PPS *pps )
 {
-  if ( m_bIsBorderExtended )
+  if (m_extendedBorder)
   {
     if( isWrapAroundEnabled( pps ) && ( !m_wrapAroundValid || m_wrapAroundOffset != pps->getWrapAroundOffset() ) )
     {
@@ -1044,7 +1044,7 @@ void Picture::extendPicBorder( const PPS *pps )
     }
   }
 
-  m_bIsBorderExtended = true;
+  m_extendedBorder = true;
 }
 
 void Picture::extendWrapBorder( const PPS *pps )
@@ -1201,7 +1201,7 @@ void Picture::addPictureToHashMapForInter()
   int picWidth = slices[0]->getPPS()->getPicWidthInLumaSamples();
   int picHeight = slices[0]->getPPS()->getPicHeightInLumaSamples();
   uint32_t* blockHashValues[2][2];
-  bool* bIsBlockSame[2][3];
+  bool     *isBlockSame[2][3];
 
   for (int i = 0; i < 2; i++)
   {
@@ -1212,25 +1212,31 @@ void Picture::addPictureToHashMapForInter()
 
     for (int j = 0; j < 3; j++)
     {
-      bIsBlockSame[i][j] = new bool[picWidth*picHeight];
+      isBlockSame[i][j] = new bool[picWidth * picHeight];
     }
   }
   m_hashMap.create(picWidth, picHeight);
-  m_hashMap.generateBlock2x2HashValue(getOrigBuf(), picWidth, picHeight, slices[0]->getSPS()->getBitDepths(), blockHashValues[0], bIsBlockSame[0]);//2x2
-  m_hashMap.generateBlockHashValue(picWidth, picHeight, 4, 4, blockHashValues[0], blockHashValues[1], bIsBlockSame[0], bIsBlockSame[1]);//4x4
-  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], bIsBlockSame[1][2], picWidth, picHeight, 4, 4);
+  m_hashMap.generateBlock2x2HashValue(getOrigBuf(), picWidth, picHeight, slices[0]->getSPS()->getBitDepths(),
+                                      blockHashValues[0], isBlockSame[0]);   // 2x2
+  m_hashMap.generateBlockHashValue(picWidth, picHeight, 4, 4, blockHashValues[0], blockHashValues[1], isBlockSame[0],
+                                   isBlockSame[1]);   // 4x4
+  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], isBlockSame[1][2], picWidth, picHeight, 4, 4);
 
-  m_hashMap.generateBlockHashValue(picWidth, picHeight, 8, 8, blockHashValues[1], blockHashValues[0], bIsBlockSame[1], bIsBlockSame[0]);//8x8
-  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[0], bIsBlockSame[0][2], picWidth, picHeight, 8, 8);
+  m_hashMap.generateBlockHashValue(picWidth, picHeight, 8, 8, blockHashValues[1], blockHashValues[0], isBlockSame[1],
+                                   isBlockSame[0]);   // 8x8
+  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[0], isBlockSame[0][2], picWidth, picHeight, 8, 8);
 
-  m_hashMap.generateBlockHashValue(picWidth, picHeight, 16, 16, blockHashValues[0], blockHashValues[1], bIsBlockSame[0], bIsBlockSame[1]);//16x16
-  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], bIsBlockSame[1][2], picWidth, picHeight, 16, 16);
+  m_hashMap.generateBlockHashValue(picWidth, picHeight, 16, 16, blockHashValues[0], blockHashValues[1], isBlockSame[0],
+                                   isBlockSame[1]);   // 16x16
+  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], isBlockSame[1][2], picWidth, picHeight, 16, 16);
 
-  m_hashMap.generateBlockHashValue(picWidth, picHeight, 32, 32, blockHashValues[1], blockHashValues[0], bIsBlockSame[1], bIsBlockSame[0]);//32x32
-  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[0], bIsBlockSame[0][2], picWidth, picHeight, 32, 32);
+  m_hashMap.generateBlockHashValue(picWidth, picHeight, 32, 32, blockHashValues[1], blockHashValues[0], isBlockSame[1],
+                                   isBlockSame[0]);   // 32x32
+  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[0], isBlockSame[0][2], picWidth, picHeight, 32, 32);
 
-  m_hashMap.generateBlockHashValue(picWidth, picHeight, 64, 64, blockHashValues[0], blockHashValues[1], bIsBlockSame[0], bIsBlockSame[1]);//64x64
-  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], bIsBlockSame[1][2], picWidth, picHeight, 64, 64);
+  m_hashMap.generateBlockHashValue(picWidth, picHeight, 64, 64, blockHashValues[0], blockHashValues[1], isBlockSame[0],
+                                   isBlockSame[1]);   // 64x64
+  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], isBlockSame[1][2], picWidth, picHeight, 64, 64);
 
   m_hashMap.setInitial();
 
@@ -1243,7 +1249,7 @@ void Picture::addPictureToHashMapForInter()
 
     for (int j = 0; j < 3; j++)
     {
-      delete[] bIsBlockSame[i][j];
+      delete[] isBlockSame[i][j];
     }
   }
 }
@@ -1358,46 +1364,48 @@ void Picture::copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcP
   int numValidComponents = getNumberValidComponents(chromaFormatIDC);
 
   Pel *srcPxl, *dstPxl;
-  int iSrcStride, iSrcHeight, iSrcWidth;
-  int iDstStride;
+  int  srcStride, srcHeight, srcWidth;
+  int  dstStride;
 
   for (int comp = 0; comp < numValidComponents; comp++)
   {
-
-    if (comp == COMPONENT_Y) {
+    if (comp == COMPONENT_Y)
+    {
       srcPxl = pcPicYuvSrc->Y().buf;
       dstPxl = pcPicYuvDst->Y().buf;
-      iSrcStride = pcPicYuvSrc->Y().stride;
-      iSrcHeight = pcPicYuvSrc->Y().height;
-      iSrcWidth = pcPicYuvSrc->Y().width;
-      iDstStride = pcPicYuvSrc->Y().stride;
+      srcStride = pcPicYuvSrc->Y().stride;
+      srcHeight = pcPicYuvSrc->Y().height;
+      srcWidth  = pcPicYuvSrc->Y().width;
+      dstStride = pcPicYuvSrc->Y().stride;
     }
-    else if (comp == COMPONENT_Cb) {
+    else if (comp == COMPONENT_Cb)
+    {
       srcPxl = pcPicYuvSrc->Cb().buf;
       dstPxl = pcPicYuvDst->Cb().buf;
-      iSrcStride = pcPicYuvSrc->Cb().stride;
-      iSrcHeight = pcPicYuvSrc->Cb().height;
-      iSrcWidth = pcPicYuvSrc->Cb().width;
-      iDstStride = pcPicYuvSrc->Cb().stride;
-    }
-    else {
-      srcPxl = pcPicYuvSrc->Cr().buf;
-      dstPxl = pcPicYuvDst->Cr().buf;
-      iSrcStride = pcPicYuvSrc->Cr().stride;
-      iSrcHeight = pcPicYuvSrc->Cr().height;
-      iSrcWidth = pcPicYuvSrc->Cr().width;
-      iDstStride = pcPicYuvSrc->Cr().stride;
-    }
-
-    if (iSrcStride == iDstStride)
-    {
-      ::memcpy(dstPxl, srcPxl, sizeof(Pel) * iSrcStride * iSrcHeight /*getTotalHeight(compId)*/);
+      srcStride = pcPicYuvSrc->Cb().stride;
+      srcHeight = pcPicYuvSrc->Cb().height;
+      srcWidth  = pcPicYuvSrc->Cb().width;
+      dstStride = pcPicYuvSrc->Cb().stride;
     }
     else
     {
-      for (int y = 0; y < iSrcHeight; y++, srcPxl += iSrcStride, dstPxl += iDstStride)
+      srcPxl = pcPicYuvSrc->Cr().buf;
+      dstPxl = pcPicYuvDst->Cr().buf;
+      srcStride = pcPicYuvSrc->Cr().stride;
+      srcHeight = pcPicYuvSrc->Cr().height;
+      srcWidth  = pcPicYuvSrc->Cr().width;
+      dstStride = pcPicYuvSrc->Cr().stride;
+    }
+
+    if (srcStride == dstStride)
+    {
+      ::memcpy(dstPxl, srcPxl, sizeof(Pel) * srcStride * srcHeight /*getTotalHeight(compId)*/);
+    }
+    else
+    {
+      for (int y = 0; y < srcHeight; y++, srcPxl += srcStride, dstPxl += dstStride)
       {
-        ::memcpy(dstPxl, srcPxl, iSrcWidth * sizeof(Pel));
+        ::memcpy(dstPxl, srcPxl, srcWidth * sizeof(Pel));
       }
     }
   }
@@ -1405,8 +1413,8 @@ void Picture::copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcP
 
 Picture* Picture::findNextPicPOC(Picture* pcPic, PicList* pcListPic)
 {
-  Picture*  nextPic = NULL;
-  Picture*  listPic = NULL;
+  Picture           *nextPic     = nullptr;
+  Picture           *listPic     = nullptr;
   PicList::iterator  iterListPic = pcListPic->begin();
   for (int i = 0; i < (int)(pcListPic->size()); i++)
   {
@@ -1423,8 +1431,8 @@ Picture* Picture::findNextPicPOC(Picture* pcPic, PicList* pcListPic)
 
 Picture* Picture::findPrevPicPOC(Picture* pcPic, PicList* pcListPic)
 {
-  Picture*  prevPic = NULL;
-  Picture*  listPic = NULL;
+  Picture           *prevPic     = nullptr;
+  Picture           *listPic     = nullptr;
   PicList::iterator  iterListPic = pcListPic->begin();
   for (int i = 0; i < (int)(pcListPic->size()); i++)
   {
@@ -1477,34 +1485,37 @@ void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int ble
         const int maxOutputValue = (1 << bitDepth) - 1;
 
         Pel *currPxl, *nextPxl, *postPxl;
-        int iStride, iHeight, iWidth;
-        if (ch == COMPONENT_Y) {
+        int  stride, height, width;
+        if (ch == COMPONENT_Y)
+        {
           currPxl = currYuv->Y().buf;
           nextPxl = nextYuv->Y().buf;
           postPxl = postYuv->Y().buf;
-          iStride = currYuv->Y().stride;
-          iHeight = currYuv->Y().height;
-          iWidth = currYuv->Y().width;
+          stride  = currYuv->Y().stride;
+          height  = currYuv->Y().height;
+          width   = currYuv->Y().width;
         }
-        else if (ch == COMPONENT_Cb) {
+        else if (ch == COMPONENT_Cb)
+        {
           nextPxl = nextYuv->Cb().buf;
           currPxl = currYuv->Cb().buf;
           postPxl = postYuv->Cb().buf;
-          iStride = currYuv->Cb().stride;
-          iHeight = currYuv->Cb().height;
-          iWidth = currYuv->Cb().width;
+          stride  = currYuv->Cb().stride;
+          height  = currYuv->Cb().height;
+          width   = currYuv->Cb().width;
         }
-        else {
+        else
+        {
           nextPxl = nextYuv->Cr().buf;
           currPxl = currYuv->Cr().buf;
           postPxl = postYuv->Cr().buf;
-          iStride = currYuv->Cr().stride;
-          iHeight = currYuv->Cr().height;
-          iWidth = currYuv->Cr().width;
+          stride  = currYuv->Cr().stride;
+          height  = currYuv->Cr().height;
+          width   = currYuv->Cr().width;
         }
-        for (int y = 0; y < iHeight; y++)
+        for (int y = 0; y < height; y++)
         {
-          for (int x = 0; x < iWidth; x++)
+          for (int x = 0; x < width; x++)
           {
 #if ENABLE_USER_DEFINED_WEIGHTS
             postPxl[x] = std::min(maxOutputValue, std::max(0, (int)(((nextPxl[x]) / SII_PF_W2) - ((currPxl[x] * SII_PF_W1) / SII_PF_W2))));
@@ -1512,9 +1523,9 @@ void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int ble
             postPxl[x] = std::min(maxOutputValue, std::max(0, (((nextPxl[x] * (blendingRatio + 1)) / blendingRatio) - (currPxl[x] / blendingRatio))));
 #endif
           }
-          currPxl += iStride;
-          nextPxl += iStride;
-          postPxl += iStride;
+          currPxl += stride;
+          nextPxl += stride;
+          postPxl += stride;
         }
       }
     }
@@ -1548,32 +1559,35 @@ void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blen
         const int maxOutputValue = (1 << bitDepth) - 1;
 
         Pel *currPxl, *prevPxl;
-        int iStride, iHeight, iWidth;
-        if (ch == COMPONENT_Y) {
+        int  stride, height, width;
+        if (ch == COMPONENT_Y)
+        {
           currPxl = currYuv->Y().buf;
           prevPxl = prevYuv->Y().buf;
-          iStride = currYuv->Y().stride;
-          iHeight = currYuv->Y().height;
-          iWidth = currYuv->Y().width;
+          stride  = currYuv->Y().stride;
+          height  = currYuv->Y().height;
+          width   = currYuv->Y().width;
         }
-        else if (ch == COMPONENT_Cb) {
+        else if (ch == COMPONENT_Cb)
+        {
           prevPxl = prevYuv->Cb().buf;
           currPxl = currYuv->Cb().buf;
-          iStride = currYuv->Cb().stride;
-          iHeight = currYuv->Cb().height;
-          iWidth = currYuv->Cb().width;
+          stride  = currYuv->Cb().stride;
+          height  = currYuv->Cb().height;
+          width   = currYuv->Cb().width;
         }
-        else {
+        else
+        {
           prevPxl = prevYuv->Cr().buf;
           currPxl = currYuv->Cr().buf;
-          iStride = currYuv->Cr().stride;
-          iHeight = currYuv->Cr().height;
-          iWidth = currYuv->Cr().width;
+          stride  = currYuv->Cr().stride;
+          height  = currYuv->Cr().height;
+          width   = currYuv->Cr().width;
         }
 
-        for (int y = 0; y < iHeight; y++)
+        for (int y = 0; y < height; y++)
         {
-          for (int x = 0; x < iWidth; x++)
+          for (int x = 0; x < width; x++)
           {
 #if ENABLE_USER_DEFINED_WEIGHTS
             currPxl[x] = std::min(maxOutputValue, std::max(0, (int)((currPxl[x] * SII_PF_W2) + (prevPxl[x] * SII_PF_W1));
@@ -1581,8 +1595,8 @@ void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blen
             currPxl[x] = std::min(maxOutputValue, std::max(0, (((currPxl[x] * blendingRatio) / (blendingRatio + 1)) + (prevPxl[x] / (blendingRatio + 1)))));
 #endif
           }
-          currPxl += iStride;
-          prevPxl += iStride;
+          currPxl += stride;
+          prevPxl += stride;
         }
       }
     }

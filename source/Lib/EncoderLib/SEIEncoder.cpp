@@ -511,7 +511,7 @@ void SEIEncoder::initSEIExtendedDrapIndication(SEIExtendedDrapIndication *sei)
 void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIntervalInfo)
 {
   assert(m_isInitialized);
-  assert(seiShutterIntervalInfo != NULL);
+  assert(seiShutterIntervalInfo != nullptr);
   seiShutterIntervalInfo->m_siiTimeScale = m_pcCfg->getSiiSEITimeScale();
   seiShutterIntervalInfo->m_siiFixedSIwithinCLVS = m_pcCfg->getSiiSEIFixedSIwithinCLVS();
   if (seiShutterIntervalInfo->m_siiFixedSIwithinCLVS == true)
@@ -1158,7 +1158,7 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SP
 void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(sei != NULL), "Unspecified error");
+  CHECK(!(sei != nullptr), "Unspecified error");
   sei->m_id = m_pcCfg->getNNPostFilterSEICharacteristicsId(filterIdx);
   sei->m_modeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsModeIdc(filterIdx);
   if (sei->m_modeIdc == 1)
@@ -1233,7 +1233,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
 void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(sei != NULL), "Unspecified error");
+  CHECK(!(sei != nullptr), "Unspecified error");
   sei->m_id = m_pcCfg->getNnPostFilterSEIActivationId();
 }
 #endif
