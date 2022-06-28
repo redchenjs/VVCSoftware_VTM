@@ -766,16 +766,16 @@ unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, co
                           *cu.cs->getCU( posP, cu.chType );
 
   //-- Set BS for Intra MB : BS = 4 or 3
-  if( ( MODE_INTRA == cuP.predMode ) || ( MODE_INTRA == cuQ.predMode ) )
+  if (CU::isIntra(cuP) || CU::isIntra(cuQ))
   {
     if( chType == CHANNEL_TYPE_LUMA )
     {
-      int bsY = (MODE_INTRA == cuP.predMode && cuP.bdpcmMode) && (MODE_INTRA == cuQ.predMode && cuQ.bdpcmMode) ? 0 : 2;
+      int bsY = (CU::isIntra(cuP) && cuP.bdpcmMode) && (CU::isIntra(cuQ) && cuQ.bdpcmMode) ? 0 : 2;
       return BsSet(bsY, COMPONENT_Y);
     }
     else
     {
-      int bsC = (MODE_INTRA == cuP.predMode && cuP.bdpcmModeChroma) && (MODE_INTRA == cuQ.predMode && cuQ.bdpcmModeChroma) ? 0 : 2;
+      int bsC = (CU::isIntra(cuP) && cuP.bdpcmModeChroma) && (CU::isIntra(cuQ) && cuQ.bdpcmModeChroma) ? 0 : 2;
       return (BsSet(bsC, COMPONENT_Cb) + BsSet(bsC, COMPONENT_Cr));
     }
   }

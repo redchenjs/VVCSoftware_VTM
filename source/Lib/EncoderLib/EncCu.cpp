@@ -994,11 +994,9 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
   {
     bestCS->prevQP[partitioner.chType] = bestCS->cus.back()->qp;
   }
-  if ((!slice.isIntra() || slice.getSPS()->getIBCFlag())
-    && partitioner.chType == CHANNEL_TYPE_LUMA
-    && bestCS->cus.size() == 1 && (bestCS->cus.back()->predMode == MODE_INTER || bestCS->cus.back()->predMode == MODE_IBC)
-    && bestCS->area.Y() == (*bestCS->cus.back()).Y()
-    )
+  if ((!slice.isIntra() || slice.getSPS()->getIBCFlag()) && partitioner.chType == CHANNEL_TYPE_LUMA
+      && bestCS->cus.size() == 1 && (CU::isInter(*bestCS->cus.back()) || CU::isIBC(*bestCS->cus.back()))
+      && bestCS->area.Y() == (*bestCS->cus.back()).Y())
   {
     const CodingUnit&     cu = *bestCS->cus.front();
 
@@ -1016,7 +1014,7 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
   if (bestCS->cus.size() == 1) // no partition
   {
     CHECK(bestCS->cus[0]->tileIdx != bestCS->pps->getTileIdx(bestCS->area.lumaPos()), "Wrong tile index!");
-    if (bestCS->cus[0]->predMode == MODE_PLT)
+    if (CU::isPLT(*bestCS->cus[0]))
     {
       for (int i = compBegin; i < (compBegin + numComp); i++)
       {
@@ -1278,14 +1276,14 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
       {
         for( int i = 0; i < bestSubCS->cus.size(); i++ )
         {
-          CHECK( bestSubCS->cus[i]->predMode != MODE_INTER, "all CUs must be inter mode in an Inter coding region (SCIPU)" );
+          CHECK(!CU::isInter(*bestSubCS->cus[i]), "all CUs must be inter mode in an Inter coding region (SCIPU)");
         }
       }
       else if( partitioner.isConsIntra() )
       {
         for( int i = 0; i < bestSubCS->cus.size(); i++ )
         {
-          CHECK( bestSubCS->cus[i]->predMode == MODE_INTER, "all CUs must not be inter mode in an Intra coding region (SCIPU)" );
+          CHECK(CU::isInter(*bestSubCS->cus[i]), "all CUs must not be inter mode in an Intra coding region (SCIPU)");
         }
       }
 
@@ -1637,7 +1635,9 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
           if( isLuma( partitioner.chType ) )
           {
             //ISP uses the value of the best cost so far (luma if it is the fast version) to avoid test non-necessary subpartitions
-            double bestCostSoFar = partitioner.isSepTree(*tempCS) ? m_modeCtrl->getBestCostWithoutSplitFlags() : bestCU && bestCU->predMode == MODE_INTRA ? bestCS->lumaCost : bestCS->cost;
+            double bestCostSoFar = partitioner.isSepTree(*tempCS)   ? m_modeCtrl->getBestCostWithoutSplitFlags()
+                                   : bestCU && CU::isIntra(*bestCU) ? bestCS->lumaCost
+                                                                    : bestCS->cost;
             if (partitioner.isSepTree(*tempCS) && encTestMode.maxCostAllowed < bestCostSoFar)
             {
               bestCostSoFar = encTestMode.maxCostAllowed;
@@ -1862,7 +1862,7 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
               }
             }
             //now we check whether the second pass of SIZE_2Nx2N and the whole Intra SIZE_NxN should be skipped or not
-            if( !mtsFlag && !tempCS->slice->isIntra() && bestCU && bestCU->predMode != MODE_INTRA )
+            if (!mtsFlag && !tempCS->slice->isIntra() && bestCU && !CU::isIntra(*bestCU))
             {
               const double thEmtInterFastSkipIntra = 1.4; // Skip checking Intra if "2Nx2N using DCT2" is worse than best Inter mode
               if( costSize2Nx2NmtsFirstPass > thEmtInterFastSkipIntra * bestInterCost )

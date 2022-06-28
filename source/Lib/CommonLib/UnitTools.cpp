@@ -48,12 +48,6 @@
 
 // CS tools
 
-
-uint64_t CS::getEstBits(const CodingStructure &cs)
-{
-  return cs.fracBits >> SCALE_BITS;
-}
-
 bool CS::isDualITree( const CodingStructure &cs )
 {
   return cs.slice->isIntra() && !cs.pcv->ISingleTree;
@@ -270,26 +264,6 @@ void CU::checkConformanceILRP(Slice *slice)
   }
 
   return;
-}
-
-bool CU::isIntra(const CodingUnit &cu)
-{
-  return cu.predMode == MODE_INTRA;
-}
-
-bool CU::isInter(const CodingUnit &cu)
-{
-  return cu.predMode == MODE_INTER;
-}
-
-bool CU::isIBC(const CodingUnit &cu)
-{
-  return cu.predMode == MODE_IBC;
-}
-
-bool CU::isPLT(const CodingUnit &cu)
-{
-  return cu.predMode == MODE_PLT;
 }
 
 bool CU::isSameSlice(const CodingUnit& cu, const CodingUnit& cu2)
@@ -4682,12 +4656,12 @@ bool CU::isBcwIdxCoded( const CodingUnit &cu )
     return false;
   }
 
-  if (cu.predMode == MODE_IBC)
+  if (CU::isIBC(cu))
   {
     return false;
   }
 
-  if( cu.predMode == MODE_INTRA || cu.cs->slice->isInterP() )
+  if (CU::isIntra(cu) || cu.cs->slice->isInterP())
   {
     return false;
   }
@@ -4774,7 +4748,8 @@ bool CU::isMTSAllowed(const CodingUnit &cu, const ComponentID compID)
 
 bool TU::isNonTransformedResidualRotated(const TransformUnit &tu, const ComponentID &compID)
 {
-  return tu.cs->sps->getSpsRangeExtension().getTransformSkipRotationEnabledFlag() && tu.blocks[compID].width == 4 && tu.cu->predMode == MODE_INTRA;
+  return tu.cs->sps->getSpsRangeExtension().getTransformSkipRotationEnabledFlag() && tu.blocks[compID].width == 4
+         && CU::isIntra(*tu.cu);
 }
 
 bool TU::getCbf( const TransformUnit &tu, const ComponentID &compID )
