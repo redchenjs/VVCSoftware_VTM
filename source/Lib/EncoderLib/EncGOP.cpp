@@ -1569,7 +1569,7 @@ void EfficientFieldIRAPMapping::initialize(const bool isField, const int gopSize
   if(isField)
   {
     int pocCurr;
-    for ( int iGOPid=0; iGOPid < gopSize; iGOPid++ )
+    for (int gopId = 0; gopId < gopSize; gopId++)
     {
       // determine actual POC
       if(POCLast == 0) //case first frame or first top field
@@ -1582,24 +1582,25 @@ void EfficientFieldIRAPMapping::initialize(const bool isField, const int gopSize
       }
       else
       {
-        pocCurr = POCLast - numPicRcvd + pCfg->getGOPEntry(iGOPid).m_POC - isField;
+        pocCurr = POCLast - numPicRcvd + pCfg->getGOPEntry(gopId).m_POC - isField;
       }
 
       // check if POC corresponds to IRAP
       NalUnitType tmpUnitType = pEncGop->getNalUnitType(pocCurr, lastIDR, isField);
       if (tmpUnitType >= NAL_UNIT_CODED_SLICE_IDR_W_RADL && tmpUnitType <= NAL_UNIT_CODED_SLICE_CRA) // if picture is an IRAP
       {
-        if(pocCurr%2 == 0 && iGOPid < gopSize-1 && pCfg->getGOPEntry(iGOPid).m_POC == pCfg->getGOPEntry(iGOPid+1).m_POC-1)
+        if (pocCurr % 2 == 0 && gopId < gopSize - 1
+            && pCfg->getGOPEntry(gopId).m_POC == pCfg->getGOPEntry(gopId + 1).m_POC - 1)
         { // if top field and following picture in enc order is associated bottom field
-          IRAPGOPid = iGOPid;
+          IRAPGOPid       = gopId;
           IRAPtoReorder = true;
           swapIRAPForward = true;
           break;
         }
-        if(pocCurr%2 != 0 && iGOPid > 0 && pCfg->getGOPEntry(iGOPid).m_POC == pCfg->getGOPEntry(iGOPid-1).m_POC+1)
+        if (pocCurr % 2 != 0 && gopId > 0 && pCfg->getGOPEntry(gopId).m_POC == pCfg->getGOPEntry(gopId - 1).m_POC + 1)
         {
           // if picture is an IRAP remember to process it first
-          IRAPGOPid = iGOPid;
+          IRAPGOPid       = gopId;
           IRAPtoReorder = true;
           swapIRAPForward = false;
           break;
@@ -2294,10 +2295,9 @@ void EncGOP::computeSignalling(Picture* pcPic, Slice* pcSlice) const
 // ====================================================================================================================
 // Public member functions
 // ====================================================================================================================
-void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
-                          std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-                          bool isField, bool isTff, const InputColourSpaceConversion snr_conversion,
-                          const bool printFrameMSE, const bool printMSSSIM, bool isEncodeLtRef, const int picIdInGOP)
+void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::list<PelUnitBuf *> &rcListPicYuvRecOut,
+                         bool isField, bool isTff, const InputColourSpaceConversion snr_conversion,
+                         const bool printFrameMSE, const bool printMSSSIM, bool isEncodeLtRef, const int picIdInGOP)
 {
   // TODO: Split this function up.
 
@@ -2310,7 +2310,7 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
   AccessUnit::iterator  itLocationToPushSliceHeaderNALU; // used to store location where NALU containing slice header is to be inserted
   Picture* scaledRefPic[MAX_NUM_REF] = {};
 
-  xInitGOP( iPOCLast, iNumPicRcvd, isField, isEncodeLtRef );
+  xInitGOP(pocLast, numPicRcvd, isField, isEncodeLtRef);
 
   m_iNumPicCoded = 0;
   SEIMessages leadingSeiMessages;
@@ -2322,63 +2322,65 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
   EfficientFieldIRAPMapping effFieldIRAPMap;
   if (m_pcCfg->getEfficientFieldIRAPEnabled())
   {
-    effFieldIRAPMap.initialize(isField, m_iGopSize, iPOCLast, iNumPicRcvd, m_iLastIDR, this, m_pcCfg);
+    effFieldIRAPMap.initialize(isField, m_iGopSize, pocLast, numPicRcvd, m_iLastIDR, this, m_pcCfg);
   }
 
   if( isField && picIdInGOP == 0 )
   {
-    for( int iGOPid = 0; iGOPid < max(2, m_iGopSize); iGOPid++ )
+    for (int gopId = 0; gopId < max(2, m_iGopSize); gopId++)
     {
-      m_pcCfg->setEncodedFlag( iGOPid, false );
+      m_pcCfg->setEncodedFlag(gopId, false);
     }
   }
-  for( int iGOPid = picIdInGOP; iGOPid <= picIdInGOP; iGOPid++ )
+  for (int gopId = picIdInGOP; gopId <= picIdInGOP; gopId++)
   {
     // reset flag indicating whether pictures have been encoded
-    m_pcCfg->setEncodedFlag( iGOPid, false );
+    m_pcCfg->setEncodedFlag(gopId, false);
     if (m_pcCfg->getEfficientFieldIRAPEnabled())
     {
-      iGOPid=effFieldIRAPMap.adjustGOPid(iGOPid);
+      gopId = effFieldIRAPMap.adjustGOPid(gopId);
     }
 
     //-- For time output for each slice
     auto beforeTime = std::chrono::steady_clock::now();
 
 #if !X0038_LAMBDA_FROM_QP_CAPABILITY
-    uint32_t uiColDir = calculateCollocatedFromL1Flag(m_pcCfg, iGOPid, m_iGopSize);
+    uint32_t colDir = calculateCollocatedFromL1Flag(m_pcCfg, gopId, m_iGopSize);
 #endif
 
     /////////////////////////////////////////////////////////////////////////////////////////////////// Initial to start encoding
-    int iTimeOffset;
+    int timeOffset;
     int pocCurr;
     int multipleFactor = m_pcCfg->getUseCompositeRef() ? 2 : 1;
 
-    if(iPOCLast == 0) //case first frame or first top field
+    if (pocLast == 0)   // case first frame or first top field
     {
       pocCurr=0;
-      iTimeOffset = isField ? (1 - multipleFactor) : multipleFactor;
+      timeOffset = isField ? (1 - multipleFactor) : multipleFactor;
     }
-    else if(iPOCLast == 1 && isField) //case first bottom field, just like the first frame, the poc computation is not right anymore, we set the right value
+    else if (pocLast == 1 && isField)   // case first bottom field, just like the first frame, the poc computation is
+                                        // not right anymore, we set the right value
     {
       pocCurr = 1;
-      iTimeOffset = multipleFactor + 1;
+      timeOffset = multipleFactor + 1;
     }
     else
     {
-      pocCurr = iPOCLast - iNumPicRcvd * multipleFactor + m_pcCfg->getGOPEntry(iGOPid).m_POC - ((isField && m_iGopSize>1) ? 1 : 0);
-      iTimeOffset = m_pcCfg->getGOPEntry(iGOPid).m_POC;
+      pocCurr = pocLast - numPicRcvd * multipleFactor + m_pcCfg->getGOPEntry(gopId).m_POC
+                - ((isField && m_iGopSize > 1) ? 1 : 0);
+      timeOffset = m_pcCfg->getGOPEntry(gopId).m_POC;
     }
 
     if (m_pcCfg->getUseCompositeRef() && isEncodeLtRef)
     {
       pocCurr++;
-      iTimeOffset--;
+      timeOffset--;
     }
     if (pocCurr / multipleFactor >= m_pcCfg->getFramesToBeEncoded())
     {
       if (m_pcCfg->getEfficientFieldIRAPEnabled())
       {
-        iGOPid=effFieldIRAPMap.restoreGOPid(iGOPid);
+        gopId = effFieldIRAPMap.restoreGOPid(gopId);
       }
       continue;
     }
@@ -2390,9 +2392,8 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
 
     // start a new access unit: create an entry in the list of output access units
     AccessUnit accessUnit;
-    accessUnit.temporalId = m_pcCfg->getGOPEntry( iGOPid ).m_temporalId;
-    xGetBuffer( rcListPic, rcListPicYuvRecOut,
-                iNumPicRcvd, iTimeOffset, pcPic, pocCurr, isField );
+    accessUnit.temporalId = m_pcCfg->getGOPEntry(gopId).m_temporalId;
+    xGetBuffer(rcListPic, rcListPicYuvRecOut, numPicRcvd, timeOffset, pcPic, pocCurr, isField);
     picHeader = pcPic->cs->picHeader;
     picHeader->setSPSId( pcPic->cs->pps->getSPSId() );
     if( getNalUnitType(pocCurr, m_iLastIDR, isField) == NAL_UNIT_CODED_SLICE_RASL && m_pcCfg->getRprRASLtoolSwitch() && m_pcCfg->getUseWrapAround() )
@@ -2441,7 +2442,8 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
     pcPic->allocateNewSlice();
     m_pcSliceEncoder->setSliceSegmentIdx(0);
 
-    m_pcSliceEncoder->initEncSlice(pcPic, iPOCLast, pocCurr, iGOPid, pcSlice, isField, isEncodeLtRef, m_pcEncLib->getLayerId(), getNalUnitType(pocCurr, m_iLastIDR, isField) );
+    m_pcSliceEncoder->initEncSlice(pcPic, pocLast, pocCurr, gopId, pcSlice, isField, isEncodeLtRef,
+                                   m_pcEncLib->getLayerId(), getNalUnitType(pocCurr, m_iLastIDR, isField));
 
     DTRACE_UPDATE( g_trace_ctx, ( std::make_pair( "poc", pocCurr ) ) );
     DTRACE_UPDATE( g_trace_ctx, ( std::make_pair( "final", 0 ) ) );
@@ -2454,15 +2456,15 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
     pcSlice->setLastIDR(m_iLastIDR);
     pcSlice->setIndependentSliceIdx(0);
 
-    if(pcSlice->getSliceType()==B_SLICE&&m_pcCfg->getGOPEntry(iGOPid).m_sliceType=='P')
+    if (pcSlice->getSliceType() == B_SLICE && m_pcCfg->getGOPEntry(gopId).m_sliceType == 'P')
     {
       pcSlice->setSliceType(P_SLICE);
     }
-    if(pcSlice->getSliceType()==B_SLICE&&m_pcCfg->getGOPEntry(iGOPid).m_sliceType=='I')
+    if (pcSlice->getSliceType() == B_SLICE && m_pcCfg->getGOPEntry(gopId).m_sliceType == 'I')
     {
       pcSlice->setSliceType(I_SLICE);
     }
-    pcSlice->setTLayer(m_pcCfg->getGOPEntry(iGOPid).m_temporalId);
+    pcSlice->setTLayer(m_pcCfg->getGOPEntry(gopId).m_temporalId);
 #if GDR_ENABLED
     if (m_pcCfg->getGdrEnabled() && pocCurr >= m_pcCfg->getGdrPocStart() && ((pocCurr - m_pcCfg->getGdrPocStart()) % m_pcCfg->getGdrPeriod() == 0))
     {
@@ -2526,11 +2528,11 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
 
     if (m_pcCfg->getUseCompositeRef() && m_picBg->getSpliceFull() && getUseLTRef())
     {
-      m_pcEncLib->selectReferencePictureList(pcSlice, pocCurr, iGOPid, m_bgPOC);
+      m_pcEncLib->selectReferencePictureList(pcSlice, pocCurr, gopId, m_bgPOC);
     }
     else
     {
-      m_pcEncLib->selectReferencePictureList(pcSlice, pocCurr, iGOPid, -1);
+      m_pcEncLib->selectReferencePictureList(pcSlice, pocCurr, gopId, -1);
     }
     if (!m_pcCfg->getEfficientFieldIRAPEnabled())
     {
@@ -2714,8 +2716,14 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
 
     if (m_pcCfg->getUseCompositeRef() && getUseLTRef() && (pocCurr > getLastLTRefPoc()))
     {
-      pcSlice->setNumRefIdx(REF_PIC_LIST_0, (pcSlice->isIntra()) ? 0 : min(m_pcCfg->getRPLEntry(0, iGOPid).m_numRefPicsActive + 1, pcSlice->getRPL0()->getNumberOfActivePictures()));
-      pcSlice->setNumRefIdx(REF_PIC_LIST_1, (!pcSlice->isInterB()) ? 0 : min(m_pcCfg->getRPLEntry(1, iGOPid).m_numRefPicsActive + 1, pcSlice->getRPL1()->getNumberOfActivePictures()));
+      pcSlice->setNumRefIdx(REF_PIC_LIST_0, (pcSlice->isIntra())
+                                              ? 0
+                                              : min(m_pcCfg->getRPLEntry(0, gopId).m_numRefPicsActive + 1,
+                                                    pcSlice->getRPL0()->getNumberOfActivePictures()));
+      pcSlice->setNumRefIdx(REF_PIC_LIST_1, (!pcSlice->isInterB())
+                                              ? 0
+                                              : min(m_pcCfg->getRPLEntry(1, gopId).m_numRefPicsActive + 1,
+                                                    pcSlice->getRPL1()->getNumberOfActivePictures()));
     }
     else
     {
@@ -2897,7 +2905,7 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
 
     if (m_pcEncLib->getTMVPModeId() == 2)
     {
-      if (iGOPid == 0) // first picture in SOP (i.e. forward B)
+      if (gopId == 0)   // first picture in SOP (i.e. forward B)
       {
         picHeader->setEnableTMVPFlag(0);
       }
@@ -3136,7 +3144,7 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
     int estimatedBits        = 0;
     int tmpBitsBeforeWriting = 0;
 
-    xPicInitRateControl(estimatedBits, iGOPid, lambda, pcPic, pcSlice);
+    xPicInitRateControl(estimatedBits, gopId, lambda, pcPic, pcSlice);
 
     uint32_t uiNumSliceSegments = 1;
 
@@ -3242,7 +3250,7 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
         {
           m_cnt_right_bottom = 0;
         }
-        if ((pocCurr % m_pcCfg->getIntraPeriod()) <= m_pcCfg->getGOPSize() && iGOPid == 0 && !pcSlice->isIntra())
+        if ((pocCurr % m_pcCfg->getIntraPeriod()) <= m_pcCfg->getGOPSize() && gopId == 0 && !pcSlice->isIntra())
         {
           m_cnt_right_bottom = m_cnt_right_bottom_i;
         }
@@ -3381,7 +3389,7 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
           m_pcEncLib->getInterSearch()->setClipMvInSubPic(false);
         }
 
-        if ( pcSlice->isIntra() && (iPOCLast == 0 || m_pcCfg->getIntraPeriod() > 1))
+        if (pcSlice->isIntra() && (pocLast == 0 || m_pcCfg->getIntraPeriod() > 1))
         {
           computeSignalling(pcPic, pcSlice);
         }
@@ -3483,7 +3491,7 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
   #if W0038_DB_OPT
         if ( m_pcCfg->getDeblockingFilterMetric()==2 )
         {
-          applyDeblockingFilterParameterSelection(pcPic, uiNumSliceSegments, iGOPid);
+          applyDeblockingFilterParameterSelection(pcPic, uiNumSliceSegments, gopId);
         }
         else
   #endif
@@ -3902,7 +3910,7 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
       // reset presence of BP SEI indication
       m_bufferingPeriodSEIPresentInAU = false;
       // create prefix SEI associated with a picture
-      xCreatePerPictureSEIMessages(iGOPid, leadingSeiMessages, nestedSeiMessages, pcSlice);
+      xCreatePerPictureSEIMessages(gopId, leadingSeiMessages, nestedSeiMessages, pcSlice);
 
       // pcSlice is currently slice 0.
       std::size_t binCountsInNalUnits   = 0; // For implementation of cabac_zero_word stuffing (section 7.4.3.10)
@@ -4178,12 +4186,11 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
         }
       }
 
-      m_pcCfg->setEncodedFlag(iGOPid, true);
+      m_pcCfg->setEncodedFlag(gopId, true);
 
       double PSNR_Y;
-      xCalculateAddPSNRs(isField, isTff, iGOPid, pcPic, accessUnit, rcListPic, encTime, snr_conversion,
-        printFrameMSE, printMSSSIM, &PSNR_Y, isEncodeLtRef );
-
+      xCalculateAddPSNRs(isField, isTff, gopId, pcPic, accessUnit, rcListPic, encTime, snr_conversion, printFrameMSE,
+                         printMSSSIM, &PSNR_Y, isEncodeLtRef);
 
       xWriteTrailingSEIMessages(trailingSeiMessages, accessUnit, pcSlice->getTLayer());
 
@@ -4279,13 +4286,13 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
 
     if (m_pcCfg->getEfficientFieldIRAPEnabled())
     {
-      iGOPid=effFieldIRAPMap.restoreGOPid(iGOPid);
+      gopId = effFieldIRAPMap.restoreGOPid(gopId);
     }
 
     pcPic->destroyTempBuffers();
     pcPic->cs->destroyCoeffs();
     pcPic->cs->releaseIntermediateData();
-  } // iGOPid-loop
+  }   // gopId-loop
 
   delete pcBitstreamRedirect;
 
@@ -4445,11 +4452,11 @@ uint64_t EncGOP::preLoopFilterPicAndCalcDist( Picture* pcPic )
 // ====================================================================================================================
 // Protected member functions
 // ====================================================================================================================
-void EncGOP::xInitGOP(int iPOCLast, int iNumPicRcvd, bool isField, bool isEncodeLtRef)
+void EncGOP::xInitGOP(int pocLast, int numPicRcvd, bool isField, bool isEncodeLtRef)
 {
-  CHECK(!( iNumPicRcvd > 0 ), "Unspecified error");
+  CHECK(!(numPicRcvd > 0), "Unspecified error");
   //  Exception for the first frames
-  if ((isField && (iPOCLast == 0 || iPOCLast == 1)) || (!isField && (iPOCLast == 0)) || isEncodeLtRef)
+  if ((isField && (pocLast == 0 || pocLast == 1)) || (!isField && (pocLast == 0)) || isEncodeLtRef)
   {
     m_iGopSize    = 1;
   }
@@ -4462,14 +4469,8 @@ void EncGOP::xInitGOP(int iPOCLast, int iNumPicRcvd, bool isField, bool isEncode
   return;
 }
 
-
-void EncGOP::xGetBuffer( PicList&                  rcListPic,
-                         std::list<PelUnitBuf*>&   rcListPicYuvRecOut,
-                         int                       iNumPicRcvd,
-                         int                       iTimeOffset,
-                         Picture*&                 rpcPic,
-                         int                       pocCurr,
-                         bool                      isField )
+void EncGOP::xGetBuffer(PicList &rcListPic, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int numPicRcvd, int timeOffset,
+                        Picture *&rpcPic, int pocCurr, bool isField)
 {
   int i;
   //  Rec. output
@@ -4477,11 +4478,11 @@ void EncGOP::xGetBuffer( PicList&                  rcListPic,
 
   if (isField && pocCurr > 1 && m_iGopSize!=1)
   {
-    iTimeOffset--;
+    timeOffset--;
   }
 
   int multipleFactor = m_pcCfg->getUseCompositeRef() ? 2 : 1;
-  for (i = 0; i < (iNumPicRcvd * multipleFactor - iTimeOffset + 1); i += multipleFactor)
+  for (i = 0; i < (numPicRcvd * multipleFactor - timeOffset + 1); i += multipleFactor)
   {
     iterPicYuvRec--;
   }
@@ -4747,10 +4748,10 @@ double EncGOP::xFindDistortionPlaneWPSNR(const CPelBuf& pic0, const CPelBuf& pic
 }
 #endif
 
-void EncGOP::xCalculateAddPSNRs( const bool isField, const bool isFieldTopFieldFirst,
-  const int iGOPid, Picture* pcPic, const AccessUnit&accessUnit, PicList &rcListPic,
-  const int64_t dEncTime, const InputColourSpaceConversion snr_conversion,
-  const bool printFrameMSE, const bool printMSSSIM, double* PSNR_Y, bool isEncodeLtRef)
+void EncGOP::xCalculateAddPSNRs(const bool isField, const bool isFieldTopFieldFirst, const int gopId, Picture *pcPic,
+                                const AccessUnit &accessUnit, PicList &rcListPic, const int64_t dEncTime,
+                                const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
+                                const bool printMSSSIM, double *PSNR_Y, bool isEncodeLtRef)
 {
   xCalculateAddPSNR(pcPic, pcPic->getRecoBuf(), accessUnit, (double)dEncTime, snr_conversion,
     printFrameMSE, printMSSSIM, PSNR_Y, isEncodeLtRef);
@@ -4760,7 +4761,7 @@ void EncGOP::xCalculateAddPSNRs( const bool isField, const bool isFieldTopFieldF
   {
     bool bothFieldsAreEncoded = false;
     int correspondingFieldPOC = pcPic->getPOC();
-    int currentPicGOPPoc = m_pcCfg->getGOPEntry(iGOPid).m_POC;
+    int  currentPicGOPPoc      = m_pcCfg->getGOPEntry(gopId).m_POC;
     if(pcPic->getPOC() == 0)
     {
       // particular case for POC 0 and 1.

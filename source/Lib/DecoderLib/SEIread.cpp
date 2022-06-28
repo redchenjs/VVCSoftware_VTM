@@ -143,17 +143,18 @@ void SEIReader::parseSEImessage(InputBitstream* bs, SEIMessages& seis, const Nal
 
 void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream* bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const VPS* vps, const SPS* sps, HRD &hrd, uint32_t payloadSize, std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>> *seiList)
 {
-  SEI *sei = NULL;
+  SEI *sei = nullptr;
   sei = new SEIScalableNesting;
   setBitstream(bs);
-  xParseSEIScalableNestingBinary((SEIScalableNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd, NULL, seiList);
+  xParseSEIScalableNestingBinary((SEIScalableNesting &) *sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
+                                 nullptr, seiList);
   int payloadBitsRemaining = getBitstream()->getNumBitsLeft();
   if (payloadBitsRemaining) /* more_data_in_payload() */
   {
     for (; payloadBitsRemaining > 9; payloadBitsRemaining--)
     {
       uint32_t reservedPayloadExtensionData;
-      sei_read_code ( NULL, 1, reservedPayloadExtensionData, "reserved_payload_extension_data");
+      sei_read_code(nullptr, 1, reservedPayloadExtensionData, "reserved_payload_extension_data");
     }
 
     /* 2 */
@@ -183,7 +184,7 @@ void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream* bs, const NalU
 
 void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, HRD &hrd, uint32_t payloadSize, int& duiIdx)
 {
-  const SEIBufferingPeriod *bp = NULL;
+  const SEIBufferingPeriod *bp = nullptr;
   bp = hrd.getBufferingPeriodSEI();
   if (!bp)
   {
@@ -193,9 +194,9 @@ void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitTy
   {
     InputBitstream bs2(*bs);
     setBitstream(&bs2);
-    SEI *sei = NULL;
+    SEI *sei = nullptr;
     sei = new SEIDecodingUnitInfo;
-    xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo&) *sei, payloadSize, *bp, nuh_layer_id, NULL);
+    xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo &) *sei, payloadSize, *bp, nuh_layer_id, nullptr);
     duiIdx = ((SEIDecodingUnitInfo&)*sei).m_decodingUnitIdx;
     delete sei;
     setBitstream(bs);
@@ -960,14 +961,14 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
     uint32_t val = 0;
     do
     {
-      sei_read_code(NULL, 8, val, "payload_type");
+      sei_read_code(nullptr, 8, val, "payload_type");
       payloadType += val;
     } while (val==0xFF);
 
     uint32_t payloadSize = 0;
     do
     {
-      sei_read_code(NULL, 8, val, "payload_size");
+      sei_read_code(nullptr, 8, val, "payload_size");
       payloadSize += val;
     } while (val==0xFF);
 
@@ -975,7 +976,7 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
     int duiIdx = 0;
     if (payloadType == SEI::DECODING_UNIT_INFO)
     {
-      const SEIBufferingPeriod *bp = NULL;
+      const SEIBufferingPeriod *bp = nullptr;
       bp = hrd.getBufferingPeriodSEI();
       if (!bp)
       {
@@ -986,9 +987,9 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
         InputBitstream *bs = getBitstream();
         InputBitstream bs2(*bs);
         setBitstream(&bs2);
-        SEI *sei = NULL;
+        SEI *sei = nullptr;
         sei = new SEIDecodingUnitInfo;
-        xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo&) *sei, payloadSize, *bp, nuhLayerId, NULL);
+        xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo &) *sei, payloadSize, *bp, nuhLayerId, nullptr);
         duiIdx = ((SEIDecodingUnitInfo&)*sei).m_decodingUnitIdx;
         delete sei;
         setBitstream(bs);
@@ -997,7 +998,7 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
     uint32_t numSubPics = sei.m_snSubpicFlag ? sei.m_snNumSubpics : 1;
     for (uint32_t j = 0; j < payloadSize; j++)
     {
-      sei_read_code(NULL, 8, val, "payload_content");
+      sei_read_code(nullptr, 8, val, "payload_content");
       payload[j] = (uint8_t)val;
     }
     if (sei.m_snOlsFlag)
