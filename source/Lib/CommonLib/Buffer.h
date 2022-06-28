@@ -419,8 +419,8 @@ void AreaBuf<Pel>::toLast( const ClpRng& clpRng );
 template<typename T>
 void AreaBuf<T>::removeWeightHighFreq(const AreaBuf<T>& other, const bool bClip, const ClpRng& clpRng, const int8_t bcwWeight)
 {
-  const int8_t bcwWeightOther = g_BcwWeightBase - bcwWeight;
-  const int8_t log2WeightBase = g_BcwLog2WeightBase;
+  const int8_t bcwWeightOther = g_bcwWeightBase - bcwWeight;
+  const int8_t log2WeightBase = g_bcwLog2WeightBase;
 
   const Pel* src = other.buf;
   const int  srcStride = other.stride;

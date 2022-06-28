@@ -350,7 +350,7 @@ void EncCu::compressCtu( CodingStructure& cs, const UnitArea& area, const unsign
 // Protected member functions
 // ====================================================================================================================
 
-static int xCalcHADs8x8_ISlice(const Pel *piOrg, const int iStrideOrg)
+static int xCalcHADs8x8_ISlice(const Pel *piOrg, const int strideOrg)
 {
   int k, i, j, jj;
   int diff[64], m1[8][8], m2[8][8], m3[8][8], iSumHad = 0;
@@ -366,7 +366,7 @@ static int xCalcHADs8x8_ISlice(const Pel *piOrg, const int iStrideOrg)
     diff[k + 6] = piOrg[6];
     diff[k + 7] = piOrg[7];
 
-    piOrg += iStrideOrg;
+    piOrg += strideOrg;
   }
 
   //horizontal
@@ -2339,7 +2339,6 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
       cu.geoFlag          = false;
     //cu.affine
       cu.predMode         = MODE_INTER;
-    //cu.LICFlag
       cu.chromaQpAdj      = m_cuChromaQpOffsetIdxPlus1;
       cu.qp               = encTestMode.qp;
     //cu.emtFlag  is set below
@@ -2711,7 +2710,6 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
       cu.geoFlag          = false;
     //cu.affine
       cu.predMode         = MODE_INTER;
-    //cu.LICFlag
       cu.chromaQpAdj      = m_cuChromaQpOffsetIdxPlus1;
       cu.qp               = encTestMode.qp;
       PredictionUnit &pu  = tempCS->addPU( cu, partitioner.chType );

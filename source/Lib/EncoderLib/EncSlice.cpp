@@ -1307,22 +1307,22 @@ static int applyQPAdaptationSubCtu (CodingStructure &cs, const UnitArea ctuArea,
 //! set adaptive search range based on poc difference
 void EncSlice::setSearchRange( Slice* pcSlice )
 {
-  int iCurrPOC = pcSlice->getPOC();
+  int currPoc = pcSlice->getPOC();
   int iRefPOC;
   int iGOPSize = m_pcCfg->getGOPSize();
   int offset      = (iGOPSize >> 1);
   int iMaxSR = m_pcCfg->getSearchRange();
   int iNumPredDir = pcSlice->isInterP() ? 1 : 2;
 
-  for (int iDir = 0; iDir < iNumPredDir; iDir++)
+  for (int dir = 0; dir < iNumPredDir; dir++)
   {
-    RefPicList  e = ( iDir ? REF_PIC_LIST_1 : REF_PIC_LIST_0 );
+    RefPicList e = (dir ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
     for (int refIdx = 0; refIdx < pcSlice->getNumRefIdx(e); refIdx++)
     {
       iRefPOC            = pcSlice->getRefPic(e, refIdx)->getPOC();
       int newSearchRange = Clip3(m_pcCfg->getMinSearchWindow(), iMaxSR,
-                                 (iMaxSR * ADAPT_SR_SCALE * abs(iCurrPOC - iRefPOC) + offset) / iGOPSize);
-      m_pcInterSearch->setAdaptiveSearchRange(iDir, refIdx, newSearchRange);
+                                 (iMaxSR * ADAPT_SR_SCALE * abs(currPoc - iRefPOC) + offset) / iGOPSize);
+      m_pcInterSearch->setAdaptiveSearchRange(dir, refIdx, newSearchRange);
     }
   }
 }

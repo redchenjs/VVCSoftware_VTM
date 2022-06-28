@@ -221,9 +221,11 @@ void calcBlkGradientCore(int sx, int sy, int     *arraysGx2, int     *arraysGxGy
 #if ENABLE_SIMD_OPT_BCW
 void removeWeightHighFreq(int16_t* dst, int dstStride, const int16_t* src, int srcStride, int width, int height, int shift, int bcwWeight)
 {
-  int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-  int weight0 = normalizer << g_BcwLog2WeightBase;
-  int weight1 = (g_BcwWeightBase - bcwWeight)*normalizer;
+  const int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
+
+  const int weight0 = normalizer << g_bcwLog2WeightBase;
+  const int weight1 = (g_bcwWeightBase - bcwWeight) * normalizer;
+
 #define REM_HF_INC  \
   src += srcStride; \
   dst += dstStride; \
@@ -255,8 +257,9 @@ void removeHighFreq(int16_t* dst, int dstStride, const int16_t* src, int srcStri
 void removeWeightHighFreq_HBD(Pel* dst, int dstStride, const Pel* src, int srcStride, int width, int height, int shift, int bcwWeight)
 {
   Intermediate_Int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-  Intermediate_Int weight0 = normalizer << g_BcwLog2WeightBase;
-  Intermediate_Int weight1 = (g_BcwWeightBase - bcwWeight)*normalizer;
+
+  Intermediate_Int weight0 = normalizer << g_bcwLog2WeightBase;
+  Intermediate_Int weight1 = (g_bcwWeightBase - bcwWeight) * normalizer;
 #define REM_HF_INC  \
   src += srcStride; \
   dst += dstStride; \
@@ -394,7 +397,7 @@ void AreaBuf<Pel>::addWeightedAvg(const AreaBuf<const Pel> &other1, const AreaBu
 {
   const int8_t w0 = getBcwWeight(bcwIdx, REF_PIC_LIST_0);
   const int8_t w1 = getBcwWeight(bcwIdx, REF_PIC_LIST_1);
-  const int8_t log2WeightBase = g_BcwLog2WeightBase;
+  const int8_t log2WeightBase = g_bcwLog2WeightBase;
 
   const Pel* src0 = other1.buf;
   const Pel* src2 = other2.buf;

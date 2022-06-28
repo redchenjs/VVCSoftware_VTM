@@ -1064,7 +1064,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
           continue;
         }
       }
-      else  // (iDir == EDGE_HOR)
+      else   // (dir == EDGE_HOR)
       {
         if (!isAvailableAbove(cu, cuP, !pps.getLoopFilterAcrossSlicesEnabledFlag(), !pps.getLoopFilterAcrossTilesEnabledFlag(),
           !( pps.getSubPicFromCU(cu).getloopFilterAcrossEnabledFlag() && pps.getSubPicFromCU(cuP).getloopFilterAcrossEnabledFlag())))
@@ -1339,7 +1339,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
         CHECK(!isAvailableLeft(cu, cuP, !pps.getLoopFilterAcrossSlicesEnabledFlag(), !pps.getLoopFilterAcrossTilesEnabledFlag(),
           !( pps.getSubPicFromCU(cu).getloopFilterAcrossEnabledFlag() && pps.getSubPicFromCU(cuP).getloopFilterAcrossEnabledFlag())), "Neighbour not available");
       }
-      else  // (iDir == EDGE_HOR)
+      else   // (dir == EDGE_HOR)
       {
         CHECK(!isAvailableAbove(cu, cuP, !pps.getLoopFilterAcrossSlicesEnabledFlag(), !pps.getLoopFilterAcrossTilesEnabledFlag(),
           !( pps.getSubPicFromCU(cu).getloopFilterAcrossEnabledFlag() && pps.getSubPicFromCU(cuP).getloopFilterAcrossEnabledFlag())), "Neighbour not available");

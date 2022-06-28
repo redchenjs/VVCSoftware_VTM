@@ -384,14 +384,14 @@ private:
   static Distortion xGetMRHADs        ( const DistParam& pcDtParam );
 
   static Distortion xGetHADs          ( const DistParam& pcDtParam );
-  static Distortion xCalcHADs2x2      ( const Pel *piOrg, const Pel *piCurr, int iStrideOrg, int iStrideCur, int iStep );
-  static Distortion xCalcHADs4x4      ( const Pel *piOrg, const Pel *piCurr, int iStrideOrg, int iStrideCur, int iStep );
-  static Distortion xCalcHADs8x8      ( const Pel *piOrg, const Pel *piCurr, int iStrideOrg, int iStrideCur, int iStep );
+  static Distortion xCalcHADs2x2(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
+  static Distortion xCalcHADs4x4(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
+  static Distortion xCalcHADs8x8(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
 
-  static Distortion xCalcHADs16x8     ( const Pel *piOrg, const Pel *piCur, int iStrideOrg, int iStrideCur );
-  static Distortion xCalcHADs8x16     ( const Pel *piOrg, const Pel *piCur, int iStrideOrg, int iStrideCur );
-  static Distortion xCalcHADs4x8      ( const Pel *piOrg, const Pel *piCur, int iStrideOrg, int iStrideCur );
-  static Distortion xCalcHADs8x4      ( const Pel *piOrg, const Pel *piCur, int iStrideOrg, int iStrideCur );
+  static Distortion xCalcHADs16x8(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
+  static Distortion xCalcHADs8x16(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
+  static Distortion xCalcHADs4x8(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
+  static Distortion xCalcHADs8x4(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
 
 #ifdef TARGET_SIMD_X86
   template<X86_VEXT vext>

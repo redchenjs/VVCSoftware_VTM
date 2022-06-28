@@ -899,8 +899,9 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 
   JVET_J0090_SET_REF_PICTURE( refPic, compID );
   const ChromaFormat chFmt = pu.chromaFormat;
-  int iScaleX = ::getComponentScaleX( compID, chFmt );
-  int iScaleY = ::getComponentScaleY( compID, chFmt );
+
+  const int scaleX = ::getComponentScaleX(compID, chFmt);
+  const int scaleY = ::getComponentScaleY(compID, chFmt);
 
   Mv mvLT =_mv[0];
   Mv mvRT =_mv[1];
@@ -919,48 +920,52 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
   int blockWidth = AFFINE_MIN_BLOCK_SIZE;
   int blockHeight = AFFINE_MIN_BLOCK_SIZE;
 
-  CHECK(blockWidth  > (width >> iScaleX ), "Sub Block width  > Block width");
-  CHECK(blockHeight > (height >> iScaleY), "Sub Block height > Block height");
+  CHECK(blockWidth > (width >> scaleX), "Sub Block width  > Block width");
+  CHECK(blockHeight > (height >> scaleY), "Sub Block height > Block height");
   const int MVBUFFER_SIZE = MAX_CU_SIZE / MIN_PU_SIZE;
 
-  const int cxWidth  = width  >> iScaleX;
-  const int cxHeight = height >> iScaleY;
-  const int iHalfBW  = blockWidth  >> 1;
-  const int iHalfBH  = blockHeight >> 1;
+  const int cxWidth  = width >> scaleX;
+  const int cxHeight = height >> scaleY;
+  const int halfBW   = blockWidth >> 1;
+  const int halfBH   = blockHeight >> 1;
 
-  const int iBit = MAX_CU_DEPTH;
-  int iDMvHorX, iDMvHorY, iDMvVerX, iDMvVerY;
-  iDMvHorX = (mvRT - mvLT).getHor() * (1 << (iBit - floorLog2(cxWidth)));
-  iDMvHorY = (mvRT - mvLT).getVer() * (1 << (iBit - floorLog2(cxWidth)));
+  const int bit = MAX_CU_DEPTH;
+
+  int dmvHorX, dmvHorY, dmvVerX, dmvVerY;
+  dmvHorX = (mvRT - mvLT).getHor() * (1 << (bit - floorLog2(cxWidth)));
+  dmvHorY = (mvRT - mvLT).getVer() * (1 << (bit - floorLog2(cxWidth)));
   if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
   {
-    iDMvVerX = (mvLB - mvLT).getHor() * (1 << (iBit - floorLog2(cxHeight)));
-    iDMvVerY = (mvLB - mvLT).getVer() * (1 << (iBit - floorLog2(cxHeight)));
+    dmvVerX = (mvLB - mvLT).getHor() * (1 << (bit - floorLog2(cxHeight)));
+    dmvVerY = (mvLB - mvLT).getVer() * (1 << (bit - floorLog2(cxHeight)));
   }
   else
   {
-    iDMvVerX = -iDMvHorY;
-    iDMvVerY = iDMvHorX;
+    dmvVerX = -dmvHorY;
+    dmvVerY = dmvHorX;
   }
 
-  int iMvScaleHor = mvLT.getHor() * (1 << iBit);
-  int iMvScaleVer = mvLT.getVer() * (1 << iBit);
+  int mvScaleHor = mvLT.getHor() * (1 << bit);
+  int mvScaleVer = mvLT.getVer() * (1 << bit);
 
   const SPS &sps    = *pu.cs->sps;
 
   const int vFilterSize = isLuma(compID) ? NTAPS_LUMA : NTAPS_CHROMA;
 
-  const int shift = iBit - 4 + MV_FRACTIONAL_BITS_INTERNAL;
+  const int shift = bit - 4 + MV_FRACTIONAL_BITS_INTERNAL;
+
   bool      wrapRef = false;
-  const bool subblkMVSpreadOverLimit = isSubblockVectorSpreadOverLimit( iDMvHorX, iDMvHorY, iDMvVerX, iDMvVerY, pu.interDir );
+  const bool subblkMVSpreadOverLimit = isSubblockVectorSpreadOverLimit(dmvHorX, dmvHorY, dmvVerX, dmvVerY, pu.interDir);
   const bool isRefScaled = refPic->isRefScaled( pu.cs->pps );
 
   bool enablePROF = (sps.getUsePROF()) && (!m_skipPROF) && (compID == COMPONENT_Y);
   enablePROF &= (!pu.cs->picHeader->getProfDisabledFlag());
   enablePROF &= !((pu.cu->affineType == AFFINEMODEL_6PARAM && _mv[0] == _mv[1] && _mv[0] == _mv[2]) || (pu.cu->affineType == AFFINEMODEL_4PARAM && _mv[0] == _mv[1]));
   enablePROF &= !subblkMVSpreadOverLimit;
-  const int profThres = 1 << (iBit + (m_isBi ? 1 : 0));
-  enablePROF &= !m_encOnly || pu.cu->slice->getCheckLDC() || iDMvHorX > profThres || iDMvHorY > profThres || iDMvVerX > profThres || iDMvVerY > profThres || iDMvHorX < -profThres || iDMvHorY < -profThres || iDMvVerX < -profThres || iDMvVerY < -profThres;
+  const int profThres = 1 << (bit + (m_isBi ? 1 : 0));
+  enablePROF &= !m_encOnly || pu.cu->slice->getCheckLDC() || dmvHorX > profThres || dmvHorY > profThres
+                || dmvVerX > profThres || dmvVerY > profThres || dmvHorX < -profThres || dmvHorY < -profThres
+                || dmvVerX < -profThres || dmvVerY < -profThres;
   enablePROF &= (isRefScaled == false);
 
   bool isLast = enablePROF ? false : !bi;
@@ -988,13 +993,13 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
     int* dMvH = dMvScaleHor;
     int* dMvV = dMvScaleVer;
 
-    int quadHorX = 4 * iDMvHorX;
-    int quadHorY = 4 * iDMvHorY;
-    int quadVerX = 4 * iDMvVerX;
-    int quadVerY = 4 * iDMvVerY;
+    const int quadHorX = 4 * dmvHorX;
+    const int quadHorY = 4 * dmvHorY;
+    const int quadVerX = 4 * dmvVerX;
+    const int quadVerY = 4 * dmvVerY;
 
-    dMvH[0] = 2 * (iDMvHorX + iDMvVerX) - 2 * (quadHorX + quadVerX);
-    dMvV[0] = 2 * (iDMvHorY + iDMvVerY) - 2 * (quadHorY + quadVerY);
+    dMvH[0] = 2 * (dmvHorX + dmvVerX) - 2 * (quadHorX + quadVerX);
+    dMvV[0] = 2 * (dmvHorY + dmvVerY) - 2 * (quadHorY + quadVerY);
 
     for (int w = 1; w < blockWidth; w++)
     {
@@ -1052,12 +1057,12 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
     const int halfBHLuma  = lumaBlockHeight >> 1;
 
     int dMvHorXLuma, dMvHorYLuma, dMvVerXLuma, dMvVerYLuma;
-    dMvHorXLuma = (mvRT - mvLT).getHor() * (1 << (iBit - floorLog2(cxWidthLuma)));
-    dMvHorYLuma = (mvRT - mvLT).getVer() * (1 << (iBit - floorLog2(cxWidthLuma)));
+    dMvHorXLuma = (mvRT - mvLT).getHor() * (1 << (bit - floorLog2(cxWidthLuma)));
+    dMvHorYLuma = (mvRT - mvLT).getVer() * (1 << (bit - floorLog2(cxWidthLuma)));
     if (pu.cu->affineType == AFFINEMODEL_6PARAM)
     {
-      dMvVerXLuma = (mvLB - mvLT).getHor() * (1 << (iBit - floorLog2(cxHeightLuma)));
-      dMvVerYLuma = (mvLB - mvLT).getVer() * (1 << (iBit - floorLog2(cxHeightLuma)));
+      dMvVerXLuma = (mvLB - mvLT).getHor() * (1 << (bit - floorLog2(cxHeightLuma)));
+      dMvVerYLuma = (mvLB - mvLT).getVer() * (1 << (bit - floorLog2(cxHeightLuma)));
     }
     else
     {
@@ -1075,13 +1080,13 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
         int mvScaleTmpHor, mvScaleTmpVer;
         if (!subblkMVSpreadOverLimitLuma)
         {
-          mvScaleTmpHor = iMvScaleHor + dMvHorXLuma * (halfBWLuma + w) + dMvVerXLuma * (halfBHLuma + h);
-          mvScaleTmpVer = iMvScaleVer + dMvHorYLuma * (halfBWLuma + w) + dMvVerYLuma * (halfBHLuma + h);
+          mvScaleTmpHor = mvScaleHor + dMvHorXLuma * (halfBWLuma + w) + dMvVerXLuma * (halfBHLuma + h);
+          mvScaleTmpVer = mvScaleVer + dMvHorYLuma * (halfBWLuma + w) + dMvVerYLuma * (halfBHLuma + h);
         }
         else
         {
-          mvScaleTmpHor = iMvScaleHor + dMvHorXLuma * (cxWidthLuma >> 1) + dMvVerXLuma * (cxHeightLuma >> 1);
-          mvScaleTmpVer = iMvScaleVer + dMvHorYLuma * (cxWidthLuma >> 1) + dMvVerYLuma * (cxHeightLuma >> 1);
+          mvScaleTmpHor = mvScaleHor + dMvHorXLuma * (cxWidthLuma >> 1) + dMvVerXLuma * (cxHeightLuma >> 1);
+          mvScaleTmpVer = mvScaleVer + dMvHorYLuma * (cxWidthLuma >> 1) + dMvVerYLuma * (cxHeightLuma >> 1);
         }
 
         roundAffineMv(mvScaleTmpHor, mvScaleTmpVer, shift);
@@ -1099,51 +1104,52 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
   {
     for ( int w = 0; w < cxWidth; w += blockWidth )
     {
-
-      int iMvScaleTmpHor, iMvScaleTmpVer;
+      int mvScaleTmpHor, mvScaleTmpVer;
       if (compID == COMPONENT_Y || pu.chromaFormat == CHROMA_444)
       {
         if ( !subblkMVSpreadOverLimit )
         {
-          iMvScaleTmpHor = iMvScaleHor + iDMvHorX * (iHalfBW + w) + iDMvVerX * (iHalfBH + h);
-          iMvScaleTmpVer = iMvScaleVer + iDMvHorY * (iHalfBW + w) + iDMvVerY * (iHalfBH + h);
+          mvScaleTmpHor = mvScaleHor + dmvHorX * (halfBW + w) + dmvVerX * (halfBH + h);
+          mvScaleTmpVer = mvScaleVer + dmvHorY * (halfBW + w) + dmvVerY * (halfBH + h);
         }
         else
         {
-          iMvScaleTmpHor = iMvScaleHor + iDMvHorX * ( cxWidth >> 1 ) + iDMvVerX * ( cxHeight >> 1 );
-          iMvScaleTmpVer = iMvScaleVer + iDMvHorY * ( cxWidth >> 1 ) + iDMvVerY * ( cxHeight >> 1 );
+          mvScaleTmpHor = mvScaleHor + dmvHorX * (cxWidth >> 1) + dmvVerX * (cxHeight >> 1);
+          mvScaleTmpVer = mvScaleVer + dmvHorY * (cxWidth >> 1) + dmvVerY * (cxHeight >> 1);
         }
-        roundAffineMv(iMvScaleTmpHor, iMvScaleTmpVer, shift);
-        Mv tmpMv(iMvScaleTmpHor, iMvScaleTmpVer);
+        roundAffineMv(mvScaleTmpHor, mvScaleTmpVer, shift);
+        Mv tmpMv(mvScaleTmpHor, mvScaleTmpVer);
         tmpMv.clipToStorageBitDepth();
-        iMvScaleTmpHor = tmpMv.getHor();
-        iMvScaleTmpVer = tmpMv.getVer();
+        mvScaleTmpHor = tmpMv.getHor();
+        mvScaleTmpVer = tmpMv.getVer();
 
         // clip and scale
         if ( refPic->isWrapAroundEnabled( pu.cs->pps ) )
         {
-          m_storedMv[h / AFFINE_MIN_BLOCK_SIZE * MVBUFFER_SIZE + w / AFFINE_MIN_BLOCK_SIZE].set(iMvScaleTmpHor, iMvScaleTmpVer);
-          Mv tmpMv(iMvScaleTmpHor, iMvScaleTmpVer);
+          m_storedMv[h / AFFINE_MIN_BLOCK_SIZE * MVBUFFER_SIZE + w / AFFINE_MIN_BLOCK_SIZE].set(mvScaleTmpHor,
+                                                                                                mvScaleTmpVer);
+          Mv tmpMv(mvScaleTmpHor, mvScaleTmpVer);
           wrapRef = wrapClipMv( tmpMv, Position( pu.Y().x + w, pu.Y().y + h ), Size( blockWidth, blockHeight ), &sps, pu.cs->pps );
-          iMvScaleTmpHor = tmpMv.getHor();
-          iMvScaleTmpVer = tmpMv.getVer();
+          mvScaleTmpHor = tmpMv.getHor();
+          mvScaleTmpVer = tmpMv.getVer();
         }
         else
         {
           wrapRef = false;
-          m_storedMv[h / AFFINE_MIN_BLOCK_SIZE * MVBUFFER_SIZE + w / AFFINE_MIN_BLOCK_SIZE].set(iMvScaleTmpHor, iMvScaleTmpVer);
+          m_storedMv[h / AFFINE_MIN_BLOCK_SIZE * MVBUFFER_SIZE + w / AFFINE_MIN_BLOCK_SIZE].set(mvScaleTmpHor,
+                                                                                                mvScaleTmpVer);
           if (isRefScaled == false)
           {
             clipMv(tmpMv, pu.lumaPos(), pu.lumaSize(), *pu.cs->sps, *pu.cs->pps);
-            iMvScaleTmpHor = tmpMv.getHor();
-            iMvScaleTmpVer = tmpMv.getVer();
+            mvScaleTmpHor = tmpMv.getHor();
+            mvScaleTmpVer = tmpMv.getVer();
           }
         }
 #if GDR_ENABLED
         if (isEncodeGdrClean)
         {
           Position subPuPos = Position(pux + w + blockWidth, puy + h + blockHeight);
-          Mv subPuMv = Mv(iMvScaleTmpHor, iMvScaleTmpVer);
+          Mv       subPuMv  = Mv(mvScaleTmpHor, mvScaleTmpVer);
           bool puClean = cs.isClean(subPuPos, subPuMv, refPic);
 
           allOk = allOk && puClean;
@@ -1152,12 +1158,15 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
       }
       else
       {
-        Mv curMv = m_storedMv[((h << iScaleY) / AFFINE_MIN_BLOCK_SIZE) * MVBUFFER_SIZE + ((w << iScaleX) / AFFINE_MIN_BLOCK_SIZE)] +
-          m_storedMv[((h << iScaleY) / AFFINE_MIN_BLOCK_SIZE + iScaleY)* MVBUFFER_SIZE + ((w << iScaleX) / AFFINE_MIN_BLOCK_SIZE + iScaleX)];
+        Mv curMv =
+          m_storedMv[((h << scaleY) / AFFINE_MIN_BLOCK_SIZE) * MVBUFFER_SIZE + ((w << scaleX) / AFFINE_MIN_BLOCK_SIZE)]
+          + m_storedMv[((h << scaleY) / AFFINE_MIN_BLOCK_SIZE + scaleY) * MVBUFFER_SIZE
+                       + ((w << scaleX) / AFFINE_MIN_BLOCK_SIZE + scaleX)];
         roundAffineMv(curMv.hor, curMv.ver, 1);
         if ( refPic->isWrapAroundEnabled( pu.cs->pps ) )
         {
-          wrapRef = wrapClipMv( curMv, Position( pu.Y().x + ( w << iScaleX ), pu.Y().y + ( h << iScaleY ) ), Size( blockWidth << iScaleX, blockHeight << iScaleY ), &sps, pu.cs->pps );
+          wrapRef = wrapClipMv(curMv, Position(pu.Y().x + (w << scaleX), pu.Y().y + (h << scaleY)),
+                               Size(blockWidth << scaleX, blockHeight << scaleY), &sps, pu.cs->pps);
         }
         else
         {
@@ -1167,14 +1176,14 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
             clipMv(curMv, pu.lumaPos(), pu.lumaSize(), *pu.cs->sps, *pu.cs->pps);
           }
         }
-        iMvScaleTmpHor = curMv.hor;
-        iMvScaleTmpVer = curMv.ver;
+        mvScaleTmpHor = curMv.hor;
+        mvScaleTmpVer = curMv.ver;
 
 #if GDR_ENABLED
         if (isEncodeGdrClean)
         {
           Position subPuPos = Position(pux + (w + blockWidth) * 2, puy + (h + blockHeight) * 2);
-          Mv subPuMv = Mv(iMvScaleTmpHor, iMvScaleTmpVer);
+          Mv       subPuMv  = Mv(mvScaleTmpHor, mvScaleTmpVer);
           bool puClean = cs.isClean(subPuPos, subPuMv, refPic);
 
           allOk = allOk && puClean;
@@ -1184,7 +1193,10 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 
       if( isRefScaled )
       {
-        xPredInterBlkRPR( scalingRatio, *pu.cs->pps, CompArea( compID, chFmt, pu.blocks[compID].offset( w, h ), Size( blockWidth, blockHeight ) ), refPic, Mv( iMvScaleTmpHor, iMvScaleTmpVer ), dstBuf.buf + w + h * dstBuf.stride, dstBuf.stride, bi, wrapRef, clpRng, 2 );
+        xPredInterBlkRPR(scalingRatio, *pu.cs->pps,
+                         CompArea(compID, chFmt, pu.blocks[compID].offset(w, h), Size(blockWidth, blockHeight)), refPic,
+                         Mv(mvScaleTmpHor, mvScaleTmpVer), dstBuf.buf + w + h * dstBuf.stride, dstBuf.stride, bi,
+                         wrapRef, clpRng, 2);
         CHECK( enablePROF, "PROF should be disabled with RPR" );
       }
       else
@@ -1194,17 +1206,17 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 
         if (isLuma(compID))
         {
-          xInt  = iMvScaleTmpHor >> 4;
-          xFrac = iMvScaleTmpHor & 15;
-          yInt  = iMvScaleTmpVer >> 4;
-          yFrac = iMvScaleTmpVer & 15;
+          xInt  = mvScaleTmpHor >> 4;
+          xFrac = mvScaleTmpHor & 15;
+          yInt  = mvScaleTmpVer >> 4;
+          yFrac = mvScaleTmpVer & 15;
         }
         else
         {
-          xInt  = iMvScaleTmpHor * (1 << (1 - iScaleX)) >> 5;
-          xFrac = iMvScaleTmpHor * (1 << (1 - iScaleX)) & 31;
-          yInt  = iMvScaleTmpVer * (1 << (1 - iScaleY)) >> 5;
-          yFrac = iMvScaleTmpVer * (1 << (1 - iScaleY)) & 31;
+          xInt  = mvScaleTmpHor * (1 << (1 - scaleX)) >> 5;
+          xFrac = mvScaleTmpHor * (1 << (1 - scaleX)) & 31;
+          yInt  = mvScaleTmpVer * (1 << (1 - scaleY)) >> 5;
+          yFrac = mvScaleTmpVer * (1 << (1 - scaleY)) & 31;
         }
 
         const CPelBuf refBuf = refPic->getRecoBuf(

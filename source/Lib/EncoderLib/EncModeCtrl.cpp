@@ -600,6 +600,7 @@ bool CacheBlkInfoCtrl::getInter(const UnitArea& area)
 
   return m_codedCUInfo[idx1][idx2][idx3][idx4]->isInter;
 }
+
 void CacheBlkInfoCtrl::setBcwIdx(const UnitArea& area, uint8_t gBiIdx)
 {
   unsigned idx1, idx2, idx3, idx4;
@@ -607,6 +608,7 @@ void CacheBlkInfoCtrl::setBcwIdx(const UnitArea& area, uint8_t gBiIdx)
 
   m_codedCUInfo[idx1][idx2][idx3][idx4]->bcwIdx = gBiIdx;
 }
+
 uint8_t CacheBlkInfoCtrl::getBcwIdx(const UnitArea& area)
 {
   unsigned idx1, idx2, idx3, idx4;

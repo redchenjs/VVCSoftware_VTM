@@ -1210,8 +1210,8 @@ template< X86_VEXT vext, int W >
 void removeWeightHighFreq_SSE(int16_t* src0, int src0Stride, const int16_t* src1, int src1Stride, int width, int height, int shift, int bcwWeight)
 {
   int normalizer = ((1 << 16) + (bcwWeight>0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-  int weight0    = normalizer * (1 << g_BcwLog2WeightBase);
-  int weight1 = (g_BcwWeightBase - bcwWeight)*normalizer;
+  int weight0    = normalizer * (1 << g_bcwLog2WeightBase);
+  int weight1    = (g_bcwWeightBase - bcwWeight) * normalizer;
   int offset = 1 << (shift - 1);
   if (W == 8)
   {
@@ -1582,8 +1582,8 @@ void removeWeightHighFreq_HBD_SIMD(Pel* src0, int src0Stride, const Pel* src1, i
   CHECK((width & 3), "the function only supports width multiple of 4");
 
   int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-  int weight0 = normalizer << g_BcwLog2WeightBase;
-  int weight1 = (g_BcwWeightBase - bcwWeight)*normalizer;
+  int              weight0    = normalizer << g_bcwLog2WeightBase;
+  int              weight1    = (g_bcwWeightBase - bcwWeight) * normalizer;
   Intermediate_Int offset = Intermediate_Int(1) << (shift - 1);
 
 #ifdef USE_AVX2

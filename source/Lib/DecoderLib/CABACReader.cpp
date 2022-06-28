@@ -987,8 +987,8 @@ void CABACReader::imv_mode( CodingUnit& cu, MergeCtx& mrgCtx )
     return;
   }
 
-  bool bNonZeroMvd = CU::hasSubCUNonZeroMVd( cu );
-  if( !bNonZeroMvd )
+  bool nonZeroMvd = CU::hasSubCUNonZeroMVd(cu);
+  if (!nonZeroMvd)
   {
     return;
   }
@@ -1266,8 +1266,7 @@ void CABACReader::cu_bcw_flag(CodingUnit& cu)
     }
   }
 
-  uint8_t bcwIdx = (uint8_t)g_BcwParsingOrder[idx];
-  CU::setBcwIdx(cu, bcwIdx);
+  cu.bcwIdx = (uint8_t) g_BcwParsingOrder[idx];
 
   DTRACE(g_trace_ctx, D_SYNTAX, "cu_bcw_flag() bcw_idx=%d\n", cu.bcwIdx ? 1 : 0);
 }

@@ -173,10 +173,10 @@ public:
     return !( *this == rcMv );
   }
 
-  const Mv scaleMv( int iScale ) const
+  const Mv scaleMv(int scale) const
   {
-    const int mvx = Clip3(MV_MIN, MV_MAX, (iScale * getHor() + 128 - (iScale * getHor() >= 0)) >> 8);
-    const int mvy = Clip3(MV_MIN, MV_MAX, (iScale * getVer() + 128 - (iScale * getVer() >= 0)) >> 8);
+    const int mvx = Clip3(MV_MIN, MV_MAX, (scale * getHor() + 128 - (scale * getHor() >= 0)) >> 8);
+    const int mvy = Clip3(MV_MIN, MV_MAX, (scale * getVer() + 128 - (scale * getVer() >= 0)) >> 8);
     return Mv( mvx, mvy );
   }
 

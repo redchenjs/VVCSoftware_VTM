@@ -1948,8 +1948,8 @@ void CABACWriter::imv_mode( const CodingUnit& cu )
     return;
   }
 
-  bool bNonZeroMvd = CU::hasSubCUNonZeroMVd( cu );
-  if( !bNonZeroMvd )
+  bool nonZeroMvd = CU::hasSubCUNonZeroMVd(cu);
+  if (!nonZeroMvd)
   {
     return;
   }
@@ -2953,8 +2953,8 @@ void CABACWriter::residual_coding_subblock( CoeffCodingContext& cctx, const TCoe
 
   for( ; nextSigPos >= minSubPos && remRegBins >= 4; nextSigPos-- )
   {
-    TCoeff    Coeff      = coeff[ cctx.blockPos( nextSigPos ) ];
-    unsigned  sigFlag    = ( Coeff != 0 );
+    TCoeff   coeffVal = coeff[cctx.blockPos(nextSigPos)];
+    unsigned sigFlag  = (coeffVal != 0);
     if( numNonZero || nextSigPos != inferSigPos )
     {
       const unsigned sigCtxId = cctx.sigCtxIdAbs( nextSigPos, coeff, state );
@@ -2974,13 +2974,13 @@ void CABACWriter::residual_coding_subblock( CoeffCodingContext& cctx, const TCoe
       numNonZero++;
       firstNZPos  = nextSigPos;
       lastNZPos   = std::max<int>( lastNZPos, nextSigPos );
-      remAbsLevel = abs( Coeff ) - 1;
+      remAbsLevel = abs(coeffVal) - 1;
 
       if (nextSigPos != cctx.scanPosLast())
       {
         signPattern <<= 1;
       }
-      if (Coeff < 0)
+      if (coeffVal < 0)
       {
         signPattern++;
       }
@@ -3005,7 +3005,7 @@ void CABACWriter::residual_coding_subblock( CoeffCodingContext& cctx, const TCoe
       }
     }
 
-    state = ( stateTransTable >> ((state<<2)+((Coeff&1)<<1)) ) & 3;
+    state = (stateTransTable >> ((state << 2) + ((coeffVal & 1) << 1))) & 3;
   }
   firstPosMode2 = nextSigPos;
   cctx.regBinLimit = remRegBins;
@@ -3036,8 +3036,8 @@ void CABACWriter::residual_coding_subblock( CoeffCodingContext& cctx, const TCoe
   //===== coeff bypass ====
   for( int scanPos = firstPosMode2; scanPos >= minSubPos; scanPos-- )
   {
-    TCoeff    Coeff     = coeff[ cctx.blockPos( scanPos ) ];
-    unsigned    absLevel  = (unsigned) abs( Coeff );
+    TCoeff      coeffVal  = coeff[cctx.blockPos(scanPos)];
+    unsigned    absLevel  = (unsigned) abs(coeffVal);
     int rice = (cctx.*(cctx.deriveRiceRRC))(scanPos, coeff, 0);
     int         pos0      = g_goRicePosCoeff0(state, rice);
     unsigned  rem       = ( absLevel == 0 ? pos0 : absLevel <= pos0 ? absLevel-1 : absLevel );
@@ -3057,7 +3057,7 @@ void CABACWriter::residual_coding_subblock( CoeffCodingContext& cctx, const TCoe
       firstNZPos = scanPos;
       lastNZPos   = std::max<int>( lastNZPos, scanPos );
       signPattern <<= 1;
-      if (Coeff < 0)
+      if (coeffVal < 0)
       {
         signPattern++;
       }
@@ -3159,8 +3159,8 @@ void CABACWriter::residual_coding_subblockTS( CoeffCodingContext& cctx, const TC
   int lastScanPosPass2 = -1;
   for (; nextSigPos <= minSubPos && cctx.numCtxBins() >= 4; nextSigPos++)
   {
-    TCoeff    Coeff      = coeff[ cctx.blockPos( nextSigPos ) ];
-    unsigned  sigFlag    = ( Coeff != 0 );
+    TCoeff   coeffVal = coeff[cctx.blockPos(nextSigPos)];
+    unsigned sigFlag  = (coeffVal != 0);
     if( numNonZero || nextSigPos != inferSigPos )
     {
       const unsigned sigCtxId = cctx.sigCtxIdAbsTS(nextSigPos, coeff);
@@ -3172,13 +3172,13 @@ void CABACWriter::residual_coding_subblockTS( CoeffCodingContext& cctx, const TC
     if( sigFlag )
     {
       //===== encode sign's =====
-      int sign = Coeff < 0;
+      int            sign      = coeffVal < 0;
       const unsigned signCtxId = cctx.signCtxIdAbsTS(nextSigPos, coeff, cctx.bdpcm());
       m_BinEncoder.encodeBin(sign, signCtxId);
       cctx.decimateNumCtxBins(1);
       numNonZero++;
       cctx.neighTS(rightPixel, belowPixel, nextSigPos, coeff);
-      modAbsCoeff = cctx.deriveModCoeff(rightPixel, belowPixel, abs(Coeff), cctx.bdpcm());
+      modAbsCoeff = cctx.deriveModCoeff(rightPixel, belowPixel, abs(coeffVal), cctx.bdpcm());
       remAbsLevel = modAbsCoeff - 1;
 
       unsigned gt1 = !!remAbsLevel;
