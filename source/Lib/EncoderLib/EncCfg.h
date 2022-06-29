@@ -1619,10 +1619,7 @@ public:
   //==== Motion search ========
   bool      getDisableIntraPUsInInterSlices    () const { return m_bDisableIntraPUsInInterSlices; }
   MESearchMethod getMotionEstimationSearchMethod ( ) const { return m_motionEstimationSearchMethod; }
-  int            getSearchRange() const
-  {
-    return m_searchRange;
-  }
+  int       getSearchRange                     () const { return m_searchRange; }
   bool      getClipForBiPredMeEnabled          () const { return m_bClipForBiPredMeEnabled; }
   bool      getFastMEAssumingSmootherMVEnabled () const { return m_bFastMEAssumingSmootherMVEnabled; }
   int       getMinSearchWindow                 () const { return m_minSearchWindow; }
