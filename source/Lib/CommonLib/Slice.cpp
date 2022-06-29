@@ -416,11 +416,11 @@ Picture* Slice::xGetLongTermRefPicCandidate( PicList& rcListPic, const int poc, 
 
 void Slice::setRefPOCList       ()
 {
-  for (int iDir = 0; iDir < NUM_REF_PIC_LIST_01; iDir++)
+  for (int dir = 0; dir < NUM_REF_PIC_LIST_01; dir++)
   {
-    for (int iNumRefIdx = 0; iNumRefIdx < m_aiNumRefIdx[iDir]; iNumRefIdx++)
+    for (int numRefIdx = 0; numRefIdx < m_aiNumRefIdx[dir]; numRefIdx++)
     {
-      m_aiRefPOCList[iDir][iNumRefIdx] = m_apcRefPicList[iDir][iNumRefIdx]->getPOC();
+      m_aiRefPOCList[dir][numRefIdx] = m_apcRefPicList[dir][numRefIdx]->getPOC();
     }
   }
 
@@ -537,14 +537,13 @@ void Slice::constructRefPicList(PicList& rcListPic)
 
 void Slice::initEqualRef()
 {
-  for (int iDir = 0; iDir < NUM_REF_PIC_LIST_01; iDir++)
+  for (int dir = 0; dir < NUM_REF_PIC_LIST_01; dir++)
   {
     for (int refIdx1 = 0; refIdx1 < MAX_NUM_REF; refIdx1++)
     {
       for (int refIdx2 = refIdx1; refIdx2 < MAX_NUM_REF; refIdx2++)
       {
-        m_abEqualRef[iDir][refIdx1][refIdx2] = m_abEqualRef[iDir][refIdx2][refIdx1] =
-          (refIdx1 == refIdx2 ? true : false);
+        m_abEqualRef[dir][refIdx1][refIdx2] = m_abEqualRef[dir][refIdx2][refIdx1] = (refIdx1 == refIdx2 ? true : false);
       }
     }
   }
@@ -4171,8 +4170,8 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
         int * const src = getScalingListAddress(scalingListId);
         {
           fseek(fp, 0, SEEK_SET);
-          bool bFound=false;
-          while ((!feof(fp)) && (!bFound))
+          bool found = false;
+          while ((!feof(fp)) && (!found))
           {
             char *ret = fgets(line, LINE_SIZE, fp);
             char *findNamePosition = ret == nullptr ? nullptr : strstr(line, MatrixType[sizeIdc][listIdc]);
@@ -4181,10 +4180,10 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
                 && (MatrixType_DC[sizeIdc][listIdc] == nullptr
                     || strstr(line, MatrixType_DC[sizeIdc][listIdc]) == nullptr))
             {
-              bFound=true;
+              found = true;
             }
           }
-          if (!bFound)
+          if (!found)
           {
             msg( ERROR, "Error: cannot find Matrix %s from scaling list file %s\n", MatrixType[sizeIdc][listIdc], fileName.c_str());
             return true;
@@ -4214,18 +4213,18 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
         {
           {
             fseek(fp, 0, SEEK_SET);
-            bool bFound=false;
-            while ((!feof(fp)) && (!bFound))
+            bool found = false;
+            while ((!feof(fp)) && (!found))
             {
               char *ret = fgets(line, LINE_SIZE, fp);
               char *findNamePosition = ret == nullptr ? nullptr : strstr(line, MatrixType_DC[sizeIdc][listIdc]);
               if (findNamePosition != nullptr)
               {
                 // This won't be a match against the non-DC string.
-                bFound=true;
+                found = true;
               }
             }
-            if (!bFound)
+            if (!found)
             {
               msg( ERROR, "Error: cannot find DC Matrix %s from scaling list file %s\n", MatrixType_DC[sizeIdc][listIdc], fileName.c_str());
               return true;

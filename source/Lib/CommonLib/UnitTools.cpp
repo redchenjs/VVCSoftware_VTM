@@ -70,16 +70,17 @@ void CS::setRefinedMotionField(CodingStructure &cs)
   {
     for (auto &pu : CU::traversePUs(*cu))
     {
-      PredictionUnit subPu = pu;
-      int dx, dy, x, y, num = 0;
-      dy = std::min<int>(pu.lumaSize().height, DMVR_SUBCU_HEIGHT);
-      dx = std::min<int>(pu.lumaSize().width, DMVR_SUBCU_WIDTH);
-      Position puPos = pu.lumaPos();
       if (PU::checkDMVRCondition(pu))
       {
-        for (y = puPos.y; y < (puPos.y + pu.lumaSize().height); y = y + dy)
+        PredictionUnit subPu = pu;
+        const int      dy    = std::min<int>(pu.lumaSize().height, DMVR_SUBCU_HEIGHT);
+        const int      dx    = std::min<int>(pu.lumaSize().width, DMVR_SUBCU_WIDTH);
+        Position       puPos = pu.lumaPos();
+        int            num   = 0;
+
+        for (int y = puPos.y; y < (puPos.y + pu.lumaSize().height); y = y + dy)
         {
-          for (x = puPos.x; x < (puPos.x + pu.lumaSize().width); x = x + dx)
+          for (int x = puPos.x; x < (puPos.x + pu.lumaSize().width); x = x + dx)
           {
             subPu.UnitArea::operator=(UnitArea(pu.chromaFormat, Area(x, y, dx, dy)));
             subPu.mv[0] = pu.mv[0];
@@ -259,7 +260,7 @@ void CU::checkConformanceILRP(Slice *slice)
   {
     for (int refList = 0; refList < numRefList; refList++) // loop over l0 and l1
     {
-      RefPicList  eRefPicList = (refList ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
+      const RefPicList eRefPicList = refList ? REF_PIC_LIST_1 : REF_PIC_LIST_0;
       for (int refIdx = 0; refIdx < slice->getNumRefIdx(eRefPicList); refIdx++)
       {
         const Picture* refPic = slice->getRefPic( eRefPicList, refIdx );
@@ -805,11 +806,13 @@ uint32_t PU::getFinalIntraMode( const PredictionUnit &pu, const ChannelType &chT
 
 const PredictionUnit &PU::getCoLocatedLumaPU(const PredictionUnit &pu)
 {
-  Position              topLeftPos = pu.blocks[pu.chType].lumaPos();
-  Position              refPos     = topLeftPos.offset(pu.blocks[pu.chType].lumaSize().width  >> 1,
-                                                       pu.blocks[pu.chType].lumaSize().height >> 1);
-  const PredictionUnit &lumaPU     = pu.cu->isSepTree() ? *pu.cs->picture->cs->getPU(refPos, CHANNEL_TYPE_LUMA)
-                                                        : *pu.cs->getPU(topLeftPos, CHANNEL_TYPE_LUMA);
+  Position topLeftPos = pu.blocks[pu.chType].lumaPos();
+
+  Position refPos =
+    topLeftPos.offset(pu.blocks[pu.chType].lumaSize().width >> 1, pu.blocks[pu.chType].lumaSize().height >> 1);
+
+  const PredictionUnit &lumaPU = pu.cu->isSepTree() ? *pu.cs->picture->cs->getPU(refPos, CHANNEL_TYPE_LUMA)
+                                                    : *pu.cs->getPU(topLeftPos, CHANNEL_TYPE_LUMA);
 
   return lumaPU;
 }
@@ -861,7 +864,8 @@ bool PU::addMergeHMVPCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int
   MotionInfo miNeighbor;
 
   auto &lut = ibcFlag ? cs.motionLut.lutIbc : cs.motionLut.lut;
-  int num_avai_candInLUT = (int)lut.size();
+
+  const int numAvailCandInLut = (int) lut.size();
 
 #if GDR_ENABLED
   const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
@@ -873,9 +877,9 @@ bool PU::addMergeHMVPCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int
     allCandSolidInAbove = allCandSolidInAbove && vbOnCtuBoundary;
   }
 #endif
-  for (int mrgIdx = 1; mrgIdx <= num_avai_candInLUT; mrgIdx++)
+  for (int mrgIdx = 1; mrgIdx <= numAvailCandInLut; mrgIdx++)
   {
-    miNeighbor = lut[num_avai_candInLUT - mrgIdx];
+    miNeighbor = lut[numAvailCandInLut - mrgIdx];
 #if GDR_ENABLED
     Position sourcePos = Position(0, 0);
     if (isEncodeGdrClean)
@@ -1043,14 +1047,14 @@ void PU::getIBCMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const
   {
 #if GDR_ENABLED
     bool allCandSolidInAbove = true;
-    bool bFound = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
-                                   miAbove, true, isGt4x4, pu, allCandSolidInAbove);
+    bool found = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
+                                  miAbove, true, isGt4x4, pu, allCandSolidInAbove);
 #else
-    bool bFound = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
-                                   miAbove, true, isGt4x4);
+    bool found = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
+                                  miAbove, true, isGt4x4);
 #endif
 
-    if (bFound)
+    if (found)
     {
       return;
     }
@@ -1078,9 +1082,7 @@ void PU::getIBCMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const
   mrgCtx.numValidMergeCand = cnt;
 }
 
-void PU::getInterMergeCandidates( const PredictionUnit &pu, MergeCtx& mrgCtx,
-                                 int mmvdList,
-                                 const int& mrgCandIdx )
+void PU::getInterMergeCandidates(const PredictionUnit &pu, MergeCtx &mrgCtx, int mmvdList, const int &mrgCandIdx)
 {
   const unsigned plevel = pu.cs->sps->getLog2ParallelMergeLevelMinus2() + 2;
   const CodingStructure &cs  = *pu.cs;
@@ -1352,7 +1354,6 @@ void PU::getInterMergeCandidates( const PredictionUnit &pu, MergeCtx& mrgCtx,
 
       if( ( !isAvailableA1 || ( miLeft != miAboveLeft ) ) && ( !isAvailableB1 || ( miAbove != miAboveLeft ) ) )
       {
-
         // get Inter Dir
         mrgCtx.interDirNeighbours[cnt] = miAboveLeft.interDir;
         mrgCtx.useAltHpelIf[cnt]       = miAboveLeft.useAltHpelIf;
@@ -1524,14 +1525,14 @@ void PU::getInterMergeCandidates( const PredictionUnit &pu, MergeCtx& mrgCtx,
     allCandSolidInAbove = true;
 #endif
 #if GDR_ENABLED
-    bool bFound  = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCandMin1, cnt, isAvailableA1, miLeft,
-                                   isAvailableB1, miAbove, CU::isIBC(*pu.cu), isGt4x4, pu, allCandSolidInAbove);
+    bool found = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCandMin1, cnt, isAvailableA1, miLeft,
+                                  isAvailableB1, miAbove, CU::isIBC(*pu.cu), isGt4x4, pu, allCandSolidInAbove);
 #else
-    bool bFound  = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCandMin1, cnt, isAvailableA1, miLeft,
-                                   isAvailableB1, miAbove, CU::isIBC(*pu.cu), isGt4x4);
+    bool found = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCandMin1, cnt, isAvailableA1, miLeft,
+                                  isAvailableB1, miAbove, CU::isIBC(*pu.cu), isGt4x4);
 #endif
 
-    if (bFound)
+    if (found)
     {
       return;
     }
@@ -1568,12 +1569,12 @@ void PU::getInterMergeCandidates( const PredictionUnit &pu, MergeCtx& mrgCtx,
         // both MVs are valid, average these two MVs
         if( (refIdxI != NOT_VALID) && (refIdxJ != NOT_VALID) )
         {
-          const Mv& MvI = mrgCtx.mvFieldNeighbours[0 * 2 + refListId].mv;
-          const Mv& MvJ = mrgCtx.mvFieldNeighbours[1 * 2 + refListId].mv;
+          const Mv &mvI = mrgCtx.mvFieldNeighbours[0 * 2 + refListId].mv;
+          const Mv &mvJ = mrgCtx.mvFieldNeighbours[1 * 2 + refListId].mv;
 
           // average two MVs
-          Mv avgMv = MvI;
-          avgMv += MvJ;
+          Mv avgMv = mvI;
+          avgMv += mvJ;
           roundAffineMv(avgMv.hor, avgMv.ver, 1);
 
           mrgCtx.mvFieldNeighbours[cnt * 2 + refListId].setMvField( avgMv, refIdxI );
@@ -1643,7 +1644,8 @@ void PU::getInterMergeCandidates( const PredictionUnit &pu, MergeCtx& mrgCtx,
 
   uint32_t arrayAddr = cnt;
 
-  int iNumRefIdx = slice.isInterB() ? std::min(slice.getNumRefIdx(REF_PIC_LIST_0), slice.getNumRefIdx(REF_PIC_LIST_1)) : slice.getNumRefIdx(REF_PIC_LIST_0);
+  int numRefIdx = slice.isInterB() ? std::min(slice.getNumRefIdx(REF_PIC_LIST_0), slice.getNumRefIdx(REF_PIC_LIST_1))
+                                   : slice.getNumRefIdx(REF_PIC_LIST_0);
 
   int r = 0;
   int refcnt = 0;
@@ -1683,7 +1685,7 @@ void PU::getInterMergeCandidates( const PredictionUnit &pu, MergeCtx& mrgCtx,
 
     arrayAddr++;
 
-    if (refcnt == iNumRefIdx - 1)
+    if (refcnt == numRefIdx - 1)
     {
       r = 0;
     }
@@ -1724,30 +1726,29 @@ bool PU::checkDMVRCondition(const PredictionUnit& pu)
   }
 }
 
-
-static int xGetDistScaleFactor(const int &iCurrPOC, const int &iCurrRefPOC, const int &iColPOC, const int &iColRefPOC)
+static int xGetDistScaleFactor(const int &currPoc, const int &currRefPoc, const int &colPoc, const int &colRefPoc)
 {
-  int iDiffPocD = iColPOC - iColRefPOC;
-  int iDiffPocB = iCurrPOC - iCurrRefPOC;
+  const int diffPocD = colPoc - colRefPoc;
+  const int diffPocB = currPoc - currRefPoc;
 
-  if (iDiffPocD == iDiffPocB)
+  if (diffPocD == diffPocB)
   {
     return 4096;
   }
   else
   {
-    int iTDB = Clip3(-128, 127, iDiffPocB);
-    int iTDD = Clip3(-128, 127, iDiffPocD);
-    int iX = (0x4000 + abs(iTDD / 2)) / iTDD;
-    int iScale = Clip3(-4096, 4095, (iTDB * iX + 32) >> 6);
-    return iScale;
+    const int tdB   = Clip3(-128, 127, diffPocB);
+    const int tdD   = Clip3(-128, 127, diffPocD);
+    const int x     = (0x4000 + abs(tdD / 2)) / tdD;
+    const int scale = Clip3(-4096, 4095, (tdB * x + 32) >> 6);
+    return scale;
   }
 }
 
 int convertMvFixedToFloat(int32_t val)
 {
-  int sign  = val >> 31;
-  int scale = floorLog2((val ^ sign) | MV_MANTISSA_UPPER_LIMIT) - (MV_MANTISSA_BITCOUNT - 1);
+  const int sign  = val >> 31;
+  const int scale = floorLog2((val ^ sign) | MV_MANTISSA_UPPER_LIMIT) - (MV_MANTISSA_BITCOUNT - 1);
 
   int exponent;
   int mantissa;
@@ -1769,8 +1770,8 @@ int convertMvFixedToFloat(int32_t val)
 
 int convertMvFloatToFixed(int val)
 {
-  int exponent = val & MV_EXPONENT_MASK;
-  int mantissa = val >> MV_EXPONENT_BITCOUNT;
+  const int exponent = val & MV_EXPONENT_MASK;
+  const int mantissa = val >> MV_EXPONENT_BITCOUNT;
   return exponent == 0 ? mantissa : (mantissa ^ MV_MANTISSA_LIMIT) * (1 << (exponent - 1));
 }
 
@@ -1900,25 +1901,25 @@ bool PU::getColocatedMVP(const PredictionUnit &pu, const RefPicList &eRefPicList
   {
     return false;
   }
-  int iColRefIdx = mi.refIdx[eColRefPicList];
+  int colRefIdx = mi.refIdx[eColRefPicList];
 
   if (sbFlag && !slice.getCheckLDC())
   {
     eColRefPicList = eRefPicList;
-    iColRefIdx = mi.refIdx[eColRefPicList];
-    if (iColRefIdx < 0)
+    colRefIdx      = mi.refIdx[eColRefPicList];
+    if (colRefIdx < 0)
     {
       return false;
     }
   }
   else
   {
-    if (iColRefIdx < 0)
+    if (colRefIdx < 0)
     {
       eColRefPicList = RefPicList(1 - eColRefPicList);
-      iColRefIdx = mi.refIdx[eColRefPicList];
+      colRefIdx      = mi.refIdx[eColRefPicList];
 
-      if (iColRefIdx < 0)
+      if (colRefIdx < 0)
       {
         return false;
       }
@@ -1940,10 +1941,10 @@ bool PU::getColocatedMVP(const PredictionUnit &pu, const RefPicList &eRefPicList
 
   const Slice &colSlice = *pColSlice;
 
-  const bool bIsCurrRefLongTerm = slice.getRefPic(eRefPicList, refIdx)->longTerm;
-  const bool bIsColRefLongTerm  = colSlice.getIsUsedAsLongTerm(eColRefPicList, iColRefIdx);
+  const bool isCurrRefLongTerm = slice.getRefPic(eRefPicList, refIdx)->longTerm;
+  const bool isColRefLongTerm  = colSlice.getIsUsedAsLongTerm(eColRefPicList, colRefIdx);
 
-  if (bIsCurrRefLongTerm != bIsColRefLongTerm)
+  if (isCurrRefLongTerm != isColRefLongTerm)
   {
     return false;
   }
@@ -1954,7 +1955,7 @@ bool PU::getColocatedMVP(const PredictionUnit &pu, const RefPicList &eRefPicList
   cColMv.setHor(roundMvComp(cColMv.getHor()));
   cColMv.setVer(roundMvComp(cColMv.getVer()));
 
-  if (bIsCurrRefLongTerm /*|| bIsColRefLongTerm*/)
+  if (isCurrRefLongTerm /*|| isColRefLongTerm*/)
   {
     rcMv = cColMv;
     rcMv.clipToStorageBitDepth();
@@ -1963,7 +1964,7 @@ bool PU::getColocatedMVP(const PredictionUnit &pu, const RefPicList &eRefPicList
   {
     const int currPOC    = slice.getPOC();
     const int colPOC     = colSlice.getPOC();
-    const int colRefPOC  = colSlice.getRefPOC(eColRefPicList, iColRefIdx);
+    const int colRefPOC  = colSlice.getRefPOC(eColRefPicList, colRefIdx);
     const int currRefPOC = slice.getRefPic(eRefPicList, refIdx)->getPOC();
     const int distscale  = xGetDistScaleFactor(currPOC, currRefPOC, colPOC, colRefPOC);
 
@@ -2003,23 +2004,15 @@ bool PU::isDiffMER(const Position &pos1, const Position &pos2, const unsigned pl
 
 bool PU::isAddNeighborMv(const Mv& currMv, Mv* neighborMvs, int numNeighborMv)
 {
-  bool existed = false;
-  for (uint32_t cand = 0; cand < numNeighborMv && !existed; cand++)
+  for (uint32_t cand = 0; cand < numNeighborMv; cand++)
   {
     if (currMv == neighborMvs[cand])
     {
-      existed = true;
+      return false;
     }
   }
 
-  if (!existed)
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+  return true;
 }
 
 void PU::getIbcMVPsEncOnly(PredictionUnit &pu, Mv* mvPred, int& nbPred)
@@ -2081,8 +2074,8 @@ void PU::getIbcMVPsEncOnly(PredictionUnit &pu, Mv* mvPred, int& nbPred)
     }
   }
 
-  bool isBvCandDerived[IBC_NUM_CANDIDATES];
-  ::memset(isBvCandDerived, false, IBC_NUM_CANDIDATES);
+  std::array<bool, IBC_NUM_CANDIDATES> isBvCandDerived;
+  isBvCandDerived.fill(false);
 
   int curNbPred = nbPred;
   if (curNbPred < IBC_NUM_CANDIDATES)
@@ -2186,23 +2179,23 @@ void PU::fillMvpCand(PredictionUnit &pu, const RefPicList &eRefPicList, const in
   bool &allCandSolidInAbove = amvpInfo.allCandSolidInAbove;
 #endif
   {
-    bool bAdded = addMVPCandUnscaled( pu, eRefPicList, refIdx, posLB, MD_BELOW_LEFT, *pInfo );
+    bool added = addMVPCandUnscaled(pu, eRefPicList, refIdx, posLB, MD_BELOW_LEFT, *pInfo);
 
-    if( !bAdded )
+    if (!added)
     {
-      bAdded = addMVPCandUnscaled( pu, eRefPicList, refIdx, posLB, MD_LEFT, *pInfo );
+      added = addMVPCandUnscaled(pu, eRefPicList, refIdx, posLB, MD_LEFT, *pInfo);
     }
   }
 
   // Above predictor search
   {
-    bool bAdded = addMVPCandUnscaled( pu, eRefPicList, refIdx, posRT, MD_ABOVE_RIGHT, *pInfo );
+    bool added = addMVPCandUnscaled(pu, eRefPicList, refIdx, posRT, MD_ABOVE_RIGHT, *pInfo);
 
-    if( !bAdded )
+    if (!added)
     {
-      bAdded = addMVPCandUnscaled( pu, eRefPicList, refIdx, posRT, MD_ABOVE, *pInfo );
+      added = addMVPCandUnscaled(pu, eRefPicList, refIdx, posRT, MD_ABOVE, *pInfo);
 
-      if( !bAdded )
+      if (!added)
       {
         addMVPCandUnscaled( pu, eRefPicList, refIdx, posLT, MD_ABOVE_LEFT, *pInfo );
       }
@@ -2225,7 +2218,7 @@ void PU::fillMvpCand(PredictionUnit &pu, const RefPicList &eRefPicList, const in
   if (cs.picHeader->getEnableTMVPFlag() && pInfo->numCand < AMVP_MAX_NUM_CANDS && (pu.lumaSize().width + pu.lumaSize().height > 12))
   {
     // Get Temporal Motion Predictor
-    const int refIdx_Col = refIdx;
+    const int refIdxCol = refIdx;
 
     Position posRB = pu.Y().bottomRight().offset(-3, -3);
 
@@ -2252,7 +2245,8 @@ void PU::fillMvpCand(PredictionUnit &pu, const RefPicList &eRefPicList, const in
         C0Avail = true;
       }
     }
-    if ( ( C0Avail && getColocatedMVP( pu, eRefPicList, posC0, cColMv, refIdx_Col, false ) ) || getColocatedMVP( pu, eRefPicList, posC1, cColMv, refIdx_Col, false ) )
+    if ((C0Avail && getColocatedMVP(pu, eRefPicList, posC0, cColMv, refIdxCol, false))
+        || getColocatedMVP(pu, eRefPicList, posC1, cColMv, refIdxCol, false))
     {
 #if GDR_ENABLED
       if (isEncodeGdrClean)
@@ -2260,10 +2254,10 @@ void PU::fillMvpCand(PredictionUnit &pu, const RefPicList &eRefPicList, const in
         Mv   ccMv;
         bool posC0inCurPicSolid = cs.isClean(posC0, CHANNEL_TYPE_LUMA);
         bool posC1inCurPicSolid = cs.isClean(posC1, CHANNEL_TYPE_LUMA);
-        bool posC0inRefPicSolid = cs.isClean(posC0, REF_PIC_LIST_0, refIdx_Col);
-        bool posC1inRefPicSolid = cs.isClean(posC1, REF_PIC_LIST_0, refIdx_Col);
+        bool posC0inRefPicSolid = cs.isClean(posC0, REF_PIC_LIST_0, refIdxCol);
+        bool posC1inRefPicSolid = cs.isClean(posC1, REF_PIC_LIST_0, refIdxCol);
 
-        bool isMVP0exist = C0Avail && getColocatedMVP(pu, eRefPicList, posC0, ccMv, refIdx_Col, false);
+        bool isMVP0exist = C0Avail && getColocatedMVP(pu, eRefPicList, posC0, ccMv, refIdxCol, false);
 
         Position pos = isMVP0exist ? posC0 : posC1;
         pInfo->mvPos[pInfo->numCand]   = pos;
@@ -2500,36 +2494,36 @@ void PU::xInheritedAffineMv(const PredictionUnit &pu, const PredictionUnit* puNe
   }
 
   int shift = MAX_CU_DEPTH;
-  int iDMvHorX, iDMvHorY, iDMvVerX, iDMvVerY;
+  int dmvHorX, dmvHorY, dmvVerX, dmvVerY;
 
-  iDMvHorX = (mvRT - mvLT).getHor() << (shift - floorLog2(neiW));
-  iDMvHorY = (mvRT - mvLT).getVer() << (shift - floorLog2(neiW));
+  dmvHorX = (mvRT - mvLT).getHor() << (shift - floorLog2(neiW));
+  dmvHorY = (mvRT - mvLT).getVer() << (shift - floorLog2(neiW));
   if (puNeighbour->cu->affineType == AFFINEMODEL_6PARAM && !isTopCtuBoundary)
   {
-    iDMvVerX = (mvLB - mvLT).getHor() << (shift - floorLog2(neiH));
-    iDMvVerY = (mvLB - mvLT).getVer() << (shift - floorLog2(neiH));
+    dmvVerX = (mvLB - mvLT).getHor() << (shift - floorLog2(neiH));
+    dmvVerY = (mvLB - mvLT).getVer() << (shift - floorLog2(neiH));
   }
   else
   {
-    iDMvVerX = -iDMvHorY;
-    iDMvVerY = iDMvHorX;
+    dmvVerX = -dmvHorY;
+    dmvVerY = dmvHorX;
   }
 
-  int iMvScaleHor = mvLT.getHor() << shift;
-  int iMvScaleVer = mvLT.getVer() << shift;
+  const int mvScaleHor = mvLT.getHor() << shift;
+  const int mvScaleVer = mvLT.getVer() << shift;
   int horTmp, verTmp;
 
   // v0
-  horTmp = iMvScaleHor + iDMvHorX * (posCurX - posNeiX) + iDMvVerX * (posCurY - posNeiY);
-  verTmp = iMvScaleVer + iDMvHorY * (posCurX - posNeiX) + iDMvVerY * (posCurY - posNeiY);
+  horTmp = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY - posNeiY);
+  verTmp = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY - posNeiY);
   roundAffineMv(horTmp, verTmp, shift);
   rcMv[0].hor = horTmp;
   rcMv[0].ver = verTmp;
   rcMv[0].clipToStorageBitDepth();
 
   // v1
-  horTmp = iMvScaleHor + iDMvHorX * (posCurX + curW - posNeiX) + iDMvVerX * (posCurY - posNeiY);
-  verTmp = iMvScaleVer + iDMvHorY * (posCurX + curW - posNeiX) + iDMvVerY * (posCurY - posNeiY);
+  horTmp = mvScaleHor + dmvHorX * (posCurX + curW - posNeiX) + dmvVerX * (posCurY - posNeiY);
+  verTmp = mvScaleVer + dmvHorY * (posCurX + curW - posNeiX) + dmvVerY * (posCurY - posNeiY);
   roundAffineMv(horTmp, verTmp, shift);
   rcMv[1].hor = horTmp;
   rcMv[1].ver = verTmp;
@@ -2538,8 +2532,8 @@ void PU::xInheritedAffineMv(const PredictionUnit &pu, const PredictionUnit* puNe
   // v2
   if (pu.cu->affineType == AFFINEMODEL_6PARAM)
   {
-    horTmp = iMvScaleHor + iDMvHorX * (posCurX - posNeiX) + iDMvVerX * (posCurY + curH - posNeiY);
-    verTmp = iMvScaleVer + iDMvHorY * (posCurX - posNeiX) + iDMvVerY * (posCurY + curH - posNeiY);
+    horTmp = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY + curH - posNeiY);
+    verTmp = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY + curH - posNeiY);
     roundAffineMv(horTmp, verTmp, shift);
     rcMv[2].hor = horTmp;
     rcMv[2].ver = verTmp;
@@ -2578,36 +2572,36 @@ void PU::xInheritedAffineMv( const PredictionUnit &pu, const PredictionUnit* puN
   }
 
   int shift = MAX_CU_DEPTH;
-  int iDMvHorX, iDMvHorY, iDMvVerX, iDMvVerY;
+  int dmvHorX, dmvHorY, dmvVerX, dmvVerY;
 
-  iDMvHorX = (mvRT - mvLT).getHor() * (1 << (shift - floorLog2(neiW)));
-  iDMvHorY = (mvRT - mvLT).getVer() * (1 << (shift - floorLog2(neiW)));
+  dmvHorX = (mvRT - mvLT).getHor() * (1 << (shift - floorLog2(neiW)));
+  dmvHorY = (mvRT - mvLT).getVer() * (1 << (shift - floorLog2(neiW)));
   if ( puNeighbour->cu->affineType == AFFINEMODEL_6PARAM && !isTopCtuBoundary )
   {
-    iDMvVerX = (mvLB - mvLT).getHor() * (1 << (shift - floorLog2(neiH)));
-    iDMvVerY = (mvLB - mvLT).getVer() * (1 << (shift - floorLog2(neiH)));
+    dmvVerX = (mvLB - mvLT).getHor() * (1 << (shift - floorLog2(neiH)));
+    dmvVerY = (mvLB - mvLT).getVer() * (1 << (shift - floorLog2(neiH)));
   }
   else
   {
-    iDMvVerX = -iDMvHorY;
-    iDMvVerY = iDMvHorX;
+    dmvVerX = -dmvHorY;
+    dmvVerY = dmvHorX;
   }
 
-  int iMvScaleHor = mvLT.getHor() * (1 << shift);
-  int iMvScaleVer = mvLT.getVer() * (1 << shift);
+  int mvScaleHor = mvLT.getHor() * (1 << shift);
+  int mvScaleVer = mvLT.getVer() * (1 << shift);
   int horTmp, verTmp;
 
   // v0
-  horTmp = iMvScaleHor + iDMvHorX * (posCurX - posNeiX) + iDMvVerX * (posCurY - posNeiY);
-  verTmp = iMvScaleVer + iDMvHorY * (posCurX - posNeiX) + iDMvVerY * (posCurY - posNeiY);
+  horTmp = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY - posNeiY);
+  verTmp = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY - posNeiY);
   roundAffineMv( horTmp, verTmp, shift );
   rcMv[0].hor = horTmp;
   rcMv[0].ver = verTmp;
   rcMv[0].clipToStorageBitDepth();
 
   // v1
-  horTmp = iMvScaleHor + iDMvHorX * (posCurX + curW - posNeiX) + iDMvVerX * (posCurY - posNeiY);
-  verTmp = iMvScaleVer + iDMvHorY * (posCurX + curW - posNeiX) + iDMvVerY * (posCurY - posNeiY);
+  horTmp = mvScaleHor + dmvHorX * (posCurX + curW - posNeiX) + dmvVerX * (posCurY - posNeiY);
+  verTmp = mvScaleVer + dmvHorY * (posCurX + curW - posNeiX) + dmvVerY * (posCurY - posNeiY);
   roundAffineMv( horTmp, verTmp, shift );
   rcMv[1].hor = horTmp;
   rcMv[1].ver = verTmp;
@@ -2616,8 +2610,8 @@ void PU::xInheritedAffineMv( const PredictionUnit &pu, const PredictionUnit* puN
   // v2
   if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
   {
-    horTmp = iMvScaleHor + iDMvHorX * (posCurX - posNeiX) + iDMvVerX * (posCurY + curH - posNeiY);
-    verTmp = iMvScaleVer + iDMvHorY * (posCurX - posNeiX) + iDMvVerY * (posCurY + curH - posNeiY);
+    horTmp = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY + curH - posNeiY);
+    verTmp = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY + curH - posNeiY);
     roundAffineMv( horTmp, verTmp, shift );
     rcMv[2].hor = horTmp;
     rcMv[2].ver = verTmp;
@@ -3056,8 +3050,8 @@ void PU::addAMVPHMVPCand(const PredictionUnit &pu, const RefPicList eRefPicList,
 
   MotionInfo neibMi;
   auto &lut = CU::isIBC(*pu.cu) ? pu.cs->motionLut.lutIbc : pu.cs->motionLut.lut;
-  int num_avai_candInLUT = (int) lut.size();
-  int num_allowedCand = std::min(MAX_NUM_HMVP_AVMPCANDS, num_avai_candInLUT);
+  int              numAvailCandInLut = (int) lut.size();
+  int              numAllowedCand    = std::min(MAX_NUM_HMVP_AVMPCANDS, numAvailCandInLut);
   const RefPicList eRefPicList2nd = (eRefPicList == REF_PIC_LIST_0) ? REF_PIC_LIST_1 : REF_PIC_LIST_0;
 
 #if GDR_ENABLED
@@ -3075,7 +3069,7 @@ void PU::addAMVPHMVPCand(const PredictionUnit &pu, const RefPicList eRefPicList,
   }
 #endif
 
-  for (int mrgIdx = 1; mrgIdx <= num_allowedCand; mrgIdx++)
+  for (int mrgIdx = 1; mrgIdx <= numAllowedCand; mrgIdx++)
   {
     if (info.numCand >= AMVP_MAX_NUM_CANDS)
     {
@@ -3386,7 +3380,6 @@ void PU::getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx
   if (sbTmvpEnableFlag && slice.getPicHeader()->getEnableTMVPFlag())
   {
     MergeCtx mrgCtx = *affMrgCtx.mrgCtx;
-    bool tmpLICFlag = false;
 
     CHECK( mrgCtx.subPuMvpMiBuf.area() == 0 || !mrgCtx.subPuMvpMiBuf.buf, "Buffer not initialized" );
     mrgCtx.subPuMvpMiBuf.fill( MotionInfo() );
@@ -3425,7 +3418,7 @@ void PU::getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx
 
     mrgCtx.numValidMergeCand = pos;
 
-    isAvailableSubPu = getInterMergeSubPuMvpCand(pu, mrgCtx, tmpLICFlag, pos, 0);
+    isAvailableSubPu = getInterMergeSubPuMvpCand(pu, mrgCtx, pos, 0);
     if ( isAvailableSubPu )
     {
       for ( int mvNum = 0; mvNum < 3; mvNum++ )
@@ -3642,9 +3635,10 @@ void PU::getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx
           }
         }
 
-        Mv        cColMv;
-        int       refIdx = 0;
-        bool      existMV = C0Avail && getColocatedMVP(pu, REF_PIC_LIST_0, posC0, cColMv, refIdx, false);
+        Mv   cColMv;
+        int  refIdx  = 0;
+        bool existMV = C0Avail && getColocatedMVP(pu, REF_PIC_LIST_0, posC0, cColMv, refIdx, false);
+
         if (existMV)
         {
           mi[3].mv[0] = cColMv;
@@ -3816,8 +3810,8 @@ void PU::setAllAffineMv(PredictionUnit& pu, Mv affLT, Mv affRT, Mv affLB, RefPic
     deltaMvVerY = deltaMvHorX;
   }
 
-  int mvScaleHor = affLT.getHor() * (1 << shift);
-  int mvScaleVer = affLT.getVer() * (1 << shift);
+  const int mvScaleHor = affLT.getHor() * (1 << shift);
+  const int mvScaleVer = affLT.getVer() * (1 << shift);
 
   int blockWidth = AFFINE_MIN_BLOCK_SIZE;
   int blockHeight = AFFINE_MIN_BLOCK_SIZE;
@@ -3884,9 +3878,7 @@ void clipColPos(int& posX, int& posY, const PredictionUnit& pu)
   posY = std::min(verMax, std::max(verMin, posY));
 }
 
-bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx& mrgCtx, bool& LICFlag, const int count
-  , int mmvdList
-)
+bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx &mrgCtx, const int count, int mmvdList)
 {
   const Slice   &slice = *pu.cs->slice;
   const unsigned scale = 4 * std::max<int>(1, 4 * AMVP_DECIMATION_FACTOR / 4);
@@ -3929,7 +3921,6 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx& mrgCtx, b
   ///////////////////////////////////////////////////////////////////////
 
   Mv cTempVector = cTMv;
-  bool  tempLICFlag = false;
 
   // compute the location of the current PU
   Position puPos = pu.lumaPos();
@@ -3942,7 +3933,7 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx& mrgCtx, b
   Mv cColMv;
   int refIdx = 0;
   // use coldir.
-  bool     bBSlice = slice.isInterB();
+  const bool isBSlice = slice.isInterB();
 
   Position centerPos;
 
@@ -3967,7 +3958,7 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx& mrgCtx, b
   {
     mrgCtx.interDirNeighbours[count] = 0;
 
-    for (unsigned currRefListId = 0; currRefListId < (bBSlice ? 2 : 1); currRefListId++)
+    for (unsigned currRefListId = 0; currRefListId < (isBSlice ? 2 : 1); currRefListId++)
     {
       RefPicList  currRefPicList = RefPicList(currRefListId);
 
@@ -3982,7 +3973,6 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx& mrgCtx, b
           mrgCtx.mvSolid[(count << 1) + currRefListId] = cs.isClean(centerPos, currRefPicList, refIdx);
         }
 #endif
-        LICFlag = tempLICFlag;
         mrgCtx.bcwIdx[count] = BCW_DEFAULT;
         found = true;
       }
@@ -4027,7 +4017,7 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx& mrgCtx, b
         mi.isIBCmot = false;
         if (colMi.isInter && colMi.isIBCmot == false)
         {
-          for (unsigned currRefListId = 0; currRefListId < (bBSlice ? 2 : 1); currRefListId++)
+          for (unsigned currRefListId = 0; currRefListId < (isBSlice ? 2 : 1); currRefListId++)
           {
             RefPicList currRefPicList = RefPicList(currRefListId);
             if (getColocatedMVP(pu, currRefPicList, colPos, cColMv, refIdx, true))
@@ -4468,7 +4458,7 @@ void PU::getNeighborAffineInfo(const PredictionUnit& pu, int& numNeighborAvai, i
 
 bool CU::hasSubCUNonZeroMVd( const CodingUnit& cu )
 {
-  bool bNonZeroMvd = false;
+  bool nonZeroMvd = false;
 
   for( const auto &pu : CU::traversePUs( cu ) )
   {
@@ -4476,21 +4466,21 @@ bool CU::hasSubCUNonZeroMVd( const CodingUnit& cu )
     {
       if( pu.interDir != 2 /* PRED_L1 */ )
       {
-        bNonZeroMvd |= pu.mvd[REF_PIC_LIST_0].getHor() != 0;
-        bNonZeroMvd |= pu.mvd[REF_PIC_LIST_0].getVer() != 0;
+        nonZeroMvd |= pu.mvd[REF_PIC_LIST_0].getHor() != 0;
+        nonZeroMvd |= pu.mvd[REF_PIC_LIST_0].getVer() != 0;
       }
       if( pu.interDir != 1 /* PRED_L0 */ )
       {
         if( !pu.cu->cs->picHeader->getMvdL1ZeroFlag() || pu.interDir != 3 /* PRED_BI */ )
         {
-          bNonZeroMvd |= pu.mvd[REF_PIC_LIST_1].getHor() != 0;
-          bNonZeroMvd |= pu.mvd[REF_PIC_LIST_1].getVer() != 0;
+          nonZeroMvd |= pu.mvd[REF_PIC_LIST_1].getHor() != 0;
+          nonZeroMvd |= pu.mvd[REF_PIC_LIST_1].getVer() != 0;
         }
       }
     }
   }
 
-  return bNonZeroMvd;
+  return nonZeroMvd;
 }
 
 bool CU::hasSubCUNonZeroAffineMVd( const CodingUnit& cu )
@@ -4640,14 +4630,14 @@ uint8_t CU::numSbtModeRdo( uint8_t sbtAllowed )
 
 bool CU::isSbtMode( const uint8_t sbtInfo )
 {
-  uint8_t sbtIdx = getSbtIdx( sbtInfo );
+  const uint8_t sbtIdx = getSbtIdx(sbtInfo);
   return sbtIdx >= SBT_VER_HALF && sbtIdx <= SBT_HOR_QUAD;
 }
 
 bool CU::isSameSbtSize( const uint8_t sbtInfo1, const uint8_t sbtInfo2 )
 {
-  uint8_t sbtIdx1 = getSbtIdxFromSbtMode( sbtInfo1 );
-  uint8_t sbtIdx2 = getSbtIdxFromSbtMode( sbtInfo2 );
+  const uint8_t sbtIdx1 = getSbtIdxFromSbtMode(sbtInfo1);
+  const uint8_t sbtIdx2 = getSbtIdxFromSbtMode(sbtInfo2);
   if( sbtIdx1 == SBT_HOR_HALF || sbtIdx1 == SBT_VER_HALF )
   {
     return sbtIdx2 == SBT_HOR_HALF || sbtIdx2 == SBT_VER_HALF;
@@ -4744,59 +4734,6 @@ uint8_t CU::getValidBcwIdx( const CodingUnit &cu )
   }
 
   return BCW_DEFAULT;
-}
-
-void CU::setBcwIdx( CodingUnit &cu, uint8_t uh )
-{
-  int8_t uhCnt = 0;
-
-  if( cu.firstPU->interDir == 3 && !cu.firstPU->mergeFlag )
-  {
-    cu.bcwIdx = uh;
-    ++uhCnt;
-  }
-  else if( cu.firstPU->interDir == 3 && cu.firstPU->mergeFlag && cu.firstPU->mergeType == MRG_TYPE_DEFAULT_N )
-  {
-    // This is intended to do nothing here.
-  }
-  else if( cu.firstPU->mergeFlag && cu.firstPU->mergeType == MRG_TYPE_SUBPU_ATMVP )
-  {
-    cu.bcwIdx = BCW_DEFAULT;
-  }
-  else
-  {
-    cu.bcwIdx = BCW_DEFAULT;
-  }
-
-  CHECK(uhCnt <= 0, " uhCnt <= 0 ");
-}
-
-uint8_t CU::deriveBcwIdx( uint8_t bcwLO, uint8_t bcwL1 )
-{
-  if( bcwLO == bcwL1 )
-  {
-    return bcwLO;
-  }
-  const int8_t w0 = getBcwWeight(bcwLO, REF_PIC_LIST_0);
-  const int8_t w1 = getBcwWeight(bcwL1, REF_PIC_LIST_1);
-  const int8_t th = g_BcwWeightBase >> 1;
-  const int8_t off = 1;
-
-  if( w0 == w1 || (w0 < (th - off) && w1 < (th - off)) || (w0 >(th + off) && w1 >(th + off)) )
-  {
-    return BCW_DEFAULT;
-  }
-  else
-  {
-    if( w0 > w1 )
-    {
-      return ( w0 >= th ? bcwLO : bcwL1 );
-    }
-    else
-    {
-      return ( w1 >= th ? bcwL1 : bcwLO );
-    }
-  }
 }
 
 bool CU::bdpcmAllowed( const CodingUnit& cu, const ComponentID compID )
@@ -4918,7 +4855,6 @@ bool TU::getPrevTuCbfAtDepth( const TransformUnit &currentTu, const ComponentID 
   return ( prevTU != nullptr ) ? TU::getCbfAtDepth( *prevTU, compID, trDepth ) : false;
 }
 
-
 // other tools
 
 uint32_t getCtuAddr( const Position& pos, const PreCalcValues& pcv )
@@ -4936,7 +4872,6 @@ int getNumModesMip(const Size& block)
   default: THROW( "Invalid mipSizeId" );
   }
 }
-
 
 int getMipSizeId(const Size& block)
 {
@@ -4962,6 +4897,3 @@ bool allowLfnstWithMip(const Size& block)
   }
   return false;
 }
-
-
-

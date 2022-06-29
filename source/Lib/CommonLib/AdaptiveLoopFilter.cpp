@@ -1309,8 +1309,9 @@ void AdaptiveLoopFilter::filterBlkCcAlf(const PelBuf &dstBuf, const CPelUnitBuf 
   const int      endHeight          = blkDst.y + blkDst.height;
   const int      startWidth         = blkDst.x;
   const int      endWidth           = blkDst.x + blkDst.width;
-  const int scaleX             = getComponentScaleX(compId, nChromaFormat);
-  const int scaleY             = getComponentScaleY(compId, nChromaFormat);
+
+  const int scaleX = getComponentScaleX(compId, nChromaFormat);
+  const int scaleY = getComponentScaleY(compId, nChromaFormat);
 
   CHECK( startHeight % clsSizeY, "Wrong startHeight in filtering" );
   CHECK( startWidth % clsSizeX, "Wrong startWidth in filtering" );

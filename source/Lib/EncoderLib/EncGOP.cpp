@@ -2871,26 +2871,26 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
     if (pcSlice->getSliceType() == B_SLICE)
     {
-      bool bLowDelay = true;
-      int  iCurrPOC  = pcSlice->getPOC();
+      bool lowDelay  = true;
+      int  currPoc   = pcSlice->getPOC();
       int  refIdx    = 0;
 
-      for (refIdx = 0; refIdx < pcSlice->getNumRefIdx(REF_PIC_LIST_0) && bLowDelay; refIdx++)
+      for (refIdx = 0; refIdx < pcSlice->getNumRefIdx(REF_PIC_LIST_0) && lowDelay; refIdx++)
       {
-        if (pcSlice->getRefPic(REF_PIC_LIST_0, refIdx)->getPOC() > iCurrPOC)
+        if (pcSlice->getRefPic(REF_PIC_LIST_0, refIdx)->getPOC() > currPoc)
         {
-          bLowDelay = false;
+          lowDelay = false;
         }
       }
-      for (refIdx = 0; refIdx < pcSlice->getNumRefIdx(REF_PIC_LIST_1) && bLowDelay; refIdx++)
+      for (refIdx = 0; refIdx < pcSlice->getNumRefIdx(REF_PIC_LIST_1) && lowDelay; refIdx++)
       {
-        if (pcSlice->getRefPic(REF_PIC_LIST_1, refIdx)->getPOC() > iCurrPOC)
+        if (pcSlice->getRefPic(REF_PIC_LIST_1, refIdx)->getPOC() > currPoc)
         {
-          bLowDelay = false;
+          lowDelay = false;
         }
       }
 
-      pcSlice->setCheckLDC(bLowDelay);
+      pcSlice->setCheckLDC(lowDelay);
     }
     else
     {

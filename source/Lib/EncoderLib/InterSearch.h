@@ -154,10 +154,10 @@ protected:
   EncReshape*     m_pcReshape;
 
   // ME parameters
-  int             m_iSearchRange;
+  int             m_searchRange;
   int             m_bipredSearchRange; // Search range for bi-prediction
   MESearchMethod  m_motionEstimationSearchMethod;
-  int             m_aaiAdaptSR                  [MAX_NUM_REF_LIST_ADAPT_SR][MAX_IDX_ADAPT_SR];
+  int             m_adaptSR[MAX_NUM_REF_LIST_ADAPT_SR][MAX_IDX_ADAPT_SR];
 
   // RD computation
   CABACWriter*    m_CABACEstimator;
@@ -194,20 +194,10 @@ public:
   InterSearch();
   virtual ~InterSearch();
 
-  void init                         ( EncCfg*        pcEncCfg,
-                                      TrQuant*       pcTrQuant,
-                                      int            iSearchRange,
-                                      int            bipredSearchRange,
-                                      MESearchMethod motionEstimationSearchMethod,
-                                      bool           useCompositeRef,
-                                      const uint32_t     maxCUWidth,
-                                      const uint32_t     maxCUHeight,
-                                      const uint32_t     maxTotalCUDepth,
-                                      RdCost*        pcRdCost,
-                                      CABACWriter*   CABACEstimator,
-                                      CtxCache*      ctxCache
-                                     , EncReshape*   m_pcReshape
-                                    );
+  void init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, int searchRange, int bipredSearchRange,
+            MESearchMethod motionEstimationSearchMethod, bool useCompositeRef, const uint32_t maxCUWidth,
+            const uint32_t maxCUHeight, const uint32_t maxTotalCUDepth, RdCost *pcRdCost, CABACWriter *CABACEstimator,
+            CtxCache *ctxCache, EncReshape *m_pcReshape);
 
   void destroy                      ();
 
@@ -420,10 +410,10 @@ public:
   void predInterSearch(CodingUnit& cu, Partitioner& partitioner );
 
   /// set ME search range
-  void setAdaptiveSearchRange(int iDir, int refIdx, int iSearchRange)
+  void setAdaptiveSearchRange(int dir, int refIdx, int searchRange)
   {
-    CHECK(iDir >= MAX_NUM_REF_LIST_ADAPT_SR || refIdx >= int(MAX_IDX_ADAPT_SR), "Invalid index");
-    m_aaiAdaptSR[iDir][refIdx] = iSearchRange;
+    CHECK(dir >= MAX_NUM_REF_LIST_ADAPT_SR || refIdx >= int(MAX_IDX_ADAPT_SR), "Invalid index");
+    m_adaptSR[dir][refIdx] = searchRange;
   }
   bool  predIBCSearch           ( CodingUnit& cu, Partitioner& partitioner, const int localSearchRangeX, const int localSearchRangeY, IbcHashMap& ibcHashMap);
   void  xIntraPatternSearch         ( PredictionUnit& pu, IntTZSearchStruct&  cStruct, Mv& rcMv, Distortion&  ruiCost, Mv* cMvSrchRngLT, Mv* cMvSrchRngRB, Mv* pcMvPred);
@@ -455,40 +445,20 @@ protected:
                            AMVPInfo &amvpInfo, bool bFilled = false, Distortion *puiDistBiP = nullptr);
 
 #if GDR_ENABLED
-  void xCheckBestMVP(
-    PredictionUnit &pu,
-    RefPicList  eRefPicList,
-    Mv          cMv,
-    Mv&         rcMvPred,
-    int&        riMVPIdx,
-    AMVPInfo&   amvpInfo,
-    uint32_t&   ruiBits,
-    Distortion& ruiCost
-    ,
-    const uint8_t  imv
-  );
+  void xCheckBestMVP(PredictionUnit &pu, RefPicList eRefPicList, Mv cMv, Mv &rcMvPred, int &riMVPIdx,
+                     AMVPInfo &amvpInfo, uint32_t &ruiBits, Distortion &ruiCost, const uint8_t imv);
 #else
-  void xCheckBestMVP              ( RefPicList  eRefPicList,
-                                    Mv          cMv,
-                                    Mv&         rcMvPred,
-                                    int&        riMVPIdx,
-                                    AMVPInfo&   amvpInfo,
-                                    uint32_t&       ruiBits,
-                                    Distortion& ruiCost
-                                    ,
-                                    const uint8_t  imv
-                                  );
+  void xCheckBestMVP(RefPicList eRefPicList, Mv cMv, Mv &rcMvPred, int &riMVPIdx, AMVPInfo &amvpInfo, uint32_t &ruiBits,
+                     Distortion &ruiCost, const uint8_t imv);
 #endif
 
   Distortion xGetTemplateCost(const PredictionUnit &pu, PelUnitBuf &origBuf, PelUnitBuf &predBuf, Mv cMvCand,
-                              int iMVPIdx, int iMVPNum, RefPicList eRefPicList, int refIdx);
+                              int mvpIdx, int mvpNum, RefPicList eRefPicList, int refIdx);
   uint32_t xCalcAffineMVBits      ( PredictionUnit& pu, Mv mvCand[3], Mv mvPred[3] );
 
   void xCopyAMVPInfo              ( AMVPInfo*   pSrc, AMVPInfo* pDst );
-  uint32_t xGetMvpIdxBits(int idx, int iNum);
-  void xGetBlkBits                ( bool bPSlice, int iPartIdx,  uint32_t uiLastMode, uint32_t uiBlkBit[3]);
-
-
+  uint32_t xGetMvpIdxBits(int idx, int num);
+  void     xGetBlkBits(bool isPSlice, uint32_t blkBit[3]);
 
   // -------------------------------------------------------------------------------------------------------------------
   // motion estimation
@@ -576,10 +546,10 @@ protected:
 
 #if GDR_ENABLED
   Distortion xGetAffineTemplateCost(PredictionUnit &pu, PelUnitBuf &origBuf, PelUnitBuf &predBuf, Mv acMvCand[3],
-                                    int iMVPIdx, int iMVPNum, RefPicList eRefPicList, int refIdx, bool &rbOk);
+                                    int mvpIdx, int mvpNum, RefPicList eRefPicList, int refIdx, bool &rbOk);
 #else
   Distortion xGetAffineTemplateCost(PredictionUnit &pu, PelUnitBuf &origBuf, PelUnitBuf &predBuf, Mv acMvCand[3],
-                                    int iMVPIdx, int iMVPNum, RefPicList eRefPicList, int refIdx);
+                                    int mvpIdx, int mvpNum, RefPicList eRefPicList, int refIdx);
 #endif
 
   void xCopyAffineAMVPInfo        ( AffineAMVPInfo& src, AffineAMVPInfo& dst );

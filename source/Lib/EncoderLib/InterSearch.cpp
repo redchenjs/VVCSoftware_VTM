@@ -83,25 +83,24 @@ static const Mv s_acMvRefineQ[9] =
   Mv(  1,  1 )  // 8
 };
 
-
 InterSearch::InterSearch()
-  : m_modeCtrl                    (nullptr)
-  , m_pSplitCS                    (nullptr)
-  , m_pFullCS                     (nullptr)
-  , m_pcEncCfg                    (nullptr)
-  , m_pcTrQuant                   (nullptr)
-  , m_pcReshape                   (nullptr)
-  , m_iSearchRange                (0)
-  , m_bipredSearchRange           (0)
+  : m_modeCtrl(nullptr)
+  , m_pSplitCS(nullptr)
+  , m_pFullCS(nullptr)
+  , m_pcEncCfg(nullptr)
+  , m_pcTrQuant(nullptr)
+  , m_pcReshape(nullptr)
+  , m_searchRange(0)
+  , m_bipredSearchRange(0)
   , m_motionEstimationSearchMethod(MESEARCH_FULL)
-  , m_CABACEstimator              (nullptr)
-  , m_CtxCache                    (nullptr)
-  , m_pTempPel                    (nullptr)
-  , m_isInitialized               (false)
+  , m_CABACEstimator(nullptr)
+  , m_CtxCache(nullptr)
+  , m_pTempPel(nullptr)
+  , m_isInitialized(false)
 {
   for (int i=0; i<MAX_NUM_REF_LIST_ADAPT_SR; i++)
   {
-    memset (m_aaiAdaptSR[i], 0, MAX_IDX_ADAPT_SR * sizeof (int));
+    memset(m_adaptSR[i], 0, MAX_IDX_ADAPT_SR * sizeof(int));
   }
   for (int i=0; i<AMVP_MAX_NUM_CANDS+1; i++)
   {
@@ -196,20 +195,10 @@ InterSearch::~InterSearch()
   }
 }
 
-void InterSearch::init( EncCfg*        pcEncCfg,
-                        TrQuant*       pcTrQuant,
-                        int            iSearchRange,
-                        int            bipredSearchRange,
-                        MESearchMethod motionEstimationSearchMethod,
-                        bool           useCompositeRef,
-                        const uint32_t     maxCUWidth,
-                        const uint32_t     maxCUHeight,
-                        const uint32_t     maxTotalCUDepth,
-                        RdCost*        pcRdCost,
-                        CABACWriter*   CABACEstimator,
-                        CtxCache*      ctxCache
-                      , EncReshape*    pcReshape
-)
+void InterSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, int searchRange, int bipredSearchRange,
+                       MESearchMethod motionEstimationSearchMethod, bool useCompositeRef, const uint32_t maxCUWidth,
+                       const uint32_t maxCUHeight, const uint32_t maxTotalCUDepth, RdCost *pcRdCost,
+                       CABACWriter *CABACEstimator, CtxCache *ctxCache, EncReshape *pcReshape)
 {
   CHECK(m_isInitialized, "Already initialized");
   m_numBVs = 0;
@@ -220,7 +209,7 @@ void InterSearch::init( EncCfg*        pcEncCfg,
   m_defaultCachedBvs.currCnt = 0;
   m_pcEncCfg                     = pcEncCfg;
   m_pcTrQuant                    = pcTrQuant;
-  m_iSearchRange                 = iSearchRange;
+  m_searchRange                  = searchRange;
   m_bipredSearchRange            = bipredSearchRange;
   m_motionEstimationSearchMethod = motionEstimationSearchMethod;
   m_CABACEstimator               = CABACEstimator;
@@ -228,26 +217,26 @@ void InterSearch::init( EncCfg*        pcEncCfg,
   m_useCompositeRef              = useCompositeRef;
   m_pcReshape                    = pcReshape;
 
-  for( uint32_t iDir = 0; iDir < MAX_NUM_REF_LIST_ADAPT_SR; iDir++ )
+  for (uint32_t dir = 0; dir < MAX_NUM_REF_LIST_ADAPT_SR; dir++)
   {
     for (uint32_t refIdx = 0; refIdx < MAX_IDX_ADAPT_SR; refIdx++)
     {
-      m_aaiAdaptSR[iDir][refIdx] = iSearchRange;
+      m_adaptSR[dir][refIdx] = searchRange;
     }
   }
 
   // initialize motion cost
-  for( int iNum = 0; iNum < AMVP_MAX_NUM_CANDS + 1; iNum++ )
+  for (int num = 0; num < AMVP_MAX_NUM_CANDS + 1; num++)
   {
     for (int idx = 0; idx < AMVP_MAX_NUM_CANDS; idx++)
     {
-      if (idx < iNum)
+      if (idx < num)
       {
-        m_auiMVPIdxCost[idx][iNum] = xGetMvpIdxBits(idx, iNum);
+        m_auiMVPIdxCost[idx][num] = xGetMvpIdxBits(idx, num);
       }
       else
       {
-        m_auiMVPIdxCost[idx][iNum] = MAX_UINT;
+        m_auiMVPIdxCost[idx][num] = MAX_UINT;
       }
     }
   }
@@ -2912,7 +2901,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 
     PelUnitBuf origBuf = pu.cs->getOrgBuf( pu );
 
-    xGetBlkBits(cs.slice->isInterP(), puIdx, uiLastMode, mbBits);
+    xGetBlkBits(cs.slice->isInterP(), mbBits);
 
     m_pcRdCost->selectMotionLambda( );
 
@@ -4689,11 +4678,11 @@ void InterSearch::xEstimateMvPredAMVP(PredictionUnit &pu, PelUnitBuf &origBuf, R
   return;
 }
 
-uint32_t InterSearch::xGetMvpIdxBits(int idx, int iNum)
+uint32_t InterSearch::xGetMvpIdxBits(int idx, int num)
 {
-  CHECK(idx < 0 || iNum < 0 || idx >= iNum, "Invalid parameters");
+  CHECK(idx < 0 || num < 0 || idx >= num, "Invalid parameters");
 
-  if (iNum == 1)
+  if (num == 1)
   {
     return 0;
   }
@@ -4705,7 +4694,7 @@ uint32_t InterSearch::xGetMvpIdxBits(int idx, int iNum)
     return length;
   }
 
-  bool bCodeLast = (iNum - 1 > temp);
+  bool bCodeLast = (num - 1 > temp);
 
   length += (temp - 1);
 
@@ -4717,11 +4706,11 @@ uint32_t InterSearch::xGetMvpIdxBits(int idx, int iNum)
   return length;
 }
 
-void InterSearch::xGetBlkBits( bool bPSlice, int iPartIdx, uint32_t uiLastMode, uint32_t uiBlkBit[3])
+void InterSearch::xGetBlkBits(bool isPSlice, uint32_t blkBit[3])
 {
-  uiBlkBit[0] = (! bPSlice) ? 3 : 1;
-  uiBlkBit[1] = 3;
-  uiBlkBit[2] = 5;
+  blkBit[0] = (!isPSlice) ? 3 : 1;
+  blkBit[1] = 3;
+  blkBit[2] = 5;
 }
 
 void InterSearch::xCopyAMVPInfo (AMVPInfo* pSrc, AMVPInfo* pDst)
@@ -4785,24 +4774,24 @@ void InterSearch::xCheckBestMVP ( RefPicList eRefPicList, Mv cMv, Mv& rcMvPred, 
   }
 #endif
 
-  for (int iMVPIdx = 0; iMVPIdx < pcAMVPInfo->numCand; iMVPIdx++)
+  for (int mvpIdx = 0; mvpIdx < pcAMVPInfo->numCand; mvpIdx++)
   {
-    if (iMVPIdx == riMVPIdx)
+    if (mvpIdx == riMVPIdx)
     {
       continue;
     }
 
-    pred = pcAMVPInfo->mvCand[iMVPIdx];
+    pred = pcAMVPInfo->mvCand[mvpIdx];
     pred.changeTransPrecInternal2Amvr(imv);
     m_pcRdCost->setPredictor( pred );
     int iMvBits = m_pcRdCost->getBitsOfVectorWithPredictor(mv.getHor(), mv.getVer(), 0);
-    iMvBits += m_auiMVPIdxCost[iMVPIdx][AMVP_MAX_NUM_CANDS];
+    iMvBits += m_auiMVPIdxCost[mvpIdx][AMVP_MAX_NUM_CANDS];
 
 #if GDR_ENABLED
     bool allOk = (iMvBits < iBestMvBits);
     if (isEncodeGdrClean)
     {
-      iMvBitsOk = pcAMVPInfo->mvSolid[iMVPIdx];
+      iMvBitsOk = pcAMVPInfo->mvSolid[mvpIdx];
       if (iMvBitsOk)
       {
         allOk = (iBestMvBitsOk) ? (iMvBits < iBestMvBits) : true;
@@ -4821,7 +4810,7 @@ void InterSearch::xCheckBestMVP ( RefPicList eRefPicList, Mv cMv, Mv& rcMvPred, 
 #endif
     {
       iBestMvBits = iMvBits;
-      iBestMVPIdx = iMVPIdx;
+      iBestMVPIdx = mvpIdx;
 #if GDR_ENABLED
       if (isEncodeGdrClean)
       {
@@ -4843,7 +4832,7 @@ void InterSearch::xCheckBestMVP ( RefPicList eRefPicList, Mv cMv, Mv& rcMvPred, 
 }
 
 Distortion InterSearch::xGetTemplateCost(const PredictionUnit &pu, PelUnitBuf &origBuf, PelUnitBuf &predBuf, Mv cMvCand,
-                                         int iMVPIdx, int iMVPNum, RefPicList eRefPicList, int refIdx)
+                                         int mvpIdx, int mvpNum, RefPicList eRefPicList, int refIdx)
 {
   Distortion uiCost = std::numeric_limits<Distortion>::max();
 
@@ -4863,18 +4852,18 @@ Distortion InterSearch::xGetTemplateCost(const PredictionUnit &pu, PelUnitBuf &o
   // calc distortion
 
   uiCost = m_pcRdCost->getDistPart(origBuf.Y(), predBuf.Y(), pu.cs->sps->getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y, DF_SAD);
-  uiCost += m_pcRdCost->getCost( m_auiMVPIdxCost[iMVPIdx][iMVPNum] );
+  uiCost += m_pcRdCost->getCost(m_auiMVPIdxCost[mvpIdx][mvpNum]);
 
   return uiCost;
 }
 
 #if GDR_ENABLED
 Distortion InterSearch::xGetAffineTemplateCost(PredictionUnit &pu, PelUnitBuf &origBuf, PelUnitBuf &predBuf,
-                                               Mv acMvCand[3], int iMVPIdx, int iMVPNum, RefPicList eRefPicList,
+                                               Mv acMvCand[3], int mvpIdx, int mvpNum, RefPicList eRefPicList,
                                                int refIdx, bool &rbOk)
 #else
 Distortion InterSearch::xGetAffineTemplateCost(PredictionUnit &pu, PelUnitBuf &origBuf, PelUnitBuf &predBuf,
-                                               Mv acMvCand[3], int iMVPIdx, int iMVPNum, RefPicList eRefPicList,
+                                               Mv acMvCand[3], int mvpIdx, int mvpNum, RefPicList eRefPicList,
                                                int refIdx)
 #endif
 {
@@ -4903,7 +4892,7 @@ Distortion InterSearch::xGetAffineTemplateCost(PredictionUnit &pu, PelUnitBuf &o
   uiCost  = m_pcRdCost->getDistPart( origBuf.Y(), predBuf.Y(), pu.cs->sps->getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y
     , distFunc
   );
-  uiCost += m_pcRdCost->getCost( m_auiMVPIdxCost[iMVPIdx][iMVPNum] );
+  uiCost += m_pcRdCost->getCost(m_auiMVPIdxCost[mvpIdx][mvpNum]);
   DTRACE( g_trace_ctx, D_COMMON, " (%d) affineTemplateCost=%d\n", DTRACE_GET_COUNTER(g_trace_ctx,D_COMMON), uiCost );
   return uiCost;
 }
@@ -4933,9 +4922,9 @@ void InterSearch::xMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, Ref
 
   CHECK(eRefPicList >= MAX_NUM_REF_LIST_ADAPT_SR || refIdxPred >= int(MAX_IDX_ADAPT_SR),
         "Invalid reference picture list");
-  m_iSearchRange = m_aaiAdaptSR[eRefPicList][refIdxPred];
+  m_searchRange = m_adaptSR[eRefPicList][refIdxPred];
 
-  int    iSrchRng   = (bBi ? m_bipredSearchRange : m_iSearchRange);
+  int    iSrchRng   = (bBi ? m_bipredSearchRange : m_searchRange);
   double fWeight    = 1.0;
 
   PelUnitBuf  origBufTmp = m_tmpStorageLCU.getBuf( UnitAreaRelative(*pu.cu, pu) );
@@ -5346,7 +5335,7 @@ void InterSearch::xTZSearch(const PredictionUnit &pu, RefPicList eRefPicList, in
   const CodingStructure &cs = *pu.cs;
   const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
-  int iSearchRange = m_iSearchRange;
+  int searchRange = m_searchRange;
   if( m_pcEncCfg->getMCTSEncConstraint() )
   {
     MCTSHelper::clipMvToArea( rcMv, pu.Y(), pu.cs->picture->mctsInfo.getTileArea(), *pu.cs->sps );
@@ -5478,9 +5467,9 @@ void InterSearch::xTZSearch(const PredictionUnit &pu, RefPicList eRefPicList, in
     Mv currBestMv(cStruct.iBestX, cStruct.iBestY );
     currBestMv <<= MV_FRACTIONAL_BITS_INTERNAL;
 #if GDR_ENABLED
-    xSetSearchRange(pu, currBestMv, m_iSearchRange >> (bFastSettings ? 1 : 0), sr, cStruct, eRefPicList, refIdxPred);
+    xSetSearchRange(pu, currBestMv, m_searchRange >> (bFastSettings ? 1 : 0), sr, cStruct, eRefPicList, refIdxPred);
 #else
-    xSetSearchRange(pu, currBestMv, m_iSearchRange >> (bFastSettings ? 1 : 0), sr, cStruct);
+    xSetSearchRange(pu, currBestMv, m_searchRange >> (bFastSettings ? 1 : 0), sr, cStruct);
 #endif
   }
   if (m_pcEncCfg->getUseHashME() && (m_currRefPicList == 0 || pu.cu->slice->getList1IdxToList0Idx(m_currRefPicIndex) < 0))
@@ -5513,7 +5502,7 @@ void InterSearch::xTZSearch(const PredictionUnit &pu, RefPicList eRefPicList, in
 
   // first search around best position up to now.
   // The following works as a "subsampled/log" window search around the best candidate
-  for ( iDist = 1; iDist <= iSearchRange; iDist*=2 )
+  for (iDist = 1; iDist <= searchRange; iDist *= 2)
   {
     if ( bFirstSearchDiamond == 1 )
     {
@@ -5539,7 +5528,7 @@ void InterSearch::xTZSearch(const PredictionUnit &pu, RefPicList eRefPicList, in
       if ( (cStruct.iBestX == 0) && (cStruct.iBestY == 0) )
       {
         // test its neighborhood
-        for ( iDist = 1; iDist <= iSearchRange; iDist*=2 )
+        for (iDist = 1; iDist <= searchRange; iDist *= 2)
         {
           xTZ8PointDiamondSearch( cStruct, 0, 0, iDist, false );
           if ( bTestZeroVectorStop && (cStruct.uiBestRound > 0) ) // stop criterion
@@ -5558,7 +5547,7 @@ void InterSearch::xTZSearch(const PredictionUnit &pu, RefPicList eRefPicList, in
     // and thus the conditions for that test would have not been satisfied
     if (bTestZeroVectorStart == true && bBestCandidateZero != true)
     {
-      for ( iDist = 1; iDist <= (iSearchRange >> 1); iDist*=2 )
+      for (iDist = 1; iDist <= (searchRange >> 1); iDist *= 2)
       {
         xTZ8PointDiamondSearch( cStruct, 0, 0, iDist, false );
         if ( bTestZeroVectorStop && (cStruct.uiBestRound > 2) ) // stop criterion
@@ -5656,7 +5645,7 @@ void InterSearch::xTZSearch(const PredictionUnit &pu, RefPicList eRefPicList, in
       iStartY = cStruct.iBestY;
       cStruct.uiBestDistance = 0;
       cStruct.ucPointNr = 0;
-      for ( iDist = 1; iDist < iSearchRange + 1; iDist*=2 )
+      for (iDist = 1; iDist < searchRange + 1; iDist *= 2)
       {
         if ( bStarRefinementDiamond == 1 )
         {
@@ -5700,8 +5689,8 @@ void InterSearch::xTZSearchSelective(const PredictionUnit &pu, RefPicList eRefPi
   const bool bStarRefinementDiamond   = true;   // 1 = xTZ8PointDiamondSearch   0 = xTZ8PointSquareSearch
   const bool bStarRefinementStop      = false;
   const uint32_t uiStarRefinementRounds   = 2;  // star refinement stop X rounds after best match (must be >=1)
-  const int  iSearchRange             = m_iSearchRange;
-  const int  iSearchRangeInitial      = m_iSearchRange >> 2;
+  const int      searchRange              = m_searchRange;
+  const int      iSearchRangeInitial      = m_searchRange >> 2;
   const int  uiSearchStep             = 4;
   const int  iMVDistThresh            = 8;
 
@@ -5783,9 +5772,9 @@ void InterSearch::xTZSearchSelective(const PredictionUnit &pu, RefPicList eRefPi
     Mv currBestMv(cStruct.iBestX, cStruct.iBestY );
     currBestMv <<= 2;
 #if GDR_ENABLED
-    xSetSearchRange(pu, currBestMv, m_iSearchRange, sr, cStruct, eRefPicList, refIdxPred);
+    xSetSearchRange(pu, currBestMv, m_searchRange, sr, cStruct, eRefPicList, refIdxPred);
 #else
-    xSetSearchRange( pu, currBestMv, m_iSearchRange, sr, cStruct );
+    xSetSearchRange(pu, currBestMv, m_searchRange, sr, cStruct);
 #endif
   }
   if (m_pcEncCfg->getUseHashME() && (m_currRefPicList == 0 || pu.cu->slice->getList1IdxToList0Idx(m_currRefPicIndex) < 0))
@@ -5850,7 +5839,7 @@ void InterSearch::xTZSearchSelective(const PredictionUnit &pu, RefPicList eRefPi
       iStartY = cStruct.iBestY;
       cStruct.uiBestDistance = 0;
       cStruct.ucPointNr = 0;
-      for ( iDist = 1; iDist < iSearchRange + 1; iDist*=2 )
+      for (iDist = 1; iDist < searchRange + 1; iDist *= 2)
       {
         if ( bStarRefinementDiamond == 1 )
         {
@@ -5936,28 +5925,28 @@ void InterSearch::xPatternSearchIntRefine(PredictionUnit& pu, IntTZSearchStruct&
   {
     Mv cTestMv[2];
     // test both AMVP candidates for each position
-    for (int iMVPIdx = 0; iMVPIdx < amvpInfo.numCand; iMVPIdx++)
+    for (int mvpIdx = 0; mvpIdx < amvpInfo.numCand; mvpIdx++)
     {
-      cTestMv[iMVPIdx] = testPos[pos];
-      cTestMv[iMVPIdx].changeTransPrecAmvr2Internal(pu.cu->imv);
-      cTestMv[iMVPIdx] += cBaseMvd[iMVPIdx];
-      cTestMv[iMVPIdx] += amvpInfo.mvCand[iMVPIdx];
+      cTestMv[mvpIdx] = testPos[pos];
+      cTestMv[mvpIdx].changeTransPrecAmvr2Internal(pu.cu->imv);
+      cTestMv[mvpIdx] += cBaseMvd[mvpIdx];
+      cTestMv[mvpIdx] += amvpInfo.mvCand[mvpIdx];
 
       // MCTS and IMV
       if( m_pcEncCfg->getMCTSEncConstraint() )
       {
-        Mv cTestMVRestr = cTestMv[iMVPIdx];
+        Mv cTestMVRestr = cTestMv[mvpIdx];
         MCTSHelper::clipMvToArea( cTestMVRestr, pu.cu->Y(), pu.cs->picture->mctsInfo.getTileAreaIntPelRestricted( pu ), *pu.cs->sps );
 
-        if( cTestMVRestr != cTestMv[iMVPIdx] )
+        if (cTestMVRestr != cTestMv[mvpIdx])
         {
           // Skip this IMV pos, cause clipping affects IMV scaling
           continue;
         }
       }
-      if ( iMVPIdx == 0 || cTestMv[0] != cTestMv[1])
+      if (mvpIdx == 0 || cTestMv[0] != cTestMv[1])
       {
-        Mv cTempMV = cTestMv[iMVPIdx];
+        Mv cTempMV = cTestMv[mvpIdx];
         if( !m_pcEncCfg->getMCTSEncConstraint() )
         {
           clipMv( cTempMV, pu.cu->lumaPos(), pu.cu->lumaSize(), sps, *pu.cs->pps );
@@ -5970,11 +5959,11 @@ void InterSearch::xPatternSearchIntRefine(PredictionUnit& pu, IntTZSearchStruct&
         dist = uiSATD;
       }
 
-      int iMvBits = m_auiMVPIdxCost[iMVPIdx][AMVP_MAX_NUM_CANDS];
-      Mv pred = amvpInfo.mvCand[iMVPIdx];
+      int iMvBits = m_auiMVPIdxCost[mvpIdx][AMVP_MAX_NUM_CANDS];
+      Mv  pred    = amvpInfo.mvCand[mvpIdx];
       pred.changeTransPrecInternal2Amvr(pu.cu->imv);
       m_pcRdCost->setPredictor( pred );
-      Mv mv = cTestMv[iMVPIdx];
+      Mv mv = cTestMv[mvpIdx];
       mv.changeTransPrecInternal2Amvr(pu.cu->imv);
       iMvBits += m_pcRdCost->getBitsOfVectorWithPredictor( mv.getHor(), mv.getVer(), 0 );
       dist += m_pcRdCost->getCost(iMvBits);
@@ -5983,8 +5972,8 @@ void InterSearch::xPatternSearchIntRefine(PredictionUnit& pu, IntTZSearchStruct&
       allOk = (dist < bestDist);
       if (isEncodeGdrClean)
       {
-        bool isSolid = amvpInfo.mvSolid[iMVPIdx];
-        bool isValid = cs.isClean(pu.Y().bottomRight(), cTestMv[iMVPIdx], eRefPicList, refIdxPred);
+        bool isSolid = amvpInfo.mvSolid[mvpIdx];
+        bool isValid = cs.isClean(pu.Y().bottomRight(), cTestMv[mvpIdx], eRefPicList, refIdxPred);
 
         diskOk = isSolid && isValid;
         if (diskOk)
@@ -6005,8 +5994,8 @@ void InterSearch::xPatternSearchIntRefine(PredictionUnit& pu, IntTZSearchStruct&
 #endif
       {
         bestDist    = dist;
-        cBestMv = cTestMv[iMVPIdx];
-        iBestMVPIdx = iMVPIdx;
+        cBestMv     = cTestMv[mvpIdx];
+        iBestMVPIdx = mvpIdx;
         iBestBits = iMvBits;
 #if GDR_ENABLED
         if (isEncodeGdrClean)
@@ -6522,7 +6511,7 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
   int tryBipred = 0;
   WPScalingParam *wp0;
   WPScalingParam *wp1;
-  xGetBlkBits(slice.isInterP(), puIdx, lastMode, mbBits);
+  xGetBlkBits(slice.isInterP(), mbBits);
 
   pu.cu->affine = true;
   pu.mergeFlag = false;
@@ -8198,29 +8187,29 @@ void InterSearch::xCheckBestAffineMVP( PredictionUnit &pu, AffineAMVPInfo &affin
   iOrgMvBits += m_auiMVPIdxCost[riMVPIdx][AMVP_MAX_NUM_CANDS];
 
   int iBestMvBits = iOrgMvBits;
-  for (int iMVPIdx = 0; iMVPIdx < affineAMVPInfo.numCand; iMVPIdx++)
+  for (int mvpIdx = 0; mvpIdx < affineAMVPInfo.numCand; mvpIdx++)
   {
-    if (iMVPIdx == riMVPIdx)
+    if (mvpIdx == riMVPIdx)
     {
       continue;
     }
-    tmpPredMv[0] = affineAMVPInfo.mvCandLT[iMVPIdx];
-    tmpPredMv[1] = affineAMVPInfo.mvCandRT[iMVPIdx];
+    tmpPredMv[0] = affineAMVPInfo.mvCandLT[mvpIdx];
+    tmpPredMv[1] = affineAMVPInfo.mvCandRT[mvpIdx];
     if ( mvNum == 3 )
     {
-      tmpPredMv[2] = affineAMVPInfo.mvCandLB[iMVPIdx];
+      tmpPredMv[2] = affineAMVPInfo.mvCandLB[mvpIdx];
     }
     int iMvBits = xCalcAffineMVBits( pu, acMv, tmpPredMv );
-    iMvBits += m_auiMVPIdxCost[iMVPIdx][AMVP_MAX_NUM_CANDS];
+    iMvBits += m_auiMVPIdxCost[mvpIdx][AMVP_MAX_NUM_CANDS];
 
 #if GDR_ENABLED
     bool allOk = (iMvBits < iBestMvBits);
     if (isEncodeGdrClean)
     {
-      bool curOk = affineAMVPInfo.mvSolidLT[iMVPIdx] && affineAMVPInfo.mvSolidRT[iMVPIdx];
+      bool curOk = affineAMVPInfo.mvSolidLT[mvpIdx] && affineAMVPInfo.mvSolidRT[mvpIdx];
       if (pu.cu->affineType == AFFINEMODEL_6PARAM)
       {
-        curOk = curOk && affineAMVPInfo.mvSolidLB[iMVPIdx];
+        curOk = curOk && affineAMVPInfo.mvSolidLB[mvpIdx];
       }
 
       bool best_ok = affineAMVPInfo.mvSolidLT[iBestMVPIdx] && affineAMVPInfo.mvSolidRT[iBestMVPIdx];
@@ -8248,7 +8237,7 @@ void InterSearch::xCheckBestAffineMVP( PredictionUnit &pu, AffineAMVPInfo &affin
 #endif
     {
       iBestMvBits = iMvBits;
-      iBestMVPIdx = iMVPIdx;
+      iBestMVPIdx = mvpIdx;
     }
   }
 
@@ -10961,7 +10950,7 @@ double InterSearch::xGetMEDistortionWeight(uint8_t bcwIdx, RefPicList eRefPicLis
 {
   if( bcwIdx != BCW_DEFAULT )
   {
-    return fabs((double)getBcwWeight(bcwIdx, eRefPicList) / (double)g_BcwWeightBase);
+    return fabs((double) getBcwWeight(bcwIdx, eRefPicList) / (double) g_bcwWeightBase);
   }
   else
   {

@@ -84,9 +84,7 @@ namespace CU
   bool  isMinWidthPredEnabledForBlkSize(const int w, const int h);
   void  adjustPredArea(CompArea &area);
   bool  isBcwIdxCoded                 (const CodingUnit& cu);
-  uint8_t getValidBcwIdx              (const CodingUnit& cu);
-  void  setBcwIdx                     (CodingUnit& cu, uint8_t uh);
-  uint8_t deriveBcwIdx                (uint8_t bcwLO, uint8_t bcwL1);
+  uint8_t  getValidBcwIdx(const CodingUnit &cu);
   bool bdpcmAllowed                   (const CodingUnit& cu, const ComponentID compID);
   bool isMTSAllowed                   (const CodingUnit& cu, const ComponentID compID);
 
@@ -175,7 +173,7 @@ namespace PU
   void getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx, const int mrgCandIdx = -1 );
   void setAllAffineMvField            (      PredictionUnit &pu, MvField *mvField, RefPicList eRefList );
   void setAllAffineMv                 (      PredictionUnit &pu, Mv affLT, Mv affRT, Mv affLB, RefPicList eRefList, bool clipCPMVs = false );
-  bool getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx &mrgCtx, bool& LICFlag, const int count, int mmvdList);
+  bool getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx &mrgCtx, const int count, int mmvdList);
   bool getInterMergeSubPuRecurCand(const PredictionUnit &pu, MergeCtx &mrgCtx, const int count);
   bool isBiPredFromDifferentDirEqDistPoc(const PredictionUnit &pu);
   void restrictBiPredMergeCandsOne    (PredictionUnit &pu);

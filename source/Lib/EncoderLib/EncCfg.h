@@ -450,7 +450,7 @@ protected:
   //====== Motion search ========
   bool      m_bDisableIntraPUsInInterSlices;
   MESearchMethod m_motionEstimationSearchMethod;
-  int       m_iSearchRange;                     //  0:Full frame
+  int            m_searchRange;   //  0:Full frame
   int       m_bipredSearchRange;
   bool      m_bClipForBiPredMeEnabled;
   bool      m_bFastMEAssumingSmootherMVEnabled;
@@ -1475,7 +1475,10 @@ public:
   //====== Motion search ========
   void      setDisableIntraPUsInInterSlices ( bool  b )      { m_bDisableIntraPUsInInterSlices = b; }
   void      setMotionEstimationSearchMethod ( MESearchMethod e ) { m_motionEstimationSearchMethod = e; }
-  void      setSearchRange                  ( int   i )      { m_iSearchRange = i; }
+  void      setSearchRange(int i)
+  {
+    m_searchRange = i;
+  }
   void      setBipredSearchRange            ( int   i )      { m_bipredSearchRange = i; }
   void      setClipForBiPredMeEnabled       ( bool  b )      { m_bClipForBiPredMeEnabled = b; }
   void      setFastMEAssumingSmootherMVEnabled ( bool b )    { m_bFastMEAssumingSmootherMVEnabled = b; }
@@ -1616,7 +1619,7 @@ public:
   //==== Motion search ========
   bool      getDisableIntraPUsInInterSlices    () const { return m_bDisableIntraPUsInInterSlices; }
   MESearchMethod getMotionEstimationSearchMethod ( ) const { return m_motionEstimationSearchMethod; }
-  int       getSearchRange                     () const { return m_iSearchRange; }
+  int       getSearchRange                     () const { return m_searchRange; }
   bool      getClipForBiPredMeEnabled          () const { return m_bClipForBiPredMeEnabled; }
   bool      getFastMEAssumingSmootherMVEnabled () const { return m_bFastMEAssumingSmootherMVEnabled; }
   int       getMinSearchWindow                 () const { return m_minSearchWindow; }
