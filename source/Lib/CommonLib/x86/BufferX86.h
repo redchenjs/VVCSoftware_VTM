@@ -1204,46 +1204,41 @@ void reco_SSE(const int16_t *src0, ptrdiff_t src0Stride, const int16_t *src1, pt
 
 #if ENABLE_SIMD_OPT_BCW
 template<X86_VEXT vext, int W>
-void removeWeightHighFreq_SSE(int16_t *src0, ptrdiff_t src0Stride, const int16_t *src1, ptrdiff_t src1Stride, int width,
-                              int height, int shift, int bcwWeight)
+void removeWeightHighFreq_SSE(int16_t *src0, ptrdiff_t src0Stride, const int16_t *src1, ptrdiff_t src1Stride, int width, int height,
+                              int bcwWeight, const Pel minVal, const Pel maxVal)
 {
-  int normalizer = ((1 << 16) + (bcwWeight>0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-  int weight0    = normalizer * (1 << g_bcwLog2WeightBase);
-  int weight1    = (g_bcwWeightBase - bcwWeight) * normalizer;
-  int offset = 1 << (shift - 1);
+  static_assert(W == 4 || W == 8, "W must be 4 or 8");
+
+  const int32_t w =
+    ((BCW_WEIGHT_BASE << BCW_INV_BITS) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
+
   if (W == 8)
   {
-    __m128i vzero = _mm_setzero_si128();
-    __m128i voffset = _mm_set1_epi32(offset);
-    __m128i vw0 = _mm_set1_epi32(weight0);
-    __m128i vw1 = _mm_set1_epi32(weight1);
-
     for (int row = 0; row < height; row++)
     {
       for (int col = 0; col < width; col += 8)
       {
-        __m128i vsrc0 = _mm_loadu_si128( (const __m128i *)&src0[col] );
-        __m128i vsrc1 = _mm_loadu_si128( (const __m128i *)&src1[col] );
+        const __m128i vsrc0 = _mm_loadu_si128((const __m128i *) &src0[col]);
+        const __m128i vsrc1 = _mm_loadu_si128((const __m128i *) &src1[col]);
 
-        __m128i vtmp, vdst, vsrc;
-        vdst = _mm_cvtepi16_epi32(vsrc0);
-        vsrc = _mm_cvtepi16_epi32(vsrc1);
-        vdst = _mm_mullo_epi32(vdst, vw0);
-        vsrc = _mm_mullo_epi32(vsrc, vw1);
-        vtmp = _mm_add_epi32(_mm_sub_epi32(vdst, vsrc), voffset);
-        vtmp = _mm_srai_epi32(vtmp, shift);
+        const __m128i diff = _mm_sub_epi16(vsrc0, vsrc1);
 
-        vsrc0 = _mm_unpackhi_epi64(vsrc0, vzero);
-        vsrc1 = _mm_unpackhi_epi64(vsrc1, vzero);
-        vdst = _mm_cvtepi16_epi32(vsrc0);
-        vsrc = _mm_cvtepi16_epi32(vsrc1);
-        vdst = _mm_mullo_epi32(vdst, vw0);
-        vsrc = _mm_mullo_epi32(vsrc, vw1);
-        vdst = _mm_add_epi32(_mm_sub_epi32(vdst, vsrc), voffset);
-        vdst = _mm_srai_epi32(vdst, shift);
-        vdst = _mm_packs_epi32(vtmp, vdst);
+        __m128i lo = _mm_cvtepi16_epi32(diff);
+        lo         = _mm_mullo_epi32(lo, _mm_set1_epi32(w));
+        lo         = _mm_add_epi32(lo, _mm_set1_epi32(1 << BCW_INV_BITS >> 1));
+        lo         = _mm_srai_epi32(lo, BCW_INV_BITS);
 
-        _mm_store_si128((__m128i *)&src0[col], vdst);
+        __m128i hi = _mm_cvtepi16_epi32(_mm_unpackhi_epi64(diff, diff));
+        hi         = _mm_mullo_epi32(hi, _mm_set1_epi32(w));
+        hi         = _mm_add_epi32(hi, _mm_set1_epi32(1 << BCW_INV_BITS >> 1));
+        hi         = _mm_srai_epi32(hi, BCW_INV_BITS);
+
+        __m128i res = _mm_packs_epi32(lo, hi);
+        res         = _mm_add_epi16(res, vsrc1);
+        res         = _mm_max_epi16(res, _mm_set1_epi16(minVal));
+        res         = _mm_min_epi16(res, _mm_set1_epi16(maxVal));
+
+        _mm_store_si128((__m128i *) &src0[col], res);
       }
       src0 += src0Stride;
       src1 += src1Stride;
@@ -1251,33 +1246,28 @@ void removeWeightHighFreq_SSE(int16_t *src0, ptrdiff_t src0Stride, const int16_t
   }
   else if (W == 4)
   {
-    __m128i vzero = _mm_setzero_si128();
-    __m128i voffset = _mm_set1_epi32(offset);
-    __m128i vw0 = _mm_set1_epi32(weight0);
-    __m128i vw1 = _mm_set1_epi32(weight1);
-
     for (int row = 0; row < height; row++)
     {
-      __m128i vsum = _mm_loadl_epi64((const __m128i *)src0);
-      __m128i vdst = _mm_loadl_epi64((const __m128i *)src1);
+      const __m128i vsrc0 = _mm_loadl_epi64((const __m128i *) src0);
+      const __m128i vsrc1 = _mm_loadl_epi64((const __m128i *) src1);
 
-      vsum = _mm_cvtepi16_epi32(vsum);
-      vdst = _mm_cvtepi16_epi32(vdst);
-      vsum = _mm_mullo_epi32(vsum, vw0);
-      vdst = _mm_mullo_epi32(vdst, vw1);
-      vsum = _mm_add_epi32(_mm_sub_epi32(vsum, vdst), voffset);
-      vsum = _mm_srai_epi32(vsum, shift);
-      vsum = _mm_packs_epi32(vsum, vzero);
+      const __m128i diff = _mm_sub_epi16(vsrc0, vsrc1);
 
-      _mm_storel_epi64((__m128i *)src0, vsum);
+      __m128i lo = _mm_cvtepi16_epi32(diff);
+      lo         = _mm_mullo_epi32(lo, _mm_set1_epi32(w));
+      lo         = _mm_add_epi32(lo, _mm_set1_epi32(1 << BCW_INV_BITS >> 1));
+      lo         = _mm_srai_epi32(lo, BCW_INV_BITS);
+
+      __m128i res = _mm_packs_epi32(lo, lo);
+      res         = _mm_add_epi16(res, vsrc1);
+      res         = _mm_max_epi16(res, _mm_set1_epi16(minVal));
+      res         = _mm_min_epi16(res, _mm_set1_epi16(maxVal));
+
+      _mm_storel_epi64((__m128i *) src0, res);
 
       src0 += src0Stride;
       src1 += src1Stride;
     }
-  }
-  else
-  {
-    THROW("Unsupported size");
   }
 }
 
@@ -1307,6 +1297,8 @@ void removeHighFreq_SSE(int16_t *src0, ptrdiff_t src0Stride, const int16_t *src1
   }
   else if (W == 4)
   {
+    CHECK(width != 4, "width must be 4");
+
     for (int row = 0; row < height; row += 2)
     {
       __m128i vsrc0 = _mm_loadl_epi64((const __m128i *)src0);
@@ -1321,8 +1313,8 @@ void removeHighFreq_SSE(int16_t *src0, ptrdiff_t src0Stride, const int16_t *src1
       _mm_storel_epi64((__m128i *)src0, vsrc0);
       _mm_storel_epi64((__m128i *)(src0 + src0Stride), _mm_unpackhi_epi64(vsrc0, vsrc0));
 
-      src0 += (src0Stride << 1);
-      src1 += (src1Stride << 1);
+      src0 += 2 * src0Stride;
+      src1 += 2 * src1Stride;
     }
   }
   else
@@ -1546,16 +1538,18 @@ template<X86_VEXT vext, int W>
 void removeHighFreq_HBD_SIMD(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
                              int height)
 {
-  CHECK((width & 3), "the function only supports width multiple of 4");
+  CHECK((width & 3), "width must be a multiple of 4");
+
   for (int row = 0; row < height; row++)
   {
     int col = 0;
 #ifdef USE_AVX2
     if (vext >= AVX2)
     {
-      __m256i mm256_vsrc0, mm256_vsrc1;
-      for (; col < ((width >> 3) << 3); col += 8)
+      for (; col < (width & ~7); col += 8)
       {
+        __m256i mm256_vsrc0, mm256_vsrc1;
+
         mm256_vsrc0 = _mm256_lddqu_si256((const __m256i *)&src0[col]);
         mm256_vsrc1 = _mm256_lddqu_si256((const __m256i *)&src1[col]);
 
@@ -1564,9 +1558,10 @@ void removeHighFreq_HBD_SIMD(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, p
       }
     }
 #endif
-    __m128i vsrc0, vsrc1;
     for (; col < width; col += 4)
     {
+      __m128i vsrc0, vsrc1;
+
       vsrc0 = _mm_lddqu_si128((const __m128i *)&src0[col]);
       vsrc1 = _mm_lddqu_si128((const __m128i *)&src1[col]);
 
@@ -1579,41 +1574,40 @@ void removeHighFreq_HBD_SIMD(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, p
 }
 
 template<X86_VEXT vext, int W>
-void removeWeightHighFreq_HBD_SIMD(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
-                                   int height, int shift, int bcwWeight)
+void removeWeightHighFreq_HBD_SIMD(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width, int height,
+                                   int bcwWeight, const Pel minVal, const Pel maxVal)
 {
   CHECK((width & 3), "the function only supports width multiple of 4");
 
-  int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-  int              weight0    = normalizer << g_bcwLog2WeightBase;
-  int              weight1    = (g_bcwWeightBase - bcwWeight) * normalizer;
-  Intermediate_Int offset = Intermediate_Int(1) << (shift - 1);
+  constexpr int s1 = (32 - BCW_INV_BITS) / 2;
+  constexpr int s2 = 32 - BCW_INV_BITS - s1;
+
+  const int32_t w =
+    ((BCW_WEIGHT_BASE << BCW_INV_BITS) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight << s1;
 
 #ifdef USE_AVX2
   if (vext >= AVX2)
   {
-    __m256i voffset = _mm256_set1_epi64x(offset);
-    __m256i vw0 = _mm256_set1_epi32(weight0);
-    __m256i vw1 = _mm256_set1_epi32(weight1);
-
-    __m256i vdst, vsrc;
     for (int row = 0; row < height; row++)
     {
       for (int col = 0; col < width; col += 4)
       {
-        __m256i vsrc0 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_lddqu_si128((__m128i *)&src0[col])), _mm_lddqu_si128((__m128i *)&src0[col + 2]), 1);
-        __m256i vsrc1 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_lddqu_si128((__m128i *)&src1[col])), _mm_lddqu_si128((__m128i *)&src1[col + 2]), 1);
-        vsrc0 = _mm256_shuffle_epi32(vsrc0, 0x50);
-        vsrc1 = _mm256_shuffle_epi32(vsrc1, 0x50);
+        const __m128i vsrc0 = _mm_loadu_si128((const __m128i *) &src0[col]);
+        const __m128i vsrc1 = _mm_loadu_si128((const __m128i *) &src1[col]);
 
-        vdst = _mm256_mul_epi32(vsrc0, vw0);
-        vsrc = _mm256_mul_epi32(vsrc1, vw1);
-        vdst = _mm256_add_epi64(_mm256_sub_epi64(vdst, vsrc), voffset);
+        const __m128i diff = _mm_slli_epi32(_mm_sub_epi32(vsrc0, vsrc1), s2);
 
-        *(src0 + col) = (Pel)(_mm256_extract_epi64(vdst, 0) >> shift);
-        *(src0 + col + 1) = (Pel)(_mm256_extract_epi64(vdst, 1) >> shift);
-        *(src0 + col + 2) = (Pel)(_mm256_extract_epi64(vdst, 2) >> shift);
-        *(src0 + col + 3) = (Pel)(_mm256_extract_epi64(vdst, 3) >> shift);
+        __m256i tmp = _mm256_cvtepi32_epi64(diff);
+        tmp         = _mm256_mul_epi32(tmp, _mm256_set1_epi32(w));
+        tmp         = _mm256_add_epi64(tmp, _mm256_set1_epi64x(1u << 31));
+        tmp         = _mm256_permutevar8x32_epi32(tmp, _mm256_setr_epi32(1, 3, 5, 7, 0, 2, 4, 6));
+
+        __m128i res = _mm256_castsi256_si128(tmp);
+        res         = _mm_add_epi32(res, vsrc1);
+        res         = _mm_min_epi32(res, _mm_set1_epi32(maxVal));
+        res         = _mm_max_epi32(res, _mm_set1_epi32(minVal));
+
+        _mm_storeu_si128((__m128i *) &src0[col], res);
       }
       src0 += src0Stride;
       src1 += src1Stride;
@@ -1622,34 +1616,28 @@ void removeWeightHighFreq_HBD_SIMD(Pel *src0, ptrdiff_t src0Stride, const Pel *s
   else
 #endif
   {
-    __m128i voffset = _mm_set_epi64x(offset, offset);
-    __m128i vw0 = _mm_set1_epi32(weight0);
-    __m128i vw1 = _mm_set1_epi32(weight1);
-
-    __m128i vdst, vsrc;
     for (int row = 0; row < height; row++)
     {
       for (int col = 0; col < width; col += 4)
       {
-        __m128i vsrc0 = _mm_lddqu_si128((__m128i *)&src0[col]);
-        __m128i vsrc1 = _mm_lddqu_si128((__m128i *)&src1[col]);
+        const __m128i vsrc0 = _mm_loadu_si128((const __m128i *) &src0[col]);
+        const __m128i vsrc1 = _mm_loadu_si128((const __m128i *) &src1[col]);
 
-        vdst = _mm_mul_epi32(vsrc0, vw0);
-        vsrc = _mm_mul_epi32(vsrc1, vw1);
-        vdst = _mm_add_epi64(_mm_sub_epi64(vdst, vsrc), voffset);
+        const __m128i diff = _mm_slli_epi32(_mm_sub_epi32(vsrc0, vsrc1), s2);
 
-        *(src0 + col) = (Pel)(_mm_extract_epi64(vdst, 0) >> shift);
-        *(src0 + col + 2) = (Pel)(_mm_extract_epi64(vdst, 1) >> shift);
+        __m128i lo = _mm_mul_epi32(diff, _mm_set1_epi32(w));
+        lo         = _mm_add_epi64(lo, _mm_set1_epi64x(1u << 31));
+        lo         = _mm_srli_si128(lo, 4);
 
-        vsrc0 = _mm_srli_si128(vsrc0, 4);
-        vsrc1 = _mm_srli_si128(vsrc1, 4);
+        __m128i hi = _mm_mul_epi32(_mm_srli_si128(diff, 4), _mm_set1_epi32(w));
+        hi         = _mm_add_epi64(hi, _mm_set1_epi64x(1u << 31));
 
-        vdst = _mm_mul_epi32(vsrc0, vw0);
-        vsrc = _mm_mul_epi32(vsrc1, vw1);
-        vdst = _mm_add_epi64(_mm_sub_epi64(vdst, vsrc), voffset);
+        __m128i res = _mm_blend_epi16(lo, hi, 0xcc);
+        res         = _mm_add_epi32(res, vsrc1);
+        res         = _mm_min_epi32(res, _mm_set1_epi32(maxVal));
+        res         = _mm_max_epi32(res, _mm_set1_epi32(minVal));
 
-        *(src0 + col + 1) = (Pel)(_mm_extract_epi64(vdst, 0) >> shift);
-        *(src0 + col + 3) = (Pel)(_mm_extract_epi64(vdst, 1) >> shift);
+        _mm_storeu_si128((__m128i *) &src0[col], res);
       }
       src0 += src0Stride;
       src1 += src1Stride;
