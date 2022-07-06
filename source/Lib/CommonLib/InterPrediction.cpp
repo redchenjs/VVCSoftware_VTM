@@ -456,7 +456,7 @@ void InterPrediction::xSubPuBio(PredictionUnit &pu, PelUnitBuf &predBuf, const R
 }
 
 void InterPrediction::xPredInterUni(const PredictionUnit &pu, const RefPicList &eRefPicList, PelUnitBuf &pcYuvPred,
-                                    const bool &bi, const bool &bioApplied, const bool luma, const bool chroma)
+                                    const bool bi, const bool bioApplied, const bool luma, const bool chroma)
 {
   const SPS &sps = *pu.cs->sps;
 
@@ -676,16 +676,11 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
   }
 }
 
-void InterPrediction::xPredInterBlk ( const ComponentID& compID, const PredictionUnit& pu, const Picture* refPic, const Mv& _mv, PelUnitBuf& dstPic, const bool& bi, const ClpRng& clpRng
-                                     , const bool& bioApplied
-                                     , bool isIBC
-                                     , const std::pair<int, int> scalingRatio
-                                     , SizeType dmvrWidth
-                                     , SizeType dmvrHeight
-                                     , bool bilinearMC
-                                     , Pel *srcPadBuf
-                                     , int32_t srcPadStride
-                                    )
+void InterPrediction::xPredInterBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic,
+                                    const Mv &_mv, PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng,
+                                    const bool bioApplied, bool isIBC, const std::pair<int, int> scalingRatio,
+                                    SizeType dmvrWidth, SizeType dmvrHeight, bool bilinearMC, Pel *srcPadBuf,
+                                    int32_t srcPadStride)
 {
   JVET_J0090_SET_REF_PICTURE( refPic, compID );
   const ChromaFormat  chFmt = pu.chromaFormat;
@@ -891,9 +886,13 @@ bool InterPrediction::isSubblockVectorSpreadOverLimit( int a, int b, int c, int 
 }
 
 #if GDR_ENABLED
-bool InterPrediction::xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic, const Mv *_mv, PelUnitBuf &dstPic, const bool &bi, const ClpRng &clpRng, bool genChromaMv, const std::pair<int, int> scalingRatio)
+bool InterPrediction::xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic,
+                                     const Mv *_mv, PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng,
+                                     bool genChromaMv, const std::pair<int, int> scalingRatio)
 #else
-void InterPrediction::xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic, const Mv *_mv, PelUnitBuf &dstPic, const bool &bi, const ClpRng &clpRng, bool genChromaMv, const std::pair<int, int> scalingRatio)
+void InterPrediction::xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic,
+                                     const Mv *_mv, PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng,
+                                     bool genChromaMv, const std::pair<int, int> scalingRatio)
 #endif
 {
 
@@ -1420,7 +1419,7 @@ void InterPrediction::xCalcBlkGradient(int sx, int sy, int    *arraysGx2, int   
 
 void InterPrediction::xWeightedAverage(const PredictionUnit &pu, const CPelUnitBuf &pcYuvSrc0,
                                        const CPelUnitBuf &pcYuvSrc1, PelUnitBuf &pcYuvDst,
-                                       const BitDepths &clipBitDepths, const ClpRngs &clpRngs, const bool &bioApplied,
+                                       const BitDepths &clipBitDepths, const ClpRngs &clpRngs, const bool bioApplied,
                                        bool lumaOnly, bool chromaOnly, PelUnitBuf *yuvDstTmp)
 {
   CHECK( (chromaOnly && lumaOnly), "should not happen" );

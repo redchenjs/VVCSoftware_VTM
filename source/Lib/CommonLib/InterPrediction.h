@@ -120,14 +120,12 @@ protected:
   void xIntraBlockCopy          (PredictionUnit &pu, PelUnitBuf &predBuf, const ComponentID compID);
   int             rightShiftMSB(int numer, int    denom);
   void            applyBiOptFlow(const PredictionUnit &pu, const CPelUnitBuf &yuvSrc0, const CPelUnitBuf &yuvSrc1, const int &refIdx0, const int &refIdx1, PelUnitBuf &yuvDst, const BitDepths &clipBitDepths);
-  void xPredInterUni            ( const PredictionUnit& pu, const RefPicList& eRefPicList, PelUnitBuf& pcYuvPred, const bool& bi
-                                  , const bool& bioApplied
-                                  , const bool luma, const bool chroma
-  );
+  void xPredInterUni(const PredictionUnit &pu, const RefPicList &eRefPicList, PelUnitBuf &pcYuvPred, const bool bi,
+                     const bool bioApplied, const bool luma, const bool chroma);
   void xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, const bool luma = true, const bool chroma = true,
                     PelUnitBuf *yuvPredTmp = nullptr);
   void xPredInterBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic, const Mv &_mv,
-                     PelUnitBuf &dstPic, const bool &bi, const ClpRng &clpRng, const bool &bioApplied, bool isIBC,
+                     PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng, const bool bioApplied, bool isIBC,
                      const std::pair<int, int> scalingRatio = SCALE_1X, SizeType dmvrWidth = 0, SizeType dmvrHeight = 0,
                      bool bilinearMC = false, Pel *srcPadBuf = nullptr, int32_t srcPadStride = 0);
 
@@ -137,12 +135,16 @@ protected:
   void xCalcBlkGradient         (int sx, int sy, int    *arraysGx2, int     *arraysGxGy, int     *arraysGxdI, int     *arraysGy2, int     *arraysGydI, int     &sGx2, int     &sGy2, int     &sGxGy, int     &sGxdI, int     &sGydI, int width, int height, int unitSize);
   void xWeightedAverage(const PredictionUnit &pu, const CPelUnitBuf &pcYuvSrc0, const CPelUnitBuf &pcYuvSrc1,
                         PelUnitBuf &pcYuvDst, const BitDepths &clipBitDepths, const ClpRngs &clpRngs,
-                        const bool &bioApplied, const bool lumaOnly = false, const bool chromaOnly = false,
+                        const bool bioApplied, const bool lumaOnly = false, const bool chromaOnly = false,
                         PelUnitBuf *yuvDstTmp = nullptr);
 #if GDR_ENABLED
-  bool xPredAffineBlk           ( const ComponentID& compID, const PredictionUnit& pu, const Picture* refPic, const Mv* _mv, PelUnitBuf& dstPic, const bool& bi, const ClpRng& clpRng, const bool genChromaMv = false, const std::pair<int, int> scalingRatio = SCALE_1X );
+  bool xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic, const Mv *_mv,
+                      PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng, const bool genChromaMv = false,
+                      const std::pair<int, int> scalingRatio = SCALE_1X);
 #else
-  void xPredAffineBlk           ( const ComponentID& compID, const PredictionUnit& pu, const Picture* refPic, const Mv* _mv, PelUnitBuf& dstPic, const bool& bi, const ClpRng& clpRng, const bool genChromaMv = false, const std::pair<int, int> scalingRatio = SCALE_1X );
+  void xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic, const Mv *_mv,
+                      PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng, const bool genChromaMv = false,
+                      const std::pair<int, int> scalingRatio = SCALE_1X);
 #endif
 
   static bool xCheckIdenticalMotion( const PredictionUnit& pu );

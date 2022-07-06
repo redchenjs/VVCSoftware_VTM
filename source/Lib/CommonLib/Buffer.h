@@ -81,7 +81,9 @@ struct PelBufferOps
   void ( *removeHighFreq4)        ( Pel* src0, int src0Stride, const Pel* src1, int src1Stride, int width, int height);
 #endif
   void (*profGradFilter) (Pel* pSrc, int srcStride, int width, int height, int gradStride, Pel* gradX, Pel* gradY, const int bitDepth);
-  void (*applyPROF)      (Pel* dst, int dstStride, const Pel* src, int srcStride, int width, int height, const Pel* gradX, const Pel* gradY, int gradStride, const int* dMvX, const int* dMvY, int dMvStride, const bool& bi, int shiftNum, Pel offset, const ClpRng& clpRng);
+  void (*applyPROF)(Pel *dst, int dstStride, const Pel *src, int srcStride, int width, int height, const Pel *gradX,
+                    const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY, int dMvStride, const bool bi,
+                    int shiftNum, Pel offset, const ClpRng &clpRng);
   void (*roundIntVector) (int* v, int size, unsigned int nShift, const int dmvLimit);
 };
 

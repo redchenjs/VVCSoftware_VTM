@@ -42,7 +42,9 @@
 #include "Buffer.h"
 #include "InterpolationFilter.h"
 
-void applyPROFCore(Pel* dst, int dstStride, const Pel* src, int srcStride, int width, int height, const Pel* gradX, const Pel* gradY, int gradStride, const int* dMvX, const int* dMvY, int dMvStride, const bool& bi, int shiftNum, Pel offset, const ClpRng& clpRng)
+void applyPROFCore(Pel *dst, int dstStride, const Pel *src, int srcStride, int width, int height, const Pel *gradX,
+                   const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY, int dMvStride, const bool bi,
+                   int shiftNum, Pel offset, const ClpRng &clpRng)
 {
   int idx = 0;
 

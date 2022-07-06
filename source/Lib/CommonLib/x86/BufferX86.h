@@ -344,8 +344,10 @@ void calcBIOSums_SSE(const Pel* srcY0Tmp, const Pel* srcY1Tmp, Pel* gradX0, Pel*
   *sumSignGY_GX  = _mm_cvtsi128_si32(sumSignGyGxTmp);
 }
 
-template< X86_VEXT vext >
-void applyPROF_SSE(Pel* dstPel, int dstStride, const Pel* srcPel, int srcStride, int width, int height, const Pel* gradX, const Pel* gradY, int gradStride, const int* dMvX, const int* dMvY, int dMvStride, const bool& bi, int shiftNum, Pel offset, const ClpRng& clpRng)
+template<X86_VEXT vext>
+void applyPROF_SSE(Pel *dstPel, int dstStride, const Pel *srcPel, int srcStride, int width, int height,
+                   const Pel *gradX, const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY, int dMvStride,
+                   const bool bi, int shiftNum, Pel offset, const ClpRng &clpRng)
 {
   CHECKD((width & 3), "block width error!");
 
@@ -812,8 +814,10 @@ void addBIOAvg4HBD_SIMD(const Pel* src0, int src0Stride, const Pel* src1, int sr
   }
 }
 
-template< X86_VEXT vext >
-void applyPROFHBD_SIMD(Pel* dstPel, int dstStride, const Pel* srcPel, int srcStride, int width, int height, const Pel* gradX, const Pel* gradY, int gradStride, const int* dMvX, const int* dMvY, int dMvStride, const bool& bi, int shiftNum, Pel offset, const ClpRng& clpRng)
+template<X86_VEXT vext>
+void applyPROFHBD_SIMD(Pel *dstPel, int dstStride, const Pel *srcPel, int srcStride, int width, int height,
+                       const Pel *gradX, const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY,
+                       int dMvStride, const bool bi, int shiftNum, Pel offset, const ClpRng &clpRng)
 {
   CHECKD((width & 3), "block width error!");
   const int dILimit = 1 << std::max<int>(clpRng.bd + 1, 13);
