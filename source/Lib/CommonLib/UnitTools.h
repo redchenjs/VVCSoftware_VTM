@@ -46,20 +46,33 @@
 // CS tools
 namespace CS
 {
-  uint64_t getEstBits                   ( const CodingStructure &cs );
   UnitArea getArea                    ( const CodingStructure &cs, const UnitArea &area, const ChannelType chType );
   bool   isDualITree                  ( const CodingStructure &cs );
   void   setRefinedMotionField(CodingStructure &cs);
-}
-
+}   // namespace CS
 
 // CU tools
 namespace CU
 {
-  bool isIntra                        (const CodingUnit &cu);
-  bool isInter                        (const CodingUnit &cu);
-  bool isIBC                          (const CodingUnit &cu);
-  bool isPLT                          (const CodingUnit &cu);
+  static inline bool isIntra(const CodingUnit &cu)
+  {
+    return cu.predMode == MODE_INTRA;
+  }
+
+  static inline bool isInter(const CodingUnit &cu)
+  {
+    return cu.predMode == MODE_INTER;
+  }
+
+  static inline bool isIBC(const CodingUnit &cu)
+  {
+    return cu.predMode == MODE_IBC;
+  }
+
+  static inline bool isPLT(const CodingUnit &cu)
+  {
+    return cu.predMode == MODE_PLT;
+  }
 
   bool isSameCtu                      (const CodingUnit &cu, const CodingUnit &cu2);
   bool isSameSlice                    (const CodingUnit &cu, const CodingUnit &cu2);

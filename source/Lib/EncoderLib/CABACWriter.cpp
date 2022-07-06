@@ -942,7 +942,7 @@ void CABACWriter::extend_ref_line(const PredictionUnit& pu)
 {
 
   const CodingUnit& cu = *pu.cu;
-  if( !cu.Y().valid() || cu.predMode != MODE_INTRA || !isLuma( cu.chType ) || cu.bdpcmMode )
+  if (!cu.Y().valid() || !CU::isIntra(cu) || !isLuma(cu.chType) || cu.bdpcmMode)
   {
     return;
   }
@@ -968,7 +968,7 @@ void CABACWriter::extend_ref_line(const PredictionUnit& pu)
 
 void CABACWriter::extend_ref_line(const CodingUnit& cu)
 {
-  if ( !cu.Y().valid() || cu.predMode != MODE_INTRA || !isLuma(cu.chType) || cu.bdpcmMode )
+  if (!cu.Y().valid() || !CU::isIntra(cu) || !isLuma(cu.chType) || cu.bdpcmMode)
   {
     return;
   }
@@ -2061,7 +2061,7 @@ void CABACWriter::merge_idx( const PredictionUnit& pu )
       return;
     }
     int numCandminus1;
-    if (pu.cu->predMode == MODE_IBC)
+    if (CU::isIBC(*pu.cu))
     {
       numCandminus1 = int(pu.cs->sps->getMaxNumIBCMergeCand()) - 1;
     }
@@ -2459,7 +2459,8 @@ void CABACWriter::transform_unit( const TransformUnit& tu, CUCtx& cuCtx, Partiti
     }
     else
     {
-      bool lumaCbfIsInferredACT = (cu.colorTransform && cu.predMode == MODE_INTRA && trDepth == 0 && !chromaCbfs.sigChroma(area.chromaFormat));
+      bool lumaCbfIsInferredACT =
+        (cu.colorTransform && CU::isIntra(cu) && trDepth == 0 && !chromaCbfs.sigChroma(area.chromaFormat));
       CHECK(lumaCbfIsInferredACT && !TU::getCbfAtDepth(tu, COMPONENT_Y, trDepth), "adaptive color transform cannot have all zero coefficients");
       bool lastCbfIsInferred    = lumaCbfIsInferredACT; // ISP and ACT are mutually exclusive
       bool previousCbf          = false;

@@ -9678,7 +9678,8 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
     const UnitArea relativeUnitArea(tu.chromaFormat, Area(tuPos, tu.Y().size()));
 
     const Slice           &slice = *cs.slice;
-    if (slice.getLmcsEnabledFlag() && slice.getPicHeader()->getLmcsChromaResidualScaleFlag() && !(CS::isDualITree(cs) && slice.isIntra() && tu.cu->predMode == MODE_IBC))
+    if (slice.getLmcsEnabledFlag() && slice.getPicHeader()->getLmcsChromaResidualScaleFlag()
+        && !(CS::isDualITree(cs) && slice.isIntra() && CU::isIBC(*tu.cu)))
     {
       const CompArea      &areaY = tu.blocks[COMPONENT_Y];
       int adj = m_pcReshape->calculateChromaAdjVpduNei(tu, areaY);
@@ -10468,8 +10469,7 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
   m_pcRdCost->setChromaFormat(cs.sps->getChromaFormatIdc());
 
   CodingUnit &cu = *cs.getCU( partitioner.chType );
-  if( cu.predMode == MODE_INTER )
-    CHECK( cu.isSepTree(), "CU with Inter mode must be in single tree" );
+  CHECK(CU::isInter(cu) && cu.isSepTree(), "CU with Inter mode must be in single tree");
 
   const ChromaFormat format     = cs.area.chromaFormat;;
   const int  numValidComponents = getNumberValidComponents(format);

@@ -130,7 +130,7 @@ void DecCu::decompressCtu( CodingStructure& cs, const UnitArea& ctuArea )
           }
         }
       }
-      if (currCU.predMode != MODE_INTRA && currCU.predMode != MODE_PLT && currCU.Y().valid())
+      if (!CU::isIntra(currCU) && !CU::isPLT(currCU) && currCU.Y().valid())
       {
         xDeriveCUMV(currCU);
 #if K0149_BLOCK_STATISTICS

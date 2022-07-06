@@ -1305,7 +1305,7 @@ void CABACReader::xReadTruncBinCode(uint32_t& symbol, uint32_t maxSymbol)
 
 void CABACReader::extend_ref_line(CodingUnit& cu)
 {
-  if ( !cu.Y().valid() || cu.predMode != MODE_INTRA || !isLuma(cu.chType) || cu.bdpcmMode )
+  if (!cu.Y().valid() || !CU::isIntra(cu) || !isLuma(cu.chType) || cu.bdpcmMode)
   {
     cu.firstPU->multiRefIdx = 0;
     return;
@@ -2369,7 +2369,7 @@ void CABACReader::merge_idx( PredictionUnit& pu )
       return;
     }
 
-    if (pu.cu->predMode == MODE_IBC)
+    if (CU::isIBC(*pu.cu))
     {
       numCandminus1 = int(pu.cs->sps->getMaxNumIBCMergeCand()) - 1;
     }
@@ -2765,7 +2765,8 @@ void CABACReader::transform_unit( TransformUnit& tu, CUCtx& cuCtx, Partitioner& 
     }
     else
     {
-      bool lumaCbfIsInferredACT = (cu.colorTransform && cu.predMode == MODE_INTRA && trDepth == 0 && !chromaCbfs.sigChroma(area.chromaFormat));
+      bool lumaCbfIsInferredACT =
+        (cu.colorTransform && CU::isIntra(cu) && trDepth == 0 && !chromaCbfs.sigChroma(area.chromaFormat));
       bool lastCbfIsInferred    = lumaCbfIsInferredACT; // ISP and ACT are mutually exclusive
       bool previousCbf          = false;
       bool rootCbfSoFar         = false;
