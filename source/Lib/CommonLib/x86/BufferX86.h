@@ -922,27 +922,7 @@ void applyPROFHBD_SIMD(Pel *dstPel, int dstStride, const Pel *srcPel, int srcStr
 template< X86_VEXT vext >
 void roundIntVector_SIMD(int* v, int size, unsigned int nShift, const int dmvLimit)
 {
-  CHECKD(size % 16 != 0, "Size must be multiple of 16!");
-#ifdef USE_AVX512
-  if (vext >= AVX512 && size >= 16)
-  {
-    __m512i dMvMin = _mm256_set1_epi32(-dmvLimit);
-    __m512i dMvMax = _mm256_set1_epi32( dmvLimit );
-    __m512i nOffset = _mm512_set1_epi32((1 << (nShift - 1)));
-    __m512i vones = _mm512_set1_epi32(1);
-    __m512i vzero = _mm512_setzero_si512();
-    for (int i = 0; i < size; i += 16, v += 16)
-    {
-      __m512i src = _mm512_loadu_si512(v);
-      __mmask16 mask = _mm512_cmpge_epi32_mask(src, vzero);
-      src = __mm512_add_epi32(src, nOffset);
-      __mm512i dst = _mm512_srai_epi32(_mm512_mask_sub_epi32(src, mask, src, vones), nShift);
-      dst = _mm512_min_epi32(dMvMax, _mm512_max_epi32(dMvMin, dst));
-      _mm512_storeu_si512(v, dst);
-    }
-  }
-  else
-#endif
+  CHECKD(size % 8 != 0, "Size must be multiple of 8");
 #ifdef USE_AVX2
   if (vext >= AVX2 && size >= 8)
   {

@@ -2053,10 +2053,6 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     {
       WRITE_FLAG(picHeader->getProfDisabledFlag(), "ph_prof_disabled_flag");
     }
-    else
-    {
-      picHeader->setProfDisabledFlag(0);
-    }
 
     if ((pps->getUseWP() || pps->getWPBiPred()) && pps->getWpInfoInPhFlag())
     {

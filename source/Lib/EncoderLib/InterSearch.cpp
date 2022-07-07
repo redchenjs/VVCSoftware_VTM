@@ -2852,9 +2852,9 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   {
     if (pu.cu->cs->bestParent != nullptr && pu.cu->cs->bestParent->getCU(CHANNEL_TYPE_LUMA) != nullptr && pu.cu->cs->bestParent->getCU(CHANNEL_TYPE_LUMA)->affine == false)
     {
-      m_skipPROF = true;
+      m_skipProf = true;
     }
-    m_encOnly = true;
+    m_skipProfCond = !pu.cu->slice->getCheckLDC();
     // motion estimation only evaluates luma component
     m_maxCompIDToPred = MAX_NUM_COMPONENT;
 //    m_maxCompIDToPred = COMPONENT_Y;
@@ -4527,8 +4527,8 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 
     PU::spanMotionInfo(pu, mergeCtx);
 
-    m_skipPROF = false;
-    m_encOnly = false;
+    m_skipProf     = false;
+    m_skipProfCond = false;
     //  MC
     PelUnitBuf predBuf = pu.cs->getPredBuf(pu);
     if ( bcwIdx == BCW_DEFAULT || !m_affineMotion.affine4ParaAvail || !m_affineMotion.affine6ParaAvail )
@@ -6721,18 +6721,20 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
 
           vx = mvScaleHor + dMvHorX * (pu.Y().x - mvInfo->x) + dMvVerX * (pu.Y().y - mvInfo->y);
           vy = mvScaleVer + dMvHorY * (pu.Y().x - mvInfo->x) + dMvVerY * (pu.Y().y - mvInfo->y);
-          roundAffineMv(vx, vy, shift);
+
           mvTmp[0] = Mv(vx, vy);
+          mvTmp[0].roundAffine(shift);
           mvTmp[0].clipToStorageBitDepth();
           clipMv( mvTmp[0], pu.cu->lumaPos(), pu.cu->lumaSize(), *pu.cs->sps, *pu.cs->pps );
           mvTmp[0].roundAffinePrecInternal2Amvr(pu.cu->imv);
+
           vx = mvScaleHor + dMvHorX * (pu.Y().x + pu.Y().width - mvInfo->x) + dMvVerX * (pu.Y().y - mvInfo->y);
           vy = mvScaleVer + dMvHorY * (pu.Y().x + pu.Y().width - mvInfo->x) + dMvVerY * (pu.Y().y - mvInfo->y);
-          roundAffineMv(vx, vy, shift);
+
           mvTmp[1] = Mv(vx, vy);
+          mvTmp[1].roundAffine(shift);
           mvTmp[1].clipToStorageBitDepth();
-          clipMv( mvTmp[1], pu.cu->lumaPos(), pu.cu->lumaSize(), *pu.cs->sps, *pu.cs->pps );
-          mvTmp[0].roundAffinePrecInternal2Amvr(pu.cu->imv);
+          clipMv(mvTmp[1], pu.cu->lumaPos(), pu.cu->lumaSize(), *pu.cs->sps, *pu.cs->pps);
           mvTmp[1].roundAffinePrecInternal2Amvr(pu.cu->imv);
 
 #if GDR_ENABLED
@@ -7290,7 +7292,7 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
   {
     tryBipred = 1;
     pu.interDir = 3;
-    m_isBi = true;
+    m_biPredSearchAffine = true;
     // Set as best list0 and list1
     iRefIdxBi[0] = refIdx[0];
     iRefIdxBi[1] = refIdx[1];
@@ -7811,7 +7813,7 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
       }
     } // for loop-iter
     }
-    m_isBi = false;
+    m_biPredSearchAffine = false;
   } // if (B_SLICE)
 
   pu.mv    [REF_PIC_LIST_0] = Mv();

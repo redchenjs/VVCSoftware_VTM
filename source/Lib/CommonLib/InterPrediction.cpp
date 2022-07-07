@@ -52,20 +52,16 @@
 // ====================================================================================================================
 
 InterPrediction::InterPrediction()
-:
-  m_currChromaFormat( NUM_CHROMA_FORMAT )
-, m_maxCompIDToPred ( MAX_NUM_COMPONENT )
-, m_pcRdCost        ( nullptr )
-, m_storedMv        ( nullptr )
-, m_skipPROF (false)
-, m_encOnly  (false)
-, m_isBi     (false)
-, m_gradX0(nullptr)
-, m_gradY0(nullptr)
-, m_gradX1(nullptr)
-, m_gradY1(nullptr)
-, m_subPuMC(false)
-, m_IBCBufferWidth(0)
+  : m_currChromaFormat(NUM_CHROMA_FORMAT)
+  , m_maxCompIDToPred(MAX_NUM_COMPONENT)
+  , m_pcRdCost(nullptr)
+  , m_storedMv(nullptr)
+  , m_gradX0(nullptr)
+  , m_gradY0(nullptr)
+  , m_gradX1(nullptr)
+  , m_gradY1(nullptr)
+  , m_subPuMC(false)
+  , m_IBCBufferWidth(0)
 {
   for( uint32_t ch = 0; ch < MAX_NUM_COMPONENT; ch++ )
   {
@@ -230,7 +226,6 @@ void InterPrediction::init( RdCost* pcRdCost, ChromaFormat chromaFormatIDC, cons
 
   if (m_storedMv == nullptr)
   {
-    const int MVBUFFER_SIZE = MAX_CU_SIZE / MIN_PU_SIZE;
     m_storedMv = new Mv[MVBUFFER_SIZE*MVBUFFER_SIZE];
   }
   if (m_IBCBufferWidth != g_IBCBufferSize / ctuSize)
@@ -895,308 +890,222 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
                                      bool genChromaMv, const std::pair<int, int> scalingRatio)
 #endif
 {
+  JVET_J0090_SET_REF_PICTURE(refPic, compID);
 
-  JVET_J0090_SET_REF_PICTURE( refPic, compID );
-  const ChromaFormat chFmt = pu.chromaFormat;
+  const ChromaFormat &chFmt = pu.chromaFormat;
 
-  const int scaleX = ::getComponentScaleX(compID, chFmt);
-  const int scaleY = ::getComponentScaleY(compID, chFmt);
+  const CodingStructure &cs  = *pu.cs;
+  const SPS &            sps = *cs.sps;
+  const PPS &            pps = *cs.pps;
+  const PicHeader &      ph  = *cs.picHeader;
 
-  Mv mvLT =_mv[0];
-  Mv mvRT =_mv[1];
-  Mv mvLB =_mv[2];
 #if GDR_ENABLED
   bool allOk = true;
-  const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool isEncodeGdrClean = sps.getGDREnabledFlag() && cs.pcv->isEncoder
+                                && ((ph.getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA))
+                                    || ph.getNumVerVirtualBoundaries() == 0);
   const int pux = pu.lx();
   const int puy = pu.ly();
 #endif
 
-  // get affine sub-block width and height
-  const int width  = pu.Y().width;
-  const int height = pu.Y().height;
-  int blockWidth = AFFINE_MIN_BLOCK_SIZE;
-  int blockHeight = AFFINE_MIN_BLOCK_SIZE;
+  const int widthLuma  = pu.Y().width;
+  const int heightLuma = pu.Y().height;
 
-  CHECK(blockWidth > (width >> scaleX), "Sub Block width  > Block width");
-  CHECK(blockHeight > (height >> scaleY), "Sub Block height > Block height");
-  const int MVBUFFER_SIZE = MAX_CU_SIZE / MIN_PU_SIZE;
+  const int sbWidth  = AFFINE_SUBBLOCK_SIZE;
+  const int sbHeight = AFFINE_SUBBLOCK_SIZE;
 
-  const int cxWidth  = width >> scaleX;
-  const int cxHeight = height >> scaleY;
-  const int halfBW   = blockWidth >> 1;
-  const int halfBH   = blockHeight >> 1;
+  const bool isRefScaled = refPic->isRefScaled(&pps);
 
-  const int bit = MAX_CU_DEPTH;
-
-  int dmvHorX, dmvHorY, dmvVerX, dmvVerY;
-  dmvHorX = (mvRT - mvLT).getHor() * (1 << (bit - floorLog2(cxWidth)));
-  dmvHorY = (mvRT - mvLT).getVer() * (1 << (bit - floorLog2(cxWidth)));
-  if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
-  {
-    dmvVerX = (mvLB - mvLT).getHor() * (1 << (bit - floorLog2(cxHeight)));
-    dmvVerY = (mvLB - mvLT).getVer() * (1 << (bit - floorLog2(cxHeight)));
-  }
-  else
-  {
-    dmvVerX = -dmvHorY;
-    dmvVerY = dmvHorX;
-  }
-
-  int mvScaleHor = mvLT.getHor() * (1 << bit);
-  int mvScaleVer = mvLT.getVer() * (1 << bit);
-
-  const SPS &sps    = *pu.cs->sps;
-
-  const int vFilterSize = isLuma(compID) ? NTAPS_LUMA : NTAPS_CHROMA;
-
-  const int shift = bit - 4 + MV_FRACTIONAL_BITS_INTERNAL;
-
-  bool      wrapRef = false;
-  const bool subblkMVSpreadOverLimit = isSubblockVectorSpreadOverLimit(dmvHorX, dmvHorY, dmvVerX, dmvVerY, pu.interDir);
-  const bool isRefScaled = refPic->isRefScaled( pu.cs->pps );
-
-  bool enablePROF = (sps.getUsePROF()) && (!m_skipPROF) && (compID == COMPONENT_Y);
-  enablePROF &= (!pu.cs->picHeader->getProfDisabledFlag());
-  enablePROF &= !((pu.cu->affineType == AFFINEMODEL_6PARAM && _mv[0] == _mv[1] && _mv[0] == _mv[2]) || (pu.cu->affineType == AFFINEMODEL_4PARAM && _mv[0] == _mv[1]));
-  enablePROF &= !subblkMVSpreadOverLimit;
-  const int profThres = 1 << (bit + (m_isBi ? 1 : 0));
-  enablePROF &= !m_encOnly || pu.cu->slice->getCheckLDC() || dmvHorX > profThres || dmvHorY > profThres
-                || dmvVerX > profThres || dmvVerY > profThres || dmvHorX < -profThres || dmvHorY < -profThres
-                || dmvVerX < -profThres || dmvVerY < -profThres;
-  enablePROF &= (isRefScaled == false);
-
-  bool isLast = enablePROF ? false : !bi;
-
-  const int cuExtW = AFFINE_MIN_BLOCK_SIZE + PROF_BORDER_EXT_W * 2;
-  const int cuExtH = AFFINE_MIN_BLOCK_SIZE + PROF_BORDER_EXT_H * 2;
-
-  PelBuf gradXExt(m_gradBuf[0], cuExtW, cuExtH);
-  PelBuf gradYExt(m_gradBuf[1], cuExtW, cuExtH);
-  const int MAX_FILTER_SIZE = std::max<int>(NTAPS_LUMA, NTAPS_CHROMA);
-  const int dstExtW = ((blockWidth + PROF_BORDER_EXT_W * 2 + 7) >> 3) << 3;
-  const int dstExtH = blockHeight + PROF_BORDER_EXT_H * 2;
-  PelBuf dstExtBuf(m_filteredBlockTmp[1][compID], dstExtW, dstExtH);
+  const int dstExtW = (sbWidth + PROF_BORDER_EXT_W * 2 + 7) & ~7;
+  const int dstExtH = sbHeight + PROF_BORDER_EXT_H * 2;
+  PelBuf    dstExtBuf(m_filteredBlockTmp[1][compID], dstExtW, dstExtH);
 
   const int refExtH = dstExtH + MAX_FILTER_SIZE - 1;
-  PelBuf tmpBuf = PelBuf(m_filteredBlockTmp[0][compID], dstExtW, refExtH);
+  PelBuf    tmpBuf  = PelBuf(m_filteredBlockTmp[0][compID], dstExtW, refExtH);
 
   PelBuf &dstBuf = dstPic.bufs[compID];
 
-  int *dMvScaleHor = m_dMvBuf[m_iRefListIdx];
-  int *dMvScaleVer = m_dMvBuf[m_iRefListIdx] + 16;
+  const bool wrapAroundEnabled = refPic->isWrapAroundEnabled(&pps);
 
-  if (enablePROF)
+  int dmvHorX = 0;
+  int dmvHorY = 0;
+  int dmvVerX = 0;
+  int dmvVerY = 0;
+
+  constexpr int PREC = MAX_CU_DEPTH;
+
+  bool enableProfTmp = compID == COMPONENT_Y && !ph.getProfDisabledFlag() && !isRefScaled && !m_skipProf;
+
+  if (compID == COMPONENT_Y || genChromaMv || chFmt == CHROMA_444)
   {
-    int* dMvH = dMvScaleHor;
-    int* dMvV = dMvScaleVer;
+    const Mv &mvLT = _mv[0];
+    const Mv &mvRT = _mv[1];
+    const Mv &mvLB = _mv[2];
 
-    const int quadHorX = 4 * dmvHorX;
-    const int quadHorY = 4 * dmvHorY;
-    const int quadVerX = 4 * dmvVerX;
-    const int quadVerY = 4 * dmvVerY;
-
-    dMvH[0] = 2 * (dmvHorX + dmvVerX) - 2 * (quadHorX + quadVerX);
-    dMvV[0] = 2 * (dmvHorY + dmvVerY) - 2 * (quadHorY + quadVerY);
-
-    for (int w = 1; w < blockWidth; w++)
+    dmvHorX = (mvRT - mvLT).getHor() * (1 << (PREC - floorLog2(widthLuma)));
+    dmvHorY = (mvRT - mvLT).getVer() * (1 << (PREC - floorLog2(widthLuma)));
+    if (pu.cu->affineType == AFFINEMODEL_6PARAM)
     {
-      dMvH[w] = dMvH[w - 1] + quadHorX;
-      dMvV[w] = dMvV[w - 1] + quadHorY;
+      dmvVerX = (mvLB - mvLT).getHor() * (1 << (PREC - floorLog2(heightLuma)));
+      dmvVerY = (mvLB - mvLT).getVer() * (1 << (PREC - floorLog2(heightLuma)));
+    }
+    else
+    {
+      dmvVerX = -dmvHorY;
+      dmvVerY = dmvHorX;
     }
 
-    dMvH += blockWidth;
-    dMvV += blockWidth;
-    for (int h = 1; h < blockHeight; h++)
+    if (dmvHorX == 0 && dmvHorY == 0 && dmvVerX == 0 && dmvVerY == 0)
     {
-      for (int w = 0; w < blockWidth; w++)
+      enableProfTmp = false;
+    }
+
+    const bool largeMvGradient = isSubblockVectorSpreadOverLimit(dmvHorX, dmvHorY, dmvVerX, dmvVerY, pu.interDir);
+    if (largeMvGradient)
+    {
+      enableProfTmp = false;
+    }
+
+    const int baseHor = mvLT.getHor() * (1 << PREC);
+    const int baseVer = mvLT.getVer() * (1 << PREC);
+
+    for (int h = 0; h < heightLuma; h += sbHeight)
+    {
+      for (int w = 0; w < widthLuma; w += sbWidth)
       {
-        dMvH[w] = dMvH[w - blockWidth] + quadVerX;
-        dMvV[w] = dMvV[w - blockWidth] + quadVerY;
+        const int weightHor = largeMvGradient ? widthLuma >> 1 : (sbWidth >> 1) + w;
+        const int weightVer = largeMvGradient ? heightLuma >> 1 : (sbHeight >> 1) + h;
+
+        Mv tmpMv;
+
+        tmpMv.hor = baseHor + dmvHorX * weightHor + dmvVerX * weightVer;
+        tmpMv.ver = baseVer + dmvHorY * weightHor + dmvVerY * weightVer;
+
+        tmpMv.roundAffine(PREC - 4 + MV_FRACTIONAL_BITS_INTERNAL);
+        tmpMv.clipToStorageBitDepth();
+
+        m_storedMv[h / AFFINE_SUBBLOCK_SIZE * MVBUFFER_SIZE + w / AFFINE_SUBBLOCK_SIZE] = tmpMv;
       }
-      dMvH += blockWidth;
-      dMvV += blockWidth;
     }
 
-    const int mvShift  = 8;
-    const int dmvLimit = ( 1 << 5 ) - 1;
+    if (enableProfTmp && m_skipProfCond)
+    {
+      const int profThres = (m_biPredSearchAffine ? 2 : 1) << PREC;
+
+      if (abs(dmvHorX) <= profThres && abs(dmvHorY) <= profThres && abs(dmvVerX) <= profThres
+          && abs(dmvVerY) <= profThres)
+      {
+        // Skip PROF during search when the adjustment is expected to be small
+        enableProfTmp = false;
+      }
+    }
+  }
+
+  const bool enableProf = enableProfTmp;
+  const bool isLast     = !enableProf && !bi;
+
+  int dMvScaleHor[AFFINE_SUBBLOCK_SIZE * AFFINE_SUBBLOCK_SIZE];
+  int dMvScaleVer[AFFINE_SUBBLOCK_SIZE * AFFINE_SUBBLOCK_SIZE];
+
+  if (enableProf)
+  {
+    for (int y = 0; y < sbHeight; y++)
+    {
+      for (int x = 0; x < sbWidth; x++)
+      {
+        const int wx = 2 * x - (sbWidth - 1);
+        const int wy = 2 * y - (sbHeight - 1);
+
+        dMvScaleHor[y * sbWidth + x] = wx * dmvHorX + wy * dmvVerX;
+        dMvScaleVer[y * sbWidth + x] = wx * dmvHorY + wy * dmvVerY;
+      }
+    }
+
+    // NOTE: the shift value is 7 and not 8 as in section 8.5.5.9 of the spec because
+    // the values dMvScaleHor/dMvScaleVer are half of diffMvLX (which are always even
+    // in equations 876 and 877)
+    const int mvShift  = 7;
+    const int dmvLimit = (1 << 5) - 1;
+
+    const int sz = sbWidth * sbHeight;
 
     if (!g_pelBufOP.roundIntVector)
     {
-      for (int idx = 0; idx < blockWidth * blockHeight; idx++)
+      for (int idx = 0; idx < sz; idx++)
       {
-        roundAffineMv(dMvScaleHor[idx], dMvScaleVer[idx], mvShift);
-        dMvScaleHor[idx] = Clip3( -dmvLimit, dmvLimit, dMvScaleHor[idx] );
-        dMvScaleVer[idx] = Clip3( -dmvLimit, dmvLimit, dMvScaleVer[idx] );
+        Mv tmpMv(dMvScaleHor[idx], dMvScaleVer[idx]);
+        tmpMv.roundAffine(mvShift);
+        dMvScaleHor[idx] = Clip3(-dmvLimit, dmvLimit, tmpMv.getHor());
+        dMvScaleVer[idx] = Clip3(-dmvLimit, dmvLimit, tmpMv.getVer());
       }
     }
     else
     {
-      int sz = blockWidth * blockHeight;
       g_pelBufOP.roundIntVector(dMvScaleHor, sz, mvShift, dmvLimit);
       g_pelBufOP.roundIntVector(dMvScaleVer, sz, mvShift, dmvLimit);
     }
   }
-  int scaleXLuma = ::getComponentScaleX(COMPONENT_Y, chFmt);
-  int scaleYLuma = ::getComponentScaleY(COMPONENT_Y, chFmt);
 
-  if (genChromaMv && pu.chromaFormat != CHROMA_444)
-  {
-    CHECK(compID == COMPONENT_Y, "Chroma only subblock MV calculation should not apply to Luma");
-    int lumaBlockWidth  = AFFINE_MIN_BLOCK_SIZE;
-    int lumaBlockHeight = AFFINE_MIN_BLOCK_SIZE;
-
-    CHECK(lumaBlockWidth > (width >> scaleXLuma), "Sub Block width  > Block width");
-    CHECK(lumaBlockHeight > (height >> scaleYLuma), "Sub Block height > Block height");
-
-    const int cxWidthLuma  = width >> scaleXLuma;
-    const int cxHeightLuma = height >> scaleYLuma;
-    const int halfBWLuma  = lumaBlockWidth >> 1;
-    const int halfBHLuma  = lumaBlockHeight >> 1;
-
-    int dMvHorXLuma, dMvHorYLuma, dMvVerXLuma, dMvVerYLuma;
-    dMvHorXLuma = (mvRT - mvLT).getHor() * (1 << (bit - floorLog2(cxWidthLuma)));
-    dMvHorYLuma = (mvRT - mvLT).getVer() * (1 << (bit - floorLog2(cxWidthLuma)));
-    if (pu.cu->affineType == AFFINEMODEL_6PARAM)
-    {
-      dMvVerXLuma = (mvLB - mvLT).getHor() * (1 << (bit - floorLog2(cxHeightLuma)));
-      dMvVerYLuma = (mvLB - mvLT).getVer() * (1 << (bit - floorLog2(cxHeightLuma)));
-    }
-    else
-    {
-      dMvVerXLuma = -dMvHorYLuma;
-      dMvVerYLuma = dMvHorXLuma;
-    }
-
-    const bool subblkMVSpreadOverLimitLuma = isSubblockVectorSpreadOverLimit(dMvHorXLuma, dMvHorYLuma, dMvVerXLuma, dMvVerYLuma, pu.interDir);
-
-    // get luma MV block by block
-    for (int h = 0; h < cxHeightLuma; h += lumaBlockHeight)
-    {
-      for (int w = 0; w < cxWidthLuma; w += lumaBlockWidth)
-      {
-        int mvScaleTmpHor, mvScaleTmpVer;
-        if (!subblkMVSpreadOverLimitLuma)
-        {
-          mvScaleTmpHor = mvScaleHor + dMvHorXLuma * (halfBWLuma + w) + dMvVerXLuma * (halfBHLuma + h);
-          mvScaleTmpVer = mvScaleVer + dMvHorYLuma * (halfBWLuma + w) + dMvVerYLuma * (halfBHLuma + h);
-        }
-        else
-        {
-          mvScaleTmpHor = mvScaleHor + dMvHorXLuma * (cxWidthLuma >> 1) + dMvVerXLuma * (cxHeightLuma >> 1);
-          mvScaleTmpVer = mvScaleVer + dMvHorYLuma * (cxWidthLuma >> 1) + dMvVerYLuma * (cxHeightLuma >> 1);
-        }
-
-        roundAffineMv(mvScaleTmpHor, mvScaleTmpVer, shift);
-        Mv tmpMv(mvScaleTmpHor, mvScaleTmpVer);
-        tmpMv.clipToStorageBitDepth();
-        mvScaleTmpHor = tmpMv.getHor();
-        mvScaleTmpVer = tmpMv.getVer();
-
-        m_storedMv[h / AFFINE_MIN_BLOCK_SIZE * MVBUFFER_SIZE + w / AFFINE_MIN_BLOCK_SIZE].set(mvScaleTmpHor, mvScaleTmpVer);
-      }
-    }
-  }
   // get prediction block by block
-  for ( int h = 0; h < cxHeight; h += blockHeight )
+  const int scaleX = ::getComponentScaleX(compID, chFmt);
+  const int scaleY = ::getComponentScaleY(compID, chFmt);
+
+  const int width  = widthLuma >> scaleX;
+  const int height = heightLuma >> scaleY;
+
+  CHECK(sbWidth > width, "Subblock width > block width");
+  CHECK(sbHeight > height, "Subblock height > block height");
+
+  for (int h = 0; h < height; h += sbHeight)
   {
-    for ( int w = 0; w < cxWidth; w += blockWidth )
+    for (int w = 0; w < width; w += sbWidth)
     {
-      int mvScaleTmpHor, mvScaleTmpVer;
-      if (compID == COMPONENT_Y || pu.chromaFormat == CHROMA_444)
+      Mv curMv;
+
+      const int hLuma = h << scaleY;
+      const int wLuma = w << scaleX;
+
+      const ptrdiff_t idx = hLuma / AFFINE_SUBBLOCK_SIZE * MVBUFFER_SIZE + wLuma / AFFINE_SUBBLOCK_SIZE;
+
+      if (compID == COMPONENT_Y || chFmt == CHROMA_444)
       {
-        if ( !subblkMVSpreadOverLimit )
-        {
-          mvScaleTmpHor = mvScaleHor + dmvHorX * (halfBW + w) + dmvVerX * (halfBH + h);
-          mvScaleTmpVer = mvScaleVer + dmvHorY * (halfBW + w) + dmvVerY * (halfBH + h);
-        }
-        else
-        {
-          mvScaleTmpHor = mvScaleHor + dmvHorX * (cxWidth >> 1) + dmvVerX * (cxHeight >> 1);
-          mvScaleTmpVer = mvScaleVer + dmvHorY * (cxWidth >> 1) + dmvVerY * (cxHeight >> 1);
-        }
-        roundAffineMv(mvScaleTmpHor, mvScaleTmpVer, shift);
-        Mv tmpMv(mvScaleTmpHor, mvScaleTmpVer);
-        tmpMv.clipToStorageBitDepth();
-        mvScaleTmpHor = tmpMv.getHor();
-        mvScaleTmpVer = tmpMv.getVer();
-
-        // clip and scale
-        if ( refPic->isWrapAroundEnabled( pu.cs->pps ) )
-        {
-          m_storedMv[h / AFFINE_MIN_BLOCK_SIZE * MVBUFFER_SIZE + w / AFFINE_MIN_BLOCK_SIZE].set(mvScaleTmpHor,
-                                                                                                mvScaleTmpVer);
-          Mv tmpMv(mvScaleTmpHor, mvScaleTmpVer);
-          wrapRef = wrapClipMv( tmpMv, Position( pu.Y().x + w, pu.Y().y + h ), Size( blockWidth, blockHeight ), &sps, pu.cs->pps );
-          mvScaleTmpHor = tmpMv.getHor();
-          mvScaleTmpVer = tmpMv.getVer();
-        }
-        else
-        {
-          wrapRef = false;
-          m_storedMv[h / AFFINE_MIN_BLOCK_SIZE * MVBUFFER_SIZE + w / AFFINE_MIN_BLOCK_SIZE].set(mvScaleTmpHor,
-                                                                                                mvScaleTmpVer);
-          if (isRefScaled == false)
-          {
-            clipMv(tmpMv, pu.lumaPos(), pu.lumaSize(), *pu.cs->sps, *pu.cs->pps);
-            mvScaleTmpHor = tmpMv.getHor();
-            mvScaleTmpVer = tmpMv.getVer();
-          }
-        }
-#if GDR_ENABLED
-        if (isEncodeGdrClean)
-        {
-          Position subPuPos = Position(pux + w + blockWidth, puy + h + blockHeight);
-          Mv       subPuMv  = Mv(mvScaleTmpHor, mvScaleTmpVer);
-          bool puClean = cs.isClean(subPuPos, subPuMv, refPic);
-
-          allOk = allOk && puClean;
-        }
-#endif
+        curMv = m_storedMv[idx];
       }
       else
       {
-        Mv curMv =
-          m_storedMv[((h << scaleY) / AFFINE_MIN_BLOCK_SIZE) * MVBUFFER_SIZE + ((w << scaleX) / AFFINE_MIN_BLOCK_SIZE)]
-          + m_storedMv[((h << scaleY) / AFFINE_MIN_BLOCK_SIZE + scaleY) * MVBUFFER_SIZE
-                       + ((w << scaleX) / AFFINE_MIN_BLOCK_SIZE + scaleX)];
-        roundAffineMv(curMv.hor, curMv.ver, 1);
-        if ( refPic->isWrapAroundEnabled( pu.cs->pps ) )
-        {
-          wrapRef = wrapClipMv(curMv, Position(pu.Y().x + (w << scaleX), pu.Y().y + (h << scaleY)),
-                               Size(blockWidth << scaleX, blockHeight << scaleY), &sps, pu.cs->pps);
-        }
-        else
-        {
-          wrapRef = false;
-          if (isRefScaled == false)
-          {
-            clipMv(curMv, pu.lumaPos(), pu.lumaSize(), *pu.cs->sps, *pu.cs->pps);
-          }
-        }
-        mvScaleTmpHor = curMv.hor;
-        mvScaleTmpVer = curMv.ver;
+        curMv = m_storedMv[idx] + m_storedMv[idx + scaleY * MVBUFFER_SIZE + scaleX];
+        curMv.roundAffine(1);
+      }
+
+      bool wrapRef = false;
+
+      if (wrapAroundEnabled)
+      {
+        wrapRef = wrapClipMv(curMv, Position(pu.Y().x + wLuma, pu.Y().y + hLuma),
+                             Size(sbWidth << scaleX, sbHeight << scaleY), &sps, &pps);
+      }
+      else if (!isRefScaled)
+      {
+        clipMv(curMv, pu.lumaPos(), pu.lumaSize(), sps, pps);
+      }
 
 #if GDR_ENABLED
-        if (isEncodeGdrClean)
-        {
-          Position subPuPos = Position(pux + (w + blockWidth) * 2, puy + (h + blockHeight) * 2);
-          Mv       subPuMv  = Mv(mvScaleTmpHor, mvScaleTmpVer);
-          bool puClean = cs.isClean(subPuPos, subPuMv, refPic);
+      if (isEncodeGdrClean)
+      {
+        const Position subPuPos = Position(pux + ((w + sbWidth) << scaleX), puy + ((h + sbHeight) << scaleY));
 
-          allOk = allOk && puClean;
-        }
-#endif
+        const bool puClean = cs.isClean(subPuPos, curMv, refPic);
+
+        allOk = allOk && puClean;
       }
+#endif
 
       if( isRefScaled )
       {
-        xPredInterBlkRPR(scalingRatio, *pu.cs->pps,
-                         CompArea(compID, chFmt, pu.blocks[compID].offset(w, h), Size(blockWidth, blockHeight)), refPic,
-                         Mv(mvScaleTmpHor, mvScaleTmpVer), dstBuf.buf + w + h * dstBuf.stride, dstBuf.stride, bi,
-                         wrapRef, clpRng, 2);
-        CHECK( enablePROF, "PROF should be disabled with RPR" );
+        CHECK(enableProf, "PROF should be disabled with RPR");
+        xPredInterBlkRPR(scalingRatio, pps,
+                         CompArea(compID, chFmt, pu.blocks[compID].offset(w, h), Size(sbWidth, sbHeight)), refPic,
+                         curMv, dstBuf.buf + w + h * dstBuf.stride, dstBuf.stride, bi, wrapRef, clpRng, 2);
       }
       else
       {
@@ -1205,93 +1114,89 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 
         if (isLuma(compID))
         {
-          xInt  = mvScaleTmpHor >> 4;
-          xFrac = mvScaleTmpHor & 15;
-          yInt  = mvScaleTmpVer >> 4;
-          yFrac = mvScaleTmpVer & 15;
+          xInt  = curMv.getHor() >> MV_FRAC_BITS_LUMA;
+          xFrac = curMv.getHor() & MV_FRAC_MASK_LUMA;
+          yInt  = curMv.getVer() >> MV_FRAC_BITS_LUMA;
+          yFrac = curMv.getVer() & MV_FRAC_MASK_LUMA;
         }
         else
         {
-          xInt  = mvScaleTmpHor * (1 << (1 - scaleX)) >> 5;
-          xFrac = mvScaleTmpHor * (1 << (1 - scaleX)) & 31;
-          yInt  = mvScaleTmpVer * (1 << (1 - scaleY)) >> 5;
-          yFrac = mvScaleTmpVer * (1 << (1 - scaleY)) & 31;
+          xInt  = curMv.getHor() * (1 << (1 - scaleX)) >> MV_FRAC_BITS_CHROMA;
+          xFrac = curMv.getHor() * (1 << (1 - scaleX)) & MV_FRAC_MASK_CHROMA;
+          yInt  = curMv.getVer() * (1 << (1 - scaleY)) >> MV_FRAC_BITS_CHROMA;
+          yFrac = curMv.getVer() * (1 << (1 - scaleY)) & MV_FRAC_MASK_CHROMA;
         }
 
         const CPelBuf refBuf = refPic->getRecoBuf(
           CompArea(compID, chFmt, pu.blocks[compID].offset(xInt + w, yInt + h), pu.blocks[compID]), wrapRef);
 
-        Pel *ref = (Pel *) refBuf.buf;
-        Pel *dst = dstBuf.buf + w + h * dstBuf.stride;
+        const Pel *ref       = refBuf.buf;
+        const int  refStride = refBuf.stride;
 
-        int refStride = refBuf.stride;
-        int dstStride = dstBuf.stride;
-
-        int bw = blockWidth;
-        int bh = blockHeight;
-
-        if (enablePROF)
-        {
-          dst       = dstExtBuf.bufAt(PROF_BORDER_EXT_W, PROF_BORDER_EXT_H);
-          dstStride = dstExtBuf.stride;
-        }
+        Pel *dst =
+          enableProf ? dstExtBuf.bufAt(PROF_BORDER_EXT_W, PROF_BORDER_EXT_H) : dstBuf.buf + w + h * dstBuf.stride;
+        const int dstStride = enableProf ? dstExtBuf.stride : dstBuf.stride;
 
         if (yFrac == 0)
         {
-          m_if.filterHor(compID, (Pel *) ref, refStride, dst, dstStride, bw, bh, xFrac, isLast, clpRng);
+          m_if.filterHor(compID, ref, refStride, dst, dstStride, sbWidth, sbHeight, xFrac, isLast, clpRng);
         }
         else if (xFrac == 0)
         {
-          m_if.filterVer(compID, (Pel *) ref, refStride, dst, dstStride, bw, bh, yFrac, true, isLast, clpRng);
+          m_if.filterVer(compID, ref, refStride, dst, dstStride, sbWidth, sbHeight, yFrac, true, isLast, clpRng);
         }
         else
         {
-          m_if.filterHor(compID, (Pel *) ref - ((vFilterSize >> 1) - 1) * refStride, refStride, tmpBuf.buf,
-                         tmpBuf.stride, bw, bh + vFilterSize - 1, xFrac, false, clpRng);
+          const int filterSize = isLuma(compID) ? NTAPS_LUMA : NTAPS_CHROMA;
+
+          m_if.filterHor(compID, ref - ((filterSize >> 1) - 1) * refStride, refStride, tmpBuf.buf, tmpBuf.stride,
+                         sbWidth, sbHeight + filterSize - 1, xFrac, false, clpRng);
           JVET_J0090_SET_CACHE_ENABLE(false);
-          m_if.filterVer(compID, tmpBuf.buf + ((vFilterSize >> 1) - 1) * tmpBuf.stride, tmpBuf.stride, dst, dstStride,
-                         bw, bh, yFrac, false, isLast, clpRng);
+          m_if.filterVer(compID, tmpBuf.buf + ((filterSize >> 1) - 1) * tmpBuf.stride, tmpBuf.stride, dst, dstStride,
+                         sbWidth, sbHeight, yFrac, false, isLast, clpRng);
           JVET_J0090_SET_CACHE_ENABLE(true);
         }
-        if (enablePROF)
+
+        if (enableProf)
         {
           const int shift = IF_INTERNAL_FRAC_BITS(clpRng.bd);
-          const int xOffset = xFrac >> 3;
-          const int yOffset = yFrac >> 3;
+          CHECKD(shift >= 0, "shift must be positive");
+          const int xOffset = xFrac >> (MV_FRAC_BITS_LUMA - 1);
+          const int yOffset = yFrac >> (MV_FRAC_BITS_LUMA - 1);
 
-          const int refOffset = (blockHeight + 1) * refStride;
-          const int dstOffset = (blockHeight + 1) * dstStride;
+          // NOTE: corners don't need to be padded
+          const Pel *refPel = ref + yOffset * refStride + xOffset;
+          Pel *      dstPel = dst;
 
-          const Pel *refPel = ref - (1 - yOffset) * refStride + xOffset - 1;
-          Pel *      dstPel = dst - dstStride - 1;
-          for (int pw = 0; pw < blockWidth + 2; pw++)
+          for (ptrdiff_t x = 0; x < sbWidth; x++)
           {
-            dstPel[pw]             = leftShift_round(refPel[pw], shift) - (Pel) IF_INTERNAL_OFFS;
-            dstPel[pw + dstOffset] = leftShift_round(refPel[pw + refOffset], shift) - (Pel) IF_INTERNAL_OFFS;
+            const ptrdiff_t refOffset = sbHeight * refStride;
+            const ptrdiff_t dstOffset = sbHeight * dstStride;
+
+            dstPel[x - dstStride] = (refPel[x - refStride] << shift) - IF_INTERNAL_OFFS;
+            dstPel[x + dstOffset] = (refPel[x + refOffset] << shift) - IF_INTERNAL_OFFS;
           }
 
-          refPel = ref + yOffset * refBuf.stride + xOffset;
-          dstPel = dst;
-          for (int ph = 0; ph < blockHeight; ph++, refPel += refStride, dstPel += dstStride)
+          for (int y = 0; y < sbHeight; y++, refPel += refStride, dstPel += dstStride)
           {
-            dstPel[-1]         = leftShift_round(refPel[-1], shift) - (Pel) IF_INTERNAL_OFFS;
-            dstPel[blockWidth] = leftShift_round(refPel[blockWidth], shift) - (Pel) IF_INTERNAL_OFFS;
+            dstPel[-1]      = (refPel[-1] << shift) - IF_INTERNAL_OFFS;
+            dstPel[sbWidth] = (refPel[sbWidth] << shift) - IF_INTERNAL_OFFS;
           }
 
-          PelBuf gradXBuf = gradXExt.subBuf(0, 0, blockWidth + 2, blockHeight + 2);
-          PelBuf gradYBuf = gradYExt.subBuf(0, 0, blockWidth + 2, blockHeight + 2);
-          g_pelBufOP.profGradFilter(dstExtBuf.buf, dstExtBuf.stride, blockWidth + 2, blockHeight + 2, gradXBuf.stride,
-                                    gradXBuf.buf, gradYBuf.buf, clpRng.bd);
+          const ptrdiff_t strideGrad = AFFINE_SUBBLOCK_WIDTH_EXT;
 
-          const Pel offset = (1 << (shift - 1)) + IF_INTERNAL_OFFS;
-          Pel *src = dstExtBuf.bufAt(PROF_BORDER_EXT_W, PROF_BORDER_EXT_H);
-          Pel *gX  = gradXBuf.bufAt(PROF_BORDER_EXT_W, PROF_BORDER_EXT_H);
-          Pel *gY  = gradYBuf.bufAt(PROF_BORDER_EXT_W, PROF_BORDER_EXT_H);
+          g_pelBufOP.profGradFilter(dstExtBuf.buf, dstExtBuf.stride, AFFINE_SUBBLOCK_WIDTH_EXT,
+                                    AFFINE_SUBBLOCK_HEIGHT_EXT, strideGrad, m_gradBuf[0], m_gradBuf[1], clpRng.bd);
 
+          const Pel offset = (1 << shift >> 1) + IF_INTERNAL_OFFS;
+
+          Pel *src  = dst;
+          Pel *gX   = m_gradBuf[0] + PROF_BORDER_EXT_H * strideGrad + PROF_BORDER_EXT_W;
+          Pel *gY   = m_gradBuf[1] + PROF_BORDER_EXT_H * strideGrad + PROF_BORDER_EXT_W;
           Pel *dstY = dstBuf.bufAt(w, h);
 
-          g_pelBufOP.applyPROF(dstY, dstBuf.stride, src, dstExtBuf.stride, blockWidth, blockHeight, gX, gY,
-                               gradXBuf.stride, dMvScaleHor, dMvScaleVer, blockWidth, bi, shift, offset, clpRng);
+          g_pelBufOP.applyPROF(dstY, dstBuf.stride, src, dstExtBuf.stride, sbWidth, sbHeight, gX, gY, strideGrad,
+                               dMvScaleHor, dMvScaleVer, sbWidth, bi, shift, offset, clpRng);
         }
       }
     }

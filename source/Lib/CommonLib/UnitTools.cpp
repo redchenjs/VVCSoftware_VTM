@@ -1549,7 +1549,7 @@ void PU::getInterMergeCandidates(const PredictionUnit &pu, MergeCtx &mrgCtx, int
           // average two MVs
           Mv avgMv = mvI;
           avgMv += mvJ;
-          roundAffineMv(avgMv.hor, avgMv.ver, 1);
+          avgMv.roundAffine(1);
 
           mrgCtx.mvFieldNeighbours[cnt * 2 + refListId].setMvField( avgMv, refIdxI );
 #if GDR_ENABLED
@@ -2483,34 +2483,27 @@ void PU::xInheritedAffineMv(const PredictionUnit &pu, const PredictionUnit* puNe
     dmvVerY = dmvHorX;
   }
 
-  const int mvScaleHor = mvLT.getHor() << shift;
-  const int mvScaleVer = mvLT.getVer() << shift;
-  int horTmp, verTmp;
+  int mvScaleHor = mvLT.getHor() << shift;
+  int mvScaleVer = mvLT.getVer() << shift;
 
   // v0
-  horTmp = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY - posNeiY);
-  verTmp = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY - posNeiY);
-  roundAffineMv(horTmp, verTmp, shift);
-  rcMv[0].hor = horTmp;
-  rcMv[0].ver = verTmp;
+  rcMv[0].hor = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY - posNeiY);
+  rcMv[0].ver = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY - posNeiY);
+  rcMv[0].roundAffine(shift);
   rcMv[0].clipToStorageBitDepth();
 
   // v1
-  horTmp = mvScaleHor + dmvHorX * (posCurX + curW - posNeiX) + dmvVerX * (posCurY - posNeiY);
-  verTmp = mvScaleVer + dmvHorY * (posCurX + curW - posNeiX) + dmvVerY * (posCurY - posNeiY);
-  roundAffineMv(horTmp, verTmp, shift);
-  rcMv[1].hor = horTmp;
-  rcMv[1].ver = verTmp;
+  rcMv[1].hor = mvScaleHor + dmvHorX * (posCurX + curW - posNeiX) + dmvVerX * (posCurY - posNeiY);
+  rcMv[1].ver = mvScaleVer + dmvHorY * (posCurX + curW - posNeiX) + dmvVerY * (posCurY - posNeiY);
+  rcMv[1].roundAffine(shift);
   rcMv[1].clipToStorageBitDepth();
 
   // v2
   if (pu.cu->affineType == AFFINEMODEL_6PARAM)
   {
-    horTmp = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY + curH - posNeiY);
-    verTmp = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY + curH - posNeiY);
-    roundAffineMv(horTmp, verTmp, shift);
-    rcMv[2].hor = horTmp;
-    rcMv[2].ver = verTmp;
+    rcMv[2].hor = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY + curH - posNeiY);
+    rcMv[2].ver = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY + curH - posNeiY);
+    rcMv[2].roundAffine(shift);
     rcMv[2].clipToStorageBitDepth();
   }
 }
@@ -2563,32 +2556,25 @@ void PU::xInheritedAffineMv( const PredictionUnit &pu, const PredictionUnit* puN
 
   int mvScaleHor = mvLT.getHor() * (1 << shift);
   int mvScaleVer = mvLT.getVer() * (1 << shift);
-  int horTmp, verTmp;
 
   // v0
-  horTmp = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY - posNeiY);
-  verTmp = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY - posNeiY);
-  roundAffineMv( horTmp, verTmp, shift );
-  rcMv[0].hor = horTmp;
-  rcMv[0].ver = verTmp;
+  rcMv[0].hor = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY - posNeiY);
+  rcMv[0].ver = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY - posNeiY);
+  rcMv[0].roundAffine(shift);
   rcMv[0].clipToStorageBitDepth();
 
   // v1
-  horTmp = mvScaleHor + dmvHorX * (posCurX + curW - posNeiX) + dmvVerX * (posCurY - posNeiY);
-  verTmp = mvScaleVer + dmvHorY * (posCurX + curW - posNeiX) + dmvVerY * (posCurY - posNeiY);
-  roundAffineMv( horTmp, verTmp, shift );
-  rcMv[1].hor = horTmp;
-  rcMv[1].ver = verTmp;
+  rcMv[1].hor = mvScaleHor + dmvHorX * (posCurX + curW - posNeiX) + dmvVerX * (posCurY - posNeiY);
+  rcMv[1].ver = mvScaleVer + dmvHorY * (posCurX + curW - posNeiX) + dmvVerY * (posCurY - posNeiY);
+  rcMv[1].roundAffine(shift);
   rcMv[1].clipToStorageBitDepth();
 
   // v2
   if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
   {
-    horTmp = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY + curH - posNeiY);
-    verTmp = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY + curH - posNeiY);
-    roundAffineMv( horTmp, verTmp, shift );
-    rcMv[2].hor = horTmp;
-    rcMv[2].ver = verTmp;
+    rcMv[2].hor = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY + curH - posNeiY);
+    rcMv[2].ver = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY + curH - posNeiY);
+    rcMv[2].roundAffine(shift);
     rcMv[2].clipToStorageBitDepth();
   }
 }
@@ -3201,8 +3187,8 @@ void PU::getAffineControlPointCand(const PredictionUnit& pu, MotionInfo mi[4], b
       case 5: // 5 : LT, LB
         vx = (cMv[l][0].hor * (1 << shift)) + ((cMv[l][2].ver - cMv[l][0].ver) * (1 << shiftHtoW));
         vy = (cMv[l][0].ver * (1 << shift)) - ((cMv[l][2].hor - cMv[l][0].hor) * (1 << shiftHtoW));
-        roundAffineMv( vx, vy, shift );
         cMv[l][1].set( vx, vy );
+        cMv[l][1].roundAffine(shift);
         cMv[l][1].clipToStorageBitDepth();
         break;
 
@@ -3787,14 +3773,15 @@ void PU::setAllAffineMv(PredictionUnit& pu, Mv affLT, Mv affRT, Mv affLB, RefPic
   const int mvScaleHor = affLT.getHor() * (1 << shift);
   const int mvScaleVer = affLT.getVer() * (1 << shift);
 
-  int blockWidth = AFFINE_MIN_BLOCK_SIZE;
-  int blockHeight = AFFINE_MIN_BLOCK_SIZE;
+  int       blockWidth  = AFFINE_SUBBLOCK_SIZE;
+  int       blockHeight = AFFINE_SUBBLOCK_SIZE;
   const int halfBW = blockWidth >> 1;
   const int halfBH = blockHeight >> 1;
 
   MotionBuf mb = pu.getMotionBuf();
   int mvScaleTmpHor, mvScaleTmpVer;
   const bool subblkMVSpreadOverLimit = InterPrediction::isSubblockVectorSpreadOverLimit( deltaMvHorX, deltaMvHorY, deltaMvVerX, deltaMvVerY, pu.interDir );
+
   for ( int h = 0; h < pu.Y().height; h += blockHeight )
   {
     for ( int w = 0; w < pu.Y().width; w += blockWidth )
@@ -3809,8 +3796,8 @@ void PU::setAllAffineMv(PredictionUnit& pu, Mv affLT, Mv affRT, Mv affLB, RefPic
         mvScaleTmpHor = mvScaleHor + deltaMvHorX * ( pu.Y().width >> 1 ) + deltaMvVerX * ( pu.Y().height >> 1 );
         mvScaleTmpVer = mvScaleVer + deltaMvHorY * ( pu.Y().width >> 1 ) + deltaMvVerY * ( pu.Y().height >> 1 );
       }
-      roundAffineMv( mvScaleTmpHor, mvScaleTmpVer, shift );
       Mv curMv(mvScaleTmpHor, mvScaleTmpVer);
+      curMv.roundAffine(shift);
       curMv.clipToStorageBitDepth();
 
       for ( int y = (h >> MIN_CU_LOG2); y < ((h + blockHeight) >> MIN_CU_LOG2); y++ )

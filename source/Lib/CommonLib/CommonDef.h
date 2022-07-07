@@ -266,12 +266,16 @@ static const int NUM_LFNST_NUM_PER_SET =                            3;
 
 static const int CABAC_INIT_PRESENT_FLAG =                          1;
 
-static const int MV_FRACTIONAL_BITS_INTERNAL                      = 4;
-static const int MV_FRACTIONAL_BITS_SIGNAL                        = 2;
-static const int MV_FRACTIONAL_BITS_DIFF = MV_FRACTIONAL_BITS_INTERNAL - MV_FRACTIONAL_BITS_SIGNAL;
-static const int LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS_SIGNAL = 1 << MV_FRACTIONAL_BITS_SIGNAL;
-static const int LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS = 1 << MV_FRACTIONAL_BITS_INTERNAL;
-static const int CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS = 1 << (MV_FRACTIONAL_BITS_INTERNAL + 1);
+static constexpr int MV_FRACTIONAL_BITS_INTERNAL = 4;
+static constexpr int MV_FRACTIONAL_BITS_SIGNAL   = 2;
+static constexpr int MV_FRACTIONAL_BITS_DIFF     = MV_FRACTIONAL_BITS_INTERNAL - MV_FRACTIONAL_BITS_SIGNAL;
+static constexpr int LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS_SIGNAL = 1 << MV_FRACTIONAL_BITS_SIGNAL;
+static constexpr int MV_FRAC_BITS_LUMA                                     = MV_FRACTIONAL_BITS_INTERNAL;
+static constexpr int MV_FRAC_BITS_CHROMA                                   = MV_FRACTIONAL_BITS_INTERNAL + 1;
+static constexpr int MV_FRAC_MASK_LUMA                                     = (1 << MV_FRAC_BITS_LUMA) - 1;
+static constexpr int MV_FRAC_MASK_CHROMA                                   = (1 << MV_FRAC_BITS_CHROMA) - 1;
+static constexpr int LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS        = 1 << MV_FRAC_BITS_LUMA;
+static constexpr int CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS      = 1 << MV_FRAC_BITS_CHROMA;
 
 static const int MAX_NUM_SUB_PICS =                         (1 << 16);
 static const int MAX_NUM_LONG_TERM_REF_PICS =                      33;
@@ -292,7 +296,7 @@ static const int RExt__PREDICTION_WEIGHTING_ANALYSIS_DC_PRECISION = 0; ///< Addi
 
 static const int MAX_TIMECODE_SEI_SETS =                            3; ///< Maximum number of time sets
 
-static const int MAX_CU_DEPTH =                                     7; ///< log2(CTUSize)
+static constexpr int MAX_CU_DEPTH             = 7;   // log2(CTUSize)
 static const int MAX_CU_SIZE =                        1<<MAX_CU_DEPTH;
 static const int MIN_CU_LOG2 =                                      2;
 static const int MIN_PU_SIZE =                                      4;
@@ -326,7 +330,7 @@ static const int SCALING_LIST_DC =                                 16; ///< defa
 
 static const int LAST_SIGNIFICANT_GROUPS =                         14;
 
-static const int AFFINE_MIN_BLOCK_SIZE =                            4; ///< Minimum affine MC block size
+static constexpr int AFFINE_SUBBLOCK_SIZE = 4;   // Minimum affine MC block size
 
 static const int MMVD_REFINE_STEP =                                 8; ///< max number of distance step
 static const int MMVD_MAX_REFINE_NUM =                              (MMVD_REFINE_STEP * 4); ///< max number of candidate from a base candidate
@@ -404,13 +408,14 @@ static const int MAX_TESTED_QPs =   ( 1 + 1 + ( MAX_DELTA_QP << 1 ) );      ///<
 
 static const int COM16_C806_TRANS_PREC =                            0;
 
-static const int NTAPS_LUMA               =                         8; ///< Number of taps for luma
-static const int NTAPS_CHROMA             =                         4; ///< Number of taps for chroma
+static constexpr int NTAPS_LUMA      = 8;   // Number of taps for luma
+static constexpr int NTAPS_CHROMA    = 4;   // Number of taps for chroma
+static constexpr int NTAPS_BILINEAR  = 2;   // Number of taps for bilinear filter
+static constexpr int MAX_FILTER_SIZE = NTAPS_LUMA > NTAPS_CHROMA ? NTAPS_LUMA : NTAPS_CHROMA;
+
 #if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
 static const int MAX_LADF_INTERVALS       =                         5; /// max number of luma adaptive deblocking filter qp offset intervals
 #endif
-
-static const int NTAPS_BILINEAR           =                         2; ///< Number of taps for bilinear filter
 
 static const int ATMVP_SUB_BLOCK_SIZE =                             3; ///< sub-block size for ATMVP
 static const int GEO_MAX_NUM_UNI_CANDS =                            6;

@@ -242,7 +242,7 @@ bool MCTSHelper::checkMvBufferForMCTSConstraint( const PredictionUnit &pu, bool 
               const MotionInfo &miA = mi;
               const MotionInfo &miB = mb.at( x + 1, y + 1 );
               Mv mvAff = miA.mv[refList] + miB.mv[refList];
-              roundAffineMv( mvAff.hor, mvAff.ver, 1 );
+              mvAff.roundAffine(1);
               getMotInfoBlockPartPos( pu, xOff, yOff, mvAff, predXLeft, predYTop, predXRight, predYBottom );
               if( !checkMVRange( mvAff, tileArea, predXLeft, predXRight + blkW, predYTop, predYBottom + blkH, chromaFormat, false, msgFlag ) )
               {
