@@ -1949,7 +1949,7 @@ void EncLib::xInitPicHeader(PicHeader &picHeader, const SPS &sps, const PPS &pps
   // BDOF / DMVR / PROF
   picHeader.setBdofDisabledFlag(false);
   picHeader.setDmvrDisabledFlag(false);
-  picHeader.setProfDisabledFlag(false);
+  picHeader.setProfDisabledFlag(!sps.getUsePROF());
 }
 
 void EncLib::xInitAPS(APS &aps)

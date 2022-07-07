@@ -256,6 +256,14 @@ public:
     return Mv(tarMvPred.hor - hor + curMvPred.hor, tarMvPred.ver - ver + curMvPred.ver);
   }
 
+  void roundAffine(const int shift)
+  {
+    const int offset = 1 << shift >> 1;
+
+    hor = (hor + offset + (~hor >> 31)) >> shift;
+    ver = (ver + offset + (~ver >> 31)) >> shift;
+  }
+
   void clipToStorageBitDepth()
   {
     hor = Clip3( -(1 << 17), (1 << 17) - 1, hor );
@@ -287,8 +295,6 @@ bool wrapClipMv( Mv& rcMv, const Position& pos,
                  const SPS *sps
                , const PPS* pps
 );
-
-void roundAffineMv( int& mvx, int& mvy, int nShift );
 
 //! \}
 

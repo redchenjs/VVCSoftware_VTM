@@ -3241,7 +3241,7 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
     }
     else
     {
-      picHeader->setProfDisabledFlag(0);
+      picHeader->setProfDisabledFlag(!sps->getUsePROF());
     }
 
     if( (pps->getUseWP() || pps->getWPBiPred()) && pps->getWpInfoInPhFlag() )

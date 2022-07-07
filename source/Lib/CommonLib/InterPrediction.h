@@ -86,6 +86,9 @@ protected:
 
   int                  m_iRefListIdx;
   PelStorage           m_geoPartBuf[2];
+
+  static constexpr int MVBUFFER_SIZE = MAX_CU_SIZE / MIN_PU_SIZE;
+
   Mv*                  m_storedMv;
  /*buffers for bilinear Filter data for DMVR refinement*/
   Pel*                 m_cYuvPredTempDMVRL0;
@@ -103,11 +106,15 @@ protected:
                              Mv(-2, 2), Mv(-1, 2), Mv(0, 2), Mv(1, 2), Mv(2, 2) };
   uint64_t m_SADsArray[((2 * DMVR_NUM_ITERATION) + 1) * ((2 * DMVR_NUM_ITERATION) + 1)];
 
-  Pel                  m_gradBuf[2][(AFFINE_MIN_BLOCK_SIZE + 2) * (AFFINE_MIN_BLOCK_SIZE + 2)];
-  int                  m_dMvBuf[2][16 * 2];
-  bool                 m_skipPROF;
-  bool                 m_encOnly;
-  bool                 m_isBi;
+  static constexpr int AFFINE_SUBBLOCK_WIDTH_EXT  = AFFINE_SUBBLOCK_SIZE + 2 * PROF_BORDER_EXT_W;
+  static constexpr int AFFINE_SUBBLOCK_HEIGHT_EXT = AFFINE_SUBBLOCK_SIZE + 2 * PROF_BORDER_EXT_H;
+
+  Pel m_gradBuf[2][AFFINE_SUBBLOCK_WIDTH_EXT * AFFINE_SUBBLOCK_HEIGHT_EXT];
+
+  // PROF skip flags for encoder speedup
+  bool m_skipProf{ false };
+  bool m_skipProfCond{ false };
+  bool m_biPredSearchAffine{ false };
 
   Pel*                 m_gradX0;
   Pel*                 m_gradY0;

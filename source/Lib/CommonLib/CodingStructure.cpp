@@ -385,7 +385,7 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv) const
   return true;
 }
 
-bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, const Picture* const refPic) const
+bool CodingStructure::isClean(const Position &IntPos, const Mv FracMv, const Picture *const refPic) const
 {
   /*
     1. non gdr picture --> false;
