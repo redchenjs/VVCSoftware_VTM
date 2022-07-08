@@ -442,7 +442,7 @@ public:
   int                   m_sariSarHeight;
 };
 
-static const uint32_t ISO_IEC_11578_LEN=16;
+static constexpr uint32_t ISO_IEC_11578_LEN=16;
 
 class SEIuserDataUnregistered : public SEI
 {

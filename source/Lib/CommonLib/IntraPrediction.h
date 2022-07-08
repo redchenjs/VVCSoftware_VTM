@@ -61,7 +61,7 @@ enum PredBuf
   NUM_PRED_BUF        = 2
 };
 
-static const uint32_t MAX_INTRA_FILTER_DEPTHS=8;
+static constexpr uint32_t MAX_INTRA_FILTER_DEPTHS=8;
 
 class IntraPrediction
 {

@@ -41,7 +41,7 @@
 #include "WeightPredAnalysis.h"
 #include <limits>
 
-static const double WEIGHT_PRED_SAD_RELATIVE_TO_NON_WEIGHT_PRED_SAD=0.99; // NOTE: U0040 used 0.95
+static constexpr double WEIGHT_PRED_SAD_RELATIVE_TO_NON_WEIGHT_PRED_SAD=0.99; // NOTE: U0040 used 0.95
 
 //! calculate SAD values for both WP version and non-WP version.
 static

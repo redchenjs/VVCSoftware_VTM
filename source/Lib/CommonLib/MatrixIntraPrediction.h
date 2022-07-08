@@ -41,8 +41,8 @@
 
 #include "Unit.h"
 
-static const int MIP_MAX_INPUT_SIZE             =  8;
-static const int MIP_MAX_REDUCED_OUTPUT_SAMPLES = 64;
+static constexpr int MIP_MAX_INPUT_SIZE             =  8;
+static constexpr int MIP_MAX_REDUCED_OUTPUT_SAMPLES = 64;
 
 
 class MatrixIntraPrediction

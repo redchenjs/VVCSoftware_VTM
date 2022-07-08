@@ -788,7 +788,7 @@ public:
   bool     saveBestSbt( const UnitArea& area, const uint32_t curPuSse, const uint8_t curPuSbt, const uint8_t curPuTrs );
 };
 
-static const int MAX_STORED_CU_INFO_REFS = 4;
+static constexpr int MAX_STORED_CU_INFO_REFS = 4;
 
 struct CodedCUInfo
 {
