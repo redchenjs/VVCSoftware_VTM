@@ -61,7 +61,7 @@
  //! \{
 
 
-static const int MIXED_NALU_PPS_OFFSET = 8;
+static constexpr int MIXED_NALU_PPS_OFFSET = 8;
 
 
 struct Subpicture {

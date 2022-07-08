@@ -62,9 +62,9 @@
 // Class definition
 // ====================================================================================================================
 
-static const uint32_t MAX_NUM_REF_LIST_ADAPT_SR = 2;
-static const uint32_t MAX_IDX_ADAPT_SR          = 33;
-static const uint32_t NUM_MV_PREDICTORS         = 3;
+static constexpr uint32_t MAX_NUM_REF_LIST_ADAPT_SR = 2;
+static constexpr uint32_t MAX_IDX_ADAPT_SR          = 33;
+static constexpr uint32_t NUM_MV_PREDICTORS         = 3;
 struct BlkRecord
 {
   std::unordered_map<Mv, Distortion> bvRecord;

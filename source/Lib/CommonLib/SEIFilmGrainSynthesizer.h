@@ -53,38 +53,38 @@
 // Class definition
 // ====================================================================================================================
 
-static const int MIN_LOG2SCALE_VALUE             = 2;
-static const int MAX_LOG2SCALE_VALUE             = 7;
-static const int FILM_GRAIN_MODEL_ID_VALUE       = 0;
-static const int BLENDING_MODE_VALUE             = 0;
-static const int MIN_CUT_OFF_FREQUENCY           = 2;
-static const int MAX_CUT_OFF_FREQUENCY           = 14;
-static const int DEFAULT_HORZ_CUT_OFF_FREQUENCY  = 8;
-static const int NUM_CUT_OFF_FREQ                = 13;
+static constexpr int MIN_LOG2SCALE_VALUE             = 2;
+static constexpr int MAX_LOG2SCALE_VALUE             = 7;
+static constexpr int FILM_GRAIN_MODEL_ID_VALUE       = 0;
+static constexpr int BLENDING_MODE_VALUE             = 0;
+static constexpr int MIN_CUT_OFF_FREQUENCY           = 2;
+static constexpr int MAX_CUT_OFF_FREQUENCY           = 14;
+static constexpr int DEFAULT_HORZ_CUT_OFF_FREQUENCY  = 8;
+static constexpr int NUM_CUT_OFF_FREQ                = 13;
 
-static const int SCALE_DOWN_422                  = 181; /* in Q-format of 8 : 1/sqrt(2) */
-static const int Q_FORMAT_SCALING                = 8;
-static const int GRAIN_SCALE                     = 6;
-static const int MIN_CHROMA_FORMAT_IDC           = 0;
-static const int MAX_CHROMA_FORMAT_IDC           = 3;
-static const int MIN_BIT_DEPTH                   = 8;
-static const int MAX_BIT_DEPTH                   = 16;
-static const int BLK_8_shift                     = 6;
-static const int BLK_16_shift                    = 8;
-static const int BLK_32_shift                    = 10;
-static const int NUM_8x8_BLKS_16x16              = 4;
-static const int NUM_16x16_BLKS_32x32            = 4;
-static const int BLK_AREA_8x8                    = 64;
-static const int BLK_AREA_16x16                  = 256;
-static const int INTENSITY_INTERVAL_MATCH_FAIL   = -1;
-static const int COLOUR_OFFSET_LUMA              = 0;
-static const int COLOUR_OFFSET_CR                = 85;
-static const int COLOUR_OFFSET_CB                = 170;
+static constexpr int SCALE_DOWN_422                  = 181; /* in Q-format of 8 : 1/sqrt(2) */
+static constexpr int Q_FORMAT_SCALING                = 8;
+static constexpr int GRAIN_SCALE                     = 6;
+static constexpr int MIN_CHROMA_FORMAT_IDC           = 0;
+static constexpr int MAX_CHROMA_FORMAT_IDC           = 3;
+static constexpr int MIN_BIT_DEPTH                   = 8;
+static constexpr int MAX_BIT_DEPTH                   = 16;
+static constexpr int BLK_8_shift                     = 6;
+static constexpr int BLK_16_shift                    = 8;
+static constexpr int BLK_32_shift                    = 10;
+static constexpr int NUM_8x8_BLKS_16x16              = 4;
+static constexpr int NUM_16x16_BLKS_32x32            = 4;
+static constexpr int BLK_AREA_8x8                    = 64;
+static constexpr int BLK_AREA_16x16                  = 256;
+static constexpr int INTENSITY_INTERVAL_MATCH_FAIL   = -1;
+static constexpr int COLOUR_OFFSET_LUMA              = 0;
+static constexpr int COLOUR_OFFSET_CR                = 85;
+static constexpr int COLOUR_OFFSET_CB                = 170;
 
-static const int MIN_WIDTH                       = 128;
-static const int MAX_WIDTH                       = 7680;
-static const int MIN_HEIGHT                      = 128;
-static const int MAX_HEIGHT                      = 4320;
+static constexpr int MIN_WIDTH                       = 128;
+static constexpr int MAX_WIDTH                       = 7680;
+static constexpr int MIN_HEIGHT                      = 128;
+static constexpr int MAX_HEIGHT                      = 4320;
 
 #define CLIP3(min, max, x)              (((x) > (max)) ? (max) :(((x) < (min))? (min):(x)))
 #define MIN(x,y)                        (((x) > (y)) ? (y) : (x))

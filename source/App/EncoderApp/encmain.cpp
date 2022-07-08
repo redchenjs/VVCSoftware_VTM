@@ -47,9 +47,9 @@
 //! \ingroup EncoderApp
 //! \{
 
-static const uint32_t settingNameWidth = 66;
-static const uint32_t settingHelpWidth = 84;
-static const uint32_t settingValueWidth = 3;
+static constexpr uint32_t settingNameWidth = 66;
+static constexpr uint32_t settingHelpWidth = 84;
+static constexpr uint32_t settingValueWidth = 3;
 // --------------------------------------------------------------------------------------------------------------------- //
 
 //macro value printing function
