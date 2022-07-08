@@ -727,7 +727,7 @@ void initGeoTemplate()
 
     int16_t rho = (g_Dis[distanceX] * 2 * GEO_MAX_CU_SIZE) + (g_Dis[distanceY] * 2 * GEO_MAX_CU_SIZE);
 
-    static constexpr int16_t maskOffset = (2*GEO_MAX_CU_SIZE - GEO_WEIGHT_MASK_SIZE) >> 1;
+    constexpr int16_t maskOffset = (2*GEO_MAX_CU_SIZE - GEO_WEIGHT_MASK_SIZE) >> 1;
     int index = 0;
     for( int y = 0; y < GEO_WEIGHT_MASK_SIZE; y++ )
     {
