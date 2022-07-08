@@ -45,12 +45,12 @@
 //! \ingroup CommonLib
 //! \{
 
-#define IF_INTERNAL_PREC 14 ///< Number of bits for internal precision
-#define IF_FILTER_PREC    6 ///< Log2 of sum of filter taps
-#define IF_INTERNAL_OFFS (1<<(IF_INTERNAL_PREC-1)) ///< Offset used internally
-#define IF_INTERNAL_PREC_BILINEAR 10 ///< Number of bits for internal precision
-#define IF_FILTER_PREC_BILINEAR   4  ///< Bilinear filter coeff precision so that intermediate value will not exceed 16 bit for SIMD - bit exact
-#define IF_INTERNAL_FRAC_BITS(bd) std::max(2, IF_INTERNAL_PREC - int(bd))
+static constexpr int IF_INTERNAL_PREC = 14;                         ///< Number of bits for internal precision
+static constexpr int IF_FILTER_PREC   = 6;                         ///< Log2 of sum of filter taps
+static constexpr int IF_INTERNAL_OFFS = (1<<(IF_INTERNAL_PREC-1));  ///< Offset used internally
+static constexpr int IF_INTERNAL_PREC_BILINEAR = 10;                ///< Number of bits for internal precision
+static constexpr int IF_FILTER_PREC_BILINEAR   = 4;                 ///< Bilinear filter coeff precision so that intermediate value will not exceed 16 bit for SIMD - bit exact
+static inline int IF_INTERNAL_FRAC_BITS(const int bd) { return std::max(2, IF_INTERNAL_PREC - bd); }
 /**
  * \brief Interpolation filter class
  */
