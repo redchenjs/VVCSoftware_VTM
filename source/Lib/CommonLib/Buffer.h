@@ -1018,18 +1018,43 @@ struct PelStorage : public PelUnitBuf
   void create( const ChromaFormat &_chromaFormat, const Area& _area, const unsigned _maxCUSize = 0, const unsigned _margin = 0, const unsigned _alignment = 0, const bool _scaleChromaMargin = true );
   void destroy();
 
-         PelBuf getBuf( const CompArea &blk );
-  const CPelBuf getBuf( const CompArea &blk ) const;
+  PelBuf getBuf(const ComponentID CompID) { return bufs[CompID]; }
 
-         PelBuf getBuf( const ComponentID CompID );
-  const CPelBuf getBuf( const ComponentID CompID ) const;
+  const CPelBuf getBuf(const ComponentID CompID) const { return bufs[CompID]; }
 
-         PelUnitBuf getBuf( const UnitArea &unit );
-  const CPelUnitBuf getBuf( const UnitArea &unit ) const;
-  Pel *getOrigin( const int id ) const { return m_origin[id]; }
+  PelBuf getBuf(const CompArea &blk)
+  {
+    const PelBuf &r = bufs[blk.compID];
+
+    CHECKD(rsAddr(blk.bottomRight(), r.stride) >= ((r.height - 1) * r.stride + r.width),
+           "Trying to access a buf outside of bound!");
+
+    return PelBuf(r.buf + rsAddr(blk, r.stride), r.stride, blk);
+  }
+
+  const CPelBuf getBuf(const CompArea &blk) const
+  {
+    const PelBuf &r = bufs[blk.compID];
+    return CPelBuf(r.buf + rsAddr(blk, r.stride), r.stride, blk);
+  }
+
+  PelUnitBuf getBuf(const UnitArea &unit)
+  {
+    return (chromaFormat == CHROMA_400)
+             ? PelUnitBuf(chromaFormat, getBuf(unit.Y()))
+             : PelUnitBuf(chromaFormat, getBuf(unit.Y()), getBuf(unit.Cb()), getBuf(unit.Cr()));
+  }
+
+  const CPelUnitBuf getBuf(const UnitArea &unit) const
+  {
+    return (chromaFormat == CHROMA_400)
+             ? CPelUnitBuf(chromaFormat, getBuf(unit.Y()))
+             : CPelUnitBuf(chromaFormat, getBuf(unit.Y()), getBuf(unit.Cb()), getBuf(unit.Cr()));
+  }
+
+  Pel *getOrigin(const int id) const { return m_origin[id]; }
 
 private:
-
   Pel *m_origin[MAX_NUM_COMPONENT];
 };
 

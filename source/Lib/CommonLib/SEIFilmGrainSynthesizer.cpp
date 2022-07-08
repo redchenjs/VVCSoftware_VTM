@@ -313,10 +313,6 @@ void SEIFilmGrainSynthesizer::grainSynthesizeAndBlend(PelStorage* pGrainBuf, boo
     offsetsArr[compCtr] = new uint32_t[maxNumBlocks];
   }
 
-  /*decComp[0] = pGrainBuf->getOrigin(COMPONENT_Y);
-  decComp[1] = pGrainBuf->getOrigin(COMPONENT_Cb);
-  decComp[2] = pGrainBuf->getOrigin(COMPONENT_Cb);*/
-
   decComp[0] = pGrainBuf->bufs[0].buf;
   decComp[1] = pGrainBuf->bufs[1].buf;
   decComp[2] = pGrainBuf->bufs[2].buf;
