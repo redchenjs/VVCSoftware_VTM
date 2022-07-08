@@ -877,41 +877,6 @@ void PelStorage::destroy()
   bufs.clear();
 }
 
-PelBuf PelStorage::getBuf( const ComponentID CompID )
-{
-  return bufs[CompID];
-}
-
-const CPelBuf PelStorage::getBuf( const ComponentID CompID ) const
-{
-  return bufs[CompID];
-}
-
-PelBuf PelStorage::getBuf( const CompArea &blk )
-{
-  const PelBuf& r = bufs[blk.compID];
-
-  CHECKD( rsAddr( blk.bottomRight(), r.stride ) >= ( ( r.height - 1 ) * r.stride + r.width ), "Trying to access a buf outside of bound!" );
-
-  return PelBuf( r.buf + rsAddr( blk, r.stride ), r.stride, blk );
-}
-
-const CPelBuf PelStorage::getBuf( const CompArea &blk ) const
-{
-  const PelBuf& r = bufs[blk.compID];
-  return CPelBuf( r.buf + rsAddr( blk, r.stride ), r.stride, blk );
-}
-
-PelUnitBuf PelStorage::getBuf( const UnitArea &unit )
-{
-  return ( chromaFormat == CHROMA_400 ) ? PelUnitBuf( chromaFormat, getBuf( unit.Y() ) ) : PelUnitBuf( chromaFormat, getBuf( unit.Y() ), getBuf( unit.Cb() ), getBuf( unit.Cr() ) );
-}
-
-const CPelUnitBuf PelStorage::getBuf( const UnitArea &unit ) const
-{
-  return ( chromaFormat == CHROMA_400 ) ? CPelUnitBuf( chromaFormat, getBuf( unit.Y() ) ) : CPelUnitBuf( chromaFormat, getBuf( unit.Y() ), getBuf( unit.Cb() ), getBuf( unit.Cr() ) );
-}
-
 template<>
 void UnitBuf<Pel>::colorSpaceConvert(const UnitBuf<Pel> &other, const bool forward, const ClpRng& clpRng)
 {
