@@ -40,8 +40,9 @@
 
 #include "CommonDef.h"
 
-typedef int PosType;
-typedef uint32_t SizeType;
+using PosType  = int32_t;
+using SizeType = uint32_t;
+
 struct Position
 {
   PosType x;
@@ -94,8 +95,16 @@ struct Area : public Position, public Size
         Position  bottomRight()             const { return { (PosType) (x + width - 1), (PosType) (y + height - 1) }; }
         Position  center()                  const { return { (PosType) (x + width / 2), (PosType) (y + height / 2) }; }
 
-  bool contains(const Position &_pos)       const { return (_pos.x >= x) && (_pos.x < (x + width)) && (_pos.y >= y) && (_pos.y < (y + height)); }
   bool contains(const Area &_area)          const { return contains(_area.pos()) && contains(_area.bottomRight()); }
+  bool contains(const Position &_pos) const
+  {
+    static_assert(std::is_unsigned<SizeType>::value, "SizeType should be unsigned");
+    // NOTE: when _pos.x is smaller than x, SizeType(_pos.x - x) is a large unsigned number
+    const bool condX = SizeType(_pos.x - x) < width;
+    const bool condY = SizeType(_pos.y - y) < height;
+
+    return condX && condY;
+  }
 
 #if GDR_ENABLED  
   bool overlap(const Area &_area) const 
