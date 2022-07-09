@@ -2131,27 +2131,31 @@ static void simdFilter( const ClpRng& clpRng, Pel const *src, int srcStride, Pel
     }
   }
   {
-    if( N == 8 && !( width & 0x07 ) )
+    if ((N == 8 || N == 6) && !(width & 0x07))
     {
       if( !isVertical )
       {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
         if (vext >= AVX2)
         {
-          simdInterpolateHorM8_HBD_AVX2<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+          simdInterpolateHorM8_HBD_AVX2<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
+                                                         clpRng, c);
         }
         else
         {
-          simdInterpolateHorM8_HBD<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+          simdInterpolateHorM8_HBD<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
+                                                    clpRng, c);
         }
 #else
         if( vext>= AVX2 )
         {
-          simdInterpolateHorM8_AVX2<vext, 8, isLast>( src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c );
+          simdInterpolateHorM8_AVX2<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
+                                                     clpRng, c);
         }
         else
         {
-          simdInterpolateHorM8<vext, 8, isLast>( src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c );
+          simdInterpolateHorM8<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                c);
         }
 #endif
       }
@@ -2160,41 +2164,47 @@ static void simdFilter( const ClpRng& clpRng, Pel const *src, int srcStride, Pel
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
         if (vext >= AVX2)
         {
-          simdInterpolateVerM8_HBD_AVX2<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+          simdInterpolateVerM8_HBD_AVX2<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
+                                                         clpRng, c);
         }
         else
         {
-          simdInterpolateVerM8_HBD<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+          simdInterpolateVerM8_HBD<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
+                                                    clpRng, c);
         }
 #else
         if( vext>= AVX2 )
         {
-          simdInterpolateVerM8_AVX2<vext, 8, isLast>( src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c );
+          simdInterpolateVerM8_AVX2<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
+                                                     clpRng, c);
         }
         else
         {
-          simdInterpolateVerM8<vext, 8, isLast>( src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c );
+          simdInterpolateVerM8<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                c);
         }
 #endif
       }
       return;
     }
-    else if( N == 8 && !( width & 0x03 ) )
+    else if ((N == 8 || N == 6) && !(width & 0x03))
     {
       if( !isVertical )
       {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-        simdInterpolateHorM4_HBD<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+        simdInterpolateHorM4_HBD<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                  c);
 #else
-        simdInterpolateHorM4<vext, 8, isLast>( src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c );
+        simdInterpolateHorM4<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
 #endif
       }
       else
       {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-        simdInterpolateVerM4_HBD<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+        simdInterpolateVerM4_HBD<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                  c);
 #else
-        simdInterpolateVerM4<vext, 8, isLast>( src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c );
+        simdInterpolateVerM4<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
 #endif
       }
       return;
@@ -2585,6 +2595,11 @@ void InterpolationFilter::_initInterpolationFilterX86()
   m_filterVer[2][1][0] = simdFilter<vext, 2, true, true, false>;
   m_filterVer[2][1][1] = simdFilter<vext, 2, true, true, true>;
 
+  m_filterVer[3][0][0] = simdFilter<vext, 6, true, false, false>;
+  m_filterVer[3][0][1] = simdFilter<vext, 6, true, false, true>;
+  m_filterVer[3][1][0] = simdFilter<vext, 6, true, true, false>;
+  m_filterVer[3][1][1] = simdFilter<vext, 6, true, true, true>;
+
   m_filterCopy[0][0] = simdFilterCopy_HBD<vext, false, false>;
   m_filterCopy[0][1] = simdFilterCopy_HBD<vext, false, true>;
   m_filterCopy[1][0] = simdFilterCopy_HBD<vext, true, false>;
@@ -2622,6 +2637,11 @@ void InterpolationFilter::_initInterpolationFilterX86()
   m_filterVer[2][0][1] = simdFilter<vext, 2, true, false, true>;
   m_filterVer[2][1][0] = simdFilter<vext, 2, true, true, false>;
   m_filterVer[2][1][1] = simdFilter<vext, 2, true, true, true>;
+
+  m_filterVer[3][0][0] = simdFilter<vext, 6, true, false, false>;
+  m_filterVer[3][0][1] = simdFilter<vext, 6, true, false, true>;
+  m_filterVer[3][1][0] = simdFilter<vext, 6, true, true, false>;
+  m_filterVer[3][1][1] = simdFilter<vext, 6, true, true, true>;
 
   m_filterCopy[0][0]   = simdFilterCopy<vext, false, false>;
   m_filterCopy[0][1]   = simdFilterCopy<vext, false, true>;

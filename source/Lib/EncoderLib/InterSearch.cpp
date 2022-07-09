@@ -9030,17 +9030,17 @@ void InterSearch::xExtDIFUpSamplingH(CPelBuf* pattern, bool useAltHpelIf)
   const Pel *srcPtr = pattern->buf - halfFilterSize*srcStride - 1;
 
   m_if.filterHor(COMPONENT_Y, srcPtr, srcStride, m_filteredBlockTmp[0][0], intStride, width + 1, height + filterSize,
-                 0 << MV_FRACTIONAL_BITS_DIFF, false, clpRng, 0, false, useAltHpelIf);
+                 0 << MV_FRACTIONAL_BITS_DIFF, false, clpRng, InterpolationFilter::FILTER_DEFAULT, useAltHpelIf);
   if (!m_skipFracME)
   {
     m_if.filterHor(COMPONENT_Y, srcPtr, srcStride, m_filteredBlockTmp[2][0], intStride, width + 1, height + filterSize,
-                   2 << MV_FRACTIONAL_BITS_DIFF, false, clpRng, 0, false, useAltHpelIf);
+                   2 << MV_FRACTIONAL_BITS_DIFF, false, clpRng, InterpolationFilter::FILTER_DEFAULT, useAltHpelIf);
   }
 
   intPtr = m_filteredBlockTmp[0][0] + halfFilterSize * intStride + 1;
   dstPtr = m_filteredBlock[0][0][0];
   m_if.filterVer(COMPONENT_Y, intPtr, intStride, dstPtr, dstStride, width + 0, height + 0, 0 << MV_FRACTIONAL_BITS_DIFF,
-                 false, true, clpRng, 0, false, useAltHpelIf);
+                 false, true, clpRng, InterpolationFilter::FILTER_DEFAULT, useAltHpelIf);
   if (m_skipFracME)
   {
     return;
@@ -9049,17 +9049,17 @@ void InterSearch::xExtDIFUpSamplingH(CPelBuf* pattern, bool useAltHpelIf)
   intPtr = m_filteredBlockTmp[0][0] + (halfFilterSize - 1) * intStride + 1;
   dstPtr = m_filteredBlock[2][0][0];
   m_if.filterVer(COMPONENT_Y, intPtr, intStride, dstPtr, dstStride, width + 0, height + 1, 2 << MV_FRACTIONAL_BITS_DIFF,
-                 false, true, clpRng, 0, false, useAltHpelIf);
+                 false, true, clpRng, InterpolationFilter::FILTER_DEFAULT, useAltHpelIf);
 
   intPtr = m_filteredBlockTmp[2][0] + halfFilterSize * intStride;
   dstPtr = m_filteredBlock[0][2][0];
   m_if.filterVer(COMPONENT_Y, intPtr, intStride, dstPtr, dstStride, width + 1, height + 0, 0 << MV_FRACTIONAL_BITS_DIFF,
-                 false, true, clpRng, 0, false, useAltHpelIf);
+                 false, true, clpRng, InterpolationFilter::FILTER_DEFAULT, useAltHpelIf);
 
   intPtr = m_filteredBlockTmp[2][0] + (halfFilterSize - 1) * intStride;
   dstPtr = m_filteredBlock[2][2][0];
   m_if.filterVer(COMPONENT_Y, intPtr, intStride, dstPtr, dstStride, width + 1, height + 1, 2 << MV_FRACTIONAL_BITS_DIFF,
-                 false, true, clpRng, 0, false, useAltHpelIf);
+                 false, true, clpRng, InterpolationFilter::FILTER_DEFAULT, useAltHpelIf);
 }
 
 

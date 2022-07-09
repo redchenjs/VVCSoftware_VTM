@@ -760,15 +760,17 @@ void InterPrediction::xPredInterBlk(const ComponentID &compID, const PredictionU
       dstBuf.buf    = m_filteredBlockTmp[2 + m_iRefListIdx][compID] + 2 * dstBuf.stride + 2;
     }
 
+    const int filterIdx = bilinearMC ? InterpolationFilter::FILTER_DMVR : InterpolationFilter::FILTER_DEFAULT;
+
     if (yFrac == 0)
     {
       m_if.filterHor(compID, (Pel *) refBuf.buf, refBuf.stride, dstBuf.buf, dstBuf.stride, backupWidth, backupHeight,
-                     xFrac, rndRes, clpRng, bilinearMC, bilinearMC, useAltHpelIf);
+                     xFrac, rndRes, clpRng, filterIdx, useAltHpelIf);
     }
     else if (xFrac == 0)
     {
       m_if.filterVer(compID, (Pel *) refBuf.buf, refBuf.stride, dstBuf.buf, dstBuf.stride, backupWidth, backupHeight,
-                     yFrac, true, rndRes, clpRng, bilinearMC, bilinearMC, useAltHpelIf);
+                     yFrac, true, rndRes, clpRng, filterIdx, useAltHpelIf);
     }
     else
     {
@@ -785,12 +787,11 @@ void InterPrediction::xPredInterBlk(const ComponentID &compID, const PredictionU
         vFilterSize = NTAPS_BILINEAR;
       }
       m_if.filterHor(compID, (Pel *) refBuf.buf - ((vFilterSize >> 1) - 1) * refBuf.stride, refBuf.stride, tmpBuf.buf,
-                     tmpBuf.stride, backupWidth, backupHeight + vFilterSize - 1, xFrac, false, clpRng, bilinearMC,
-                     bilinearMC, useAltHpelIf);
+                     tmpBuf.stride, backupWidth, backupHeight + vFilterSize - 1, xFrac, false, clpRng, filterIdx,
+                     useAltHpelIf);
       JVET_J0090_SET_CACHE_ENABLE(false);
       m_if.filterVer(compID, (Pel *) tmpBuf.buf + ((vFilterSize >> 1) - 1) * tmpBuf.stride, tmpBuf.stride, dstBuf.buf,
-                     dstBuf.stride, backupWidth, backupHeight, yFrac, false, rndRes, clpRng, bilinearMC, bilinearMC,
-                     useAltHpelIf);
+                     dstBuf.stride, backupWidth, backupHeight, yFrac, false, rndRes, clpRng, filterIdx, useAltHpelIf);
     }
     JVET_J0090_SET_CACHE_ENABLE(
       (srcPadStride == 0)
@@ -1100,12 +1101,14 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
       }
 #endif
 
+      const int filterIdx = InterpolationFilter::FILTER_AFFINE;
+
       if( isRefScaled )
       {
         CHECK(enableProf, "PROF should be disabled with RPR");
         xPredInterBlkRPR(scalingRatio, pps,
                          CompArea(compID, chFmt, pu.blocks[compID].offset(w, h), Size(sbWidth, sbHeight)), refPic,
-                         curMv, dstBuf.buf + w + h * dstBuf.stride, dstBuf.stride, bi, wrapRef, clpRng, 2);
+                         curMv, dstBuf.buf + w + h * dstBuf.stride, dstBuf.stride, bi, wrapRef, clpRng, filterIdx);
       }
       else
       {
@@ -1139,21 +1142,23 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 
         if (yFrac == 0)
         {
-          m_if.filterHor(compID, ref, refStride, dst, dstStride, sbWidth, sbHeight, xFrac, isLast, clpRng);
+          m_if.filterHor(compID, ref, refStride, dst, dstStride, sbWidth, sbHeight, xFrac, isLast, clpRng, filterIdx);
         }
         else if (xFrac == 0)
         {
-          m_if.filterVer(compID, ref, refStride, dst, dstStride, sbWidth, sbHeight, yFrac, true, isLast, clpRng);
+          m_if.filterVer(compID, ref, refStride, dst, dstStride, sbWidth, sbHeight, yFrac, true, isLast, clpRng,
+                         filterIdx);
         }
         else
         {
-          const int filterSize = isLuma(compID) ? NTAPS_LUMA : NTAPS_CHROMA;
+          const int filterSize = isLuma(compID) ? NTAPS_LUMA_AFFINE : NTAPS_CHROMA_AFFINE;
+          const int rowsAbove  = (filterSize - 1) >> 1;
 
-          m_if.filterHor(compID, ref - ((filterSize >> 1) - 1) * refStride, refStride, tmpBuf.buf, tmpBuf.stride,
-                         sbWidth, sbHeight + filterSize - 1, xFrac, false, clpRng);
+          m_if.filterHor(compID, ref - rowsAbove * refStride, refStride, tmpBuf.buf, tmpBuf.stride, sbWidth,
+                         sbHeight + filterSize - 1, xFrac, false, clpRng, filterIdx);
           JVET_J0090_SET_CACHE_ENABLE(false);
-          m_if.filterVer(compID, tmpBuf.buf + ((filterSize >> 1) - 1) * tmpBuf.stride, tmpBuf.stride, dst, dstStride,
-                         sbWidth, sbHeight, yFrac, false, isLast, clpRng);
+          m_if.filterVer(compID, tmpBuf.buf + rowsAbove * tmpBuf.stride, tmpBuf.stride, dst, dstStride, sbWidth,
+                         sbHeight, yFrac, false, isLast, clpRng, filterIdx);
           JVET_J0090_SET_CACHE_ENABLE(true);
         }
 
@@ -2300,67 +2305,44 @@ bool InterPrediction::xPredInterBlkRPR( const std::pair<int, int>& scalingRatio,
     int yFilter = filterIndex;
     const int rprThreshold1 = ( 1 << SCALE_RATIO_BITS ) * 5 / 4;
     const int rprThreshold2 = ( 1 << SCALE_RATIO_BITS ) * 7 / 4;
-    if( filterIndex == 0 )
+    if (filterIndex == InterpolationFilter::FILTER_DEFAULT || !isLuma(compID))
     {
       if( scalingRatio.first > rprThreshold2 )
       {
-        xFilter = 4;
+        xFilter = InterpolationFilter::FILTER_RPR2;
       }
       else if( scalingRatio.first > rprThreshold1 )
       {
-        xFilter = 3;
+        xFilter = InterpolationFilter::FILTER_RPR1;
       }
 
       if( scalingRatio.second > rprThreshold2 )
       {
-        yFilter = 4;
+        yFilter = InterpolationFilter::FILTER_RPR2;
       }
       else if( scalingRatio.second > rprThreshold1 )
       {
-        yFilter = 3;
+        yFilter = InterpolationFilter::FILTER_RPR1;
       }
     }
-    if (filterIndex == 2)
+    else if (filterIndex == InterpolationFilter::FILTER_AFFINE)
     {
-      if (isLuma(compID))
+      if (scalingRatio.first > rprThreshold2)
       {
-        if (scalingRatio.first > rprThreshold2)
-        {
-          xFilter = 6;
-        }
-        else if (scalingRatio.first > rprThreshold1)
-        {
-          xFilter = 5;
-        }
-
-        if (scalingRatio.second > rprThreshold2)
-        {
-          yFilter = 6;
-        }
-        else if (scalingRatio.second > rprThreshold1)
-        {
-          yFilter = 5;
-        }
+        xFilter = InterpolationFilter::FILTER_AFFINE_RPR2;
       }
-      else
+      else if (scalingRatio.first > rprThreshold1)
       {
-        if (scalingRatio.first > rprThreshold2)
-        {
-          xFilter = 4;
-        }
-        else if (scalingRatio.first > rprThreshold1)
-        {
-          xFilter = 3;
-        }
+        xFilter = InterpolationFilter::FILTER_AFFINE_RPR1;
+      }
 
-        if (scalingRatio.second > rprThreshold2)
-        {
-          yFilter = 4;
-        }
-        else if (scalingRatio.second > rprThreshold1)
-        {
-          yFilter = 3;
-        }
+      if (scalingRatio.second > rprThreshold2)
+      {
+        yFilter = InterpolationFilter::FILTER_AFFINE_RPR2;
+      }
+      else if (scalingRatio.second > rprThreshold1)
+      {
+        yFilter = InterpolationFilter::FILTER_AFFINE_RPR1;
       }
     }
 
@@ -2433,7 +2415,7 @@ bool InterPrediction::xPredInterBlkRPR( const std::pair<int, int>& scalingRatio,
       Pel *const tempBuf = m_filteredBlockTmpRPR + col;
 
       m_if.filterHor(compID, (Pel *) refBuf.buf - ((vFilterSize >> 1) - 1) * refBuf.stride, refBuf.stride, tempBuf,
-                     tmpStride, 1, refHeight + vFilterSize - 1 + extSize, xFrac, false, clpRng, xFilter, false,
+                     tmpStride, 1, refHeight + vFilterSize - 1 + extSize, xFrac, false, clpRng, xFilter,
                      useAltHpelIf && scalingRatio.first == 1 << SCALE_RATIO_BITS);
     }
 
@@ -2450,7 +2432,7 @@ bool InterPrediction::xPredInterBlkRPR( const std::pair<int, int>& scalingRatio,
 
       JVET_J0090_SET_CACHE_ENABLE( false );
       m_if.filterVer(compID, tempBuf + ((vFilterSize >> 1) - 1) * tmpStride, tmpStride, dst + row * dstStride,
-                     dstStride, width, 1, yFrac, false, rndRes, clpRng, yFilter, false,
+                     dstStride, width, 1, yFrac, false, rndRes, clpRng, yFilter,
                      useAltHpelIf && scalingRatio.second == 1 << SCALE_RATIO_BITS);
       JVET_J0090_SET_CACHE_ENABLE( true );
     }
