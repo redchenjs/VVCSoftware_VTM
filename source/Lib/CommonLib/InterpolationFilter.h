@@ -57,6 +57,8 @@ static inline int IF_INTERNAL_FRAC_BITS(const int bd) { return std::max(2, IF_IN
 class InterpolationFilter
 {
   static const TFilterCoeff m_lumaFilter4x4[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA];
+  static const TFilterCoeff m_affineLumaFilter[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA];
+
 public:
   static const TFilterCoeff m_lumaFilter[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA]; ///< Luma filter taps
   static const TFilterCoeff m_chromaFilter[CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_CHROMA]; ///< Chroma filter taps
@@ -88,10 +90,22 @@ protected:
   static CacheModel* m_cacheModel;
 #endif
 public:
+  enum
+  {
+    FILTER_DEFAULT = 0,
+    FILTER_DMVR,
+    FILTER_AFFINE,
+    FILTER_RPR1,
+    FILTER_RPR2,
+    FILTER_AFFINE_RPR1,
+    FILTER_AFFINE_RPR2,
+  };
+
   InterpolationFilter();
   ~InterpolationFilter() {}
   void( *m_filterHor[3][2][2] )( const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
-  void( *m_filterVer[3][2][2] )( const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
+  void (*m_filterVer[4][2][2])(const ClpRng &clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width,
+                               int height, TFilterCoeff const *coeff, bool biMCForDMVR);
   void( *m_filterCopy[2][2] )  ( const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, bool biMCForDMVR);
   void( *m_weightedGeoBlk )(const PredictionUnit &pu, const uint32_t width, const uint32_t height, const ComponentID compIdx, const uint8_t splitDir, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
 
@@ -102,11 +116,11 @@ public:
   void _initInterpolationFilterX86();
 #endif
   void filterHor(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride, int width,
-                 int height, int frac, bool isLast, const ClpRng &clpRng, int nFilterIdx = 0, bool biMCForDMVR = false,
+                 int height, int frac, bool isLast, const ClpRng &clpRng, int nFilterIdx = FILTER_DEFAULT,
                  bool useAltHpelIf = false);
   void filterVer(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride, int width,
-                 int height, int frac, bool isFirst, bool isLast, const ClpRng &clpRng, int nFilterIdx = 0,
-                 bool biMCForDMVR = false, bool useAltHpelIf = false);
+                 int height, int frac, bool isFirst, bool isLast, const ClpRng &clpRng, int nFilterIdx = FILTER_DEFAULT,
+                 bool useAltHpelIf = false);
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
   void cacheAssign( CacheModel *cache ) { m_cacheModel = cache; }
 #endif

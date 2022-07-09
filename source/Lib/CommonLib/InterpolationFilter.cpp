@@ -54,6 +54,7 @@ CacheModel* InterpolationFilter::m_cacheModel;
 // ====================================================================================================================
 // Tables
 // ====================================================================================================================
+// TODO: implement 6-tap horizontal filtering in SIMD code such that m_affineLumaFilter can be used instead of m_lumaFilter4x4
 const TFilterCoeff InterpolationFilter::m_lumaFilter4x4[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA] =
 {
   {  0, 0,   0, 64,  0,   0,  0,  0 },
@@ -73,6 +74,31 @@ const TFilterCoeff InterpolationFilter::m_lumaFilter4x4[LUMA_INTERPOLATION_FILTE
   {  0, 1,  -3,  8, 62,  -5,  1,  0 },
   {  0, 1,  -2,  4, 63,  -3,  1,  0 }
 };
+
+// clang-format off
+const TFilterCoeff InterpolationFilter::m_affineLumaFilter[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA] =
+{
+  { 0,   0,  64,   0,   0, 0, 0, 0 },
+  { 1,  -3,  63,   4,  -2, 1, 0, 0 },
+  { 1,  -5,  62,   8,  -3, 1, 0, 0 },
+  { 2,  -8,  60,  13,  -4, 1, 0, 0 },
+
+  { 3, -10,  58,  17,  -5, 1, 0, 0 },
+  { 3, -11,  52,  26,  -8, 2, 0, 0 },
+  { 2,  -9,  47,  31, -10, 3, 0, 0 },
+  { 3, -11,  45,  34, -10, 3, 0, 0 },
+
+  { 3, -11,  40,  40, -11, 3, 0, 0 },
+  { 3, -10,  34,  45, -11, 3, 0, 0 },
+  { 3, -10,  31,  47,  -9, 2, 0, 0 },
+  { 2,  -8,  26,  52, -11, 3, 0, 0 },
+
+  { 1,  -5,  17,  58, -10, 3, 0, 0 },
+  { 1,  -4,  13,  60,  -8, 2, 0, 0 },
+  { 1,  -3,   8,  62,  -5, 1, 0, 0 },
+  { 1,  -2,   4,  63,  -3, 1, 0, 0 }
+};
+// clang-format on
 
 const TFilterCoeff InterpolationFilter::m_lumaFilter[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA] =
 {
@@ -343,6 +369,11 @@ InterpolationFilter::InterpolationFilter()
   m_filterVer[2][0][1] = filter<2, true, false, true>;
   m_filterVer[2][1][0] = filter<2, true, true, false>;
   m_filterVer[2][1][1] = filter<2, true, true, true>;
+
+  m_filterVer[3][0][0] = filter<6, true, false, false>;
+  m_filterVer[3][0][1] = filter<6, true, false, true>;
+  m_filterVer[3][1][0] = filter<6, true, true, false>;
+  m_filterVer[3][1][1] = filter<6, true, true, true>;
 
   m_filterCopy[0][0]   = filterCopy<false, false>;
   m_filterCopy[0][1]   = filterCopy<false, true>;
@@ -625,138 +656,71 @@ void InterpolationFilter::filter(const ClpRng& clpRng, Pel const *src, int srcSt
   }
 }
 
-/**
- * \brief Filter a block of samples (horizontal)
- *
- * \tparam N          Number of taps
- * \param  bitDepth   Bit depth of samples
- * \param  src        Pointer to source samples
- * \param  srcStride  Stride of source samples
- * \param  dst        Pointer to destination samples
- * \param  dstStride  Stride of destination samples
- * \param  width      Width of block
- * \param  height     Height of block
- * \param  isLast     Flag indicating whether it is the last filtering operation
- * \param  coeff      Pointer to filter taps
- */
+static constexpr int tapToIdx(const int N)
+{
+  return N == 8 ? 0 : (N == 4 ? 1 : (N == 2 ? 2 : (N == 6 ? 3 : 4)));
+}
+
 template<int N>
 void InterpolationFilter::filterHor(const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, bool isLast, TFilterCoeff const *coeff, bool biMCForDMVR)
 {
-//#if ENABLE_SIMD_OPT_MCIF
-  if( N == 8 )
-  {
-    m_filterHor[0][1][isLast](clpRng, src, srcStride, dst, dstStride, width, height, coeff, biMCForDMVR);
-  }
-  else if( N == 4 )
-  {
-    m_filterHor[1][1][isLast](clpRng, src, srcStride, dst, dstStride, width, height, coeff, biMCForDMVR);
-  }
-  else if( N == 2 )
-  {
-    m_filterHor[2][1][isLast](clpRng, src, srcStride, dst, dstStride, width, height, coeff, biMCForDMVR);
-  }
-  else
-  {
-    THROW( "Invalid tap number" );
-  }
+  constexpr int IDX = tapToIdx(N);
+  static_assert(IDX < 3, "Unsupported tap count");
+  m_filterHor[IDX][1][isLast](clpRng, src, srcStride, dst, dstStride, width, height, coeff, biMCForDMVR);
 }
 
-/**
- * \brief Filter a block of samples (vertical)
- *
- * \tparam N          Number of taps
- * \param  bitDepth   Bit depth
- * \param  src        Pointer to source samples
- * \param  srcStride  Stride of source samples
- * \param  dst        Pointer to destination samples
- * \param  dstStride  Stride of destination samples
- * \param  width      Width of block
- * \param  height     Height of block
- * \param  isFirst    Flag indicating whether it is the first filtering operation
- * \param  isLast     Flag indicating whether it is the last filtering operation
- * \param  coeff      Pointer to filter taps
- */
 template<int N>
 void InterpolationFilter::filterVer(const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, bool isFirst, bool isLast, TFilterCoeff const *coeff, bool biMCForDMVR)
 {
-//#if ENABLE_SIMD_OPT_MCIF
-  if( N == 8 )
-  {
-    m_filterVer[0][isFirst][isLast]( clpRng, src, srcStride, dst, dstStride, width, height, coeff, biMCForDMVR);
-  }
-  else if( N == 4 )
-  {
-    m_filterVer[1][isFirst][isLast]( clpRng, src, srcStride, dst, dstStride, width, height, coeff, biMCForDMVR);
-  }
-  else if( N == 2 )
-  {
-    m_filterVer[2][isFirst][isLast]( clpRng, src, srcStride, dst, dstStride, width, height, coeff, biMCForDMVR);
-  }
-  else{
-    THROW( "Invalid tap number" );
-  }
+  constexpr int IDX = tapToIdx(N);
+  static_assert(IDX < 4, "Unsupported tap count");
+  m_filterVer[IDX][isFirst][isLast](clpRng, src, srcStride, dst, dstStride, width, height, coeff, biMCForDMVR);
 }
 
 // ====================================================================================================================
 // Public member functions
 // ====================================================================================================================
 
-/**
- * \brief Filter a block of Luma/Chroma samples (horizontal)
- *
- * \param  compID     Chroma component ID
- * \param  src        Pointer to source samples
- * \param  srcStride  Stride of source samples
- * \param  dst        Pointer to destination samples
- * \param  dstStride  Stride of destination samples
- * \param  width      Width of block
- * \param  height     Height of block
- * \param  frac       Fractional sample offset
- * \param  isLast     Flag indicating whether it is the last filtering operation
- * \param  bitDepth   Bit depth
- */
 void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride,
                                     int width, int height, int frac, bool isLast, const ClpRng &clpRng, int nFilterIdx,
-                                    bool biMCForDMVR, bool useAltHpelIf)
+                                    bool useAltHpelIf)
 {
-  if( frac == 0 && nFilterIdx < 2 )
+  const bool biMCForDMVR = nFilterIdx == FILTER_DMVR;
+
+  if (frac == 0 && nFilterIdx <= FILTER_AFFINE)
   {
     m_filterCopy[true][isLast]( clpRng, src, srcStride, dst, dstStride, width, height, biMCForDMVR );
   }
   else if( isLuma( compID ) )
   {
     CHECK( frac < 0 || frac >= LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction" );
-    if( nFilterIdx == 1 )
+    if (nFilterIdx == FILTER_DMVR)
     {
       filterHor<NTAPS_BILINEAR>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_bilinearFilterPrec4[frac], biMCForDMVR );
     }
-    else if( nFilterIdx == 2 )
+    else if (nFilterIdx == FILTER_AFFINE)
     {
       filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaFilter4x4[frac], biMCForDMVR );
     }
-    else if( nFilterIdx == 3 )
+    else if (nFilterIdx == FILTER_RPR1)
     {
       filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaFilterRPR1[frac], biMCForDMVR );
     }
-    else if( nFilterIdx == 4 )
+    else if (nFilterIdx == FILTER_RPR2)
     {
       filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaFilterRPR2[frac], biMCForDMVR );
     }
-    else if (nFilterIdx == 5)
+    else if (nFilterIdx == FILTER_AFFINE_RPR1)
     {
       filterHor<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_affineLumaFilterRPR1[frac], biMCForDMVR);
     }
-    else if (nFilterIdx == 6)
+    else if (nFilterIdx == FILTER_AFFINE_RPR2)
     {
       filterHor<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_affineLumaFilterRPR2[frac], biMCForDMVR);
     }
     else if( frac == 8 && useAltHpelIf )
     {
       filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaAltHpelIFilter, biMCForDMVR );
-    }
-    else if( ( width == 4 && height == 4 ) || ( width == 4 && height == ( 4 + NTAPS_LUMA - 1 ) ) )
-    {
-      filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaFilter4x4[frac], biMCForDMVR );
     }
     else
     {
@@ -766,12 +730,12 @@ void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, in
   else
   {
     CHECK(frac < 0 || frac >= CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction");
-    if( nFilterIdx == 3 )
+    if (nFilterIdx == FILTER_RPR1)
     {
       filterHor<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilterRPR1[frac],
                               biMCForDMVR);
     }
-    else if( nFilterIdx == 4 )
+    else if (nFilterIdx == FILTER_RPR2)
     {
       filterHor<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilterRPR2[frac],
                               biMCForDMVR);
@@ -784,64 +748,47 @@ void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, in
   }
 }
 
-
-/**
- * \brief Filter a block of Luma/Chroma samples (vertical)
- *
- * \param  compID     Colour component ID
- * \param  src        Pointer to source samples
- * \param  srcStride  Stride of source samples
- * \param  dst        Pointer to destination samples
- * \param  dstStride  Stride of destination samples
- * \param  width      Width of block
- * \param  height     Height of block
- * \param  frac       Fractional sample offset
- * \param  isFirst    Flag indicating whether it is the first filtering operation
- * \param  isLast     Flag indicating whether it is the last filtering operation
- * \param  bitDepth   Bit depth
- */
 void InterpolationFilter::filterVer(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride,
                                     int width, int height, int frac, bool isFirst, bool isLast, const ClpRng &clpRng,
-                                    int nFilterIdx, bool biMCForDMVR, bool useAltHpelIf)
+                                    int nFilterIdx, bool useAltHpelIf)
 {
-  if( frac == 0 && nFilterIdx < 2 )
+  const bool biMCForDMVR = nFilterIdx == FILTER_DMVR;
+
+  if (frac == 0 && nFilterIdx <= FILTER_AFFINE)
   {
     m_filterCopy[isFirst][isLast]( clpRng, src, srcStride, dst, dstStride, width, height, biMCForDMVR );
   }
   else if( isLuma( compID ) )
   {
     CHECK( frac < 0 || frac >= LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction" );
-    if( nFilterIdx == 1 )
+    if (nFilterIdx == FILTER_DMVR)
     {
       filterVer<NTAPS_BILINEAR>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_bilinearFilterPrec4[frac], biMCForDMVR );
     }
-    else if( nFilterIdx == 2 )
+    else if (nFilterIdx == FILTER_AFFINE)
     {
-      filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaFilter4x4[frac], biMCForDMVR );
+      filterVer<NTAPS_LUMA_AFFINE>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                   m_affineLumaFilter[frac], biMCForDMVR);
     }
-    else if( nFilterIdx == 3 )
+    else if (nFilterIdx == FILTER_RPR1)
     {
       filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaFilterRPR1[frac], biMCForDMVR );
     }
-    else if( nFilterIdx == 4 )
+    else if (nFilterIdx == FILTER_RPR2)
     {
       filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaFilterRPR2[frac], biMCForDMVR );
     }
-    else if (nFilterIdx == 5)
+    else if (nFilterIdx == FILTER_AFFINE_RPR1)
     {
       filterVer<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_affineLumaFilterRPR1[frac], biMCForDMVR);
     }
-    else if (nFilterIdx == 6)
+    else if (nFilterIdx == FILTER_AFFINE_RPR2)
     {
       filterVer<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_affineLumaFilterRPR2[frac], biMCForDMVR);
     }
     else if( frac == 8 && useAltHpelIf )
     {
       filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaAltHpelIFilter, biMCForDMVR );
-    }
-    else if( width == 4 && height == 4 )
-    {
-      filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaFilter4x4[frac], biMCForDMVR );
     }
     else
     {
@@ -851,12 +798,12 @@ void InterpolationFilter::filterVer(const ComponentID compID, Pel const *src, in
   else
   {
     CHECK(frac < 0 || frac >= CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction");
-    if( nFilterIdx == 3 )
+    if (nFilterIdx == FILTER_RPR1)
     {
       filterVer<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
                               m_chromaFilterRPR1[frac], biMCForDMVR);
     }
-    else if( nFilterIdx == 4 )
+    else if (nFilterIdx == FILTER_RPR2)
     {
       filterVer<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
                               m_chromaFilterRPR2[frac], biMCForDMVR);
