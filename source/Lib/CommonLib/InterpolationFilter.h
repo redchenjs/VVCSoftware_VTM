@@ -56,7 +56,6 @@ static inline int IF_INTERNAL_FRAC_BITS(const int bd) { return std::max(2, IF_IN
  */
 class InterpolationFilter
 {
-  static const TFilterCoeff m_lumaFilter4x4[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA];
   static const TFilterCoeff m_affineLumaFilter[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA];
 
 public:
@@ -73,15 +72,19 @@ private:
   static const TFilterCoeff m_bilinearFilterPrec4[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_BILINEAR]; ///< bilinear filter taps
 public:
   template<bool isFirst, bool isLast>
-  static void filterCopy( const ClpRng& clpRng, const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height, bool biMCForDMVR);
+  static void filterCopy(const ClpRng &clpRng, const Pel *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                         int width, int height, bool biMCForDMVR);
 
   template<int N, bool isVertical, bool isFirst, bool isLast>
-  static void filter(const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
+  static void filter(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                     int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
   template<int N>
-  void filterHor(const ClpRng& clpRng, Pel const* src, int srcStride, Pel *dst, int dstStride, int width, int height, bool isLast, TFilterCoeff const *coeff, bool biMCForDMVR);
+  void filterHor(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width,
+                 int height, bool isLast, TFilterCoeff const *coeff, bool biMCForDMVR);
 
   template<int N>
-  void filterVer(const ClpRng& clpRng, Pel const* src, int srcStride, Pel *dst, int dstStride, int width, int height, bool isFirst, bool isLast, TFilterCoeff const *coeff, bool biMCForDMVR);
+  void filterVer(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width,
+                 int height, bool isFirst, bool isLast, TFilterCoeff const *coeff, bool biMCForDMVR);
 
   static void xWeightedGeoBlk(const PredictionUnit &pu, const uint32_t width, const uint32_t height, const ComponentID compIdx, const uint8_t splitDir, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
   void weightedGeoBlk(const PredictionUnit &pu, const uint32_t width, const uint32_t height, const ComponentID compIdx, const uint8_t splitDir, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
@@ -103,10 +106,12 @@ public:
 
   InterpolationFilter();
   ~InterpolationFilter() {}
-  void( *m_filterHor[3][2][2] )( const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
-  void (*m_filterVer[4][2][2])(const ClpRng &clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width,
-                               int height, TFilterCoeff const *coeff, bool biMCForDMVR);
-  void( *m_filterCopy[2][2] )  ( const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, bool biMCForDMVR);
+  void (*m_filterHor[4][2][2])(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                               int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
+  void (*m_filterVer[4][2][2])(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                               int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
+  void (*m_filterCopy[2][2])(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                             int width, int height, bool biMCForDMVR);
   void( *m_weightedGeoBlk )(const PredictionUnit &pu, const uint32_t width, const uint32_t height, const ComponentID compIdx, const uint8_t splitDir, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
 
   void initInterpolationFilter( bool enable );
@@ -115,12 +120,12 @@ public:
   template <X86_VEXT vext>
   void _initInterpolationFilterX86();
 #endif
-  void filterHor(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride, int width,
-                 int height, int frac, bool isLast, const ClpRng &clpRng, int nFilterIdx = FILTER_DEFAULT,
+  void filterHor(const ComponentID compID, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                 int width, int height, int frac, bool isLast, const ClpRng &clpRng, int nFilterIdx = FILTER_DEFAULT,
                  bool useAltHpelIf = false);
-  void filterVer(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride, int width,
-                 int height, int frac, bool isFirst, bool isLast, const ClpRng &clpRng, int nFilterIdx = FILTER_DEFAULT,
-                 bool useAltHpelIf = false);
+  void filterVer(const ComponentID compID, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                 int width, int height, int frac, bool isFirst, bool isLast, const ClpRng &clpRng,
+                 int nFilterIdx = FILTER_DEFAULT, bool useAltHpelIf = false);
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
   void cacheAssign( CacheModel *cache ) { m_cacheModel = cache; }
 #endif
