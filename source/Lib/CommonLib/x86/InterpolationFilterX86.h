@@ -60,7 +60,8 @@
 // Full-pel copy 8-bit/16-bit
 // ===========================
 template<typename Tsrc, int N, bool isFirst, bool isLast>
-static void fullPelCopySSE( const ClpRng& clpRng, const void*_src, int srcStride, int16_t *dst, int dstStride, int width, int height )
+static void fullPelCopySSE(const ClpRng &clpRng, const void *_src, const ptrdiff_t srcStride, int16_t *dst,
+                           const ptrdiff_t dstStride, int width, int height)
 {
   Tsrc* src = (Tsrc*)_src;
 
@@ -117,7 +118,8 @@ static void fullPelCopySSE( const ClpRng& clpRng, const void*_src, int srcStride
 }
 
 template<typename Tsrc, int N, bool isFirst, bool isLast>
-static void fullPelCopyAVX2( const ClpRng& clpRng, const void*_src, int srcStride, short *dst, int dstStride, int width, int height )
+static void fullPelCopyAVX2(const ClpRng &clpRng, const void *_src, const ptrdiff_t srcStride, short *dst,
+                            const ptrdiff_t dstStride, int width, int height)
 {
 #ifdef USE_AVX2
   Tsrc* src = (Tsrc*)_src;
@@ -177,403 +179,313 @@ static void fullPelCopyAVX2( const ClpRng& clpRng, const void*_src, int srcStrid
 #endif
 }
 
-
 template<X86_VEXT vext, bool isFirst, bool isLast>
-static void simdFilterCopy( const ClpRng& clpRng, const Pel* src, int srcStride, int16_t* dst, int dstStride, int width, int height, bool biMCForDMVR)
+static void simdFilterCopy(const ClpRng &clpRng, const Pel *src, const ptrdiff_t srcStride, int16_t *dst,
+                           const ptrdiff_t dstStride, int width, int height, bool biMCForDMVR)
 {
   InterpolationFilter::filterCopy<isFirst, isLast>(clpRng, src, srcStride, dst, dstStride, width, height, biMCForDMVR);
 }
 
 
 // SIMD interpolation horizontal, block width modulo 4
-template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateHorM4( const int16_t* src, int srcStride, int16_t *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *coeff )
+template<X86_VEXT vext, int N, bool CLAMP>
+static void simdInterpolateHorM4(const int16_t *src, const ptrdiff_t srcStride, int16_t *dst, const ptrdiff_t dstStride,
+                                 int width, int height, int shift, int offset, const ClpRng &clpRng,
+                                 int16_t const *coeff)
 {
-  _mm_prefetch( (const char*)src + srcStride, _MM_HINT_T0 );
-  __m128i voffset = _mm_set1_epi32( offset );
-  __m128i vibdimin = _mm_set1_epi16( clpRng.min );
-  __m128i vibdimax = _mm_set1_epi16( clpRng.max );
-  __m128i vcoeffh = _mm_lddqu_si128( ( __m128i const * )coeff );
+  static_assert(N == 2 || N == 4 || N == 6 || N == 8, "only filter sizes 2, 4, 6, and 8 are supported");
 
-  __m128i vzero, vshufc0, vshufc1;
-  __m128i vsum;
+  _mm_prefetch((const char *) (src + srcStride), _MM_HINT_T0);
 
-  if (N != 8)
+  const __m128i minVal = _mm_set1_epi16(clpRng.min);
+  const __m128i maxVal = _mm_set1_epi16(clpRng.max);
+
+  __m128i c;
+  switch (N)
   {
-    vcoeffh = _mm_shuffle_epi32( vcoeffh, 0x44 );
-    vzero = _mm_setzero_si128();
-    vshufc0 = _mm_set_epi8( 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1, 0x0 );
-    vshufc1 = _mm_set_epi8( 0xd, 0xc, 0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4 );
+  case 2: c = _mm_cvtsi32_si128(*(int32_t *) coeff); break;
+  case 4: c = _mm_loadl_epi64((__m128i const *) coeff); break;
+  default: c = _mm_loadu_si128((__m128i const *) coeff); break;
   }
 
-  vzero = _mm_setzero_si128();
-
-  for( int row = 0; row < height; row++ )
+  __m128i coeffs[4];   // should be coeffs[N / 2] but MSVC doesn't like it
+  switch (N)
   {
-    _mm_prefetch( (const char*)src + 2 * srcStride, _MM_HINT_T0 );
-    for( int col = 0; col < width; col += 4 )
+  case 8: coeffs[3] = _mm_shuffle_epi32(c, 0xff);
+  case 6: coeffs[2] = _mm_shuffle_epi32(c, 0xaa);
+  case 4: coeffs[1] = _mm_shuffle_epi32(c, 0x55);
+  default: coeffs[0] = _mm_shuffle_epi32(c, 0x00); break;
+  }
+
+  const __m128i shuffle0 = _mm_setr_epi8(0, 1, 2, 3, 2, 3, 4, 5, 4, 5, 6, 7, 6, 7, 8, 9);
+  const __m128i shuffle1 = _mm_setr_epi8(4, 5, 6, 7, 6, 7, 8, 9, 8, 9, 10, 11, 10, 11, 12, 13);
+
+  for (ptrdiff_t row = 0; row < height; row++)
+  {
+    _mm_prefetch((const char *) (src + (row + 2) * srcStride), _MM_HINT_T0);
+
+    for (ptrdiff_t col = 0; col < width; col += 4)
     {
-      if( N == 8 )
+      __m128i vsum = _mm_set1_epi32(offset);
+
+      for (ptrdiff_t i = 0; i < N / 2; i += 2)
       {
-        __m128i vtmp[2];
-        for( int i = 0; i < 4; i += 2 )
+        const __m128i val = _mm_loadu_si128((const __m128i *) (src + srcStride * row + col + 2 * i));
+
+        vsum = _mm_add_epi32(vsum, _mm_madd_epi16(_mm_shuffle_epi8(val, shuffle0), coeffs[i]));
+
+        if (i + 1 < N / 2)
         {
-          __m128i vsrc0 = _mm_lddqu_si128( ( __m128i const * )&src[col + i] );
-          __m128i vsrc1 = _mm_lddqu_si128( ( __m128i const * )&src[col + i + 1] );
-          vsrc0 = _mm_madd_epi16( vsrc0, vcoeffh );
-          vsrc1 = _mm_madd_epi16( vsrc1, vcoeffh );
-          vtmp[i / 2] = _mm_hadd_epi32( vsrc0, vsrc1 );
+          vsum = _mm_add_epi32(vsum, _mm_madd_epi16(_mm_shuffle_epi8(val, shuffle1), coeffs[i + 1]));
         }
-        vsum = _mm_hadd_epi32( vtmp[0], vtmp[1] );
       }
-      else
+
+      vsum = _mm_sra_epi32(vsum, _mm_cvtsi32_si128(shift));
+      vsum = _mm_packs_epi32(vsum, vsum);
+
+      if (CLAMP)
       {
-        __m128i vtmp0, vtmp1;
-        __m128i vsrc = _mm_lddqu_si128( ( __m128i const * )&src[col] );
-        vtmp0 = _mm_shuffle_epi8( vsrc, vshufc0 );
-        vtmp1 = _mm_shuffle_epi8( vsrc, vshufc1 );
-
-        vtmp0 = _mm_madd_epi16( vtmp0, vcoeffh );
-        vtmp1 = _mm_madd_epi16( vtmp1, vcoeffh );
-        vsum = _mm_hadd_epi32( vtmp0, vtmp1 );
+        vsum = _mm_min_epi16(vsum, maxVal);
+        vsum = _mm_max_epi16(vsum, minVal);
       }
 
-      vsum = _mm_add_epi32(vsum, voffset);
-      vsum = _mm_srai_epi32(vsum, shift);
-      vsum = _mm_packs_epi32(vsum, vzero);
-
-      if( shiftBack )
-      { //clip
-        vsum = _mm_min_epi16( vibdimax, _mm_max_epi16( vibdimin, vsum ) );
-      }
-      _mm_storel_epi64( ( __m128i * )&dst[col], vsum );
+      _mm_storel_epi64((__m128i *) (dst + dstStride * row + col), vsum);
     }
-    src += srcStride;
-    dst += dstStride;
   }
 }
-
 
 // SIMD interpolation horizontal, block width modulo 8
-template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateHorM8( const int16_t* src, int srcStride, int16_t *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *coeff )
+template<X86_VEXT vext, int N, bool CLAMP>
+static void simdInterpolateHorM8(const int16_t *src, const ptrdiff_t srcStride, int16_t *dst, const ptrdiff_t dstStride,
+                                 int width, int height, int shift, int offset, const ClpRng &clpRng,
+                                 int16_t const *coeff)
 {
-  const int filterSpan = ( N - 1 );
-  _mm_prefetch( (const char*)src + srcStride, _MM_HINT_T0 );
-  _mm_prefetch( (const char*)src + ( width >> 1 ) + srcStride, _MM_HINT_T0 );
-  _mm_prefetch( (const char*)src + width + filterSpan + srcStride, _MM_HINT_T0 );
+  static_assert(N == 2 || N == 4 || N == 6 || N == 8, "only filter sizes 2, 4, 6, and 8 are supported");
 
-  __m128i voffset  = _mm_set1_epi32( offset );
-  __m128i vibdimin = _mm_set1_epi16( clpRng.min );
-  __m128i vibdimax = _mm_set1_epi16( clpRng.max );
-  __m128i vcoeffh  = _mm_lddqu_si128( ( __m128i const * )coeff );
+  std::array<ptrdiff_t, 3> memOffsets = { { 2 * srcStride, 2 * srcStride + (width >> 1),
+                                            2 * srcStride + width - 8 + (N / 2 + 1) / 2 * 4 + 7 } };
 
-  __m128i vshufc0, vshufc1;
-  __m128i vsum, vsuma, vsumb;
-
-  if (N != 8)
+  for (auto &off: memOffsets)
   {
-    vcoeffh = _mm_shuffle_epi32( vcoeffh, 0x44 );
-    vshufc0 = _mm_set_epi8( 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1, 0x0 );
-    vshufc1 = _mm_set_epi8( 0xd, 0xc, 0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4 );
+    _mm_prefetch((const char *) (src - srcStride + off), _MM_HINT_T0);
   }
 
-  for( int row = 0; row < height; row++ )
+  const __m128i minVal = _mm_set1_epi16(clpRng.min);
+  const __m128i maxVal = _mm_set1_epi16(clpRng.max);
+
+  __m128i c;
+  switch (N)
   {
-    _mm_prefetch( (const char*)src + 2 * srcStride, _MM_HINT_T0 );
-    _mm_prefetch( (const char*)src + ( width >> 1 ) + 2 * srcStride, _MM_HINT_T0 );
-    _mm_prefetch( (const char*)src + width + filterSpan + 2 * srcStride, _MM_HINT_T0 );
-    for( int col = 0; col < width; col += 8 )
+  case 2: c = _mm_cvtsi32_si128(*(int32_t *) coeff); break;
+  case 4: c = _mm_loadl_epi64((__m128i const *) coeff); break;
+  default: c = _mm_loadu_si128((__m128i const *) coeff); break;
+  }
+
+  __m128i coeffs[4];   // should be coeffs[N / 2] but MSVC doesn't like it
+  switch (N)
+  {
+  case 8: coeffs[3] = _mm_shuffle_epi32(c, 0xff);
+  case 6: coeffs[2] = _mm_shuffle_epi32(c, 0xaa);
+  case 4: coeffs[1] = _mm_shuffle_epi32(c, 0x55);
+  default: coeffs[0] = _mm_shuffle_epi32(c, 0x00); break;
+  }
+
+  const __m128i shuffle0 = _mm_setr_epi8(0, 1, 2, 3, 2, 3, 4, 5, 4, 5, 6, 7, 6, 7, 8, 9);
+  const __m128i shuffle1 = _mm_setr_epi8(4, 5, 6, 7, 6, 7, 8, 9, 8, 9, 10, 11, 10, 11, 12, 13);
+
+  for (ptrdiff_t row = 0; row < height; row++)
+  {
+    for (auto &off: memOffsets)
     {
-      if( N == 8 )
-      {
-        __m128i vtmp[4];
-        for( int i = 0; i < 8; i += 2 ){
-          __m128i vsrc0 = _mm_lddqu_si128( ( __m128i const * )&src[col + i] );
-          __m128i vsrc1 = _mm_lddqu_si128( ( __m128i const * )&src[col + i + 1] );
-          vsrc0 = _mm_madd_epi16( vsrc0, vcoeffh );
-          vsrc1 = _mm_madd_epi16( vsrc1, vcoeffh );
-          vtmp[i / 2] = _mm_hadd_epi32( vsrc0, vsrc1 );
-        }
-        vsuma = _mm_hadd_epi32( vtmp[0], vtmp[1] );
-        vsumb = _mm_hadd_epi32( vtmp[2], vtmp[3] );
-      }
-      else
-      {
-        __m128i vtmp00, vtmp01, vtmp10, vtmp11;
-        __m128i vsrc0 = _mm_lddqu_si128( ( __m128i const * )&src[col] );
-        __m128i vsrc1 = _mm_lddqu_si128( ( __m128i const * )&src[col + 4] );
-        vtmp00 = _mm_shuffle_epi8( vsrc0, vshufc0 );
-        vtmp01 = _mm_shuffle_epi8( vsrc0, vshufc1 );
-        vtmp10 = _mm_shuffle_epi8( vsrc1, vshufc0 );
-        vtmp11 = _mm_shuffle_epi8( vsrc1, vshufc1 );
-
-        vtmp00 = _mm_madd_epi16( vtmp00, vcoeffh );
-        vtmp01 = _mm_madd_epi16( vtmp01, vcoeffh );
-        vtmp10 = _mm_madd_epi16( vtmp10, vcoeffh );
-        vtmp11 = _mm_madd_epi16( vtmp11, vcoeffh );
-
-        vsuma = _mm_hadd_epi32( vtmp00, vtmp01 );
-        vsumb = _mm_hadd_epi32( vtmp10, vtmp11 );
-      }
-
-      vsuma = _mm_add_epi32(vsuma, voffset);
-      vsumb = _mm_add_epi32(vsumb, voffset);
-
-      vsuma = _mm_srai_epi32(vsuma, shift);
-      vsumb = _mm_srai_epi32(vsumb, shift);
-
-      vsum = _mm_packs_epi32(vsuma, vsumb);
-
-      if (shiftBack)
-      {   // clip
-        vsum = _mm_min_epi16( vibdimax, _mm_max_epi16( vibdimin, vsum ) );
-      }
-      _mm_storeu_si128( ( __m128i * )&dst[col], vsum );
+      _mm_prefetch((const char *) (src + row * srcStride + off), _MM_HINT_T0);
     }
-    src += srcStride;
-    dst += dstStride;
+
+    for (ptrdiff_t col = 0; col < width; col += 8)
+    {
+      __m128i vsum0 = _mm_set1_epi32(offset);
+      __m128i vsum1 = _mm_set1_epi32(offset);
+
+      __m128i val0 = _mm_loadu_si128((const __m128i *) (src + srcStride * row + col));
+
+      for (ptrdiff_t i = 0; i < N / 2; i += 2)
+      {
+        const __m128i val1 = _mm_loadu_si128((const __m128i *) (src + srcStride * row + col + 2 * i + 4));
+
+        vsum0 = _mm_add_epi32(vsum0, _mm_madd_epi16(_mm_shuffle_epi8(val0, shuffle0), coeffs[i]));
+        vsum1 = _mm_add_epi32(vsum1, _mm_madd_epi16(_mm_shuffle_epi8(val1, shuffle0), coeffs[i]));
+
+        if (i + 1 < N / 2)
+        {
+          vsum0 = _mm_add_epi32(vsum0, _mm_madd_epi16(_mm_shuffle_epi8(val0, shuffle1), coeffs[i + 1]));
+          vsum1 = _mm_add_epi32(vsum1, _mm_madd_epi16(_mm_shuffle_epi8(val1, shuffle1), coeffs[i + 1]));
+        }
+
+        val0 = val1;
+      }
+
+      vsum0 = _mm_sra_epi32(vsum0, _mm_cvtsi32_si128(shift));
+      vsum1 = _mm_sra_epi32(vsum1, _mm_cvtsi32_si128(shift));
+
+      __m128i vsum = _mm_packs_epi32(vsum0, vsum1);
+
+      if (CLAMP)
+      {
+        vsum = _mm_min_epi16(vsum, maxVal);
+        vsum = _mm_max_epi16(vsum, minVal);
+      }
+
+      _mm_storeu_si128((__m128i *) (dst + dstStride * row + col), vsum);
+    }
   }
 }
 
-
-template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateHorM8_AVX2( const int16_t* src, int srcStride, int16_t *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *coeff )
-{
 #ifdef USE_AVX2
-  const int filterSpan =/* bChromaIntl ? 2* ( N-1 ) : */( N-1 );
-  _mm_prefetch( (const char*)( src+srcStride ), _MM_HINT_T0 );
-  _mm_prefetch( (const char*)( src+( width>>1 )+srcStride ), _MM_HINT_T0 );
-  _mm_prefetch( (const char*)( src+width+filterSpan+srcStride ), _MM_HINT_T0 );
-
-  __m256i voffset    = _mm256_set1_epi32( offset );
-  __m128i vibdimin   = _mm_set1_epi16( clpRng.min );
-  __m128i vibdimax   = _mm_set1_epi16( clpRng.max );
-
-  __m256i vshuf0 = _mm256_set_epi8( 0x9, 0x8, 0x7, 0x6, 0x7, 0x6, 0x5, 0x4, 0x5, 0x4, 0x3, 0x2, 0x3, 0x2, 0x1, 0x0,
-                                    0x9, 0x8, 0x7, 0x6, 0x7, 0x6, 0x5, 0x4, 0x5, 0x4, 0x3, 0x2, 0x3, 0x2, 0x1, 0x0 );
-  __m256i vshuf1 = _mm256_set_epi8( 0xd, 0xc, 0xb, 0xa, 0xb, 0xa, 0x9, 0x8, 0x9, 0x8, 0x7, 0x6, 0x7, 0x6, 0x5, 0x4,
-                                    0xd, 0xc, 0xb, 0xa, 0xb, 0xa, 0x9, 0x8, 0x9, 0x8, 0x7, 0x6, 0x7, 0x6, 0x5, 0x4 );
-
-  __m256i vcoeff[N/2];
-  for( int i=0; i<N; i+=2 )
-  {
-    vcoeff[i/2] = _mm256_unpacklo_epi16( _mm256_set1_epi16( coeff[i] ), _mm256_set1_epi16( coeff[i+1] ) );
-  }
-
-  __m256i vsum;
-
-  for( int row = 0; row < height; row++ )
-  {
-    _mm_prefetch( (const char*)( src+2*srcStride ), _MM_HINT_T0 );
-    _mm_prefetch( (const char*)( src+( width>>1 )+2*srcStride ), _MM_HINT_T0 );
-    _mm_prefetch( (const char*)( src+width+filterSpan + 2*srcStride ), _MM_HINT_T0 );
-    for( int col = 0; col < width; col+=8 )
-    {
-      if( N==8 )
-      {
-        __m128i vsrc[3];
-        for( int i=0; i<3; i++ )
-        {
-          vsrc[i] = _mm_loadu_si128( ( const __m128i * )&src[col+i*4] );
-        }
-        vsum = _mm256_setzero_si256();
-        for( int i=0; i<2; i++ )
-        {
-          __m256i vsrc0 = _mm256_castsi128_si256( vsrc[i] );
-          vsrc0 = _mm256_inserti128_si256( vsrc0, vsrc[i+1], 1 );
-          __m256i vsrca0 = _mm256_shuffle_epi8( vsrc0, vshuf0 );
-          __m256i vsrca1 = _mm256_shuffle_epi8( vsrc0, vshuf1 );
-          vsum  = _mm256_add_epi32( vsum, _mm256_add_epi32( _mm256_madd_epi16( vsrca0, vcoeff[2*i] ), _mm256_madd_epi16( vsrca1, vcoeff[2*i+1] ) ) );
-        }
-      }
-      else
-      {
-        __m256i vtmp02, vtmp13;
-        {
-          __m256i vsrc = _mm256_castsi128_si256( _mm_loadu_si128( ( const __m128i* )&src[col] ) );
-          vsrc = _mm256_inserti128_si256( vsrc, _mm_loadu_si128( ( const __m128i* )&src[col+4] ), 1 );
-
-          vtmp02 = _mm256_shuffle_epi8( vsrc, vshuf0 );
-          vtmp13 = _mm256_shuffle_epi8( vsrc, vshuf1 );
-        }
-        vtmp02 = _mm256_madd_epi16( vtmp02, vcoeff[0] );
-        vtmp13 = _mm256_madd_epi16( vtmp13, vcoeff[1] );
-        vsum = _mm256_add_epi32( vtmp02, vtmp13 );
-      }
-      vsum = _mm256_add_epi32(vsum, voffset);
-      vsum = _mm256_srai_epi32(vsum, shift);
-
-      __m128i vsump = _mm256_castsi256_si128( _mm256_permute4x64_epi64( _mm256_packs_epi32( vsum, vsum ), 0x88 ) );
-      if( shiftBack )
-      { //clip
-        vsump = _mm_min_epi16( vibdimax, _mm_max_epi16( vibdimin, vsump ) );
-      }
-      _mm_storeu_si128( ( __m128i * )&dst[col], vsump );
-    }
-    src += srcStride;
-    dst += dstStride;
-  }
-#endif
-}
-
-
-template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateHorM16_AVX2( const int16_t* src, int srcStride, int16_t *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *coeff )
+template<X86_VEXT vext, int N, bool CLAMP>
+static void simdInterpolateHorM8_AVX2(const int16_t *src, const ptrdiff_t srcStride, int16_t *dst,
+                                      const ptrdiff_t dstStride, int width, int height, int shift, int offset,
+                                      const ClpRng &clpRng, int16_t const *coeff)
 {
-#ifdef USE_AVX2
-  const int filterSpan = ( N-1 );
-  _mm_prefetch( (const char*)( src+srcStride ), _MM_HINT_T0 );
-  _mm_prefetch( (const char*)( src+( width>>1 )+srcStride ), _MM_HINT_T0 );
-  _mm_prefetch( (const char*)( src+width+filterSpan+srcStride ), _MM_HINT_T0 );
-  _mm_prefetch( (const char*)( src+2*srcStride ), _MM_HINT_T0 );
-  _mm_prefetch( (const char*)( src+( width>>1 )+2*srcStride ), _MM_HINT_T0 );
-  _mm_prefetch( (const char*)( src+width+filterSpan+2*srcStride ), _MM_HINT_T0 );
-  _mm_prefetch( (const char*)( src+3*srcStride ), _MM_HINT_T0 );
-  _mm_prefetch( (const char*)( src+( width>>1 )+3*srcStride ), _MM_HINT_T0 );
-  _mm_prefetch( (const char*)( src+width+filterSpan+3*srcStride ), _MM_HINT_T0 );
+  static_assert(N == 2 || N == 4 || N == 6 || N == 8, "only filter sizes 2, 4, 6, and 8 are supported");
 
-  __m256i voffset    = _mm256_set1_epi32( offset );
-  __m256i vibdimin   = _mm256_set1_epi16( clpRng.min );
-  __m256i vibdimax   = _mm256_set1_epi16( clpRng.max );
-  __m256i vzero      = _mm256_setzero_si256();
-  __m256i vsum, vsuma, vsumb;
+  std::array<ptrdiff_t, 3> memOffsets = { { 2 * srcStride, 2 * srcStride + (width >> 1),
+                                            2 * srcStride + width - 8 + (N / 2 + 1) / 2 * 4 + 7 } };
 
-  __m256i vshuf0 = _mm256_set_epi8( 0x9, 0x8, 0x7, 0x6, 0x7, 0x6, 0x5, 0x4, 0x5, 0x4, 0x3, 0x2, 0x3, 0x2, 0x1, 0x0,
-                                    0x9, 0x8, 0x7, 0x6, 0x7, 0x6, 0x5, 0x4, 0x5, 0x4, 0x3, 0x2, 0x3, 0x2, 0x1, 0x0 );
-  __m256i vshuf1 = _mm256_set_epi8( 0xd, 0xc, 0xb, 0xa, 0xb, 0xa, 0x9, 0x8, 0x9, 0x8, 0x7, 0x6, 0x7, 0x6, 0x5, 0x4,
-                                    0xd, 0xc, 0xb, 0xa, 0xb, 0xa, 0x9, 0x8, 0x9, 0x8, 0x7, 0x6, 0x7, 0x6, 0x5, 0x4 );
-  __m256i vcoeff[N/2];
-  for( int i=0; i<N; i+=2 )
+  for (auto &off: memOffsets)
   {
-    vcoeff[i/2] = _mm256_unpacklo_epi16( _mm256_set1_epi16( coeff[i] ), _mm256_set1_epi16( coeff[i+1] ) );
+    _mm_prefetch((const char *) (src - srcStride + off), _MM_HINT_T0);
   }
 
-  for( int row = 0; row < height; row++ )
-  {
-    _mm_prefetch( (const char*)( src+2*srcStride ), _MM_HINT_T0 );
-    _mm_prefetch( (const char*)( src+( width>>1 )+2*srcStride ), _MM_HINT_T0 );
-    _mm_prefetch( (const char*)( src+width+filterSpan + 2*srcStride ), _MM_HINT_T0 );
+  const __m128i minVal = _mm_set1_epi16(clpRng.min);
+  const __m128i maxVal = _mm_set1_epi16(clpRng.max);
 
-    for( int col = 0; col < width; col+=16 )
+  __m128i c0;
+  switch (N)
+  {
+  case 2: c0 = _mm_cvtsi32_si128(*(int32_t *) coeff); break;
+  case 4: c0 = _mm_loadl_epi64((__m128i const *) coeff); break;
+  default: c0 = _mm_loadu_si128((__m128i const *) coeff); break;
+  }
+  __m256i c = _mm256_broadcastsi128_si256(c0);
+
+  __m256i coeffs[4];   // should be coeffs[N / 2] but MSVC doesn't like it
+  switch (N)
+  {
+  case 8: coeffs[3] = _mm256_shuffle_epi32(c, 0xff);
+  case 6: coeffs[2] = _mm256_shuffle_epi32(c, 0xaa);
+  case 4: coeffs[1] = _mm256_shuffle_epi32(c, 0x55);
+  default: coeffs[0] = _mm256_shuffle_epi32(c, 0x00); break;
+  }
+
+  const __m256i shuffle0 = _mm256_broadcastsi128_si256(_mm_setr_epi8(0, 1, 2, 3, 2, 3, 4, 5, 4, 5, 6, 7, 6, 7, 8, 9));
+  const __m256i shuffle1 =
+    _mm256_broadcastsi128_si256(_mm_setr_epi8(4, 5, 6, 7, 6, 7, 8, 9, 8, 9, 10, 11, 10, 11, 12, 13));
+
+  for (ptrdiff_t row = 0; row < height; row++)
+  {
+    for (auto &off: memOffsets)
     {
-      __m256i vsrc[3];
-      for( int i=0; i<3; i++ )
+      _mm_prefetch((const char *) (src + row * srcStride + off), _MM_HINT_T0);
+    }
+
+    for (ptrdiff_t col = 0; col < width; col += 8)
+    {
+      __m256i vsum = _mm256_set1_epi32(offset);
+
+      __m128i val0 = _mm_loadu_si128((const __m128i *) (src + srcStride * row + col));
+
+      for (ptrdiff_t i = 0; i < N / 2; i += 2)
       {
-        vsrc[i] = _mm256_lddqu_si256( ( const __m256i * )&src[col+i*4] );
-      }
-      if( N==8 )
-      {
-        vsuma = vsumb = vzero;
-        for( int i=0; i<2; i++ )
+        const __m128i val1 = _mm_loadu_si128((const __m128i *) (src + srcStride * row + col + 2 * i + 4));
+        const __m256i val  = _mm256_inserti128_si256(_mm256_castsi128_si256(val0), val1, 1);
+
+        vsum = _mm256_add_epi32(vsum, _mm256_madd_epi16(_mm256_shuffle_epi8(val, shuffle0), coeffs[i]));
+
+        if (i + 1 < N / 2)
         {
-          __m256i vsrca0 = _mm256_shuffle_epi8( vsrc[i], vshuf0 );
-          __m256i vsrca1 = _mm256_shuffle_epi8( vsrc[i], vshuf1 );
-          __m256i vsrcb0 = _mm256_shuffle_epi8( vsrc[i+1], vshuf0 );
-          __m256i vsrcb1 = _mm256_shuffle_epi8( vsrc[i+1], vshuf1 );
-          vsuma  = _mm256_add_epi32( vsuma, _mm256_add_epi32( _mm256_madd_epi16( vsrca0, vcoeff[2*i] ), _mm256_madd_epi16( vsrca1, vcoeff[2*i+1] ) ) );
-          vsumb  = _mm256_add_epi32( vsumb, _mm256_add_epi32( _mm256_madd_epi16( vsrcb0, vcoeff[2*i] ), _mm256_madd_epi16( vsrcb1, vcoeff[2*i+1] ) ) );
+          vsum = _mm256_add_epi32(vsum, _mm256_madd_epi16(_mm256_shuffle_epi8(val, shuffle1), coeffs[i + 1]));
         }
+
+        val0 = val1;
       }
-      else
+
+      vsum = _mm256_sra_epi32(vsum, _mm_cvtsi32_si128(shift));
+
+      __m128i sum = _mm_packs_epi32(_mm256_castsi256_si128(vsum), _mm256_extracti128_si256(vsum, 1));
+
+      if (CLAMP)
       {
-        __m256i vtmp00, vtmp01, vtmp10, vtmp11;
-        vtmp00 = _mm256_shuffle_epi8(vsrc[0], vshuf0);
-        vtmp01 = _mm256_shuffle_epi8(vsrc[0], vshuf1);
-        vtmp10 = _mm256_shuffle_epi8(vsrc[1], vshuf0);
-        vtmp11 = _mm256_shuffle_epi8(vsrc[1], vshuf1);
-
-        vtmp00 = _mm256_madd_epi16( vtmp00, vcoeff[0] );
-        vtmp01 = _mm256_madd_epi16( vtmp01, vcoeff[1] );
-        vtmp10 = _mm256_madd_epi16( vtmp10, vcoeff[0] );
-        vtmp11 = _mm256_madd_epi16( vtmp11, vcoeff[1] );
-
-        vsuma = _mm256_add_epi32( vtmp00, vtmp01 );
-        vsumb = _mm256_add_epi32( vtmp10, vtmp11 );
+        sum = _mm_min_epi16(sum, maxVal);
+        sum = _mm_max_epi16(sum, minVal);
       }
 
-      vsuma = _mm256_add_epi32(vsuma, voffset);
-      vsumb = _mm256_add_epi32(vsumb, voffset);
-      vsuma = _mm256_srai_epi32(vsuma, shift);
-      vsumb = _mm256_srai_epi32(vsumb, shift);
-      vsum  = _mm256_packs_epi32(vsuma, vsumb);
-
-      if( shiftBack )
-      { //clip
-        vsum = _mm256_min_epi16( vibdimax, _mm256_max_epi16( vibdimin, vsum ) );
-      }
-      _mm256_storeu_si256( ( __m256i * )&dst[col], vsum );
+      _mm_storeu_si128((__m128i *) (dst + dstStride * row + col), sum);
     }
-    src += srcStride;
-    dst += dstStride;
   }
-#endif
 }
+#endif
 
-
-template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateVerM4( const int16_t *src, int srcStride, int16_t *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *coeff )
+template<X86_VEXT vext, int N, bool CLAMP>
+static void simdInterpolateVerM4(const int16_t *src, const ptrdiff_t srcStride, int16_t *dst, const ptrdiff_t dstStride,
+                                 int width, int height, int shift, int offset, const ClpRng &clpRng,
+                                 int16_t const *coeff)
 {
-  const int16_t *srcOrig = src;
-  int16_t *dstOrig = dst;
+  static_assert(N == 2 || N == 4 || N == 6 || N == 8, "only filter sizes 2, 4, 6, and 8 are supported");
 
-  __m128i vcoeff[N / 2], vsrc[N];
-  __m128i vzero = _mm_setzero_si128();
-  __m128i voffset = _mm_set1_epi32( offset );
-  __m128i vibdimin = _mm_set1_epi16( clpRng.min );
-  __m128i vibdimax = _mm_set1_epi16( clpRng.max );
+  const __m128i minVal = _mm_set1_epi16(clpRng.min);
+  const __m128i maxVal = _mm_set1_epi16(clpRng.max);
 
-  __m128i vsum;
+  const __m128i vcoeff =
+    N == 2 ? _mm_cvtsi32_si128(*(uint32_t *) coeff)
+           : (N == 4 ? _mm_loadl_epi64((__m128i const *) coeff) : _mm_loadu_si128((__m128i const *) coeff));
 
-  for( int i = 0; i < N; i += 2 )
+  for (ptrdiff_t col = 0; col < width; col += 4)
   {
-    vcoeff[i / 2] = _mm_unpacklo_epi16( _mm_set1_epi16( coeff[i] ), _mm_set1_epi16( coeff[i + 1] ) );
-  }
-
-  for( int col = 0; col < width; col += 4 )
-  {
-    for( int i = 0; i < N - 1; i++ )
+    for (ptrdiff_t row = 0; row < height; row++)
     {
-      vsrc[i] = _mm_loadl_epi64( ( __m128i const * )&src[col + i * srcStride] );
-    }
-    for( int row = 0; row < height; row++ )
-    {
-      vsrc[N - 1] = _mm_loadl_epi64( ( __m128i const * )&src[col + ( N - 1 ) * srcStride] );
+      __m128i vsum = _mm_set1_epi32(offset);
 
-      vsum = vzero;
-      for( int i = 0; i < N; i += 2 )
+      __m128i val[N / 2];
+
+      for (ptrdiff_t i = 0; i < N / 2; i++)
       {
-        __m128i vsrc0 = _mm_unpacklo_epi16( vsrc[i], vsrc[i + 1] );
-        vsum = _mm_add_epi32( vsum, _mm_madd_epi16( vsrc0, vcoeff[i / 2] ) );
+        const __m128i valA = _mm_loadl_epi64((__m128i const *) (src + col + (row + 2 * i) * srcStride));
+        const __m128i valB = _mm_loadl_epi64((__m128i const *) (src + col + (row + 2 * i + 1) * srcStride));
+
+        val[i] = _mm_unpacklo_epi16(valA, valB);
       }
 
-      for( int i = 0; i < N - 1; i++ )
+      vsum = _mm_add_epi32(vsum, _mm_madd_epi16(val[0], _mm_shuffle_epi32(vcoeff, 0x00)));
+      if (N >= 4)
       {
-        vsrc[i] = vsrc[i + 1];
+        vsum = _mm_add_epi32(vsum, _mm_madd_epi16(val[1], _mm_shuffle_epi32(vcoeff, 0x55)));
+      }
+      if (N >= 6)
+      {
+        vsum = _mm_add_epi32(vsum, _mm_madd_epi16(val[2], _mm_shuffle_epi32(vcoeff, 0xaa)));
+      }
+      if (N == 8)
+      {
+        vsum = _mm_add_epi32(vsum, _mm_madd_epi16(val[3], _mm_shuffle_epi32(vcoeff, 0xff)));
       }
 
-      vsum = _mm_add_epi32(vsum, voffset);
       vsum = _mm_srai_epi32(vsum, shift);
-      vsum = _mm_packs_epi32(vsum, vzero);
+      vsum = _mm_packs_epi32(vsum, vsum);
 
-      if( shiftBack ) //clip
+      if (CLAMP)
       {
-        vsum = _mm_min_epi16( vibdimax, _mm_max_epi16( vibdimin, vsum ) );
+        vsum = _mm_min_epi16(vsum, maxVal);
+        vsum = _mm_max_epi16(vsum, minVal);
       }
 
-      _mm_storel_epi64( ( __m128i* )&dst[col], vsum );
-
-      src += srcStride;
-      dst += dstStride;
+      _mm_storel_epi64((__m128i *) (dst + row * dstStride + col), vsum);
     }
-    src = srcOrig;
-    dst = dstOrig;
   }
 }
 
-
 template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateVerM8( const int16_t *src, int srcStride, int16_t *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *coeff )
+static void simdInterpolateVerM8(const int16_t *src, const ptrdiff_t srcStride, int16_t *dst, const ptrdiff_t dstStride,
+                                 int width, int height, int shift, int offset, const ClpRng &clpRng,
+                                 int16_t const *coeff)
 {
   const int16_t *srcOrig = src;
   int16_t *dstOrig = dst;
@@ -637,134 +549,70 @@ static void simdInterpolateVerM8( const int16_t *src, int srcStride, int16_t *ds
   }
 }
 
-template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateVerM8_AVX2( const int16_t *src, int srcStride, int16_t *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *coeff )
-{
 #ifdef USE_AVX2
-
-  __m256i voffset    = _mm256_set1_epi32( offset );
-  __m128i vibdimin   = _mm_set1_epi16( clpRng.min );
-  __m128i vibdimax   = _mm_set1_epi16( clpRng.max );
-
-  __m256i vsum;
-  __m256i vsrc[N];
-  __m256i vcoeff[N/2];
-  for( int i=0; i<N; i+=2 )
-  {
-    vcoeff[i/2] = _mm256_unpacklo_epi16( _mm256_set1_epi16( coeff[i] ), _mm256_set1_epi16( coeff[i+1] ) );
-  }
-
-  const short *srcOrig = src;
-  int16_t *dstOrig = dst;
-
-  for( int col = 0; col < width; col+=8 )
-  {
-    for( int i=0; i<N-1; i++ )
-    {
-      vsrc[i]= _mm256_castsi128_si256( _mm_loadu_si128( ( const __m128i * )&src[col + i * srcStride] ) );
-      vsrc[i]= _mm256_permute4x64_epi64( vsrc[i], 0x50 );
-    }
-    for( int row = 0; row < height; row++ )
-    {
-      vsrc[N-1]= _mm256_castsi128_si256( _mm_loadu_si128( ( const __m128i * )&src[col + ( N-1 ) * srcStride] ) );
-      vsrc[N-1]= _mm256_permute4x64_epi64( vsrc[N-1], 0x50 );
-      vsum = _mm256_setzero_si256();
-      for( int i=0; i<N; i+=2 )
-      {
-        __m256i vsrc0 = _mm256_unpacklo_epi16( vsrc[i], vsrc[i+1] );
-        vsum  = _mm256_add_epi32( vsum, _mm256_madd_epi16( vsrc0, vcoeff[i/2] ) );
-      }
-      for( int i=0; i<N-1; i++ )
-      {
-        vsrc[i] = vsrc[i+1];
-      }
-
-      vsum = _mm256_add_epi32(vsum, voffset);
-      vsum = _mm256_srai_epi32(vsum, shift);
-
-      __m128i vsump = _mm256_castsi256_si128( _mm256_permute4x64_epi64( _mm256_packs_epi32( vsum, vsum ), 0x88 ) );
-      if( shiftBack )
-      { //clip
-        vsump = _mm_min_epi16( vibdimax, _mm_max_epi16( vibdimin, vsump ) );
-      }
-      _mm_storeu_si128( ( __m128i * )&dst[col], vsump );
-
-      src += srcStride;
-      dst += dstStride;
-    }
-    src= srcOrig;
-    dst= dstOrig;
-  }
-#endif
-}
-
-template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateVerM16_AVX2( const int16_t *src, int srcStride, int16_t *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *coeff )
+template<X86_VEXT vext, int N, bool CLAMP>
+static void simdInterpolateVerM8_AVX2(const int16_t *src, const ptrdiff_t srcStride, int16_t *dst,
+                                      const ptrdiff_t dstStride, int width, int height, int shift, int offset,
+                                      const ClpRng &clpRng, int16_t const *coeff)
 {
-#ifdef USE_AVX2
-  __m256i voffset    = _mm256_set1_epi32( offset );
-  __m256i vibdimin   = _mm256_set1_epi16( clpRng.min );
-  __m256i vibdimax   = _mm256_set1_epi16( clpRng.max );
-  __m256i vzero      = _mm256_setzero_si256();
-  __m256i vsum, vsuma, vsumb;
+  const __m128i minVal = _mm_set1_epi16(clpRng.min);
+  const __m128i maxVal = _mm_set1_epi16(clpRng.max);
 
-  __m256i vsrc[N];
-  __m256i vcoeff[N/2];
-  for( int i=0; i<N; i+=2 )
+  __m256i coeffs[N / 2];
+
+  for (int i = 0; i < N / 2; i++)
   {
-    vcoeff[i/2] = _mm256_unpacklo_epi16( _mm256_set1_epi16( coeff[i] ), _mm256_set1_epi16( coeff[i+1] ) );
+    coeffs[i] = _mm256_broadcastd_epi32(_mm_cvtsi32_si128(*(int32_t *) &coeff[2 * i]));
   }
 
-  const short *srcOrig = src;
-  int16_t *dstOrig = dst;
-
-  for( int col = 0; col < width; col+=16 )
+  for (ptrdiff_t col = 0; col < width; col += 8)
   {
-    for( int i=0; i<N-1; i++ )
+    __m256i vsrc[N];
+
+    for (int i = 0; i < N - 1; i++)
     {
-      vsrc[i] = _mm256_lddqu_si256( ( const __m256i * )&src[col + i * srcStride] );
+      vsrc[i] = _mm256_castsi128_si256(_mm_loadu_si128((const __m128i *) (src + col + i * srcStride)));
+      vsrc[i] = _mm256_permute4x64_epi64(vsrc[i], _MM_SHUFFLE(1, 1, 0, 0));
     }
-    for( int row = 0; row < height; row++ )
+
+    for (ptrdiff_t row = 0; row < height; row++)
     {
-      vsrc[N-1]= _mm256_lddqu_si256( ( const __m256i * )&src[col + ( N-1 ) * srcStride] );
-      vsuma = vsumb = vzero;
-      for( int i=0; i<N; i+=2 )
+      vsrc[N - 1] = _mm256_castsi128_si256(_mm_loadu_si128((const __m128i *) (src + col + (row + N - 1) * srcStride)));
+      vsrc[N - 1] = _mm256_permute4x64_epi64(vsrc[N - 1], _MM_SHUFFLE(1, 1, 0, 0));
+
+      __m256i vsum = _mm256_set1_epi32(offset);
+
+      for (int i = 0; i < N / 2; i++)
       {
-        __m256i vsrca = _mm256_unpacklo_epi16( vsrc[i], vsrc[i+1] );
-        __m256i vsrcb = _mm256_unpackhi_epi16( vsrc[i], vsrc[i+1] );
-        vsuma  = _mm256_add_epi32( vsuma, _mm256_madd_epi16( vsrca, vcoeff[i/2] ) );
-        vsumb  = _mm256_add_epi32( vsumb, _mm256_madd_epi16( vsrcb, vcoeff[i/2] ) );
+        __m256i vsrc0 = _mm256_unpacklo_epi16(vsrc[2 * i], vsrc[2 * i + 1]);
+        vsum          = _mm256_add_epi32(vsum, _mm256_madd_epi16(vsrc0, coeffs[i]));
       }
-      for( int i=0; i<N-1; i++ )
+
+      vsum = _mm256_sra_epi32(vsum, _mm_cvtsi32_si128(shift));
+      vsum = _mm256_packs_epi32(vsum, vsum);
+
+      __m128i sum = _mm256_castsi256_si128(_mm256_permute4x64_epi64(vsum, _MM_SHUFFLE(3, 1, 2, 0)));
+
+      if (CLAMP)
       {
-        vsrc[i] = vsrc[i+1];
+        sum = _mm_min_epi16(sum, maxVal);
+        sum = _mm_max_epi16(sum, minVal);
       }
 
-      vsuma = _mm256_add_epi32(vsuma, voffset);
-      vsumb = _mm256_add_epi32(vsumb, voffset);
-      vsuma = _mm256_srai_epi32(vsuma, shift);
-      vsumb = _mm256_srai_epi32(vsumb, shift);
-      vsum  = _mm256_packs_epi32(vsuma, vsumb);
+      _mm_storeu_si128((__m128i *) (dst + row * dstStride + col), sum);
 
-      if( shiftBack )
-      { //clip
-        vsum = _mm256_min_epi16( vibdimax, _mm256_max_epi16( vibdimin, vsum ) );
+      for (int i = 0; i < N - 1; i++)
+      {
+        vsrc[i] = vsrc[i + 1];
       }
-
-      _mm256_storeu_si256( ( __m256i * )&dst[col], vsum );
-
-      src += srcStride;
-      dst += dstStride;
     }
-    src= srcOrig;
-    dst= dstOrig;
   }
-#endif
 }
-
+#endif
 
 template<int N, bool isLast>
-inline void interpolate( const int16_t* src, int cStride, int16_t *dst, int width, int shift, int offset, int bitdepth, int maxVal, int16_t const *c )
+inline void interpolate(const int16_t *src, const ptrdiff_t cStride, int16_t *dst, int width, int shift, int offset,
+                        int bitdepth, int maxVal, int16_t const *c)
 {
   for( int col = 0; col < width; col++ )
   {
@@ -798,8 +646,8 @@ inline void interpolate( const int16_t* src, int cStride, int16_t *dst, int widt
   }
 }
 
-
-static inline __m128i simdInterpolateLuma2P8( int16_t const *src, int srcStride, __m128i *mmCoeff, const __m128i & mmOffset, int shift )
+static inline __m128i simdInterpolateLuma2P8(int16_t const *src, const ptrdiff_t srcStride, __m128i *mmCoeff,
+                                             const __m128i &mmOffset, int shift)
 {
   __m128i sumHi = _mm_setzero_si128();
   __m128i sumLo = _mm_setzero_si128();
@@ -817,7 +665,8 @@ static inline __m128i simdInterpolateLuma2P8( int16_t const *src, int srcStride,
   return( _mm_packs_epi32( sumLo, sumHi ) );
 }
 
-static inline __m128i simdInterpolateLuma2P4( int16_t const *src, int srcStride, __m128i *mmCoeff, const __m128i & mmOffset, int shift )
+static inline __m128i simdInterpolateLuma2P4(int16_t const *src, const ptrdiff_t srcStride, __m128i *mmCoeff,
+                                             const __m128i &mmOffset, int shift)
 {
   __m128i sumHi = _mm_setzero_si128();
   __m128i sumLo = _mm_setzero_si128();
@@ -845,7 +694,9 @@ static inline __m128i simdClip3( __m128i mmMin, __m128i mmMax, __m128i mmPix )
 }
 
 template<X86_VEXT vext, bool isLast>
-static void simdInterpolateN2_M8( const int16_t* src, int srcStride, int16_t *dst, int dstStride, int cStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *c )
+static void simdInterpolateN2_M8(const int16_t *src, const ptrdiff_t srcStride, int16_t *dst, const ptrdiff_t dstStride,
+                                 const ptrdiff_t cStride, int width, int height, int shift, int offset,
+                                 const ClpRng &clpRng, int16_t const *c)
 {
   int row, col;
   __m128i mmOffset = _mm_set1_epi32( offset );
@@ -873,7 +724,9 @@ static void simdInterpolateN2_M8( const int16_t* src, int srcStride, int16_t *ds
 }
 
 template<X86_VEXT vext, bool isLast>
-static void simdInterpolateN2_M4( const int16_t* src, int srcStride, int16_t *dst, int dstStride, int cStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *c )
+static void simdInterpolateN2_M4(const int16_t *src, const ptrdiff_t srcStride, int16_t *dst, const ptrdiff_t dstStride,
+                                 const ptrdiff_t cStride, int width, int height, int shift, int offset,
+                                 const ClpRng &clpRng, int16_t const *c)
 {
   int row, col;
   __m128i mmOffset = _mm_set1_epi32( offset );
@@ -900,7 +753,8 @@ static void simdInterpolateN2_M4( const int16_t* src, int srcStride, int16_t *ds
   }
 }
 #ifdef USE_AVX2
-static inline __m256i simdInterpolateLuma10Bit2P16(int16_t const *src1, int srcStride, __m256i *mmCoeff, const __m256i & mmOffset, __m128i &mmShift)
+static inline __m256i simdInterpolateLuma10Bit2P16(int16_t const *src1, const ptrdiff_t srcStride, __m256i *mmCoeff,
+                                                   const __m256i &mmOffset, __m128i &mmShift)
 {
   __m256i sumLo;
   __m256i mmPix  = _mm256_loadu_si256((__m256i *) src1);
@@ -913,7 +767,8 @@ static inline __m256i simdInterpolateLuma10Bit2P16(int16_t const *src1, int srcS
 }
 #endif
 
-static inline __m128i simdInterpolateLuma10Bit2P8(int16_t const *src1, int srcStride, __m128i *mmCoeff, const __m128i & mmOffset, __m128i &mmShift)
+static inline __m128i simdInterpolateLuma10Bit2P8(int16_t const *src1, const ptrdiff_t srcStride, __m128i *mmCoeff,
+                                                  const __m128i &mmOffset, __m128i &mmShift)
 {
   __m128i sumLo;
   __m128i mmPix  = _mm_loadu_si128((__m128i *) src1);
@@ -925,7 +780,8 @@ static inline __m128i simdInterpolateLuma10Bit2P8(int16_t const *src1, int srcSt
   return(sumLo);
 }
 
-static inline __m128i simdInterpolateLuma10Bit2P4(int16_t const *src, int srcStride, __m128i *mmCoeff, const __m128i & mmOffset, __m128i &mmShift)
+static inline __m128i simdInterpolateLuma10Bit2P4(int16_t const *src, const ptrdiff_t srcStride, __m128i *mmCoeff,
+                                                  const __m128i &mmOffset, __m128i &mmShift)
 {
   __m128i sumLo;
   __m128i mmPix  = _mm_loadl_epi64((__m128i *) src);
@@ -938,7 +794,8 @@ static inline __m128i simdInterpolateLuma10Bit2P4(int16_t const *src, int srcStr
 }
 
 #ifdef USE_AVX2
-static inline __m256i simdInterpolateLumaHighBit2P16(int16_t const *src1, int srcStride, __m256i *mmCoeff, const __m256i & mmOffset, __m128i &mmShift)
+static inline __m256i simdInterpolateLumaHighBit2P16(int16_t const *src1, const ptrdiff_t srcStride, __m256i *mmCoeff,
+                                                     const __m256i &mmOffset, __m128i &mmShift)
 {
   __m256i mm_mul_lo = _mm256_setzero_si256();
   __m256i mm_mul_hi = _mm256_setzero_si256();
@@ -958,7 +815,8 @@ static inline __m256i simdInterpolateLumaHighBit2P16(int16_t const *src1, int sr
 }
 #endif
 
-static inline __m128i simdInterpolateLumaHighBit2P8(int16_t const *src1, int srcStride, __m128i *mmCoeff, const __m128i & mmOffset, __m128i &mmShift)
+static inline __m128i simdInterpolateLumaHighBit2P8(int16_t const *src1, const ptrdiff_t srcStride, __m128i *mmCoeff,
+                                                    const __m128i &mmOffset, __m128i &mmShift)
 {
   __m128i mm_mul_lo = _mm_setzero_si128();
   __m128i mm_mul_hi = _mm_setzero_si128();
@@ -977,7 +835,8 @@ static inline __m128i simdInterpolateLumaHighBit2P8(int16_t const *src1, int src
   return(mm_sum);
 }
 
-static inline __m128i simdInterpolateLumaHighBit2P4(int16_t const *src1, int srcStride, __m128i *mmCoeff, const __m128i & mmOffset, __m128i &mmShift)
+static inline __m128i simdInterpolateLumaHighBit2P4(int16_t const *src1, const ptrdiff_t srcStride, __m128i *mmCoeff,
+                                                    const __m128i &mmOffset, __m128i &mmShift)
 {
   __m128i mm_sum = _mm_setzero_si128();
   __m128i mm_zero = _mm_setzero_si128();
@@ -995,7 +854,9 @@ static inline __m128i simdInterpolateLumaHighBit2P4(int16_t const *src1, int src
 }
 
 template<X86_VEXT vext, bool isLast>
-static void simdInterpolateN2_HIGHBIT_M4(const int16_t* src, int srcStride, int16_t *dst, int dstStride, int cStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *c)
+static void simdInterpolateN2_HIGHBIT_M4(const int16_t *src, const ptrdiff_t srcStride, int16_t *dst,
+                                         const ptrdiff_t dstStride, const ptrdiff_t cStride, int width, int height,
+                                         int shift, int offset, const ClpRng &clpRng, int16_t const *c)
 {
 #if USE_AVX2
   __m256i mm256Offset = _mm256_set1_epi32(offset);
@@ -1044,7 +905,9 @@ static void simdInterpolateN2_HIGHBIT_M4(const int16_t* src, int srcStride, int1
 }
 
 template<X86_VEXT vext, bool isLast>
-static void simdInterpolateN2_10BIT_M4(const int16_t* src, int srcStride, int16_t *dst, int dstStride, int cStride, int width, int height, int shift, int offset, const ClpRng& clpRng, int16_t const *c)
+static void simdInterpolateN2_10BIT_M4(const int16_t *src, const ptrdiff_t srcStride, int16_t *dst,
+                                       const ptrdiff_t dstStride, const ptrdiff_t cStride, int width, int height,
+                                       int shift, int offset, const ClpRng &clpRng, int16_t const *c)
 {
   int row, col;
   __m128i mmOffset = _mm_set1_epi16(offset);
@@ -1092,7 +955,9 @@ static void simdInterpolateN2_10BIT_M4(const int16_t* src, int srcStride, int16_
 }
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
 template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateHorM8_HBD(const Pel* src, int srcStride, Pel *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, Pel const *coeff)
+static void simdInterpolateHorM8_HBD(const Pel *src, const ptrdiff_t srcStride, Pel *dst, const ptrdiff_t dstStride,
+                                     int width, int height, int shift, int offset, const ClpRng &clpRng,
+                                     Pel const *coeff)
 {
   const int filterSpan = (N - 1);
   _mm_prefetch((const char*)src + srcStride, _MM_HINT_T0);
@@ -1165,7 +1030,9 @@ static void simdInterpolateHorM8_HBD(const Pel* src, int srcStride, Pel *dst, in
 }
 
 template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateHorM8_HBD_AVX2(const Pel* src, int srcStride, Pel *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, Pel const *coeff)
+static void simdInterpolateHorM8_HBD_AVX2(const Pel *src, const ptrdiff_t srcStride, Pel *dst,
+                                          const ptrdiff_t dstStride, int width, int height, int shift, int offset,
+                                          const ClpRng &clpRng, Pel const *coeff)
 {
 #ifdef USE_AVX2
   const int filterSpan = (N - 1);
@@ -1212,7 +1079,9 @@ static void simdInterpolateHorM8_HBD_AVX2(const Pel* src, int srcStride, Pel *ds
 }
 
 template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateVerM8_HBD(const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, Pel const *coeff)
+static void simdInterpolateVerM8_HBD(const Pel *src, const ptrdiff_t srcStride, Pel *dst, const ptrdiff_t dstStride,
+                                     int width, int height, int shift, int offset, const ClpRng &clpRng,
+                                     Pel const *coeff)
 {
   const Pel *srcOrig = src;
   Pel *dstOrig = dst;
@@ -1279,7 +1148,9 @@ static void simdInterpolateVerM8_HBD(const Pel *src, int srcStride, Pel *dst, in
 }
 
 template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateVerM8_HBD_AVX2(const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, Pel const *coeff)
+static void simdInterpolateVerM8_HBD_AVX2(const Pel *src, const ptrdiff_t srcStride, Pel *dst,
+                                          const ptrdiff_t dstStride, int width, int height, int shift, int offset,
+                                          const ClpRng &clpRng, Pel const *coeff)
 {
 #ifdef USE_AVX2
   __m256i voffset = _mm256_set1_epi32(offset);
@@ -1336,7 +1207,9 @@ static void simdInterpolateVerM8_HBD_AVX2(const Pel *src, int srcStride, Pel *ds
 }
 
 template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateHorM4_HBD(const Pel* src, int srcStride, Pel *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, Pel const *coeff)
+static void simdInterpolateHorM4_HBD(const Pel *src, const ptrdiff_t srcStride, Pel *dst, const ptrdiff_t dstStride,
+                                     int width, int height, int shift, int offset, const ClpRng &clpRng,
+                                     Pel const *coeff)
 {
   __m128i voffset = _mm_set1_epi32(offset);
   __m128i vibdimin = _mm_set1_epi32(clpRng.min);
@@ -1399,7 +1272,9 @@ static void simdInterpolateHorM4_HBD(const Pel* src, int srcStride, Pel *dst, in
 }
 
 template<X86_VEXT vext, int N, bool shiftBack>
-static void simdInterpolateVerM4_HBD(const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng, Pel const *coeff)
+static void simdInterpolateVerM4_HBD(const Pel *src, const ptrdiff_t srcStride, Pel *dst, const ptrdiff_t dstStride,
+                                     int width, int height, int shift, int offset, const ClpRng &clpRng,
+                                     Pel const *coeff)
 {
   const Pel *srcOrig = src;
   Pel *dstOrig = dst;
@@ -1455,7 +1330,9 @@ static void simdInterpolateVerM4_HBD(const Pel *src, int srcStride, Pel *dst, in
 }
 
 template<X86_VEXT vext, bool isLast>
-static void simdInterpolateN2_M8_HBD(const Pel* src, int srcStride, Pel *dst, int dstStride, int cStride, int width, int height, int shift, int offset, const ClpRng& clpRng, Pel const *c)
+static void simdInterpolateN2_M8_HBD(const Pel *src, const ptrdiff_t srcStride, Pel *dst, const ptrdiff_t dstStride,
+                                     const ptrdiff_t cStride, int width, int height, int shift, int offset,
+                                     const ClpRng &clpRng, Pel const *c)
 {
   int row, col;
   __m128i mmOffset = _mm_set1_epi32(offset);
@@ -1501,7 +1378,9 @@ static void simdInterpolateN2_M8_HBD(const Pel* src, int srcStride, Pel *dst, in
 }
 
 template<X86_VEXT vext, bool isLast>
-static void simdInterpolateN2_M4_HBD(const Pel* src, int srcStride, Pel *dst, int dstStride, int cStride, int width, int height, int shift, int offset, const ClpRng& clpRng, Pel const *c)
+static void simdInterpolateN2_M4_HBD(const Pel *src, const ptrdiff_t srcStride, Pel *dst, const ptrdiff_t dstStride,
+                                     const ptrdiff_t cStride, int width, int height, int shift, int offset,
+                                     const ClpRng &clpRng, Pel const *c)
 {
   int row, col;
   __m128i mmOffset = _mm_set1_epi32(offset);
@@ -1541,7 +1420,9 @@ static void simdInterpolateN2_M4_HBD(const Pel* src, int srcStride, Pel *dst, in
 }
 
 template<X86_VEXT vext, bool isLast>
-static void simdInterpolateN2_HBD_M4(const Pel* src, int srcStride, Pel *dst, int dstStride, int cStride, int width, int height, int shift, int offset, const ClpRng& clpRng, Pel const *c)
+static void simdInterpolateN2_HBD_M4(const Pel *src, const ptrdiff_t srcStride, Pel *dst, const ptrdiff_t dstStride,
+                                     const ptrdiff_t cStride, int width, int height, int shift, int offset,
+                                     const ClpRng &clpRng, Pel const *c)
 {
   CHECK(isLast, "Not Supported");
   CHECK(width % 4 != 0, "Not Supported");
@@ -1574,7 +1455,9 @@ static void simdInterpolateN2_HBD_M4(const Pel* src, int srcStride, Pel *dst, in
 }
 
 template<X86_VEXT vext, bool isLast>
-static void simdInterpolateN2_HBD_M4_AVX2(const Pel* src, int srcStride, Pel *dst, int dstStride, int cStride, int width, int height, int shift, int offset, const ClpRng& clpRng, Pel const *c)
+static void simdInterpolateN2_HBD_M4_AVX2(const Pel *src, const ptrdiff_t srcStride, Pel *dst,
+                                          const ptrdiff_t dstStride, const ptrdiff_t cStride, int width, int height,
+                                          int shift, int offset, const ClpRng &clpRng, Pel const *c)
 {
 #ifdef USE_AVX2
   CHECK(isLast, "Not Supported");
@@ -1615,7 +1498,8 @@ static void simdInterpolateN2_HBD_M4_AVX2(const Pel* src, int srcStride, Pel *ds
 }
 
 template<X86_VEXT vext, bool isFirst, bool isLast>
-static void simdFilterCopy_HBD(const ClpRng& clpRng, const Pel* src, int srcStride, Pel* dst, int dstStride, int width, int height, bool biMCForDMVR)
+static void simdFilterCopy_HBD(const ClpRng &clpRng, const Pel *src, const ptrdiff_t srcStride, Pel *dst,
+                               const ptrdiff_t dstStride, int width, int height, bool biMCForDMVR)
 {
   int row;
 
@@ -2070,8 +1954,9 @@ void xWeightedGeoBlk_HBD_SIMD(const PredictionUnit &pu, const uint32_t width, co
   }
 }
 #endif
-template<X86_VEXT vext, int N, bool isVertical, bool isFirst, bool isLast>
-static void simdFilter( const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR)
+template<X86_VEXT vext, int N, bool VERTICAL, bool FIRST, bool LAST>
+static void simdFilter(const ClpRng &clpRng, Pel const *src, const ptrdiff_t srcStride, Pel *dst,
+                       const ptrdiff_t dstStride, int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR)
 {
   int row, col;
 
@@ -2094,7 +1979,7 @@ static void simdFilter( const ClpRng& clpRng, Pel const *src, int srcStride, Pel
     c[7] = coeff[7];
   }
 
-  int cStride = ( isVertical ) ? srcStride : 1;
+  const ptrdiff_t cStride = (VERTICAL) ? srcStride : 1;
   src -= ( N/2 - 1 ) * cStride;
 
   int offset;
@@ -2102,24 +1987,10 @@ static void simdFilter( const ClpRng& clpRng, Pel const *src, int srcStride, Pel
   int shift    = IF_FILTER_PREC;
   // with the current settings (IF_INTERNAL_PREC = 14 and IF_FILTER_PREC = 6), though headroom can be
   // negative for bit depths greater than 14, shift will remain non-negative for bit depths of 8->20
-  CHECK( shift < 0, "Negative shift" );
-
-
-  if( isLast )
-  {
-    shift += ( isFirst ) ? 0 : headRoom;
-    offset = 1 << ( shift - 1 );
-    offset += ( isFirst ) ? 0 : IF_INTERNAL_OFFS << IF_FILTER_PREC;
-  }
-  else
-  {
-    shift -= ( isFirst ) ? headRoom : 0;
-    offset = (isFirst) ? -(IF_INTERNAL_OFFS << shift) : 0;
-  }
 
   if (biMCForDMVR)
   {
-    if( isFirst )
+    if (FIRST)
     {
       shift = IF_FILTER_PREC_BILINEAR - (IF_INTERNAL_PREC_BILINEAR - clpRng.bd);
       offset = 1 << (shift - 1);
@@ -2130,32 +2001,51 @@ static void simdFilter( const ClpRng& clpRng, Pel const *src, int srcStride, Pel
       offset = 1 << (shift - 1);
     }
   }
+  else
   {
-    if ((N == 8 || N == 6) && !(width & 0x07))
+    if (LAST)
     {
-      if( !isVertical )
+      shift += (FIRST) ? 0 : headRoom;
+      offset = 1 << (shift - 1);
+      offset += (FIRST) ? 0 : IF_INTERNAL_OFFS << IF_FILTER_PREC;
+    }
+    else
+    {
+      shift -= (FIRST) ? headRoom : 0;
+      offset = (FIRST) ? -(IF_INTERNAL_OFFS << shift) : 0;
+    }
+  }
+
+  const bool widthMult8 = (width & 7) == 0;
+  const bool widthMult4 = (width & 3) == 0;
+
+  {
+    if ((N == 8 || N == 6) && widthMult8)
+    {
+      if (!VERTICAL)
       {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
         if (vext >= AVX2)
         {
-          simdInterpolateHorM8_HBD_AVX2<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
-                                                         clpRng, c);
+          simdInterpolateHorM8_HBD_AVX2<vext, 8, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset,
+                                                       clpRng, c);
         }
         else
         {
-          simdInterpolateHorM8_HBD<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
-                                                    clpRng, c);
+          simdInterpolateHorM8_HBD<vext, 8, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                  c);
         }
 #else
+#ifdef USE_AVX2
         if( vext>= AVX2 )
         {
-          simdInterpolateHorM8_AVX2<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
-                                                     clpRng, c);
+          simdInterpolateHorM8_AVX2<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                   c);
         }
         else
+#endif
         {
-          simdInterpolateHorM8<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
-                                                c);
+          simdInterpolateHorM8<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
         }
 #endif
       }
@@ -2164,138 +2054,154 @@ static void simdFilter( const ClpRng& clpRng, Pel const *src, int srcStride, Pel
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
         if (vext >= AVX2)
         {
-          simdInterpolateVerM8_HBD_AVX2<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
-                                                         clpRng, c);
+          simdInterpolateVerM8_HBD_AVX2<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset,
+                                                       clpRng, c);
         }
         else
         {
-          simdInterpolateVerM8_HBD<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
-                                                    clpRng, c);
+          simdInterpolateVerM8_HBD<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                  c);
         }
 #else
+#ifdef USE_AVX2
         if( vext>= AVX2 )
         {
-          simdInterpolateVerM8_AVX2<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset,
-                                                     clpRng, c);
+          simdInterpolateVerM8_AVX2<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                   c);
         }
         else
+#endif
         {
-          simdInterpolateVerM8<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
-                                                c);
+          simdInterpolateVerM8<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
         }
 #endif
       }
       return;
     }
-    else if ((N == 8 || N == 6) && !(width & 0x03))
+    else if ((N == 8 || N == 6) && widthMult4)
     {
-      if( !isVertical )
+      if (!VERTICAL)
       {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-        simdInterpolateHorM4_HBD<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
-                                                  c);
+        simdInterpolateHorM4_HBD<vext, 8, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                c);
 #else
-        simdInterpolateHorM4<vext, 8, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+        simdInterpolateHorM4<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
 #endif
       }
       else
       {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-        simdInterpolateVerM4_HBD<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
-                                                  c);
+        simdInterpolateVerM4_HBD<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                c);
 #else
-        simdInterpolateVerM4<vext, N, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+        simdInterpolateVerM4<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
 #endif
       }
       return;
     }
-    else if( N == 4 && !( width & 0x03 ) )
+    else if (N == 4 && widthMult4)
     {
-      if( !isVertical )
+      if (!VERTICAL)
       {
-        if( ( width % 8 ) == 0 )
+        if (widthMult8)
         {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
           if (vext >= AVX2)
           {
-            simdInterpolateHorM8_HBD_AVX2<vext, 4, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+            simdInterpolateHorM8_HBD_AVX2<vext, 4, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset,
+                                                         clpRng, c);
           }
           else
           {
-            simdInterpolateHorM8_HBD<vext, 4, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+            simdInterpolateHorM8_HBD<vext, 4, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset,
+                                                    clpRng, c);
           }
 #else
+#ifdef USE_AVX2
           if( vext>= AVX2 )
           {
-            simdInterpolateHorM8_AVX2<vext, 4, isLast>( src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c );
+            simdInterpolateHorM8_AVX2<vext, 4, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset,
+                                                     clpRng, c);
           }
           else
+#endif
           {
-            simdInterpolateHorM8<vext, 4, isLast>( src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c );
+            simdInterpolateHorM8<vext, 4, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                c);
           }
 #endif
         }
         else
         {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-          simdInterpolateHorM4_HBD<vext, 4, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+          simdInterpolateHorM4_HBD<vext, 4, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                  c);
 #else
-          simdInterpolateHorM4<vext, 4, isLast>( src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c );
+          simdInterpolateHorM4<vext, 4, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
 #endif
         }
       }
       else
       {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-        simdInterpolateVerM4_HBD<vext, 4, isLast>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
+        simdInterpolateVerM4_HBD<vext, 4, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+                                                c);
 #else
-        simdInterpolateVerM4<vext, 4, isLast>( src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c );
+        simdInterpolateVerM4<vext, 4, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
 #endif
       }
       return;
     }
     else if (biMCForDMVR)
     {
-      if (N == 2 && !(width & 0x03))
+      if (N == 2 && widthMult4)
       {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
         if (vext >= AVX2)
         {
-          simdInterpolateN2_HBD_M4_AVX2<vext, isLast>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset, clpRng, c);
+          simdInterpolateN2_HBD_M4_AVX2<vext, LAST>(src, srcStride, dst, dstStride, cStride, width, height, shift,
+                                                    offset, clpRng, c);
         }
         else
         {
-          simdInterpolateN2_HBD_M4<vext, isLast>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset, clpRng, c);
+          simdInterpolateN2_HBD_M4<vext, LAST>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset,
+                                               clpRng, c);
         }
 #else
         if (clpRng.bd <= 10)
         {
-        simdInterpolateN2_10BIT_M4<vext, isLast>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset, clpRng, c);
+          simdInterpolateN2_10BIT_M4<vext, LAST>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset,
+                                                 clpRng, c);
         }
         else
         {
-          simdInterpolateN2_HIGHBIT_M4<vext, isLast>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset, clpRng, c);
+          simdInterpolateN2_HIGHBIT_M4<vext, LAST>(src, srcStride, dst, dstStride, cStride, width, height, shift,
+                                                   offset, clpRng, c);
         }
 #endif
         return;
       }
     }
-    else if( N == 2 && !( width & 0x07 ) )
+    else if (N == 2 && widthMult8)
     {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-      simdInterpolateN2_M8_HBD<vext, isLast>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset,
-                                             clpRng, c);
+      simdInterpolateN2_M8_HBD<vext, LAST>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset,
+                                           clpRng, c);
 #else
-      simdInterpolateN2_M8<vext, isLast>( src, srcStride, dst, dstStride, cStride, width, height, shift, offset, clpRng, c );
+      simdInterpolateN2_M8<vext, LAST>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset, clpRng,
+                                       c);
 #endif
       return;
     }
-    else if( N == 2 && !( width & 0x03 ) )
+    else if (N == 2 && widthMult4)
     {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-      simdInterpolateN2_M4_HBD<vext, isLast>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset, clpRng, c);
+      simdInterpolateN2_M4_HBD<vext, LAST>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset,
+                                           clpRng, c);
 #else
-      simdInterpolateN2_M4<vext, isLast>( src, srcStride, dst, dstStride, cStride, width, height, shift, offset, clpRng, c );
+      simdInterpolateN2_M4<vext, LAST>(src, srcStride, dst, dstStride, cStride, width, height, shift, offset, clpRng,
+                                       c);
 #endif
       return;
     }
@@ -2326,7 +2232,7 @@ static void simdFilter( const ClpRng& clpRng, Pel const *src, int srcStride, Pel
       }
 
       Pel val = ( sum + offset ) >> shift;
-      if( isLast )
+      if (LAST)
       {
         val = ClipPel( val, clpRng );
       }
@@ -2622,6 +2528,11 @@ void InterpolationFilter::_initInterpolationFilterX86()
   m_filterHor[2][0][1] = simdFilter<vext, 2, false, false, true>;
   m_filterHor[2][1][0] = simdFilter<vext, 2, false, true, false>;
   m_filterHor[2][1][1] = simdFilter<vext, 2, false, true, true>;
+
+  m_filterHor[3][0][0] = simdFilter<vext, 6, false, false, false>;
+  m_filterHor[3][0][1] = simdFilter<vext, 6, false, false, true>;
+  m_filterHor[3][1][0] = simdFilter<vext, 6, false, true, false>;
+  m_filterHor[3][1][1] = simdFilter<vext, 6, false, true, true>;
 
   m_filterVer[0][0][0] = simdFilter<vext, 8, true, false, false>;
   m_filterVer[0][0][1] = simdFilter<vext, 8, true, false, true>;
