@@ -1495,6 +1495,11 @@ void DecLib::checkSeiContentInAccessUnit()
         payloadType += val;
       } while (val==0xFF);
 
+      if (payloadType == SEI::USER_DATA_REGISTERED_ITU_T_T35 || payloadType == SEI::USER_DATA_UNREGISTERED)
+      {
+        break;
+      }
+
       uint32_t payloadSize = 0;
       do
       {
@@ -1502,7 +1507,7 @@ void DecLib::checkSeiContentInAccessUnit()
         payloadSize += val;
       } while (val==0xFF);
 
-      if (payloadType != SEI::SCALABLE_NESTING && payloadType != SEI::USER_DATA_REGISTERED_ITU_T_T35 && payloadType != SEI::USER_DATA_UNREGISTERED)
+      if (payloadType != SEI::SCALABLE_NESTING)
       {
         if (payloadType == SEI::BUFFERING_PERIOD || payloadType == SEI::PICTURE_TIMING || payloadType == SEI::DECODING_UNIT_INFO || payloadType == SEI::SUBPICTURE_LEVEL_INFO)
         {
