@@ -1165,7 +1165,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
         if (enableProf)
         {
           const int shift = IF_INTERNAL_FRAC_BITS(clpRng.bd);
-          CHECKD(shift >= 0, "shift must be positive");
+          CHECKD(shift < 0, "shift must be positive");
           const int xOffset = xFrac >> (MV_FRAC_BITS_LUMA - 1);
           const int yOffset = yFrac >> (MV_FRAC_BITS_LUMA - 1);
 
