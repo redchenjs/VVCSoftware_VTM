@@ -2596,7 +2596,7 @@ void VPS::deriveOutputLayerSets()
   {
     if (m_numLayersInOls[i] > 1)
     {
-      m_multiLayerOlsIdxToOlsIdx[j] = i;
+      m_multiLayerOlsIdxToOlsIdx[j++] = i;
     }
   }
 }
