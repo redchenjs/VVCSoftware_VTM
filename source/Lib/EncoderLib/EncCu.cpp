@@ -4763,7 +4763,14 @@ Distortion EncCu::getDistortionDb( CodingStructure &cs, CPelBuf org, CPelBuf rec
     }
     else
     {
-      dist += m_pcRdCost->getDistPart( org, reco, cs.sps->getBitDepth(toChannelType( compID ) ), compID, DF_SSE );
+      if ((isChroma(compID) && m_pcEncCfg->getReshapeIntraCMD()))
+      {
+	dist += m_pcRdCost->getDistPart( org, reco, cs.sps->getBitDepth(toChannelType( compID ) ), compID, DF_SSE_WTD, &orgLuma );
+      }
+      else
+      {
+        dist += m_pcRdCost->getDistPart( org, reco, cs.sps->getBitDepth(toChannelType( compID ) ), compID, DF_SSE );
+      }
     }
   }
   else
