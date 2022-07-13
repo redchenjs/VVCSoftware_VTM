@@ -679,23 +679,23 @@ void DecLib::executeLoopFilters()
 
   if (cs.sps->getUseLmcs() && cs.picHeader->getLmcsEnabledFlag())
   {
-      const PreCalcValues& pcv = *cs.pcv;
-      for (uint32_t yPos = 0; yPos < pcv.lumaHeight; yPos += pcv.maxCUHeight)
+    const PreCalcValues &pcv = *cs.pcv;
+    for (uint32_t yPos = 0; yPos < pcv.lumaHeight; yPos += pcv.maxCUHeight)
+    {
+      for (uint32_t xPos = 0; xPos < pcv.lumaWidth; xPos += pcv.maxCUWidth)
       {
-        for (uint32_t xPos = 0; xPos < pcv.lumaWidth; xPos += pcv.maxCUWidth)
+        const CodingUnit *cu = cs.getCU(Position(xPos, yPos), CHANNEL_TYPE_LUMA);
+        if (cu->slice->getLmcsEnabledFlag())
         {
-          const CodingUnit* cu = cs.getCU(Position(xPos, yPos), CHANNEL_TYPE_LUMA);
-          if (cu->slice->getLmcsEnabledFlag())
-          {
-            const uint32_t width = (xPos + pcv.maxCUWidth > pcv.lumaWidth) ? (pcv.lumaWidth - xPos) : pcv.maxCUWidth;
-            const uint32_t height = (yPos + pcv.maxCUHeight > pcv.lumaHeight) ? (pcv.lumaHeight - yPos) : pcv.maxCUHeight;
-            const UnitArea area(cs.area.chromaFormat, Area(xPos, yPos, width, height));
-            cs.getRecoBuf(area).get(COMPONENT_Y).rspSignal(m_cReshaper.getInvLUT());
-          }
+          const uint32_t width  = (xPos + pcv.maxCUWidth > pcv.lumaWidth) ? (pcv.lumaWidth - xPos) : pcv.maxCUWidth;
+          const uint32_t height = (yPos + pcv.maxCUHeight > pcv.lumaHeight) ? (pcv.lumaHeight - yPos) : pcv.maxCUHeight;
+          const UnitArea area(cs.area.chromaFormat, Area(xPos, yPos, width, height));
+          cs.getRecoBuf(area).get(COMPONENT_Y).rspSignal(m_cReshaper.getInvLUT());
         }
       }
-      m_cReshaper.setRecReshaped(false);
-      m_cSAO.setReshaper(&m_cReshaper);
+    }
+    m_cReshaper.setRecReshaped(false);
+    m_cSAO.setReshaper(&m_cReshaper);
   }
   // deblocking filter
   m_deblockingFilter.deblockingFilterPic( cs );
