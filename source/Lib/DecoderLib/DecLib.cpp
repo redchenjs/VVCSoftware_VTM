@@ -799,8 +799,14 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
     c += 32;  // tolower
   }
 
-  if (pcSlice->isDRAP()) c = 'D';
-  if (pcSlice->getEdrapRapId() > 0) c = 'E';
+  if (pcSlice->isDRAP())
+  {
+    c = 'D';
+  }
+  if (pcSlice->getEdrapRapId() > 0)
+  {
+    c = 'E';
+  }
 
   //-- For time output for each slice
   msg( msgl, "POC %4d LId: %2d TId: %1d ( %s, %c-SLICE, QP%3d ) ", pcSlice->getPOC(), pcSlice->getPic()->layerId,
@@ -1032,7 +1038,6 @@ void DecLib::xCreateLostPicture( int iLostPoc, const int layerId )
   {
     m_pocRandomAccess = iLostPoc;
   }
-
 }
 
 void  DecLib::xCreateUnavailablePicture( const PPS *pps, const int iUnavailablePoc, const bool longTermFlag, const int temporalId, const int layerId, const bool interLayerRefPicFlag )
@@ -1084,6 +1089,7 @@ void  DecLib::xCreateUnavailablePicture( const PPS *pps, const int iUnavailableP
     m_pocRandomAccess = iUnavailablePoc;
   }
 }
+
 void DecLib::checkPicTypeAfterEos()
 {
   int layerId = m_pcPic->slices[0]->getNalUnitLayerId();
@@ -1730,6 +1736,7 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
       }
     }
   }
+
   if (pSlice->getAlfEnabledFlag(COMPONENT_Cb)||pSlice->getAlfEnabledFlag(COMPONENT_Cr) )
   {
     //chroma APS
@@ -2135,21 +2142,22 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     xParsePrefixSEImessages();
 
     // Check if any new SEI has arrived
-     if(!m_SEIs.empty())
-     {
-       // Currently only decoding Unit SEI message occurring between VCL NALUs copied
-       SEIMessages& picSEI = m_pcPic->SEIs;
-       SEIMessages decodingUnitInfos = extractSeisByType( picSEI, SEI::DECODING_UNIT_INFO);
-       picSEI.insert(picSEI.end(), decodingUnitInfos.begin(), decodingUnitInfos.end());
-       deleteSEIs(m_SEIs);
-     }
-     if (m_seiInclusionFlag)
-     {
-       checkParameterSetsInclusionSEIconstraints(nalu);
-     }
+    if (!m_SEIs.empty())
+    {
+      // Currently only decoding Unit SEI message occurring between VCL NALUs copied
+      SEIMessages &picSEI            = m_pcPic->SEIs;
+      SEIMessages  decodingUnitInfos = extractSeisByType(picSEI, SEI::DECODING_UNIT_INFO);
+      picSEI.insert(picSEI.end(), decodingUnitInfos.begin(), decodingUnitInfos.end());
+      deleteSEIs(m_SEIs);
+    }
+    if (m_seiInclusionFlag)
+    {
+      checkParameterSetsInclusionSEIconstraints(nalu);
+    }
   }
   xCheckParameterSetConstraints(layerId);
 }
+
 void DecLib::xCheckParameterSetConstraints(const int layerId)
 {
   // Conformance checks
@@ -2879,8 +2887,8 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
       {
         if( vps->getLayerIdInOls(vps->m_targetOlsIdx, i) == nalu.m_nuhLayerId )
         {
-            isCurLayerNotOutput = false;
-            break;
+          isCurLayerNotOutput = false;
+          break;
         }
       }
 
@@ -2990,7 +2998,7 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     }
   }
 
-    m_prevPOC = m_apcSlicePilot->getPOC();
+  m_prevPOC = m_apcSlicePilot->getPOC();
 
   if (m_bFirstSliceInPicture)
   {
@@ -3112,150 +3120,151 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   pcSlice->scaleRefPicList( scaledRefPic, m_pcPic->cs->picHeader, m_parameterSetManager.getAPSs(), m_picHeader.getLmcsAPS(), m_picHeader.getScalingListAPS(), true );
 #endif
 
-    if (!pcSlice->isIntra())
-    {
-      bool lowDelay  = true;
-      int  currPoc   = pcSlice->getPOC();
-      int  refIdx    = 0;
+  if (!pcSlice->isIntra())
+  {
+    bool lowDelay = true;
+    int  currPoc  = pcSlice->getPOC();
+    int  refIdx   = 0;
 
-      for (refIdx = 0; refIdx < pcSlice->getNumRefIdx(REF_PIC_LIST_0) && lowDelay; refIdx++)
+    for (refIdx = 0; refIdx < pcSlice->getNumRefIdx(REF_PIC_LIST_0) && lowDelay; refIdx++)
+    {
+      if (pcSlice->getRefPic(REF_PIC_LIST_0, refIdx)->getPOC() > currPoc)
       {
-        if (pcSlice->getRefPic(REF_PIC_LIST_0, refIdx)->getPOC() > currPoc)
+        lowDelay = false;
+      }
+    }
+    if (pcSlice->isInterB())
+    {
+      for (refIdx = 0; refIdx < pcSlice->getNumRefIdx(REF_PIC_LIST_1) && lowDelay; refIdx++)
+      {
+        if (pcSlice->getRefPic(REF_PIC_LIST_1, refIdx)->getPOC() > currPoc)
         {
           lowDelay = false;
         }
       }
-      if (pcSlice->isInterB())
-      {
-        for (refIdx = 0; refIdx < pcSlice->getNumRefIdx(REF_PIC_LIST_1) && lowDelay; refIdx++)
-        {
-          if (pcSlice->getRefPic(REF_PIC_LIST_1, refIdx)->getPOC() > currPoc)
-          {
-            lowDelay = false;
-          }
-        }
-      }
-
-      pcSlice->setCheckLDC(lowDelay);
     }
 
-    if (pcSlice->getSPS()->getUseSMVD() && pcSlice->getCheckLDC() == false
-      && pcSlice->getPicHeader()->getMvdL1ZeroFlag() == false
-      )
+    pcSlice->setCheckLDC(lowDelay);
+  }
+
+  if (pcSlice->getSPS()->getUseSMVD() && pcSlice->getCheckLDC() == false
+      && pcSlice->getPicHeader()->getMvdL1ZeroFlag() == false)
+  {
+    int currPOC = pcSlice->getPOC();
+
+    int forwardPOC  = currPOC;
+    int backwardPOC = currPOC;
+    int ref         = 0;
+    int refIdx0     = -1;
+    int refIdx1     = -1;
+
+    // search nearest forward POC in List 0
+    for (ref = 0; ref < pcSlice->getNumRefIdx(REF_PIC_LIST_0); ref++)
     {
-      int currPOC = pcSlice->getPOC();
+      int        poc           = pcSlice->getRefPic(REF_PIC_LIST_0, ref)->getPOC();
+      const bool isRefLongTerm = pcSlice->getRefPic(REF_PIC_LIST_0, ref)->longTerm;
+      if (poc < currPOC && (poc > forwardPOC || refIdx0 == -1) && !isRefLongTerm)
+      {
+        forwardPOC = poc;
+        refIdx0    = ref;
+      }
+    }
 
-      int forwardPOC = currPOC;
-      int backwardPOC = currPOC;
-      int ref = 0;
-      int refIdx0 = -1;
-      int refIdx1 = -1;
+    // search nearest backward POC in List 1
+    for (ref = 0; ref < pcSlice->getNumRefIdx(REF_PIC_LIST_1); ref++)
+    {
+      int        poc           = pcSlice->getRefPic(REF_PIC_LIST_1, ref)->getPOC();
+      const bool isRefLongTerm = pcSlice->getRefPic(REF_PIC_LIST_1, ref)->longTerm;
+      if (poc > currPOC && (poc < backwardPOC || refIdx1 == -1) && !isRefLongTerm)
+      {
+        backwardPOC = poc;
+        refIdx1     = ref;
+      }
+    }
 
-      // search nearest forward POC in List 0
+    if (!(forwardPOC < currPOC && backwardPOC > currPOC))
+    {
+      forwardPOC  = currPOC;
+      backwardPOC = currPOC;
+      refIdx0     = -1;
+      refIdx1     = -1;
+
+      // search nearest backward POC in List 0
       for ( ref = 0; ref < pcSlice->getNumRefIdx( REF_PIC_LIST_0 ); ref++ )
       {
         int poc = pcSlice->getRefPic( REF_PIC_LIST_0, ref )->getPOC();
         const bool isRefLongTerm = pcSlice->getRefPic(REF_PIC_LIST_0, ref)->longTerm;
-        if ( poc < currPOC && (poc > forwardPOC || refIdx0 == -1) && !isRefLongTerm )
+        if (poc > currPOC && (poc < backwardPOC || refIdx0 == -1) && !isRefLongTerm)
         {
-          forwardPOC = poc;
+          backwardPOC = poc;
           refIdx0 = ref;
         }
       }
 
-      // search nearest backward POC in List 1
+      // search nearest forward POC in List 1
       for ( ref = 0; ref < pcSlice->getNumRefIdx( REF_PIC_LIST_1 ); ref++ )
       {
         int poc = pcSlice->getRefPic( REF_PIC_LIST_1, ref )->getPOC();
         const bool isRefLongTerm = pcSlice->getRefPic(REF_PIC_LIST_1, ref)->longTerm;
-        if ( poc > currPOC && (poc < backwardPOC || refIdx1 == -1) && !isRefLongTerm )
+        if (poc < currPOC && (poc > forwardPOC || refIdx1 == -1) && !isRefLongTerm)
         {
-          backwardPOC = poc;
+          forwardPOC = poc;
           refIdx1 = ref;
         }
       }
+    }
 
-      if ( !(forwardPOC < currPOC && backwardPOC > currPOC) )
-      {
-        forwardPOC = currPOC;
-        backwardPOC = currPOC;
-        refIdx0 = -1;
-        refIdx1 = -1;
-
-        // search nearest backward POC in List 0
-        for ( ref = 0; ref < pcSlice->getNumRefIdx( REF_PIC_LIST_0 ); ref++ )
-        {
-          int poc = pcSlice->getRefPic( REF_PIC_LIST_0, ref )->getPOC();
-          const bool isRefLongTerm = pcSlice->getRefPic(REF_PIC_LIST_0, ref)->longTerm;
-          if ( poc > currPOC && (poc < backwardPOC || refIdx0 == -1) && !isRefLongTerm )
-          {
-            backwardPOC = poc;
-            refIdx0 = ref;
-          }
-        }
-
-        // search nearest forward POC in List 1
-        for ( ref = 0; ref < pcSlice->getNumRefIdx( REF_PIC_LIST_1 ); ref++ )
-        {
-          int poc = pcSlice->getRefPic( REF_PIC_LIST_1, ref )->getPOC();
-          const bool isRefLongTerm = pcSlice->getRefPic(REF_PIC_LIST_1, ref)->longTerm;
-          if ( poc < currPOC && (poc > forwardPOC || refIdx1 == -1) && !isRefLongTerm )
-          {
-            forwardPOC = poc;
-            refIdx1 = ref;
-          }
-        }
-      }
-
-      if ( forwardPOC < currPOC && backwardPOC > currPOC )
-      {
-        pcSlice->setBiDirPred( true, refIdx0, refIdx1 );
-      }
-      else
-      {
-        pcSlice->setBiDirPred( false, -1, -1 );
-      }
+    if (forwardPOC < currPOC && backwardPOC > currPOC)
+    {
+      pcSlice->setBiDirPred(true, refIdx0, refIdx1);
     }
     else
     {
       pcSlice->setBiDirPred( false, -1, -1 );
     }
+  }
+  else
+  {
+    pcSlice->setBiDirPred(false, -1, -1);
+  }
 
-    //---------------
-    pcSlice->setRefPOCList();
+  //---------------
+  pcSlice->setRefPOCList();
 
-    NalUnitInfo naluInfo;
-    naluInfo.m_nalUnitType = nalu.m_nalUnitType;
-    naluInfo.m_nuhLayerId = nalu.m_nuhLayerId;
-    naluInfo.m_firstCTUinSlice = pcSlice->getFirstCtuRsAddrInSlice();
-    naluInfo.m_POC = pcSlice->getPOC();
-    xCheckMixedNalUnit(pcSlice, sps, nalu);
-    m_nalUnitInfo[naluInfo.m_nuhLayerId].push_back(naluInfo);
-    SEIMessages drapSEIs = getSeisByType(m_pcPic->SEIs, SEI::DEPENDENT_RAP_INDICATION );
-    if (!drapSEIs.empty())
+  NalUnitInfo naluInfo;
+  naluInfo.m_nalUnitType     = nalu.m_nalUnitType;
+  naluInfo.m_nuhLayerId      = nalu.m_nuhLayerId;
+  naluInfo.m_firstCTUinSlice = pcSlice->getFirstCtuRsAddrInSlice();
+  naluInfo.m_POC             = pcSlice->getPOC();
+  xCheckMixedNalUnit(pcSlice, sps, nalu);
+  m_nalUnitInfo[naluInfo.m_nuhLayerId].push_back(naluInfo);
+  SEIMessages drapSEIs = getSeisByType(m_pcPic->SEIs, SEI::DEPENDENT_RAP_INDICATION);
+  if (!drapSEIs.empty())
+  {
+    msg(NOTICE, "Dependent RAP indication SEI decoded\n");
+    pcSlice->setDRAP(true);
+    pcSlice->setLatestDRAPPOC(pcSlice->getPOC());
+  }
+  pcSlice->checkConformanceForDRAP(nalu.m_temporalId);
+  if (pcSlice->isIntra())
+  {
+    pcSlice->getPic()->setEdrapRapId(0);
+  }
+  SEIMessages edrapSEIs = getSeisByType(m_pcPic->SEIs, SEI::EXTENDED_DRAP_INDICATION);
+  if (!edrapSEIs.empty())
+  {
+    msg(NOTICE, "Extended DRAP indication SEI decoded\n");
+    SEIExtendedDrapIndication *seiEdrap = (SEIExtendedDrapIndication *) edrapSEIs.front();
+    pcSlice->setEdrapRapId(seiEdrap->m_edrapIndicationRapIdMinus1 + 1);
+    pcSlice->getPic()->setEdrapRapId(seiEdrap->m_edrapIndicationRapIdMinus1 + 1);
+    pcSlice->setEdrapNumRefRapPics(seiEdrap->m_edrapIndicationNumRefRapPicsMinus1 + 1);
+    for (int i = 0; i < pcSlice->getEdrapNumRefRapPics(); i++)
     {
-      msg( NOTICE, "Dependent RAP indication SEI decoded\n");
-      pcSlice->setDRAP(true);
-      pcSlice->setLatestDRAPPOC(pcSlice->getPOC());
+      pcSlice->addEdrapRefRapIds(seiEdrap->m_edrapIndicationRefRapId[i]);
     }
-    pcSlice->checkConformanceForDRAP(nalu.m_temporalId);
-    if (pcSlice->isIntra())
-      pcSlice->getPic()->setEdrapRapId(0);
-    SEIMessages edrapSEIs = getSeisByType(m_pcPic->SEIs, SEI::EXTENDED_DRAP_INDICATION );
-    if (!edrapSEIs.empty())
-    {
-      msg( NOTICE, "Extended DRAP indication SEI decoded\n");
-      SEIExtendedDrapIndication *seiEdrap = (SEIExtendedDrapIndication *)edrapSEIs.front();
-      pcSlice->setEdrapRapId(seiEdrap->m_edrapIndicationRapIdMinus1 + 1);
-      pcSlice->getPic()->setEdrapRapId(seiEdrap->m_edrapIndicationRapIdMinus1 + 1);
-      pcSlice->setEdrapNumRefRapPics(seiEdrap->m_edrapIndicationNumRefRapPicsMinus1 + 1);
-      for (int i = 0; i < pcSlice->getEdrapNumRefRapPics(); i++)
-      {
-        pcSlice->addEdrapRefRapIds(seiEdrap->m_edrapIndicationRefRapId[i]);
-      }
-      pcSlice->setLatestEDRAPPOC(pcSlice->getPOC());
-    }
-    pcSlice->checkConformanceForEDRAP(nalu.m_temporalId);
+    pcSlice->setLatestEDRAPPOC(pcSlice->getPOC());
+  }
+  pcSlice->checkConformanceForEDRAP(nalu.m_temporalId);
 
   Quant *quant = m_cTrQuant.getQuant();
 
@@ -3296,7 +3305,9 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   if (pcSlice->getSPS()->getUseLmcs())
   {
     if (m_bFirstSliceInPicture)
+    {
       m_sliceLmcsApsId = -1;
+    }
     if (pcSlice->getLmcsEnabledFlag())
     {
       APS* lmcsAPS = pcSlice->getPicHeader()->getLmcsAPS();
@@ -3558,6 +3569,7 @@ void DecLib::xDecodeAPS(InputNALUnit& nalu)
   // thus, storing it must be last action.
   m_parameterSetManager.storeAPS(aps, nalu.getBitstream().getFifo());
 }
+
 bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, int iTargetOlsIdx)
 {
   bool ret;
@@ -3581,154 +3593,135 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
   }
   switch (nalu.m_nalUnitType)
   {
-    case NAL_UNIT_VPS:
-      xDecodeVPS( nalu );
-      if (getTOlsIdxExternalFlag())
-      {
-        m_vps->m_targetOlsIdx = iTargetOlsIdx;
-      }
-      else if (getTOlsIdxOpiFlag())
-      {
-        m_vps->m_targetOlsIdx = m_opi->getOpiOlsIdx();
-      }
-      else
-      {
-        m_vps->m_targetOlsIdx = m_vps->deriveTargetOLSIdx();
-      }
-      return false;
-    case NAL_UNIT_OPI:
-      xDecodeOPI( nalu );
-      return false;
-    case NAL_UNIT_DCI:
-      xDecodeDCI( nalu );
-      return false;
-    case NAL_UNIT_SPS:
-      xDecodeSPS( nalu );
-      return false;
-
-    case NAL_UNIT_PPS:
-      xDecodePPS( nalu );
-      return false;
-
-    case NAL_UNIT_PH:
-      xDecodePicHeader(nalu);
-      return !m_bFirstSliceInPicture;
-
-    case NAL_UNIT_PREFIX_APS:
-      xDecodeAPS(nalu);
-      return false;
-
-    case NAL_UNIT_SUFFIX_APS:
-      if( m_prevSliceSkipped )
-      {
-        xDecodeAPS(nalu);
-      }
-      else
-      {
-        m_suffixApsNalus.push_back(new InputNALUnit(nalu));
-      }
-      return false;
-
-    case NAL_UNIT_PREFIX_SEI:
-      // Buffer up prefix SEI messages until SPS of associated VCL is known.
-      m_prefixSEINALUs.push_back(new InputNALUnit(nalu));
-      m_pictureSeiNalus.push_back(new InputNALUnit(nalu));
-      return false;
-
-    case NAL_UNIT_SUFFIX_SEI:
-      if (m_pcPic)
-      {
-        if ( m_prevSliceSkipped )
-        {
-          msg( NOTICE, "Note: received suffix SEI but current picture is skipped.\n");
-          return false;
-        }
-        m_pictureSeiNalus.push_back(new InputNALUnit(nalu));
-        m_accessUnitSeiNalus.push_back(new InputNALUnit(nalu));
-        m_accessUnitSeiTids.push_back(nalu.m_temporalId);
-        const SPS *sps = m_parameterSetManager.getActiveSPS();
-        const VPS *vps = m_parameterSetManager.getVPS(sps->getVPSId());
-        m_seiReader.parseSEImessage( &(nalu.getBitstream()), m_pcPic->SEIs, nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId, vps, sps, m_HRD, m_pDecodedSEIOutputStream );
-#if JVET_S0257_DUMP_360SEI_MESSAGE
-        m_seiCfgDump.write360SeiDump(m_decoded360SeiDumpFileName, m_pcPic->SEIs, sps);
-#endif
-        m_accessUnitSeiPayLoadTypes.push_back(std::tuple<NalUnitType, int, SEI::PayloadType>(nalu.m_nalUnitType, nalu.m_nuhLayerId, m_pcPic->SEIs.back()->payloadType()));
-      }
-      else
-      {
-        msg( NOTICE, "Note: received suffix SEI but no picture currently active.\n");
-      }
-      return false;
-
-    case NAL_UNIT_CODED_SLICE_TRAIL:
-    case NAL_UNIT_CODED_SLICE_STSA:
-    case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
-    case NAL_UNIT_CODED_SLICE_IDR_N_LP:
-    case NAL_UNIT_CODED_SLICE_CRA:
-    case NAL_UNIT_CODED_SLICE_GDR:
-    case NAL_UNIT_CODED_SLICE_RADL:
-    case NAL_UNIT_CODED_SLICE_RASL:
-      ret = xDecodeSlice(nalu, iSkipFrame, iPOCLastDisplay);
-      return ret;
-
-    case NAL_UNIT_EOS:
-      m_associatedIRAPType[nalu.m_nuhLayerId] = NAL_UNIT_INVALID;
-      m_pocCRA[nalu.m_nuhLayerId] = -MAX_INT;
-      m_prevGDRInSameLayerPOC[nalu.m_nuhLayerId] = -MAX_INT;
-      m_prevGDRInSameLayerRecoveryPOC[nalu.m_nuhLayerId] = -MAX_INT;
-      std::fill_n(m_prevGDRSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
-      std::fill_n(m_prevIRAPSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
-      memset(m_prevIRAPSubpicDecOrderNo[nalu.m_nuhLayerId], 0, sizeof(int)*MAX_NUM_SUB_PICS);
-      std::fill_n(m_prevIRAPSubpicType[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, NAL_UNIT_INVALID);
-      m_pocRandomAccess = MAX_INT;
-      m_prevLayerID = MAX_INT;
-      m_prevPOC = -MAX_INT;
-      m_prevSliceSkipped = false;
-      m_skippedPOC = 0;
-      m_accessUnitEos[nalu.m_nuhLayerId] = true;
-      m_prevEOS[nalu.m_nuhLayerId] = true;
-      return false;
-
-    case NAL_UNIT_ACCESS_UNIT_DELIMITER:
-      {
-        AUDReader audReader;
-        uint32_t picType;
-        audReader.parseAccessUnitDelimiter(&(nalu.getBitstream()), m_audIrapOrGdrAuFlag, picType);
-        return !m_bFirstSliceInPicture;
-      }
-
-    case NAL_UNIT_EOB:
-      return false;
-
-    case NAL_UNIT_FD:
+  case NAL_UNIT_VPS:
+    xDecodeVPS(nalu);
+    if (getTOlsIdxExternalFlag())
     {
-      FDReader fdReader;
-      uint32_t fdSize;
-      fdReader.parseFillerData(&(nalu.getBitstream()), fdSize);
-      msg( NOTICE, "Note: found NAL_UNIT_FD with %u bytes payload.\n", fdSize);
-      return false;
+      m_vps->m_targetOlsIdx = iTargetOlsIdx;
     }
+    else if (getTOlsIdxOpiFlag())
+    {
+      m_vps->m_targetOlsIdx = m_opi->getOpiOlsIdx();
+    }
+    else
+    {
+      m_vps->m_targetOlsIdx = m_vps->deriveTargetOLSIdx();
+    }
+    return false;
+  case NAL_UNIT_OPI: xDecodeOPI(nalu); return false;
+  case NAL_UNIT_DCI: xDecodeDCI(nalu); return false;
+  case NAL_UNIT_SPS: xDecodeSPS(nalu); return false;
 
-    case NAL_UNIT_RESERVED_IRAP_VCL_11:
-      msg( NOTICE, "Note: found reserved VCL NAL unit.\n");
-      xParsePrefixSEIsForUnknownVCLNal();
-      return false;
-    case NAL_UNIT_RESERVED_VCL_4:
-    case NAL_UNIT_RESERVED_VCL_5:
-    case NAL_UNIT_RESERVED_VCL_6:
-    case NAL_UNIT_RESERVED_NVCL_26:
-    case NAL_UNIT_RESERVED_NVCL_27:
-      msg( NOTICE, "Note: found reserved NAL unit.\n");
-      return false;
-    case NAL_UNIT_UNSPECIFIED_28:
-    case NAL_UNIT_UNSPECIFIED_29:
-    case NAL_UNIT_UNSPECIFIED_30:
-    case NAL_UNIT_UNSPECIFIED_31:
-      msg( NOTICE, "Note: found unspecified NAL unit.\n");
-      return false;
-    default:
-      THROW( "Invalid NAL unit type" );
-      break;
+  case NAL_UNIT_PPS: xDecodePPS(nalu); return false;
+
+  case NAL_UNIT_PH: xDecodePicHeader(nalu); return !m_bFirstSliceInPicture;
+
+  case NAL_UNIT_PREFIX_APS: xDecodeAPS(nalu); return false;
+
+  case NAL_UNIT_SUFFIX_APS:
+    if (m_prevSliceSkipped)
+    {
+      xDecodeAPS(nalu);
+    }
+    else
+    {
+      m_suffixApsNalus.push_back(new InputNALUnit(nalu));
+    }
+    return false;
+
+  case NAL_UNIT_PREFIX_SEI:
+    // Buffer up prefix SEI messages until SPS of associated VCL is known.
+    m_prefixSEINALUs.push_back(new InputNALUnit(nalu));
+    m_pictureSeiNalus.push_back(new InputNALUnit(nalu));
+    return false;
+
+  case NAL_UNIT_SUFFIX_SEI:
+    if (m_pcPic)
+    {
+      if (m_prevSliceSkipped)
+      {
+        msg(NOTICE, "Note: received suffix SEI but current picture is skipped.\n");
+        return false;
+      }
+      m_pictureSeiNalus.push_back(new InputNALUnit(nalu));
+      m_accessUnitSeiNalus.push_back(new InputNALUnit(nalu));
+      m_accessUnitSeiTids.push_back(nalu.m_temporalId);
+      const SPS *sps = m_parameterSetManager.getActiveSPS();
+      const VPS *vps = m_parameterSetManager.getVPS(sps->getVPSId());
+      m_seiReader.parseSEImessage(&(nalu.getBitstream()), m_pcPic->SEIs, nalu.m_nalUnitType, nalu.m_nuhLayerId,
+                                  nalu.m_temporalId, vps, sps, m_HRD, m_pDecodedSEIOutputStream);
+#if JVET_S0257_DUMP_360SEI_MESSAGE
+      m_seiCfgDump.write360SeiDump(m_decoded360SeiDumpFileName, m_pcPic->SEIs, sps);
+#endif
+      m_accessUnitSeiPayLoadTypes.push_back(std::tuple<NalUnitType, int, SEI::PayloadType>(
+        nalu.m_nalUnitType, nalu.m_nuhLayerId, m_pcPic->SEIs.back()->payloadType()));
+    }
+    else
+    {
+      msg(NOTICE, "Note: received suffix SEI but no picture currently active.\n");
+    }
+    return false;
+
+  case NAL_UNIT_CODED_SLICE_TRAIL:
+  case NAL_UNIT_CODED_SLICE_STSA:
+  case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
+  case NAL_UNIT_CODED_SLICE_IDR_N_LP:
+  case NAL_UNIT_CODED_SLICE_CRA:
+  case NAL_UNIT_CODED_SLICE_GDR:
+  case NAL_UNIT_CODED_SLICE_RADL:
+  case NAL_UNIT_CODED_SLICE_RASL: ret = xDecodeSlice(nalu, iSkipFrame, iPOCLastDisplay); return ret;
+
+  case NAL_UNIT_EOS:
+    m_associatedIRAPType[nalu.m_nuhLayerId]            = NAL_UNIT_INVALID;
+    m_pocCRA[nalu.m_nuhLayerId]                        = -MAX_INT;
+    m_prevGDRInSameLayerPOC[nalu.m_nuhLayerId]         = -MAX_INT;
+    m_prevGDRInSameLayerRecoveryPOC[nalu.m_nuhLayerId] = -MAX_INT;
+    std::fill_n(m_prevGDRSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
+    std::fill_n(m_prevIRAPSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
+    memset(m_prevIRAPSubpicDecOrderNo[nalu.m_nuhLayerId], 0, sizeof(int) * MAX_NUM_SUB_PICS);
+    std::fill_n(m_prevIRAPSubpicType[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, NAL_UNIT_INVALID);
+    m_pocRandomAccess                  = MAX_INT;
+    m_prevLayerID                      = MAX_INT;
+    m_prevPOC                          = -MAX_INT;
+    m_prevSliceSkipped                 = false;
+    m_skippedPOC                       = 0;
+    m_accessUnitEos[nalu.m_nuhLayerId] = true;
+    m_prevEOS[nalu.m_nuhLayerId]       = true;
+    return false;
+
+  case NAL_UNIT_ACCESS_UNIT_DELIMITER:
+  {
+    AUDReader audReader;
+    uint32_t  picType;
+    audReader.parseAccessUnitDelimiter(&(nalu.getBitstream()), m_audIrapOrGdrAuFlag, picType);
+    return !m_bFirstSliceInPicture;
+  }
+
+  case NAL_UNIT_EOB: return false;
+
+  case NAL_UNIT_FD:
+  {
+    FDReader fdReader;
+    uint32_t fdSize;
+    fdReader.parseFillerData(&(nalu.getBitstream()), fdSize);
+    msg(NOTICE, "Note: found NAL_UNIT_FD with %u bytes payload.\n", fdSize);
+    return false;
+  }
+
+  case NAL_UNIT_RESERVED_IRAP_VCL_11:
+    msg(NOTICE, "Note: found reserved VCL NAL unit.\n");
+    xParsePrefixSEIsForUnknownVCLNal();
+    return false;
+  case NAL_UNIT_RESERVED_VCL_4:
+  case NAL_UNIT_RESERVED_VCL_5:
+  case NAL_UNIT_RESERVED_VCL_6:
+  case NAL_UNIT_RESERVED_NVCL_26:
+  case NAL_UNIT_RESERVED_NVCL_27: msg(NOTICE, "Note: found reserved NAL unit.\n"); return false;
+  case NAL_UNIT_UNSPECIFIED_28:
+  case NAL_UNIT_UNSPECIFIED_29:
+  case NAL_UNIT_UNSPECIFIED_30:
+  case NAL_UNIT_UNSPECIFIED_31: msg(NOTICE, "Note: found unspecified NAL unit.\n"); return false;
+  default: THROW("Invalid NAL unit type"); break;
   }
 
   return false;
@@ -3869,7 +3862,6 @@ void DecLib::xCheckMixedNalUnit(Slice* pcSlice, SPS *sps, InputNALUnit &nalu)
       }
       CHECK( !hasDiffTypes, "VCL NAL units of the picture shall have two or more different nal_unit_type values");
     }
-
   }
   else // all slices shall have the same nal unit type
   {
@@ -3878,7 +3870,9 @@ void DecLib::xCheckMixedNalUnit(Slice* pcSlice, SPS *sps, InputNALUnit &nalu)
     {
       Slice *PreSlice = m_pcPic->slices[i];
       if (PreSlice->getNalUnitType() != pcSlice->getNalUnitType())
+      {
         sameNalUnitType = false;
+      }
     }
     CHECK(!sameNalUnitType, "pps_mixed_nalu_types_in_pic_flag is zero, but have different nal unit types");
   }
@@ -3919,8 +3913,8 @@ bool DecLib::isNewPicture(std::ifstream *bitstreamFile, class InputByteStream *b
     {
       // get next NAL unit type
       read(nalu);
-      switch( nalu.m_nalUnitType ) {
-
+      switch (nalu.m_nalUnitType)
+      {
       // NUT that indicate the start of a new picture
       case NAL_UNIT_ACCESS_UNIT_DELIMITER:
       case NAL_UNIT_OPI:
@@ -4028,8 +4022,8 @@ bool DecLib::isNewAccessUnit( bool newPicture, std::ifstream *bitstreamFile, cla
     {
       // get next NAL unit type
       read(nalu);
-      switch( nalu.m_nalUnitType ) {
-
+      switch (nalu.m_nalUnitType)
+      {
       // AUD always indicates the start of a new access unit
       case NAL_UNIT_ACCESS_UNIT_DELIMITER:
         ret = true;
