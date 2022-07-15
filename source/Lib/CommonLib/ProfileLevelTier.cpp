@@ -119,6 +119,12 @@ const ProfileFeatures *ProfileFeatures::getProfileFeatures(const Profile::Name p
 }
 
 void
+ProfileLevelTierFeatures::extractPTLInformation(const SPS &sps)
+{
+  extractPTLInformation(*sps.getProfileTierLevel());
+}
+
+void
 ProfileLevelTierFeatures::extractPTLInformation(const ProfileTierLevel &ptl)
 {
   const ProfileTierLevel &spsPtl = ptl;
