@@ -6253,23 +6253,30 @@ bool IntraSearch::updateISPStatusFromRelCU( double bestNonISPCostCurrCu, ModeInf
   bestISPModeInRelCU = -1;
   if (m_modeCtrl->getRelatedCuIsValid())
   {
+    const IspPredModeVal ispPredModeVal = m_modeCtrl->getIspPredModeValRelCU();
+
+    const bool bestModeRelCuIsMip = ispPredModeVal.mipFlag;
+    const int  relatedCuIntraMode = ispPredModeVal.bestPredModeDCT2;
+
     double bestNonISPCostRelCU = m_modeCtrl->getBestDCT2NonISPCostRelCU();
     double costRatio           = bestNonISPCostCurrCu / bestNonISPCostRelCU;
-    bool   bestModeRelCuIsMip  = (m_modeCtrl->getIspPredModeValRelCU() >> 5) & 0x1;
     bool   bestModeCurrCuIsMip = bestNonISPModeCurrCu.mipFlg;
-    int    relatedCuIntraMode  = m_modeCtrl->getIspPredModeValRelCU() >> 9;
-    bool   isSameTypeOfMode    = (bestModeRelCuIsMip && bestModeCurrCuIsMip) || (!bestModeRelCuIsMip && !bestModeCurrCuIsMip);
+    bool   isSameTypeOfMode    = bestModeRelCuIsMip == bestModeCurrCuIsMip;
     bool   bothModesAreAngular = bestNonISPModeCurrCu.modeId > DC_IDX && relatedCuIntraMode > DC_IDX;
-    bool   modesAreComparable  = isSameTypeOfMode && (bestModeCurrCuIsMip || bestNonISPModeCurrCu.modeId == relatedCuIntraMode || (bothModesAreAngular && abs(relatedCuIntraMode - (int)bestNonISPModeCurrCu.modeId) <= 5));
-    int    status              = m_modeCtrl->getIspPredModeValRelCU();
+    bool   modesAreComparable =
+      isSameTypeOfMode
+      && (bestModeCurrCuIsMip || bestNonISPModeCurrCu.modeId == relatedCuIntraMode
+          || (bothModesAreAngular && abs(relatedCuIntraMode - (int) bestNonISPModeCurrCu.modeId) <= 5));
 
-    if ((status & 0x3) == 0x3) //ISP was not selected in the relCU
+    CHECK(!ispPredModeVal.valid, "Wrong ISP relCU status");
+
+    if (ispPredModeVal.notIsp)   // ISP was not selected in the relCU
     {
       double bestNonDCT2Cost = m_modeCtrl->getBestNonDCT2Cost();
       double ratioWithNonDCT2 = bestNonDCT2Cost / bestNonISPCostRelCU;
-      double margin = ratioWithNonDCT2 < 0.95 ? 0.2 : 0.1;
+      const double margin           = ratioWithNonDCT2 < 0.95 ? 0.2 : 0.1;
 
-      if (costRatio > 1 - margin && costRatio < 1 + margin && modesAreComparable)
+      if (costRatio > 1.0 - margin && costRatio < 1.0 + margin && modesAreComparable)
       {
         for (int lfnstVal = 0; lfnstVal < NUM_LFNST_NUM_PER_SET; lfnstVal++)
         {
@@ -6279,23 +6286,19 @@ bool IntraSearch::updateISPStatusFromRelCU( double bestNonISPCostCurrCu, ModeInf
         return false;
       }
     }
-    else if ((status & 0x3) == 0x1) //ISP was selected in the relCU
+    else
     {
-      double margin = 0.05;
+      const double margin = 0.05;
 
-      if (costRatio > 1 - margin && costRatio < 1 + margin && modesAreComparable)
+      if (costRatio > 1.0 - margin && costRatio < 1.0 + margin && modesAreComparable)
       {
-        int  ispSplitIdx = (m_modeCtrl->getIspPredModeValRelCU() >> 2) & 0x1;
-        bool lfnstIdxIsNot0 = (bool)((m_modeCtrl->getIspPredModeValRelCU() >> 3) & 0x1);
-        bool lfnstIdxIs2 = (bool)((m_modeCtrl->getIspPredModeValRelCU() >> 4) & 0x1);
-        int  lfnstIdx = !lfnstIdxIsNot0 ? 0 : lfnstIdxIs2 ? 2 : 1;
         bestISPModeInRelCU = (int)m_modeCtrl->getBestISPIntraModeRelCU();
 
         for (int splitIdx = 0; splitIdx < NUM_INTRA_SUBPARTITIONS_MODES - 1; splitIdx++)
         {
           for (int lfnstVal = 0; lfnstVal < NUM_LFNST_NUM_PER_SET; lfnstVal++)
           {
-            if (lfnstVal == lfnstIdx && splitIdx == ispSplitIdx)
+            if (lfnstVal == ispPredModeVal.ispLfnstIdx && splitIdx == ispPredModeVal.verIsp)
             {
               continue;
             }
@@ -6303,13 +6306,8 @@ bool IntraSearch::updateISPStatusFromRelCU( double bestNonISPCostCurrCu, ModeInf
           }
         }
 
-        bool stopNonDCT2Transforms = (bool)((m_modeCtrl->getIspPredModeValRelCU() >> 6) & 0x1);
-        m_modeCtrl->setStopNonDCT2Transforms(stopNonDCT2Transforms);
+        m_modeCtrl->setStopNonDCT2Transforms(ispPredModeVal.lowIspCost);
       }
-    }
-    else
-    {
-      THROW("Wrong ISP relCU status");
     }
   }
 

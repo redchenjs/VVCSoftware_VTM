@@ -87,6 +87,29 @@ enum EncTestModeOpts
   ETO_INVALID     = 0xffffffff            // bits 0-31  (invalid option)
 };
 
+enum ExtraFeatures
+{
+  DID_HORZ_SPLIT = 0,
+  DID_VERT_SPLIT,
+  DID_QUAD_SPLIT,
+  BEST_HORZ_SPLIT_COST,
+  BEST_VERT_SPLIT_COST,
+  BEST_TRIH_SPLIT_COST,
+  BEST_TRIV_SPLIT_COST,
+  DO_TRIH_SPLIT,
+  DO_TRIV_SPLIT,
+  BEST_NON_SPLIT_COST,
+  BEST_NO_IMV_COST,
+  BEST_IMV_COST,
+  QT_BEFORE_BT,
+  IS_BEST_NOSPLIT_SKIP,
+  MAX_QT_SUB_DEPTH,
+#if REUSE_CU_RESULTS
+  IS_REUSING_CU,
+#endif
+  NUM_EXTRA_FEATURES
+};
+
 static void getAreaIdx(const Area& area, const PreCalcValues &pcv, unsigned &idx1, unsigned &idx2, unsigned &idx3, unsigned &idx4)
 {
   idx1 = (area.x & pcv.maxCUWidthMask)  >> MIN_CU_LOG2;
@@ -169,92 +192,69 @@ inline EncTestMode getCSEncMode( const CodingStructure& cs )
 // EncModeCtrl controls if specific modes should be tested
 //////////////////////////////////////////////////////////////////////////
 
+struct IspPredModeVal
+{
+  uint16_t valid : 1;
+  uint16_t notIsp : 1;
+  uint16_t verIsp : 1;
+  uint16_t ispLfnstIdx : 2;
+  uint16_t mipFlag : 1;
+  uint16_t lowIspCost : 1;
+  uint16_t bestPredModeDCT2 : 9;
+};
+
 struct ComprCUCtx
 {
   ComprCUCtx() : testModes(), extraFeatures()
   {
   }
 
-  ComprCUCtx( const CodingStructure& cs, const uint32_t _minDepth, const uint32_t _maxDepth, const uint32_t numExtraFeatures )
-    : minDepth      ( _minDepth  )
-    , maxDepth      ( _maxDepth  )
-    , testModes     (            )
-    , lastTestMode  (            )
-    , earlySkip     ( false      )
-    , isHashPerfectMatch
-                    ( false      )
-    , bestCS        ( nullptr    )
-    , bestCU        ( nullptr    )
-    , bestTU        ( nullptr    )
-    , extraFeatures (            )
-    , extraFeaturesd(            )
-    , bestInterCost ( MAX_DOUBLE )
-    , bestMtsSize2Nx2N1stPass
-                    ( MAX_DOUBLE )
-    , skipSecondMTSPass
-                    ( false )
-    , interHad      (std::numeric_limits<Distortion>::max())
-    , bestCostWithoutSplitFlags( MAX_DOUBLE )
-    , bestCostMtsFirstPassNoIsp( MAX_DOUBLE )
-    , bestCostIsp   ( MAX_DOUBLE )
-    , ispWasTested  ( false )
-    , bestPredModeDCT2
-                    ( UINT8_MAX )
-    , relatedCuIsValid
-                    ( false )
-    , ispPredModeVal( 0 )
-    , bestDCT2NonISPCost
-                    ( MAX_DOUBLE )
-    , bestNonDCT2Cost
-                    ( MAX_DOUBLE )
-    , bestISPIntraMode
-                    ( UINT8_MAX )
-    , mipFlag       ( false )
-    , ispMode       ( NOT_INTRA_SUBPARTITIONS )
-    , ispLfnstIdx   ( 0 )
-    , stopNonDCT2Transforms
-                    ( false )
+  ComprCUCtx(const CodingStructure &cs, const uint32_t _minDepth, const uint32_t _maxDepth)
+    : minDepth(_minDepth), maxDepth(_maxDepth), testModes(), lastTestMode()
   {
     getAreaIdx( cs.area.Y(), *cs.pcv, cuX, cuY, cuW, cuH );
     partIdx = ( ( cuX << 8 ) | cuY );
 
-    extraFeatures.reserve( numExtraFeatures );
-    extraFeatures.resize ( numExtraFeatures, 0 );
-
-    extraFeaturesd.reserve( numExtraFeatures );
-    extraFeaturesd.resize ( numExtraFeatures, 0.0 );
+    extraFeatures.fill(0);
+    extraFeaturesd.fill(0.0);
   }
 
-  unsigned                          minDepth;
-  unsigned                          maxDepth;
-  unsigned                          cuX, cuY, cuW, cuH, partIdx;
-  std::vector<EncTestMode>          testModes;
-  EncTestMode                       lastTestMode;
-  bool                              earlySkip;
-  bool                              isHashPerfectMatch;
-  CodingStructure                  *bestCS;
-  CodingUnit                       *bestCU;
-  TransformUnit                    *bestTU;
-  static_vector<int64_t,  30>         extraFeatures;
-  static_vector<double, 30>         extraFeaturesd;
-  double                            bestInterCost;
-  double                            bestMtsSize2Nx2N1stPass;
-  bool                              skipSecondMTSPass;
-  Distortion                        interHad;
-  double                            bestCostWithoutSplitFlags;
-  double                            bestCostMtsFirstPassNoIsp;
-  double                            bestCostIsp;
-  bool                              ispWasTested;
-  uint16_t                          bestPredModeDCT2;
-  bool                              relatedCuIsValid;
-  uint16_t                          ispPredModeVal;
-  double                            bestDCT2NonISPCost;
-  double                            bestNonDCT2Cost;
-  uint8_t                           bestISPIntraMode;
-  bool                              mipFlag;
-  uint8_t                           ispMode;
-  uint8_t                           ispLfnstIdx;
-  bool                              stopNonDCT2Transforms;
+  unsigned                 minDepth;
+  unsigned                 maxDepth;
+  unsigned                 cuX, cuY, cuW, cuH, partIdx;
+  std::vector<EncTestMode> testModes;
+  EncTestMode              lastTestMode;
+  CodingStructure         *bestCS{ nullptr };
+  CodingUnit              *bestCU{ nullptr };
+  TransformUnit           *bestTU{ nullptr };
+
+  std::array<int64_t, NUM_EXTRA_FEATURES> extraFeatures;
+  std::array<double, NUM_EXTRA_FEATURES>  extraFeaturesd;
+
+  double bestInterCost{ MAX_DOUBLE };
+  double bestMtsSize2Nx2N1stPass{ MAX_DOUBLE };
+  double bestCostWithoutSplitFlags{ MAX_DOUBLE };
+  double bestCostMtsFirstPassNoIsp{ MAX_DOUBLE };
+  double bestCostIsp{ MAX_DOUBLE };
+  double bestDCT2NonISPCost{ MAX_DOUBLE };
+  double bestNonDCT2Cost{ MAX_DOUBLE };
+
+  Distortion interHad{ std::numeric_limits<Distortion>::max() };
+
+  uint16_t       bestPredModeDCT2{ UINT8_MAX };
+  IspPredModeVal ispPredModeVal{ 0, 0, 0, 0, 0, 0, 0 };
+
+  bool earlySkip{ false };
+  bool isHashPerfectMatch{ false };
+  bool skipSecondMTSPass{ false };
+  bool ispWasTested{ false };
+  bool relatedCuIsValid{ false };
+  bool mipFlag{ false };
+  bool stopNonDCT2Transforms{ false };
+
+  uint8_t bestISPIntraMode{ UINT8_MAX };
+  uint8_t ispMode{ NOT_INTRA_SUBPARTITIONS };
+  uint8_t ispLfnstIdx{ 0 };
 
   template<typename T> T    get( int ft )       const { return typeid(T) == typeid(double) ? (T&)extraFeaturesd[ft] : T(extraFeatures[ft]); }
   template<typename T> void set( int ft, T val )      { extraFeatures [ft] = int64_t( val ); }
@@ -342,8 +342,10 @@ public:
   uint16_t getBestPredModeDCT2        ()                  const { return m_ComprCUCtxList.back().bestPredModeDCT2; }
   bool   getRelatedCuIsValid          ()                  const { return m_ComprCUCtxList.back().relatedCuIsValid; }
   void   setRelatedCuIsValid          ( bool val )              { m_ComprCUCtxList.back().relatedCuIsValid = val; }
-  uint16_t getIspPredModeValRelCU     ()                  const { return m_ComprCUCtxList.back().ispPredModeVal; }
-  void   setIspPredModeValRelCU       ( uint16_t val )          { m_ComprCUCtxList.back().ispPredModeVal = val; }
+  IspPredModeVal getIspPredModeValRelCU() const
+  {
+    return m_ComprCUCtxList.back().ispPredModeVal;
+  }
   double getBestDCT2NonISPCostRelCU   ()                  const { return m_ComprCUCtxList.back().bestDCT2NonISPCost; }
   void   setBestDCT2NonISPCostRelCU   ( double val )            { m_ComprCUCtxList.back().bestDCT2NonISPCost = val; }
   double getBestNonDCT2Cost           ()                  const { return m_ComprCUCtxList.back().bestNonDCT2Cost; }
@@ -799,7 +801,7 @@ struct CodedCUInfo
   uint8_t bcwIdx;
   char selectColorSpaceOption;   // 0 - test both two color spaces; 1 - only test the first color spaces; 2 - only test
                                  // the second color spaces
-  uint16_t ispPredModeVal;
+  IspPredModeVal ispPredModeVal;
   double   bestDCT2NonISPCost;
   double   bestCost;
   double   bestNonDCT2Cost;
@@ -896,29 +898,6 @@ class EncModeCtrlMTnoRQT : public EncModeCtrl, public CacheBlkInfoCtrl
 #endif
   , public SaveLoadEncInfoSbt
 {
-  enum ExtraFeatures
-  {
-    DID_HORZ_SPLIT = 0,
-    DID_VERT_SPLIT,
-    DID_QUAD_SPLIT,
-    BEST_HORZ_SPLIT_COST,
-    BEST_VERT_SPLIT_COST,
-    BEST_TRIH_SPLIT_COST,
-    BEST_TRIV_SPLIT_COST,
-    DO_TRIH_SPLIT,
-    DO_TRIV_SPLIT,
-    BEST_NON_SPLIT_COST,
-    BEST_NO_IMV_COST,
-    BEST_IMV_COST,
-    QT_BEFORE_BT,
-    IS_BEST_NOSPLIT_SKIP,
-    MAX_QT_SUB_DEPTH,
-#if REUSE_CU_RESULTS
-    IS_REUSING_CU,
-#endif
-    NUM_EXTRA_FEATURES
-  };
-
   unsigned m_skipThreshold;
 #if GDR_ENABLED
   EncCfg m_encCfg;
@@ -939,7 +918,6 @@ public:
 
   bool xSkipTreeCandidate(const PartSplit split, const double* splitRdCostBest, const SliceType& sliceType) const;
 };
-
 
 //! \}
 
