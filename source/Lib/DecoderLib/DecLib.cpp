@@ -2390,8 +2390,12 @@ void DecLib::xCheckParameterSetConstraints(const int layerId)
     CHECK( !sps->getPtlDpbHrdParamsPresentFlag(), "When sps_video_parameter_set_id is greater than 0 and there is an OLS that contains only one layer with nuh_layer_id equal to the nuh_layer_id of the SPS, the value of sps_ptl_dpb_hrd_params_present_flag shall be equal to 1" );
   }
 
+  const ProfileTierLevel &ptl = vps && vps->getNumLayersInOls(vps->m_targetOlsIdx) > 1
+      ? vps->getProfileTierLevel(vps->getOlsPtlIdx(vps->m_targetOlsIdx))
+      : *sps->getProfileTierLevel();
+
   ProfileLevelTierFeatures ptlFeatures;
-  ptlFeatures.extractPTLInformation(*sps);
+  ptlFeatures.extractPTLInformation(ptl);
   const ProfileFeatures *profileFeatures = ptlFeatures.getProfileFeatures();
   if (profileFeatures != nullptr)
   {

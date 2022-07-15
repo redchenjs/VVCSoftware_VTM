@@ -82,6 +82,8 @@ struct ProfileFeatures
 };
 
 
+class ProfileTierLevel;
+
 class ProfileLevelTierFeatures
 {
   private:
@@ -92,7 +94,7 @@ class ProfileLevelTierFeatures
   public:
     ProfileLevelTierFeatures() : m_pProfile(nullptr), m_pLevelTier(nullptr), m_tier(Level::MAIN) {}
 
-    void extractPTLInformation(const SPS &sps);
+    void extractPTLInformation(const ProfileTierLevel &ptl);
 
     const ProfileFeatures     *getProfileFeatures()   const { return m_pProfile; }
     const LevelTierFeatures   *getLevelTierFeatures() const { return m_pLevelTier; }
