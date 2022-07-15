@@ -231,7 +231,10 @@ static int getGlaringColorQPOffset (Picture* const pcPic, const int ctuAddr, Sli
 
       avgCompValue = pcPic->getOrigBuf (chrArea).computeAvg();
     }
-    else avgCompValue = pcPic->getOrigBuf (pcPic->block (compID)).computeAvg();
+    else
+    {
+      avgCompValue = pcPic->getOrigBuf(pcPic->block(compID)).computeAvg();
+    }
 
     if (chrValue > avgCompValue)
     {
@@ -867,7 +870,6 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   {
     rpcSlice->setRiceBaseLevel(4);
   }
-
 }
 
 double EncSlice::initializeLambda(const Slice* slice, const int GOPid, const int refQP, const double dQP)
@@ -1738,10 +1740,12 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
     DTRACE_UPDATE( g_trace_ctx, std::make_pair( "ctu", ctuRsAddr ) );
 
     if( pCfg->getSwitchPOC() != pcPic->poc || -1 == pCfg->getDebugCTU() )
-    if ((cs.slice->getSliceType() != I_SLICE || cs.sps->getIBCFlag()) && cs.pps->ctuIsTileColBd( ctuXPosInCtus ))
     {
-      cs.motionLut.lut.resize(0);
-      cs.motionLut.lutIbc.resize(0);
+      if ((cs.slice->getSliceType() != I_SLICE || cs.sps->getIBCFlag()) && cs.pps->ctuIsTileColBd(ctuXPosInCtus))
+      {
+        cs.motionLut.lut.resize(0);
+        cs.motionLut.lutIbc.resize(0);
+      }
     }
 
     const SubPic &curSubPic = pcSlice->getPPS()->getSubPicFromPos(pos);
@@ -1999,12 +2003,6 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
       }
     }
   }
-
-  // this is wpp exclusive section
-
-//  m_uiPicTotalBits += actualBits;
-//  m_uiPicDist       = cs.dist;
-
 }
 
 void EncSlice::encodeSlice   ( Picture* pcPic, OutputBitstream* pcSubstreams, uint32_t &numBinsCoded )
