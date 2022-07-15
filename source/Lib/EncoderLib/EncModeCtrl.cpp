@@ -1967,8 +1967,8 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
           {
             // Compact data
             relatedCU.ispPredModeVal.valid            = 1;
-            relatedCU.ispPredModeVal.notIsp           = cuECtx.ispMode == NOT_INTRA_SUBPARTITIONS ? 1 : 0;
-            relatedCU.ispPredModeVal.verIsp           = cuECtx.ispMode == VER_INTRA_SUBPARTITIONS;
+            relatedCU.ispPredModeVal.notIsp           = cuECtx.ispMode == ISPType::NONE ? 1 : 0;
+            relatedCU.ispPredModeVal.verIsp           = cuECtx.ispMode == ISPType::VER;
             relatedCU.ispPredModeVal.ispLfnstIdx      = cuECtx.ispLfnstIdx;
             relatedCU.ispPredModeVal.mipFlag          = cuECtx.mipFlag;
             relatedCU.ispPredModeVal.lowIspCost       = cuECtx.bestCostIsp < cuECtx.bestNonDCT2Cost * 0.95;
@@ -2116,7 +2116,7 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
     {
       cuECtx.bestMtsSize2Nx2N1stPass   = tempCS->cost;
     }
-    if( !cu.ispMode )
+    if (cu.ispMode == ISPType::NONE)
     {
       cuECtx.bestCostMtsFirstPassNoIsp = tempCS->cost;
     }

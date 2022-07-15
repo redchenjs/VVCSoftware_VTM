@@ -252,8 +252,8 @@ struct ComprCUCtx
   bool mipFlag{ false };
   bool stopNonDCT2Transforms{ false };
 
-  uint8_t bestISPIntraMode{ UINT8_MAX };
-  uint8_t ispMode{ NOT_INTRA_SUBPARTITIONS };
+  uint8_t bestISPIntraMode{ NOMODE_IDX };
+  ISPType ispMode{ ISPType::NONE };
   uint8_t ispLfnstIdx{ 0 };
 
   template<typename T> T    get( int ft )       const { return typeid(T) == typeid(double) ? (T&)extraFeaturesd[ft] : T(extraFeatures[ft]); }
@@ -353,7 +353,12 @@ public:
   uint8_t getBestISPIntraModeRelCU    ()                  const { return m_ComprCUCtxList.back().bestISPIntraMode; }
   void   setBestISPIntraModeRelCU     ( uint8_t val )           { m_ComprCUCtxList.back().bestISPIntraMode = val; }
   void   setMIPFlagISPPass            ( bool val )              { m_ComprCUCtxList.back().mipFlag = val; }
-  void   setISPMode                   ( uint8_t val )           { m_ComprCUCtxList.back().ispMode = val; }
+
+  void setISPMode(const ISPType val)
+  {
+    m_ComprCUCtxList.back().ispMode = val;
+  }
+
   void   setISPLfnstIdx               ( uint8_t val )           { m_ComprCUCtxList.back().ispLfnstIdx = val; }
   bool   getStopNonDCT2Transforms     ()                  const { return m_ComprCUCtxList.back().stopNonDCT2Transforms; }
   void   setStopNonDCT2Transforms     ( bool val )              { m_ComprCUCtxList.back().stopNonDCT2Transforms = val; }

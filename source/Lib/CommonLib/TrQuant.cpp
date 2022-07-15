@@ -626,7 +626,7 @@ void TrQuant::getTrTypes(const TransformUnit tu, const ComponentID compID, Trans
                              && isLuma(compID);
   const bool isImplicitMTS = CU::isIntra(*tu.cu) && tu.cs->sps->getImplicitMTSIntraEnabled() && isLuma(compID)
                              && tu.cu->lfnstIdx == 0 && tu.cu->mipFlag == 0;
-  const bool isISP = CU::isIntra(*tu.cu) && tu.cu->ispMode && isLuma(compID);
+  const bool isISP = CU::isIntra(*tu.cu) && tu.cu->ispMode != ISPType::NONE && isLuma(compID);
   const bool isSBT = CU::isInter(*tu.cu) && tu.cu->sbtInfo && isLuma(compID);
 
   trTypeHor = TransType::DCT2;

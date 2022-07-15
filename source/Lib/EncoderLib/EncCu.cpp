@@ -1634,7 +1634,7 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
           cu.qp               = encTestMode.qp;
           cu.lfnstIdx         = lfnstIdx;
           cu.mtsFlag          = mtsFlag;
-          cu.ispMode          = NOT_INTRA_SUBPARTITIONS;
+          cu.ispMode          = ISPType::NONE;
           cu.colorTransform = adaptiveColorTrans;
 
           CU::addPUs( cu );
@@ -1655,7 +1655,7 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
               bestCostSoFar = encTestMode.maxCostAllowed;
             }
             validCandRet = m_pcIntraSearch->estIntraPredLumaQT(cu, partitioner, bestCostSoFar, mtsFlag, startMTSIdx[trGrpIdx], endMTSIdx[trGrpIdx], (trGrpIdx > 0), !cu.colorTransform ? bestCS : nullptr);
-            if ((!validCandRet || (cu.ispMode && cu.firstTU->cbf[COMPONENT_Y] == 0)))
+            if ((!validCandRet || (cu.ispMode != ISPType::NONE && cu.firstTU->cbf[COMPONENT_Y] == 0)))
             {
               continue;
             }
@@ -1664,7 +1664,8 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
               m_modeCtrl->setISPMode(cu.ispMode);
               m_modeCtrl->setISPLfnstIdx(cu.lfnstIdx);
               m_modeCtrl->setMIPFlagISPPass(cu.mipFlag);
-              m_modeCtrl->setBestISPIntraModeRelCU(cu.ispMode ? PU::getFinalIntraMode(*cu.firstPU, CHANNEL_TYPE_LUMA) : UINT8_MAX);
+              m_modeCtrl->setBestISPIntraModeRelCU(
+                cu.ispMode != ISPType::NONE ? PU::getFinalIntraMode(*cu.firstPU, CHANNEL_TYPE_LUMA) : NOMODE_IDX);
               m_modeCtrl->setBestDCT2NonISPCostRelCU(m_modeCtrl->getMtsFirstPassNoIspCost());
             }
 
@@ -1677,7 +1678,7 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
               }
             }
 
-            useIntraSubPartitions = cu.ispMode != NOT_INTRA_SUBPARTITIONS;
+            useIntraSubPartitions = cu.ispMode != ISPType::NONE;
             if( !partitioner.isSepTree( *tempCS ) )
             {
               tempCS->lumaCost = m_pcRdCost->calcRdCost( tempCS->fracBits, tempCS->dist );
@@ -1716,7 +1717,7 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
           {
             TUIntraSubPartitioner subTuPartitioner( partitioner );
             m_pcIntraSearch->estIntraPredChromaQT( cu, ( !useIntraSubPartitions || ( cu.isSepTree() && !isLuma( CHANNEL_TYPE_CHROMA ) ) ) ? partitioner : subTuPartitioner, maxCostAllowedForChroma );
-            if( useIntraSubPartitions && !cu.ispMode )
+            if (useIntraSubPartitions && cu.ispMode == ISPType::NONE)
             {
               //At this point the temp cost is larger than the best cost. Therefore, we can already skip the remaining calculations
               continue;
@@ -1766,7 +1767,7 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
           xCheckChromaQPOffset( *tempCS, partitioner );
 
           // Check if low frequency non-separable transform (LFNST) is too expensive
-          if( lfnstIdx && !cuCtx.lfnstLastScanPos && !cu.ispMode )
+          if (lfnstIdx && !cuCtx.lfnstLastScanPos && cu.ispMode == ISPType::NONE)
           {
             bool cbfAtZeroDepth = cu.isSepTree() ?
                                        cu.rootCbf
@@ -1853,11 +1854,13 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
             }
 
             //we decide to skip the non-DCT-II transforms and LFNST according to the ISP results
-            if ((endMtsFlag > 0 || endLfnstIdx > 0) && (cu.ispMode || (bestCS && bestCS->cus[0]->ispMode)) && tempCS->slice->isIntra() && m_pcEncCfg->getUseFastISP())
+            if ((endMtsFlag > 0 || endLfnstIdx > 0)
+                && (cu.ispMode != ISPType::NONE || (bestCS && bestCS->cus[0]->ispMode != ISPType::NONE))
+                && tempCS->slice->isIntra() && m_pcEncCfg->getUseFastISP())
             {
               double bestCostDct2NoIsp = m_modeCtrl->getMtsFirstPassNoIspCost();
               double bestIspCost       = m_modeCtrl->getIspCost();
-              CHECKD( cu.ispMode && bestCostDct2NoIsp <= bestIspCost, "wrong cost!" );
+              CHECKD(cu.ispMode != ISPType::NONE && bestCostDct2NoIsp <= bestIspCost, "wrong cost!");
               double threshold = 1.4;
 
               double lfnstThreshold = 1.01 * threshold;
@@ -2267,8 +2270,12 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
   };
 
   static_vector<ModeInfo, MRG_MAX_NUM_CANDS + MMVD_ADD_NUM>  RdModeList;
-  bool                                        mrgTempBufSet = false;
-  const int candNum = mergeCtx.numValidMergeCand + (tempCS->sps->getUseMMVD() ? std::min<int>(MMVD_BASE_MV_NUM, mergeCtx.numValidMergeCand) * MMVD_MAX_REFINE_NUM : 0);
+
+  bool      mrgTempBufSet = false;
+  const int candNum =
+    mergeCtx.numValidMergeCand
+    + (tempCS->sps->getUseMMVD() ? std::min<int>(MMVD_BASE_MV_NUM, mergeCtx.numValidMergeCand) * MMVD_MAX_REFINE_NUM
+                                 : 0);
 
   for (int i = 0; i < candNum; i++)
   {

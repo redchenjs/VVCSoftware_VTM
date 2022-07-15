@@ -1435,7 +1435,7 @@ void CABACReader::intra_luma_pred_modes( CodingUnit &cu )
     {
       uint32_t ipred_idx = 0;
       {
-        unsigned ctx = (pu->cu->ispMode == NOT_INTRA_SUBPARTITIONS ? 1 : 0);
+        unsigned ctx = (pu->cu->ispMode == ISPType::NONE ? 1 : 0);
         if (pu->multiRefIdx == 0)
         {
           ipred_idx = m_binDecoder.decodeBin(Ctx::IntraLumaPlanarFlag(ctx));
@@ -1598,7 +1598,7 @@ void CABACReader::cu_residual( CodingUnit& cu, Partitioner &partitioner, CUCtx& 
   cuCtx.mtsLastScanPos                                = false;
 
   ChromaCbfs chromaCbfs;
-  if( cu.ispMode && isLuma( partitioner.chType ) )
+  if (cu.ispMode != ISPType::NONE && isLuma(partitioner.chType))
   {
     TUIntraSubPartitioner subTuPartitioner( partitioner );
     transform_tree( *cu.cs, subTuPartitioner, cuCtx, CU::getISPType(cu, getFirstComponentOfChannel(partitioner.chType)), 0 );
@@ -2602,7 +2602,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
     split = true;
   }
 
-  if( !split && cu.ispMode )
+  if (!split && cu.ispMode != ISPType::NONE)
   {
     split = partitioner.canSplit( ispType, cs );
   }
@@ -2619,7 +2619,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
 #endif
       partitioner.splitCurrArea(TU_MAX_TR_SPLIT, cs);
     }
-    else if (cu.ispMode)
+    else if (cu.ispMode != ISPType::NONE)
     {
       partitioner.splitCurrArea(ispType, cs);
     }
@@ -2756,10 +2756,13 @@ void CABACReader::transform_unit( TransformUnit& tu, CUCtx& cuCtx, Partitioner& 
   ChromaCbfs        chromaCbfs;
   chromaCbfs.Cb = chromaCbfs.Cr = false;
 
-  const bool chromaCbfISP = area.chromaFormat != CHROMA_400 && area.blocks[COMPONENT_Cb].valid() && cu.ispMode;
+  const bool chromaCbfISP =
+    area.chromaFormat != CHROMA_400 && area.blocks[COMPONENT_Cb].valid() && cu.ispMode != ISPType::NONE;
 
   // cbf_cb & cbf_cr
-  if (area.chromaFormat != CHROMA_400 && area.blocks[COMPONENT_Cb].valid() && (!cu.isSepTree() || partitioner.chType == CHANNEL_TYPE_CHROMA) && (!cu.ispMode || chromaCbfISP))
+  if (area.chromaFormat != CHROMA_400 && area.blocks[COMPONENT_Cb].valid()
+      && (!cu.isSepTree() || partitioner.chType == CHANNEL_TYPE_CHROMA)
+      && (cu.ispMode == ISPType::NONE || chromaCbfISP))
   {
     const int cbfDepth = chromaCbfISP ? trDepth - 1 : trDepth;
     if (!(cu.sbtInfo && tu.noResidual))
@@ -2799,9 +2802,10 @@ void CABACReader::transform_unit( TransformUnit& tu, CUCtx& cuCtx, Partitioner& 
       bool lastCbfIsInferred    = lumaCbfIsInferredACT; // ISP and ACT are mutually exclusive
       bool previousCbf          = false;
       bool rootCbfSoFar         = false;
-      if (cu.ispMode)
+      if (cu.ispMode != ISPType::NONE)
       {
-        uint32_t nTus = cu.ispMode == HOR_INTRA_SUBPARTITIONS ? cu.lheight() >> floorLog2(tu.lheight()) : cu.lwidth() >> floorLog2(tu.lwidth());
+        uint32_t nTus =
+          cu.ispMode == ISPType::HOR ? cu.lheight() >> floorLog2(tu.lheight()) : cu.lwidth() >> floorLog2(tu.lwidth());
         if (subTuCounter == nTus - 1)
         {
           TransformUnit* tuPointer = cu.firstTU;
@@ -2820,11 +2824,11 @@ void CABACReader::transform_unit( TransformUnit& tu, CUCtx& cuCtx, Partitioner& 
           previousCbf = TU::getPrevTuCbfAtDepth(tu, COMPONENT_Y, trDepth);
         }
       }
-      bool cbfY = lastCbfIsInferred ? true : cbf_comp(tu.Y(), trDepth, previousCbf, cu.ispMode, cu.bdpcmMode);
+      bool cbfY = lastCbfIsInferred ? true : cbf_comp(tu.Y(), trDepth, previousCbf, cu.ispMode != ISPType::NONE, cu.bdpcmMode);
       TU::setCbfAtDepth(tu, COMPONENT_Y, trDepth, (cbfY ? 1 : 0));
     }
   }
-  if (area.chromaFormat != CHROMA_400 && (!cu.ispMode || chromaCbfISP))
+  if (area.chromaFormat != CHROMA_400 && (cu.ispMode == ISPType::NONE || chromaCbfISP))
   {
     TU::setCbfAtDepth(tu, COMPONENT_Cb, trDepth, (chromaCbfs.Cb ? 1 : 0));
     TU::setCbfAtDepth(tu, COMPONENT_Cr, trDepth, (chromaCbfs.Cr ? 1 : 0));
@@ -3081,7 +3085,7 @@ void CABACReader::isp_mode( CodingUnit& cu )
       || cu.bdpcmMode != BdpcmMode::NONE || !CU::canUseISP(cu, getFirstComponentOfChannel(cu.chType))
       || cu.colorTransform)
   {
-    cu.ispMode = NOT_INTRA_SUBPARTITIONS;
+    cu.ispMode = ISPType::NONE;
     return;
   }
 
@@ -3092,7 +3096,7 @@ void CABACReader::isp_mode( CodingUnit& cu )
   if( symbol )
   {
     RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET( STATS__CABAC_BITS__ISP_SPLIT_FLAG );
-    cu.ispMode = 1 + m_binDecoder.decodeBin(Ctx::ISPMode(1));
+    cu.ispMode = m_binDecoder.decodeBin(Ctx::ISPMode(1)) ? ISPType::VER : ISPType::HOR;
   }
   DTRACE( g_trace_ctx, D_SYNTAX, "intra_subPartitions() etype=%d pos=(%d,%d) ispIdx=%d\n", cu.chType, cu.blocks[cu.chType].x, cu.blocks[cu.chType].y, (int)cu.ispMode );
 }
@@ -3100,7 +3104,7 @@ void CABACReader::isp_mode( CodingUnit& cu )
 void CABACReader::residual_lfnst_mode( CodingUnit& cu,  CUCtx& cuCtx  )
 {
   int chIdx = cu.isSepTree() && cu.chType == CHANNEL_TYPE_CHROMA ? 1 : 0;
-  if ((cu.ispMode && !CU::canUseLfnstWithISP(cu, cu.chType))
+  if ((cu.ispMode != ISPType::NONE && !CU::canUseLfnstWithISP(cu, cu.chType))
       || (cu.cs->sps->getUseLFNST() && CU::isIntra(cu) && cu.mipFlag && !allowLfnstWithMip(cu.firstPU->lumaSize()))
       || (cu.isSepTree() && cu.chType == CHANNEL_TYPE_CHROMA && std::min(cu.blocks[1].width, cu.blocks[1].height) < 4)
       || (cu.blocks[chIdx].lumaSize().width > cu.cs->sps->getMaxTbSize()
@@ -3130,7 +3134,7 @@ void CABACReader::residual_lfnst_mode( CodingUnit& cu,  CUCtx& cuCtx  )
         }
       }
     }
-    if ((!cuCtx.lfnstLastScanPos && !cu.ispMode) || nonZeroCoeffNonTsCorner8x8 || isTrSkip)
+    if ((!cuCtx.lfnstLastScanPos && cu.ispMode == ISPType::NONE) || nonZeroCoeffNonTsCorner8x8 || isTrSkip)
     {
       cu.lfnstIdx = 0;
       return;

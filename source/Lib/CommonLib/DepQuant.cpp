@@ -487,15 +487,15 @@ namespace DQIntern
     {
       bits = fracBitsAccess.getFracBitsArray(Ctx::QtRootCbf());
     }
-    else if (tu.cu->ispMode && isLuma(chType))
+    else if (tu.cu->ispMode != ISPType::NONE && isLuma(chType))
     {
       bool lastCbfIsInferred = false;
       if (CU::isISPLast(*tu.cu, tu.Y(), compID))
       {
         TransformUnit *tuPointer = tu.cu->firstTU;
 
-        const uint32_t nTus = tu.cu->ispMode == HOR_INTRA_SUBPARTITIONS ? tu.cu->lheight() >> floorLog2(tu.lheight())
-                                                                        : tu.cu->lwidth() >> floorLog2(tu.lwidth());
+        const uint32_t nTus = tu.cu->ispMode == ISPType::HOR ? tu.cu->lheight() >> floorLog2(tu.lheight())
+                                                             : tu.cu->lwidth() >> floorLog2(tu.lwidth());
 
         lastCbfIsInferred = true;
         for (int tuIdx = 0; tuIdx < nTus - 1; tuIdx++)

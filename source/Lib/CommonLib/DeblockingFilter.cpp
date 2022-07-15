@@ -459,7 +459,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
 
     if ( pcv.chrFormat != CHROMA_400 && cu.blocks[COMPONENT_Cb].valid() )
     {
-      if ( !cu.ispMode || edge == 0 )
+      if (cu.ispMode == ISPType::NONE || edge == 0)
       {
         xEdgeFilterChroma( cu, edgeDir, edge );
       }

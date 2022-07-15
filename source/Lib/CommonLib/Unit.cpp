@@ -348,7 +348,7 @@ void CodingUnit::initData()
     refIdxBi[i] = -1;
   }
   smvdMode        = 0;
-  ispMode           = 0;
+  ispMode           = ISPType::NONE;
   mipFlag           = false;
 
   for (int idx = 0; idx < MAX_NUM_CHANNEL_TYPE; idx++)
@@ -443,7 +443,8 @@ const bool CodingUnit::checkCCLMAllowed() const
           allowCCLM = false;
         }
       }
-      else if( colLumaCu->lwidth() == 64 && colLumaCu->lheight() == 64 && colLumaCu->ispMode ) //not split at 64x64 luma node and use ISP mode
+      else if (colLumaCu->lwidth() == 64 && colLumaCu->lheight() == 64
+               && colLumaCu->ispMode != ISPType::NONE)   // not split at 64x64 luma node and use ISP mode
       {
         allowCCLM = false;
       }

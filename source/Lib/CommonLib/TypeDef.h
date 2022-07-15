@@ -368,13 +368,13 @@ static inline MtsType operator++(MtsType &a, int)
 typedef std::pair<MtsType, bool> TrMode;
 typedef std::pair<int, int>      TrCost;
 
-enum ISPType
+enum class ISPType : int8_t
 {
-  NOT_INTRA_SUBPARTITIONS       = 0,
-  HOR_INTRA_SUBPARTITIONS       = 1,
-  VER_INTRA_SUBPARTITIONS       = 2,
-  NUM_INTRA_SUBPARTITIONS_MODES = 3,
-  INTRA_SUBPARTITIONS_RESERVED  = 4
+  NONE = -1,
+  HOR  = 0,
+  VER,
+  NUM,
+  INTRA_SUBPARTITIONS_RESERVED
 };
 
 enum SbtIdx

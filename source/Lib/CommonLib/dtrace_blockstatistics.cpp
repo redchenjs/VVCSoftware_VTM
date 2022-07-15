@@ -892,7 +892,7 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
           if(chType == CHANNEL_TYPE_LUMA)
           {
             DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::MIPFlag), cu.mipFlag);
-            DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::ISPMode), cu.ispMode);
+            DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::ISPMode), to_underlying(cu.ispMode));
           }
 
           const uint32_t numChType = ::getNumberValidChannels( cu.chromaFormat );
