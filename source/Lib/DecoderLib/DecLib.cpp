@@ -2829,16 +2829,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
       m_picHeader.setNoOutputBeforeRecoveryFlag( false );
     }
 
-    //the inference for NoOutputOfPriorPicsFlag
-    if( !m_firstSliceInBitstream && m_picHeader.getNoOutputBeforeRecoveryFlag() )
-    {
-      m_apcSlicePilot->setNoOutputOfPriorPicsFlag(true);
-    }
-    else
-    {
-      m_apcSlicePilot->setNoOutputOfPriorPicsFlag(false);
-    }
-
     if (m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR)
     {
       m_lastNoOutputBeforeRecoveryFlag[nalu.m_nuhLayerId] = m_picHeader.getNoOutputBeforeRecoveryFlag();
