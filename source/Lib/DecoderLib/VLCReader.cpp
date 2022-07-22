@@ -2384,6 +2384,12 @@ void HLSyntaxReader::parseVPS(VPS* pcVPS)
   for (int i = 0; i < pcVPS->getNumPtls(); i++)
   {
     parseProfileTierLevel(&ptls[i], pcVPS->getPtPresentFlag(i), pcVPS->getPtlMaxTemporalId(i));
+    if (!pcVPS->getPtPresentFlag(i))
+    {
+      ptls[i].setProfileIdc(ptls[i - 1].getProfileIdc());
+      ptls[i].setTierFlag(ptls[i - 1].getTierFlag());
+      *ptls[i].getConstraintInfo() = *ptls[i - 1].getConstraintInfo();
+    }
   }
   pcVPS->setProfileTierLevel(ptls);
   for (int i = 0; i < pcVPS->getTotalNumOLSs(); i++)

@@ -121,7 +121,13 @@ const ProfileFeatures *ProfileFeatures::getProfileFeatures(const Profile::Name p
 void
 ProfileLevelTierFeatures::extractPTLInformation(const SPS &sps)
 {
-  const ProfileTierLevel &spsPtl =*(sps.getProfileTierLevel());
+  extractPTLInformation(*sps.getProfileTierLevel());
+}
+
+void
+ProfileLevelTierFeatures::extractPTLInformation(const ProfileTierLevel &ptl)
+{
+  const ProfileTierLevel &spsPtl = ptl;
 
   m_pProfile = nullptr;
   m_pLevelTier = nullptr;
@@ -163,7 +169,7 @@ ProfileLevelTierFeatures::extractPTLInformation(const SPS &sps)
     }
     else
     {
-      m_hbrFactor = 1 + sps.getProfileTierLevel()->getTierFlag();
+      m_hbrFactor = 1 + ptl.getTierFlag();
     }
   }
 }
