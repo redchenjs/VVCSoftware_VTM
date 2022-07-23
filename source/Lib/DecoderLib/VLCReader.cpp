@@ -310,7 +310,7 @@ void HLSyntaxReader::copyRefPicList(SPS* sps, ReferencePictureList* source_rpl, 
     dest_rp->setNumberOfLongtermPictures(0);
   }
 
-  uint32_t numRefPic = dest_rp->getNumberOfShorttermPictures() + dest_rp->getNumberOfLongtermPictures();
+  uint32_t numRefPic = dest_rp->getNumberOfShorttermPictures() + dest_rp->getNumberOfLongtermPictures() + dest_rp->getNumberOfInterLayerPictures();
 
   for( int ii = 0; ii < numRefPic; ii++ )
   {
