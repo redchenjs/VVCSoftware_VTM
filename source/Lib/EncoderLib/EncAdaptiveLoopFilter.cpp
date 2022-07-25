@@ -2207,14 +2207,19 @@ void EncAdaptiveLoopFilter::deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnit
 
               int  orgStride = orgYuv.get(compID).stride;
               Pel* org = orgYuv.get(compID).bufAt(xStart >> ::getComponentScaleX(compID, m_chromaFormat), yStart >> ::getComponentScaleY(compID, m_chromaFormat));
+
+              ptrdiff_t orgLumaStride = orgYuv.get(COMPONENT_Y).stride;
+              Pel      *orgLuma       = orgYuv.get(COMPONENT_Y).bufAt(xStart, yStart);
+
               ChannelType chType = toChannelType( compID );
 
               for( int shape = 0; shape != m_filterShapes[chType].size(); shape++ )
               {
                 const CompArea &compAreaDst = areaDst.block(compID);
                 getBlkStats(m_alfCovariance[compIdx][shape][ctuRsAddr], m_filterShapes[chType][shape],
-                            compIdx ? nullptr : m_classifier, org, orgStride, rec, recStride, compAreaDst, compArea,
-                            chType, ((compIdx == 0) ? m_alfVBLumaCTUHeight : m_alfVBChmaCTUHeight),
+                            compIdx ? nullptr : m_classifier, org, orgStride, orgLuma, orgLumaStride, rec, recStride,
+                            compAreaDst, compArea, chType,
+                            ((compIdx == 0) ? m_alfVBLumaCTUHeight : m_alfVBChmaCTUHeight),
                             (compIdx == 0) ? m_alfVBLumaPos : m_alfVBChmaPos);
               }
             }
@@ -2257,13 +2262,16 @@ void EncAdaptiveLoopFilter::deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnit
           int  orgStride = orgYuv.get(compID).stride;
           Pel *org       = orgYuv.get(compID).bufAt(compArea);
 
+          ptrdiff_t orgLumaStride = orgYuv.get(COMPONENT_Y).stride;
+          Pel      *orgLuma       = orgYuv.get(COMPONENT_Y).bufAt(area.block(COMPONENT_Y));
+
           ChannelType chType = toChannelType(compID);
 
           for (int shape = 0; shape != m_filterShapes[chType].size(); shape++)
           {
             getBlkStats(m_alfCovariance[compIdx][shape][ctuRsAddr], m_filterShapes[chType][shape],
-                        compIdx ? nullptr : m_classifier, org, orgStride, rec, recStride, compArea, compArea, chType,
-                        ((compIdx == 0) ? m_alfVBLumaCTUHeight : m_alfVBChmaCTUHeight),
+                        compIdx ? nullptr : m_classifier, org, orgStride, orgLuma, orgLumaStride, rec, recStride,
+                        compArea, compArea, chType, ((compIdx == 0) ? m_alfVBLumaCTUHeight : m_alfVBChmaCTUHeight),
                         (compIdx == 0) ? m_alfVBLumaPos : m_alfVBChmaPos);
 
             const int numClasses = isLuma(compID) ? MAX_NUM_ALF_CLASSES : 1;
@@ -2281,7 +2289,11 @@ void EncAdaptiveLoopFilter::deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnit
   }
 }
 
-void EncAdaptiveLoopFilter::getBlkStats(AlfCovariance* alfCovariance, const AlfFilterShape& shape, AlfClassifier** classifier, Pel* org, const int orgStride, Pel* rec, const int recStride, const CompArea& areaDst, const CompArea& area, const ChannelType channel, int vbCTUHeight, int vbPos)
+void EncAdaptiveLoopFilter::getBlkStats(AlfCovariance *alfCovariance, const AlfFilterShape &shape,
+                                        AlfClassifier **classifier, Pel *org, const int orgStride, const Pel *orgLuma,
+                                        const ptrdiff_t orgLumaStride, Pel *rec, const int recStride,
+                                        const CompArea &areaDst, const CompArea &area, const ChannelType channel,
+                                        int vbCTUHeight, int vbPos)
 {
   Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MAX_ALF_NUM_CLIP_VALS];
 
@@ -2309,7 +2321,10 @@ void EncAdaptiveLoopFilter::getBlkStats(AlfCovariance* alfCovariance, const AlfF
 
       calcCovariance(ELocal, rec + j, recStride, shape, transposeIdx, channel, vbDistance);
 
-      const double weight = m_alfWSSD ? m_lumaLevelToWeightPLUT[org[j]] : 1.0;
+      const ComponentID compID  = channel == CHANNEL_TYPE_LUMA ? COMPONENT_Y : COMPONENT_Cb;
+      const Pel        *lumaPtr = orgLuma + (i << ::getComponentScaleY(compID, m_chromaFormat)) * orgLumaStride
+                           + (j << ::getComponentScaleX(compID, m_chromaFormat));
+      const double weight = m_alfWSSD ? m_lumaLevelToWeightPLUT[*lumaPtr] : 1.0;
       const double yLocal = org[j] - rec[j];
 
       double e[MAX_ALF_NUM_CLIP_VALS][MAX_NUM_ALF_LUMA_COEFF];
@@ -4079,6 +4094,9 @@ void EncAdaptiveLoopFilter::getBlkStatsCcAlf(AlfCovariance &alfCovariance, const
   int        orgStride = orgYuv.get(compID).stride;
   const Pel *org       = orgYuv.get(compID).bufAt(compArea);
 
+  const ptrdiff_t orgLumaStride = orgYuv.get(COMPONENT_Y).stride;
+  const Pel      *orgLuma       = orgYuv.get(COMPONENT_Y).bufAt(areaDst.block(COMPONENT_Y));
+
   int vbCTUHeight = m_alfVBLumaCTUHeight;
   int vbPos       = m_alfVBLumaPos;
   if ((yPos + m_maxCUHeight) >= m_picHeight)
@@ -4093,7 +4111,9 @@ void EncAdaptiveLoopFilter::getBlkStatsCcAlf(AlfCovariance &alfCovariance, const
 
   for (int i = 0; i < compArea.height; i++)
   {
-    int vbDistance = ((i << getComponentScaleY(compID, m_chromaFormat)) % vbCTUHeight) - vbPos;
+    const int iY = i << getComponentScaleY(compID, m_chromaFormat);
+
+    const int  vbDistance  = (iY % vbCTUHeight) - vbPos;
     const bool skipThisRow = getComponentScaleY(compID, m_chromaFormat) == 0 && (vbDistance == 0 || vbDistance == 1);
     for (int j = 0; j < compArea.width && (!skipThisRow); j++)
     {
@@ -4103,7 +4123,9 @@ void EncAdaptiveLoopFilter::getBlkStatsCcAlf(AlfCovariance &alfCovariance, const
 
       calcCovarianceCcAlf(ELocal, rec[COMPONENT_Y] + jY, recStride[COMPONENT_Y], shape, vbDistance);
 
-      const double weight = m_alfWSSD ? m_lumaLevelToWeightPLUT[org[j]] : 1.0;
+      const Pel *lumaPtr = orgLuma + iY * orgLumaStride + jY;
+
+      const double weight = m_alfWSSD ? m_lumaLevelToWeightPLUT[*lumaPtr] : 1.0;
       const double yLocal = org[j] - rec[compID][j];
 
       double e[MAX_NUM_CC_ALF_CHROMA_COEFF];
