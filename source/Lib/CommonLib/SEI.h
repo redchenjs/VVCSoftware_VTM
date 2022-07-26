@@ -705,7 +705,6 @@ public:
 };
 
 
-#ifdef JVET_Z0046_Green_Metadata
 class SEIGreenMetadataInfo : public SEI
 {
 public:
@@ -734,7 +733,6 @@ public:
   int m_numSeconds = -1;
   SEIComplexityMetrics m_greenComplexityMetrics;
 };
-#endif
 
 
 class SEIParameterSetsInclusionIndication : public SEI

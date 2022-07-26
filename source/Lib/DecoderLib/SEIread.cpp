@@ -346,12 +346,10 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIScalabilityDimensionInfo;
       xParseSEIScalabilityDimensionInfo((SEIScalabilityDimensionInfo&) *sei, payloadSize, pDecodedMessageOutputStream );
       break;
-#ifdef JVET_Z0046_Green_Metadata
     case SEI::GREEN_METADATA:
       sei = new SEIGreenMetadataInfo;
       xParseSEIGreenMetadataInfo((SEIGreenMetadataInfo&) *sei,  payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     case SEI::MULTIVIEW_ACQUISITION_INFO:
       sei = new SEIMultiviewAcquisitionInfo;
       xParseSEIMultiviewAcquisitionInfo((SEIMultiviewAcquisitionInfo&) *sei, payloadSize, pDecodedMessageOutputStream );
@@ -729,7 +727,6 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
 }
 
 
-#ifdef JVET_Z0046_Green_Metadata
 void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   uint32_t code;
@@ -874,7 +871,6 @@ void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t p
   }
 }
 
-#endif
 
 
 void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD &hrd, std::ostream* decodedMessageOutputStream, std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>> *seiList)
