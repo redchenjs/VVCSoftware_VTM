@@ -2708,9 +2708,7 @@ private:
   bool                       m_biDirPred;
   bool                       m_lmChromaCheckDisable;
   int                        m_symRefIdx[2];
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   bool                       m_meetBiPredT;
-#endif 
 
   //  Data
   int                        m_iSliceQpDelta;
@@ -2918,10 +2916,8 @@ public:
 
   void                        setBiDirPred( bool b, int refIdx0, int refIdx1 ) { m_biDirPred = b; m_symRefIdx[0] = refIdx0; m_symRefIdx[1] = refIdx1; }
   bool                        getBiDirPred() const { return m_biDirPred; }
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   void                        setMeetBiPredT(bool b)                                 { m_meetBiPredT = b; }
   bool                        getMeetBiPredT() const                                 { return m_meetBiPredT;  }
-#endif
   void                        setDisableLmChromaCheck( bool b )  { m_lmChromaCheckDisable = b; }
   bool                        getDisableLmChromaCheck() const { return m_lmChromaCheckDisable; }
   int                         getSymRefIdx( int refList ) const { return m_symRefIdx[refList]; }

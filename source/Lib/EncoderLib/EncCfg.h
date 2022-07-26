@@ -352,9 +352,7 @@ protected:
   bool      m_sbTmvpEnableFlag;
   bool      m_Affine;
   bool      m_AffineType;
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   bool      m_adaptBypassAffineMe;
-#endif
   bool      m_PROF;
   bool      m_BIO;
 
@@ -1299,10 +1297,8 @@ public:
   bool      getAffine                       ()         const { return m_Affine; }
   void      setAffineType( bool b )                          { m_AffineType = b; }
   bool      getAffineType()                            const { return m_AffineType; }
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   void      setAdaptBypassAffineMe(bool b)                   { m_adaptBypassAffineMe = b;}
   bool      getAdaptBypassAffineMe()                   const { return m_adaptBypassAffineMe; }
-#endif 
   void      setPROF                         (bool b)         { m_PROF = b; }
   bool      getPROF                         ()         const { return m_PROF; }
   void      setBIO(bool b)                                   { m_BIO = b; }

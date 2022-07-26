@@ -54,7 +54,6 @@
 
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_Z0111_ADAPT_BYPASS_AFFINE_ME                 1 // JVET-Z0111 
 #define JVET_Z0046_Green_Metadata                         1 // JVET-Z0046
 #define JVET_Z0120_SHUTTER_INTERVAL_SEI                   1 // JVET-Z0120
 #define JVET_Z0244                                        1 // JVET-Z0244

@@ -965,9 +965,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MMVD",                                            m_MMVD,                                            true, "Enable Merge mode with Motion Vector Difference (0:off, 1:on)  [default: 1]")
   ("Affine",                                          m_Affine,                                         false, "Enable affine prediction (0:off, 1:on)  [default: off]")
   ("AffineType",                                      m_AffineType,                                      true,  "Enable affine type prediction (0:off, 1:on)  [default: on]" )
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   ("AdaptBypassAffineMe",                             m_adaptBypassAffineMe,                            false, "Adaptively bypass affine ME (0: off, 1:on, defaul: off]")
-#endif
   ("PROF",                                            m_PROF,                                           false, "Enable Prediction refinement with optical flow for affine mode (0:off, 1:on)  [default: off]")
   ("BIO",                                             m_BIO,                                            false, "Enable bi-directional optical flow")
   ("IMV",                                             m_ImvMode,                                            1, "Adaptive MV precision Mode (IMV)\n"
@@ -4929,9 +4927,7 @@ void EncAppCfg::xPrintParameter()
     if ( m_Affine )
     {
       msg( VERBOSE, "AffineType:%d ", m_AffineType );
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
       msg( VERBOSE, "AdaptBypassAffineMe:%d ", m_adaptBypassAffineMe);
-#endif
     }
     msg(VERBOSE, "PROF:%d ", m_PROF);
     msg(VERBOSE, "SbTMVP:%d ", m_sbTmvpEnableFlag);

@@ -4391,7 +4391,6 @@ void PU::spanGeoMotionInfo( PredictionUnit &pu, MergeCtx &geoMrgCtx, const uint8
   }
 }
 
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
 void PU::getNeighborAffineInfo(const PredictionUnit& pu, int& numNeighborAvai, int& numNeighborAffine)
 {
   const Position& posLT = pu.Y().topLeft();
@@ -4415,7 +4414,6 @@ void PU::getNeighborAffineInfo(const PredictionUnit& pu, int& numNeighborAvai, i
     }
   }
 }
-#endif
 
 bool CU::hasSubCUNonZeroMVd( const CodingUnit& cu )
 {

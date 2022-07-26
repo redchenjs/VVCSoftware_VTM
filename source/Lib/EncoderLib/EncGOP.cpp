@@ -3043,9 +3043,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       picHeader->setMvdL1ZeroFlag(false);
     }
 
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
     pcSlice->setMeetBiPredT(false);
-#endif
     if ( pcSlice->getSPS()->getUseSMVD() && pcSlice->getCheckLDC() == false
       && picHeader->getMvdL1ZeroFlag() == false
       )
@@ -3115,10 +3113,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       if ( forwardPOC < currPOC && backwardPOC > currPOC )
       {
         pcSlice->setBiDirPred( true, refIdx0, refIdx1 );
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
         constexpr int affineMeTBiPred = 1;
         pcSlice->setMeetBiPredT(abs(forwardPOC - currPOC) <= affineMeTBiPred);
-#endif
       }
       else
       {
