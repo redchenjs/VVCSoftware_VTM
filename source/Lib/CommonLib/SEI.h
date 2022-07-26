@@ -92,10 +92,8 @@ public:
     CONSTRAINED_RASL_ENCODING            = 207,
     VDI_SEI_ENVELOPE             = 208,
     SHUTTER_INTERVAL_INFO                = 209,
-#if JVET_Z0244
     NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS = 210,
     NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
-#endif
   };
 
   SEI() {}
@@ -1063,7 +1061,6 @@ public:
   virtual ~SEIVDISeiEnvelope() {}
 };
 
-#if JVET_Z0244
 class SEINeuralNetworkPostFilterCharacteristics : public SEI
 {
 public:
@@ -1144,7 +1141,6 @@ public:
 
   uint32_t       m_id;
 };
-#endif
 
 //! \}
 

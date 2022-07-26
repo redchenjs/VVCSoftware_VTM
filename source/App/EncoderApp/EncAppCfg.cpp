@@ -1662,7 +1662,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()(cOSS2.str(), m_olsPtlIdx[i], 0);
   }
 
-#if JVET_Z0244
   opts.addOptions()("SEINNPostFilterCharacteristicsEnabled",  m_nnPostFilterSEICharacteristicsEnabled, false, "Control generation of the Neural Network Post Filter Characteristics SEI messages");
   opts.addOptions()( "SEINNPostFilterCharacteristicsNumFilters",                                      m_nnPostFilterSEICharacteristicsNumFilters,                                  0, "Specifies the number of Neural Network Post Filter Characteristics SEI messages" );
   for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; i++)
@@ -1770,7 +1769,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
     opts.addOptions()("SEINNPostFilterActivationId", m_nnPostFilterSEIActivationId , 0u,        "Id of the Neural Network Post Filter on current picture");
   }
-#endif
 
   po::setDefaults(opts);
   po::ErrorReporter err;
@@ -4607,7 +4605,6 @@ bool EncAppCfg::xCheckParameter()
   }
 #endif
 
-#if JVET_Z0244
   if (m_nnPostFilterSEICharacteristicsEnabled)
   {
     for (int i = 0; i < m_nnPostFilterSEICharacteristicsNumFilters; i++)
@@ -4635,7 +4632,6 @@ bool EncAppCfg::xCheckParameter()
   {
     xConfirmPara(m_nnPostFilterSEIActivationId > (1 << 20) - 1, "SEINNPostFilterActivationId must be in the range of 0 to 2^20-1");
   }
-#endif
 
   xConfirmPara(m_log2ParallelMergeLevel < 2, "Log2ParallelMergeLevel should be larger than or equal to 2");
   xConfirmPara(m_log2ParallelMergeLevel > m_uiCTUSize, "Log2ParallelMergeLevel should be less than or equal to CTU size");

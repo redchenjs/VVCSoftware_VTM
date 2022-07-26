@@ -1121,7 +1121,6 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setShutterFilterFlag(m_ShutterFilterEnable);
   m_cEncLib.setBlendingRatioSII(m_SII_BlendingRatio);
 #endif
-#if JVET_Z0244
   m_cEncLib.setNNPostFilterSEICharacteristicsEnabled             (m_nnPostFilterSEICharacteristicsEnabled);
   m_cEncLib.setNNPostFilterSEICharacteristicsNumFilters          (m_nnPostFilterSEICharacteristicsNumFilters);
   for (int i = 0; i < m_nnPostFilterSEICharacteristicsNumFilters; i++)
@@ -1154,7 +1153,6 @@ void EncApp::xInitLibCfg()
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
   m_cEncLib.setNnPostFilterSEIActivationId                       (m_nnPostFilterSEIActivationId);
-#endif
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );
   m_cEncLib.setEntryPointPresentFlag                             ( m_entryPointPresentFlag );
   m_cEncLib.setTMVPModeId                                        ( m_TMVPModeId );

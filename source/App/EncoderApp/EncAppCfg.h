@@ -732,7 +732,6 @@ protected:
 
   CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
 
-#if JVET_Z0244
   bool                  m_nnPostFilterSEICharacteristicsEnabled;
   int                   m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t              m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
@@ -762,7 +761,6 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEIActivationEnabled;
   uint32_t              m_nnPostFilterSEIActivationId;
-#endif
 
   bool                  m_constrainedRaslEncoding;
 

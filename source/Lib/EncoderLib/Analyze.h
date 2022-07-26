@@ -83,12 +83,10 @@ public:
   virtual ~Analyze()  {}
   Analyze() { clear(); }
 
-#if JVET_Z0244
   void addBits(double bits)
   {
     m_dAddBits += bits;
   }
-#endif
 
   void  addResult( double psnr[MAX_NUM_COMPONENT], double bits, const double MSEyuvframe[MAX_NUM_COMPONENT],
     const double upscaledPSNR[MAX_NUM_COMPONENT], const double msssim[MAX_NUM_COMPONENT], bool isEncodeLtRef )
