@@ -549,13 +549,11 @@ protected:
   uint32_t  m_fgcSEILog2ScaleFactor;
   bool      m_fgcSEICompModelPresent[MAX_NUM_COMPONENT];
   bool      m_fgcSEIAnalysisEnabled;
-#if JVET_Z0047_FG_IMPROVEMENT
   std::string m_fgcSEIExternalMask;
   std::string m_fgcSEIExternalDenoised;
   int       m_fgcSEITemporalFilterPastRefs;
   int       m_fgcSEITemporalFilterFutureRefs;
   std::map<int, double> m_fgcSEITemporalFilterStrengths;
-#endif
   bool      m_fgcSEIPerPictureSEI;
   uint32_t  m_fgcSEINumModelValuesMinus1          [MAX_NUM_COMPONENT];
   uint32_t  m_fgcSEINumIntensityIntervalMinus1    [MAX_NUM_COMPONENT];

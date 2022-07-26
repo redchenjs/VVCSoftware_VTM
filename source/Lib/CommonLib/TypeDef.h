@@ -54,7 +54,6 @@
 
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_Z0047_FG_IMPROVEMENT                         1 // Improvements to the film grain analysis code
 
 //########### place macros to be be kept below this line ###############
 #define JVET_X0143_ALF_APS_ID_OFFSET                      0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.
