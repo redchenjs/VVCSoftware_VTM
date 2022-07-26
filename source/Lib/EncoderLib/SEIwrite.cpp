@@ -157,11 +157,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &h
   case SEI::CONSTRAINED_RASL_ENCODING:
     xWriteSEIConstrainedRaslIndication(*static_cast<const SEIConstrainedRaslIndication*>(&sei));
     break;
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   case SEI::SHUTTER_INTERVAL_INFO:
     xWriteSEIShutterInterval(*static_cast<const SEIShutterIntervalInfo*>(&sei));
     break;
-#endif
 #if JVET_Z0244
   case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
     xWriteSEINeuralNetworkPostFilterCharacteristics(*static_cast<const SEINeuralNetworkPostFilterCharacteristics*>(&sei));
@@ -1386,7 +1384,6 @@ void SEIWriter::xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei)
   }
 }
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
 void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
 {
   WRITE_CODE(sei.m_siiTimeScale, 32, "sii_time_scale");
@@ -1404,7 +1401,6 @@ void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
     }
   }
 }
-#endif
 
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)
 {

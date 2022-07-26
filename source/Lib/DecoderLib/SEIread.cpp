@@ -402,12 +402,10 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIConstrainedRaslIndication;
       xParseSEIConstrainedRaslIndication((SEIConstrainedRaslIndication&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
     case SEI::SHUTTER_INTERVAL_INFO:
       sei = new SEIShutterIntervalInfo;
       xParseSEIShutterInterval((SEIShutterIntervalInfo&)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
 #if JVET_Z0244
     case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
       sei = new SEINeuralNetworkPostFilterCharacteristics;
@@ -548,7 +546,6 @@ void SEIReader::xParseSEIuserDataUnregistered(SEIuserDataUnregistered &sei, uint
   }
 }
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
 void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   int32_t i;
@@ -571,7 +568,6 @@ void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t p
     }
   }
 }
-#endif
 
 /**
  * parse bitstream bs and unpack a decoded picture hash SEI message

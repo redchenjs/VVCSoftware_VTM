@@ -1196,12 +1196,10 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setTSRCdisableLL                                     ( m_TSRCdisableLL );
   m_cEncLib.setUseRecalculateQPAccordingToLambda                 ( m_recalculateQPAccordingToLambda );
   m_cEncLib.setDCIEnabled                                        ( m_DCIEnabled );
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   m_cEncLib.setSiiSEIEnabled(m_siiSEIEnabled);
   m_cEncLib.setSiiSEINumUnitsInShutterInterval(m_siiSEINumUnitsInShutterInterval);
   m_cEncLib.setSiiSEITimeScale(m_siiSEITimeScale);
   m_cEncLib.setSiiSEISubLayerNumUnitsInSI(m_siiSEISubLayerNumUnitsInSI);
-#endif
   m_cEncLib.setVuiParametersPresentFlag                          ( m_vuiParametersPresentFlag );
   m_cEncLib.setSamePicTimingInAllOLS                             (m_samePicTimingInAllOLS);
   m_cEncLib.setAspectRatioInfoPresentFlag                        ( m_aspectRatioInfoPresentFlag);

@@ -739,9 +739,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp0              (0, 65535,  0, 256 * 6);
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp1              (0, 65535,  0, 256 * 6);
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
-#endif
 
 #if ENABLE_TRACING
   string sTracingRule;
@@ -1423,11 +1421,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEISARISarWidth",                                 m_sariSarWidth,                           0, "Specifies the Sample Aspect Ratio Width of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
   ("SEISARISarHeight",                                m_sariSarHeight,                          0, "Specifies the Sample Aspect Ratio Height of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
   ("MCTSEncConstraint",                               m_MCTSEncConstraint,                               false, "For MCTS, constrain motion vectors at tile boundaries")
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   ("SEIShutterIntervalEnabled",                       m_siiSEIEnabled,                          false, "Controls if shutter interval information SEI message is enabled")
   ("SEISiiTimeScale",                                 m_siiSEITimeScale,                        27000000u, "Specifies sii_time_scale")
   ("SEISiiInputNumUnitsInShutterInterval",            cfg_siiSEIInputNumUnitsInSI,              cfg_siiSEIInputNumUnitsInSI, "Specifies sub_layer_num_units_in_shutter_interval")
-#endif
 
 #if ENABLE_TRACING
   ("TraceChannelsList",                               bTracingChannelsList,                              false, "List all available tracing channels")
@@ -3148,7 +3144,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #if JVET_Z0120_SII_SEI_PROCESSING
   m_ShutterFilterEnable = false;
 #endif
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   if (m_siiSEIEnabled)
   {
     assert(m_siiSEITimeScale >= 0 && m_siiSEITimeScale <= MAX_UINT);
@@ -3224,7 +3219,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
 #endif
   }
-#endif
 
 
   if( m_costMode == COST_LOSSLESS_CODING )

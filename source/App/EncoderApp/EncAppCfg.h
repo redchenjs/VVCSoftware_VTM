@@ -842,12 +842,10 @@ protected:
   int       m_ImvMode;                                        ///< imv mode
   int       m_Imv4PelFast;                                    ///< imv 4-Pel fast mode
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   bool      m_siiSEIEnabled;
   uint32_t  m_siiSEINumUnitsInShutterInterval;
   uint32_t  m_siiSEITimeScale;
   std::vector<uint32_t>     m_siiSEISubLayerNumUnitsInSI;
-#endif
 #if JVET_Z0120_SII_SEI_PROCESSING
   bool        m_ShutterFilterEnable;                          ///< enable Pre-Filtering with Shutter Interval SEI
   std::string m_shutterIntervalPreFileName;                   ///< output Pre-Filtering video

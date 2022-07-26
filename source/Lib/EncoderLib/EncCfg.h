@@ -657,12 +657,10 @@ protected:
   uint8_t     m_preferredTransferCharacteristics;
 #endif
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   bool                    m_siiSEIEnabled;
   uint32_t                m_siiSEINumUnitsInShutterInterval;
   uint32_t                m_siiSEITimeScale;
   std::vector<uint32_t>   m_siiSEISubLayerNumUnitsInSI;
-#endif
 
 #if JVET_Z0244
   bool                    m_nnPostFilterSEICharacteristicsEnabled;
@@ -1761,7 +1759,6 @@ public:
   void  setSubpicDecodedPictureHashType(HashType m)                  { m_subpicDecodedPictureHashType = m; }
   HashType getSubpicDecodedPictureHashType() const                   { return m_subpicDecodedPictureHashType; }
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   void     setSiiSEIEnabled(bool b) { m_siiSEIEnabled = b; }
   bool     getSiiSEIEnabled() { return m_siiSEIEnabled; }
   void     setSiiSEINumUnitsInShutterInterval(uint32_t value) { m_siiSEINumUnitsInShutterInterval = value; }
@@ -1772,7 +1769,6 @@ public:
   bool     getSiiSEIFixedSIwithinCLVS() { return m_siiSEISubLayerNumUnitsInSI.empty(); }
   void     setSiiSEISubLayerNumUnitsInSI(const std::vector<uint32_t>& b) { m_siiSEISubLayerNumUnitsInSI = b; }
   uint32_t getSiiSEISubLayerNumUnitsInSI(uint32_t idx) const { return m_siiSEISubLayerNumUnitsInSI[idx]; }
-#endif
 
 #if JVET_Z0244
   void        setNNPostFilterSEICharacteristicsEnabled(bool enabledFlag)                                                { m_nnPostFilterSEICharacteristicsEnabled = enabledFlag; }
