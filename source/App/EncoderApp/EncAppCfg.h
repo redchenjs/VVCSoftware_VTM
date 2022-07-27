@@ -348,9 +348,7 @@ protected:
   bool      m_sbTmvpEnableFlag;
   bool      m_Affine;
   bool      m_AffineType;
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   bool      m_adaptBypassAffineMe;
-#endif
   bool      m_PROF;
   bool      m_BIO;
   int       m_LMChroma;
@@ -551,13 +549,11 @@ protected:
   uint32_t  m_fgcSEILog2ScaleFactor;
   bool      m_fgcSEICompModelPresent[MAX_NUM_COMPONENT];
   bool      m_fgcSEIAnalysisEnabled;
-#if JVET_Z0047_FG_IMPROVEMENT
   std::string m_fgcSEIExternalMask;
   std::string m_fgcSEIExternalDenoised;
   int       m_fgcSEITemporalFilterPastRefs;
   int       m_fgcSEITemporalFilterFutureRefs;
   std::map<int, double> m_fgcSEITemporalFilterStrengths;
-#endif
   bool      m_fgcSEIPerPictureSEI;
   uint32_t  m_fgcSEINumModelValuesMinus1          [MAX_NUM_COMPONENT];
   uint32_t  m_fgcSEINumIntensityIntervalMinus1    [MAX_NUM_COMPONENT];
@@ -734,7 +730,6 @@ protected:
 
   CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
 
-#if JVET_Z0244
   bool                  m_nnPostFilterSEICharacteristicsEnabled;
   int                   m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t              m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
@@ -764,7 +759,6 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEIActivationEnabled;
   uint32_t              m_nnPostFilterSEIActivationId;
-#endif
 
   bool                  m_constrainedRaslEncoding;
 
@@ -844,12 +838,10 @@ protected:
   int       m_ImvMode;                                        ///< imv mode
   int       m_Imv4PelFast;                                    ///< imv 4-Pel fast mode
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   bool      m_siiSEIEnabled;
   uint32_t  m_siiSEINumUnitsInShutterInterval;
   uint32_t  m_siiSEITimeScale;
   std::vector<uint32_t>     m_siiSEISubLayerNumUnitsInSI;
-#endif
 #if JVET_Z0120_SII_SEI_PROCESSING
   bool        m_ShutterFilterEnable;                          ///< enable Pre-Filtering with Shutter Interval SEI
   std::string m_shutterIntervalPreFileName;                   ///< output Pre-Filtering video

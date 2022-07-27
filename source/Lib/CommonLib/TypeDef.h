@@ -54,11 +54,6 @@
 
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_Z0111_ADAPT_BYPASS_AFFINE_ME                 1 // JVET-Z0111 
-#define JVET_Z0046_Green_Metadata                         1 // JVET-Z0046
-#define JVET_Z0120_SHUTTER_INTERVAL_SEI                   1 // JVET-Z0120
-#define JVET_Z0244                                        1 // JVET-Z0244
-#define JVET_Z0047_FG_IMPROVEMENT                         1 // Improvements to the film grain analysis code
 
 //########### place macros to be be kept below this line ###############
 #define JVET_X0143_ALF_APS_ID_OFFSET                      0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.
@@ -993,7 +988,6 @@ struct SEIMasteringDisplay
   uint16_t    whitePoint[2];
 };
 
-#ifdef JVET_Z0046_Green_Metadata
 struct SEIQualityMetrics
 {
   double psnr = 0;
@@ -1017,7 +1011,6 @@ struct SEIComplexityMetrics
   uint32_t portionSaoInstances = 0;
   uint32_t portionAlfInstances = 0;
 };
-#endif
 
 
 #if SHARP_LUMA_DELTA_QP

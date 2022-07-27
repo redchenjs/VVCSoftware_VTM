@@ -2762,7 +2762,6 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   {
     checkAffine = !( bestCU->firstPU->mergeFlag || !bestCU->affine );
   }
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   constexpr int affineMeTSize = 256;
   if (checkAffine && m_pcEncCfg->getAdaptBypassAffineMe() && pu.lumaSize().area() > affineMeTSize) 
   {
@@ -2781,7 +2780,6 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
       }
     }
   }
-#endif
 
   if ( pu.cu->imv == 2 && checkNonAffine && pu.cu->slice->getSPS()->getAffineAmvrEnabledFlag() )
   {
@@ -6469,9 +6467,7 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
   Distortion    uiCost[2] = { std::numeric_limits<Distortion>::max(), std::numeric_limits<Distortion>::max() };
   Distortion    uiCostBi  = std::numeric_limits<Distortion>::max();
   Distortion    costTemp;
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   costTemp = std::numeric_limits<Distortion>::max();
-#endif
 #if GDR_ENABLED
   bool uiCostOk[2] = { init_value, init_value };
   bool uiCostBiOk = init_value;

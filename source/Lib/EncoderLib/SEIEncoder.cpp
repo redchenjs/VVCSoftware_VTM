@@ -507,7 +507,6 @@ void SEIEncoder::initSEIExtendedDrapIndication(SEIExtendedDrapIndication *sei)
   }
 }
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
 void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIntervalInfo)
 {
   assert(m_isInitialized);
@@ -528,7 +527,6 @@ void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIn
     }
   }
 }
-#endif
 
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned
@@ -1154,7 +1152,6 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SP
   }
 }
 
-#if JVET_Z0244
 void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
@@ -1236,7 +1233,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
   CHECK(!(sei != nullptr), "Unspecified error");
   sei->m_id = m_pcCfg->getNnPostFilterSEIActivationId();
 }
-#endif
 
 
 //! \}

@@ -352,9 +352,7 @@ protected:
   bool      m_sbTmvpEnableFlag;
   bool      m_Affine;
   bool      m_AffineType;
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   bool      m_adaptBypassAffineMe;
-#endif
   bool      m_PROF;
   bool      m_BIO;
 
@@ -659,14 +657,11 @@ protected:
   uint8_t     m_preferredTransferCharacteristics;
 #endif
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   bool                    m_siiSEIEnabled;
   uint32_t                m_siiSEINumUnitsInShutterInterval;
   uint32_t                m_siiSEITimeScale;
   std::vector<uint32_t>   m_siiSEISubLayerNumUnitsInSI;
-#endif
 
-#if JVET_Z0244
   bool                    m_nnPostFilterSEICharacteristicsEnabled;
   int                     m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t                m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
@@ -697,7 +692,6 @@ protected:
 
   bool                    m_nnPostFilterSEIActivationEnabled;
   uint32_t                m_nnPostFilterSEIActivationId;
-#endif
 
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
@@ -709,13 +703,11 @@ protected:
   uint8_t   m_fgcSEILog2ScaleFactor;
   bool      m_fgcSEICompModelPresent[MAX_NUM_COMPONENT];
   bool      m_fgcSEIAnalysisEnabled;
-#if JVET_Z0047_FG_IMPROVEMENT
   std::string m_fgcSEIExternalMask;
   std::string m_fgcSEIExternalDenoised;
   int       m_fgcSEITemporalFilterPastRefs;
   int       m_fgcSEITemporalFilterFutureRefs;
   std::map<int, double> m_fgcSEITemporalFilterStrengths;
-#endif
   bool      m_fgcSEIPerPictureSEI;
   uint8_t   m_fgcSEINumModelValuesMinus1          [MAX_NUM_COMPONENT];
   uint8_t   m_fgcSEINumIntensityIntervalMinus1    [MAX_NUM_COMPONENT];
@@ -1299,10 +1291,8 @@ public:
   bool      getAffine                       ()         const { return m_Affine; }
   void      setAffineType( bool b )                          { m_AffineType = b; }
   bool      getAffineType()                            const { return m_AffineType; }
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   void      setAdaptBypassAffineMe(bool b)                   { m_adaptBypassAffineMe = b;}
   bool      getAdaptBypassAffineMe()                   const { return m_adaptBypassAffineMe; }
-#endif 
   void      setPROF                         (bool b)         { m_PROF = b; }
   bool      getPROF                         ()         const { return m_PROF; }
   void      setBIO(bool b)                                   { m_BIO = b; }
@@ -1765,7 +1755,6 @@ public:
   void  setSubpicDecodedPictureHashType(HashType m)                  { m_subpicDecodedPictureHashType = m; }
   HashType getSubpicDecodedPictureHashType() const                   { return m_subpicDecodedPictureHashType; }
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   void     setSiiSEIEnabled(bool b) { m_siiSEIEnabled = b; }
   bool     getSiiSEIEnabled() { return m_siiSEIEnabled; }
   void     setSiiSEINumUnitsInShutterInterval(uint32_t value) { m_siiSEINumUnitsInShutterInterval = value; }
@@ -1776,9 +1765,7 @@ public:
   bool     getSiiSEIFixedSIwithinCLVS() { return m_siiSEISubLayerNumUnitsInSI.empty(); }
   void     setSiiSEISubLayerNumUnitsInSI(const std::vector<uint32_t>& b) { m_siiSEISubLayerNumUnitsInSI = b; }
   uint32_t getSiiSEISubLayerNumUnitsInSI(uint32_t idx) const { return m_siiSEISubLayerNumUnitsInSI[idx]; }
-#endif
 
-#if JVET_Z0244
   void        setNNPostFilterSEICharacteristicsEnabled(bool enabledFlag)                                                { m_nnPostFilterSEICharacteristicsEnabled = enabledFlag; }
   bool        getNNPostFilterSEICharacteristicsEnabled() const                                                          { return m_nnPostFilterSEICharacteristicsEnabled; }
   void        setNNPostFilterSEICharacteristicsNumFilters(int numFilters)                                               { m_nnPostFilterSEICharacteristicsNumFilters = numFilters; }
@@ -1841,7 +1828,6 @@ public:
   bool        getNnPostFilterSEIActivationEnabled() const                                                               { return m_nnPostFilterSEIActivationEnabled; }
   void        setNnPostFilterSEIActivationId(uint32_t id)                                                               { m_nnPostFilterSEIActivationId = id; }
   uint32_t    getNnPostFilterSEIActivationId() const                                                                    { return m_nnPostFilterSEIActivationId; }
-#endif
 
   void  setBufferingPeriodSEIEnabled(bool b)                         { m_bufferingPeriodSEIEnabled = b; }
   bool  getBufferingPeriodSEIEnabled() const                         { return m_bufferingPeriodSEIEnabled; }
@@ -2054,7 +2040,6 @@ public:
   bool*     getFGCSEICompModelPresent                 ()                        { return m_fgcSEICompModelPresent; }
   void      setFilmGrainAnalysisEnabled               (bool b)                  { m_fgcSEIAnalysisEnabled = b; }
   bool      getFilmGrainAnalysisEnabled               ()                        { return m_fgcSEIAnalysisEnabled; }
-#if JVET_Z0047_FG_IMPROVEMENT
   void        setFilmGrainExternalMask(std::string s) { m_fgcSEIExternalMask = s; }
   void        setFilmGrainExternalDenoised(std::string s) { m_fgcSEIExternalDenoised = s; }
   std::string getFilmGrainExternalMask() { return m_fgcSEIExternalMask; }
@@ -2065,7 +2050,6 @@ public:
   int         getFilmGrainTemporalFilterPastRefs()                              { return m_fgcSEITemporalFilterPastRefs; };
   int         getFilmGrainTemporalFilterFutureRef()                             { return m_fgcSEITemporalFilterFutureRefs; };
   std::map<int, double> getFilmGrainTemporalFilterStrengths()                   { return m_fgcSEITemporalFilterStrengths; };
-#endif
   void      setFilmGrainCharactersticsSEIPerPictureSEI(bool b)                  { m_fgcSEIPerPictureSEI = b; }
   bool      getFilmGrainCharactersticsSEIPerPictureSEI()                        { return m_fgcSEIPerPictureSEI; }
   void      setFGCSEINumIntensityIntervalMinus1 (uint8_t v, int index)          { m_fgcSEINumIntensityIntervalMinus1[index] = v; }

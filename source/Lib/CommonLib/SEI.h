@@ -91,13 +91,9 @@ public:
     EXTENDED_DRAP_INDICATION             = 206,
     CONSTRAINED_RASL_ENCODING            = 207,
     VDI_SEI_ENVELOPE             = 208,
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
     SHUTTER_INTERVAL_INFO                = 209,
-#endif
-#if JVET_Z0244
     NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS = 210,
     NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
-#endif
   };
 
   SEI() {}
@@ -108,7 +104,6 @@ public:
   virtual PayloadType payloadType() const = 0;
 };
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
 class SEIShutterIntervalInfo : public SEI
 {
 public:
@@ -123,7 +118,6 @@ public:
   bool                  m_siiFixedSIwithinCLVS;
   std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
 };
-#endif
 
 class SEIEquirectangularProjection : public SEI
 {
@@ -705,7 +699,6 @@ public:
 };
 
 
-#ifdef JVET_Z0046_Green_Metadata
 class SEIGreenMetadataInfo : public SEI
 {
 public:
@@ -734,7 +727,6 @@ public:
   int m_numSeconds = -1;
   SEIComplexityMetrics m_greenComplexityMetrics;
 };
-#endif
 
 
 class SEIParameterSetsInclusionIndication : public SEI
@@ -1069,7 +1061,6 @@ public:
   virtual ~SEIVDISeiEnvelope() {}
 };
 
-#if JVET_Z0244
 class SEINeuralNetworkPostFilterCharacteristics : public SEI
 {
 public:
@@ -1150,7 +1141,6 @@ public:
 
   uint32_t       m_id;
 };
-#endif
 
 //! \}
 

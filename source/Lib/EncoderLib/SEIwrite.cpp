@@ -157,19 +157,15 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &h
   case SEI::CONSTRAINED_RASL_ENCODING:
     xWriteSEIConstrainedRaslIndication(*static_cast<const SEIConstrainedRaslIndication*>(&sei));
     break;
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   case SEI::SHUTTER_INTERVAL_INFO:
     xWriteSEIShutterInterval(*static_cast<const SEIShutterIntervalInfo*>(&sei));
     break;
-#endif
-#if JVET_Z0244
   case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
     xWriteSEINeuralNetworkPostFilterCharacteristics(*static_cast<const SEINeuralNetworkPostFilterCharacteristics*>(&sei));
     break;
   case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
     xWriteSEINeuralNetworkPostFilterActivation(*static_cast<const SEINeuralNetworkPostFilterActivation*>(&sei));
     break;
-#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -180,20 +176,14 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &h
 /**
  * marshal all SEI messages in provided list into one bitstream bs
  */
-#if JVET_Z0244
 uint32_t SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList, HRD &hrd, bool isNested, const uint32_t temporalId)
-#else
-void SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList, HRD &hrd, bool isNested, const uint32_t temporalId)
-#endif
 {
 #if ENABLE_TRACING
   if (g_HLSTraceEnable)
     xTraceSEIHeader();
 #endif
 
-#if JVET_Z0244
   uint32_t numBits = 0;
-#endif
 
   OutputBitstream bs_count;
 
@@ -215,9 +205,7 @@ void SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList
     uint32_t payload_data_num_bits = bs_count.getNumberOfWrittenBits();
     CHECK(0 != payload_data_num_bits % 8, "Invalid number of payload data bits");
 
-#if JVET_Z0244
     numBits += payload_data_num_bits;
-#endif
 
     setBitstream(&bs);
     uint32_t payloadType = (*sei)->payloadType();
@@ -227,9 +215,7 @@ void SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList
     }
     WRITE_CODE(payloadType, 8, "payload_type");
 
-#if JVET_Z0244
     numBits += 8;
-#endif
 
     uint32_t payloadSize = payload_data_num_bits/8;
     for (; payloadSize >= 0xff; payloadSize -= 0xff)
@@ -251,9 +237,7 @@ void SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList
     xWriteRbspTrailingBits();
   }
 
-#if JVET_Z0244
   return numBits;
-#endif
 }
 
 /**
@@ -1386,7 +1370,6 @@ void SEIWriter::xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei)
   }
 }
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
 void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
 {
   WRITE_CODE(sei.m_siiTimeScale, 32, "sii_time_scale");
@@ -1404,14 +1387,12 @@ void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
     }
   }
 }
-#endif
 
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)
 {
   // intentionally empty
 }
 
-#if JVET_Z0244
 void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics &sei)
 {
   WRITE_UVLC(sei.m_id, "nnpfc_id");
@@ -1488,5 +1469,4 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
 {
   WRITE_UVLC(sei.m_id, "nnpfa_id");
 }
-#endif
 //! \}

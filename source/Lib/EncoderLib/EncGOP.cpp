@@ -235,16 +235,11 @@ void EncGOP::init ( EncLib* pcEncLib )
 
   if (m_pcCfg->getFilmGrainAnalysisEnabled())
   {
-#if JVET_Z0047_FG_IMPROVEMENT
     m_FGAnalyser.init(m_pcCfg->getSourceWidth(), m_pcCfg->getSourceHeight(), m_pcCfg->getSourcePadding(0),
                       m_pcCfg->getSourcePadding(1), IPCOLOURSPACE_UNCHANGED, false, m_pcCfg->getChromaFormatIdc(),
                       *(BitDepths *) m_pcCfg->getInputBitDepth(), *(BitDepths *) m_pcCfg->getBitDepth(),
                       m_pcCfg->getFrameSkip(), m_pcCfg->getFGCSEICompModelPresent(),
                       m_pcCfg->getFilmGrainExternalMask(), m_pcCfg->getFilmGrainExternalDenoised());
-#else
-    m_FGAnalyser.init(m_pcCfg->getSourceWidth(), m_pcCfg->getSourceHeight(), m_pcCfg->getChromaFormatIdc(),
-                      *(BitDepths *) pcEncLib->getBitDepth(), m_pcCfg->getFGCSEICompModelPresent());
-#endif
   }
 
 #if WCG_EXT
@@ -514,43 +509,27 @@ void EncGOP::xWriteSEI (NalUnitType naluType, SEIMessages& seiMessages, AccessUn
   auPos++;
 }
 
-#if JVET_Z0244
 uint32_t EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId)
-#else
-void EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId)
-#endif
 {
   // don't do anything, if we get an empty list
   if (seiMessages.empty())
   {
-#if JVET_Z0244
     return 0;
-#else
-    return;
-#endif
   }
 
-#if JVET_Z0244
   uint32_t numBits = 0;
-#endif
 
   for (SEIMessages::const_iterator sei = seiMessages.begin(); sei!=seiMessages.end(); sei++ )
   {
     SEIMessages tmpMessages;
     tmpMessages.push_back(*sei);
     OutputNALUnit nalu( naluType, m_pcEncLib->getLayerId(), temporalId );
-#if JVET_Z0244
     numBits += m_seiWriter.writeSEImessages(nalu.m_Bitstream, tmpMessages, *m_HRD, false, temporalId);
-#else
-    m_seiWriter.writeSEImessages(nalu.m_Bitstream, tmpMessages, *m_HRD, false, temporalId);
-#endif
     auPos = accessUnit.insert(auPos, new NALUnitEBSP(nalu));
     auPos++;
   }
 
-#if JVET_Z0244
   return numBits;
-#endif
 }
 
 void EncGOP::xClearSEIs(SEIMessages& seiMessages, bool deleteMessages)
@@ -566,11 +545,7 @@ void EncGOP::xClearSEIs(SEIMessages& seiMessages, bool deleteMessages)
 }
 
 // write SEI messages as separate NAL units ordered
-#if JVET_Z0244
 uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, bool testWrite)
-#else
-void EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, bool testWrite)
-#endif
 {
   AccessUnit::iterator itNalu = accessUnit.begin();
 
@@ -632,11 +607,7 @@ void EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duI
 
 
   // And finally everything else one by one
-#if JVET_Z0244
   uint32_t numBits = xWriteSEISeparately(NAL_UNIT_PREFIX_SEI, localMessages, accessUnit, itNalu, temporalId);
-#else
-  xWriteSEISeparately(NAL_UNIT_PREFIX_SEI, localMessages, accessUnit, itNalu, temporalId);
-#endif
   xClearSEIs(localMessages, !testWrite);
 
   if (!testWrite)
@@ -644,16 +615,10 @@ void EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duI
     seiMessages.clear();
   }
 
-#if JVET_Z0244
   return numBits;
-#endif
 }
 
-#if JVET_Z0244
 uint32_t EncGOP::xWriteLeadingSEIMessages (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, const SPS *sps, std::deque<DUData> &duData)
-#else
-void EncGOP::xWriteLeadingSEIMessages (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, const SPS *sps, std::deque<DUData> &duData)
-#endif
 {
   AccessUnit testAU;
   SEIMessages picTimingSEIs = getSeisByType(seiMessages, SEI::PICTURE_TIMING);
@@ -667,11 +632,7 @@ void EncGOP::xWriteLeadingSEIMessages (SEIMessages& seiMessages, SEIMessages& du
   xUpdateTimingSEI(picTiming, duData, sps);
   xUpdateDuInfoSEI(duInfoSeiMessages, picTiming, sps->getMaxTLayers());
   // actual writing
-#if JVET_Z0244
   return xWriteLeadingSEIOrdered(seiMessages, duInfoSeiMessages, accessUnit, temporalId, false);
-#else
-  xWriteLeadingSEIOrdered(seiMessages, duInfoSeiMessages, accessUnit, temporalId, false);
-#endif
 
   // testAU will automatically be cleaned up when losing scope
 }
@@ -893,15 +854,12 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     SEIConstrainedRaslIndication* seiConstrainedRasl = new SEIConstrainedRaslIndication;
     seiMessages.push_back(seiConstrainedRasl);
   }
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   if (m_pcCfg->getSiiSEIEnabled())
   {
     SEIShutterIntervalInfo *seiShutterInterval = new SEIShutterIntervalInfo;
     m_seiEncoder.initSEIShutterIntervalInfo(seiShutterInterval);
     seiMessages.push_back(seiShutterInterval);
   }
-#endif
-#if JVET_Z0244
   if (m_pcCfg->getNNPostFilterSEICharacteristicsEnabled())
   {
     for (int i = 0; i < m_pcCfg->getNNPostFilterSEICharacteristicsNumFilters(); i++)
@@ -911,7 +869,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
       seiMessages.push_back(seiNNPostFilterCharacteristics);
     }
   }
-#endif
 }
 
 void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice)
@@ -992,14 +949,12 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     seiMessages.push_back(fgcSEI);
   }
 
-#if JVET_Z0244
   if (m_pcCfg->getNnPostFilterSEIActivationEnabled())
   {
     SEINeuralNetworkPostFilterActivation *nnpfActivationSEI = new SEINeuralNetworkPostFilterActivation;
     m_seiEncoder.initSEINeuralNetworkPostFilterActivation(nnpfActivationSEI);
     seiMessages.push_back(nnpfActivationSEI);
   }
-#endif
 }
 
 void EncGOP::xCreateScalableNestingSEI(SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t>& subpicIDs, uint16_t maxSubpicIdInPic)
@@ -3043,9 +2998,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       picHeader->setMvdL1ZeroFlag(false);
     }
 
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
     pcSlice->setMeetBiPredT(false);
-#endif
     if ( pcSlice->getSPS()->getUseSMVD() && pcSlice->getCheckLDC() == false
       && picHeader->getMvdL1ZeroFlag() == false
       )
@@ -3115,10 +3068,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       if ( forwardPOC < currPOC && backwardPOC > currPOC )
       {
         pcSlice->setBiDirPred( true, refIdx0, refIdx1 );
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
         constexpr int affineMeTBiPred = 1;
         pcSlice->setMeetBiPredT(abs(forwardPOC - currPOC) <= affineMeTBiPred);
-#endif
       }
       else
       {
@@ -3721,7 +3672,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
     if (m_pcCfg->getFilmGrainAnalysisEnabled())
     {
-#if JVET_Z0047_FG_IMPROVEMENT
       int  filteredFrame    = m_pcCfg->getIntraPeriod() < 1 ? 2 * m_pcCfg->getFrameRate() : m_pcCfg->getIntraPeriod();
       bool ready_to_analyze = pcPic->getPOC() % filteredFrame ? false : true; // either it is mctf denoising or external source for film grain analysis. note: if mctf is used, it is different from mctf for encoding.
       if (ready_to_analyze)
@@ -3729,34 +3679,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         m_FGAnalyser.initBufs(pcPic);
         m_FGAnalyser.estimate_grain(pcPic);
       }
-#else
-      int picPoc        = pcPic->getPOC();
-      int filteredFrame = 0;
-
-      if (m_pcCfg->getIntraPeriod() < 1)
-      {
-        filteredFrame = 2 * m_pcCfg->getFrameRate();
-      }
-      else
-      {
-        filteredFrame = m_pcCfg->getIntraPeriod();
-      }
-
-      if (picPoc % filteredFrame == 0)
-      {
-        pcPic->m_isMctfFiltered = true;
-      }
-      else
-      {
-        pcPic->m_isMctfFiltered = false;
-      }
-
-      if (pcPic->m_isMctfFiltered)
-      {
-        m_FGAnalyser.initBufs(pcPic);
-        m_FGAnalyser.estimate_grain(pcPic);
-      }
-#endif
     }
 
     if( encPic || decPic )
@@ -4250,12 +4172,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         xCreateScalableNestingSEI(leadingSeiMessages, nestedSeiMessages, targetOLS, targetLayers, subpicIDs, maxSubpicIdInPic);
       }
 
-#if JVET_Z0244
       double seiBits = (double)xWriteLeadingSEIMessages( leadingSeiMessages, duInfoSeiMessages, accessUnit, pcSlice->getTLayer(), pcSlice->getSPS(), duData );
       m_gcAnalyzeAll.addBits(seiBits);
-#else
-      xWriteLeadingSEIMessages( leadingSeiMessages, duInfoSeiMessages, accessUnit, pcSlice->getTLayer(), pcSlice->getSPS(), duData );
-#endif
       xWriteDuSEIMessages( duInfoSeiMessages, accessUnit, pcSlice->getTLayer(), duData );
 
       m_AUWriterIf->outputAU( accessUnit );

@@ -455,15 +455,10 @@ FGAnalyser::~FGAnalyser()
 }
 
 // initialize film grain parameters
-#if JVET_Z0047_FG_IMPROVEMENT
 void FGAnalyser::init(const int width, const int height, const int sourcePaddingWidth, const int sourcePaddingHeight,
                       const InputColourSpaceConversion ipCSC, bool clipInputVideoToRec709Range, const ChromaFormat inputChroma,
                       const BitDepths &inputBitDepths, const BitDepths &outputBitDepths, const int frameSkip, 
                       const bool doAnalysis[], std::string filmGrainExternalMask, std::string filmGrainExternalDenoised)
-#else
-void FGAnalyser::init(const int width, const int height, const ChromaFormat inputChroma,
-                      const BitDepths &inputBitDepths, const bool doAnalysis[])
-#endif
 {
   m_log2ScaleFactor = 2;
   for (int i = 0; i < MAX_NUM_COMPONENT; i++)
@@ -471,13 +466,8 @@ void FGAnalyser::init(const int width, const int height, const ChromaFormat inpu
     m_compModel[i].presentFlag           = true;
     m_compModel[i].numModelValues        = 1;
     m_compModel[i].numIntensityIntervals = 1;
-#if JVET_Z0047_FG_IMPROVEMENT
     m_compModel[i].intensityValues.resize(MAX_NUM_INTENSITIES);
     for (int j = 0; j < MAX_NUM_INTENSITIES; j++)
-#else
-    m_compModel[i].intensityValues.resize(MAX_ALLOWED_COMP_MODEL_PAIRS);
-    for (int j = 0; j < MAX_ALLOWED_COMP_MODEL_PAIRS; j++)
-#endif
     {
       m_compModel[i].intensityValues[j].intensityIntervalLowerBound = 10;
       m_compModel[i].intensityValues[j].intensityIntervalUpperBound = 250;
@@ -492,7 +482,6 @@ void FGAnalyser::init(const int width, const int height, const ChromaFormat inpu
 
   // initialize picture parameters and create buffers
   m_chromaFormatIDC = inputChroma;
-#if JVET_Z0047_FG_IMPROVEMENT
   m_bitDepthsIn                 = inputBitDepths;
   m_bitDepths                   = outputBitDepths;
   m_sourcePadding[0]            = sourcePaddingWidth;
@@ -502,9 +491,6 @@ void FGAnalyser::init(const int width, const int height, const ChromaFormat inpu
   m_frameSkip                   = frameSkip;
   m_filmGrainExternalMask       = filmGrainExternalMask;
   m_filmGrainExternalDenoised   = filmGrainExternalDenoised;
-#else
-  m_bitDepths       = inputBitDepths;
-#endif
 
   int margin = m_edgeDetector.m_convWidthG / 2;   // set margin for padding for filtering
 
@@ -529,7 +515,6 @@ void FGAnalyser::init(const int width, const int height, const ChromaFormat inpu
 void FGAnalyser::initBufs(Picture *pic)
 {
   m_originalBuf->copyFrom(pic->getTrueOrigBuf());   // original is here
-#if JVET_Z0047_FG_IMPROVEMENT
   PelStorage dummyPicBufferTO;                      // Only used temporary in yuvFrames.read
   dummyPicBufferTO.create(pic->cs->area);
   if (!m_filmGrainExternalDenoised.empty())         // read external denoised frame
@@ -567,16 +552,6 @@ void FGAnalyser::initBufs(Picture *pic)
   {
     findMask();
   }
-#else
-  if (pic->m_isMctfFiltered)
-  {
-    m_workingBuf->copyFrom(pic->m_bufs[PIC_FILTERED_ORIGINAL_FG]);   // filtered frame for film grain analysis is in here
-  }
-  else
-  {
-    THROW("ERROR: To estimate film grain parameters, you need to have filtered frame, e.g., MCTF filtered frame.\n");
-  }
-#endif
 }
 
 // delete picture buffers
@@ -605,10 +580,6 @@ void FGAnalyser::destroy()
 // main functions for film grain analysis
 void FGAnalyser::estimate_grain(Picture *pic)
 {
-#if !JVET_Z0047_FG_IMPROVEMENT // moved to other place; to be deleted
-  // find mask
-  findMask();
-#endif
 
   // estimate parameters
   estimate_grain_parameters();
@@ -656,20 +627,12 @@ void FGAnalyser::findMask()
     // full resolution
     m_edgeDetector.detect_edges(m_workingBuf, m_maskBuf, bitDepth, compID);
     suppressLowIntensity(*m_workingBuf, *m_maskBuf, bitDepth, compID);
-#if JVET_Z0047_FG_IMPROVEMENT
     m_morphOperation.dilation(m_maskBuf, bitDepth, compID, 4);
-#else
-    m_morphOperation.dilation(m_maskBuf, bitDepth, compID, 1);
-#endif
 
     // subsampled 2
     m_edgeDetector.detect_edges(workingBufSubsampled2, maskSubsampled2, bitDepth, compID);
     suppressLowIntensity(*workingBufSubsampled2, *maskSubsampled2, bitDepth, compID);
-#if JVET_Z0047_FG_IMPROVEMENT
     m_morphOperation.dilation(maskSubsampled2, bitDepth, compID, 3);
-#else
-    m_morphOperation.dilation(maskSubsampled2, bitDepth, compID, 1);
-#endif
 
     // upsample, combine maskBuf and maskUpsampled
     upsample(*maskSubsampled2, *maskUpsampled, compID, 2);
@@ -678,11 +641,7 @@ void FGAnalyser::findMask()
     // subsampled 4
     m_edgeDetector.detect_edges(workingBufSubsampled4, maskSubsampled4, bitDepth, compID);
     suppressLowIntensity(*workingBufSubsampled4, *maskSubsampled4, bitDepth, compID);
-#if JVET_Z0047_FG_IMPROVEMENT
     m_morphOperation.dilation(maskSubsampled4, bitDepth, compID, 2);
-#else
-    m_morphOperation.dilation(maskSubsampled4, bitDepth, compID, 1);
-#endif
 
     // upsample, combine maskBuf and maskUpsampled
     upsample(*maskSubsampled4, *maskUpsampled, compID, 4);
@@ -809,18 +768,6 @@ void FGAnalyser::combineMasks(PelStorage &buff1, PelStorage &buff2, ComponentID 
   }
 }
 
-#if !JVET_Z0047_FG_IMPROVEMENT // to be deleted - unused function
-int FGAnalyser::denoise(Picture *pic)
-{
-  if (pic->m_isMctfFiltered)
-  {
-    return 0;
-  }
-
-  // add custom denoising algorithm
-  return 1;
-}
-#endif
 
 // estimate cut-off frequencies and scaling factors for different intensity intervals
 void FGAnalyser::estimate_grain_parameters()
@@ -891,11 +838,9 @@ void FGAnalyser::estimate_grain_parameters()
               // collect all data for parameter estimation; mean and variance are caluclated on blockSize x blockSize blocks
               mean = meanVar(*m_workingBuf, blockSize, compID, i + k * blockSize, j + m * blockSize, false);
               var  = meanVar(*tmpBuff, blockSize, compID, i + k * blockSize, j + m * blockSize, true);
-#if JVET_Z0047_FG_IMPROVEMENT
               // regularize high variations; controls excessively fluctuating points
               double tmp = 3.0 * pow((double)(var), .5) + .5;
               var = (int)tmp;
-#endif
               if (var < (MAX_REAL_SCALE << (bitDepth - BIT_DEPTH_8))) // limit data points to meaningful values. higher variance can be result of not perfect mask estimation (non-flat regions fall in estimation process)
               {
                 vec_mean.push_back(mean);   // mean of the filtered frame
@@ -934,12 +879,7 @@ void FGAnalyser::estimate_scaling_factors(std::vector<int> &data_x, std::vector<
 
   // Fit the points with the curve. Quantization of the curve using Lloyd Max quantization.
   bool valid;
-#if JVET_Z0047_FG_IMPROVEMENT
   for (int i = 0; i < NUM_PASSES; i++)   // if num_passes = 2, filtering of the dataset points is performed
-#else
-  int  num_passes = 2;
-  for (int i = 0; i < num_passes; i++) // if num_passes = 2, filtering of the dataset points is performed in the second step
-#endif
   {
     valid = fit_function(data_x, data_y, coeffs, scalingVec, ORDER, bitDepth, i);   // n-th order polynomial regression for scaling function estimation
     if (!valid)
@@ -1173,7 +1113,6 @@ int FGAnalyser::count_edges(PelStorage &buffer, int windowSize, ComponentID comp
 // calulate mean and variance for windowSize x windowSize block
 int FGAnalyser::meanVar(PelStorage &buffer, int windowSize, ComponentID compID, int offsetX, int offsetY, bool getVar)
 {
-#if JVET_Z0047_FG_IMPROVEMENT
   double m = 0, v = 0;
 
   for (int x = 0; x < windowSize; x++)
@@ -1192,37 +1131,6 @@ int FGAnalyser::meanVar(PelStorage &buffer, int windowSize, ComponentID compID, 
   }
 
   return (int)(m + .5);
-#else
-  int m = 0, v = 0;
-  int log2WindowsSize = floorLog2(windowSize);
-
-  for (int x = 0; x < windowSize; x++)
-  {
-    for (int y = 0; y < windowSize; y++)
-    {
-      m += buffer.get(compID).at(offsetX + x, offsetY + y);
-    }
-  }
-  m = (m + (1 << (log2WindowsSize + log2WindowsSize - 1))) >> (log2WindowsSize + log2WindowsSize);
-
-  if (getVar)
-  {
-    for (int x = 0; x < windowSize; x++)
-    {
-      for (int y = 0; y < windowSize; y++)
-      {
-        v +=
-          (buffer.get(compID).at(offsetX + x, offsetY + y) - m) * (buffer.get(compID).at(offsetX + x, offsetY + y) - m);
-      }
-    }
-    v = (v + (1 << (log2WindowsSize + log2WindowsSize - 1))) >> (log2WindowsSize + log2WindowsSize);
-    return v;
-  }
-  else
-  {
-    return m;
-  }
-#endif
 }
 
 // Fit data to a function using n-th order polynomial interpolation
@@ -1308,7 +1216,6 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
                     // parameters are used
   }
 
-#if JVET_Z0047_FG_IMPROVEMENT
   for (i = 0; i < tmp_data_x.size(); i++) // remove single points before extending and fitting
   {
     int check = 0;
@@ -1330,12 +1237,6 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
   }
 
   extend_points(tmp_data_x, tmp_data_y, bitDepth);   // find the most left and the most right point, and extend edges
-#else
-  if (second_pass)
-  {
-    extend_points(tmp_data_x, tmp_data_y, bitDepth);   // find the most left and the most right point, and extend edges
-  }
-#endif
 
   CHECK(tmp_data_x.size() > MAXPAIRS, "Maximum dataset size exceeded.");
 
@@ -1957,76 +1858,6 @@ void FGAnalyser::setEstimatedParameters(std::vector<int> &quantizedVec, unsigned
     return;
   }
 
-#if !JVET_Z0047_FG_IMPROVEMENT // misunderstood limitation; number of intervals can be more than 10, but pairs of cut-off frequencies must be less or equal to 10
-                               // to be deleted
-  // if number of intervals is larger than 10, find smallest interval and merge it with the closest one
-  while (m_compModel[compID].numIntensityIntervals > 10)
-  {
-    int diff           = finalIntervalsandScalingFactors[1][0] - finalIntervalsandScalingFactors[0][0];
-    int minIntervalIdx = 0;
-
-    for (int i = 1; i < finalIntervalsandScalingFactors[2].size(); i++)
-    {
-      if (finalIntervalsandScalingFactors[2][i] != 0)
-      {
-        int tmp = finalIntervalsandScalingFactors[1][i] - finalIntervalsandScalingFactors[0][i];
-        if (tmp < diff)
-        {
-          minIntervalIdx = i;
-          diff           = tmp;
-        }
-      }
-    }
-
-    int diffRight = (minIntervalIdx == (finalIntervalsandScalingFactors[2].size() - 1))
-                        || (finalIntervalsandScalingFactors[2][minIntervalIdx + 1] == 0)
-                      ? std::numeric_limits<int>::max()
-                      : abs(finalIntervalsandScalingFactors[2][minIntervalIdx] - finalIntervalsandScalingFactors[2][minIntervalIdx + 1]);
-    int diffLeft = (minIntervalIdx == 0) || (finalIntervalsandScalingFactors[2][minIntervalIdx - 1] == 0)
-                     ? std::numeric_limits<int>::max()
-                     : abs(finalIntervalsandScalingFactors[2][minIntervalIdx] - finalIntervalsandScalingFactors[2][minIntervalIdx - 1]);
-
-    // merge with left or right interval
-    if (diffLeft < diffRight)
-    {
-      int tmp1 =
-        finalIntervalsandScalingFactors[1][minIntervalIdx - 1] - finalIntervalsandScalingFactors[0][minIntervalIdx - 1];
-      int tmp2 =
-        finalIntervalsandScalingFactors[1][minIntervalIdx] - finalIntervalsandScalingFactors[0][minIntervalIdx];
-
-      int newScale = (tmp1 * finalIntervalsandScalingFactors[2][minIntervalIdx - 1]
-                      + tmp2 * finalIntervalsandScalingFactors[2][minIntervalIdx])
-                     / (tmp1 + tmp2);
-
-      finalIntervalsandScalingFactors[1][minIntervalIdx - 1] = finalIntervalsandScalingFactors[1][minIntervalIdx];
-      finalIntervalsandScalingFactors[2][minIntervalIdx - 1] = newScale;
-      for (int i = 0; i < 3; i++)
-      {
-        finalIntervalsandScalingFactors[i].erase(finalIntervalsandScalingFactors[i].begin() + minIntervalIdx);
-      }
-    }
-    else
-    {
-      int tmp1 =
-        finalIntervalsandScalingFactors[1][minIntervalIdx + 1] - finalIntervalsandScalingFactors[0][minIntervalIdx + 1];
-      int tmp2 =
-        finalIntervalsandScalingFactors[1][minIntervalIdx] - finalIntervalsandScalingFactors[0][minIntervalIdx];
-
-      int newScale = (tmp1 * finalIntervalsandScalingFactors[2][minIntervalIdx + 1]
-                      + tmp2 * finalIntervalsandScalingFactors[2][minIntervalIdx])
-                     / (tmp1 + tmp2);
-
-      finalIntervalsandScalingFactors[1][minIntervalIdx] = finalIntervalsandScalingFactors[1][minIntervalIdx + 1];
-      finalIntervalsandScalingFactors[2][minIntervalIdx] = newScale;
-      for (int i = 0; i < 3; i++)
-      {
-        finalIntervalsandScalingFactors[i].erase(finalIntervalsandScalingFactors[i].begin() + minIntervalIdx + 1);
-      }
-    }
-
-    m_compModel[compID].numIntensityIntervals--;
-  }
-#endif
 
   // set final interval boundaries and scaling factors. check if some interval has scaling factor 0, and do not encode
   // them within SEI.
@@ -2043,9 +1874,7 @@ void FGAnalyser::setEstimatedParameters(std::vector<int> &quantizedVec, unsigned
       j++;
     }
   }
-#if JVET_Z0047_FG_IMPROVEMENT
   CHECK(j != m_compModel[compID].numIntensityIntervals, "Check film grain intensity levels");
-#endif
 }
 
 long double FGAnalyser::ldpow(long double n, unsigned p)
@@ -2137,39 +1966,26 @@ void FGAnalyser::extend_points(std::vector<int> &data_x, std::vector<int> &data_
   // extend points to the left
   int    step  = POINT_STEP;
   double scale = POINT_SCALE;
-#if JVET_Z0047_FG_IMPROVEMENT
   int num_extra_point_left  = MAX_NUM_POINT_TO_EXTEND;
   int num_extra_point_right = MAX_NUM_POINT_TO_EXTEND;
   while (xmin >= step && ymin > 1 && num_extra_point_left > 0)
-#else
-  while (xmin >= step && ymin > 1)
-#endif
   {
     xmin -= step;
     ymin = static_cast<int>(ymin / scale);
     data_x.push_back(xmin);
     data_y.push_back(ymin);
-#if JVET_Z0047_FG_IMPROVEMENT
     num_extra_point_left--;
-#endif
   }
 
   // extend points to the right
-#if JVET_Z0047_FG_IMPROVEMENT
   while (xmax + step <= ((1 << bitDepth) - 1) && ymax > 1 && num_extra_point_right > 0)
-#else
-  while (xmax + step <= ((1 << bitDepth) - 1) && ymax > 1)
-#endif
   {
     xmax += step;
     ymax = static_cast<int>(ymax / scale);
     data_x.push_back(xmax);
     data_y.push_back(ymax);
-#if JVET_Z0047_FG_IMPROVEMENT
     num_extra_point_right--;
-#endif
   }
-#if JVET_Z0047_FG_IMPROVEMENT
   for (int i = 0; i < data_x.size(); i++)
   {
     if (data_x[i] < MIN_INTENSITY || data_x[i] > MAX_INTENSITY)
@@ -2179,6 +1995,5 @@ void FGAnalyser::extend_points(std::vector<int> &data_x, std::vector<int> &data_
       i--;
     }
   }
-#endif
 }
 

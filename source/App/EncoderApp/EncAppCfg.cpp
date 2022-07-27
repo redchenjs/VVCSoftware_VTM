@@ -739,9 +739,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp0              (0, 65535,  0, 256 * 6);
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp1              (0, 65535,  0, 256 * 6);
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
-#endif
 
 #if ENABLE_TRACING
   string sTracingRule;
@@ -965,9 +963,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MMVD",                                            m_MMVD,                                            true, "Enable Merge mode with Motion Vector Difference (0:off, 1:on)  [default: 1]")
   ("Affine",                                          m_Affine,                                         false, "Enable affine prediction (0:off, 1:on)  [default: off]")
   ("AffineType",                                      m_AffineType,                                      true,  "Enable affine type prediction (0:off, 1:on)  [default: on]" )
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   ("AdaptBypassAffineMe",                             m_adaptBypassAffineMe,                            false, "Adaptively bypass affine ME (0: off, 1:on, defaul: off]")
-#endif
   ("PROF",                                            m_PROF,                                           false, "Enable Prediction refinement with optical flow for affine mode (0:off, 1:on)  [default: off]")
   ("BIO",                                             m_BIO,                                            false, "Enable bi-directional optical flow")
   ("IMV",                                             m_ImvMode,                                            1, "Adaptive MV precision Mode (IMV)\n"
@@ -1425,11 +1421,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEISARISarWidth",                                 m_sariSarWidth,                           0, "Specifies the Sample Aspect Ratio Width of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
   ("SEISARISarHeight",                                m_sariSarHeight,                          0, "Specifies the Sample Aspect Ratio Height of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
   ("MCTSEncConstraint",                               m_MCTSEncConstraint,                               false, "For MCTS, constrain motion vectors at tile boundaries")
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   ("SEIShutterIntervalEnabled",                       m_siiSEIEnabled,                          false, "Controls if shutter interval information SEI message is enabled")
   ("SEISiiTimeScale",                                 m_siiSEITimeScale,                        27000000u, "Specifies sii_time_scale")
   ("SEISiiInputNumUnitsInShutterInterval",            cfg_siiSEIInputNumUnitsInSI,              cfg_siiSEIInputNumUnitsInSI, "Specifies sub_layer_num_units_in_shutter_interval")
-#endif
 
 #if ENABLE_TRACING
   ("TraceChannelsList",                               bTracingChannelsList,                              false, "List all available tracing channels")
@@ -1448,13 +1442,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIFGCCompModelPresentComp1",                     m_fgcSEICompModelPresent[1],                       false, "Specifies the presence of film grain modelling on colour component 1.")
   ("SEIFGCCompModelPresentComp2",                     m_fgcSEICompModelPresent[2],                       false, "Specifies the presence of film grain modelling on colour component 2.")
   ("SEIFGCAnalysisEnabled",                           m_fgcSEIAnalysisEnabled,                           false, "Control adaptive film grain parameter estimation - film grain analysis")
-#if JVET_Z0047_FG_IMPROVEMENT
   ("SEIFGCExternalMask",                              m_fgcSEIExternalMask,                       string( "" ), "Read external file with mask for film grain analysis. If empty string, use internally calculated mask.")
   ("SEIFGCExternalDenoised",                          m_fgcSEIExternalDenoised,                   string( "" ), "Read external file with denoised sequence for film grain analysis. If empty string, use MCTF for denoising.")
   ("SEIFGCTemporalFilterPastRefs",                    m_fgcSEITemporalFilterPastRefs,          TF_DEFAULT_REFS, "Number of past references for temporal prefilter")
   ("SEIFGCTemporalFilterFutureRefs",                  m_fgcSEITemporalFilterFutureRefs,        TF_DEFAULT_REFS, "Number of future references for temporal prefilter")
   ("SEIFGCTemporalFilterStrengthFrame*",              m_fgcSEITemporalFilterStrengths, std::map<int, double>(), "Strength for every * frame in FGC-specific temporal filter, where * is an integer.")
-#endif
   ("SEIFGCPerPictureSEI",                             m_fgcSEIPerPictureSEI,                             false, "Film Grain SEI is added for each picture as speciffied in RDD5 to ensure bit accurate synthesis in tricky mode")
   ("SEIFGCNumIntensityIntervalMinus1Comp0",           m_fgcSEINumIntensityIntervalMinus1[0],                0u, "Specifies the number of intensity intervals minus1 on colour component 0.")
   ("SEIFGCNumIntensityIntervalMinus1Comp1",           m_fgcSEINumIntensityIntervalMinus1[1],                0u, "Specifies the number of intensity intervals minus1 on colour component 1.")
@@ -1668,7 +1660,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()(cOSS2.str(), m_olsPtlIdx[i], 0);
   }
 
-#if JVET_Z0244
   opts.addOptions()("SEINNPostFilterCharacteristicsEnabled",  m_nnPostFilterSEICharacteristicsEnabled, false, "Control generation of the Neural Network Post Filter Characteristics SEI messages");
   opts.addOptions()( "SEINNPostFilterCharacteristicsNumFilters",                                      m_nnPostFilterSEICharacteristicsNumFilters,                                  0, "Specifies the number of Neural Network Post Filter Characteristics SEI messages" );
   for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; i++)
@@ -1776,7 +1767,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
     opts.addOptions()("SEINNPostFilterActivationId", m_nnPostFilterSEIActivationId , 0u,        "Id of the Neural Network Post Filter on current picture");
   }
-#endif
 
   po::setDefaults(opts);
   po::ErrorReporter err;
@@ -2800,14 +2790,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       msg(WARNING, "*************************************************************************\n");
       m_fgcSEIPersistenceFlag = false;
     }
-#if JVET_Z0047_FG_IMPROVEMENT
     if (m_fgcSEIAnalysisEnabled && m_fgcSEITemporalFilterStrengths.empty())
     {
       // By default: in random-acces = filter RAPs, in all-intra = filter every frame, otherwise = filter every 2s 
       int filteredFrame = m_iIntraPeriod < 1 ? 2 * m_iFrameRate : m_iIntraPeriod;
       m_fgcSEITemporalFilterStrengths[filteredFrame] = 1.5;
     }
-#endif
     uint32_t numModelCtr;
     if (m_fgcSEICompModelPresent[0])
     {
@@ -3150,7 +3138,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #if JVET_Z0120_SII_SEI_PROCESSING
   m_ShutterFilterEnable = false;
 #endif
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   if (m_siiSEIEnabled)
   {
     assert(m_siiSEITimeScale >= 0 && m_siiSEITimeScale <= MAX_UINT);
@@ -3226,7 +3213,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
 #endif
   }
-#endif
 
 
   if( m_costMode == COST_LOSSLESS_CODING )
@@ -4615,7 +4601,6 @@ bool EncAppCfg::xCheckParameter()
   }
 #endif
 
-#if JVET_Z0244
   if (m_nnPostFilterSEICharacteristicsEnabled)
   {
     for (int i = 0; i < m_nnPostFilterSEICharacteristicsNumFilters; i++)
@@ -4643,7 +4628,6 @@ bool EncAppCfg::xCheckParameter()
   {
     xConfirmPara(m_nnPostFilterSEIActivationId > (1 << 20) - 1, "SEINNPostFilterActivationId must be in the range of 0 to 2^20-1");
   }
-#endif
 
   xConfirmPara(m_log2ParallelMergeLevel < 2, "Log2ParallelMergeLevel should be larger than or equal to 2");
   xConfirmPara(m_log2ParallelMergeLevel > m_uiCTUSize, "Log2ParallelMergeLevel should be less than or equal to CTU size");
@@ -4929,9 +4913,7 @@ void EncAppCfg::xPrintParameter()
     if ( m_Affine )
     {
       msg( VERBOSE, "AffineType:%d ", m_AffineType );
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
       msg( VERBOSE, "AdaptBypassAffineMe:%d ", m_adaptBypassAffineMe);
-#endif
     }
     msg(VERBOSE, "PROF:%d ", m_PROF);
     msg(VERBOSE, "SbTMVP:%d ", m_sbTmvpEnableFlag);
@@ -5051,9 +5033,7 @@ void EncAppCfg::xPrintParameter()
   msg(VERBOSE, "TemporalFilter:%d/%d ", m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs);
   msg(VERBOSE, "SEI CTI:%d ", m_ctiSEIEnabled);
   msg(VERBOSE, "BIM:%d ", m_bimEnabled);
-#if JVET_Z0047_FG_IMPROVEMENT
   msg(VERBOSE, "SEI FGC:%d ", m_fgcSEIEnabled);
-#endif
 
 #if EXTENSION_360_VIDEO
   m_ext360.outputConfigurationSummary();

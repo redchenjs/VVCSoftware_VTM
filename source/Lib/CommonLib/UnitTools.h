@@ -200,9 +200,7 @@ namespace PU
   void getIbcMVPsEncOnly(PredictionUnit &pu, Mv* mvPred, int& nbPred);
   bool getDerivedBV(PredictionUnit &pu, const Mv& currentMv, Mv& derivedMv);
   bool checkDMVRCondition(const PredictionUnit& pu);
-#if JVET_Z0111_ADAPT_BYPASS_AFFINE_ME
   void getNeighborAffineInfo(const PredictionUnit& pu, int& numNeighborAvai, int& numNeighborAffine);
-#endif
 
 }
 

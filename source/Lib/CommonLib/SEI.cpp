@@ -477,13 +477,9 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
     case SEI::EXTENDED_DRAP_INDICATION:             return "Extended DRAP indication";
     case SEI::CONSTRAINED_RASL_ENCODING:            return "Constrained RASL encoding";
     case SEI::VDI_SEI_ENVELOPE:                     return "Video decoding interface SEI envelope";
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
     case SEI::SHUTTER_INTERVAL_INFO:                return "Shutter interval information";
-#endif
-#if JVET_Z0244
     case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS: return "Neural network post-filter characteristics";
     case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:      return "Neural network post-filter activation";
-#endif
     default:                                        return "Unknown";
   }
 }

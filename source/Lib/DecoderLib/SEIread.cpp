@@ -346,12 +346,10 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIScalabilityDimensionInfo;
       xParseSEIScalabilityDimensionInfo((SEIScalabilityDimensionInfo&) *sei, payloadSize, pDecodedMessageOutputStream );
       break;
-#ifdef JVET_Z0046_Green_Metadata
     case SEI::GREEN_METADATA:
       sei = new SEIGreenMetadataInfo;
       xParseSEIGreenMetadataInfo((SEIGreenMetadataInfo&) *sei,  payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     case SEI::MULTIVIEW_ACQUISITION_INFO:
       sei = new SEIMultiviewAcquisitionInfo;
       xParseSEIMultiviewAcquisitionInfo((SEIMultiviewAcquisitionInfo&) *sei, payloadSize, pDecodedMessageOutputStream );
@@ -404,13 +402,10 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIConstrainedRaslIndication;
       xParseSEIConstrainedRaslIndication((SEIConstrainedRaslIndication&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
     case SEI::SHUTTER_INTERVAL_INFO:
       sei = new SEIShutterIntervalInfo;
       xParseSEIShutterInterval((SEIShutterIntervalInfo&)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
-#if JVET_Z0244
     case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
       sei = new SEINeuralNetworkPostFilterCharacteristics;
       xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics&)*sei, payloadSize, pDecodedMessageOutputStream);
@@ -419,7 +414,6 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEINeuralNetworkPostFilterActivation;
       xParseSEINNPostFilterActivation((SEINeuralNetworkPostFilterActivation&)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -550,7 +544,6 @@ void SEIReader::xParseSEIuserDataUnregistered(SEIuserDataUnregistered &sei, uint
   }
 }
 
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
 void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   int32_t i;
@@ -573,7 +566,6 @@ void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t p
     }
   }
 }
-#endif
 
 /**
  * parse bitstream bs and unpack a decoded picture hash SEI message
@@ -729,7 +721,6 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
 }
 
 
-#ifdef JVET_Z0046_Green_Metadata
 void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   uint32_t code;
@@ -874,7 +865,6 @@ void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t p
   }
 }
 
-#endif
 
 
 void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD &hrd, std::ostream* decodedMessageOutputStream, std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>> *seiList)
@@ -2477,7 +2467,6 @@ void SEIReader::xParseSEIConstrainedRaslIndication( SEIConstrainedRaslIndication
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
 }
 
-#if JVET_Z0244
 void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
@@ -2604,7 +2593,6 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_id" );
   sei.m_id =val;
 }
-#endif
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE
 void SeiCfgFileDump::write360SeiDump (std::string decoded360MessageFileName, SEIMessages& seis, const SPS* sps)

@@ -36,9 +36,7 @@
 #ifndef __SEIWRITE__
 #define __SEIWRITE__
 
-#if JVET_Z0244
 #include <fstream>
-#endif
 
 #include "VLCWriter.h"
 #include "CommonLib/SEI.h"
@@ -53,11 +51,7 @@ public:
   SEIWriter() {};
   virtual ~SEIWriter() {};
 
-#if JVET_Z0244
   uint32_t writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList, HRD &hrd, bool isNested, const uint32_t temporalId);
-#else
-  void writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList, HRD &hrd, bool isNested, const uint32_t temporalId);
-#endif
 
 protected:
   void xWriteSEIuserDataUnregistered(const SEIuserDataUnregistered &sei);
@@ -97,16 +91,12 @@ protected:
   void xWriteSEIContentColourVolume(const SEIContentColourVolume &sei);
   void xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei);
   void xWriteSEIAnnotatedRegions                  (const SEIAnnotatedRegions& sei);
-#if JVET_Z0120_SHUTTER_INTERVAL_SEI
   void xWriteSEIShutterInterval(const SEIShutterIntervalInfo& sei);
-#endif
   void xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &hrd, const uint32_t temporalId);
   void xWriteByteAlign();
-#if JVET_Z0244
   void xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
   void xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCharacteristics& sei);
   void xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei);
-#endif
 protected:
   HRD m_nestingHrd;
 };
