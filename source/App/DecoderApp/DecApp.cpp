@@ -464,7 +464,7 @@ uint32_t DecApp::decode()
       // update file bitdepth shift if recon bitdepth changed between sequences
       for( uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++ )
       {
-        int reconBitdepth = pcListPic->front()->cs->sps->getBitDepth((ChannelType)channelType);
+        int reconBitdepth = pcListPic->front()->m_bitDepths[(ChannelType)channelType];
         int fileBitdepth  = m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].getFileBitdepth(channelType);
         int bitdepthShift = m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].getBitdepthShift(channelType);
         if( fileBitdepth + bitdepthShift != reconBitdepth )
@@ -475,7 +475,7 @@ uint32_t DecApp::decode()
 
       if (!m_SEIFGSFileName.empty() && !m_videoIOYuvSEIFGSFile[nalu.m_nuhLayerId].isOpen())
       {
-        const BitDepths &bitDepths = pcListPic->front()->cs->sps->getBitDepths();   // use bit depths of first reconstructed picture.
+        const BitDepths &bitDepths = pcListPic->front()->m_bitDepths;   // use bit depths of first reconstructed picture.
         for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
         {
           if (m_outputBitDepth[channelType] == 0)
@@ -513,7 +513,7 @@ uint32_t DecApp::decode()
       {
         for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
         {
-          int reconBitdepth = pcListPic->front()->cs->sps->getBitDepth((ChannelType) channelType);
+          int reconBitdepth = pcListPic->front()->m_bitDepths[(ChannelType)channelType];
           int fileBitdepth  = m_videoIOYuvSEIFGSFile[nalu.m_nuhLayerId].getFileBitdepth(channelType);
           int bitdepthShift = m_videoIOYuvSEIFGSFile[nalu.m_nuhLayerId].getBitdepthShift(channelType);
           if (fileBitdepth + bitdepthShift != reconBitdepth)
@@ -525,7 +525,7 @@ uint32_t DecApp::decode()
 
       if (!m_SEICTIFileName.empty() && !m_cVideoIOYuvSEICTIFile[nalu.m_nuhLayerId].isOpen())
       {
-        const BitDepths& bitDepths = pcListPic->front()->cs->sps->getBitDepths(); // use bit depths of first reconstructed picture.
+        const BitDepths& bitDepths = pcListPic->front()->m_bitDepths; // use bit depths of first reconstructed picture.
         for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
         {
           if (m_outputBitDepth[channelType] == 0)
@@ -712,7 +712,7 @@ uint32_t DecApp::decode()
 
       if ((!m_shutterIntervalPostFileName.empty()) && (!openedPostFile) && getShutterFilterFlag())
       {
-        const BitDepths &bitDepths = pcListPic->front()->cs->sps->getBitDepths();
+        const BitDepths &bitDepths = pcListPic->front()->m_bitDepths;
         for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
         {
           if (m_outputBitDepth[channelType] == 0)
@@ -933,21 +933,24 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
   PicList::iterator iterPic   = pcListPic->begin();
   int numPicsNotYetDisplayed = 0;
   int dpbFullness = 0;
-  const SPS* activeSPS = (pcListPic->front()->cs->sps);
   uint32_t maxNumReorderPicsHighestTid;
   uint32_t maxDecPicBufferingHighestTid;
-  uint32_t maxNrSublayers = activeSPS->getMaxTLayers();
-
   const VPS* referredVPS = pcListPic->front()->cs->vps;
-  const int temporalId = ( m_iMaxTemporalLayer == -1 || m_iMaxTemporalLayer >= maxNrSublayers ) ? maxNrSublayers - 1 : m_iMaxTemporalLayer;
 
   if( referredVPS == nullptr || referredVPS->m_numLayersInOls[referredVPS->m_targetOlsIdx] == 1 )
   {
+    const SPS* activeSPS = (pcListPic->front()->cs->sps);
+    const int temporalId = (m_iMaxTemporalLayer == -1 || m_iMaxTemporalLayer >= activeSPS->getMaxTLayers())
+      ? activeSPS->getMaxTLayers() - 1
+      : m_iMaxTemporalLayer;
     maxNumReorderPicsHighestTid = activeSPS->getMaxNumReorderPics( temporalId );
     maxDecPicBufferingHighestTid = activeSPS->getMaxDecPicBuffering( temporalId );
   }
   else
   {
+    const int temporalId = (m_iMaxTemporalLayer == -1 || m_iMaxTemporalLayer >= referredVPS->getMaxSubLayers())
+      ? referredVPS->getMaxSubLayers() - 1
+      : m_iMaxTemporalLayer;
     maxNumReorderPicsHighestTid = referredVPS->getMaxNumReorderPics( temporalId );
     maxDecPicBufferingHighestTid = referredVPS->getMaxDecPicBuffering( temporalId );
   }
@@ -1054,10 +1057,10 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         if (!m_reconFileName.empty())
         {
           const Window &conf = pcPic->getConformanceWindow();
-          const SPS* sps = pcPic->cs->sps;
-          ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+          ChromaFormat chromaFormatIDC = pcPic->m_chromaFormatIDC;
           if( m_upscaledOutput )
           {
+            const SPS* sps = pcPic->cs->sps;
             m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture( *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
           }
           else

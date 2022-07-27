@@ -1052,6 +1052,8 @@ void  DecLib::xCreateUnavailablePicture( const PPS *pps, const int iUnavailableP
   cFillPic->cs->vps = m_parameterSetManager.getVPS(sps->getVPSId());
   cFillPic->cs->create(cFillPic->cs->sps->getChromaFormatIdc(), Area(0, 0, cFillPic->cs->pps->getPicWidthInLumaSamples(), cFillPic->cs->pps->getPicHeightInLumaSamples()), true, (bool)(cFillPic->cs->sps->getPLTMode()));
   cFillPic->allocateNewSlice();
+  cFillPic->m_chromaFormatIDC = sps->getChromaFormatIdc();
+  cFillPic->m_bitDepths = sps->getBitDepths();
 
   cFillPic->slices[0]->initSlice();
 
