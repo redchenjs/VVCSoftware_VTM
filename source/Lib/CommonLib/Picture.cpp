@@ -282,6 +282,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   mixedNaluTypesInPicFlag = pps.getMixedNaluTypesInPicFlag();
   nonReferencePictureFlag = picHeader->getNonReferencePictureFlag();
   m_chromaFormatIDC = sps.getChromaFormatIdc();
+  m_bitDepths = sps.getBitDepths();
 
   if (m_spliceIdx == nullptr)
   {

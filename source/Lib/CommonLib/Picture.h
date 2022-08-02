@@ -271,6 +271,7 @@ public:
   std::vector<AQpLayer*> aqlayer;
 
   ChromaFormat m_chromaFormatIDC;
+  BitDepths    m_bitDepths;
 
 #if !KEEP_PRED_AND_RESI_SIGNALS
 private:
