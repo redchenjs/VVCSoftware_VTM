@@ -5426,6 +5426,31 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the bit depth of the input tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_sample_idc = 4.
   \\
+  \Option{SEINNPostFilterCharacteristicsAuxInpIdc\emph{i}} &
+  \Default{0} &
+  Specifies that auxiliary input data may be present in the neural network input tensor for any allowed luma-only, chroma-only, and luma-chroma configuration.
+  \\
+  \Option{SEINNPostFilterCharacteristicsSepColDescriptionFlag\emph{i}} &
+  \Default{false} &
+  Specifies that the colour primaries, transfer characteristics, and matrix coefficients of the picture that results from the neural-network post filtering may be different than for the input to the filter.
+  \par
+  \begin{tabular}{p{0.49\columnwidth}}
+    When true (non-zero) the syntax elements nnpfc_colour_primaries, nnpfc_transfer_characteristic, and nnpfc_matrix_coeffs specify the colour primaries, transfer characteristics, and matrix coefficients of the picture that results from the neural-network post filtering. \\
+    When false the syntax elements nnpfc_colour_primaries, nnpfc_transfer_chracteristics, and nnpfc_matrix_coeffs are assumed to be the same as the input to the filter. \\
+  \end{tabular}
+  \\
+  \Option{SEINNPostFilterCharacteristicsColPrimaries\emph{i}} &
+  \Default{0} &
+  Specifies the colour primaries of the picture resulting from applying the neural-network post-filter specified in the SEI message, rather than the colour primaries used for the CLVS.
+  \\
+  \Option{SEINNPostFilterCharacteristicsTransCharacteristics\emph{i}} &
+  \Default{0} &
+  Specifies the transfer characteristics of the picture resulting from applying the neural-network post-filter specified in the SEI message, rather than the transfer characteristics used for the CLVS.
+  \\
+  \Option{SEINNPostFilterCharacteristicsMatrixCoeffs\emph{i}} &
+  \Default{0} &
+  Specifies the matrix coefficients of the picture resulting from applying the neural-network post-filter specified in the SEI message, rather than the matrix coefficients used for the CLVS
+  \\
   \Option{SEINNPostFilterCharacteristicsInpOrderIdc\emph{i}} &
   \Default{0} &
   Specifies the method of ordering the input sample arrays for the \emph{i}-th neural network post-filter.
