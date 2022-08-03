@@ -54,7 +54,7 @@
 
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AA0100                                       1 // JVET-AA0100 AHG9: On auxiliary input and separate colour description in the neural-network post-filter characteristics SEI message
+#define JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS        1 // JVET-AA0100 AHG9: On auxiliary input and separate colour description in the neural-network post-filter characteristics SEI message
 
 //########### place macros to be be kept below this line ###############
 #define JVET_X0143_ALF_APS_ID_OFFSET                      0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.

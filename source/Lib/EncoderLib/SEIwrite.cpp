@@ -1419,7 +1419,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     {
       WRITE_UVLC(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
     }
-#if JVET_AA0100
+#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
     WRITE_UVLC(sei.m_AuxInpIdc,"nnpfc_aux_inp_idc");
     WRITE_FLAG(sei.m_SepColDescriptionFlag,"nnpfc_sep_col_desc_flag");
 

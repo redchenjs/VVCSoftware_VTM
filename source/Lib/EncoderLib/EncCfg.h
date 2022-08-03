@@ -675,7 +675,7 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsInpSampleIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0100
+#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
   uint32_t                m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsColPrimaries[MAX_NUM_NN_POST_FILTERS];
@@ -1796,16 +1796,16 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(uint32_t outTensorBitDepthMinus8, int filterIdx) { m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx] = outTensorBitDepthMinus8; }
   uint32_t    getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx]; }
-#if JVET_AA0100
-  void        setNNPostFilterSEICharacteristicsAuxInpIdc(uint32_t AuxInpIdc, int filterIdx)                             { m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx] = AuxInpIdc; }  
+#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
+  void        setNNPostFilterSEICharacteristicsAuxInpIdc(uint32_t auxInpIdc, int filterIdx)                             { m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx] = auxInpIdc; }  
   uint32_t    getNNPostFilterSEICharacteristicsAuxInpIdc(int filterIdx) const                                           { return m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx]; } 
-  void        setNNPostFilterSEICharacteristicsSepColDescriptionFlag(bool SepColDescriptionFlag, int filterIdx)         { m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[filterIdx] = SepColDescriptionFlag; }  
+  void        setNNPostFilterSEICharacteristicsSepColDescriptionFlag(bool sepColDescriptionFlag, int filterIdx)         { m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[filterIdx] = sepColDescriptionFlag; }  
   bool        getNNPostFilterSEICharacteristicsSepColDescriptionFlag(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[filterIdx]; } 
-  void        setNNPostFilterSEICharacteristicsColPrimaries(uint32_t ColPrimaries, int filterIdx)                       { m_nnPostFilterSEICharacteristicsColPrimaries[filterIdx] = ColPrimaries; }
+  void        setNNPostFilterSEICharacteristicsColPrimaries(uint32_t colPrimaries, int filterIdx)                       { m_nnPostFilterSEICharacteristicsColPrimaries[filterIdx] = colPrimaries; }
   uint32_t    getNNPostFilterSEICharacteristicsColPrimaries(int filterIdx) const                                        { return m_nnPostFilterSEICharacteristicsColPrimaries[filterIdx]; }
-  void        setNNPostFilterSEICharacteristicsTransCharacteristics(uint32_t TransCharacteristics, int filterIdx)       { m_nnPostFilterSEICharacteristicsTransCharacteristics[filterIdx] = TransCharacteristics; }
+  void        setNNPostFilterSEICharacteristicsTransCharacteristics(uint32_t transCharacteristics, int filterIdx)       { m_nnPostFilterSEICharacteristicsTransCharacteristics[filterIdx] = transCharacteristics; }
   uint32_t    getNNPostFilterSEICharacteristicsTransCharacteristics(int filterIdx) const                                { return m_nnPostFilterSEICharacteristicsTransCharacteristics[filterIdx]; }
-  void        setNNPostFilterSEICharacteristicsMatrixCoeffs(uint32_t MatrixCoeffs, int filterIdx)                       { m_nnPostFilterSEICharacteristicsMatrixCoeffs[filterIdx] = MatrixCoeffs; }
+  void        setNNPostFilterSEICharacteristicsMatrixCoeffs(uint32_t matrixCoeffs, int filterIdx)                       { m_nnPostFilterSEICharacteristicsMatrixCoeffs[filterIdx] = matrixCoeffs; }
   uint32_t    getNNPostFilterSEICharacteristicsMatrixCoeffs(int filterIdx) const                                        { return m_nnPostFilterSEICharacteristicsMatrixCoeffs[filterIdx]; }
 #endif 
   void        setNNPostFilterSEICharacteristicsComponentLastFlag(bool componentLastFlag, int filterIdx)                 { m_nnPostFilterSEICharacteristicsComponentLastFlag[filterIdx] = componentLastFlag; }

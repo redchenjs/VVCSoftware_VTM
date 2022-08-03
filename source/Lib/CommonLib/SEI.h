@@ -1077,7 +1077,7 @@ public:
   , m_outTensorBitDepthMinus8(0)
   , m_componentLastFlag(false)
   , m_inpSampleIdc(0)
-#if JVET_AA0100
+#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
   , m_AuxInpIdc(0)
   , m_SepColDescriptionFlag(false)
   , m_ColPrimaries(0)
@@ -1120,7 +1120,7 @@ public:
   uint32_t       m_outTensorBitDepthMinus8;
   bool           m_componentLastFlag;
   uint32_t       m_inpSampleIdc;
-#if JVET_AA0100 
+#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS 
   uint32_t       m_AuxInpIdc;
   bool           m_SepColDescriptionFlag;
   uint8_t        m_ColPrimaries;
