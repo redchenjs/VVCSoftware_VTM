@@ -604,16 +604,16 @@ function( _bb_enable_warnings_helper warning_options_ )
   
   if( CMAKE_CXX_COMPILER_ID MATCHES "^(AppleClang|Clang)$" )
     if( NOT XCODE )
-      set( _bb_warning_options -Wall )
+      set( _bb_warning_options )
     endif()
   elseif( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" )
-    set( _bb_warning_options -Wall -fdiagnostics-show-option )
+    set( _bb_warning_options -fdiagnostics-show-option )
   elseif( CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" )
     # Do we have to override the warning level?
   elseif( CMAKE_CXX_COMPILER_ID STREQUAL "Intel" )
     # Do we have to override the warning level on Windows/MSVC?
     if( ( NOT MSVC ) AND ( NOT XCODE ) )
-      set( _bb_warning_options -Wall )
+      set( _bb_warning_options )
     endif()
   elseif( CMAKE_CXX_COMPILER_ID STREQUAL "Cray" )
     # Do we have to override the warning level?    
