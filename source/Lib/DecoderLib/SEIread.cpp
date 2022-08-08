@@ -2478,7 +2478,14 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfc_mode_idc" );
   sei.m_modeIdc = val;
 
+#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
+  sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_purpose_and_formatting_flag");
+  sei.m_purposeAndFormattingFlag = val;
+
+  if (sei.m_purposeAndFormattingFlag)
+#else
   if (sei.m_modeIdc == 1)
+#endif
   {
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_purpose");
     sei.m_purpose = val;

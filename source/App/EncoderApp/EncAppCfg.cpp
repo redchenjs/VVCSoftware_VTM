@@ -1672,6 +1672,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     modeIdc << "SEINNPostFilterCharacteristicsModeIdc" << i;
     opts.addOptions()(modeIdc.str(), m_nnPostFilterSEICharacteristicsModeIdc[i], 0u, "Specifies the Neural Network Post Filter IDC in the Neural Network Post Filter Characteristics SEI message");
 
+#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
+    std::ostringstream purposeAndFormattingFlag;
+    purposeAndFormattingFlag << "SEINNPostFilterCharacteristicsPurposeAndFormattingFlag" << i;
+    opts.addOptions()(purposeAndFormattingFlag.str(), m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[i], false, "Specifies whether the filter purpose, input formatting, output formatting and complexity are present in the Neural Network Post Filter Characteristics SEI message");
+#endif
+
     std::ostringstream purpose;
     purpose << "SEINNPostFilterCharacteristicsPurpose" << i;
     opts.addOptions()(purpose.str(), m_nnPostFilterSEICharacteristicsPurpose[i], 0u, "Specifies the purpose in the Neural Network Post Filter Characteristics SEI message");
