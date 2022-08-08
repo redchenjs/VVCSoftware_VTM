@@ -1080,6 +1080,13 @@ public:
   , m_outTensorBitDepthMinus8(0)
   , m_componentLastFlag(false)
   , m_inpSampleIdc(0)
+#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
+  , m_AuxInpIdc(0)
+  , m_SepColDescriptionFlag(false)
+  , m_ColPrimaries(0)
+  , m_TransCharacteristics(0)
+  , m_MatrixCoeffs(0)
+#endif
   , m_inpOrderIdc(0)
   , m_outSampleIdc(0)
   , m_outOrderIdc(0)
@@ -1119,6 +1126,13 @@ public:
   uint32_t       m_outTensorBitDepthMinus8;
   bool           m_componentLastFlag;
   uint32_t       m_inpSampleIdc;
+#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS 
+  uint32_t       m_AuxInpIdc;
+  bool           m_SepColDescriptionFlag;
+  uint8_t        m_ColPrimaries;
+  uint8_t        m_TransCharacteristics;
+  uint8_t        m_MatrixCoeffs;
+#endif
   uint32_t       m_inpOrderIdc;
   uint32_t       m_outSampleIdc;
   uint32_t       m_outOrderIdc;
