@@ -1125,6 +1125,53 @@ void EncApp::xInitLibCfg()
   {
     m_cEncLib.setNNPostFilterSEICharacteristicsId                      (m_nnPostFilterSEICharacteristicsId[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsModeIdc                 (m_nnPostFilterSEICharacteristicsModeIdc[i], i);
+#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
+    m_cEncLib.setNNPostFilterSEICharacteristicsPurposeAndFormattingFlag( m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[i], i);
+    if (m_cEncLib.getNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(i))
+    {
+      m_cEncLib.setNNPostFilterSEICharacteristicsPurpose                 (m_nnPostFilterSEICharacteristicsPurpose[i], i);
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 2  || m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 4)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsOutSubWidthCFlag        (m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsOutSubHeightCFlag       (m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[i], i);
+      }
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 3  || m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 4)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthInLumaSamples   (m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightInLumaSamples  (m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], i);
+      }
+      m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsInpSampleIdc            (m_nnPostFilterSEICharacteristicsInpSampleIdc[i], i);
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsInpSampleIdc(i) == 4)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i], i);
+      }
+      m_cEncLib.setNNPostFilterSEICharacteristicsInpOrderIdc             (m_nnPostFilterSEICharacteristicsInpOrderIdc[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsOutSampleIdc            (m_nnPostFilterSEICharacteristicsOutSampleIdc[i], i);
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsOutSampleIdc(i) == 4)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i], i);
+      }
+      m_cEncLib.setNNPostFilterSEICharacteristicsOutOrderIdc             (m_nnPostFilterSEICharacteristicsOutOrderIdc[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsConstantPatchSizeFlag   ( m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsPatchWidthMinus1        ( m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsPatchHeightMinus1       ( m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsOverlap                 ( m_nnPostFilterSEICharacteristicsOverlap[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsPaddingType             ( m_nnPostFilterSEICharacteristicsPaddingType[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsComplexityIdc           ( m_nnPostFilterSEICharacteristicsComplexityIdc[i], i);
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsComplexityIdc(i) > 0)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeFlag       ( m_nnPostFilterSEICharacteristicsParameterTypeFlag[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3     ( m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsNumParametersIdc        ( m_nnPostFilterSEICharacteristicsNumParametersIdc[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsNumKmacOperationsIdc    ( m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], i);
+      }
+    }
+    if (m_cEncLib.getNNPostFilterSEICharacteristicsModeIdc(i) == 1)
+    {
+      m_cEncLib.setNNPostFilterSEICharacteristicsPayloadFilename(m_nnPostFilterSEICharacteristicsPayloadFilename[i], i);
+    }
+#else
     m_cEncLib.setNNPostFilterSEICharacteristicsPurpose                 (m_nnPostFilterSEICharacteristicsPurpose[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsOutSubWidthCFlag        (m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsOutSubHeightCFlag       (m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[i], i);
@@ -1148,6 +1195,7 @@ void EncApp::xInitLibCfg()
     m_cEncLib.setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3     ( m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsNumParametersIdc        ( m_nnPostFilterSEICharacteristicsNumParametersIdc[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsNumKmacOperationsIdc    ( m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], i);
+#endif
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
   m_cEncLib.setNnPostFilterSEIActivationId                       (m_nnPostFilterSEIActivationId);

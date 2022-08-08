@@ -1068,6 +1068,9 @@ public:
   SEINeuralNetworkPostFilterCharacteristics()
   : m_id(0)
   , m_modeIdc(0)
+#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
+  , m_purposeAndFormattingFlag(false)
+#endif
   , m_purpose(0)
   , m_outSubWidthCFlag(false)
   , m_outSubHeightCFlag(false)
@@ -1104,6 +1107,9 @@ public:
 
   uint32_t       m_id;
   uint32_t       m_modeIdc;
+#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
+  bool           m_purposeAndFormattingFlag;
+#endif
   uint32_t       m_purpose;
   bool           m_outSubWidthCFlag;
   bool           m_outSubHeightCFlag;
