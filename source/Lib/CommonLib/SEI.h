@@ -1089,8 +1089,14 @@ public:
   , m_purposeAndFormattingFlag(false)
 #endif
   , m_purpose(0)
+#if JVET_AA0054_CHROMA_FORMAT_FLAG
+    , m_outSubCFlag(0)
+    , m_outSubWidthC(1)
+    , m_outSubHeightC(1)
+#else
   , m_outSubWidthCFlag(false)
   , m_outSubHeightCFlag(false)
+#endif
   , m_picWidthInLumaSamples(0)
   , m_picHeightInLumaSamples(0)
   , m_inpTensorBitDepthMinus8(0)
@@ -1135,8 +1141,14 @@ public:
   bool           m_purposeAndFormattingFlag;
 #endif
   uint32_t       m_purpose;
+#if JVET_AA0054_CHROMA_FORMAT_FLAG
+  bool           m_outSubCFlag;
+  uint8_t        m_outSubWidthC;
+  uint8_t        m_outSubHeightC;
+#else
   bool           m_outSubWidthCFlag;
   bool           m_outSubHeightCFlag;
+#endif
   uint32_t       m_picWidthInLumaSamples;
   uint32_t       m_picHeightInLumaSamples;
   uint32_t       m_inpTensorBitDepthMinus8;
