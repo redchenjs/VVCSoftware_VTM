@@ -151,6 +151,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &h
   case SEI::SAMPLE_ASPECT_RATIO_INFO:
     xWriteSEISampleAspectRatioInfo(*static_cast<const SEISampleAspectRatioInfo*>(&sei));
     break;
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+  case SEI::PHASE_INDICATION:
+    xWriteSEIPhaseIndication(*static_cast<const SEIPhaseIndication*>(&sei));
+    break;
+#endif
   case SEI::ANNOTATED_REGIONS:
     xWriteSEIAnnotatedRegions(*static_cast<const SEIAnnotatedRegions*>(&sei));
     break;
@@ -1200,6 +1205,16 @@ void SEIWriter::xWriteSEISampleAspectRatioInfo(const SEISampleAspectRatioInfo &s
     }
   }
 }
+
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+void SEIWriter::xWriteSEIPhaseIndication(const SEIPhaseIndication& sei)
+{
+  WRITE_CODE((uint32_t)sei.m_horPhaseNum, 8, "hor_phase_num");
+  WRITE_CODE((uint32_t)sei.m_horPhaseDenMinus1, 8, "hor_phase_den_minus1");
+  WRITE_CODE((uint32_t)sei.m_verPhaseNum, 8, "ver_phase_num");
+  WRITE_CODE((uint32_t)sei.m_verPhaseDenMinus1, 8, "ver_phase_den_minus1");
+}
+#endif
 
 void SEIWriter::xWriteSEIUserDataRegistered(const SEIUserDataRegistered &sei)
 {

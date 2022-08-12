@@ -974,6 +974,18 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setSariAspectRatioIdc                                (m_sariAspectRatioIdc);
   m_cEncLib.setSariSarWidth                                      (m_sariSarWidth);
   m_cEncLib.setSariSarHeight                                     (m_sariSarHeight);
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+  m_cEncLib.setPhaseIndicationSEIEnabledFullResolution           (m_phaseIndicationSEIEnabledFullResolution);
+  m_cEncLib.setHorPhaseNumFullResolution                         (m_piHorPhaseNumFullResolution);
+  m_cEncLib.setHorPhaseDenMinus1FullResolution                   (m_piHorPhaseDenMinus1FullResolution);
+  m_cEncLib.setVerPhaseNumFullResolution                         (m_piVerPhaseNumFullResolution);
+  m_cEncLib.setVerPhaseDenMinus1FullResolution                   (m_piVerPhaseDenMinus1FullResolution);
+  m_cEncLib.setPhaseIndicationSEIEnabledReducedResolution        (m_phaseIndicationSEIEnabledReducedResolution);
+  m_cEncLib.setHorPhaseNumReducedResolution                      (m_piHorPhaseNumReducedResolution);
+  m_cEncLib.setHorPhaseDenMinus1ReducedResolution                (m_piHorPhaseDenMinus1ReducedResolution);
+  m_cEncLib.setVerPhaseNumReducedResolution                      (m_piVerPhaseNumReducedResolution);
+  m_cEncLib.setVerPhaseDenMinus1ReducedResolution                (m_piVerPhaseDenMinus1ReducedResolution);
+#endif
   m_cEncLib.setMCTSEncConstraint                                 ( m_MCTSEncConstraint);
   m_cEncLib.setMasteringDisplaySEI                               ( m_masteringDisplay );
 #if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI

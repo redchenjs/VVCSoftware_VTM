@@ -414,6 +414,12 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEINeuralNetworkPostFilterActivation;
       xParseSEINNPostFilterActivation((SEINeuralNetworkPostFilterActivation&)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+    case SEI::PHASE_INDICATION:
+      sei = new SEIPhaseIndication;
+      xParseSEIPhaseIndication((SEIPhaseIndication&)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -2620,6 +2626,26 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_id" );
   sei.m_id =val;
 }
+
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+void SEIReader::xParseSEIPhaseIndication(SEIPhaseIndication& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
+{
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  uint32_t val;
+
+  sei_read_code(pDecodedMessageOutputStream, 8, val, "hor_phase_num");
+  sei.m_horPhaseNum = val;
+  sei_read_code(pDecodedMessageOutputStream, 8, val, "hor_phase_den_minus1");
+  sei.m_horPhaseDenMinus1 = val;
+  sei_read_code(pDecodedMessageOutputStream, 8, val, "ver_phase_num");
+  sei.m_verPhaseNum = val;
+  sei_read_code(pDecodedMessageOutputStream, 8, val, "ver_phase_den_minus1");
+  sei.m_verPhaseDenMinus1 = val;
+
+  CHECK(sei.m_horPhaseNum > sei.m_horPhaseDenMinus1 + 1, "The value of hor_phase_num shall be in the range of 0 to hor_phase_den_minus1 + 1, inclusive");
+  CHECK(sei.m_verPhaseNum > sei.m_verPhaseDenMinus1 + 1, "The value of ver_phase_num shall be in the range of 0 to ver_phase_den_minus1 + 1, inclusive");
+}
+#endif
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE
 void SeiCfgFileDump::write360SeiDump (std::string decoded360MessageFileName, SEIMessages& seis, const SPS* sps)

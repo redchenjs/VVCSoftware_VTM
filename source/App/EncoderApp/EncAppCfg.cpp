@@ -1420,6 +1420,18 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEISARIAspectRatioIdc",                           m_sariAspectRatioIdc,                     0, "Specifies the Sample Aspect Ratio IDC of Sample Aspect Ratio Information SEI messages")
   ("SEISARISarWidth",                                 m_sariSarWidth,                           0, "Specifies the Sample Aspect Ratio Width of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
   ("SEISARISarHeight",                                m_sariSarHeight,                          0, "Specifies the Sample Aspect Ratio Height of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+  ("SEIPhaseIndicationFullResolution",                m_phaseIndicationSEIEnabledFullResolution,          false, "Control generation of Phase Indication SEI messages for full resolution pictures.")
+  ("SEIPIHorPhaseNumFullResolution",                  m_piHorPhaseNumFullResolution,                      0, "Specifies the Horizontal Phase Numerator of Phase Indication SEI messages for full resolution pictures.")
+  ("SEIPIHorPhaseDenMinus1FullResolution",            m_piHorPhaseDenMinus1FullResolution,                0, "Specifies the Horizontal Phase Denominator minus 1 of Phase Indication SEI messages for full resolution pictures.")
+  ("SEIPIVerPhaseNumFullResolution",                  m_piVerPhaseNumFullResolution,                      0, "Specifies the Vertical Phase Numerator of Phase Indication SEI messages for full resolution pictures.")
+  ("SEIPIVerPhaseDenMinus1FullResolution",            m_piVerPhaseDenMinus1FullResolution,                0, "Specifies the Vertical Phase Denominator minus 1 of Phase Indication SEI messages for full resolution pictures.")
+  ("SEIPhaseIndicationReducedResolution",             m_phaseIndicationSEIEnabledReducedResolution,       false, "Control generation of Phase Indication SEI messages for reduced resolution pictures.")
+  ("SEIPIHorPhaseNumReducedResolution",               m_piHorPhaseNumReducedResolution,                   0, "Specifies the Horizontal Phase Numerator of Phase Indication SEI messages for reduced resolution pictures.")
+  ("SEIPIHorPhaseDenMinus1ReducedResolution",         m_piHorPhaseDenMinus1ReducedResolution,             0, "Specifies the Horizontal Phase Denominator minus 1 of Phase Indication SEI messages for reduced resolution pictures.")
+  ("SEIPIVerPhaseNumReducedResolution",               m_piVerPhaseNumReducedResolution,                   0, "Specifies the Vertical Phase Numerator of Phase Indication SEI messages for reduced resolution pictures.")
+  ("SEIPIVerPhaseDenMinus1ReducedResolution",         m_piVerPhaseDenMinus1ReducedResolution,             0, "Specifies the Vertical Phase Denominator minus 1 of Phase Indication SEI messages for reduced resolution pictures.")
+#endif
   ("MCTSEncConstraint",                               m_MCTSEncConstraint,                               false, "For MCTS, constrain motion vectors at tile boundaries")
   ("SEIShutterIntervalEnabled",                       m_siiSEIEnabled,                          false, "Controls if shutter interval information SEI message is enabled")
   ("SEISiiTimeScale",                                 m_siiSEITimeScale,                        27000000u, "Specifies sii_time_scale")
@@ -4663,6 +4675,31 @@ bool EncAppCfg::xCheckParameter()
   {
     xConfirmPara(m_nnPostFilterSEIActivationId > (1 << 20) - 1, "SEINNPostFilterActivationId must be in the range of 0 to 2^20-1");
   }
+
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+  if (m_phaseIndicationSEIEnabledFullResolution)
+  {
+    xConfirmPara(m_piHorPhaseNumFullResolution < 0, "m_piHorPhaseNumFullResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piHorPhaseDenMinus1FullResolution < 0, "m_piHorPhaseDenMinus1FullResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piVerPhaseNumFullResolution < 0, "m_piVerPhaseNumFullResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piVerPhaseDenMinus1FullResolution < 0, "m_piVerPhaseDenMinus1FullResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piHorPhaseDenMinus1FullResolution > 511, "m_piHorPhaseDenMinus1FullResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piHorPhaseNumFullResolution > m_piHorPhaseDenMinus1FullResolution + 1, "m_piHorPhaseNumFullResolution must be in the range of 0 to m_piHorPhaseDenMinus1FullResolution + 1, inclusive");
+    xConfirmPara(m_piVerPhaseDenMinus1FullResolution > 511, "m_piVerPhaseDenMinus1FullResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piVerPhaseNumFullResolution > m_piVerPhaseDenMinus1FullResolution + 1, "m_piVerPhaseNumFullResolution must be in the range of 0 to m_piVerPhaseDenMinus1FullResolution + 1, inclusive");
+  }
+  if (m_phaseIndicationSEIEnabledReducedResolution)
+  {
+    xConfirmPara(m_piHorPhaseNumReducedResolution < 0, "m_piHorPhaseNumReducedResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piHorPhaseDenMinus1ReducedResolution < 0, "m_piHorPhaseDenMinus1ReducedResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piVerPhaseNumReducedResolution < 0, "m_piVerPhaseNumReducedResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piVerPhaseDenMinus1ReducedResolution < 0, "m_piVerPhaseDenMinus1ReducedResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piHorPhaseDenMinus1ReducedResolution > 511, "m_piHorPhaseDenMinus1ReducedResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piHorPhaseNumReducedResolution > m_piHorPhaseDenMinus1ReducedResolution + 1, "m_piHorPhaseNumReducedResolution must be in the range of 0 to m_piHorPhaseDenMinus1ReducedResolution + 1, inclusive");
+    xConfirmPara(m_piVerPhaseDenMinus1ReducedResolution > 511, "m_piVerPhaseDenMinus1ReducedResolution must be in the range of 0 to 511, inclusive");
+    xConfirmPara(m_piVerPhaseNumReducedResolution > m_piVerPhaseDenMinus1ReducedResolution + 1, "m_piVerPhaseNumReducedResolution must be in the range of 0 to m_piVerPhaseDenMinus1ReducedResolution + 1, inclusive");
+  }
+#endif
 
   xConfirmPara(m_log2ParallelMergeLevel < 2, "Log2ParallelMergeLevel should be larger than or equal to 2");
   xConfirmPara(m_log2ParallelMergeLevel > m_uiCTUSize, "Log2ParallelMergeLevel should be less than or equal to CTU size");

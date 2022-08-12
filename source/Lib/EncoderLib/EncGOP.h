@@ -326,6 +326,9 @@ protected:
   void xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS *sps, const PPS *pps);
   void xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice);
   void xCreateFrameFieldInfoSEI (SEIMessages& seiMessages, Slice *slice, bool isField);
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+  void xCreatePhaseIndicationSEIMessages (SEIMessages& seiMessages, Slice* slice, int ppsId);
+#endif
   void xCreatePictureTimingSEI  (int IRAPGOPid, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, SEIMessages& duInfoSeiMessages, Slice *slice, bool isField, std::deque<DUData> &duData);
   void xUpdateDuData(AccessUnit &testAU, std::deque<DUData> &duData);
   void xUpdateTimingSEI(SEIPictureTiming *pictureTimingSEI, std::deque<DUData> &duData, const SPS *sps);
@@ -345,7 +348,11 @@ protected:
   int xWriteSPS( AccessUnit &accessUnit, const SPS *sps, const int layerId = 0 );
   int xWritePPS( AccessUnit &accessUnit, const PPS *pps, const int layerId = 0 );
   int xWriteAPS( AccessUnit &accessUnit, APS *aps, const int layerId, const bool isPrefixNUT );
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+  int xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool bSeqFirst, const int layerIdx, bool newPPS);
+#else
   int xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool bSeqFirst, const int layerIdx);
+#endif
   int xWritePicHeader( AccessUnit &accessUnit, PicHeader *picHeader );
 
   void applyDeblockingFilterMetric( Picture* pcPic, uint32_t uiNumSlices );

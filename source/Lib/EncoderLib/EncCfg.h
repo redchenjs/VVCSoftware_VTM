@@ -650,6 +650,18 @@ protected:
   int                   m_sariAspectRatioIdc;
   int                   m_sariSarWidth;
   int                   m_sariSarHeight;
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+  bool                  m_phaseIndicationSEIEnabledFullResolution;
+  int                   m_horPhaseNumFullResolution;
+  int                   m_horPhaseDenMinus1FullResolution;
+  int                   m_verPhaseNumFullResolution;
+  int                   m_verPhaseDenMinus1FullResolution;
+  bool                  m_phaseIndicationSEIEnabledReducedResolution;
+  int                   m_horPhaseNumReducedResolution;
+  int                   m_horPhaseDenMinus1ReducedResolution;
+  int                   m_verPhaseNumReducedResolution;
+  int                   m_verPhaseDenMinus1ReducedResolution;
+#endif
   bool      m_MCTSEncConstraint;
   SEIMasteringDisplay m_masteringDisplay;
 #if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
@@ -2035,6 +2047,28 @@ public:
   void     setSariSarWidth(const int val)                                                                   { m_sariSarWidth = val; }
   int      getSariSarHeight() const                                                                         { return m_sariSarHeight; }
   void     setSariSarHeight(const int val)                                                                  { m_sariSarHeight = val; }
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+  bool     getPhaseIndicationSEIEnabledFullResolution() const                                               { return m_phaseIndicationSEIEnabledFullResolution; }
+  void     setPhaseIndicationSEIEnabledFullResolution(const bool val)                                       { m_phaseIndicationSEIEnabledFullResolution = val; }
+  int      getHorPhaseNumFullResolution() const                                                             { return m_horPhaseNumFullResolution; }
+  void     setHorPhaseNumFullResolution(const int val)                                                      { m_horPhaseNumFullResolution = val; }
+  int      getHorPhaseDenMinus1FullResolution() const                                                       { return m_horPhaseDenMinus1FullResolution; }
+  void     setHorPhaseDenMinus1FullResolution(const int val)                                                { m_horPhaseDenMinus1FullResolution = val; }
+  int      getVerPhaseNumFullResolution() const                                                             { return m_verPhaseNumFullResolution; }
+  void     setVerPhaseNumFullResolution(const int   val)                                                    { m_verPhaseNumFullResolution = val; }
+  int      getVerPhaseDenMinus1FullResolution() const                                                       { return m_verPhaseDenMinus1FullResolution; }
+  void     setVerPhaseDenMinus1FullResolution(const int val)                                                { m_verPhaseDenMinus1FullResolution = val; }
+  bool     getPhaseIndicationSEIEnabledReducedResolution() const                                            { return m_phaseIndicationSEIEnabledReducedResolution; }
+  void     setPhaseIndicationSEIEnabledReducedResolution(const bool val)                                    { m_phaseIndicationSEIEnabledReducedResolution = val; }
+  int      getHorPhaseNumReducedResolution() const                                                          { return m_horPhaseNumReducedResolution; }
+  void     setHorPhaseNumReducedResolution(const int val)                                                   { m_horPhaseNumReducedResolution = val; }
+  int      getHorPhaseDenMinus1ReducedResolution() const                                                    { return m_horPhaseDenMinus1ReducedResolution; }
+  void     setHorPhaseDenMinus1ReducedResolution(const int val)                                             { m_horPhaseDenMinus1ReducedResolution = val; }
+  int      getVerPhaseNumReducedResolution() const                                                          { return m_verPhaseNumReducedResolution; }
+  void     setVerPhaseNumReducedResolution(const int   val)                                                 { m_verPhaseNumReducedResolution = val; }
+  int      getVerPhaseDenMinus1ReducedResolution() const                                                    { return m_verPhaseDenMinus1ReducedResolution; }
+  void     setVerPhaseDenMinus1ReducedResolution(const int val)                                             { m_verPhaseDenMinus1ReducedResolution = val; }
+#endif
   void  setMCTSEncConstraint(bool b)                                 { m_MCTSEncConstraint = b; }
   bool  getMCTSEncConstraint()                                       { return m_MCTSEncConstraint; }
   void  setMasteringDisplaySEI(const SEIMasteringDisplay &src)       { m_masteringDisplay = src; }

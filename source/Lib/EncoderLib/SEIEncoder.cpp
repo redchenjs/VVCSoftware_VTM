@@ -394,6 +394,29 @@ void SEIEncoder::initSEISampleAspectRatioInfo(SEISampleAspectRatioInfo* seiSampl
   }
 }
 
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+void SEIEncoder::initSEIPhaseIndication(SEIPhaseIndication* seiPhaseIndication, int ppsId)
+{
+  CHECK(!(m_isInitialized), "seiPhaseIndication already initialized");
+  CHECK(!(seiPhaseIndication != nullptr), "Need a seiPhaseIndication for initialization (got nullptr)");
+
+  if (ppsId == 0)
+  {
+    seiPhaseIndication->m_horPhaseNum = m_pcCfg->getHorPhaseNumFullResolution();
+    seiPhaseIndication->m_horPhaseDenMinus1 = m_pcCfg->getHorPhaseDenMinus1FullResolution();
+    seiPhaseIndication->m_verPhaseNum = m_pcCfg->getVerPhaseNumFullResolution();
+    seiPhaseIndication->m_verPhaseDenMinus1 = m_pcCfg->getVerPhaseDenMinus1FullResolution();
+  }
+  else if (ppsId == ENC_PPS_ID_RPR)
+  {
+    seiPhaseIndication->m_horPhaseNum = m_pcCfg->getHorPhaseNumReducedResolution();
+    seiPhaseIndication->m_horPhaseDenMinus1 = m_pcCfg->getHorPhaseDenMinus1ReducedResolution();
+    seiPhaseIndication->m_verPhaseNum = m_pcCfg->getVerPhaseNumReducedResolution();
+    seiPhaseIndication->m_verPhaseDenMinus1 = m_pcCfg->getVerPhaseDenMinus1ReducedResolution();
+  }
+}
+#endif
+
 //! initialize scalable nesting SEI message.
 //! Note: The SEI message structures input into this function will become part of the scalable nesting SEI and will be
 //!       automatically freed, when the nesting SEI is disposed.

@@ -779,6 +779,19 @@ protected:
   int                   m_sariSarWidth;
   int                   m_sariSarHeight;
 
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+  bool                  m_phaseIndicationSEIEnabledFullResolution;
+  int                   m_piHorPhaseNumFullResolution;
+  int                   m_piHorPhaseDenMinus1FullResolution;
+  int                   m_piVerPhaseNumFullResolution;
+  int                   m_piVerPhaseDenMinus1FullResolution;
+  bool                  m_phaseIndicationSEIEnabledReducedResolution;
+  int                   m_piHorPhaseNumReducedResolution;
+  int                   m_piHorPhaseDenMinus1ReducedResolution;
+  int                   m_piVerPhaseNumReducedResolution;
+  int                   m_piVerPhaseDenMinus1ReducedResolution;
+#endif
+
   bool      m_MCTSEncConstraint;
 
   // weighted prediction
