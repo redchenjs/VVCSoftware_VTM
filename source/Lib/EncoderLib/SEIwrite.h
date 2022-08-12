@@ -83,6 +83,9 @@ protected:
   void xWriteSEIDepthRepInfoElement               (double f);
   void xWriteSEISubpictureLevelInfo               (const SEISubpicureLevelInfo &sei);
   void xWriteSEISampleAspectRatioInfo             (const SEISampleAspectRatioInfo &sei);
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+  void xWriteSEIPhaseIndication                   (const SEIPhaseIndication&sei);
+#endif
   void xWriteSEIConstrainedRaslIndication         (const SEIConstrainedRaslIndication &sei);
   void xWriteSEIUserDataRegistered(const SEIUserDataRegistered& sei);
   void xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacteristics& sei);

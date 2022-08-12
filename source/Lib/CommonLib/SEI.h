@@ -94,6 +94,9 @@ public:
     SHUTTER_INTERVAL_INFO                = 209,
     NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS = 210,
     NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+    PHASE_INDICATION                     = 212,
+#endif
   };
 
   SEI() {}
@@ -435,6 +438,20 @@ public:
   int                   m_sariSarWidth;
   int                   m_sariSarHeight;
 };
+
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+class SEIPhaseIndication : public SEI
+{
+public:
+  PayloadType payloadType() const { return PHASE_INDICATION; }
+  SEIPhaseIndication() {}
+  virtual ~SEIPhaseIndication() {}
+  int                   m_horPhaseNum;
+  int                   m_horPhaseDenMinus1;
+  int                   m_verPhaseNum;
+  int                   m_verPhaseDenMinus1;
+};
+#endif
 
 static constexpr uint32_t ISO_IEC_11578_LEN=16;
 

@@ -3733,6 +3733,7 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   209 & Shutter Interval Information             & Table \ref{tab:sei-sii} \\
   210 & Neural network post-filter characteristics & Table \ref{tab:sei-nn-post-filter-characteristics} \\
   211 & Neural netowrk post-filter activation & Table \ref{tab:sei-nn-post-filter-activation} \\
+  212 & Phase indication                         & Table \ref{tab:sei-phase-indication} \\
 \end{SEIListTable}
 %%
 %% SEI messages
@@ -5574,6 +5575,49 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the id of the neural network post-filter.
   \\
+\end{OptionTableNoShorthand}
+
+\begin{OptionTableNoShorthand}{Phase indication}{tab:sei-phase-indication}
+\Option{SEIPhaseIndicationFullResolution} &
+\Default{false} &
+Control generation of Phase Indication SEI messages for full resolution pictures.
+\\
+\Option{SEIPIHorPhaseNumFullResolution} &
+\Default{0} &
+Specifies the Horizontal Phase Numerator of Phase Indication SEI messages for full resolution pictures.
+\\
+\Option{SEIPIHorPhaseDenMinus1FullResolution} &
+\Default{0} &
+Specifies the Horizontal Phase Denominator minus 1 of Phase Indication SEI messages for full resolution pictures.
+\\
+\Option{SEIPIVerPhaseNumFullResolution} &
+\Default{0} &
+Specifies the Vertical Phase Numerator of Phase Indication SEI messages for full resolution pictures.
+\\
+\Option{SEIPIVerPhaseDenMinus1FullResolution} &
+\Default{0} &
+Specifies the Vertical Phase Denominator minus 1 of Phase Indication SEI messages for full resolution pictures.
+\\
+\Option{SEIPhaseIndicationReducedResolution} &
+\Default{false} &
+Control generation of Phase Indication SEI messages for reduced resolution pictures.
+\\
+\Option{SEIPIHorPhaseNumReducedResolution} &
+\Default{0} &
+Specifies the Horizontal Phase Numerator of Phase Indication SEI messages for reduced resolution pictures.
+\\
+\Option{SEIPIHorPhaseDenMinus1ReducedResolution} &
+\Default{0} &
+Specifies the Horizontal Phase Denominator minus 1 of Phase Indication SEI messages for reduced resolution pictures.
+\\
+\Option{SEIPIVerPhaseNumReducedResolution} &
+\Default{0} &
+Specifies the Vertical Phase Numerator of Phase Indication SEI messages for reduced resolution pictures.
+\\
+\Option{SEIPIVerPhaseDenMinus1ReducedResolution} &
+\Default{0} &
+Specifies the Vertical Phase Denominator minus 1 of Phase Indication SEI messages for reduced resolution pictures.
+\\
 \end{OptionTableNoShorthand}
 
 %\Option{SEITimeCode} &

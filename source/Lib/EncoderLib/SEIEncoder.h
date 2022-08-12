@@ -77,6 +77,9 @@ public:
   void initSEIGcmp(SEIGeneralizedCubemapProjection *sei);
   void initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SPS *sps);
   void initSEISampleAspectRatioInfo(SEISampleAspectRatioInfo *sei);
+#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
+  void initSEIPhaseIndication(SEIPhaseIndication* sei, int ppsId);
+#endif
   void initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *sei);
   void initSEIMasteringDisplayColourVolume(SEIMasteringDisplayColourVolume *sei);
   void initSEIContentLightLevel(SEIContentLightLevelInfo *sei);
