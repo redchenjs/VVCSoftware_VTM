@@ -1845,7 +1845,7 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
             {
               double bestCostDct2NoIsp = m_modeCtrl->getMtsFirstPassNoIspCost();
               double bestIspCost       = m_modeCtrl->getIspCost();
-              CHECKD( bestCostDct2NoIsp <= bestIspCost, "wrong cost!" );
+              CHECKD( cu.ispMode && bestCostDct2NoIsp <= bestIspCost, "wrong cost!" );
               double threshold = 1.4;
 
               double lfnstThreshold = 1.01 * threshold;
