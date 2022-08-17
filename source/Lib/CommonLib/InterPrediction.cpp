@@ -253,8 +253,10 @@ bool InterPrediction::xCheckIdenticalMotion( const PredictionUnit &pu )
     {
       int RefPOCL0 = slice.getRefPic( REF_PIC_LIST_0, pu.refIdx[0] )->getPOC();
       int RefPOCL1 = slice.getRefPic( REF_PIC_LIST_1, pu.refIdx[1] )->getPOC();
+      int RefLayerId0 = slice.getRefPic( REF_PIC_LIST_0, pu.refIdx[0] )->layerId;
+      int RefLayerId1 = slice.getRefPic( REF_PIC_LIST_1, pu.refIdx[1] )->layerId;
 
-      if( RefPOCL0 == RefPOCL1 )
+      if (RefPOCL0 == RefPOCL1 && RefLayerId0 == RefLayerId1)
       {
         if( !pu.cu->affine )
         {
