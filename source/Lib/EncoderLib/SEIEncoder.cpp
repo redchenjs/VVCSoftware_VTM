@@ -1192,8 +1192,12 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
 
     if(sei->m_purpose == 2 || sei->m_purpose == 4)
     {
+#if JVET_AA0054_CHROMA_FORMAT_FLAG
+      sei->m_outSubCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubCFlag(filterIdx);
+#else
       sei->m_outSubWidthCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubWidthCFlag(filterIdx);
       sei->m_outSubHeightCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubHeightCFlag(filterIdx);
+#endif
     }
     if(sei->m_purpose == 3 || sei->m_purpose == 4)
     {

@@ -682,8 +682,12 @@ protected:
   bool                    m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[MAX_NUM_NN_POST_FILTERS];
 #endif
   uint32_t                m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AA0054_CHROMA_FORMAT_FLAG
+  bool                    m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
+#else
   bool                    m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[MAX_NUM_NN_POST_FILTERS];
+#endif
   uint32_t                m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
@@ -1803,10 +1807,15 @@ public:
   void        setNNPostFilterSEICharacteristicsPurpose(uint32_t purpose, int filterIdx)                                 { m_nnPostFilterSEICharacteristicsPurpose[filterIdx] = purpose; }
   uint32_t    getNNPostFilterSEICharacteristicsPurpose(int filterIdx) const                                             { return m_nnPostFilterSEICharacteristicsPurpose[filterIdx]; }
 
+#if JVET_AA0054_CHROMA_FORMAT_FLAG
+  void        setNNPostFilterSEICharacteristicsOutSubCFlag(bool SubCFlag, int filterIdx) { m_nnPostFilterSEICharacteristicsOutSubCFlag[filterIdx] = SubCFlag; }
+  bool        getNNPostFilterSEICharacteristicsOutSubCFlag(int filterIdx) const { return m_nnPostFilterSEICharacteristicsOutSubCFlag[filterIdx]; }
+#else
   void        setNNPostFilterSEICharacteristicsOutSubWidthCFlag(bool outSubWidthCFlag, int filterIdx)                   { m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[filterIdx] = outSubWidthCFlag; }
   bool        getNNPostFilterSEICharacteristicsOutSubWidthCFlag(int filterIdx) const                                    { return m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsOutSubHeightCFlag(bool outSubHeightCFlag, int filterIdx)                 { m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[filterIdx] = outSubHeightCFlag; }
   bool        getNNPostFilterSEICharacteristicsOutSubHeightCFlag(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[filterIdx]; }
+#endif
   void        setNNPostFilterSEICharacteristicsPicWidthInLumaSamples(uint32_t picWidthInLumaSamples, int filterIdx)     { m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[filterIdx] = picWidthInLumaSamples; }
   uint32_t    getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsPicHeightInLumaSamples(uint32_t picHeightInLumaSamples, int filterIdx)   { m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[filterIdx] = picHeightInLumaSamples; }
