@@ -251,10 +251,10 @@ bool InterPrediction::xCheckIdenticalMotion( const PredictionUnit &pu )
   {
     if( pu.refIdx[0] >= 0 && pu.refIdx[1] >= 0 )
     {
-      int RefPOCL0 = slice.getRefPic( REF_PIC_LIST_0, pu.refIdx[0] )->getPOC();
-      int RefPOCL1 = slice.getRefPic( REF_PIC_LIST_1, pu.refIdx[1] )->getPOC();
+      const Picture *refPicL0 = slice.getRefPic(REF_PIC_LIST_0, pu.refIdx[0]);
+      const Picture *refPicL1 = slice.getRefPic(REF_PIC_LIST_1, pu.refIdx[1]);
 
-      if( RefPOCL0 == RefPOCL1 )
+      if (refPicL0 == refPicL1)
       {
         if( !pu.cu->affine )
         {
