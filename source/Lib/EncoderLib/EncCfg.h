@@ -49,8 +49,6 @@
 
 #include "EncCfgParam.h"
 
-using namespace EncCfgParam;
-
 #if JVET_O0756_CALCULATE_HDRMETRICS
 #include "HDRLib/inc/DistortionMetric.H"
 #endif
@@ -643,7 +641,7 @@ protected:
   uint8_t              m_gcmpSEIGuardBandType;
   bool                 m_gcmpSEIGuardBandBoundaryExteriorFlag;
   uint8_t              m_gcmpSEIGuardBandSamplesMinus1;
-  CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
+  EncCfgParam::CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
   bool                  m_sampleAspectRatioInfoSEIEnabled;
   bool                  m_sariCancelFlag;
   bool                  m_sariPersistenceFlag;
@@ -934,7 +932,7 @@ protected:
   int         m_debugCTU;                                     ///< dbg ctu
   bool        m_bs2ModPOCAndType;
 
-  CfgVPSParameters m_cfgVPSParameters;
+  EncCfgParam::CfgVPSParameters m_cfgVPSParameters;
 
   int         m_maxNumAlfAps;
   bool        m_constantJointCbCrSignFlag;
@@ -2042,8 +2040,14 @@ public:
   bool    getGcmpSEIGuardBandBoundaryExteriorFlag()                                                 { return m_gcmpSEIGuardBandBoundaryExteriorFlag; }
   void    setGcmpSEIGuardBandSamplesMinus1( uint8_t u )                                             { m_gcmpSEIGuardBandSamplesMinus1 = u; }
   uint8_t getGcmpSEIGuardBandSamplesMinus1()                                                        { return m_gcmpSEIGuardBandSamplesMinus1; }
-  const CfgSEISubpictureLevel& getSubpicureLevelInfoSEICfg() const                                  { return m_cfgSubpictureLevelInfoSEI; }
-  void     setSubpicureLevelInfoSEICfg(const CfgSEISubpictureLevel& cfg)                            { m_cfgSubpictureLevelInfoSEI = cfg; }
+  const EncCfgParam::CfgSEISubpictureLevel &getSubpicureLevelInfoSEICfg() const
+  {
+    return m_cfgSubpictureLevelInfoSEI;
+  }
+  void setSubpicureLevelInfoSEICfg(const EncCfgParam::CfgSEISubpictureLevel &cfg)
+  {
+    m_cfgSubpictureLevelInfoSEI = cfg;
+  }
   bool     getSampleAspectRatioInfoSEIEnabled() const                                                       { return m_sampleAspectRatioInfoSEIEnabled; }
   void     setSampleAspectRatioInfoSEIEnabled(const bool val)                                               { m_sampleAspectRatioInfoSEIEnabled = val; }
   bool     getSariCancelFlag() const                                                                        { return m_sariCancelFlag; }
@@ -2594,8 +2598,14 @@ public:
   void        setAvoidIntraInDepLayer(bool b)                        { m_avoidIntraInDepLayer = b; }
   bool        getAvoidIntraInDepLayer()                        const { return m_avoidIntraInDepLayer; }
 
-  const CfgVPSParameters& getVPSParameters() const                                  { return m_cfgVPSParameters; }
-  void                    setVPSParameters(const CfgVPSParameters& cfg)             { m_cfgVPSParameters = cfg; }
+  const EncCfgParam::CfgVPSParameters &getVPSParameters() const
+  {
+    return m_cfgVPSParameters;
+  }
+  void setVPSParameters(const EncCfgParam::CfgVPSParameters &cfg)
+  {
+    m_cfgVPSParameters = cfg;
+  }
 };
 
 //! \}

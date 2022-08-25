@@ -53,9 +53,10 @@
 #include <math.h>
 #include <limits>
 
+using namespace std;
 
- //! \ingroup EncoderLib
- //! \{
+//! \ingroup EncoderLib
+//! \{
 
 static const Mv s_acMvRefineH[9] =
 {

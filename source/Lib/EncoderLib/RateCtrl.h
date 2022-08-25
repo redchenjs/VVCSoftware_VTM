@@ -48,8 +48,6 @@
 #include <vector>
 #include <algorithm>
 
-using namespace std;
-
 //! \ingroup EncoderLib
 //! \{
 
@@ -233,13 +231,13 @@ public:
   ~EncRCPic();
 
 public:
-  void create( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP, int frameLevel, list<EncRCPic*>& listPreviousPictures );
+  void create(EncRCSeq *encRCSeq, EncRCGOP *encRCGOP, int frameLevel, std::list<EncRCPic *> &listPreviousPictures);
   void destroy();
 
-  int    estimatePicQP    ( double lambda, list<EncRCPic*>& listPreviousPictures );
+  int    estimatePicQP(double lambda, std::list<EncRCPic *> &listPreviousPictures);
   int    getRefineBitsForIntra(int orgBits);
   double calculateLambdaIntra(double alpha, double beta, double MADPerPixel, double bitsPerPixel);
-  double estimatePicLambda( list<EncRCPic*>& listPreviousPictures, bool isIRAP);
+  double estimatePicLambda(std::list<EncRCPic *> &listPreviousPictures, bool isIRAP);
 
   void   updateAlphaBetaIntra(double *alpha, double *beta);
 
@@ -253,13 +251,13 @@ public:
   double clipRcAlpha(const int bitdepth, const double alpha);
   double clipRcBeta(const double beta);
 
-  void addToPictureLsit( list<EncRCPic*>& listPreviousPictures );
+  void   addToPictureLsit(std::list<EncRCPic *> &listPreviousPictures);
   double calAverageQP();
   double calAverageLambda();
 
 private:
   int xEstPicTargetBits( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP );
-  int xEstPicHeaderBits( list<EncRCPic*>& listPreviousPictures, int frameLevel );
+  int xEstPicHeaderBits(std::list<EncRCPic *> &listPreviousPictures, int frameLevel);
 #if V0078_ADAPTIVE_LOWER_BOUND
   int xEstPicLowerBound( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP );
 #endif
@@ -362,7 +360,7 @@ public:
     CHECK(m_encRCPic == nullptr, "Object does not exist");
     return m_encRCPic;
   }
-  list<EncRCPic*>& getPicList() { return m_listRCPictures; }
+  std::list<EncRCPic *> &getPicList() { return m_listRCPictures; }
 #if U0132_TARGET_BITS_SATURATION
   bool       getCpbSaturationEnabled()  { return m_CpbSaturationEnabled;  }
   uint32_t       getCpbState()              { return m_cpbState;       }
@@ -376,7 +374,7 @@ private:
   EncRCSeq* m_encRCSeq;
   EncRCGOP* m_encRCGOP;
   EncRCPic* m_encRCPic;
-  list<EncRCPic*> m_listRCPictures;
+  std::list<EncRCPic *> m_listRCPictures;
   int        m_RCQP;
 #if U0132_TARGET_BITS_SATURATION
   bool       m_CpbSaturationEnabled;    // Enable target bits saturation to avoid CPB overflow and underflow

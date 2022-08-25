@@ -44,8 +44,6 @@
 #include "CommonLib/CommonDef.h"
 #include "CommonLib/Unit.h"
 
-using namespace std;
-
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
@@ -57,7 +55,7 @@ using namespace std;
 class VideoIOYuv
 {
 private:
-  fstream   m_cHandle;                                      ///< file handle
+  std::fstream m_cHandle;                            ///< file handle
   int       m_fileBitdepth[MAX_NUM_CHANNEL_TYPE]; ///< bitdepth of input/output video file
   int       m_MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];  ///< bitdepth after addition of MSBs (with value 0)
   int       m_bitdepthShift[MAX_NUM_CHANNEL_TYPE];  ///< number of bits to increase or decrease image by before/after write/read

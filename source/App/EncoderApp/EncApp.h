@@ -77,7 +77,7 @@ private:
   int               m_iFrameRcvd;                 ///< number of received frames
   uint32_t          m_essentialBytes;
   uint32_t          m_totalBytes;
-  fstream&          m_bitstream;
+  std::fstream     &m_bitstream;
 #if JVET_O0756_CALCULATE_HDRMETRICS
   std::chrono::duration<long long, ratio<1, 1000000000>> m_metricTime;
 #endif
@@ -109,7 +109,7 @@ private:
   bool m_flush;
 
 public:
-  EncApp( fstream& bitStream, EncLibCommon* encLibCommon );
+  EncApp(std::fstream &bitStream, EncLibCommon *encLibCommon);
   virtual ~EncApp();
 
   int   getMaxLayers() const { return m_maxLayers; }

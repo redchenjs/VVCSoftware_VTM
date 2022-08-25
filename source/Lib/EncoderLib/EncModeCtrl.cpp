@@ -49,6 +49,8 @@
 
 #include <cmath>
 
+using namespace std;
+
 void EncModeCtrl::init( EncCfg *pCfg, RateCtrl *pRateCtrl, RdCost* pRdCost )
 {
   m_pcEncCfg      = pCfg;

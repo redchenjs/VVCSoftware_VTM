@@ -139,7 +139,8 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
   bool isFilterThisFrame = false;
   if (m_QP >= 17)  // disable filter for QP < 17
   {
-    for (map<int, double>::iterator it = m_temporalFilterStrengths.begin(); it != m_temporalFilterStrengths.end(); ++it)
+    for (std::map<int, double>::iterator it = m_temporalFilterStrengths.begin(); it != m_temporalFilterStrengths.end();
+         ++it)
     {
       int filteredFrame = it->first;
       if (receivedPoc % filteredFrame == 0)
@@ -206,7 +207,8 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
     PelStorage newOrgPic;
     newOrgPic.create(m_chromaFormatIDC, m_area, 0, m_padding);
     double overallStrength = -1.0;
-    for (map<int, double>::iterator it = m_temporalFilterStrengths.begin(); it != m_temporalFilterStrengths.end(); ++it)
+    for (std::map<int, double>::iterator it = m_temporalFilterStrengths.begin(); it != m_temporalFilterStrengths.end();
+         ++it)
     {
       int frame = it->first;
       double strength = it->second;

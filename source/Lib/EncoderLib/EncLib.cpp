@@ -46,6 +46,8 @@
 #include "EncLibCommon.h"
 #include "CommonLib/ProfileLevelTier.h"
 
+using namespace std;
+
 //! \ingroup EncoderLib
 //! \{
 
