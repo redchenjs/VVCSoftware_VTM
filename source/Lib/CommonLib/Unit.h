@@ -308,7 +308,7 @@ struct CodingUnit : public UnitArea
   bool           skip;
   bool           mmvdSkip;
   bool           affine;
-  int            affineType;
+  AffineModel    affineType;
   bool           colorTransform;
   bool           geoFlag;
   BdpcmMode      bdpcmMode;
@@ -368,6 +368,8 @@ struct CodingUnit : public UnitArea
   const bool        isConsIntra() const { return modeType == MODE_TYPE_INTRA; }
 
   BdpcmMode getBdpcmMode(const ComponentID compId) const { return isLuma(compId) ? bdpcmMode : bdpcmModeChroma; }
+
+  int getNumAffineMvs() const { return affineType == AffineModel::_6_PARAMS ? 3 : 2; }
 };
 
 // ---------------------------------------------------------------------------

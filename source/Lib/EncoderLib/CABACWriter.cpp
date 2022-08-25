@@ -1796,15 +1796,9 @@ void CABACWriter::prediction_unit( const PredictionUnit& pu )
       ref_idx     ( pu, REF_PIC_LIST_0 );
       if ( pu.cu->affine )
       {
-        Mv mvd = pu.mvdAffi[REF_PIC_LIST_0][0];
-        mvd.changeAffinePrecInternal2Amvr(pu.cu->imv);
-        mvd_coding(mvd, 0); // already changed to signaling precision
-        mvd = pu.mvdAffi[REF_PIC_LIST_0][1];
-        mvd.changeAffinePrecInternal2Amvr(pu.cu->imv);
-        mvd_coding(mvd, 0); // already changed to signaling precision
-        if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
+        for (int i = 0; i < pu.cu->getNumAffineMvs(); i++)
         {
-          mvd = pu.mvdAffi[REF_PIC_LIST_0][2];
+          Mv mvd = pu.mvdAffi[REF_PIC_LIST_0][i];
           mvd.changeAffinePrecInternal2Amvr(pu.cu->imv);
           mvd_coding(mvd, 0); // already changed to signaling precision
         }
@@ -1826,15 +1820,9 @@ void CABACWriter::prediction_unit( const PredictionUnit& pu )
         {
           if (pu.cu->affine)
           {
-            Mv mvd = pu.mvdAffi[REF_PIC_LIST_1][0];
-            mvd.changeAffinePrecInternal2Amvr(pu.cu->imv);
-            mvd_coding(mvd, 0); // already changed to signaling precision
-            mvd = pu.mvdAffi[REF_PIC_LIST_1][1];
-            mvd.changeAffinePrecInternal2Amvr(pu.cu->imv);
-            mvd_coding(mvd, 0);   // already changed to signaling precision
-            if (pu.cu->affineType == AFFINEMODEL_6PARAM)
+            for (int i = 0; i < pu.cu->getNumAffineMvs(); i++)
             {
-              mvd = pu.mvdAffi[REF_PIC_LIST_1][2];
+              Mv mvd = pu.mvdAffi[REF_PIC_LIST_1][i];
               mvd.changeAffinePrecInternal2Amvr(pu.cu->imv);
               mvd_coding(mvd, 0);   // already changed to signaling precision
             }
@@ -1891,8 +1879,9 @@ void CABACWriter::affine_flag( const CodingUnit& cu )
     if ( cu.affine && cu.cs->sps->getUseAffineType() )
     {
       unsigned ctxId = 0;
-      m_binEncoder.encodeBin(cu.affineType, Ctx::AffineType(ctxId));
-      DTRACE( g_trace_ctx, D_SYNTAX, "affine_type() affine_type=%d ctx=%d pos=(%d,%d)\n", cu.affineType ? 1 : 0, ctxId, cu.Y().x, cu.Y().y );
+      m_binEncoder.encodeBin(cu.affineType != AffineModel::_4_PARAMS ? 1 : 0, Ctx::AffineType(ctxId));
+      DTRACE(g_trace_ctx, D_SYNTAX, "affine_type() affine_type=%d ctx=%d pos=(%d,%d)\n",
+             cu.affineType != AffineModel::_4_PARAMS ? 1 : 0, ctxId, cu.Y().x, cu.Y().y);
     }
   }
 }

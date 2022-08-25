@@ -4798,7 +4798,7 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
       }
       else
       {
-        for (int ctrlP = 1 + (cu->affineType == AFFINEMODEL_6PARAM); ctrlP >= 0; ctrlP--)
+        for (int ctrlP = cu->getNumAffineMvs() - 1; ctrlP >= 0; ctrlP--)
         {
           mvShift = affineShiftTab[cu->imv];
           Mv signaledmvd(pu.mvdAffi[refList][ctrlP].getHor() >> mvShift, pu.mvdAffi[refList][ctrlP].getVer() >> mvShift);
@@ -4826,7 +4826,7 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
     {
       if (pu.refIdx[refList] >= 0)
       {
-        for (int ctrlP = 1 + (cu->affineType == AFFINEMODEL_6PARAM); ctrlP >= 0; ctrlP--)
+        for (int ctrlP = cu->getNumAffineMvs() - 1; ctrlP >= 0; ctrlP--)
         {
           if (pu.mvAffi[refList][ctrlP].getAbsHor() >= maxMv || pu.mvAffi[refList][ctrlP].getAbsVer() >= maxMv)
           {

@@ -633,7 +633,13 @@ public:
 class AffineMergeCtx
 {
 public:
-  AffineMergeCtx() : numValidMergeCand( 0 ) { for ( unsigned i = 0; i < AFFINE_MRG_MAX_NUM_CANDS; i++ ) affineType[i] = AFFINEMODEL_4PARAM; }
+  AffineMergeCtx() : numValidMergeCand(0)
+  {
+    for (int i = 0; i < AFFINE_MRG_MAX_NUM_CANDS; i++)
+    {
+      affineType[i] = AffineModel::_4_PARAMS;
+    }
+  }
   ~AffineMergeCtx() {}
 public:
   MvField       mvFieldNeighbours[AFFINE_MRG_MAX_NUM_CANDS << 1][3]; // double length for mv of both lists
@@ -642,7 +648,7 @@ public:
   bool          mvValid[AFFINE_MRG_MAX_NUM_CANDS << 1][3];
 #endif
   unsigned char interDirNeighbours[AFFINE_MRG_MAX_NUM_CANDS];
-  EAffineModel  affineType[AFFINE_MRG_MAX_NUM_CANDS];
+  AffineModel   affineType[AFFINE_MRG_MAX_NUM_CANDS];
   uint8_t       bcwIdx[AFFINE_MRG_MAX_NUM_CANDS];
   int           numValidMergeCand;
   int           maxNumMergeCand;

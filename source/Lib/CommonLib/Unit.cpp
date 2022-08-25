@@ -328,7 +328,7 @@ void CodingUnit::initData()
   skip              = false;
   mmvdSkip = false;
   affine            = false;
-  affineType        = 0;
+  affineType        = AffineModel::_4_PARAMS;
   colorTransform = false;
   geoFlag           = false;
   bdpcmMode         = BdpcmMode::NONE;

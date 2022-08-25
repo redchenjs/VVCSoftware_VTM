@@ -943,11 +943,9 @@ void DecCu::xDeriveCuMvs(CodingUnit &cu)
               CHECK( pu.refIdx[eRefList] < 0, "Unexpected negative refIdx." );
               if (!cu.cs->pcv->isEncoder)
               {
-                pu.mvdAffi[eRefList][0].changeAffinePrecAmvr2Internal(pu.cu->imv);
-                pu.mvdAffi[eRefList][1].changeAffinePrecAmvr2Internal(pu.cu->imv);
-                if (cu.affineType == AFFINEMODEL_6PARAM)
+                for (int i = 0; i < cu.getNumAffineMvs(); i++)
                 {
-                  pu.mvdAffi[eRefList][2].changeAffinePrecAmvr2Internal(pu.cu->imv);
+                  pu.mvdAffi[eRefList][i].changeAffinePrecAmvr2Internal(pu.cu->imv);
                 }
               }
 
@@ -956,7 +954,7 @@ void DecCu::xDeriveCuMvs(CodingUnit &cu)
               mvRT += pu.mvdAffi[eRefList][0];
 
               Mv mvLB;
-              if ( cu.affineType == AFFINEMODEL_6PARAM )
+              if (cu.affineType == AffineModel::_6_PARAMS)
               {
                 mvLB = affineAMVPInfo.mvCandLB[mvpIdx] + pu.mvdAffi[eRefList][2];
                 mvLB += pu.mvdAffi[eRefList][0];
