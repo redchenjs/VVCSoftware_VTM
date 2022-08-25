@@ -3213,7 +3213,8 @@ void CABACWriter::residual_coding_subblockTS( CoeffCodingContext& cctx, const TC
       {
         unsigned gt2 = (absLevel >= (cutoffVal + 2));
           m_BinEncoder.encodeBin(gt2, cctx.greaterXCtxIdAbsTS(cutoffVal >> 1));
-          DTRACE(g_trace_ctx, D_SYNTAX_RESI, "ts_gt%d_flag() bin=%d ctx=%d sp=%d coeff=%d\n", i, gt2, cctx.greaterXCtxIdAbsTS(cutoffVal >> 1), scanPos, min<int>(absLevel, cutoffVal + 2));
+          DTRACE(g_trace_ctx, D_SYNTAX_RESI, "ts_gt%d_flag() bin=%d ctx=%d sp=%d coeff=%d\n", i, gt2,
+                 cctx.greaterXCtxIdAbsTS(cutoffVal >> 1), scanPos, std::min<int>(absLevel, cutoffVal + 2));
           cctx.decimateNumCtxBins(1);
       }
       cutoffVal += 2;

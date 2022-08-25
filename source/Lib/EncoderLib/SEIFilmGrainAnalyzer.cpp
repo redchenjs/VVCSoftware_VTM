@@ -37,6 +37,7 @@
 
 #include "SEIFilmGrainAnalyzer.h"
 
+using namespace std;
 
 // ====================================================================================================================
 // Edge detection - Canny

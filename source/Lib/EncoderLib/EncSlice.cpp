@@ -766,7 +766,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
 
     int  offset = (curPoc < gdrPocStart) ? 0 : (((curPoc - gdrPocStart) / gdrPeriod) * gdrPeriod);
     int  actualGdrStart = gdrPocStart + offset;
-    int  actualGdrInterval = min(gdrInterval, (int)(pcPic->getPicWidthInLumaSamples() / 8));
+    int  actualGdrInterval = std::min(gdrInterval, (int) (pcPic->getPicWidthInLumaSamples() / 8));
     int  recoveryPocCnt = actualGdrInterval - 1;
     int  recoveryPicPoc = actualGdrStart + recoveryPocCnt;
 

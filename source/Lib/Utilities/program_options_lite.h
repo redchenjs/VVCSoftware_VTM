@@ -45,7 +45,6 @@
 
 //! \ingroup TAppCommon
 //! \{
-using namespace std;
 
 template <class T>
 struct SMultiValueInput
@@ -68,7 +67,7 @@ struct SMultiValueInput
 
   T readValue(const char *&pStr, bool &bSuccess);
 
-  istream& readValues(std::istream &in);
+  std::istream &readValues(std::istream &in);
 };
 
 namespace df

@@ -223,9 +223,8 @@ public:
 
     auto hexValue=[](double x) {
       uint64_t ui;
-      copy(reinterpret_cast<uint8_t *>(&x),
-           reinterpret_cast<uint8_t *>(&x) + sizeof(x),
-           reinterpret_cast<uint8_t *>(&ui));
+      std::copy(reinterpret_cast<uint8_t *>(&x), reinterpret_cast<uint8_t *>(&x) + sizeof(x),
+                reinterpret_cast<uint8_t *>(&ui));
       return ui;
     };
     //

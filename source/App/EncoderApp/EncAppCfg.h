@@ -728,7 +728,7 @@ protected:
   bool                 m_gcmpSEIGuardBandBoundaryExteriorFlag;
   uint32_t             m_gcmpSEIGuardBandSamplesMinus1;
 
-  CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
+  EncCfgParam::CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
 
   bool                  m_nnPostFilterSEICharacteristicsEnabled;
   int                   m_nnPostFilterSEICharacteristicsNumFilters;
@@ -943,7 +943,7 @@ protected:
 
   int         m_numPtlsInVps;
 
-  CfgVPSParameters m_cfgVPSParameters;
+  EncCfgParam::CfgVPSParameters m_cfgVPSParameters;
   Level::Name m_levelPtl[MAX_NUM_OLSS];
   int         m_olsPtlIdx[MAX_NUM_OLSS];
 

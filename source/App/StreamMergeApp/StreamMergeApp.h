@@ -53,13 +53,9 @@
 #include "VLCWriter.h"
 #include "StreamMergeAppCfg.h"
 
-using namespace std;
-
-
-
 struct MergeLayer;
 class SingleLayerStream;
-typedef map<uint32_t, uint32_t> OldToNewIdMapping;
+using OldToNewIdMapping = std::map<uint32_t, uint32_t>;
 
 // ====================================================================================================================
 // Class definition
@@ -95,16 +91,16 @@ struct MergeLayer
 {
   int id;
 
-  ifstream *                 fp;
+  std::ifstream             *fp;
   InputByteStream *          bs;
   bool                       firstSliceInPicture = true;
   bool                       doneReading = false;
-  vector<AnnexBStats>        stats;
+  std::vector<AnnexBStats>   stats;
   ParameterSetManager        oldIDsPsManager;
   ParameterSetManager        psManager;
-  vector<int>                vpsIds;
-  vector<int>                spsIds;
-  vector<int>                ppsIds;
+  std::vector<int>           vpsIds;
+  std::vector<int>           spsIds;
+  std::vector<int>           ppsIds;
 
   OldToNewIdMapping vpsIdMapping;
   OldToNewIdMapping spsIdMapping;
@@ -231,7 +227,7 @@ private:
   uint32_t m_futureBytes; /* bytes that have been peeked */
 };
 
-bool byteStreamNALUnit(SingleLayerStream& bs, std::istream& istream, vector<uint8_t>& nalUnit, AnnexBStats& stats);
+bool byteStreamNALUnit(SingleLayerStream &bs, std::istream &istream, std::vector<uint8_t> &nalUnit, AnnexBStats &stats);
 
 #endif // __STREAMMERGEAPP__
 

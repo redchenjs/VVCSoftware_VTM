@@ -44,6 +44,8 @@
 #include "DecoderLib/AnnexBread.h"
 #include "EncoderLib/AnnexBwrite.h"
 
+using namespace std;
+
 //! \ingroup SEIFilmGrainApp
 //! \{
 

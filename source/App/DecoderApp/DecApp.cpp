@@ -48,6 +48,8 @@
 #endif
 #include "CommonLib/dtrace_codingstruct.h"
 
+using namespace std;
+
 //! \ingroup DecoderApp
 //! \{
 

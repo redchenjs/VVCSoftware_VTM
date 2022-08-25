@@ -41,6 +41,8 @@
 #include "DecApp.h"
 #include "program_options_lite.h"
 
+using namespace std;
+
 //! \ingroup DecoderApp
 //! \{
 

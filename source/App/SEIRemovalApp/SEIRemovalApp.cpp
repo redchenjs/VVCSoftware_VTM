@@ -44,6 +44,8 @@
 #include "DecoderLib/AnnexBread.h"
 #include "DecoderLib/NALread.h"
 
+using namespace std;
+
 //! \ingroup DecoderApp
 //! \{
 
