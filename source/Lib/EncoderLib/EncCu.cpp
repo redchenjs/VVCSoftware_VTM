@@ -1162,7 +1162,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
 
     costTemp = m_pcRdCost->calcRdCost( uint64_t( m_CABACEstimator->getEstFracBits() + approxBits + ( ( bestCS->fracBits ) / factor ) ), Distortion( bestCS->dist / factor ) ) + bestCS->costDbOffset / factor;
   }
-  else if ( m_pcEncCfg->getFastAdaptCostPredMode() == 1) 
+  else if (m_pcEncCfg->getFastAdaptCostPredMode() == 1)
   {
     const double factor = ( tempCS->currQP[partitioner.chType] > 30 ? 1.1 : 1.075 )
     + (isChroma(partitioner.chType) ? 0.2 : 0.0);
@@ -1178,7 +1178,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
   {
     CHECK( bestCS->costDbOffset != 0, "error" );
   }
-  const double cost = costTemp;	
+  const double cost = costTemp;
 
   m_CABACEstimator->getCtx() = SubCtx( Ctx::SplitFlag,   ctxStartSP );
   m_CABACEstimator->getCtx() = SubCtx( Ctx::SplitQtFlag, ctxStartQt );

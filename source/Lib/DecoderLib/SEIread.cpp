@@ -1111,7 +1111,7 @@ void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, 
   for (auto nestedsei : sei.m_nestedSEIs)
   {
     CHECK(nestedsei->payloadType() == SEI::FILLER_PAYLOAD || nestedsei->payloadType() == SEI::SCALABLE_NESTING, "An SEI message that has payloadType equal to filler payload or scalable nesting shall not be contained in a scalable nesting SEI message");
-    
+
     CHECK(nestedsei->payloadType() == SEI::SCALABILITY_DIMENSION_INFO, "A scalability dimension information SEI message shall not be contained in a scalable nesting SEI message");
     CHECK(nestedsei->payloadType() == SEI::MULTIVIEW_ACQUISITION_INFO, "A multiview acquisition information SEI message shall not be contained in a scalable nesting SEI message");
 
@@ -2364,7 +2364,7 @@ void SEIReader::xParseSEIDepthRepInfoElement(double& f,std::ostream *pDecodedMes
   uint32_t val;
   uint32_t x_sign,x_mantissa_len,x_mantissa;
   int x_exp;
-  
+
   sei_read_flag(pDecodedMessageOutputStream,     val,"da_sign_flag");  x_sign = val ? 1 : 0 ;
   sei_read_code(pDecodedMessageOutputStream,  7, val, "da_exponent" );         x_exp = val-31;
   sei_read_code(pDecodedMessageOutputStream,  5, val, "da_mantissa_len_minus1" );         x_mantissa_len = val+1;
@@ -2385,6 +2385,7 @@ void SEIReader::xParseSEIDepthRepInfoElement(double& f,std::ostream *pDecodedMes
     {
       m = m * 2;
     }
+
     f = f/m;
   }
   else
@@ -2393,6 +2394,7 @@ void SEIReader::xParseSEIDepthRepInfoElement(double& f,std::ostream *pDecodedMes
     {
       m = m * 2;
     }
+
     f= f * m;
   }
   if (x_sign==1)
@@ -2546,29 +2548,30 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei.m_purpose = val;
 
     ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
-    uint8_t SubWidthC;
-    uint8_t SubHeightC;
+    uint8_t      subWidthC;
+    uint8_t      subHeightC;
     if (chromaFormatIDC == ChromaFormat::CHROMA_420)
     {
-      SubWidthC = 2;
-      SubHeightC = 2;
+      subWidthC  = 2;
+      subHeightC = 2;
     }
     else if (chromaFormatIDC == ChromaFormat::CHROMA_422)
     {
-      SubWidthC = 2;
-      SubHeightC = 1;
+      subWidthC  = 2;
+      subHeightC = 1;
     }
     else
     {
-      SubWidthC = 1;
-      SubHeightC = 1;
+      subWidthC  = 1;
+      subHeightC = 1;
     }
     if(sei.m_purpose == 2 || sei.m_purpose == 4)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_out_sub_c_flag");
       sei.m_outSubCFlag = val;
 
-      CHECK(((SubWidthC == 2) && (SubHeightC == 1) && (sei.m_outSubCFlag == 0)), "If SubWidthC is equal to 2 and SubHeightC is equal to 1, nnpfc_out_sub_c_flag shall not be equal to 0");
+      CHECK(((subWidthC == 2) && (subHeightC == 1) && (sei.m_outSubCFlag == 0)),
+            "If SubWidthC is equal to 2 and SubHeightC is equal to 1, nnpfc_out_sub_c_flag shall not be equal to 0");
 
       if (sei.m_outSubCFlag)
       {
@@ -2583,10 +2586,11 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     }
     else
     {
-      sei.m_outSubWidthC = SubWidthC;
-      sei.m_outSubHeightC = SubHeightC;
+      sei.m_outSubWidthC  = subWidthC;
+      sei.m_outSubHeightC = subHeightC;
     }
-    CHECK(((SubWidthC == 1) && (SubHeightC == 1)) && ((sei.m_purpose == 2) || (sei.m_purpose == 4)), "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose shall not be equal to 2 or 4");
+    CHECK(((subWidthC == 1) && (subHeightC == 1)) && ((sei.m_purpose == 2) || (sei.m_purpose == 4)),
+          "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose shall not be equal to 2 or 4");
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_width_in_luma_samples");
@@ -2607,18 +2611,18 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_inpTensorBitDepthMinus8 = val;
     }
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
-    sei.m_AuxInpIdc = val;
+    sei.m_auxInpIdc = val;
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
-    sei.m_SepColDescriptionFlag = val;
+    sei.m_sepColDescriptionFlag = val;
 
-    if(sei.m_SepColDescriptionFlag)
+    if (sei.m_sepColDescriptionFlag)
     {
       sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_col_primaries");
-      sei.m_ColPrimaries = val;
+      sei.m_colPrimaries = val;
       sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_trans_characteristics");
-      sei.m_TransCharacteristics = val;
+      sei.m_transCharacteristics = val;
       sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_matrix_coeffs");
-      sei.m_MatrixCoeffs = val;
+      sei.m_matrixCoeffs = val;
     }
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");

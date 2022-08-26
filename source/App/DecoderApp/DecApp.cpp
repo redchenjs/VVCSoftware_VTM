@@ -430,7 +430,7 @@ uint32_t DecApp::decode()
           if (isY4mFileExt(reconFileName))
           {
             const auto sps        = pcListPic->front()->cs->sps;
-            int        frameRate  = 50;            
+            int        frameRate  = 50;
             int        frameScale = 1;
             if(sps->getGeneralHrdParametersPresentFlag())
             {
@@ -589,7 +589,7 @@ uint32_t DecApp::decode()
           curSII.m_siiInfo.m_siiMaxSubLayersMinus1 = 0;
           curSII.m_siiInfo.m_siiFixedSIwithinCLVS = 0;
 
-          if (shutterIntervalInfo.size() > 0) 
+          if (shutterIntervalInfo.size() > 0)
           {
             SEIShutterIntervalInfo *seiShutterIntervalInfo = (SEIShutterIntervalInfo*) *(shutterIntervalInfo.begin());
             curSII.m_isValidSii = 1;
@@ -607,7 +607,7 @@ uint32_t DecApp::decode()
             m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo_s>(tmpInfo, curSII));
             curSIIInfo = seiShutterIntervalInfo;
           }
-          else 
+          else
           {
             curSII.m_isValidSii = 0;
             hasValidSII = 0;
@@ -615,24 +615,24 @@ uint32_t DecApp::decode()
             m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo_s>(tmpInfo, curSII));
           }
         }
-        else 
+        else
         {
-          if (m_activeSiiInfo.size() == 1) 
+          if (m_activeSiiInfo.size() == 1)
           {
             curSIIInfo = &(m_activeSiiInfo.begin()->second.m_siiInfo);
           }
-          else 
+          else
           {
             uint8_t isLast = 1;
-            for (int i = 1; i < m_activeSiiInfo.size() + 1; i++) 
+            for (int i = 1; i < m_activeSiiInfo.size() + 1; i++)
             {
-              if (pcPic->getPOC() <= m_activeSiiInfo.at(i).m_picPoc) 
+              if (pcPic->getPOC() <= m_activeSiiInfo.at(i).m_picPoc)
               {
-                if (m_activeSiiInfo[i - 1].m_isValidSii) 
+                if (m_activeSiiInfo[i - 1].m_isValidSii)
                 {
                   curSIIInfo = &(m_activeSiiInfo.at(i - 1).m_siiInfo);
                 }
-                else 
+                else
                 {
                   hasValidSII = 0;
                 }
@@ -640,7 +640,7 @@ uint32_t DecApp::decode()
                 break;
               }
             }
-            if (isLast) 
+            if (isLast)
             {
               uint32_t tmpInfo = (uint32_t)(m_activeSiiInfo.size());
               curSIIInfo = &(m_activeSiiInfo.at(tmpInfo).m_siiInfo);
@@ -707,7 +707,7 @@ uint32_t DecApp::decode()
             setShutterFilterFlag(false);
           }
         }
-        else 
+        else
         {
           fprintf(stderr, "Warning: Shutter Interval information should be specified in SII-SEI message\n");
           setShutterFilterFlag(false);

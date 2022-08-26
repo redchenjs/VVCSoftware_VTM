@@ -2635,7 +2635,7 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
   {
     WRITE_CODE(pcSlice->get_tsrc_index(), 3, "sh_ts_residual_coding_rice_idx_minus1");
   }
-  if (pcSlice->getSPS()->getSpsRangeExtension().getReverseLastSigCoeffEnabledFlag()) 
+  if (pcSlice->getSPS()->getSpsRangeExtension().getReverseLastSigCoeffEnabledFlag())
   {
     WRITE_FLAG(pcSlice->getReverseLastSigCoeffFlag(), "sh_reverse_last_sig_coeff_flag");
   }

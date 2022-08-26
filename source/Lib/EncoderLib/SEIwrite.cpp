@@ -308,7 +308,7 @@ void SEIWriter::xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei, const 
   {
     WRITE_FLAG(sei.m_dpbOutputDuDelayPresentFlag, "dpb_output_du_delay_present_flag");
   }
- 
+
   if(sei.m_dpbOutputDuDelayPresentFlag)
   {
     WRITE_CODE(sei.m_picSptDpbOutputDuDelay, bp.getDpbOutputDelayDuLength(), "pic_spt_dpb_output_du_delay");
@@ -1345,7 +1345,7 @@ void SEIWriter::xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei)
       WRITE_CODE(sei.m_transferFunction, 8, "colour_transform_transfer_function");
       WRITE_CODE(sei.m_matrixCoefs, 8, "colour_transform_matrix_coefficients");
     }
-    WRITE_CODE(sei.m_bitdepth - 8, 4, "colour_transform_bit_depth_minus8"); 
+    WRITE_CODE(sei.m_bitdepth - 8, 4, "colour_transform_bit_depth_minus8");
     WRITE_CODE(sei.m_log2NumberOfPointsPerLut - 1, 3, "colour_transform_log2_number_of_points_per_lut_minus1");
     WRITE_FLAG(sei.m_crossComponentFlag, "colour_transform_cross_comp_flag");
     if (sei.m_crossComponentFlag)
@@ -1438,13 +1438,14 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     {
       WRITE_UVLC(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
     }
-    WRITE_UVLC(sei.m_AuxInpIdc,"nnpfc_aux_inp_idc");
-    WRITE_FLAG(sei.m_SepColDescriptionFlag,"nnpfc_sep_col_desc_flag");
+    WRITE_UVLC(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
+    WRITE_FLAG(sei.m_sepColDescriptionFlag, "nnpfc_sep_col_desc_flag");
 
-    if (sei.m_SepColDescriptionFlag){
-      WRITE_CODE(sei.m_ColPrimaries,8,"nnpfc_col_primaries");
-      WRITE_CODE(sei.m_TransCharacteristics,8,"nnpfc_trans_characteristics");
-      WRITE_CODE(sei.m_MatrixCoeffs,8,"nnpfc_matrix_coeffs");
+    if (sei.m_sepColDescriptionFlag)
+    {
+      WRITE_CODE(sei.m_colPrimaries, 8, "nnpfc_col_primaries");
+      WRITE_CODE(sei.m_transCharacteristics, 8, "nnpfc_trans_characteristics");
+      WRITE_CODE(sei.m_matrixCoeffs, 8, "nnpfc_matrix_coeffs");
     }
 
     WRITE_UVLC(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");

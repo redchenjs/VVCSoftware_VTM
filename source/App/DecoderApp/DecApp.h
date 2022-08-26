@@ -69,7 +69,7 @@ private:
   VideoIOYuv                              m_cTVideoIOYuvSIIPostFile;      ///< post-filtered YUV class
   int                                     m_SII_BlendingRatio;
 
-  typedef struct 
+  typedef struct
   {
     SEIShutterIntervalInfo m_siiInfo;
     uint32_t               m_picPoc;

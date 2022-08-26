@@ -223,12 +223,12 @@ protected:
   bool          m_noSubpicInfoConstraintFlag;
   // coding structure
   int       m_iIntraPeriod;                                   ///< period of I-slice (random access period)
-#if GDR_ENABLED 
+#if GDR_ENABLED
   bool      m_gdrEnabled;
   int       m_gdrPocStart;
   int       m_gdrPeriod;
-  int       m_gdrInterval;  
-  bool      m_gdrNoHash;  
+  int       m_gdrInterval;
+  bool      m_gdrNoHash;
 #endif
   int       m_iDecodingRefreshType;                           ///< random access type
   int       m_iGOPSize;                                       ///< GOP size of hierarchical structure

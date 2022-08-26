@@ -161,16 +161,16 @@ namespace PU
   bool addMVPCandUnscaled(const PredictionUnit &pu, const RefPicList &eRefPicList, const int &refIdx,
                           const Position &pos, const MvpDir &eDir, AMVPInfo &amvpInfo);
 #if GDR_ENABLED
-  void xInheritedAffineMv(const PredictionUnit &pu, const PredictionUnit* puNeighbour, RefPicList eRefPicList, Mv rcMv[3], bool rcMvSolid[3], MvpType rcMvType[3], Position rcMvPos[3]);  
+  void xInheritedAffineMv(const PredictionUnit &pu, const PredictionUnit *puNeighbour, RefPicList eRefPicList,
+                          Mv rcMv[3], bool rcMvSolid[3], MvpType rcMvType[3], Position rcMvPos[3]);
 #endif
   void xInheritedAffineMv             ( const PredictionUnit &pu, const PredictionUnit* puNeighbour, RefPicList eRefPicList, Mv rcMv[3] );
-  bool addMergeHMVPCand               (const CodingStructure &cs, MergeCtx& mrgCtx, const int& mrgCandIdx, const uint32_t maxNumMergeCandMin1, int &cnt
-    , const bool isAvailableA1, const MotionInfo miLeft, const bool isAvailableB1, const MotionInfo miAbove
-    , const bool ibcFlag
-    , const bool isGt4x4
+  bool addMergeHMVPCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int &mrgCandIdx,
+                        const uint32_t maxNumMergeCandMin1, int &cnt, const bool isAvailableA1, const MotionInfo miLeft,
+                        const bool isAvailableB1, const MotionInfo miAbove, const bool ibcFlag, const bool isGt4x4
 #if GDR_ENABLED
-    , const PredictionUnit &pu
-    , bool &allCandSolidInAbove  
+                        ,
+                        const PredictionUnit &pu, bool &allCandSolidInAbove
 #endif
   );
   void addAMVPHMVPCand                (const PredictionUnit &pu, const RefPicList eRefPicList, const int currRefPOC, AMVPInfo &info);

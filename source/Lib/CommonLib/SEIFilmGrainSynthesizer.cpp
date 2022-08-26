@@ -731,7 +731,7 @@ void SEIFilmGrainSynthesizer::deblockGrainStripe(Pel *grainStripe, uint32_t widt
   uint32_t pos, vertCtr;
 
   uint32_t widthCropped = (widthComp - blkSize);
-  
+
   for (vertCtr = 0; vertCtr < heightComp; vertCtr++)
   {
     for (pos = 0; pos < widthCropped; pos += blkSize)

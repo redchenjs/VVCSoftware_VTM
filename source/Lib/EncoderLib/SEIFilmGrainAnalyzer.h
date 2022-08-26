@@ -107,7 +107,7 @@ private:
 
   double            m_lowThresholdRatio   = 0.1;               // low threshold rato
   int               m_highThresholdRatio  = 3;                 // high threshold rato
-  
+
   void gradient   ( PelStorage* buff1, PelStorage* buff2,
                     unsigned int width, unsigned int height,
                     unsigned int convWidthS, unsigned int convHeightS, unsigned int bitDepth, ComponentID compID );

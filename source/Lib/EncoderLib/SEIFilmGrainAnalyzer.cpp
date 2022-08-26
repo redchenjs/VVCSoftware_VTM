@@ -70,7 +70,7 @@ void Canny::gradient(PelStorage *buff1, PelStorage *buff2, unsigned int width, u
   buff1 - magnitude; buff2 - orientation (Only luma in buff2)
   */
 
-  // 360 degrees are split into the 8 equal parts; edge direction is quantized 
+  // 360 degrees are split into the 8 equal parts; edge direction is quantized
   const double edge_threshold_22_5  = 22.5;
   const double edge_threshold_67_5  = 67.5;
   const double edge_threshold_112_5 = 112.5;
@@ -459,9 +459,10 @@ FGAnalyser::~FGAnalyser()
 
 // initialize film grain parameters
 void FGAnalyser::init(const int width, const int height, const int sourcePaddingWidth, const int sourcePaddingHeight,
-                      const InputColourSpaceConversion ipCSC, bool clipInputVideoToRec709Range, const ChromaFormat inputChroma,
-                      const BitDepths &inputBitDepths, const BitDepths &outputBitDepths, const int frameSkip, 
-                      const bool doAnalysis[], std::string filmGrainExternalMask, std::string filmGrainExternalDenoised)
+                      const InputColourSpaceConversion ipCSC, bool clipInputVideoToRec709Range,
+                      const ChromaFormat inputChroma, const BitDepths &inputBitDepths, const BitDepths &outputBitDepths,
+                      const int frameSkip, const bool doAnalysis[], std::string filmGrainExternalMask,
+                      std::string filmGrainExternalDenoised)
 {
   m_log2ScaleFactor = 2;
   for (int i = 0; i < MAX_NUM_COMPONENT; i++)
@@ -1021,7 +1022,7 @@ int FGAnalyser::cutoff_frequency(std::vector<double> &mean)
   int size = (int) intersectionPointList.size();
 
   if (size > 0)
-  {                                                                         
+  {
     return Clip3<int>(2, 14, (intersectionPointList[size - 1] - 1) >> 2);   // clip to RDD5 range, (h-3)/4 + 0.5
   }
   else

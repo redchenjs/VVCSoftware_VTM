@@ -45,7 +45,7 @@
 #include <stdio.h>
 #include <fstream>
 #include <iostream>
-#include "CommonDef.h" 
+#include "CommonDef.h"
 #include "NALread.h"
 #include "CABACWriter.h"
 #include "AnnexBread.h"

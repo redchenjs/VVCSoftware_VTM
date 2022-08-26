@@ -308,11 +308,11 @@ protected:
   unsigned              m_subPicIdLen;
   std::vector<uint16_t> m_subPicId;
 #if GDR_ENABLED
-  bool      m_gdrEnabled;  
+  bool      m_gdrEnabled;
   unsigned  m_gdrPocStart;
   unsigned  m_gdrPeriod;
-  int       m_gdrInterval;  
-  bool      m_gdrNoHash;  
+  int       m_gdrInterval;
+  bool      m_gdrNoHash;
 #endif
   bool      m_useSplitConsOverride;
   unsigned  m_uiMinQT[3]; //0: I slice; 1: P/B slice, 2: I slice chroma
@@ -1215,14 +1215,26 @@ public:
   void      setGdrEnabled(bool b)       { m_gdrEnabled  = b; }
   void      setGdrPeriod(unsigned u)    { m_gdrPeriod   = u; }
   void      setGdrPocStart(unsigned u)  { m_gdrPocStart = u; }
-  void      setGdrInterval(int i)       { m_gdrInterval = i; }  
-  void      setGdrNoHash(bool b)        { m_gdrNoHash   = b; }    
+  void      setGdrInterval(int i)
+  {
+    m_gdrInterval = i;
+  }
+  void setGdrNoHash(bool b)
+  {
+    m_gdrNoHash = b;
+  }
 
   bool      getGdrEnabled()             { return m_gdrEnabled;  }
   unsigned  getGdrPeriod()              { return m_gdrPeriod;   }
   unsigned  getGdrPocStart()            { return m_gdrPocStart; }
-  int       getGdrInterval()            { return m_gdrInterval; }  
-  bool      getGdrNoHash()              { return m_gdrNoHash;   }  
+  int       getGdrInterval()
+  {
+    return m_gdrInterval;
+  }
+  bool getGdrNoHash()
+  {
+    return m_gdrNoHash;
+  }
 #endif
   void      setMaxMTTHierarchyDepth         ( unsigned uiMaxMTTHierarchyDepth, unsigned uiMaxMTTHierarchyDepthI, unsigned uiMaxMTTHierarchyDepthIChroma )
                                                              { m_uiMaxMTTHierarchyDepth = uiMaxMTTHierarchyDepth; m_uiMaxMTTHierarchyDepthI = uiMaxMTTHierarchyDepthI; m_uiMaxMTTHierarchyDepthIChroma = uiMaxMTTHierarchyDepthIChroma; }
@@ -1784,10 +1796,22 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(uint32_t outTensorBitDepthMinus8, int filterIdx) { m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx] = outTensorBitDepthMinus8; }
   uint32_t    getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx]; }
-  void        setNNPostFilterSEICharacteristicsAuxInpIdc(uint32_t auxInpIdc, int filterIdx)                             { m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx] = auxInpIdc; }  
-  uint32_t    getNNPostFilterSEICharacteristicsAuxInpIdc(int filterIdx) const                                           { return m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx]; } 
-  void        setNNPostFilterSEICharacteristicsSepColDescriptionFlag(bool sepColDescriptionFlag, int filterIdx)         { m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[filterIdx] = sepColDescriptionFlag; }  
-  bool        getNNPostFilterSEICharacteristicsSepColDescriptionFlag(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[filterIdx]; } 
+  void setNNPostFilterSEICharacteristicsAuxInpIdc(uint32_t auxInpIdc, int filterIdx)
+  {
+    m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx] = auxInpIdc;
+  }
+  uint32_t getNNPostFilterSEICharacteristicsAuxInpIdc(int filterIdx) const
+  {
+    return m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx];
+  }
+  void setNNPostFilterSEICharacteristicsSepColDescriptionFlag(bool sepColDescriptionFlag, int filterIdx)
+  {
+    m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[filterIdx] = sepColDescriptionFlag;
+  }
+  bool getNNPostFilterSEICharacteristicsSepColDescriptionFlag(int filterIdx) const
+  {
+    return m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[filterIdx];
+  }
   void        setNNPostFilterSEICharacteristicsColPrimaries(uint32_t colPrimaries, int filterIdx)                       { m_nnPostFilterSEICharacteristicsColPrimaries[filterIdx] = colPrimaries; }
   uint32_t    getNNPostFilterSEICharacteristicsColPrimaries(int filterIdx) const                                        { return m_nnPostFilterSEICharacteristicsColPrimaries[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsTransCharacteristics(uint32_t transCharacteristics, int filterIdx)       { m_nnPostFilterSEICharacteristicsTransCharacteristics[filterIdx] = transCharacteristics; }

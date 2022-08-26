@@ -3551,7 +3551,7 @@ static uint32_t xCalcHAD16x8_AVX2(const Torg *piOrg, const Tcur *piCur, const in
 #if JVET_R0164_MEAN_SCALED_SATD
     uint32_t absDc = _mm_cvtsi128_si32( _mm256_castsi256_si128( m1[0] ) );
 #endif
-    
+
     // sum up
     m1[ 0] = _mm256_add_epi32( m1[ 0], m1[ 1] );
     m1[ 2] = _mm256_add_epi32( m1[ 2], m1[ 3] );
@@ -4406,7 +4406,7 @@ Distortion RdCost::xGetSSE_HBD_SIMD(const DistParam& pcDtParam)
       }
     }
   }
-  
+
   return sum;
 }
 #else
