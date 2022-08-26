@@ -257,13 +257,13 @@ void EncGOP::init ( EncLib* pcEncLib )
   {
     pcEncLib->getRdCost()->initLumaLevelToWeightTable(m_pcCfg->getBitDepth(CHANNEL_TYPE_LUMA));
   }
-  pcEncLib->getALF()->getLumaLevelWeightTable() = pcEncLib->getRdCost()->getLumaLevelWeightTable();
-  int alfWSSD = 0;
-  if (m_pcCfg->getLmcs() && m_pcCfg->getReshapeSignalType() == RESHAPE_SIGNAL_PQ )
-  {
-    alfWSSD = 1;
-  }
+
+  const bool alfWSSD = m_pcCfg->getLmcs() && m_pcCfg->getReshapeSignalType() == RESHAPE_SIGNAL_PQ;
   pcEncLib->getALF()->setAlfWSSD(alfWSSD);
+  if (alfWSSD)
+  {
+    pcEncLib->getALF()->setLumaLevelWeightTable(pcEncLib->getRdCost()->getLumaLevelWeightTable());
+  }
 #endif
   m_pcReshaper = pcEncLib->getReshaper();
 

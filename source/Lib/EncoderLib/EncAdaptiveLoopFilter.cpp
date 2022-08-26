@@ -40,7 +40,6 @@
 #include "CommonLib/CodingStructure.h"
 
 #define AlfCtx(c) SubCtx( Ctx::Alf, c)
-std::vector<double> EncAdaptiveLoopFilter::m_lumaLevelToWeightPLUT;
 
 #include <algorithm>
 
@@ -453,8 +452,6 @@ EncAdaptiveLoopFilter::EncAdaptiveLoopFilter( int& apsIdStart )
   m_filterCoeffSet = nullptr;
   m_filterClippSet = nullptr;
   m_diffFilterCoeff = nullptr;
-
-  m_alfWSSD = 0;
 
   m_alfCovarianceCcAlf[0] = nullptr;
   m_alfCovarianceCcAlf[1] = nullptr;
@@ -2289,19 +2286,11 @@ void EncAdaptiveLoopFilter::getBlkStats(AlfCovariance* alfCovariance, const AlfF
   const int numBins = AlfNumClippingValues[channel];
   int transposeIdx = 0;
   int classIdx = 0;
-  bool isLumaFilter = shape.numCoeff > 7 ? 1 : 0;
-  double filterStrengthTarget = isLumaFilter ? m_encCfg->getALFStrengthTargetLuma() : m_encCfg->getALFStrengthTargetChroma();
-  double filterStrengthTargetE = 1.0;
-  double filterStrengthTargetY = 1.0;
-  if (filterStrengthTarget != 0.0)
-  {
-    filterStrengthTargetY = 1 / filterStrengthTarget;
-    filterStrengthTargetE = filterStrengthTargetY * filterStrengthTargetY;
-  }
-  else
-  {
-    filterStrengthTargetY = 0.0;
-  }
+
+  const double strength =
+    isLuma(channel) ? m_encCfg->getALFStrengthTargetLuma() : m_encCfg->getALFStrengthTargetChroma();
+  const double invStrength = strength != 0.0 ? 1.0 / strength : 0.0;
+
   for( int i = 0; i < area.height; i++ )
   {
     int vbDistance = ((areaDst.y + i) % vbCTUHeight) - vbPos;
@@ -2319,52 +2308,38 @@ void EncAdaptiveLoopFilter::getBlkStats(AlfCovariance* alfCovariance, const AlfF
         classIdx = cl.classIdx;
       }
 
-      double weight = 1.0;
-      if (m_alfWSSD)
-      {
-        weight = m_lumaLevelToWeightPLUT[org[j]];
-      }
-      Intermediate_Int yLocal = org[j] - rec[j];
       calcCovariance(ELocal, rec + j, recStride, shape, transposeIdx, channel, vbDistance);
-      for( int k = 0; k < shape.numCoeff; k++ )
+
+      const double weight = m_alfWSSD ? m_lumaLevelToWeightPLUT[org[j]] : 1.0;
+      const double yLocal = org[j] - rec[j];
+
+      double e[MaxAlfNumClippingValues][MAX_NUM_ALF_LUMA_COEFF];
+
+      for (int b = 0; b < numBins; b++)
       {
-        for( int l = k; l < shape.numCoeff; l++ )
+        for (int k = 0; k < shape.numCoeff; k++)
         {
-          for( int b0 = 0; b0 < numBins; b0++ )
+          e[b][k] = invStrength * ELocal[k][b];
+        }
+      }
+
+      for (int b0 = 0; b0 < numBins; b0++)
+      {
+        for (int k = 0; k < shape.numCoeff; k++)
+        {
+          const double we = weight * e[b0][k];
+
+          for (int b1 = 0; b1 < numBins; b1++)
           {
-            for( int b1 = 0; b1 < numBins; b1++ )
+            for (int l = k; l < shape.numCoeff; l++)
             {
-              if (m_alfWSSD)
-              {
-                alfCovariance[classIdx].E[b0][b1][k][l] += filterStrengthTargetE * weight * (ELocal[k][b0] * (double)ELocal[l][b1]);
-              }
-              else
-              {
-                alfCovariance[classIdx].E[b0][b1][k][l] += filterStrengthTargetE * ELocal[k][b0] * (double)ELocal[l][b1];
-              }
+              alfCovariance[classIdx].E[b0][b1][k][l] += we * e[b1][l];
             }
           }
-        }
-        for( int b = 0; b < numBins; b++ )
-        {
-          if (m_alfWSSD)
-          {
-            alfCovariance[classIdx].y[b][k] += filterStrengthTargetY * weight * (ELocal[k][b] * (double)yLocal);
-          }
-          else
-          {
-            alfCovariance[classIdx].y[b][k] += filterStrengthTargetY * ELocal[k][b] * (double)yLocal;
-          }
+          alfCovariance[classIdx].y[b0][k] += we * yLocal;
         }
       }
-      if (m_alfWSSD)
-      {
-        alfCovariance[classIdx].pixAcc += weight * (yLocal * (double)yLocal);
-      }
-      else
-      {
-        alfCovariance[classIdx].pixAcc += yLocal * (double)yLocal;
-      }
+      alfCovariance[classIdx].pixAcc += weight * yLocal * yLocal;
     }
     org += orgStride;
     rec += recStride;
@@ -2373,13 +2348,13 @@ void EncAdaptiveLoopFilter::getBlkStats(AlfCovariance* alfCovariance, const AlfF
   int numClasses = classifier ? MAX_NUM_ALF_CLASSES : 1;
   for( classIdx = 0; classIdx < numClasses; classIdx++ )
   {
-    for( int k = 1; k < shape.numCoeff; k++ )
+    for (int k = 1; k < shape.numCoeff; k++)
     {
-      for( int l = 0; l < k; l++ )
+      for (int l = 0; l < k; l++)
       {
-        for( int b0 = 0; b0 < numBins; b0++ )
+        for (int b0 = 0; b0 < numBins; b0++)
         {
-          for( int b1 = 0; b1 < numBins; b1++ )
+          for (int b1 = 0; b1 < numBins; b1++)
           {
             alfCovariance[classIdx].E[b0][b1][k][l] = alfCovariance[classIdx].E[b1][b0][l][k];
           }
@@ -4101,7 +4076,6 @@ void EncAdaptiveLoopFilter::getBlkStatsCcAlf(AlfCovariance &alfCovariance, const
 
   int        orgStride = orgYuv.get(compID).stride;
   const Pel *org       = orgYuv.get(compID).bufAt(compArea);
-  const int  numBins   = 1;
 
   int vbCTUHeight = m_alfVBLumaCTUHeight;
   int vbPos       = m_alfVBLumaPos;
@@ -4111,75 +4085,43 @@ void EncAdaptiveLoopFilter::getBlkStatsCcAlf(AlfCovariance &alfCovariance, const
   }
 
   Pel ELocal[MAX_NUM_CC_ALF_CHROMA_COEFF][1];
-  double filterStrengthTarget = m_encCfg->getCCALFStrengthTarget();
-  double filterStrengthTargetE = 1.0;
-  double filterStrengthTargetY = 1.0;
-  if (filterStrengthTarget != 0.0)
-  {
-    filterStrengthTargetY = 1 / filterStrengthTarget;
-    filterStrengthTargetE = filterStrengthTargetY * filterStrengthTargetY;
-  }
-  else
-  {
-    filterStrengthTargetY = 0.0;
-  }
+
+  const double strength    = m_encCfg->getCCALFStrengthTarget();
+  const double invStrength = strength != 0.0 ? 1.0 / strength : 0.0;
+
   for (int i = 0; i < compArea.height; i++)
   {
     int vbDistance = ((i << getComponentScaleY(compID, m_chromaFormat)) % vbCTUHeight) - vbPos;
     const bool skipThisRow = getComponentScaleY(compID, m_chromaFormat) == 0 && (vbDistance == 0 || vbDistance == 1);
     for (int j = 0; j < compArea.width && (!skipThisRow); j++)
     {
+      const int jY = j << getComponentScaleX(compID, m_chromaFormat);
+
       std::memset(ELocal, 0, sizeof(ELocal));
 
-      double weight = 1.0;
-      if (m_alfWSSD)
+      calcCovarianceCcAlf(ELocal, rec[COMPONENT_Y] + jY, recStride[COMPONENT_Y], shape, vbDistance);
+
+      const double weight = m_alfWSSD ? m_lumaLevelToWeightPLUT[org[j]] : 1.0;
+      const double yLocal = org[j] - rec[compID][j];
+
+      double e[MAX_NUM_CC_ALF_CHROMA_COEFF];
+
+      for (int k = 0; k < shape.numCoeff - 1; k++)
       {
-        weight = m_lumaLevelToWeightPLUT[org[j]];
+        e[k] = invStrength * ELocal[k][0];
       }
-
-      Intermediate_Int yLocal = org[j] - rec[compID][j];
-
-      calcCovarianceCcAlf( ELocal, rec[COMPONENT_Y] + ( j << getComponentScaleX(compID, m_chromaFormat)), recStride[COMPONENT_Y], shape, vbDistance );
 
       for( int k = 0; k < (shape.numCoeff - 1); k++ )
       {
+        const double we = weight * e[k];
+
         for( int l = k; l < (shape.numCoeff - 1); l++ )
         {
-          for( int b0 = 0; b0 < numBins; b0++ )
-          {
-            for (int b1 = 0; b1 < numBins; b1++)
-            {
-              if (m_alfWSSD)
-              {
-                alfCovariance.E[b0][b1][k][l] += filterStrengthTargetE * weight * (ELocal[k][b0] * (double)ELocal[l][b1]);
-              }
-              else
-              {
-                alfCovariance.E[b0][b1][k][l] += filterStrengthTargetE * ELocal[k][b0] * (double)ELocal[l][b1];
-              }
-            }
-          }
+          alfCovariance.E[0][0][k][l] += we * e[l];
         }
-        for (int b = 0; b < numBins; b++)
-        {
-          if (m_alfWSSD)
-          {
-            alfCovariance.y[b][k] += filterStrengthTargetY * weight * (ELocal[k][b] * (double)yLocal);
-          }
-          else
-          {
-            alfCovariance.y[b][k] += filterStrengthTargetY * ELocal[k][b] * (double)yLocal;
-          }
-        }
+        alfCovariance.y[0][k] += we * yLocal;
       }
-      if (m_alfWSSD)
-      {
-        alfCovariance.pixAcc += weight * (yLocal * (double)yLocal);
-      }
-      else
-      {
-        alfCovariance.pixAcc += yLocal * (double)yLocal;
-      }
+      alfCovariance.pixAcc += weight * yLocal * yLocal;
     }
     org += orgStride;
     for (int srcCIdx = 0; srcCIdx < numberOfComponents; srcCIdx++)
@@ -4207,13 +4149,7 @@ void EncAdaptiveLoopFilter::getBlkStatsCcAlf(AlfCovariance &alfCovariance, const
   {
     for (int l = 0; l < k; l++)
     {
-      for (int b0 = 0; b0 < numBins; b0++)
-      {
-        for (int b1 = 0; b1 < numBins; b1++)
-        {
-          alfCovariance.E[b0][b1][k][l] = alfCovariance.E[b1][b0][l][k];
-        }
-      }
+      alfCovariance.E[0][0][k][l] = alfCovariance.E[0][0][l][k];
     }
   }
 }
