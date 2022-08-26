@@ -553,6 +553,26 @@ void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIn
   }
 }
 
+#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
+void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo)
+{
+  assert(m_isInitialized);
+  assert(seiProcessingOrderInfo != nullptr);
+
+  uint32_t numSEIMessages = m_pcCfg->getPoSEINumofSeiMessages();
+  seiProcessingOrderInfo->m_posNumofSeiMessages = numSEIMessages;
+  seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
+
+  seiProcessingOrderInfo->m_posPayloadType.resize(numSEIMessages);
+  seiProcessingOrderInfo->m_posProcessingOrder.resize(numSEIMessages);
+
+  for (uint32_t i = 0; i < numSEIMessages; i++) {
+    seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
+    seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
+  }
+}
+#endif
+
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned
                            bool         &failed,        /// used and updated

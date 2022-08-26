@@ -112,6 +112,9 @@ protected:
 #if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   void xParseSEIPhaseIndication(SEIPhaseIndication& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
 #endif
+#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
+  void xParseSEIProcessingOrder               (SEIProcessingOrderInfo& sei, uint32_t payloadSize, std::ostream *decodedMessageOutputStream);
+#endif
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);
   void sei_read_code(std::ostream *pOS, uint32_t length, uint32_t &ruiCode, const char *pSymbolName);

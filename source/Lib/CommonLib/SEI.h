@@ -97,6 +97,10 @@ public:
 #if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
     PHASE_INDICATION                     = 212,
 #endif
+
+#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
+    SEI_PROCESSING_ORDER                 = 213,
+#endif
   };
 
   SEI() {}
@@ -121,6 +125,21 @@ public:
   bool                  m_siiFixedSIwithinCLVS;
   std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
 };
+
+#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
+class SEIProcessingOrderInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return SEI_PROCESSING_ORDER; }
+  SEIProcessingOrderInfo() {}
+  virtual ~SEIProcessingOrderInfo() {}
+
+  bool                   m_posEnabled;
+  std::vector<uint16_t>  m_posPayloadType;
+  std::vector<uint8_t>   m_posProcessingOrder;
+  uint32_t               m_posNumofSeiMessages;
+};
+#endif
 
 class SEIEquirectangularProjection : public SEI
 {

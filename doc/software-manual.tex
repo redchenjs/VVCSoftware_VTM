@@ -3734,6 +3734,7 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   210 & Neural network post-filter characteristics & Table \ref{tab:sei-nn-post-filter-characteristics} \\
   211 & Neural netowrk post-filter activation & Table \ref{tab:sei-nn-post-filter-activation} \\
   212 & Phase indication                         & Table \ref{tab:sei-phase-indication} \\
+  213 & Processing order SEI messages            & Table \ref{tab:sei-processing order}\\
 \end{SEIListTable}
 %%
 %% SEI messages
@@ -5617,6 +5618,21 @@ Specifies the Vertical Phase Numerator of Phase Indication SEI messages for redu
 \Option{SEIPIVerPhaseDenMinus1ReducedResolution} &
 \Default{0} &
 Specifies the Vertical Phase Denominator minus 1 of Phase Indication SEI messages for reduced resolution pictures.
+\\
+\end{OptionTableNoShorthand}
+
+\begin{OptionTableNoShorthand}{Processing order SEI message encoder parameters}{tab:sei-processing order}
+\Option{SEIPOEnabled} &
+\Default{false} &
+Enables (true) or disables (false) the insertion of processing order SEI message.
+\\
+\Option{SEIPOPayLoadType\emph{i}} &
+\Default{0} &
+Specifies the value of payloadType for the \emph{i}-th SEI message for which information is provided in the SEI processing order SEI message.
+\\
+\Option{SEIPOProcessingOrder\emph{i}} &
+\Default{0} &
+Specifies the preferred order of processing any SEI message with payloadType equal to SEIPOPayLoadType\emph{i}.
 \\
 \end{OptionTableNoShorthand}
 

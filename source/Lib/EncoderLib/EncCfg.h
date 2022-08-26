@@ -838,6 +838,15 @@ protected:
   int       m_driSEINonlinearNumMinus1;
   std::vector<uint32_t> m_driSEINonlinearModel;
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
+
+#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
+  //SEI message processing order
+  bool                  m_poSEIEnabled;
+  std::vector<uint16_t> m_poSEIPayloadType;
+  std::vector<uint8_t>  m_poSEIProcessingOrder;
+  uint32_t              m_numofSEIMessages;
+#endif
+
   bool      m_constrainedRaslEncoding;
 
   //====== Weighted Prediction ========
@@ -2329,6 +2338,18 @@ public:
   bool     getCraAPSreset()                                    const { return m_craAPSreset; }
   void     setRprRASLtoolSwitch(bool b)                              { m_rprRASLtoolSwitch = b; }
   bool     getRprRASLtoolSwitch()                                    { return m_rprRASLtoolSwitch; }
+
+#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
+  //SEI messages processing order
+  void     setPoSEIEnabled(bool b)                                   { m_poSEIEnabled = b; }
+  bool     getPoSEIEnabled()                                         { return m_poSEIEnabled; }
+  void     setPoSEIPayloadType(const std::vector<uint16_t>& b)       { m_poSEIPayloadType = b; }
+  uint16_t getPoSEIPayloadType(uint16_t idx)                   const { return m_poSEIPayloadType[idx]; }
+  void     setPoSEIProcessingOrder(const std::vector<uint8_t>& b)    { m_poSEIProcessingOrder = b; }
+  uint8_t  getPoSEIProcessingOrder(uint8_t idx)                const { return m_poSEIProcessingOrder[idx]; }
+  void     setPoSEINumofSeiMessages(uint32_t i)                      { m_numofSEIMessages = i; }
+  uint32_t getPoSEINumofSeiMessages()                          const { return m_numofSEIMessages; }
+#endif
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
   void         setWPBiPred            ( bool b )                     { m_useWeightedBiPred = b;    }

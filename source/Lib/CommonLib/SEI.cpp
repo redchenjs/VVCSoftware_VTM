@@ -483,6 +483,10 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
 #if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
     case SEI::PHASE_INDICATION:                     return "Phase Indication";
 #endif
+
+#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
+    case SEI::SEI_PROCESSING_ORDER:                 return "SEI messages Processing order";
+#endif
     default:                                        return "Unknown";
   }
 }
