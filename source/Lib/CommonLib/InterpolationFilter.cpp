@@ -674,43 +674,43 @@ void InterpolationFilter::filterVer(const ClpRng &clpRng, Pel const *src, const 
 
 void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, const ptrdiff_t srcStride, Pel *dst,
                                     const ptrdiff_t dstStride, int width, int height, int frac, bool isLast,
-                                    const ClpRng &clpRng, int nFilterIdx, bool useAltHpelIf)
+                                    const ClpRng &clpRng, Filter nFilterIdx)
 {
-  const bool biMCForDMVR = nFilterIdx == FILTER_DMVR;
+  const bool biMCForDMVR = nFilterIdx == Filter::DMVR;
 
-  if (frac == 0 && nFilterIdx <= FILTER_AFFINE)
+  if (frac == 0 && nFilterIdx <= Filter::AFFINE)
   {
     m_filterCopy[true][isLast]( clpRng, src, srcStride, dst, dstStride, width, height, biMCForDMVR );
   }
   else if( isLuma( compID ) )
   {
     CHECK( frac < 0 || frac >= LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction" );
-    if (nFilterIdx == FILTER_DMVR)
+    if (nFilterIdx == Filter::DMVR)
     {
       filterHor<NTAPS_BILINEAR>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_bilinearFilterPrec4[frac], biMCForDMVR );
     }
-    else if (nFilterIdx == FILTER_AFFINE)
+    else if (nFilterIdx == Filter::AFFINE)
     {
       filterHor<NTAPS_LUMA_AFFINE>(clpRng, src, srcStride, dst, dstStride, width, height, isLast,
                                    m_affineLumaFilter[frac], biMCForDMVR);
     }
-    else if (nFilterIdx == FILTER_RPR1)
+    else if (nFilterIdx == Filter::RPR1)
     {
       filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaFilterRPR1[frac], biMCForDMVR );
     }
-    else if (nFilterIdx == FILTER_RPR2)
+    else if (nFilterIdx == Filter::RPR2)
     {
       filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaFilterRPR2[frac], biMCForDMVR );
     }
-    else if (nFilterIdx == FILTER_AFFINE_RPR1)
+    else if (nFilterIdx == Filter::AFFINE_RPR1)
     {
       filterHor<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_affineLumaFilterRPR1[frac], biMCForDMVR);
     }
-    else if (nFilterIdx == FILTER_AFFINE_RPR2)
+    else if (nFilterIdx == Filter::AFFINE_RPR2)
     {
       filterHor<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_affineLumaFilterRPR2[frac], biMCForDMVR);
     }
-    else if( frac == 8 && useAltHpelIf )
+    else if (frac == 8 && nFilterIdx == Filter::HALFPEL_ALT)
     {
       filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaAltHpelIFilter, biMCForDMVR );
     }
@@ -722,12 +722,12 @@ void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, co
   else
   {
     CHECK(frac < 0 || frac >= CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction");
-    if (nFilterIdx == FILTER_RPR1)
+    if (nFilterIdx == Filter::RPR1)
     {
       filterHor<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilterRPR1[frac],
                               biMCForDMVR);
     }
-    else if (nFilterIdx == FILTER_RPR2)
+    else if (nFilterIdx == Filter::RPR2)
     {
       filterHor<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilterRPR2[frac],
                               biMCForDMVR);
@@ -742,43 +742,43 @@ void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, co
 
 void InterpolationFilter::filterVer(const ComponentID compID, Pel const *src, const ptrdiff_t srcStride, Pel *dst,
                                     const ptrdiff_t dstStride, int width, int height, int frac, bool isFirst,
-                                    bool isLast, const ClpRng &clpRng, int nFilterIdx, bool useAltHpelIf)
+                                    bool isLast, const ClpRng &clpRng, Filter nFilterIdx)
 {
-  const bool biMCForDMVR = nFilterIdx == FILTER_DMVR;
+  const bool biMCForDMVR = nFilterIdx == Filter::DMVR;
 
-  if (frac == 0 && nFilterIdx <= FILTER_AFFINE)
+  if (frac == 0 && nFilterIdx <= Filter::AFFINE)
   {
     m_filterCopy[isFirst][isLast]( clpRng, src, srcStride, dst, dstStride, width, height, biMCForDMVR );
   }
   else if( isLuma( compID ) )
   {
     CHECK( frac < 0 || frac >= LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction" );
-    if (nFilterIdx == FILTER_DMVR)
+    if (nFilterIdx == Filter::DMVR)
     {
       filterVer<NTAPS_BILINEAR>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_bilinearFilterPrec4[frac], biMCForDMVR );
     }
-    else if (nFilterIdx == FILTER_AFFINE)
+    else if (nFilterIdx == Filter::AFFINE)
     {
       filterVer<NTAPS_LUMA_AFFINE>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
                                    m_affineLumaFilter[frac], biMCForDMVR);
     }
-    else if (nFilterIdx == FILTER_RPR1)
+    else if (nFilterIdx == Filter::RPR1)
     {
       filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaFilterRPR1[frac], biMCForDMVR );
     }
-    else if (nFilterIdx == FILTER_RPR2)
+    else if (nFilterIdx == Filter::RPR2)
     {
       filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaFilterRPR2[frac], biMCForDMVR );
     }
-    else if (nFilterIdx == FILTER_AFFINE_RPR1)
+    else if (nFilterIdx == Filter::AFFINE_RPR1)
     {
       filterVer<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_affineLumaFilterRPR1[frac], biMCForDMVR);
     }
-    else if (nFilterIdx == FILTER_AFFINE_RPR2)
+    else if (nFilterIdx == Filter::AFFINE_RPR2)
     {
       filterVer<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_affineLumaFilterRPR2[frac], biMCForDMVR);
     }
-    else if( frac == 8 && useAltHpelIf )
+    else if (frac == 8 && nFilterIdx == Filter::HALFPEL_ALT)
     {
       filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaAltHpelIFilter, biMCForDMVR );
     }
@@ -790,12 +790,12 @@ void InterpolationFilter::filterVer(const ComponentID compID, Pel const *src, co
   else
   {
     CHECK(frac < 0 || frac >= CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction");
-    if (nFilterIdx == FILTER_RPR1)
+    if (nFilterIdx == Filter::RPR1)
     {
       filterVer<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
                               m_chromaFilterRPR1[frac], biMCForDMVR);
     }
-    else if (nFilterIdx == FILTER_RPR2)
+    else if (nFilterIdx == Filter::RPR2)
     {
       filterVer<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
                               m_chromaFilterRPR2[frac], biMCForDMVR);

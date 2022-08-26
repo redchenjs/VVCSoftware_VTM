@@ -693,7 +693,10 @@ void InterPrediction::xPredInterBlk(const ComponentID &compID, const PredictionU
 
   bool useAltHpelIf = pu.cu->imv == IMV_HPEL;
 
-  if( !isIBC && xPredInterBlkRPR( scalingRatio, *pu.cs->pps, CompArea( compID, chFmt, pu.blocks[compID], Size( dstPic.bufs[compID].width, dstPic.bufs[compID].height ) ), refPic, mv, dstPic.bufs[compID].buf, dstPic.bufs[compID].stride, bi, wrapRef, clpRng, 0, useAltHpelIf ) )
+  if (!isIBC
+      && xPredInterBlkRPR(scalingRatio, *pu.cs->pps, CompArea(compID, chFmt, pu.blocks[compID], dstPic.bufs[compID]),
+                          refPic, mv, dstPic.bufs[compID].buf, dstPic.bufs[compID].stride, bi, wrapRef, clpRng,
+                          InterpolationFilter::Filter::DEFAULT, useAltHpelIf))
   {
     CHECK( bilinearMC, "DMVR should be disabled with RPR" );
     CHECK( bioApplied, "BDOF should be disabled with RPR" );
@@ -760,17 +763,19 @@ void InterPrediction::xPredInterBlk(const ComponentID &compID, const PredictionU
       dstBuf.buf    = m_filteredBlockTmp[2 + m_iRefListIdx][compID] + 2 * dstBuf.stride + 2;
     }
 
-    const int filterIdx = bilinearMC ? InterpolationFilter::FILTER_DMVR : InterpolationFilter::FILTER_DEFAULT;
+    const auto filterIdx =
+      bilinearMC ? InterpolationFilter::Filter::DMVR
+                 : (useAltHpelIf ? InterpolationFilter::Filter::HALFPEL_ALT : InterpolationFilter::Filter::DEFAULT);
 
     if (yFrac == 0)
     {
       m_if.filterHor(compID, (Pel *) refBuf.buf, refBuf.stride, dstBuf.buf, dstBuf.stride, backupWidth, backupHeight,
-                     xFrac, rndRes, clpRng, filterIdx, useAltHpelIf);
+                     xFrac, rndRes, clpRng, filterIdx);
     }
     else if (xFrac == 0)
     {
       m_if.filterVer(compID, (Pel *) refBuf.buf, refBuf.stride, dstBuf.buf, dstBuf.stride, backupWidth, backupHeight,
-                     yFrac, true, rndRes, clpRng, filterIdx, useAltHpelIf);
+                     yFrac, true, rndRes, clpRng, filterIdx);
     }
     else
     {
@@ -787,11 +792,10 @@ void InterPrediction::xPredInterBlk(const ComponentID &compID, const PredictionU
         vFilterSize = NTAPS_BILINEAR;
       }
       m_if.filterHor(compID, (Pel *) refBuf.buf - ((vFilterSize >> 1) - 1) * refBuf.stride, refBuf.stride, tmpBuf.buf,
-                     tmpBuf.stride, backupWidth, backupHeight + vFilterSize - 1, xFrac, false, clpRng, filterIdx,
-                     useAltHpelIf);
+                     tmpBuf.stride, backupWidth, backupHeight + vFilterSize - 1, xFrac, false, clpRng, filterIdx);
       JVET_J0090_SET_CACHE_ENABLE(false);
       m_if.filterVer(compID, (Pel *) tmpBuf.buf + ((vFilterSize >> 1) - 1) * tmpBuf.stride, tmpBuf.stride, dstBuf.buf,
-                     dstBuf.stride, backupWidth, backupHeight, yFrac, false, rndRes, clpRng, filterIdx, useAltHpelIf);
+                     dstBuf.stride, backupWidth, backupHeight, yFrac, false, rndRes, clpRng, filterIdx);
     }
     JVET_J0090_SET_CACHE_ENABLE(
       (srcPadStride == 0)
@@ -1101,7 +1105,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
       }
 #endif
 
-      const int filterIdx = InterpolationFilter::FILTER_AFFINE;
+      const auto filterIdx = InterpolationFilter::Filter::AFFINE;
 
       if( isRefScaled )
       {
@@ -2280,7 +2284,10 @@ bool InterPrediction::isLumaBvValid(const int ctuSize, const int xCb, const int 
   return true;
 }
 
-bool InterPrediction::xPredInterBlkRPR( const std::pair<int, int>& scalingRatio, const PPS& pps, const CompArea &blk, const Picture* refPic, const Mv& mv, Pel* dst, const int dstStride, const bool bi, const bool wrapRef, const ClpRng& clpRng, const int filterIndex, const bool useAltHpelIf )
+bool InterPrediction::xPredInterBlkRPR(const std::pair<int, int> &scalingRatio, const PPS &pps, const CompArea &blk,
+                                       const Picture *refPic, const Mv &mv, Pel *dst, const int dstStride,
+                                       const bool bi, const bool wrapRef, const ClpRng &clpRng,
+                                       const InterpolationFilter::Filter filterIndex, const bool useAltHpelIf)
 {
   const ChromaFormat  chFmt = blk.chromaFormat;
   const ComponentID compID = blk.compID;
@@ -2301,51 +2308,62 @@ bool InterPrediction::xPredInterBlkRPR( const std::pair<int, int>& scalingRatio,
     int refPicWidth = refPic->getPicWidthInLumaSamples();
     int refPicHeight = refPic->getPicHeightInLumaSamples();
 
-    int xFilter = filterIndex;
-    int yFilter = filterIndex;
+    InterpolationFilter::Filter xFilter       = filterIndex;
+    InterpolationFilter::Filter yFilter       = filterIndex;
     const int rprThreshold1 = ( 1 << SCALE_RATIO_BITS ) * 5 / 4;
     const int rprThreshold2 = ( 1 << SCALE_RATIO_BITS ) * 7 / 4;
-    if (filterIndex == InterpolationFilter::FILTER_DEFAULT || !isLuma(compID))
+    if (filterIndex == InterpolationFilter::Filter::DEFAULT || !isLuma(compID))
     {
       if( scalingRatio.first > rprThreshold2 )
       {
-        xFilter = InterpolationFilter::FILTER_RPR2;
+        xFilter = InterpolationFilter::Filter::RPR2;
       }
       else if( scalingRatio.first > rprThreshold1 )
       {
-        xFilter = InterpolationFilter::FILTER_RPR1;
+        xFilter = InterpolationFilter::Filter::RPR1;
       }
 
       if( scalingRatio.second > rprThreshold2 )
       {
-        yFilter = InterpolationFilter::FILTER_RPR2;
+        yFilter = InterpolationFilter::Filter::RPR2;
       }
       else if( scalingRatio.second > rprThreshold1 )
       {
-        yFilter = InterpolationFilter::FILTER_RPR1;
+        yFilter = InterpolationFilter::Filter::RPR1;
       }
     }
-    else if (filterIndex == InterpolationFilter::FILTER_AFFINE)
+    else if (filterIndex == InterpolationFilter::Filter::AFFINE)
     {
       if (scalingRatio.first > rprThreshold2)
       {
-        xFilter = InterpolationFilter::FILTER_AFFINE_RPR2;
+        xFilter = InterpolationFilter::Filter::AFFINE_RPR2;
       }
       else if (scalingRatio.first > rprThreshold1)
       {
-        xFilter = InterpolationFilter::FILTER_AFFINE_RPR1;
+        xFilter = InterpolationFilter::Filter::AFFINE_RPR1;
       }
 
       if (scalingRatio.second > rprThreshold2)
       {
-        yFilter = InterpolationFilter::FILTER_AFFINE_RPR2;
+        yFilter = InterpolationFilter::Filter::AFFINE_RPR2;
       }
       else if (scalingRatio.second > rprThreshold1)
       {
-        yFilter = InterpolationFilter::FILTER_AFFINE_RPR1;
+        yFilter = InterpolationFilter::Filter::AFFINE_RPR1;
       }
     }
 
+    if (useAltHpelIf)
+    {
+      if (xFilter == InterpolationFilter::Filter::DEFAULT && scalingRatio.first == 1 << SCALE_RATIO_BITS)
+      {
+        xFilter = InterpolationFilter::Filter::HALFPEL_ALT;
+      }
+      if (yFilter == InterpolationFilter::Filter::DEFAULT && scalingRatio.second == 1 << SCALE_RATIO_BITS)
+      {
+        yFilter = InterpolationFilter::Filter::HALFPEL_ALT;
+      }
+    }
     const int posShift = SCALE_RATIO_BITS - 4;
     int stepX = ( scalingRatio.first + 8 ) >> 4;
     int stepY = ( scalingRatio.second + 8 ) >> 4;
@@ -2415,8 +2433,7 @@ bool InterPrediction::xPredInterBlkRPR( const std::pair<int, int>& scalingRatio,
       Pel *const tempBuf = m_filteredBlockTmpRPR + col;
 
       m_if.filterHor(compID, (Pel *) refBuf.buf - ((vFilterSize >> 1) - 1) * refBuf.stride, refBuf.stride, tempBuf,
-                     tmpStride, 1, refHeight + vFilterSize - 1 + extSize, xFrac, false, clpRng, xFilter,
-                     useAltHpelIf && scalingRatio.first == 1 << SCALE_RATIO_BITS);
+                     tmpStride, 1, refHeight + vFilterSize - 1 + extSize, xFrac, false, clpRng, xFilter);
     }
 
     for( row = 0; row < height; row++ )
@@ -2432,8 +2449,7 @@ bool InterPrediction::xPredInterBlkRPR( const std::pair<int, int>& scalingRatio,
 
       JVET_J0090_SET_CACHE_ENABLE( false );
       m_if.filterVer(compID, tempBuf + ((vFilterSize >> 1) - 1) * tmpStride, tmpStride, dst + row * dstStride,
-                     dstStride, width, 1, yFrac, false, rndRes, clpRng, yFilter,
-                     useAltHpelIf && scalingRatio.second == 1 << SCALE_RATIO_BITS);
+                     dstStride, width, 1, yFrac, false, rndRes, clpRng, yFilter);
       JVET_J0090_SET_CACHE_ENABLE( true );
     }
   }
