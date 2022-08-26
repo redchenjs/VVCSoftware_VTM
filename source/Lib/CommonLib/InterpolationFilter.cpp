@@ -42,7 +42,6 @@
 
 #include "Rom.h"
 #include "InterpolationFilter.h"
-
 #include "ChromaFormat.h"
 
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
@@ -141,47 +140,49 @@ const TFilterCoeff InterpolationFilter::m_lumaFilterRPR2[LUMA_INTERPOLATION_FILT
   { -2, -4,  5, 21, 29, 19,  0, -4 }
 };
 
+// clang-format off
 // 1.5x
 const TFilterCoeff InterpolationFilter::m_affineLumaFilterRPR1[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA] =
 {
-  {  0, -6, 17, 42, 17, -5, -1,  0 },
-  {  0, -5, 15, 41, 19, -5, -1,  0 },
-  {  0, -5, 13, 40, 21, -4, -1,  0 },
-  {  0, -5, 11, 39, 24, -4, -1,  0 },
-  {  0, -5,  9, 38, 26, -3, -1,  0 },
-  {  0, -5,  7, 38, 28, -2, -2,  0 },
-  {  0, -4,  5, 36, 30, -1, -2,  0 },
-  {  0, -3,  3, 35, 32,  0, -3,  0 },
-  {  0, -3,  2, 33, 33,  2, -3,  0 },
-  {  0, -3,  0, 32, 35,  3, -3,  0 },
-  {  0, -2, -1, 30, 36,  5, -4,  0 },
-  {  0, -2, -2, 28, 38,  7, -5,  0 },
-  {  0, -1, -3, 26, 38,  9, -5,  0 },
-  {  0, -1, -4, 24, 39, 11, -5,  0 },
-  {  0, -1, -4, 21, 40, 13, -5,  0 },
-  {  0, -1, -5, 19, 41, 15, -5,  0 }
+  {  -6, 17, 42, 17, -5, -1,  0, 0 },
+  {  -5, 15, 41, 19, -5, -1,  0, 0 },
+  {  -5, 13, 40, 21, -4, -1,  0, 0 },
+  {  -5, 11, 39, 24, -4, -1,  0, 0 },
+  {  -5,  9, 38, 26, -3, -1,  0, 0 },
+  {  -5,  7, 38, 28, -2, -2,  0, 0 },
+  {  -4,  5, 36, 30, -1, -2,  0, 0 },
+  {  -3,  3, 35, 32,  0, -3,  0, 0 },
+  {  -3,  2, 33, 33,  2, -3,  0, 0 },
+  {  -3,  0, 32, 35,  3, -3,  0, 0 },
+  {  -2, -1, 30, 36,  5, -4,  0, 0 },
+  {  -2, -2, 28, 38,  7, -5,  0, 0 },
+  {  -1, -3, 26, 38,  9, -5,  0, 0 },
+  {  -1, -4, 24, 39, 11, -5,  0, 0 },
+  {  -1, -4, 21, 40, 13, -5,  0, 0 },
+  {  -1, -5, 19, 41, 15, -5,  0, 0 }
 };
 
 // 2x
 const TFilterCoeff InterpolationFilter::m_affineLumaFilterRPR2[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA] =
 {
-  {  0, -2, 20, 28, 20,  2, -4,  0 },
-  {  0, -4, 19, 29, 21,  5, -6,  0 },
-  {  0, -5, 18, 29, 22,  6, -6,  0 },
-  {  0, -5, 16, 29, 23,  7, -6,  0 },
-  {  0, -5, 16, 28, 24,  7, -6,  0 },
-  {  0, -5, 14, 28, 25,  8, -6,  0 },
-  {  0, -6, 14, 27, 26,  9, -6,  0 },
-  {  0, -4, 12, 28, 25, 10, -7,  0 },
-  {  0, -6, 11, 27, 27, 11, -6,  0 },
-  {  0, -7, 10, 25, 28, 12, -4,  0 },
-  {  0, -6,  9, 26, 27, 14, -6,  0 },
-  {  0, -6,  8, 25, 28, 14, -5,  0 },
-  {  0, -6,  7, 24, 28, 16, -5,  0 },
-  {  0, -6,  7, 23, 29, 16, -5,  0 },
-  {  0, -6,  6, 22, 29, 18, -5,  0 },
-  {  0, -6,  5, 21, 29, 19, -4,  0 }
+  {  -2, 20, 28, 20,  2, -4,  0, 0 },
+  {  -4, 19, 29, 21,  5, -6,  0, 0 },
+  {  -5, 18, 29, 22,  6, -6,  0, 0 },
+  {  -5, 16, 29, 23,  7, -6,  0, 0 },
+  {  -5, 16, 28, 24,  7, -6,  0, 0 },
+  {  -5, 14, 28, 25,  8, -6,  0, 0 },
+  {  -6, 14, 27, 26,  9, -6,  0, 0 },
+  {  -4, 12, 28, 25, 10, -7,  0, 0 },
+  {  -6, 11, 27, 27, 11, -6,  0, 0 },
+  {  -7, 10, 25, 28, 12, -4,  0, 0 },
+  {  -6,  9, 26, 27, 14, -6,  0, 0 },
+  {  -6,  8, 25, 28, 14, -5,  0, 0 },
+  {  -6,  7, 24, 28, 16, -5,  0, 0 },
+  {  -6,  7, 23, 29, 16, -5,  0, 0 },
+  {  -6,  6, 22, 29, 18, -5,  0, 0 },
+  {  -6,  5, 21, 29, 19, -4,  0, 0 }
 };
+// clang-format on
 
 const TFilterCoeff InterpolationFilter::m_lumaAltHpelIFilter[NTAPS_LUMA] = {  0, 3, 9, 20, 20, 9, 3, 0 };
 const TFilterCoeff InterpolationFilter::m_chromaFilter[CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_CHROMA] =
@@ -319,45 +320,45 @@ const TFilterCoeff InterpolationFilter::m_bilinearFilterPrec4[LUMA_INTERPOLATION
 
 InterpolationFilter::InterpolationFilter()
 {
-  m_filterHor[0][0][0] = filter<8, false, false, false>;
-  m_filterHor[0][0][1] = filter<8, false, false, true>;
-  m_filterHor[0][1][0] = filter<8, false, true, false>;
-  m_filterHor[0][1][1] = filter<8, false, true, true>;
+  m_filterHor[_8_TAPS][0][0] = filter<8, false, false, false, false>;
+  m_filterHor[_8_TAPS][0][1] = filter<8, false, false, true, false>;
+  m_filterHor[_8_TAPS][1][0] = filter<8, false, true, false, false>;
+  m_filterHor[_8_TAPS][1][1] = filter<8, false, true, true, false>;
 
-  m_filterHor[1][0][0] = filter<4, false, false, false>;
-  m_filterHor[1][0][1] = filter<4, false, false, true>;
-  m_filterHor[1][1][0] = filter<4, false, true, false>;
-  m_filterHor[1][1][1] = filter<4, false, true, true>;
+  m_filterHor[_4_TAPS][0][0] = filter<4, false, false, false, false>;
+  m_filterHor[_4_TAPS][0][1] = filter<4, false, false, true, false>;
+  m_filterHor[_4_TAPS][1][0] = filter<4, false, true, false, false>;
+  m_filterHor[_4_TAPS][1][1] = filter<4, false, true, true, false>;
 
-  m_filterHor[2][0][0] = filter<2, false, false, false>;
-  m_filterHor[2][0][1] = filter<2, false, false, true>;
-  m_filterHor[2][1][0] = filter<2, false, true, false>;
-  m_filterHor[2][1][1] = filter<2, false, true, true>;
+  m_filterHor[_2_TAPS_DMVR][0][0] = filter<2, false, false, false, true>;
+  m_filterHor[_2_TAPS_DMVR][0][1] = filter<2, false, false, true, true>;
+  m_filterHor[_2_TAPS_DMVR][1][0] = filter<2, false, true, false, true>;
+  m_filterHor[_2_TAPS_DMVR][1][1] = filter<2, false, true, true, true>;
 
-  m_filterHor[3][0][0] = filter<6, false, false, false>;
-  m_filterHor[3][0][1] = filter<6, false, false, true>;
-  m_filterHor[3][1][0] = filter<6, false, true, false>;
-  m_filterHor[3][1][1] = filter<6, false, true, true>;
+  m_filterHor[_6_TAPS][0][0] = filter<6, false, false, false, false>;
+  m_filterHor[_6_TAPS][0][1] = filter<6, false, false, true, false>;
+  m_filterHor[_6_TAPS][1][0] = filter<6, false, true, false, false>;
+  m_filterHor[_6_TAPS][1][1] = filter<6, false, true, true, false>;
 
-  m_filterVer[0][0][0] = filter<8, true, false, false>;
-  m_filterVer[0][0][1] = filter<8, true, false, true>;
-  m_filterVer[0][1][0] = filter<8, true, true, false>;
-  m_filterVer[0][1][1] = filter<8, true, true, true>;
+  m_filterVer[_8_TAPS][0][0] = filter<8, true, false, false, false>;
+  m_filterVer[_8_TAPS][0][1] = filter<8, true, false, true, false>;
+  m_filterVer[_8_TAPS][1][0] = filter<8, true, true, false, false>;
+  m_filterVer[_8_TAPS][1][1] = filter<8, true, true, true, false>;
 
-  m_filterVer[1][0][0] = filter<4, true, false, false>;
-  m_filterVer[1][0][1] = filter<4, true, false, true>;
-  m_filterVer[1][1][0] = filter<4, true, true, false>;
-  m_filterVer[1][1][1] = filter<4, true, true, true>;
+  m_filterVer[_4_TAPS][0][0] = filter<4, true, false, false, false>;
+  m_filterVer[_4_TAPS][0][1] = filter<4, true, false, true, false>;
+  m_filterVer[_4_TAPS][1][0] = filter<4, true, true, false, false>;
+  m_filterVer[_4_TAPS][1][1] = filter<4, true, true, true, false>;
 
-  m_filterVer[2][0][0] = filter<2, true, false, false>;
-  m_filterVer[2][0][1] = filter<2, true, false, true>;
-  m_filterVer[2][1][0] = filter<2, true, true, false>;
-  m_filterVer[2][1][1] = filter<2, true, true, true>;
+  m_filterVer[_2_TAPS_DMVR][0][0] = filter<2, true, false, false, true>;
+  m_filterVer[_2_TAPS_DMVR][0][1] = filter<2, true, false, true, true>;
+  m_filterVer[_2_TAPS_DMVR][1][0] = filter<2, true, true, false, true>;
+  m_filterVer[_2_TAPS_DMVR][1][1] = filter<2, true, true, true, true>;
 
-  m_filterVer[3][0][0] = filter<6, true, false, false>;
-  m_filterVer[3][0][1] = filter<6, true, false, true>;
-  m_filterVer[3][1][0] = filter<6, true, true, false>;
-  m_filterVer[3][1][1] = filter<6, true, true, true>;
+  m_filterVer[_6_TAPS][0][0] = filter<6, true, false, false, false>;
+  m_filterVer[_6_TAPS][0][1] = filter<6, true, false, true, false>;
+  m_filterVer[_6_TAPS][1][0] = filter<6, true, true, false, false>;
+  m_filterVer[_6_TAPS][1][1] = filter<6, true, true, true, false>;
 
   m_filterCopy[0][0]   = filterCopy<false, false>;
   m_filterCopy[0][1]   = filterCopy<false, true>;
@@ -367,20 +368,6 @@ InterpolationFilter::InterpolationFilter()
   m_weightedGeoBlk = xWeightedGeoBlk;
 }
 
-
-/**
- * \brief Apply unit FIR filter to a block of samples
- *
- * \param bitDepth   bitDepth of samples
- * \param src        Pointer to source samples
- * \param srcStride  Stride of source samples
- * \param dst        Pointer to destination samples
- * \param dstStride  Stride of destination samples
- * \param width      Width of block
- * \param height     Height of block
- * \param isFirst    Flag indicating whether it is the first filtering operation
- * \param isLast     Flag indicating whether it is the last filtering operation
- */
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // !!! NOTE !!!
@@ -513,22 +500,6 @@ void InterpolationFilter::filterCopy(const ClpRng &clpRng, const Pel *src, const
   }
 }
 
-/**
- * \brief Apply FIR filter to a block of samples
- *
- * \tparam N          Number of taps
- * \tparam isVertical Flag indicating filtering along vertical direction
- * \tparam isFirst    Flag indicating whether it is the first filtering operation
- * \tparam isLast     Flag indicating whether it is the last filtering operation
- * \param  bitDepth   Bit depth of samples
- * \param  src        Pointer to source samples
- * \param  srcStride  Stride of source samples
- * \param  dst        Pointer to destination samples
- * \param  dstStride  Stride of destination samples
- * \param  width      Width of block
- * \param  height     Height of block
- * \param  coeff      Pointer to filter taps
- */
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // !!! NOTE !!!
@@ -537,10 +508,9 @@ void InterpolationFilter::filterCopy(const ClpRng &clpRng, const Pel *src, const
 //  If you change the functionality here, consider to switch off the SIMD implementation of this function.
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<int N, bool isVertical, bool isFirst, bool isLast>
+template<int N, bool isVertical, bool isFirst, bool isLast, bool biMCForDMVR>
 void InterpolationFilter::filter(const ClpRng &clpRng, Pel const *src, const ptrdiff_t srcStride, Pel *dst,
-                                 const ptrdiff_t dstStride, int width, int height, TFilterCoeff const *coeff,
-                                 bool biMCForDMVR)
+                                 const ptrdiff_t dstStride, int width, int height, TFilterCoeff const *coeff)
 {
   int row, col;
 
@@ -643,29 +613,24 @@ void InterpolationFilter::filter(const ClpRng &clpRng, Pel const *src, const ptr
   }
 }
 
-static constexpr int tapToIdx(const int N)
-{
-  return N == 8 ? 0 : (N == 4 ? 1 : (N == 2 ? 2 : (N == 6 ? 3 : 4)));
-}
-
-template<int N>
+template<int N, bool biMCForDMVR>
 void InterpolationFilter::filterHor(const ClpRng &clpRng, Pel const *src, const ptrdiff_t srcStride, Pel *dst,
                                     const ptrdiff_t dstStride, int width, int height, bool isLast,
-                                    TFilterCoeff const *coeff, bool biMCForDMVR)
+                                    TFilterCoeff const *coeff)
 {
-  constexpr int IDX = tapToIdx(N);
-  static_assert(IDX < 4, "Unsupported tap count");
-  m_filterHor[IDX][1][isLast](clpRng, src, srcStride, dst, dstStride, width, height, coeff, biMCForDMVR);
+  constexpr int IDX = tapToIdx(N, biMCForDMVR);
+  static_assert(IDX < NUM_TAP_MODES, "Unsupported tap count");
+  m_filterHor[IDX][1][isLast](clpRng, src, srcStride, dst, dstStride, width, height, coeff);
 }
 
-template<int N>
+template<int N, bool biMCForDMVR>
 void InterpolationFilter::filterVer(const ClpRng &clpRng, Pel const *src, const ptrdiff_t srcStride, Pel *dst,
                                     const ptrdiff_t dstStride, int width, int height, bool isFirst, bool isLast,
-                                    TFilterCoeff const *coeff, bool biMCForDMVR)
+                                    TFilterCoeff const *coeff)
 {
-  constexpr int IDX = tapToIdx(N);
-  static_assert(IDX < 4, "Unsupported tap count");
-  m_filterVer[IDX][isFirst][isLast](clpRng, src, srcStride, dst, dstStride, width, height, coeff, biMCForDMVR);
+  constexpr int IDX = tapToIdx(N, biMCForDMVR);
+  static_assert(IDX < NUM_TAP_MODES, "Unsupported tap count");
+  m_filterVer[IDX][isFirst][isLast](clpRng, src, srcStride, dst, dstStride, width, height, coeff);
 }
 
 // ====================================================================================================================
@@ -676,47 +641,50 @@ void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, co
                                     const ptrdiff_t dstStride, int width, int height, int frac, bool isLast,
                                     const ClpRng &clpRng, Filter nFilterIdx)
 {
-  const bool biMCForDMVR = nFilterIdx == Filter::DMVR;
-
   if (frac == 0 && nFilterIdx <= Filter::AFFINE)
   {
-    m_filterCopy[true][isLast]( clpRng, src, srcStride, dst, dstStride, width, height, biMCForDMVR );
+    m_filterCopy[true][isLast](clpRng, src, srcStride, dst, dstStride, width, height, nFilterIdx == Filter::DMVR);
   }
   else if( isLuma( compID ) )
   {
     CHECK( frac < 0 || frac >= LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction" );
     if (nFilterIdx == Filter::DMVR)
     {
-      filterHor<NTAPS_BILINEAR>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_bilinearFilterPrec4[frac], biMCForDMVR );
+      filterHor<NTAPS_BILINEAR, true>(clpRng, src, srcStride, dst, dstStride, width, height, isLast,
+                                      m_bilinearFilterPrec4[frac]);
     }
     else if (nFilterIdx == Filter::AFFINE)
     {
-      filterHor<NTAPS_LUMA_AFFINE>(clpRng, src, srcStride, dst, dstStride, width, height, isLast,
-                                   m_affineLumaFilter[frac], biMCForDMVR);
+      filterHor<NTAPS_LUMA_AFFINE, false>(clpRng, src, srcStride, dst, dstStride, width, height, isLast,
+                                          m_affineLumaFilter[frac]);
     }
     else if (nFilterIdx == Filter::RPR1)
     {
-      filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaFilterRPR1[frac], biMCForDMVR );
+      filterHor<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isLast,
+                                   m_lumaFilterRPR1[frac]);
     }
     else if (nFilterIdx == Filter::RPR2)
     {
-      filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaFilterRPR2[frac], biMCForDMVR );
+      filterHor<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isLast,
+                                   m_lumaFilterRPR2[frac]);
     }
     else if (nFilterIdx == Filter::AFFINE_RPR1)
     {
-      filterHor<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_affineLumaFilterRPR1[frac], biMCForDMVR);
+      filterHor<NTAPS_LUMA_AFFINE, false>(clpRng, src, srcStride, dst, dstStride, width, height, isLast,
+                                          m_affineLumaFilterRPR1[frac]);
     }
     else if (nFilterIdx == Filter::AFFINE_RPR2)
     {
-      filterHor<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_affineLumaFilterRPR2[frac], biMCForDMVR);
+      filterHor<NTAPS_LUMA_AFFINE, false>(clpRng, src, srcStride, dst, dstStride, width, height, isLast,
+                                          m_affineLumaFilterRPR2[frac]);
     }
-    else if (frac == 8 && nFilterIdx == Filter::HALFPEL_ALT)
+    else if (frac == LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS / 2 && nFilterIdx == Filter::HALFPEL_ALT)
     {
-      filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaAltHpelIFilter, biMCForDMVR );
+      filterHor<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaAltHpelIFilter);
     }
     else
     {
-      filterHor<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaFilter[frac], biMCForDMVR );
+      filterHor<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_lumaFilter[frac]);
     }
   }
   else
@@ -724,18 +692,18 @@ void InterpolationFilter::filterHor(const ComponentID compID, Pel const *src, co
     CHECK(frac < 0 || frac >= CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction");
     if (nFilterIdx == Filter::RPR1)
     {
-      filterHor<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilterRPR1[frac],
-                              biMCForDMVR);
+      filterHor<NTAPS_CHROMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isLast,
+                                     m_chromaFilterRPR1[frac]);
     }
     else if (nFilterIdx == Filter::RPR2)
     {
-      filterHor<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilterRPR2[frac],
-                              biMCForDMVR);
+      filterHor<NTAPS_CHROMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isLast,
+                                     m_chromaFilterRPR2[frac]);
     }
     else
     {
-      filterHor<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isLast, m_chromaFilter[frac],
-                              biMCForDMVR);
+      filterHor<NTAPS_CHROMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isLast,
+                                     m_chromaFilter[frac]);
     }
   }
 }
@@ -744,47 +712,52 @@ void InterpolationFilter::filterVer(const ComponentID compID, Pel const *src, co
                                     const ptrdiff_t dstStride, int width, int height, int frac, bool isFirst,
                                     bool isLast, const ClpRng &clpRng, Filter nFilterIdx)
 {
-  const bool biMCForDMVR = nFilterIdx == Filter::DMVR;
-
   if (frac == 0 && nFilterIdx <= Filter::AFFINE)
   {
-    m_filterCopy[isFirst][isLast]( clpRng, src, srcStride, dst, dstStride, width, height, biMCForDMVR );
+    m_filterCopy[isFirst][isLast](clpRng, src, srcStride, dst, dstStride, width, height, nFilterIdx == Filter::DMVR);
   }
   else if( isLuma( compID ) )
   {
     CHECK( frac < 0 || frac >= LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction" );
     if (nFilterIdx == Filter::DMVR)
     {
-      filterVer<NTAPS_BILINEAR>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_bilinearFilterPrec4[frac], biMCForDMVR );
+      filterVer<NTAPS_BILINEAR, true>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                      m_bilinearFilterPrec4[frac]);
     }
     else if (nFilterIdx == Filter::AFFINE)
     {
-      filterVer<NTAPS_LUMA_AFFINE>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
-                                   m_affineLumaFilter[frac], biMCForDMVR);
+      filterVer<NTAPS_LUMA_AFFINE, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                          m_affineLumaFilter[frac]);
     }
     else if (nFilterIdx == Filter::RPR1)
     {
-      filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaFilterRPR1[frac], biMCForDMVR );
+      filterVer<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                   m_lumaFilterRPR1[frac]);
     }
     else if (nFilterIdx == Filter::RPR2)
     {
-      filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaFilterRPR2[frac], biMCForDMVR );
+      filterVer<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                   m_lumaFilterRPR2[frac]);
     }
     else if (nFilterIdx == Filter::AFFINE_RPR1)
     {
-      filterVer<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_affineLumaFilterRPR1[frac], biMCForDMVR);
+      filterVer<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                   m_affineLumaFilterRPR1[frac]);
     }
     else if (nFilterIdx == Filter::AFFINE_RPR2)
     {
-      filterVer<NTAPS_LUMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_affineLumaFilterRPR2[frac], biMCForDMVR);
+      filterVer<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                   m_affineLumaFilterRPR2[frac]);
     }
     else if (frac == 8 && nFilterIdx == Filter::HALFPEL_ALT)
     {
-      filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaAltHpelIFilter, biMCForDMVR );
+      filterVer<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                   m_lumaAltHpelIFilter);
     }
     else
     {
-      filterVer<NTAPS_LUMA>( clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast, m_lumaFilter[frac], biMCForDMVR );
+      filterVer<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                   m_lumaFilter[frac]);
     }
   }
   else
@@ -792,18 +765,18 @@ void InterpolationFilter::filterVer(const ComponentID compID, Pel const *src, co
     CHECK(frac < 0 || frac >= CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS, "Invalid fraction");
     if (nFilterIdx == Filter::RPR1)
     {
-      filterVer<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
-                              m_chromaFilterRPR1[frac], biMCForDMVR);
+      filterVer<NTAPS_CHROMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                     m_chromaFilterRPR1[frac]);
     }
     else if (nFilterIdx == Filter::RPR2)
     {
-      filterVer<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
-                              m_chromaFilterRPR2[frac], biMCForDMVR);
+      filterVer<NTAPS_CHROMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                     m_chromaFilterRPR2[frac]);
     }
     else
     {
-      filterVer<NTAPS_CHROMA>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
-                              m_chromaFilter[frac], biMCForDMVR);
+      filterVer<NTAPS_CHROMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                     m_chromaFilter[frac]);
     }
   }
 }
@@ -866,11 +839,6 @@ void InterpolationFilter::xWeightedGeoBlk(const PredictionUnit &pu, const uint32
   }
 }
 
-/**
- * \brief turn on SIMD fuc
- *
- * \param bEn   enabled of SIMD function for interpolation
- */
 void InterpolationFilter::initInterpolationFilter( bool enable )
 {
 #if ENABLE_SIMD_OPT_MCIF

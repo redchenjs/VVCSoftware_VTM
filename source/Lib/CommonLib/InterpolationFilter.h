@@ -75,16 +75,16 @@ public:
   static void filterCopy(const ClpRng &clpRng, const Pel *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
                          int width, int height, bool biMCForDMVR);
 
-  template<int N, bool isVertical, bool isFirst, bool isLast>
+  template<int N, bool isVertical, bool isFirst, bool isLast, bool biMCForDMVR>
   static void filter(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
-                     int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
-  template<int N>
+                     int width, int height, TFilterCoeff const *coeff);
+  template<int N, bool biMCForDMVR>
   void filterHor(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width,
-                 int height, bool isLast, TFilterCoeff const *coeff, bool biMCForDMVR);
+                 int height, bool isLast, TFilterCoeff const *coeff);
 
-  template<int N>
+  template<int N, bool biMCForDMVR>
   void filterVer(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width,
-                 int height, bool isFirst, bool isLast, TFilterCoeff const *coeff, bool biMCForDMVR);
+                 int height, bool isFirst, bool isLast, TFilterCoeff const *coeff);
 
   static void xWeightedGeoBlk(const PredictionUnit &pu, const uint32_t width, const uint32_t height, const ComponentID compIdx, const uint8_t splitDir, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
   void weightedGeoBlk(const PredictionUnit &pu, const uint32_t width, const uint32_t height, const ComponentID compIdx, const uint8_t splitDir, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
@@ -92,6 +92,21 @@ protected:
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
   static CacheModel* m_cacheModel;
 #endif
+  enum
+  {
+    _8_TAPS,
+    _4_TAPS,
+    _2_TAPS_DMVR,
+    _6_TAPS,
+    NUM_TAP_MODES
+  };
+
+  static constexpr int tapToIdx(const int N, const bool biMCForDMVR)
+  {
+    return biMCForDMVR ? (N == 2 ? _2_TAPS_DMVR : NUM_TAP_MODES)
+                       : (N == 8 ? _8_TAPS : (N == 4 ? _4_TAPS : (N == 6 ? _6_TAPS : NUM_TAP_MODES)));
+  }
+
 public:
   enum class Filter
   {
@@ -107,10 +122,10 @@ public:
 
   InterpolationFilter();
   ~InterpolationFilter() {}
-  void (*m_filterHor[4][2][2])(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
-                               int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
-  void (*m_filterVer[4][2][2])(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
-                               int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
+  void (*m_filterHor[NUM_TAP_MODES][2][2])(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst,
+                                           ptrdiff_t dstStride, int width, int height, TFilterCoeff const *coeff);
+  void (*m_filterVer[NUM_TAP_MODES][2][2])(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst,
+                                           ptrdiff_t dstStride, int width, int height, TFilterCoeff const *coeff);
   void (*m_filterCopy[2][2])(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
                              int width, int height, bool biMCForDMVR);
   void( *m_weightedGeoBlk )(const PredictionUnit &pu, const uint32_t width, const uint32_t height, const ComponentID compIdx, const uint8_t splitDir, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
