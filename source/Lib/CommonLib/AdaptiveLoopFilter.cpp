@@ -42,7 +42,7 @@
 #include <array>
 #include <cmath>
 
-constexpr int AdaptiveLoopFilter::AlfNumClippingValues[];
+constexpr int AdaptiveLoopFilter::ALF_NUM_CLIP_VALS[];
 
 AdaptiveLoopFilter::AdaptiveLoopFilter()
   : m_classifier( nullptr )
@@ -696,7 +696,7 @@ void AdaptiveLoopFilter::reconstructCoeff( AlfParam& alfParam, ChannelType chann
       for( int coeffIdx = 0; coeffIdx < numCoeffMinus1; ++coeffIdx )
       {
         int clipIdx = alfParam.nonLinearFlag[channel] ? clipp[filterIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx] : 0;
-        CHECK(!(clipIdx >= 0 && clipIdx < MaxAlfNumClippingValues), "Bad clip idx in ALF");
+        CHECK(!(clipIdx >= 0 && clipIdx < MAX_ALF_NUM_CLIP_VALS), "Bad clip idx in ALF");
         m_clippFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx] = isRdo ? clipIdx : m_alfClippingValues[channel][clipIdx];
       }
       m_clippFinal[classIdx* MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1] =
@@ -730,17 +730,18 @@ void AdaptiveLoopFilter::create( const int picWidth, const int picHeight, const 
   m_alfVBLumaCTUHeight = m_maxCUHeight;
   m_alfVBChmaCTUHeight = (m_maxCUHeight >> ((m_chromaFormat == CHROMA_420) ? 1 : 0));
 
-  static_assert( AlfNumClippingValues[CHANNEL_TYPE_LUMA] > 0, "AlfNumClippingValues[CHANNEL_TYPE_LUMA] must be at least one" );
+  static_assert(ALF_NUM_CLIP_VALS[CHANNEL_TYPE_LUMA] > 0, "ALF_NUM_CLIP_VALS[CHANNEL_TYPE_LUMA] must be at least one");
   m_alfClippingValues[CHANNEL_TYPE_LUMA][0] = 1 << m_inputBitDepth[CHANNEL_TYPE_LUMA];
   int shiftLuma = m_inputBitDepth[CHANNEL_TYPE_LUMA] - 8;
-  for (int i = 1; i < AlfNumClippingValues[CHANNEL_TYPE_LUMA]; ++i)
+  for (int i = 1; i < ALF_NUM_CLIP_VALS[CHANNEL_TYPE_LUMA]; ++i)
   {
     m_alfClippingValues[CHANNEL_TYPE_LUMA][i] = 1 << (7 - 2 * i + shiftLuma);
   }
-  static_assert( AlfNumClippingValues[CHANNEL_TYPE_CHROMA] > 0, "AlfNumClippingValues[CHANNEL_TYPE_CHROMA] must be at least one" );
+  static_assert(ALF_NUM_CLIP_VALS[CHANNEL_TYPE_CHROMA] > 0,
+                "ALF_NUM_CLIP_VALS[CHANNEL_TYPE_CHROMA] must be at least one");
   m_alfClippingValues[CHANNEL_TYPE_CHROMA][0] = 1 << m_inputBitDepth[CHANNEL_TYPE_CHROMA];
   int shiftChroma = m_inputBitDepth[CHANNEL_TYPE_CHROMA] - 8;
-  for (int i = 1; i < AlfNumClippingValues[CHANNEL_TYPE_CHROMA]; ++i)
+  for (int i = 1; i < ALF_NUM_CLIP_VALS[CHANNEL_TYPE_CHROMA]; ++i)
   {
     m_alfClippingValues[CHANNEL_TYPE_CHROMA][i] = 1 << (7 - 2 * i + shiftChroma);
   }

@@ -943,7 +943,7 @@ protected:
 
   EncCfgParam::CfgVPSParameters m_cfgVPSParameters;
 
-  int         m_maxNumAlfAps;
+  int         m_maxNumAlfAps{ ALF_CTB_MAX_NUM_APS };
   bool        m_constantJointCbCrSignFlag;
   bool        m_alf;                                          ///< Adaptive Loop Filter
   bool        m_alfTrueOrg;
