@@ -424,6 +424,12 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIPhaseIndication((SEIPhaseIndication&)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
+#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
+    case SEI::SEI_PROCESSING_ORDER:
+      sei = new SEIProcessingOrderInfo;
+      xParseSEIProcessingOrder((SEIProcessingOrderInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -576,6 +582,27 @@ void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t p
     }
   }
 }
+
+#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
+void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t payloadSize, std::ostream *decodedMessageOutputStream)
+{
+  uint32_t i,b;
+  uint32_t NumSEIMessages, val;
+  output_sei_message_header(sei, decodedMessageOutputStream, payloadSize);
+  //Here payload is in Bytes, Since "sei_payloadType" is 2 Bytes + "sei_payloadOrder" is 1 Byte so total = 3 Bytes
+  //To get Number of SEI messages, just do payloadSize/3
+  NumSEIMessages = payloadSize / 3;
+  sei.m_posPayloadType.resize(NumSEIMessages);
+  sei.m_posProcessingOrder.resize(NumSEIMessages);
+  for(i=0,b=0; b < payloadSize; i++,b+=3)
+  {
+    sei_read_code(decodedMessageOutputStream, 16, val, "sei_payloadType[i]");
+    sei.m_posPayloadType[i] = val;
+    sei_read_code(decodedMessageOutputStream, 8, val, "sei_processingOrder[i]");
+    sei.m_posProcessingOrder[i] = val;
+  }
+}
+#endif
 
 /**
  * parse bitstream bs and unpack a decoded picture hash SEI message

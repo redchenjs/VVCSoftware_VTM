@@ -774,6 +774,13 @@ protected:
   bool                  m_nnPostFilterSEIActivationEnabled;
   uint32_t              m_nnPostFilterSEIActivationId;
 
+#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
+  bool                  m_poSEIEnabled;
+  std::vector<uint16_t> m_poSEIPayloadType;
+  std::vector<uint8_t>  m_poSEIProcessingOrder;
+  uint32_t              m_numofSEIMessages;
+#endif
+
   bool                  m_constrainedRaslEncoding;
 
   bool                  m_sampleAspectRatioInfoSEIEnabled;

@@ -60,6 +60,7 @@
 #define JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE          1 //  Software support of Phase Indication SEI message
 #define JVET_AA0054_CHROMA_FORMAT_FLAG                    1 // JVET-AA0054 PROPOSAL2: Signalling improvements to specify output chroma information
 #define JVET_AA0054_CHROMA_UPSAMPLING_CONSTRAINT          1 // JVET-AA0054 PROPOSAL3: Constraint to prevent chroma upsampling when input chroma format is monochrome or YUV444
+#define JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER      1 // JVET-AA0102 and JVET-AA2027: SEI processing order SEI message in VVC (Draft 1) (SEI processing order SEI message carries information indicating the preferred processing order, as determined by the encoder)
 
 //########### place macros to be be kept below this line ###############
 #define JVET_X0143_ALF_APS_ID_OFFSET                      0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.
