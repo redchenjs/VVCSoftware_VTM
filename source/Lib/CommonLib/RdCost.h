@@ -317,17 +317,21 @@ public:
            + xGetExpGolombNumberOfBits(((y * (1 << m_iCostScale)) - m_mvPredictor.getVer()) >> imvShift);
   }
 #if WCG_EXT
-         void    saveUnadjustedLambda       ();
-         void    initLumaLevelToWeightTable (int bitDepth);
-  inline double  getWPSNRLumaLevelWeight    (int val) { return m_lumaLevelToWeightPLUT[val]; }
-  void           initLumaLevelToWeightTableReshape();
-  void           updateReshapeLumaLevelToWeightTableChromaMD (std::vector<Pel>& ILUT);
-
+  void saveUnadjustedLambda();
+  void initLumaLevelToWeightTable(int bitDepth);
+  void initLumaLevelToWeightTableReshape();
+  void updateReshapeLumaLevelToWeightTableChromaMD(std::vector<Pel> &ILUT);
   void restoreReshapeLumaLevelToWeightTable();
+  void updateReshapeLumaLevelToWeightTable(SliceReshapeInfo &sliceReshape, Pel *wtTable, double cwt);
 
-  void           setReshapeInfo                              (uint32_t type, int lumaBD) { m_signalType = type; m_lumaBD = lumaBD; }
-  void           updateReshapeLumaLevelToWeightTable         (SliceReshapeInfo &sliceReshape, Pel *wtTable, double cwt);
-  inline std::vector<double>& getLumaLevelWeightTable        ()                   { return m_lumaLevelToWeightPLUT; }
+  void setReshapeInfo(uint32_t type, int lumaBD)
+  {
+    m_signalType = type;
+    m_lumaBD     = lumaBD;
+  }
+
+  double               getWPSNRLumaLevelWeight(int val) { return m_lumaLevelToWeightPLUT[val]; }
+  std::vector<double> &getLumaLevelWeightTable() { return m_lumaLevelToWeightPLUT; }
 #endif
 
   void           lambdaAdjustColorTrans(bool forward, ComponentID compID, bool applyChromaScale = false,
