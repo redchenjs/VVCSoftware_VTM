@@ -46,11 +46,11 @@
 
 struct AlfCovariance
 {
-  static constexpr int MaxAlfNumClippingValues = AdaptiveLoopFilter::MaxAlfNumClippingValues;
+  static constexpr int MAX_ALF_NUM_CLIP_VALS = AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS;
   using TE = double[MAX_NUM_ALF_LUMA_COEFF][MAX_NUM_ALF_LUMA_COEFF];
   using Ty = double[MAX_NUM_ALF_LUMA_COEFF];
-  using TKE = TE[AdaptiveLoopFilter::MaxAlfNumClippingValues][AdaptiveLoopFilter::MaxAlfNumClippingValues];
-  using TKy = Ty[AdaptiveLoopFilter::MaxAlfNumClippingValues];
+  using TKE = TE[AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS][AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS];
+  using TKy = Ty[AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS];
 
   int numCoeff;
   int numBins;
@@ -61,10 +61,10 @@ struct AlfCovariance
   AlfCovariance() {}
   ~AlfCovariance() {}
 
-  void create( int size, int num_bins = MaxAlfNumClippingValues )
+  void create(int size, int _numBins = MAX_ALF_NUM_CLIP_VALS)
   {
     numCoeff = size;
-    numBins = num_bins;
+    numBins  = _numBins;
     std::memset( y, 0, sizeof( y ) );
     std::memset( E, 0, sizeof( E ) );
   }
@@ -73,10 +73,12 @@ struct AlfCovariance
   {
   }
 
-  void reset( int num_bins = -1 )
+  void reset(int _numBins = -1)
   {
-    if ( num_bins > 0 )
-      numBins = num_bins;
+    if (_numBins > 0)
+    {
+      numBins = _numBins;
+    }
     pixAcc = 0;
     std::memset( y, 0, sizeof( y ) );
     std::memset( E, 0, sizeof( E ) );
@@ -317,7 +319,8 @@ private:
   void   getFrameStat( AlfCovariance* frameCov, AlfCovariance** ctbCov, uint8_t* ctbEnableFlags, uint8_t* ctbAltIdx, const int numClasses, int altIdx );
   void   deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnitBuf& recYuv, CodingStructure& cs );
   void   getBlkStats(AlfCovariance* alfCovariace, const AlfFilterShape& shape, AlfClassifier** classifier, Pel* org, const int orgStride, Pel* rec, const int recStride, const CompArea& areaDst, const CompArea& area, const ChannelType channel, int vbCTUHeight, int vbPos);
-  void   calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MaxAlfNumClippingValues], const Pel *rec, const int stride, const AlfFilterShape& shape, const int transposeIdx, const ChannelType channel, int vbDistance);
+  void   calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MAX_ALF_NUM_CLIP_VALS], const Pel *rec, const int stride,
+                        const AlfFilterShape &shape, const int transposeIdx, const ChannelType channel, int vbDistance);
   void   deriveStatsForCcAlfFiltering(const PelUnitBuf &orgYuv, const PelUnitBuf &recYuv, const int compIdx,
                                       const int maskStride, const uint8_t filterIdc, CodingStructure &cs);
   void   getBlkStatsCcAlf(AlfCovariance &alfCovariance, const AlfFilterShape &shape, const PelUnitBuf &orgYuv,

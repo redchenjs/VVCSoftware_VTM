@@ -72,13 +72,11 @@ public:
     return Clip3<Pel>(-clip, +clip, val0-ref) + Clip3<Pel>(-clip, +clip, val1-ref);
   }
 
-  static constexpr int AlfNumClippingValues[MAX_NUM_CHANNEL_TYPE] = { 4, 4 };
-  static constexpr int MaxAlfNumClippingValues = 4;
+  static constexpr int ALF_NUM_CLIP_VALS[MAX_NUM_CHANNEL_TYPE] = { 4, 4 };
+  static constexpr int MAX_ALF_NUM_CLIP_VALS                   = 4;
 
   static constexpr int   m_NUM_BITS = 8;
-  static constexpr int   m_CLASSIFICATION_BLK_SIZE = 32;  //non-normative, local buffer size
-  static constexpr int m_ALF_UNUSED_CLASSIDX = 255;
-  static constexpr int m_ALF_UNUSED_TRANSPOSIDX = 255;
+  static constexpr int   m_CLASSIFICATION_BLK_SIZE = 32;   // non-normative, local buffer size
 
   AdaptiveLoopFilter();
   virtual ~AdaptiveLoopFilter() {}
@@ -143,7 +141,7 @@ protected:
   bool                         m_created = false;
   short                        m_chromaCoeffFinal[MAX_NUM_ALF_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];
   AlfParam*                    m_alfParamChroma;
-  Pel                          m_alfClippingValues[MAX_NUM_CHANNEL_TYPE][MaxAlfNumClippingValues];
+  Pel                          m_alfClippingValues[MAX_NUM_CHANNEL_TYPE][MAX_ALF_NUM_CLIP_VALS];
   std::vector<AlfFilterShape>  m_filterShapesCcAlf[2];
   std::vector<AlfFilterShape>  m_filterShapes[MAX_NUM_CHANNEL_TYPE];
   AlfClassifier**              m_classifier;
