@@ -318,7 +318,10 @@ private:
   void   getFrameStats(ChannelType channel, int shapeIdx);
   void   getFrameStat( AlfCovariance* frameCov, AlfCovariance** ctbCov, uint8_t* ctbEnableFlags, uint8_t* ctbAltIdx, const int numClasses, int altIdx );
   void   deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnitBuf& recYuv, CodingStructure& cs );
-  void   getBlkStats(AlfCovariance* alfCovariace, const AlfFilterShape& shape, AlfClassifier** classifier, Pel* org, const int orgStride, Pel* rec, const int recStride, const CompArea& areaDst, const CompArea& area, const ChannelType channel, int vbCTUHeight, int vbPos);
+  void   getBlkStats(AlfCovariance *alfCovariace, const AlfFilterShape &shape, AlfClassifier **classifier, Pel *org,
+                     const int orgStride, const Pel *orgLuma, const ptrdiff_t orgLumaStride, Pel *rec,
+                     const int recStride, const CompArea &areaDst, const CompArea &area, const ChannelType channel,
+                     int vbCTUHeight, int vbPos);
   void   calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MAX_ALF_NUM_CLIP_VALS], const Pel *rec, const int stride,
                         const AlfFilterShape &shape, const int transposeIdx, const ChannelType channel, int vbDistance);
   void   deriveStatsForCcAlfFiltering(const PelUnitBuf &orgYuv, const PelUnitBuf &recYuv, const int compIdx,
