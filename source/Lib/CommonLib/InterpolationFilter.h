@@ -93,15 +93,16 @@ protected:
   static CacheModel* m_cacheModel;
 #endif
 public:
-  enum
+  enum class Filter
   {
-    FILTER_DEFAULT = 0,
-    FILTER_DMVR,
-    FILTER_AFFINE,
-    FILTER_RPR1,
-    FILTER_RPR2,
-    FILTER_AFFINE_RPR1,
-    FILTER_AFFINE_RPR2,
+    DEFAULT = 0,
+    DMVR,
+    AFFINE,
+    RPR1,
+    RPR2,
+    AFFINE_RPR1,
+    AFFINE_RPR2,
+    HALFPEL_ALT
   };
 
   InterpolationFilter();
@@ -121,11 +122,9 @@ public:
   void _initInterpolationFilterX86();
 #endif
   void filterHor(const ComponentID compID, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
-                 int width, int height, int frac, bool isLast, const ClpRng &clpRng, int nFilterIdx = FILTER_DEFAULT,
-                 bool useAltHpelIf = false);
+                 int width, int height, int frac, bool isLast, const ClpRng &clpRng, Filter nFilterIdx);
   void filterVer(const ComponentID compID, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
-                 int width, int height, int frac, bool isFirst, bool isLast, const ClpRng &clpRng,
-                 int nFilterIdx = FILTER_DEFAULT, bool useAltHpelIf = false);
+                 int width, int height, int frac, bool isFirst, bool isLast, const ClpRng &clpRng, Filter nFilterIdx);
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
   void cacheAssign( CacheModel *cache ) { m_cacheModel = cache; }
 #endif
