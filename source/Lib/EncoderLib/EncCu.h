@@ -195,11 +195,11 @@ private:
 
   int                   m_ctuIbcSearchRangeX;
   int                   m_ctuIbcSearchRangeY;
-  int                   m_bestBcwIdx[2];
-  double                m_bestBcwCost[2];
+
+  std::array<int, 2>    m_bestBcwIdx;
+  std::array<double, 2> m_bestBcwCost;
 
   static const GeoMotionInfo m_geoModeTest[GEO_MAX_NUM_CANDS];
-
 #if SHARP_LUMA_DELTA_QP || ENABLE_QPA_SUB_CTU
   void    updateLambda      ( Slice* slice, const int dQP,
  #if WCG_EXT && ER_CHROMA_QP_WCG_PPS
@@ -261,7 +261,8 @@ protected:
   void xCheckRDCostAffineMerge2Nx2N
                               ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode );
   void xCheckRDCostInter      ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode );
-  bool xCheckRDCostInterIMV(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode, double &bestIntPelCost);
+  bool xCheckRDCostInterAmvr(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm,
+                             const EncTestMode &encTestMode, double &bestIntPelCost);
   void xEncodeDontSplit       ( CodingStructure &cs, Partitioner &partitioner);
 
   void xCheckRDCostMerge2Nx2N ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode );
