@@ -1954,9 +1954,9 @@ void xWeightedGeoBlk_HBD_SIMD(const PredictionUnit &pu, const uint32_t width, co
   }
 }
 #endif
-template<X86_VEXT vext, int N, bool VERTICAL, bool FIRST, bool LAST>
+template<X86_VEXT vext, int N, bool VERTICAL, bool FIRST, bool LAST, bool biMCForDMVR>
 static void simdFilter(const ClpRng &clpRng, Pel const *src, const ptrdiff_t srcStride, Pel *dst,
-                       const ptrdiff_t dstStride, int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR)
+                       const ptrdiff_t dstStride, int width, int height, TFilterCoeff const *coeff)
 {
   int row, col;
 
@@ -2469,43 +2469,47 @@ void xWeightedGeoBlk_SSE(const PredictionUnit &pu, const uint32_t width, const u
 template <X86_VEXT vext>
 void InterpolationFilter::_initInterpolationFilterX86()
 {
+  m_filterHor[_8_TAPS][0][0] = simdFilter<vext, 8, false, false, false, false>;
+  m_filterHor[_8_TAPS][0][1] = simdFilter<vext, 8, false, false, true, false>;
+  m_filterHor[_8_TAPS][1][0] = simdFilter<vext, 8, false, true, false, false>;
+  m_filterHor[_8_TAPS][1][1] = simdFilter<vext, 8, false, true, true, false>;
+
+  m_filterHor[_4_TAPS][0][0] = simdFilter<vext, 4, false, false, false, false>;
+  m_filterHor[_4_TAPS][0][1] = simdFilter<vext, 4, false, false, true, false>;
+  m_filterHor[_4_TAPS][1][0] = simdFilter<vext, 4, false, true, false, false>;
+  m_filterHor[_4_TAPS][1][1] = simdFilter<vext, 4, false, true, true, false>;
+
+  m_filterHor[_2_TAPS_DMVR][0][0] = simdFilter<vext, 2, false, false, false, true>;
+  m_filterHor[_2_TAPS_DMVR][0][1] = simdFilter<vext, 2, false, false, true, true>;
+  m_filterHor[_2_TAPS_DMVR][1][0] = simdFilter<vext, 2, false, true, false, true>;
+  m_filterHor[_2_TAPS_DMVR][1][1] = simdFilter<vext, 2, false, true, true, true>;
+
+  m_filterHor[_6_TAPS][0][0] = simdFilter<vext, 6, false, false, false, false>;
+  m_filterHor[_6_TAPS][0][1] = simdFilter<vext, 6, false, false, true, false>;
+  m_filterHor[_6_TAPS][1][0] = simdFilter<vext, 6, false, true, false, false>;
+  m_filterHor[_6_TAPS][1][1] = simdFilter<vext, 6, false, true, true, false>;
+
+  m_filterVer[_8_TAPS][0][0] = simdFilter<vext, 8, true, false, false, false>;
+  m_filterVer[_8_TAPS][0][1] = simdFilter<vext, 8, true, false, true, false>;
+  m_filterVer[_8_TAPS][1][0] = simdFilter<vext, 8, true, true, false, false>;
+  m_filterVer[_8_TAPS][1][1] = simdFilter<vext, 8, true, true, true, false>;
+
+  m_filterVer[_4_TAPS][0][0] = simdFilter<vext, 4, true, false, false, false>;
+  m_filterVer[_4_TAPS][0][1] = simdFilter<vext, 4, true, false, true, false>;
+  m_filterVer[_4_TAPS][1][0] = simdFilter<vext, 4, true, true, false, false>;
+  m_filterVer[_4_TAPS][1][1] = simdFilter<vext, 4, true, true, true, false>;
+
+  m_filterVer[_2_TAPS_DMVR][0][0] = simdFilter<vext, 2, true, false, false, true>;
+  m_filterVer[_2_TAPS_DMVR][0][1] = simdFilter<vext, 2, true, false, true, true>;
+  m_filterVer[_2_TAPS_DMVR][1][0] = simdFilter<vext, 2, true, true, false, true>;
+  m_filterVer[_2_TAPS_DMVR][1][1] = simdFilter<vext, 2, true, true, true, true>;
+
+  m_filterVer[_6_TAPS][0][0] = simdFilter<vext, 6, true, false, false, false>;
+  m_filterVer[_6_TAPS][0][1] = simdFilter<vext, 6, true, false, true, false>;
+  m_filterVer[_6_TAPS][1][0] = simdFilter<vext, 6, true, true, false, false>;
+  m_filterVer[_6_TAPS][1][1] = simdFilter<vext, 6, true, true, true, false>;
+
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-  // [taps][bFirst][bLast]
-  m_filterHor[0][0][0] = simdFilter<vext, 8, false, false, false>;
-  m_filterHor[0][0][1] = simdFilter<vext, 8, false, false, true>;
-  m_filterHor[0][1][0] = simdFilter<vext, 8, false, true, false>;
-  m_filterHor[0][1][1] = simdFilter<vext, 8, false, true, true>;
-
-  m_filterHor[1][0][0] = simdFilter<vext, 4, false, false, false>;
-  m_filterHor[1][0][1] = simdFilter<vext, 4, false, false, true>;
-  m_filterHor[1][1][0] = simdFilter<vext, 4, false, true, false>;
-  m_filterHor[1][1][1] = simdFilter<vext, 4, false, true, true>;
-
-  m_filterHor[2][0][0] = simdFilter<vext, 2, false, false, false>;
-  m_filterHor[2][0][1] = simdFilter<vext, 2, false, false, true>;
-  m_filterHor[2][1][0] = simdFilter<vext, 2, false, true, false>;
-  m_filterHor[2][1][1] = simdFilter<vext, 2, false, true, true>;
-
-  m_filterVer[0][0][0] = simdFilter<vext, 8, true, false, false>;
-  m_filterVer[0][0][1] = simdFilter<vext, 8, true, false, true>;
-  m_filterVer[0][1][0] = simdFilter<vext, 8, true, true, false>;
-  m_filterVer[0][1][1] = simdFilter<vext, 8, true, true, true>;
-
-  m_filterVer[1][0][0] = simdFilter<vext, 4, true, false, false>;
-  m_filterVer[1][0][1] = simdFilter<vext, 4, true, false, true>;
-  m_filterVer[1][1][0] = simdFilter<vext, 4, true, true, false>;
-  m_filterVer[1][1][1] = simdFilter<vext, 4, true, true, true>;
-
-  m_filterVer[2][0][0] = simdFilter<vext, 2, true, false, false>;
-  m_filterVer[2][0][1] = simdFilter<vext, 2, true, false, true>;
-  m_filterVer[2][1][0] = simdFilter<vext, 2, true, true, false>;
-  m_filterVer[2][1][1] = simdFilter<vext, 2, true, true, true>;
-
-  m_filterVer[3][0][0] = simdFilter<vext, 6, true, false, false>;
-  m_filterVer[3][0][1] = simdFilter<vext, 6, true, false, true>;
-  m_filterVer[3][1][0] = simdFilter<vext, 6, true, true, false>;
-  m_filterVer[3][1][1] = simdFilter<vext, 6, true, true, true>;
-
   m_filterCopy[0][0] = simdFilterCopy_HBD<vext, false, false>;
   m_filterCopy[0][1] = simdFilterCopy_HBD<vext, false, true>;
   m_filterCopy[1][0] = simdFilterCopy_HBD<vext, true, false>;
@@ -2513,47 +2517,6 @@ void InterpolationFilter::_initInterpolationFilterX86()
 
   m_weightedGeoBlk = xWeightedGeoBlk_HBD_SIMD<vext>;
 #else
-  // [taps][bFirst][bLast]
-  m_filterHor[0][0][0] = simdFilter<vext, 8, false, false, false>;
-  m_filterHor[0][0][1] = simdFilter<vext, 8, false, false, true>;
-  m_filterHor[0][1][0] = simdFilter<vext, 8, false, true, false>;
-  m_filterHor[0][1][1] = simdFilter<vext, 8, false, true, true>;
-
-  m_filterHor[1][0][0] = simdFilter<vext, 4, false, false, false>;
-  m_filterHor[1][0][1] = simdFilter<vext, 4, false, false, true>;
-  m_filterHor[1][1][0] = simdFilter<vext, 4, false, true, false>;
-  m_filterHor[1][1][1] = simdFilter<vext, 4, false, true, true>;
-
-  m_filterHor[2][0][0] = simdFilter<vext, 2, false, false, false>;
-  m_filterHor[2][0][1] = simdFilter<vext, 2, false, false, true>;
-  m_filterHor[2][1][0] = simdFilter<vext, 2, false, true, false>;
-  m_filterHor[2][1][1] = simdFilter<vext, 2, false, true, true>;
-
-  m_filterHor[3][0][0] = simdFilter<vext, 6, false, false, false>;
-  m_filterHor[3][0][1] = simdFilter<vext, 6, false, false, true>;
-  m_filterHor[3][1][0] = simdFilter<vext, 6, false, true, false>;
-  m_filterHor[3][1][1] = simdFilter<vext, 6, false, true, true>;
-
-  m_filterVer[0][0][0] = simdFilter<vext, 8, true, false, false>;
-  m_filterVer[0][0][1] = simdFilter<vext, 8, true, false, true>;
-  m_filterVer[0][1][0] = simdFilter<vext, 8, true, true, false>;
-  m_filterVer[0][1][1] = simdFilter<vext, 8, true, true, true>;
-
-  m_filterVer[1][0][0] = simdFilter<vext, 4, true, false, false>;
-  m_filterVer[1][0][1] = simdFilter<vext, 4, true, false, true>;
-  m_filterVer[1][1][0] = simdFilter<vext, 4, true, true, false>;
-  m_filterVer[1][1][1] = simdFilter<vext, 4, true, true, true>;
-
-  m_filterVer[2][0][0] = simdFilter<vext, 2, true, false, false>;
-  m_filterVer[2][0][1] = simdFilter<vext, 2, true, false, true>;
-  m_filterVer[2][1][0] = simdFilter<vext, 2, true, true, false>;
-  m_filterVer[2][1][1] = simdFilter<vext, 2, true, true, true>;
-
-  m_filterVer[3][0][0] = simdFilter<vext, 6, true, false, false>;
-  m_filterVer[3][0][1] = simdFilter<vext, 6, true, false, true>;
-  m_filterVer[3][1][0] = simdFilter<vext, 6, true, true, false>;
-  m_filterVer[3][1][1] = simdFilter<vext, 6, true, true, true>;
-
   m_filterCopy[0][0]   = simdFilterCopy<vext, false, false>;
   m_filterCopy[0][1]   = simdFilterCopy<vext, false, true>;
   m_filterCopy[1][0]   = simdFilterCopy<vext, true, false>;
