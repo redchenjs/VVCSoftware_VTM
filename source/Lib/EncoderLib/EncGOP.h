@@ -211,7 +211,7 @@ private:
   hdrtoolslib::ColorTransformParams   *m_pcColorTransformParams;
   hdrtoolslib::FrameFormat            *m_pcFrameFormat;
 
-  std::chrono::duration<long long, ratio<1, 1000000000>> m_metricTime;
+  std::chrono::duration<long long, std::ratio<1, 1000000000>> m_metricTime;
 #endif
 
 public:
@@ -273,7 +273,7 @@ public:
   Analyze& getAnalyzeBData() { return m_gcAnalyzeB; }
 #endif
 #if JVET_O0756_CALCULATE_HDRMETRICS
-  std::chrono::duration<long long, ratio<1, 1000000000>> getMetricTime()    const { return m_metricTime; };
+  std::chrono::duration<long long, std::ratio<1, 1000000000>> getMetricTime() const { return m_metricTime; };
 #endif
 
 protected:
