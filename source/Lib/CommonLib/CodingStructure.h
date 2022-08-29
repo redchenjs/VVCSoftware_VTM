@@ -102,8 +102,14 @@ public:
 
   CodingStructure(CUCache&, PUCache&, TUCache&);
 
+#if GDR_ENABLED
+  bool isGdrEnabled() { return m_gdrEnabled; }
+  void create(const UnitArea &_unit, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabled = false);
+  void create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabeld = false);
+#else
   void create(const UnitArea &_unit, const bool isTopLayer, const bool isPLTused);
   void create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused);
+#endif
 
   void destroy();
   void releaseIntermediateData();
@@ -271,6 +277,10 @@ private:
   int     m_offsets[ MAX_NUM_COMPONENT ];
 
   MotionInfo *m_motionBuf;
+
+#if GDR_ENABLED
+  bool m_gdrEnabled;
+#endif
 
 public:
   CodingStructure *bestParent;

@@ -1533,8 +1533,16 @@ void CodingStructure::allocateVectorsAtPicLevel()
   tus.reserve( allocSize );
 }
 
+#if GDR_ENABLED
+void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabled)
+#else
 void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused)
+#endif
 {
+#if GDR_ENABLED
+  m_gdrEnabled = isGdrEnabled;
+#endif
+
   createInternals(UnitArea(_chromaFormat, _area), isTopLayer, isPLTused);
 
   if (isTopLayer)
@@ -1542,20 +1550,44 @@ void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _are
     return;
   }
 
+#if GDR_ENABLED
+  if (m_gdrEnabled)
+  {    
+    picHeader = new PicHeader();
+    picHeader->initPicHeader();
+  }
+#endif
+
   m_reco.create( area );
   m_pred.create( area );
   m_resi.create( area );
   m_orgr.create( area );
 }
 
+#if GDR_ENABLED
+void CodingStructure::create(const UnitArea& _unit, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabled)
+#else
 void CodingStructure::create(const UnitArea& _unit, const bool isTopLayer, const bool isPLTused)
+#endif
 {
+#if GDR_ENABLED
+  m_gdrEnabled = isGdrEnabled;
+#endif
+
   createInternals(_unit, isTopLayer, isPLTused);
 
   if (isTopLayer)
   {
     return;
   }
+
+#if GDR_ENABLED  
+  if (m_gdrEnabled)
+  {  
+    picHeader = new PicHeader();
+    picHeader->initPicHeader();
+  }
+#endif
 
   m_reco.create( area );
   m_pred.create( area );
@@ -1803,6 +1835,15 @@ void CodingStructure::destroyCoeffs()
       m_runType[i] = nullptr;
     }
   }
+
+#if GDR_ENABLED
+  if (picHeader && m_gdrEnabled)
+  {
+    delete picHeader;
+  }
+
+  picHeader = nullptr;
+#endif
 }
 
 void CodingStructure::initSubStructure( CodingStructure& subStruct, const ChannelType _chType, const UnitArea &subArea, const bool &isTuEnc )
@@ -1831,7 +1872,23 @@ void CodingStructure::initSubStructure( CodingStructure& subStruct, const Channe
   subStruct.sps       = sps;
   subStruct.vps       = vps;
   subStruct.pps       = pps;
+#if GDR_ENABLED
+  if (m_gdrEnabled)
+  {
+    if (!subStruct.picHeader)
+    {
+      subStruct.picHeader = new PicHeader;
+      subStruct.picHeader->initPicHeader();
+    }
+    *subStruct.picHeader = *picHeader;
+  }
+  else
+  {
+    subStruct.picHeader = picHeader;
+  }
+#else
   subStruct.picHeader = picHeader;
+#endif
 
   memcpy(subStruct.alfApss, alfApss, sizeof(alfApss));
 
