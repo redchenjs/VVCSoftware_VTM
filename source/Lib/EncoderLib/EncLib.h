@@ -121,7 +121,7 @@ private:
 
   bool                      m_doPlt;
 #if JVET_O0756_CALCULATE_HDRMETRICS
-  std::chrono::duration<long long, ratio<1, 1000000000>> m_metricTime;
+  std::chrono::duration<long long, std::ratio<1, 1000000000>> m_metricTime;
 #endif
   int                       m_picIdInGOP;
 
@@ -201,7 +201,7 @@ public:
   bool                   getPltEnc()                      const { return   m_doPlt; }
   void                   checkPltStats( Picture* pic );
 #if JVET_O0756_CALCULATE_HDRMETRICS
-  std::chrono::duration<long long, ratio<1, 1000000000>> getMetricTime()    const { return m_metricTime; };
+  std::chrono::duration<long long, std::ratio<1, 1000000000>> getMetricTime() const { return m_metricTime; };
 #endif
   // -------------------------------------------------------------------------------------------------------------------
   // encoder function

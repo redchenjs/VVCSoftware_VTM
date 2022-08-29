@@ -79,7 +79,7 @@ private:
   uint32_t          m_totalBytes;
   std::fstream     &m_bitstream;
 #if JVET_O0756_CALCULATE_HDRMETRICS
-  std::chrono::duration<long long, ratio<1, 1000000000>> m_metricTime;
+  std::chrono::duration<long long, std::ratio<1, 1000000000>> m_metricTime;
 #endif
 
 private:
@@ -121,7 +121,7 @@ public:
   void  outputAU( const AccessUnit& au );
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
-  std::chrono::duration<long long, ratio<1, 1000000000>> getMetricTime()    const { return m_metricTime; };
+  std::chrono::duration<long long, std::ratio<1, 1000000000>> getMetricTime() const { return m_metricTime; };
 #endif
   VPS * getVPS() { return m_cEncLib.getVPS(); }
   int   getChromaFormatIDC() const { return m_cEncLib.getChromaFormatIdc(); }
