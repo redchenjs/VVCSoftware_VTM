@@ -960,7 +960,9 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
   m_pcPic->destroyTempBuffers();
   m_pcPic->cs->destroyCoeffs();
   m_pcPic->cs->releaseIntermediateData();
+#if !GDR_ENABLED
   m_pcPic->cs->picHeader->initPicHeader();
+#endif
   m_puCounter++;
 }
 
@@ -1974,14 +1976,11 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     //  Get a new picture buffer. This will also set up m_pcPic, and therefore give us a SPS and PPS pointer that we can use.
     m_pcPic = xGetNewPicBuffer( *sps, *pps, m_apcSlicePilot->getTLayer(), layerId );
 
-#if GDR_ENABLED
-    PicHeader *picHeader = new PicHeader;
-    *picHeader = m_picHeader;
-    m_apcSlicePilot->setPicHeader(picHeader);
-    m_pcPic->finalInit(vps, *sps, *pps, picHeader, apss, lmcsAPS, scalinglistAPS);
-#else
     m_pcPic->finalInit( vps, *sps, *pps, &m_picHeader, apss, lmcsAPS, scalinglistAPS );
+#if GDR_ENABLED
+    m_apcSlicePilot->setPicHeader(m_pcPic->cs->picHeader);
 #endif
+
     m_pcPic->createGrainSynthesizer(m_firstPictureInSequence, &m_grainCharacteristic, &m_grainBuf, pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(), sps->getChromaFormatIdc(), sps->getBitDepth(CHANNEL_TYPE_LUMA));
     m_pcPic->createColourTransfProcessor(m_firstPictureInSequence, &m_colourTranfParams, &m_invColourTransfBuf, pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(), sps->getChromaFormatIdc(), sps->getBitDepth(CHANNEL_TYPE_LUMA));
     m_firstPictureInSequence = false;
@@ -1995,6 +1994,9 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
 
     // we now have a real slice:
     Slice *pSlice = m_pcPic->slices[m_uiSliceSegmentIdx];
+#if GDR_ENABLED
+    pSlice->setPicHeader(m_pcPic->cs->picHeader);
+#endif
 
     // Update the PPS and SPS pointers with the ones of the picture.
     pps=pSlice->getPPS();

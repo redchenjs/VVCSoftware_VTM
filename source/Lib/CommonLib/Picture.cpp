@@ -128,13 +128,6 @@ void Picture::destroy()
   m_hashMap.clearAll();
   if (cs)
   {
-#if GDR_ENABLED
-    if (cs->picHeader)
-    {
-      delete cs->picHeader;
-    }
-    cs->picHeader = nullptr;
-#endif
     cs->destroy();
     delete cs;
     cs = nullptr;
@@ -260,7 +253,11 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   {
     cs = new CodingStructure( g_globalUnitCache.cuCache, g_globalUnitCache.puCache, g_globalUnitCache.tuCache );
     cs->sps = &sps;
+#if GDR_ENABLED
+    cs->create(chromaFormatIDC, Area(0, 0, width, height), true, (bool)sps.getPLTMode(), sps.getGDREnabledFlag());
+#else
     cs->create(chromaFormatIDC, Area(0, 0, width, height), true, (bool) sps.getPLTMode());
+#endif
   }
 
   cs->vps = vps;
@@ -271,8 +268,22 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   picHeader->setPPSId( pps.getPPSId() );
 #if GDR_ENABLED
   picHeader->setPic(this);
-#endif
+
+  PicHeader *ph = new PicHeader;
+  ph->initPicHeader();
+  *ph = *picHeader;
+  ph->setPic(this);
+
+  if (cs->picHeader)
+  {
+    delete cs->picHeader;
+    cs->picHeader = nullptr;
+  }
+
+  cs->picHeader = ph;
+#else
   cs->picHeader = picHeader;
+#endif
   memcpy(cs->alfApss, alfApss, sizeof(cs->alfApss));
   cs->lmcsAps = lmcsAps;
   cs->scalinglistAps = scalingListAps;
