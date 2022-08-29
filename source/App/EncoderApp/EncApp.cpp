@@ -1724,7 +1724,7 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
                                       false, // TODO: m_packedYUVMode,
                                       m_confWinLeft, m_confWinRight, m_confWinTop, m_confWinBottom, NUM_CHROMA_FORMAT, m_isTopFieldFirst );
       }
-    }
+   }
   }
   else
   {
@@ -1742,8 +1742,11 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         }
         else
         {
-          m_cVideoIOYuvReconFile.write( pcPicYuvRec->get( COMPONENT_Y ).width, pcPicYuvRec->get( COMPONENT_Y ).height, *pcPicYuvRec, ipCSC, m_packedYUVMode,
-            m_confWinLeft, m_confWinRight, m_confWinTop, m_confWinBottom, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
+          const SPS& sps = *m_cEncLib.getSPS(0);
+          const PPS& pps = *m_cEncLib.getPPS((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) ? ENC_PPS_ID_RPR : 0);
+          Window confWindowPPS = pps.getConformanceWindow();
+          m_cVideoIOYuvReconFile.write(pcPicYuvRec->get(COMPONENT_Y).width, pcPicYuvRec->get(COMPONENT_Y).height, *pcPicYuvRec, ipCSC, m_packedYUVMode,
+            confWindowPPS.getWindowLeftOffset()*SPS::getWinUnitX(m_cEncLib.getChromaFormatIdc()), confWindowPPS.getWindowRightOffset()*SPS::getWinUnitX(m_cEncLib.getChromaFormatIdc()), confWindowPPS.getWindowTopOffset()*SPS::getWinUnitY(m_cEncLib.getChromaFormatIdc()), confWindowPPS.getWindowBottomOffset() * SPS::getWinUnitY(m_cEncLib.getChromaFormatIdc()), NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
         }
       }
     }
