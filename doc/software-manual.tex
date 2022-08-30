@@ -5526,19 +5526,34 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
     0 & zero padding \\
     1 & replication padding \\
     2 & reflection padding \\
+    3 & wrap-around padding \\
+    4 & fixed padding \\
   \end{tabular}
+  \\
+  \Option{SEINNPostFilterCharacteristicsLumaPadding\emph{i}} &
+  \Default{0} &
+  Specifies the luma padding when when nnpfc_padding_type is equal to 4 of the \emph{i}-th neural network post-filter.
+  \\
+  \Option{SEINNPostFilterCharacteristicsCrPadding\emph{i}} &
+  \Default{0} &
+  Specifies the Cr padding when when nnpfc_padding_type is equal to 4 of the \emph{i}-th neural network post-filter.
+  \\
+  \Option{SEINNPostFilterCharacteristicsCbPadding\emph{i}} &
+  \Default{0} &
+  Specifies the Cb padding when when nnpfc_padding_type is equal to 4 of the \emph{i}-th neural network post-filter.
   \\
   \Option{SEINNPostFilterCharacteristicsComplexityIdc\emph{i}} &
   \Default{0} &
   Specifies the nnpfc_complexity_idc of the \emph{i}-th neural network post-filter.
   \\
-  \Option{SEINNPostFilterCharacteristicsParameterTypeFlag\emph{i}} &
-  \Default{false} &
-  Specifies the nnpfc_parameter_type_flag of the \emph{i}-th neural network post-filter.
+  \Option{SEINNPostFilterCharacteristicsParameterTypeIdc\emph{i}} &
+  \Default{0} &
+  Specifies the nnpfc_parameter_type_idc of the \emph{i}-th neural network post-filter.
   \par
   \begin{tabular}{cp{0.35\textwidth}}
-    false & Indicates that the \emph{i}-th neural network post-filter uses only integer parameters \\
-    true & Indicates that the \emph{i}-th neural network post-filter may use floating point or integer parameters \\
+    0 & Indicates that the \emph{i}-th neural network post-filter uses only integer parameters \\
+    1 & Indicates that the \emph{i}-th neural network post-filter may use floating point or integer parameters \\
+    2 & Indicates that the \emph{i}-th neural network post-filter may use binary parameters \\
   \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsLog2ParameterBitLengthMinus3\emph{i}} &

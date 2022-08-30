@@ -1174,10 +1174,24 @@ void EncApp::xInitLibCfg()
       m_cEncLib.setNNPostFilterSEICharacteristicsPatchHeightMinus1       ( m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsOverlap                 ( m_nnPostFilterSEICharacteristicsOverlap[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsPaddingType             ( m_nnPostFilterSEICharacteristicsPaddingType[i], i);
+#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
+      m_cEncLib.setNNPostFilterSEICharacteristicsLumaPadding             (m_nnPostFilterSEICharacteristicsLumaPadding[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsCrPadding               (m_nnPostFilterSEICharacteristicsCrPadding[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsCbPadding               (m_nnPostFilterSEICharacteristicsCbPadding[i], i);
+#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsComplexityIdc           ( m_nnPostFilterSEICharacteristicsComplexityIdc[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsComplexityIdc(i) > 0)
       {
+#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
+      m_cEncLib.setNNPostFilterSEICharacteristicsLumaPadding             (m_nnPostFilterSEICharacteristicsLumaPadding[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsCrPadding               (m_nnPostFilterSEICharacteristicsCrPadding[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsCbPadding               (m_nnPostFilterSEICharacteristicsCbPadding[i], i);
+#endif
+#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
+      m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeIdc        (m_nnPostFilterSEICharacteristicsParameterTypeIdc[i], i);
+#else
         m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeFlag       ( m_nnPostFilterSEICharacteristicsParameterTypeFlag[i], i);
+#endif
         m_cEncLib.setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3     ( m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumParametersIdc        ( m_nnPostFilterSEICharacteristicsNumParametersIdc[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumKmacOperationsIdc    ( m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], i);
@@ -1217,7 +1231,11 @@ void EncApp::xInitLibCfg()
     m_cEncLib.setNNPostFilterSEICharacteristicsPaddingType             ( m_nnPostFilterSEICharacteristicsPaddingType[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsPayloadFilename         ( m_nnPostFilterSEICharacteristicsPayloadFilename[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsComplexityIdc           ( m_nnPostFilterSEICharacteristicsComplexityIdc[i], i);
+#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
+    m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeIdc        (m_nnPostFilterSEICharacteristicsParameterTypeIdc[i], i);
+#else
     m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeFlag       ( m_nnPostFilterSEICharacteristicsParameterTypeFlag[i], i);
+#endif
     m_cEncLib.setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3     ( m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsNumParametersIdc        ( m_nnPostFilterSEICharacteristicsNumParametersIdc[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsNumKmacOperationsIdc    ( m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], i);

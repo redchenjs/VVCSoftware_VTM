@@ -1484,6 +1484,14 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     WRITE_UVLC(sei.m_patchHeightMinus1, "nnpfc_patch_height_minus1");
     WRITE_UVLC(sei.m_overlap, "nnpfc_overlap");
     WRITE_UVLC(sei.m_paddingType, "nnpfc_padding_type");
+#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
+    if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
+    {
+      WRITE_UVLC(sei.m_lumaPadding, "nnpfc_luma_padding_val");
+      WRITE_UVLC(sei.m_cbPadding, "nnpfc_cb_padding_val");
+      WRITE_UVLC(sei.m_crPadding, "nnpfc_cr_padding_val");
+    }
+#endif
 
     WRITE_UVLC(sei.m_complexityIdc, "nnpfc_complexity_idc");
     if(sei.m_complexityIdc > 0)
@@ -1508,8 +1516,16 @@ void SEIWriter::xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCha
 {
   if(sei.m_complexityIdc == 1)
   {
+#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
+    WRITE_CODE(sei.m_parameterTypeIdc, 2, "nnpfc_parameter_type_idc");
+    if (sei.m_parameterTypeIdc != 2)
+    {
+      WRITE_CODE(sei.m_log2ParameterBitLengthMinus3, 2, "nnpfc_log2_parameter_bit_length_minus3");
+  }
+#else
     WRITE_FLAG(sei.m_parameterTypeFlag, "nnpfc_parameter_type_flag");
     WRITE_CODE(sei.m_log2ParameterBitLengthMinus3, 2, "nnpfc_log2_parameter_bit_length_minus3");
+#endif
 #if JVET_AA0067_NNPFC_SEI_FIX
     WRITE_CODE(sei.m_numParametersIdc, 6, "nnpfc_num_parameters_idc");
 #else

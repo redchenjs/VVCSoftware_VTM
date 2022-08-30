@@ -1258,13 +1258,22 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     sei->m_patchHeightMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchHeightMinus1(filterIdx);
     sei->m_overlap = m_pcCfg->getNNPostFilterSEICharacteristicsOverlap(filterIdx);
     sei->m_paddingType = m_pcCfg->getNNPostFilterSEICharacteristicsPaddingType(filterIdx);
+#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
+    sei->m_lumaPadding = m_pcCfg->getNNPostFilterSEICharacteristicsLumaPadding(filterIdx);
+    sei->m_cbPadding = m_pcCfg->getNNPostFilterSEICharacteristicsCbPadding(filterIdx);
+    sei->m_crPadding = m_pcCfg->getNNPostFilterSEICharacteristicsCrPadding(filterIdx);
+#endif
 
     sei->m_complexityIdc = m_pcCfg->getNNPostFilterSEICharacteristicsComplexityIdc(filterIdx);
     if(sei->m_complexityIdc > 0)
     {
       if(sei->m_complexityIdc == 1)
       {
+#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
+        sei->m_parameterTypeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsParameterTypeIdc(filterIdx);
+#else
         sei->m_parameterTypeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsParameterTypeFlag(filterIdx);
+#endif
         sei->m_log2ParameterBitLengthMinus3 = m_pcCfg->getNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3(filterIdx);
         sei->m_numParametersIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumParametersIdc(filterIdx);
         sei->m_numKmacOperationsIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(filterIdx);

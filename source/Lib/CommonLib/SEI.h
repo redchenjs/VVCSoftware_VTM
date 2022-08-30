@@ -1137,9 +1137,18 @@ public:
   , m_patchHeightMinus1(0)
   , m_overlap(0)
   , m_paddingType(0)
+#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
+  , m_lumaPadding(0)
+  , m_cbPadding(0)
+  , m_crPadding(0)
+#endif
   , m_payloadByte(nullptr)
   , m_complexityIdc(0)
+#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
+  , m_parameterTypeIdc(0)
+#else
   , m_parameterTypeFlag(false)
+#endif
   , m_log2ParameterBitLengthMinus3(0)
   , m_numParametersIdc(0)
   , m_numKmacOperationsIdc(0)
@@ -1189,10 +1198,19 @@ public:
   uint32_t       m_patchHeightMinus1;
   uint32_t       m_overlap;
   uint32_t       m_paddingType;
+#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
+  uint32_t       m_lumaPadding;
+  uint32_t       m_cbPadding;
+  uint32_t       m_crPadding;
+#endif
   uint64_t       m_payloadLength;
   char*          m_payloadByte;
   uint32_t       m_complexityIdc;
+#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
+  uint32_t       m_parameterTypeIdc;
+#else
   bool           m_parameterTypeFlag;
+#endif
   uint32_t       m_log2ParameterBitLengthMinus3;
   uint32_t       m_numParametersIdc;
   uint32_t       m_numKmacOperationsIdc;
