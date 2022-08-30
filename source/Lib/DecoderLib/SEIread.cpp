@@ -2652,6 +2652,20 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_padding_type");
     sei.m_paddingType = val;
 
+#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
+    if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_luma_padding_val");
+      sei.m_lumaPadding = val;
+
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_cb_padding_val");
+      sei.m_cbPadding = val;
+
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_cr_padding_val");
+      sei.m_crPadding = val;
+    }
+#endif
+
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_complexity_idc");
     sei.m_complexityIdc = val;
 
@@ -2659,11 +2673,21 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     {
       if(sei.m_complexityIdc == 1)
       {
+#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
+        sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_parameter_type_idc");
+        sei.m_parameterTypeIdc = val;
+        if (sei.m_parameterTypeIdc != 2)
+        {
+          sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_log2_parameter_bit_length_minus3");
+          sei.m_log2ParameterBitLengthMinus3 = val;
+        }
+#else
         sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_parameter_type_flag");
         sei.m_parameterTypeFlag = val;
 
         sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_log2_parameter_bit_length_minus3");
         sei.m_log2ParameterBitLengthMinus3 = val;
+#endif
 
 #if JVET_AA0067_NNPFC_SEI_FIX
         sei_read_code(pDecodedMessageOutputStream, 6, val, "nnpfc_num_parameters_idc");

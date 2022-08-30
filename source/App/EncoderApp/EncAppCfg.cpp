@@ -1800,13 +1800,33 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     paddingType << "SEINNPostFilterCharacteristicsPaddingType" << i;
     opts.addOptions()(paddingType.str(), m_nnPostFilterSEICharacteristicsPaddingType[i], 0u, "Specifies the process of padding when referencing sample locations outside the boundaries of the cropped decoded output picture ");
 
+#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
+    std::ostringstream lumaPadding;
+    lumaPadding << "SEINNPostFilterCharacteristicsLumaPadding" << i;
+    opts.addOptions()(lumaPadding.str(), m_nnPostFilterSEICharacteristicsLumaPadding[i], 0u, "Specifies the luma padding when when the padding type is fixed padding ");
+
+    std::ostringstream crPadding;
+    crPadding << "SEINNPostFilterCharacteristicsCrPadding" << i;
+    opts.addOptions()(crPadding.str(), m_nnPostFilterSEICharacteristicsCrPadding[i], 0u, "Specifies the Cr padding when when the padding type is fixed padding ");
+
+    std::ostringstream cbPadding;
+    cbPadding << "SEINNPostFilterCharacteristicsCbPadding" << i;
+    opts.addOptions()(cbPadding.str(), m_nnPostFilterSEICharacteristicsCbPadding[i], 0u, "Specifies the Cb padding when when the padding type is fixed padding ");
+#endif
+
     std::ostringstream complexityIdc;
     complexityIdc << "SEINNPostFilterCharacteristicsComplexityIdc" << i;
     opts.addOptions()(complexityIdc.str(), m_nnPostFilterSEICharacteristicsComplexityIdc[i], 0u, "Specifies the value of nnpfc_complexity_idc in the Neural Network Post Filter Characteristics SEI message");
 
+#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
+    std::ostringstream parameterTypeIdc;
+    parameterTypeIdc << "SEINNPostFilterCharacteristicsParameterTypeIdc" << i;
+    opts.addOptions()(parameterTypeIdc.str(), m_nnPostFilterSEICharacteristicsParameterTypeIdc[i], 0u, "Specifies the data type of parameters in the Neural Network Post Filter Characteristics SEI message");
+#else
     std::ostringstream parameterTypeFlag;
     parameterTypeFlag << "SEINNPostFilterCharacteristicsParameterTypeFlag" << i;
     opts.addOptions()(parameterTypeFlag.str(), m_nnPostFilterSEICharacteristicsParameterTypeFlag[i], false, "Specifies the data type of parameters in the Neural Network Post Filter Characteristics SEI message");
+#endif
 
     std::ostringstream log2ParameterBitLengthMinus3;
     log2ParameterBitLengthMinus3 << "SEINNPostFilterCharacteristicsLog2ParameterBitLengthMinus3" << i;
