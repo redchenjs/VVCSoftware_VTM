@@ -1453,6 +1453,18 @@ void DecLib::resetPictureSeiNalus()
   }
 }
 
+/**
+ - Reset list of Prefix SEI NAL units from the current picture
+ */
+void DecLib::resetPrefixSeiNalus()
+{
+  while (!m_prefixSEINALUs.empty())
+  {
+    delete m_prefixSEINALUs.front();
+    m_prefixSEINALUs.pop_front();
+  }
+}
+
 void DecLib::checkSeiContentInAccessUnit()
 {
   if (m_accessUnitSeiNalus.empty())
@@ -2926,6 +2938,7 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     resetAccessUnitApsNals();
     resetAccessUnitPicInfo();
     resetPictureUnitNals();
+    resetPrefixSeiNalus();
     m_maxDecSubPicIdx = 0;
     m_maxDecSliceAddrInSubPic = -1;
     return false;
