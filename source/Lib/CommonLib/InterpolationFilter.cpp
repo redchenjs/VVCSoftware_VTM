@@ -741,13 +741,13 @@ void InterpolationFilter::filterVer(const ComponentID compID, Pel const *src, co
     }
     else if (nFilterIdx == Filter::AFFINE_RPR1)
     {
-      filterVer<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
-                                   m_affineLumaFilterRPR1[frac]);
+      filterVer<NTAPS_LUMA_AFFINE, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                          m_affineLumaFilterRPR1[frac]);
     }
     else if (nFilterIdx == Filter::AFFINE_RPR2)
     {
-      filterVer<NTAPS_LUMA, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
-                                   m_affineLumaFilterRPR2[frac]);
+      filterVer<NTAPS_LUMA_AFFINE, false>(clpRng, src, srcStride, dst, dstStride, width, height, isFirst, isLast,
+                                          m_affineLumaFilterRPR2[frac]);
     }
     else if (frac == 8 && nFilterIdx == Filter::HALFPEL_ALT)
     {
