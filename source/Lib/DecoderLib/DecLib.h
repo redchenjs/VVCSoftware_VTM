@@ -291,6 +291,7 @@ public:
   void resetIsFirstAuInCvs();
   void checkSeiInPictureUnit();
   void resetPictureSeiNalus();
+  void resetPrefixSeiNalus();
   bool isSliceNaluFirstInAU( bool newPicture, InputNALUnit &nalu );
   void processSuffixApsNalus();
 
