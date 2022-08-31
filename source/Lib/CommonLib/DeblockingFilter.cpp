@@ -762,12 +762,18 @@ DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(con
   {
     if (isLuma(chType))
     {
-      const int bsY = CU::isIntra(cuP) && cuP.bdpcmMode && CU::isIntra(cuQ) && cuQ.bdpcmMode ? 0 : 2;
+      const int bsY =
+        CU::isIntra(cuP) && cuP.bdpcmMode != BdpcmMode::NONE && CU::isIntra(cuQ) && cuQ.bdpcmMode != BdpcmMode::NONE
+          ? 0
+          : 2;
       return EdgeStrengths().setBoundaryStrength(COMPONENT_Y, bsY);
     }
     else
     {
-      const int bsC = CU::isIntra(cuP) && cuP.bdpcmModeChroma && CU::isIntra(cuQ) && cuQ.bdpcmModeChroma ? 0 : 2;
+      const int bsC = CU::isIntra(cuP) && cuP.bdpcmModeChroma != BdpcmMode::NONE && CU::isIntra(cuQ)
+                          && cuQ.bdpcmModeChroma != BdpcmMode::NONE
+                        ? 0
+                        : 2;
       return EdgeStrengths().setBoundaryStrength(COMPONENT_Cb, bsC).setBoundaryStrength(COMPONENT_Cr, bsC);
     }
   }

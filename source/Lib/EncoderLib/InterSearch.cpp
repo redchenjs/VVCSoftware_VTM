@@ -9321,13 +9321,18 @@ void InterSearch::xEncodeInterResidualQT(CodingStructure &cs, Partitioner &parti
       {
         const bool chroma_cbf = TU::getCbfAtDepth(currTU, COMPONENT_Cb, currDepth);
         if (!(cu.sbtInfo && (currDepth == 0 || (currDepth == 1 && currTU.noResidual))))
-          m_CABACEstimator->cbf_comp(cs, chroma_cbf, currArea.blocks[COMPONENT_Cb], currDepth);
+        {
+          m_CABACEstimator->cbf_comp(chroma_cbf, currArea.blocks[COMPONENT_Cb], currDepth, false, false,
+                                     BdpcmMode::NONE);
+        }
       }
       {
         const bool chroma_cbf = TU::getCbfAtDepth(currTU, COMPONENT_Cr, currDepth);
         if (!(cu.sbtInfo && (currDepth == 0 || (currDepth == 1 && currTU.noResidual))))
-          m_CABACEstimator->cbf_comp(cs, chroma_cbf, currArea.blocks[COMPONENT_Cr], currDepth,
-                                     TU::getCbfAtDepth(currTU, COMPONENT_Cb, currDepth));
+        {
+          m_CABACEstimator->cbf_comp(chroma_cbf, currArea.blocks[COMPONENT_Cr], currDepth,
+                                     TU::getCbfAtDepth(currTU, COMPONENT_Cb, currDepth), false, BdpcmMode::NONE);
+        }
       }
     }
 
@@ -9335,7 +9340,8 @@ void InterSearch::xEncodeInterResidualQT(CodingStructure &cs, Partitioner &parti
       && !isChroma(partitioner.chType)
       )
     {
-      m_CABACEstimator->cbf_comp( cs, TU::getCbfAtDepth( currTU, COMPONENT_Y, currDepth ), currArea.Y(), currDepth );
+      m_CABACEstimator->cbf_comp(TU::getCbfAtDepth(currTU, COMPONENT_Y, currDepth), currArea.Y(), currDepth, false,
+                                 false, BdpcmMode::NONE);
     }
   }
 
@@ -9882,7 +9888,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
           if (!tu.noResidual)
           {
             const bool prevCbf = ( compID == COMPONENT_Cr ? tu.cbf[COMPONENT_Cb] : false );
-            m_CABACEstimator->cbf_comp( *csFull, false, compArea, currDepth, prevCbf );
+            m_CABACEstimator->cbf_comp(false, compArea, currDepth, prevCbf, false, BdpcmMode::NONE);
           }
 
           nonCoeffFracBits = m_CABACEstimator->getEstFracBits();
@@ -9922,7 +9928,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
           }
 
           const bool prevCbf = (compID == COMPONENT_Cr ? tu.cbf[COMPONENT_Cb] : false);
-          m_CABACEstimator->cbf_comp(*csFull, true, compArea, currDepth, prevCbf);
+          m_CABACEstimator->cbf_comp(true, compArea, currDepth, prevCbf, false, BdpcmMode::NONE);
           if (compID == COMPONENT_Cr)
           {
             const int cbfMask = (tu.cbf[COMPONENT_Cb] ? CBF_MASK_CB : 0) + CBF_MASK_CR;
@@ -10207,8 +10213,8 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
             const bool cbfCb = (codedCbfMask & CBF_MASK_CB) != 0;
             const bool cbfCr = (codedCbfMask & CBF_MASK_CR) != 0;
 
-            m_CABACEstimator->cbf_comp(cs, cbfCb, cbArea, currDepth, false);
-            m_CABACEstimator->cbf_comp(cs, cbfCr, crArea, currDepth, cbfCb);
+            m_CABACEstimator->cbf_comp(cbfCb, cbArea, currDepth, false, false, BdpcmMode::NONE);
+            m_CABACEstimator->cbf_comp(cbfCr, crArea, currDepth, cbfCb, false, BdpcmMode::NONE);
             m_CABACEstimator->joint_cb_cr(tu, codedCbfMask);
             if (cbfCb)
             {
@@ -10318,8 +10324,8 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
         if (tu.blocks[compID].valid())
         {
           const bool prevCbf = (compID == COMPONENT_Cr ? TU::getCbfAtDepth(tu, COMPONENT_Cb, currDepth) : false);
-          m_CABACEstimator->cbf_comp(*csFull, TU::getCbfAtDepth(tu, compID, currDepth), tu.blocks[compID], currDepth,
-                                     prevCbf);
+          m_CABACEstimator->cbf_comp(TU::getCbfAtDepth(tu, compID, currDepth), tu.blocks[compID], currDepth, prevCbf,
+                                     false, BdpcmMode::NONE);
         }
       }
     }

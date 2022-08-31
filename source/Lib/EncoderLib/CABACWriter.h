@@ -140,7 +140,7 @@ public:
 
   // transform tree (clause 7.3.8.8)
   void        transform_tree            ( const CodingStructure&        cs,       Partitioner&      pm,     CUCtx& cuCtx,                         const PartSplit ispType = TU_NO_ISP, const int subTuIdx = -1 );
-  void        cbf_comp                  ( const CodingStructure&        cs,       bool              cbf,    const CompArea& area, unsigned depth, const bool prevCbf = false, const bool useISP = false );
+  void cbf_comp(bool cbf, const CompArea &area, unsigned depth, bool prevCbf, bool useISP, BdpcmMode bdpcmMode);
 
   // mvd coding (clause 7.3.8.9)
   void        mvd_coding                ( const Mv &rMvd, int8_t imv );

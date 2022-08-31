@@ -1934,7 +1934,7 @@ void EncCu::xCheckPLT(CodingStructure *&tempCS, CodingStructure *&bestCS, Partit
 
   cu.chromaQpAdj = m_cuChromaQpOffsetIdxPlus1;
   cu.qp = encTestMode.qp;
-  cu.bdpcmMode = 0;
+  cu.bdpcmMode   = BdpcmMode::NONE;
 
   tempCS->addPU(CS::getArea(*tempCS, tempCS->area, partitioner.chType), partitioner.chType);
   tempCS->addTU(CS::getArea(*tempCS, tempCS->area, partitioner.chType), partitioner.chType);
@@ -2948,7 +2948,7 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   cu.mmvdSkip    = false;
   cu.skip        = false;
   cu.mipFlag     = false;
-  cu.bdpcmMode   = 0;
+  cu.bdpcmMode   = BdpcmMode::NONE;
 
   PredictionUnit &pu = tempCS->addPU(cu, pm.chType);
 #if GDR_ENABLED
@@ -3234,7 +3234,7 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
       cu.mmvdSkip    = false;
       cu.skip        = false;
       cu.mipFlag     = false;
-      cu.bdpcmMode   = 0;
+      cu.bdpcmMode   = BdpcmMode::NONE;
 
       PredictionUnit &pu = tempCS->addPU(cu, pm.chType);
       pu.mergeFlag        = true;

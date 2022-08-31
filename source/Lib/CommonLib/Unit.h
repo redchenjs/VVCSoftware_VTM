@@ -311,8 +311,8 @@ struct CodingUnit : public UnitArea
   int            affineType;
   bool           colorTransform;
   bool           geoFlag;
-  int            bdpcmMode;
-  int            bdpcmModeChroma;
+  BdpcmMode      bdpcmMode;
+  BdpcmMode      bdpcmModeChroma;
   uint8_t        imv;
   bool           rootCbf;
   uint8_t        sbtInfo;
@@ -363,6 +363,8 @@ struct CodingUnit : public UnitArea
   const bool        isLocalSepTree() const;
   const bool        isConsInter() const { return modeType == MODE_TYPE_INTER; }
   const bool        isConsIntra() const { return modeType == MODE_TYPE_INTRA; }
+
+  BdpcmMode getBdpcmMode(const ComponentID compId) const { return isLuma(compId) ? bdpcmMode : bdpcmModeChroma; }
 };
 
 // ---------------------------------------------------------------------------

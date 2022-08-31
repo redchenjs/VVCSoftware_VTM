@@ -221,7 +221,7 @@ void IntraPrediction::predIntraAng( const ComponentID compId, PelBuf &piPred, co
   CHECK(width == 2, "Width of 2 is not supported");
   CHECK(PU::isMIP(pu, toChannelType(compId)), "We should not get here for MIP.");
   const uint32_t dirMode =
-    (isLuma(compId) ? pu.cu->bdpcmMode : pu.cu->bdpcmModeChroma) ? BDPCM_IDX : PU::getFinalIntraMode(pu, channelType);
+    pu.cu->getBdpcmMode(compID) != BdpcmMode::NONE ? BDPCM_IDX : PU::getFinalIntraMode(pu, channelType);
 
   CHECK(floorLog2(width) < 2 && pu.cs->pcv->noChroma2x2, "Size not allowed");
   CHECK(floorLog2(width) > MAX_CU_DEPTH, "Size not allowed");
@@ -236,7 +236,9 @@ void IntraPrediction::predIntraAng( const ComponentID compId, PelBuf &piPred, co
   {
     case(PLANAR_IDX): xPredIntraPlanar(srcBuf, piPred); break;
     case(DC_IDX):     xPredIntraDc(srcBuf, piPred, channelType, false); break;
-    case(BDPCM_IDX):  xPredIntraBDPCM(srcBuf, piPred, isLuma(compID) ? pu.cu->bdpcmMode : pu.cu->bdpcmModeChroma, clpRng); break;
+    case BDPCM_IDX:
+      xPredIntraBDPCM(srcBuf, piPred, pu.cu->getBdpcmMode(compID), clpRng);
+      break;
     default:          xPredIntraAng(srcBuf, piPred, channelType, clpRng); break;
   }
 
@@ -412,7 +414,7 @@ void IntraPrediction::initPredIntraParams(const PredictionUnit & pu, const CompA
 
   // high level conditions and DC intra prediction
   if (isLuma(chType) && !useISP && !PU::isMIP(pu, chType) && m_ipaParam.multiRefIndex == 0 && DC_IDX != dirMode
-      && !pu.cu->bdpcmMode)
+      && pu.cu->bdpcmMode == BdpcmMode::NONE)
   {
     if (dirMode == PLANAR_IDX)   // Planar intra prediction
     {
@@ -636,7 +638,7 @@ void IntraPrediction::xPredIntraAng( const CPelBuf &pSrc, PelBuf &pDst, const Ch
   }
 }
 
-void IntraPrediction::xPredIntraBDPCM(const CPelBuf &pSrc, PelBuf &pDst, const uint32_t dirMode, const ClpRng& clpRng )
+void IntraPrediction::xPredIntraBDPCM(const CPelBuf &pSrc, PelBuf &pDst, const BdpcmMode dirMode, const ClpRng &clpRng)
 {
   const int wdt = pDst.width;
   const int hgt = pDst.height;
@@ -644,10 +646,10 @@ void IntraPrediction::xPredIntraBDPCM(const CPelBuf &pSrc, PelBuf &pDst, const u
   const int strideP = pDst.stride;
   const int strideS = pSrc.stride;
 
-  CHECK( !( dirMode == 1 || dirMode == 2 ), "Incorrect BDPCM mode parameter." );
+  CHECK(dirMode != BdpcmMode::HOR && dirMode != BdpcmMode::VER, "Incorrect BDPCM mode parameter.");
 
   Pel* pred = &pDst.buf[0];
-  if( dirMode == 1 )
+  if (dirMode == BdpcmMode::HOR)
   {
     Pel  val;
     for( int y = 0; y < hgt; y++ )

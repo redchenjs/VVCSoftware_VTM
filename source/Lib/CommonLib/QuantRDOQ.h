@@ -169,7 +169,7 @@ private:
   int    m_sigRateDelta       [MAX_TB_SIZEY * MAX_TB_SIZEY];
   TCoeff m_deltaU             [MAX_TB_SIZEY * MAX_TB_SIZEY];
   TCoeff m_fullCoeff          [MAX_TB_SIZEY * MAX_TB_SIZEY];
-  int   m_bdpcm;
+  BdpcmMode m_bdpcm;
   int   m_testedLevels;
 };// END CLASS DEFINITION QuantRDOQ
 

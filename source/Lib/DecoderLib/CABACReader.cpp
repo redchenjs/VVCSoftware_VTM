@@ -1194,27 +1194,30 @@ void CABACReader::bdpcm_mode( CodingUnit& cu, const ComponentID compID )
   {
     if (isLuma(compID))
     {
-      cu.bdpcmMode = 0;
+      cu.bdpcmMode = BdpcmMode::NONE;
       if (!CS::isDualITree(*cu.cs))
       {
-        cu.bdpcmModeChroma = 0;
+        cu.bdpcmModeChroma = BdpcmMode::NONE;
       }
     }
     else
     {
-      cu.bdpcmModeChroma = 0;
+      cu.bdpcmModeChroma = BdpcmMode::NONE;
     }
     return;
   }
 
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET_SIZE2( STATS__CABAC_BITS__BDPCM_MODE, cu.block(compID).lumaSize(), compID );
 
+  BdpcmMode bdpcmMode;
   unsigned ctxId = isLuma( compID ) ? 0 : 2;
-
-  int bdpcmMode = m_binDecoder.decodeBin(Ctx::BDPCMMode(ctxId));
-  if (bdpcmMode)
+  if (m_binDecoder.decodeBin(Ctx::BDPCMMode(ctxId)))
   {
-    bdpcmMode += m_binDecoder.decodeBin(Ctx::BDPCMMode(ctxId + 1));
+    bdpcmMode = m_binDecoder.decodeBin(Ctx::BDPCMMode(ctxId + 1)) ? BdpcmMode::VER : BdpcmMode::HOR;
+  }
+  else
+  {
+    bdpcmMode = BdpcmMode::NONE;
   }
   if (isLuma(compID))
   {
@@ -1340,7 +1343,7 @@ void CABACReader::xReadTruncBinCode(uint32_t& symbol, uint32_t maxSymbol)
 
 void CABACReader::extend_ref_line(CodingUnit& cu)
 {
-  if (!cu.Y().valid() || !CU::isIntra(cu) || !isLuma(cu.chType) || cu.bdpcmMode)
+  if (!cu.Y().valid() || !CU::isIntra(cu) || !isLuma(cu.chType) || cu.bdpcmMode != BdpcmMode::NONE)
   {
     cu.firstPU->multiRefIdx = 0;
     return;
@@ -1388,9 +1391,9 @@ void CABACReader::intra_luma_pred_modes( CodingUnit &cu )
     return;
   }
 
-  if( cu.bdpcmMode )
+  if (cu.bdpcmMode != BdpcmMode::NONE)
   {
-    cu.firstPU->intraDir[0] = cu.bdpcmMode == 2? VER_IDX : HOR_IDX;
+    cu.firstPU->intraDir[0] = cu.bdpcmMode == BdpcmMode::VER ? VER_IDX : HOR_IDX;
     return;
   }
 
@@ -1488,9 +1491,9 @@ void CABACReader::intra_chroma_pred_modes( CodingUnit& cu )
     return;
   }
 
-  if( cu.bdpcmModeChroma )
+  if (cu.bdpcmModeChroma != BdpcmMode::NONE)
   {
-    cu.firstPU->intraDir[1] = cu.bdpcmModeChroma == 2 ? VER_IDX : HOR_IDX;
+    cu.firstPU->intraDir[1] = cu.bdpcmModeChroma == BdpcmMode::VER ? VER_IDX : HOR_IDX;
     return;
   }
   PredictionUnit *pu = cu.firstPU;
@@ -2658,37 +2661,24 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
   }
 }
 
-bool CABACReader::cbf_comp( CodingStructure& cs, const CompArea& area, unsigned depth, const bool prevCbf, const bool useISP )
+bool CABACReader::cbf_comp(const CompArea &area, unsigned depth, const bool prevCbf, const bool useISP,
+                           const BdpcmMode bdpcmMode)
 {
   unsigned  ctxId = DeriveCtx::CtxQtCbf(area.compID, prevCbf, useISP && isLuma(area.compID));
   const CtxSet&   ctxSet  = Ctx::QtCbf[ area.compID ];
 
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET_SIZE2(STATS__CABAC_BITS__QT_CBF, area.size(), area.compID);
 
-  unsigned  cbf = 0;
-  if( (area.compID == COMPONENT_Y && cs.getCU(area.pos(), toChannelType(area.compID))->bdpcmMode)
-   || (area.compID != COMPONENT_Y && cs.getCU(area.pos(), toChannelType(area.compID))->bdpcmModeChroma))
+  if (bdpcmMode != BdpcmMode::NONE)
   {
-    if (area.compID == COMPONENT_Y)
-    {
-      ctxId = 1;
-    }
-    else if (area.compID == COMPONENT_Cb)
-    {
-      ctxId = 1;
-    }
-    else
-    {
-      ctxId = 2;
-    }
-    cbf = m_binDecoder.decodeBin(ctxSet(ctxId));
-  }
-  else
-  {
-    cbf = m_binDecoder.decodeBin(ctxSet(ctxId));
+    ctxId = area.compID == COMPONENT_Cr ? 2 : 1;
   }
 
-  DTRACE( g_trace_ctx, D_SYNTAX, "cbf_comp() etype=%d pos=(%d,%d) ctx=%d cbf=%d\n", area.compID, area.x, area.y, ctxId, cbf );
+  const bool cbf = m_binDecoder.decodeBin(ctxSet(ctxId)) != 0;
+
+  DTRACE(g_trace_ctx, D_SYNTAX, "cbf_comp() etype=%d pos=(%d,%d) ctx=%d cbf=%d\n", area.compID, area.x, area.y, ctxId,
+         cbf ? 1 : 0);
+
   return cbf;
 }
 
@@ -2762,7 +2752,6 @@ void CABACReader::transform_unit( TransformUnit& tu, CUCtx& cuCtx, Partitioner& 
   const UnitArea&         area = partitioner.currArea();
   const unsigned          trDepth = partitioner.currTrDepth;
 
-  CodingStructure&  cs = *tu.cs;
   CodingUnit&       cu = *tu.cu;
   ChromaCbfs        chromaCbfs;
   chromaCbfs.Cb = chromaCbfs.Cr = false;
@@ -2775,12 +2764,12 @@ void CABACReader::transform_unit( TransformUnit& tu, CUCtx& cuCtx, Partitioner& 
     const int cbfDepth = chromaCbfISP ? trDepth - 1 : trDepth;
     if (!(cu.sbtInfo && tu.noResidual))
     {
-      chromaCbfs.Cb = cbf_comp(cs, area.blocks[COMPONENT_Cb], cbfDepth);
+      chromaCbfs.Cb = cbf_comp(area.blocks[COMPONENT_Cb], cbfDepth, false, false, cu.bdpcmModeChroma);
     }
 
     if (!(cu.sbtInfo && tu.noResidual))
     {
-      chromaCbfs.Cr = cbf_comp(cs, area.blocks[COMPONENT_Cr], cbfDepth, chromaCbfs.Cb);
+      chromaCbfs.Cr = cbf_comp(area.blocks[COMPONENT_Cr], cbfDepth, chromaCbfs.Cb, false, cu.bdpcmModeChroma);
     }
   }
   else if (cu.isSepTree())
@@ -2831,7 +2820,7 @@ void CABACReader::transform_unit( TransformUnit& tu, CUCtx& cuCtx, Partitioner& 
           previousCbf = TU::getPrevTuCbfAtDepth(tu, COMPONENT_Y, trDepth);
         }
       }
-      bool cbfY = lastCbfIsInferred ? true : cbf_comp(cs, tu.Y(), trDepth, previousCbf, cu.ispMode);
+      bool cbfY = lastCbfIsInferred ? true : cbf_comp(tu.Y(), trDepth, previousCbf, cu.ispMode, cu.bdpcmMode);
       TU::setCbfAtDepth(tu, COMPONENT_Y, trDepth, (cbfY ? 1 : 0));
     }
   }
@@ -2976,7 +2965,7 @@ void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID, CUCtx&
   bool signHiding = cu.cs->slice->getSignDataHidingEnabledFlag();
 
   // init coeff coding context
-  CoeffCodingContext  cctx    ( tu, compID, signHiding );
+  CoeffCodingContext  cctx(tu, compID, signHiding, cu.getBdpcmMode(compID));
   TCoeff*             coeff   = tu.getCoeffs( compID ).buf;
 
   // parse last coeff position
@@ -3036,7 +3025,7 @@ void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID, CUCtx&
 
 void CABACReader::ts_flag( TransformUnit& tu, ComponentID compID )
 {
-  int tsFlag = ( (tu.cu->bdpcmMode && isLuma(compID)) || (tu.cu->bdpcmModeChroma && isChroma(compID)) ) ? 1 : tu.mtsIdx[compID] == MTS_SKIP ? 1 : 0;
+  int tsFlag = tu.cu->getBdpcmMode(compID) != BdpcmMode::NONE || tu.mtsIdx[compID] == MTS_SKIP ? 1 : 0;
   int ctxIdx = isLuma(compID) ? 0 : 1;
 
   if( TU::isTSAllowed ( tu, compID ) )
@@ -3086,7 +3075,9 @@ void CABACReader::mts_idx( CodingUnit& cu, CUCtx& cuCtx )
 
 void CABACReader::isp_mode( CodingUnit& cu )
 {
-  if( !CU::isIntra( cu ) || !isLuma( cu.chType ) || cu.firstPU->multiRefIdx || !cu.cs->sps->getUseISP() || cu.bdpcmMode || !CU::canUseISP( cu, getFirstComponentOfChannel( cu.chType ) ) || cu.colorTransform )
+  if (!CU::isIntra(cu) || !isLuma(cu.chType) || cu.firstPU->multiRefIdx || !cu.cs->sps->getUseISP()
+      || cu.bdpcmMode != BdpcmMode::NONE || !CU::canUseISP(cu, getFirstComponentOfChannel(cu.chType))
+      || cu.colorTransform)
   {
     cu.ispMode = NOT_INTRA_SUBPARTITIONS;
     return;
@@ -3421,7 +3412,7 @@ void CABACReader::residual_codingTS( TransformUnit& tu, ComponentID compID )
   DTRACE( g_trace_ctx, D_SYNTAX, "residual_codingTS() etype=%d pos=(%d,%d) size=%dx%d\n", tu.blocks[compID].compID, tu.blocks[compID].x, tu.blocks[compID].y, tu.blocks[compID].width, tu.blocks[compID].height );
 
   // init coeff coding context
-  CoeffCodingContext  cctx    ( tu, compID, false, isLuma(compID) ? tu.cu->bdpcmMode : tu.cu->bdpcmModeChroma);
+  CoeffCodingContext  cctx(tu, compID, false, tu.cu->getBdpcmMode(compID));
   TCoeff*             coeff   = tu.getCoeffs( compID ).buf;
   int maxCtxBins = (cctx.maxNumCoeff() * 7) >> 2;
   cctx.setNumCtxBins(maxCtxBins);
@@ -3592,7 +3583,7 @@ void CABACReader::residual_coding_subblockTS(CoeffCodingContext &cctx, TCoeff *c
         sigBlkPos[numNonZero++] = blkPos;
       }
     }
-    if (!cctx.bdpcm() && cutoffVal)
+    if (cctx.bdpcm() == BdpcmMode::NONE && cutoffVal)
     {
       if (tcoeff > 0)
       {
