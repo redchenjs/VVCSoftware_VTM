@@ -1196,6 +1196,10 @@ void EncApp::xInitLibCfg()
         m_cEncLib.setNNPostFilterSEICharacteristicsNumParametersIdc        ( m_nnPostFilterSEICharacteristicsNumParametersIdc[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumKmacOperationsIdc    ( m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], i);
       }
+#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+      m_cEncLib.setNNPostFilterSEICharacteristicsUriTag                  ( m_nnPostFilterSEICharacteristicsUriTag[i], i);
+      m_cEncLib.setNNPostFilterSEICharacteristicsUri                     ( m_nnPostFilterSEICharacteristicsUri[i], i);
+#endif
     }
     if (m_cEncLib.getNNPostFilterSEICharacteristicsModeIdc(i) == 1)
     {

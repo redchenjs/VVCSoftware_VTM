@@ -95,6 +95,18 @@ void SEIReader::sei_read_flag(std::ostream *pOS, uint32_t& ruiCode, const char *
   }
 }
 
+#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+void SEIReader::sei_read_string(std::ostream* os, std::string& code, const char* symbolName)
+{
+  READ_STRING(code, symbolName);
+  if (os)
+  {
+    (*os) << "  " << std::setw(55) << symbolName << ": " << code << "\n";
+  }
+}
+
+#endif
+
 static inline void output_sei_message_header(SEI &sei, std::ostream *pDecodedMessageOutputStream, uint32_t payloadSize)
 {
   if (pDecodedMessageOutputStream)
@@ -2701,6 +2713,25 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       }
     }
   }
+#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+  if (sei.m_modeIdc == POST_FILTER_MODE::URI)
+  {
+    std::string val2;
+    while (!isByteAligned())
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_reserved_zero_bit");
+      CHECK(val != 0, "nnpfc_reserved_zero_bit not equal to zero");
+    }
+
+    sei_read_string(pDecodedMessageOutputStream, val2, "nnpfc_uri_tag");
+    sei.m_uriTag = val2;
+
+    val2 = "";
+    sei_read_string(pDecodedMessageOutputStream, val2, "nnpfc_uri");
+    sei.m_uri = val2;
+  }
+#endif
+
   if (sei.m_modeIdc == 1)
   {
     while (!isByteAligned())

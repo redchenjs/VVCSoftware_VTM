@@ -63,6 +63,7 @@
 #define JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER      1 // JVET-AA0102 and JVET-AA2027: SEI processing order SEI message in VVC (Draft 1) (SEI processing order SEI message carries information indicating the preferred processing order, as determined by the encoder)
 #define JVET_AA0055_SIGNAL_ADDITIONAL_PADDING             1 // JVET-AA0055 PROPOSAL A: Allow for signalling additional padding types for the neural network
 #define JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK         1 // JVET-AA0055 PROPOSAL B: Allow for signalling the use of binary neural network
+#define JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA           1 // JVET-AA0054_PROPOSAL1: Method to specify neural network post filter data via an external URL
 
 //########### place macros to be be kept below this line ###############
 #define JVET_X0143_ALF_APS_ID_OFFSET                      0 // A value between 0 to 7 inclusive. This macro should be kept, or to be defined as a configuration parameter if possible.
@@ -691,6 +692,15 @@ enum NNPC_PaddingType
   REFLECTION_PADDING = 2,
   WRAP_AROUND_PADDING = 3,
   FIXED_PADDING = 4
+};
+#endif
+
+#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+enum POST_FILTER_MODE
+{
+  EXTERNAL = 0,
+  INTERNAL = 1,
+  URI =2
 };
 #endif
 

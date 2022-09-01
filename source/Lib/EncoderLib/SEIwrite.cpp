@@ -1463,7 +1463,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     WRITE_UVLC(sei.m_AuxInpIdc,"nnpfc_aux_inp_idc");
     WRITE_FLAG(sei.m_SepColDescriptionFlag,"nnpfc_sep_col_desc_flag");
 
-    if(sei.m_SepColDescriptionFlag){
+    if (sei.m_SepColDescriptionFlag){
       WRITE_CODE(sei.m_ColPrimaries,8,"nnpfc_col_primaries");
       WRITE_CODE(sei.m_TransCharacteristics,8,"nnpfc_trans_characteristics");
       WRITE_CODE(sei.m_MatrixCoeffs,8,"nnpfc_matrix_coeffs");
@@ -1499,6 +1499,17 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteNNPFCComplexityElement(sei);
     }
   }
+#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+  if (sei.m_modeIdc == POST_FILTER_MODE::URI)
+  {
+    while (!isByteAligned())
+    {
+      WRITE_FLAG(0, "nnpfc_reserved_zero_bit");
+    }
+    WRITE_STRING(sei.m_uriTag, "nnpfc_uri_tag");
+    WRITE_STRING(sei.m_uri, "nnpfc_uri");
+  }
+#endif
   if (sei.m_modeIdc == 1)
   {
     while (!isByteAligned())
