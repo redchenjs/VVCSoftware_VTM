@@ -112,11 +112,12 @@ public:
       uint32_t absError = 0;
       if (isChroma((ComponentID) comp))
       {
-        absError += int(double(std::abs(data[comp] - element.data[comp])) * PLT_CHROMA_WEIGHTING) >> (bitDepths.recon[CHANNEL_TYPE_CHROMA] - PLT_ENCBITDEPTH);
+        absError += int(double(std::abs(data[comp] - element.data[comp])) * PLT_CHROMA_WEIGHTING)
+                    >> (bitDepths[ChannelType::CHROMA] - PLT_ENCBITDEPTH);
       }
       else
       {
-        absError += (std::abs(data[comp] - element.data[comp]))>> (bitDepths.recon[CHANNEL_TYPE_LUMA] - PLT_ENCBITDEPTH);
+        absError += (std::abs(data[comp] - element.data[comp])) >> (bitDepths[ChannelType::LUMA] - PLT_ENCBITDEPTH);
       }
       if (absError > errorLimit)
       {
@@ -132,14 +133,14 @@ public:
     uint32_t sumAd = 0;
     for (int comp = compBegin; comp < (compBegin + numComp); comp++)
     {
-      ChannelType chType = (comp > 0) ? CHANNEL_TYPE_CHROMA : CHANNEL_TYPE_LUMA;
+      ChannelType chType = (comp > 0) ? ChannelType::CHROMA : ChannelType::LUMA;
       if (lossless)
       {
         sumAd += (std::abs(data[comp] - element.data[comp]));
       }
       else
       {
-      sumAd += (std::abs(data[comp] - element.data[comp]) >> (bitDepths.recon[chType] - PLT_ENCBITDEPTH));
+        sumAd += (std::abs(data[comp] - element.data[comp]) >> (bitDepths[chType] - PLT_ENCBITDEPTH));
       }
     }
     return sumAd;
@@ -213,7 +214,7 @@ private:
     bool     mipTrFlg; // PU::mipTransposedFlag
     uint8_t  mRefId;   // PU::multiRefIdx
     ISPType  ispMod;   // CU::ispMode
-    uint32_t modeId; // PU::intraDir[CHANNEL_TYPE_LUMA]
+    uint32_t modeId;   // PU::intraDir[ChannelType::LUMA]
 
     ModeInfo() : mipFlg(false), mipTrFlg(false), mRefId(0), ispMod(ISPType::NONE), modeId(0) {}
     ModeInfo(const bool mipf, const bool miptf, const int mrid, const ISPType ispm, const uint32_t mode)

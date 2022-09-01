@@ -176,7 +176,7 @@ inline CompArea clipArea(const CompArea &compArea, const Area &boundingBox)
 // unit definition
 // ---------------------------------------------------------------------------
 
-typedef static_vector<CompArea, MAX_NUM_TBLOCKS> UnitBlocksType;
+using UnitBlocksType = static_vector<CompArea, MAX_NUM_TBLOCKS>;
 
 struct UnitArea
 {
@@ -198,7 +198,10 @@ struct UnitArea
         CompArea& Cr()                                 { return blocks[COMPONENT_Cr]; }
   const CompArea& Cr()                           const { return blocks[COMPONENT_Cr]; }
 
-        CompArea& block(const ComponentID comp)       { return blocks[comp]; }
+  CompArea       &block(const ChannelType ct) { return blocks[getFirstComponentOfChannel(ct)]; }
+  CompArea const &block(const ChannelType ct) const { return blocks[getFirstComponentOfChannel(ct)]; }
+
+  CompArea       &block(const ComponentID comp) { return blocks[comp]; }
   const CompArea& block(const ComponentID comp) const { return blocks[comp]; }
 
   bool contains(const UnitArea& other) const;
@@ -337,8 +340,8 @@ struct CodingUnit : public UnitArea
 #if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct m_featureCounter;
 #endif
-  
-  CodingUnit() : chType( CH_L ) { }
+
+  CodingUnit() : chType(ChannelType::LUMA) {}
   CodingUnit(const UnitArea &unit);
   CodingUnit(const ChromaFormat _chromaFormat, const Area &area);
 
@@ -378,7 +381,7 @@ struct CodingUnit : public UnitArea
 
 struct IntraPredictionData
 {
-  uint32_t  intraDir[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<uint32_t, ChannelType> intraDir;
   bool      mipTransposedFlag;
   uint8_t   multiRefIdx;
 };
@@ -431,7 +434,7 @@ struct PredictionUnit : public UnitArea, public IntraPredictionData, public Inte
   ChannelType      chType;
 
   // constructors
-  PredictionUnit(): chType( CH_L ) { }
+  PredictionUnit() : chType(ChannelType::LUMA) {}
   PredictionUnit(const UnitArea &unit);
   PredictionUnit(const ChromaFormat _chromaFormat, const Area &area);
 
@@ -472,7 +475,7 @@ struct TransformUnit : public UnitArea
   uint8_t        jointCbCr;
   uint8_t        cbf        [ MAX_NUM_TBLOCKS ];
 
-  TransformUnit() : chType( CH_L ) { }
+  TransformUnit() : chType(ChannelType::LUMA) {}
   TransformUnit(const UnitArea& unit);
   TransformUnit(const ChromaFormat _chromaFormat, const Area &area);
 
@@ -481,32 +484,33 @@ struct TransformUnit : public UnitArea
   unsigned       idx;
   TransformUnit *next;
   TransformUnit *prev;
-  void init(TCoeff **coeffs, Pel **pcmbuf, bool **runType);
+  void           init(TCoeff **coeffs, Pel **pcmbuf, EnumArray<bool *, ChannelType> &runType);
 
   TransformUnit& operator=(const TransformUnit& other);
   void copyComponentFrom  (const TransformUnit& other, const ComponentID compID);
   void checkTuNoResidual( unsigned idx );
   int  getTbAreaAfterCoefZeroOut(ComponentID compID) const;
 
-         CoeffBuf getCoeffs(const ComponentID id);
-  const CCoeffBuf getCoeffs(const ComponentID id) const;
-         PelBuf   getPcmbuf(const ComponentID id);
-  const CPelBuf   getPcmbuf(const ComponentID id) const;
-        int       getChromaAdj( )                 const;
-        void      setChromaAdj(int i);
-         PelBuf   getcurPLTIdx(const ComponentID id);
-  const CPelBuf   getcurPLTIdx(const ComponentID id) const;
-         PLTtypeBuf   getrunType(const ComponentID id);
-  const CPLTtypeBuf   getrunType(const ComponentID id) const;
-         PLTescapeBuf getescapeValue(const ComponentID id);
+  CoeffBuf            getCoeffs(const ComponentID id);
+  const CCoeffBuf     getCoeffs(const ComponentID id) const;
+  PelBuf              getPcmbuf(const ComponentID id);
+  const CPelBuf       getPcmbuf(const ComponentID id) const;
+  int                 getChromaAdj() const;
+  void                setChromaAdj(int i);
+  PelBuf              getcurPLTIdx(const ComponentID id);
+  const CPelBuf       getcurPLTIdx(const ComponentID id) const;
+  PLTtypeBuf          getrunType(const ChannelType id);
+  const CPLTtypeBuf   getrunType(const ChannelType id) const;
+  PLTescapeBuf        getescapeValue(const ComponentID id);
   const CPLTescapeBuf getescapeValue(const ComponentID id) const;
-        Pel*      getPLTIndex(const ComponentID id);
-        bool*     getRunTypes(const ComponentID id);
+  Pel                *getPLTIndex(const ComponentID id);
+  bool               *getRunTypes(const ChannelType id);
 
 private:
-  TCoeff *m_coeffs[ MAX_NUM_TBLOCKS ];
-  Pel    *m_pcmbuf[ MAX_NUM_TBLOCKS ];
-  bool   *m_runType[ MAX_NUM_TBLOCKS - 1 ];
+  TCoeff *m_coeffs[MAX_NUM_TBLOCKS];
+  Pel    *m_pcmbuf[MAX_NUM_TBLOCKS];
+
+  EnumArray<bool *, ChannelType> m_runType;
 };
 
 // ---------------------------------------------------------------------------

@@ -590,7 +590,7 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
     modeParam[compIdx].modeIdc = SAOMode::OFF;
     m_CABACEstimator->resetBits();
     m_CABACEstimator->sao_offset_params(modeParam[compIdx], compIdx, sliceEnabled[compIdx],
-                                        bitDepths.recon[CHANNEL_TYPE_LUMA]);
+                                        bitDepths[ChannelType::LUMA]);
     modeDist[compIdx] = 0;
     minCost           = m_lambda[compIdx] * (FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits());
     ctxBestLuma = SAOCtx( m_CABACEstimator->getCtx() );
@@ -603,7 +603,7 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
         testOffset[compIdx].typeIdc.newType = typeIdc;
 
         //derive coded offset
-        deriveOffsets(compIdx, bitDepths.recon[CHANNEL_TYPE_LUMA], typeIdc, blkStats[ctuRsAddr][compIdx][typeIdc],
+        deriveOffsets(compIdx, bitDepths[ChannelType::LUMA], typeIdc, blkStats[ctuRsAddr][compIdx][typeIdc],
                       testOffset[compIdx].offset, testOffset[compIdx].typeAuxInfo);
 
         //inversed quantized offsets
@@ -611,14 +611,14 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
 
         //get distortion
         dist[compIdx] =
-          getDistortion(bitDepths.recon[CHANNEL_TYPE_LUMA], testOffset[compIdx].typeIdc.newType,
+          getDistortion(bitDepths[ChannelType::LUMA], testOffset[compIdx].typeIdc.newType,
                         testOffset[compIdx].typeAuxInfo, invQuantOffset, blkStats[ctuRsAddr][compIdx][typeIdc]);
 
         //get rate
         m_CABACEstimator->getCtx() = SAOCtx( ctxStartLuma );
         m_CABACEstimator->resetBits();
         m_CABACEstimator->sao_offset_params(testOffset[compIdx], compIdx, sliceEnabled[compIdx],
-                                            bitDepths.recon[CHANNEL_TYPE_LUMA]);
+                                            bitDepths[ChannelType::LUMA]);
         double rate = FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
         cost = (double)dist[compIdx] + m_lambda[compIdx]*rate;
         if(cost < minCost)
@@ -645,7 +645,7 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
     modeParam[component].modeIdc = SAOMode::OFF;
     modeDist [component]         = 0;
     m_CABACEstimator->sao_offset_params(modeParam[component], component, sliceEnabled[component],
-                                        bitDepths.recon[CHANNEL_TYPE_CHROMA]);
+                                        bitDepths[ChannelType::CHROMA]);
     const uint64_t currentFracBits = m_CABACEstimator->getEstFracBits();
     cost += m_lambda[component] * FRAC_BITS_SCALE * (currentFracBits - previousFracBits);
     previousFracBits = currentFracBits;
@@ -676,12 +676,13 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
       testOffset[component].typeIdc.newType = typeIdc;
 
       //derive offset & get distortion
-      deriveOffsets(component, bitDepths.recon[CHANNEL_TYPE_CHROMA], typeIdc, blkStats[ctuRsAddr][component][typeIdc],
+      deriveOffsets(component, bitDepths[ChannelType::CHROMA], typeIdc, blkStats[ctuRsAddr][component][typeIdc],
                     testOffset[component].offset, testOffset[component].typeAuxInfo);
       invertQuantOffsets(component, typeIdc, testOffset[component].typeAuxInfo, invQuantOffset, testOffset[component].offset);
-      dist[component] = getDistortion(bitDepths.recon[CHANNEL_TYPE_CHROMA], typeIdc, testOffset[component].typeAuxInfo, invQuantOffset, blkStats[ctuRsAddr][component][typeIdc]);
+      dist[component] = getDistortion(bitDepths[ChannelType::CHROMA], typeIdc, testOffset[component].typeAuxInfo,
+                                      invQuantOffset, blkStats[ctuRsAddr][component][typeIdc]);
       m_CABACEstimator->sao_offset_params(testOffset[component], component, sliceEnabled[component],
-                                          bitDepths.recon[CHANNEL_TYPE_CHROMA]);
+                                          bitDepths[ChannelType::CHROMA]);
       const uint64_t currentFracBits = m_CABACEstimator->getEstFracBits();
       cost += dist[component] + (m_lambda[component] * FRAC_BITS_SCALE * (currentFracBits - previousFracBits));
       previousFracBits = currentFracBits;
@@ -747,11 +748,11 @@ void EncSampleAdaptiveOffset::deriveModeMergeRDO(const BitDepths &bitDepths, int
       if (mergedOffsetParam.modeIdc != SAOMode::OFF)
       {
         //offsets have been reconstructed. Don't call inversed quantization function.
-        normDist += (((double) getDistortion(bitDepths.recon[toChannelType(ComponentID(compIdx))],
-                                             mergedOffsetParam.typeIdc.newType, mergedOffsetParam.typeAuxInfo,
-                                             mergedOffsetParam.offset,
-                                             blkStats[ctuRsAddr][compIdx][mergedOffsetParam.typeIdc.newType]))
-                     / m_lambda[compIdx]);
+        normDist +=
+          (((double) getDistortion(bitDepths[toChannelType(ComponentID(compIdx))], mergedOffsetParam.typeIdc.newType,
+                                   mergedOffsetParam.typeAuxInfo, mergedOffsetParam.offset,
+                                   blkStats[ctuRsAddr][compIdx][mergedOffsetParam.typeIdc.newType]))
+           / m_lambda[compIdx]);
       }
     }
 
@@ -1543,10 +1544,10 @@ void EncSampleAdaptiveOffset::deriveLoopFilterBoundaryAvailability(CodingStructu
 
   const int width = cs.pcv->maxCUWidth;
   const int height = cs.pcv->maxCUHeight;
-  const CodingUnit* cuCurr = cs.getCU(pos, CH_L);
-  const CodingUnit* cuLeft = cs.getCU(pos.offset(-width, 0), CH_L);
-  const CodingUnit* cuAbove = cs.getCU(pos.offset(0, -height), CH_L);
-  const CodingUnit* cuAboveLeft = cs.getCU(pos.offset(-width, -height), CH_L);
+  const CodingUnit *cuCurr      = cs.getCU(pos, ChannelType::LUMA);
+  const CodingUnit *cuLeft      = cs.getCU(pos.offset(-width, 0), ChannelType::LUMA);
+  const CodingUnit *cuAbove     = cs.getCU(pos.offset(0, -height), ChannelType::LUMA);
+  const CodingUnit *cuAboveLeft = cs.getCU(pos.offset(-width, -height), ChannelType::LUMA);
 
   if (!isLoopFiltAcrossSlicePPS)
   {

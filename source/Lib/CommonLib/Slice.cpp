@@ -143,10 +143,7 @@ Slice::Slice()
   resetWpScaling();
   initWpAcDcParam();
 
-  for(int ch=0; ch < MAX_NUM_CHANNEL_TYPE; ch++)
-  {
-    m_saoEnabledFlag[ch] = false;
-  }
+  m_saoEnabledFlag.fill(false);
 
   memset(m_alfApss, 0, sizeof(m_alfApss));
   m_ccAlfFilterParam.reset();
@@ -252,8 +249,8 @@ void Slice::inheritFromPicHeader( PicHeader *picHeader, const PPS *pps, const SP
     setDeblockingFilterCrTcOffsetDiv2   ( getDeblockingFilterTcOffsetDiv2()   );
   }
 
-  setSaoEnabledFlag(CHANNEL_TYPE_LUMA,     picHeader->getSaoEnabledFlag(CHANNEL_TYPE_LUMA));
-  setSaoEnabledFlag(CHANNEL_TYPE_CHROMA,   picHeader->getSaoEnabledFlag(CHANNEL_TYPE_CHROMA));
+  setSaoEnabledFlag(ChannelType::LUMA, picHeader->getSaoEnabledFlag(ChannelType::LUMA));
+  setSaoEnabledFlag(ChannelType::CHROMA, picHeader->getSaoEnabledFlag(ChannelType::CHROMA));
 
   setAlfEnabledFlag(COMPONENT_Y,  picHeader->getAlfEnabledFlag(COMPONENT_Y));
   setAlfEnabledFlag(COMPONENT_Cb, picHeader->getAlfEnabledFlag(COMPONENT_Cb));
@@ -321,11 +318,11 @@ void Slice::setNumEntryPoints(const SPS *sps, const PPS *pps)
 void Slice::setDefaultClpRng( const SPS& sps )
 {
   m_clpRngs.comp[COMPONENT_Y].min = m_clpRngs.comp[COMPONENT_Cb].min  = m_clpRngs.comp[COMPONENT_Cr].min = 0;
-  m_clpRngs.comp[COMPONENT_Y].max                                     = (1<< sps.getBitDepth(CHANNEL_TYPE_LUMA))-1;
-  m_clpRngs.comp[COMPONENT_Y].bd  = sps.getBitDepth(CHANNEL_TYPE_LUMA);
+  m_clpRngs.comp[COMPONENT_Y].max  = (1 << sps.getBitDepth(ChannelType::LUMA)) - 1;
+  m_clpRngs.comp[COMPONENT_Y].bd   = sps.getBitDepth(ChannelType::LUMA);
   m_clpRngs.comp[COMPONENT_Y].n   = 0;
-  m_clpRngs.comp[COMPONENT_Cb].max = m_clpRngs.comp[COMPONENT_Cr].max = (1<< sps.getBitDepth(CHANNEL_TYPE_CHROMA))-1;
-  m_clpRngs.comp[COMPONENT_Cb].bd  = m_clpRngs.comp[COMPONENT_Cr].bd  = sps.getBitDepth(CHANNEL_TYPE_CHROMA);
+  m_clpRngs.comp[COMPONENT_Cb].max = m_clpRngs.comp[COMPONENT_Cr].max = (1 << sps.getBitDepth(ChannelType::CHROMA)) - 1;
+  m_clpRngs.comp[COMPONENT_Cb].bd = m_clpRngs.comp[COMPONENT_Cr].bd = sps.getBitDepth(ChannelType::CHROMA);
   m_clpRngs.comp[COMPONENT_Cb].n   = m_clpRngs.comp[COMPONENT_Cr].n   = 0;
   m_clpRngs.used = m_clpRngs.chroma = false;
 }
@@ -1057,10 +1054,7 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
     }
   }
 
-  for( uint32_t ch = 0 ; ch < MAX_NUM_CHANNEL_TYPE; ch++)
-  {
-    m_saoEnabledFlag[ch] = pSrc->m_saoEnabledFlag[ch];
-  }
+  m_saoEnabledFlag = pSrc->m_saoEnabledFlag;
 
   m_cabacInitFlag                 = pSrc->m_cabacInitFlag;
   memcpy(m_alfApss, pSrc->m_alfApss, sizeof(m_alfApss)); // this might be quite unsafe
@@ -2758,7 +2752,7 @@ PicHeader::PicHeader()
 {
   memset(m_virtualBoundariesPosX,                   0,    sizeof(m_virtualBoundariesPosX));
   memset(m_virtualBoundariesPosY,                   0,    sizeof(m_virtualBoundariesPosY));
-  memset(m_saoEnabledFlag,                          0,    sizeof(m_saoEnabledFlag));
+  m_saoEnabledFlag.fill(false);
   memset(m_alfEnabledFlag,                          0,    sizeof(m_alfEnabledFlag));
   memset(m_minQT,                                   0,    sizeof(m_minQT));
   memset(m_maxMTTHierarchyDepth,                    0,    sizeof(m_maxMTTHierarchyDepth));
@@ -2843,7 +2837,7 @@ void PicHeader::initPicHeader()
   m_numL1Weights                                  = 0;
   memset(m_virtualBoundariesPosX,                   0,    sizeof(m_virtualBoundariesPosX));
   memset(m_virtualBoundariesPosY,                   0,    sizeof(m_virtualBoundariesPosY));
-  memset(m_saoEnabledFlag,                          0,    sizeof(m_saoEnabledFlag));
+  m_saoEnabledFlag.fill(false);
   memset(m_alfEnabledFlag,                          0,    sizeof(m_alfEnabledFlag));
   memset(m_minQT,                                   0,    sizeof(m_minQT));
   memset(m_maxMTTHierarchyDepth,                    0,    sizeof(m_maxMTTHierarchyDepth));
@@ -2971,7 +2965,6 @@ SPS::SPS()
   , m_jointCbCrEnabledFlag(false)
   , m_entropyCodingSyncEnabledFlag(false)
   , m_entryPointPresentFlag(false)
-  , m_internalMinusInputBitDepth{ 0, 0 }
   , m_sbtmvpEnabledFlag(false)
   , m_bdofEnabledFlag(false)
   , m_fpelMmvdEnabledFlag(false)
@@ -3032,9 +3025,10 @@ SPS::SPS()
   , m_scalingMatrixDesignatedColourSpaceFlag(true)
   , m_disableScalingMatrixForLfnstBlks(true)
 {
+  m_bitDepths.fill(8);
+  m_internalMinusInputBitDepth.fill(0);
   for(int ch=0; ch<MAX_NUM_CHANNEL_TYPE; ch++)
   {
-    m_bitDepths.recon[ch] = 8;
     m_qpBDOffset   [ch] = 0;
   }
 
@@ -3700,7 +3694,9 @@ const SubPic& PPS::getSubPicFromPos(const Position& pos)  const
 
 const SubPic&  PPS::getSubPicFromCU(const CodingUnit& cu) const
 {
-  const Position lumaPos = cu.Y().valid() ? cu.Y().pos() : recalcPosition(cu.chromaFormat, cu.chType, CHANNEL_TYPE_LUMA, cu.blocks[cu.chType].pos());
+  const Position lumaPos = cu.Y().valid()
+                             ? cu.Y().pos()
+                             : recalcPosition(cu.chromaFormat, cu.chType, ChannelType::LUMA, cu.block(cu.chType).pos());
   return getSubPicFromPos(lumaPos);
 }
 
@@ -4366,14 +4362,15 @@ bool ScalingList::isLumaScalingList( int scalingListId) const
 
 uint32_t PreCalcValues::getValIdx( const Slice &slice, const ChannelType chType ) const
 {
-  return slice.isIntra() ? ( ISingleTree ? 0 : ( chType << 1 ) ) : 1;
+  return slice.isIntra() ? (ISingleTree || isLuma(chType) ? 0 : 2) : 1;
 }
 
 uint32_t PreCalcValues::getMaxBtDepth( const Slice &slice, const ChannelType chType ) const
 {
   if ( slice.getPicHeader()->getSplitConsOverrideFlag() )
   {
-    return slice.getPicHeader()->getMaxMTTHierarchyDepth( slice.getSliceType(), ISingleTree ? CHANNEL_TYPE_LUMA : chType);
+    return slice.getPicHeader()->getMaxMTTHierarchyDepth(slice.getSliceType(),
+                                                         ISingleTree ? ChannelType::LUMA : chType);
   }
   else
   {
@@ -4390,7 +4387,7 @@ uint32_t PreCalcValues::getMaxBtSize( const Slice &slice, const ChannelType chTy
 {
   if (slice.getPicHeader()->getSplitConsOverrideFlag())
   {
-    return slice.getPicHeader()->getMaxBTSize( slice.getSliceType(), ISingleTree ? CHANNEL_TYPE_LUMA : chType);
+    return slice.getPicHeader()->getMaxBTSize(slice.getSliceType(), ISingleTree ? ChannelType::LUMA : chType);
   }
   else
   {
@@ -4407,7 +4404,7 @@ uint32_t PreCalcValues::getMaxTtSize( const Slice &slice, const ChannelType chTy
 {
   if (slice.getPicHeader()->getSplitConsOverrideFlag())
   {
-    return slice.getPicHeader()->getMaxTTSize( slice.getSliceType(), ISingleTree ? CHANNEL_TYPE_LUMA : chType);
+    return slice.getPicHeader()->getMaxTTSize(slice.getSliceType(), ISingleTree ? ChannelType::LUMA : chType);
   }
   else
   {
@@ -4418,7 +4415,7 @@ uint32_t PreCalcValues::getMinQtSize( const Slice &slice, const ChannelType chTy
 {
   if (slice.getPicHeader()->getSplitConsOverrideFlag())
   {
-    return slice.getPicHeader()->getMinQTSize( slice.getSliceType(), ISingleTree ? CHANNEL_TYPE_LUMA : chType);
+    return slice.getPicHeader()->getMinQTSize(slice.getSliceType(), ISingleTree ? ChannelType::LUMA : chType);
   }
   else
   {

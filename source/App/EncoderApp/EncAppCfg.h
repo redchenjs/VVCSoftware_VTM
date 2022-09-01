@@ -427,10 +427,10 @@ protected:
 
   int       m_log2MaxTbSize;
   // coding tools (bit-depth)
-  int       m_inputBitDepth   [MAX_NUM_CHANNEL_TYPE];         ///< bit-depth of input file
-  int       m_outputBitDepth  [MAX_NUM_CHANNEL_TYPE];         ///< bit-depth of output file
-  int       m_msbExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];      ///< bit-depth of input samples after MSB extension
-  int       m_internalBitDepth[MAX_NUM_CHANNEL_TYPE];         ///< bit-depth codec operates at (input/output files will be converted)
+  BitDepths m_inputBitDepth;         // bit depth of input file
+  BitDepths m_outputBitDepth;        // bit depth of output file
+  BitDepths m_msbExtendedBitDepth;   // bit depth of input samples after MSB extension
+  BitDepths m_internalBitDepth;      // bit depth codec operates at (input/output files will be converted)
   bool      m_extendedPrecisionProcessingFlag;
   bool      m_tsrcRicePresentFlag;
   bool      m_reverseLastSigCoeffEnabledFlag;

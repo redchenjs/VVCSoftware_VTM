@@ -478,8 +478,9 @@ protected:
 #endif
 
   //====== Tool list ========
-  int       m_inputBitDepth[MAX_NUM_CHANNEL_TYPE];         ///< bit-depth of input file
-  int       m_bitDepth[MAX_NUM_CHANNEL_TYPE];
+  BitDepths m_inputBitDepth;   // bit-depth of input file
+  BitDepths m_bitDepth;
+
   bool      m_bUseASR;
   bool      m_bUseHADME;
   bool      m_useRDOQ;
@@ -1716,9 +1717,15 @@ public:
 #endif
 
   //==== Tool list ========
-  void      setBitDepth( const ChannelType chType, int internalBitDepthForChannel ) { m_bitDepth[chType] = internalBitDepthForChannel; }
-  void      setInputBitDepth( const ChannelType chType, int internalBitDepthForChannel ) { m_inputBitDepth[chType] = internalBitDepthForChannel; }
-  int*      getInputBitDepth()                              { return m_inputBitDepth; }
+  void setBitDepth(const ChannelType chType, int internalBitDepthForChannel)
+  {
+    m_bitDepth[chType] = internalBitDepthForChannel;
+  }
+  void setInputBitDepth(const ChannelType chType, int internalBitDepthForChannel)
+  {
+    m_inputBitDepth[chType] = internalBitDepthForChannel;
+  }
+  BitDepths &getInputBitDepth() { return m_inputBitDepth; }
   void      setUseASR                       ( bool  b )     { m_bUseASR     = b; }
   void      setUseHADME                     ( bool  b )     { m_bUseHADME   = b; }
   void      setUseRDOQ                      ( bool  b )     { m_useRDOQ    = b; }
@@ -1738,8 +1745,8 @@ public:
 
   void      setDeltaQpRD                    ( uint32_t  u )     {m_uiDeltaQpRD  = u; }
   void      setFastDeltaQp                  ( bool  b )     {m_bFastDeltaQP = b; }
-  int       getBitDepth                     (const ChannelType chType) const { return m_bitDepth[chType]; }
-  int*      getBitDepth                     ()      { return m_bitDepth; }
+  int                 getBitDepth(const ChannelType chType) const { return m_bitDepth[chType]; }
+  BitDepths          &getBitDepth() { return m_bitDepth; }
   bool      getUseASR                       ()      { return m_bUseASR;     }
   bool      getUseHADME                     ()      { return m_bUseHADME;   }
   bool      getUseRDOQ                      ()      { return m_useRDOQ;    }

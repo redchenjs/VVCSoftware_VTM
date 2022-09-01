@@ -63,8 +63,8 @@ CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID comp
                       [gp_sizeIdxInfo->idxFrom(m_height)])
   , m_scanCG(g_scanOrder[SCAN_UNGROUPED][CoeffScanType::DIAG][gp_sizeIdxInfo->idxFrom(m_widthInGroups)]
                         [gp_sizeIdxInfo->idxFrom(m_heightInGroups)])
-  , m_CtxSetLastX(Ctx::LastX[m_chType])
-  , m_CtxSetLastY(Ctx::LastY[m_chType])
+  , m_CtxSetLastX(Ctx::LastX[to_underlying(m_chType)])
+  , m_CtxSetLastY(Ctx::LastY[to_underlying(m_chType)])
   , m_maxLastPosX(g_groupIdx[getNonzeroTuSize(m_width) - 1])
   , m_maxLastPosY(g_groupIdx[getNonzeroTuSize(m_height) - 1])
   , m_lastOffsetX(0)
@@ -83,9 +83,10 @@ CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID comp
   , m_sigGroupCtxId(-1)
   , m_tmplCpSum1(-1)
   , m_tmplCpDiag(-1)
-  , m_sigFlagCtxSet{ Ctx::SigFlag[m_chType], Ctx::SigFlag[m_chType + 2], Ctx::SigFlag[m_chType + 4] }
-  , m_parFlagCtxSet(Ctx::ParFlag[m_chType])
-  , m_gtxFlagCtxSet{ Ctx::GtxFlag[m_chType], Ctx::GtxFlag[m_chType + 2] }
+  , m_sigFlagCtxSet{ Ctx::SigFlag[to_underlying(m_chType)], Ctx::SigFlag[to_underlying(m_chType) + 2],
+                     Ctx::SigFlag[to_underlying(m_chType) + 4] }
+  , m_parFlagCtxSet(Ctx::ParFlag[to_underlying(m_chType)])
+  , m_gtxFlagCtxSet{ Ctx::GtxFlag[to_underlying(m_chType)], Ctx::GtxFlag[to_underlying(m_chType) + 2] }
   , m_sigGroupCtxIdTS(-1)
   , m_tsSigFlagCtxSet(Ctx::TsSigFlag)
   , m_tsParFlagCtxSet(Ctx::TsParFlag)
@@ -98,7 +99,7 @@ CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID comp
   // LOGTODO
   unsigned log2sizeX = m_log2BlockWidth;
   unsigned log2sizeY = m_log2BlockHeight;
-  if (m_chType == CHANNEL_TYPE_CHROMA)
+  if (m_chType == ChannelType::CHROMA)
   {
     const_cast<int&>(m_lastShiftX) = Clip3( 0, 2, int( m_width  >> 3) );
     const_cast<int&>(m_lastShiftY) = Clip3( 0, 2, int( m_height >> 3) );
@@ -142,7 +143,7 @@ void CoeffCodingContext::initSubblock( int SubsetId, bool sigGroupFlag )
   unsigned  CGPosX    = m_subSetPosX;
   unsigned  sigRight  = unsigned( ( CGPosX + 1 ) < m_widthInGroups  ? m_sigCoeffGroupFlag[ m_subSetPos + 1               ] : false );
   unsigned  sigLower  = unsigned( ( CGPosY + 1 ) < m_heightInGroups ? m_sigCoeffGroupFlag[ m_subSetPos + m_widthInGroups ] : false );
-  m_sigGroupCtxId     = Ctx::SigCoeffGroup[m_chType]( sigRight | sigLower );
+  m_sigGroupCtxId     = Ctx::SigCoeffGroup[to_underlying(m_chType)](sigRight | sigLower);
   unsigned  sigLeft   = unsigned( CGPosX > 0 ? m_sigCoeffGroupFlag[m_subSetPos - 1              ] : false );
   unsigned  sigAbove  = unsigned( CGPosY > 0 ? m_sigCoeffGroupFlag[m_subSetPos - m_widthInGroups] : false );
   m_sigGroupCtxIdTS   = Ctx::TsSigCoeffGroup( sigLeft  + sigAbove );
@@ -151,8 +152,8 @@ void CoeffCodingContext::initSubblock( int SubsetId, bool sigGroupFlag )
 
 unsigned DeriveCtx::CtxModeConsFlag( const CodingStructure& cs, Partitioner& partitioner )
 {
-  assert( partitioner.chType == CHANNEL_TYPE_LUMA );
-  const Position pos = partitioner.currArea().blocks[partitioner.chType];
+  assert(isLuma(partitioner.chType));
+  const Position pos         = partitioner.currArea().block(partitioner.chType);
   const unsigned curSliceIdx = cs.slice->getIndependentSliceIdx();
   const unsigned curTileIdx = cs.pps->getTileIdx( partitioner.currArea().lumaPos() );
 
@@ -166,7 +167,7 @@ unsigned DeriveCtx::CtxModeConsFlag( const CodingStructure& cs, Partitioner& par
 
 void DeriveCtx::CtxSplit( const CodingStructure& cs, Partitioner& partitioner, unsigned& ctxSpl, unsigned& ctxQt, unsigned& ctxHv, unsigned& ctxHorBt, unsigned& ctxVerBt, bool* _canSplit /*= nullptr */ )
 {
-  const Position pos         = partitioner.currArea().blocks[partitioner.chType];
+  const Position pos         = partitioner.currArea().block(partitioner.chType);
   const unsigned curSliceIdx = cs.slice->getIndependentSliceIdx();
   const unsigned curTileIdx  = cs.pps->getTileIdx( partitioner.currArea().lumaPos() );
 
@@ -190,19 +191,19 @@ void DeriveCtx::CtxSplit( const CodingStructure& cs, Partitioner& partitioner, u
   ///////////////////////
   // CTX do split (0-8)
   ///////////////////////
-  const unsigned widthCurr  = partitioner.currArea().blocks[partitioner.chType].width;
-  const unsigned heightCurr = partitioner.currArea().blocks[partitioner.chType].height;
+  const unsigned widthCurr  = partitioner.currArea().block(partitioner.chType).width;
+  const unsigned heightCurr = partitioner.currArea().block(partitioner.chType).height;
 
   ctxSpl = 0;
 
   if( cuLeft )
   {
-    const unsigned heightLeft = cuLeft->blocks[partitioner.chType].height;
+    const unsigned heightLeft = cuLeft->block(partitioner.chType).height;
     ctxSpl += ( heightLeft < heightCurr ? 1 : 0 );
   }
   if( cuAbove )
   {
-    const unsigned widthAbove = cuAbove->blocks[partitioner.chType].width;
+    const unsigned widthAbove = cuAbove->block(partitioner.chType).width;
     ctxSpl += ( widthAbove < widthCurr ? 1 : 0 );
   }
 
@@ -252,10 +253,10 @@ void DeriveCtx::CtxSplit( const CodingStructure& cs, Partitioner& partitioner, u
 
   if( numVer == numHor )
   {
-    const Area& area = partitioner.currArea().blocks[partitioner.chType];
+    const Area &area = partitioner.currArea().block(partitioner.chType);
 
-    const unsigned wAbove       = cuAbove ? cuAbove->blocks[partitioner.chType].width  : 1;
-    const unsigned hLeft        = cuLeft  ? cuLeft ->blocks[partitioner.chType].height : 1;
+    const unsigned wAbove = cuAbove ? cuAbove->block(partitioner.chType).width : 1;
+    const unsigned hLeft  = cuLeft ? cuLeft->block(partitioner.chType).height : 1;
 
     const unsigned depAbove     = area.width / wAbove;
     const unsigned depLeft      = area.height / hLeft;
@@ -312,10 +313,10 @@ unsigned DeriveCtx::CtxAffineFlag( const CodingUnit& cu )
   const CodingStructure *cs = cu.cs;
   unsigned ctxId = 0;
 
-  const CodingUnit *cuLeft = cs->getCURestricted( cu.lumaPos().offset( -1, 0 ), cu, CH_L );
+  const CodingUnit *cuLeft = cs->getCURestricted(cu.lumaPos().offset(-1, 0), cu, ChannelType::LUMA);
   ctxId = ( cuLeft && cuLeft->affine ) ? 1 : 0;
 
-  const CodingUnit *cuAbove = cs->getCURestricted( cu.lumaPos().offset( 0, -1 ), cu, CH_L );
+  const CodingUnit *cuAbove = cs->getCURestricted(cu.lumaPos().offset(0, -1), cu, ChannelType::LUMA);
   ctxId += ( cuAbove && cuAbove->affine ) ? 1 : 0;
 
   return ctxId;
@@ -327,11 +328,11 @@ unsigned DeriveCtx::CtxSkipFlag( const CodingUnit& cu )
   unsigned ctxId = 0;
 
   // Get BCBP of left PU
-  const CodingUnit *cuLeft = cs->getCURestricted( cu.lumaPos().offset( -1, 0 ), cu, CH_L );
+  const CodingUnit *cuLeft = cs->getCURestricted(cu.lumaPos().offset(-1, 0), cu, ChannelType::LUMA);
   ctxId = ( cuLeft && cuLeft->skip ) ? 1 : 0;
 
   // Get BCBP of above PU
-  const CodingUnit *cuAbove = cs->getCURestricted( cu.lumaPos().offset( 0, -1 ), cu, CH_L );
+  const CodingUnit *cuAbove = cs->getCURestricted(cu.lumaPos().offset(0, -1), cu, ChannelType::LUMA);
   ctxId += ( cuAbove && cuAbove->skip ) ? 1 : 0;
 
   return ctxId;
@@ -339,8 +340,8 @@ unsigned DeriveCtx::CtxSkipFlag( const CodingUnit& cu )
 
 unsigned DeriveCtx::CtxPredModeFlag( const CodingUnit& cu )
 {
-  const CodingUnit *cuLeft  = cu.cs->getCURestricted(cu.lumaPos().offset(-1, 0), cu, CH_L);
-  const CodingUnit *cuAbove = cu.cs->getCURestricted(cu.lumaPos().offset(0, -1), cu, CH_L);
+  const CodingUnit *cuLeft  = cu.cs->getCURestricted(cu.lumaPos().offset(-1, 0), cu, ChannelType::LUMA);
+  const CodingUnit *cuAbove = cu.cs->getCURestricted(cu.lumaPos().offset(0, -1), cu, ChannelType::LUMA);
 
   unsigned ctxId = ((cuAbove && CU::isIntra(*cuAbove)) || (cuLeft && CU::isIntra(*cuLeft))) ? 1 : 0;
 
@@ -351,7 +352,7 @@ unsigned DeriveCtx::CtxIBCFlag(const CodingUnit& cu)
 {
   const CodingStructure *cs = cu.cs;
   unsigned ctxId = 0;
-  const Position pos = cu.chType == CHANNEL_TYPE_CHROMA ? cu.chromaPos() : cu.lumaPos();
+  const Position         pos    = cu.chType == ChannelType::CHROMA ? cu.chromaPos() : cu.lumaPos();
   const CodingUnit *cuLeft = cs->getCURestricted(pos.offset(-1, 0), cu, cu.chType);
   ctxId += (cuLeft && CU::isIBC(*cuLeft)) ? 1 : 0;
 
@@ -381,7 +382,10 @@ void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
   }
 #if GDR_ENABLED
   CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool       isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 
   if (isEncodeGdrClean)
   {
@@ -416,7 +420,10 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
 
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
   const int mvdBaseIdx  = candIdx.pos.baseIdx;
@@ -646,10 +653,10 @@ unsigned DeriveCtx::CtxMipFlag( const CodingUnit& cu )
   const CodingStructure *cs = cu.cs;
   unsigned ctxId = 0;
 
-  const CodingUnit *cuLeft = cs->getCURestricted( cu.lumaPos().offset( -1, 0 ), cu, CH_L );
+  const CodingUnit *cuLeft = cs->getCURestricted(cu.lumaPos().offset(-1, 0), cu, ChannelType::LUMA);
   ctxId = (cuLeft && cuLeft->mipFlag) ? 1 : 0;
 
-  const CodingUnit *cuAbove = cs->getCURestricted( cu.lumaPos().offset( 0, -1 ), cu, CH_L );
+  const CodingUnit *cuAbove = cs->getCURestricted(cu.lumaPos().offset(0, -1), cu, ChannelType::LUMA);
   ctxId += (cuAbove && cuAbove->mipFlag) ? 1 : 0;
 
   ctxId  = (cu.lwidth() > 2*cu.lheight() || cu.lheight() > 2*cu.lwidth()) ? 3 : ctxId;

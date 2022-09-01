@@ -87,23 +87,19 @@ EncTemporalFilter::EncTemporalFilter()
   , m_inputColourSpaceConvert(NUMBER_INPUT_COLOUR_SPACE_CONVERSIONS)
 {}
 
-void EncTemporalFilter::init(const int frameSkip, const int inputBitDepth[MAX_NUM_CHANNEL_TYPE],
-                             const int msbExtendedBitDepth[MAX_NUM_CHANNEL_TYPE],
-                             const int internalBitDepth[MAX_NUM_CHANNEL_TYPE], const int width, const int height,
-                             const int *pad, const bool rec709, const std::string &filename,
-                             const ChromaFormat inputChromaFormatIDC, const InputColourSpaceConversion colorSpaceConv,
-                             const int qp, const std::map<int, double> &temporalFilterStrengths, const int pastRefs,
-                             const int futureRefs, const int firstValidFrame, const int lastValidFrame
-                             , const bool mctfEnabled, std::map<int, int*> *adaptQPmap, const bool bimEnabled, const int ctuSize
-                             )
+void EncTemporalFilter::init(const int frameSkip, const BitDepths &inputBitDepth, const BitDepths &msbExtendedBitDepth,
+                             const BitDepths &internalBitDepth, const int width, const int height, const int *pad,
+                             const bool rec709, const std::string &filename, const ChromaFormat inputChromaFormatIDC,
+                             const InputColourSpaceConversion colorSpaceConv, const int qp,
+                             const std::map<int, double> &temporalFilterStrengths, const int pastRefs,
+                             const int futureRefs, const int firstValidFrame, const int lastValidFrame,
+                             const bool mctfEnabled, std::map<int, int *> *adaptQPmap, const bool bimEnabled,
+                             const int ctuSize)
 {
   m_frameSkip = frameSkip;
-  for (int i = 0; i < MAX_NUM_CHANNEL_TYPE; i++)
-  {
-    m_inputBitDepth[i]       = inputBitDepth[i];
-    m_msbExtendedBitDepth[i] = msbExtendedBitDepth[i];
-    m_internalBitDepth[i]    = internalBitDepth[i];
-  }
+  m_inputBitDepth       = inputBitDepth;
+  m_msbExtendedBitDepth = msbExtendedBitDepth;
+  m_internalBitDepth    = internalBitDepth;
 
   m_sourceWidth  = width;
   m_sourceHeight = height;
@@ -394,7 +390,7 @@ int EncTemporalFilter::motionErrorLuma(const PelStorage &orig,
       }
     }
 
-    const Pel maxSampleValue = (1 << m_internalBitDepth[CHANNEL_TYPE_LUMA]) - 1;
+    const Pel maxSampleValue = (1 << m_internalBitDepth[ChannelType::LUMA]) - 1;
     for (int y1 = 0; y1 < bs; y1++)
     {
       const Pel *origRow = origOrigin + (y + y1) * origStride;
@@ -690,7 +686,7 @@ void EncTemporalFilter::bilateralFilter(const PelStorage &orgPic,
     const ptrdiff_t   dstStride             = newOrgPic.bufs[c].stride;
     const double sigmaSq = isChroma(compID) ? chromaSigmaSq : lumaSigmaSq;
     const double weightScaling = overallStrength * (isChroma(compID) ? m_chromaFactor : 0.4);
-    const Pel maxSampleValue   = (1 << m_internalBitDepth[toChannelType(compID)]) - 1;
+    const Pel         maxSampleValue        = (1 << m_internalBitDepth[toChannelType(compID)]) - 1;
     const double bitDepthDiffWeighting = 1024.0 / (maxSampleValue + 1);
     const int lumaBlockSize = 8;
     const int csx = getComponentScaleX(compID, m_chromaFormatIDC);

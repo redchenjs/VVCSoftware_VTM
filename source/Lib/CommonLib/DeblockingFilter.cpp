@@ -91,9 +91,9 @@ static bool isNeighbourAvailable(const CodingUnit &cu, const CodingUnit &cu2, co
 
 void DeblockingFilter::clearFilterLengthAndTransformEdge()
 {
-  std::fill_n(m_maxFilterLen[0][0], sizeof(m_maxFilterLen) / sizeof(FilterLenPair),
+  std::fill_n(m_maxFilterLen[ChannelType::LUMA][0], sizeof(m_maxFilterLen) / sizeof(FilterLenPair),
               FilterLenPair{ FilterLen::_1, FilterLen::_1 });
-  std::fill_n(m_transformEdge[0][0], sizeof(m_transformEdge) / sizeof(bool), false);
+  std::fill_n(m_transformEdge[ChannelType::LUMA][0], sizeof(m_transformEdge) / sizeof(bool), false);
 }
 
 // ====================================================================================================================
@@ -168,11 +168,11 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
       m_ctuYLumaSamples = y << pcv.maxCUHeightLog2;
 
       const UnitArea ctuArea( pcv.chrFormat, Area( x << pcv.maxCUWidthLog2, y << pcv.maxCUHeightLog2, pcv.maxCUWidth, pcv.maxCUWidth ) );
-      CodingUnit *firstCU = cs.getCU(ctuArea.lumaPos(), CHANNEL_TYPE_LUMA);
+      CodingUnit *firstCU = cs.getCU(ctuArea.lumaPos(), ChannelType::LUMA);
       cs.slice = firstCU->slice;
 
       // CU-based deblocking
-      for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_LUMA), CHANNEL_TYPE_LUMA))
+      for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, ChannelType::LUMA), ChannelType::LUMA))
       {
 #if GREEN_METADATA_SEI_ENABLED
         currCU.m_featureCounter.resetBoundaryStrengths();
@@ -188,7 +188,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
         resetBsAndEdgeFilter(EDGE_VER);
         clearFilterLengthAndTransformEdge();
 
-        for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_CHROMA), CHANNEL_TYPE_CHROMA))
+        for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, ChannelType::CHROMA), ChannelType::CHROMA))
         {
 #if GREEN_METADATA_SEI_ENABLED
           currCU.m_featureCounter.resetBoundaryStrengths();
@@ -213,11 +213,11 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
       m_ctuYLumaSamples = y << pcv.maxCUHeightLog2;
 
       const UnitArea ctuArea( pcv.chrFormat, Area( x << pcv.maxCUWidthLog2, y << pcv.maxCUHeightLog2, pcv.maxCUWidth, pcv.maxCUWidth ) );
-      CodingUnit *firstCU = cs.getCU(ctuArea.lumaPos(), CHANNEL_TYPE_LUMA);
+      CodingUnit *firstCU = cs.getCU(ctuArea.lumaPos(), ChannelType::LUMA);
       cs.slice = firstCU->slice;
 
       // CU-based deblocking
-      for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_LUMA), CHANNEL_TYPE_LUMA))
+      for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, ChannelType::LUMA), ChannelType::LUMA))
       {
 #if GREEN_METADATA_SEI_ENABLED
         currCU.m_featureCounter.resetBoundaryStrengths();
@@ -233,7 +233,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
         resetBsAndEdgeFilter(EDGE_HOR);
         clearFilterLengthAndTransformEdge();
 
-        for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_CHROMA), CHANNEL_TYPE_CHROMA))
+        for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, ChannelType::CHROMA), ChannelType::CHROMA))
         {
 #if GREEN_METADATA_SEI_ENABLED
           currCU.m_featureCounter.resetBoundaryStrengths();
@@ -277,7 +277,10 @@ void DeblockingFilter::resetFilterLengths()
 void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir )
 {
   const PreCalcValues& pcv = *cu.cs->pcv;
-  const Area area          = cu.Y().valid() ? cu.Y() : Area( recalcPosition( cu.chromaFormat, cu.chType, CHANNEL_TYPE_LUMA, cu.blocks[cu.chType].pos() ), recalcSize( cu.chromaFormat, cu.chType, CHANNEL_TYPE_LUMA, cu.blocks[cu.chType].size() ) );
+  const Area           area = cu.Y().valid()
+                                ? cu.Y()
+                                : Area(recalcPosition(cu.chromaFormat, cu.chType, ChannelType::LUMA, cu.block(cu.chType).pos()),
+                                       recalcSize(cu.chromaFormat, cu.chType, ChannelType::LUMA, cu.block(cu.chType).size()));
 
   m_shiftHor = ::getComponentScaleX(COMPONENT_Cb, cu.chromaFormat);
   m_shiftVer = ::getComponentScaleY(COMPONENT_Cb, cu.chromaFormat);
@@ -312,9 +315,13 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
 
   for( auto &currTU : CU::traverseTUs( cu ) )
   {
-    const Area& areaTu = cu.Y().valid() ? currTU.block( COMPONENT_Y ) : Area( recalcPosition( cu.chromaFormat, cu.chType, CHANNEL_TYPE_LUMA, currTU.blocks[cu.chType].pos() ), recalcSize( cu.chromaFormat, cu.chType, CHANNEL_TYPE_LUMA, currTU.blocks[cu.chType].size() ) );
-    const bool  xOff   = currTU.blocks[cu.chType].x != cu.blocks[cu.chType].x;
-    const bool  yOff   = currTU.blocks[cu.chType].y != cu.blocks[cu.chType].y;
+    const Area &areaTu =
+      cu.Y().valid()
+        ? currTU.block(COMPONENT_Y)
+        : Area(recalcPosition(cu.chromaFormat, cu.chType, ChannelType::LUMA, currTU.block(cu.chType).pos()),
+               recalcSize(cu.chromaFormat, cu.chType, ChannelType::LUMA, currTU.block(cu.chType).size()));
+    const bool xOff = currTU.block(cu.chType).x != cu.block(cu.chType).x;
+    const bool yOff = currTU.block(cu.chType).y != cu.block(cu.chType).y;
 
     verEdgeFilter = xOff ? m_filterCuEdge.internal : m_filterCuEdge.left;
     horEdgeFilter = yOff ? m_filterCuEdge.internal : m_filterCuEdge.top;
@@ -342,15 +349,15 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
 
     const uint32_t s = LOG_GRID_SIZE - (cu.Y().valid() ? 0 : (edgeDir == EDGE_VER ? m_shiftHor : m_shiftVer));
 
-    edgeIdx.push_back((getPos(currTU.blocks[cu.chType], edgeDir) - getPos(cu.blocks[cu.chType], edgeDir)) >> s);
+    edgeIdx.push_back((getPos(currTU.block(cu.chType), edgeDir) - getPos(cu.block(cu.chType), edgeDir)) >> s);
   }
 
   bool mvSubBlocks = false;
   for( auto &currPU : CU::traversePUs( cu ) )
   {
     const Area& areaPu = cu.Y().valid() ? currPU.block( COMPONENT_Y ) : area;
-    const bool xOff    = currPU.blocks[cu.chType].x != cu.blocks[cu.chType].x;
-    const bool yOff    = currPU.blocks[cu.chType].y != cu.blocks[cu.chType].y;
+    const bool  xOff   = currPU.block(cu.chType).x != cu.block(cu.chType).x;
+    const bool  yOff   = currPU.block(cu.chType).y != cu.block(cu.chType).y;
 
     verEdgeFilter = xOff ? m_filterCuEdge.internal : m_filterCuEdge.left;
     horEdgeFilter = yOff ? m_filterCuEdge.internal : m_filterCuEdge.top;
@@ -362,7 +369,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
 
     xSetEdgefilterMultiple(cu, EDGE_VER, areaPu, verEdgeFilter, false);
     xSetEdgefilterMultiple(cu, EDGE_HOR, areaPu, horEdgeFilter, false);
-    edgeIdx.push_back((getPos(currPU.blocks[cu.chType], edgeDir) - getPos(cu.blocks[cu.chType], edgeDir))
+    edgeIdx.push_back((getPos(currPU.block(cu.chType), edgeDir) - getPos(cu.block(cu.chType), edgeDir))
                       >> LOG_GRID_SIZE);
 
     if ((currPU.mergeFlag && (currPU.mergeType == MRG_TYPE_SUBPU_ATMVP)) || cu.affine)
@@ -380,7 +387,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
           }
 
           xSetEdgefilterMultiple(cu, EDGE_HOR, mvBlockH, horEdgeFilter, false);
-          edgeIdx.push_back((currPU.blocks[cu.chType].y + off - cu.blocks[cu.chType].y) >> LOG_GRID_SIZE);
+          edgeIdx.push_back((currPU.block(cu.chType).y + off - cu.block(cu.chType).y) >> LOG_GRID_SIZE);
         }
       }
       else
@@ -395,7 +402,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
           }
 
           xSetEdgefilterMultiple(cu, EDGE_VER, mvBlockV, verEdgeFilter, false);
-          edgeIdx.push_back((currPU.blocks[cu.chType].x + off - cu.blocks[cu.chType].x) >> LOG_GRID_SIZE);
+          edgeIdx.push_back((currPU.block(cu.chType).x + off - cu.block(cu.chType).x) >> LOG_GRID_SIZE);
         }
       }
     }
@@ -417,7 +424,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
       {
         if(cu.treeType != TREE_C)
         {
-          es |= xGetBoundaryStrengthSingle(cu, edgeDir, localPos, CHANNEL_TYPE_LUMA);
+          es |= xGetBoundaryStrengthSingle(cu, edgeDir, localPos, ChannelType::LUMA);
 #if GREEN_METADATA_SEI_ENABLED
           const int bsY = es.getBoundaryStrength(COMPONENT_Y);
           cu.m_featureCounter.boundaryStrength[bsY]++;
@@ -426,7 +433,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
         }
         if(cu.treeType != TREE_L && cu.chromaFormat != CHROMA_400 && cu.blocks[COMPONENT_Cb].valid())
         {
-          es |= xGetBoundaryStrengthSingle(cu, edgeDir, localPos, CHANNEL_TYPE_CHROMA);
+          es |= xGetBoundaryStrengthSingle(cu, edgeDir, localPos, ChannelType::CHROMA);
 #if GREEN_METADATA_SEI_ENABLED
           const int bsCb = es.getBoundaryStrength(COMPONENT_Cb);
           const int bsCr = es.getBoundaryStrength(COMPONENT_Cr);
@@ -541,7 +548,7 @@ void DeblockingFilter::xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdge
         // Edge deblocking needs to be recomputed since ISP contains whole CU chroma transforms in last TU of the CU
         for ( int x = 0; x < currTU.blocks[cIdx].width; x += minCUWidth )
         {
-          const Position  posQ     = Position( currTU.blocks[ch].x + x, currTU.blocks[ch].y );
+          const Position       posQ           = Position(currTU.block(ch).x + x, currTU.block(ch).y);
           const Position  posP     = posQ.offset( 0, -1 );
           const int sizeQSide      = tuQ.block(comp).height;
           const TransformUnit& tuP = *cu.cs->getTU( posP, ch );
@@ -597,7 +604,7 @@ void DeblockingFilter::xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdge
         // Edge deblocking needs to be recomputed since ISP contains whole CU chroma transforms in last TU of the CU
         for ( int y = 0; y < currTU.blocks[cIdx].height; y += minCUHeight )
         {
-          const Position  posQ     = Position( currTU.blocks[ch].x, currTU.blocks[ch].y + y );
+          const Position       posQ           = Position(currTU.block(ch).x, currTU.block(ch).y + y);
           const Position  posP     = posQ.offset( -1, 0 );
           const int sizeQSide      = tuQ.block(comp).width;
           const TransformUnit& tuP = *cu.cs->getTU( posP, ch );
@@ -765,7 +772,7 @@ void DeblockingFilter::xSetDeblockingFilterParam( const CodingUnit& cu )
   if (deblockingEnabled)
   {
     const PPS      &pps = *cu.cs->pps;
-    const Position &pos = cu.blocks[cu.chType].pos();
+    const Position &pos = cu.block(cu.chType).pos();
 
     if (pos.x > 0)
     {
@@ -787,15 +794,16 @@ DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(con
                                                                              const Position      &localPos,
                                                                              const ChannelType    chType) const
 {
-  const ChannelType chTypeQ = cu.Y().valid() ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA;
+  const ChannelType chTypeQ = cu.Y().valid() ? ChannelType::LUMA : ChannelType::CHROMA;
 
-  const Position posQ = recalcPosition(cu.chromaFormat, CHANNEL_TYPE_LUMA, chTypeQ, localPos);
+  const Position posQ = recalcPosition(cu.chromaFormat, ChannelType::LUMA, chTypeQ, localPos);
   const Position posP = edgeDir == EDGE_VER ? posQ.offset(-1, 0) : posQ.offset(0, -1);
 
   const CodingUnit& cuQ = cu;
-  const CodingUnit& cuP = (chType == CHANNEL_TYPE_CHROMA && cuQ.chType == CHANNEL_TYPE_LUMA) ?
-                          *cu.cs->getCU(recalcPosition( cu.chromaFormat, CHANNEL_TYPE_LUMA, CHANNEL_TYPE_CHROMA, posP), CHANNEL_TYPE_CHROMA) :
-                          *cu.cs->getCU( posP, cu.chType );
+  const CodingUnit &cuP =
+    (chType == ChannelType::CHROMA && isLuma(cuQ.chType)) ? *cu.cs->getCU(
+      recalcPosition(cu.chromaFormat, ChannelType::LUMA, ChannelType::CHROMA, posP), ChannelType::CHROMA)
+                                                          : *cu.cs->getCU(posP, cu.chType);
 
   if (CU::isIntra(cuP) || CU::isIntra(cuQ))
   {
@@ -818,9 +826,10 @@ DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(con
   }
 
   const TransformUnit& tuQ = *cuQ.cs->getTU(posQ, cuQ.chType);
-  const TransformUnit& tuP = (cuP.chType == CHANNEL_TYPE_CHROMA && cuQ.chType == CHANNEL_TYPE_LUMA) ?
-                             *cuP.cs->getTU(recalcPosition( cu.chromaFormat, CHANNEL_TYPE_LUMA, CHANNEL_TYPE_CHROMA, posP), CHANNEL_TYPE_CHROMA) :
-                             *cuP.cs->getTU(posP, cuQ.chType);
+  const TransformUnit &tuP =
+    (cuP.chType == ChannelType::CHROMA && isLuma(cuQ.chType)) ? *cuP.cs->getTU(
+      recalcPosition(cu.chromaFormat, ChannelType::LUMA, ChannelType::CHROMA, posP), ChannelType::CHROMA)
+                                                              : *cuP.cs->getTU(posP, cuQ.chType);
 
   const PreCalcValues& pcv = *cu.cs->pcv;
   const unsigned rasterIdx = getRasterIdx( Position{ localPos.x,  localPos.y }, pcv );
@@ -871,11 +880,11 @@ DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(con
   {
     return tmpBs;
   }
-  if( chType == CHANNEL_TYPE_CHROMA )
+  if (chType == ChannelType::CHROMA)
   {
     return tmpBs;
   }
-  if( cuP.predMode != cuQ.predMode && chType == CHANNEL_TYPE_LUMA )
+  if (cuP.predMode != cuQ.predMode && isLuma(chType))
   {
     return EdgeStrengths().setBoundaryStrength(COMPONENT_Y, 1);
   }
@@ -984,7 +993,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
 
   const Slice   &slice    = *(cu.slice);
   const bool     spsPaletteEnabledFlag          = sps->getPLTMode();
-  const int      bitDepthLuma                   = sps->getBitDepth(CHANNEL_TYPE_LUMA);
+  const int      bitDepthLuma                   = sps->getBitDepth(ChannelType::LUMA);
   const ClpRng& clpRng( cu.cs->slice->clpRng(COMPONENT_Y) );
 
   int      qp       = 0;
@@ -1057,7 +1066,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
       bool sidePisLarge   = false;
       bool sideQisLarge   = false;
 
-      auto maxFilterLen = m_maxFilterLen[CHANNEL_TYPE_LUMA][(pos.x - m_ctuXLumaSamples) >> LOG_GRID_SIZE]
+      auto maxFilterLen = m_maxFilterLen[ChannelType::LUMA][(pos.x - m_ctuXLumaSamples) >> LOG_GRID_SIZE]
                                         [(pos.y - m_ctuYLumaSamples) >> LOG_GRID_SIZE];
 
       if (maxFilterLen.p > FilterLen::_3)
@@ -1177,8 +1186,12 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
 
 void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx)
 {
-  const Position lumaPos   = cu.Y().valid() ? cu.Y().pos() : recalcPosition( cu.chromaFormat, cu.chType, CHANNEL_TYPE_LUMA, cu.blocks[cu.chType].pos() );
-  const Size     lumaSize  = cu.Y().valid() ? cu.Y().size() : recalcSize( cu.chromaFormat, cu.chType, CHANNEL_TYPE_LUMA, cu.blocks[cu.chType].size() );
+  const Position lumaPos  = cu.Y().valid()
+                              ? cu.Y().pos()
+                              : recalcPosition(cu.chromaFormat, cu.chType, ChannelType::LUMA, cu.block(cu.chType).pos());
+  const Size     lumaSize = cu.Y().valid()
+                              ? cu.Y().size()
+                              : recalcSize(cu.chromaFormat, cu.chType, ChannelType::LUMA, cu.block(cu.chType).size());
 
   const PreCalcValues& pcv = *cu.cs->pcv;
   unsigned  rasterIdx      = getRasterIdx( lumaPos, pcv );
@@ -1248,7 +1261,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
     pos        = Position{ lumaPos.x - xoffset, lumaPos.y + edgeIdx * numPelsLuma };
   }
 
-  const int bitdepthScale = 1 << (sps.getBitDepth(CHANNEL_TYPE_CHROMA) - 8);
+  const int bitdepthScale = 1 << (sps.getBitDepth(ChannelType::CHROMA) - 8);
 
   const int subSamplingShift = (edgeDir == EDGE_VER) ? m_shiftVer : m_shiftHor;
 
@@ -1268,13 +1281,13 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
     {
       const CodingUnit& cuQ =  cu;
 
-      CodingUnit &cuP1 = *cu.cs->getCU(recalcPosition(cu.chromaFormat, CHANNEL_TYPE_LUMA, cu.chType,
+      CodingUnit &cuP1 = *cu.cs->getCU(recalcPosition(cu.chromaFormat, ChannelType::LUMA, cu.chType,
                                                       pos.offset(xoffset - numPelsLuma, yoffset - numPelsLuma)),
                                        cu.chType);
-      CodingUnit &cuP  = *cu.cs->getCU(recalcPosition(cu.chromaFormat, CHANNEL_TYPE_LUMA,
-                                                     (cuP1.isSepTree() ? CHANNEL_TYPE_CHROMA : cu.chType),
-                                                     pos.offset(xoffset - numPelsLuma, yoffset - numPelsLuma)),
-                                      (cuP1.isSepTree() ? CHANNEL_TYPE_CHROMA : cu.chType));
+      CodingUnit &cuP  = *cu.cs->getCU(recalcPosition(cu.chromaFormat, ChannelType::LUMA,
+                                                      (cuP1.isSepTree() ? ChannelType::CHROMA : cu.chType),
+                                                      pos.offset(xoffset - numPelsLuma, yoffset - numPelsLuma)),
+                                       (cuP1.isSepTree() ? ChannelType::CHROMA : cu.chType));
 
       CHECKD(!isNeighbourAvailable(cu, cuP, *cu.cs->pps), "Neighbour not available");
 
@@ -1286,7 +1299,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
         partQNoFilter = partQNoFilter || CU::isPLT(cuQ);
       }
 
-      const auto &maxFilterLen = m_maxFilterLen[CHANNEL_TYPE_CHROMA][(pos.x - m_ctuXLumaSamples) >> LOG_GRID_SIZE]
+      const auto &maxFilterLen = m_maxFilterLen[ChannelType::CHROMA][(pos.x - m_ctuXLumaSamples) >> LOG_GRID_SIZE]
                                                [(pos.y - m_ctuYLumaSamples) >> LOG_GRID_SIZE];
 
       const bool largeBoundary = maxFilterLen.p >= FilterLen::_3 && maxFilterLen.q >= FilterLen::_3;
@@ -1302,7 +1315,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
       {
         if ((bS[chromaIdx] == 2) || (largeBoundary && (bS[chromaIdx] == 1)))
         {
-          auto compId = ComponentID(getFirstComponentOfChannel(CHANNEL_TYPE_CHROMA) + chromaIdx);
+          auto compId = ComponentID(getFirstComponentOfChannel(ChannelType::CHROMA) + chromaIdx);
 
           const ClpRng &clpRng(cu.cs->slice->clpRng(compId));
 
@@ -1312,22 +1325,22 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
           Pel *src3 = src0 + srcStep * ((GRID_SIZE - 1) >> subSamplingShift);
 
           const TransformUnit &tuQ = *cuQ.cs->getTU(
-            recalcPosition(cu.chromaFormat, CHANNEL_TYPE_LUMA, CHANNEL_TYPE_CHROMA, pos), CHANNEL_TYPE_CHROMA);
+            recalcPosition(cu.chromaFormat, ChannelType::LUMA, ChannelType::CHROMA, pos), ChannelType::CHROMA);
           const TransformUnit &tuP =
-            *cuP.cs->getTU(recalcPosition(cu.chromaFormat, CHANNEL_TYPE_LUMA, CHANNEL_TYPE_CHROMA,
+            *cuP.cs->getTU(recalcPosition(cu.chromaFormat, ChannelType::LUMA, ChannelType::CHROMA,
                                           (edgeDir == EDGE_VER) ? pos.offset(-1, 0) : pos.offset(0, -1)),
-                           CHANNEL_TYPE_CHROMA);
+                           ChannelType::CHROMA);
 
           const QpParam qpP(tuP, compId, -MAX_INT, false);
           const QpParam qpQ(tuQ, compId, -MAX_INT, false);
 
-          const int qpBdOffset = tuP.cs->sps->getQpBDOffset(CHANNEL_TYPE_CHROMA);
+          const int qpBdOffset = tuP.cs->sps->getQpBDOffset(ChannelType::CHROMA);
           const int qp         = ((qpP.Qp(0) + qpQ.Qp(0) + 1) >> 1) - qpBdOffset;
 
           const int indexTC =
             Clip3<int>(0, MAX_QP + DEFAULT_INTRA_TC_OFFSET,
                        qp + DEFAULT_INTRA_TC_OFFSET * (bS[chromaIdx] - 1) + 2 * tcOffsetDiv2[chromaIdx]);
-          const int bitDepthChroma = sps.getBitDepth(CHANNEL_TYPE_CHROMA);
+          const int bitDepthChroma = sps.getBitDepth(ChannelType::CHROMA);
           const int tc             = bitDepthChroma < 10
                                        ? ((sm_tcTable[indexTC] + (1 << (9 - bitDepthChroma))) >> (10 - bitDepthChroma))
                                        : ((sm_tcTable[indexTC]) << (bitDepthChroma - 10));

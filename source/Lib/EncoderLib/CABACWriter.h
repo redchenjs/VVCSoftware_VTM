@@ -82,7 +82,8 @@ public:
   void        end_of_slice              ();
 
   // coding tree unit (clause 7.3.8.2)
-  void        coding_tree_unit          (       CodingStructure&        cs,       const UnitArea&   area,       int (&qps)[2],  unsigned ctuRsAddr,  bool skipSao = false, bool skipAlf = false );
+  void coding_tree_unit(CodingStructure &cs, const UnitArea &area, EnumArray<int, ChannelType> &qps, unsigned ctuRsAddr,
+                        bool skipSao = false, bool skipAlf = false);
 
   // sao (clause 7.3.8.3)
   void        sao                       ( const Slice&                  slice,    unsigned          ctuRsAddr );

@@ -160,14 +160,7 @@ public:
     mseYuv    = 0;
     int scale = 0;
 
-    int maximumBitDepth = bitDepths.recon[CHANNEL_TYPE_LUMA];
-    for (uint32_t channelTypeIndex = 1; channelTypeIndex < MAX_NUM_CHANNEL_TYPE; channelTypeIndex++)
-    {
-      if (bitDepths.recon[channelTypeIndex] > maximumBitDepth)
-      {
-        maximumBitDepth = bitDepths.recon[channelTypeIndex];
-      }
-    }
+    const int maximumBitDepth = std::max(bitDepths[ChannelType::LUMA], bitDepths[ChannelType::CHROMA]);
 
     const uint32_t maxval                = 255 << (maximumBitDepth - 8);
     const uint32_t numberValidComponents = getNumberValidComponents(chFmt);
@@ -180,7 +173,7 @@ public:
       const uint32_t csy       = getComponentScaleY(compID, chFmt);
       const int      scaleChan = 4 >> (csx + csy);
       const uint32_t bitDepthShift =
-        2 * (maximumBitDepth - bitDepths.recon[toChannelType(compID)]);   //*2 because this is a squared number
+        2 * (maximumBitDepth - bitDepths[toChannelType(compID)]);   //*2 because this is a squared number
 
       const double channelMSE = (m_mseYuvFrame[compID] * double(1 << bitDepthShift)) / double(getNumPic());
 
@@ -259,7 +252,7 @@ public:
         }
         else
         {
-          const uint32_t maxval = 255 << (bitDepths.recon[toChannelType(compID)] - 8);
+          const uint32_t maxval = 255 << (bitDepths[toChannelType(compID)] - 8);
           const double   MSE    = m_mseYuvFrame[compID];
           mseBasedSNR[compID] = (MSE == 0) ? 999.99 : 10.0 * log10((maxval * maxval) / (MSE / (double)getNumPic()));
         }

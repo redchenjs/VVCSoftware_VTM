@@ -220,7 +220,8 @@ public:
   void  destroy             ();
 
   /// CTU analysis function
-  void  compressCtu         ( CodingStructure& cs, const UnitArea& area, const unsigned ctuRsAddr, const int prevQP[], const int currQP[] );
+  void compressCtu(CodingStructure &cs, const UnitArea &area, const unsigned ctuRsAddr,
+                   const EnumArray<int, ChannelType> &prevQP, const EnumArray<int, ChannelType> &currQP);
   /// CTU encoding function
   int   updateCtuDataISlice ( const CPelBuf buf );
 

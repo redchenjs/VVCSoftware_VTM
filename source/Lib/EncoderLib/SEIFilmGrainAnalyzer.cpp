@@ -478,7 +478,8 @@ void FGAnalyser::init(const int width, const int height, const int sourcePadding
       m_compModel[i].intensityValues[j].compModelValue.resize(MAX_ALLOWED_MODEL_VALUES);
       for (int k = 0; k < m_compModel[i].numModelValues; k++)
       {
-        m_compModel[i].intensityValues[j].compModelValue[k] = 26 - 13 * (toChannelType((ComponentID) i));   // half intensity for chroma. Provided value is default value, manually tuned.
+        // half intensity for chroma. Provided value is default value, manually tuned.
+        m_compModel[i].intensityValues[j].compModelValue[k] = i == 0 ? 26 : 13;
       }
     }
     m_doAnalysis[i] = doAnalysis[i];
@@ -524,7 +525,7 @@ void FGAnalyser::initBufs(Picture *pic)
   if (!m_filmGrainExternalDenoised.empty())         // read external denoised frame
   {
     VideoIOYuv yuvFrames;
-    yuvFrames.open(m_filmGrainExternalDenoised, false, m_bitDepthsIn.recon, m_bitDepthsIn.recon, m_bitDepths.recon);
+    yuvFrames.open(m_filmGrainExternalDenoised, false, m_bitDepthsIn, m_bitDepthsIn, m_bitDepths);
     yuvFrames.skipFrames(pic->getPOC() + m_frameSkip, m_workingBuf->Y().width - m_sourcePadding[0],
                          m_workingBuf->Y().height - m_sourcePadding[1], m_chromaFormatIDC);
     if (!yuvFrames.read(*m_workingBuf, dummyPicBufferTO, m_ipCSC, m_sourcePadding,
@@ -542,7 +543,7 @@ void FGAnalyser::initBufs(Picture *pic)
   if (!m_filmGrainExternalMask.empty())   // read external mask
   {
     VideoIOYuv yuvFrames;
-    yuvFrames.open(m_filmGrainExternalMask, false, m_bitDepthsIn.recon, m_bitDepthsIn.recon, m_bitDepths.recon);
+    yuvFrames.open(m_filmGrainExternalMask, false, m_bitDepthsIn, m_bitDepthsIn, m_bitDepths);
     yuvFrames.skipFrames(pic->getPOC() + m_frameSkip, m_maskBuf->Y().width - m_sourcePadding[0],
                          m_maskBuf->Y().height - m_sourcePadding[1], m_chromaFormatIDC);
     if (!yuvFrames.read(*m_maskBuf, dummyPicBufferTO, m_ipCSC, m_sourcePadding,

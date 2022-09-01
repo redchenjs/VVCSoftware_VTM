@@ -391,9 +391,12 @@ void QuantRDOQ::xSetErrScaleCoeff( uint32_t list, uint32_t sizeX, uint32_t sizeY
 {
   const int width = g_scalingListSizeX[sizeX];
   const int height = g_scalingListSizeX[sizeY];
-  const ChannelType channelType = ( ( list == 0 ) || ( list == MAX_NUM_COMPONENT ) ) ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA;
-  const int channelBitDepth = bitDepths.recon[channelType];
-  const int iTransformShift = getTransformShift( channelBitDepth, Size( g_scalingListSizeX[sizeX], g_scalingListSizeX[sizeY] ), maxLog2TrDynamicRange[channelType] );  // Represents scaling through forward transform
+  const ChannelType channelType =
+    ((list == 0) || (list == MAX_NUM_COMPONENT)) ? ChannelType::LUMA : ChannelType::CHROMA;
+  const int channelBitDepth = bitDepths[channelType];
+  const int iTransformShift = getTransformShift(
+    channelBitDepth, Size(g_scalingListSizeX[sizeX], g_scalingListSizeX[sizeY]),
+    maxLog2TrDynamicRange[to_underlying(channelType)]);   // Represents scaling through forward transform
 
   uint32_t i, uiMaxNumCoeff = width * height;
   int *piQuantcoeff;

@@ -131,11 +131,11 @@ private:
 
   // maxFilterLen for [channel type][luma/chroma sample distance from left edge of CTU]
   // [luma/chroma sample distance from top edge of CTU]
-  FilterLenPair m_maxFilterLen[MAX_NUM_CHANNEL_TYPE][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
+  EnumArray<FilterLenPair[MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE], ChannelType> m_maxFilterLen;
 
   // transform edge flag for [channel type][luma/chroma sample distance from left edge of CTU]
   // [luma/chroma sample distance from top edge of CTU]
-  bool m_transformEdge[MAX_NUM_CHANNEL_TYPE][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
+  EnumArray<bool[MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE], ChannelType> m_transformEdge;
 
   PelStorage                   m_encPicYuvBuffer;
   bool                         m_enc;

@@ -66,10 +66,7 @@ Picture::Picture()
   m_colourTranfParams     = nullptr;
   nonReferencePictureFlag = false;
 
-  for( int i = 0; i < MAX_NUM_CHANNEL_TYPE; i++ )
-  {
-    m_prevQP[i] = -1;
-  }
+  m_prevQP.fill(-1);
   m_spliceIdx           = nullptr;
   m_ctuNums = 0;
   layerId = NOT_VALID;
@@ -841,15 +838,19 @@ void Picture::rescalePicture( const std::pair<int, int> scalingRatio,
     const CPelBuf& beforeScale = beforeScaling.get( compID );
     const PelBuf& afterScale = afterScaling.get( compID );
 
-    sampleRateConv( scalingRatio, std::pair<int, int>( ::getComponentScaleX( compID, chromaFormatIDC ), ::getComponentScaleY( compID, chromaFormatIDC ) ),
-                    beforeScale, scalingWindowBefore.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ), scalingWindowBefore.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-                    afterScale, scalingWindowAfter.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ), scalingWindowAfter.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-                    bitDepths.recon[toChannelType(compID)], downsampling || useLumaFilter ? true : isLuma( compID ), downsampling,
+    sampleRateConv(
+      scalingRatio,
+      std::pair<int, int>(::getComponentScaleX(compID, chromaFormatIDC), ::getComponentScaleY(compID, chromaFormatIDC)),
+      beforeScale, scalingWindowBefore.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+      scalingWindowBefore.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC), afterScale,
+      scalingWindowAfter.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+      scalingWindowAfter.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC), bitDepths[toChannelType(compID)],
+      downsampling || useLumaFilter ? true : isLuma(compID), downsampling,
 #if !JVET_AB0081
-                    isLuma( compID ) ? 1 : horCollocatedChromaFlag, isLuma( compID ) ? 1 : verCollocatedChromaFlag
+      isLuma(compID) ? 1 : horCollocatedChromaFlag, isLuma(compID) ? 1 : verCollocatedChromaFlag
 #else
-                    isLuma(compID) ? 1 : horCollocatedChromaFlag, isLuma(compID) ? 1 : verCollocatedChromaFlag,
-                    rescaleForDisplay, upscaleFilterForDisplay
+      isLuma(compID) ? 1 : horCollocatedChromaFlag, isLuma(compID) ? 1 : verCollocatedChromaFlag, rescaleForDisplay,
+      upscaleFilterForDisplay
 #endif
     );
   }
@@ -1644,7 +1645,7 @@ void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int ble
       for (int chan = 0; chan < numValidComponents; chan++)
       {
         const ComponentID ch = ComponentID(chan);
-        const ChannelType cType = (ch == COMPONENT_Y) ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA;
+        const ChannelType cType          = (ch == COMPONENT_Y) ? ChannelType::LUMA : ChannelType::CHROMA;
         const int bitDepth = pcPic->cs->sps->getBitDepth(cType);
         const int maxOutputValue = (1 << bitDepth) - 1;
 
@@ -1719,7 +1720,7 @@ void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blen
       for (int chan = 0; chan < numValidComponents; chan++)
       {
         const ComponentID ch = ComponentID(chan);
-        const ChannelType cType = (ch == COMPONENT_Y) ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA;
+        const ChannelType cType          = toChannelType(ch);
         const int bitDepth = pcPic->cs->sps->getBitDepth(cType);
         const int maxOutputValue = (1 << bitDepth) - 1;
 

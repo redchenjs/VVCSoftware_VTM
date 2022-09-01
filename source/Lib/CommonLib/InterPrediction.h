@@ -187,7 +187,8 @@ public:
   void motionCompensateCu(CodingUnit &cu, RefPicList eRefPicList, bool luma, bool chroma);
 
   void    motionCompensationGeo(CodingUnit &cu, MergeCtx &GeoMrgCtx);
-  void    weightedGeoBlk(PredictionUnit &pu, const uint8_t splitDir, int32_t channel, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
+  void    weightedGeoBlk(PredictionUnit &pu, const uint8_t splitDir, ChannelType channel, PelUnitBuf &predDst,
+                         PelUnitBuf &predSrc0, PelUnitBuf &predSrc1);
 
   // DMVR related definitions
   using DmvrDist = int32_t;

@@ -62,7 +62,7 @@ void CABACWriter::initCtxModels( const Slice& slice )
   }
   m_binEncoder.reset(qp, (int) sliceType);
   m_binEncoder.setBaseLevel(slice.getRiceBaseLevel());
-  m_binEncoder.riceStatReset(slice.getSPS()->getBitDepth(CHANNEL_TYPE_LUMA),
+  m_binEncoder.riceStatReset(slice.getSPS()->getBitDepth(ChannelType::LUMA),
                              slice.getSPS()->getSpsRangeExtension().getPersistentRiceAdaptationEnabledFlag());
 }
 
@@ -146,12 +146,13 @@ void CABACWriter::end_of_slice()
 //    bool  coding_tree_unit( cs, area, qp, ctuRsAddr, skipSao, skipAlf )
 //================================================================================
 
-void CABACWriter::coding_tree_unit( CodingStructure& cs, const UnitArea& area, int (&qps)[2], unsigned ctuRsAddr, bool skipSao /* = false */, bool skipAlf /* = false */ )
+void CABACWriter::coding_tree_unit(CodingStructure &cs, const UnitArea &area, EnumArray<int, ChannelType> &qps,
+                                   unsigned ctuRsAddr, bool skipSao /* = false */, bool skipAlf /* = false */)
 {
-  CUCtx cuCtx( qps[CH_L] );
+  CUCtx           cuCtx(qps[ChannelType::LUMA]);
   QTBTPartitioner partitioner;
 
-  partitioner.initCtu(area, CH_L, *cs.slice);
+  partitioner.initCtu(area, ChannelType::LUMA, *cs.slice);
 
   if( !skipSao )
   {
@@ -198,23 +199,23 @@ void CABACWriter::coding_tree_unit( CodingStructure& cs, const UnitArea& area, i
 
   if ( CS::isDualITree(cs) && cs.pcv->chrFormat != CHROMA_400 && cs.pcv->maxCUWidth > 64 )
   {
-    CUCtx chromaCuCtx(qps[CH_C]);
+    CUCtx           chromaCuCtx(qps[ChannelType::CHROMA]);
     QTBTPartitioner chromaPartitioner;
-    chromaPartitioner.initCtu(area, CH_C, *cs.slice);
+    chromaPartitioner.initCtu(area, ChannelType::CHROMA, *cs.slice);
     coding_tree(cs, partitioner, cuCtx, &chromaPartitioner, &chromaCuCtx);
-    qps[CH_L] = cuCtx.qp;
-    qps[CH_C] = chromaCuCtx.qp;
+    qps[ChannelType::LUMA]   = cuCtx.qp;
+    qps[ChannelType::CHROMA] = chromaCuCtx.qp;
   }
   else
   {
     coding_tree(cs, partitioner, cuCtx);
-    qps[CH_L] = cuCtx.qp;
+    qps[ChannelType::LUMA] = cuCtx.qp;
     if( CS::isDualITree( cs ) && cs.pcv->chrFormat != CHROMA_400 )
     {
-      CUCtx cuCtxChroma( qps[CH_C] );
-      partitioner.initCtu(area, CH_C, *cs.slice);
+      CUCtx cuCtxChroma(qps[ChannelType::CHROMA]);
+      partitioner.initCtu(area, ChannelType::CHROMA, *cs.slice);
       coding_tree(cs, partitioner, cuCtxChroma);
-      qps[CH_C] = cuCtxChroma.qp;
+      qps[ChannelType::CHROMA] = cuCtxChroma.qp;
     }
   }
 }
@@ -239,9 +240,9 @@ void CABACWriter::sao( const Slice& slice, unsigned ctuRsAddr )
   const PreCalcValues &pcv          = *cs.pcv;
   const SAOBlkParam   &saoCtuParams = cs.picture->getSAO()[ctuRsAddr];
 
-  const bool sliceSaoLumaFlag = slice.getSaoEnabledFlag(CHANNEL_TYPE_LUMA);
+  const bool sliceSaoLumaFlag = slice.getSaoEnabledFlag(ChannelType::LUMA);
   const bool sliceSaoChromaFlag =
-    slice.getSaoEnabledFlag(CHANNEL_TYPE_CHROMA) && sps.getChromaFormatIdc() != CHROMA_400;
+    slice.getSaoEnabledFlag(ChannelType::CHROMA) && sps.getChromaFormatIdc() != CHROMA_400;
 
   if (!sliceSaoLumaFlag && !sliceSaoChromaFlag)
   {
@@ -261,9 +262,11 @@ void CABACWriter::sao( const Slice& slice, unsigned ctuRsAddr )
   const unsigned curTileIdx  = cs.pps->getTileIdx(pos);
 
   const bool leftMergeAvail =
-    cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, CH_L) ? true : false;
+    cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
+    != nullptr;
   const bool aboveMergeAvail =
-    cs.getCURestricted(pos.offset(0, -(int) pcv.maxCUHeight), pos, curSliceIdx, curTileIdx, CH_L) ? true : false;
+    cs.getCURestricted(pos.offset(0, -(int) pcv.maxCUHeight), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
+    != nullptr;
 
   sao_block_params(saoCtuParams, sps.getBitDepths(), sliceEnabled, leftMergeAvail, aboveMergeAvail, false);
 }
@@ -297,7 +300,7 @@ void CABACWriter::sao_block_params(const SAOBlkParam &saoPars, const BitDepths &
     for( int compIdx=0; compIdx < MAX_NUM_COMPONENT; compIdx++ )
     {
       sao_offset_params(saoPars[compIdx], ComponentID(compIdx), sliceEnabled[compIdx],
-                        bitDepths.recon[toChannelType(ComponentID(compIdx))]);
+                        bitDepths[toChannelType(ComponentID(compIdx))]);
     }
   }
 }
@@ -395,7 +398,7 @@ void CABACWriter::coding_tree(const CodingStructure& cs, Partitioner& partitione
 {
   const PPS      &pps         = *cs.pps;
   const UnitArea &currArea    = partitioner.currArea();
-  const CodingUnit &cu        = *cs.getCU( currArea.blocks[partitioner.chType], partitioner.chType );
+  const CodingUnit &cu          = *cs.getCU(currArea.block(partitioner.chType), partitioner.chType);
 
   // Reset delta QP coding flag and ChromaQPAdjustemt coding flag
   //Note: do not reset qg at chroma CU
@@ -443,7 +446,7 @@ void CABACWriter::coding_tree(const CodingStructure& cs, Partitioner& partitione
       {
         if (partitioner.currArea().lwidth() > 64 || partitioner.currArea().lheight() > 64)
         {
-          if (cs.picture->blocks[partitioner.chType].contains(partitioner.currArea().blocks[partitioner.chType].pos()))
+          if (cs.picture->block(partitioner.chType).contains(partitioner.currArea().block(partitioner.chType).pos()))
           {
             coding_tree(cs, partitioner, cuCtx, pPartitionerChroma, pCuCtxChroma);
           }
@@ -455,13 +458,13 @@ void CABACWriter::coding_tree(const CodingStructure& cs, Partitioner& partitione
         else
         {
           // dual tree coding under 64x64 block
-          if (cs.picture->blocks[partitioner.chType].contains(partitioner.currArea().blocks[partitioner.chType].pos()))
+          if (cs.picture->block(partitioner.chType).contains(partitioner.currArea().block(partitioner.chType).pos()))
           {
             coding_tree(cs, partitioner, cuCtx);
           }
           lumaContinue = partitioner.nextPart(cs);
-          if (cs.picture->blocks[pPartitionerChroma->chType].contains(
-                pPartitionerChroma->currArea().blocks[pPartitionerChroma->chType].pos()))
+          if (cs.picture->block(pPartitionerChroma->chType)
+                .contains(pPartitionerChroma->currArea().block(pPartitionerChroma->chType).pos()))
           {
             coding_tree(cs, *pPartitionerChroma, *pCuCtxChroma);
           }
@@ -481,7 +484,7 @@ void CABACWriter::coding_tree(const CodingStructure& cs, Partitioner& partitione
       partitioner.modeType = modeTypeChild;
 
       bool chromaNotSplit = modeTypeParent == MODE_TYPE_ALL && modeTypeChild == MODE_TYPE_INTRA ? true : false;
-      CHECK(chromaNotSplit && partitioner.chType != CHANNEL_TYPE_LUMA, "chType must be luma");
+      CHECK(chromaNotSplit && partitioner.chType != ChannelType::LUMA, "chType must be luma");
       if (partitioner.treeType == TREE_D)
       {
         partitioner.treeType = chromaNotSplit ? TREE_L : TREE_D;
@@ -490,7 +493,7 @@ void CABACWriter::coding_tree(const CodingStructure& cs, Partitioner& partitione
 
       do
       {
-        if( cs.picture->blocks[partitioner.chType].contains( partitioner.currArea().blocks[partitioner.chType].pos() ) )
+        if (cs.picture->block(partitioner.chType).contains(partitioner.currArea().block(partitioner.chType).pos()))
         {
           coding_tree( cs, partitioner, cuCtx );
         }
@@ -501,18 +504,18 @@ void CABACWriter::coding_tree(const CodingStructure& cs, Partitioner& partitione
       {
         if (isChromaEnabled(cs.pcv->chrFormat))
         {
-          CHECK(partitioner.chType != CHANNEL_TYPE_LUMA, "must be luma status");
-          partitioner.chType   = CHANNEL_TYPE_CHROMA;
+          CHECK(partitioner.chType != ChannelType::LUMA, "must be luma status");
+          partitioner.chType   = ChannelType::CHROMA;
           partitioner.treeType = TREE_C;
 
-          if (cs.picture->blocks[partitioner.chType].contains(partitioner.currArea().blocks[partitioner.chType].pos()))
+          if (cs.picture->block(partitioner.chType).contains(partitioner.currArea().block(partitioner.chType).pos()))
           {
             coding_tree(cs, partitioner, cuCtx);
           }
         }
 
         //recover
-        partitioner.chType = CHANNEL_TYPE_LUMA;
+        partitioner.chType   = ChannelType::LUMA;
         partitioner.treeType = TREE_D;
       }
       partitioner.modeType = modeTypeParent;
@@ -532,7 +535,7 @@ void CABACWriter::coding_tree(const CodingStructure& cs, Partitioner& partitione
   // coding unit
   coding_unit( cu, partitioner, cuCtx );
 
-  if( cu.chType == CHANNEL_TYPE_CHROMA )
+  if (cu.chType == ChannelType::CHROMA)
   {
     DTRACE_COND( (isEncoding()), g_trace_ctx, D_QP, "[chroma CU]x=%d, y=%d, w=%d, h=%d, qp=%d\n", cu.Cb().x, cu.Cb().y, cu.Cb().width, cu.Cb().height, cu.qp );
   }
@@ -681,7 +684,7 @@ void CABACWriter::coding_unit( const CodingUnit& cu, Partitioner& partitioner, C
       {
         cu_palette_info(cu, COMPONENT_Y, 1, cuCtx);
       }
-      if (cu.chromaFormat != CHROMA_400 && (partitioner.chType == CHANNEL_TYPE_CHROMA))
+      if (cu.chromaFormat != CHROMA_400 && (partitioner.chType == ChannelType::CHROMA))
       {
         cu_palette_info(cu, COMPONENT_Cb, 2, cuCtx);
       }
@@ -753,7 +756,7 @@ void CABACWriter::cu_skip_flag( const CodingUnit& cu )
 
 void CABACWriter::pred_mode( const CodingUnit& cu )
 {
-  if (cu.cs->slice->getSPS()->getIBCFlag() && cu.chType != CHANNEL_TYPE_CHROMA)
+  if (cu.cs->slice->getSPS()->getIBCFlag() && cu.chType != ChannelType::CHROMA)
   {
     if( cu.isConsInter() )
     {
@@ -843,11 +846,13 @@ void CABACWriter::bdpcm_mode( const CodingUnit& cu, const ComponentID compID )
   }
   if (isLuma(compID))
   {
-    DTRACE(g_trace_ctx, D_SYNTAX, "bdpcm_mode(%d) x=%d, y=%d, w=%d, h=%d, bdpcm=%d\n", CHANNEL_TYPE_LUMA, cu.lumaPos().x, cu.lumaPos().y, cu.lwidth(), cu.lheight(), cu.bdpcmMode);
+    DTRACE(g_trace_ctx, D_SYNTAX, "bdpcm_mode(%d) x=%d, y=%d, w=%d, h=%d, bdpcm=%d\n", ChannelType::LUMA,
+           cu.lumaPos().x, cu.lumaPos().y, cu.lwidth(), cu.lheight(), cu.bdpcmMode);
   }
   else
   {
-    DTRACE(g_trace_ctx, D_SYNTAX, "bdpcm_mode(%d) x=%d, y=%d, w=%d, h=%d, bdpcm=%d\n", CHANNEL_TYPE_CHROMA, cu.chromaPos().x, cu.chromaPos().y, cu.chromaSize().width, cu.chromaSize().height, cu.bdpcmModeChroma);
+    DTRACE(g_trace_ctx, D_SYNTAX, "bdpcm_mode(%d) x=%d, y=%d, w=%d, h=%d, bdpcm=%d\n", ChannelType::CHROMA,
+           cu.chromaPos().x, cu.chromaPos().y, cu.chromaSize().width, cu.chromaSize().height, cu.bdpcmModeChroma);
   }
 }
 
@@ -863,7 +868,7 @@ void CABACWriter::cu_pred_data( const CodingUnit& cu )
     intra_luma_pred_modes  ( cu );
     if( ( !cu.Y().valid() || ( !cu.isSepTree() && cu.Y().valid() ) ) && isChromaEnabled(cu.chromaFormat) )
     {
-      bdpcm_mode( cu, ComponentID(CHANNEL_TYPE_CHROMA) );
+      bdpcm_mode(cu, ComponentID(ChannelType::CHROMA));
     }
     intra_chroma_pred_modes( cu );
     return;
@@ -1028,7 +1033,7 @@ void CABACWriter::intra_luma_pred_modes( const CodingUnit& cu )
 
   if (cu.bdpcmMode != BdpcmMode::NONE)
   {
-    cu.firstPU->intraDir[0] = cu.bdpcmMode == BdpcmMode::VER ? VER_IDX : HOR_IDX;
+    cu.firstPU->intraDir[ChannelType::LUMA] = cu.bdpcmMode == BdpcmMode::VER ? VER_IDX : HOR_IDX;
     return;
   }
 
@@ -1059,7 +1064,7 @@ void CABACWriter::intra_luma_pred_modes( const CodingUnit& cu )
 
     PU::getIntraMPMs( *pu, mpm_pred );
 
-    ipred_mode = pu->intraDir[0];
+    ipred_mode = pu->intraDir[ChannelType::LUMA];
     mpm_idx    = numMPMs;
     for( unsigned idx = 0; idx < numMPMs; idx++ )
     {
@@ -1131,7 +1136,8 @@ void CABACWriter::intra_luma_pred_modes( const CodingUnit& cu )
                          NUM_LUMA_MODE - NUM_MOST_PROBABLE_MODES);   // Remaining mode is truncated binary coded
     }
 
-    DTRACE( g_trace_ctx, D_SYNTAX, "intra_luma_pred_modes() idx=%d pos=(%d,%d) mode=%d\n", k, pu->lumaPos().x, pu->lumaPos().y, pu->intraDir[0] );
+    DTRACE(g_trace_ctx, D_SYNTAX, "intra_luma_pred_modes() idx=%d pos=(%d,%d) mode=%d\n", k, pu->lumaPos().x,
+           pu->lumaPos().y, pu->intraDir[ChannelType::LUMA]);
     pu = pu->next;
   }
 }
@@ -1158,7 +1164,7 @@ void CABACWriter::intra_luma_pred_mode( const PredictionUnit& pu )
 
   PU::getIntraMPMs( pu, mpm_pred );
 
-  unsigned ipred_mode = pu.intraDir[0];
+  unsigned ipred_mode = pu.intraDir[ChannelType::LUMA];
   unsigned mpm_idx = numMPMs;
 
   for( int idx = 0; idx < numMPMs; idx++ )
@@ -1221,14 +1227,14 @@ void CABACWriter::intra_luma_pred_mode( const PredictionUnit& pu )
 
 void CABACWriter::intra_chroma_pred_modes( const CodingUnit& cu )
 {
-  if( cu.chromaFormat == CHROMA_400 || ( cu.isSepTree() && cu.chType == CHANNEL_TYPE_LUMA ) )
+  if (cu.chromaFormat == CHROMA_400 || (cu.isSepTree() && isLuma(cu.chType)))
   {
     return;
   }
 
   if (cu.bdpcmModeChroma != BdpcmMode::NONE)
   {
-    cu.firstPU->intraDir[1] = cu.bdpcmModeChroma == BdpcmMode::VER ? VER_IDX : HOR_IDX;
+    cu.firstPU->intraDir[ChannelType::CHROMA] = cu.bdpcmModeChroma == BdpcmMode::VER ? VER_IDX : HOR_IDX;
     return;
   }
   const PredictionUnit* pu = cu.firstPU;
@@ -1237,7 +1243,7 @@ void CABACWriter::intra_chroma_pred_modes( const CodingUnit& cu )
 }
 void CABACWriter::intra_chroma_lmc_mode(const PredictionUnit& pu)
 {
-  const unsigned intraDir = pu.intraDir[1];
+  const unsigned intraDir = pu.intraDir[ChannelType::CHROMA];
   int lmModeList[10];
   PU::getLMSymbolList(pu, lmModeList);
   int symbol = -1;
@@ -1263,10 +1269,10 @@ void CABACWriter::intra_chroma_lmc_mode(const PredictionUnit& pu)
 
 void CABACWriter::intra_chroma_pred_mode(const PredictionUnit& pu)
 {
-  const unsigned intraDir = pu.intraDir[1];
+  const unsigned intraDir = pu.intraDir[ChannelType::CHROMA];
   if (pu.cu->colorTransform)
   {
-    CHECK(pu.intraDir[CHANNEL_TYPE_CHROMA] != DM_CHROMA_IDX, "chroma should use DM for adaptive color transform");
+    CHECK(pu.intraDir[ChannelType::CHROMA] != DM_CHROMA_IDX, "chroma should use DM for adaptive color transform");
     return;
   }
   if (pu.cs->sps->getUseLMChroma() && pu.cu->checkCCLMAllowed())
@@ -1332,8 +1338,7 @@ void CABACWriter::cu_residual( const CodingUnit& cu, Partitioner& partitioner, C
     adaptive_color_transform(cu);
   }
 
-  cuCtx.violatesLfnstConstrained[CHANNEL_TYPE_LUMA]   = false;
-  cuCtx.violatesLfnstConstrained[CHANNEL_TYPE_CHROMA] = false;
+  cuCtx.violatesLfnstConstrained.fill(false);
   cuCtx.lfnstLastScanPos                              = false;
   cuCtx.violatesMtsCoeffConstraint                    = false;
   cuCtx.mtsLastScanPos                                = false;
@@ -1533,7 +1538,7 @@ void CABACWriter::cuPaletteSubblockInfo(const CodingUnit& cu, ComponentID compBe
 {
   const SPS&      sps = *(cu.cs->sps);
   TransformUnit&  tu  = *cu.firstTU;
-  PLTtypeBuf      runType = tu.getrunType(compBegin);
+  PLTtypeBuf      runType      = tu.getrunType(toChannelType(compBegin));
   PelBuf          curPLTIdx = tu.getcurPLTIdx(compBegin);
   uint32_t        indexMaxSize = cu.useEscape[compBegin] ? (cu.curPLTSize[compBegin] + 1) : cu.curPLTSize[compBegin];
   uint32_t        totalPel = cu.block(compBegin).height*cu.block(compBegin).width;
@@ -2252,7 +2257,7 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
 {
   const UnitArea&       area = partitioner.currArea();
   int             subTuCounter = subTuIdx;
-  const TransformUnit&  tu = *cs.getTU(area.blocks[partitioner.chType].pos(), partitioner.chType, subTuIdx);
+  const TransformUnit  &tu           = *cs.getTU(area.block(partitioner.chType).pos(), partitioner.chType, subTuIdx);
   const CodingUnit&     cu = *tu.cu;
   const unsigned        trDepth = partitioner.currTrDepth;
   const bool            split = (tu.depth > trDepth);
@@ -2276,7 +2281,7 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
     if( partitioner.canSplit( TU_MAX_TR_SPLIT, cs ) )
     {
 #if ENABLE_TRACING
-      const CompArea &tuArea = partitioner.currArea().blocks[partitioner.chType];
+      const CompArea &tuArea = partitioner.currArea().block(partitioner.chType);
       DTRACE( g_trace_ctx, D_SYNTAX, "transform_tree() maxTrSplit chType=%d pos=(%d,%d) size=%dx%d\n", partitioner.chType, tuArea.x, tuArea.y, tuArea.width, tuArea.height );
 
 #endif
@@ -2305,7 +2310,9 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
   }
   else
   {
-    DTRACE( g_trace_ctx, D_SYNTAX, "transform_unit() pos=(%d,%d) size=%dx%d depth=%d trDepth=%d\n", tu.blocks[tu.chType].x, tu.blocks[tu.chType].y, tu.blocks[tu.chType].width, tu.blocks[tu.chType].height, cu.depth, partitioner.currTrDepth );
+    DTRACE(g_trace_ctx, D_SYNTAX, "transform_unit() pos=(%d,%d) size=%dx%d depth=%d trDepth=%d\n",
+           tu.block(tu.chType).x, tu.block(tu.chType).y, tu.block(tu.chType).width, tu.block(tu.chType).height,
+           cu.depth, partitioner.currTrDepth);
 
     transform_unit( tu, cuCtx, partitioner, subTuCounter);
   }
@@ -2411,7 +2418,7 @@ void CABACWriter::transform_unit( const TransformUnit& tu, CUCtx& cuCtx, Partiti
   if (area.chromaFormat != CHROMA_400)
   {
     const bool chromaCbfISP = area.blocks[COMPONENT_Cb].valid() && cu.ispMode != ISPType::NONE;
-    if (area.blocks[COMPONENT_Cb].valid() && (!cu.isSepTree() || partitioner.chType == CHANNEL_TYPE_CHROMA)
+    if (area.blocks[COMPONENT_Cb].valid() && (!cu.isSepTree() || partitioner.chType == ChannelType::CHROMA)
         && (cu.ispMode == ISPType::NONE || chromaCbfISP))
     {
       unsigned cbfDepth = chromaCbfISP ? trDepth - 1 : trDepth;
@@ -2547,14 +2554,15 @@ void CABACWriter::transform_unit( const TransformUnit& tu, CUCtx& cuCtx, Partiti
     }
   }
 
-  DTRACE_COND( ( isEncoding() ), g_trace_ctx, D_DQP, "x=%d, y=%d, d=%d, qpAdj=%d\n", cu.blocks[cu.chType].lumaPos().x, cu.blocks[cu.chType].lumaPos().y, cu.qtDepth, cu.chromaQpAdj );
+  DTRACE_COND((isEncoding()), g_trace_ctx, D_DQP, "x=%d, y=%d, d=%d, qpAdj=%d\n", cu.block(cu.chType).lumaPos().x,
+              cu.block(cu.chType).lumaPos().y, cu.qtDepth, cu.chromaQpAdj);
 }
 
 void CABACWriter::cu_qp_delta( const CodingUnit& cu, int predQP, const int8_t qp )
 {
   CHECK(!( predQP != std::numeric_limits<int>::max()), "Unspecified error");
   int       DQp         = qp - predQP;
-  int       qpBdOffsetY = cu.cs->sps->getQpBDOffset( CHANNEL_TYPE_LUMA );
+  int       qpBdOffsetY = cu.cs->sps->getQpBDOffset(ChannelType::LUMA);
   DQp                   = ( DQp + (MAX_QP + 1) + (MAX_QP + 1) / 2 + qpBdOffsetY + (qpBdOffsetY / 2)) % ((MAX_QP + 1) + qpBdOffsetY) - (MAX_QP + 1) / 2 - (qpBdOffsetY / 2);
   unsigned  absDQP      = unsigned( DQp < 0 ? -DQp : DQp );
   unsigned  unaryDQP    = std::min<unsigned>( absDQP, CU_DQP_TU_CMAX );
@@ -2569,7 +2577,8 @@ void CABACWriter::cu_qp_delta( const CodingUnit& cu, int predQP, const int8_t qp
     m_binEncoder.encodeBinEP(DQp < 0);
   }
 
-  DTRACE_COND( ( isEncoding() ), g_trace_ctx, D_DQP, "x=%d, y=%d, d=%d, pred_qp=%d, DQp=%d, qp=%d\n", cu.blocks[cu.chType].lumaPos().x, cu.blocks[cu.chType].lumaPos().y, cu.qtDepth, predQP, DQp, qp );
+  DTRACE_COND((isEncoding()), g_trace_ctx, D_DQP, "x=%d, y=%d, d=%d, pred_qp=%d, DQp=%d, qp=%d\n",
+              cu.block(cu.chType).lumaPos().x, cu.block(cu.chType).lumaPos().y, cu.qtDepth, predQP, DQp, qp);
 }
 
 
@@ -2658,7 +2667,7 @@ void CABACWriter::residual_coding( const TransformUnit& tu, ComponentID compID, 
   if (cuCtx && tu.mtsIdx[compID] != MtsType::SKIP && tu.blocks[compID].height >= 4 && tu.blocks[compID].width >= 4)
   {
     const int maxLfnstPos = ((tu.blocks[compID].height == 4 && tu.blocks[compID].width == 4) || (tu.blocks[compID].height == 8 && tu.blocks[compID].width == 8)) ? 7 : 15;
-    cuCtx->violatesLfnstConstrained[ toChannelType(compID) ] |= cctx.scanPosLast() > maxLfnstPos;
+    cuCtx->violatesLfnstConstrained[toChannelType(compID)] |= cctx.scanPosLast() > maxLfnstPos;
   }
   if (cuCtx && tu.mtsIdx[compID] != MtsType::SKIP && tu.blocks[compID].height >= 4 && tu.blocks[compID].width >= 4)
   {
@@ -2773,15 +2782,16 @@ void CABACWriter::isp_mode( const CodingUnit& cu )
     m_binEncoder.encodeBin( 1, Ctx::ISPMode( 0 ) );
     m_binEncoder.encodeBin(cu.ispMode == ISPType::HOR ? 0 : 1, Ctx::ISPMode(1));
   }
-  DTRACE( g_trace_ctx, D_SYNTAX, "intra_subPartitions() etype=%d pos=(%d,%d) ispIdx=%d\n", cu.chType, cu.blocks[cu.chType].x, cu.blocks[cu.chType].y, (int)cu.ispMode );
+  DTRACE(g_trace_ctx, D_SYNTAX, "intra_subPartitions() etype=%d pos=(%d,%d) ispIdx=%d\n", cu.chType,
+         cu.block(cu.chType).x, cu.block(cu.chType).y, (int) cu.ispMode);
 }
 
 void CABACWriter::residual_lfnst_mode( const CodingUnit& cu, CUCtx& cuCtx )
 {
-  int chIdx = cu.isSepTree() && cu.chType == CHANNEL_TYPE_CHROMA ? 1 : 0;
+  int chIdx = cu.isSepTree() && isChroma(cu.chType) ? 1 : 0;
   if ((cu.ispMode != ISPType::NONE && !CU::canUseLfnstWithISP(cu, cu.chType))
       || (cu.cs->sps->getUseLFNST() && CU::isIntra(cu) && cu.mipFlag && !allowLfnstWithMip(cu.firstPU->lumaSize()))
-      || (cu.isSepTree() && cu.chType == CHANNEL_TYPE_CHROMA && std::min(cu.blocks[1].width, cu.blocks[1].height) < 4)
+      || (cu.isSepTree() && isChroma(cu.chType) && std::min(cu.blocks[1].width, cu.blocks[1].height) < 4)
       || (cu.blocks[chIdx].lumaSize().width > cu.cs->sps->getMaxTbSize()
           || cu.blocks[chIdx].lumaSize().height > cu.cs->sps->getMaxTbSize()))
   {
@@ -2792,7 +2802,8 @@ void CABACWriter::residual_lfnst_mode( const CodingUnit& cu, CUCtx& cuCtx )
   {
     const bool lumaFlag                   = cu.isSepTree() ? (   isLuma( cu.chType ) ? true : false ) : true;
     const bool chromaFlag                 = cu.isSepTree() ? ( isChroma( cu.chType ) ? true : false ) : true;
-          bool nonZeroCoeffNonTsCorner8x8 = ( lumaFlag && cuCtx.violatesLfnstConstrained[CHANNEL_TYPE_LUMA] ) || (chromaFlag && cuCtx.violatesLfnstConstrained[CHANNEL_TYPE_CHROMA] );
+    bool       nonZeroCoeffNonTsCorner8x8 = (lumaFlag && cuCtx.violatesLfnstConstrained[ChannelType::LUMA])
+                                      || (chromaFlag && cuCtx.violatesLfnstConstrained[ChannelType::CHROMA]);
     bool isTrSkip = false;
     for (auto &currTU : CU::traverseTUs(cu))
     {
@@ -3388,9 +3399,11 @@ void CABACWriter::codeAlfCtuEnableFlag( CodingStructure& cs, uint32_t ctuRsAddr,
     const uint32_t curTileIdx  = cs.pps->getTileIdx(pos);
 
     const bool leftAvail =
-      cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, CH_L) ? true : false;
+      cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
+      != nullptr;
     const bool aboveAvail =
-      cs.getCURestricted(pos.offset(0, -(int) pcv.maxCUHeight), pos, curSliceIdx, curTileIdx, CH_L) ? true : false;
+      cs.getCURestricted(pos.offset(0, -(int) pcv.maxCUHeight), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
+      != nullptr;
 
     const int leftCTUAddr  = leftAvail ? ctuRsAddr - 1 : -1;
     const int aboveCTUAddr = aboveAvail ? ctuRsAddr - frameWidthInCtus : -1;
@@ -3413,8 +3426,9 @@ void CABACWriter::codeCcAlfFilterControlIdc(uint8_t idcVal, CodingStructure &cs,
   const uint32_t curTileIdx     = cs.pps->getTileIdx( lumaPos );
   Position       leftLumaPos    = lumaPos.offset(-(int)cs.pcv->maxCUWidth, 0);
   Position       aboveLumaPos   = lumaPos.offset(0, -(int)cs.pcv->maxCUWidth);
-  bool           leftAvail      = cs.getCURestricted( leftLumaPos,  lumaPos, curSliceIdx, curTileIdx, CH_L ) ? true : false;
-  bool           aboveAvail     = cs.getCURestricted( aboveLumaPos, lumaPos, curSliceIdx, curTileIdx, CH_L ) ? true : false;
+  bool leftAvail = cs.getCURestricted(leftLumaPos, lumaPos, curSliceIdx, curTileIdx, ChannelType::LUMA) ? true : false;
+  bool aboveAvail =
+    cs.getCURestricted(aboveLumaPos, lumaPos, curSliceIdx, curTileIdx, ChannelType::LUMA) ? true : false;
   int            ctxt           = 0;
 
   if (leftAvail)
@@ -3477,10 +3491,11 @@ void CABACWriter::mip_pred_mode( const PredictionUnit& pu )
   m_binEncoder.encodeBinEP((pu.mipTransposedFlag ? 1 : 0));
 
   const int numModes = getNumModesMip( pu.Y() );
-  CHECKD( pu.intraDir[CHANNEL_TYPE_LUMA] < 0 || pu.intraDir[CHANNEL_TYPE_LUMA] >= numModes, "Invalid MIP mode" );
-  xWriteTruncBinCode( pu.intraDir[CHANNEL_TYPE_LUMA], numModes );
+  CHECKD(pu.intraDir[ChannelType::LUMA] < 0 || pu.intraDir[ChannelType::LUMA] >= numModes, "Invalid MIP mode");
+  xWriteTruncBinCode(pu.intraDir[ChannelType::LUMA], numModes);
 
-  DTRACE( g_trace_ctx, D_SYNTAX, "mip_pred_mode() pos=(%d,%d) mode=%d transposed=%d\n", pu.lumaPos().x, pu.lumaPos().y, pu.intraDir[CHANNEL_TYPE_LUMA], pu.mipTransposedFlag ? 1 : 0 );
+  DTRACE(g_trace_ctx, D_SYNTAX, "mip_pred_mode() pos=(%d,%d) mode=%d transposed=%d\n", pu.lumaPos().x, pu.lumaPos().y,
+         pu.intraDir[ChannelType::LUMA], pu.mipTransposedFlag ? 1 : 0);
 }
 
 void CABACWriter::codeAlfCtuFilterIndex(CodingStructure& cs, uint32_t ctuRsAddr, bool alfEnableLuma)

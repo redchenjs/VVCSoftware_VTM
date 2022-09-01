@@ -114,13 +114,14 @@ void EncLib::create( const int layerId )
 
   if (m_lmcsEnabled)
   {
-    m_cReshaper.createEnc( getSourceWidth(), getSourceHeight(), m_maxCUWidth, m_maxCUHeight, m_bitDepth[COMPONENT_Y]);
+    m_cReshaper.createEnc(getSourceWidth(), getSourceHeight(), m_maxCUWidth, m_maxCUHeight,
+                          m_bitDepth[ChannelType::LUMA]);
   }
   if ( m_RCEnableRateControl )
   {
     m_cRateCtrl.init(m_framesToBeEncoded, m_RCTargetBitrate,
                      (int) ((double) m_frameRate / m_temporalSubsampleRatio + 0.5), m_gopSize, m_intraPeriod,
-                     m_sourceWidth, m_sourceHeight, m_maxCUWidth, m_maxCUHeight, getBitDepth(CHANNEL_TYPE_LUMA),
+                     m_sourceWidth, m_sourceHeight, m_maxCUWidth, m_maxCUHeight, getBitDepth(ChannelType::LUMA),
                      m_RCKeepHierarchicalBit, m_RCUseLCUSeparateModel, m_GOPList);
   }
 
@@ -486,7 +487,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
   // initialize encoder search class
   CABACWriter* cabacEstimator = m_CABACEncoder.getCABACEstimator(&sps0);
   m_cIntraSearch.init(this, &m_cTrQuant, &m_cRdCost, cabacEstimator, getCtxCache(), m_maxCUWidth, m_maxCUHeight,
-                      floorLog2(m_maxCUWidth) - m_log2MinCUSize, &m_cReshaper, sps0.getBitDepth(CHANNEL_TYPE_LUMA));
+                      floorLog2(m_maxCUWidth) - m_log2MinCUSize, &m_cReshaper, sps0.getBitDepth(ChannelType::LUMA));
   m_cInterSearch.init(this, &m_cTrQuant, m_searchRange, m_bipredSearchRange, m_motionEstimationSearchMethod,
                       getUseCompositeRef(), m_maxCUWidth, m_maxCUHeight, floorLog2(m_maxCUWidth) - m_log2MinCUSize,
                       &m_cRdCost, cabacEstimator, getCtxCache(), &m_cReshaper);
@@ -541,11 +542,8 @@ void EncLib::xInitScalingLists( SPS &sps, APS &aps )
 {
   // Initialise scaling lists
   // The encoder will only use the SPS scaling lists. The PPS will never be marked present.
-  const int maxLog2TrDynamicRange[MAX_NUM_CHANNEL_TYPE] =
-  {
-    sps.getMaxLog2TrDynamicRange(CHANNEL_TYPE_LUMA),
-    sps.getMaxLog2TrDynamicRange(CHANNEL_TYPE_CHROMA)
-  };
+  const int maxLog2TrDynamicRange[MAX_NUM_CHANNEL_TYPE] = { sps.getMaxLog2TrDynamicRange(ChannelType::LUMA),
+                                                            sps.getMaxLog2TrDynamicRange(ChannelType::CHROMA) };
 
   Quant* quant = getTrQuant()->getQuant();
 
@@ -747,7 +745,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
           pSrc1 += ppcPicYuvRPR[0]->get(COMPONENT_Y).stride;
         }
 
-        const uint32_t maxval = 255 << (orgSPS->getBitDepth(CHANNEL_TYPE_LUMA) - 8);
+        const uint32_t maxval = 255 << (orgSPS->getBitDepth(ChannelType::LUMA) - 8);
         upscaledPSNR = totalDiff ? 10.0 * log10((double)maxval * maxval * orgPPS->getPicWidthInLumaSamples() * orgPPS->getPicHeightInLumaSamples() / (double)totalDiff) : 999.99;
       }
 
@@ -1265,7 +1263,8 @@ void EncLib::xInitVPS( const SPS& sps )
         m_vps->setOlsDpbPicWidth( olsIdx, std::max<int>( sps.getMaxPicWidthInLumaSamples(), m_vps->getOlsDpbPicSize( olsIdx ).width ) );
         m_vps->setOlsDpbPicHeight( olsIdx, std::max<int>( sps.getMaxPicHeightInLumaSamples(), m_vps->getOlsDpbPicSize( olsIdx ).height ) );
         m_vps->setOlsDpbChromaFormatIdc( olsIdx, std::max<int>(sps.getChromaFormatIdc(), m_vps->getOlsDpbChromaFormatIdc( olsIdx )));
-        m_vps->setOlsDpbBitDepthMinus8( olsIdx, std::max<int>(sps.getBitDepth(CHANNEL_TYPE_LUMA) - 8, m_vps->getOlsDpbBitDepthMinus8( olsIdx )));
+        m_vps->setOlsDpbBitDepthMinus8(
+          olsIdx, std::max<int>(sps.getBitDepth(ChannelType::LUMA) - 8, m_vps->getOlsDpbBitDepthMinus8(olsIdx)));
       }
 
       m_vps->setOlsDpbParamsIdx( olsIdx, dpbIdx );
@@ -1573,11 +1572,11 @@ void EncLib::xInitSPS( SPS& sps )
 
   sps.setLog2MaxTbSize   ( m_log2MaxTbSize );
 
-  for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
+  for (const auto channelType: { ChannelType::LUMA, ChannelType::CHROMA })
   {
-    sps.setBitDepth      (ChannelType(channelType), m_bitDepth[channelType] );
-    sps.setQpBDOffset  (ChannelType(channelType), (6 * (m_bitDepth[channelType] - 8)));
-    sps.setInternalMinusInputBitDepth(ChannelType(channelType), max(0, (m_bitDepth[channelType] - m_inputBitDepth[channelType])));
+    sps.setBitDepth(channelType, m_bitDepth[channelType]);
+    sps.setQpBDOffset(channelType, (6 * (m_bitDepth[channelType] - 8)));
+    sps.setInternalMinusInputBitDepth(channelType, max(0, (m_bitDepth[channelType] - m_inputBitDepth[channelType])));
   }
 
   sps.setEntropyCodingSyncEnabledFlag( m_entropyCodingSyncEnabledFlag );
@@ -1653,7 +1652,7 @@ void EncLib::xInitSPS( SPS& sps )
   }
   int numQpTables = m_chromaQpMappingTableParams.getSameCQPTableForAllChromaFlag() ? 1 : (sps.getJointCbCrEnabledFlag() ? 3 : 2);
   m_chromaQpMappingTableParams.setNumQpTables(numQpTables);
-  sps.setChromaQpMappingTableFromParams(m_chromaQpMappingTableParams, sps.getQpBDOffset(CHANNEL_TYPE_CHROMA));
+  sps.setChromaQpMappingTableFromParams(m_chromaQpMappingTableParams, sps.getQpBDOffset(ChannelType::CHROMA));
   sps.derivedChromaQPMappingTables();
 
   if( getPictureTimingSEIEnabled() || getDecodingUnitInfoSEIEnabled() || getCpbSaturationEnabled() )
@@ -1862,7 +1861,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
       baseQp = getBaseQP()-26;
     }
     const int maxDQP = 37;
-    const int minDQP = -26 + sps.getQpBDOffset(CHANNEL_TYPE_LUMA);
+    const int minDQP = -26 + sps.getQpBDOffset(ChannelType::LUMA);
 
     pps.setPicInitQPMinus26( std::min( maxDQP, std::max( minDQP, baseQp ) ));
   }
@@ -2591,7 +2590,7 @@ void EncLib::checkPltStats( Picture* pic )
 
 int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
 {
-  const int lumaQpBDOffset = pSlice->getSPS()->getQpBDOffset(CHANNEL_TYPE_LUMA);
+  const int lumaQpBDOffset = pSlice->getSPS()->getQpBDOffset(ChannelType::LUMA);
   int qp;
 
   if (getCostMode()==COST_LOSSLESS_CODING)

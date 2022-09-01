@@ -180,14 +180,16 @@ void AdaptiveDepthPartitioner::setMaxMinDepth( unsigned& minDepth, unsigned& max
 {
   unsigned          stdMinDepth = 0;
   unsigned          stdMaxDepth = ( floorLog2(cs.sps->getCTUSize()) - floorLog2(cs.sps->getMinQTSize( cs.slice->getSliceType(), chType )));
-  const Position    pos         = currArea().blocks[chType].pos();
+  const Position    pos         = currArea().block(chType).pos();
   const unsigned    curSliceIdx = cs.slice->getIndependentSliceIdx();
   const unsigned    curTileIdx  = cs.pps->getTileIdx( currArea().lumaPos() );
 
   const CodingUnit* cuLeft        = cs.getCURestricted( pos.offset( -1,                               0 ), pos, curSliceIdx, curTileIdx, chType );
-  const CodingUnit* cuBelowLeft   = cs.getCURestricted( pos.offset( -1, currArea().blocks[chType].height), pos, curSliceIdx, curTileIdx, chType );
+  const CodingUnit *cuBelowLeft =
+    cs.getCURestricted(pos.offset(-1, currArea().block(chType).height), pos, curSliceIdx, curTileIdx, chType);
   const CodingUnit* cuAbove       = cs.getCURestricted( pos.offset(  0,                              -1 ), pos, curSliceIdx, curTileIdx, chType );
-  const CodingUnit* cuAboveRight  = cs.getCURestricted( pos.offset( currArea().blocks[chType].width, -1 ), pos, curSliceIdx, curTileIdx, chType );
+  const CodingUnit *cuAboveRight =
+    cs.getCURestricted(pos.offset(currArea().block(chType).width, -1), pos, curSliceIdx, curTileIdx, chType);
 
   minDepth = stdMaxDepth;
   maxDepth = stdMinDepth;
@@ -394,8 +396,8 @@ void QTBTPartitioner::canSplit( const CodingStructure &cs, bool& canNo, bool& ca
 
   // the minimal and maximal sizes are given in luma samples
   const CompArea&  area  = currArea().Y();
-  const CompArea  *areaC = (chType == CHANNEL_TYPE_CHROMA) ? &(currArea().Cb()) : nullptr;
-        PartLevel& level = m_partStack.back();
+  const CompArea  *areaC = (chType == ChannelType::CHROMA) ? &(currArea().Cb()) : nullptr;
+  PartLevel       &level = m_partStack.back();
 
   const PartSplit lastSplit = level.split;
   const PartSplit parlSplit = lastSplit == CU_TRIH_SPLIT ? CU_HORZ_SPLIT : CU_VERT_SPLIT;
@@ -696,7 +698,7 @@ void QTBTPartitioner::exitCurrSplit()
 
 bool QTBTPartitioner::nextPart( const CodingStructure &cs, bool autoPop /*= false*/ )
 {
-  const Position &prevPos = currArea().blocks[chType].pos();
+  const Position &prevPos = currArea().block(chType).pos();
 
   unsigned currIdx = ++m_partStack.back().idx;
 

@@ -201,8 +201,8 @@ unsigned int IbcHashMap::xxCalcBlockHash(const Pel *pel, const ptrdiff_t stride,
 template<ChromaFormat chromaFormat>
 void IbcHashMap::xxBuildPicHashMap(const PelUnitBuf& pic)
 {
-  const int chromaScalingX = getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, chromaFormat);
-  const int chromaScalingY = getChannelTypeScaleY(CHANNEL_TYPE_CHROMA, chromaFormat);
+  const int chromaScalingX     = getChannelTypeScaleX(ChannelType::CHROMA, chromaFormat);
+  const int chromaScalingY     = getChannelTypeScaleY(ChannelType::CHROMA, chromaFormat);
   const int chromaMinBlkWidth = MIN_PU_SIZE >> chromaScalingX;
   const int chromaMinBlkHeight = MIN_PU_SIZE >> chromaScalingY;
 
@@ -303,7 +303,8 @@ bool IbcHashMap::ibcHashMatch(const Area& lumaArea, std::vector<Position>& cand,
       bool wholeBlockMatch = true;
       if (lumaArea.width > MIN_PU_SIZE || lumaArea.height > MIN_PU_SIZE)
       {
-        if (!cs.isDecomp(bottomRight, CHANNEL_TYPE_LUMA) || bottomRight.x >= m_picWidth || bottomRight.y >= m_picHeight || topLeft.x < 0 || topLeft.y < 0)
+        if (!cs.isDecomp(bottomRight, ChannelType::LUMA) || bottomRight.x >= m_picWidth || bottomRight.y >= m_picHeight
+            || topLeft.x < 0 || topLeft.y < 0)
         {
           continue;
         }
@@ -319,7 +320,8 @@ bool IbcHashMap::ibcHashMatch(const Area& lumaArea, std::vector<Position>& cand,
       else
       {
         CHECK(topLeft != *refBlockPos, "4x4 target block should not have offset!");
-        if (abs(topLeft.x - lumaArea.x) > searchRange4SmallBlk || abs(topLeft.y - lumaArea.y) > searchRange4SmallBlk || !cs.isDecomp(bottomRight, CHANNEL_TYPE_LUMA))
+        if (abs(topLeft.x - lumaArea.x) > searchRange4SmallBlk || abs(topLeft.y - lumaArea.y) > searchRange4SmallBlk
+            || !cs.isDecomp(bottomRight, ChannelType::LUMA))
         {
           continue;
         }

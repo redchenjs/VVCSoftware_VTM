@@ -876,7 +876,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 #if GDR_ENABLED
   bool allOk = true;
   const bool isEncodeGdrClean = sps.getGDREnabledFlag() && cs.pcv->isEncoder
-                                && ((ph.getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA))
+                                && ((ph.getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
                                     || ph.getNumVerVirtualBoundaries() == 0);
   const int pux = pu.lx();
   const int puy = pu.ly();
@@ -1216,7 +1216,8 @@ void InterPrediction::applyBiOptFlow(const PredictionUnit &pu, const CPelUnitBuf
     Pel* gradY = (refList == 0) ? m_gradY0 : m_gradY1;
     Pel* gradX = (refList == 0) ? m_gradX0 : m_gradX1;
 
-    xBioGradFilter(dstTempPtr, stridePredMC, widthG, heightG, widthG, gradX, gradY, clipBitDepths.recon[toChannelType(COMPONENT_Y)]);
+    xBioGradFilter(dstTempPtr, stridePredMC, widthG, heightG, widthG, gradX, gradY,
+                   clipBitDepths[toChannelType(COMPONENT_Y)]);
     Pel* padStr = m_filteredBlockTmp[2 + refList][COMPONENT_Y] + 2 * stridePredMC + 2;
     for (int y = 0; y< height; y++)
     {
@@ -1231,7 +1232,7 @@ void InterPrediction::applyBiOptFlow(const PredictionUnit &pu, const CPelUnitBuf
   }
 
   const ClpRng& clpRng = pu.cu->cs->slice->clpRng(COMPONENT_Y);
-  const int   bitDepth = clipBitDepths.recon[toChannelType(COMPONENT_Y)];
+  const int     bitDepth = clipBitDepths[toChannelType(COMPONENT_Y)];
   const int   shiftNum = IF_INTERNAL_FRAC_BITS(bitDepth) + 1;
   const int   offset = (1 << (shiftNum - 1)) + 2 * IF_INTERNAL_OFFS;
   const int   limit = ( 1 << 4 ) - 1;
@@ -1558,31 +1559,26 @@ void InterPrediction::motionCompensationGeo( CodingUnit &cu, MergeCtx &geoMrgCtx
     {
       printf( "DECODER_GEO_PU: pu motion vector across tile boundaries (%d,%d,%d,%d)\n", pu.lx(), pu.ly(), pu.lwidth(), pu.lheight() );
     }
-    weightedGeoBlk(pu, splitDir, isChromaEnabled(pu.chromaFormat)? MAX_NUM_CHANNEL_TYPE : CHANNEL_TYPE_LUMA, predBuf, tmpGeoBuf0, tmpGeoBuf1);
+
+    weightedGeoBlk(pu, splitDir, ChannelType::LUMA, predBuf, tmpGeoBuf0, tmpGeoBuf1);
+    if (isChromaEnabled(pu.chromaFormat))
+    {
+      weightedGeoBlk(pu, splitDir, ChannelType::CHROMA, predBuf, tmpGeoBuf0, tmpGeoBuf1);
+    }
   }
 }
 
-void InterPrediction::weightedGeoBlk( PredictionUnit &pu, const uint8_t splitDir, int32_t channel, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1)
+void InterPrediction::weightedGeoBlk(PredictionUnit &pu, const uint8_t splitDir, const ChannelType channel,
+                                     PelUnitBuf &predDst, PelUnitBuf &predSrc0, PelUnitBuf &predSrc1)
 {
-  if( channel == CHANNEL_TYPE_LUMA )
+  if (isLuma(channel))
   {
     m_if.weightedGeoBlk( pu, pu.lumaSize().width, pu.lumaSize().height, COMPONENT_Y, splitDir, predDst, predSrc0, predSrc1 );
   }
-  else if( channel == CHANNEL_TYPE_CHROMA )
+  else
   {
     m_if.weightedGeoBlk( pu, pu.chromaSize().width, pu.chromaSize().height, COMPONENT_Cb, splitDir, predDst, predSrc0, predSrc1 );
     m_if.weightedGeoBlk( pu, pu.chromaSize().width, pu.chromaSize().height, COMPONENT_Cr, splitDir, predDst, predSrc0, predSrc1 );
-  }
-  else
-  {
-    m_if.weightedGeoBlk( pu, pu.lumaSize().width,   pu.lumaSize().height,   COMPONENT_Y,  splitDir, predDst, predSrc0, predSrc1 );
-    if (isChromaEnabled(pu.chromaFormat))
-    {
-      m_if.weightedGeoBlk(pu, pu.chromaSize().width, pu.chromaSize().height, COMPONENT_Cb, splitDir, predDst, predSrc0,
-                          predSrc1);
-      m_if.weightedGeoBlk(pu, pu.chromaSize().width, pu.chromaSize().height, COMPONENT_Cr, splitDir, predDst, predSrc0,
-                          predSrc1);
-    }
   }
 }
 

@@ -777,13 +777,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
   ("SourceWidth,-wdt",                                m_sourceWidth,                                       0, "Source picture width")
   ("SourceHeight,-hgt",                               m_sourceHeight,                                      0, "Source picture height")
-  ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")
-  ("OutputBitDepth",                                  m_outputBitDepth[CHANNEL_TYPE_LUMA],                  0, "Bit-depth of output file (default:InternalBitDepth)")
-  ("MSBExtendedBitDepth",                             m_msbExtendedBitDepth[CHANNEL_TYPE_LUMA],             0, "bit depth of luma component after addition of MSBs of value 0 (used for synthesising High Dynamic Range source material). (default:InputBitDepth)")
-  ("InternalBitDepth",                                m_internalBitDepth[CHANNEL_TYPE_LUMA],                0, "Bit-depth the codec operates at. (default: MSBExtendedBitDepth). If different to MSBExtendedBitDepth, source data will be converted")
-  ("InputBitDepthC",                                  m_inputBitDepth[CHANNEL_TYPE_CHROMA],                 0, "As per InputBitDepth but for chroma component. (default:InputBitDepth)")
-  ("OutputBitDepthC",                                 m_outputBitDepth[CHANNEL_TYPE_CHROMA],                0, "As per OutputBitDepth but for chroma component. (default: use luma output bit-depth)")
-  ("MSBExtendedBitDepthC",                            m_msbExtendedBitDepth[CHANNEL_TYPE_CHROMA],           0, "As per MSBExtendedBitDepth but for chroma component. (default:MSBExtendedBitDepth)")
+  ("InputBitDepth",                                   m_inputBitDepth[ChannelType::LUMA],                   8, "Bit-depth of input file")
+  ("OutputBitDepth",                                  m_outputBitDepth[ChannelType::LUMA],                  0, "Bit-depth of output file (default:InternalBitDepth)")
+  ("MSBExtendedBitDepth",                             m_msbExtendedBitDepth[ChannelType::LUMA],             0, "bit depth of luma component after addition of MSBs of value 0 (used for synthesising High Dynamic Range source material). (default:InputBitDepth)")
+  ("InternalBitDepth",                                m_internalBitDepth[ChannelType::LUMA],                0, "Bit-depth the codec operates at. (default: MSBExtendedBitDepth). If different to MSBExtendedBitDepth, source data will be converted")
+  ("InputBitDepthC",                                  m_inputBitDepth[ChannelType::CHROMA],                 0, "As per InputBitDepth but for chroma component. (default:InputBitDepth)")
+  ("OutputBitDepthC",                                 m_outputBitDepth[ChannelType::CHROMA],                0, "As per OutputBitDepth but for chroma component. (default: use luma output bit-depth)")
+  ("MSBExtendedBitDepthC",                            m_msbExtendedBitDepth[ChannelType::CHROMA],           0, "As per MSBExtendedBitDepth but for chroma component. (default:MSBExtendedBitDepth)")
   ("ExtendedPrecision",                               m_extendedPrecisionProcessingFlag,                false, "Increased internal accuracies to support high bit depths (not valid in V1 profiles)")
   ("TSRCRicePresent",                                 m_tsrcRicePresentFlag,                            false, "Indicate that TSRC Rice information is present in slice header (not valid in V1 profiles)")
   ("ReverseLastSigCoeff",                             m_reverseLastSigCoeffEnabledFlag,                 false, "enable reverse last significant coefficient postion in RRC (not valid in V1 profiles)")
@@ -2361,30 +2361,30 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_subProfile[i] = cfg_SubProfile.values[i];
   }
   /* rules for input, output and internal bitdepths as per help text */
-  if (m_msbExtendedBitDepth[CHANNEL_TYPE_LUMA] == 0)
+  if (m_msbExtendedBitDepth[ChannelType::LUMA] == 0)
   {
-    m_msbExtendedBitDepth[CHANNEL_TYPE_LUMA] = m_inputBitDepth[CHANNEL_TYPE_LUMA];
+    m_msbExtendedBitDepth[ChannelType::LUMA] = m_inputBitDepth[ChannelType::LUMA];
   }
-  if (m_msbExtendedBitDepth[CHANNEL_TYPE_CHROMA] == 0)
+  if (m_msbExtendedBitDepth[ChannelType::CHROMA] == 0)
   {
-    m_msbExtendedBitDepth[CHANNEL_TYPE_CHROMA] = m_msbExtendedBitDepth[CHANNEL_TYPE_LUMA];
+    m_msbExtendedBitDepth[ChannelType::CHROMA] = m_msbExtendedBitDepth[ChannelType::LUMA];
   }
-  if (m_internalBitDepth   [CHANNEL_TYPE_LUMA  ] == 0)
+  if (m_internalBitDepth[ChannelType::LUMA] == 0)
   {
-    m_internalBitDepth[CHANNEL_TYPE_LUMA] = m_msbExtendedBitDepth[CHANNEL_TYPE_LUMA];
+    m_internalBitDepth[ChannelType::LUMA] = m_msbExtendedBitDepth[ChannelType::LUMA];
   }
-    m_internalBitDepth   [CHANNEL_TYPE_CHROMA] = m_internalBitDepth   [CHANNEL_TYPE_LUMA  ];
-  if (m_inputBitDepth      [CHANNEL_TYPE_CHROMA] == 0)
+  m_internalBitDepth[ChannelType::CHROMA] = m_internalBitDepth[ChannelType::LUMA];
+  if (m_inputBitDepth[ChannelType::CHROMA] == 0)
   {
-    m_inputBitDepth      [CHANNEL_TYPE_CHROMA] = m_inputBitDepth      [CHANNEL_TYPE_LUMA  ];
+    m_inputBitDepth[ChannelType::CHROMA] = m_inputBitDepth[ChannelType::LUMA];
   }
-  if (m_outputBitDepth     [CHANNEL_TYPE_LUMA  ] == 0)
+  if (m_outputBitDepth[ChannelType::LUMA] == 0)
   {
-    m_outputBitDepth     [CHANNEL_TYPE_LUMA  ] = m_internalBitDepth   [CHANNEL_TYPE_LUMA  ];
+    m_outputBitDepth[ChannelType::LUMA] = m_internalBitDepth[ChannelType::LUMA];
   }
-  if (m_outputBitDepth     [CHANNEL_TYPE_CHROMA] == 0)
+  if (m_outputBitDepth[ChannelType::CHROMA] == 0)
   {
-    m_outputBitDepth     [CHANNEL_TYPE_CHROMA] = m_outputBitDepth     [CHANNEL_TYPE_LUMA  ];
+    m_outputBitDepth[ChannelType::CHROMA] = m_outputBitDepth[ChannelType::LUMA];
   }
 
   m_inputChromaFormatIDC = numberToChromaFormat(tmpInputChromaFormat);
@@ -2412,17 +2412,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     VideoIOYuv   inputFile;
     inputFile.parseY4mFileHeader(m_inputFileName, width, height, frameRate, inputBitDepth, chromaFormat);
     if (width != m_sourceWidth || height != m_sourceHeight || frameRate != m_frameRate
-        || inputBitDepth != m_inputBitDepth[0] || chromaFormat != m_chromaFormatIDC)
+        || inputBitDepth != m_inputBitDepth[ChannelType::LUMA] || chromaFormat != m_chromaFormatIDC)
     {
       msg(WARNING, "\nWarning: Y4M file info is different from input setting. Using the info from Y4M file\n");
       m_sourceWidth            = width;
       m_sourceHeight           = height;
       m_frameRate              = frameRate;
-      m_inputBitDepth[0]       = inputBitDepth;
-      m_inputBitDepth[1]       = inputBitDepth;
+      m_inputBitDepth.fill(inputBitDepth);
       m_chromaFormatIDC        = chromaFormat;
-      m_msbExtendedBitDepth[0] = m_inputBitDepth[0];
-      m_msbExtendedBitDepth[1] = m_inputBitDepth[1];
+      m_msbExtendedBitDepth    = m_inputBitDepth;
     }
   }
 
@@ -2496,8 +2494,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         m_bitDepthConstraint = 16; // max value - unconstrained.
       }
     }
-    CHECK(m_bitDepthConstraint < m_internalBitDepth[CHANNEL_TYPE_LUMA], "MaxBitDepthConstraint setting does not allow the specified luma bit depth to be coded.");
-    CHECK(m_bitDepthConstraint < m_internalBitDepth[CHANNEL_TYPE_CHROMA], "MaxBitDepthConstraint setting does not allow the specified chroma bit depth to be coded.");
+    CHECK(m_bitDepthConstraint < m_internalBitDepth[ChannelType::LUMA],
+          "MaxBitDepthConstraint setting does not allow the specified luma bit depth to be coded.");
+    CHECK(m_bitDepthConstraint < m_internalBitDepth[ChannelType::CHROMA],
+          "MaxBitDepthConstraint setting does not allow the specified chroma bit depth to be coded.");
     CHECK(m_chromaFormatConstraint < m_chromaFormatIDC, "MaxChromaFormatConstraint setting does not allow the specified chroma format to be coded.");
     CHECK(m_chromaFormatConstraint >= NUM_CHROMA_FORMAT, "Bad value given for MaxChromaFormatConstraint setting.")
     CHECK(m_bitDepthConstraint < 8 || m_bitDepthConstraint>16, "MaxBitDepthConstraint setting must be in the range 8 to 16 (inclusive)");
@@ -2704,7 +2704,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     cfg_qpOutValCbCr.values.push_back(cfg_qpOutValCbCr.values[0] + 1);
   }
 
-  int qpBdOffsetC = 6 * (m_internalBitDepth[CHANNEL_TYPE_CHROMA] - 8);
+  int qpBdOffsetC = 6 * (m_internalBitDepth[ChannelType::CHROMA] - 8);
   m_chromaQpMappingTableParams.m_deltaQpInValMinus1[0].resize(cfg_qpInValCb.values.size());
   m_chromaQpMappingTableParams.m_deltaQpOutVal[0].resize(cfg_qpOutValCb.values.size());
   m_chromaQpMappingTableParams.m_numPtsInCQPTableMinus1[0] = (int) cfg_qpOutValCb.values.size() - 2;
@@ -3408,7 +3408,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       firstSliceLossless = true;
     }
     if (firstSliceLossless) // if first slice is lossless
-    m_iQP = LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP - ( ( m_internalBitDepth[CHANNEL_TYPE_LUMA] - 8 ) * 6 );
+      m_iQP = LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP - ((m_internalBitDepth[ChannelType::LUMA] - 8) * 6);
   }
 
   m_maxCuWidth = m_maxCuHeight = m_ctuSize;
@@ -3438,7 +3438,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
 int EncAppCfg::xAutoDetermineProfile()
 {
-  const int maxBitDepth= std::max(m_internalBitDepth[CHANNEL_TYPE_LUMA], m_internalBitDepth[m_chromaFormatIDC==ChromaFormat::CHROMA_400 ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA]);
+  const int maxBitDepth = std::max(
+    m_internalBitDepth[ChannelType::LUMA],
+    m_internalBitDepth[m_chromaFormatIDC == ChromaFormat::CHROMA_400 ? ChannelType::LUMA : ChannelType::CHROMA]);
   m_profile=Profile::NONE;
 
   switch (m_chromaFormatIDC)
@@ -3572,7 +3574,8 @@ bool EncAppCfg::xCheckParameter()
 
 
   xConfirmPara(m_bitstreamFileName.empty(), "A bitstream file name must be specified (BitstreamFile)");
-  xConfirmPara(m_internalBitDepth[CHANNEL_TYPE_CHROMA] != m_internalBitDepth[CHANNEL_TYPE_LUMA], "The internalBitDepth must be the same for luma and chroma");
+  xConfirmPara(m_internalBitDepth[ChannelType::CHROMA] != m_internalBitDepth[ChannelType::LUMA],
+               "The internalBitDepth must be the same for luma and chroma");
   if (m_profile != Profile::NONE)
   {
     xConfirmPara(m_log2MaxTransformSkipBlockSize>=6, "Transform Skip Log2 Max Size must be less or equal to 5 for given profile.");
@@ -3592,10 +3595,11 @@ bool EncAppCfg::xCheckParameter()
 
 
   // check range of parameters
-  xConfirmPara( m_inputBitDepth[CHANNEL_TYPE_LUMA  ] < 8,                                   "InputBitDepth must be at least 8" );
-  xConfirmPara( m_inputBitDepth[CHANNEL_TYPE_CHROMA] < 8,                                   "InputBitDepthC must be at least 8" );
+  xConfirmPara(m_inputBitDepth[ChannelType::LUMA] < 8, "InputBitDepth must be at least 8");
+  xConfirmPara(m_inputBitDepth[ChannelType::CHROMA] < 8, "InputBitDepthC must be at least 8");
 
-  if( (m_internalBitDepth[CHANNEL_TYPE_LUMA] < m_inputBitDepth[CHANNEL_TYPE_LUMA]) || (m_internalBitDepth[CHANNEL_TYPE_CHROMA] < m_inputBitDepth[CHANNEL_TYPE_CHROMA]) )
+  if ((m_internalBitDepth[ChannelType::LUMA] < m_inputBitDepth[ChannelType::LUMA])
+      || (m_internalBitDepth[ChannelType::CHROMA] < m_inputBitDepth[ChannelType::CHROMA]))
   {
       msg(WARNING, "*****************************************************************************\n");
       msg(WARNING, "** WARNING: InternalBitDepth is set to the lower value than InputBitDepth! **\n");
@@ -3606,33 +3610,36 @@ bool EncAppCfg::xCheckParameter()
 #if !RExt__HIGH_BIT_DEPTH_SUPPORT
   if (m_extendedPrecisionProcessingFlag)
   {
-    for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
+    for (const auto bd: m_internalBitDepth)
     {
-      xConfirmPara((m_internalBitDepth[channelType] > 8) , "Model is not configured to support high enough internal accuracies - enable RExt__HIGH_BIT_DEPTH_SUPPORT to use increased precision internal data types etc...");
+      xConfirmPara((bd > 8), "Model is not configured to support high enough internal accuracies - enable "
+                             "RExt__HIGH_BIT_DEPTH_SUPPORT to use increased precision internal data types etc...");
     }
   }
   else
   {
-    for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
+    for (const auto bd: m_internalBitDepth)
     {
-      xConfirmPara((m_internalBitDepth[channelType] > 12) , "Model is not configured to support high enough internal accuracies - enable RExt__HIGH_BIT_DEPTH_SUPPORT to use increased precision internal data types etc...");
+      xConfirmPara((bd > 12), "Model is not configured to support high enough internal accuracies - enable "
+                              "RExt__HIGH_BIT_DEPTH_SUPPORT to use increased precision internal data types etc...");
     }
   }
 #endif
 
-  xConfirmPara((m_msbExtendedBitDepth[CHANNEL_TYPE_LUMA] < m_inputBitDepth[CHANNEL_TYPE_LUMA]),
+  xConfirmPara((m_msbExtendedBitDepth[ChannelType::LUMA] < m_inputBitDepth[ChannelType::LUMA]),
                "MSB-extended bit depth for luma channel (--MSBExtendedBitDepth) must be greater than or equal to input "
                "bit depth for luma channel (--InputBitDepth)");
-  xConfirmPara((m_msbExtendedBitDepth[CHANNEL_TYPE_CHROMA] < m_inputBitDepth[CHANNEL_TYPE_CHROMA]),
+  xConfirmPara((m_msbExtendedBitDepth[ChannelType::CHROMA] < m_inputBitDepth[ChannelType::CHROMA]),
                "MSB-extended bit depth for chroma channel (--MSBExtendedBitDepthC) must be greater than or equal to "
                "input bit depth for chroma channel (--InputBitDepthC)");
 
   bool check_sps_range_extension_flag = m_extendedPrecisionProcessingFlag || m_rrcRiceExtensionEnableFlag
                                         || m_persistentRiceAdaptationEnabledFlag || m_tsrcRicePresentFlag;
-  if (m_internalBitDepth[CHANNEL_TYPE_LUMA] <= 10)
+  if (m_internalBitDepth[ChannelType::LUMA] <= 10)
+  {
     xConfirmPara( (check_sps_range_extension_flag == 1) ,
                  "RExt tools (Extended Precision Processing, RRC Rice Extension, Persistent Rice Adaptation and TSRC Rice Extension) must be disabled for BitDepth is less than or equal to 10 (the value of sps_range_extension_flag shall be 0 when BitDepth is less than or equal to 10.)");
-
+  }
   xConfirmPara( m_chromaFormatIDC >= NUM_CHROMA_FORMAT,                                     "ChromaFormatIDC must be either 400, 420, 422 or 444" );
   std::string sTempIPCSC="InputColourSpaceConvert must be empty, "+getListOfColourSpaceConverts(true);
   xConfirmPara( m_inputColourSpaceConvert >= NUMBER_INPUT_COLOUR_SPACE_CONVERSIONS,         sTempIPCSC.c_str() );
@@ -3680,7 +3687,8 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara(m_level < Level::LEVEL4 && m_levelTier == Level::HIGH, "High tier not defined for levels below 4.");
   }
 
-  xConfirmPara( m_iQP < -6 * (m_internalBitDepth[CHANNEL_TYPE_LUMA] - 8) || m_iQP > MAX_QP, "QP exceeds supported range (-QpBDOffsety to 63)" );
+  xConfirmPara(m_iQP < -6 * (m_internalBitDepth[ChannelType::LUMA] - 8) || m_iQP > MAX_QP,
+               "QP exceeds supported range (-QpBDOffsety to 63)");
   xConfirmPara( m_deblockingFilterMetric!=0 && (m_deblockingFilterDisable || m_deblockingFilterOffsetInPPS), "If DeblockingFilterMetric is non-zero then both LoopFilterDisable and LoopFilterOffsetInPPS must be 0");
   xConfirmPara( m_deblockingFilterBetaOffsetDiv2 < -12 || m_deblockingFilterBetaOffsetDiv2 > 12,          "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
   xConfirmPara( m_deblockingFilterTcOffsetDiv2 < -12 || m_deblockingFilterTcOffsetDiv2 > 12,              "Loop Filter Tc Offset div. 2 exceeds supported range (-12 to 12)" );
@@ -3818,9 +3826,9 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara((m_sourceWidth % minCuSize ) || (m_sourceHeight % minCuSize),              "Picture width or height is not a multiple of minCuSize");
   const int minDiff =
     (int) floorLog2(m_minQt[2])
-    - std::max(MIN_CU_LOG2, (int) m_log2MinCuSize - (int) getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, m_chromaFormatIDC));
+    - std::max(MIN_CU_LOG2, (int) m_log2MinCuSize - (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC));
   xConfirmPara( minDiff < 0 ,                                                               "Min Chroma QT size in I slices is smaller than Min Luma CU size even considering color format");
-  xConfirmPara((m_minQt[2] << (int) getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, m_chromaFormatIDC))
+  xConfirmPara((m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC))
                  > std::min(64, (int) m_ctuSize),
                "Min Chroma QT size in I slices should be smaller than or equal to CTB size or CB size after implicit "
                "split of CTB");
@@ -3837,7 +3845,7 @@ bool EncAppCfg::xCheckParameter()
                "Maximum BT size for luma block in non I slice should be larger than minimum QT size");
   xConfirmPara(m_maxBt[1] > m_ctuSize,
                "Maximum BT size for luma block in non I slice should be smaller than or equal to CTUSize");
-  xConfirmPara(m_maxBt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, m_chromaFormatIDC)),
+  xConfirmPara(m_maxBt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
                "Maximum BT size for chroma block in I slice should be larger than minimum QT size");
   xConfirmPara(m_maxBt[2] > m_ctuSize,
                "Maximum BT size for chroma block in I slice should be smaller than or equal to CTUSize");
@@ -3849,7 +3857,7 @@ bool EncAppCfg::xCheckParameter()
                "Maximum TT size for luma block in non I slice should be larger than minimum QT size");
   xConfirmPara(m_maxTt[1] > m_ctuSize,
                "Maximum TT size for luma block in non I slice should be smaller than or equal to CTUSize");
-  xConfirmPara(m_maxTt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, m_chromaFormatIDC)),
+  xConfirmPara(m_maxTt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
                "Maximum TT size for chroma block in I slice should be larger than minimum QT size");
   xConfirmPara(m_maxTt[2] > m_ctuSize,
                "Maximum TT size for chroma block in I slice should be smaller than or equal to CTUSize");
@@ -3864,9 +3872,9 @@ bool EncAppCfg::xCheckParameter()
   }
   if (m_uiMaxMTTHierarchyDepthIChroma == 0)
   {
-    xConfirmPara(m_maxBt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, m_chromaFormatIDC)),
+    xConfirmPara(m_maxBt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
                  "MaxBTChromaISlice shall be equal to MinQTChromaISlice when MaxMTTHierarchyDepthISliceC is 0.");
-    xConfirmPara(m_maxTt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, m_chromaFormatIDC)),
+    xConfirmPara(m_maxTt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
                  "MaxTTChromaISlice shall be equal to MinQTChromaISlice when MaxMTTHierarchyDepthISliceC is 0.");
   }
   if (m_uiMaxMTTHierarchyDepth == 0)
@@ -5028,10 +5036,12 @@ void EncAppCfg::xPrintParameter()
   msg( DETAILS, "Cr QP Offset (dual tree)               : %d (%d)\n", m_crQpOffset, m_crQpOffsetDualTree);
   msg( DETAILS, "QP adaptation                          : %d (range=%d)\n", m_bUseAdaptiveQP, (m_bUseAdaptiveQP ? m_iQPAdaptationRange : 0) );
   msg(DETAILS, "GOP size                               : %d\n", m_gopSize);
-  msg( DETAILS, "Input bit depth                        : (Y:%d, C:%d)\n", m_inputBitDepth[CHANNEL_TYPE_LUMA], m_inputBitDepth[CHANNEL_TYPE_CHROMA] );
-  msg(DETAILS, "MSB-extended bit depth                 : (Y:%d, C:%d)\n", m_msbExtendedBitDepth[CHANNEL_TYPE_LUMA],
-      m_msbExtendedBitDepth[CHANNEL_TYPE_CHROMA]);
-  msg( DETAILS, "Internal bit depth                     : (Y:%d, C:%d)\n", m_internalBitDepth[CHANNEL_TYPE_LUMA], m_internalBitDepth[CHANNEL_TYPE_CHROMA] );
+  msg(DETAILS, "Input bit depth                        : (Y:%d, C:%d)\n", m_inputBitDepth[ChannelType::LUMA],
+      m_inputBitDepth[ChannelType::CHROMA]);
+  msg(DETAILS, "MSB-extended bit depth                 : (Y:%d, C:%d)\n", m_msbExtendedBitDepth[ChannelType::LUMA],
+      m_msbExtendedBitDepth[ChannelType::CHROMA]);
+  msg(DETAILS, "Internal bit depth                     : (Y:%d, C:%d)\n", m_internalBitDepth[ChannelType::LUMA],
+      m_internalBitDepth[ChannelType::CHROMA]);
   if (m_cuChromaQpOffsetList.size() > 0)
   {
     msg( DETAILS, "Chroma QP offset list                  : (" );
@@ -5104,8 +5114,8 @@ void EncAppCfg::xPrintParameter()
 
   msg( VERBOSE, "TOOL CFG: ");
   msg(VERBOSE, "IBD:%d ",
-      ((m_internalBitDepth[CHANNEL_TYPE_LUMA] > m_msbExtendedBitDepth[CHANNEL_TYPE_LUMA])
-       || (m_internalBitDepth[CHANNEL_TYPE_CHROMA] > m_msbExtendedBitDepth[CHANNEL_TYPE_CHROMA])));
+      ((m_internalBitDepth[ChannelType::LUMA] > m_msbExtendedBitDepth[ChannelType::LUMA])
+       || (m_internalBitDepth[ChannelType::CHROMA] > m_msbExtendedBitDepth[ChannelType::CHROMA])));
   msg( VERBOSE, "HAD:%d ", m_bUseHADME                          );
   msg( VERBOSE, "RDQ:%d ", m_useRDOQ                            );
   msg( VERBOSE, "RDQTS:%d ", m_useRDOQTS                        );

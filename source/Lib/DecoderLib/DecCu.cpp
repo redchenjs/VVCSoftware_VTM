@@ -247,7 +247,10 @@ void DecCu::xIntraRecBlk( TransformUnit& tu, const ComponentID compID )
   bool flag = slice.getLmcsEnabledFlag() && (slice.isIntra() || (!slice.isIntra() && m_pcReshape->getCTUFlag()));
   if (flag && slice.getPicHeader()->getLmcsChromaResidualScaleFlag() && (compID != COMPONENT_Y) && (tu.cbf[COMPONENT_Cb] || tu.cbf[COMPONENT_Cr]))
   {
-    const Area area = tu.Y().valid() ? tu.Y() : Area(recalcPosition(tu.chromaFormat, tu.chType, CHANNEL_TYPE_LUMA, tu.blocks[tu.chType].pos()), recalcSize(tu.chromaFormat, tu.chType, CHANNEL_TYPE_LUMA, tu.blocks[tu.chType].size()));
+    const Area      area  = tu.Y().valid()
+                              ? tu.Y()
+                              : Area(recalcPosition(tu.chromaFormat, tu.chType, ChannelType::LUMA, tu.block(tu.chType).pos()),
+                                     recalcSize(tu.chromaFormat, tu.chType, ChannelType::LUMA, tu.block(tu.chType).size()));
     const CompArea &areaY = CompArea(COMPONENT_Y, tu.chromaFormat, area);
     int adj = m_pcReshape->calculateChromaAdjVpduNei(tu, areaY);
     tu.setChromaAdj(adj);
@@ -334,18 +337,21 @@ void DecCu::xIntraRecBlk( TransformUnit& tu, const ComponentID compID )
 void DecCu::xIntraRecACTBlk(TransformUnit& tu)
 {
   CodingStructure      &cs = *tu.cs;
-  const PredictionUnit &pu = *tu.cs->getPU(tu.blocks[COMPONENT_Y], CHANNEL_TYPE_LUMA);
+  const PredictionUnit &pu    = *tu.cs->getPU(tu.blocks[COMPONENT_Y], ChannelType::LUMA);
   const Slice          &slice = *cs.slice;
 
   CHECK(!tu.Y().valid() || !tu.Cb().valid() || !tu.Cr().valid(), "Invalid TU");
   CHECK(&pu != tu.cu->firstPU, "wrong PU fetch");
   CHECK(tu.cu->ispMode != ISPType::NONE, "adaptive color transform cannot be applied to ISP");
-  CHECK(pu.intraDir[CHANNEL_TYPE_CHROMA] != DM_CHROMA_IDX, "chroma should use DM mode for adaptive color transform");
+  CHECK(pu.intraDir[ChannelType::CHROMA] != DM_CHROMA_IDX, "chroma should use DM mode for adaptive color transform");
 
   bool flag = slice.getLmcsEnabledFlag() && (slice.isIntra() || (!slice.isIntra() && m_pcReshape->getCTUFlag()));
   if (flag && slice.getPicHeader()->getLmcsChromaResidualScaleFlag())
   {
-    const Area      area = tu.Y().valid() ? tu.Y() : Area(recalcPosition(tu.chromaFormat, tu.chType, CHANNEL_TYPE_LUMA, tu.blocks[tu.chType].pos()), recalcSize(tu.chromaFormat, tu.chType, CHANNEL_TYPE_LUMA, tu.blocks[tu.chType].size()));
+    const Area      area  = tu.Y().valid()
+                              ? tu.Y()
+                              : Area(recalcPosition(tu.chromaFormat, tu.chType, ChannelType::LUMA, tu.block(tu.chType).pos()),
+                                     recalcSize(tu.chromaFormat, tu.chType, ChannelType::LUMA, tu.block(tu.chType).size()));
     const CompArea &areaY = CompArea(COMPONENT_Y, tu.chromaFormat, area);
     int            adj = m_pcReshape->calculateChromaAdjVpduNei(tu, areaY);
     tu.setChromaAdj(adj);
@@ -451,11 +457,11 @@ void DecCu::xReconIntraQT( CodingUnit &cu )
   {
     if (cu.isSepTree())
     {
-      if (cu.chType == CHANNEL_TYPE_LUMA)
+      if (isLuma(cu.chType))
       {
         xReconPLT(cu, COMPONENT_Y, 1);
       }
-      if (cu.chromaFormat != CHROMA_400 && (cu.chType == CHANNEL_TYPE_CHROMA))
+      if (cu.chromaFormat != CHROMA_400 && (cu.chType == ChannelType::CHROMA))
       {
         xReconPLT(cu, COMPONENT_Cb, 2);
       }
@@ -480,13 +486,11 @@ void DecCu::xReconIntraQT( CodingUnit &cu )
   }
   else
   {
-    const uint32_t numChType = ::getNumberValidChannels(cu.chromaFormat);
-
-    for (uint32_t chType = CHANNEL_TYPE_LUMA; chType < numChType; chType++)
+    for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(cu.chromaFormat); chType++)
     {
-      if (cu.blocks[chType].valid())
+      if (cu.block(chType).valid())
       {
-        xIntraRecQT(cu, ChannelType(chType));
+        xIntraRecQT(cu, chType);
       }
     }
   }

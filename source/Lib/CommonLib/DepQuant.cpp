@@ -135,7 +135,7 @@ namespace DQIntern
     const NbInfoOut*    getNbInfoOut( int hd, int vd ) const { return m_scanId2NbInfoOutArray[hd][vd]; }
     const TUParameters* getTUPars   ( const CompArea& area, const ComponentID compID ) const
     {
-      return m_tuParameters[floorLog2(area.width)][floorLog2(area.height)][toChannelType(compID)];
+      return m_tuParameters[floorLog2(area.width)][floorLog2(area.height)][to_underlying(toChannelType(compID))];
     }
   private:
     void  xInitScanArrays   ();
@@ -396,7 +396,7 @@ namespace DQIntern
     {
       const int nextScanIdx = scanIdx - 1;
       const int diag        = m_scanId2BlkPos[nextScanIdx].x + m_scanId2BlkPos[nextScanIdx].y;
-      if( m_chType == CHANNEL_TYPE_LUMA )
+      if (isLuma(m_chType))
       {
         scanInfo.sigCtxOffsetNext = ( diag < 2 ? 8 : diag < 5 ?  4 : 0 );
         scanInfo.gtxCtxOffsetNext = ( diag < 1 ? 16 : diag < 3 ? 11 : diag < 10 ? 6 : 1 );
@@ -528,7 +528,7 @@ namespace DQIntern
 
       const unsigned size       = isY ? tuPars.m_height : tuPars.m_width;
       const int      log2Size   = ceilLog2(size);
-      const CtxSet  &ctxSetLast = (isY ? Ctx::LastY : Ctx::LastX)[chType];
+      const CtxSet  &ctxSetLast = (isY ? Ctx::LastY : Ctx::LastX)[to_underlying(chType)];
       const unsigned lastShift  = isLuma(chType) ? (log2Size + 1) >> 2 : Clip3<unsigned>(0, 2, size >> 3);
       const unsigned lastOffset = isLuma(chType) ? CoeffCodingContext::prefixCtx[log2Size] : 0;
       const int      nzSize     = getNonzeroTuSize(size);
@@ -562,7 +562,7 @@ namespace DQIntern
 
   void RateEstimator::xSetSigSbbFracBits( const FracBitsAccess& fracBitsAccess, ChannelType chType )
   {
-    const CtxSet& ctxSet = Ctx::SigCoeffGroup[ chType ];
+    const CtxSet &ctxSet = Ctx::SigCoeffGroup[to_underlying(chType)];
     for( unsigned ctxId = 0; ctxId < sm_maxNumSigSbbCtx; ctxId++ )
     {
       m_sigSbbFracBits[ ctxId ] = fracBitsAccess.getFracBitsArray( ctxSet( ctxId ) );
@@ -574,8 +574,8 @@ namespace DQIntern
     for( unsigned ctxSetId = 0; ctxSetId < sm_numCtxSetsSig; ctxSetId++ )
     {
       BinFracBits*    bits    = m_sigFracBits [ ctxSetId ];
-      const CtxSet&   ctxSet  = Ctx::SigFlag  [ chType + 2*ctxSetId ];
-      const unsigned  numCtx  = ( chType == CHANNEL_TYPE_LUMA ? 12 : 8 );
+      const CtxSet   &ctxSet  = Ctx::SigFlag[to_underlying(chType) + 2 * ctxSetId];
+      const unsigned  numCtx  = isLuma(chType) ? 12 : 8;
       for( unsigned ctxId = 0; ctxId < numCtx; ctxId++ )
       {
         bits[ ctxId ] = fracBitsAccess.getFracBitsArray( ctxSet( ctxId ) );
@@ -583,12 +583,13 @@ namespace DQIntern
     }
   }
 
-  void RateEstimator::xSetGtxFlagBits( const FracBitsAccess& fracBitsAccess, ChannelType chType )
+  void RateEstimator::xSetGtxFlagBits(const FracBitsAccess &fracBitsAccess, const ChannelType chType)
   {
-    const CtxSet&   ctxSetPar   = Ctx::ParFlag [     chType ];
-    const CtxSet&   ctxSetGt1   = Ctx::GtxFlag [ 2 + chType ];
-    const CtxSet&   ctxSetGt2   = Ctx::GtxFlag [     chType ];
-    const unsigned  numCtx      = ( chType == CHANNEL_TYPE_LUMA ? 21 : 11 );
+    const auto     chIdx     = to_underlying(chType);
+    const CtxSet  &ctxSetPar = Ctx::ParFlag[chIdx];
+    const CtxSet  &ctxSetGt1 = Ctx::GtxFlag[2 + chIdx];
+    const CtxSet  &ctxSetGt2 = Ctx::GtxFlag[chIdx];
+    const unsigned numCtx    = isLuma(chType) ? 21 : 11;
     for( unsigned ctxId = 0; ctxId < numCtx; ctxId++ )
     {
       BinFracBits     fbPar = fracBitsAccess.getFracBitsArray( ctxSetPar( ctxId ) );
@@ -1126,7 +1127,8 @@ namespace DQIntern
       {
         m_numSigSbb     =  1;
         m_refSbbCtxId   = -1;
-        int ctxBinSampleRatio = (scanInfo.chType == CHANNEL_TYPE_LUMA) ? MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_LUMA : MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_CHROMA;
+        int ctxBinSampleRatio = isLuma(scanInfo.chType) ? MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_LUMA
+                                                        : MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_CHROMA;
         m_remRegBins = (effWidth * effHeight *ctxBinSampleRatio) / 16 - (decision.absLevel < 2 ? (unsigned)decision.absLevel : 3);
         ::memset( m_absLevelsAndCtxInit, 0, 48*sizeof(uint8_t) );
       }
@@ -1339,7 +1341,8 @@ namespace DQIntern
     }
     else
     {
-      int ctxBinSampleRatio = (scanInfo.chType == CHANNEL_TYPE_LUMA) ? MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_LUMA : MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_CHROMA;
+      int ctxBinSampleRatio  = isLuma(scanInfo.chType) ? MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_LUMA
+                                                       : MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_CHROMA;
       currState.m_remRegBins = (currState.effWidth * currState.effHeight *ctxBinSampleRatio) / 16;
     }
     currState.m_goRicePar     = 0;

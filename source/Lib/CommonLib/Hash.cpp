@@ -367,7 +367,7 @@ void Hash::getPixelsIn1DCharArrayByBlock2x2(const PelUnitBuf &curPicBuf, unsigne
     includeAllComponent = false;
   }
 
-  if (bitDepths.recon[CHANNEL_TYPE_LUMA] == 8 && bitDepths.recon[CHANNEL_TYPE_CHROMA] == 8)
+  if (bitDepths[ChannelType::LUMA] == 8 && bitDepths[ChannelType::CHROMA] == 8)
   {
     Pel* curPel[MAX_NUM_COMPONENT]={nullptr};
     ptrdiff_t stride[MAX_NUM_COMPONENT] = { 0 };
@@ -403,8 +403,8 @@ void Hash::getPixelsIn1DCharArrayByBlock2x2(const PelUnitBuf &curPicBuf, unsigne
   }
   else
   {
-    int shift = bitDepths.recon[CHANNEL_TYPE_LUMA] - 8;
-    int shiftc = includeAllComponent ? (bitDepths.recon[CHANNEL_TYPE_CHROMA] - 8) : 0;
+    int       shift                     = bitDepths[ChannelType::LUMA] - 8;
+    int       shiftc                    = includeAllComponent ? (bitDepths[ChannelType::CHROMA] - 8) : 0;
     Pel* curPel[MAX_NUM_COMPONENT]={nullptr};
     ptrdiff_t stride[MAX_NUM_COMPONENT] = { 0 };
     const int maxComponent=includeAllComponent?MAX_NUM_COMPONENT:1;

@@ -107,14 +107,13 @@ public:
   EncTemporalFilter();
   ~EncTemporalFilter() {}
 
-  void init(const int frameSkip, const int inputBitDepth[MAX_NUM_CHANNEL_TYPE],
-            const int msbExtendedBitDepth[MAX_NUM_CHANNEL_TYPE], const int internalBitDepth[MAX_NUM_CHANNEL_TYPE],
-            const int width, const int height, const int *pad, const bool rec709, const std::string &filename,
-            const ChromaFormat inputChroma, const InputColourSpaceConversion colorSpaceConv, const int qp,
+  void init(const int frameSkip, const BitDepths &inputBitDepth, const BitDepths &msbExtendedBitDepth,
+            const BitDepths &internalBitDepth, const int width, const int height, const int *pad, const bool rec709,
+            const std::string &filename, const ChromaFormat inputChroma,
+            const InputColourSpaceConversion colorSpaceConv, const int qp,
             const std::map<int, double> &temporalFilterStrengths, const int pastRefs, const int futureRefs,
-            const int firstValidFrame, const int lastValidFrame
-            , const bool bMCTFenabled, std::map<int, int*> *adaptQPmap, const bool bBIMenabled, const int ctuSize
-            );
+            const int firstValidFrame, const int lastValidFrame, const bool bMCTFenabled,
+            std::map<int, int *> *adaptQPmap, const bool bBIMenabled, const int ctuSize);
 
   bool filter(PelStorage *orgPic, int frame);
 
@@ -132,9 +131,11 @@ private:
   // Private member variables
   int                        m_frameSkip;
   std::string m_inputFileName;
-  int m_inputBitDepth[MAX_NUM_CHANNEL_TYPE];
-  int                        m_msbExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];
-  int m_internalBitDepth[MAX_NUM_CHANNEL_TYPE];
+
+  BitDepths m_inputBitDepth;
+  BitDepths m_msbExtendedBitDepth;
+  BitDepths m_internalBitDepth;
+
   ChromaFormat m_chromaFormatIDC;
   int m_sourceWidth;
   int m_sourceHeight;

@@ -134,7 +134,8 @@ uint32_t calcCRC(const CPelUnitBuf& pic, PictureHash &digest, const BitDepths &b
   {
     const ComponentID compID = ComponentID(chan);
     const CPelBuf area = pic.get(compID);
-    digestLen = compCRC(bitDepths.recon[toChannelType(compID)], area.bufAt(0, 0), area.width, area.height, area.stride, digest );
+    digestLen =
+      compCRC(bitDepths[toChannelType(compID)], area.bufAt(0, 0), area.width, area.height, area.stride, digest);
   }
   return digestLen;
 }
@@ -174,7 +175,8 @@ uint32_t calcChecksum(const CPelUnitBuf& pic, PictureHash &digest, const BitDept
   {
     const ComponentID compID=ComponentID(chan);
     const CPelBuf area = pic.get(compID);
-    digestLen=compChecksum(bitDepths.recon[toChannelType(compID)], area.bufAt(0,0), area.width, area.height, area.stride, digest, bitDepths);
+    digestLen = compChecksum(bitDepths[toChannelType(compID)], area.bufAt(0, 0), area.width, area.height, area.stride,
+                             digest, bitDepths);
   }
   return digestLen;
 }
@@ -211,7 +213,7 @@ uint32_t calcMD5WithCropping(const CPelUnitBuf &pic, PictureHash &digest, const 
     const int         compRightOffset  = rightOffset >> chromaScaleX;
     const int         compTopOffset    = topOffset >> chromaScaleY;
     const int         compBottomOffset = bottomOffset >> chromaScaleY;
-    md5_plane_func = bitDepths.recon[toChannelType(compID)] <= 8 ? (MD5PlaneFunc)md5_plane<1> : (MD5PlaneFunc)md5_plane<2>;
+    md5_plane_func = bitDepths[toChannelType(compID)] <= 8 ? (MD5PlaneFunc) md5_plane<1> : (MD5PlaneFunc) md5_plane<2>;
     uint8_t tmp_digest[MD5_DIGEST_STRING_LENGTH];
     md5_plane_func(md5[compID], area.bufAt(compLeftOffset, compTopOffset),
                    area.width - compRightOffset - compLeftOffset, area.height - compTopOffset - compBottomOffset,

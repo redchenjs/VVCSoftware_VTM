@@ -549,10 +549,10 @@ void HLSWriter::codeAlfAps( APS* pcAPS )
 {
   AlfParam param = pcAPS->getAlfAPSParam();
 
-  WRITE_FLAG(param.newFilterFlag[CHANNEL_TYPE_LUMA], "alf_luma_new_filter");
+  WRITE_FLAG(param.newFilterFlag[ChannelType::LUMA], "alf_luma_new_filter");
   if (pcAPS->chromaPresentFlag)
   {
-    WRITE_FLAG(param.newFilterFlag[CHANNEL_TYPE_CHROMA], "alf_chroma_new_filter");
+    WRITE_FLAG(param.newFilterFlag[ChannelType::CHROMA], "alf_chroma_new_filter");
   }
 
   CcAlfFilterParam paramCcAlf = pcAPS->getCcAlfAPSParam();
@@ -562,9 +562,9 @@ void HLSWriter::codeAlfAps( APS* pcAPS )
     WRITE_FLAG(paramCcAlf.newCcAlfFilter[COMPONENT_Cr - 1], "alf_cc_cr_filter_signal_flag");
   }
 
-  if (param.newFilterFlag[CHANNEL_TYPE_LUMA])
+  if (param.newFilterFlag[ChannelType::LUMA])
   {
-    WRITE_FLAG( param.nonLinearFlag[CHANNEL_TYPE_LUMA], "alf_luma_clip" );
+    WRITE_FLAG(param.nonLinearFlag[ChannelType::LUMA], "alf_luma_clip");
 
     WRITE_UVLC(param.numLumaFilters - 1, "alf_luma_num_filters_signalled_minus1");
     if (param.numLumaFilters > 1)
@@ -578,9 +578,9 @@ void HLSWriter::codeAlfAps( APS* pcAPS )
     alfFilter(param, false, 0);
   }
 
-  if (param.newFilterFlag[CHANNEL_TYPE_CHROMA])
+  if (param.newFilterFlag[ChannelType::CHROMA])
   {
-    WRITE_FLAG(param.nonLinearFlag[CHANNEL_TYPE_CHROMA], "alf_nonlinear_enable_flag_chroma");
+    WRITE_FLAG(param.nonLinearFlag[ChannelType::CHROMA], "alf_nonlinear_enable_flag_chroma");
     if( MAX_NUM_ALF_ALTERNATIVES_CHROMA > 1 )
     {
       WRITE_UVLC( param.numAlternativesChroma - 1, "alf_chroma_num_alts_minus1" );
@@ -916,9 +916,10 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
   const Profile::Name profile = pcSPS->getProfileTierLevel()->getProfileIdc();
   if (profile != Profile::NONE)
   {
-    CHECK(pcSPS->getBitDepth(CHANNEL_TYPE_LUMA) > ProfileFeatures::getProfileFeatures(profile)->maxBitDepth, "sps_bitdepth_minus8 exceeds range supported by signalled profile");
+    CHECK(pcSPS->getBitDepth(ChannelType::LUMA) > ProfileFeatures::getProfileFeatures(profile)->maxBitDepth,
+          "sps_bitdepth_minus8 exceeds range supported by signalled profile");
   }
-  WRITE_UVLC(pcSPS->getBitDepth(CHANNEL_TYPE_LUMA) - 8, "sps_bitdepth_minus8");
+  WRITE_UVLC(pcSPS->getBitDepth(ChannelType::LUMA) - 8, "sps_bitdepth_minus8");
   WRITE_FLAG( pcSPS->getEntropyCodingSyncEnabledFlag() ? 1 : 0, "sps_entropy_coding_sync_enabled_flag" );
   WRITE_FLAG( pcSPS->getEntryPointsPresentFlag() ? 1 : 0, "sps_entry_point_offsets_present_flag" );
   WRITE_CODE(pcSPS->getBitsForPOC()-4, 4, "sps_log2_max_pic_order_cnt_lsb_minus4");
@@ -960,12 +961,15 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
   }
   if (pcSPS->getUseDualITree())
   {
-    WRITE_UVLC(floorLog2(pcSPS->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA)) - pcSPS->getLog2MinCodingBlockSize(), "sps_log2_diff_min_qt_min_cb_intra_slice_chroma");
+    WRITE_UVLC(floorLog2(pcSPS->getMinQTSize(I_SLICE, ChannelType::CHROMA)) - pcSPS->getLog2MinCodingBlockSize(),
+               "sps_log2_diff_min_qt_min_cb_intra_slice_chroma");
     WRITE_UVLC(pcSPS->getMaxMTTHierarchyDepthIChroma(), "sps_max_mtt_hierarchy_depth_intra_slice_chroma");
     if (pcSPS->getMaxMTTHierarchyDepthIChroma() != 0)
     {
-      WRITE_UVLC(floorLog2(pcSPS->getMaxBTSizeIChroma()) - floorLog2(pcSPS->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA)), "sps_log2_diff_max_bt_min_qt_intra_slice_chroma");
-      WRITE_UVLC(floorLog2(pcSPS->getMaxTTSizeIChroma()) - floorLog2(pcSPS->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA)), "sps_log2_diff_max_tt_min_qt_intra_slice_chroma");
+      WRITE_UVLC(floorLog2(pcSPS->getMaxBTSizeIChroma()) - floorLog2(pcSPS->getMinQTSize(I_SLICE, ChannelType::CHROMA)),
+                 "sps_log2_diff_max_bt_min_qt_intra_slice_chroma");
+      WRITE_UVLC(floorLog2(pcSPS->getMaxTTSizeIChroma()) - floorLog2(pcSPS->getMinQTSize(I_SLICE, ChannelType::CHROMA)),
+                 "sps_log2_diff_max_tt_min_qt_intra_slice_chroma");
     }
   }
   WRITE_UVLC(floorLog2(pcSPS->getMinQTSize(B_SLICE)) - pcSPS->getLog2MinCodingBlockSize(), "sps_log2_diff_min_qt_min_cb_inter_slice");
@@ -1153,7 +1157,7 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
   }
   if (pcSPS->getTransformSkipEnabledFlag() || pcSPS->getPLTMode())
   {
-    WRITE_UVLC(pcSPS->getInternalMinusInputBitDepth(CHANNEL_TYPE_LUMA),                         "sps_internal_bit_depth_minus_input_bit_depth");
+    WRITE_UVLC(pcSPS->getInternalMinusInputBitDepth(ChannelType::LUMA), "sps_internal_bit_depth_minus_input_bit_depth");
   }
   WRITE_FLAG(pcSPS->getIBCFlag() ? 1 : 0,                                                      "sps_ibc_enabled_flag");
   if (pcSPS->getIBCFlag())
@@ -1299,7 +1303,7 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
       "sps_extension_7bits[6]" };
 #endif
 
-    if (pcSPS->getBitDepth(CHANNEL_TYPE_LUMA) <= 10)
+    if (pcSPS->getBitDepth(ChannelType::LUMA) <= 10)
     {
       CHECK((sps_extension_flags[SPS_EXT__REXT] == 1),
             "The value of sps_range_extension_flag shall be 0 when BitDepth is less than or equal to 10.");
@@ -1947,12 +1951,18 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
 
       if (sps->getUseDualITree())
       {
-        WRITE_UVLC(floorLog2(picHeader->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA)) - sps->getLog2MinCodingBlockSize(), "ph_log2_diff_min_qt_min_cb_intra_slice_chroma");
-        WRITE_UVLC(picHeader->getMaxMTTHierarchyDepth(I_SLICE, CHANNEL_TYPE_CHROMA), "ph_max_mtt_hierarchy_depth_intra_slice_chroma");
-        if (picHeader->getMaxMTTHierarchyDepth(I_SLICE, CHANNEL_TYPE_CHROMA) != 0)
+        WRITE_UVLC(floorLog2(picHeader->getMinQTSize(I_SLICE, ChannelType::CHROMA)) - sps->getLog2MinCodingBlockSize(),
+                   "ph_log2_diff_min_qt_min_cb_intra_slice_chroma");
+        WRITE_UVLC(picHeader->getMaxMTTHierarchyDepth(I_SLICE, ChannelType::CHROMA),
+                   "ph_max_mtt_hierarchy_depth_intra_slice_chroma");
+        if (picHeader->getMaxMTTHierarchyDepth(I_SLICE, ChannelType::CHROMA) != 0)
         {
-          WRITE_UVLC(floorLog2(picHeader->getMaxBTSize(I_SLICE, CHANNEL_TYPE_CHROMA)) - floorLog2(picHeader->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA)), "ph_log2_diff_max_bt_min_qt_intra_slice_chroma");
-          WRITE_UVLC(floorLog2(picHeader->getMaxTTSize(I_SLICE, CHANNEL_TYPE_CHROMA)) - floorLog2(picHeader->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA)), "ph_log2_diff_max_tt_min_qt_intra_slice_chroma");
+          WRITE_UVLC(floorLog2(picHeader->getMaxBTSize(I_SLICE, ChannelType::CHROMA))
+                       - floorLog2(picHeader->getMinQTSize(I_SLICE, ChannelType::CHROMA)),
+                     "ph_log2_diff_max_bt_min_qt_intra_slice_chroma");
+          WRITE_UVLC(floorLog2(picHeader->getMaxTTSize(I_SLICE, ChannelType::CHROMA))
+                       - floorLog2(picHeader->getMinQTSize(I_SLICE, ChannelType::CHROMA)),
+                     "ph_log2_diff_max_tt_min_qt_intra_slice_chroma");
         }
       }
     }
@@ -2111,22 +2121,22 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
   {
     if (pps->getSaoInfoInPhFlag())
     {
-      WRITE_FLAG(picHeader->getSaoEnabledFlag(CHANNEL_TYPE_LUMA), "ph_sao_luma_enabled_flag");
+      WRITE_FLAG(picHeader->getSaoEnabledFlag(ChannelType::LUMA), "ph_sao_luma_enabled_flag");
       if (sps->getChromaFormatIdc() != CHROMA_400)
       {
-        WRITE_FLAG(picHeader->getSaoEnabledFlag(CHANNEL_TYPE_CHROMA), "ph_sao_chroma_enabled_flag");
+        WRITE_FLAG(picHeader->getSaoEnabledFlag(ChannelType::CHROMA), "ph_sao_chroma_enabled_flag");
       }
     }
     else
     {
-      picHeader->setSaoEnabledFlag(CHANNEL_TYPE_LUMA,   true);
-      picHeader->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, true);
+      picHeader->setSaoEnabledFlag(ChannelType::LUMA, true);
+      picHeader->setSaoEnabledFlag(ChannelType::CHROMA, true);
     }
   }
   else
   {
-    picHeader->setSaoEnabledFlag(CHANNEL_TYPE_LUMA,   false);
-    picHeader->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, false);
+    picHeader->setSaoEnabledFlag(ChannelType::LUMA, false);
+    picHeader->setSaoEnabledFlag(ChannelType::CHROMA, false);
   }
 
   // deblocking filter controls
@@ -2538,10 +2548,10 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
 
   if (pcSlice->getSPS()->getSAOEnabledFlag() && !pcSlice->getPPS()->getSaoInfoInPhFlag())
   {
-    WRITE_FLAG(pcSlice->getSaoEnabledFlag(CHANNEL_TYPE_LUMA), "sh_sao_luma_used_flag");
+    WRITE_FLAG(pcSlice->getSaoEnabledFlag(ChannelType::LUMA), "sh_sao_luma_used_flag");
     if (chromaEnabled)
     {
-      WRITE_FLAG(pcSlice->getSaoEnabledFlag(CHANNEL_TYPE_CHROMA), "sh_sao_chroma_used_flag");
+      WRITE_FLAG(pcSlice->getSaoEnabledFlag(ChannelType::CHROMA), "sh_sao_chroma_used_flag");
     }
   }
 
@@ -2916,7 +2926,9 @@ void HLSWriter::xCodePredWeightTable( Slice* pcSlice )
               int deltaWeight = (wp[j].codedWeight - (1 << wp[COMPONENT_Cb].log2WeightDenom));
               WRITE_SVLC(deltaWeight, listIdx == 0 ? "delta_chroma_weight_l0[i]" : "delta_chroma_weight_l1[i]");
 
-              int range=pcSlice->getSPS()->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag() ? (1<<pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_CHROMA))/2 : 128;
+              int range        = pcSlice->getSPS()->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag()
+                                   ? (1 << pcSlice->getSPS()->getBitDepth(ChannelType::CHROMA)) / 2
+                                   : 128;
               int pred         = (range - ((range * wp[j].codedWeight) >> (wp[j].log2WeightDenom)));
               int deltaChroma  = (wp[j].codedOffset - pred);
               WRITE_SVLC(deltaChroma, listIdx == 0 ? "delta_chroma_offset_l0[i]" : "delta_chroma_offset_l1[i]");
@@ -2998,7 +3010,9 @@ void HLSWriter::xCodePredWeightTable(PicHeader *picHeader, const PPS *pps, const
             int deltaWeight = (wp[j].codedWeight - (1 << wp[COMPONENT_Cb].log2WeightDenom));
             WRITE_SVLC(deltaWeight, numRef == 0 ? "delta_chroma_weight_l0[i]" : "delta_chroma_weight_l1[i]");
 
-            int range = sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag() ? (1 << sps->getBitDepth(CHANNEL_TYPE_CHROMA)) / 2 : 128;
+            int range       = sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag()
+                                ? (1 << sps->getBitDepth(ChannelType::CHROMA)) / 2
+                                : 128;
             int pred        = (range - ((range * wp[j].codedWeight) >> (wp[j].log2WeightDenom)));
             int deltaChroma = (wp[j].codedOffset - pred);
             WRITE_SVLC(deltaChroma, numRef == 0 ? "delta_chroma_offset_l0[i]" : "delta_chroma_offset_l1[i]");
@@ -3154,7 +3168,7 @@ void HLSWriter::alfFilter( const AlfParam& alfParam, const bool isChroma, const 
   }
 
   // Clipping values coding
-  if( alfParam.nonLinearFlag[isChroma] )
+  if (alfParam.nonLinearFlag[isChroma ? ChannelType::CHROMA : ChannelType::LUMA])
   {
     for (int ind = 0; ind < numFilters; ++ind)
     {

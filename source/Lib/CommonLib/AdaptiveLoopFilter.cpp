@@ -42,7 +42,7 @@
 #include <array>
 #include <cmath>
 
-constexpr int AdaptiveLoopFilter::ALF_NUM_CLIP_VALS[];
+const EnumArray<int, ChannelType> AdaptiveLoopFilter::ALF_NUM_CLIP_VALS = { 4, 4 };
 
 AdaptiveLoopFilter::AdaptiveLoopFilter()
   : m_classifier( nullptr )
@@ -118,14 +118,15 @@ bool AdaptiveLoopFilter::isCrossedByVirtualBoundaries( const CodingStructure& cs
   const Slice& slice = *(cs.slice);
   int   ctuSize = slice.getSPS()->getCTUSize();
   const Position currCtuPos(xPos, yPos);
-  const CodingUnit *currCtu = cs.getCU(currCtuPos, CHANNEL_TYPE_LUMA);
+  const CodingUnit *currCtu   = cs.getCU(currCtuPos, ChannelType::LUMA);
   const SubPic& curSubPic = slice.getPPS()->getSubPicFromPos(currCtuPos);
+
   bool loopFilterAcrossSubPicEnabledFlag = curSubPic.getloopFilterAcrossEnabledFlag();
   //top
   if (yPos >= ctuSize && clipTop == false)
   {
     const Position prevCtuPos(xPos, yPos - ctuSize);
-    const CodingUnit *prevCtu = cs.getCU(prevCtuPos, CHANNEL_TYPE_LUMA);
+    const CodingUnit *prevCtu = cs.getCU(prevCtuPos, ChannelType::LUMA);
     if ((!pps->getLoopFilterAcrossSlicesEnabledFlag() && !CU::isSameSlice(*currCtu, *prevCtu)) ||
         (!pps->getLoopFilterAcrossTilesEnabledFlag()  && !CU::isSameTile(*currCtu,  *prevCtu))
       || (!loopFilterAcrossSubPicEnabledFlag && !CU::isSameSubPic(*currCtu, *prevCtu))
@@ -139,7 +140,7 @@ bool AdaptiveLoopFilter::isCrossedByVirtualBoundaries( const CodingStructure& cs
   if (yPos + ctuSize < cs.pcv->lumaHeight && clipBottom == false)
   {
     const Position nextCtuPos(xPos, yPos + ctuSize);
-    const CodingUnit *nextCtu = cs.getCU(nextCtuPos, CHANNEL_TYPE_LUMA);
+    const CodingUnit *nextCtu = cs.getCU(nextCtuPos, ChannelType::LUMA);
     if ((!pps->getLoopFilterAcrossSlicesEnabledFlag() && !CU::isSameSlice(*currCtu, *nextCtu)) ||
         (!pps->getLoopFilterAcrossTilesEnabledFlag()  && !CU::isSameTile(*currCtu,  *nextCtu))
       || (!loopFilterAcrossSubPicEnabledFlag && !CU::isSameSubPic(*currCtu, *nextCtu))
@@ -153,7 +154,7 @@ bool AdaptiveLoopFilter::isCrossedByVirtualBoundaries( const CodingStructure& cs
   if (xPos >= ctuSize && clipLeft == false)
   {
     const Position prevCtuPos(xPos - ctuSize, yPos);
-    const CodingUnit *prevCtu = cs.getCU(prevCtuPos, CHANNEL_TYPE_LUMA);
+    const CodingUnit *prevCtu = cs.getCU(prevCtuPos, ChannelType::LUMA);
     if ((!pps->getLoopFilterAcrossSlicesEnabledFlag() && !CU::isSameSlice(*currCtu, *prevCtu)) ||
         (!pps->getLoopFilterAcrossTilesEnabledFlag()  && !CU::isSameTile(*currCtu,  *prevCtu))
       || (!loopFilterAcrossSubPicEnabledFlag && !CU::isSameSubPic(*currCtu, *prevCtu))
@@ -167,7 +168,7 @@ bool AdaptiveLoopFilter::isCrossedByVirtualBoundaries( const CodingStructure& cs
   if (xPos + ctuSize < cs.pcv->lumaWidth && clipRight == false)
   {
     const Position nextCtuPos(xPos + ctuSize, yPos);
-    const CodingUnit *nextCtu = cs.getCU(nextCtuPos, CHANNEL_TYPE_LUMA);
+    const CodingUnit *nextCtu = cs.getCU(nextCtuPos, ChannelType::LUMA);
     if ((!pps->getLoopFilterAcrossSlicesEnabledFlag() && !CU::isSameSlice(*currCtu, *nextCtu)) ||
         (!pps->getLoopFilterAcrossTilesEnabledFlag()  && !CU::isSameTile(*currCtu,  *nextCtu))
       || (!loopFilterAcrossSubPicEnabledFlag && !CU::isSameSubPic(*currCtu, *nextCtu))
@@ -184,7 +185,7 @@ bool AdaptiveLoopFilter::isCrossedByVirtualBoundaries( const CodingStructure& cs
     if ( xPos >= ctuSize && yPos >= ctuSize )
     {
       const Position prevCtuPos( xPos - ctuSize, yPos - ctuSize );
-      const CodingUnit *prevCtu = cs.getCU( prevCtuPos, CHANNEL_TYPE_LUMA );
+      const CodingUnit *prevCtu = cs.getCU(prevCtuPos, ChannelType::LUMA);
       if ( !pps->getLoopFilterAcrossSlicesEnabledFlag() && !CU::isSameSlice( *currCtu, *prevCtu ) )
       {
         rasterSliceAlfPad = 1;
@@ -198,7 +199,7 @@ bool AdaptiveLoopFilter::isCrossedByVirtualBoundaries( const CodingStructure& cs
     if ( xPos + ctuSize < cs.pcv->lumaWidth && yPos + ctuSize < cs.pcv->lumaHeight )
     {
       const Position nextCtuPos( xPos + ctuSize, yPos + ctuSize );
-      const CodingUnit *nextCtu = cs.getCU( nextCtuPos, CHANNEL_TYPE_LUMA );
+      const CodingUnit *nextCtu = cs.getCU(nextCtuPos, ChannelType::LUMA);
       if ( !pps->getLoopFilterAcrossSlicesEnabledFlag() && !CU::isSameSlice( *currCtu, *nextCtu ) )
       {
         rasterSliceAlfPad += 2;
@@ -437,7 +438,7 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
     for( int xPos = 0; xPos < pcv.lumaWidth; xPos += pcv.maxCUWidth )
     {
       // get first CU in CTU
-      const CodingUnit *cu = cs.getCU( Position(xPos, yPos), CHANNEL_TYPE_LUMA );
+      const CodingUnit *cu = cs.getCU(Position(xPos, yPos), ChannelType::LUMA);
 
       // skip this CTU if ALF is disabled
       if (!cu->slice->getAlfEnabledFlag(COMPONENT_Y) && !cu->slice->getAlfEnabledFlag(COMPONENT_Cb) && !cu->slice->getAlfEnabledFlag(COMPONENT_Cr))
@@ -659,7 +660,7 @@ void AdaptiveLoopFilter::reconstructCoeffAPSs(CodingStructure& cs, bool luma, bo
       curAPS = aps[apsIdx];
       CHECK(curAPS == nullptr, "invalid APS");
       alfParamTmp = curAPS->getAlfAPSParam();
-      reconstructCoeff(alfParamTmp, CHANNEL_TYPE_LUMA, isRdo, true);
+      reconstructCoeff(alfParamTmp, ChannelType::LUMA, isRdo, true);
       memcpy(m_coeffApsLuma[i], m_coeffFinal, sizeof(m_coeffFinal));
       memcpy(m_clippApsLuma[i], m_clippFinal, sizeof(m_clippFinal));
     }
@@ -672,11 +673,12 @@ void AdaptiveLoopFilter::reconstructCoeffAPSs(CodingStructure& cs, bool luma, bo
     curAPS = aps[apsIdxChroma];
     m_alfParamChroma = &curAPS->getAlfAPSParam();
     alfParamTmp = *m_alfParamChroma;
-    reconstructCoeff(alfParamTmp, CHANNEL_TYPE_CHROMA, isRdo, true);
+    reconstructCoeff(alfParamTmp, ChannelType::CHROMA, isRdo, true);
   }
 }
 
-void AdaptiveLoopFilter::reconstructCoeff( AlfParam& alfParam, ChannelType channel, const bool isRdo, const bool isRedo )
+void AdaptiveLoopFilter::reconstructCoeff(AlfParam &alfParam, const ChannelType channel, const bool isRdo,
+                                          const bool isRedo)
 {
   const int factor = isRdo ? 0 : 1 << COEFF_SCALE_BITS;
 
@@ -702,7 +704,7 @@ void AdaptiveLoopFilter::reconstructCoeff( AlfParam& alfParam, ChannelType chann
       for( int coeffIdx = 0; coeffIdx < numCoeffMinus1; ++coeffIdx )
       {
         m_chromaCoeffFinal[altIdx][coeffIdx] = coeff[coeffIdx];
-        int clipIdx = alfParam.nonLinearFlag[channel] ? clipp[coeffIdx] : 0;
+        const int clipIdx                    = alfParam.nonLinearFlag[channel] ? clipp[coeffIdx] : 0;
         m_chromaClippFinal[altIdx][coeffIdx] = isRdo ? clipIdx : m_alfClippingValues[channel][clipIdx];
       }
       m_chromaCoeffFinal[altIdx][numCoeffMinus1] = factor;
@@ -719,24 +721,25 @@ void AdaptiveLoopFilter::reconstructCoeff( AlfParam& alfParam, ChannelType chann
         m_coeffFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx] = coeff[filterIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx];
       }
       m_coeffFinal[classIdx* MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1] = factor;
-      m_clippFinal[classIdx* MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1] = isRdo ? 0 : m_alfClippingValues[channel][0];
+      m_clippFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1] = isRdo ? 0 : m_alfClippingValues[channel][0];
       for( int coeffIdx = 0; coeffIdx < numCoeffMinus1; ++coeffIdx )
       {
         int clipIdx = alfParam.nonLinearFlag[channel] ? clipp[filterIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx] : 0;
         CHECK(!(clipIdx >= 0 && clipIdx < MAX_ALF_NUM_CLIP_VALS), "Bad clip idx in ALF");
-        m_clippFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx] = isRdo ? clipIdx : m_alfClippingValues[channel][clipIdx];
+        m_clippFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx] =
+          isRdo ? clipIdx : m_alfClippingValues[channel][clipIdx];
       }
-      m_clippFinal[classIdx* MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1] =
-        isRdo ? 0 :
-        m_alfClippingValues[channel][0];
+      m_clippFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1] = isRdo ? 0 : m_alfClippingValues[channel][0];
     }
   }
 }
 
-void AdaptiveLoopFilter::create( const int picWidth, const int picHeight, const ChromaFormat format, const int maxCUWidth, const int maxCUHeight, const int maxCUDepth, const int inputBitDepth[MAX_NUM_CHANNEL_TYPE] )
+void AdaptiveLoopFilter::create(const int picWidth, const int picHeight, const ChromaFormat format,
+                                const int maxCUWidth, const int maxCUHeight, const int maxCUDepth,
+                                const BitDepths &inputBitDepth)
 {
   destroy();
-  std::memcpy( m_inputBitDepth, inputBitDepth, sizeof( m_inputBitDepth ) );
+  m_inputBitDepth = inputBitDepth;
   m_picWidth = picWidth;
   m_picHeight = picHeight;
   m_maxCUWidth = maxCUWidth;
@@ -749,28 +752,27 @@ void AdaptiveLoopFilter::create( const int picWidth, const int picHeight, const 
   m_numCTUsInPic = m_numCTUsInHeight * m_numCTUsInWidth;
   m_filterShapesCcAlf[0].push_back(AlfFilterShape(size_CC_ALF));
   m_filterShapesCcAlf[1].push_back(AlfFilterShape(size_CC_ALF));
-  m_filterShapes[CHANNEL_TYPE_LUMA].push_back( AlfFilterShape( 7 ) );
-  m_filterShapes[CHANNEL_TYPE_CHROMA].push_back( AlfFilterShape( 5 ) );
+  m_filterShapes[ChannelType::LUMA].push_back(AlfFilterShape(7));
+  m_filterShapes[ChannelType::CHROMA].push_back(AlfFilterShape(5));
   m_alfVBLumaPos = m_maxCUHeight - ALF_VB_POS_ABOVE_CTUROW_LUMA;
   m_alfVBChmaPos = (m_maxCUHeight >> ((m_chromaFormat == CHROMA_420) ? 1 : 0)) - ALF_VB_POS_ABOVE_CTUROW_CHMA;
 
   m_alfVBLumaCTUHeight = m_maxCUHeight;
   m_alfVBChmaCTUHeight = (m_maxCUHeight >> ((m_chromaFormat == CHROMA_420) ? 1 : 0));
 
-  static_assert(ALF_NUM_CLIP_VALS[CHANNEL_TYPE_LUMA] > 0, "ALF_NUM_CLIP_VALS[CHANNEL_TYPE_LUMA] must be at least one");
-  m_alfClippingValues[CHANNEL_TYPE_LUMA][0] = 1 << m_inputBitDepth[CHANNEL_TYPE_LUMA];
-  int shiftLuma = m_inputBitDepth[CHANNEL_TYPE_LUMA] - 8;
-  for (int i = 1; i < ALF_NUM_CLIP_VALS[CHANNEL_TYPE_LUMA]; ++i)
+  CHECK(ALF_NUM_CLIP_VALS[ChannelType::LUMA] < 1, "ALF_NUM_CLIP_VALS[ChannelType::LUMA] must be at least one");
+  m_alfClippingValues[ChannelType::LUMA][0] = 1 << m_inputBitDepth[ChannelType::LUMA];
+  int shiftLuma                             = m_inputBitDepth[ChannelType::LUMA] - 8;
+  for (int i = 1; i < ALF_NUM_CLIP_VALS[ChannelType::LUMA]; ++i)
   {
-    m_alfClippingValues[CHANNEL_TYPE_LUMA][i] = 1 << (7 - 2 * i + shiftLuma);
+    m_alfClippingValues[ChannelType::LUMA][i] = 1 << (7 - 2 * i + shiftLuma);
   }
-  static_assert(ALF_NUM_CLIP_VALS[CHANNEL_TYPE_CHROMA] > 0,
-                "ALF_NUM_CLIP_VALS[CHANNEL_TYPE_CHROMA] must be at least one");
-  m_alfClippingValues[CHANNEL_TYPE_CHROMA][0] = 1 << m_inputBitDepth[CHANNEL_TYPE_CHROMA];
-  int shiftChroma = m_inputBitDepth[CHANNEL_TYPE_CHROMA] - 8;
-  for (int i = 1; i < ALF_NUM_CLIP_VALS[CHANNEL_TYPE_CHROMA]; ++i)
+  CHECK(ALF_NUM_CLIP_VALS[ChannelType::CHROMA] < 1, "ALF_NUM_CLIP_VALS[ChannelType::CHROMA] must be at least one");
+  m_alfClippingValues[ChannelType::CHROMA][0] = 1 << m_inputBitDepth[ChannelType::CHROMA];
+  int shiftChroma                             = m_inputBitDepth[ChannelType::CHROMA] - 8;
+  for (int i = 1; i < ALF_NUM_CLIP_VALS[ChannelType::CHROMA]; ++i)
   {
-    m_alfClippingValues[CHANNEL_TYPE_CHROMA][i] = 1 << (7 - 2 * i + shiftChroma);
+    m_alfClippingValues[ChannelType::CHROMA][i] = 1 << (7 - 2 * i + shiftChroma);
   }
   if (m_created)
   {
@@ -811,7 +813,7 @@ void AdaptiveLoopFilter::create( const int picWidth, const int picHeight, const 
   }
   for (int i = 0; i < MAX_NUM_ALF_LUMA_COEFF * MAX_NUM_ALF_CLASSES; i++)
   {
-    m_clipDefault[i] = m_alfClippingValues[CHANNEL_TYPE_LUMA][0];
+    m_clipDefault[i] = m_alfClippingValues[ChannelType::LUMA][0];
   }
   m_created = true;
 
@@ -835,8 +837,8 @@ void AdaptiveLoopFilter::destroy()
 
   m_tempBuf.destroy();
   m_tempBuf2.destroy();
-  m_filterShapes[CHANNEL_TYPE_LUMA].clear();
-  m_filterShapes[CHANNEL_TYPE_CHROMA].clear();
+  m_filterShapes[ChannelType::LUMA].clear();
+  m_filterShapes[ChannelType::CHROMA].clear();
   m_created = false;
 
   m_filterShapesCcAlf[0].clear();
@@ -866,10 +868,10 @@ void AdaptiveLoopFilter::deriveClassification( AlfClassifier** classifier, const
     for( int j = blk.pos().x; j < width; j += m_CLASSIFICATION_BLK_SIZE )
     {
       int nWidth = std::min( j + m_CLASSIFICATION_BLK_SIZE, width ) - j;
-      m_deriveClassificationBlk(classifier, m_laplacian, srcLuma, Area( j - blk.pos().x + blkDst.pos().x, i - blk.pos().y + blkDst.pos().y, nWidth, nHeight ), Area(j, i, nWidth, nHeight), m_inputBitDepth[CHANNEL_TYPE_LUMA] + 4
-        , m_alfVBLumaCTUHeight
-        , m_alfVBLumaPos
-      );
+      m_deriveClassificationBlk(
+        classifier, m_laplacian, srcLuma,
+        Area(j - blk.pos().x + blkDst.pos().x, i - blk.pos().y + blkDst.pos().y, nWidth, nHeight),
+        Area(j, i, nWidth, nHeight), m_inputBitDepth[ChannelType::LUMA] + 4, m_alfVBLumaCTUHeight, m_alfVBLumaPos);
     }
   }
 }

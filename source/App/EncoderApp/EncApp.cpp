@@ -342,7 +342,8 @@ void EncApp::xInitLibCfg( int layerIdx )
     CHECK(m_noResChangeInClvsConstraintFlag && m_resChangeInClvsEnabled, "Resolution change in CLVS shall be deactivated when m_noResChangeInClvsConstraintFlag is equal to 1");
 
     m_cEncLib.setMaxBitDepthConstraintIdc(m_maxBitDepthConstraintIdc);
-    CHECK(m_internalBitDepth[CHANNEL_TYPE_LUMA] > m_maxBitDepthConstraintIdc, "Internal bit depth shall be less than or equal to m_maxBitDepthConstraintIdc");
+    CHECK(m_internalBitDepth[ChannelType::LUMA] > m_maxBitDepthConstraintIdc,
+          "Internal bit depth shall be less than or equal to m_maxBitDepthConstraintIdc");
 
     m_cEncLib.setMaxChromaFormatConstraintIdc(m_maxChromaFormatConstraintIdc);
     CHECK(m_chromaFormatIDC > m_maxChromaFormatConstraintIdc, "Chroma format Idc shall be less than or equal to m_maxBitDepthConstraintIdc");
@@ -714,7 +715,7 @@ void EncApp::xInitLibCfg( int layerIdx )
 
   m_cEncLib.setUseSplitConsOverride                              ( m_SplitConsOverrideEnabledFlag );
   // convert the Intra Chroma minQT setting from chroma unit to luma unit
-  m_minQt[2] <<= getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, m_chromaFormatIDC);
+  m_minQt[2] <<= getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC);
   m_cEncLib.setMinQTSizes(m_minQt);
   m_cEncLib.setMaxMTTHierarchyDepth                              ( m_uiMaxMTTHierarchyDepth, m_uiMaxMTTHierarchyDepthI, m_uiMaxMTTHierarchyDepthIChroma );
   m_cEncLib.setMaxBTSizes(m_maxBt);
@@ -839,10 +840,10 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setDisableFastDecisionTT                             (m_disableFastDecisionTT);
 
   // set internal bit-depth and constants
-  for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
+  for (const auto channelType: { ChannelType::LUMA, ChannelType::CHROMA })
   {
-    m_cEncLib.setBitDepth((ChannelType)channelType, m_internalBitDepth[channelType]);
-    m_cEncLib.setInputBitDepth((ChannelType)channelType, m_inputBitDepth[channelType]);
+    m_cEncLib.setBitDepth(channelType, m_internalBitDepth[channelType]);
+    m_cEncLib.setInputBitDepth(channelType, m_inputBitDepth[channelType]);
   }
 
   m_cEncLib.setMaxNumMergeCand                                   ( m_maxNumMergeCand );
@@ -1427,13 +1428,17 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
 #endif
   if (!m_reconFileName.empty())
   {
-    if (m_packedYUVMode && ((m_outputBitDepth[CH_L] != 10 && m_outputBitDepth[CH_L] != 12)
-        || ((m_sourceWidth & (1 + (m_outputBitDepth[CH_L] & 3))) != 0)))
+    if (m_packedYUVMode
+        && ((m_outputBitDepth[ChannelType::LUMA] != 10 && m_outputBitDepth[ChannelType::LUMA] != 12)
+            || ((m_sourceWidth & (1 + (m_outputBitDepth[ChannelType::LUMA] & 3))) != 0)))
     {
       EXIT ("Invalid output bit-depth or image width for packed YUV output, aborting\n");
     }
-    if (m_packedYUVMode && (m_chromaFormatIDC != CHROMA_400) && ((m_outputBitDepth[CH_C] != 10 && m_outputBitDepth[CH_C] != 12)
-        || (((m_sourceWidth / SPS::getWinUnitX (m_chromaFormatIDC)) & (1 + (m_outputBitDepth[CH_C] & 3))) != 0)))
+    if (m_packedYUVMode && (m_chromaFormatIDC != CHROMA_400)
+        && ((m_outputBitDepth[ChannelType::CHROMA] != 10 && m_outputBitDepth[ChannelType::CHROMA] != 12)
+            || (((m_sourceWidth / SPS::getWinUnitX(m_chromaFormatIDC))
+                 & (1 + (m_outputBitDepth[ChannelType::CHROMA] & 3)))
+                != 0)))
     {
       EXIT ("Invalid chroma output bit-depth or image width for packed YUV output, aborting\n");
     }
@@ -1457,7 +1462,7 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
       const auto sy = SPS::getWinUnitY(m_chromaFormatIDC);
       m_cVideoIOYuvReconFile.setOutputY4mInfo(m_sourceWidth - (m_confWinLeft + m_confWinRight) * sx,
                                               m_sourceHeight - (m_confWinTop + m_confWinBottom) * sy, m_frameRate, 1,
-                                              m_internalBitDepth[0], m_chromaFormatIDC);
+                                              m_internalBitDepth[ChannelType::LUMA], m_chromaFormatIDC);
     }
     m_cVideoIOYuvReconFile.open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, m_internalBitDepth );  // write mode
   }
