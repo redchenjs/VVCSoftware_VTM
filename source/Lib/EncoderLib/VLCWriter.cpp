@@ -111,6 +111,17 @@ void  VLCWriter::xWriteFlagTr(uint32_t value, const char *pSymbolName)
   }
 }
 
+#ifdef JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+void  VLCWriter::xWriteStringTr(std::string value, const char* pSymbolName)
+{
+  xWriteString(value);
+  if (g_HLSTraceEnable)
+  {
+    DTRACE(g_trace_ctx, D_HEADER, "%-50s st(v)  : %s\n", pSymbolName, value);
+  }
+}
+#endif
+
 bool g_HLSTraceEnable = true;
 
 #endif
@@ -155,6 +166,17 @@ void VLCWriter::xWriteFlag( uint32_t uiCode )
 {
   m_pcBitIf->write( uiCode, 1 );
 }
+
+#ifdef JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+void VLCWriter::xWriteString(std::string code)
+{
+  for (int i = 0; i < code.length(); ++i)
+  {
+    m_pcBitIf->write(code[i], 8);
+  }
+  m_pcBitIf->write('\0', 8);
+}
+#endif
 
 void VLCWriter::xWriteRbspTrailingBits()
 {

@@ -1144,6 +1144,10 @@ public:
 #endif
   , m_payloadByte(nullptr)
   , m_complexityIdc(0)
+#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+  , m_uriTag("")
+  , m_uri("")
+#endif
 #if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   , m_parameterTypeIdc(0)
 #else
@@ -1206,6 +1210,10 @@ public:
   uint64_t       m_payloadLength;
   char*          m_payloadByte;
   uint32_t       m_complexityIdc;
+#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+  std::string    m_uriTag;
+  std::string    m_uri;
+#endif
 #if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   uint32_t       m_parameterTypeIdc;
 #else

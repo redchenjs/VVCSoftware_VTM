@@ -97,6 +97,18 @@ void  VLCReader::xReadFlagTr(uint32_t& rValue, const char *pSymbolName)
   DTRACE( g_trace_ctx, D_HEADER, "%-50s u(1)  : %d\n", pSymbolName, rValue );
 }
 
+#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+void  VLCReader::xReadStringTr(std::string& rValue, const char* pSymbolName)
+{
+#if RExt__DECODER_DEBUG_BIT_STATISTICS
+  xReadString(rValue, pSymbolName);
+#else
+  xReadString(rValue);
+#endif
+  DTRACE(g_trace_ctx, D_HEADER, "%-50s u(1)  : %s\n", pSymbolName, rValue);
+}
+#endif
+
 #endif
 
 #if RExt__DECODER_DEBUG_BIT_STATISTICS || ENABLE_TRACING
@@ -228,6 +240,25 @@ void VLCReader::xReadFlag (uint32_t& ruiCode)
   CodingStatistics::IncrementStatisticEP(pSymbolName, 1, int(/*ruiCode*/0));
 #endif
 }
+#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+#if RExt__DECODER_DEBUG_BIT_STATISTICS
+void VLCReader::xReadString(std::string& code, const char* symbolName)
+#else
+void VLCReader::xReadString(std::string& code)
+#endif
+{
+  uint32_t uiCode;
+  char* codeIn = (char*)&uiCode;
+  *codeIn = ' ';
+  while (*codeIn != '\0')
+  {
+    m_pcBitstream->read(8, uiCode);
+    codeIn = (char*)&uiCode;
+    code.append(codeIn);
+  }
+
+}
+#endif
 
 void VLCReader::xReadRbspTrailingBits()
 {
