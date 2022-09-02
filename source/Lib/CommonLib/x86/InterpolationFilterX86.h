@@ -2484,10 +2484,12 @@ void InterpolationFilter::_initInterpolationFilterX86()
   m_filterHor[_2_TAPS_DMVR][1][0] = simdFilter<vext, 2, false, true, false, true>;
   m_filterHor[_2_TAPS_DMVR][1][1] = simdFilter<vext, 2, false, true, true, true>;
 
+#if !RExt__HIGH_BIT_DEPTH_SUPPORT   // SIMD code for HBD doesn't support 6 taps
   m_filterHor[_6_TAPS][0][0] = simdFilter<vext, 6, false, false, false, false>;
   m_filterHor[_6_TAPS][0][1] = simdFilter<vext, 6, false, false, true, false>;
   m_filterHor[_6_TAPS][1][0] = simdFilter<vext, 6, false, true, false, false>;
   m_filterHor[_6_TAPS][1][1] = simdFilter<vext, 6, false, true, true, false>;
+#endif
 
   m_filterVer[_8_TAPS][0][0] = simdFilter<vext, 8, true, false, false, false>;
   m_filterVer[_8_TAPS][0][1] = simdFilter<vext, 8, true, false, true, false>;
