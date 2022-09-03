@@ -411,16 +411,9 @@ void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
   pu.mmvdEncOptMode = 0;
 }
 
-void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
+void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
 {
   const Slice &slice = *pu.cs->slice;
-  const int mvShift = MV_FRACTIONAL_BITS_DIFF;
-  const int refMvdCands[8] = { 1 << mvShift , 2 << mvShift , 4 << mvShift , 8 << mvShift , 16 << mvShift , 32 << mvShift,  64 << mvShift , 128 << mvShift };
-  int fPosGroup = 0;
-  int fPosBaseIdx = 0;
-  int fPosStep = 0;
-  int tempIdx = 0;
-  int fPosPosition = 0;
   Mv tempMv[2];
 
 #if GDR_ENABLED
@@ -428,14 +421,11 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
   const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
-  tempIdx = candIdx;
-  fPosGroup = tempIdx / (MMVD_BASE_MV_NUM * MMVD_MAX_REFINE_NUM);
-  tempIdx = tempIdx - fPosGroup * (MMVD_BASE_MV_NUM * MMVD_MAX_REFINE_NUM);
-  fPosBaseIdx = tempIdx / MMVD_MAX_REFINE_NUM;
-  tempIdx = tempIdx - fPosBaseIdx * (MMVD_MAX_REFINE_NUM);
-  fPosStep = tempIdx / 4;
-  fPosPosition = tempIdx - fPosStep * (4);
-  int offset = refMvdCands[fPosStep];
+  const int fPosBaseIdx  = candIdx.pos.baseIdx;
+  const int fPosStep     = candIdx.pos.step;
+  const int fPosPosition = candIdx.pos.position;
+
+  int offset = 1 << (fPosStep + MV_FRACTIONAL_BITS_DIFF);
   if ( pu.cu->slice->getPicHeader()->getDisFracMMVD() )
   {
     offset <<= 2;
@@ -625,12 +615,13 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
 #endif
   }
 
-  pu.mmvdMergeFlag = true;
-  pu.mmvdMergeIdx = candIdx;
-  pu.mergeFlag = true;
+  pu.mmvdMergeFlag    = true;
+  pu.mmvdMergeIdx     = candIdx;
+  pu.mergeFlag        = true;
   pu.regularMergeFlag = true;
-  pu.mergeIdx = candIdx;
-  pu.mergeType = MRG_TYPE_DEFAULT_N;
+  pu.mergeIdx         = candIdx.val;
+  pu.mergeType        = MRG_TYPE_DEFAULT_N;
+
   pu.mvd[REF_PIC_LIST_0] = Mv();
   pu.mvd[REF_PIC_LIST_1] = Mv();
   pu.mvpIdx[REF_PIC_LIST_0] = NOT_VALID;

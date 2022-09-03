@@ -2114,21 +2114,20 @@ void CABACWriter::merge_idx( const PredictionUnit& pu )
 }
 void CABACWriter::mmvd_merge_idx(const PredictionUnit& pu)
 {
-  int var0, var1, var2;
-  int mvpIdx = pu.mmvdMergeIdx;
-  var0 = mvpIdx / MMVD_MAX_REFINE_NUM;
-  var1 = (mvpIdx - (var0 * MMVD_MAX_REFINE_NUM)) / 4;
-  var2 = mvpIdx - (var0 * MMVD_MAX_REFINE_NUM) - var1 * 4;
+  const int var0 = pu.mmvdMergeIdx.pos.baseIdx;
+  const int var1 = pu.mmvdMergeIdx.pos.step;
+  const int var2 = pu.mmvdMergeIdx.pos.position;
+
   if (pu.cs->sps->getMaxNumMergeCand() > 1)
   {
-    static_assert(MMVD_BASE_MV_NUM == 2, "");
+    static_assert(MmvdIdx::BASE_MV_NUM == 2, "");
     assert(var0 < 2);
     m_binEncoder.encodeBin(var0, Ctx::MmvdMergeIdx());
   }
   DTRACE(g_trace_ctx, D_SYNTAX, "base_mvp_idx() base_mvp_idx=%d\n", var0);
 
-  int numCandminus1_step = MMVD_REFINE_STEP - 1;
-  if (numCandminus1_step > 0)
+  int numStepCandMinus1 = MmvdIdx::REFINE_STEP - 1;
+  if (numStepCandMinus1 > 0)
   {
     if (var1 == 0)
     {
@@ -2137,7 +2136,7 @@ void CABACWriter::mmvd_merge_idx(const PredictionUnit& pu)
     else
     {
       m_binEncoder.encodeBin(1, Ctx::MmvdStepMvpIdx());
-      for (unsigned idx = 1; idx < numCandminus1_step; idx++)
+      for (unsigned idx = 1; idx < numStepCandMinus1; idx++)
       {
         m_binEncoder.encodeBinEP(var1 == idx ? 0 : 1);
         if (var1 == idx)
@@ -2152,7 +2151,7 @@ void CABACWriter::mmvd_merge_idx(const PredictionUnit& pu)
   m_binEncoder.encodeBinsEP(var2, 2);
 
   DTRACE(g_trace_ctx, D_SYNTAX, "pos() pos=%d\n", var2);
-  DTRACE(g_trace_ctx, D_SYNTAX, "mmvd_merge_idx() mmvd_merge_idx=%d\n", pu.mmvdMergeIdx);
+  DTRACE(g_trace_ctx, D_SYNTAX, "mmvd_merge_idx() mmvd_merge_idx=%d\n", pu.mmvdMergeIdx.val);
 }
 
 void CABACWriter::inter_pred_idc( const PredictionUnit& pu )

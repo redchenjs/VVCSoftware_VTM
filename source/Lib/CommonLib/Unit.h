@@ -383,19 +383,19 @@ struct IntraPredictionData
 
 struct InterPredictionData
 {
-  bool      mergeFlag;
-  bool      regularMergeFlag;
-  uint8_t     mergeIdx;
-  uint8_t     geoSplitDir;
-  uint8_t     geoMergeIdx0;
-  uint8_t     geoMergeIdx1;
-  bool           mmvdMergeFlag;
-  uint32_t       mmvdMergeIdx;
-  uint8_t     interDir;
-  uint8_t     mvpIdx  [NUM_REF_PIC_LIST_01];
-  uint8_t     mvpNum  [NUM_REF_PIC_LIST_01];
-  Mv        mvd     [NUM_REF_PIC_LIST_01];
-  Mv        mv      [NUM_REF_PIC_LIST_01];
+  bool    mergeFlag;
+  bool    regularMergeFlag;
+  uint8_t mergeIdx;
+  uint8_t geoSplitDir;
+  uint8_t geoMergeIdx0;
+  uint8_t geoMergeIdx1;
+  bool    mmvdMergeFlag;
+  MmvdIdx mmvdMergeIdx;
+  uint8_t interDir;
+  uint8_t mvpIdx[NUM_REF_PIC_LIST_01];
+  uint8_t mvpNum[NUM_REF_PIC_LIST_01];
+  Mv      mvd[NUM_REF_PIC_LIST_01];
+  Mv      mv[NUM_REF_PIC_LIST_01];
 #if GDR_ENABLED
   bool      mvSolid[NUM_REF_PIC_LIST_01];
   bool      mvValid[NUM_REF_PIC_LIST_01];

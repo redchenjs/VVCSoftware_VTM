@@ -619,13 +619,13 @@ public:
 
   MotionBuf     subPuMvpMiBuf;
   MotionBuf     subPuMvpExtMiBuf;
-  MvField mmvdBaseMv[MMVD_BASE_MV_NUM][2];
+  MvField       mmvdBaseMv[MmvdIdx::BASE_MV_NUM][2];
 #if GDR_ENABLED
-  bool          mmvdSolid[MMVD_BASE_MV_NUM][2];
-  bool          mmvdValid[MMVD_BASE_MV_NUM][2];
+  bool mmvdSolid[MmvdIdx::BASE_MV_NUM][2];
+  bool mmvdValid[MmvdIdx::BASE_MV_NUM][2];
 #endif
-  void setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx);
-  bool          mmvdUseAltHpelIf  [ MMVD_BASE_MV_NUM ];
+  void          setMmvdMergeCandiInfo(PredictionUnit &pu, MmvdIdx candIdx);
+  bool          mmvdUseAltHpelIf[MmvdIdx::BASE_MV_NUM];
   bool          useAltHpelIf      [ MRG_MAX_NUM_CANDS ];
   void setMergeInfo( PredictionUnit& pu, int candIdx );
 };

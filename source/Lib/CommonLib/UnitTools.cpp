@@ -1752,7 +1752,7 @@ int PU::getDistScaleFactor(const int &currPOC, const int &currRefPOC, const int 
   return xGetDistScaleFactor(currPOC, currRefPOC, colPOC, colRefPOC);
 }
 
-void PU::getInterMMVDMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const int& mrgCandIdx)
+void PU::getInterMMVDMergeCandidates(const PredictionUnit &pu, MergeCtx &mrgCtx)
 {
   int refIdxList0, refIdxList1;
   int k;
@@ -1765,7 +1765,7 @@ void PU::getInterMMVDMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx,
 #endif
 
 #if GDR_ENABLED
-  for (int k = 0; k < MMVD_BASE_MV_NUM; k++)
+  for (int k = 0; k < MmvdIdx::BASE_MV_NUM; k++)
   {
     mrgCtx.mmvdSolid[k][0] = true;
     mrgCtx.mmvdSolid[k][1] = true;
@@ -1818,7 +1818,7 @@ void PU::getInterMMVDMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx,
 
     currBaseNum++;
 
-    if (currBaseNum == MMVD_BASE_MV_NUM)
+    if (currBaseNum == MmvdIdx::BASE_MV_NUM)
     {
       break;
     }

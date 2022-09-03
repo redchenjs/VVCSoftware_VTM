@@ -351,12 +351,31 @@ static constexpr int LAST_SIGNIFICANT_GROUPS =                         14;
 
 static constexpr int AFFINE_SUBBLOCK_SIZE = 4;   // Minimum affine MC block size
 
-static constexpr int MMVD_REFINE_STEP =                                 8; ///< max number of distance step
-static constexpr int MMVD_MAX_REFINE_NUM =                              (MMVD_REFINE_STEP * 4); ///< max number of candidate from a base candidate
-static constexpr int MMVD_BASE_MV_NUM =                                 2; ///< max number of base candidate
-static constexpr int MMVD_ADD_NUM =                                     (MMVD_MAX_REFINE_NUM * MMVD_BASE_MV_NUM);///< total number of mmvd candidate
 static constexpr int MMVD_MRG_MAX_RD_NUM =                              MRG_MAX_NUM_CANDS;
 static constexpr int MMVD_MRG_MAX_RD_BUF_NUM =                          (MMVD_MRG_MAX_RD_NUM + 1);///< increase buffer size by 1
+
+union MmvdIdx
+{
+  using T = uint8_t;
+
+  static constexpr int LOG_REFINE_STEP = 3;
+  static constexpr int REFINE_STEP     = 1 << LOG_REFINE_STEP;
+  static constexpr int LOG_BASE_MV_NUM = 1;
+  static constexpr int BASE_MV_NUM     = 1 << LOG_BASE_MV_NUM;
+  static constexpr int MAX_REFINE_NUM  = 4 * REFINE_STEP;
+  static constexpr int ADD_NUM         = MAX_REFINE_NUM * BASE_MV_NUM;
+  static constexpr int INVALID         = std::numeric_limits<T>::max();
+
+  struct
+  {
+    T baseIdx : LOG_BASE_MV_NUM;
+    T step : LOG_REFINE_STEP;
+    T position : 2;
+  } pos;
+  T val;
+};
+
+static_assert(sizeof(MmvdIdx::val) == sizeof(MmvdIdx::pos), "MmvdIdx::val is not wide enough");
 
 static constexpr int MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_LUMA =      28;
 static constexpr int MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_CHROMA =    28;
