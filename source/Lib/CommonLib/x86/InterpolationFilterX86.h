@@ -954,126 +954,125 @@ static void simdInterpolateN2_10BIT_M4(const int16_t *src, const ptrdiff_t srcSt
   }
 }
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-template<X86_VEXT vext, int N, bool shiftBack>
+template<X86_VEXT vext, int N, bool CLAMP>
 static void simdInterpolateHorM8_HBD(const Pel *src, const ptrdiff_t srcStride, Pel *dst, const ptrdiff_t dstStride,
                                      int width, int height, int shift, int offset, const ClpRng &clpRng,
                                      Pel const *coeff)
 {
-  const int filterSpan = (N - 1);
-  _mm_prefetch((const char*)src + srcStride, _MM_HINT_T0);
-  _mm_prefetch((const char*)src + (width >> 1) + srcStride, _MM_HINT_T0);
-  _mm_prefetch((const char*)src + width + filterSpan + srcStride, _MM_HINT_T0);
+  static_assert(N == 4 || N == 6 || N == 8, "only filter sizes 4, 6, and 8 are supported");
+  static_assert(sizeof(Pel) == 4, "samples must be 32 bits wide");
 
-  __m128i voffset = _mm_set1_epi32(offset);
-  __m128i vibdimin = _mm_set1_epi32(clpRng.min);
-  __m128i vibdimax = _mm_set1_epi32(clpRng.max);
-  __m128i vcoeffh0, vcoeffh1;
-  __m128i vsrc0, vsrc1;
-  __m128i vsuma, vsumb;
+  std::array<ptrdiff_t, 3> memOffsets = { { 2 * srcStride, 2 * srcStride + (width >> 1),
+                                            2 * srcStride + width - 8 + (N / 2 + 1) / 2 * 4 + 7 } };
 
-  vcoeffh0 = _mm_lddqu_si128((__m128i const *)coeff);
-  if (N == 8)
+  for (auto &off: memOffsets)
   {
-    vcoeffh1 = _mm_lddqu_si128((__m128i const *)(coeff + 4));
+    _mm_prefetch((const char *) (src - srcStride + off), _MM_HINT_T0);
   }
 
-  for (int row = 0; row < height; row++)
+  const __m128i minVal = _mm_set1_epi32(clpRng.min);
+  const __m128i maxVal = _mm_set1_epi32(clpRng.max);
+
+  __m128i coeffs[N];
+
+  for (int k = 0; k < N; k++)
   {
-    _mm_prefetch((const char*)src + 2 * srcStride, _MM_HINT_T0);
-    _mm_prefetch((const char*)src + (width >> 1) + 2 * srcStride, _MM_HINT_T0);
-    _mm_prefetch((const char*)src + width + filterSpan + 2 * srcStride, _MM_HINT_T0);
+    coeffs[k] = _mm_set1_epi32(coeff[k]);
+  }
 
-    for (int col = 0; col < width; col += 8)
+  for (ptrdiff_t row = 0; row < height; row++)
+  {
+    for (auto &off: memOffsets)
     {
-      __m128i vtmp[4];
-      for (int i = 0; i < 8; i += 2)
-      {
-        if (N == 8)
-        {
-          __m128i vsrc00 = _mm_lddqu_si128((__m128i const *)&src[col + i]);
-          __m128i vsrc01 = _mm_lddqu_si128((__m128i const *)&src[col + i + 4]);
-          vsrc0 = _mm_add_epi32(_mm_mullo_epi32(vsrc00, vcoeffh0), _mm_mullo_epi32(vsrc01, vcoeffh1));
-
-          __m128i vsrc10 = _mm_lddqu_si128((__m128i const *)&src[col + i + 1]);
-          __m128i vsrc11 = _mm_lddqu_si128((__m128i const *)&src[col + i + 5]);
-          vsrc1 = _mm_add_epi32(_mm_mullo_epi32(vsrc10, vcoeffh0), _mm_mullo_epi32(vsrc11, vcoeffh1));
-        }
-        else
-        {
-          vsrc0 = _mm_mullo_epi32(_mm_lddqu_si128((__m128i const *)&src[col + i]), vcoeffh0);
-          vsrc1 = _mm_mullo_epi32(_mm_lddqu_si128((__m128i const *)&src[col + i + 1]), vcoeffh0);
-        }
-
-        vtmp[i / 2] = _mm_hadd_epi32(vsrc0, vsrc1);
-      }
-
-      vsuma = _mm_hadd_epi32(vtmp[0], vtmp[1]);
-      vsumb = _mm_hadd_epi32(vtmp[2], vtmp[3]);
-
-      vsuma = _mm_add_epi32(vsuma, voffset);
-      vsumb = _mm_add_epi32(vsumb, voffset);
-
-      vsuma = _mm_srai_epi32(vsuma, shift);
-      vsumb = _mm_srai_epi32(vsumb, shift);
-
-      if (shiftBack)
-      {
-        vsuma = _mm_min_epi32(vibdimax, _mm_max_epi32(vibdimin, vsuma));
-        vsumb = _mm_min_epi32(vibdimax, _mm_max_epi32(vibdimin, vsumb));
-      }
-      _mm_storeu_si128((__m128i *)&dst[col], vsuma);
-      _mm_storeu_si128((__m128i *)&dst[col + 4], vsumb);
+      _mm_prefetch((const char *) (src + row * srcStride + off), _MM_HINT_T0);
     }
-    src += srcStride;
-    dst += dstStride;
+
+    for (ptrdiff_t col = 0; col < width; col += 8)
+    {
+      __m128i sum0 = _mm_set1_epi32(offset);
+      __m128i sum1 = _mm_set1_epi32(offset);
+
+      for (ptrdiff_t k = 0; k < N; k++)
+      {
+        const __m128i a = _mm_loadu_si128((const __m128i *) (src + row * srcStride + col + k));
+        const __m128i b = _mm_loadu_si128((const __m128i *) (src + row * srcStride + col + k + 4));
+
+        sum0 = _mm_add_epi32(sum0, _mm_mullo_epi32(a, coeffs[k]));
+        sum1 = _mm_add_epi32(sum1, _mm_mullo_epi32(b, coeffs[k]));
+      }
+
+      sum0 = _mm_sra_epi32(sum0, _mm_cvtsi32_si128(shift));
+      sum1 = _mm_sra_epi32(sum1, _mm_cvtsi32_si128(shift));
+
+      if (CLAMP)
+      {
+        sum0 = _mm_min_epi32(sum0, maxVal);
+        sum0 = _mm_max_epi32(sum0, minVal);
+        sum1 = _mm_min_epi32(sum1, maxVal);
+        sum1 = _mm_max_epi32(sum1, minVal);
+      }
+
+      _mm_storeu_si128((__m128i *) (dst + row * dstStride + col), sum0);
+      _mm_storeu_si128((__m128i *) (dst + row * dstStride + col + 4), sum1);
+    }
   }
 }
 
-template<X86_VEXT vext, int N, bool shiftBack>
+template<X86_VEXT vext, int N, bool CLAMP>
 static void simdInterpolateHorM8_HBD_AVX2(const Pel *src, const ptrdiff_t srcStride, Pel *dst,
                                           const ptrdiff_t dstStride, int width, int height, int shift, int offset,
                                           const ClpRng &clpRng, Pel const *coeff)
 {
-#ifdef USE_AVX2
-  const int filterSpan = (N - 1);
-  _mm_prefetch((const char*)(src + srcStride), _MM_HINT_T0);
-  _mm_prefetch((const char*)(src + (width >> 1) + srcStride), _MM_HINT_T0);
-  _mm_prefetch((const char*)(src + width + filterSpan + srcStride), _MM_HINT_T0);
+#if USE_AVX2
+  static_assert(N == 4 || N == 6 || N == 8, "only filter sizes 4, 6, and 8 are supported");
+  static_assert(sizeof(Pel) == 4, "samples must be 32 bits wide");
 
-  __m256i voffset = _mm256_set1_epi32(offset);
-  __m256i vibdimin = _mm256_set1_epi32(clpRng.min);
-  __m256i vibdimax = _mm256_set1_epi32(clpRng.max);
+  std::array<ptrdiff_t, 3> memOffsets = { { 2 * srcStride, 2 * srcStride + (width >> 1),
+                                            2 * srcStride + width - 8 + (N / 2 + 1) / 2 * 4 + 7 } };
 
-  __m256i vcoeff[N];
-  for (int i = 0; i < N; i++)
+  for (auto &off: memOffsets)
   {
-    vcoeff[i] = _mm256_set1_epi32(coeff[i]);
+    _mm_prefetch((const char *) (src - srcStride + off), _MM_HINT_T0);
   }
 
-  for (int row = 0; row < height; row++)
-  {
-    _mm_prefetch((const char*)(src + 2 * srcStride), _MM_HINT_T0);
-    _mm_prefetch((const char*)(src + (width >> 1) + 2 * srcStride), _MM_HINT_T0);
-    _mm_prefetch((const char*)(src + width + filterSpan + 2 * srcStride), _MM_HINT_T0);
+  const __m256i minVal = _mm256_set1_epi32(clpRng.min);
+  const __m256i maxVal = _mm256_set1_epi32(clpRng.max);
 
-    for (int col = 0; col < width; col += 8)
+  __m256i coeffs[N];
+
+  for (int k = 0; k < N; k++)
+  {
+    coeffs[k] = _mm256_set1_epi32(coeff[k]);
+  }
+
+  for (ptrdiff_t row = 0; row < height; row++)
+  {
+    for (auto &off: memOffsets)
     {
-      __m256i vsum = _mm256_setzero_si256();
-      for (int i = 0; i < N; i++)
-      {
-        __m256i vsrc = _mm256_lddqu_si256((__m256i *)&src[col + i]);
-        vsum = _mm256_add_epi32(vsum, _mm256_mullo_epi32(vsrc, vcoeff[i]));
-      }
-      vsum = _mm256_add_epi32(vsum, voffset);
-      vsum = _mm256_srai_epi32(vsum, shift);
-      if (shiftBack)
-      {
-        vsum = _mm256_min_epi32(vibdimax, _mm256_max_epi32(vibdimin, vsum));
-      }
-      _mm256_storeu_si256((__m256i *)&dst[col], vsum);
+      _mm_prefetch((const char *) (src + row * srcStride + off), _MM_HINT_T0);
     }
-    src += srcStride;
-    dst += dstStride;
+
+    for (ptrdiff_t col = 0; col < width; col += 8)
+    {
+      __m256i sum = _mm256_set1_epi32(offset);
+
+      for (ptrdiff_t k = 0; k < N; k++)
+      {
+        const __m256i a = _mm256_loadu_si256((const __m256i *) (src + row * srcStride + col + k));
+
+        sum = _mm256_add_epi32(sum, _mm256_mullo_epi32(a, coeffs[k]));
+      }
+
+      sum = _mm256_sra_epi32(sum, _mm_cvtsi32_si128(shift));
+
+      if (CLAMP)
+      {
+        sum = _mm256_min_epi32(sum, maxVal);
+        sum = _mm256_max_epi32(sum, minVal);
+      }
+
+      _mm256_storeu_si256((__m256i *) (dst + row * dstStride + col), sum);
+    }
   }
 #endif
 }
@@ -1206,68 +1205,47 @@ static void simdInterpolateVerM8_HBD_AVX2(const Pel *src, const ptrdiff_t srcStr
 #endif
 }
 
-template<X86_VEXT vext, int N, bool shiftBack>
+template<X86_VEXT vext, int N, bool CLAMP>
 static void simdInterpolateHorM4_HBD(const Pel *src, const ptrdiff_t srcStride, Pel *dst, const ptrdiff_t dstStride,
                                      int width, int height, int shift, int offset, const ClpRng &clpRng,
                                      Pel const *coeff)
 {
-  __m128i voffset = _mm_set1_epi32(offset);
-  __m128i vibdimin = _mm_set1_epi32(clpRng.min);
-  __m128i vibdimax = _mm_set1_epi32(clpRng.max);
-  __m128i vcoeffh0, vcoeffh1, vsum;
-  vcoeffh0 = _mm_lddqu_si128((__m128i const *)coeff);
-  if (N == 8)
+  static_assert(N == 4 || N == 6 || N == 8, "only filter sizes 4, 6, and 8 are supported");
+  static_assert(sizeof(Pel) == 4, "samples must be 32 bits wide");
+
+  const __m128i minVal = _mm_set1_epi32(clpRng.min);
+  const __m128i maxVal = _mm_set1_epi32(clpRng.max);
+
+  __m128i coeffs[N];
+
+  for (int k = 0; k < N; k++)
   {
-    vcoeffh1 = _mm_lddqu_si128((__m128i const *)(coeff + 4));
+    coeffs[k] = _mm_set1_epi32(coeff[k]);
   }
 
-  for (int row = 0; row < height; row++)
+  for (ptrdiff_t row = 0; row < height; row++)
   {
-    for (int col = 0; col < width; col += 4)
+    for (ptrdiff_t col = 0; col < width; col += 4)
     {
-      if (N == 8)
+      __m128i sum = _mm_set1_epi32(offset);
+
+      for (ptrdiff_t k = 0; k < N; k++)
       {
-        __m128i vtmp[2];
-        for (int i = 0; i < 4; i += 2)
-        {
-          __m128i vsrc00 = _mm_lddqu_si128((__m128i const *)&src[col + i]);
-          __m128i vsrc01 = _mm_lddqu_si128((__m128i const *)&src[col + i + 4]);
-          __m128i vsrc10 = _mm_lddqu_si128((__m128i const *)&src[col + i + 1]);
-          __m128i vsrc11 = _mm_lddqu_si128((__m128i const *)&src[col + i + 5]);
+        const __m128i a = _mm_loadu_si128((const __m128i *) (src + row * srcStride + col + k));
 
-          __m128i vsrc0 = _mm_add_epi32(_mm_mullo_epi32(vsrc00, vcoeffh0), _mm_mullo_epi32(vsrc01, vcoeffh1));
-          __m128i vsrc1 = _mm_add_epi32(_mm_mullo_epi32(vsrc10, vcoeffh0), _mm_mullo_epi32(vsrc11, vcoeffh1));
-          vtmp[i / 2] = _mm_hadd_epi32(vsrc0, vsrc1);
-        }
-        vsum = _mm_hadd_epi32(vtmp[0], vtmp[1]);
-      }
-      else
-      {
-        __m128i vsrc0 = _mm_lddqu_si128((__m128i const *)&src[col]);
-        __m128i vsrc1 = _mm_lddqu_si128((__m128i const *)&src[col + 1]);
-        __m128i vsrc2 = _mm_lddqu_si128((__m128i const *)&src[col + 2]);
-        __m128i vsrc3 = _mm_lddqu_si128((__m128i const *)&src[col + 3]);
-
-        vsrc0 = _mm_mullo_epi32(vsrc0, vcoeffh0);
-        vsrc1 = _mm_mullo_epi32(vsrc1, vcoeffh0);
-        vsrc2 = _mm_mullo_epi32(vsrc2, vcoeffh0);
-        vsrc3 = _mm_mullo_epi32(vsrc3, vcoeffh0);
-
-        __m128i vsrca = _mm_hadd_epi32(vsrc0, vsrc1);
-        __m128i vsrcb = _mm_hadd_epi32(vsrc2, vsrc3);
-        vsum = _mm_hadd_epi32(vsrca, vsrcb);
+        sum = _mm_add_epi32(sum, _mm_mullo_epi32(a, coeffs[k]));
       }
 
-      vsum = _mm_add_epi32(vsum, voffset);
-      vsum = _mm_srai_epi32(vsum, shift);
-      if (shiftBack)
+      sum = _mm_sra_epi32(sum, _mm_cvtsi32_si128(shift));
+
+      if (CLAMP)
       {
-        vsum = _mm_min_epi32(vibdimax, _mm_max_epi32(vibdimin, vsum));
+        sum = _mm_min_epi32(sum, maxVal);
+        sum = _mm_max_epi32(sum, minVal);
       }
-      _mm_storeu_si128((__m128i *)&dst[col], vsum);
+
+      _mm_storeu_si128((__m128i *) (dst + row * dstStride + col), sum);
     }
-    src += srcStride;
-    dst += dstStride;
   }
 }
 
@@ -2484,12 +2462,10 @@ void InterpolationFilter::_initInterpolationFilterX86()
   m_filterHor[_2_TAPS_DMVR][1][0] = simdFilter<vext, 2, false, true, false, true>;
   m_filterHor[_2_TAPS_DMVR][1][1] = simdFilter<vext, 2, false, true, true, true>;
 
-#if !RExt__HIGH_BIT_DEPTH_SUPPORT   // SIMD code for HBD doesn't support 6 taps
   m_filterHor[_6_TAPS][0][0] = simdFilter<vext, 6, false, false, false, false>;
   m_filterHor[_6_TAPS][0][1] = simdFilter<vext, 6, false, false, true, false>;
   m_filterHor[_6_TAPS][1][0] = simdFilter<vext, 6, false, true, false, false>;
   m_filterHor[_6_TAPS][1][1] = simdFilter<vext, 6, false, true, true, false>;
-#endif
 
   m_filterVer[_8_TAPS][0][0] = simdFilter<vext, 8, true, false, false, false>;
   m_filterVer[_8_TAPS][0][1] = simdFilter<vext, 8, true, false, true, false>;
