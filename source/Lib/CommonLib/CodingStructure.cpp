@@ -117,6 +117,15 @@ void CodingStructure::destroy()
 
   destroyCoeffs();
 
+#if GDR_ENABLED
+  if (picHeader && m_gdrEnabled)
+  {
+    delete picHeader;
+  }
+
+  picHeader = nullptr;
+#endif
+
   for( uint32_t i = 0; i < MAX_NUM_CHANNEL_TYPE; i++ )
   {
     delete[] m_isDecomp[ i ];
@@ -1835,15 +1844,6 @@ void CodingStructure::destroyCoeffs()
       m_runType[i] = nullptr;
     }
   }
-
-#if GDR_ENABLED
-  if (picHeader && m_gdrEnabled)
-  {
-    delete picHeader;
-  }
-
-  picHeader = nullptr;
-#endif
 }
 
 void CodingStructure::initSubStructure( CodingStructure& subStruct, const ChannelType _chType, const UnitArea &subArea, const bool &isTuEnc )
