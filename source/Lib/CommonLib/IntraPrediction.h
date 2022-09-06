@@ -69,6 +69,9 @@ protected:
   Pel      m_refBuffer[MAX_NUM_COMPONENT][NUM_PRED_BUF][(MAX_CU_SIZE * 2 + 1 + MAX_REF_LINE_IDX) * 2];
   uint32_t m_refBufferStride[MAX_NUM_COMPONENT];
 
+  static const int angTable[32];
+  static const int invAngTable[32];
+
 private:
 
   Pel* m_yuvExt2[MAX_NUM_COMPONENT][4];

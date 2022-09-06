@@ -3756,7 +3756,10 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
           bits += m_auiMVPIdxCost[mvpIdxSym[tarRefList]][AMVP_MAX_NUM_CANDS];
           costStart += m_pcRdCost->getCost(bits);
 
-          std::vector<Mv> symmvdCands;
+          constexpr int MAX_NUM_SYM_MVD_CANDS = 5;
+
+          static_vector<Mv, MAX_NUM_SYM_MVD_CANDS> symmvdCands;
+
           auto smmvdCandsGen = [&](Mv mvCand, bool mvPrecAdj)
           {
             if (mvPrecAdj && pu.cu->imv)
@@ -3765,9 +3768,9 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
             }
 
             bool toAddMvCand = true;
-            for (std::vector<Mv>::iterator pos = symmvdCands.begin(); pos != symmvdCands.end(); pos++)
+            for (const auto &pos: symmvdCands)
             {
-              if (*pos == mvCand)
+              if (pos == mvCand)
               {
                 toAddMvCand = false;
                 break;
@@ -3786,12 +3789,8 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
           {
             smmvdCandsGen(cMvBi[curRefList], false);
           }
-          for (int i = 0; i < m_uniMvListSize; i++)
+          for (int i = 0; i < m_uniMvListSize && symmvdCands.size() < symmvdCands.capacity(); i++)
           {
-            if ( symmvdCands.size() >= 5 )
-            {
-              break;
-            }
             BlkUniMvInfo* curMvInfo = m_uniMvList + ((m_uniMvListIdx - 1 - i + m_uniMvListMaxSize) % (m_uniMvListMaxSize));
             smmvdCandsGen(curMvInfo->uniMvs[curRefList][refIdxCur], true);
           }

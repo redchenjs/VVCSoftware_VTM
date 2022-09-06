@@ -219,13 +219,14 @@ private:
     ModeInfo(const bool mipf, const bool miptf, const int mrid, const uint8_t ispm, const uint32_t mode) : mipFlg(mipf), mipTrFlg(miptf), mRefId(mrid), ispMod(ispm), modeId(mode) {}
     bool operator==(const ModeInfo cmp) const { return (mipFlg == cmp.mipFlg && mipTrFlg == cmp.mipTrFlg && mRefId == cmp.mRefId && ispMod == cmp.ispMod && modeId == cmp.modeId); }
   };
+
   struct ModeInfoWithCost : public ModeInfo
   {
     double rdCost;
     ModeInfoWithCost() : ModeInfo(), rdCost(MAX_DOUBLE) {}
     ModeInfoWithCost(const bool mipf, const bool miptf, const int mrid, const uint8_t ispm, const uint32_t mode, double cost) : ModeInfo(mipf, miptf, mrid, ispm, mode), rdCost(cost) {}
     bool operator==(const ModeInfoWithCost cmp) const { return (mipFlg == cmp.mipFlg && mipTrFlg == cmp.mipTrFlg && mRefId == cmp.mRefId && ispMod == cmp.ispMod && modeId == cmp.modeId && rdCost == cmp.rdCost); }
-    static bool compareModeInfoWithCost(ModeInfoWithCost a, ModeInfoWithCost b) { return a.rdCost < b.rdCost; }
+    static bool compare(const ModeInfoWithCost &a, const ModeInfoWithCost &b) { return a.rdCost < b.rdCost; }
   };
 
   struct ISPTestedModeInfo
@@ -246,6 +247,7 @@ private:
       rdCost = MAX_DOUBLE;
     }
   };
+
   struct ISPTestedModesInfo
   {
     ISPTestedModeInfo                           intraMode[NUM_LUMA_MODE][2];
@@ -324,11 +326,13 @@ private:
       numOrigModesToTest = -1;
       memset(modeHasBeenTested, 0, sizeof(modeHasBeenTested));
     }
+
     void clearISPModeInfo(int idx)
     {
       intraMode[idx][0].clear();
       intraMode[idx][1].clear();
     }
+
     void init(const int numTotalPartsHor, const int numTotalPartsVer)
     {
       clear();
@@ -353,11 +357,11 @@ private:
   ModeInfo   m_savedRdModeList[ NUM_LFNST_NUM_PER_SET ][ NUM_LUMA_MODE ];
   int32_t    m_savedNumRdModes[ NUM_LFNST_NUM_PER_SET ];
 
-  ModeInfo                                           m_savedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  char                                               m_savedBDPCMModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  double                                             m_savedRdCostFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  int                                                m_numSavedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2];
-  int                                                m_savedRdModeIdx;
+  ModeInfo m_savedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  char     m_savedBDPCMModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  double   m_savedRdCostFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  int      m_numSavedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2];
+  int      m_savedRdModeIdx;
 
   static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_savedRdModeListLFNST;
   static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_savedHadModeListLFNST;
@@ -367,6 +371,9 @@ private:
 
   PelStorage      m_tmpStorageLCU;
   PelStorage      m_colorTransResiBuf;
+
+  std::vector<TransformUnit *> m_orgTUs;
+
 protected:
   // interface to option
   EncCfg*         m_pcEncCfg;
@@ -395,17 +402,9 @@ public:
   IntraSearch();
   ~IntraSearch();
 
-  void init                       ( EncCfg*        pcEncCfg,
-                                    TrQuant*       pcTrQuant,
-                                    RdCost*        pcRdCost,
-                                    CABACWriter*   CABACEstimator,
-                                    CtxCache*      ctxCache,
-                                    const uint32_t     maxCUWidth,
-                                    const uint32_t     maxCUHeight,
-                                    const uint32_t     maxTotalCUDepth
-                                  , EncReshape*   m_pcReshape
-                                  , const unsigned bitDepthY
-                                  );
+  void init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, CABACWriter *CABACEstimator, CtxCache *ctxCache,
+            const uint32_t maxCUWidth, const uint32_t maxCUHeight, const uint32_t maxTotalCUDepth,
+            EncReshape *m_pcReshape, const unsigned bitDepthY);
 
   void destroy                    ();
 

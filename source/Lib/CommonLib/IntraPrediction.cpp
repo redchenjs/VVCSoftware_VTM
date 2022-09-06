@@ -356,6 +356,13 @@ void IntraPrediction::xPredIntraDc( const CPelBuf &pSrc, PelBuf &pDst, const Cha
   pDst.fill( dcval );
 }
 
+const int IntraPrediction::angTable[32]    = { 0,  1,  2,  3,  4,  6,  8,  10, 12, 14,  16,  18,  20,  23,  26,  29,
+                                               32, 35, 39, 45, 51, 57, 64, 73, 86, 102, 128, 171, 256, 341, 512, 1024 };
+const int IntraPrediction::invAngTable[32] = {
+  0,   16384, 8192, 5461, 4096, 2731, 2048, 1638, 1365, 1170, 1024, 910, 819, 712, 630, 565,
+  512, 468,   420,  364,  321,  287,  256,  224,  191,  161,  128,  96,  64,  48,  32,  16
+};   // (512 * 32) / Angle
+
 // Function for initialization of intra prediction parameters
 void IntraPrediction::initPredIntraParams(const PredictionUnit & pu, const CompArea area, const SPS& sps)
 {
@@ -382,12 +389,6 @@ void IntraPrediction::initPredIntraParams(const PredictionUnit & pu, const CompA
   int absAng = 0;
   if (dirMode > DC_IDX && dirMode < NUM_LUMA_MODE) // intraPredAngle for directional modes
   {
-    static const int angTable[32]    = { 0,    1,    2,    3,    4,    6,     8,   10,   12,   14,   16,   18,   20,   23,   26,   29,   32,   35,   39,  45,  51,  57,  64,  73,  86, 102, 128, 171, 256, 341, 512, 1024 };
-    static const int invAngTable[32] = {
-      0,   16384, 8192, 5461, 4096, 2731, 2048, 1638, 1365, 1170, 1024, 910, 819, 712, 630, 565,
-      512, 468,   420,  364,  321,  287,  256,  224,  191,  161,  128,  96,  64,  48,  32,  16
-    };   // (512 * 32) / Angle
-
     const int absAngMode = abs(intraPredAngleMode);
     const int signAng    = intraPredAngleMode < 0 ? -1 : 1;
     absAng               = angTable[absAngMode];
