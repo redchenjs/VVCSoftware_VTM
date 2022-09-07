@@ -1061,7 +1061,7 @@ uint32_t SEIFilmGrainSynthesizer::fgsSimulationBlending_8x8(fgsProcessArgs *inAr
     }
   }
 
-  delete grainStripe;
+  delete [] grainStripe;
   return FGS_SUCCESS;
 }
 
@@ -1161,7 +1161,7 @@ uint32_t SEIFilmGrainSynthesizer::fgsSimulationBlending_16x16(fgsProcessArgs *in
     }
   }
 
-  delete grainStripe;
+  delete [] grainStripe;
   return FGS_SUCCESS;
 }
 
@@ -1255,7 +1255,7 @@ uint32_t SEIFilmGrainSynthesizer::fgsSimulationBlending_32x32(fgsProcessArgs *in
     }
   }
 
-  delete grainStripe;
+  delete [] grainStripe;
   return FGS_SUCCESS;
 }
 

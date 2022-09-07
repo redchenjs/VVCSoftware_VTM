@@ -68,7 +68,7 @@ class SortingElement
 public:
   inline bool operator<(const SortingElement &other) const
   {
-    return cnt > other.cnt;
+    return cnt[0] > other.cnt[0];
   }
   SortingElement() {
     cnt[0] = cnt[1] = cnt[2] = cnt[3] = 0;
