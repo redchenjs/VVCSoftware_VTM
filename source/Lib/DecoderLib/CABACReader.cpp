@@ -351,9 +351,9 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
   const bool sliceSaoChromaFlag =
     slice.getSaoEnabledFlag(CHANNEL_TYPE_CHROMA) && sps.getChromaFormatIdc() != CHROMA_400;
 
-  saoCtuParams[COMPONENT_Y].modeIdc  = SAO_MODE_OFF;
-  saoCtuParams[COMPONENT_Cb].modeIdc = SAO_MODE_OFF;
-  saoCtuParams[COMPONENT_Cr].modeIdc = SAO_MODE_OFF;
+  saoCtuParams[COMPONENT_Y].modeIdc  = SAOMode::OFF;
+  saoCtuParams[COMPONENT_Cb].modeIdc = SAOMode::OFF;
+  saoCtuParams[COMPONENT_Cr].modeIdc = SAOMode::OFF;
 
   if (!sliceSaoLumaFlag && !sliceSaoChromaFlag)
   {
@@ -371,36 +371,36 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
 
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET( STATS__CABAC_BITS__SAO );
 
-  const unsigned  curTileIdx  = cs.pps->getTileIdx( pos );
+  auto mergeType = SAOModeMergeTypes::NONE;
 
-  int saoMergeType = -1;
+  const unsigned curTileIdx = cs.pps->getTileIdx(pos);
 
   if( cs.getCURestricted( pos.offset(-(int)cs.pcv->maxCUWidth, 0), pos, curSliceIdx, curTileIdx, CH_L ) )
   {
     // sao_merge_left_flag
-    saoMergeType += m_binDecoder.decodeBin(Ctx::SaoMergeFlag());
+    mergeType = m_binDecoder.decodeBin(Ctx::SaoMergeFlag()) ? SAOModeMergeTypes::LEFT : SAOModeMergeTypes::NONE;
   }
 
-  if (saoMergeType < 0
+  if (mergeType == SAOModeMergeTypes::NONE
       && cs.getCURestricted(pos.offset(0, -(int) cs.pcv->maxCUHeight), pos, curSliceIdx, curTileIdx, CH_L))
   {
     // sao_merge_above_flag
-    saoMergeType += 2 * m_binDecoder.decodeBin(Ctx::SaoMergeFlag());
+    mergeType = m_binDecoder.decodeBin(Ctx::SaoMergeFlag()) ? SAOModeMergeTypes::ABOVE : SAOModeMergeTypes::NONE;
   }
 
-  if (saoMergeType >= 0)
+  if (mergeType != SAOModeMergeTypes::NONE)
   {
     if (sliceSaoLumaFlag || sliceSaoChromaFlag)
     {
-      saoCtuParams[COMPONENT_Y].modeIdc = SAO_MODE_MERGE;
-      saoCtuParams[COMPONENT_Y].typeIdc = saoMergeType;
+      saoCtuParams[COMPONENT_Y].modeIdc           = SAOMode::MERGE;
+      saoCtuParams[COMPONENT_Y].typeIdc.mergeType = mergeType;
     }
     if (sliceSaoChromaFlag)
     {
-      saoCtuParams[COMPONENT_Cb].modeIdc = SAO_MODE_MERGE;
-      saoCtuParams[COMPONENT_Cr].modeIdc = SAO_MODE_MERGE;
-      saoCtuParams[COMPONENT_Cb].typeIdc = saoMergeType;
-      saoCtuParams[COMPONENT_Cr].typeIdc = saoMergeType;
+      saoCtuParams[COMPONENT_Cb].modeIdc           = SAOMode::MERGE;
+      saoCtuParams[COMPONENT_Cr].modeIdc           = SAOMode::MERGE;
+      saoCtuParams[COMPONENT_Cb].typeIdc.mergeType = mergeType;
+      saoCtuParams[COMPONENT_Cr].typeIdc.mergeType = mergeType;
     }
     return;
   }
@@ -420,14 +420,14 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
         if (m_binDecoder.decodeBinEP())
         {
           // edge offset
-          sao_pars.modeIdc = SAO_MODE_NEW;
-          sao_pars.typeIdc = SAO_TYPE_START_EO;
+          sao_pars.modeIdc         = SAOMode::NEW;
+          sao_pars.typeIdc.newType = SAOModeNewTypes::START_EO;
         }
         else
         {
           // band offset
-          sao_pars.modeIdc = SAO_MODE_NEW;
-          sao_pars.typeIdc = SAO_TYPE_START_BO;
+          sao_pars.modeIdc         = SAOMode::NEW;
+          sao_pars.typeIdc.newType = SAOModeNewTypes::START_BO;
         }
       }
     }
@@ -436,7 +436,7 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
       sao_pars.modeIdc = saoCtuParams[COMPONENT_Cb].modeIdc;
       sao_pars.typeIdc = saoCtuParams[COMPONENT_Cb].typeIdc;
     }
-    if( sao_pars.modeIdc == SAO_MODE_OFF )
+    if (sao_pars.modeIdc == SAOMode::OFF)
     {
       continue;
     }
@@ -451,7 +451,7 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
     offset[3] = (int) unary_max_eqprob(maxOffsetQVal);
 
     // band offset mode
-    if( sao_pars.typeIdc == SAO_TYPE_START_BO )
+    if (sao_pars.typeIdc.newType == SAOModeNewTypes::START_BO)
     {
       // sao_offset_sign
       for( int k = 0; k < 4; k++ )
@@ -475,7 +475,8 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
     if( compID != COMPONENT_Cr )
     {
       // sao_eo_class_luma / sao_eo_class_chroma
-      sao_pars.typeIdc += m_binDecoder.decodeBinsEP(NUM_SAO_EO_TYPES_LOG2);
+      sao_pars.typeIdc.newType =
+        SAOModeNewTypes(to_underlying(sao_pars.typeIdc.newType) + m_binDecoder.decodeBinsEP(NUM_SAO_EO_TYPES_LOG2));
     }
     else
     {

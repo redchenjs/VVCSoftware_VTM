@@ -642,36 +642,38 @@ enum class HashType
   NUM
 };
 
-enum SAOMode //mode
+enum class SAOMode : uint8_t
 {
-  SAO_MODE_OFF = 0,
-  SAO_MODE_NEW,
-  SAO_MODE_MERGE,
-  NUM_SAO_MODES
+  OFF = 0,
+  NEW,
+  MERGE,
+  NUM
 };
 
-enum SAOModeMergeTypes
+enum class SAOModeMergeTypes : int8_t
 {
-  SAO_MERGE_LEFT =0,
-  SAO_MERGE_ABOVE,
-  NUM_SAO_MERGE_TYPES
+  NONE = -1,
+  LEFT = 0,
+  ABOVE,
+  NUM
 };
 
-
-enum SAOModeNewTypes
+enum class SAOModeNewTypes : int8_t
 {
-  SAO_TYPE_START_EO =0,
-  SAO_TYPE_EO_0 = SAO_TYPE_START_EO,
-  SAO_TYPE_EO_90,
-  SAO_TYPE_EO_135,
-  SAO_TYPE_EO_45,
+  NONE     = -1,
+  START_EO = 0,
+  EO_0     = START_EO,
+  EO_90,
+  EO_135,
+  EO_45,
 
-  SAO_TYPE_START_BO,
-  SAO_TYPE_BO = SAO_TYPE_START_BO,
+  START_BO,
+  BO = START_BO,
 
-  NUM_SAO_NEW_TYPES
+  NUM
 };
-#define NUM_SAO_EO_TYPES_LOG2 2
+
+static constexpr int NUM_SAO_EO_TYPES_LOG2 = 2;
 
 enum SAOEOClasses
 {
@@ -890,7 +892,11 @@ enum ImvMode
 struct SAOOffset
 {
   SAOMode modeIdc; // NEW, MERGE, OFF
-  int typeIdc;     // union of SAOModeMergeTypes and SAOModeNewTypes, depending on modeIdc.
+  union
+  {
+    SAOModeMergeTypes mergeType;
+    SAOModeNewTypes   newType;
+  } typeIdc;
   int typeAuxInfo; // BO: starting band index
   int offset[MAX_NUM_SAO_CLASSES];
 

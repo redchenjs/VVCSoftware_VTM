@@ -276,13 +276,15 @@ void CABACWriter::sao_block_params(const SAOBlkParam &saoPars, const BitDepths &
   if( leftMergeAvail )
   {
     // sao_merge_left_flag
-    isLeftMerge   = ( saoPars[COMPONENT_Y].modeIdc == SAO_MODE_MERGE && saoPars[COMPONENT_Y].typeIdc == SAO_MERGE_LEFT );
+    isLeftMerge = (saoPars[COMPONENT_Y].modeIdc == SAOMode::MERGE
+                   && saoPars[COMPONENT_Y].typeIdc.mergeType == SAOModeMergeTypes::LEFT);
     m_binEncoder.encodeBin((isLeftMerge), Ctx::SaoMergeFlag());
   }
   if( aboveMergeAvail && !isLeftMerge )
   {
     // sao_merge_above_flag
-    isAboveMerge  = ( saoPars[COMPONENT_Y].modeIdc == SAO_MODE_MERGE && saoPars[COMPONENT_Y].typeIdc == SAO_MERGE_ABOVE );
+    isAboveMerge = (saoPars[COMPONENT_Y].modeIdc == SAOMode::MERGE
+                    && saoPars[COMPONENT_Y].typeIdc.mergeType == SAOModeMergeTypes::ABOVE);
     m_binEncoder.encodeBin((isAboveMerge), Ctx::SaoMergeFlag());
   }
   if( onlyEstMergeInfo )
@@ -304,7 +306,7 @@ void CABACWriter::sao_offset_params(const SAOOffset &ctbPars, ComponentID compID
 {
   if( !sliceEnabled )
   {
-    CHECK( ctbPars.modeIdc != SAO_MODE_OFF, "Sao must be off, if it is disabled on slice level" );
+    CHECK(ctbPars.modeIdc != SAOMode::OFF, "Sao must be off, if it is disabled on slice level");
     return;
   }
   const bool isFirstCompOfChType = ( getFirstComponentOfChannel( toChannelType(compID) ) == compID );
@@ -312,36 +314,37 @@ void CABACWriter::sao_offset_params(const SAOOffset &ctbPars, ComponentID compID
   if( isFirstCompOfChType )
   {
     // sao_type_idx_luma / sao_type_idx_chroma
-    if( ctbPars.modeIdc == SAO_MODE_OFF )
+    if (ctbPars.modeIdc == SAOMode::OFF)
     {
       m_binEncoder.encodeBin(0, Ctx::SaoTypeIdx());
     }
-    else if( ctbPars.typeIdc == SAO_TYPE_BO )
+    else if (ctbPars.typeIdc.newType == SAOModeNewTypes::BO)
     {
       m_binEncoder.encodeBin(1, Ctx::SaoTypeIdx());
       m_binEncoder.encodeBinEP(0);
     }
     else
     {
-      CHECK(!( ctbPars.typeIdc < SAO_TYPE_START_BO ), "Unspecified error");
+      CHECK(!(ctbPars.typeIdc.newType < SAOModeNewTypes::START_BO), "Unspecified error");
       m_binEncoder.encodeBin(1, Ctx::SaoTypeIdx());
       m_binEncoder.encodeBinEP(1);
     }
   }
 
-  if( ctbPars.modeIdc == SAO_MODE_NEW )
+  if (ctbPars.modeIdc == SAOMode::NEW)
   {
     const int maxOffsetQVal = SampleAdaptiveOffset::getMaxOffsetQVal( bitDepth );
-    int       numClasses    = ( ctbPars.typeIdc == SAO_TYPE_BO ? 4 : NUM_SAO_EO_CLASSES );
+    int       numClasses    = (ctbPars.typeIdc.newType == SAOModeNewTypes::BO ? 4 : NUM_SAO_EO_CLASSES);
     int       k             = 0;
     int       offset[4];
     for( int i = 0; i < numClasses; i++ )
     {
-      if( ctbPars.typeIdc != SAO_TYPE_BO && i == SAO_CLASS_EO_PLAIN )
+      if (ctbPars.typeIdc.newType != SAOModeNewTypes::BO && i == SAO_CLASS_EO_PLAIN)
       {
         continue;
       }
-      int classIdx = ( ctbPars.typeIdc == SAO_TYPE_BO ? ( ctbPars.typeAuxInfo + i ) % NUM_SAO_BO_CLASSES : i );
+      int classIdx =
+        (ctbPars.typeIdc.newType == SAOModeNewTypes::BO ? (ctbPars.typeAuxInfo + i) % NUM_SAO_BO_CLASSES : i);
       offset[k++]  = ctbPars.offset[classIdx];
     }
 
@@ -353,7 +356,7 @@ void CABACWriter::sao_offset_params(const SAOOffset &ctbPars, ComponentID compID
     }
 
     // band offset mode
-    if( ctbPars.typeIdc == SAO_TYPE_BO )
+    if (ctbPars.typeIdc.newType == SAOModeNewTypes::BO)
     {
       // sao_offset_sign
       for( int i = 0; i < 4; i++ )
@@ -372,8 +375,9 @@ void CABACWriter::sao_offset_params(const SAOOffset &ctbPars, ComponentID compID
       if( isFirstCompOfChType )
       {
         // sao_eo_class_luma / sao_eo_class_chroma
-        CHECK( ctbPars.typeIdc - SAO_TYPE_START_EO < 0, "sao edge offset class is outside valid range" );
-        m_binEncoder.encodeBinsEP(ctbPars.typeIdc - SAO_TYPE_START_EO, NUM_SAO_EO_TYPES_LOG2);
+        CHECK(ctbPars.typeIdc.newType < SAOModeNewTypes::START_EO, "sao edge offset class is outside valid range");
+        m_binEncoder.encodeBinsEP(to_underlying(ctbPars.typeIdc.newType) - to_underlying(SAOModeNewTypes::START_EO),
+                                  NUM_SAO_EO_TYPES_LOG2);
       }
     }
   }
