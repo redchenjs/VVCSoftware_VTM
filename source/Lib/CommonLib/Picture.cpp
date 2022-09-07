@@ -629,12 +629,13 @@ const TFilterCoeff m_chromaFilter6[32][6] =
 };
 #endif
 
-void Picture::sampleRateConv( const std::pair<int, int> scalingRatio, const std::pair<int, int> compScale,
-                              const CPelBuf& beforeScale, const int beforeScaleLeftOffset, const int beforeScaleTopOffset,
-                              const PelBuf& afterScale, const int afterScaleLeftOffset, const int afterScaleTopOffset,
-                              const int bitDepth, const bool useLumaFilter, const bool downsampling,
+void Picture::sampleRateConv(const ScalingRatio scalingRatio, const int scaleX, const int scaleY,
+                             const CPelBuf &beforeScale, const int beforeScaleLeftOffset,
+                             const int beforeScaleTopOffset, const PelBuf &afterScale, const int afterScaleLeftOffset,
+                             const int afterScaleTopOffset, const int bitDepth, const bool useLumaFilter,
+                             const bool downsampling,
 #if !JVET_AB0081
-                              const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
+                             const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
 #else
                               const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag,
                               const bool rescaleForDisplay, const int upscaleFilterForDisplay
@@ -678,70 +679,76 @@ void Picture::sampleRateConv( const std::pair<int, int> scalingRatio, const std:
 #endif
   const int numFracPositions = useLumaFilter ? 15 : 31;
   const int numFracShift = useLumaFilter ? 4 : 5;
-  const int posShiftX = SCALE_RATIO_BITS - numFracShift + compScale.first;
-  const int posShiftY = SCALE_RATIO_BITS - numFracShift + compScale.second;
-  int addX = ( 1 << ( posShiftX - 1 ) ) + ( beforeScaleLeftOffset << SCALE_RATIO_BITS ) + ( ( int( 1 - horCollocatedPositionFlag ) * 8 * ( scalingRatio.first - SCALE_1X.first ) + ( 1 << ( 2 + compScale.first ) ) ) >> ( 3 + compScale.first ) );
-  int addY = ( 1 << ( posShiftY - 1 ) ) + ( beforeScaleTopOffset << SCALE_RATIO_BITS ) + ( ( int( 1 - verCollocatedPositionFlag ) * 8 * ( scalingRatio.second - SCALE_1X.second ) + ( 1 << ( 2 + compScale.second ) ) ) >> ( 3 + compScale.second ) );
+
+  const int posShiftX = ScalingRatio::BITS - numFracShift + scaleX;
+  const int posShiftY = ScalingRatio::BITS - numFracShift + scaleY;
+
+  const int addX =
+    (1 << (posShiftX - 1)) + (beforeScaleLeftOffset << ScalingRatio::BITS)
+    + ((int(1 - horCollocatedPositionFlag) * 8 * (scalingRatio.x - SCALE_1X.x) + (1 << (2 + scaleX))) >> (3 + scaleX));
+  const int addY =
+    (1 << (posShiftY - 1)) + (beforeScaleTopOffset << ScalingRatio::BITS)
+    + ((int(1 - verCollocatedPositionFlag) * 8 * (scalingRatio.y - SCALE_1X.y) + (1 << (2 + scaleY))) >> (3 + scaleY));
 
   if( downsampling )
   {
     int verFilter = 0;
     int horFilter = 0;
 
-    if (scalingRatio.first > (15 << SCALE_RATIO_BITS) / 4)
+    if (scalingRatio.x > (15 << ScalingRatio::BITS) / 4)
     {
       horFilter = 7;
     }
-    else if (scalingRatio.first > (20 << SCALE_RATIO_BITS) / 7)
+    else if (scalingRatio.x > (20 << ScalingRatio::BITS) / 7)
     {
       horFilter = 6;
     }
-    else if (scalingRatio.first > (5 << SCALE_RATIO_BITS) / 2)
+    else if (scalingRatio.x > (5 << ScalingRatio::BITS) / 2)
     {
       horFilter = 5;
     }
-    else if (scalingRatio.first > (2 << SCALE_RATIO_BITS))
+    else if (scalingRatio.x > (2 << ScalingRatio::BITS))
     {
       horFilter = 4;
     }
-    else if (scalingRatio.first > (5 << SCALE_RATIO_BITS) / 3)
+    else if (scalingRatio.x > (5 << ScalingRatio::BITS) / 3)
     {
       horFilter = 3;
     }
-    else if (scalingRatio.first > (5 << SCALE_RATIO_BITS) / 4)
+    else if (scalingRatio.x > (5 << ScalingRatio::BITS) / 4)
     {
       horFilter = 2;
     }
-    else if (scalingRatio.first > (20 << SCALE_RATIO_BITS) / 19)
+    else if (scalingRatio.x > (20 << ScalingRatio::BITS) / 19)
     {
       horFilter = 1;
     }
 
-    if (scalingRatio.second > (15 << SCALE_RATIO_BITS) / 4)
+    if (scalingRatio.y > (15 << ScalingRatio::BITS) / 4)
     {
       verFilter = 7;
     }
-    else if (scalingRatio.second > (20 << SCALE_RATIO_BITS) / 7)
+    else if (scalingRatio.y > (20 << ScalingRatio::BITS) / 7)
     {
       verFilter = 6;
     }
-    else if (scalingRatio.second > (5 << SCALE_RATIO_BITS) / 2)
+    else if (scalingRatio.y > (5 << ScalingRatio::BITS) / 2)
     {
       verFilter = 5;
     }
-    else if (scalingRatio.second > (2 << SCALE_RATIO_BITS))
+    else if (scalingRatio.y > (2 << ScalingRatio::BITS))
     {
       verFilter = 4;
     }
-    else if (scalingRatio.second > (5 << SCALE_RATIO_BITS) / 3)
+    else if (scalingRatio.y > (5 << ScalingRatio::BITS) / 3)
     {
       verFilter = 3;
     }
-    else if (scalingRatio.second > (5 << SCALE_RATIO_BITS) / 4)
+    else if (scalingRatio.y > (5 << ScalingRatio::BITS) / 4)
     {
       verFilter = 2;
     }
-    else if (scalingRatio.second > (20 << SCALE_RATIO_BITS) / 19)
+    else if (scalingRatio.y > (20 << ScalingRatio::BITS) / 19)
     {
       verFilter = 1;
     }
@@ -768,7 +775,8 @@ void Picture::sampleRateConv( const std::pair<int, int> scalingRatio, const std:
   for( int i = 0; i < scaledWidth; i++ )
   {
     const Pel* org = orgSrc;
-    int refPos = ( ( ( i << compScale.first ) - afterScaleLeftOffset ) * scalingRatio.first + addX ) >> posShiftX;
+
+    int  refPos  = (((i << scaleX) - afterScaleLeftOffset) * scalingRatio.x + addX) >> posShiftX;
     int integer = refPos >> numFracShift;
     int frac = refPos & numFracPositions;
     int* tmp = buf + i;
@@ -795,7 +803,7 @@ void Picture::sampleRateConv( const std::pair<int, int> scalingRatio, const std:
 
   for( int j = 0; j < scaledHeight; j++ )
   {
-    int refPos = ( ( ( j << compScale.second ) - afterScaleTopOffset ) * scalingRatio.second + addY ) >> posShiftY;
+    int refPos  = (((j << scaleY) - afterScaleTopOffset) * scalingRatio.y + addY) >> posShiftY;
     int integer = refPos >> numFracShift;
     int frac = refPos & numFracPositions;
 
@@ -820,12 +828,12 @@ void Picture::sampleRateConv( const std::pair<int, int> scalingRatio, const std:
   delete[] buf;
 }
 
-void Picture::rescalePicture( const std::pair<int, int> scalingRatio,
-                              const CPelUnitBuf& beforeScaling, const Window& scalingWindowBefore,
-                              const PelUnitBuf& afterScaling, const Window& scalingWindowAfter,
-                              const ChromaFormat chromaFormatIDC, const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
+void Picture::rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf &beforeScaling,
+                             const Window &scalingWindowBefore, const PelUnitBuf &afterScaling,
+                             const Window &scalingWindowAfter, const ChromaFormat chromaFormatIDC,
+                             const BitDepths &bitDepths, const bool useLumaFilter, const bool downsampling,
 #if !JVET_AB0081
-                              const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
+                             const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
 #else
                               const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
                               bool rescaleForDisplay, int upscaleFilterForDisplay
@@ -840,7 +848,7 @@ void Picture::rescalePicture( const std::pair<int, int> scalingRatio,
 
     sampleRateConv(
       scalingRatio,
-      std::pair<int, int>(::getComponentScaleX(compID, chromaFormatIDC), ::getComponentScaleY(compID, chromaFormatIDC)),
+      ::getComponentScaleX(compID, chromaFormatIDC), ::getComponentScaleY(compID, chromaFormatIDC),
       beforeScale, scalingWindowBefore.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
       scalingWindowBefore.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC), afterScale,
       scalingWindowAfter.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),

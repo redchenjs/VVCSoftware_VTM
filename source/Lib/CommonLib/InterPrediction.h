@@ -126,7 +126,7 @@ protected:
 
   void xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic, const Mv &_mv,
                      PelUnitBuf &dstPic, bool bi, const ClpRng &clpRng, bool bioApplied, bool isIBC,
-                     const std::pair<int, int> scalingRatio, bool bilinearMC, Pel *srcPadBuf, ptrdiff_t srcPadStride,
+                     const ScalingRatio scalingRatio, bool bilinearMC, Pel *srcPadBuf, ptrdiff_t srcPadStride,
                      Pel *bdofDstBuf);
   void xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic, const Mv &_mv,
                      PelUnitBuf &dstPic, bool bi, const ClpRng &clpRng, bool bioApplied, bool isIBC, RefPicList l)
@@ -149,11 +149,11 @@ protected:
 #if GDR_ENABLED
   bool xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic, const Mv *_mv,
                       PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng, const bool genChromaMv = false,
-                      const std::pair<int, int> scalingRatio = SCALE_1X);
+                      const ScalingRatio = SCALE_1X);
 #else
   void xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic, const Mv *_mv,
                       PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng, const bool genChromaMv = false,
-                      const std::pair<int, int> scalingRatio = SCALE_1X);
+                      const ScalingRatio = SCALE_1X);
 #endif
 
   static bool xCheckIdenticalMotion( const PredictionUnit& pu );
@@ -215,7 +215,7 @@ public:
   void resetVPDUforIBC(const ChromaFormat chromaFormatIDC, const int ctuSize, const int vSize, const int xPos, const int yPos);
   bool isLumaBvValid(const int ctuSize, const int xCb, const int yCb, const int width, const int height, const int xBv, const int yBv);
 
-  bool xPredInterBlkRPR(const std::pair<int, int> &scalingRatio, const PPS &pps, const CompArea &blk,
+  bool xPredInterBlkRPR(const ScalingRatio scalingRatio, const PPS &pps, const CompArea &blk,
                         const Picture *refPic, const Mv &mv, Pel *dst, const ptrdiff_t dstStride, const bool bi,
                         const bool wrapRef, const ClpRng &clpRng, const InterpolationFilter::Filter filterIndex,
                         const bool useAltHpelIf = false);

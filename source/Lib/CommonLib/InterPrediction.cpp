@@ -659,7 +659,7 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
 
 void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic,
                                     const Mv &_mv, PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng,
-                                    const bool bioApplied, bool isIBC, const std::pair<int, int> scalingRatio,
+                                    const bool bioApplied, bool isIBC, const ScalingRatio scalingRatio,
                                     bool bilinearMC, Pel *srcPadBuf, ptrdiff_t srcPadStride, Pel *bdofDstBuf)
 {
   JVET_J0090_SET_REF_PICTURE( refPic, compID );
@@ -846,11 +846,11 @@ bool InterPrediction::isSubblockVectorSpreadOverLimit( int a, int b, int c, int 
 #if GDR_ENABLED
 bool InterPrediction::xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic,
                                      const Mv *_mv, PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng,
-                                     bool genChromaMv, const std::pair<int, int> scalingRatio)
+                                     bool genChromaMv, const ScalingRatio scalingRatio)
 #else
 void InterPrediction::xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic,
                                      const Mv *_mv, PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng,
-                                     bool genChromaMv, const std::pair<int, int> scalingRatio)
+                                     bool genChromaMv, const ScalingRatio scalingRatio)
 #endif
 {
   JVET_J0090_SET_REF_PICTURE(refPic, compID);
@@ -2072,7 +2072,7 @@ bool InterPrediction::isLumaBvValid(const int ctuSize, const int xCb, const int 
   return true;
 }
 
-bool InterPrediction::xPredInterBlkRPR(const std::pair<int, int> &scalingRatio, const PPS &pps, const CompArea &blk,
+bool InterPrediction::xPredInterBlkRPR(const ScalingRatio scalingRatio, const PPS &pps, const CompArea &blk,
                                        const Picture *refPic, const Mv &mv, Pel *dst, const ptrdiff_t dstStride,
                                        const bool bi, const bool wrapRef, const ClpRng &clpRng,
                                        const InterpolationFilter::Filter filterIndex, const bool useAltHpelIf)
@@ -2098,44 +2098,46 @@ bool InterPrediction::xPredInterBlkRPR(const std::pair<int, int> &scalingRatio, 
 
     InterpolationFilter::Filter xFilter       = filterIndex;
     InterpolationFilter::Filter yFilter       = filterIndex;
-    const int rprThreshold1 = ( 1 << SCALE_RATIO_BITS ) * 5 / 4;
-    const int rprThreshold2 = ( 1 << SCALE_RATIO_BITS ) * 7 / 4;
+
+    const int rprThreshold1 = (1 << ScalingRatio::BITS) * 5 / 4;
+    const int rprThreshold2 = (1 << ScalingRatio::BITS) * 7 / 4;
+
     if (filterIndex == InterpolationFilter::Filter::DEFAULT || !isLuma(compID))
     {
-      if( scalingRatio.first > rprThreshold2 )
+      if (scalingRatio.x > rprThreshold2)
       {
         xFilter = InterpolationFilter::Filter::RPR2;
       }
-      else if( scalingRatio.first > rprThreshold1 )
+      else if (scalingRatio.x > rprThreshold1)
       {
         xFilter = InterpolationFilter::Filter::RPR1;
       }
 
-      if( scalingRatio.second > rprThreshold2 )
+      if (scalingRatio.y > rprThreshold2)
       {
         yFilter = InterpolationFilter::Filter::RPR2;
       }
-      else if( scalingRatio.second > rprThreshold1 )
+      else if (scalingRatio.y > rprThreshold1)
       {
         yFilter = InterpolationFilter::Filter::RPR1;
       }
     }
     else if (filterIndex == InterpolationFilter::Filter::AFFINE)
     {
-      if (scalingRatio.first > rprThreshold2)
+      if (scalingRatio.x > rprThreshold2)
       {
         xFilter = InterpolationFilter::Filter::AFFINE_RPR2;
       }
-      else if (scalingRatio.first > rprThreshold1)
+      else if (scalingRatio.x > rprThreshold1)
       {
         xFilter = InterpolationFilter::Filter::AFFINE_RPR1;
       }
 
-      if (scalingRatio.second > rprThreshold2)
+      if (scalingRatio.y > rprThreshold2)
       {
         yFilter = InterpolationFilter::Filter::AFFINE_RPR2;
       }
-      else if (scalingRatio.second > rprThreshold1)
+      else if (scalingRatio.y > rprThreshold1)
       {
         yFilter = InterpolationFilter::Filter::AFFINE_RPR1;
       }
@@ -2143,19 +2145,19 @@ bool InterPrediction::xPredInterBlkRPR(const std::pair<int, int> &scalingRatio, 
 
     if (useAltHpelIf)
     {
-      if (xFilter == InterpolationFilter::Filter::DEFAULT && scalingRatio.first == 1 << SCALE_RATIO_BITS)
+      if (xFilter == InterpolationFilter::Filter::DEFAULT && scalingRatio.x == SCALE_1X.x)
       {
         xFilter = InterpolationFilter::Filter::HALFPEL_ALT;
       }
-      if (yFilter == InterpolationFilter::Filter::DEFAULT && scalingRatio.second == 1 << SCALE_RATIO_BITS)
+      if (yFilter == InterpolationFilter::Filter::DEFAULT && scalingRatio.y == SCALE_1X.y)
       {
         yFilter = InterpolationFilter::Filter::HALFPEL_ALT;
       }
     }
-    const int posShift = SCALE_RATIO_BITS - 4;
+    const int posShift = ScalingRatio::BITS - 4;
 
-    const int stepX = (scalingRatio.first + 8) >> 4;
-    const int stepY = (scalingRatio.second + 8) >> 4;
+    const int stepX = (scalingRatio.x + 8) >> 4;
+    const int stepY = (scalingRatio.y + 8) >> 4;
 
     const int offX = 1 << (posShift - shiftHor - 1);
     const int offY = 1 << (posShift - shiftVer - 1);
@@ -2168,8 +2170,10 @@ bool InterPrediction::xPredInterBlkRPR(const std::pair<int, int> &scalingRatio, 
     const int64_t posY =
       ((blk.pos().y << scaleY) - (pps.getScalingWindow().getWindowTopOffset() * SPS::getWinUnitY(chFmt))) >> scaleY;
 
-    int addX = isLuma( compID ) ? 0 : int( 1 - refPic->cs->sps->getHorCollocatedChromaFlag() ) * 8 * ( scalingRatio.first - SCALE_1X.first );
-    int addY = isLuma( compID ) ? 0 : int( 1 - refPic->cs->sps->getVerCollocatedChromaFlag() ) * 8 * ( scalingRatio.second - SCALE_1X.second );
+    int addX =
+      isLuma(compID) ? 0 : int(1 - refPic->cs->sps->getHorCollocatedChromaFlag()) * 8 * (scalingRatio.x - SCALE_1X.x);
+    int addY =
+      isLuma(compID) ? 0 : int(1 - refPic->cs->sps->getVerCollocatedChromaFlag()) * 8 * (scalingRatio.y - SCALE_1X.y);
 
     int boundLeft   = 0;
     int boundRight  = refPicWidth >> scaleX;
@@ -2190,11 +2194,11 @@ bool InterPrediction::xPredInterBlkRPR(const std::pair<int, int> &scalingRatio, 
     int64_t x0Int;
     int64_t y0Int;
 
-    x0Int = ((posX << (4 + scaleX)) + mv.getHor()) * (int64_t) scalingRatio.first + addX;
+    x0Int = ((posX << (4 + scaleX)) + mv.getHor()) * (int64_t) scalingRatio.x + addX;
     x0Int = sgn2(x0Int) * ((abs(x0Int) + (1ull << (7 + scaleX))) >> (8 + scaleX))
             + ((refPic->getScalingWindow().getWindowLeftOffset() * SPS::getWinUnitX(chFmt)) << ((posShift - scaleX)));
 
-    y0Int = ((posY << (4 + scaleY)) + mv.getVer()) * (int64_t) scalingRatio.second + addY;
+    y0Int = ((posY << (4 + scaleY)) + mv.getVer()) * (int64_t) scalingRatio.y + addY;
     y0Int = sgn2(y0Int) * ((abs(y0Int) + (1ull << (7 + scaleY))) >> (8 + scaleY))
             + ((refPic->getScalingWindow().getWindowTopOffset() * SPS::getWinUnitY(chFmt)) << ((posShift - scaleY)));
 

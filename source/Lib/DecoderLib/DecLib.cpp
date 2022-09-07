@@ -825,15 +825,15 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
     msg(msgl, "[L%d", refList);
     for (int refIndex = 0; refIndex < pcSlice->getNumRefIdx(RefPicList(refList)); refIndex++)
     {
-      const std::pair<int, int> &scaleRatio = pcSlice->getScalingRatio(RefPicList(refList), refIndex);
+      const ScalingRatio &scaleRatio = pcSlice->getScalingRatio(RefPicList(refList), refIndex);
 
       if (pcSlice->getPicHeader()->getEnableTMVPFlag() && pcSlice->getColFromL0Flag() == bool(1 - refList)
           && pcSlice->getColRefIdx() == refIndex)
       {
-        if( scaleRatio.first != 1 << SCALE_RATIO_BITS || scaleRatio.second != 1 << SCALE_RATIO_BITS )
+        if (scaleRatio != SCALE_1X)
         {
           msg(msgl, " %dc(%1.2lfx, %1.2lfx)", pcSlice->getRefPOC(RefPicList(refList), refIndex),
-              double(scaleRatio.first) / (1 << SCALE_RATIO_BITS), double(scaleRatio.second) / (1 << SCALE_RATIO_BITS));
+              double(scaleRatio.x) / (1 << ScalingRatio::BITS), double(scaleRatio.y) / (1 << ScalingRatio::BITS));
         }
         else
         {
@@ -842,10 +842,10 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
       }
       else
       {
-        if( scaleRatio.first != 1 << SCALE_RATIO_BITS || scaleRatio.second != 1 << SCALE_RATIO_BITS )
+        if (scaleRatio != SCALE_1X)
         {
           msg(msgl, " %d(%1.2lfx, %1.2lfx)", pcSlice->getRefPOC(RefPicList(refList), refIndex),
-              double(scaleRatio.first) / (1 << SCALE_RATIO_BITS), double(scaleRatio.second) / (1 << SCALE_RATIO_BITS));
+              double(scaleRatio.x) / (1 << ScalingRatio::BITS), double(scaleRatio.y) / (1 << ScalingRatio::BITS));
         }
         else
         {

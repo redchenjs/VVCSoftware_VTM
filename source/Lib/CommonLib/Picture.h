@@ -171,27 +171,27 @@ struct Picture : public UnitArea
   void          setSpliceIdx(uint32_t idx, int poc) { m_spliceIdx[idx] = poc; }
   void          createSpliceIdx(int nums);
   bool          getSpliceFull();
-  static void   sampleRateConv( const std::pair<int, int> scalingRatio, const std::pair<int, int> compScale,
-                                const CPelBuf& beforeScale, const int beforeScaleLeftOffset, const int beforeScaleTopOffset,
-                                const PelBuf& afterScale, const int afterScaleLeftOffset, const int afterScaleTopOffset,
-                                const int bitDepth, const bool useLumaFilter, const bool downsampling,
+  static void   sampleRateConv(const ScalingRatio scalingRatio, int scaleX, int scaleY, const CPelBuf &beforeScale,
+                               const int beforeScaleLeftOffset, const int beforeScaleTopOffset, const PelBuf &afterScale,
+                               const int afterScaleLeftOffset, const int afterScaleTopOffset, const int bitDepth,
+                               const bool useLumaFilter, const bool downsampling,
 #if !JVET_AB0081
-                                const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
+                             const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
 #else
-                                const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag,
-                                const bool rescaleForDisplay, const int upscaleFilterForDisplay
+                              const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag,
+                              const bool rescaleForDisplay, const int upscaleFilterForDisplay
 #endif
   );
 
-  static void   rescalePicture( const std::pair<int, int> scalingRatio,
-                                const CPelUnitBuf& beforeScaling, const Window& scalingWindowBefore,
-                                const PelUnitBuf& afterScaling, const Window& scalingWindowAfter,
-                                const ChromaFormat chromaFormatIDC, const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
+  static void rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf &beforeScaling,
+                             const Window &scalingWindowBefore, const PelUnitBuf &afterScaling,
+                             const Window &scalingWindowAfter, const ChromaFormat chromaFormatIDC,
+                             const BitDepths &bitDepths, const bool useLumaFilter, const bool downsampling,
 #if !JVET_AB0081
-                                const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
+                             const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
 #else
-                                const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
-                                bool rescaleForDisplay = false, int upscaleFilterForDisplay = 0
+                              const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
+                              bool rescaleForDisplay = false, int upscaleFilterForDisplay = 0
 #endif
   );
 
