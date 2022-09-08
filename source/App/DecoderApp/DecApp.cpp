@@ -456,7 +456,7 @@ uint32_t DecApp::decode()
               msg(WARNING, "\nWarning: No frame rate info found in the bitstream, default 50 fps is used.\n");
             }
             const auto pps = pcListPic->front()->cs->pps;
-            auto confWindow = sps->getConformanceWindow();
+            auto confWindow = pps->getConformanceWindow();
             const int picWidth = pps->getPicWidthInLumaSamples() - confWindow.getWindowLeftOffset() - confWindow.getWindowRightOffset();
             const int picHeight = pps->getPicHeightInLumaSamples() - confWindow.getWindowTopOffset() - confWindow.getWindowBottomOffset();
             m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(picWidth, picHeight, frameRate, frameScale, m_outputBitDepth[0], sps->getChromaFormatIdc());
