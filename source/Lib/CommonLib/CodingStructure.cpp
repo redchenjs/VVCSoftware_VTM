@@ -349,6 +349,10 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv) const
   }
 
   PicHeader     *curPh = curPic->cs->picHeader;
+  if (!curPh)
+  {
+    return false;
+  }
   bool isCurGdrPicture = curPh->getInGdrInterval();
 
   if (isCurGdrPicture)
@@ -648,6 +652,10 @@ bool CodingStructure::isClean(const Position &IntPos, RefPicList e, int refIdx) 
   }
 
   PicHeader     *refPh = refPic->cs->picHeader;
+  if (!refPh)
+  {
+    return false;
+  }
   bool isRefGdrPicture = refPh->getInGdrInterval();
 
   if (isRefGdrPicture)
@@ -685,6 +693,11 @@ bool CodingStructure::isClean(const Position &IntPos, const Picture* const refPi
   }
 
   PicHeader     *refPh = refPic->cs->picHeader;
+  if (!refPh)
+  {
+    return false;
+  }
+
   bool isRefGdrPicture = refPh->getInGdrInterval();
 
   if (isRefGdrPicture)
@@ -723,6 +736,11 @@ bool CodingStructure::isClean(const int Intx, const int Inty, const ChannelType 
          pos in dirty area -> false
   */
   PicHeader     *curPh = picHeader;
+  if (!curPh)
+  {
+    return false;
+  }
+
   bool isCurGdrPicture = curPh->getInGdrInterval();
   if (isCurGdrPicture)
   {
