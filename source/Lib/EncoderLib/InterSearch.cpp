@@ -5132,7 +5132,17 @@ void InterSearch::xSetSearchRange(const PredictionUnit &pu, const Mv &cMvPred, c
 #if GDR_ENABLED
   if (m_pcEncCfg->getGdrEnabled())
   {
-    bool isRefGdrPicture = pu.cs->slice->getRefPic(eRefPicList, refIdx)->cs->picHeader->getInGdrInterval();
+    bool isRefGdrPicture = false;   
+    Picture *refPic = (refIdx < 0) ? nullptr : pu.cs->slice->getRefPic(eRefPicList, refIdx);
+    if (refPic)
+    {
+      PicHeader *ph = refPic->cs->picHeader;
+      if (ph)
+      {
+        isRefGdrPicture = ph->getInGdrInterval();
+      }
+    }
+    
     if (isRefGdrPicture)
     {
       mvTL = { cFPMvPred.getHor(), cFPMvPred.getVer() };
