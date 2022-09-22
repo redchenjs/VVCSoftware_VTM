@@ -498,11 +498,10 @@ DecLib::DecLib()
 
 DecLib::~DecLib()
 {
-  while (!m_prefixSEINALUs.empty())
-  {
-    delete m_prefixSEINALUs.front();
-    m_prefixSEINALUs.pop_front();
-  }
+  resetAccessUnitSeiNalus();
+  resetPictureSeiNalus();
+  resetPrefixSeiNalus();
+
   if (m_sdiSEIInFirstAU != nullptr)
   {
     delete m_sdiSEIInFirstAU;
@@ -535,6 +534,12 @@ void DecLib::destroy()
   {
     delete m_dci;
     m_dci = nullptr;
+  }
+
+  if (m_opi)
+  {
+    delete m_opi;
+    m_opi = nullptr;
   }
 
   m_cSliceDecoder.destroy();
