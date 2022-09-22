@@ -78,6 +78,9 @@ int main(int argc, char* argv[])
   if(!pcDecApp->parseCfg( argc, argv ))
   {
     returnCode = EXIT_FAILURE;
+
+    delete pcDecApp;
+
     return returnCode;
   }
 
