@@ -498,11 +498,10 @@ DecLib::DecLib()
 
 DecLib::~DecLib()
 {
-  while (!m_prefixSEINALUs.empty())
-  {
-    delete m_prefixSEINALUs.front();
-    m_prefixSEINALUs.pop_front();
-  }
+  resetAccessUnitSeiNalus();
+  resetPictureSeiNalus();
+  resetPrefixSeiNalus();
+
   if (m_sdiSEIInFirstAU != nullptr)
   {
     delete m_sdiSEIInFirstAU;
