@@ -537,6 +537,12 @@ void DecLib::destroy()
     m_dci = nullptr;
   }
 
+  if (m_opi)
+  {
+    delete m_opi;
+    m_opi = nullptr;
+  }
+
   m_cSliceDecoder.destroy();
 }
 
