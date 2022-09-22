@@ -1179,14 +1179,12 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
 
   if (pcPic->fieldPic ) //Field Decoding
   {
-    PicList::iterator endPic   = pcListPic->end();
-    endPic--;
-    Picture *pcPicTop, *pcPicBottom = nullptr;
+    PicList::iterator endPic = pcListPic->end();
     while (iterPic != endPic)
     {
-      pcPicTop = *(iterPic);
+      Picture *pcPicTop = *iterPic;
       iterPic++;
-      pcPicBottom = *(iterPic);
+      Picture *pcPicBottom = iterPic == endPic ? pcPicTop : *iterPic;
 
       if( pcPicTop->layerId != layerId && layerId != NOT_VALID )
       {
@@ -1227,19 +1225,24 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
         pcPicTop->neededForOutput = false;
         pcPicBottom->neededForOutput = false;
 
-        if(pcPicTop)
-        {
-          pcPicTop->destroy();
-          delete pcPicTop;
-          pcPicTop = nullptr;
-        }
+        pcPicTop->destroy();
+        delete pcPicTop;
+        pcPicBottom->destroy();
+        delete pcPicBottom;
+        iterPic--;
+        *iterPic = nullptr;
+        iterPic++;
+        *iterPic = nullptr;
+        iterPic++;
       }
-    }
-    if(pcPicBottom)
-    {
-      pcPicBottom->destroy();
-      delete pcPicBottom;
-      pcPicBottom = nullptr;
+      else
+      {
+        pcPicTop->destroy();
+        delete pcPicTop;
+        iterPic--;
+        *iterPic = nullptr;
+        iterPic++;
+      }
     }
   }
   else //Frame decoding
@@ -1375,7 +1378,9 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
     pcListPic->remove_if([](Picture* p) { return p == nullptr; });
   }
   else
-  pcListPic->clear();
+  {
+    pcListPic->clear();
+  }
   m_iPOCLastDisplay = -MAX_INT;
 }
 
