@@ -36,7 +36,7 @@
  */
 
 #include "InterSearch.h"
-
+#include "EquationSolver.h"
 
 #include "CommonLib/CommonDef.h"
 #include "CommonLib/Rom.h"
@@ -8353,7 +8353,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
   int iParaNum = pu.cu->affineType ? 7 : 5;
   int affineParaNum = iParaNum - 1;
   int mvNum = pu.cu->affineType ? 3 : 2;
-  double pdEqualCoeff[7][7];
+  // double pdEqualCoeff[7][7];
 
   int64_t  i64EqualCoeff[7][7];
   Pel    *piError = m_tmpAffiError;
@@ -8366,7 +8366,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
 #if GDR_ENABLED
   bool uiCostBestOk = true;
   bool uiCostTempOk = true;
-  bool costTempOk = true;
+  // bool costTempOk = true;
 
   bool allOk = true;
 #endif
@@ -8505,19 +8505,25 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
     m_EqualCoeffComputer(piError, width, pdDerivate, width, i64EqualCoeff, width, height,
                          (pu.cu->affineType == AFFINEMODEL_6PARAM));
 
-    for ( int row = 0; row < iParaNum; row++ )
-    {
-      for ( int i = 0; i < iParaNum; i++ )
-      {
-        pdEqualCoeff[row][i] = (double)i64EqualCoeff[row][i];
-      }
-    }
+    // for ( int row = 0; row < iParaNum; row++ )
+    // {
+    //   for ( int i = 0; i < iParaNum; i++ )
+    //   {
+    //     pdEqualCoeff[row][i] = (double)i64EqualCoeff[row][i];
+    //   }
+    // }
 
     double dAffinePara[6];
     double dDeltaMv[6]={0.0, 0.0, 0.0, 0.0, 0.0, 0.0,};
     Mv acDeltaMv[3];
 
-    solveEqual( pdEqualCoeff, affineParaNum, dAffinePara );
+    // solveEqual( pdEqualCoeff, affineParaNum, dAffinePara );
+
+    EquationSolver *solver = new EquationSolver();
+    solver->load_data(i64EqualCoeff, affineParaNum);
+    solver->method_dfa5(affineParaNum);
+    solver->save_data(dAffinePara, affineParaNum, 8);
+    delete(solver);
 
     // convert to delta mv
     dDeltaMv[0] = dAffinePara[0];
@@ -8692,7 +8698,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
       mvpIdx = bestMvpIdx;
     }
   }
-
+/*
   auto checkCPMVRdCost = [&](Mv ctrlPtMv[3])
   {
 #if GDR_ENABLED
@@ -8915,7 +8921,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
   acMvSolid[1] = aamvpi.mvSolidRT[mvpIdx];
   acMvSolid[2] = aamvpi.mvSolidLB[mvpIdx];
 #endif
-
+*/
   ruiBits = uiBitsBest;
   ruiCost = uiCostBest;
   DTRACE( g_trace_ctx, D_COMMON, " (%d) uiBitsBest=%d, uiCostBest=%d\n", DTRACE_GET_COUNTER(g_trace_ctx,D_COMMON), uiBitsBest, uiCostBest );
