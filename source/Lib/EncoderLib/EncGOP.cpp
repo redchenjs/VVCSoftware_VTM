@@ -6381,7 +6381,7 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
         {
           higherTLayerRefs.push_back(ii);
         }
-        else if (refPicIdxL0 >= rpl1->getNumberOfActivePictures() && layerIdx && vps && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
+        else if (refPicIdxL0 >= rpl0->getNumberOfActivePictures() && layerIdx && vps && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
         {
           inactiveRefs.push_back(ii);
         }
