@@ -577,7 +577,7 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
 {
   if (pocCRA < MAX_UINT && getPOC() > pocCRA)
   {
-    uint32_t numRefPic = pRPL0->getNumberOfShorttermPictures() + pRPL0->getNumberOfLongtermPictures();
+    uint32_t numRefPic = pRPL0->getNumberOfShorttermPictures() + pRPL0->getNumberOfLongtermPictures() + pRPL0->getNumberOfInterLayerPictures();
     for (int i = 0; i < numRefPic; i++)
     {
       if (!pRPL0->isRefPicLongterm(i))
@@ -599,7 +599,7 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
         CHECK(ltrp->getPOC() < pocCRA, "Invalid state");
       }
     }
-    numRefPic = pRPL1->getNumberOfShorttermPictures() + pRPL1->getNumberOfLongtermPictures();
+    numRefPic = pRPL1->getNumberOfShorttermPictures() + pRPL1->getNumberOfLongtermPictures() + pRPL1->getNumberOfInterLayerPictures();
     for (int i = 0; i < numRefPic; i++)
     {
       if (!pRPL1->isRefPicLongterm(i))
@@ -1638,7 +1638,7 @@ void Slice::applyReferencePictureListBasedMarking( PicList& rcListPic, const Ref
       {
         curPoc = curPoc & (pocCycle - 1);
       }
-      if (rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced)
+      if (rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced && rpcPic->reconstructed && rpcPic->layerId == getNalUnitLayerId())
       {
         isAvailable = 1;
         break;
@@ -1666,7 +1666,7 @@ void Slice::applyReferencePictureListBasedMarking( PicList& rcListPic, const Ref
         {
           curPoc = curPoc & (pocCycle - 1);
         }
-        if (!rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced)
+        if (!rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced && rpcPic->reconstructed && rpcPic->layerId == getNalUnitLayerId())
         {
           isAvailable = 1;
           rpcPic->longTerm = true;
@@ -1945,7 +1945,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
       {
         curPoc = curPoc & (pocCycle - 1);
       }
-      if (rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced)
+      if (rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced && rpcPic->reconstructed && rpcPic->layerId == getNalUnitLayerId())
       {
         isAvailable = 1;
         break;
@@ -1969,7 +1969,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
         {
           curPoc = curPoc & (pocCycle - 1);
         }
-        if (!rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced)
+        if (!rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced && rpcPic->reconstructed && rpcPic->layerId == getNalUnitLayerId())
         {
           isAvailable = 1;
           rpcPic->longTerm = true;
