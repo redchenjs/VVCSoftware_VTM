@@ -546,10 +546,13 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
 
 void SEIReader::xParseSEIFillerPayload(SEIFillerPayload &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
-  uint32_t val;
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+
   for (uint32_t i = 0; i < payloadSize; i++)
   {
+    uint32_t val;
     sei_read_code( nullptr, 8, val, "ff_byte");
+    CHECK(val != 0xff, "ff_byte shall be a byte having the value 0xFF");
   }
 }
 
