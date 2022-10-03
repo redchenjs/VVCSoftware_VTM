@@ -111,6 +111,15 @@ public:
   virtual PayloadType payloadType() const = 0;
 };
 
+class SEIFillerPayload : public SEI
+{
+public:
+  PayloadType payloadType() const { return FILLER_PAYLOAD; }
+  SEIFillerPayload() {}
+  virtual ~SEIFillerPayload() {}
+
+};
+
 class SEIShutterIntervalInfo : public SEI
 {
 public:
