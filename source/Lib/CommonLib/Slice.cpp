@@ -1833,7 +1833,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
       {
         curPoc = curPoc & (pocCycle - 1);
       }
-      if (rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced)
+      if (rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced && rpcPic->reconstructed && rpcPic->layerId == m_nuhLayerId)
       {
         isAvailable = 1;
         break;
@@ -1857,7 +1857,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
         {
           curPoc = curPoc & (pocCycle - 1);
         }
-        if (!rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced)
+        if (!rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced && rpcPic->reconstructed && rpcPic->layerId == m_nuhLayerId)
         {
           isAvailable = 1;
           rpcPic->longTerm = true;
