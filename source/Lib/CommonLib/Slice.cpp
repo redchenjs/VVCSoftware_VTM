@@ -1891,7 +1891,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
     while (iterPic != rcListPic.end())
     {
       rpcPic = *(iterPic++);
-      if (!rpcPic->longTerm && rpcPic->getPOC() == this->getPOC() + pRPL->getRefPicIdentifier(ii) && rpcPic->referenced)
+      if (rpcPic->getPOC() == this->getPOC() + pRPL->getRefPicIdentifier(ii) && rpcPic->referenced && rpcPic->layerId == m_nuhLayerId)
       {
         isAvailable = 1;
         break;
@@ -2004,7 +2004,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
     while (iterPic != rcListPic.end())
     {
       rpcPic = *(iterPic++);
-      if (!rpcPic->longTerm && rpcPic->getPOC() == this->getPOC() + pRPL->getRefPicIdentifier(ii) && rpcPic->referenced)
+      if (rpcPic->getPOC() == this->getPOC() + pRPL->getRefPicIdentifier(ii) && rpcPic->referenced && rpcPic->layerId == m_nuhLayerId)
       {
         isAvailable = 1;
         break;
