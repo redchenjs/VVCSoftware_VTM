@@ -256,6 +256,10 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
   {
     switch (payloadType)
     {
+    case SEI::FILLER_PAYLOAD:
+      sei = new SEIFillerPayload;
+      xParseSEIFillerPayload((SEIFillerPayload&) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
     case SEI::USER_DATA_UNREGISTERED:
       sei = new SEIuserDataUnregistered;
       xParseSEIuserDataUnregistered((SEIuserDataUnregistered&) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -472,6 +476,10 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
         sei = new SEIScalableNesting;
         xParseSEIScalableNesting((SEIScalableNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd, pDecodedMessageOutputStream);
         break;
+      case SEI::FILLER_PAYLOAD:
+        sei = new SEIFillerPayload;
+        xParseSEIFillerPayload((SEIFillerPayload&) *sei, payloadSize, pDecodedMessageOutputStream);
+        break;
       default:
         for (uint32_t i = 0; i < payloadSize; i++)
         {
@@ -534,6 +542,18 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
   /* restore primary bitstream for sei_message */
   delete getBitstream();
   setBitstream(bs);
+}
+
+void SEIReader::xParseSEIFillerPayload(SEIFillerPayload &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+{
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+
+  for (uint32_t i = 0; i < payloadSize; i++)
+  {
+    uint32_t val;
+    sei_read_code( nullptr, 8, val, "ff_byte");
+    CHECK(val != 0xff, "ff_byte shall be a byte having the value 0xFF");
+  }
 }
 
 /**
