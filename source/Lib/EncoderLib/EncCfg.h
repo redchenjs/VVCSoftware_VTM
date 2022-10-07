@@ -2587,7 +2587,7 @@ public:
   void         setMaxNumALFAPS(int n)                                 { m_maxNumAlfAps = n; }
   int          getMaxNumALFAPS()                                const { return m_maxNumAlfAps; }
   void         setConstantJointCbCrSignFlag(bool b)                   { m_constantJointCbCrSignFlag = b; }
-  int          getConstantJointCbCrSignFlag()                   const { return m_constantJointCbCrSignFlag; }
+  bool         getConstantJointCbCrSignFlag()                   const { return m_constantJointCbCrSignFlag; }
 
   void         setUseALF( bool b ) { m_alf = b; }
   bool         getUseALF()                                      const { return m_alf; }

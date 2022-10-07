@@ -1822,7 +1822,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     }
     else
     {
-      picHeader->setVirtualBoundariesPresentFlag( 0 );
+      picHeader->setVirtualBoundariesPresentFlag( false );
       picHeader->setNumVerVirtualBoundaries( 0 );
       picHeader->setNumHorVirtualBoundaries( 0 );
     }
@@ -1928,7 +1928,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
   }
   else
   {
-    picHeader->setSplitConsOverrideFlag(0);
+    picHeader->setSplitConsOverrideFlag(false);
   }
   // Q0781, two-flags
   if (picHeader->getPicIntraSliceAllowedFlag())
@@ -2057,7 +2057,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     }
     else
     {
-      picHeader->setBdofDisabledFlag(0);
+      picHeader->setBdofDisabledFlag(false);
     }
 
   // picture level DMVR disable flags
@@ -2067,7 +2067,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     }
     else
     {
-      picHeader->setDmvrDisabledFlag(0);
+      picHeader->setDmvrDisabledFlag(false);
     }
 
   // picture level PROF disable flags
@@ -2568,7 +2568,7 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
       }
       else
       {
-        pcSlice->setDeblockingFilterOverrideFlag(0);
+        pcSlice->setDeblockingFilterOverrideFlag(false);
       }
       if (pcSlice->getDeblockingFilterOverrideFlag())
       {
