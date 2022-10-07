@@ -47,7 +47,7 @@
 //! \{
 
 Slice::Slice()
-  : m_iPOC(0)
+  : m_poc(0)
   , m_iLastIDR(0)
   , m_prevGDRInSameLayerPOC(-MAX_INT)
   , m_iAssociatedIRAP(0)
@@ -78,7 +78,7 @@ Slice::Slice()
   , m_signDataHidingEnabledFlag(false)
   , m_tsResidualCodingDisabledFlag(false)
   , m_pendingRasInit(false)
-  , m_bCheckLDC(false)
+  , m_checkLdc(false)
   , m_biDirPred(false)
   , m_lmChromaCheckDisable(false)
   , m_iSliceQpDelta(0)
@@ -94,7 +94,7 @@ Slice::Slice()
   , m_independentSliceIdx(0)
   , m_nextSlice(false)
   , m_sliceBits(0)
-  , m_bFinalized(false)
+  , m_finalized(false)
   , m_bTestWeightPred(false)
   , m_bTestWeightBiPred(false)
   , m_substreamSizes()
@@ -111,7 +111,7 @@ Slice::Slice()
     m_riceBit[i] = 0;
   }
 
-  m_cnt_right_bottom = 0;
+  m_cntRightBottom = 0;
 
   for(uint32_t i=0; i<NUM_REF_PIC_LIST_01; i++)
   {
@@ -178,7 +178,7 @@ void Slice::initSlice()
 
   m_noOutputOfPriorPicsFlag = 0;
 
-  m_bCheckLDC = false;
+  m_checkLdc = false;
 
   m_biDirPred = false;
   m_lmChromaCheckDisable = false;
@@ -191,8 +191,7 @@ void Slice::initSlice()
   }
   m_iSliceChromaQpDelta[JOINT_CbCr] = 0;
 
-
-  m_bFinalized=false;
+  m_finalized = false;
 
   m_substreamSizes.clear();
   m_cabacInitFlag        = false;
@@ -789,7 +788,7 @@ void Slice::checkSTSA(PicList& rcListPic)
     while (iterPic != rcListPic.end())
     {
       pcRefPic = *(iterPic++);
-      if (!pcRefPic->referenced || pcRefPic->getPOC() == m_iPOC)
+      if (!pcRefPic->referenced || pcRefPic->getPOC() == m_poc)
       {
         continue;
       }
@@ -898,7 +897,7 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
 
   int i, j, k;
 
-  m_iPOC                 = pSrc->m_iPOC;
+  m_poc                               = pSrc->m_poc;
   m_eNalUnitType         = pSrc->m_eNalUnitType;
   m_eSliceType           = pSrc->m_eSliceType;
   m_iSliceQp             = pSrc->m_iSliceQp;
@@ -922,7 +921,7 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
     m_riceBit[i] = pSrc->m_riceBit[i];
   }
   m_reverseLastSigCoeffFlag = pSrc->m_reverseLastSigCoeffFlag;
-  m_cnt_right_bottom        = pSrc->m_cnt_right_bottom;
+  m_cntRightBottom          = pSrc->m_cntRightBottom;
 
   for (i = 0; i < NUM_REF_PIC_LIST_01; i++)
   {
@@ -934,7 +933,7 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
     m_list1IdxToList0Idx[i] = pSrc->m_list1IdxToList0Idx[i];
   }
 
-  m_bCheckLDC             = pSrc->m_bCheckLDC;
+  m_checkLdc             = pSrc->m_checkLdc;
   m_iSliceQpDelta        = pSrc->m_iSliceQpDelta;
 
   m_biDirPred = pSrc->m_biDirPred;
@@ -1697,7 +1696,7 @@ void Slice::applyReferencePictureListBasedMarking( PicList& rcListPic, const Ref
         // Diagonal inter-layer prediction is not allowed
         CHECK( pRPL0->getRefPicIdentifier( i ), "ILRP identifier should be 0" );
 
-        if( pcPic->poc == m_iPOC )
+        if (pcPic->poc == m_poc)
         {
           isReference = 1;
           pcPic->longTerm = true;
@@ -1742,7 +1741,7 @@ void Slice::applyReferencePictureListBasedMarking( PicList& rcListPic, const Ref
         // Diagonal inter-layer prediction is not allowed
         CHECK( pRPL1->getRefPicIdentifier( i ), "ILRP identifier should be 0" );
 
-        if( pcPic->poc == m_iPOC )
+        if (pcPic->poc == m_poc)
         {
           isReference = 1;
           pcPic->longTerm = true;
@@ -1781,7 +1780,7 @@ void Slice::applyReferencePictureListBasedMarking( PicList& rcListPic, const Ref
     }
     // mark the picture as "unused for reference" if it is not in
     // the Reference Picture List
-    if( pcPic->layerId == layerId && pcPic->poc != m_iPOC && isReference == 0 )
+    if (pcPic->layerId == layerId && pcPic->poc != m_poc && isReference == 0)
     {
       pcPic->referenced = false;
       pcPic->longTerm = false;
@@ -2033,7 +2032,7 @@ bool Slice::isPOCInRefPicList(const ReferencePictureList *rpl, int poc )
       // Diagonal inter-layer prediction is not allowed
       CHECK( rpl->getRefPicIdentifier( i ), "ILRP identifier should be 0" );
 
-      if( poc == m_iPOC )
+      if (poc == m_poc)
       {
         return true;
       }
@@ -2331,24 +2330,24 @@ unsigned Slice::getMinPictureDistance() const
 // Video parameter set (VPS)
 // ------------------------------------------------------------------------------------------------
 VPS::VPS()
-  : m_VPSId(0)
+  : m_vpsId(0)
   , m_maxLayers(1)
   , m_vpsMaxSubLayers(7)
-  , m_vpsDefaultPtlDpbHrdMaxTidFlag (true)
+  , m_vpsDefaultPtlDpbHrdMaxTidFlag(true)
   , m_vpsAllIndependentLayersFlag(true)
-  , m_vpsEachLayerIsAnOlsFlag (1)
-  , m_vpsOlsModeIdc (0)
-  , m_vpsNumOutputLayerSets (1)
-  , m_vpsNumPtls (1)
+  , m_vpsEachLayerIsAnOlsFlag(1)
+  , m_vpsOlsModeIdc(0)
+  , m_vpsNumOutputLayerSets(1)
+  , m_vpsNumPtls(1)
   , m_vpsExtensionFlag(false)
   , m_vpsGeneralHrdParamsPresentFlag(false)
   , m_vpsSublayerCpbParamsPresentFlag(false)
   , m_numOlsTimingHrdParamsMinus1(0)
-  , m_totalNumOLSs( 1 )
-  , m_numMultiLayeredOlss( 0 )
-  , m_numDpbParams( 0 )
-  , m_sublayerDpbParamsPresentFlag( false )
-  , m_targetOlsIdx( 0 )
+  , m_totalNumOLSs(1)
+  , m_numMultiLayeredOlss(0)
+  , m_numDpbParams(0)
+  , m_sublayerDpbParamsPresentFlag(false)
+  , m_targetOlsIdx(0)
 {
   for (int i = 0; i < MAX_VPS_SUBLAYERS; i++)
   {
@@ -2889,113 +2888,112 @@ SPSRExt::SPSRExt()
 {
 }
 
-
 SPS::SPS()
-: m_SPSId                     (  0)
-, m_VPSId                     ( 0 )
-, m_layerId                   ( 0 )
-, m_affineAmvrEnabledFlag     ( false )
-, m_DMVR                      ( false )
-, m_MMVD                      ( false )
-, m_SBT                       ( false )
-, m_ISP                       ( false )
-, m_chromaFormatIdc           (CHROMA_420)
-, m_uiMaxTLayers              (  1)
-, m_ptlDpbHrdParamsPresentFlag (1)
-, m_SubLayerDpbParamsFlag      (0)
-// Structure
-, m_maxWidthInLumaSamples     (352)
-, m_maxHeightInLumaSamples    (288)
-, m_subPicInfoPresentFlag     (false)
-, m_numSubPics(1)
-, m_independentSubPicsFlag     (false)
-, m_subPicSameSizeFlag        (false)
-, m_subPicIdMappingExplicitlySignalledFlag ( false )
-, m_subPicIdMappingPresentFlag ( false )
-, m_subPicIdLen(16)
-, m_log2MinCodingBlockSize    (  2)
-, m_CTUSize(0)
-, m_minQT{ 0, 0, 0 }
-, m_maxMTTHierarchyDepth{ MAX_BT_DEPTH, MAX_BT_DEPTH_INTER, MAX_BT_DEPTH_C }
-, m_maxBTSize{ 0, 0, 0 }
-, m_maxTTSize{ 0, 0, 0 }
-, m_uiMaxCUWidth              ( 32)
-, m_uiMaxCUHeight             ( 32)
-, m_numRPL0                   ( 0 )
-, m_numRPL1                   ( 0 )
-, m_rpl1CopyFromRpl0Flag      ( false )
-, m_rpl1IdxPresentFlag        ( false )
-, m_allRplEntriesHasSameSignFlag ( true )
-, m_bLongTermRefsPresent      (false)
-// Tool list
-, m_transformSkipEnabledFlag  (false)
-, m_log2MaxTransformSkipBlockSize (2)
-, m_BDPCMEnabledFlag          (false)
-, m_JointCbCrEnabledFlag      (false)
-, m_entropyCodingSyncEnabledFlag(false)
-, m_entryPointPresentFlag(false)
-, m_internalMinusInputBitDepth{ 0, 0 }
-, m_sbtmvpEnabledFlag         (false)
-, m_bdofEnabledFlag           (false)
-, m_fpelMmvdEnabledFlag       ( false )
-, m_BdofControlPresentInPhFlag( false )
-, m_DmvrControlPresentInPhFlag( false )
-, m_ProfControlPresentInPhFlag( false )
-, m_uiBitsForPOC              (  8)
-, m_pocMsbCycleFlag           ( false )
-, m_pocMsbCycleLen            ( 1 )
-, m_numExtraPHBytes           ( 0 )
-, m_numExtraSHBytes           ( 0 )
-, m_numLongTermRefPicSPS      (  0)
+  : m_spsId(0)
+  , m_vpsId(0)
+  , m_layerId(0)
+  , m_affineAmvrEnabledFlag(false)
+  , m_DMVR(false)
+  , m_MMVD(false)
+  , m_SBT(false)
+  , m_ISP(false)
+  , m_chromaFormatIdc(CHROMA_420)
+  , m_uiMaxTLayers(1)
+  , m_ptlDpbHrdParamsPresentFlag(1)
+  , m_subLayerDpbParamsFlag(0)
+  // Structure
+  , m_maxWidthInLumaSamples(352)
+  , m_maxHeightInLumaSamples(288)
+  , m_subPicInfoPresentFlag(false)
+  , m_numSubPics(1)
+  , m_independentSubPicsFlag(false)
+  , m_subPicSameSizeFlag(false)
+  , m_subPicIdMappingExplicitlySignalledFlag(false)
+  , m_subPicIdMappingPresentFlag(false)
+  , m_subPicIdLen(16)
+  , m_log2MinCodingBlockSize(2)
+  , m_CTUSize(0)
+  , m_minQT{ 0, 0, 0 }
+  , m_maxMTTHierarchyDepth{ MAX_BT_DEPTH, MAX_BT_DEPTH_INTER, MAX_BT_DEPTH_C }
+  , m_maxBTSize{ 0, 0, 0 }
+  , m_maxTTSize{ 0, 0, 0 }
+  , m_uiMaxCUWidth(32)
+  , m_uiMaxCUHeight(32)
+  , m_numRPL0(0)
+  , m_numRPL1(0)
+  , m_rpl1CopyFromRpl0Flag(false)
+  , m_rpl1IdxPresentFlag(false)
+  , m_allRplEntriesHasSameSignFlag(true)
+  , m_longTermRefsPresent(false)
+  // Tool list
+  , m_transformSkipEnabledFlag(false)
+  , m_log2MaxTransformSkipBlockSize(2)
+  , m_BDPCMEnabledFlag(false)
+  , m_jointCbCrEnabledFlag(false)
+  , m_entropyCodingSyncEnabledFlag(false)
+  , m_entryPointPresentFlag(false)
+  , m_internalMinusInputBitDepth{ 0, 0 }
+  , m_sbtmvpEnabledFlag(false)
+  , m_bdofEnabledFlag(false)
+  , m_fpelMmvdEnabledFlag(false)
+  , m_BdofControlPresentInPhFlag(false)
+  , m_DmvrControlPresentInPhFlag(false)
+  , m_ProfControlPresentInPhFlag(false)
+  , m_bitsForPoc(8)
+  , m_pocMsbCycleFlag(false)
+  , m_pocMsbCycleLen(1)
+  , m_numExtraPHBytes(0)
+  , m_numExtraSHBytes(0)
+  , m_numLongTermRefPicSPS(0)
 
-, m_log2MaxTbSize             (  6)
+  , m_log2MaxTbSize(6)
 
-, m_useWeightPred             (false)
-, m_useWeightedBiPred         (false)
-, m_saoEnabledFlag            (false)
-, m_bTemporalIdNestingFlag    (false)
-, m_scalingListEnabledFlag    (false)
-, m_virtualBoundariesEnabledFlag( 0 )
-, m_virtualBoundariesPresentFlag( 0 )
-, m_numVerVirtualBoundaries(0)
-, m_numHorVirtualBoundaries(0)
-, m_generalHrdParametersPresentFlag(false)
-, m_fieldSeqFlag              (false)
-, m_vuiParametersPresentFlag  (false)
-, m_vuiParameters             ()
-, m_wrapAroundEnabledFlag     (false)
-, m_IBCFlag                   (  0)
-, m_PLTMode                   (  0)
-, m_lmcsEnabled               (false)
-, m_AMVREnabledFlag                       ( false )
-, m_LMChroma                  ( false )
-, m_horCollocatedChromaFlag   ( true )
-, m_verCollocatedChromaFlag   ( false )
-, m_LFNST                     ( false )
-, m_Affine                    ( false )
-, m_AffineType                ( false )
-, m_PROF                      ( false )
-, m_ciip                   ( false )
-, m_Geo                       ( false )
+  , m_useWeightPred(false)
+  , m_useWeightedBiPred(false)
+  , m_saoEnabledFlag(false)
+  , m_bTemporalIdNestingFlag(false)
+  , m_scalingListEnabledFlag(false)
+  , m_virtualBoundariesEnabledFlag(0)
+  , m_virtualBoundariesPresentFlag(0)
+  , m_numVerVirtualBoundaries(0)
+  , m_numHorVirtualBoundaries(0)
+  , m_generalHrdParametersPresentFlag(false)
+  , m_fieldSeqFlag(false)
+  , m_vuiParametersPresentFlag(false)
+  , m_vuiParameters()
+  , m_wrapAroundEnabledFlag(false)
+  , m_IBCFlag(0)
+  , m_PLTMode(0)
+  , m_lmcsEnabled(false)
+  , m_AMVREnabledFlag(false)
+  , m_LMChroma(false)
+  , m_horCollocatedChromaFlag(true)
+  , m_verCollocatedChromaFlag(false)
+  , m_LFNST(false)
+  , m_Affine(false)
+  , m_AffineType(false)
+  , m_PROF(false)
+  , m_ciip(false)
+  , m_Geo(false)
 #if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
-, m_LadfEnabled               ( false )
-, m_LadfNumIntervals          ( 0 )
-, m_LadfQpOffset              { 0 }
-, m_LadfIntervalLowerBound    { 0 }
+  , m_LadfEnabled(false)
+  , m_LadfNumIntervals(0)
+  , m_LadfQpOffset{ 0 }
+  , m_LadfIntervalLowerBound{ 0 }
 #endif
-, m_MRL                       ( false )
-, m_MIP                       ( false )
-, m_GDREnabledFlag            ( true )
-, m_SubLayerCbpParametersPresentFlag ( true )
-, m_rprEnabledFlag            ( false )
-, m_resChangeInClvsEnabledFlag ( false )
-, m_maxNumMergeCand(MRG_MAX_NUM_CANDS)
-, m_maxNumAffineMergeCand(AFFINE_MRG_MAX_NUM_CANDS)
-, m_maxNumIBCMergeCand(IBC_MRG_MAX_NUM_CANDS)
-, m_maxNumGeoCand(0)
-, m_scalingMatrixAlternativeColourSpaceDisabledFlag( false )
-, m_scalingMatrixDesignatedColourSpaceFlag( true )
-, m_disableScalingMatrixForLfnstBlks( true)
+  , m_MRL(false)
+  , m_MIP(false)
+  , m_GDREnabledFlag(true)
+  , m_SubLayerCbpParametersPresentFlag(true)
+  , m_rprEnabledFlag(false)
+  , m_resChangeInClvsEnabledFlag(false)
+  , m_maxNumMergeCand(MRG_MAX_NUM_CANDS)
+  , m_maxNumAffineMergeCand(AFFINE_MRG_MAX_NUM_CANDS)
+  , m_maxNumIBCMergeCand(IBC_MRG_MAX_NUM_CANDS)
+  , m_maxNumGeoCand(0)
+  , m_scalingMatrixAlternativeColourSpaceDisabledFlag(false)
+  , m_scalingMatrixDesignatedColourSpaceFlag(true)
+  , m_disableScalingMatrixForLfnstBlks(true)
 {
   for(int ch=0; ch<MAX_NUM_CHANNEL_TYPE; ch++)
   {
@@ -3150,8 +3148,8 @@ SubPic::~SubPic()
 }
 
 PPS::PPS()
-  : m_PPSId(0)
-  , m_SPSId(0)
+  : m_ppsId(0)
+  , m_spsId(0)
   , m_picInitQPMinus26(0)
   , m_useDQP(false)
   , m_usePPSChromaTool(false)
@@ -3199,9 +3197,11 @@ PPS::PPS()
   , m_wrapAroundOffset(0)
   , pcv(nullptr)
 {
-  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.CbOffset = 0; // Array includes entry [0] for the null offset used when cu_chroma_qp_offset_flag=0. This is initialised here and never subsequently changed.
-  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.CrOffset = 0;
-  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.JointCbCrOffset = 0;
+  // Array includes entry [0] for the null offset used when cu_chroma_qp_offset_flag=0. This is initialised here
+  // and never subsequently changed.
+  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.cbOffset        = 0;
+  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.crOffset        = 0;
+  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.jointCbCrOffset = 0;
   m_tileColWidth.clear();
   m_tileRowHeight.clear();
   m_tileColBd.clear();
@@ -3744,13 +3744,13 @@ APS::~APS()
 {
 }
 
-ReferencePictureList::ReferencePictureList( const bool interLayerPicPresentFlag )
+ReferencePictureList::ReferencePictureList(const bool interLayerPicPresentFlag)
   : m_numberOfShorttermPictures(0)
   , m_numberOfLongtermPictures(0)
   , m_numberOfActivePictures(MAX_INT)
-  , m_ltrp_in_slice_header_flag(0)
-  , m_interLayerPresentFlag( interLayerPicPresentFlag )
-  , m_numberOfInterLayerPictures( 0 )
+  , m_ltrpInSliceHeaderFlag(0)
+  , m_interLayerPresentFlag(interLayerPicPresentFlag)
+  , m_numberOfInterLayerPictures(0)
 {
   ::memset(m_isLongtermRefPic, 0, sizeof(m_isLongtermRefPic));
   ::memset(m_refPicIdentifier, 0, sizeof(m_refPicIdentifier));
