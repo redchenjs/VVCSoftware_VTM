@@ -6251,7 +6251,7 @@ void EncGOP::applyDeblockingFilterParameterSelection( Picture* pcPic, const uint
     for (int i=0; i<numSlices; i++)
     {
       Slice* pcSlice = pcPic->slices[i];
-      pcSlice->setDeblockingFilterOverrideFlag( true);
+      pcSlice->setDeblockingFilterOverrideFlag(!pcPPS->getPPSDeblockingFilterDisabledFlag());
       pcSlice->setDeblockingFilterDisable     ( true);
     }
   }
