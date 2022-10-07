@@ -2896,27 +2896,27 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     {
       if (gopId == 0)   // first picture in SOP (i.e. forward B)
       {
-        picHeader->setEnableTMVPFlag(0);
+        picHeader->setEnableTMVPFlag(false);
       }
       else
       {
         // Note: pcSlice->getColFromL0Flag() is assumed to be always 0 and getcolRefIdx() is always 0.
-        picHeader->setEnableTMVPFlag(1);
+        picHeader->setEnableTMVPFlag(true);
       }
     }
     else if (m_pcEncLib->getTMVPModeId() == 1)
     {
-      picHeader->setEnableTMVPFlag(1);
+      picHeader->setEnableTMVPFlag(true);
     }
     else
     {
-      picHeader->setEnableTMVPFlag(0);
+      picHeader->setEnableTMVPFlag(false);
     }
 
     // disable TMVP when current picture is the only ref picture
     if (pcSlice->isIRAP() && pcSlice->getSPS()->getIBCFlag())
     {
-      picHeader->setEnableTMVPFlag(0);
+      picHeader->setEnableTMVPFlag(false);
     }
 
     if( pcSlice->getSliceType() != I_SLICE && picHeader->getEnableTMVPFlag() )
@@ -2987,7 +2987,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       }
       else
       {
-        picHeader->setEnableTMVPFlag( 0 );
+        picHeader->setEnableTMVPFlag( false );
       }
     }
 
@@ -3217,10 +3217,14 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     }
     if (pcSlice->getSPS()->getJointCbCrEnabledFlag())
     {
-      if (m_pcCfg->getConstantJointCbCrSignFlag()) 
-        pcPic->cs->picHeader->setJointCbCrSignFlag(m_pcCfg->getConstantJointCbCrSignFlag()-1);
+      if (m_pcCfg->getConstantJointCbCrSignFlag())
+      {
+        pcPic->cs->picHeader->setJointCbCrSignFlag(false);
+      }
       else
+      {
         m_pcSliceEncoder->setJointCbCrModes(*pcPic->cs, Position(0, 0), pcPic->cs->area.lumaSize());
+      }
     }
     if (!pcSlice->getSPS()->getSpsRangeExtension().getReverseLastSigCoeffEnabledFlag() || pcSlice->getSliceQp() > 12)
     {

@@ -1353,7 +1353,7 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setReshapeCW                                         ( m_reshapeCW );
   m_cEncLib.setReshapeCSoffset                                   ( m_CSoffset );
   m_cEncLib.setMaxNumALFAPS                                      (m_maxNumAlfAps);
-  m_cEncLib.setConstantJointCbCrSignFlag                         (m_constantJointCbCrSignFlag);
+  m_cEncLib.setConstantJointCbCrSignFlag                         (m_constantJointCbCrSignFlag != 0);
 #if JVET_O0756_CALCULATE_HDRMETRICS
   for (int i=0; i<hdrtoolslib::NB_REF_WHITE; i++)
   {
