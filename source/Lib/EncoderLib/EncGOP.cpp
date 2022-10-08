@@ -134,7 +134,7 @@ EncGOP::EncGOP()
   m_metricTime = std::chrono::milliseconds(0);
 #endif
 
-  m_bInitAMaxBT         = true;
+  m_initAMaxBt = true;
   m_bgPOC = -1;
 
   m_picBg   = nullptr;
@@ -144,8 +144,8 @@ EncGOP::EncGOP()
   m_isUseLTRef = false;
   m_isPrepareLTRef = true;
   m_lastLTRefPoc = 0;
-  m_cnt_right_bottom = 0;
-  m_cnt_right_bottom_i = 0;
+  m_cntRightBottom      = 0;
+  m_cntRightBottomIntra = 0;
 }
 
 EncGOP::~EncGOP()
@@ -2753,17 +2753,17 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           refLayer = 9;   // Max layer is 10
         }
 
-        if( m_bInitAMaxBT && pcSlice->getPOC() > m_uiPrevISlicePOC )
+        if (m_initAMaxBt && pcSlice->getPOC() > m_prevISlicePoc)
         {
-          ::memset( m_uiBlkSize, 0, sizeof( m_uiBlkSize ) );
-          ::memset( m_uiNumBlk,  0, sizeof( m_uiNumBlk ) );
-          m_bInitAMaxBT = false;
+          m_blkSize.fill(0);
+          m_numBlks.fill(0);
+          m_initAMaxBt = false;
         }
 
-        if( refLayer >= 0 && m_uiNumBlk[refLayer] != 0 )
+        if (refLayer >= 0 && m_numBlks[refLayer] != 0)
         {
           picHeader->setSplitConsOverrideFlag(true);
-          double dBlkSize = sqrt( ( double ) m_uiBlkSize[refLayer] / m_uiNumBlk[refLayer] );
+          double       dBlkSize     = sqrt((double) m_blkSize[refLayer] / m_numBlks[refLayer]);
           unsigned int newMaxBtSize = picHeader->getMaxBTSize(pcSlice->getSliceType(), CHANNEL_TYPE_LUMA);
           if( dBlkSize < AMAXBT_TH32 )
           {
@@ -2780,20 +2780,20 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           newMaxBtSize = Clip3(picHeader->getMinQTSize(pcSlice->getSliceType()), pcPic->cs->sps->getCTUSize(), newMaxBtSize);
           picHeader->setMaxBTSize(1, newMaxBtSize);
 
-          m_uiBlkSize[refLayer] = 0;
-          m_uiNumBlk [refLayer] = 0;
+          m_blkSize[refLayer] = 0;
+          m_numBlks[refLayer] = 0;
         }
       }
       else
       {
-        if( m_bInitAMaxBT )
+        if (m_initAMaxBt)
         {
-          ::memset( m_uiBlkSize, 0, sizeof( m_uiBlkSize ) );
-          ::memset( m_uiNumBlk,  0, sizeof( m_uiNumBlk ) );
+          m_blkSize.fill(0);
+          m_numBlks.fill(0);
         }
 
-        m_uiPrevISlicePOC = pcSlice->getPOC();
-        m_bInitAMaxBT = true;
+        m_prevISlicePoc = pcSlice->getPOC();
+        m_initAMaxBt    = true;
       }
       bool identicalToSPS=true;
       const SPS* sps =pcSlice->getSPS();
@@ -3237,15 +3237,15 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         if (pcSlice->isIntra())
         {
-          m_cnt_right_bottom = 0;
+          m_cntRightBottom = 0;
         }
         if ((pocCurr % m_pcCfg->getIntraPeriod()) <= m_pcCfg->getGOPSize() && gopId == 0 && !pcSlice->isIntra())
         {
-          m_cnt_right_bottom = m_cnt_right_bottom_i;
+          m_cntRightBottom = m_cntRightBottomIntra;
         }
       }
       /*for RA serial and parallel alignment end*/
-      pcSlice->setReverseLastSigCoeffFlag(m_cnt_right_bottom >= 0);
+      pcSlice->setReverseLastSigCoeffFlag(m_cntRightBottom >= 0);
     }
 
     if( encPic )
@@ -3702,8 +3702,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         if( !pcSlice->isIntra() )
         {
-          m_uiBlkSize[pcSlice->getDepth()] += cu->Y().area();
-          m_uiNumBlk [pcSlice->getDepth()]++;
+          m_blkSize[pcSlice->getDepth()] += cu->Y().area();
+          m_numBlks[pcSlice->getDepth()]++;
         }
       }
     }
@@ -4232,10 +4232,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       fflush( stdout );
     }
 
-    m_cnt_right_bottom = pcSlice->getCntRightBottom();
+    m_cntRightBottom = pcSlice->getCntRightBottom();
     if (m_pcCfg->getIntraPeriod() > 1 && pcSlice->isIntra())
     {
-      m_cnt_right_bottom_i = m_cnt_right_bottom;
+      m_cntRightBottomIntra = m_cntRightBottom;
     }
 
     DTRACE_UPDATE( g_trace_ctx, ( std::make_pair( "final", 0 ) ) );

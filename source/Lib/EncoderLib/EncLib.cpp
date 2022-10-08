@@ -1584,8 +1584,9 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     pps.clearChromaQpOffsetList();
     for (int i=0; i < m_cuChromaQpOffsetList.size(); i++)
     {
-      pps.setChromaQpOffsetListEntry(i + 1, m_cuChromaQpOffsetList[i].u.comp.CbOffset,
-        m_cuChromaQpOffsetList[i].u.comp.CrOffset, m_cuChromaQpOffsetList[i].u.comp.JointCbCrOffset);
+      pps.setChromaQpOffsetListEntry(i + 1, m_cuChromaQpOffsetList[i].u.comp.cbOffset,
+                                     m_cuChromaQpOffsetList[i].u.comp.crOffset,
+                                     m_cuChromaQpOffsetList[i].u.comp.jointCbCrOffset);
     }
   }
   else
@@ -1617,7 +1618,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     bool enable = (m_chromaCbCrQpOffset != 0);
     for (int i=0; i < m_cuChromaQpOffsetList.size(); i++)
     {
-      enable |= (m_cuChromaQpOffsetList[i].u.comp.JointCbCrOffset != 0);
+      enable |= (m_cuChromaQpOffsetList[i].u.comp.jointCbCrOffset != 0);
     }
     pps.setJointCbCrQpOffsetPresentFlag(enable);
   }
@@ -1972,7 +1973,7 @@ void EncLib::xInitRPL(SPS &sps)
       rpl->setNumberOfShorttermPictures(ge.m_numRefPics);
       rpl->setNumberOfLongtermPictures(0);   //Hardcoded as 0 for now. need to update this when implementing LTRP
       rpl->setNumberOfActivePictures(ge.m_numRefPicsActive);
-      rpl->setLtrpInSliceHeaderFlag(ge.m_ltrp_in_slice_header_flag);
+      rpl->setLtrpInSliceHeaderFlag(ge.m_ltrpInSliceHeaderFlag);
       rpl->setInterLayerPresentFlag( sps.getInterLayerPresentFlag() );
       // inter-layer reference picture is not signaled in SPS RPL, SPS is shared currently
       rpl->setNumberOfInterLayerPictures( 0 );

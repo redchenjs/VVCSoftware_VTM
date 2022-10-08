@@ -2024,8 +2024,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_RPLList1[i].m_numRefPicsActive = m_GOPList[i].m_numRefPicsActive1;
     m_RPLList0[i].m_numRefPics = m_GOPList[i].m_numRefPics0;
     m_RPLList1[i].m_numRefPics = m_GOPList[i].m_numRefPics1;
-    m_RPLList0[i].m_ltrp_in_slice_header_flag = m_GOPList[i].m_ltrp_in_slice_header_flag;
-    m_RPLList1[i].m_ltrp_in_slice_header_flag = m_GOPList[i].m_ltrp_in_slice_header_flag;
+    m_RPLList0[i].m_ltrpInSliceHeaderFlag = m_GOPList[i].m_ltrpInSliceHeaderFlag;
+    m_RPLList1[i].m_ltrpInSliceHeaderFlag = m_GOPList[i].m_ltrpInSliceHeaderFlag;
     for (int j = 0; j < m_GOPList[i].m_numRefPics0; j++)
       m_RPLList0[i].m_deltaRefPics[j] = m_GOPList[i].m_deltaRefPics0[j];
     for (int j = 0; j < m_GOPList[i].m_numRefPics1; j++)
@@ -2709,9 +2709,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   m_cuChromaQpOffsetList.resize(cfg_cbQpOffsetList.values.size());
   for (int i=0; i < cfg_cbQpOffsetList.values.size(); i++)
   {
-    m_cuChromaQpOffsetList[i].u.comp.CbOffset = cfg_cbQpOffsetList.values[i];
-    m_cuChromaQpOffsetList[i].u.comp.CrOffset = cfg_crQpOffsetList.values[i];
-    m_cuChromaQpOffsetList[i].u.comp.JointCbCrOffset = cfg_cbCrQpOffsetList.values.size() ? cfg_cbCrQpOffsetList.values[i] : 0;
+    m_cuChromaQpOffsetList[i].u.comp.cbOffset = cfg_cbQpOffsetList.values[i];
+    m_cuChromaQpOffsetList[i].u.comp.crOffset = cfg_crQpOffsetList.values[i];
+    m_cuChromaQpOffsetList[i].u.comp.jointCbCrOffset =
+      cfg_cbCrQpOffsetList.values.size() ? cfg_cbCrQpOffsetList.values[i] : 0;
   }
 
 #if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
@@ -4950,8 +4951,8 @@ void EncAppCfg::xPrintParameter()
     msg( DETAILS, "Chroma QP offset list                  : (" );
     for (int i=0; i < m_cuChromaQpOffsetList.size(); i++)
     {
-      msg( DETAILS, "%d %d %d%s", m_cuChromaQpOffsetList[i].u.comp.CbOffset, m_cuChromaQpOffsetList[i].u.comp.CrOffset, m_cuChromaQpOffsetList[i].u.comp.JointCbCrOffset,
-        (i+1 < m_cuChromaQpOffsetList.size() ? ", " : ")\n") );
+      msg(DETAILS, "%d %d %d%s", m_cuChromaQpOffsetList[i].u.comp.cbOffset, m_cuChromaQpOffsetList[i].u.comp.crOffset,
+          m_cuChromaQpOffsetList[i].u.comp.jointCbCrOffset, (i + 1 < m_cuChromaQpOffsetList.size() ? ", " : ")\n"));
     }
     msg( DETAILS, "cu_chroma_qp_offset_subdiv             : %d\n", m_cuChromaQpOffsetSubdiv);
     msg( DETAILS, "cu_chroma_qp_offset_enabled_flag       : %s\n", (m_cuChromaQpOffsetEnabled ? "Enabled" : "Disabled") );

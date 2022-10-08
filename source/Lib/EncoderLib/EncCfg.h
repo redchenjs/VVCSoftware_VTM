@@ -82,34 +82,34 @@ struct GOPEntry
   int m_numRefPics1;
   int m_deltaRefPics1[MAX_NUM_REF_PICS];
   bool m_isEncoded;
-  bool m_ltrp_in_slice_header_flag;
+  bool   m_ltrpInSliceHeaderFlag;
   GOPEntry()
-  : m_POC(-1)
-  , m_QPOffset(0)
+    : m_POC(-1)
+    , m_QPOffset(0)
 #if X0038_LAMBDA_FROM_QP_CAPABILITY
-  , m_QPOffsetModelOffset(0)
-  , m_QPOffsetModelScale(0)
+    , m_QPOffsetModelOffset(0)
+    , m_QPOffsetModelScale(0)
 #endif
 #if W0038_CQP_ADJ
-  , m_CbQPoffset(0)
-  , m_CrQPoffset(0)
+    , m_CbQPoffset(0)
+    , m_CrQPoffset(0)
 #endif
-  , m_QPFactor(0)
-  , m_tcOffsetDiv2(0)
-  , m_betaOffsetDiv2(0)
-  , m_CbTcOffsetDiv2(0)
-  , m_CbBetaOffsetDiv2(0)
-  , m_CrTcOffsetDiv2(0)
-  , m_CrBetaOffsetDiv2(0)
-  , m_temporalId(0)
-  , m_refPic(false)
-  , m_sliceType('P')
+    , m_QPFactor(0)
+    , m_tcOffsetDiv2(0)
+    , m_betaOffsetDiv2(0)
+    , m_CbTcOffsetDiv2(0)
+    , m_CbBetaOffsetDiv2(0)
+    , m_CrTcOffsetDiv2(0)
+    , m_CrBetaOffsetDiv2(0)
+    , m_temporalId(0)
+    , m_refPic(false)
+    , m_sliceType('P')
     , m_numRefPicsActive0(0)
     , m_numRefPics0(0)
     , m_numRefPicsActive1(0)
     , m_numRefPics1(0)
     , m_isEncoded(false)
-    , m_ltrp_in_slice_header_flag(false)
+    , m_ltrpInSliceHeaderFlag(false)
   {
     ::memset(m_deltaRefPics0, 0, sizeof(m_deltaRefPics0));
     ::memset(m_deltaRefPics1, 0, sizeof(m_deltaRefPics1));
@@ -126,7 +126,7 @@ struct RPLEntry
   int m_numRefPics;
   int m_deltaRefPics[MAX_NUM_REF_PICS];
   bool m_isEncoded;
-  bool m_ltrp_in_slice_header_flag;
+  bool   m_ltrpInSliceHeaderFlag;
   RPLEntry()
     : m_POC(-1)
     , m_temporalId(0)
@@ -135,7 +135,7 @@ struct RPLEntry
     , m_sliceType('P')
     , m_numRefPics(0)
     , m_isEncoded(false)
-    , m_ltrp_in_slice_header_flag(false)
+    , m_ltrpInSliceHeaderFlag(false)
   {
     ::memset(m_deltaRefPics, 0, sizeof(m_deltaRefPics));
   }
