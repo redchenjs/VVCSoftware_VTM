@@ -959,7 +959,7 @@ static void simdInterpolateHorM8_HBD(const Pel *src, const ptrdiff_t srcStride, 
                                      int width, int height, int shift, int offset, const ClpRng &clpRng,
                                      Pel const *coeff)
 {
-  static_assert(N == 4 || N == 6 || N == 8, "only filter sizes 4, 6, and 8 are supported");
+  static_assert(N == 2 || N == 4 || N == 6 || N == 8, "only filter sizes 2, 4, 6, and 8 are supported");
   static_assert(sizeof(Pel) == 4, "samples must be 32 bits wide");
 
   std::array<ptrdiff_t, 3> memOffsets = { { 2 * srcStride, 2 * srcStride + (width >> 1),
@@ -1024,7 +1024,7 @@ static void simdInterpolateHorM8_HBD_AVX2(const Pel *src, const ptrdiff_t srcStr
                                           const ClpRng &clpRng, Pel const *coeff)
 {
 #if USE_AVX2
-  static_assert(N == 4 || N == 6 || N == 8, "only filter sizes 4, 6, and 8 are supported");
+  static_assert(N == 2 || N == 4 || N == 6 || N == 8, "only filter sizes 2, 4, 6, and 8 are supported");
   static_assert(sizeof(Pel) == 4, "samples must be 32 bits wide");
 
   std::array<ptrdiff_t, 3> memOffsets = { { 2 * srcStride, 2 * srcStride + (width >> 1),
@@ -1210,7 +1210,7 @@ static void simdInterpolateHorM4_HBD(const Pel *src, const ptrdiff_t srcStride, 
                                      int width, int height, int shift, int offset, const ClpRng &clpRng,
                                      Pel const *coeff)
 {
-  static_assert(N == 4 || N == 6 || N == 8, "only filter sizes 4, 6, and 8 are supported");
+  static_assert(N == 2 || N == 4 || N == 6 || N == 8, "only filter sizes 2, 4, 6, and 8 are supported");
   static_assert(sizeof(Pel) == 4, "samples must be 32 bits wide");
 
   const __m128i minVal = _mm_set1_epi32(clpRng.min);
@@ -2005,12 +2005,12 @@ static void simdFilter(const ClpRng &clpRng, Pel const *src, const ptrdiff_t src
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
         if (vext >= AVX2)
         {
-          simdInterpolateHorM8_HBD_AVX2<vext, 8, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset,
+          simdInterpolateHorM8_HBD_AVX2<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset,
                                                        clpRng, c);
         }
         else
         {
-          simdInterpolateHorM8_HBD<vext, 8, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+          simdInterpolateHorM8_HBD<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
                                                   c);
         }
 #else
@@ -2061,7 +2061,7 @@ static void simdFilter(const ClpRng &clpRng, Pel const *src, const ptrdiff_t src
       if (!VERTICAL)
       {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-        simdInterpolateHorM4_HBD<vext, 8, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
+        simdInterpolateHorM4_HBD<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng,
                                                 c);
 #else
         simdInterpolateHorM4<vext, N, LAST>(src, srcStride, dst, dstStride, width, height, shift, offset, clpRng, c);
