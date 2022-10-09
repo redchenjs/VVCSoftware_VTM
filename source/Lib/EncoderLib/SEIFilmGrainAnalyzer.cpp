@@ -39,6 +39,8 @@
 
 using namespace std;
 
+constexpr double FGAnalyser::m_tapFilter[3];
+
 // ====================================================================================================================
 // Edge detection - Canny
 // ====================================================================================================================
@@ -986,7 +988,7 @@ int FGAnalyser::cutoff_frequency(std::vector<double> &mean)
   mean.insert(mean.begin(), mean.front());
   for (int j = 1; j < DATA_BASE_SIZE + 1; j++)
   {
-    sum[j - 1] = (m_tap_filtar[0] * mean[j - 1] + m_tap_filtar[1] * mean[j] + m_tap_filtar[2] * mean[j + 1]) / m_normTap;
+    sum[j - 1] = (m_tapFilter[0] * mean[j - 1] + m_tapFilter[1] * mean[j] + m_tapFilter[2] * mean[j + 1]) / m_normTap;
   }
 
   double target = 0;
