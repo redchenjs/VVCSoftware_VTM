@@ -117,7 +117,7 @@ void  VLCWriter::xWriteStringTr(std::string value, const char* pSymbolName)
   xWriteString(value);
   if (g_HLSTraceEnable)
   {
-    DTRACE(g_trace_ctx, D_HEADER, "%-50s st(v)  : %s\n", pSymbolName, value);
+    DTRACE(g_trace_ctx, D_HEADER, "%-50s st(v)  : %s\n", pSymbolName, value.c_str());
   }
 }
 #endif
