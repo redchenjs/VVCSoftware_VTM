@@ -680,7 +680,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   }
   else if (rpcSlice->getPPS()->getDeblockingFilterControlPresentFlag())
   {
-    rpcSlice->setDeblockingFilterOverrideFlag( rpcSlice->getPPS()->getDeblockingFilterOverrideEnabledFlag() );
+    rpcSlice->setDeblockingFilterOverrideFlag(rpcSlice->getPPS()->getDeblockingFilterOverrideEnabledFlag() && !rpcSlice->getPPS()->getPPSDeblockingFilterDisabledFlag());
     rpcSlice->setDeblockingFilterDisable( rpcSlice->getPPS()->getPPSDeblockingFilterDisabledFlag() );
     if ( !rpcSlice->getDeblockingFilterDisable())
     {
