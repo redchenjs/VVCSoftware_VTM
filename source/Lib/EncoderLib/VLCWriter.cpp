@@ -468,11 +468,14 @@ void HLSWriter::codePPS( const PPS* pcPPS )
     /* skip zero index */
     for (int cuChromaQpOffsetIdx = 0; cuChromaQpOffsetIdx < pcPPS->getChromaQpOffsetListLen(); cuChromaQpOffsetIdx++)
     {
-      WRITE_SVLC(pcPPS->getChromaQpOffsetListEntry(cuChromaQpOffsetIdx+1).u.comp.CbOffset,     "pps_cb_qp_offset_list[i]");
-      WRITE_SVLC(pcPPS->getChromaQpOffsetListEntry(cuChromaQpOffsetIdx+1).u.comp.CrOffset,     "pps_cr_qp_offset_list[i]");
+      WRITE_SVLC(pcPPS->getChromaQpOffsetListEntry(cuChromaQpOffsetIdx + 1).u.comp.cbOffset,
+                 "pps_cb_qp_offset_list[i]");
+      WRITE_SVLC(pcPPS->getChromaQpOffsetListEntry(cuChromaQpOffsetIdx + 1).u.comp.crOffset,
+                 "pps_cr_qp_offset_list[i]");
       if (pcPPS->getJointCbCrQpOffsetPresentFlag())
       {
-        WRITE_SVLC(pcPPS->getChromaQpOffsetListEntry(cuChromaQpOffsetIdx + 1).u.comp.JointCbCrOffset, "pps_joint_cbcr_qp_offset_list[i]");
+        WRITE_SVLC(pcPPS->getChromaQpOffsetListEntry(cuChromaQpOffsetIdx + 1).u.comp.jointCbCrOffset,
+                   "pps_joint_cbcr_qp_offset_list[i]");
       }
     }
   }
@@ -1822,7 +1825,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     }
     else
     {
-      picHeader->setVirtualBoundariesPresentFlag( 0 );
+      picHeader->setVirtualBoundariesPresentFlag( false );
       picHeader->setNumVerVirtualBoundaries( 0 );
       picHeader->setNumHorVirtualBoundaries( 0 );
     }
@@ -1928,7 +1931,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
   }
   else
   {
-    picHeader->setSplitConsOverrideFlag(0);
+    picHeader->setSplitConsOverrideFlag(false);
   }
   // Q0781, two-flags
   if (picHeader->getPicIntraSliceAllowedFlag())
@@ -2057,7 +2060,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     }
     else
     {
-      picHeader->setBdofDisabledFlag(0);
+      picHeader->setBdofDisabledFlag(false);
     }
 
   // picture level DMVR disable flags
@@ -2067,7 +2070,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     }
     else
     {
-      picHeader->setDmvrDisabledFlag(0);
+      picHeader->setDmvrDisabledFlag(false);
     }
 
   // picture level PROF disable flags
@@ -2568,7 +2571,7 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
       }
       else
       {
-        pcSlice->setDeblockingFilterOverrideFlag(0);
+        pcSlice->setDeblockingFilterOverrideFlag(false);
       }
       if (pcSlice->getDeblockingFilterOverrideFlag())
       {

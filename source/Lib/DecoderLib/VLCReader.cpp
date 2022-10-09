@@ -2705,7 +2705,7 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
     if (pps->getAlfInfoInPhFlag())
     {
       READ_FLAG(uiCode, "ph_alf_enabled_flag");
-      picHeader->setAlfEnabledFlag(COMPONENT_Y, uiCode);
+      picHeader->setAlfEnabledFlag(COMPONENT_Y, uiCode != 0);
 
       int alfCbEnabledFlag = 0;
       int alfCrEnabledFlag = 0;
@@ -3214,7 +3214,7 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
       }
       else
       {
-        picHeader->setPicColFromL0Flag(1);
+        picHeader->setPicColFromL0Flag(true);
       }
       if ((picHeader->getPicColFromL0Flag() == 1 && picHeader->getRPL(0)->getNumRefEntries() > 1) ||
         (picHeader->getPicColFromL0Flag() == 0 && picHeader->getRPL(1)->getNumRefEntries() > 1))
@@ -3229,7 +3229,7 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
     }
     else
     {
-      picHeader->setPicColFromL0Flag(0);
+      picHeader->setPicColFromL0Flag(false);
     }
 
 
@@ -3273,13 +3273,13 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
     }
     else
     {
-      if (sps->getBdofControlPresentInPhFlag() == 0)
+      if (!sps->getBdofControlPresentInPhFlag())
       {
-        picHeader->setBdofDisabledFlag(1 - (int)(sps->getBDOFEnabledFlag()));
+        picHeader->setBdofDisabledFlag(!sps->getBDOFEnabledFlag());
       }
       else
       {
-        picHeader->setBdofDisabledFlag(1);
+        picHeader->setBdofDisabledFlag(true);
       }
     }
 
@@ -3290,13 +3290,13 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
     }
     else
     {
-      if (sps->getDmvrControlPresentInPhFlag() == 0)
+      if (!sps->getDmvrControlPresentInPhFlag())
       {
-        picHeader->setDmvrDisabledFlag(1 - (int)(sps->getUseDMVR()));
+        picHeader->setDmvrDisabledFlag(!sps->getUseDMVR());
       }
       else
       {
-        picHeader->setDmvrDisabledFlag(1);
+        picHeader->setDmvrDisabledFlag(true);
       }
     }
 
@@ -4274,12 +4274,12 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
   if (sps->getSAOEnabledFlag() && !pps->getSaoInfoInPhFlag())
   {
     READ_FLAG(uiCode, "sh_sao_luma_used_flag");
-    pcSlice->setSaoEnabledFlag(CHANNEL_TYPE_LUMA, (bool) uiCode);
+    pcSlice->setSaoEnabledFlag(CHANNEL_TYPE_LUMA, uiCode != 0);
 
     if (hasChroma)
     {
       READ_FLAG(uiCode, "sh_sao_chroma_used_flag");
-      pcSlice->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, (bool) uiCode);
+      pcSlice->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, uiCode != 0);
     }
   }
 
@@ -4292,14 +4292,14 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
     }
     else
     {
-      pcSlice->setDeblockingFilterOverrideFlag(0);
+      pcSlice->setDeblockingFilterOverrideFlag(false);
     }
     if (pcSlice->getDeblockingFilterOverrideFlag())
     {
       if (!pps->getPPSDeblockingFilterDisabledFlag())
       {
         READ_FLAG(uiCode, "sh_deblocking_filter_disabled_flag");
-        pcSlice->setDeblockingFilterDisable(uiCode ? 1 : 0);
+        pcSlice->setDeblockingFilterDisable(uiCode != 0);
       }
       else
       {

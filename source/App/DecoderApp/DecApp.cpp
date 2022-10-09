@@ -457,8 +457,10 @@ uint32_t DecApp::decode()
             }
             const auto pps = pcListPic->front()->cs->pps;
             auto confWindow = pps->getConformanceWindow();
-            const int picWidth = pps->getPicWidthInLumaSamples() - confWindow.getWindowLeftOffset() - confWindow.getWindowRightOffset();
-            const int picHeight = pps->getPicHeightInLumaSamples() - confWindow.getWindowTopOffset() - confWindow.getWindowBottomOffset();
+            const auto sx = SPS::getWinUnitX(sps->getChromaFormatIdc());
+            const auto sy = SPS::getWinUnitY(sps->getChromaFormatIdc());
+            const int picWidth = pps->getPicWidthInLumaSamples() - (confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
+            const int picHeight = pps->getPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
             m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(picWidth, picHeight, frameRate, frameScale, m_outputBitDepth[0], sps->getChromaFormatIdc());
           }
           m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, bitDepths.recon ); // write mode

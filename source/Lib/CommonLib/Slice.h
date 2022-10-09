@@ -64,7 +64,6 @@ class TrQuant;
 // Constants
 // ====================================================================================================================
 class PreCalcValues;
-static const uint32_t REF_PIC_LIST_NUM_IDX=32;
 
 typedef std::list<Picture*> PicList;
 
@@ -90,7 +89,7 @@ private:
   int   m_numberOfActivePictures;
   bool  m_deltaPocMSBPresentFlag[MAX_NUM_REF_PICS];
   int   m_deltaPOCMSBCycleLT[MAX_NUM_REF_PICS];
-  bool  m_ltrp_in_slice_header_flag;
+  bool  m_ltrpInSliceHeaderFlag;
   bool  m_interLayerPresentFlag;
   bool  m_isInterLayerRefPic[MAX_NUM_REF_PICS];
   int   m_interLayerRefPicIdx[MAX_NUM_REF_PICS];
@@ -110,8 +109,8 @@ public:
   void    setNumberOfLongtermPictures(int numberOfLtrp);
   int     getNumberOfLongtermPictures() const;
 
-  void    setLtrpInSliceHeaderFlag(bool flag) { m_ltrp_in_slice_header_flag = flag; }
-  bool    getLtrpInSliceHeaderFlag() const { return m_ltrp_in_slice_header_flag; }
+  void setLtrpInSliceHeaderFlag(bool flag) { m_ltrpInSliceHeaderFlag = flag; }
+  bool getLtrpInSliceHeaderFlag() const { return m_ltrpInSliceHeaderFlag; }
 
   void    setNumberOfInterLayerPictures( const int numberOfIlrp ) { m_numberOfInterLayerPictures = numberOfIlrp; }
   int     getNumberOfInterLayerPictures() const { return m_numberOfInterLayerPictures; }
@@ -687,9 +686,9 @@ struct ChromaQpAdj
   union
   {
     struct {
-      int CbOffset;
-      int CrOffset;
-      int JointCbCrOffset;
+      int cbOffset;
+      int crOffset;
+      int jointCbCrOffset;
     } comp;
     int offset[3];
   } u;
@@ -729,6 +728,7 @@ struct ChromaQpMappingTableParams {
   void      setDeltaQpOutVal(int tableIdx, int idx, int n)                      { m_deltaQpOutVal[tableIdx][idx] = n; }
   int       getDeltaQpOutVal(int tableIdx, int idx)                       const { return m_deltaQpOutVal[tableIdx][idx]; }
 };
+
 struct ChromaQpMappingTable : ChromaQpMappingTableParams
 {
   std::map<int, int> m_chromaQpMappingTables[MAX_NUM_CQP_MAPPING_TABLES];
@@ -976,7 +976,7 @@ public:
 class VPS
 {
 private:
-  int                   m_VPSId;
+  int                   m_vpsId;
   uint32_t              m_maxLayers;
 
   uint32_t              m_vpsMaxSubLayers;
@@ -1039,8 +1039,8 @@ public:
 
   virtual           ~VPS();
 
-  int               getVPSId() const                                     { return m_VPSId;                                                  }
-  void              setVPSId(int i)                                      { m_VPSId = i;                                                     }
+  int  getVPSId() const { return m_vpsId; }
+  void setVPSId(int i) { m_vpsId = i; }
 
   uint32_t          getMaxLayers() const                                 { return m_maxLayers;                                            }
   void              setMaxLayers(uint32_t l)                             { m_maxLayers = l;                                               }
@@ -1381,8 +1381,8 @@ public:
 class SPS
 {
 private:
-  int               m_SPSId;
-  int               m_VPSId;
+  int               m_spsId;
+  int               m_vpsId;
   int               m_layerId;
   bool              m_affineAmvrEnabledFlag;
   bool              m_DMVR;
@@ -1394,7 +1394,7 @@ private:
   uint32_t              m_uiMaxTLayers;           // maximum number of temporal layers
 
   bool              m_ptlDpbHrdParamsPresentFlag;
-  bool              m_SubLayerDpbParamsFlag;
+  bool              m_subLayerDpbParamsFlag;
 
   // Structure
   uint32_t              m_maxWidthInLumaSamples;
@@ -1435,8 +1435,8 @@ private:
   bool              m_rpl1CopyFromRpl0Flag;
   bool              m_rpl1IdxPresentFlag;
   bool              m_allRplEntriesHasSameSignFlag;
-  bool              m_bLongTermRefsPresent;
-  bool              m_SPSTemporalMVPEnabledFlag;
+  bool              m_longTermRefsPresent;
+  bool              m_temporalMvpEnabledFlag;
   int               m_maxNumReorderPics[MAX_TLAYER];
 
   // Tool list
@@ -1444,7 +1444,7 @@ private:
   bool              m_transformSkipEnabledFlag;
   int               m_log2MaxTransformSkipBlockSize;
   bool              m_BDPCMEnabledFlag;
-  bool              m_JointCbCrEnabledFlag;
+  bool              m_jointCbCrEnabledFlag;
   // Parameter
   BitDepths         m_bitDepths;
   bool              m_entropyCodingSyncEnabledFlag;                    //!< Flag for enabling WPP
@@ -1458,7 +1458,7 @@ private:
   bool              m_BdofControlPresentInPhFlag;
   bool              m_DmvrControlPresentInPhFlag;
   bool              m_ProfControlPresentInPhFlag;
-  uint32_t          m_uiBitsForPOC;
+  uint32_t          m_bitsForPoc;
   bool              m_pocMsbCycleFlag;
   uint32_t          m_pocMsbCycleLen;
   int               m_numExtraPHBytes;
@@ -1560,10 +1560,14 @@ public:
   SPS();
   virtual                 ~SPS();
 
-  int                     getSPSId() const                                                                { return m_SPSId;                                                      }
-  void                    setSPSId(int i)                                                                 { m_SPSId = i;                                                         }
-  int                     getVPSId() const                                                                { return m_VPSId; }
-  void                    setVPSId(int i)                                                                 { m_VPSId = i; }
+  // clang-format off
+  int  getSPSId() const { return m_spsId; }
+  void setSPSId(int val) { m_spsId = val; }
+
+  int  getVPSId() const { return m_vpsId; }
+  void setVPSId(int val) { m_vpsId = val; }
+  // clang-format on
+
   void                    setLayerId( int i )                                                             { m_layerId = i;                                                       }
   int                     getLayerId() const                                                              { return m_layerId;                                                    }
   ChromaFormat            getChromaFormatIdc () const                                                     { return m_chromaFormatIdc;                                            }
@@ -1692,8 +1696,11 @@ public:
   void                    setLog2MaxTransformSkipBlockSize(uint32_t u)                                        { m_log2MaxTransformSkipBlockSize = u;                                 }
   bool                    getBDPCMEnabledFlag() const                                                         { return m_BDPCMEnabledFlag;                                           }
   void                    setBDPCMEnabledFlag( bool b )                                                       { m_BDPCMEnabledFlag = b;                                              }
-  void                    setBitsForPOC( uint32_t u )                                                         { m_uiBitsForPOC = u;                                                  }
-  uint32_t                    getBitsForPOC() const                                                           { return m_uiBitsForPOC;                                               }
+  // clang-format off
+  void     setBitsForPOC(uint32_t val) { m_bitsForPoc = val; }
+  uint32_t getBitsForPOC() const { return m_bitsForPoc; }
+  // clang-format on
+
   void                    setPocMsbCycleFlag(bool b)                                                          { m_pocMsbCycleFlag = b;                                               }
   bool                    getPocMsbCycleFlag() const                                                          { return m_pocMsbCycleFlag;                                            }
   void                    setPocMsbCycleLen(uint32_t u)                                                       { m_pocMsbCycleLen = u;                                                }
@@ -1724,10 +1731,15 @@ public:
   bool                    getRPL1IdxPresentFlag() const                                                       { return m_rpl1IdxPresentFlag;                                         }
   void                    setAllActiveRplEntriesHasSameSignFlag(bool isAllSame)                               { m_allRplEntriesHasSameSignFlag = isAllSame;                          }
   bool                    getAllActiveRplEntriesHasSameSignFlag() const                                       { return m_allRplEntriesHasSameSignFlag;                               }
-  bool                    getLongTermRefsPresent() const                                                  { return m_bLongTermRefsPresent;                                       }
-  void                    setLongTermRefsPresent(bool b)                                                  { m_bLongTermRefsPresent=b;                                            }
-  bool                    getSPSTemporalMVPEnabledFlag() const                                            { return m_SPSTemporalMVPEnabledFlag;                                  }
-  void                    setSPSTemporalMVPEnabledFlag(bool b)                                            { m_SPSTemporalMVPEnabledFlag=b;                                       }
+
+  // clang-format off
+  void setLongTermRefsPresent(bool val) { m_longTermRefsPresent = val; }
+  bool getLongTermRefsPresent() const { return m_longTermRefsPresent; }
+
+  void setSPSTemporalMVPEnabledFlag(bool val) { m_temporalMvpEnabledFlag = val; }
+  bool getSPSTemporalMVPEnabledFlag() const { return m_temporalMvpEnabledFlag; }
+  // clang-format on
+
   void                    setLog2MaxTbSize( uint32_t u )                                                  { m_log2MaxTbSize = u;                                                 }
   uint32_t                getLog2MaxTbSize() const                                                        { return  m_log2MaxTbSize;                                             }
   uint32_t                getMaxTbSize() const                                                            { return  1 << m_log2MaxTbSize;                                        }
@@ -1750,15 +1762,19 @@ public:
   void                    setSAOEnabledFlag(bool bVal)                                                    { m_saoEnabledFlag = bVal;                                                    }
   bool                    getSAOEnabledFlag() const                                                       { return m_saoEnabledFlag;                                                    }
 
-  bool                    getALFEnabledFlag() const                                                       { return m_alfEnabledFlag; }
-  void                    setALFEnabledFlag( bool b )                                                     { m_alfEnabledFlag = b; }
-bool                    getCCALFEnabledFlag() const                                                       { return m_ccalfEnabledFlag; }
-void                    setCCALFEnabledFlag( bool b )                                                     { m_ccalfEnabledFlag = b; }
-  void                    setJointCbCrEnabledFlag(bool bVal)                                              { m_JointCbCrEnabledFlag = bVal; }
-  bool                    getJointCbCrEnabledFlag() const                                                 { return m_JointCbCrEnabledFlag; }
+  // clang-format off
+  void setALFEnabledFlag(bool val) { m_alfEnabledFlag = val; }
+  bool getALFEnabledFlag() const { return m_alfEnabledFlag; }
 
+  void setCCALFEnabledFlag(bool val) { m_ccalfEnabledFlag = val; }
+  bool getCCALFEnabledFlag() const { return m_ccalfEnabledFlag; }
+
+  void setJointCbCrEnabledFlag(bool val) { m_jointCbCrEnabledFlag = val; }
+  bool getJointCbCrEnabledFlag() const { return m_jointCbCrEnabledFlag; }
+
+  void setSbTMVPEnabledFlag(bool val) { m_sbtmvpEnabledFlag = val; }
   bool getSbTMVPEnabledFlag() const { return m_sbtmvpEnabledFlag; }
-  void setSbTMVPEnabledFlag(bool b) { m_sbtmvpEnabledFlag = b; }
+  // clang-format on
 
   void                    setBDOFEnabledFlag(bool b)                                                      { m_bdofEnabledFlag = b; }
   bool                    getBDOFEnabledFlag() const                                                      { return m_bdofEnabledFlag; }
@@ -1782,8 +1798,12 @@ void                    setCCALFEnabledFlag( bool b )                           
 
   bool                    getPtlDpbHrdParamsPresentFlag()  const                                          { return m_ptlDpbHrdParamsPresentFlag;     }
   void                    setPtlDpbHrdParamsPresentFlag(bool b)                                           {        m_ptlDpbHrdParamsPresentFlag = b; }
-  bool                    getSubLayerDpbParamsFlag()  const                                               { return m_SubLayerDpbParamsFlag;          }
-  void                    setSubLayerDpbParamsFlag(bool b)                                                {        m_SubLayerDpbParamsFlag = b;      }
+
+  // clang-format off
+  void setSubLayerDpbParamsFlag(bool val) { m_subLayerDpbParamsFlag = val; }
+  bool getSubLayerDpbParamsFlag() const { return m_subLayerDpbParamsFlag; }
+  // clang-format on
+
   bool                    getTemporalIdNestingFlag() const                                                { return m_bTemporalIdNestingFlag;                                     }
   void                    setTemporalIdNestingFlag(bool value) { m_bTemporalIdNestingFlag = value; }
 
@@ -1958,8 +1978,8 @@ void                    setCCALFEnabledFlag( bool b )                           
 class PPS
 {
 private:
-  int              m_PPSId;                    // pic_parameter_set_id
-  int              m_SPSId;                    // seq_parameter_set_id
+  int              m_ppsId;   // pic_parameter_set_id
+  int              m_spsId;   // seq_parameter_set_id
   int              m_picInitQPMinus26;
   bool             m_useDQP;
   bool             m_usePPSChromaTool;
@@ -1985,12 +2005,13 @@ private:
 
   bool             m_rpl1IdxPresentFlag;
 
-  bool             m_bUseWeightPred;                    //!< Use of Weighting Prediction (P_SLICE)
+  bool             m_useWeightedPred;                   //!< Use of Weighting Prediction (P_SLICE)
   bool             m_useWeightedBiPred;                 //!< Use of Weighting Bi-Prediction (B_SLICE)
   bool             m_OutputFlagPresentFlag;             //!< Indicates the presence of output_flag in slice header
   uint32_t         m_numSubPics;                        //!< number of sub-pictures used - must match SPS
   bool             m_subPicIdMappingInPpsFlag;
   uint32_t         m_subPicIdLen;                       //!< sub-picture ID length in bits
+
   std::vector<uint16_t> m_subPicId;                     //!< sub-picture ID for each sub-picture in the sequence
   bool             m_noPicPartitionFlag;                //!< no picture partitioning flag - single slice, single tile
   uint8_t          m_log2CtuSize;                       //!< log2 of the CTU size - required to match corresponding value in SPS
@@ -2060,10 +2081,10 @@ public:
                          PPS();
   virtual                ~PPS();
 
-  int                    getPPSId() const                                                 { return m_PPSId;                               }
-  void                   setPPSId(int i)                                                  { m_PPSId = i;                                  }
-  int                    getSPSId() const                                                 { return m_SPSId;                               }
-  void                   setSPSId(int i)                                                  { m_SPSId = i;                                  }
+  int  getPPSId() const { return m_ppsId; }
+  void setPPSId(int i) { m_ppsId = i; }
+  int  getSPSId() const { return m_spsId; }
+  void setSPSId(int i) { m_spsId = i; }
 
   void                   setTemporalId( int i )                                           { m_temporalId = i;                             }
   int                    getTemporalId()                                            const { return m_temporalId;                          }
@@ -2121,10 +2142,12 @@ public:
 
   void                   setChromaQpOffsetListEntry( int cuChromaQpOffsetIdxPlus1, int cbOffset, int crOffset, int jointCbCrOffset )
   {
+    // Array includes entry [0] for the null offset used when cu_chroma_qp_offset_flag=0, and entries
+    // [cu_chroma_qp_offset_idx+1...] otherwise
     CHECK(cuChromaQpOffsetIdxPlus1 == 0 || cuChromaQpOffsetIdxPlus1 > MAX_QP_OFFSET_LIST_SIZE, "Invalid chroma QP offset");
-    m_ChromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.CbOffset = cbOffset; // Array includes entry [0] for the null offset used when cu_chroma_qp_offset_flag=0, and entries [cu_chroma_qp_offset_idx+1...] otherwise
-    m_ChromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.CrOffset = crOffset;
-    m_ChromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.JointCbCrOffset = jointCbCrOffset;
+    m_ChromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.cbOffset        = cbOffset;
+    m_ChromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.crOffset        = crOffset;
+    m_ChromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.jointCbCrOffset = jointCbCrOffset;
     m_chromaQpOffsetListLen = std::max(m_chromaQpOffsetListLen, cuChromaQpOffsetIdxPlus1);
   }
 
@@ -2136,9 +2159,9 @@ public:
   void                   setRpl1IdxPresentFlag(bool isPresent)                            { m_rpl1IdxPresentFlag = isPresent;             }
   uint32_t               getRpl1IdxPresentFlag() const                                    { return m_rpl1IdxPresentFlag;                  }
 
-  bool                   getUseWP() const                                                 { return m_bUseWeightPred;                      }
+  bool                   getUseWP() const { return m_useWeightedPred; }
   bool                   getWPBiPred() const                                              { return m_useWeightedBiPred;                   }
-  void                   setUseWP( bool b )                                               { m_bUseWeightPred = b;                         }
+  void                   setUseWP(bool b) { m_useWeightedPred = b; }
   void                   setWPBiPred( bool b )                                            { m_useWeightedBiPred = b;                      }
 
   void                   setWrapAroundEnabledFlag(bool b)                                 { m_wrapAroundEnabledFlag = b;                  }
@@ -2653,7 +2676,7 @@ class Slice
 private:
   //  Bitstream writing
   bool                       m_saoEnabledFlag[MAX_NUM_CHANNEL_TYPE];
-  int                        m_iPOC;
+  int                         m_poc;
   int                        m_iLastIDR;
   int                        m_prevGDRInSameLayerPOC;  //< the previous GDR in the same layer
   int                        m_iAssociatedIRAP;
@@ -2703,7 +2726,7 @@ private:
   int                        m_aiNumRefIdx   [NUM_REF_PIC_LIST_01];    //  for multiple reference of current slice
   bool                       m_pendingRasInit;
 
-  bool                       m_bCheckLDC;
+  bool m_checkLdc;
 
   bool                       m_biDirPred;
   bool                       m_lmChromaCheckDisable;
@@ -2742,8 +2765,7 @@ private:
   uint32_t                   m_independentSliceIdx;
   bool                       m_nextSlice;
   uint32_t                   m_sliceBits;
-  bool                       m_bFinalized;
-
+  bool                       m_finalized;
 
   bool                       m_bTestWeightPred;
   bool                       m_bTestWeightBiPred;
@@ -2778,7 +2800,8 @@ private:
   bool                       m_isLossless{ false };
   int                        m_tsrc_index;
   unsigned                   m_riceBit[8];
-  int                        m_cnt_right_bottom;
+  int                        m_cntRightBottom;
+
 public:
                               Slice();
   virtual                     ~Slice();
@@ -2825,7 +2848,7 @@ public:
   SliceType                   getSliceType() const                                   { return m_eSliceType;                                          }
   void                        setNoOutputOfPriorPicsFlag(bool b)                     { m_noOutputOfPriorPicsFlag = b;                                }
   bool                        getNoOutputOfPriorPicsFlag() const                     { return m_noOutputOfPriorPicsFlag;                             }
-  int                         getPOC() const                                         { return m_iPOC;                                                }
+  int                         getPOC() const { return m_poc; }
   int                         getSliceQp() const                                     { return m_iSliceQp;                                            }
   bool                        getUseWeightedPrediction() const                       { return( (m_eSliceType==P_SLICE && testWeightPred()) || (m_eSliceType==B_SLICE && testWeightBiPred()) ); }
   int                         getSliceQpDelta() const                                { return m_iSliceQpDelta;                                       }
@@ -2860,9 +2883,9 @@ public:
   void                        checkColRefIdx(uint32_t curSliceSegmentIdx, const Picture* pic);
   bool                        getIsUsedAsLongTerm(int i, int j) const                { return m_bIsUsedAsLongTerm[i][j];                             }
   void                        setIsUsedAsLongTerm(int i, int j, bool value)          { m_bIsUsedAsLongTerm[i][j] = value;                            }
-  bool                        getCheckLDC() const                                    { return m_bCheckLDC;                                           }
+  bool                        getCheckLDC() const { return m_checkLdc; }
   int                         getList1IdxToList0Idx( int list1Idx ) const            { return m_list1IdxToList0Idx[list1Idx];                        }
-  void                        setPOC( int i )                                        { m_iPOC              = i;                                      }
+  void                        setPOC(int i) { m_poc = i; }
   bool                        getPictureHeaderInSliceHeader() const                  { return m_pictureHeaderInSliceHeader;                         }
   void                        setPictureHeaderInSliceHeader( bool e )                { m_pictureHeaderInSliceHeader = e;                            }
   void                        setNalUnitType( NalUnitType e )                        { m_eNalUnitType      = e;                                      }
@@ -2912,7 +2935,7 @@ public:
 
   void                        setColFromL0Flag( bool colFromL0 )                     { m_colFromL0Flag = colFromL0;                                  }
   void                        setColRefIdx( uint32_t refIdx)                             { m_colRefIdx = refIdx;                                         }
-  void                        setCheckLDC( bool b )                                  { m_bCheckLDC = b;                                              }
+  void                        setCheckLDC(bool b) { m_checkLdc = b; }
 
   void                        setBiDirPred( bool b, int refIdx0, int refIdx1 ) { m_biDirPred = b; m_symRefIdx[0] = refIdx0; m_symRefIdx[1] = refIdx1; }
   bool                        getBiDirPred() const { return m_biDirPred; }
@@ -3018,8 +3041,12 @@ public:
   void                        copySliceInfo(Slice *pcSliceSrc, bool cpyAlmostAll = true);
   void                        setSliceBits( uint32_t uiVal )                             { m_sliceBits = uiVal;                                          }
   uint32_t                        getSliceBits() const                                   { return m_sliceBits;                                           }
-  void                        setFinalized( bool uiVal )                             { m_bFinalized = uiVal;                                         }
-  bool                        getFinalized() const                                   { return m_bFinalized;                                          }
+
+  // clang-format off
+  void setFinalized(bool val) { m_finalized = val; }
+  bool getFinalized() const { return m_finalized; }
+  // clang-format on
+
   bool                        testWeightPred( ) const                                { return m_bTestWeightPred;                                     }
   void                            setTestWeightPred(bool value) { m_bTestWeightPred = value; }
   bool                        testWeightBiPred( ) const                              { return m_bTestWeightBiPred;                                   }
@@ -3119,8 +3146,11 @@ public:
   int                         get_tsrc_index() const { return m_tsrc_index; }
   void                        setRiceBit(int idx, int i) { m_riceBit[idx] = i; }
   unsigned                    getRiceBit(int idx) const { return m_riceBit[idx]; }
-  void updateCntRightBottom(int v) { m_cnt_right_bottom += v; }
-  int  getCntRightBottom() { return m_cnt_right_bottom; }
+
+  // clang-format off
+  void updateCntRightBottom(int val) { m_cntRightBottom += val; }
+  int  getCntRightBottom() const { return m_cntRightBottom; }
+  // clang-format on
 
 protected:
   Picture*              xGetRefPic( PicList& rcListPic, const int poc, const int layerId );

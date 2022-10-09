@@ -120,8 +120,8 @@ private:
   //  Data
   bool                    m_bLongtermTestPictureHasBeenCoded;
   bool                    m_bLongtermTestPictureHasBeenCoded2;
-  uint32_t                    m_numLongTermRefPicSPS;
-  uint32_t                    m_ltRefPicPocLsbSps[MAX_NUM_LONG_TERM_REF_PICS];
+  uint32_t                m_numLongTermRefPicSPS;
+  uint32_t                m_ltRefPicPocLsbSps[MAX_NUM_LONG_TERM_REF_PICS];
   bool                    m_ltRefPicUsedByCurrPicFlag[MAX_NUM_LONG_TERM_REF_PICS];
   int                     m_iLastIDR;
   int                     m_iGopSize;
@@ -135,8 +135,8 @@ private:
   unsigned                m_riceBit[8][2];
   int                     m_preQP[2];
   int                     m_preIPOC;
-  int                     m_cnt_right_bottom;
-  int                     m_cnt_right_bottom_i;
+  int                     m_cntRightBottom;
+  int                     m_cntRightBottomIntra;
 
   //  Access channel
   EncLib*                 m_pcEncLib;
@@ -145,7 +145,7 @@ private:
   PicList*                m_pcListPic;
 
   HLSWriter*              m_HLSWriter;
-  DeblockingFilter*             m_pcLoopFilter;
+  DeblockingFilter       *m_pcLoopFilter;
 
   SEIWriter               m_seiWriter;
 
@@ -176,9 +176,9 @@ private:
   int                     m_associatedIRAPPOC[MAX_VPS_LAYERS];
 
   std::vector<int>        m_vRVM_RP;
-  uint32_t                    m_lastBPSEI[MAX_TLAYER];
-  uint32_t                    m_totalCoded[MAX_TLAYER];
-  bool                        m_rapWithLeading;
+  uint32_t                m_lastBPSEI[MAX_TLAYER];
+  uint32_t                m_totalCoded[MAX_TLAYER];
+  bool                    m_rapWithLeading;
   bool                    m_bufferingPeriodSEIPresentInAU;
   SEIEncoder              m_seiEncoder;
 #if W0038_DB_OPT
@@ -187,10 +187,10 @@ private:
 #endif
 
   // members needed for adaptive max BT size
-  uint32_t                    m_uiBlkSize[10];
-  uint32_t                    m_uiNumBlk[10];
-  uint32_t                    m_uiPrevISlicePOC;
-  bool                    m_bInitAMaxBT;
+  std::array<uint32_t, 8> m_blkSize;
+  std::array<uint32_t, 8> m_numBlks;
+  uint32_t                m_prevISlicePoc;
+  bool                    m_initAMaxBt;
 
   AUWriterIf*             m_AUWriterIf;
 #if GDR_ENABLED
