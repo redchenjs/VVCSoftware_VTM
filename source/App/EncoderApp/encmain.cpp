@@ -189,6 +189,48 @@ int main(int argc, char* argv[])
 
   if (layerIdx > 1)
   {
+    int nbLayersUsingAlf = 0;
+    int totalUsedAPSIDs = 0;
+    std::array<uint8_t, ALF_CTB_MAX_NUM_APS> usedAlfAps;
+    usedAlfAps.fill(0);
+    bool overlapAPS = false;
+    for (uint32_t i = 0; i < layerIdx; i++)
+    {
+      if (pcEncApp[i]->getALFEnabled())
+      {
+        nbLayersUsingAlf++;
+        totalUsedAPSIDs += pcEncApp[i]->getMaxNumALFAPS();
+        for (int apsid = 0; apsid < pcEncApp[i]->getMaxNumALFAPS(); apsid++)
+        {
+          usedAlfAps[apsid + pcEncApp[i]->getALFAPSIDShift()] ++;
+          if (usedAlfAps[apsid + pcEncApp[i]->getALFAPSIDShift()] > 1)
+          {
+            overlapAPS = true;
+          }
+        }
+      }
+    }
+    if (totalUsedAPSIDs > ALF_CTB_MAX_NUM_APS || overlapAPS)
+    {
+      msg(WARNING, "Number of configured ALF APS Ids exceeds maximum for multilayer, or overlap APS Ids - reconfiguring with automatic settings\n");
+      int apsShift = 0;
+      for (uint32_t i = 0; i < layerIdx; i++)
+      {
+        if (pcEncApp[i]->getALFEnabled())
+        {
+          int nbAPS = pcEncApp[i]->getMaxNumALFAPS();
+          if (totalUsedAPSIDs > ALF_CTB_MAX_NUM_APS)
+          {
+            nbAPS = std::min(nbAPS, std::max(1, ALF_CTB_MAX_NUM_APS / nbLayersUsingAlf));
+            nbAPS = std::min(nbAPS, ALF_CTB_MAX_NUM_APS - apsShift);
+          }
+          msg(WARNING, "\tlayer %d : %d: %d -> %d \n", i, nbAPS, apsShift, apsShift + nbAPS - 1);
+          pcEncApp[i]->forceMaxNumALFAPS(nbAPS);
+          pcEncApp[i]->forceALFAPSIDShift(apsShift);
+          apsShift += nbAPS;
+        }
+      }
+    }
     VPS* vps = pcEncApp[0]->getVPS();
     //check chroma format and bit-depth for dependent layers
     for (uint32_t i = 0; i < layerIdx; i++)

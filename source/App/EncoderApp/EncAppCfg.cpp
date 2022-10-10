@@ -1617,6 +1617,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("AlfTrueOrg",                                      m_alfTrueOrg,                              true, "Using true original samples for ALF optimization when MCTF is enabled\n")
   ( "ALF",                                             m_alf,                                    true, "Adaptive Loop Filter\n" )
   ("MaxNumALFAPS",                                    m_maxNumAlfAps,             ALF_CTB_MAX_NUM_APS, "Maximum number of ALF APSs" )
+  ("AlfapsIDShift",                                   m_alfapsIDShift,                              0, "shift for ALF APSs" )
   ("ConstantJointCbCrSignFlag",                       m_constantJointCbCrSignFlag,              0, "Constant JointCbCr sign flag" )
   ("ALFStrengthLuma",                                  m_alfStrengthLuma,                         1.0, "Adaptive Loop Filter strength for luma. The parameter scales the magnitudes of the ALF filter coefficients for luma. Valid range is 0.0 <= ALFStrengthLuma <= 1.0")
   ("ALFAllowPredefinedFilters",                        m_alfAllowPredefinedFilters,              true, "Allow use of predefined filters for ALF")
@@ -3475,7 +3476,8 @@ bool EncAppCfg::xCheckParameter()
   bool check_failed = false; /* abort if there is a fatal configuration problem */
 #define xConfirmPara(a,b) check_failed |= confirmPara(a,b)
 
-  xConfirmPara(m_maxNumAlfAps > ALF_CTB_MAX_NUM_APS, "The number of ALF APSs should not be more than ALF_CTB_MAX_NUM_APS");
+  xConfirmPara(m_alfapsIDShift < 0, "ALF APSs shift should be positive");
+  xConfirmPara(m_alfapsIDShift + m_maxNumAlfAps > ALF_CTB_MAX_NUM_APS, "The number of ALF APSs should not be more than ALF_CTB_MAX_NUM_APS");
 
   if( m_depQuantEnabledFlag )
   {
@@ -5046,7 +5048,8 @@ void EncAppCfg::xPrintParameter()
   msg( VERBOSE, "SAO:%d ", (m_bUseSAO)?(1):(0));
   msg( VERBOSE, "ALF:%d ", m_alf ? 1 : 0 );
   msg( VERBOSE, "CCALF:%d ", m_ccalf ? 1 : 0 );
-  msg(VERBOSE, "MaxNumALFAPS", m_maxNumAlfAps);
+  msg(VERBOSE, "MaxNumALFAPS %d ", m_maxNumAlfAps);
+  msg(VERBOSE, "AlfapsIDShift %d ", m_alfapsIDShift);
   msg(VERBOSE, "ConstantJointCbCrSignFlag", m_constantJointCbCrSignFlag);
   msg( VERBOSE, "WPP:%d ", (int)m_useWeightedPred);
   msg( VERBOSE, "WPB:%d ", (int)m_useWeightedBiPred);
