@@ -105,7 +105,7 @@ void  VLCReader::xReadStringTr(std::string& rValue, const char* pSymbolName)
 #else
   xReadString(rValue);
 #endif
-  DTRACE(g_trace_ctx, D_HEADER, "%-50s u(1)  : %s\n", pSymbolName, rValue);
+  DTRACE(g_trace_ctx, D_HEADER, "%-50s u(1)  : %s\n", pSymbolName, rValue.c_str());
 }
 #endif
 
