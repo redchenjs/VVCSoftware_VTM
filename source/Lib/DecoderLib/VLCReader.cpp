@@ -256,7 +256,6 @@ void VLCReader::xReadString(std::string& code)
     codeIn = (char*)&uiCode;
     code.append(codeIn);
   }
-
 }
 #endif
 
@@ -744,71 +743,71 @@ void HLSyntaxReader::parsePPS( PPS* pcPPS )
   pcPPS->setPPSChromaToolFlag(uiCode ? true : false);
   if (pcPPS->getPPSChromaToolFlag())
   {
-  READ_SVLC( iCode, "pps_cb_qp_offset");
-  pcPPS->setQpOffset(COMPONENT_Cb, iCode);
-  CHECK( pcPPS->getQpOffset(COMPONENT_Cb) < -12, "Invalid Cb QP offset" );
-  CHECK( pcPPS->getQpOffset(COMPONENT_Cb) >  12, "Invalid Cb QP offset" );
+    READ_SVLC(iCode, "pps_cb_qp_offset");
+    pcPPS->setQpOffset(COMPONENT_Cb, iCode);
+    CHECK(pcPPS->getQpOffset(COMPONENT_Cb) < -12, "Invalid Cb QP offset");
+    CHECK(pcPPS->getQpOffset(COMPONENT_Cb) > 12, "Invalid Cb QP offset");
 
-  READ_SVLC( iCode, "pps_cr_qp_offset");
-  pcPPS->setQpOffset(COMPONENT_Cr, iCode);
-  CHECK( pcPPS->getQpOffset(COMPONENT_Cr) < -12, "Invalid Cr QP offset" );
-  CHECK( pcPPS->getQpOffset(COMPONENT_Cr) >  12, "Invalid Cr QP offset" );
+    READ_SVLC(iCode, "pps_cr_qp_offset");
+    pcPPS->setQpOffset(COMPONENT_Cr, iCode);
+    CHECK(pcPPS->getQpOffset(COMPONENT_Cr) < -12, "Invalid Cr QP offset");
+    CHECK(pcPPS->getQpOffset(COMPONENT_Cr) > 12, "Invalid Cr QP offset");
 
-  READ_FLAG(uiCode, "pps_joint_cbcr_qp_offset_present_flag");
-  pcPPS->setJointCbCrQpOffsetPresentFlag(uiCode ? true : false);
+    READ_FLAG(uiCode, "pps_joint_cbcr_qp_offset_present_flag");
+    pcPPS->setJointCbCrQpOffsetPresentFlag(uiCode ? true : false);
 
-  if (pcPPS->getJointCbCrQpOffsetPresentFlag())
-  {
-    READ_SVLC(iCode, "pps_joint_cbcr_qp_offset_value");
-  }
-  else
-  {
-    iCode = 0;
-  }
-  pcPPS->setQpOffset(JOINT_CbCr, iCode);
-
-  CHECK( pcPPS->getQpOffset(JOINT_CbCr) < -12, "Invalid CbCr QP offset" );
-  CHECK( pcPPS->getQpOffset(JOINT_CbCr) >  12, "Invalid CbCr QP offset" );
-
-  CHECK(MAX_NUM_COMPONENT>3, "Invalid maximal number of components");
-
-  READ_FLAG( uiCode, "pps_slice_chroma_qp_offsets_present_flag" );
-  pcPPS->setSliceChromaQpFlag( uiCode ? true : false );
-
-  READ_FLAG( uiCode, "pps_cu_chroma_qp_offset_list_enabled_flag");
-  if (uiCode == 0)
-  {
-    pcPPS->clearChromaQpOffsetList();
-  }
-  else
-  {
-    uint32_t tableSizeMinus1 = 0;
-    READ_UVLC(tableSizeMinus1, "pps_chroma_qp_offset_list_len_minus1");
-    CHECK(tableSizeMinus1 >= MAX_QP_OFFSET_LIST_SIZE, "Table size exceeds maximum");
-
-    for (int cuChromaQpOffsetIdx = 0; cuChromaQpOffsetIdx <= (tableSizeMinus1); cuChromaQpOffsetIdx++)
+    if (pcPPS->getJointCbCrQpOffsetPresentFlag())
     {
-      int cbOffset;
-      int crOffset;
-      int jointCbCrOffset;
-      READ_SVLC(cbOffset, "pps_cb_qp_offset_list[i]");
-      CHECK(cbOffset < -12 || cbOffset > 12, "Invalid chroma QP offset");
-      READ_SVLC(crOffset, "pps_cr_qp_offset_list[i]");
-      CHECK(crOffset < -12 || crOffset > 12, "Invalid chroma QP offset");
-      if (pcPPS->getJointCbCrQpOffsetPresentFlag())
-      {
-        READ_SVLC(jointCbCrOffset, "pps_joint_cbcr_qp_offset_list[i]");
-      }
-      else
-      {
-        jointCbCrOffset = 0;
-      }
-      CHECK(jointCbCrOffset < -12 || jointCbCrOffset > 12, "Invalid chroma QP offset");
-      // table uses +1 for index (see comment inside the function)
-      pcPPS->setChromaQpOffsetListEntry(cuChromaQpOffsetIdx + 1, cbOffset, crOffset, jointCbCrOffset);
+      READ_SVLC(iCode, "pps_joint_cbcr_qp_offset_value");
     }
-    CHECK(pcPPS->getChromaQpOffsetListLen() != tableSizeMinus1 + 1, "Invalid chroma QP offset list length");
-  }
+    else
+    {
+      iCode = 0;
+    }
+    pcPPS->setQpOffset(JOINT_CbCr, iCode);
+
+    CHECK(pcPPS->getQpOffset(JOINT_CbCr) < -12, "Invalid CbCr QP offset");
+    CHECK(pcPPS->getQpOffset(JOINT_CbCr) > 12, "Invalid CbCr QP offset");
+
+    CHECK(MAX_NUM_COMPONENT > 3, "Invalid maximal number of components");
+
+    READ_FLAG(uiCode, "pps_slice_chroma_qp_offsets_present_flag");
+    pcPPS->setSliceChromaQpFlag(uiCode ? true : false);
+
+    READ_FLAG(uiCode, "pps_cu_chroma_qp_offset_list_enabled_flag");
+    if (uiCode == 0)
+    {
+      pcPPS->clearChromaQpOffsetList();
+    }
+    else
+    {
+      uint32_t tableSizeMinus1 = 0;
+      READ_UVLC(tableSizeMinus1, "pps_chroma_qp_offset_list_len_minus1");
+      CHECK(tableSizeMinus1 >= MAX_QP_OFFSET_LIST_SIZE, "Table size exceeds maximum");
+
+      for (int cuChromaQpOffsetIdx = 0; cuChromaQpOffsetIdx <= (tableSizeMinus1); cuChromaQpOffsetIdx++)
+      {
+        int cbOffset;
+        int crOffset;
+        int jointCbCrOffset;
+        READ_SVLC(cbOffset, "pps_cb_qp_offset_list[i]");
+        CHECK(cbOffset < -12 || cbOffset > 12, "Invalid chroma QP offset");
+        READ_SVLC(crOffset, "pps_cr_qp_offset_list[i]");
+        CHECK(crOffset < -12 || crOffset > 12, "Invalid chroma QP offset");
+        if (pcPPS->getJointCbCrQpOffsetPresentFlag())
+        {
+          READ_SVLC(jointCbCrOffset, "pps_joint_cbcr_qp_offset_list[i]");
+        }
+        else
+        {
+          jointCbCrOffset = 0;
+        }
+        CHECK(jointCbCrOffset < -12 || jointCbCrOffset > 12, "Invalid chroma QP offset");
+        // table uses +1 for index (see comment inside the function)
+        pcPPS->setChromaQpOffsetListEntry(cuChromaQpOffsetIdx + 1, cbOffset, crOffset, jointCbCrOffset);
+      }
+      CHECK(pcPPS->getChromaQpOffsetListLen() != tableSizeMinus1 + 1, "Invalid chroma QP offset list length");
+    }
   }
   else
   {
@@ -1257,6 +1256,7 @@ void HLSyntaxReader::parseGeneralHrdParameters(GeneralHrdParams *hrd)
     CHECK(symbol > 31,"The value of hrd_cpb_cnt_minus1 shall be in the range of 0 to 31, inclusive");
   }
 }
+
 void HLSyntaxReader::parseOlsHrdParameters(GeneralHrdParams * generalHrd, OlsHrdParams *olsHrd, uint32_t firstSubLayer, uint32_t maxNumSubLayersMinus1)
 {
   uint32_t  symbol;
@@ -1394,9 +1394,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
 
   if (pcSPS->getPtlDpbHrdParamsPresentFlag())
   {
-
     parseProfileTierLevel(pcSPS->getProfileTierLevel(), true, pcSPS->getMaxTLayers() - 1);
-
   }
 
   READ_FLAG(uiCode, "sps_gdr_enabled_flag");
@@ -1705,7 +1703,8 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
   pcSPS->setMaxBTSize(maxBTSize[1], maxBTSize[0], maxBTSize[2]);
   pcSPS->setMaxTTSize(maxTTSize[1], maxTTSize[0], maxTTSize[2]);
 
-  if (pcSPS->getCTUSize() > 32) {
+  if (pcSPS->getCTUSize() > 32)
+  {
     READ_FLAG(uiCode, "sps_max_luma_transform_size_64_flag");        pcSPS->setLog2MaxTbSize((uiCode ? 1 : 0) + 5);
   }
   else
@@ -2160,8 +2159,10 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
     }
 
     if (pcSPS->getBitDepth(CHANNEL_TYPE_LUMA) <= 10)
+    {
       CHECK(sps_extension_flags[SPS_EXT__REXT] == 1,
             "The value of sps_range_extension_flag shall be 0 when BitDepth is less than or equal to 10.");
+    }
 
     bool bSkipTrailingExtensionBits=false;
     for(int i=0; i<NUM_SPS_EXTENSION_FLAGS; i++) // loop used so that the order is determined by the enum.
@@ -3770,7 +3771,6 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
         CHECK(apsToCheckLuma == nullptr, "referenced APS not found");
         CHECK(apsToCheckLuma->getAlfAPSParam().newFilterFlag[CHANNEL_TYPE_LUMA] != 1, "bitstream conformance error, alf_luma_filter_signal_flag shall be equal to 1");
       }
-
 
       pcSlice->setAlfApsIdsLuma(apsId);
       if (hasChroma)

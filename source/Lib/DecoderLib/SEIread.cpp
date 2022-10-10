@@ -934,8 +934,6 @@ void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t p
   }
 }
 
-
-
 void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD &hrd, std::ostream* decodedMessageOutputStream, std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>> *seiList)
 {
   uint32_t symbol;
@@ -1197,8 +1195,8 @@ void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& sei, uint32_t pay
       sei.m_duSptCpbRemovalDelayIncrement[i] = 0;
     }
   }
-  if (!bp.m_decodingUnitDpbDuParamsInPicTimingSeiFlag)
 
+  if (!bp.m_decodingUnitDpbDuParamsInPicTimingSeiFlag)
   {
     sei_read_flag(pDecodedMessageOutputStream, val, "dpb_output_du_delay_present_flag"); sei.m_dpbOutputDuDelayPresentFlag = (val != 0);
   }
@@ -1219,7 +1217,6 @@ void SEIReader::xParseSEIBufferingPeriod(SEIBufferingPeriod& sei, uint32_t paylo
 {
   int i, nalOrVcl;
   uint32_t code;
-
 
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
 
@@ -1280,7 +1277,8 @@ void SEIReader::xParseSEIBufferingPeriod(SEIBufferingPeriod& sei, uint32_t paylo
       sei.m_cpbRemovalDelayDelta[ i ] = code;
     }
   }
- sei_read_uvlc( pDecodedMessageOutputStream, code, "bp_cpb_cnt_minus1" ); sei.m_bpCpbCnt = code + 1;
+  sei_read_uvlc(pDecodedMessageOutputStream, code, "bp_cpb_cnt_minus1");
+  sei.m_bpCpbCnt = code + 1;
   if (sei.m_bpMaxSubLayers - 1 > 0)
   {
     sei_read_flag(pDecodedMessageOutputStream, code, "bp_sublayer_initial_cpb_removal_delay_present_flag");
@@ -1331,12 +1329,10 @@ void SEIReader::xParseSEIBufferingPeriod(SEIBufferingPeriod& sei, uint32_t paylo
   {
     sei_read_flag(pDecodedMessageOutputStream, code, "use_alt_cpb_params_flag"); sei.m_useAltCpbParamsFlag = code;
   }
-
 }
 
 void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& sei, uint32_t payloadSize, const uint32_t temporalId, const SEIBufferingPeriod& bp, std::ostream *pDecodedMessageOutputStream)
 {
-
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
 
   uint32_t symbol;
@@ -1653,6 +1649,7 @@ void SEIReader::xParseSEIAnnotatedRegions(SEIAnnotatedRegions& sei, uint32_t pay
     }
   }
 }
+
 void SEIReader::xParseSEIFrameFieldinfo(SEIFrameFieldInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
@@ -1960,6 +1957,7 @@ void SEIReader::xParseSEIColourTransformInfo(SEIColourTransformInfo& sei, uint32
     }
   }
 }
+
 void SEIReader::xParseSEIContentColourVolume(SEIContentColourVolume& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   int i;
@@ -1998,6 +1996,7 @@ void SEIReader::xParseSEIContentColourVolume(SEIContentColourVolume& sei, uint32
     }
   }
 }
+
 void SEIReader::xParseSEIEquirectangularProjection(SEIEquirectangularProjection& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   uint32_t val;
@@ -2222,10 +2221,14 @@ void SEIReader::xParseSEIScalabilityDimensionInfo(SEIScalabilityDimensionInfo& s
         for (int j = 0; j < i; j++)
         {
           if (sei.m_sdiViewIdVal[i] == sei.m_sdiViewIdVal[j])
+          {
             newViewFlag = false;
+          }
         }
         if (newViewFlag)
+        {
           sei.m_sdiNumViews++;
+        }
       }
     }
   }
@@ -2287,7 +2290,7 @@ void SEIReader::xParseSEIMultiviewAcquisitionInfo(SEIMultiviewAcquisitionInfo& s
       }
     }
   }
-};
+}
 
 void SEIReader::xParseSEIMultiviewViewPosition(SEIMultiviewViewPosition& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
@@ -2300,7 +2303,7 @@ void SEIReader::xParseSEIMultiviewViewPosition(SEIMultiviewViewPosition& sei, ui
   {
     sei_read_uvlc(pDecodedMessageOutputStream, val, "view_position"); sei.m_mvpViewPosition[i] = val;
   }
-};
+}
 
 void SEIReader::xParseSEIAlphaChannelInfo(SEIAlphaChannelInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
@@ -2321,7 +2324,7 @@ void SEIReader::xParseSEIAlphaChannelInfo(SEIAlphaChannelInfo& sei, uint32_t pay
       sei_read_flag( pDecodedMessageOutputStream, val, "alpha_channel_clip_type_flag" ); sei.m_aciClipTypeFlag = (val == 1);
     }
   }
-};
+}
 
 void SEIReader::xParseSEIDepthRepresentationInfo(SEIDepthRepresentationInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
@@ -2385,7 +2388,8 @@ void SEIReader::xParseSEIDepthRepInfoElement(double& f,std::ostream *pDecodedMes
   if (x_mantissa_len>=16)
   {
     f =1.0 +  (x_mantissa*1.0)/(1u<<(x_mantissa_len-16))/(256.0*256.0 );
-  }else
+  }
+  else
   {
     f =1.0 +  (x_mantissa*1.0)/(1u<<x_mantissa_len);
   }
@@ -2394,22 +2398,24 @@ void SEIReader::xParseSEIDepthRepInfoElement(double& f,std::ostream *pDecodedMes
   if (x_exp<0)
   {
     for(i=0;i<-x_exp;i++)
-    m = m * 2;
-    
+    {
+      m = m * 2;
+    }
     f = f/m;
   }
   else
   {
     for(i=0;i<x_exp;i++)
-    m = m * 2;
-    
+    {
+      m = m * 2;
+    }
     f= f * m;
   }
   if (x_sign==1)
   {
     f= -f;
   }
-};
+}
 
 void SEIReader::xParseSEISubpictureLevelInfo(SEISubpicureLevelInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
@@ -2644,7 +2650,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei.m_SepColDescriptionFlag = val;
 
     if(sei.m_SepColDescriptionFlag)
-  {
+    {
       sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_col_primaries");
       sei.m_ColPrimaries = val;
       sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_trans_characteristics");
@@ -2926,7 +2932,9 @@ void SeiCfgFileDump::xDumpSEIGeneralizedCubemapProjection  (SEIGeneralizedCubema
         fprintf(fp, "%s\n", packingTypeStr.c_str());
         fprintf(fp, "InputGCMPMappingType              : %d                                    # 0: CMP; 1: EAC; 2: parameterized CMP\n", (int)sei.m_gcmpMappingFunctionType);
         if ((int)sei.m_gcmpMappingFunctionType == 2)
+        {
           fprintf(fp, "%s\n", gcmpsettingsStr.c_str());
+        }
         fprintf(fp, "InputGCMPPaddingFlag              : %d                                   # 0: input without guard bands; 1: input with guard bands\n", sei.m_gcmpGuardBandFlag);
         if (sei.m_gcmpGuardBandFlag)
         {
