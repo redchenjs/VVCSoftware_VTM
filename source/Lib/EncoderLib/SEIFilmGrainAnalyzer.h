@@ -174,7 +174,8 @@ private:
   Canny    m_edgeDetector;
   Morph    m_morphOperation;
   double   m_lowIntensityRatio            = 0.1;                    // supress everything below 0.1*maxIntensityOffset
-  static constexpr double m_tap_filtar[3] = { 1, 2, 1 };
+
+  static constexpr double m_tapFilter[3]  = { 1, 2, 1 };
   static constexpr double m_normTap       = 4.0;
 
   // fg model parameters
