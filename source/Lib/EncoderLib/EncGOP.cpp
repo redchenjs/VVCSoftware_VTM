@@ -3582,9 +3582,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           pcPic->slices[s]->m_ccAlfFilterControl[1] = m_pcALF->getCcAlfControlIdc(COMPONENT_Cr);
         }
       }
-      else if (!layerIdx && (cs.slice->getPendingRasInit() || cs.slice->isIDRorBLA()))
+      else if (cs.slice->getPendingRasInit() || cs.slice->isIDRorBLA())
       {
-        m_pcALF->setApsIdStart(ALF_CTB_MAX_NUM_APS);
+        m_pcALF->setApsIdStart(m_pcCfg->getALFAPSIDShift() + m_pcCfg->getMaxNumALFAPS());
       }
       DTRACE_UPDATE( g_trace_ctx, ( std::make_pair( "final", 1 ) ) );
       if (m_pcCfg->getUseCompositeRef() && getPrepareLTRef())
@@ -3615,19 +3615,18 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         // IRAP AU: reset APS map
         {
-          int layerIdx = pcSlice->getVPS() == nullptr ? 0 : pcSlice->getVPS()->getGeneralLayerIdx( pcSlice->getPic()->layerId );
-          if( !layerIdx && ( pcSlice->getPendingRasInit() || pcSlice->isIDRorBLA() ) )
+          if (pcSlice->getPendingRasInit() || pcSlice->isIDRorBLA())
           {
             // We have to reset all APS on IRAP, but in not encoding case we have to keep the parsed APS of current slice
             // Get active ALF APSs from picture/slice header
             const std::vector<int> sliceApsIdsLuma = pcSlice->getAlfApsIdsLuma();
 
-            m_pcALF->setApsIdStart(m_pcCfg->getMaxNumALFAPS());
+            m_pcALF->setApsIdStart(m_pcCfg->getALFAPSIDShift() + m_pcCfg->getMaxNumALFAPS());
 
             ParameterSetMap<APS>* apsMap = m_pcEncLib->getApsMap();
             apsMap->clearActive();
 
-           for (int apsId = 0; apsId < m_pcCfg->getMaxNumALFAPS(); apsId++)
+           for (int apsId = m_pcCfg->getALFAPSIDShift(); apsId < m_pcCfg->getALFAPSIDShift() + m_pcCfg->getMaxNumALFAPS(); apsId++)
            {
               int psId = ( apsId << NUM_APS_TYPE_LEN ) + ALF_APS;
               APS* aps = apsMap->getPS( psId );
@@ -3669,7 +3668,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
         // Assign tne correct APS to slice and emulate the setting of ALF start APS ID
         int changedApsId = -1;
-        for (int apsId = m_pcCfg->getMaxNumALFAPS() - 1; apsId >= 0; apsId--)
+        for (int apsId = m_pcCfg->getALFAPSIDShift() + m_pcCfg->getMaxNumALFAPS() - 1; apsId >= m_pcCfg->getALFAPSIDShift(); apsId--)
         {
           ParameterSetMap<APS>* apsMap = m_pcEncLib->getApsMap();
           int psId = ( apsId << NUM_APS_TYPE_LEN ) + ALF_APS;
@@ -3827,7 +3826,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
       if (pcSlice->getSPS()->getALFEnabledFlag() && (pcSlice->getAlfEnabledFlag(COMPONENT_Y) || pcSlice->getCcAlfCbEnabledFlag() || pcSlice->getCcAlfCrEnabledFlag()))
       {
-        for (int apsId = 0; apsId < m_pcCfg->getMaxNumALFAPS(); apsId++)
+        for (int apsId = m_pcCfg->getALFAPSIDShift(); apsId < m_pcCfg->getALFAPSIDShift() + m_pcCfg->getMaxNumALFAPS(); apsId++)
         {
           ParameterSetMap<APS> *apsMap = m_pcEncLib->getApsMap();
 

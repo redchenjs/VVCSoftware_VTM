@@ -957,6 +957,7 @@ protected:
   EncCfgParam::CfgVPSParameters m_cfgVPSParameters;
 
   int         m_maxNumAlfAps{ ALF_CTB_MAX_NUM_APS };
+  int         m_alfapsIDShift{ 0 };
   bool        m_constantJointCbCrSignFlag;
   bool        m_alf;                                          ///< Adaptive Loop Filter
   bool        m_alfTrueOrg;
@@ -2586,6 +2587,8 @@ public:
 
   void         setMaxNumALFAPS(int n)                                 { m_maxNumAlfAps = n; }
   int          getMaxNumALFAPS()                                const { return m_maxNumAlfAps; }
+  void         setALFAPSIDShift(int n)                                { m_alfapsIDShift = n; }
+  int          getALFAPSIDShift()                               const { return m_alfapsIDShift; }
   void         setConstantJointCbCrSignFlag(bool b)                   { m_constantJointCbCrSignFlag = b; }
   bool         getConstantJointCbCrSignFlag()                   const { return m_constantJointCbCrSignFlag; }
 

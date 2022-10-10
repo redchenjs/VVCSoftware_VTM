@@ -57,7 +57,6 @@ using namespace std;
 
 EncLib::EncLib( EncLibCommon* encLibCommon )
   : m_cListPic( encLibCommon->getPictureBuffer() )
-  , m_cEncALF( encLibCommon->getApsIdStart() )
   , m_spsMap( encLibCommon->getSpsMap() )
   , m_ppsMap( encLibCommon->getPpsMap() )
   , m_apsMap( encLibCommon->getApsMap() )
