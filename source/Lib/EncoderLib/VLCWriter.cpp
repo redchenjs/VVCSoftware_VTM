@@ -530,13 +530,6 @@ void HLSWriter::codeAPS( APS* pcAPS )
 #endif
 
   WRITE_CODE((int)pcAPS->getAPSType(), 3, "aps_params_type");
-#if JVET_X0143_ALF_APS_ID_OFFSET 
-  if (pcAPS->getAPSType() == ALF_APS)
-  {
-    WRITE_CODE((pcAPS->getAPSId() + JVET_X0143_ALF_APS_ID_OFFSET ) % 8, 5, "adaptation_parameter_set_id");
-  }
-  else
-#endif
   WRITE_CODE(pcAPS->getAPSId(), 5, "adaptation_parameter_set_id");
   WRITE_FLAG(pcAPS->chromaPresentFlag, "aps_chroma_present_flag");
 
@@ -2291,11 +2284,7 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
       const std::vector<int>&   apsId = pcSlice->getAlfApsIdsLuma();
       for (int i = 0; i < pcSlice->getNumAlfApsIdsLuma(); i++)
       {
-#if JVET_X0143_ALF_APS_ID_OFFSET 
-        WRITE_CODE((apsId[i] + JVET_X0143_ALF_APS_ID_OFFSET ) % 8, 3, "sh_alf_aps_id_luma[i]");
-#else
         WRITE_CODE(apsId[i], 3, "sh_alf_aps_id_luma[i]");
-#endif
       }
 
       const int alfChromaIdc = pcSlice->getAlfEnabledFlag(COMPONENT_Cb) + pcSlice->getAlfEnabledFlag(COMPONENT_Cr) * 2;
@@ -2306,11 +2295,7 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
       }
       if (alfChromaIdc)
       {
-#if JVET_X0143_ALF_APS_ID_OFFSET 
-        WRITE_CODE((pcSlice->getAlfApsIdChroma() + JVET_X0143_ALF_APS_ID_OFFSET ) % 8, 3, "sh_alf_aps_id_chroma");
-#else
         WRITE_CODE(pcSlice->getAlfApsIdChroma(), 3, "sh_alf_aps_id_chroma");
-#endif
       }
 
       if (pcSlice->getSPS()->getCCALFEnabledFlag())
@@ -2320,22 +2305,14 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
         if (filterParam.ccAlfFilterEnabled[COMPONENT_Cb - 1])
         {
           // write CC ALF Cb APS ID
-#if JVET_X0143_ALF_APS_ID_OFFSET 
-          WRITE_CODE((pcSlice->getCcAlfCbApsId() + JVET_X0143_ALF_APS_ID_OFFSET ) % 8, 3, "sh_alf_cc_cb_aps_id");
-#else
           WRITE_CODE(pcSlice->getCcAlfCbApsId(), 3, "sh_alf_cc_cb_aps_id");
-#endif
         }
         // Cr
         WRITE_FLAG(filterParam.ccAlfFilterEnabled[COMPONENT_Cr - 1] ? 1 : 0, "sh_alf_cc_cr_enabled_flag");
         if (filterParam.ccAlfFilterEnabled[COMPONENT_Cr - 1])
         {
           // write CC ALF Cr APS ID
-#if JVET_X0143_ALF_APS_ID_OFFSET 
-          WRITE_CODE((pcSlice->getCcAlfCrApsId() + JVET_X0143_ALF_APS_ID_OFFSET ) % 8, 3, "sh_alf_cc_cr_aps_id");
-#else
           WRITE_CODE(pcSlice->getCcAlfCrApsId(), 3, "sh_alf_cc_cr_aps_id");
-#endif
         }
       }
     }
