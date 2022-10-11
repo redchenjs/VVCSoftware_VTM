@@ -126,6 +126,11 @@ public:
   VPS * getVPS() { return m_cEncLib.getVPS(); }
   int   getChromaFormatIDC() const { return m_cEncLib.getChromaFormatIdc(); }
   int   getBitDepth() const { return m_cEncLib.getBitDepth(CHANNEL_TYPE_LUMA); }
+  bool  getALFEnabled() { return m_cEncLib.getUseALF(); }
+  int   getMaxNumALFAPS() { return m_cEncLib.getMaxNumALFAPS(); }
+  int   getALFAPSIDShift() { return m_cEncLib.getALFAPSIDShift(); }
+  void  forceMaxNumALFAPS(int n) { m_cEncLib.setMaxNumALFAPS(n); }
+  void  forceALFAPSIDShift(int n) { m_cEncLib.setALFAPSIDShift(n); }
 };// END CLASS DEFINITION EncApp
 
 //! \}

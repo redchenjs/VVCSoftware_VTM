@@ -437,9 +437,8 @@ int AlfCovariance::gnsSolveByChol( TE LHS, double* rhs, double *x, int numEq ) c
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 
-EncAdaptiveLoopFilter::EncAdaptiveLoopFilter( int& apsIdStart )
+EncAdaptiveLoopFilter::EncAdaptiveLoopFilter()
   : m_CABACEstimator( nullptr )
-  , m_apsIdStart( apsIdStart )
 {
   for( int i = 0; i < MAX_NUM_COMPONENT; i++ )
   {
@@ -875,16 +874,14 @@ void EncAdaptiveLoopFilter::ALFProcess(CodingStructure& cs, const double *lambda
                                        , Picture* pcPic, uint32_t numSliceSegments
                                       )
 {
-  int layerIdx = cs.vps == nullptr ? 0 : cs.vps->getGeneralLayerIdx( cs.slice->getPic()->layerId );
-
-   // IRAP AU is assumed
-  if( !layerIdx && ( cs.slice->getPendingRasInit() || cs.slice->isIDRorBLA() || ( cs.slice->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA && m_encCfg->getCraAPSreset() ) ) )
+  // IRAP AU is assumed
+  if( ( cs.slice->getPendingRasInit() || cs.slice->isIDRorBLA() || ( cs.slice->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA && m_encCfg->getCraAPSreset() ) ) )
   {
     memset(cs.slice->getAlfAPSs(), 0, sizeof(*cs.slice->getAlfAPSs())*ALF_CTB_MAX_NUM_APS);
-    m_apsIdStart = m_encCfg->getMaxNumALFAPS();
+    m_apsIdStart = m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS();
 
     m_apsMap->clearActive();
-    for (int i = 0; i < ALF_CTB_MAX_NUM_APS; i++)
+    for (int i = m_encCfg->getALFAPSIDShift(); i < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(); i++)
     {
       APS* alfAPS = m_apsMap->getPS((i << NUM_APS_TYPE_LEN) + ALF_APS);
       m_apsMap->clearChangedFlag((i << NUM_APS_TYPE_LEN) + ALF_APS);
@@ -2561,36 +2558,40 @@ void EncAdaptiveLoopFilter::setCtuEnableFlag( uint8_t** ctuFlags, ChannelType ch
 std::vector<int> EncAdaptiveLoopFilter::getAvaiApsIdsLuma(CodingStructure& cs, int &newApsId)
 {
   APS** apss = cs.slice->getAlfAPSs();
-  for (int i = 0; i < m_encCfg->getMaxNumALFAPS(); i++)
+  for (int i = m_encCfg->getALFAPSIDShift(); i < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(); i++)
   {
     apss[i] = m_apsMap->getPS((i << NUM_APS_TYPE_LEN) + ALF_APS);
   }
 
   std::vector<int> result;
   int apsIdChecked = 0, curApsId = m_apsIdStart;
-  if (curApsId < m_encCfg->getMaxNumALFAPS())
+  if (curApsId < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS())
   {
     while ((apsIdChecked < m_encCfg->getMaxNumALFAPS()) && !cs.slice->isIRAP() && (result.size() < m_encCfg->getMaxNumALFAPS())
            && !cs.slice->getPendingRasInit())
     {
-      APS* curAPS = cs.slice->getAlfAPSs()[curApsId];
+      APS* curAPS = apss[curApsId];
 
       if( curAPS && curAPS->getLayerId() == cs.slice->getPic()->layerId && curAPS->getTemporalId() <= cs.slice->getTLayer() && curAPS->getAlfAPSParam().newFilterFlag[CHANNEL_TYPE_LUMA] )
       {
         result.push_back(curApsId);
       }
       apsIdChecked++;
-      curApsId = (curApsId + 1) % m_encCfg->getMaxNumALFAPS();
+      curApsId++;
+      if (curApsId >= m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS())
+      {
+        curApsId = m_encCfg->getALFAPSIDShift();
+      }
     }
   }
   cs.slice->setNumAlfApsIdsLuma((int)result.size());
   cs.slice->setAlfApsIdsLuma(result);
   newApsId = m_apsIdStart - 1;
-  if (newApsId < 0)
+  if (newApsId < m_encCfg->getALFAPSIDShift())
   {
-    newApsId = m_encCfg->getMaxNumALFAPS() - 1;
+    newApsId = m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS() - 1;
   }
-  CHECK(newApsId >= m_encCfg->getMaxNumALFAPS(), "Wrong APS index assignment in getAvaiApsIdsLuma");
+  CHECK(newApsId >= m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(), "Wrong APS index assignment in getAvaiApsIdsLuma");
   return result;
 }
 void  EncAdaptiveLoopFilter::initDistortion()
@@ -2943,9 +2944,9 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
       while ((newApsIdChroma < 0) && ((counter--)))
       {
         curId--;
-        if (curId < 0)
+        if (curId < m_encCfg->getALFAPSIDShift())
         {
-          curId = m_encCfg->getMaxNumALFAPS() - 1;
+          curId = m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS() - 1;
         }
         if (std::find(bestApsIds.begin(), bestApsIds.end(), curId) == bestApsIds.end())
         {
@@ -2953,7 +2954,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
         }
       }
     }
-    for (int curApsId = 0; curApsId < m_encCfg->getMaxNumALFAPS(); curApsId++)
+    for (int curApsId = m_encCfg->getALFAPSIDShift(); curApsId < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(); curApsId++)
     {
       const bool reuseExistingAPS = curApsId != newApsIdChroma;
 
@@ -3608,26 +3609,30 @@ void EncAdaptiveLoopFilter::determineControlIdcValues(CodingStructure &cs, const
 std::vector<int> EncAdaptiveLoopFilter::getAvailableCcAlfApsIds(CodingStructure& cs, ComponentID compID)
 {
   APS** apss = cs.slice->getAlfAPSs();
-  for (int i = 0; i < m_encCfg->getMaxNumALFAPS(); i++)
+  for (int i = m_encCfg->getALFAPSIDShift(); i < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(); i++)
   {
     apss[i] = m_apsMap->getPS((i << NUM_APS_TYPE_LEN) + ALF_APS);
   }
 
   std::vector<int> result;
   int apsIdChecked = 0, curApsId = m_apsIdStart;
-  if (curApsId < m_encCfg->getMaxNumALFAPS())
+  if (curApsId < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS())
   {
     while ((apsIdChecked < m_encCfg->getMaxNumALFAPS()) && !cs.slice->isIRAP() && (result.size() < m_encCfg->getMaxNumALFAPS())
            && !cs.slice->getPendingRasInit())
     {
-      APS* curAPS = cs.slice->getAlfAPSs()[curApsId];
+      APS* curAPS = apss[curApsId];
       if (curAPS && curAPS->getLayerId() == cs.slice->getPic()->layerId
           && curAPS->getTemporalId() <= cs.slice->getTLayer() && curAPS->getCcAlfAPSParam().newCcAlfFilter[compID - 1])
       {
         result.push_back(curApsId);
       }
       apsIdChecked++;
-      curApsId = (curApsId + 1) % m_encCfg->getMaxNumALFAPS();
+      curApsId++;
+      if (curApsId >= m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS())
+      {
+        curApsId = m_encCfg->getALFAPSIDShift();
+      }
     }
   }
   return result;

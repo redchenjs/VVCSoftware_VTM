@@ -912,6 +912,7 @@ protected:
   bool        m_forceDecodeBitstream1;
 
   int         m_maxNumAlfAps{ ALF_CTB_MAX_NUM_APS };
+  int         m_alfapsIDShift;
   int         m_constantJointCbCrSignFlag;
   bool        m_alf;                                       ///< Adaptive Loop Filter
   bool        m_alfTrueOrg;

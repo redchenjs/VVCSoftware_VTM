@@ -894,9 +894,9 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
   msg( msgl, "\n");
 
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
-    m_cacheModel.reportFrame();
-    m_cacheModel.accumulateFrame();
-    m_cacheModel.clear();
+  m_cacheModel.reportFrame();
+  m_cacheModel.accumulateFrame();
+  m_cacheModel.clear();
 #endif
 
   m_pcPic->neededForOutput = (pcSlice->getPicHeader()->getPicOutputFlag() ? true : false);
@@ -3819,6 +3819,7 @@ void DecLib::checkNalUnitConstraints( uint32_t naluType )
     xCheckNalUnitConstraintFlags( cInfo, naluType );
   }
 }
+
 void DecLib::xCheckNalUnitConstraintFlags( const ConstraintInfo *cInfo, uint32_t naluType )
 {
   if (cInfo != nullptr)
@@ -3845,6 +3846,7 @@ void DecLib::xCheckNalUnitConstraintFlags( const ConstraintInfo *cInfo, uint32_t
       "Non-conforming bitstream. no_aps_constraint_flag is equal to 1 but bitstream contains NAL unit of type APS_SUFFIX_NUT.");
   }
 }
+
 void DecLib::xCheckMixedNalUnit(Slice* pcSlice, SPS *sps, InputNALUnit &nalu)
 {
   if (pcSlice->getPPS()->getMixedNaluTypesInPicFlag())

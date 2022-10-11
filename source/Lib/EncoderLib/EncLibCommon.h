@@ -44,7 +44,6 @@
 class EncLibCommon
 {
 private:
-  int                       m_apsIdStart;         ///< ALF APS id, APS id space is shared across all layers
   ParameterSetMap<SPS>      m_spsMap;             ///< SPS, it is shared across all layers
   ParameterSetMap<PPS>      m_ppsMap;             ///< PPS, it is shared across all layers
   ParameterSetMap<APS>      m_apsMap;             ///< APS, it is shared across all layers
@@ -56,7 +55,6 @@ public:
   EncLibCommon();
   virtual ~EncLibCommon();
 
-  int&                     getApsIdStart()         { return m_apsIdStart; }
   PicList&                 getPictureBuffer()      { return m_cListPic;   }
   ParameterSetMap<SPS>&    getSpsMap()             { return m_spsMap;     }
   ParameterSetMap<PPS>&    getPpsMap()             { return m_ppsMap;     }
