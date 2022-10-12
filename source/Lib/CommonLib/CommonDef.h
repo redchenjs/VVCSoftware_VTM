@@ -132,6 +132,8 @@ static constexpr uint8_t  MAX_UCHAR =                                   255;
 static constexpr uint8_t  MAX_SCHAR =                                   127;
 static constexpr double   MAX_DOUBLE =                             1.7e+308; ///< max. value of double-type value
 
+static constexpr Distortion MAX_DISTORTION = std::numeric_limits<Distortion>::max();
+
 // ====================================================================================================================
 // Coding tool configuration
 // ====================================================================================================================
