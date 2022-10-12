@@ -816,8 +816,8 @@ void EncAdaptiveLoopFilter::xSetupCcAlfAPS( CodingStructure &cs )
     {
       aps->getCcAlfAPSParam().ccAlfFilterIdxEnabled[COMPONENT_Cb - 1][filterIdx] =
         m_ccAlfFilterParam.ccAlfFilterIdxEnabled[COMPONENT_Cb - 1][filterIdx];
-      memcpy(aps->getCcAlfAPSParam().ccAlfCoeff[COMPONENT_Cb - 1][filterIdx],
-             m_ccAlfFilterParam.ccAlfCoeff[COMPONENT_Cb - 1][filterIdx], sizeof(short) * MAX_NUM_CC_ALF_CHROMA_COEFF);
+      std::copy_n(m_ccAlfFilterParam.ccAlfCoeff[COMPONENT_Cb - 1][filterIdx], MAX_NUM_CC_ALF_CHROMA_COEFF,
+                  aps->getCcAlfAPSParam().ccAlfCoeff[COMPONENT_Cb - 1][filterIdx]);
     }
     aps->setAPSId(ccAlfCbApsId);
     aps->setAPSType(ALF_APS);
@@ -848,8 +848,8 @@ void EncAdaptiveLoopFilter::xSetupCcAlfAPS( CodingStructure &cs )
     {
       aps->getCcAlfAPSParam().ccAlfFilterIdxEnabled[COMPONENT_Cr - 1][filterIdx] =
         m_ccAlfFilterParam.ccAlfFilterIdxEnabled[COMPONENT_Cr - 1][filterIdx];
-      memcpy(aps->getCcAlfAPSParam().ccAlfCoeff[COMPONENT_Cr - 1][filterIdx],
-             m_ccAlfFilterParam.ccAlfCoeff[COMPONENT_Cr - 1][filterIdx], sizeof(short) * MAX_NUM_CC_ALF_CHROMA_COEFF);
+      std::copy_n(m_ccAlfFilterParam.ccAlfCoeff[COMPONENT_Cr - 1][filterIdx], MAX_NUM_CC_ALF_CHROMA_COEFF,
+                  aps->getCcAlfAPSParam().ccAlfCoeff[COMPONENT_Cr - 1][filterIdx]);
     }
     aps->setAPSId(ccAlfCrApsId);
     if (m_reuseApsId[COMPONENT_Cr - 1] < 0)
