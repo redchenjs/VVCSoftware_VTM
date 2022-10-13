@@ -116,9 +116,8 @@ EncAppCfg::~EncAppCfg()
 #endif
 }
 
-void EncAppCfg::create(const int layerIdx)
+void EncAppCfg::create()
 {
-  m_layerIdx = layerIdx;
 }
 
 void EncAppCfg::destroy()
@@ -1655,7 +1654,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "NumPTLsInVPS",                                   m_numPtlsInVps,                               1, "Number of profile_tier_level structures in VPS" )
   ( "AvoidIntraInDepLayers",                          m_avoidIntraInDepLayer,                    true, "Replaces I pictures in dependent layers with B pictures" )
   ( "MaxTidILRefPicsPlusOneLayerId%d",                m_maxTidILRefPicsPlus1Str, string(""), MAX_VPS_LAYERS, "Maximum temporal ID for inter-layer reference pictures plus 1 of i-th layer, 0 for IRAP only")
-  ( "RPLofDepLayerInSH",                              m_RPLofDepLayerInSH,                      true, "define Reference picture lists in slice header instead of SPS for dependant layers")
     ;
 
   opts.addOptions()
@@ -4021,52 +4019,6 @@ bool EncAppCfg::xCheckParameter()
       }
       else
       {
-        if (!m_RPLofDepLayerInSH && m_avoidIntraInDepLayer && m_layerIdx > 0 && m_numRefLayers[m_layerIdx] > 0 && m_RPLList0[curGOP].m_POC == m_iGOPSize)
-        {
-          m_RPLList0[m_iGOPSize + extraRPLs] = m_RPLList0[curGOP];
-          m_RPLList1[m_iGOPSize + extraRPLs] = m_RPLList1[curGOP];
-          m_RPLList0[m_iGOPSize + extraRPLs].m_POC = 0;
-          m_RPLList1[m_iGOPSize + extraRPLs].m_POC = 0;
-          m_RPLList0[m_iGOPSize + extraRPLs].m_numRefPics = 0;
-          m_RPLList1[m_iGOPSize + extraRPLs].m_numRefPics = 0;
-          m_RPLList0[m_iGOPSize + extraRPLs].m_numRefPicsActive = 0;
-          m_RPLList1[m_iGOPSize + extraRPLs].m_numRefPicsActive = 0;
-          extraRPLs++;
-          if (m_iIntraPeriod > m_iGOPSize)
-          {
-            m_RPLList0[m_iGOPSize + extraRPLs] = m_RPLList0[curGOP];
-            m_RPLList1[m_iGOPSize + extraRPLs] = m_RPLList1[curGOP];
-            m_RPLList0[m_iGOPSize + extraRPLs].m_POC = m_iIntraPeriod;
-            m_RPLList1[m_iGOPSize + extraRPLs].m_POC = m_iIntraPeriod;
-            m_RPLList0[m_iGOPSize + extraRPLs].m_numRefPics = 0;
-            m_RPLList1[m_iGOPSize + extraRPLs].m_numRefPics = 0;
-            m_RPLList0[m_iGOPSize + extraRPLs].m_numRefPicsActive = 0;
-            m_RPLList1[m_iGOPSize + extraRPLs].m_numRefPicsActive = 0;
-            int newRefs0 = 0;
-            for (int i = 0; i < m_RPLList0[curGOP].m_numRefPics; i++)
-            {
-              int absPOC = m_iIntraPeriod - m_RPLList0[curGOP].m_deltaRefPics[i];
-              if (absPOC >= 0)
-              {
-                m_RPLList0[m_iGOPSize + extraRPLs].m_deltaRefPics[newRefs0] = m_RPLList0[curGOP].m_deltaRefPics[i];
-                newRefs0++;
-              }
-            }
-            m_RPLList0[m_iGOPSize + extraRPLs].m_numRefPics = newRefs0;
-            int newRefs1 = 0;
-            for (int i = 0; i< m_RPLList1[curGOP].m_numRefPics; i++)
-            {
-              int absPOC = m_iIntraPeriod - m_RPLList1[curGOP].m_deltaRefPics[i];
-              if (absPOC >= 0)
-              {
-                m_RPLList1[m_iGOPSize + extraRPLs].m_deltaRefPics[newRefs1] = m_RPLList1[curGOP].m_deltaRefPics[i];
-                newRefs1++;
-              }
-            }
-            m_RPLList1[m_iGOPSize + extraRPLs].m_numRefPics = newRefs1;
-            extraRPLs++;
-          }
-        }
         //create a new RPLEntry for this frame containing all the reference pictures that were available (POC > 0)
         m_RPLList0[m_iGOPSize + extraRPLs] = m_RPLList0[curGOP];
         m_RPLList1[m_iGOPSize + extraRPLs] = m_RPLList1[curGOP];
@@ -5235,7 +5187,6 @@ void EncAppCfg::xPrintParameter()
   {
     msg( VERBOSE, "RPR:%d ", 0 );
   }
-  msg(VERBOSE, "RPLofDepLayerInSH:%d ", m_RPLofDepLayerInSH);
   msg(VERBOSE, "TemporalFilter:%d/%d ", m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs);
   msg(VERBOSE, "SEI CTI:%d ", m_ctiSEIEnabled);
   msg(VERBOSE, "BIM:%d ", m_bimEnabled);

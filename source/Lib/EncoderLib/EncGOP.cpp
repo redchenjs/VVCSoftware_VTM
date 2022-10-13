@@ -2633,7 +2633,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     if (pcSlice->checkThatAllRefPicsAreAvailable(rcListPic, pcSlice->getRPL0(), 0, false) != 0 || pcSlice->checkThatAllRefPicsAreAvailable(rcListPic, pcSlice->getRPL1(), 1, false) != 0 ||
         (m_pcEncLib->getDependentRAPIndicationSEIEnabled() && !pcSlice->isIRAP() && ( pcSlice->isDRAP() || !pcSlice->isPOCInRefPicList(pcSlice->getRPL0(), pcSlice->getAssociatedIRAPPOC())) ) ||
         (m_pcEncLib->getEdrapIndicationSEIEnabled() && !pcSlice->isIRAP() && ( pcSlice->getEdrapRapId() > 0 || !pcSlice->isPOCInRefPicList(pcSlice->getRPL0(), pcSlice->getAssociatedIRAPPOC()) ) )
-      || (m_pcEncLib->getRPLofDepLayerInSH() && (m_pcEncLib->getAvoidIntraInDepLayer() || !pcSlice->isIRAP()) && pcSlice->getPic()->cs->vps && m_pcEncLib->getNumRefLayers(pcSlice->getPic()->cs->vps->getGeneralLayerIdx(m_pcEncLib->getLayerId())))
+      || ((m_pcEncLib->getAvoidIntraInDepLayer() || !pcSlice->isIRAP()) && pcSlice->getPic()->cs->vps && m_pcEncLib->getNumRefLayers(pcSlice->getPic()->cs->vps->getGeneralLayerIdx(m_pcEncLib->getLayerId())))
       )
     {
       xCreateExplicitReferencePictureSetFromReference( pcSlice, rcListPic, pcSlice->getRPL0(), pcSlice->getRPL1() );
@@ -2656,7 +2656,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
           if (lTid == pcSlice->getTLayer())
           {
-            const ReferencePictureList* rpl0 = m_pcEncLib->getRPLofDepLayerInSH()? m_pcEncLib->getRPLList(0)->getReferencePictureList(ii): pcSlice->getSPS()->getRPLList0()->getReferencePictureList(ii);
+            const ReferencePictureList* rpl0 = pcSlice->getSPS()->getRPLList0()->getReferencePictureList(ii);
             for (int jj = 0; jj < pcSlice->getRPL0()->getNumberOfActivePictures(); jj++)
             {
               int tPoc = pcSlice->getPOC() + rpl0->getRefPicIdentifier(jj);
@@ -2675,7 +2675,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
                 break;
               }
             }
-            const ReferencePictureList* rpl1 = m_pcEncLib->getRPLofDepLayerInSH()? m_pcEncLib->getRPLList(1)->getReferencePictureList(ii): pcSlice->getSPS()->getRPLList1()->getReferencePictureList(ii);
+            const ReferencePictureList* rpl1 = pcSlice->getSPS()->getRPLList1()->getReferencePictureList(ii);
             for (int jj = 0; jj < pcSlice->getRPL1()->getNumberOfActivePictures(); jj++)
             {
               int tPoc = pcSlice->getPOC() + rpl1->getRefPicIdentifier(jj);

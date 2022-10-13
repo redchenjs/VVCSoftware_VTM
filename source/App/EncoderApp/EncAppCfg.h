@@ -961,7 +961,6 @@ protected:
   int         m_numOutputLayerSets;
   std::string m_olsOutputLayerStr[MAX_VPS_LAYERS];
   std::string m_maxTidILRefPicsPlus1Str[MAX_VPS_LAYERS];
-  bool        m_RPLofDepLayerInSH;
 
   int         m_numPtlsInVps;
 
@@ -1006,7 +1005,7 @@ public:
   virtual ~EncAppCfg();
 
 public:
-  void  create    (const int layerIdx);                       ///< create option handling class
+  void  create    ();                                         ///< create option handling class
   void  destroy   ();                                         ///< destroy option handling class
   bool  parseCfg  ( int argc, char* argv[] );                ///< parse configuration file to fill member variables
 
