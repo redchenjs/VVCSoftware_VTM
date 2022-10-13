@@ -1387,6 +1387,7 @@ void EncApp::xInitLibCfg()
       m_cEncLib.setTargetOlsIdx                                   (m_targetOlsIdx);
     }
   }
+  m_cEncLib.setRPLofDepLayerInSH                                 (m_RPLofDepLayerInSH);
 
   m_cEncLib.setGopBasedTemporalFilterEnabled(m_gopBasedTemporalFilterEnabled);
   m_cEncLib.setBIM                                               ( m_bimEnabled );

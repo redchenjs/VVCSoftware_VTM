@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
   {
     pcEncApp[layerIdx] = new EncApp( bitstream, &encLibCommon );
     // create application encoder class per layer
-    pcEncApp[layerIdx]->create();
+    pcEncApp[layerIdx]->create(layerIdx);
 
     // parse configuration per layer
     try

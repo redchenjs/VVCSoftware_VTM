@@ -1958,13 +1958,44 @@ void EncLib::xInitRPL(SPS &sps)
 
   int numRPLCandidates = getRPLCandidateSize(0);
   // To allocate one additional memory for RPL of POC1 (first bottom field) which is not specified in cfg file
-  sps.createRPLList0(numRPLCandidates + (isFieldCoding ? 1 : 0));
-  sps.createRPLList1(numRPLCandidates + (isFieldCoding ? 1 : 0));
-  RPLList* rplList = 0;
+  int layerIdx = getVPS() == nullptr ? 0 : getVPS()->getGeneralLayerIdx(m_layerId);
+  RPLList* rplLists[2];
+  bool codeRplInSH = layerIdx > 0 && getRPLofDepLayerInSH() && getNumRefLayers(layerIdx) > 0 && (getAvoidIntraInDepLayer() || getIntraPeriod() > 1) ;
+  setRPLofDepLayerInSH(codeRplInSH);
+  if (codeRplInSH)
+  {
+    getRPLList(0)->destroy();
+    getRPLList(0)->create(numRPLCandidates + (isFieldCoding ? 1 : 0));
+    getRPLList(1)->destroy();
+    getRPLList(1)->create(numRPLCandidates + (isFieldCoding ? 1 : 0));
+    rplLists[0] = getRPLList(0);
+    rplLists[1] = getRPLList(1);
+  }
+  else
+  {
+    sps.createRPLList0(numRPLCandidates + (isFieldCoding ? 1 : 0));
+    sps.createRPLList1(numRPLCandidates + (isFieldCoding ? 1 : 0));
+    rplLists[0] = sps.getRPLList(0);
+    rplLists[1] = sps.getRPLList(1);
+  }
+  std::vector <int> refLayersIdx;
+  if (layerIdx > 0 && !getRPLofDepLayerInSH())
+  {
+    if (getNumRefLayers(layerIdx) > 0)
+    {
+      for (int refLayerIdx = 0; refLayerIdx < getNumRefLayers(layerIdx); refLayerIdx++)
+      {
+        if (getVPS()->getDirectRefLayerFlag(layerIdx, refLayerIdx))
+        {
+          refLayersIdx.push_back(refLayerIdx);
+        }
+      }
+    }
+  }
 
   for (int i = 0; i < 2; i++)
   {
-    rplList = (i == 0) ? sps.getRPLList0() : sps.getRPLList1();
+    RPLList* rplList = rplLists[i];
     for (int j = 0; j < numRPLCandidates; j++)
     {
       const RPLEntry &ge = getRPLEntry(i, j);
@@ -1977,6 +2008,37 @@ void EncLib::xInitRPL(SPS &sps)
       // inter-layer reference picture is not signaled in SPS RPL, SPS is shared currently
       rpl->setNumberOfInterLayerPictures( 0 );
 
+      if (!getRPLofDepLayerInSH())
+      {
+        bool isIntraLayerPredAllowed = getVPS() ? ((getVPS()->getIndependentLayerFlag(layerIdx) || (getVPS()->getPredDirection(ge.m_temporalId) != 1)) && (ge.m_POC % m_intraPeriod) != 0) : true;
+        bool isInterLayerPredAllowed = getVPS() ? (!getVPS()->getIndependentLayerFlag(layerIdx) && (getVPS()->getPredDirection(ge.m_temporalId) != 2) && ((ge.m_POC % m_intraPeriod) != 0 || (getAvoidIntraInDepLayer() && layerIdx))) : false;
+
+        int NumRefActive = 0;
+        if (isIntraLayerPredAllowed)
+        {
+          for (int k = 0; k < ge.m_numRefPicsActive; k++)
+          {
+            rpl->setRefPicIdentifier(k, -ge.m_deltaRefPics[k], 0, false, 0);
+          }
+          NumRefActive = ge.m_numRefPicsActive;
+        }
+        int validNumILRef = 0;
+        if (isInterLayerPredAllowed)
+        {
+          for (int refLayerIdx : refLayersIdx)
+          {
+            rpl->setRefPicIdentifier(NumRefActive + validNumILRef, 0, true, true, m_vps->getInterLayerRefIdc(m_layerId, refLayerIdx));
+            validNumILRef++;
+          }
+          rpl->setNumberOfInterLayerPictures(validNumILRef);
+          rpl->setNumberOfActivePictures(NumRefActive + validNumILRef);
+        }
+        for (int k = NumRefActive; k < ge.m_numRefPics; k++)
+        {
+          rpl->setRefPicIdentifier(k + validNumILRef, -ge.m_deltaRefPics[k], 0, false, 0);
+        }
+      }
+      else
       for (int k = 0; k < ge.m_numRefPics; k++)
       {
         rpl->setRefPicIdentifier(k, -ge.m_deltaRefPics[k], 0, false, 0);
@@ -1989,7 +2051,7 @@ void EncLib::xInitRPL(SPS &sps)
     // To set RPL of POC1 (first bottom field) which is not specified in cfg file
     for (int i = 0; i < 2; i++)
     {
-      rplList = (i == 0) ? sps.getRPLList0() : sps.getRPLList1();
+      RPLList* rplList = rplLists[i];
       rpl = rplList->getReferencePictureList(numRPLCandidates);
       rpl->setNumberOfShorttermPictures(1);
       rpl->setNumberOfLongtermPictures(0);
@@ -2003,11 +2065,11 @@ void EncLib::xInitRPL(SPS &sps)
   bool isRpl1CopiedFromRpl0 = true;
   for( int i = 0; isRpl1CopiedFromRpl0 && i < numRPLCandidates; i++)
   {
-    if( sps.getRPLList0()->getReferencePictureList(i)->getNumRefEntries() == sps.getRPLList1()->getReferencePictureList(i)->getNumRefEntries() )
+    if(rplLists[0]->getReferencePictureList(i)->getNumRefEntries() == rplLists[1]->getReferencePictureList(i)->getNumRefEntries() )
     {
-      for( int j = 0; isRpl1CopiedFromRpl0 && j < sps.getRPLList0()->getReferencePictureList(i)->getNumRefEntries(); j++ )
+      for( int j = 0; isRpl1CopiedFromRpl0 && j < rplLists[0]->getReferencePictureList(i)->getNumRefEntries(); j++ )
       {
-        if( sps.getRPLList0()->getReferencePictureList(i)->getRefPicIdentifier(j) != sps.getRPLList1()->getReferencePictureList(i)->getRefPicIdentifier(j) )
+        if(rplLists[0]->getReferencePictureList(i)->getRefPicIdentifier(j) != rplLists[1]->getReferencePictureList(i)->getRefPicIdentifier(j) )
         {
           isRpl1CopiedFromRpl0 = false;
         }
@@ -2022,15 +2084,14 @@ void EncLib::xInitRPL(SPS &sps)
 
   //Check if all delta POC of STRP in each RPL has the same sign
   //Check RPLL0 first
-  const RPLList* rplList0 = sps.getRPLList0();
-  const RPLList* rplList1 = sps.getRPLList1();
-  uint32_t numberOfRPL = sps.getNumRPL0();
+  const RPLList* rplList0 = rplLists[0];
+  uint32_t numberOfRPL = rplLists[0]->getNumberOfReferencePictureLists();
 
   bool isAllEntriesinRPLHasSameSignFlag = true;
   for (uint32_t ii = 0; isAllEntriesinRPLHasSameSignFlag && ii < numberOfRPL; ii++)
   {
     bool isFirstEntry = true;
-    bool lastSign;
+    bool lastSign = true;
 
     const ReferencePictureList* rpl = rplList0->getReferencePictureList(ii);
     for (uint32_t jj = 0; isAllEntriesinRPLHasSameSignFlag && jj < rpl->getNumberOfActivePictures(); jj++)
@@ -2054,11 +2115,12 @@ void EncLib::xInitRPL(SPS &sps)
     }
   }
   //Check RPLL1. Skip it if it is already found out that this flag is not true for RPL0 or if RPL1 is the same as RPL0
-  numberOfRPL = sps.getNumRPL1();
+  const RPLList* rplList1 = rplLists[1];
+  numberOfRPL = rplLists[1]->getNumberOfReferencePictureLists();
   for (uint32_t ii = 0; isAllEntriesinRPLHasSameSignFlag && !sps.getRPL1CopyFromRPL0Flag() && ii < numberOfRPL; ii++)
   {
     bool isFirstEntry = true;
-    bool lastSign;
+    bool lastSign = true;
 
     const ReferencePictureList* rpl = rplList1->getReferencePictureList(ii);
     for (uint32_t jj = 0; isAllEntriesinRPLHasSameSignFlag && jj < rpl->getNumberOfActivePictures(); jj++)
@@ -2084,57 +2146,6 @@ void EncLib::xInitRPL(SPS &sps)
   sps.setAllActiveRplEntriesHasSameSignFlag(isAllEntriesinRPLHasSameSignFlag);
 }
 
-void EncLib::getActiveRefPicListNumForPOC(const SPS *sps, int POCCurr, int GOPid, uint32_t *activeL0, uint32_t *activeL1)
-{
-  if (m_isLowDelay)  //Only for RA
-  {
-    *activeL0 = *activeL1 = 0;
-    return;
-  }
-  uint32_t rpl0Idx = GOPid;
-  uint32_t rpl1Idx = GOPid;
-
-  int fullListNum = m_iGOPSize;
-  int partialListNum = getRPLCandidateSize(0) - m_iGOPSize;
-  int extraNum = fullListNum;
-  if (m_isLowDelay)
-  {
-    if (POCCurr < (2 * m_iGOPSize + 2))
-    {
-      int candidateIdx = (POCCurr + m_iGOPSize - 1 >= fullListNum + partialListNum) ? GOPid : POCCurr + m_iGOPSize - 1;
-      rpl0Idx = candidateIdx;
-      rpl1Idx = candidateIdx;
-    }
-    else
-    {
-      rpl0Idx = (POCCurr%m_iGOPSize == 0) ? m_iGOPSize - 1 : POCCurr%m_iGOPSize - 1;
-      rpl1Idx = (POCCurr%m_iGOPSize == 0) ? m_iGOPSize - 1 : POCCurr%m_iGOPSize - 1;
-    }
-    extraNum = fullListNum + partialListNum;
-  }
-  for (; extraNum<fullListNum + partialListNum; extraNum++)
-  {
-    if (m_intraPeriod > 0 && getDecodingRefreshType() > 0)
-    {
-      int POCIndex = POCCurr % m_intraPeriod;
-      if (POCIndex == 0)
-      {
-        POCIndex = m_intraPeriod;
-      }
-      if (POCIndex == m_RPLList0[extraNum].m_POC)
-      {
-        rpl0Idx = extraNum;
-        rpl1Idx = extraNum;
-        extraNum++;
-      }
-    }
-  }
-
-  const ReferencePictureList *rpl0 = sps->getRPLList0()->getReferencePictureList(rpl0Idx);
-  *activeL0 = rpl0->getNumberOfActivePictures();
-  const ReferencePictureList *rpl1 = sps->getRPLList1()->getReferencePictureList(rpl1Idx);
-  *activeL1 = rpl1->getNumberOfActivePictures();
-}
 
 void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, int ltPoc)
 {
@@ -2144,8 +2155,21 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
     POCCurr++;
   }
 
-  slice->setRPL0idx(GOPid);
-  slice->setRPL1idx(GOPid);
+  const RPLList* rplLists[2];
+  bool codeRplInSH = getRPLofDepLayerInSH();
+  int RPLIdx = GOPid;
+  if (codeRplInSH)
+  {
+    rplLists[0] = getRPLList(0);
+    rplLists[1] = getRPLList(1);
+    slice->setRPL0idx(-1);
+    slice->setRPL1idx(-1);
+  }
+  else
+  {
+    rplLists[0] = slice->getSPS()->getRPLList(0);
+    rplLists[1] = slice->getSPS()->getRPLList(1);
+  }
 
   int fullListNum = m_iGOPSize;
   int partialListNum = getRPLCandidateSize(0) - m_iGOPSize;
@@ -2154,7 +2178,7 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
   int rplPeriod = m_intraPeriod;
   if( rplPeriod < 0 )  //Need to check if it is low delay or RA but with no RAP
   {
-    if( slice->getSPS()->getRPLList0()->getReferencePictureList(1)->getRefPicIdentifier(0) * slice->getSPS()->getRPLList1()->getReferencePictureList(1)->getRefPicIdentifier(0) < 0)
+    if (rplLists[0]->getReferencePictureList(1)->getRefPicIdentifier(0) * rplLists[1]->getReferencePictureList(1)->getRefPicIdentifier(0) < 0)
     {
       rplPeriod = m_iGOPSize * 2;
     }
@@ -2166,13 +2190,11 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
     if (currPOCsinceLastIDR < (2 * m_iGOPSize + 2))
     {
       int candidateIdx = (currPOCsinceLastIDR + m_iGOPSize - 1 >= fullListNum + partialListNum) ? GOPid : currPOCsinceLastIDR + m_iGOPSize - 1;
-      slice->setRPL0idx(candidateIdx);
-      slice->setRPL1idx(candidateIdx);
+      RPLIdx = candidateIdx;
     }
     else
     {
-      slice->setRPL0idx((POCCurr%m_iGOPSize == 0) ? m_iGOPSize - 1 : POCCurr%m_iGOPSize - 1);
-      slice->setRPL1idx((POCCurr%m_iGOPSize == 0) ? m_iGOPSize - 1 : POCCurr%m_iGOPSize - 1);
+      RPLIdx = (POCCurr % m_iGOPSize == 0) ? m_iGOPSize - 1 : POCCurr % m_iGOPSize - 1;
     }
     extraNum = fullListNum + partialListNum;
   }
@@ -2181,14 +2203,22 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
     if( rplPeriod > 0 )
     {
       int POCIndex = POCCurr % rplPeriod;
+      if (!codeRplInSH && (POCCurr == 0))
+      {
+        POCIndex = 0;
+      }
+      else if (!codeRplInSH && (POCCurr % m_intraPeriod) == 0 && m_intraPeriod > m_iGOPSize)
+      {
+        POCIndex = m_intraPeriod;
+      }
+      else
       if (POCIndex == 0)
       {
         POCIndex = rplPeriod;
       }
       if (POCIndex == m_RPLList0[extraNum].m_POC)
       {
-        slice->setRPL0idx(extraNum);
-        slice->setRPL1idx(extraNum);
+        RPLIdx = extraNum;
         extraNum++;
       }
     }
@@ -2208,34 +2238,35 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
       int numRPLCandidates = getRPLCandidateSize(0);
       if (POCCurr < numRPLCandidates - m_iGOPSize + 2)
       {
-        slice->setRPL0idx(POCCurr + m_iGOPSize - 2);
-        slice->setRPL1idx(POCCurr + m_iGOPSize - 2);
+        RPLIdx = POCCurr + m_iGOPSize - 2;
       }
       else
       {
         if (POCCurr%m_iGOPSize == 0)
         {
-          slice->setRPL0idx(m_iGOPSize - 2);
-          slice->setRPL1idx(m_iGOPSize - 2);
+          RPLIdx = m_iGOPSize - 2;
         }
         else if (POCCurr%m_iGOPSize == 1)
         {
-          slice->setRPL0idx(m_iGOPSize - 1);
-          slice->setRPL1idx(m_iGOPSize - 1);
+          RPLIdx = m_iGOPSize - 1;
         }
         else
         {
-          slice->setRPL0idx(POCCurr % m_iGOPSize - 2);
-          slice->setRPL1idx(POCCurr % m_iGOPSize - 2);
+          RPLIdx = POCCurr % m_iGOPSize - 2;
         }
       }
     }
   }
 
-  const ReferencePictureList *rpl0 = (slice->getSPS()->getRPLList0()->getReferencePictureList(slice->getRPL0idx()));
-  const ReferencePictureList *rpl1 = (slice->getSPS()->getRPLList1()->getReferencePictureList(slice->getRPL1idx()));
-  *slice->getRPL0() = *rpl0;
-  *slice->getRPL1() = *rpl1;
+  * slice->getRPL0() = *rplLists[0]->getReferencePictureList(RPLIdx);
+  *slice->getRPL1() = *rplLists[1]->getReferencePictureList(RPLIdx);
+
+  if (!codeRplInSH)
+  {
+    slice->setRPL0idx(RPLIdx);
+    slice->setRPL1idx(RPLIdx);
+  }
+
 }
 
 

@@ -910,6 +910,7 @@ protected:
 
   OPI       m_opi;
   bool      m_OPIEnabled;                                     ///< enable Operating Point Information (OPI)
+  bool      m_RPLofDepLayerInSH;
 
   DCI       m_dci;
   bool      m_DCIEnabled;                                     ///< enable Decoding Capability Information (DCI)
@@ -2477,6 +2478,8 @@ public:
   void         setOPIEnabled(bool i)                { m_OPIEnabled = i; }
   void         setHtidPlus1(int HTid)               { m_opi.setHtidInfoPresentFlag(true); m_opi.setOpiHtidPlus1(HTid); }
   void         setTargetOlsIdx(int TOlsIdx)         { m_opi.setOlsInfoPresentFlag(true); m_opi.setOpiOlsIdx(TOlsIdx); }
+  void         setRPLofDepLayerInSH(bool val)       { m_RPLofDepLayerInSH = val; }
+  bool         getRPLofDepLayerInSH()         const { return m_RPLofDepLayerInSH; }
 
   bool         getDCIEnabled()                      { return m_DCIEnabled; }
   void         setDCIEnabled(bool i)                { m_DCIEnabled = i; }
