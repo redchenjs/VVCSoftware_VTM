@@ -2770,7 +2770,7 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   }
   CHECK((sps->getVPSId() > 0) && (vps == 0), "Invalid VPS");
 
-  const ProfileTierLevel &profileTierLevel = sps->getPtlDpbHrdParamsPresentFlag()
+  const ProfileTierLevel &profileTierLevel = vps->getNumLayersInOls(vps->m_targetOlsIdx) == 1
     ? *sps->getProfileTierLevel()
     : vps->getProfileTierLevel(vps->getOlsPtlIdx(vps->m_targetOlsIdx));
 
