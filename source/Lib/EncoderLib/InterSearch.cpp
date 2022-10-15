@@ -2720,7 +2720,6 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   bool         uiAffineCostOk;
   bool         uiAffine6CostOk;
   bool         uiCostOk[2];
-  bool         uiCostBiOk;
   bool         costValidList1Ok;
 
   bool         bCleanCandExist;
@@ -2807,7 +2806,6 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
     uiAffineCostOk = init_value;
     uiAffine6CostOk = init_value;
     memset(uiCostOk, init_value, sizeof(uiCostOk));
-    uiCostBiOk = init_value;
     uiCostTempOk = init_value;
     costValidList1Ok = init_value;
 
@@ -2863,8 +2861,11 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
     Distortion   uiHevcCost = std::numeric_limits<Distortion>::max();
     Distortion   uiAffineCost = std::numeric_limits<Distortion>::max();
     Distortion   uiCost[2] = { std::numeric_limits<Distortion>::max(), std::numeric_limits<Distortion>::max() };
-    Distortion   uiCostBi  =   std::numeric_limits<Distortion>::max();
+    Distortion   costBi       = MAX_DISTORTION;
     Distortion   costTemp;
+#if GDR_ENABLED
+    bool costBiOk = false;
+#endif
 
 #if GDR_ENABLED
     memset(uiCostTempL0Ok, init_value, sizeof(uiCostTempL0Ok));
@@ -3285,7 +3286,10 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
             // If sub-pel filter samples are not inside of allowed area
             if( restrictedMv != pu.mv[REF_PIC_LIST_1] )
             {
-              uiCostBi = std::numeric_limits<Distortion>::max();
+              costBi = MAX_DISTORTION;
+#if GDR_ENABLED
+              costBiOk = false;
+#endif
               doBiPred = false;
             }
           }
@@ -3496,12 +3500,12 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
                             aaiMvpIdxBi[refList][refIdxTemp], amvp[eRefPicList], bitsTemp, costTemp, pu.cu->imv);
 #endif
 #if GDR_ENABLED
-              allOk = (costTemp < uiCostBi);
+              allOk = (costTemp < costBi);
               if (isEncodeGdrClean)
               {
                 if (uiCostTempOk)
                 {
-                  allOk = (uiCostBiOk) ? (costTemp < uiCostBi) : true;
+                  allOk = costBiOk ? costTemp < costBi : true;
                 }
                 else
                 {
@@ -3512,7 +3516,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 #if GDR_ENABLED
               if (allOk)
 #else
-              if (costTemp < uiCostBi)
+              if (costTemp < costBi)
 #endif
               {
                 changed = true;
@@ -3528,12 +3532,9 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 #endif
                 iRefIdxBi[refList] = refIdxTemp;
 
-                uiCostBi = costTemp;
+                costBi = costTemp;
 #if GDR_ENABLED
-                if (isEncodeGdrClean)
-                {
-                  uiCostBiOk = uiCostTempOk;
-                }
+                costBiOk = uiCostTempOk;
 #endif
                 motBits[refList] = bitsTemp - mbBits[2] - motBits[1 - refList];
                 motBits[refList] -= ((cs.slice->getSPS()->getUseBcw() == true) ? getWeightIdxBits(bcwIdx) : 0);
@@ -3560,13 +3561,15 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
             if (!changed)
             {
 #if GDR_ENABLED
-              allOk = ((uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1]) || enforceBcwPred);
+              allOk = ((costBi <= uiCost[0] && costBi <= uiCost[1]) || enforceBcwPred);
 
               if (isEncodeGdrClean)
               {
-                if (uiCostBiOk)
+                if (costBiOk)
                 {
-                  allOk = (uiCostOk[0] && uiCostOk[1]) ? ((uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1]) || enforceBcwPred) : true;
+                  allOk = (uiCostOk[0] && uiCostOk[1])
+                            ? ((costBi <= uiCost[0] && costBi <= uiCost[1]) || enforceBcwPred)
+                            : true;
                 }
                 else
                 {
@@ -3577,15 +3580,15 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 #if GDR_ENABLED
               if (allOk)
 #else
-              if ((uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1]) || enforceBcwPred)
+              if ((costBi <= uiCost[0] && costBi <= uiCost[1]) || enforceBcwPred)
 #endif
               {
                 xCopyAMVPInfo(&aacAMVPInfo[0][iRefIdxBi[0]], &amvp[REF_PIC_LIST_0]);
 #if GDR_ENABLED
-                // note : uiCostBi is the new Best MVP cost,
+                // note : costBi is the new Best MVP cost,
                 //          solid info will be at amvp[eRefPicList].mvSolid[aaiMvpIdx[refList][refIdxTemp]];
                 xCheckBestMVP(pu, REF_PIC_LIST_0, cMvBi[0], cMvPredBi[0][iRefIdxBi[0]], aaiMvpIdxBi[0][iRefIdxBi[0]],
-                              amvp[REF_PIC_LIST_0], bits[2], uiCostBi, pu.cu->imv);
+                              amvp[REF_PIC_LIST_0], bits[2], costBi, pu.cu->imv);
 
                 if (isEncodeGdrClean)
                 {
@@ -3599,23 +3602,20 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
                     cMvBiValid[0] = cMvBiSolid[0];
                   }
 
-                  uiCostBiOk = true;
-                  uiCostBiOk = uiCostBiOk && cMvPredBiSolid[0][iRefIdxBi[0]];
-                  uiCostBiOk = uiCostBiOk && cMvBiSolid[0];
-                  uiCostBiOk = uiCostBiOk && cMvBiValid[0];
+                  costBiOk = cMvPredBiSolid[0][iRefIdxBi[0]] && cMvBiSolid[0] && cMvBiValid[0];
                 }
 #else
                 xCheckBestMVP(REF_PIC_LIST_0, cMvBi[0], cMvPredBi[0][iRefIdxBi[0]], aaiMvpIdxBi[0][iRefIdxBi[0]],
-                              amvp[REF_PIC_LIST_0], bits[2], uiCostBi, pu.cu->imv);
+                              amvp[REF_PIC_LIST_0], bits[2], costBi, pu.cu->imv);
 #endif
                 if (!cs.picHeader->getMvdL1ZeroFlag())
                 {
                   xCopyAMVPInfo(&aacAMVPInfo[1][iRefIdxBi[1]], &amvp[REF_PIC_LIST_1]);
 #if GDR_ENABLED
-                  // note : uiCostBi is the new Best MVP cost,
+                  // note : costBi is the new Best MVP cost,
                   //          solid info will be at amvp[eRefPicList].mvSolid[aaiMvpIdx[refList][refIdxTemp]];
                   xCheckBestMVP(pu, REF_PIC_LIST_1, cMvBi[1], cMvPredBi[1][iRefIdxBi[1]], aaiMvpIdxBi[1][iRefIdxBi[1]],
-                                amvp[REF_PIC_LIST_1], bits[2], uiCostBi, pu.cu->imv);
+                                amvp[REF_PIC_LIST_1], bits[2], costBi, pu.cu->imv);
 
                   if (isEncodeGdrClean)
                   {
@@ -3629,14 +3629,11 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
                       cMvBiValid[1] = cMvBiSolid[1];
                     }
 
-                    uiCostBiOk = true;
-                    uiCostBiOk = uiCostBiOk && cMvPredBiSolid[1][iRefIdxBi[1]];
-                    uiCostBiOk = uiCostBiOk && cMvBiSolid[1];
-                    uiCostBiOk = uiCostBiOk && cMvBiValid[1];
+                    costBiOk = cMvPredBiSolid[1][iRefIdxBi[1]] && cMvBiSolid[1] && cMvBiValid[1];
                   }
 #else
                   xCheckBestMVP(REF_PIC_LIST_1, cMvBi[1], cMvPredBi[1][iRefIdxBi[1]], aaiMvpIdxBi[1][iRefIdxBi[1]],
-                                amvp[REF_PIC_LIST_1], bits[2], uiCostBi, pu.cu->imv);
+                                amvp[REF_PIC_LIST_1], bits[2], costBi, pu.cu->imv);
 #endif
                 }
               }
@@ -3935,12 +3932,12 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
           }
           // save results
 #if GDR_ENABLED
-          bool allOk = (symCost < uiCostBi);
+          bool allOk = (symCost < costBi);
           if (isEncodeGdrClean)
           {
             if (symCostOk)
             {
-              allOk = (uiCostBiOk) ? (symCost < uiCostBi) : true;
+              allOk = costBiOk ? symCost < costBi : true;
             }
             else
             {
@@ -3952,13 +3949,13 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 #if GDR_ENABLED
           if (allOk)
 #else
-          if ( symCost < uiCostBi )
+          if (symCost < costBi)
 #endif
           {
-            uiCostBi = symCost;
+            costBi  = symCost;
             symMode = 1 + curRefList;
 #if GDR_ENABLED
-            uiCostBiOk = symCostOk;
+            costBiOk = symCostOk;
 #endif
 
             cMvBi[curRefList] = cCurMvField.mv;
@@ -4034,19 +4031,16 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
         wp1 = cu.cs->slice->getWpScaling(REF_PIC_LIST_1, iRefIdxBi[1]);
         if (WPScalingParam::isWeighted(wp0) || WPScalingParam::isWeighted(wp1))
         {
-          uiCostBi       = MAX_UINT;
+          costBi = MAX_DISTORTION;
 #if GDR_ENABLED
-          if (isEncodeGdrClean)
-          {
-            uiCostBiOk = false;
-          }
+          costBiOk = false;
 #endif
           enforceBcwPred = false;
         }
       }
       if (enforceBcwPred)
       {
-        uiCost[0] = uiCost[1] = MAX_UINT;
+        uiCost[0] = uiCost[1] = MAX_DISTORTION;
 #if GDR_ENABLED
         uiCostOk[0] = uiCostOk[1] = false;
 #endif
@@ -4054,13 +4048,14 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 
       uiLastModeTemp = uiLastMode;
 #if GDR_ENABLED
-      allOk = ((uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1]) || enforceBcwPred);
+      allOk = ((costBi <= uiCost[0] && costBi <= uiCost[1]) || enforceBcwPred);
 
       if (isEncodeGdrClean)
       {
-        if (uiCostBiOk)
+        if (costBiOk)
         {
-          allOk = (uiCostOk[0] && uiCostOk[1]) ? ((uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1]) || enforceBcwPred) : true;
+          allOk =
+            (uiCostOk[0] && uiCostOk[1]) ? ((costBi <= uiCost[0] && costBi <= uiCost[1]) || enforceBcwPred) : true;
         }
         else
         {
@@ -4086,9 +4081,11 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 #if GDR_ENABLED
       if (allOk)
 #else
-      if ( uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1])
+      if (costBi <= uiCost[0] && costBi <= uiCost[1])
 #endif
       {
+        CHECK(iRefIdxBi[0] < 0, "Invalid picture reference index");
+        CHECK(iRefIdxBi[1] < 0, "Invalid picture reference index");
         uiLastMode = 2;
         pu.mv    [REF_PIC_LIST_0] = cMvBi[0];
         pu.mv    [REF_PIC_LIST_1] = cMvBi[1];
@@ -4159,13 +4156,14 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
         cu.bcwIdx = BCW_DEFAULT;   // Reset to default for the Non-NormalMC modes.
       }
 
-      uiHevcCost = (uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1])
-                     ? uiCostBi
-                     : ((uiCost[0] <= uiCost[1]) ? uiCost[0] : uiCost[1]);
+      uiHevcCost =
+        (costBi <= uiCost[0] && costBi <= uiCost[1]) ? costBi : ((uiCost[0] <= uiCost[1]) ? uiCost[0] : uiCost[1]);
 #if GDR_ENABLED
       if (isEncodeGdrClean)
       {
-        uiHevcCostOk = (uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1]) ? uiCostBiOk : ((uiCost[0] <= uiCost[1]) ? uiCostOk[0] : uiCostOk[1]);
+        uiHevcCostOk = (costBi <= uiCost[0] && costBi <= uiCost[1])
+                         ? costBiOk
+                         : (uiCost[0] <= uiCost[1] ? uiCostOk[0] : uiCostOk[1]);
       }
 #endif
     }
@@ -6476,13 +6474,13 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
 #endif
 
   Distortion    uiCost[2] = { std::numeric_limits<Distortion>::max(), std::numeric_limits<Distortion>::max() };
-  Distortion    uiCostBi  = std::numeric_limits<Distortion>::max();
+  Distortion    costBi    = MAX_DISTORTION;
   Distortion    costTemp;
   costTemp = std::numeric_limits<Distortion>::max();
 #if GDR_ENABLED
   bool uiCostOk[2] = { init_value, init_value };
-  bool uiCostBiOk = init_value;
   bool uiCostTempOk = init_value;
+  bool costBiOk     = false;
 #endif
 
   uint32_t          bits[3] = { 0 };
@@ -7375,7 +7373,10 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
           // If sub-pel filter samples are not inside of allowed area
           if( restrictedMv != pcMvTemp[i] )
           {
-            uiCostBi = std::numeric_limits<Distortion>::max();
+            costBi = MAX_DISTORTION;
+#if GDR_ENABLED
+            costBiOk = false;
+#endif
             doBiPred = false;
           }
         }
@@ -7651,13 +7652,13 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
 #endif
 
 #if GDR_ENABLED
-          allOk = (costTemp < uiCostBi);
+          allOk = (costTemp < costBi);
 
           if (isEncodeGdrClean)
           {
             if (uiCostTempOk)
             {
-              allOk = (uiCostBiOk) ? (costTemp < uiCostBi) : true;
+              allOk = costBiOk ? costTemp < costBi : true;
             }
             else
             {
@@ -7669,7 +7670,7 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
 #if GDR_ENABLED
           if (allOk)
 #else
-          if (costTemp < uiCostBi)
+          if (costTemp < costBi)
 #endif
           {
             changed = true;
@@ -7683,12 +7684,9 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
 #endif
             iRefIdxBi[refList] = refIdxTemp;
 
-            uiCostBi = costTemp;
+            costBi = costTemp;
 #if GDR_ENABLED
-            if (isEncodeGdrClean)
-            {
-              uiCostBiOk = uiCostTempOk;
-            }
+            costBiOk = uiCostTempOk;
 #endif
             motBits[refList] = bitsTemp - mbBits[2] - motBits[1 - refList];
             motBits[refList] -= ((pu.cu->slice->getSPS()->getUseBcw() == true) ? bcwIdxBits : 0);
@@ -7733,15 +7731,14 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
         if (!changed)
         {
 #if GDR_ENABLED
-          allOk = ((uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1]) || enforceBcwPred);
+          allOk = ((costBi <= uiCost[0] && costBi <= uiCost[1]) || enforceBcwPred);
 
           if (isEncodeGdrClean)
           {
-            if (uiCostBiOk)
+            if (costBiOk)
             {
-              allOk = (uiCostOk[0] && uiCostOk[1])
-                        ? ((uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1]) || enforceBcwPred)
-                        : true;
+              allOk =
+                (uiCostOk[0] && uiCostOk[1]) ? ((costBi <= uiCost[0] && costBi <= uiCost[1]) || enforceBcwPred) : true;
             }
             else
             {
@@ -7753,12 +7750,12 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
 #if GDR_ENABLED
           if (allOk)
 #else
-          if ((uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1]) || enforceBcwPred)
+          if ((costBi <= uiCost[0] && costBi <= uiCost[1]) || enforceBcwPred)
 #endif
           {
             xCopyAffineAMVPInfo(aacAffineAMVPInfo[0][iRefIdxBi[0]], affiAMVPInfoTemp[REF_PIC_LIST_0]);
             xCheckBestAffineMVP(pu, affiAMVPInfoTemp[REF_PIC_LIST_0], REF_PIC_LIST_0, cMvBi[0],
-                                cMvPredBi[0][iRefIdxBi[0]], aaiMvpIdxBi[0][iRefIdxBi[0]], bits[2], uiCostBi);
+                                cMvPredBi[0][iRefIdxBi[0]], aaiMvpIdxBi[0][iRefIdxBi[0]], bits[2], costBi);
 #if GDR_ENABLED
             if (isEncodeGdrClean)
             {
@@ -7779,14 +7776,12 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
                 cMvBiValid[REF_PIC_LIST_0][2] = cMvPredBiSolid[REF_PIC_LIST_0][iRefIdxBi[0]][2];
               }
 
-              uiCostBiOk = true;
-              uiCostBiOk = uiCostBiOk && cMvPredBiSolid[REF_PIC_LIST_0][iRefIdxBi[0]][0]
-                           && cMvPredBiSolid[REF_PIC_LIST_0][iRefIdxBi[0]][1];
-              uiCostBiOk = uiCostBiOk && ((mvNum > 2) ? cMvPredBiSolid[REF_PIC_LIST_0][iRefIdxBi[0]][2] : true);
-              uiCostBiOk =
-                uiCostBiOk && cMvBiSolid[0][0] && cMvBiSolid[0][1] && ((mvNum > 2) ? cMvBiSolid[0][2] : true);
-              uiCostBiOk =
-                uiCostBiOk && cMvBiValid[0][0] && cMvBiValid[0][1] && ((mvNum > 2) ? cMvBiValid[0][2] : true);
+              costBiOk = true;
+              costBiOk = costBiOk && cMvPredBiSolid[REF_PIC_LIST_0][iRefIdxBi[0]][0]
+                         && cMvPredBiSolid[REF_PIC_LIST_0][iRefIdxBi[0]][1];
+              costBiOk = costBiOk && ((mvNum > 2) ? cMvPredBiSolid[REF_PIC_LIST_0][iRefIdxBi[0]][2] : true);
+              costBiOk = costBiOk && cMvBiSolid[0][0] && cMvBiSolid[0][1] && ((mvNum > 2) ? cMvBiSolid[0][2] : true);
+              costBiOk = costBiOk && cMvBiValid[0][0] && cMvBiValid[0][1] && ((mvNum > 2) ? cMvBiValid[0][2] : true);
             }
 #endif
 
@@ -7794,7 +7789,7 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
             {
               xCopyAffineAMVPInfo(aacAffineAMVPInfo[1][iRefIdxBi[1]], affiAMVPInfoTemp[REF_PIC_LIST_1]);
               xCheckBestAffineMVP(pu, affiAMVPInfoTemp[REF_PIC_LIST_1], REF_PIC_LIST_1, cMvBi[1],
-                                  cMvPredBi[1][iRefIdxBi[1]], aaiMvpIdxBi[1][iRefIdxBi[1]], bits[2], uiCostBi);
+                                  cMvPredBi[1][iRefIdxBi[1]], aaiMvpIdxBi[1][iRefIdxBi[1]], bits[2], costBi);
 #if GDR_ENABLED
               if (isEncodeGdrClean)
               {
@@ -7815,14 +7810,12 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
                   cMvBiValid[REF_PIC_LIST_1][2] = cMvPredBiSolid[REF_PIC_LIST_1][iRefIdxBi[1]][2];
                 }
 
-                uiCostBiOk = true;
-                uiCostBiOk = uiCostBiOk && cMvPredBiSolid[REF_PIC_LIST_1][iRefIdxBi[1]][0]
-                             && cMvPredBiSolid[REF_PIC_LIST_1][iRefIdxBi[1]][1];
-                uiCostBiOk = uiCostBiOk && ((mvNum > 2) ? cMvPredBiSolid[REF_PIC_LIST_1][iRefIdxBi[1]][2] : true);
-                uiCostBiOk =
-                  uiCostBiOk && cMvBiSolid[1][0] && cMvBiSolid[1][1] && ((mvNum > 2) ? cMvBiSolid[1][2] : true);
-                uiCostBiOk =
-                  uiCostBiOk && cMvBiValid[1][0] && cMvBiValid[1][1] && ((mvNum > 2) ? cMvBiValid[1][2] : true);
+                costBiOk = true;
+                costBiOk = costBiOk && cMvPredBiSolid[REF_PIC_LIST_1][iRefIdxBi[1]][0]
+                           && cMvPredBiSolid[REF_PIC_LIST_1][iRefIdxBi[1]][1];
+                costBiOk = costBiOk && ((mvNum > 2) ? cMvPredBiSolid[REF_PIC_LIST_1][iRefIdxBi[1]][2] : true);
+                costBiOk = costBiOk && cMvBiSolid[1][0] && cMvBiSolid[1][1] && ((mvNum > 2) ? cMvBiSolid[1][2] : true);
+                costBiOk = costBiOk && cMvBiValid[1][0] && cMvBiValid[1][1] && ((mvNum > 2) ? cMvBiValid[1][2] : true);
               }
 #endif
             }
@@ -7874,16 +7867,16 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
 
     if (WPScalingParam::isWeighted(wp0) || WPScalingParam::isWeighted(wp1))
     {
-      uiCostBi = MAX_UINT;
+      costBi         = MAX_DISTORTION;
       enforceBcwPred = false;
 #if GDR_ENABLED
-      uiCostBiOk = false;
+      costBiOk = false;
 #endif
     }
   }
   if( enforceBcwPred )
   {
-    uiCost[0] = uiCost[1] = MAX_UINT;
+    uiCost[0] = uiCost[1] = MAX_DISTORTION;
 #if GDR_ENABLED
     uiCostOk[0] = uiCostOk[1] = false;
 #endif
@@ -7891,13 +7884,13 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
 
   // Affine ME result set
 #if GDR_ENABLED
-  bool BiOk = (uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1]);
+  bool BiOk = (costBi <= uiCost[0] && costBi <= uiCost[1]);
 
   if (isEncodeGdrClean)
   {
-    if (uiCostBiOk)
+    if (costBiOk)
     {
-      BiOk = (uiCostOk[0] && uiCostOk[1]) ? (uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1]) : true;
+      BiOk = (uiCostOk[0] && uiCostOk[1]) ? (costBi <= uiCost[0] && costBi <= uiCost[1]) : true;
     }
     else
     {
@@ -7922,11 +7915,11 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
 #if GDR_ENABLED
   if (BiOk)
 #else
-  if ( uiCostBi <= uiCost[0] && uiCostBi <= uiCost[1] ) // Bi
+  if (costBi <= uiCost[0] && costBi <= uiCost[1])   // Bi
 #endif
   {
     lastMode = 2;
-    affineCost = uiCostBi;
+    affineCost  = costBi;
     pu.interDir = 3;
     PU::setAllAffineMv( pu, cMvBi[0][0], cMvBi[0][1], cMvBi[0][2], REF_PIC_LIST_0);
     PU::setAllAffineMv( pu, cMvBi[1][0], cMvBi[1][1], cMvBi[1][2], REF_PIC_LIST_1);
@@ -10177,7 +10170,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
             m_pcTrQuant->setLambda(m_pcTrQuant->getLambda() / (cRescale * cRescale));
           }
 
-          Distortion currCompDistY = MAX_UINT64;
+          Distortion currCompDistY = MAX_DISTORTION;
           QpParam    qpCbCr(tu, codeCompId);
 
           tu.getCoeffs(otherCompId).fill(0);   // do we need that?
