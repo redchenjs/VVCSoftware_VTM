@@ -6666,7 +6666,7 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
   *slice->getRPL0() = localRPL0;
 
   //Copy from L0 if we have less than active ref pic
-  numOfNeedToFill = pLocalRPL0->getNumberOfActivePictures() - ( numOfLTRPL1 + numOfSTRPL1 ) - numOfILRPL0;
+  numOfNeedToFill = rpl1->getNumberOfActivePictures() - (numOfLTRPL1 + numOfSTRPL1);
 
   for( int ii = 0; numOfNeedToFill > 0 && ii < ( pLocalRPL0->getNumberOfLongtermPictures() + pLocalRPL0->getNumberOfShorttermPictures() + pLocalRPL0->getNumberOfInterLayerPictures() ); ii++ )
   {
@@ -6704,7 +6704,7 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
   pLocalRPL1->setNumberOfInterLayerPictures( numOfILRPL1 );
   numPics = (slice->isIRAP()) ? 0 : numOfLTRPL1 + numOfSTRPL1;
 
-  pLocalRPL1->setNumberOfActivePictures( ( isDisallowMixedRefPic ? numPics : ( numPics < rpl1->getNumberOfActivePictures() ? numPics : rpl1->getNumberOfActivePictures() ) ) + numOfILRPL1 );
+  pLocalRPL1->setNumberOfActivePictures((numPics < rpl1->getNumberOfActivePictures() ? numPics : rpl1->getNumberOfActivePictures()) + numOfILRPL1);
   pLocalRPL1->setLtrpInSliceHeaderFlag( 1 );
   slice->setRPL1idx( -1 );
   *slice->getRPL1() = localRPL1;
