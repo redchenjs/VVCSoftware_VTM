@@ -948,7 +948,6 @@ protected:
   bool        m_OPIEnabled;                                     ///< enable Operating Point Information (OPI)
   int         m_maxTemporalLayer;
   int         m_layerId[MAX_VPS_LAYERS];
-  int         m_layerIdx;
   int         m_maxSublayers;
   bool        m_defaultPtlDpbHrdMaxTidFlag;
   bool        m_allIndependentLayersFlag;
@@ -961,6 +960,7 @@ protected:
   int         m_numOutputLayerSets;
   std::string m_olsOutputLayerStr[MAX_VPS_LAYERS];
   std::string m_maxTidILRefPicsPlus1Str[MAX_VPS_LAYERS];
+  bool        m_rplOfDepLayerInSh;
 
   int         m_numPtlsInVps;
 
