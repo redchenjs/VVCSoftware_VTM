@@ -1654,6 +1654,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "NumPTLsInVPS",                                   m_numPtlsInVps,                               1, "Number of profile_tier_level structures in VPS" )
   ( "AvoidIntraInDepLayers",                          m_avoidIntraInDepLayer,                    true, "Replaces I pictures in dependent layers with B pictures" )
   ( "MaxTidILRefPicsPlusOneLayerId%d",                m_maxTidILRefPicsPlus1Str, string(""), MAX_VPS_LAYERS, "Maximum temporal ID for inter-layer reference pictures plus 1 of i-th layer, 0 for IRAP only")
+  ( "RPLofDepLayerInSH",                              m_rplOfDepLayerInSh,                      false, "define Reference picture lists in slice header instead of SPS for dependant layers")
     ;
 
   opts.addOptions()
@@ -5186,6 +5187,10 @@ void EncAppCfg::xPrintParameter()
   else
   {
     msg( VERBOSE, "RPR:%d ", 0 );
+  }
+  if (m_rplOfDepLayerInSh)
+  {
+    msg(VERBOSE, "RPLofDepLayerInSH:%d ", m_rplOfDepLayerInSh);
   }
   msg(VERBOSE, "TemporalFilter:%d/%d ", m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs);
   msg(VERBOSE, "SEI CTI:%d ", m_ctiSEIEnabled);

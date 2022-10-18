@@ -128,12 +128,16 @@ private:
   VPS*                      m_vps;
 
   int*                      m_layerDecPicBuffering;
+  RPLList                   m_rplLists[2];
 
 public:
   SPS*                      getSPS( int spsId ) { return m_spsMap.getPS( spsId ); };
   APS**                     getApss() { return m_apss; }
   Ctx                       m_entropyCodingSyncContextState;      ///< leave in addition to vector for compatibility
   PLTBuf                    m_palettePredictorSyncState;
+  const RPLList*            getRPLList(bool b) const { return &m_rplLists[b]; }
+  RPLList*                  getRPLList(bool b) { return &m_rplLists[b]; }
+  uint32_t                  getNumRPL(bool b) const { return m_rplLists[b].getNumberOfReferencePictureLists(); }
 
 protected:
   void  xGetNewPicBuffer  ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Picture*& rpcPic, int ppsId ); ///< get picture buffer which will be processed. If ppsId<0, then the ppsMap will be queried for the first match.
@@ -184,7 +188,6 @@ public:
   RateCtrl*               getRateCtrl           ()              { return  &m_cRateCtrl;            }
 
 
-  void                    getActiveRefPicListNumForPOC(const SPS *sps, int POCCurr, int GOPid, uint32_t *activeL0, uint32_t *activeL1);
   void                    selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, int ltPoc);
 
   void                   setParamSetChanged(int spsId, int ppsId);
