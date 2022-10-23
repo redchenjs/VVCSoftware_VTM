@@ -2128,8 +2128,14 @@ The lower value has higher speedup and also has higher coding loss.
 \begin{OptionTableNoShorthand}{Quantization parameters}{tab:quantization}
 \Option{QP (-q)} &
 %\ShortOption{-q} &
-\Default{30.0} &
-Specifies the base value of the quantization parameter. If it is non-integer, the QP is switched once during encoding.
+\Default{30} &
+Specifies the base value of the quantization parameter (QP).
+\\
+
+\Option{QPIncrementFrame (-qpif)} &
+%\ShortOption{\None} &
+\Default{Undefined} &
+Specifies a frame number in the input video file. If this value is defined, the base QP value is incremented by 1 for all frames that have a frame number equal to or larger than the specified frame number. This option may be used for rate matching as it enables to obtain average bitrates that are between bitrates obtainable with fixed base QP values.
 \\
 
 \Option{IntraQPOffset} &
