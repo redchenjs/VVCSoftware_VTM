@@ -100,16 +100,10 @@ EncAppCfg::EncAppCfg()
 , m_ext360(*this)
 #endif
 {
-  m_aidQP = nullptr;
 }
 
 EncAppCfg::~EncAppCfg()
 {
-  if ( m_aidQP )
-  {
-    delete[] m_aidQP;
-  }
-
 #if ENABLE_TRACING
   tracing_uninit(g_trace_ctx);
   g_trace_ctx = nullptr;
@@ -2518,8 +2512,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_subpicDecodedPictureHashType=HashType(tmpSubpicDecodedPictureHashMappedType-1);
   }
   // allocate slice-based dQP values
-  m_aidQP = new int[ m_framesToBeEncoded + m_iGOPSize + 1 ];
-  ::memset( m_aidQP, 0, sizeof(int)*( m_framesToBeEncoded + m_iGOPSize + 1 ) );
+  m_frameDeltaQps.resize(m_framesToBeEncoded + m_iGOPSize + 1);
+  std::fill(m_frameDeltaQps.begin(), m_frameDeltaQps.end(), 0);
 
   if (m_qpIncrementAtSourceFrame.bPresent)
   {
@@ -2531,12 +2525,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       // if ssf=10, fs=2, tsr=2, then for this simulation, switch at POC 4 (=(10-2)/2): POC0=Src2, POC1=Src4, POC2=Src6, POC3=Src8, POC4=Src10
       switchingPOC = (m_qpIncrementAtSourceFrame.value - m_FrameSkip) / m_temporalSubsampleRatio;
     }
-    for (uint32_t i = switchingPOC; i<(m_framesToBeEncoded + m_iGOPSize + 1); i++)
+    for (uint32_t i = switchingPOC; i < m_frameDeltaQps.size(); i++)
     {
-      m_aidQP[i] = 1;
+      m_frameDeltaQps[i] = 1;
     }
   }
-
 
 #if SHARP_LUMA_DELTA_QP
   CHECK( lumaLevelToDeltaQPMode >= LUMALVL_TO_DQP_NUM_MODES, "Error in cfg" );
@@ -2749,16 +2742,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     FILE* fpt=fopen( m_dQPFileName.c_str(), "r" );
     if ( fpt )
     {
-      int iValue;
-      int iPOC = 0;
-      while ( iPOC < m_framesToBeEncoded )
+      int val;
+      int poc = 0;
+      m_frameDeltaQps.clear();
+      while (poc < m_framesToBeEncoded)
       {
-        if ( fscanf(fpt, "%d", &iValue ) == EOF )
+        if (fscanf(fpt, "%d", &val) == EOF)
         {
           break;
         }
-        m_aidQP[ iPOC ] = iValue;
-        iPOC++;
+        m_frameDeltaQps.push_back(val);
+        poc++;
       }
       fclose(fpt);
     }
