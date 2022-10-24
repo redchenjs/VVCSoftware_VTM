@@ -76,25 +76,6 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
 
   Distortion sum = 0;
 
-#if !U0040_MODIFIED_WEIGHTEDPREDICTION_WITH_BIPRED_AND_CLIPPING
-  for (int rows = rcDtParam.org.height; rows != 0; rows--)
-  {
-    for (int n = 0; n < cols; n++)
-    {
-      const Pel pred = ( (w0*piCur[n] + round) >> shift ) + offset ;
-
-      sum += abs(piOrg[n] - pred);
-    }
-    if (rcDtParam.maximumDistortionForEarlyExit < (sum >> distortionShift))
-    {
-      return sum >> distortionShift;
-    }
-    piOrg += strideOrg;
-    piCur += strideCur;
-  }
-
-  //rcDtParam.compID = MAX_NUM_COMPONENT;  // reset for DEBUG (assert test)
-#else
   ClpRng clpRng; // this just affects the cost
   clpRng.min = 0;
   clpRng.max = (1 << rcDtParam.bitDepth) - 1;
@@ -225,7 +206,6 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
     }
   }
   //rcDtParam.compIdx = MAX_NUM_COMPONENT;  // reset for DEBUG (assert test)
-#endif
 
   return sum >> distortionShift;
 }
@@ -259,21 +239,6 @@ Distortion RdCostWeightPrediction::xGetSSEw( const DistParam &rcDtParam )
 
   Distortion sum = 0;
 
-#if !U0040_MODIFIED_WEIGHTEDPREDICTION_WITH_BIPRED_AND_CLIPPING
-  for (int rows = rcDtParam.org.height; rows != 0; rows--)
-  {
-    for (int n = 0; n < cols; n++)
-    {
-      const Pel pred     = ( (w0*piCur[n] + round) >> shift ) + offset ;
-      const Pel residual = piOrg[n] - pred;
-      sum += ( Distortion(residual) * Distortion(residual) ) >> distortionShift;
-    }
-    piOrg += strideOrg;
-    piCur += strideCur;
-  }
-
-  //rcDtParam.compIdx = MAX_NUM_COMPONENT; // reset for DEBUG (assert test)
-#else
   if (rcDtParam.isBiPred)
   {
     for (int rows = rcDtParam.org.height; rows != 0; rows--)
@@ -308,7 +273,6 @@ Distortion RdCostWeightPrediction::xGetSSEw( const DistParam &rcDtParam )
   }
 
   //rcDtParam.compIdx = MAX_NUM_COMPONENT; // reset for DEBUG (assert test)
-#endif
 
   return sum;
 }
