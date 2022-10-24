@@ -1951,17 +1951,10 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
 
     estimatedCpbFullness -= m_pcRateCtrl->getBufferingRate();
     // prevent underflow
-#if V0078_ADAPTIVE_LOWER_BOUND
     if (estimatedCpbFullness - estimatedBits < m_pcRateCtrl->getRCPic()->getLowerBound())
     {
       estimatedBits = std::max(200, estimatedCpbFullness - m_pcRateCtrl->getRCPic()->getLowerBound());
     }
-#else
-    if (estimatedCpbFullness - estimatedBits < (int)(m_pcRateCtrl->getCpbSize()*0.1f))
-    {
-      estimatedBits = std::max(200, estimatedCpbFullness - (int)(m_pcRateCtrl->getCpbSize()*0.1f));
-    }
-#endif
 
     m_pcRateCtrl->getRCPic()->setTargetBits(estimatedBits);
   }
@@ -1998,17 +1991,10 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
 
         estimatedCpbFullness -= m_pcRateCtrl->getBufferingRate();
         // prevent underflow
-#if V0078_ADAPTIVE_LOWER_BOUND
         if (estimatedCpbFullness - bits < m_pcRateCtrl->getRCPic()->getLowerBound())
         {
           bits = estimatedCpbFullness - m_pcRateCtrl->getRCPic()->getLowerBound();
         }
-#else
-        if (estimatedCpbFullness - bits < (int)(m_pcRateCtrl->getCpbSize()*0.1f))
-        {
-          bits = estimatedCpbFullness - (int)(m_pcRateCtrl->getCpbSize()*0.1f);
-        }
-#endif
       }
 
       if ( bits < 200 )

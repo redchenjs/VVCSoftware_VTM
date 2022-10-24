@@ -258,9 +258,7 @@ public:
 private:
   int xEstPicTargetBits( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP );
   int xEstPicHeaderBits(std::list<EncRCPic *> &listPreviousPictures, int frameLevel);
-#if V0078_ADAPTIVE_LOWER_BOUND
   int xEstPicLowerBound( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP );
-#endif
 
 public:
   EncRCSeq*      getRCSequence()                         { return m_encRCSeq; }
@@ -276,9 +274,7 @@ public:
   int  getPixelsLeft()                                    { return m_pixelsLeft; }
   int  getBitsCoded()                                     { return m_targetBits - m_estHeaderBits - m_bitsLeft; }
   int  getLCUCoded()                                      { return m_numberOfLCU - m_LCULeft; }
-#if V0078_ADAPTIVE_LOWER_BOUND
   int  getLowerBound()                                    { return m_lowerBound; }
-#endif
   TRCLCU* getLCU()                                        { return m_LCUs; }
   TRCLCU& getLCU( int LCUIdx )                            { return m_LCUs[LCUIdx]; }
   int  getPicActualHeaderBits()                           { return m_picActualHeaderBits; }
@@ -307,9 +303,7 @@ private:
   int m_targetBits;
   int m_estHeaderBits;
   int m_estPicQP;
-#if V0078_ADAPTIVE_LOWER_BOUND
   int m_lowerBound;
-#endif
   double m_estPicLambda;
 
   int m_LCULeft;

@@ -716,7 +716,6 @@ int EncRCPic::xEstPicHeaderBits( list<EncRCPic*>& listPreviousPictures, int fram
   return estHeaderBits;
 }
 
-#if V0078_ADAPTIVE_LOWER_BOUND
 int EncRCPic::xEstPicLowerBound(EncRCSeq* encRCSeq, EncRCGOP* encRCGOP)
 {
   int lowerBound = 0;
@@ -754,7 +753,6 @@ int EncRCPic::xEstPicLowerBound(EncRCSeq* encRCSeq, EncRCGOP* encRCGOP)
 
   return lowerBound;
 }
-#endif
 
 void EncRCPic::addToPictureLsit( list<EncRCPic*>& listPreviousPictures )
 {
@@ -796,9 +794,7 @@ void EncRCPic::create( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP, int frameLevel, l
   int LCUHeight      = encRCSeq->getLCUHeight();
   int picWidthInLCU  = ( picWidth  % LCUWidth  ) == 0 ? picWidth  / LCUWidth  : picWidth  / LCUWidth  + 1;
   int picHeightInLCU = ( picHeight % LCUHeight ) == 0 ? picHeight / LCUHeight : picHeight / LCUHeight + 1;
-#if V0078_ADAPTIVE_LOWER_BOUND
   m_lowerBound       = xEstPicLowerBound( encRCSeq, encRCGOP );
-#endif
 
   m_LCULeft         = m_numberOfLCU;
   m_bitsLeft       -= m_estHeaderBits;
