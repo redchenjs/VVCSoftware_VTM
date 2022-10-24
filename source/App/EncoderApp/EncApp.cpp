@@ -1204,7 +1204,6 @@ void EncApp::xInitLibCfg()
     {
       m_cEncLib.setNNPostFilterSEICharacteristicsPayloadFilename(m_nnPostFilterSEICharacteristicsPayloadFilename[i], i);
     }
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS 
     m_cEncLib.setNNPostFilterSEICharacteristicsAuxInpIdc               (m_nnPostFilterSEICharacteristicsAuxInpIdc[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsSepColDescriptionFlag   (m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[i], i);
     if (m_cEncLib.getNNPostFilterSEICharacteristicsSepColDescriptionFlag(i)){
@@ -1212,7 +1211,6 @@ void EncApp::xInitLibCfg()
       m_cEncLib.setNNPostFilterSEICharacteristicsTransCharacteristics  (m_nnPostFilterSEICharacteristicsTransCharacteristics[i],i);
       m_cEncLib.setNNPostFilterSEICharacteristicsMatrixCoeffs          (m_nnPostFilterSEICharacteristicsMatrixCoeffs[i],i);
     }
-#endif
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
   m_cEncLib.setNnPostFilterSEIActivationId                       (m_nnPostFilterSEIActivationId);

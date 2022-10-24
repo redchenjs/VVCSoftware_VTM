@@ -1455,7 +1455,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     {
       WRITE_UVLC(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
     }
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
     WRITE_UVLC(sei.m_AuxInpIdc,"nnpfc_aux_inp_idc");
     WRITE_FLAG(sei.m_SepColDescriptionFlag,"nnpfc_sep_col_desc_flag");
 
@@ -1464,7 +1463,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       WRITE_CODE(sei.m_TransCharacteristics,8,"nnpfc_trans_characteristics");
       WRITE_CODE(sei.m_MatrixCoeffs,8,"nnpfc_matrix_coeffs");
     }
-#endif
 
     WRITE_UVLC(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     WRITE_UVLC(sei.m_outSampleIdc, "nnpfc_out_sample_idc");

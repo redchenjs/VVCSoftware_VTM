@@ -690,13 +690,11 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsInpSampleIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
   uint32_t                m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsColPrimaries[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsTransCharacteristics[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsMatrixCoeffs[MAX_NUM_NN_POST_FILTERS];
-#endif  
   uint32_t                m_nnPostFilterSEICharacteristicsInpOrderIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsOutSampleIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsOutOrderIdc[MAX_NUM_NN_POST_FILTERS];
@@ -1842,7 +1840,6 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(uint32_t outTensorBitDepthMinus8, int filterIdx) { m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx] = outTensorBitDepthMinus8; }
   uint32_t    getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx]; }
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
   void        setNNPostFilterSEICharacteristicsAuxInpIdc(uint32_t auxInpIdc, int filterIdx)                             { m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx] = auxInpIdc; }  
   uint32_t    getNNPostFilterSEICharacteristicsAuxInpIdc(int filterIdx) const                                           { return m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx]; } 
   void        setNNPostFilterSEICharacteristicsSepColDescriptionFlag(bool sepColDescriptionFlag, int filterIdx)         { m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[filterIdx] = sepColDescriptionFlag; }  
@@ -1853,7 +1850,6 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsTransCharacteristics(int filterIdx) const                                { return m_nnPostFilterSEICharacteristicsTransCharacteristics[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsMatrixCoeffs(uint32_t matrixCoeffs, int filterIdx)                       { m_nnPostFilterSEICharacteristicsMatrixCoeffs[filterIdx] = matrixCoeffs; }
   uint32_t    getNNPostFilterSEICharacteristicsMatrixCoeffs(int filterIdx) const                                        { return m_nnPostFilterSEICharacteristicsMatrixCoeffs[filterIdx]; }
-#endif 
   void        setNNPostFilterSEICharacteristicsComponentLastFlag(bool componentLastFlag, int filterIdx)                 { m_nnPostFilterSEICharacteristicsComponentLastFlag[filterIdx] = componentLastFlag; }
   bool        getNNPostFilterSEICharacteristicsComponentLastFlag(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsComponentLastFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsInpSampleIdc(uint32_t inpSampleIdc, int filterIdx)                       { m_nnPostFilterSEICharacteristicsInpSampleIdc[filterIdx] = inpSampleIdc; }

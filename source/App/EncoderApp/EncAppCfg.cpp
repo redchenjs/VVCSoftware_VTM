@@ -1747,7 +1747,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream inpSampleIdc;
     inpSampleIdc << "SEINNPostFilterCharacteristicsInpSampleIdc" << i;
     opts.addOptions()(inpSampleIdc.str(), m_nnPostFilterSEICharacteristicsInpSampleIdc[i], 0u, "Specifies the method of converting an input sample in the the Neural Network Post Filter Characteristics SEI message");
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
     std::ostringstream auxInpIdc;
     auxInpIdc << "SEINNPostFilterCharacteristicsAuxInpIdc" << i;
     opts.addOptions()(auxInpIdc.str(), m_nnPostFilterSEICharacteristicsAuxInpIdc[i], 0u, "Specifies the auxillary input index in the Nueral Network Post Filter Characteristics SEI message");
@@ -1767,7 +1766,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream matrixCoeffs;
     matrixCoeffs << "SEINNPostFilterCharacteristicsMatrixCoeffs" << i;
     opts.addOptions()(matrixCoeffs.str(), m_nnPostFilterSEICharacteristicsMatrixCoeffs[i], 0u, "Specifies color matrix coefficients in the Nueral Network Post Filter Characteristics SEI message");
-#endif
     std::ostringstream inpOrderIdc;
     inpOrderIdc << "SEINNPostFilterCharacteristicsInpOrderIdc" << i;
     opts.addOptions()(inpOrderIdc.str(), m_nnPostFilterSEICharacteristicsInpOrderIdc[i], 0u, "Specifies the method of ordering the input sample arrays in the Neural Network Post Filter Characteristics SEI message");
@@ -4733,11 +4731,9 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpSampleIdc[i] > 255, "SEINNPostFilterCharacteristicsInpSampleIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpOrderIdc[i] > 255, "SEINNPostFilterCharacteristicsInpOrderIdc must be in the range of  0 to 255");
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
       xConfirmPara(m_nnPostFilterSEICharacteristicsColPrimaries[i] > 255, "m_nnPostFilterSEICharacteristicsColPrimaries must in the range 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsTransCharacteristics[i] > 255, "m_nnPostFilterSEICharacteristicsTransCharacteristics must in the range 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsMatrixCoeffs[i] > 255, "m_nnPostFilterSEICharacteristicsMatrixCoeffs must in the range 0 to 255");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutSampleIdc[i] > 255, "SEINNPostFilterCharacteristicsOutSampleIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutOrderIdc[i] > 255, "SEINNPostFilterCharacteristicsOutOrderIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i] > 32766, "SEINNPostFilterCharacteristicsPatchWidthMinus1 must be in the range of 0 to 32766");

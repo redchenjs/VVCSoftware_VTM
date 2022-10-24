@@ -1238,7 +1238,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_outTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(filterIdx);
     }
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
     sei->m_AuxInpIdc = m_pcCfg->getNNPostFilterSEICharacteristicsAuxInpIdc(filterIdx);
     sei->m_SepColDescriptionFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSepColDescriptionFlag(filterIdx);
     if(sei->m_SepColDescriptionFlag){
@@ -1246,7 +1245,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_TransCharacteristics = m_pcCfg->getNNPostFilterSEICharacteristicsTransCharacteristics(filterIdx);
       sei->m_MatrixCoeffs = m_pcCfg->getNNPostFilterSEICharacteristicsMatrixCoeffs(filterIdx);
     }
-#endif
 
     sei->m_outOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutOrderIdc(filterIdx);
     sei->m_constantPatchSizeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(filterIdx);

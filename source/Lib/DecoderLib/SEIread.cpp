@@ -2639,7 +2639,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_minus8");
       sei.m_inpTensorBitDepthMinus8 = val;
     }
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
     sei.m_AuxInpIdc = val;
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
@@ -2654,7 +2653,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_matrix_coeffs");
       sei.m_MatrixCoeffs = val;
     }
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
