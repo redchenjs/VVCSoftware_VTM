@@ -2345,13 +2345,11 @@ int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
     }
     qp += appliedSwitchDQQ;
 
-#if QP_SWITCHING_FOR_PARALLEL
     const int* pdQPs = getdQPs();
     if ( pdQPs )
     {
       qp += pdQPs[pSlice->getPOC() / (m_compositeRefEnabled ? 2 : 1)];
     }
-#endif
 
     if(sliceType==I_SLICE)
     {
@@ -2376,14 +2374,6 @@ int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
       }
     }
 
-#if !QP_SWITCHING_FOR_PARALLEL
-    // modify QP if a fractional QP was originally specified, cause dQPs to be 0 or 1.
-    const int* pdQPs = getdQPs();
-    if ( pdQPs )
-    {
-      qp += pdQPs[ pSlice->getPOC() ];
-    }
-#endif
   }
   qp = Clip3( -lumaQpBDOffset, MAX_QP, qp );
   return qp;

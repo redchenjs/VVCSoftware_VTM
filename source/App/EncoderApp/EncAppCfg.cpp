@@ -434,7 +434,6 @@ istream& SMultiValueInput<T>::readValues(std::istream &in)
   return in;
 }
 
-#if QP_SWITCHING_FOR_PARALLEL
 template <class T>
 static inline istream& operator >> (std::istream &in, EncAppCfg::OptionalValue<T> &value)
 {
@@ -450,7 +449,6 @@ static inline istream& operator >> (std::istream &in, EncAppCfg::OptionalValue<T
   }
   return in;
 }
-#endif
 
 template <class T1, class T2>
 static inline istream& operator >> (std::istream& in, std::map<T1, T2>& map)
@@ -1114,12 +1112,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("IQPFactor,-IQF",                                  m_dIntraQpFactor,                                  -1.0, "Intra QP Factor for Lambda Computation. If negative, the default will scale lambda based on GOP size (unless LambdaFromQpEnable then IntraQPOffset is used instead)")
 
   /* Quantization parameters */
-#if QP_SWITCHING_FOR_PARALLEL
   ("QP,q",                                            m_iQP,                                               30, "Qp value")
   ("QPIncrementFrame,-qpif",                          m_qpIncrementAtSourceFrame,   OptionalValue<uint32_t>(), "If a source file frame number is specified, the internal QP will be incremented for all POCs associated with source frames >= frame number. If empty, do not increment.")
-#else
-  ("QP,q",                                            m_fQP,                                             30.0, "Qp value, if value is float, QP is switched once during encoding")
-#endif
 #if X0038_LAMBDA_FROM_QP_CAPABILITY
   ("IntraQPOffset",                                   m_intraQPOffset,                                      0, "Qp offset value for intra slice, typically determined based on GOP size")
   ("LambdaFromQpEnable",                              m_lambdaFromQPEnable,                             false, "Enable flag for derivation of lambda from QP")
@@ -2545,7 +2539,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   m_aidQP = new int[ m_framesToBeEncoded + m_iGOPSize + 1 ];
   ::memset( m_aidQP, 0, sizeof(int)*( m_framesToBeEncoded + m_iGOPSize + 1 ) );
 
-#if QP_SWITCHING_FOR_PARALLEL
   if (m_qpIncrementAtSourceFrame.bPresent)
   {
     uint32_t switchingPOC = 0;
@@ -2561,21 +2554,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_aidQP[i] = 1;
     }
   }
-#else
-  // handling of floating-point QP values
-  // if QP is not integer, sequence is split into two sections having QP and QP+1
-  m_iQP = (int)( m_fQP );
-  if ( m_iQP < m_fQP )
-  {
-    int iSwitchPOC = (int)( m_framesToBeEncoded - (m_fQP - m_iQP)*m_framesToBeEncoded + 0.5 );
-
-    iSwitchPOC = (int)( (double)iSwitchPOC / m_iGOPSize + 0.5 )*m_iGOPSize;
-    for ( int i=iSwitchPOC; i<m_framesToBeEncoded + m_iGOPSize + 1; i++ )
-    {
-      m_aidQP[i] = 1;
-    }
-  }
-#endif
 
 
 #if SHARP_LUMA_DELTA_QP
@@ -3168,11 +3146,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
 #if ENABLE_QPA_SUB_CTU
- #if QP_SWITCHING_FOR_PARALLEL
   if ((m_iQP < 38) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && (m_sourceWidth <= 2048) && (m_sourceHeight <= 1280)
- #else
-  if (((int)m_fQP < 38) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && (m_sourceWidth <= 2048) && (m_sourceHeight <= 1280)
- #endif
  #if WCG_EXT && ER_CHROMA_QP_WCG_PPS
       && (!m_wcgChromaQpControl.enabled)
  #endif
@@ -3181,11 +3155,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_cuQpDeltaSubdiv = 2;
   }
 #else
- #if QP_SWITCHING_FOR_PARALLEL
   if( ( m_iQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_sourceHeight <= 1280 ) && ( m_sourceWidth <= 2048 ) )
- #else
-  if( ( ( int ) m_fQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_sourceHeight <= 1280 ) && ( m_sourceWidth <= 2048 ) )
- #endif
   {
     msg( WARNING, "*************************************************************************\n" );
     msg( WARNING, "* WARNING: QPA on with large CTU for <=HD sequences, limiting CTU size! *\n" );
@@ -4888,7 +4858,6 @@ void EncAppCfg::xPrintParameter()
   msg( DETAILS, "Decoding refresh type                  : %d\n", m_iDecodingRefreshType );
   msg( DETAILS, "DRAP period                            : %d\n", m_drapPeriod );
   msg( DETAILS, "EDRAP period                           : %d\n", m_edrapPeriod );
-#if QP_SWITCHING_FOR_PARALLEL
   if (m_qpIncrementAtSourceFrame.bPresent)
   {
     msg( DETAILS, "QP                                     : %d (incrementing internal QP at source frame %d)\n", m_iQP, m_qpIncrementAtSourceFrame.value);
@@ -4897,9 +4866,6 @@ void EncAppCfg::xPrintParameter()
   {
     msg( DETAILS, "QP                                     : %d\n", m_iQP);
   }
-#else
-  msg( DETAILS, "QP                                     : %5.2f\n", m_fQP );
-#endif
   msg( DETAILS, "Max dQP signaling subdiv               : %d\n", m_cuQpDeltaSubdiv);
 
   msg( DETAILS, "Cb QP Offset (dual tree)               : %d (%d)\n", m_cbQpOffset, m_cbQpOffsetDualTree);

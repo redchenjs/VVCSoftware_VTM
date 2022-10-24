@@ -69,7 +69,6 @@ namespace po = df::program_options_lite;
 /// encoder configuration class
 class EncAppCfg
 {
-#if QP_SWITCHING_FOR_PARALLEL
 public:
   template <class T>
   struct OptionalValue
@@ -78,7 +77,6 @@ public:
     T    value;
     OptionalValue() : bPresent(false), value() { }
   };
-#endif
 
 protected:
   // file I/O
@@ -259,11 +257,7 @@ protected:
   bool      m_disableFastDecisionTT;                         ///< flag for disabling fast decision for TT from BT
 
   // coding quality
-#if QP_SWITCHING_FOR_PARALLEL
   OptionalValue<uint32_t> m_qpIncrementAtSourceFrame;             ///< Optional source frame number at which all subsequent frames are to use an increased internal QP.
-#else
-  double    m_fQP;                                            ///< QP value of key-picture (floating point)
-#endif
   int       m_iQP;                                            ///< QP value of key-picture (integer)
   bool      m_useIdentityTableForNon420Chroma;
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
