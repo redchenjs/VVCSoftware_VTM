@@ -454,9 +454,7 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
     case SEI::DECODED_PICTURE_HASH:                 return "Decoded picture hash";
     case SEI::DEPENDENT_RAP_INDICATION:             return "Dependent RAP indication";
     case SEI::MASTERING_DISPLAY_COLOUR_VOLUME:      return "Mastering display colour volume";
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
     case SEI::ALTERNATIVE_TRANSFER_CHARACTERISTICS: return "Alternative transfer characteristics";
-#endif
     case SEI::CONTENT_LIGHT_LEVEL_INFO:             return "Content light level information";
     case SEI::AMBIENT_VIEWING_ENVIRONMENT:          return "Ambient viewing environment";
     case SEI::CONTENT_COLOUR_VOLUME:                return "Content colour volume";

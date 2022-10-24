@@ -527,9 +527,7 @@ protected:
   int       m_doSEITransformType;
   bool      m_parameterSetsInclusionIndicationSEIEnabled;
   int       m_selfContainedClvsFlag;
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   int       m_preferredTransferCharacteristics;
-#endif
 
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;

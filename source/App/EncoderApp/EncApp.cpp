@@ -984,10 +984,8 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setVerPhaseDenMinus1ReducedResolution                (m_piVerPhaseDenMinus1ReducedResolution);
   m_cEncLib.setMCTSEncConstraint                                 ( m_MCTSEncConstraint);
   m_cEncLib.setMasteringDisplaySEI                               ( m_masteringDisplay );
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   m_cEncLib.setSEIAlternativeTransferCharacteristicsSEIEnable    ( m_preferredTransferCharacteristics>=0     );
   m_cEncLib.setSEIPreferredTransferCharacteristics               ( uint8_t(m_preferredTransferCharacteristics) );
-#endif
   // film grain charcteristics
   m_cEncLib.setFilmGrainCharactersticsSEIEnabled                 (m_fgcSEIEnabled);
   m_cEncLib.setFilmGrainCharactersticsSEICancelFlag              (m_fgcSEICancelFlag);

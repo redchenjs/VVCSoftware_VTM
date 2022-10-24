@@ -780,7 +780,6 @@ bool SEIEncoder::initSEIAnnotatedRegions(SEIAnnotatedRegions* SEIAnnoReg, int cu
 }
 
 
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
 void SEIEncoder::initSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics *seiAltTransCharacteristics)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
@@ -788,7 +787,6 @@ void SEIEncoder::initSEIAlternativeTransferCharacteristics(SEIAlternativeTransfe
   //  Set SEI message parameters read from command line options
   seiAltTransCharacteristics->m_preferredTransferCharacteristics = m_pcCfg->getSEIPreferredTransferCharacteristics();
 }
-#endif
 void SEIEncoder::initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *seiFilmGrain)
 {
   CHECK(!(m_isInitialized), "Unspecified error");

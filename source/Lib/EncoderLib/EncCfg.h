@@ -658,10 +658,8 @@ protected:
   int                   m_verPhaseDenMinus1ReducedResolution;
   bool      m_MCTSEncConstraint;
   SEIMasteringDisplay m_masteringDisplay;
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   bool      m_alternativeTransferCharacteristicsSEIEnabled;
   uint8_t     m_preferredTransferCharacteristics;
-#endif
 
   bool                    m_siiSEIEnabled;
   uint32_t                m_siiSEINumUnitsInShutterInterval;
@@ -2080,12 +2078,10 @@ public:
   void  setMCTSEncConstraint(bool b)                                 { m_MCTSEncConstraint = b; }
   bool  getMCTSEncConstraint()                                       { return m_MCTSEncConstraint; }
   void  setMasteringDisplaySEI(const SEIMasteringDisplay &src)       { m_masteringDisplay = src; }
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   void  setSEIAlternativeTransferCharacteristicsSEIEnable( bool b)   { m_alternativeTransferCharacteristicsSEIEnabled = b;    }
   bool  getSEIAlternativeTransferCharacteristicsSEIEnable( ) const   { return m_alternativeTransferCharacteristicsSEIEnabled; }
   void  setSEIPreferredTransferCharacteristics(uint8_t v)              { m_preferredTransferCharacteristics = v;    }
   uint8_t getSEIPreferredTransferCharacteristics() const               { return m_preferredTransferCharacteristics; }
-#endif
   const SEIMasteringDisplay &getMasteringDisplaySEI() const          { return m_masteringDisplay; }
   // film grain SEI
   void  setFilmGrainCharactersticsSEIEnabled (bool b)                { m_fgcSEIEnabled = b; }

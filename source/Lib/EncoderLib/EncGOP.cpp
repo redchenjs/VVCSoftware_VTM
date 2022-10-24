@@ -705,14 +705,12 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     seiMessages.push_back(sei);
   }
 
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   if(m_pcCfg->getSEIAlternativeTransferCharacteristicsSEIEnable())
   {
     SEIAlternativeTransferCharacteristics *seiAlternativeTransferCharacteristics = new SEIAlternativeTransferCharacteristics;
     m_seiEncoder.initSEIAlternativeTransferCharacteristics(seiAlternativeTransferCharacteristics);
     seiMessages.push_back(seiAlternativeTransferCharacteristics);
   }
-#endif
   if (m_pcCfg->getErpSEIEnabled())
   {
     SEIEquirectangularProjection *sei = new SEIEquirectangularProjection;

@@ -330,12 +330,10 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIMasteringDisplayColourVolume;
       xParseSEIMasteringDisplayColourVolume((SEIMasteringDisplayColourVolume&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
     case SEI::ALTERNATIVE_TRANSFER_CHARACTERISTICS:
       sei = new SEIAlternativeTransferCharacteristics;
       xParseSEIAlternativeTransferCharacteristics((SEIAlternativeTransferCharacteristics&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     case SEI::EQUIRECTANGULAR_PROJECTION:
       sei = new SEIEquirectangularProjection;
       xParseSEIEquirectangularProjection((SEIEquirectangularProjection&) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -1763,7 +1761,6 @@ void SEIReader::xParseSEIMasteringDisplayColourVolume(SEIMasteringDisplayColourV
   sei_read_code( pDecodedMessageOutputStream, 32, code, "mdcv_min_display_mastering_luminance" ); sei.values.minLuminance = code;
 }
 
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
 void SEIReader::xParseSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
 {
   uint32_t code;
@@ -1771,7 +1768,6 @@ void SEIReader::xParseSEIAlternativeTransferCharacteristics(SEIAlternativeTransf
 
   sei_read_code(pDecodedMessageOutputStream, 8, code, "preferred_transfer_characteristics"); sei.m_preferredTransferCharacteristics = code;
 }
-#endif
 void SEIReader::xParseSEIUserDataRegistered(SEIUserDataRegistered& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
