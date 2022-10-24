@@ -2596,9 +2596,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_outSubWidthC = SubWidthC;
       sei.m_outSubHeightC = SubHeightC;
     }
-#if JVET_AA0054_CHROMA_UPSAMPLING_CONSTRAINT
     CHECK(((SubWidthC == 1) && (SubHeightC == 1)) && ((sei.m_purpose == 2) || (sei.m_purpose == 4)), "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose shall not be equal to 2 or 4");
-#endif
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_width_in_luma_samples");
