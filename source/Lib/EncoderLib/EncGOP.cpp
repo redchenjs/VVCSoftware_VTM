@@ -1939,7 +1939,6 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
   m_pcRateCtrl->initRCPic( frameLevel );
   estimatedBits = m_pcRateCtrl->getRCPic()->getTargetBits();
 
-#if U0132_TARGET_BITS_SATURATION
   if (m_pcRateCtrl->getCpbSaturationEnabled() && frameLevel != 0)
   {
     int estimatedCpbFullness = m_pcRateCtrl->getCpbState() + m_pcRateCtrl->getBufferingRate();
@@ -1966,7 +1965,6 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
 
     m_pcRateCtrl->getRCPic()->setTargetBits(estimatedBits);
   }
-#endif
 
   int sliceQP = m_pcCfg->getInitialQP();
   if ( ( slice->getPOC() == 0 && m_pcCfg->getInitialQP() > 0 ) || ( frameLevel == 0 && m_pcCfg->getForceIntraQP() ) ) // QP is specified
@@ -1988,7 +1986,6 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
       int bits = m_pcRateCtrl->getRCSeq()->getLeftAverageBits();
       bits = m_pcRateCtrl->getRCPic()->getRefineBitsForIntra( bits );
 
-#if U0132_TARGET_BITS_SATURATION
       if (m_pcRateCtrl->getCpbSaturationEnabled() )
       {
         int estimatedCpbFullness = m_pcRateCtrl->getCpbState() + m_pcRateCtrl->getBufferingRate();
@@ -2013,7 +2010,6 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
         }
 #endif
       }
-#endif
 
       if ( bits < 200 )
       {
@@ -4177,13 +4173,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         {
           m_pcRateCtrl->getRCGOP()->updateAfterPicture( estimatedBits );
         }
-  #if U0132_TARGET_BITS_SATURATION
         if (m_pcRateCtrl->getCpbSaturationEnabled())
         {
           m_pcRateCtrl->updateCpbState(actualTotalBits);
           msg( NOTICE, " [CPB %6d bits]", m_pcRateCtrl->getCpbState() );
         }
-  #endif
       }
       xCreateFrameFieldInfoSEI( leadingSeiMessages, pcSlice, isField );
       xCreatePictureTimingSEI( m_pcCfg->getEfficientFieldIRAPEnabled() ? effFieldIRAPMap.GetIRAPGOPid() : 0, leadingSeiMessages, nestedSeiMessages, duInfoSeiMessages, pcSlice, isField, duData );

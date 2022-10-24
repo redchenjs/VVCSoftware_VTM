@@ -1227,11 +1227,9 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setUseLCUSeparateModel                               ( m_RCUseLCUSeparateModel );
   m_cEncLib.setInitialQP                                         ( m_RCInitialQP );
   m_cEncLib.setForceIntraQP                                      ( m_RCForceIntraQP );
-#if U0132_TARGET_BITS_SATURATION
   m_cEncLib.setCpbSaturationEnabled                              ( m_RCCpbSaturationEnabled );
   m_cEncLib.setCpbSize                                           ( m_RCCpbSize );
   m_cEncLib.setInitialCpbFullness                                ( m_RCInitialCpbFullness );
-#endif
   m_cEncLib.setCostMode                                          ( m_costMode );
   m_cEncLib.setTSRCdisableLL                                     ( m_TSRCdisableLL );
   m_cEncLib.setUseRecalculateQPAccordingToLambda                 ( m_recalculateQPAccordingToLambda );

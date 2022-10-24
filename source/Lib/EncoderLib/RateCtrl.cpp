@@ -1897,12 +1897,10 @@ void RateCtrl::init(int totalFrames, int targetBitrate, int frameRate, int GOPSi
   {
     m_encRCSeq->initLCUPara();
   }
-#if U0132_TARGET_BITS_SATURATION
   m_CpbSaturationEnabled = false;
   m_cpbSize              = targetBitrate;
   m_cpbState             = (uint32_t)(m_cpbSize*0.5f);
   m_bufferingRate        = (int)(targetBitrate / frameRate);
-#endif
 
   delete[] bitsRatio;
   delete[] GOPID2Level;
@@ -1921,7 +1919,6 @@ void RateCtrl::initRCGOP( int numberOfPictures )
   m_encRCGOP->create(m_encRCSeq, numberOfPictures, useAdaptiveBitsRatio);
 }
 
-#if U0132_TARGET_BITS_SATURATION
 int  RateCtrl::updateCpbState(int actualBits)
 {
   int cpbState = 1;
@@ -1949,7 +1946,6 @@ void RateCtrl::initHrdParam(const GeneralHrdParams* generalHrd, const OlsHrdPara
   m_bufferingRate = (uint32_t)(((olsHrd->getBitRateValueMinus1(0, 0) + 1) << (6 + generalHrd->getBitRateScale())) / iFrameRate);
   msg(NOTICE, "\nHRD - [Initial CPB state %6d] [CPB Size %6d] [Buffering Rate %6d]\n", m_cpbState, m_cpbSize, m_bufferingRate);
 }
-#endif
 
 void RateCtrl::destroyRCGOP()
 {

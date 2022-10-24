@@ -176,12 +176,10 @@ void EncLib::init(AUWriterIf *auWriterIf)
     sps0.setLongTermRefsPresent(true);
   }
 
-#if U0132_TARGET_BITS_SATURATION
   if (m_RCCpbSaturationEnabled)
   {
     m_cRateCtrl.initHrdParam(sps0.getGeneralHrdParameters(), sps0.getOlsHrdParameters(), m_iFrameRate, m_RCInitialCpbFullness);
   }
-#endif
   m_cRdCost.setCostMode ( m_costMode );
 
   // initialize PPS
@@ -1391,11 +1389,7 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setChromaQpMappingTableFromParams(m_chromaQpMappingTableParams, sps.getQpBDOffset(CHANNEL_TYPE_CHROMA));
   sps.derivedChromaQPMappingTables();
 
-#if U0132_TARGET_BITS_SATURATION
   if( getPictureTimingSEIEnabled() || getDecodingUnitInfoSEIEnabled() || getCpbSaturationEnabled() )
-#else
-  if( getPictureTimingSEIEnabled() || getDecodingUnitInfoSEIEnabled() )
-#endif
   {
     xInitHrdParameters(sps);
   }

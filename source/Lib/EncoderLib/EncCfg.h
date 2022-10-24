@@ -877,11 +877,9 @@ protected:
   bool      m_RCUseLCUSeparateModel;
   int       m_RCInitialQP;
   bool      m_RCForceIntraQP;
-#if U0132_TARGET_BITS_SATURATION
   bool      m_RCCpbSaturationEnabled;
   uint32_t      m_RCCpbSize;
   double    m_RCInitialCpbFullness;
-#endif
   CostMode  m_costMode;                                       ///< The cost function to use, primarily when considering lossless coding.
   bool      m_TSRCdisableLL;                                  ///< Disable TSRC for lossless
 
@@ -2395,14 +2393,12 @@ public:
   void         setInitialQP           ( int QP )                     { m_RCInitialQP = QP;             }
   bool         getForceIntraQP        ()                             { return m_RCForceIntraQP;        }
   void         setForceIntraQP        ( bool b )                     { m_RCForceIntraQP = b;           }
-#if U0132_TARGET_BITS_SATURATION
   bool         getCpbSaturationEnabled()                             { return m_RCCpbSaturationEnabled;}
   void         setCpbSaturationEnabled( bool b )                     { m_RCCpbSaturationEnabled = b;   }
   uint32_t         getCpbSize             ()                             { return m_RCCpbSize;}
   void         setCpbSize             ( uint32_t ui )                    { m_RCCpbSize = ui;   }
   double       getInitialCpbFullness  ()                             { return m_RCInitialCpbFullness;  }
   void         setInitialCpbFullness  (double f)                     { m_RCInitialCpbFullness = f;     }
-#endif
   CostMode     getCostMode( ) const                                  { return m_costMode; }
   void         setCostMode(CostMode m )                              { m_costMode = m; }
   bool         getTSRCdisableLL       ()                             { return m_TSRCdisableLL;         }
