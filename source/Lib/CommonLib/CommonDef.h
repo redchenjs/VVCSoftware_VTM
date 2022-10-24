@@ -356,9 +356,7 @@ static constexpr int MAX_NUM_HMVP_AVMPCANDS =                          4; ///< m
 static constexpr int ALF_VB_POS_ABOVE_CTUROW_LUMA = 4;
 static constexpr int ALF_VB_POS_ABOVE_CTUROW_CHMA = 2;
 
-#if W0038_DB_OPT
 static constexpr int MAX_ENCODER_DEBLOCKING_QUALITY_LAYERS =           8 ;
-#endif
 
 #if SHARP_LUMA_DELTA_QP
 static constexpr uint32_t LUMA_LEVEL_TO_DQP_LUT_MAXSIZE =                1024; ///< max LUT size for QP offset based on luma

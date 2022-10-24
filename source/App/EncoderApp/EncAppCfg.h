@@ -456,11 +456,7 @@ protected:
   int       m_deblockingFilterCbTcOffsetDiv2;                 ///< tc offset for Cb deblocking filter
   int       m_deblockingFilterCrBetaOffsetDiv2;               ///< beta offset for Cr deblocking filter
   int       m_deblockingFilterCrTcOffsetDiv2;                 ///< tc offset for Cr deblocking filter
-#if W0038_DB_OPT
   int       m_deblockingFilterMetric;                         ///< blockiness metric in encoder
-#else
-  bool      m_DeblockingFilterMetric;                         ///< blockiness metric in encoder
-#endif
 
   // coding tools (encoder-only parameters)
   bool      m_bUseASR;                                        ///< flag for using adaptive motion search range

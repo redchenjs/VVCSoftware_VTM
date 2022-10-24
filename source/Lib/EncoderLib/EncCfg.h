@@ -421,11 +421,7 @@ protected:
   int       m_deblockingFilterCbTcOffsetDiv2;
   int       m_deblockingFilterCrBetaOffsetDiv2;
   int       m_deblockingFilterCrTcOffsetDiv2;
-#if W0038_DB_OPT
   int       m_deblockingFilterMetric;
-#else
-  bool      m_DeblockingFilterMetric;
-#endif
   bool      m_bUseSAO;
   bool      m_saoTrueOrg;
   bool      m_bTestSAODisableAtPictureLevel;
@@ -1468,11 +1464,7 @@ public:
   void      setDeblockingFilterCbTcOffset   ( int   i )      { m_deblockingFilterCbTcOffsetDiv2    = i; }
   void      setDeblockingFilterCrBetaOffset ( int   i )      { m_deblockingFilterCrBetaOffsetDiv2  = i; }
   void      setDeblockingFilterCrTcOffset   ( int   i )      { m_deblockingFilterCrTcOffsetDiv2    = i; }
-#if W0038_DB_OPT
   void      setDeblockingFilterMetric       ( int   i )      { m_deblockingFilterMetric = i; }
-#else
-  void      setDeblockingFilterMetric       ( bool  b )      { m_DeblockingFilterMetric = b; }
-#endif
   //====== Motion search ========
   void      setDisableIntraPUsInInterSlices ( bool  b )      { m_bDisableIntraPUsInInterSlices = b; }
   void      setMotionEstimationSearchMethod ( MESearchMethod e ) { m_motionEstimationSearchMethod = e; }
@@ -1607,11 +1599,7 @@ public:
   int       getDeblockingFilterCbTcOffset         ()      { return m_deblockingFilterCbTcOffsetDiv2;   }
   int       getDeblockingFilterCrBetaOffset       ()      { return m_deblockingFilterCrBetaOffsetDiv2; }
   int       getDeblockingFilterCrTcOffset         ()      { return m_deblockingFilterCrTcOffsetDiv2;   }
-#if W0038_DB_OPT
   int       getDeblockingFilterMetric       ()      { return m_deblockingFilterMetric; }
-#else
-  bool      getDeblockingFilterMetric       ()      { return m_DeblockingFilterMetric; }
-#endif
 
   //==== Motion search ========
   bool      getDisableIntraPUsInInterSlices    () const { return m_bDisableIntraPUsInInterSlices; }

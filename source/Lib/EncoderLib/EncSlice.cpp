@@ -1352,10 +1352,8 @@ void EncSlice::precompressSlice( Picture* pcPic )
     // NOTE: This distortion is the chroma-weighted SSE distortion for the slice.
     //       Previously a standard SSE distortion was calculated (for the entire frame).
     //       Which is correct?
-#if W0038_DB_OPT
     // TODO: Update loop filter, SAO and distortion calculation to work on one slice only.
     // uiPicDist = m_pcGOPEncoder->preLoopFilterPicAndCalcDist( pcPic );
-#endif
     // compute RD cost and choose the best
     double dPicRdCost = double( uiPicDist ) + dFrameLambda * double( m_uiPicTotalBits );
 

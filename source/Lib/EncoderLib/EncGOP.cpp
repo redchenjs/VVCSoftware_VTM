@@ -114,9 +114,7 @@ EncGOP::EncGOP()
     m_associatedIRAPType[i] = NAL_UNIT_CODED_SLICE_IDR_N_LP;
   }
   ::memset(m_associatedIRAPPOC, 0, sizeof(m_associatedIRAPPOC));
-#if W0038_DB_OPT
   m_pcDeblockingTempPicYuv = nullptr;
-#endif
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
   m_ppcFrameOrg             = nullptr;
@@ -189,14 +187,12 @@ void  EncGOP::create()
 
 void  EncGOP::destroy()
 {
-#if W0038_DB_OPT
   if (m_pcDeblockingTempPicYuv)
   {
     m_pcDeblockingTempPicYuv->destroy();
     delete m_pcDeblockingTempPicYuv;
     m_pcDeblockingTempPicYuv = nullptr;
   }
-#endif
   if (m_picBg)
   {
     m_picBg->destroy();
@@ -3442,13 +3438,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       //-- Loop filter
       if ( m_pcCfg->getDeblockingFilterMetric() )
       {
-  #if W0038_DB_OPT
         if ( m_pcCfg->getDeblockingFilterMetric()==2 )
         {
           applyDeblockingFilterParameterSelection(pcPic, uiNumSliceSegments, gopId);
         }
         else
-  #endif
         {
           applyDeblockingFilterMetric(pcPic, uiNumSliceSegments);
         }
@@ -4350,7 +4344,6 @@ void EncGOP::printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const boo
   msg( DETAILS,"\nRVM: %.3lf\n", xCalculateRVM() );
 }
 
-#if W0038_DB_OPT
 uint64_t EncGOP::preLoopFilterPicAndCalcDist( Picture* pcPic )
 {
   CodingStructure& cs = *pcPic->cs;
@@ -4371,7 +4364,6 @@ uint64_t EncGOP::preLoopFilterPicAndCalcDist( Picture* pcPic )
   }
   return dist;
 }
-#endif
 
 // ====================================================================================================================
 // Protected member functions
@@ -6105,7 +6097,6 @@ void EncGOP::applyDeblockingFilterMetric( Picture* pcPic, uint32_t uiNumSlices )
   }
 }
 
-#if W0038_DB_OPT
 void EncGOP::applyDeblockingFilterParameterSelection( Picture* pcPic, const uint32_t numSlices, const int gopID )
 {
   enum DBFltParam
@@ -6246,7 +6237,6 @@ void EncGOP::applyDeblockingFilterParameterSelection( Picture* pcPic, const uint
     }
   }
 }
-#endif
 
 bool EncGOP::xCheckMaxTidILRefPics(int layerIdx, Picture* refPic, bool currentPicIsIRAP)
 {
