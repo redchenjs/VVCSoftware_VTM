@@ -734,29 +734,20 @@ protected:
   int                   m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t              m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   bool                  m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
   bool                  m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
-#else
-  bool                  m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[MAX_NUM_NN_POST_FILTERS];
-  bool                  m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsInpSampleIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
   uint32_t              m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsColPrimaries[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsTransCharacteristics[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsMatrixCoeffs[MAX_NUM_NN_POST_FILTERS];
-#endif  
   uint32_t              m_nnPostFilterSEICharacteristicsInpOrderIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutSampleIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutOrderIdc[MAX_NUM_NN_POST_FILTERS];
@@ -765,34 +756,24 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOverlap[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPaddingType[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
   uint32_t              m_nnPostFilterSEICharacteristicsLumaPadding[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsCbPadding[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsCrPadding[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::string           m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsComplexityIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   std::string           m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
-#endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   uint32_t              m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
-#else
-  bool                  m_nnPostFilterSEICharacteristicsParameterTypeFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsNumParametersIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEIActivationEnabled;
   uint32_t              m_nnPostFilterSEIActivationId;
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint8_t>  m_poSEIProcessingOrder;
   uint32_t              m_numofSEIMessages;
-#endif
 
   bool                  m_constrainedRaslEncoding;
 
@@ -803,7 +784,6 @@ protected:
   int                   m_sariSarWidth;
   int                   m_sariSarHeight;
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   bool                  m_phaseIndicationSEIEnabledFullResolution;
   int                   m_piHorPhaseNumFullResolution;
   int                   m_piHorPhaseDenMinus1FullResolution;
@@ -814,7 +794,6 @@ protected:
   int                   m_piHorPhaseDenMinus1ReducedResolution;
   int                   m_piVerPhaseNumReducedResolution;
   int                   m_piVerPhaseDenMinus1ReducedResolution;
-#endif
 
   bool      m_MCTSEncConstraint;
 

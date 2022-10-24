@@ -77,9 +77,7 @@ public:
   void initSEIGcmp(SEIGeneralizedCubemapProjection *sei);
   void initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SPS *sps);
   void initSEISampleAspectRatioInfo(SEISampleAspectRatioInfo *sei);
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   void initSEIPhaseIndication(SEIPhaseIndication* sei, int ppsId);
-#endif
   void initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *sei);
   void initSEIMasteringDisplayColourVolume(SEIMasteringDisplayColourVolume *sei);
   void initSEIContentLightLevel(SEIContentLightLevelInfo *sei);
@@ -96,9 +94,7 @@ public:
   void initSEIShutterIntervalInfo(SEIShutterIntervalInfo *sei);
   void initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx);
   void initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei);
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   void initSEIProcessingOrderInfo(SEIProcessingOrderInfo *sei);
-#endif
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;

@@ -151,11 +151,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &h
   case SEI::SAMPLE_ASPECT_RATIO_INFO:
     xWriteSEISampleAspectRatioInfo(*static_cast<const SEISampleAspectRatioInfo*>(&sei));
     break;
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   case SEI::PHASE_INDICATION:
     xWriteSEIPhaseIndication(*static_cast<const SEIPhaseIndication*>(&sei));
     break;
-#endif
   case SEI::ANNOTATED_REGIONS:
     xWriteSEIAnnotatedRegions(*static_cast<const SEIAnnotatedRegions*>(&sei));
     break;
@@ -171,11 +169,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &h
   case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
     xWriteSEINeuralNetworkPostFilterActivation(*static_cast<const SEINeuralNetworkPostFilterActivation*>(&sei));
     break;
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   case SEI::SEI_PROCESSING_ORDER:
     xWriteSEIProcessingOrder(*static_cast<const SEIProcessingOrderInfo*>(&sei));
     break;
-#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -1211,7 +1207,6 @@ void SEIWriter::xWriteSEISampleAspectRatioInfo(const SEISampleAspectRatioInfo &s
   }
 }
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
 void SEIWriter::xWriteSEIPhaseIndication(const SEIPhaseIndication& sei)
 {
   WRITE_CODE((uint32_t)sei.m_horPhaseNum, 8, "hor_phase_num");
@@ -1219,7 +1214,6 @@ void SEIWriter::xWriteSEIPhaseIndication(const SEIPhaseIndication& sei)
   WRITE_CODE((uint32_t)sei.m_verPhaseNum, 8, "ver_phase_num");
   WRITE_CODE((uint32_t)sei.m_verPhaseDenMinus1, 8, "ver_phase_den_minus1");
 }
-#endif
 
 void SEIWriter::xWriteSEIUserDataRegistered(const SEIUserDataRegistered &sei)
 {
@@ -1408,7 +1402,6 @@ void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
   }
 }
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
 void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
 {
   for (uint32_t i=0; i < sei.m_posNumofSeiMessages; i++)
@@ -1417,7 +1410,6 @@ void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
     WRITE_CODE(sei.m_posProcessingOrder[i], 8, "sei_processingOrder[i]");
   }
 }
-#endif
 
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)
 {
@@ -1428,23 +1420,14 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 {
   WRITE_UVLC(sei.m_id, "nnpfc_id");
   WRITE_UVLC(sei.m_modeIdc, "nnpfc_mode_idc");
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   WRITE_FLAG(sei.m_purposeAndFormattingFlag, "nnpfc_purpose_and_formatting_flag");
   if (sei.m_purposeAndFormattingFlag)
-#else
-  if (sei.m_modeIdc == 1)
-#endif
   {
     WRITE_UVLC(sei.m_purpose, "nnpfc_purpose");
 
     if(sei.m_purpose == 2 || sei.m_purpose == 4)
     {
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
       WRITE_FLAG(sei.m_outSubCFlag, "nnpfc_out_sub_c_flag");
-#else
-      WRITE_FLAG(sei.m_outSubWidthCFlag, "nnpfc_out_sub_width_c_flag");
-      WRITE_FLAG(sei.m_outSubHeightCFlag, "nnpfc_out_sub_height_c_flag");
-#endif
     }
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
     {
@@ -1459,7 +1442,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     {
       WRITE_UVLC(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
     }
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
     WRITE_UVLC(sei.m_AuxInpIdc,"nnpfc_aux_inp_idc");
     WRITE_FLAG(sei.m_SepColDescriptionFlag,"nnpfc_sep_col_desc_flag");
 
@@ -1468,7 +1450,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       WRITE_CODE(sei.m_TransCharacteristics,8,"nnpfc_trans_characteristics");
       WRITE_CODE(sei.m_MatrixCoeffs,8,"nnpfc_matrix_coeffs");
     }
-#endif
 
     WRITE_UVLC(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     WRITE_UVLC(sei.m_outSampleIdc, "nnpfc_out_sample_idc");
@@ -1484,14 +1465,12 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     WRITE_UVLC(sei.m_patchHeightMinus1, "nnpfc_patch_height_minus1");
     WRITE_UVLC(sei.m_overlap, "nnpfc_overlap");
     WRITE_UVLC(sei.m_paddingType, "nnpfc_padding_type");
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
       WRITE_UVLC(sei.m_lumaPadding, "nnpfc_luma_padding_val");
       WRITE_UVLC(sei.m_cbPadding, "nnpfc_cb_padding_val");
       WRITE_UVLC(sei.m_crPadding, "nnpfc_cr_padding_val");
     }
-#endif
 
     WRITE_UVLC(sei.m_complexityIdc, "nnpfc_complexity_idc");
     if(sei.m_complexityIdc > 0)
@@ -1499,7 +1478,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteNNPFCComplexityElement(sei);
     }
   }
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   if (sei.m_modeIdc == POST_FILTER_MODE::URI)
   {
     while (!isByteAligned())
@@ -1509,7 +1487,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     WRITE_STRING(sei.m_uriTag, "nnpfc_uri_tag");
     WRITE_STRING(sei.m_uri, "nnpfc_uri");
   }
-#endif
   if (sei.m_modeIdc == 1)
   {
     while (!isByteAligned())
@@ -1527,21 +1504,12 @@ void SEIWriter::xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCha
 {
   if(sei.m_complexityIdc == 1)
   {
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
     WRITE_CODE(sei.m_parameterTypeIdc, 2, "nnpfc_parameter_type_idc");
     if (sei.m_parameterTypeIdc != 2)
     {
       WRITE_CODE(sei.m_log2ParameterBitLengthMinus3, 2, "nnpfc_log2_parameter_bit_length_minus3");
   }
-#else
-    WRITE_FLAG(sei.m_parameterTypeFlag, "nnpfc_parameter_type_flag");
-    WRITE_CODE(sei.m_log2ParameterBitLengthMinus3, 2, "nnpfc_log2_parameter_bit_length_minus3");
-#endif
-#if JVET_AA0067_NNPFC_SEI_FIX
     WRITE_CODE(sei.m_numParametersIdc, 6, "nnpfc_num_parameters_idc");
-#else
-    WRITE_CODE(sei.m_numParametersIdc, 8, "nnpfc_num_parameters_idc");
-#endif
     WRITE_UVLC(sei.m_numKmacOperationsIdc, "nnpfc_num_kmac_operations_idc");
   }
 }

@@ -97,7 +97,6 @@ void  VLCReader::xReadFlagTr(uint32_t& rValue, const char *pSymbolName)
   DTRACE( g_trace_ctx, D_HEADER, "%-50s u(1)  : %d\n", pSymbolName, rValue );
 }
 
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
 void  VLCReader::xReadStringTr(std::string& rValue, const char* pSymbolName)
 {
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
@@ -107,7 +106,6 @@ void  VLCReader::xReadStringTr(std::string& rValue, const char* pSymbolName)
 #endif
   DTRACE(g_trace_ctx, D_HEADER, "%-50s u(1)  : %s\n", pSymbolName, rValue.c_str());
 }
-#endif
 
 #endif
 
@@ -240,7 +238,6 @@ void VLCReader::xReadFlag (uint32_t& ruiCode)
   CodingStatistics::IncrementStatisticEP(pSymbolName, 1, int(/*ruiCode*/0));
 #endif
 }
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
 void VLCReader::xReadString(std::string& code, const char* symbolName)
 #else
@@ -257,7 +254,6 @@ void VLCReader::xReadString(std::string& code)
     code.append(codeIn);
   }
 }
-#endif
 
 void VLCReader::xReadRbspTrailingBits()
 {

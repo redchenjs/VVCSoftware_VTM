@@ -83,9 +83,7 @@ protected:
   void xWriteSEIDepthRepInfoElement               (double f);
   void xWriteSEISubpictureLevelInfo               (const SEISubpicureLevelInfo &sei);
   void xWriteSEISampleAspectRatioInfo             (const SEISampleAspectRatioInfo &sei);
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   void xWriteSEIPhaseIndication                   (const SEIPhaseIndication&sei);
-#endif
   void xWriteSEIConstrainedRaslIndication         (const SEIConstrainedRaslIndication &sei);
   void xWriteSEIUserDataRegistered(const SEIUserDataRegistered& sei);
   void xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacteristics& sei);
@@ -100,9 +98,7 @@ protected:
   void xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
   void xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCharacteristics& sei);
   void xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei);
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   void xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei);
-#endif
 protected:
   HRD m_nestingHrd;
 };

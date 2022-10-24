@@ -648,7 +648,6 @@ protected:
   int                   m_sariAspectRatioIdc;
   int                   m_sariSarWidth;
   int                   m_sariSarHeight;
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   bool                  m_phaseIndicationSEIEnabledFullResolution;
   int                   m_horPhaseNumFullResolution;
   int                   m_horPhaseDenMinus1FullResolution;
@@ -659,7 +658,6 @@ protected:
   int                   m_horPhaseDenMinus1ReducedResolution;
   int                   m_verPhaseNumReducedResolution;
   int                   m_verPhaseDenMinus1ReducedResolution;
-#endif
   bool      m_MCTSEncConstraint;
   SEIMasteringDisplay m_masteringDisplay;
 #if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
@@ -676,29 +674,20 @@ protected:
   int                     m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t                m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   bool                    m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t                m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
   bool                    m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
-#else
-  bool                    m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[MAX_NUM_NN_POST_FILTERS];
-  bool                    m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t                m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsInpSampleIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
   uint32_t                m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsColPrimaries[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsTransCharacteristics[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsMatrixCoeffs[MAX_NUM_NN_POST_FILTERS];
-#endif  
   uint32_t                m_nnPostFilterSEICharacteristicsInpOrderIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsOutSampleIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsOutOrderIdc[MAX_NUM_NN_POST_FILTERS];
@@ -707,22 +696,14 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsOverlap[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPaddingType[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
   uint32_t                m_nnPostFilterSEICharacteristicsLumaPadding[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsCrPadding[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsCbPadding[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::string             m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsComplexityIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   std::string             m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
   std::string             m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
-#endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   uint32_t                m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
-#else
-  bool                    m_nnPostFilterSEICharacteristicsParameterTypeFlag [MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t                m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsNumParametersIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[MAX_NUM_NN_POST_FILTERS];
@@ -852,13 +833,11 @@ protected:
   std::vector<uint32_t> m_driSEINonlinearModel;
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   //SEI message processing order
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint8_t>  m_poSEIProcessingOrder;
   uint32_t              m_numofSEIMessages;
-#endif
 
   bool      m_constrainedRaslEncoding;
 
@@ -1822,22 +1801,13 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsId(int filterIdx) const                                                  { return m_nnPostFilterSEICharacteristicsId[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsModeIdc(uint32_t idc, int filterIdx)                                     { m_nnPostFilterSEICharacteristicsModeIdc[filterIdx] = idc; }
   uint32_t    getNNPostFilterSEICharacteristicsModeIdc(int filterIdx) const                                             { return m_nnPostFilterSEICharacteristicsModeIdc[filterIdx]; }
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   void        setNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(bool purposeAndFormattingFlag, int filterIdx)   { m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[filterIdx] = purposeAndFormattingFlag; }
   bool        getNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(int filterIdx) const                            { return m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[filterIdx]; }
-#endif
   void        setNNPostFilterSEICharacteristicsPurpose(uint32_t purpose, int filterIdx)                                 { m_nnPostFilterSEICharacteristicsPurpose[filterIdx] = purpose; }
   uint32_t    getNNPostFilterSEICharacteristicsPurpose(int filterIdx) const                                             { return m_nnPostFilterSEICharacteristicsPurpose[filterIdx]; }
 
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
   void        setNNPostFilterSEICharacteristicsOutSubCFlag(bool SubCFlag, int filterIdx) { m_nnPostFilterSEICharacteristicsOutSubCFlag[filterIdx] = SubCFlag; }
   bool        getNNPostFilterSEICharacteristicsOutSubCFlag(int filterIdx) const { return m_nnPostFilterSEICharacteristicsOutSubCFlag[filterIdx]; }
-#else
-  void        setNNPostFilterSEICharacteristicsOutSubWidthCFlag(bool outSubWidthCFlag, int filterIdx)                   { m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[filterIdx] = outSubWidthCFlag; }
-  bool        getNNPostFilterSEICharacteristicsOutSubWidthCFlag(int filterIdx) const                                    { return m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[filterIdx]; }
-  void        setNNPostFilterSEICharacteristicsOutSubHeightCFlag(bool outSubHeightCFlag, int filterIdx)                 { m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[filterIdx] = outSubHeightCFlag; }
-  bool        getNNPostFilterSEICharacteristicsOutSubHeightCFlag(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[filterIdx]; }
-#endif
   void        setNNPostFilterSEICharacteristicsPicWidthInLumaSamples(uint32_t picWidthInLumaSamples, int filterIdx)     { m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[filterIdx] = picWidthInLumaSamples; }
   uint32_t    getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsPicHeightInLumaSamples(uint32_t picHeightInLumaSamples, int filterIdx)   { m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[filterIdx] = picHeightInLumaSamples; }
@@ -1846,7 +1816,6 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(uint32_t outTensorBitDepthMinus8, int filterIdx) { m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx] = outTensorBitDepthMinus8; }
   uint32_t    getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx]; }
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
   void        setNNPostFilterSEICharacteristicsAuxInpIdc(uint32_t auxInpIdc, int filterIdx)                             { m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx] = auxInpIdc; }  
   uint32_t    getNNPostFilterSEICharacteristicsAuxInpIdc(int filterIdx) const                                           { return m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx]; } 
   void        setNNPostFilterSEICharacteristicsSepColDescriptionFlag(bool sepColDescriptionFlag, int filterIdx)         { m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[filterIdx] = sepColDescriptionFlag; }  
@@ -1857,7 +1826,6 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsTransCharacteristics(int filterIdx) const                                { return m_nnPostFilterSEICharacteristicsTransCharacteristics[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsMatrixCoeffs(uint32_t matrixCoeffs, int filterIdx)                       { m_nnPostFilterSEICharacteristicsMatrixCoeffs[filterIdx] = matrixCoeffs; }
   uint32_t    getNNPostFilterSEICharacteristicsMatrixCoeffs(int filterIdx) const                                        { return m_nnPostFilterSEICharacteristicsMatrixCoeffs[filterIdx]; }
-#endif 
   void        setNNPostFilterSEICharacteristicsComponentLastFlag(bool componentLastFlag, int filterIdx)                 { m_nnPostFilterSEICharacteristicsComponentLastFlag[filterIdx] = componentLastFlag; }
   bool        getNNPostFilterSEICharacteristicsComponentLastFlag(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsComponentLastFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsInpSampleIdc(uint32_t inpSampleIdc, int filterIdx)                       { m_nnPostFilterSEICharacteristicsInpSampleIdc[filterIdx] = inpSampleIdc; }
@@ -1879,30 +1847,21 @@ public:
   void        setNNPostFilterSEICharacteristicsPaddingType(uint32_t paddingType, int filterIdx)                         { m_nnPostFilterSEICharacteristicsPaddingType[filterIdx] = paddingType; }
   uint32_t    getNNPostFilterSEICharacteristicsPaddingType(int filterIdx) const                                         { return m_nnPostFilterSEICharacteristicsPaddingType[filterIdx]; }
 
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
   void        setNNPostFilterSEICharacteristicsLumaPadding(uint32_t lumaPadding, int filterIdx) { m_nnPostFilterSEICharacteristicsLumaPadding[filterIdx] = lumaPadding; }
   uint32_t    getNNPostFilterSEICharacteristicsLumaPadding(int filterIdx) const { return m_nnPostFilterSEICharacteristicsLumaPadding[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsCbPadding(uint32_t cbPadding, int filterIdx) { m_nnPostFilterSEICharacteristicsCbPadding[filterIdx] = cbPadding; }
   uint32_t    getNNPostFilterSEICharacteristicsCbPadding(int filterIdx) const { return m_nnPostFilterSEICharacteristicsCbPadding[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsCrPadding(uint32_t crPadding, int filterIdx) { m_nnPostFilterSEICharacteristicsCrPadding[filterIdx] = crPadding; }
   uint32_t    getNNPostFilterSEICharacteristicsCrPadding(int filterIdx) const { return m_nnPostFilterSEICharacteristicsCrPadding[filterIdx]; }
-#endif
 
   void        setNNPostFilterSEICharacteristicsComplexityIdc (uint32_t complexityIdc , int filterIdx)                   { m_nnPostFilterSEICharacteristicsComplexityIdc[filterIdx] = complexityIdc ; }
   uint32_t    getNNPostFilterSEICharacteristicsComplexityIdc (int filterIdx) const                                      { return m_nnPostFilterSEICharacteristicsComplexityIdc[filterIdx]; }
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   void        setNNPostFilterSEICharacteristicsUriTag(std::string uriTag, int filterIdx)                                { m_nnPostFilterSEICharacteristicsUriTag[filterIdx] = uriTag; }
   std::string getNNPostFilterSEICharacteristicsUriTag(int filterIdx) const                                              { return m_nnPostFilterSEICharacteristicsUriTag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsUri(std::string uri, int filterIdx)                                      { m_nnPostFilterSEICharacteristicsUri[filterIdx] = uri; }
   std::string getNNPostFilterSEICharacteristicsUri(int filterIdx) const                                                 { return m_nnPostFilterSEICharacteristicsUri[filterIdx]; }
-#endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   void        setNNPostFilterSEICharacteristicsParameterTypeIdc(uint32_t parameterTypeIdc, int filterIdx) { m_nnPostFilterSEICharacteristicsParameterTypeIdc[filterIdx] = parameterTypeIdc; }
   uint32_t    getNNPostFilterSEICharacteristicsParameterTypeIdc(int filterIdx) const { return m_nnPostFilterSEICharacteristicsParameterTypeIdc[filterIdx]; }
-#else
-  void        setNNPostFilterSEICharacteristicsParameterTypeFlag(bool parameterTypeFlag, int filterIdx)                 { m_nnPostFilterSEICharacteristicsParameterTypeFlag[filterIdx] = parameterTypeFlag; }
-  bool        getNNPostFilterSEICharacteristicsParameterTypeFlag(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsParameterTypeFlag[filterIdx]; }
-#endif
   void        setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3 (uint32_t log2ParameterBitLengthMinus3 , int filterIdx) { m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[filterIdx] = log2ParameterBitLengthMinus3 ; }
   uint32_t    getNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3 (int filterIdx) const                       { return m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsNumParametersIdc  (uint32_t numParametersIdc  , int filterIdx)           { m_nnPostFilterSEICharacteristicsNumParametersIdc[filterIdx] = numParametersIdc  ; }
@@ -2104,7 +2063,6 @@ public:
   void     setSariSarWidth(const int val)                                                                   { m_sariSarWidth = val; }
   int      getSariSarHeight() const                                                                         { return m_sariSarHeight; }
   void     setSariSarHeight(const int val)                                                                  { m_sariSarHeight = val; }
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   bool     getPhaseIndicationSEIEnabledFullResolution() const                                               { return m_phaseIndicationSEIEnabledFullResolution; }
   void     setPhaseIndicationSEIEnabledFullResolution(const bool val)                                       { m_phaseIndicationSEIEnabledFullResolution = val; }
   int      getHorPhaseNumFullResolution() const                                                             { return m_horPhaseNumFullResolution; }
@@ -2125,7 +2083,6 @@ public:
   void     setVerPhaseNumReducedResolution(const int   val)                                                 { m_verPhaseNumReducedResolution = val; }
   int      getVerPhaseDenMinus1ReducedResolution() const                                                    { return m_verPhaseDenMinus1ReducedResolution; }
   void     setVerPhaseDenMinus1ReducedResolution(const int val)                                             { m_verPhaseDenMinus1ReducedResolution = val; }
-#endif
   void  setMCTSEncConstraint(bool b)                                 { m_MCTSEncConstraint = b; }
   bool  getMCTSEncConstraint()                                       { return m_MCTSEncConstraint; }
   void  setMasteringDisplaySEI(const SEIMasteringDisplay &src)       { m_masteringDisplay = src; }
@@ -2374,7 +2331,6 @@ public:
   void     setRprRASLtoolSwitch(bool b)                              { m_rprRASLtoolSwitch = b; }
   bool     getRprRASLtoolSwitch()                                    { return m_rprRASLtoolSwitch; }
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   //SEI messages processing order
   void     setPoSEIEnabled(bool b)                                   { m_poSEIEnabled = b; }
   bool     getPoSEIEnabled()                                         { return m_poSEIEnabled; }
@@ -2384,7 +2340,6 @@ public:
   uint8_t  getPoSEIProcessingOrder(uint8_t idx)                const { return m_poSEIProcessingOrder[idx]; }
   void     setPoSEINumofSeiMessages(uint32_t i)                      { m_numofSEIMessages = i; }
   uint32_t getPoSEINumofSeiMessages()                          const { return m_numofSEIMessages; }
-#endif
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
   void         setWPBiPred            ( bool b )                     { m_useWeightedBiPred = b;    }

@@ -409,11 +409,7 @@ int EncGOP::xWriteAPS( AccessUnit &accessUnit, APS *aps, const int layerId, cons
   return (int)(accessUnit.back()->m_nalUnitData.str().size()) * 8;
 }
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
 int EncGOP::xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool bSeqFirst, const int layerIdx, bool newPPS)
-#else
-int EncGOP::xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool bSeqFirst, const int layerIdx)
-#endif
 {
   int actualTotalBits = 0;
 
@@ -441,11 +437,7 @@ int EncGOP::xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool
     }
   }
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   if( newPPS ) // Note this assumes that all changes to the PPS are made at the EncLib level prior to picture creation (EncLib::xGetNewPicBuffer).
-#else
-  if( m_pcEncLib->PPSNeedsWriting( slice->getPPS()->getPPSId() ) ) // Note this assumes that all changes to the PPS are made at the EncLib level prior to picture creation (EncLib::xGetNewPicBuffer).
-#endif
   {
     actualTotalBits += xWritePPS( accessUnit, slice->getPPS(), m_pcEncLib->getLayerId() );
   }
@@ -877,14 +869,12 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
       seiMessages.push_back(seiNNPostFilterCharacteristics);
     }
   }
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   if (m_pcCfg->getPoSEIEnabled())
   {
     SEIProcessingOrderInfo *seiProcessingOrder = new SEIProcessingOrderInfo;
     m_seiEncoder.initSEIProcessingOrderInfo(seiProcessingOrder);
     seiMessages.push_back(seiProcessingOrder);
   }
-#endif
 }
 
 void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice)
@@ -973,7 +963,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
   }
 }
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
 void EncGOP::xCreatePhaseIndicationSEIMessages(SEIMessages& seiMessages, Slice* slice, int ppsId)
 {
   if (m_pcCfg->getPhaseIndicationSEIEnabledFullResolution() && ppsId == 0)
@@ -989,7 +978,6 @@ void EncGOP::xCreatePhaseIndicationSEIMessages(SEIMessages& seiMessages, Slice* 
     seiMessages.push_back(seiPhaseIndication);
   }
 }
-#endif
 
 void EncGOP::xCreateScalableNestingSEI(SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t>& subpicIDs, uint16_t maxSubpicIdInPic)
 {
@@ -3745,12 +3733,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       }
 
       // it is assumed that layerIdx equal to 0 is always present
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
       bool newPPS = m_pcEncLib->PPSNeedsWriting(pcSlice->getPPS()->getPPSId());
       actualTotalBits += xWriteParameterSets(accessUnit, pcSlice, writePS, layerIdx, newPPS);
-#else
-      actualTotalBits += xWriteParameterSets(accessUnit, pcSlice, writePS, layerIdx);
-#endif
 
       if (writePS)
       {
@@ -3877,12 +3861,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       // create prefix SEI associated with a picture
       xCreatePerPictureSEIMessages(gopId, leadingSeiMessages, nestedSeiMessages, pcSlice);
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
       if (newPPS)
       {
         xCreatePhaseIndicationSEIMessages(leadingSeiMessages, pcSlice, pcSlice->getPPS()->getPPSId());
       }
-#endif
       // pcSlice is currently slice 0.
       std::size_t binCountsInNalUnits   = 0; // For implementation of cabac_zero_word stuffing (section 7.4.3.10)
       std::size_t numBytesInVclNalUnits = 0; // For implementation of cabac_zero_word stuffing (section 7.4.3.10)

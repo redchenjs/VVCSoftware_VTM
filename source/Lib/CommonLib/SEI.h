@@ -94,13 +94,9 @@ public:
     SHUTTER_INTERVAL_INFO                = 209,
     NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS = 210,
     NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
     PHASE_INDICATION                     = 212,
-#endif
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
     SEI_PROCESSING_ORDER                 = 213,
-#endif
   };
 
   SEI() {}
@@ -135,7 +131,6 @@ public:
   std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
 };
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
 class SEIProcessingOrderInfo : public SEI
 {
 public:
@@ -148,7 +143,6 @@ public:
   std::vector<uint8_t>   m_posProcessingOrder;
   uint32_t               m_posNumofSeiMessages;
 };
-#endif
 
 class SEIEquirectangularProjection : public SEI
 {
@@ -467,7 +461,6 @@ public:
   int                   m_sariSarHeight;
 };
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
 class SEIPhaseIndication : public SEI
 {
 public:
@@ -479,7 +472,6 @@ public:
   int                   m_verPhaseNum;
   int                   m_verPhaseDenMinus1;
 };
-#endif
 
 static constexpr uint32_t ISO_IEC_11578_LEN=16;
 
@@ -1113,31 +1105,22 @@ public:
   SEINeuralNetworkPostFilterCharacteristics()
   : m_id(0)
   , m_modeIdc(0)
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   , m_purposeAndFormattingFlag(false)
-#endif
   , m_purpose(0)
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
     , m_outSubCFlag(0)
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
-#else
-  , m_outSubWidthCFlag(false)
-  , m_outSubHeightCFlag(false)
-#endif
   , m_picWidthInLumaSamples(0)
   , m_picHeightInLumaSamples(0)
   , m_inpTensorBitDepthMinus8(0)
   , m_outTensorBitDepthMinus8(0)
   , m_componentLastFlag(false)
   , m_inpSampleIdc(0)
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
   , m_AuxInpIdc(0)
   , m_SepColDescriptionFlag(false)
   , m_ColPrimaries(0)
   , m_TransCharacteristics(0)
   , m_MatrixCoeffs(0)
-#endif
   , m_inpOrderIdc(0)
   , m_outSampleIdc(0)
   , m_outOrderIdc(0)
@@ -1146,22 +1129,14 @@ public:
   , m_patchHeightMinus1(0)
   , m_overlap(0)
   , m_paddingType(0)
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
   , m_lumaPadding(0)
   , m_cbPadding(0)
   , m_crPadding(0)
-#endif
   , m_payloadByte(nullptr)
   , m_complexityIdc(0)
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   , m_uriTag("")
   , m_uri("")
-#endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   , m_parameterTypeIdc(0)
-#else
-  , m_parameterTypeFlag(false)
-#endif
   , m_log2ParameterBitLengthMinus3(0)
   , m_numParametersIdc(0)
   , m_numKmacOperationsIdc(0)
@@ -1178,31 +1153,22 @@ public:
 
   uint32_t       m_id;
   uint32_t       m_modeIdc;
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   bool           m_purposeAndFormattingFlag;
-#endif
   uint32_t       m_purpose;
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
   bool           m_outSubCFlag;
   uint8_t        m_outSubWidthC;
   uint8_t        m_outSubHeightC;
-#else
-  bool           m_outSubWidthCFlag;
-  bool           m_outSubHeightCFlag;
-#endif
   uint32_t       m_picWidthInLumaSamples;
   uint32_t       m_picHeightInLumaSamples;
   uint32_t       m_inpTensorBitDepthMinus8;
   uint32_t       m_outTensorBitDepthMinus8;
   bool           m_componentLastFlag;
   uint32_t       m_inpSampleIdc;
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS 
   uint32_t       m_AuxInpIdc;
   bool           m_SepColDescriptionFlag;
   uint8_t        m_ColPrimaries;
   uint8_t        m_TransCharacteristics;
   uint8_t        m_MatrixCoeffs;
-#endif
   uint32_t       m_inpOrderIdc;
   uint32_t       m_outSampleIdc;
   uint32_t       m_outOrderIdc;
@@ -1211,23 +1177,15 @@ public:
   uint32_t       m_patchHeightMinus1;
   uint32_t       m_overlap;
   uint32_t       m_paddingType;
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
   uint32_t       m_lumaPadding;
   uint32_t       m_cbPadding;
   uint32_t       m_crPadding;
-#endif
   uint64_t       m_payloadLength;
   char*          m_payloadByte;
   uint32_t       m_complexityIdc;
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   std::string    m_uriTag;
   std::string    m_uri;
-#endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   uint32_t       m_parameterTypeIdc;
-#else
-  bool           m_parameterTypeFlag;
-#endif
   uint32_t       m_log2ParameterBitLengthMinus3;
   uint32_t       m_numParametersIdc;
   uint32_t       m_numKmacOperationsIdc;

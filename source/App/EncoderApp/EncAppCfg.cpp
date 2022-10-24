@@ -745,10 +745,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType     (0, 65535, 0, 256*2);
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder (0, 255, 0, 256);
-#endif
 
 #if ENABLE_TRACING
   string sTracingRule;
@@ -1429,7 +1427,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISARIAspectRatioIdc", m_sariAspectRatioIdc, 0, "Specifies the Sample Aspect Ratio IDC of Sample Aspect Ratio Information SEI messages")
 ("SEISARISarWidth", m_sariSarWidth, 0, "Specifies the Sample Aspect Ratio Width of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
 ("SEISARISarHeight", m_sariSarHeight, 0, "Specifies the Sample Aspect Ratio Height of Sample Aspect Ratio Information SEI messages, if extended SAR is chosen.")
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
 ("SEIPhaseIndicationFullResolution", m_phaseIndicationSEIEnabledFullResolution, false, "Control generation of Phase Indication SEI messages for full resolution pictures.")
 ("SEIPIHorPhaseNumFullResolution", m_piHorPhaseNumFullResolution, 0, "Specifies the Horizontal Phase Numerator of Phase Indication SEI messages for full resolution pictures.")
 ("SEIPIHorPhaseDenMinus1FullResolution", m_piHorPhaseDenMinus1FullResolution, 0, "Specifies the Horizontal Phase Denominator minus 1 of Phase Indication SEI messages for full resolution pictures.")
@@ -1440,7 +1437,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEIPIHorPhaseDenMinus1ReducedResolution", m_piHorPhaseDenMinus1ReducedResolution, 0, "Specifies the Horizontal Phase Denominator minus 1 of Phase Indication SEI messages for reduced resolution pictures.")
 ("SEIPIVerPhaseNumReducedResolution", m_piVerPhaseNumReducedResolution, 0, "Specifies the Vertical Phase Numerator of Phase Indication SEI messages for reduced resolution pictures.")
 ("SEIPIVerPhaseDenMinus1ReducedResolution", m_piVerPhaseDenMinus1ReducedResolution, 0, "Specifies the Vertical Phase Denominator minus 1 of Phase Indication SEI messages for reduced resolution pictures.")
-#endif
 ("MCTSEncConstraint", m_MCTSEncConstraint, false, "For MCTS, constrain motion vectors at tile boundaries")
 ("SEIShutterIntervalEnabled", m_siiSEIEnabled, false, "Controls if shutter interval information SEI message is enabled")
 ("SEISiiTimeScale", m_siiSEITimeScale, 27000000u, "Specifies sii_time_scale")
@@ -1595,12 +1591,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIDRINonlinearModel",                            cfg_driSEINonlinearModel,       cfg_driSEINonlinearModel, "List of the piece-wise linear segments for mapping of decoded luma sample values of an auxiliary picture to a scale that is uniformly quantized in terms of disparity in the depth representation information SEI message")
   ("SEIConstrainedRASL",                              m_constrainedRaslEncoding,                         false, "Control generation of constrained RASL encoding SEI message")
   
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   //Processing order of SEI (pos)
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
-#endif
 
   ("DebugBitstream",                                  m_decodeBitstreams[0],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
   ("DebugPOC",                                        m_switchPOC,                                 -1, "If DebugBitstream is present, load frames up to this POC from this bitstream. Starting with DebugPOC, return to normal encoding." )
@@ -1702,29 +1696,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     modeIdc << "SEINNPostFilterCharacteristicsModeIdc" << i;
     opts.addOptions()(modeIdc.str(), m_nnPostFilterSEICharacteristicsModeIdc[i], 0u, "Specifies the Neural Network Post Filter IDC in the Neural Network Post Filter Characteristics SEI message");
 
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
     std::ostringstream purposeAndFormattingFlag;
     purposeAndFormattingFlag << "SEINNPostFilterCharacteristicsPurposeAndFormattingFlag" << i;
     opts.addOptions()(purposeAndFormattingFlag.str(), m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[i], false, "Specifies whether the filter purpose, input formatting, output formatting and complexity are present in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream purpose;
     purpose << "SEINNPostFilterCharacteristicsPurpose" << i;
     opts.addOptions()(purpose.str(), m_nnPostFilterSEICharacteristicsPurpose[i], 0u, "Specifies the purpose in the Neural Network Post Filter Characteristics SEI message");
 
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
     std::ostringstream outSubWidthCFlag;
     outSubWidthCFlag << "SEINNPostFilterCharacteristicsOutSubCFlag" << i;
     opts.addOptions()(outSubWidthCFlag.str(), m_nnPostFilterSEICharacteristicsOutSubCFlag[i], false, "Specifies output chroma format when upsampling");
-#else
-    std::ostringstream outSubWidthCFlag;
-    outSubWidthCFlag << "SEINNPostFilterCharacteristicsOutSubWidthCFlag" << i;
-    opts.addOptions()(outSubWidthCFlag.str(), m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[i], false, "Specifies if the output SubWidthC (horizontal chroma subsampling ratio relative to luma) is smaller than the input SubWidthC");
-
-    std::ostringstream outSubHeightCFlag;
-    outSubHeightCFlag << "SEINNPostFilterCharacteristicsOutSubHeightCFlag" << i;
-    opts.addOptions()(outSubHeightCFlag.str(), m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[i], false, "Specifies if the output SubHeightC (vertical chroma subsampling ratio relative to luma) is smaller than the input SubHeightC");
-#endif
 
     std::ostringstream picWidthInLumaSamples;
     picWidthInLumaSamples << "SEINNPostFilterCharacteristicsPicWidthInLumaSamples" << i;
@@ -1749,7 +1731,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream inpSampleIdc;
     inpSampleIdc << "SEINNPostFilterCharacteristicsInpSampleIdc" << i;
     opts.addOptions()(inpSampleIdc.str(), m_nnPostFilterSEICharacteristicsInpSampleIdc[i], 0u, "Specifies the method of converting an input sample in the the Neural Network Post Filter Characteristics SEI message");
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
     std::ostringstream auxInpIdc;
     auxInpIdc << "SEINNPostFilterCharacteristicsAuxInpIdc" << i;
     opts.addOptions()(auxInpIdc.str(), m_nnPostFilterSEICharacteristicsAuxInpIdc[i], 0u, "Specifies the auxillary input index in the Nueral Network Post Filter Characteristics SEI message");
@@ -1769,7 +1750,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream matrixCoeffs;
     matrixCoeffs << "SEINNPostFilterCharacteristicsMatrixCoeffs" << i;
     opts.addOptions()(matrixCoeffs.str(), m_nnPostFilterSEICharacteristicsMatrixCoeffs[i], 0u, "Specifies color matrix coefficients in the Nueral Network Post Filter Characteristics SEI message");
-#endif
     std::ostringstream inpOrderIdc;
     inpOrderIdc << "SEINNPostFilterCharacteristicsInpOrderIdc" << i;
     opts.addOptions()(inpOrderIdc.str(), m_nnPostFilterSEICharacteristicsInpOrderIdc[i], 0u, "Specifies the method of ordering the input sample arrays in the Neural Network Post Filter Characteristics SEI message");
@@ -1802,7 +1782,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     paddingType << "SEINNPostFilterCharacteristicsPaddingType" << i;
     opts.addOptions()(paddingType.str(), m_nnPostFilterSEICharacteristicsPaddingType[i], 0u, "Specifies the process of padding when referencing sample locations outside the boundaries of the cropped decoded output picture ");
 
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
     std::ostringstream lumaPadding;
     lumaPadding << "SEINNPostFilterCharacteristicsLumaPadding" << i;
     opts.addOptions()(lumaPadding.str(), m_nnPostFilterSEICharacteristicsLumaPadding[i], 0u, "Specifies the luma padding when when the padding type is fixed padding ");
@@ -1814,13 +1793,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream cbPadding;
     cbPadding << "SEINNPostFilterCharacteristicsCbPadding" << i;
     opts.addOptions()(cbPadding.str(), m_nnPostFilterSEICharacteristicsCbPadding[i], 0u, "Specifies the Cb padding when when the padding type is fixed padding ");
-#endif
 
     std::ostringstream complexityIdc;
     complexityIdc << "SEINNPostFilterCharacteristicsComplexityIdc" << i;
     opts.addOptions()(complexityIdc.str(), m_nnPostFilterSEICharacteristicsComplexityIdc[i], 0u, "Specifies the value of nnpfc_complexity_idc in the Neural Network Post Filter Characteristics SEI message");
 
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
     std::ostringstream uriTag;
     uriTag << "SEINNPostFilterCharacteristicsUriTag" << i;
     opts.addOptions()(uriTag.str(), m_nnPostFilterSEICharacteristicsUriTag[i], string(""), "Specifies the neural network uri tag in the Neural Network Post Filter Characteristics SEI message");
@@ -1828,17 +1805,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream uri;
     uri << "SEINNPostFilterCharacteristicsUri" << i;
     opts.addOptions()(uri.str(), m_nnPostFilterSEICharacteristicsUri[i], string(""), "Specifies the neural network information uri in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
     std::ostringstream parameterTypeIdc;
     parameterTypeIdc << "SEINNPostFilterCharacteristicsParameterTypeIdc" << i;
     opts.addOptions()(parameterTypeIdc.str(), m_nnPostFilterSEICharacteristicsParameterTypeIdc[i], 0u, "Specifies the data type of parameters in the Neural Network Post Filter Characteristics SEI message");
-#else
-    std::ostringstream parameterTypeFlag;
-    parameterTypeFlag << "SEINNPostFilterCharacteristicsParameterTypeFlag" << i;
-    opts.addOptions()(parameterTypeFlag.str(), m_nnPostFilterSEICharacteristicsParameterTypeFlag[i], false, "Specifies the data type of parameters in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream log2ParameterBitLengthMinus3;
     log2ParameterBitLengthMinus3 << "SEINNPostFilterCharacteristicsLog2ParameterBitLengthMinus3" << i;
@@ -3308,7 +3278,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   if (m_poSEIEnabled)
   {
     assert(cfg_poSEIPayloadType.values.size() > 0);
@@ -3332,7 +3301,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     assert(m_poSEIPayloadType.size() > 0);
     assert(m_poSEIProcessingOrder.size() == m_poSEIPayloadType.size());
   }
-#endif
 
   if( m_costMode == COST_LOSSLESS_CODING )
   {
@@ -4735,11 +4703,9 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpSampleIdc[i] > 255, "SEINNPostFilterCharacteristicsInpSampleIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpOrderIdc[i] > 255, "SEINNPostFilterCharacteristicsInpOrderIdc must be in the range of  0 to 255");
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
       xConfirmPara(m_nnPostFilterSEICharacteristicsColPrimaries[i] > 255, "m_nnPostFilterSEICharacteristicsColPrimaries must in the range 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsTransCharacteristics[i] > 255, "m_nnPostFilterSEICharacteristicsTransCharacteristics must in the range 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsMatrixCoeffs[i] > 255, "m_nnPostFilterSEICharacteristicsMatrixCoeffs must in the range 0 to 255");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutSampleIdc[i] > 255, "SEINNPostFilterCharacteristicsOutSampleIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutOrderIdc[i] > 255, "SEINNPostFilterCharacteristicsOutOrderIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i] > 32766, "SEINNPostFilterCharacteristicsPatchWidthMinus1 must be in the range of 0 to 32766");
@@ -4748,11 +4714,7 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsPaddingType[i] > (1 << 4) - 1, "SEINNPostFilterPaddingType must be in the range of 0 to 2^4-1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsComplexityIdc[i] > 255, "SEINNPostFilterCharacteristicsComplexityIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i] > 3, "SEINNPostFilterCharacteristicsLog2ParameterBitLengthMinus3 must be in the range of 0 to 3");
-#if JVET_AA0067_NNPFC_SEI_FIX
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumParametersIdc[i] > 52, "SEINNPostFilterCharacteristicsNumParametersIdc must be in the range of 0 to 52");
-#else
-      xConfirmPara(m_nnPostFilterSEICharacteristicsNumParametersIdc[i] > 255, "SEINNPostFilterCharacteristicsNumParametersIdc must be in the range of 0 to 255");
-#endif
     }
   }
 
@@ -4761,7 +4723,6 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara(m_nnPostFilterSEIActivationId > (1 << 20) - 1, "SEINNPostFilterActivationId must be in the range of 0 to 2^20-1");
   }
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   if (m_phaseIndicationSEIEnabledFullResolution)
   {
     xConfirmPara(m_piHorPhaseNumFullResolution < 0, "m_piHorPhaseNumFullResolution must be in the range of 0 to 511, inclusive");
@@ -4784,7 +4745,6 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara(m_piVerPhaseDenMinus1ReducedResolution > 511, "m_piVerPhaseDenMinus1ReducedResolution must be in the range of 0 to 511, inclusive");
     xConfirmPara(m_piVerPhaseNumReducedResolution > m_piVerPhaseDenMinus1ReducedResolution + 1, "m_piVerPhaseNumReducedResolution must be in the range of 0 to m_piVerPhaseDenMinus1ReducedResolution + 1, inclusive");
   }
-#endif
 
   xConfirmPara(m_log2ParallelMergeLevel < 2, "Log2ParallelMergeLevel should be larger than or equal to 2");
   xConfirmPara(m_log2ParallelMergeLevel > m_uiCTUSize, "Log2ParallelMergeLevel should be less than or equal to CTU size");
@@ -5197,9 +5157,7 @@ void EncAppCfg::xPrintParameter()
   msg(VERBOSE, "BIM:%d ", m_bimEnabled);
   msg(VERBOSE, "SEI FGC:%d ", m_fgcSEIEnabled);
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   msg(VERBOSE, "SEI processing Order:%d ", m_poSEIEnabled);
-#endif
 
 #if EXTENSION_360_VIDEO
   m_ext360.outputConfigurationSummary();

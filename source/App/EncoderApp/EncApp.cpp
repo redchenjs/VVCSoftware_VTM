@@ -974,7 +974,6 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setSariAspectRatioIdc                                (m_sariAspectRatioIdc);
   m_cEncLib.setSariSarWidth                                      (m_sariSarWidth);
   m_cEncLib.setSariSarHeight                                     (m_sariSarHeight);
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   m_cEncLib.setPhaseIndicationSEIEnabledFullResolution           (m_phaseIndicationSEIEnabledFullResolution);
   m_cEncLib.setHorPhaseNumFullResolution                         (m_piHorPhaseNumFullResolution);
   m_cEncLib.setHorPhaseDenMinus1FullResolution                   (m_piHorPhaseDenMinus1FullResolution);
@@ -985,7 +984,6 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setHorPhaseDenMinus1ReducedResolution                (m_piHorPhaseDenMinus1ReducedResolution);
   m_cEncLib.setVerPhaseNumReducedResolution                      (m_piVerPhaseNumReducedResolution);
   m_cEncLib.setVerPhaseDenMinus1ReducedResolution                (m_piVerPhaseDenMinus1ReducedResolution);
-#endif
   m_cEncLib.setMCTSEncConstraint                                 ( m_MCTSEncConstraint);
   m_cEncLib.setMasteringDisplaySEI                               ( m_masteringDisplay );
 #if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
@@ -1137,19 +1135,13 @@ void EncApp::xInitLibCfg()
   {
     m_cEncLib.setNNPostFilterSEICharacteristicsId                      (m_nnPostFilterSEICharacteristicsId[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsModeIdc                 (m_nnPostFilterSEICharacteristicsModeIdc[i], i);
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
     m_cEncLib.setNNPostFilterSEICharacteristicsPurposeAndFormattingFlag( m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[i], i);
     if (m_cEncLib.getNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(i))
     {
       m_cEncLib.setNNPostFilterSEICharacteristicsPurpose                 (m_nnPostFilterSEICharacteristicsPurpose[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 2  || m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 4)
       {
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
         m_cEncLib.setNNPostFilterSEICharacteristicsOutSubCFlag(m_nnPostFilterSEICharacteristicsOutSubCFlag[i], i);
-#else
-        m_cEncLib.setNNPostFilterSEICharacteristicsOutSubWidthCFlag        (m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[i], i);
-        m_cEncLib.setNNPostFilterSEICharacteristicsOutSubHeightCFlag       (m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[i], i);
-#endif
       }
       if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 3  || m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 4)
       {
@@ -1174,38 +1166,27 @@ void EncApp::xInitLibCfg()
       m_cEncLib.setNNPostFilterSEICharacteristicsPatchHeightMinus1       ( m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsOverlap                 ( m_nnPostFilterSEICharacteristicsOverlap[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsPaddingType             ( m_nnPostFilterSEICharacteristicsPaddingType[i], i);
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
       m_cEncLib.setNNPostFilterSEICharacteristicsLumaPadding             (m_nnPostFilterSEICharacteristicsLumaPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCrPadding               (m_nnPostFilterSEICharacteristicsCrPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCbPadding               (m_nnPostFilterSEICharacteristicsCbPadding[i], i);
-#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsComplexityIdc           ( m_nnPostFilterSEICharacteristicsComplexityIdc[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsComplexityIdc(i) > 0)
       {
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
       m_cEncLib.setNNPostFilterSEICharacteristicsLumaPadding             (m_nnPostFilterSEICharacteristicsLumaPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCrPadding               (m_nnPostFilterSEICharacteristicsCrPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCbPadding               (m_nnPostFilterSEICharacteristicsCbPadding[i], i);
-#endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
       m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeIdc        (m_nnPostFilterSEICharacteristicsParameterTypeIdc[i], i);
-#else
-        m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeFlag       ( m_nnPostFilterSEICharacteristicsParameterTypeFlag[i], i);
-#endif
         m_cEncLib.setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3     ( m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumParametersIdc        ( m_nnPostFilterSEICharacteristicsNumParametersIdc[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumKmacOperationsIdc    ( m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], i);
       }
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
       m_cEncLib.setNNPostFilterSEICharacteristicsUriTag                  ( m_nnPostFilterSEICharacteristicsUriTag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsUri                     ( m_nnPostFilterSEICharacteristicsUri[i], i);
-#endif
     }
     if (m_cEncLib.getNNPostFilterSEICharacteristicsModeIdc(i) == 1)
     {
       m_cEncLib.setNNPostFilterSEICharacteristicsPayloadFilename(m_nnPostFilterSEICharacteristicsPayloadFilename[i], i);
     }
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS 
     m_cEncLib.setNNPostFilterSEICharacteristicsAuxInpIdc               (m_nnPostFilterSEICharacteristicsAuxInpIdc[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsSepColDescriptionFlag   (m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[i], i);
     if (m_cEncLib.getNNPostFilterSEICharacteristicsSepColDescriptionFlag(i)){
@@ -1213,37 +1194,6 @@ void EncApp::xInitLibCfg()
       m_cEncLib.setNNPostFilterSEICharacteristicsTransCharacteristics  (m_nnPostFilterSEICharacteristicsTransCharacteristics[i],i);
       m_cEncLib.setNNPostFilterSEICharacteristicsMatrixCoeffs          (m_nnPostFilterSEICharacteristicsMatrixCoeffs[i],i);
     }
-#endif
-#else
-    m_cEncLib.setNNPostFilterSEICharacteristicsPurpose                 (m_nnPostFilterSEICharacteristicsPurpose[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOutSubWidthCFlag        (m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOutSubHeightCFlag       (m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthInLumaSamples   (m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightInLumaSamples  (m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i], i);
-
-    m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsInpSampleIdc            (m_nnPostFilterSEICharacteristicsInpSampleIdc[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsInpOrderIdc             (m_nnPostFilterSEICharacteristicsInpOrderIdc[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOutSampleIdc            (m_nnPostFilterSEICharacteristicsOutSampleIdc[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOutOrderIdc             (m_nnPostFilterSEICharacteristicsOutOrderIdc[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsConstantPatchSizeFlag   ( m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPatchWidthMinus1        ( m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPatchHeightMinus1       ( m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOverlap                 ( m_nnPostFilterSEICharacteristicsOverlap[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPaddingType             ( m_nnPostFilterSEICharacteristicsPaddingType[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPayloadFilename         ( m_nnPostFilterSEICharacteristicsPayloadFilename[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsComplexityIdc           ( m_nnPostFilterSEICharacteristicsComplexityIdc[i], i);
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
-    m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeIdc        (m_nnPostFilterSEICharacteristicsParameterTypeIdc[i], i);
-#else
-    m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeFlag       ( m_nnPostFilterSEICharacteristicsParameterTypeFlag[i], i);
-#endif
-    m_cEncLib.setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3     ( m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsNumParametersIdc        ( m_nnPostFilterSEICharacteristicsNumParametersIdc[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsNumKmacOperationsIdc    ( m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], i);
-#endif
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
   m_cEncLib.setNnPostFilterSEIActivationId                       (m_nnPostFilterSEIActivationId);
@@ -1293,12 +1243,10 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setSiiSEITimeScale(m_siiSEITimeScale);
   m_cEncLib.setSiiSEISubLayerNumUnitsInSI(m_siiSEISubLayerNumUnitsInSI);
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   m_cEncLib.setPoSEIEnabled                                      (m_poSEIEnabled);
   m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
   m_cEncLib.setPoSEINumofSeiMessages                             (m_numofSEIMessages);
-#endif
 
   m_cEncLib.setVuiParametersPresentFlag                          ( m_vuiParametersPresentFlag );
   m_cEncLib.setSamePicTimingInAllOLS                             (m_samePicTimingInAllOLS);

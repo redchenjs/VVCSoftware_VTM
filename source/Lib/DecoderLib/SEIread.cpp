@@ -95,7 +95,6 @@ void SEIReader::sei_read_flag(std::ostream *pOS, uint32_t& ruiCode, const char *
   }
 }
 
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
 void SEIReader::sei_read_string(std::ostream* os, std::string& code, const char* symbolName)
 {
   READ_STRING(code, symbolName);
@@ -105,7 +104,6 @@ void SEIReader::sei_read_string(std::ostream* os, std::string& code, const char*
   }
 }
 
-#endif
 
 static inline void output_sei_message_header(SEI &sei, std::ostream *pDecodedMessageOutputStream, uint32_t payloadSize)
 {
@@ -424,28 +422,20 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       break;
     case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
       sei = new SEINeuralNetworkPostFilterCharacteristics;
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
       xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics&)*sei, payloadSize, sps, pDecodedMessageOutputStream);
-#else
-      xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics&)*sei, payloadSize, pDecodedMessageOutputStream);
-#endif
       break;
     case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
       sei = new SEINeuralNetworkPostFilterActivation;
       xParseSEINNPostFilterActivation((SEINeuralNetworkPostFilterActivation&)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
     case SEI::PHASE_INDICATION:
       sei = new SEIPhaseIndication;
       xParseSEIPhaseIndication((SEIPhaseIndication&)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
     case SEI::SEI_PROCESSING_ORDER:
       sei = new SEIProcessingOrderInfo;
       xParseSEIProcessingOrder((SEIProcessingOrderInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -615,7 +605,6 @@ void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t p
   }
 }
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
 void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t payloadSize, std::ostream *decodedMessageOutputStream)
 {
   uint32_t i,b;
@@ -634,7 +623,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
     sei.m_posProcessingOrder[i] = val;
   }
 }
-#endif
 
 /**
  * parse bitstream bs and unpack a decoded picture hash SEI message
@@ -2542,11 +2530,7 @@ void SEIReader::xParseSEIConstrainedRaslIndication( SEIConstrainedRaslIndication
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
 }
 
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
 void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics& sei, uint32_t payloadSize, const SPS* sps, std::ostream* pDecodedMessageOutputStream)
-#else
-void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
-#endif
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
   uint32_t val;
@@ -2557,19 +2541,14 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfc_mode_idc" );
   sei.m_modeIdc = val;
 
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_purpose_and_formatting_flag");
   sei.m_purposeAndFormattingFlag = val;
 
   if (sei.m_purposeAndFormattingFlag)
-#else
-  if (sei.m_modeIdc == 1)
-#endif
   {
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_purpose");
     sei.m_purpose = val;
 
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
     ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
     uint8_t SubWidthC;
     uint8_t SubHeightC;
@@ -2588,10 +2567,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       SubWidthC = 1;
       SubHeightC = 1;
     }
-#endif
     if(sei.m_purpose == 2 || sei.m_purpose == 4)
     {
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_out_sub_c_flag");
       sei.m_outSubCFlag = val;
 
@@ -2607,23 +2584,13 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_outSubWidthC = 2;
         sei.m_outSubHeightC = 1;
       }
-#else
-      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_out_sub_width_c_flag");
-      sei.m_outSubWidthCFlag = val;
-      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_out_sub_height_c_flag");
-      sei.m_outSubHeightCFlag = val;
-#endif
     }
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
     else
     {
       sei.m_outSubWidthC = SubWidthC;
       sei.m_outSubHeightC = SubHeightC;
     }
-#if JVET_AA0054_CHROMA_UPSAMPLING_CONSTRAINT
     CHECK(((SubWidthC == 1) && (SubHeightC == 1)) && ((sei.m_purpose == 2) || (sei.m_purpose == 4)), "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose shall not be equal to 2 or 4");
-#endif
-#endif
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_width_in_luma_samples");
@@ -2643,7 +2610,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_minus8");
       sei.m_inpTensorBitDepthMinus8 = val;
     }
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
     sei.m_AuxInpIdc = val;
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
@@ -2658,7 +2624,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_matrix_coeffs");
       sei.m_MatrixCoeffs = val;
     }
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
@@ -2690,7 +2655,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_padding_type");
     sei.m_paddingType = val;
 
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_luma_padding_val");
@@ -2702,7 +2666,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_cr_padding_val");
       sei.m_crPadding = val;
     }
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_complexity_idc");
     sei.m_complexityIdc = val;
@@ -2711,7 +2674,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     {
       if(sei.m_complexityIdc == 1)
       {
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
         sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_parameter_type_idc");
         sei.m_parameterTypeIdc = val;
         if (sei.m_parameterTypeIdc != 2)
@@ -2719,19 +2681,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
           sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_log2_parameter_bit_length_minus3");
           sei.m_log2ParameterBitLengthMinus3 = val;
         }
-#else
-        sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_parameter_type_flag");
-        sei.m_parameterTypeFlag = val;
 
-        sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_log2_parameter_bit_length_minus3");
-        sei.m_log2ParameterBitLengthMinus3 = val;
-#endif
-
-#if JVET_AA0067_NNPFC_SEI_FIX
         sei_read_code(pDecodedMessageOutputStream, 6, val, "nnpfc_num_parameters_idc");
-#else
-        sei_read_code(pDecodedMessageOutputStream, 8, val, "nnpfc_num_parameters_idc");
-#endif
         sei.m_numParametersIdc = val;
 
         sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_num_kmac_operations_idc");
@@ -2739,7 +2690,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       }
     }
   }
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   if (sei.m_modeIdc == POST_FILTER_MODE::URI)
   {
     std::string val2;
@@ -2756,7 +2706,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_string(pDecodedMessageOutputStream, val2, "nnpfc_uri");
     sei.m_uri = val2;
   }
-#endif
 
   if (sei.m_modeIdc == 1)
   {
@@ -2791,7 +2740,6 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
   sei.m_id =val;
 }
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
 void SEIReader::xParseSEIPhaseIndication(SEIPhaseIndication& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
@@ -2809,7 +2757,6 @@ void SEIReader::xParseSEIPhaseIndication(SEIPhaseIndication& sei, uint32_t paylo
   CHECK(sei.m_horPhaseNum > sei.m_horPhaseDenMinus1 + 1, "The value of hor_phase_num shall be in the range of 0 to hor_phase_den_minus1 + 1, inclusive");
   CHECK(sei.m_verPhaseNum > sei.m_verPhaseDenMinus1 + 1, "The value of ver_phase_num shall be in the range of 0 to ver_phase_den_minus1 + 1, inclusive");
 }
-#endif
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE
 void SeiCfgFileDump::write360SeiDump (std::string decoded360MessageFileName, SEIMessages& seis, const SPS* sps)

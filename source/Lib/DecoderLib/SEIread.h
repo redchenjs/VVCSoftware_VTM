@@ -104,27 +104,17 @@ protected:
   void xParseSEIColourTransformInfo           (SEIColourTransformInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
   void xParseSEIConstrainedRaslIndication     (SEIConstrainedRaslIndication& sei,     uint32_t payLoadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
   void xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics& sei, uint32_t payloadSize, const SPS* sps, std::ostream* pDecodedMessageOutputStream);
-#else
-  void xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
-#endif
   void xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActivation& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   void xParseSEIPhaseIndication(SEIPhaseIndication& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
-#endif
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   void xParseSEIProcessingOrder               (SEIProcessingOrderInfo& sei, uint32_t payloadSize, std::ostream *decodedMessageOutputStream);
-#endif
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);
   void sei_read_code(std::ostream *pOS, uint32_t length, uint32_t &ruiCode, const char *pSymbolName);
   void sei_read_uvlc(std::ostream *pOS,                uint32_t& ruiCode, const char *pSymbolName);
   void sei_read_svlc(std::ostream *pOS,                int&  ruiCode, const char *pSymbolName);
   void sei_read_flag(std::ostream *pOS,                uint32_t& ruiCode, const char *pSymbolName);
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   void sei_read_string(std::ostream* os, std::string& code, const char* symbolName);
-#endif
 
 protected:
   HRD m_nestedHrd;
