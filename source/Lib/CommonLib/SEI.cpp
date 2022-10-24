@@ -482,9 +482,7 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
     case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:      return "Neural network post-filter activation";
     case SEI::PHASE_INDICATION:                     return "Phase Indication";
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
     case SEI::SEI_PROCESSING_ORDER:                 return "SEI messages Processing order";
-#endif
     default:                                        return "Unknown";
   }
 }

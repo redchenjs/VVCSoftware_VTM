@@ -169,11 +169,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &h
   case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
     xWriteSEINeuralNetworkPostFilterActivation(*static_cast<const SEINeuralNetworkPostFilterActivation*>(&sei));
     break;
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   case SEI::SEI_PROCESSING_ORDER:
     xWriteSEIProcessingOrder(*static_cast<const SEIProcessingOrderInfo*>(&sei));
     break;
-#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -1404,7 +1402,6 @@ void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
   }
 }
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
 void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
 {
   for (uint32_t i=0; i < sei.m_posNumofSeiMessages; i++)
@@ -1413,7 +1410,6 @@ void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
     WRITE_CODE(sei.m_posProcessingOrder[i], 8, "sei_processingOrder[i]");
   }
 }
-#endif
 
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)
 {

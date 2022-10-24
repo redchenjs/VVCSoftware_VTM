@@ -1253,12 +1253,10 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setSiiSEITimeScale(m_siiSEITimeScale);
   m_cEncLib.setSiiSEISubLayerNumUnitsInSI(m_siiSEISubLayerNumUnitsInSI);
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   m_cEncLib.setPoSEIEnabled                                      (m_poSEIEnabled);
   m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
   m_cEncLib.setPoSEINumofSeiMessages                             (m_numofSEIMessages);
-#endif
 
   m_cEncLib.setVuiParametersPresentFlag                          ( m_vuiParametersPresentFlag );
   m_cEncLib.setSamePicTimingInAllOLS                             (m_samePicTimingInAllOLS);

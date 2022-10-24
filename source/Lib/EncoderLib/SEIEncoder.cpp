@@ -551,7 +551,6 @@ void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIn
   }
 }
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
 void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo)
 {
   assert(m_isInitialized);
@@ -569,7 +568,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
   }
 }
-#endif
 
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned

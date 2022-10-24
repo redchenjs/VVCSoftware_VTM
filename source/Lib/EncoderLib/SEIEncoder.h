@@ -94,9 +94,7 @@ public:
   void initSEIShutterIntervalInfo(SEIShutterIntervalInfo *sei);
   void initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx);
   void initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei);
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   void initSEIProcessingOrderInfo(SEIProcessingOrderInfo *sei);
-#endif
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;

@@ -745,10 +745,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType     (0, 65535, 0, 256*2);
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder (0, 255, 0, 256);
-#endif
 
 #if ENABLE_TRACING
   string sTracingRule;
@@ -1593,12 +1591,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIDRINonlinearModel",                            cfg_driSEINonlinearModel,       cfg_driSEINonlinearModel, "List of the piece-wise linear segments for mapping of decoded luma sample values of an auxiliary picture to a scale that is uniformly quantized in terms of disparity in the depth representation information SEI message")
   ("SEIConstrainedRASL",                              m_constrainedRaslEncoding,                         false, "Control generation of constrained RASL encoding SEI message")
   
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   //Processing order of SEI (pos)
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
-#endif
 
   ("DebugBitstream",                                  m_decodeBitstreams[0],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
   ("DebugPOC",                                        m_switchPOC,                                 -1, "If DebugBitstream is present, load frames up to this POC from this bitstream. Starting with DebugPOC, return to normal encoding." )
@@ -3292,7 +3288,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   if (m_poSEIEnabled)
   {
     assert(cfg_poSEIPayloadType.values.size() > 0);
@@ -3316,7 +3311,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     assert(m_poSEIPayloadType.size() > 0);
     assert(m_poSEIProcessingOrder.size() == m_poSEIPayloadType.size());
   }
-#endif
 
   if( m_costMode == COST_LOSSLESS_CODING )
   {
@@ -5173,9 +5167,7 @@ void EncAppCfg::xPrintParameter()
   msg(VERBOSE, "BIM:%d ", m_bimEnabled);
   msg(VERBOSE, "SEI FGC:%d ", m_fgcSEIEnabled);
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   msg(VERBOSE, "SEI processing Order:%d ", m_poSEIEnabled);
-#endif
 
 #if EXTENSION_360_VIDEO
   m_ext360.outputConfigurationSummary();

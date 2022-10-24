@@ -869,14 +869,12 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
       seiMessages.push_back(seiNNPostFilterCharacteristics);
     }
   }
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   if (m_pcCfg->getPoSEIEnabled())
   {
     SEIProcessingOrderInfo *seiProcessingOrder = new SEIProcessingOrderInfo;
     m_seiEncoder.initSEIProcessingOrderInfo(seiProcessingOrder);
     seiMessages.push_back(seiProcessingOrder);
   }
-#endif
 }
 
 void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice)

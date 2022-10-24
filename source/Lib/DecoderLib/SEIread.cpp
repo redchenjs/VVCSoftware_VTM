@@ -434,12 +434,10 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIPhaseIndication;
       xParseSEIPhaseIndication((SEIPhaseIndication&)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
     case SEI::SEI_PROCESSING_ORDER:
       sei = new SEIProcessingOrderInfo;
       xParseSEIProcessingOrder((SEIProcessingOrderInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -609,7 +607,6 @@ void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t p
   }
 }
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
 void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t payloadSize, std::ostream *decodedMessageOutputStream)
 {
   uint32_t i,b;
@@ -628,7 +625,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
     sei.m_posProcessingOrder[i] = val;
   }
 }
-#endif
 
 /**
  * parse bitstream bs and unpack a decoded picture hash SEI message

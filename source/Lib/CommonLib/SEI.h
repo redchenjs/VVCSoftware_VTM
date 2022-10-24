@@ -96,9 +96,7 @@ public:
     NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
     PHASE_INDICATION                     = 212,
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
     SEI_PROCESSING_ORDER                 = 213,
-#endif
   };
 
   SEI() {}
@@ -133,7 +131,6 @@ public:
   std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
 };
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
 class SEIProcessingOrderInfo : public SEI
 {
 public:
@@ -146,7 +143,6 @@ public:
   std::vector<uint8_t>   m_posProcessingOrder;
   uint32_t               m_posNumofSeiMessages;
 };
-#endif
 
 class SEIEquirectangularProjection : public SEI
 {
