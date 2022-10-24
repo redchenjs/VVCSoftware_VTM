@@ -2721,11 +2721,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_log2ParameterBitLengthMinus3 = val;
 #endif
 
-#if JVET_AA0067_NNPFC_SEI_FIX
         sei_read_code(pDecodedMessageOutputStream, 6, val, "nnpfc_num_parameters_idc");
-#else
-        sei_read_code(pDecodedMessageOutputStream, 8, val, "nnpfc_num_parameters_idc");
-#endif
         sei.m_numParametersIdc = val;
 
         sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_num_kmac_operations_idc");

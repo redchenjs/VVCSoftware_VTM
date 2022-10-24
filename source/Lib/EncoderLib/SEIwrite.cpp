@@ -1531,11 +1531,7 @@ void SEIWriter::xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCha
     WRITE_FLAG(sei.m_parameterTypeFlag, "nnpfc_parameter_type_flag");
     WRITE_CODE(sei.m_log2ParameterBitLengthMinus3, 2, "nnpfc_log2_parameter_bit_length_minus3");
 #endif
-#if JVET_AA0067_NNPFC_SEI_FIX
     WRITE_CODE(sei.m_numParametersIdc, 6, "nnpfc_num_parameters_idc");
-#else
-    WRITE_CODE(sei.m_numParametersIdc, 8, "nnpfc_num_parameters_idc");
-#endif
     WRITE_UVLC(sei.m_numKmacOperationsIdc, "nnpfc_num_kmac_operations_idc");
   }
 }

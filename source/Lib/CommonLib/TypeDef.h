@@ -54,7 +54,6 @@
 
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AA0067_NNPFC_SEI_FIX                         1 // JVET-AA0067 AHG9: Some specification improvements for neural-network post-filter characteristics SEI message	
 #define JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE          1 //  Software support of Phase Indication SEI message
 #define JVET_AA0054_CHROMA_FORMAT_FLAG                    1 // JVET-AA0054 PROPOSAL2: Signalling improvements to specify output chroma information
 #define JVET_AA0054_CHROMA_UPSAMPLING_CONSTRAINT          1 // JVET-AA0054 PROPOSAL3: Constraint to prevent chroma upsampling when input chroma format is monochrome or YUV444
