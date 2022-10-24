@@ -2975,12 +2975,10 @@ SPS::SPS()
   , m_PROF(false)
   , m_ciip(false)
   , m_Geo(false)
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   , m_LadfEnabled(false)
   , m_LadfNumIntervals(0)
   , m_LadfQpOffset{ 0 }
   , m_LadfIntervalLowerBound{ 0 }
-#endif
   , m_MRL(false)
   , m_MIP(false)
   , m_GDREnabledFlag(true)

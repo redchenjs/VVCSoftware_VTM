@@ -33,7 +33,6 @@
 
 #include "EncHRD.h"
 
-#if U0132_TARGET_BITS_SATURATION
 
 // calculate scale value of bitrate and initial delay
 int EncHRD::xCalcScale(int x)
@@ -53,19 +52,14 @@ int EncHRD::xCalcScale(int x)
 
   return scaleValue;
 }
-#endif
 
 void EncHRD::initHRDParameters(EncCfg* encCfg)
 {
   bool useSubCpbParams = encCfg->getNoPicPartitionFlag() == false;
   int  bitRate = encCfg->getTargetBitrate();
-# if U0132_TARGET_BITS_SATURATION
   int cpbSize = encCfg->getCpbSize();
   CHECK(!(cpbSize != 0), "Unspecified error");  // CPB size may not be equal to zero. ToDo: have a better default and check for level constraints
   if (!encCfg->getHrdParametersPresentFlag() && !encCfg->getCpbSaturationEnabled())
-#else
-  if (!encCfg->getHrdParametersPresentFlag())
-#endif
   {
     return;
   }
@@ -118,7 +112,6 @@ void EncHRD::initHRDParameters(EncCfg* encCfg)
     m_generalHrdParams.setTickDivisorMinus2(100 - 2);
   }
 
-#if U0132_TARGET_BITS_SATURATION
   if (xCalcScale(bitRate) <= 6)
   {
     m_generalHrdParams.setBitRateScale(0);
@@ -136,10 +129,6 @@ void EncHRD::initHRDParameters(EncCfg* encCfg)
   {
     m_generalHrdParams.setCpbSizeScale(xCalcScale(cpbSize) - 4);
   }
-#else
-  m_generalHrdParams.setBitRateScale(4);                                       // in units of 2^( 6 + 4 ) = 1,024 bps
-  m_generalHrdParams.setCpbSizeScale(6);                                       // in units of 2^( 4 + 6 ) = 1,024 bit
-#endif
 
   m_generalHrdParams.setCpbSizeDuScale(6);                                     // in units of 2^( 4 + 6 ) = 1,024 bit
   m_generalHrdParams.setHrdCpbCntMinus1(0);
@@ -163,11 +152,7 @@ void EncHRD::initHRDParameters(EncCfg* encCfg)
     // BitRate[ i ] = ( bit_rate_value_minus1[ i ] + 1 ) * 2^( 6 + bit_rate_scale )
     bitrateValue = bitRate / (1 << (6 + m_generalHrdParams.getBitRateScale()));      // bitRate is in bits, so it needs to be scaled down
                                                                               // CpbSize[ i ] = ( cpb_size_value_minus1[ i ] + 1 ) * 2^( 4 + cpb_size_scale )
-#if U0132_TARGET_BITS_SATURATION
     cpbSizeValue = cpbSize / (1 << (4 + m_generalHrdParams.getCpbSizeScale()));      // using bitRate results in 1 second CPB size
-#else
-    cpbSizeValue = bitRate / (1 << (4 + m_generalHrdParams.getCpbSizeScale()));      // using bitRate results in 1 second CPB size
-#endif
 
 
                                                                               // DU CPB size could be smaller (i.e. bitrateValue / number of DUs), but we don't know

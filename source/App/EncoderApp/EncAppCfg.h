@@ -69,7 +69,6 @@ namespace po = df::program_options_lite;
 /// encoder configuration class
 class EncAppCfg
 {
-#if QP_SWITCHING_FOR_PARALLEL
 public:
   template <class T>
   struct OptionalValue
@@ -78,7 +77,6 @@ public:
     T    value;
     OptionalValue() : bPresent(false), value() { }
   };
-#endif
 
 protected:
   // file I/O
@@ -259,18 +257,12 @@ protected:
   bool      m_disableFastDecisionTT;                         ///< flag for disabling fast decision for TT from BT
 
   // coding quality
-#if QP_SWITCHING_FOR_PARALLEL
   OptionalValue<uint32_t> m_qpIncrementAtSourceFrame;             ///< Optional source frame number at which all subsequent frames are to use an increased internal QP.
-#else
-  double    m_fQP;                                            ///< QP value of key-picture (floating point)
-#endif
   int       m_iQP;                                            ///< QP value of key-picture (integer)
   bool      m_useIdentityTableForNon420Chroma;
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   int       m_intraQPOffset;                                  ///< QP offset for intra slice (integer)
   bool      m_lambdaFromQPEnable;                             ///< enable flag for QP:lambda fix
-#endif
   std::string m_dQPFileName;                                  ///< QP offset for each slice (initialized from external file)
   int*      m_aidQP;                                          ///< array of slice QP values
   int       m_iMaxDeltaQP;                                    ///< max. |delta QP|
@@ -366,12 +358,10 @@ protected:
   bool      m_compositeRefEnabled;
   bool      m_bcw;
   bool      m_BcwFast;
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   bool      m_LadfEnabed;
   int       m_LadfNumIntervals;
   std::vector<int> m_LadfQpOffset;
   int       m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
-#endif
 
   bool      m_ciip;
   bool      m_Geo;
@@ -466,11 +456,7 @@ protected:
   int       m_deblockingFilterCbTcOffsetDiv2;                 ///< tc offset for Cb deblocking filter
   int       m_deblockingFilterCrBetaOffsetDiv2;               ///< beta offset for Cr deblocking filter
   int       m_deblockingFilterCrTcOffsetDiv2;                 ///< tc offset for Cr deblocking filter
-#if W0038_DB_OPT
   int       m_deblockingFilterMetric;                         ///< blockiness metric in encoder
-#else
-  bool      m_DeblockingFilterMetric;                         ///< blockiness metric in encoder
-#endif
 
   // coding tools (encoder-only parameters)
   bool      m_bUseASR;                                        ///< flag for using adaptive motion search range
@@ -535,9 +521,7 @@ protected:
   int       m_doSEITransformType;
   bool      m_parameterSetsInclusionIndicationSEIEnabled;
   int       m_selfContainedClvsFlag;
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   int       m_preferredTransferCharacteristics;
-#endif
 
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
@@ -825,11 +809,9 @@ protected:
   bool      m_RCUseLCUSeparateModel;              ///< use separate R-lambda model at LCU level                        NOTE: code-tidy - rename to m_RCUseCtuSeparateModel
   int       m_RCInitialQP;                        ///< inital QP for rate control
   bool      m_RCForceIntraQP;                     ///< force all intra picture to use initial QP or not
-#if U0132_TARGET_BITS_SATURATION
   bool      m_RCCpbSaturationEnabled;             ///< enable target bits saturation to avoid CPB overflow and underflow
   uint32_t      m_RCCpbSize;                          ///< CPB size
   double    m_RCInitialCpbFullness;               ///< initial CPB fullness
-#endif
   ScalingListMode m_useScalingListId;                         ///< using quantization matrix
   std::string m_scalingListFileName;                          ///< quantization matrix file name
   bool      m_disableScalingMatrixForLfnstBlks;

@@ -114,9 +114,7 @@ EncGOP::EncGOP()
     m_associatedIRAPType[i] = NAL_UNIT_CODED_SLICE_IDR_N_LP;
   }
   ::memset(m_associatedIRAPPOC, 0, sizeof(m_associatedIRAPPOC));
-#if W0038_DB_OPT
   m_pcDeblockingTempPicYuv = nullptr;
-#endif
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
   m_ppcFrameOrg             = nullptr;
@@ -189,14 +187,12 @@ void  EncGOP::create()
 
 void  EncGOP::destroy()
 {
-#if W0038_DB_OPT
   if (m_pcDeblockingTempPicYuv)
   {
     m_pcDeblockingTempPicYuv->destroy();
     delete m_pcDeblockingTempPicYuv;
     m_pcDeblockingTempPicYuv = nullptr;
   }
-#endif
   if (m_picBg)
   {
     m_picBg->destroy();
@@ -705,14 +701,12 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     seiMessages.push_back(sei);
   }
 
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   if(m_pcCfg->getSEIAlternativeTransferCharacteristicsSEIEnable())
   {
     SEIAlternativeTransferCharacteristics *seiAlternativeTransferCharacteristics = new SEIAlternativeTransferCharacteristics;
     m_seiEncoder.initSEIAlternativeTransferCharacteristics(seiAlternativeTransferCharacteristics);
     seiMessages.push_back(seiAlternativeTransferCharacteristics);
   }
-#endif
   if (m_pcCfg->getErpSEIEnabled())
   {
     SEIEquirectangularProjection *sei = new SEIEquirectangularProjection;
@@ -1939,7 +1933,6 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
   m_pcRateCtrl->initRCPic( frameLevel );
   estimatedBits = m_pcRateCtrl->getRCPic()->getTargetBits();
 
-#if U0132_TARGET_BITS_SATURATION
   if (m_pcRateCtrl->getCpbSaturationEnabled() && frameLevel != 0)
   {
     int estimatedCpbFullness = m_pcRateCtrl->getCpbState() + m_pcRateCtrl->getBufferingRate();
@@ -1952,21 +1945,13 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
 
     estimatedCpbFullness -= m_pcRateCtrl->getBufferingRate();
     // prevent underflow
-#if V0078_ADAPTIVE_LOWER_BOUND
     if (estimatedCpbFullness - estimatedBits < m_pcRateCtrl->getRCPic()->getLowerBound())
     {
       estimatedBits = std::max(200, estimatedCpbFullness - m_pcRateCtrl->getRCPic()->getLowerBound());
     }
-#else
-    if (estimatedCpbFullness - estimatedBits < (int)(m_pcRateCtrl->getCpbSize()*0.1f))
-    {
-      estimatedBits = std::max(200, estimatedCpbFullness - (int)(m_pcRateCtrl->getCpbSize()*0.1f));
-    }
-#endif
 
     m_pcRateCtrl->getRCPic()->setTargetBits(estimatedBits);
   }
-#endif
 
   int sliceQP = m_pcCfg->getInitialQP();
   if ( ( slice->getPOC() == 0 && m_pcCfg->getInitialQP() > 0 ) || ( frameLevel == 0 && m_pcCfg->getForceIntraQP() ) ) // QP is specified
@@ -1988,7 +1973,6 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
       int bits = m_pcRateCtrl->getRCSeq()->getLeftAverageBits();
       bits = m_pcRateCtrl->getRCPic()->getRefineBitsForIntra( bits );
 
-#if U0132_TARGET_BITS_SATURATION
       if (m_pcRateCtrl->getCpbSaturationEnabled() )
       {
         int estimatedCpbFullness = m_pcRateCtrl->getCpbState() + m_pcRateCtrl->getBufferingRate();
@@ -2001,19 +1985,11 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
 
         estimatedCpbFullness -= m_pcRateCtrl->getBufferingRate();
         // prevent underflow
-#if V0078_ADAPTIVE_LOWER_BOUND
         if (estimatedCpbFullness - bits < m_pcRateCtrl->getRCPic()->getLowerBound())
         {
           bits = estimatedCpbFullness - m_pcRateCtrl->getRCPic()->getLowerBound();
         }
-#else
-        if (estimatedCpbFullness - bits < (int)(m_pcRateCtrl->getCpbSize()*0.1f))
-        {
-          bits = estimatedCpbFullness - (int)(m_pcRateCtrl->getCpbSize()*0.1f);
-        }
-#endif
       }
-#endif
 
       if ( bits < 200 )
       {
@@ -2321,9 +2297,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     //-- For time output for each slice
     auto beforeTime = std::chrono::steady_clock::now();
 
-#if !X0038_LAMBDA_FROM_QP_CAPABILITY
-    uint32_t colDir = calculateCollocatedFromL1Flag(m_pcCfg, gopId, m_iGopSize);
-#endif
 
     /////////////////////////////////////////////////////////////////////////////////////////////////// Initial to start encoding
     int timeOffset;
@@ -3465,13 +3438,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       //-- Loop filter
       if ( m_pcCfg->getDeblockingFilterMetric() )
       {
-  #if W0038_DB_OPT
         if ( m_pcCfg->getDeblockingFilterMetric()==2 )
         {
           applyDeblockingFilterParameterSelection(pcPic, uiNumSliceSegments, gopId);
         }
         else
-  #endif
         {
           applyDeblockingFilterMetric(pcPic, uiNumSliceSegments);
         }
@@ -4177,13 +4148,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         {
           m_pcRateCtrl->getRCGOP()->updateAfterPicture( estimatedBits );
         }
-  #if U0132_TARGET_BITS_SATURATION
         if (m_pcRateCtrl->getCpbSaturationEnabled())
         {
           m_pcRateCtrl->updateCpbState(actualTotalBits);
           msg( NOTICE, " [CPB %6d bits]", m_pcRateCtrl->getCpbState() );
         }
-  #endif
       }
       xCreateFrameFieldInfoSEI( leadingSeiMessages, pcSlice, isField );
       xCreatePictureTimingSEI( m_pcCfg->getEfficientFieldIRAPEnabled() ? effFieldIRAPMap.GetIRAPGOPid() : 0, leadingSeiMessages, nestedSeiMessages, duInfoSeiMessages, pcSlice, isField, duData );
@@ -4375,7 +4344,6 @@ void EncGOP::printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const boo
   msg( DETAILS,"\nRVM: %.3lf\n", xCalculateRVM() );
 }
 
-#if W0038_DB_OPT
 uint64_t EncGOP::preLoopFilterPicAndCalcDist( Picture* pcPic )
 {
   CodingStructure& cs = *pcPic->cs;
@@ -4396,7 +4364,6 @@ uint64_t EncGOP::preLoopFilterPicAndCalcDist( Picture* pcPic )
   }
   return dist;
 }
-#endif
 
 // ====================================================================================================================
 // Protected member functions
@@ -6130,7 +6097,6 @@ void EncGOP::applyDeblockingFilterMetric( Picture* pcPic, uint32_t uiNumSlices )
   }
 }
 
-#if W0038_DB_OPT
 void EncGOP::applyDeblockingFilterParameterSelection( Picture* pcPic, const uint32_t numSlices, const int gopID )
 {
   enum DBFltParam
@@ -6271,7 +6237,6 @@ void EncGOP::applyDeblockingFilterParameterSelection( Picture* pcPic, const uint
     }
   }
 }
-#endif
 
 bool EncGOP::xCheckMaxTidILRefPics(int layerIdx, Picture* refPic, bool currentPicIsIRAP)
 {

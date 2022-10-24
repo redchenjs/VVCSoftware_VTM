@@ -67,9 +67,7 @@ protected:
   void xWriteSEIDisplayOrientation(const SEIDisplayOrientation& sei);
   void xWriteSEIParameterSetsInclusionIndication(const SEIParameterSetsInclusionIndication& sei);
   void xWriteSEIMasteringDisplayColourVolume( const SEIMasteringDisplayColourVolume& sei);
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   void xWriteSEIAlternativeTransferCharacteristics(const SEIAlternativeTransferCharacteristics& sei);
-#endif
   void xWriteSEIEquirectangularProjection         (const SEIEquirectangularProjection &sei);
   void xWriteSEISphereRotation                    (const SEISphereRotation &sei);
   void xWriteSEIOmniViewport                      (const SEIOmniViewport& sei);

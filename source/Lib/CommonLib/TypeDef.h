@@ -137,7 +137,6 @@ typedef std::pair<int, int>  TrCost;
 
 #define PRINT_MACRO_VALUES                                1 ///< When enabled, the encoder prints out a list of the non-environment-variable controlled macros and their values on startup
 
-#define INTRA_FULL_SEARCH                                 0 ///< enables full mode search for intra estimation
 
 // TODO: rename this macro to DECODER_DEBUG_BIT_STATISTICS (may currently cause merge issues with other branches)
 // This can be enabled by the makefile
@@ -165,9 +164,6 @@ typedef std::pair<int, int>  TrCost;
 // ====================================================================================================================
 
 #define DECODER_CHECK_SUBSTREAM_AND_SLICE_TRAILING_BYTES  1 ///< TODO: integrate this macro into a broader conformance checking system.
-#define U0040_MODIFIED_WEIGHTEDPREDICTION_WITH_BIPRED_AND_CLIPPING 1
-#define U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI    1 ///< Alternative transfer characteristics SEI message (JCTVC-U0033, with syntax naming from V1005)
-#define X0038_LAMBDA_FROM_QP_CAPABILITY                   1 ///< This approach derives lambda from QP+QPoffset+QPoffset2. QPoffset2 is derived from QP+QPoffset using a linear model that is clipped between 0 and 3.
                                                             // To use this capability enable config parameter LambdaFromQpEnable
 
 // ====================================================================================================================
@@ -205,11 +201,6 @@ typedef std::pair<int, int>  TrCost;
 
 #define RDOQ_CHROMA_LAMBDA                                1 ///< F386: weighting of chroma for RDOQ
 
-#define U0132_TARGET_BITS_SATURATION                      1 ///< Rate control with target bits saturation method
-#ifdef  U0132_TARGET_BITS_SATURATION
-#define V0078_ADAPTIVE_LOWER_BOUND                        1 ///< Target bits saturation with adaptive lower bound
-#endif
-#define W0038_DB_OPT                                      1 ///< adaptive DB parameter selection, LoopFilterOffsetInPPS and LoopFilterDisable are set to 0 and DeblockingFilterMetric=2;
 #define W0038_CQP_ADJ                                     1 ///< chroma QP adjustment based on TL, CQPTLAdjustEnabled is set to 1;
 
 #define SHARP_LUMA_DELTA_QP                               1 ///< include non-normative LCU deltaQP and normative chromaQP change
@@ -220,9 +211,7 @@ typedef std::pair<int, int>  TrCost;
 
 #define RDOQ_CHROMA                                       1 ///< use of RDOQ in chroma
 
-#define QP_SWITCHING_FOR_PARALLEL                         1 ///< Replace floating point QP with a source-file frame number. After switching POC, increase base QP instead of frame level QP.
 
-#define LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET         1 /// JVET-L0414 (CE11.2.2) with explicit signalling of num interval, threshold and qpOffset
 // ====================================================================================================================
 // Derived macros
 // ====================================================================================================================

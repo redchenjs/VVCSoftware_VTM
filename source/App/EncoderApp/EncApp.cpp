@@ -570,10 +570,8 @@ void EncApp::xInitLibCfg()
 
   m_cEncLib.setBaseQP                                            ( m_iQP );
 
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   m_cEncLib.setIntraQPOffset                                     ( m_intraQPOffset );
   m_cEncLib.setLambdaFromQPEnable                                ( m_lambdaFromQPEnable );
-#endif
   m_cEncLib.setChromaQpMappingTableParams                        (m_chromaQpMappingTableParams);
 
   m_cEncLib.setSourcePadding                                     ( m_sourcePadding );
@@ -595,11 +593,7 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setDeblockingFilterCbTcOffset                        ( m_deblockingFilterCbTcOffsetDiv2    );
   m_cEncLib.setDeblockingFilterCrBetaOffset                      ( m_deblockingFilterCrBetaOffsetDiv2  );
   m_cEncLib.setDeblockingFilterCrTcOffset                        ( m_deblockingFilterCrTcOffsetDiv2    );
-#if W0038_DB_OPT
   m_cEncLib.setDeblockingFilterMetric                            ( m_deblockingFilterMetric );
-#else
-  m_cEncLib.setDeblockingFilterMetric                            ( m_DeblockingFilterMetric );
-#endif
 
   //====== Motion search ========
   m_cEncLib.setDisableIntraPUsInInterSlices                      ( m_bDisableIntraPUsInInterSlices );
@@ -658,11 +652,7 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setSmoothQPReductionModelScaleInter                  (m_smoothQPReductionModelScaleInter);
   m_cEncLib.setSmoothQPReductionModelOffsetInter                 (m_smoothQPReductionModelOffsetInter);
   m_cEncLib.setSmoothQPReductionLimitInter                       (m_smoothQPReductionLimitInter);
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   m_cEncLib.setDeltaQpRD( (m_costMode==COST_LOSSLESS_CODING) ? 0 : m_uiDeltaQpRD );
-#else
-  m_cEncLib.setDeltaQpRD                                         ( m_uiDeltaQpRD  );
-#endif
   m_cEncLib.setFastDeltaQp                                       ( m_bFastDeltaQP  );
   m_cEncLib.setUseASR                                            ( m_bUseASR      );
   m_cEncLib.setUseHADME                                          ( m_bUseHADME    );
@@ -729,7 +719,6 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setUseSMVD                                           ( m_SMVD );
   m_cEncLib.setUseBcw                                            ( m_bcw );
   m_cEncLib.setUseBcwFast                                        ( m_BcwFast );
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   m_cEncLib.setUseLadf                                           ( m_LadfEnabed );
   if ( m_LadfEnabed )
   {
@@ -740,7 +729,6 @@ void EncApp::xInitLibCfg()
       m_cEncLib.setLadfIntervalLowerBound(m_LadfIntervalLowerBound[k], k);
     }
   }
-#endif
   m_cEncLib.setUseCiip                                        ( m_ciip );
   m_cEncLib.setUseGeo                                            ( m_Geo );
   m_cEncLib.setUseHashME                                         ( m_HashME );
@@ -986,10 +974,8 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setVerPhaseDenMinus1ReducedResolution                (m_piVerPhaseDenMinus1ReducedResolution);
   m_cEncLib.setMCTSEncConstraint                                 ( m_MCTSEncConstraint);
   m_cEncLib.setMasteringDisplaySEI                               ( m_masteringDisplay );
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   m_cEncLib.setSEIAlternativeTransferCharacteristicsSEIEnable    ( m_preferredTransferCharacteristics>=0     );
   m_cEncLib.setSEIPreferredTransferCharacteristics               ( uint8_t(m_preferredTransferCharacteristics) );
-#endif
   // film grain charcteristics
   m_cEncLib.setFilmGrainCharactersticsSEIEnabled                 (m_fgcSEIEnabled);
   m_cEncLib.setFilmGrainCharactersticsSEICancelFlag              (m_fgcSEICancelFlag);
@@ -1229,11 +1215,9 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setUseLCUSeparateModel                               ( m_RCUseLCUSeparateModel );
   m_cEncLib.setInitialQP                                         ( m_RCInitialQP );
   m_cEncLib.setForceIntraQP                                      ( m_RCForceIntraQP );
-#if U0132_TARGET_BITS_SATURATION
   m_cEncLib.setCpbSaturationEnabled                              ( m_RCCpbSaturationEnabled );
   m_cEncLib.setCpbSize                                           ( m_RCCpbSize );
   m_cEncLib.setInitialCpbFullness                                ( m_RCInitialCpbFullness );
-#endif
   m_cEncLib.setCostMode                                          ( m_costMode );
   m_cEncLib.setTSRCdisableLL                                     ( m_TSRCdisableLL );
   m_cEncLib.setUseRecalculateQPAccordingToLambda                 ( m_recalculateQPAccordingToLambda );

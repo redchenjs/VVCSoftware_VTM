@@ -129,10 +129,8 @@ std::istringstream &operator>>(std::istringstream &in, GOPEntry &entry)     //in
   in>>entry.m_sliceType;
   in>>entry.m_POC;
   in>>entry.m_QPOffset;
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   in>>entry.m_QPOffsetModelOffset;
   in>>entry.m_QPOffsetModelScale;
-#endif
 #if W0038_CQP_ADJ
   in>>entry.m_CbQPoffset;
   in>>entry.m_CrQPoffset;
@@ -264,14 +262,12 @@ strToLevel[] =
   {"15.5", Level::LEVEL15_5},
 };
 
-#if U0132_TARGET_BITS_SATURATION
 uint32_t g_uiMaxCpbSize[2][28] =
 {
   //            LEVEL1,          LEVEL2,  LEVEL2_1,      LEVEL3,  LEVEL3_1,       LEVEL4,   LEVEL4_1,       LEVEL5,    LEVEL5_1,  LEVEL5_2,     LEVEL6,    LEVEL6_1,  LEVEL6_2   LEVEL6_3
   { 0, 0, 0, 0, 350000, 0, 0, 0, 1500000, 3000000, 0, 0, 6000000, 10000000, 0, 0, 12000000, 20000000, 0, 0,  25000000,  40000000,  60000000, 0,  80000000, 120000000, 240000000,  240000000 },
   { 0, 0, 0, 0,      0, 0, 0, 0,       0,       0, 0, 0,       0,        0, 0, 0, 30000000, 50000000, 0, 0, 100000000, 160000000, 240000000, 0, 240000000, 480000000, 800000000, 1600000000 }
 };
-#endif
 
 static const struct MapStrToCostMode
 {
@@ -434,7 +430,6 @@ istream& SMultiValueInput<T>::readValues(std::istream &in)
   return in;
 }
 
-#if QP_SWITCHING_FOR_PARALLEL
 template <class T>
 static inline istream& operator >> (std::istream &in, EncAppCfg::OptionalValue<T> &value)
 {
@@ -450,7 +445,6 @@ static inline istream& operator >> (std::istream &in, EncAppCfg::OptionalValue<T
   }
   return in;
 }
-#endif
 
 template <class T1, class T2>
 static inline istream& operator >> (std::istream& in, std::map<T1, T2>& map)
@@ -708,12 +702,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>        cfg_mvpSEIViewPosition             (0, 63, 0, std::numeric_limits<uint32_t>::max());
 
   SMultiValueInput<uint32_t>        cfg_driSEINonlinearModel           (0, 31, 0, std::numeric_limits<uint32_t>::max());
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   const int defaultLadfQpOffset[3] = { 1, 0, 1 };
   const int defaultLadfIntervalLowerBound[2] = { 350, 833 };
   SMultiValueInput<int>  cfg_LadfQpOffset                    ( -MAX_QP, MAX_QP, 2, MAX_LADF_INTERVALS, defaultLadfQpOffset, 3 );
   SMultiValueInput<int>  cfg_LadfIntervalLowerBound          ( 0, std::numeric_limits<int>::max(), 1, MAX_LADF_INTERVALS - 1, defaultLadfIntervalLowerBound, 2 );
-#endif
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosX       (0, std::numeric_limits<uint32_t>::max(), 0, 3);
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosY       (0, std::numeric_limits<uint32_t>::max(), 0, 3);
 
@@ -1002,12 +994,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("CompositeLTReference",                            m_compositeRefEnabled,                            false, "Enable Composite Long Term Reference Frame")
   ("BCW",                                             m_bcw,                                            false, "Enable Generalized Bi-prediction(Bcw)")
   ("BcwFast",                                         m_BcwFast,                                        false, "Fast methods for Generalized Bi-prediction(Bcw)\n")
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   ("LADF",                                            m_LadfEnabed,                                     false, "Luma adaptive deblocking filter QP Offset(L0414)")
   ("LadfNumIntervals",                                m_LadfNumIntervals,                                   3, "LADF number of intervals (2-5, inclusive)")
   ("LadfQpOffset",                                    cfg_LadfQpOffset,                      cfg_LadfQpOffset, "LADF QP offset")
   ("LadfIntervalLowerBound",                          cfg_LadfIntervalLowerBound,  cfg_LadfIntervalLowerBound, "LADF lower bound for 2nd lowest interval")
-#endif
   ("CIIP",                                            m_ciip,                                           false, "Enable CIIP mode")
   ("Geo",                                             m_Geo,                                            false, "Enable geometric partitioning mode (0:off, 1:on)")
   ("HashME",                                          m_HashME,                                         false, "Enable hash motion estimation (0:off, 1:on)")
@@ -1114,16 +1104,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("IQPFactor,-IQF",                                  m_dIntraQpFactor,                                  -1.0, "Intra QP Factor for Lambda Computation. If negative, the default will scale lambda based on GOP size (unless LambdaFromQpEnable then IntraQPOffset is used instead)")
 
   /* Quantization parameters */
-#if QP_SWITCHING_FOR_PARALLEL
   ("QP,q",                                            m_iQP,                                               30, "Qp value")
   ("QPIncrementFrame,-qpif",                          m_qpIncrementAtSourceFrame,   OptionalValue<uint32_t>(), "If a source file frame number is specified, the internal QP will be incremented for all POCs associated with source frames >= frame number. If empty, do not increment.")
-#else
-  ("QP,q",                                            m_fQP,                                             30.0, "Qp value, if value is float, QP is switched once during encoding")
-#endif
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   ("IntraQPOffset",                                   m_intraQPOffset,                                      0, "Qp offset value for intra slice, typically determined based on GOP size")
   ("LambdaFromQpEnable",                              m_lambdaFromQPEnable,                             false, "Enable flag for derivation of lambda from QP")
-#endif
   ("DeltaQpRD,-dqr",                                  m_uiDeltaQpRD,                                       0u, "max dQp offset for slice")
   ("MaxDeltaQP,d",                                    m_iMaxDeltaQP,                                        0, "max dQp offset for block")
   ("MaxCuDQPSubdiv,-dqd",                             m_cuQpDeltaSubdiv,                                    0, "Maximum subdiv for CU luma Qp adjustment")
@@ -1200,11 +1184,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("DeblockingFilterCbTcOffset_div2",                 m_deblockingFilterCbTcOffsetDiv2,                     0)
   ("DeblockingFilterCrBetaOffset_div2",               m_deblockingFilterCrBetaOffsetDiv2,                   0)
   ("DeblockingFilterCrTcOffset_div2",                 m_deblockingFilterCrTcOffsetDiv2,                     0)
-#if W0038_DB_OPT
   ("DeblockingFilterMetric",                          m_deblockingFilterMetric,                             0)
-#else
-  ("DeblockingFilterMetric",                          m_DeblockingFilterMetric,                         false)
-#endif
   // Coding tools
   ("ReconBasedCrossCPredictionEstimate",              m_reconBasedCrossCPredictionEstimate,             false, "When determining the alpha value for cross-component prediction, use the decoded residual rather than the pre-transform encoder-side residual")
   ("TransformSkip",                                   m_useTransformSkip,                               false, "Intra transform skipping")
@@ -1287,11 +1267,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "RCLCUSeparateModel",                             m_RCUseLCUSeparateModel,                           true, "Rate control: use CTU level separate R-lambda model" )
   ( "InitialQP",                                      m_RCInitialQP,                                        0, "Rate control: initial QP" )
   ( "RCForceIntraQP",                                 m_RCForceIntraQP,                                 false, "Rate control: force intra QP to be equal to initial QP" )
-#if U0132_TARGET_BITS_SATURATION
   ( "RCCpbSaturation",                                m_RCCpbSaturationEnabled,                         false, "Rate control: enable target bits saturation to avoid CPB overflow and underflow" )
   ( "RCCpbSize",                                      m_RCCpbSize,                                         0u, "Rate control: CPB size" )
   ( "RCInitialCpbFullness",                           m_RCInitialCpbFullness,                             0.9, "Rate control: initial CPB fullness" )
-#endif
   ("CostMode",                                        m_costMode,                         COST_STANDARD_LOSSY, "Use alternative cost functions: choose between 'lossy', 'sequence_level_lossless', 'lossless' (which forces QP to " MACRO_TO_STRING(LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP) ") and 'mixed_lossless_lossy' (which used QP'=" MACRO_TO_STRING(LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP_PRIME) " for pre-estimates of transquant-bypass blocks).")
   ("TSRCdisableLL",                                   m_TSRCdisableLL,                                   true, "Disable TSRC for lossless coding" )
   ("RecalculateQPAccordingToLambda",                  m_recalculateQPAccordingToLambda,                 false, "Recalculate QP values according to lambda values. Do not suggest to be enabled in all intra case")
@@ -1345,9 +1323,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIMasteringDisplayMinLuminance",                 m_masteringDisplay.minLuminance,                      0u, "Specifies the mastering display minimum luminance value in units of 1/10000 candela per square metre (32-bit code value)")
   ("SEIMasteringDisplayPrimaries",                    cfg_DisplayPrimariesCode,       cfg_DisplayPrimariesCode, "Mastering display primaries for all three colour planes in CIE xy coordinates in increments of 1/50000 (results in the ranges 0 to 50000 inclusive)")
   ("SEIMasteringDisplayWhitePoint",                   cfg_DisplayWhitePointCode,     cfg_DisplayWhitePointCode, "Mastering display white point CIE xy coordinates in normalised increments of 1/50000 (e.g. 0.333 = 16667)")
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   ("SEIPreferredTransferCharacteristics",              m_preferredTransferCharacteristics,                   -1, "Value for the preferred_transfer_characteristics field of the Alternative transfer characteristics SEI which will override the corresponding entry in the VUI. If negative, do not produce the respective SEI message")
-#endif
 
   ("SEIErpEnabled",                                   m_erpSEIEnabled,                                   false, "Control generation of equirectangular projection SEI messages")
 ("SEIErpCancelFlag", m_erpSEICancelFlag, true, "Indicate that equirectangular projection SEI message cancels the persistence or follows")
@@ -2545,7 +2521,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   m_aidQP = new int[ m_framesToBeEncoded + m_iGOPSize + 1 ];
   ::memset( m_aidQP, 0, sizeof(int)*( m_framesToBeEncoded + m_iGOPSize + 1 ) );
 
-#if QP_SWITCHING_FOR_PARALLEL
   if (m_qpIncrementAtSourceFrame.bPresent)
   {
     uint32_t switchingPOC = 0;
@@ -2561,21 +2536,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_aidQP[i] = 1;
     }
   }
-#else
-  // handling of floating-point QP values
-  // if QP is not integer, sequence is split into two sections having QP and QP+1
-  m_iQP = (int)( m_fQP );
-  if ( m_iQP < m_fQP )
-  {
-    int iSwitchPOC = (int)( m_framesToBeEncoded - (m_fQP - m_iQP)*m_framesToBeEncoded + 0.5 );
-
-    iSwitchPOC = (int)( (double)iSwitchPOC / m_iGOPSize + 0.5 )*m_iGOPSize;
-    for ( int i=iSwitchPOC; i<m_framesToBeEncoded + m_iGOPSize + 1; i++ )
-    {
-      m_aidQP[i] = 1;
-    }
-  }
-#endif
 
 
 #if SHARP_LUMA_DELTA_QP
@@ -2687,7 +2647,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       cfg_cbCrQpOffsetList.values.size() ? cfg_cbCrQpOffsetList.values[i] : 0;
   }
 
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   if ( m_LadfEnabed )
   {
     CHECK( m_LadfNumIntervals != cfg_LadfQpOffset.values.size(), "size of LadfQpOffset must be equal to LadfNumIntervals");
@@ -2699,7 +2658,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_LadfIntervalLowerBound[k] = cfg_LadfIntervalLowerBound.values[k - 1];
     }
   }
-#endif
 
   if (m_chromaFormatIDC != CHROMA_420)
   {
@@ -3168,11 +3126,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
 #if ENABLE_QPA_SUB_CTU
- #if QP_SWITCHING_FOR_PARALLEL
   if ((m_iQP < 38) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && (m_sourceWidth <= 2048) && (m_sourceHeight <= 1280)
- #else
-  if (((int)m_fQP < 38) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && (m_sourceWidth <= 2048) && (m_sourceHeight <= 1280)
- #endif
  #if WCG_EXT && ER_CHROMA_QP_WCG_PPS
       && (!m_wcgChromaQpControl.enabled)
  #endif
@@ -3181,11 +3135,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_cuQpDeltaSubdiv = 2;
   }
 #else
- #if QP_SWITCHING_FOR_PARALLEL
   if( ( m_iQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_sourceHeight <= 1280 ) && ( m_sourceWidth <= 2048 ) )
- #else
-  if( ( ( int ) m_fQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_sourceHeight <= 1280 ) && ( m_sourceWidth <= 2048 ) )
- #endif
   {
     msg( WARNING, "*************************************************************************\n" );
     msg( WARNING, "* WARNING: QPA on with large CTU for <=HD sequences, limiting CTU size! *\n" );
@@ -3585,11 +3535,7 @@ bool EncAppCfg::xCheckParameter()
   }
 
   xConfirmPara( m_iQP < -6 * (m_internalBitDepth[CHANNEL_TYPE_LUMA] - 8) || m_iQP > MAX_QP, "QP exceeds supported range (-QpBDOffsety to 63)" );
-#if W0038_DB_OPT
   xConfirmPara( m_deblockingFilterMetric!=0 && (m_deblockingFilterDisable || m_deblockingFilterOffsetInPPS), "If DeblockingFilterMetric is non-zero then both LoopFilterDisable and LoopFilterOffsetInPPS must be 0");
-#else
-  xConfirmPara( m_DeblockingFilterMetric && (m_bLoopFilterDisable || m_loopFilterOffsetInPPS), "If DeblockingFilterMetric is true then both LoopFilterDisable and LoopFilterOffsetInPPS must be 0");
-#endif
   xConfirmPara( m_deblockingFilterBetaOffsetDiv2 < -12 || m_deblockingFilterBetaOffsetDiv2 > 12,          "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
   xConfirmPara( m_deblockingFilterTcOffsetDiv2 < -12 || m_deblockingFilterTcOffsetDiv2 > 12,              "Loop Filter Tc Offset div. 2 exceeds supported range (-12 to 12)" );
   xConfirmPara( m_deblockingFilterCbBetaOffsetDiv2 < -12 || m_deblockingFilterCbBetaOffsetDiv2 > 12,      "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
@@ -4544,21 +4490,17 @@ bool EncAppCfg::xCheckParameter()
       }
     }
     xConfirmPara( m_uiDeltaQpRD > 0, "Rate control cannot be used together with slice level multiple-QP optimization!\n" );
-#if U0132_TARGET_BITS_SATURATION
     if ((m_RCCpbSaturationEnabled) && (m_level!=Level::NONE) && (m_profile!=Profile::NONE))
     {
       uint32_t uiLevelIdx = (m_level / 16) * 4 + (uint32_t)((m_level % 16) / 3);
       xConfirmPara(m_RCCpbSize > g_uiMaxCpbSize[m_levelTier][uiLevelIdx], "RCCpbSize should be smaller than or equal to Max CPB size according to tier and level");
       xConfirmPara(m_RCInitialCpbFullness > 1, "RCInitialCpbFullness should be smaller than or equal to 1");
     }
-#endif
   }
-#if U0132_TARGET_BITS_SATURATION
   else
   {
     xConfirmPara( m_RCCpbSaturationEnabled != 0, "Target bits saturation cannot be processed without Rate control" );
   }
-#endif
 
   if (m_framePackingSEIEnabled)
   {
@@ -4748,9 +4690,7 @@ bool EncAppCfg::xCheckParameter()
 
   xConfirmPara(m_log2ParallelMergeLevel < 2, "Log2ParallelMergeLevel should be larger than or equal to 2");
   xConfirmPara(m_log2ParallelMergeLevel > m_uiCTUSize, "Log2ParallelMergeLevel should be less than or equal to CTU size");
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   xConfirmPara(m_preferredTransferCharacteristics > 255, "transfer_characteristics_idc should not be greater than 255.");
-#endif
   xConfirmPara( unsigned(m_ImvMode) > 1, "ImvMode exceeds range (0 to 1)" );
   if (m_AffineAmvr)
   {
@@ -4888,7 +4828,6 @@ void EncAppCfg::xPrintParameter()
   msg( DETAILS, "Decoding refresh type                  : %d\n", m_iDecodingRefreshType );
   msg( DETAILS, "DRAP period                            : %d\n", m_drapPeriod );
   msg( DETAILS, "EDRAP period                           : %d\n", m_edrapPeriod );
-#if QP_SWITCHING_FOR_PARALLEL
   if (m_qpIncrementAtSourceFrame.bPresent)
   {
     msg( DETAILS, "QP                                     : %d (incrementing internal QP at source frame %d)\n", m_iQP, m_qpIncrementAtSourceFrame.value);
@@ -4897,9 +4836,6 @@ void EncAppCfg::xPrintParameter()
   {
     msg( DETAILS, "QP                                     : %d\n", m_iQP);
   }
-#else
-  msg( DETAILS, "QP                                     : %5.2f\n", m_fQP );
-#endif
   msg( DETAILS, "Max dQP signaling subdiv               : %d\n", m_cuQpDeltaSubdiv);
 
   msg( DETAILS, "Cb QP Offset (dual tree)               : %d (%d)\n", m_cbQpOffset, m_cbQpOffsetDualTree);
@@ -4954,14 +4890,12 @@ void EncAppCfg::xPrintParameter()
     msg( DETAILS, "UseLCUSeparateModel                    : %d\n", m_RCUseLCUSeparateModel );
     msg( DETAILS, "InitialQP                              : %d\n", m_RCInitialQP );
     msg( DETAILS, "ForceIntraQP                           : %d\n", m_RCForceIntraQP );
-#if U0132_TARGET_BITS_SATURATION
     msg( DETAILS, "CpbSaturation                          : %d\n", m_RCCpbSaturationEnabled );
     if (m_RCCpbSaturationEnabled)
     {
       msg( DETAILS, "CpbSize                                : %d\n", m_RCCpbSize);
       msg( DETAILS, "InitalCpbFullness                      : %.2f\n", m_RCInitialCpbFullness);
     }
-#endif
   }
 
 #if GDR_ENABLED
@@ -5063,9 +4997,7 @@ void EncAppCfg::xPrintParameter()
     msg( VERBOSE, "CompositeLTReference:%d ", m_compositeRefEnabled);
     msg( VERBOSE, "Bcw:%d ", m_bcw );
     msg( VERBOSE, "BcwFast:%d ", m_BcwFast );
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
     msg( VERBOSE, "LADF:%d ", m_LadfEnabed );
-#endif
     msg(VERBOSE, "CIIP:%d ", m_ciip);
     msg( VERBOSE, "Geo:%d ", m_Geo );
     m_allowDisFracMMVD = m_MMVD ? m_allowDisFracMMVD : false;

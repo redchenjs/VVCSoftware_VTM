@@ -176,12 +176,10 @@ void EncLib::init(AUWriterIf *auWriterIf)
     sps0.setLongTermRefsPresent(true);
   }
 
-#if U0132_TARGET_BITS_SATURATION
   if (m_RCCpbSaturationEnabled)
   {
     m_cRateCtrl.initHrdParam(sps0.getGeneralHrdParameters(), sps0.getOlsHrdParameters(), m_iFrameRate, m_RCInitialCpbFullness);
   }
-#endif
   m_cRdCost.setCostMode ( m_costMode );
 
   // initialize PPS
@@ -1265,7 +1263,6 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setUseSBT                             ( m_SBT );
   sps.setUseSMVD                ( m_SMVD );
   sps.setUseBcw                ( m_bcw );
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   sps.setLadfEnabled           ( m_LadfEnabled );
   if ( m_LadfEnabled )
   {
@@ -1277,7 +1274,6 @@ void EncLib::xInitSPS( SPS& sps )
     }
     CHECK( m_LadfIntervalLowerBound[0] != 0, "abnormal value set to LadfIntervalLowerBound[0]" );
   }
-#endif
 
   sps.setUseCiip            ( m_ciip );
   sps.setUseGeo                ( m_Geo );
@@ -1393,11 +1389,7 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setChromaQpMappingTableFromParams(m_chromaQpMappingTableParams, sps.getQpBDOffset(CHANNEL_TYPE_CHROMA));
   sps.derivedChromaQPMappingTables();
 
-#if U0132_TARGET_BITS_SATURATION
   if( getPictureTimingSEIEnabled() || getDecodingUnitInfoSEIEnabled() || getCpbSaturationEnabled() )
-#else
-  if( getPictureTimingSEIEnabled() || getDecodingUnitInfoSEIEnabled() )
-#endif
   {
     xInitHrdParameters(sps);
   }
@@ -2321,7 +2313,6 @@ void EncLib::checkPltStats( Picture* pic )
   }
 }
 
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
 int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
 {
   const int lumaQpBDOffset = pSlice->getSPS()->getQpBDOffset(CHANNEL_TYPE_LUMA);
@@ -2345,13 +2336,11 @@ int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
     }
     qp += appliedSwitchDQQ;
 
-#if QP_SWITCHING_FOR_PARALLEL
     const int* pdQPs = getdQPs();
     if ( pdQPs )
     {
       qp += pdQPs[pSlice->getPOC() / (m_compositeRefEnabled ? 2 : 1)];
     }
-#endif
 
     if(sliceType==I_SLICE)
     {
@@ -2376,19 +2365,10 @@ int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
       }
     }
 
-#if !QP_SWITCHING_FOR_PARALLEL
-    // modify QP if a fractional QP was originally specified, cause dQPs to be 0 or 1.
-    const int* pdQPs = getdQPs();
-    if ( pdQPs )
-    {
-      qp += pdQPs[ pSlice->getPOC() ];
-    }
-#endif
   }
   qp = Clip3( -lumaQpBDOffset, MAX_QP, qp );
   return qp;
 }
-#endif
 
 
 //! \}

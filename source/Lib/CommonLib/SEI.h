@@ -840,7 +840,6 @@ void xTraceSEIHeader();
 void xTraceSEIMessageType( SEI::PayloadType payloadType );
 #endif
 
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
 class SEIAlternativeTransferCharacteristics : public SEI
 {
 public:
@@ -853,7 +852,6 @@ public:
 
   uint32_t m_preferredTransferCharacteristics;
 };
-#endif
 class SEIUserDataRegistered : public SEI
 {
 public:

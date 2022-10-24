@@ -181,10 +181,8 @@ private:
   bool                    m_rapWithLeading;
   bool                    m_bufferingPeriodSEIPresentInAU;
   SEIEncoder              m_seiEncoder;
-#if W0038_DB_OPT
   PelStorage*             m_pcDeblockingTempPicYuv;
   int                     m_DBParam[MAX_ENCODER_DEBLOCKING_QUALITY_LAYERS][4];   //[layer_id][0: available; 1: bDBDisabled; 2: Beta Offset Div2; 3: Tc Offset Div2;]
-#endif
 
   // members needed for adaptive max BT size
   std::array<uint32_t, 8> m_blkSize;
@@ -258,9 +256,7 @@ public:
     const bool printMSSSIM, const bool printHexPsnr, const bool printRprPSNR, const BitDepths &bitDepths
                        , int layerId
                        );
-#if W0038_DB_OPT
   uint64_t  preLoopFilterPicAndCalcDist( Picture* pcPic );
-#endif
   EncSlice*  getSliceEncoder()   { return m_pcSliceEncoder; }
   NalUnitType getNalUnitType( int pocCurr, int lastIdr, bool isField );
   void arrangeCompositeReference(Slice* pcSlice, PicList& rcListPic, int pocCurr);
@@ -350,9 +346,7 @@ protected:
   int xWritePicHeader( AccessUnit &accessUnit, PicHeader *picHeader );
 
   void applyDeblockingFilterMetric( Picture* pcPic, uint32_t uiNumSlices );
-#if W0038_DB_OPT
   void applyDeblockingFilterParameterSelection( Picture* pcPic, const uint32_t numSlices, const int gopID );
-#endif
   void xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicList& rcListPic, const ReferencePictureList *rpl0, const ReferencePictureList *rpl1 );
   bool xCheckMaxTidILRefPics(int layerIdx, Picture* refPic, bool currentPicIsIRAP);
   void computeSignalling(Picture* pcPic, Slice* pcSlice) const;

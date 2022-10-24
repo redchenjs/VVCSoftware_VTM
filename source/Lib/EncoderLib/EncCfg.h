@@ -57,10 +57,8 @@ struct GOPEntry
 {
   int m_POC;
   int m_QPOffset;
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   double m_QPOffsetModelOffset;
   double m_QPOffsetModelScale;
-#endif
 #if W0038_CQP_ADJ
   int m_CbQPoffset;
   int m_CrQPoffset;
@@ -86,10 +84,8 @@ struct GOPEntry
   GOPEntry()
     : m_POC(-1)
     , m_QPOffset(0)
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
     , m_QPOffsetModelOffset(0)
     , m_QPOffsetModelScale(0)
-#endif
 #if W0038_CQP_ADJ
     , m_CbQPoffset(0)
     , m_CrQPoffset(0)
@@ -286,10 +282,8 @@ protected:
 
   int       m_iQP;                              //  if (AdaptiveQP == OFF)
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   int       m_intraQPOffset;                    ///< QP offset for intra slice (integer)
   int       m_lambdaFromQPEnable;               ///< enable lambda derivation from QP
-#endif
 
   bool      m_AccessUnitDelimiter;               ///< add Access Unit Delimiter NAL units
   bool      m_enablePictureHeaderInSliceHeader;  ///< Enable Picture Header in Slice Header
@@ -358,12 +352,10 @@ protected:
   bool      m_compositeRefEnabled;        //composite reference
   bool      m_bcw;
   bool      m_BcwFast;
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   bool      m_LadfEnabled;
   int       m_LadfNumIntervals;
   int       m_LadfQpOffset[MAX_LADF_INTERVALS];
   int       m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
-#endif
 
   bool      m_ciip;
   bool      m_Geo;
@@ -429,11 +421,7 @@ protected:
   int       m_deblockingFilterCbTcOffsetDiv2;
   int       m_deblockingFilterCrBetaOffsetDiv2;
   int       m_deblockingFilterCrTcOffsetDiv2;
-#if W0038_DB_OPT
   int       m_deblockingFilterMetric;
-#else
-  bool      m_DeblockingFilterMetric;
-#endif
   bool      m_bUseSAO;
   bool      m_saoTrueOrg;
   bool      m_bTestSAODisableAtPictureLevel;
@@ -660,10 +648,8 @@ protected:
   int                   m_verPhaseDenMinus1ReducedResolution;
   bool      m_MCTSEncConstraint;
   SEIMasteringDisplay m_masteringDisplay;
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   bool      m_alternativeTransferCharacteristicsSEIEnabled;
   uint8_t     m_preferredTransferCharacteristics;
-#endif
 
   bool                    m_siiSEIEnabled;
   uint32_t                m_siiSEINumUnitsInShutterInterval;
@@ -879,11 +865,9 @@ protected:
   bool      m_RCUseLCUSeparateModel;
   int       m_RCInitialQP;
   bool      m_RCForceIntraQP;
-#if U0132_TARGET_BITS_SATURATION
   bool      m_RCCpbSaturationEnabled;
   uint32_t      m_RCCpbSize;
   double    m_RCInitialCpbFullness;
-#endif
   CostMode  m_costMode;                                       ///< The cost function to use, primarily when considering lossless coding.
   bool      m_TSRCdisableLL;                                  ///< Disable TSRC for lossless
 
@@ -1202,10 +1186,8 @@ public:
   void      setEdrapPeriod                  (int edrapPeriod) { m_edrapPeriod = edrapPeriod; }
 
   void      setBaseQP                       ( int   i )      { m_iQP = i; }
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   void      setIntraQPOffset                ( int   i )         { m_intraQPOffset = i; }
   void      setLambdaFromQPEnable           ( bool  b )         { m_lambdaFromQPEnable = b; }
-#endif
   void      setChromaQpMappingTableParams   (const ChromaQpMappingTableParams &params) { m_chromaQpMappingTableParams = params; }
 
   void      setSourcePadding                ( int*  padding)                { for ( int i = 0; i < 2; i++ ) m_sourcePadding[i] = padding[i]; }
@@ -1347,7 +1329,6 @@ public:
   void      setUseBcwFast                   ( uint32_t b )   { m_BcwFast = b; }
   bool      getUseBcwFast                   ()         const { return m_BcwFast; }
 
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   void      setUseLadf                      ( bool b )       { m_LadfEnabled = b; }
   bool      getUseLadf                      ()         const { return m_LadfEnabled; }
   void      setLadfNumIntervals             ( int i )        { m_LadfNumIntervals = i; }
@@ -1357,7 +1338,6 @@ public:
   void      setLadfIntervalLowerBound       ( int value, int idx ){ m_LadfIntervalLowerBound[ idx ] = value; }
   int       getLadfIntervalLowerBound       ( int idx ) const { return m_LadfIntervalLowerBound[ idx ]; }
 
-#endif
 
   void      setUseCiip                   ( bool b )       { m_ciip = b; }
   bool      getUseCiip                   ()         const { return m_ciip; }
@@ -1484,11 +1464,7 @@ public:
   void      setDeblockingFilterCbTcOffset   ( int   i )      { m_deblockingFilterCbTcOffsetDiv2    = i; }
   void      setDeblockingFilterCrBetaOffset ( int   i )      { m_deblockingFilterCrBetaOffsetDiv2  = i; }
   void      setDeblockingFilterCrTcOffset   ( int   i )      { m_deblockingFilterCrTcOffsetDiv2    = i; }
-#if W0038_DB_OPT
   void      setDeblockingFilterMetric       ( int   i )      { m_deblockingFilterMetric = i; }
-#else
-  void      setDeblockingFilterMetric       ( bool  b )      { m_DeblockingFilterMetric = b; }
-#endif
   //====== Motion search ========
   void      setDisableIntraPUsInInterSlices ( bool  b )      { m_bDisableIntraPUsInInterSlices = b; }
   void      setMotionEstimationSearchMethod ( MESearchMethod e ) { m_motionEstimationSearchMethod = e; }
@@ -1602,15 +1578,11 @@ public:
   int       getMaxNumReorderPics            (uint32_t tlayer) { return m_maxNumReorderPics[tlayer]; }
   int       getDrapPeriod                   ()     { return m_drapPeriod; }
   int       getEdrapPeriod                  ()     { return m_edrapPeriod; }
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   int       getIntraQPOffset                () const    { return  m_intraQPOffset; }
   int       getLambdaFromQPEnable           () const    { return  m_lambdaFromQPEnable; }
 public:
   int       getBaseQP                       () const { return  m_iQP; } // public should use getQPForPicture.
   int       getQPForPicture                 (const uint32_t gopIndex, const Slice *pSlice) const; // Function actually defined in EncLib.cpp
-#else
-  int       getBaseQP                       ()       { return  m_iQP; }
-#endif
   int       getSourcePadding                ( int i ) { CHECK(i >= 2, "Invalid index"); return  m_sourcePadding[i]; }
 
   bool      getAccessUnitDelimiter() const  { return m_AccessUnitDelimiter; }
@@ -1627,11 +1599,7 @@ public:
   int       getDeblockingFilterCbTcOffset         ()      { return m_deblockingFilterCbTcOffsetDiv2;   }
   int       getDeblockingFilterCrBetaOffset       ()      { return m_deblockingFilterCrBetaOffsetDiv2; }
   int       getDeblockingFilterCrTcOffset         ()      { return m_deblockingFilterCrTcOffsetDiv2;   }
-#if W0038_DB_OPT
   int       getDeblockingFilterMetric       ()      { return m_deblockingFilterMetric; }
-#else
-  bool      getDeblockingFilterMetric       ()      { return m_DeblockingFilterMetric; }
-#endif
 
   //==== Motion search ========
   bool      getDisableIntraPUsInInterSlices    () const { return m_bDisableIntraPUsInInterSlices; }
@@ -2086,12 +2054,10 @@ public:
   void  setMCTSEncConstraint(bool b)                                 { m_MCTSEncConstraint = b; }
   bool  getMCTSEncConstraint()                                       { return m_MCTSEncConstraint; }
   void  setMasteringDisplaySEI(const SEIMasteringDisplay &src)       { m_masteringDisplay = src; }
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   void  setSEIAlternativeTransferCharacteristicsSEIEnable( bool b)   { m_alternativeTransferCharacteristicsSEIEnabled = b;    }
   bool  getSEIAlternativeTransferCharacteristicsSEIEnable( ) const   { return m_alternativeTransferCharacteristicsSEIEnabled; }
   void  setSEIPreferredTransferCharacteristics(uint8_t v)              { m_preferredTransferCharacteristics = v;    }
   uint8_t getSEIPreferredTransferCharacteristics() const               { return m_preferredTransferCharacteristics; }
-#endif
   const SEIMasteringDisplay &getMasteringDisplaySEI() const          { return m_masteringDisplay; }
   // film grain SEI
   void  setFilmGrainCharactersticsSEIEnabled (bool b)                { m_fgcSEIEnabled = b; }
@@ -2399,14 +2365,12 @@ public:
   void         setInitialQP           ( int QP )                     { m_RCInitialQP = QP;             }
   bool         getForceIntraQP        ()                             { return m_RCForceIntraQP;        }
   void         setForceIntraQP        ( bool b )                     { m_RCForceIntraQP = b;           }
-#if U0132_TARGET_BITS_SATURATION
   bool         getCpbSaturationEnabled()                             { return m_RCCpbSaturationEnabled;}
   void         setCpbSaturationEnabled( bool b )                     { m_RCCpbSaturationEnabled = b;   }
   uint32_t         getCpbSize             ()                             { return m_RCCpbSize;}
   void         setCpbSize             ( uint32_t ui )                    { m_RCCpbSize = ui;   }
   double       getInitialCpbFullness  ()                             { return m_RCInitialCpbFullness;  }
   void         setInitialCpbFullness  (double f)                     { m_RCInitialCpbFullness = f;     }
-#endif
   CostMode     getCostMode( ) const                                  { return m_costMode; }
   void         setCostMode(CostMode m )                              { m_costMode = m; }
   bool         getTSRCdisableLL       ()                             { return m_TSRCdisableLL;         }
