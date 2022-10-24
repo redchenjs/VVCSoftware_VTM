@@ -54,7 +54,6 @@
 
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AA0054_CHROMA_FORMAT_FLAG                    1 // JVET-AA0054 PROPOSAL2: Signalling improvements to specify output chroma information
 #define JVET_AA0054_CHROMA_UPSAMPLING_CONSTRAINT          1 // JVET-AA0054 PROPOSAL3: Constraint to prevent chroma upsampling when input chroma format is monochrome or YUV444
 #define JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER      1 // JVET-AA0102 and JVET-AA2027: SEI processing order SEI message in VVC (Draft 1) (SEI processing order SEI message carries information indicating the preferred processing order, as determined by the encoder)
 #define JVET_AA0055_SIGNAL_ADDITIONAL_PADDING             1 // JVET-AA0055 PROPOSAL A: Allow for signalling additional padding types for the neural network

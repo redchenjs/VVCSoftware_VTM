@@ -1708,19 +1708,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     purpose << "SEINNPostFilterCharacteristicsPurpose" << i;
     opts.addOptions()(purpose.str(), m_nnPostFilterSEICharacteristicsPurpose[i], 0u, "Specifies the purpose in the Neural Network Post Filter Characteristics SEI message");
 
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
     std::ostringstream outSubWidthCFlag;
     outSubWidthCFlag << "SEINNPostFilterCharacteristicsOutSubCFlag" << i;
     opts.addOptions()(outSubWidthCFlag.str(), m_nnPostFilterSEICharacteristicsOutSubCFlag[i], false, "Specifies output chroma format when upsampling");
-#else
-    std::ostringstream outSubWidthCFlag;
-    outSubWidthCFlag << "SEINNPostFilterCharacteristicsOutSubWidthCFlag" << i;
-    opts.addOptions()(outSubWidthCFlag.str(), m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[i], false, "Specifies if the output SubWidthC (horizontal chroma subsampling ratio relative to luma) is smaller than the input SubWidthC");
-
-    std::ostringstream outSubHeightCFlag;
-    outSubHeightCFlag << "SEINNPostFilterCharacteristicsOutSubHeightCFlag" << i;
-    opts.addOptions()(outSubHeightCFlag.str(), m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[i], false, "Specifies if the output SubHeightC (vertical chroma subsampling ratio relative to luma) is smaller than the input SubHeightC");
-#endif
 
     std::ostringstream picWidthInLumaSamples;
     picWidthInLumaSamples << "SEINNPostFilterCharacteristicsPicWidthInLumaSamples" << i;

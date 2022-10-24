@@ -1431,12 +1431,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 
     if(sei.m_purpose == 2 || sei.m_purpose == 4)
     {
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
       WRITE_FLAG(sei.m_outSubCFlag, "nnpfc_out_sub_c_flag");
-#else
-      WRITE_FLAG(sei.m_outSubWidthCFlag, "nnpfc_out_sub_width_c_flag");
-      WRITE_FLAG(sei.m_outSubHeightCFlag, "nnpfc_out_sub_height_c_flag");
-#endif
     }
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
     {

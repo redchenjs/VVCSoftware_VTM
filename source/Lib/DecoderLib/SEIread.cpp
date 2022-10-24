@@ -424,11 +424,7 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       break;
     case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
       sei = new SEINeuralNetworkPostFilterCharacteristics;
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
       xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics&)*sei, payloadSize, sps, pDecodedMessageOutputStream);
-#else
-      xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics&)*sei, payloadSize, pDecodedMessageOutputStream);
-#endif
       break;
     case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
       sei = new SEINeuralNetworkPostFilterActivation;
@@ -2540,11 +2536,7 @@ void SEIReader::xParseSEIConstrainedRaslIndication( SEIConstrainedRaslIndication
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
 }
 
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
 void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics& sei, uint32_t payloadSize, const SPS* sps, std::ostream* pDecodedMessageOutputStream)
-#else
-void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
-#endif
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
   uint32_t val;
@@ -2563,7 +2555,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_purpose");
     sei.m_purpose = val;
 
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
     ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
     uint8_t SubWidthC;
     uint8_t SubHeightC;
@@ -2582,10 +2573,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       SubWidthC = 1;
       SubHeightC = 1;
     }
-#endif
     if(sei.m_purpose == 2 || sei.m_purpose == 4)
     {
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_out_sub_c_flag");
       sei.m_outSubCFlag = val;
 
@@ -2601,14 +2590,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_outSubWidthC = 2;
         sei.m_outSubHeightC = 1;
       }
-#else
-      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_out_sub_width_c_flag");
-      sei.m_outSubWidthCFlag = val;
-      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_out_sub_height_c_flag");
-      sei.m_outSubHeightCFlag = val;
-#endif
     }
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
     else
     {
       sei.m_outSubWidthC = SubWidthC;
@@ -2616,7 +2598,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     }
 #if JVET_AA0054_CHROMA_UPSAMPLING_CONSTRAINT
     CHECK(((SubWidthC == 1) && (SubHeightC == 1)) && ((sei.m_purpose == 2) || (sei.m_purpose == 4)), "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose shall not be equal to 2 or 4");
-#endif
 #endif
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
     {
