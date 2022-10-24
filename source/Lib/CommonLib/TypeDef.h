@@ -221,7 +221,6 @@ typedef std::pair<int, int>  TrCost;
 #define RDOQ_CHROMA                                       1 ///< use of RDOQ in chroma
 
 
-#define LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET         1 /// JVET-L0414 (CE11.2.2) with explicit signalling of num interval, threshold and qpOffset
 // ====================================================================================================================
 // Derived macros
 // ====================================================================================================================

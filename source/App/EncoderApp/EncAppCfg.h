@@ -360,12 +360,10 @@ protected:
   bool      m_compositeRefEnabled;
   bool      m_bcw;
   bool      m_BcwFast;
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   bool      m_LadfEnabed;
   int       m_LadfNumIntervals;
   std::vector<int> m_LadfQpOffset;
   int       m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
-#endif
 
   bool      m_ciip;
   bool      m_Geo;

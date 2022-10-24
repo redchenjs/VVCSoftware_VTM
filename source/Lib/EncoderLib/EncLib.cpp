@@ -1265,7 +1265,6 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setUseSBT                             ( m_SBT );
   sps.setUseSMVD                ( m_SMVD );
   sps.setUseBcw                ( m_bcw );
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   sps.setLadfEnabled           ( m_LadfEnabled );
   if ( m_LadfEnabled )
   {
@@ -1277,7 +1276,6 @@ void EncLib::xInitSPS( SPS& sps )
     }
     CHECK( m_LadfIntervalLowerBound[0] != 0, "abnormal value set to LadfIntervalLowerBound[0]" );
   }
-#endif
 
   sps.setUseCiip            ( m_ciip );
   sps.setUseGeo                ( m_Geo );

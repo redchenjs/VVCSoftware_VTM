@@ -358,12 +358,10 @@ protected:
   bool      m_compositeRefEnabled;        //composite reference
   bool      m_bcw;
   bool      m_BcwFast;
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   bool      m_LadfEnabled;
   int       m_LadfNumIntervals;
   int       m_LadfQpOffset[MAX_LADF_INTERVALS];
   int       m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
-#endif
 
   bool      m_ciip;
   bool      m_Geo;
@@ -1347,7 +1345,6 @@ public:
   void      setUseBcwFast                   ( uint32_t b )   { m_BcwFast = b; }
   bool      getUseBcwFast                   ()         const { return m_BcwFast; }
 
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   void      setUseLadf                      ( bool b )       { m_LadfEnabled = b; }
   bool      getUseLadf                      ()         const { return m_LadfEnabled; }
   void      setLadfNumIntervals             ( int i )        { m_LadfNumIntervals = i; }
@@ -1357,7 +1354,6 @@ public:
   void      setLadfIntervalLowerBound       ( int value, int idx ){ m_LadfIntervalLowerBound[ idx ] = value; }
   int       getLadfIntervalLowerBound       ( int idx ) const { return m_LadfIntervalLowerBound[ idx ]; }
 
-#endif
 
   void      setUseCiip                   ( bool b )       { m_ciip = b; }
   bool      getUseCiip                   ()         const { return m_ciip; }

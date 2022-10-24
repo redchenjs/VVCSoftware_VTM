@@ -706,12 +706,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>        cfg_mvpSEIViewPosition             (0, 63, 0, std::numeric_limits<uint32_t>::max());
 
   SMultiValueInput<uint32_t>        cfg_driSEINonlinearModel           (0, 31, 0, std::numeric_limits<uint32_t>::max());
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   const int defaultLadfQpOffset[3] = { 1, 0, 1 };
   const int defaultLadfIntervalLowerBound[2] = { 350, 833 };
   SMultiValueInput<int>  cfg_LadfQpOffset                    ( -MAX_QP, MAX_QP, 2, MAX_LADF_INTERVALS, defaultLadfQpOffset, 3 );
   SMultiValueInput<int>  cfg_LadfIntervalLowerBound          ( 0, std::numeric_limits<int>::max(), 1, MAX_LADF_INTERVALS - 1, defaultLadfIntervalLowerBound, 2 );
-#endif
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosX       (0, std::numeric_limits<uint32_t>::max(), 0, 3);
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosY       (0, std::numeric_limits<uint32_t>::max(), 0, 3);
 
@@ -1000,12 +998,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("CompositeLTReference",                            m_compositeRefEnabled,                            false, "Enable Composite Long Term Reference Frame")
   ("BCW",                                             m_bcw,                                            false, "Enable Generalized Bi-prediction(Bcw)")
   ("BcwFast",                                         m_BcwFast,                                        false, "Fast methods for Generalized Bi-prediction(Bcw)\n")
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   ("LADF",                                            m_LadfEnabed,                                     false, "Luma adaptive deblocking filter QP Offset(L0414)")
   ("LadfNumIntervals",                                m_LadfNumIntervals,                                   3, "LADF number of intervals (2-5, inclusive)")
   ("LadfQpOffset",                                    cfg_LadfQpOffset,                      cfg_LadfQpOffset, "LADF QP offset")
   ("LadfIntervalLowerBound",                          cfg_LadfIntervalLowerBound,  cfg_LadfIntervalLowerBound, "LADF lower bound for 2nd lowest interval")
-#endif
   ("CIIP",                                            m_ciip,                                           false, "Enable CIIP mode")
   ("Geo",                                             m_Geo,                                            false, "Enable geometric partitioning mode (0:off, 1:on)")
   ("HashME",                                          m_HashME,                                         false, "Enable hash motion estimation (0:off, 1:on)")
@@ -2665,7 +2661,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       cfg_cbCrQpOffsetList.values.size() ? cfg_cbCrQpOffsetList.values[i] : 0;
   }
 
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   if ( m_LadfEnabed )
   {
     CHECK( m_LadfNumIntervals != cfg_LadfQpOffset.values.size(), "size of LadfQpOffset must be equal to LadfNumIntervals");
@@ -2677,7 +2672,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_LadfIntervalLowerBound[k] = cfg_LadfIntervalLowerBound.values[k - 1];
     }
   }
-#endif
 
   if (m_chromaFormatIDC != CHROMA_420)
   {
@@ -5029,9 +5023,7 @@ void EncAppCfg::xPrintParameter()
     msg( VERBOSE, "CompositeLTReference:%d ", m_compositeRefEnabled);
     msg( VERBOSE, "Bcw:%d ", m_bcw );
     msg( VERBOSE, "BcwFast:%d ", m_BcwFast );
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
     msg( VERBOSE, "LADF:%d ", m_LadfEnabed );
-#endif
     msg(VERBOSE, "CIIP:%d ", m_ciip);
     msg( VERBOSE, "Geo:%d ", m_Geo );
     m_allowDisFracMMVD = m_MMVD ? m_allowDisFracMMVD : false;

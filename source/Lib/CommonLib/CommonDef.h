@@ -415,9 +415,7 @@ static constexpr int NTAPS_CHROMA_AFFINE = 4;   // Number of taps for chroma aff
 static constexpr int NTAPS_BILINEAR      = 2;   // Number of taps for bilinear filter
 static constexpr int MAX_FILTER_SIZE     = NTAPS_LUMA > NTAPS_CHROMA ? NTAPS_LUMA : NTAPS_CHROMA;
 
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
 static constexpr int MAX_LADF_INTERVALS       =                         5; /// max number of luma adaptive deblocking filter qp offset intervals
-#endif
 
 static constexpr int ATMVP_SUB_BLOCK_SIZE =                             3; ///< sub-block size for ATMVP
 static constexpr int GEO_MAX_NUM_UNI_CANDS =                            6;

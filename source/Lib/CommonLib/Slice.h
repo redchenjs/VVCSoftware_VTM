@@ -1527,12 +1527,10 @@ private:
   bool              m_bcw;                        //
   bool              m_ciip;
   bool              m_Geo;
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   bool              m_LadfEnabled;
   int               m_LadfNumIntervals;
   int               m_LadfQpOffset[MAX_LADF_INTERVALS];
   int               m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
-#endif
   bool              m_MRL;
   bool              m_MIP;
   ChromaQpMappingTable m_chromaQpMappingTable;
@@ -1921,7 +1919,6 @@ public:
   bool      getUseSMVD()                                                  const     { return m_SMVD; }
   void      setUseBcw             ( bool b )                                        { m_bcw = b; }
   bool      getUseBcw             ()                                      const     { return m_bcw; }
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   void      setLadfEnabled        ( bool b )                                        { m_LadfEnabled = b; }
   bool      getLadfEnabled        ()                                      const     { return m_LadfEnabled; }
   void      setLadfNumIntervals   ( int i )                                         { m_LadfNumIntervals = i; }
@@ -1930,7 +1927,6 @@ public:
   int       getLadfQpOffset       ( int idx )                             const     { return m_LadfQpOffset[ idx ]; }
   void      setLadfIntervalLowerBound( int value, int idx )                         { m_LadfIntervalLowerBound[ idx ] = value; }
   int       getLadfIntervalLowerBound( int idx )                          const     { return m_LadfIntervalLowerBound[ idx ]; }
-#endif
 
   void      setUseCiip         ( bool b )                                        { m_ciip = b; }
   bool      getUseCiip         ()                                      const     { return m_ciip; }

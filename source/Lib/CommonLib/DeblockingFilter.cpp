@@ -951,7 +951,6 @@ unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, co
   return ( ( abs( mvQ0.getHor() - mvP0.getHor() ) >= nThreshold ) || ( abs( mvQ0.getVer() - mvP0.getVer() ) >= nThreshold ) ) ? (tmpBs + 1) : tmpBs;
 }
 
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
 void DeblockingFilter::deriveLADFShift( const Pel* src, const int stride, int& shift, const DeblockEdgeDir edgeDir, const SPS sps )
 {
   uint32_t lumaLevel = 0;
@@ -979,7 +978,6 @@ void DeblockingFilter::deriveLADFShift( const Pel* src, const int stride, int& s
     }
   }
 }
-#endif
 
 void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx)
 {
@@ -1076,14 +1074,12 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
 
       qp = (cuP.qp + cuQ.qp + 1) >> 1;
 
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
       if ( sps.getLadfEnabled() )
       {
         int shift = 0;
         deriveLADFShift(tmpSrc + srcStep * (idx * pelsInPart), stride, shift, edgeDir, sps);
         qp += shift;
       }
-#endif
 
       bool sidePisLarge   = false;
       bool sideQisLarge   = false;

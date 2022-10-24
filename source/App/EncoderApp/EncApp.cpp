@@ -729,7 +729,6 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setUseSMVD                                           ( m_SMVD );
   m_cEncLib.setUseBcw                                            ( m_bcw );
   m_cEncLib.setUseBcwFast                                        ( m_BcwFast );
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   m_cEncLib.setUseLadf                                           ( m_LadfEnabed );
   if ( m_LadfEnabed )
   {
@@ -740,7 +739,6 @@ void EncApp::xInitLibCfg()
       m_cEncLib.setLadfIntervalLowerBound(m_LadfIntervalLowerBound[k], k);
     }
   }
-#endif
   m_cEncLib.setUseCiip                                        ( m_ciip );
   m_cEncLib.setUseGeo                                            ( m_Geo );
   m_cEncLib.setUseHashME                                         ( m_HashME );
