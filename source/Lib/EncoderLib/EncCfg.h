@@ -705,11 +705,7 @@ protected:
   std::string             m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
   std::string             m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
 #endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   uint32_t                m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
-#else
-  bool                    m_nnPostFilterSEICharacteristicsParameterTypeFlag [MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t                m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsNumParametersIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[MAX_NUM_NN_POST_FILTERS];
@@ -1868,13 +1864,8 @@ public:
   void        setNNPostFilterSEICharacteristicsUri(std::string uri, int filterIdx)                                      { m_nnPostFilterSEICharacteristicsUri[filterIdx] = uri; }
   std::string getNNPostFilterSEICharacteristicsUri(int filterIdx) const                                                 { return m_nnPostFilterSEICharacteristicsUri[filterIdx]; }
 #endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   void        setNNPostFilterSEICharacteristicsParameterTypeIdc(uint32_t parameterTypeIdc, int filterIdx) { m_nnPostFilterSEICharacteristicsParameterTypeIdc[filterIdx] = parameterTypeIdc; }
   uint32_t    getNNPostFilterSEICharacteristicsParameterTypeIdc(int filterIdx) const { return m_nnPostFilterSEICharacteristicsParameterTypeIdc[filterIdx]; }
-#else
-  void        setNNPostFilterSEICharacteristicsParameterTypeFlag(bool parameterTypeFlag, int filterIdx)                 { m_nnPostFilterSEICharacteristicsParameterTypeFlag[filterIdx] = parameterTypeFlag; }
-  bool        getNNPostFilterSEICharacteristicsParameterTypeFlag(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsParameterTypeFlag[filterIdx]; }
-#endif
   void        setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3 (uint32_t log2ParameterBitLengthMinus3 , int filterIdx) { m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[filterIdx] = log2ParameterBitLengthMinus3 ; }
   uint32_t    getNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3 (int filterIdx) const                       { return m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsNumParametersIdc  (uint32_t numParametersIdc  , int filterIdx)           { m_nnPostFilterSEICharacteristicsNumParametersIdc[filterIdx] = numParametersIdc  ; }

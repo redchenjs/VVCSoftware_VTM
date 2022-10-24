@@ -54,7 +54,6 @@
 
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK         1 // JVET-AA0055 PROPOSAL B: Allow for signalling the use of binary neural network
 #define JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA           1 // JVET-AA0054_PROPOSAL1: Method to specify neural network post filter data via an external URL
 
 //########### place macros to be be kept below this line ###############

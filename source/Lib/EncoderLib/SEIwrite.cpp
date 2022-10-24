@@ -1506,16 +1506,11 @@ void SEIWriter::xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCha
 {
   if(sei.m_complexityIdc == 1)
   {
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
     WRITE_CODE(sei.m_parameterTypeIdc, 2, "nnpfc_parameter_type_idc");
     if (sei.m_parameterTypeIdc != 2)
     {
       WRITE_CODE(sei.m_log2ParameterBitLengthMinus3, 2, "nnpfc_log2_parameter_bit_length_minus3");
   }
-#else
-    WRITE_FLAG(sei.m_parameterTypeFlag, "nnpfc_parameter_type_flag");
-    WRITE_CODE(sei.m_log2ParameterBitLengthMinus3, 2, "nnpfc_log2_parameter_bit_length_minus3");
-#endif
     WRITE_CODE(sei.m_numParametersIdc, 6, "nnpfc_num_parameters_idc");
     WRITE_UVLC(sei.m_numKmacOperationsIdc, "nnpfc_num_kmac_operations_idc");
   }

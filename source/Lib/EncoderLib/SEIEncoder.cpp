@@ -1252,11 +1252,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       if(sei->m_complexityIdc == 1)
       {
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
         sei->m_parameterTypeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsParameterTypeIdc(filterIdx);
-#else
-        sei->m_parameterTypeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsParameterTypeFlag(filterIdx);
-#endif
         sei->m_log2ParameterBitLengthMinus3 = m_pcCfg->getNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3(filterIdx);
         sei->m_numParametersIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumParametersIdc(filterIdx);
         sei->m_numKmacOperationsIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(filterIdx);

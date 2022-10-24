@@ -1808,15 +1808,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()(uri.str(), m_nnPostFilterSEICharacteristicsUri[i], string(""), "Specifies the neural network information uri in the Neural Network Post Filter Characteristics SEI message");
 #endif
 
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
     std::ostringstream parameterTypeIdc;
     parameterTypeIdc << "SEINNPostFilterCharacteristicsParameterTypeIdc" << i;
     opts.addOptions()(parameterTypeIdc.str(), m_nnPostFilterSEICharacteristicsParameterTypeIdc[i], 0u, "Specifies the data type of parameters in the Neural Network Post Filter Characteristics SEI message");
-#else
-    std::ostringstream parameterTypeFlag;
-    parameterTypeFlag << "SEINNPostFilterCharacteristicsParameterTypeFlag" << i;
-    opts.addOptions()(parameterTypeFlag.str(), m_nnPostFilterSEICharacteristicsParameterTypeFlag[i], false, "Specifies the data type of parameters in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream log2ParameterBitLengthMinus3;
     log2ParameterBitLengthMinus3 << "SEINNPostFilterCharacteristicsLog2ParameterBitLengthMinus3" << i;

@@ -2676,7 +2676,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     {
       if(sei.m_complexityIdc == 1)
       {
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
         sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_parameter_type_idc");
         sei.m_parameterTypeIdc = val;
         if (sei.m_parameterTypeIdc != 2)
@@ -2684,13 +2683,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
           sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_log2_parameter_bit_length_minus3");
           sei.m_log2ParameterBitLengthMinus3 = val;
         }
-#else
-        sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_parameter_type_flag");
-        sei.m_parameterTypeFlag = val;
-
-        sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_log2_parameter_bit_length_minus3");
-        sei.m_log2ParameterBitLengthMinus3 = val;
-#endif
 
         sei_read_code(pDecodedMessageOutputStream, 6, val, "nnpfc_num_parameters_idc");
         sei.m_numParametersIdc = val;

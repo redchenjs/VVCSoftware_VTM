@@ -1138,11 +1138,7 @@ public:
   , m_uriTag("")
   , m_uri("")
 #endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   , m_parameterTypeIdc(0)
-#else
-  , m_parameterTypeFlag(false)
-#endif
   , m_log2ParameterBitLengthMinus3(0)
   , m_numParametersIdc(0)
   , m_numKmacOperationsIdc(0)
@@ -1193,11 +1189,7 @@ public:
   std::string    m_uriTag;
   std::string    m_uri;
 #endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   uint32_t       m_parameterTypeIdc;
-#else
-  bool           m_parameterTypeFlag;
-#endif
   uint32_t       m_log2ParameterBitLengthMinus3;
   uint32_t       m_numParametersIdc;
   uint32_t       m_numKmacOperationsIdc;
