@@ -1129,11 +1129,9 @@ public:
   , m_patchHeightMinus1(0)
   , m_overlap(0)
   , m_paddingType(0)
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
   , m_lumaPadding(0)
   , m_cbPadding(0)
   , m_crPadding(0)
-#endif
   , m_payloadByte(nullptr)
   , m_complexityIdc(0)
 #if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
@@ -1185,11 +1183,9 @@ public:
   uint32_t       m_patchHeightMinus1;
   uint32_t       m_overlap;
   uint32_t       m_paddingType;
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
   uint32_t       m_lumaPadding;
   uint32_t       m_cbPadding;
   uint32_t       m_crPadding;
-#endif
   uint64_t       m_payloadLength;
   char*          m_payloadByte;
   uint32_t       m_complexityIdc;

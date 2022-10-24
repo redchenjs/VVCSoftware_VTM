@@ -696,11 +696,9 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsOverlap[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPaddingType[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
   uint32_t                m_nnPostFilterSEICharacteristicsLumaPadding[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsCrPadding[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsCbPadding[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::string             m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsComplexityIdc[MAX_NUM_NN_POST_FILTERS];
 #if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
@@ -1855,14 +1853,12 @@ public:
   void        setNNPostFilterSEICharacteristicsPaddingType(uint32_t paddingType, int filterIdx)                         { m_nnPostFilterSEICharacteristicsPaddingType[filterIdx] = paddingType; }
   uint32_t    getNNPostFilterSEICharacteristicsPaddingType(int filterIdx) const                                         { return m_nnPostFilterSEICharacteristicsPaddingType[filterIdx]; }
 
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
   void        setNNPostFilterSEICharacteristicsLumaPadding(uint32_t lumaPadding, int filterIdx) { m_nnPostFilterSEICharacteristicsLumaPadding[filterIdx] = lumaPadding; }
   uint32_t    getNNPostFilterSEICharacteristicsLumaPadding(int filterIdx) const { return m_nnPostFilterSEICharacteristicsLumaPadding[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsCbPadding(uint32_t cbPadding, int filterIdx) { m_nnPostFilterSEICharacteristicsCbPadding[filterIdx] = cbPadding; }
   uint32_t    getNNPostFilterSEICharacteristicsCbPadding(int filterIdx) const { return m_nnPostFilterSEICharacteristicsCbPadding[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsCrPadding(uint32_t crPadding, int filterIdx) { m_nnPostFilterSEICharacteristicsCrPadding[filterIdx] = crPadding; }
   uint32_t    getNNPostFilterSEICharacteristicsCrPadding(int filterIdx) const { return m_nnPostFilterSEICharacteristicsCrPadding[filterIdx]; }
-#endif
 
   void        setNNPostFilterSEICharacteristicsComplexityIdc (uint32_t complexityIdc , int filterIdx)                   { m_nnPostFilterSEICharacteristicsComplexityIdc[filterIdx] = complexityIdc ; }
   uint32_t    getNNPostFilterSEICharacteristicsComplexityIdc (int filterIdx) const                                      { return m_nnPostFilterSEICharacteristicsComplexityIdc[filterIdx]; }

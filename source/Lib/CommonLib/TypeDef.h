@@ -54,7 +54,6 @@
 
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AA0055_SIGNAL_ADDITIONAL_PADDING             1 // JVET-AA0055 PROPOSAL A: Allow for signalling additional padding types for the neural network
 #define JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK         1 // JVET-AA0055 PROPOSAL B: Allow for signalling the use of binary neural network
 #define JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA           1 // JVET-AA0054_PROPOSAL1: Method to specify neural network post filter data via an external URL
 
@@ -676,7 +675,6 @@ enum SAOEOClasses
   NUM_SAO_EO_CLASSES,
 };
 
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
 enum NNPC_PaddingType
 {
   ZERO_PADDING = 0,
@@ -685,7 +683,6 @@ enum NNPC_PaddingType
   WRAP_AROUND_PADDING = 3,
   FIXED_PADDING = 4
 };
-#endif
 
 #if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
 enum POST_FILTER_MODE

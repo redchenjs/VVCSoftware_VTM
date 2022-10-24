@@ -2657,7 +2657,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_padding_type");
     sei.m_paddingType = val;
 
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_luma_padding_val");
@@ -2669,7 +2668,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_cr_padding_val");
       sei.m_crPadding = val;
     }
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_complexity_idc");
     sei.m_complexityIdc = val;

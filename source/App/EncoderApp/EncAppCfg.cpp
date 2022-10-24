@@ -1782,7 +1782,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     paddingType << "SEINNPostFilterCharacteristicsPaddingType" << i;
     opts.addOptions()(paddingType.str(), m_nnPostFilterSEICharacteristicsPaddingType[i], 0u, "Specifies the process of padding when referencing sample locations outside the boundaries of the cropped decoded output picture ");
 
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
     std::ostringstream lumaPadding;
     lumaPadding << "SEINNPostFilterCharacteristicsLumaPadding" << i;
     opts.addOptions()(lumaPadding.str(), m_nnPostFilterSEICharacteristicsLumaPadding[i], 0u, "Specifies the luma padding when when the padding type is fixed padding ");
@@ -1794,7 +1793,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream cbPadding;
     cbPadding << "SEINNPostFilterCharacteristicsCbPadding" << i;
     opts.addOptions()(cbPadding.str(), m_nnPostFilterSEICharacteristicsCbPadding[i], 0u, "Specifies the Cb padding when when the padding type is fixed padding ");
-#endif
 
     std::ostringstream complexityIdc;
     complexityIdc << "SEINNPostFilterCharacteristicsComplexityIdc" << i;
