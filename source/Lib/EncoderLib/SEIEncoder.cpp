@@ -396,7 +396,6 @@ void SEIEncoder::initSEISampleAspectRatioInfo(SEISampleAspectRatioInfo* seiSampl
   }
 }
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
 void SEIEncoder::initSEIPhaseIndication(SEIPhaseIndication* seiPhaseIndication, int ppsId)
 {
   CHECK(!(m_isInitialized), "seiPhaseIndication already initialized");
@@ -417,7 +416,6 @@ void SEIEncoder::initSEIPhaseIndication(SEIPhaseIndication* seiPhaseIndication, 
     seiPhaseIndication->m_verPhaseDenMinus1 = m_pcCfg->getVerPhaseDenMinus1ReducedResolution();
   }
 }
-#endif
 
 //! initialize scalable nesting SEI message.
 //! Note: The SEI message structures input into this function will become part of the scalable nesting SEI and will be

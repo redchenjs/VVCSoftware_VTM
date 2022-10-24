@@ -94,9 +94,7 @@ public:
     SHUTTER_INTERVAL_INFO                = 209,
     NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS = 210,
     NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
     PHASE_INDICATION                     = 212,
-#endif
 
 #if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
     SEI_PROCESSING_ORDER                 = 213,
@@ -467,7 +465,6 @@ public:
   int                   m_sariSarHeight;
 };
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
 class SEIPhaseIndication : public SEI
 {
 public:
@@ -479,7 +476,6 @@ public:
   int                   m_verPhaseNum;
   int                   m_verPhaseDenMinus1;
 };
-#endif
 
 static constexpr uint32_t ISO_IEC_11578_LEN=16;
 
