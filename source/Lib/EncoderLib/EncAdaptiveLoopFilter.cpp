@@ -2568,45 +2568,53 @@ void EncAdaptiveLoopFilter::setCtuEnableFlag( uint8_t** ctuFlags, ChannelType ch
   }
 }
 
-std::vector<int> EncAdaptiveLoopFilter::getAvaiApsIdsLuma(CodingStructure& cs, int &newApsId)
+int EncAdaptiveLoopFilter::getAvailableApsIdsLuma(CodingStructure &cs)
 {
   APS** apss = cs.slice->getAlfAPSs();
-  for (int i = m_encCfg->getALFAPSIDShift(); i < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(); i++)
+  const int firstApsId = m_encCfg->getALFAPSIDShift();
+  const int lastApsId  = firstApsId + m_encCfg->getMaxNumALFAPS();
+
+  for (int i = firstApsId; i < lastApsId; i++)
   {
     apss[i] = m_apsMap->getPS((i << NUM_APS_TYPE_LEN) + ALF_APS);
   }
 
-  std::vector<int> result;
-  int apsIdChecked = 0, curApsId = m_apsIdStart;
-  if (curApsId < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS())
+  AlfApsList result;
+
+  int curApsId = m_apsIdStart;
+
+  if (curApsId < lastApsId && !cs.slice->isIRAP() && !cs.slice->getPendingRasInit())
   {
-    while ((apsIdChecked < m_encCfg->getMaxNumALFAPS()) && !cs.slice->isIRAP() && (result.size() < m_encCfg->getMaxNumALFAPS())
-           && !cs.slice->getPendingRasInit())
+    for (int i = 0; i < m_encCfg->getMaxNumALFAPS(); i++)
     {
       APS* curAPS = apss[curApsId];
 
-      if( curAPS && curAPS->getLayerId() == cs.slice->getPic()->layerId && curAPS->getTemporalId() <= cs.slice->getTLayer() && curAPS->getAlfAPSParam().newFilterFlag[CHANNEL_TYPE_LUMA] )
+      if (curAPS != nullptr && curAPS->getLayerId() == cs.slice->getPic()->layerId
+          && curAPS->getTemporalId() <= cs.slice->getTLayer()
+          && curAPS->getAlfAPSParam().newFilterFlag[CHANNEL_TYPE_LUMA])
       {
         result.push_back(curApsId);
       }
-      apsIdChecked++;
-      curApsId++;
-      if (curApsId >= m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS())
+      if (++curApsId >= lastApsId)
       {
-        curApsId = m_encCfg->getALFAPSIDShift();
+        curApsId = firstApsId;
       }
     }
   }
+
   cs.slice->setNumAlfApsIdsLuma((int)result.size());
   cs.slice->setAlfApsIdsLuma(result);
-  newApsId = m_apsIdStart - 1;
-  if (newApsId < m_encCfg->getALFAPSIDShift())
+
+  int newApsId = m_apsIdStart - 1;
+  if (newApsId < firstApsId)
   {
-    newApsId = m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS() - 1;
+    newApsId = lastApsId - 1;
   }
-  CHECK(newApsId >= m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(), "Wrong APS index assignment in getAvaiApsIdsLuma");
-  return result;
+  CHECK(newApsId >= lastApsId, "Wrong APS index assignment");
+
+  return newApsId;
 }
+
 void  EncAdaptiveLoopFilter::initDistortion()
 {
   for (int comp = 0; comp < MAX_NUM_COMPONENT; comp++)
@@ -2654,9 +2662,9 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
   setCtuEnableFlag(m_ctuEnableFlag, CHANNEL_TYPE_LUMA, 0);
   double costOff = getUnfilteredDistortion(m_alfCovarianceFrame[CHANNEL_TYPE_LUMA][0], CHANNEL_TYPE_LUMA);
 
-  int newApsId;
-  std::vector<int> apsIds = getAvaiApsIdsLuma(cs, newApsId);
-  std::vector<int> bestApsIds;
+  const int         newApsId = getAvailableApsIdsLuma(cs);
+  const AlfApsList &apsIds   = cs.slice->getAlfApsIdsLuma();
+  AlfApsList        bestApsIds;
   double costMin = MAX_DOUBLE;
   reconstructCoeffAPSs(cs, true, false, true);
 
@@ -2923,7 +2931,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
       m_apsIdStart = newApsId;
     }
 
-    std::vector<int> apsIds = cs.slice->getAlfApsIdsLuma();
+    const AlfApsList &apsIds = cs.slice->getAlfApsIdsLuma();
     for (int i = 0; i < (int)cs.slice->getNumAlfApsIdsLuma(); i++)
     {
       apss[apsIds[i]] = m_apsMap->getPS((apsIds[i] << NUM_APS_TYPE_LEN) + ALF_APS);
@@ -3634,11 +3642,11 @@ std::vector<int> EncAdaptiveLoopFilter::getAvailableCcAlfApsIds(CodingStructure&
   }
 
   std::vector<int> result;
-  int apsIdChecked = 0, curApsId = m_apsIdStart;
+  int              numApsIdsChecked = 0, curApsId = m_apsIdStart;
   if (curApsId < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS())
   {
-    while ((apsIdChecked < m_encCfg->getMaxNumALFAPS()) && !cs.slice->isIRAP() && (result.size() < m_encCfg->getMaxNumALFAPS())
-           && !cs.slice->getPendingRasInit())
+    while ((numApsIdsChecked < m_encCfg->getMaxNumALFAPS()) && !cs.slice->isIRAP()
+           && (result.size() < m_encCfg->getMaxNumALFAPS()) && !cs.slice->getPendingRasInit())
     {
       APS* curAPS = apss[curApsId];
       if (curAPS && curAPS->getLayerId() == cs.slice->getPic()->layerId
@@ -3646,7 +3654,7 @@ std::vector<int> EncAdaptiveLoopFilter::getAvailableCcAlfApsIds(CodingStructure&
       {
         result.push_back(curApsId);
       }
-      apsIdChecked++;
+      numApsIdsChecked++;
       curApsId++;
       if (curApsId >= m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS())
       {

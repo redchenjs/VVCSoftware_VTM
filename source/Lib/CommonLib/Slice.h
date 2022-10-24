@@ -2458,7 +2458,9 @@ private:
   bool                        m_saoEnabledFlag[MAX_NUM_CHANNEL_TYPE];                   //!< sao enabled flags for each channel
   bool                        m_alfEnabledFlag[MAX_NUM_COMPONENT];                      //!< alf enabled flags for each component
   int                         m_numAlfApsIdsLuma;                                       //!< number of alf aps active for the picture
-  std::vector<int>            m_alfApsIdsLuma;                                          //!< list of alf aps for the picture
+
+  AlfApsList m_alfApsIdsLuma;   // list of ALF APSs for the picture
+
   int                         m_alfApsIdChroma;                                         //!< chroma alf aps ID
   bool m_ccalfEnabledFlag[MAX_NUM_COMPONENT];
   int  m_ccalfCbApsId;
@@ -2650,14 +2652,8 @@ public:
   unsigned                    getMaxTTSize(SliceType   slicetype,
                                        ChannelType chType = CHANNEL_TYPE_LUMA) const    { return slicetype == I_SLICE ? (chType == CHANNEL_TYPE_LUMA ? m_maxTTSize[0] : m_maxTTSize[2]) : m_maxTTSize[1];                                  }
 
-  void                        setAlfApsIdsLuma(std::vector<int> apsIDs)                 { m_alfApsIdsLuma.resize(m_numAlfApsIdsLuma);
-                                                                                          for (int i = 0; i < m_numAlfApsIdsLuma; i++)
-                                                                                          {
-                                                                                            m_alfApsIdsLuma[i] = apsIDs[i];
-                                                                                          }
-                                                                                        }
-
-  std::vector<int>            getAlfApsIdsLuma() const                                  { return m_alfApsIdsLuma; }
+  void              setAlfApsIdsLuma(const AlfApsList &apsIDs) { m_alfApsIdsLuma = apsIDs; }
+  const AlfApsList &getAlfApsIdsLuma() const { return m_alfApsIdsLuma; }
 
   void                        setWpScaling(WPScalingParam *wp)
   {
@@ -2801,7 +2797,9 @@ private:
   APS*                       m_alfApss[ALF_CTB_MAX_NUM_APS];
   bool                       m_alfEnabledFlag[MAX_NUM_COMPONENT];
   int                        m_numAlfApsIdsLuma;
-  std::vector<int>           m_alfApsIdsLuma;
+
+  AlfApsList m_alfApsIdsLuma;
+
   int                        m_alfApsIdChroma;
   bool                       m_ccAlfCbEnabledFlag;
   bool                       m_ccAlfCrEnabledFlag;
@@ -3120,15 +3118,10 @@ public:
   void                        setNumAlfApsIdsLuma(int i) { m_numAlfApsIdsLuma = i; }
   int                         getAlfApsIdChroma() const { return m_alfApsIdChroma; }
   void                        setAlfApsIdChroma(int i) { m_alfApsIdChroma = i; }
-  std::vector<int>            getAlfApsIdsLuma() const { return m_alfApsIdsLuma; }
-  void                        setAlfApsIdsLuma(std::vector<int> apsIDs)
-  {
-    m_alfApsIdsLuma.resize(m_numAlfApsIdsLuma);
-    for (int i = 0; i < m_numAlfApsIdsLuma; i++)
-    {
-      m_alfApsIdsLuma[i] = apsIDs[i];
-    }
-  }
+
+  const AlfApsList &getAlfApsIdsLuma() const { return m_alfApsIdsLuma; }
+  void              setAlfApsIdsLuma(const AlfApsList &apsIDs) { m_alfApsIdsLuma = apsIDs; }
+
   void resetCcAlCbfEnabledFlag() { m_ccAlfCbEnabledFlag = 0; }
   void resetCcAlCrfEnabledFlag() { m_ccAlfCrEnabledFlag = 0; }
 

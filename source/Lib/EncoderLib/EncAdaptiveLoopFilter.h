@@ -283,7 +283,7 @@ public:
   EncAdaptiveLoopFilter();
   virtual ~EncAdaptiveLoopFilter() {}
   void  initDistortion();
-  std::vector<int> getAvaiApsIdsLuma(CodingStructure& cs, int &newApsId);
+  int   getAvailableApsIdsLuma(CodingStructure &cs);
   void  alfEncoderCtb(CodingStructure& cs, AlfParam& alfParamNewFilters
 #if ENABLE_QPA
     , const double lambdaChromaWeight
