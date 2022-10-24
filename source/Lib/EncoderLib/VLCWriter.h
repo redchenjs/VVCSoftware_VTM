@@ -54,9 +54,7 @@
 #define WRITE_UVLC( value,         name)    xWriteUvlcTr ( value,         name )
 #define WRITE_SVLC( value,         name)    xWriteSvlcTr ( value,         name )
 #define WRITE_FLAG( value,         name)    xWriteFlagTr ( value,         name )
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
 #define WRITE_STRING( value,         name)    xWriteStringTr ( value,         name )
-#endif
 
 extern bool g_HLSTraceEnable;
 #else
@@ -65,9 +63,7 @@ extern bool g_HLSTraceEnable;
 #define WRITE_UVLC( value,         name)     xWriteUvlc ( value )
 #define WRITE_SVLC( value,         name)     xWriteSvlc ( value )
 #define WRITE_FLAG( value,         name)     xWriteFlag ( value )
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
 #define WRITE_STRING( value,       name)     xWriteString ( value )
-#endif
 
 #endif
 
@@ -91,18 +87,14 @@ protected:
   void  xWriteUvlc            ( uint32_t uiCode );
   void  xWriteSvlc            ( int  iCode   );
   void  xWriteFlag            ( uint32_t uiCode );
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   void  xWriteString(std::string code);
-#endif
 #if ENABLE_TRACING
   void  xWriteSCodeTr         ( int value,  uint32_t  length, const char *pSymbolName);
   void  xWriteCodeTr          ( uint32_t value, uint32_t  length, const char *pSymbolName);
   void  xWriteUvlcTr          ( uint32_t value,               const char *pSymbolName);
   void  xWriteSvlcTr          ( int  value,               const char *pSymbolName);
   void  xWriteFlagTr          ( uint32_t value,               const char *pSymbolName);
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   void  xWriteStringTr        (std::string value, const char* symbolName);
-#endif
 #endif
   void  xWriteRbspTrailingBits();
   bool isByteAligned()      { return (m_pcBitIf->getNumBitsUntilByteAligned() == 0); } ;

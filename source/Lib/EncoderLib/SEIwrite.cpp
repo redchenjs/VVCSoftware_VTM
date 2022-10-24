@@ -1478,7 +1478,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteNNPFCComplexityElement(sei);
     }
   }
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   if (sei.m_modeIdc == POST_FILTER_MODE::URI)
   {
     while (!isByteAligned())
@@ -1488,7 +1487,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     WRITE_STRING(sei.m_uriTag, "nnpfc_uri_tag");
     WRITE_STRING(sei.m_uri, "nnpfc_uri");
   }
-#endif
   if (sei.m_modeIdc == 1)
   {
     while (!isByteAligned())

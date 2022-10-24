@@ -1798,7 +1798,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     complexityIdc << "SEINNPostFilterCharacteristicsComplexityIdc" << i;
     opts.addOptions()(complexityIdc.str(), m_nnPostFilterSEICharacteristicsComplexityIdc[i], 0u, "Specifies the value of nnpfc_complexity_idc in the Neural Network Post Filter Characteristics SEI message");
 
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
     std::ostringstream uriTag;
     uriTag << "SEINNPostFilterCharacteristicsUriTag" << i;
     opts.addOptions()(uriTag.str(), m_nnPostFilterSEICharacteristicsUriTag[i], string(""), "Specifies the neural network uri tag in the Neural Network Post Filter Characteristics SEI message");
@@ -1806,7 +1805,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream uri;
     uri << "SEINNPostFilterCharacteristicsUri" << i;
     opts.addOptions()(uri.str(), m_nnPostFilterSEICharacteristicsUri[i], string(""), "Specifies the neural network information uri in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream parameterTypeIdc;
     parameterTypeIdc << "SEINNPostFilterCharacteristicsParameterTypeIdc" << i;

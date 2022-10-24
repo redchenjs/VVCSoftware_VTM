@@ -1134,10 +1134,8 @@ public:
   , m_crPadding(0)
   , m_payloadByte(nullptr)
   , m_complexityIdc(0)
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   , m_uriTag("")
   , m_uri("")
-#endif
   , m_parameterTypeIdc(0)
   , m_log2ParameterBitLengthMinus3(0)
   , m_numParametersIdc(0)
@@ -1185,10 +1183,8 @@ public:
   uint64_t       m_payloadLength;
   char*          m_payloadByte;
   uint32_t       m_complexityIdc;
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   std::string    m_uriTag;
   std::string    m_uri;
-#endif
   uint32_t       m_parameterTypeIdc;
   uint32_t       m_log2ParameterBitLengthMinus3;
   uint32_t       m_numParametersIdc;

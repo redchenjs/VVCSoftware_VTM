@@ -1258,10 +1258,8 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_numKmacOperationsIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(filterIdx);
       }
     }
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
     sei->m_uriTag = m_pcCfg->getNNPostFilterSEICharacteristicsUriTag(filterIdx);
     sei->m_uri = m_pcCfg->getNNPostFilterSEICharacteristicsUri(filterIdx);
-#endif
   }
   if (sei->m_modeIdc == 1)
   {

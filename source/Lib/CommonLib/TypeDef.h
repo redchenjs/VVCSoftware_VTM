@@ -54,7 +54,6 @@
 
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA           1 // JVET-AA0054_PROPOSAL1: Method to specify neural network post filter data via an external URL
 
 //########### place macros to be be kept below this line ###############
 
@@ -683,14 +682,12 @@ enum NNPC_PaddingType
   FIXED_PADDING = 4
 };
 
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
 enum POST_FILTER_MODE
 {
   EXTERNAL = 0,
   INTERNAL = 1,
   URI =2
 };
-#endif
 
 #define NUM_SAO_BO_CLASSES_LOG2  5
 #define NUM_SAO_BO_CLASSES       (1<<NUM_SAO_BO_CLASSES_LOG2)

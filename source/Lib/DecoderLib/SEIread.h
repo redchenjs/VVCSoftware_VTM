@@ -114,9 +114,7 @@ protected:
   void sei_read_uvlc(std::ostream *pOS,                uint32_t& ruiCode, const char *pSymbolName);
   void sei_read_svlc(std::ostream *pOS,                int&  ruiCode, const char *pSymbolName);
   void sei_read_flag(std::ostream *pOS,                uint32_t& ruiCode, const char *pSymbolName);
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   void sei_read_string(std::ostream* os, std::string& code, const char* symbolName);
-#endif
 
 protected:
   HRD m_nestedHrd;
