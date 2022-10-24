@@ -261,10 +261,8 @@ protected:
   int       m_iQP;                                            ///< QP value of key-picture (integer)
   bool      m_useIdentityTableForNon420Chroma;
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   int       m_intraQPOffset;                                  ///< QP offset for intra slice (integer)
   bool      m_lambdaFromQPEnable;                             ///< enable flag for QP:lambda fix
-#endif
   std::string m_dQPFileName;                                  ///< QP offset for each slice (initialized from external file)
   int*      m_aidQP;                                          ///< array of slice QP values
   int       m_iMaxDeltaQP;                                    ///< max. |delta QP|

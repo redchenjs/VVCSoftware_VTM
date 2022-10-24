@@ -57,10 +57,8 @@ struct GOPEntry
 {
   int m_POC;
   int m_QPOffset;
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   double m_QPOffsetModelOffset;
   double m_QPOffsetModelScale;
-#endif
 #if W0038_CQP_ADJ
   int m_CbQPoffset;
   int m_CrQPoffset;
@@ -86,10 +84,8 @@ struct GOPEntry
   GOPEntry()
     : m_POC(-1)
     , m_QPOffset(0)
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
     , m_QPOffsetModelOffset(0)
     , m_QPOffsetModelScale(0)
-#endif
 #if W0038_CQP_ADJ
     , m_CbQPoffset(0)
     , m_CrQPoffset(0)
@@ -286,10 +282,8 @@ protected:
 
   int       m_iQP;                              //  if (AdaptiveQP == OFF)
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   int       m_intraQPOffset;                    ///< QP offset for intra slice (integer)
   int       m_lambdaFromQPEnable;               ///< enable lambda derivation from QP
-#endif
 
   bool      m_AccessUnitDelimiter;               ///< add Access Unit Delimiter NAL units
   bool      m_enablePictureHeaderInSliceHeader;  ///< Enable Picture Header in Slice Header
@@ -1196,10 +1190,8 @@ public:
   void      setEdrapPeriod                  (int edrapPeriod) { m_edrapPeriod = edrapPeriod; }
 
   void      setBaseQP                       ( int   i )      { m_iQP = i; }
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   void      setIntraQPOffset                ( int   i )         { m_intraQPOffset = i; }
   void      setLambdaFromQPEnable           ( bool  b )         { m_lambdaFromQPEnable = b; }
-#endif
   void      setChromaQpMappingTableParams   (const ChromaQpMappingTableParams &params) { m_chromaQpMappingTableParams = params; }
 
   void      setSourcePadding                ( int*  padding)                { for ( int i = 0; i < 2; i++ ) m_sourcePadding[i] = padding[i]; }
@@ -1594,15 +1586,11 @@ public:
   int       getMaxNumReorderPics            (uint32_t tlayer) { return m_maxNumReorderPics[tlayer]; }
   int       getDrapPeriod                   ()     { return m_drapPeriod; }
   int       getEdrapPeriod                  ()     { return m_edrapPeriod; }
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   int       getIntraQPOffset                () const    { return  m_intraQPOffset; }
   int       getLambdaFromQPEnable           () const    { return  m_lambdaFromQPEnable; }
 public:
   int       getBaseQP                       () const { return  m_iQP; } // public should use getQPForPicture.
   int       getQPForPicture                 (const uint32_t gopIndex, const Slice *pSlice) const; // Function actually defined in EncLib.cpp
-#else
-  int       getBaseQP                       ()       { return  m_iQP; }
-#endif
   int       getSourcePadding                ( int i ) { CHECK(i >= 2, "Invalid index"); return  m_sourcePadding[i]; }
 
   bool      getAccessUnitDelimiter() const  { return m_AccessUnitDelimiter; }

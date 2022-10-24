@@ -2301,9 +2301,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     //-- For time output for each slice
     auto beforeTime = std::chrono::steady_clock::now();
 
-#if !X0038_LAMBDA_FROM_QP_CAPABILITY
-    uint32_t colDir = calculateCollocatedFromL1Flag(m_pcCfg, gopId, m_iGopSize);
-#endif
 
     /////////////////////////////////////////////////////////////////////////////////////////////////// Initial to start encoding
     int timeOffset;

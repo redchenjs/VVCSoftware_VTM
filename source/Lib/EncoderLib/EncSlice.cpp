@@ -475,39 +475,16 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   // QP setting
   // ------------------------------------------------------------------------------------------------------------------
 
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   rpcSlice->setNalUnitType(nalType);
   dQP = m_pcCfg->getQPForPicture(gopId, rpcSlice);
-#else
-  dQP = m_pcCfg->getBaseQP();
-  if(eSliceType!=I_SLICE)
-  {
-    dQP += m_pcCfg->getGOPEntry(gopId).m_QPOffset;
-  }
-
-  // modify QP
-  const int* pdQPs = m_pcCfg->getdQPs();
-  if ( pdQPs )
-  {
-    dQP += pdQPs[ rpcSlice->getPOC() ];
-  }
-
-  if (m_pcCfg->getCostMode()==COST_LOSSLESS_CODING)
-  {
-    dQP=LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP;
-    m_pcCfg->setDeltaQpRD(0);
-  }
-#endif
 
   // ------------------------------------------------------------------------------------------------------------------
   // Lambda computation
   // ------------------------------------------------------------------------------------------------------------------
 
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   const int temporalId = m_pcCfg->getGOPEntry(gopId).m_temporalId;
 #if !SHARP_LUMA_DELTA_QP
   const std::vector<double> &intraLambdaModifiers=m_pcCfg->getIntraLambdaModifier();
-#endif
 #endif
   int    qp;
   double dOrigQP = dQP;
@@ -535,10 +512,6 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   dQP     = m_vdRdPicQp    [0];
   qp      = m_viRdPicQp[0];
 
-#if !X0038_LAMBDA_FROM_QP_CAPABILITY
-  const int                  temporalId          = m_pcCfg->getGOPEntry(gopId).m_temporalId;
-  const std::vector<double> &intraLambdaModifiers=m_pcCfg->getIntraLambdaModifier();
-#endif
 
 #if W0038_CQP_ADJ
  #if ENABLE_QPA
@@ -579,19 +552,6 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   }
 #endif
 
-#if !X0038_LAMBDA_FROM_QP_CAPABILITY
-  double lambdaModifier;
-  if( rpcSlice->getSliceType( ) != I_SLICE || intraLambdaModifiers.empty())
-  {
-    lambdaModifier = m_pcCfg->getLambdaModifier( temporalId );
-  }
-  else
-  {
-    lambdaModifier = intraLambdaModifiers[ (temporalId < intraLambdaModifiers.size()) ? temporalId : (intraLambdaModifiers.size()-1) ];
-  }
-
-  dLambda *= lambdaModifier;
-#endif
 
 #if RDOQ_CHROMA_LAMBDA
   m_pcRdCost->setDistortionWeight (COMPONENT_Y, 1.0); // no chroma weighting for luma
@@ -878,10 +838,8 @@ double EncSlice::initializeLambda(const Slice* slice, const int GOPid, const int
   const int   bitDepthShift = 6 * (bitDepthLuma - 8 - DISTORTION_PRECISION_ADJUSTMENT(bitDepthLuma)) - 12;
   const int   numberBFrames = m_pcCfg->getGOPSize() - 1;
   const SliceType sliceType = slice->getSliceType();
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   const int      temporalId = m_pcCfg->getGOPEntry(GOPid).m_temporalId;
   const std::vector<double> &intraLambdaModifiers = m_pcCfg->getIntraLambdaModifier();
-#endif
   // case #1: I or P slices (key-frame)
   double dQPFactor = m_pcCfg->getGOPEntry(GOPid).m_QPFactor;
   double dLambda, lambdaModifier;
@@ -894,33 +852,25 @@ double EncSlice::initializeLambda(const Slice* slice, const int GOPid, const int
     }
     else
     {
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
       if (m_pcCfg->getLambdaFromQPEnable())
       {
         dQPFactor = 0.57;
       }
       else
-#endif
       {
         dQPFactor =
           0.57 * (1.0 - Clip3(0.0, 0.5, 0.05 * double(slice->getPic()->fieldPic ? numberBFrames >> 1 : numberBFrames)));
       }
     }
   }
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   else if (m_pcCfg->getLambdaFromQPEnable())
   {
     dQPFactor = 0.57;
   }
-#endif
 
   dLambda = dQPFactor * pow(2.0, (dQP + bitDepthShift) / 3.0);
 
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   if (slice->getDepth() > 0 && !m_pcCfg->getLambdaFromQPEnable())
-#else
-  if (slice->getDepth() > 0)
-#endif
   {
     dLambda *= Clip3(2.0, 4.0, ((refQP + bitDepthShift) / 6.0));
   }
@@ -929,7 +879,6 @@ double EncSlice::initializeLambda(const Slice* slice, const int GOPid, const int
   {
     dLambda *= 0.95;
   }
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   if ((sliceType != I_SLICE) || intraLambdaModifiers.empty())
   {
     lambdaModifier = m_pcCfg->getLambdaModifier(temporalId);
@@ -939,7 +888,6 @@ double EncSlice::initializeLambda(const Slice* slice, const int GOPid, const int
     lambdaModifier = intraLambdaModifiers[temporalId < intraLambdaModifiers.size() ? temporalId : intraLambdaModifiers.size() - 1];
   }
   dLambda *= lambdaModifier;
-#endif
 
   return dLambda;
 }

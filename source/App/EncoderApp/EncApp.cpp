@@ -570,10 +570,8 @@ void EncApp::xInitLibCfg()
 
   m_cEncLib.setBaseQP                                            ( m_iQP );
 
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   m_cEncLib.setIntraQPOffset                                     ( m_intraQPOffset );
   m_cEncLib.setLambdaFromQPEnable                                ( m_lambdaFromQPEnable );
-#endif
   m_cEncLib.setChromaQpMappingTableParams                        (m_chromaQpMappingTableParams);
 
   m_cEncLib.setSourcePadding                                     ( m_sourcePadding );
@@ -658,11 +656,7 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setSmoothQPReductionModelScaleInter                  (m_smoothQPReductionModelScaleInter);
   m_cEncLib.setSmoothQPReductionModelOffsetInter                 (m_smoothQPReductionModelOffsetInter);
   m_cEncLib.setSmoothQPReductionLimitInter                       (m_smoothQPReductionLimitInter);
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   m_cEncLib.setDeltaQpRD( (m_costMode==COST_LOSSLESS_CODING) ? 0 : m_uiDeltaQpRD );
-#else
-  m_cEncLib.setDeltaQpRD                                         ( m_uiDeltaQpRD  );
-#endif
   m_cEncLib.setFastDeltaQp                                       ( m_bFastDeltaQP  );
   m_cEncLib.setUseASR                                            ( m_bUseASR      );
   m_cEncLib.setUseHADME                                          ( m_bUseHADME    );

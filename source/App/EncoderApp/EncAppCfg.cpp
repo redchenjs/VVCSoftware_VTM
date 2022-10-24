@@ -129,10 +129,8 @@ std::istringstream &operator>>(std::istringstream &in, GOPEntry &entry)     //in
   in>>entry.m_sliceType;
   in>>entry.m_POC;
   in>>entry.m_QPOffset;
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   in>>entry.m_QPOffsetModelOffset;
   in>>entry.m_QPOffsetModelScale;
-#endif
 #if W0038_CQP_ADJ
   in>>entry.m_CbQPoffset;
   in>>entry.m_CrQPoffset;
@@ -1108,10 +1106,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   /* Quantization parameters */
   ("QP,q",                                            m_iQP,                                               30, "Qp value")
   ("QPIncrementFrame,-qpif",                          m_qpIncrementAtSourceFrame,   OptionalValue<uint32_t>(), "If a source file frame number is specified, the internal QP will be incremented for all POCs associated with source frames >= frame number. If empty, do not increment.")
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   ("IntraQPOffset",                                   m_intraQPOffset,                                      0, "Qp offset value for intra slice, typically determined based on GOP size")
   ("LambdaFromQpEnable",                              m_lambdaFromQPEnable,                             false, "Enable flag for derivation of lambda from QP")
-#endif
   ("DeltaQpRD,-dqr",                                  m_uiDeltaQpRD,                                       0u, "max dQp offset for slice")
   ("MaxDeltaQP,d",                                    m_iMaxDeltaQP,                                        0, "max dQp offset for block")
   ("MaxCuDQPSubdiv,-dqd",                             m_cuQpDeltaSubdiv,                                    0, "Maximum subdiv for CU luma Qp adjustment")

@@ -2313,7 +2313,6 @@ void EncLib::checkPltStats( Picture* pic )
   }
 }
 
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
 int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
 {
   const int lumaQpBDOffset = pSlice->getSPS()->getQpBDOffset(CHANNEL_TYPE_LUMA);
@@ -2370,7 +2369,6 @@ int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
   qp = Clip3( -lumaQpBDOffset, MAX_QP, qp );
   return qp;
 }
-#endif
 
 
 //! \}
