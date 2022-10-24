@@ -633,9 +633,6 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
 
     int numModesForFullRD = g_intraModeNumFastUseMPM2D[logWidth - MIN_CU_LOG2][logHeight - MIN_CU_LOG2];
 
-#if INTRA_FULL_SEARCH
-    numModesForFullRD = numModesAvailable;
-#endif
 
     if (isSecondColorSpace)
     {

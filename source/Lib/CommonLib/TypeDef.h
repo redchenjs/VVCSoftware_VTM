@@ -137,7 +137,6 @@ typedef std::pair<int, int>  TrCost;
 
 #define PRINT_MACRO_VALUES                                1 ///< When enabled, the encoder prints out a list of the non-environment-variable controlled macros and their values on startup
 
-#define INTRA_FULL_SEARCH                                 0 ///< enables full mode search for intra estimation
 
 // TODO: rename this macro to DECODER_DEBUG_BIT_STATISTICS (may currently cause merge issues with other branches)
 // This can be enabled by the makefile
