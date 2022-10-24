@@ -1203,12 +1203,8 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
   CHECK(!(sei != nullptr), "Unspecified error");
   sei->m_id = m_pcCfg->getNNPostFilterSEICharacteristicsId(filterIdx);
   sei->m_modeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsModeIdc(filterIdx);
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   sei->m_purposeAndFormattingFlag = m_pcCfg->getNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(filterIdx);
   if (sei->m_purposeAndFormattingFlag)
-#else
-  if (sei->m_modeIdc == 1)
-#endif
   {
     sei->m_purpose = m_pcCfg->getNNPostFilterSEICharacteristicsPurpose(filterIdx);
 

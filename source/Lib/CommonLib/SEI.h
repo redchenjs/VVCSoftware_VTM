@@ -1113,9 +1113,7 @@ public:
   SEINeuralNetworkPostFilterCharacteristics()
   : m_id(0)
   , m_modeIdc(0)
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   , m_purposeAndFormattingFlag(false)
-#endif
   , m_purpose(0)
 #if JVET_AA0054_CHROMA_FORMAT_FLAG
     , m_outSubCFlag(0)
@@ -1178,9 +1176,7 @@ public:
 
   uint32_t       m_id;
   uint32_t       m_modeIdc;
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   bool           m_purposeAndFormattingFlag;
-#endif
   uint32_t       m_purpose;
 #if JVET_AA0054_CHROMA_FORMAT_FLAG
   bool           m_outSubCFlag;

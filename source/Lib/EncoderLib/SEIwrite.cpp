@@ -1428,12 +1428,8 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 {
   WRITE_UVLC(sei.m_id, "nnpfc_id");
   WRITE_UVLC(sei.m_modeIdc, "nnpfc_mode_idc");
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   WRITE_FLAG(sei.m_purposeAndFormattingFlag, "nnpfc_purpose_and_formatting_flag");
   if (sei.m_purposeAndFormattingFlag)
-#else
-  if (sei.m_modeIdc == 1)
-#endif
   {
     WRITE_UVLC(sei.m_purpose, "nnpfc_purpose");
 

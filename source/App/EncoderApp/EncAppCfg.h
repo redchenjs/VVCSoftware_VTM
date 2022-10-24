@@ -734,9 +734,7 @@ protected:
   int                   m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t              m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   bool                  m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
 #if JVET_AA0054_CHROMA_FORMAT_FLAG
   bool                  m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
