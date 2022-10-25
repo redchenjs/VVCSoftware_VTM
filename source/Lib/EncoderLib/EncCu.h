@@ -159,7 +159,7 @@ private:
     Ctx best;
   };
 
-  std::vector<CtxPair>  m_CtxBuffer;
+  std::vector<CtxPair>  m_ctxBuffer;
   CtxPair*              m_CurrCtx;
   CtxCache*             m_CtxCache;
 

@@ -151,7 +151,7 @@ void EncCu::create( EncCfg* encCfg )
     m_acGeoWeightedBuffer[ui].create( chromaFormat, Area( 0, 0, uiMaxWidth, uiMaxHeight ) );
   }
 
-  m_CtxBuffer.resize( maxDepth );
+  m_ctxBuffer.resize(maxDepth);
   m_CurrCtx = 0;
 }
 
@@ -302,7 +302,7 @@ void EncCu::compressCtu( CodingStructure& cs, const UnitArea& area, const unsign
     }
   }
   // init current context pointer
-  m_CurrCtx = m_CtxBuffer.data();
+  m_CurrCtx = m_ctxBuffer.data();
 
   CodingStructure *tempCS = m_pTempCS[gp_sizeIdxInfo->idxFrom( area.lumaSize().width )][gp_sizeIdxInfo->idxFrom( area.lumaSize().height )];
   CodingStructure *bestCS = m_pBestCS[gp_sizeIdxInfo->idxFrom( area.lumaSize().width )][gp_sizeIdxInfo->idxFrom( area.lumaSize().height )];

@@ -135,7 +135,7 @@ public:
       q = q ^ 0xff;
     return ((q >> 2) * (range >> 5) >> 1) + 4;
   }
-  static uint8_t  getRenormBitsLPS  ( unsigned LPS )                    { return    m_RenormTable_32  [LPS>>3]; }
+  static uint8_t  getRenormBitsLPS(unsigned lpsRange) { return m_RenormTable_32[lpsRange >> 3]; }
   static uint8_t  getRenormBitsRange( unsigned range )                  { return    1; }
   uint16_t getState() const { return m_state[0] + m_state[1]; }
   void     setState(uint16_t pState)
@@ -300,25 +300,41 @@ public:
   CtxStore( bool dummy );
   CtxStore( const CtxStore<BinProbModel>& ctxStore );
 public:
-  void copyFrom   ( const CtxStore<BinProbModel>& src )                        { checkInit(); ::memcpy( m_Ctx,               src.m_Ctx,               sizeof( BinProbModel ) * ContextSetCfg::NumberOfContexts ); }
-  void copyFrom   ( const CtxStore<BinProbModel>& src, const CtxSet& ctxSet )  { checkInit(); ::memcpy( m_Ctx+ctxSet.Offset, src.m_Ctx+ctxSet.Offset, sizeof( BinProbModel ) * ctxSet.Size ); }
+  void copyFrom(const CtxStore<BinProbModel> &src)
+  {
+    checkInit();
+    ::memcpy(m_ctx, src.m_ctx, sizeof(BinProbModel) * ContextSetCfg::NumberOfContexts);
+  }
+  void copyFrom(const CtxStore<BinProbModel> &src, const CtxSet &ctxSet)
+  {
+    checkInit();
+    ::memcpy(m_ctx + ctxSet.Offset, src.m_ctx + ctxSet.Offset, sizeof(BinProbModel) * ctxSet.Size);
+  }
   void init       ( int qp, int initId );
   void setWinSizes( const std::vector<uint8_t>&   log2WindowSizes );
   void loadPStates( const std::vector<uint16_t>&  probStates );
   void savePStates( std::vector<uint16_t>&        probStates )  const;
 
-  const BinProbModel& operator[]      ( unsigned  ctxId  )  const { return m_Ctx[ctxId]; }
-  BinProbModel&       operator[]      ( unsigned  ctxId  )        { return m_Ctx[ctxId]; }
-  uint32_t            estFracBits     ( unsigned  bin,
-                                        unsigned  ctxId  )  const { return m_Ctx[ctxId].estFracBits(bin); }
+  const BinProbModel &operator[](unsigned ctxId) const { return m_ctx[ctxId]; }
+  BinProbModel       &operator[](unsigned ctxId) { return m_ctx[ctxId]; }
+  uint32_t            estFracBits(unsigned bin, unsigned ctxId) const { return m_ctx[ctxId].estFracBits(bin); }
 
-  BinFracBits         getFracBitsArray( unsigned  ctxId  )  const { return m_Ctx[ctxId].getFracBitsArray(); }
+  BinFracBits getFracBitsArray(unsigned ctxId) const { return m_ctx[ctxId].getFracBitsArray(); }
 
 private:
-  inline void checkInit() { if( m_Ctx ) return; m_CtxBuffer.resize( ContextSetCfg::NumberOfContexts ); m_Ctx = m_CtxBuffer.data(); }
+  inline void checkInit()
+  {
+    if (m_ctx)
+    {
+      return;
+    }
+    m_ctxBuffer.resize(ContextSetCfg::NumberOfContexts);
+    m_ctx = m_ctxBuffer.data();
+  }
+
 private:
-  std::vector<BinProbModel> m_CtxBuffer;
-  BinProbModel*             m_Ctx;
+  std::vector<BinProbModel> m_ctxBuffer;
+  BinProbModel             *m_ctx;
 };
 
 
@@ -328,12 +344,12 @@ class SubCtx
 {
   friend class Ctx;
 public:
-  SubCtx( const CtxSet& ctxSet, const Ctx& ctx ) : m_CtxSet( ctxSet          ), m_Ctx( ctx          ) {}
-  SubCtx( const SubCtx& subCtx )                 : m_CtxSet( subCtx.m_CtxSet ), m_Ctx( subCtx.m_Ctx ) {}
+  SubCtx(const CtxSet &ctxSet, const Ctx &ctx) : m_CtxSet(ctxSet), m_ctx(ctx) {}
+  SubCtx(const SubCtx &subCtx) : m_CtxSet(subCtx.m_CtxSet), m_ctx(subCtx.m_ctx) {}
   const SubCtx& operator= ( const SubCtx& ) = delete;
 private:
   const CtxSet  m_CtxSet;
-  const Ctx&    m_Ctx;
+  const Ctx    &m_ctx;
 };
 
 
@@ -360,10 +376,10 @@ public:
 
   SubCtx operator= ( SubCtx&& subCtx )
   {
-    m_BPMType = subCtx.m_Ctx.m_BPMType;
+    m_BPMType = subCtx.m_ctx.m_BPMType;
     switch( m_BPMType )
     {
-    case BPM_Std:   m_CtxStore_Std  .copyFrom( subCtx.m_Ctx.m_CtxStore_Std,   subCtx.m_CtxSet );  break;
+    case BPM_Std: m_CtxStore_Std.copyFrom(subCtx.m_ctx.m_CtxStore_Std, subCtx.m_CtxSet); break;
     default:        break;
     }
     return std::move(subCtx);

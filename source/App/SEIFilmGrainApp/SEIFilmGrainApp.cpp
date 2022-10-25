@@ -260,7 +260,7 @@ uint32_t SEIFilmGrainApp::process()
                                        || nalu.m_nalUnitType == NAL_UNIT_PPS || nalu.m_nalUnitType == NAL_UNIT_PREFIX_APS || nalu.m_nalUnitType == NAL_UNIT_SUFFIX_APS);
         SEIMessages currentMessages = extractSeisByType(SEIs, SEI::FILM_GRAIN_CHARACTERISTICS);
         OutputNALUnit outNalu(NAL_UNIT_PREFIX_SEI, nalu.m_nuhLayerId, nalu.m_temporalId);
-        m_seiWriter.writeSEImessages(outNalu.m_Bitstream, currentMessages, m_hrd, false, nalu.m_temporalId);
+        m_seiWriter.writeSEImessages(outNalu.m_bitstream, currentMessages, m_hrd, false, nalu.m_temporalId);
         NALUnitEBSP naluWithHeader(outNalu);
         writeAnnexBNalUnit(bitstreamFileOut, naluWithHeader, useLongStartCode);
       }

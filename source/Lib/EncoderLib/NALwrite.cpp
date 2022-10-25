@@ -87,7 +87,7 @@ void writeNaluContent(ostream& out, OutputNALUnit& nalu)
    *  - 0x00000302
    *  - 0x00000303
    */
-  vector<uint8_t>& rbsp   = nalu.m_Bitstream.getFIFO();
+  vector<uint8_t> &rbsp = nalu.m_bitstream.getFIFO();
 
   vector<uint8_t> outputBuffer;
   outputBuffer.resize(rbsp.size()*2+1); //there can never be enough emulation_prevention_three_bytes to require this much space
