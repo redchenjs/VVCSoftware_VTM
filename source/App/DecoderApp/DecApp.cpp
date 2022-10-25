@@ -400,7 +400,9 @@ uint32_t DecApp::decode()
       for (; iterPicLayer != pcListPic->end(); ++iterPicLayer)
       {
         if ((*iterPicLayer)->layerId == nalu.m_nuhLayerId)
+        {
           break;
+        }
       }
       if (iterPicLayer != pcListPic->end())
       {
