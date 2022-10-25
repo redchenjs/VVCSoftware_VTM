@@ -56,23 +56,19 @@ struct OutputNALUnit : public NALUnit
    * storage for a bitstream.  Upon construction the NALunit header is
    * written to the bitstream.
    */
-  OutputNALUnit(
-    NalUnitType nalUnitType,
-    uint32_t layerId = 0,
-    uint32_t temporalID = 0,
-    uint32_t reserved_zero_6bits = 0)
-  : NALUnit( nalUnitType, temporalID, reserved_zero_6bits, 0, layerId )
-  , m_Bitstream()
+  OutputNALUnit(NalUnitType nalUnitType, uint32_t layerId = 0, uint32_t temporalID = 0,
+                uint32_t reserved_zero_6bits = 0)
+    : NALUnit(nalUnitType, temporalID, reserved_zero_6bits, 0, layerId), m_bitstream()
   {}
 
   OutputNALUnit& operator=(const NALUnit& src)
   {
-    m_Bitstream.clear();
+    m_bitstream.clear();
     static_cast<NALUnit*>(this)->operator=(src);
     return *this;
   }
 
-  OutputBitstream m_Bitstream;
+  OutputBitstream m_bitstream;
 };
 
 void writeNaluWithHeader(std::ostream& out, OutputNALUnit& nalu);

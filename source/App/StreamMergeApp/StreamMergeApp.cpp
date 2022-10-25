@@ -392,7 +392,7 @@ bool StreamMergeApp::preInjectNalu(MergeLayer &layer, InputNALUnit &inNalu, Outp
   HLSyntaxReader hlsReader;
   HLSWriter      hlsWriter;
   hlsReader.setBitstream(&inNalu.getBitstream());
-  hlsWriter.setBitstream(&outNalu.m_Bitstream);
+  hlsWriter.setBitstream(&outNalu.m_bitstream);
 
   switch (inNalu.m_nalUnitType)
   {
@@ -433,7 +433,7 @@ void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNal
   HLSyntaxReader hlsReader;
   HLSWriter      hlsWriter;
   hlsReader.setBitstream(&inNalu.getBitstream());
-  hlsWriter.setBitstream(&outNalu.m_Bitstream);
+  hlsWriter.setBitstream(&outNalu.m_bitstream);
 
   msg(INFO, " layer %i, nalu type ", layer.id);
   switch (inNalu.m_nalUnitType)
@@ -523,7 +523,7 @@ void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNal
     msg(INFO, " with index %i", inNalu.m_nalUnitType);
     // Copy payload from input nalu to output nalu. Code copied from SubpicMergeApp::copyInputNaluToOutputNalu().
     vector<uint8_t> &inFifo  = inNalu.getBitstream().getFifo();
-    vector<uint8_t> &outFifo = outNalu.m_Bitstream.getFIFO();
+    vector<uint8_t> &outFifo = outNalu.m_bitstream.getFIFO();
     outFifo                  = vector<uint8_t>(inFifo.begin() + 2, inFifo.end());
     break;
   }

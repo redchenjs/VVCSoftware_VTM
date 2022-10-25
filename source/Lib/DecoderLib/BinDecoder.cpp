@@ -44,52 +44,39 @@
 
 #include "CommonLib/dtrace_next.h"
 
-#define CNT_OFFSET 0
-
-
-
-template <class BinProbModel>
-BinDecoderBase::BinDecoderBase( const BinProbModel* dummy )
-  : Ctx         ( dummy )
-  , m_Bitstream ( 0 )
-  , m_Range     ( 0 )
-  , m_Value     ( 0 )
-  , m_bitsNeeded( 0 )
+template<class BinProbModel>
+BinDecoderBase::BinDecoderBase(const BinProbModel *dummy)
+  : Ctx(dummy), m_bitstream(nullptr), m_range(0), m_value(0), m_bitsNeeded(0)
 {}
-
 
 void BinDecoderBase::init( InputBitstream* bitstream )
 {
-  m_Bitstream = bitstream;
+  m_bitstream = bitstream;
 }
-
 
 void BinDecoderBase::uninit()
 {
-  m_Bitstream = 0;
+  m_bitstream = nullptr;
 }
-
 
 void BinDecoderBase::start()
 {
-  CHECK( m_Bitstream->getNumBitsUntilByteAligned(), "Bitstream is not byte aligned." );
+  CHECK(m_bitstream->getNumBitsUntilByteAligned(), "Bitstream is not byte aligned.");
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
   CodingStatistics::UpdateCABACStat(STATS__CABAC_INITIALISATION, 512, 510, 0);
 #endif
-  m_Range       = 510;
-  m_Value       = ( m_Bitstream->readByte() << 8 ) + m_Bitstream->readByte();
+  m_range       = 510;
+  m_value       = (m_bitstream->readByte() << 8) + m_bitstream->readByte();
   m_bitsNeeded  = -8;
 }
-
 
 void BinDecoderBase::finish()
 {
   unsigned lastByte;
-  m_Bitstream->peekPreviousByte( lastByte );
+  m_bitstream->peekPreviousByte(lastByte);
   CHECK( ( ( lastByte << ( 8 + m_bitsNeeded ) ) & 0xff ) != 0x80,
         "No proper stop/alignment pattern at end of CABAC stream." );
 }
-
 
 void BinDecoderBase::reset( int qp, int initId )
 {
@@ -104,27 +91,26 @@ void BinDecoderBase::riceStatReset(int bitDepth, bool persistentRiceAdaptationEn
 
 unsigned BinDecoderBase::decodeBinEP()
 {
-  m_Value            += m_Value;
+  m_value += m_value;
   if( ++m_bitsNeeded >= 0 )
   {
-    m_Value          += m_Bitstream->readByte();
+    m_value += m_bitstream->readByte();
     m_bitsNeeded      = -8;
   }
 
   unsigned bin = 0;
-  unsigned SR  = m_Range << 7;
-  if( m_Value >= SR )
+  unsigned scaledRange = m_range << 7;
+  if (m_value >= scaledRange)
   {
-    m_Value   -= SR;
+    m_value -= scaledRange;
     bin        = 1;
   }
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
   CodingStatistics::IncrementStatisticEP( *ptype, 1, int(bin) );
 #endif
-  DTRACE( g_trace_ctx, D_CABAC, "%d" "  " "%d" "  EP=%d \n",  DTRACE_GET_COUNTER( g_trace_ctx, D_CABAC ), m_Range, bin );
+  DTRACE(g_trace_ctx, D_CABAC, "%d  %d  EP=%d \n", DTRACE_GET_COUNTER(g_trace_ctx, D_CABAC), m_range, bin);
   return bin;
 }
-
 
 unsigned BinDecoderBase::decodeBinsEP( unsigned numBins )
 {
@@ -132,7 +118,7 @@ unsigned BinDecoderBase::decodeBinsEP( unsigned numBins )
   int numBinsOrig = numBins;
 #endif
 
-  if( m_Range == 256 )
+  if (m_range == 256)
   {
     return decodeAlignedBinsEP( numBins );
   }
@@ -140,36 +126,36 @@ unsigned BinDecoderBase::decodeBinsEP( unsigned numBins )
   unsigned bins    = 0;
   while(   remBins > 8 )
   {
-    m_Value     = ( m_Value << 8 ) + ( m_Bitstream->readByte() << ( 8 + m_bitsNeeded ) );
-    unsigned SR =   m_Range << 15;
+    m_value              = (m_value << 8) + (m_bitstream->readByte() << (8 + m_bitsNeeded));
+    unsigned scaledRange = m_range << 15;
     for( int i = 0; i < 8; i++ )
     {
       bins += bins;
-      SR  >>= 1;
-      if( m_Value >= SR )
+      scaledRange >>= 1;
+      if (m_value >= scaledRange)
       {
         bins    ++;
-        m_Value -= SR;
+        m_value -= scaledRange;
       }
     }
     remBins -= 8;
   }
   m_bitsNeeded   += remBins;
-  m_Value       <<= remBins;
+  m_value <<= remBins;
   if( m_bitsNeeded >= 0 )
   {
-    m_Value      += m_Bitstream->readByte() << m_bitsNeeded;
+    m_value += m_bitstream->readByte() << m_bitsNeeded;
     m_bitsNeeded -= 8;
   }
-  unsigned SR = m_Range << ( remBins + 7 );
+  unsigned scaledRange = m_range << (remBins + 7);
   for ( int i = 0; i < remBins; i++ )
   {
     bins += bins;
-    SR  >>= 1;
-    if( m_Value >= SR )
+    scaledRange >>= 1;
+    if (m_value >= scaledRange)
     {
       bins    ++;
-      m_Value -= SR;
+      m_value -= scaledRange;
     }
   }
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
@@ -178,7 +164,8 @@ unsigned BinDecoderBase::decodeBinsEP( unsigned numBins )
 #if ENABLE_TRACING
   for( int i = 0; i < numBinsOrig; i++ )
   {
-    DTRACE( g_trace_ctx, D_CABAC, "%d" "  " "%d" "  EP=%d \n", DTRACE_GET_COUNTER( g_trace_ctx, D_CABAC ), m_Range, ( bins >> ( numBinsOrig - 1 - i ) ) & 1 );
+    DTRACE(g_trace_ctx, D_CABAC, "%d  %d  EP=%d \n", DTRACE_GET_COUNTER(g_trace_ctx, D_CABAC), m_range,
+           (bins >> (numBinsOrig - 1 - i)) & 1);
   }
 #endif
   return bins;
@@ -213,15 +200,14 @@ unsigned BinDecoderBase::decodeRemAbsEP(unsigned goRicePar, unsigned cutoff, int
   return offset + decodeBinsEP(length);
 }
 
-
 unsigned BinDecoderBase::decodeBinTrm()
 {
-  m_Range    -= 2;
-  unsigned SR = m_Range << 7;
-  if( m_Value >= SR )
+  m_range -= 2;
+  unsigned scaledRange = m_range << 7;
+  if (m_value >= scaledRange)
   {
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
-    CodingStatistics::UpdateCABACStat     ( STATS__CABAC_TRM_BITS,       m_Range+2, 2, 1 );
+    CodingStatistics::UpdateCABACStat(STATS__CABAC_TRM_BITS, m_range + 2, 2, 1);
     CodingStatistics::IncrementStatisticEP( STATS__BYTE_ALIGNMENT_BITS, -m_bitsNeeded, 0 );
 #endif
     return 1;
@@ -229,15 +215,15 @@ unsigned BinDecoderBase::decodeBinTrm()
   else
   {
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
-    CodingStatistics::UpdateCABACStat ( STATS__CABAC_TRM_BITS, m_Range+2, m_Range, 0 );
+    CodingStatistics::UpdateCABACStat(STATS__CABAC_TRM_BITS, m_range + 2, m_range, 0);
 #endif
-    if( m_Range < 256 )
+    if (m_range < 256)
     {
-      m_Range += m_Range;
-      m_Value += m_Value;
+      m_range += m_range;
+      m_value += m_value;
       if( ++m_bitsNeeded == 0 )
       {
-        m_Value      += m_Bitstream->readByte();
+        m_value += m_bitstream->readByte();
         m_bitsNeeded  = -8;
       }
     }
@@ -245,17 +231,13 @@ unsigned BinDecoderBase::decodeBinTrm()
   }
 }
 
-
-
-
 void BinDecoderBase::align()
 {
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
-  CodingStatistics::UpdateCABACStat( STATS__CABAC_EP_BIT_ALIGNMENT, m_Range, 256, 0 );
+  CodingStatistics::UpdateCABACStat(STATS__CABAC_EP_BIT_ALIGNMENT, m_range, 256, 0);
 #endif
-  m_Range = 256;
+  m_range = 256;
 }
-
 
 unsigned BinDecoderBase::decodeAlignedBinsEP( unsigned numBins )
 {
@@ -266,24 +248,25 @@ unsigned BinDecoderBase::decodeAlignedBinsEP( unsigned numBins )
   unsigned bins    = 0;
   while(   remBins > 0 )
   {
-    // The MSB of m_Value is known to be 0 because range is 256. Therefore:
+    // The MSB of m_value is known to be 0 because range is 256. Therefore:
     //   > The comparison against the symbol range of 128 is simply a test on the next-most-significant bit
     //   > "Subtracting" the symbol range if the decoded bin is 1 simply involves clearing that bit.
-    //  As a result, the required bins are simply the <binsToRead> next-most-significant bits of m_Value
-    //  (m_Value is stored MSB-aligned in a 16-bit buffer - hence the shift of 15)
+    //  As a result, the required bins are simply the <binsToRead> next-most-significant bits of m_value
+    //  (m_value is stored MSB-aligned in a 16-bit buffer - hence the shift of 15)
     //
-    //    m_Value = |0|V|V|V|V|V|V|V|V|B|B|B|B|B|B|B|        (V = usable bit, B = potential buffered bit (buffer refills when m_bitsNeeded >= 0))
+    //    m_value = |0|V|V|V|V|V|V|V|V|B|B|B|B|B|B|B|
+    //    (V = usable bit, B = potential buffered bit (buffer refills when m_bitsNeeded >= 0))
     //
     unsigned binsToRead = std::min<unsigned>( remBins, 8 ); //read bytes if able to take advantage of the system's byte-read function
     unsigned binMask    = ( 1 << binsToRead ) - 1;
-    unsigned newBins    = ( m_Value >> (15 - binsToRead) ) & binMask;
+    unsigned newBins    = (m_value >> (15 - binsToRead)) & binMask;
     bins                = ( bins    << binsToRead) | newBins;
-    m_Value             = ( m_Value << binsToRead) & 0x7FFF;
+    m_value             = (m_value << binsToRead) & 0x7FFF;
     remBins            -= binsToRead;
     m_bitsNeeded       += binsToRead;
     if( m_bitsNeeded >= 0 )
     {
-      m_Value          |= m_Bitstream->readByte() << m_bitsNeeded;
+      m_value |= m_bitstream->readByte() << m_bitsNeeded;
       m_bitsNeeded     -= 8;
     }
   }
@@ -293,49 +276,46 @@ unsigned BinDecoderBase::decodeAlignedBinsEP( unsigned numBins )
 #if ENABLE_TRACING
   for( int i = 0; i < numBinsOrig; i++ )
   {
-    DTRACE( g_trace_ctx, D_CABAC, "%d" "  " "%d" "  " "EP=%d \n", DTRACE_GET_COUNTER( g_trace_ctx, D_CABAC ), m_Range, ( bins >> ( numBinsOrig - 1 - i ) ) & 1 );
+    DTRACE(g_trace_ctx, D_CABAC, "%d  %d  EP=%d \n", DTRACE_GET_COUNTER(g_trace_ctx, D_CABAC), m_range,
+           (bins >> (numBinsOrig - 1 - i)) & 1);
   }
 #endif
   return bins;
 }
 
-
-
-
-template <class BinProbModel>
+template<class BinProbModel>
 TBinDecoder<BinProbModel>::TBinDecoder()
-  : BinDecoderBase( static_cast<const BinProbModel*>    ( nullptr ) )
-  , m_Ctx         ( static_cast<CtxStore<BinProbModel>&>( *this   ) )
+  : BinDecoderBase(static_cast<const BinProbModel *>(nullptr)), m_ctx(static_cast<CtxStore<BinProbModel> &>(*this))
 {}
-
 
 template <class BinProbModel>
 unsigned TBinDecoder<BinProbModel>::decodeBin( unsigned ctxId )
 {
-  BinProbModel& rcProbModel = m_Ctx[ctxId];
-  unsigned      bin         = rcProbModel.mps();
-  uint32_t      LPS         = rcProbModel.getLPS( m_Range );
+  BinProbModel &probModel = m_ctx[ctxId];
+  unsigned      bin       = probModel.mps();
+  uint32_t      lpsRange  = probModel.getLPS(m_range);
 
-  DTRACE( g_trace_ctx, D_CABAC, "%d" " %d " "%d" "  " "[%d:%d]" "  " "%2d(MPS=%d)"  "  " , DTRACE_GET_COUNTER( g_trace_ctx, D_CABAC ), ctxId, m_Range, m_Range-LPS, LPS, ( unsigned int )( rcProbModel.state() ), m_Value < ( ( m_Range - LPS ) << 7 ) );
-  //DTRACE( g_trace_ctx, D_CABAC, " %d " "%d" "  " "[%d:%d]" "  " "%2d(MPS=%d)"  "  ", DTRACE_GET_COUNTER( g_trace_ctx, D_CABAC ), m_Range, m_Range - LPS, LPS, (unsigned int)( rcProbModel.state() ), m_Value < ( ( m_Range - LPS ) << 7 ) );
+  DTRACE(g_trace_ctx, D_CABAC, "%d %d %d  [%d:%d]  %2d(MPS=%d)  ", DTRACE_GET_COUNTER(g_trace_ctx, D_CABAC), ctxId,
+         m_range, m_range - lpsRange, lpsRange, (unsigned int) (probModel.state()),
+         m_value < ((m_range - lpsRange) << 7));
 
-  m_Range   -=  LPS;
-  uint32_t      SR          = m_Range << 7;
-  if( m_Value < SR )
+  m_range -= lpsRange;
+  uint32_t scaledRange = m_range << 7;
+  if (m_value < scaledRange)
   {
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
-    CodingStatistics::UpdateCABACStat( *ptype, m_Range+LPS, m_Range, int( bin ) );
+    CodingStatistics::UpdateCABACStat(*ptype, m_range + lpsRange, m_range, int(bin));
 #endif
     // MPS path
-    if( m_Range < 256 )
+    if (m_range < 256)
     {
-      int numBits   = rcProbModel.getRenormBitsRange( m_Range );
-      m_Range     <<= numBits;
-      m_Value     <<= numBits;
+      int numBits = probModel.getRenormBitsRange(m_range);
+      m_range <<= numBits;
+      m_value <<= numBits;
       m_bitsNeeded += numBits;
       if( m_bitsNeeded >= 0 )
       {
-        m_Value      += m_Bitstream->readByte() << m_bitsNeeded;
+        m_value += m_bitstream->readByte() << m_bitsNeeded;
         m_bitsNeeded -= 8;
       }
     }
@@ -344,27 +324,25 @@ unsigned TBinDecoder<BinProbModel>::decodeBin( unsigned ctxId )
   {
     bin = 1 - bin;
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
-    CodingStatistics::UpdateCABACStat( *ptype, m_Range+LPS, LPS, int( bin ) );
+    CodingStatistics::UpdateCABACStat(*ptype, m_range + lpsRange, lpsRange, int(bin));
 #endif
     // LPS path
-    int numBits   = rcProbModel.getRenormBitsLPS( LPS );
-    m_Value      -= SR;
-    m_Value       = m_Value << numBits;
-    m_Range       = LPS     << numBits;
+    int numBits = probModel.getRenormBitsLPS(lpsRange);
+    m_value -= scaledRange;
+    m_value = m_value << numBits;
+    m_range = lpsRange << numBits;
     m_bitsNeeded += numBits;
     if( m_bitsNeeded >= 0 )
     {
-      m_Value      += m_Bitstream->readByte() << m_bitsNeeded;
+      m_value += m_bitstream->readByte() << m_bitsNeeded;
       m_bitsNeeded -= 8;
     }
   }
-  rcProbModel.update( bin );
+  probModel.update(bin);
   //DTRACE_DECR_COUNTER( g_trace_ctx, D_CABAC );
   DTRACE_WITHOUT_COUNT( g_trace_ctx, D_CABAC, "  -  " "%d" "\n", bin );
   return  bin;
 }
-
-
 
 template class TBinDecoder<BinProbModel_Std>;
 

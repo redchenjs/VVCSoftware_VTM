@@ -387,7 +387,7 @@ void BitstreamExtractorApp::xWriteVPS(VPS *vps, std::ostream& out, int layerId, 
   CHECK( naluOut.m_temporalId, "The value of TemporalId of VPS NAL units shall be equal to 0" );
 
   // write the VPS to the newly created NAL unit buffer
-  m_hlSyntaxWriter.setBitstream( &naluOut.m_Bitstream );
+  m_hlSyntaxWriter.setBitstream(&naluOut.m_bitstream);
   m_hlSyntaxWriter.codeVPS( vps );
 
   NALUnitEBSP naluWithHeader(naluOut);
@@ -401,7 +401,7 @@ void BitstreamExtractorApp::xWriteSPS(SPS *sps, std::ostream& out, int layerId, 
   CHECK( naluOut.m_temporalId, "The value of TemporalId of SPS NAL units shall be equal to 0" );
 
   // write the SPS to the newly created NAL unit buffer
-  m_hlSyntaxWriter.setBitstream( &naluOut.m_Bitstream );
+  m_hlSyntaxWriter.setBitstream(&naluOut.m_bitstream);
   m_hlSyntaxWriter.codeSPS( sps );
 
   NALUnitEBSP naluWithHeader(naluOut);
@@ -414,7 +414,7 @@ void BitstreamExtractorApp::xWritePPS(PPS *pps, std::ostream& out, int layerId, 
   OutputNALUnit naluOut (NAL_UNIT_PPS, layerId, temporalId);
 
   // write the PPS to the newly created NAL unit buffer
-  m_hlSyntaxWriter.setBitstream( &naluOut.m_Bitstream );
+  m_hlSyntaxWriter.setBitstream(&naluOut.m_bitstream);
   m_hlSyntaxWriter.codePPS( pps );
 
   NALUnitEBSP naluWithHeader(naluOut);
@@ -457,7 +457,7 @@ bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit
       {
         // applies to target subpicture -> extract
         OutputNALUnit outNalu( nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId );
-        m_seiWriter.writeSEImessages(outNalu.m_Bitstream, sei->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
+        m_seiWriter.writeSEImessages(outNalu.m_bitstream, sei->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
         NALUnitEBSP naluWithHeader(outNalu);
         writeAnnexBNalUnit(out, naluWithHeader, true);
         return false;
@@ -829,7 +829,8 @@ uint32_t BitstreamExtractorApp::decode()
                 if (seiNesting->m_snOlsFlag || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
                 {
                   OutputNALUnit outNalu(nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId);
-                  m_seiWriter.writeSEImessages(outNalu.m_Bitstream, seiNesting->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
+                  m_seiWriter.writeSEImessages(outNalu.m_bitstream, seiNesting->m_nestedSEIs, m_hrd, false,
+                                               nalu.m_temporalId);
                   NALUnitEBSP naluWithHeader(outNalu);
                   writeAnnexBNalUnit(bitstreamFileOut, naluWithHeader, true);
                   writeInpuNalUnitToStream = false;
@@ -894,7 +895,7 @@ uint32_t BitstreamExtractorApp::decode()
 
         // create output NAL unit
         OutputNALUnit out (nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId);
-        out.m_Bitstream.getFIFO() = nalu.getBitstream().getFifo();
+        out.m_bitstream.getFIFO() = nalu.getBitstream().getFifo();
         // write with start code emulation prevention
         writeNaluContent (bitstreamFileOut, out);
       }

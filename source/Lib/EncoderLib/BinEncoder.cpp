@@ -38,101 +38,91 @@
 #include "CommonLib/dtrace_next.h"
 
 BinCounter::BinCounter()
-  : m_CtxBinsCodedBuffer( Ctx::NumberOfContexts )
-  , m_NumBinsCtx        ( m_CtxBinsCodedBuffer.data() )
-  , m_NumBinsEP         ( 0 )
-  , m_NumBinsTrm        ( 0 )
+  : m_ctxBinsCodedBuffer(Ctx::NumberOfContexts)
+  , m_numBinsCtx(m_ctxBinsCodedBuffer.data())
+  , m_numBinsEP(0)
+  , m_numBinsTrm(0)
 {}
 
 
 void BinCounter::reset()
 {
-  for( std::size_t k = 0; k < m_CtxBinsCodedBuffer.size(); k++ )
+  for (std::size_t k = 0; k < m_ctxBinsCodedBuffer.size(); k++)
   {
-    m_NumBinsCtx[k] = 0;
+    m_numBinsCtx[k] = 0;
   }
-  m_NumBinsEP       = 0;
-  m_NumBinsTrm      = 0;
+  m_numBinsEP  = 0;
+  m_numBinsTrm = 0;
 }
 
 
 uint32_t BinCounter::getAll() const
 {
-  uint32_t  count = m_NumBinsEP + m_NumBinsTrm;
-  for( std::size_t k = 0; k < m_CtxBinsCodedBuffer.size(); k++ )
+  uint32_t count = m_numBinsEP + m_numBinsTrm;
+  for (std::size_t k = 0; k < m_ctxBinsCodedBuffer.size(); k++)
   {
-    count += m_NumBinsCtx[k];
+    count += m_numBinsCtx[k];
   }
   return count;
 }
 
-
-
-
-
-template <class BinProbModel>
-BinEncoderBase::BinEncoderBase( const BinProbModel* dummy )
-  : BinEncIf          ( dummy )
-  , m_Bitstream       ( 0 )
-  , m_Low             ( 0 )
-  , m_Range           ( 0 )
-  , m_bufferedByte    ( 0 )
-  , m_numBufferedBytes( 0 )
-  , m_bitsLeft        ( 0 )
+template<class BinProbModel>
+BinEncoderBase::BinEncoderBase(const BinProbModel *dummy)
+  : BinEncIf(dummy), m_bitstream(nullptr), m_low(0), m_range(0), m_bufferedByte(0), m_numBufferedBytes(0), m_bitsLeft(0)
 {}
 
 void BinEncoderBase::init( OutputBitstream* bitstream )
 {
-  m_Bitstream = bitstream;
+  m_bitstream = bitstream;
 }
 
 void BinEncoderBase::uninit()
 {
-  m_Bitstream = 0;
+  m_bitstream = nullptr;
 }
 
 void BinEncoderBase::start()
 {
-  m_Low               = 0;
-  m_Range             = 510;
+  m_low               = 0;
+  m_range             = 510;
   m_bufferedByte      = 0xff;
   m_numBufferedBytes  = 0;
   m_bitsLeft          = 23;
   BinCounter::reset();
-  m_BinStore. reset();
+  m_binStore.reset();
 }
 
 void BinEncoderBase::finish()
 {
-  if( m_Low >> ( 32 - m_bitsLeft ) )
+  if (m_low >> (32 - m_bitsLeft))
   {
-    m_Bitstream->write( m_bufferedByte + 1, 8 );
+    m_bitstream->write(m_bufferedByte + 1, 8);
     while( m_numBufferedBytes > 1 )
     {
-      m_Bitstream->write( 0x00, 8 );
+      m_bitstream->write(0x00, 8);
       m_numBufferedBytes--;
     }
-    m_Low -= 1 << ( 32 - m_bitsLeft );
+    m_low -= 1 << (32 - m_bitsLeft);
   }
   else
   {
     if( m_numBufferedBytes > 0 )
     {
-      m_Bitstream->write( m_bufferedByte, 8 );
+      m_bitstream->write(m_bufferedByte, 8);
     }
     while( m_numBufferedBytes > 1 )
     {
-      m_Bitstream->write( 0xff, 8 );
+      m_bitstream->write(0xff, 8);
       m_numBufferedBytes--;
     }
   }
-  m_Bitstream->write( m_Low >> 8, 24 - m_bitsLeft );
+  m_bitstream->write(m_low >> 8, 24 - m_bitsLeft);
 }
 
 void BinEncoderBase::restart()
 {
-  m_Low               = 0;
-  m_Range             = 510;
+  m_low               = 0;
+  m_range             = 510;
   m_bufferedByte      = 0xff;
   m_numBufferedBytes  = 0;
   m_bitsLeft          = 23;
@@ -146,7 +136,7 @@ void BinEncoderBase::reset( int qp, int initId )
 
 void BinEncoderBase::resetBits()
 {
-  m_Low               = 0;
+  m_low               = 0;
   m_bufferedByte      = 0xff;
   m_numBufferedBytes  = 0;
   m_bitsLeft          = 23;
@@ -155,13 +145,13 @@ void BinEncoderBase::resetBits()
 
 void BinEncoderBase::encodeBinEP( unsigned bin )
 {
-  DTRACE( g_trace_ctx, D_CABAC, "%d" "  " "%d" "  EP=%d \n", DTRACE_GET_COUNTER( g_trace_ctx, D_CABAC ), m_Range, bin );
+  DTRACE(g_trace_ctx, D_CABAC, "%d  %d  EP=%d \n", DTRACE_GET_COUNTER(g_trace_ctx, D_CABAC), m_range, bin);
 
   BinCounter::addEP();
-  m_Low <<= 1;
+  m_low <<= 1;
   if( bin )
   {
-    m_Low += m_Range;
+    m_low += m_range;
   }
   m_bitsLeft--;
   if( m_bitsLeft < 12 )
@@ -174,11 +164,12 @@ void BinEncoderBase::encodeBinsEP( unsigned bins, unsigned numBins )
 {
   for(int i = 0; i < numBins; i++)
   {
-    DTRACE( g_trace_ctx, D_CABAC, "%d" "  " "%d" "  EP=%d \n", DTRACE_GET_COUNTER( g_trace_ctx, D_CABAC ), m_Range, ( bins >> ( numBins - 1 - i ) ) & 1 );
+    DTRACE(g_trace_ctx, D_CABAC, "%d  %d  EP=%d \n", DTRACE_GET_COUNTER(g_trace_ctx, D_CABAC), m_range,
+           (bins >> (numBins - 1 - i)) & 1);
   }
 
   BinCounter::addEP( numBins );
-  if( m_Range == 256 )
+  if (m_range == 256)
   {
     encodeAlignedBinsEP( bins, numBins );
     return;
@@ -187,8 +178,8 @@ void BinEncoderBase::encodeBinsEP( unsigned bins, unsigned numBins )
   {
     numBins          -= 8;
     unsigned pattern  = bins >> numBins;
-    m_Low           <<= 8;
-    m_Low            += m_Range * pattern;
+    m_low <<= 8;
+    m_low += m_range * pattern;
     bins             -= pattern << numBins;
     m_bitsLeft       -= 8;
     if( m_bitsLeft < 12 )
@@ -196,8 +187,8 @@ void BinEncoderBase::encodeBinsEP( unsigned bins, unsigned numBins )
       writeOut();
     }
   }
-  m_Low     <<= numBins;
-  m_Low      += m_Range * bins;
+  m_low <<= numBins;
+  m_low += m_range * bins;
   m_bitsLeft -= numBins;
   if( m_bitsLeft < 12 )
   {
@@ -246,22 +237,22 @@ void BinEncoderBase::encodeRemAbsEP(unsigned bins, unsigned goRicePar, unsigned 
 void BinEncoderBase::encodeBinTrm( unsigned bin )
 {
   BinCounter::addTrm();
-  m_Range -= 2;
+  m_range -= 2;
   if( bin )
   {
-    m_Low      += m_Range;
-    m_Low     <<= 7;
-    m_Range     = 2 << 7;
+    m_low += m_range;
+    m_low <<= 7;
+    m_range = 2 << 7;
     m_bitsLeft -= 7;
   }
-  else if( m_Range >= 256 )
+  else if (m_range >= 256)
   {
     return;
   }
   else
   {
-    m_Low     <<= 1;
-    m_Range   <<= 1;
+    m_low <<= 1;
+    m_range <<= 1;
     m_bitsLeft--;
   }
   if( m_bitsLeft < 12 )
@@ -273,7 +264,7 @@ void BinEncoderBase::encodeBinTrm( unsigned bin )
 
 void BinEncoderBase::align()
 {
-  m_Range = 256;
+  m_range = 256;
 }
 
 
@@ -300,7 +291,7 @@ void BinEncoderBase::encodeAlignedBinsEP( unsigned bins, unsigned numBins )
     unsigned binsToCode = std::min<unsigned>( remBins, 8); //code bytes if able to take advantage of the system's byte-write function
     unsigned binMask    = ( 1 << binsToCode ) - 1;
     unsigned newBins    = ( bins >> ( remBins - binsToCode ) ) & binMask;
-    m_Low               = ( m_Low << binsToCode ) + ( newBins << 8 ); //range is known to be 256
+    m_low               = (m_low << binsToCode) + (newBins << 8);   // range is known to be 256
     remBins            -= binsToCode;
     m_bitsLeft         -= binsToCode;
     if( m_bitsLeft < 12 )
@@ -312,9 +303,9 @@ void BinEncoderBase::encodeAlignedBinsEP( unsigned bins, unsigned numBins )
 
 void BinEncoderBase::writeOut()
 {
-  unsigned leadByte = m_Low >> ( 24 - m_bitsLeft );
+  unsigned leadByte = m_low >> (24 - m_bitsLeft);
   m_bitsLeft       += 8;
-  m_Low            &= 0xffffffffu >> m_bitsLeft;
+  m_low &= 0xffffffffu >> m_bitsLeft;
   if( leadByte == 0xff )
   {
     m_numBufferedBytes++;
@@ -326,11 +317,11 @@ void BinEncoderBase::writeOut()
       unsigned carry  = leadByte >> 8;
       unsigned byte   = m_bufferedByte + carry;
       m_bufferedByte  = leadByte & 0xff;
-      m_Bitstream->write( byte, 8 );
+      m_bitstream->write(byte, 8);
       byte            = ( 0xff + carry ) & 0xff;
       while( m_numBufferedBytes > 1 )
       {
-        m_Bitstream->write( byte, 8 );
+        m_bitstream->write(byte, 8);
         m_numBufferedBytes--;
       }
     }
@@ -342,31 +333,29 @@ void BinEncoderBase::writeOut()
   }
 }
 
-
-
-template <class BinProbModel>
+template<class BinProbModel>
 TBinEncoder<BinProbModel>::TBinEncoder()
-  : BinEncoderBase( static_cast<const BinProbModel*>    ( nullptr ) )
-  , m_Ctx         ( static_cast<CtxStore<BinProbModel>&>( *this   ) )
+  : BinEncoderBase(static_cast<const BinProbModel *>(nullptr)), m_ctx(static_cast<CtxStore<BinProbModel> &>(*this))
 {}
 
 template <class BinProbModel>
 void TBinEncoder<BinProbModel>::encodeBin( unsigned bin, unsigned ctxId )
 {
   BinCounter::addCtx( ctxId );
-  BinProbModel& rcProbModel = m_Ctx[ctxId];
-  uint32_t      LPS         = rcProbModel.getLPS( m_Range );
+  BinProbModel &probModel = m_ctx[ctxId];
+  uint32_t      lpsRange  = probModel.getLPS(m_range);
 
-  DTRACE( g_trace_ctx, D_CABAC, "%d" " %d " "%d" "  " "[%d:%d]" "  " "%2d(MPS=%d)"  "  " "  -  " "%d" "\n", DTRACE_GET_COUNTER( g_trace_ctx, D_CABAC ), ctxId, m_Range, m_Range - LPS, LPS, ( unsigned int ) ( rcProbModel.state() ), bin == rcProbModel.mps(), bin );
+  DTRACE(g_trace_ctx, D_CABAC, "%d %d %d  [%d:%d]  %2d(MPS=%d)    -  %d\n", DTRACE_GET_COUNTER(g_trace_ctx, D_CABAC),
+         ctxId, m_range, m_range - lpsRange, lpsRange, (unsigned int) (probModel.state()), bin == probModel.mps(), bin);
 
-  m_Range   -=  LPS;
-  if( bin != rcProbModel.mps() )
+  m_range -= lpsRange;
+  if (bin != probModel.mps())
   {
-    int numBits   = rcProbModel.getRenormBitsLPS( LPS );
+    int numBits = probModel.getRenormBitsLPS(lpsRange);
     m_bitsLeft   -= numBits;
-    m_Low        += m_Range;
-    m_Low         = m_Low << numBits;
-    m_Range       = LPS   << numBits;
+    m_low += m_range;
+    m_low   = m_low << numBits;
+    m_range = lpsRange << numBits;
     if( m_bitsLeft < 12 )
     {
       writeOut();
@@ -374,27 +363,27 @@ void TBinEncoder<BinProbModel>::encodeBin( unsigned bin, unsigned ctxId )
   }
   else
   {
-    if( m_Range < 256 )
+    if (m_range < 256)
     {
-      int numBits   = rcProbModel.getRenormBitsRange( m_Range );
+      int numBits = probModel.getRenormBitsRange(m_range);
       m_bitsLeft   -= numBits;
-      m_Low       <<= numBits;
-      m_Range     <<= numBits;
+      m_low <<= numBits;
+      m_range <<= numBits;
       if( m_bitsLeft < 12 )
       {
         writeOut();
       }
     }
   }
-  rcProbModel.update( bin );
-  BinEncoderBase::m_BinStore.addBin( bin, ctxId );
+  probModel.update(bin);
+  BinEncoderBase::m_binStore.addBin(bin, ctxId);
 }
 
 template <class BinProbModel>
 BinEncIf* TBinEncoder<BinProbModel>::getTestBinEncoder() const
 {
   BinEncIf* testBinEncoder = 0;
-  if( m_BinStore.inUse() )
+  if (m_binStore.inUse())
   {
     testBinEncoder = new TBinEncoder<BinProbModel>();
   }
@@ -409,7 +398,7 @@ template <class BinProbModel>
 BitEstimatorBase::BitEstimatorBase( const BinProbModel* dummy )
   : BinEncIf      ( dummy )
 {
-  m_EstFracBits = 0;
+  m_estFracBits = 0;
 }
 
 void BitEstimatorBase::encodeRemAbsEP(unsigned bins, unsigned goRicePar, unsigned cutoff, int maxLog2TrDynamicRange)
@@ -417,7 +406,7 @@ void BitEstimatorBase::encodeRemAbsEP(unsigned bins, unsigned goRicePar, unsigne
   const unsigned threshold = cutoff << goRicePar;
   if (bins < threshold)
   {
-    m_EstFracBits += BinProbModelBase::estFracBitsEP((bins >> goRicePar) + 1 + goRicePar);
+    m_estFracBits += BinProbModelBase::estFracBitsEP((bins >> goRicePar) + 1 + goRicePar);
   }
   else
   {
@@ -438,7 +427,7 @@ void BitEstimatorBase::encodeRemAbsEP(unsigned bins, unsigned goRicePar, unsigne
       }
       suffixLength = prefixLength + goRicePar + 1; //+1 for the separator bit
     }
-    m_EstFracBits += BinProbModelBase::estFracBitsEP(cutoff + prefixLength + suffixLength);
+    m_estFracBits += BinProbModelBase::estFracBitsEP(cutoff + prefixLength + suffixLength);
   }
 }
 
@@ -446,19 +435,13 @@ void BitEstimatorBase::align()
 {
   static const uint64_t add   = BinProbModelBase::estFracBitsEP() - 1;
   static const uint64_t mask  = ~add;
-  m_EstFracBits += add;
-  m_EstFracBits &= mask;
+  m_estFracBits += add;
+  m_estFracBits &= mask;
 }
 
-
-
-
-
-
-template <class BinProbModel>
+template<class BinProbModel>
 TBitEstimator<BinProbModel>::TBitEstimator()
-  : BitEstimatorBase  ( static_cast<const BinProbModel*>    ( nullptr) )
-  , m_Ctx             ( static_cast<CtxStore<BinProbModel>&>( *this  ) )
+  : BitEstimatorBase(static_cast<const BinProbModel *>(nullptr)), m_ctx(static_cast<CtxStore<BinProbModel> &>(*this))
 {}
 
 

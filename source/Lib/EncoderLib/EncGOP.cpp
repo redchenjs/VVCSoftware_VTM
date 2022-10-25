@@ -336,7 +336,7 @@ void EncGOP::init ( EncLib* pcEncLib )
 int EncGOP::xWriteOPI (AccessUnit &accessUnit, const OPI *opi)
 {
   OutputNALUnit nalu(NAL_UNIT_OPI);
-  m_HLSWriter->setBitstream( &nalu.m_Bitstream );
+  m_HLSWriter->setBitstream(&nalu.m_bitstream);
   CHECK( nalu.m_temporalId, "The value of TemporalId of OPI NAL units shall be equal to 0" );
   m_HLSWriter->codeOPI( opi );
   accessUnit.push_back(new NALUnitEBSP(nalu));
@@ -346,7 +346,7 @@ int EncGOP::xWriteOPI (AccessUnit &accessUnit, const OPI *opi)
 int EncGOP::xWriteVPS (AccessUnit &accessUnit, const VPS *vps)
 {
   OutputNALUnit nalu(NAL_UNIT_VPS);
-  m_HLSWriter->setBitstream( &nalu.m_Bitstream );
+  m_HLSWriter->setBitstream(&nalu.m_bitstream);
   CHECK( nalu.m_temporalId, "The value of TemporalId of VPS NAL units shall be equal to 0" );
   m_HLSWriter->codeVPS( vps );
   accessUnit.push_back(new NALUnitEBSP(nalu));
@@ -355,7 +355,7 @@ int EncGOP::xWriteVPS (AccessUnit &accessUnit, const VPS *vps)
 int EncGOP::xWriteDCI(AccessUnit& accessUnit, const DCI* dci)
 {
   OutputNALUnit nalu(NAL_UNIT_DCI);
-  m_HLSWriter->setBitstream(&nalu.m_Bitstream);
+  m_HLSWriter->setBitstream(&nalu.m_bitstream);
   CHECK(nalu.m_temporalId, "The value of TemporalId of DCI NAL units shall be equal to 0");
   m_HLSWriter->codeDCI(dci);
   accessUnit.push_back(new NALUnitEBSP(nalu));
@@ -365,7 +365,7 @@ int EncGOP::xWriteDCI(AccessUnit& accessUnit, const DCI* dci)
 int EncGOP::xWriteSPS( AccessUnit &accessUnit, const SPS *sps, const int layerId )
 {
   OutputNALUnit nalu(NAL_UNIT_SPS);
-  m_HLSWriter->setBitstream( &nalu.m_Bitstream );
+  m_HLSWriter->setBitstream(&nalu.m_bitstream);
   nalu.m_nuhLayerId = layerId;
   CHECK( nalu.m_temporalId, "The value of TemporalId of SPS NAL units shall be equal to 0" );
   m_HLSWriter->codeSPS( sps );
@@ -377,7 +377,7 @@ int EncGOP::xWriteSPS( AccessUnit &accessUnit, const SPS *sps, const int layerId
 int EncGOP::xWritePPS( AccessUnit &accessUnit, const PPS *pps, const int layerId )
 {
   OutputNALUnit nalu(NAL_UNIT_PPS);
-  m_HLSWriter->setBitstream( &nalu.m_Bitstream );
+  m_HLSWriter->setBitstream(&nalu.m_bitstream);
   nalu.m_nuhLayerId = layerId;
   nalu.m_temporalId = accessUnit.temporalId;
   CHECK( nalu.m_temporalId < accessUnit.temporalId, "TemporalId shall be greater than or equal to the TemporalId of the layer access unit containing the NAL unit" );
@@ -389,7 +389,7 @@ int EncGOP::xWritePPS( AccessUnit &accessUnit, const PPS *pps, const int layerId
 int EncGOP::xWriteAPS( AccessUnit &accessUnit, APS *aps, const int layerId, const bool isPrefixNUT )
 {
   OutputNALUnit nalu( isPrefixNUT ? NAL_UNIT_PREFIX_APS : NAL_UNIT_SUFFIX_APS );
-  m_HLSWriter->setBitstream(&nalu.m_Bitstream);
+  m_HLSWriter->setBitstream(&nalu.m_bitstream);
   nalu.m_nuhLayerId = layerId;
   nalu.m_temporalId = aps->getTemporalId();
   aps->setLayerId( layerId );
@@ -444,7 +444,7 @@ int EncGOP::xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool
 int EncGOP::xWritePicHeader( AccessUnit &accessUnit, PicHeader *picHeader )
 {
   OutputNALUnit nalu(NAL_UNIT_PH);
-  m_HLSWriter->setBitstream( &nalu.m_Bitstream );
+  m_HLSWriter->setBitstream(&nalu.m_bitstream);
   nalu.m_temporalId = accessUnit.temporalId;
   nalu.m_nuhLayerId = m_pcEncLib->getLayerId();
   m_HLSWriter->codePictureHeader( picHeader, true );
@@ -468,7 +468,7 @@ void EncGOP::xWriteAccessUnitDelimiter (AccessUnit &accessUnit, Slice *slice)
   }
   CHECK( nalu.m_temporalId != accessUnit.temporalId, "TemporalId shall be equal to the TemporalId of the AU containing the NAL unit" );
   int picType = slice->isIntra() ? 0 : (slice->isInterP() ? 1 : 2);
-  audWriter.codeAUD(nalu.m_Bitstream, m_audIrapOrGdrAuFlag, picType);
+  audWriter.codeAUD(nalu.m_bitstream, m_audIrapOrGdrAuFlag, picType);
   accessUnit.push_front(new NALUnitEBSP(nalu));
 }
 
@@ -487,7 +487,7 @@ void EncGOP::xWriteFillerData (AccessUnit &accessUnit, Slice *slice, uint32_t &f
     nalu.m_nuhLayerId = slice->getVPS()->getLayerId(0);
   }
   CHECK( nalu.m_temporalId != accessUnit.temporalId, "TemporalId shall be equal to the TemporalId of the AU containing the NAL unit" );
-  fdWriter.codeFD(nalu.m_Bitstream, fdSize);
+  fdWriter.codeFD(nalu.m_bitstream, fdSize);
   accessUnit.push_back(new NALUnitEBSP(nalu));
 }
 
@@ -500,7 +500,7 @@ void EncGOP::xWriteSEI (NalUnitType naluType, SEIMessages& seiMessages, AccessUn
     return;
   }
   OutputNALUnit nalu( naluType, m_pcEncLib->getLayerId(), temporalId );
-  m_seiWriter.writeSEImessages(nalu.m_Bitstream, seiMessages, *m_HRD, false, temporalId);
+  m_seiWriter.writeSEImessages(nalu.m_bitstream, seiMessages, *m_HRD, false, temporalId);
   auPos = accessUnit.insert(auPos, new NALUnitEBSP(nalu));
   auPos++;
 }
@@ -520,7 +520,7 @@ uint32_t EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMess
     SEIMessages tmpMessages;
     tmpMessages.push_back(*sei);
     OutputNALUnit nalu( naluType, m_pcEncLib->getLayerId(), temporalId );
-    numBits += m_seiWriter.writeSEImessages(nalu.m_Bitstream, tmpMessages, *m_HRD, false, temporalId);
+    numBits += m_seiWriter.writeSEImessages(nalu.m_bitstream, tmpMessages, *m_HRD, false, temporalId);
     auPos = accessUnit.insert(auPos, new NALUnitEBSP(nalu));
     auPos++;
   }
@@ -3960,7 +3960,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
         /* start slice NALunit */
         OutputNALUnit nalu( pcSlice->getNalUnitType(), m_pcEncLib->getLayerId(), pcSlice->getTLayer() );
-        m_HLSWriter->setBitstream( &nalu.m_Bitstream );
+        m_HLSWriter->setBitstream(&nalu.m_bitstream);
 
         tmpBitsBeforeWriting = m_HLSWriter->getNumberOfWrittenBits();
         m_HLSWriter->codeSliceHeader( pcSlice );
@@ -3995,9 +3995,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         }
         {
           // Construct the final bitstream by concatenating substreams.
-          // The final bitstream is either nalu.m_Bitstream or pcBitstreamRedirect;
+          // The final bitstream is either nalu.m_bitstream or pcBitstreamRedirect;
           // Complete the slice header info.
-          m_HLSWriter->setBitstream( &nalu.m_Bitstream );
+          m_HLSWriter->setBitstream(&nalu.m_bitstream);
           m_HLSWriter->codeTilesWPPEntryPoint( pcSlice );
 
           // Append substreams...
@@ -4022,7 +4022,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
         if (!bNALUAlignedWrittenToList)
         {
-          nalu.m_Bitstream.writeAlignZero();
+          nalu.m_bitstream.writeAlignZero();
           accessUnit.push_back(new NALUnitEBSP(nalu));
         }
 
@@ -5739,12 +5739,12 @@ double EncGOP::xCalculateRVM()
 void EncGOP::xAttachSliceDataToNalUnit (OutputNALUnit& rNalu, OutputBitstream* codedSliceData)
 {
   // Byte-align
-  rNalu.m_Bitstream.writeByteAlignment();   // Slice header byte-alignment
+  rNalu.m_bitstream.writeByteAlignment();   // Slice header byte-alignment
 
   // Perform bitstream concatenation
   if (codedSliceData->getNumberOfWrittenBits() > 0)
   {
-    rNalu.m_Bitstream.addSubstream(codedSliceData);
+    rNalu.m_bitstream.addSubstream(codedSliceData);
   }
   codedSliceData->clear();
 }

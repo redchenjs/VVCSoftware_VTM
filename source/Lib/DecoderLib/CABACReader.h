@@ -48,14 +48,18 @@
 class CABACReader
 {
 public:
-  CABACReader(BinDecoderBase& binDecoder) : m_BinDecoder(binDecoder), m_Bitstream(0) {}
+  CABACReader(BinDecoderBase &binDecoder) : m_binDecoder(binDecoder), m_bitstream(nullptr) {}
   virtual ~CABACReader() {}
 
 public:
   void        initCtxModels             ( Slice&                        slice );
-  void        initBitstream             ( InputBitstream*               bitstream )           { m_Bitstream = bitstream; m_BinDecoder.init( m_Bitstream ); }
-  const Ctx&  getCtx                    ()                                            const   { return m_BinDecoder.getCtx();  }
-  Ctx&        getCtx                    ()                                                    { return m_BinDecoder.getCtx();  }
+  void        initBitstream(InputBitstream *bitstream)
+  {
+    m_bitstream = bitstream;
+    m_binDecoder.init(m_bitstream);
+  }
+  const Ctx &getCtx() const { return m_binDecoder.getCtx(); }
+  Ctx       &getCtx() { return m_binDecoder.getCtx(); }
 
 public:
   // slice segment data (clause 7.3.8.1)
@@ -146,7 +150,7 @@ private:
   unsigned    unary_max_symbol          ( unsigned ctxId0, unsigned ctxIdN, unsigned maxSymbol );
   unsigned    unary_max_eqprob          (                                   unsigned maxSymbol );
   unsigned    exp_golomb_eqprob         ( unsigned count );
-  unsigned    get_num_bits_read         () { return m_BinDecoder.getNumBitsRead(); }
+  unsigned    get_num_bits_read() { return m_binDecoder.getNumBitsRead(); }
   unsigned    code_unary_fixed          ( unsigned ctxId, unsigned unary_max, unsigned fixed );
 
   void        xReadTruncBinCode(uint32_t& symbol, uint32_t maxSymbol);
@@ -155,8 +159,8 @@ private:
   void        xAdjustPLTIndex           ( CodingUnit& cu,           Pel curLevel,          uint32_t idx, PelBuf& paletteIdx, PLTtypeBuf& paletteRunType, int maxSymbol, ComponentID compBegin );
 public:
 private:
-  BinDecoderBase& m_BinDecoder;
-  InputBitstream* m_Bitstream;
+  BinDecoderBase &m_binDecoder;
+  InputBitstream *m_bitstream;
   ScanElement*    m_scanOrder;
 };
 

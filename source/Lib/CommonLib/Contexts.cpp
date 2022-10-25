@@ -882,71 +882,67 @@ const CtxSet ContextSetCfg::Sao = { ContextSetCfg::SaoMergeFlag, ContextSetCfg::
 
 const CtxSet ContextSetCfg::Alf = { ContextSetCfg::ctbAlfFlag, ContextSetCfg::ctbAlfAlternative, ContextSetCfg::AlfUseTemporalFilt };
 
-template <class BinProbModel>
-CtxStore<BinProbModel>::CtxStore()
-  : m_CtxBuffer ()
-  , m_Ctx       ( nullptr )
+template<class BinProbModel> CtxStore<BinProbModel>::CtxStore() : m_ctxBuffer(), m_ctx(nullptr) {}
+
+template<class BinProbModel>
+CtxStore<BinProbModel>::CtxStore(bool dummy) : m_ctxBuffer(ContextSetCfg::NumberOfContexts), m_ctx(m_ctxBuffer.data())
 {}
 
-template <class BinProbModel>
-CtxStore<BinProbModel>::CtxStore( bool dummy )
-  : m_CtxBuffer ( ContextSetCfg::NumberOfContexts )
-  , m_Ctx       ( m_CtxBuffer.data() )
-{}
-
-template <class BinProbModel>
-CtxStore<BinProbModel>::CtxStore( const CtxStore<BinProbModel>& ctxStore )
-  : m_CtxBuffer ( ctxStore.m_CtxBuffer )
-  , m_Ctx       ( m_CtxBuffer.data() )
+template<class BinProbModel>
+CtxStore<BinProbModel>::CtxStore(const CtxStore<BinProbModel> &ctxStore)
+  : m_ctxBuffer(ctxStore.m_ctxBuffer), m_ctx(m_ctxBuffer.data())
 {}
 
 template <class BinProbModel>
 void CtxStore<BinProbModel>::init( int qp, int initId )
 {
   const std::vector<uint8_t>& initTable = ContextSetCfg::getInitTable( initId );
-  CHECK( m_CtxBuffer.size() != initTable.size(),
-        "Size of init table (" << initTable.size() << ") does not match size of context buffer (" << m_CtxBuffer.size() << ")." );
+  CHECK(m_ctxBuffer.size() != initTable.size(), "Size of init table (" << initTable.size()
+                                                                       << ") does not match size of context buffer ("
+                                                                       << m_ctxBuffer.size() << ").");
   const std::vector<uint8_t> &rateInitTable = ContextSetCfg::getInitTable(NUMBER_OF_SLICE_TYPES);
-  CHECK(m_CtxBuffer.size() != rateInitTable.size(),
+  CHECK(m_ctxBuffer.size() != rateInitTable.size(),
         "Size of rate init table (" << rateInitTable.size() << ") does not match size of context buffer ("
-                                    << m_CtxBuffer.size() << ").");
+                                    << m_ctxBuffer.size() << ").");
   int clippedQP = Clip3( 0, MAX_QP, qp );
-  for( std::size_t k = 0; k < m_CtxBuffer.size(); k++ )
+  for (std::size_t k = 0; k < m_ctxBuffer.size(); k++)
   {
-    m_CtxBuffer[k].init( clippedQP, initTable[k] );
-    m_CtxBuffer[k].setLog2WindowSize(rateInitTable[k]);
+    m_ctxBuffer[k].init(clippedQP, initTable[k]);
+    m_ctxBuffer[k].setLog2WindowSize(rateInitTable[k]);
   }
 }
 
 template <class BinProbModel>
 void CtxStore<BinProbModel>::setWinSizes( const std::vector<uint8_t>& log2WindowSizes )
 {
-  CHECK( m_CtxBuffer.size() != log2WindowSizes.size(),
-        "Size of window size table (" << log2WindowSizes.size() << ") does not match size of context buffer (" << m_CtxBuffer.size() << ")." );
-  for( std::size_t k = 0; k < m_CtxBuffer.size(); k++ )
+  CHECK(m_ctxBuffer.size() != log2WindowSizes.size(),
+        "Size of window size table (" << log2WindowSizes.size() << ") does not match size of context buffer ("
+                                      << m_ctxBuffer.size() << ").");
+  for (std::size_t k = 0; k < m_ctxBuffer.size(); k++)
   {
-    m_CtxBuffer[k].setLog2WindowSize( log2WindowSizes[k] );
+    m_ctxBuffer[k].setLog2WindowSize(log2WindowSizes[k]);
   }
 }
 
 template <class BinProbModel>
 void CtxStore<BinProbModel>::loadPStates( const std::vector<uint16_t>& probStates )
 {
-  CHECK( m_CtxBuffer.size() != probStates.size(),
-        "Size of prob states table (" << probStates.size() << ") does not match size of context buffer (" << m_CtxBuffer.size() << ")." );
-  for( std::size_t k = 0; k < m_CtxBuffer.size(); k++ )
+  CHECK(m_ctxBuffer.size() != probStates.size(), "Size of prob states table ("
+                                                   << probStates.size() << ") does not match size of context buffer ("
+                                                   << m_ctxBuffer.size() << ").");
+  for (std::size_t k = 0; k < m_ctxBuffer.size(); k++)
   {
-    m_CtxBuffer[k].setState( probStates[k] );
+    m_ctxBuffer[k].setState(probStates[k]);
   }
 }
 
 template <class BinProbModel>
 void CtxStore<BinProbModel>::savePStates( std::vector<uint16_t>& probStates ) const
 {
-  probStates.resize( m_CtxBuffer.size(), uint16_t(0) );
-  for( std::size_t k = 0; k < m_CtxBuffer.size(); k++ )
+  probStates.resize(m_ctxBuffer.size(), uint16_t(0));
+  for (std::size_t k = 0; k < m_ctxBuffer.size(); k++)
   {
-    probStates[k] = m_CtxBuffer[k].getState();
+    probStates[k] = m_ctxBuffer[k].getState();
   }
 }
 
