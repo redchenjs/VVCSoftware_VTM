@@ -445,7 +445,7 @@ void AreaBuf<Pel>::scaleSignal(const int scale, const bool dir, const ClpRng& cl
 {
   Pel* dst = buf;
   Pel* src = buf;
-  int sign, absval;
+  int  absval;
   int maxAbsclipBD = (1<<clpRng.bd) - 1;
 
   if (dir) // forward
@@ -460,7 +460,7 @@ void AreaBuf<Pel>::scaleSignal(const int scale, const bool dir, const ClpRng& cl
       {
         for (unsigned x = 0; x < width; x++)
         {
-          sign = src[x] >= 0 ? 1 : -1;
+          const int sign = sgn2(src[x]);
           absval = sign * src[x];
           dst[x] = (Pel)Clip3(-maxAbsclipBD, maxAbsclipBD, sign * (((absval << CSCALE_FP_PREC) + (scale >> 1)) / scale));
         }
@@ -476,7 +476,7 @@ void AreaBuf<Pel>::scaleSignal(const int scale, const bool dir, const ClpRng& cl
       for (unsigned x = 0; x < width; x++)
       {
         src[x] = (Pel)Clip3((Pel)(-maxAbsclipBD - 1), (Pel)maxAbsclipBD, src[x]);
-        sign = src[x] >= 0 ? 1 : -1;
+        const int sign = sgn2(src[x]);
         absval = sign * src[x];
         int val = sign * ((absval * scale + (1 << (CSCALE_FP_PREC - 1))) >> CSCALE_FP_PREC);
         if (sizeof(Pel) == 2) // avoid overflow when storing data

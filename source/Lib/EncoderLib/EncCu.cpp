@@ -4731,7 +4731,7 @@ void EncCu::xCalDebCost( CodingStructure &cs, Partitioner &partitioner, bool cal
 
     //updated cost
     int64_t distTmp = distCur - cs.dist + distAfterDb - distBeforeDb;
-    int sign = distTmp < 0 ? -1 : 1;
+    const int sign    = sgn2(distTmp);
     distTmp = distTmp < 0 ? -distTmp : distTmp;
     cs.costDbOffset = sign * m_pcRdCost->calcRdCost( 0, distTmp );
   }

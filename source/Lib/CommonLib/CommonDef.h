@@ -536,6 +536,18 @@ template <typename T> inline void Check3( T minVal, T maxVal, T a)
   CHECK( ( a > maxVal ) || ( a < minVal ), "ERROR: Range check " << minVal << " >= " << a << " <= " << maxVal << " failed" );
 }  ///< general min/max clip
 
+template<typename T> inline constexpr int sgn(const T val)
+{
+  // return -1 for val < 0, 0 for val == 0, and 1 for val > 0
+  return (T(0) < val ? 1 : 0) - (val < T(0) ? 1 : 0);
+}
+
+template<typename T> inline constexpr int sgn2(const T val)
+{
+  // return -1 for val < 0, and 1 for val >= 0
+  return val >= T(0) ? 1 : -1;
+}
+
 extern MsgLevel g_verbosity;
 
 #include <stdarg.h>

@@ -1734,11 +1734,8 @@ inline int32_t div_for_maxq7(int64_t N, int64_t D)
   {
     q++;
   }
-  if (sign)
-  {
-    return (-q);
-  }
-  return(q);
+
+  return sign ? -q : q;
 }
 
 void xSubPelErrorSrfc(uint64_t *sadBuffer, int32_t *deltaMv)
@@ -2365,40 +2362,50 @@ bool InterPrediction::xPredInterBlkRPR(const std::pair<int, int> &scalingRatio, 
       }
     }
     const int posShift = SCALE_RATIO_BITS - 4;
-    int stepX = ( scalingRatio.first + 8 ) >> 4;
-    int stepY = ( scalingRatio.second + 8 ) >> 4;
-    int64_t x0Int;
-    int64_t y0Int;
-    int offX = 1 << ( posShift - shiftHor - 1 );
-    int offY = 1 << ( posShift - shiftVer - 1 );
 
-    const int64_t posX = ( ( blk.pos().x << ::getComponentScaleX( compID, chFmt ) ) - ( pps.getScalingWindow().getWindowLeftOffset() * SPS::getWinUnitX( chFmt ) ) ) >> ::getComponentScaleX( compID, chFmt );
-    const int64_t posY = ( ( blk.pos().y << ::getComponentScaleY( compID, chFmt ) ) - ( pps.getScalingWindow().getWindowTopOffset()  * SPS::getWinUnitY( chFmt ) ) ) >> ::getComponentScaleY( compID, chFmt );
+    const int stepX = (scalingRatio.first + 8) >> 4;
+    const int stepY = (scalingRatio.second + 8) >> 4;
+
+    const int offX = 1 << (posShift - shiftHor - 1);
+    const int offY = 1 << (posShift - shiftVer - 1);
+
+    const uint32_t scaleX = ::getComponentScaleX(compID, chFmt);
+    const uint32_t scaleY = ::getComponentScaleY(compID, chFmt);
+
+    const int64_t posX =
+      ((blk.pos().x << scaleX) - (pps.getScalingWindow().getWindowLeftOffset() * SPS::getWinUnitX(chFmt))) >> scaleX;
+    const int64_t posY =
+      ((blk.pos().y << scaleY) - (pps.getScalingWindow().getWindowTopOffset() * SPS::getWinUnitY(chFmt))) >> scaleY;
 
     int addX = isLuma( compID ) ? 0 : int( 1 - refPic->cs->sps->getHorCollocatedChromaFlag() ) * 8 * ( scalingRatio.first - SCALE_1X.first );
     int addY = isLuma( compID ) ? 0 : int( 1 - refPic->cs->sps->getVerCollocatedChromaFlag() ) * 8 * ( scalingRatio.second - SCALE_1X.second );
 
     int boundLeft   = 0;
-    int boundRight  = refPicWidth >> ::getComponentScaleX( compID, chFmt );
+    int boundRight  = refPicWidth >> scaleX;
     int boundTop    = 0;
-    int boundBottom = refPicHeight >> ::getComponentScaleY( compID, chFmt );
+    int boundBottom = refPicHeight >> scaleY;
     if( refPic->subPictures.size() > 1 )
     {
       const SubPic& curSubPic = pps.getSubPicFromPos(blk.lumaPos());
       if( curSubPic.getTreatedAsPicFlag() )
       {
-        boundLeft   = curSubPic.getSubPicLeft()   >> ::getComponentScaleX( compID, chFmt );
-        boundRight  = curSubPic.getSubPicRight()  >> ::getComponentScaleX( compID, chFmt );
-        boundTop    = curSubPic.getSubPicTop()    >> ::getComponentScaleY( compID, chFmt );
-        boundBottom = curSubPic.getSubPicBottom() >> ::getComponentScaleY( compID, chFmt );
+        boundLeft   = curSubPic.getSubPicLeft() >> scaleX;
+        boundRight  = curSubPic.getSubPicRight() >> scaleX;
+        boundTop    = curSubPic.getSubPicTop() >> scaleY;
+        boundBottom = curSubPic.getSubPicBottom() >> scaleY;
       }
     }
 
-    x0Int = ( ( posX << ( 4 + ::getComponentScaleX( compID, chFmt ) ) ) + mv.getHor() ) * (int64_t)scalingRatio.first + addX;
-    x0Int = SIGN( x0Int ) * ( ( llabs( x0Int ) + ( (long long)1 << ( 7 + ::getComponentScaleX( compID, chFmt ) ) ) ) >> ( 8 + ::getComponentScaleX( compID, chFmt ) ) ) + ( ( refPic->getScalingWindow().getWindowLeftOffset() * SPS::getWinUnitX( chFmt ) ) << ( ( posShift - ::getComponentScaleX( compID, chFmt ) ) ) );
+    int64_t x0Int;
+    int64_t y0Int;
 
-    y0Int = ( ( posY << ( 4 + ::getComponentScaleY( compID, chFmt ) ) ) + mv.getVer() ) * (int64_t)scalingRatio.second + addY;
-    y0Int = SIGN( y0Int ) * ( ( llabs( y0Int ) + ( (long long)1 << ( 7 + ::getComponentScaleY( compID, chFmt ) ) ) ) >> ( 8 + ::getComponentScaleY( compID, chFmt ) ) ) + ( ( refPic->getScalingWindow().getWindowTopOffset() * SPS::getWinUnitY( chFmt ) ) << ( ( posShift - ::getComponentScaleY( compID, chFmt ) ) ) );
+    x0Int = ((posX << (4 + scaleX)) + mv.getHor()) * (int64_t) scalingRatio.first + addX;
+    x0Int = sgn2(x0Int) * ((abs(x0Int) + (1ull << (7 + scaleX))) >> (8 + scaleX))
+            + ((refPic->getScalingWindow().getWindowLeftOffset() * SPS::getWinUnitX(chFmt)) << ((posShift - scaleX)));
+
+    y0Int = ((posY << (4 + scaleY)) + mv.getVer()) * (int64_t) scalingRatio.second + addY;
+    y0Int = sgn2(y0Int) * ((abs(y0Int) + (1ull << (7 + scaleY))) >> (8 + scaleY))
+            + ((refPic->getScalingWindow().getWindowTopOffset() * SPS::getWinUnitY(chFmt)) << ((posShift - scaleY)));
 
     const int extSize = isLuma( compID ) ? 1 : 2;
     int vFilterSize = isLuma( compID ) ? NTAPS_LUMA : NTAPS_CHROMA;

@@ -1898,7 +1898,7 @@ void EncAdaptiveLoopFilter::roundFiltCoeff( int *filterCoeffQuant, double *filte
   double alfStrength = isLumaFilter ? m_encCfg->getALFStrengthLuma() : m_encCfg->getALFStrengthChroma();
   for( int i = 0; i < numCoeff; i++ )
   {
-    int sign = filterCoeff[i] > 0 ? 1 : -1;
+    const int sign      = sgn2(filterCoeff[i]);
     filterCoeffQuant[i] = int((filterCoeff[i] * alfStrength) * sign * factor + 0.5) * sign;
   }
 }
@@ -1908,7 +1908,7 @@ void EncAdaptiveLoopFilter::roundFiltCoeffCCALF(int16_t *filterCoeffQuant, doubl
 {
   for( int i = 0; i < numCoeff; i++ )
   {
-    int sign = filterCoeff[i] > 0 ? 1 : -1;
+    const int sign       = sgn2(filterCoeff[i]);
     double best_err = 128.0*128.0;
     int best_index = 0;
     for(int k = 0; k < CCALF_CANDS_COEFF_NR; k++)
