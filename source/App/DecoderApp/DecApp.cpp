@@ -1003,7 +1003,7 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         numPicsNotYetDisplayed = numPicsNotYetDisplayed-2;
         if ( !m_reconFileName.empty() )
         {
-          const Window &conf = pcPicTop->cs->pps->getConformanceWindow();
+          const Window &conf = pcPicTop->getConformanceWindow();
           const bool isTff = pcPicTop->topField;
 
           bool display = true;
@@ -1198,7 +1198,7 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
           // write to file
           if ( !m_reconFileName.empty() )
           {
-            const Window &conf = pcPicTop->cs->pps->getConformanceWindow();
+            const Window &conf = pcPicTop->getConformanceWindow();
             const bool    isTff   = pcPicTop->topField;
 
             m_cVideoIOYuvReconFile[pcPicTop->layerId].write( pcPicTop->getRecoBuf(), pcPicBottom->getRecoBuf(),
