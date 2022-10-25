@@ -8538,15 +8538,15 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
     const int multiShift = 1 << normShiftTab[pu.cu->imv];
     const int mvShift = stepShiftTab[pu.cu->imv];
 
-    acDeltaMv[0] = Mv((int) (dDeltaMv[0] * multiShift + SIGN(dDeltaMv[0]) * 0.5) * (1 << mvShift),
-                      (int) (dDeltaMv[2] * multiShift + SIGN(dDeltaMv[2]) * 0.5) * (1 << mvShift));
-    acDeltaMv[1] = Mv((int) (dDeltaMv[1] * multiShift + SIGN(dDeltaMv[1]) * 0.5) * (1 << mvShift),
-                      (int) (dDeltaMv[3] * multiShift + SIGN(dDeltaMv[3]) * 0.5) * (1 << mvShift));
+    acDeltaMv[0] = Mv((int) (dDeltaMv[0] * multiShift + sgn2(dDeltaMv[0]) * 0.5) * (1 << mvShift),
+                      (int) (dDeltaMv[2] * multiShift + sgn2(dDeltaMv[2]) * 0.5) * (1 << mvShift));
+    acDeltaMv[1] = Mv((int) (dDeltaMv[1] * multiShift + sgn2(dDeltaMv[1]) * 0.5) * (1 << mvShift),
+                      (int) (dDeltaMv[3] * multiShift + sgn2(dDeltaMv[3]) * 0.5) * (1 << mvShift));
 
     if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
     {
-      acDeltaMv[2] = Mv((int) (dDeltaMv[4] * multiShift + SIGN(dDeltaMv[4]) * 0.5) * (1 << mvShift),
-                        (int) (dDeltaMv[5] * multiShift + SIGN(dDeltaMv[5]) * 0.5) * (1 << mvShift));
+      acDeltaMv[2] = Mv((int) (dDeltaMv[4] * multiShift + sgn2(dDeltaMv[4]) * 0.5) * (1 << mvShift),
+                        (int) (dDeltaMv[5] * multiShift + sgn2(dDeltaMv[5]) * 0.5) * (1 << mvShift));
     }
     if ( !m_pcEncCfg->getUseAffineAmvrEncOpt() )
     {

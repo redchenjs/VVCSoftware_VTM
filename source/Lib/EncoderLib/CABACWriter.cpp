@@ -3262,7 +3262,7 @@ void CABACWriter::residual_coding_subblockTS( CoeffCodingContext& cctx, const TC
 
       if (absLevel && scanPos > lastScanPosPass1)
       {
-        int sign = coeff[cctx.blockPos(scanPos)] < 0;
+        const int sign = coeff[cctx.blockPos(scanPos)] < 0 ? 1 : 0;
         m_BinEncoder.encodeBinEP(sign);
       }
     }

@@ -384,11 +384,6 @@ public:
     return m_tsLrg1FlagCtxSet(numPos);
   }
 
-  template <typename T> int sgn(T val)
-  {
-    return (T(0) < val) - (val < T(0));
-  }
-
   unsigned signCtxIdAbsTS(int scanPos, const TCoeff* coeff, int bdpcm)
   {
     const uint32_t  posY = m_scan[scanPos].y;
