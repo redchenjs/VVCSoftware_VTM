@@ -3405,7 +3405,7 @@ void CABACReader::residual_codingTS( TransformUnit& tu, ComponentID compID )
     int goRiceParam = 1;
     if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MTS_SKIP)
     {
-      goRiceParam = goRiceParam + tu.cu->slice->get_tsrc_index();
+      goRiceParam = goRiceParam + tu.cu->slice->getTsrcIndex();
     }
     residual_coding_subblockTS( cctx, coeff, goRiceParam);
   }

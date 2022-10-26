@@ -4399,7 +4399,7 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
   if ((!pcSlice->getTSResidualCodingDisabledFlag()) && sps->getSpsRangeExtension().getTSRCRicePresentFlag())
   {
     READ_CODE(3, uiCode, "sh_ts_residual_coding_rice_idx_minus1");
-    pcSlice->set_tsrc_index(uiCode);
+    pcSlice->setTsrcIndex(uiCode);
   }
   if (sps->getSpsRangeExtension().getReverseLastSigCoeffEnabledFlag())
   {

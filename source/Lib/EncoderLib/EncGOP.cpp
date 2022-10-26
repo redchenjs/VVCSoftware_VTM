@@ -2240,7 +2240,7 @@ void EncGOP::computeSignalling(Picture* pcPic, Slice* pcSlice) const
       {
         tsrcIndex = std::min(tsrcIndex, std::max(0, pcPic->cs->sps->getBitDepth(CHANNEL_TYPE_LUMA) - 9));
       }
-      pcSlice->set_tsrc_index(tsrcIndex);
+      pcSlice->setTsrcIndex(tsrcIndex);
     }
   }
 }
@@ -3241,7 +3241,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
             if (m_preQP[0] != pcSlice->getSliceQp())
             {
-              m_riceBit[pcSlice->get_tsrc_index()][0] = (int) (m_riceBit[pcSlice->get_tsrc_index()][0] * 9 / 10);
+              m_riceBit[pcSlice->getTsrcIndex()][0] = (int) (m_riceBit[pcSlice->getTsrcIndex()][0] * 9 / 10);
             }
 
             for (int idx = 2; idx < 9; idx++)
@@ -3257,7 +3257,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
               m_riceBit[idx - 2][0] = 0;
             }
             m_riceBit[7][0] = 0;
-            pcSlice->set_tsrc_index(nextRice - 1);
+            pcSlice->setTsrcIndex(nextRice - 1);
           }
           else
           {

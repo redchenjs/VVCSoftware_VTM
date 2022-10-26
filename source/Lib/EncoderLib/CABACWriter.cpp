@@ -3106,7 +3106,7 @@ void CABACWriter::residual_codingTS( const TransformUnit& tu, ComponentID compID
     unsigned RiceBit[8]   = { 0, 0, 0, 0, 0, 0, 0, 0 };
     if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MTS_SKIP)
     {
-      goRiceParam = goRiceParam + tu.cu->slice->get_tsrc_index();
+      goRiceParam = goRiceParam + tu.cu->slice->getTsrcIndex();
       if (isEncoding())
       {
         ricePresentFlag = true;
