@@ -278,9 +278,9 @@ bool InterPrediction::xCheckIdenticalMotion( const PredictionUnit &pu )
   return false;
 }
 
-void InterPrediction::xSubPuMC( PredictionUnit& pu, PelUnitBuf& predBuf, const RefPicList &eRefPicList /*= REF_PIC_LIST_X*/, const bool luma /*= true*/, const bool chroma /*= true*/)
+void InterPrediction::xSubPuMC(PredictionUnit &pu, PelUnitBuf &predBuf, const RefPicList &eRefPicList, const bool luma,
+                               const bool chroma)
 {
-
   // compute the location of the current PU
   Position puPos    = pu.lumaPos();
   Size puSize       = pu.lumaSize();
@@ -444,7 +444,9 @@ void InterPrediction::xSubPuBio(PredictionUnit &pu, PelUnitBuf &predBuf, const R
         motionCompensation(subPu, subPredBuf, eRefPicList, true, true, &subPredBufTmp);
       }
       else
-      motionCompensation(subPu, subPredBuf, eRefPicList);
+      {
+        motionCompensation(subPu, subPredBuf, eRefPicList);
+      }
     }
   }
   JVET_J0090_SET_CACHE_ENABLE(true);
@@ -1548,7 +1550,9 @@ void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf
       {
         xPredInterUni(pu, REF_PIC_LIST_0, predBuf, false, false, luma, chroma);
         if (predBufWOBIO)
+        {
           predBufWOBIO->copyFrom(predBuf, (luma && !chroma), (chroma && !luma));
+        }
       }
       else
       {
