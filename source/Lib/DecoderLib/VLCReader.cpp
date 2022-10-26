@@ -3483,6 +3483,7 @@ void  HLSyntaxReader::checkAlfNaluTidAndPicTid(Slice* pcSlice, PicHeader* picHea
 {
   SPS* sps = parameterSetManager->getSPS(picHeader->getSPSId());
   PPS* pps = parameterSetManager->getPPS(picHeader->getPPSId());
+  VPS* vps = parameterSetManager->getVPS(sps->getVPSId());
   int curPicTid = pcSlice->getTLayer();
   APS* aps;
   const std::vector<int>&   apsId = picHeader->getAlfApsIdsLuma();
@@ -3497,18 +3498,18 @@ void  HLSyntaxReader::checkAlfNaluTidAndPicTid(Slice* pcSlice, PicHeader* picHea
       if( pcSlice->getNalUnitLayerId() != aps->getLayerId() )
       {
         CHECK( aps->getLayerId() > pcSlice->getNalUnitLayerId(), "Layer Id of APS cannot be greater than layer Id of VCL NAL unit the refer to it" );
-        CHECK( pcSlice->getSPS()->getVPSId() == 0, "VPSId of the referred SPS cannot be 0 when layer Id of APS and layer Id of current slice are different" );
-        for (int i = 0; i < pcSlice->getVPS()->getNumOutputLayerSets(); i++ )
+        CHECK( sps->getVPSId() == 0, "VPSId of the referred SPS cannot be 0 when layer Id of APS and layer Id of current slice are different" );
+        for (int i = 0; i < vps->getNumOutputLayerSets(); i++ )
         {
           bool isCurrLayerInOls = false;
           bool isRefLayerInOls = false;
-          for( int j = pcSlice->getVPS()->getNumLayersInOls(i) - 1; j >= 0; j-- )
+          for( int j = vps->getNumLayersInOls(i) - 1; j >= 0; j-- )
           {
-            if( pcSlice->getVPS()->getLayerIdInOls(i, j) == pcSlice->getNalUnitLayerId() )
+            if( vps->getLayerIdInOls(i, j) == pcSlice->getNalUnitLayerId() )
             {
               isCurrLayerInOls = true;
             }
-            if( pcSlice->getVPS()->getLayerIdInOls(i, j) == aps->getLayerId() )
+            if( vps->getLayerIdInOls(i, j) == aps->getLayerId() )
             {
               isRefLayerInOls = true;
             }
@@ -3526,18 +3527,18 @@ void  HLSyntaxReader::checkAlfNaluTidAndPicTid(Slice* pcSlice, PicHeader* picHea
       if( pcSlice->getNalUnitLayerId() != aps->getLayerId() )
       {
         CHECK( aps->getLayerId() > pcSlice->getNalUnitLayerId(), "Layer Id of APS cannot be greater than layer Id of VCL NAL unit the refer to it" );
-        CHECK( pcSlice->getSPS()->getVPSId() == 0, "VPSId of the referred SPS cannot be 0 when layer Id of APS and layer Id of current slice are different" );
-        for (int i = 0; i < pcSlice->getVPS()->getNumOutputLayerSets(); i++ )
+        CHECK( sps->getVPSId() == 0, "VPSId of the referred SPS cannot be 0 when layer Id of APS and layer Id of current slice are different" );
+        for (int i = 0; i < vps->getNumOutputLayerSets(); i++ )
         {
           bool isCurrLayerInOls = false;
           bool isRefLayerInOls = false;
-          for( int j = pcSlice->getVPS()->getNumLayersInOls(i) - 1; j >= 0; j-- )
+          for( int j = vps->getNumLayersInOls(i) - 1; j >= 0; j-- )
           {
-            if( pcSlice->getVPS()->getLayerIdInOls(i, j) == pcSlice->getNalUnitLayerId() )
+            if( vps->getLayerIdInOls(i, j) == pcSlice->getNalUnitLayerId() )
             {
               isCurrLayerInOls = true;
             }
-            if( pcSlice->getVPS()->getLayerIdInOls(i, j) == aps->getLayerId() )
+            if( vps->getLayerIdInOls(i, j) == aps->getLayerId() )
             {
               isRefLayerInOls = true;
             }
