@@ -157,11 +157,9 @@ void ParameterSetMap<VPS>::setID(VPS* parameterSet, const int psId)
 }
 
 ProfileTierLevel::ProfileTierLevel()
-  : m_tierFlag        (Level::MAIN)
-  , m_profileIdc      (Profile::NONE)
-  , m_numSubProfile(0)
-  , m_subProfileIdc(0)
-  , m_levelIdc        (Level::NONE)
+  : m_tierFlag(Level::MAIN)
+  , m_profileIdc(Profile::NONE)
+  , m_levelIdc(Level::NONE)
   , m_frameOnlyConstraintFlag(1)
   , m_multiLayerEnabledFlag(0)
 {

@@ -4815,10 +4815,6 @@ bool             operator == (const ProfileTierLevel& op1, const ProfileTierLeve
   {
     return false;
   }
-  if (op1.m_numSubProfile != op2.m_numSubProfile)
-  {
-    return false;
-  }
   if (op1.m_levelIdc != op2.m_levelIdc)
   {
     return false;
