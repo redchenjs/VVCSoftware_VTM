@@ -98,9 +98,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
 
   if (slice->getFirstCtuRsAddrInSlice() == 0)
   {
-    cs.picture->resizeAlfCtuEnableFlag( cs.pcv->sizeInCtus );
-    cs.picture->resizeAlfCtbFilterIndex(cs.pcv->sizeInCtus);
-    cs.picture->resizeAlfCtuAlternative( cs.pcv->sizeInCtus );
+    cs.picture->resizeAlfData(cs.pcv->sizeInCtus);
   }
 
   const unsigned numSubstreams = slice->getNumberOfSubstreamSizes() + 1;

@@ -278,6 +278,12 @@ private:
   UnitArea m_ctuArea;
 #endif
 
+  std::vector<uint8_t> m_alfCtuEnableFlag[MAX_NUM_COMPONENT];
+  std::vector<short>   m_alfCtbFilterIndex;
+  std::vector<uint8_t> m_alfCtuAlternative[MAX_NUM_COMPONENT];
+
+  std::vector<SAOBlkParam> m_sao[2];
+
 public:
   SAOBlkParam    *getSAO(int id = 0)                        { return &m_sao[id][0]; };
   void            resizeSAO(unsigned numEntries, int dstid) { m_sao[dstid].resize(numEntries); }
@@ -286,46 +292,17 @@ public:
 #if ENABLE_QPA
   std::vector<double>     m_uEnerHpCtu;                         ///< CTU-wise L2 or squared L1 norm of high-passed luma input
   std::vector<Pel>        m_iOffsetCtu;                         ///< CTU-wise DC offset (later QP index offset) of luma input
- #if ENABLE_QPA_SUB_CTU
+#if ENABLE_QPA_SUB_CTU
   std::vector<int8_t>     m_subCtuQP;                           ///< sub-CTU-wise adapted QPs for delta-QP depth of 1 or more
- #endif
+#endif
 #endif
 
-  std::vector<SAOBlkParam> m_sao[2];
+  void copyAlfData(const Picture &p);
+  void resizeAlfData(int numEntries);
 
-  std::vector<uint8_t> m_alfCtuEnableFlag[MAX_NUM_COMPONENT];
-  uint8_t* getAlfCtuEnableFlag( int compIdx ) { return m_alfCtuEnableFlag[compIdx].data(); }
-  std::vector<uint8_t>* getAlfCtuEnableFlag() { return m_alfCtuEnableFlag; }
-  void resizeAlfCtuEnableFlag( int numEntries )
-  {
-    for( int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++ )
-    {
-      m_alfCtuEnableFlag[compIdx].resize( numEntries );
-      std::fill( m_alfCtuEnableFlag[compIdx].begin(), m_alfCtuEnableFlag[compIdx].end(), 0 );
-    }
-  }
-  std::vector<short> m_alfCtbFilterIndex;
-  short* getAlfCtbFilterIndex() { return m_alfCtbFilterIndex.data(); }
-  std::vector<short>& getAlfCtbFilterIndexVec() { return m_alfCtbFilterIndex; }
-  void resizeAlfCtbFilterIndex(int numEntries)
-  {
-    m_alfCtbFilterIndex.resize(numEntries);
-    for (int i = 0; i < numEntries; i++)
-    {
-      m_alfCtbFilterIndex[i] = 0;
-    }
-  }
-  std::vector<uint8_t> m_alfCtuAlternative[MAX_NUM_COMPONENT];
-  std::vector<uint8_t>& getAlfCtuAlternative( int compIdx ) { return m_alfCtuAlternative[compIdx]; }
-  uint8_t* getAlfCtuAlternativeData( int compIdx ) { return m_alfCtuAlternative[compIdx].data(); }
-  void resizeAlfCtuAlternative( int numEntries )
-  {
-    for( int compIdx = 1; compIdx < MAX_NUM_COMPONENT; compIdx++ )
-    {
-      m_alfCtuAlternative[compIdx].resize( numEntries );
-      std::fill( m_alfCtuAlternative[compIdx].begin(), m_alfCtuAlternative[compIdx].end(), 0 );
-    }
-  }
+  uint8_t *getAlfCtuEnableFlag(int compIdx) { return m_alfCtuEnableFlag[compIdx].data(); }
+  short   *getAlfCtbFilterIndex() { return m_alfCtbFilterIndex.data(); }
+  uint8_t *getAlfCtuAlternativeData(int compIdx) { return m_alfCtuAlternative[compIdx].data(); }
 };
 
 int calcAndPrintHashStatus(const CPelUnitBuf& pic, const class SEIDecodedPictureHash* pictureHashSEI, const BitDepths &bitDepths, const MsgLevel msgl);
