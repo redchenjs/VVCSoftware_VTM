@@ -558,14 +558,14 @@ class ProfileTierLevel
 {
   Level::Tier       m_tierFlag;
   Profile::Name     m_profileIdc;
-  uint8_t           m_numSubProfile;
-  std::vector<uint32_t>          m_subProfileIdc;
   Level::Name       m_levelIdc;
   bool              m_frameOnlyConstraintFlag;
   bool              m_multiLayerEnabledFlag;
   ConstraintInfo    m_constraintInfo;
+
   std::array<bool, MAX_TLAYER - 1>    m_subLayerLevelPresentFlag;
   std::array<Level::Name, MAX_TLAYER> m_subLayerLevelIdc;
+  static_vector<uint32_t, 255>        m_subProfileIdc;
 
 public:
                 ProfileTierLevel();
@@ -579,8 +579,8 @@ public:
   uint32_t      getSubProfileIdc(int i) const               { return m_subProfileIdc[i]; }
   void          setSubProfileIdc(int i, uint32_t x)         { m_subProfileIdc[i] = x; }
 
-  uint8_t       getNumSubProfile() const                    { return m_numSubProfile; }
-  void          setNumSubProfile(uint8_t x)                 { m_numSubProfile = x; m_subProfileIdc.resize(m_numSubProfile); }
+  uint8_t getNumSubProfile() const { return (uint8_t) m_subProfileIdc.size(); }
+  void    setNumSubProfile(uint8_t x) { m_subProfileIdc.resize(x); }
 
   Level::Name   getLevelIdc() const                         { return m_levelIdc;                    }
   void          setLevelIdc(Level::Name x)                  { m_levelIdc = x;                       }
