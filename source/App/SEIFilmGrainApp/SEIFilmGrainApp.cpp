@@ -173,7 +173,7 @@ uint32_t SEIFilmGrainApp::process()
 
     InputNALUnit nalu;
     byteStreamNALUnit(bytestream, nalu.getBitstream().getFifo(), stats);
-    
+
     bool writeNALU = true;
     bool removeSEI = false;
     bool insertSEI = false;

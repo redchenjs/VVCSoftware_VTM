@@ -2763,7 +2763,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
     checkAffine = !( bestCU->firstPU->mergeFlag || !bestCU->affine );
   }
   constexpr int affineMeTSize = 256;
-  if (checkAffine && m_pcEncCfg->getAdaptBypassAffineMe() && pu.lumaSize().area() > affineMeTSize) 
+  if (checkAffine && m_pcEncCfg->getAdaptBypassAffineMe() && pu.lumaSize().area() > affineMeTSize)
   {
     constexpr int affineMeTNeighbor = 4;
     int neighborAvai = 0, neighborAffine = 0;

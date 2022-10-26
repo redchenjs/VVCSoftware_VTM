@@ -768,7 +768,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
 #if JVET_Z0120_SII_SEI_PROCESSING
   ("SEIShutterIntervalPreFilename,-sii",              m_shutterIntervalPreFileName, string(""), "File name of Pre-Filtering video. If empty, not output video\n")
-#endif  
+#endif
   ("SourceWidth,-wdt",                                m_sourceWidth,                                       0, "Source picture width")
   ("SourceHeight,-hgt",                               m_sourceHeight,                                      0, "Source picture height")
   ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")
@@ -780,7 +780,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MSBExtendedBitDepthC",                            m_MSBExtendedBitDepth[CHANNEL_TYPE_CHROMA],           0, "As per MSBExtendedBitDepth but for chroma component. (default:MSBExtendedBitDepth)")
   ("ExtendedPrecision",                               m_extendedPrecisionProcessingFlag,                false, "Increased internal accuracies to support high bit depths (not valid in V1 profiles)")
   ("TSRCRicePresent",                                 m_tsrcRicePresentFlag,                            false, "Indicate that TSRC Rice information is present in slice header (not valid in V1 profiles)")
-  ("ReverseLastSigCoeff",                             m_reverseLastSigCoeffEnabledFlag,                 false, "enable reverse last significant coefficient postion in RRC (not valid in V1 profiles)")  
+  ("ReverseLastSigCoeff",                             m_reverseLastSigCoeffEnabledFlag,                 false, "enable reverse last significant coefficient postion in RRC (not valid in V1 profiles)")
   ("HighPrecisionPredictionWeighting",                m_highPrecisionOffsetsEnabledFlag,                false, "Use high precision option for weighted prediction (not valid in V1 profiles)")
   ("InputColourSpaceConvert",                         inputColourSpaceConvert,                     string(""), "Colour space conversion to apply to input video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(true))
   ("SNRInternalColourSpace",                          m_snrInternalColourSpace,                         false, "If true, then no colour space conversion is applied prior to SNR, otherwise inverse of input is applied.")
@@ -1812,7 +1812,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0;
   m_resChangeInClvsEnabled = m_resChangeInClvsEnabled && m_rprEnabledFlag;
-  
+
   if( m_constrainedRaslEncoding )
   {
     m_craAPSreset            = true;
@@ -1823,7 +1823,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_craAPSreset            = false;
     m_rprRASLtoolSwitch      = false;
   }
-  
+
   if( m_fractionOfFrames != 1.0 )
   {
     m_framesToBeEncoded = int( m_framesToBeEncoded * m_fractionOfFrames );
@@ -1857,8 +1857,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
     int8_t sliceType = m_GOPList[0].m_sliceType;
 
-    m_GOPList[0].m_POC = 1;    
-    m_GOPList[0].m_QPOffset = 0;
+    m_GOPList[0].m_POC                 = 1;
+    m_GOPList[0].m_QPOffset            = 0;
     m_GOPList[0].m_QPOffsetModelOffset = 0;
     m_GOPList[0].m_QPOffsetModelScale = 0;
     m_GOPList[0].m_CbQPoffset = 0;
@@ -2779,7 +2779,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   CHECK(!m_fgcSEIEnabled && m_fgcSEIAnalysisEnabled, "FGC SEI must be enabled in order to perform film grain analysis!");
   if (m_fgcSEIEnabled)
   {
-    if (m_iQP < 17 && m_fgcSEIAnalysisEnabled == true) { // TODO: JVET_Z0047_FG_IMPROVEMENT: check this; the constraint may have gone 
+    if (m_iQP < 17 && m_fgcSEIAnalysisEnabled == true)
+    {   // TODO: JVET_Z0047_FG_IMPROVEMENT: check this; the constraint may have gone
       msg(WARNING, "*************************************************************************\n");
       msg(WARNING, "* WARNING: Film Grain Estimation is disabled for Qp<17! FGC SEI will use default parameters for film grain! *\n");
       msg(WARNING, "*************************************************************************\n");
@@ -2813,7 +2814,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
     if (m_fgcSEIAnalysisEnabled && m_fgcSEITemporalFilterStrengths.empty())
     {
-      // By default: in random-acces = filter RAPs, in all-intra = filter every frame, otherwise = filter every 2s 
+      // By default: in random-acces = filter RAPs, in all-intra = filter every frame, otherwise = filter every 2s
       int filteredFrame = m_iIntraPeriod < 1 ? 2 * m_iFrameRate : m_iIntraPeriod;
       m_fgcSEITemporalFilterStrengths[filteredFrame] = 1.5;
     }
@@ -2864,7 +2865,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
     m_fgcSEILog2ScaleFactor = m_fgcSEILog2ScaleFactor ? m_fgcSEILog2ScaleFactor : 2;
   }
-  if (m_ctiSEIEnabled) 
+  if (m_ctiSEIEnabled)
   {
     CHECK(!m_ctiSEICrossComponentFlag && m_ctiSEICrossComponentInferred, "CTI CrossComponentFlag is 0, but CTI CrossComponentInferred is 1 (must be 0 for CrossComponentFlag 0)");
     CHECK(!m_ctiSEICrossComponentFlag && !m_ctiSEICrossComponentInferred && !m_ctiSEINumberChromaLut, "For CTI CrossComponentFlag = 0, CTI NumberChromaLut needs to be specified (1 or 2) ");
@@ -2875,33 +2876,33 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_ctiSEILut[0].numLutValues = (int)cfg_SEICTILut0.values.size();
     m_ctiSEILut[0].lutValues = cfg_SEICTILut0.values;
 
-    if (!m_ctiSEICrossComponentFlag || (m_ctiSEICrossComponentFlag && !m_ctiSEICrossComponentInferred)) 
+    if (!m_ctiSEICrossComponentFlag || (m_ctiSEICrossComponentFlag && !m_ctiSEICrossComponentInferred))
     {
       CHECK(cfg_SEICTILut1.values.empty(), "SEI CTI LUT1 not specified");
       m_ctiSEILut[1].presentFlag = true;
       m_ctiSEILut[1].numLutValues = (int)cfg_SEICTILut1.values.size();
       m_ctiSEILut[1].lutValues = cfg_SEICTILut1.values;
 
-      if (m_ctiSEINumberChromaLut == 1) 
+      if (m_ctiSEINumberChromaLut == 1)
       { // Cb lut the same as Cr lut
         m_ctiSEILut[2].presentFlag = true;
         m_ctiSEILut[2].numLutValues = m_ctiSEILut[1].numLutValues;
         m_ctiSEILut[2].lutValues = m_ctiSEILut[1].lutValues;
       }
-      else if (m_ctiSEINumberChromaLut == 2) 
+      else if (m_ctiSEINumberChromaLut == 2)
       { // read from cfg
         CHECK(cfg_SEICTILut2.values.empty(), "SEI CTI LUT2 not specified");
         m_ctiSEILut[2].presentFlag = true;
         m_ctiSEILut[2].numLutValues = (int)cfg_SEICTILut2.values.size();
         m_ctiSEILut[2].lutValues = cfg_SEICTILut2.values;
       }
-      else 
+      else
       {
         CHECK(m_ctiSEINumberChromaLut < 1 && m_ctiSEINumberChromaLut > 2, "Number of chroma LUTs is missing or out of range!");
       }
     }
     //  check if lut size is power of 2
-    for (int idx = 0; idx < MAX_NUM_COMPONENT; idx++) 
+    for (int idx = 0; idx < MAX_NUM_COMPONENT; idx++)
     {
       int n = m_ctiSEILut[idx].numLutValues - 1;
       CHECK(n > 0 && (n & (n - 1)) != 0, "Size of LUT minus 1 should be power of 2!");
@@ -3185,7 +3186,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
       double shutterAngleFactor = (fpsHFR * ((double)(m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1])))/((double)m_siiSEITimeScale);
 
-      // If shutterAngleFactor = 1 indicates that shutterAngle = 360  
+      // If shutterAngleFactor = 1 indicates that shutterAngle = 360
       // If shutterAngleFactor = 0.5 indicates that shutterAngle = 180
       // If shutterAngleFactor = 0.25 indicates that shutterAngle = 90
 
@@ -3198,7 +3199,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         m_ShutterFilterEnable = false;
         printf("Warning: For the shutterAngle = %d, the blending can't be applied\n", (int)(shutterAngleFactor * 360));
       }
-      // supports only the case of SFR = HFR / 2 
+      // supports only the case of SFR = HFR / 2
       if (m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1] < m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1 - 1])
       {
         checkSubLayerSI = 1;
@@ -3481,10 +3482,8 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara( (m_MSBExtendedBitDepth[CHANNEL_TYPE_LUMA  ] < m_inputBitDepth[CHANNEL_TYPE_LUMA  ]), "MSB-extended bit depth for luma channel (--MSBExtendedBitDepth) must be greater than or equal to input bit depth for luma channel (--InputBitDepth)" );
   xConfirmPara( (m_MSBExtendedBitDepth[CHANNEL_TYPE_CHROMA] < m_inputBitDepth[CHANNEL_TYPE_CHROMA]), "MSB-extended bit depth for chroma channel (--MSBExtendedBitDepthC) must be greater than or equal to input bit depth for chroma channel (--InputBitDepthC)" );
 
-  bool check_sps_range_extension_flag = m_extendedPrecisionProcessingFlag || 
-                                  m_rrcRiceExtensionEnableFlag ||
-                                  m_persistentRiceAdaptationEnabledFlag || 
-                                  m_tsrcRicePresentFlag;
+  bool check_sps_range_extension_flag = m_extendedPrecisionProcessingFlag || m_rrcRiceExtensionEnableFlag
+                                        || m_persistentRiceAdaptationEnabledFlag || m_tsrcRicePresentFlag;
   if (m_internalBitDepth[CHANNEL_TYPE_LUMA] <= 10)
     xConfirmPara( (check_sps_range_extension_flag == 1) ,
                  "RExt tools (Extended Precision Processing, RRC Rice Extension, Persistent Rice Adaptation and TSRC Rice Extension) must be disabled for BitDepth is less than or equal to 10 (the value of sps_range_extension_flag shall be 0 when BitDepth is less than or equal to 10.)");
@@ -3748,7 +3747,7 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara( m_ccalf, "CCALF cannot be enabled when ALF is disabled" );
   }
 
-  if (m_maxNumAlfAps == 0) 
+  if (m_maxNumAlfAps == 0)
   {
     xConfirmPara(m_ccalf, "CCALF cannot be enabled when ALF APS is disabled");
   }

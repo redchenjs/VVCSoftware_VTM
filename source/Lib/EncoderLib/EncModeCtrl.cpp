@@ -2007,7 +2007,7 @@ bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double*
 
   if (!(m_pcEncCfg->getFastTTskip() & FAST_METHOD_TT_ENC_SPEEDUP_ISLICE))
   {
-    if (sliceType == I_SLICE) 
+    if (sliceType == I_SLICE)
     {
       return false;
     }
@@ -2015,8 +2015,8 @@ bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double*
 
   if (!(m_pcEncCfg->getFastTTskip() & FAST_METHOD_TT_ENC_SPEEDUP_BSLICE))
   {
-    if (sliceType == B_SLICE) 
-    { 
+    if (sliceType == B_SLICE)
+    {
       return false;
     }
   }
@@ -2028,7 +2028,7 @@ bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double*
     {
       if (splitRdCostBest[CTU_LEVEL] < MAX_DOUBLE && splitRdCostBest[CU_HORZ_SPLIT] < MAX_DOUBLE)
       {
-        if (splitRdCostBest[CU_HORZ_SPLIT] > ttEncSpeedRate * splitRdCostBest[CTU_LEVEL]) 
+        if (splitRdCostBest[CU_HORZ_SPLIT] > ttEncSpeedRate * splitRdCostBest[CTU_LEVEL])
         {
           res = true;
         }
@@ -2039,7 +2039,7 @@ bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double*
     {
       if (splitRdCostBest[CU_HORZ_SPLIT] < MAX_DOUBLE && splitRdCostBest[CU_VERT_SPLIT] < MAX_DOUBLE)
       {
-        if (splitRdCostBest[CU_HORZ_SPLIT] > horXorVerRate * splitRdCostBest[CU_VERT_SPLIT]) 
+        if (splitRdCostBest[CU_HORZ_SPLIT] > horXorVerRate * splitRdCostBest[CU_VERT_SPLIT])
         {
           res = true;
         }

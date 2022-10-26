@@ -1579,7 +1579,7 @@ void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _are
 
 #if GDR_ENABLED
   if (m_gdrEnabled)
-  {    
+  {
     picHeader = new PicHeader();
     picHeader->initPicHeader();
   }
@@ -1608,9 +1608,9 @@ void CodingStructure::create(const UnitArea& _unit, const bool isTopLayer, const
     return;
   }
 
-#if GDR_ENABLED  
+#if GDR_ENABLED
   if (m_gdrEnabled)
-  {  
+  {
     picHeader = new PicHeader();
     picHeader->initPicHeader();
   }

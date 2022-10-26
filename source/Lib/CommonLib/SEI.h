@@ -1101,43 +1101,43 @@ class SEINeuralNetworkPostFilterCharacteristics : public SEI
 public:
   PayloadType payloadType() const override { return NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS; }
   SEINeuralNetworkPostFilterCharacteristics()
-  : m_id(0)
-  , m_modeIdc(0)
-  , m_purposeAndFormattingFlag(false)
-  , m_purpose(0)
+    : m_id(0)
+    , m_modeIdc(0)
+    , m_purposeAndFormattingFlag(false)
+    , m_purpose(0)
     , m_outSubCFlag(0)
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
-  , m_picWidthInLumaSamples(0)
-  , m_picHeightInLumaSamples(0)
-  , m_inpTensorBitDepthMinus8(0)
-  , m_outTensorBitDepthMinus8(0)
-  , m_componentLastFlag(false)
-  , m_inpSampleIdc(0)
-  , m_AuxInpIdc(0)
-  , m_SepColDescriptionFlag(false)
-  , m_ColPrimaries(0)
-  , m_TransCharacteristics(0)
-  , m_MatrixCoeffs(0)
-  , m_inpOrderIdc(0)
-  , m_outSampleIdc(0)
-  , m_outOrderIdc(0)
-  , m_constantPatchSizeFlag(false)
-  , m_patchWidthMinus1(0)
-  , m_patchHeightMinus1(0)
-  , m_overlap(0)
-  , m_paddingType(0)
-  , m_lumaPadding(0)
-  , m_cbPadding(0)
-  , m_crPadding(0)
-  , m_payloadByte(nullptr)
-  , m_complexityIdc(0)
-  , m_uriTag("")
-  , m_uri("")
-  , m_parameterTypeIdc(0)
-  , m_log2ParameterBitLengthMinus3(0)
-  , m_numParametersIdc(0)
-  , m_numKmacOperationsIdc(0)
+    , m_picWidthInLumaSamples(0)
+    , m_picHeightInLumaSamples(0)
+    , m_inpTensorBitDepthMinus8(0)
+    , m_outTensorBitDepthMinus8(0)
+    , m_componentLastFlag(false)
+    , m_inpSampleIdc(0)
+    , m_auxInpIdc(0)
+    , m_sepColDescriptionFlag(false)
+    , m_colPrimaries(0)
+    , m_transCharacteristics(0)
+    , m_matrixCoeffs(0)
+    , m_inpOrderIdc(0)
+    , m_outSampleIdc(0)
+    , m_outOrderIdc(0)
+    , m_constantPatchSizeFlag(false)
+    , m_patchWidthMinus1(0)
+    , m_patchHeightMinus1(0)
+    , m_overlap(0)
+    , m_paddingType(0)
+    , m_lumaPadding(0)
+    , m_cbPadding(0)
+    , m_crPadding(0)
+    , m_payloadByte(nullptr)
+    , m_complexityIdc(0)
+    , m_uriTag("")
+    , m_uri("")
+    , m_parameterTypeIdc(0)
+    , m_log2ParameterBitLengthMinus3(0)
+    , m_numParametersIdc(0)
+    , m_numKmacOperationsIdc(0)
   {}
 
   ~SEINeuralNetworkPostFilterCharacteristics() override
@@ -1162,11 +1162,11 @@ public:
   uint32_t       m_outTensorBitDepthMinus8;
   bool           m_componentLastFlag;
   uint32_t       m_inpSampleIdc;
-  uint32_t       m_AuxInpIdc;
-  bool           m_SepColDescriptionFlag;
-  uint8_t        m_ColPrimaries;
-  uint8_t        m_TransCharacteristics;
-  uint8_t        m_MatrixCoeffs;
+  uint32_t m_auxInpIdc;
+  bool     m_sepColDescriptionFlag;
+  uint8_t  m_colPrimaries;
+  uint8_t  m_transCharacteristics;
+  uint8_t  m_matrixCoeffs;
   uint32_t       m_inpOrderIdc;
   uint32_t       m_outSampleIdc;
   uint32_t       m_outOrderIdc;

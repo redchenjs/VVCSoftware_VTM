@@ -391,7 +391,7 @@ struct InterPredictionData
   uint8_t     mvpNum  [NUM_REF_PIC_LIST_01];
   Mv        mvd     [NUM_REF_PIC_LIST_01];
   Mv        mv      [NUM_REF_PIC_LIST_01];
-#if GDR_ENABLED 
+#if GDR_ENABLED
   bool      mvSolid[NUM_REF_PIC_LIST_01];
   bool      mvValid[NUM_REF_PIC_LIST_01];
   bool      mvpSolid[NUM_REF_PIC_LIST_01];

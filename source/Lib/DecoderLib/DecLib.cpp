@@ -656,9 +656,9 @@ Picture* DecLib::xGetNewPicBuffer( const SPS &sps, const PPS &pps, const uint32_
     }
 #if GDR_ENABLED // picHeader should be deleted in case pcPic slot gets reused
     if (pcPic && pcPic->cs && pcPic->cs->picHeader)
-    {          
+    {
       delete pcPic->cs->picHeader;
-      pcPic->cs->picHeader = nullptr;    
+      pcPic->cs->picHeader = nullptr;
     }
 #endif
   }

@@ -192,10 +192,7 @@ inline void checkBPSyntaxElementLength(const SEIBufferingPeriod* bp1, const SEIB
 class HRD
 {
 public:
-  HRD()
-  :m_bufferingPeriodInitialized (false)
-  , m_pictureTimingAvailable    (false)	
-  {};
+  HRD() : m_bufferingPeriodInitialized(false), m_pictureTimingAvailable(false){};
 
   virtual ~HRD()
   {};
@@ -214,7 +211,7 @@ public:
     {
       checkBPSyntaxElementLength(bp, &m_bufferingPeriodSEI);
     }
-    bp->copyTo(m_bufferingPeriodSEI); 
+    bp->copyTo(m_bufferingPeriodSEI);
     m_bufferingPeriodInitialized = true;
   }
 

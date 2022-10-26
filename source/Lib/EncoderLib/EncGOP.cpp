@@ -801,7 +801,7 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     m_seiEncoder.initSEIContentColourVolume(seiContentColourVolume);
     seiMessages.push_back(seiContentColourVolume);
   }
-  
+
   if (m_pcCfg->getSdiSEIEnabled())
   {
     SEIScalabilityDimensionInfo *seiScalabilityDimensionInfo = new SEIScalabilityDimensionInfo;
@@ -2114,9 +2114,9 @@ void EncGOP::xPicInitLMCS(Picture *pic, PicHeader *picHeader, Slice *slice)
     }
 
     //set all necessary information in LMCS APS and picture header
-    picHeader->setLmcsEnabledFlag(m_pcReshaper->getSliceReshaperInfo().getUseSliceReshaper());    
+    picHeader->setLmcsEnabledFlag(m_pcReshaper->getSliceReshaperInfo().getUseSliceReshaper());
     slice->setLmcsEnabledFlag(m_pcReshaper->getSliceReshaperInfo().getUseSliceReshaper());
-    picHeader->setLmcsChromaResidualScaleFlag(m_pcReshaper->getSliceReshaperInfo().getSliceReshapeChromaAdj() == 1);    
+    picHeader->setLmcsChromaResidualScaleFlag(m_pcReshaper->getSliceReshaperInfo().getSliceReshapeChromaAdj() == 1);
 
 #if GDR_ENABLED
     if (slice->getSPS()->getGDREnabledFlag() && picHeader->getInGdrInterval())
@@ -3083,7 +3083,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       xUpdateRPRtmvp( picHeader, pcSlice );
       CHECK( pcSlice->getPPS()->getWrapAroundEnabledFlag(), "pps_ref_wraparound_enabled_flag should be 0 with constrained RASL encoding" );
     }
-    
+
     double lambda            = 0.0;
     int actualHeadBits       = 0;
     int actualTotalBits      = 0;
@@ -3262,7 +3262,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           else
           {
             m_preIPOC = pocCurr;
-            m_preQP[0] = MAX_INT;          
+            m_preQP[0] = MAX_INT;
             m_preQP[1] = pcSlice->getSliceQp();
             for (int idx = 0; idx < MAX_TSRC_RICE; idx++)
             {

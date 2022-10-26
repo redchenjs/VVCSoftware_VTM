@@ -124,7 +124,7 @@ public:
   bool refreshCrossBTV(int begX, int endX) const;
 
   bool overlapDirty() const;
-  bool dirtyCrossTTV() const;  
+  bool dirtyCrossTTV() const;
   bool dirtyCrossBTV() const;
 #endif
 
@@ -132,14 +132,14 @@ public:
   bool isClean(const ChannelType effChType) const;
   bool isClean(const Position &IntPos, RefPicList e, int refIdx) const;
   bool isClean(const Position &IntPos, const Picture* const ref_pic) const;
-  bool isClean(const Position &IntPos, Mv FracMv) const;  
+  bool isClean(const Position &IntPos, Mv FracMv) const;
   bool isClean(const Position &IntPos, Mv FracMv, const Picture* const refPic) const;
   bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, int isProf=0) const;
   bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, bool ibc) const;
-  bool isClean(const Position &IntPos, const ChannelType effChType) const;  
-  bool isClean(const int x, const int y, const ChannelType effChType) const;  
+  bool isClean(const Position &IntPos, const ChannelType effChType) const;
+  bool isClean(const int x, const int y, const ChannelType effChType) const;
   bool isClean(const Area &area, const ChannelType effChType) const;
-  
+
   bool isSubPuClean(PredictionUnit &pu, const Mv *mv) const;
 #endif
   void rebindPicBufs();

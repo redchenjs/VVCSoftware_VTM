@@ -204,8 +204,8 @@ private:
   std::vector<std::tuple<NalUnitType, int, SEI::PayloadType>> m_accessUnitSeiPayLoadTypes;
 
   std::vector<NalUnitType> m_pictureUnitNals;
-  std::list<InputNALUnit*> m_pictureSeiNalus; 
-  std::list<InputNALUnit*> m_suffixApsNalus; 
+  std::list<InputNALUnit *> m_pictureSeiNalus;
+  std::list<InputNALUnit *> m_suffixApsNalus;
   std::list<InputNALUnit*> m_accessUnitSeiNalus;
 
   OPI*                    m_opi;
@@ -347,9 +347,9 @@ protected:
   void      xUpdatePreviousTid0POC(Slice *pSlice)
   {
     if( (pSlice->getTLayer() == 0) && (pSlice->getNalUnitType() != NAL_UNIT_CODED_SLICE_RASL) && (pSlice->getNalUnitType() != NAL_UNIT_CODED_SLICE_RADL) && !pSlice->getPicHeader()->getNonReferencePictureFlag() )
-    { 
-      m_prevTid0POC = pSlice->getPOC(); 
-    }  
+    {
+      m_prevTid0POC = pSlice->getPOC();
+    }
   }
   void      xParsePrefixSEImessages();
   void      xParsePrefixSEIsForUnknownVCLNal();

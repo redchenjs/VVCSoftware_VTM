@@ -106,9 +106,9 @@ struct Area : public Position, public Size
     return condX && condY;
   }
 
-#if GDR_ENABLED  
-  bool overlap(const Area &_area) const 
-  { 
+#if GDR_ENABLED
+  bool overlap(const Area &_area) const
+  {
     Area thisArea = Area(pos(), size());
 
     if (contains(_area))

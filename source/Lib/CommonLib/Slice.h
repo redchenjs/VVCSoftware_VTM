@@ -163,7 +163,7 @@ class ScalingList
 public:
              ScalingList();
   virtual    ~ScalingList()                                                 { }
-  
+
   int*       getScalingListAddress(uint32_t scalingListId)                    { return &(m_scalingListCoef[scalingListId][0]);            } //!< get matrix coefficient
   const int* getScalingListAddress(uint32_t scalingListId) const              { return &(m_scalingListCoef[scalingListId][0]);            } //!< get matrix coefficient
   void       checkPredMode(uint32_t scalingListId);
@@ -1231,26 +1231,26 @@ private:
 
 public:
   VUI()
-    : m_progressiveSourceFlag             (false) // Default values as documented in VVC D10 are used
-    , m_interlacedSourceFlag              (false)
-    , m_nonPackedFlag                     (false)
-    , m_nonProjectedFlag                  (false)
-    , m_aspectRatioInfoPresentFlag        (false) 
-    , m_aspectRatioConstantFlag           (false)
-    , m_aspectRatioIdc                    (0)
-    , m_sarWidth                          (0)
-    , m_sarHeight                         (0)
-    , m_overscanInfoPresentFlag           (false)
-    , m_overscanAppropriateFlag           (false)
-    , m_colourDescriptionPresentFlag      (false)
-    , m_colourPrimaries                   (2)
-    , m_transferCharacteristics           (2)
-    , m_matrixCoefficients                (2)
-    , m_videoFullRangeFlag                (false)
-    , m_chromaLocInfoPresentFlag          (false)
-    , m_chromaSampleLocTypeTopField       (6)
-    , m_chromaSampleLocTypeBottomField    (6)
-    , m_chromaSampleLocType               (6)
+    : m_progressiveSourceFlag(false)   // Default values as documented in VVC D10 are used
+    , m_interlacedSourceFlag(false)
+    , m_nonPackedFlag(false)
+    , m_nonProjectedFlag(false)
+    , m_aspectRatioInfoPresentFlag(false)
+    , m_aspectRatioConstantFlag(false)
+    , m_aspectRatioIdc(0)
+    , m_sarWidth(0)
+    , m_sarHeight(0)
+    , m_overscanInfoPresentFlag(false)
+    , m_overscanAppropriateFlag(false)
+    , m_colourDescriptionPresentFlag(false)
+    , m_colourPrimaries(2)
+    , m_transferCharacteristics(2)
+    , m_matrixCoefficients(2)
+    , m_videoFullRangeFlag(false)
+    , m_chromaLocInfoPresentFlag(false)
+    , m_chromaSampleLocTypeTopField(6)
+    , m_chromaSampleLocTypeBottomField(6)
+    , m_chromaSampleLocType(6)
   {}
 
   virtual           ~VUI() {}
@@ -1551,7 +1551,7 @@ private:
   bool              m_scalingMatrixAlternativeColourSpaceDisabledFlag;
   bool              m_scalingMatrixDesignatedColourSpaceFlag;
 
-  bool m_disableScalingMatrixForLfnstBlks; 
+  bool m_disableScalingMatrixForLfnstBlks;
 
 public:
 
@@ -2161,7 +2161,7 @@ public:
   void                   setWPBiPred( bool b )                                            { m_useWeightedBiPred = b;                      }
 
   void                   setWrapAroundEnabledFlag(bool b)                                 { m_wrapAroundEnabledFlag = b;                  }
-  bool                   getWrapAroundEnabledFlag() const                                 { return m_wrapAroundEnabledFlag;               }  
+  bool                   getWrapAroundEnabledFlag() const { return m_wrapAroundEnabledFlag; }
   void                   setPicWidthMinusWrapAroundOffset(unsigned offset)                { m_picWidthMinusWrapAroundOffset = offset;     }
   unsigned               getPicWidthMinusWrapAroundOffset() const                         { return m_picWidthMinusWrapAroundOffset;       }
   void                   setWrapAroundOffset(unsigned offset)                             { m_wrapAroundOffset = offset;                  }
@@ -2494,7 +2494,10 @@ public:
   bool                        getGdrPicFlag() const                                     { return m_gdrPicFlag;                                                                         }
 #if GDR_ENABLED
   void                        setInGdrInterval(bool b)                                  { m_inGdrInterval = b;                                                                         }
-  bool                        getInGdrInterval() const                                  { return m_inGdrInterval;                                                                      }  
+  bool                        getInGdrInterval() const
+  {
+    return m_inGdrInterval;
+  }
 #endif
   void                        setRecoveryPocCnt( uint32_t u )                           { m_recoveryPocCnt = u;                                                                        }
   uint32_t                    getRecoveryPocCnt() const                                 { return m_recoveryPocCnt;                                                                     }
@@ -2691,10 +2694,10 @@ private:
   std::vector<int>           m_edrapRefRapIds;
   int                        m_latestEDRAPPOC;
   bool                       m_latestEdrapLeadingPicDecodableFlag;
-  ReferencePictureList        m_RPL0;            //< RPL for L0 when present in slice header
-  ReferencePictureList        m_RPL1;            //< RPL for L1 when present in slice header
-  int                         m_rpl0Idx;              //< index of used RPL in the SPS or -1 for local RPL in the slice header
-  int                         m_rpl1Idx;              //< index of used RPL in the SPS or -1 for local RPL in the slice header
+  ReferencePictureList       m_RPL0;      //< RPL for L0 when present in slice header
+  ReferencePictureList       m_RPL1;      //< RPL for L1 when present in slice header
+  int                        m_rpl0Idx;   //< index of used RPL in the SPS or -1 for local RPL in the slice header
+  int                        m_rpl1Idx;   //< index of used RPL in the SPS or -1 for local RPL in the slice header
   NalUnitType                m_eNalUnitType;         ///< Nal unit type for the slice
   bool                       m_pictureHeaderInSliceHeader;
   uint32_t                   m_nuhLayerId;           ///< Nal unit layer id
@@ -2714,7 +2717,7 @@ private:
   int                        m_deblockingFilterCrBetaOffsetDiv2;  //< beta offset for deblocking filter
   int                        m_deblockingFilterCrTcOffsetDiv2;    //< tc offset for deblocking filter
   bool                       m_depQuantEnabledFlag;               //!< dependent quantization enabled flag
-  int                        m_riceBaseLevelValue;    //< baseLevel value for abs_remainder 
+  int                        m_riceBaseLevelValue;                //< baseLevel value for abs_remainder
   bool                       m_reverseLastSigCoeffFlag;
   bool                       m_signDataHidingEnabledFlag;         //!< sign data hiding enabled flag
   bool                       m_tsResidualCodingDisabledFlag;
@@ -2912,13 +2915,13 @@ public:
   void                        setDeblockingFilterCrBetaOffsetDiv2( int i )           { m_deblockingFilterCrBetaOffsetDiv2 = i;                         }
   void                        setDeblockingFilterCrTcOffsetDiv2( int i )             { m_deblockingFilterCrTcOffsetDiv2 = i;                           }
   void                        setDepQuantEnabledFlag( bool b )                       { m_depQuantEnabledFlag = b;                                                                   }
-  bool                        getDepQuantEnabledFlag() const                         { return m_depQuantEnabledFlag;                                                                }  
+  bool                        getDepQuantEnabledFlag() const { return m_depQuantEnabledFlag; }
   void                        setRiceBaseLevel(int b) { m_riceBaseLevelValue = b; }
   int                         getRiceBaseLevel() const { return m_riceBaseLevelValue; }
   void                        setReverseLastSigCoeffFlag( bool b )                   { m_reverseLastSigCoeffFlag = b;                                }
   bool                        getReverseLastSigCoeffFlag() const                     { return m_reverseLastSigCoeffFlag;                             }
   void                        setSignDataHidingEnabledFlag( bool b )                 { m_signDataHidingEnabledFlag = b;                                                             }
-  bool                        getSignDataHidingEnabledFlag() const                   { return m_signDataHidingEnabledFlag;                                                          }  
+  bool                        getSignDataHidingEnabledFlag() const { return m_signDataHidingEnabledFlag; }
   void                        setTSResidualCodingDisabledFlag(bool b) { m_tsResidualCodingDisabledFlag = b; }
   bool                        getTSResidualCodingDisabledFlag() const { return m_tsResidualCodingDisabledFlag; }
 
@@ -2945,7 +2948,10 @@ public:
   bool                        isInterB() const                                       { return m_eSliceType == B_SLICE;                               }
   bool                        isInterP() const                                       { return m_eSliceType == P_SLICE;                               }
 #if GDR_ENABLED
-  bool                        isInterGDR() const { return (m_eSliceType == B_SLICE && m_eNalUnitType == NAL_UNIT_CODED_SLICE_GDR); }  
+  bool isInterGDR() const
+  {
+    return (m_eSliceType == B_SLICE && m_eNalUnitType == NAL_UNIT_CODED_SLICE_GDR);
+  }
 #endif
 
   bool                        getEnableDRAPSEI () const                              { return m_enableDRAPSEI;                                       }

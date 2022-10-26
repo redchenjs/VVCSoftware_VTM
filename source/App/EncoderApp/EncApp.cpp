@@ -987,9 +987,9 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setFilmGrainAnalysisEnabled                          (m_fgcSEIAnalysisEnabled);
   m_cEncLib.setFilmGrainExternalMask                             (m_fgcSEIExternalMask);
   m_cEncLib.setFilmGrainExternalDenoised                         (m_fgcSEIExternalDenoised);
-  m_cEncLib.setFilmGrainTemporalFilterPastRefs                   (m_fgcSEITemporalFilterPastRefs);  
+  m_cEncLib.setFilmGrainTemporalFilterPastRefs(m_fgcSEITemporalFilterPastRefs);
   m_cEncLib.setFilmGrainTemporalFilterFutureRefs                 (m_fgcSEITemporalFilterFutureRefs);
-  m_cEncLib.setFilmGrainTemporalFilterStrengths                  (m_fgcSEITemporalFilterStrengths); 
+  m_cEncLib.setFilmGrainTemporalFilterStrengths(m_fgcSEITemporalFilterStrengths);
   m_cEncLib.setFilmGrainCharactersticsSEIPerPictureSEI           (m_fgcSEIPerPictureSEI);
   for (int i = 0; i < MAX_NUM_COMPONENT; i++) {
     m_cEncLib.setFGCSEICompModelPresent                          (m_fgcSEICompModelPresent[i], i);
@@ -1026,7 +1026,7 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setCtiSEICrossComponentInferred(m_ctiSEICrossComponentInferred);
   m_cEncLib.setCtiSEINbChromaLut(m_ctiSEINumberChromaLut);
   m_cEncLib.setCtiSEIChromaOffset(m_ctiSEIChromaOffset);
-  for (int i = 0; i < MAX_NUM_COMPONENT; i++) 
+  for (int i = 0; i < MAX_NUM_COMPONENT; i++)
   {
     m_cEncLib.setCtiSEILut(m_ctiSEILut[i], i);
   }
@@ -1175,7 +1175,8 @@ void EncApp::xInitLibCfg()
     }
     m_cEncLib.setNNPostFilterSEICharacteristicsAuxInpIdc               (m_nnPostFilterSEICharacteristicsAuxInpIdc[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsSepColDescriptionFlag   (m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[i], i);
-    if (m_cEncLib.getNNPostFilterSEICharacteristicsSepColDescriptionFlag(i)){
+    if (m_cEncLib.getNNPostFilterSEICharacteristicsSepColDescriptionFlag(i))
+    {
       m_cEncLib.setNNPostFilterSEICharacteristicsColPrimaries          (m_nnPostFilterSEICharacteristicsColPrimaries[i],i);
       m_cEncLib.setNNPostFilterSEICharacteristicsTransCharacteristics  (m_nnPostFilterSEICharacteristicsTransCharacteristics[i],i);
       m_cEncLib.setNNPostFilterSEICharacteristicsMatrixCoeffs          (m_nnPostFilterSEICharacteristicsMatrixCoeffs[i],i);

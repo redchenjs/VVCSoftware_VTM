@@ -160,7 +160,7 @@ void VideoIOYuv::open( const std::string &fileName, bool bWriteMode, const int f
     {
       EXIT( "Failed to write reconstructed YUV file: " << fileName.c_str() );
     }
-    if (isY4mFileExt(fileName)) 
+    if (isY4mFileExt(fileName))
     {
       writeY4mFileHeader();
       m_outY4m = true;
@@ -198,7 +198,7 @@ void VideoIOYuv::parseY4mFileHeader(const std::string &fileName, int &width, int
 {
   m_cHandle.open(fileName.c_str(), ios::binary | ios::in);
   CHECK(m_cHandle.fail(), "File open failed.")
-  
+
   char header[Y4M_MAX_HEADER_LENGTH];
   m_cHandle.read(header, sizeof(header));
   CHECK(strncmp(header, y4mSignature, Y4M_SIGNATURE_LENGTH), "The input is not a Y4M file!");

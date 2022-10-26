@@ -1283,7 +1283,7 @@ void Picture::createGrainSynthesizer(bool firstPictureInSequence, SEIFilmGrainSy
 
     // Frame level PelStorage buffer created to blend Film Grain Noise into it
     m_grainBuf->create(chromaFormat, Area(0, 0, width, height), 0, m_padValue, 0, false);
-	
+
     m_grainCharacteristic->fgsInit();
   }
 }
@@ -1310,7 +1310,7 @@ PelUnitBuf Picture::getDisplayBufFG(bool wrap)
   {
     m_grainBuf->copyFrom(getRecoBuf());
     m_grainBuf->extendBorderPel(m_padValue); // Padding to make wd and ht multiple of max fgs window size(64)
-	
+
     m_grainCharacteristic->m_poc = getPOC();
     m_grainCharacteristic->grainSynthesizeAndBlend(m_grainBuf, slices[0]->getIdrPicFlag());
 

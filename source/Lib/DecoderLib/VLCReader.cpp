@@ -2170,7 +2170,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
           {
             SPSRExt &spsRangeExtension = pcSPS->getSpsRangeExtension();
             READ_FLAG( uiCode, "extended_precision_processing_flag");       spsRangeExtension.setExtendedPrecisionProcessingFlag (uiCode != 0);
-            if (pcSPS->getTransformSkipEnabledFlag()) 
+            if (pcSPS->getTransformSkipEnabledFlag())
             {
               READ_FLAG( uiCode, "sps_ts_residual_coding_rice_present_in_sh_flag"); spsRangeExtension.setTSRCRicePresentFlag(uiCode != 0);
             }

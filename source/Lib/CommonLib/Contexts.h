@@ -406,8 +406,8 @@ public:
       {
           CHECK(bitDepth <= 10,"BitDepth shall be larger than 10.");
           m_GRAdaptStats[k] = 2 * floorLog2(bitDepth - 10);
-      } 
-      else 
+      }
+      else
       {
           m_GRAdaptStats[k] = 0;
       }

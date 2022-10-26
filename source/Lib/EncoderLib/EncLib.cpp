@@ -1925,8 +1925,8 @@ void EncLib::xInitPicHeader(PicHeader &picHeader, const SPS &sps, const PPS &pps
     }
   }
 
-#if GDR_ENABLED  
-    picHeader.setGdrOrIrapPicFlag(false);    
+#if GDR_ENABLED
+  picHeader.setGdrOrIrapPicFlag(false);
 #endif
 
   // gradual decoder refresh flag

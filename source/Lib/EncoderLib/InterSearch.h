@@ -77,7 +77,7 @@ struct AffineMVInfo
   int x, y, w, h;
 };
 
-#if GDR_ENABLED 
+#if GDR_ENABLED
 struct AffineMVInfoSolid
 {
   bool  affMVsSolid[2][33][3];
@@ -129,7 +129,7 @@ private:
   bool            m_affineModeSelected;
   std::unordered_map< Position, std::unordered_map< Size, BlkRecord> > m_ctuRecord;
   AffineMVInfo       *m_affMVList;
-#if GDR_ENABLED  
+#if GDR_ENABLED
   AffineMVInfoSolid  *m_affMVListSolid;
 #endif
   int             m_affMVListIdx;
@@ -140,7 +140,7 @@ private:
   int             m_uniMvListSize;
   int             m_uniMvListMaxSize;
   Distortion      m_hevcCost;
-#if GDR_ENABLED  
+#if GDR_ENABLED
   bool            m_hevcCostOk;
 #endif
   EncAffineMotion m_affineMotion;
@@ -558,11 +558,10 @@ protected:
   Distortion xGetSymmetricCost( PredictionUnit& pu, PelUnitBuf& origBuf, RefPicList eCurRefPicList, const MvField& cCurMvField, MvField& cTarMvField , int bcwIdx );
 
 #if GDR_ENABLED
-  Distortion xSymmeticRefineMvSearch( 
-    PredictionUnit& pu, PelUnitBuf& origBuf, 
-    Mv& rcMvCurPred, Mv& rcMvTarPred,
-    RefPicList eRefPicList, MvField& rCurMvField, MvField& rTarMvField, 
-    Distortion uiMinCost, int searchPattern, int nSearchStepShift, uint32_t uiMaxSearchRounds , int bcwIdx, bool& rbOk );
+  Distortion xSymmeticRefineMvSearch(PredictionUnit &pu, PelUnitBuf &origBuf, Mv &rcMvCurPred, Mv &rcMvTarPred,
+                                     RefPicList eRefPicList, MvField &rCurMvField, MvField &rTarMvField,
+                                     Distortion uiMinCost, int searchPattern, int nSearchStepShift,
+                                     uint32_t uiMaxSearchRounds, int bcwIdx, bool &rbOk);
 #else
   Distortion xSymmeticRefineMvSearch( PredictionUnit& pu, PelUnitBuf& origBuf, Mv& rcMvCurPred, Mv& rcMvTarPred
     , RefPicList eRefPicList, MvField& rCurMvField, MvField& rTarMvField, Distortion uiMinCost, int searchPattern, int nSearchStepShift, uint32_t uiMaxSearchRounds , int bcwIdx );

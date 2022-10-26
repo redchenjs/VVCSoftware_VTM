@@ -189,7 +189,7 @@ void BitstreamExtractorApp::xRewriteSPS (SPS &targetSPS, const SPS &sourceSPS, S
   conf.setWindowBottomOffset(subpicConfWinBottomOffset);
 
   if (sourceSPS.getVirtualBoundariesEnabledFlag() && sourceSPS.getVirtualBoundariesPresentFlag())
-  { 
+  {
     targetSPS.setNumVerVirtualBoundaries(0);
     for (int i = 0; i < sourceSPS.getNumVerVirtualBoundaries() ; i ++)
     {

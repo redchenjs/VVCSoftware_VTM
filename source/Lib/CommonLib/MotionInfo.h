@@ -94,7 +94,7 @@ struct AffineAMVPInfo
   Mv       mvCandLB[ AMVP_MAX_NUM_CANDS_MEM ];  ///< array of affine motion vector predictor candidates for left-bottom corner
   unsigned numCand;                       ///< number of motion vector predictor candidates
 #if GDR_ENABLED
-  bool     allCandSolidInAbove;  
+  bool allCandSolidInAbove;
 
   bool     mvSolidLT[AMVP_MAX_NUM_CANDS_MEM];
   bool     mvSolidRT[AMVP_MAX_NUM_CANDS_MEM];
@@ -107,7 +107,7 @@ struct AffineAMVPInfo
   MvpType  mvTypeLT[AMVP_MAX_NUM_CANDS_MEM];
   MvpType  mvTypeRT[AMVP_MAX_NUM_CANDS_MEM];
   MvpType  mvTypeLB[AMVP_MAX_NUM_CANDS_MEM];
-  
+
   Position mvPosLT[AMVP_MAX_NUM_CANDS_MEM];
   Position mvPosRT[AMVP_MAX_NUM_CANDS_MEM];
   Position mvPosLB[AMVP_MAX_NUM_CANDS_MEM];
@@ -217,7 +217,7 @@ class BcwMotionParam
   bool       m_readOnly[2][33];       // 2 RefLists, 33 RefFrams
   Mv         m_mv[2][33];
   Distortion m_dist[2][33];
-  
+
 #if GDR_ENABLED
   bool       m_mvSolid[2][33];
 #endif

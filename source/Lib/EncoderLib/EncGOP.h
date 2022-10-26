@@ -192,7 +192,7 @@ private:
 
   AUWriterIf*             m_AUWriterIf;
 #if GDR_ENABLED
-  int                     m_lastGdrIntervalPoc;  
+  int m_lastGdrIntervalPoc;
 #endif
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
@@ -252,10 +252,9 @@ public:
 
   int       getPreQP() const { return m_preQP[0]; }
 
-  void  printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const bool printMSEBasedSNR, const bool printSequenceMSE, 
-    const bool printMSSSIM, const bool printHexPsnr, const bool printRprPSNR, const BitDepths &bitDepths
-                       , int layerId
-                       );
+  void printOutSummary(uint32_t uiNumAllPicCoded, bool isField, const bool printMSEBasedSNR,
+                       const bool printSequenceMSE, const bool printMSSSIM, const bool printHexPsnr,
+                       const bool printRprPSNR, const BitDepths &bitDepths, int layerId);
   uint64_t  preLoopFilterPicAndCalcDist( Picture* pcPic );
   EncSlice*  getSliceEncoder()   { return m_pcSliceEncoder; }
   NalUnitType getNalUnitType( int pocCurr, int lastIdr, bool isField );
@@ -293,14 +292,15 @@ protected:
                               const AccessUnit &accessUnit, PicList &rcListPic, int64_t dEncTime,
                               const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
                               const bool printMSSSIM, double *PSNR_Y, bool isEncodeLtRef);
-  void  xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUnit&, double dEncTime, const InputColourSpaceConversion snr_conversion, 
-    const bool printFrameMSE, const bool printMSSSIM, double* PSNR_Y, bool isEncodeLtRef);
-  void  xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture* pcPicOrgSecondField,
-                                     PelUnitBuf cPicRecFirstField, PelUnitBuf cPicRecSecondField,
-                                     const InputColourSpaceConversion snr_conversion, const bool printFrameMSE, 
-                                     const bool printMSSSIM, double* PSNR_Y, bool isEncodeLtRef);
-  double xCalculateMSSSIM (const Pel* org, const int orgStride, const Pel* rec, const int recStride, 
-    const int width, const int height, const uint32_t bitDepth);
+  void     xCalculateAddPSNR(Picture *pcPic, PelUnitBuf cPicD, const AccessUnit &, double dEncTime,
+                             const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
+                             const bool printMSSSIM, double *PSNR_Y, bool isEncodeLtRef);
+  void     xCalculateInterlacedAddPSNR(Picture *pcPicOrgFirstField, Picture *pcPicOrgSecondField,
+                                       PelUnitBuf cPicRecFirstField, PelUnitBuf cPicRecSecondField,
+                                       const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
+                                       const bool printMSSSIM, double *PSNR_Y, bool isEncodeLtRef);
+  double   xCalculateMSSSIM(const Pel *org, const int orgStride, const Pel *rec, const int recStride, const int width,
+                            const int height, const uint32_t bitDepth);
   uint64_t xFindDistortionPlane(const CPelBuf& pic0, const CPelBuf& pic1, const uint32_t rshift
 #if ENABLE_QPA
                             , const uint32_t chromaShiftHor = 0, const uint32_t chromaShiftVer = 0
