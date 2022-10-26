@@ -90,14 +90,14 @@ QpParam::QpParam(const int           qpy,
   }
   baseQp = Clip3( 0, MAX_QP+qpBdOffset, baseQp + dqp );
 
-  Qps[0] =baseQp;
+  qps[0] = baseQp;
   pers[0]=baseQp/6;
   rems[0]=baseQp%6;
 
   int baseQpTS = baseQp;
   baseQpTS = std::max(baseQpTS, 4 + 6 * internalMinusInputBitDepth);
 
-  Qps[1]  = baseQpTS;
+  qps[1]  = baseQpTS;
   pers[1] = baseQpTS / 6;
   rems[1] = baseQpTS % 6;
 }

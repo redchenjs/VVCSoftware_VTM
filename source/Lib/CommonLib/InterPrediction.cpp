@@ -228,13 +228,13 @@ void InterPrediction::init( RdCost* pcRdCost, ChromaFormat chromaFormatIDC, cons
   {
     m_storedMv = new Mv[MVBUFFER_SIZE*MVBUFFER_SIZE];
   }
-  if (m_IBCBufferWidth != g_IBCBufferSize / ctuSize)
+  if (m_IBCBufferWidth != IBC_BUFFER_SIZE / ctuSize)
   {
     m_IBCBuffer.destroy();
   }
   if (m_IBCBuffer.bufs.empty())
   {
-    m_IBCBufferWidth = g_IBCBufferSize / ctuSize;
+    m_IBCBufferWidth = IBC_BUFFER_SIZE / ctuSize;
     m_IBCBuffer.create(UnitArea(chromaFormatIDC, Area(0, 0, m_IBCBufferWidth, ctuSize)));
   }
 }

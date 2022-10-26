@@ -69,8 +69,6 @@ CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID comp
   , m_lastOffsetY(0)
   , m_lastShiftX(0)
   , m_lastShiftY(0)
-  , m_TrafoBypass(tu.cs->sps->getSpsRangeExtension().getTransformSkipContextEnabledFlag()
-                  && (tu.mtsIdx[m_compID] == MTS_SKIP))
   , m_minCoeff(-(1 << tu.cs->sps->getMaxLog2TrDynamicRange(m_chType)))
   , m_maxCoeff((1 << tu.cs->sps->getMaxLog2TrDynamicRange(m_chType)) - 1)
   , m_scanPosLast(-1)

@@ -288,8 +288,8 @@ void WeightPredAnalysis::xCalcACDCParamSlice(Slice *const slice)
     }
 
     const int fixedBitShift = (slice->getSPS()->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag())?RExt__PREDICTION_WEIGHTING_ANALYSIS_DC_PRECISION:0;
-    weightACDCParam[compID].iDC = (((orgDC<<fixedBitShift)+(sample>>1)) / sample);
-    weightACDCParam[compID].iAC = orgAC;
+    weightACDCParam[compID].dc = (((orgDC << fixedBitShift) + (sample >> 1)) / sample);
+    weightACDCParam[compID].ac = orgAC;
   }
 
   slice->setWpAcDcParam(weightACDCParam);
@@ -423,11 +423,11 @@ bool WeightPredAnalysis::xUpdatingWPParameters(Slice *const slice, const int log
         const int         realOffset    = ((int)1<<(realLog2Denom-1));
 
         // current frame
-        const int64_t currDC = currWeightACDCParam[comp].iDC;
-        const int64_t currAC = currWeightACDCParam[comp].iAC;
+        const int64_t currDC = currWeightACDCParam[comp].dc;
+        const int64_t currAC = currWeightACDCParam[comp].ac;
         // reference frame
-        const int64_t refDC  = refWeightACDCParam[comp].iDC;
-        const int64_t refAC  = refWeightACDCParam[comp].iAC;
+        const int64_t refDC = refWeightACDCParam[comp].dc;
+        const int64_t refAC = refWeightACDCParam[comp].ac;
 
         // calculating codedWeight and codedOffset params
         const double weightUnquantized =

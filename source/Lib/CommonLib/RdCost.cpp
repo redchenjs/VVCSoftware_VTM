@@ -70,16 +70,16 @@ double RdCost::calcRdCost( uint64_t fracBits, Distortion distortion )
     return MAX_DOUBLE;
   }
 #if WCG_EXT
-  return ( useUnadjustedLambda ? m_DistScaleUnadjusted : m_DistScale ) * double( distortion ) + double( fracBits );
+  return (useUnadjustedLambda ? m_distScaleUnadjusted : m_distScale) * double(distortion) + double(fracBits);
 #else
-  return m_DistScale * double( distortion ) + double( fracBits );
+  return m_distScale * double(distortion) + double(fracBits);
 #endif
 }
 
 void RdCost::setLambda( double dLambda, const BitDepths &bitDepths )
 {
   m_dLambda             = dLambda;
-  m_DistScale           = double(1<<SCALE_BITS) / m_dLambda;
+  m_distScale           = double(1 << SCALE_BITS) / m_dLambda;
   m_dLambdaMotionSAD    = sqrt(m_dLambda);
 }
 
@@ -94,10 +94,10 @@ void RdCost::lambdaAdjustColorTrans(bool forward, ComponentID componentID, bool 
       double lamdbaAdjustRate = pow(2.0, delta_QP / 3.0);
 
       m_lambdaStore[0][component] = m_dLambda;
-      m_DistScaleStore[0][component] = m_DistScale;
+      m_distScaleStore[0][component] = m_distScale;
 
       m_lambdaStore[1][component] = m_dLambda * lamdbaAdjustRate;
-      m_DistScaleStore[1][component] = double(1 << SCALE_BITS) / m_lambdaStore[1][component];
+      m_distScaleStore[1][component] = double(1 << SCALE_BITS) / m_lambdaStore[1][component];
     }
     m_resetStore = false;
   }
@@ -114,17 +114,17 @@ void RdCost::lambdaAdjustColorTrans(bool forward, ComponentID componentID, bool 
   }
 
   m_dLambda = m_lambdaStore[m_pairCheck][componentID];
-  m_DistScale = m_DistScaleStore[m_pairCheck][componentID];
+  m_distScale = m_distScaleStore[m_pairCheck][componentID];
   if (applyChromaScale)
   {
     CHECK(m_pairCheck == 0 || componentID == COMPONENT_Y, "wrong lambda adjustment for CS");
     double cResScale = (double)(1 << CSCALE_FP_PREC) / (double)(*resScaleInv);
     m_dLambda = m_dLambda / (cResScale*cResScale);
-    m_DistScale = double(1 << SCALE_BITS) / m_dLambda;
+    m_distScale      = double(1 << SCALE_BITS) / m_dLambda;
   }
   if (m_pairCheck == 0)
   {
-    CHECK(m_DistScale != m_DistScaleUnadjusted, "lambda should be adjusted to the original value");
+    CHECK(m_distScale != m_distScaleUnadjusted, "lambda should be adjusted to the original value");
   }
 }
 
@@ -3069,7 +3069,7 @@ std::vector<double> RdCost::m_lumaLevelToWeightPLUT;
 void RdCost::saveUnadjustedLambda()
 {
   m_dLambda_unadjusted = m_dLambda;
-  m_DistScaleUnadjusted = m_DistScale;
+  m_distScaleUnadjusted = m_distScale;
 }
 
 void RdCost::initLumaLevelToWeightTable(int bitDepth)

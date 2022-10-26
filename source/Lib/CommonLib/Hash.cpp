@@ -142,7 +142,7 @@ void TComHash::create(int picWidth, int picHeight)
   {
     return;
   }
-  int maxAddr = 1 << (m_CRCBits + m_blockSizeBits);
+  int maxAddr   = 1 << (CRC_BITS + m_blockSizeBits);
   m_lookupTable = new std::vector<BlockHash>*[maxAddr];
   memset(m_lookupTable, 0, sizeof(std::vector<BlockHash>*) * maxAddr);
   tableHasContent = false;
@@ -163,7 +163,7 @@ void TComHash::clearAll()
   {
     return;
   }
-  int maxAddr = 1 << (m_CRCBits + m_blockSizeBits);
+  int maxAddr = 1 << (CRC_BITS + m_blockSizeBits);
   for (int i = 0; i < maxAddr; i++)
   {
     if (m_lookupTable[i] != nullptr)
@@ -341,8 +341,8 @@ void TComHash::addToHashMapByRowWithPrecalData(uint32_t* picHash[2], bool* picIs
 
   int addValue = m_blockSizeToIndex[width][height];
   CHECK(addValue < 0, "Wrong")
-  addValue <<= m_CRCBits;
-  int crcMask = 1 << m_CRCBits;
+  addValue <<= CRC_BITS;
+  int crcMask = 1 << CRC_BITS;
   crcMask -= 1;
   int blockIdx = floorLog2(width) - 2;
 
@@ -540,8 +540,8 @@ bool TComHash::getBlockHashValue(const PelUnitBuf &curPicBuf, int width, int hei
   int addValue = m_blockSizeToIndex[width][height];
 
   CHECK(addValue < 0, "Wrong")
-  addValue <<= m_CRCBits;
-  int crcMask = 1 << m_CRCBits;
+  addValue <<= CRC_BITS;
+  int crcMask = 1 << CRC_BITS;
   crcMask -= 1;
   int length = 4;
   bool includeChroma = false;

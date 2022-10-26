@@ -47,7 +47,7 @@
 
 EncReshape::EncReshape()
 {
-  m_CTUFlag      = false;
+  m_ctuFlag      = false;
   m_srcReshaped  = false;
   m_recReshaped  = false;
   m_reshape      = true;

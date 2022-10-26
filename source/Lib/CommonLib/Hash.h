@@ -125,7 +125,7 @@ private:
   uint16_t* hashPic[5];//4x4 ~ 64x64
 
 private:
-  static const int m_CRCBits = 16;
+  static constexpr int CRC_BITS        = 16;
   static const int m_blockSizeBits = 3;
   static int m_blockSizeToIndex[65][65];
 
