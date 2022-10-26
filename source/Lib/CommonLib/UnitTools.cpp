@@ -4352,10 +4352,10 @@ void PU::spanGeoMotionInfo( PredictionUnit &pu, MergeCtx &geoMrgCtx, const uint8
   }
   for (int y = 0; y < mb.height; y++)
   {
-    lookUpY = (2 * (4 * y + offsetY) + 5) * g_Dis[distanceY];
+    lookUpY = (2 * (4 * y + offsetY) + 5) * g_dis[distanceY];
     for (int x = 0; x < mb.width; x++)
     {
-      motionIdx = (2 * (4 * x + offsetX) + 5) * g_Dis[distanceX] + lookUpY;
+      motionIdx = (2 * (4 * x + offsetX) + 5) * g_dis[distanceX] + lookUpY;
       tpmMask = abs(motionIdx) < 32 ? 2 : (motionIdx <= 0 ? (1 - isFlip) : isFlip);
       if (tpmMask == 2)
       {

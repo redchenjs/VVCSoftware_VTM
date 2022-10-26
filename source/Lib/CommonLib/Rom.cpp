@@ -538,104 +538,35 @@ const uint32_t g_groupIdx[MAX_TB_SIZEY] = { 0,  1,  2,  3,  4,  4,  5,  5,  6,  
 
 const uint32_t g_goRiceParsCoeff[32] = { 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2,
                                          2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3 };
-const char *MatrixType[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] =
-{
-  {
-    "INTRA1X1_LUMA",
-    "INTRA1X1_CHROMAU",
-    "INTRA1X1_CHROMAV",
-    "INTER1X1_LUMA",
-    "INTER1X1_CHROMAU",
-    "INTER1X1_CHROMAV"
-  },
-  {
-    "INTRA2X2_LUMA",
-    "INTRA2X2_CHROMAU",
-    "INTRA2X2_CHROMAV",
-    "INTER2X2_LUMA",
-    "INTER2X2_CHROMAU",
-    "INTER2X2_CHROMAV"
-  },
-  {
-    "INTRA4X4_LUMA",
-    "INTRA4X4_CHROMAU",
-    "INTRA4X4_CHROMAV",
-    "INTER4X4_LUMA",
-    "INTER4X4_CHROMAU",
-    "INTER4X4_CHROMAV"
-  },
-  {
-    "INTRA8X8_LUMA",
-    "INTRA8X8_CHROMAU",
-    "INTRA8X8_CHROMAV",
-    "INTER8X8_LUMA",
-    "INTER8X8_CHROMAU",
-    "INTER8X8_CHROMAV"
-  },
-  {
-    "INTRA16X16_LUMA",
-    "INTRA16X16_CHROMAU",
-    "INTRA16X16_CHROMAV",
-    "INTER16X16_LUMA",
-    "INTER16X16_CHROMAU",
-    "INTER16X16_CHROMAV"
-  },
-  {
-    "INTRA32X32_LUMA",
-    "INTRA32X32_CHROMAU",
-    "INTRA32X32_CHROMAV",
-    "INTER32X32_LUMA",
-    "INTER32X32_CHROMAU",
-    "INTER32X32_CHROMAV"
-  },
-  {
-    "INTRA64X64_LUMA",
-    "INTRA64X64_CHROMAU",
-    "INTRA64X64_CHROMAV",
-    "INTER64X64_LUMA",
-    "INTER64X64_CHROMAU",
-    "INTER64X64_CHROMAV"
-  },
-  {
-  },
+
+const char *matrixType[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] = {
+  { "INTRA1X1_LUMA", "INTRA1X1_CHROMAU", "INTRA1X1_CHROMAV", "INTER1X1_LUMA", "INTER1X1_CHROMAU", "INTER1X1_CHROMAV" },
+  { "INTRA2X2_LUMA", "INTRA2X2_CHROMAU", "INTRA2X2_CHROMAV", "INTER2X2_LUMA", "INTER2X2_CHROMAU", "INTER2X2_CHROMAV" },
+  { "INTRA4X4_LUMA", "INTRA4X4_CHROMAU", "INTRA4X4_CHROMAV", "INTER4X4_LUMA", "INTER4X4_CHROMAU", "INTER4X4_CHROMAV" },
+  { "INTRA8X8_LUMA", "INTRA8X8_CHROMAU", "INTRA8X8_CHROMAV", "INTER8X8_LUMA", "INTER8X8_CHROMAU", "INTER8X8_CHROMAV" },
+  { "INTRA16X16_LUMA", "INTRA16X16_CHROMAU", "INTRA16X16_CHROMAV", "INTER16X16_LUMA", "INTER16X16_CHROMAU",
+    "INTER16X16_CHROMAV" },
+  { "INTRA32X32_LUMA", "INTRA32X32_CHROMAU", "INTRA32X32_CHROMAV", "INTER32X32_LUMA", "INTER32X32_CHROMAU",
+    "INTER32X32_CHROMAV" },
+  { "INTRA64X64_LUMA", "INTRA64X64_CHROMAU", "INTRA64X64_CHROMAV", "INTER64X64_LUMA", "INTER64X64_CHROMAU",
+    "INTER64X64_CHROMAV" },
+  {},
 };
 
-const char *MatrixType_DC[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] =
-{
-  {  //1x1
-  },
+const char *matrixTypeDc[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] = {
   {
+    // 1x1
   },
-  {
-  },
-  {
-  },
-  {
-    "INTRA16X16_LUMA_DC",
-    "INTRA16X16_CHROMAU_DC",
-    "INTRA16X16_CHROMAV_DC",
-    "INTER16X16_LUMA_DC",
-    "INTER16X16_CHROMAU_DC",
-    "INTER16X16_CHROMAV_DC"
-  },
-  {
-    "INTRA32X32_LUMA_DC",
-    "INTRA32X32_CHROMAU_DC",
-    "INTRA32X32_CHROMAV_DC",
-    "INTER32X32_LUMA_DC",
-    "INTER32X32_CHROMAU_DC",
-    "INTER32X32_CHROMAV_DC"
-  },
-  {
-    "INTRA64X64_LUMA_DC",
-    "INTRA64X64_CHROMAU_DC",
-    "INTRA64X64_CHROMAV_DC",
-    "INTER64X64_LUMA_DC",
-    "INTER64X64_CHROMAU_DC",
-    "INTER64X64_CHROMAV_DC"
-  },
-  {
-  },
+  {},
+  {},
+  {},
+  { "INTRA16X16_LUMA_DC", "INTRA16X16_CHROMAU_DC", "INTRA16X16_CHROMAV_DC", "INTER16X16_LUMA_DC",
+    "INTER16X16_CHROMAU_DC", "INTER16X16_CHROMAV_DC" },
+  { "INTRA32X32_LUMA_DC", "INTRA32X32_CHROMAU_DC", "INTRA32X32_CHROMAV_DC", "INTER32X32_LUMA_DC",
+    "INTER32X32_CHROMAU_DC", "INTER32X32_CHROMAV_DC" },
+  { "INTRA64X64_LUMA_DC", "INTRA64X64_CHROMAU_DC", "INTRA64X64_CHROMAV_DC", "INTER64X64_LUMA_DC",
+    "INTER64X64_CHROMAU_DC", "INTER64X64_CHROMAV_DC" },
+  {},
 };
 
 const int g_quantTSDefault4x4[4 * 4] =
@@ -725,17 +656,17 @@ void initGeoTemplate()
     int distanceX = angleIdx;
     int distanceY = (distanceX + (GEO_NUM_ANGLES >> 2)) % GEO_NUM_ANGLES;
 
-    int16_t rho = (g_Dis[distanceX] * 2 * GEO_MAX_CU_SIZE) + (g_Dis[distanceY] * 2 * GEO_MAX_CU_SIZE);
+    int16_t rho = (g_dis[distanceX] * 2 * GEO_MAX_CU_SIZE) + (g_dis[distanceY] * 2 * GEO_MAX_CU_SIZE);
 
     constexpr int16_t maskOffset = (2*GEO_MAX_CU_SIZE - GEO_WEIGHT_MASK_SIZE) >> 1;
     int index = 0;
     for( int y = 0; y < GEO_WEIGHT_MASK_SIZE; y++ )
     {
-      int16_t lookUpY = (((y + maskOffset) << 1) + 1) * g_Dis[distanceY];
+      int16_t lookUpY = (((y + maskOffset) << 1) + 1) * g_dis[distanceY];
       for( int x = 0; x < GEO_WEIGHT_MASK_SIZE; x++, index++ )
       {
         int16_t sx_i = ((x + maskOffset) << 1) + 1;
-        int16_t weightIdx = sx_i * g_Dis[distanceX] + lookUpY - rho;
+        int16_t weightIdx                                    = sx_i * g_dis[distanceX] + lookUpY - rho;
         int weightLinearIdx = 32 + weightIdx;
         g_globalGeoWeights[g_angle2mask[angleIdx]][index] = Clip3(0, 8, (weightLinearIdx + 4) >> 3);
         g_globalGeoEncSADmask[g_angle2mask[angleIdx]][index] = weightIdx > 0 ? 1 : 0;
@@ -778,7 +709,10 @@ int16_t*  g_globalGeoWeights   [GEO_NUM_PRESTORED_MASK];
 Pel*      g_globalGeoEncSADmask[GEO_NUM_PRESTORED_MASK];
 int16_t   g_weightOffset       [GEO_NUM_PARTITION_MODE][GEO_NUM_CU_SIZE][GEO_NUM_CU_SIZE][2];
 int8_t    g_angle2mask[GEO_NUM_ANGLES] = { 0, -1, 1, 2, 3, 4, -1, -1, 5, -1, -1, 4, 3, 2, 1, -1, 0, -1, 1, 2, 3, 4, -1, -1, 5, -1, -1, 4, 3, 2, 1, -1 };
-int8_t    g_Dis[GEO_NUM_ANGLES] = { 8, 8, 8, 8, 4, 4, 2, 1, 0, -1, -2, -4, -4, -8, -8, -8, -8, -8, -8, -8, -4, -4, -2, -1, 0, 1, 2, 4, 4, 8, 8, 8 };
+
+int8_t g_dis[GEO_NUM_ANGLES] = { 8,  8,  8,  8,  4,  4,  2,  1,  0, -1, -2, -4, -4, -8, -8, -8,
+                                 -8, -8, -8, -8, -4, -4, -2, -1, 0, 1,  2,  4,  4,  8,  8,  8 };
+
 int8_t    g_angle2mirror[GEO_NUM_ANGLES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2 };
 //! \}
 

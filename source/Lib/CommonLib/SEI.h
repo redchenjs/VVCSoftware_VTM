@@ -1051,8 +1051,9 @@ public:
     bool      m_partialObjectFlagPresentFlag;
     bool      m_objectLabelPresentFlag;
     bool      m_objectConfidenceInfoPresentFlag;
-    uint32_t      m_objectConfidenceLength;         // Only valid if m_objectConfidenceInfoPresentFlag
+    uint32_t  m_objectConfidenceLength;         // Only valid if m_objectConfidenceInfoPresentFlag
     bool      m_objectLabelLanguagePresentFlag; // Only valid if m_objectLabelPresentFlag
+
     std::string m_annotatedRegionsObjectLabelLang;
   };
   typedef uint32_t AnnotatedRegionObjectIndex;

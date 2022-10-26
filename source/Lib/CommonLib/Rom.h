@@ -170,8 +170,8 @@ extern CDTrace* g_trace_ctx;
 
 const char* nalUnitTypeToString(NalUnitType type);
 
-extern const char *MatrixType   [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
-extern const char *MatrixType_DC[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
+extern const char *matrixType[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
+extern const char *matrixTypeDc[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
 
 extern const int g_quantTSDefault4x4   [4*4];
 extern const int g_quantIntraDefault8x8[8*8];
@@ -219,7 +219,7 @@ extern uint16_t g_paletteQuant[57];
 extern uint8_t g_paletteRunTopLut[5];
 extern uint8_t g_paletteRunLeftLut[5];
 
-const int g_IBCBufferSize = 256 * 128;
+static constexpr int IBC_BUFFER_SIZE = 256 * 128;
 
 void initGeoTemplate();
 extern int16_t** g_GeoParams;
@@ -227,7 +227,7 @@ extern int16_t*  g_globalGeoWeights   [GEO_NUM_PRESTORED_MASK];
 extern Pel*      g_globalGeoEncSADmask[GEO_NUM_PRESTORED_MASK];
 extern int16_t   g_weightOffset       [GEO_NUM_PARTITION_MODE][GEO_NUM_CU_SIZE][GEO_NUM_CU_SIZE][2];
 extern int8_t    g_angle2mask         [GEO_NUM_ANGLES];
-extern int8_t    g_Dis[GEO_NUM_ANGLES];
+extern int8_t    g_dis[GEO_NUM_ANGLES];
 extern int8_t    g_angle2mirror[GEO_NUM_ANGLES];
 #endif  //__TCOMROM__
 

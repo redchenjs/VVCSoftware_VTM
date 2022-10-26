@@ -533,7 +533,6 @@ private:
   const int                 m_lastOffsetY;
   const int                 m_lastShiftX;
   const int                 m_lastShiftY;
-  const bool                m_TrafoBypass;
   const TCoeff              m_minCoeff;
   const TCoeff              m_maxCoeff;
   // modified

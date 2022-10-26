@@ -114,11 +114,11 @@ private:
   CostMode                m_costMode;
   double                  m_distortionWeight[MAX_NUM_COMPONENT]; // only chroma values are used.
   double                  m_dLambda;
-  bool                   m_isLosslessRDCost;
+  bool                    m_isLosslessRDCost;
 
 #if WCG_EXT
   double                  m_dLambda_unadjusted; // TODO: check is necessary
-  double                  m_DistScaleUnadjusted;
+  double                  m_distScaleUnadjusted;
 
   static std::vector<int32_t> m_reshapeLumaLevelToWeightPLUT;   // scaled by MSE_WEIGHT_ONE
   static std::vector<double>  m_lumaLevelToWeightPLUT;
@@ -129,10 +129,10 @@ private:
 
   ChromaFormat            m_cf;
 #endif
-  double                  m_DistScale;
+  double                  m_distScale;
   double                  m_dLambdaMotionSAD;
   double                  m_lambdaStore[2][3];   // 0-org; 1-act
-  double                  m_DistScaleStore[2][3]; // 0-org; 1-act
+  double                  m_distScaleStore[2][3];   // 0-org; 1-act
   bool                    m_resetStore;
   int                     m_pairCheck;
 

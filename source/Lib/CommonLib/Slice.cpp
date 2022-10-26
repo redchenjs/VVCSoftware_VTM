@@ -62,7 +62,7 @@ Slice::Slice()
   , m_eSliceType(I_SLICE)
   , m_noOutputOfPriorPicsFlag(0)
   , m_iSliceQp(0)
-  , m_ChromaQpAdjEnabled(false)
+  , m_chromaQpAdjEnabled(false)
   , m_lmcsEnabledFlag(0)
   , m_explicitScalingListUsed(0)
   , m_deblockingFilterDisable(false)
@@ -902,7 +902,7 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
   m_eSliceType           = pSrc->m_eSliceType;
   m_iSliceQp             = pSrc->m_iSliceQp;
   m_iSliceQpBase         = pSrc->m_iSliceQpBase;
-  m_ChromaQpAdjEnabled              = pSrc->m_ChromaQpAdjEnabled;
+  m_chromaQpAdjEnabled                = pSrc->m_chromaQpAdjEnabled;
   m_deblockingFilterDisable         = pSrc->m_deblockingFilterDisable;
   m_deblockingFilterOverrideFlag    = pSrc->m_deblockingFilterOverrideFlag;
   m_deblockingFilterBetaOffsetDiv2  = pSrc->m_deblockingFilterBetaOffsetDiv2;
@@ -2200,8 +2200,8 @@ void  Slice::initWpAcDcParam()
 {
   for(int iComp = 0; iComp < MAX_NUM_COMPONENT; iComp++ )
   {
-    m_weightACDCParam[iComp].iAC = 0;
-    m_weightACDCParam[iComp].iDC = 0;
+    m_weightACDCParam[iComp].ac = 0;
+    m_weightACDCParam[iComp].dc = 0;
   }
 }
 
@@ -2928,7 +2928,7 @@ SPS::SPS()
   // Tool list
   , m_transformSkipEnabledFlag(false)
   , m_log2MaxTransformSkipBlockSize(2)
-  , m_BDPCMEnabledFlag(false)
+  , m_bdpcmEnabledFlag(false)
   , m_jointCbCrEnabledFlag(false)
   , m_entropyCodingSyncEnabledFlag(false)
   , m_entryPointPresentFlag(false)
@@ -2936,9 +2936,9 @@ SPS::SPS()
   , m_sbtmvpEnabledFlag(false)
   , m_bdofEnabledFlag(false)
   , m_fpelMmvdEnabledFlag(false)
-  , m_BdofControlPresentInPhFlag(false)
-  , m_DmvrControlPresentInPhFlag(false)
-  , m_ProfControlPresentInPhFlag(false)
+  , m_bdofControlPresentInPhFlag(false)
+  , m_dmvrControlPresentInPhFlag(false)
+  , m_profControlPresentInPhFlag(false)
   , m_bitsForPoc(8)
   , m_pocMsbCycleFlag(false)
   , m_pocMsbCycleLen(1)
@@ -2951,7 +2951,7 @@ SPS::SPS()
   , m_useWeightPred(false)
   , m_useWeightedBiPred(false)
   , m_saoEnabledFlag(false)
-  , m_bTemporalIdNestingFlag(false)
+  , m_temporalIdNestingFlag(false)
   , m_scalingListEnabledFlag(false)
   , m_virtualBoundariesEnabledFlag(0)
   , m_virtualBoundariesPresentFlag(0)
@@ -3151,7 +3151,7 @@ PPS::PPS()
   , m_picInitQPMinus26(0)
   , m_useDQP(false)
   , m_usePPSChromaTool(false)
-  , m_bSliceChromaQpFlag(false)
+  , m_sliceChromaQpFlag(false)
   , m_chromaCbQpOffset(0)
   , m_chromaCrQpOffset(0)
   , m_chromaCbCrQpOffset(0)
@@ -3197,9 +3197,9 @@ PPS::PPS()
 {
   // Array includes entry [0] for the null offset used when cu_chroma_qp_offset_flag=0. This is initialised here
   // and never subsequently changed.
-  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.cbOffset        = 0;
-  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.crOffset        = 0;
-  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.jointCbCrOffset = 0;
+  m_chromaQpAdjTableIncludingNullEntry[0].u.comp.cbOffset        = 0;
+  m_chromaQpAdjTableIncludingNullEntry[0].u.comp.crOffset        = 0;
+  m_chromaQpAdjTableIncludingNullEntry[0].u.comp.jointCbCrOffset = 0;
   m_tileColWidth.clear();
   m_tileRowHeight.clear();
   m_tileColBd.clear();
@@ -4092,7 +4092,7 @@ static void outputScalingListHelp(std::ostream &os)
     {
       if (!(((sizeIdc == SCALING_LIST_64x64) && (listIdc % (SCALING_LIST_NUM / SCALING_LIST_PRED_MODES) != 0)) || ((sizeIdc == SCALING_LIST_2x2) && (listIdc % (SCALING_LIST_NUM / SCALING_LIST_PRED_MODES) == 0))))
       {
-        os << "  " << MatrixType[sizeIdc][listIdc] << '\n';
+        os << "  " << matrixType[sizeIdc][listIdc] << '\n';
       }
     }
   }
@@ -4109,7 +4109,7 @@ void ScalingList::outputScalingLists(std::ostream &os) const
       if (!((sizeIdc== SCALING_LIST_64x64 && listIdc % (SCALING_LIST_NUM / SCALING_LIST_PRED_MODES) != 0) || (sizeIdc == SCALING_LIST_2x2 && listIdc < 4)))
       {
         const int *src = getScalingListAddress(scalingListId);
-        os << (MatrixType[sizeIdc][listIdc]) << " =\n  ";
+        os << (matrixType[sizeIdc][listIdc]) << " =\n  ";
         for(uint32_t y=0; y<size; y++)
         {
           for(uint32_t x=0; x<size; x++, src++)
@@ -4120,7 +4120,7 @@ void ScalingList::outputScalingLists(std::ostream &os) const
         }
         if(sizeIdc > SCALING_LIST_8x8)
         {
-          os << MatrixType_DC[sizeIdc][listIdc] << " = \n  " << std::setw(3) << getScalingListDC(scalingListId) << "\n";
+          os << matrixTypeDc[sizeIdc][listIdc] << " = \n  " << std::setw(3) << getScalingListDC(scalingListId) << "\n";
         }
         os << "\n";
         scalingListId++;
@@ -4172,18 +4172,19 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
           while ((!feof(fp)) && (!found))
           {
             char *ret = fgets(line, LINE_SIZE, fp);
-            char *findNamePosition = ret == nullptr ? nullptr : strstr(line, MatrixType[sizeIdc][listIdc]);
+            char *findNamePosition = ret == nullptr ? nullptr : strstr(line, matrixType[sizeIdc][listIdc]);
             // This could be a match against the DC string as well, so verify it isn't
             if (findNamePosition != nullptr
-                && (MatrixType_DC[sizeIdc][listIdc] == nullptr
-                    || strstr(line, MatrixType_DC[sizeIdc][listIdc]) == nullptr))
+                && (matrixTypeDc[sizeIdc][listIdc] == nullptr
+                    || strstr(line, matrixTypeDc[sizeIdc][listIdc]) == nullptr))
             {
               found = true;
             }
           }
           if (!found)
           {
-            msg( ERROR, "Error: cannot find Matrix %s from scaling list file %s\n", MatrixType[sizeIdc][listIdc], fileName.c_str());
+            msg(ERROR, "Error: cannot find Matrix %s from scaling list file %s\n", matrixType[sizeIdc][listIdc],
+                fileName.c_str());
             return true;
 
           }
@@ -4193,12 +4194,16 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
           int data;
           if (fscanf(fp, "%d,", &data)!=1)
           {
-            msg( ERROR, "Error: cannot read value #%d for Matrix %s from scaling list file %s at file position %ld\n", i, MatrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
+            msg(ERROR, "Error: cannot read value #%d for Matrix %s from scaling list file %s at file position %ld\n", i,
+                matrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
             return true;
           }
           if (data<0 || data>255)
           {
-            msg( ERROR, "Error: QMatrix entry #%d of value %d for Matrix %s from scaling list file %s at file position %ld is out of range (0 to 255)\n", i, data, MatrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
+            msg(ERROR,
+                "Error: QMatrix entry #%d of value %d for Matrix %s from scaling list file %s at file position %ld is "
+                "out of range (0 to 255)\n",
+                i, data, matrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
             return true;
           }
           src[i] = data;
@@ -4215,7 +4220,7 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
             while ((!feof(fp)) && (!found))
             {
               char *ret = fgets(line, LINE_SIZE, fp);
-              char *findNamePosition = ret == nullptr ? nullptr : strstr(line, MatrixType_DC[sizeIdc][listIdc]);
+              char *findNamePosition = ret == nullptr ? nullptr : strstr(line, matrixTypeDc[sizeIdc][listIdc]);
               if (findNamePosition != nullptr)
               {
                 // This won't be a match against the non-DC string.
@@ -4224,19 +4229,24 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
             }
             if (!found)
             {
-              msg( ERROR, "Error: cannot find DC Matrix %s from scaling list file %s\n", MatrixType_DC[sizeIdc][listIdc], fileName.c_str());
+              msg(ERROR, "Error: cannot find DC Matrix %s from scaling list file %s\n", matrixTypeDc[sizeIdc][listIdc],
+                  fileName.c_str());
               return true;
             }
           }
           int data;
           if (fscanf(fp, "%d,", &data)!=1)
           {
-            msg( ERROR, "Error: cannot read DC %s from scaling list file %s at file position %ld\n", MatrixType_DC[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
+            msg(ERROR, "Error: cannot read DC %s from scaling list file %s at file position %ld\n",
+                matrixTypeDc[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
             return true;
           }
           if (data<0 || data>255)
           {
-            msg( ERROR, "Error: DC value %d for Matrix %s from scaling list file %s at file position %ld is out of range (0 to 255)\n", data, MatrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
+            msg(ERROR,
+                "Error: DC value %d for Matrix %s from scaling list file %s at file position %ld is out of range (0 to "
+                "255)\n",
+                data, matrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
             return true;
           }
           //overwrite DC value when size of matrix is larger than 16x16

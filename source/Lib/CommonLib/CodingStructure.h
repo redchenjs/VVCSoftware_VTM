@@ -203,7 +203,7 @@ public:
   bool        useDbCost;
   double      costDbOffset;
   double      lumaCost;
-  uint64_t      fracBits;
+  uint64_t    fracBits;
   Distortion  dist;
   Distortion  interHad;
   TreeType    treeType; //because partitioner can not go deep to tu and cu coding (e.g., addCU()), need another variable for indicating treeType
