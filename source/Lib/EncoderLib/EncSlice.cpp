@@ -616,7 +616,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   pcPic->setLossyQPValue(qp);
   if ((!rpcSlice->getTSResidualCodingDisabledFlag()) && ( rpcSlice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() ))
   {
-    rpcSlice->set_tsrc_index(Clip3(MIN_TSRC_RICE, MAX_TSRC_RICE, (int) ((19 - qp) / 6)) - 1);
+    rpcSlice->setTsrcIndex(Clip3(MIN_TSRC_RICE, MAX_TSRC_RICE, (int) ((19 - qp) / 6)) - 1);
   }
 #if !W0038_CQP_ADJ
   rpcSlice->setSliceChromaQpDelta( COMPONENT_Cb, 0 );
@@ -1647,7 +1647,9 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
       int hashBlkHitPerc = m_pcCuEncoder->getIbcHashMap().calHashBlkMatchPerc(cs.area.Y());
       cs.slice->setDisableSATDForRD(hashBlkHitPerc > 59);
     }
-    if ((pcSlice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag()) && (m_pcGOPEncoder->getPreQP() != pcSlice->getSliceQp()) && (pcPic->cs->pps->getNumSlicesInPic() == 1) && (pcSlice->get_tsrc_index() > 0) && (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) <= 12))
+    if ((pcSlice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag())
+        && (m_pcGOPEncoder->getPreQP() != pcSlice->getSliceQp()) && (pcPic->cs->pps->getNumSlicesInPic() == 1)
+        && (pcSlice->getTsrcIndex() > 0) && (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) <= 12))
     {
       uint32_t totalCtu  = 0;
       uint32_t hashRatio = 0;
@@ -1666,7 +1668,7 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
       {
         if ((hashRatio < 4200) || (hashRatio < (41 * totalCtu)))
         {
-          pcSlice->set_tsrc_index(0);
+          pcSlice->setTsrcIndex(0);
         }
       }
     }

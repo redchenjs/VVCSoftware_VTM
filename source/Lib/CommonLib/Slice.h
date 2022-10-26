@@ -2801,7 +2801,7 @@ private:
   int                        m_ccAlfCrApsId;
   bool                       m_disableSATDForRd{ false };
   bool                       m_isLossless{ false };
-  int                        m_tsrc_index;
+  int                        m_tsrcIndex{ 0 };
   unsigned                   m_riceBit[8];
   int                        m_cntRightBottom;
 
@@ -3148,8 +3148,16 @@ public:
 
   CcAlfFilterParam            m_ccAlfFilterParam;
   uint8_t*                    m_ccAlfFilterControl[2];
-  void                        set_tsrc_index(int v) { m_tsrc_index = v; }
-  int                         get_tsrc_index() const { return m_tsrc_index; }
+
+  void setTsrcIndex(int v)
+  {
+    m_tsrcIndex = v;
+  }
+  int getTsrcIndex() const
+  {
+    return m_tsrcIndex;
+  }
+
   void                        setRiceBit(int idx, int i) { m_riceBit[idx] = i; }
   unsigned                    getRiceBit(int idx) const { return m_riceBit[idx]; }
 

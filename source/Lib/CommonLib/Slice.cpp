@@ -104,7 +104,6 @@ Slice::Slice()
   , m_encCABACTableIdx(I_SLICE)
   , m_iProcessingStartTime(0)
   , m_dProcessingTime(0)
-  , m_tsrc_index(0)
 {
   for (uint32_t i = 0; i < MAX_TSRC_RICE; i++)
   {
@@ -914,7 +913,7 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
   m_depQuantEnabledFlag               = pSrc->m_depQuantEnabledFlag;
   m_signDataHidingEnabledFlag         = pSrc->m_signDataHidingEnabledFlag;
   m_tsResidualCodingDisabledFlag      = pSrc->m_tsResidualCodingDisabledFlag;
-  m_tsrc_index                        = pSrc->m_tsrc_index;
+  m_tsrcIndex                         = pSrc->m_tsrcIndex;
 
   for (i = 0; i < MAX_TSRC_RICE; i++)
   {

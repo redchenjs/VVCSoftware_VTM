@@ -1324,7 +1324,7 @@ void QuantRDOQ::xRateDistOptQuantTS( TransformUnit &tu, const ComponentID &compI
       goRiceParam = cctx.templateAbsSumTS( scanPos, dstCoeff );
       if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MTS_SKIP)
       {
-        goRiceParam = goRiceParam + tu.cu->slice->get_tsrc_index();
+        goRiceParam = goRiceParam + tu.cu->slice->getTsrcIndex();
       }
       unsigned ctxIdSign = cctx.signCtxIdAbsTS(scanPos, dstCoeff, 0);
       const BinFracBits fracBitsSign = fracBits.getFracBitsArray(ctxIdSign);
@@ -1547,7 +1547,7 @@ void QuantRDOQ::forwardBDPCM(TransformUnit &tu, const ComponentID &compID, const
       goRiceParam = cctx.templateAbsSumTS(scanPos, dstCoeff);
       if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MTS_SKIP)
       {
-        goRiceParam = goRiceParam + tu.cu->slice->get_tsrc_index();
+        goRiceParam = goRiceParam + tu.cu->slice->getTsrcIndex();
       }
       unsigned ctxIdSign = cctx.signCtxIdAbsTS(scanPos, dstCoeff, dirMode);
       const BinFracBits fracBitsSign = fracBits.getFracBitsArray(ctxIdSign);
