@@ -188,7 +188,7 @@ namespace PU
   void setAllAffineMv                 (      PredictionUnit &pu, Mv affLT, Mv affRT, Mv affLB, RefPicList eRefList, bool clipCPMVs = false );
   bool getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx &mrgCtx, const int count, int mmvdList);
   bool getInterMergeSubPuRecurCand(const PredictionUnit &pu, MergeCtx &mrgCtx, const int count);
-  bool isBiPredFromDifferentDirEqDistPoc(const PredictionUnit &pu);
+  bool isSimpleSymmetricBiPred(const PredictionUnit &pu);
   void restrictBiPredMergeCandsOne    (PredictionUnit &pu);
 
   bool isLMCMode                      (                          unsigned mode);
@@ -203,6 +203,10 @@ namespace PU
   bool checkDMVRCondition(const PredictionUnit& pu);
   void getNeighborAffineInfo(const PredictionUnit& pu, int& numNeighborAvai, int& numNeighborAffine);
 
+  static inline bool dmvrBdofSizeCheck(const PredictionUnit &pu)
+  {
+    return pu.lheight() >= 8 && pu.lwidth() >= 8 && pu.lheight() * pu.lwidth() >= 128;
+  }
 }
 
 // TU tools
