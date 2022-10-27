@@ -156,9 +156,8 @@ protected:
 
   static bool xCheckIdenticalMotion( const PredictionUnit& pu );
 
-  void xSubPuMC(PredictionUnit& pu, PelUnitBuf& predBuf, const RefPicList &eRefPicList = REF_PIC_LIST_X, const bool luma = true, const bool chroma = true);
-  void xSubPuBio(PredictionUnit &pu, PelUnitBuf &predBuf, const RefPicList &eRefPicList = REF_PIC_LIST_X,
-                 PelUnitBuf *yuvDstTmp = nullptr);
+  void xSubPuMC(PredictionUnit &pu, PelUnitBuf &predBuf, const RefPicList &eRefPicList, bool luma, bool chroma);
+  void xSubPuBio(PredictionUnit &pu, PelUnitBuf &predBuf, const RefPicList &eRefPicList, PelUnitBuf *yuvDstTmp);
   void destroy();
 
 
