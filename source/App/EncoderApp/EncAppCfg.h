@@ -264,7 +264,9 @@ protected:
   int       m_intraQPOffset;                                  ///< QP offset for intra slice (integer)
   bool      m_lambdaFromQPEnable;                             ///< enable flag for QP:lambda fix
   std::string m_dQPFileName;                                  ///< QP offset for each slice (initialized from external file)
-  int*      m_aidQP;                                          ///< array of slice QP values
+
+  FrameDeltaQps m_frameDeltaQps;   // array of frame delta QP values
+
   int       m_iMaxDeltaQP;                                    ///< max. |delta QP|
   uint32_t  m_uiDeltaQpRD;                                    ///< dQP range for multi-pass slice QP optimization
   int       m_cuQpDeltaSubdiv;                                ///< Maximum subdiv for CU luma Qp adjustment (0:default)

@@ -656,7 +656,7 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setFastDeltaQp                                       ( m_bFastDeltaQP  );
   m_cEncLib.setUseASR                                            ( m_bUseASR      );
   m_cEncLib.setUseHADME                                          ( m_bUseHADME    );
-  m_cEncLib.setdQPs                                              ( m_aidQP        );
+  m_cEncLib.setdQPs(m_frameDeltaQps);
   m_cEncLib.setUseRDOQ                                           ( m_useRDOQ     );
   m_cEncLib.setUseRDOQTS                                         ( m_useRDOQTS   );
   m_cEncLib.setUseSelectiveRDOQ                                  ( m_useSelectiveRDOQ );

@@ -147,6 +147,8 @@ std::istringstream &operator>>(std::istringstream &in, GOPEntry &entry);     //i
 // Class definition
 // ====================================================================================================================
 
+using FrameDeltaQps = std::vector<int>;
+
 /// encoder configuration class
 class EncCfg
 {
@@ -512,7 +514,9 @@ protected:
   double    m_smoothQPReductionModelScaleInter;
   double    m_smoothQPReductionModelOffsetInter;
   int       m_smoothQPReductionLimitInter;
-  int*      m_aidQP;
+
+  FrameDeltaQps m_frameDeltaQps;
+
   uint32_t      m_uiDeltaQpRD;
   bool      m_bFastDeltaQP;
   bool      m_ISP;
@@ -1650,7 +1654,9 @@ public:
   void      setFastMEForGenBLowDelayEnabled ( bool  b )     { m_bFastMEForGenBLowDelayEnabled = b; }
   void      setUseBLambdaForNonKeyLowDelayPictures ( bool b ) { m_bUseBLambdaForNonKeyLowDelayPictures = b; }
 
-  void      setdQPs                         ( int*  p )     { m_aidQP       = p; }
+  void                 setdQPs(FrameDeltaQps &v) { m_frameDeltaQps = v; }
+  const FrameDeltaQps &getdQPs() const { return m_frameDeltaQps; }
+
   void      setDeltaQpRD                    ( uint32_t  u )     {m_uiDeltaQpRD  = u; }
   void      setFastDeltaQp                  ( bool  b )     {m_bFastDeltaQP = b; }
   int       getBitDepth                     (const ChannelType chType) const { return m_bitDepth[chType]; }
@@ -1705,7 +1711,6 @@ public:
   bool getUseFastISP                                   () const   { return m_useFastISP;    }
   void setUseFastISP                                   ( bool b ) { m_useFastISP  = b;   }
 
-  const int* getdQPs                        () const { return m_aidQP;       }
   uint32_t      getDeltaQpRD                    () const { return m_uiDeltaQpRD; }
   bool      getFastDeltaQp                  () const { return m_bFastDeltaQP; }
   void      setMixedLossyLossless(bool b) { m_mixedLossyLossless = b; }

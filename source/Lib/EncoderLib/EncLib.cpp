@@ -2336,10 +2336,10 @@ int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
     }
     qp += appliedSwitchDQQ;
 
-    const int* pdQPs = getdQPs();
-    if ( pdQPs )
+    const FrameDeltaQps &deltaQps = getdQPs();
+    if (deltaQps.size() != 0)
     {
-      qp += pdQPs[pSlice->getPOC() / (m_compositeRefEnabled ? 2 : 1)];
+      qp += deltaQps[pSlice->getPOC() / (m_compositeRefEnabled ? 2 : 1)];
     }
 
     if(sliceType==I_SLICE)
@@ -2364,7 +2364,6 @@ int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
         qp += qpOffset ;
       }
     }
-
   }
   qp = Clip3( -lumaQpBDOffset, MAX_QP, qp );
   return qp;
