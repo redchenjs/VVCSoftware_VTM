@@ -1177,24 +1177,6 @@ public:
     CHECKD( _size > N, "capacity exceeded" );
   }
 
-  bool operator!=(const static_vector<T, N> &v) const
-  {
-    if (_size != v._size)
-    {
-      return true;
-    }
-
-    for (size_t i = 0; i < _size; i++)
-    {
-      if (_arr[i] != v._arr[i])
-      {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
   void resize( size_t N_ )                      { CHECKD( N_ > N, "capacity exceeded" ); while(_size < N_) _arr[ _size++ ] = T() ; _size = N_; }
   void resize( size_t N_, const T& _val )       { CHECKD( N_ > N, "capacity exceeded" ); while(_size < N_) _arr[ _size++ ] = _val; _size = N_; }
   void reserve( size_t N_ )                     { CHECKD( N_ > N, "capacity exceeded" ); }

@@ -565,7 +565,7 @@ class ProfileTierLevel
 
   std::array<bool, MAX_TLAYER - 1>    m_subLayerLevelPresentFlag;
   std::array<Level::Name, MAX_TLAYER> m_subLayerLevelIdc;
-  static_vector<uint32_t, 255>        m_subProfileIdc;
+  std::vector<uint32_t>               m_subProfileIdc;
 
 public:
                 ProfileTierLevel();
