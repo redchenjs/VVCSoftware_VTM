@@ -652,7 +652,8 @@ void AdaptiveLoopFilter::reconstructCoeffAPSs(CodingStructure& cs, bool luma, bo
 
 void AdaptiveLoopFilter::reconstructCoeff( AlfParam& alfParam, ChannelType channel, const bool isRdo, const bool isRedo )
 {
-  int factor = isRdo ? 0 : (1 << (m_NUM_BITS - 1));
+  const int factor = isRdo ? 0 : 1 << COEFF_SCALE_BITS;
+
   AlfFilterType filterType = isLuma( channel ) ? ALF_FILTER_7 : ALF_FILTER_5;
   int numClasses = isLuma( channel ) ? MAX_NUM_ALF_CLASSES : 1;
   int numCoeff = filterType == ALF_FILTER_5 ? 7 : 13;
@@ -778,7 +779,8 @@ void AdaptiveLoopFilter::create( const int picWidth, const int picHeight, const 
       {
        m_fixedFilterSetCoeffDec[filterSetIndex][classIdx * MAX_NUM_ALF_LUMA_COEFF + i] = m_fixedFilterSetCoeff[fixedFilterIdx][i];
       }
-      m_fixedFilterSetCoeffDec[filterSetIndex][classIdx * MAX_NUM_ALF_LUMA_COEFF + MAX_NUM_ALF_LUMA_COEFF - 1] = (1 << (m_NUM_BITS - 1));
+      m_fixedFilterSetCoeffDec[filterSetIndex][classIdx * MAX_NUM_ALF_LUMA_COEFF + MAX_NUM_ALF_LUMA_COEFF - 1] =
+        1 << COEFF_SCALE_BITS;
     }
   }
   for (int i = 0; i < MAX_NUM_ALF_LUMA_COEFF * MAX_NUM_ALF_CLASSES; i++)
@@ -1093,9 +1095,9 @@ void AdaptiveLoopFilter::filterBlk(AlfClassifier **classifier, const PelUnitBuf 
   const Pel *pImg0, *pImg1, *pImg2, *pImg3, *pImg4, *pImg5, *pImg6;
 
   const short *coef = filterSet;
-  const Pel *clip = fClipSet;
-  const int shift = m_NUM_BITS - 1;
+  const Pel   *clip = fClipSet;
 
+  const int shift  = COEFF_SCALE_BITS;
   const int offset = 1 << ( shift - 1 );
 
   int transposeIdx = 0;
@@ -1374,7 +1376,8 @@ void AdaptiveLoopFilter::filterBlkCcAlf(const PelBuf &dstBuf, const CPelUnitBuf 
           sum += filterCoeff[5] * (srcCross[offset1 + jj2 + 1] - currSrcCross);
           sum += filterCoeff[6] * (srcCross[offset3 + jj2    ] - currSrcCross);
 
-          sum = (sum + ((1 << m_scaleBits ) >> 1)) >> m_scaleBits;
+          sum = (sum + (1 << COEFF_SCALE_BITS >> 1)) >> COEFF_SCALE_BITS;
+
           const int offset = 1 << clpRngs.comp[compId].bd >> 1;
           sum = ClipPel(sum + offset, clpRngs.comp[compId]) - offset;
           sum += srcSelf[jj];

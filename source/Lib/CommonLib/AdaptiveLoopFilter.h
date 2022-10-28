@@ -67,6 +67,8 @@ enum Direction
 class AdaptiveLoopFilter
 {
 public:
+  static constexpr int COEFF_SCALE_BITS = 7;   // 8-bit signed values
+
   static inline Pel clipALF(const Pel clip, const Pel ref, const Pel val0, const Pel val1)
   {
     return Clip3<Pel>(-clip, +clip, val0-ref) + Clip3<Pel>(-clip, +clip, val1-ref);
@@ -75,7 +77,6 @@ public:
   static constexpr int ALF_NUM_CLIP_VALS[MAX_NUM_CHANNEL_TYPE] = { 4, 4 };
   static constexpr int MAX_ALF_NUM_CLIP_VALS                   = 4;
 
-  static constexpr int   m_NUM_BITS = 8;
   static constexpr int   m_CLASSIFICATION_BLK_SIZE = 32;   // non-normative, local buffer size
 
   AdaptiveLoopFilter();
@@ -129,7 +130,7 @@ public:
 
 protected:
   bool isCrossedByVirtualBoundaries( const CodingStructure& cs, const int xPos, const int yPos, const int width, const int height, bool& clipTop, bool& clipBottom, bool& clipLeft, bool& clipRight, int& numHorVirBndry, int& numVerVirBndry, int horVirBndryPos[], int verVirBndryPos[], int& rasterSliceAlfPad );
-  static constexpr int   m_scaleBits = 7; // 8-bits
+
   CcAlfFilterParam       m_ccAlfFilterParam;
   uint8_t*               m_ccAlfFilterControl[2];
   static const int             m_classToFilterMapping[NUM_FIXED_FILTER_SETS][MAX_NUM_ALF_CLASSES];

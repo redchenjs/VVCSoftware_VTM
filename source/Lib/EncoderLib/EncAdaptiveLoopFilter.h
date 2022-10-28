@@ -204,7 +204,7 @@ struct AlfCovariance
   double calculateError( const int *clip ) const;
   double calculateError( const int *clip, const double *coeff ) const { return calculateError(clip, coeff, numCoeff); }
   double calculateError( const int *clip, const double *coeff, const int numCoeff ) const;
-  double calcErrorForCoeffs( const int *clip, const int *coeff, const int numCoeff, const int bitDepth ) const;
+  double calcErrorForCoeffs(const int *clip, const int *coeff, const int numCoeff, const int fractionalBits) const;
   double calcErrorForCcAlfCoeffs(const int16_t *coeff, const int numCoeff, const int bitDepth) const;
 
   void getClipMax(const AlfFilterShape& alfShape, int *clip_max) const;
@@ -336,14 +336,15 @@ private:
                                int shapeIdx, int &coeffBits, bool onlyFilterCost = false);
   double deriveFilterCoeffs(AlfCovariance* cov, AlfCovariance* covMerged, int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], AlfFilterShape& alfShape, short* filterIndices, int numFilters, double errorTabForce0Coeff[MAX_NUM_ALF_CLASSES][2], AlfParam& alfParam);
   int    deriveFilterCoefficientsPredictionMode( AlfFilterShape& alfShape, int **filterSet, int** filterCoeffDiff, const int numFilters );
-  double deriveCoeffQuant( int *filterClipp, int *filterCoeffQuant, const AlfCovariance& cov, const AlfFilterShape& shape, const int bitDepth, const bool optimizeClip );
+  double deriveCoeffQuant(int *filterClipp, int *filterCoeffQuant, const AlfCovariance &cov,
+                          const AlfFilterShape &shape, const int fractionalBits, const bool optimizeClip);
   double deriveCtbAlfEnableFlags(CodingStructure &cs, const int shapeIdx, ChannelType channel,
 #if ENABLE_QPA
                                  const double chromaWeight,
 #endif
                                  const int numClasses, const int numCoeff, double &distUnfilter);
   void   roundFiltCoeff( int *filterCoeffQuant, double *filterCoeff, const int numCoeff, const int factor );
-  void   roundFiltCoeffCCALF(int16_t *filterCoeffQuant, double *filterCoeff, const int numCoeff, const int factor);
+  void   roundFiltCoeffCCALF(int16_t *filterCoeffQuant, double *filterCoeff, const int numCoeff, int factor);
 
   double getDistCoeffForce0( bool* codedVarBins, double errorForce0CoeffTab[MAX_NUM_ALF_CLASSES][2], int* bitsVarBin, int zeroBitsVarBin, const int numFilters);
   int    lengthUvlc( int uiCode );

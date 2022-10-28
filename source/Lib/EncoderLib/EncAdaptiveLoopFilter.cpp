@@ -238,9 +238,11 @@ double AlfCovariance::optimizeFilter(const AlfFilterShape &alfShape, int *clip, 
   return err_best;
 }
 
-double AlfCovariance::calcErrorForCoeffs( const int *clip, const int *coeff, const int numCoeff, const int bitDepth ) const
+double AlfCovariance::calcErrorForCoeffs(const int *clip, const int *coeff, const int numCoeff,
+                                         const int fractionalBits) const
 {
-  double factor = 1 << ( bitDepth - 1 );
+  const double factor = 1 << fractionalBits;
+
   double error = 0;
 
   for( int i = 0; i < numCoeff; i++ )   //diagonal
@@ -1184,7 +1186,7 @@ double EncAdaptiveLoopFilter::deriveCtbAlfEnableFlags(CodingStructure &cs, const
 
           double altDist = 0.;
           altDist += m_alfCovariance[compID][shapeIdx][ctuIdx][0].calcErrorForCoeffs(
-            m_filterClippSet[altIdx], m_filterCoeffSet[altIdx], numCoeff, m_NUM_BITS);
+            m_filterClippSet[altIdx], m_filterCoeffSet[altIdx], numCoeff, COEFF_SCALE_BITS);
 
           double altCost = altDist + r_altCost;
           if( altCost < bestAltCost )
@@ -1426,8 +1428,8 @@ double EncAdaptiveLoopFilter::getFilterCoeffAndCost(CodingStructure &cs, double 
                     nonLinearFlag ? ALF_NUM_CLIP_VALS[CHANNEL_TYPE_CHROMA] / 2 : 0);
         double dist = m_alfCovarianceFrame[channel][shapeIdx][altIdx].pixAcc
                       + deriveCoeffQuant(m_filterClippSet[altIdx], m_filterCoeffSet[altIdx],
-                                         m_alfCovarianceFrame[channel][shapeIdx][altIdx], alfFilterShape, m_NUM_BITS,
-                                         nonLinearFlag);
+                                         m_alfCovarianceFrame[channel][shapeIdx][altIdx], alfFilterShape,
+                                         COEFF_SCALE_BITS, nonLinearFlag);
         for( int i = 0; i < MAX_NUM_ALF_CHROMA_COEFF; i++ )
         {
           m_alfParamTemp.chromaCoeff[altIdx][i] = m_filterCoeffSet[altIdx][i];
@@ -1530,7 +1532,8 @@ double EncAdaptiveLoopFilter::getFilteredDistortion( AlfCovariance* cov, const i
 
   for( int classIdx = 0; classIdx < numClasses; classIdx++ )
   {
-    dist += cov[classIdx].calcErrorForCoeffs(m_filterClippSet[classIdx], m_filterCoeffSet[classIdx], numCoeff, m_NUM_BITS);
+    dist += cov[classIdx].calcErrorForCoeffs(m_filterClippSet[classIdx], m_filterCoeffSet[classIdx], numCoeff,
+                                             COEFF_SCALE_BITS);
   }
 
   return dist;
@@ -1823,18 +1826,22 @@ double EncAdaptiveLoopFilter::deriveFilterCoeffs( AlfCovariance* cov, AlfCovaria
 
     // Find coeffcients
     assert(alfShape.numCoeff == tmpCov.numCoeff);
-    errorTabForce0Coeff[filtIdx][1] = tmpCov.pixAcc + deriveCoeffQuant( m_filterClippSet[filtIdx], m_filterCoeffSet[filtIdx], tmpCov, alfShape, m_NUM_BITS, false );
+    errorTabForce0Coeff[filtIdx][1] = tmpCov.pixAcc
+                                      + deriveCoeffQuant(m_filterClippSet[filtIdx], m_filterCoeffSet[filtIdx], tmpCov,
+                                                         alfShape, COEFF_SCALE_BITS, false);
     errorTabForce0Coeff[filtIdx][0] = tmpCov.pixAcc;
     error += errorTabForce0Coeff[filtIdx][1];
   }
   return error;
 }
 
-double EncAdaptiveLoopFilter::deriveCoeffQuant( int *filterClipp, int *filterCoeffQuant, const AlfCovariance& cov, const AlfFilterShape& shape, const int bitDepth, const bool optimizeClip )
+double EncAdaptiveLoopFilter::deriveCoeffQuant(int *filterClipp, int *filterCoeffQuant, const AlfCovariance &cov,
+                                               const AlfFilterShape &shape, const int fractionalBits,
+                                               const bool optimizeClip)
 {
-  const int factor = 1 << ( bitDepth - 1 );
-  const int max_value = factor - 1;
-  const int min_value = -factor + 1;
+  const int factor   = 1 << fractionalBits;
+  const int maxValue = factor - 1;
+  const int minValue = -factor + 1;
 
   const int numCoeff = shape.numCoeff;
   double    filterCoeff[MAX_NUM_ALF_LUMA_COEFF];
@@ -1844,7 +1851,7 @@ double EncAdaptiveLoopFilter::deriveCoeffQuant( int *filterClipp, int *filterCoe
 
   for ( int i = 0; i < numCoeff - 1; i++ )
   {
-    filterCoeffQuant[i] = std::min( max_value, std::max( min_value, filterCoeffQuant[i] ) );
+    filterCoeffQuant[i] = std::min(maxValue, std::max(minValue, filterCoeffQuant[i]));
   }
   filterCoeffQuant[numCoeff - 1] = 0;
 
@@ -1854,7 +1861,7 @@ double EncAdaptiveLoopFilter::deriveCoeffQuant( int *filterClipp, int *filterCoe
   {
     modified = 0;
   }
-  double errRef=cov.calcErrorForCoeffs( filterClipp, filterCoeffQuant, numCoeff, bitDepth );
+  double errRef = cov.calcErrorForCoeffs(filterClipp, filterCoeffQuant, numCoeff, fractionalBits);
   while( modified )
   {
     modified=0;
@@ -1865,14 +1872,14 @@ double EncAdaptiveLoopFilter::deriveCoeffQuant( int *filterClipp, int *filterCoe
 
       for( int k = 0; k < numCoeff-1; k++ )
       {
-        if( filterCoeffQuant[k] - sign > max_value || filterCoeffQuant[k] - sign < min_value )
+        if (filterCoeffQuant[k] - sign > maxValue || filterCoeffQuant[k] - sign < minValue)
         {
           continue;
         }
 
         filterCoeffQuant[k] -= sign;
 
-        double error = cov.calcErrorForCoeffs( filterClipp, filterCoeffQuant, numCoeff, bitDepth );
+        double error = cov.calcErrorForCoeffs(filterClipp, filterCoeffQuant, numCoeff, fractionalBits);
         if( error < errMin )
         {
           errMin = error;
@@ -1906,22 +1913,28 @@ void EncAdaptiveLoopFilter::roundFiltCoeff( int *filterCoeffQuant, double *filte
 void EncAdaptiveLoopFilter::roundFiltCoeffCCALF(int16_t *filterCoeffQuant, double *filterCoeff, const int numCoeff,
                                                 const int factor)
 {
-  for( int i = 0; i < numCoeff; i++ )
+  for (int i = 0; i < numCoeff; i++)
   {
-    const int sign       = sgn2(filterCoeff[i]);
-    double best_err = 128.0*128.0;
-    int best_index = 0;
-    for(int k = 0; k < CCALF_CANDS_COEFF_NR; k++)
+    const int sign = sgn2(filterCoeff[i]);
+
+    double bestErr   = factor * factor;
+    int    bestIndex = 0;
+
+    const double val = filterCoeff[i] * m_encCfg->getCCALFStrength() * sign * factor;
+
+    for (int k = 0; k < CCALF_CANDS_COEFF_NR; k++)
     {
-      double err = ((filterCoeff[i] * m_encCfg->getCCALFStrength()) * sign * factor - CCALF_SMALL_TAB[k]);
-      err = err*err;
-      if(err < best_err)
+      const double diff = val - CCALF_SMALL_TAB[k];
+      const double err  = diff * diff;
+
+      if (err < bestErr)
       {
-        best_err = err;
-        best_index = k;
+        bestErr   = err;
+        bestIndex = k;
       }
     }
-    filterCoeffQuant[i] = CCALF_SMALL_TAB[best_index] * sign;
+
+    filterCoeffQuant[i] = CCALF_SMALL_TAB[bestIndex] * sign;
   }
 }
 
@@ -2708,7 +2721,8 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
                   m_filterTmp[i] = pCoeff[classIdx * MAX_NUM_ALF_LUMA_COEFF + i];
                   m_clipTmp[i] = pClipp[classIdx * MAX_NUM_ALF_LUMA_COEFF + i];
                 }
-                dDistOrgNewFilter += m_alfCovariance[COMPONENT_Y][0][ctbIdx][classIdx].calcErrorForCoeffs(m_clipTmp, m_filterTmp, MAX_NUM_ALF_LUMA_COEFF, m_NUM_BITS);
+                dDistOrgNewFilter += m_alfCovariance[COMPONENT_Y][0][ctbIdx][classIdx].calcErrorForCoeffs(
+                  m_clipTmp, m_filterTmp, MAX_NUM_ALF_LUMA_COEFF, COEFF_SCALE_BITS);
               }
             }
           }
@@ -2780,7 +2794,8 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
               if (filterSetIdx < NUM_FIXED_FILTER_SETS)
               {
                 int filterIdx = m_classToFilterMapping[filterSetIdx][classIdx];
-                dist += m_alfCovariance[COMPONENT_Y][0][ctbIdx][classIdx].calcErrorForCoeffs(m_clipDefaultEnc, m_fixedFilterSetCoeff[filterIdx], MAX_NUM_ALF_LUMA_COEFF, m_NUM_BITS);
+                dist += m_alfCovariance[COMPONENT_Y][0][ctbIdx][classIdx].calcErrorForCoeffs(
+                  m_clipDefaultEnc, m_fixedFilterSetCoeff[filterIdx], MAX_NUM_ALF_LUMA_COEFF, COEFF_SCALE_BITS);
               }
               else
               {
@@ -2806,7 +2821,8 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
                   m_filterTmp[i] = pCoeff[classIdx * MAX_NUM_ALF_LUMA_COEFF + i];
                   m_clipTmp[i] = pClipp[classIdx * MAX_NUM_ALF_LUMA_COEFF + i];
                 }
-                dist += m_alfCovariance[COMPONENT_Y][0][ctbIdx][classIdx].calcErrorForCoeffs(m_clipTmp, m_filterTmp, MAX_NUM_ALF_LUMA_COEFF, m_NUM_BITS);
+                dist += m_alfCovariance[COMPONENT_Y][0][ctbIdx][classIdx].calcErrorForCoeffs(
+                  m_clipTmp, m_filterTmp, MAX_NUM_ALF_LUMA_COEFF, COEFF_SCALE_BITS);
               }
             }
             //cost
@@ -3029,7 +3045,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
               m_clipTmp[i]   = m_chromaClippFinal[altIdx][i];
             }
             double altDist = m_alfCovariance[compId][0][ctbIdx][0].calcErrorForCoeffs(
-              m_clipTmp, m_filterTmp, MAX_NUM_ALF_CHROMA_COEFF, m_NUM_BITS);
+              m_clipTmp, m_filterTmp, MAX_NUM_ALF_CHROMA_COEFF, COEFF_SCALE_BITS);
             double altCost = altDist + r_altCost;
             if (altCost < bestAltCost)
             {
@@ -3377,7 +3393,7 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilterCoeff( ComponentID compID, const Pe
   }
 
   m_alfCovarianceFrameCcAlf[compID - 1][0][filterIdx].gnsSolveByChol(kE, ky, filterCoeffDbl, size);
-  roundFiltCoeffCCALF(filterCoeffInt, filterCoeffDbl, size, (1 << m_scaleBits));
+  roundFiltCoeffCCALF(filterCoeffInt, filterCoeffDbl, size, 1 << COEFF_SCALE_BITS);
 
   for (int k = 0; k < size; k++)
   {
@@ -3391,7 +3407,8 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilterCoeff( ComponentID compID, const Pe
   {
     modified = 0;
   }
-  double errRef      = m_alfCovarianceFrameCcAlf[compID - 1][0][filterIdx].calcErrorForCcAlfCoeffs(filterCoeffInt, size, (m_scaleBits+1));
+  double errRef = m_alfCovarianceFrameCcAlf[compID - 1][0][filterIdx].calcErrorForCcAlfCoeffs(filterCoeffInt, size,
+                                                                                              COEFF_SCALE_BITS + 1);
   while (modified)
   {
     modified = 0;
@@ -3419,7 +3436,9 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilterCoeff( ComponentID compID, const Pe
         }
 
         filterCoeffInt[k] = forward_tab[org_idx - delta];
-        double error = m_alfCovarianceFrameCcAlf[compID - 1][0][filterIdx].calcErrorForCcAlfCoeffs(filterCoeffInt, size, (m_scaleBits+1));
+
+        double error = m_alfCovarianceFrameCcAlf[compID - 1][0][filterIdx].calcErrorForCcAlfCoeffs(
+          filterCoeffInt, size, COEFF_SCALE_BITS + 1);
         if( error < errMin )
         {
           errMin = error;
@@ -3825,7 +3844,7 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilter( CodingStructure& cs, ComponentID 
                 m_trainingDistortion[filterIdx][ctuIdx] =
                   int(m_ctbDistortionUnfilter[compID][ctuIdx]
                       + m_alfCovarianceCcAlf[compID - 1][0][0][ctuIdx].calcErrorForCcAlfCoeffs(
-                        ccAlfFilterCoeff[filterIdx], numCoeff, m_scaleBits + 1));
+                        ccAlfFilterCoeff[filterIdx], numCoeff, COEFF_SCALE_BITS + 1));
               }
             }
           }
