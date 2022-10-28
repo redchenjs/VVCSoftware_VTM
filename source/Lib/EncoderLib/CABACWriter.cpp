@@ -2944,19 +2944,18 @@ void CABACWriter::residual_coding_subblock( CoeffCodingContext& cctx, const TCoe
   uint8_t   ctxOffset[16];
 
   //===== encode absolute values =====
-  const int inferSigPos   = nextSigPos != cctx.scanPosLast() ? ( cctx.isNotFirst() ? minSubPos : -1 ) : nextSigPos;
-  int       firstNZPos    = nextSigPos;
-  int       lastNZPos     = -1;
-  TCoeff    remAbsLevel   = -1;
-  int       numNonZero    =  0;
-  unsigned  signPattern   =  0;
-  int       remRegBins    = cctx.regBinLimit;
-  int       firstPosMode2 = minSubPos - 1;
+  const int inferSigPos     = nextSigPos != cctx.scanPosLast() ? (cctx.isNotFirst() ? minSubPos : -1) : nextSigPos;
+  int       firstNZPos      = nextSigPos;
+  int       lastNZPos       = -1;
+  int       numNonZero      = 0;
+  unsigned  signPattern     = 0;
+  int       remRegBins      = cctx.regBinLimit;
+  int       firstPos2ndPass = minSubPos - 1;
 
   for( ; nextSigPos >= minSubPos && remRegBins >= 4; nextSigPos-- )
   {
-    TCoeff   coeffVal = coeff[cctx.blockPos(nextSigPos)];
-    unsigned sigFlag  = (coeffVal != 0);
+    const TCoeff level   = coeff[cctx.blockPos(nextSigPos)];
+    unsigned     sigFlag = (level != 0);
     if( numNonZero || nextSigPos != inferSigPos )
     {
       const unsigned sigCtxId = cctx.sigCtxIdAbs( nextSigPos, coeff, state );
@@ -2976,52 +2975,54 @@ void CABACWriter::residual_coding_subblock( CoeffCodingContext& cctx, const TCoe
       numNonZero++;
       firstNZPos  = nextSigPos;
       lastNZPos   = std::max<int>( lastNZPos, nextSigPos );
-      remAbsLevel = abs(coeffVal) - 1;
+      const uint32_t absLevel = abs(level);
 
       if (nextSigPos != cctx.scanPosLast())
       {
         signPattern <<= 1;
       }
-      if (coeffVal < 0)
+      if (level < 0)
       {
         signPattern++;
       }
 
-      unsigned gt1 = !!remAbsLevel;
-      m_binEncoder.encodeBin(gt1, cctx.greater1CtxIdAbs(ctxOff));
+      const bool gt1 = absLevel > 1;
+      m_binEncoder.encodeBin( gt1, cctx.greater1CtxIdAbs(ctxOff) );
       DTRACE( g_trace_ctx, D_SYNTAX_RESI, "gt1_flag() bin=%d ctx=%d\n", gt1, cctx.greater1CtxIdAbs(ctxOff) );
       remRegBins--;
 
       if( gt1 )
       {
-        remAbsLevel  -= 1;
-        m_binEncoder.encodeBin(remAbsLevel & 1, cctx.parityCtxIdAbs(ctxOff));
-        DTRACE( g_trace_ctx, D_SYNTAX_RESI, "par_flag() bin=%d ctx=%d\n", remAbsLevel&1, cctx.parityCtxIdAbs( ctxOff ) );
-        remAbsLevel >>= 1;
+        m_binEncoder.encodeBin(absLevel & 1, cctx.parityCtxIdAbs(ctxOff));
+        DTRACE(g_trace_ctx, D_SYNTAX_RESI, "par_flag() bin=%d ctx=%d\n", absLevel & 1, cctx.parityCtxIdAbs(ctxOff));
 
         remRegBins--;
-        unsigned gt2 = !!remAbsLevel;
+        const bool gt2 = absLevel > 3;
         m_binEncoder.encodeBin(gt2, cctx.greater2CtxIdAbs(ctxOff));
         DTRACE(g_trace_ctx, D_SYNTAX_RESI, "gt2_flag() bin=%d ctx=%d\n", gt2, cctx.greater2CtxIdAbs(ctxOff));
         remRegBins--;
+
+        if (gt2)
+        {
+          // Start 2nd pass with first coeff that has absLevel > 3
+          firstPos2ndPass = std::max(firstPos2ndPass, nextSigPos);
+        }
       }
     }
 
-    state = (stateTransTable >> ((state << 2) + ((coeffVal & 1) << 1))) & 3;
+    state = (stateTransTable >> ((state << 2) + ((level & 1) << 1))) & 3;
   }
-  firstPosMode2 = nextSigPos;
+  int minPos2ndPass = nextSigPos;
   cctx.regBinLimit = remRegBins;
 
-
   //===== 2nd PASS: Go-rice codes =====
-  unsigned ricePar = 0;
-  for( int scanPos = firstSigPos; scanPos > firstPosMode2; scanPos-- )
+  for (int scanPos = firstPos2ndPass; scanPos > minPos2ndPass; scanPos--)
   {
-    ricePar = (cctx.*(cctx.deriveRiceRRC))(scanPos, coeff, baseLevel);
-
     unsigned absLevel = (unsigned) abs( coeff[ cctx.blockPos( scanPos ) ] );
     if( absLevel >= 4 )
     {
+      const unsigned ricePar = (cctx.*(cctx.deriveRiceRRC))(scanPos, coeff, baseLevel);
+
       unsigned rem      = ( absLevel - 4 ) >> 1;
       m_binEncoder.encodeRemAbsEP(rem, ricePar, COEF_REMAIN_BIN_REDUCTION, cctx.maxLog2TrDRange());
       DTRACE( g_trace_ctx, D_SYNTAX_RESI, "rem_val() bin=%d ctx=%d\n", rem, ricePar );
@@ -3036,7 +3037,7 @@ void CABACWriter::residual_coding_subblock( CoeffCodingContext& cctx, const TCoe
   }
 
   //===== coeff bypass ====
-  for( int scanPos = firstPosMode2; scanPos >= minSubPos; scanPos-- )
+  for (int scanPos = minPos2ndPass; scanPos >= minSubPos; scanPos--)
   {
     TCoeff      coeffVal  = coeff[cctx.blockPos(scanPos)];
     unsigned    absLevel  = (unsigned) abs(coeffVal);
@@ -3127,7 +3128,8 @@ void CABACWriter::residual_codingTS( const TransformUnit& tu, ComponentID compID
   }
 }
 
-void CABACWriter::residual_coding_subblockTS( CoeffCodingContext& cctx, const TCoeff* coeff, unsigned (&RiceBit)[8], int riceParam, bool ricePresentFlag)
+void CABACWriter::residual_coding_subblockTS(CoeffCodingContext &cctx, const TCoeff *coeff, unsigned (&RiceBit)[8],
+                                             const int riceParam, bool ricePresentFlag)
 {
   //===== init =====
   const int   minSubPos   = cctx.maxSubPos();
@@ -3233,10 +3235,9 @@ void CABACWriter::residual_coding_subblockTS( CoeffCodingContext& cctx, const TC
 
     if( absLevel >= cutoffVal )
     {
-      int       rice = riceParam;
       unsigned  rem = scanPos <= lastScanPosPass1 ? (absLevel - cutoffVal) >> 1 : absLevel;
-      m_binEncoder.encodeRemAbsEP(rem, rice, COEF_REMAIN_BIN_REDUCTION, cctx.maxLog2TrDRange());
-      DTRACE( g_trace_ctx, D_SYNTAX_RESI, "ts_rem_val() bin=%d ctx=%d sp=%d\n", rem, rice, scanPos );
+      m_binEncoder.encodeRemAbsEP(rem, riceParam, COEF_REMAIN_BIN_REDUCTION, cctx.maxLog2TrDRange());
+      DTRACE(g_trace_ctx, D_SYNTAX_RESI, "ts_rem_val() bin=%d ctx=%d sp=%d\n", rem, riceParam, scanPos);
       if ( ricePresentFlag && (isEncoding()) && (cctx.compID() == COMPONENT_Y))
       {
         for (int idx = 1; idx < 9; idx++)
