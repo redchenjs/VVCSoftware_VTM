@@ -105,9 +105,9 @@ SliceType xGetCtxInitId( const Slice& slice, const BinEncIf& binEncoder, Ctx& ct
 
 SliceType CABACWriter::getCtxInitId( const Slice& slice )
 {
-  switch (m_testCtx.getBPMType())
+  switch (m_testCtx.getBpmType())
   {
-  case BPM_Std: return xGetCtxInitId<BinProbModel_Std>(slice, m_binEncoder, m_testCtx);
+  case BpmType::STD: return xGetCtxInitId<BinProbModel_Std>(slice, m_binEncoder, m_testCtx);
   default:        return  NUMBER_OF_SLICE_TYPES;
   }
 }

@@ -270,6 +270,27 @@ typedef       uint64_t        Distortion;        ///< distortion measurement
 // Enumeration
 // ====================================================================================================================
 
+// casts enum to underlying integer type
+template<typename E> constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept
+{
+  return static_cast<typename std::underlying_type<E>::type>(e);
+}
+
+// array indexed by an enum type
+template<class T, class E> struct EnumArray : public std::array<T, to_underlying(E::NUM)>
+{
+  using base            = std::array<T, to_underlying(E::NUM)>;
+  using size_type       = E;
+  using reference       = T &;
+  using const_reference = const T &;
+
+public:
+  constexpr EnumArray() : base() {}
+  constexpr EnumArray(const base &a) : base(a) {}
+
+  reference                 operator[](size_type e) { return base::operator[](to_underlying(e)); }
+  constexpr const_reference operator[](size_type e) const { return base::operator[](to_underlying(e)); }
+};
 
 enum ApsType
 {

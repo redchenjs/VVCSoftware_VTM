@@ -196,21 +196,23 @@ class CABACEncoder
 {
 public:
   CABACEncoder()
-    : m_CABACWriterStd      ( m_BinEncoderStd )
-    , m_CABACEstimatorStd   ( m_BitEstimatorStd )
-    , m_CABACWriter         { &m_CABACWriterStd,   }
-    , m_CABACEstimator      { &m_CABACEstimatorStd }
+    : m_CABACWriterStd(m_BinEncoderStd)
+    , m_CABACEstimatorStd(m_BitEstimatorStd)
+    , m_CABACWriter{ { &m_CABACWriterStd } }
+    , m_CABACEstimator{ { &m_CABACEstimatorStd } }
   {}
 
-  CABACWriter*                getCABACWriter          ( const SPS*   sps   )        { return m_CABACWriter   [0]; }
-  CABACWriter*                getCABACEstimator       ( const SPS*   sps   )        { return m_CABACEstimator[0]; }
+  CABACWriter *getCABACWriter(const SPS *sps) { return m_CABACWriter[BpmType::STD]; }
+  CABACWriter *getCABACEstimator(const SPS *sps) { return m_CABACEstimator[BpmType::STD]; }
+
 private:
   BinEncoder_Std      m_BinEncoderStd;
   BitEstimator_Std    m_BitEstimatorStd;
   CABACWriter         m_CABACWriterStd;
   CABACWriter         m_CABACEstimatorStd;
-  CABACWriter*        m_CABACWriter   [BPM_NUM-1];
-  CABACWriter*        m_CABACEstimator[BPM_NUM-1];
+
+  EnumArray<CABACWriter *, BpmType> m_CABACWriter;
+  EnumArray<CABACWriter *, BpmType> m_CABACEstimator;
 };
 
 //! \}

@@ -948,12 +948,10 @@ void CtxStore<BinProbModel>::savePStates( std::vector<uint16_t>& probStates ) co
 
 template class CtxStore<BinProbModel_Std>;
 
-Ctx::Ctx()                                  : m_BPMType( BPM_Undefined )                        {}
-Ctx::Ctx( const BinProbModel_Std*   dummy ) : m_BPMType( BPM_Std   ), m_CtxStore_Std  ( true )  {}
+Ctx::Ctx() : m_bpmType(BpmType::UNDEFINED) {}
+Ctx::Ctx(const BinProbModel_Std *dummy) : m_bpmType(BpmType::STD), m_CtxStore_Std(true) {}
 
-Ctx::Ctx( const Ctx& ctx )
-  : m_BPMType         ( ctx.m_BPMType )
-  , m_CtxStore_Std    ( ctx.m_CtxStore_Std    )
+Ctx::Ctx(const Ctx &ctx) : m_bpmType(ctx.m_bpmType), m_CtxStore_Std(ctx.m_CtxStore_Std)
 {
   ::memcpy( m_GRAdaptStats, ctx.m_GRAdaptStats, sizeof( unsigned ) * RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS );
 }
