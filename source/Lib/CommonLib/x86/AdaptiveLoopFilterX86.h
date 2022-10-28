@@ -56,7 +56,7 @@ static void simdFilter5x5Blk_HBD(AlfClassifier **classifier, const PelUnitBuf &r
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int shift = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int shift   = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int round = 1 << (shift - 1);
   const __m128i offset1 = _mm_set1_epi32((1 << ((shift + 3) - 1)) - round);
 
@@ -427,7 +427,7 @@ static void simdFilter5x5Blk_HBD_AVX2(AlfClassifier **classifier, const PelUnitB
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int shift = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int shift   = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int round = 1 << (shift - 1);
   const __m256i offset1 = _mm256_set1_epi32((1 << ((shift + 3) - 1)) - round);
 
@@ -833,7 +833,7 @@ static void simdFilter5x5Blk(AlfClassifier **classifier, const PelUnitBuf &recDs
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int SHIFT = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int SHIFT     = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int ROUND = 1 << (SHIFT - 1);
   const __m128i mmOffset1 = _mm_set1_epi32((1 << ((SHIFT + 3) - 1)) - ROUND);
 
@@ -1038,7 +1038,7 @@ static void simdFilter7x7Blk_HBD(AlfClassifier **classifier, const PelUnitBuf &r
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int shift = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int shift = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int round = 1 << (shift - 1);
 
   const size_t width = blk.width;
@@ -1264,7 +1264,7 @@ static void simdFilter7x7Blk_HBD_AVX2(AlfClassifier **classifier, const PelUnitB
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int shift = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int shift = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int round = 1 << (shift - 1);
 
   const size_t width = blk.width;
@@ -1493,7 +1493,7 @@ static void simdFilter7x7Blk(AlfClassifier **classifier, const PelUnitBuf &recDs
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int SHIFT = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int SHIFT = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int ROUND = 1 << (SHIFT - 1);
 
   const size_t width  = blk.width;
