@@ -84,13 +84,6 @@ struct GeoMotionInfo
   GeoMotionInfo(uint8_t candIdx0, uint8_t candIdx1) : m_candIdx0(candIdx0), m_candIdx1(candIdx1) { }
   GeoMotionInfo() { m_candIdx0 = m_candIdx1 = 0; }
 };
-struct SmallerThanComboCost
-{
-  inline bool operator() (const GeoMergeCombo& first, const GeoMergeCombo& second)
-  {
-    return (first.cost < second.cost);
-  }
-};
 
 class GeoComboCostList
 {
@@ -99,7 +92,11 @@ public:
   ~GeoComboCostList() {};
   std::vector<GeoMergeCombo> list;
 
-  void sortByCost() { std::stable_sort(list.begin(), list.end(), SmallerThanComboCost()); };
+  void sortByCost()
+  {
+    std::stable_sort(list.begin(), list.end(),
+                     [](const GeoMergeCombo &a, const GeoMergeCombo &b) { return a.cost < b.cost; });
+  };
 };
 struct SingleGeoMergeEntry
 {
@@ -208,6 +205,9 @@ private:
                               const bool updateRdCostLambda );
 #endif
   double                m_sbtCostSave[2];
+
+  GeoComboCostList m_comboList;
+
 public:
   /// copy parameters from encoder class
   void  init                ( EncLib* pcEncLib, const SPS& sps );

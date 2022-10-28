@@ -2958,7 +2958,6 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   pu.regularMergeFlag = false;
   PU::getGeoMergeCandidates(pu, mergeCtx);
 
-  GeoComboCostList comboList;
   int bitsCandTB = floorLog2(GEO_NUM_PARTITION_MODE);
   PelUnitBuf geoBuffer[MRG_MAX_NUM_CANDS];
   PelUnitBuf geoTempBuf[MRG_MAX_NUM_CANDS];
@@ -3135,6 +3134,9 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
     }
   }
 
+  GeoComboCostList &comboList = m_comboList;
+  comboList.list.clear();
+
   for (int splitDir = 0; splitDir < GEO_NUM_PARTITION_MODE; splitDir++)
   {
     for (int GeoMotionIdx = 0; GeoMotionIdx < maxNumMergeCandidates * (maxNumMergeCandidates - 1); GeoMotionIdx++)
@@ -3171,11 +3173,10 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
     return;
   }
   comboList.sortByCost();
-  bool geocandHasNoResidual[GEO_MAX_TRY_WEIGHTED_SAD];
-  for (int mergeCand = 0; mergeCand < GEO_MAX_TRY_WEIGHTED_SAD; mergeCand++)
-  {
-    geocandHasNoResidual[mergeCand] = false;
-  }
+
+  std::array<bool, GEO_MAX_TRY_WEIGHTED_SAD> geocandHasNoResidual;
+  geocandHasNoResidual.fill(false);
+
   bool bestIsSkip = false;
   int geoNumCobo = (int)comboList.list.size();
   static_vector<uint8_t, GEO_MAX_TRY_WEIGHTED_SAD> geoRdModeList;
