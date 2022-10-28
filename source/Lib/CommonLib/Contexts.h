@@ -55,12 +55,13 @@ struct BinFracBits
   uint32_t intBits[2];
 };
 
-
-enum BPMType
+enum class BpmType : int
 {
-  BPM_Undefined = 0,
-  BPM_Std,
-  BPM_NUM
+  UNDEFINED = -1,
+  // List of Binary Probability Models for entropy coding
+  // The VVC standard currently defines a single model (STD)
+  STD = 0,
+  NUM
 };
 
 class ProbModelTables
@@ -364,10 +365,10 @@ public:
 public:
   const Ctx& operator= ( const Ctx& ctx )
   {
-    m_BPMType = ctx.m_BPMType;
-    switch( m_BPMType )
+    m_bpmType = ctx.m_bpmType;
+    switch (m_bpmType)
     {
-    case BPM_Std:   m_CtxStore_Std  .copyFrom( ctx.m_CtxStore_Std   );  break;
+    case BpmType::STD: m_CtxStore_Std.copyFrom(ctx.m_CtxStore_Std); break;
     default:        break;
     }
     ::memcpy( m_GRAdaptStats, ctx.m_GRAdaptStats, sizeof( unsigned ) * RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS );
@@ -376,10 +377,10 @@ public:
 
   SubCtx operator= ( SubCtx&& subCtx )
   {
-    m_BPMType = subCtx.m_ctx.m_BPMType;
-    switch( m_BPMType )
+    m_bpmType = subCtx.m_ctx.m_bpmType;
+    switch (m_bpmType)
     {
-    case BPM_Std: m_CtxStore_Std.copyFrom(subCtx.m_ctx.m_CtxStore_Std, subCtx.m_CtxSet); break;
+    case BpmType::STD: m_CtxStore_Std.copyFrom(subCtx.m_ctx.m_CtxStore_Std, subCtx.m_CtxSet); break;
     default:        break;
     }
     return std::move(subCtx);
@@ -387,9 +388,9 @@ public:
 
   void  init ( int qp, int initId )
   {
-    switch( m_BPMType )
+    switch (m_bpmType)
     {
-    case BPM_Std:   m_CtxStore_Std  .init( qp, initId );  break;
+    case BpmType::STD: m_CtxStore_Std.init(qp, initId); break;
     default:        break;
     }
     for( std::size_t k = 0; k < RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS; k++ )
@@ -416,27 +417,27 @@ public:
 
   void  loadPStates( const std::vector<uint16_t>& probStates )
   {
-    switch( m_BPMType )
+    switch (m_bpmType)
     {
-    case BPM_Std:   m_CtxStore_Std  .loadPStates( probStates );  break;
+    case BpmType::STD: m_CtxStore_Std.loadPStates(probStates); break;
     default:        break;
     }
   }
 
   void  savePStates( std::vector<uint16_t>& probStates ) const
   {
-    switch( m_BPMType )
+    switch (m_bpmType)
     {
-    case BPM_Std:   m_CtxStore_Std  .savePStates( probStates );  break;
+    case BpmType::STD: m_CtxStore_Std.savePStates(probStates); break;
     default:        break;
     }
   }
 
   void  initCtxAndWinSize( unsigned ctxId, const Ctx& ctx, const uint8_t winSize )
   {
-    switch( m_BPMType )
+    switch (m_bpmType)
     {
-    case BPM_Std:
+    case BpmType::STD:
       m_CtxStore_Std  [ctxId] = ctx.m_CtxStore_Std  [ctxId];
       m_CtxStore_Std  [ctxId] . setLog2WindowSize   (winSize);
       break;
@@ -452,7 +453,7 @@ public:
   void                setBaseLevel(int value)                         { m_baseLevel = value; }
 
 public:
-  unsigned            getBPMType      ()                        const { return m_BPMType; }
+  BpmType             getBpmType() const { return m_bpmType; }
   const Ctx&          getCtx          ()                        const { return *this; }
   Ctx&                getCtx          ()                              { return *this; }
 
@@ -461,15 +462,15 @@ public:
 
   const FracBitsAccess&   getFracBitsAcess()  const
   {
-    switch( m_BPMType )
+    switch (m_bpmType)
     {
-    case BPM_Std:   return m_CtxStore_Std;
+    case BpmType::STD: return m_CtxStore_Std;
     default:        THROW("BPMType out of range");
     }
   }
 
 private:
-  BPMType                       m_BPMType;
+  BpmType                       m_bpmType;
   CtxStore<BinProbModel_Std>    m_CtxStore_Std;
 protected:
   unsigned                      m_GRAdaptStats[RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS];

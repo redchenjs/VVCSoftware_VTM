@@ -168,17 +168,15 @@ private:
 class CABACDecoder
 {
 public:
-  CABACDecoder()
-    : m_CABACReaderStd  ( m_BinDecoderStd )
-    , m_CABACReader     { &m_CABACReaderStd }
-  {}
+  CABACDecoder() : m_CABACReaderStd(m_BinDecoderStd), m_CABACReader{ { &m_CABACReaderStd } } {}
 
-  CABACReader*                getCABACReader    ( int           id    )       { return m_CABACReader[id]; }
+  CABACReader *getCABACReader(BpmType id) { return m_CABACReader[id]; }
 
 private:
   BinDecoder_Std          m_BinDecoderStd;
   CABACReader             m_CABACReaderStd;
-  CABACReader*            m_CABACReader[BPM_NUM-1];
+
+  EnumArray<CABACReader *, BpmType> m_CABACReader;
 };
 
 #endif
