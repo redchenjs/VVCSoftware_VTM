@@ -35,62 +35,57 @@
     \brief    class of picture which includes side information for encoder (header)
 */
 
-#ifndef __AQP__
-#define __AQP__
+#pragma once
 
 #include "CommonLib/CommonDef.h"
 #include "CommonLib/Picture.h"
-
-//! \ingroup EncoderLib
-//! \{
 
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
 
-/// Local image characteristics for CUs on a specific depth
+// Local image characteristics for CUs on a specific depth
 class AQpLayer
 {
 private:
-  uint32_t                  m_uiAQPartWidth;
-  uint32_t                  m_uiAQPartHeight;
-  uint32_t                  m_uiNumAQPartInWidth;
-  uint32_t                  m_uiNumAQPartInHeight;
-  double                m_dAvgActivity;
-  std::vector<double>   m_acEncAQU;
+  uint32_t m_partWidth;
+  uint32_t m_partHeight;
+  uint32_t m_widthInParts;
+  uint32_t m_heightInParts;
+  double   m_avgActivity;
+
+  std::vector<double> m_activities;
 
 public:
-  AQpLayer(int width, int height, uint32_t uiAQPartWidth, uint32_t uiAQPartHeight);
+  AQpLayer(int width, int height, uint32_t partWidth, uint32_t partHeight);
   virtual ~AQpLayer();
 
-  uint32_t                   getAQPartWidth()        { return m_uiAQPartWidth;       }
-  uint32_t                   getAQPartHeight()       { return m_uiAQPartHeight;      }
-  uint32_t                   getNumAQPartInWidth()   { return m_uiNumAQPartInWidth;  }
-  uint32_t                   getNumAQPartInHeight()  { return m_uiNumAQPartInHeight; }
-  uint32_t                   getAQPartStride()       { return m_uiNumAQPartInWidth;  }
-  std::vector<double>&   getQPAdaptationUnit()   { return m_acEncAQU;           }
-  double getActivity( const Position& pos)
+  uint32_t getAQPartWidth() const { return m_partWidth; }
+  uint32_t getAQPartHeight() const { return m_partHeight; }
+  uint32_t getNumAQPartInWidth() const { return m_widthInParts; }
+  uint32_t getNumAQPartInHeight() const { return m_heightInParts; }
+  uint32_t getAQPartStride() const { return m_widthInParts; }
+
+  std::vector<double> &getQPAdaptationUnit() { return m_activities; }
+
+  double getActivity(const Position &pos) const
   {
-    uint32_t uiAQUPosX = pos.x / m_uiAQPartWidth;
-    uint32_t uiAQUPosY = pos.y / m_uiAQPartHeight;
-    return m_acEncAQU[uiAQUPosY * m_uiNumAQPartInWidth + uiAQUPosX];
+    const uint32_t x = pos.x / m_partWidth;
+    const uint32_t y = pos.y / m_partHeight;
+    return m_activities[y * m_widthInParts + x];
   }
 
-  double                 getAvgActivity()        { return m_dAvgActivity;        }
+  double getAvgActivity() const { return m_avgActivity; }
 
-  void                   setAvgActivity( double d )  { m_dAvgActivity = d; }
+  void setAvgActivity(double d) { m_avgActivity = d; }
 };
 
-/// Source picture analyzer class
+// Source picture analyzer class
 class AQpPreanalyzer
 {
 protected:
   AQpPreanalyzer() {}
   virtual ~AQpPreanalyzer() {}
 public:
-  static void preanalyze( Picture* picture );
+  static void preanalyze(Picture *pic);
 };
-
-//! \}
-
-#endif // __ENCPIC__
