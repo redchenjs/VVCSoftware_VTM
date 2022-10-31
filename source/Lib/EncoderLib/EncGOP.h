@@ -179,7 +179,14 @@ private:
   bool                    m_bufferingPeriodSEIPresentInAU;
   SEIEncoder              m_seiEncoder;
   PelStorage*             m_pcDeblockingTempPicYuv;
-  int                     m_DBParam[MAX_ENCODER_DEBLOCKING_QUALITY_LAYERS][4];   //[layer_id][0: available; 1: bDBDisabled; 2: Beta Offset Div2; 3: Tc Offset Div2;]
+
+  struct
+  {
+    bool   available;
+    bool   disabled;
+    int8_t betaOffsetDiv2;
+    int8_t tcOffsetDiv2;
+  } m_deblockParam[MAX_ENCODER_DEBLOCKING_QUALITY_LAYERS];
 
   // members needed for adaptive max BT size
   struct BlkStat
