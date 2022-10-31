@@ -47,8 +47,7 @@
 //! \ingroup CommonLib
 //! \{
 
-
-FpDistFunc RdCost::m_afpDistortFunc[DF_TOTAL_FUNCTIONS] = { nullptr, };
+EnumArray<DistFunc, DFunc> RdCost::m_distortionFunc;
 
 RdCost::RdCost()
 {
@@ -128,85 +127,85 @@ void RdCost::lambdaAdjustColorTrans(bool forward, ComponentID componentID, bool 
   }
 }
 
-// Initialize Function Pointer by [eDFunc]
+// Initialize Function Pointer by [distFunc]
 void RdCost::init()
 {
-  m_afpDistortFunc[DF_SSE    ] = RdCost::xGetSSE;
-  m_afpDistortFunc[DF_SSE2   ] = RdCost::xGetSSE;
-  m_afpDistortFunc[DF_SSE4   ] = RdCost::xGetSSE4;
-  m_afpDistortFunc[DF_SSE8   ] = RdCost::xGetSSE8;
-  m_afpDistortFunc[DF_SSE16  ] = RdCost::xGetSSE16;
-  m_afpDistortFunc[DF_SSE32  ] = RdCost::xGetSSE32;
-  m_afpDistortFunc[DF_SSE64  ] = RdCost::xGetSSE64;
-  m_afpDistortFunc[DF_SSE16N ] = RdCost::xGetSSE16N;
+  m_distortionFunc[DFunc::SSE]    = RdCost::xGetSSE;
+  m_distortionFunc[DFunc::SSE2]   = RdCost::xGetSSE;
+  m_distortionFunc[DFunc::SSE4]   = RdCost::xGetSSE4;
+  m_distortionFunc[DFunc::SSE8]   = RdCost::xGetSSE8;
+  m_distortionFunc[DFunc::SSE16]  = RdCost::xGetSSE16;
+  m_distortionFunc[DFunc::SSE32]  = RdCost::xGetSSE32;
+  m_distortionFunc[DFunc::SSE64]  = RdCost::xGetSSE64;
+  m_distortionFunc[DFunc::SSE16N] = RdCost::xGetSSE16N;
 
-  m_afpDistortFunc[DF_SAD    ] = RdCost::xGetSAD;
-  m_afpDistortFunc[DF_SAD2   ] = RdCost::xGetSAD;
-  m_afpDistortFunc[DF_SAD4   ] = RdCost::xGetSAD4;
-  m_afpDistortFunc[DF_SAD8   ] = RdCost::xGetSAD8;
-  m_afpDistortFunc[DF_SAD16  ] = RdCost::xGetSAD16;
-  m_afpDistortFunc[DF_SAD32  ] = RdCost::xGetSAD32;
-  m_afpDistortFunc[DF_SAD64  ] = RdCost::xGetSAD64;
-  m_afpDistortFunc[DF_SAD16N ] = RdCost::xGetSAD16N;
+  m_distortionFunc[DFunc::SAD]    = RdCost::xGetSAD;
+  m_distortionFunc[DFunc::SAD2]   = RdCost::xGetSAD;
+  m_distortionFunc[DFunc::SAD4]   = RdCost::xGetSAD4;
+  m_distortionFunc[DFunc::SAD8]   = RdCost::xGetSAD8;
+  m_distortionFunc[DFunc::SAD16]  = RdCost::xGetSAD16;
+  m_distortionFunc[DFunc::SAD32]  = RdCost::xGetSAD32;
+  m_distortionFunc[DFunc::SAD64]  = RdCost::xGetSAD64;
+  m_distortionFunc[DFunc::SAD16N] = RdCost::xGetSAD16N;
 
-  m_afpDistortFunc[DF_SAD12  ] = RdCost::xGetSAD12;
-  m_afpDistortFunc[DF_SAD24  ] = RdCost::xGetSAD24;
-  m_afpDistortFunc[DF_SAD48  ] = RdCost::xGetSAD48;
+  m_distortionFunc[DFunc::SAD12] = RdCost::xGetSAD12;
+  m_distortionFunc[DFunc::SAD24] = RdCost::xGetSAD24;
+  m_distortionFunc[DFunc::SAD48] = RdCost::xGetSAD48;
 
-  m_afpDistortFunc[DF_HAD    ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD2   ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD4   ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD8   ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD16  ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD32  ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD64  ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD16N ] = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD]    = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD2]   = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD4]   = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD8]   = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD16]  = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD32]  = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD64]  = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD16N] = RdCost::xGetHADs;
 
-  m_afpDistortFunc[DF_MRSAD    ] = RdCost::xGetMRSAD;
-  m_afpDistortFunc[DF_MRSAD2   ] = RdCost::xGetMRSAD;
-  m_afpDistortFunc[DF_MRSAD4   ] = RdCost::xGetMRSAD4;
-  m_afpDistortFunc[DF_MRSAD8   ] = RdCost::xGetMRSAD8;
-  m_afpDistortFunc[DF_MRSAD16  ] = RdCost::xGetMRSAD16;
-  m_afpDistortFunc[DF_MRSAD32  ] = RdCost::xGetMRSAD32;
-  m_afpDistortFunc[DF_MRSAD64  ] = RdCost::xGetMRSAD64;
-  m_afpDistortFunc[DF_MRSAD16N ] = RdCost::xGetMRSAD16N;
+  m_distortionFunc[DFunc::MRSAD]    = RdCost::xGetMRSAD;
+  m_distortionFunc[DFunc::MRSAD2]   = RdCost::xGetMRSAD;
+  m_distortionFunc[DFunc::MRSAD4]   = RdCost::xGetMRSAD4;
+  m_distortionFunc[DFunc::MRSAD8]   = RdCost::xGetMRSAD8;
+  m_distortionFunc[DFunc::MRSAD16]  = RdCost::xGetMRSAD16;
+  m_distortionFunc[DFunc::MRSAD32]  = RdCost::xGetMRSAD32;
+  m_distortionFunc[DFunc::MRSAD64]  = RdCost::xGetMRSAD64;
+  m_distortionFunc[DFunc::MRSAD16N] = RdCost::xGetMRSAD16N;
 
-  m_afpDistortFunc[DF_MRSAD12  ] = RdCost::xGetMRSAD12;
-  m_afpDistortFunc[DF_MRSAD24  ] = RdCost::xGetMRSAD24;
-  m_afpDistortFunc[DF_MRSAD48  ] = RdCost::xGetMRSAD48;
+  m_distortionFunc[DFunc::MRSAD12] = RdCost::xGetMRSAD12;
+  m_distortionFunc[DFunc::MRSAD24] = RdCost::xGetMRSAD24;
+  m_distortionFunc[DFunc::MRSAD48] = RdCost::xGetMRSAD48;
 
-  m_afpDistortFunc[DF_MRHAD    ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD2   ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD4   ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD8   ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD16  ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD32  ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD64  ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD16N ] = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD]    = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD2]   = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD4]   = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD8]   = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD16]  = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD32]  = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD64]  = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD16N] = RdCost::xGetMRHADs;
 
-  m_afpDistortFunc[DF_SAD_FULL_NBIT   ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT2  ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT4  ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT8  ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT16 ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT32 ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT64 ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT16N] = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT]    = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT2]   = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT4]   = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT8]   = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT16]  = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT32]  = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT64]  = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT16N] = RdCost::xGetSAD_full;
 
 #if WCG_EXT
-  m_afpDistortFunc[DF_SSE_WTD   ] = RdCost::xGetSSE_WTD;
-  m_afpDistortFunc[DF_SSE2_WTD  ] = RdCost::xGetSSE2_WTD;
-  m_afpDistortFunc[DF_SSE4_WTD  ] = RdCost::xGetSSE4_WTD;
-  m_afpDistortFunc[DF_SSE8_WTD  ] = RdCost::xGetSSE8_WTD;
-  m_afpDistortFunc[DF_SSE16_WTD ] = RdCost::xGetSSE16_WTD;
-  m_afpDistortFunc[DF_SSE32_WTD ] = RdCost::xGetSSE32_WTD;
-  m_afpDistortFunc[DF_SSE64_WTD ] = RdCost::xGetSSE64_WTD;
-  m_afpDistortFunc[DF_SSE16N_WTD] = RdCost::xGetSSE16N_WTD;
+  m_distortionFunc[DFunc::SSE_WTD]    = RdCost::xGetSSE_WTD;
+  m_distortionFunc[DFunc::SSE2_WTD]   = RdCost::xGetSSE2_WTD;
+  m_distortionFunc[DFunc::SSE4_WTD]   = RdCost::xGetSSE4_WTD;
+  m_distortionFunc[DFunc::SSE8_WTD]   = RdCost::xGetSSE8_WTD;
+  m_distortionFunc[DFunc::SSE16_WTD]  = RdCost::xGetSSE16_WTD;
+  m_distortionFunc[DFunc::SSE32_WTD]  = RdCost::xGetSSE32_WTD;
+  m_distortionFunc[DFunc::SSE64_WTD]  = RdCost::xGetSSE64_WTD;
+  m_distortionFunc[DFunc::SSE16N_WTD] = RdCost::xGetSSE16N_WTD;
 #endif
 
-  m_afpDistortFunc[DF_SAD_INTERMEDIATE_BITDEPTH] = RdCost::xGetSAD;
+  m_distortionFunc[DFunc::SAD_INTERMEDIATE_BITDEPTH] = RdCost::xGetSAD;
 
-  m_afpDistortFunc[DF_SAD_WITH_MASK] = RdCost::xGetSADwMask;
+  m_distortionFunc[DFunc::SAD_WITH_MASK] = RdCost::xGetSADwMask;
 
 #if ENABLE_SIMD_OPT_DIST
 #ifdef TARGET_SIMD_X86
@@ -240,37 +239,17 @@ void RdCost::setDistParam(DistParam &rcDP, const CPelBuf &org, const Pel *piRefY
   rcDP.step         = step;
   rcDP.maximumDistortionForEarlyExit = std::numeric_limits<Distortion>::max();
 
-  int DFOffset = ( rcDP.useMR ? DF_MRSAD - DF_SAD : 0 );
   if( !useHadamard )
   {
-    if( org.width == 12 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD12 + DFOffset ];
-    }
-    else if( org.width == 24 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD24 + DFOffset ];
-    }
-    else if( org.width == 48 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD48 + DFOffset ];
-    }
-    else if( isPowerOf2( org.width ) )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD + DFOffset + floorLog2( org.width ) ];
-    }
-    else
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD + DFOffset ];
-    }
-  }
-  else if( isPowerOf2( org.width ) )
-  {
-    rcDP.distFunc = m_afpDistortFunc[ DF_HAD + DFOffset + floorLog2( org.width ) ];
+    const DFunc baseIdx = rcDP.useMR ? DFunc::MRSAD : DFunc::SAD;
+
+    rcDP.distFunc = m_distortionFunc[baseIdx + sizeOffset<true>(org.width)];
   }
   else
   {
-    rcDP.distFunc = m_afpDistortFunc[ DF_HAD + DFOffset ];
+    const DFunc baseIdx = rcDP.useMR ? DFunc::MRHAD : DFunc::HAD;
+
+    rcDP.distFunc = m_distortionFunc[baseIdx + sizeOffset<false>(org.width)];
   }
 
   // initialize
@@ -320,34 +299,17 @@ void RdCost::setDistParam( DistParam &rcDP, const CPelBuf &org, const CPelBuf &c
   rcDP.bitDepth     = bitDepth;
   rcDP.compID       = compID;
 
-  const int DFOffset = ( rcDP.useMR ? DF_MRSAD - DF_SAD : 0 );
-
   if( !useHadamard )
   {
-    if( org.width == 12 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD12 + DFOffset ];
-    }
-    else if( org.width == 24 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD24 + DFOffset ];
-    }
-    else if( org.width == 48 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD48 + DFOffset ];
-    }
-    else if( isPowerOf2( org.width) )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD + DFOffset + floorLog2( org.width ) ];
-    }
-    else
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD + DFOffset ];
-    }
+    const DFunc baseIdx = rcDP.useMR ? DFunc::MRSAD : DFunc::SAD;
+
+    rcDP.distFunc = m_distortionFunc[baseIdx + sizeOffset<true>(org.width)];
   }
   else
   {
-    rcDP.distFunc = m_afpDistortFunc[ DF_HAD + DFOffset + floorLog2( org.width ) ];
+    const DFunc baseIdx = rcDP.useMR ? DFunc::MRHAD : DFunc::HAD;
+
+    rcDP.distFunc = m_distortionFunc[baseIdx + sizeOffset<false>(org.width)];
   }
 
   rcDP.maximumDistortionForEarlyExit = std::numeric_limits<Distortion>::max();
@@ -375,32 +337,19 @@ void RdCost::setDistParam(DistParam &rcDP, const Pel *pOrg, const Pel *piRefY, p
   CHECK(useHadamard || rcDP.useMR, "only used in xDmvrCost with these default parameters (so far...)");
   if ( bioApplied )
   {
-    rcDP.distFunc = m_afpDistortFunc[ DF_SAD_INTERMEDIATE_BITDEPTH ];
+    rcDP.distFunc = m_distortionFunc[DFunc::SAD_INTERMEDIATE_BITDEPTH];
     return;
   }
 
-  if( width == 12 )
-  {
-    rcDP.distFunc = m_afpDistortFunc[ DF_SAD12 ];
-  }
-  else if( width == 24 )
-  {
-    rcDP.distFunc = m_afpDistortFunc[ DF_SAD24 ];
-  }
-  else if( width == 48 )
-  {
-    rcDP.distFunc = m_afpDistortFunc[ DF_SAD48 ];
-  }
-  else
-  {
-    rcDP.distFunc = m_afpDistortFunc[ DF_SAD + floorLog2( width ) ];
-  }
+  rcDP.distFunc = m_distortionFunc[DFunc::SAD + sizeOffset<true>(width)];
 }
 
 #if WCG_EXT
-Distortion RdCost::getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc, const CPelBuf *orgLuma )
+Distortion RdCost::getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
+                               DFunc distFunc, const CPelBuf *orgLuma)
 #else
-Distortion RdCost::getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc )
+    Distortion RdCost::getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
+                                   DFunc distFunc)
 #endif
 {
   DistParam cDtParam;
@@ -427,14 +376,7 @@ Distortion RdCost::getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitD
   }
 #endif
 
-  if( isPowerOf2( org.width ) )
-  {
-    cDtParam.distFunc = m_afpDistortFunc[eDFunc + floorLog2(org.width)];
-  }
-  else
-  {
-    cDtParam.distFunc = m_afpDistortFunc[eDFunc];
-  }
+  cDtParam.distFunc = m_distortionFunc[distFunc + sizeOffset<false>(org.width)];
 
   if (isChroma(compID))
   {
@@ -3895,7 +3837,7 @@ Distortion RdCost::xGetMRHADs( const DistParam &rcDtParam )
   DistParam modDistParam = rcDtParam;
   modDistParam.org = modOrg;
 
-  return m_afpDistortFunc[DF_HAD]( modDistParam );
+  return m_distortionFunc[DFunc::HAD](modDistParam);
 }
 
 void RdCost::setDistParam(DistParam &rcDP, const CPelBuf &org, const Pel *piRefY, ptrdiff_t iRefStride, const Pel *mask,
@@ -3921,7 +3863,7 @@ void RdCost::setDistParam(DistParam &rcDP, const CPelBuf &org, const Pel *piRefY
   rcDP.maximumDistortionForEarlyExit = std::numeric_limits<Distortion>::max();
 
   // set Cost function for motion estimation with Mask
-  rcDP.distFunc = m_afpDistortFunc[ DF_SAD_WITH_MASK ];
+  rcDP.distFunc = m_distortionFunc[DFunc::SAD_WITH_MASK];
 }
 
 Distortion RdCost::xGetSADwMask( const DistParam& rcDtParam )

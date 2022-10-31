@@ -4519,11 +4519,13 @@ Distortion EncCu::getDistortionDb( CodingStructure &cs, CPelBuf org, CPelBuf rec
       PelBuf tmpRecLuma = m_tmpStorageLCU->getBuf( tmpArea );
       tmpRecLuma.copyFrom( reco );
       tmpRecLuma.rspSignal( m_pcReshape->getInvLUT() );
-      dist += m_pcRdCost->getDistPart( org, tmpRecLuma, cs.sps->getBitDepth( toChannelType( compID ) ), compID, DF_SSE_WTD, &orgLuma );
+      dist += m_pcRdCost->getDistPart(org, tmpRecLuma, cs.sps->getBitDepth(toChannelType(compID)), compID,
+                                      DFunc::SSE_WTD, &orgLuma);
     }
     else
     {
-      dist += m_pcRdCost->getDistPart( org, reco, cs.sps->getBitDepth( toChannelType( compID ) ), compID, DF_SSE_WTD, &orgLuma );
+      dist += m_pcRdCost->getDistPart(org, reco, cs.sps->getBitDepth(toChannelType(compID)), compID, DFunc::SSE_WTD,
+                                      &orgLuma);
     }
   }
   else if (m_pcEncCfg->getLmcs() && cs.slice->getLmcsEnabledFlag() && cs.slice->isIntra()) //intra slice
@@ -4534,25 +4536,25 @@ Distortion EncCu::getDistortionDb( CodingStructure &cs, CPelBuf org, CPelBuf rec
       PelBuf tmpRecLuma = m_tmpStorageLCU->getBuf( tmpArea );
       tmpRecLuma.copyFrom( reco );
       tmpRecLuma.rspSignal( m_pcReshape->getFwdLUT() );
-      dist += m_pcRdCost->getDistPart( org, tmpRecLuma, cs.sps->getBitDepth( toChannelType( compID ) ), compID, DF_SSE );
+      dist += m_pcRdCost->getDistPart(org, tmpRecLuma, cs.sps->getBitDepth(toChannelType(compID)), compID, DFunc::SSE);
     }
     else
     {
       if ((isChroma(compID) && m_pcEncCfg->getReshapeIntraCMD()))
       {
-        dist +=
-          m_pcRdCost->getDistPart(org, reco, cs.sps->getBitDepth(toChannelType(compID)), compID, DF_SSE_WTD, &orgLuma);
+        dist += m_pcRdCost->getDistPart(org, reco, cs.sps->getBitDepth(toChannelType(compID)), compID, DFunc::SSE_WTD,
+                                        &orgLuma);
       }
       else
       {
-        dist += m_pcRdCost->getDistPart( org, reco, cs.sps->getBitDepth(toChannelType( compID ) ), compID, DF_SSE );
+        dist += m_pcRdCost->getDistPart(org, reco, cs.sps->getBitDepth(toChannelType(compID)), compID, DFunc::SSE);
       }
     }
   }
   else
 #endif
   {
-    dist = m_pcRdCost->getDistPart( org, reco, cs.sps->getBitDepth( toChannelType( compID ) ), compID, DF_SSE );
+    dist = m_pcRdCost->getDistPart(org, reco, cs.sps->getBitDepth(toChannelType(compID)), compID, DFunc::SSE);
   }
   return dist;
 }
@@ -5002,18 +5004,19 @@ void EncCu::xReuseCachedResult( CodingStructure *&tempCS, CodingStructure *&best
             tmpRecLuma.copyFrom(reco);
             tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
             finalDistortion += m_pcRdCost->getDistPart(org, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
-                                                       DF_SSE_WTD, &orgLuma);
+                                                       DFunc::SSE_WTD, &orgLuma);
           }
           else
           {
-            finalDistortion +=
-              m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID, DF_SSE_WTD, &orgLuma);
+            finalDistortion += m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID,
+                                                       DFunc::SSE_WTD, &orgLuma);
           }
         }
         else
 #endif
         {
-          finalDistortion += m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID, DF_SSE);
+          finalDistortion +=
+            m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID, DFunc::SSE);
         }
       }
     }

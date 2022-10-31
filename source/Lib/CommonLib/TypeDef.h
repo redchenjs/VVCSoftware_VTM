@@ -537,85 +537,105 @@ enum RefPicList
 #define L1 REF_PIC_LIST_1
 
 /// distortion function index
-enum DFunc
+enum class DFunc
 {
-  DF_SSE             = 0,             ///< general size SSE
-  DF_SSE2            = DF_SSE+1,      ///<   2xM SSE
-  DF_SSE4            = DF_SSE+2,      ///<   4xM SSE
-  DF_SSE8            = DF_SSE+3,      ///<   8xM SSE
-  DF_SSE16           = DF_SSE+4,      ///<  16xM SSE
-  DF_SSE32           = DF_SSE+5,      ///<  32xM SSE
-  DF_SSE64           = DF_SSE+6,      ///<  64xM SSE
-  DF_SSE16N          = DF_SSE+7,      ///< 16NxM SSE
+  // SSE functions by size
+  SSE = 0,
+  SSE2,
+  SSE4,
+  SSE8,
+  SSE16,
+  SSE32,
+  SSE64,
+  SSE16N,
 
-  DF_SAD             = 8,             ///< general size SAD
-  DF_SAD2            = DF_SAD+1,      ///<   2xM SAD
-  DF_SAD4            = DF_SAD+2,      ///<   4xM SAD
-  DF_SAD8            = DF_SAD+3,      ///<   8xM SAD
-  DF_SAD16           = DF_SAD+4,      ///<  16xM SAD
-  DF_SAD32           = DF_SAD+5,      ///<  32xM SAD
-  DF_SAD64           = DF_SAD+6,      ///<  64xM SAD
-  DF_SAD16N          = DF_SAD+7,      ///< 16NxM SAD
+  // SAD functions by size
+  SAD,
+  SAD2,
+  SAD4,
+  SAD8,
+  SAD16,
+  SAD32,
+  SAD64,
+  SAD16N,
 
-  DF_HAD             = 16,            ///< general size Hadamard
-  DF_HAD2            = DF_HAD+1,      ///<   2xM HAD
-  DF_HAD4            = DF_HAD+2,      ///<   4xM HAD
-  DF_HAD8            = DF_HAD+3,      ///<   8xM HAD
-  DF_HAD16           = DF_HAD+4,      ///<  16xM HAD
-  DF_HAD32           = DF_HAD+5,      ///<  32xM HAD
-  DF_HAD64           = DF_HAD+6,      ///<  64xM HAD
-  DF_HAD16N          = DF_HAD+7,      ///< 16NxM HAD
+  // HAD functions by size
+  HAD,
+  HAD2,
+  HAD4,
+  HAD8,
+  HAD16,
+  HAD32,
+  HAD64,
+  HAD16N,
 
-  DF_SAD12           = 24,
-  DF_SAD24           = 25,
-  DF_SAD48           = 26,
+  // SAD functions by size (odd sizes)
+  SAD12,
+  SAD24,
+  SAD48,
 
-  DF_MRSAD           = 27,            ///< general size MR SAD
-  DF_MRSAD2          = DF_MRSAD+1,    ///<   2xM MR SAD
-  DF_MRSAD4          = DF_MRSAD+2,    ///<   4xM MR SAD
-  DF_MRSAD8          = DF_MRSAD+3,    ///<   8xM MR SAD
-  DF_MRSAD16         = DF_MRSAD+4,    ///<  16xM MR SAD
-  DF_MRSAD32         = DF_MRSAD+5,    ///<  32xM MR SAD
-  DF_MRSAD64         = DF_MRSAD+6,    ///<  64xM MR SAD
-  DF_MRSAD16N        = DF_MRSAD+7,    ///< 16NxM MR SAD
+  // Mean-removed versions
+  // NOTE: order must be the same as the regular versions above
 
-  DF_MRHAD           = 35,            ///< general size MR Hadamard
-  DF_MRHAD2          = DF_MRHAD+1,    ///<   2xM MR HAD
-  DF_MRHAD4          = DF_MRHAD+2,    ///<   4xM MR HAD
-  DF_MRHAD8          = DF_MRHAD+3,    ///<   8xM MR HAD
-  DF_MRHAD16         = DF_MRHAD+4,    ///<  16xM MR HAD
-  DF_MRHAD32         = DF_MRHAD+5,    ///<  32xM MR HAD
-  DF_MRHAD64         = DF_MRHAD+6,    ///<  64xM MR HAD
-  DF_MRHAD16N        = DF_MRHAD+7,    ///< 16NxM MR HAD
+  MRSAD,
+  MRSAD2,
+  MRSAD4,
+  MRSAD8,
+  MRSAD16,
+  MRSAD32,
+  MRSAD64,
+  MRSAD16N,
 
-  DF_MRSAD12         = 43,
-  DF_MRSAD24         = 44,
-  DF_MRSAD48         = 45,
+  MRHAD,
+  MRHAD2,
+  MRHAD4,
+  MRHAD8,
+  MRHAD16,
+  MRHAD32,
+  MRHAD64,
+  MRHAD16N,
 
-  DF_SAD_FULL_NBIT    = 46,
-  DF_SAD_FULL_NBIT2   = DF_SAD_FULL_NBIT+1,    ///<   2xM SAD with full bit usage
-  DF_SAD_FULL_NBIT4   = DF_SAD_FULL_NBIT+2,    ///<   4xM SAD with full bit usage
-  DF_SAD_FULL_NBIT8   = DF_SAD_FULL_NBIT+3,    ///<   8xM SAD with full bit usage
-  DF_SAD_FULL_NBIT16  = DF_SAD_FULL_NBIT+4,    ///<  16xM SAD with full bit usage
-  DF_SAD_FULL_NBIT32  = DF_SAD_FULL_NBIT+5,    ///<  32xM SAD with full bit usage
-  DF_SAD_FULL_NBIT64  = DF_SAD_FULL_NBIT+6,    ///<  64xM SAD with full bit usage
-  DF_SAD_FULL_NBIT16N = DF_SAD_FULL_NBIT+7,    ///< 16NxM SAD with full bit usage
+  MRSAD12,
+  MRSAD24,
+  MRSAD48,
 
-  DF_SSE_WTD          = 54,                ///< general size SSE
-  DF_SSE2_WTD         = DF_SSE_WTD+1,      ///<   4xM SSE
-  DF_SSE4_WTD         = DF_SSE_WTD+2,      ///<   4xM SSE
-  DF_SSE8_WTD         = DF_SSE_WTD+3,      ///<   8xM SSE
-  DF_SSE16_WTD        = DF_SSE_WTD+4,      ///<  16xM SSE
-  DF_SSE32_WTD        = DF_SSE_WTD+5,      ///<  32xM SSE
-  DF_SSE64_WTD        = DF_SSE_WTD+6,      ///<  64xM SSE
-  DF_SSE16N_WTD       = DF_SSE_WTD+7,      ///< 16NxM SSE
-  DF_DEFAULT_ORI      = DF_SSE_WTD+8,
+  // Full precision versions of SAD functions
+  SAD_FULL_NBIT,
+  SAD_FULL_NBIT2,
+  SAD_FULL_NBIT4,
+  SAD_FULL_NBIT8,
+  SAD_FULL_NBIT16,
+  SAD_FULL_NBIT32,
+  SAD_FULL_NBIT64,
+  SAD_FULL_NBIT16N,
 
-  DF_SAD_INTERMEDIATE_BITDEPTH = 63,
+  // Weighted SSE functions by size
+  SSE_WTD,
+  SSE2_WTD,
+  SSE4_WTD,
+  SSE8_WTD,
+  SSE16_WTD,
+  SSE32_WTD,
+  SSE64_WTD,
+  SSE16N_WTD,
 
-  DF_SAD_WITH_MASK   = 64,
-  DF_TOTAL_FUNCTIONS = 65
+  SAD_INTERMEDIATE_BITDEPTH,
+
+  SAD_WITH_MASK,
+
+  NUM
 };
+
+enum class DFuncDiff;
+
+static inline DFuncDiff operator-(const DFunc &a, const DFunc &b)
+{
+  return static_cast<DFuncDiff>(to_underlying(a) - to_underlying(b));
+}
+static inline DFunc operator+(const DFunc &a, const DFuncDiff &b)
+{
+  return static_cast<DFunc>(to_underlying(a) + to_underlying(b));
+}
 
 /// motion vector predictor direction used in AMVP
 enum MvpDir

@@ -957,7 +957,6 @@ static inline int ceilLog2(uint32_t x)
   return (x==0) ? -1 : floorLog2(x - 1) + 1;
 }
 
-
 //CASE-BREAK for breakpoints
 #if defined ( _MSC_VER ) && defined ( _DEBUG )
 #define _CASE(_x) if(_x)

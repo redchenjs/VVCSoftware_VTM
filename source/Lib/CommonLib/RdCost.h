@@ -45,6 +45,7 @@
 #include "Slice.h"
 #include "RdCostWeightPrediction.h"
 #include <math.h>
+#include <functional>
 
 //! \ingroup CommonLib
 //! \{
@@ -56,8 +57,7 @@ class EncCfg;
 // Type definition
 // ====================================================================================================================
 
-// for function pointer
-typedef Distortion (*FpDistFunc) (const DistParam&);
+using DistFunc = std::function<Distortion(const DistParam &)>;
 
 // ====================================================================================================================
 // Class definition
@@ -77,7 +77,7 @@ public:
   int                   stepX;
   ptrdiff_t             maskStride2;
   int                   step;
-  FpDistFunc            distFunc;
+  DistFunc              distFunc;
   int                   bitDepth;
 
   bool                  useMR;
@@ -110,7 +110,7 @@ class RdCost
 private:
   // for distortion
 
-  static FpDistFunc       m_afpDistortFunc[DF_TOTAL_FUNCTIONS]; // [eDFunc]
+  static EnumArray<DistFunc, DFunc> m_distortionFunc;
   CostMode                m_costMode;
   double                  m_distortionWeight[MAX_NUM_COMPONENT]; // only chroma values are used.
   double                  m_dLambda;
@@ -143,6 +143,35 @@ private:
   int                     m_iCostScale;
 
   double                  m_dCost; // for ibc
+
+  template<bool allowOddSizes> static DFuncDiff sizeOffset(const uint32_t width)
+  {
+    if (width <= 64 && isPowerOf2(width))
+    {
+      return static_cast<DFuncDiff>(floorLog2(width));
+    }
+    else if (width % 16 == 0)
+    {
+      return DFunc::SAD16N - DFunc::SAD;
+    }
+    else if (allowOddSizes && width == 12)
+    {
+      return DFunc::SAD12 - DFunc::SAD;
+    }
+    else if (allowOddSizes && width == 24)
+    {
+      return DFunc::SAD24 - DFunc::SAD;
+    }
+    else if (allowOddSizes && width == 48)
+    {
+      return DFunc::SAD48 - DFunc::SAD;
+    }
+    else
+    {
+      return DFunc::SAD - DFunc::SAD;
+    }
+  }
+
 public:
   RdCost();
   virtual ~RdCost();
@@ -440,13 +469,15 @@ private:
 public:
 
 #if WCG_EXT
-  Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc,
+  Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc distFunc,
                          const CPelBuf *orgLuma = nullptr);
 #else
-  Distortion   getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc );
+  Distortion    getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
+                            DFunc distFunc);
 #endif
 
-  Distortion   getDistPart(const CPelBuf &org, const CPelBuf &cur, const Pel* mask, int bitDepth, const ComponentID compID, DFunc eDFunc);
+  Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, const Pel *mask, int bitDepth,
+                         const ComponentID compID, DFunc distFunc);
 };// END CLASS DEFINITION RdCost
 
 //! \}
