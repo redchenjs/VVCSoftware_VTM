@@ -4217,11 +4217,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
   CHECK( m_iNumPicCoded > 1, "Unspecified error" );
 }
 
-void EncGOP::printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const bool printMSEBasedSNR,
-  const bool printSequenceMSE, const bool printMSSSIM, const bool printHexPsnr, const bool printRprPSNR,
-  const BitDepths &bitDepths
-                             , int layerId
-                             )
+void EncGOP::printOutSummary(uint32_t numAllPicCoded, bool isField, const bool printMSEBasedSNR,
+                             const bool printSequenceMSE, const bool printMSSSIM, const bool printHexPsnr,
+                             const bool printRprPsnr, const BitDepths &bitDepths, int layerId)
 {
 #if ENABLE_QPA
   const bool    useWPSNR = m_pcEncLib->getUseWPSNR();
@@ -4232,19 +4230,19 @@ void EncGOP::printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const boo
 
   if( m_pcCfg->getDecodeBitstream(0).empty() && m_pcCfg->getDecodeBitstream(1).empty() && !m_pcCfg->useFastForwardToPOC() )
   {
-    CHECK( !( uiNumAllPicCoded == m_gcAnalyzeAll.getNumPic() ), "Unspecified error" );
+    CHECK(!(numAllPicCoded == m_gcAnalyzeAll.getNumPic()), "Unspecified error");
   }
 
-  //--CFG_KDY
-  const int rateMultiplier=(isField?2:1);
-  m_gcAnalyzeAll.setFrmRate( m_pcCfg->getFrameRate()*rateMultiplier / (double)m_pcCfg->getTemporalSubsampleRatio());
-  m_gcAnalyzeI.setFrmRate( m_pcCfg->getFrameRate()*rateMultiplier / (double)m_pcCfg->getTemporalSubsampleRatio());
-  m_gcAnalyzeP.setFrmRate( m_pcCfg->getFrameRate()*rateMultiplier / (double)m_pcCfg->getTemporalSubsampleRatio());
-  m_gcAnalyzeB.setFrmRate( m_pcCfg->getFrameRate()*rateMultiplier / (double)m_pcCfg->getTemporalSubsampleRatio());
+  const double picRate = m_pcCfg->getFrameRate() * (isField ? 2.0 : 1.0) / m_pcCfg->getTemporalSubsampleRatio();
+
+  m_gcAnalyzeAll.setFrameRate(picRate);
+  m_gcAnalyzeI.setFrameRate(picRate);
+  m_gcAnalyzeP.setFrameRate(picRate);
+  m_gcAnalyzeB.setFrameRate(picRate);
 #if WCG_WPSNR
   if (useLumaWPSNR)
   {
-    m_gcAnalyzeWPSNR.setFrmRate(m_pcCfg->getFrameRate()*rateMultiplier / (double)m_pcCfg->getTemporalSubsampleRatio());
+    m_gcAnalyzeWPSNR.setFrameRate(picRate);
   }
 #endif
 
@@ -4262,29 +4260,34 @@ void EncGOP::printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const boo
   std::string id="a";
   if (layerId==0) id+=' ';
   else            id+=std::to_string(layerId);
-  m_gcAnalyzeAll.printOut(header,metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr, printRprPSNR, bitDepths, useWPSNR
+  m_gcAnalyzeAll.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr,
+                          printRprPsnr, bitDepths, useWPSNR
 #if JVET_O0756_CALCULATE_HDRMETRICS
-                          , calculateHdrMetrics
+                          ,
+                          calculateHdrMetrics
 #endif
-                          );
+  );
   if( g_verbosity >= INFO ) std::cout<<header<<'\n'<<metrics<<std::endl;
 
   id="i";
   if (layerId==0) id+=' ';
   else            id+=std::to_string(layerId);
-  m_gcAnalyzeI.printOut(header,metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr, printRprPSNR, bitDepths );
+  m_gcAnalyzeI.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr,
+                        printRprPsnr, bitDepths);
   if( g_verbosity >= DETAILS ) std::cout<< "\n\nI Slices--------------------------------------------------------\n"<<header<<'\n'<<metrics<<std::endl;
 
   id="p";
   if (layerId==0) id+=' ';
   else            id+=std::to_string(layerId);
-  m_gcAnalyzeP.printOut(header,metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr, printRprPSNR, bitDepths );
+  m_gcAnalyzeP.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr,
+                        printRprPsnr, bitDepths);
   if( g_verbosity >= DETAILS ) std::cout<<"\n\nP Slices--------------------------------------------------------\n"<<header<<'\n'<<metrics<<std::endl;
 
   id="b";
   if (layerId==0) id+=' ';
   else            id+=std::to_string(layerId);
-  m_gcAnalyzeB.printOut(header,metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr, printRprPSNR, bitDepths );
+  m_gcAnalyzeB.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr,
+                        printRprPsnr, bitDepths);
   if( g_verbosity >= DETAILS ) std::cout<<"\n\nB Slices--------------------------------------------------------\n"<<header<<'\n'<<metrics<<std::endl;
 
 #if WCG_WPSNR
@@ -4293,7 +4296,8 @@ void EncGOP::printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const boo
     id="w";
     if (layerId==0) id+=' ';
     else            id+=std::to_string(layerId);
-    m_gcAnalyzeWPSNR.printOut(header,metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr, printRprPSNR, bitDepths, useLumaWPSNR );
+    m_gcAnalyzeWPSNR.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr,
+                              printRprPsnr, bitDepths, useLumaWPSNR);
     if( g_verbosity >= DETAILS ) std::cout<<"\nWPSNR SUMMARY --------------------------------------------------------\n"<<header<<'\n'<<metrics<<std::endl;
 
   }
@@ -4321,17 +4325,30 @@ void EncGOP::printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const boo
   if(isField)
   {
     //-- interlaced summary
-    m_gcAnalyzeAll_in.setFrmRate( m_pcCfg->getFrameRate() / (double)m_pcCfg->getTemporalSubsampleRatio());
-    m_gcAnalyzeAll_in.setBits(m_gcAnalyzeAll.getBits());
+    m_gcAnalyzeAllField.setFrameRate(m_pcCfg->getFrameRate() / (double) m_pcCfg->getTemporalSubsampleRatio());
+    m_gcAnalyzeAllField.setBits(m_gcAnalyzeAll.getBits());
     // prior to the above statement, the interlace analyser does not contain the correct total number of bits.
     id="a";
-    if (layerId==0) id+=' ';
-    else            id+=std::to_string(layerId);
-    m_gcAnalyzeAll_in.printOut(header,metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr, printRprPSNR, bitDepths, useWPSNR );
-    if( g_verbosity >= DETAILS ) std::cout<< "\n\nSUMMARY INTERLACED ---------------------------------------------\n"<<header<<'\n'<<metrics<<std::endl;
+    if (layerId == 0)
+    {
+      id += ' ';
+    }
+    else
+    {
+      id += std::to_string(layerId);
+    }
+    m_gcAnalyzeAllField.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM,
+                                 printHexPsnr, printRprPsnr, bitDepths, useWPSNR);
+    if (g_verbosity >= DETAILS)
+    {
+      std::cout << "\n\nSUMMARY INTERLACED ---------------------------------------------\n"
+                << header << '\n'
+                << metrics << std::endl;
+    }
     if (!m_pcCfg->getSummaryOutFilename().empty())
     {
-      m_gcAnalyzeAll_in.printSummary(chFmt, printSequenceMSE, printHexPsnr, bitDepths, m_pcCfg->getSummaryOutFilename());
+      m_gcAnalyzeAllField.printSummary(chFmt, printSequenceMSE, printHexPsnr, bitDepths,
+                                       m_pcCfg->getSummaryOutFilename());
 #if WCG_WPSNR
       if (useLumaWPSNR)
       {
@@ -4788,7 +4805,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   const CPelUnitBuf& picC = (conversion == IPCOLOURSPACE_UNCHANGED) ? pic : interm;
 
   //===== calculate PSNR =====
-  double MSEyuvframe[MAX_NUM_COMPONENT] = {0, 0, 0};
+  double             mseYuvFrame[MAX_NUM_COMPONENT] = { 0, 0, 0 };
   const ChromaFormat formatD = pic.chromaFormat;
   const ChromaFormat format  = sps.getChromaFormatIdc();
 
@@ -4840,15 +4857,17 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     const CPelBuf orgPB(o.bufAt(0, 0), o.stride, width, height);
     const uint32_t    bitDepth = sps.getBitDepth(toChannelType(compID));
 #if ENABLE_QPA
-    const uint64_t uiSSDtemp = xFindDistortionPlane(recPB, orgPB, useWPSNR ? bitDepth : 0, ::getComponentScaleX(compID, format), ::getComponentScaleY(compID, format));
+    const uint64_t ssdTemp =
+      xFindDistortionPlane(recPB, orgPB, useWPSNR ? bitDepth : 0, ::getComponentScaleX(compID, format),
+                           ::getComponentScaleY(compID, format));
 #else
-    const uint64_t uiSSDtemp = xFindDistortionPlane(recPB, orgPB, 0);
+    const uint64_t ssdTemp = xFindDistortionPlane(recPB, orgPB, 0);
 #endif
     const uint32_t maxval = 255 << (bitDepth - 8);
     const uint32_t size   = width * height;
     const double fRefValue = (double)maxval * maxval * size;
-    dPSNR[comp]       = uiSSDtemp ? 10.0 * log10(fRefValue / (double)uiSSDtemp) : 999.99;
-    MSEyuvframe[comp] = (double)uiSSDtemp / size;
+    dPSNR[comp]              = ssdTemp ? 10.0 * log10(fRefValue / (double) ssdTemp) : 999.99;
+    mseYuvFrame[comp]        = (double) ssdTemp / size;
     if(printMSSSIM)
     {
       msssim[comp] = xCalculateMSSSIM (o.bufAt(0, 0), o.stride, p.bufAt(0, 0), p.stride, width, height, bitDepth);
@@ -4929,7 +4948,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   m_vRVM_RP.push_back( uibits );
 
   //===== add PSNR =====
-  m_gcAnalyzeAll.addResult(dPSNR, (double)uibits, MSEyuvframe, upscaledPSNR, msssim, isEncodeLtRef);
+  m_gcAnalyzeAll.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, isEncodeLtRef);
 #if EXTENSION_360_VIDEO
   m_ext360.addResult(m_gcAnalyzeAll);
 #endif
@@ -4941,7 +4960,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 #endif
   if (pcSlice->isIntra())
   {
-    m_gcAnalyzeI.addResult(dPSNR, (double)uibits, MSEyuvframe, upscaledPSNR, msssim, isEncodeLtRef);
+    m_gcAnalyzeI.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, isEncodeLtRef);
     *PSNR_Y = dPSNR[COMPONENT_Y];
 #if EXTENSION_360_VIDEO
     m_ext360.addResult(m_gcAnalyzeI);
@@ -4955,7 +4974,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   }
   if (pcSlice->isInterP())
   {
-    m_gcAnalyzeP.addResult(dPSNR, (double)uibits, MSEyuvframe, upscaledPSNR, msssim, isEncodeLtRef);
+    m_gcAnalyzeP.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, isEncodeLtRef);
     *PSNR_Y = dPSNR[COMPONENT_Y];
 #if EXTENSION_360_VIDEO
     m_ext360.addResult(m_gcAnalyzeP);
@@ -4969,7 +4988,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   }
   if (pcSlice->isInterB())
   {
-    m_gcAnalyzeB.addResult(dPSNR, (double)uibits, MSEyuvframe, upscaledPSNR, msssim, isEncodeLtRef);
+    m_gcAnalyzeB.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, isEncodeLtRef);
     *PSNR_Y = dPSNR[COMPONENT_Y];
 #if EXTENSION_360_VIDEO
     m_ext360.addResult(m_gcAnalyzeB);
@@ -5041,7 +5060,8 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 
     if( printFrameMSE )
     {
-      msg( NOTICE, " [Y MSE %6.4lf  U MSE %6.4lf  V MSE %6.4lf]", MSEyuvframe[COMPONENT_Y], MSEyuvframe[COMPONENT_Cb], MSEyuvframe[COMPONENT_Cr] );
+      msg(NOTICE, " [Y MSE %6.4lf  U MSE %6.4lf  V MSE %6.4lf]", mseYuvFrame[COMPONENT_Y], mseYuvFrame[COMPONENT_Cb],
+          mseYuvFrame[COMPONENT_Cr]);
     }
 #if WCG_WPSNR
     if (useLumaWPSNR)
@@ -5461,7 +5481,7 @@ void EncGOP::xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture* 
   }
 
   //===== calculate PSNR =====
-  double MSEyuvframe[MAX_NUM_COMPONENT] = {0, 0, 0};
+  double mseYuvFrame[MAX_NUM_COMPONENT] = { 0, 0, 0 };
   double msssim[MAX_NUM_COMPONENT] = {0.0};
 
   CHECK(!(acPicRecFields[0].chromaFormat==acPicRecFields[1].chromaFormat), "Unspecified error");
@@ -5473,7 +5493,7 @@ void EncGOP::xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture* 
     CHECK(!(acPicRecFields[0].get(ch).width==acPicRecFields[1].get(ch).width), "Unspecified error");
     CHECK(!(acPicRecFields[0].get(ch).height==acPicRecFields[0].get(ch).height), "Unspecified error");
 
-    uint64_t uiSSDtemp=0;
+    uint64_t       ssdTemp = 0;
     const uint32_t width    = acPicRecFields[0].get(ch).width - (m_pcEncLib->getSourcePadding(0) >> ::getComponentScaleX(ch, format));
     const uint32_t height   = acPicRecFields[0].get(ch).height - ((m_pcEncLib->getSourcePadding(1) >> 1) >> ::getComponentScaleY(ch, format));
     const uint32_t bitDepth = sps.getBitDepth(toChannelType(ch));
@@ -5483,9 +5503,12 @@ void EncGOP::xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture* 
     {
       CHECK(!(conversion == IPCOLOURSPACE_UNCHANGED), "Unspecified error");
 #if ENABLE_QPA
-      uiSSDtemp += xFindDistortionPlane( acPicRecFields[fieldNum].get(ch), apcPicOrgFields[fieldNum]->getOrigBuf().get(ch), useWPSNR ? bitDepth : 0, ::getComponentScaleX(ch, format), ::getComponentScaleY(ch, format) );
+      ssdTemp += xFindDistortionPlane(acPicRecFields[fieldNum].get(ch), apcPicOrgFields[fieldNum]->getOrigBuf().get(ch),
+                                      useWPSNR ? bitDepth : 0, ::getComponentScaleX(ch, format),
+                                      ::getComponentScaleY(ch, format));
 #else
-      uiSSDtemp += xFindDistortionPlane( acPicRecFields[fieldNum].get(ch), apcPicOrgFields[fieldNum]->getOrigBuf().get(ch), 0 );
+      ssdTemp +=
+        xFindDistortionPlane(acPicRecFields[fieldNum].get(ch), apcPicOrgFields[fieldNum]->getOrigBuf().get(ch), 0);
 #endif
       if(printMSSSIM)
       {
@@ -5501,14 +5524,14 @@ void EncGOP::xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture* 
     const uint32_t maxval = 255 << (bitDepth - 8);
     const uint32_t size   = width * height * 2;
     const double fRefValue = (double)maxval * maxval * size;
-    dPSNR[ch]         = uiSSDtemp ? 10.0 * log10(fRefValue / (double)uiSSDtemp) : 999.99;
-    MSEyuvframe[ch]   = (double)uiSSDtemp / size;
+    dPSNR[ch]                = ssdTemp ? 10.0 * log10(fRefValue / (double) ssdTemp) : 999.99;
+    mseYuvFrame[ch]          = (double) ssdTemp / size;
   }
 
   uint32_t uibits = 0; // the number of bits for the pair is not calculated here - instead the overall total is used elsewhere.
 
   //===== add PSNR =====
-  m_gcAnalyzeAll_in.addResult (dPSNR, (double)uibits, MSEyuvframe, MSEyuvframe, msssim, isEncodeLtRef);
+  m_gcAnalyzeAllField.addResult(dPSNR, (double) uibits, mseYuvFrame, mseYuvFrame, msssim, isEncodeLtRef);
 
   *PSNR_Y = dPSNR[COMPONENT_Y];
 
@@ -5519,7 +5542,8 @@ void EncGOP::xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture* 
   }
   if (printFrameMSE)
   {
-    msg( DETAILS, " [Y MSE %6.4lf  U MSE %6.4lf  V MSE %6.4lf]", MSEyuvframe[COMPONENT_Y], MSEyuvframe[COMPONENT_Cb], MSEyuvframe[COMPONENT_Cr] );
+    msg(DETAILS, " [Y MSE %6.4lf  U MSE %6.4lf  V MSE %6.4lf]", mseYuvFrame[COMPONENT_Y], mseYuvFrame[COMPONENT_Cb],
+        mseYuvFrame[COMPONENT_Cr]);
   }
 
   for(uint32_t fieldNum=0; fieldNum<2; fieldNum++)

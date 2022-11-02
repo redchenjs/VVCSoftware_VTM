@@ -109,7 +109,7 @@ private:
 #if WCG_WPSNR
   Analyze                 m_gcAnalyzeWPSNR;
 #endif
-  Analyze                 m_gcAnalyzeAll_in;
+  Analyze m_gcAnalyzeAllField;
 #if EXTENSION_360_VIDEO
   TExt360EncGop           m_ext360;
 public:
@@ -252,9 +252,9 @@ public:
 
   int       getPreQP() const { return m_preQP[0]; }
 
-  void printOutSummary(uint32_t uiNumAllPicCoded, bool isField, const bool printMSEBasedSNR,
-                       const bool printSequenceMSE, const bool printMSSSIM, const bool printHexPsnr,
-                       const bool printRprPSNR, const BitDepths &bitDepths, int layerId);
+  void printOutSummary(uint32_t numAllPicCoded, bool isField, const bool printMSEBasedSNR, const bool printSequenceMSE,
+                       const bool printMSSSIM, const bool printHexPsnr, const bool printRprPsnr,
+                       const BitDepths &bitDepths, int layerId);
   uint64_t  preLoopFilterPicAndCalcDist( Picture* pcPic );
   EncSlice*  getSliceEncoder()   { return m_pcSliceEncoder; }
   NalUnitType getNalUnitType( int pocCurr, int lastIdr, bool isField );
