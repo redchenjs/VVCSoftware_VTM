@@ -373,7 +373,7 @@ std::vector<uint8_t> process_segment(const char * path, int idx, int * poc_base,
   }
 
   fseek(fdi, 0, SEEK_END);
-  int full_sz = ftell(fdi);
+  long full_sz = ftell(fdi);
   fseek(fdi, 0, SEEK_SET);
 
   std::vector<uint8_t> v(full_sz);
