@@ -85,7 +85,7 @@ private:
 private:
   // initialization
   void xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId );         ///< create files & encoder class
-  void xInitLibCfg ();                           ///< initialize internal variables
+  void xInitLibCfg ( int layerIdx );             ///< initialize internal variables
   void xInitLib();                               ///< initialize encoder class
   void xDestroyLib ();                           ///< destroy encoder class
 

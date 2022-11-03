@@ -926,7 +926,7 @@ protected:
   bool        m_rplOfDepLayerInSh;
 
   int         m_numPtlsInVps;
-
+  int         m_ptPresentInPtl[MAX_NUM_OLSS];
   EncCfgParam::CfgVPSParameters m_cfgVPSParameters;
   Level::Name m_levelPtl[MAX_NUM_OLSS];
   int         m_olsPtlIdx[MAX_NUM_OLSS];

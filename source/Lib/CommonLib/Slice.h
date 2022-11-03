@@ -1108,6 +1108,8 @@ public:
   void              setPtlMaxTemporalId(int idx, uint32_t val)           { m_ptlMaxTemporalId[idx] = val; }
 
   void              setProfileTierLevel(const std::vector<ProfileTierLevel> &val)   { m_vpsProfileTierLevel = val; }
+  void              setProfileTierLevel(int layerIdx, const ProfileTierLevel val)   { m_vpsProfileTierLevel[layerIdx] = val; }
+  void              resizePTL(int val)                                   { m_vpsProfileTierLevel.resize(val); }
   const ProfileTierLevel& getProfileTierLevel(int idx)             const { return m_vpsProfileTierLevel[idx]; }
 
   uint32_t          getOlsPtlIdx(int idx)                          const { return m_olsPtlIdx[idx]; }

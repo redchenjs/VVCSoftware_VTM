@@ -73,7 +73,7 @@ EncApp::~EncApp()
 {
 }
 
-void EncApp::xInitLibCfg()
+void EncApp::xInitLibCfg( int layerIdx )
 {
   VPS& vps = *m_cEncLib.getVPS();
   if (m_targetOlsIdx != 500)
@@ -205,42 +205,43 @@ void EncApp::xInitLibCfg()
   for (int i = 0; i < vps.getNumPtls(); i++)
   {
     if( i > 0 )
-      vps.setPtPresentFlag                                         (i, 0);
+      vps.setPtPresentFlag(i, m_ptPresentInPtl[i]);
     vps.setPtlMaxTemporalId                                      (i, vps.getMaxSubLayers() - 1);
   }
   for (int i = 0; i < vps.getNumOutputLayerSets(); i++)
   {
     vps.setOlsPtlIdx                                             (i, m_olsPtlIdx[i]);
   }
-  std::vector<ProfileTierLevel> ptls;
-  ptls.resize(vps.getNumPtls());
-  // PTL0 shall be the same as the one signalled in the SPS
-  ptls[0].setLevelIdc                                            ( m_level );
-  ptls[0].setProfileIdc                                          ( m_profile);
-  ptls[0].setTierFlag                                            ( m_levelTier );
-  ptls[0].setFrameOnlyConstraintFlag                             ( m_frameOnlyConstraintFlag);
-  ptls[0].setMultiLayerEnabledFlag                               ( m_multiLayerEnabledFlag);
+  if (layerIdx == 0)
+  {
+    vps.resizePTL(vps.getNumPtls());
+  }
+  ProfileTierLevel ptl;
+  ptl.setLevelIdc                                            ( m_level );
+  ptl.setProfileIdc                                          ( m_profile);
+  ptl.setTierFlag                                            ( m_levelTier );
+  ptl.setFrameOnlyConstraintFlag                             ( m_frameOnlyConstraintFlag);
+  CHECK(m_numRefLayers[layerIdx] > 0 && !m_multiLayerEnabledFlag, "ptl_multilayer_enabled_flag shall be equal to 1 when target layer use inter layer prediction");
+  ptl.setMultiLayerEnabledFlag                               ( m_multiLayerEnabledFlag);
   CHECK((m_profile == Profile::MAIN_10 || m_profile == Profile::MAIN_10_444 || \
          m_profile == Profile::MAIN_10_STILL_PICTURE || m_profile == Profile::MAIN_10_444_STILL_PICTURE || \
          m_profile == Profile::MAIN_12 || m_profile == Profile::MAIN_12_INTRA || m_profile == Profile::MAIN_12_STILL_PICTURE || \
          m_profile == Profile::MAIN_12_444 || m_profile == Profile::MAIN_12_444_INTRA || m_profile == Profile::MAIN_12_444_STILL_PICTURE || \
          m_profile == Profile::MAIN_16_444 || m_profile == Profile::MAIN_16_444_INTRA || m_profile == Profile::MAIN_16_444_STILL_PICTURE) \
           && m_multiLayerEnabledFlag, "ptl_multilayer_enabled_flag shall be equal to 0 for non-multilayer profiles");
-  ptls[0].setNumSubProfile                                       ( m_numSubProfile );
+  ptl.setNumSubProfile                                       ( m_numSubProfile );
   for (int i = 0; i < m_numSubProfile; i++)
   {
-    ptls[0].setSubProfileIdc                                   (i, m_subProfile[i]);
+    ptl.setSubProfileIdc                                     (i, m_subProfile[i]);
   }
-  for(int i = 1; i < vps.getNumPtls(); i++)
-  {
-    ptls[i].setLevelIdc                                          (m_levelPtl[i]);
-  }
-  vps.setProfileTierLevel(ptls);
+  if ( 0 < layerIdx )
+    ptl.setLevelIdc                                          ( m_levelPtl[layerIdx] );
+  vps.setProfileTierLevel(layerIdx, ptl);
   vps.setVPSExtensionFlag                                        ( false );
   m_cEncLib.setProfile                                           ( m_profile);
   m_cEncLib.setLevel                                             ( m_levelTier, m_level);
   m_cEncLib.setFrameOnlyConstraintFlag                           ( m_frameOnlyConstraintFlag);
-  m_cEncLib.setMultiLayerEnabledFlag                             ( m_multiLayerEnabledFlag || m_maxLayers > 1);
+  m_cEncLib.setMultiLayerEnabledFlag                             ( m_multiLayerEnabledFlag);
   m_cEncLib.setNumSubProfile                                     ( m_numSubProfile );
   for (int i = 0; i < m_numSubProfile; i++)
   {
@@ -1451,7 +1452,7 @@ void EncApp::createLib( const int layerIdx )
   }
 
   // initialize internal class & member variables and VPS
-  xInitLibCfg();
+  xInitLibCfg( layerIdx );
   const int layerId = m_cEncLib.getVPS() == nullptr ? 0 : m_cEncLib.getVPS()->getLayerId( layerIdx );
   xCreateLib( m_recBufList, layerId );
   xInitLib();
