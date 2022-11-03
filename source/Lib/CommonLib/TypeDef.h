@@ -42,6 +42,7 @@
 #error Include CommonDef.h not TypeDef.h
 #endif
 
+#include <array>
 #include <vector>
 #include <utility>
 #include <sstream>
