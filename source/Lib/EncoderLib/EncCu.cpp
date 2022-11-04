@@ -3644,11 +3644,14 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
 // ibc merge/skip mode check
 void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode)
 {
-  assert(partitioner.chType != CHANNEL_TYPE_CHROMA); // chroma IBC is derived
-  if (tempCS->area.lwidth() == 128 || tempCS->area.lheight() == 128) // disable IBC mode larger than 64x64
+  CHECK(partitioner.chType == CHANNEL_TYPE_CHROMA, "chroma IBC is derived");
+
+  // don't use IBC for large CUs
+  if (tempCS->area.lwidth() > IBC_MAX_CU_SIZE || tempCS->area.lheight() > IBC_MAX_CU_SIZE)
   {
     return;
   }
+
   const SPS &sps = *tempCS->sps;
 
   tempCS->initStructData(encTestMode.qp);
@@ -3999,8 +4002,9 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
 
 void EncCu::xCheckRDCostIBCMode(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode)
 {
-  if (tempCS->area.lwidth() == 128 || tempCS->area.lheight() == 128) // disable IBC mode larger than 64x64
+  if (tempCS->area.lwidth() > IBC_MAX_CU_SIZE || tempCS->area.lheight() > IBC_MAX_CU_SIZE)
   {
+    // disable IBC mode larger than 64x64
     return;
   }
 

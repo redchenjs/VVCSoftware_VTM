@@ -700,7 +700,7 @@ void CABACWriter::cu_skip_flag( const CodingUnit& cu )
 
   if ((cu.slice->isIntra() || cu.isConsIntra()) && cu.cs->slice->getSPS()->getIBCFlag())
   {
-    if (cu.lwidth() < 128 && cu.lheight() < 128) // disable IBC mode larger than 64x64
+    if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)   // disable IBC mode larger than 64x64
     {
       m_binEncoder.encodeBin((cu.skip), Ctx::SkipFlag(ctxId));
       DTRACE(g_trace_ctx, D_SYNTAX, "cu_skip_flag() ctx=%d skip=%d\n", ctxId, cu.skip ? 1 : 0);
@@ -720,7 +720,8 @@ void CABACWriter::cu_skip_flag( const CodingUnit& cu )
   DTRACE( g_trace_ctx, D_SYNTAX, "cu_skip_flag() ctx=%d skip=%d\n", ctxId, cu.skip ? 1 : 0 );
   if (cu.skip && cu.cs->slice->getSPS()->getIBCFlag())
   {
-    if (cu.lwidth() < 128 && cu.lheight() < 128 && !cu.isConsInter()) // disable IBC mode larger than 64x64 and disable IBC when only allowing inter mode
+    // disable IBC mode larger than 64x64 and disable IBC when only allowing inter mode
+    if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE && !cu.isConsInter())
     {
       if ( cu.lwidth() == 4 && cu.lheight() == 4 )
       {
@@ -745,7 +746,7 @@ void CABACWriter::pred_mode( const CodingUnit& cu )
 
     if ( cu.cs->slice->isIntra() || ( cu.lwidth() == 4 && cu.lheight() == 4 ) || cu.isConsIntra() )
     {
-      if (cu.lwidth() < 128 && cu.lheight() < 128) // disable IBC mode larger than 64x64
+      if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)
       {
         unsigned ctxidx = DeriveCtx::CtxIBCFlag(cu);
         m_binEncoder.encodeBin(CU::isIBC(cu), Ctx::IBCFlag(ctxidx));
@@ -771,7 +772,7 @@ void CABACWriter::pred_mode( const CodingUnit& cu )
       }
       else
       {
-        if (cu.lwidth() < 128 && cu.lheight() < 128) // disable IBC mode larger than 64x64
+        if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)   // disable IBC mode larger than 64x64
         {
           unsigned ctxidx = DeriveCtx::CtxIBCFlag(cu);
           m_binEncoder.encodeBin(CU::isIBC(cu), Ctx::IBCFlag(ctxidx));
