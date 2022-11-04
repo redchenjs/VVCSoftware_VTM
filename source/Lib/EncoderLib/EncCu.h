@@ -70,12 +70,13 @@ class EncSlice;
 struct GeoMergeCombo
 {
   int splitDir;
-  int mergeIdx0;
-  int mergeIdx1;
+  short  mergeIdx0;
+  short  mergeIdx1;
   double cost;
   GeoMergeCombo() : splitDir(), mergeIdx0(-1), mergeIdx1(-1), cost(0.0) {};
   GeoMergeCombo(int _splitDir, int _mergeIdx0, int _mergeIdx1, double _cost) : splitDir(_splitDir), mergeIdx0(_mergeIdx0), mergeIdx1(_mergeIdx1), cost(_cost) {};
 };
+
 struct GeoMotionInfo
 {
   uint8_t   m_candIdx0;
@@ -98,51 +99,49 @@ public:
                      [](const GeoMergeCombo &a, const GeoMergeCombo &b) { return a.cost < b.cost; });
   };
 };
-struct SingleGeoMergeEntry
-{
-  int mergeIdx;
-  double cost;
-  SingleGeoMergeEntry() : mergeIdx(0), cost(MAX_DOUBLE) {};
-  SingleGeoMergeEntry(int _mergeIdx, double _cost) : mergeIdx(_mergeIdx), cost(_cost) {};
-};
+
 class FastGeoCostList
 {
+  int m_maxNumGeoCand{ 0 };
+
+  using CostArray = double[GEO_NUM_PARTITION_MODE][2];
+
+  CostArray *m_singleDistList{ nullptr };
+
 public:
-  FastGeoCostList() { numGeoTemplatesInitialized = 0; };
+  FastGeoCostList() {}
   ~FastGeoCostList()
   {
-    for (int partIdx = 0; partIdx < 2; partIdx++)
-    {
-      for (int splitDir = 0; splitDir < GEO_NUM_PARTITION_MODE; splitDir++)
-      {
-        delete[] singleDistList[partIdx][splitDir];
-      }
-      delete[] singleDistList[partIdx];
-      singleDistList[partIdx] = nullptr;
-    }
-  };
-  SingleGeoMergeEntry** singleDistList[2];
-  void init(int numTemplates, int maxNumGeoCand)
+    delete[] m_singleDistList;
+    m_singleDistList = nullptr;
+  }
+
+  void init(int maxNumGeoCand)
   {
-    if (numGeoTemplatesInitialized == 0 || numGeoTemplatesInitialized < numTemplates)
+    if (m_maxNumGeoCand != maxNumGeoCand)
     {
-      for (int partIdx = 0; partIdx < 2; partIdx++)
-      {
-        singleDistList[partIdx] = new SingleGeoMergeEntry*[numTemplates];
-        for (int splitDir = 0; splitDir < numTemplates; splitDir++)
-        {
-          singleDistList[partIdx][splitDir] = new SingleGeoMergeEntry[maxNumGeoCand];
-        }
-      }
-      numGeoTemplatesInitialized = numTemplates;
+      delete[] m_singleDistList;
+      m_singleDistList = nullptr;
+
+      CHECK(maxNumGeoCand > MRG_MAX_NUM_CANDS, "Too many candidates");
+      m_singleDistList = new CostArray[maxNumGeoCand];
+      m_maxNumGeoCand  = maxNumGeoCand;
     }
   }
+
   void insert(int geoIdx, int partIdx, int mergeIdx, double cost)
   {
-    assert(geoIdx < numGeoTemplatesInitialized);
-    singleDistList[partIdx][geoIdx][mergeIdx] = SingleGeoMergeEntry(mergeIdx, cost);
+    CHECKD(geoIdx >= GEO_NUM_PARTITION_MODE, "geoIdx is too large");
+    CHECKD(mergeIdx >= m_maxNumGeoCand, "mergeIdx is too large");
+    CHECKD(partIdx >= 2, "partIdx is too large");
+
+    m_singleDistList[mergeIdx][geoIdx][partIdx] = cost;
   }
-  int numGeoTemplatesInitialized;
+
+  double getCost(const int splitDir, const int mergeCand0, const int mergeCand1)
+  {
+    return m_singleDistList[mergeCand0][splitDir][0] + m_singleDistList[mergeCand1][splitDir][1];
+  }
 };
 
 class EncCu
@@ -186,8 +185,10 @@ private:
   PelStorage            m_acMergeBuffer[MMVD_MRG_MAX_RD_BUF_NUM];
   PelStorage            m_acRealMergeBuffer[MRG_MAX_NUM_CANDS];
   PelStorage            m_acMergeTmpBuffer[MRG_MAX_NUM_CANDS];
-  PelStorage            m_acGeoWeightedBuffer[GEO_MAX_TRY_WEIGHTED_SAD]; // to store weighted prediction pixles
-  FastGeoCostList       m_GeoCostList;
+
+  std::array<PelStorage, GEO_MAX_TRY_WEIGHTED_SAD> m_geoWeightedBuffers;   // weighted prediction pixels
+
+  FastGeoCostList       m_geoCostList;
   double                m_AFFBestSATDCost;
   double                m_mergeBestSATDCost;
   MotionInfo            m_SubPuMiBuf      [( MAX_CU_SIZE * MAX_CU_SIZE ) >> ( MIN_CU_LOG2 << 1 )];
@@ -196,7 +197,9 @@ private:
   int                   m_ctuIbcSearchRangeY;
   int                   m_bestBcwIdx[2];
   double                m_bestBcwCost[2];
-  GeoMotionInfo         m_GeoModeTest[GEO_MAX_NUM_CANDS];
+
+  static const GeoMotionInfo m_geoModeTest[GEO_MAX_NUM_CANDS];
+
 #if SHARP_LUMA_DELTA_QP || ENABLE_QPA_SUB_CTU
   void    updateLambda      ( Slice* slice, const int dQP,
  #if WCG_EXT && ER_CHROMA_QP_WCG_PPS
