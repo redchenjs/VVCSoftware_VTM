@@ -82,7 +82,7 @@ Slice::Slice()
   , m_biDirPred(false)
   , m_lmChromaCheckDisable(false)
   , m_iSliceQpDelta(0)
-  , m_iDepth(0)
+  , m_hierPredLayerIdx(0)
   , m_pcSPS(nullptr)
   , m_pcPPS(nullptr)
   , m_pcPic(nullptr)
@@ -958,7 +958,7 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
   }
   if (cpyAlmostAll)
   {
-    m_iDepth = pSrc->m_iDepth;
+    m_hierPredLayerIdx = pSrc->m_hierPredLayerIdx;
   }
 
   // access channel

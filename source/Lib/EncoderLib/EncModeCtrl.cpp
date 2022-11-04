@@ -1103,11 +1103,12 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
   const CodingUnit* cuLeft  = cs.getCU( cs.area.blocks[partitioner.chType].pos().offset( -1, 0 ), partitioner.chType );
   const CodingUnit* cuAbove = cs.getCU( cs.area.blocks[partitioner.chType].pos().offset( 0, -1 ), partitioner.chType );
 
-  const bool qtBeforeBt = ( (  cuLeft  &&  cuAbove  && cuLeft ->qtDepth > partitioner.currQtDepth && cuAbove->qtDepth > partitioner.currQtDepth )
-                         || (  cuLeft  && !cuAbove  && cuLeft ->qtDepth > partitioner.currQtDepth )
-                         || ( !cuLeft  &&  cuAbove  && cuAbove->qtDepth > partitioner.currQtDepth )
-                         || ( !cuAbove && !cuLeft   && cs.area.lwidth() >= ( 32 << cs.slice->getDepth() ) ) )
-                         && ( cs.area.lwidth() > ( cs.pcv->getMinQtSize( *cs.slice, partitioner.chType ) << 1 ) );
+  const bool qtBeforeBt =
+    ((cuLeft && cuAbove && cuLeft->qtDepth > partitioner.currQtDepth && cuAbove->qtDepth > partitioner.currQtDepth)
+     || (cuLeft && !cuAbove && cuLeft->qtDepth > partitioner.currQtDepth)
+     || (!cuLeft && cuAbove && cuAbove->qtDepth > partitioner.currQtDepth)
+     || (!cuAbove && !cuLeft && cs.area.lwidth() >= (32 << cs.slice->getHierPredLayerIdx())))
+    && (cs.area.lwidth() > (cs.pcv->getMinQtSize(*cs.slice, partitioner.chType) << 1));
 
   // set features
   ComprCUCtx &cuECtx  = m_ComprCUCtxList.back();

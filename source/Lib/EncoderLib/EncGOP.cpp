@@ -2704,33 +2704,33 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
     xPicInitHashME( pcPic, pcSlice->getPPS(), rcListPic );
 
-    if( m_pcCfg->getUseAMaxBT() )
+    if (m_pcCfg->getUseAMaxBT())
     {
+      const SliceType sliceType = pcSlice->getSliceType();
+      const SPS      *sps       = pcSlice->getSPS();
+
       if (!pcSlice->isIRAP())
       {
-        int refLayer = pcSlice->getDepth();
-        if (refLayer > 9)
-        {
-          refLayer = 9;   // Max layer is 10
-        }
+        const int hierPredLayerIdx = std::min<int>(pcSlice->getHierPredLayerIdx(), (int) m_blkStat.size() - 1);
 
         if (m_initAMaxBt && pcSlice->getPOC() > m_prevISlicePoc)
         {
-          m_blkSize.fill(0);
-          m_numBlks.fill(0);
+          m_blkStat.fill({ 0, 0 });
           m_initAMaxBt = false;
         }
 
-        if (refLayer >= 0 && m_numBlks[refLayer] != 0)
+        if (hierPredLayerIdx >= 0 && m_blkStat[hierPredLayerIdx].count != 0)
         {
           picHeader->setSplitConsOverrideFlag(true);
-          double       dBlkSize     = sqrt((double) m_blkSize[refLayer] / m_numBlks[refLayer]);
-          unsigned int newMaxBtSize = picHeader->getMaxBTSize(pcSlice->getSliceType(), CHANNEL_TYPE_LUMA);
-          if( dBlkSize < AMAXBT_TH32 )
+
+          const double avgBlkSize = (double) m_blkStat[hierPredLayerIdx].area / m_blkStat[hierPredLayerIdx].count;
+
+          unsigned newMaxBtSize;
+          if (avgBlkSize < AMAXBT_TH32 * AMAXBT_TH32)
           {
             newMaxBtSize = 32;
           }
-          else if( dBlkSize < AMAXBT_TH64 )
+          else if (avgBlkSize < AMAXBT_TH64 * AMAXBT_TH64)
           {
             newMaxBtSize = 64;
           }
@@ -2738,64 +2738,51 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           {
             newMaxBtSize = 128;
           }
-          newMaxBtSize = Clip3(picHeader->getMinQTSize(pcSlice->getSliceType()), pcPic->cs->sps->getCTUSize(), newMaxBtSize);
+          newMaxBtSize = Clip3(picHeader->getMinQTSize(sliceType), sps->getCTUSize(), newMaxBtSize);
           picHeader->setMaxBTSize(1, newMaxBtSize);
 
-          m_blkSize[refLayer] = 0;
-          m_numBlks[refLayer] = 0;
+          m_blkStat[hierPredLayerIdx] = { 0, 0 };
         }
       }
       else
       {
         if (m_initAMaxBt)
         {
-          m_blkSize.fill(0);
-          m_numBlks.fill(0);
+          m_blkStat.fill({ 0, 0 });
         }
 
         m_prevISlicePoc = pcSlice->getPOC();
         m_initAMaxBt    = true;
       }
-      bool identicalToSPS=true;
-      const SPS* sps =pcSlice->getSPS();
 
-      if (picHeader->getPicInterSliceAllowedFlag())
+      bool identicalToSps = true;
+
+      if (identicalToSps && picHeader->getPicInterSliceAllowedFlag())
       {
-        if (picHeader->getMinQTSize(pcSlice->getSliceType()) != pcSlice->getSPS()->getMinQTSize(pcSlice->getSliceType()) ||
-            picHeader->getMaxMTTHierarchyDepth(pcSlice->getSliceType()) != pcSlice->getSPS()->getMaxMTTHierarchyDepth() ||
-            picHeader->getMaxBTSize(pcSlice->getSliceType()) != pcSlice->getSPS()->getMaxBTSize() ||
-            picHeader->getMaxTTSize(pcSlice->getSliceType()) != pcSlice->getSPS()->getMaxTTSize()
-          )
+        identicalToSps = picHeader->getMinQTSize(sliceType) == sps->getMinQTSize(sliceType)
+                         && picHeader->getMaxMTTHierarchyDepth(sliceType) == sps->getMaxMTTHierarchyDepth()
+                         && picHeader->getMaxBTSize(sliceType) == sps->getMaxBTSize()
+                         && picHeader->getMaxTTSize(sliceType) == sps->getMaxTTSize();
+      }
+
+      if (identicalToSps && picHeader->getPicIntraSliceAllowedFlag())
+      {
+        identicalToSps = picHeader->getMinQTSize(I_SLICE) == sps->getMinQTSize(I_SLICE)
+                         && picHeader->getMaxMTTHierarchyDepth(I_SLICE) == sps->getMaxMTTHierarchyDepthI()
+                         && picHeader->getMaxBTSize(I_SLICE) == sps->getMaxBTSizeI()
+                         && picHeader->getMaxTTSize(I_SLICE) == sps->getMaxTTSizeI();
+
+        if (identicalToSps && sps->getUseDualITree())
         {
-          identicalToSPS=false;
+          identicalToSps =
+            picHeader->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA) == sps->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA)
+            && picHeader->getMaxMTTHierarchyDepth(I_SLICE, CHANNEL_TYPE_CHROMA) == sps->getMaxMTTHierarchyDepthIChroma()
+            && picHeader->getMaxBTSize(I_SLICE, CHANNEL_TYPE_CHROMA) == sps->getMaxBTSizeIChroma()
+            && picHeader->getMaxTTSize(I_SLICE, CHANNEL_TYPE_CHROMA) == sps->getMaxTTSizeIChroma();
         }
       }
 
-      if (identicalToSPS && picHeader->getPicIntraSliceAllowedFlag())
-      {
-        if (picHeader->getMinQTSize(I_SLICE) != sps->getMinQTSize(I_SLICE) ||
-            picHeader->getMaxMTTHierarchyDepth(I_SLICE) != sps->getMaxMTTHierarchyDepthI() ||
-            picHeader->getMaxBTSize(I_SLICE) != sps->getMaxBTSizeI() ||
-            picHeader->getMaxTTSize(I_SLICE) != sps->getMaxTTSizeI()
-        )
-        {
-          identicalToSPS=false;
-        }
-
-        if (identicalToSPS && sps->getUseDualITree())
-        {
-          if (picHeader->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA) != sps->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA) ||
-              picHeader->getMaxMTTHierarchyDepth(I_SLICE, CHANNEL_TYPE_CHROMA) != sps->getMaxMTTHierarchyDepthIChroma() ||
-              picHeader->getMaxBTSize(I_SLICE, CHANNEL_TYPE_CHROMA) != sps->getMaxBTSizeIChroma() ||
-              picHeader->getMaxTTSize(I_SLICE, CHANNEL_TYPE_CHROMA) != sps->getMaxTTSizeIChroma()
-           )
-          {
-            identicalToSPS=false;
-          }
-        }
-      }
-
-      if (identicalToSPS)
+      if (identicalToSps)
       {
         picHeader->setSplitConsOverrideFlag(false);
       }
@@ -3654,15 +3641,14 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
     pcSlice->freeScaledRefPicList( scaledRefPic );
 
-    if( m_pcCfg->getUseAMaxBT() )
+    if (m_pcCfg->getUseAMaxBT() && !pcSlice->isIntra())
     {
-      for( const CodingUnit *cu : pcPic->cs->cus )
+      const int hierPredLayerIdx = std::min<int>(pcSlice->getHierPredLayerIdx(), (int) m_blkStat.size() - 1);
+
+      for (const CodingUnit *cu: pcPic->cs->cus)
       {
-        if( !pcSlice->isIntra() )
-        {
-          m_blkSize[pcSlice->getDepth()] += cu->Y().area();
-          m_numBlks[pcSlice->getDepth()]++;
-        }
+        m_blkStat[hierPredLayerIdx].area += cu->Y().area();
+        m_blkStat[hierPredLayerIdx].count++;
       }
     }
 

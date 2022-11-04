@@ -356,7 +356,7 @@ void EncSampleAdaptiveOffset::decidePicParams(const Slice& slice, bool* sliceEna
     }
   }
 
-  const int picTempLayer = slice.getDepth();
+  const int hierPredLayerIdx = slice.getHierPredLayerIdx();
 
   //decide sliceEnabled[compIdx]
   const int numberOfComponents = m_numberOfComponents;
@@ -375,8 +375,9 @@ void EncSampleAdaptiveOffset::decidePicParams(const Slice& slice, bool* sliceEna
       if (saoEncodingRateChroma>0.0)
       {
         // decide slice-level on/off based on previous results
-        if( (picTempLayer > 0)
-          && (m_saoDisabledRate[compIdx][picTempLayer-1] > ((compIdx==COMPONENT_Y) ? saoEncodingRate : saoEncodingRateChroma)) )
+        if (hierPredLayerIdx > 0
+            && (m_saoDisabledRate[compIdx][hierPredLayerIdx - 1]
+                > ((compIdx == COMPONENT_Y) ? saoEncodingRate : saoEncodingRateChroma)))
         {
           sliceEnabled[compIdx] = false;
         }
@@ -384,8 +385,7 @@ void EncSampleAdaptiveOffset::decidePicParams(const Slice& slice, bool* sliceEna
       else
       {
         // decide slice-level on/off based on previous results
-        if( (picTempLayer > 0)
-          && (m_saoDisabledRate[COMPONENT_Y][0] > saoEncodingRate) )
+        if (hierPredLayerIdx > 0 && (m_saoDisabledRate[COMPONENT_Y][0] > saoEncodingRate))
         {
           sliceEnabled[compIdx] = false;
         }
@@ -1103,7 +1103,7 @@ void EncSampleAdaptiveOffset::disabledRate( CodingStructure& cs, SAOBlkParam* re
   {
     const PreCalcValues& pcv = *cs.pcv;
     const uint32_t numberOfComponents = getNumberValidComponents( cs.picture->chromaFormat );
-    int picTempLayer = cs.slice->getDepth();
+    const int            hierPredLayerIdx   = cs.slice->getHierPredLayerIdx();
     int numCtusForSAOOff[MAX_NUM_COMPONENT];
 
     for (int compIdx = 0; compIdx < numberOfComponents; compIdx++)
@@ -1121,10 +1121,10 @@ void EncSampleAdaptiveOffset::disabledRate( CodingStructure& cs, SAOBlkParam* re
     {
       for (int compIdx = 0; compIdx < numberOfComponents; compIdx++)
       {
-        m_saoDisabledRate[compIdx][picTempLayer] = (double)numCtusForSAOOff[compIdx]/(double)pcv.sizeInCtus;
+        m_saoDisabledRate[compIdx][hierPredLayerIdx] = (double) numCtusForSAOOff[compIdx] / (double) pcv.sizeInCtus;
       }
     }
-    else if (picTempLayer == 0)
+    else if (hierPredLayerIdx == 0)
     {
       m_saoDisabledRate[COMPONENT_Y][0] = (double)(numCtusForSAOOff[COMPONENT_Y]+numCtusForSAOOff[COMPONENT_Cb]+numCtusForSAOOff[COMPONENT_Cr])/(double)(pcv.sizeInCtus *3);
     }
