@@ -4696,34 +4696,22 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
 
   const PredictionUnit& pu = *cu->firstPU;
 
-  // clang-format off
-  const int affineShiftTab[3] =
-  {
-    MV_PRECISION_INTERNAL - MV_PRECISION_QUARTER,
-    MV_PRECISION_INTERNAL - MV_PRECISION_SIXTEENTH,
-    MV_PRECISION_INTERNAL - MV_PRECISION_INT
-  };
-
-  const int normalShiftTab[NUM_IMV_MODES] =
-  {
-    MV_PRECISION_INTERNAL - MV_PRECISION_QUARTER,
-    MV_PRECISION_INTERNAL - MV_PRECISION_INT,
-    MV_PRECISION_INTERNAL - MV_PRECISION_4PEL,
-    MV_PRECISION_INTERNAL - MV_PRECISION_HALF,
-  };
-  // clang-format on
-
-  int mvShift;
-
+  // Check whether MV and MVD are in valid range
   for (int refList = 0; refList < NUM_REF_PIC_LIST_01; refList++)
   {
     if (pu.refIdx[refList] >= 0)
     {
       if (!cu->affine)
       {
-        mvShift = normalShiftTab[cu->imv];
-        Mv signaledmvd(pu.mvd[refList].getHor() >> mvShift, pu.mvd[refList].getVer() >> mvShift);
-        if (!((signaledmvd.getHor() >= MVD_MIN) && (signaledmvd.getHor() <= MVD_MAX)) || !((signaledmvd.getVer() >= MVD_MIN) && (signaledmvd.getVer() <= MVD_MAX)))
+        if (!pu.mv[refList].isInRange())
+        {
+          return;
+        }
+
+        Mv signaledMvd = pu.mvd[refList];
+        signaledMvd.changeTransPrecInternal2Amvr(cu->imv);
+
+        if (!signaledMvd.isInRangeDelta())
         {
           return;
         }
@@ -4732,9 +4720,15 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
       {
         for (int ctrlP = cu->getNumAffineMvs() - 1; ctrlP >= 0; ctrlP--)
         {
-          mvShift = affineShiftTab[cu->imv];
-          Mv signaledmvd(pu.mvdAffi[refList][ctrlP].getHor() >> mvShift, pu.mvdAffi[refList][ctrlP].getVer() >> mvShift);
-          if (!((signaledmvd.getHor() >= MVD_MIN) && (signaledmvd.getHor() <= MVD_MAX)) || !((signaledmvd.getVer() >= MVD_MIN) && (signaledmvd.getVer() <= MVD_MAX)))
+          if (!pu.mvAffi[refList][ctrlP].isInRange())
+          {
+            return;
+          }
+
+          Mv signaledMvd = pu.mvdAffi[refList][ctrlP];
+          signaledMvd.changeAffinePrecInternal2Amvr(cu->imv);
+
+          if (!signaledMvd.isInRangeDelta())
           {
             return;
           }
@@ -4742,32 +4736,7 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
       }
     }
   }
-  // avoid MV exceeding 18-bit dynamic range
-  const int maxMv = 1 << 17;
-  if (!cu->affine && !pu.mergeFlag)
-  {
-    if ((pu.refIdx[0] >= 0 && (pu.mv[0].getAbsHor() >= maxMv || pu.mv[0].getAbsVer() >= maxMv))
-        || (pu.refIdx[1] >= 0 && (pu.mv[1].getAbsHor() >= maxMv || pu.mv[1].getAbsVer() >= maxMv)))
-    {
-      return;
-    }
-  }
-  if (cu->affine && !pu.mergeFlag)
-  {
-    for (int refList = 0; refList < NUM_REF_PIC_LIST_01; refList++)
-    {
-      if (pu.refIdx[refList] >= 0)
-      {
-        for (int ctrlP = cu->getNumAffineMvs() - 1; ctrlP >= 0; ctrlP--)
-        {
-          if (pu.mvAffi[refList][ctrlP].getAbsHor() >= maxMv || pu.mvAffi[refList][ctrlP].getAbsVer() >= maxMv)
-          {
-            return;
-          }
-        }
-      }
-    }
-  }
+
   const bool mtsAllowed = tempCS->sps->getExplicitMtsInterEnabled() && CU::isInter(*cu)
                           && partitioner.currArea().lwidth() <= MTS_INTER_MAX_CU_SIZE
                           && partitioner.currArea().lheight() <= MTS_INTER_MAX_CU_SIZE;

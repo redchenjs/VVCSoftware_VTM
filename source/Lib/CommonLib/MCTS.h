@@ -76,7 +76,8 @@ namespace MCTSHelper {
   void clipMvToArea                  ( Mv& rcMv, const struct Area& block, const struct Area& clipArea, const SPS& sps, int mvFracBits = MV_FRACTIONAL_BITS_INTERNAL );
   Area getTileArea                   ( const CodingStructure* cs, const int ctuAddr );
   bool isRefBlockAtRestrictedTileBoundary( const PredictionUnit &pu );
-  bool checkMvForMCTSConstraint      ( const PredictionUnit &pu, const Mv& mv, const MvPrecision mvPrec = MV_PRECISION_QUARTER );
+  bool checkMvForMCTSConstraint(const PredictionUnit &pu, const Mv &mv,
+                                const MvPrecision mvPrec = MvPrecision::QUARTER);
   bool checkMvBufferForMCTSConstraint( const PredictionUnit &pu, bool msgFlag = false );
   bool checkMvIsNotInRestrictedArea  ( const PredictionUnit &pu, const Mv& mv, const Area& restrArea, const MvPrecision mvPrec );
 }

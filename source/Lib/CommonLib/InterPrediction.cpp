@@ -955,7 +955,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
         tmpMv.hor = baseHor + dmvHorX * weightHor + dmvVerX * weightVer;
         tmpMv.ver = baseVer + dmvHorY * weightHor + dmvVerY * weightVer;
 
-        tmpMv.roundAffine(PREC - 4 + MV_FRACTIONAL_BITS_INTERNAL);
+        tmpMv >>= PREC - 4 + MV_FRACTIONAL_BITS_INTERNAL;
         tmpMv.clipToStorageBitDepth();
 
         m_storedMv[h / AFFINE_SUBBLOCK_SIZE * MVBUFFER_SIZE + w / AFFINE_SUBBLOCK_SIZE] = tmpMv;
@@ -1008,7 +1008,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
       for (int idx = 0; idx < sz; idx++)
       {
         Mv tmpMv(dMvScaleHor[idx], dMvScaleVer[idx]);
-        tmpMv.roundAffine(mvShift);
+        tmpMv >>= 7;
         dMvScaleHor[idx] = Clip3(-dmvLimit, dmvLimit, tmpMv.getHor());
         dMvScaleVer[idx] = Clip3(-dmvLimit, dmvLimit, tmpMv.getVer());
       }
@@ -1048,7 +1048,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
       else
       {
         curMv = m_storedMv[idx] + m_storedMv[idx + scaleY * MVBUFFER_SIZE + scaleX];
-        curMv.roundAffine(1);
+        curMv >>= 1;
       }
 
       bool wrapRef = false;
@@ -1693,7 +1693,7 @@ void InterPrediction::xDmvrFinalMc(const PredictionUnit &pu, PelUnitBuf yuvSrc[N
 
     Mv startMv = mergeMV[l];
 
-    if( g_mctsDecCheckEnabled && !MCTSHelper::checkMvForMCTSConstraint( pu, startMv, MV_PRECISION_INTERNAL ) )
+    if (g_mctsDecCheckEnabled && !MCTSHelper::checkMvForMCTSConstraint(pu, startMv, MvPrecision::INTERNAL))
     {
       const Area& tileArea = pu.cs->picture->mctsInfo.getTileArea();
       printf( "Attempt an access over tile boundary at block %d,%d %d,%d with MV %d,%d (in Tile TL: %d,%d BR: %d,%d)\n",
@@ -1937,7 +1937,7 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
       const bool doSubpelRefine =
         significantCost && deltaMv.getAbsHor() != DMVR_RANGE && deltaMv.getAbsVer() != DMVR_RANGE;
 
-      deltaMv.changePrecision(MV_PRECISION_INT, MV_PRECISION_INTERNAL);
+      deltaMv.changePrecision(MvPrecision::ONE, MvPrecision::INTERNAL);
 
       if (doSubpelRefine)
       {
@@ -2018,7 +2018,7 @@ void InterPrediction::xIntraBlockCopy(PredictionUnit &pu, PelUnitBuf &predBuf, c
   const int shiftSampleVer = ::getComponentScaleY(compID, pu.chromaFormat);
   const int ctuSizeLog2Ver = floorLog2(lcuWidth) - shiftSampleVer;
   pu.bv = pu.mv[REF_PIC_LIST_0];
-  pu.bv.changePrecision(MV_PRECISION_INTERNAL, MV_PRECISION_INT);
+  pu.bv.changePrecision(MvPrecision::INTERNAL, MvPrecision::ONE);
   int refx, refy;
   if (compID == COMPONENT_Y)
   {

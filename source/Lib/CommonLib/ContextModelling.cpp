@@ -402,7 +402,7 @@ void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
   if (CU::isIBC(*pu.cu))
   {
     pu.bv = pu.mv[REF_PIC_LIST_0];
-    pu.bv.changePrecision(MV_PRECISION_INTERNAL, MV_PRECISION_INT); // used for only integer resolution
+    pu.bv.changePrecision(MvPrecision::INTERNAL, MvPrecision::ONE);   // used for only integer resolution
     pu.cu->imv = pu.cu->imv == IMV_HPEL ? 0 : pu.cu->imv;
   }
   pu.cu->bcwIdx = (interDirNeighbours[candIdx] == 3) ? bcwIdx[candIdx] : BCW_DEFAULT;
@@ -477,7 +477,7 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
       }
       else
       {
-        tempMv[0] = tempMv[1].scaleMv(scale);
+        tempMv[0] = tempMv[1].getScaledMv(scale);
       }
     }
     else
@@ -498,7 +498,7 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
       }
       else
       {
-        tempMv[1] = tempMv[0].scaleMv(scale);
+        tempMv[1] = tempMv[0].getScaledMv(scale);
       }
     }
 
