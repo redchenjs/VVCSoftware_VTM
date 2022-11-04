@@ -83,9 +83,8 @@ EncGOP::EncGOP()
 {
   m_iLastIDR            = 0;
   m_iGopSize            = 0;
-  m_iNumPicCoded        = 0; //Niko
-  m_bFirst              = true;
-  m_iLastRecoveryPicPOC = 0;
+  m_numPicsCoded                       = 0;
+  m_first                              = true;
   m_latestDRAPPOC       = MAX_INT;
   m_latestEDRAPPOC      = MAX_INT;
   m_latestEdrapLeadingPicDecodableFlag = false;
@@ -98,10 +97,10 @@ EncGOP::EncGOP()
   m_pcSliceEncoder      = nullptr;
   m_pcListPic           = nullptr;
   m_HLSWriter           = nullptr;
-  m_bSeqFirst           = true;
+  m_seqFirst            = true;
   m_audIrapOrGdrAuFlag  = false;
 
-  m_bRefreshPending     = 0;
+  m_refreshPending       = 0;
   m_pocCRA              = 0;
   m_numLongTermRefPicSPS = 0;
   ::memset(m_ltRefPicPocLsbSps, 0, sizeof(m_ltRefPicPocLsbSps));
@@ -181,8 +180,6 @@ EncGOP::~EncGOP()
  */
 void  EncGOP::create()
 {
-  m_bLongtermTestPictureHasBeenCoded = 0;
-  m_bLongtermTestPictureHasBeenCoded2 = 0;
 }
 
 void  EncGOP::destroy()
@@ -207,7 +204,7 @@ void  EncGOP::destroy()
   }
   if (m_pcCfg->getFilmGrainAnalysisEnabled())
   {
-    m_FGAnalyser.destroy();
+    m_fgAnalyzer.destroy();
   }
 }
 
@@ -231,7 +228,7 @@ void EncGOP::init ( EncLib* pcEncLib )
 
   if (m_pcCfg->getFilmGrainAnalysisEnabled())
   {
-    m_FGAnalyser.init(m_pcCfg->getSourceWidth(), m_pcCfg->getSourceHeight(), m_pcCfg->getSourcePadding(0),
+    m_fgAnalyzer.init(m_pcCfg->getSourceWidth(), m_pcCfg->getSourceHeight(), m_pcCfg->getSourcePadding(0),
                       m_pcCfg->getSourcePadding(1), IPCOLOURSPACE_UNCHANGED, false, m_pcCfg->getChromaFormatIdc(),
                       *(BitDepths *) m_pcCfg->getInputBitDepth(), *(BitDepths *) m_pcCfg->getBitDepth(),
                       m_pcCfg->getFrameSkip(), m_pcCfg->getFGCSEICompModelPresent(),
@@ -690,7 +687,7 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
   if(m_pcCfg->getFramePackingArrangementSEIEnabled())
   {
     SEIFramePacking *sei = new SEIFramePacking;
-    m_seiEncoder.initSEIFramePacking (sei, m_iNumPicCoded);
+    m_seiEncoder.initSEIFramePacking(sei, m_numPicsCoded);
     seiMessages.push_back(sei);
   }
 
@@ -758,12 +755,12 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     m_seiEncoder.initSEIFilmGrainCharacteristics(sei);
     if (m_pcCfg->getFilmGrainAnalysisEnabled())
     {
-      sei->m_log2ScaleFactor = m_FGAnalyser.getLog2scaleFactor();
+      sei->m_log2ScaleFactor = m_fgAnalyzer.getLog2scaleFactor();
       for (int compIdx = 0; compIdx < getNumberValidComponents(m_pcCfg->getChromaFormatIdc()); compIdx++)
       {
         if (sei->m_compModel[compIdx].presentFlag)
         {   // higher importance of presentFlag is from cfg file
-          sei->m_compModel[compIdx] = m_FGAnalyser.getCompModel(compIdx);
+          sei->m_compModel[compIdx] = m_fgAnalyzer.getCompModel(compIdx);
         }
       }
     }
@@ -937,12 +934,12 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     m_seiEncoder.initSEIFilmGrainCharacteristics(fgcSEI);
     if (m_pcCfg->getFilmGrainAnalysisEnabled())
     {
-      fgcSEI->m_log2ScaleFactor = m_FGAnalyser.getLog2scaleFactor();
+      fgcSEI->m_log2ScaleFactor = m_fgAnalyzer.getLog2scaleFactor();
       for (int compIdx = 0; compIdx < getNumberValidComponents(m_pcCfg->getChromaFormatIdc()); compIdx++)
       {
         if (fgcSEI->m_compModel[compIdx].presentFlag)
         {   // higher importance of presentFlag is from cfg file
-          fgcSEI->m_compModel[compIdx] = m_FGAnalyser.getCompModel(compIdx);
+          fgcSEI->m_compModel[compIdx] = m_fgAnalyzer.getCompModel(compIdx);
         }
       }
     }
@@ -2265,7 +2262,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
   xInitGOP(pocLast, numPicRcvd, isField, isEncodeLtRef);
 
-  m_iNumPicCoded = 0;
+  m_numPicsCoded = 0;
   SEIMessages leadingSeiMessages;
   SEIMessages nestedSeiMessages;
   SEIMessages duInfoSeiMessages;
@@ -2459,7 +2456,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       pcSlice->setAssociatedIRAPPOC(m_associatedIRAPPOC[pcPic->layerId]);
     }
 
-    pcSlice->decodingRefreshMarking(m_pocCRA, m_bRefreshPending, rcListPic, m_pcCfg->getEfficientFieldIRAPEnabled());
+    pcSlice->decodingRefreshMarking(m_pocCRA, m_refreshPending, rcListPic, m_pcCfg->getEfficientFieldIRAPEnabled());
     if (m_pcCfg->getUseCompositeRef() && isEncodeLtRef)
     {
       setUseLTRef(true);
@@ -3672,8 +3669,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       bool ready_to_analyze = pcPic->getPOC() % filteredFrame ? false : true; // either it is mctf denoising or external source for film grain analysis. note: if mctf is used, it is different from mctf for encoding.
       if (ready_to_analyze)
       {
-        m_FGAnalyser.initBufs(pcPic);
-        m_FGAnalyser.estimate_grain(pcPic);
+        m_fgAnalyzer.initBufs(pcPic);
+        m_fgAnalyzer.estimate_grain(pcPic);
       }
     }
 
@@ -3685,9 +3682,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
       // write various parameter sets
 #if GDR_ENABLED // Note : insert SPS/PPS at every GDR picture
-      bool writePS = m_bSeqFirst || (m_pcCfg->getReWriteParamSets() && (pcSlice->isIRAP())) || pcSlice->isInterGDR();
+      bool writePS = m_seqFirst || (m_pcCfg->getReWriteParamSets() && (pcSlice->isIRAP())) || pcSlice->isInterGDR();
 #else
-      bool writePS = m_bSeqFirst || (m_pcCfg->getReWriteParamSets() && (pcSlice->isIRAP()));
+      bool writePS = m_seqFirst || (m_pcCfg->getReWriteParamSets() && (pcSlice->isIRAP()));
 #endif
       if (writePS)
       {
@@ -3713,7 +3710,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         CHECK(!(leadingSeiMessages.empty()), "Unspecified error");
         xCreateIRAPLeadingSEIMessages(leadingSeiMessages, pcSlice->getSPS(), pcSlice->getPPS());
 
-        m_bSeqFirst = false;
+        m_seqFirst = false;
       }
 
 
@@ -3865,7 +3862,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           }
           //the inference for NoOutputPriorPicsFlag
           // KJS: This cannot happen at the encoder
-          if( !m_bFirst && ( pcSlice->isIRAP() || pcSlice->getNalUnitType() >= NAL_UNIT_CODED_SLICE_GDR ) && picHeader->getNoOutputBeforeRecoveryFlag() )
+          if (!m_first && (pcSlice->isIRAP() || pcSlice->getNalUnitType() >= NAL_UNIT_CODED_SLICE_GDR)
+              && picHeader->getNoOutputBeforeRecoveryFlag())
           {
             if (pcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA || pcSlice->getNalUnitType() >= NAL_UNIT_CODED_SLICE_GDR)
             {
@@ -4191,8 +4189,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     DTRACE_UPDATE( g_trace_ctx, ( std::make_pair( "final", 0 ) ) );
 
     pcPic->reconstructed = true;
-    m_bFirst = false;
-    m_iNumPicCoded++;
+    m_first              = false;
+    m_numPicsCoded++;
     if (!(m_pcCfg->getUseCompositeRef() && isEncodeLtRef))
     {
       for( int i = pcSlice->getTLayer() ; i < pcSlice->getSPS()->getMaxTLayers() ; i ++ )
@@ -4214,7 +4212,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
   delete pcBitstreamRedirect;
 
-  CHECK( m_iNumPicCoded > 1, "Unspecified error" );
+  CHECK(m_numPicsCoded > 1, "Unspecified error");
 }
 
 void EncGOP::printOutSummary(uint32_t numAllPicCoded, bool isField, const bool printMSEBasedSNR,
@@ -4945,7 +4943,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   }
 
   uint32_t uibits = numRBSPBytes * 8;
-  m_vRVM_RP.push_back( uibits );
+  m_rvm.push_back(uibits);
 
   //===== add PSNR =====
   m_gcAnalyzeAll.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, isEncodeLtRef);
@@ -5715,37 +5713,38 @@ double EncGOP::xCalculateRVM()
   if( m_pcCfg->getGOPSize() == 1 && m_pcCfg->getIntraPeriod() != 1 && m_pcCfg->getFramesToBeEncoded() > RVM_VCEGAM10_M * 2 )
   {
     // calculate RVM only for lowdelay configurations
-    std::vector<double> vRL , vB;
-    size_t N = m_vRVM_RP.size();
-    vRL.resize( N );
-    vB.resize( N );
+
+    size_t n = m_rvm.size();
+
+    std::vector<double> vRL(n);
+    std::vector<double> vB(n);
 
     int i;
     double dRavg = 0 , dBavg = 0;
     vB[RVM_VCEGAM10_M] = 0;
-    for( i = RVM_VCEGAM10_M + 1 ; i < N - RVM_VCEGAM10_M + 1 ; i++ )
+    for (i = RVM_VCEGAM10_M + 1; i < n - RVM_VCEGAM10_M + 1; i++)
     {
       vRL[i] = 0;
       for( int j = i - RVM_VCEGAM10_M ; j <= i + RVM_VCEGAM10_M - 1 ; j++ )
       {
-        vRL[i] += m_vRVM_RP[j];
+        vRL[i] += m_rvm[j];
       }
       vRL[i] /= ( 2 * RVM_VCEGAM10_M );
-      vB[i] = vB[i-1] + m_vRVM_RP[i] - vRL[i];
-      dRavg += m_vRVM_RP[i];
+      vB[i] = vB[i - 1] + m_rvm[i] - vRL[i];
+      dRavg += m_rvm[i];
       dBavg += vB[i];
     }
 
-    dRavg /= ( N - 2 * RVM_VCEGAM10_M );
-    dBavg /= ( N - 2 * RVM_VCEGAM10_M );
+    dRavg /= (n - 2 * RVM_VCEGAM10_M);
+    dBavg /= (n - 2 * RVM_VCEGAM10_M);
 
     double dSigamB = 0;
-    for( i = RVM_VCEGAM10_M + 1 ; i < N - RVM_VCEGAM10_M + 1 ; i++ )
+    for (i = RVM_VCEGAM10_M + 1; i < n - RVM_VCEGAM10_M + 1; i++)
     {
       double tmp = vB[i] - dBavg;
       dSigamB += tmp * tmp;
     }
-    dSigamB = sqrt( dSigamB / ( N - 2 * RVM_VCEGAM10_M ) );
+    dSigamB = sqrt(dSigamB / (n - 2 * RVM_VCEGAM10_M));
 
     double f = sqrt( 12.0 * ( RVM_VCEGAM10_M - 1 ) / ( RVM_VCEGAM10_M + 1 ) );
 
