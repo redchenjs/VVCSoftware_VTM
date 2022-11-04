@@ -2744,7 +2744,7 @@ private:
   Picture*                   m_apcRefPicList [NUM_REF_PIC_LIST_01][MAX_NUM_REF+1];
   int                        m_aiRefPOCList  [NUM_REF_PIC_LIST_01][MAX_NUM_REF+1];
   bool                       m_bIsUsedAsLongTerm[NUM_REF_PIC_LIST_01][MAX_NUM_REF+1];
-  int                        m_iDepth;
+  int                        m_hierPredLayerIdx;   // hierarchical prediction layer index
   Picture*                   m_scaledRefPicList[NUM_REF_PIC_LIST_01][MAX_NUM_REF + 1];
   Picture*                   m_savedRefPicList[NUM_REF_PIC_LIST_01][MAX_NUM_REF + 1];
   std::pair<int, int>        m_scalingRatio[NUM_REF_PIC_LIST_01][MAX_NUM_REF_PICS];
@@ -2882,7 +2882,7 @@ public:
   const Picture*              getPic() const                                         { return m_pcPic;                                               }
   Picture *                   getRefPic(RefPicList e, int refIdx) const { return m_apcRefPicList[e][refIdx]; }
   int                         getRefPOC(RefPicList e, int refIdx) const { return m_aiRefPOCList[e][refIdx]; }
-  int                         getDepth() const                                       { return m_iDepth;                                              }
+  int                         getHierPredLayerIdx() const { return m_hierPredLayerIdx; }
   bool                        getColFromL0Flag() const                               { return m_colFromL0Flag;                                       }
   uint32_t                    getColRefIdx() const                                   { return m_colRefIdx;                                           }
   void                        checkColRefIdx(uint32_t curSliceSegmentIdx, const Picture* pic);
@@ -2933,7 +2933,7 @@ public:
 
   void                        setNumRefIdx( RefPicList e, int i )                    { m_aiNumRefIdx[e]    = i;                                      }
   void                        setPic( Picture* p )                                   { m_pcPic             = p;                                      }
-  void                        setDepth( int iDepth )                                 { m_iDepth            = iDepth;                                 }
+  void                        setHierPredLayerIdx(int idx) { m_hierPredLayerIdx = idx; }
 
   void                        constructRefPicList(PicList& rcListPic);
   void                        setRefPOCList();

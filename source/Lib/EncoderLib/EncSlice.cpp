@@ -382,7 +382,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
 #endif
 
   // depth computation based on GOP size
-  int depth;
+  int hierPredLayerIdx;
   {
     int poc = rpcSlice->getPOC();
     if(isField)
@@ -396,12 +396,12 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
 
     if ( poc == 0 )
     {
-      depth = 0;
+      hierPredLayerIdx = 0;
     }
     else
     {
       int step = m_pcCfg->getGOPSize() * multipleFactor;
-      depth    = 0;
+      hierPredLayerIdx = 0;
       for( int i=step>>1; i>=1; i>>=1 )
       {
         for (int j = i; j<(m_pcCfg->getGOPSize() * multipleFactor); j += step)
@@ -413,7 +413,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
           }
         }
         step >>= 1;
-        depth++;
+        hierPredLayerIdx++;
       }
     }
 
@@ -421,7 +421,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
     {
       if (isField && ((rpcSlice->getPOC() % 2) == 1))
       {
-        depth++;
+        hierPredLayerIdx++;
       }
     }
   }
@@ -462,7 +462,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
     eSliceType = (pocLast == 0 || pocCurr == 0 || m_pcGOPEncoder->getGOPSize() == 0) ? I_SLICE : eSliceType;
   }
 
-  rpcSlice->setDepth        ( depth );
+  rpcSlice->setHierPredLayerIdx(hierPredLayerIdx);
   rpcSlice->setSliceType    ( eSliceType );
 
   // ------------------------------------------------------------------------------------------------------------------
@@ -870,7 +870,7 @@ double EncSlice::initializeLambda(const Slice* slice, const int GOPid, const int
 
   dLambda = dQPFactor * pow(2.0, (dQP + bitDepthShift) / 3.0);
 
-  if (slice->getDepth() > 0 && !m_pcCfg->getLambdaFromQPEnable())
+  if (slice->getHierPredLayerIdx() > 0 && !m_pcCfg->getLambdaFromQPEnable())
   {
     dLambda *= Clip3(2.0, 4.0, ((refQP + bitDepthShift) / 6.0));
   }

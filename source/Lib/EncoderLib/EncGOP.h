@@ -185,10 +185,14 @@ private:
   int                     m_DBParam[MAX_ENCODER_DEBLOCKING_QUALITY_LAYERS][4];   //[layer_id][0: available; 1: bDBDisabled; 2: Beta Offset Div2; 3: Tc Offset Div2;]
 
   // members needed for adaptive max BT size
-  std::array<uint32_t, 8> m_blkSize;
-  std::array<uint32_t, 8> m_numBlks;
-  uint32_t                m_prevISlicePoc;
-  bool                    m_initAMaxBt;
+  struct BlkStat
+  {
+    uint32_t area;
+    uint32_t count;
+  };
+  std::array<BlkStat, 8> m_blkStat;
+  uint32_t               m_prevISlicePoc;
+  bool                   m_initAMaxBt;
 
   AUWriterIf*             m_AUWriterIf;
 #if GDR_ENABLED
