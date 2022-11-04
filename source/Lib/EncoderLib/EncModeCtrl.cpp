@@ -427,7 +427,7 @@ void CacheBlkInfoCtrl::init( const Slice &slice )
           {
             if( m_codedCUInfo[x][y][wIdx][hIdx] )
             {
-              memset( m_codedCUInfo[x][y][wIdx][hIdx], 0, sizeof( CodedCUInfo ) );
+              std::fill_n(reinterpret_cast<char *>(m_codedCUInfo[x][y][wIdx][hIdx]), sizeof(CodedCUInfo), 0);
             }
           }
         }

@@ -241,55 +241,20 @@ else                                                        \
 template<typename T>
 void AreaBuf<T>::fill(const T &val)
 {
-  if( sizeof( T ) == 1 )
+  if (width == stride)
   {
-    if( width == stride )
-    {
-      ::memset( buf, reinterpret_cast< const signed char& >( val ), width * height * sizeof( T ) );
-    }
-    else
-    {
-      T* dest = buf;
-      size_t line = width * sizeof( T );
-
-      for( unsigned y = 0; y < height; y++ )
-      {
-        ::memset( dest, reinterpret_cast< const signed char& >( val ), line );
-
-        dest += stride;
-      }
-    }
-  }
-  else if( T( 0 ) == val )
-  {
-    if( width == stride )
-    {
-      ::memset( buf, 0, width * height * sizeof( T ) );
-    }
-    else
-    {
-      T* dest = buf;
-      size_t line = width * sizeof( T );
-
-      for( unsigned y = 0; y < height; y++ )
-      {
-        ::memset( dest, 0, line );
-
-        dest += stride;
-      }
-    }
+    std::fill_n(buf, width * height, val);
   }
   else
   {
     T* dest = buf;
 
-#define FILL_INC        dest      += stride
-#define FILL_OP( ADDR ) dest[ADDR] = val
+    for (unsigned y = 0; y < height; y++)
+    {
+      std::fill_n(dest, width, val);
 
-    SIZE_AWARE_PER_EL_OP( FILL_OP, FILL_INC );
-
-#undef FILL_INC
-#undef FILL_OP
+      dest += stride;
+    }
   }
 }
 
@@ -298,16 +263,15 @@ void AreaBuf<T>::memset( const int val )
 {
   if( width == stride )
   {
-    ::memset( buf, val, width * height * sizeof( T ) );
+    std::fill_n(reinterpret_cast<char *>(buf), width * height * sizeof(T), val);
   }
   else
   {
-    T* dest = buf;
-    size_t line = width * sizeof( T );
+    T *dest = buf;
 
     for( int y = 0; y < height; y++ )
     {
-      ::memset( dest, val, line );
+      std::fill_n(reinterpret_cast<char *>(dest), width * sizeof(T), val);
 
       dest += stride;
     }

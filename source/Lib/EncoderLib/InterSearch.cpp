@@ -6430,7 +6430,7 @@ void InterSearch::xPredAffineInterSearch( PredictionUnit&       pu,
 
     // AffineAMVPInfo aacAffineAMVPInfo[2][33];
     ::memset(aacAffineAMVPInfo, 0, sizeof(aacAffineAMVPInfo));
-    ::memset(affiAMVPInfoTemp, 0, sizeof(affiAMVPInfoTemp));
+    std::fill_n(reinterpret_cast<char *>(affiAMVPInfoTemp), sizeof(affiAMVPInfoTemp), 0);
 
     for (int i = 0; i < 2; i++)
     {
