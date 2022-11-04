@@ -918,7 +918,7 @@ void CABACReader::cu_skip_flag( CodingUnit& cu )
     cu.rootCbf = false;
     cu.predMode = MODE_INTRA;
     cu.mmvdSkip = false;
-    if (cu.lwidth() < 128 && cu.lheight() < 128) // disable IBC mode larger than 64x64
+    if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)   // disable IBC mode larger than 64x64
     {
       unsigned ctxId = DeriveCtx::CtxSkipFlag(cu);
       unsigned skip  = m_binDecoder.decodeBin(Ctx::SkipFlag(ctxId));
@@ -948,7 +948,8 @@ void CABACReader::cu_skip_flag( CodingUnit& cu )
 
   if (skip && cu.cs->slice->getSPS()->getIBCFlag())
   {
-    if (cu.lwidth() < 128 && cu.lheight() < 128 && !cu.isConsInter()) // disable IBC mode larger than 64x64 and disable IBC when only allowing inter mode
+    // disable IBC mode larger than 64x64 and disable IBC when only allowing inter mode
+    if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE && !cu.isConsInter())
     {
       if ( cu.lwidth() == 4 && cu.lheight() == 4 )
       {
@@ -1086,7 +1087,7 @@ void CABACReader::pred_mode( CodingUnit& cu )
     if ( cu.cs->slice->isIntra() || ( cu.lwidth() == 4 && cu.lheight() == 4 ) || cu.isConsIntra() )
     {
       cu.predMode = MODE_INTRA;
-      if (cu.lwidth() < 128 && cu.lheight() < 128) // disable IBC mode larger than 64x64
+      if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)   // disable IBC mode larger than 64x64
       {
         unsigned ctxidx = DeriveCtx::CtxIBCFlag(cu);
         if (m_binDecoder.decodeBin(Ctx::IBCFlag(ctxidx)))
@@ -1118,7 +1119,7 @@ void CABACReader::pred_mode( CodingUnit& cu )
       else
       {
         cu.predMode = MODE_INTER;
-        if (cu.lwidth() < 128 && cu.lheight() < 128) // disable IBC mode larger than 64x64
+        if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)   // disable IBC mode larger than 64x64
         {
           unsigned ctxidx = DeriveCtx::CtxIBCFlag(cu);
           if (m_binDecoder.decodeBin(Ctx::IBCFlag(ctxidx)))
