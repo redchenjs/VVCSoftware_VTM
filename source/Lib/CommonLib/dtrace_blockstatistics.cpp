@@ -320,22 +320,29 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
 
           int maskStride = 0;
           int stepX = 1;
-          Pel* SADmask;
+          Pel *sadMask;
           if (g_angle2mirror[angle] == 2)
           {
             maskStride = -GEO_WEIGHT_MASK_SIZE;
-            SADmask = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]][(GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][1]) * GEO_WEIGHT_MASK_SIZE + g_weightOffset[splitDir][hIdx][wIdx][0]];
+            sadMask    = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
+                                            [(GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][1])
+                                               * GEO_WEIGHT_MASK_SIZE
+                                             + g_weightOffset[splitDir][hIdx][wIdx][0]];
           }
           else if (g_angle2mirror[angle] == 1)
           {
             stepX = -1;
             maskStride = GEO_WEIGHT_MASK_SIZE;
-            SADmask = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]][g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE + (GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][0])];
+            sadMask    = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
+                                            [g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE
+                                             + (GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][0])];
           }
           else
           {
             maskStride = GEO_WEIGHT_MASK_SIZE;
-            SADmask = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]][g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE + g_weightOffset[splitDir][hIdx][wIdx][0]];
+            sadMask    = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
+                                            [g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE
+                                             + g_weightOffset[splitDir][hIdx][wIdx][0]];
           }
 
           int currentPartition = 0;
@@ -355,8 +362,8 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
           // process top boundary
           for( int x = 0; x < width-1; x++ )
           {
-            boundaryOfMask.push_back(*SADmask);
-            if(*SADmask != *(SADmask+stepX))
+            boundaryOfMask.push_back(*sadMask);
+            if (*sadMask != *(sadMask + stepX))
             {
               // found a change of partitions, it is a corner of both partition polygons
               oneGeoPartitioning[currentPartition].push_back(Position(TL.x + x, TL.y));
@@ -364,7 +371,7 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
               currentPartition ^= 0x01;
               oneGeoPartitioning[currentPartition].push_back(Position(TL.x + x, TL.y));
             }
-            SADmask += stepX;
+            sadMask += stepX;
           }
 
           // corner of block is a corner of the current partition
@@ -373,8 +380,8 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
           // process right boundary
           for( int y = 0; y < height-1; y++ )
           {
-            boundaryOfMask.push_back(*SADmask);
-            if(*SADmask != *(SADmask+maskStride))
+            boundaryOfMask.push_back(*sadMask);
+            if (*sadMask != *(sadMask + maskStride))
             {
               // found a change of partitions, it is a corner of both partition polygons
               oneGeoPartitioning[currentPartition].push_back(Position(TR.x, TR.y + y));
@@ -382,7 +389,7 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
               currentPartition ^= 0x01;
               oneGeoPartitioning[currentPartition].push_back(Position(TR.x, TR.y + y));
             }
-            SADmask += maskStride;
+            sadMask += maskStride;
           }
 
           // corner of block is a corner of the current partition
@@ -391,8 +398,8 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
           // process bottom boundary
           for( int x = width-1; x > 0; x-- )
           {
-            boundaryOfMask.push_back(*SADmask);
-            if(*SADmask != *(SADmask-stepX))
+            boundaryOfMask.push_back(*sadMask);
+            if (*sadMask != *(sadMask - stepX))
             {
               // found a change of partitions, it is a corner of both partition polygons
               oneGeoPartitioning[currentPartition].push_back(Position(BL.x + x, BL.y));
@@ -400,7 +407,7 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
               currentPartition ^= 0x01;
               oneGeoPartitioning[currentPartition].push_back(Position(BL.x + x, BL.y));
             }
-            SADmask -= stepX;
+            sadMask -= stepX;
           }
 
           // corner of block is a corner of the current partition
@@ -409,8 +416,8 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
           // process left boundary
           for( int y = height-1; y > 0; y-- )
           {
-            boundaryOfMask.push_back(*SADmask);
-            if(*SADmask != *(SADmask-maskStride))
+            boundaryOfMask.push_back(*sadMask);
+            if (*sadMask != *(sadMask - maskStride))
             {
               // found a change of partitions, it is a corner of both partition polygons
               oneGeoPartitioning[currentPartition].push_back(Position(TL.x, TL.y + y));
@@ -418,7 +425,7 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
               currentPartition ^= 0x01;
               oneGeoPartitioning[currentPartition].push_back(Position(TL.x, TL.y + y));
             }
-            SADmask -= maskStride;
+            sadMask -= maskStride;
           }
 
           // corner of block is a corner of the current partition

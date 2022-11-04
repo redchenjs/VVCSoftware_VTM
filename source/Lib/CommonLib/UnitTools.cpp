@@ -4286,7 +4286,8 @@ void PU::getGeoMergeCandidates( const PredictionUnit &pu, MergeCtx& geoMrgCtx )
   }
 }
 
-void PU::spanGeoMotionInfo( PredictionUnit &pu, MergeCtx &geoMrgCtx, const uint8_t splitDir, const uint8_t candIdx0, const uint8_t candIdx1)
+void PU::spanGeoMotionInfo(PredictionUnit &pu, const MergeCtx &geoMrgCtx, const uint8_t splitDir,
+                           const uint8_t candIdx0, const uint8_t candIdx1)
 {
   pu.geoSplitDir  = splitDir;
   pu.geoMergeIdx0 = candIdx0;
