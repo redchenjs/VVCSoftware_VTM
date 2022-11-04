@@ -118,16 +118,13 @@ private:
 #endif
 
   //  Data
-  bool                    m_bLongtermTestPictureHasBeenCoded;
-  bool                    m_bLongtermTestPictureHasBeenCoded2;
   uint32_t                m_numLongTermRefPicSPS;
   uint32_t                m_ltRefPicPocLsbSps[MAX_NUM_LONG_TERM_REF_PICS];
   bool                    m_ltRefPicUsedByCurrPicFlag[MAX_NUM_LONG_TERM_REF_PICS];
   int                     m_iLastIDR;
   int                     m_iGopSize;
-  int                     m_iNumPicCoded;
-  bool                    m_bFirst;
-  int                     m_iLastRecoveryPicPOC;
+  int                     m_numPicsCoded;
+  bool                    m_first;
   int                     m_latestDRAPPOC;
   int                     m_latestEDRAPPOC;
   bool                    m_latestEdrapLeadingPicDecodableFlag;
@@ -149,7 +146,7 @@ private:
 
   SEIWriter               m_seiWriter;
 
-  FGAnalyser              m_FGAnalyser;
+  FGAnalyser m_fgAnalyzer;
 
   Picture *               m_picBg;
   Picture *               m_picOrig;
@@ -164,18 +161,18 @@ private:
   EncReshape*               m_pcReshaper;
   RateCtrl*                 m_pcRateCtrl;
   // indicate sequence first
-  bool                    m_bSeqFirst;
+  bool                    m_seqFirst;
   bool                    m_audIrapOrGdrAuFlag;
 
   EncHRD*                 m_HRD;
 
   // clean decoding refresh
-  bool                    m_bRefreshPending;
+  bool                    m_refreshPending;
   int                     m_pocCRA;
   NalUnitType             m_associatedIRAPType[MAX_VPS_LAYERS];
   int                     m_associatedIRAPPOC[MAX_VPS_LAYERS];
 
-  std::vector<int>        m_vRVM_RP;
+  std::vector<int>        m_rvm;
   uint32_t                m_lastBPSEI[MAX_TLAYER];
   uint32_t                m_totalCoded[MAX_TLAYER];
   bool                    m_rapWithLeading;
