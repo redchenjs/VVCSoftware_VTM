@@ -3100,7 +3100,8 @@ void IntraSearch::xEncCoeffQT( CodingStructure &cs, Partitioner &partitioner, co
     {
       if (compID == COMPONENT_Cr)
       {
-        const int cbfMask = (TU::getCbf(currTU, COMPONENT_Cb) ? 2 : 0) + (TU::getCbf(currTU, COMPONENT_Cr) ? 1 : 0);
+        const int cbfMask =
+          (TU::getCbf(currTU, COMPONENT_Cb) ? CBF_MASK_CB : 0) + (TU::getCbf(currTU, COMPONENT_Cr) ? CBF_MASK_CR : 0);
         m_CABACEstimator->joint_cb_cr(currTU, cbfMask);
       }
       if (TU::getCbf(currTU, compID))
@@ -3187,18 +3188,22 @@ uint64_t IntraSearch::xGetIntraFracBitsQTChroma(TransformUnit& currTU, const Com
 
   if ( currTU.jointCbCr )
   {
-    const int cbfMask = ( TU::getCbf( currTU, COMPONENT_Cb ) ? 2 : 0 ) + ( TU::getCbf( currTU, COMPONENT_Cr ) ? 1 : 0 );
-    m_CABACEstimator->cbf_comp( cs, cbfMask>>1, currTU.blocks[ COMPONENT_Cb ], currTU.depth, false );
-    m_CABACEstimator->cbf_comp( cs, cbfMask &1, currTU.blocks[ COMPONENT_Cr ], currTU.depth, cbfMask>>1 );
-    if( cbfMask )
+    const bool cbfMaskCb = TU::getCbf(currTU, COMPONENT_Cb);
+    const bool cbfMaskCr = TU::getCbf(currTU, COMPONENT_Cr);
+    const int  cbfMask   = (cbfMaskCb ? CBF_MASK_CB : 0) + (cbfMaskCr ? CBF_MASK_CR : 0);
+
+    m_CABACEstimator->cbf_comp(cs, cbfMaskCb, currTU.blocks[COMPONENT_Cb], currTU.depth, false);
+    m_CABACEstimator->cbf_comp(cs, cbfMaskCr, currTU.blocks[COMPONENT_Cr], currTU.depth, cbfMaskCb);
+
+    if (cbfMask != 0)
     {
       m_CABACEstimator->joint_cb_cr( currTU, cbfMask );
     }
-    if( cbfMask >> 1 )
+    if (cbfMaskCb)
     {
       m_CABACEstimator->residual_coding( currTU, COMPONENT_Cb );
     }
-    if( cbfMask & 1 )
+    if (cbfMaskCr)
     {
       m_CABACEstimator->residual_coding( currTU, COMPONENT_Cr );
     }
@@ -3213,7 +3218,7 @@ uint64_t IntraSearch::xGetIntraFracBitsQTChroma(TransformUnit& currTU, const Com
     {
       const bool cbCbf    = TU::getCbf( currTU, COMPONENT_Cb );
       const bool crCbf    = TU::getCbf( currTU, compID );
-      const int  cbfMask  = ( cbCbf ? 2 : 0 ) + ( crCbf ? 1 : 0 );
+      const int  cbfMask  = (cbCbf ? CBF_MASK_CB : 0) + (crCbf ? CBF_MASK_CR : 0);
       m_CABACEstimator->cbf_comp( cs, crCbf, currTU.blocks[ compID ], currTU.depth, cbCbf );
       m_CABACEstimator->joint_cb_cr( currTU, cbfMask );
     }
@@ -3439,8 +3444,9 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
   }
   else // chroma
   {
-    int         codedCbfMask  = 0;
-    ComponentID codeCompId    = (tu.jointCbCr ? (tu.jointCbCr >> 1 ? COMPONENT_Cb : COMPONENT_Cr) : compID);
+    ComponentID codeCompId =
+      tu.jointCbCr != 0 ? ((tu.jointCbCr & CBF_MASK_CB) != 0 ? COMPONENT_Cb : COMPONENT_Cr) : compID;
+
     const QpParam qpCbCr(tu, codeCompId);
 
     if( tu.jointCbCr )
@@ -3475,10 +3481,13 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
 
     DTRACE(g_trace_ctx, D_TU_ABS_SUM, "%d: comp=%d, abssum=%d\n", DTRACE_GET_COUNTER(g_trace_ctx, D_TU_ABS_SUM),
            codeCompId, absSum);
+
+    int codedCbfMask = 0;
+
     if (absSum > 0)
     {
       m_pcTrQuant->invTransformNxN(tu, codeCompId, codeResi, qpCbCr);
-      codedCbfMask += ( codeCompId == COMPONENT_Cb ? 2 : 1 );
+      codedCbfMask += codeCompId == COMPONENT_Cb ? CBF_MASK_CB : CBF_MASK_CR;
     }
     else
     {
@@ -3487,9 +3496,9 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
 
     if( tu.jointCbCr )
     {
-      if( tu.jointCbCr == 3 && codedCbfMask == 2 )
+      if (tu.jointCbCr == 3 && codedCbfMask == CBF_MASK_CB)
       {
-        codedCbfMask = 3;
+        codedCbfMask = CBF_MASK_CBCR;
         TU::setCbfAtDepth (tu, COMPONENT_Cr, tu.depth, true );
       }
       if( tu.jointCbCr != codedCbfMask )
@@ -3681,7 +3690,7 @@ void IntraSearch::xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &c
     if (absSum > 0)
     {
       m_pcTrQuant->invTransformNxN(tu, codeCompId, codeResi, qpCbCr);
-      codedCbfMask += (codeCompId == COMPONENT_Cb ? 2 : 1);
+      codedCbfMask += codeCompId == COMPONENT_Cb ? CBF_MASK_CB : CBF_MASK_CR;
     }
     else
     {
@@ -3690,9 +3699,9 @@ void IntraSearch::xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &c
 
     if (tu.jointCbCr)
     {
-      if (tu.jointCbCr == 3 && codedCbfMask == 2)
+      if (tu.jointCbCr == 3 && codedCbfMask == CBF_MASK_CB)
       {
-        codedCbfMask = 3;
+        codedCbfMask = CBF_MASK_CBCR;
         TU::setCbfAtDepth(tu, COMPONENT_Cr, tu.depth, true);
       }
       if (tu.jointCbCr != codedCbfMask)
@@ -4876,8 +4885,9 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
     {
       tu.jointCbCr = (uint8_t)cbfMask;
 
-      ComponentID codeCompId = ((cbfMask >> 1) ? COMPONENT_Cb : COMPONENT_Cr);
-      ComponentID otherCompId = ((codeCompId == COMPONENT_Cb) ? COMPONENT_Cr : COMPONENT_Cb);
+      ComponentID codeCompId  = (cbfMask & CBF_MASK_CB) != 0 ? COMPONENT_Cb : COMPONENT_Cr;
+      ComponentID otherCompId = codeCompId == COMPONENT_Cb ? COMPONENT_Cr : COMPONENT_Cb;
+
       bool        tsAllowed = TU::isTSAllowed(tu, codeCompId) && (m_pcEncCfg->getUseChromaTS()) && !cu.lfnstIdx;
       uint8_t     numTransformCands = 1 + (tsAllowed ? 1 : 0); // DCT + TS = 2 tests
       bool        cbfDCT2 = true;
@@ -5416,10 +5426,11 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
       }
       for( int cbfMask : jointCbfMasksToTest )
       {
+        currTU.jointCbCr = (uint8_t) cbfMask;
 
-        currTU.jointCbCr               = (uint8_t)cbfMask;
-        ComponentID codeCompId = ((currTU.jointCbCr >> 1) ? COMPONENT_Cb : COMPONENT_Cr);
-        ComponentID otherCompId = ((codeCompId == COMPONENT_Cb) ? COMPONENT_Cr : COMPONENT_Cb);
+        ComponentID codeCompId  = (cbfMask & CBF_MASK_CB) != 0 ? COMPONENT_Cb : COMPONENT_Cr;
+        ComponentID otherCompId = codeCompId == COMPONENT_Cb ? COMPONENT_Cr : COMPONENT_Cb;
+
         bool        tsAllowed = TU::isTSAllowed(currTU, codeCompId) && (m_pcEncCfg->getUseChromaTS()) && !currTU.cu->lfnstIdx;
         uint8_t     numTransformCands = 1 + (tsAllowed ? 1 : 0); // DCT + TS = 2 tests
         bool        cbfDCT2 = true;

@@ -502,6 +502,11 @@ static constexpr int BIT_DEPTH_8 =                                    8;
 
 static constexpr int MSE_WEIGHT_FRAC_BITS = 16;
 static constexpr int MSE_WEIGHT_ONE       = 1 << MSE_WEIGHT_FRAC_BITS;
+
+static constexpr int CBF_MASK_CB   = 2;
+static constexpr int CBF_MASK_CR   = 1;
+static constexpr int CBF_MASK_CBCR = CBF_MASK_CB | CBF_MASK_CR;
+
 // ====================================================================================================================
 // SEI and related constants
 // ====================================================================================================================

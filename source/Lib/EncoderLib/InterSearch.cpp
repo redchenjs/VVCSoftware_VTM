@@ -9347,7 +9347,8 @@ void InterSearch::xEncodeInterResidualQT(CodingStructure &cs, Partitioner &parti
       {
         if( compID == COMPONENT_Cr )
         {
-          const int cbfMask = ( TU::getCbf( currTU, COMPONENT_Cb ) ? 2 : 0) + ( TU::getCbf( currTU, COMPONENT_Cr ) ? 1 : 0 );
+          const int cbfMask =
+            (TU::getCbf(currTU, COMPONENT_Cb) ? CBF_MASK_CB : 0) + (TU::getCbf(currTU, COMPONENT_Cr) ? CBF_MASK_CR : 0);
           m_CABACEstimator->joint_cb_cr( currTU, cbfMask );
         }
         if( TU::getCbf( currTU, compID ) )
@@ -9924,7 +9925,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
           m_CABACEstimator->cbf_comp(*csFull, true, compArea, currDepth, prevCbf);
           if (compID == COMPONENT_Cr)
           {
-            const int cbfMask = (tu.cbf[COMPONENT_Cb] ? 2 : 0) + 1;
+            const int cbfMask = (tu.cbf[COMPONENT_Cb] ? CBF_MASK_CB : 0) + CBF_MASK_CR;
             m_CABACEstimator->joint_cb_cr(tu, cbfMask);
           }
 
@@ -10079,8 +10080,9 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
 
       for (int cbfMask: jointCbfMasksToTest)
       {
-        ComponentID codeCompId = (cbfMask >> 1 ? COMPONENT_Cb : COMPONENT_Cr);
-        ComponentID otherCompId = (codeCompId == COMPONENT_Cr ? COMPONENT_Cb : COMPONENT_Cr);
+        ComponentID codeCompId  = (cbfMask & CBF_MASK_CB) != 0 ? COMPONENT_Cb : COMPONENT_Cr;
+        ComponentID otherCompId = codeCompId == COMPONENT_Cr ? COMPONENT_Cb : COMPONENT_Cr;
+
         bool        tsAllowed = TU::isTSAllowed(tu, codeCompId) && (m_pcEncCfg->getUseChromaTS());
         uint8_t     numTransformCands = 1 + (tsAllowed ? 1 : 0); // DCT + TS = 2 tests
         bool        cbfDCT2 = true;
@@ -10178,19 +10180,19 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
           if (compAbsSum > 0)
           {
             m_pcTrQuant->invTransformNxN(tu, codeCompId, codeResi, qpCbCr);
-            codedCbfMask += (codeCompId == COMPONENT_Cb ? 2 : 1);
+            codedCbfMask += codeCompId == COMPONENT_Cb ? CBF_MASK_CB : CBF_MASK_CR;
           }
           else
           {
             codeResi.fill(0);
           }
 
-          if (tu.jointCbCr == 3 && codedCbfMask == 2)
+          if (tu.jointCbCr == 3 && codedCbfMask == CBF_MASK_CB)
           {
-            codedCbfMask = 3;
+            codedCbfMask = CBF_MASK_CBCR;
             TU::setCbfAtDepth(tu, COMPONENT_Cr, tu.depth, true);
           }
-          if (codedCbfMask && tu.jointCbCr != codedCbfMask)
+          if (codedCbfMask != 0 && tu.jointCbCr != codedCbfMask)
           {
             codedCbfMask = 0;
           }
@@ -10202,14 +10204,17 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
           }
           if (currAbsSum > 0)
           {
-            m_CABACEstimator->cbf_comp(cs, codedCbfMask >> 1, cbArea, currDepth, false);
-            m_CABACEstimator->cbf_comp(cs, codedCbfMask & 1, crArea, currDepth, codedCbfMask >> 1);
+            const bool cbfCb = (codedCbfMask & CBF_MASK_CB) != 0;
+            const bool cbfCr = (codedCbfMask & CBF_MASK_CR) != 0;
+
+            m_CABACEstimator->cbf_comp(cs, cbfCb, cbArea, currDepth, false);
+            m_CABACEstimator->cbf_comp(cs, cbfCr, crArea, currDepth, cbfCb);
             m_CABACEstimator->joint_cb_cr(tu, codedCbfMask);
-            if (codedCbfMask >> 1)
+            if (cbfCb)
             {
               m_CABACEstimator->residual_coding(tu, COMPONENT_Cb);
             }
-            if (codedCbfMask & 1)
+            if (cbfCr)
             {
               m_CABACEstimator->residual_coding(tu, COMPONENT_Cr);
             }
@@ -10334,7 +10339,8 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       {
         if( compID == COMPONENT_Cr )
         {
-          const int cbfMask = ( TU::getCbf( tu, COMPONENT_Cb ) ? 2 : 0 ) + ( TU::getCbf( tu, COMPONENT_Cr ) ? 1 : 0 );
+          const int cbfMask =
+            (TU::getCbf(tu, COMPONENT_Cb) ? CBF_MASK_CB : 0) + (TU::getCbf(tu, COMPONENT_Cr) ? CBF_MASK_CR : 0);
           m_CABACEstimator->joint_cb_cr(tu, cbfMask);
         }
         if( TU::getCbf( tu, compID ) )

@@ -2946,7 +2946,7 @@ void CABACReader::joint_cb_cr( TransformUnit& tu, const int cbfMask )
     return;
   }
 
-  if( ( CU::isIntra( *tu.cu ) && cbfMask ) || ( cbfMask == 3 ) )
+  if ((CU::isIntra(*tu.cu) && cbfMask != 0) || cbfMask == CBF_MASK_CBCR)
   {
     RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET_SIZE2( STATS__CABAC_BITS__JOINT_CB_CR, tu.blocks[COMPONENT_Cr].lumaSize(), CHANNEL_TYPE_CHROMA );
     tu.jointCbCr = (m_binDecoder.decodeBin(Ctx::JointCbCrFlag(cbfMask - 1)) ? cbfMask : 0);

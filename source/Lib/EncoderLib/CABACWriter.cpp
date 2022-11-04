@@ -2627,7 +2627,7 @@ void CABACWriter::joint_cb_cr( const TransformUnit& tu, const int cbfMask )
   }
 
   CHECK( tu.jointCbCr && tu.jointCbCr != cbfMask, "wrong value of jointCbCr (" << (int)tu.jointCbCr << " vs " << (int)cbfMask << ")" );
-  if( ( CU::isIntra( *tu.cu ) && cbfMask ) || ( cbfMask == 3 ) )
+  if ((CU::isIntra(*tu.cu) && cbfMask != 0) || cbfMask == CBF_MASK_CBCR)
   {
     m_binEncoder.encodeBin(tu.jointCbCr ? 1 : 0, Ctx::JointCbCrFlag(cbfMask - 1));
   }

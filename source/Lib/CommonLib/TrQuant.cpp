@@ -564,7 +564,7 @@ void TrQuant::selectICTCandidates(const TransformUnit &tu, CompStorage *resCb, C
 
   if( !CU::isIntra( *tu.cu ) )
   {
-    int cbfMask = 3;
+    int cbfMask = CBF_MASK_CBCR;
     resCb[cbfMask].create( tu.blocks[COMPONENT_Cb] );
     resCr[cbfMask].create( tu.blocks[COMPONENT_Cr] );
     fwdTransformICT(tu, resCb[0], resCr[0], resCb[cbfMask], resCr[cbfMask], cbfMask);
@@ -588,7 +588,7 @@ void TrQuant::selectICTCandidates(const TransformUnit &tu, CompStorage *resCb, C
   int64_t minDist2  = std::numeric_limits<int64_t>::max();
   int     cbfMask1  = 0;
   int     cbfMask2  = 0;
-  for( int cbfMask : { 1, 2, 3 } )
+  for (int cbfMask: { CBF_MASK_CB, CBF_MASK_CR, CBF_MASK_CBCR })
   {
     if( pairDist[cbfMask].first < minDist1 )
     {
