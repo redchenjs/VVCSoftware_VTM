@@ -3153,9 +3153,10 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   m_pcRdCost->setDistParam(distParamSAD2, tempCS->getOrgBuf().Y(), m_acMergeBuffer[0].Y(),
                            sps.getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y, useHadamard);
 
+  const int geoNumMrgSadCand  = min(GEO_MAX_TRY_WEIGHTED_SAD, (int) comboList.list.size());
   int geoNumMrgSatdCand = min(GEO_MAX_TRY_WEIGHTED_SATD, (int) comboList.list.size());
 
-  for (int candidateIdx = 0; candidateIdx < geoNumMrgSatdCand; candidateIdx++)
+  for (int candidateIdx = 0; candidateIdx < geoNumMrgSadCand; candidateIdx++)
   {
     const int splitDir   = comboList.list[candidateIdx].splitDir;
     const int mergeCand0 = comboList.list[candidateIdx].mergeIdx0;
