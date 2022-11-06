@@ -530,16 +530,15 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
 {
   const PPS   &pps   = *pu.cs->pps;
   const Slice &slice = *pu.cs->slice;
-  CHECK( !pu.cu->affine && pu.refIdx[0] >= 0 && pu.refIdx[1] >= 0 && ( pu.lwidth() + pu.lheight() == 12 ), "invalid 4x8/8x4 bi-predicted blocks" );
 
-  int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
-  int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
+  const int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
+  const int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
 
-  const WPScalingParam *wp0 = pu.cs->slice->getWpScaling(REF_PIC_LIST_0, refIdx0);
-  const WPScalingParam *wp1 = pu.cs->slice->getWpScaling(REF_PIC_LIST_1, refIdx1);
+  CHECK(!pu.cu->affine && refIdx0 >= 0 && refIdx1 >= 0 && pu.lwidth() + pu.lheight() == 12,
+        "invalid 4x8/8x4 bi-predicted blocks");
 
   bool bioApplied = false;
-  if (pu.cs->sps->getBDOFEnabledFlag() && (!pu.cs->picHeader->getBdofDisabledFlag()))
+  if (pu.cs->sps->getBDOFEnabledFlag() && !pu.cs->picHeader->getBdofDisabledFlag())
   {
     if (pu.cu->affine || m_subPuMC)
     {
@@ -547,42 +546,15 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
     }
     else
     {
-      const bool biocheck0 =
-        !((WPScalingParam::isWeighted(wp0) || WPScalingParam::isWeighted(wp1)) && slice.getSliceType() == B_SLICE);
-      const bool biocheck1 = !(pps.getUseWP() && slice.getSliceType() == P_SLICE);
-      if (biocheck0
-        && biocheck1
-        && PU::isBiPredFromDifferentDirEqDistPoc(pu)
-        && (pu.Y().height >= 8)
-        && (pu.Y().width >= 8)
-        && ((pu.Y().height * pu.Y().width) >= 128)
-       )
-      {
-        bioApplied = true;
-      }
-    }
-
-    if (bioApplied && pu.ciipFlag)
-    {
-      bioApplied = false;
-    }
-
-    if (bioApplied && pu.cu->smvdMode)
-    {
-      bioApplied = false;
-    }
-
-    if (pu.cu->cs->sps->getUseBcw() && bioApplied && pu.cu->bcwIdx != BCW_DEFAULT)
-    {
-      bioApplied = false;
+      bioApplied = PU::isSimpleSymmetricBiPred(pu) && PU::dmvrBdofSizeCheck(pu) && !pu.ciipFlag && !pu.cu->smvdMode;
     }
   }
   if (pu.mmvdEncOptMode == 2 && pu.mmvdMergeFlag)
   {
     bioApplied = false;
   }
-  bool dmvrApplied = false;
-  dmvrApplied = (pu.mvRefine) && PU::checkDMVRCondition(pu);
+
+  bool dmvrApplied = (pu.mvRefine) && PU::checkDMVRCondition(pu);
 
   bool refIsScaled = ( refIdx0 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_0, refIdx0 )->isRefScaled( pu.cs->pps ) ) ||
                      ( refIdx1 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_1, refIdx1 )->isRefScaled( pu.cs->pps ) );
@@ -1479,16 +1451,13 @@ void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf
   }
   else
   {
-    CHECK( !pu.cu->affine && pu.refIdx[0] >= 0 && pu.refIdx[1] >= 0 && ( pu.lwidth() + pu.lheight() == 12 ), "invalid 4x8/8x4 bi-predicted blocks" );
-    int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
-    int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
-
-    const WPScalingParam *wp0 = pu.cs->slice->getWpScaling(REF_PIC_LIST_0, refIdx0);
-    const WPScalingParam *wp1 = pu.cs->slice->getWpScaling(REF_PIC_LIST_1, refIdx1);
+    const int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
+    const int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
+    CHECK(!pu.cu->affine && refIdx0 >= 0 && refIdx1 >= 0 && pu.lwidth() + pu.lheight() == 12,
+          "invalid 4x8/8x4 bi-predicted blocks");
 
     bool bioApplied = false;
-    const Slice &slice = *pu.cs->slice;
-    if (pu.cs->sps->getBDOFEnabledFlag() && (!pu.cs->picHeader->getBdofDisabledFlag()))
+    if (pu.cs->sps->getBDOFEnabledFlag() && !pu.cs->picHeader->getBdofDisabledFlag())
     {
       if (pu.cu->affine || m_subPuMC)
       {
@@ -1496,34 +1465,9 @@ void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf
       }
       else
       {
-        const bool biocheck0 =
-          !((WPScalingParam::isWeighted(wp0) || WPScalingParam::isWeighted(wp1)) && slice.getSliceType() == B_SLICE);
-        const bool biocheck1 = !(pps.getUseWP() && slice.getSliceType() == P_SLICE);
-        if (biocheck0
-          && biocheck1
-          && PU::isBiPredFromDifferentDirEqDistPoc(pu)
-          && (pu.Y().height >= 8)
-          && (pu.Y().width >= 8)
-          && ((pu.Y().height * pu.Y().width) >= 128)
-          )
-        {
-          bioApplied = true;
-        }
+        bioApplied = PU::isSimpleSymmetricBiPred(pu) && PU::dmvrBdofSizeCheck(pu) && !pu.ciipFlag && !pu.cu->smvdMode;
       }
 
-      if (bioApplied && pu.ciipFlag)
-      {
-        bioApplied = false;
-      }
-
-      if (bioApplied && pu.cu->smvdMode)
-      {
-        bioApplied = false;
-      }
-      if (pu.cu->cs->sps->getUseBcw() && bioApplied && pu.cu->bcwIdx != BCW_DEFAULT)
-      {
-        bioApplied = false;
-      }
       if (pu.mmvdEncOptMode == 2 && pu.mmvdMergeFlag)
       {
         bioApplied = false;
@@ -1533,8 +1477,7 @@ void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf
     bool refIsScaled = ( refIdx0 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_0, refIdx0 )->isRefScaled( pu.cs->pps ) ) ||
                        ( refIdx1 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_1, refIdx1 )->isRefScaled( pu.cs->pps ) );
     bioApplied = refIsScaled ? false : bioApplied;
-    bool dmvrApplied = false;
-    dmvrApplied = (pu.mvRefine) && PU::checkDMVRCondition(pu);
+    bool dmvrApplied = (pu.mvRefine) && PU::checkDMVRCondition(pu);
     if ((pu.lumaSize().width > MAX_BDOF_APPLICATION_REGION || pu.lumaSize().height > MAX_BDOF_APPLICATION_REGION) && pu.mergeType != MRG_TYPE_SUBPU_ATMVP && (bioApplied && !dmvrApplied))
     {
       xSubPuBio(pu, predBuf, eRefPicList, predBufWOBIO);

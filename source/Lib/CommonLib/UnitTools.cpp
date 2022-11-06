@@ -1679,9 +1679,6 @@ bool PU::checkDMVRCondition(const PredictionUnit& pu)
     const int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
     const int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
 
-    const WPScalingParam *wp0 = pu.cu->slice->getWpScaling(REF_PIC_LIST_0, refIdx0);
-    const WPScalingParam *wp1 = pu.cu->slice->getWpScaling(REF_PIC_LIST_1, refIdx1);
-
     const bool ref0IsScaled = refIdx0 < 0 || refIdx0 >= MAX_NUM_REF
                                 ? false
                                 : pu.cu->slice->getRefPic(REF_PIC_LIST_0, refIdx0)->isRefScaled(pu.cs->pps);
@@ -1690,9 +1687,8 @@ bool PU::checkDMVRCondition(const PredictionUnit& pu)
                                 : pu.cu->slice->getRefPic(REF_PIC_LIST_1, refIdx1)->isRefScaled(pu.cs->pps);
 
     return pu.mergeFlag && pu.mergeType == MRG_TYPE_DEFAULT_N && !pu.ciipFlag && !pu.cu->affine && !pu.mmvdMergeFlag
-           && !pu.cu->mmvdSkip && PU::isBiPredFromDifferentDirEqDistPoc(pu) && (pu.lheight() >= 8) && (pu.lwidth() >= 8)
-           && ((pu.lheight() * pu.lwidth()) >= 128) && (pu.cu->bcwIdx == BCW_DEFAULT)
-           && !WPScalingParam::isWeighted(wp0) && !WPScalingParam::isWeighted(wp1) && !ref0IsScaled && !ref1IsScaled;
+           && !pu.cu->mmvdSkip && PU::isSimpleSymmetricBiPred(pu) && PU::dmvrBdofSizeCheck(pu) && !ref0IsScaled
+           && !ref1IsScaled;
   }
   else
   {
@@ -4159,27 +4155,38 @@ void PU::applyImv( PredictionUnit& pu, MergeCtx &mrgCtx, InterPrediction *interP
   PU::spanMotionInfo( pu, mrgCtx );
 }
 
-
-bool PU::isBiPredFromDifferentDirEqDistPoc(const PredictionUnit& pu)
+bool PU::isSimpleSymmetricBiPred(const PredictionUnit &pu)
 {
-  if (pu.refIdx[0] >= 0 && pu.refIdx[1] >= 0)
+  const int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
+  const int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
+
+  if (refIdx0 >= 0 && refIdx1 >= 0)
   {
-    if (pu.cu->slice->getRefPic(REF_PIC_LIST_0, pu.refIdx[0])->longTerm
-      || pu.cu->slice->getRefPic(REF_PIC_LIST_1, pu.refIdx[1])->longTerm)
+    const Slice *slice = pu.cu->slice;
+
+    if (slice->getRefPic(REF_PIC_LIST_0, refIdx0)->longTerm || slice->getRefPic(REF_PIC_LIST_1, refIdx1)->longTerm)
     {
       return false;
     }
-    const int poc0 = pu.cu->slice->getRefPOC(REF_PIC_LIST_0, pu.refIdx[0]);
-    const int poc1 = pu.cu->slice->getRefPOC(REF_PIC_LIST_1, pu.refIdx[1]);
-    const int poc = pu.cu->slice->getPOC();
-    if ((poc - poc0)*(poc - poc1) < 0)
+
+    if (pu.cu->bcwIdx != BCW_DEFAULT)
     {
-      if (abs(poc - poc0) == abs(poc - poc1))
-      {
-        return true;
-      }
+      return false;
     }
+
+    if (WPScalingParam::isWeighted(slice->getWpScaling(REF_PIC_LIST_0, refIdx0))
+        || WPScalingParam::isWeighted(slice->getWpScaling(REF_PIC_LIST_1, refIdx1)))
+    {
+      return false;
+    }
+
+    const int poc0 = slice->getRefPOC(REF_PIC_LIST_0, refIdx0);
+    const int poc1 = slice->getRefPOC(REF_PIC_LIST_1, refIdx1);
+    const int poc  = slice->getPOC();
+
+    return poc - poc0 == poc1 - poc;
   }
+
   return false;
 }
 
