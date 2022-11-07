@@ -261,7 +261,7 @@ void EncGOP::init ( EncLib* pcEncLib )
   m_pcReshaper = pcEncLib->getReshaper();
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
-  const bool calculateHdrMetrics = m_pcEncLib->getCalcluateHdrMetrics();
+  const bool calculateHdrMetrics = m_pcEncLib->getCalculateHdrMetrics();
   if(calculateHdrMetrics)
   {
     //allocate frame buffers and initialize class members
@@ -4236,7 +4236,7 @@ void EncGOP::printOutSummary(uint32_t numAllPicCoded, bool isField, const bool p
   msg( INFO, "\n" );
   msg( DETAILS,"\nSUMMARY --------------------------------------------------------\n" );
 #if JVET_O0756_CALCULATE_HDRMETRICS
-  const bool calculateHdrMetrics = m_pcEncLib->getCalcluateHdrMetrics();
+  const bool calculateHdrMetrics = m_pcEncLib->getCalculateHdrMetrics();
 #endif
 
 
@@ -4892,7 +4892,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 #endif
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
-  const bool calculateHdrMetrics = m_pcEncLib->getCalcluateHdrMetrics();
+  const bool calculateHdrMetrics = m_pcEncLib->getCalculateHdrMetrics();
   if (calculateHdrMetrics)
   {
     auto beforeTime = std::chrono::steady_clock::now();
