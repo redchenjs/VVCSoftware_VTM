@@ -3176,8 +3176,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_ShutterFilterEnable = true;
       double fpsHFR = (double)m_iFrameRate;
       int32_t i;
-      bool checkEqualValuesOfSFR = 1;
-      bool checkSubLayerSI = 0;
+      bool    checkEqualValuesOfSFR = true;
+      bool    checkSubLayerSI       = false;
 
       double shutterAngleFactor = (fpsHFR * ((double)(m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1])))/((double)m_siiSEITimeScale);
 
@@ -3197,14 +3197,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       // supports only the case of SFR = HFR / 2
       if (m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1] < m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1 - 1])
       {
-        checkSubLayerSI = 1;
+        checkSubLayerSI = true;
       }
       // check shutter interval for all sublayer remains same for LFR pictures
       for (i = 1; i < siiMaxSubLayersMinus1; i++)
       {
         if (m_siiSEISubLayerNumUnitsInSI[0] != m_siiSEISubLayerNumUnitsInSI[i])
         {
-          checkEqualValuesOfSFR = 0;
+          checkEqualValuesOfSFR = false;
         }
       }
       if (checkSubLayerSI && checkEqualValuesOfSFR)

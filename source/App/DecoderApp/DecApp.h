@@ -69,14 +69,14 @@ private:
   VideoIOYuv                              m_cTVideoIOYuvSIIPostFile;      ///< post-filtered YUV class
   int                                     m_SII_BlendingRatio;
 
-  typedef struct
+  struct IdrSiiInfo
   {
     SEIShutterIntervalInfo m_siiInfo;
     uint32_t               m_picPoc;
-    uint8_t                m_isValidSii;
-  }IdrSiiInfo_s;
+    bool                   m_isValidSii;
+  };
 
-  std::map<uint32_t, IdrSiiInfo_s>      m_activeSiiInfo;
+  std::map<uint32_t, IdrSiiInfo> m_activeSiiInfo;
 
 #endif
 
