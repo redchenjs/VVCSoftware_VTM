@@ -4237,51 +4237,42 @@ void EncGOP::printOutSummary(uint32_t numAllPicCoded, bool isField, const bool p
   msg( DETAILS,"\nSUMMARY --------------------------------------------------------\n" );
 #if JVET_O0756_CALCULATE_HDRMETRICS
   const bool calculateHdrMetrics = m_pcEncLib->getCalculateHdrMetrics();
+#else
+  const bool calculateHdrMetrics = false;
 #endif
-
 
   std::string header,metrics;
   std::string id="a";
-  if (layerId==0) id+=' ';
-  else            id+=std::to_string(layerId);
+  id += layerId == 0 ? " " : std::to_string(layerId);
   m_gcAnalyzeAll.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr,
-                          printRprPsnr, bitDepths, useWPSNR
-#if JVET_O0756_CALCULATE_HDRMETRICS
-                          ,
-                          calculateHdrMetrics
-#endif
-  );
+                          printRprPsnr, bitDepths, useWPSNR, calculateHdrMetrics);
   if( g_verbosity >= INFO ) std::cout<<header<<'\n'<<metrics<<std::endl;
 
   id="i";
-  if (layerId==0) id+=' ';
-  else            id+=std::to_string(layerId);
+  id += layerId == 0 ? " " : std::to_string(layerId);
   m_gcAnalyzeI.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr,
-                        printRprPsnr, bitDepths);
+                        printRprPsnr, bitDepths, false, false);
   if( g_verbosity >= DETAILS ) std::cout<< "\n\nI Slices--------------------------------------------------------\n"<<header<<'\n'<<metrics<<std::endl;
 
   id="p";
-  if (layerId==0) id+=' ';
-  else            id+=std::to_string(layerId);
+  id += layerId == 0 ? " " : std::to_string(layerId);
   m_gcAnalyzeP.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr,
-                        printRprPsnr, bitDepths);
+                        printRprPsnr, bitDepths, false, false);
   if( g_verbosity >= DETAILS ) std::cout<<"\n\nP Slices--------------------------------------------------------\n"<<header<<'\n'<<metrics<<std::endl;
 
   id="b";
-  if (layerId==0) id+=' ';
-  else            id+=std::to_string(layerId);
+  id += layerId == 0 ? " " : std::to_string(layerId);
   m_gcAnalyzeB.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr,
-                        printRprPsnr, bitDepths);
+                        printRprPsnr, bitDepths, false, false);
   if( g_verbosity >= DETAILS ) std::cout<<"\n\nB Slices--------------------------------------------------------\n"<<header<<'\n'<<metrics<<std::endl;
 
 #if WCG_WPSNR
   if (useLumaWPSNR)
   {
     id="w";
-    if (layerId==0) id+=' ';
-    else            id+=std::to_string(layerId);
+    id += layerId == 0 ? " " : std::to_string(layerId);
     m_gcAnalyzeWPSNR.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, printHexPsnr,
-                              printRprPsnr, bitDepths, useLumaWPSNR);
+                              printRprPsnr, bitDepths, useLumaWPSNR, false);
     if( g_verbosity >= DETAILS ) std::cout<<"\nWPSNR SUMMARY --------------------------------------------------------\n"<<header<<'\n'<<metrics<<std::endl;
 
   }
@@ -4313,16 +4304,9 @@ void EncGOP::printOutSummary(uint32_t numAllPicCoded, bool isField, const bool p
     m_gcAnalyzeAllField.setBits(m_gcAnalyzeAll.getBits());
     // prior to the above statement, the interlace analyser does not contain the correct total number of bits.
     id="a";
-    if (layerId == 0)
-    {
-      id += ' ';
-    }
-    else
-    {
-      id += std::to_string(layerId);
-    }
+    id += layerId == 0 ? " " : std::to_string(layerId);
     m_gcAnalyzeAllField.printOut(header, metrics, id, chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM,
-                                 printHexPsnr, printRprPsnr, bitDepths, useWPSNR);
+                                 printHexPsnr, printRprPsnr, bitDepths, useWPSNR, false);
     if (g_verbosity >= DETAILS)
     {
       std::cout << "\n\nSUMMARY INTERLACED ---------------------------------------------\n"

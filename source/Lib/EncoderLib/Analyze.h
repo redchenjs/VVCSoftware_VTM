@@ -194,8 +194,11 @@ public:
 
   void printOut(std::string &header, std::string &metrics, const std::string &delim, ChromaFormat chFmt,
                 bool printMSEBasedSNR, bool printSequenceMSE, bool printMSSSIM, bool printHexPsnr, bool printRprPsnr,
-                const BitDepths &bitDepths, bool useWPSNR = false, bool printHdrMetrics = false)
+                const BitDepths &bitDepths, bool useWPSNR, bool printHdrMetrics)
   {
+#if !JVET_O0756_CALCULATE_HDRMETRICS
+    (void) printHdrMetrics;   // unused parameter
+#endif
 
     std::ostringstream headeross,metricoss;
     // no generic lambda in C++11...
