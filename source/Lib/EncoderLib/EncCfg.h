@@ -2589,7 +2589,7 @@ public:
   void        setCropOffsetBottom(int value)                          { m_cropOffsetBottom = value;}
   int         getCropOffsetBottom()                             const { return m_cropOffsetBottom;}
   void        setCalculateHdrMetrics(bool value)                      { m_calculateHdrMetrics = value;}
-  bool        getCalcluateHdrMetrics()                          const { return m_calculateHdrMetrics;}
+  bool        getCalculateHdrMetrics()                          const { return m_calculateHdrMetrics;}
 #endif
   void        setRprEnabled(bool b)                                   { m_rprEnabledFlag = b; }
   bool        isRprEnabled()                                    const { return m_rprEnabledFlag; }
