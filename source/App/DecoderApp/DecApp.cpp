@@ -562,16 +562,16 @@ uint32_t DecApp::decode()
 
       if (!m_shutterIntervalPostFileName.empty())
       {
-        int32_t hasValidSII = 1;
-        SEIShutterIntervalInfo *curSIIInfo = NULL;
+        bool                    hasValidSII = true;
+        SEIShutterIntervalInfo *curSIIInfo  = nullptr;
         if ((pcPic->getPictureType() == NAL_UNIT_CODED_SLICE_IDR_W_RADL ||
           pcPic->getPictureType() == NAL_UNIT_CODED_SLICE_IDR_N_LP) && m_newCLVS[nalu.m_nuhLayerId])
         {
-          IdrSiiInfo_s curSII;
+          IdrSiiInfo curSII;
           curSII.m_picPoc = pcPic->getPOC();
 
-          curSII.m_isValidSii = 0;
-          curSII.m_siiInfo.m_siiEnabled = 0;
+          curSII.m_isValidSii                             = false;
+          curSII.m_siiInfo.m_siiEnabled                   = false;
           curSII.m_siiInfo.m_siiNumUnitsInShutterInterval = 0;
           curSII.m_siiInfo.m_siiTimeScale = 0;
           curSII.m_siiInfo.m_siiMaxSubLayersMinus1 = 0;
@@ -580,7 +580,7 @@ uint32_t DecApp::decode()
           if (shutterIntervalInfo.size() > 0)
           {
             SEIShutterIntervalInfo *seiShutterIntervalInfo = (SEIShutterIntervalInfo*) *(shutterIntervalInfo.begin());
-            curSII.m_isValidSii = 1;
+            curSII.m_isValidSii                            = true;
 
             curSII.m_siiInfo.m_siiEnabled = seiShutterIntervalInfo->m_siiEnabled;
             curSII.m_siiInfo.m_siiNumUnitsInShutterInterval = seiShutterIntervalInfo->m_siiNumUnitsInShutterInterval;
@@ -589,18 +589,20 @@ uint32_t DecApp::decode()
             curSII.m_siiInfo.m_siiFixedSIwithinCLVS = seiShutterIntervalInfo->m_siiFixedSIwithinCLVS;
             curSII.m_siiInfo.m_siiSubLayerNumUnitsInSI.clear();
             for (int i = 0; i < seiShutterIntervalInfo->m_siiSubLayerNumUnitsInSI.size(); i++)
+            {
               curSII.m_siiInfo.m_siiSubLayerNumUnitsInSI.push_back(seiShutterIntervalInfo->m_siiSubLayerNumUnitsInSI[i]);
+            }
 
             uint32_t tmpInfo = (uint32_t)(m_activeSiiInfo.size() + 1);
-            m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo_s>(tmpInfo, curSII));
+            m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo>(tmpInfo, curSII));
             curSIIInfo = seiShutterIntervalInfo;
           }
           else
           {
-            curSII.m_isValidSii = 0;
-            hasValidSII = 0;
+            curSII.m_isValidSii = false;
+            hasValidSII         = false;
             uint32_t tmpInfo = (uint32_t)(m_activeSiiInfo.size() + 1);
-            m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo_s>(tmpInfo, curSII));
+            m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo>(tmpInfo, curSII));
           }
         }
         else
@@ -611,7 +613,7 @@ uint32_t DecApp::decode()
           }
           else
           {
-            uint8_t isLast = 1;
+            bool isLast = true;
             for (int i = 1; i < m_activeSiiInfo.size() + 1; i++)
             {
               if (pcPic->getPOC() <= m_activeSiiInfo.at(i).m_picPoc)
@@ -622,9 +624,9 @@ uint32_t DecApp::decode()
                 }
                 else
                 {
-                  hasValidSII = 0;
+                  hasValidSII = false;
                 }
-                isLast = 0;
+                isLast = false;
                 break;
               }
             }
@@ -645,15 +647,15 @@ uint32_t DecApp::decode()
             uint32_t numUnitsHFR = curSIIInfo->m_siiSubLayerNumUnitsInSI[siiMaxSubLayersMinus1];
 
             int blending_ratio = (numUnitsLFR / numUnitsHFR);
-            bool checkEqualValuesOfSFR = 1;
-            bool checkSubLayerSI = 0;
+            bool checkEqualValuesOfSFR = true;
+            bool checkSubLayerSI       = false;
             int i;
 
             //supports only the case of SFR = HFR / 2
             if (curSIIInfo->m_siiSubLayerNumUnitsInSI[siiMaxSubLayersMinus1] <
                         curSIIInfo->m_siiSubLayerNumUnitsInSI[siiMaxSubLayersMinus1 - 1])
             {
-              checkSubLayerSI = 1;
+              checkSubLayerSI = true;
             }
             else
             {
@@ -664,7 +666,7 @@ uint32_t DecApp::decode()
             {
               if (curSIIInfo->m_siiSubLayerNumUnitsInSI[0] != curSIIInfo->m_siiSubLayerNumUnitsInSI[i])
               {
-                checkEqualValuesOfSFR = 0;
+                checkEqualValuesOfSFR = false;
               }
             }
             if (!checkEqualValuesOfSFR)
