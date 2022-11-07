@@ -158,17 +158,24 @@ void CABACReader::coding_tree_unit( CodingStructure& cs, const UnitArea& area, i
   if (cs.sps->getALFEnabledFlag() && (cs.slice->getAlfEnabledFlag(COMPONENT_Y)))
   {
     const PreCalcValues& pcv = *cs.pcv;
-    int                 frame_width_in_ctus = pcv.widthInCtus;
-    int                 ry = ctuRsAddr / frame_width_in_ctus;
-    int                 rx = ctuRsAddr - ry * frame_width_in_ctus;
-    const Position      pos( rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight );
-    const uint32_t          curSliceIdx = cs.slice->getIndependentSliceIdx();
-    const uint32_t          curTileIdx = cs.pps->getTileIdx( pos );
-    bool                leftAvail = cs.getCURestricted( pos.offset( -(int)pcv.maxCUWidth, 0 ), pos, curSliceIdx, curTileIdx, CH_L ) ? true : false;
-    bool                aboveAvail = cs.getCURestricted( pos.offset( 0, -(int)pcv.maxCUHeight ), pos, curSliceIdx, curTileIdx, CH_L ) ? true : false;
 
-    int leftCTUAddr = leftAvail ? ctuRsAddr - 1 : -1;
-    int aboveCTUAddr = aboveAvail ? ctuRsAddr - frame_width_in_ctus : -1;
+    const int frameWidthInCtus = pcv.widthInCtus;
+
+    const int ry = ctuRsAddr / frameWidthInCtus;
+    const int rx = ctuRsAddr - ry * frameWidthInCtus;
+
+    const Position pos(rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight);
+
+    const uint32_t curSliceIdx = cs.slice->getIndependentSliceIdx();
+    const uint32_t curTileIdx  = cs.pps->getTileIdx(pos);
+
+    const bool leftAvail =
+      cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, CH_L) != nullptr;
+    const bool aboveAvail =
+      cs.getCURestricted(pos.offset(0, -(int) pcv.maxCUHeight), pos, curSliceIdx, curTileIdx, CH_L) != nullptr;
+
+    const int leftCTUAddr  = leftAvail ? ctuRsAddr - 1 : -1;
+    const int aboveCTUAddr = aboveAvail ? ctuRsAddr - frameWidthInCtus : -1;
 
     for( int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++ )
     {
@@ -198,7 +205,9 @@ void CABACReader::coding_tree_unit( CodingStructure& cs, const UnitArea& area, i
           {
             uint8_t decoded = 0;
             while (decoded < numAlts - 1 && m_binDecoder.decodeBin(Ctx::ctbAlfAlternative(compIdx - 1)))
+            {
               ++ decoded;
+            }
             ctbAlfAlternative[ctuRsAddr] = decoded;
           }
         }
@@ -211,10 +220,11 @@ void CABACReader::coding_tree_unit( CodingStructure& cs, const UnitArea& area, i
     {
       if (cs.slice->m_ccAlfFilterParam.ccAlfFilterEnabled[compIdx - 1])
       {
-        const int filterCount   = cs.slice->m_ccAlfFilterParam.ccAlfFilterCount[compIdx - 1];
+        const int filterCount = cs.slice->m_ccAlfFilterParam.ccAlfFilterCount[compIdx - 1];
 
-        const int      ry = ctuRsAddr / cs.pcv->widthInCtus;
-        const int      rx = ctuRsAddr % cs.pcv->widthInCtus;
+        const int ry = ctuRsAddr / cs.pcv->widthInCtus;
+        const int rx = ctuRsAddr % cs.pcv->widthInCtus;
+
         const Position lumaPos(rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight);
 
         ccAlfFilterControlIdc(cs, ComponentID(compIdx), ctuRsAddr, cs.slice->m_ccAlfFilterControl[compIdx - 1], lumaPos,
@@ -247,8 +257,7 @@ void CABACReader::coding_tree_unit( CodingStructure& cs, const UnitArea& area, i
   }
 
   DTRACE_COND( ctuRsAddr == 0, g_trace_ctx, D_QP_PER_CTU, "\n%4d %2d", cs.picture->poc, cs.slice->getSliceQpBase() );
-  DTRACE     (                 g_trace_ctx, D_QP_PER_CTU, " %3d",           qps[CH_L] - cs.slice->getSliceQpBase() );
-
+  DTRACE(g_trace_ctx, D_QP_PER_CTU, " %3d", qps[CH_L] - cs.slice->getSliceQpBase());
 }
 
 void CABACReader::readAlfCtuFilterIndex(CodingStructure& cs, unsigned ctuRsAddr)
@@ -279,19 +288,22 @@ void CABACReader::readAlfCtuFilterIndex(CodingStructure& cs, unsigned ctuRsAddr)
   }
   alfCtbFilterSetIndex[ctuRsAddr] = filtIndex;
 }
+
 void CABACReader::ccAlfFilterControlIdc(CodingStructure &cs, const ComponentID compID, const int curIdx,
                                         uint8_t *filterControlIdc, Position lumaPos, int filterCount)
 {
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET( STATS__CABAC_BITS__CROSS_COMPONENT_ALF_BLOCK_LEVEL_IDC );
 
-  Position       leftLumaPos    = lumaPos.offset(-(int)cs.pcv->maxCUWidth, 0);
-  Position       aboveLumaPos   = lumaPos.offset(0, -(int)cs.pcv->maxCUWidth);
-  const uint32_t curSliceIdx    = cs.slice->getIndependentSliceIdx();
-  const uint32_t curTileIdx     = cs.pps->getTileIdx( lumaPos );
-  bool           leftAvail      = cs.getCURestricted( leftLumaPos,  lumaPos, curSliceIdx, curTileIdx, CH_L ) ? true : false;
-  bool           aboveAvail     = cs.getCURestricted( aboveLumaPos, lumaPos, curSliceIdx, curTileIdx, CH_L ) ? true : false;
-  int            ctxt           = 0;
+  const Position leftLumaPos  = lumaPos.offset(-(int) cs.pcv->maxCUWidth, 0);
+  const Position aboveLumaPos = lumaPos.offset(0, -(int) cs.pcv->maxCUWidth);
 
+  const uint32_t curSliceIdx = cs.slice->getIndependentSliceIdx();
+  const uint32_t curTileIdx  = cs.pps->getTileIdx(lumaPos);
+
+  const bool leftAvail  = cs.getCURestricted(leftLumaPos, lumaPos, curSliceIdx, curTileIdx, CH_L) != nullptr;
+  const bool aboveAvail = cs.getCURestricted(aboveLumaPos, lumaPos, curSliceIdx, curTileIdx, CH_L) != nullptr;
+
+  int ctxt = 0;
   if (leftAvail)
   {
     ctxt += ( filterControlIdc[curIdx - 1] ) ? 1 : 0;
@@ -324,70 +336,81 @@ void CABACReader::ccAlfFilterControlIdc(CodingStructure &cs, const ComponentID c
 
 void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
 {
-  const SPS&   sps   = *cs.sps;
+  const SPS &sps = *cs.sps;
 
   if( !sps.getSAOEnabledFlag() )
   {
     return;
   }
 
-  const Slice& slice                        = *cs.slice;
-  SAOBlkParam&      sao_ctu_pars            = cs.picture->getSAO()[ctuRsAddr];
-  bool              slice_sao_luma_flag     = ( slice.getSaoEnabledFlag( CHANNEL_TYPE_LUMA ) );
-  bool              slice_sao_chroma_flag   = ( slice.getSaoEnabledFlag( CHANNEL_TYPE_CHROMA ) && sps.getChromaFormatIdc() != CHROMA_400 );
-  sao_ctu_pars[ COMPONENT_Y  ].modeIdc      = SAO_MODE_OFF;
-  sao_ctu_pars[ COMPONENT_Cb ].modeIdc      = SAO_MODE_OFF;
-  sao_ctu_pars[ COMPONENT_Cr ].modeIdc      = SAO_MODE_OFF;
-  if( !slice_sao_luma_flag && !slice_sao_chroma_flag )
+  const Slice &slice = *cs.slice;
+
+  SAOBlkParam &saoCtuParams = cs.picture->getSAO()[ctuRsAddr];
+
+  const bool sliceSaoLumaFlag = slice.getSaoEnabledFlag(CHANNEL_TYPE_LUMA);
+  const bool sliceSaoChromaFlag =
+    slice.getSaoEnabledFlag(CHANNEL_TYPE_CHROMA) && sps.getChromaFormatIdc() != CHROMA_400;
+
+  saoCtuParams[COMPONENT_Y].modeIdc  = SAO_MODE_OFF;
+  saoCtuParams[COMPONENT_Cb].modeIdc = SAO_MODE_OFF;
+  saoCtuParams[COMPONENT_Cr].modeIdc = SAO_MODE_OFF;
+
+  if (!sliceSaoLumaFlag && !sliceSaoChromaFlag)
   {
     return;
   }
 
   // merge
-  int             frame_width_in_ctus     = cs.pcv->widthInCtus;
-  int             ry                      = ctuRsAddr      / frame_width_in_ctus;
-  int             rx                      = ctuRsAddr - ry * frame_width_in_ctus;
-  int             sao_merge_type          = -1;
+  const int frameWidthInCtus = cs.pcv->widthInCtus;
+
+  const int ry = ctuRsAddr / frameWidthInCtus;
+  const int rx = ctuRsAddr - ry * frameWidthInCtus;
+
   const Position  pos( rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight );
   const unsigned  curSliceIdx = cs.slice->getIndependentSliceIdx();
 
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET( STATS__CABAC_BITS__SAO );
 
   const unsigned  curTileIdx  = cs.pps->getTileIdx( pos );
+
+  int saoMergeType = -1;
+
   if( cs.getCURestricted( pos.offset(-(int)cs.pcv->maxCUWidth, 0), pos, curSliceIdx, curTileIdx, CH_L ) )
   {
     // sao_merge_left_flag
-    sao_merge_type += int(m_binDecoder.decodeBin(Ctx::SaoMergeFlag()));
+    saoMergeType += m_binDecoder.decodeBin(Ctx::SaoMergeFlag());
   }
 
-  if( sao_merge_type < 0 && cs.getCURestricted( pos.offset(0, -(int)cs.pcv->maxCUHeight), pos, curSliceIdx, curTileIdx, CH_L ) )
+  if (saoMergeType < 0
+      && cs.getCURestricted(pos.offset(0, -(int) cs.pcv->maxCUHeight), pos, curSliceIdx, curTileIdx, CH_L))
   {
     // sao_merge_above_flag
-    sao_merge_type += int(m_binDecoder.decodeBin(Ctx::SaoMergeFlag())) << 1;
+    saoMergeType += 2 * m_binDecoder.decodeBin(Ctx::SaoMergeFlag());
   }
-  if( sao_merge_type >= 0 )
+
+  if (saoMergeType >= 0)
   {
-    if( slice_sao_luma_flag || slice_sao_chroma_flag )
+    if (sliceSaoLumaFlag || sliceSaoChromaFlag)
     {
-      sao_ctu_pars[ COMPONENT_Y  ].modeIdc  = SAO_MODE_MERGE;
-      sao_ctu_pars[ COMPONENT_Y  ].typeIdc  = sao_merge_type;
+      saoCtuParams[COMPONENT_Y].modeIdc = SAO_MODE_MERGE;
+      saoCtuParams[COMPONENT_Y].typeIdc = saoMergeType;
     }
-    if( slice_sao_chroma_flag )
+    if (sliceSaoChromaFlag)
     {
-      sao_ctu_pars[ COMPONENT_Cb ].modeIdc  = SAO_MODE_MERGE;
-      sao_ctu_pars[ COMPONENT_Cr ].modeIdc  = SAO_MODE_MERGE;
-      sao_ctu_pars[ COMPONENT_Cb ].typeIdc  = sao_merge_type;
-      sao_ctu_pars[ COMPONENT_Cr ].typeIdc  = sao_merge_type;
+      saoCtuParams[COMPONENT_Cb].modeIdc = SAO_MODE_MERGE;
+      saoCtuParams[COMPONENT_Cr].modeIdc = SAO_MODE_MERGE;
+      saoCtuParams[COMPONENT_Cb].typeIdc = saoMergeType;
+      saoCtuParams[COMPONENT_Cr].typeIdc = saoMergeType;
     }
     return;
   }
 
   // explicit parameters
-  ComponentID firstComp = ( slice_sao_luma_flag   ? COMPONENT_Y  : COMPONENT_Cb );
-  ComponentID lastComp  = ( slice_sao_chroma_flag ? COMPONENT_Cr : COMPONENT_Y  );
+  ComponentID firstComp = sliceSaoLumaFlag ? COMPONENT_Y : COMPONENT_Cb;
+  ComponentID lastComp  = sliceSaoChromaFlag ? COMPONENT_Cr : COMPONENT_Y;
   for( ComponentID compID = firstComp; compID <= lastComp; compID = ComponentID( compID + 1 ) )
   {
-    SAOOffset& sao_pars = sao_ctu_pars[ compID ];
+    SAOOffset &sao_pars = saoCtuParams[compID];
 
     // sao_type_idx_luma / sao_type_idx_chroma
     if( compID != COMPONENT_Cr )
@@ -410,8 +433,8 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
     }
     else //Cr, follow Cb SAO type
     {
-      sao_pars.modeIdc = sao_ctu_pars[ COMPONENT_Cb ].modeIdc;
-      sao_pars.typeIdc = sao_ctu_pars[ COMPONENT_Cb ].typeIdc;
+      sao_pars.modeIdc = saoCtuParams[COMPONENT_Cb].modeIdc;
+      sao_pars.typeIdc = saoCtuParams[COMPONENT_Cb].typeIdc;
     }
     if( sao_pars.modeIdc == SAO_MODE_OFF )
     {
@@ -421,10 +444,11 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
     // sao_offset_abs
     int       offset[4];
     const int maxOffsetQVal = SampleAdaptiveOffset::getMaxOffsetQVal( sps.getBitDepth( toChannelType(compID) ) );
-    offset    [0]           = (int)unary_max_eqprob( maxOffsetQVal );
-    offset    [1]           = (int)unary_max_eqprob( maxOffsetQVal );
-    offset    [2]           = (int)unary_max_eqprob( maxOffsetQVal );
-    offset    [3]           = (int)unary_max_eqprob( maxOffsetQVal );
+
+    offset[0] = (int) unary_max_eqprob(maxOffsetQVal);
+    offset[1] = (int) unary_max_eqprob(maxOffsetQVal);
+    offset[2] = (int) unary_max_eqprob(maxOffsetQVal);
+    offset[3] = (int) unary_max_eqprob(maxOffsetQVal);
 
     // band offset mode
     if( sao_pars.typeIdc == SAO_TYPE_START_BO )
@@ -455,7 +479,7 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
     }
     else
     {
-      sao_pars.typeIdc  = sao_ctu_pars[ COMPONENT_Cb ].typeIdc;
+      sao_pars.typeIdc = saoCtuParams[COMPONENT_Cb].typeIdc;
     }
     sao_pars.offset[ SAO_CLASS_EO_FULL_VALLEY ] =  offset[0];
     sao_pars.offset[ SAO_CLASS_EO_HALF_VALLEY ] =  offset[1];
@@ -721,7 +745,7 @@ void CABACReader::coding_tree( CodingStructure& cs, Partitioner& partitioner, CU
 
 ModeType CABACReader::mode_constraint( CodingStructure& cs, Partitioner &partitioner, PartSplit splitMode )
 {
-  int val = cs.signalModeCons( splitMode, partitioner, partitioner.modeType );
+  const int val = cs.signalModeCons(splitMode, partitioner, partitioner.modeType);
   if( val == LDT_MODE_TYPE_SIGNAL )
   {
     int ctxIdx = DeriveCtx::CtxModeConsFlag( cs, partitioner );
@@ -1184,9 +1208,9 @@ void CABACReader::bdpcm_mode( CodingUnit& cu, const ComponentID compID )
 
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET_SIZE2( STATS__CABAC_BITS__BDPCM_MODE, cu.block(compID).lumaSize(), compID );
 
-  int bdpcmMode;
   unsigned ctxId = isLuma( compID ) ? 0 : 2;
-  bdpcmMode      = m_binDecoder.decodeBin(Ctx::BDPCMMode(ctxId));
+
+  int bdpcmMode = m_binDecoder.decodeBin(Ctx::BDPCMMode(ctxId));
   if (bdpcmMode)
   {
     bdpcmMode += m_binDecoder.decodeBin(Ctx::BDPCMMode(ctxId + 1));
@@ -1350,7 +1374,6 @@ void CABACReader::extend_ref_line(CodingUnit& cu)
         multiRefIdx =
           m_binDecoder.decodeBin(Ctx::MultiRefLineIdx(1)) == 1 ? MULTI_REF_LINE_IDX[2] : MULTI_REF_LINE_IDX[1];
       }
-
     }
     pu->multiRefIdx = multiRefIdx;
     pu = pu->next;
@@ -1691,7 +1714,9 @@ void CABACReader::cu_palette_info(CodingUnit& cu, ComponentID compBegin, uint32_
   int curPLTidx = 0;
 
   if( cu.isLocalSepTree() )
+  {
     cu.cs->prevPLT.curPLTSize[compBegin] = cu.cs->prevPLT.curPLTSize[COMPONENT_Y];
+  }
   cu.lastPLTSize[compBegin] = cu.cs->prevPLT.curPLTSize[compBegin];
 
   int maxPltSize = cu.isSepTree() ? MAXPLTSIZE_DUALTREE : MAXPLTSIZE;
@@ -1753,6 +1778,7 @@ void CABACReader::cu_palette_info(CodingUnit& cu, ComponentID compBegin, uint32_
       }
     }
   }
+
   cu.useEscape[compBegin] = true;
   if (cu.curPLTSize[compBegin] > 0)
   {
@@ -1826,7 +1852,7 @@ void CABACReader::cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, u
     runCopyFlag[0] = 0;
   }
 
-// PLT runCopy flag and runType - context coded
+  // PLT runCopy flag and runType - context coded
   int curPos = minSubPos;
   for (; curPos < maxSubPos && indexMaxSize > 1; curPos++)
   {
@@ -1870,7 +1896,7 @@ void CABACReader::cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, u
     }
   }
 
-// PLT index values - bypass coded
+  // PLT index values - bypass coded
   uint32_t adjust;
   uint32_t symbol = 0;
   curPos = minSubPos;
@@ -1927,7 +1953,7 @@ void CABACReader::cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, u
     }
   }
 
-// Quantized escape colors - bypass coded
+  // Quantized escape colors - bypass coded
   uint32_t scaleX = getComponentScaleX(COMPONENT_Cb, sps.getChromaFormatIdc());
   uint32_t scaleY = getComponentScaleY(COMPONENT_Cb, sps.getChromaFormatIdc());
   for (int comp = compBegin; comp < (compBegin + numComp); comp++)
@@ -2287,7 +2313,7 @@ void CABACReader::merge_data( PredictionUnit& pu )
       pu.cu->mmvdSkip = false;
       if (geoAvailable && ciipAvailable)
       {
-        Ciip_flag(pu);
+        ciip_flag(pu);
       }
       else if (ciipAvailable)
       {
@@ -2529,7 +2555,7 @@ void CABACReader::mvp_flag( PredictionUnit& pu, RefPicList eRefList )
   DTRACE(g_trace_ctx, D_SYNTAX, "mvpIdx(refList:%d)=%d\n", eRefList, mvpIdx);
 }
 
-void CABACReader::Ciip_flag(PredictionUnit& pu)
+void CABACReader::ciip_flag(PredictionUnit &pu)
 {
   if (!pu.cs->sps->getUseCiip())
   {
@@ -2545,7 +2571,8 @@ void CABACReader::Ciip_flag(PredictionUnit& pu)
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET(STATS__CABAC_BITS__MH_INTRA_FLAG);
 
   pu.ciipFlag = (m_binDecoder.decodeBin(Ctx::CiipFlag()));
-  DTRACE(g_trace_ctx, D_SYNTAX, "Ciip_flag() Ciip=%d pos=(%d,%d) size=%dx%d\n", pu.ciipFlag ? 1 : 0, pu.lumaPos().x, pu.lumaPos().y, pu.lumaSize().width, pu.lumaSize().height);
+  DTRACE(g_trace_ctx, D_SYNTAX, "ciip_flag() Ciip=%d pos=(%d,%d) size=%dx%d\n", pu.ciipFlag ? 1 : 0, pu.lumaPos().x,
+         pu.lumaPos().y, pu.lumaSize().width, pu.lumaSize().height);
 }
 
 //================================================================================

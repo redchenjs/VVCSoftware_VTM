@@ -604,8 +604,8 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
   //pre-encode merge flags
   modeParam[COMPONENT_Y].modeIdc = SAO_MODE_OFF;
   const TempCtx ctxStartBlk   ( m_CtxCache, SAOCtx( m_CABACEstimator->getCtx() ) );
-  m_CABACEstimator->sao_block_pars(modeParam, bitDepths, sliceEnabled, (mergeList[SAO_MERGE_LEFT] != nullptr),
-                                   (mergeList[SAO_MERGE_ABOVE] != nullptr), true);
+  m_CABACEstimator->sao_block_params(modeParam, bitDepths, sliceEnabled, (mergeList[SAO_MERGE_LEFT] != nullptr),
+                                     (mergeList[SAO_MERGE_ABOVE] != nullptr), true);
   const TempCtx ctxStartLuma  ( m_CtxCache, SAOCtx( m_CABACEstimator->getCtx() ) );
   TempCtx       ctxBestLuma   ( m_CtxCache );
 
@@ -615,7 +615,8 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
     //"off" case as initial cost
     modeParam[compIdx].modeIdc = SAO_MODE_OFF;
     m_CABACEstimator->resetBits();
-    m_CABACEstimator->sao_offset_pars( modeParam[compIdx], compIdx, sliceEnabled[compIdx], bitDepths.recon[CHANNEL_TYPE_LUMA] );
+    m_CABACEstimator->sao_offset_params(modeParam[compIdx], compIdx, sliceEnabled[compIdx],
+                                        bitDepths.recon[CHANNEL_TYPE_LUMA]);
     modeDist[compIdx] = 0;
     minCost           = m_lambda[compIdx] * (FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits());
     ctxBestLuma = SAOCtx( m_CABACEstimator->getCtx() );
@@ -638,7 +639,8 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
         //get rate
         m_CABACEstimator->getCtx() = SAOCtx( ctxStartLuma );
         m_CABACEstimator->resetBits();
-        m_CABACEstimator->sao_offset_pars( testOffset[compIdx], compIdx, sliceEnabled[compIdx], bitDepths.recon[CHANNEL_TYPE_LUMA] );
+        m_CABACEstimator->sao_offset_params(testOffset[compIdx], compIdx, sliceEnabled[compIdx],
+                                            bitDepths.recon[CHANNEL_TYPE_LUMA]);
         double rate = FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
         cost = (double)dist[compIdx] + m_lambda[compIdx]*rate;
         if(cost < minCost)
@@ -664,7 +666,8 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
 
     modeParam[component].modeIdc = SAO_MODE_OFF;
     modeDist [component]         = 0;
-    m_CABACEstimator->sao_offset_pars( modeParam[component], component, sliceEnabled[component], bitDepths.recon[CHANNEL_TYPE_CHROMA] );
+    m_CABACEstimator->sao_offset_params(modeParam[component], component, sliceEnabled[component],
+                                        bitDepths.recon[CHANNEL_TYPE_CHROMA]);
     const uint64_t currentFracBits = m_CABACEstimator->getEstFracBits();
     cost += m_lambda[component] * FRAC_BITS_SCALE * (currentFracBits - previousFracBits);
     previousFracBits = currentFracBits;
@@ -697,7 +700,8 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
       deriveOffsets(component, bitDepths.recon[CHANNEL_TYPE_CHROMA], typeIdc, blkStats[ctuRsAddr][component][typeIdc], testOffset[component].offset, testOffset[component].typeAuxInfo);
       invertQuantOffsets(component, typeIdc, testOffset[component].typeAuxInfo, invQuantOffset, testOffset[component].offset);
       dist[component] = getDistortion(bitDepths.recon[CHANNEL_TYPE_CHROMA], typeIdc, testOffset[component].typeAuxInfo, invQuantOffset, blkStats[ctuRsAddr][component][typeIdc]);
-      m_CABACEstimator->sao_offset_pars( testOffset[component], component, sliceEnabled[component], bitDepths.recon[CHANNEL_TYPE_CHROMA] );
+      m_CABACEstimator->sao_offset_params(testOffset[component], component, sliceEnabled[component],
+                                          bitDepths.recon[CHANNEL_TYPE_CHROMA]);
       const uint64_t currentFracBits = m_CABACEstimator->getEstFracBits();
       cost += dist[component] + (m_lambda[component] * FRAC_BITS_SCALE * (currentFracBits - previousFracBits));
       previousFracBits = currentFracBits;
@@ -724,8 +728,8 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
 
   m_CABACEstimator->getCtx() = SAOCtx( ctxStartBlk );
   m_CABACEstimator->resetBits();
-  m_CABACEstimator->sao_block_pars(modeParam, bitDepths, sliceEnabled, (mergeList[SAO_MERGE_LEFT] != nullptr),
-                                   (mergeList[SAO_MERGE_ABOVE] != nullptr), false);
+  m_CABACEstimator->sao_block_params(modeParam, bitDepths, sliceEnabled, (mergeList[SAO_MERGE_LEFT] != nullptr),
+                                     (mergeList[SAO_MERGE_ABOVE] != nullptr), false);
   modeNormCost += FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
 }
 
@@ -768,8 +772,8 @@ void EncSampleAdaptiveOffset::deriveModeMergeRDO(const BitDepths &bitDepths, int
     //rate
     m_CABACEstimator->getCtx() = SAOCtx( ctxStart );
     m_CABACEstimator->resetBits();
-    m_CABACEstimator->sao_block_pars(testBlkParam, bitDepths, sliceEnabled, (mergeList[SAO_MERGE_LEFT] != nullptr),
-                                     (mergeList[SAO_MERGE_ABOVE] != nullptr), false);
+    m_CABACEstimator->sao_block_params(testBlkParam, bitDepths, sliceEnabled, (mergeList[SAO_MERGE_LEFT] != nullptr),
+                                       (mergeList[SAO_MERGE_ABOVE] != nullptr), false);
     double rate = FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
     cost = normDist+rate;
 
@@ -964,7 +968,7 @@ void EncSampleAdaptiveOffset::decideBlkParams(CodingStructure& cs, bool* sliceEn
           testBlkParam[COMPONENT_Y].modeIdc = SAO_MODE_MERGE;
           testBlkParam[COMPONENT_Y].typeIdc = SAO_MERGE_LEFT;
           m_CABACEstimator->resetBits();
-          m_CABACEstimator->sao_block_pars(testBlkParam, cs.sps->getBitDepths(), sliceEnabled, true, false, true);
+          m_CABACEstimator->sao_block_params(testBlkParam, cs.sps->getBitDepths(), sliceEnabled, true, false, true);
           double rate = FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
           modeCost += rate * groupSize;
           if (modeCost < minCost2)
