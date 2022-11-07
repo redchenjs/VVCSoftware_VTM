@@ -117,7 +117,7 @@ public:
   void        inter_pred_idc            ( PredictionUnit&               pu );
   void        ref_idx                   ( PredictionUnit&               pu,     RefPicList      eRefList );
   void        mvp_flag                  ( PredictionUnit&               pu,     RefPicList      eRefList );
-  void        Ciip_flag              ( PredictionUnit&               pu );
+  void        ciip_flag(PredictionUnit &pu);
   void        smvd_mode              ( PredictionUnit&               pu );
 
 
