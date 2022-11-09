@@ -76,7 +76,7 @@ extern       ScanElement   g_coefTopLeftDiagScan8x8[ MAX_CU_SIZE / 2 + 1 ][ 64 ]
 extern const int g_quantScales   [2/*0=4^n blocks, 1=2*4^n blocks*/][SCALING_LIST_REM_NUM];          // Q(QP%6)
 extern const int g_invQuantScales[2/*0=4^n blocks, 1=2*4^n blocks*/][SCALING_LIST_REM_NUM];          // IQ(QP%6)
 
-static const int g_numTransformMatrixSizes = 6;
+static constexpr int NUM_TRANSFORM_MATRIX_SIZES = 6;
 #if RExt__HIGH_PRECISION_FORWARD_TRANSFORM
 static const int g_transformMatrixShift[TRANSFORM_NUMBER_OF_DIRECTIONS] = { 14, 6 };
 #else

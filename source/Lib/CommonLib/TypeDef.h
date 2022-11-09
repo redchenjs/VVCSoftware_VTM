@@ -309,14 +309,12 @@ enum QuantFlags
   Q_SELECTIVE_RDOQ = 0x4,
 };
 
-//EMT transform tags
-enum TransType
+enum class TransType
 {
   DCT2 = 0,
-  DCT8 = 1,
-  DST7 = 2,
-  NUM_TRANS_TYPE = 3,
-  DCT2_EMT = 4
+  DCT8,
+  DST7,
+  NUM
 };
 
 enum MTSIdx
