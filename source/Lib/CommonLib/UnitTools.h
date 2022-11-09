@@ -197,8 +197,8 @@ namespace PU
   void getGeoMergeCandidates          (const PredictionUnit &pu, MergeCtx &GeoMrgCtx);
   void spanGeoMotionInfo(PredictionUnit &pu, const MergeCtx &GeoMrgCtx, const uint8_t splitDir, const uint8_t candIdx0,
                          const uint8_t candIdx1);
-  bool isAddNeighborMv  (const Mv& currMv, Mv* neighborMvs, int numNeighborMv);
-  void getIbcMVPsEncOnly(PredictionUnit &pu, Mv* mvPred, int& nbPred);
+  bool addNeighborMv  (const Mv& currMv, static_vector<Mv, IBC_NUM_CANDIDATES>& neighborMvs);
+  void getIbcMVPsEncOnly(PredictionUnit &pu, static_vector<Mv, IBC_NUM_CANDIDATES>& mvPred);
   bool getDerivedBV(PredictionUnit &pu, const Mv& currentMv, Mv& derivedMv);
   bool checkDMVRCondition(const PredictionUnit& pu);
   void getNeighborAffineInfo(const PredictionUnit& pu, int& numNeighborAvai, int& numNeighborAffine);

@@ -350,9 +350,4 @@ struct LutMotionCand
   static_vector<MotionInfo, MAX_NUM_HMVP_CANDS> lut;
   static_vector<MotionInfo, MAX_NUM_HMVP_CANDS> lutIbc;
 };
-struct PatentBvCand
-{
-  Mv m_bvCands[IBC_NUM_CANDIDATES];
-  int currCnt;
-};
 #endif // __MOTIONINFO__

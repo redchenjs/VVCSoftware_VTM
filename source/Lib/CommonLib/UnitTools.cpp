@@ -1972,20 +1972,20 @@ bool PU::isDiffMER(const Position &pos1, const Position &pos2, const unsigned pl
   return false;
 }
 
-bool PU::isAddNeighborMv(const Mv& currMv, Mv* neighborMvs, int numNeighborMv)
+bool PU::addNeighborMv(const Mv& currMv, static_vector<Mv, IBC_NUM_CANDIDATES>& neighborMvs)
 {
-  for (uint32_t cand = 0; cand < numNeighborMv; cand++)
+  for (const auto& cand : neighborMvs)
   {
-    if (currMv == neighborMvs[cand])
+    if (currMv == cand)
     {
       return false;
     }
   }
-
+  neighborMvs.push_back(currMv);
   return true;
 }
 
-void PU::getIbcMVPsEncOnly(PredictionUnit &pu, Mv* mvPred, int& nbPred)
+void PU::getIbcMVPsEncOnly(PredictionUnit &pu, static_vector<Mv, IBC_NUM_CANDIDATES>& mvPred)
 {
   const PreCalcValues   &pcv = *pu.cs->pcv;
   const int  cuWidth = pu.blocks[COMPONENT_Y].width;
@@ -1995,80 +1995,64 @@ void PU::getIbcMVPsEncOnly(PredictionUnit &pu, Mv* mvPred, int& nbPred)
   const int  totalAboveUnits = (cuWidth >> log2UnitWidth) + 1;
   const int  totalLeftUnits = (cuHeight >> log2UnitHeight) + 1;
 
-  nbPred = 0;
   Position posLT = pu.Y().topLeft();
 
   // above-left
   const PredictionUnit *aboveLeftPU = pu.cs->getPURestricted(posLT.offset(-1, -1), pu, CHANNEL_TYPE_LUMA);
   if (aboveLeftPU && CU::isIBC(*aboveLeftPU->cu))
   {
-    if (isAddNeighborMv(aboveLeftPU->bv, mvPred, nbPred))
-    {
-      mvPred[nbPred++] = aboveLeftPU->bv;
-    }
+    addNeighborMv(aboveLeftPU->bv, mvPred);
   }
 
   // above neighbors
-  for (uint32_t dx = 0; dx < totalAboveUnits && nbPred < IBC_NUM_CANDIDATES; dx++)
+  for (uint32_t dx = 0; dx < totalAboveUnits && mvPred.size() < mvPred.max_size(); dx++)
   {
     const PredictionUnit* tmpPU = pu.cs->getPURestricted(posLT.offset((dx << log2UnitWidth), -1), pu, CHANNEL_TYPE_LUMA);
     if (tmpPU && CU::isIBC(*tmpPU->cu))
     {
-      if (isAddNeighborMv(tmpPU->bv, mvPred, nbPred))
-      {
-        mvPred[nbPred++] = tmpPU->bv;
-      }
+      addNeighborMv(tmpPU->bv, mvPred);
     }
   }
 
   // left neighbors
-  for (uint32_t dy = 0; dy < totalLeftUnits && nbPred < IBC_NUM_CANDIDATES; dy++)
+  for (uint32_t dy = 0; dy < totalLeftUnits && mvPred.size() < mvPred.max_size(); dy++)
   {
     const PredictionUnit* tmpPU = pu.cs->getPURestricted(posLT.offset(-1, (dy << log2UnitHeight)), pu, CHANNEL_TYPE_LUMA);
     if (tmpPU && CU::isIBC(*tmpPU->cu))
     {
-      if (isAddNeighborMv(tmpPU->bv, mvPred, nbPred))
-      {
-        mvPred[nbPred++] = tmpPU->bv;
-      }
+      addNeighborMv(tmpPU->bv, mvPred);
     }
   }
 
   size_t numAvaiCandInLUT = pu.cs->motionLut.lutIbc.size();
-  for (uint32_t cand = 0; cand < numAvaiCandInLUT && nbPred < IBC_NUM_CANDIDATES; cand++)
+  for (uint32_t cand = 0; cand < numAvaiCandInLUT && mvPred.size() < mvPred.max_size(); cand++)
   {
     MotionInfo neibMi = pu.cs->motionLut.lutIbc[cand];
-    if (isAddNeighborMv(neibMi.bv, mvPred, nbPred))
-    {
-      mvPred[nbPred++] = neibMi.bv;
-    }
+    addNeighborMv(neibMi.bv, mvPred);
   }
 
   std::array<bool, IBC_NUM_CANDIDATES> isBvCandDerived;
   isBvCandDerived.fill(false);
 
-  int curNbPred = nbPred;
-  if (curNbPred < IBC_NUM_CANDIDATES)
+  auto curNbPred = mvPred.size();
+  if (curNbPred < mvPred.max_size())
   {
     do
     {
-      curNbPred = nbPred;
-      for (uint32_t idx = 0; idx < curNbPred && nbPred < IBC_NUM_CANDIDATES; idx++)
+      curNbPred = mvPred.size();
+      for (uint32_t idx = 0; idx < curNbPred && mvPred.size() < mvPred.max_size(); idx++)
       {
         if (!isBvCandDerived[idx])
         {
           Mv derivedBv;
           if (getDerivedBV(pu, mvPred[idx], derivedBv))
           {
-            if (isAddNeighborMv(derivedBv, mvPred, nbPred))
-            {
-              mvPred[nbPred++] = derivedBv;
-            }
+            addNeighborMv(derivedBv, mvPred);
           }
           isBvCandDerived[idx] = true;
         }
       }
-    } while (nbPred > curNbPred && nbPred < IBC_NUM_CANDIDATES);
+    } while (mvPred.size() > curNbPred && mvPred.size() < mvPred.max_size());
   }
 }
 
