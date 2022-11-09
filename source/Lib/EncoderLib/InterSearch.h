@@ -144,7 +144,7 @@ private:
   bool            m_hevcCostOk;
 #endif
   EncAffineMotion m_affineMotion;
-  PatentBvCand    m_defaultCachedBvs;
+  static_vector<Mv, IBC_NUM_CANDIDATES> m_defaultCachedBvs;
 protected:
   // interface to option
   EncCfg*         m_pcEncCfg;
@@ -180,8 +180,7 @@ protected:
 
   bool            m_isInitialized;
 
-  Mv              m_acBVs[2 * IBC_NUM_CANDIDATES];
-  unsigned int    m_numBVs;
+  static_vector<Mv, 2 * IBC_NUM_CANDIDATES> m_acBVs;
   bool            m_useCompositeRef;
   Distortion      m_estMinDistSbt[NUMBER_SBT_MODE + 1]; // estimated minimum SSE value of the PU if using a SBT mode
   uint8_t         m_sbtRdoOrder[NUMBER_SBT_MODE];       // order of SBT mode in RDO
@@ -420,15 +419,11 @@ public:
   void  xSetIntraSearchRange        ( PredictionUnit& pu, int iRoiWidth, int iRoiHeight, const int localSearchRangeX, const int localSearchRangeY, Mv& rcMvSrchRngLT, Mv& rcMvSrchRngRB);
   void  resetIbcSearch()
   {
-    for (int i = 0; i < IBC_NUM_CANDIDATES; i++)
-    {
-      m_defaultCachedBvs.m_bvCands[i].setZero();
-    }
-    m_defaultCachedBvs.currCnt = 0;
+    m_defaultCachedBvs.clear();
   }
   void  xIBCEstimation   ( PredictionUnit& pu, PelUnitBuf& origBuf, Mv     *pcMvPred, Mv     &rcMv, Distortion &ruiCost, const int localSearchRangeX, const int localSearchRangeY);
-  void  xIBCSearchMVCandUpdate  ( Distortion  uiSad, int x, int y, Distortion* uiSadBestCand, Mv* cMVCand);
-  int   xIBCSearchMVChromaRefine( PredictionUnit& pu, int iRoiWidth, int iRoiHeight, int cuPelX, int cuPelY, Distortion* uiSadBestCand, Mv*     cMVCand);
+  void  xIBCSearchMVCandUpdate  ( Distortion  uiSad, int x, int y, Distortion* uiSadBestCand, static_vector<Mv, CHROMA_REFINEMENT_CANDIDATES>& cMVCand);
+  int   xIBCSearchMVChromaRefine( PredictionUnit& pu, int iRoiWidth, int iRoiHeight, int cuPelX, int cuPelY, Distortion* uiSadBestCand, static_vector<Mv, CHROMA_REFINEMENT_CANDIDATES>& cMVCand);
   void addToSortList(std::list<BlockHash>& listBlockHash, std::list<int>& listCost, int cost, const BlockHash& blockHash);
   bool predInterHashSearch(CodingUnit& cu, Partitioner& partitioner, bool& isPerfectMatch);
   bool xHashInterEstimation(PredictionUnit& pu, RefPicList& bestRefPicList, int& bestRefIndex, Mv& bestMv, Mv& bestMvd, int& bestMVPIndex, bool& isPerfectMatch);

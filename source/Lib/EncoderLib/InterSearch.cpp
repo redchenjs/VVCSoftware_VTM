@@ -201,12 +201,7 @@ void InterSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, int searchRange, in
                        CABACWriter *CABACEstimator, CtxCache *ctxCache, EncReshape *pcReshape)
 {
   CHECK(m_isInitialized, "Already initialized");
-  m_numBVs = 0;
-  for (int i = 0; i < IBC_NUM_CANDIDATES; i++)
-  {
-    m_defaultCachedBvs.m_bvCands[i].setZero();
-  }
-  m_defaultCachedBvs.currCnt = 0;
+  m_defaultCachedBvs.clear();
   m_pcEncCfg                     = pcEncCfg;
   m_pcTrQuant                    = pcTrQuant;
   m_searchRange                  = searchRange;
@@ -852,7 +847,7 @@ Distortion InterSearch::xGetInterPredictionError( PredictionUnit& pu, PelUnitBuf
 
 /// add ibc search functions here
 
-void InterSearch::xIBCSearchMVCandUpdate(Distortion  sad, int x, int y, Distortion* sadBestCand, Mv* cMVCand)
+void InterSearch::xIBCSearchMVCandUpdate(Distortion  sad, int x, int y, Distortion* sadBestCand, static_vector<Mv, CHROMA_REFINEMENT_CANDIDATES>& cMVCand)
 {
   int j = CHROMA_REFINEMENT_CANDIDATES - 1;
 
@@ -883,7 +878,7 @@ int InterSearch::xIBCSearchMVChromaRefine(PredictionUnit& pu,
   int         cuPelX,
   int         cuPelY,
   Distortion* sadBestCand,
-  Mv*     cMVCand
+  static_vector<Mv, CHROMA_REFINEMENT_CANDIDATES>& cMVCand
 
 )
 {
@@ -996,32 +991,23 @@ int InterSearch::xIBCSearchMVChromaRefine(PredictionUnit& pu,
   return bestCandIdx;
 }
 
-static unsigned int xMergeCandLists(Mv *dst, unsigned int dn, unsigned int dstTotalLength, Mv *src, unsigned int sn)
+template <size_t MAX_DST_NUM, size_t MAX_SRC_NUM>
+static void xMergeCandLists(static_vector<Mv, MAX_DST_NUM>& dst, const static_vector<Mv, MAX_SRC_NUM>& src)
 {
-  for (unsigned int cand = 0; cand < sn && dn < dstTotalLength; cand++)
+  if (dst.size() < MAX_DST_NUM)
   {
-    if (src[cand] == Mv())
+    for (const auto& candSrc : src)
     {
-      continue;
-    }
-    bool found = false;
-    for (int j = 0; j<dn; j++)
-    {
-      if (src[cand] == dst[j])
+      if (candSrc != Mv() && std::find(dst.begin(), dst.end(), candSrc) == dst.end())
       {
-        found = true;
-        break;
+        dst.push_back(candSrc);
+        if (dst.size() >= MAX_DST_NUM)
+        {
+          return;
+        }
       }
     }
-
-    if (!found)
-    {
-      dst[dn] = src[cand];
-      dn++;
-    }
   }
-
-  return dn;
 }
 
 void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cStruct, Mv& rcMv, Distortion&  ruiCost, Mv*  pcMvSrchRngLT, Mv*  pcMvSrchRngRB, Mv* pcMvPred)
@@ -1050,7 +1036,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
   int         bestCandIdx = 0;
 
   Distortion  sadBestCand[CHROMA_REFINEMENT_CANDIDATES];
-  Mv      cMVCand[CHROMA_REFINEMENT_CANDIDATES];
+  static_vector<Mv, CHROMA_REFINEMENT_CANDIDATES> cMVCand;
 
 #if GDR_ENABLED
   CodingStructure &cs = *pu.cs;
@@ -1060,7 +1046,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
   for (int cand = 0; cand < CHROMA_REFINEMENT_CANDIDATES; cand++)
   {
     sadBestCand[cand] = std::numeric_limits<Distortion>::max();
-    cMVCand[cand].set(0, 0);
+    cMVCand.push_back(Mv());
   }
 
   m_cDistParam.useMR = false;
@@ -1076,18 +1062,17 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
     Distortion tempSadBest = 0;
 
     int srLeft = srchRngHorLeft, srRight = srchRngHorRight, srTop = srchRngVerTop, srBottom = srchRngVerBottom;
-    m_numBVs = 0;
-    m_numBVs = xMergeCandLists(m_acBVs, m_numBVs, (2 * IBC_NUM_CANDIDATES), m_defaultCachedBvs.m_bvCands, m_defaultCachedBvs.currCnt);
+    m_acBVs.clear();
+    xMergeCandLists(m_acBVs, m_defaultCachedBvs);
 
-    Mv cMvPredEncOnly[IBC_NUM_CANDIDATES];
-    int nbPreds = 0;
-    PU::getIbcMVPsEncOnly(pu, cMvPredEncOnly, nbPreds);
-    m_numBVs = xMergeCandLists(m_acBVs, m_numBVs, (2 * IBC_NUM_CANDIDATES), cMvPredEncOnly, nbPreds);
+    static_vector<Mv, IBC_NUM_CANDIDATES> mvPredEncOnly;
+    PU::getIbcMVPsEncOnly(pu, mvPredEncOnly);
+    xMergeCandLists(m_acBVs, mvPredEncOnly);
 
-    for (unsigned int cand = 0; cand < m_numBVs; cand++)
+    for (const auto& cand : m_acBVs)
     {
-      int xPred = m_acBVs[cand].getHor();
-      int yPred = m_acBVs[cand].getVer();
+      int xPred = cand.getHor();
+      int yPred = cand.getVer();
 
       if (!(xPred == 0 && yPred == 0)
         && !((yPred < srTop) || (yPred > srBottom))
@@ -1391,12 +1376,12 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
   ruiCost = sadBest;
 
 end:
-  m_numBVs = 0;
-  m_numBVs = xMergeCandLists(m_acBVs, m_numBVs, (2 * IBC_NUM_CANDIDATES), m_defaultCachedBvs.m_bvCands, m_defaultCachedBvs.currCnt);
+  m_acBVs.clear();
+  xMergeCandLists(m_acBVs, m_defaultCachedBvs);
 
-  m_defaultCachedBvs.currCnt = 0;
-  m_defaultCachedBvs.currCnt = xMergeCandLists(m_defaultCachedBvs.m_bvCands, m_defaultCachedBvs.currCnt, IBC_NUM_CANDIDATES, cMVCand, CHROMA_REFINEMENT_CANDIDATES);
-  m_defaultCachedBvs.currCnt = xMergeCandLists(m_defaultCachedBvs.m_bvCands, m_defaultCachedBvs.currCnt, IBC_NUM_CANDIDATES, m_acBVs, m_numBVs);
+  m_defaultCachedBvs.clear();
+  xMergeCandLists(m_defaultCachedBvs, cMVCand);
+  xMergeCandLists(m_defaultCachedBvs, m_acBVs);
 
   for (unsigned int cand = 0; cand < CHROMA_REFINEMENT_CANDIDATES; cand++)
   {
@@ -1517,14 +1502,13 @@ void InterSearch::xIBCEstimation(PredictionUnit& pu, PelUnitBuf& origBuf,
 
     if (buffered)
     {
-      Mv cMvPredEncOnly[IBC_NUM_CANDIDATES];
-      int nbPreds = 0;
-      PU::getIbcMVPsEncOnly(pu, cMvPredEncOnly, nbPreds);
+      static_vector<Mv, IBC_NUM_CANDIDATES> mvPredEncOnly;
+      PU::getIbcMVPsEncOnly(pu, mvPredEncOnly);
 
-      for (unsigned int cand = 0; cand < nbPreds; cand++)
+      for (const auto& cand : mvPredEncOnly)
       {
-        int xPred = cMvPredEncOnly[cand].getHor();
-        int yPred = cMvPredEncOnly[cand].getVer();
+        int xPred = cand.getHor();
+        int yPred = cand.getVer();
 
 #if GDR_ENABLED
         bool validCand = true;
