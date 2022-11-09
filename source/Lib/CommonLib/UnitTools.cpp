@@ -4775,7 +4775,7 @@ int TU::getICTMode( const TransformUnit& tu, int jointCbCr )
 bool TU::needsSqrt2Scale( const TransformUnit &tu, const ComponentID &compID )
 {
   const Size &size=tu.blocks[compID];
-  const bool isTransformSkip = (tu.mtsIdx[compID] == MTS_SKIP);
+  const bool  isTransformSkip = tu.mtsIdx[compID] == MtsType::SKIP;
   return (!isTransformSkip) && (((floorLog2(size.width) + floorLog2(size.height)) & 1) == 1);
 }
 
@@ -5545,7 +5545,7 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
             }
           }
 
-          if (currTU.cu->lfnstIdx && currTU.mtsIdx[COMPONENT_Y] != MTS_SKIP
+          if (currTU.cu->lfnstIdx && currTU.mtsIdx[COMPONENT_Y] != MtsType::SKIP
               && (currTU.cu->isSepTree() ? true : isLuma(COMPONENT_Y)))
           {
             bool significantCoeff = false;
@@ -5829,7 +5829,7 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
               }
             }
 
-            if (currTU.cu->lfnstIdx && currTU.mtsIdx[m_compID] != MTS_SKIP
+            if (currTU.cu->lfnstIdx && currTU.mtsIdx[m_compID] != MtsType::SKIP
                 && (currTU.cu->isSepTree() ? true : isLuma(COMPONENT_Cr)))
             {
               bool significantCoeff = false;

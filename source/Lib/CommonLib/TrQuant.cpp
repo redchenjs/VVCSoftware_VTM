@@ -320,7 +320,7 @@ void TrQuant::xInvLfnst( const TransformUnit &tu, const ComponentID compID )
   const uint32_t  width    = area.width;
   const uint32_t  height   = area.height;
   const uint32_t  lfnstIdx = tu.cu->lfnstIdx;
-  if( lfnstIdx && tu.mtsIdx[compID] != MTS_SKIP && (tu.cu->isSepTree() ? true : isLuma(compID)) )
+  if (lfnstIdx && tu.mtsIdx[compID] != MtsType::SKIP && (tu.cu->isSepTree() ? true : isLuma(compID)))
   {
     const bool whge3 = width >= 8 && height >= 8;
     const ScanElement * scan = whge3 ? g_coefTopLeftDiagScan8x8[ gp_sizeIdxInfo->idxFrom( width ) ] : g_scanOrder[ SCAN_GROUPED_4x4 ][ CoeffScanType::DIAG ][ gp_sizeIdxInfo->idxFrom( width ) ][ gp_sizeIdxInfo->idxFrom( height ) ];
@@ -418,7 +418,7 @@ void TrQuant::xFwdLfnst( const TransformUnit &tu, const ComponentID compID, cons
   const uint32_t  width    = area.width;
   const uint32_t  height   = area.height;
   const uint32_t  lfnstIdx = tu.cu->lfnstIdx;
-  if( lfnstIdx && tu.mtsIdx[compID] != MTS_SKIP && (tu.cu->isSepTree() ? true : isLuma(compID)) )
+  if (lfnstIdx && tu.mtsIdx[compID] != MtsType::SKIP && (tu.cu->isSepTree() ? true : isLuma(compID)))
   {
     const bool whge3 = width >= 8 && height >= 8;
     const ScanElement * scan = whge3 ? g_coefTopLeftDiagScan8x8[ gp_sizeIdxInfo->idxFrom( width ) ] : g_scanOrder[ SCAN_GROUPED_4x4 ][ CoeffScanType::DIAG ][ gp_sizeIdxInfo->idxFrom( width ) ][ gp_sizeIdxInfo->idxFrom( height ) ];
@@ -531,7 +531,7 @@ void TrQuant::invTransformNxN( TransformUnit &tu, const ComponentID &compID, Pel
     xInvLfnst(tu, compID);
   }
 
-  if (tu.mtsIdx[compID] == MTS_SKIP)
+  if (tu.mtsIdx[compID] == MtsType::SKIP)
   {
     xITransformSkip(tempCoeff, pResi, tu, compID);
   }
@@ -713,10 +713,10 @@ void TrQuant::getTrTypes(const TransformUnit tu, const ComponentID compID, Trans
 
   if (isExplicitMTS)
   {
-    if (tu.mtsIdx[compID] > MTS_SKIP)
+    if (tu.mtsIdx[compID] > MtsType::SKIP)
     {
-      int indHor = (tu.mtsIdx[compID] - MTS_DST7_DST7) & 1;
-      int indVer = (tu.mtsIdx[compID] - MTS_DST7_DST7) >> 1;
+      int indHor = (tu.mtsIdx[compID] - MtsType::DST7_DST7) & 1;
+      int indVer = (tu.mtsIdx[compID] - MtsType::DST7_DST7) >> 1;
       trTypeHor  = indHor ? TransType::DCT8 : TransType::DST7;
       trTypeVer  = indVer ? TransType::DCT8 : TransType::DST7;
     }
@@ -926,7 +926,7 @@ void TrQuant::transformNxN(TransformUnit &tu, const ComponentID &compID, const Q
       continue;
     }
 
-    if ( tu.mtsIdx[compID] == MTS_SKIP )
+    if (tu.mtsIdx[compID] == MtsType::SKIP)
     {
       xTransformSkip( tu, compID, resiBuf, tempCoeff.buf );
     }
@@ -942,11 +942,11 @@ void TrQuant::transformNxN(TransformUnit &tu, const ComponentID &compID, const Q
     }
 
     double scaleSAD=1.0;
-    if ( tu.mtsIdx[compID] == MTS_SKIP && ((floorLog2(width) + floorLog2(height)) & 1) == 1)
+    if (tu.mtsIdx[compID] == MtsType::SKIP && ((floorLog2(width) + floorLog2(height)) & 1) == 1)
     {
       scaleSAD=1.0/1.414213562; // compensate for not scaling transform skip coefficients by 1/sqrt(2)
     }
-    if (tu.mtsIdx[compID] == MTS_SKIP)
+    if (tu.mtsIdx[compID] == MtsType::SKIP)
     {
       int trShift = getTransformShift(tu.cu->slice->getSPS()->getBitDepth(toChannelType(compID)), rect.size(),
                                       tu.cu->slice->getSPS()->getMaxLog2TrDynamicRange(toChannelType(compID)));
@@ -990,7 +990,7 @@ void TrQuant::transformNxN(TransformUnit &tu, const ComponentID &compID, const Q
 
   if (tu.cu->getBdpcmMode(compID) != BdpcmMode::NONE)
   {
-    tu.mtsIdx[compID] = MTS_SKIP;
+    tu.mtsIdx[compID] = MtsType::SKIP;
   }
 
   absSum = 0;
@@ -1004,7 +1004,7 @@ void TrQuant::transformNxN(TransformUnit &tu, const ComponentID &compID, const Q
 
   if (!loadTr)
   {
-    if (tu.mtsIdx[compID] == MTS_SKIP)
+    if (tu.mtsIdx[compID] == MtsType::SKIP)
     {
       xTransformSkip(tu, compID, resiBuf, tempCoeff.buf);
     }

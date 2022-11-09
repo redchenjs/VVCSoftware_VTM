@@ -1780,7 +1780,7 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
             }
           }
 
-          if (isLuma(partitioner.chType) && cu.firstTU->mtsIdx[COMPONENT_Y] > MTS_SKIP)
+          if (isLuma(partitioner.chType) && cu.firstTU->mtsIdx[COMPONENT_Y] > MtsType::SKIP)
           {
             CHECK(!cuCtx.mtsLastScanPos, "MTS is disallowed to only contain DC coefficient");
           }
@@ -1842,7 +1842,7 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
               if( bestCS->cus.size() == 1 )
               {
                 CodingUnit &cu = *bestCS->cus.front();
-                if (cu.firstTU->mtsIdx[COMPONENT_Y] == MTS_SKIP)
+                if (cu.firstTU->mtsIdx[COMPONENT_Y] == MtsType::SKIP)
                 {
                   if( ( floorLog2( cu.firstTU->blocks[ COMPONENT_Y ].width ) + floorLog2( cu.firstTU->blocks[ COMPONENT_Y ].height ) ) >= 6 )
                   {
@@ -4852,10 +4852,10 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
   int     slShift = 4 + std::min( (int)gp_sizeIdxInfo->idxFrom( cu->lwidth() ) + (int)gp_sizeIdxInfo->idxFrom( cu->lheight() ), 9 );
   Distortion curPuSse = m_pcInterSearch->getEstDistSbt( NUMBER_SBT_MODE );
   uint8_t currBestSbt = 0;
-  uint8_t currBestTrs = MAX_UCHAR;
+  auto       currBestTrs = MtsType::NONE;
   uint8_t histBestSbt = MAX_UCHAR;
-  uint8_t histBestTrs = MAX_UCHAR;
-  m_pcInterSearch->setHistBestTrs( MAX_UCHAR, MAX_UCHAR );
+  auto       histBestTrs = MtsType::NONE;
+  m_pcInterSearch->setHistBestTrs(MAX_UCHAR, MtsType::NONE);
   if( doPreAnalyzeResi )
   {
     if( m_pcInterSearch->getSkipSbtAll() && !mtsAllowed ) //emt is off
@@ -4866,9 +4866,10 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
     else
     {
       assert( curPuSse != std::numeric_limits<uint64_t>::max() );
-      uint16_t compositeSbtTrs = slsSbt->findBestSbt( cu->cs->area, (uint32_t)( curPuSse >> slShift ) );
-      histBestSbt = ( compositeSbtTrs >> 0 ) & 0xff;
-      histBestTrs = ( compositeSbtTrs >> 8 ) & 0xff;
+      SaveLoadEncInfoSbt::BestSbt compositeSbtTrs = slsSbt->findBestSbt(cu->cs->area, (uint32_t) (curPuSse >> slShift));
+
+      histBestSbt = compositeSbtTrs.sbt;
+      histBestTrs = compositeSbtTrs.trs;
       if( m_pcInterSearch->getSkipSbtAll() && CU::isSbtMode( histBestSbt ) ) //special case, skip SBT when loading SBT
       {
         histBestSbt = 0; //try DCT2
@@ -4946,7 +4947,7 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
       sbtOffCost    = tempCS->cost;
       sbtOffDist    = tempCS->dist;
       sbtOffRootCbf = cu->rootCbf;
-      currBestSbt   = CU::getSbtInfo(cu->firstTU->mtsIdx[COMPONENT_Y] > MTS_SKIP ? SBT_OFF_MTS : SBT_OFF_DCT, 0);
+      currBestSbt   = CU::getSbtInfo(cu->firstTU->mtsIdx[COMPONENT_Y] > MtsType::SKIP ? SBT_OFF_MTS : SBT_OFF_DCT, 0);
       currBestTrs   = cu->firstTU->mtsIdx[COMPONENT_Y];
 
 #if WCG_EXT
@@ -5084,7 +5085,7 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
       {
         currBestSbt = cu->sbtInfo;
         currBestTrs = tempCS->tus[cu->sbtInfo ? cu->getSbtPos() : 0]->mtsIdx[COMPONENT_Y];
-        assert( currBestTrs == 0 || currBestTrs == 1 );
+        assert(currBestTrs == MtsType::DCT2_DCT2 || currBestTrs == MtsType::SKIP);
         currBestCost = tempCS->cost;
       }
 

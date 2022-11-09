@@ -2637,7 +2637,7 @@ void CABACWriter::residual_coding( const TransformUnit& tu, ComponentID compID, 
 
   ts_flag            ( tu, compID );
 
-  if( tu.mtsIdx[compID] == MTS_SKIP && !tu.cs->slice->getTSResidualCodingDisabledFlag() )
+  if (tu.mtsIdx[compID] == MtsType::SKIP && !tu.cs->slice->getTSResidualCodingDisabledFlag())
   {
     residual_codingTS( tu, compID );
     return;
@@ -2665,17 +2665,17 @@ void CABACWriter::residual_coding( const TransformUnit& tu, ComponentID compID, 
   CHECK( scanPosLast < 0, "Coefficient coding called for empty TU" );
   cctx.setScanPosLast(scanPosLast);
 
-  if (cuCtx && tu.mtsIdx[compID] != MTS_SKIP && tu.blocks[compID].height >= 4 && tu.blocks[compID].width >= 4)
+  if (cuCtx && tu.mtsIdx[compID] != MtsType::SKIP && tu.blocks[compID].height >= 4 && tu.blocks[compID].width >= 4)
   {
     const int maxLfnstPos = ((tu.blocks[compID].height == 4 && tu.blocks[compID].width == 4) || (tu.blocks[compID].height == 8 && tu.blocks[compID].width == 8)) ? 7 : 15;
     cuCtx->violatesLfnstConstrained[ toChannelType(compID) ] |= cctx.scanPosLast() > maxLfnstPos;
   }
-  if (cuCtx && tu.mtsIdx[compID] != MTS_SKIP && tu.blocks[compID].height >= 4 && tu.blocks[compID].width >= 4)
+  if (cuCtx && tu.mtsIdx[compID] != MtsType::SKIP && tu.blocks[compID].height >= 4 && tu.blocks[compID].width >= 4)
   {
     const int lfnstLastScanPosTh = isLuma( compID ) ? LFNST_LAST_SIG_LUMA : LFNST_LAST_SIG_CHROMA;
     cuCtx->lfnstLastScanPos |= cctx.scanPosLast() >= lfnstLastScanPosTh;
   }
-  if (cuCtx && isLuma(compID) && tu.mtsIdx[compID] != MTS_SKIP)
+  if (cuCtx && isLuma(compID) && tu.mtsIdx[compID] != MtsType::SKIP)
   {
     cuCtx->mtsLastScanPos |= cctx.scanPosLast() >= 1;
   }
@@ -2724,7 +2724,7 @@ void CABACWriter::residual_coding( const TransformUnit& tu, ComponentID compID, 
 
 void CABACWriter::ts_flag( const TransformUnit& tu, ComponentID compID )
 {
-  int tsFlag = tu.mtsIdx[compID] == MTS_SKIP ? 1 : 0;
+  const int tsFlag = tu.mtsIdx[compID] == MtsType::SKIP ? 1 : 0;
   int ctxIdx = isLuma(compID) ? 0 : 1;
 
   if( TU::isTSAllowed ( tu, compID ) )
@@ -2737,12 +2737,12 @@ void CABACWriter::ts_flag( const TransformUnit& tu, ComponentID compID )
 void CABACWriter::mts_idx( const CodingUnit& cu, CUCtx* cuCtx )
 {
   TransformUnit &tu = *cu.firstTU;
-  int        mtsIdx = tu.mtsIdx[COMPONENT_Y];
+  MtsType        mtsIdx = tu.mtsIdx[COMPONENT_Y];
 
-  if( CU::isMTSAllowed( cu, COMPONENT_Y ) && cuCtx && !cuCtx->violatesMtsCoeffConstraint &&
-      cuCtx->mtsLastScanPos && cu.lfnstIdx == 0 && mtsIdx != MTS_SKIP)
+  if (CU::isMTSAllowed(cu, COMPONENT_Y) && cuCtx && !cuCtx->violatesMtsCoeffConstraint && cuCtx->mtsLastScanPos
+      && cu.lfnstIdx == 0 && mtsIdx != MtsType::SKIP)
   {
-    int symbol = mtsIdx != MTS_DCT2_DCT2 ? 1 : 0;
+    int symbol = mtsIdx != MtsType::DCT2_DCT2 ? 1 : 0;
     int ctxIdx = 0;
 
     m_binEncoder.encodeBin(symbol, Ctx::MTSIdx(ctxIdx));
@@ -2752,7 +2752,7 @@ void CABACWriter::mts_idx( const CodingUnit& cu, CUCtx* cuCtx )
       ctxIdx = 1;
       for( int i = 0; i < 3; i++, ctxIdx++ )
       {
-        symbol = mtsIdx > i + MTS_DST7_DST7 ? 1 : 0;
+        symbol = mtsIdx > MtsType::DST7_DST7 + i ? 1 : 0;
         m_binEncoder.encodeBin(symbol, Ctx::MTSIdx(ctxIdx));
 
         if( !symbol )
@@ -2809,7 +2809,8 @@ void CABACWriter::residual_lfnst_mode( const CodingUnit& cu, CUCtx& cuCtx )
       const uint32_t numValidComp = getNumberValidComponents(cu.chromaFormat);
       for (uint32_t compID = COMPONENT_Y; compID < numValidComp; compID++)
       {
-        if (currTU.blocks[compID].valid() && TU::getCbf(currTU, (ComponentID)compID) && currTU.mtsIdx[compID] == MTS_SKIP)
+        if (currTU.blocks[compID].valid() && TU::getCbf(currTU, (ComponentID) compID)
+            && currTU.mtsIdx[compID] == MtsType::SKIP)
         {
           isTrSkip = true;
           break;
@@ -3114,7 +3115,7 @@ void CABACWriter::residual_codingTS( const TransformUnit& tu, ComponentID compID
     int goRiceParam = 1;
     bool ricePresentFlag = false;
     unsigned RiceBit[8]   = { 0, 0, 0, 0, 0, 0, 0, 0 };
-    if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MTS_SKIP)
+    if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MtsType::SKIP)
     {
       goRiceParam = goRiceParam + tu.cu->slice->getTsrcIndex();
       if (isEncoding())
@@ -3127,7 +3128,8 @@ void CABACWriter::residual_codingTS( const TransformUnit& tu, ComponentID compID
       }
     }
     residual_coding_subblockTS( cctx, coeff, RiceBit, goRiceParam, ricePresentFlag);
-    if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MTS_SKIP && isEncoding())
+    if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MtsType::SKIP
+        && isEncoding())
     {
       for (int i = 0; i < MAX_TSRC_RICE; i++)
       {

@@ -3418,7 +3418,8 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
       m_pcTrQuant->transformNxN(tu, compID, cQP, *trModes, m_pcEncCfg->getMTSIntraMaxCand());
       tu.mtsIdx[compID] = trModes->at(0).first;
     }
-    if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[compID] == 0)
+    if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()
+          && tu.mtsIdx[compID] == MtsType::DCT2_DCT2)
         || tu.cu->bdpcmMode != BdpcmMode::NONE)
     {
       m_pcTrQuant->transformNxN(tu, compID, cQP, absSum, m_CABACEstimator->getCtx(), loadTr);
@@ -3433,8 +3434,8 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
       dist = MAX_INT;
       return;
     }
-    if (m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[compID] == 0
-        && BdpcmMode::NONE == tu.cu->bdpcmMode)
+    if (m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()
+        && tu.mtsIdx[compID] == MtsType::DCT2_DCT2 && BdpcmMode::NONE == tu.cu->bdpcmMode)
     {
       absSum = 0;
       tu.getCoeffs(compID).fill(0);
@@ -3473,16 +3474,18 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
       tu.mtsIdx[codeCompId] = trModes->at(0).first;
       if (tu.jointCbCr)
       {
-        tu.mtsIdx[(codeCompId == COMPONENT_Cr) ? COMPONENT_Cb : COMPONENT_Cr] = MTS_DCT2_DCT2;
+        tu.mtsIdx[(codeCompId == COMPONENT_Cr) ? COMPONENT_Cb : COMPONENT_Cr] = MtsType::DCT2_DCT2;
       }
     }
     // encoder bugfix: Set loadTr to aovid redundant transform process
-    if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[compID] == 0)
+    if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()
+          && tu.mtsIdx[compID] == MtsType::DCT2_DCT2)
         || tu.cu->bdpcmModeChroma != BdpcmMode::NONE)
     {
       m_pcTrQuant->transformNxN(tu, codeCompId, qpCbCr, absSum, m_CABACEstimator->getCtx(), loadTr);
     }
-    if ((m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[compID] == 0)
+    if ((m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()
+         && tu.mtsIdx[compID] == MtsType::DCT2_DCT2)
         && BdpcmMode::NONE == tu.cu->bdpcmModeChroma)
     {
       absSum = 0;
@@ -3650,12 +3653,14 @@ void IntraSearch::xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &c
       m_pcTrQuant->transformNxN(tu, compID, cQP, *trModes, m_pcEncCfg->getMTSIntraMaxCand());
       tu.mtsIdx[compID] = trModes->at(0).first;
     }
-    if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[compID] == 0)
+    if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()
+          && tu.mtsIdx[compID] == MtsType::DCT2_DCT2)
         || tu.cu->bdpcmMode != BdpcmMode::NONE)
     {
       m_pcTrQuant->transformNxN(tu, compID, cQP, absSum, m_CABACEstimator->getCtx(), loadTr);
     }
-    if ((m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[compID] == 0)
+    if ((m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()
+         && tu.mtsIdx[compID] == MtsType::DCT2_DCT2)
         && tu.cu->bdpcmMode == BdpcmMode::NONE)
     {
       absSum = 0;
@@ -3693,10 +3698,11 @@ void IntraSearch::xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &c
       tu.mtsIdx[codeCompId] = trModes->at(0).first;
       if (tu.jointCbCr)
       {
-        tu.mtsIdx[(codeCompId == COMPONENT_Cr) ? COMPONENT_Cb : COMPONENT_Cr] = MTS_DCT2_DCT2;
+        tu.mtsIdx[(codeCompId == COMPONENT_Cr) ? COMPONENT_Cb : COMPONENT_Cr] = MtsType::DCT2_DCT2;
       }
     }
-    if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[codeCompId] == 0)
+    if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()
+          && tu.mtsIdx[codeCompId] == MtsType::DCT2_DCT2)
         || tu.cu->bdpcmModeChroma != BdpcmMode::NONE)
     {
       m_pcTrQuant->transformNxN(tu, codeCompId, qpCbCr, absSum, m_CABACEstimator->getCtx(), loadTr);
@@ -3873,9 +3879,11 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
   Distortion singleDistLuma                     = 0;
   uint64_t   singleFracBits                     = 0;
   bool       checkTransformSkip                 = sps.getTransformSkipEnabledFlag();
-  int        bestModeId[ MAX_NUM_COMPONENT ]    = { 0, 0, 0 };
   uint8_t    nNumTransformCands                 = cu.mtsFlag ? 4 : 1;
   uint8_t    numTransformIndexCands             = nNumTransformCands;
+
+  std::array<int, MAX_NUM_COMPONENT> bestModeIds;
+  bestModeIds.fill(0);
 
   const TempCtx ctxStart  ( m_CtxCache, m_CABACEstimator->getCtx() );
   TempCtx       ctxBest   ( m_CtxCache );
@@ -3917,8 +3925,8 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
 
       if( !cu.mtsFlag && checkTransformSkip )
       {
-        trModes.push_back( TrMode( 0, true ) ); //DCT2
-        trModes.push_back( TrMode( 1, true ) ); //TS
+        trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));   // DCT2
+        trModes.push_back(TrMode(MtsType::SKIP, true));        // TS
       }
     }
     else
@@ -3930,25 +3938,25 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
         CHECK(!tsAllowed && cu.bdpcmMode == BdpcmMode::NONE, "transform skip should be enabled for LS");
         if (cu.bdpcmMode != BdpcmMode::NONE)
         {
-          trModes.push_back(TrMode(0, true));
+          trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));
         }
         else
         {
-          trModes.push_back(TrMode(1, true));
+          trModes.push_back(TrMode(MtsType::SKIP, true));
         }
       }
       else
       {
-        trModes.push_back(TrMode(0, true));   // DCT2
+        trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));   // DCT2
         if (tsAllowed)
         {
-          trModes.push_back(TrMode(1, true));
+          trModes.push_back(TrMode(MtsType::SKIP, true));
         }
         if (mtsAllowed)
         {
-          for (int i = 2; i < 6; i++)
+          for (MtsType mtsIdx = MtsType::DST7_DST7; mtsIdx < MtsType::NUM; mtsIdx++)
           {
-            trModes.push_back(TrMode(i, true));
+            trModes.push_back(TrMode(mtsIdx, true));
           }
         }
       }
@@ -3966,8 +3974,10 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
     int        firstCheckId      = (sps.getUseLFNST() && mtsCheckRangeFlag && cu.mtsFlag) ? mtsFirstCheckId : 0;
 
     //we add the MTS candidates to the loop. TransformSkip will still be the last one to be checked (when modeId == lastCheckId) as long as checkTransformSkip is true
-    int        lastCheckId       = sps.getUseLFNST() ? ( ( mtsCheckRangeFlag && cu.mtsFlag ) ? ( mtsLastCheckId + ( int ) checkTransformSkip ) : ( numTransformIndexCands - ( firstCheckId + 1 ) + ( int ) checkTransformSkip ) ) :
-                                   trModes[ nNumTransformCands - 1 ].first;
+    int  lastCheckId             = sps.getUseLFNST() ? ((mtsCheckRangeFlag && cu.mtsFlag)
+                                                          ? (mtsLastCheckId + (int) checkTransformSkip)
+                                                          : (numTransformIndexCands - (firstCheckId + 1) + (int) checkTransformSkip))
+                                                     : trModes[nNumTransformCands - 1].first - MtsType::DCT2_DCT2;
     bool isNotOnlyOneMode        = sps.getUseLFNST() ? lastCheckId != firstCheckId : nNumTransformCands != 1;
 
     if( isNotOnlyOneMode )
@@ -3985,7 +3995,7 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
 
     for( int modeId = firstCheckId; modeId <= ( sps.getUseLFNST() ? lastCheckId : ( nNumTransformCands - 1 ) ); modeId++ )
     {
-      uint8_t transformIndex = modeId;
+      int transformIndex = modeId;
 
       if( sps.getUseLFNST() )
       {
@@ -4002,7 +4012,9 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
       {
         if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()))
         {
-          if (!cbfDCT2 || (m_pcEncCfg->getUseTransformSkipFast() && bestModeId[COMPONENT_Y] == MTS_SKIP))
+          if (!cbfDCT2
+              || (m_pcEncCfg->getUseTransformSkipFast()
+                  && MtsType::DCT2_DCT2 + bestModeIds[COMPONENT_Y] == MtsType::SKIP))
           {
             break;
           }
@@ -4051,25 +4063,25 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
 
             if( transformIndex == 1 )
             {
-              tu.mtsIdx[COMPONENT_Y] = (intraMode < DIA_IDX) ? MTS_DST7_DCT8 : MTS_DCT8_DST7;
+              tu.mtsIdx[COMPONENT_Y] = (intraMode < DIA_IDX) ? MtsType::DST7_DCT8 : MtsType::DCT8_DST7;
             }
             else if( transformIndex == 2 )
             {
-              tu.mtsIdx[COMPONENT_Y] = (intraMode < DIA_IDX) ? MTS_DCT8_DST7 : MTS_DST7_DCT8;
+              tu.mtsIdx[COMPONENT_Y] = (intraMode < DIA_IDX) ? MtsType::DCT8_DST7 : MtsType::DST7_DCT8;
             }
             else
             {
-              tu.mtsIdx[COMPONENT_Y] = MTS_DST7_DST7 + transformIndex;
+              tu.mtsIdx[COMPONENT_Y] = MtsType::DST7_DST7 + transformIndex;
             }
           }
           else
           {
-            tu.mtsIdx[COMPONENT_Y] = MTS_DST7_DST7 + transformIndex;
+            tu.mtsIdx[COMPONENT_Y] = MtsType::DST7_DST7 + transformIndex;
           }
         }
         else
         {
-          tu.mtsIdx[COMPONENT_Y] = transformIndex;
+          tu.mtsIdx[COMPONENT_Y] = MtsType::DCT2_DCT2 + transformIndex;
         }
 
         if( !cu.mtsFlag && checkTransformSkip )
@@ -4081,7 +4093,7 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
             {
               if( trModes[ i ].second )
               {
-                lastCheckId = trModes[ i ].first;
+                lastCheckId = trModes[i].first - MtsType::DCT2_DCT2;
               }
             }
           }
@@ -4102,7 +4114,7 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
             {
               if( trModes[ i ].second )
               {
-                lastCheckId = trModes[ i ].first;
+                lastCheckId = trModes[i].first - MtsType::DCT2_DCT2;
               }
             }
           }
@@ -4116,7 +4128,9 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
       cuCtx.mtsLastScanPos = false;
       cuCtx.violatesMtsCoeffConstraint = false;
       //----- determine rate and r-d cost -----
-      if( ( sps.getUseLFNST() ? ( modeId == lastCheckId && modeId != 0 && checkTransformSkip ) : ( trModes[ modeId ].first != 0 ) ) && !TU::getCbfAtDepth( tu, COMPONENT_Y, currDepth ) )
+      if ((sps.getUseLFNST() ? (modeId == lastCheckId && modeId != 0 && checkTransformSkip)
+                             : (trModes[modeId].first != MtsType::DCT2_DCT2))
+          && !TU::getCbfAtDepth(tu, COMPONENT_Y, currDepth))
       {
         //In order not to code TS flag when cbf is zero, the case for TS with cbf being zero is forbidden.
         if (m_pcEncCfg->getCostMode() != COST_LOSSLESS_CODING || !slice.isLossless())
@@ -4132,7 +4146,7 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
       else
       {
         singleTmpFracBits = xGetIntraFracBitsQT(*csFull, partitioner, true, false, -1, TU_NO_ISP, &cuCtx);
-        if (tu.mtsIdx[COMPONENT_Y] > MTS_SKIP)
+        if (tu.mtsIdx[COMPONENT_Y] > MtsType::SKIP)
         {
           if (!cuCtx.mtsLastScanPos)
           {
@@ -4157,21 +4171,21 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
 
         if( sps.getUseLFNST() )
         {
-          bestModeId[ COMPONENT_Y ] = modeId;
+          bestModeIds[COMPONENT_Y] = modeId;
           cbfBestMode = TU::getCbfAtDepth( tu, COMPONENT_Y, currDepth );
           cbfBestModeValid = true;
           validReturnFull = true;
         }
         else
         {
-          bestModeId[ COMPONENT_Y ] = trModes[ modeId ].first;
-          if( trModes[ modeId ].first == 0 )
+          bestModeIds[COMPONENT_Y] = trModes[modeId].first - MtsType::DCT2_DCT2;
+          if (trModes[modeId].first == MtsType::DCT2_DCT2)
           {
             cbfDCT2 = TU::getCbfAtDepth( tu, COMPONENT_Y, currDepth );
           }
         }
 
-        if( bestModeId[COMPONENT_Y] != lastCheckId )
+        if (bestModeIds[COMPONENT_Y] != lastCheckId)
         {
           saveCS.getPredBuf( tu.Y() ).copyFrom( csFull->getPredBuf( tu.Y() ) );
           saveCS.getRecoBuf( tu.Y() ).copyFrom( csFull->getRecoBuf( tu.Y() ) );
@@ -4200,7 +4214,7 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
     }
     else
     {
-      if( bestModeId[COMPONENT_Y] != lastCheckId )
+      if (bestModeIds[COMPONENT_Y] != lastCheckId)
       {
         csFull->getPredBuf( tu.Y() ).copyFrom( saveCS.getPredBuf( tu.Y() ) );
         csFull->getRecoBuf( tu.Y() ).copyFrom( saveCS.getRecoBuf( tu.Y() ) );
@@ -4425,8 +4439,8 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
 
       if (!cu.mtsFlag && checkTransformSkip)
       {
-        trModes.push_back(TrMode(0, true)); //DCT2
-        trModes.push_back(TrMode(1, true)); //TS
+        trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));   // DCT2
+        trModes.push_back(TrMode(MtsType::SKIP, true));        // TS
       }
     }
     else
@@ -4437,27 +4451,27 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
         CHECK(!tsAllowed && cu.bdpcmMode == BdpcmMode::NONE, "transform skip should be enabled for LS");
         if (cu.bdpcmMode != BdpcmMode::NONE)
         {
-          trModes.push_back(TrMode(0, true));
+          trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));
         }
         else
         {
-          trModes.push_back(TrMode(1, true));
+          trModes.push_back(TrMode(MtsType::SKIP, true));
         }
       }
       else
       {
         nNumTransformCands = 1 + (tsAllowed ? 1 : 0) + (mtsAllowed ? 4 : 0);   // DCT + TS + 4 MTS = 6 tests
 
-        trModes.push_back(TrMode(0, true));   // DCT2
+        trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));   // DCT2
         if (tsAllowed)
         {
-          trModes.push_back(TrMode(1, true));
+          trModes.push_back(TrMode(MtsType::SKIP, true));
         }
         if (mtsAllowed)
         {
           for (int i = 2; i < 6; i++)
           {
-            trModes.push_back(TrMode(i, true));
+            trModes.push_back(TrMode(MtsType(i), true));
           }
         }
       }
@@ -4469,7 +4483,10 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
     uint64_t        singleTmpFracBits = 0;
     double          singleCostTmp = 0;
     int             firstCheckId = (sps.getUseLFNST() && mtsCheckRangeFlag && cu.mtsFlag) ? mtsFirstCheckId : 0;
-    int             lastCheckId = sps.getUseLFNST() ? ((mtsCheckRangeFlag && cu.mtsFlag) ? (mtsLastCheckId + (int)checkTransformSkip) : (numTransformIndexCands - (firstCheckId + 1) + (int)checkTransformSkip)) : trModes[nNumTransformCands - 1].first;
+    int              lastCheckId       = sps.getUseLFNST() ? ((mtsCheckRangeFlag && cu.mtsFlag)
+                                                                ? (mtsLastCheckId + (int) checkTransformSkip)
+                                                                : (numTransformIndexCands - (firstCheckId + 1) + (int) checkTransformSkip))
+                                                           : trModes[nNumTransformCands - 1].first - MtsType::DCT2_DCT2;
     bool            isNotOnlyOneMode = sps.getUseLFNST() ? lastCheckId != firstCheckId : nNumTransformCands != 1;
 
     if (isNotOnlyOneMode)
@@ -4492,7 +4509,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
 
     for (int modeIndex = firstCheckId; sps.getUseLFNST() || modeIndex < trModes.size(); modeIndex++)
     {
-      const int modeId = sps.getUseLFNST() ? modeIndex : trModes[modeIndex].first;
+      const int modeId = sps.getUseLFNST() ? modeIndex : trModes[modeIndex].first - MtsType::DCT2_DCT2;
       if (modeId > lastCheckId)
       {
         break;
@@ -4527,7 +4544,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
             continue;
           }
         }
-        tu.mtsIdx[COMPONENT_Y] = modeId;
+        tu.mtsIdx[COMPONENT_Y] = MtsType::DCT2_DCT2 + modeId;
       }
 
       singleDistTmpLuma = 0;
@@ -4541,25 +4558,25 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
 
             if (transformIndex == 1)
             {
-              tu.mtsIdx[COMPONENT_Y] = (intraMode < DIA_IDX) ? MTS_DST7_DCT8 : MTS_DCT8_DST7;
+              tu.mtsIdx[COMPONENT_Y] = (intraMode < DIA_IDX) ? MtsType::DST7_DCT8 : MtsType::DCT8_DST7;
             }
             else if (transformIndex == 2)
             {
-              tu.mtsIdx[COMPONENT_Y] = (intraMode < DIA_IDX) ? MTS_DCT8_DST7 : MTS_DST7_DCT8;
+              tu.mtsIdx[COMPONENT_Y] = (intraMode < DIA_IDX) ? MtsType::DCT8_DST7 : MtsType::DST7_DCT8;
             }
             else
             {
-              tu.mtsIdx[COMPONENT_Y] = MTS_DST7_DST7 + transformIndex;
+              tu.mtsIdx[COMPONENT_Y] = MtsType::DST7_DST7 + transformIndex;
             }
           }
           else
           {
-            tu.mtsIdx[COMPONENT_Y] = MTS_DST7_DST7 + transformIndex;
+            tu.mtsIdx[COMPONENT_Y] = MtsType::DST7_DST7 + transformIndex;
           }
         }
         else
         {
-          tu.mtsIdx[COMPONENT_Y] = transformIndex;
+          tu.mtsIdx[COMPONENT_Y] = MtsType::DCT2_DCT2 + transformIndex;
         }
 
         if (!cu.mtsFlag && checkTransformSkip)
@@ -4571,7 +4588,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
             {
               if (trModes[i].second)
               {
-                lastCheckId = trModes[i].first;
+                lastCheckId = trModes[i].first - MtsType::DCT2_DCT2;
               }
             }
           }
@@ -4592,7 +4609,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
             {
               if (trModes[i].second)
               {
-                lastCheckId = trModes[i].first;
+                lastCheckId = trModes[i].first - MtsType::DCT2_DCT2;
               }
             }
           }
@@ -4622,7 +4639,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
       {
         singleTmpFracBits = xGetIntraFracBitsQT(*csFull, partitioner, true, false, -1, TU_NO_ISP, &cuCtx);
 
-        if (tu.mtsIdx[COMPONENT_Y] > MTS_SKIP)
+        if (tu.mtsIdx[COMPONENT_Y] > MtsType::SKIP)
         {
           if (!cuCtx.mtsLastScanPos)
           {
@@ -4735,19 +4752,19 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
         CHECK(!tsAllowed && cu.bdpcmModeChroma == BdpcmMode::NONE, "transform skip should be enabled for LS");
         if (cu.bdpcmModeChroma != BdpcmMode::NONE)
         {
-          trModes.push_back(TrMode(0, true));
+          trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));
         }
         else
         {
-          trModes.push_back(TrMode(1, true));
+          trModes.push_back(TrMode(MtsType::SKIP, true));
         }
       }
       else
       {
-        trModes.push_back(TrMode(0, true));                    // DCT
+        trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));   // DCT
         if (tsAllowed)
         {
-          trModes.push_back(TrMode(1, true));                  // TS
+          trModes.push_back(TrMode(MtsType::SKIP, true));   // TS
         }
       }
       if (m_pcEncCfg->getCostMode() != COST_LOSSLESS_CODING || !slice.isLossless())
@@ -4795,7 +4812,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
         {
           xIntraCodingACTTUBlock(tu, compID, singleDistChroma);
         }
-        if (!tu.mtsIdx[compID])
+        if (tu.mtsIdx[compID] == MtsType::DCT2_DCT2)
         {
           cbfDCT2 = TU::getCbfAtDepth(tu, compID, currDepth);
         }
@@ -4907,10 +4924,10 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
       bool        cbfDCT2 = true;
 
       trModes.clear();
-      trModes.push_back(TrMode(0, true)); // DCT2
+      trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));   // DCT2
       if (tsAllowed)
       {
-        trModes.push_back(TrMode(1, true));//TS
+        trModes.push_back(TrMode(MtsType::SKIP, true));   // TS
       }
 
       for (int modeId = 0; modeId < numTransformCands; modeId++)
@@ -4925,7 +4942,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
         }
         Distortion distTmp = 0;
         tu.mtsIdx[codeCompId] = trModes[modeId].first;
-        tu.mtsIdx[otherCompId] = MTS_DCT2_DCT2;
+        tu.mtsIdx[otherCompId]     = MtsType::DCT2_DCT2;
         m_CABACEstimator->getCtx() = ctxStart;
         csFull->getResiBuf(cbArea).copyFrom(orgResiCb[cbfMask]);
         csFull->getResiBuf(crArea).copyFrom(orgResiCr[cbfMask]);
@@ -4942,7 +4959,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
         uint64_t bitsTmp = 0;
         if (distTmp < std::numeric_limits<Distortion>::max())
         {
-          if (!tu.mtsIdx[codeCompId])
+          if (tu.mtsIdx[codeCompId] == MtsType::DCT2_DCT2)
           {
             cbfDCT2 = true;
           }
@@ -4991,7 +5008,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
           bitsTmp = xGetIntraFracBitsQT(*csFull, partitioner, true, true, -1, TU_NO_ISP);
           costTmp = m_pcRdCost->calcRdCost(bitsTmp, distTmp);
         }
-        else if (!tu.mtsIdx[codeCompId])
+        else if (tu.mtsIdx[codeCompId] == MtsType::DCT2_DCT2)
         {
           cbfDCT2 = false;
         }
@@ -5256,20 +5273,20 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
         CHECK(!tsAllowed && currTU.cu->bdpcmModeChroma == BdpcmMode::NONE, "transform skip should be enabled for LS");
         if (currTU.cu->bdpcmModeChroma != BdpcmMode::NONE)
         {
-          trModes.push_back(TrMode(0, true));
+          trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));
         }
         else
         {
-          trModes.push_back(TrMode(1, true));
+          trModes.push_back(TrMode(MtsType::SKIP, true));
         }
       }
       else
       {
-        trModes.push_back(TrMode(0, true));   // DCT2
+        trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));   // DCT2
 
         if (tsAllowed)
         {
-          trModes.push_back(TrMode(1, true));   // TS
+          trModes.push_back(TrMode(MtsType::SKIP, true));   // TS
         }
       }
       CHECK(!currTU.Cb().valid(), "Invalid TU");
@@ -5291,7 +5308,7 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
       {
         resiCb.copyFrom(orgResiCb[0]);
         resiCr.copyFrom(orgResiCr[0]);
-        currTU.mtsIdx[compID] = currTU.cu->bdpcmModeChroma != BdpcmMode::NONE ? MTS_SKIP : trModes[modeId].first;
+        currTU.mtsIdx[compID] = currTU.cu->bdpcmModeChroma != BdpcmMode::NONE ? MtsType::SKIP : trModes[modeId].first;
 
         currModeId++;
 
@@ -5300,7 +5317,7 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
         if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()))
         {
           // if DCT2's cbf==0, skip ts search
-          if (!cbfDCT2 && trModes[modeId].first == MTS_SKIP)
+          if (!cbfDCT2 && trModes[modeId].first == MtsType::SKIP)
           {
             break;
           }
@@ -5327,7 +5344,7 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
           xIntraCodingTUBlock(currTU, compID, singleDistCTmp, default0Save1Load2);
         }
 
-        if (((currTU.mtsIdx[compID] == MTS_SKIP && currTU.cu->bdpcmModeChroma == BdpcmMode::NONE)
+        if (((currTU.mtsIdx[compID] == MtsType::SKIP && currTU.cu->bdpcmModeChroma == BdpcmMode::NONE)
              && !TU::getCbf(currTU, compID)))   // In order not to code TS flag when cbf is zero, the case for TS with
                                                 // cbf being zero is forbidden.
         {
@@ -5372,7 +5389,7 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
             bestDistCr = singleDistCTmp;
           }
 
-          if (currTU.mtsIdx[compID] == MTS_DCT2_DCT2)
+          if (currTU.mtsIdx[compID] == MtsType::DCT2_DCT2)
           {
             cbfDCT2 = TU::getCbfAtDepth(currTU, compID, currDepth);
           }
@@ -5423,21 +5440,27 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
       Distortion bestDistCbCr   = bestDistCb + bestDistCr;
       int        bestJointCbCr  = 0;
       CbfMaskList jointCbfMasksToTest;
-      if ( cs.sps->getJointCbCrEnabledFlag() && (TU::getCbf(tmpTU, COMPONENT_Cb) || TU::getCbf(tmpTU, COMPONENT_Cr)))
+
+      const bool cbfCb = TU::getCbf(tmpTU, COMPONENT_Cb);
+      const bool cbfCr = TU::getCbf(tmpTU, COMPONENT_Cr);
+
+      if (cs.sps->getJointCbCrEnabledFlag() && (cbfCb || cbfCr))
       {
         m_pcTrQuant->selectICTCandidates(currTU, orgResiCb, orgResiCr, jointCbfMasksToTest);
       }
-      bool checkDCTOnly = (TU::getCbf(tmpTU, COMPONENT_Cb) && tmpTU.mtsIdx[COMPONENT_Cb] == MTS_DCT2_DCT2 && !TU::getCbf(tmpTU, COMPONENT_Cr)) ||
-                          (TU::getCbf(tmpTU, COMPONENT_Cr) && tmpTU.mtsIdx[COMPONENT_Cr] == MTS_DCT2_DCT2 && !TU::getCbf(tmpTU, COMPONENT_Cb)) ||
-                          (TU::getCbf(tmpTU, COMPONENT_Cb) && tmpTU.mtsIdx[COMPONENT_Cb] == MTS_DCT2_DCT2 && TU::getCbf(tmpTU, COMPONENT_Cr) && tmpTU.mtsIdx[COMPONENT_Cr] == MTS_DCT2_DCT2);
 
-      bool checkTSOnly = (TU::getCbf(tmpTU, COMPONENT_Cb) && tmpTU.mtsIdx[COMPONENT_Cb] == MTS_SKIP && !TU::getCbf(tmpTU, COMPONENT_Cr)) ||
-                         (TU::getCbf(tmpTU, COMPONENT_Cr) && tmpTU.mtsIdx[COMPONENT_Cr] == MTS_SKIP && !TU::getCbf(tmpTU, COMPONENT_Cb)) ||
-                         (TU::getCbf(tmpTU, COMPONENT_Cb) && tmpTU.mtsIdx[COMPONENT_Cb] == MTS_SKIP && TU::getCbf(tmpTU, COMPONENT_Cr) && tmpTU.mtsIdx[COMPONENT_Cr] == MTS_SKIP);
+      const bool dctCb = cbfCb && tmpTU.mtsIdx[COMPONENT_Cb] == MtsType::DCT2_DCT2;
+      const bool dctCr = cbfCr && tmpTU.mtsIdx[COMPONENT_Cr] == MtsType::DCT2_DCT2;
+
+      const bool tsCb = cbfCb && tmpTU.mtsIdx[COMPONENT_Cb] == MtsType::SKIP;
+      const bool tsCr = cbfCr && tmpTU.mtsIdx[COMPONENT_Cr] == MtsType::SKIP;
+
+      const bool checkDctOnly = (dctCb && !cbfCr) || (dctCr && !cbfCb) || (dctCb && dctCr);
+      const bool checkTsOnly  = (tsCb && !cbfCr) || (tsCr && !cbfCb) || (tsCb && tsCr);
 
       if (jointCbfMasksToTest.size() && currTU.cu->bdpcmModeChroma != BdpcmMode::NONE)
       {
-        CHECK(!checkTSOnly || checkDCTOnly, "bdpcm only allows transform skip");
+        CHECK(!checkTsOnly || checkDctOnly, "bdpcm only allows transform skip");
       }
       for( int cbfMask : jointCbfMasksToTest )
       {
@@ -5451,18 +5474,18 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
         bool        cbfDCT2 = true;
 
         TrModeList trModes;
-        if (checkDCTOnly || checkTSOnly)
+        if (checkDctOnly || checkTsOnly)
         {
           numTransformCands = 1;
         }
 
-        if (!checkTSOnly || currTU.cu->bdpcmModeChroma != BdpcmMode::NONE)
+        if (!checkTsOnly || currTU.cu->bdpcmModeChroma != BdpcmMode::NONE)
         {
-          trModes.push_back(TrMode(0, true)); // DCT2
+          trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));   // DCT2
         }
-        if (tsAllowed && !checkDCTOnly)
+        if (tsAllowed && !checkDctOnly)
         {
-          trModes.push_back(TrMode(1, true));//TS
+          trModes.push_back(TrMode(MtsType::SKIP, true));   // TS
         }
         for (int modeId = 0; modeId < numTransformCands; modeId++)
         {
@@ -5475,8 +5498,9 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
             continue;
           }
           Distortion distTmp = 0;
-          currTU.mtsIdx[codeCompId]  = currTU.cu->bdpcmModeChroma != BdpcmMode::NONE ? MTS_SKIP : trModes[modeId].first;
-          currTU.mtsIdx[otherCompId] = MTS_DCT2_DCT2;
+          currTU.mtsIdx[codeCompId] =
+            currTU.cu->bdpcmModeChroma != BdpcmMode::NONE ? MtsType::SKIP : trModes[modeId].first;
+          currTU.mtsIdx[otherCompId] = MtsType::DCT2_DCT2;
           m_CABACEstimator->getCtx() = ctxStartTU;
 
           resiCb.copyFrom(orgResiCb[cbfMask]);
@@ -5494,12 +5518,12 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
           {
             uint64_t bits = xGetIntraFracBitsQTChroma(currTU, COMPONENT_Cb);
             costTmp       = m_pcRdCost->calcRdCost(bits, distTmp);
-            if (!currTU.mtsIdx[codeCompId])
+            if (currTU.mtsIdx[codeCompId] == MtsType::DCT2_DCT2)
             {
               cbfDCT2 = true;
             }
           }
-          else if (!currTU.mtsIdx[codeCompId])
+          else if (currTU.mtsIdx[codeCompId] == MtsType::DCT2_DCT2)
           {
             cbfDCT2 = false;
           }

@@ -543,7 +543,7 @@ void SaveLoadEncInfoSbt::destroy()
   delete[] m_saveLoadSbt;
 }
 
-uint16_t SaveLoadEncInfoSbt::findBestSbt( const UnitArea& area, const uint32_t curPuSse )
+SaveLoadEncInfoSbt::BestSbt SaveLoadEncInfoSbt::findBestSbt(const UnitArea &area, const uint32_t curPuSse)
 {
   unsigned idx1, idx2, idx3, idx4;
   getAreaIdx( area.Y(), *m_sliceSbt->getPPS()->pcv, idx1, idx2, idx3, idx4 );
@@ -553,14 +553,15 @@ uint16_t SaveLoadEncInfoSbt::findBestSbt( const UnitArea& area, const uint32_t c
   {
     if( curPuSse == pSbtSave->puSse[i] )
     {
-      return pSbtSave->puSbt[i] + ( pSbtSave->puTrs[i] << 8 );
+      return { pSbtSave->puSbt[i], pSbtSave->puTrs[i] };
     }
   }
 
-  return MAX_UCHAR + ( MAX_UCHAR << 8 );
+  return { MAX_UCHAR, MtsType::NONE };
 }
 
-bool SaveLoadEncInfoSbt::saveBestSbt( const UnitArea& area, const uint32_t curPuSse, const uint8_t curPuSbt, const uint8_t curPuTrs )
+bool SaveLoadEncInfoSbt::saveBestSbt(const UnitArea &area, const uint32_t curPuSse, const uint8_t curPuSbt,
+                                     const MtsType curPuTrs)
 {
   unsigned idx1, idx2, idx3, idx4;
   getAreaIdx( area.Y(), *m_sliceSbt->getPPS()->pcv, idx1, idx2, idx3, idx4 );
