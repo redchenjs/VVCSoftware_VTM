@@ -64,19 +64,22 @@ struct coeffGroupRDStats
   double d64SigCost_0;
 };
 
-FwdTrans *fastFwdTrans[NUM_TRANS_TYPE][g_numTransformMatrixSizes] =
-{
-  { fastForwardDCT2_B2, fastForwardDCT2_B4, fastForwardDCT2_B8, fastForwardDCT2_B16, fastForwardDCT2_B32, fastForwardDCT2_B64 },
-  { nullptr,            fastForwardDCT8_B4, fastForwardDCT8_B8, fastForwardDCT8_B16, fastForwardDCT8_B32, nullptr },
-  { nullptr,            fastForwardDST7_B4, fastForwardDST7_B8, fastForwardDST7_B16, fastForwardDST7_B32, nullptr },
-};
+using FwdTransList = std::array<FwdTrans *, NUM_TRANSFORM_MATRIX_SIZES>;
+using InvTransList = std::array<InvTrans *, NUM_TRANSFORM_MATRIX_SIZES>;
 
-InvTrans *fastInvTrans[NUM_TRANS_TYPE][g_numTransformMatrixSizes] =
-{
-  { fastInverseDCT2_B2, fastInverseDCT2_B4, fastInverseDCT2_B8, fastInverseDCT2_B16, fastInverseDCT2_B32, fastInverseDCT2_B64 },
-  { nullptr,            fastInverseDCT8_B4, fastInverseDCT8_B8, fastInverseDCT8_B16, fastInverseDCT8_B32, nullptr },
-  { nullptr,            fastInverseDST7_B4, fastInverseDST7_B8, fastInverseDST7_B16, fastInverseDST7_B32, nullptr },
-};
+static const EnumArray<FwdTransList, TransType> fastFwdTrans = { {
+  FwdTransList{ fastForwardDCT2_B2, fastForwardDCT2_B4, fastForwardDCT2_B8, fastForwardDCT2_B16, fastForwardDCT2_B32,
+                fastForwardDCT2_B64 },
+  FwdTransList{ nullptr, fastForwardDCT8_B4, fastForwardDCT8_B8, fastForwardDCT8_B16, fastForwardDCT8_B32, nullptr },
+  FwdTransList{ nullptr, fastForwardDST7_B4, fastForwardDST7_B8, fastForwardDST7_B16, fastForwardDST7_B32, nullptr },
+} };
+
+static const EnumArray<InvTransList, TransType> fastInvTrans = { {
+  InvTransList{ fastInverseDCT2_B2, fastInverseDCT2_B4, fastInverseDCT2_B8, fastInverseDCT2_B16, fastInverseDCT2_B32,
+                fastInverseDCT2_B64 },
+  InvTransList{ nullptr, fastInverseDCT8_B4, fastInverseDCT8_B8, fastInverseDCT8_B16, fastInverseDCT8_B32, nullptr },
+  InvTransList{ nullptr, fastInverseDST7_B4, fastInverseDST7_B8, fastInverseDST7_B16, fastInverseDST7_B32, nullptr },
+} };
 
 //! \ingroup CommonLib
 //! \{
@@ -616,7 +619,7 @@ void TrQuant::selectICTCandidates(const TransformUnit &tu, CompStorage *resCb, C
 // Logical transform
 // ------------------------------------------------------------------------------------------------
 
-void TrQuant::getTrTypes(const TransformUnit tu, const ComponentID compID, int &trTypeHor, int &trTypeVer)
+void TrQuant::getTrTypes(const TransformUnit tu, const ComponentID compID, TransType &trTypeHor, TransType &trTypeVer)
 {
   const bool isExplicitMTS = (CU::isIntra(*tu.cu) ? tu.cs->sps->getExplicitMtsIntraEnabled()
                                                   : tu.cs->sps->getExplicitMtsInterEnabled() && CU::isInter(*tu.cu))
@@ -626,8 +629,8 @@ void TrQuant::getTrTypes(const TransformUnit tu, const ComponentID compID, int &
   const bool isISP = CU::isIntra(*tu.cu) && tu.cu->ispMode && isLuma(compID);
   const bool isSBT = CU::isInter(*tu.cu) && tu.cu->sbtInfo && isLuma(compID);
 
-  trTypeHor = DCT2;
-  trTypeVer = DCT2;
+  trTypeHor = TransType::DCT2;
+  trTypeVer = TransType::DCT2;
 
   if (isISP && tu.cu->lfnstIdx)
   {
@@ -648,11 +651,11 @@ void TrQuant::getTrTypes(const TransformUnit tu, const ComponentID compID, int &
 
     if (widthDstOk)
     {
-      trTypeHor = DST7;
+      trTypeHor = TransType::DST7;
     }
     if (heightDstOk)
     {
-      trTypeVer = DST7;
+      trTypeVer = TransType::DST7;
     }
     return;
   }
@@ -668,19 +671,19 @@ void TrQuant::getTrTypes(const TransformUnit tu, const ComponentID compID, int &
       assert( tu.lwidth() <= MTS_INTER_MAX_CU_SIZE );
       if( tu.lheight() > MTS_INTER_MAX_CU_SIZE )
       {
-        trTypeHor = trTypeVer = DCT2;
+        trTypeHor = trTypeVer = TransType::DCT2;
       }
       else
       {
         if (sbtPos == SBT_POS0)
         {
-          trTypeHor = DCT8;
-          trTypeVer = DST7;
+          trTypeHor = TransType::DCT8;
+          trTypeVer = TransType::DST7;
         }
         else
         {
-          trTypeHor = DST7;
-          trTypeVer = DST7;
+          trTypeHor = TransType::DST7;
+          trTypeVer = TransType::DST7;
         }
       }
     }
@@ -689,19 +692,19 @@ void TrQuant::getTrTypes(const TransformUnit tu, const ComponentID compID, int &
       assert( tu.lheight() <= MTS_INTER_MAX_CU_SIZE );
       if( tu.lwidth() > MTS_INTER_MAX_CU_SIZE )
       {
-        trTypeHor = trTypeVer = DCT2;
+        trTypeHor = trTypeVer = TransType::DCT2;
       }
       else
       {
         if (sbtPos == SBT_POS0)
         {
-          trTypeHor = DST7;
-          trTypeVer = DCT8;
+          trTypeHor = TransType::DST7;
+          trTypeVer = TransType::DCT8;
         }
         else
         {
-          trTypeHor = DST7;
-          trTypeVer = DST7;
+          trTypeHor = TransType::DST7;
+          trTypeVer = TransType::DST7;
         }
       }
     }
@@ -714,8 +717,8 @@ void TrQuant::getTrTypes(const TransformUnit tu, const ComponentID compID, int &
     {
       int indHor = (tu.mtsIdx[compID] - MTS_DST7_DST7) & 1;
       int indVer = (tu.mtsIdx[compID] - MTS_DST7_DST7) >> 1;
-      trTypeHor = indHor ? DCT8 : DST7;
-      trTypeVer = indVer ? DCT8 : DST7;
+      trTypeHor  = indHor ? TransType::DCT8 : TransType::DST7;
+      trTypeVer  = indVer ? TransType::DCT8 : TransType::DST7;
     }
   }
 }
@@ -728,13 +731,17 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   const uint32_t transformWidthIndex    = floorLog2(width ) - 1;  // nLog2WidthMinus1, since transform start from 2-point
   const uint32_t transformHeightIndex   = floorLog2(height) - 1;  // nLog2HeightMinus1, since transform start from 2-point
 
-  int trTypeHor = DCT2;
-  int trTypeVer = DCT2;
+  auto trTypeHor = TransType::DCT2;
+  auto trTypeVer = TransType::DCT2;
 
   getTrTypes ( tu, compID, trTypeHor, trTypeVer );
 
-  int  skipWidth  = ( trTypeHor != DCT2 && width  == 32 ) ? 16 : width  > JVET_C0024_ZERO_OUT_TH ? width  - JVET_C0024_ZERO_OUT_TH : 0;
-  int  skipHeight = ( trTypeVer != DCT2 && height == 32 ) ? 16 : height > JVET_C0024_ZERO_OUT_TH ? height - JVET_C0024_ZERO_OUT_TH : 0;
+  int skipWidth  = (trTypeHor != TransType::DCT2 && width == 32) ? 16
+                   : width > JVET_C0024_ZERO_OUT_TH              ? width - JVET_C0024_ZERO_OUT_TH
+                                                                 : 0;
+  int skipHeight = (trTypeVer != TransType::DCT2 && height == 32) ? 16
+                   : height > JVET_C0024_ZERO_OUT_TH              ? height - JVET_C0024_ZERO_OUT_TH
+                                                                  : 0;
   if( tu.cs->sps->getUseLFNST() && tu.cu->lfnstIdx )
   {
     if( (width == 4 && height > 4) || (width > 4 && height == 4) )
@@ -750,7 +757,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   }
 
 #if RExt__DECODER_DEBUG_TOOL_STATISTICS
-  if ( trTypeHor != DCT2 )
+  if (trTypeHor != TransType::DCT2)
   {
     CodingStatistics::IncrementStatisticTool( CodingStatisticsClassType{ STATS__TOOL_EMT, uint32_t( width ), uint32_t( height ), compID } );
   }
@@ -810,12 +817,16 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   const uint32_t transformWidthIndex    = floorLog2(width ) - 1;                                // nLog2WidthMinus1, since transform start from 2-point
   const uint32_t transformHeightIndex   = floorLog2(height) - 1;                                // nLog2HeightMinus1, since transform start from 2-point
 
-  int trTypeHor = DCT2;
-  int trTypeVer = DCT2;
+  auto trTypeHor = TransType::DCT2;
+  auto trTypeVer = TransType::DCT2;
 
   getTrTypes ( tu, compID, trTypeHor, trTypeVer );
-  int skipWidth  = ( trTypeHor != DCT2 && width  == 32 ) ? 16 : width  > JVET_C0024_ZERO_OUT_TH ? width  - JVET_C0024_ZERO_OUT_TH : 0;
-  int skipHeight = ( trTypeVer != DCT2 && height == 32 ) ? 16 : height > JVET_C0024_ZERO_OUT_TH ? height - JVET_C0024_ZERO_OUT_TH : 0;
+  int skipWidth  = (trTypeHor != TransType::DCT2 && width == 32) ? 16
+                   : width > JVET_C0024_ZERO_OUT_TH              ? width - JVET_C0024_ZERO_OUT_TH
+                                                                 : 0;
+  int skipHeight = (trTypeVer != TransType::DCT2 && height == 32) ? 16
+                   : height > JVET_C0024_ZERO_OUT_TH              ? height - JVET_C0024_ZERO_OUT_TH
+                                                                  : 0;
   if( tu.cs->sps->getUseLFNST() && tu.cu->lfnstIdx )
   {
     if( (width == 4 && height > 4) || (width > 4 && height == 4) )
