@@ -641,16 +641,25 @@ void SEIReader::xParseSEIDecodedPictureHash(SEIDecodedPictureHash& sei, uint32_t
   sei.singleCompFlag = val;
   sei_read_code( pDecodedMessageOutputStream, 7, val, "dph_sei_reserved_zero_7bits");
   bytesRead++;
-  uint32_t expectedSize = ( sei.singleCompFlag ? 1 : 3 ) * (sei.method == 0 ? 16 : (sei.method == 1 ? 2 : 4));
+  uint32_t expectedSize =
+    (sei.singleCompFlag ? 1 : 3) * (sei.method == HashType::MD5 ? 16 : (sei.method == HashType::CRC ? 2 : 4));
   CHECK ((payloadSize - bytesRead) != expectedSize, "The size of the decoded picture hash does not match the expected size.");
 
   const char *traceString="\0";
   switch (sei.method)
   {
-    case HASHTYPE_MD5: traceString="picture_md5"; break;
-    case HASHTYPE_CRC: traceString="picture_crc"; break;
-    case HASHTYPE_CHECKSUM: traceString="picture_checksum"; break;
-    default: THROW("Unknown hash type"); break;
+  case HashType::MD5:
+    traceString = "picture_md5";
+    break;
+  case HashType::CRC:
+    traceString = "picture_crc";
+    break;
+  case HashType::CHECKSUM:
+    traceString = "picture_checksum";
+    break;
+  default:
+    THROW("Unknown hash type");
+    break;
   }
 
   if (pDecodedMessageOutputStream)

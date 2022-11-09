@@ -270,15 +270,23 @@ void SEIWriter::xWriteSEIDecodedPictureHash(const SEIDecodedPictureHash& sei)
   const char *traceString="\0";
   switch (sei.method)
   {
-    case HASHTYPE_MD5: traceString="picture_md5"; break;
-    case HASHTYPE_CRC: traceString="picture_crc"; break;
-    case HASHTYPE_CHECKSUM: traceString="picture_checksum"; break;
-    default: THROW("Unknown hash type"); break;
+  case HashType::MD5:
+    traceString = "picture_md5";
+    break;
+  case HashType::CRC:
+    traceString = "picture_crc";
+    break;
+  case HashType::CHECKSUM:
+    traceString = "picture_checksum";
+    break;
+  default:
+    THROW("Unknown hash type");
+    break;
   }
 
   if (traceString != 0) //use of this variable is needed to avoid a compiler error with G++ 4.6.1
   {
-    WRITE_CODE(sei.method, 8, "dph_sei_hash_type");
+    WRITE_CODE(to_underlying(sei.method), 8, "dph_sei_hash_type");
     WRITE_CODE(sei.singleCompFlag, 1, "dph_sei_single_component_flag");
     WRITE_CODE(0, 7, "dph_sei_reserved_zero_7bits");
     for(uint32_t i=0; i<uint32_t(sei.m_pictureHash.hash.size()); i++)

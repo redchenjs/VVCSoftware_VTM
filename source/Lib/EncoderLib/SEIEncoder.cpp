@@ -487,25 +487,26 @@ void SEIEncoder::initDecodedPictureHashSEI(SEIDecodedPictureHash *decodedPicture
   decodedPictureHashSEI->singleCompFlag = (m_pcCfg->getChromaFormatIdc() == 0);
   switch (m_pcCfg->getDecodedPictureHashSEIType())
   {
-    case HASHTYPE_MD5:
-      {
-        uint32_t numChar=calcMD5(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
-        rHashString = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
-      }
-      break;
-    case HASHTYPE_CRC:
-      {
-        uint32_t numChar=calcCRC(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
-        rHashString = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
-      }
-      break;
-    case HASHTYPE_CHECKSUM:
-    default:
-      {
-        uint32_t numChar=calcChecksum(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
-        rHashString = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
-      }
-      break;
+  case HashType::MD5:
+  {
+    uint32_t numChar = calcMD5(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
+    rHashString      = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
+    break;
+  }
+  break;
+  case HashType::CRC:
+  {
+    uint32_t numChar = calcCRC(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
+    rHashString      = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
+    break;
+  }
+  case HashType::CHECKSUM:
+  default:
+  {
+    uint32_t numChar = calcChecksum(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
+    rHashString      = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
+    break;
+  }
   }
 }
 
