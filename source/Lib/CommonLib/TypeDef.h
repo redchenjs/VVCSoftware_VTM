@@ -55,6 +55,7 @@
 
 
 //########### place macros to be removed in next cycle below this line ###############
+#define JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC 1
 
 //########### place macros to be be kept below this line ###############
 
