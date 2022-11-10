@@ -2492,7 +2492,8 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           {
             pu.cs->getPredBuf(pu).Y().rspSignal(m_pcReshape->getFwdLUT());
           }
-          m_pcIntraSearch->geneWeightedPred(COMPONENT_Y, pu.cs->getPredBuf(pu).Y(), pu, m_pcIntraSearch->getPredictorPtr2(COMPONENT_Y, intraCnt));
+          m_pcIntraSearch->geneWeightedPred(pu.cs->getPredBuf(pu).Y(), pu,
+                                            m_pcIntraSearch->getPredictorPtr2(COMPONENT_Y, intraCnt));
 
           // calculate cost
           if (pu.cs->slice->getLmcsEnabledFlag() && m_pcReshape->getCTUFlag())
@@ -2787,19 +2788,17 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           {
             tmpBuf.rspSignal(m_pcReshape->getFwdLUT());
           }
-          m_pcIntraSearch->geneWeightedPred(COMPONENT_Y, tmpBuf, pu, m_pcIntraSearch->getPredictorPtr2(COMPONENT_Y, bufIdx));
+          m_pcIntraSearch->geneWeightedPred(tmpBuf, pu, m_pcIntraSearch->getPredictorPtr2(COMPONENT_Y, bufIdx));
           if (isChromaEnabled(pu.chromaFormat))
           {
             if (pu.chromaSize().width > 2)
             {
               tmpBuf = tempCS->getPredBuf(pu).Cb();
               tmpBuf.copyFrom(acMergeTmpBuffer[uiMergeCand].Cb());
-              m_pcIntraSearch->geneWeightedPred(COMPONENT_Cb, tmpBuf, pu,
-                                                m_pcIntraSearch->getPredictorPtr2(COMPONENT_Cb, bufIdx));
+              m_pcIntraSearch->geneWeightedPred(tmpBuf, pu, m_pcIntraSearch->getPredictorPtr2(COMPONENT_Cb, bufIdx));
               tmpBuf = tempCS->getPredBuf(pu).Cr();
               tmpBuf.copyFrom(acMergeTmpBuffer[uiMergeCand].Cr());
-              m_pcIntraSearch->geneWeightedPred(COMPONENT_Cr, tmpBuf, pu,
-                                                m_pcIntraSearch->getPredictorPtr2(COMPONENT_Cr, bufIdx));
+              m_pcIntraSearch->geneWeightedPred(tmpBuf, pu, m_pcIntraSearch->getPredictorPtr2(COMPONENT_Cr, bufIdx));
             }
             else
             {
