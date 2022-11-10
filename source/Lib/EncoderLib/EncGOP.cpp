@@ -3110,9 +3110,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     // it is used for signalling during CTU mode decision, i.e. before ALF processing
     if( pcSlice->getSPS()->getALFEnabledFlag() )
     {
-      pcPic->resizeAlfCtuEnableFlag( numberOfCtusInFrame );
-      pcPic->resizeAlfCtuAlternative( numberOfCtusInFrame );
-      pcPic->resizeAlfCtbFilterIndex(numberOfCtusInFrame);
+      pcPic->resizeAlfData(numberOfCtusInFrame);
     }
 
     bool decPic = false;

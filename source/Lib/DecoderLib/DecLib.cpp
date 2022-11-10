@@ -199,23 +199,7 @@ bool tryDecodePicture( Picture* pcEncPic, const int expectedPoc, const std::stri
 
                   if (pic->cs->sps->getALFEnabledFlag())
                   {
-                    std::copy(pic->getAlfCtbFilterIndexVec().begin(), pic->getAlfCtbFilterIndexVec().end(),
-                              pcEncPic->getAlfCtbFilterIndexVec().begin());
-                    for (int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++)
-                    {
-                      std::copy(pic->getAlfCtuEnableFlag()[compIdx].begin(), pic->getAlfCtuEnableFlag()[compIdx].end(),
-                                pcEncPic->getAlfCtuEnableFlag()[compIdx].begin());
-                    }
-                    pcEncPic->resizeAlfCtbFilterIndex(pic->cs->pcv->sizeInCtus);
-                    memcpy(pcEncPic->getAlfCtbFilterIndex(), pic->getAlfCtbFilterIndex(),
-                           sizeof(short) * pic->cs->pcv->sizeInCtus);
-
-                    std::copy(pic->getAlfCtuAlternative(COMPONENT_Cb).begin(),
-                              pic->getAlfCtuAlternative(COMPONENT_Cb).end(),
-                              pcEncPic->getAlfCtuAlternative(COMPONENT_Cb).begin());
-                    std::copy(pic->getAlfCtuAlternative(COMPONENT_Cr).begin(),
-                              pic->getAlfCtuAlternative(COMPONENT_Cr).end(),
-                              pcEncPic->getAlfCtuAlternative(COMPONENT_Cr).begin());
+                    pcEncPic->copyAlfData(*pic);
 
                     for (int i = 0; i < pic->slices.size(); i++)
                     {

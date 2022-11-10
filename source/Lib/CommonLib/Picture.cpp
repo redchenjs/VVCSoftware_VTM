@@ -1616,3 +1616,43 @@ void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blen
 }
 #endif
 
+void Picture::copyAlfData(const Picture &p)
+{
+  CHECK(p.m_alfCtbFilterIndex.size() != m_alfCtbFilterIndex.size(), "Size mismatch");
+
+  std::copy(p.m_alfCtbFilterIndex.begin(), p.m_alfCtbFilterIndex.end(), m_alfCtbFilterIndex.begin());
+
+  for (int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++)
+  {
+    CHECK(p.m_alfCtuEnableFlag[compIdx].size() != m_alfCtuEnableFlag[compIdx].size(), "Size mismatch");
+
+    std::copy(p.m_alfCtuEnableFlag[compIdx].begin(), p.m_alfCtuEnableFlag[compIdx].end(),
+              m_alfCtuEnableFlag[compIdx].begin());
+  }
+
+  for (int compIdx = COMPONENT_Cb; compIdx < MAX_NUM_COMPONENT; compIdx++)
+  {
+    CHECK(p.m_alfCtuAlternative[compIdx].size() != m_alfCtuAlternative[compIdx].size(), "Size mismatch");
+
+    std::copy(p.m_alfCtuAlternative[compIdx].begin(), p.m_alfCtuAlternative[compIdx].end(),
+              m_alfCtuAlternative[compIdx].begin());
+  }
+}
+
+void Picture::resizeAlfData(const int numEntries)
+{
+  for (int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++)
+  {
+    m_alfCtuEnableFlag[compIdx].resize(numEntries);
+    std::fill(m_alfCtuEnableFlag[compIdx].begin(), m_alfCtuEnableFlag[compIdx].end(), 0);
+  }
+
+  m_alfCtbFilterIndex.resize(numEntries);
+  std::fill(m_alfCtbFilterIndex.begin(), m_alfCtbFilterIndex.end(), 0);
+
+  for (int compIdx = 1; compIdx < MAX_NUM_COMPONENT; compIdx++)
+  {
+    m_alfCtuAlternative[compIdx].resize(numEntries);
+    std::fill(m_alfCtuAlternative[compIdx].begin(), m_alfCtuAlternative[compIdx].end(), 0);
+  }
+}
