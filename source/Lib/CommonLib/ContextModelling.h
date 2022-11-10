@@ -84,9 +84,7 @@ public:
   bool            isSigGroup(int scanPosCG) const { return m_sigCoeffGroupFlag[m_scanCG[scanPosCG].idx]; }
   bool            isSigGroup      ()                        const { return m_sigCoeffGroupFlag[ m_subSetPos ]; }
   bool            signHiding      ()                        const { return m_signHiding; }
-  bool            hideSign        ( int       posFirst,
-                                    int       posLast   )   const { return ( m_signHiding && ( posLast - posFirst >= SBH_THRESHOLD ) ); }
-  CoeffScanType   scanType        ()                        const { return m_scanType; }
+  bool hideSign(int posFirst, int posLast) const { return (m_signHiding && (posLast - posFirst >= SBH_THRESHOLD)); }
   unsigned        blockPos(int scanPos) const { return m_scan[scanPos].idx; }
   unsigned        posX(int scanPos) const { return m_scan[scanPos].x; }
   unsigned        posY(int scanPos) const { return m_scan[scanPos].y; }
@@ -522,7 +520,6 @@ private:
   const bool                m_signHiding;
   const bool                m_extendedPrecision;
   const int                 m_maxLog2TrDynamicRange;
-  CoeffScanType             m_scanType;
   const ScanElement *       m_scan;
   const ScanElement *       m_scanCG;
   const CtxSet              m_CtxSetLastX;

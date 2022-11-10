@@ -56,10 +56,9 @@ CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID comp
   , m_signHiding(signHide)
   , m_extendedPrecision(tu.cs->sps->getSpsRangeExtension().getExtendedPrecisionProcessingFlag())
   , m_maxLog2TrDynamicRange(tu.cs->sps->getMaxLog2TrDynamicRange(m_chType))
-  , m_scanType(SCAN_DIAG)
-  , m_scan(
-      g_scanOrder[SCAN_GROUPED_4x4][m_scanType][gp_sizeIdxInfo->idxFrom(m_width)][gp_sizeIdxInfo->idxFrom(m_height)])
-  , m_scanCG(g_scanOrder[SCAN_UNGROUPED][m_scanType][gp_sizeIdxInfo->idxFrom(m_widthInGroups)]
+  , m_scan(g_scanOrder[SCAN_GROUPED_4x4][CoeffScanType::DIAG][gp_sizeIdxInfo->idxFrom(m_width)]
+                      [gp_sizeIdxInfo->idxFrom(m_height)])
+  , m_scanCG(g_scanOrder[SCAN_UNGROUPED][CoeffScanType::DIAG][gp_sizeIdxInfo->idxFrom(m_widthInGroups)]
                         [gp_sizeIdxInfo->idxFrom(m_heightInGroups)])
   , m_CtxSetLastX(Ctx::LastX[m_chType])
   , m_CtxSetLastY(Ctx::LastY[m_chType])

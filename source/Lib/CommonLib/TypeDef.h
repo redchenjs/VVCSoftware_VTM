@@ -584,13 +584,20 @@ enum MESearchMethod
 };
 
 /// coefficient scanning type used in ACS
-enum CoeffScanType
+enum class CoeffScanType
 {
-  SCAN_DIAG = 0,        ///< up-right diagonal scan
-  SCAN_TRAV_HOR = 1,
-  SCAN_TRAV_VER = 2,
-  SCAN_NUMBER_OF_TYPES
+  DIAG = 0,
+  TRAV_HOR = 1,
+  TRAV_VER = 2,
+  NUM
 };
+
+static inline CoeffScanType operator++(CoeffScanType &a, int)
+{
+  CoeffScanType b = a;
+  a = static_cast<CoeffScanType>(to_underlying(a) + 1);
+  return b;
+}
 
 enum CoeffScanGroupType
 {
