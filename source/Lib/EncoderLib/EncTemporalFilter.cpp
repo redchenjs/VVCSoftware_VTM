@@ -310,9 +310,9 @@ void EncTemporalFilter::subsampleLuma(const PelStorage &input, PelStorage &outpu
   output.create(m_chromaFormatIDC, Area(0, 0, newWidth, newHeight), 0, m_padding);
 
   const Pel* srcRow   = input.Y().buf;
-  const int srcStride = input.Y().stride;
+  const ptrdiff_t srcStride      = input.Y().stride;
   Pel *dstRow         = output.Y().buf;
-  const int dstStride = output.Y().stride;
+  const ptrdiff_t dstStride      = output.Y().stride;
 
   for (int y = 0; y < newHeight; y++, srcRow += factor * srcStride, dstRow += dstStride)
   {
@@ -340,9 +340,9 @@ int EncTemporalFilter::motionErrorLuma(const PelStorage &orig,
   const int besterror = 8 * 8 * 1024 * 1024) const
 {
   const Pel* origOrigin = orig.Y().buf;
-  const int  origStride = orig.Y().stride;
+  const ptrdiff_t origStride = orig.Y().stride;
   const Pel* buffOrigin = buffer.Y().buf;
-  const int  buffStride = buffer.Y().stride;
+  const ptrdiff_t buffStride = buffer.Y().stride;
 
   int error = 0;
   if (((dx | dy) & 0xF) == 0)
@@ -593,10 +593,10 @@ void EncTemporalFilter::applyMotion(const Array2D<MotionVector> &mvs, const PelS
     const Pel maxValue = (1 << m_internalBitDepth[toChannelType(compID)]) - 1;
 
     const Pel *srcImage = input.bufs[c].buf;
-    const int srcStride = input.bufs[c].stride;
+    const ptrdiff_t srcStride = input.bufs[c].stride;
 
     Pel *dstImage = output.bufs[c].buf;
-    int dstStride = output.bufs[c].stride;
+    ptrdiff_t dstStride = output.bufs[c].stride;
 
     for (int y = 0, blockNumY = 0; y + blockSizeY <= height; y += blockSizeY, blockNumY++)
     {
@@ -685,9 +685,9 @@ void EncTemporalFilter::bilateralFilter(const PelStorage &orgPic,
     const int height = orgPic.bufs[c].height;
     const int width  = orgPic.bufs[c].width;
     const Pel* srcPelRow = orgPic.bufs[c].buf;
-    const int  srcStride = orgPic.bufs[c].stride;
-          Pel* dstPelRow = newOrgPic.bufs[c].buf;
-    const int  dstStride = newOrgPic.bufs[c].stride;
+    const ptrdiff_t   srcStride             = orgPic.bufs[c].stride;
+    Pel              *dstPelRow             = newOrgPic.bufs[c].buf;
+    const ptrdiff_t   dstStride             = newOrgPic.bufs[c].stride;
     const double sigmaSq = isChroma(compID) ? chromaSigmaSq : lumaSigmaSq;
     const double weightScaling = overallStrength * (isChroma(compID) ? m_chromaFactor : 0.4);
     const Pel maxSampleValue   = (1 << m_internalBitDepth[toChannelType(compID)]) - 1;

@@ -1519,7 +1519,7 @@ void QuantRDOQ::forwardBDPCM(TransformUnit &tu, const ComponentID &compID, const
       const int posX = cctx.posX(scanPos);
       const int posY = cctx.posY(scanPos);
       const int posS = (BdpcmMode::HOR == dirMode) ? posX : posY;
-      const int posNb =
+      const ptrdiff_t posNb =
         (BdpcmMode::HOR == dirMode) ? (posX - 1) + posY * coeffs.stride : posX + (posY - 1) * coeffs.stride;
       TCoeff predCoeff = (0 != posS) ? m_fullCoeff[posNb] : 0;
 
@@ -1635,7 +1635,7 @@ void QuantRDOQ::forwardBDPCM(TransformUnit &tu, const ComponentID &compID, const
           const int posX = cctx.posX(scanPos);
           const int posY = cctx.posY(scanPos);
           const int posS = (BdpcmMode::HOR == dirMode) ? posX : posY;
-          const int posNb =
+          const ptrdiff_t posNb =
             (BdpcmMode::HOR == dirMode) ? (posX - 1) + posY * coeffs.stride : posX + (posY - 1) * coeffs.stride;
           m_fullCoeff[scanPos] = (0 != posS) ? m_fullCoeff[posNb] : 0;
 

@@ -58,8 +58,8 @@ Distortion RdCost::xGetSSE_SIMD( const DistParam &rcDtParam )
   const Tcur* pSrc2     = (const Tcur*)rcDtParam.cur.buf;
   int         rows       = rcDtParam.org.height;
   int         cols       = rcDtParam.org.width;
-  const int   strideSrc1 = rcDtParam.org.stride;
-  const int   strideSrc2 = rcDtParam.cur.stride;
+  const ptrdiff_t strideSrc1 = rcDtParam.org.stride;
+  const ptrdiff_t strideSrc2 = rcDtParam.cur.stride;
 
   const uint32_t shift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
   unsigned int uiRet = 0;
@@ -149,8 +149,8 @@ template<int width, X86_VEXT vext> Distortion RdCost::xGetSSE_NxN_SIMD(const Dis
   const Torg* pSrc1     = (const Torg*)rcDtParam.org.buf;
   const Tcur* pSrc2     = (const Tcur*)rcDtParam.cur.buf;
   int         rows       = rcDtParam.org.height;
-  const int   strideSrc1 = rcDtParam.org.stride;
-  const int   strideSrc2 = rcDtParam.cur.stride;
+  const ptrdiff_t strideSrc1 = rcDtParam.org.stride;
+  const ptrdiff_t strideSrc2 = rcDtParam.cur.stride;
 
   const uint32_t shift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
   unsigned int uiRet = 0;
@@ -253,8 +253,8 @@ Distortion RdCost::xGetSAD_SIMD( const DistParam &rcDtParam )
   int          cols       = rcDtParam.org.width;
   int          subShift   = rcDtParam.subShift;
   int          subStep    = (1 << subShift);
-  const int    strideSrc1 = rcDtParam.org.stride * subStep;
-  const int    strideSrc2 = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideSrc1 = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideSrc2 = rcDtParam.cur.stride * subStep;
 
   uint32_t sum = 0;
   if (vext >= AVX2 && (cols & 15) == 0)
@@ -349,8 +349,8 @@ Distortion RdCost::xGetSAD_IBD_SIMD(const DistParam &rcDtParam)
   int  height = rcDtParam.org.width;
   int  subShift = rcDtParam.subShift;
   int  subStep = (1 << subShift);
-  const int src0Stride = rcDtParam.org.stride * subStep;
-  const int src1Stride = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t src0Stride = rcDtParam.org.stride * subStep;
+  const ptrdiff_t src1Stride = rcDtParam.cur.stride * subStep;
 
   __m128i vtotalsum32 = _mm_setzero_si128();
   __m128i vzero = _mm_setzero_si128();
@@ -388,8 +388,8 @@ template<int width, X86_VEXT vext> Distortion RdCost::xGetSAD_NxN_SIMD(const Dis
   int          rows       = rcDtParam.org.height;
   int          subShift   = rcDtParam.subShift;
   int          subStep    = (1 << subShift);
-  const int    strideSrc1 = rcDtParam.org.stride * subStep;
-  const int    strideSrc2 = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideSrc1 = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideSrc2 = rcDtParam.cur.stride * subStep;
 
   uint32_t sum = 0;
 
@@ -495,7 +495,8 @@ template<int width, X86_VEXT vext> Distortion RdCost::xGetSAD_NxN_SIMD(const Dis
 }
 
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-static Distortion xCalcHAD2x2_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD2x2_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                      const ptrdiff_t strideCur)
 {
   __m128i m1[2], m2[2];
   for (int k = 0; k < 2; k++)
@@ -532,7 +533,8 @@ static Distortion xCalcHAD2x2_HBD_SSE(const Torg *piOrg, const Tcur *piCur, cons
   return sad;
 }
 
-static Distortion xCalcHAD4x4_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD4x4_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                      const ptrdiff_t strideCur)
 {
   __m128i r0 = _mm_lddqu_si128((const __m128i*)&piOrg[0]);
   __m128i r1 = _mm_lddqu_si128((const __m128i *) &piOrg[strideOrg]);
@@ -617,7 +619,8 @@ static Distortion xCalcHAD4x4_HBD_SSE(const Torg *piOrg, const Tcur *piCur, cons
   return sad;
 }
 
-static Distortion xCalcHAD8x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD8x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                      const ptrdiff_t strideCur)
 {
   __m128i m1[8][2], m2[8][2];
 
@@ -751,7 +754,8 @@ static Distortion xCalcHAD8x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, cons
   return sad;
 }
 
-static Distortion xCalcHAD4x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD4x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                      const ptrdiff_t strideCur)
 {
   __m128i m1[8], m2[8];
 
@@ -848,7 +852,8 @@ static Distortion xCalcHAD4x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, cons
   return sad;
 }
 
-static Distortion xCalcHAD8x4_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD8x4_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                      const ptrdiff_t strideCur)
 {
   __m128i m1[8][2], m2[8][2];
 
@@ -946,7 +951,8 @@ static Distortion xCalcHAD8x4_HBD_SSE(const Torg *piOrg, const Tcur *piCur, cons
   return sad;
 }
 
-static Distortion xCalcHAD16x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD16x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                       const ptrdiff_t strideCur)
 {
   __m128i m1[16][2][2], m2[16][2][2];
   __m128i sum = _mm_setzero_si128();
@@ -1160,7 +1166,8 @@ static Distortion xCalcHAD16x8_HBD_SSE(const Torg *piOrg, const Tcur *piCur, con
   return sad;
 }
 
-static Distortion xCalcHAD8x16_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD8x16_HBD_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                       const ptrdiff_t strideCur)
 {
   __m128i m1[2][16], m2[2][16];
   __m128i sum = _mm_setzero_si128();
@@ -1351,7 +1358,8 @@ static Distortion xCalcHAD8x16_HBD_SSE(const Torg *piOrg, const Tcur *piCur, con
 }
 
 #ifdef USE_AVX2
-static Distortion xCalcHAD4x4_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD4x4_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                       const ptrdiff_t strideCur)
 {
   __m256i r0 = _mm256_castsi128_si256(_mm_lddqu_si128((const __m128i*)&piOrg[0]));
   __m256i r1 = _mm256_castsi128_si256(_mm_lddqu_si128((const __m128i *) &piOrg[strideOrg]));
@@ -1441,7 +1449,8 @@ static Distortion xCalcHAD4x4_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, con
   return sad;
 }
 
-static Distortion xCalcHAD8x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD8x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                       const ptrdiff_t strideCur)
 {
   __m256i m1[8], m2[8];
 
@@ -1560,7 +1569,8 @@ static Distortion xCalcHAD8x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, con
   return sad;
 }
 
-static Distortion xCalcHAD4x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD4x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                       const ptrdiff_t strideCur)
 {
   __m256i m1[8], m2[8], n1[4], n2[4];
   for (int k = 0; k < 8; k++)
@@ -1646,7 +1656,8 @@ static Distortion xCalcHAD4x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, con
   return sad;
 }
 
-static Distortion xCalcHAD8x4_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD8x4_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                       const ptrdiff_t strideCur)
 {
   __m256i m1[8], m2[8];
 
@@ -1740,7 +1751,8 @@ static Distortion xCalcHAD8x4_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, con
   return sad;
 }
 
-static Distortion xCalcHAD16x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD16x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                        const ptrdiff_t strideCur)
 {
   __m256i m1[16], m2[16];
 
@@ -1972,7 +1984,8 @@ static Distortion xCalcHAD16x8_HBD_AVX2(const Torg *piOrg, const Tcur *piCur, co
   return (sad);
 }
 
-static Distortion xCalcHAD8x16_HBD_AVX2(const Pel *piOrg, const Pel *piCur, const int strideOrg, const int strideCur)
+static Distortion xCalcHAD8x16_HBD_AVX2(const Pel *piOrg, const Pel *piCur, const ptrdiff_t strideOrg,
+                                        const ptrdiff_t strideCur)
 {
   __m256i m1[16], m2[16];
 
@@ -2208,7 +2221,8 @@ static Distortion xCalcHAD8x16_HBD_AVX2(const Pel *piOrg, const Pel *piCur, cons
 #else
 static constexpr uint64_t INV_SQRT_2 = 0xb504f334U;   // 2^32 / sqrt(2.0)
 
-static uint32_t xCalcHAD4x4_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur)
+static uint32_t xCalcHAD4x4_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                const ptrdiff_t strideCur)
 {
   __m128i r0 = ( sizeof( Torg ) > 1 ) ? ( _mm_loadl_epi64( ( const __m128i* )&piOrg[0] ) ) : ( _mm_unpacklo_epi8( _mm_cvtsi32_si128( *(const int*)&piOrg[0] ), _mm_setzero_si128() ) );
   __m128i r1 = (sizeof(Torg) > 1)
@@ -2311,8 +2325,8 @@ static uint32_t xCalcHAD4x4_SSE(const Torg *piOrg, const Tcur *piCur, const int 
 }
 
 //working up to 12-bit
-static uint32_t xCalcHAD8x8_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur,
-                                const int iBitDepth)
+static uint32_t xCalcHAD8x8_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                const ptrdiff_t strideCur, const int iBitDepth)
 {
   __m128i m1[8][2], m2[8][2];
 
@@ -2447,8 +2461,8 @@ static uint32_t xCalcHAD8x8_SSE(const Torg *piOrg, const Tcur *piCur, const int 
 
 
 //working up to 12-bit
-static uint32_t xCalcHAD16x8_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur,
-                                 const int iBitDepth)
+static uint32_t xCalcHAD16x8_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                 const ptrdiff_t strideCur, const int iBitDepth)
 {
   __m128i m1[16][2][2], m2[16][2][2];
   __m128i sum = _mm_setzero_si128();
@@ -2666,8 +2680,8 @@ static uint32_t xCalcHAD16x8_SSE(const Torg *piOrg, const Tcur *piCur, const int
 
 
 //working up to 12-bit
-static uint32_t xCalcHAD8x16_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur,
-                                 const int iBitDepth)
+static uint32_t xCalcHAD8x16_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                 const ptrdiff_t strideCur, const int iBitDepth)
 {
   __m128i m1[2][16], m2[2][16];
   __m128i sum = _mm_setzero_si128();
@@ -2864,8 +2878,8 @@ static uint32_t xCalcHAD8x16_SSE(const Torg *piOrg, const Tcur *piCur, const int
 }
 
 template<typename Torg, typename Tcur /*, bool bHorDownsampling*/>
-static uint32_t xCalcHAD8x4_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur,
-                                const int iBitDepth)
+static uint32_t xCalcHAD8x4_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                const ptrdiff_t strideCur, const int iBitDepth)
 {
   __m128i m1[8], m2[8];
   __m128i vzero = _mm_setzero_si128();
@@ -3014,8 +3028,8 @@ static uint32_t xCalcHAD8x4_SSE(const Torg *piOrg, const Tcur *piCur, const int 
   return sad;
 }
 
-static uint32_t xCalcHAD4x8_SSE(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur,
-                                const int iBitDepth)
+static uint32_t xCalcHAD4x8_SSE(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                const ptrdiff_t strideCur, const int iBitDepth)
 {
   __m128i m1[8], m2[8];
 
@@ -3162,8 +3176,8 @@ static uint32_t xCalcHAD4x8_SSE(const Torg *piOrg, const Tcur *piCur, const int 
   return sad;
 }
 
-static uint32_t xCalcHAD16x16_AVX2(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur,
-                                   const int iBitDepth)
+static uint32_t xCalcHAD16x16_AVX2(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                   const ptrdiff_t strideCur, const int iBitDepth)
 {
   uint32_t sad = 0;
 
@@ -3341,8 +3355,8 @@ static uint32_t xCalcHAD16x16_AVX2(const Torg *piOrg, const Tcur *piCur, const i
   return ( sad );
 }
 
-static uint32_t xCalcHAD16x8_AVX2(const Torg *piOrg, const Tcur *piCur, const int strideOrg, const int strideCur,
-                                  const int iBitDepth)
+static uint32_t xCalcHAD16x8_AVX2(const Torg *piOrg, const Tcur *piCur, const ptrdiff_t strideOrg,
+                                  const ptrdiff_t strideCur, const int iBitDepth)
 {
   uint32_t sad = 0;
 
@@ -3589,8 +3603,8 @@ static uint32_t xCalcHAD16x8_AVX2(const Torg *piOrg, const Tcur *piCur, const in
   return (sad);
 }
 
-static uint32_t xCalcHAD8x16_AVX2(const Pel *piOrg, const Pel *piCur, const int strideOrg, const int strideCur,
-                                  const int iBitDepth)
+static uint32_t xCalcHAD8x16_AVX2(const Pel *piOrg, const Pel *piCur, const ptrdiff_t strideOrg,
+                                  const ptrdiff_t strideCur, const int iBitDepth)
 {
   uint32_t sad = 0;
 
@@ -3851,8 +3865,8 @@ Distortion RdCost::xGetSADwMask_SIMD( const DistParam &rcDtParam )
   int  cols           = rcDtParam.org.width;
   int  subShift       = rcDtParam.subShift;
   int  subStep        = ( 1 << subShift);
-  const int strideSrc1 = rcDtParam.org.stride * subStep;
-  const int strideSrc2 = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideSrc1     = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideSrc2     = rcDtParam.cur.stride * subStep;
   const int strideMask = rcDtParam.maskStride * subStep;
 
   Distortion sum = 0;
@@ -3940,8 +3954,8 @@ Distortion RdCost::xGetHADs_HBD_SIMD(const DistParam &rcDtParam)
   const Pel* piCur = rcDtParam.cur.buf;
   const int  rows      = rcDtParam.org.height;
   const int  cols      = rcDtParam.org.width;
-  const int  strideCur = rcDtParam.cur.stride;
-  const int  strideOrg = rcDtParam.org.stride;
+  const ptrdiff_t strideCur = rcDtParam.cur.stride;
+  const ptrdiff_t strideOrg = rcDtParam.org.stride;
   const int  step      = rcDtParam.step;
 
   CHECK(step != 1, "the function only supports of step equal to 1");
@@ -4033,8 +4047,8 @@ Distortion RdCost::xGetHADs_HBD_SIMD(const DistParam &rcDtParam)
   }
   else if ((rows % 8 == 0) && (cols % 8 == 0))
   {
-    int offsetOrg = strideOrg << 3;
-    int offsetCur = strideCur << 3;
+    ptrdiff_t offsetOrg = strideOrg << 3;
+    ptrdiff_t offsetCur = strideCur << 3;
     for (y = 0; y < rows; y += 8)
     {
       for (x = 0; x < cols; x += 8)
@@ -4056,8 +4070,8 @@ Distortion RdCost::xGetHADs_HBD_SIMD(const DistParam &rcDtParam)
   }
   else if ((rows % 4 == 0) && (cols % 4 == 0))
   {
-    int offsetOrg = strideOrg << 2;
-    int offsetCur = strideCur << 2;
+    ptrdiff_t offsetOrg = strideOrg << 2;
+    ptrdiff_t offsetCur = strideCur << 2;
 
     for (y = 0; y < rows; y += 4)
     {
@@ -4080,8 +4094,8 @@ Distortion RdCost::xGetHADs_HBD_SIMD(const DistParam &rcDtParam)
   }
   else if ((rows % 2 == 0) && (cols % 2 == 0))
   {
-    int offsetOrg = strideOrg << 1;
-    int offsetCur = strideCur << 1;
+    ptrdiff_t offsetOrg = strideOrg << 1;
+    ptrdiff_t offsetCur = strideCur << 1;
     for (y = 0; y < rows; y += 2)
     {
       for (x = 0; x < cols; x += 2)
@@ -4114,8 +4128,8 @@ Distortion RdCost::xGetSAD_HBD_SIMD(const DistParam &rcDtParam)
   int        cols       = rcDtParam.org.width;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  const int  strideSrc1 = rcDtParam.org.stride * subStep;
-  const int  strideSrc2 = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideSrc1 = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideSrc2 = rcDtParam.cur.stride * subStep;
 
   if ((cols < 4) && (rows < (subStep << 1)))
   {
@@ -4176,8 +4190,8 @@ Distortion RdCost::xGetSAD_HBD_SIMD(const DistParam &rcDtParam)
       __m128i vsum32 = vzero;
       __m128i vsrc10, vsrc20, vsrc11, vsrc21, vsum0, vsum1, vsum;
 
-      int i2StrideSrc1 = (strideSrc1 << 1);
-      int i2StrideSrc2 = (strideSrc2 << 1);
+      ptrdiff_t i2StrideSrc1 = (strideSrc1 << 1);
+      ptrdiff_t i2StrideSrc2 = (strideSrc2 << 1);
 
       for (int y = 0; y < rows; y += (subStep << 1))
       {
@@ -4220,9 +4234,9 @@ Distortion RdCost::xGetSADwMask_HBD_SIMD(const DistParam &rcDtParam)
   int  cols = rcDtParam.org.width;
   int  subShift = rcDtParam.subShift;
   int  subStep = (1 << subShift);
-  const int strideSrc1 = rcDtParam.org.stride * subStep;
-  const int strideSrc2 = rcDtParam.cur.stride * subStep;
-  const int strideMask = rcDtParam.maskStride * subStep;
+  const ptrdiff_t strideSrc1 = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideSrc2 = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideMask = rcDtParam.maskStride * subStep;
 
   Distortion sum = 0;
 
@@ -4319,8 +4333,8 @@ Distortion RdCost::xGetSSE_HBD_SIMD(const DistParam& pcDtParam)
   const Pel* piCur = pcDtParam.cur.buf;
   int        rows      = pcDtParam.org.height;
   int        cols      = pcDtParam.org.width;
-  int        strideCur = pcDtParam.cur.stride;
-  int        strideOrg = pcDtParam.org.stride;
+  ptrdiff_t  strideCur = pcDtParam.cur.stride;
+  ptrdiff_t  strideOrg = pcDtParam.org.stride;
 
   Distortion sum = 0;
 #ifdef USE_AVX2
@@ -4422,8 +4436,8 @@ Distortion RdCost::xGetHADs_SIMD( const DistParam &rcDtParam )
   const Pel*  piCur = rcDtParam.cur.buf;
   const int   rows       = rcDtParam.org.height;
   const int   cols       = rcDtParam.org.width;
-  const int   strideCur  = rcDtParam.cur.stride;
-  const int   strideOrg  = rcDtParam.org.stride;
+  const ptrdiff_t strideCur  = rcDtParam.cur.stride;
+  const ptrdiff_t strideOrg  = rcDtParam.org.stride;
   const int iBitDepth  = rcDtParam.bitDepth;
 
   int  x, y;
@@ -4493,8 +4507,8 @@ Distortion RdCost::xGetHADs_SIMD( const DistParam &rcDtParam )
   }
   else if (vext >= AVX2 && (((rows | cols) & 15) == 0) && (rows == cols))
   {
-    int offsetOrg = strideOrg << 4;
-    int offsetCur = strideCur << 4;
+    ptrdiff_t offsetOrg = strideOrg << 4;
+    ptrdiff_t offsetCur = strideCur << 4;
     for (y = 0; y < rows; y += 16)
     {
       for (x = 0; x < cols; x += 16)
@@ -4507,8 +4521,8 @@ Distortion RdCost::xGetHADs_SIMD( const DistParam &rcDtParam )
   }
   else if ((((rows | cols) & 7) == 0) && (rows == cols))
   {
-    int offsetOrg = strideOrg << 3;
-    int offsetCur = strideCur << 3;
+    ptrdiff_t offsetOrg = strideOrg << 3;
+    ptrdiff_t offsetCur = strideCur << 3;
     for (y = 0; y < rows; y += 8)
     {
       for (x = 0; x < cols; x += 8)
@@ -4521,8 +4535,8 @@ Distortion RdCost::xGetHADs_SIMD( const DistParam &rcDtParam )
   }
   else if ((rows % 4 == 0) && (cols % 4 == 0))
   {
-    int offsetOrg = strideOrg << 2;
-    int offsetCur = strideCur << 2;
+    ptrdiff_t offsetOrg = strideOrg << 2;
+    ptrdiff_t offsetCur = strideCur << 2;
 
     for (y = 0; y < rows; y += 4)
     {
@@ -4536,8 +4550,8 @@ Distortion RdCost::xGetHADs_SIMD( const DistParam &rcDtParam )
   }
   else if ((rows % 2 == 0) && (cols % 2 == 0))
   {
-    int offsetOrg = strideOrg << 1;
-    int offsetCur = strideCur << 1;
+    ptrdiff_t offsetOrg = strideOrg << 1;
+    ptrdiff_t offsetCur = strideCur << 1;
     for (y = 0; y < rows; y += 2)
     {
       for (x = 0; x < cols; x += 2)

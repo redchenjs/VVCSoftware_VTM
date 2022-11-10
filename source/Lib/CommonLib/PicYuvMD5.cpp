@@ -86,8 +86,7 @@ static void md5_plane(MD5& md5, const Pel* plane, uint32_t width, uint32_t heigh
   }
 }
 
-
-uint32_t compCRC(int bitdepth, const Pel* plane, uint32_t width, uint32_t height, uint32_t stride, PictureHash &digest)
+uint32_t compCRC(int bitdepth, const Pel *plane, uint32_t width, uint32_t height, ptrdiff_t stride, PictureHash &digest)
 {
   uint32_t crcMsb;
   uint32_t bitVal;
@@ -140,7 +139,8 @@ uint32_t calcCRC(const CPelUnitBuf& pic, PictureHash &digest, const BitDepths &b
   return digestLen;
 }
 
-uint32_t compChecksum(int bitdepth, const Pel* plane, uint32_t width, uint32_t height, uint32_t stride, PictureHash &digest, const BitDepths &/*bitDepths*/)
+uint32_t compChecksum(int bitdepth, const Pel *plane, uint32_t width, uint32_t height, ptrdiff_t stride,
+                      PictureHash &digest, const BitDepths & /*bitDepths*/)
 {
   uint32_t checksum = 0;
   uint8_t xor_mask;
@@ -194,7 +194,7 @@ uint32_t calcMD5WithCropping(const CPelUnitBuf &pic, PictureHash &digest, const 
                              const int leftOffset, const int rightOffset, const int topOffset, const int bottomOffset)
 {
   /* choose an md5_plane packing function based on the system bitdepth */
-  typedef void (*MD5PlaneFunc)(MD5&, const Pel*, uint32_t, uint32_t, uint32_t);
+  typedef void (*MD5PlaneFunc)(MD5 &, const Pel *, uint32_t, uint32_t, ptrdiff_t);
   MD5PlaneFunc md5_plane_func;
 
   MD5 md5[MAX_NUM_COMPONENT];

@@ -893,7 +893,7 @@ int InterSearch::xIBCSearchMVChromaRefine(PredictionUnit& pu,
 
   Pel* pRef;
   Pel* pOrg;
-  int refStride, orgStride;
+  ptrdiff_t refStride, orgStride;
   int width, height;
 
   int picWidth = pu.cs->slice->getPPS()->getPicWidthInLumaSamples();
@@ -1986,7 +1986,7 @@ bool InterSearch::xRectHashInterEstimation(PredictionUnit& pu, RefPicList& bestR
 
   int xPos = pu.cu->lumaPos().x;
   int yPos = pu.cu->lumaPos().y;
-  const int currStride = pu.cs->picture->getOrigBuf().get(COMPONENT_Y).stride;
+  const ptrdiff_t currStride = pu.cs->picture->getOrigBuf().get(COMPONENT_Y).stride;
   const Pel* curPel = pu.cs->picture->getOrigBuf().get(COMPONENT_Y).buf + yPos * currStride + xPos;
   int picWidth = pu.cu->slice->getPPS()->getPicWidthInLumaSamples();
   int picHeight = pu.cu->slice->getPPS()->getPicHeightInLumaSamples();
@@ -2121,7 +2121,8 @@ bool InterSearch::xRectHashInterEstimation(PredictionUnit& pu, RefPicList& bestR
 
         bool wrap = pu.cu->slice->getRefPic(eRefPicList, refIdx)->isWrapAroundEnabled( pu.cs->pps );
         const Pel* refBufStart = pu.cu->slice->getRefPic(eRefPicList, refIdx)->getRecoBuf(wrap).get(COMPONENT_Y).buf;
-        const int refStride = pu.cu->slice->getRefPic(eRefPicList, refIdx)->getRecoBuf(wrap).get(COMPONENT_Y).stride;
+        const ptrdiff_t refStride =
+          pu.cu->slice->getRefPic(eRefPicList, refIdx)->getRecoBuf(wrap).get(COMPONENT_Y).stride;
         m_cDistParam.cur.stride = refStride;
 
         m_pcRdCost->selectMotionLambda( );
@@ -2433,7 +2434,8 @@ bool InterSearch::xHashInterEstimation(PredictionUnit& pu, RefPicList& bestRefPi
 
         bool wrap = pu.cu->slice->getRefPic(eRefPicList, refIdx)->isWrapAroundEnabled( pu.cs->pps );
         const Pel* refBufStart = pu.cu->slice->getRefPic(eRefPicList, refIdx)->getRecoBuf(wrap).get(COMPONENT_Y).buf;
-        const int refStride = pu.cu->slice->getRefPic(eRefPicList, refIdx)->getRecoBuf(wrap).get(COMPONENT_Y).stride;
+        const ptrdiff_t refStride =
+          pu.cu->slice->getRefPic(eRefPicList, refIdx)->getRecoBuf(wrap).get(COMPONENT_Y).stride;
 
         m_cDistParam.cur.stride = refStride;
 
@@ -6032,7 +6034,7 @@ void InterSearch::xPatternSearchFracDIF(const PredictionUnit &pu, RefPicList eRe
 {
 
   //  Reference pattern initialization (integer scale)
-  int     offset = rcMvInt.getHor() + rcMvInt.getVer() * cStruct.iRefStride;
+  ptrdiff_t offset = rcMvInt.getHor() + rcMvInt.getVer() * cStruct.iRefStride;
   CPelBuf cPatternRoi(cStruct.piRefY + offset, cStruct.iRefStride, *cStruct.pcPatternKey);
   if (m_skipFracME)
   {
@@ -8423,8 +8425,8 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
 
   ::memcpy( acMv, acMvTemp, sizeof(Mv) * 3 );
 
-  const int bufStride = pBuf->Y().stride;
-  const int predBufStride = predBuf.Y().stride;
+  const ptrdiff_t bufStride     = pBuf->Y().stride;
+  const ptrdiff_t predBufStride = predBuf.Y().stride;
   Mv prevIterMv[7][3];
   int iIterTime;
   if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
@@ -9022,10 +9024,10 @@ void InterSearch::xExtDIFUpSamplingH(CPelBuf* pattern, bool useAltHpelIf)
   const ClpRng& clpRng = m_lumaClpRng;
   int width      = pattern->width;
   int height     = pattern->height;
-  int srcStride  = pattern->stride;
+  ptrdiff_t     srcStride  = pattern->stride;
 
-  int intStride = width + 1;
-  int dstStride = width + 1;
+  ptrdiff_t  intStride = width + 1;
+  ptrdiff_t  dstStride = width + 1;
   Pel *intPtr;
   Pel *dstPtr;
   int filterSize = NTAPS_LUMA;
@@ -9080,11 +9082,11 @@ void InterSearch::xExtDIFUpSamplingQ( CPelBuf* pattern, Mv halfPelRef )
   const ClpRng& clpRng = m_lumaClpRng;
   int width      = pattern->width;
   int height     = pattern->height;
-  int srcStride  = pattern->stride;
+  ptrdiff_t     srcStride  = pattern->stride;
 
   Pel const* srcPtr;
-  int intStride = width + 1;
-  int dstStride = width + 1;
+  ptrdiff_t  intStride = width + 1;
+  ptrdiff_t  dstStride = width + 1;
   Pel *intPtr;
   Pel *dstPtr;
   int filterSize = NTAPS_LUMA;
@@ -9423,8 +9425,8 @@ void InterSearch::calcMinDistSbt( CodingStructure &cs, const CodingUnit& cu, con
     const CPelBuf predPel = cs.getPredBuf( compArea );
     int lengthX = compArea.width / numPartX;
     int lengthY = compArea.height / numPartY;
-    int strideOrg  = orgPel.stride;
-    int stridePred = predPel.stride;
+    ptrdiff_t         strideOrg  = orgPel.stride;
+    ptrdiff_t         stridePred = predPel.stride;
     uint32_t          shift = DISTORTION_PRECISION_ADJUSTMENT((*cs.sps.getBitDepth(toChannelType(compID)) - 8) << 1);
     Intermediate_Int  temp;
 

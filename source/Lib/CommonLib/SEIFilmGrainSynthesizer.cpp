@@ -266,7 +266,8 @@ void SEIFilmGrainSynthesizer::grainSynthesizeAndBlend(PelStorage* pGrainBuf, boo
 {
   uint8_t     numComp = MAX_NUM_COMPONENT, compCtr; /* number of color components */
   uint8_t     color_offset[MAX_NUM_COMPONENT];
-  uint32_t    widthComp[MAX_NUM_COMPONENT], heightComp[MAX_NUM_COMPONENT], strideComp[MAX_NUM_COMPONENT];
+  uint32_t    widthComp[MAX_NUM_COMPONENT], heightComp[MAX_NUM_COMPONENT];
+  ptrdiff_t   strideComp[MAX_NUM_COMPONENT];
   uint32_t *  offsetsArr[MAX_NUM_COMPONENT];
   Pel *       decComp[MAX_NUM_COMPONENT];
   uint32_t    pseudoRandValEc;
@@ -750,7 +751,8 @@ void SEIFilmGrainSynthesizer::deblockGrainStripe(Pel *grainStripe, uint32_t widt
 }
 
 void SEIFilmGrainSynthesizer::blendStripe(Pel *decSampleHbdOffsetY, Pel *grainStripe, uint32_t widthComp,
-  uint32_t strideSrc, uint32_t strideGrain, uint32_t blockHeight, uint8_t bitDepth)
+                                          ptrdiff_t strideSrc, ptrdiff_t strideGrain, uint32_t blockHeight,
+                                          uint8_t bitDepth)
 {
   uint32_t k, l;
   uint16_t maxRange;
@@ -759,8 +761,8 @@ void SEIFilmGrainSynthesizer::blendStripe(Pel *decSampleHbdOffsetY, Pel *grainSt
   int32_t  grainSample;
   uint16_t decodeSampleHbd;
   uint8_t bitDepthShift = (bitDepth - BIT_DEPTH_8);
-  uint32_t bufInc = (strideSrc - widthComp);
-  uint32_t grainBufInc = (strideGrain - widthComp);
+  ptrdiff_t bufInc        = (strideSrc - widthComp);
+  ptrdiff_t grainBufInc   = (strideGrain - widthComp);
 
   for (l = 0; l < blockHeight; l++) /* y direction */
   {
@@ -781,7 +783,8 @@ void SEIFilmGrainSynthesizer::blendStripe(Pel *decSampleHbdOffsetY, Pel *grainSt
 }
 
 void SEIFilmGrainSynthesizer::blendStripe_32x32(Pel *decSampleHbdOffsetY, Pel *grainStripe, uint32_t widthComp,
-  uint32_t strideSrc, uint32_t strideGrain, uint32_t blockHeight, uint8_t bitDepth)
+                                                ptrdiff_t strideSrc, ptrdiff_t strideGrain, uint32_t blockHeight,
+                                                uint8_t bitDepth)
 {
   uint32_t k, l;
   uint16_t maxRange;
@@ -790,8 +793,8 @@ void SEIFilmGrainSynthesizer::blendStripe_32x32(Pel *decSampleHbdOffsetY, Pel *g
   int32_t  grainSample;
   uint16_t decodeSampleHbd;
   uint8_t bitDepthShift = (bitDepth - BIT_DEPTH_8);
-  uint32_t bufInc = (strideSrc - widthComp);
-  uint32_t grainBufInc = (strideGrain - widthComp);
+  ptrdiff_t bufInc        = (strideSrc - widthComp);
+  ptrdiff_t grainBufInc   = (strideGrain - widthComp);
 
   for (l = 0; l < blockHeight; l++) /* y direction */
   {
@@ -811,8 +814,8 @@ void SEIFilmGrainSynthesizer::blendStripe_32x32(Pel *decSampleHbdOffsetY, Pel *g
   return;
 }
 
-Pel SEIFilmGrainSynthesizer::blockAverage_8x8(Pel *decSampleBlk8, uint32_t widthComp, uint16_t *pNumSamples,
-  uint8_t ySize, uint8_t xSize, uint8_t bitDepth)
+Pel SEIFilmGrainSynthesizer::blockAverage_8x8(Pel *decSampleBlk8, ptrdiff_t widthComp, uint16_t *pNumSamples,
+                                              uint8_t ySize, uint8_t xSize, uint8_t bitDepth)
 {
   uint32_t blockAvg = 0;
   uint8_t  k;
@@ -833,8 +836,8 @@ Pel SEIFilmGrainSynthesizer::blockAverage_8x8(Pel *decSampleBlk8, uint32_t width
   return blockAvg;
 }
 
-uint32_t SEIFilmGrainSynthesizer::blockAverage_16x16(Pel *decSampleBlk8, uint32_t widthComp, uint16_t *pNumSamples,
-  uint8_t ySize, uint8_t xSize, uint8_t bitDepth)
+uint32_t SEIFilmGrainSynthesizer::blockAverage_16x16(Pel *decSampleBlk8, ptrdiff_t widthComp, uint16_t *pNumSamples,
+                                                     uint8_t ySize, uint8_t xSize, uint8_t bitDepth)
 {
   uint32_t blockAvg = 0;
   uint8_t  k;
@@ -855,12 +858,12 @@ uint32_t SEIFilmGrainSynthesizer::blockAverage_16x16(Pel *decSampleBlk8, uint32_
   return blockAvg;
 }
 
-uint32_t SEIFilmGrainSynthesizer::blockAverage_32x32(Pel *decSampleBlk32, uint32_t strideComp, uint8_t bitDepth)
+uint32_t SEIFilmGrainSynthesizer::blockAverage_32x32(Pel *decSampleBlk32, ptrdiff_t strideComp, uint8_t bitDepth)
 {
   uint32_t blockAvg = 0;
   uint8_t  k;
   uint8_t l;
-  uint32_t bufInc = strideComp - BLK_32;
+  ptrdiff_t bufInc = strideComp - BLK_32;
   for (k = 0; k < BLK_32; k++)
   {
     for (l = 0; l < BLK_32; l++)
@@ -950,12 +953,14 @@ uint32_t SEIFilmGrainSynthesizer::fgsSimulationBlending_8x8(fgsProcessArgs *inAr
   uint8_t  numComp, compCtr, blkId; /* number of color components */
   uint8_t  log2ScaleFactor, h, v;
   uint8_t  bitDepth; /*grain bit depth and decoded bit depth are assumed to be same */
-  uint32_t widthComp[MAX_NUM_COMPONENT], heightComp[MAX_NUM_COMPONENT], strideComp[MAX_NUM_COMPONENT];
+  uint32_t  widthComp[MAX_NUM_COMPONENT], heightComp[MAX_NUM_COMPONENT];
+  ptrdiff_t strideComp[MAX_NUM_COMPONENT];
   Pel *    decSampleHbdBlk16, *decSampleHbdBlk8, *decSampleHbdOffsetY;
   Pel *    decHbdComp[MAX_NUM_COMPONENT];
   uint16_t numSamples;
   int16_t  scaleFactor;
-  uint32_t kOffset, lOffset, grainStripeOffset, grainStripeOffsetBlk8, offsetBlk8x8;
+  uint32_t  kOffset, lOffset, grainStripeOffset, grainStripeOffsetBlk8;
+  ptrdiff_t offsetBlk8x8;
   uint32_t kOffset_const, lOffset_const;
   int16_t  scaleFactor_const;
   Pel *    grainStripe; /* worth a row of 16x16 : Max size : 16xw;*/
@@ -1070,7 +1075,8 @@ uint32_t SEIFilmGrainSynthesizer::fgsSimulationBlending_16x16(fgsProcessArgs *in
   uint8_t  numComp, compCtr; /* number of color components */
   uint8_t  log2ScaleFactor, h, v;
   uint8_t  bitDepth; /*grain bit depth and decoded bit depth are assumed to be same */
-  uint32_t widthComp[MAX_NUM_COMPONENT], heightComp[MAX_NUM_COMPONENT], strideComp[MAX_NUM_COMPONENT];
+  uint32_t  widthComp[MAX_NUM_COMPONENT], heightComp[MAX_NUM_COMPONENT];
+  ptrdiff_t strideComp[MAX_NUM_COMPONENT];
   Pel *    decSampleHbdBlk16, *decSampleHbdOffsetY;
   Pel *    decHbdComp[MAX_NUM_COMPONENT];
   uint16_t numSamples;
@@ -1170,7 +1176,8 @@ uint32_t SEIFilmGrainSynthesizer::fgsSimulationBlending_32x32(fgsProcessArgs *in
   uint8_t  numComp, compCtr; /* number of color components */
   uint8_t  log2ScaleFactor, h, v;
   uint8_t  bitDepth; /*grain bit depth and decoded bit depth are assumed to be same */
-  uint32_t widthComp[MAX_NUM_COMPONENT], heightComp[MAX_NUM_COMPONENT], strideComp[MAX_NUM_COMPONENT];
+  uint32_t  widthComp[MAX_NUM_COMPONENT], heightComp[MAX_NUM_COMPONENT];
+  ptrdiff_t strideComp[MAX_NUM_COMPONENT];
   Pel *    decSampleBlk32, *decSampleOffsetY;
   Pel *    decComp[MAX_NUM_COMPONENT];
   int16_t  scaleFactor;

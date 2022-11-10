@@ -119,8 +119,8 @@ public:
   static bool isBlock2x2ColSameValue(unsigned char* p, bool includeAllComponent = true);
   static bool getBlockHashValue(const PelUnitBuf &curPicBuf, int width, int height, int xStart, int yStart, const BitDepths bitDepths, uint32_t& hashValue1, uint32_t& hashValue2);
   static void initBlockSizeToIndex();
-  static bool isHorizontalPerfectLuma(const Pel* srcPel, int stride, int width, int height);
-  static bool isVerticalPerfectLuma(const Pel* srcPel, int stride, int width, int height);
+  static bool     isHorizontalPerfectLuma(const Pel *srcPel, ptrdiff_t stride, int width, int height);
+  static bool     isVerticalPerfectLuma(const Pel *srcPel, ptrdiff_t stride, int width, int height);
 
 private:
   std::vector<BlockHash>** m_lookupTable;

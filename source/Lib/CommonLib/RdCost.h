@@ -179,10 +179,14 @@ public:
   void          _initRdCostX86();
 #endif
 
-  void           setDistParam( DistParam &rcDP, const CPelBuf &org, const Pel* piRefY , int iRefStride, int bitDepth, ComponentID compID, int subShiftMode = 0, int step = 1, bool useHadamard = false );
+  void setDistParam(DistParam &rcDP, const CPelBuf &org, const Pel *piRefY, ptrdiff_t iRefStride, int bitDepth,
+                    ComponentID compID, int subShiftMode = 0, int step = 1, bool useHadamard = false);
   void           setDistParam( DistParam &rcDP, const CPelBuf &org, const CPelBuf &cur, int bitDepth, ComponentID compID, bool useHadamard = false );
-  void           setDistParam( DistParam &rcDP, const Pel* pOrg, const Pel* piRefY, int iOrgStride, int iRefStride, int bitDepth, ComponentID compID, int width, int height, int subShiftMode = 0, int step = 1, bool useHadamard = false, bool bioApplied = false );
-  void           setDistParam( DistParam &rcDP, const CPelBuf &org, const Pel* piRefY, int iRefStride, const Pel* mask, int iMaskStride, int stepX, int iMaskStride2, int bitDepth,  ComponentID compID);
+  void setDistParam(DistParam &rcDP, const Pel *pOrg, const Pel *piRefY, ptrdiff_t iOrgStride, ptrdiff_t iRefStride,
+                    int bitDepth, ComponentID compID, int width, int height, int subShiftMode = 0, int step = 1,
+                    bool useHadamard = false, bool bioApplied = false);
+  void setDistParam(DistParam &rcDP, const CPelBuf &org, const Pel *piRefY, ptrdiff_t iRefStride, const Pel *mask,
+                    int iMaskStride, int stepX, int iMaskStride2, int bitDepth, ComponentID compID);
 
   double         getMotionLambda          ( )  { return m_dLambdaMotionSAD; }
   void           selectMotionLambda       ( )  { m_motionLambda = getMotionLambda( ); }
@@ -388,14 +392,17 @@ private:
   static Distortion xGetMRHADs        ( const DistParam& pcDtParam );
 
   static Distortion xGetHADs          ( const DistParam& pcDtParam );
-  static Distortion xCalcHADs2x2(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
-  static Distortion xCalcHADs4x4(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
-  static Distortion xCalcHADs8x8(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
+  static Distortion xCalcHADs2x2(const Pel *piOrg, const Pel *piCurr, ptrdiff_t strideOrg, ptrdiff_t strideCur,
+                                 int step);
+  static Distortion xCalcHADs4x4(const Pel *piOrg, const Pel *piCurr, ptrdiff_t strideOrg, ptrdiff_t strideCur,
+                                 int step);
+  static Distortion xCalcHADs8x8(const Pel *piOrg, const Pel *piCurr, ptrdiff_t strideOrg, ptrdiff_t strideCur,
+                                 int step);
 
-  static Distortion xCalcHADs16x8(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
-  static Distortion xCalcHADs8x16(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
-  static Distortion xCalcHADs4x8(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
-  static Distortion xCalcHADs8x4(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
+  static Distortion xCalcHADs16x8(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur);
+  static Distortion xCalcHADs8x16(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur);
+  static Distortion xCalcHADs4x8(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur);
+  static Distortion xCalcHADs8x4(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur);
 
 #ifdef TARGET_SIMD_X86
   template<X86_VEXT vext>

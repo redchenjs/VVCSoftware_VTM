@@ -47,15 +47,19 @@
 class AffineGradientSearch
 {
 public:
-  void( *m_HorizontalSobelFilter ) (Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height);
+  void (*m_HorizontalSobelFilter)(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                  const int derivateBufStride, const int width, const int height);
 
-  void( *m_VerticalSobelFilter ) (Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height);
+  void (*m_VerticalSobelFilter)(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                const int derivateBufStride, const int width, const int height);
 
   void( *m_EqualCoeffComputer ) (Pel *pResidue, int residueStride, int **ppDerivate, int derivateBufStride, int64_t( *pEqualCoeff )[7], int width, int height, bool b6Param);
 
-  static void xHorizontalSobelFilter( Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height );
+  static void xHorizontalSobelFilter(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                     const int derivateBufStride, const int width, const int height);
 
-  static void xVerticalSobelFilter( Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height );
+  static void xVerticalSobelFilter(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                   const int derivateBufStride, const int width, const int height);
 
   static void xEqualCoeffComputer( Pel *pResidue, int residueStride, int **ppDerivate, int derivateBufStride, int64_t( *pEqualCoeff )[7], int width, int height, bool b6Param );
 

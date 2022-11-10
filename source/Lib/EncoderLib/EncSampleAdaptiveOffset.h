@@ -118,7 +118,7 @@ private:   // methods
                        const double saoEncodingRate, const double saoEncodingRateChroma,
                        const bool isGreedymergeEncoding);
   void    getBlkStats(const ComponentID compIdx, const int channelBitDepth, StatDataArray &statsDataTypes, Pel *srcBlk,
-                      Pel *orgBlk, int srcStride, int orgStride, int width, int height, bool isLeftAvail,
+                      Pel *orgBlk, ptrdiff_t srcStride, ptrdiff_t orgStride, int width, int height, bool isLeftAvail,
                       bool isRightAvail, bool isAboveAvail, bool isBelowAvail, bool isAboveLeftAvail,
                       bool isAboveRightAvail, bool isCalculatePreDeblockSamples, bool isCtuCrossedByVirtualBoundaries,
                       int horVirBndryPos[], int verVirBndryPos[], int numHorVirBndry, int numVerVirBndry);

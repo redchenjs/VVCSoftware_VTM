@@ -61,50 +61,74 @@ struct PelBufferOps
   void _initPelBufOpsX86();
 #endif
 
-  void ( *addAvg4 )       ( const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, int width, int height,            int shift, int offset, const ClpRng& clpRng );
-  void ( *addAvg8 )       ( const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, int width, int height,            int shift, int offset, const ClpRng& clpRng );
-  void ( *reco4 )         ( const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, int width, int height,                                   const ClpRng& clpRng );
-  void ( *reco8 )         ( const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, int width, int height,                                   const ClpRng& clpRng );
-  void ( *linTf4 )        ( const Pel* src0, int src0Stride,                                  Pel *dst, int dstStride, int width, int height, int scale, int shift, int offset, const ClpRng& clpRng, bool bClip );
-  void ( *linTf8 )        ( const Pel* src0, int src0Stride,                                  Pel *dst, int dstStride, int width, int height, int scale, int shift, int offset, const ClpRng& clpRng, bool bClip );
-  void(*addBIOAvg4)    (const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel*gradY1, int gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset, const ClpRng& clpRng);
-  void(*bioGradFilter) (Pel* pSrc, int srcStride, int width, int height, int gradStride, Pel* gradX, Pel* gradY, const int bitDepth);
-  void(*calcBIOPar)    (const Pel* srcY0Temp, const Pel* srcY1Temp, const Pel* gradX0, const Pel* gradX1, const Pel* gradY0, const Pel* gradY1, int* dotProductTemp1, int* dotProductTemp2, int* dotProductTemp3, int* dotProductTemp5, int* dotProductTemp6, const int src0Stride, const int src1Stride, const int gradStride, const int widthG, const int heightG, const int bitDepth);
-  void(*calcBIOSums)   (const Pel* srcY0Tmp, const Pel* srcY1Tmp, Pel* gradX0, Pel* gradX1, Pel* gradY0, Pel* gradY1, int xu, int yu, const int src0Stride, const int src1Stride, const int widthG, const int bitDepth, int* sumAbsGX, int* sumAbsGY, int* sumDIX, int* sumDIY, int* sumSignGY_GX);
+  void (*addAvg4)(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
+                  ptrdiff_t dstStride, int width, int height, int shift, int offset, const ClpRng &clpRng);
+  void (*addAvg8)(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
+                  ptrdiff_t dstStride, int width, int height, int shift, int offset, const ClpRng &clpRng);
+  void (*reco4)(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
+                ptrdiff_t dstStride, int width, int height, const ClpRng &clpRng);
+  void (*reco8)(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
+                ptrdiff_t dstStride, int width, int height, const ClpRng &clpRng);
+  void (*linTf4)(const Pel *src0, ptrdiff_t src0Stride, Pel *dst, ptrdiff_t dstStride, int width, int height, int scale,
+                 int shift, int offset, const ClpRng &clpRng, bool bClip);
+  void (*linTf8)(const Pel *src0, ptrdiff_t src0Stride, Pel *dst, ptrdiff_t dstStride, int width, int height, int scale,
+                 int shift, int offset, const ClpRng &clpRng, bool bClip);
+  void (*addBIOAvg4)(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
+                     ptrdiff_t dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel *gradY1,
+                     ptrdiff_t gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset,
+                     const ClpRng &clpRng);
+  void (*bioGradFilter)(Pel *pSrc, ptrdiff_t srcStride, int width, int height, ptrdiff_t gradStride, Pel *gradX,
+                        Pel *gradY, const int bitDepth);
+  void (*calcBIOPar)(const Pel *srcY0Temp, const Pel *srcY1Temp, const Pel *gradX0, const Pel *gradX1,
+                     const Pel *gradY0, const Pel *gradY1, int *dotProductTemp1, int *dotProductTemp2,
+                     int *dotProductTemp3, int *dotProductTemp5, int *dotProductTemp6, const ptrdiff_t src0Stride,
+                     const ptrdiff_t src1Stride, const int gradStride, const int widthG, const int heightG,
+                     const int bitDepth);
+  void (*calcBIOSums)(const Pel *srcY0Tmp, const Pel *srcY1Tmp, Pel *gradX0, Pel *gradX1, Pel *gradY0, Pel *gradY1,
+                      int xu, int yu, const ptrdiff_t src0Stride, const ptrdiff_t src1Stride, const int widthG,
+                      const int bitDepth, int *sumAbsGX, int *sumAbsGY, int *sumDIX, int *sumDIY, int *sumSignGY_GX);
   void(*calcBlkGradient)(int sx, int sy, int    *arraysGx2, int     *arraysGxGy, int     *arraysGxdI, int     *arraysGy2, int     *arraysGydI, int     &sGx2, int     &sGy2, int     &sGxGy, int     &sGxdI, int     &sGydI, int width, int height, int unitSize);
-  void (*copyBuffer)(const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height);
-  void(*padding)(Pel *dst, int stride, int width, int height, int padSize);
+  void (*copyBuffer)(const Pel *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width, int height);
+  void (*padding)(Pel *dst, ptrdiff_t stride, int width, int height, int padSize);
 #if ENABLE_SIMD_OPT_BCW
-  void ( *removeWeightHighFreq8)  ( Pel* src0, int src0Stride, const Pel* src1, int src1Stride, int width, int height, int shift, int bcwWeight);
-  void ( *removeWeightHighFreq4)  ( Pel* src0, int src0Stride, const Pel* src1, int src1Stride, int width, int height, int shift, int bcwWeight);
-  void ( *removeHighFreq8)        ( Pel* src0, int src0Stride, const Pel* src1, int src1Stride, int width, int height);
-  void ( *removeHighFreq4)        ( Pel* src0, int src0Stride, const Pel* src1, int src1Stride, int width, int height);
+  void (*removeWeightHighFreq8)(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
+                                int height, int shift, int bcwWeight);
+  void (*removeWeightHighFreq4)(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
+                                int height, int shift, int bcwWeight);
+  void (*removeHighFreq8)(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
+                          int height);
+  void (*removeHighFreq4)(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
+                          int height);
 #endif
-  void (*profGradFilter) (Pel* pSrc, int srcStride, int width, int height, int gradStride, Pel* gradX, Pel* gradY, const int bitDepth);
-  void (*applyPROF)(Pel *dst, int dstStride, const Pel *src, int srcStride, int width, int height, const Pel *gradX,
-                    const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY, int dMvStride, const bool bi,
-                    int shiftNum, Pel offset, const ClpRng &clpRng);
+  void (*profGradFilter)(Pel *pSrc, ptrdiff_t srcStride, int width, int height, ptrdiff_t gradStride, Pel *gradX,
+                         Pel *gradY, const int bitDepth);
+  void (*applyPROF)(Pel *dst, ptrdiff_t dstStride, const Pel *src, ptrdiff_t srcStride, int width, int height,
+                    const Pel *gradX, const Pel *gradY, ptrdiff_t gradStride, const int *dMvX, const int *dMvY,
+                    ptrdiff_t dMvStride, const bool bi, int shiftNum, Pel offset, const ClpRng &clpRng);
   void (*roundIntVector) (int* v, int size, unsigned int nShift, const int dmvLimit);
 };
 
 extern PelBufferOps g_pelBufOP;
 
-void paddingCore(Pel *ptr, int stride, int width, int height, int padSize);
-void copyBufferCore(const Pel *src, int srcStride, Pel *Dst, int dstStride, int width, int height);
+void paddingCore(Pel *ptr, ptrdiff_t stride, int width, int height, int padSize);
+void copyBufferCore(const Pel *src, ptrdiff_t srcStride, Pel *Dst, ptrdiff_t dstStride, int width, int height);
 
 template<typename T>
 struct AreaBuf : public Size
 {
   T*        buf;
-  int       stride;
+  ptrdiff_t stride;
   // the proper type causes awful lot of errors
   //ptrdiff_t stride;
 
   AreaBuf() : Size(), buf(nullptr), stride(0) {}
   AreaBuf( T *_buf, const Size &size )                                                    : Size( size ),            buf( _buf ), stride( size.width ) { }
-  AreaBuf( T *_buf, const int &_stride, const Size &size )                                : Size( size ),            buf( _buf ), stride( _stride )    { }
+  AreaBuf(T *_buf, const ptrdiff_t &_stride, const Size &size) : Size(size), buf(_buf), stride(_stride) {}
   AreaBuf( T *_buf, const SizeType &_width, const SizeType &_height )                     : Size( _width, _height ), buf( _buf ), stride( _width )     { }
-  AreaBuf( T *_buf, const int &_stride, const SizeType &_width, const SizeType &_height ) : Size( _width, _height ), buf( _buf ), stride( _stride )    { }
+  AreaBuf(T *_buf, const ptrdiff_t &_stride, const SizeType &_width, const SizeType &_height)
+    : Size(_width, _height), buf(_buf), stride(_stride)
+  {
+  }
 
   operator AreaBuf<const T>() const { return AreaBuf<const T>( buf, stride, width, height ); }
 
@@ -140,7 +164,8 @@ struct AreaBuf : public Size
   void rspSignal            ( std::vector<Pel>& pLUT );
   void scaleSignal          ( const int scale, const bool dir , const ClpRng& clpRng);
   void applyLumaCTI(std::vector<Pel>& pLUTY);
-  void applyChromaCTI(Pel* bufY, int strideY, std::vector<Pel>& pLUTUV, int bitDepth, ChromaFormat chrFormat, bool fwdMap);
+  void applyChromaCTI(Pel *bufY, ptrdiff_t strideY, std::vector<Pel> &pLUTUV, int bitDepth, ChromaFormat chrFormat,
+                      bool fwdMap);
   T    computeAvg           ( ) const;
 
         T& at( const int &x, const int &y )          { return buf[y * stride + x]; }
@@ -301,7 +326,7 @@ void AreaBuf<T>::copyFrom( const AreaBuf<const T> &other )
   {
           T* dst         = buf;
     const T* src         = other.buf;
-    const unsigned srcStride = other.stride;
+    const ptrdiff_t srcStride   = other.stride;
 
     for( unsigned y = 0; y < height; y++ )
     {
@@ -389,10 +414,10 @@ void AreaBuf<T>::removeWeightHighFreq(const AreaBuf<T>& other, const bool bClip,
   const int8_t log2WeightBase = g_bcwLog2WeightBase;
 
   const Pel* src = other.buf;
-  const int  srcStride = other.stride;
+  const ptrdiff_t srcStride = other.stride;
 
   Pel* dst = buf;
-  const int  dstStride = stride;
+  const ptrdiff_t dstStride = stride;
 
 #if ENABLE_SIMD_OPT_BCW
   if(!bClip)
@@ -444,10 +469,10 @@ template<typename T>
 void AreaBuf<T>::removeHighFreq( const AreaBuf<T>& other, const bool bClip, const ClpRng& clpRng )
 {
   const T*  src       = other.buf;
-  const int srcStride = other.stride;
+  const ptrdiff_t srcStride = other.stride;
 
-        T*  dst       = buf;
-  const int dstStride = stride;
+  T              *dst       = buf;
+  const ptrdiff_t dstStride = stride;
 
 #if ENABLE_SIMD_OPT_BCW
   if (!bClip)
@@ -514,7 +539,7 @@ void AreaBuf<T>::extendBorderPel(unsigned marginX, unsigned marginY)
   T* p = buf;
   int h = height;
   int w = width;
-  int s = stride;
+  ptrdiff_t s = stride;
 
   CHECK((w + 2 * marginX) > s, "Size of buffer too small to extend");
   // do left and right margins
@@ -549,7 +574,7 @@ template<typename T>
 void AreaBuf<T>::padBorderPel( unsigned marginX, unsigned marginY, int dir )
 {
   T*  p = buf;
-  int s = stride;
+  ptrdiff_t s = stride;
   int h = height;
   int w = width;
 
@@ -590,7 +615,7 @@ void AreaBuf<T>::extendBorderPel( unsigned margin )
   T*  p = buf;
   int h = height;
   int w = width;
-  int s = stride;
+  ptrdiff_t s = stride;
 
   CHECK( ( w + 2 * margin ) > s, "Size of buffer too small to extend" );
   // do left and right margins

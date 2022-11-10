@@ -881,7 +881,9 @@ void AdaptiveLoopFilter::deriveClassificationBlk(AlfClassifier **classifier, int
   CHECK((vbCTUHeight & (vbCTUHeight - 1)) != 0, "vbCTUHeight must be a power of 2");
 
   static const int th[16] = { 0, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4 };
-  const int stride = srcLuma.stride;
+
+  const ptrdiff_t stride = srcLuma.stride;
+
   const Pel* src = srcLuma.buf;
   const int maxActivity = 15;
 
@@ -900,7 +902,8 @@ void AdaptiveLoopFilter::deriveClassificationBlk(AlfClassifier **classifier, int
 
   for( int i = 0; i < height; i += 2 )
   {
-    int yoffset = ( i + 1 + startHeight ) * stride - flP1;
+    const ptrdiff_t yoffset = (i + 1 + startHeight) * stride - flP1;
+
     const Pel *src0 = &src[yoffset - stride];
     const Pel *src1 = &src[yoffset];
     const Pel *src2 = &src[yoffset + stride];
@@ -1106,8 +1109,8 @@ void AdaptiveLoopFilter::filterBlk(AlfClassifier **classifier, const PelUnitBuf 
   const CPelBuf srcLuma = recSrc.get( compId );
   PelBuf dstLuma = recDst.get( compId );
 
-  const int srcStride = srcLuma.stride;
-  const int dstStride = dstLuma.stride;
+  const ptrdiff_t srcStride = srcLuma.stride;
+  const ptrdiff_t dstStride = dstLuma.stride;
 
   const int startHeight = blk.y;
   const int endHeight = blk.y + blk.height;
@@ -1137,8 +1140,8 @@ void AdaptiveLoopFilter::filterBlk(AlfClassifier **classifier, const PelUnitBuf 
 
   AlfClassifier *pClass = nullptr;
 
-  int dstStride2 = dstStride * clsSizeY;
-  int srcStride2 = srcStride * clsSizeY;
+  const ptrdiff_t dstStride2 = dstStride * clsSizeY;
+  const ptrdiff_t srcStride2 = srcStride * clsSizeY;
 
   std::array<int, MAX_NUM_ALF_LUMA_COEFF> filterCoeff;
   std::array<int, MAX_NUM_ALF_LUMA_COEFF> filterClipp;
@@ -1347,11 +1350,12 @@ void AdaptiveLoopFilter::filterBlkCcAlf(const PelBuf &dstBuf, const CPelUnitBuf 
   CHECK( ( endHeight - startHeight ) % clsSizeY, "Wrong endHeight in filtering" );
   CHECK( ( endWidth - startWidth ) % clsSizeX, "Wrong endWidth in filtering" );
 
-  CPelBuf     srcBuf     = recSrc.get(COMPONENT_Y);
-  const int   lumaStride = srcBuf.stride;
-  const Pel * lumaPtr    = srcBuf.buf + blkSrc.y * lumaStride + blkSrc.x;
+  CPelBuf srcBuf = recSrc.get(COMPONENT_Y);
 
-  const int   chromaStride = dstBuf.stride;
+  const ptrdiff_t lumaStride   = srcBuf.stride;
+  const ptrdiff_t chromaStride = dstBuf.stride;
+
+  const Pel  *lumaPtr      = srcBuf.buf + blkSrc.y * lumaStride + blkSrc.x;
   Pel *       chromaPtr    = dstBuf.buf + blkDst.y * chromaStride + blkDst.x;
 
   for( int i = 0; i < endHeight - startHeight; i += clsSizeY )
@@ -1364,9 +1368,9 @@ void AdaptiveLoopFilter::filterBlkCcAlf(const PelBuf &dstBuf, const CPelUnitBuf 
         int col       = j;
         Pel *srcSelf  = chromaPtr + col + row * chromaStride;
 
-        int offset1 = lumaStride;
-        int offset2 = -lumaStride;
-        int offset3 = 2 * lumaStride;
+        ptrdiff_t offset1 = lumaStride;
+        ptrdiff_t offset2 = -lumaStride;
+        ptrdiff_t offset3 = 2 * lumaStride;
         row <<= scaleY;
         col <<= scaleX;
         const Pel *srcCross = lumaPtr + col + row * lumaStride;

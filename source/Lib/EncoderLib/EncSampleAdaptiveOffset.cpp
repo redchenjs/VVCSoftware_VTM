@@ -295,10 +295,10 @@ void EncSampleAdaptiveOffset::getStatistics(std::vector<StatDataArray *> &blkSta
         const ComponentID compID = ComponentID(compIdx);
         const CompArea& compArea = area.block( compID );
 
-        int  srcStride  = srcYuv.get(compID).stride;
+        ptrdiff_t srcStride  = srcYuv.get(compID).stride;
         Pel* srcBlk     = srcYuv.get(compID).bufAt( compArea );
 
-        int  orgStride  = orgYuv.get(compID).stride;
+        ptrdiff_t orgStride  = orgYuv.get(compID).stride;
         Pel* orgBlk     = orgYuv.get(compID).bufAt( compArea );
 
         for (int i = 0; i < numHorVirBndry; i++)
@@ -1126,12 +1126,13 @@ void EncSampleAdaptiveOffset::disabledRate(CodingStructure &cs, SAOBlkParam *rec
 }
 
 void EncSampleAdaptiveOffset::getBlkStats(const ComponentID compIdx, const int channelBitDepth,
-                                          StatDataArray &statsDataTypes, Pel *srcBlk, Pel *orgBlk, int srcStride,
-                                          int orgStride, int width, int height, bool isLeftAvail, bool isRightAvail,
-                                          bool isAboveAvail, bool isBelowAvail, bool isAboveLeftAvail,
-                                          bool isAboveRightAvail, bool isCalculatePreDeblockSamples,
-                                          bool isCtuCrossedByVirtualBoundaries, int horVirBndryPos[],
-                                          int verVirBndryPos[], int numHorVirBndry, int numVerVirBndry)
+                                          StatDataArray &statsDataTypes, Pel *srcBlk, Pel *orgBlk, ptrdiff_t srcStride,
+                                          ptrdiff_t orgStride, int width, int height, bool isLeftAvail,
+                                          bool isRightAvail, bool isAboveAvail, bool isBelowAvail,
+                                          bool isAboveLeftAvail, bool isAboveRightAvail,
+                                          bool isCalculatePreDeblockSamples, bool isCtuCrossedByVirtualBoundaries,
+                                          int horVirBndryPos[], int verVirBndryPos[], int numHorVirBndry,
+                                          int numVerVirBndry)
 {
   int x,y, startX, startY, endX, endY, edgeType, firstLineStartX, firstLineEndX;
   int8_t signLeft, signRight, signDown;

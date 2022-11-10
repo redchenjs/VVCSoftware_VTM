@@ -1918,7 +1918,7 @@ void EncGOP::xPicInitHashME( Picture *pic, const PPS *pps, PicList &rcListPic )
         if (refPic->getPOC() == 0)
         {
           Pel* picSrc = refPic->getOrigBuf().get(COMPONENT_Y).buf;
-          int stridePic = refPic->getOrigBuf().get(COMPONENT_Y).stride;
+          ptrdiff_t stridePic = refPic->getOrigBuf().get(COMPONENT_Y).stride;
           int picWidth = pps->getPicWidthInLumaSamples();
           int picHeight = pps->getPicHeightInLumaSamples();
           int blockSize = 4;
@@ -2238,7 +2238,7 @@ void EncGOP::computeSignalling(Picture* pcPic, Slice* pcSlice) const
       int qpOffs = pcSlice->getSliceQp() - qpBase;
 
       const CPelBuf buffer = pcPic->getOrigBuf(compID);
-      const int stride = buffer.stride;
+      const ptrdiff_t stride = buffer.stride;
       const int height = buffer.height;
       const int width = buffer.width;
       total += (height - 1) * (width - 1);
@@ -4656,8 +4656,8 @@ static inline double calcWeightedSquaredError(const CPelBuf& org,        const C
                                               const uint32_t offsetX,    const uint32_t offsetY,
                                               int blockWidth,            int blockHeight)
 {
-  const int    O = org.stride;
-  const int    R = rec.stride;
+  const ptrdiff_t O    = org.stride;
+  const ptrdiff_t R    = rec.stride;
   const Pel   *o = org.bufAt(offsetX, offsetY);
   const Pel   *r = rec.bufAt(offsetX, offsetY);
   const int yAct = offsetY > 0 ? 0 : 1;
@@ -5498,7 +5498,8 @@ void EncGOP::xCalculateGreenComplexityMetrics( FeatureCounterStruct featureCount
 }
 #endif
 
-double EncGOP::xCalculateMSSSIM (const Pel* org, const int orgStride, const Pel* rec, const int recStride, const int width, const int height, const uint32_t bitDepth)
+double EncGOP::xCalculateMSSSIM(const Pel *org, const ptrdiff_t orgStride, const Pel *rec, const ptrdiff_t recStride,
+                                const int width, const int height, const uint32_t bitDepth)
 {
   const int MAX_MSSSIM_SCALE  = 5;
   const int WEIGHTING_MID_TAP = 5;
@@ -6122,8 +6123,8 @@ void EncGOP::arrangeCompositeReference(Slice* pcSlice, PicList& rcListPic, int p
 
   int width = pcv->lumaWidth;
   int height = pcv->lumaHeight;
-  int stride = curPic->getOrigBuf().get(COMPONENT_Y).stride;
-  int cStride = curPic->getOrigBuf().get(COMPONENT_Cb).stride;
+  ptrdiff_t stride        = curPic->getOrigBuf().get(COMPONENT_Y).stride;
+  ptrdiff_t cStride       = curPic->getOrigBuf().get(COMPONENT_Cb).stride;
   Pel* curLumaAddr = curPic->getOrigBuf().get(COMPONENT_Y).buf;
   Pel* curCbAddr = curPic->getOrigBuf().get(COMPONENT_Cb).buf;
   Pel* curCrAddr = curPic->getOrigBuf().get(COMPONENT_Cr).buf;
@@ -6244,8 +6245,8 @@ void EncGOP::updateCompositeReference(Slice* pcSlice, PicList& rcListPic, int po
 
   int width = pcv->lumaWidth;
   int height = pcv->lumaHeight;
-  int stride = curPic->getRecoBuf().get(COMPONENT_Y).stride;
-  int cStride = curPic->getRecoBuf().get(COMPONENT_Cb).stride;
+  ptrdiff_t stride  = curPic->getRecoBuf().get(COMPONENT_Y).stride;
+  ptrdiff_t cStride = curPic->getRecoBuf().get(COMPONENT_Cb).stride;
 
   Pel* bgLumaAddr = m_picBg->getRecoBuf().get(COMPONENT_Y).buf;
   Pel* bgCbAddr = m_picBg->getRecoBuf().get(COMPONENT_Cb).buf;
@@ -6316,7 +6317,7 @@ void EncGOP::applyDeblockingFilterMetric( Picture* pcPic, uint32_t uiNumSlices )
 {
   PelBuf cPelBuf = pcPic->getRecoBuf().get( COMPONENT_Y );
   Pel* Rec    = cPelBuf.buf;
-  const int  stride = cPelBuf.stride;
+  const ptrdiff_t stride    = cPelBuf.stride;
   const uint32_t picWidth = cPelBuf.width;
   const uint32_t picHeight = cPelBuf.height;
 

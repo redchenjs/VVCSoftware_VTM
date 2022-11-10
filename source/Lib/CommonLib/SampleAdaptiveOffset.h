@@ -81,7 +81,7 @@ protected:
                                             bool &isBelowRightAvail) const;
 
   void offsetBlock(const int channelBitDepth, const ClpRng &clpRng, SAOModeNewTypes typeIdx, int *offset,
-                   const Pel *srcBlk, Pel *resBlk, int srcStride, int resStride, int width, int height,
+                   const Pel *srcBlk, Pel *resBlk, ptrdiff_t srcStride, ptrdiff_t resStride, int width, int height,
                    bool isLeftAvail, bool isRightAvail, bool isAboveAvail, bool isBelowAvail, bool isAboveLeftAvail,
                    bool isAboveRightAvail, bool isBelowLeftAvail, bool isBelowRightAvail,
                    bool isCtuCrossedByVirtualBoundaries, int horVirBndryPos[], int verVirBndryPos[], int numHorVirBndry,

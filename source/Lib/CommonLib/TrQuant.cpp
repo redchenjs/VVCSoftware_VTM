@@ -763,7 +763,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   ALIGN_DATA( MEMORY_ALIGN_DEF_SIZE, TCoeff block[MAX_TB_SIZEY * MAX_TB_SIZEY] );
 
   const Pel *resiBuf    = resi.buf;
-  const int  resiStride = resi.stride;
+  const ptrdiff_t resiStride = resi.stride;
 
   for( int y = 0; y < height; y++ )
   {
@@ -863,7 +863,7 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   }
 
   Pel *resiBuf    = pResidual.buf;
-  int  resiStride = pResidual.stride;
+  ptrdiff_t resiStride = pResidual.stride;
 
   for( int y = 0; y < height; y++ )
   {

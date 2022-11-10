@@ -70,7 +70,8 @@ inter3 = _mm_add_epi64(inter0, inter3);                                         
 }
 
 template<X86_VEXT vext>
-static void simdHorizontalSobelFilter( Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height )
+static void simdHorizontalSobelFilter(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                      const int derivateBufStride, const int width, const int height)
 {
   __m128i mmPred[4];
   __m128i mm2xPred[2];
@@ -133,7 +134,8 @@ static void simdHorizontalSobelFilter( Pel *const pPred, const int predStride, i
 }
 
 template<X86_VEXT vext>
-static void simdVerticalSobelFilter( Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height )
+static void simdVerticalSobelFilter(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                    const int derivateBufStride, const int width, const int height)
 {
   __m128i mmPred[4];
   __m128i mmIntermediates[6];
@@ -308,7 +310,8 @@ static void simdEqualCoeffComputer( Pel *pResidue, int residueStride, int **ppDe
 }
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
 template<X86_VEXT vext>
-static void simdHorizontalSobelFilter_HBD_SIMD(Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height)
+static void simdHorizontalSobelFilter_HBD_SIMD(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                               const int32_t derivateBufStride, const int width, const int height)
 {
   __m128i pred[4];
   __m128i pred2x[2];
@@ -413,7 +416,8 @@ static void simdHorizontalSobelFilter_HBD_SIMD(Pel *const pPred, const int predS
 }
 
 template<X86_VEXT vext>
-static void simdVerticalSobelFilter_HBD_SIMD(Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height)
+static void simdVerticalSobelFilter_HBD_SIMD(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                             const int32_t derivateBufStride, const int width, const int height)
 {
   __m128i pred[4];
   __m128i intermediates[6];

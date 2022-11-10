@@ -63,7 +63,8 @@ private:
   unsigned int**  m_pos2Hash;
   std::unordered_map<unsigned int, std::vector<Position>> m_hash2Pos;
 
-  unsigned int xxCalcBlockHash(const Pel* pel, const int stride, const int width, const int height, unsigned int crc);
+  unsigned int xxCalcBlockHash(const Pel *pel, const ptrdiff_t stride, const int width, const int height,
+                               unsigned int crc);
 
   template<ChromaFormat chromaFormat>
   void    xxBuildPicHashMap(const PelUnitBuf& pic);

@@ -1701,9 +1701,9 @@ void xWeightedGeoBlk_HBD_SIMD(const PredictionUnit &pu, const uint32_t width, co
   Pel* dst = predDst.get(compIdx).buf;
   Pel* src0 = predSrc0.get(compIdx).buf;
   Pel* src1 = predSrc1.get(compIdx).buf;
-  int32_t strideDst = predDst.get(compIdx).stride;
-  int32_t strideSrc0 = predSrc0.get(compIdx).stride;
-  int32_t strideSrc1 = predSrc1.get(compIdx).stride;
+  ptrdiff_t strideDst  = predDst.get(compIdx).stride;
+  ptrdiff_t strideSrc0 = predSrc0.get(compIdx).stride;
+  ptrdiff_t strideSrc1 = predSrc1.get(compIdx).stride;
 
   const char    log2WeightBase = 3;
   const ClpRng  clpRng = pu.cu->slice->clpRngs().comp[compIdx];
@@ -2228,9 +2228,9 @@ void xWeightedGeoBlk_SSE(const PredictionUnit &pu, const uint32_t width, const u
   Pel* dst = predDst.get(compIdx).buf;
   Pel* src0 = predSrc0.get(compIdx).buf;
   Pel* src1 = predSrc1.get(compIdx).buf;
-  int32_t strideDst = predDst.get(compIdx).stride;
-  int32_t strideSrc0 = predSrc0.get(compIdx).stride;
-  int32_t strideSrc1 = predSrc1.get(compIdx).stride;
+  ptrdiff_t strideDst  = predDst.get(compIdx).stride;
+  ptrdiff_t strideSrc0 = predSrc0.get(compIdx).stride;
+  ptrdiff_t strideSrc1 = predSrc1.get(compIdx).stride;
 
   const char    log2WeightBase = 3;
   const ClpRng  clpRng = pu.cu->slice->clpRngs().comp[compIdx];

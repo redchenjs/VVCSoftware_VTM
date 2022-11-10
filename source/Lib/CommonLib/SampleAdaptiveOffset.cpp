@@ -283,10 +283,10 @@ void SampleAdaptiveOffset::xReconstructBlkSAOParams(CodingStructure& cs, SAOBlkP
 }
 
 void SampleAdaptiveOffset::offsetBlock(const int channelBitDepth, const ClpRng &clpRng, SAOModeNewTypes typeIdx,
-                                       int *offset, const Pel *srcBlk, Pel *resBlk, int srcStride, int resStride,
-                                       int width, int height, bool isLeftAvail, bool isRightAvail, bool isAboveAvail,
-                                       bool isBelowAvail, bool isAboveLeftAvail, bool isAboveRightAvail,
-                                       bool isBelowLeftAvail, bool isBelowRightAvail,
+                                       int *offset, const Pel *srcBlk, Pel *resBlk, ptrdiff_t srcStride,
+                                       ptrdiff_t resStride, int width, int height, bool isLeftAvail, bool isRightAvail,
+                                       bool isAboveAvail, bool isBelowAvail, bool isAboveLeftAvail,
+                                       bool isAboveRightAvail, bool isBelowLeftAvail, bool isBelowRightAvail,
                                        bool isCtuCrossedByVirtualBoundaries, int horVirBndryPos[], int verVirBndryPos[],
                                        int numHorVirBndry, int numVerVirBndry)
 {
@@ -585,9 +585,10 @@ void SampleAdaptiveOffset::offsetCTU(const UnitArea &area, const CPelUnitBuf &sr
 
     if (ctbOffset.modeIdc != SAOMode::OFF)
     {
-      int  srcStride    = src.get(compID).stride;
-      const Pel* srcBlk = src.get(compID).bufAt(compArea);
-      int  resStride    = res.get(compID).stride;
+      const ptrdiff_t srcStride = src.get(compID).stride;
+      const ptrdiff_t resStride = res.get(compID).stride;
+
+      const Pel *srcBlk       = src.get(compID).bufAt(compArea);
       Pel* resBlk       = res.get(compID).bufAt(compArea);
       for (int i = 0; i < numHorVirBndry; i++)
       {

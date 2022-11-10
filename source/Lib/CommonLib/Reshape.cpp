@@ -160,7 +160,7 @@ int  Reshape::calculateChromaAdjVpduNei(TransformUnit &tu, const CompArea &areaY
 
     CompArea lumaArea = CompArea(COMPONENT_Y, tu.chromaFormat, topLeftLuma->lumaPos(), topLeftLuma->lumaSize(), true);
     PelBuf piRecoY = cs.picture->getRecoBuf(lumaArea);
-    int strideY = piRecoY.stride;
+    ptrdiff_t strideY     = piRecoY.stride;
     int chromaScale = (1 << CSCALE_FP_PREC);
     int lumaValue = -1;
 
