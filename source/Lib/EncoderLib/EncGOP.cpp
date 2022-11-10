@@ -1288,7 +1288,7 @@ void EncGOP::xUpdateDuData(AccessUnit &testAU, std::deque<DUData> &duData)
   }
 
   // The last DU may have a trailing SEI
-  if (m_pcCfg->getDecodedPictureHashSEIType()!=HASHTYPE_NONE)
+  if (m_pcCfg->getDecodedPictureHashSEIType() != HashType::NONE)
   {
     duData.back().accumBitsDU += ( 20 << 3 ); // probably around 20 bytes - should be further adjusted, e.g. by type
     duData.back().accumNalsDU += 1;
@@ -1647,16 +1647,18 @@ printHash(const HashType hashType, const std::string &digestStr)
   const char *decodedPictureHashModeName;
   switch (hashType)
   {
-    case HASHTYPE_MD5:
-      decodedPictureHashModeName = "MD5";
-      break;
-    case HASHTYPE_CRC:
-      decodedPictureHashModeName = "CRC";
-      break;
-    case HASHTYPE_CHECKSUM:
-      decodedPictureHashModeName = "Checksum";
-      break;
-    default: decodedPictureHashModeName = nullptr; break;
+  case HashType::MD5:
+    decodedPictureHashModeName = "MD5";
+    break;
+  case HashType::CRC:
+    decodedPictureHashModeName = "CRC";
+    break;
+  case HashType::CHECKSUM:
+    decodedPictureHashModeName = "Checksum";
+    break;
+  default:
+    decodedPictureHashModeName = nullptr;
+    break;
   }
   if (decodedPictureHashModeName != nullptr)
   {
@@ -4059,9 +4061,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 #if GDR_ENABLED
       // note : generate hash sei only for non-gdr pictures
       bool genHash = !(m_pcCfg->getGdrNoHash() && pcSlice->getPicHeader()->getInGdrInterval());
-      if (m_pcCfg->getDecodedPictureHashSEIType() != HASHTYPE_NONE && genHash)
+      if (m_pcCfg->getDecodedPictureHashSEIType() != HashType::NONE && genHash)
 #else
-      if (m_pcCfg->getDecodedPictureHashSEIType()!=HASHTYPE_NONE)
+      if (m_pcCfg->getDecodedPictureHashSEIType() != HashType::NONE)
 #endif
       {
         SEIDecodedPictureHash *decodedPictureHashSei = new SEIDecodedPictureHash();
@@ -4073,7 +4075,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       const PPS* pps = pcPic->cs->pps;
       const int numSubpics = pps->getNumSubPics();
       std::string subPicDigest;
-      if (numSubpics > 1 && m_pcCfg->getSubpicDecodedPictureHashType() != HASHTYPE_NONE )
+      if (numSubpics > 1 && m_pcCfg->getSubpicDecodedPictureHashType() != HashType::NONE)
       {
         std::vector<uint16_t> subPicIdsInPic;
         xGetSubpicIdsInPic(subPicIdsInPic, pcPic->cs->sps, pps);

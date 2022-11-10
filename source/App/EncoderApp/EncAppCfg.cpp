@@ -2490,27 +2490,27 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
-  if (tmpDecodedPictureHashSEIMappedType<0 || tmpDecodedPictureHashSEIMappedType>=int(NUMBER_OF_HASHTYPES))
+  if (tmpDecodedPictureHashSEIMappedType < 0 || tmpDecodedPictureHashSEIMappedType > to_underlying(HashType::NUM))
   {
     EXIT( "Error: bad checksum mode");
   }
   // Need to map values to match those of the SEI message:
   if (tmpDecodedPictureHashSEIMappedType==0)
   {
-    m_decodedPictureHashSEIType=HASHTYPE_NONE;
+    m_decodedPictureHashSEIType = HashType::NONE;
   }
   else
   {
-    m_decodedPictureHashSEIType=HashType(tmpDecodedPictureHashSEIMappedType-1);
+    m_decodedPictureHashSEIType = static_cast<HashType>(tmpDecodedPictureHashSEIMappedType - 1);
   }
   // Need to map values to match those of the SEI message:
   if (tmpSubpicDecodedPictureHashMappedType==0)
   {
-    m_subpicDecodedPictureHashType=HASHTYPE_NONE;
+    m_subpicDecodedPictureHashType = HashType::NONE;
   }
   else
   {
-    m_subpicDecodedPictureHashType=HashType(tmpSubpicDecodedPictureHashMappedType-1);
+    m_subpicDecodedPictureHashType = static_cast<HashType>(tmpSubpicDecodedPictureHashMappedType - 1);
   }
   // allocate slice-based dQP values
   m_frameDeltaQps.resize(m_framesToBeEncoded + m_iGOPSize + 1);
@@ -3367,7 +3367,7 @@ int EncAppCfg::xAutoDetermineProfile()
 bool EncAppCfg::xCheckParameter()
 {
   msg( NOTICE, "\n" );
-  if (m_decodedPictureHashSEIType==HASHTYPE_NONE)
+  if (m_decodedPictureHashSEIType == HashType::NONE)
   {
     msg( DETAILS, "******************************************************************\n");
     msg( DETAILS, "** WARNING: --SEIDecodedPictureHash is now disabled by default. **\n");
