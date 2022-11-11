@@ -193,78 +193,67 @@ void fastInverseDCT2_B4( const TCoeff *src, TCoeff *dst, int shift, int line, in
   }
 }
 
-
-template< int uiTrSize >
-inline void _fastInverseMM( const TCoeff *src, TCoeff *dst, int shift, int line, int iSkipLine, int iSkipLine2, const TCoeff outputMinimum, const TCoeff outputMaximum, const TMatrixCoeff* iT )
+template<size_t TR_SIZE>
+inline void inverseMatrixMult(const TCoeff *src, TCoeff *dst, int shift, size_t numOutLines, int skipOutLines,
+                              int skipInLines, const TCoeff outputMinimum, const TCoeff outputMaximum,
+                              const TMatrixCoeff *m)
 {
-  const TCoeff rnd_factor = TCoeff(1) << (shift - 1);
-  const int  reducedLine = line - iSkipLine;
-  const int  cutoff      = uiTrSize - iSkipLine2;
+  const TCoeff rndFactor = TCoeff(1) << (shift - 1);
 
-  for( int i = 0; i<reducedLine; i++ )
+  const size_t reducedLine = numOutLines - skipOutLines;
+  const size_t cutoff      = TR_SIZE - skipInLines;
+
+  for (size_t i = 0; i < reducedLine; i++)
   {
-    for( int j = 0; j<uiTrSize; j++ )
+    for (size_t j = 0; j < TR_SIZE; j++)
     {
-      TCoeff iSum = 0;
-      for( int k = 0; k<cutoff; k++)
+      Intermediate_Int sum = 0;
+      for (size_t k = 0; k < cutoff; k++)
       {
-        iSum += src[k*line + i] * iT[k*uiTrSize + j];
+        sum += src[k * numOutLines + i] * m[k * TR_SIZE + j];
       }
-      dst[i*uiTrSize + j] = Clip3<TCoeff>(outputMinimum, outputMaximum, (iSum + rnd_factor) >> shift);
+      dst[i * TR_SIZE + j] = Clip3<TCoeff>(outputMinimum, outputMaximum, (sum + rndFactor) >> shift);
     }
   }
 
-  if (iSkipLine)
+  if (skipOutLines > 0)
   {
-    memset(dst + (reducedLine*uiTrSize), 0, (iSkipLine*uiTrSize) * sizeof(TCoeff));
+    std::fill_n(dst + reducedLine * TR_SIZE, skipOutLines * TR_SIZE, 0);
   }
 }
 
-
-template< int uiTrSize >
-inline void _fastForwardMM( const TCoeff *src, TCoeff *dst, int shift, int line, int iSkipLine, int iSkipLine2, const TMatrixCoeff* tc )
+template<size_t TR_SIZE>
+inline void forwardMatrixMult(const TCoeff *src, TCoeff *dst, int shift, size_t numInLines, int skipInLines,
+                              int skipOutLines, const TMatrixCoeff *m)
 {
-  const TCoeff rnd_factor = TCoeff(1) << (shift - 1);
-  const int  reducedLine = line - iSkipLine;
-  const int  cutoff      = uiTrSize - iSkipLine2;
-  TCoeff *pCoef;
+  const TCoeff rndFactor = TCoeff(1) << (shift - 1);
 
-  for( int i = 0; i<reducedLine; i++ )
+  const size_t reducedLine = numInLines - skipInLines;
+  const size_t cutoff      = TR_SIZE - skipOutLines;
+
+  for (int j = 0; j < cutoff; j++)
   {
-    pCoef = dst;
-    const TMatrixCoeff* iT = tc;
-    for( int j = 0; j<cutoff; j++ )
+    for (int i = 0; i < reducedLine; i++)
     {
-      TCoeff iSum = 0;
-      for( int k = 0; k<uiTrSize; k++ )
+      Intermediate_Int sum = 0;
+      for (int k = 0; k < TR_SIZE; k++)
       {
-        iSum += src[k] * iT[k];
+        sum += src[i * TR_SIZE + k] * m[j * TR_SIZE + k];
       }
-      pCoef[i] = (iSum + rnd_factor) >> shift;
-      pCoef += line;
-      iT += uiTrSize;
+      dst[j * numInLines + i] = (sum + rndFactor) >> shift;
     }
-    src += uiTrSize;
-  }
 
-  if( iSkipLine )
-  {
-    pCoef = dst + reducedLine;
-    for( int j = 0; j<cutoff; j++ )
+    if (skipInLines > 0)
     {
-      memset(pCoef, 0, sizeof(TCoeff) * iSkipLine);
-      pCoef += line;
+      std::fill_n(dst + j * numInLines + reducedLine, skipInLines, 0);
     }
   }
 
-  if( iSkipLine2 )
+  if (skipOutLines > 0)
   {
-    pCoef = dst + line*cutoff;
-    memset(pCoef, 0, sizeof(TCoeff) * line * iSkipLine2);
+    std::fill_n(dst + cutoff * numInLines, skipOutLines * numInLines, 0);
   }
 }
-
-
 
 /** 8x8 forward transform implemented using partial butterfly structure (1D)
 *  \param src   input data (residual)
@@ -921,12 +910,13 @@ void fastInverseDST7_B4(const TCoeff *src, TCoeff *dst, int shift, int line, int
 
 void fastForwardDST7_B8(const TCoeff *src, TCoeff *dst, int shift, int line, int iSkipLine, int iSkipLine2)
 {
-  _fastForwardMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDST7P8[TRANSFORM_FORWARD][0] );
+  forwardMatrixMult<8>(src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDST7P8[TRANSFORM_FORWARD][0]);
 }
 
 void fastInverseDST7_B8(const TCoeff *src, TCoeff *dst, int shift, int line, int iSkipLine, int iSkipLine2, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
-  _fastInverseMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, g_trCoreDST7P8[TRANSFORM_INVERSE][0]);
+  inverseMatrixMult<8>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum,
+                       g_trCoreDST7P8[TRANSFORM_INVERSE][0]);
 }
 
 
@@ -994,7 +984,7 @@ void fastForwardDST7_B16(const TCoeff *src, TCoeff *dst, int shift, int line, in
     memset(dst, 0, sizeof(TCoeff) * line * iSkipLine2);
   }
 #else
-  _fastForwardMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDST7P16[TRANSFORM_FORWARD][0] );
+  forwardMatrixMult<16>(src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDST7P16[TRANSFORM_FORWARD][0]);
 #endif
 }
 
@@ -1051,7 +1041,8 @@ void fastInverseDST7_B16(const TCoeff *src, TCoeff *dst, int shift, int line, in
     memset(dst, 0, (iSkipLine * 16) * sizeof(TCoeff));
   }
 #else
-  _fastInverseMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, g_trCoreDST7P16[TRANSFORM_INVERSE][0]);
+  inverseMatrixMult<16>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum,
+                        g_trCoreDST7P16[TRANSFORM_INVERSE][0]);
 #endif
 }
 
@@ -1151,7 +1142,7 @@ void fastForwardDST7_B32(const TCoeff *src, TCoeff *dst, int shift, int line, in
     memset(dst, 0, sizeof(TCoeff) * line * iSkipLine2);
   }
 #else
-  _fastForwardMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDST7P32[TRANSFORM_FORWARD][0] );
+  forwardMatrixMult<32>(src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDST7P32[TRANSFORM_FORWARD][0]);
 #endif
 }
 
@@ -1236,7 +1227,8 @@ void fastInverseDST7_B32(const TCoeff *src, TCoeff *dst, int shift, int line, in
     memset(dst, 0, (iSkipLine * 32) * sizeof(TCoeff));
   }
 #else
-  _fastInverseMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, g_trCoreDST7P32[TRANSFORM_INVERSE][0] );
+  inverseMatrixMult<32>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum,
+                        g_trCoreDST7P32[TRANSFORM_INVERSE][0]);
 #endif
 }
 
@@ -1311,12 +1303,13 @@ void fastInverseDCT8_B4(const TCoeff *src, TCoeff *dst, int shift, int line, int
 
 void fastForwardDCT8_B8(const TCoeff *src, TCoeff *dst, int shift, int line, int iSkipLine, int iSkipLine2)
 {
-  _fastForwardMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDCT8P8[TRANSFORM_FORWARD][0] );
+  forwardMatrixMult<8>(src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDCT8P8[TRANSFORM_FORWARD][0]);
 }
 
 void fastInverseDCT8_B8(const TCoeff *src, TCoeff *dst, int shift, int line, int iSkipLine, int iSkipLine2, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
-  _fastInverseMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, g_trCoreDCT8P8[TRANSFORM_INVERSE][0] );
+  inverseMatrixMult<8>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum,
+                       g_trCoreDCT8P8[TRANSFORM_INVERSE][0]);
 }
 
 
@@ -1384,7 +1377,7 @@ void fastForwardDCT8_B16(const TCoeff *src, TCoeff *dst, int shift, int line, in
     memset(dst, 0, sizeof(TCoeff) * line * iSkipLine2);
   }
 #else
-  _fastForwardMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDCT8P16[TRANSFORM_FORWARD][0] );
+  forwardMatrixMult<16>(src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDCT8P16[TRANSFORM_FORWARD][0]);
 #endif
 }
 
@@ -1439,7 +1432,8 @@ void fastInverseDCT8_B16(const TCoeff *src, TCoeff *dst, int shift, int line, in
     memset(dst, 0, (iSkipLine * 16) * sizeof(TCoeff));
   }
 #else
-  _fastInverseMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, g_trCoreDCT8P16[TRANSFORM_INVERSE][0] );
+  inverseMatrixMult<16>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum,
+                        g_trCoreDCT8P16[TRANSFORM_INVERSE][0]);
 #endif
 }
 
@@ -1540,7 +1534,7 @@ void fastForwardDCT8_B32(const TCoeff *src, TCoeff *dst, int shift, int line, in
     memset(dst, 0, sizeof(TCoeff) * line * iSkipLine2);
   }
 #else
-  _fastForwardMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDCT8P32[TRANSFORM_FORWARD][0] );
+  forwardMatrixMult<32>(src, dst, shift, line, iSkipLine, iSkipLine2, g_trCoreDCT8P32[TRANSFORM_FORWARD][0]);
 #endif
 }
 
@@ -1627,7 +1621,8 @@ void fastInverseDCT8_B32(const TCoeff *src, TCoeff *dst, int shift, int line, in
     memset(dst, 0, (iSkipLine * 32) * sizeof(TCoeff));
   }
 #else
-  _fastInverseMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, g_trCoreDCT8P32[TRANSFORM_INVERSE][0] );
+  inverseMatrixMult<32>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum,
+                        g_trCoreDCT8P32[TRANSFORM_INVERSE][0]);
 #endif
 }
 
