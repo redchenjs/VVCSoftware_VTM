@@ -347,7 +347,7 @@ void InterPrediction::xSubPuMC(PredictionUnit &pu, PelUnitBuf &predBuf, const Re
       PelUnitBuf subPredBuf = predBuf.subBuf(UnitAreaRelative(pu, subPu));
       subPu.mmvdEncOptMode = 0;
       subPu.mvRefine = false;
-      motionCompensation(subPu, subPredBuf, eRefPicList, luma, chroma);
+      motionCompensation(subPu, subPredBuf, eRefPicList, luma, chroma, nullptr);
       secDim = later - secStep;
     }
   }
@@ -519,7 +519,7 @@ void InterPrediction::xPredInterUni(const PredictionUnit &pu, const RefPicList &
       {
         xPredInterBlk(compID, pu, pu.cu->slice->getRefPic(eRefPicList, refIdx)->unscaledPic, mv[0], pcYuvPred, bi,
                       pu.cu->slice->clpRng(compID), bioApplied, isIBC,
-                      pu.cu->slice->getScalingRatio(eRefPicList, refIdx));
+                      pu.cu->slice->getScalingRatio(eRefPicList, refIdx), 0, 0, false, nullptr, 0);
       }
     }
   }
@@ -640,12 +640,13 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
     }
     else
     {
-      xWeightedAverage( pu, srcPred0, srcPred1, pcYuvPred, slice.getSPS()->getBitDepths(), slice.clpRngs(), bioApplied, lumaOnly, chromaOnly, yuvPredTmp );
+      xWeightedAverage(pu, srcPred0, srcPred1, pcYuvPred, slice.getSPS()->getBitDepths(), slice.clpRngs(), bioApplied,
+                       lumaOnly, chromaOnly, yuvPredTmp);
     }
   }
 }
 
-void InterPrediction::xPredInterBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic,
+void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic,
                                     const Mv &_mv, PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng,
                                     const bool bioApplied, bool isIBC, const std::pair<int, int> scalingRatio,
                                     SizeType dmvrWidth, SizeType dmvrHeight, bool bilinearMC, Pel *srcPadBuf,
@@ -1402,7 +1403,7 @@ void InterPrediction::xWeightedAverage(const PredictionUnit &pu, const CPelUnitB
   }
 }
 
-void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf, const RefPicList &eRefPicList,
+void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf, const RefPicList eRefPicList,
                                          const bool luma, const bool chroma, PelUnitBuf *predBufWOBIO)
 {
   // Note: there appears to be an interaction with weighted prediction that
@@ -1438,7 +1439,7 @@ void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf
   if( eRefPicList != REF_PIC_LIST_X )
   {
     CHECK(predBufWOBIO != nullptr, "the case should not happen!");
-    if ((CU::isIBC(*pu.cu) == false) && ((sliceType == P_SLICE && pps.getUseWP()) || (sliceType == B_SLICE && pps.getWPBiPred())))
+    if (!CU::isIBC(*pu.cu) && ((sliceType == P_SLICE && pps.getUseWP()) || (sliceType == B_SLICE && pps.getWPBiPred())))
     {
       xPredInterUni(pu, eRefPicList, predBuf, true, false, luma, chroma);
       xWeightedPredictionUni(pu, predBuf, eRefPicList, predBuf, -1, m_maxCompIDToPred, (luma && !chroma),
@@ -1506,23 +1507,23 @@ void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf
   return;
 }
 
-void InterPrediction::motionCompensation(CodingUnit &cu, const RefPicList &eRefPicList, const bool luma,
+void InterPrediction::motionCompensateCu(CodingUnit &cu, const RefPicList eRefPicList, const bool luma,
                                          const bool chroma)
 {
   for( auto &pu : CU::traversePUs( cu ) )
   {
     PelUnitBuf predBuf = cu.cs->getPredBuf( pu );
     pu.mvRefine = true;
-    motionCompensation(pu, predBuf, eRefPicList, luma, chroma);
+    motionCompensation(pu, predBuf, eRefPicList, luma, chroma, nullptr);
     pu.mvRefine = false;
   }
 }
 
-void InterPrediction::motionCompensation(PredictionUnit &pu, const RefPicList &eRefPicList, const bool luma,
+void InterPrediction::motionCompensatePu(PredictionUnit &pu, const RefPicList eRefPicList, const bool luma,
                                          const bool chroma)
 {
   PelUnitBuf predBuf = pu.cs->getPredBuf( pu );
-  motionCompensation(pu, predBuf, eRefPicList, luma, chroma);
+  motionCompensation(pu, predBuf, eRefPicList, luma, chroma, nullptr);
 }
 
 int InterPrediction::rightShiftMSB(int numer, int denom)
@@ -1544,7 +1545,8 @@ void InterPrediction::motionCompensationGeo( CodingUnit &cu, MergeCtx &geoMrgCtx
 
     geoMrgCtx.setMergeInfo( pu, candIdx0 );
     PU::spanMotionInfo( pu );
-    motionCompensation(pu, tmpGeoBuf0, REF_PIC_LIST_X, true, isChromaEnabled(pu.chromaFormat)); // TODO: check 4:0:0 interaction with weighted prediction.
+    // TODO: check 4:0:0 interaction with weighted prediction.
+    motionCompensation(pu, tmpGeoBuf0, REF_PIC_LIST_X, true, isChromaEnabled(pu.chromaFormat), nullptr);
     if( g_mctsDecCheckEnabled && !MCTSHelper::checkMvBufferForMCTSConstraint( pu, true ) )
     {
       printf( "DECODER_GEO_PU: pu motion vector across tile boundaries (%d,%d,%d,%d)\n", pu.lx(), pu.ly(), pu.lwidth(), pu.lheight() );
@@ -1552,7 +1554,8 @@ void InterPrediction::motionCompensationGeo( CodingUnit &cu, MergeCtx &geoMrgCtx
 
     geoMrgCtx.setMergeInfo( pu, candIdx1 );
     PU::spanMotionInfo( pu );
-    motionCompensation(pu, tmpGeoBuf1, REF_PIC_LIST_X, true, isChromaEnabled(pu.chromaFormat)); // TODO: check 4:0:0 interaction with weighted prediction.
+    // TODO: check 4:0:0 interaction with weighted prediction.
+    motionCompensation(pu, tmpGeoBuf1, REF_PIC_LIST_X, true, isChromaEnabled(pu.chromaFormat), nullptr);
     if( g_mctsDecCheckEnabled && !MCTSHelper::checkMvBufferForMCTSConstraint( pu, true ) )
     {
       printf( "DECODER_GEO_PU: pu motion vector across tile boundaries (%d,%d,%d,%d)\n", pu.lx(), pu.ly(), pu.lwidth(), pu.lheight() );
@@ -2107,7 +2110,8 @@ void InterPrediction::xProcessDMVR(PredictionUnit& pu, PelUnitBuf &pcYuvDst, con
 
         subPredBuf.bufs[COMPONENT_Cr].buf = pcYuvDst.bufs[COMPONENT_Cr].buf + (xStart >> scaleX) + ((yStart >> scaleY) * dstStride[COMPONENT_Cr]);
         }
-        xWeightedAverage(subPu, srcPred0, srcPred1, subPredBuf, subPu.cu->slice->getSPS()->getBitDepths(), subPu.cu->slice->clpRngs(), bioAppliedType[num]);
+        xWeightedAverage(subPu, srcPred0, srcPred1, subPredBuf, subPu.cu->slice->getSPS()->getBitDepths(),
+                         subPu.cu->slice->clpRngs(), bioAppliedType[num], false, false, nullptr);
         num++;
       }
     }

@@ -2590,7 +2590,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           pu.mmvdEncOptMode = (refineStep > 2 ? 2 : 1);
           CHECK(!pu.mmvdMergeFlag, "MMVD merge should be set");
           // Don't do chroma MC here
-          m_pcInterSearch->motionCompensation(pu, *singleMergeTempBuffer, REF_PIC_LIST_X, true, false);
+          m_pcInterSearch->motionCompensation(pu, *singleMergeTempBuffer, REF_PIC_LIST_X, true, false, nullptr);
           pu.mmvdEncOptMode = 0;
           pu.mvRefine = false;
           Distortion uiSad = distParam.distFunc(distParam);
@@ -2816,7 +2816,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           if (RdModeList[uiMrgHADIdx].isMMVD)
           {
             pu.mmvdEncOptMode = 0;
-            m_pcInterSearch->motionCompensation(pu);
+            m_pcInterSearch->motionCompensatePu(pu, REF_PIC_LIST_X, true, true);
           }
           else if (uiNoResidualPass != 0 && RdModeList[uiMrgHADIdx].isCIIP)
           {
@@ -2831,7 +2831,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
       else
       {
         pu.mvRefine = true;
-        m_pcInterSearch->motionCompensation( pu );
+        m_pcInterSearch->motionCompensatePu(pu, REF_PIC_LIST_X, true, true);
         pu.mvRefine = false;
       }
       if (!cu.mmvdSkip && !pu.ciipFlag && uiNoResidualPass != 0)
@@ -3010,7 +3010,7 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
       tempCS->initStructData(encTestMode.qp);
       return;
     }
-    m_pcInterSearch->motionCompensation(pu, geoBuffer[mergeCand]);
+    m_pcInterSearch->motionCompensation(pu, geoBuffer[mergeCand], REF_PIC_LIST_X);
     geoTempBuf[mergeCand] = m_acMergeTmpBuffer[mergeCand].getBuf(localUnitArea);
     geoTempBuf[mergeCand].Y().copyFrom(geoBuffer[mergeCand].Y());
     geoTempBuf[mergeCand].Y().roundToOutputBitdepth(geoTempBuf[mergeCand].Y(), cu.slice->clpRng(COMPONENT_Y));
@@ -3427,7 +3427,7 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
 #endif
         distParam.cur = acMergeBuffer[uiMergeCand].Y();
 
-        m_pcInterSearch->motionCompensation( pu, acMergeBuffer[uiMergeCand], REF_PIC_LIST_X, true, false );
+        m_pcInterSearch->motionCompensation(pu, acMergeBuffer[uiMergeCand], REF_PIC_LIST_X, true, false, nullptr);
 
         Distortion uiSad = distParam.distFunc( distParam );
         uint32_t   uiBitsCand = uiMergeCand + 1;
@@ -3538,11 +3538,11 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
       if ( mrgTempBufSet )
       {
         tempCS->getPredBuf().copyFrom(acMergeBuffer[uiMergeCand], true, false);   // Copy Luma Only
-        m_pcInterSearch->motionCompensation(pu, REF_PIC_LIST_X, false, true);
+        m_pcInterSearch->motionCompensatePu(pu, REF_PIC_LIST_X, false, true);
       }
       else
       {
-        m_pcInterSearch->motionCompensation( pu );
+        m_pcInterSearch->motionCompensatePu(pu, REF_PIC_LIST_X, true, true);
       }
 
 #if GDR_ENABLED
@@ -3917,7 +3917,7 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
             }
 #endif
             //  MC
-            m_pcInterSearch->motionCompensation(pu,REF_PIC_LIST_0, true, chroma);
+            m_pcInterSearch->motionCompensatePu(pu, REF_PIC_LIST_0, true, chroma);
             m_CABACEstimator->getCtx() = m_CurrCtx->start;
 
 #if GDR_ENABLED
@@ -4047,7 +4047,7 @@ void EncCu::xCheckRDCostIBCMode(CodingStructure *&tempCS, CodingStructure *&best
     PU::spanMotionInfo(pu);
     const bool chroma = !pu.cu->isSepTree();
     //  MC
-    m_pcInterSearch->motionCompensation(pu, REF_PIC_LIST_0, true, chroma);
+    m_pcInterSearch->motionCompensatePu(pu, REF_PIC_LIST_0, true, chroma);
 
     m_pcInterSearch->encodeResAndCalcRdInterCU(*tempCS, partitioner, false, true, chroma);
     if (tempCS->slice->getSPS()->getUseColorTrans())

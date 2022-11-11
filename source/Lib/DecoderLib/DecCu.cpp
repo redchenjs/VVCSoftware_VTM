@@ -627,11 +627,11 @@ void DecCu::xReconInter(CodingUnit &cu)
     const bool chroma = isChromaEnabled(cu.chromaFormat) && cu.Cb().valid();
     if (luma && (chroma || !isChromaEnabled(cu.chromaFormat)))
     {
-      m_pcInterPred->motionCompensation(cu);
+      m_pcInterPred->motionCompensateCu(cu, REF_PIC_LIST_X, true, true);
     }
     else
     {
-      m_pcInterPred->motionCompensation(cu, REF_PIC_LIST_0, luma, chroma);
+      m_pcInterPred->motionCompensateCu(cu, REF_PIC_LIST_0, luma, chroma);
     }
   }
   if (cu.Y().valid())
