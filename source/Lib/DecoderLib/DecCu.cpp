@@ -636,8 +636,7 @@ void DecCu::xReconInter(CodingUnit &cu)
   }
   if (cu.Y().valid())
   {
-    bool isIbcSmallBlk = CU::isIBC(cu) && (cu.lwidth() * cu.lheight() <= 16);
-    CU::saveMotionInHMVP( cu, isIbcSmallBlk );
+    CU::saveMotionForHmvp(cu);
   }
 
   if (cu.firstPU->ciipFlag)

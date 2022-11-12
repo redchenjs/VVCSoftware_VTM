@@ -86,7 +86,7 @@ namespace CU
   uint32_t getNumPUs                      (const CodingUnit& cu);
   void addPUs                         (      CodingUnit& cu);
 
-  void saveMotionInHMVP               (const CodingUnit& cu, const bool isToBeDone );
+  void saveMotionForHmvp(const CodingUnit &cu);
 
   PartSplit getSplitAtDepth           (const CodingUnit& cu, const unsigned depth);
   ModeType  getModeTypeAtDepth        (const CodingUnit& cu, const unsigned depth);
@@ -165,9 +165,10 @@ namespace PU
                           Mv rcMv[3], bool rcMvSolid[3], MvpType rcMvType[3], Position rcMvPos[3]);
 #endif
   void xInheritedAffineMv             ( const PredictionUnit &pu, const PredictionUnit* puNeighbour, RefPicList eRefPicList, Mv rcMv[3] );
-  bool addMergeHMVPCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int &mrgCandIdx,
-                        const uint32_t maxNumMergeCandMin1, int &cnt, const bool isAvailableA1, const MotionInfo miLeft,
-                        const bool isAvailableB1, const MotionInfo miAbove, const bool ibcFlag, const bool isGt4x4
+  bool addMergeHmvpCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int &mrgCandIdx,
+                        const uint32_t maxNumMergeCandMin1, int &cnt, const bool isAvailableA1,
+                        const MotionInfo &miLeft, const bool isAvailableB1, const MotionInfo &miAbove,
+                        const bool ibcFlag, const bool isGt4x4
 #if GDR_ENABLED
                         ,
                         const PredictionUnit &pu, bool &allCandSolidInAbove

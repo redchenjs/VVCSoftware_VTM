@@ -353,30 +353,33 @@ void CU::addPUs( CodingUnit& cu )
   cu.cs->addPU( CS::getArea( *cu.cs, cu, cu.chType ), cu.chType );
 }
 
-void CU::saveMotionInHMVP( const CodingUnit& cu, const bool isToBeDone )
+void CU::saveMotionForHmvp(const CodingUnit &cu)
 {
-  const PredictionUnit& pu = *cu.firstPU;
-
-  if (!cu.geoFlag && !cu.affine && !isToBeDone)
+  if (!cu.geoFlag && !cu.affine && !(CU::isIBC(cu) && cu.lwidth() * cu.lheight() <= 16))
   {
+    const PredictionUnit &pu = *cu.firstPU;
+
     MotionInfo mi = pu.getMotionInfo();
 
 #if GDR_ENABLED
     mi.sourcePos   = pu.lumaPos();
     mi.sourceClean = pu.cs->isClean(mi.sourcePos, CHANNEL_TYPE_LUMA);
 #endif
-    mi.bcwIdx = (mi.interDir == 3) ? cu.bcwIdx : BCW_DEFAULT;
+    mi.bcwIdx = mi.interDir == 3 ? cu.bcwIdx : BCW_DEFAULT;
 
-    const unsigned log2ParallelMergeLevel = pu.cs->sps->getLog2ParallelMergeLevelMinus2() + 2;
-    const unsigned xBr = pu.cu->Y().width + pu.cu->Y().x;
-    const unsigned yBr = pu.cu->Y().height + pu.cu->Y().y;
-
-    const bool enableHmvp = ((xBr >> log2ParallelMergeLevel) > (pu.cu->Y().x >> log2ParallelMergeLevel))
-                            && ((yBr >> log2ParallelMergeLevel) > (pu.cu->Y().y >> log2ParallelMergeLevel));
-    const bool enableInsertion = CU::isIBC(cu) || enableHmvp;
-    if (enableInsertion)
+    if (CU::isIBC(cu))
     {
-      cu.cs->addMiToLut(CU::isIBC(cu) ? cu.cs->motionLut.lutIbc : cu.cs->motionLut.lut, mi);
+      cu.cs->addMiToLut(cu.cs->motionLut.lutIbc, mi);
+    }
+    else
+    {
+      const uint32_t  mask = ~0u << (pu.cs->sps->getLog2ParallelMergeLevelMinus2() + 2);
+      const CompArea &area = pu.cu->Y();
+
+      if ((((area.x + area.width) ^ area.x) & mask) != 0 && (((area.y + area.height) ^ area.y) & mask) != 0)
+      {
+        cu.cs->addMiToLut(cu.cs->motionLut.lut, mi);
+      }
     }
   }
 }
@@ -824,25 +827,27 @@ int PU::getWideAngle( const TransformUnit &tu, const uint32_t dirMode, const Com
   return predMode;
 }
 
-bool PU::addMergeHMVPCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int &mrgCandIdx,
+bool PU::addMergeHmvpCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int &mrgCandIdx,
                           const uint32_t maxNumMergeCandMin1, int &cnt, const bool isAvailableA1,
-                          const MotionInfo miLeft, const bool isAvailableB1, const MotionInfo miAbove,
+                          const MotionInfo &miLeft, const bool isAvailableB1, const MotionInfo &miAbove,
                           const bool ibcFlag, const bool isGt4x4
 #if GDR_ENABLED
-                         ,const PredictionUnit &pu
-                         ,bool &allCandSolidInAbove
+                          ,
+                          const PredictionUnit &pu, bool &allCandSolidInAbove
 #endif
 )
 {
-  const Slice& slice = *cs.slice;
-  MotionInfo miNeighbor;
+  const Slice &slice = *cs.slice;
 
-  auto &lut = ibcFlag ? cs.motionLut.lutIbc : cs.motionLut.lut;
+  const auto &lut = ibcFlag ? cs.motionLut.lutIbc : cs.motionLut.lut;
 
   const int numAvailCandInLut = (int) lut.size();
 
 #if GDR_ENABLED
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA))
+        || cs.picHeader->getNumVerVirtualBoundaries() == 0);
 
   bool  vbOnCtuBoundary = true;
   if (isEncodeGdrClean)
@@ -851,9 +856,9 @@ bool PU::addMergeHMVPCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int
     allCandSolidInAbove = allCandSolidInAbove && vbOnCtuBoundary;
   }
 #endif
-  for (int mrgIdx = 1; mrgIdx <= numAvailCandInLut; mrgIdx++)
+  for (int mrgIdx = 0; mrgIdx < numAvailCandInLut; mrgIdx++)
   {
-    miNeighbor = lut[numAvailCandInLut - mrgIdx];
+    const MotionInfo &miNeighbor = lut[numAvailCandInLut - 1 - mrgIdx];
 #if GDR_ENABLED
     Position sourcePos = Position(0, 0);
     if (isEncodeGdrClean)
@@ -862,33 +867,27 @@ bool PU::addMergeHMVPCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int
     }
 #endif
 
-    if ( mrgIdx > 2 || ((mrgIdx > 1 || !isGt4x4) && ibcFlag)
-      || ((!isAvailableA1 || (miLeft != miNeighbor)) && (!isAvailableB1 || (miAbove != miNeighbor))) )
+    if (mrgIdx > 1 || ((mrgIdx > 0 || !isGt4x4) && ibcFlag)
+        || ((!isAvailableA1 || miLeft != miNeighbor) && (!isAvailableB1 || miAbove != miNeighbor)))
     {
       mrgCtx.interDirNeighbours[cnt] = miNeighbor.interDir;
-      mrgCtx.useAltHpelIf      [cnt] = !ibcFlag && miNeighbor.useAltHpelIf;
-      mrgCtx.bcwIdx[cnt]             = (miNeighbor.interDir == 3) ? miNeighbor.bcwIdx : BCW_DEFAULT;
+      mrgCtx.useAltHpelIf[cnt]       = !ibcFlag && miNeighbor.useAltHpelIf;
+      mrgCtx.bcwIdx[cnt]             = miNeighbor.interDir == 3 ? miNeighbor.bcwIdx : BCW_DEFAULT;
 
-      mrgCtx.mvFieldNeighbours[cnt << 1].setMvField(miNeighbor.mv[0], miNeighbor.refIdx[0]);
-#if GDR_ENABLED
-      if (isEncodeGdrClean)
+      const int numLists = slice.isInterB() ? 2 : 1;
+
+      for (int listIdx = 0; listIdx < numLists; listIdx++)
       {
-        // note : cannot gaurantee the order/value in the lut if any of the lut is in dirty area
-        mrgCtx.mvPos[(cnt << 1) + 0]   = sourcePos;
-        mrgCtx.mvSolid[(cnt << 1) + 0] = allCandSolidInAbove && vbOnCtuBoundary;
-        mrgCtx.mvValid[(cnt << 1) + 0] = cs.isClean(pu.Y().bottomRight(), miNeighbor.mv[0], REF_PIC_LIST_0, miNeighbor.refIdx[0]);
-        allCandSolidInAbove = allCandSolidInAbove && vbOnCtuBoundary;
-      }
-#endif
-      if (slice.isInterB())
-      {
-        mrgCtx.mvFieldNeighbours[(cnt << 1) + 1].setMvField(miNeighbor.mv[1], miNeighbor.refIdx[1]);
+        mrgCtx.mvFieldNeighbours[2 * cnt + listIdx].setMvField(miNeighbor.mv[listIdx], miNeighbor.refIdx[listIdx]);
+
 #if GDR_ENABLED
         if (isEncodeGdrClean)
         {
-          mrgCtx.mvPos[(cnt << 1) + 1]   = sourcePos;
-          mrgCtx.mvSolid[(cnt << 1) + 1] = allCandSolidInAbove && vbOnCtuBoundary;
-          mrgCtx.mvValid[(cnt << 1) + 1] = cs.isClean(pu.Y().bottomRight(), miNeighbor.mv[1], REF_PIC_LIST_1, miNeighbor.refIdx[1]);
+          // note : cannot guarantee the order/value in the lut if any of the lut is in dirty area
+          mrgCtx.mvPos[2 * cnt + listIdx]   = sourcePos;
+          mrgCtx.mvSolid[2 * cnt + listIdx] = allCandSolidInAbove && vbOnCtuBoundary;
+          mrgCtx.mvValid[2 * cnt + listIdx] =
+            cs.isClean(pu.Y().bottomRight(), miNeighbor.mv[listIdx], RefPicList(listIdx), miNeighbor.refIdx[listIdx]);
           allCandSolidInAbove = allCandSolidInAbove && vbOnCtuBoundary;
         }
 #endif
@@ -898,9 +897,8 @@ bool PU::addMergeHMVPCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int
       {
         return true;
       }
-      cnt ++;
 
-      if (cnt  == maxNumMergeCandMin1)
+      if (++cnt == maxNumMergeCandMin1)
       {
         break;
       }
@@ -1021,10 +1019,10 @@ void PU::getIBCMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const
   {
 #if GDR_ENABLED
     bool allCandSolidInAbove = true;
-    bool found = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
+    bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
                                   miAbove, true, isGt4x4, pu, allCandSolidInAbove);
 #else
-    bool found = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
+    bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
                                   miAbove, true, isGt4x4);
 #endif
 
@@ -1499,10 +1497,10 @@ void PU::getInterMergeCandidates(const PredictionUnit &pu, MergeCtx &mrgCtx, int
     allCandSolidInAbove = true;
 #endif
 #if GDR_ENABLED
-    bool found = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCandMin1, cnt, isAvailableA1, miLeft,
+    bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCandMin1, cnt, isAvailableA1, miLeft,
                                   isAvailableB1, miAbove, CU::isIBC(*pu.cu), isGt4x4, pu, allCandSolidInAbove);
 #else
-    bool found = addMergeHMVPCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCandMin1, cnt, isAvailableA1, miLeft,
+    bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCandMin1, cnt, isAvailableA1, miLeft,
                                   isAvailableB1, miAbove, CU::isIBC(*pu.cu), isGt4x4);
 #endif
 
