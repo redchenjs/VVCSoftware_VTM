@@ -753,7 +753,7 @@ void Quant::processScalingListEnc( int *coeff, int *quantcoeff, int quantScales,
     {
       for (uint32_t i = 0; i<width; i++)
       {
-        if (j >= JVET_C0024_ZERO_OUT_TH || i >= JVET_C0024_ZERO_OUT_TH)
+        if (j >= MAX_NONZERO_TU_SIZE || i >= MAX_NONZERO_TU_SIZE)
         {
           quantcoeff[j*width + i] = 0;
           continue;
@@ -807,7 +807,7 @@ void Quant::processScalingListDec( const int *coeff, int *dequantcoeff, int invQ
         int dequantCoeffLineSep = j * width;
         for (uint32_t i = 0; i < width; i++)
         {
-          if (i >= JVET_C0024_ZERO_OUT_TH || j >= JVET_C0024_ZERO_OUT_TH)
+          if (i >= MAX_NONZERO_TU_SIZE || j >= MAX_NONZERO_TU_SIZE)
           {
             dequantcoeff[dequantCoeffLineSep + i] = 0;
             continue;
@@ -824,7 +824,7 @@ void Quant::processScalingListDec( const int *coeff, int *dequantcoeff, int invQ
         int dequantCoeffLineSep = j * width;
         for (uint32_t i = 0; i < width; i++)
         {
-          if (i >= JVET_C0024_ZERO_OUT_TH || j >= JVET_C0024_ZERO_OUT_TH)
+          if (i >= MAX_NONZERO_TU_SIZE || j >= MAX_NONZERO_TU_SIZE)
           {
             dequantcoeff[dequantCoeffLineSep + i] = 0;
             continue;

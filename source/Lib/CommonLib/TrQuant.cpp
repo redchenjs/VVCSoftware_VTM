@@ -736,12 +736,9 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
 
   getTrTypes ( tu, compID, trTypeHor, trTypeVer );
 
-  int skipWidth  = (trTypeHor != TransType::DCT2 && width == 32) ? 16
-                   : width > JVET_C0024_ZERO_OUT_TH              ? width - JVET_C0024_ZERO_OUT_TH
-                                                                 : 0;
-  int skipHeight = (trTypeVer != TransType::DCT2 && height == 32) ? 16
-                   : height > JVET_C0024_ZERO_OUT_TH              ? height - JVET_C0024_ZERO_OUT_TH
-                                                                  : 0;
+  int skipWidth  = (trTypeHor != TransType::DCT2 && width == 32) ? 16 : std::max(width - MAX_NONZERO_TU_SIZE, 0);
+  int skipHeight = (trTypeVer != TransType::DCT2 && height == 32) ? 16 : std::max(height - MAX_NONZERO_TU_SIZE, 0);
+
   if( tu.cs->sps->getUseLFNST() && tu.cu->lfnstIdx )
   {
     if( (width == 4 && height > 4) || (width > 4 && height == 4) )
@@ -821,12 +818,9 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   auto trTypeVer = TransType::DCT2;
 
   getTrTypes ( tu, compID, trTypeHor, trTypeVer );
-  int skipWidth  = (trTypeHor != TransType::DCT2 && width == 32) ? 16
-                   : width > JVET_C0024_ZERO_OUT_TH              ? width - JVET_C0024_ZERO_OUT_TH
-                                                                 : 0;
-  int skipHeight = (trTypeVer != TransType::DCT2 && height == 32) ? 16
-                   : height > JVET_C0024_ZERO_OUT_TH              ? height - JVET_C0024_ZERO_OUT_TH
-                                                                  : 0;
+  int skipWidth  = (trTypeHor != TransType::DCT2 && width == 32) ? 16 : std::max(width - MAX_NONZERO_TU_SIZE, 0);
+  int skipHeight = (trTypeVer != TransType::DCT2 && height == 32) ? 16 : std::max(height - MAX_NONZERO_TU_SIZE, 0);
+
   if( tu.cs->sps->getUseLFNST() && tu.cu->lfnstIdx )
   {
     if( (width == 4 && height > 4) || (width > 4 && height == 4) )

@@ -675,7 +675,7 @@ void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, 
 
   const uint32_t lfnstIdx = tu.cu->lfnstIdx;
 
-  const int iCGNum = lfnstIdx > 0 ? 1 : std::min<int>(JVET_C0024_ZERO_OUT_TH, uiWidth) * std::min<int>(JVET_C0024_ZERO_OUT_TH, uiHeight) >> cctx.log2CGSize();
+  const int iCGNum = lfnstIdx > 0 ? 1 : getNonzeroTuSize(uiWidth) * getNonzeroTuSize(uiHeight) >> cctx.log2CGSize();
 
   for (int subSetId = iCGNum - 1; subSetId >= 0; subSetId--)
   {
@@ -955,8 +955,8 @@ void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, 
   int lastBitsX[LAST_SIGNIFICANT_GROUPS] = { 0 };
   int lastBitsY[LAST_SIGNIFICANT_GROUPS] = { 0 };
   {
-    int dim1 = std::min<int>(JVET_C0024_ZERO_OUT_TH, uiWidth);
-    int dim2 = std::min<int>(JVET_C0024_ZERO_OUT_TH, uiHeight);
+    int dim1  = getNonzeroTuSize(uiWidth);
+    int dim2  = getNonzeroTuSize(uiHeight);
     int bitsX = 0;
     int bitsY = 0;
     int ctxId;
@@ -978,8 +978,8 @@ void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, 
     lastBitsY[ctxId] = bitsY;
   }
 
-  unsigned zoTbWdith  = std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, cctx.width());
-  unsigned zoTbHeight = std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, cctx.height());
+  unsigned zoTbWdith  = getNonzeroTuSize(cctx.width());
+  unsigned zoTbHeight = getNonzeroTuSize(cctx.height());
   if (tu.cs->sps->getMtsEnabled() && tu.cu->sbtInfo != 0 && tu.blocks[compID].width <= 32
       && tu.blocks[compID].height <= 32 && compID == COMPONENT_Y)
   {
