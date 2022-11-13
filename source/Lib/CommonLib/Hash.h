@@ -62,16 +62,15 @@ typedef std::vector<BlockHash>::iterator MapIterator;
 // Class definitions
 // ====================================================================================================================
 
-
-struct TCRCCalculatorLight
+struct CrcCalculatorLight
 {
 public:
-  TCRCCalculatorLight(uint32_t bits, uint32_t truncPoly);
-  ~TCRCCalculatorLight();
+  CrcCalculatorLight(uint32_t bits, uint32_t truncPoly);
+  ~CrcCalculatorLight();
 
 public:
-  void processData(unsigned char* curData, uint32_t dataLength);
-  void reset() { m_remainder = 0; }
+  void     processData(const uint8_t *curData, size_t dataLength);
+  void     reset() { m_remainder = 0; }
   uint32_t getCRC() { return m_remainder & m_finalResultMask; }
 
 private:
@@ -85,12 +84,17 @@ private:
   uint32_t m_finalResultMask;
 };
 
-
-struct TComHash
+struct Hash
 {
+  static constexpr int MIN_LOG_BLK_SIZE  = 2;
+  static constexpr int MAX_LOG_BLK_SIZE  = 6;
+  static constexpr int NUM_LOG_BLK_SIZES = MAX_LOG_BLK_SIZE - MIN_LOG_BLK_SIZE + 1;
+  static constexpr int LOG_SIZE_BITS     = 3;
+  static_assert(NUM_LOG_BLK_SIZES <= (1 << LOG_SIZE_BITS), "Hash::LOG_SIZE_BITS is too small");
+
 public:
-  TComHash();
-  ~TComHash();
+  Hash();
+  ~Hash();
   void create(int picWidth, int picHeight);
   void clearAll();
   void addToTable(uint32_t hashValue, const BlockHash& blockHash);
@@ -105,12 +109,11 @@ public:
   void addToHashMapByRowWithPrecalData(uint32_t* srcHash[2], bool* srcIsSame, int picWidth, int picHeight, int width, int height);
   bool isInitial() { return tableHasContent; }
   void setInitial() { tableHasContent = true; }
-  uint16_t* getHashPic(int baseSize) const { return hashPic[floorLog2(baseSize) - 2]; }
-
+  uint16_t *getHashPic(int baseSize) const { return hashPic[floorLog2(baseSize) - MIN_LOG_BLK_SIZE]; }
 
 public:
-  static uint32_t getCRCValue1(unsigned char* p, int length);
-  static uint32_t getCRCValue2(unsigned char* p, int length);
+  static uint32_t getCRCValue1(const uint8_t *p, size_t length);
+  static uint32_t getCRCValue2(const uint8_t *p, size_t length);
   static void getPixelsIn1DCharArrayByBlock2x2(const PelUnitBuf &curPicBuf, unsigned char* pixelsIn1D, int xStart, int yStart, const BitDepths& bitDepths, bool includeAllComponent = true);
   static bool isBlock2x2RowSameValue(unsigned char* p, bool includeAllComponent = true);
   static bool isBlock2x2ColSameValue(unsigned char* p, bool includeAllComponent = true);
@@ -122,15 +125,22 @@ public:
 private:
   std::vector<BlockHash>** m_lookupTable;
   bool tableHasContent;
-  uint16_t* hashPic[5];//4x4 ~ 64x64
+  std::array<uint16_t *, NUM_LOG_BLK_SIZES> hashPic;   // 4x4 ~ 64x64
 
 private:
-  static constexpr int CRC_BITS        = 16;
-  static const int m_blockSizeBits = 3;
-  static int m_blockSizeToIndex[65][65];
+  static constexpr int CRC_BITS = 16;
 
-  static TCRCCalculatorLight m_crcCalculator1;
-  static TCRCCalculatorLight m_crcCalculator2;
+  static int getIndexFromBlockSize(int w, int h)
+  {
+    if (w != h)
+    {
+      return -1;
+    }
+    return w == 4 ? 4 : floorLog2(w) - 3;
+  }
+
+  static CrcCalculatorLight m_crcCalculator1;
+  static CrcCalculatorLight m_crcCalculator2;
 };
 
 #endif // __HASH__

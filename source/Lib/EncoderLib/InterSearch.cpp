@@ -1864,7 +1864,7 @@ void InterSearch::addToSortList(std::list<BlockHash>& listBlockHash, std::list<i
 
 void InterSearch::selectMatchesInter(const MapIterator& itBegin, int count, std::list<BlockHash>& listBlockHash, const BlockHash& currBlockHash)
 {
-  const int maxReturnNumber = 5;
+  const int maxReturnNumber = Hash::NUM_LOG_BLK_SIZES;
 
   listBlockHash.clear();
   std::list<int> listCost;
@@ -2016,11 +2016,13 @@ bool InterSearch::xRectHashInterEstimation(PredictionUnit& pu, RefPicList& bestR
       basePel = curPel + k * baseSize * currStride;
     }
 
-    if (idxNonSimple == -1 && !TComHash::isHorizontalPerfectLuma(basePel, currStride, baseSize, baseSize) && !TComHash::isVerticalPerfectLuma(basePel, currStride, baseSize, baseSize))
+    if (idxNonSimple == -1 && !Hash::isHorizontalPerfectLuma(basePel, currStride, baseSize, baseSize)
+        && !Hash::isVerticalPerfectLuma(basePel, currStride, baseSize, baseSize))
     {
       idxNonSimple = k;
     }
-    TComHash::getBlockHashValue((pu.cs->picture->getOrigBuf()), baseSize, baseSize, xBase, yBase, pu.cu->slice->getSPS()->getBitDepths(), hashValue1s[k], hashValue2s[k]);
+    Hash::getBlockHashValue((pu.cs->picture->getOrigBuf()), baseSize, baseSize, xBase, yBase,
+                            pu.cu->slice->getSPS()->getBitDepths(), hashValue1s[k], hashValue2s[k]);
   }
   if (idxNonSimple == -1)
   {
@@ -2317,7 +2319,8 @@ bool InterSearch::xHashInterEstimation(PredictionUnit& pu, RefPicList& bestRefPi
   uint32_t hashValue2;
   Distortion bestCost = UINT64_MAX;
 
-  if (!TComHash::getBlockHashValue((pu.cs->picture->getOrigBuf()), width, height, xPos, yPos, pu.cu->slice->getSPS()->getBitDepths(), hashValue1, hashValue2))
+  if (!Hash::getBlockHashValue((pu.cs->picture->getOrigBuf()), width, height, xPos, yPos,
+                               pu.cu->slice->getSPS()->getBitDepths(), hashValue1, hashValue2))
   {
     return false;
   }
