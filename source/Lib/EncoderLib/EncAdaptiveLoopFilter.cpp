@@ -1366,7 +1366,7 @@ void EncAdaptiveLoopFilter::copyAlfParam( AlfParam& alfParamDst, AlfParam& alfPa
 {
   if( isLuma( channel ) )
   {
-    memcpy( &alfParamDst, &alfParamSrc, sizeof( AlfParam ) );
+    alfParamDst = alfParamSrc;
   }
   else
   {

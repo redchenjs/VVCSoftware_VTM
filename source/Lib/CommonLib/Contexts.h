@@ -304,12 +304,14 @@ public:
   void copyFrom(const CtxStore<BinProbModel> &src)
   {
     checkInit();
-    ::memcpy(m_ctx, src.m_ctx, sizeof(BinProbModel) * ContextSetCfg::NumberOfContexts);
+    std::copy_n(reinterpret_cast<const char *>(src.m_ctx), sizeof(BinProbModel) * ContextSetCfg::NumberOfContexts,
+                reinterpret_cast<char *>(m_ctx));
   }
   void copyFrom(const CtxStore<BinProbModel> &src, const CtxSet &ctxSet)
   {
     checkInit();
-    ::memcpy(m_ctx + ctxSet.Offset, src.m_ctx + ctxSet.Offset, sizeof(BinProbModel) * ctxSet.Size);
+    std::copy_n(reinterpret_cast<const char *>(src.m_ctx + ctxSet.Offset), sizeof(BinProbModel) * ctxSet.Size,
+                reinterpret_cast<char *>(m_ctx + ctxSet.Offset));
   }
   void init       ( int qp, int initId );
   void setWinSizes( const std::vector<uint8_t>&   log2WindowSizes );
