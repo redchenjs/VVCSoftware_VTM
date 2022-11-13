@@ -51,6 +51,8 @@
 struct CoeffCodingContext
 {
 public:
+  static const int prefixCtx[8];
+
   CoeffCodingContext( const TransformUnit& tu, ComponentID component, bool signHide, bool bdpcm = false );
 public:
   void  initSubblock     ( int SubsetId, bool sigGroupFlag = false );

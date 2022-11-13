@@ -336,8 +336,8 @@ void initROM()
 
       const uint32_t  groupWidth     = 1 << log2CGWidth;
       const uint32_t  groupHeight    = 1 << log2CGHeight;
-      const uint32_t  widthInGroups = std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, blockWidth) >> log2CGWidth;
-      const uint32_t  heightInGroups = std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, blockHeight) >> log2CGHeight;
+      const uint32_t  widthInGroups  = getNonzeroTuSize(blockWidth) >> log2CGWidth;
+      const uint32_t  heightInGroups = getNonzeroTuSize(blockHeight) >> log2CGHeight;
 
       const uint32_t  groupSize      = groupWidth    * groupHeight;
       const uint32_t  totalGroups    = widthInGroups * heightInGroups;
@@ -348,7 +348,7 @@ void initROM()
 
         g_scanOrder[SCAN_GROUPED_4x4][scanType][blockWidthIdx][blockHeightIdx] = scan;
 
-        if ( blockWidth > JVET_C0024_ZERO_OUT_TH || blockHeight > JVET_C0024_ZERO_OUT_TH )
+        if (blockWidth > MAX_NONZERO_TU_SIZE || blockHeight > MAX_NONZERO_TU_SIZE)
         {
           for (uint32_t i = 0; i < totalValues; i++)
           {

@@ -2871,8 +2871,8 @@ void CABACWriter::last_sig_coeff( CoeffCodingContext& cctx, const TransformUnit&
   unsigned maxLastPosX = cctx.maxLastPosX();
   unsigned maxLastPosY = cctx.maxLastPosY();
 
-  unsigned zoTbWdith  = std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, cctx.width());
-  unsigned zoTbHeight = std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, cctx.height());
+  unsigned zoTbWdith  = getNonzeroTuSize(cctx.width());
+  unsigned zoTbHeight = getNonzeroTuSize(cctx.height());
 
   if (tu.cs->sps->getMtsEnabled() && tu.cu->sbtInfo != 0 && tu.blocks[compID].width <= 32
       && tu.blocks[compID].height <= 32 && compID == COMPONENT_Y)

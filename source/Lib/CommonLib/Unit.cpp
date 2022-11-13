@@ -889,8 +889,8 @@ int TransformUnit::getTbAreaAfterCoefZeroOut(ComponentID compID) const
     tbZeroOutWidth = (blocks[compID].width == 32) ? 16 : tbZeroOutWidth;
     tbZeroOutHeight = (blocks[compID].height == 32) ? 16 : tbZeroOutHeight;
   }
-  tbZeroOutWidth = std::min<int>(JVET_C0024_ZERO_OUT_TH, tbZeroOutWidth);
-  tbZeroOutHeight = std::min<int>(JVET_C0024_ZERO_OUT_TH, tbZeroOutHeight);
+  tbZeroOutWidth  = getNonzeroTuSize(tbZeroOutWidth);
+  tbZeroOutHeight = getNonzeroTuSize(tbZeroOutHeight);
   tbArea = tbZeroOutWidth * tbZeroOutHeight;
   return tbArea;
 }

@@ -40,6 +40,8 @@
 #include "CodingStructure.h"
 #include "Picture.h"
 
+const int CoeffCodingContext::prefixCtx[8] = { 0, 0, 0, 3, 6, 10, 15, 21 };
+
 CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID component, bool signHide, bool bdpcm)
   : m_compID(component)
   , m_chType(toChannelType(m_compID))
@@ -48,8 +50,8 @@ CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID comp
   , m_log2CGWidth(g_log2SbbSize[floorLog2(m_width)][floorLog2(m_height)][0])
   , m_log2CGHeight(g_log2SbbSize[floorLog2(m_width)][floorLog2(m_height)][1])
   , m_log2CGSize(m_log2CGWidth + m_log2CGHeight)
-  , m_widthInGroups(std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_width) >> m_log2CGWidth)
-  , m_heightInGroups(std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_height) >> m_log2CGHeight)
+  , m_widthInGroups(getNonzeroTuSize(m_width) >> m_log2CGWidth)
+  , m_heightInGroups(getNonzeroTuSize(m_height) >> m_log2CGHeight)
   , m_log2BlockWidth((unsigned) floorLog2(m_width))
   , m_log2BlockHeight((unsigned) floorLog2(m_height))
   , m_maxNumCoeff(m_width * m_height)
@@ -62,8 +64,8 @@ CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID comp
                         [gp_sizeIdxInfo->idxFrom(m_heightInGroups)])
   , m_CtxSetLastX(Ctx::LastX[m_chType])
   , m_CtxSetLastY(Ctx::LastY[m_chType])
-  , m_maxLastPosX(g_groupIdx[std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_width) - 1])
-  , m_maxLastPosY(g_groupIdx[std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_height) - 1])
+  , m_maxLastPosX(g_groupIdx[getNonzeroTuSize(m_width) - 1])
+  , m_maxLastPosY(g_groupIdx[getNonzeroTuSize(m_height) - 1])
   , m_lastOffsetX(0)
   , m_lastOffsetY(0)
   , m_lastShiftX(0)
@@ -102,9 +104,9 @@ CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID comp
   }
   else
   {
-    static const int prefix_ctx[8]  = { 0, 0, 0, 3, 6, 10, 15, 21 };
-    const_cast<int&>(m_lastOffsetX) = prefix_ctx[ log2sizeX ];
-    const_cast<int&>(m_lastOffsetY) = prefix_ctx[ log2sizeY ];;
+    const_cast<int &>(m_lastOffsetX) = prefixCtx[log2sizeX];
+    const_cast<int &>(m_lastOffsetY) = prefixCtx[log2sizeY];
+
     const_cast<int&>(m_lastShiftX)  = (log2sizeX + 1) >> 2;
     const_cast<int&>(m_lastShiftY)  = (log2sizeY + 1) >> 2;
   }
