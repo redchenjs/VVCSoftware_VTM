@@ -1963,6 +1963,14 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     APS* scalinglistAPS = nullptr;
     activateAPS(&m_picHeader, m_apcSlicePilot, m_parameterSetManager, apss, lmcsAPS, scalinglistAPS);
 
+    if (((vps != nullptr) && (vps->getVPSGeneralHrdParamsPresentFlag())) || (sps->getGeneralHrdParametersPresentFlag()))
+    {
+      const GeneralHrdParams *generalHrdParams = (sps->getGeneralHrdParametersPresentFlag()
+          ? sps->getGeneralHrdParameters()
+          : vps->getGeneralHrdParameters());
+      m_HRD.setGeneralHrdParameters(*generalHrdParams);
+    }
+
     xParsePrefixSEImessages();
 
 #if RExt__HIGH_BIT_DEPTH_SUPPORT==0

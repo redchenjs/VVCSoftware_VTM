@@ -196,7 +196,7 @@ public:
 
   virtual ~HRD()
   {};
-  void                 setGeneralHrdParameters(GeneralHrdParams &generalHrdParam) { m_generalHrdParams = generalHrdParam; }
+  void                 setGeneralHrdParameters(const GeneralHrdParams &generalHrdParam) { m_generalHrdParams = generalHrdParam; }
   GeneralHrdParams        getGeneralHrdParameters() const { return m_generalHrdParams; }
   const GeneralHrdParams& getGeneralHrdParameters() { return m_generalHrdParams; }
 
