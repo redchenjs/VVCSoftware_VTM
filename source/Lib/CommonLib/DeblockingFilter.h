@@ -58,8 +58,8 @@ class DeblockingFilter
   static constexpr int GRID_SIZE     = 1 << LOG_GRID_SIZE;
 
 private:
-  static_vector<char, MAX_NUM_PARTS_IN_CTU> m_aapucBS       [NUM_EDGE_DIR];         ///< Bs for [Ver/Hor][Y/U/V][Blk_Idx]
-  static_vector<bool, MAX_NUM_PARTS_IN_CTU> m_aapbEdgeFilter[NUM_EDGE_DIR];
+  static_vector<char, MAX_NUM_PARTS_IN_CTU> m_boundaryStrengths[NUM_EDGE_DIR];   // Bs for [Ver/Hor][Blk_Idx]
+  static_vector<bool, MAX_NUM_PARTS_IN_CTU> m_edgeFilterFlags[NUM_EDGE_DIR];
   LFCUParam m_stLFCUParam;                   ///< status structure
   int     m_ctuXLumaSamples, m_ctuYLumaSamples;                            // location of left-edge and top-edge of CTU
   int     m_shiftHor, m_shiftVer;                                          // shift values to convert location from luma sample units to chroma sample units
@@ -93,7 +93,7 @@ private:
   void xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx);
   void xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx);
 
-  void deriveLADFShift( const Pel* src, const int stride, int& shift, const DeblockEdgeDir edgeDir, const SPS sps );
+  int deriveLADFShift(const Pel *src, const int stride, const DeblockEdgeDir edgeDir, const SPS *sps);
   void xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
                                                const TransformUnit &currTU, const int firstComponent);
   void xSetMaxFilterLengthPQForCodingSubBlocks( const DeblockEdgeDir edgeDir, const CodingUnit& cu, const PredictionUnit& currPU, const bool& mvSubBlocks, const int& subBlockSize, const Area& areaPu );
@@ -147,6 +147,7 @@ public:
     return sm_betaTable[ indexB ];
   }
 
+  void resetBsAndEdgeFilter(int edgeDir);
   void resetFilterLengths();
 };
 
