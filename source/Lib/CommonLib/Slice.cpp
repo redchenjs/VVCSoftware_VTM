@@ -3931,7 +3931,7 @@ void ScalingList::codePredScalingList(int* scalingList, const int* scalingListPr
   int deltaValue = 0;
   int matrixSize = (scalingListId < SCALING_LIST_1D_START_4x4) ? 2 : (scalingListId < SCALING_LIST_1D_START_8x8) ? 4 : 8;
   int coefNum = matrixSize*matrixSize;
-  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
+  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][CoeffScanType::DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
   int nextCoef = 0;
 
   int8_t data;
@@ -3972,7 +3972,7 @@ void ScalingList::codeScalingList(int* scalingList, int scalingListDC, int scali
 {
   int matrixSize = (scalingListId < SCALING_LIST_1D_START_4x4) ? 2 : (scalingListId < SCALING_LIST_1D_START_8x8) ? 4 : 8;
   int coefNum = matrixSize * matrixSize;
-  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
+  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][CoeffScanType::DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
   int nextCoef = SCALING_LIST_START_VALUE;
   int8_t data;
   const int *src = scalingList;

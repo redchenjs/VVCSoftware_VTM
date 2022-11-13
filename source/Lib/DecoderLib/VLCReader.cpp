@@ -5199,7 +5199,7 @@ void HLSyntaxReader::decodeScalingList(ScalingList *scalingList, uint32_t scalin
   int data;
   int scalingListDcCoefMinus8 = 0;
   int nextCoef = (isPredictor) ? 0 : SCALING_LIST_START_VALUE;
-  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
+  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][CoeffScanType::DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
   int *dst = scalingList->getScalingListAddress(scalingListId);
 
   int PredListId = scalingList->getRefMatrixId(scalingListId);

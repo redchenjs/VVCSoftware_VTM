@@ -114,7 +114,7 @@ public:
     {
       //------------------------------------------------
 
-      case SCAN_DIAG:
+      case CoeffScanType::DIAG:
 
         if ((m_column == m_blockWidth - 1) || (m_line == 0)) //if we reach the end of a rank, go diagonally down to the next one
         {
@@ -134,7 +134,7 @@ public:
         }
         break;
 
-      case SCAN_TRAV_HOR:
+      case CoeffScanType::TRAV_HOR:
         if (m_line % 2 == 0)
         {
           if (m_column == (m_blockWidth - 1))
@@ -161,7 +161,7 @@ public:
         }
         break;
 
-      case SCAN_TRAV_VER:
+      case CoeffScanType::TRAV_VER:
         if (m_column % 2 == 0)
         {
           if (m_line == (m_blockHeight - 1))
@@ -191,7 +191,7 @@ public:
 
       default:
 
-        THROW("ERROR: Unknown scan type \"" << m_scanType << "\"in ScanGenerator::GetNextIndex");
+        THROW("ERROR: Unknown scan type \"" << to_underlying(m_scanType) << "\"in ScanGenerator::GetNextIndex");
         break;
     }
 
@@ -297,10 +297,9 @@ void initROM()
 
       //non-grouped scan orders
 
-      for (uint32_t scanTypeIndex = 0; scanTypeIndex < SCAN_NUMBER_OF_TYPES; scanTypeIndex++)
+      for (auto scanType = CoeffScanType::DIAG; scanType < CoeffScanType::NUM; scanType++)
       {
-        const CoeffScanType scanType = CoeffScanType(scanTypeIndex);
-        ScanElement *       scan     = nullptr;
+        ScanElement *scan = nullptr;
 
         if (blockWidthIdx < sizeInfo.numWidths() && blockHeightIdx < sizeInfo.numHeights())
         {
@@ -343,10 +342,8 @@ void initROM()
       const uint32_t  groupSize      = groupWidth    * groupHeight;
       const uint32_t  totalGroups    = widthInGroups * heightInGroups;
 
-      for (uint32_t scanTypeIndex = 0; scanTypeIndex < SCAN_NUMBER_OF_TYPES; scanTypeIndex++)
+      for (auto scanType = CoeffScanType::DIAG; scanType < CoeffScanType::NUM; scanType++)
       {
-        const CoeffScanType scanType = CoeffScanType(scanTypeIndex);
-
         ScanElement *scan = new ScanElement[totalValues];
 
         g_scanOrder[SCAN_GROUPED_4x4][scanType][blockWidthIdx][blockHeightIdx] = scan;
@@ -438,14 +435,14 @@ void destroyROM()
 
   for (uint32_t groupTypeIndex = 0; groupTypeIndex < SCAN_NUMBER_OF_GROUP_TYPES; groupTypeIndex++)
   {
-    for (uint32_t scanOrderIndex = 0; scanOrderIndex < SCAN_NUMBER_OF_TYPES; scanOrderIndex++)
+    for (auto scanOrder = CoeffScanType::DIAG; scanOrder < CoeffScanType::NUM; scanOrder++)
     {
       for (uint32_t blockWidthIdx = 0; blockWidthIdx <= numWidths; blockWidthIdx++)
       {
         for (uint32_t blockHeightIdx = 0; blockHeightIdx <= numHeights; blockHeightIdx++)
         {
-          delete[] g_scanOrder[groupTypeIndex][scanOrderIndex][blockWidthIdx][blockHeightIdx];
-          g_scanOrder[groupTypeIndex][scanOrderIndex][blockWidthIdx][blockHeightIdx] = nullptr;
+          delete[] g_scanOrder[groupTypeIndex][scanOrder][blockWidthIdx][blockHeightIdx];
+          g_scanOrder[groupTypeIndex][scanOrder][blockWidthIdx][blockHeightIdx] = nullptr;
         }
       }
     }
@@ -526,7 +523,7 @@ UnitScale g_miScaling( MIN_CU_LOG2, MIN_CU_LOG2 );
 int g_riceT[4] = { 32,128, 512, 2048 };
 int g_riceShift[5] = { 0, 2, 4, 6, 8 };
 // scanning order table
-ScanElement *g_scanOrder[SCAN_NUMBER_OF_GROUP_TYPES][SCAN_NUMBER_OF_TYPES][MAX_CU_SIZE / 2 + 1][MAX_CU_SIZE / 2 + 1];
+EnumArray<ScanElement *[MAX_CU_SIZE / 2 + 1][MAX_CU_SIZE / 2 + 1], CoeffScanType> g_scanOrder[SCAN_NUMBER_OF_GROUP_TYPES];
 ScanElement  g_coefTopLeftDiagScan8x8[ MAX_CU_SIZE / 2 + 1 ][ 64 ];
 
 const uint32_t g_minInGroup[LAST_SIGNIFICANT_GROUPS] = { 0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96 };

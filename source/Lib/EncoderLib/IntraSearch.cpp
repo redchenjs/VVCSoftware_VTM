@@ -2137,7 +2137,7 @@ void IntraSearch::deriveIndexMap(CodingStructure &cs, Partitioner &partitioner, 
   int   total     = height*width;
   Pel  *runIndex = tu.getPLTIndex(compBegin);
   bool *runType  = tu.getRunTypes(compBegin);
-  m_scanOrder = g_scanOrder[SCAN_UNGROUPED][pltScanMode ? SCAN_TRAV_VER : SCAN_TRAV_HOR][gp_sizeIdxInfo->idxFrom(width)][gp_sizeIdxInfo->idxFrom(height)];
+  m_scanOrder = g_scanOrder[SCAN_UNGROUPED][pltScanMode ? CoeffScanType::TRAV_VER : CoeffScanType::TRAV_HOR][gp_sizeIdxInfo->idxFrom(width)][gp_sizeIdxInfo->idxFrom(height)];
 // Trellis initialization
   for (int i = 0; i < 2; i++)
   {

@@ -3073,7 +3073,7 @@ void HLSWriter::xCodeScalingList(const ScalingList* scalingList, uint32_t scalin
 {
   int matrixSize = (scalingListId < SCALING_LIST_1D_START_4x4) ? 2 : ((scalingListId < SCALING_LIST_1D_START_8x8) ? 4 : 8);
   int coefNum = matrixSize * matrixSize;
-  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
+  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][CoeffScanType::DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
   int nextCoef = (isPredictor) ? 0 : SCALING_LIST_START_VALUE;
 
   int data;
