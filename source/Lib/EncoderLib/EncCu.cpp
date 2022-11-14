@@ -5180,7 +5180,7 @@ void EncCu::xReuseCachedResult( CodingStructure *&tempCS, CodingStructure *&best
 
     Distortion finalDistortion = 0;
     tempCS->useDbCost = m_pcEncCfg->getUseEncDbOpt();
-    if ( m_pcEncCfg->getUseEncDbOpt() )
+    if (!tempCS->slice->getDeblockingFilterDisable() && m_pcEncCfg->getUseEncDbOpt())
     {
       xCalDebCost( *tempCS, partitioner, true );
       finalDistortion = tempCS->dist;
