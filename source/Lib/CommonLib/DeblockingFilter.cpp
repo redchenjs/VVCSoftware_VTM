@@ -77,18 +77,13 @@ inline static uint32_t getRasterIdx(const Position& pos, const PreCalcValues& pc
 // ====================================================================================================================
 // utility functions
 // ====================================================================================================================
-static bool isAvailableLeft(const CodingUnit &cu, const CodingUnit &cu2, const bool enforceSliceRestriction,
-                            const bool enforceTileRestriction, const bool enforceSubPicRestriction)
+static bool isNeighbourAvailable(const CodingUnit &cu, const CodingUnit &cu2, const PPS &pps)
 {
-  return ((!enforceSliceRestriction || CU::isSameSlice(cu, cu2)) && (!enforceTileRestriction || CU::isSameTile(cu, cu2))
-          && (!enforceSubPicRestriction || CU::isSameSubPic(cu, cu2)));
-}
-
-static bool isAvailableAbove(const CodingUnit &cu, const CodingUnit &cu2, const bool enforceSliceRestriction,
-                             const bool enforceTileRestriction, const bool enforceSubPicRestriction)
-{
-  return (!enforceSliceRestriction || CU::isSameSlice(cu, cu2)) && (!enforceTileRestriction || CU::isSameTile(cu, cu2))
-         && (!enforceSubPicRestriction || CU::isSameSubPic(cu, cu2));
+  return (pps.getLoopFilterAcrossSlicesEnabledFlag() || CU::isSameSlice(cu, cu2))
+         && (pps.getLoopFilterAcrossTilesEnabledFlag() || CU::isSameTile(cu, cu2))
+         && ((pps.getSubPicFromCU(cu).getloopFilterAcrossEnabledFlag()
+              && pps.getSubPicFromCU(cu2).getloopFilterAcrossEnabledFlag())
+             || CU::isSameSubPic(cu, cu2));
 }
 
 void DeblockingFilter::clearFilterLengthAndTransformEdge()
@@ -730,11 +725,21 @@ void DeblockingFilter::xSetDeblockingFilterParam( const CodingUnit& cu )
   const Position& pos = cu.blocks[cu.chType].pos();
 
   m_stLFCUParam.internalEdge = true;
+  m_stLFCUParam.leftEdge     = false;
+  m_stLFCUParam.topEdge      = false;
 
-  m_stLFCUParam.leftEdge = (0 < pos.x) && isAvailableLeft(cu, *cu.cs->getCU(pos.offset(-1, 0), cu.chType), !pps.getLoopFilterAcrossSlicesEnabledFlag(), !pps.getLoopFilterAcrossTilesEnabledFlag(),
-    !( pps.getSubPicFromCU(cu).getloopFilterAcrossEnabledFlag() && pps.getSubPicFromCU(*cu.cs->getCU(pos.offset(-1, 0), cu.chType)).getloopFilterAcrossEnabledFlag()));
-  m_stLFCUParam.topEdge = (0 < pos.y) && isAvailableAbove(cu, *cu.cs->getCU(pos.offset(0, -1), cu.chType), !pps.getLoopFilterAcrossSlicesEnabledFlag(), !pps.getLoopFilterAcrossTilesEnabledFlag(),
-    !( pps.getSubPicFromCU(cu).getloopFilterAcrossEnabledFlag() && pps.getSubPicFromCU(*cu.cs->getCU(pos.offset(0, -1), cu.chType)).getloopFilterAcrossEnabledFlag()));
+  if (pos.x > 0)
+  {
+    CodingUnit *neighbourCu = cu.cs->getCU(pos.offset(-1, 0), cu.chType);
+
+    m_stLFCUParam.leftEdge = isNeighbourAvailable(cu, *neighbourCu, pps);
+  }
+  if (pos.y > 0)
+  {
+    CodingUnit *neighbourCu = cu.cs->getCU(pos.offset(0, -1), cu.chType);
+
+    m_stLFCUParam.topEdge = isNeighbourAvailable(cu, *neighbourCu, pps);
+  }
 }
 
 unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, const DeblockEdgeDir edgeDir, const Position& localPos, const ChannelType chType ) const
@@ -1046,10 +1051,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
       // Derive neighboring PU index
       if (edgeDir == EDGE_VER)
       {
-        if (!isAvailableLeft(cu, cuP, !pps->getLoopFilterAcrossSlicesEnabledFlag(),
-                             !pps->getLoopFilterAcrossTilesEnabledFlag(),
-                             !(pps->getSubPicFromCU(cu).getloopFilterAcrossEnabledFlag()
-                               && pps->getSubPicFromCU(cuP).getloopFilterAcrossEnabledFlag())))
+        if (!isNeighbourAvailable(cu, cuP, *pps))
         {
           m_boundaryStrengths[edgeDir][bsAbsIdx] = bs = 0;
           continue;
@@ -1057,10 +1059,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
       }
       else   // (dir == EDGE_HOR)
       {
-        if (!isAvailableAbove(cu, cuP, !pps->getLoopFilterAcrossSlicesEnabledFlag(),
-                              !pps->getLoopFilterAcrossTilesEnabledFlag(),
-                              !(pps->getSubPicFromCU(cu).getloopFilterAcrossEnabledFlag()
-                                && pps->getSubPicFromCU(cuP).getloopFilterAcrossEnabledFlag())))
+        if (!isNeighbourAvailable(cu, cuP, *pps))
         {
           m_boundaryStrengths[edgeDir][bsAbsIdx] = bs = 0;
           continue;
@@ -1238,8 +1237,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
   Pel *      srcCb       = picYuvRecCb.buf;
   Pel *      srcCr       = picYuvRecCr.buf;
   const int          stride              = picYuvRecCb.stride;
-  const SPS &sps           = *cu.cs->sps;
-  const PPS &pps           = *cu.cs->pps;
+  const SPS         &sps                 = *cu.cs->sps;
   const Slice  &slice      = *cu.slice;
   const ChromaFormat nChromaFormat   = sps.getChromaFormatIdc();
 
@@ -1323,16 +1321,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
                                                      pos.offset(xoffset - numPelsLuma, yoffset - numPelsLuma)),
                                       (cuP1.isSepTree() ? CHANNEL_TYPE_CHROMA : cu.chType));
 
-      if (edgeDir == EDGE_VER)
-      {
-        CHECK(!isAvailableLeft(cu, cuP, !pps.getLoopFilterAcrossSlicesEnabledFlag(), !pps.getLoopFilterAcrossTilesEnabledFlag(),
-          !( pps.getSubPicFromCU(cu).getloopFilterAcrossEnabledFlag() && pps.getSubPicFromCU(cuP).getloopFilterAcrossEnabledFlag())), "Neighbour not available");
-      }
-      else   // (dir == EDGE_HOR)
-      {
-        CHECK(!isAvailableAbove(cu, cuP, !pps.getLoopFilterAcrossSlicesEnabledFlag(), !pps.getLoopFilterAcrossTilesEnabledFlag(),
-          !( pps.getSubPicFromCU(cu).getloopFilterAcrossEnabledFlag() && pps.getSubPicFromCU(cuP).getloopFilterAcrossEnabledFlag())), "Neighbour not available");
-      }
+      CHECKD(!isNeighbourAvailable(cu, cuP, *cu.cs->pps), "Neighbour not available");
 
       partPNoFilter = partQNoFilter = false;
       if ( sps.getPLTMode())
