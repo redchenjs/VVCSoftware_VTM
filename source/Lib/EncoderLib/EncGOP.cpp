@@ -3125,6 +3125,19 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     if (pcSlice->getPPS()->getSliceChromaQpFlag() && CS::isDualITree (*pcSlice->getPic()->cs))
 #endif
     {
+#if JVET_AB0080_CHROMA_QP_FIX
+      if (!(pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR || pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2 || pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3))
+      {
+        // overwrite chroma qp offset for dual tree
+        pcSlice->setSliceChromaQpDelta(COMPONENT_Cb, m_pcCfg->getChromaCbQpOffsetDualTree());
+        pcSlice->setSliceChromaQpDelta(COMPONENT_Cr, m_pcCfg->getChromaCrQpOffsetDualTree());
+        if (pcSlice->getSPS()->getJointCbCrEnabledFlag())
+        {
+          pcSlice->setSliceChromaQpDelta(JOINT_CbCr, m_pcCfg->getChromaCbCrQpOffsetDualTree());
+        }
+        m_pcSliceEncoder->setUpLambda(pcSlice, pcSlice->getLambdas()[0], pcSlice->getSliceQp());
+      }
+#else
       // overwrite chroma qp offset for dual tree
       pcSlice->setSliceChromaQpDelta(COMPONENT_Cb, m_pcCfg->getChromaCbQpOffsetDualTree());
       pcSlice->setSliceChromaQpDelta(COMPONENT_Cr, m_pcCfg->getChromaCrQpOffsetDualTree());
@@ -3133,6 +3146,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         pcSlice->setSliceChromaQpDelta(JOINT_CbCr, m_pcCfg->getChromaCbCrQpOffsetDualTree());
       }
       m_pcSliceEncoder->setUpLambda(pcSlice, pcSlice->getLambdas()[0], pcSlice->getSliceQp());
+#endif
     }
 
     xPicInitLMCS(pcPic, picHeader, pcSlice);

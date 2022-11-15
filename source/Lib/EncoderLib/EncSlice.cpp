@@ -530,6 +530,48 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
                                                   : m_pcCfg->getGOPEntry(gopId).m_CbQPoffset;
     int        crQP   = bUseIntraOrPeriodicOffset ? m_pcCfg->getSliceChromaOffsetQpIntraOrPeriodic(true)
                                                   : m_pcCfg->getGOPEntry(gopId).m_CrQPoffset;
+#if JVET_AB0080_CHROMA_QP_FIX
+    // adjust chroma QP such that it corresponds to the luma QP change when encoding in reduced resolution
+    if (m_pcCfg->getGOPBasedRPREnabledFlag())
+    {
+      if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR) // ScalingRatioHor/ScalingRatioVer
+      {
+        int mappedQPbefore = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)1, qp - m_pcCfg->getQpOffsetRPR());
+        int mappedQPafter = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)1, qp);
+        int changeIncludingMapping = mappedQPbefore - mappedQPafter;
+        cbQP = cbQP + changeIncludingMapping + m_pcCfg->getQpOffsetChromaRPR();
+
+        mappedQPbefore = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)2, qp - m_pcCfg->getQpOffsetRPR());
+        mappedQPafter = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)2, qp);
+        changeIncludingMapping = mappedQPbefore - mappedQPafter;
+        crQP = crQP + changeIncludingMapping + m_pcCfg->getQpOffsetChromaRPR();
+      }
+      else if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2) // ScalingRatioHor2/ScalingRatioVer2
+      {
+        int mappedQPbefore = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)1, qp - m_pcCfg->getQpOffsetRPR2());
+        int mappedQPafter = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)1, qp);
+        int changeIncludingMapping = mappedQPbefore - mappedQPafter;
+        cbQP = cbQP + changeIncludingMapping + m_pcCfg->getQpOffsetChromaRPR2();
+
+        mappedQPbefore = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)2, qp - m_pcCfg->getQpOffsetRPR2());
+        mappedQPafter = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)2, qp);
+        changeIncludingMapping = mappedQPbefore - mappedQPafter;
+        crQP = crQP + changeIncludingMapping + m_pcCfg->getQpOffsetChromaRPR2();
+      }
+      else if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3) // ScalingRatioHor3/ScalingRatioVer3
+      {
+        int mappedQPbefore = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)1, qp - m_pcCfg->getQpOffsetRPR3());
+        int mappedQPafter = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)1, qp);
+        int changeIncludingMapping = mappedQPbefore - mappedQPafter;
+        cbQP = cbQP + changeIncludingMapping + m_pcCfg->getQpOffsetChromaRPR3();
+
+        mappedQPbefore = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)2, qp - m_pcCfg->getQpOffsetRPR3());
+        mappedQPafter = rpcSlice->getSPS()->getMappedChromaQpValue((ComponentID)2, qp);
+        changeIncludingMapping = mappedQPbefore - mappedQPafter;
+        crQP = crQP + changeIncludingMapping + m_pcCfg->getQpOffsetChromaRPR3();
+      }
+    }
+#endif
     int cbCrQP = (cbQP + crQP) >> 1; // use floor of average chroma QP offset for joint-Cb/Cr coding
 
     cbQP = Clip3( -12, 12, cbQP + rpcSlice->getPPS()->getQpOffset(COMPONENT_Cb) ) - rpcSlice->getPPS()->getQpOffset(COMPONENT_Cb);

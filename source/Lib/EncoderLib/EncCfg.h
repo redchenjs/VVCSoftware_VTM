@@ -954,6 +954,25 @@ protected:
 #endif
   double      m_scalingRatioHor;
   double      m_scalingRatioVer;
+#if JVET_AB0080
+  bool        m_gopBasedRPREnabledFlag;
+  int         m_gopBasedRPRQPThreshold;
+  double      m_scalingRatioHor2;
+  double      m_scalingRatioVer2;
+  double      m_scalingRatioHor3;
+  double      m_scalingRatioVer3;
+  double      m_psnrThresholdRPR;
+  double      m_psnrThresholdRPR2;
+  double      m_psnrThresholdRPR3;
+  int         m_qpOffsetRPR;
+  int         m_qpOffsetRPR2;
+  int         m_qpOffsetRPR3;
+#if JVET_AB0080_CHROMA_QP_FIX
+  int         m_qpOffsetChromaRPR;
+  int         m_qpOffsetChromaRPR2;
+  int         m_qpOffsetChromaRPR3;
+#endif
+#endif
   bool        m_rprEnabledFlag;
   bool        m_resChangeInClvsEnabled;
   int         m_switchPocPeriod;
@@ -2594,6 +2613,27 @@ public:
   void        setRprEnabled(bool b)                                   { m_rprEnabledFlag = b; }
   bool        isRprEnabled()                                    const { return m_rprEnabledFlag; }
   void        setScalingRatio( double hor, double ver )              { m_scalingRatioHor = hor, m_scalingRatioVer = ver;  }
+#if JVET_AB0080
+  void        setGOPBasedRPREnabledFlag(bool b)                      { m_gopBasedRPREnabledFlag = b; }
+#if JVET_AB0080_CHROMA_QP_FIX
+  bool        getGOPBasedRPREnabledFlag()                            const { return m_gopBasedRPREnabledFlag; }
+#endif
+  void        setGOPBasedRPRQPThreshold(int qp)                      { m_gopBasedRPRQPThreshold = qp; }
+  int         getGOPBasedRPRQPThreshold()                            const { return m_gopBasedRPRQPThreshold; }
+  void        setScalingRatio2(double hor, double ver)               { m_scalingRatioHor2 = hor, m_scalingRatioVer2 = ver; }
+  void        setScalingRatio3(double hor, double ver)               { m_scalingRatioHor3 = hor, m_scalingRatioVer3 = ver; }
+  void        setPsnrThresholdRPR(double psnr, double psnr2, double psnr3) { m_psnrThresholdRPR = psnr, m_psnrThresholdRPR2 = psnr2, m_psnrThresholdRPR3 = psnr3; }
+  void        setQpOffsetRPR(int qpOffset, int qpOffset2, int qpOffset3)   { m_qpOffsetRPR = qpOffset, m_qpOffsetRPR2 = qpOffset2, m_qpOffsetRPR3 = qpOffset3; }
+  int         getQpOffsetRPR()                                       const { return m_qpOffsetRPR; }
+  int         getQpOffsetRPR2()                                      const { return m_qpOffsetRPR2; }
+  int         getQpOffsetRPR3()                                      const { return m_qpOffsetRPR3; }
+#if JVET_AB0080_CHROMA_QP_FIX
+  void        setQpOffsetChromaRPR(int qpOffsetChroma, int qpOffsetChroma2, int qpOffsetChroma3) { m_qpOffsetChromaRPR = qpOffsetChroma, m_qpOffsetChromaRPR2 = qpOffsetChroma2, m_qpOffsetChromaRPR3 = qpOffsetChroma3; }
+  int         getQpOffsetChromaRPR()                                  const { return m_qpOffsetChromaRPR; }
+  int         getQpOffsetChromaRPR2()                                 const { return m_qpOffsetChromaRPR2; }
+  int         getQpOffsetChromaRPR3()                                 const { return m_qpOffsetChromaRPR3; }
+#endif
+#endif
   void        setResChangeInClvsEnabled(bool b)                      { m_resChangeInClvsEnabled = b; }
   bool        isResChangeInClvsEnabled()                        const { return m_resChangeInClvsEnabled; }
   void        setSwitchPocPeriod( int p )                            { m_switchPocPeriod = p;}
