@@ -168,7 +168,7 @@ private:
 class CABACDecoder
 {
 public:
-  CABACDecoder() : m_CABACReaderStd(m_BinDecoderStd), m_CABACReader{ { &m_CABACReaderStd } } {}
+  CABACDecoder() : m_CABACReaderStd(m_BinDecoderStd), m_CABACReader{ &m_CABACReaderStd } {}
 
   CABACReader *getCABACReader(BpmType id) { return m_CABACReader[id]; }
 

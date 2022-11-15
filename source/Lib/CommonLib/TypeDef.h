@@ -288,7 +288,14 @@ template<class T, class E> struct EnumArray : public std::array<T, to_underlying
 
 public:
   constexpr EnumArray() : base() {}
-  constexpr EnumArray(const base &a) : base(a) {}
+  constexpr EnumArray(std::initializer_list<T> l)
+  {
+    size_t j = 0;
+    for (const auto &i: l)
+    {
+      base::at(j++) = i;
+    }
+  }
 
   reference                 operator[](size_type e) { return base::operator[](to_underlying(e)); }
   constexpr const_reference operator[](size_type e) const { return base::operator[](to_underlying(e)); }
