@@ -1757,7 +1757,7 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
           {
             ppsID = layerId;
           }
-          //printf("m_cEncLib.m_iGOPRprPpsId=%d ppsID=%d\n", m_cEncLib.m_iGOPRprPpsId, ppsID);
+          //printf("m_cEncLib.m_gopRprPpsId=%d ppsID=%d\n", m_cEncLib.m_gopRprPpsId, ppsID);
         }
         else
         {

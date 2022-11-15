@@ -770,11 +770,11 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
             }
           }
         }
-        m_iGOPRprPpsId = ppsID;
+        m_gopRprPpsId = ppsID;
       }
       else
       {
-        ppsID = m_iGOPRprPpsId;
+        ppsID = m_gopRprPpsId;
       }
     }
 

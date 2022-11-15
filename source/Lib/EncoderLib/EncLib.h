@@ -139,7 +139,7 @@ public:
   RPLList*                  getRPLList(bool b) { return &m_rplLists[b]; }
   uint32_t                  getNumRPL(bool b) const { return m_rplLists[b].getNumberOfReferencePictureLists(); }
 #if JVET_AB0080
-  int                       m_iGOPRprPpsId;
+  int                       m_gopRprPpsId;
 #endif
 protected:
   void  xGetNewPicBuffer  ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Picture*& rpcPic, int ppsId ); ///< get picture buffer which will be processed. If ppsId<0, then the ppsMap will be queried for the first match.
