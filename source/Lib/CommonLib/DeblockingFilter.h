@@ -57,9 +57,44 @@ class DeblockingFilter
   static constexpr int LOG_GRID_SIZE = 2;
   static constexpr int GRID_SIZE     = 1 << LOG_GRID_SIZE;
 
+  class EdgeStrengths
+  {
+    // bit  7  : transform edge flag
+    // bit  6  : prediction edge flag
+    // bits 4-5: boundary strengh Cr
+    // bits 2-3: boundary strengh Cb
+    // bits 0-1: boundary strengh Y
+    uint8_t val;
+
+    static constexpr int TEM = 0x80;   // transform edge mask
+    static constexpr int PEM = 0x40;   // prediction edge mask
+    static constexpr int BPS = 2;      // bits per strength
+
+  public:
+    EdgeStrengths() : val(0) {}
+
+    void setTransEdge(bool b) { val = b ? val | TEM : val & ~TEM; }
+    bool getTransEdge() const { return (val & TEM) != 0; }
+    void setPredEdge(bool b) { val = b ? val | PEM : val & ~PEM; }
+    bool getPredEdge() const { return (val & PEM) != 0; }
+    bool hasEdge() const { return (val & (TEM | PEM)) != 0; }
+    int  getBoundaryStrength(ComponentID c) const { return (val >> (BPS * c)) & ((1 << BPS) - 1); }
+
+    EdgeStrengths &setBoundaryStrength(ComponentID c, int bs)
+    {
+      val |= bs << (BPS * c);
+      return *this;
+    }
+
+    EdgeStrengths &operator|=(const EdgeStrengths &es)
+    {
+      val |= es.val;
+      return *this;
+    }
+  };
+
 private:
-  static_vector<char, MAX_NUM_PARTS_IN_CTU> m_boundaryStrengths[NUM_EDGE_DIR];   // Bs for [Ver/Hor][Blk_Idx]
-  static_vector<bool, MAX_NUM_PARTS_IN_CTU> m_edgeFilterFlags[NUM_EDGE_DIR];
+  static_vector<EdgeStrengths, MAX_NUM_PARTS_IN_CTU> m_edgeStrengths[NUM_EDGE_DIR];
   LFCUParam m_stLFCUParam;                   ///< status structure
   int     m_ctuXLumaSamples, m_ctuYLumaSamples;                            // location of left-edge and top-edge of CTU
   int     m_shiftHor, m_shiftVer;                                          // shift values to convert location from luma sample units to chroma sample units
@@ -99,11 +134,11 @@ private:
   void xSetDeblockingFilterParam        ( const CodingUnit& cu );
 
   // filtering functions
-  unsigned
-  xGetBoundaryStrengthSingle      ( const CodingUnit& cu, const DeblockEdgeDir edgeDir, const Position& localPos, const ChannelType chType  ) const;
+  EdgeStrengths xGetBoundaryStrengthSingle(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const Position &localPos,
+                                           const ChannelType chType) const;
 
   void xSetEdgefilterMultiple(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const Area &area, const bool value,
-                              const bool edgeIdx = false);
+                              const bool isTransEdge);
   void xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx);
   void xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx);
 
@@ -124,9 +159,6 @@ private:
   inline bool xUseStrongFiltering(Pel *src, const int offset, const int d, const int beta, const int tc,
                                   bool sidePisLarge = false, bool sideQisLarge = false,
                                   FilterLenPair maxFilterLen = DEFAULT_FL2, bool isChromaHorCTBBoundary = false) const;
-
-  inline unsigned BsSet(unsigned val, const ComponentID compIdx) const;
-  inline unsigned BsGet(unsigned val, const ComponentID compIdx) const;
 
   inline bool isCrossedByVirtualBoundaries ( const int xPos, const int yPos, const int width, const int height, int& numHorVirBndry, int& numVerVirBndry, int horVirBndryPos[], int verVirBndryPos[], const PicHeader* picHeader );
   inline void xDeriveEdgefilterParam       ( const int xPos, const int yPos, const int numVerVirBndry, const int numHorVirBndry, const int verVirBndryPos[], const int horVirBndryPos[], bool &verEdgeFilter, bool &horEdgeFilter );

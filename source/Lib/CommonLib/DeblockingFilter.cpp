@@ -117,8 +117,7 @@ void DeblockingFilter::create(const unsigned maxCUDepth)
   const auto numPartitions = size_t(1) << (2 * maxCUDepth);
   for( int edgeDir = 0; edgeDir < NUM_EDGE_DIR; edgeDir++ )
   {
-    m_boundaryStrengths[edgeDir].resize(numPartitions);
-    m_edgeFilterFlags[edgeDir].resize(numPartitions);
+    m_edgeStrengths[edgeDir].resize(numPartitions);
   }
   m_enc = false;
 }
@@ -134,8 +133,7 @@ void DeblockingFilter::destroy()
 {
   for( int edgeDir = 0; edgeDir < NUM_EDGE_DIR; edgeDir++ )
   {
-    m_boundaryStrengths[edgeDir].clear();
-    m_edgeFilterFlags[edgeDir].clear();
+    m_edgeStrengths[edgeDir].clear();
   }
 }
 
@@ -233,8 +231,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
 
 void DeblockingFilter::resetBsAndEdgeFilter(const int edgeDir)
 {
-  std::fill_n(m_boundaryStrengths[edgeDir].data(), m_boundaryStrengths[edgeDir].size(), 0);
-  std::fill_n(m_edgeFilterFlags[edgeDir].data(), m_edgeFilterFlags[edgeDir].size(), false);
+  std::fill_n(m_edgeStrengths[edgeDir].data(), m_edgeStrengths[edgeDir].size(), EdgeStrengths());
 }
 
 void DeblockingFilter::resetFilterLengths()
@@ -286,9 +283,11 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
   for( auto &currTU : CU::traverseTUs( cu ) )
   {
     const Area& areaTu = cu.Y().valid() ? currTU.block( COMPONENT_Y ) : Area( recalcPosition( cu.chromaFormat, cu.chType, CHANNEL_TYPE_LUMA, currTU.blocks[cu.chType].pos() ), recalcSize( cu.chromaFormat, cu.chType, CHANNEL_TYPE_LUMA, currTU.blocks[cu.chType].size() ) );
+    const bool  xOff   = currTU.blocks[cu.chType].x != cu.blocks[cu.chType].x;
+    const bool  yOff   = currTU.blocks[cu.chType].y != cu.blocks[cu.chType].y;
 
-    verEdgeFilter = m_stLFCUParam.internalEdge;
-    horEdgeFilter = m_stLFCUParam.internalEdge;
+    verEdgeFilter = xOff ? m_stLFCUParam.internalEdge : m_stLFCUParam.leftEdge;
+    horEdgeFilter = yOff ? m_stLFCUParam.internalEdge : m_stLFCUParam.topEdge;
 
     if ((edgeDir == EDGE_HOR && areaTu.y % 4 != 0) || (edgeDir == EDGE_VER && areaTu.x % 4 != 0))
     {
@@ -308,8 +307,8 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
     {
       xDeriveEdgefilterParam( areaTu.x, areaTu.y, numVerVirBndry, numHorVirBndry, verVirBndryPos, horVirBndryPos, verEdgeFilter, horEdgeFilter );
     }
-    xSetEdgefilterMultiple( cu, EDGE_VER, areaTu, verEdgeFilter );
-    xSetEdgefilterMultiple( cu, EDGE_HOR, areaTu, horEdgeFilter );
+    xSetEdgefilterMultiple(cu, EDGE_VER, areaTu, verEdgeFilter, true);
+    xSetEdgefilterMultiple(cu, EDGE_HOR, areaTu, horEdgeFilter, true);
     xSetMaxFilterLengthPQFromTransformSizes(edgeDir, cu, currTU, COMPONENT_Y);
     if( cu.Y().valid() )
     {
@@ -329,15 +328,16 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
     const bool xOff    = currPU.blocks[cu.chType].x != cu.blocks[cu.chType].x;
     const bool yOff    = currPU.blocks[cu.chType].y != cu.blocks[cu.chType].y;
 
-    verEdgeFilter = (xOff ? m_stLFCUParam.internalEdge : m_stLFCUParam.leftEdge);
-    horEdgeFilter = (yOff ? m_stLFCUParam.internalEdge : m_stLFCUParam.topEdge);
+    verEdgeFilter = xOff ? m_stLFCUParam.internalEdge : m_stLFCUParam.leftEdge;
+    horEdgeFilter = yOff ? m_stLFCUParam.internalEdge : m_stLFCUParam.topEdge;
+
     if( isCuCrossedByVirtualBoundaries )
     {
       xDeriveEdgefilterParam( areaPu.x, areaPu.y, numVerVirBndry, numHorVirBndry, verVirBndryPos, horVirBndryPos, verEdgeFilter, horEdgeFilter );
     }
 
-    xSetEdgefilterMultiple( cu, EDGE_VER, areaPu, verEdgeFilter, xOff );
-    xSetEdgefilterMultiple( cu, EDGE_HOR, areaPu, horEdgeFilter, yOff );
+    xSetEdgefilterMultiple(cu, EDGE_VER, areaPu, verEdgeFilter, false);
+    xSetEdgefilterMultiple(cu, EDGE_HOR, areaPu, horEdgeFilter, false);
     edgeIdx.push_back( ( edgeDir == EDGE_HOR ) ? ( currPU.blocks[cu.chType].y - cu.blocks[cu.chType].y ) / 4 : ( currPU.blocks[cu.chType].x - cu.blocks[cu.chType].x ) / 4 );
 
     if ((currPU.mergeFlag && (currPU.mergeType == MRG_TYPE_SUBPU_ATMVP)) || cu.affine)
@@ -354,7 +354,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
             xDeriveEdgefilterParam( mvBlockH.x, mvBlockH.y, 0, numHorVirBndry, verVirBndryPos, horVirBndryPos, verEdgeFilter, horEdgeFilter );
           }
 
-          xSetEdgefilterMultiple(cu, EDGE_HOR, mvBlockH, horEdgeFilter, 1);
+          xSetEdgefilterMultiple(cu, EDGE_HOR, mvBlockH, horEdgeFilter, false);
           edgeIdx.push_back( ( currPU.blocks[cu.chType].y + off - cu.blocks[cu.chType].y ) / 4 );
         }
       }
@@ -369,7 +369,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
             xDeriveEdgefilterParam( mvBlockV.x, mvBlockV.y, numVerVirBndry, 0, verVirBndryPos, horVirBndryPos, verEdgeFilter, horEdgeFilter );
           }
 
-          xSetEdgefilterMultiple(cu, EDGE_VER, mvBlockV, verEdgeFilter, 1);
+          xSetEdgefilterMultiple(cu, EDGE_VER, mvBlockV, verEdgeFilter, false);
           edgeIdx.push_back( ( currPU.blocks[cu.chType].x + off - cu.blocks[cu.chType].x ) / 4 );
         }
       }
@@ -387,18 +387,18 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
       const Position localPos  { area.x + x, area.y + y };
       const unsigned rasterIdx = getRasterIdx( localPos, pcv );
 
-      if (m_edgeFilterFlags[edgeDir][rasterIdx])
+      EdgeStrengths es = m_edgeStrengths[edgeDir][rasterIdx];
+      if (es.hasEdge())
       {
-        char bS = 0;
         if(cu.treeType != TREE_C)
         {
-          bS |= xGetBoundaryStrengthSingle( cu, edgeDir, localPos, CHANNEL_TYPE_LUMA );
+          es |= xGetBoundaryStrengthSingle(cu, edgeDir, localPos, CHANNEL_TYPE_LUMA);
         }
         if(cu.treeType != TREE_L && cu.chromaFormat != CHROMA_400 && cu.blocks[COMPONENT_Cb].valid())
         {
-          bS |= xGetBoundaryStrengthSingle( cu, edgeDir, localPos, CHANNEL_TYPE_CHROMA );
+          es |= xGetBoundaryStrengthSingle(cu, edgeDir, localPos, CHANNEL_TYPE_CHROMA);
         }
-        m_boundaryStrengths[edgeDir][rasterIdx] = bS;
+        m_edgeStrengths[edgeDir][rasterIdx] = es;
       }
     }
   }
@@ -687,7 +687,7 @@ void DeblockingFilter::xSetMaxFilterLengthPQForCodingSubBlocks( const DeblockEdg
 }
 
 void DeblockingFilter::xSetEdgefilterMultiple(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const Area &area,
-                                              const bool value, const bool edgeIdx)
+                                              const bool value, const bool isTransEdge)
 {
   const PreCalcValues& pcv = *cu.cs->pcv;
 
@@ -697,18 +697,15 @@ void DeblockingFilter::xSetEdgefilterMultiple(const CodingUnit &cu, const Debloc
 
   for (int i = 0; i < numElem; i++)
   {
-    m_edgeFilterFlags[edgeDir][bsIdx] = value;
-    if (m_boundaryStrengths[edgeDir][bsIdx] && value)
+    if (isTransEdge)
     {
-      m_boundaryStrengths[edgeDir][bsIdx] = 3;   // both the TU and PU edge
+      m_edgeStrengths[edgeDir][bsIdx].setTransEdge(value);
     }
     else
     {
-      if (!edgeIdx)
-      {
-        m_boundaryStrengths[edgeDir][bsIdx] = value;
-      }
+      m_edgeStrengths[edgeDir][bsIdx].setPredEdge(value);
     }
+
     bsIdx += add;
   }
 }
@@ -744,10 +741,11 @@ void DeblockingFilter::xSetDeblockingFilterParam( const CodingUnit& cu )
   }
 }
 
-unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, const DeblockEdgeDir edgeDir, const Position& localPos, const ChannelType chType ) const
+DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(const CodingUnit    &cu,
+                                                                             const DeblockEdgeDir edgeDir,
+                                                                             const Position      &localPos,
+                                                                             const ChannelType    chType) const
 {
-  // The boundary strength that is output by the function xGetBoundaryStrengthSingle is a multi component boundary strength that contains boundary strength for luma (bits 0 to 1), cb (bits 2 to 3) and cr (bits 4 to 5).
-
   const Slice& sliceQ = *cu.slice;
 
   int shiftHor = cu.Y().valid() ? 0 : ::getComponentScaleX(COMPONENT_Cb, cu.firstPU->chromaFormat);
@@ -760,18 +758,17 @@ unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, co
                           *cu.cs->getCU(recalcPosition( cu.chromaFormat, CHANNEL_TYPE_LUMA, CHANNEL_TYPE_CHROMA, posP), CHANNEL_TYPE_CHROMA) :
                           *cu.cs->getCU( posP, cu.chType );
 
-  //-- Set BS for Intra MB : BS = 4 or 3
   if (CU::isIntra(cuP) || CU::isIntra(cuQ))
   {
-    if( chType == CHANNEL_TYPE_LUMA )
+    if (isLuma(chType))
     {
-      int bsY = (CU::isIntra(cuP) && cuP.bdpcmMode) && (CU::isIntra(cuQ) && cuQ.bdpcmMode) ? 0 : 2;
-      return BsSet(bsY, COMPONENT_Y);
+      const int bsY = CU::isIntra(cuP) && cuP.bdpcmMode && CU::isIntra(cuQ) && cuQ.bdpcmMode ? 0 : 2;
+      return EdgeStrengths().setBoundaryStrength(COMPONENT_Y, bsY);
     }
     else
     {
-      int bsC = (CU::isIntra(cuP) && cuP.bdpcmModeChroma) && (CU::isIntra(cuQ) && cuQ.bdpcmModeChroma) ? 0 : 2;
-      return (BsSet(bsC, COMPONENT_Cb) + BsSet(bsC, COMPONENT_Cr));
+      const int bsC = CU::isIntra(cuP) && cuP.bdpcmModeChroma && CU::isIntra(cuQ) && cuQ.bdpcmModeChroma ? 0 : 2;
+      return EdgeStrengths().setBoundaryStrength(COMPONENT_Cb, bsC).setBoundaryStrength(COMPONENT_Cr, bsC);
     }
   }
 
@@ -782,26 +779,28 @@ unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, co
 
   const PreCalcValues& pcv = *cu.cs->pcv;
   const unsigned rasterIdx = getRasterIdx( Position{ localPos.x,  localPos.y }, pcv );
-  if (m_boundaryStrengths[edgeDir][rasterIdx] && (cuP.firstPU->ciipFlag || cuQ.firstPU->ciipFlag))
+  if (m_edgeStrengths[edgeDir][rasterIdx].getTransEdge() && (cuP.firstPU->ciipFlag || cuQ.firstPU->ciipFlag))
   {
     if(chType == CHANNEL_TYPE_LUMA)
     {
-      return BsSet(2, COMPONENT_Y);
+      return EdgeStrengths().setBoundaryStrength(COMPONENT_Y, 2);
     }
     else
     {
-      return BsSet(2, COMPONENT_Cb) + BsSet(2, COMPONENT_Cr);
+      return EdgeStrengths().setBoundaryStrength(COMPONENT_Cb, 2).setBoundaryStrength(COMPONENT_Cr, 2);
     }
   }
 
-  unsigned tmpBs = 0;
+  EdgeStrengths tmpBs;
+
   //-- Set BS for not Intra MB : BS = 2 or 1 or 0
   if(chType == CHANNEL_TYPE_LUMA)
   {
     // Y
-    if (m_boundaryStrengths[edgeDir][rasterIdx] && (TU::getCbf(tuQ, COMPONENT_Y) || TU::getCbf(tuP, COMPONENT_Y)))
+    if (m_edgeStrengths[edgeDir][rasterIdx].getTransEdge()
+        && (TU::getCbf(tuQ, COMPONENT_Y) || TU::getCbf(tuP, COMPONENT_Y)))
     {
-      tmpBs += BsSet(1, COMPONENT_Y);
+      tmpBs.setBoundaryStrength(COMPONENT_Y, 1);
     }
   }
   else
@@ -809,31 +808,27 @@ unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, co
     if (pcv.chrFormat != CHROMA_400)
     {
       // U
-      if (m_boundaryStrengths[edgeDir][rasterIdx]
+      if (m_edgeStrengths[edgeDir][rasterIdx].getTransEdge()
           && (TU::getCbf(tuQ, COMPONENT_Cb) || TU::getCbf(tuP, COMPONENT_Cb) || tuQ.jointCbCr || tuP.jointCbCr))
       {
-        tmpBs += BsSet(1, COMPONENT_Cb);
+        tmpBs.setBoundaryStrength(COMPONENT_Cb, 1);
       }
       // V
-      if (m_boundaryStrengths[edgeDir][rasterIdx]
+      if (m_edgeStrengths[edgeDir][rasterIdx].getTransEdge()
           && (TU::getCbf(tuQ, COMPONENT_Cr) || TU::getCbf(tuP, COMPONENT_Cr) || tuQ.jointCbCr || tuP.jointCbCr))
       {
-        tmpBs += BsSet(1, COMPONENT_Cr);
+        tmpBs.setBoundaryStrength(COMPONENT_Cr, 1);
       }
     }
   }
-  if (BsGet(tmpBs, COMPONENT_Y) == 1)
-  {
-    return tmpBs;
-  }
 
-  if ( !cu.Y().valid() )
+  if (tmpBs.getBoundaryStrength(COMPONENT_Y) == 1 || !cu.Y().valid())
   {
     return tmpBs;
   }
 
   // and now the pred
-  if (m_boundaryStrengths[edgeDir][rasterIdx] != 0 && m_boundaryStrengths[edgeDir][rasterIdx] != 3)
+  if (m_edgeStrengths[edgeDir][rasterIdx].getTransEdge() && !m_edgeStrengths[edgeDir][rasterIdx].getPredEdge())
   {
     return tmpBs;
   }
@@ -843,13 +838,19 @@ unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, co
   }
   if( cuP.predMode != cuQ.predMode && chType == CHANNEL_TYPE_LUMA )
   {
-    return BsSet(1, COMPONENT_Y);
+    return EdgeStrengths().setBoundaryStrength(COMPONENT_Y, 1);
   }
   const Position& lumaPosQ  = Position{ localPos.x,  localPos.y };
   const Position  lumaPosP  = ( edgeDir == EDGE_VER ) ? lumaPosQ.offset( -1, 0 ) : lumaPosQ.offset( 0, -1 );
   const MotionInfo&     miQ = cuQ.cs->getMotionInfo( lumaPosQ );
   const MotionInfo&     miP = cuP.cs->getMotionInfo( lumaPosP );
   const Slice&       sliceP = *cuP.slice;
+
+  auto motionBreak = [](const Mv &a, const Mv &b) -> bool
+  {
+    constexpr int MVD_TH = 1 << MV_FRACTIONAL_BITS_INTERNAL >> 1;
+    return abs(b.getHor() - a.getHor()) >= MVD_TH || abs(b.getVer() - a.getVer()) >= MVD_TH;
+  };
 
   if (sliceQ.isInterB() || sliceP.isInterB())
   {
@@ -882,8 +883,6 @@ unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, co
       mvQ1 = miQ.mv[1];
     }
 
-    int nThreshold = (1 << MV_FRACTIONAL_BITS_INTERNAL) >> 1;
-
     unsigned bs = 0;
 
     //th can be optimized
@@ -893,30 +892,17 @@ unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, co
       {
         if (refP0 == refQ0)
         {
-          bs = ((abs(mvQ0.getHor() - mvP0.getHor()) >= nThreshold) || (abs(mvQ0.getVer() - mvP0.getVer()) >= nThreshold)
-                || (abs(mvQ1.getHor() - mvP1.getHor()) >= nThreshold)
-                || (abs(mvQ1.getVer() - mvP1.getVer()) >= nThreshold))
-                 ? 1
-                 : 0;
+          bs = motionBreak(mvP0, mvQ0) || motionBreak(mvP1, mvQ1) ? 1 : 0;
         }
         else
         {
-          bs = ((abs(mvQ1.getHor() - mvP0.getHor()) >= nThreshold) || (abs(mvQ1.getVer() - mvP0.getVer()) >= nThreshold)
-                || (abs(mvQ0.getHor() - mvP1.getHor()) >= nThreshold)
-                || (abs(mvQ0.getVer() - mvP1.getVer()) >= nThreshold))
-                 ? 1
-                 : 0;
+          bs = motionBreak(mvP0, mvQ1) || motionBreak(mvP1, mvQ0) ? 1 : 0;
         }
       }
       else    // Same L0 & L1
       {
         bs =
-          ((abs(mvQ0.getHor() - mvP0.getHor()) >= nThreshold) || (abs(mvQ0.getVer() - mvP0.getVer()) >= nThreshold)
-           || (abs(mvQ1.getHor() - mvP1.getHor()) >= nThreshold) || (abs(mvQ1.getVer() - mvP1.getVer()) >= nThreshold))
-              && ((abs(mvQ1.getHor() - mvP0.getHor()) >= nThreshold)
-                  || (abs(mvQ1.getVer() - mvP0.getVer()) >= nThreshold)
-                  || (abs(mvQ0.getHor() - mvP1.getHor()) >= nThreshold)
-                  || (abs(mvQ0.getVer() - mvP1.getVer()) >= nThreshold))
+          (motionBreak(mvP0, mvQ0) || motionBreak(mvP1, mvQ1)) && (motionBreak(mvP0, mvQ1) || motionBreak(mvP1, mvQ0))
             ? 1
             : 0;
       }
@@ -925,7 +911,7 @@ unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, co
     {
       bs = 1;
     }
-    return bs + tmpBs;
+    return tmpBs.setBoundaryStrength(COMPONENT_Y, bs);
   }
 
 
@@ -936,14 +922,13 @@ unsigned DeblockingFilter::xGetBoundaryStrengthSingle ( const CodingUnit& cu, co
   const Picture *refQ0 = (CU::isIBC(cuQ) ? sliceQ.getPic() : sliceQ.getRefPic(REF_PIC_LIST_0, miQ.refIdx[0]));
   if (refP0 != refQ0)
   {
-    return tmpBs + 1;
+    return tmpBs.setBoundaryStrength(COMPONENT_Y, 1);
   }
 
   Mv mvP0 = miP.mv[0];
   Mv mvQ0 = miQ.mv[0];
 
-  int nThreshold = (1 << MV_FRACTIONAL_BITS_INTERNAL) >> 1;
-  return ( ( abs( mvQ0.getHor() - mvP0.getHor() ) >= nThreshold ) || ( abs( mvQ0.getVer() - mvP0.getVer() ) >= nThreshold ) ) ? (tmpBs + 1) : tmpBs;
+  return tmpBs.setBoundaryStrength(COMPONENT_Y, motionBreak(mvP0, mvQ0) ? 1 : 0);
 }
 
 int DeblockingFilter::deriveLADFShift(const Pel *src, const int stride, const DeblockEdgeDir edgeDir, const SPS *sps)
@@ -1044,7 +1029,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
       continue;
     }
     bsAbsIdx = getRasterIdx(pos, pcv);
-    bs       = BsGet(m_boundaryStrengths[edgeDir][bsAbsIdx], COMPONENT_Y);
+    bs       = m_edgeStrengths[edgeDir][bsAbsIdx].getBoundaryStrength(COMPONENT_Y);
 
     if (bs)
     {
@@ -1055,7 +1040,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
       {
         if (!isNeighbourAvailable(cu, cuP, *pps))
         {
-          m_boundaryStrengths[edgeDir][bsAbsIdx] = bs = 0;
+          m_edgeStrengths[edgeDir][bsAbsIdx] = EdgeStrengths();
           continue;
         }
       }
@@ -1063,7 +1048,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
       {
         if (!isNeighbourAvailable(cu, cuP, *pps))
         {
-          m_boundaryStrengths[edgeDir][bsAbsIdx] = bs = 0;
+          m_edgeStrengths[edgeDir][bsAbsIdx] = EdgeStrengths();
           continue;
         }
       }
@@ -1304,11 +1289,11 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
     pos.y += yoffset;
 
     unsigned bsAbsIdx = getRasterIdx(pos, pcv);
-    unsigned tmpBs    = m_boundaryStrengths[edgeDir][bsAbsIdx];
+    EdgeStrengths tmpBs    = m_edgeStrengths[edgeDir][bsAbsIdx];
 
     unsigned bS[2];
-    bS[0] = BsGet(tmpBs, COMPONENT_Cb);
-    bS[1] = BsGet(tmpBs, COMPONENT_Cr);
+    bS[0] = tmpBs.getBoundaryStrength(COMPONENT_Cb);
+    bS[1] = tmpBs.getBoundaryStrength(COMPONENT_Cr);
 
     if (bS[0] > 0 || bS[1] > 0)
     {
@@ -1758,8 +1743,5 @@ inline int DeblockingFilter::xCalcDQ(Pel *src, const int offset) const
 {
   return abs(src[0] - 2 * src[offset] + src[offset * 2]);
 }
-
-inline unsigned DeblockingFilter::BsSet(unsigned val, const ComponentID compIdx) const { return (val << (compIdx << 1)); }
-inline unsigned DeblockingFilter::BsGet(unsigned val, const ComponentID compIdx) const { return ((val >> (compIdx << 1)) & 3); }
 
 //! \}
