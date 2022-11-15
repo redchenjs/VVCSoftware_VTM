@@ -1827,7 +1827,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #if JVET_AB0080
   if (m_gopBasedRPREnabledFlag)
   {
-    m_upscaledOutput = 2.0;
+    m_upscaledOutput = 2;
     if (m_scalingRatioHor == 1.0 && m_scalingRatioVer == 1.0)
     {
       m_scalingRatioHor = 2.0;
