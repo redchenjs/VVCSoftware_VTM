@@ -1449,7 +1449,7 @@ void EncApp::createLib( const int layerIdx )
   if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag)
   {
     UnitArea unitAreaRPR10(m_chromaFormatIDC, Area(0, 0, m_sourceWidth, sourceHeight));
-    UnitArea unitAreaRPR20(m_chromaFormatIDC, Area(0, 0, int(m_sourceWidth / 2.0), int(sourceHeight / 2.0)));
+    UnitArea unitAreaRPR20(m_chromaFormatIDC, Area(0, 0, m_sourceWidth / 2, sourceHeight / 2));
     m_rprPic[0] = new PelStorage;
     m_rprPic[0]->create(unitAreaRPR10);
     m_rprPic[1] = new PelStorage;
