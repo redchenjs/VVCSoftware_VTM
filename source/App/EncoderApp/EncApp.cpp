@@ -1448,7 +1448,7 @@ void EncApp::createLib( const int layerIdx )
 #if JVET_AB0080
   if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag)
   {
-    UnitArea unitAreaRPR10(m_chromaFormatIDC, Area(0, 0, int(m_sourceWidth), int(sourceHeight)));
+    UnitArea unitAreaRPR10(m_chromaFormatIDC, Area(0, 0, m_sourceWidth, sourceHeight));
     UnitArea unitAreaRPR20(m_chromaFormatIDC, Area(0, 0, int(m_sourceWidth / 2.0), int(sourceHeight / 2.0)));
     m_rprPic[0] = new PelStorage;
     m_rprPic[0]->create(unitAreaRPR10);
@@ -1736,7 +1736,7 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         const SPS& sps = *m_cEncLib.getSPS(layerId);
 #if JVET_AB0080
         int ppsID = layerId;
-        if (m_gopBasedRPREnabledFlag) // && (m_cEncLib.getBaseQP() >= m_cEncLib.getGOPBasedRPRQPThreshold()))
+        if (m_gopBasedRPREnabledFlag)
         {
           const PPS& pps1 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR);
           const PPS& pps2 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR2);
@@ -1757,7 +1757,6 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
           {
             ppsID = layerId;
           }
-          //printf("m_cEncLib.m_gopRprPpsId=%d ppsID=%d\n", m_cEncLib.m_gopRprPpsId, ppsID);
         }
         else
         {
