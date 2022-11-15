@@ -705,9 +705,9 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
 #if JVET_AB0080
     if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag && (m_iQP >= getGOPBasedRPRQPThreshold()))
     {
-      const int iPOC = m_pocLast + (m_compositeRefEnabled ? 2 : 1);
+      const int poc = m_pocLast + (m_compositeRefEnabled ? 2 : 1);
       double upscaledPSNR = 0.0;
-      if (iPOC % getGOPSize() == 0)
+      if (poc % getGOPSize() == 0)
       {
         int xScale = 32768;
         int yScale = 32768;
@@ -729,37 +729,38 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
         const  Pel* pSrc0 = pcPicYuvOrg->get(COMPONENT_Y).bufAt(0, 0);
         const  Pel* pSrc1 = ppcPicYuvRPR[0]->get(COMPONENT_Y).bufAt(0, 0);
 
-        uint64_t uiTotalDiff = 0;
+        uint64_t totalDiff = 0;
         for (int y = 0; y < pcPicYuvOrg->get(COMPONENT_Y).height; y++)
         {
           for (int x = 0; x < pcPicYuvOrg->get(COMPONENT_Y).width; x++)
           {
-            int iTemp = pSrc0[x] - pSrc1[x];
-            uiTotalDiff += uint64_t(iTemp) * uint64_t(iTemp);
+            int diff = pSrc0[x] - pSrc1[x];
+            totalDiff += uint64_t(diff) * uint64_t(diff);
           }
           pSrc0 += pcPicYuvOrg->get(COMPONENT_Y).stride;
           pSrc1 += ppcPicYuvRPR[0]->get(COMPONENT_Y).stride;
         }
 
         const uint32_t maxval = 255 << (pOrgSPS->getBitDepth(CHANNEL_TYPE_LUMA) - 8);
-        upscaledPSNR = uiTotalDiff ? 10.0 * log10((double)maxval * maxval * pOrgPPS->getPicWidthInLumaSamples() * pOrgPPS->getPicHeightInLumaSamples() / (double)uiTotalDiff) : 999.99;
+        upscaledPSNR = totalDiff ? 10.0 * log10((double)maxval * maxval * pOrgPPS->getPicWidthInLumaSamples() * pOrgPPS->getPicHeightInLumaSamples() / (double)totalDiff) : 999.99;
       }
 
-      if (iPOC % getGOPSize() == 0)
+      if (poc % getGOPSize() == 0)
       {
-        if ((m_psnrThresholdRPR - (m_iQP - 37) * 0.5) < upscaledPSNR)
+        const int qpBias = 37;
+        if ((m_psnrThresholdRPR - (m_iQP - qpBias) * 0.5) < upscaledPSNR)
         {
           ppsID = ENC_PPS_ID_RPR;
         }
         else
         {
-          if ((m_psnrThresholdRPR2 - (m_iQP - 37) * 0.5) < upscaledPSNR)
+          if ((m_psnrThresholdRPR2 - (m_iQP - qpBias) * 0.5) < upscaledPSNR)
           {
             ppsID = ENC_PPS_ID_RPR2;
           }
           else
           {
-            if ((m_psnrThresholdRPR3 - (m_iQP - 37) * 0.5) < upscaledPSNR)
+            if ((m_psnrThresholdRPR3 - (m_iQP - qpBias) * 0.5) < upscaledPSNR)
             {
               ppsID = ENC_PPS_ID_RPR3;
             }
@@ -1941,7 +1942,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
 #if JVET_AB0080_CHROMA_QP_FIX
   if (m_gopBasedRPREnabledFlag)
   {
-    if (pps.getPPSId() == 3 || pps.getPPSId() == 5 || pps.getPPSId() == 7)
+    if (pps.getPPSId() == ENC_PPS_ID_RPR || pps.getPPSId() == ENC_PPS_ID_RPR2 || pps.getPPSId() == ENC_PPS_ID_RPR3)
     {
       pps.setSliceChromaQpFlag(true);
     }
