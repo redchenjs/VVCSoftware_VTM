@@ -4807,7 +4807,12 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     CU::getRprScaling( &sps, pps, pcPic, xScale, yScale );
     std::pair<int, int> scalingRatio = std::pair<int, int>( xScale, yScale );
 
+#if JVET_AB0081
+    bool rescaleForDisplay = true;
+    Picture::rescalePicture(scalingRatio, picC, pcPic->getScalingWindow(), upscaledRec, pps->getScalingWindow(), format, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag(), rescaleForDisplay, m_pcCfg->getUpscaleFilerForDisplay());
+#else
     Picture::rescalePicture( scalingRatio, picC, pcPic->getScalingWindow(), upscaledRec, pps->getScalingWindow(), format, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag() );
+#endif
   }
 
   for (int comp = 0; comp < ::getNumberValidComponents(formatD); comp++)

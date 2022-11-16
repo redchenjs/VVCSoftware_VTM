@@ -278,6 +278,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setResChangeInClvsEnabled                            ( m_resChangeInClvsEnabled );
   m_cEncLib.setSwitchPocPeriod                                   ( m_switchPocPeriod );
   m_cEncLib.setUpscaledOutput                                    ( m_upscaledOutput );
+#if JVET_AB0081
+  m_cEncLib.setUpscaleFilerForDisplay                            (m_upscaleFilterForDisplay);
+#endif
   m_cEncLib.setFramesToBeEncoded                                 ( m_framesToBeEncoded );
   m_cEncLib.setValidFrames(m_firstValidFrame, m_lastValidFrame);
   m_cEncLib.setAvoidIntraInDepLayer                              ( m_avoidIntraInDepLayer );
@@ -1768,7 +1771,11 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
 #endif
         if( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() )
         {
+#if JVET_AB0081
+          m_cVideoIOYuvReconFile.writeUpscaledPicture(sps, pps, *pcPicYuvRec, ipCSC, m_packedYUVMode, m_cEncLib.getUpscaledOutput(), NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+#else
           m_cVideoIOYuvReconFile.writeUpscaledPicture( sps, pps, *pcPicYuvRec, ipCSC, m_packedYUVMode, m_cEncLib.getUpscaledOutput(), NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
+#endif
         }
         else
         {
