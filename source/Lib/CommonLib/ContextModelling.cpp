@@ -42,7 +42,8 @@
 
 const int CoeffCodingContext::prefixCtx[8] = { 0, 0, 0, 3, 6, 10, 15, 21 };
 
-CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID component, bool signHide, bool bdpcm)
+CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID component, bool signHide,
+                                       const BdpcmMode bdpcm)
   : m_compID(component)
   , m_chType(toChannelType(m_compID))
   , m_width(tu.block(m_compID).width)

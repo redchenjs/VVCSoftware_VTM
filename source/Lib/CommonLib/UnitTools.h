@@ -193,8 +193,7 @@ namespace PU
   void restrictBiPredMergeCandsOne    (PredictionUnit &pu);
 
   bool isLMCMode                      (                          unsigned mode);
-  bool isLMCModeEnabled               (const PredictionUnit &pu, unsigned mode);
-  bool isChromaIntraModeCrossCheckMode(const PredictionUnit &pu);
+  bool isLMCModeEnabled(const PredictionUnit &pu, unsigned mode);
   void getGeoMergeCandidates          (const PredictionUnit &pu, MergeCtx &GeoMrgCtx);
   void spanGeoMotionInfo(PredictionUnit &pu, const MergeCtx &GeoMrgCtx, const uint8_t splitDir, const uint8_t candIdx0,
                          const uint8_t candIdx1);

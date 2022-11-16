@@ -378,6 +378,13 @@ enum SbtMode
   NUMBER_SBT_MODE
 };
 
+enum class BdpcmMode : uint8_t
+{
+  NONE = 0,
+  HOR,
+  VER
+};
+
 /// supported slice type
 enum SliceType
 {

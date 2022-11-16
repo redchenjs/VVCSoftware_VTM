@@ -832,14 +832,14 @@ void CABACWriter::bdpcm_mode( const CodingUnit& cu, const ComponentID compID )
     return;
   }
 
-  int bdpcmMode = isLuma(compID) ? cu.bdpcmMode : cu.bdpcmModeChroma;
+  const BdpcmMode bdpcmMode = cu.getBdpcmMode(compID);
 
   unsigned ctxId = isLuma(compID) ? 0 : 2;
-  m_binEncoder.encodeBin(bdpcmMode > 0 ? 1 : 0, Ctx::BDPCMMode(ctxId));
+  m_binEncoder.encodeBin(bdpcmMode != BdpcmMode::NONE ? 1 : 0, Ctx::BDPCMMode(ctxId));
 
-  if (bdpcmMode)
+  if (bdpcmMode != BdpcmMode::NONE)
   {
-    m_binEncoder.encodeBin(bdpcmMode > 1 ? 1 : 0, Ctx::BDPCMMode(ctxId + 1));
+    m_binEncoder.encodeBin(bdpcmMode != BdpcmMode::HOR ? 1 : 0, Ctx::BDPCMMode(ctxId + 1));
   }
   if (isLuma(compID))
   {
@@ -961,7 +961,7 @@ void CABACWriter::extend_ref_line(const PredictionUnit& pu)
 {
 
   const CodingUnit& cu = *pu.cu;
-  if (!cu.Y().valid() || !CU::isIntra(cu) || !isLuma(cu.chType) || cu.bdpcmMode)
+  if (!cu.Y().valid() || !CU::isIntra(cu) || !isLuma(cu.chType) || cu.bdpcmMode != BdpcmMode::NONE)
   {
     return;
   }
@@ -987,7 +987,7 @@ void CABACWriter::extend_ref_line(const PredictionUnit& pu)
 
 void CABACWriter::extend_ref_line(const CodingUnit& cu)
 {
-  if (!cu.Y().valid() || !CU::isIntra(cu) || !isLuma(cu.chType) || cu.bdpcmMode)
+  if (!cu.Y().valid() || !CU::isIntra(cu) || !isLuma(cu.chType) || cu.bdpcmMode != BdpcmMode::NONE)
   {
     return;
   }
@@ -1026,9 +1026,9 @@ void CABACWriter::intra_luma_pred_modes( const CodingUnit& cu )
     return;
   }
 
-  if( cu.bdpcmMode )
+  if (cu.bdpcmMode != BdpcmMode::NONE)
   {
-    cu.firstPU->intraDir[0] = cu.bdpcmMode == 2? VER_IDX : HOR_IDX;
+    cu.firstPU->intraDir[0] = cu.bdpcmMode == BdpcmMode::VER ? VER_IDX : HOR_IDX;
     return;
   }
 
@@ -1139,7 +1139,7 @@ void CABACWriter::intra_luma_pred_modes( const CodingUnit& cu )
 
 void CABACWriter::intra_luma_pred_mode( const PredictionUnit& pu )
 {
-  if (pu.cu->bdpcmMode)
+  if (pu.cu->bdpcmMode != BdpcmMode::NONE)
   {
     return;
   }
@@ -1226,9 +1226,9 @@ void CABACWriter::intra_chroma_pred_modes( const CodingUnit& cu )
     return;
   }
 
-  if( cu.bdpcmModeChroma )
+  if (cu.bdpcmModeChroma != BdpcmMode::NONE)
   {
-    cu.firstPU->intraDir[1] = cu.bdpcmModeChroma == 2 ? VER_IDX : HOR_IDX;
+    cu.firstPU->intraDir[1] = cu.bdpcmModeChroma == BdpcmMode::VER ? VER_IDX : HOR_IDX;
     return;
   }
   const PredictionUnit* pu = cu.firstPU;
@@ -2323,34 +2323,21 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
   }
 }
 
-void CABACWriter::cbf_comp( const CodingStructure& cs, bool cbf, const CompArea& area, unsigned depth, const bool prevCbf, const bool useISP )
+void CABACWriter::cbf_comp(bool cbf, const CompArea &area, unsigned depth, const bool prevCbf, const bool useISP,
+                           const BdpcmMode bdpcmMode)
 {
   unsigned  ctxId = DeriveCtx::CtxQtCbf(area.compID, prevCbf, useISP && isLuma(area.compID));
   const CtxSet&   ctxSet  = Ctx::QtCbf[ area.compID ];
 
-  if ((area.compID == COMPONENT_Y && cs.getCU(area.pos(), toChannelType(area.compID))->bdpcmMode)
-      || (area.compID != COMPONENT_Y && cs.getCU(area.pos(), toChannelType(area.compID)) != nullptr
-          && cs.getCU(area.pos(), toChannelType(area.compID))->bdpcmModeChroma))
+  if (bdpcmMode != BdpcmMode::NONE)
   {
-    if (area.compID == COMPONENT_Y)
-    {
-      ctxId = 1;
-    }
-    else if (area.compID == COMPONENT_Cb)
-    {
-      ctxId = 1;
-    }
-    else
-    {
-      ctxId = 2;
-    }
-    m_binEncoder.encodeBin(cbf, ctxSet(ctxId));
+    ctxId = area.compID == COMPONENT_Cr ? 2 : 1;
   }
-  else
-  {
-    m_binEncoder.encodeBin(cbf, ctxSet(ctxId));
-  }
-  DTRACE( g_trace_ctx, D_SYNTAX, "cbf_comp() etype=%d pos=(%d,%d) ctx=%d cbf=%d\n", area.compID, area.x, area.y, ctxId, cbf );
+
+  m_binEncoder.encodeBin(cbf ? 1 : 0, ctxSet(ctxId));
+
+  DTRACE(g_trace_ctx, D_SYNTAX, "cbf_comp() etype=%d pos=(%d,%d) ctx=%d cbf=%d\n", area.compID, area.x, area.y, ctxId,
+         cbf ? 1 : 0);
 }
 
 //================================================================================
@@ -2426,7 +2413,6 @@ void CABACWriter::mvd_coding( const Mv &rMvd, int8_t imv )
 //================================================================================
 void CABACWriter::transform_unit( const TransformUnit& tu, CUCtx& cuCtx, Partitioner& partitioner, const int subTuCounter)
 {
-  const CodingStructure&  cs = *tu.cs;
   const CodingUnit&       cu = *tu.cu;
   const UnitArea&         area = partitioner.currArea();
   const unsigned          trDepth = partitioner.currTrDepth;
@@ -2443,13 +2429,14 @@ void CABACWriter::transform_unit( const TransformUnit& tu, CUCtx& cuCtx, Partiti
       chromaCbfs.Cb     = TU::getCbfAtDepth(tu, COMPONENT_Cb, trDepth);
       if (!(cu.sbtInfo && tu.noResidual))
       {
-        cbf_comp(cs, chromaCbfs.Cb, area.blocks[COMPONENT_Cb], cbfDepth);
+        cbf_comp(chromaCbfs.Cb, area.blocks[COMPONENT_Cb], cbfDepth, false, false, cu.getBdpcmMode(COMPONENT_Cb));
       }
 
       chromaCbfs.Cr = TU::getCbfAtDepth(tu, COMPONENT_Cr, trDepth);
       if (!(cu.sbtInfo && tu.noResidual))
       {
-        cbf_comp(cs, chromaCbfs.Cr, area.blocks[COMPONENT_Cr], cbfDepth, chromaCbfs.Cb);
+        cbf_comp(chromaCbfs.Cr, area.blocks[COMPONENT_Cr], cbfDepth, chromaCbfs.Cb, false,
+                 cu.getBdpcmMode(COMPONENT_Cr));
       }
     }
     else if (cu.isSepTree())
@@ -2508,7 +2495,8 @@ void CABACWriter::transform_unit( const TransformUnit& tu, CUCtx& cuCtx, Partiti
       }
       if (!lastCbfIsInferred)
       {
-        cbf_comp(cs, TU::getCbfAtDepth(tu, COMPONENT_Y, trDepth), tu.Y(), trDepth, previousCbf, cu.ispMode);
+        cbf_comp(TU::getCbfAtDepth(tu, COMPONENT_Y, trDepth), tu.Y(), trDepth, previousCbf, cu.ispMode,
+                 cu.getBdpcmMode(COMPONENT_Y));
       }
     }
   }
@@ -2659,7 +2647,7 @@ void CABACWriter::residual_coding( const TransformUnit& tu, ComponentID compID, 
   bool signHiding = cu.cs->slice->getSignDataHidingEnabledFlag();
 
   // init coeff coding context
-  CoeffCodingContext  cctx    ( tu, compID, signHiding );
+  CoeffCodingContext  cctx(tu, compID, signHiding, BdpcmMode::NONE);
   const TCoeff*       coeff   = tu.getCoeffs( compID ).buf;
 
   // determine and set last coeff position and sig group flags
@@ -2779,7 +2767,9 @@ void CABACWriter::mts_idx( const CodingUnit& cu, CUCtx* cuCtx )
 
 void CABACWriter::isp_mode( const CodingUnit& cu )
 {
-  if( !CU::isIntra( cu ) || !isLuma( cu.chType ) || cu.firstPU->multiRefIdx || !cu.cs->sps->getUseISP() || cu.bdpcmMode || !CU::canUseISP( cu, getFirstComponentOfChannel( cu.chType ) ) || cu.colorTransform )
+  if (!CU::isIntra(cu) || !isLuma(cu.chType) || cu.firstPU->multiRefIdx || !cu.cs->sps->getUseISP()
+      || cu.bdpcmMode != BdpcmMode::NONE || !CU::canUseISP(cu, getFirstComponentOfChannel(cu.chType))
+      || cu.colorTransform)
   {
     CHECK( cu.ispMode != NOT_INTRA_SUBPARTITIONS, "cu.ispMode != 0" );
     return;
@@ -3201,7 +3191,7 @@ void CABACWriter::residual_coding_subblockTS(CoeffCodingContext &cctx, const TCo
       cctx.decimateNumCtxBins(1);
       numNonZero++;
       cctx.neighTS(rightPixel, belowPixel, nextSigPos, coeff);
-      modAbsCoeff = cctx.deriveModCoeff(rightPixel, belowPixel, abs(coeffVal), cctx.bdpcm());
+      modAbsCoeff = cctx.deriveModCoeff(rightPixel, belowPixel, abs(coeffVal), cctx.bdpcm() != BdpcmMode::NONE);
       remAbsLevel = modAbsCoeff - 1;
 
       unsigned gt1 = !!remAbsLevel;
@@ -3227,7 +3217,8 @@ void CABACWriter::residual_coding_subblockTS(CoeffCodingContext &cctx, const TCo
   {
     unsigned absLevel;
     cctx.neighTS(rightPixel, belowPixel, scanPos, coeff);
-    absLevel = cctx.deriveModCoeff(rightPixel, belowPixel, abs(coeff[cctx.blockPos(scanPos)]), cctx.bdpcm());
+    absLevel =
+      cctx.deriveModCoeff(rightPixel, belowPixel, abs(coeff[cctx.blockPos(scanPos)]), cctx.bdpcm() != BdpcmMode::NONE);
     cutoffVal = 2;
     for (int i = 0; i < numGtBins; i++)
     {
@@ -3250,7 +3241,8 @@ void CABACWriter::residual_coding_subblockTS(CoeffCodingContext &cctx, const TCo
     unsigned absLevel;
     cctx.neighTS(rightPixel, belowPixel, scanPos, coeff);
     cutoffVal = (scanPos <= lastScanPosPass2 ? 10 : (scanPos <= lastScanPosPass1 ? 2 : 0));
-    absLevel = cctx.deriveModCoeff(rightPixel, belowPixel, abs(coeff[cctx.blockPos(scanPos)]), cctx.bdpcm()||!cutoffVal);
+    absLevel  = cctx.deriveModCoeff(rightPixel, belowPixel, abs(coeff[cctx.blockPos(scanPos)]),
+                                    cctx.bdpcm() != BdpcmMode::NONE || cutoffVal == 0);
 
     if( absLevel >= cutoffVal )
     {

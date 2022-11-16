@@ -123,7 +123,7 @@ public:
 
   // transform tree (clause 7.3.8.8)
   void        transform_tree            ( CodingStructure&              cs, Partitioner&    pm, CUCtx& cuCtx, const PartSplit ispType = TU_NO_ISP, const int subTuIdx = -1 );
-  bool        cbf_comp                  ( CodingStructure&              cs,     const CompArea& area,     unsigned depth, const bool prevCbf = false, const bool useISP = false );
+  bool cbf_comp(const CompArea &area, unsigned depth, bool prevCbf, bool useISP, BdpcmMode bdpcmMode);
 
   // mvd coding (clause 7.3.8.9)
   void        mvd_coding                ( Mv &rMvd );

@@ -761,11 +761,6 @@ int PU::getLMSymbolList(const PredictionUnit &pu, int *modeList)
   return idx;
 }
 
-bool PU::isChromaIntraModeCrossCheckMode( const PredictionUnit &pu )
-{
-  return !pu.cu->bdpcmModeChroma && pu.intraDir[CHANNEL_TYPE_CHROMA] == DM_CHROMA_IDX;
-}
-
 uint32_t PU::getFinalIntraMode( const PredictionUnit &pu, const ChannelType &chType )
 {
   uint32_t intraMode = pu.intraDir[chType];
@@ -4715,7 +4710,7 @@ bool CU::isMTSAllowed(const CodingUnit &cu, const ComponentID compID)
   mtsAllowed &= cuWidth <= maxSize && cuHeight <= maxSize;
   mtsAllowed &= !cu.ispMode;
   mtsAllowed &= !cu.sbtInfo;
-  mtsAllowed &= !(cu.bdpcmMode && cuWidth <= tsMaxSize && cuHeight <= tsMaxSize);
+  mtsAllowed &= !(cu.bdpcmMode != BdpcmMode::NONE && cuWidth <= tsMaxSize && cuHeight <= tsMaxSize);
   return mtsAllowed;
 }
 
@@ -4756,8 +4751,7 @@ bool TU::isTSAllowed(const TransformUnit &tu, const ComponentID compID)
   bool tsAllowed = tu.cs->sps->getTransformSkipEnabledFlag();
   tsAllowed &= ( !tu.cu->ispMode || !isLuma(compID) );
   SizeType transformSkipMaxSize = 1 << maxSize;
-  tsAllowed &= !(tu.cu->bdpcmMode && isLuma(compID));
-  tsAllowed &= !(tu.cu->bdpcmModeChroma && isChroma(compID));
+  tsAllowed &= tu.cu->getBdpcmMode(compID) == BdpcmMode::NONE;
   tsAllowed &= tu.blocks[compID].width <= transformSkipMaxSize && tu.blocks[compID].height <= transformSkipMaxSize;
   tsAllowed &= !tu.cu->sbtInfo;
 

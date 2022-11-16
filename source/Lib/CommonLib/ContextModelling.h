@@ -53,7 +53,8 @@ struct CoeffCodingContext
 public:
   static const int prefixCtx[8];
 
-  CoeffCodingContext( const TransformUnit& tu, ComponentID component, bool signHide, bool bdpcm = false );
+  CoeffCodingContext(const TransformUnit &tu, ComponentID component, bool signHide, const BdpcmMode bdpcm);
+
 public:
   void  initSubblock     ( int SubsetId, bool sigGroupFlag = false );
 public:
@@ -97,7 +98,7 @@ public:
   int             numCtxBins      ()                        const { return   m_remainingContextBins;      }
   void            setNumCtxBins   ( int n )                       {          m_remainingContextBins  = n; }
   unsigned        sigGroupCtxId   ( bool ts = false     )   const { return ts ? m_sigGroupCtxIdTS : m_sigGroupCtxId; }
-  bool            bdpcm           ()                        const { return m_bdpcm; }
+  BdpcmMode       bdpcm() const { return m_bdpcm; }
 
   void            decimateNumCtxBins(int n) { m_remainingContextBins -= n; }
   void            increaseNumCtxBins(int n) { m_remainingContextBins += n; }
@@ -355,7 +356,7 @@ public:
   unsigned parityCtxIdAbsTS   ()                  const { return m_tsParFlagCtxSet(      0 ); }
   unsigned greaterXCtxIdAbsTS ( uint8_t offset )  const { return m_tsGtxFlagCtxSet( offset ); }
 
-  unsigned lrg1CtxIdAbsTS(int scanPos, const TCoeff* coeff, int bdpcm)
+  unsigned lrg1CtxIdAbsTS(int scanPos, const TCoeff *coeff, const BdpcmMode bdpcm)
   {
     const uint32_t  posY = m_scan[scanPos].y;
     const uint32_t  posX = m_scan[scanPos].x;
@@ -364,7 +365,7 @@ public:
     int             numPos = 0;
 #define UPDATE(x) {TCoeff a=abs(x);numPos+=int(!!a);}
 
-    if (bdpcm)
+    if (bdpcm != BdpcmMode::NONE)
     {
       numPos = 3;
     }
@@ -384,7 +385,7 @@ public:
     return m_tsLrg1FlagCtxSet(numPos);
   }
 
-  unsigned signCtxIdAbsTS(int scanPos, const TCoeff* coeff, int bdpcm)
+  unsigned signCtxIdAbsTS(int scanPos, const TCoeff *coeff, const BdpcmMode bdpcm)
   {
     const uint32_t  posY = m_scan[scanPos].y;
     const uint32_t  posX = m_scan[scanPos].x;
@@ -414,7 +415,7 @@ public:
     {
       signCtx = 2;
     }
-    if (bdpcm)
+    if (bdpcm != BdpcmMode::NONE)
     {
       signCtx += 3;
     }
@@ -439,7 +440,7 @@ public:
     }
   }
 
-  int deriveModCoeff(int rightPixel, int belowPixel, TCoeff absCoeff, int bdpcm = 0)
+  int deriveModCoeff(int rightPixel, int belowPixel, TCoeff absCoeff, const bool bdpcm)
   {
 
     if (absCoeff == 0)
@@ -450,7 +451,7 @@ public:
 
     int absCoeffMod = int(absCoeff);
 
-    if (bdpcm == 0)
+    if (!bdpcm)
     {
       pred1 = std::max(absBelow, absRight);
 
@@ -556,7 +557,7 @@ private:
   CtxSet                    m_tsSignFlagCtxSet;
   int                       m_remainingContextBins;
   std::bitset<MLS_GRP_NUM>  m_sigCoeffGroupFlag;
-  const bool                m_bdpcm;
+  const BdpcmMode           m_bdpcm;
   int                       m_cctxBaseLevel;
   TCoeff                    m_histValue;
   bool                      m_updateHist;

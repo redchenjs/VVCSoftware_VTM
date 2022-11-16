@@ -153,7 +153,7 @@ void invResDPCM( const TransformUnit &tu, const ComponentID &compID, CoeffBuf &d
   const TCoeff* coef = &coeffs.buf[0];
   TCoeff* dst = &dstBuf.buf[0];
 
-  if( isLuma(compID) ? tu.cu->bdpcmMode == 1 : tu.cu->bdpcmModeChroma == 1)
+  if (tu.cu->getBdpcmMode(compID) == BdpcmMode::HOR)
   {
     for( int y = 0; y < hgt; y++ )
     {
@@ -193,7 +193,7 @@ void fwdResDPCM( TransformUnit &tu, const ComponentID &compID )
 
   TCoeff* coef = &coeffs.buf[0];
 
-  if( isLuma(compID) ? tu.cu->bdpcmMode == 1 : tu.cu->bdpcmModeChroma == 1)
+  if (tu.cu->getBdpcmMode(compID) == BdpcmMode::HOR)
   {
     for( int y = 0; y < hgt; y++ )
     {
@@ -377,7 +377,7 @@ void Quant::dequant(const TransformUnit &tu,
   const int             channelBitDepth    = sps->getBitDepth(toChannelType(compID));
 
   const TCoeff          *coef;
-  if ((tu.cu->bdpcmMode && isLuma(compID)) || ( tu.cu->bdpcmModeChroma && isChroma(compID) ))
+  if (tu.cu->getBdpcmMode(compID) != BdpcmMode::NONE)
   {
     invResDPCM( tu, compID, dstCoeff );
     coef = piCoef;
@@ -941,7 +941,7 @@ void Quant::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf 
   const int  maxLog2TrDynamicRange = sps.getMaxLog2TrDynamicRange(toChannelType(compID));
 
   {
-    CoeffCodingContext cctx(tu, compID, tu.cs->slice->getSignDataHidingEnabledFlag());
+    CoeffCodingContext cctx(tu, compID, tu.cs->slice->getSignDataHidingEnabledFlag(), tu.cu->getBdpcmMode(compID));
     const TCoeff entropyCodingMinimum = -(1 << maxLog2TrDynamicRange);
     const TCoeff entropyCodingMaximum =  (1 << maxLog2TrDynamicRange) - 1;
 
@@ -996,7 +996,7 @@ void Quant::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf 
 
       piQCoef.buf[uiBlockPos] = Clip3<TCoeff>( entropyCodingMinimum, entropyCodingMaximum, quantisedCoefficient );
     } // for n
-    if ((tu.cu->bdpcmMode && isLuma(compID)) || (tu.cu->bdpcmModeChroma && isChroma(compID)) )
+    if (cctx.bdpcm() != BdpcmMode::NONE)
     {
       fwdResDPCM( tu, compID );
     }

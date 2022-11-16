@@ -988,7 +988,7 @@ void TrQuant::transformNxN(TransformUnit &tu, const ComponentID &compID, const Q
     return;
   }
 
-  if ((tu.cu->bdpcmMode && isLuma(compID)) || (!isLuma(compID) && tu.cu->bdpcmModeChroma))
+  if (tu.cu->getBdpcmMode(compID) != BdpcmMode::NONE)
   {
     tu.mtsIdx[compID] = MTS_SKIP;
   }

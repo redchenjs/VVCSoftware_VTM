@@ -331,8 +331,8 @@ void CodingUnit::initData()
   affineType        = 0;
   colorTransform = false;
   geoFlag           = false;
-  bdpcmMode         = 0;
-  bdpcmModeChroma   = 0;
+  bdpcmMode         = BdpcmMode::NONE;
+  bdpcmModeChroma   = BdpcmMode::NONE;
   qp                = 0;
   chromaQpAdj       = 0;
   rootCbf           = true;

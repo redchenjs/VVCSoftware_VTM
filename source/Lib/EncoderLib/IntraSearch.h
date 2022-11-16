@@ -357,11 +357,11 @@ private:
   ModeInfo   m_savedRdModeList[ NUM_LFNST_NUM_PER_SET ][ NUM_LUMA_MODE ];
   int32_t    m_savedNumRdModes[ NUM_LFNST_NUM_PER_SET ];
 
-  ModeInfo m_savedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  char     m_savedBDPCMModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  double   m_savedRdCostFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  int      m_numSavedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2];
-  int      m_savedRdModeIdx;
+  ModeInfo  m_savedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  BdpcmMode m_savedBDPCMModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  double    m_savedRdCostFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  int       m_numSavedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2];
+  int       m_savedRdModeIdx;
 
   static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_savedRdModeListLFNST;
   static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_savedHadModeListLFNST;
@@ -430,7 +430,8 @@ public:
   uint64_t xFracModeBitsIntra(PredictionUnit &pu, const uint32_t &mode, const ChannelType &compID);
   void invalidateBestModeCost     () { for( int i = 0; i < NUM_LFNST_NUM_PER_SET; i++ ) m_bestModeCostValid[ i ] = false; };
 
-  void sortRdModeListFirstColorSpace(ModeInfo mode, double cost, char bdpcmMode, ModeInfo* rdModeList, double* rdCostList, char* bdpcmModeList, int& candNum);
+  void sortRdModeListFirstColorSpace(ModeInfo mode, double cost, BdpcmMode bdpcmMode, ModeInfo *rdModeList,
+                                     double *rdCostList, BdpcmMode *bdpcmModeList, int &candNum);
   void invalidateBestRdModeFirstColorSpace();
   void setSavedRdModeIdx(int idx) { m_savedRdModeIdx = idx; }
 
