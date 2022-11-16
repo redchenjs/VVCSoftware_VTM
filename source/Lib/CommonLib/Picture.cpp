@@ -636,9 +636,11 @@ void Picture::sampleRateConv( const std::pair<int, int> scalingRatio, const std:
                               const CPelBuf& beforeScale, const int beforeScaleLeftOffset, const int beforeScaleTopOffset,
                               const PelBuf& afterScale, const int afterScaleLeftOffset, const int afterScaleTopOffset,
                               const int bitDepth, const bool useLumaFilter, const bool downsampling,
+#if !JVET_AB0081
                               const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
-#if JVET_AB0081
-                            , const bool rescaleForDisplay, const int upscaleFilterForDisplay
+#else
+                              const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag,
+                              const bool rescaleForDisplay, const int upscaleFilterForDisplay
 #endif
 )
 {
@@ -825,9 +827,11 @@ void Picture::rescalePicture( const std::pair<int, int> scalingRatio,
                               const CPelUnitBuf& beforeScaling, const Window& scalingWindowBefore,
                               const PelUnitBuf& afterScaling, const Window& scalingWindowAfter,
                               const ChromaFormat chromaFormatIDC, const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
+#if !JVET_AB0081
                               const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
-#if JVET_AB0081
-                            , bool rescaleForDisplay, int upscaleFilterForDisplay
+#else
+                              const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
+                              bool rescaleForDisplay, int upscaleFilterForDisplay
 #endif
 )
 {
@@ -841,9 +845,11 @@ void Picture::rescalePicture( const std::pair<int, int> scalingRatio,
                     beforeScale, scalingWindowBefore.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ), scalingWindowBefore.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
                     afterScale, scalingWindowAfter.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ), scalingWindowAfter.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
                     bitDepths.recon[toChannelType(compID)], downsampling || useLumaFilter ? true : isLuma( compID ), downsampling,
+#if !JVET_AB0081
                     isLuma( compID ) ? 1 : horCollocatedChromaFlag, isLuma( compID ) ? 1 : verCollocatedChromaFlag
-#if JVET_AB0081
-                  , rescaleForDisplay, upscaleFilterForDisplay
+#else
+                    isLuma(compID) ? 1 : horCollocatedChromaFlag, isLuma(compID) ? 1 : verCollocatedChromaFlag,
+                    rescaleForDisplay, upscaleFilterForDisplay
 #endif
     );
   }

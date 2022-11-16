@@ -175,9 +175,11 @@ struct Picture : public UnitArea
                                 const CPelBuf& beforeScale, const int beforeScaleLeftOffset, const int beforeScaleTopOffset,
                                 const PelBuf& afterScale, const int afterScaleLeftOffset, const int afterScaleTopOffset,
                                 const int bitDepth, const bool useLumaFilter, const bool downsampling,
+#if !JVET_AB0081
                                 const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
-#if JVET_AB0081
-                              , const bool rescaleForDisplay, const int upscaleFilterForDisplay
+#else
+                                const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag,
+                                const bool rescaleForDisplay, const int upscaleFilterForDisplay
 #endif
   );
 
@@ -185,9 +187,11 @@ struct Picture : public UnitArea
                                 const CPelUnitBuf& beforeScaling, const Window& scalingWindowBefore,
                                 const PelUnitBuf& afterScaling, const Window& scalingWindowAfter,
                                 const ChromaFormat chromaFormatIDC, const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
+#if !JVET_AB0081
                                 const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
-#if JVET_AB0081
-                              , bool rescaleForDisplay = false, int upscaleFilterForDisplay = 0
+#else
+                                const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
+                                bool rescaleForDisplay = false, int upscaleFilterForDisplay = 0
 #endif
   );
 

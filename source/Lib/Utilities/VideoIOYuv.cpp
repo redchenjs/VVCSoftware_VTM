@@ -1418,11 +1418,11 @@ void VideoIOYuv::ColourSpaceConvert(const CPelUnitBuf &src, PelUnitBuf &dest, co
   }
 }
 
-bool VideoIOYuv::writeUpscaledPicture( const SPS& sps, const PPS& pps, const CPelUnitBuf& pic, const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode, int outputChoice, ChromaFormat format, const bool bClipToRec709
-#if JVET_AB0081
-  , int upscaleFilterForDisplay
+#if !JVET_AB0081
+bool VideoIOYuv::writeUpscaledPicture( const SPS& sps, const PPS& pps, const CPelUnitBuf& pic, const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode, int outputChoice, ChromaFormat format, const bool bClipToRec709)
+#else
+bool VideoIOYuv::writeUpscaledPicture(const SPS& sps, const PPS& pps, const CPelUnitBuf& pic, const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode, int outputChoice, ChromaFormat format, const bool bClipToRec709, int upscaleFilterForDisplay)
 #endif
-)
 {
   ChromaFormat chromaFormatIDC = sps.getChromaFormatIdc();
   bool ret = false;
