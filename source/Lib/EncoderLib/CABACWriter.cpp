@@ -3490,7 +3490,7 @@ void CABACWriter::mip_pred_mode( const PredictionUnit& pu )
 {
   m_binEncoder.encodeBinEP((pu.mipTransposedFlag ? 1 : 0));
 
-  const int numModes = getNumModesMip( pu.Y() );
+  const int numModes = MatrixIntraPrediction::getNumModesMip(pu.Y());
   CHECKD(pu.intraDir[ChannelType::LUMA] < 0 || pu.intraDir[ChannelType::LUMA] >= numModes, "Invalid MIP mode");
   xWriteTruncBinCode(pu.intraDir[ChannelType::LUMA], numModes);
 

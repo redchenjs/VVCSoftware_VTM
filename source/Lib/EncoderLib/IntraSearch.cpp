@@ -913,7 +913,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
             if (testMip && !supportedMipBlkSize)
             {
               // avoid estimation for unsupported blk sizes
-              const int transpOff    = getNumModesMip(pu.Y());
+              const int transpOff    = MatrixIntraPrediction::getNumModesMip(pu.Y());
               const int numModesFull = (transpOff << 1);
               for (uint32_t modeFull = 0; modeFull < numModesFull; modeFull++)
               {
@@ -935,7 +935,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
               initIntraPatternChType(cu, pu.Y());
               initIntraMip(pu, pu.Y());
 
-              const int transpOff    = getNumModesMip(pu.Y());
+              const int transpOff    = MatrixIntraPrediction::getNumModesMip(pu.Y());
               const int numModesFull = (transpOff << 1);
               for (uint32_t modeFull = 0; modeFull < numModesFull; modeFull++)
               {
@@ -5803,7 +5803,8 @@ void IntraSearch::reduceHadCandList(static_vector<T, N>& candModeList, static_ve
   if ((pu.lwidth() > 8 && pu.lheight() > 8))
   {
     // Sort MIP candidates by Hadamard cost
-    const int transpOff = getNumModesMip( pu.Y() );
+    const int transpOff = MatrixIntraPrediction::getNumModesMip(pu.Y());
+
     static_vector<uint8_t, FAST_UDI_MAX_RDMODE_NUM> sortedMipModes(0);
     static_vector<double, FAST_UDI_MAX_RDMODE_NUM> sortedMipCost(0);
     for( uint8_t mode : { 0, 1, 2 } )

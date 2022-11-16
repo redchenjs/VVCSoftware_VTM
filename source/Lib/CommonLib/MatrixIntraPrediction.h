@@ -44,51 +44,60 @@
 static constexpr int MIP_MAX_INPUT_SIZE             =  8;
 static constexpr int MIP_MAX_REDUCED_OUTPUT_SAMPLES = 64;
 
-
 class MatrixIntraPrediction
 {
 public:
   MatrixIntraPrediction();
 
   void prepareInputForPred(const CPelBuf &pSrc, const Area &block, const int bitDepth, const ComponentID compId);
-  void predBlock(int *const result, const int modeIdx, const bool transpose, const int bitDepth,
+  void predBlock(Pel *const result, const int modeIdx, const bool transpose, const int bitDepth,
                  const ComponentID compId);
 
-  private:
-    ComponentID m_component;
+  static int getNumModesMip(const Size &block);
 
-    static_vector<int, MIP_MAX_INPUT_SIZE> m_reducedBoundary;           // downsampled             boundary of a block
-    static_vector<int, MIP_MAX_INPUT_SIZE> m_reducedBoundaryTransposed; // downsampled, transposed boundary of a block
-    int                                    m_inputOffset;
-    int                                    m_inputOffsetTransp;
-    static_vector<int, MIP_MAX_WIDTH>      m_refSamplesTop;             // top  reference samples for upsampling
-    static_vector<int, MIP_MAX_HEIGHT>     m_refSamplesLeft;            // left reference samples for upsampling
+private:
+  enum class MipSizeId
+  {
+    S0 = 0,
+    S1,
+    S2,
+    NUM
+  };
 
-    Size m_blockSize;
-    int  m_sizeId;
-    int  m_reducedBdrySize;
-    int  m_reducedPredSize;
-    unsigned int m_upsmpFactorHor;
-    unsigned int m_upsmpFactorVer;
+  static MipSizeId getMipSizeId(const Size &block);
 
-    void initPredBlockParams(const Size& block);
+  ComponentID m_component;
 
-    static void boundaryDownsampling1D(int* reducedDst, const int* const fullSrc, const SizeType srcLen, const SizeType dstLen);
+  static_vector<Pel, MIP_MAX_INPUT_SIZE> m_reducedBoundary;             // downsampled             boundary of a block
+  static_vector<Pel, MIP_MAX_INPUT_SIZE> m_reducedBoundaryTransposed;   // downsampled, transposed boundary of a block
+  int                                    m_inputOffset;
+  int                                    m_inputOffsetTransp;
+  static_vector<Pel, MIP_MAX_WIDTH>      m_refSamplesTop;    // top  reference samples for upsampling
+  static_vector<Pel, MIP_MAX_HEIGHT>     m_refSamplesLeft;   // left reference samples for upsampling
 
-    void predictionUpsampling( int* const dst, const int* const src ) const;
-    static void predictionUpsampling1D( int* const dst, const int* const src, const int* const bndry,
-                                        const SizeType srcSizeUpsmpDim, const SizeType srcSizeOrthDim,
-                                        const SizeType srcStep, const SizeType srcStride,
-                                        const SizeType dstStep, const SizeType dstStride,
-                                        const SizeType bndryStep,
-                                        const unsigned int upsmpFactor );
+  Size         m_blockSize;
+  MipSizeId    m_sizeId;
+  int          m_reducedBdrySize;
+  int          m_reducedPredSize;
+  unsigned int m_upsmpFactorHor;
+  unsigned int m_upsmpFactorVer;
 
-    const uint8_t* getMatrixData(const int modeIdx) const;
+  void initPredBlockParams(const Size &block);
 
+  static void boundaryDownsampling1D(Pel *reducedDst, const Pel *const fullSrc, const SizeType srcLen,
+                                     const SizeType dstLen);
 
-    void computeReducedPred( int*const result, const int* const input,
-                             const uint8_t* matrix,
-                             const bool transpose, const int bitDepth );
+  void        predictionUpsampling(Pel *const dst, const Pel *const src) const;
+  static void predictionUpsampling1D(Pel *const dst, const Pel *const src, const Pel *const bndry,
+                                     const SizeType srcSizeUpsmpDim, const SizeType srcSizeOrthDim,
+                                     const SizeType srcStep, const SizeType srcStride, const SizeType dstStep,
+                                     const SizeType dstStride, const SizeType bndryStep,
+                                     const unsigned int upsmpFactor);
+
+  const uint8_t *getMatrixData(const int modeIdx) const;
+
+  void computeReducedPred(Pel *const result, const Pel *const input, const uint8_t *matrix, const bool transpose,
+                          const int bitDepth);
   };
 
 #endif //__MATRIXINTRAPPREDICTION__

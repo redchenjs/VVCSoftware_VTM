@@ -41,21 +41,20 @@
 #include "UnitTools.h"
 #include "MipData.h"
 
-
-MatrixIntraPrediction::MatrixIntraPrediction():
-  m_component(MAX_NUM_COMPONENT),
-  m_reducedBoundary          (MIP_MAX_INPUT_SIZE),
-  m_reducedBoundaryTransposed(MIP_MAX_INPUT_SIZE),
-  m_inputOffset      ( 0 ),
-  m_inputOffsetTransp( 0 ),
-  m_refSamplesTop (MIP_MAX_WIDTH),
-  m_refSamplesLeft(MIP_MAX_HEIGHT),
-  m_blockSize( 0, 0 ),
-  m_sizeId( 0 ),
-  m_reducedBdrySize( 0 ),
-  m_reducedPredSize( 0 ),
-  m_upsmpFactorHor( 0 ),
-  m_upsmpFactorVer( 0 )
+MatrixIntraPrediction::MatrixIntraPrediction()
+  : m_component(MAX_NUM_COMPONENT)
+  , m_reducedBoundary(MIP_MAX_INPUT_SIZE)
+  , m_reducedBoundaryTransposed(MIP_MAX_INPUT_SIZE)
+  , m_inputOffset(0)
+  , m_inputOffsetTransp(0)
+  , m_refSamplesTop(MIP_MAX_WIDTH)
+  , m_refSamplesLeft(MIP_MAX_HEIGHT)
+  , m_blockSize(0, 0)
+  , m_sizeId(MipSizeId::S0)
+  , m_reducedBdrySize(0)
+  , m_reducedPredSize(0)
+  , m_upsmpFactorHor(0)
+  , m_upsmpFactorVer(0)
 {
 }
 
@@ -85,14 +84,14 @@ void MatrixIntraPrediction::prepareInputForPred(const CPelBuf &pSrc, const Area 
   m_reducedBoundary          .resize( inputSize );
   m_reducedBoundaryTransposed.resize( inputSize );
 
-  int* const topReduced = m_reducedBoundary.data();
+  Pel *const topReduced = m_reducedBoundary.data();
   boundaryDownsampling1D( topReduced, m_refSamplesTop.data(), block.width, m_reducedBdrySize );
 
-  int* const leftReduced = m_reducedBoundary.data() + m_reducedBdrySize;
+  Pel *const leftReduced = m_reducedBoundary.data() + m_reducedBdrySize;
   boundaryDownsampling1D( leftReduced, m_refSamplesLeft.data(), block.height, m_reducedBdrySize );
 
-  int* const leftReducedTransposed = m_reducedBoundaryTransposed.data();
-  int* const topReducedTransposed  = m_reducedBoundaryTransposed.data() + m_reducedBdrySize;
+  Pel *const leftReducedTransposed = m_reducedBoundaryTransposed.data();
+  Pel *const topReducedTransposed  = m_reducedBoundaryTransposed.data() + m_reducedBdrySize;
   for( int x = 0; x < m_reducedBdrySize; x++ )
   {
     topReducedTransposed[x] = topReduced[x];
@@ -107,7 +106,7 @@ void MatrixIntraPrediction::prepareInputForPred(const CPelBuf &pSrc, const Area 
   m_inputOffset       = m_reducedBoundary[0];
   m_inputOffsetTransp = m_reducedBoundaryTransposed[0];
 
-  const bool hasFirstCol = (m_sizeId < 2);
+  const bool hasFirstCol = (m_sizeId < MipSizeId::S2);
   m_reducedBoundary          [0] = hasFirstCol ? ((1 << (bitDepth - 1)) - m_inputOffset      ) : 0; // first column of matrix not needed for large blocks
   m_reducedBoundaryTransposed[0] = hasFirstCol ? ((1 << (bitDepth - 1)) - m_inputOffsetTransp) : 0;
   for (int i = 1; i < inputSize; i++)
@@ -117,7 +116,7 @@ void MatrixIntraPrediction::prepareInputForPred(const CPelBuf &pSrc, const Area 
   }
 }
 
-void MatrixIntraPrediction::predBlock(int *const result, const int modeIdx, const bool transpose, const int bitDepth,
+void MatrixIntraPrediction::predBlock(Pel *const result, const int modeIdx, const bool transpose, const int bitDepth,
                                       const ComponentID compId)
 {
   CHECK(m_component != compId, "Boundary has not been prepared for this component.");
@@ -126,9 +125,11 @@ void MatrixIntraPrediction::predBlock(int *const result, const int modeIdx, cons
 
   const uint8_t* matrix = getMatrixData(modeIdx);
 
-  static_vector<int, MIP_MAX_REDUCED_OUTPUT_SAMPLES> bufReducedPred( m_reducedPredSize * m_reducedPredSize );
-  int* const       reducedPred     = needUpsampling ? bufReducedPred.data() : result;
-  const int* const reducedBoundary = transpose ? m_reducedBoundaryTransposed.data() : m_reducedBoundary.data();
+  static_vector<Pel, MIP_MAX_REDUCED_OUTPUT_SAMPLES> bufReducedPred(m_reducedPredSize * m_reducedPredSize);
+
+  Pel *const                                         reducedPred = needUpsampling ? bufReducedPred.data() : result;
+  const Pel *const reducedBoundary = transpose ? m_reducedBoundaryTransposed.data() : m_reducedBoundary.data();
+
   computeReducedPred(reducedPred, reducedBoundary, matrix, transpose, bitDepth);
   if( needUpsampling )
   {
@@ -136,19 +137,49 @@ void MatrixIntraPrediction::predBlock(int *const result, const int modeIdx, cons
   }
 }
 
+MatrixIntraPrediction::MipSizeId MatrixIntraPrediction::getMipSizeId(const Size &block)
+{
+  if (block.width == 4 && block.height == 4)
+  {
+    return MipSizeId::S0;
+  }
+  else if (block.width == 4 || block.height == 4 || (block.width == 8 && block.height == 8))
+  {
+    return MipSizeId::S1;
+  }
+  else
+  {
+    return MipSizeId::S2;
+  }
+}
+
+int MatrixIntraPrediction::getNumModesMip(const Size &block)
+{
+  switch (getMipSizeId(block))
+  {
+  case MipSizeId::S0:
+    return 16;
+
+  case MipSizeId::S1:
+    return 8;
+
+  case MipSizeId::S2:
+  default:
+    return 6;
+  }
+}
 
 void MatrixIntraPrediction::initPredBlockParams(const Size& block)
 {
   m_blockSize = block;
   // init size index
-  m_sizeId = getMipSizeId( m_blockSize );
+  m_sizeId = getMipSizeId(block);
 
   // init reduced boundary size
-  m_reducedBdrySize = (m_sizeId == 0) ? 2 : 4;
+  m_reducedBdrySize = (m_sizeId == MipSizeId::S0) ? 2 : 4;
 
   // init reduced prediction size
-  m_reducedPredSize = ( m_sizeId < 2 ) ? 4 : 8;
-
+  m_reducedPredSize = (m_sizeId < MipSizeId::S2) ? 4 : 8;
 
   // init upsampling factors
   m_upsmpFactorHor = m_blockSize.width  / m_reducedPredSize;
@@ -158,9 +189,8 @@ void MatrixIntraPrediction::initPredBlockParams(const Size& block)
   CHECKD( (m_upsmpFactorVer < 1) || ((m_upsmpFactorVer & (m_upsmpFactorVer - 1)) != 0), "Need power of two vertical upsampling factor." );
 }
 
-
-
-void MatrixIntraPrediction::boundaryDownsampling1D(int* reducedDst, const int* const fullSrc, const SizeType srcLen, const SizeType dstLen)
+void MatrixIntraPrediction::boundaryDownsampling1D(Pel *reducedDst, const Pel *const fullSrc, const SizeType srcLen,
+                                                   const SizeType dstLen)
 {
   if (dstLen < srcLen)
   {
@@ -190,28 +220,26 @@ void MatrixIntraPrediction::boundaryDownsampling1D(int* reducedDst, const int* c
   }
 }
 
-
-void MatrixIntraPrediction::predictionUpsampling1D(int* const dst, const int* const src, const int* const bndry,
+void MatrixIntraPrediction::predictionUpsampling1D(Pel *const dst, const Pel *const src, const Pel *const bndry,
                                                    const SizeType srcSizeUpsmpDim, const SizeType srcSizeOrthDim,
                                                    const SizeType srcStep, const SizeType srcStride,
                                                    const SizeType dstStep, const SizeType dstStride,
-                                                   const SizeType bndryStep,
-                                                   const unsigned int upsmpFactor )
+                                                   const SizeType bndryStep, const unsigned int upsmpFactor)
 {
   const int log2UpsmpFactor = floorLog2( upsmpFactor );
   CHECKD( upsmpFactor <= 1, "Upsampling factor must be at least 2." );
   const int roundingOffset = 1 << (log2UpsmpFactor - 1);
 
   SizeType idxOrthDim = 0;
-  const int* srcLine = src;
-  int* dstLine = dst;
-  const int* bndryLine = bndry + bndryStep - 1;
+  const Pel *srcLine    = src;
+  Pel       *dstLine    = dst;
+  const Pel *bndryLine  = bndry + bndryStep - 1;
   while( idxOrthDim < srcSizeOrthDim )
   {
     SizeType idxUpsmpDim = 0;
-    const int* before = bndryLine;
-    const int* behind = srcLine;
-    int* currDst = dstLine;
+    const Pel *before      = bndryLine;
+    const Pel *behind      = srcLine;
+    Pel       *currDst     = dstLine;
     while( idxUpsmpDim < srcSizeUpsmpDim )
     {
       SizeType pos = 1;
@@ -239,15 +267,14 @@ void MatrixIntraPrediction::predictionUpsampling1D(int* const dst, const int* co
   }
 }
 
-
-void MatrixIntraPrediction::predictionUpsampling( int* const dst, const int* const src ) const
+void MatrixIntraPrediction::predictionUpsampling(Pel *const dst, const Pel *const src) const
 {
-  const int* verSrc     = src;
+  const Pel *verSrc     = src;
   SizeType   verSrcStep = m_blockSize.width;
 
   if( m_upsmpFactorHor > 1 )
   {
-    int* const horDst = dst + (m_upsmpFactorVer - 1) * m_blockSize.width;
+    Pel *const horDst = dst + (m_upsmpFactorVer - 1) * m_blockSize.width;
     verSrc = horDst;
     verSrcStep *= m_upsmpFactorVer;
 
@@ -270,41 +297,49 @@ const uint8_t* MatrixIntraPrediction::getMatrixData(const int modeIdx) const
 {
   switch( m_sizeId )
   {
-  case 0: return &mipMatrix4x4[modeIdx][0][0];
+  case MipSizeId::S0:
+    return &mipMatrix4x4[modeIdx][0][0];
 
-  case 1: return &mipMatrix8x8[modeIdx][0][0];
+  case MipSizeId::S1:
+    return &mipMatrix8x8[modeIdx][0][0];
 
-  case 2: return &mipMatrix16x16[modeIdx][0][0];
-
-  default: THROW( "Invalid mipSizeId" );
+  case MipSizeId::S2:
+  default:
+    return &mipMatrix16x16[modeIdx][0][0];
   }
 }
 
-void MatrixIntraPrediction::computeReducedPred( int*const result, const int* const input,
-                                                const uint8_t* matrix,
-                                                const bool transpose, const int bitDepth )
+void MatrixIntraPrediction::computeReducedPred(Pel *const result, const Pel *const input, const uint8_t *matrix,
+                                               const bool transpose, const int bitDepth)
 {
   const int inputSize = 2 * m_reducedBdrySize;
 
   // use local buffer for transposed result
-  static_vector<int, MIP_MAX_REDUCED_OUTPUT_SAMPLES> resBufTransposed( m_reducedPredSize * m_reducedPredSize );
-  int*const resPtr = (transpose) ? resBufTransposed.data() : result;
+  static_vector<Pel, MIP_MAX_REDUCED_OUTPUT_SAMPLES> resBufTransposed(m_reducedPredSize * m_reducedPredSize);
+
+  Pel *const resPtr = (transpose) ? resBufTransposed.data() : result;
 
   int sum = 0;
-  for( int i = 0; i < inputSize; i++ ) { sum += input[i]; }
+  for (int i = 0; i < inputSize; i++)
+  {
+    sum += input[i];
+  }
   const int offset = (1 << (MIP_SHIFT_MATRIX - 1)) - MIP_OFFSET_MATRIX * sum;
   CHECK( inputSize != 4 * (inputSize >> 2), "Error, input size not divisible by four" );
 
   const uint8_t *weight = matrix;
   const int   inputOffset = transpose ? m_inputOffsetTransp : m_inputOffset;
 
-  const bool redSize = (m_sizeId == 2);
+  const bool redSize = (m_sizeId == MipSizeId::S2);
   int posRes = 0;
   for( int y = 0; y < m_reducedPredSize; y++ )
   {
     for( int x = 0; x < m_reducedPredSize; x++ )
     {
-      if( redSize ) weight -= 1;
+      if (redSize)
+      {
+        weight -= 1;
+      }
       int tmp0 = redSize ? 0 : (input[0] * weight[0]);
       int tmp1 = input[1] * weight[1];
       int tmp2 = input[2] * weight[2];

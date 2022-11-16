@@ -1840,7 +1840,7 @@ void IntraPrediction::initIntraMip( const PredictionUnit &pu, const CompArea &ar
 void IntraPrediction::predIntraMip( const ComponentID compId, PelBuf &piPred, const PredictionUnit &pu )
 {
   CHECK( piPred.width > MIP_MAX_WIDTH || piPred.height > MIP_MAX_HEIGHT, "Error: block size not supported for MIP" );
-  CHECK( piPred.width != (1 << floorLog2(piPred.width)) || piPred.height != (1 << floorLog2(piPred.height)), "Error: expecting blocks of size 2^M x 2^N" );
+  CHECK(!isPowerOf2(piPred.width) || !isPowerOf2(piPred.height), "Error: expecting blocks of size 2^M x 2^N");
 
   // generate mode-specific prediction
   uint32_t modeIdx       = MAX_NUM_MIP_MODE;
@@ -1862,9 +1862,9 @@ void IntraPrediction::predIntraMip( const ComponentID compId, PelBuf &piPred, co
   }
   const int bitDepth = pu.cu->slice->getSPS()->getBitDepth(toChannelType(compId));
 
-  CHECK(modeIdx >= getNumModesMip(piPred), "Error: Wrong MIP mode index");
+  CHECK(modeIdx >= MatrixIntraPrediction::getNumModesMip(piPred), "Error: Wrong MIP mode index");
 
-  static_vector<int, MIP_MAX_WIDTH* MIP_MAX_HEIGHT> predMip( piPred.width * piPred.height );
+  static_vector<Pel, MIP_MAX_WIDTH * MIP_MAX_HEIGHT> predMip(piPred.width * piPred.height);
   m_matrixIntraPred.predBlock(predMip.data(), modeIdx, transposeFlag, bitDepth, compId);
 
   for( int y = 0; y < piPred.height; y++ )
