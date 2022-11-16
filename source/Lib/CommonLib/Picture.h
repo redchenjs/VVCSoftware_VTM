@@ -175,13 +175,21 @@ struct Picture : public UnitArea
                                 const CPelBuf& beforeScale, const int beforeScaleLeftOffset, const int beforeScaleTopOffset,
                                 const PelBuf& afterScale, const int afterScaleLeftOffset, const int afterScaleTopOffset,
                                 const int bitDepth, const bool useLumaFilter, const bool downsampling,
-                                const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag );
+                                const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
+#if JVET_AB0081
+                              , const bool rescaleForDisplay, const int upscaleFilterForDisplay
+#endif
+  );
 
   static void   rescalePicture( const std::pair<int, int> scalingRatio,
                                 const CPelUnitBuf& beforeScaling, const Window& scalingWindowBefore,
                                 const PelUnitBuf& afterScaling, const Window& scalingWindowAfter,
                                 const ChromaFormat chromaFormatIDC, const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
-                                const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag );
+                                const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
+#if JVET_AB0081
+                              , bool rescaleForDisplay = false, int upscaleFilterForDisplay = 0
+#endif
+  );
 
 private:
   Window        m_conformanceWindow;

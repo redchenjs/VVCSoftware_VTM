@@ -57,6 +57,7 @@
 #if JVET_AB0080
 #define JVET_AB0080_CHROMA_QP_FIX                         1 // fix to align chroma QP changes with luma QP changes
 #endif
+#define JVET_AB0081                                       1 // JVET-AB0081: Increased length of filters used for upscaling reconstructed pictures in VTM
 
 //########### place macros to be removed in next cycle below this line ###############
 #define JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC 1

@@ -1021,6 +1021,11 @@ POC period at which resolution is changed.
 Picture output options: output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for reference picture resampling. When GOPBasedRPR is true it will be set to 2.
 \\
 
+\Option{UpscaleFilterForDisplay} &
+%\ShortOption{\None} &
+\Default{1} &
+Filters used for upscaling reconstruction to full resolution (2: ECM 12-tap luma and 6-tap chroma MC filters, 1: Alternative 12-tap luma and 6-tap chroma filters, 0: VVC 8-tap luma and 4-tap chroma MC filters).
+\\
 
 \end{OptionTableNoShorthand}
 
@@ -5900,6 +5905,12 @@ Defines the maximum temporal layer to be decoded. If -1, then all layers are dec
 \Default{\NotSet} &
 Specifies the targetDecLayerIdSet file name. The file would contain white-space separated LayerId values of the layers that are to be decoded.
 Omitting the parameter, or using a value of -1 in the file decodes all layers.
+\\
+
+\Option{UpscaleFilterForDisplay} &
+%\ShortOption{\None} &
+\Default{1} &
+Filters used for upscaling reconstruction to full resolution (2: ECM 12-tap luma and 6-tap chroma MC filters, 1: Alternative 12-tap luma and 6-tap chroma filters, 0: VVC 8-tap luma and 4-tap chroma MC filters).
 \\
 
 \Option{OutputBitDepth (-d)} &
