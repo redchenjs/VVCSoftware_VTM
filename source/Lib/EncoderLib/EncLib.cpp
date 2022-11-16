@@ -218,7 +218,9 @@ void EncLib::init(AUWriterIf *auWriterIf)
 
     pps.setPicWidthInLumaSamples( width );
     pps.setPicHeightInLumaSamples( height );
-
+#if JVET_AB0080_CHROMA_QP_FIX
+    pps.setSliceChromaQpFlag(true);
+#endif
     Window conformanceWindow;
     conformanceWindow.setWindow( 0, ( width - scaledWidth ) / SPS::getWinUnitX( sps0.getChromaFormatIdc() ), 0, ( height - scaledHeight ) / SPS::getWinUnitY( sps0.getChromaFormatIdc() ) );
     if (pps.getPicWidthInLumaSamples() == sps0.getMaxPicWidthInLumaSamples() && pps.getPicHeightInLumaSamples() == sps0.getMaxPicHeightInLumaSamples())
@@ -282,6 +284,162 @@ void EncLib::init(AUWriterIf *auWriterIf)
       pps.setWrapAroundOffset                   ( 0 );
     }
   }
+#if JVET_AB0080
+  if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag && (m_iQP >= getGOPBasedRPRQPThreshold()))
+  {
+    PPS& pps = *(m_ppsMap.allocatePS(ENC_PPS_ID_RPR2));
+    Window& inputScalingWindow = pps0.getScalingWindow();
+    int scaledWidth = int((pps0.getPicWidthInLumaSamples() - SPS::getWinUnitX(sps0.getChromaFormatIdc()) * (inputScalingWindow.getWindowLeftOffset() + inputScalingWindow.getWindowRightOffset())) / m_scalingRatioHor2);
+    int minSizeUnit = std::max(8, 1 << sps0.getLog2MinCodingBlockSize());
+    int temp = scaledWidth / minSizeUnit;
+    int width = (scaledWidth - (temp * minSizeUnit) > 0 ? temp + 1 : temp) * minSizeUnit;
+
+    int scaledHeight = int((pps0.getPicHeightInLumaSamples() - SPS::getWinUnitY(sps0.getChromaFormatIdc()) * (inputScalingWindow.getWindowTopOffset() + inputScalingWindow.getWindowBottomOffset())) / m_scalingRatioVer2);
+    temp = scaledHeight / minSizeUnit;
+    int height = (scaledHeight - (temp * minSizeUnit) > 0 ? temp + 1 : temp) * minSizeUnit;
+
+    pps.setPicWidthInLumaSamples(width);
+    pps.setPicHeightInLumaSamples(height);
+#if JVET_AB0080_CHROMA_QP_FIX
+    pps.setSliceChromaQpFlag(true);
+#endif
+
+    Window conformanceWindow;
+    conformanceWindow.setWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0, (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
+    if (pps.getPicWidthInLumaSamples() == sps0.getMaxPicWidthInLumaSamples() && pps.getPicHeightInLumaSamples() == sps0.getMaxPicHeightInLumaSamples())
+    {
+      pps.setConformanceWindow(sps0.getConformanceWindow());
+      pps.setConformanceWindowFlag(false);
+    }
+    else
+    {
+      pps.setConformanceWindow(conformanceWindow);
+      pps.setConformanceWindowFlag(pps.getConformanceWindow().getWindowEnabledFlag());
+    }
+
+    Window scalingWindow;
+    scalingWindow.setWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0, (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
+    pps.setScalingWindow(scalingWindow);
+
+    //register the width/height of the current pic into reference SPS
+    if (!sps0.getPPSValidFlag(pps.getPPSId()))
+    {
+      sps0.setPPSValidFlag(pps.getPPSId(), true);
+      sps0.setScalingWindowSizeInPPS(pps.getPPSId(), scaledWidth, scaledHeight);
+    }
+    int curSeqMaxPicWidthY = sps0.getMaxPicWidthInLumaSamples();    // sps_pic_width_max_in_luma_samples
+    int curSeqMaxPicHeightY = sps0.getMaxPicHeightInLumaSamples();  // sps_pic_height_max_in_luma_samples
+    int curPicWidthY = width;                                       // pps_pic_width_in_luma_samples
+    int curPicHeightY = height;                                     // pps_pic_height_in_luma_samples
+    int max8MinCbSizeY = std::max((int)8, (1 << sps0.getLog2MinCodingBlockSize())); // Max(8, MinCbSizeY)
+                                                                                    //Warning message of potential scaling window size violation
+    for (int i = 0; i < 64; i++)
+    {
+      if (sps0.getPPSValidFlag(i))
+      {
+        if ((scaledWidth * curSeqMaxPicWidthY) < sps0.getScalingWindowSizeInPPS(i).width * (curPicWidthY - max8MinCbSizeY))
+          printf("Potential violation: (curScaledWIdth * curSeqMaxPicWidthY) should be greater than or equal to refScaledWidth * (curPicWidthY - max(8, MinCbSizeY)\n");
+        if ((scaledHeight * curSeqMaxPicHeightY) < sps0.getScalingWindowSizeInPPS(i).height * (curPicHeightY - max8MinCbSizeY))
+          printf("Potential violation: (curScaledHeight * curSeqMaxPicHeightY) should be greater than or equal to refScaledHeight * (curPicHeightY - max(8, MinCbSizeY)\n");
+      }
+    }
+
+    // disable picture partitioning for scaled RPR pictures (slice/tile config only provided for the original resolution)
+    m_noPicPartitionFlag = true;
+
+    xInitPPS(pps, sps0); // will allocate memory for and initialize pps.pcv inside
+
+    if (pps.getWrapAroundEnabledFlag())
+    {
+      int minCbSizeY = (1 << sps0.getLog2MinCodingBlockSize());
+      pps.setPicWidthMinusWrapAroundOffset((pps.getPicWidthInLumaSamples() / minCbSizeY) - (m_wrapAroundOffset * pps.getPicWidthInLumaSamples() / pps0.getPicWidthInLumaSamples() / minCbSizeY));
+      pps.setWrapAroundOffset(minCbSizeY * (pps.getPicWidthInLumaSamples() / minCbSizeY - pps.getPicWidthMinusWrapAroundOffset()));
+
+    }
+    else
+    {
+      pps.setPicWidthMinusWrapAroundOffset(0);
+      pps.setWrapAroundOffset(0);
+    }
+  }
+  if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag && (getBaseQP() >= getGOPBasedRPRQPThreshold()))
+  {
+    PPS& pps = *(m_ppsMap.allocatePS(ENC_PPS_ID_RPR3));
+    Window& inputScalingWindow = pps0.getScalingWindow();
+    int scaledWidth = int((pps0.getPicWidthInLumaSamples() - SPS::getWinUnitX(sps0.getChromaFormatIdc()) * (inputScalingWindow.getWindowLeftOffset() + inputScalingWindow.getWindowRightOffset())) / m_scalingRatioHor3);
+    int minSizeUnit = std::max(8, 1 << sps0.getLog2MinCodingBlockSize());
+    int temp = scaledWidth / minSizeUnit;
+    int width = (scaledWidth - (temp * minSizeUnit) > 0 ? temp + 1 : temp) * minSizeUnit;
+
+    int scaledHeight = int((pps0.getPicHeightInLumaSamples() - SPS::getWinUnitY(sps0.getChromaFormatIdc()) * (inputScalingWindow.getWindowTopOffset() + inputScalingWindow.getWindowBottomOffset())) / m_scalingRatioVer3);
+    temp = scaledHeight / minSizeUnit;
+    int height = (scaledHeight - (temp * minSizeUnit) > 0 ? temp + 1 : temp) * minSizeUnit;
+
+    pps.setPicWidthInLumaSamples(width);
+    pps.setPicHeightInLumaSamples(height);
+#if JVET_AB0080_CHROMA_QP_FIX
+    pps.setSliceChromaQpFlag(true);
+#endif
+
+    Window conformanceWindow;
+    conformanceWindow.setWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0, (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
+    if (pps.getPicWidthInLumaSamples() == sps0.getMaxPicWidthInLumaSamples() && pps.getPicHeightInLumaSamples() == sps0.getMaxPicHeightInLumaSamples())
+    {
+      pps.setConformanceWindow(sps0.getConformanceWindow());
+      pps.setConformanceWindowFlag(false);
+    }
+    else
+    {
+      pps.setConformanceWindow(conformanceWindow);
+      pps.setConformanceWindowFlag(pps.getConformanceWindow().getWindowEnabledFlag());
+    }
+
+    Window scalingWindow;
+    scalingWindow.setWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0, (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
+    pps.setScalingWindow(scalingWindow);
+
+    //register the width/height of the current pic into reference SPS
+    if (!sps0.getPPSValidFlag(pps.getPPSId()))
+    {
+      sps0.setPPSValidFlag(pps.getPPSId(), true);
+      sps0.setScalingWindowSizeInPPS(pps.getPPSId(), scaledWidth, scaledHeight);
+    }
+    int curSeqMaxPicWidthY = sps0.getMaxPicWidthInLumaSamples();    // sps_pic_width_max_in_luma_samples
+    int curSeqMaxPicHeightY = sps0.getMaxPicHeightInLumaSamples();  // sps_pic_height_max_in_luma_samples
+    int curPicWidthY = width;                                       // pps_pic_width_in_luma_samples
+    int curPicHeightY = height;                                     // pps_pic_height_in_luma_samples
+    int max8MinCbSizeY = std::max((int)8, (1 << sps0.getLog2MinCodingBlockSize())); // Max(8, MinCbSizeY)
+                                                                                    //Warning message of potential scaling window size violation
+    for (int i = 0; i < 64; i++)
+    {
+      if (sps0.getPPSValidFlag(i))
+      {
+        if ((scaledWidth * curSeqMaxPicWidthY) < sps0.getScalingWindowSizeInPPS(i).width * (curPicWidthY - max8MinCbSizeY))
+          printf("Potential violation: (curScaledWIdth * curSeqMaxPicWidthY) should be greater than or equal to refScaledWidth * (curPicWidthY - max(8, MinCbSizeY)\n");
+        if ((scaledHeight * curSeqMaxPicHeightY) < sps0.getScalingWindowSizeInPPS(i).height * (curPicHeightY - max8MinCbSizeY))
+          printf("Potential violation: (curScaledHeight * curSeqMaxPicHeightY) should be greater than or equal to refScaledHeight * (curPicHeightY - max(8, MinCbSizeY)\n");
+      }
+    }
+
+    // disable picture partitioning for scaled RPR pictures (slice/tile config only provided for the original resolution)
+    m_noPicPartitionFlag = true;
+
+    xInitPPS(pps, sps0); // will allocate memory for and initialize pps.pcv inside
+
+    if (pps.getWrapAroundEnabledFlag())
+    {
+      int minCbSizeY = (1 << sps0.getLog2MinCodingBlockSize());
+      pps.setPicWidthMinusWrapAroundOffset((pps.getPicWidthInLumaSamples() / minCbSizeY) - (m_wrapAroundOffset * pps.getPicWidthInLumaSamples() / pps0.getPicWidthInLumaSamples() / minCbSizeY));
+      pps.setWrapAroundOffset(minCbSizeY * (pps.getPicWidthInLumaSamples() / minCbSizeY - pps.getPicWidthMinusWrapAroundOffset()));
+
+    }
+    else
+    {
+      pps.setPicWidthMinusWrapAroundOffset(0);
+      pps.setWrapAroundOffset(0);
+    }
+  }
+#endif
 
 #if ER_CHROMA_QP_WCG_PPS
   if (m_wcgChromaQpControl.isEnabled())
@@ -470,7 +628,11 @@ void EncLib::deletePicBuffer()
 bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuvTrueOrg,
                         PelStorage *pcPicYuvFilteredOrg, PelStorage *pcPicYuvFilteredOrgForFG,
                         const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut,
-                        int &numEncoded)
+                        int &numEncoded
+#if JVET_AB0080
+  , PelStorage** ppcPicYuvRPR
+#endif
+)
 {
   if (m_compositeRefEnabled && m_cGOPEncoder.getPicBg()->getSpliceFull() && m_pocLast >= 10 && m_receivedPicCount == 0
       && m_cGOPEncoder.getEncodedLTRef() == false)
@@ -540,6 +702,96 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
     }
 #endif
 
+#if JVET_AB0080
+    if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag && (m_iQP >= getGOPBasedRPRQPThreshold()))
+    {
+      const int poc = m_pocLast + (m_compositeRefEnabled ? 2 : 1);
+      double upscaledPSNR = 0.0;
+      if (poc % getGOPSize() == 0)
+      {
+        int xScale = 32768;
+        int yScale = 32768;
+        std::pair<int, int> downScalingRatio = std::pair<int, int>(xScale, yScale);
+        xScale = 8192;
+        yScale = 8192;
+        std::pair<int, int> upScalingRatio = std::pair<int, int>(xScale, yScale);
+
+        const PPS* orgPPS = m_ppsMap.getPS(0);
+        const SPS* orgSPS = m_spsMap.getPS(orgPPS->getSPSId());
+        const ChromaFormat chFormatIdc = orgSPS->getChromaFormatIdc();
+
+        const PPS* pTempPPS = m_ppsMap.getPS(ENC_PPS_ID_RPR);
+        Picture::rescalePicture(downScalingRatio, *pcPicYuvOrg, orgPPS->getScalingWindow(), *ppcPicYuvRPR[1], pTempPPS->getScalingWindow(), chFormatIdc, orgSPS->getBitDepths(), true, true,
+          orgSPS->getHorCollocatedChromaFlag(), orgSPS->getVerCollocatedChromaFlag());
+        Picture::rescalePicture(upScalingRatio, *ppcPicYuvRPR[1], orgPPS->getScalingWindow(), *ppcPicYuvRPR[0], pTempPPS->getScalingWindow(), chFormatIdc, orgSPS->getBitDepths(), true, false,
+          orgSPS->getHorCollocatedChromaFlag(), orgSPS->getVerCollocatedChromaFlag());
+        // Calculate PSNR
+        const  Pel* pSrc0 = pcPicYuvOrg->get(COMPONENT_Y).bufAt(0, 0);
+        const  Pel* pSrc1 = ppcPicYuvRPR[0]->get(COMPONENT_Y).bufAt(0, 0);
+
+        uint64_t totalDiff = 0;
+        for (int y = 0; y < pcPicYuvOrg->get(COMPONENT_Y).height; y++)
+        {
+          for (int x = 0; x < pcPicYuvOrg->get(COMPONENT_Y).width; x++)
+          {
+            int diff = pSrc0[x] - pSrc1[x];
+            totalDiff += uint64_t(diff) * uint64_t(diff);
+          }
+          pSrc0 += pcPicYuvOrg->get(COMPONENT_Y).stride;
+          pSrc1 += ppcPicYuvRPR[0]->get(COMPONENT_Y).stride;
+        }
+
+        const uint32_t maxval = 255 << (orgSPS->getBitDepth(CHANNEL_TYPE_LUMA) - 8);
+        upscaledPSNR = totalDiff ? 10.0 * log10((double)maxval * maxval * orgPPS->getPicWidthInLumaSamples() * orgPPS->getPicHeightInLumaSamples() / (double)totalDiff) : 999.99;
+      }
+
+      if (poc % getGOPSize() == 0)
+      {
+        const int qpBias = 37;
+        if ((m_psnrThresholdRPR - (m_iQP - qpBias) * 0.5) < upscaledPSNR)
+        {
+          ppsID = ENC_PPS_ID_RPR;
+        }
+        else
+        {
+          if ((m_psnrThresholdRPR2 - (m_iQP - qpBias) * 0.5) < upscaledPSNR)
+          {
+            ppsID = ENC_PPS_ID_RPR2;
+          }
+          else
+          {
+            if ((m_psnrThresholdRPR3 - (m_iQP - qpBias) * 0.5) < upscaledPSNR)
+            {
+              ppsID = ENC_PPS_ID_RPR3;
+            }
+            else
+            {
+              ppsID = 0;
+            }
+          }
+        }
+        m_gopRprPpsId = ppsID;
+      }
+      else
+      {
+        ppsID = m_gopRprPpsId;
+      }
+    }
+
+    if (m_resChangeInClvsEnabled && m_intraPeriod == -1 && !m_gopBasedRPREnabledFlag)
+    {
+      const int poc = m_pocLast + (m_compositeRefEnabled ? 2 : 1);
+
+      if (poc / m_switchPocPeriod % 2)
+      {
+        ppsID = ENC_PPS_ID_RPR;
+      }
+      else
+      {
+        ppsID = 0;
+      }
+    }
+#else
     if( m_resChangeInClvsEnabled && m_intraPeriod == -1 )
     {
       const int poc = m_pocLast + (m_compositeRefEnabled ? 2 : 1);
@@ -553,7 +805,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
         ppsID = 0;
       }
     }
-
+#endif
     if( m_vps->getMaxLayers() > 1 )
     {
       ppsID = m_vps->getGeneralLayerIdx( m_layerId );
@@ -1216,6 +1468,15 @@ void EncLib::xInitSPS( SPS& sps )
   {
     int maxPicWidth = std::max(m_sourceWidth, (int)((double)m_sourceWidth / m_scalingRatioHor + 0.5));
     int maxPicHeight = std::max(m_sourceHeight, (int)((double)m_sourceHeight / m_scalingRatioVer + 0.5));
+#if JVET_AB0080
+    if (m_gopBasedRPREnabledFlag)
+    {
+      maxPicWidth = std::max(maxPicWidth, (int)((double)m_sourceWidth / m_scalingRatioHor2 + 0.5));
+      maxPicHeight = std::max(maxPicHeight, (int)((double)m_sourceHeight / m_scalingRatioVer2 + 0.5));
+      maxPicWidth = std::max(maxPicWidth, (int)((double)m_sourceWidth / m_scalingRatioHor3 + 0.5));
+      maxPicHeight = std::max(maxPicHeight, (int)((double)m_sourceHeight / m_scalingRatioVer3 + 0.5));
+    }
+#endif
     const int minCuSize = std::max(8, 1 << m_log2MinCUSize);
     if (maxPicWidth % minCuSize)
     {
@@ -1678,7 +1939,15 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
   {
     pps.setSliceChromaQpFlag(m_chromaCbQpOffsetDualTree != 0 || m_chromaCrQpOffsetDualTree != 0 || m_chromaCbCrQpOffsetDualTree != 0);
   }
-
+#if JVET_AB0080_CHROMA_QP_FIX
+  if (m_gopBasedRPREnabledFlag)
+  {
+    if (pps.getPPSId() == ENC_PPS_ID_RPR || pps.getPPSId() == ENC_PPS_ID_RPR2 || pps.getPPSId() == ENC_PPS_ID_RPR3)
+    {
+      pps.setSliceChromaQpFlag(true);
+    }
+  }
+#endif
   int minCbSizeY = (1 << sps.getLog2MinCodingBlockSize());
   pps.setWrapAroundEnabledFlag                ( m_wrapAround );
   if( m_wrapAround )
@@ -2364,6 +2633,23 @@ int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
         qp += qpOffset ;
       }
     }
+#if JVET_AB0080
+    if (m_gopBasedRPREnabledFlag)
+    {
+      if (pSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR)
+      {
+        qp += EncCfg::m_qpOffsetRPR;
+      }
+      if (pSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2)
+      {
+        qp += EncCfg::m_qpOffsetRPR2;
+      }
+      if (pSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3)
+      {
+        qp += EncCfg::m_qpOffsetRPR3;
+      }
+    }
+#endif
   }
   qp = Clip3( -lumaQpBDOffset, MAX_QP, qp );
   return qp;

@@ -1542,7 +1542,9 @@ private:
   bool              m_rprEnabledFlag;
   bool              m_resChangeInClvsEnabledFlag;
   bool              m_interLayerPresentFlag;
-
+#if JVET_AB0080
+  bool              m_gopBasedRPREnabledFlag;
+#endif
   uint32_t          m_log2ParallelMergeLevelMinus2;
   bool              m_ppsValidFlag[64];
   Size              m_scalingWindowSizeInPPS[64];
@@ -1954,6 +1956,10 @@ public:
 
   bool      getRprEnabledFlag()                                           const     { return m_rprEnabledFlag; }
   void      setRprEnabledFlag( bool flag )                                          { m_rprEnabledFlag = flag; }
+#if JVET_AB0080
+  bool      getGOPBasedRPREnabledFlag()                                   const     { return m_gopBasedRPREnabledFlag; }
+  void      setGOPBasedRPREnabledFlag(bool flag)                                    { m_gopBasedRPREnabledFlag = flag; }
+#endif
   bool      getInterLayerPresentFlag()                                        const { return m_interLayerPresentFlag; }
   void      setInterLayerPresentFlag( bool b )                                      { m_interLayerPresentFlag = b; }
   bool      getResChangeInClvsEnabledFlag()                               const     { return m_resChangeInClvsEnabledFlag; }
