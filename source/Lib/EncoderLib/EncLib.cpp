@@ -716,15 +716,15 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
         yScale = 8192;
         std::pair<int, int> upScalingRatio = std::pair<int, int>(xScale, yScale);
 
-        const PPS* pOrgPPS = m_ppsMap.getPS(0);
-        const SPS* pOrgSPS = m_spsMap.getPS(pOrgPPS->getSPSId());
-        const ChromaFormat chFormatIdc = pOrgSPS->getChromaFormatIdc();
+        const PPS* orgPPS = m_ppsMap.getPS(0);
+        const SPS* orgSPS = m_spsMap.getPS(orgPPS->getSPSId());
+        const ChromaFormat chFormatIdc = orgSPS->getChromaFormatIdc();
 
         const PPS* pTempPPS = m_ppsMap.getPS(ENC_PPS_ID_RPR);
-        Picture::rescalePicture(downScalingRatio, *pcPicYuvOrg, pOrgPPS->getScalingWindow(), *ppcPicYuvRPR[1], pTempPPS->getScalingWindow(), chFormatIdc, pOrgSPS->getBitDepths(), true, true,
-          pOrgSPS->getHorCollocatedChromaFlag(), pOrgSPS->getVerCollocatedChromaFlag());
-        Picture::rescalePicture(upScalingRatio, *ppcPicYuvRPR[1], pOrgPPS->getScalingWindow(), *ppcPicYuvRPR[0], pTempPPS->getScalingWindow(), chFormatIdc, pOrgSPS->getBitDepths(), true, false,
-          pOrgSPS->getHorCollocatedChromaFlag(), pOrgSPS->getVerCollocatedChromaFlag());
+        Picture::rescalePicture(downScalingRatio, *pcPicYuvOrg, orgPPS->getScalingWindow(), *ppcPicYuvRPR[1], pTempPPS->getScalingWindow(), chFormatIdc, orgSPS->getBitDepths(), true, true,
+          orgSPS->getHorCollocatedChromaFlag(), orgSPS->getVerCollocatedChromaFlag());
+        Picture::rescalePicture(upScalingRatio, *ppcPicYuvRPR[1], orgPPS->getScalingWindow(), *ppcPicYuvRPR[0], pTempPPS->getScalingWindow(), chFormatIdc, orgSPS->getBitDepths(), true, false,
+          orgSPS->getHorCollocatedChromaFlag(), orgSPS->getVerCollocatedChromaFlag());
         // Calculate PSNR
         const  Pel* pSrc0 = pcPicYuvOrg->get(COMPONENT_Y).bufAt(0, 0);
         const  Pel* pSrc1 = ppcPicYuvRPR[0]->get(COMPONENT_Y).bufAt(0, 0);
@@ -741,8 +741,8 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
           pSrc1 += ppcPicYuvRPR[0]->get(COMPONENT_Y).stride;
         }
 
-        const uint32_t maxval = 255 << (pOrgSPS->getBitDepth(CHANNEL_TYPE_LUMA) - 8);
-        upscaledPSNR = totalDiff ? 10.0 * log10((double)maxval * maxval * pOrgPPS->getPicWidthInLumaSamples() * pOrgPPS->getPicHeightInLumaSamples() / (double)totalDiff) : 999.99;
+        const uint32_t maxval = 255 << (orgSPS->getBitDepth(CHANNEL_TYPE_LUMA) - 8);
+        upscaledPSNR = totalDiff ? 10.0 * log10((double)maxval * maxval * orgPPS->getPicWidthInLumaSamples() * orgPPS->getPicHeightInLumaSamples() / (double)totalDiff) : 999.99;
       }
 
       if (poc % getGOPSize() == 0)
