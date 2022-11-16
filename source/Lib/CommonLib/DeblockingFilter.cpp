@@ -746,8 +746,6 @@ DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(con
                                                                              const Position      &localPos,
                                                                              const ChannelType    chType) const
 {
-  const Slice& sliceQ = *cu.slice;
-
   int shiftHor = cu.Y().valid() ? 0 : ::getComponentScaleX(COMPONENT_Cb, cu.firstPU->chromaFormat);
   int shiftVer = cu.Y().valid() ? 0 : ::getComponentScaleY(COMPONENT_Cb, cu.firstPU->chromaFormat);
   const Position& posQ = Position{ localPos.x >> shiftHor,  localPos.y >> shiftVer };
@@ -846,11 +844,12 @@ DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(con
   {
     return EdgeStrengths().setBoundaryStrength(COMPONENT_Y, 1);
   }
-  const Position& lumaPosQ  = Position{ localPos.x,  localPos.y };
-  const Position  lumaPosP  = ( edgeDir == EDGE_VER ) ? lumaPosQ.offset( -1, 0 ) : lumaPosQ.offset( 0, -1 );
-  const MotionInfo&     miQ = cuQ.cs->getMotionInfo( lumaPosQ );
-  const MotionInfo&     miP = cuP.cs->getMotionInfo( lumaPosP );
-  const Slice&       sliceP = *cuP.slice;
+
+  const Position lumaPosQ = localPos;
+  const Position lumaPosP = edgeDir == EDGE_VER ? lumaPosQ.offset(-1, 0) : lumaPosQ.offset(0, -1);
+
+  const MotionInfo &miQ = cuQ.cs->getMotionInfo(lumaPosQ);
+  const MotionInfo &miP = cuP.cs->getMotionInfo(lumaPosP);
 
   auto motionBreak = [](const Mv &a, const Mv &b) -> bool
   {
@@ -858,83 +857,47 @@ DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(con
     return abs(b.getHor() - a.getHor()) >= MVD_TH || abs(b.getVer() - a.getVer()) >= MVD_TH;
   };
 
-  if (sliceQ.isInterB() || sliceP.isInterB())
+  auto getPic = [](const CodingUnit &cu, const MotionInfo &mi, RefPicList l) -> const Picture *
   {
-    const Picture *refP0 =
-      (CU::isIBC(cuP) ? sliceP.getPic()
-                      : ((0 > miP.refIdx[0]) ? nullptr : sliceP.getRefPic(REF_PIC_LIST_0, miP.refIdx[0])));
-    const Picture *piRefP1 =
-      (CU::isIBC(cuP) ? nullptr : ((0 > miP.refIdx[1]) ? nullptr : sliceP.getRefPic(REF_PIC_LIST_1, miP.refIdx[1])));
-    const Picture *refQ0 =
-      (CU::isIBC(cuQ) ? sliceQ.getPic()
-                      : ((0 > miQ.refIdx[0]) ? nullptr : sliceQ.getRefPic(REF_PIC_LIST_0, miQ.refIdx[0])));
-    const Picture *piRefQ1 =
-      (CU::isIBC(cuQ) ? nullptr : ((0 > miQ.refIdx[1]) ? nullptr : sliceQ.getRefPic(REF_PIC_LIST_1, miQ.refIdx[1])));
-    Mv mvP0, mvP1, mvQ0, mvQ1;
+    return CU::isIBC(cu) ? (l == REF_PIC_LIST_0 ? cu.slice->getPic() : nullptr)
+                         : (mi.refIdx[l] >= 0 ? cu.slice->getRefPic(l, mi.refIdx[l]) : nullptr);
+  };
 
-    if (0 <= miP.refIdx[0])
-    {
-      mvP0 = miP.mv[0];
-    }
-    if (0 <= miP.refIdx[1])
-    {
-      mvP1 = miP.mv[1];
-    }
-    if (0 <= miQ.refIdx[0])
-    {
-      mvQ0 = miQ.mv[0];
-    }
-    if (0 <= miQ.refIdx[1])
-    {
-      mvQ1 = miQ.mv[1];
-    }
+  bool d = true;   // by default assume there is discontinuity
 
-    unsigned bs = 0;
+  const Picture *refP0 = getPic(cuP, miP, REF_PIC_LIST_0);
+  const Picture *refQ0 = getPic(cuQ, miQ, REF_PIC_LIST_0);
 
-    //th can be optimized
-    if (((refP0 == refQ0) && (piRefP1 == piRefQ1)) || ((refP0 == piRefQ1) && (piRefP1 == refQ0)))
+  if (cuQ.slice->isInterB() || cuP.slice->isInterB())
+  {
+    const Picture *refP1 = getPic(cuP, miP, REF_PIC_LIST_1);
+    const Picture *refQ1 = getPic(cuQ, miQ, REF_PIC_LIST_1);
+
+    if ((refP0 == refQ0 && refP1 == refQ1) || (refP0 == refQ1 && refP1 == refQ0))
     {
-      if (refP0 != piRefP1)   // Different L0 & L1
+      const Mv mvP0 = miP.refIdx[REF_PIC_LIST_0] >= 0 ? miP.mv[REF_PIC_LIST_0] : Mv();
+      const Mv mvP1 = miP.refIdx[REF_PIC_LIST_1] >= 0 ? miP.mv[REF_PIC_LIST_1] : Mv();
+      const Mv mvQ0 = miQ.refIdx[REF_PIC_LIST_0] >= 0 ? miQ.mv[REF_PIC_LIST_0] : Mv();
+      const Mv mvQ1 = miQ.refIdx[REF_PIC_LIST_1] >= 0 ? miQ.mv[REF_PIC_LIST_1] : Mv();
+
+      if (refP0 != refP1)
       {
-        if (refP0 == refQ0)
-        {
-          bs = motionBreak(mvP0, mvQ0) || motionBreak(mvP1, mvQ1) ? 1 : 0;
-        }
-        else
-        {
-          bs = motionBreak(mvP0, mvQ1) || motionBreak(mvP1, mvQ0) ? 1 : 0;
-        }
+        d = refP0 == refQ0 ? motionBreak(mvP0, mvQ0) || motionBreak(mvP1, mvQ1)
+                           : motionBreak(mvP0, mvQ1) || motionBreak(mvP1, mvQ0);
       }
-      else    // Same L0 & L1
+      else
       {
-        bs =
-          (motionBreak(mvP0, mvQ0) || motionBreak(mvP1, mvQ1)) && (motionBreak(mvP0, mvQ1) || motionBreak(mvP1, mvQ0))
-            ? 1
-            : 0;
+        d = d && (motionBreak(mvP0, mvQ0) || motionBreak(mvP1, mvQ1));
+        d = d && (motionBreak(mvP0, mvQ1) || motionBreak(mvP1, mvQ0));
       }
     }
-    else // for all different Ref_Idx
-    {
-      bs = 1;
-    }
-    return tmpBs.setBoundaryStrength(COMPONENT_Y, bs);
   }
-
-
-  // pcSlice->isInterP()
-  CHECK(CU::isInter(cuP) && 0 > miP.refIdx[0], "Invalid reference picture list index");
-  CHECK(CU::isInter(cuP) && 0 > miQ.refIdx[0], "Invalid reference picture list index");
-  const Picture *refP0 = (CU::isIBC(cuP) ? sliceP.getPic() : sliceP.getRefPic(REF_PIC_LIST_0, miP.refIdx[0]));
-  const Picture *refQ0 = (CU::isIBC(cuQ) ? sliceQ.getPic() : sliceQ.getRefPic(REF_PIC_LIST_0, miQ.refIdx[0]));
-  if (refP0 != refQ0)
+  else if (refP0 == refQ0)
   {
-    return tmpBs.setBoundaryStrength(COMPONENT_Y, 1);
+    d = motionBreak(miP.mv[REF_PIC_LIST_0], miQ.mv[REF_PIC_LIST_0]);
   }
 
-  Mv mvP0 = miP.mv[0];
-  Mv mvQ0 = miQ.mv[0];
-
-  return tmpBs.setBoundaryStrength(COMPONENT_Y, motionBreak(mvP0, mvQ0) ? 1 : 0);
+  return tmpBs.setBoundaryStrength(COMPONENT_Y, d ? 1 : 0);
 }
 
 int DeblockingFilter::deriveLADFShift(const Pel *src, const int stride, const DeblockEdgeDir edgeDir, const SPS *sps)
