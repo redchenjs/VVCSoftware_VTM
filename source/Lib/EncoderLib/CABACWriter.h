@@ -199,8 +199,8 @@ public:
   CABACEncoder()
     : m_CABACWriterStd(m_BinEncoderStd)
     , m_CABACEstimatorStd(m_BitEstimatorStd)
-    , m_CABACWriter{ { &m_CABACWriterStd } }
-    , m_CABACEstimator{ { &m_CABACEstimatorStd } }
+    , m_CABACWriter{ &m_CABACWriterStd }
+    , m_CABACEstimator{ &m_CABACEstimatorStd }
   {}
 
   CABACWriter *getCABACWriter(const SPS *sps) { return m_CABACWriter[BpmType::STD]; }

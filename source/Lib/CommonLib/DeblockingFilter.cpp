@@ -1416,13 +1416,9 @@ void DeblockingFilter::xFilteringPandQ(Pel *src, int offset, const FilterLenPair
 
   using A = static_vector<char, 8>;
 
-  static const EnumArray<A, FilterLen> dbCoeffsX = { {
-    A{},
-    A{},
-    A{ 53, 32, 11 },
-    A{ 58, 45, 32, 19, 6 },
-    A{ 59, 50, 41, 32, 23, 14, 5 },
-  } };
+  static const EnumArray<A, FilterLen> dbCoeffsX = {
+    A{}, A{}, A{ 53, 32, 11 }, A{ 58, 45, 32, 19, 6 }, A{ 59, 50, 41, 32, 23, 14, 5 },
+  };
 
   const auto &dbCoeffsP = dbCoeffsX[filterLen.p];
   const auto &dbCoeffsQ = dbCoeffsX[filterLen.q];
@@ -1478,13 +1474,7 @@ void DeblockingFilter::xFilteringPandQ(Pel *src, int offset, const FilterLenPair
     }
   }
 
-  static const EnumArray<A, FilterLen> tcX = { {
-    A{},
-    A{},
-    A{ 6, 4, 2 },
-    A{ 6, 5, 4, 3, 2 },
-    A{ 6, 5, 4, 3, 2, 1, 1 },
-  } };
+  static const EnumArray<A, FilterLen> tcX = { A{}, A{}, A{ 6, 4, 2 }, A{ 6, 5, 4, 3, 2 }, A{ 6, 5, 4, 3, 2, 1, 1 } };
 
   const auto &tcP = tcX[filterLen.p];
   const auto &tcQ = tcX[filterLen.q];
