@@ -64,17 +64,31 @@ private:
   int     m_ctuXLumaSamples, m_ctuYLumaSamples;                            // location of left-edge and top-edge of CTU
   int     m_shiftHor, m_shiftVer;                                          // shift values to convert location from luma sample units to chroma sample units
 
-  // maxFilterLengthP for [component][luma/chroma sample distance from left edge of CTU]
-  // [luma/chroma sample distance from top edge of CTU]
-  uint8_t m_maxFilterLengthP[MAX_NUM_COMPONENT][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
+  enum class FilterLen : uint8_t
+  {
+    _1,
+    _2,
+    _3,
+    _5,
+    _7,
+    NUM
+  };
 
-  // maxFilterLengthQ for [component][luma/chroma sample distance from left edge of CTU]
-  // [luma/chroma sample distance from top edge of CTU]
-  uint8_t m_maxFilterLengthQ[MAX_NUM_COMPONENT][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
+  struct FilterLenPair
+  {
+    FilterLen p;
+    FilterLen q;
+  };
 
-  // transform edge flag for [component][luma/chroma sample distance from left edge of CTU]
+  static constexpr FilterLenPair DEFAULT_FL2 = { FilterLen::_7, FilterLen::_7 };
+
+  // maxFilterLen for [channel type][luma/chroma sample distance from left edge of CTU]
   // [luma/chroma sample distance from top edge of CTU]
-  bool m_transformEdge[MAX_NUM_COMPONENT][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
+  FilterLenPair m_maxFilterLen[MAX_NUM_CHANNEL_TYPE][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
+
+  // transform edge flag for [channel type][luma/chroma sample distance from left edge of CTU]
+  // [luma/chroma sample distance from top edge of CTU]
+  bool m_transformEdge[MAX_NUM_CHANNEL_TYPE][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
 
   PelStorage                   m_encPicYuvBuffer;
   bool                         m_enc;
@@ -98,19 +112,18 @@ private:
                                                const TransformUnit &currTU, const int firstComponent);
   void xSetMaxFilterLengthPQForCodingSubBlocks( const DeblockEdgeDir edgeDir, const CodingUnit& cu, const PredictionUnit& currPU, const bool& mvSubBlocks, const int& subBlockSize, const Area& areaPu );
 
-  inline void xBilinearFilter     ( Pel* srcP, Pel* srcQ, int offset, int refMiddle, int refP, int refQ, int numberPSide, int numberQSide, const int* dbCoeffsP, const int* dbCoeffsQ, int tc ) const;
-  inline void xFilteringPandQ     ( Pel* src, int offset, int numberPSide, int numberQSide, int tc ) const;
-  inline void xPelFilterLuma(Pel *src, const int offset, const int tc, const bool sw, const bool partPNoFilter,
+  static void xFilteringPandQ(Pel *src, int offset, FilterLenPair filterLen, int tc);
+  static void xPelFilterLuma(Pel *src, const int offset, const int tc, const bool sw, const bool partPNoFilter,
                              const bool partQNoFilter, const int thrCut, const bool bFilterSecondP,
                              const bool bFilterSecondQ, const ClpRng &clpRng, bool sidePisLarge = false,
-                             bool sideQisLarge = false, int maxFilterLengthP = 7, int maxFilterLengthQ = 7) const;
+                             bool sideQisLarge = false, FilterLenPair maxFilterLen = DEFAULT_FL2);
   inline void xPelFilterChroma(Pel *src, const int offset, const int tc, const bool sw, const bool partPNoFilter,
                                const bool partQNoFilter, const ClpRng &clpRng, const bool largeBoundary,
                                const bool isChromaHorCTBBoundary) const;
 
   inline bool xUseStrongFiltering(Pel *src, const int offset, const int d, const int beta, const int tc,
-                                  bool sidePisLarge = false, bool sideQisLarge = false, int maxFilterLengthP = 7,
-                                  int maxFilterLengthQ = 7, bool isChromaHorCTBBoundary = false) const;
+                                  bool sidePisLarge = false, bool sideQisLarge = false,
+                                  FilterLenPair maxFilterLen = DEFAULT_FL2, bool isChromaHorCTBBoundary = false) const;
 
   inline unsigned BsSet(unsigned val, const ComponentID compIdx) const;
   inline unsigned BsGet(unsigned val, const ComponentID compIdx) const;
