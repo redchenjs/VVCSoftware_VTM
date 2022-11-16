@@ -35,13 +35,12 @@
 #include "ParameterSetManager.h"
 
 ParameterSetManager::ParameterSetManager()
-: m_spsMap(MAX_NUM_SPS)
-, m_ppsMap(MAX_NUM_PPS)
-, m_apsMap(MAX_NUM_APS * MAX_NUM_APS_TYPE)
-, m_vpsMap(MAX_NUM_VPS)
-, m_activeSPSId(-1)
-, m_activeVPSId(-1)
+  : m_spsMap(MAX_NUM_SPS), m_ppsMap(MAX_NUM_PPS), m_vpsMap(MAX_NUM_VPS), m_activeSPSId(-1), m_activeVPSId(-1)
 {
+  for (const auto t: { ApsType::ALF, ApsType::LMCS, ApsType::SCALING_LIST })
+  {
+    m_apsMap[t] = ParameterSetMap<APS>(MAX_NUM_APS(t));
+  }
 }
 
 
@@ -118,12 +117,12 @@ bool ParameterSetManager::activatePPS(int ppsId, bool isIRAP)
   return false;
 }
 
-bool ParameterSetManager::activateAPS(int apsId, int apsType)
+bool ParameterSetManager::activateAPS(uint8_t apsId, ApsType apsType)
 {
-  APS *aps = m_apsMap.getPS( ( apsId << NUM_APS_TYPE_LEN ) + apsType );
+  APS *aps = m_apsMap[apsType].getPS(apsId);
   if (aps)
   {
-    m_apsMap.setActive( ( apsId << NUM_APS_TYPE_LEN ) + apsType );
+    m_apsMap[apsType].setActive(apsId);
     return true;
   }
   else

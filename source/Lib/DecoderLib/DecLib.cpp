@@ -58,7 +58,9 @@
 #include "CommonLib/CodingStatistics.h"
 #endif
 
-bool tryDecodePicture( Picture* pcEncPic, const int expectedPoc, const std::string& bitstreamFileName, ParameterSetMap<APS> *apsMap, bool bDecodeUntilPocFound /* = false */, int debugCTU /* = -1*/, int debugPOC /* = -1*/ )
+bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::string &bitstreamFileName,
+                      EnumArray<ParameterSetMap<APS>, ApsType> *apsMap, bool bDecodeUntilPocFound, int debugCTU,
+                      int debugPOC)
 {
   int      poc;
   PicList *pcListPic = nullptr;
@@ -459,7 +461,6 @@ DecLib::DecLib()
   , m_clsVPSid(0)
   , m_targetSubPicIdx(0)
   , m_dci(nullptr)
-  , m_apsMapEnc(nullptr)
 {
 #if ENABLE_SIMD_OPT_BUFFER
   g_pelBufOP.initPelBufOpsX86();
@@ -1747,12 +1748,12 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
     for (int i = 0; i < pSlice->getAlfApsIdsLuma().size(); i++)
     {
       int apsId = pSlice->getAlfApsIdsLuma()[i];
-      APS* aps = parameterSetManager.getAPS(apsId, ALF_APS);
+      APS *aps   = parameterSetManager.getAPS(apsId, ApsType::ALF);
 
       if (aps)
       {
         apss[apsId] = aps;
-        if (false == parameterSetManager.activateAPS(apsId, ALF_APS))
+        if (false == parameterSetManager.activateAPS(apsId, ApsType::ALF))
         {
           THROW("APS activation failed!");
         }
@@ -1760,7 +1761,9 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
         CHECK( aps->getTemporalId() > pSlice->getTLayer(), "TemporalId shall be less than or equal to the TemporalId of the coded slice NAL unit" );
         //ToDO: APS NAL unit containing the APS RBSP shall have nuh_layer_id either equal to the nuh_layer_id of a coded slice NAL unit that referrs it, or equal to the nuh_layer_id of a direct dependent layer of the layer containing a coded slice NAL unit that referrs it.
 
-        CHECK( sps->getChromaFormatIdc() == CHROMA_400 && aps->chromaPresentFlag, "When ChromaArrayType is equal to 0, the value of aps_chroma_present_flag of an ALF_APS shall be equal to 0" );
+        CHECK(sps->getChromaFormatIdc() == CHROMA_400 && aps->chromaPresentFlag,
+              "When ChromaArrayType is equal to 0, the value of aps_chroma_present_flag of an ApsType::ALF shall be "
+              "equal to 0");
 
         CHECK(((sps->getCCALFEnabledFlag() == false) && (aps->getCcAlfAPSParam().newCcAlfFilter[0] || aps->getCcAlfAPSParam().newCcAlfFilter[1])), "When sps_ccalf_enabled_flag is 0, the values of alf_cc_cb_filter_signal_flag and alf_cc_cr_filter_signal_flag shall be equal to 0");
       }
@@ -1771,11 +1774,11 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
   {
     //chroma APS
     int apsId = pSlice->getAlfApsIdChroma();
-    APS* aps = parameterSetManager.getAPS(apsId, ALF_APS);
+    APS *aps   = parameterSetManager.getAPS(apsId, ApsType::ALF);
     if (aps)
     {
       apss[apsId] = aps;
-      if (false == parameterSetManager.activateAPS(apsId, ALF_APS))
+      if (false == parameterSetManager.activateAPS(apsId, ApsType::ALF))
       {
         THROW("APS activation failed!");
       }
@@ -1800,11 +1803,11 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
   if(pSlice->getCcAlfCbEnabledFlag())
   {
     int apsId = pSlice->getCcAlfCbApsId();
-    APS *aps = parameterSetManager.getAPS(apsId, ALF_APS);
+    APS *aps   = parameterSetManager.getAPS(apsId, ApsType::ALF);
     if(aps)
     {
       apss[apsId] = aps;
-      if (false == parameterSetManager.activateAPS(apsId, ALF_APS))
+      if (false == parameterSetManager.activateAPS(apsId, ApsType::ALF))
       {
         THROW("APS activation failed!");
       }
@@ -1828,11 +1831,11 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
   if(pSlice->getCcAlfCrEnabledFlag())
   {
     int apsId = pSlice->getCcAlfCrApsId();
-    APS *aps = parameterSetManager.getAPS(apsId, ALF_APS);
+    APS *aps   = parameterSetManager.getAPS(apsId, ApsType::ALF);
     if(aps)
     {
       apss[apsId] = aps;
-      if (false == parameterSetManager.activateAPS(apsId, ALF_APS))
+      if (false == parameterSetManager.activateAPS(apsId, ApsType::ALF))
       {
         THROW("APS activation failed!");
       }
@@ -1855,22 +1858,24 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
 
   if (picHeader->getLmcsEnabledFlag() && lmcsAPS == nullptr)
   {
-    lmcsAPS = parameterSetManager.getAPS(picHeader->getLmcsAPSId(), LMCS_APS);
+    lmcsAPS = parameterSetManager.getAPS(picHeader->getLmcsAPSId(), ApsType::LMCS);
     CHECK(lmcsAPS == nullptr, "No LMCS APS present");
     if (lmcsAPS)
     {
-      parameterSetManager.clearAPSChangedFlag(picHeader->getLmcsAPSId(), LMCS_APS);
-      if (false == parameterSetManager.activateAPS(picHeader->getLmcsAPSId(), LMCS_APS))
+      parameterSetManager.clearAPSChangedFlag(picHeader->getLmcsAPSId(), ApsType::LMCS);
+      if (false == parameterSetManager.activateAPS(picHeader->getLmcsAPSId(), ApsType::LMCS))
       {
         THROW("LMCS APS activation failed!");
       }
 
-      CHECK( sps->getChromaFormatIdc() == CHROMA_400 && lmcsAPS->chromaPresentFlag, "When ChromaArrayType is equal to 0, the value of aps_chroma_present_flag of an LMCS_APS shall be equal to 0");
+      CHECK(sps->getChromaFormatIdc() == CHROMA_400 && lmcsAPS->chromaPresentFlag,
+            "When ChromaArrayType is equal to 0, the value of aps_chroma_present_flag of an ApsType::LMCS shall be "
+            "equal to 0");
 
-      CHECK(
-        lmcsAPS->getReshaperAPSInfo().maxNbitsNeededDeltaCW - 1 < 0
-          || lmcsAPS->getReshaperAPSInfo().maxNbitsNeededDeltaCW - 1 > sps->getBitDepth(ChannelType::LUMA) - 2,
-        "The value of lmcs_delta_cw_prec_minus1 of an LMCS_APS shall be in the range of 0 to BitDepth 2, inclusive");
+      CHECK(lmcsAPS->getReshaperAPSInfo().maxNbitsNeededDeltaCW - 1 < 0
+              || lmcsAPS->getReshaperAPSInfo().maxNbitsNeededDeltaCW - 1 > sps->getBitDepth(ChannelType::LUMA) - 2,
+            "The value of lmcs_delta_cw_prec_minus1 of an ApsType::LMCS shall be in the range of 0 to BitDepth 2, "
+            "inclusive");
 
       CHECK( lmcsAPS->getTemporalId() > pSlice->getTLayer(), "TemporalId shall be less than or equal to the TemporalId of the coded slice NAL unit" );
       //ToDO: APS NAL unit containing the APS RBSP shall have nuh_layer_id either equal to the nuh_layer_id of a coded slice NAL unit that referrs it, or equal to the nuh_layer_id of a direct dependent layer of the layer containing a coded slice NAL unit that referrs it.
@@ -1880,12 +1885,12 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
 
   if( picHeader->getExplicitScalingListEnabledFlag() && scalingListAPS == nullptr)
   {
-    scalingListAPS = parameterSetManager.getAPS( picHeader->getScalingListAPSId(), SCALING_LIST_APS );
+    scalingListAPS = parameterSetManager.getAPS(picHeader->getScalingListAPSId(), ApsType::SCALING_LIST);
     CHECK( scalingListAPS == nullptr, "No SCALING LIST APS present" );
     if( scalingListAPS )
     {
-      parameterSetManager.clearAPSChangedFlag( picHeader->getScalingListAPSId(), SCALING_LIST_APS );
-      if( false == parameterSetManager.activateAPS( picHeader->getScalingListAPSId(), SCALING_LIST_APS ) )
+      parameterSetManager.clearAPSChangedFlag(picHeader->getScalingListAPSId(), ApsType::SCALING_LIST);
+      if (false == parameterSetManager.activateAPS(picHeader->getScalingListAPSId(), ApsType::SCALING_LIST))
       {
         THROW( "SCALING LIST APS activation failed!" );
       }
@@ -1978,13 +1983,13 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
       CHECK(sps->getMaxTLayers() > m_vps->getMaxSubLayers(), "The SPS signals more temporal sub-layers than allowed by the VPS");
     }
 
-    m_parameterSetManager.getApsMap()->clearActive();
+    m_parameterSetManager.getApsMap(ApsType::ALF)->clearActive();
     for (int i = 0; i < ALF_CTB_MAX_NUM_APS; i++)
     {
-      APS* aps = m_parameterSetManager.getAPS(i, ALF_APS);
+      APS *aps = m_parameterSetManager.getAPS(i, ApsType::ALF);
       if (aps)
       {
-        m_parameterSetManager.clearAPSChangedFlag(i, ALF_APS);
+        m_parameterSetManager.clearAPSChangedFlag(i, ApsType::ALF);
       }
     }
     APS* lmcsAPS = nullptr;
@@ -2167,18 +2172,18 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     }
     for (int i = 0; i < ALF_CTB_MAX_NUM_APS; i++)
     {
-      APS* aps = m_parameterSetManager.getAPS(i, ALF_APS);
-      if (aps && m_parameterSetManager.getAPSChangedFlag(i, ALF_APS))
+      APS *aps = m_parameterSetManager.getAPS(i, ApsType::ALF);
+      if (aps && m_parameterSetManager.getAPSChangedFlag(i, ApsType::ALF))
       {
         EXIT("Error - a new APS has been decoded while processing a picture");
       }
     }
 
-    if (lmcsAPS && m_parameterSetManager.getAPSChangedFlag(lmcsAPS->getAPSId(), LMCS_APS) )
+    if (lmcsAPS && m_parameterSetManager.getAPSChangedFlag(lmcsAPS->getAPSId(), ApsType::LMCS))
     {
       EXIT("Error - a new LMCS APS has been decoded while processing a picture");
     }
-    if( scalinglistAPS && m_parameterSetManager.getAPSChangedFlag( scalinglistAPS->getAPSId(), SCALING_LIST_APS ) )
+    if (scalinglistAPS && m_parameterSetManager.getAPSChangedFlag(scalinglistAPS->getAPSId(), ApsType::SCALING_LIST))
     {
       EXIT( "Error - a new SCALING LIST APS has been decoded while processing a picture" );
     }
@@ -3604,17 +3609,17 @@ void DecLib::xDecodeAPS(InputNALUnit& nalu)
   aps->setLayerId( nalu.m_nuhLayerId );
   aps->setHasPrefixNalUnitType( nalu.m_nalUnitType == NAL_UNIT_PREFIX_APS );
   aps->setPuCounter( m_puCounter );
-  m_parameterSetManager.checkAuApsContent( aps, m_accessUnitApsNals );
+  m_parameterSetManager.checkAuApsContent(aps, m_accessUnitApsNals[aps->getAPSType()]);
   if( m_apsMapEnc )
   {
     APS* apsEnc = new APS();
     *apsEnc = *aps;
-    m_apsMapEnc->storePS( ( apsEnc->getAPSId() << NUM_APS_TYPE_LEN ) + apsEnc->getAPSType(), apsEnc );
+    (*m_apsMapEnc)[aps->getAPSType()].storePS(apsEnc->getAPSId(), apsEnc);
   }
 
   if( nalu.m_nalUnitType == NAL_UNIT_SUFFIX_APS && m_prevSliceSkipped )
   {
-    m_accessUnitApsNals.pop_back();
+    m_accessUnitApsNals[aps->getAPSType()].pop_back();
   }
 
   // aps will be deleted if it was already stored (and did not changed),

@@ -779,7 +779,7 @@ uint32_t BitstreamExtractorApp::decode()
         m_hlSynaxReader.parseAPS( aps );
         msg (VERBOSE, "APS Info: APS ID = %d Type = %d Layer = %d\n", aps->getAPSId(), aps->getAPSType(), nalu.m_nuhLayerId);
         int apsId = aps->getAPSId();
-        int apsType = aps->getAPSType();
+        ApsType apsType = aps->getAPSType();
         // note: storeAPS may invalidate the aps pointer!
         m_parameterSetManager.storeAPS(aps, nalu.getBitstream().getFifo());
         // get APS back

@@ -98,7 +98,7 @@ private:
   // SPS
   ParameterSetMap<SPS>     &m_spsMap;                             ///< SPS. This is the base value
   ParameterSetMap<PPS>     &m_ppsMap;                             ///< PPS. This is the base value
-  ParameterSetMap<APS>     &m_apsMap;                             ///< APS. This is the base value
+  EnumArray<ParameterSetMap<APS>, ApsType> &m_apsMaps;                            ///< APS. This is the base value
   PicHeader                 m_picHeader;                          ///< picture header
   // RD cost computation
   RdCost                    m_cRdCost;                            ///< RD cost computation class
@@ -203,15 +203,15 @@ public:
   void selectReferencePictureList(Slice *slice, int pocCurr, int gopId, int ltPoc);
 
   void                   setParamSetChanged(int spsId, int ppsId);
-  bool                   APSNeedsWriting(int apsId);
   bool                   PPSNeedsWriting(int ppsId);
   bool                   SPSNeedsWriting(int spsId);
   const PPS* getPPS( int Id ) { return m_ppsMap.getPS( Id); }
-  const APS*             getAPS(int Id) { return m_apsMap.getPS(Id); }
+  const APS             *getAPS(int Id, ApsType apsType) { return m_apsMaps[apsType].getPS(Id); }
 
   EncReshape*            getReshaper()                          { return  &m_cReshaper; }
 
-  ParameterSetMap<APS>*  getApsMap() { return &m_apsMap; }
+  ParameterSetMap<APS>                     *getApsMap(ApsType apsType) { return &m_apsMaps[apsType]; }
+  EnumArray<ParameterSetMap<APS>, ApsType> *getApsMaps() { return &m_apsMaps; }
 
   bool                   getPltEnc()                      const { return   m_doPlt; }
   void                   checkPltStats( Picture* pic );

@@ -2372,7 +2372,7 @@ public:
   APS();
   virtual                ~APS();
 
-  int                    getAPSId() const                                                 { return m_APSId;                               }
+  uint8_t                getAPSId() const { return m_APSId; }
   void                   setAPSId(int i)                                                  { m_APSId = i;                                  }
 
   ApsType                getAPSType() const                                               { return m_APSType;                             }

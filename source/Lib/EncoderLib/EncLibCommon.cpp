@@ -38,12 +38,13 @@
 #include "CommonDef.h"
 #include "EncLibCommon.h"
 
-EncLibCommon::EncLibCommon()
-  : m_spsMap( MAX_NUM_SPS )
-  , m_ppsMap( MAX_NUM_PPS )
-  , m_apsMap( MAX_NUM_APS * MAX_NUM_APS_TYPE )
+EncLibCommon::EncLibCommon() : m_spsMap(MAX_NUM_SPS), m_ppsMap(MAX_NUM_PPS)
 {
   std::memset( m_layerDecPicBuffering, 0, sizeof( m_layerDecPicBuffering ) );
+  for (const auto t: { ApsType::ALF, ApsType::LMCS, ApsType::SCALING_LIST })
+  {
+    m_apsMaps[t] = ParameterSetMap<APS>(MAX_NUM_APS(t));
+  }
 }
 
 EncLibCommon::~EncLibCommon()
