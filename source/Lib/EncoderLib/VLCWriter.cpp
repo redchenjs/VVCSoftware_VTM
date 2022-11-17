@@ -1646,7 +1646,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
       if (picHeader->getAlfEnabledFlag(COMPONENT_Y))
       {
         WRITE_CODE(picHeader->getNumAlfApsIdsLuma(), 3, "ph_num_alf_aps_ids_luma");
-        const std::vector<int>&   apsId = picHeader->getAlfApsIdsLuma();
+        const AlfApsList &apsId = picHeader->getAlfApsIdsLuma();
         for (int i = 0; i < picHeader->getNumAlfApsIdsLuma(); i++)
         {
           WRITE_CODE(apsId[i], 3, "ph_alf_aps_id_luma");
@@ -2275,7 +2275,7 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
     if (alfEnabled)
     {
       WRITE_CODE(pcSlice->getNumAlfApsIdsLuma(), 3, "sh_num_alf_aps_ids_luma");
-      const std::vector<int>&   apsId = pcSlice->getAlfApsIdsLuma();
+      const AlfApsList &apsId = pcSlice->getAlfApsIdsLuma();
       for (int i = 0; i < pcSlice->getNumAlfApsIdsLuma(); i++)
       {
         WRITE_CODE(apsId[i], 3, "sh_alf_aps_id_luma[i]");

@@ -105,6 +105,8 @@ struct AlfFilterShape
   std::vector<int> pattern;
 };
 
+using AlfApsList = static_vector<int, ALF_CTB_MAX_NUM_APS>;
+
 struct AlfParam
 {
   bool                         enabledFlag[MAX_NUM_COMPONENT];                          // alf_slice_enable_flag, alf_chroma_idc
