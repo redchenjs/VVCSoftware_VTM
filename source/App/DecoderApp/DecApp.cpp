@@ -1093,21 +1093,25 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
           {
             const SPS* sps = pcPic->cs->sps;
 #if JVET_AB0081
-            m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+            m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput,
+              NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
 #else
-            m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture( *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
+            m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput,
+              NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
 #endif
           }
           else
           {
-            m_cVideoIOYuvReconFile[pcPic->layerId].write( pcPic->getRecoBuf().get( COMPONENT_Y ).width, pcPic->getRecoBuf().get( COMPONENT_Y ).height, pcPic->getRecoBuf(),
-                                        m_outputColourSpaceConvert,
-                                        m_packedYUVMode,
-                                        conf.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-                                        conf.getWindowRightOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-                                        conf.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-                                        conf.getWindowBottomOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-                                        NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
+            m_cVideoIOYuvReconFile[pcPic->layerId].write(
+              pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+              pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+              conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+              m_clipOutputVideoToRec709Range);
             }
         }
         // Perform FGS on decoded frame and write to output FGS file
@@ -1119,20 +1123,25 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
           if (m_upscaledOutput)
           {
 #if JVET_AB0081
-            m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+            m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+              m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
 #else
-            m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+            m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+              m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
 #endif
           }
           else
           {
-            m_videoIOYuvSEIFGSFile[pcPic->layerId].write(pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height, pcPic->getDisplayBufFG(),
-                                    m_outputColourSpaceConvert, m_packedYUVMode,
-                                    conf.getWindowLeftOffset()   * SPS::getWinUnitX(chromaFormatIDC),
-                                    conf.getWindowRightOffset()  * SPS::getWinUnitX(chromaFormatIDC),
-                                    conf.getWindowTopOffset()    * SPS::getWinUnitY(chromaFormatIDC),
-                                    conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
-                                    NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+            m_videoIOYuvSEIFGSFile[pcPic->layerId].write(
+              pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+              pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+              conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+              m_clipOutputVideoToRec709Range);
           }
         }
 
@@ -1147,17 +1156,14 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
           const SPS* sps = pcPic->cs->sps;
           ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
 
-          m_cTVideoIOYuvSIIPostFile.write(
-            pcPic->getPostRecBuf().get(COMPONENT_Y).width,
-            pcPic->getPostRecBuf().get(COMPONENT_Y).height,
-            pcPic->getPostRecBuf(),
-            m_outputColourSpaceConvert,
-            m_packedYUVMode,
-            conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
-            conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
-            conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
-            conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
-            NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+          m_cTVideoIOYuvSIIPostFile.write(pcPic->getPostRecBuf().get(COMPONENT_Y).width,
+                                          pcPic->getPostRecBuf().get(COMPONENT_Y).height, pcPic->getPostRecBuf(),
+                                          m_outputColourSpaceConvert, m_packedYUVMode,
+                                          conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                                          conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                                          conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                                          conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                                          NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
         }
 #endif
 
@@ -1170,20 +1176,25 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
           if (m_upscaledOutput)
           {
 #if JVET_AB0081
-            m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+            m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+              m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
 #else
-            m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+            m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+              m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
 #endif
           }
           else
           {
-            m_cVideoIOYuvSEICTIFile[pcPic->layerId].write(pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height, pcPic->getDisplayBuf(),
-              m_outputColourSpaceConvert, m_packedYUVMode,
+            m_cVideoIOYuvSEICTIFile[pcPic->layerId].write(
+              pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+              pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
               conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
               conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
               conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
-              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
-              NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+              m_clipOutputVideoToRec709Range);
           }
         }
         writeLineToOutputLog(pcPic);
@@ -1308,21 +1319,25 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             {
               const SPS* sps = pcPic->cs->sps;
 #if JVET_AB0081
-              m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+              m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
 #else
-              m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture( *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
+              m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
 #endif
             }
             else
             {
-              m_cVideoIOYuvReconFile[pcPic->layerId].write( pcPic->getRecoBuf().get( COMPONENT_Y ).width, pcPic->getRecoBuf().get( COMPONENT_Y ).height, pcPic->getRecoBuf(),
-                                        m_outputColourSpaceConvert,
-                                        m_packedYUVMode,
-                                        conf.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-                                        conf.getWindowRightOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-                                        conf.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-                                        conf.getWindowBottomOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-                                        NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
+              m_cVideoIOYuvReconFile[pcPic->layerId].write(
+                pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+                pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+                conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+                m_clipOutputVideoToRec709Range);
               }
           }
           // Perform FGS on decoded frame and write to output FGS file
@@ -1334,20 +1349,25 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             if (m_upscaledOutput)
             {
 #if JVET_AB0081
-              m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+              m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
 #else
-              m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+              m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
 #endif
             }
             else
             {
-              m_videoIOYuvSEIFGSFile[pcPic->layerId].write(pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height, pcPic->getDisplayBufFG(),
-                                      m_outputColourSpaceConvert, m_packedYUVMode,
-                                      conf.getWindowLeftOffset()   * SPS::getWinUnitX(chromaFormatIDC),
-                                      conf.getWindowRightOffset()  * SPS::getWinUnitX(chromaFormatIDC),
-                                      conf.getWindowTopOffset()    * SPS::getWinUnitY(chromaFormatIDC),
-                                      conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
-                                      NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+              m_videoIOYuvSEIFGSFile[pcPic->layerId].write(
+                pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+                pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+                conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+                m_clipOutputVideoToRec709Range);
             }
           }
 
@@ -1361,16 +1381,14 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             const SPS* sps = pcPic->cs->sps;
             ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
 
-            m_cTVideoIOYuvSIIPostFile.write(
-              pcPic->getPostRecBuf().get(COMPONENT_Y).width,
-              pcPic->getPostRecBuf().get(COMPONENT_Y).height,
-              pcPic->getPostRecBuf(),
-              m_outputColourSpaceConvert, m_packedYUVMode,
-              conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
-              conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
-              conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
-              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
-              NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+            m_cTVideoIOYuvSIIPostFile.write(pcPic->getPostRecBuf().get(COMPONENT_Y).width,
+                                            pcPic->getPostRecBuf().get(COMPONENT_Y).height, pcPic->getPostRecBuf(),
+                                            m_outputColourSpaceConvert, m_packedYUVMode,
+                                            conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                                            conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                                            conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                                            conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                                            NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
           }
 #endif
 
@@ -1383,20 +1401,25 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             if (m_upscaledOutput)
             {
 #if JVET_AB0081
-              m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+              m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
 #else
-              m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+              m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
 #endif
             }
             else
             {
-              m_cVideoIOYuvSEICTIFile[pcPic->layerId].write(pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height, pcPic->getDisplayBuf(),
-                m_outputColourSpaceConvert, m_packedYUVMode,
+              m_cVideoIOYuvSEICTIFile[pcPic->layerId].write(
+                pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+                pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
                 conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
                 conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
                 conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
-                conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
-                NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+                conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+                m_clipOutputVideoToRec709Range);
             }
           }
           writeLineToOutputLog(pcPic);

@@ -77,14 +77,14 @@ const double EncTemporalFilter::m_refStrengths[2][4] = {
 const int EncTemporalFilter::m_cuTreeThresh[4] =
   { 75, 60, 30, 15 };
 
-EncTemporalFilter::EncTemporalFilter() :
-  m_FrameSkip(0),
-  m_chromaFormatIDC(NUM_CHROMA_FORMAT),
-  m_sourceWidth(0),
-  m_sourceHeight(0),
-  m_QP(0),
-  m_clipInputVideoToRec709Range(false),
-  m_inputColourSpaceConvert(NUMBER_INPUT_COLOUR_SPACE_CONVERSIONS)
+EncTemporalFilter::EncTemporalFilter()
+  : m_frameSkip(0)
+  , m_chromaFormatIDC(NUM_CHROMA_FORMAT)
+  , m_sourceWidth(0)
+  , m_sourceHeight(0)
+  , m_QP(0)
+  , m_clipInputVideoToRec709Range(false)
+  , m_inputColourSpaceConvert(NUMBER_INPUT_COLOUR_SPACE_CONVERSIONS)
 {}
 
 void EncTemporalFilter::init(const int frameSkip, const int inputBitDepth[MAX_NUM_CHANNEL_TYPE],
@@ -97,11 +97,11 @@ void EncTemporalFilter::init(const int frameSkip, const int inputBitDepth[MAX_NU
                              , const bool mctfEnabled, std::map<int, int*> *adaptQPmap, const bool bimEnabled, const int ctuSize
                              )
 {
-  m_FrameSkip = frameSkip;
+  m_frameSkip = frameSkip;
   for (int i = 0; i < MAX_NUM_CHANNEL_TYPE; i++)
   {
     m_inputBitDepth[i]       = inputBitDepth[i];
-    m_MSBExtendedBitDepth[i] = msbExtendedBitDepth[i];
+    m_msbExtendedBitDepth[i] = msbExtendedBitDepth[i];
     m_internalBitDepth[i]    = internalBitDepth[i];
   }
 
@@ -153,11 +153,11 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
 
   if (isFilterThisFrame)
   {
-    const int  currentFilePoc = receivedPoc + m_FrameSkip;
+    const int  currentFilePoc = receivedPoc + m_frameSkip;
     const int  firstFrame     = std::max(currentFilePoc - m_pastRefs, m_firstValidFrame);
     const int  lastFrame      = std::min(currentFilePoc + m_futureRefs, m_lastValidFrame);
     VideoIOYuv yuvFrames;
-    yuvFrames.open(m_inputFileName, false, m_inputBitDepth, m_MSBExtendedBitDepth, m_internalBitDepth);
+    yuvFrames.open(m_inputFileName, false, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth);
     yuvFrames.skipFrames(firstFrame, m_sourceWidth - m_pad[0], m_sourceHeight - m_pad[1], m_chromaFormatIDC);
 
     std::deque<TemporalFilterSourcePicInfo> srcFrameInfo;

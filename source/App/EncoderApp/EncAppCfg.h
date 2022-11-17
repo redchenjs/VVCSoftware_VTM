@@ -90,8 +90,8 @@ protected:
   double    m_dIntraQpFactor;                                 ///< Intra Q Factor. If negative, use a default equation: 0.57*(1.0 - Clip3( 0.0, 0.5, 0.05*(double)(isField ? (GopSize-1)/2 : GopSize-1) ))
 
   // source specification
-  int       m_iFrameRate;                                     ///< source frame-rates (Hz)
-  uint32_t      m_FrameSkip;                                      ///< number of skipped frames from the beginning
+  int           m_frameRate;                                      ///< source frame-rates (Hz)
+  uint32_t      m_frameSkip;                                      ///< number of skipped frames from the beginning
   uint32_t      m_temporalSubsampleRatio;                         ///< temporal subsample ratio, 2 means code every two frames
   int       m_sourceWidth;                                   ///< source width in pixel
   int       m_sourceHeight;                                  ///< source height in pixel (when interlaced = field height)
@@ -121,7 +121,7 @@ protected:
   InputColourSpaceConversion m_inputColourSpaceConvert;       ///< colour space conversion to apply to input video
   bool      m_snrInternalColourSpace;                       ///< if true, then no colour space conversion is applied for snr calculation, otherwise inverse of input is applied.
   bool      m_outputInternalColourSpace;                    ///< if true, then no colour space conversion is applied for reconstructed video, otherwise inverse of input is applied.
-  ChromaFormat m_InputChromaFormatIDC;
+  ChromaFormat               m_inputChromaFormatIDC;
 
   bool      m_printMSEBasedSequencePSNR;
   bool      m_printHexPsnr;
@@ -130,8 +130,8 @@ protected:
   bool      m_printMSSSIM;
   bool      m_printWPSNR;
   bool      m_cabacZeroWordPaddingEnabled;
-  bool      m_bClipInputVideoToRec709Range;
-  bool      m_bClipOutputVideoToRec709Range;
+  bool      m_clipInputVideoToRec709Range;
+  bool      m_clipOutputVideoToRec709Range;
   bool      m_packedYUVMode;                                  ///< If true, output 10-bit and 12-bit YUV data as 5-byte and 3-byte (respectively) packed YUV data
 
   bool      m_gciPresentFlag;
@@ -222,7 +222,7 @@ protected:
   bool          m_oneSlicePerSubpicConstraintFlag;
   bool          m_noSubpicInfoConstraintFlag;
   // coding structure
-  int       m_iIntraPeriod;                                   ///< period of I-slice (random access period)
+  int m_intraPeriod;   ///< period of I-slice (random access period)
 #if GDR_ENABLED
   bool      m_gdrEnabled;
   int       m_gdrPocStart;
@@ -230,8 +230,8 @@ protected:
   int       m_gdrInterval;
   bool      m_gdrNoHash;
 #endif
-  int       m_iDecodingRefreshType;                           ///< random access type
-  int       m_iGOPSize;                                       ///< GOP size of hierarchical structure
+  int       m_intraRefreshType;                               ///< random access type
+  int       m_gopSize;                                        ///< GOP size of hierarchical structure
   int       m_drapPeriod;                                     ///< period of dependent RAP pictures
   int       m_edrapPeriod;                                    ///< period of extended dependent RAP pictures
   bool      m_rewriteParamSets;                              ///< Flag to enable rewriting of parameter sets at random access points
@@ -313,7 +313,7 @@ protected:
   bool      m_isLowDelay;
 
   // coding unit (CU) definition
-  unsigned  m_uiCTUSize;
+  unsigned              m_ctuSize;
   bool m_subPicInfoPresentFlag;
   unsigned m_numSubPics;
   bool m_subPicSameSizeFlag;
@@ -328,12 +328,12 @@ protected:
   unsigned m_subPicIdLen;
   std::vector<uint16_t> m_subPicId;
   bool      m_SplitConsOverrideEnabledFlag;
-  unsigned  m_uiMinQT[3]; // 0: I slice luma; 1: P/B slice; 2: I slice chroma
+  unsigned              m_minQt[3];   // 0: I slice luma; 1: P/B slice; 2: I slice chroma
   unsigned  m_uiMaxMTTHierarchyDepth;
   unsigned  m_uiMaxMTTHierarchyDepthI;
   unsigned  m_uiMaxMTTHierarchyDepthIChroma;
-  unsigned  m_uiMaxBT[3];
-  unsigned  m_uiMaxTT[3];
+  unsigned              m_maxBt[3];
+  unsigned              m_maxTt[3];
   int       m_ttFastSkip;
   double    m_ttFastSkipThr;
   bool      m_dualTree;
@@ -407,8 +407,8 @@ protected:
   uint32_t  m_initialCW;
   int       m_CSoffset;
   bool      m_encDbOpt;
-  unsigned  m_uiMaxCUWidth;                                   ///< max. CU width in pixel
-  unsigned  m_uiMaxCUHeight;                                  ///< max. CU height in pixel
+  unsigned              m_maxCuWidth;                                      ///< max. CU width in pixel
+  unsigned              m_maxCuHeight;                                     ///< max. CU height in pixel
   unsigned m_log2MinCuSize;                                   ///< min. CU size log2
 
   bool      m_useFastLCTU;
@@ -429,7 +429,7 @@ protected:
   // coding tools (bit-depth)
   int       m_inputBitDepth   [MAX_NUM_CHANNEL_TYPE];         ///< bit-depth of input file
   int       m_outputBitDepth  [MAX_NUM_CHANNEL_TYPE];         ///< bit-depth of output file
-  int       m_MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];      ///< bit-depth of input samples after MSB extension
+  int       m_msbExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];      ///< bit-depth of input samples after MSB extension
   int       m_internalBitDepth[MAX_NUM_CHANNEL_TYPE];         ///< bit-depth codec operates at (input/output files will be converted)
   bool      m_extendedPrecisionProcessingFlag;
   bool      m_tsrcRicePresentFlag;

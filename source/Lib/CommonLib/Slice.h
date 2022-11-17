@@ -1426,8 +1426,8 @@ private:
   unsigned    m_maxTTSize[3];
   bool        m_idrRefParamList;
   unsigned    m_dualITree;
-  uint32_t              m_uiMaxCUWidth;
-  uint32_t              m_uiMaxCUHeight;
+  uint32_t          m_maxCuWidth;
+  uint32_t          m_maxCuHeight;
 
   RPLList           m_RPLList0;
   RPLList           m_RPLList1;
@@ -1688,10 +1688,10 @@ public:
   void                    setUseDualITree(bool b) { m_dualITree = b; }
   bool                    getUseDualITree()                                      const { return m_dualITree; }
 
-  void                    setMaxCUWidth( uint32_t u )                                                         { m_uiMaxCUWidth = u;                                                  }
-  uint32_t                    getMaxCUWidth() const                                                           { return  m_uiMaxCUWidth;                                              }
-  void                    setMaxCUHeight( uint32_t u )                                                        { m_uiMaxCUHeight = u;                                                 }
-  uint32_t                    getMaxCUHeight() const                                                          { return  m_uiMaxCUHeight;                                             }
+  void                        setMaxCUWidth(uint32_t u) { m_maxCuWidth = u; }
+  uint32_t                    getMaxCUWidth() const { return m_maxCuWidth; }
+  void                        setMaxCUHeight(uint32_t u) { m_maxCuHeight = u; }
+  uint32_t                    getMaxCUHeight() const { return m_maxCuHeight; }
   bool                    getTransformSkipEnabledFlag() const                                                 { return m_transformSkipEnabledFlag;                                   }
   void                    setTransformSkipEnabledFlag( bool b )                                               { m_transformSkipEnabledFlag = b;                                      }
   uint32_t                getLog2MaxTransformSkipBlockSize() const                                            { return m_log2MaxTransformSkipBlockSize;                              }

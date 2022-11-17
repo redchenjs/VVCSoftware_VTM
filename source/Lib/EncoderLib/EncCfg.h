@@ -154,8 +154,8 @@ class EncCfg
 {
 protected:
   //==== File I/O ========
-  int       m_iFrameRate;
-  int       m_FrameSkip;
+  int       m_frameRate;
+  int       m_frameSkip;
   uint32_t  m_temporalSubsampleRatio;
   int       m_sourceWidth;
   int       m_sourceHeight;
@@ -271,7 +271,7 @@ protected:
   uint32_t  m_decodingRefreshType;            ///< the type of decoding refresh employed for the random access.
   bool      m_rewriteParamSets;
   bool      m_idrRefParamList;
-  int       m_iGOPSize;
+  int       m_gopSize;
   RPLEntry  m_RPLList0[MAX_GOP];
   RPLEntry  m_RPLList1[MAX_GOP];
   int       m_numRPLList0;
@@ -317,9 +317,9 @@ protected:
   bool      m_gdrNoHash;
 #endif
   bool      m_useSplitConsOverride;
-  unsigned  m_uiMinQT[3]; //0: I slice; 1: P/B slice, 2: I slice chroma
-  unsigned  m_uiMaxBT[3]; //0: I slice; 1: P/B slice, 2: I slice chroma
-  unsigned  m_uiMaxTT[3]; //0: I slice; 1: P/B slice, 2: I slice chroma
+  unsigned  m_minQt[3];   // 0: I slice; 1: P/B slice, 2: I slice chroma
+  unsigned  m_maxBt[3];   // 0: I slice; 1: P/B slice, 2: I slice chroma
+  unsigned  m_maxTt[3];   // 0: I slice; 1: P/B slice, 2: I slice chroma
   unsigned  m_uiMaxMTTHierarchyDepth;
   unsigned  m_uiMaxMTTHierarchyDepthI;
   unsigned  m_uiMaxMTTHierarchyDepthIChroma;
@@ -1147,8 +1147,8 @@ public:
   bool      getNoReverseLastSigCoeffConstraintFlag() const { return m_noReverseLastSigCoeffConstraintFlag; }
   void      setNoReverseLastSigCoeffConstraintFlag(bool val) { m_noReverseLastSigCoeffConstraintFlag = val; }
 
-  void      setFrameRate                    ( int   i )      { m_iFrameRate = i; }
-  void      setFrameSkip                    ( uint32_t  i )      { m_FrameSkip = i; }
+  void      setFrameRate(int i) { m_frameRate = i; }
+  void      setFrameSkip(uint32_t i) { m_frameSkip = i; }
   void      setTemporalSubsampleRatio       ( uint32_t  i )      { m_temporalSubsampleRatio = i; }
   void      setSourceWidth                  ( int   i )      { m_sourceWidth = i; }
   void      setSourceHeight                 ( int   i )      { m_sourceHeight = i; }
@@ -1199,7 +1199,7 @@ public:
   void      setReWriteParamSets             ( bool  b )      { m_rewriteParamSets = b; }
   void      setIDRRefParamListPresent       ( bool  b )      { m_idrRefParamList  = b; }
   bool      getIDRRefParamListPresent       ()        const  { return m_idrRefParamList; }
-  void      setGOPSize                      ( int   i )      { m_iGOPSize = i; }
+  void            setGOPSize(int i) { m_gopSize = i; }
   void      setGopList(const GOPEntry GOPList[MAX_GOP]) { for (int i = 0; i < MAX_GOP; i++) m_GOPList[i] = GOPList[i]; }
   const GOPEntry &getGOPEntry               ( int   i ) const { return m_GOPList[i]; }
   void      setRPLList0(const RPLEntry RPLList[MAX_GOP])
@@ -1251,9 +1251,24 @@ public:
   void      setIsLowDelay                   ( bool isLowDelay )             { m_isLowDelay = isLowDelay; }
 
   void      setCTUSize                      ( unsigned  u )      { m_CTUSize  = u; }
-  void      setMinQTSizes                   ( unsigned* minQT)   { m_uiMinQT[0] = minQT[0]; m_uiMinQT[1] = minQT[1]; m_uiMinQT[2] = minQT[2]; }
-  void      setMaxBTSizes                   ( unsigned* maxBT)   { m_uiMaxBT[0] = maxBT[0]; m_uiMaxBT[1] = maxBT[1]; m_uiMaxBT[2] = maxBT[2]; }
-  void      setMaxTTSizes                   ( unsigned* maxTT)   { m_uiMaxTT[0] = maxTT[0]; m_uiMaxTT[1] = maxTT[1]; m_uiMaxTT[2] = maxTT[2]; }
+  void      setMinQTSizes(unsigned *minQT)
+  {
+    m_minQt[0] = minQT[0];
+    m_minQt[1] = minQT[1];
+    m_minQt[2] = minQT[2];
+  }
+  void setMaxBTSizes(unsigned *maxBT)
+  {
+    m_maxBt[0] = maxBT[0];
+    m_maxBt[1] = maxBT[1];
+    m_maxBt[2] = maxBT[2];
+  }
+  void setMaxTTSizes(unsigned *maxTT)
+  {
+    m_maxTt[0] = maxTT[0];
+    m_maxTt[1] = maxTT[1];
+    m_maxTt[2] = maxTT[2];
+  }
 #if GDR_ENABLED
   void      setGdrEnabled(bool b)       { m_gdrEnabled  = b; }
   void      setGdrPeriod(unsigned u)    { m_gdrPeriod   = u; }
@@ -1609,8 +1624,8 @@ public:
 #endif
 
   //====== Sequence ========
-  int       getFrameRate                    () const     { return  m_iFrameRate; }
-  uint32_t      getFrameSkip                    () const     { return  m_FrameSkip; }
+  int           getFrameRate() const { return m_frameRate; }
+  uint32_t      getFrameSkip() const { return m_frameSkip; }
   uint32_t      getTemporalSubsampleRatio       () const     { return  m_temporalSubsampleRatio; }
   int       getSourceWidth                  () const     { return  m_sourceWidth; }
   int       getSourceHeight                 () const     { return  m_sourceHeight; }
@@ -1628,7 +1643,7 @@ public:
   int       getIntraPeriod                  () const     { return  m_intraPeriod; }
   uint32_t  getDecodingRefreshType          () const     { return  m_decodingRefreshType; }
   bool      getReWriteParamSets             ()  const    { return m_rewriteParamSets; }
-  int       getGOPSize                      () const     { return  m_iGOPSize; }
+  int       getGOPSize() const { return m_gopSize; }
   int       getMaxDecPicBuffering           (uint32_t tlayer) { return m_maxDecPicBuffering[tlayer]; }
   int       getMaxNumReorderPics            (uint32_t tlayer) { return m_maxNumReorderPics[tlayer]; }
   int       getDrapPeriod                   ()     { return m_drapPeriod; }
