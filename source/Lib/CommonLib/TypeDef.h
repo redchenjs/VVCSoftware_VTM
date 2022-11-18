@@ -139,7 +139,9 @@ typedef std::pair<int, int>  TrCost;
 #define KEEP_PRED_AND_RESI_SIGNALS                        0
 
 #if JVET_AB0072
+#ifndef GREEN_METADATA_SEI_ENABLED
 #define GREEN_METADATA_SEI_ENABLED 0 //JVET-AB0072: Analyser for the Green Metadata SEI
+#endif
 #endif
 
 // ====================================================================================================================
