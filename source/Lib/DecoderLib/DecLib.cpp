@@ -686,6 +686,10 @@ void DecLib::executeLoopFilters()
     m_cReshaper.setRecReshaped(false);
     m_cSAO.setReshaper(&m_cReshaper);
   }
+#ifdef GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct initValues;
+  cs.m_featureCounter =  initValues;
+#endif
   // deblocking filter
   m_deblockingFilter.deblockingFilterPic( cs );
   CS::setRefinedMotionField(cs);
@@ -703,6 +707,11 @@ void DecLib::executeLoopFilters()
     m_cALF.ALFProcess(cs);
   }
 
+#ifdef GREEN_METADATA_SEI_ENABLED
+  m_featureCounter.addSAO(cs.m_featureCounter);
+  m_featureCounter.addALF(cs.m_featureCounter);
+  m_featureCounter.addBoundaryStrengths(cs.m_featureCounter);
+#endif
   for (int i = 0; i < cs.pps->getNumSubPics() && m_targetSubPicIdx; i++)
   {
     // keep target subpic samples untouched, for other subpics mask their output sample value to 0
@@ -781,7 +790,11 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
 
   Slice*  pcSlice = m_pcPic->cs->slice;
   m_prevPicPOC = pcSlice->getPOC();
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+  m_featureCounter.height = m_pcPic->Y().height;
+  m_featureCounter.width = m_pcPic->Y().width;
+#endif
+  
   char c = (pcSlice->isIntra() ? 'I' : pcSlice->isInterP() ? 'P' : 'B');
   if (!m_pcPic->referenced)
   {
@@ -3421,9 +3434,15 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     }
   }
 #endif // GDR_LEAK_TEST
+#ifdef GREEN_METADATA_SEI_ENABLED
+  pcSlice->setFeatureCounter(this->m_featureCounter);
+#endif
   //  Decode a picture
   m_cSliceDecoder.decompressSlice( pcSlice, &( nalu.getBitstream() ), ( m_pcPic->poc == getDebugPOC() ? getDebugCTU() : -1 ) );
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+  this->m_featureCounter = pcSlice->getFeatureCounter();
+#endif
+  
   m_bFirstSliceInPicture = false;
   m_uiSliceSegmentIdx++;
 

@@ -564,6 +564,23 @@ protected:
   bool      m_doSEIPersistenceFlag;
   int       m_doSEITransformType;
   bool      m_parameterSetsInclusionIndicationSEIEnabled;
+#ifdef GREEN_METADATA_SEI_ENABLED
+  bool      m_greenMetadataInfoSEIEnabled;
+  int      m_greenMetadataType;
+  int      m_greenMetadataGranularityType;
+  int      m_greenMetadataExtendedRepresentation;
+  int      m_greenMetadataPeriodType;
+  int      m_greenMetadataPeriodNumSeconds;
+  int      m_greenMetadataPeriodNumPictures;
+  //Metrics for quality recovery after low-power encoding
+  int      m_xsdNumberMetrics;
+  bool     m_xsdMetricTypePSNR;
+  bool     m_xsdMetricTypeSSIM;
+  bool     m_xsdMetricTypeVMAF;
+  bool     m_xsdMetricTypeWPSNR;
+  bool     m_xsdMetricTypeWSPSNR;
+  bool     m_xsdMetricTypeEstimatedEnergy;
+#endif
   bool      m_selfContainedClvsFlag;
   bool      m_bpDeltasGOPStructure;
   bool      m_decodingUnitInfoSEIEnabled;
@@ -1925,6 +1942,32 @@ public:
   int   getDOSEITransformType() const                                { return m_doSEITransformType; }
   void  setParameterSetsInclusionIndicationSEIEnabled(bool b)        { m_parameterSetsInclusionIndicationSEIEnabled = b; }
   bool  getParameterSetsInclusionIndicationSEIEnabled() const        { return m_parameterSetsInclusionIndicationSEIEnabled; }
+#ifdef GREEN_METADATA_SEI_ENABLED
+  void setSEIGreenMetadataInfoSEIEnable(int b)                       { (b >= 0) ? m_greenMetadataInfoSEIEnabled = 1 : m_greenMetadataInfoSEIEnabled =0;}
+  bool getSEIGreenMetadataInfoSEIEnable()                            { return m_greenMetadataInfoSEIEnabled;}
+  void setSEIGreenMetadataType(int b)                                { m_greenMetadataType = b;}
+  int getSEIGreenMetadataType()                                      { return m_greenMetadataType;}
+  int getSEIGreenMetadataGranularityType()                           { return m_greenMetadataGranularityType;}
+  void setSEIGreenMetadataGranularityType(int b)                     { m_greenMetadataGranularityType = b;}
+  int getSEIGreenMetadataExtendedRepresentation()                    { return m_greenMetadataExtendedRepresentation;}
+  void setSEIGreenMetadataExtendedRepresentation(int b)              { m_greenMetadataExtendedRepresentation = b;}
+  void setSEIGreenMetadataPeriodType(int b)                          { m_greenMetadataPeriodType = b;}
+  int getSEIGreenMetadataPeriodType()                                { return m_greenMetadataPeriodType;}
+  void setSEIGreenMetadataPeriodNumSeconds(int b)                    {m_greenMetadataPeriodNumSeconds = b;}
+  int getSEIGreenMetadataPeriodNumSeconds()                          {return m_greenMetadataPeriodNumSeconds;}
+  void setSEIGreenMetadataPeriodNumPictures(int b)                   {m_greenMetadataPeriodNumPictures = b;}
+  int getSEIGreenMetadataPeriodNumPictures()                         {return m_greenMetadataPeriodNumPictures;}
+  void setSEIXSDNumberMetrics(int b)                                  { m_xsdNumberMetrics = b;}
+  int  getSEIXSDNumberMetrics()                                      { return m_xsdNumberMetrics;}
+  void setSEIXSDMetricTypePSNR(bool b)                                { m_xsdMetricTypePSNR = b;}
+  bool getSEIXSDMetricTypePSNR()                                     { return m_xsdMetricTypePSNR;}
+  void setSEIXSDMetricTypeSSIM(bool b)                                { m_xsdMetricTypeSSIM = b;}
+  bool getSEIXSDMetricTypeSSIM()                                     { return m_xsdMetricTypeSSIM;}
+  void setSEIXSDMetricTypeWPSNR(bool b)                               { m_xsdMetricTypeWPSNR = b;}
+  bool getSEIXSDMetricTypeWPSNR()                                    { return m_xsdMetricTypeWPSNR;}
+  void setSEIXSDMetricTypeWSPSNR(bool b)                              { m_xsdMetricTypeWSPSNR = b;}
+  bool getSEIXSDMetricTypeWSPSNR()                                   { return m_xsdMetricTypeWSPSNR;}
+#endif
   void  setSelfContainedClvsFlag(bool b)                             { m_selfContainedClvsFlag = b; }
   int   getSelfContainedClvsFlag()                                   { return m_selfContainedClvsFlag; }
   void  setBpDeltasGOPStructure(bool b)                              { m_bpDeltasGOPStructure = b;    }

@@ -200,7 +200,9 @@ private:
   Window        m_scalingWindow;
   int           m_decodingOrderNumber;
   NalUnitType   m_pictureType;
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct m_featureCounter;
+#endif
 public:
   bool m_isSubPicBorderSaved;
 
@@ -215,7 +217,11 @@ public:
   void    saveSubPicBorder(int POC, int subPicX0, int subPicY0, int subPicWidth, int subPicHeight);
   void  extendSubPicBorder(int POC, int subPicX0, int subPicY0, int subPicWidth, int subPicHeight);
   void restoreSubPicBorder(int POC, int subPicX0, int subPicY0, int subPicWidth, int subPicHeight);
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+  void setFeatureCounter (FeatureCounterStruct b ) { m_featureCounter = b;}
+  FeatureCounterStruct getFeatureCounter (){return m_featureCounter;}
+#endif
+  
   bool getSubPicSaved()          { return m_isSubPicBorderSaved; }
   void setSubPicSaved(bool bVal) { m_isSubPicBorderSaved = bVal; }
   bool     m_extendedBorder;

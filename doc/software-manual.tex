@@ -4288,23 +4288,69 @@ Specifies the rotation and mirroring to be applied to the picture.
 
 
 
-\begin{OptionTableNoShorthand}{Green Metadata SEI message encoder parameters}{tab:sei-green-metadata}
-\Option{SEIGreenMetadataType} &
-\Default{0} &
+\Default{-1} &
 Specifies the type of metadata that is present in the SEI message.
 \par
 \begin{tabular}{cp{0.35\textwidth}}
-  0 & Reserved \\
-  1 & Metadata enabling quality recovery after low-power encoding is present \\
+	-1 & Disabled \\
+	0 & Metadata for decoder complexity metrics \\
+	1 & Metadata enabling quality recovery after low-power encoding\\
 \end{tabular}
 \\
-\Option{SEIXSDMetricType} &
+\Option{SEIGreenMetadataPeriodType} &
 \Default{0} &
-Indicates the type of the objective quality metric.
+Indicates the period type of metadata.
 \par
 \begin{tabular}{cp{0.35\textwidth}}
-  0 & PSNR is used as objective quality metric \\
+	0 & Metadata are applicable to a single picture  \\
+	1 & Metadata are applicable to all pictures in decoding order, up to (but not including) the picture containing the next I slice (not implemented) \\
+	2 & Metadata are applicable to all pictures over a specified time interval in seconds \\
+	3 & Metadata are applicable over a specified number of pictures counted in decoding order \\
 \end{tabular}
+\\
+\Option{SEIGreenMetadataPeriodTypeSeconds} &
+\Default{1} &
+Indicates the number of seconds over which metadata should be valid (if SEIGreenMetadataPeriodType == 2)
+\\
+\Option{SEIGreenMetadataPeriodTypePictures} &
+\Default{1} &
+Indicates the number of pictures, counted in decoding order, over which metadata should be valid (if SEIGreenMetadataPeriodType == 3)
+\\
+\Option{SEIGreenMetadataExtendedRepresentation} &
+\Default{0} &
+Enables or disables the signaling of extended complexity metrics (if SEIGreenMetadataType == 0)
+\\
+\Option{GMFA} &
+\Default{false} &
+Enables or disables the output of a file containing analysis statistics for green metadata generation (if SEIGreenMetadataType == 0)
+\\
+\Option{GMFAFile} &
+\Default{} &
+File name for GMFA output file.
+\\
+\Option{GMFAFramewise} &
+\Default{false} &
+Enables or disables frame-wise output of the statistics. If disabled, statistics are calculated for the complete bit stream.
+\\
+\Option{SEIXSDMetricNumber} &
+\Default{1} &
+Number of quality metrics to be signaled (if SEIGreenMetadataType == 1)
+\\
+\Option{SEIXSDMetricTypePSNR} &
+\Default{false} &
+Enables or disables sending of PSNR metric.
+\\
+\Option{SEIXSDMetricTypeSSIM} &
+\Default{false} &
+Enables or disables sending of SSIM metric.
+\\
+\Option{SEIXSDMetricTypeWPSNR} &
+\Default{false} &
+Enables or disables sending of wPSNR metric.
+\\
+\Option{SEIXSDMetricTypeWSPSNR} &
+\Default{false} &
+Enables or disables sending of WS-PSNR metric.
 \\
 \end{OptionTableNoShorthand}
 
@@ -6243,6 +6289,38 @@ DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL,
 \end{minted}
 \end{description}
 
+
+\section{Coding tool statistics extension for green metadata}
+\label{sec:green-meta-sei}
+
+The encoder and the decoder include an extension that generates coding tool statistic. In the encoder, the extension calculates green metadata for encoding green SEI messages, in particular complexity metrics for decoder power reduction. The decoder extension can be used for cross-checking the correct functionality of the encoding extension.
+
+The output of the analyzer can be enabled with the option 'GMFA' (Green Metadata Feature Analyzer). The output file name is specified with the flag 'GMFAFile'.
+Furthermore, it is possible to generate a framewise analysis with the option 'GMFAFramewise'. The output file is generated in a Matlab-readable way. Here is an example for both the encoder and the decoder:
+
+\begin{minted}{bash}
+bin/EncoderAppStatic -b bitstream.vvc  --GMFA 1 --GMFAFramewise=1 --GMFAFile="bitstream.m" [encoder options]
+
+bin/DecoderAppStatic -b bitstream.vvc  --GMFA 1 --GMFAFramewise=1 --GMFAFile="bitstream.m" [decoder options]
+\end{minted}
+
+The output file contains arrays with statistics on the use of coding tools on block-size level. As an example, the number of intra-coded blocks is returned as:
+
+\begin{minted}{bash}
+n.intraBlocks = [...
+0  0  0  0  0  0  0  0 ;...
+0  0  0  16412  2142  54  0  0 ;...
+0  0  41654  41906  9780  665  27  0 ;...
+0  0  23494  22855  8641  906  26  0 ;...
+0  0  4670  4797  4030  1215  60  0 ;...
+0  0  433  507  881  1104  84  0 ;...
+0  0  38  48  43  122  131  0 ;...
+0  0  0  0  0  0  0  0 ];
+\end{minted}
+
+The horizontal position indicates the logarithm to the basis 2 block width (1, 2, 4, .., 128) and the vertical position the block height, accordingly. In this example, the bit stream contains $16{,}412$ intra-coded blocks of size $8\times 2$.
+
+More information can be found in JVET-P0085 and \url{10.1109/ICIP40778.2020.9190840}.
 
 
 

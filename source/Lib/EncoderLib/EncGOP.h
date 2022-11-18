@@ -220,6 +220,13 @@ private:
   std::chrono::duration<long long, std::ratio<1, 1000000000>> m_metricTime;
 #endif
 
+#ifdef GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct m_featureCounter;
+  FeatureCounterStruct m_featureCounterReference;
+  SEIQualityMetrics m_SEIGreenQualityMetrics;
+  SEIComplexityMetrics m_SEIGreenComplexityMetrics;
+#endif
+
 public:
   EncGOP();
   virtual ~EncGOP();
@@ -253,6 +260,10 @@ public:
   void      setLastLTRefPoc(int iLastLTRefPoc) { m_lastLTRefPoc = iLastLTRefPoc; }
   int       getLastLTRefPoc() const { return m_lastLTRefPoc; }
 
+#ifdef GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct getFeatureCounter(){return m_featureCounter;}
+  void setFeatureCounter(FeatureCounterStruct b){m_featureCounter=b;}
+#endif
 #if GDR_ENABLED
   void      setLastGdrIntervalPoc(int p)  { m_lastGdrIntervalPoc = p; }
   int       getLastGdrIntervalPoc() const { return m_lastGdrIntervalPoc; }
@@ -358,6 +369,9 @@ protected:
   void xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicList& rcListPic, const ReferencePictureList *rpl0, const ReferencePictureList *rpl1 );
   bool xCheckMaxTidILRefPics(int layerIdx, Picture* refPic, bool currentPicIsIRAP);
   void computeSignalling(Picture* pcPic, Slice* pcSlice) const;
+#ifdef GREEN_METADATA_SEI_ENABLED
+  void xCalculateGreenComplexityMetrics(FeatureCounterStruct featureCounter, FeatureCounterStruct featureCounterReference, SEIGreenMetadataInfo* seiGreenMetadataInfo);
+#endif
 };// END CLASS DEFINITION EncGOP
 
 //! \}

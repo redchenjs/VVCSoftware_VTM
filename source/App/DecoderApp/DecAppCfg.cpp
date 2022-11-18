@@ -124,6 +124,11 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
                                                                                    "\t2: enable tool statistic\n"
                                                                                    "\t3: enable bit and tool statistic\n")
 #endif
+#ifdef GREEN_METADATA_SEI_ENABLED
+  ("GMFA", m_GMFA, false, "Write output file for the Green-Metadata analyzer for decoder complexity metrics (JVET-P0085)\n")
+  ("GMFAFile", m_GMFAFile, string(""), "File for the Green Metadata Bit Stream Feature Analyzer output (JVET-P0085)\n")
+  ("GMFAFramewise", m_GMFAFramewise, false, "Output of frame-wise Green Metadata Bit Stream Feature Analyzer files\n")
+#endif
   ("MCTSCheck",                m_mctsCheck,                           false,       "If enabled, the decoder checks for violations of mc_exact_sample_value_match_flag in Temporal MCTS ")
   ("targetSubPicIdx",          m_targetSubPicIdx,                     0,           "Specify which subpicture shall be written to output, using subpic index, 0: disabled, subpicIdx=m_targetSubPicIdx-1 \n" )
   ( "UpscaledOutput",          m_upscaledOutput,                          0,       "Upscaled output for RPR" )

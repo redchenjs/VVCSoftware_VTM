@@ -858,7 +858,27 @@ protected:
   int         m_SII_BlendingRatio;
   void        setBlendingRatioSII(int value) { m_SII_BlendingRatio = value; }
 #endif
+#ifdef GREEN_METADATA_SEI_ENABLED
+public:
+  std::string getGMFAFile ();
+  bool getGMFAUsage();
+protected:
+  std::string   m_GMFAFile;
+  bool          m_GMFA;
+  
+  int      m_greenMetadataType;
+  int      m_greenMetadataExtendedRepresentation;
+  int      m_greenMetadataGranularityType;
+  int      m_greenMetadataPeriodType;
+  int      m_greenMetadataPeriodNumSeconds;
+  int      m_greenMetadataPeriodNumPictures;
 
+  int      m_xsdNumberMetrics;
+  bool     m_xsdMetricTypePSNR;
+  bool     m_xsdMetricTypeSSIM;
+  bool     m_xsdMetricTypeWPSNR;
+  bool     m_xsdMetricTypeWSPSNR;
+#endif
   std::string m_summaryOutFilename;                           ///< filename to use for producing summary output file.
   std::string m_summaryPicFilenameBase;                       ///< Base filename to use for producing summary picture output files. The actual filenames used will have I.txt, P.txt and B.txt appended.
   uint32_t        m_summaryVerboseness;                           ///< Specifies the level of the verboseness of the text output.

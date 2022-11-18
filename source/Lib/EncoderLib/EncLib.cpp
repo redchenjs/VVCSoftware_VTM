@@ -677,6 +677,9 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
 #if JVET_O0756_CALCULATE_HDRMETRICS
     m_metricTime = m_cGOPEncoder.getMetricTime();
 #endif
+#ifdef GREEN_METADATA_SEI_ENABLED
+    this->setFeatureCounter(m_cGOPEncoder.getFeatureCounter());
+#endif
     m_cGOPEncoder.setEncodedLTRef( true );
     if( m_RCEnableRateControl )
     {

@@ -231,7 +231,11 @@ uint32_t getCtuAddr        (const Position& pos, const PreCalcValues &pcv);
 int  getNumModesMip   (const Size& block);
 int getMipSizeId      (const Size& block);
 bool allowLfnstWithMip(const Size& block);
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+void writeGMFAOutput(FeatureCounterStruct& featureCounter, FeatureCounterStruct& featureCounterReference, std::string GMFAFile, bool lastFrame);
+void featureToFile(std::ofstream& featureFile,int featureCounterReference[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1], std::string featureName,bool calcDifference=false,int featureCounter[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1]=NULL);
+void countFeatures  (FeatureCounterStruct& featureCounterStruct, CodingStructure& cs, const UnitArea& ctuArea);
+#endif
 template<typename T, size_t N>
 uint32_t updateCandList(T mode, double uiCost, static_vector<T, N> &candModeList,
                         static_vector<double, N> &candCostList, size_t uiFastCandNum = N, int *iserttPos = nullptr)

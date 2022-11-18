@@ -232,6 +232,54 @@ void SEIEncoder::initSEIErp(SEIEquirectangularProjection* seiEquirectangularProj
   }
 }
 
+#ifdef GREEN_METADATA_SEI_ENABLED
+void SEIEncoder::initSEIGreenMetadataInfo(SEIGreenMetadataInfo* seiGreenMetadataInfo, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics,SEIComplexityMetrics greenMetadata)
+{
+  assert (m_isInitialized);
+  assert (seiGreenMetadataInfo!=NULL);
+  
+  if (m_pcCfg->getSEIGreenMetadataType() == 1) //Metadata for quality recovery after low-power encoding
+  {
+    seiGreenMetadataInfo->m_greenMetadataType = m_pcCfg->getSEIGreenMetadataType();
+    seiGreenMetadataInfo->m_xsdSubpicNumberMinus1 = m_pcCfg->getSEIXSDNumberMetrics()-1;
+    seiGreenMetadataInfo->m_xsdSubPicIdc = 1; //Only 1 Picture is supported
+    // Maximum valid value for 16-bit integer: 65535
+    (m_pcCfg->getSEIXSDMetricTypePSNR()) ? seiGreenMetadataInfo->m_xsdMetricValuePSNR  = min(int(metrics.psnr*100),65535) :  seiGreenMetadataInfo->m_xsdMetricValuePSNR = 0;
+    (m_pcCfg->getSEIXSDMetricTypeSSIM()) ? seiGreenMetadataInfo->m_xsdMetricValueSSIM  = min(int(metrics.ssim*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueSSIM  = 0;
+    (m_pcCfg->getSEIXSDMetricTypeWPSNR()) ? seiGreenMetadataInfo->m_xsdMetricValueWPSNR  = min(int(metrics.wpsnr*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueWPSNR  = 0;
+    (m_pcCfg->getSEIXSDMetricTypeWSPSNR()) ? seiGreenMetadataInfo->m_xsdMetricValueWSPSNR  = min(int(metrics.wspsnr*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueWSPSNR  = 0;
+    
+    seiGreenMetadataInfo->m_xsdMetricTypePSNR = m_pcCfg->getSEIXSDMetricTypePSNR();
+    seiGreenMetadataInfo->m_xsdMetricTypeSSIM = m_pcCfg->getSEIXSDMetricTypeSSIM();
+    seiGreenMetadataInfo->m_xsdMetricTypeWPSNR = m_pcCfg->getSEIXSDMetricTypeWPSNR();
+    seiGreenMetadataInfo->m_xsdMetricTypeWSPSNR = m_pcCfg->getSEIXSDMetricTypeWSPSNR();
+  }
+  else if(m_pcCfg->getSEIGreenMetadataType() == 0) // Metadata for decoder-complexity metrics
+  {
+    seiGreenMetadataInfo->m_greenMetadataType                   = m_pcCfg->getSEIGreenMetadataType();
+    seiGreenMetadataInfo->m_greenMetadataGranularityType        = m_pcCfg->getSEIGreenMetadataGranularityType();
+    seiGreenMetadataInfo->m_greenMetadataExtendedRepresentation = m_pcCfg->getSEIGreenMetadataExtendedRepresentation();
+    switch (m_pcCfg->getSEIGreenMetadataPeriodType())   // Period type
+    {
+    case 0:   // 0x00 complexity metrics are applicable to a single picture
+      seiGreenMetadataInfo->m_numPictures = m_pcCfg->getSEIGreenMetadataPeriodNumPictures();
+      break;
+    case 1:   // 0x01 complexity metrics are applicable to all pictures in decoding order, up to (but not including) the picture containing the next I slice
+      //
+      break;
+    case 2:   // 0x02 complexity metrics are applicable over a specified time interval in seconds
+      seiGreenMetadataInfo->m_numPictures = m_pcCfg->getSEIGreenMetadataPeriodNumPictures();
+      break;
+    case 3:   // 0x03 complexity metrics are applicable over a specified number of pictures counted in decoding order
+      seiGreenMetadataInfo->m_numSeconds = m_pcCfg->getSEIGreenMetadataPeriodNumSeconds();
+      break;
+    default:   // 0x05-0xFF reserved
+      break;   //
+    }
+  }
+}
+#endif
+
 void SEIEncoder::initSEISphereRotation(SEISphereRotation* seiSphereRotation)
 {
   CHECK(!(m_isInitialized), "seiSphereRotation already initialized");

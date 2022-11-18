@@ -906,6 +906,22 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setDoSEITransformType                                ( m_doSEITransformType);
   m_cEncLib.setParameterSetsInclusionIndicationSEIEnabled        (m_parameterSetsInclusionIndicationSEIEnabled);
   m_cEncLib.setSelfContainedClvsFlag                             (m_selfContainedClvsFlag);
+#ifdef GREEN_METADATA_SEI_ENABLED
+  m_cEncLib.setGMFAFile(m_GMFAFile);
+  m_cEncLib.setSEIGreenMetadataInfoSEIEnable                     ( m_greenMetadataType );
+  m_cEncLib.setSEIGreenMetadataExtendedRepresentation            ( m_greenMetadataExtendedRepresentation);
+  m_cEncLib.setSEIGreenMetadataGranularityType                   ( m_greenMetadataGranularityType);
+  m_cEncLib.setSEIGreenMetadataType                              ( m_greenMetadataType );
+  m_cEncLib.setSEIGreenMetadataPeriodType                        ( m_greenMetadataPeriodType );
+  m_cEncLib.setSEIGreenMetadataPeriodNumPictures                 (m_greenMetadataPeriodNumPictures);
+  m_cEncLib.setSEIGreenMetadataPeriodNumSeconds                  (m_greenMetadataPeriodNumSeconds);
+  //Metrics for quality recovery after low-power encoding
+  m_cEncLib.setSEIXSDNumberMetrics                               (m_xsdNumberMetrics);
+  m_cEncLib.setSEIXSDMetricTypePSNR                              (m_xsdMetricTypePSNR);
+  m_cEncLib.setSEIXSDMetricTypeSSIM                              (m_xsdMetricTypeSSIM);
+  m_cEncLib.setSEIXSDMetricTypeWPSNR                             (m_xsdMetricTypeWPSNR);
+  m_cEncLib.setSEIXSDMetricTypeWSPSNR                            (m_xsdMetricTypeWSPSNR);
+#endif
   m_cEncLib.setErpSEIEnabled                                     ( m_erpSEIEnabled );
   m_cEncLib.setErpSEICancelFlag                                  ( m_erpSEICancelFlag );
   m_cEncLib.setErpSEIPersistenceFlag                             ( m_erpSEIPersistenceFlag );
@@ -1874,5 +1890,24 @@ void EncApp::printChromaFormat()
     std::cout << "\n" << std::endl;
   }
 }
+
+#ifdef GREEN_METADATA_SEI_ENABLED
+void EncApp::featureToFile(std::ofstream& featureFile,int feature[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1], std::string featureName)
+{
+  featureFile <<   "\tn." << featureName << " = [...\n\t";
+  for (size_t i = 0; i < MAX_CU_DEPTH+1; i++)
+  {
+    for (size_t j = 0; j < MAX_CU_DEPTH+1; j++)
+    {
+      featureFile << " " << feature[j][i] << " ";
+    }
+    if (i != MAX_CU_DEPTH)
+    {
+      featureFile << ";... \n\t";
+    }
+  }
+  featureFile << "]; \n ";
+}
+#endif
 
 //! \}

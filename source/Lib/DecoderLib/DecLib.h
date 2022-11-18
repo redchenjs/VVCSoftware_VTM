@@ -321,11 +321,21 @@ public:
   const OPI* getOPI()                     { return m_opi; }
 
   bool      getMixedNaluTypesInPicFlag();
+#ifdef GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct m_featureCounter;
+  bool m_GMFAFramewise;
+  std::string   m_GMFAFile;
+  void setFeatureCounter (FeatureCounterStruct b ) {m_featureCounter = b;}
+  FeatureCounterStruct getFeatureCounter (){return m_featureCounter;}
+  void setGMFAFile(std::string b){m_GMFAFile = b;}
+  void setFeatureAnalysisFramewise(bool b){m_GMFAFramewise = b;}
+#endif
 
 #if JVET_Z0120_SII_SEI_PROCESSING
   bool  getShutterFilterFlag()        const { return m_ShutterFilterEnable; }
   void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
 #endif
+
 
 protected:
   void  xUpdateRasInit(Slice* slice);

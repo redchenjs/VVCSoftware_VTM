@@ -50,6 +50,7 @@
 #include <cstring>
 #include <assert.h>
 #include <cassert>
+#include "CommonDef.h"
 
 // clang-format off
 
@@ -61,6 +62,7 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 #define JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC 1
+#define JVET_AB0072                                      1 //Green-MPEG SEI Messaging (JVET-AB0072)
 
 //########### place macros to be be kept below this line ###############
 
@@ -135,6 +137,10 @@ typedef std::pair<int, int>  TrCost;
 #define WCG_WPSNR                                         WCG_EXT
 
 #define KEEP_PRED_AND_RESI_SIGNALS                        0
+
+#if JVET_AB0072
+#define GREEN_METADATA_SEI_ENABLED 0 //JVET-AB0072: Analyser for the Green Metadata SEI
+#endif
 
 // ====================================================================================================================
 // Debugging
@@ -864,6 +870,7 @@ enum NalUnitType
   NAL_UNIT_INVALID
 };
 
+
 #if SHARP_LUMA_DELTA_QP
 enum LumaLevelToDQPMode
 {
@@ -1363,6 +1370,8 @@ struct XUCache
   PUCache puCache;
   TUCache tuCache;
 };
+
+
 
 //! \}
 

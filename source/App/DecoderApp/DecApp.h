@@ -122,7 +122,6 @@ private:
 
   void  writeLineToOutputLog(Picture * pcPic);
   void xOutputAnnotatedRegions(PicList* pcListPic);
-
 };
 
 //! \}
