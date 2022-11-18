@@ -130,10 +130,10 @@ private:
   static const int m_cuTreeThresh[4];
 
   // Private member variables
-  int m_FrameSkip;
+  int                        m_frameSkip;
   std::string m_inputFileName;
   int m_inputBitDepth[MAX_NUM_CHANNEL_TYPE];
-  int m_MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];
+  int                        m_msbExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];
   int m_internalBitDepth[MAX_NUM_CHANNEL_TYPE];
   ChromaFormat m_chromaFormatIDC;
   int m_sourceWidth;

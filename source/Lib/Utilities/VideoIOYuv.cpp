@@ -136,8 +136,8 @@ void VideoIOYuv::open( const std::string &fileName, bool bWriteMode, const int f
   for(uint32_t ch=0; ch<MAX_NUM_CHANNEL_TYPE; ch++)
   {
     m_fileBitdepth       [ch] = std::min<uint32_t>(fileBitDepth[ch], 16);
-    m_MSBExtendedBitDepth[ch] = MSBExtendedBitDepth[ch];
-    m_bitdepthShift      [ch] = internalBitDepth[ch] - m_MSBExtendedBitDepth[ch];
+    m_msbExtendedBitDepth[ch] = MSBExtendedBitDepth[ch];
+    m_bitdepthShift[ch]       = internalBitDepth[ch] - m_msbExtendedBitDepth[ch];
 
     if (m_fileBitdepth[ch] > 16)
     {
@@ -1039,7 +1039,8 @@ static bool writeField(ostream& fd, const Pel* top, const Pel* bottom,
  * @param format           chroma format
  * @return true for success, false in case of error
  */
-bool VideoIOYuv::read ( PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSpaceConversion ipcsc, int aiPad[2], ChromaFormat format, const bool bClipToRec709 )
+bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpaceConversion ipcsc, int aiPad[2],
+                      ChromaFormat format, const bool clipToRec709)
 {
   // check end-of-file
   if ( isEof() )
@@ -1092,11 +1093,14 @@ bool VideoIOYuv::read ( PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSp
     const ComponentID compID = ComponentID(comp);
     const ChannelType chType=toChannelType(compID);
 
-    const int desired_bitdepth = m_MSBExtendedBitDepth[chType] + m_bitdepthShift[chType];
+    const int desired_bitdepth = m_msbExtendedBitDepth[chType] + m_bitdepthShift[chType];
 
-    const bool b709Compliance=(bClipToRec709) && (m_bitdepthShift[chType] < 0 && desired_bitdepth >= 8);     /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
-    const Pel minval = b709Compliance? ((   1 << (desired_bitdepth - 8))   ) : 0;
-    const Pel maxval = b709Compliance? ((0xff << (desired_bitdepth - 8)) -1) : (1 << desired_bitdepth) - 1;
+    const bool rec709Compliance =
+      (clipToRec709)
+      && (m_bitdepthShift[chType] < 0
+          && desired_bitdepth >= 8); /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
+    const Pel  minval = rec709Compliance ? ((1 << (desired_bitdepth - 8))) : 0;
+    const Pel  maxval = rec709Compliance ? ((0xff << (desired_bitdepth - 8)) - 1) : (1 << desired_bitdepth) - 1;
     const bool processComponent = (size_t)compID < picOrg.bufs.size();
     Pel* const dst = processComponent ? picOrg.get(compID).bufAt(0,0) : nullptr;
 #if EXTENSION_360_VIDEO
@@ -1149,10 +1153,10 @@ bool VideoIOYuv::read ( PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSp
  * @return true for success, false in case of error
  */
  // here orgWidth and orgHeight are for luma
-bool VideoIOYuv::write( uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf& pic,
-                        const InputColourSpaceConversion ipCSC,
-                        const bool bPackedYUVOutputMode,
-                        int confLeft, int confRight, int confTop, int confBottom, ChromaFormat format, const bool bClipToRec709, const bool subtractConfWindowOffsets )
+bool VideoIOYuv::write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf &pic,
+                       const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode, int confLeft,
+                       int confRight, int confTop, int confBottom, ChromaFormat format, const bool clipToRec709,
+                       const bool subtractConfWindowOffsets)
 {
   PelStorage interm;
 
@@ -1196,9 +1200,13 @@ bool VideoIOYuv::write( uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf
     {
       const ComponentID compID=ComponentID(comp);
       const ChannelType ch=toChannelType(compID);
-      const bool b709Compliance = bClipToRec709 && (-m_bitdepthShift[ch] < 0 && m_MSBExtendedBitDepth[ch] >= 8);     /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
-      const Pel minval = b709Compliance? ((   1 << (m_MSBExtendedBitDepth[ch] - 8))   ) : 0;
-      const Pel maxval = b709Compliance? ((0xff << (m_MSBExtendedBitDepth[ch] - 8)) -1) : (1 << m_MSBExtendedBitDepth[ch]) - 1;
+      const bool        rec709Compliance =
+        clipToRec709
+        && (-m_bitdepthShift[ch] < 0
+            && m_msbExtendedBitDepth[ch] >= 8); /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
+      const Pel minval = rec709Compliance ? ((1 << (m_msbExtendedBitDepth[ch] - 8))) : 0;
+      const Pel maxval =
+        rec709Compliance ? ((0xff << (m_msbExtendedBitDepth[ch] - 8)) - 1) : (1 << m_msbExtendedBitDepth[ch]) - 1;
 
       scalePlane( picZ.get(compID), -m_bitdepthShift[ch], minval, maxval);
     }
@@ -1245,10 +1253,9 @@ bool VideoIOYuv::write( uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf
   return retval;
 }
 
-bool VideoIOYuv::write( const CPelUnitBuf& picTop, const CPelUnitBuf& picBottom,
-                        const InputColourSpaceConversion ipCSC,
-                        const bool bPackedYUVOutputMode,
-                        int confLeft, int confRight, int confTop, int confBottom, ChromaFormat format, const bool isTff, const bool bClipToRec709 )
+bool VideoIOYuv::write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBottom, const InputColourSpaceConversion ipCSC,
+                       const bool bPackedYUVOutputMode, int confLeft, int confRight, int confTop, int confBottom,
+                       ChromaFormat format, const bool isTff, const bool clipToRec709)
 {
   PelStorage intermTop;
   PelStorage intermBottom;
@@ -1301,9 +1308,13 @@ bool VideoIOYuv::write( const CPelUnitBuf& picTop, const CPelUnitBuf& picBottom,
       {
         const ComponentID compID=ComponentID(comp);
         const ChannelType ch=toChannelType(compID);
-        const bool b709Compliance=bClipToRec709 && (-m_bitdepthShift[ch] < 0 && m_MSBExtendedBitDepth[ch] >= 8);     /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
-        const Pel minval = b709Compliance? ((   1 << (m_MSBExtendedBitDepth[ch] - 8))   ) : 0;
-        const Pel maxval = b709Compliance? ((0xff << (m_MSBExtendedBitDepth[ch] - 8)) -1) : (1 << m_MSBExtendedBitDepth[ch]) - 1;
+        const bool        rec709Compliance =
+          clipToRec709
+          && (-m_bitdepthShift[ch] < 0
+              && m_msbExtendedBitDepth[ch] >= 8); /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
+        const Pel minval = rec709Compliance ? ((1 << (m_msbExtendedBitDepth[ch] - 8))) : 0;
+        const Pel maxval =
+          rec709Compliance ? ((0xff << (m_msbExtendedBitDepth[ch] - 8)) - 1) : (1 << m_msbExtendedBitDepth[ch]) - 1;
 
         scalePlane( picZ.get(compID), -m_bitdepthShift[ch], minval, maxval);
       }
@@ -1419,9 +1430,14 @@ void VideoIOYuv::ColourSpaceConvert(const CPelUnitBuf &src, PelUnitBuf &dest, co
 }
 
 #if !JVET_AB0081
-bool VideoIOYuv::writeUpscaledPicture( const SPS& sps, const PPS& pps, const CPelUnitBuf& pic, const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode, int outputChoice, ChromaFormat format, const bool bClipToRec709)
+bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
+                                      const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode,
+                                      int outputChoice, ChromaFormat format, const bool clipToRec709)
 #else
-bool VideoIOYuv::writeUpscaledPicture(const SPS& sps, const PPS& pps, const CPelUnitBuf& pic, const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode, int outputChoice, ChromaFormat format, const bool bClipToRec709, int upscaleFilterForDisplay)
+bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
+                                      const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode,
+                                      int outputChoice, ChromaFormat format, const bool clipToRec709,
+                                      int upscaleFilterForDisplay)
 #endif
 {
   ChromaFormat chromaFormatIDC = sps.getChromaFormatIdc();
@@ -1460,41 +1476,34 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS& sps, const PPS& pps, const CPel
 #else
       Picture::rescalePicture( std::pair<int, int>( xScale, yScale ), pic, pps.getScalingWindow(), upscaledPic, afterScaleWindowFullResolution, chromaFormatIDC, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag() );
 #endif
-      ret = write( sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), upscaledPic,
-        ipCSC,
-        bPackedYUVOutputMode,
-        confFullResolution.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-        confFullResolution.getWindowRightOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-        confFullResolution.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-        confFullResolution.getWindowBottomOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-        NUM_CHROMA_FORMAT, bClipToRec709, false );
+      ret = write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), upscaledPic, ipCSC,
+                  bPackedYUVOutputMode, confFullResolution.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                  confFullResolution.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                  confFullResolution.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                  confFullResolution.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+                  clipToRec709, false);
     }
     else
     {
       const Window &conf = pps.getConformanceWindow();
 
-      ret = write( sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), pic,
-        ipCSC,
-        bPackedYUVOutputMode,
-        conf.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-        conf.getWindowRightOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-        conf.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-        conf.getWindowBottomOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-        NUM_CHROMA_FORMAT, bClipToRec709, false );
+      ret =
+        write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), pic, ipCSC, bPackedYUVOutputMode,
+              conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT, clipToRec709, false);
     }
   }
   else
   {
     const Window &conf = pps.getConformanceWindow();
 
-    ret = write( pic.get( COMPONENT_Y ).width, pic.get( COMPONENT_Y ).height, pic,
-      ipCSC,
-      bPackedYUVOutputMode,
-      conf.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-      conf.getWindowRightOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-      conf.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-      conf.getWindowBottomOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-      NUM_CHROMA_FORMAT, bClipToRec709 );
+    ret = write(pic.get(COMPONENT_Y).width, pic.get(COMPONENT_Y).height, pic, ipCSC, bPackedYUVOutputMode,
+                conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT, clipToRec709);
   }
 
   return ret;

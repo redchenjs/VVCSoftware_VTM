@@ -118,8 +118,10 @@ void EncLib::create( const int layerId )
   }
   if ( m_RCEnableRateControl )
   {
-    m_cRateCtrl.init(m_framesToBeEncoded, m_RCTargetBitrate, (int)((double)m_iFrameRate / m_temporalSubsampleRatio + 0.5), m_iGOPSize, m_intraPeriod, m_sourceWidth, m_sourceHeight,
-      m_maxCUWidth, m_maxCUHeight, getBitDepth(CHANNEL_TYPE_LUMA), m_RCKeepHierarchicalBit, m_RCUseLCUSeparateModel, m_GOPList);
+    m_cRateCtrl.init(m_framesToBeEncoded, m_RCTargetBitrate,
+                     (int) ((double) m_frameRate / m_temporalSubsampleRatio + 0.5), m_gopSize, m_intraPeriod,
+                     m_sourceWidth, m_sourceHeight, m_maxCUWidth, m_maxCUHeight, getBitDepth(CHANNEL_TYPE_LUMA),
+                     m_RCKeepHierarchicalBit, m_RCUseLCUSeparateModel, m_GOPList);
   }
 
 }
@@ -178,7 +180,8 @@ void EncLib::init(AUWriterIf *auWriterIf)
 
   if (m_RCCpbSaturationEnabled)
   {
-    m_cRateCtrl.initHrdParam(sps0.getGeneralHrdParameters(), sps0.getOlsHrdParameters(), m_iFrameRate, m_RCInitialCpbFullness);
+    m_cRateCtrl.initHrdParam(sps0.getGeneralHrdParameters(), sps0.getOlsHrdParameters(), m_frameRate,
+                             m_RCInitialCpbFullness);
   }
   m_cRdCost.setCostMode ( m_costMode );
 
@@ -905,7 +908,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
   }
 
   if ((m_receivedPicCount == 0)
-      || (!flush && (m_pocLast != 0) && (m_receivedPicCount != m_iGOPSize) && (m_iGOPSize != 0)))
+      || (!flush && (m_pocLast != 0) && (m_receivedPicCount != m_gopSize) && (m_gopSize != 0)))
   {
     numEncoded = 0;
     return true;
@@ -945,7 +948,7 @@ bool EncLib::encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBu
   m_picIdInGOP++;
 
   // go over all pictures in a GOP excluding the first IRAP
-  if (m_picIdInGOP != m_iGOPSize && m_pocLast)
+  if (m_picIdInGOP != m_gopSize && m_pocLast)
   {
     return true;
   }
@@ -1074,7 +1077,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYu
 
   }
 
-  if (m_receivedPicCount && (flush || m_pocLast == 1 || m_receivedPicCount == m_iGOPSize))
+  if (m_receivedPicCount && (flush || m_pocLast == 1 || m_receivedPicCount == m_gopSize))
   {
     m_picIdInGOP = 0;
     keepDoing = false;
@@ -1104,7 +1107,7 @@ bool EncLib::encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBu
   }
 
   // go over all pictures in a GOP excluding first top field and first bottom field
-  if (m_picIdInGOP != m_iGOPSize && m_pocLast > 1)
+  if (m_picIdInGOP != m_gopSize && m_pocLast > 1)
   {
     return true;
   }
@@ -1148,7 +1151,7 @@ void EncLib::xGetNewPicBuffer ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Pict
   // use an entry in the buffered list if the maximum number that need buffering has been reached:
   int maxDecPicBuffering = ( m_vps == nullptr || m_vps->m_numLayersInOls[m_vps->m_targetOlsIdx] == 1 ) ? sps.getMaxDecPicBuffering( MAX_TLAYER - 1 ) : m_vps->getMaxDecPicBuffering( MAX_TLAYER - 1 );
 
-  if( m_cListPic.size() >= (uint32_t)( m_iGOPSize + maxDecPicBuffering + 2 ) )
+  if (m_cListPic.size() >= (uint32_t) (m_gopSize + maxDecPicBuffering + 2))
   {
     PicList::iterator iterPic = m_cListPic.begin();
     int               size    = int(m_cListPic.size());
@@ -1501,10 +1504,10 @@ void EncLib::xInitSPS( SPS& sps )
 
   sps.setCTUSize                             ( m_CTUSize );
   sps.setSplitConsOverrideEnabledFlag        ( m_useSplitConsOverride );
-  sps.setMinQTSizes                          ( m_uiMinQT );
+  sps.setMinQTSizes(m_minQt);
   sps.setMaxMTTHierarchyDepth                ( m_uiMaxMTTHierarchyDepth, m_uiMaxMTTHierarchyDepthI, m_uiMaxMTTHierarchyDepthIChroma );
-  sps.setMaxBTSize( m_uiMaxBT[1], m_uiMaxBT[0], m_uiMaxBT[2] );
-  sps.setMaxTTSize( m_uiMaxTT[1], m_uiMaxTT[0], m_uiMaxTT[2] );
+  sps.setMaxBTSize(m_maxBt[1], m_maxBt[0], m_maxBt[2]);
+  sps.setMaxTTSize(m_maxTt[1], m_maxTt[0], m_maxTt[2]);
   sps.setIDRRefParamListPresent              ( m_idrRefParamList );
   sps.setUseDualITree                        ( m_dualITree );
   sps.setUseLFNST                            ( m_LFNST );
@@ -1920,7 +1923,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     bChromaDeltaQPEnabled = ( m_sliceChromaQpOffsetIntraOrPeriodic[0] || m_sliceChromaQpOffsetIntraOrPeriodic[1] );
     if( !bChromaDeltaQPEnabled )
     {
-      for( int i=0; i<m_iGOPSize; i++ )
+      for (int i = 0; i < m_gopSize; i++)
       {
         if( m_GOPList[i].m_CbQPoffset || m_GOPList[i].m_CrQPoffset )
         {
@@ -2438,8 +2441,8 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
     rplLists[1] = slice->getSPS()->getRPLList(1);
   }
 
-  int fullListNum = m_iGOPSize;
-  int partialListNum = getRPLCandidateSize(0) - m_iGOPSize;
+  int fullListNum    = m_gopSize;
+  int partialListNum = getRPLCandidateSize(0) - m_gopSize;
   int extraNum = fullListNum;
 
   int rplPeriod = m_intraPeriod;
@@ -2447,21 +2450,23 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
   {
     if (rplLists[0]->getReferencePictureList(1)->getRefPicIdentifier(0) * rplLists[1]->getReferencePictureList(1)->getRefPicIdentifier(0) < 0)
     {
-      rplPeriod = m_iGOPSize * 2;
+      rplPeriod = m_gopSize * 2;
     }
   }
 
   if (m_isLowDelay)
   {
     const int currPOCsinceLastIDR = POCCurr - slice->getLastIDR();
-    if (currPOCsinceLastIDR < (2 * m_iGOPSize + 2))
+    if (currPOCsinceLastIDR < (2 * m_gopSize + 2))
     {
-      int candidateIdx = (currPOCsinceLastIDR + m_iGOPSize - 1 >= fullListNum + partialListNum) ? GOPid : currPOCsinceLastIDR + m_iGOPSize - 1;
+      int candidateIdx = (currPOCsinceLastIDR + m_gopSize - 1 >= fullListNum + partialListNum)
+                           ? GOPid
+                           : currPOCsinceLastIDR + m_gopSize - 1;
       RPLIdx = candidateIdx;
     }
     else
     {
-      RPLIdx = (POCCurr % m_iGOPSize == 0) ? m_iGOPSize - 1 : POCCurr % m_iGOPSize - 1;
+      RPLIdx = (POCCurr % m_gopSize == 0) ? m_gopSize - 1 : POCCurr % m_gopSize - 1;
     }
     extraNum = fullListNum + partialListNum;
   }
@@ -2494,23 +2499,23 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
     {
       // To set RPL indexes for LD
       int numRPLCandidates = getRPLCandidateSize(0);
-      if (POCCurr < numRPLCandidates - m_iGOPSize + 2)
+      if (POCCurr < numRPLCandidates - m_gopSize + 2)
       {
-        RPLIdx = POCCurr + m_iGOPSize - 2;
+        RPLIdx = POCCurr + m_gopSize - 2;
       }
       else
       {
-        if (POCCurr%m_iGOPSize == 0)
+        if (POCCurr % m_gopSize == 0)
         {
-          RPLIdx = m_iGOPSize - 2;
+          RPLIdx = m_gopSize - 2;
         }
-        else if (POCCurr%m_iGOPSize == 1)
+        else if (POCCurr % m_gopSize == 1)
         {
-          RPLIdx = m_iGOPSize - 1;
+          RPLIdx = m_gopSize - 1;
         }
         else
         {
-          RPLIdx = POCCurr % m_iGOPSize - 2;
+          RPLIdx = POCCurr % m_gopSize - 2;
         }
       }
     }

@@ -2916,8 +2916,8 @@ SPS::SPS()
   , m_maxMTTHierarchyDepth{ MAX_BT_DEPTH, MAX_BT_DEPTH_INTER, MAX_BT_DEPTH_C }
   , m_maxBTSize{ 0, 0, 0 }
   , m_maxTTSize{ 0, 0, 0 }
-  , m_uiMaxCUWidth(32)
-  , m_uiMaxCUHeight(32)
+  , m_maxCuWidth(32)
+  , m_maxCuHeight(32)
   , m_numRPL0(0)
   , m_numRPL1(0)
   , m_rpl1CopyFromRpl0Flag(false)
