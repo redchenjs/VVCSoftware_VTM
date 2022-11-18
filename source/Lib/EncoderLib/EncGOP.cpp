@@ -223,7 +223,6 @@ void EncGOP::init ( EncLib* pcEncLib )
   ::memset(m_lastBPSEI, 0, sizeof(m_lastBPSEI));
   ::memset(m_totalCoded, 0, sizeof(m_totalCoded));
   m_HRD                = pcEncLib->getHRD();
-
   m_AUWriterIf = pcEncLib->getAUWriterIf();
 
   if (m_pcCfg->getFilmGrainAnalysisEnabled())
@@ -3342,7 +3341,18 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           computeSignalling(pcPic, pcSlice);
         }
         m_pcSliceEncoder->precompressSlice( pcPic );
-        m_pcSliceEncoder->compressSlice   ( pcPic, false, false );
+#ifdef GREEN_METADATA_SEI_ENABLED
+        pcPic->setFeatureCounter(m_featureCounter);
+        if(m_pcEncLib->getGMFAFramewise())
+        {
+          FeatureCounterStruct m_featureCounterFrameReference;
+          m_featureCounterFrameReference = m_featureCounter;
+        }
+#endif
+        m_pcSliceEncoder->compressSlice   ( pcPic, false, false);
+#ifdef GREEN_METADATA_SEI_ENABLED
+        m_featureCounter = pcPic->getFeatureCounter();
+#endif
 
         if(sliceIdx < pcPic->cs->pps->getNumSlicesInPic() - 1)
         {
@@ -3359,7 +3369,47 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           uiNumSliceSegments++;
         }
       }
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+      m_featureCounter.baseQP[pcPic->getLossyQPValue()] ++;
+      if (m_featureCounter.isYUV420 == -1)
+      {
+        m_featureCounter.isYUV400 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_400 ? 1 : 0;
+        m_featureCounter.isYUV420 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_420 ? 1 : 0;
+        m_featureCounter.isYUV422 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_422 ? 1 : 0;
+        m_featureCounter.isYUV444 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_444 ? 1 : 0;
+      }
+  
+      if (m_featureCounter.is8bit == -1)
+      {
+        m_featureCounter.is8bit  = (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) == 8) ? 1 : 0;
+        m_featureCounter.is10bit = (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) == 10) ? 1 : 0;
+        m_featureCounter.is12bit = (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) == 12) ? 1 : 0;
+      }
+  
+  
+      if (pcSlice->getSliceType() == B_SLICE)
+      {
+        m_featureCounter.bSlices++;
+      }
+      else if (pcSlice->getSliceType()== P_SLICE)
+      {
+        m_featureCounter.pSlices++;
+      }
+      else
+      {
+        m_featureCounter.iSlices++;
+      }
+  
+      if (m_featureCounter.width == -1)
+      {
+        m_featureCounter.width = pcPic->getPicWidthInLumaSamples();
+      }
+  
+      if (m_featureCounter.height == -1)
+      {
+        m_featureCounter.height = pcPic->getPicHeightInLumaSamples();
+      }
+#endif
       duData.clear();
 
       CodingStructure& cs = *pcPic->cs;
@@ -3455,12 +3505,21 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           }
         }
       }
+#ifdef GREEN_METADATA_SEI_ENABLED
+      cs.m_featureCounter.resetBoundaryStrengths();
+#endif
       m_pcLoopFilter->deblockingFilterPic( cs );
+#ifdef GREEN_METADATA_SEI_ENABLED
+      m_featureCounter.addBoundaryStrengths(cs.m_featureCounter);
+#endif
 
       CS::setRefinedMotionField(cs);
 
       if( pcSlice->getSPS()->getSAOEnabledFlag() )
       {
+#ifdef GREEN_METADATA_SEI_ENABLED
+        cs.m_featureCounter.resetSAO();
+#endif
         bool sliceEnabled[MAX_NUM_COMPONENT];
         m_pcSAO->initCABACEstimator( m_pcEncLib->getCABACEncoder(), m_pcEncLib->getCtxCache(), pcSlice );
         m_pcSAO->SAOProcess( cs, sliceEnabled, pcSlice->getLambdas(),
@@ -3483,6 +3542,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
             pcPic->slices[s]->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, sliceEnabled[COMPONENT_Cb]);
           }
         }
+#ifdef GREEN_METADATA_SEI_ENABLED
+        m_featureCounter.addSAO(cs.m_featureCounter);
+#endif
       }
 
       if( pcSlice->getSPS()->getALFEnabledFlag() )
@@ -3495,13 +3557,18 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           pcPic->slices[s]->setAlfEnabledFlag(COMPONENT_Y, false);
         }
         m_pcALF->initCABACEstimator(m_pcEncLib->getCABACEncoder(), m_pcEncLib->getCtxCache(), pcSlice, m_pcEncLib->getApsMap());
+#ifdef GREEN_METADATA_SEI_ENABLED
+        cs.m_featureCounter.resetALF();
+#endif
         m_pcALF->ALFProcess(cs, pcSlice->getLambdas()
 #if ENABLE_QPA
           , (m_pcCfg->getUsePerceptQPA() && !m_pcCfg->getUseRateCtrl() && pcSlice->getPPS()->getUseDQP() ? m_pcEncLib->getRdCost()->getChromaWeight() : 0.0)
 #endif
           , pcPic, uiNumSliceSegments
         );
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+        m_featureCounter.addALF(cs.m_featureCounter);
+#endif
         //assign ALF slice header
         for (int s = 0; s < uiNumSliceSegments; s++)
         {
@@ -4113,7 +4180,79 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       double PSNR_Y;
       xCalculateAddPSNRs(isField, isTff, gopId, pcPic, accessUnit, rcListPic, encTime, snr_conversion, printFrameMSE,
                          printMSSSIM, &PSNR_Y, isEncodeLtRef);
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+      this->setFeatureCounter(m_featureCounter);
+      m_SEIGreenQualityMetrics.psnr = PSNR_Y;
+      if (m_pcCfg->getSEIGreenMetadataInfoSEIEnable())
+      {
+        SEIGreenMetadataInfo* seiGreenMetadataInfo = new SEIGreenMetadataInfo;
+        seiGreenMetadataInfo->m_greenMetadataType = m_pcCfg->getSEIGreenMetadataType();
+        seiGreenMetadataInfo->m_numPictures = m_pcCfg->getSEIGreenMetadataPeriodNumPictures();
+        seiGreenMetadataInfo->m_periodType = m_pcCfg->getSEIGreenMetadataPeriodType();
+        seiGreenMetadataInfo->m_numSeconds = m_pcCfg->getSEIGreenMetadataPeriodNumSeconds();
+        seiGreenMetadataInfo->m_greenMetadataGranularityType = m_pcCfg->getSEIGreenMetadataGranularityType();
+        seiGreenMetadataInfo->m_greenMetadataExtendedRepresentation = m_pcCfg->getSEIGreenMetadataExtendedRepresentation();
+        int64_t codedFrames = m_featureCounter.iSlices + m_featureCounter.bSlices + m_featureCounter.pSlices;
+        int numberFrames = seiGreenMetadataInfo->m_numSeconds * m_pcCfg->getFrameRate();
+    
+        if (seiGreenMetadataInfo->m_greenMetadataType == 0)
+        {
+          switch (m_pcCfg->getSEIGreenMetadataPeriodType()) // Period type
+          {
+          case 0: //0x00 complexity metrics are applicable to a single picture
+            seiGreenMetadataInfo->m_numPictures = m_pcCfg->getSEIGreenMetadataPeriodNumPictures();
+            xCalculateGreenComplexityMetrics(m_featureCounter, m_featureCounterReference, seiGreenMetadataInfo);
+            m_seiEncoder.initSEIGreenMetadataInfo(seiGreenMetadataInfo,  m_featureCounter, m_SEIGreenQualityMetrics,m_SEIGreenComplexityMetrics);
+            leadingSeiMessages.push_back(seiGreenMetadataInfo);
+            m_featureCounterReference = m_featureCounter;
+            break;
+          case 1: //0x01 complexity metrics are applicable to all pictures in decoding order, up to (but not including) the picture containing the next I slice
+            if (codedFrames == m_pcCfg->getFramesToBeEncoded() || codedFrames == 1)
+            {
+              xCalculateGreenComplexityMetrics(m_featureCounter, m_featureCounterReference, seiGreenMetadataInfo);
+              m_seiEncoder.initSEIGreenMetadataInfo(seiGreenMetadataInfo,  m_featureCounter, m_SEIGreenQualityMetrics,m_SEIGreenComplexityMetrics);
+              leadingSeiMessages.push_back(seiGreenMetadataInfo);
+              m_featureCounterReference = m_featureCounter;
+            }
+            break;
+          case 2: //0x02 complexity metrics are applicable over a specified time interval in seconds
+            seiGreenMetadataInfo->m_numSeconds = m_pcCfg->getSEIGreenMetadataPeriodNumSeconds();
+            if( ((codedFrames% numberFrames) == 0) || (codedFrames == m_pcCfg->getFramesToBeEncoded()))
+            {
+              seiGreenMetadataInfo->m_numSeconds = int(floor(double(codedFrames)/double(m_pcCfg->getFrameRate())));
+              xCalculateGreenComplexityMetrics(m_featureCounter, m_featureCounterReference, seiGreenMetadataInfo);
+              m_seiEncoder.initSEIGreenMetadataInfo(seiGreenMetadataInfo,  m_featureCounter, m_SEIGreenQualityMetrics,m_SEIGreenComplexityMetrics);
+              leadingSeiMessages.push_back(seiGreenMetadataInfo);
+              m_featureCounterReference = m_featureCounter;
+            }
+            break;
+          case 3: //0x03 complexity metrics are applicable over a specified number of pictures counted in decoding order
+            seiGreenMetadataInfo->m_numPictures = m_pcCfg->getSEIGreenMetadataPeriodNumPictures();
+            if( ((codedFrames%(seiGreenMetadataInfo->m_numPictures)) == 0) || (codedFrames == m_pcCfg->getFramesToBeEncoded()))
+            {
+              xCalculateGreenComplexityMetrics(m_featureCounter, m_featureCounterReference, seiGreenMetadataInfo);
+              m_seiEncoder.initSEIGreenMetadataInfo(seiGreenMetadataInfo,  m_featureCounter, m_SEIGreenQualityMetrics,m_SEIGreenComplexityMetrics);
+              leadingSeiMessages.push_back(seiGreenMetadataInfo);
+              m_featureCounterReference = m_featureCounter;
+            }
+            break;
+          case 4: //0x04 complexity metrics are applicable to a single picture with slice or tile granularity
+          case 5: //0x05 complexity metrics are applicable to a single picture with subpicture granularity
+          case 6: //0x06 complexity metrics are applicable to all pictures in decoding order, up to (but not including) the picture containing the next I slice with subpicture granularity
+          case 7: //0x07 complexity metrics are applicable over a specified time interval in seconds with subpicture granularity
+          case 8: //0x08 complexity metrics are applicable over a specified number of pictures counted in decoding order with subpicture granularity
+          default: //0x05-0xFF reserved
+            break;
+          }
+        }
+        else if (seiGreenMetadataInfo->m_greenMetadataType == 1) // Quality metric signaling
+        {
+          m_seiEncoder.initSEIGreenMetadataInfo(seiGreenMetadataInfo, m_featureCounter, m_SEIGreenQualityMetrics, m_SEIGreenComplexityMetrics);
+          leadingSeiMessages.push_back(seiGreenMetadataInfo);
+        }
+      }
+#endif
+      
       xWriteTrailingSEIMessages(trailingSeiMessages, accessUnit, pcSlice->getTLayer());
 
 #if GDR_ENABLED
@@ -5161,7 +5300,148 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     std::cout << "\r\t" << pcSlice->getPOC();
     std::cout.flush();
   }
+#ifdef GREEN_METADATA_SEI_ENABLED
+  m_SEIGreenQualityMetrics.ssim = msssim[0];
+  m_SEIGreenQualityMetrics.wpsnr = dPSNR[0];
+#endif
 }
+
+#ifdef GREEN_METADATA_SEI_ENABLED
+void EncGOP::xCalculateGreenComplexityMetrics( FeatureCounterStruct featureCounter, FeatureCounterStruct featureCounterReference, SEIGreenMetadataInfo* seiGreenMetadataInfo)
+{
+  double chromaFormatMultiplier = 0;
+  
+  if (featureCounter.isYUV400 == 1)
+  {
+    chromaFormatMultiplier = 1;
+  }
+  else if (featureCounter.isYUV420)
+  {
+    chromaFormatMultiplier = 1.5;
+  }
+  else if (featureCounter.isYUV422)
+  {
+    chromaFormatMultiplier = 2;
+  }
+  else if (featureCounter.isYUV444)
+  {
+    chromaFormatMultiplier = 3;
+  }
+  
+  // Initialize
+  int64_t totalNum4BlocksPic = 0;
+  int64_t totalNum4BlocksInPeriod = 0;
+  int64_t maxNumDeblockingInstances = 0;
+  
+  double numNonZeroBlocks = 0;
+  double numNonZero4_8_16_Blocks = 0;
+  double numNonZero32_64_128_Blocks = 0;
+  double numNonZero256_512_1024_Blocks = 0;
+  double numNonZero2048_4096_Blocks = 0;
+  double numIntraPredictedBlocks = 0;
+  double numBiAndGpmPredictedBlocks = 0;
+  double numBDOFPredictedBlocks = 0;
+  double numDeblockingInstances = 0;
+  double numSaoFilteredBlocks = 0;
+  double numAlfFilteredBlocks = 0;
+  // Calculate difference
+  FeatureCounterStruct featureCounterDifference;
+  
+  featureCounterDifference.iSlices  = featureCounter.iSlices - featureCounterReference.iSlices;
+  featureCounterDifference.bSlices  = featureCounter.bSlices - featureCounterReference.bSlices;
+  featureCounterDifference.pSlices  = featureCounter.pSlices - featureCounterReference.pSlices;
+  featureCounterDifference.nrOfCoeff = featureCounter.nrOfCoeff - featureCounterReference.nrOfCoeff;
+  featureCounterDifference.biPredPel = featureCounter.biPredPel - featureCounterReference.biPredPel;
+  featureCounterDifference.boundaryStrength[0] = featureCounter.boundaryStrength[0] - featureCounterReference.boundaryStrength[0];
+  featureCounterDifference.boundaryStrength[1] = featureCounter.boundaryStrength[1] - featureCounterReference.boundaryStrength[1];
+  featureCounterDifference.boundaryStrength[2] = featureCounter.boundaryStrength[2] - featureCounterReference.boundaryStrength[2];
+  featureCounterDifference.saoLumaEO = featureCounter.saoLumaEO - featureCounterReference.saoLumaEO;
+  featureCounterDifference.saoLumaBO = featureCounter.saoLumaBO - featureCounterReference.saoLumaBO;
+  featureCounterDifference.saoChromaEO = featureCounter.saoChromaEO - featureCounterReference.saoChromaEO;
+  featureCounterDifference.saoChromaBO = featureCounter.saoChromaBO - featureCounterReference.saoChromaBO;
+  featureCounterDifference.saoLumaPels = featureCounter.saoLumaPels - featureCounterReference.saoLumaPels;
+  featureCounterDifference.saoChromaPels = featureCounter.saoChromaPels - featureCounterReference.saoChromaPels;
+  featureCounterDifference.alfLumaType7 = featureCounter.alfLumaType7 - featureCounterReference.alfLumaType7;
+  featureCounterDifference.alfChromaType5 = featureCounter.alfChromaType5 - featureCounterReference.alfChromaType5;
+  featureCounterDifference.alfLumaPels = featureCounter.alfLumaPels - featureCounterReference.alfLumaPels;
+  featureCounterDifference.alfChromaPels = featureCounter.alfChromaPels - featureCounterReference.alfChromaPels;
+  
+  
+  for (int i = 0; i < MAX_CU_DEPTH+1; i++)
+  {
+    for (int j = 0; j < MAX_CU_DEPTH+1; j++)
+    {
+      featureCounterDifference.transformBlocks[i][j] = featureCounter.transformBlocks[i][j] - featureCounterReference.transformBlocks[i][j];
+      featureCounterDifference.intraBlockSizes[i][j] = featureCounter.intraBlockSizes[i][j] - featureCounterReference.intraBlockSizes[i][j];
+      featureCounterDifference.geo[i][j] = featureCounter.geo[i][j] - featureCounterReference.geo[i][j];
+      featureCounterDifference.bdofBlocks[i][j] = featureCounter.bdofBlocks[i][j] - featureCounterReference.bdofBlocks[i][j];
+    }
+  }
+  
+  
+  //Calculate complexity metrics
+  totalNum4BlocksPic = int(chromaFormatMultiplier * featureCounter.width * featureCounter.height / 4);
+  totalNum4BlocksInPeriod = int((featureCounterDifference.iSlices + featureCounterDifference.pSlices + featureCounterDifference.bSlices) * totalNum4BlocksPic);
+  maxNumDeblockingInstances = int(chromaFormatMultiplier * totalNum4BlocksInPeriod - 2 * (featureCounter.width + featureCounter.height) * 2);
+  
+  for (int i = 0; i < MAX_CU_DEPTH+1; i++)
+  {
+    for(int j = 0; j < MAX_CU_DEPTH+1; j++)
+    {
+      double numberOfPels = pow(2,i) * pow(2,j);
+      numNonZeroBlocks += double(featureCounterDifference.transformBlocks[i][j] * numberOfPels / 4);
+      numIntraPredictedBlocks += double(featureCounterDifference.intraBlockSizes[i][j] * numberOfPels / 4);
+      
+      if (numberOfPels == 4 || numberOfPels == 8 || numberOfPels == 16)
+      {
+        numNonZero4_8_16_Blocks += double(featureCounterDifference.transformBlocks[i][j] * numberOfPels / 4);
+      }
+      
+      if (numberOfPels == 32 || numberOfPels == 64 || numberOfPels == 128)
+      {
+        numNonZero32_64_128_Blocks += double(featureCounterDifference.transformBlocks[i][j] * numberOfPels / 4);
+      }
+      
+      if (numberOfPels == 256 || numberOfPels == 512 || numberOfPels == 1024)
+      {
+        numNonZero256_512_1024_Blocks += double(featureCounterDifference.transformBlocks[i][j] * numberOfPels / 4);
+      }
+      
+      if (numberOfPels == 2048 || numberOfPels == 4096 )
+      {
+        numNonZero2048_4096_Blocks += double(featureCounterDifference.transformBlocks[i][j] * numberOfPels / 4);
+      }
+      numBDOFPredictedBlocks += double(featureCounterDifference.bdofBlocks[i][j] * numberOfPels / 4);
+      numBiAndGpmPredictedBlocks += double(featureCounterDifference.geo[i][j] * numberOfPels / 4);
+    }
+  }
+  
+  numBiAndGpmPredictedBlocks += double(featureCounterDifference.biPredPel/4);
+  numDeblockingInstances = double(featureCounterDifference.boundaryStrength[0] + featureCounterDifference.boundaryStrength[1] + featureCounterDifference.boundaryStrength[2]);
+  numSaoFilteredBlocks   = double(featureCounterDifference.saoLumaPels + featureCounterDifference.saoChromaPels)/4;
+  numAlfFilteredBlocks   = double(featureCounterDifference.alfLumaPels + featureCounterDifference.alfChromaPels)/4;
+  
+  seiGreenMetadataInfo->m_greenComplexityMetrics.portionNonZeroBlocksArea = int(floor( 255.0 * numNonZeroBlocks / totalNum4BlocksInPeriod));
+  seiGreenMetadataInfo->m_greenComplexityMetrics.portionNonZero_4_8_16BlocksArea = int(floor(255.0 * numNonZero4_8_16_Blocks / totalNum4BlocksInPeriod));
+  seiGreenMetadataInfo->m_greenComplexityMetrics.portionNonZero_32_64_128BlocksArea = int(floor( 255.0 * numNonZero32_64_128_Blocks / totalNum4BlocksInPeriod));
+  seiGreenMetadataInfo->m_greenComplexityMetrics.portionNonZero_256_512_1024BlocksArea = int(floor( 255.0 * numNonZero256_512_1024_Blocks / totalNum4BlocksInPeriod));
+  seiGreenMetadataInfo->m_greenComplexityMetrics.portionNonZero_2048_4096BlocksArea = int(floor( 255.0 * numNonZero2048_4096_Blocks / totalNum4BlocksInPeriod));
+  if (numNonZeroBlocks != 0)
+  {
+    seiGreenMetadataInfo->m_greenComplexityMetrics.portionNonZeroTransformCoefficientsArea =
+      int(floor(255.0 * featureCounterDifference.nrOfCoeff / (4 *numNonZeroBlocks)));
+  }
+  
+  seiGreenMetadataInfo->m_greenComplexityMetrics.portionIntraPredictedBlocksArea = int(floor( 255.0 * numIntraPredictedBlocks / totalNum4BlocksInPeriod));
+  seiGreenMetadataInfo->m_greenComplexityMetrics.portionBiAndGpmPredictedBlocksArea = int(floor( 255.0 * numBiAndGpmPredictedBlocks / totalNum4BlocksInPeriod));
+  seiGreenMetadataInfo->m_greenComplexityMetrics.portionBdofBlocksArea  = int(floor( 255.0 * numBDOFPredictedBlocks / totalNum4BlocksInPeriod));
+  seiGreenMetadataInfo->m_greenComplexityMetrics.portionDeblockingInstances = int(floor( 255.0 * numDeblockingInstances / maxNumDeblockingInstances));
+  seiGreenMetadataInfo->m_greenComplexityMetrics.portionSaoInstances = int(floor( 255.0 * numSaoFilteredBlocks / totalNum4BlocksInPeriod));
+  seiGreenMetadataInfo->m_greenComplexityMetrics.portionAlfInstances = int(floor( 255.0 * numAlfFilteredBlocks / totalNum4BlocksInPeriod));
+  seiGreenMetadataInfo->m_numPictures = int(featureCounterDifference.iSlices + featureCounterDifference.bSlices +featureCounterDifference.pSlices);
+  seiGreenMetadataInfo->m_numSeconds = int(floor(double(seiGreenMetadataInfo->m_numPictures) / double(m_pcCfg->getFrameRate())));
+}
+#endif
 
 double EncGOP::xCalculateMSSSIM (const Pel* org, const int orgStride, const Pel* rec, const int recStride, const int width, const int height, const uint32_t bitDepth)
 {
@@ -6697,4 +6977,5 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
   }
 
 }
+
 //! \}

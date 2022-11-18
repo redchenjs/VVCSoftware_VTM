@@ -43,6 +43,10 @@
 #include <iomanip>
 #include <limits>
 
+#ifdef GREEN_METADATA_SEI_ENABLED
+#include <fstream>
+#endif
+
 
 #if _MSC_VER > 1000
 // disable "signed and unsigned mismatch"
@@ -643,6 +647,189 @@ T* aligned_malloc(size_t len, size_t alignement) {
 #else
 #    define ALWAYS_INLINE
 #endif
+
+#ifdef GREEN_METADATA_SEI_ENABLED
+struct FeatureCounterStruct// Bit Stream Feature Analyzer structure containing all specific features
+{
+  int  width = -1;
+  int  height = -1;
+  int  bytes = -1;
+  int  baseQP[64] = {  0  };
+  int  isYUV400 = -1;
+  int  isYUV420 = -1;
+  int  isYUV422 = -1;
+  int  isYUV444 = -1;
+  int  is8bit = -1;
+  int  is10bit = -1;
+  int  is12bit = -1;
+  int  iSlices = 0;
+  int  bSlices = 0;
+  int  pSlices = 0;
+  
+  int  intraBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaPlaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaDcBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaHvdBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaHvBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaAngBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaPlaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaDcBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaHvdBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaHvBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaAngBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaCrossCompBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraPDPCBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaPDPCBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaPDPCBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraMIPBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaMIPBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaMIPBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraSubPartitionsHorizontal[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaSubPartitionsHorizontal[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaSubPartitionsHorizontal[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraSubPartitionsVertical[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaSubPartitionsVertical[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaSubPartitionsVertical[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  IBCBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  IBCLumaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  IBCChromaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  // Inter-Features
+  int  interBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interLumaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interChromaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  interInterBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interLumaInterBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interChromaInterBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  interSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interLumaSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interChromaSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  interMergeBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interLumaMergeBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interChromaMergeBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  affine[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineLuma[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineChroma[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  affineMerge[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineLumaMerge[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineChromaMerge[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  affineInter[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineLumaInter[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineChromaInter[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  affineSkip[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineLumaSkip[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineChromaSkip[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  geo[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  geoLuma[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  geoChroma[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int64_t  biPredPel = 0;
+  int64_t  uniPredPel = 0;
+  int64_t  fracPelHor = 0;
+  int64_t  fracPelVer = 0;
+  int64_t  fracPelBoth = 0;
+  int64_t  copyCUPel = 0;
+  int64_t  affineFracPelHor = 0;
+  int64_t  affineFracPelVer = 0;
+  int64_t  affineFracPelBoth = 0;
+  int64_t  affineCopyCUPel = 0;
+  int  dmvrBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  bdofBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  // Transform
+  int  transformBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  transformLumaBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  transformChromaBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  transformSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  transformLumaSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  transformChromaSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int64_t  transformLFNST4 = 0;
+  int64_t  transformLFNST8 = 0;
+  //Coefficent
+  int64_t  nrOfCoeff = 0;
+  int64_t  coeffG1 = 0;
+  double   valueOfCoeff = 0;
+  //In-Loop Filter
+  int64_t  boundaryStrength[3] = { 0 };
+  int64_t  boundaryStrengthPel[3] = { 0 };
+  int64_t  saoLumaBO = 0;
+  int64_t  saoLumaEO = 0;
+  int64_t  saoChromaBO = 0;
+  int64_t  saoChromaEO = 0;
+  int64_t  saoLumaPels = 0;
+  int64_t  saoChromaPels = 0;
+  int64_t  alfLumaType7 = 0;
+  int64_t  alfChromaType5 = 0;
+  int64_t  alfLumaPels = 0;
+  int64_t  alfChromaPels = 0;
+  int64_t  ccalf           = 0;
+  
+  void resetBoundaryStrengths()
+  {
+    for (int i = 0; i < 3; i++)
+    {
+      boundaryStrength[i] = 0;
+      boundaryStrengthPel[i] = 0;
+    }
+  }
+  
+  void addBoundaryStrengths(const FeatureCounterStruct &c)
+  {
+    for (int i = 0; i < 3; i++)
+    {
+      boundaryStrength[i] += c.boundaryStrength[i];
+      boundaryStrengthPel[i] += c.boundaryStrengthPel[i];
+    }
+  }
+  
+  void resetSAO()
+  {
+    saoLumaBO = 0;
+    saoLumaEO = 0;
+    saoChromaBO = 0;
+    saoChromaEO = 0;
+    saoLumaPels = 0;
+    saoChromaPels = 0;
+  }
+  
+  void addSAO(const FeatureCounterStruct &c)
+  {
+    saoLumaBO += c.saoLumaBO;
+    saoLumaEO += c.saoLumaEO;
+    saoChromaBO += c.saoChromaBO;
+    saoChromaEO += c.saoChromaEO;
+    saoLumaPels += c.saoLumaPels;
+    saoChromaPels += c.saoChromaPels;
+  }
+  
+  void resetALF()
+  {
+    alfLumaType7   = 0;
+    alfChromaType5 = 0;
+    alfLumaPels = 0;
+    alfChromaPels = 0;
+    ccalf = 0;
+  }
+  
+  void addALF(const FeatureCounterStruct &c)
+  {
+    alfLumaType7 += c.alfLumaType7;
+    alfChromaType5 += c.alfChromaType5;
+    alfLumaPels += c.alfLumaPels;
+    alfChromaPels += c.alfChromaPels;
+    ccalf += c.ccalf;
+  }
+};
+#endif
+
 
 #if ENABLE_SIMD_OPT
 #ifdef TARGET_SIMD_X86

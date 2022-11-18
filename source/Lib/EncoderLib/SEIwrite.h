@@ -97,6 +97,9 @@ protected:
   void xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCharacteristics& sei);
   void xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei);
   void xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei);
+#ifdef GREEN_METADATA_SEI_ENABLED
+  void xWriteSEIGreenMetadataInfo                 (const SEIGreenMetadataInfo &sei);
+#endif
 protected:
   HRD m_nestingHrd;
 };

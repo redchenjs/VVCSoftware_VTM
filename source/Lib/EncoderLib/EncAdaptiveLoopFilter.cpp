@@ -3235,6 +3235,10 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
                 coeff = m_fixedFilterSetCoeffDec[filterSetIndex];
                 clip = m_clipDefault;
               }
+#ifdef GREEN_METADATA_SEI_ENABLED
+              cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
+              cs.m_featureCounter.alfLumaPels += (width * height);
+#endif
               m_filter7x7Blk(m_classifier, recBuf, buf, blkDst, blkSrc, COMPONENT_Y, coeff, clip,
                              m_clpRngs.comp[COMPONENT_Y], cs, m_alfVBLumaCTUHeight, m_alfVBLumaPos);
             }
@@ -3252,6 +3256,10 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
                 m_filter5x5Blk(m_classifier, recBuf, buf, blkDst, blkSrc, compID, m_chromaCoeffFinal[alt_num],
                                m_chromaClippFinal[alt_num], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
                                m_alfVBChmaPos);
+#ifdef GREEN_METADATA_SEI_ENABLED
+                cs.m_featureCounter.alfChromaType5+= ((width >> chromaScaleX) * (height >> chromaScaleY) / 16);
+                cs.m_featureCounter.alfChromaPels += ((width >> chromaScaleX) * (height >> chromaScaleY)) ;
+#endif
               }
             }
 
@@ -3282,6 +3290,10 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
           }
           m_filter7x7Blk(m_classifier, recBuf, recExtBuf, blk, blk, COMPONENT_Y, coeff, clip,
                          m_clpRngs.comp[COMPONENT_Y], cs, m_alfVBLumaCTUHeight, m_alfVBLumaPos);
+#ifdef GREEN_METADATA_SEI_ENABLED
+          cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
+          cs.m_featureCounter.alfLumaPels += (width * height);
+#endif
         }
 
         for (int compIdx = 1; compIdx < MAX_NUM_COMPONENT; compIdx++)
@@ -3296,6 +3308,10 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
             m_filter5x5Blk(m_classifier, recBuf, recExtBuf, blk, blk, compID, m_chromaCoeffFinal[alt_num],
                            m_chromaClippFinal[alt_num], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
                            m_alfVBChmaPos);
+#ifdef GREEN_METADATA_SEI_ENABLED
+            cs.m_featureCounter.alfChromaType5+= ((width >> chromaScaleX) * (height >> chromaScaleY) / 16) ;
+            cs.m_featureCounter.alfChromaPels += ((width >> chromaScaleX) * (height >> chromaScaleY)) ;
+#endif
           }
         }
       }

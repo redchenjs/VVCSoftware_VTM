@@ -46,6 +46,9 @@
 #include <utility>
 #include <algorithm>
 
+#ifdef GREEN_METADATA_SEI_ENABLED
+#include <fstream>
+#endif
 // CS tools
 
 bool CS::isDualITree( const CodingStructure &cs )
@@ -4841,3 +4844,1087 @@ bool allowLfnstWithMip(const Size& block)
   }
   return false;
 }
+
+
+#ifdef GREEN_METADATA_SEI_ENABLED
+void writeGMFAOutput(FeatureCounterStruct& featureCounterUpdated, FeatureCounterStruct& featureCounterOld, std::string GMFAFile,bool lastFrame )
+{
+  std::string fileName = std::string("");
+  std::string matlabFile = std::string("");
+  if (GMFAFile.length() == 0)
+  {
+    return;
+  }
+  fileName = GMFAFile;
+  size_t strStart = 0;
+  size_t strEnd = 0;
+  
+  int64_t codedFrames = featureCounterUpdated.iSlices + featureCounterUpdated.bSlices + featureCounterUpdated.pSlices;
+  strEnd = fileName.rfind('.');
+  strEnd = strEnd == fileName.length() ? 0 : strEnd;
+
+  if (!lastFrame)
+  {
+    fileName = fileName.substr(0, strEnd) + "_" + std::to_string(codedFrames) + fileName.substr(strEnd, fileName.length());
+  }
+  
+  strStart = fileName.find_last_of("/\\");
+  strStart = strStart == fileName.length() ? 0 : strStart+1;
+
+  matlabFile = fileName.substr(strStart, strEnd-strStart);
+  std::ofstream featureFile(fileName);
+
+  featureFile << "function [n]=";
+  featureFile << matlabFile.c_str();
+  featureFile << "() \n";
+  //General features
+  featureFile << "\tn.EO = 1;\n";
+  featureFile << "\tn.ISlice = " << featureCounterUpdated.iSlices-featureCounterOld.iSlices << ";\n";
+  featureFile << "\tn.PSlice = " << featureCounterUpdated.pSlices-featureCounterOld.pSlices << ";\n";
+  featureFile << "\tn.BSlice = " << featureCounterUpdated.bSlices-featureCounterOld.bSlices << ";\n";
+  
+  featureFile << "\tn.width  = " << featureCounterUpdated.width << " ; \n";
+  featureFile << "\tn.height = " << featureCounterUpdated.height << " ; \n";
+  featureFile << "\tn.baseQP = [...\n\t";
+  for (int iter = 0; iter < 64; iter++)
+  {
+    featureFile << " " << featureCounterUpdated.baseQP[iter]-featureCounterOld.baseQP[iter] << " ";
+    if (iter % 8 == 7 && iter != 63)
+    {
+      featureFile << " ...\n\t";
+    }
+  }
+  featureFile << "]; \n ";
+  
+  featureFile << "\tn.bytes  = " << featureCounterUpdated.bytes << " ; \n";
+  featureFile << "\tn.is8bit = " << featureCounterUpdated.is8bit << " ; \n";
+  featureFile << "\tn.is10bit = " << featureCounterUpdated.is10bit << " ; \n";
+  featureFile << "\tn.is12bit = " << featureCounterUpdated.is12bit << " ; \n";
+  featureFile << "\tn.isYUV400 = " << featureCounterUpdated.isYUV400 << " ; \n";
+  featureFile << "\tn.isYUV420 = " << featureCounterUpdated.isYUV420 << " ; \n";
+  featureFile << "\tn.isYUV422 = " << featureCounterUpdated.isYUV422 << " ; \n";
+  featureFile << "\tn.isYUV444 = " << featureCounterUpdated.isYUV444 << " ; \n";
+  //Intra Feature
+  featureToFile(featureFile, featureCounterUpdated.intraBlockSizes, "intraBlocks",true,featureCounterOld.intraBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraLumaPlaBlockSizes, "intraPlaLuma",true,featureCounterOld.intraLumaPlaBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraLumaDcBlockSizes, "intraDCLuma",true,featureCounterOld.intraLumaDcBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraLumaHvdBlockSizes, "intraHVDLuma",true,featureCounterOld.intraLumaHvdBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraLumaHvBlockSizes, "intraHVLuma",true,featureCounterOld.intraLumaHvBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraLumaAngBlockSizes, "intraAngLuma",true,featureCounterOld.intraLumaAngBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraChromaPlaBlockSizes, "intraPlaChroma",true,featureCounterOld.intraChromaPlaBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraChromaDcBlockSizes, "intraDCChroma",true,featureCounterOld.intraChromaDcBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraChromaHvdBlockSizes, "intraHVDChroma",true,featureCounterOld.intraChromaHvdBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraChromaHvBlockSizes, "intraHVChroma",true,featureCounterOld.intraChromaHvBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraChromaAngBlockSizes, "intraAngChroma",true,featureCounterOld.intraChromaAngBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraChromaCrossCompBlockSizes, "intraCrossComp",true,featureCounterOld.intraChromaCrossCompBlockSizes);
+  
+  featureToFile(featureFile, featureCounterUpdated.intraPDPCBlockSizes, "intraPDPC",true,featureCounterOld.intraPDPCBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraLumaPDPCBlockSizes, "intraLumaPDPC",true,featureCounterOld.intraLumaPDPCBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraChromaPDPCBlockSizes, "intraChromaPDPC",true,featureCounterOld.intraChromaPDPCBlockSizes);
+  
+  featureToFile(featureFile, featureCounterUpdated.intraMIPBlockSizes, "intraMIP",true,featureCounterOld.intraMIPBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraLumaMIPBlockSizes, "intraLumaMIP",true,featureCounterOld.intraLumaMIPBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.intraChromaMIPBlockSizes, "intraChromaMIP",true,featureCounterOld.intraChromaMIPBlockSizes);
+  
+  featureToFile(featureFile, featureCounterUpdated.IBCBlockSizes, "intraIBC",true,featureCounterOld.IBCBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.IBCLumaBlockSizes, "intraLumaIBC",true,featureCounterOld.IBCLumaBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.IBCChromaBlockSizes, "intraChromaIBC",true,featureCounterOld.IBCChromaBlockSizes);
+  
+  featureToFile(featureFile, featureCounterUpdated.intraSubPartitionsHorizontal, "intraSubPartitionsHorizontal",true,featureCounterOld.intraSubPartitionsHorizontal);
+  featureToFile(featureFile, featureCounterUpdated.intraLumaSubPartitionsHorizontal, "intraLumaSubPartitionsHorizontal",true,featureCounterOld.intraLumaSubPartitionsHorizontal);
+  featureToFile(featureFile, featureCounterUpdated.intraChromaSubPartitionsHorizontal,"intraChromaSubPartitionsHorizontal",true,featureCounterOld.intraChromaSubPartitionsHorizontal);
+  
+  featureToFile(featureFile, featureCounterUpdated.intraSubPartitionsVertical, "intraSubPartitionsVertical",true,featureCounterOld.intraSubPartitionsVertical);
+  featureToFile(featureFile, featureCounterUpdated.intraLumaSubPartitionsVertical, "intraLumaSubPartitionsVertical",true,featureCounterOld.intraLumaSubPartitionsVertical);
+  featureToFile(featureFile, featureCounterUpdated.intraChromaSubPartitionsVertical, "intraChromaSubPartitionsVertical",true,featureCounterOld.intraChromaSubPartitionsVertical);
+  
+  //Inter
+  featureToFile(featureFile, featureCounterUpdated.interBlockSizes, "interBlocks",true,featureCounterOld.interBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.interLumaBlockSizes, "interLumaBlocks",true,featureCounterOld.interLumaBlockSizes);
+  featureToFile(featureFile, featureCounterUpdated.interChromaBlockSizes, "interChromaBlocks",true,featureCounterOld.interChromaBlockSizes);
+  
+  featureToFile(featureFile, featureCounterUpdated.interInterBlocks, "interInter",true,featureCounterOld.interInterBlocks);
+  featureToFile(featureFile, featureCounterUpdated.interLumaInterBlocks, "interLumaInter",true,featureCounterOld.interLumaInterBlocks);
+  featureToFile(featureFile, featureCounterUpdated.interChromaInterBlocks, "interChromaInter",true,featureCounterOld.interChromaInterBlocks);
+  
+  featureToFile(featureFile, featureCounterUpdated.interMergeBlocks, "interMerge",true,featureCounterOld.interMergeBlocks);
+  featureToFile(featureFile, featureCounterUpdated.interLumaMergeBlocks, "interLumaMerge",true,featureCounterOld.interLumaMergeBlocks);
+  featureToFile(featureFile, featureCounterUpdated.interChromaMergeBlocks, "interChromaMerge",true,featureCounterOld.interChromaMergeBlocks);
+  
+  featureToFile(featureFile, featureCounterUpdated.interSkipBlocks, "interSkip",true,featureCounterOld.interSkipBlocks);
+  featureToFile(featureFile, featureCounterUpdated.interLumaSkipBlocks, "interLumaSkip",true,featureCounterOld.interLumaSkipBlocks);
+  featureToFile(featureFile, featureCounterUpdated.interChromaSkipBlocks, "interChromaSkip",true,featureCounterOld.interChromaSkipBlocks);
+  
+  featureToFile(featureFile, featureCounterUpdated.affine, "interAffine",true,featureCounterOld.affine);
+  featureToFile(featureFile, featureCounterUpdated.affineLuma, "interLumaAffine",true,featureCounterOld.affineLuma);
+  featureToFile(featureFile, featureCounterUpdated.affineChroma, "interChromaAffine",true,featureCounterOld.affineChroma);
+  
+  featureToFile(featureFile, featureCounterUpdated.affineInter, "interAffineInter",true,featureCounterOld.affineInter);
+  featureToFile(featureFile, featureCounterUpdated.affineLumaInter, "interLumaAffineInter",true,featureCounterOld.affineLumaInter);
+  featureToFile(featureFile, featureCounterUpdated.affineChromaInter, "interChromaAffineInter",true,featureCounterOld.affineChromaInter);
+  
+  featureToFile(featureFile, featureCounterUpdated.affineMerge, "interAffineMerge",true,featureCounterOld.affineMerge);
+  featureToFile(featureFile, featureCounterUpdated.affineLumaMerge, "interLumaAffineMerge",true,featureCounterOld.affineLumaMerge);
+  featureToFile(featureFile, featureCounterUpdated.affineChromaMerge, "interChromaAffineMerge",true,featureCounterOld.affineChromaMerge);
+  
+  featureToFile(featureFile, featureCounterUpdated.affineSkip, "interAffineSkip",true,featureCounterOld.affineSkip);
+  featureToFile(featureFile, featureCounterUpdated.affineLumaSkip, "interLumaAffineSkip",true,featureCounterOld.affineLumaSkip);
+  featureToFile(featureFile, featureCounterUpdated.affineChromaSkip, "interChromaAffineSkip",true,featureCounterOld.affineChromaSkip);
+  
+  featureToFile(featureFile, featureCounterUpdated.geo, "geo",true,featureCounterOld.geo);
+  featureToFile(featureFile, featureCounterUpdated.geoLuma, "geoLuma",true,featureCounterOld.geoLuma);
+  featureToFile(featureFile, featureCounterUpdated.geoChroma, "geoChroma",true,featureCounterOld.geoChroma);
+  
+  featureToFile(featureFile, featureCounterUpdated.dmvrBlocks, "dmvrBlocks",true,featureCounterOld.dmvrBlocks);
+  featureToFile(featureFile, featureCounterUpdated.bdofBlocks, "bdofBlocks",true,featureCounterOld.bdofBlocks);
+
+  featureFile << "\tn.uniPredPel  = " << featureCounterUpdated.uniPredPel-featureCounterOld.uniPredPel << " ; \n";
+  featureFile << "\tn.biPredPel   = " << featureCounterUpdated.biPredPel-featureCounterOld.biPredPel << " ; \n";
+  featureFile << "\tn.fracPelHor  = " << featureCounterUpdated.fracPelHor-featureCounterOld.fracPelHor << " ; \n";
+  featureFile << "\tn.fracPelVer  = " << featureCounterUpdated.fracPelVer-featureCounterOld.fracPelVer << " ; \n";
+  featureFile << "\tn.fracPelBoth = " << featureCounterUpdated.fracPelBoth-featureCounterOld.fracPelBoth << " ; \n";
+  featureFile << "\tn.copyCUPel   = " << featureCounterUpdated.copyCUPel-featureCounterOld.copyCUPel << " ; \n";
+  
+  featureFile << "\tn.affineFracPelHor  = " << featureCounterUpdated.affineFracPelHor-featureCounterOld.affineFracPelHor << " ; \n";
+  featureFile << "\tn.affineFracPelVer  = " << featureCounterUpdated.affineFracPelVer-featureCounterOld.affineFracPelVer << " ; \n";
+  featureFile << "\tn.affineFracPelBoth = " << featureCounterUpdated.affineFracPelBoth-featureCounterOld.affineFracPelBoth << " ; \n";
+  featureFile << "\tn.affineCopyCUPel   = " << featureCounterUpdated.affineCopyCUPel-featureCounterOld.affineCopyCUPel << " ; \n";
+  
+  //Transform
+  featureToFile(featureFile, featureCounterUpdated.transformBlocks, "transform",true,featureCounterOld.transformBlocks);
+  featureToFile(featureFile, featureCounterUpdated.transformLumaBlocks, "transformLuma",true,featureCounterOld.transformLumaBlocks);
+  featureToFile(featureFile, featureCounterUpdated.transformChromaBlocks, "transformChroma",true,featureCounterOld.transformChromaBlocks);
+  
+  featureToFile(featureFile, featureCounterUpdated.transformSkipBlocks, "transformSkip",true,featureCounterOld.transformSkipBlocks);
+  featureToFile(featureFile, featureCounterUpdated.transformLumaSkipBlocks, "transformLumaSkip",true,featureCounterOld.transformLumaSkipBlocks);
+  featureToFile(featureFile, featureCounterUpdated.transformChromaSkipBlocks, "transformChromaSkip",true,featureCounterOld.transformChromaSkipBlocks);
+  
+  featureFile << "\tn.transformLFNST4  = " << featureCounterUpdated.transformLFNST4-featureCounterOld.transformLFNST4 << " ; \n";
+  featureFile << "\tn.transformLFNST8  = " << featureCounterUpdated.transformLFNST8-featureCounterOld.transformLFNST8 << " ; \n";
+  
+  featureFile << "\tn.nrOfCoeff  = " << featureCounterUpdated.nrOfCoeff-featureCounterOld.nrOfCoeff << " ; \n";
+  featureFile << "\tn.coeffG1    = " << featureCounterUpdated.coeffG1-featureCounterOld.coeffG1 << " ; \n";
+  featureFile << "\tn.valueOfCoeff  = " << featureCounterUpdated.valueOfCoeff-featureCounterOld.valueOfCoeff << " ; \n";
+  //In-Loop
+  featureFile << "\tn.BS0  = " << featureCounterUpdated.boundaryStrength[0]-featureCounterOld.boundaryStrength[0] << " ; \n";
+  featureFile << "\tn.BS1  = " << featureCounterUpdated.boundaryStrength[1]-featureCounterOld.boundaryStrength[1] << " ; \n";
+  featureFile << "\tn.BS2  = " << featureCounterUpdated.boundaryStrength[2]-featureCounterOld.boundaryStrength[2] << " ; \n";
+  featureFile << "\tn.BSPel0  = " << featureCounterUpdated.boundaryStrengthPel[0]-featureCounterOld.boundaryStrengthPel[0] << " ; \n";
+  featureFile << "\tn.BSPel1  = " << featureCounterUpdated.boundaryStrengthPel[1]-featureCounterOld.boundaryStrengthPel[1] << " ; \n";
+  featureFile << "\tn.BSPel2  = " << featureCounterUpdated.boundaryStrengthPel[2]-featureCounterOld.boundaryStrengthPel[2] << " ; \n";
+  featureFile << "\tn.saoLumaBO  = " << featureCounterUpdated.saoLumaBO-featureCounterOld.saoLumaBO << " ; \n";
+  featureFile << "\tn.saoLumaEO  = " << featureCounterUpdated.saoLumaEO-featureCounterOld.saoLumaEO << " ; \n";
+  featureFile << "\tn.saoChromaBO  = " << featureCounterUpdated.saoChromaBO-featureCounterOld.saoChromaBO << " ; \n";
+  featureFile << "\tn.saoChromaEO  = " << featureCounterUpdated.saoChromaEO-featureCounterOld.saoChromaEO << " ; \n";
+  featureFile <<   "\tn.saoLumaPels  = " << featureCounterUpdated.saoLumaPels << " ; \n";
+  featureFile <<   "\tn.saoChromaPels  = " << featureCounterUpdated.saoChromaPels << " ; \n";
+  featureFile << "\tn.alfLumaType7  = " << featureCounterUpdated.alfLumaType7-featureCounterOld.alfLumaType7 << " ; \n";
+  featureFile << "\tn.alfChromaType5 = " << featureCounterUpdated.alfChromaType5-featureCounterOld.alfChromaType5 << " ; \n";
+  featureFile <<   "\tn.alfLumaPels  = " << featureCounterUpdated.alfLumaPels << " ; \n";
+  featureFile <<   "\tn.alfChromaPels  = " << featureCounterUpdated.alfChromaPels << " ; \n";
+  featureFile << "\tn.ccalf = " << featureCounterUpdated.ccalf-featureCounterOld.ccalf  << " ; \n";
+  featureFile << "end\n";
+  featureFile.close();
+}
+
+void featureToFile(std::ofstream& featureFile,int featureCounterReference[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1], std::string featureName,bool calcDifference,int featureCounter[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1])
+{
+  featureFile <<   "\tn." << featureName << " = [...\n\t";
+  for (size_t i = 0; i < MAX_CU_DEPTH+1; i++)
+  {
+    for (size_t j = 0; j < MAX_CU_DEPTH+1; j++)
+    {
+      if (calcDifference)
+      {
+        featureFile << " " << featureCounterReference[j][i]  - featureCounter[j][i] << " ";
+      }
+      else
+      {
+        featureFile << " " << featureCounterReference[j][i]  << " ";
+      }
+    }
+    if (i != MAX_CU_DEPTH)
+    {
+      featureFile << ";... \n\t";
+    }
+  }
+  featureFile << "]; \n ";
+}
+
+void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, const UnitArea& ctuArea)
+{
+  SizeType             cuWidthIdx     = MAX_UINT;
+  SizeType             cuHeightIdx    = MAX_UINT;
+  
+  for (auto &currCU: cs.traverseCUs(ctuArea, CHANNEL_TYPE_LUMA))
+  {
+    cuWidthIdx  = floorLog2(currCU.lwidth());
+    cuHeightIdx = floorLog2(currCU.lheight());
+    if ((cuWidthIdx <= MAX_CU_DEPTH+1) && (cuHeightIdx <= MAX_CU_DEPTH+1))
+    {
+      if (currCU.predMode == MODE_INTRA)   // Intra-Mode
+      {
+        for (auto &currPU: CU::traversePUs(currCU))
+        {
+          SizeType puWidthIdx  = floorLog2(currPU.Y().width);
+          SizeType puHeightIdx = floorLog2(currPU.Y().height);
+          if ((puWidthIdx <= MAX_CU_DEPTH+1) && (puHeightIdx <= MAX_CU_DEPTH+1))
+          {
+            featureCounter.intraBlockSizes[puWidthIdx][puHeightIdx]++;
+            SizeType lumaPredDir = currPU.intraDir[CHANNEL_TYPE_LUMA];
+            if (currCU.mipFlag)
+            {
+              featureCounter.intraMIPBlockSizes[puWidthIdx][puHeightIdx]++;
+              featureCounter.intraLumaMIPBlockSizes[puWidthIdx][puHeightIdx]++;
+            }
+            else
+            {
+              if (lumaPredDir == PLANAR_IDX)
+              {
+                featureCounter.intraLumaPlaBlockSizes[puWidthIdx][puHeightIdx]++;
+              }
+              else if (lumaPredDir == DC_IDX)
+              {
+                featureCounter.intraLumaDcBlockSizes[puWidthIdx][puHeightIdx]++;
+              }
+              else if (lumaPredDir == HOR_IDX || lumaPredDir == VER_IDX || lumaPredDir == DIA_IDX)
+              {
+                featureCounter.intraLumaHvdBlockSizes[puWidthIdx][puHeightIdx]++;
+              }
+              else
+              {
+                featureCounter.intraLumaAngBlockSizes[puWidthIdx][puHeightIdx]++;
+              }
+            }
+            bool tempPDPC =
+              (currPU.Y().width >= MIN_TB_SIZEY && currPU.Y().height >= MIN_TB_SIZEY) && isLuma(COMPONENT_Y)
+                ? currPU.multiRefIdx
+                : false;
+            if (tempPDPC)
+            {
+              featureCounter.intraPDPCBlockSizes[puWidthIdx][puHeightIdx]++;
+              featureCounter.intraLumaPDPCBlockSizes[puWidthIdx][puHeightIdx]++;
+            }
+          }
+        }
+
+        if (currCU.ispMode > NOT_INTRA_SUBPARTITIONS)
+        {
+          if (currCU.ispMode == VER_INTRA_SUBPARTITIONS)
+          {
+            featureCounter.intraSubPartitionsVertical[cuWidthIdx][cuHeightIdx]++;
+            featureCounter.intraLumaSubPartitionsVertical[cuWidthIdx][cuHeightIdx]++;
+          }
+          if (currCU.ispMode == HOR_INTRA_SUBPARTITIONS)
+          {
+            featureCounter.intraSubPartitionsHorizontal[cuWidthIdx][cuHeightIdx]++;
+            featureCounter.intraLumaSubPartitionsHorizontal[cuWidthIdx][cuHeightIdx]++;
+          }
+        }
+      }
+      else if (currCU.predMode == MODE_IBC)   // IBC-Mode
+      {
+        featureCounter.IBCBlockSizes[cuWidthIdx][cuHeightIdx]++;
+        featureCounter.IBCLumaBlockSizes[cuWidthIdx][cuHeightIdx]++;
+      }
+      else if (currCU.predMode == MODE_INTER)   // Inter-Mode
+      {
+        featureCounter.interBlockSizes[cuWidthIdx][cuHeightIdx]++;
+        featureCounter.interLumaBlockSizes[cuWidthIdx][cuHeightIdx]++;
+        featureCounter.interBlockSizes[cuWidthIdx-1][cuHeightIdx-1] += 2;
+        featureCounter.interChromaBlockSizes[cuWidthIdx-1][cuHeightIdx-1] += 2;
+        if (currCU.skip)
+        {
+          featureCounter.interSkipBlocks[cuWidthIdx][cuHeightIdx]++;
+          featureCounter.interLumaSkipBlocks[cuWidthIdx][cuHeightIdx]++;
+          featureCounter.interSkipBlocks[cuWidthIdx-1][cuHeightIdx-1] += 2;
+          featureCounter.interChromaSkipBlocks[cuWidthIdx-1][cuHeightIdx-1] += 2;
+          if (currCU.affine)
+          {
+            featureCounter.affine[cuWidthIdx][cuHeightIdx]++;
+            featureCounter.affineLuma[cuWidthIdx][cuHeightIdx]++;
+            featureCounter.affineSkip[cuWidthIdx][cuHeightIdx]++;
+            featureCounter.affineLumaSkip[cuWidthIdx][cuHeightIdx]++;
+            featureCounter.affine[cuWidthIdx-1][cuHeightIdx-1] += 2;
+            featureCounter.affineChroma[cuWidthIdx-1][cuHeightIdx-1] += 2;
+            featureCounter.affineSkip[cuWidthIdx-1][cuHeightIdx-1] += 2;
+            featureCounter.affineChromaSkip[cuWidthIdx-1][cuHeightIdx-1] += 2;
+          }
+        }
+        else
+        {
+          for (auto &currPU: CU::traversePUs(currCU))
+          {
+            SizeType puWidthIdx  = floorLog2(currPU.lwidth());
+            SizeType puHeightIdx = floorLog2(currPU.lheight());
+            if ((puWidthIdx <= MAX_CU_DEPTH+1) && (puHeightIdx <= MAX_CU_DEPTH+1))
+            {
+              if (currPU.mergeFlag)
+              {
+                featureCounter.interMergeBlocks[puWidthIdx][puHeightIdx]++;
+                featureCounter.interLumaMergeBlocks[puWidthIdx][puHeightIdx]++;
+                featureCounter.interMergeBlocks[puWidthIdx-1][puHeightIdx-1] += 2;
+                featureCounter.interChromaMergeBlocks[puWidthIdx-1][puHeightIdx-1] += 2;
+                if (currCU.affine)
+                {
+                  featureCounter.affine[puWidthIdx][puHeightIdx]++;
+                  featureCounter.affineLuma[puWidthIdx][puHeightIdx]++;
+                  featureCounter.affineMerge[puWidthIdx][puHeightIdx]++;
+                  featureCounter.affineLumaMerge[puWidthIdx][puHeightIdx]++;
+                  featureCounter.affine[puWidthIdx-1][puHeightIdx-1] += 2;
+                  featureCounter.affineChroma[puWidthIdx-1][puHeightIdx-1] += 2;
+                  featureCounter.affineMerge[puWidthIdx-1][puHeightIdx-1] += 2;
+                  featureCounter.affineChromaMerge[puWidthIdx-1][puHeightIdx-1] += 2;
+                }
+              }
+              else   // InterInter
+              {
+                featureCounter.interInterBlocks[puWidthIdx][puHeightIdx]++;
+                featureCounter.interLumaInterBlocks[puWidthIdx][puHeightIdx]++;
+                featureCounter.interInterBlocks[puWidthIdx-1][puHeightIdx-1] += 2;
+                featureCounter.interChromaInterBlocks[puWidthIdx-1][puHeightIdx-1] += 2;
+                if (currCU.affine)
+                {
+                  featureCounter.affine[puWidthIdx][puHeightIdx]++;
+                  featureCounter.affineLuma[puWidthIdx][puHeightIdx]++;
+                  featureCounter.affineInter[puWidthIdx][puHeightIdx]++;
+                  featureCounter.affineLumaInter[puWidthIdx][puHeightIdx]++;
+                  featureCounter.affine[puWidthIdx-1][puHeightIdx-1] += 2;
+                  featureCounter.affineChroma[puWidthIdx-1][puHeightIdx-1] += 2;
+                  featureCounter.affineInter[puWidthIdx-1][puHeightIdx-1] += 2;
+                  featureCounter.affineChromaInter[puWidthIdx-1][puHeightIdx-1] += 2;
+                }
+              }
+              if (currPU.cu->geoFlag)
+              {
+                featureCounter.geo[puWidthIdx][puHeightIdx]++;
+                featureCounter.geoLuma[puWidthIdx][puHeightIdx]++;
+                featureCounter.geo[puWidthIdx-1][puHeightIdx-1] += 2;
+                featureCounter.geoChroma[puWidthIdx-1][puHeightIdx-1] += 2;
+              }
+            }
+          }
+        }
+
+
+
+        for (auto &currPU: CU::traversePUs(currCU))   // Check whether BDOF or DMVR are used in the current PU
+        {
+          bool m_DMVRapplied = false;
+          bool m_BDOFapplied = false;
+
+          PredictionUnit &pu          = currPU;
+          SizeType        puWidthIdx  = floorLog2(currPU.lwidth());
+          SizeType        puHeightIdx = floorLog2(currPU.lheight());
+          if ((puWidthIdx <= MAX_CU_DEPTH + 1) && (puHeightIdx <= MAX_CU_DEPTH + 1))
+          {
+            const PPS   &pps        = *pu.cs->pps;
+            const Slice &localSlice = *pu.cs->slice;
+            CHECK(!pu.cu->affine && pu.refIdx[0] >= 0 && pu.refIdx[1] >= 0 && (pu.lwidth() + pu.lheight() == 12),
+                  "invalid 4x8/8x4 bi-predicted blocks");
+
+            int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
+            int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
+
+            const WPScalingParam *wp0 = pu.cs->slice->getWpScaling(REF_PIC_LIST_0, refIdx0);
+            const WPScalingParam *wp1 = pu.cs->slice->getWpScaling(REF_PIC_LIST_1, refIdx1);
+
+            bool bioApplied = false;
+            if (pu.cs->sps->getBDOFEnabledFlag() && (!pu.cs->picHeader->getBdofDisabledFlag()))
+            {
+              if (pu.cu->affine)
+              {
+                bioApplied = false;
+              }
+              else
+              {
+                const bool biocheck0 = !((WPScalingParam::isWeighted(wp0) || WPScalingParam::isWeighted(wp1))
+                                         && localSlice.getSliceType() == B_SLICE);
+                const bool biocheck1 = !(pps.getUseWP() && localSlice.getSliceType() == P_SLICE);
+                if (biocheck0 && biocheck1 && PU::isSimpleSymmetricBiPred(pu) && (pu.Y().height >= 8)
+                    && (pu.Y().width >= 8) && ((pu.Y().height * pu.Y().width) >= 128))
+                {
+                  bioApplied = true;
+                }
+              }
+
+              if (bioApplied && pu.ciipFlag)
+              {
+                bioApplied = false;
+              }
+
+              if (bioApplied && pu.cu->smvdMode)
+              {
+                bioApplied = false;
+              }
+
+              if (pu.cu->cs->sps->getUseBcw() && bioApplied && pu.cu->bcwIdx != BCW_DEFAULT)
+              {
+                bioApplied = false;
+              }
+            }
+            if (pu.mmvdEncOptMode == 2 && pu.mmvdMergeFlag)
+            {
+              bioApplied = false;
+            }
+            bool dmvrApplied = false;
+            dmvrApplied      = PU::checkDMVRCondition(pu);
+
+            bool refIsScaled =
+              (refIdx0 < 0 ? false : pu.cu->slice->getRefPic(REF_PIC_LIST_0, refIdx0)->isRefScaled(pu.cs->pps))
+              || (refIdx1 < 0 ? false : pu.cu->slice->getRefPic(REF_PIC_LIST_1, refIdx1)->isRefScaled(pu.cs->pps));
+            dmvrApplied = dmvrApplied && !refIsScaled;
+            bioApplied  = bioApplied && !refIsScaled;
+
+            for (uint32_t refList = 0; refList < NUM_REF_PIC_LIST_01; refList++)
+            {
+              if (pu.refIdx[refList] < 0)
+              {
+                continue;
+              }
+
+              RefPicList eRefPicList = (refList ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
+
+              CHECK(CU::isIBC(*pu.cu) && eRefPicList != REF_PIC_LIST_0, "Invalid interdir for ibc mode");
+              CHECK(CU::isIBC(*pu.cu) && pu.refIdx[refList] != MAX_NUM_REF, "Invalid reference index for ibc mode");
+              CHECK((CU::isInter(*pu.cu) && pu.refIdx[refList] >= localSlice.getNumRefIdx(eRefPicList)),
+                    "Invalid reference index");
+            }
+
+            m_BDOFapplied = bioApplied;
+
+            if (!pu.cu->geoFlag && (!dmvrApplied) && (!bioApplied) && pps.getWPBiPred()
+                && localSlice.getSliceType() == B_SLICE && pu.cu->bcwIdx == BCW_DEFAULT)
+            {
+              m_DMVRapplied = false;
+            }
+            else if (!pu.cu->geoFlag && pps.getUseWP() && localSlice.getSliceType() == P_SLICE)
+            {
+              m_DMVRapplied = false;
+            }
+            else
+            {
+              m_DMVRapplied = dmvrApplied;
+            }
+
+            if (m_DMVRapplied)
+            {
+              featureCounter.dmvrBlocks[puWidthIdx][puHeightIdx]++;
+            }
+
+            if (m_BDOFapplied)
+            {
+              featureCounter.bdofBlocks[puWidthIdx][puHeightIdx]++;
+            }
+          }
+        }
+      }
+
+      if (currCU.predMode == MODE_INTER)
+      {
+        const int nShift  = MV_FRACTIONAL_BITS_DIFF;
+        const int nOffset = 1 << (nShift - 1);
+
+        for (auto &currPU: CU::traversePUs(currCU))
+        {
+          int numberOfPels = currPU.lwidth() * currPU.lheight();
+          if (!currPU.cu->affine && !currPU.cu->geoFlag)
+          {
+            if (currPU.interDir != MODE_TYPE_INTRA /* PRED_L1 */)
+            {
+              Mv mv   = currPU.mv[REF_PIC_LIST_0];
+              Mv mvd  = currPU.mvd[REF_PIC_LIST_0];
+              mv.hor  = mv.hor >= 0 ? (mv.hor + nOffset) >> nShift : -((-mv.hor + nOffset) >> nShift);
+              mv.ver  = mv.ver >= 0 ? (mv.ver + nOffset) >> nShift : -((-mv.ver + nOffset) >> nShift);
+              mvd.hor = mvd.hor >= 0 ? (mvd.hor + nOffset) >> nShift : -((-mvd.hor + nOffset) >> nShift);
+              mvd.ver = mvd.ver >= 0 ? (mvd.ver + nOffset) >> nShift : -((-mvd.ver + nOffset) >> nShift);
+
+              if (currPU.interDir == 3)
+              {
+                featureCounter.biPredPel += numberOfPels;
+              }
+              else
+              {
+                featureCounter.uniPredPel += numberOfPels;
+              }
+
+              if (mv.hor == 0 && mv.ver == 0)
+              {
+                featureCounter.copyCUPel += numberOfPels;
+              }
+              if (mv.hor != 0 && mv.ver == 0)
+              {
+                featureCounter.fracPelHor += numberOfPels;
+              }
+              if (mv.hor == 0 && mv.ver != 0)
+              {
+                featureCounter.fracPelVer += numberOfPels;
+              }
+              if (mv.hor != 0 && mv.ver != 0)
+              {
+                featureCounter.fracPelBoth += numberOfPels;
+              }
+            }
+            if (currPU.interDir != 1 /* PRED_L1 */)
+            {
+              Mv mv   = currPU.mv[REF_PIC_LIST_1];
+              Mv mvd  = currPU.mvd[REF_PIC_LIST_1];
+              mv.hor  = mv.hor >= 0 ? (mv.hor + nOffset) >> nShift : -((-mv.hor + nOffset) >> nShift);
+              mv.ver  = mv.ver >= 0 ? (mv.ver + nOffset) >> nShift : -((-mv.ver + nOffset) >> nShift);
+              mvd.hor = mvd.hor >= 0 ? (mvd.hor + nOffset) >> nShift : -((-mvd.hor + nOffset) >> nShift);
+              mvd.ver = mvd.ver >= 0 ? (mvd.ver + nOffset) >> nShift : -((-mvd.ver + nOffset) >> nShift);
+
+              if (currPU.interDir != 3)
+              {
+                featureCounter.uniPredPel += numberOfPels;
+              }
+
+              if (mv.hor == 0 && mv.ver == 0)
+              {
+                featureCounter.copyCUPel += numberOfPels;
+              }
+              if (mv.hor != 0 && mv.ver == 0)
+              {
+                featureCounter.fracPelHor += numberOfPels;
+              }
+              if (mv.hor == 0 && mv.ver != 0)
+              {
+                featureCounter.fracPelVer += numberOfPels;
+              }
+              if (mv.hor != 0 && mv.ver != 0)
+              {
+                featureCounter.fracPelBoth += numberOfPels;
+              }
+            }
+          }
+          else if (currPU.cu->affine)
+          {
+            if (currPU.interDir != 2 /* PRED_L1 */)
+            {
+              Mv                mv[3];
+              const CMotionBuf &mb = currPU.getMotionBuf();
+              mv[0]                = mb.at(0, 0).mv[REF_PIC_LIST_0];
+              mv[1]                = mb.at(mb.width - 1, 0).mv[REF_PIC_LIST_0];
+              mv[2]                = mb.at(0, mb.height - 1).mv[REF_PIC_LIST_0];
+              mv[0].hor = mv[0].hor >= 0 ? (mv[0].hor + nOffset) >> nShift : -((-mv[0].hor + nOffset) >> nShift);
+              mv[0].ver = mv[0].ver >= 0 ? (mv[0].ver + nOffset) >> nShift : -((-mv[0].ver + nOffset) >> nShift);
+              mv[1].hor = mv[1].hor >= 0 ? (mv[1].hor + nOffset) >> nShift : -((-mv[1].hor + nOffset) >> nShift);
+              mv[1].ver = mv[1].ver >= 0 ? (mv[1].ver + nOffset) >> nShift : -((-mv[1].ver + nOffset) >> nShift);
+              mv[2].hor = mv[2].hor >= 0 ? (mv[2].hor + nOffset) >> nShift : -((-mv[2].hor + nOffset) >> nShift);
+              mv[2].ver = mv[2].ver >= 0 ? (mv[2].ver + nOffset) >> nShift : -((-mv[2].ver + nOffset) >> nShift);
+
+              if (currPU.interDir == 3)
+              {
+                featureCounter.biPredPel += numberOfPels;
+              }
+              else
+              {
+                featureCounter.uniPredPel += numberOfPels;
+              }
+
+              for (int iter = 0; iter < 3; iter++)
+              {
+                if (mv[iter].hor == 0 && mv[iter].ver == 0)
+                {
+                  featureCounter.affineCopyCUPel += numberOfPels;
+                }
+                if (mv[iter].hor != 0 && mv[iter].ver == 0)
+                {
+                  featureCounter.affineFracPelHor += numberOfPels;
+                }
+                if (mv[iter].hor == 0 && mv[iter].ver != 0)
+                {
+                  featureCounter.affineFracPelVer += numberOfPels;
+                }
+                if (mv[iter].hor != 0 && mv[iter].ver != 0)
+                {
+                  featureCounter.affineFracPelBoth += numberOfPels;
+                }
+              }
+            }
+            if (currPU.interDir != 1 /* PRED_L1 */)
+            {
+              Mv                mv[3];
+              const CMotionBuf &mb = currPU.getMotionBuf();
+              mv[0]                = mb.at(0, 0).mv[REF_PIC_LIST_1];
+              mv[1]                = mb.at(mb.width - 1, 0).mv[REF_PIC_LIST_1];
+              mv[2]                = mb.at(0, mb.height - 1).mv[REF_PIC_LIST_1];
+
+              mv[0].hor = mv[0].hor >= 0 ? (mv[0].hor + nOffset) >> nShift : -((-mv[0].hor + nOffset) >> nShift);
+              mv[0].ver = mv[0].ver >= 0 ? (mv[0].ver + nOffset) >> nShift : -((-mv[0].ver + nOffset) >> nShift);
+              mv[1].hor = mv[1].hor >= 0 ? (mv[1].hor + nOffset) >> nShift : -((-mv[1].hor + nOffset) >> nShift);
+              mv[1].ver = mv[1].ver >= 0 ? (mv[1].ver + nOffset) >> nShift : -((-mv[1].ver + nOffset) >> nShift);
+              mv[2].hor = mv[2].hor >= 0 ? (mv[2].hor + nOffset) >> nShift : -((-mv[2].hor + nOffset) >> nShift);
+              mv[2].ver = mv[2].ver >= 0 ? (mv[2].ver + nOffset) >> nShift : -((-mv[2].ver + nOffset) >> nShift);
+
+              if (currPU.interDir != 3)
+              {
+                featureCounter.uniPredPel += numberOfPels;
+              }
+
+              for (int iter = 0; iter < 3; iter++)
+              {
+                if (mv[iter].hor == 0 && mv[iter].ver == 0)
+                {
+                  featureCounter.affineCopyCUPel += numberOfPels;
+                }
+                if (mv[iter].hor != 0 && mv[iter].ver == 0)
+                {
+                  featureCounter.affineFracPelHor += numberOfPels;
+                }
+                if (mv[iter].hor == 0 && mv[iter].ver != 0)
+                {
+                  featureCounter.affineFracPelVer += numberOfPels;
+                }
+                if (mv[iter].hor != 0 && mv[iter].ver != 0)
+                {
+                  featureCounter.affineFracPelBoth += numberOfPels;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      for (auto &currTU: CU::traverseTUs(currCU))
+      {
+        bool     m_notOnCounterGridWidth  = false;
+        bool     m_notOnCounterGridHeight = false;
+        SizeType currTUWIdx               = MAX_UINT;
+        SizeType currTUHIdx               = MAX_UINT;
+        currTUWIdx                        = floorLog2(currTU.Y().width);
+        currTUHIdx                        = floorLog2(currTU.Y().height);
+        if ((currTUWIdx <= MAX_CU_DEPTH + 1) && (currTUHIdx <= MAX_CU_DEPTH + 1))
+        {
+          if (currTU.Y().width != int(pow(2, currTUWIdx)))
+          {
+            m_notOnCounterGridWidth = true;
+          }
+
+          if (currTU.Y().height != int(pow(2, currTUHIdx)))
+          {
+            m_notOnCounterGridHeight = true;
+          }
+
+          if (currTU.cu->skip)
+          {
+            featureCounter.transformSkipBlocks[currTUWIdx][currTUHIdx]++;
+            featureCounter.transformLumaSkipBlocks[currTUWIdx][currTUHIdx]++;
+            if (m_notOnCounterGridHeight || m_notOnCounterGridWidth)
+            {
+              if (m_notOnCounterGridHeight)
+              {
+                featureCounter.transformSkipBlocks[currTUWIdx][currTUHIdx - 1]++;
+                featureCounter.transformLumaSkipBlocks[currTUWIdx][currTUHIdx - 1]++;
+              }
+
+              if (m_notOnCounterGridWidth)
+              {
+                featureCounter.transformSkipBlocks[currTUWIdx - 1][currTUHIdx]++;
+                featureCounter.transformLumaSkipBlocks[currTUWIdx - 1][currTUHIdx]++;
+              }
+            }
+          }
+          else
+          {
+            featureCounter.transformBlocks[currTUWIdx][currTUHIdx]++;
+            featureCounter.transformLumaBlocks[currTUWIdx][currTUHIdx]++;
+            if (m_notOnCounterGridHeight || m_notOnCounterGridWidth)
+            {
+              if (m_notOnCounterGridHeight)
+              {
+                featureCounter.transformBlocks[currTUWIdx][currTUHIdx - 1]++;
+                featureCounter.transformLumaBlocks[currTUWIdx][currTUHIdx - 1]++;
+              }
+
+              if (m_notOnCounterGridWidth)
+              {
+                featureCounter.transformBlocks[currTUWIdx - 1][currTUHIdx]++;
+                featureCounter.transformLumaBlocks[currTUWIdx - 1][currTUHIdx]++;
+              }
+            }
+          }
+
+          if (currTU.cu->lfnstIdx && currTU.mtsIdx[COMPONENT_Y] != MTS_SKIP
+              && (currTU.cu->isSepTree() ? true : isLuma(COMPONENT_Y)))
+          {
+            bool significantCoeff = false;
+            for (int bufferScan = 0; bufferScan < currTU.lwidth() * currTU.lheight() && !significantCoeff; bufferScan++)
+            {
+              if (currTU.getCoeffs(ComponentID(0)).buf[bufferScan] != 0)
+              {
+                significantCoeff = true;
+              }
+            }
+
+            if (significantCoeff)
+            {
+              if (currTU.Y().width >= 8 && currTU.Y().height >= 8)
+              {
+                featureCounter.transformLFNST8++;
+              }
+              else
+              {
+                featureCounter.transformLFNST4++;
+              }
+            }
+          }
+
+          int maxNumberOfCoeffs = 0;
+
+          maxNumberOfCoeffs = currTU.Y().width * currTU.Y().height;
+          if (currTU.cbf[COMPONENT_Y] == 0)
+          {
+            maxNumberOfCoeffs = 0;
+          }
+
+          for (int i = 0; i < maxNumberOfCoeffs; i++)
+          {
+            int counterCoeff = currTU.getCoeffs(COMPONENT_Y).buf[i];
+            if (counterCoeff != 0)
+            {
+              featureCounter.nrOfCoeff++;
+
+              if (counterCoeff < 0)
+              {
+                counterCoeff *= -1;
+              }
+
+              if (counterCoeff > 1)
+              {
+                featureCounter.coeffG1++;
+              }
+
+              counterCoeff--;   // taking account of the fact that n_coeffg1 has already been counted
+              double ldVal = counterCoeff < 2 ? 0.0
+                                              : floorLog2(counterCoeff)
+                                                  + (2 * counterCoeff >= (3 << floorLog2(counterCoeff)) ? 0.585 : 0.0);
+              featureCounter.valueOfCoeff += ldVal;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for (auto &currCU: cs.traverseCUs(ctuArea, CHANNEL_TYPE_CHROMA))
+  {
+    SizeType cuCbWidthIdx  = floorLog2(currCU.Cb().width);
+    SizeType cuCbHeightIdx = floorLog2(currCU.Cb().height);
+    SizeType cuCrWidthIdx  = floorLog2(currCU.Cr().width);
+    SizeType cuCrHeightIdx = floorLog2(currCU.Cr().height);
+    
+    if ((cuCbWidthIdx <= MAX_CU_DEPTH+1) && (cuCbHeightIdx <= MAX_CU_DEPTH+1) && (cuCrWidthIdx <= MAX_CU_DEPTH+1) && (cuCrHeightIdx <= MAX_CU_DEPTH+1))
+    {
+      if (currCU.predMode == MODE_INTRA)   // Intra-Mode
+      {
+        for (auto &currPU: CU::traversePUs(currCU))
+        {
+          SizeType chromaWidthIdx  = floorLog2(currPU.Cb().width);
+          SizeType chromaHeightIdx = floorLog2(currPU.Cb().height);
+          if ((chromaWidthIdx <= MAX_CU_DEPTH+1) && (chromaHeightIdx <= MAX_CU_DEPTH+1))
+          {
+            featureCounter.intraBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+            SizeType chromaPredDir = currPU.intraDir[CHANNEL_TYPE_CHROMA];
+            // Intra Prediction Direction
+            if (currCU.mipFlag)
+            {
+              featureCounter.intraMIPBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              featureCounter.intraChromaMIPBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+            }
+            else
+            {
+              if (chromaPredDir == PLANAR_IDX)
+              {
+                featureCounter.intraChromaPlaBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              }
+              else if (chromaPredDir == DC_IDX)
+              {
+                featureCounter.intraChromaDcBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              }
+              else if (chromaPredDir == HOR_IDX || chromaPredDir == VER_IDX || chromaPredDir == DIA_IDX)
+              {
+                featureCounter.intraChromaHvdBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              }
+              else if (chromaPredDir < LM_CHROMA_IDX)
+              {
+                featureCounter.intraChromaAngBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              }
+
+              if (PU::isLMCMode(chromaPredDir))
+              {
+                featureCounter.intraChromaCrossCompBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              }
+            }
+
+            bool tempPDPC =
+              (currPU.Cb().width >= MIN_TB_SIZEY && currPU.Cb().height >= MIN_TB_SIZEY) && isLuma(COMPONENT_Cb)
+                ? currPU.multiRefIdx
+                : false;
+            if (tempPDPC)
+            {
+              featureCounter.intraPDPCBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              featureCounter.intraChromaPDPCBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+            }
+          }
+        }
+
+        if (currCU.ispMode > NOT_INTRA_SUBPARTITIONS)
+        {
+          if (currCU.ispMode == VER_INTRA_SUBPARTITIONS)
+          {
+            featureCounter.intraSubPartitionsVertical[cuCbWidthIdx][cuCbHeightIdx]++;
+            featureCounter.intraChromaSubPartitionsVertical[cuCbWidthIdx][cuCbHeightIdx]++;
+          }
+          if (currCU.ispMode == HOR_INTRA_SUBPARTITIONS)
+          {
+            featureCounter.intraSubPartitionsHorizontal[cuCbWidthIdx][cuCbHeightIdx]++;
+            featureCounter.intraChromaSubPartitionsHorizontal[cuCbWidthIdx][cuCbHeightIdx]++;
+          }
+        }
+      }
+
+      if (currCU.predMode == MODE_INTRA)   // Intra-Mode
+      {
+        for (auto &currPU: CU::traversePUs(currCU))
+        {
+          SizeType chromaWidthIdx  = floorLog2(currPU.Cr().width);
+          SizeType chromaHeightIdx = floorLog2(currPU.Cr().height);
+          featureCounter.intraBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+          SizeType chromaPredDir = currPU.intraDir[CHANNEL_TYPE_CHROMA];
+          if ((chromaWidthIdx <= MAX_CU_DEPTH + 1) && (chromaHeightIdx <= MAX_CU_DEPTH + 1))
+          {
+            if (currCU.mipFlag)
+            {
+              featureCounter.intraMIPBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              featureCounter.intraChromaMIPBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+            }
+            else
+            {
+              if (chromaPredDir == PLANAR_IDX)
+              {
+                featureCounter.intraChromaPlaBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              }
+              else if (chromaPredDir == DC_IDX)
+              {
+                featureCounter.intraChromaDcBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              }
+              else if (chromaPredDir == HOR_IDX || chromaPredDir == VER_IDX || chromaPredDir == DIA_IDX)
+              {
+                featureCounter.intraChromaHvdBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              }
+              else if (chromaPredDir < NUM_CHROMA_MODE)
+              {
+                featureCounter.intraChromaAngBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              }
+
+              if (PU::isLMCMode(chromaPredDir))
+              {
+                featureCounter.intraChromaCrossCompBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              }
+            }
+            bool tempPDPC =
+              (currPU.Cr().width >= MIN_TB_SIZEY && currPU.Cr().height >= MIN_TB_SIZEY) && isLuma(COMPONENT_Cr)
+                ? currPU.multiRefIdx
+                : false;
+            if (tempPDPC)
+            {
+              featureCounter.intraPDPCBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+              featureCounter.intraChromaPDPCBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
+            }
+          }
+        }
+
+        if (currCU.ispMode > NOT_INTRA_SUBPARTITIONS)
+        {
+          if (currCU.ispMode == VER_INTRA_SUBPARTITIONS)
+          {
+            featureCounter.intraSubPartitionsVertical[cuCrWidthIdx][cuCrHeightIdx]++;
+            featureCounter.intraChromaSubPartitionsVertical[cuCrWidthIdx][cuCrHeightIdx]++;
+          }
+          if (currCU.ispMode == HOR_INTRA_SUBPARTITIONS)
+          {
+            featureCounter.intraSubPartitionsHorizontal[cuCrWidthIdx][cuCrHeightIdx]++;
+            featureCounter.intraSubPartitionsHorizontal[cuCrWidthIdx][cuCrHeightIdx]++;
+          }
+        }
+      }
+
+
+      for (auto &currTU: CU::traverseTUs(currCU))
+      {
+        for (int m_compID = 1; m_compID < getNumberValidComponents(currTU.chromaFormat); m_compID++)
+        {
+          bool     m_notOnCounterGridWidth  = false;
+          bool     m_notOnCounterGridHeight = false;
+          SizeType currTUWIdx               = MAX_UINT;
+          SizeType currTUHIdx               = MAX_UINT;
+          if ((currTUWIdx <= MAX_CU_DEPTH+1) && (currTUHIdx <= MAX_CU_DEPTH+1))
+          {
+            if (m_compID == COMPONENT_Cb)
+            {
+              currTUWIdx = floorLog2(currTU.Cb().width);
+              currTUHIdx = floorLog2(currTU.Cb().height);
+              if (currTU.Cb().width != int(pow(2, currTUWIdx)))
+              {
+                m_notOnCounterGridWidth = true;
+              }
+
+              if (currTU.Cb().height != int(pow(2, currTUHIdx)))
+              {
+                m_notOnCounterGridHeight = true;
+              }
+            }
+            else
+            {
+              currTUWIdx = floorLog2(currTU.Cr().width);
+              currTUHIdx = floorLog2(currTU.Cr().height);
+              if (currTU.Cr().width != int(pow(2, currTUWIdx)))
+              {
+                m_notOnCounterGridWidth = true;
+              }
+
+              if (currTU.Cr().height != int(pow(2, currTUHIdx)))
+              {
+                m_notOnCounterGridHeight = true;
+              }
+            }
+
+            if (currTU.cu->skip)
+            {
+              featureCounter.transformSkipBlocks[currTUWIdx][currTUHIdx]++;
+              featureCounter.transformChromaSkipBlocks[currTUWIdx][currTUHIdx]++;
+              if (m_notOnCounterGridHeight || m_notOnCounterGridWidth)
+              {
+                if (m_notOnCounterGridHeight)
+                {
+                  featureCounter.transformSkipBlocks[currTUWIdx][currTUHIdx - 1]++;
+                  featureCounter.transformChromaSkipBlocks[currTUWIdx][currTUHIdx - 1]++;
+                }
+
+                if (m_notOnCounterGridWidth)
+                {
+                  featureCounter.transformSkipBlocks[currTUWIdx - 1][currTUHIdx]++;
+                  featureCounter.transformChromaSkipBlocks[currTUWIdx - 1][currTUHIdx]++;
+                }
+              }
+            }
+            else
+            {
+              featureCounter.transformBlocks[currTUWIdx][currTUHIdx]++;
+              featureCounter.transformChromaBlocks[currTUWIdx][currTUHIdx]++;
+              if (m_notOnCounterGridHeight || m_notOnCounterGridWidth)
+              {
+                if (m_notOnCounterGridHeight)
+                {
+                  featureCounter.transformBlocks[currTUWIdx][currTUHIdx - 1]++;
+                  featureCounter.transformChromaBlocks[currTUWIdx][currTUHIdx - 1]++;
+                }
+
+                if (m_notOnCounterGridWidth)
+                {
+                  featureCounter.transformBlocks[currTUWIdx - 1][currTUHIdx]++;
+                  featureCounter.transformChromaBlocks[currTUWIdx - 1][currTUHIdx]++;
+                }
+              }
+            }
+
+            if (currTU.cu->lfnstIdx && currTU.mtsIdx[m_compID] != MTS_SKIP
+                && (currTU.cu->isSepTree() ? true : isLuma(COMPONENT_Cr)))
+            {
+              bool significantCoeff = false;
+              if (m_compID == COMPONENT_Cb)
+              {
+                for (int bufferScan = 0;
+                     bufferScan < currTU.Cb().width * currTU.Cb().height && significantCoeff == false; bufferScan++)
+                {
+                  if (currTU.getCoeffs(ComponentID(m_compID)).buf[bufferScan] != 0)
+                  {
+                    significantCoeff = true;
+                  }
+                }
+              }
+              else
+              {
+                for (int bufferScan = 0;
+                     bufferScan < currTU.Cr().width * currTU.Cr().height && significantCoeff == false; bufferScan++)
+                {
+                  if (currTU.getCoeffs(ComponentID(m_compID)).buf[bufferScan] != 0)
+                  {
+                    significantCoeff = true;
+                  }
+                }
+              }
+
+              if (significantCoeff)
+              {
+                if (currTU.Cb().width >= 8 && currTU.Cb().height >= 8)
+                {
+                  featureCounter.transformLFNST8++;
+                }
+                else
+                {
+                  featureCounter.transformLFNST4++;
+                }
+              }
+            }
+
+            int maxNumberOfCoeffs = 0;
+            if (m_compID == COMPONENT_Y)
+            {
+              maxNumberOfCoeffs = currTU.Y().width * currTU.Y().height;
+              if (currTU.cbf[COMPONENT_Y] == 0)
+              {
+                maxNumberOfCoeffs = 0;
+              }
+            }
+            else if (m_compID == COMPONENT_Cb)
+            {
+              maxNumberOfCoeffs = currTU.Cb().width * currTU.Cb().height;
+              if (currTU.cbf[COMPONENT_Cb] == 0)
+              {
+                maxNumberOfCoeffs = 0;
+              }
+            }
+            else
+            {
+              maxNumberOfCoeffs = currTU.Cr().width * currTU.Cr().height;
+              if (currTU.cbf[COMPONENT_Cr] == 0)
+              {
+                maxNumberOfCoeffs = 0;
+              }
+            }
+
+            for (int i = 0; i < maxNumberOfCoeffs; i++)
+            {
+              int counterCoeff = currTU.getCoeffs((ComponentID) m_compID).buf[i];
+
+              if (counterCoeff != 0)
+              {
+                featureCounter.nrOfCoeff++;
+
+                if (counterCoeff < 0)   // abs val
+                {
+                  counterCoeff *= -1;
+                }
+
+                if (counterCoeff > 1)
+                {
+                  featureCounter.coeffG1++;
+                }
+
+                counterCoeff--;   // taking account of the fact that n_coeffg1 has already been counted
+                double ldVal =
+                  counterCoeff < 2
+                    ? 0.0
+                    : floorLog2(counterCoeff) + (2 * counterCoeff >= (3 << floorLog2(counterCoeff)) ? 0.585 : 0.0);
+                featureCounter.valueOfCoeff += ldVal;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#endif

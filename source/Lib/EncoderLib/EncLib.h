@@ -129,7 +129,11 @@ private:
 
   int*                      m_layerDecPicBuffering;
   RPLList                   m_rplLists[2];
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct             m_featureCounter;
+  bool                      m_GMFAFramewise;
+  std::string   m_GMFAFile;
+#endif
 public:
   SPS*                      getSPS( int spsId ) { return m_spsMap.getPS( spsId ); };
   APS**                     getApss() { return m_apss; }
@@ -189,7 +193,13 @@ public:
   CtxCache*               getCtxCache           ()              { return  &m_CtxCache;             }
   RateCtrl*               getRateCtrl           ()              { return  &m_cRateCtrl;            }
 
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct getFeatureCounter(){return m_featureCounter;}
+  void setFeatureCounter(FeatureCounterStruct b){m_featureCounter=b;}
+  bool getGMFAFramewise() {return m_GMFAFramewise;}
+  void setGMFAFile(std::string b){m_GMFAFile = b;}
+#endif
+  
   void                    selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, int ltPoc);
 
   void                   setParamSetChanged(int spsId, int ppsId);

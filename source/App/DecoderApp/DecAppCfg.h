@@ -90,7 +90,11 @@ protected:
   std::string   m_cacheCfgFile;                       ///< Config file of cache model
   int           m_statMode;                           ///< Config statistic mode (0 - bit stat, 1 - tool stat, 3 - both)
   bool          m_mctsCheck;
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+  bool          m_GMFA;
+  std::string   m_GMFAFile;
+  bool          m_GMFAFramewise;
+#endif
   int          m_upscaledOutput;                     ////< Output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for RPR.
 #if JVET_AB0081
   int          m_upscaleFilterForDisplay;

@@ -376,7 +376,9 @@ void AdaptiveLoopFilter::applyCcAlfFilter(CodingStructure &cs, ComponentID compI
               const Area blkDst(xStart >> chromaScaleX, yStart >> chromaScaleY, w >> chromaScaleX, h >> chromaScaleY);
               m_filterCcAlf(dstBuf, buf, blkDst, blkSrc, compID, filterCoeff, m_clpRngs, cs, m_alfVBLumaCTUHeight,
                             m_alfVBLumaPos);
-
+#ifdef  GREEN_METADATA_SEI_ENABLED
+              cs.m_featureCounter.ccalf++;
+#endif
               xStart = xEnd;
             }
 
@@ -392,6 +394,9 @@ void AdaptiveLoopFilter::applyCcAlfFilter(CodingStructure &cs, ComponentID compI
 
           m_filterCcAlf(dstBuf, recYuvExt, blkDst, blkSrc, compID, filterCoeff, m_clpRngs, cs, m_alfVBLumaCTUHeight,
                         m_alfVBLumaPos);
+#ifdef  GREEN_METADATA_SEI_ENABLED
+          cs.m_featureCounter.ccalf++;
+#endif
         }
       }
       ctuIdx++;
@@ -515,6 +520,10 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
                 coeff = m_fixedFilterSetCoeffDec[filterSetIndex];
                 clip = m_clipDefault;
               }
+#ifdef  GREEN_METADATA_SEI_ENABLED
+              cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
+              cs.m_featureCounter.alfLumaPels += (width * height);
+#endif
               m_filter7x7Blk(m_classifier, recYuv, buf, blkDst, blkSrc, COMPONENT_Y, coeff, clip, m_clpRngs.comp[COMPONENT_Y], cs
                 , m_alfVBLumaCTUHeight
                 , m_alfVBLumaPos
@@ -535,6 +544,10 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
                 m_filter5x5Blk(m_classifier, recYuv, buf, blkDst, blkSrc, compID, m_chromaCoeffFinal[alt_num], m_chromaClippFinal[alt_num], m_clpRngs.comp[compIdx], cs
                   , m_alfVBChmaCTUHeight
                    , m_alfVBChmaPos );
+#ifdef  GREEN_METADATA_SEI_ENABLED
+                cs.m_featureCounter.alfChromaType5+= ((width >> chromaScaleX) * (height >> chromaScaleY) / 16) ;
+                cs.m_featureCounter.alfChromaPels += ((width >> chromaScaleX) * (height >> chromaScaleY)) ;
+#endif
               }
               if (cu->slice->m_ccAlfFilterParam.ccAlfFilterEnabled[compIdx - 1])
               {
@@ -546,7 +559,10 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
                   Area blkDst(xStart >> chromaScaleX, yStart >> chromaScaleY, w >> chromaScaleX, h >> chromaScaleY);
 
                   const int16_t *filterCoeff = m_ccAlfFilterParam.ccAlfCoeff[compIdx - 1][filterIdx - 1];
-
+#ifdef  GREEN_METADATA_SEI_ENABLED
+                  cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
+                  cs.m_featureCounter.alfLumaPels += (width * height);
+#endif
                   m_filterCcAlf(recYuv.get(compID), buf, blkDst, blkSrc, compID, filterCoeff, m_clpRngs, cs,
                                 m_alfVBLumaCTUHeight, m_alfVBLumaPos);
                 }
@@ -579,6 +595,10 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
             coeff = m_fixedFilterSetCoeffDec[filterSetIndex];
             clip = m_clipDefault;
           }
+#ifdef  GREEN_METADATA_SEI_ENABLED
+          cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
+          cs.m_featureCounter.alfLumaPels += (width * height);
+#endif
           m_filter7x7Blk(m_classifier, recYuv, tmpYuv, blk, blk, COMPONENT_Y, coeff, clip, m_clpRngs.comp[COMPONENT_Y],
                          cs, m_alfVBLumaCTUHeight, m_alfVBLumaPos);
         }
@@ -593,6 +613,10 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
           {
             Area    blk(xPos >> chromaScaleX, yPos >> chromaScaleY, width >> chromaScaleX, height >> chromaScaleY);
             uint8_t alt_num = m_ctuAlternative[compIdx][ctuIdx];
+#ifdef  GREEN_METADATA_SEI_ENABLED
+            cs.m_featureCounter.alfChromaType5+= ((width >> chromaScaleX) * (height >> chromaScaleY) / 16) ;
+            cs.m_featureCounter.alfChromaPels += ((width >> chromaScaleX) * (height >> chromaScaleY)) ;
+#endif
             m_filter5x5Blk(m_classifier, recYuv, tmpYuv, blk, blk, compID, m_chromaCoeffFinal[alt_num],
                            m_chromaClippFinal[alt_num], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
                            m_alfVBChmaPos);
@@ -607,7 +631,9 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
               Area blkSrc(xPos, yPos, width, height);
 
               const int16_t *filterCoeff = m_ccAlfFilterParam.ccAlfCoeff[compIdx - 1][filterIdx - 1];
-
+#ifdef  GREEN_METADATA_SEI_ENABLED
+              cs.m_featureCounter.ccalf++;
+#endif
               m_filterCcAlf(recYuv.get(compID), tmpYuv, blkDst, blkSrc, compID, filterCoeff, m_clpRngs, cs,
                             m_alfVBLumaCTUHeight, m_alfVBLumaPos);
             }

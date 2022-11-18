@@ -825,7 +825,21 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "CropOffsetBottom",                               m_cropOffsetBottom,                                   0, "Crop Offset Bottom position")
   ( "CalculateHdrMetrics",                            m_calculateHdrMetrics,                            false, "Enable HDR metric calculation")
 #endif
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+  ("SEIGreenMetadataType",                            m_greenMetadataType,                                  -1, "Value for the green_metadata_type specifies the type of metadata that is present in the SEI message. -1: Green metadata disabled (default); 0: Decoder complexity metrics; 1: quality recovery after low-power encoding")
+  ("SEIGreenMetadataGranularityType",                 m_greenMetadataGranularityType,                       -1, "Specifies the type of granularity for which the metadata are applicable. Only implemented for picture granularity. ")
+  ("SEIGreenMetadataPeriodType",                      m_greenMetadataPeriodType,                             0, "Value for the Period Type incidacting over which amount of time the metadata have been calculated")
+  ("SEIGreenMetadataPeriodTypeSeconds",               m_greenMetadataPeriodNumSeconds,                       1, "indicates the number of seconds over which the metadata are applicable when SEIGreenMetadataPeriodType is 2.")
+  ("SEIGreenMetadataPeriodTypePictures",              m_greenMetadataPeriodNumPictures,                      1, "specifies the number of pictures, counted in decoding order, over which the metadata are applicable when SEIGreenMetadataPeriodType is 3.")
+  ("SEIXSDMetricNumber",                              m_xsdNumberMetrics,                                    1, "Number of quality metrics.")
+  ("SEIXSDMetricTypePSNR",                            m_xsdMetricTypePSNR,                               false, "Set to 'true' if PSNR shall be signalled. ")
+  ("SEIXSDMetricTypeSSIM",                            m_xsdMetricTypeSSIM,                               false, "Set to 'true' if SSIM shall be signalled. ")
+  ("SEIXSDMetricTypeWPSNR",                           m_xsdMetricTypeWPSNR,                              false, "Set to 'true' if WPSNR shall be signalled. ")
+  ("SEIXSDMetricTypeWSPSNR",                          m_xsdMetricTypeWSPSNR,                             false, "Set to 'true' if WSSPSNR shall be signalled. ")
+  ("SEIGreenMetadataExtendedRepresentation",          m_greenMetadataExtendedRepresentation,                 0, "Specifies whether reduced or extended set of complexity metrics is signelled. ")
+  ("GMFA",                                            m_GMFA,                                            false, "Write output file for the Green-Metadata analyzer for decoder complexity metrics (JVET-P0085)\n")
+  ("GMFAFile",                                        m_GMFAFile,                                   string(""), "File for the Green Metadata Bit Stream Feature Analyzer output (JVET-P0085)\n")
+#endif
   //Field coding parameters
   ("FieldCoding",                                     m_isField,                                        false, "Signals if it's a field based coding")
   ("TopFieldFirst, Tff",                              m_isTopFieldFirst,                                false, "In case of field based coding, signals whether if it's a top field first or not")
@@ -5158,6 +5172,17 @@ bool EncAppCfg::xHasNonZeroTemporalID ()
   }
   return false;
 }
+
+#ifdef GREEN_METADATA_SEI_ENABLED
+bool EncAppCfg::getGMFAUsage() {
+  return m_GMFA;
+}
+
+std::string EncAppCfg::getGMFAFile (){
+  return m_GMFAFile;
+}
+
+#endif
 
 bool EncAppCfg::xHasLeadingPicture ()
 {

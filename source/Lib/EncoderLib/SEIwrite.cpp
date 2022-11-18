@@ -83,6 +83,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &h
   case SEI::FRAME_PACKING:
     xWriteSEIFramePacking(*static_cast<const SEIFramePacking*>(&sei));
     break;
+#ifdef  GREEN_METADATA_SEI_ENABLED
+  case SEI::GREEN_METADATA:
+    xWriteSEIGreenMetadataInfo(*static_cast<const SEIGreenMetadataInfo*>(&sei));
+    break;
+#endif
   case SEI::DISPLAY_ORIENTATION:
     xWriteSEIDisplayOrientation(*static_cast<const SEIDisplayOrientation*>(&sei));
     break;
@@ -1419,6 +1424,118 @@ void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndic
 {
   // intentionally empty
 }
+
+#ifdef GREEN_METADATA_SEI_ENABLED
+void SEIWriter::xWriteSEIGreenMetadataInfo(const SEIGreenMetadataInfo& sei)
+{
+  WRITE_CODE(sei.m_greenMetadataType, 8, "green_metadata_type");
+  switch (sei.m_greenMetadataType)
+  {
+  case 0:
+    WRITE_CODE(sei.m_periodType,4, "period_type");
+    WRITE_CODE(sei.m_greenMetadataGranularityType,3, "granularity_type");
+    WRITE_CODE(sei.m_greenMetadataExtendedRepresentation,1, "extended_representation_flag");
+    
+    if (sei.m_periodType == 2)
+    {
+      WRITE_CODE(sei.m_numSeconds, 16, "num_seconds");
+    }
+    else if (sei.m_periodType == 3)
+    {
+      WRITE_CODE(sei.m_numPictures, 16, "num_pictures");
+    }
+    
+    if (sei.m_greenMetadataGranularityType == 0)
+    {
+      WRITE_CODE(sei.m_greenComplexityMetrics.portionNonZeroBlocksArea, 8, "portion_non_zero_blocks_area");
+      WRITE_CODE(sei.m_greenComplexityMetrics.portionNonZeroTransformCoefficientsArea, 8, "portion_non_zero_transform_coefficients_area");
+      WRITE_CODE(sei.m_greenComplexityMetrics.portionIntraPredictedBlocksArea, 8, "portion_intra_predicted_blocks_area");
+      WRITE_CODE(sei.m_greenComplexityMetrics.portionDeblockingInstances, 8, "portion_deblocking_instances");
+      WRITE_CODE(sei.m_greenComplexityMetrics.portionAlfInstances, 8, "portion_alf_instances");
+      
+      if(sei.m_greenMetadataExtendedRepresentation == 1)
+      {
+        if(sei.m_greenComplexityMetrics.portionNonZeroBlocksArea != 0)
+        {
+          WRITE_CODE(sei.m_greenComplexityMetrics.portionNonZero_4_8_16BlocksArea, 8, "portion_non_zero_4_8_16_blocks_area");
+          WRITE_CODE(sei.m_greenComplexityMetrics.portionNonZero_32_64_128BlocksArea, 8, "portion_non_zero_32_64_128_blocks_area");
+          WRITE_CODE(sei.m_greenComplexityMetrics.portionNonZero_256_512_1024BlocksArea, 8, "portion_non_zero_256_512_1024_blocks_area");
+          WRITE_CODE(sei.m_greenComplexityMetrics.portionNonZero_2048_4096BlocksArea, 8, "portion_non_zero_2048_4096_blocks_area");
+        }
+        
+        
+        if(sei.m_greenComplexityMetrics.portionIntraPredictedBlocksArea < 255)
+        {
+          WRITE_CODE(sei.m_greenComplexityMetrics.portionBiAndGpmPredictedBlocksArea, 8,"portion_bi_and_gpm_predicted_blocks_area");
+          WRITE_CODE(sei.m_greenComplexityMetrics.portionBdofBlocksArea, 8,"portion_bdof_blocks_area");
+        }
+        
+        WRITE_CODE(sei.m_greenComplexityMetrics.portionSaoInstances, 8, "portion_sao_instances");
+      }
+    }
+    
+    break;
+  case 1:
+    int xsdSubpicNumberMinus1 = 0;
+    WRITE_CODE(xsdSubpicNumberMinus1, 16, "xsd_subpic_number_minus1");
+    for (int i = 0; i <= xsdSubpicNumberMinus1; i++)
+    {
+      int xsdMetricNumberMinus1 = -1;
+      WRITE_CODE(sei.m_xsdSubPicIdc, 16, "xsd_subpic_idc[i]");
+      std::vector <int> xsdMetricArray;
+      if (sei.m_xsdMetricTypePSNR)
+      {
+        xsdMetricNumberMinus1++;
+        xsdMetricArray.push_back(0);
+      }
+      if (sei.m_xsdMetricTypeSSIM)
+      {
+        xsdMetricNumberMinus1++;
+        xsdMetricArray.push_back(1);
+      }
+  
+      if (sei.m_xsdMetricTypeWPSNR)
+      {
+        xsdMetricNumberMinus1++;
+        xsdMetricArray.push_back(2);
+      }
+  
+      if (sei.m_xsdMetricTypeWSPSNR)
+      {
+        xsdMetricNumberMinus1++;
+        xsdMetricArray.push_back(3);
+      }
+      
+      WRITE_CODE(xsdMetricNumberMinus1, 8, "xsd_metric_number_minus1[i]");
+      for (int j = 0; j <= xsdMetricNumberMinus1; j++)
+      {
+        if (xsdMetricArray[j] == 0)
+        {
+          WRITE_CODE(0, 8, "xsd_metric_type");
+          WRITE_CODE(sei.m_xsdMetricValuePSNR, 16, "xsd_metric_type[i][j]");
+        }
+        else if (xsdMetricArray[j] == 1)
+        {
+          WRITE_CODE(1, 8, "xsd_metric_type");
+          WRITE_CODE(sei.m_xsdMetricValueSSIM, 16, "xsd_metric_type[i][j]");
+        }
+        else if (xsdMetricArray[j] == 2)
+        {
+          WRITE_CODE(3, 8, "xsd_metric_type");
+          WRITE_CODE(sei.m_xsdMetricValueWPSNR, 16, "xsd_metric_type[i][j]");
+        }
+        else if (xsdMetricArray[j] == 3)
+        {
+          WRITE_CODE(4, 8, "xsd_metric_type");
+          WRITE_CODE(sei.m_xsdMetricValueWSPSNR, 16, "xsd_metric_type[i][j]");
+        }
+      }
+    }
+    break;
+  }
+}
+#endif
+
 
 void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics &sei)
 {

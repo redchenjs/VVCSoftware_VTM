@@ -597,7 +597,34 @@ void SampleAdaptiveOffset::offsetCTU(const UnitArea &area, const CPelUnitBuf &sr
       {
         verVirBndryPosComp[i] = (verVirBndryPos[i] >> ::getComponentScaleX(compID, area.chromaFormat)) - compArea.x;
       }
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+      if (ctbOffset.typeIdc.newType == SAOModeNewTypes::START_BO)
+      {
+        if (compID == COMPONENT_Y)
+        {
+          cs.m_featureCounter.saoLumaBO++;
+          cs.m_featureCounter.saoLumaPels += area.lumaSize().width * area.lumaSize().height;
+        }
+        else
+        {
+          cs.m_featureCounter.saoChromaBO++;
+          cs.m_featureCounter.saoChromaPels += area.chromaSize().width * area.chromaSize().height;
+        }
+      }
+      else if (ctbOffset.typeIdc.newType == SAOModeNewTypes::EO_0 || ctbOffset.typeIdc.newType == SAOModeNewTypes::EO_135 || ctbOffset.typeIdc.newType == SAOModeNewTypes::EO_45 ||ctbOffset.typeIdc.newType == SAOModeNewTypes::EO_90 )
+      {
+        if (compID == COMPONENT_Y)
+        {
+          cs.m_featureCounter.saoLumaEO++;
+          cs.m_featureCounter.saoLumaPels += area.lumaSize().width * area.lumaSize().height;
+        }
+        else
+        {
+          cs.m_featureCounter.saoChromaEO++;
+          cs.m_featureCounter.saoChromaPels += area.chromaSize().width * area.chromaSize().height;
+        }
+      }
+#endif
       offsetBlock(cs.sps->getBitDepth(toChannelType(compID)), cs.slice->clpRng(compID), ctbOffset.typeIdc.newType,
                   ctbOffset.offset, srcBlk, resBlk, srcStride, resStride, compArea.width, compArea.height, isLeftAvail,
                   isRightAvail, isAboveAvail, isBelowAvail, isAboveLeftAvail, isAboveRightAvail, isBelowLeftAvail,

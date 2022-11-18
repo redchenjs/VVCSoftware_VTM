@@ -336,7 +336,15 @@ int main(int argc, char* argv[])
 #else
   auto encTime = std::chrono::duration_cast<std::chrono::milliseconds>( endTime - startTime).count();
 #endif
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+  for( auto & encApp : pcEncApp )
+  {
+    FeatureCounterStruct  featureCounterFinal = encApp->getFeatureCounter();
+    featureCounterFinal.bytes = encApp->getTotalNumberOfBytes();
+    FeatureCounterStruct dummy;
+    writeGMFAOutput(featureCounterFinal, dummy, encApp->getGMFAFile(),true);
+  }
+#endif
   for( auto & encApp : pcEncApp )
   {
     encApp->destroyLib();

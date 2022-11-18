@@ -232,7 +232,12 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
     cabacReader.coding_tree_unit( cs, ctuArea, pic->m_prevQP, ctuRsAddr );
 
     m_pcCuDecoder->decompressCtu( cs, ctuArea );
-
+#ifdef GREEN_METADATA_SEI_ENABLED
+    FeatureCounterStruct featureCounter = slice->getFeatureCounter();
+    countFeatures( featureCounter, cs,ctuArea);
+    slice->setFeatureCounter(featureCounter);
+#endif
+    
     if( ctuXPosInCtus == tileXPosInCtus && wavefrontsEnabled )
     {
       m_entropyCodingSyncContextState = cabacReader.getCtx();
@@ -285,7 +290,40 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
       }
     }
   }
-
+  
+#ifdef GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct featureCounter = slice->getFeatureCounter();
+  featureCounter.baseQP[slice->getSliceQpBase()] ++;
+  if (featureCounter.isYUV400 == -1)
+  {
+    featureCounter.isYUV400 = sps->getChromaFormatIdc() == CHROMA_400 ? 1 : 0;
+    featureCounter.isYUV420 = sps->getChromaFormatIdc() == CHROMA_420 ? 1 : 0;
+    featureCounter.isYUV422 = sps->getChromaFormatIdc() == CHROMA_422 ? 1 : 0;
+    featureCounter.isYUV444 = sps->getChromaFormatIdc() == CHROMA_444 ? 1 : 0;
+  }
+  
+  if (featureCounter.is8bit == -1)
+  {
+    featureCounter.is8bit  = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 8) ? 1 : 0;
+    featureCounter.is10bit = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 10) ? 1 : 0;
+    featureCounter.is12bit = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 12) ? 1 : 0;
+  }
+  
+  if (slice->getSliceType() == B_SLICE)
+  {
+    featureCounter.bSlices++;
+  }
+  else if (slice->getSliceType() == P_SLICE)
+  {
+    featureCounter.pSlices++;
+  }
+  else
+  {
+    featureCounter.iSlices++;
+  }
+  slice->setFeatureCounter(featureCounter);
+#endif
+  
   // deallocate all created substreams, including internal buffers.
   for( auto substr: ppcSubstreams )
   {

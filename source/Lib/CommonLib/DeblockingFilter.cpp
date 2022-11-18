@@ -155,6 +155,9 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
     }
   }
 #endif
+#ifdef GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct tempFeatureCounter;
+#endif
 
   for( int y = 0; y < pcv.heightInCtus; y++ )
   {
@@ -172,7 +175,13 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
       // CU-based deblocking
       for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_LUMA), CHANNEL_TYPE_LUMA))
       {
+#ifdef GREEN_METADATA_SEI_ENABLED
+        currCU.m_featureCounter.resetBoundaryStrengths();
+#endif
         xDeblockCU( currCU, EDGE_VER );
+#ifdef GREEN_METADATA_SEI_ENABLED
+        tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
+#endif
       }
 
       if( CS::isDualITree( cs ) )
@@ -182,7 +191,13 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
 
         for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_CHROMA), CHANNEL_TYPE_CHROMA))
         {
+#ifdef GREEN_METADATA_SEI_ENABLED
+          currCU.m_featureCounter.resetBoundaryStrengths();
+#endif
           xDeblockCU( currCU, EDGE_VER );
+#ifdef GREEN_METADATA_SEI_ENABLED
+          tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
+#endif
         }
       }
     }
@@ -205,7 +220,13 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
       // CU-based deblocking
       for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_LUMA), CHANNEL_TYPE_LUMA))
       {
+#ifdef GREEN_METADATA_SEI_ENABLED
+        currCU.m_featureCounter.resetBoundaryStrengths();
+#endif
         xDeblockCU( currCU, EDGE_HOR );
+#ifdef GREEN_METADATA_SEI_ENABLED
+        tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
+#endif
       }
 
       if( CS::isDualITree( cs ) )
@@ -215,12 +236,21 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
 
         for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_CHROMA), CHANNEL_TYPE_CHROMA))
         {
+#ifdef GREEN_METADATA_SEI_ENABLED
+          currCU.m_featureCounter.resetBoundaryStrengths();
+#endif
           xDeblockCU( currCU, EDGE_HOR );
+#ifdef GREEN_METADATA_SEI_ENABLED
+          tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
+#endif
         }
       }
     }
   }
 
+#ifdef GREEN_METADATA_SEI_ENABLED
+  cs.m_featureCounter.addBoundaryStrengths(tempFeatureCounter);
+#endif
   DTRACE_PIC_COMP(D_REC_CB_LUMA_LF,   cs, cs.getRecoBuf(), COMPONENT_Y);
   DTRACE_PIC_COMP(D_REC_CB_CHROMA_LF, cs, cs.getRecoBuf(), COMPONENT_Cb);
   DTRACE_PIC_COMP(D_REC_CB_CHROMA_LF, cs, cs.getRecoBuf(), COMPONENT_Cr);
@@ -393,10 +423,23 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
         if(cu.treeType != TREE_C)
         {
           es |= xGetBoundaryStrengthSingle(cu, edgeDir, localPos, CHANNEL_TYPE_LUMA);
+#ifdef  GREEN_METADATA_SEI_ENABLED
+          const int bsY = es.getBoundaryStrength(COMPONENT_Y);
+          cu.m_featureCounter.boundaryStrength[bsY]++;
+          cu.m_featureCounter.boundaryStrengthPel[bsY] += pelsInPart;
+#endif
         }
         if(cu.treeType != TREE_L && cu.chromaFormat != CHROMA_400 && cu.blocks[COMPONENT_Cb].valid())
         {
           es |= xGetBoundaryStrengthSingle(cu, edgeDir, localPos, CHANNEL_TYPE_CHROMA);
+#ifdef GREEN_METADATA_SEI_ENABLED
+          const int bsCb = es.getBoundaryStrength(COMPONENT_Cb);
+          const int bsCr = es.getBoundaryStrength(COMPONENT_Cr);
+          cu.m_featureCounter.boundaryStrength[bsCb]++;
+          cu.m_featureCounter.boundaryStrength[bsCr]++;
+          cu.m_featureCounter.boundaryStrengthPel[bsCb] += pelsInPart;
+          cu.m_featureCounter.boundaryStrengthPel[bsCr] += pelsInPart;
+#endif
         }
         m_edgeStrengths[edgeDir][rasterIdx] = es;
       }
