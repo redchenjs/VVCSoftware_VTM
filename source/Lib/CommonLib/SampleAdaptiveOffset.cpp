@@ -597,7 +597,7 @@ void SampleAdaptiveOffset::offsetCTU(const UnitArea &area, const CPelUnitBuf &sr
       {
         verVirBndryPosComp[i] = (verVirBndryPos[i] >> ::getComponentScaleX(compID, area.chromaFormat)) - compArea.x;
       }
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
       if (ctbOffset.typeIdc.newType == SAOModeNewTypes::START_BO)
       {
         if (compID == COMPONENT_Y)

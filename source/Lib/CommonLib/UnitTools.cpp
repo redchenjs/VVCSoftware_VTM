@@ -46,7 +46,7 @@
 #include <utility>
 #include <algorithm>
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
 #include <fstream>
 #endif
 // CS tools
@@ -4846,7 +4846,7 @@ bool allowLfnstWithMip(const Size& block)
 }
 
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
 void writeGMFAOutput(FeatureCounterStruct& featureCounterUpdated, FeatureCounterStruct& featureCounterOld, std::string GMFAFile,bool lastFrame )
 {
   std::string fileName = std::string("");

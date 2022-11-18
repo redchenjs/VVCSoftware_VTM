@@ -232,7 +232,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
     cabacReader.coding_tree_unit( cs, ctuArea, pic->m_prevQP, ctuRsAddr );
 
     m_pcCuDecoder->decompressCtu( cs, ctuArea );
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
     FeatureCounterStruct featureCounter = slice->getFeatureCounter();
     countFeatures( featureCounter, cs,ctuArea);
     slice->setFeatureCounter(featureCounter);
@@ -291,7 +291,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
     }
   }
   
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct featureCounter = slice->getFeatureCounter();
   featureCounter.baseQP[slice->getSliceQpBase()] ++;
   if (featureCounter.isYUV400 == -1)

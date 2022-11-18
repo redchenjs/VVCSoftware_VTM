@@ -231,7 +231,7 @@ uint32_t getCtuAddr        (const Position& pos, const PreCalcValues &pcv);
 int  getNumModesMip   (const Size& block);
 int getMipSizeId      (const Size& block);
 bool allowLfnstWithMip(const Size& block);
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
 void writeGMFAOutput(FeatureCounterStruct& featureCounter, FeatureCounterStruct& featureCounterReference, std::string GMFAFile, bool lastFrame);
 void featureToFile(std::ofstream& featureFile,int featureCounterReference[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1], std::string featureName,bool calcDifference=false,int featureCounter[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1]=NULL);
 void countFeatures  (FeatureCounterStruct& featureCounterStruct, CodingStructure& cs, const UnitArea& ctuArea);

@@ -746,7 +746,7 @@ public:
   int m_greenMetadataType =-1;
   // Metrics for quality recovery after low-power encoding
   int m_xsdSubpicNumberMinus1 = -1; //xsd_metric_number_minus1 plus 1 indicates the number of objective quality metrics contained in the SEI message.
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   int m_xsdSubPicIdc;
 #endif
   

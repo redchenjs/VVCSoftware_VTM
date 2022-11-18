@@ -83,7 +83,7 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &h
   case SEI::FRAME_PACKING:
     xWriteSEIFramePacking(*static_cast<const SEIFramePacking*>(&sei));
     break;
-#ifdef  GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   case SEI::GREEN_METADATA:
     xWriteSEIGreenMetadataInfo(*static_cast<const SEIGreenMetadataInfo*>(&sei));
     break;
@@ -1425,7 +1425,7 @@ void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndic
   // intentionally empty
 }
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
 void SEIWriter::xWriteSEIGreenMetadataInfo(const SEIGreenMetadataInfo& sei)
 {
   WRITE_CODE(sei.m_greenMetadataType, 8, "green_metadata_type");

@@ -155,7 +155,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
     }
   }
 #endif
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct tempFeatureCounter;
 #endif
 
@@ -175,11 +175,11 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
       // CU-based deblocking
       for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_LUMA), CHANNEL_TYPE_LUMA))
       {
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
         currCU.m_featureCounter.resetBoundaryStrengths();
 #endif
         xDeblockCU( currCU, EDGE_VER );
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
         tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
 #endif
       }
@@ -191,11 +191,11 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
 
         for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_CHROMA), CHANNEL_TYPE_CHROMA))
         {
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
           currCU.m_featureCounter.resetBoundaryStrengths();
 #endif
           xDeblockCU( currCU, EDGE_VER );
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
           tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
 #endif
         }
@@ -220,11 +220,11 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
       // CU-based deblocking
       for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_LUMA), CHANNEL_TYPE_LUMA))
       {
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
         currCU.m_featureCounter.resetBoundaryStrengths();
 #endif
         xDeblockCU( currCU, EDGE_HOR );
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
         tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
 #endif
       }
@@ -236,11 +236,11 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
 
         for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, CHANNEL_TYPE_CHROMA), CHANNEL_TYPE_CHROMA))
         {
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
           currCU.m_featureCounter.resetBoundaryStrengths();
 #endif
           xDeblockCU( currCU, EDGE_HOR );
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
           tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
 #endif
         }
@@ -248,7 +248,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
     }
   }
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   cs.m_featureCounter.addBoundaryStrengths(tempFeatureCounter);
 #endif
   DTRACE_PIC_COMP(D_REC_CB_LUMA_LF,   cs, cs.getRecoBuf(), COMPONENT_Y);
@@ -423,7 +423,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
         if(cu.treeType != TREE_C)
         {
           es |= xGetBoundaryStrengthSingle(cu, edgeDir, localPos, CHANNEL_TYPE_LUMA);
-#ifdef  GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
           const int bsY = es.getBoundaryStrength(COMPONENT_Y);
           cu.m_featureCounter.boundaryStrength[bsY]++;
           cu.m_featureCounter.boundaryStrengthPel[bsY] += pelsInPart;
@@ -432,7 +432,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
         if(cu.treeType != TREE_L && cu.chromaFormat != CHROMA_400 && cu.blocks[COMPONENT_Cb].valid())
         {
           es |= xGetBoundaryStrengthSingle(cu, edgeDir, localPos, CHANNEL_TYPE_CHROMA);
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
           const int bsCb = es.getBoundaryStrength(COMPONENT_Cb);
           const int bsCr = es.getBoundaryStrength(COMPONENT_Cr);
           cu.m_featureCounter.boundaryStrength[bsCb]++;

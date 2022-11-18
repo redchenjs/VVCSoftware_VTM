@@ -321,7 +321,7 @@ public:
   const OPI* getOPI()                     { return m_opi; }
 
   bool      getMixedNaluTypesInPicFlag();
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct m_featureCounter;
   bool m_GMFAFramewise;
   std::string   m_GMFAFile;

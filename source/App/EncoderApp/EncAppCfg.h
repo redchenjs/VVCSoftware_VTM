@@ -858,7 +858,7 @@ protected:
   int         m_SII_BlendingRatio;
   void        setBlendingRatioSII(int value) { m_SII_BlendingRatio = value; }
 #endif
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
 public:
   std::string getGMFAFile ();
   bool getGMFAUsage();

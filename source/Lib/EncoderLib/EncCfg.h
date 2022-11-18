@@ -564,7 +564,7 @@ protected:
   bool      m_doSEIPersistenceFlag;
   int       m_doSEITransformType;
   bool      m_parameterSetsInclusionIndicationSEIEnabled;
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   bool      m_greenMetadataInfoSEIEnabled;
   int      m_greenMetadataType;
   int      m_greenMetadataGranularityType;
@@ -1957,7 +1957,7 @@ public:
   int   getDOSEITransformType() const                                { return m_doSEITransformType; }
   void  setParameterSetsInclusionIndicationSEIEnabled(bool b)        { m_parameterSetsInclusionIndicationSEIEnabled = b; }
   bool  getParameterSetsInclusionIndicationSEIEnabled() const        { return m_parameterSetsInclusionIndicationSEIEnabled; }
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   void setSEIGreenMetadataInfoSEIEnable(int b)                       { (b >= 0) ? m_greenMetadataInfoSEIEnabled = 1 : m_greenMetadataInfoSEIEnabled =0;}
   bool getSEIGreenMetadataInfoSEIEnable()                            { return m_greenMetadataInfoSEIEnabled;}
   void setSEIGreenMetadataType(int b)                                { m_greenMetadataType = b;}

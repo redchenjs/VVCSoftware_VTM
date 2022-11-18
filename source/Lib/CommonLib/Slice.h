@@ -2810,7 +2810,7 @@ private:
   int                        m_tsrcIndex{ 0 };
   unsigned                   m_riceBit[8];
   int                        m_cntRightBottom;
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct m_featureCounter;
 #endif
 
@@ -2966,7 +2966,7 @@ public:
     return (m_eSliceType == B_SLICE && m_eNalUnitType == NAL_UNIT_CODED_SLICE_GDR);
   }
 #endif
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   void setFeatureCounter (FeatureCounterStruct b ) {m_featureCounter = b;}
   FeatureCounterStruct getFeatureCounter (){return m_featureCounter;}
 #endif

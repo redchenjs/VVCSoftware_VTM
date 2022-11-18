@@ -1872,7 +1872,7 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
     if (pCfg->getSwitchPOC() != pcPic->poc || ctuRsAddr >= pCfg->getDebugCTU())
     {
       m_pcCuEncoder->compressCtu(cs, ctuArea, ctuRsAddr, prevQP, currQP);
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
       FeatureCounterStruct m_featureCounter = pcPic->getFeatureCounter();
       countFeatures(m_featureCounter, cs,ctuArea);
       pcPic->setFeatureCounter(m_featureCounter);

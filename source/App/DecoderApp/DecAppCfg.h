@@ -90,7 +90,7 @@ protected:
   std::string   m_cacheCfgFile;                       ///< Config file of cache model
   int           m_statMode;                           ///< Config statistic mode (0 - bit stat, 1 - tool stat, 3 - both)
   bool          m_mctsCheck;
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   bool          m_GMFA;
   std::string   m_GMFAFile;
   bool          m_GMFAFramewise;
