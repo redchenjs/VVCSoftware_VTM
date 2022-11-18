@@ -129,7 +129,7 @@ private:
 
   int*                      m_layerDecPicBuffering;
   RPLList                   m_rplLists[2];
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct             m_featureCounter;
   bool                      m_GMFAFramewise;
   std::string   m_GMFAFile;
@@ -193,7 +193,7 @@ public:
   CtxCache*               getCtxCache           ()              { return  &m_CtxCache;             }
   RateCtrl*               getRateCtrl           ()              { return  &m_cRateCtrl;            }
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct getFeatureCounter(){return m_featureCounter;}
   void setFeatureCounter(FeatureCounterStruct b){m_featureCounter=b;}
   bool getGMFAFramewise() {return m_GMFAFramewise;}

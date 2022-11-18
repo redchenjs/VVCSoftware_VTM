@@ -334,7 +334,7 @@ struct CodingUnit : public UnitArea
   uint8_t        reusePLTSize[MAX_NUM_CHANNEL_TYPE];
   uint8_t        curPLTSize[MAX_NUM_CHANNEL_TYPE];
   Pel            curPLT[MAX_NUM_COMPONENT][MAXPLTSIZE];
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct m_featureCounter;
 #endif
   

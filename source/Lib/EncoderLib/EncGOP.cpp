@@ -3341,7 +3341,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           computeSignalling(pcPic, pcSlice);
         }
         m_pcSliceEncoder->precompressSlice( pcPic );
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
         pcPic->setFeatureCounter(m_featureCounter);
         if(m_pcEncLib->getGMFAFramewise())
         {
@@ -3350,7 +3350,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         }
 #endif
         m_pcSliceEncoder->compressSlice   ( pcPic, false, false);
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
         m_featureCounter = pcPic->getFeatureCounter();
 #endif
 
@@ -3369,7 +3369,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           uiNumSliceSegments++;
         }
       }
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
       m_featureCounter.baseQP[pcPic->getLossyQPValue()] ++;
       if (m_featureCounter.isYUV420 == -1)
       {
@@ -3505,11 +3505,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           }
         }
       }
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
       cs.m_featureCounter.resetBoundaryStrengths();
 #endif
       m_pcLoopFilter->deblockingFilterPic( cs );
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
       m_featureCounter.addBoundaryStrengths(cs.m_featureCounter);
 #endif
 
@@ -3517,7 +3517,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
       if( pcSlice->getSPS()->getSAOEnabledFlag() )
       {
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
         cs.m_featureCounter.resetSAO();
 #endif
         bool sliceEnabled[MAX_NUM_COMPONENT];
@@ -3542,7 +3542,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
             pcPic->slices[s]->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, sliceEnabled[COMPONENT_Cb]);
           }
         }
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
         m_featureCounter.addSAO(cs.m_featureCounter);
 #endif
       }
@@ -3557,7 +3557,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           pcPic->slices[s]->setAlfEnabledFlag(COMPONENT_Y, false);
         }
         m_pcALF->initCABACEstimator(m_pcEncLib->getCABACEncoder(), m_pcEncLib->getCtxCache(), pcSlice, m_pcEncLib->getApsMap());
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
         cs.m_featureCounter.resetALF();
 #endif
         m_pcALF->ALFProcess(cs, pcSlice->getLambdas()
@@ -3566,7 +3566,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 #endif
           , pcPic, uiNumSliceSegments
         );
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
         m_featureCounter.addALF(cs.m_featureCounter);
 #endif
         //assign ALF slice header
@@ -4180,7 +4180,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       double PSNR_Y;
       xCalculateAddPSNRs(isField, isTff, gopId, pcPic, accessUnit, rcListPic, encTime, snr_conversion, printFrameMSE,
                          printMSSSIM, &PSNR_Y, isEncodeLtRef);
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
       this->setFeatureCounter(m_featureCounter);
       m_SEIGreenQualityMetrics.psnr = PSNR_Y;
       if (m_pcCfg->getSEIGreenMetadataInfoSEIEnable())
@@ -5300,13 +5300,13 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     std::cout << "\r\t" << pcSlice->getPOC();
     std::cout.flush();
   }
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   m_SEIGreenQualityMetrics.ssim = msssim[0];
   m_SEIGreenQualityMetrics.wpsnr = dPSNR[0];
 #endif
 }
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
 void EncGOP::xCalculateGreenComplexityMetrics( FeatureCounterStruct featureCounter, FeatureCounterStruct featureCounterReference, SEIGreenMetadataInfo* seiGreenMetadataInfo)
 {
   double chromaFormatMultiplier = 0;

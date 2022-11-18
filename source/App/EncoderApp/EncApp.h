@@ -110,7 +110,7 @@ private:
   PelStorage*            m_filteredOrgPicForFG;
   EncTemporalFilter      m_temporalFilterForFG;
   bool m_flush;
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct      m_featureCounter;
 #endif
 
@@ -137,7 +137,7 @@ public:
   int   getALFAPSIDShift() { return m_cEncLib.getALFAPSIDShift(); }
   void  forceMaxNumALFAPS(int n) { m_cEncLib.setMaxNumALFAPS(n); }
   void  forceALFAPSIDShift(int n) { m_cEncLib.setALFAPSIDShift(n); }
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   uint32_t getTotalNumberOfBytes() {return m_totalBytes;}
   FeatureCounterStruct getFeatureCounter(){return m_cEncLib.getFeatureCounter();}
   void      featureToFile(std::ofstream& featureFile,int feature[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1], std::string featureName);

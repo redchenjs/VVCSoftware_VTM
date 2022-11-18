@@ -232,7 +232,7 @@ void SEIEncoder::initSEIErp(SEIEquirectangularProjection* seiEquirectangularProj
   }
 }
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
 void SEIEncoder::initSEIGreenMetadataInfo(SEIGreenMetadataInfo* seiGreenMetadataInfo, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics,SEIComplexityMetrics greenMetadata)
 {
   assert (m_isInitialized);

@@ -90,7 +90,7 @@ uint32_t DecApp::decode()
   int      poc;
   PicList *pcListPic = nullptr;
   
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct featureCounter;
   FeatureCounterStruct featureCounterOld;
   ifstream bitstreamSize(m_bitstreamFileName.c_str(), ifstream::in | ifstream::binary);
@@ -187,7 +187,7 @@ uint32_t DecApp::decode()
     m_cDecLib.setHTidExternalSetFlag(m_mTidExternalSet);
     m_cDecLib.setTOlsIdxExternalFlag(m_tOlsIdxTidExternalSet);
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
     m_cDecLib.setFeatureAnalysisFramewise( m_GMFAFramewise);
     m_cDecLib.setGMFAFile(m_GMFAFile);
 #endif
@@ -798,7 +798,7 @@ uint32_t DecApp::decode()
       m_cDecLib.resetAccessUnitApsNals();
       m_cDecLib.resetAccessUnitPicInfo();
     }
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
     if (m_GMFA && m_GMFAFramewise && bNewPicture)
     {
       FeatureCounterStruct featureCounterUpdated = m_cDecLib.getFeatureCounter();
@@ -815,7 +815,7 @@ uint32_t DecApp::decode()
   setOutputPicturePresentInStream();
   CHECK(!outputPicturePresentInBitstream, "It is required that there shall be at least one picture with PictureOutputFlag equal to 1 in the bitstream")
   
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   if (m_GMFA && m_GMFAFramewise) //Last frame
   {
     FeatureCounterStruct featureCounterUpdated = m_cDecLib.getFeatureCounter();

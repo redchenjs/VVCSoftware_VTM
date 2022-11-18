@@ -906,7 +906,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setDoSEITransformType                                ( m_doSEITransformType);
   m_cEncLib.setParameterSetsInclusionIndicationSEIEnabled        (m_parameterSetsInclusionIndicationSEIEnabled);
   m_cEncLib.setSelfContainedClvsFlag                             (m_selfContainedClvsFlag);
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   m_cEncLib.setGMFAFile(m_GMFAFile);
   m_cEncLib.setSEIGreenMetadataInfoSEIEnable                     ( m_greenMetadataType );
   m_cEncLib.setSEIGreenMetadataExtendedRepresentation            ( m_greenMetadataExtendedRepresentation);
@@ -1891,7 +1891,7 @@ void EncApp::printChromaFormat()
   }
 }
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
 void EncApp::featureToFile(std::ofstream& featureFile,int feature[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1], std::string featureName)
 {
   featureFile <<   "\tn." << featureName << " = [...\n\t";

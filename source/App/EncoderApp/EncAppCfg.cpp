@@ -825,7 +825,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "CropOffsetBottom",                               m_cropOffsetBottom,                                   0, "Crop Offset Bottom position")
   ( "CalculateHdrMetrics",                            m_calculateHdrMetrics,                            false, "Enable HDR metric calculation")
 #endif
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   ("SEIGreenMetadataType",                            m_greenMetadataType,                                  -1, "Value for the green_metadata_type specifies the type of metadata that is present in the SEI message. -1: Green metadata disabled (default); 0: Decoder complexity metrics; 1: quality recovery after low-power encoding")
   ("SEIGreenMetadataGranularityType",                 m_greenMetadataGranularityType,                       -1, "Specifies the type of granularity for which the metadata are applicable. Only implemented for picture granularity. ")
   ("SEIGreenMetadataPeriodType",                      m_greenMetadataPeriodType,                             0, "Value for the Period Type incidacting over which amount of time the metadata have been calculated")
@@ -5173,7 +5173,7 @@ bool EncAppCfg::xHasNonZeroTemporalID ()
   return false;
 }
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
 bool EncAppCfg::getGMFAUsage() {
   return m_GMFA;
 }

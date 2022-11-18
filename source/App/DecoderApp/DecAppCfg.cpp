@@ -124,7 +124,7 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
                                                                                    "\t2: enable tool statistic\n"
                                                                                    "\t3: enable bit and tool statistic\n")
 #endif
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   ("GMFA", m_GMFA, false, "Write output file for the Green-Metadata analyzer for decoder complexity metrics (JVET-P0085)\n")
   ("GMFAFile", m_GMFAFile, string(""), "File for the Green Metadata Bit Stream Feature Analyzer output (JVET-P0085)\n")
   ("GMFAFramewise", m_GMFAFramewise, false, "Output of frame-wise Green Metadata Bit Stream Feature Analyzer files\n")

@@ -43,7 +43,7 @@
 #include <iomanip>
 #include <limits>
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
 #include <fstream>
 #endif
 
@@ -648,7 +648,7 @@ T* aligned_malloc(size_t len, size_t alignement) {
 #    define ALWAYS_INLINE
 #endif
 
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
 struct FeatureCounterStruct// Bit Stream Feature Analyzer structure containing all specific features
 {
   int  width = -1;

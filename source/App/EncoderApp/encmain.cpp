@@ -336,7 +336,7 @@ int main(int argc, char* argv[])
 #else
   auto encTime = std::chrono::duration_cast<std::chrono::milliseconds>( endTime - startTime).count();
 #endif
-#ifdef GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_ENABLED
   for( auto & encApp : pcEncApp )
   {
     FeatureCounterStruct  featureCounterFinal = encApp->getFeatureCounter();
