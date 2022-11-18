@@ -93,8 +93,16 @@ class DeblockingFilter
     }
   };
 
+public:
+  enum class EdgeDir
+  {
+    VER = 0,
+    HOR,
+    NUM
+  };
+
 private:
-  static_vector<EdgeStrengths, MAX_NUM_PARTS_IN_CTU> m_edgeStrengths[NUM_EDGE_DIR];
+  EnumArray<static_vector<EdgeStrengths, MAX_NUM_PARTS_IN_CTU>, EdgeDir> m_edgeStrengths;
 
   struct CuEdgeParams
   {
@@ -140,26 +148,27 @@ private:
   PelStorage                   m_encPicYuvBuffer;
   bool                         m_enc;
 private:
+  static PosType getPos(const Position &p, EdgeDir dir) { return dir == EdgeDir::VER ? p.x : p.y; }
+
   void clearFilterLengthAndTransformEdge();
 
   // set / get functions
   void xSetDeblockingFilterParam        ( const CodingUnit& cu );
 
   // filtering functions
-  EdgeStrengths xGetBoundaryStrengthSingle(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const Position &localPos,
+  EdgeStrengths xGetBoundaryStrengthSingle(const CodingUnit &cu, EdgeDir edgeDir, const Position &localPos,
                                            const ChannelType chType) const;
 
-  void xSetEdgefilterMultiple(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const Area &area, const bool value,
+  void xSetEdgefilterMultiple(const CodingUnit &cu, EdgeDir edgeDir, const Area &area, const bool value,
                               const bool isTransEdge);
-  void xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx);
-  void xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx);
+  void xEdgeFilterLuma(const CodingUnit &cu, EdgeDir edgeDir, const int edgeIdx);
+  void xEdgeFilterChroma(const CodingUnit &cu, EdgeDir edgeDir, const int edgeIdx);
 
-  int  deriveLADFShift(const Pel *src, const ptrdiff_t stride, const DeblockEdgeDir edgeDir, const SPS *sps);
-  void xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
-                                               const TransformUnit &currTU, const int firstComponent);
-  void xSetMaxFilterLengthPQForCodingSubBlocks(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
-                                               const PredictionUnit &currPU, const bool &mvSubBlocks,
-                                               const Area &areaPu);
+  int  deriveLADFShift(const Pel *src, const ptrdiff_t stride, EdgeDir edgeDir, const SPS *sps);
+  void xSetMaxFilterLengthPQFromTransformSizes(EdgeDir edgeDir, const CodingUnit &cu, const TransformUnit &currTU,
+                                               const int firstComponent);
+  void xSetMaxFilterLengthPQForCodingSubBlocks(EdgeDir edgeDir, const CodingUnit &cu, const PredictionUnit &currPU,
+                                               const bool &mvSubBlocks, const Area &areaPu);
 
   static void xFilteringPandQ(Pel *src, ptrdiff_t offset, FilterLenPair filterLen, int tc);
   static void xPelFilterLuma(Pel *src, const ptrdiff_t offset, const int tc, const bool sw, const bool partPNoFilter,
@@ -189,8 +198,9 @@ public:
   ~DeblockingFilter();
 
   /// CU-level deblocking function
-  void xDeblockCU(CodingUnit& cu, const DeblockEdgeDir edgeDir);
-  void  initEncPicYuvBuffer(ChromaFormat chromaFormat, const Size &size, const unsigned maxCUSize);
+  void deblockCu(CodingUnit &cu, EdgeDir edgeDir);
+  void initEncPicYuvBuffer(ChromaFormat chromaFormat, const Size &size, const unsigned maxCUSize);
+
   PelStorage& getDbEncPicYuvBuffer() { return m_encPicYuvBuffer; }
   void  setEnc(bool b) { m_enc = b; }
 
@@ -206,7 +216,7 @@ public:
     return sm_betaTable[ indexB ];
   }
 
-  void resetBsAndEdgeFilter(int edgeDir);
+  void resetBsAndEdgeFilter(EdgeDir edgeDir);
   void resetFilterLengths();
 };
 

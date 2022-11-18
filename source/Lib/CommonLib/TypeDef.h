@@ -492,13 +492,6 @@ enum MATRIX_COEFFICIENTS // Table E.5 (Matrix coefficients)
   MATRIX_COEFFICIENTS_BT2020_CONSTANT_LUMINANCE     = 10,
 };
 
-enum DeblockEdgeDir
-{
-  EDGE_VER     = 0,
-  EDGE_HOR     = 1,
-  NUM_EDGE_DIR = 2
-};
-
 /// supported prediction type
 enum PredMode
 {

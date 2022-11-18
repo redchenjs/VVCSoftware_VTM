@@ -4427,13 +4427,13 @@ void EncCu::xCalDebCost( CodingStructure &cs, Partitioner &partitioner, bool cal
     if ( leftEdgeAvai )
     {
       m_deblockingFilter->resetFilterLengths();
-      m_deblockingFilter->xDeblockCU( *cu, EDGE_VER );
+      m_deblockingFilter->deblockCu(*cu, DeblockingFilter::EdgeDir::VER);
     }
 
     if (topEdgeAvai)
     {
       m_deblockingFilter->resetFilterLengths();
-      m_deblockingFilter->xDeblockCU( *cu, EDGE_HOR );
+      m_deblockingFilter->deblockCu(*cu, DeblockingFilter::EdgeDir::HOR);
     }
 
     //update current CU SSE

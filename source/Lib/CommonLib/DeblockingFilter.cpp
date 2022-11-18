@@ -75,8 +75,6 @@ inline static uint32_t getRasterIdx(const Position& pos, const PreCalcValues& pc
   return ( ( pos.x & pcv.maxCUWidthMask ) >> pcv.minCUWidthLog2 ) + ( ( pos.y & pcv.maxCUHeightMask ) >> pcv.minCUHeightLog2 ) * pcv.partsInCtuWidth;
 }
 
-static PosType getPos(const Position &p, DeblockEdgeDir dir) { return dir == EDGE_VER ? p.x : p.y; }
-
 // ====================================================================================================================
 // utility functions
 // ====================================================================================================================
@@ -116,9 +114,9 @@ void DeblockingFilter::create(const unsigned maxCUDepth)
 {
   destroy();
   const auto numPartitions = size_t(1) << (2 * maxCUDepth);
-  for( int edgeDir = 0; edgeDir < NUM_EDGE_DIR; edgeDir++ )
+  for (auto &es: m_edgeStrengths)
   {
-    m_edgeStrengths[edgeDir].resize(numPartitions);
+    es.resize(numPartitions);
   }
   m_enc = false;
 }
@@ -132,9 +130,9 @@ void DeblockingFilter::initEncPicYuvBuffer(ChromaFormat chromaFormat, const Size
 
 void DeblockingFilter::destroy()
 {
-  for( int edgeDir = 0; edgeDir < NUM_EDGE_DIR; edgeDir++ )
+  for (auto &es: m_edgeStrengths)
   {
-    m_edgeStrengths[edgeDir].clear();
+    es.clear();
   }
 }
 
@@ -162,7 +160,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
   {
     for( int x = 0; x < pcv.widthInCtus; x++ )
     {
-      resetBsAndEdgeFilter(EDGE_VER);
+      resetBsAndEdgeFilter(EdgeDir::VER);
       clearFilterLengthAndTransformEdge();
       m_ctuXLumaSamples = x << pcv.maxCUWidthLog2;
       m_ctuYLumaSamples = y << pcv.maxCUHeightLog2;
@@ -177,7 +175,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
 #if GREEN_METADATA_SEI_ENABLED
         currCU.m_featureCounter.resetBoundaryStrengths();
 #endif
-        xDeblockCU( currCU, EDGE_VER );
+        deblockCu(currCU, EdgeDir::VER);
 #if GREEN_METADATA_SEI_ENABLED
         tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
 #endif
@@ -185,7 +183,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
 
       if( CS::isDualITree( cs ) )
       {
-        resetBsAndEdgeFilter(EDGE_VER);
+        resetBsAndEdgeFilter(EdgeDir::VER);
         clearFilterLengthAndTransformEdge();
 
         for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, ChannelType::CHROMA), ChannelType::CHROMA))
@@ -193,7 +191,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
 #if GREEN_METADATA_SEI_ENABLED
           currCU.m_featureCounter.resetBoundaryStrengths();
 #endif
-          xDeblockCU( currCU, EDGE_VER );
+          deblockCu(currCU, EdgeDir::VER);
 #if GREEN_METADATA_SEI_ENABLED
           tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
 #endif
@@ -207,7 +205,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
   {
     for( int x = 0; x < pcv.widthInCtus; x++ )
     {
-      resetBsAndEdgeFilter(EDGE_HOR);
+      resetBsAndEdgeFilter(EdgeDir::HOR);
       clearFilterLengthAndTransformEdge();
       m_ctuXLumaSamples = x << pcv.maxCUWidthLog2;
       m_ctuYLumaSamples = y << pcv.maxCUHeightLog2;
@@ -222,7 +220,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
 #if GREEN_METADATA_SEI_ENABLED
         currCU.m_featureCounter.resetBoundaryStrengths();
 #endif
-        xDeblockCU( currCU, EDGE_HOR );
+        deblockCu(currCU, EdgeDir::HOR);
 #if GREEN_METADATA_SEI_ENABLED
         tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
 #endif
@@ -230,7 +228,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
 
       if( CS::isDualITree( cs ) )
       {
-        resetBsAndEdgeFilter(EDGE_HOR);
+        resetBsAndEdgeFilter(EdgeDir::HOR);
         clearFilterLengthAndTransformEdge();
 
         for (auto &currCU: cs.traverseCUs(CS::getArea(cs, ctuArea, ChannelType::CHROMA), ChannelType::CHROMA))
@@ -238,7 +236,7 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
 #if GREEN_METADATA_SEI_ENABLED
           currCU.m_featureCounter.resetBoundaryStrengths();
 #endif
-          xDeblockCU( currCU, EDGE_HOR );
+          deblockCu(currCU, EdgeDir::HOR);
 #if GREEN_METADATA_SEI_ENABLED
           tempFeatureCounter.addBoundaryStrengths(currCU.m_featureCounter);
 #endif
@@ -258,15 +256,15 @@ void DeblockingFilter::deblockingFilterPic(CodingStructure &cs)
   DTRACE_CRC( g_trace_ctx, D_CRC, cs, cs.getRecoBuf() );
 }
 
-void DeblockingFilter::resetBsAndEdgeFilter(const int edgeDir)
+void DeblockingFilter::resetBsAndEdgeFilter(const EdgeDir edgeDir)
 {
   std::fill_n(m_edgeStrengths[edgeDir].data(), m_edgeStrengths[edgeDir].size(), EdgeStrengths());
 }
 
 void DeblockingFilter::resetFilterLengths()
 {
-  resetBsAndEdgeFilter(EDGE_VER);
-  resetBsAndEdgeFilter(EDGE_HOR);
+  resetBsAndEdgeFilter(EdgeDir::VER);
+  resetBsAndEdgeFilter(EdgeDir::HOR);
   clearFilterLengthAndTransformEdge();
 }
 
@@ -274,7 +272,7 @@ void DeblockingFilter::resetFilterLengths()
 // Protected member functions
 // ====================================================================================================================
 
-void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir )
+void DeblockingFilter::deblockCu(CodingUnit &cu, const EdgeDir edgeDir)
 {
   const PreCalcValues& pcv = *cu.cs->pcv;
   const Area           area = cu.Y().valid()
@@ -343,11 +341,11 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
     {
       xDeriveEdgefilterParam( areaTu.x, areaTu.y, numVerVirBndry, numHorVirBndry, verVirBndryPos, horVirBndryPos, verEdgeFilter, horEdgeFilter );
     }
-    xSetEdgefilterMultiple(cu, EDGE_VER, areaTu, verEdgeFilter, true);
-    xSetEdgefilterMultiple(cu, EDGE_HOR, areaTu, horEdgeFilter, true);
+    xSetEdgefilterMultiple(cu, EdgeDir::VER, areaTu, verEdgeFilter, true);
+    xSetEdgefilterMultiple(cu, EdgeDir::HOR, areaTu, horEdgeFilter, true);
     xSetMaxFilterLengthPQFromTransformSizes(edgeDir, cu, currTU, COMPONENT_Y);
 
-    const uint32_t s = LOG_GRID_SIZE - (cu.Y().valid() ? 0 : (edgeDir == EDGE_VER ? m_shiftHor : m_shiftVer));
+    const uint32_t s = LOG_GRID_SIZE - (cu.Y().valid() ? 0 : (edgeDir == EdgeDir::VER ? m_shiftHor : m_shiftVer));
 
     edgeIdx.push_back((getPos(currTU.block(cu.chType), edgeDir) - getPos(cu.block(cu.chType), edgeDir)) >> s);
   }
@@ -367,15 +365,15 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
       xDeriveEdgefilterParam( areaPu.x, areaPu.y, numVerVirBndry, numHorVirBndry, verVirBndryPos, horVirBndryPos, verEdgeFilter, horEdgeFilter );
     }
 
-    xSetEdgefilterMultiple(cu, EDGE_VER, areaPu, verEdgeFilter, false);
-    xSetEdgefilterMultiple(cu, EDGE_HOR, areaPu, horEdgeFilter, false);
+    xSetEdgefilterMultiple(cu, EdgeDir::VER, areaPu, verEdgeFilter, false);
+    xSetEdgefilterMultiple(cu, EdgeDir::HOR, areaPu, horEdgeFilter, false);
     edgeIdx.push_back((getPos(currPU.block(cu.chType), edgeDir) - getPos(cu.block(cu.chType), edgeDir))
                       >> LOG_GRID_SIZE);
 
     if ((currPU.mergeFlag && currPU.mergeType == MergeType::SUBPU_ATMVP) || cu.affine)
     {
       mvSubBlocks = true;
-      if (edgeDir == EDGE_HOR)
+      if (edgeDir == EdgeDir::HOR)
       {
         for (uint32_t off = SUB_BLOCK_SIZE; off < areaPu.height; off += SUB_BLOCK_SIZE)
         {
@@ -386,7 +384,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
             xDeriveEdgefilterParam( mvBlockH.x, mvBlockH.y, 0, numHorVirBndry, verVirBndryPos, horVirBndryPos, verEdgeFilter, horEdgeFilter );
           }
 
-          xSetEdgefilterMultiple(cu, EDGE_HOR, mvBlockH, horEdgeFilter, false);
+          xSetEdgefilterMultiple(cu, EdgeDir::HOR, mvBlockH, horEdgeFilter, false);
           edgeIdx.push_back((currPU.block(cu.chType).y + off - cu.block(cu.chType).y) >> LOG_GRID_SIZE);
         }
       }
@@ -401,7 +399,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
             xDeriveEdgefilterParam( mvBlockV.x, mvBlockV.y, numVerVirBndry, 0, verVirBndryPos, horVirBndryPos, verEdgeFilter, horEdgeFilter );
           }
 
-          xSetEdgefilterMultiple(cu, EDGE_VER, mvBlockV, verEdgeFilter, false);
+          xSetEdgefilterMultiple(cu, EdgeDir::VER, mvBlockV, verEdgeFilter, false);
           edgeIdx.push_back((currPU.block(cu.chType).x + off - cu.block(cu.chType).x) >> LOG_GRID_SIZE);
         }
       }
@@ -518,12 +516,12 @@ inline void DeblockingFilter::xDeriveEdgefilterParam( const int xPos, const int 
   }
 }
 
-void DeblockingFilter::xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
+void DeblockingFilter::xSetMaxFilterLengthPQFromTransformSizes(const EdgeDir edgeDir, const CodingUnit &cu,
                                                                const TransformUnit &currTU, const int firstComponent)
 {
   const TransformUnit& tuQ = currTU;
 
-  if ( edgeDir == EDGE_HOR )
+  if (edgeDir == EdgeDir::HOR)
   {
     for (int cIdx = firstComponent; cIdx < ::getNumberValidComponents(tuQ.chromaFormat); cIdx++)   // per component
     {
@@ -579,7 +577,7 @@ void DeblockingFilter::xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdge
       }
     }
   }
-  if ( edgeDir == EDGE_VER )
+  if (edgeDir == EdgeDir::VER)
   {
     for ( int cIdx = firstComponent; cIdx < ::getNumberValidComponents(tuQ.chromaFormat); cIdx++ ) // per component
     {
@@ -637,7 +635,7 @@ void DeblockingFilter::xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdge
   }
 }
 
-void DeblockingFilter::xSetMaxFilterLengthPQForCodingSubBlocks(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
+void DeblockingFilter::xSetMaxFilterLengthPQForCodingSubBlocks(const EdgeDir edgeDir, const CodingUnit &cu,
                                                                const PredictionUnit &currPU, const bool &mvSubBlocks,
                                                                const Area &areaPu)
 {
@@ -650,7 +648,7 @@ void DeblockingFilter::xSetMaxFilterLengthPQForCodingSubBlocks(const DeblockEdge
     const int minCUWidth   = cu.cs->pcv->minCUWidth;
     const int minCUHeight  = cu.cs->pcv->minCUHeight;
 
-    if ( edgeDir == EDGE_HOR )
+    if (edgeDir == EdgeDir::HOR)
     {
       for (int y = 0; y < areaPu.height; y += SUB_BLOCK_SIZE)
       {
@@ -692,7 +690,7 @@ void DeblockingFilter::xSetMaxFilterLengthPQForCodingSubBlocks(const DeblockEdge
         }
       }
     }
-    else // edgeDir == EDGE_VER
+    else
     {
       for (int x = 0; x < areaPu.width; x += SUB_BLOCK_SIZE)
       {
@@ -737,13 +735,13 @@ void DeblockingFilter::xSetMaxFilterLengthPQForCodingSubBlocks(const DeblockEdge
   }
 }
 
-void DeblockingFilter::xSetEdgefilterMultiple(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const Area &area,
+void DeblockingFilter::xSetEdgefilterMultiple(const CodingUnit &cu, const EdgeDir edgeDir, const Area &area,
                                               const bool value, const bool isTransEdge)
 {
   const PreCalcValues& pcv = *cu.cs->pcv;
 
-  const unsigned add     = (edgeDir == EDGE_VER) ? pcv.partsInCtuWidth : 1;
-  const unsigned numElem = (edgeDir == EDGE_VER) ? (area.height / pcv.minCUHeight) : (area.width / pcv.minCUWidth);
+  const unsigned add     = edgeDir == EdgeDir::VER ? pcv.partsInCtuWidth : 1;
+  const unsigned numElem = edgeDir == EdgeDir::VER ? (area.height / pcv.minCUHeight) : (area.width / pcv.minCUWidth);
   unsigned       bsIdx   = getRasterIdx(area, pcv);
 
   for (int i = 0; i < numElem; i++)
@@ -789,15 +787,15 @@ void DeblockingFilter::xSetDeblockingFilterParam( const CodingUnit& cu )
   }
 }
 
-DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(const CodingUnit    &cu,
-                                                                             const DeblockEdgeDir edgeDir,
-                                                                             const Position      &localPos,
-                                                                             const ChannelType    chType) const
+DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(const CodingUnit &cu,
+                                                                             const EdgeDir     edgeDir,
+                                                                             const Position   &localPos,
+                                                                             const ChannelType chType) const
 {
   const ChannelType chTypeQ = cu.Y().valid() ? ChannelType::LUMA : ChannelType::CHROMA;
 
   const Position posQ = recalcPosition(cu.chromaFormat, ChannelType::LUMA, chTypeQ, localPos);
-  const Position posP = edgeDir == EDGE_VER ? posQ.offset(-1, 0) : posQ.offset(0, -1);
+  const Position posP = edgeDir == EdgeDir::VER ? posQ.offset(-1, 0) : posQ.offset(0, -1);
 
   const CodingUnit& cuQ = cu;
   const CodingUnit &cuP =
@@ -890,7 +888,7 @@ DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(con
   }
 
   const Position lumaPosQ = localPos;
-  const Position lumaPosP = edgeDir == EDGE_VER ? lumaPosQ.offset(-1, 0) : lumaPosQ.offset(0, -1);
+  const Position lumaPosP = edgeDir == EdgeDir::VER ? lumaPosQ.offset(-1, 0) : lumaPosQ.offset(0, -1);
 
   const MotionInfo &miQ = cuQ.cs->getMotionInfo(lumaPosQ);
   const MotionInfo &miP = cuP.cs->getMotionInfo(lumaPosP);
@@ -944,16 +942,15 @@ DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(con
   return tmpBs.setBoundaryStrength(COMPONENT_Y, d ? 1 : 0);
 }
 
-int DeblockingFilter::deriveLADFShift(const Pel *src, const ptrdiff_t stride, const DeblockEdgeDir edgeDir,
-                                      const SPS *sps)
+int DeblockingFilter::deriveLADFShift(const Pel *src, const ptrdiff_t stride, const EdgeDir edgeDir, const SPS *sps)
 {
   uint32_t lumaLevel = 0;
 
-  if (edgeDir == EDGE_VER)
+  if (edgeDir == EdgeDir::VER)
   {
     lumaLevel = (src[0] + src[3*stride] + src[-1] + src[3*stride - 1]) >> 2;
   }
-  else // (edgeDir == EDGE_HOR)
+  else
   {
     lumaLevel = (src[0] + src[3] + src[-stride] + src[-stride + 3]) >> 2;
   }
@@ -976,7 +973,7 @@ int DeblockingFilter::deriveLADFShift(const Pel *src, const ptrdiff_t stride, co
   return shift;
 }
 
-void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx)
+void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const EdgeDir edgeDir, const int edgeIdx)
 {
   const CompArea&  lumaArea = cu.block(COMPONENT_Y);
   const PreCalcValues& pcv = *cu.cs->pcv;
@@ -997,7 +994,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
   const ClpRng& clpRng( cu.cs->slice->clpRng(COMPONENT_Y) );
 
   int      qp       = 0;
-  unsigned numParts = (((edgeDir == EDGE_VER) ? lumaArea.height / pcv.minCUHeight : lumaArea.width / pcv.minCUWidth));
+  unsigned     numParts = edgeDir == EdgeDir::VER ? lumaArea.height / pcv.minCUHeight : lumaArea.width / pcv.minCUWidth;
   int          pelsInPart   = pcv.minCUWidth;
   unsigned     bsAbsIdx = 0, bs = 0;
   ptrdiff_t    offset;
@@ -1009,7 +1006,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
 
   Position pos;
 
-  if (edgeDir == EDGE_VER)
+  if (edgeDir == EdgeDir::VER)
   {
     xoffset   = 0;
     yoffset   = pelsInPart;
@@ -1018,7 +1015,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
     tmpSrc += edgeIdx * pelsInPart;
     pos = Position{ lumaArea.x + edgeIdx * pelsInPart, lumaArea.y - yoffset };
   }
-  else  // (edgeDir == EDGE_HOR)
+  else   // (edgeDir == EdgeDir::HOR)
   {
     xoffset   = pelsInPart;
     yoffset   = 0;
@@ -1086,7 +1083,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
         sideQisLarge = true;
       }
 
-      if (edgeDir == EDGE_HOR && pos.y % slice.getSPS()->getCTUSize() == 0)
+      if (edgeDir == EdgeDir::HOR && pos.y % slice.getSPS()->getCTUSize() == 0)
       {
         sidePisLarge = false;
       }
@@ -1184,7 +1181,7 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
   }
 }
 
-void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx)
+void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const EdgeDir edgeDir, const int edgeIdx)
 {
   const Position lumaPos  = cu.Y().valid()
                               ? cu.Y().pos()
@@ -1222,14 +1219,14 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
   unsigned edgeNumInCtuHor  = rasterIdx / pcv.partsInCtuWidth + edgeIdx;
 
   if (pelsInPartChromaH < GRID_SIZE_CHR && pelsInPartChromaV < GRID_SIZE_CHR
-      && (edgeDir == EDGE_VER ? edgeNumInCtuVert % (GRID_SIZE_CHR / pelsInPartChromaH)
-                              : edgeNumInCtuHor % (GRID_SIZE_CHR / pelsInPartChromaV))
+      && (edgeDir == EdgeDir::VER ? edgeNumInCtuVert % (GRID_SIZE_CHR / pelsInPartChromaH)
+                                  : edgeNumInCtuHor % (GRID_SIZE_CHR / pelsInPartChromaV))
            != 0)
   {
     return;
   }
 
-  unsigned numParts    = (edgeDir == EDGE_VER) ? lumaSize.height / pcv.minCUHeight : lumaSize.width / pcv.minCUWidth;
+  unsigned numParts    = edgeDir == EdgeDir::VER ? lumaSize.height / pcv.minCUHeight : lumaSize.width / pcv.minCUWidth;
   int      numPelsLuma = pcv.minCUWidth;
 
   Pel *tmpSrcCb = srcCb;
@@ -1238,7 +1235,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
   int xoffset, yoffset;
   Position pos( lumaPos.x, lumaPos.y );
 
-  if( edgeDir == EDGE_VER )
+  if (edgeDir == EdgeDir::VER)
   {
     xoffset      = 0;
     yoffset      = numPelsLuma;
@@ -1249,7 +1246,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
     loopLength = pelsInPartChromaV;
     pos        = Position{ lumaPos.x + edgeIdx * numPelsLuma, lumaPos.y - yoffset };
   }
-  else  // (edgeDir == EDGE_HOR)
+  else   // (edgeDir == EdgeDir::HOR)
   {
     xoffset      = numPelsLuma;
     yoffset      = 0;
@@ -1263,7 +1260,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
 
   const int bitdepthScale = 1 << (sps.getBitDepth(ChannelType::CHROMA) - 8);
 
-  const int subSamplingShift = (edgeDir == EDGE_VER) ? m_shiftVer : m_shiftHor;
+  const int subSamplingShift = (edgeDir == EdgeDir::VER) ? m_shiftVer : m_shiftHor;
 
   for (int idx = 0; idx < numParts; idx++)
   {
@@ -1306,7 +1303,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
 
       bool isChromaHorCTBBoundary = false;
 
-      if (edgeDir == EDGE_HOR && pos.y % cuP.slice->getSPS()->getCTUSize() == 0)
+      if (edgeDir == EdgeDir::HOR && pos.y % cuP.slice->getSPS()->getCTUSize() == 0)
       {
         isChromaHorCTBBoundary = true;
       }
@@ -1328,7 +1325,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
             recalcPosition(cu.chromaFormat, ChannelType::LUMA, ChannelType::CHROMA, pos), ChannelType::CHROMA);
           const TransformUnit &tuP =
             *cuP.cs->getTU(recalcPosition(cu.chromaFormat, ChannelType::LUMA, ChannelType::CHROMA,
-                                          (edgeDir == EDGE_VER) ? pos.offset(-1, 0) : pos.offset(0, -1)),
+                                          (edgeDir == EdgeDir::VER) ? pos.offset(-1, 0) : pos.offset(0, -1)),
                            ChannelType::CHROMA);
 
           const QpParam qpP(tuP, compId, -MAX_INT, false);
