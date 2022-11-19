@@ -309,6 +309,9 @@ static constexpr int MAX_NUM_TUS =                                     16; ///< 
 static constexpr int MAX_LOG2_DIFF_CU_TR_SIZE =                         3;
 static constexpr int MAX_CU_TILING_PARTITIONS = 1 << ( MAX_LOG2_DIFF_CU_TR_SIZE << 1 );
 
+static constexpr int LOG2_VPDU_SIZE = 6;
+static constexpr int VPDU_SIZE      = 1 << LOG2_VPDU_SIZE;
+
 static constexpr int PIC_MARGIN = 16;
 
 static constexpr int MAX_NONZERO_TU_SIZE = 32;
