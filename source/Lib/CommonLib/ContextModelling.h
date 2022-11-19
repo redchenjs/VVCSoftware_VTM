@@ -604,13 +604,13 @@ public:
   MergeCtx() : numValidMergeCand(0), hasMergedCandList(false) {}
   ~MergeCtx() {}
 public:
-  MvField       mvFieldNeighbours [ MRG_MAX_NUM_CANDS << 1 ]; // double length for mv of both lists
+  MvField mvFieldNeighbours[MRG_MAX_NUM_CANDS][2];
 #if GDR_ENABLED
   // note : check if source of mv and mv itself is valid
-  bool          mvSolid[MRG_MAX_NUM_CANDS << 1];
-  bool          mvValid           [MRG_MAX_NUM_CANDS << 1];
-  Position      mvPos             [MRG_MAX_NUM_CANDS << 1];
-  MvpType       mvType            [MRG_MAX_NUM_CANDS << 1];
+  bool     mvSolid[MRG_MAX_NUM_CANDS][2];
+  bool     mvValid[MRG_MAX_NUM_CANDS][2];
+  Position mvPos[MRG_MAX_NUM_CANDS][2];
+  MvpType  mvType[MRG_MAX_NUM_CANDS][2];
 #endif
   uint8_t       bcwIdx[MRG_MAX_NUM_CANDS];
   unsigned char interDirNeighbours[ MRG_MAX_NUM_CANDS      ];
@@ -642,10 +642,30 @@ public:
   }
   ~AffineMergeCtx() {}
 public:
-  MvField       mvFieldNeighbours[AFFINE_MRG_MAX_NUM_CANDS << 1][3]; // double length for mv of both lists
+  std::array<MvField[2], AFFINE_MAX_NUM_CP> mvFieldNeighbours[AFFINE_MRG_MAX_NUM_CANDS];
 #if GDR_ENABLED
-  bool          mvSolid[AFFINE_MRG_MAX_NUM_CANDS << 1][3];
-  bool          mvValid[AFFINE_MRG_MAX_NUM_CANDS << 1][3];
+  std::array<bool[2], AFFINE_MAX_NUM_CP> mvSolid[AFFINE_MRG_MAX_NUM_CANDS];
+  std::array<bool[2], AFFINE_MAX_NUM_CP> mvValid[AFFINE_MRG_MAX_NUM_CANDS];
+
+  bool isSolid(const int idx, const int l)
+  {
+    bool solid = true;
+    for (auto &c: mvSolid[idx])
+    {
+      solid &= c[l];
+    }
+    return solid;
+  }
+
+  bool isValid(const int idx, const int l)
+  {
+    bool valid = true;
+    for (auto &c: mvValid[idx])
+    {
+      valid &= c[l];
+    }
+    return valid;
+  }
 #endif
   unsigned char interDirNeighbours[AFFINE_MRG_MAX_NUM_CANDS];
   AffineModel   affineType[AFFINE_MRG_MAX_NUM_CANDS];
