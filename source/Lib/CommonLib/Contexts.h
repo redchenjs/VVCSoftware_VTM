@@ -57,7 +57,7 @@ struct BinFracBits
 
 enum class BpmType : int
 {
-  UNDEFINED = -1,
+  NONE = -1,
   // List of Binary Probability Models for entropy coding
   // The VVC standard currently defines a single model (STD)
   STD = 0,

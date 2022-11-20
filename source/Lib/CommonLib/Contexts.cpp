@@ -948,7 +948,7 @@ void CtxStore<BinProbModel>::savePStates( std::vector<uint16_t>& probStates ) co
 
 template class CtxStore<BinProbModel_Std>;
 
-Ctx::Ctx() : m_bpmType(BpmType::UNDEFINED) {}
+Ctx::Ctx() : m_bpmType(BpmType::NONE) {}
 Ctx::Ctx(const BinProbModel_Std *dummy) : m_bpmType(BpmType::STD), m_CtxStore_Std(true) {}
 
 Ctx::Ctx(const Ctx &ctx) : m_bpmType(ctx.m_bpmType), m_CtxStore_Std(ctx.m_CtxStore_Std)
