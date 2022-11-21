@@ -1770,7 +1770,7 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         const SPS& sps = *m_cEncLib.getSPS(layerId);
 #if JVET_AB0080
         int ppsID = layerId;
-        if (m_gopBasedRPREnabledFlag)
+        if (m_gopBasedRPREnabledFlag  && (m_cEncLib.getBaseQP() >= m_cEncLib.getGOPBasedRPRQPThreshold()))
         {
           const PPS& pps1 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR);
           const PPS& pps2 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR2);
