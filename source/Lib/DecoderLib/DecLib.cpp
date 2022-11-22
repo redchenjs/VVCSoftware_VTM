@@ -1726,7 +1726,7 @@ void DecLib::checkAPSInPictureUnit()
   }
 }
 
-void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& parameterSetManager, APS** apss, APS* lmcsAPS, APS* scalingListAPS)
+void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& parameterSetManager, APS** apss, APS*& lmcsAPS, APS*& scalingListAPS)
 {
   const SPS *sps = parameterSetManager.getSPS(picHeader->getSPSId());
   //luma APSs
