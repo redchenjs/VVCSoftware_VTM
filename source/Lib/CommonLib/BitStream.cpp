@@ -366,7 +366,11 @@ InputBitstream *InputBitstream::extractSubstream( uint32_t uiNumBits )
     std::size_t currentOutputBufferSize=buf.size();
     const uint32_t uiNumBytesToReadFromFifo = std::min<uint32_t>(uiNumBytes, (uint32_t)m_fifo.size() - m_fifo_idx);
     buf.resize(currentOutputBufferSize+uiNumBytes);
-    memcpy(&(buf[currentOutputBufferSize]), &(m_fifo[m_fifo_idx]), uiNumBytesToReadFromFifo); m_fifo_idx+=uiNumBytesToReadFromFifo;
+    if (!buf.empty())
+    {
+      memcpy(&(buf[currentOutputBufferSize]), &(m_fifo[m_fifo_idx]), uiNumBytesToReadFromFifo);
+      m_fifo_idx += uiNumBytesToReadFromFifo;
+    }
     if (uiNumBytesToReadFromFifo != uiNumBytes)
     {
       memset(&(buf[currentOutputBufferSize+uiNumBytesToReadFromFifo]), 0, uiNumBytes - uiNumBytesToReadFromFifo);
