@@ -1727,7 +1727,7 @@ void DecLib::checkAPSInPictureUnit()
   }
 }
 
-void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& parameterSetManager, APS** apss, APS*& lmcsAPS, APS*& scalingListAPS)
+void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& parameterSetManager, APS** apss, APS* lmcsAPS, APS* scalingListAPS)
 {
   const SPS *sps = parameterSetManager.getSPS(picHeader->getSPSId());
   //luma APSs
@@ -3261,13 +3261,13 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   xCheckMixedNalUnit(pcSlice, sps, nalu);
   m_nalUnitInfo[naluInfo.m_nuhLayerId].push_back(naluInfo);
   SEIMessages drapSEIs = getSeisByType(m_pcPic->SEIs, SEI::DEPENDENT_RAP_INDICATION);
-  pcSlice->setLatestDRAPPOC(m_latestDRAPPOC);
   if (!drapSEIs.empty())
   {
     msg(NOTICE, "Dependent RAP indication SEI decoded\n");
     m_latestDRAPPOC = pcSlice->getPOC();
     pcSlice->setDRAP(true);
   }
+  pcSlice->setLatestDRAPPOC(m_latestDRAPPOC);
   pcSlice->checkConformanceForDRAP(nalu.m_temporalId);
   if (pcSlice->isIntra())
   {
