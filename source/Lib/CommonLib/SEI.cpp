@@ -116,6 +116,7 @@ void SEIBufferingPeriod::copyTo (SEIBufferingPeriod& target) const
   target.m_bpCpbCnt = m_bpCpbCnt;
   target.m_bpDecodingUnitHrdParamsPresentFlag = m_bpDecodingUnitHrdParamsPresentFlag;
   target.m_decodingUnitCpbParamsInPicTimingSeiFlag = m_decodingUnitCpbParamsInPicTimingSeiFlag;
+  target.m_decodingUnitDpbDuParamsInPicTimingSeiFlag = m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
   target.m_sublayerInitialCpbRemovalDelayPresentFlag = m_sublayerInitialCpbRemovalDelayPresentFlag;
   target.m_concatenationFlag = m_concatenationFlag;
   target.m_maxInitialRemovalDelayForConcatenation = m_maxInitialRemovalDelayForConcatenation;
