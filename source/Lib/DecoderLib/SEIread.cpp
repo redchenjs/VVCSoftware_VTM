@@ -1336,10 +1336,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& sei, uint32_t payloadSi
   uint32_t symbol;
   sei_read_code( pDecodedMessageOutputStream, bp.m_cpbRemovalDelayLength, symbol, "pt_cpb_removal_delay_minus1[bp_max_sub_layers_minus1]" );
   sei.m_auCpbRemovalDelay[bp.m_bpMaxSubLayers - 1] = symbol + 1;
-  if (bp.m_bpMaxSubLayers == 1)
-  {
-    sei.m_ptSubLayerDelaysPresentFlag[0] = true;
-  }
+  sei.m_ptSubLayerDelaysPresentFlag[bp.m_bpMaxSubLayers - 1] = true;
   for (int i = temporalId; i < bp.m_bpMaxSubLayers - 1; i++)
   {
     sei_read_flag(pDecodedMessageOutputStream, symbol, "pt_sub_layer_delays_present_flag[i]");
