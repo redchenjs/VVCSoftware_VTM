@@ -1236,6 +1236,7 @@ void SEIReader::xParseSEIBufferingPeriod(SEIBufferingPeriod& sei, uint32_t paylo
   {
     sei.m_duCpbRemovalDelayIncrementLength = 24;
     sei.m_dpbOutputDelayDuLength = 24;
+    sei.m_decodingUnitCpbParamsInPicTimingSeiFlag = false;
     sei.m_decodingUnitDpbDuParamsInPicTimingSeiFlag = false;
   }
 
