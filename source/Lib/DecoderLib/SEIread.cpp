@@ -1339,7 +1339,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& sei, uint32_t payloadSi
   sei.m_ptSubLayerDelaysPresentFlag[bp.m_bpMaxSubLayers - 1] = true;
   for (int i = temporalId; i < bp.m_bpMaxSubLayers - 1; i++)
   {
-    sei_read_flag(pDecodedMessageOutputStream, symbol, "pt_sub_layer_delays_present_flag[i]");
+    sei_read_flag(pDecodedMessageOutputStream, symbol, "pt_sublayer_delays_present_flag[i]");
     sei.m_ptSubLayerDelaysPresentFlag[i] = (symbol == 1);
     if (sei.m_ptSubLayerDelaysPresentFlag[i])
     {
