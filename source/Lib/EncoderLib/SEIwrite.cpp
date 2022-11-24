@@ -423,7 +423,7 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
   WRITE_CODE( sei.m_auCpbRemovalDelay[bp.m_bpMaxSubLayers - 1] - 1, bp.m_cpbRemovalDelayLength,               "pt_cpb_removal_delay_minus1[bp_max_sub_layers_minus1]" );
   for (int i = temporalId; i < bp.m_bpMaxSubLayers - 1; i++)
   {
-    WRITE_FLAG(sei.m_ptSubLayerDelaysPresentFlag[i], "pt_sub_layer_delays_present_flag[i]");
+    WRITE_FLAG(sei.m_ptSubLayerDelaysPresentFlag[i], "pt_sublayer_delays_present_flag[i]");
     if (sei.m_ptSubLayerDelaysPresentFlag[i])
     {
       if (bp.m_cpbRemovalDelayDeltasPresentFlag)
