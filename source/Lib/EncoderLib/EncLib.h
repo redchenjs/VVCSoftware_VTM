@@ -139,9 +139,9 @@ public:
   APS**                     getApss() { return m_apss; }
   Ctx                       m_entropyCodingSyncContextState;      ///< leave in addition to vector for compatibility
   PLTBuf                    m_palettePredictorSyncState;
-  const RPLList*            getRPLList(bool b) const { return &m_rplLists[b]; }
-  RPLList*                  getRPLList(bool b) { return &m_rplLists[b]; }
-  uint32_t                  getNumRPL(bool b) const { return m_rplLists[b].getNumberOfReferencePictureLists(); }
+  const RPLList            *getRplList(RefPicList l) const { return &m_rplLists[l]; }
+  RPLList                  *getRplList(RefPicList l) { return &m_rplLists[l]; }
+  uint32_t                  getNumRpl(RefPicList l) const { return m_rplLists[l].getNumberOfReferencePictureLists(); }
   int                       m_gopRprPpsId;
 protected:
   void  xGetNewPicBuffer  ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Picture*& rpcPic, int ppsId ); ///< get picture buffer which will be processed. If ppsId<0, then the ppsMap will be queried for the first match.

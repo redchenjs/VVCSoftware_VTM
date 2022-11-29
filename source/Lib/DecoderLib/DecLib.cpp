@@ -2010,7 +2010,8 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     }
 #endif
 
-    m_apcSlicePilot->applyReferencePictureListBasedMarking( m_cListPic, m_apcSlicePilot->getRPL0(), m_apcSlicePilot->getRPL1(), layerId, *pps);
+    m_apcSlicePilot->applyReferencePictureListBasedMarking(m_cListPic, m_apcSlicePilot->getRpl(REF_PIC_LIST_0),
+                                                           m_apcSlicePilot->getRpl(REF_PIC_LIST_1), layerId, *pps);
 
     //  Get a new picture buffer. This will also set up m_pcPic, and therefore give us a SPS and PPS pointer that we can use.
     m_pcPic = xGetNewPicBuffer( *sps, *pps, m_apcSlicePilot->getTLayer(), layerId );
@@ -3010,36 +3011,30 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   {
     int lostPoc;
     int refPicIndex;
-    while ((lostPoc = m_apcSlicePilot->checkThatAllRefPicsAreAvailable(m_cListPic, m_apcSlicePilot->getRPL0(), 0, true, &refPicIndex, m_apcSlicePilot->getNumRefIdx(REF_PIC_LIST_0))) > 0)
+    for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
     {
-      if( !pps->getMixedNaluTypesInPicFlag() && (
-      ( ( m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_W_RADL || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP ) && ( sps->getIDRRefParamListPresent() || pps->getRplInfoInPhFlag() ) ) ||
-        ( ( m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA ) && m_picHeader.getNoOutputBeforeRecoveryFlag() ) ) )
+      const ReferencePictureList *rpl = m_apcSlicePilot->getRpl(l);
+
+      while ((lostPoc = m_apcSlicePilot->checkThatAllRefPicsAreAvailable(m_cListPic, rpl, 0, true, &refPicIndex,
+                                                                         m_apcSlicePilot->getNumRefIdx(l)))
+             > 0)
       {
-        if (m_apcSlicePilot->getRPL0()->isInterLayerRefPic(refPicIndex) == 0)
+        if (!pps->getMixedNaluTypesInPicFlag()
+            && ((m_apcSlicePilot->isIDRorBLA() && (sps->getIDRRefParamListPresent() || pps->getRplInfoInPhFlag()))
+                || ((m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR
+                     || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA)
+                    && m_picHeader.getNoOutputBeforeRecoveryFlag())))
         {
-          xCreateUnavailablePicture( pps, lostPoc, m_apcSlicePilot->getRPL0()->isRefPicLongterm( refPicIndex ), m_apcSlicePilot->getTLayer(), m_apcSlicePilot->getNalUnitLayerId(), m_apcSlicePilot->getRPL0()->isInterLayerRefPic( refPicIndex ) );
+          if (!rpl->isInterLayerRefPic(refPicIndex))
+          {
+            xCreateUnavailablePicture(pps, lostPoc, rpl->isRefPicLongterm(refPicIndex), m_apcSlicePilot->getTLayer(),
+                                      m_apcSlicePilot->getNalUnitLayerId(), rpl->isInterLayerRefPic(refPicIndex));
+          }
         }
-      }
-      else
-      {
-        xCreateLostPicture( lostPoc - 1, m_apcSlicePilot->getPic()->layerId );
-      }
-    }
-    while ((lostPoc = m_apcSlicePilot->checkThatAllRefPicsAreAvailable(m_cListPic, m_apcSlicePilot->getRPL1(), 0, true, &refPicIndex, m_apcSlicePilot->getNumRefIdx(REF_PIC_LIST_1))) > 0)
-    {
-      if( !pps->getMixedNaluTypesInPicFlag() && (
-        ( ( m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_W_RADL || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP ) && ( sps->getIDRRefParamListPresent() || pps->getRplInfoInPhFlag() ) ) ||
-        ( ( m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA ) && m_picHeader.getNoOutputBeforeRecoveryFlag() ) ) )
-      {
-        if (m_apcSlicePilot->getRPL1()->isInterLayerRefPic(refPicIndex) == 0)
+        else
         {
-          xCreateUnavailablePicture( pps, lostPoc, m_apcSlicePilot->getRPL1()->isRefPicLongterm( refPicIndex ), m_apcSlicePilot->getTLayer(), m_apcSlicePilot->getNalUnitLayerId(), m_apcSlicePilot->getRPL1()->isInterLayerRefPic( refPicIndex ) );
+          xCreateLostPicture(lostPoc - 1, m_apcSlicePilot->getPic()->layerId);
         }
-      }
-      else
-      {
-        xCreateLostPicture( lostPoc - 1, m_apcSlicePilot->getPic()->layerId );
       }
     }
   }
@@ -3171,13 +3166,16 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
 #endif
   }
   pcSlice->getPic()->sliceSubpicIdx.push_back(pps->getSubPicIdxFromSubPicId(pcSlice->getSliceSubPicId()));
-  pcSlice->checkCRA(pcSlice->getRPL0(), pcSlice->getRPL1(), m_pocCRA[nalu.m_nuhLayerId], m_checkCRAFlags[nalu.m_nuhLayerId], m_cListPic);
+  pcSlice->checkCRA(pcSlice->getRpl(REF_PIC_LIST_0), pcSlice->getRpl(REF_PIC_LIST_1), m_pocCRA[nalu.m_nuhLayerId],
+                    m_checkCRAFlags[nalu.m_nuhLayerId], m_cListPic);
   pcSlice->constructRefPicList(m_cListPic);
   pcSlice->setPrevGDRSubpicPOC(m_prevGDRSubpicPOC[nalu.m_nuhLayerId][currSubPicIdx]);
   pcSlice->setPrevIRAPSubpicPOC(m_prevIRAPSubpicPOC[nalu.m_nuhLayerId][currSubPicIdx]);
   pcSlice->setPrevIRAPSubpicType(m_prevIRAPSubpicType[nalu.m_nuhLayerId][currSubPicIdx]);
-  pcSlice->checkSubpicTypeConstraints(m_cListPic, pcSlice->getRPL0(), pcSlice->getRPL1(), m_prevIRAPSubpicDecOrderNo[nalu.m_nuhLayerId][currSubPicIdx]);
-  pcSlice->checkRPL(pcSlice->getRPL0(), pcSlice->getRPL1(), m_associatedIRAPDecodingOrderNumber[nalu.m_nuhLayerId], m_cListPic);
+  pcSlice->checkSubpicTypeConstraints(m_cListPic, pcSlice->getRpl(REF_PIC_LIST_0), pcSlice->getRpl(REF_PIC_LIST_1),
+                                      m_prevIRAPSubpicDecOrderNo[nalu.m_nuhLayerId][currSubPicIdx]);
+  pcSlice->checkRPL(pcSlice->getRpl(REF_PIC_LIST_0), pcSlice->getRpl(REF_PIC_LIST_1),
+                    m_associatedIRAPDecodingOrderNumber[nalu.m_nuhLayerId], m_cListPic);
   pcSlice->checkSTSA(m_cListPic);
   if (m_pcPic->cs->vps && !m_pcPic->cs->vps->getIndependentLayerFlag(m_pcPic->cs->vps->getGeneralLayerIdx(nalu.m_nuhLayerId)) && m_pcPic->cs->pps->getNumSubPics() > 1)
   {

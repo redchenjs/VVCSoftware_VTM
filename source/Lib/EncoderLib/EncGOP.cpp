@@ -2637,73 +2637,65 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       }
     }
 
-    if (pcSlice->checkThatAllRefPicsAreAvailable(rcListPic, pcSlice->getRPL0(), 0, false) != 0 || pcSlice->checkThatAllRefPicsAreAvailable(rcListPic, pcSlice->getRPL1(), 1, false) != 0 ||
-        (m_pcEncLib->getDependentRAPIndicationSEIEnabled() && !pcSlice->isIRAP() && ( pcSlice->isDRAP() || !pcSlice->isPOCInRefPicList(pcSlice->getRPL0(), pcSlice->getAssociatedIRAPPOC())) ) ||
-        (m_pcEncLib->getEdrapIndicationSEIEnabled() && !pcSlice->isIRAP() && ( pcSlice->getEdrapRapId() > 0 || !pcSlice->isPOCInRefPicList(pcSlice->getRPL0(), pcSlice->getAssociatedIRAPPOC()) ) )
-      || (((pcSlice->isIRAP() && m_pcEncLib->getAvoidIntraInDepLayer()) || (!pcSlice->isIRAP() && m_pcEncLib->getRplOfDepLayerInSh())) && pcSlice->getPic()->cs->vps && m_pcEncLib->getNumRefLayers(pcSlice->getPic()->cs->vps->getGeneralLayerIdx(m_pcEncLib->getLayerId())))
-      )
+    if (pcSlice->checkThatAllRefPicsAreAvailable(rcListPic, pcSlice->getRpl(REF_PIC_LIST_0), 0, false) != 0
+        || pcSlice->checkThatAllRefPicsAreAvailable(rcListPic, pcSlice->getRpl(REF_PIC_LIST_1), 1, false) != 0
+        || (m_pcEncLib->getDependentRAPIndicationSEIEnabled() && !pcSlice->isIRAP()
+            && (pcSlice->isDRAP()
+                || !pcSlice->isPOCInRefPicList(pcSlice->getRpl(REF_PIC_LIST_0), pcSlice->getAssociatedIRAPPOC())))
+        || (m_pcEncLib->getEdrapIndicationSEIEnabled() && !pcSlice->isIRAP()
+            && (pcSlice->getEdrapRapId() > 0
+                || !pcSlice->isPOCInRefPicList(pcSlice->getRpl(REF_PIC_LIST_0), pcSlice->getAssociatedIRAPPOC())))
+        || (((pcSlice->isIRAP() && m_pcEncLib->getAvoidIntraInDepLayer())
+             || (!pcSlice->isIRAP() && m_pcEncLib->getRplOfDepLayerInSh()))
+            && pcSlice->getPic()->cs->vps
+            && m_pcEncLib->getNumRefLayers(pcSlice->getPic()->cs->vps->getGeneralLayerIdx(m_pcEncLib->getLayerId()))))
     {
-      xCreateExplicitReferencePictureSetFromReference( pcSlice, rcListPic, pcSlice->getRPL0(), pcSlice->getRPL1() );
+      xCreateExplicitReferencePictureSetFromReference(pcSlice, rcListPic, pcSlice->getRpl(REF_PIC_LIST_0),
+                                                      pcSlice->getRpl(REF_PIC_LIST_1));
     }
 
-    pcSlice->applyReferencePictureListBasedMarking( rcListPic, pcSlice->getRPL0(), pcSlice->getRPL1(), pcSlice->getPic()->layerId, *(pcSlice->getPPS()));
+    pcSlice->applyReferencePictureListBasedMarking(rcListPic, pcSlice->getRpl(REF_PIC_LIST_0),
+                                                   pcSlice->getRpl(REF_PIC_LIST_1), pcSlice->getPic()->layerId,
+                                                   *(pcSlice->getPPS()));
 
-    if(pcSlice->getTLayer() > 0
-      && !(pcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_RADL     // Check if not a leading picture
-        || pcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_RASL)
-        )
+    if (pcSlice->getTLayer() > 0 && !pcSlice->isLeadingPic())
     {
       if (pcSlice->isStepwiseTemporalLayerSwitchingPointCandidate(rcListPic))
       {
         bool isSTSA=true;
 
-        for(int ii=0;(ii<m_pcCfg->getGOPSize() && isSTSA==true);ii++)
+        for (int ii = 0; ii < m_pcCfg->getGOPSize() && isSTSA; ii++)
         {
           int lTid = m_pcCfg->getRPLEntry(0, ii).m_temporalId;
 
           if (lTid == pcSlice->getTLayer())
           {
-            const ReferencePictureList* rpl0 = m_pcEncLib->getRplOfDepLayerInSh()? m_pcEncLib->getRPLList(0)->getReferencePictureList(ii): pcSlice->getSPS()->getRPLList0()->getReferencePictureList(ii);
-            for (int jj = 0; jj < pcSlice->getRPL0()->getNumberOfActivePictures(); jj++)
+            for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
             {
-              int tPoc = pcSlice->getPOC() + rpl0->getRefPicIdentifier(jj);
-              int kk = 0;
-              for (kk = 0; kk<m_pcCfg->getGOPSize(); kk++)
+              const ReferencePictureList *rpl = m_pcEncLib->getRplOfDepLayerInSh()
+                                                  ? m_pcEncLib->getRplList(l)->getReferencePictureList(ii)
+                                                  : pcSlice->getSPS()->getRplList(l)->getReferencePictureList(ii);
+              for (int jj = 0; jj < pcSlice->getRpl(l)->getNumberOfActivePictures(); jj++)
               {
-                if (m_pcCfg->getRPLEntry(0, kk).m_POC == tPoc)
+                // What about long-term and inter-layer?
+                int tPoc = pcSlice->getPOC() + rpl->getRefPicIdentifier(jj);
+                for (int kk = 0; kk < m_pcCfg->getGOPSize(); kk++)
                 {
-                  break;
+                  if (m_pcCfg->getRPLEntry(0, kk).m_POC == tPoc)
+                  {
+                    int tTid = m_pcCfg->getRPLEntry(0, kk).m_temporalId;
+                    if (tTid >= pcSlice->getTLayer())
+                    {
+                      isSTSA = false;
+                      break;
+                    }
+                  }
                 }
-              }
-              int tTid = m_pcCfg->getRPLEntry(0, kk).m_temporalId;
-              if (tTid >= pcSlice->getTLayer())
-              {
-                isSTSA = false;
-                break;
-              }
-            }
-            const ReferencePictureList* rpl1 = m_pcEncLib->getRplOfDepLayerInSh()? m_pcEncLib->getRPLList(1)->getReferencePictureList(ii): pcSlice->getSPS()->getRPLList1()->getReferencePictureList(ii);
-            for (int jj = 0; jj < pcSlice->getRPL1()->getNumberOfActivePictures(); jj++)
-            {
-              int tPoc = pcSlice->getPOC() + rpl1->getRefPicIdentifier(jj);
-              int kk = 0;
-              for (kk = 0; kk<m_pcCfg->getGOPSize(); kk++)
-              {
-                if (m_pcCfg->getRPLEntry(1, kk).m_POC == tPoc)
-                {
-                  break;
-                }
-              }
-              int tTid = m_pcCfg->getRPLEntry(1, kk).m_temporalId;
-              if (tTid >= pcSlice->getTLayer())
-              {
-                isSTSA = false;
-                break;
               }
             }
           }
         }
-        if(isSTSA==true)
+        if (isSTSA)
         {
           pcSlice->setNalUnitType(NAL_UNIT_CODED_SLICE_STSA);
         }
@@ -2715,16 +2707,18 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       pcSlice->setNumRefIdx(REF_PIC_LIST_0, (pcSlice->isIntra())
                                               ? 0
                                               : min(m_pcCfg->getRPLEntry(0, gopId).m_numRefPicsActive + 1,
-                                                    pcSlice->getRPL0()->getNumberOfActivePictures()));
+                                                    pcSlice->getRpl(REF_PIC_LIST_0)->getNumberOfActivePictures()));
       pcSlice->setNumRefIdx(REF_PIC_LIST_1, (!pcSlice->isInterB())
                                               ? 0
                                               : min(m_pcCfg->getRPLEntry(1, gopId).m_numRefPicsActive + 1,
-                                                    pcSlice->getRPL1()->getNumberOfActivePictures()));
+                                                    pcSlice->getRpl(REF_PIC_LIST_1)->getNumberOfActivePictures()));
     }
     else
     {
-      pcSlice->setNumRefIdx(REF_PIC_LIST_0, (pcSlice->isIntra()) ? 0 : pcSlice->getRPL0()->getNumberOfActivePictures());
-      pcSlice->setNumRefIdx(REF_PIC_LIST_1, (!pcSlice->isInterB()) ? 0 : pcSlice->getRPL1()->getNumberOfActivePictures());
+      pcSlice->setNumRefIdx(REF_PIC_LIST_0,
+                            (pcSlice->isIntra()) ? 0 : pcSlice->getRpl(REF_PIC_LIST_0)->getNumberOfActivePictures());
+      pcSlice->setNumRefIdx(REF_PIC_LIST_1,
+                            (!pcSlice->isInterB()) ? 0 : pcSlice->getRpl(REF_PIC_LIST_1)->getNumberOfActivePictures());
     }
     if (m_pcCfg->getUseCompositeRef() && getPrepareLTRef())
     {
@@ -3938,10 +3932,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         }
         m_pcSliceEncoder->setSliceSegmentIdx(sliceSegmentIdxCount);
 
-        *pcSlice->getRPL0() = *pcPic->slices[0]->getRPL0();
-        *pcSlice->getRPL1() = *pcPic->slices[0]->getRPL1();
-        pcSlice->setRPL0idx(pcPic->slices[0]->getRPL0idx());
-        pcSlice->setRPL1idx(pcPic->slices[0]->getRPL1idx());
+        *pcSlice->getRpl(REF_PIC_LIST_0) = *pcPic->slices[0]->getRpl(REF_PIC_LIST_0);
+        *pcSlice->getRpl(REF_PIC_LIST_1) = *pcPic->slices[0]->getRpl(REF_PIC_LIST_1);
+        pcSlice->setRplIdx(REF_PIC_LIST_0, pcPic->slices[0]->getRplIdx(REF_PIC_LIST_0));
+        pcSlice->setRplIdx(REF_PIC_LIST_1, pcPic->slices[0]->getRplIdx(REF_PIC_LIST_1));
 
         picHeader->setNoOutputBeforeRecoveryFlag( false );
         if (pcSlice->isIRAP())
@@ -3968,10 +3962,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           // code RPL in picture header or slice headers
           if( !m_pcCfg->getSliceLevelRpl() && (!pcSlice->getIdrPicFlag() || pcSlice->getSPS()->getIDRRefParamListPresent()) )
           {
-            picHeader->setRPL0idx(pcSlice->getRPL0idx());
-            picHeader->setRPL1idx(pcSlice->getRPL1idx());
-            *picHeader->getRPL0() = *pcSlice->getRPL0();
-            *picHeader->getRPL1() = *pcSlice->getRPL1();
+            picHeader->setRplIdx(REF_PIC_LIST_0, pcSlice->getRplIdx(REF_PIC_LIST_0));
+            picHeader->setRplIdx(REF_PIC_LIST_1, pcSlice->getRplIdx(REF_PIC_LIST_1));
+            *picHeader->getRpl(REF_PIC_LIST_0) = *pcSlice->getRpl(REF_PIC_LIST_0);
+            *picHeader->getRpl(REF_PIC_LIST_1) = *pcSlice->getRpl(REF_PIC_LIST_1);
           }
 
           // code DBLK in picture header or slice headers
@@ -4018,8 +4012,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           if (!m_pcCfg->getSliceLevelWp())
           {
             picHeader->setWpScaling(pcSlice->getWpScalingAll());
-            picHeader->setNumL0Weights(pcSlice->getNumRefIdx(REF_PIC_LIST_0));
-            picHeader->setNumL0Weights(pcSlice->getNumRefIdx(REF_PIC_LIST_1));
+            picHeader->setNumWeights(REF_PIC_LIST_0, pcSlice->getNumRefIdx(REF_PIC_LIST_0));
+            picHeader->setNumWeights(REF_PIC_LIST_1, pcSlice->getNumRefIdx(REF_PIC_LIST_1));
           }
 
           pcPic->cs->picHeader->setPic(pcPic);
@@ -6600,410 +6594,241 @@ bool EncGOP::xCheckMaxTidILRefPics(int layerIdx, Picture* refPic, bool currentPi
 
 void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicList& rcListPic, const ReferencePictureList *rpl0, const ReferencePictureList *rpl1 )
 {
-  Picture* rpcPic;
-  int pocCycle = 0;
+  const int pocCycle = 1 << slice->getSPS()->getBitsForPOC();
 
-  Picture* pic = slice->getPic();
-  const VPS* vps = slice->getPic()->cs->vps;
-  int layerIdx = vps == nullptr ? 0 : vps->getGeneralLayerIdx( pic->layerId );
-  bool isIntraLayerPredAllowed = (vps->getIndependentLayerFlag(layerIdx) || (vps->getPredDirection(slice->getTLayer()) != 1))
-    && (!slice->isIRAP() || (m_pcEncLib->getAvoidIntraInDepLayer() && layerIdx));
-  bool isInterLayerPredAllowed = !vps->getIndependentLayerFlag(layerIdx) && (vps->getPredDirection(slice->getTLayer()) != 2);
+  const bool interLayerPresent = slice->getSPS()->getInterLayerPresentFlag();
 
-  ReferencePictureList        localRPL0(slice->getSPS()->getInterLayerPresentFlag());
-  ReferencePictureList *const pLocalRPL0 = &localRPL0;
+  Picture   *curPic   = slice->getPic();
+  const VPS *vps      = curPic->cs->vps;
+  int        layerIdx = vps->getGeneralLayerIdx(curPic->layerId);
 
-  uint32_t numOfSTRPL0 = 0;
-  uint32_t numOfLTRPL0 = 0;
-  uint32_t numOfILRPL0 = 0;
-  uint32_t numOfRefPic = rpl0->getNumberOfShorttermPictures() + rpl0->getNumberOfLongtermPictures() + rpl0->getNumberOfInterLayerPictures();
-  uint32_t refPicIdxL0 = 0;
+  const bool isIntraLayerPredAllowed =
+    (vps->getIndependentLayerFlag(layerIdx) || vps->getPredDirection(slice->getTLayer()) != 1)
+    && (!slice->isIRAP() || (m_pcEncLib->getAvoidIntraInDepLayer() && layerIdx != 0));
+  const bool isInterLayerPredAllowed =
+    !vps->getIndependentLayerFlag(layerIdx) && vps->getPredDirection(slice->getTLayer()) != 2;
 
-  static_vector<int, MAX_NUM_REF_PICS> higherTLayerRefs;
+  ReferencePictureList localRpl[NUM_REF_PIC_LIST_01] = { ReferencePictureList(interLayerPresent),
+                                                         ReferencePictureList(interLayerPresent) };
 
-  higherTLayerRefs.resize(0);
-  static_vector<int, MAX_NUM_REF_PICS> inactiveRefs;
-  inactiveRefs.resize(0);
-  if (isIntraLayerPredAllowed)
+  uint32_t numStrp[NUM_REF_PIC_LIST_01] = { 0, 0 };
+  uint32_t numLtrp[NUM_REF_PIC_LIST_01] = { 0, 0 };
+  uint32_t numIlrp[NUM_REF_PIC_LIST_01] = { 0, 0 };
+  uint32_t num[NUM_REF_PIC_LIST_01]     = { 0, 0 };
+
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
   {
-    for (int ii = 0; ii < numOfRefPic; ii++)
+    static_vector<int, MAX_NUM_REF_PICS> higherTLayerRefs;
+    static_vector<int, MAX_NUM_REF_PICS> inactiveRefs;
+
+    const ReferencePictureList *rpl = l == REF_PIC_LIST_0 ? rpl0 : rpl1;
+
+    if (isIntraLayerPredAllowed)
     {
-      // loop through all pictures in the reference picture buffer
-      PicList::iterator iterPic = rcListPic.begin();
-
-      bool isAvailable  = false;
-      bool hasHigherTId = false;
-
-      if (!rpl0->isInterLayerRefPic(ii))
+      for (int ii = 0; ii < rpl->getNumRefEntries(); ii++)
       {
-        pocCycle = 1 << (slice->getSPS()->getBitsForPOC());
-        while (iterPic != rcListPic.end())
+        if (!rpl->isInterLayerRefPic(ii))
         {
-          rpcPic = *(iterPic++);
-
-          if (rpcPic->layerId == pic->layerId)
+          for (const auto &pic: rcListPic)
           {
-            hasHigherTId = rpcPic->temporalId > pic->temporalId;
-            if (!rpl0->isRefPicLongterm(ii) && rpcPic->referenced
-              && rpcPic->getPOC() == slice->getPOC() + rpl0->getRefPicIdentifier(ii)
-              && !slice->isPocRestrictedByDRAP(rpcPic->getPOC(), rpcPic->precedingDRAP)
-              && !slice->isPocRestrictedByEdrap(rpcPic->getPOC()))
+            if (pic->layerId == curPic->layerId && pic->referenced
+                && !slice->isPocRestrictedByDRAP(pic->getPOC(), pic->precedingDRAP)
+                && !slice->isPocRestrictedByEdrap(pic->getPOC()))
             {
-              isAvailable = true;
-              break;
-            }
-            else if (rpl0->isRefPicLongterm(ii) && rpcPic->referenced && (rpcPic->getPOC() & (pocCycle - 1)) == rpl0->getRefPicIdentifier(ii) && !slice->isPocRestrictedByDRAP(rpcPic->getPOC(), rpcPic->precedingDRAP)
-              && !slice->isPocRestrictedByEdrap(rpcPic->getPOC()))
-            {
-              isAvailable = true;
-              break;
-            }
-          }
-        }
-
-        if (isAvailable)
-        {
-          if (slice->isIRAP())
-          {
-            inactiveRefs.push_back(ii);
-          }
-          else if (hasHigherTId)
-          {
-            higherTLayerRefs.push_back(ii);
-          }
-          else if (refPicIdxL0 >= rpl0->getNumberOfActivePictures() - rpl0->getNumberOfInterLayerPictures() && layerIdx && vps && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
-          {
-            inactiveRefs.push_back(ii);
-          }
-          else
-          {
-            pLocalRPL0->setRefPicIdentifier(refPicIdxL0, rpl0->getRefPicIdentifier(ii), rpl0->isRefPicLongterm(ii), false,
-              NOT_VALID);
-            refPicIdxL0++;
-            numOfSTRPL0 = numOfSTRPL0 + ((rpl0->isRefPicLongterm(ii)) ? 0 : 1);
-            numOfLTRPL0 += (rpl0->isRefPicLongterm(ii) && !rpl0->isInterLayerRefPic(ii)) ? 1 : 0;
-          }
-        }
-      }
-    }
-  }
-
-  // inter-layer reference pictures are added to the end of the reference picture list
-  if (layerIdx && vps && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
-  {
-    numOfRefPic = rpl0->getNumberOfInterLayerPictures() ? rpl0->getNumberOfInterLayerPictures() : m_pcEncLib->getNumRefLayers( layerIdx );
-
-    for( int ii = 0; ii < numOfRefPic; ii++ )
-    {
-      // loop through all pictures in the reference picture buffer
-      PicList::iterator iterPic = rcListPic.begin();
-
-      while( iterPic != rcListPic.end() && ii < numOfRefPic )
-      {
-        rpcPic = *( iterPic++ );
-        int refLayerIdx = vps->getGeneralLayerIdx( rpcPic->layerId );
-        if (rpcPic->referenced && rpcPic->getPOC() == pic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
-            && xCheckMaxTidILRefPics(layerIdx, rpcPic, slice->isIRAP()))
-        {
-          pLocalRPL0->setRefPicIdentifier( refPicIdxL0, 0, true, true, vps->getInterLayerRefIdc( layerIdx, refLayerIdx ) );
-          refPicIdxL0++;
-          numOfILRPL0++;
-          ii++;
-        }
-      }
-    }
-  }
-  // now add inactive refs
-  for (int i = 0; i < inactiveRefs.size(); i++)
-  {
-    const int ii = inactiveRefs[i];
-    pLocalRPL0->setRefPicIdentifier(refPicIdxL0, rpl0->getRefPicIdentifier(ii), rpl0->isRefPicLongterm(ii), false,
-      NOT_VALID);
-    refPicIdxL0++;
-    numOfSTRPL0 = numOfSTRPL0 + ((rpl0->isRefPicLongterm(ii)) ? 0 : 1);
-    numOfLTRPL0 += (rpl0->isRefPicLongterm(ii) && !rpl0->isInterLayerRefPic(ii)) ? 1 : 0;
-  }
-
-  if( slice->getEnableDRAPSEI() )
-  {
-    pLocalRPL0->setNumberOfShorttermPictures( numOfSTRPL0 );
-    pLocalRPL0->setNumberOfLongtermPictures( numOfLTRPL0 );
-    pLocalRPL0->setNumberOfInterLayerPictures( numOfILRPL0 );
-
-    if( !slice->isIRAP() && !slice->isPOCInRefPicList( pLocalRPL0, slice->getAssociatedIRAPPOC() ) )
-    {
-      if( slice->getUseLTforDRAP() && !slice->isPOCInRefPicList( rpl1, slice->getAssociatedIRAPPOC() ) )
-      {
-        // Adding associated IRAP as longterm picture
-        pLocalRPL0->setRefPicIdentifier( refPicIdxL0, slice->getAssociatedIRAPPOC(), true, false, 0 );
-        refPicIdxL0++;
-        numOfLTRPL0++;
-      }
-      else
-      {
-        // Adding associated IRAP as shortterm picture
-        pLocalRPL0->setRefPicIdentifier(refPicIdxL0, slice->getAssociatedIRAPPOC() - slice->getPOC(), false, false, 0);
-        refPicIdxL0++;
-        numOfSTRPL0++;
-      }
-    }
-  }
-  if( slice->getEnableEdrapSEI() )
-  {
-    pLocalRPL0->setNumberOfShorttermPictures( numOfSTRPL0 );
-    pLocalRPL0->setNumberOfLongtermPictures( numOfLTRPL0 );
-    pLocalRPL0->setNumberOfInterLayerPictures( numOfILRPL0 );
-
-    for (int i = 0; i < slice->getEdrapNumRefRapPics(); i++)
-    {
-      int refPoc = slice->getEdrapRefRapId(i) == 0 ? slice->getAssociatedIRAPPOC() : slice->getEdrapRefRapId(i) * m_pcEncLib->getEdrapPeriod();
-      if( slice->isPOCInRefPicList( pLocalRPL0, refPoc ) )
-      {
-        continue;
-      }
-      if( slice->getUseLTforEdrap() && !slice->isPOCInRefPicList( rpl1, refPoc ) )
-      {
-        // Added as longterm picture
-        pLocalRPL0->setRefPicIdentifier( refPicIdxL0, refPoc, true, false, 0 );
-        refPicIdxL0++;
-        numOfLTRPL0++;
-      }
-      else
-      {
-        // Added as shortterm picture
-        pLocalRPL0->setRefPicIdentifier(refPicIdxL0, refPoc - slice->getPOC(), false, false, 0);
-        refPicIdxL0++;
-        numOfSTRPL0++;
-      }
-    }
-  }
-
-  // now add higher TId refs
-  for (int i = 0; i < higherTLayerRefs.size(); i++)
-  {
-    const int ii = higherTLayerRefs[i];
-    pLocalRPL0->setRefPicIdentifier(refPicIdxL0, rpl0->getRefPicIdentifier(ii), rpl0->isRefPicLongterm(ii), false,
-                                    NOT_VALID);
-    refPicIdxL0++;
-    numOfSTRPL0 = numOfSTRPL0 + ((rpl0->isRefPicLongterm(ii)) ? 0 : 1);
-    numOfLTRPL0 += (rpl0->isRefPicLongterm(ii) && !rpl0->isInterLayerRefPic(ii)) ? 1 : 0;
-  }
-
-  ReferencePictureList        localRPL1(slice->getSPS()->getInterLayerPresentFlag());
-  ReferencePictureList *const pLocalRPL1 = &localRPL1;
-
-  uint32_t numOfSTRPL1 = 0;
-  uint32_t numOfLTRPL1 = 0;
-  uint32_t numOfILRPL1 = 0;
-  numOfRefPic = rpl1->getNumberOfShorttermPictures() + rpl1->getNumberOfLongtermPictures() + rpl1->getNumberOfInterLayerPictures();
-  uint32_t refPicIdxL1 = 0;
-
-  higherTLayerRefs.resize(0);
-  inactiveRefs.resize(0);
-  if (isIntraLayerPredAllowed)
-  {
-    for (int ii = 0; ii < numOfRefPic; ii++)
-    {
-      // loop through all pictures in the reference picture buffer
-      if (!rpl1->isInterLayerRefPic(ii))
-      {
-        PicList::iterator iterPic = rcListPic.begin();
-
-        bool isAvailable = false;
-        bool hasHigherTId = false;
-        pocCycle = 1 << (slice->getSPS()->getBitsForPOC());
-        while (iterPic != rcListPic.end())
-        {
-          rpcPic = *(iterPic++);
-          if (rpcPic->layerId == pic->layerId)
-          {
-            hasHigherTId = rpcPic->temporalId > pic->temporalId;
-            if (!rpl1->isRefPicLongterm(ii) && rpcPic->referenced
-              && rpcPic->getPOC() == slice->getPOC() + rpl1->getRefPicIdentifier(ii)
-              && !slice->isPocRestrictedByDRAP(rpcPic->getPOC(), rpcPic->precedingDRAP)
-              && !slice->isPocRestrictedByEdrap(rpcPic->getPOC()))
-            {
-              isAvailable = true;
-              break;
-            }
-            else if (rpl1->isRefPicLongterm(ii) && rpcPic->referenced && (rpcPic->getPOC() & (pocCycle - 1)) == rpl1->getRefPicIdentifier(ii) && !slice->isPocRestrictedByDRAP(rpcPic->getPOC(), rpcPic->precedingDRAP) && !slice->isPocRestrictedByEdrap(rpcPic->getPOC()))
-            {
-              isAvailable = true;
-              break;
+              const bool isAvailable = !rpl->isRefPicLongterm(ii)
+                                         ? pic->getPOC() == slice->getPOC() + rpl->getRefPicIdentifier(ii)
+                                         : (pic->getPOC() & (pocCycle - 1)) == rpl->getRefPicIdentifier(ii);
+              if (isAvailable)
+              {
+                if (slice->isIRAP())
+                {
+                  inactiveRefs.push_back(ii);
+                }
+                else if (pic->temporalId > curPic->temporalId)
+                {
+                  higherTLayerRefs.push_back(ii);
+                }
+                else if (num[l] >= rpl->getNumberOfActivePictures() - rpl->getNumberOfInterLayerPictures()
+                         && layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag()
+                         && isInterLayerPredAllowed)
+                {
+                  inactiveRefs.push_back(ii);
+                }
+                else
+                {
+                  localRpl[l].setRefPicIdentifier(num[l], rpl->getRefPicIdentifier(ii), rpl->isRefPicLongterm(ii),
+                                                  false, NOT_VALID);
+                  num[l]++;
+                  numStrp[l] += rpl->isRefPicLongterm(ii) ? 0 : 1;
+                  numLtrp[l] += rpl->isRefPicLongterm(ii) && !rpl->isInterLayerRefPic(ii) ? 1 : 0;
+                }
+                break;
+              }
             }
           }
         }
-
-        if (isAvailable)
-        {
-          if (slice->isIRAP())
-          {
-            inactiveRefs.push_back(ii);
-          }
-          else if (hasHigherTId)
-          {
-            higherTLayerRefs.push_back(ii);
-          }
-          else if (refPicIdxL1 >= rpl1->getNumberOfActivePictures() - rpl1->getNumberOfInterLayerPictures() && layerIdx && vps && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
-          {
-            inactiveRefs.push_back(ii);
-          }
-          else
-          {
-            pLocalRPL1->setRefPicIdentifier(refPicIdxL1, rpl1->getRefPicIdentifier(ii), rpl1->isRefPicLongterm(ii), false,
-              NOT_VALID);
-            refPicIdxL1++;
-            numOfSTRPL1 = numOfSTRPL1 + ((rpl1->isRefPicLongterm(ii)) ? 0 : 1);
-            numOfLTRPL1 += (rpl1->isRefPicLongterm(ii) && !rpl1->isInterLayerRefPic(ii)) ? 1 : 0;
-          }
-        }
       }
     }
-  }
 
-
-  // inter-layer reference pictures are added to the end of the reference picture list
-  if (layerIdx && vps && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
-  {
-    numOfRefPic = rpl1->getNumberOfInterLayerPictures() ? rpl1->getNumberOfInterLayerPictures() : m_pcEncLib->getNumRefLayers( layerIdx );
-
-    for( int ii = 0; ii < numOfRefPic; ii++ )
+    // inter-layer reference pictures are added to the end of the reference picture list
+    if (layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
     {
-      // loop through all pictures in the reference picture buffer
-      PicList::iterator iterPic = rcListPic.begin();
-
-      while( iterPic != rcListPic.end() && ii < numOfRefPic )
+      for (const auto &pic: rcListPic)
       {
-        rpcPic = *( iterPic++ );
-        int refLayerIdx = vps->getGeneralLayerIdx( rpcPic->layerId );
-        if (rpcPic->referenced && rpcPic->getPOC() == pic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
-            && xCheckMaxTidILRefPics( layerIdx, rpcPic, slice->isIRAP()))
+        int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
+        if (pic->referenced && pic->getPOC() == curPic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
+            && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
         {
-          pLocalRPL1->setRefPicIdentifier( refPicIdxL1, 0, true, true, vps->getInterLayerRefIdc( layerIdx, refLayerIdx ) );
-          refPicIdxL1++;
-          numOfILRPL1++;
-          ii++;
+          localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
+          num[l]++;
+          numIlrp[l]++;
         }
       }
     }
-  }
 
-  for (int i = 0; i < inactiveRefs.size(); i++)
-  {
-    const int ii = inactiveRefs[i];
-    pLocalRPL1->setRefPicIdentifier(refPicIdxL1, rpl1->getRefPicIdentifier(ii), rpl1->isRefPicLongterm(ii), false,
-                                    NOT_VALID);
-    refPicIdxL1++;
-    numOfSTRPL1 = numOfSTRPL1 + ((rpl1->isRefPicLongterm(ii)) ? 0 : 1);
-    numOfLTRPL1 += (rpl1->isRefPicLongterm(ii) && !rpl1->isInterLayerRefPic(ii)) ? 1 : 0;
-  }
-  // now add higher TId refs
-  for (int i = 0; i < higherTLayerRefs.size(); i++)
-  {
-    const int ii = higherTLayerRefs[i];
-    pLocalRPL1->setRefPicIdentifier(refPicIdxL1, rpl1->getRefPicIdentifier(ii), rpl1->isRefPicLongterm(ii), false,
-                                    NOT_VALID);
-    refPicIdxL1++;
-    numOfSTRPL1 = numOfSTRPL1 + ((rpl1->isRefPicLongterm(ii)) ? 0 : 1);
-    numOfLTRPL1 += (rpl1->isRefPicLongterm(ii) && !rpl1->isInterLayerRefPic(ii)) ? 1 : 0;
-  }
-
-  //Copy from L1 if we have less than active ref pic
-  int numOfNeedToFill = rpl0->getNumberOfActivePictures() - rpl0->getNumberOfInterLayerPictures() - (numOfLTRPL0 + numOfSTRPL0);
-  bool isDisallowMixedRefPic = ( slice->getSPS()->getAllActiveRplEntriesHasSameSignFlag() ) ? true : false;
-  int originalL0StrpNum = numOfSTRPL0;
-  int originalL0LtrpNum = numOfLTRPL0;
-  int originalL0IlrpNum = numOfILRPL0;
-
-  for( int ii = 0; numOfNeedToFill > 0 && ii < ( numOfLTRPL1 + numOfSTRPL1 + numOfILRPL1 ); ii++ )
-  {
-    if( ii <= ( numOfLTRPL1 + numOfSTRPL1 + numOfILRPL1 - 1 ) )
+    // now add inactive refs
+    for (const int i: inactiveRefs)
     {
-      //Make sure this copy is not already in L0
+      localRpl[l].setRefPicIdentifier(num[l], rpl->getRefPicIdentifier(i), rpl->isRefPicLongterm(i), false, NOT_VALID);
+      num[l]++;
+      numStrp[l] += rpl->isRefPicLongterm(i) ? 0 : 1;
+      numLtrp[l] += rpl->isRefPicLongterm(i) && !rpl->isInterLayerRefPic(i) ? 1 : 0;
+    }
+
+    if (slice->getEnableDRAPSEI() && l == REF_PIC_LIST_0)
+    {
+      localRpl[l].setNumberOfShorttermPictures(numStrp[l]);
+      localRpl[l].setNumberOfLongtermPictures(numLtrp[l]);
+      localRpl[l].setNumberOfInterLayerPictures(numIlrp[l]);
+
+      if (!slice->isIRAP() && !slice->isPOCInRefPicList(&localRpl[l], slice->getAssociatedIRAPPOC()))
+      {
+        if (slice->getUseLTforDRAP() && !slice->isPOCInRefPicList(rpl1, slice->getAssociatedIRAPPOC()))
+        {
+          // Adding associated IRAP as longterm picture
+          localRpl[l].setRefPicIdentifier(num[l], slice->getAssociatedIRAPPOC(), true, false, 0);
+          num[l]++;
+          numLtrp[l]++;
+        }
+        else
+        {
+          // Adding associated IRAP as shortterm picture
+          localRpl[l].setRefPicIdentifier(num[l], slice->getAssociatedIRAPPOC() - slice->getPOC(), false, false, 0);
+          num[l]++;
+          numStrp[l]++;
+        }
+      }
+    }
+    if (slice->getEnableEdrapSEI() && l == REF_PIC_LIST_0)
+    {
+      localRpl[l].setNumberOfShorttermPictures(numStrp[l]);
+      localRpl[l].setNumberOfLongtermPictures(numLtrp[l]);
+      localRpl[l].setNumberOfInterLayerPictures(numIlrp[l]);
+
+      for (int i = 0; i < slice->getEdrapNumRefRapPics(); i++)
+      {
+        int refPoc = slice->getEdrapRefRapId(i) == 0 ? slice->getAssociatedIRAPPOC()
+                                                     : slice->getEdrapRefRapId(i) * m_pcEncLib->getEdrapPeriod();
+        if (slice->isPOCInRefPicList(&localRpl[l], refPoc))
+        {
+          continue;
+        }
+        if (slice->getUseLTforEdrap() && !slice->isPOCInRefPicList(rpl1, refPoc))
+        {
+          // Added as longterm picture
+          localRpl[l].setRefPicIdentifier(num[l], refPoc, true, false, 0);
+          num[l]++;
+          numLtrp[l]++;
+        }
+        else
+        {
+          // Added as shortterm picture
+          localRpl[l].setRefPicIdentifier(num[l], refPoc - slice->getPOC(), false, false, 0);
+          num[l]++;
+          numStrp[l]++;
+        }
+      }
+    }
+
+    // now add higher TId refs
+    for (const int i: higherTLayerRefs)
+    {
+      localRpl[l].setRefPicIdentifier(num[l], rpl->getRefPicIdentifier(i), rpl->isRefPicLongterm(i), false, NOT_VALID);
+      num[l]++;
+      numStrp[l] += rpl->isRefPicLongterm(i) ? 0 : 1;
+      numLtrp[l] += rpl->isRefPicLongterm(i) && !rpl->isInterLayerRefPic(i) ? 1 : 0;
+    }
+  }
+
+  uint32_t numPrev[NUM_REF_PIC_LIST_01] = { num[REF_PIC_LIST_0], num[REF_PIC_LIST_1] };
+
+  // Copy from other list if we have fewer than active ref pics
+
+  bool isDisallowMixedRefPic = slice->getSPS()->getAllActiveRplEntriesHasSameSignFlag();
+
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
+  {
+    const ReferencePictureList *rpl = l == REF_PIC_LIST_0 ? rpl0 : rpl1;
+    const auto                  k   = l == REF_PIC_LIST_0 ? REF_PIC_LIST_1 : REF_PIC_LIST_0;
+
+    int numOfNeedToFill = rpl->getNumberOfActivePictures() - num[l];
+
+    for (int ii = 0; numOfNeedToFill > 0 && ii < numPrev[k]; ii++)
+    {
+      const int  identifier   = localRpl[k].getRefPicIdentifier(ii);
+      const bool isLongTerm   = localRpl[k].isRefPicLongterm(ii);
+      const bool isInterLayer = localRpl[k].isInterLayerRefPic(ii);
+
+      // Make sure this copy is not already present
       bool canIncludeThis = true;
-      for( int jj = 0; jj < refPicIdxL0; jj++ )
+      for (int jj = 0; jj < num[l]; jj++)
       {
-        if( ( pLocalRPL1->getRefPicIdentifier( ii ) == pLocalRPL0->getRefPicIdentifier( jj ) ) && ( pLocalRPL1->isRefPicLongterm( ii ) == pLocalRPL0->isRefPicLongterm( jj ) ) && pLocalRPL1->getInterLayerRefPicIdx( ii ) == pLocalRPL0->getInterLayerRefPicIdx( jj ) )
+        if (identifier == localRpl[l].getRefPicIdentifier(jj) && isLongTerm == localRpl[l].isRefPicLongterm(jj)
+            && isInterLayer == localRpl[l].isInterLayerRefPic(jj))
         {
           canIncludeThis = false;
+          break;
         }
 
-        bool sameSign = ( pLocalRPL1->getRefPicIdentifier( ii ) > 0 ) == ( pLocalRPL0->getRefPicIdentifier( 0 ) > 0 );
-
-        if( isDisallowMixedRefPic && canIncludeThis && !pLocalRPL1->isRefPicLongterm( ii ) && !sameSign )
+        if (isDisallowMixedRefPic && !isLongTerm && !localRpl[l].isRefPicLongterm(jj))
         {
-          canIncludeThis = false;
+          const bool sameSign = (identifier ^ localRpl[l].getRefPicIdentifier(jj)) >= 0;
+          if (!sameSign)
+          {
+            canIncludeThis = false;
+            break;
+          }
         }
       }
       if( canIncludeThis )
       {
-        pLocalRPL0->setRefPicIdentifier( refPicIdxL0, pLocalRPL1->getRefPicIdentifier( ii ), pLocalRPL1->isRefPicLongterm( ii ), pLocalRPL1->isInterLayerRefPic( ii ), pLocalRPL1->getInterLayerRefPicIdx( ii ) );
-        refPicIdxL0++;
-        numOfSTRPL0 = numOfSTRPL0 + ( ( pLocalRPL1->isRefPicLongterm( ii ) ) ? 0 : 1 );
-        numOfLTRPL0 += ( pLocalRPL1->isRefPicLongterm( ii ) && !pLocalRPL1->isInterLayerRefPic( ii ) ) ? 1 : 0;
-        numOfILRPL0 += pLocalRPL1->isInterLayerRefPic( ii ) ? 1 : 0;
+        localRpl[l].setRefPicIdentifier(num[l], identifier, isLongTerm, isInterLayer,
+                                        localRpl[k].getInterLayerRefPicIdx(ii));
+        num[l]++;
+        numStrp[l] += isLongTerm ? 0 : 1;
+        numLtrp[l] += isLongTerm && !isInterLayer ? 1 : 0;
+        numIlrp[l] += isInterLayer ? 1 : 0;
         numOfNeedToFill--;
       }
     }
+    localRpl[l].setNumberOfLongtermPictures(numLtrp[l]);
+    localRpl[l].setNumberOfShorttermPictures(numStrp[l]);
+    localRpl[l].setNumberOfInterLayerPictures(numIlrp[l]);
+    const int numPics = slice->isIRAP() ? 0 : numLtrp[l] + numStrp[l];
+
+    localRpl[l].setNumberOfActivePictures(
+      std::min<int>(numPics, rpl->getNumberOfActivePictures() - rpl->getNumberOfInterLayerPictures()) + numIlrp[l]);
+    localRpl[l].setLtrpInSliceHeaderFlag(1);
+    slice->setRplIdx(l, -1);
+    *slice->getRpl(l) = localRpl[l];
   }
-  pLocalRPL0->setNumberOfLongtermPictures( numOfLTRPL0 );
-  pLocalRPL0->setNumberOfShorttermPictures( numOfSTRPL0 );
-  pLocalRPL0->setNumberOfInterLayerPictures( numOfILRPL0 );
-  int numPics = (slice->isIRAP()) ? 0 : numOfLTRPL0 + numOfSTRPL0;
 
-  pLocalRPL0->setNumberOfActivePictures((numPics < (rpl0->getNumberOfActivePictures() - rpl0->getNumberOfInterLayerPictures()) ? numPics : (rpl0->getNumberOfActivePictures() - rpl0->getNumberOfInterLayerPictures())) + numOfILRPL0);
-  pLocalRPL0->setLtrpInSliceHeaderFlag( 1 );
-  slice->setRPL0idx( -1 );
-  *slice->getRPL0() = localRPL0;
-
-  //Copy from L0 if we have less than active ref pic
-  numOfNeedToFill = rpl1->getNumberOfActivePictures() - rpl1->getNumberOfInterLayerPictures() - (numOfLTRPL1 + numOfSTRPL1);
-
-  for( int ii = 0; numOfNeedToFill > 0 && ii < ( pLocalRPL0->getNumberOfLongtermPictures() + pLocalRPL0->getNumberOfShorttermPictures() + pLocalRPL0->getNumberOfInterLayerPictures() ); ii++ )
-  {
-    if( ii <= ( originalL0StrpNum + originalL0LtrpNum + originalL0IlrpNum - 1 ) )
-    {
-      //Make sure this copy is not already in L0
-      bool canIncludeThis = true;
-      for( int jj = 0; jj < refPicIdxL1; jj++ )
-      {
-        if( ( pLocalRPL0->getRefPicIdentifier( ii ) == pLocalRPL1->getRefPicIdentifier( jj ) ) && ( pLocalRPL0->isRefPicLongterm( ii ) == pLocalRPL1->isRefPicLongterm( jj ) ) && pLocalRPL0->getInterLayerRefPicIdx( ii ) == pLocalRPL1->getInterLayerRefPicIdx( jj ) )
-        {
-          canIncludeThis = false;
-        }
-
-        bool sameSign = ( pLocalRPL0->getRefPicIdentifier( ii ) > 0 ) == ( pLocalRPL1->getRefPicIdentifier( 0 ) > 0 );
-
-        if( isDisallowMixedRefPic && canIncludeThis && !pLocalRPL0->isRefPicLongterm( ii ) && !sameSign )
-        {
-          canIncludeThis = false;
-        }
-      }
-      if( canIncludeThis )
-      {
-        pLocalRPL1->setRefPicIdentifier( refPicIdxL1, pLocalRPL0->getRefPicIdentifier( ii ), pLocalRPL0->isRefPicLongterm( ii ), pLocalRPL0->isInterLayerRefPic( ii ), pLocalRPL0->getInterLayerRefPicIdx( ii ) );
-        refPicIdxL1++;
-        numOfSTRPL1 = numOfSTRPL1 + ( ( pLocalRPL0->isRefPicLongterm( ii ) ) ? 0 : 1 );
-        numOfLTRPL1 += ( pLocalRPL0->isRefPicLongterm( ii ) && !pLocalRPL0->isInterLayerRefPic( ii ) ) ? 1 : 0;
-        numOfILRPL1 += pLocalRPL0->isInterLayerRefPic( ii ) ? 1 : 0;
-        numOfNeedToFill--;
-      }
-    }
-  }
-  pLocalRPL1->setNumberOfLongtermPictures( numOfLTRPL1 );
-  pLocalRPL1->setNumberOfShorttermPictures( numOfSTRPL1 );
-  pLocalRPL1->setNumberOfInterLayerPictures( numOfILRPL1 );
-  numPics = (slice->isIRAP()) ? 0 : numOfLTRPL1 + numOfSTRPL1;
-
-  pLocalRPL1->setNumberOfActivePictures((numPics < (rpl1->getNumberOfActivePictures() - rpl1->getNumberOfInterLayerPictures()) ? numPics : (rpl1->getNumberOfActivePictures() - rpl1->getNumberOfInterLayerPictures())) + numOfILRPL1);
-  pLocalRPL1->setLtrpInSliceHeaderFlag( 1 );
-  slice->setRPL1idx( -1 );
-  *slice->getRPL1() = localRPL1;
-  // To ensure that any picture in the RefRapIds has been included in the refrence list.
+  // Ensure that all pictures in the RefRapIds are included in a reference list.
   for (int i = 0; i < slice->getEdrapNumRefRapPics(); i++)
   {
     int refPoc = slice->getEdrapRefRapId(i) == 0 ? slice->getAssociatedIRAPPOC() : slice->getEdrapRefRapId(i) * m_pcEncLib->getEdrapPeriod();
-    if (!slice->isPOCInRefPicList( pLocalRPL0, refPoc ) && !slice->isPOCInRefPicList( pLocalRPL1, refPoc ))
+    if (!slice->isPOCInRefPicList(&localRpl[REF_PIC_LIST_0], refPoc)
+        && !slice->isPOCInRefPicList(&localRpl[REF_PIC_LIST_1], refPoc))
     {
       slice->deleteEdrapRefRapIds(i);
     }
