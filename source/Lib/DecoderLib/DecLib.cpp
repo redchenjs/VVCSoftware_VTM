@@ -390,6 +390,7 @@ DecLib::DecLib()
   : m_maxRefPicNum(0)
   , m_isFirstGeneralHrd(true)
   , m_prevGeneralHrdParams()
+  , m_latestDRAPPOC(MAX_INT)
   , m_associatedIRAPDecodingOrderNumber{ 0 }
   , m_decodingOrderCounter(0)
   , m_puCounter(0)
@@ -3263,9 +3264,10 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   if (!drapSEIs.empty())
   {
     msg(NOTICE, "Dependent RAP indication SEI decoded\n");
+    m_latestDRAPPOC = pcSlice->getPOC();
     pcSlice->setDRAP(true);
-    pcSlice->setLatestDRAPPOC(pcSlice->getPOC());
   }
+  pcSlice->setLatestDRAPPOC(m_latestDRAPPOC);
   pcSlice->checkConformanceForDRAP(nalu.m_temporalId);
   if (pcSlice->isIntra())
   {
