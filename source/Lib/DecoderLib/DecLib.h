@@ -75,7 +75,8 @@ private:
   int                     m_prevGDRInSameLayerPOC[MAX_VPS_LAYERS]; ///< POC number of the latest GDR picture
   int                     m_prevGDRInSameLayerRecoveryPOC[MAX_VPS_LAYERS]; ///< Recovery POC number of the latest GDR picture
   NalUnitType             m_associatedIRAPType[MAX_VPS_LAYERS]; ///< NAL unit type of the previous IRAP picture
-  int                     m_pocCRA[MAX_VPS_LAYERS];            ///< POC number of the previous CRA picture
+  int                     m_pocCRA[MAX_VPS_LAYERS];             ///< POC number of the previous CRA picture
+  CheckCRAFlags           m_checkCRAFlags[MAX_VPS_LAYERS];
   int                     m_latestDRAPPOC;
   int                     m_associatedIRAPDecodingOrderNumber[MAX_VPS_LAYERS]; ///< Decoding order number of the previous IRAP picture
   int                     m_decodingOrderCounter;
