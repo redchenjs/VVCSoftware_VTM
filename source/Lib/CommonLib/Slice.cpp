@@ -571,16 +571,33 @@ void Slice::checkColRefIdx(uint32_t curSliceSegmentIdx, const Picture* pic)
   }
 }
 
-void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int pocCRA, PicList& rcListPic)
+void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int pocCRA, CheckCRAFlags &flags, PicList& rcListPic)
 {
   if (pocCRA < MAX_UINT && getPOC() > pocCRA)
   {
+    if (flags.seenLeadingFieldPic && flags.trailingFieldHadRefIssue)
+    {
+      THROW("Invalid state");
+    }
+
     uint32_t numRefPic = pRPL0->getNumberOfShorttermPictures() + pRPL0->getNumberOfLongtermPictures() + pRPL0->getNumberOfInterLayerPictures();
     for (int i = 0; i < numRefPic; i++)
     {
       if (!pRPL0->isRefPicLongterm(i))
       {
-        CHECK(getPOC() + pRPL0->getRefPicIdentifier(i) < pocCRA, "Invalid state");
+        if (getPOC() + pRPL0->getRefPicIdentifier(i) < pocCRA)
+        {
+          // report error immediately if we are
+          //   processing frames
+          //   or this is second trailing field picture
+          //   or this is trailing field picture after leading field picture
+          //   or this is active reference picture of trailing field picture
+          CHECK(!getSPS()->getFieldSeqFlag() || flags.seenTrailingFieldPic || flags.seenLeadingFieldPic || i < getNumRefIdx(REF_PIC_LIST_0), "Invalid state");
+
+          // otherwise, we are checking non-active reference picture of first trailing field picture
+          flags.trailingFieldHadRefIssue = true;
+          return;
+        }
       }
       else if (!pRPL0->isInterLayerRefPic(i))
       {
@@ -593,8 +610,12 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
         }
         const Picture *ltrp =
           xGetLongTermRefPic(rcListPic, ltrpPoc, pRPL0->getDeltaPocMSBPresentFlag(i), m_pcPic->layerId);
-        CHECK(ltrp == nullptr, "Long-term pic not found");
-        CHECK(ltrp->getPOC() < pocCRA, "Invalid state");
+        if (ltrp == nullptr || ltrp->getPOC() < pocCRA)
+        {
+          CHECK(!getSPS()->getFieldSeqFlag() || flags.seenTrailingFieldPic || flags.seenLeadingFieldPic || i < getNumRefIdx(REF_PIC_LIST_0), "Invalid state");
+          flags.trailingFieldHadRefIssue = true;
+          return;
+        }
       }
     }
     numRefPic = pRPL1->getNumberOfShorttermPictures() + pRPL1->getNumberOfLongtermPictures() + pRPL1->getNumberOfInterLayerPictures();
@@ -602,7 +623,12 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
     {
       if (!pRPL1->isRefPicLongterm(i))
       {
-        CHECK(getPOC() + pRPL1->getRefPicIdentifier(i) < pocCRA, "Invalid state");
+        if (getPOC() + pRPL1->getRefPicIdentifier(i) < pocCRA)
+        {
+          CHECK(!getSPS()->getFieldSeqFlag() || flags.seenTrailingFieldPic || flags.seenLeadingFieldPic || i < getNumRefIdx(REF_PIC_LIST_1), "Invalid state");
+          flags.trailingFieldHadRefIssue = true;
+          return;
+        }
       }
       else if( !pRPL1->isInterLayerRefPic( i ) )
       {
@@ -615,10 +641,24 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
         }
         const Picture *ltrp =
           xGetLongTermRefPic(rcListPic, ltrpPoc, pRPL1->getDeltaPocMSBPresentFlag(i), m_pcPic->layerId);
-        CHECK(ltrp == nullptr, "Long-term pic not found");
-        CHECK(ltrp->getPOC() < pocCRA, "Invalid state");
+        if (ltrp == nullptr || ltrp->getPOC() < pocCRA)
+        {
+          CHECK(!getSPS()->getFieldSeqFlag() || flags.seenTrailingFieldPic || flags.seenLeadingFieldPic || i < getNumRefIdx(REF_PIC_LIST_1), "Invalid state");
+          flags.trailingFieldHadRefIssue = true;
+          return;
+        }
       }
     }
+
+    if (getSPS()->getFieldSeqFlag())
+    {
+      flags.seenTrailingFieldPic = true;
+    }
+  }
+  else if (getSPS()->getFieldSeqFlag() && getPOC() < pocCRA)
+  {
+    flags.seenLeadingFieldPic = true;
+    flags.trailingFieldHadRefIssue = false;
   }
 }
 

@@ -604,6 +604,25 @@ public:
 };
 
 
+struct CheckCRAFlags
+{
+  CheckCRAFlags()
+  {
+    clear();
+  }
+
+  void clear()
+  {
+    seenTrailingFieldPic = false;
+    seenLeadingFieldPic = false;
+    trailingFieldHadRefIssue = false;
+  }
+
+  bool seenTrailingFieldPic;     ///< whether or not have seen trailing field picture after CRA
+  bool seenLeadingFieldPic;      ///< whether or not have seen leading field picture after CRA
+  bool trailingFieldHadRefIssue; ///< whether or not first trailing field picture had forbidden references pictures
+};
+
 
 class SliceReshapeInfo
 {
@@ -2910,7 +2929,7 @@ public:
   // CLVSS PU is either an IRAP PU with NoOutputBeforeRecoveryFlag equal to 1 or a GDR PU with NoOutputBeforeRecoveryFlag equal to 1.
   bool                        isClvssPu() const                                      { return m_eNalUnitType >= NAL_UNIT_CODED_SLICE_IDR_W_RADL && m_eNalUnitType <= NAL_UNIT_CODED_SLICE_GDR && !m_pcPPS->getMixedNaluTypesInPicFlag() && m_pcPicHeader->getNoOutputBeforeRecoveryFlag(); }
   bool                        isIDRorBLA() const { return (getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_W_RADL) || (getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP); }
-  void                        checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int pocCRA, PicList& rcListPic);
+  void                        checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int pocCRA, CheckCRAFlags &flags, PicList& rcListPic);
   void                        checkSTSA(PicList& rcListPic);
   void                        checkRPL(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int associatedIRAPDecodingOrderNumber, PicList& rcListPic);
   void                        decodingRefreshMarking(int& pocCRA, bool& bRefreshPending, PicList& rcListPic, const bool bEfficientFieldIRAPEnabled);

@@ -3122,7 +3122,7 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     pcSlice->getPic()->sliceSubpicIdx.clear();
   }
   pcSlice->getPic()->sliceSubpicIdx.push_back(pps->getSubPicIdxFromSubPicId(pcSlice->getSliceSubPicId()));
-  pcSlice->checkCRA(pcSlice->getRPL0(), pcSlice->getRPL1(), m_pocCRA[nalu.m_nuhLayerId], m_cListPic);
+  pcSlice->checkCRA(pcSlice->getRPL0(), pcSlice->getRPL1(), m_pocCRA[nalu.m_nuhLayerId], m_checkCRAFlags[nalu.m_nuhLayerId], m_cListPic);
   pcSlice->constructRefPicList(m_cListPic);
   pcSlice->setPrevGDRSubpicPOC(m_prevGDRSubpicPOC[nalu.m_nuhLayerId][currSubPicIdx]);
   pcSlice->setPrevIRAPSubpicPOC(m_prevIRAPSubpicPOC[nalu.m_nuhLayerId][currSubPicIdx]);
@@ -3471,6 +3471,7 @@ void DecLib::updateAssociatedIRAP()
   {
     m_associatedIRAPDecodingOrderNumber[m_pcPic->layerId] = m_pcPic->getDecodingOrderNumber();
     m_pocCRA[m_pcPic->layerId] = m_pcPic->getPOC();
+    m_checkCRAFlags[m_pcPic->layerId].clear();
     m_associatedIRAPType[m_pcPic->layerId] = pictureType;
   }
 }
@@ -3703,6 +3704,7 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
   case NAL_UNIT_EOS:
     m_associatedIRAPType[nalu.m_nuhLayerId]            = NAL_UNIT_INVALID;
     m_pocCRA[nalu.m_nuhLayerId]                        = -MAX_INT;
+    m_checkCRAFlags[nalu.m_nuhLayerId].clear();
     m_prevGDRInSameLayerPOC[nalu.m_nuhLayerId]         = -MAX_INT;
     m_prevGDRInSameLayerRecoveryPOC[nalu.m_nuhLayerId] = -MAX_INT;
     std::fill_n(m_prevGDRSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
