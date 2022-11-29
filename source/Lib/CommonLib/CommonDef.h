@@ -372,12 +372,15 @@ static constexpr int MAX_ENCODER_DEBLOCKING_QUALITY_LAYERS =           8 ;
 static constexpr uint32_t LUMA_LEVEL_TO_DQP_LUT_MAXSIZE =                1024; ///< max LUT size for QP offset based on luma
 
 #endif
-static constexpr int DMVR_SUBCU_WIDTH = 16;
-static constexpr int DMVR_SUBCU_HEIGHT = 16;
-static constexpr int DMVR_SUBCU_WIDTH_LOG2 = 4;
+static constexpr int DMVR_SUBCU_WIDTH_LOG2  = 4;
 static constexpr int DMVR_SUBCU_HEIGHT_LOG2 = 4;
-static constexpr int MAX_NUM_SUBCU_DMVR = ((MAX_CU_SIZE * MAX_CU_SIZE) >> (DMVR_SUBCU_WIDTH_LOG2 + DMVR_SUBCU_HEIGHT_LOG2));
-static constexpr int DMVR_NUM_ITERATION = 2;
+static constexpr int DMVR_SUBCU_WIDTH       = 1 << DMVR_SUBCU_WIDTH_LOG2;
+static constexpr int DMVR_SUBCU_HEIGHT      = 1 << DMVR_SUBCU_HEIGHT_LOG2;
+static constexpr int MAX_NUM_SUBCU_DMVR = MAX_CU_SIZE * MAX_CU_SIZE >> (DMVR_SUBCU_WIDTH_LOG2 + DMVR_SUBCU_HEIGHT_LOG2);
+
+static constexpr int DMVR_RANGE = 2;
+static constexpr int DMVR_SPAN  = 2 * DMVR_RANGE + 1;
+static constexpr int DMVR_AREA  = DMVR_SPAN * DMVR_SPAN;
 
 //QTBT high level parameters
 //for I slice luma CTB configuration para.

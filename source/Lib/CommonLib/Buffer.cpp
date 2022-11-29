@@ -360,7 +360,7 @@ PelBufferOps::PelBufferOps()
 
 PelBufferOps g_pelBufOP = PelBufferOps();
 
-void copyBufferCore(Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height)
+void copyBufferCore(const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height)
 {
   int numBytes = width * sizeof(Pel);
   for (int i = 0; i < height; i++)

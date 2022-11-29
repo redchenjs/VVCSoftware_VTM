@@ -90,21 +90,15 @@ protected:
   static constexpr int MVBUFFER_SIZE = MAX_CU_SIZE / MIN_PU_SIZE;
 
   Mv*                  m_storedMv;
- /*buffers for bilinear Filter data for DMVR refinement*/
-  Pel*                 m_cYuvPredTempDMVRL0;
-  Pel*                 m_cYuvPredTempDMVRL1;
-  int                  m_biLinearBufStride;
-  /*buffers for padded data*/
-  PelUnitBuf           m_cYuvRefBuffDMVRL0;
-  PelUnitBuf           m_cYuvRefBuffDMVRL1;
-  Pel*                 m_cRefSamplesDMVRL0[MAX_NUM_COMPONENT];
-  Pel*                 m_cRefSamplesDMVRL1[MAX_NUM_COMPONENT];
-  Mv m_pSearchOffset[25] = { Mv(-2,-2), Mv(-1,-2), Mv(0,-2), Mv(1,-2), Mv(2,-2),
-                             Mv(-2,-1), Mv(-1,-1), Mv(0,-1), Mv(1,-1), Mv(2,-1),
-                             Mv(-2, 0), Mv(-1, 0), Mv(0, 0), Mv(1, 0), Mv(2, 0),
-                             Mv(-2, 1), Mv(-1, 1), Mv(0, 1), Mv(1, 1), Mv(2, 1),
-                             Mv(-2, 2), Mv(-1, 2), Mv(0, 2), Mv(1, 2), Mv(2, 2) };
-  uint64_t m_SADsArray[((2 * DMVR_NUM_ITERATION) + 1) * ((2 * DMVR_NUM_ITERATION) + 1)];
+  // buffers for initial prediction that is used to calculate DMVR refinement
+  Pel   *m_yuvPredTempDmvr[NUM_REF_PIC_LIST_01];
+  PelBuf m_dmvrInitialPred[NUM_REF_PIC_LIST_01];
+
+  // buffers for padded data, initially filled by xDmvrPrefetch(), padded by xDmvrPad()
+  Pel       *m_refSamplesDmvr[NUM_REF_PIC_LIST_01][MAX_NUM_COMPONENT];
+  PelUnitBuf m_yuvRefBufDmvr[NUM_REF_PIC_LIST_01];
+
+  static const std::array<Mv, DMVR_AREA> m_dmvrSearchOffsets;
 
   static constexpr int AFFINE_SUBBLOCK_WIDTH_EXT  = AFFINE_SUBBLOCK_SIZE + 2 * PROF_BORDER_EXT_W;
   static constexpr int AFFINE_SUBBLOCK_HEIGHT_EXT = AFFINE_SUBBLOCK_SIZE + 2 * PROF_BORDER_EXT_H;
@@ -133,12 +127,11 @@ protected:
 
   void xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic, const Mv &_mv,
                      PelUnitBuf &dstPic, bool bi, const ClpRng &clpRng, bool bioApplied, bool isIBC,
-                     const std::pair<int, int> scalingRatio, SizeType dmvrWidth, SizeType dmvrHeight, bool bilinearMC,
-                     Pel *srcPadBuf, int32_t srcPadStride);
+                     const std::pair<int, int> scalingRatio, bool bilinearMC, Pel *srcPadBuf, int32_t srcPadStride);
   void xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic, const Mv &_mv,
                      PelUnitBuf &dstPic, bool bi, const ClpRng &clpRng, bool bioApplied, bool isIBC)
   {
-    xPredInterBlk(compID, pu, refPic, _mv, dstPic, bi, clpRng, bioApplied, isIBC, SCALE_1X, 0, 0, false, nullptr, 0);
+    xPredInterBlk(compID, pu, refPic, _mv, dstPic, bi, clpRng, bioApplied, isIBC, SCALE_1X, false, nullptr, 0);
   }
 
   void xAddBIOAvg4              (const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel*gradY1, int gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset, const ClpRng& clpRng);
@@ -191,15 +184,21 @@ public:
 
   void    motionCompensationGeo(CodingUnit &cu, MergeCtx &GeoMrgCtx);
   void    weightedGeoBlk(PredictionUnit &pu, const uint8_t splitDir, int32_t channel, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
-  void xPrefetch(PredictionUnit& pu, PelUnitBuf &pcPad, RefPicList refId, bool forLuma);
-  void xPad(PredictionUnit& pu, PelUnitBuf &pcPad, RefPicList refId);
-  void    xFinalPaddedMCForDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvSrc0, PelUnitBuf &pcYuvSrc1, PelUnitBuf &pcPad0,
-                                PelUnitBuf &pcPad1, const bool bioApplied, const Mv startMV[NUM_REF_PIC_LIST_01],
-                                bool blockMoved);
-  void xBIPMVRefine(int bd, Pel *pRefL0, Pel *pRefL1, uint64_t& minCost, int16_t *deltaMV, uint64_t *pSADsArray, int width, int height);
-  uint64_t xDMVRCost(int bitDepth, Pel* pRef, uint32_t refStride, const Pel* pOrg, uint32_t orgStride, int width, int height);
-  void xinitMC(PredictionUnit& pu, const ClpRngs &clpRngs);
-  void xProcessDMVR(PredictionUnit& pu, PelUnitBuf &pcYuvDst, const ClpRngs &clpRngs, const bool bioApplied );
+
+  // DMVR related definitions
+  using DmvrDist = int32_t;
+
+  static constexpr DmvrDist UNDEFINED_DMVR_DIST = -1;
+
+  void     xDmvrPrefetch(const PredictionUnit &pu, bool forLuma);
+  void     xDmvrPad(const PredictionUnit &pu);
+  void     xDmvrFinalMc(const PredictionUnit &pu, PelUnitBuf yuvSrc[NUM_REF_PIC_LIST_01], bool applyBdof,
+                        const Mv startMV[NUM_REF_PIC_LIST_01], bool blockMoved);
+  void     xDmvrIntegerRefine(int bd, DmvrDist &minCost, Mv &deltaMv, DmvrDist *sadPtr, int width, int height);
+  Mv       xDmvrSubpelRefine(const DmvrDist *sadPtr);
+  DmvrDist xDmvrCost(int bitDepth, const Mv &mvd, int width, int height);
+  void     xDmvrInitialMc(const PredictionUnit &pu, const ClpRngs &clpRngs);
+  void     xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, const ClpRngs &clpRngs, const bool applyBdof);
 
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
   void    cacheAssign( CacheModel *cache );

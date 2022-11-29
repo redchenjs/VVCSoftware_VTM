@@ -118,7 +118,7 @@ void addAvg_SSE( const int16_t* src0, int src0Stride, const int16_t* src1, int s
 }
 
 template<X86_VEXT vext>
-void copyBufferSimd(Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height)
+void copyBufferSimd(const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height)
 {
   if (width < 8)
   {
