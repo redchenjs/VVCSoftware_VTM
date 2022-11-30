@@ -3650,21 +3650,6 @@ unsigned CABACReader::exp_golomb_eqprob( unsigned count )
   return symbol;
 }
 
-unsigned CABACReader::code_unary_fixed( unsigned ctxId, unsigned unary_max, unsigned fixed )
-{
-  unsigned idx;
-  bool     unary = m_binDecoder.decodeBin(ctxId);
-  if( unary )
-  {
-    idx = unary_max_eqprob( unary_max );
-  }
-  else
-  {
-    idx = unary_max + 1 + m_binDecoder.decodeBinsEP(fixed);
-  }
-  return idx;
-}
-
 void CABACReader::mip_flag( CodingUnit& cu )
 {
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET( STATS__CABAC_BITS__OTHER );

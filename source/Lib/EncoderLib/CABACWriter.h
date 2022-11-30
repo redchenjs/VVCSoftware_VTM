@@ -178,7 +178,6 @@ private:
   void        unary_max_symbol          ( unsigned symbol, unsigned ctxId0, unsigned ctxIdN, unsigned maxSymbol );
   void        unary_max_eqprob          ( unsigned symbol,                                   unsigned maxSymbol );
   void        exp_golomb_eqprob         ( unsigned symbol, unsigned count );
-  void        code_unary_fixed          ( unsigned symbol, unsigned ctxId, unsigned unary_max, unsigned fixed );
 
   void  xWriteTruncBinCode(uint32_t uiSymbol, uint32_t uiMaxSymbol);
   void        codeScanRotationModeFlag   ( const CodingUnit& cu,     ComponentID compBegin);
