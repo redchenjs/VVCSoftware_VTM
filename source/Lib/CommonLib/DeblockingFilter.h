@@ -45,8 +45,6 @@
 //! \ingroup CommonLib
 //! \{
 
-#define DEBLOCK_SMALLEST_BLOCK  8
-
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
@@ -56,6 +54,7 @@ class DeblockingFilter
 {
   static constexpr int LOG_GRID_SIZE  = 2;
   static constexpr int GRID_SIZE      = 1 << LOG_GRID_SIZE;
+  static constexpr int GRID_SIZE_CHR  = 8;
   static constexpr int SUB_BLOCK_SIZE = 8;
 
   class EdgeStrengths
@@ -98,7 +97,10 @@ private:
   static_vector<EdgeStrengths, MAX_NUM_PARTS_IN_CTU> m_edgeStrengths[NUM_EDGE_DIR];
   LFCUParam m_stLFCUParam;                   ///< status structure
   int     m_ctuXLumaSamples, m_ctuYLumaSamples;                            // location of left-edge and top-edge of CTU
-  int     m_shiftHor, m_shiftVer;                                          // shift values to convert location from luma sample units to chroma sample units
+
+  // shift values to convert location from luma sample units to chroma sample units
+  int m_shiftHor;
+  int m_shiftVer;
 
   enum class FilterLen : uint8_t
   {
