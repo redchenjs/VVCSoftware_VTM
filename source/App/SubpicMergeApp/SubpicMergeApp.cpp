@@ -535,7 +535,7 @@ void SubpicMergeApp::generateMergedStreamSPSes(std::vector<SPS*> &spsList)
     sps.setMaxPicHeightInLumaSamples(m_picHeight);
 
     sps.setSubPicInfoPresentFlag(true);
-    sps.setNumSubPics((uint8_t)numSubPics);
+    sps.setNumSubPics((uint32_t)numSubPics);
     sps.setSubPicIdLen(computeSubPicIdLen(numSubPics + 1));
     sps.setSubPicIdMappingExplicitlySignalledFlag(true);
     sps.setSubPicIdMappingPresentFlag(true);
@@ -553,7 +553,7 @@ void SubpicMergeApp::generateMergedStreamSPSes(std::vector<SPS*> &spsList)
       sps.setSubPicHeight(subPicId, (uint32_t)(subpic.height / sps.getCTUSize()));
       sps.setSubPicTreatedAsPicFlag(subPicId, true);
       sps.setLoopFilterAcrossSubpicEnabledFlag(subPicId, false);
-      sps.setSubPicId(subPicId, (uint8_t)subPicId);
+      sps.setSubPicId(subPicId, (uint16_t)subPicId);
       subPicId++;
     }
   }
