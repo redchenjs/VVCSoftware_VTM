@@ -1154,7 +1154,7 @@ bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpac
  */
  // here orgWidth and orgHeight are for luma
 bool VideoIOYuv::write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf &pic,
-                       const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode, int confLeft,
+                       const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode, int confLeft,
                        int confRight, int confTop, int confBottom, ChromaFormat format, const bool clipToRec709,
                        const bool subtractConfWindowOffsets)
 {
@@ -1242,9 +1242,8 @@ bool VideoIOYuv::write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf 
     const uint32_t    csy         = ::getComponentScaleY(compID, format);
     const CPelBuf     area        = picO.get(compID);
     const int         planeOffset = (confLeft >> csx) + (confTop >> csy) * area.stride;
-    if( !writePlane( orgWidth, orgHeight, m_cHandle, area.bufAt( 0, 0 ) + planeOffset, is16bit, area.stride,
-                     width444, height444, compID, picO.chromaFormat, format, m_fileBitdepth[ch],
-                     bPackedYUVOutputMode ? 1 : 0))
+    if (!writePlane(orgWidth, orgHeight, m_cHandle, area.bufAt(0, 0) + planeOffset, is16bit, area.stride, width444,
+                    height444, compID, picO.chromaFormat, format, m_fileBitdepth[ch], packedYuvOutputMode ? 1 : 0))
     {
       retval = false;
     }
@@ -1254,7 +1253,7 @@ bool VideoIOYuv::write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf 
 }
 
 bool VideoIOYuv::write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBottom, const InputColourSpaceConversion ipCSC,
-                       const bool bPackedYUVOutputMode, int confLeft, int confRight, int confTop, int confBottom,
+                       const bool packedYuvOutputMode, int confLeft, int confRight, int confTop, int confBottom,
                        ChromaFormat format, const bool isTff, const bool clipToRec709)
 {
   PelStorage intermTop;
@@ -1351,13 +1350,9 @@ bool VideoIOYuv::write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBottom, 
     const uint32_t csy = ::getComponentScaleY(compID, dstChrFormat );
     const int planeOffset  = (confLeft>>csx) + ( confTop>>csy) * areaTop.stride; //offset is for entire frame - round up for top field and down for bottom field
 
-    if (!writeField (m_cHandle,
-                     (areaTop.   bufAt(0,0) + planeOffset),
-                     (areaBottom.bufAt(0,0) + planeOffset),
-                     is16bit,
-                     areaTop.stride,
-                     width444, height444, compID, dstChrFormat, format, m_fileBitdepth[ch], isTff,
-                     bPackedYUVOutputMode ? 1 : 0))
+    if (!writeField(m_cHandle, (areaTop.bufAt(0, 0) + planeOffset), (areaBottom.bufAt(0, 0) + planeOffset), is16bit,
+                    areaTop.stride, width444, height444, compID, dstChrFormat, format, m_fileBitdepth[ch], isTff,
+                    packedYuvOutputMode ? 1 : 0))
     {
       retval=false;
     }
@@ -1431,11 +1426,11 @@ void VideoIOYuv::ColourSpaceConvert(const CPelUnitBuf &src, PelUnitBuf &dest, co
 
 #if !JVET_AB0081
 bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
-                                      const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode,
+                                      const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
                                       int outputChoice, ChromaFormat format, const bool clipToRec709)
 #else
 bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
-                                      const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode,
+                                      const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
                                       int outputChoice, ChromaFormat format, const bool clipToRec709,
                                       int upscaleFilterForDisplay)
 #endif
@@ -1477,7 +1472,7 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
       Picture::rescalePicture( std::pair<int, int>( xScale, yScale ), pic, pps.getScalingWindow(), upscaledPic, afterScaleWindowFullResolution, chromaFormatIDC, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag() );
 #endif
       ret = write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), upscaledPic, ipCSC,
-                  bPackedYUVOutputMode, confFullResolution.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                  packedYuvOutputMode, confFullResolution.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
                   confFullResolution.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
                   confFullResolution.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
                   confFullResolution.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
@@ -1488,7 +1483,7 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
       const Window &conf = pps.getConformanceWindow();
 
       ret =
-        write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), pic, ipCSC, bPackedYUVOutputMode,
+        write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), pic, ipCSC, packedYuvOutputMode,
               conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
               conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
               conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
@@ -1499,7 +1494,7 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
   {
     const Window &conf = pps.getConformanceWindow();
 
-    ret = write(pic.get(COMPONENT_Y).width, pic.get(COMPONENT_Y).height, pic, ipCSC, bPackedYUVOutputMode,
+    ret = write(pic.get(COMPONENT_Y).width, pic.get(COMPONENT_Y).height, pic, ipCSC, packedYuvOutputMode,
                 conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
                 conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
                 conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
