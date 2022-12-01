@@ -3452,20 +3452,6 @@ void CABACWriter::codeCcAlfFilterControlIdc(uint8_t idcVal, CodingStructure &cs,
   DTRACE( g_trace_ctx, D_SYNTAX, "ccAlfFilterControlIdc() compID=%d pos=(%d,%d) ctxt=%d, filterCount=%d, idcVal=%d\n", compID, lumaPos.x, lumaPos.y, ctxt, filterCount, idcVal );
 }
 
-void CABACWriter::code_unary_fixed( unsigned symbol, unsigned ctxId, unsigned unary_max, unsigned fixed )
-{
-  bool unary = (symbol <= unary_max);
-  m_binEncoder.encodeBin(unary, ctxId);
-  if( unary )
-  {
-    unary_max_eqprob( symbol, unary_max );
-  }
-  else
-  {
-    m_binEncoder.encodeBinsEP(symbol - unary_max - 1, fixed);
-  }
-}
-
 void CABACWriter::mip_flag( const CodingUnit& cu )
 {
   if( !cu.Y().valid() )

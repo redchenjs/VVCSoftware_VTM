@@ -151,7 +151,6 @@ private:
   unsigned    unary_max_eqprob          (                                   unsigned maxSymbol );
   unsigned    exp_golomb_eqprob         ( unsigned count );
   unsigned    get_num_bits_read() { return m_binDecoder.getNumBitsRead(); }
-  unsigned    code_unary_fixed          ( unsigned ctxId, unsigned unary_max, unsigned fixed );
 
   void        xReadTruncBinCode(uint32_t& symbol, uint32_t maxSymbol);
   void        parseScanRotationModeFlag ( CodingUnit& cu,           ComponentID compBegin );
