@@ -54,8 +54,9 @@
 /// deblocking filter class
 class DeblockingFilter
 {
-  static constexpr int LOG_GRID_SIZE = 2;
-  static constexpr int GRID_SIZE     = 1 << LOG_GRID_SIZE;
+  static constexpr int LOG_GRID_SIZE  = 2;
+  static constexpr int GRID_SIZE      = 1 << LOG_GRID_SIZE;
+  static constexpr int SUB_BLOCK_SIZE = 8;
 
   class EdgeStrengths
   {
@@ -145,7 +146,9 @@ private:
   int deriveLADFShift(const Pel *src, const int stride, const DeblockEdgeDir edgeDir, const SPS *sps);
   void xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
                                                const TransformUnit &currTU, const int firstComponent);
-  void xSetMaxFilterLengthPQForCodingSubBlocks( const DeblockEdgeDir edgeDir, const CodingUnit& cu, const PredictionUnit& currPU, const bool& mvSubBlocks, const int& subBlockSize, const Area& areaPu );
+  void xSetMaxFilterLengthPQForCodingSubBlocks(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
+                                               const PredictionUnit &currPU, const bool &mvSubBlocks,
+                                               const Area &areaPu);
 
   static void xFilteringPandQ(Pel *src, int offset, FilterLenPair filterLen, int tc);
   static void xPelFilterLuma(Pel *src, const int offset, const int tc, const bool sw, const bool partPNoFilter,

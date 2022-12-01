@@ -351,7 +351,6 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
   }
 
   bool mvSubBlocks = false;
-  int subBlockSize = 8;
   for( auto &currPU : CU::traversePUs( cu ) )
   {
     const Area& areaPu = cu.Y().valid() ? currPU.block( COMPONENT_Y ) : area;
@@ -375,7 +374,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
       mvSubBlocks = true;
       if (edgeDir == EDGE_HOR)
       {
-        for (uint32_t off = subBlockSize; off < areaPu.height; off += subBlockSize)
+        for (uint32_t off = SUB_BLOCK_SIZE; off < areaPu.height; off += SUB_BLOCK_SIZE)
         {
           const Area mvBlockH(cu.Y().x, cu.Y().y + off, cu.Y().width, pcv.minCUHeight);
           horEdgeFilter = m_stLFCUParam.internalEdge;
@@ -390,7 +389,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
       }
       else
       {
-        for (uint32_t off = subBlockSize; off < areaPu.width; off += subBlockSize)
+        for (uint32_t off = SUB_BLOCK_SIZE; off < areaPu.width; off += SUB_BLOCK_SIZE)
         {
           const Area mvBlockV(cu.Y().x + off, cu.Y().y, pcv.minCUWidth, cu.Y().height);
           verEdgeFilter = m_stLFCUParam.internalEdge;
@@ -405,7 +404,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
       }
     }
 
-    xSetMaxFilterLengthPQForCodingSubBlocks( edgeDir, cu, currPU, mvSubBlocks, subBlockSize, areaPu );
+    xSetMaxFilterLengthPQForCodingSubBlocks(edgeDir, cu, currPU, mvSubBlocks, areaPu);
   }
 
   const unsigned pelsInPart = pcv.minCUWidth;
@@ -631,7 +630,9 @@ void DeblockingFilter::xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdge
   }
 }
 
-void DeblockingFilter::xSetMaxFilterLengthPQForCodingSubBlocks( const DeblockEdgeDir edgeDir, const CodingUnit& cu, const PredictionUnit& currPU, const bool& mvSubBlocks, const int& subBlockSize, const Area& areaPu )
+void DeblockingFilter::xSetMaxFilterLengthPQForCodingSubBlocks(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
+                                                               const PredictionUnit &currPU, const bool &mvSubBlocks,
+                                                               const Area &areaPu)
 {
   if ( mvSubBlocks && currPU.Y().valid() )
   {
@@ -644,7 +645,7 @@ void DeblockingFilter::xSetMaxFilterLengthPQForCodingSubBlocks( const DeblockEdg
 
     if ( edgeDir == EDGE_HOR )
     {
-      for ( int y = 0; y < areaPu.height; y += subBlockSize )
+      for (int y = 0; y < areaPu.height; y += SUB_BLOCK_SIZE)
       {
         for ( int x = 0; x < areaPu.width; x += minCUWidth )
         {
@@ -686,7 +687,7 @@ void DeblockingFilter::xSetMaxFilterLengthPQForCodingSubBlocks( const DeblockEdg
     }
     else // edgeDir == EDGE_VER
     {
-      for ( int x = 0; x < areaPu.width; x += subBlockSize )
+      for (int x = 0; x < areaPu.width; x += SUB_BLOCK_SIZE)
       {
         for ( int y = 0; y < areaPu.height; y += minCUHeight )
         {
