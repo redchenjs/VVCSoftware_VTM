@@ -1586,8 +1586,8 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setUseWP( m_useWeightedPred );
   sps.setUseWPBiPred( m_useWeightedBiPred );
 
-  sps.setSAOEnabledFlag( m_bUseSAO );
-  sps.setJointCbCrEnabledFlag( m_JointCbCrMode );
+  sps.setSAOEnabledFlag(m_useSao);
+  sps.setJointCbCrEnabledFlag(m_jointCbCrMode);
   sps.setMaxTLayers( m_maxTempLayer );
   sps.setTemporalIdNestingFlag( ( m_maxTempLayer == 1 ) ? true : false );
 
@@ -1788,38 +1788,38 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
   {
     pps.setSubPicId(picIdx, sps.getSubPicId(picIdx));
   }
-  bool bUseDQP = (getCuQpDeltaSubdiv() > 0)? true : false;
+  bool useDeltaQp = getCuQpDeltaSubdiv() > 0;
 
   if((getMaxDeltaQP() != 0 )|| getUseAdaptiveQP())
   {
-    bUseDQP = true;
+    useDeltaQp = true;
   }
 
 #if SHARP_LUMA_DELTA_QP
   if ( getLumaLevelToDeltaQPMapping().isEnabled() )
   {
-    bUseDQP = true;
+    useDeltaQp = true;
   }
 #endif
   if (getSmoothQPReductionEnable())
   {
-    bUseDQP = true;
+    useDeltaQp = true;
   }
 #if ENABLE_QPA
-  if (getUsePerceptQPA() && !bUseDQP)
+  if (getUsePerceptQPA() && !useDeltaQp)
   {
     CHECK( m_cuQpDeltaSubdiv != 0, "max. delta-QP subdiv must be zero!" );
-    bUseDQP = (getBaseQP() < 38) && (getSourceWidth() > 512 || getSourceHeight() > 320);
+    useDeltaQp = (getBaseQP() < 38) && (getSourceWidth() > 512 || getSourceHeight() > 320);
   }
 #endif
   if (m_bimEnabled)
   {
-    bUseDQP = true;
+    useDeltaQp = true;
   }
 
   if (m_costMode==COST_SEQUENCE_LEVEL_LOSSLESS || m_costMode==COST_LOSSLESS_CODING)
   {
-    bUseDQP=false;
+    useDeltaQp = false;
   }
 
 
@@ -1827,7 +1827,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
   {
     pps.setUseDQP(true);
   }
-  else if(bUseDQP)
+  else if (useDeltaQp)
   {
     pps.setUseDQP(true);
   }
@@ -1918,16 +1918,16 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
   }
 #endif
 #if W0038_CQP_ADJ
-  bool bChromaDeltaQPEnabled = false;
+  bool chromaDeltaQpEnabled = false;
   {
-    bChromaDeltaQPEnabled = ( m_sliceChromaQpOffsetIntraOrPeriodic[0] || m_sliceChromaQpOffsetIntraOrPeriodic[1] );
-    if( !bChromaDeltaQPEnabled )
+    chromaDeltaQpEnabled = (m_sliceChromaQpOffsetIntraOrPeriodic[0] || m_sliceChromaQpOffsetIntraOrPeriodic[1]);
+    if (!chromaDeltaQpEnabled)
     {
       for (int i = 0; i < m_gopSize; i++)
       {
         if( m_GOPList[i].m_CbQPoffset || m_GOPList[i].m_CrQPoffset )
         {
-          bChromaDeltaQPEnabled = true;
+          chromaDeltaQpEnabled = true;
           break;
         }
       }
@@ -1936,10 +1936,10 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
  #if ENABLE_QPA
   if ((getUsePerceptQPA() || getSliceChromaOffsetQpPeriodicity() > 0) && (getChromaFormatIdc() != CHROMA_400))
   {
-    bChromaDeltaQPEnabled = true;
+    chromaDeltaQpEnabled = true;
   }
  #endif
-  pps.setSliceChromaQpFlag(bChromaDeltaQPEnabled);
+  pps.setSliceChromaQpFlag(chromaDeltaQpEnabled);
 #endif
   if (!pps.getSliceChromaQpFlag() && sps.getUseDualITree() && (getChromaFormatIdc() != CHROMA_400))
   {
@@ -2138,34 +2138,34 @@ void EncLib::xInitPicHeader(PicHeader &picHeader, const SPS &sps, const PPS &pps
   picHeader.setMaxBTSizes( sps.getMaxBTSizes() );
   picHeader.setMaxTTSizes( sps.getMaxTTSizes() );
 
-  bool bUseDQP = (getCuQpDeltaSubdiv() > 0)? true : false;
+  bool useDeltaQp = getCuQpDeltaSubdiv() > 0;
 
   if( (getMaxDeltaQP() != 0 )|| getUseAdaptiveQP() )
   {
-    bUseDQP = true;
+    useDeltaQp = true;
   }
 
 #if SHARP_LUMA_DELTA_QP
   if( getLumaLevelToDeltaQPMapping().isEnabled() )
   {
-    bUseDQP = true;
+    useDeltaQp = true;
   }
 #endif
   if (getSmoothQPReductionEnable())
   {
-    bUseDQP = true;
+    useDeltaQp = true;
   }
 #if ENABLE_QPA
-  if( getUsePerceptQPA() && !bUseDQP )
+  if (getUsePerceptQPA() && !useDeltaQp)
   {
     CHECK( m_cuQpDeltaSubdiv != 0, "max. delta-QP subdiv must be zero!" );
-    bUseDQP = (getBaseQP() < 38) && (getSourceWidth() > 512 || getSourceHeight() > 320);
+    useDeltaQp = (getBaseQP() < 38) && (getSourceWidth() > 512 || getSourceHeight() > 320);
   }
 #endif
 
   if( m_costMode==COST_SEQUENCE_LEVEL_LOSSLESS || m_costMode==COST_LOSSLESS_CODING )
   {
-    bUseDQP=false;
+    useDeltaQp = false;
   }
 
   if( m_RCEnableRateControl )
@@ -2173,7 +2173,7 @@ void EncLib::xInitPicHeader(PicHeader &picHeader, const SPS &sps, const PPS &pps
     picHeader.setCuQpDeltaSubdivIntra( 0 );
     picHeader.setCuQpDeltaSubdivInter( 0 );
   }
-  else if( bUseDQP )
+  else if (useDeltaQp)
   {
     picHeader.setCuQpDeltaSubdivIntra( m_cuQpDeltaSubdiv );
     picHeader.setCuQpDeltaSubdivInter( m_cuQpDeltaSubdiv );
@@ -2416,18 +2416,17 @@ void EncLib::xInitRPL(SPS &sps)
   sps.setAllActiveRplEntriesHasSameSignFlag(isAllEntriesinRPLHasSameSignFlag);
 }
 
-
-void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, int ltPoc)
+void EncLib::selectReferencePictureList(Slice *slice, int pocCurr, int gopId, int ltPoc)
 {
-  bool isEncodeLtRef = (POCCurr == ltPoc);
+  bool isEncodeLtRef = (pocCurr == ltPoc);
   if (m_compositeRefEnabled && isEncodeLtRef)
   {
-    POCCurr++;
+    pocCurr++;
   }
 
   const RPLList* rplLists[2];
   bool codeRplInSH = getRplOfDepLayerInSh();
-  int RPLIdx = GOPid;
+  int            RPLIdx      = gopId;
   if (codeRplInSH)
   {
     rplLists[0] = getRPLList(0);
@@ -2456,17 +2455,17 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
 
   if (m_isLowDelay)
   {
-    const int currPOCsinceLastIDR = POCCurr - slice->getLastIDR();
+    const int currPOCsinceLastIDR = pocCurr - slice->getLastIDR();
     if (currPOCsinceLastIDR < (2 * m_gopSize + 2))
     {
       int candidateIdx = (currPOCsinceLastIDR + m_gopSize - 1 >= fullListNum + partialListNum)
-                           ? GOPid
+                           ? gopId
                            : currPOCsinceLastIDR + m_gopSize - 1;
       RPLIdx = candidateIdx;
     }
     else
     {
-      RPLIdx = (POCCurr % m_gopSize == 0) ? m_gopSize - 1 : POCCurr % m_gopSize - 1;
+      RPLIdx = (pocCurr % m_gopSize == 0) ? m_gopSize - 1 : pocCurr % m_gopSize - 1;
     }
     extraNum = fullListNum + partialListNum;
   }
@@ -2474,12 +2473,12 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
   {
     if( rplPeriod > 0 )
     {
-      int POCIndex = POCCurr % rplPeriod;
-      if (POCIndex == 0)
+      int pocIndex = pocCurr % rplPeriod;
+      if (pocIndex == 0)
       {
-        POCIndex = rplPeriod;
+        pocIndex = rplPeriod;
       }
-      if (POCIndex == m_RPLList0[extraNum].m_POC)
+      if (pocIndex == m_RPLList0[extraNum].m_POC)
       {
         RPLIdx = extraNum;
         extraNum++;
@@ -2490,7 +2489,7 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
   if (slice->getPic()->fieldPic)
   {
     // To set RPL index of POC1 (first bottom field)
-    if (POCCurr == 1)
+    if (pocCurr == 1)
     {
       slice->setRPL0idx(getRPLCandidateSize(0));
       slice->setRPL1idx(getRPLCandidateSize(0));
@@ -2499,23 +2498,23 @@ void EncLib::selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, in
     {
       // To set RPL indexes for LD
       int numRPLCandidates = getRPLCandidateSize(0);
-      if (POCCurr < numRPLCandidates - m_gopSize + 2)
+      if (pocCurr < numRPLCandidates - m_gopSize + 2)
       {
-        RPLIdx = POCCurr + m_gopSize - 2;
+        RPLIdx = pocCurr + m_gopSize - 2;
       }
       else
       {
-        if (POCCurr % m_gopSize == 0)
+        if (pocCurr % m_gopSize == 0)
         {
           RPLIdx = m_gopSize - 2;
         }
-        else if (POCCurr % m_gopSize == 1)
+        else if (pocCurr % m_gopSize == 1)
         {
           RPLIdx = m_gopSize - 1;
         }
         else
         {
-          RPLIdx = POCCurr % m_gopSize - 2;
+          RPLIdx = pocCurr % m_gopSize - 2;
         }
       }
     }
