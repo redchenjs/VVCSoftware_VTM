@@ -494,22 +494,6 @@ void SubpicMergeApp::generateMergedStreamVPSes(std::vector<VPS*> &vpsList)
   }
 }
 
-
-/**
-  - Return subpicture ID length in bits
-*/
-uint32_t SubpicMergeApp::computeSubPicIdLen(uint32_t numSubpics)
-{
-  uint32_t subPicIdLen = 1;
-
-  while ((1 << subPicIdLen) < numSubpics)
-  {
-    subPicIdLen++;
-  }
-
-  return subPicIdLen;
-}
-
 /**
   - Create merged stream SPSes with subpicture information
 */
@@ -536,7 +520,7 @@ void SubpicMergeApp::generateMergedStreamSPSes(std::vector<SPS*> &spsList)
 
     sps.setSubPicInfoPresentFlag(true);
     sps.setNumSubPics(numSubPics);
-    sps.setSubPicIdLen(computeSubPicIdLen(numSubPics + 1));
+    sps.setSubPicIdLen(ceilLog2(numSubPics-1));
     sps.setSubPicIdMappingExplicitlySignalledFlag(true);
     sps.setSubPicIdMappingPresentFlag(true);
 
