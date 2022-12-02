@@ -334,10 +334,12 @@ void IntraPrediction::xPredIntraPlanar( const CPelBuf &pSrc, PelBuf &pDst )
     leftColumn[k]  = leftColumn[k] << log2W;
   }
 
-  const uint32_t finalShift = 1 + log2W + log2H;
-  const uint32_t stride     = pDst.stride;
-  Pel*       pred       = pDst.buf;
-  for( int y = 0; y < height; y++, pred += stride )
+  const int finalShift = 1 + log2W + log2H;
+
+  Pel            *pred   = pDst.buf;
+  const ptrdiff_t stride = pDst.stride;
+
+  for (int y = 0; y < height; y++)
   {
     int horPred = leftColumn[y];
 
@@ -346,8 +348,9 @@ void IntraPrediction::xPredIntraPlanar( const CPelBuf &pSrc, PelBuf &pDst )
       horPred += rightColumn[y];
       topRow[x] += bottomRow[x];
 
-      int vertPred = topRow[x];
-      pred[x]      = ( ( horPred << log2H ) + ( vertPred << log2W ) + offset ) >> finalShift;
+      const int vertPred = topRow[x];
+
+      pred[y * stride + x] = ((horPred << log2H) + (vertPred << log2W) + offset) >> finalShift;
     }
   }
 }
@@ -418,7 +421,7 @@ void IntraPrediction::initPredIntraParams(const PredictionUnit & pu, const CompA
   {
     if (dirMode == PLANAR_IDX)   // Planar intra prediction
     {
-      m_ipaParam.refFilterFlag = puSize.width * puSize.height > 32 ? true : false;
+      m_ipaParam.refFilterFlag = puSize.width * puSize.height > 32;
     }
     else
     {
@@ -675,45 +678,33 @@ void IntraPrediction::xPredIntraBDPCM(const CPelBuf &pSrc, PelBuf &pDst, const B
   }
 }
 
-void IntraPrediction::geneWeightedPred(const ComponentID compId, PelBuf &pred, const PredictionUnit &pu, Pel *srcBuf)
+void IntraPrediction::geneWeightedPred(PelBuf &pred, const PredictionUnit &pu, const Pel *srcBuf)
 {
-  const int width = pred.width;
+  const int width  = pred.width;
+  const int height = pred.height;
   CHECK(width == 2, "Width of 2 is not supported");
-  const int height    = pred.height;
-  const int srcStride = width;
-  const int dstStride = pred.stride;
+
+  const ptrdiff_t srcStride = width;
+  const ptrdiff_t dstStride = pred.stride;
 
   Pel *dstBuf = pred.buf;
-  int wIntra, wMerge;
 
   const Position posBL = pu.Y().bottomLeft();
   const Position posTR = pu.Y().topRight();
+
   const PredictionUnit *neigh0 = pu.cs->getPURestricted(posBL.offset(-1, 0), pu, CHANNEL_TYPE_LUMA);
   const PredictionUnit *neigh1 = pu.cs->getPURestricted(posTR.offset(0, -1), pu, CHANNEL_TYPE_LUMA);
-  bool isNeigh0Intra = neigh0 && (CU::isIntra(*neigh0->cu));
-  bool isNeigh1Intra = neigh1 && (CU::isIntra(*neigh1->cu));
 
-  if (isNeigh0Intra && isNeigh1Intra)
-  {
-    wIntra = 3; wMerge = 1;
-  }
-  else
-  {
-    if (!isNeigh0Intra && !isNeigh1Intra)
-    {
-      wIntra = 1; wMerge = 3;
-    }
-    else
-    {
-      wIntra = 2; wMerge = 2;
-    }
-  }
+  const bool isNeigh0Intra = neigh0 != nullptr && (CU::isIntra(*neigh0->cu));
+  const bool isNeigh1Intra = neigh1 != nullptr && (CU::isIntra(*neigh1->cu));
+
+  const int wIntra = 1 + (isNeigh0Intra ? 1 : 0) + (isNeigh1Intra ? 1 : 0);
 
   for (int y = 0; y < height; y++)
   {
     for (int x = 0; x < width; x++)
     {
-      dstBuf[y*dstStride + x] = (wMerge * dstBuf[y*dstStride + x] + wIntra * srcBuf[y*srcStride + x] + 2) >> 2;
+      dstBuf[y * dstStride + x] += (wIntra * (srcBuf[y * srcStride + x] - dstBuf[y * dstStride + x]) + 2) >> 2;
     }
   }
 }

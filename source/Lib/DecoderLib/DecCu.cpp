@@ -645,11 +645,14 @@ void DecCu::xReconInter(CodingUnit &cu)
     {
       cu.cs->getPredBuf(*cu.firstPU).Y().rspSignal(m_pcReshape->getFwdLUT());
     }
-    m_pcIntraPred->geneWeightedPred(COMPONENT_Y, cu.cs->getPredBuf(*cu.firstPU).Y(), *cu.firstPU, m_pcIntraPred->getPredictorPtr2(COMPONENT_Y, 0));
+    m_pcIntraPred->geneWeightedPred(cu.cs->getPredBuf(*cu.firstPU).Y(), *cu.firstPU,
+                                    m_pcIntraPred->getPredictorPtr2(COMPONENT_Y, 0));
     if (isChromaEnabled(cu.chromaFormat) && cu.chromaSize().width > 2)
     {
-      m_pcIntraPred->geneWeightedPred(COMPONENT_Cb, cu.cs->getPredBuf(*cu.firstPU).Cb(), *cu.firstPU, m_pcIntraPred->getPredictorPtr2(COMPONENT_Cb, 0));
-      m_pcIntraPred->geneWeightedPred(COMPONENT_Cr, cu.cs->getPredBuf(*cu.firstPU).Cr(), *cu.firstPU, m_pcIntraPred->getPredictorPtr2(COMPONENT_Cr, 0));
+      m_pcIntraPred->geneWeightedPred(cu.cs->getPredBuf(*cu.firstPU).Cb(), *cu.firstPU,
+                                      m_pcIntraPred->getPredictorPtr2(COMPONENT_Cb, 0));
+      m_pcIntraPred->geneWeightedPred(cu.cs->getPredBuf(*cu.firstPU).Cr(), *cu.firstPU,
+                                      m_pcIntraPred->getPredictorPtr2(COMPONENT_Cr, 0));
     }
   }
 

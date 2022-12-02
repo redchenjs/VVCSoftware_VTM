@@ -169,7 +169,7 @@ public:
   void initIntraMip               (const PredictionUnit &pu, const CompArea &area);
   void predIntraMip               (const ComponentID compId, PelBuf &piPred, const PredictionUnit &pu);
 
-  void geneWeightedPred           (const ComponentID compId, PelBuf &pred, const PredictionUnit &pu, Pel *srcBuf);
+  void geneWeightedPred(PelBuf &pred, const PredictionUnit &pu, const Pel *srcBuf);
   Pel* getPredictorPtr2           (const ComponentID compID, uint32_t idx) { return m_yuvExt2[compID][idx]; }
   void switchBuffer               (const PredictionUnit &pu, ComponentID compID, PelBuf srcBuff, Pel *dst);
   void geneIntrainterPred         (const CodingUnit &cu);
