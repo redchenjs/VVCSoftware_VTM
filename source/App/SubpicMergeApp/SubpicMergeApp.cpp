@@ -498,9 +498,9 @@ void SubpicMergeApp::generateMergedStreamVPSes(std::vector<VPS*> &vpsList)
 /**
   - Return subpicture ID length in bits
 */
-int SubpicMergeApp::computeSubPicIdLen(int numSubpics)
+uint32_t SubpicMergeApp::computeSubPicIdLen(uint32_t numSubpics)
 {
-  int subPicIdLen = 1;
+  uint32_t subPicIdLen = 1;
 
   while ((1 << subPicIdLen) < numSubpics)
   {
@@ -515,7 +515,7 @@ int SubpicMergeApp::computeSubPicIdLen(int numSubpics)
 */
 void SubpicMergeApp::generateMergedStreamSPSes(std::vector<SPS*> &spsList)
 {
-  int numSubPics = (int)m_subpics->size();
+  uint32_t numSubPics = (uint32_t)m_subpics->size();
 
   for (auto &subpic : *m_subpics)
   {
@@ -535,7 +535,7 @@ void SubpicMergeApp::generateMergedStreamSPSes(std::vector<SPS*> &spsList)
     sps.setMaxPicHeightInLumaSamples(m_picHeight);
 
     sps.setSubPicInfoPresentFlag(true);
-    sps.setNumSubPics((uint8_t)numSubPics);
+    sps.setNumSubPics(numSubPics);
     sps.setSubPicIdLen(computeSubPicIdLen(numSubPics + 1));
     sps.setSubPicIdMappingExplicitlySignalledFlag(true);
     sps.setSubPicIdMappingPresentFlag(true);
@@ -553,7 +553,7 @@ void SubpicMergeApp::generateMergedStreamSPSes(std::vector<SPS*> &spsList)
       sps.setSubPicHeight(subPicId, (uint32_t)(subpic.height / sps.getCTUSize()));
       sps.setSubPicTreatedAsPicFlag(subPicId, true);
       sps.setLoopFilterAcrossSubpicEnabledFlag(subPicId, false);
-      sps.setSubPicId(subPicId, (uint8_t)subPicId);
+      sps.setSubPicId(subPicId, (uint16_t)subPicId);
       subPicId++;
     }
   }
