@@ -520,7 +520,7 @@ void SubpicMergeApp::generateMergedStreamSPSes(std::vector<SPS*> &spsList)
 
     sps.setSubPicInfoPresentFlag(true);
     sps.setNumSubPics(numSubPics);
-    sps.setSubPicIdLen(ceilLog2(numSubPics-1));
+    sps.setSubPicIdLen(ceilLog2(numSubPics));
     sps.setSubPicIdMappingExplicitlySignalledFlag(true);
     sps.setSubPicIdMappingPresentFlag(true);
 
