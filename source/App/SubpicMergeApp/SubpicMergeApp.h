@@ -100,7 +100,7 @@ private:
   void decodeNalu(Subpicture &subpic, InputNALUnit &nalu, SEI *&decodePictureHashSei);
   void parseSubpic(Subpicture &subpic, bool &morePictures);
   void generateMergedStreamVPSes(std::vector<VPS*> &vpsList);
-  int computeSubPicIdLen(int numSubpics);
+  uint32_t computeSubPicIdLen(uint32_t numSubpics);
   void generateMergedStreamSPSes(std::vector<SPS*> &spsList);
   void getTileDimensions(std::vector<int> &tileWidths, std::vector<int> &tileHeights);
   void generateMergedStreamPPSes(ParameterSetManager &psManager, std::vector<PPS*> &ppsList);
