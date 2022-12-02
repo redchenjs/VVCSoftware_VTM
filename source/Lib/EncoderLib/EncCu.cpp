@@ -5174,7 +5174,7 @@ void EncCu::xReuseCachedResult( CodingStructure *&tempCS, CodingStructure *&best
     }
     else
     {
-      xDeriveCUMV( cu );
+      xDeriveCuMvs(cu);
       xReconInter( cu );
     }
 

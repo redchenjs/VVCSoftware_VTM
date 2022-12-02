@@ -86,7 +86,7 @@ protected:
   void xIntraRecACTBlk(TransformUnit&   tu);
   void xDecodeInterTU     ( TransformUnit&   tu, const ComponentID compID );
 
-  void xDeriveCUMV        ( CodingUnit&      cu );
+  void               xDeriveCuMvs(CodingUnit &cu);
   void xReconPLT          ( CodingUnit&      cu,       ComponentID compBegin, uint32_t numComp );
   PelStorage        *m_tmpStorageLCU;
 private:

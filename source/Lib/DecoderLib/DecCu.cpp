@@ -118,7 +118,7 @@ void DecCu::decompressCtu( CodingStructure& cs, const UnitArea& ctuArea )
     {
       if(currCU.Y().valid())
       {
-        const int vSize = cs.slice->getSPS()->getMaxCUHeight() > 64 ? 64 : cs.slice->getSPS()->getMaxCUHeight();
+        const int vSize = std::min<int>(VPDU_SIZE, cs.slice->getSPS()->getMaxCUHeight());
         if((currCU.Y().x % vSize) == 0 && (currCU.Y().y % vSize) == 0)
         {
           for(int x = currCU.Y().x; x < currCU.Y().x + currCU.Y().width; x += vSize)
@@ -133,7 +133,7 @@ void DecCu::decompressCtu( CodingStructure& cs, const UnitArea& ctuArea )
       }
       if (!CU::isIntra(currCU) && !CU::isPLT(currCU) && currCU.Y().valid())
       {
-        xDeriveCUMV(currCU);
+        xDeriveCuMvs(currCU);
 #if K0149_BLOCK_STATISTICS
         if(currCU.geoFlag)
         {
@@ -823,7 +823,7 @@ void DecCu::xDecodeInterTexture(CodingUnit &cu)
   }
 }
 
-void DecCu::xDeriveCUMV( CodingUnit &cu )
+void DecCu::xDeriveCuMvs(CodingUnit &cu)
 {
   for( auto &pu : CU::traversePUs( cu ) )
   {
@@ -840,7 +840,7 @@ void DecCu::xDeriveCUMV( CodingUnit &cu )
     {
       if (pu.mmvdMergeFlag || pu.cu->mmvdSkip)
       {
-        CHECK(pu.ciipFlag == true, "invalid Ciip");
+        CHECK(pu.ciipFlag, "invalid Ciip");
         if (pu.cs->sps->getSbTMVPEnabledFlag())
         {
           Size bufSize = g_miScaling.scale(pu.lumaSize());
