@@ -378,7 +378,7 @@ protected:
   bool      m_rgbFormat;
   bool      m_useColorTrans;
   unsigned  m_PLTMode;
-  bool      m_JointCbCrMode;
+  bool      m_jointCbCrMode;
   bool      m_useChromaTS;
   unsigned  m_IBCMode;
   unsigned  m_IBCLocalSearchRangeX;
@@ -441,7 +441,7 @@ protected:
 
 
   // coding tool (SAO)
-  bool      m_bUseSAO;
+  bool      m_useSao;
   bool      m_saoTrueOrg;
   bool      m_bTestSAODisableAtPictureLevel;
   double    m_saoEncodingRate;                                ///< When >0 SAO early picture termination is enabled for luma and chroma

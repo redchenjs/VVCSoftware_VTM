@@ -342,7 +342,8 @@ protected:
   void xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice);
   void xCreateFrameFieldInfoSEI (SEIMessages& seiMessages, Slice *slice, bool isField);
   void xCreatePhaseIndicationSEIMessages (SEIMessages& seiMessages, Slice* slice, int ppsId);
-  void xCreatePictureTimingSEI  (int IRAPGOPid, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, SEIMessages& duInfoSeiMessages, Slice *slice, bool isField, std::deque<DUData> &duData);
+  void xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SEIMessages &nestedSeiMessages,
+                               SEIMessages &duInfoSeiMessages, Slice *slice, bool isField, std::deque<DUData> &duData);
   void xUpdateDuData(AccessUnit &testAU, std::deque<DUData> &duData);
   void xUpdateTimingSEI(SEIPictureTiming *pictureTimingSEI, std::deque<DUData> &duData, const SPS *sps);
   void xUpdateDuInfoSEI(SEIMessages &duInfoSeiMessages, SEIPictureTiming *pictureTimingSEI, int maxSubLayers);

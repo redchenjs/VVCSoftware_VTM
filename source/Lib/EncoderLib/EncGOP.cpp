@@ -1001,8 +1001,9 @@ void EncGOP::xCreateFrameFieldInfoSEI  (SEIMessages& seiMessages, Slice *slice, 
   }
 }
 
-
-void EncGOP::xCreatePictureTimingSEI  (int IRAPGOPid, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, SEIMessages& duInfoSeiMessages, Slice *slice, bool isField, std::deque<DUData> &duData)
+void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SEIMessages &nestedSeiMessages,
+                                     SEIMessages &duInfoSeiMessages, Slice *slice, bool isField,
+                                     std::deque<DUData> &duData)
 {
   // Picture timing depends on buffering period. When either of those is not disabled,
   // initialization would fail. Needs more cleanup after DU timing is integrated.
@@ -1202,7 +1203,7 @@ void EncGOP::xCreatePictureTimingSEI  (int IRAPGOPid, SEIMessages& seiMessages, 
       }
     }
     pictureTimingSEI->m_picDpbOutputDelay = slice->getSPS()->getMaxNumReorderPics(slice->getSPS()->getMaxTLayers()-1) + slice->getPOC() - m_totalCoded[maxNumSubLayers-1];
-    if(m_pcCfg->getEfficientFieldIRAPEnabled() && IRAPGOPid > 0 && IRAPGOPid < m_iGopSize)
+    if (m_pcCfg->getEfficientFieldIRAPEnabled() && irapGopId > 0 && irapGopId < m_iGopSize)
     {
       // if pictures have been swapped there is likely one more picture delay on their tid. Very rough approximation
       pictureTimingSEI->m_picDpbOutputDelay ++;
@@ -1513,22 +1514,18 @@ cabac_zero_word_padding(const Slice *const pcSlice,
 class EfficientFieldIRAPMapping
 {
   private:
-    int  IRAPGOPid;
+    int  irapGopId;
     bool IRAPtoReorder;
     bool swapIRAPForward;
 
   public:
-    EfficientFieldIRAPMapping() :
-      IRAPGOPid(-1),
-      IRAPtoReorder(false),
-      swapIRAPForward(false)
-    { }
+    EfficientFieldIRAPMapping() : irapGopId(-1), IRAPtoReorder(false), swapIRAPForward(false) {}
 
     void initialize(const bool isField, const int gopSize, const int POCLast, const int numPicRcvd, const int lastIDR, EncGOP *pEncGop, EncCfg *pCfg);
 
     int adjustGOPid(const int gopID);
     int restoreGOPid(const int gopID);
-    int GetIRAPGOPid() const { return IRAPGOPid; }
+    int GetIRAPGOPid() const { return irapGopId; }
 };
 
 void EfficientFieldIRAPMapping::initialize(const bool isField, const int gopSize, const int POCLast, const int numPicRcvd, const int lastIDR, EncGOP *pEncGop, EncCfg *pCfg )
@@ -1559,7 +1556,7 @@ void EfficientFieldIRAPMapping::initialize(const bool isField, const int gopSize
         if (pocCurr % 2 == 0 && gopId < gopSize - 1
             && pCfg->getGOPEntry(gopId).m_POC == pCfg->getGOPEntry(gopId + 1).m_POC - 1)
         { // if top field and following picture in enc order is associated bottom field
-          IRAPGOPid       = gopId;
+          irapGopId       = gopId;
           IRAPtoReorder = true;
           swapIRAPForward = true;
           break;
@@ -1567,7 +1564,7 @@ void EfficientFieldIRAPMapping::initialize(const bool isField, const int gopSize
         if (pocCurr % 2 != 0 && gopId > 0 && pCfg->getGOPEntry(gopId).m_POC == pCfg->getGOPEntry(gopId - 1).m_POC + 1)
         {
           // if picture is an IRAP remember to process it first
-          IRAPGOPid       = gopId;
+          irapGopId       = gopId;
           IRAPtoReorder = true;
           swapIRAPForward = false;
           break;
@@ -1577,66 +1574,66 @@ void EfficientFieldIRAPMapping::initialize(const bool isField, const int gopSize
   }
 }
 
-int EfficientFieldIRAPMapping::adjustGOPid(const int GOPid)
+int EfficientFieldIRAPMapping::adjustGOPid(const int gopId)
 {
   if(IRAPtoReorder)
   {
     if(swapIRAPForward)
     {
-      if(GOPid == IRAPGOPid)
+      if (gopId == irapGopId)
       {
-        return IRAPGOPid +1;
+        return irapGopId + 1;
       }
-      else if(GOPid == IRAPGOPid +1)
+      else if (gopId == irapGopId + 1)
       {
-        return IRAPGOPid;
+        return irapGopId;
       }
     }
     else
     {
-      if(GOPid == IRAPGOPid -1)
+      if (gopId == irapGopId - 1)
       {
-        return IRAPGOPid;
+        return irapGopId;
       }
-      else if(GOPid == IRAPGOPid)
+      else if (gopId == irapGopId)
       {
-        return IRAPGOPid -1;
+        return irapGopId - 1;
       }
     }
   }
-  return GOPid;
+  return gopId;
 }
 
-int EfficientFieldIRAPMapping::restoreGOPid(const int GOPid)
+int EfficientFieldIRAPMapping::restoreGOPid(const int gopId)
 {
   if(IRAPtoReorder)
   {
     if(swapIRAPForward)
     {
-      if(GOPid == IRAPGOPid)
+      if (gopId == irapGopId)
       {
         IRAPtoReorder = false;
-        return IRAPGOPid +1;
+        return irapGopId + 1;
       }
-      else if(GOPid == IRAPGOPid +1)
+      else if (gopId == irapGopId + 1)
       {
-        return GOPid -1;
+        return gopId - 1;
       }
     }
     else
     {
-      if(GOPid == IRAPGOPid)
+      if (gopId == irapGopId)
       {
-        return IRAPGOPid -1;
+        return irapGopId - 1;
       }
-      else if(GOPid == IRAPGOPid -1)
+      else if (gopId == irapGopId - 1)
       {
         IRAPtoReorder = false;
-        return IRAPGOPid;
+        return irapGopId;
       }
     }
   }
-  return GOPid;
+  return gopId;
 }
 
 

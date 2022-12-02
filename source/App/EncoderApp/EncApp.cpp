@@ -361,7 +361,7 @@ void EncApp::xInitLibCfg( int layerIdx )
     CHECK(m_noPartitionConstraintsOverrideConstraintFlag && m_SplitConsOverrideEnabledFlag, "Partition override shall be deactivated when m_noPartitionConstraintsOverrideConstraintFlag is equal to 1");
 
     m_cEncLib.setNoSaoConstraintFlag(m_noSaoConstraintFlag);
-    CHECK(m_noSaoConstraintFlag && m_bUseSAO, "SAO shall be deactivated when m_bNoSaoConstraintFlag is equal to 1");
+    CHECK(m_noSaoConstraintFlag && m_useSao, "SAO shall be deactivated when m_bNoSaoConstraintFlag is equal to 1");
 
     m_cEncLib.setNoAlfConstraintFlag(m_noAlfConstraintFlag);
     CHECK(m_noAlfConstraintFlag && m_alf, "ALF shall be deactivated when m_bNoAlfConstraintFlag is equal to 1");
@@ -429,7 +429,8 @@ void EncApp::xInitLibCfg( int layerIdx )
     CHECK(m_noBDPCMConstraintFlag && m_useBDPCM, "BDPCM shall be deactivated when m_noBDPCMConstraintFlag is equal to 1");
 
     m_cEncLib.setNoJointCbCrConstraintFlag(m_noJointCbCrConstraintFlag);
-    CHECK(m_noJointCbCrConstraintFlag && m_JointCbCrMode, "JCCR shall be deactivated when m_noJointCbCrConstraintFlag is equal to 1");
+    CHECK(m_noJointCbCrConstraintFlag && m_jointCbCrMode,
+          "JCCR shall be deactivated when m_noJointCbCrConstraintFlag is equal to 1");
 
     m_cEncLib.setNoDepQuantConstraintFlag(m_noDepQuantConstraintFlag);
     CHECK(m_noDepQuantConstraintFlag && m_depQuantEnabledFlag, "DQ shall be deactivated when m_bNoDepQuantConstraintFlag is equal to 1");
@@ -767,7 +768,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setRGBFormatFlag(m_rgbFormat);
   m_cEncLib.setUseColorTrans(m_useColorTrans);
   m_cEncLib.setPLTMode                                           ( m_PLTMode );
-  m_cEncLib.setJointCbCr                                         ( m_JointCbCrMode );
+  m_cEncLib.setJointCbCr(m_jointCbCrMode);
   m_cEncLib.setIBCMode                                           ( m_IBCMode );
   m_cEncLib.setIBCLocalSearchRangeX                              ( m_IBCLocalSearchRangeX );
   m_cEncLib.setIBCLocalSearchRangeY                              ( m_IBCLocalSearchRangeY );
@@ -883,7 +884,7 @@ void EncApp::xInitLibCfg( int layerIdx )
 
   //====== Sub-picture and Slices ========
   m_cEncLib.setSingleSlicePerSubPicFlagFlag                      ( m_singleSlicePerSubPicFlag );
-  m_cEncLib.setUseSAO                                            ( m_bUseSAO );
+  m_cEncLib.setUseSAO(m_useSao);
   m_cEncLib.setSaoTrueOrg                                        ( m_saoTrueOrg );
   m_cEncLib.setTestSAODisableAtPictureLevel                      ( m_bTestSAODisableAtPictureLevel );
   m_cEncLib.setSaoEncodingRate                                   ( m_saoEncodingRate );

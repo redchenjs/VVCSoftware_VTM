@@ -372,7 +372,7 @@ protected:
   bool      m_rgbFormat;
   bool      m_useColorTrans;
   unsigned  m_PLTMode;
-  bool      m_JointCbCrMode;
+  bool      m_jointCbCrMode;
   unsigned  m_IBCMode;
   unsigned  m_IBCLocalSearchRangeX;
   unsigned  m_IBCLocalSearchRangeY;
@@ -424,7 +424,7 @@ protected:
   int       m_deblockingFilterCrBetaOffsetDiv2;
   int       m_deblockingFilterCrTcOffsetDiv2;
   int       m_deblockingFilterMetric;
-  bool      m_bUseSAO;
+  bool      m_useSao;
   bool      m_saoTrueOrg;
   bool      m_bTestSAODisableAtPictureLevel;
   double    m_saoEncodingRate;       // When non-0 SAO early picture termination is enabled for luma and chroma
@@ -1435,8 +1435,8 @@ public:
   bool      getUseColorTrans()                         const { return m_useColorTrans; }
   void      setPLTMode                   ( unsigned n)    { m_PLTMode = n; }
   unsigned  getPLTMode                   ()         const { return m_PLTMode; }
-  void      setJointCbCr                    ( bool b )       { m_JointCbCrMode = b; }
-  bool      getJointCbCr                    ()         const { return m_JointCbCrMode; }
+  void      setJointCbCr(bool b) { m_jointCbCrMode = b; }
+  bool      getJointCbCr() const { return m_jointCbCrMode; }
   void      setIBCMode                      (unsigned n)     { m_IBCMode = n; }
   unsigned  getIBCMode                      ()         const { return m_IBCMode; }
   void      setIBCLocalSearchRangeX         (unsigned n)     { m_IBCLocalSearchRangeX = n; }
@@ -1750,8 +1750,8 @@ public:
   void setUseChromaTS                                  (bool b) { m_useChromaTS = b; }
   bool getUseBDPCM                                     ()         { return m_useBDPCM; }
   void setUseBDPCM                                     ( bool b ) { m_useBDPCM  = b;   }
-  bool getUseJointCbCr                                 ()         { return m_JointCbCrMode; }
-  void setUseJointCbCr                                 (bool b)   { m_JointCbCrMode = b; }
+  bool     getUseJointCbCr() { return m_jointCbCrMode; }
+  void     setUseJointCbCr(bool b) { m_jointCbCrMode = b; }
   bool getRrcRiceExtensionEnableFlag()                 const { return m_rrcRiceExtensionEnableFlag; }
   void setRrcRiceExtensionEnableFlag(const bool value) { m_rrcRiceExtensionEnableFlag = value; }
   bool getPersistentRiceAdaptationEnabledFlag          ()                 const { return m_persistentRiceAdaptationEnabledFlag;  }
@@ -1795,8 +1795,8 @@ public:
   //====== Sub-picture and Slices ========
   void      setSingleSlicePerSubPicFlagFlag( bool b )                { m_singleSlicePerSubPicFlag = b;    }
   bool      getSingleSlicePerSubPicFlagFlag( )                       { return m_singleSlicePerSubPicFlag;    }
-  void      setUseSAO                  (bool bVal)                   { m_bUseSAO = bVal; }
-  bool      getUseSAO                  ()                            { return m_bUseSAO; }
+  void      setUseSAO(bool val) { m_useSao = val; }
+  bool      getUseSAO() { return m_useSao; }
   void      setSaoTrueOrg              (bool b)                      { m_saoTrueOrg = b; }
   bool      getSaoTrueOrg              () const                      { return m_saoTrueOrg; }
   void  setTestSAODisableAtPictureLevel (bool bVal)                  { m_bTestSAODisableAtPictureLevel = bVal; }

@@ -199,8 +199,8 @@ public:
   bool getGMFAFramewise() {return m_GMFAFramewise;}
   void setGMFAFile(std::string b){m_GMFAFile = b;}
 #endif
-  
-  void                    selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, int ltPoc);
+
+  void selectReferencePictureList(Slice *slice, int pocCurr, int gopId, int ltPoc);
 
   void                   setParamSetChanged(int spsId, int ppsId);
   bool                   APSNeedsWriting(int apsId);

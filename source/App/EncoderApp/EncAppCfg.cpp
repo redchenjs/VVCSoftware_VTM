@@ -1018,7 +1018,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("MmvdDisNum",                                      m_MmvdDisNum,                                     8,     "Number of MMVD Distance Entries")
   ("ColorTransform",                                  m_useColorTrans,                                  false, "Enable the color transform")
   ("PLT",                                             m_PLTMode,                                           0u, "PLTMode (0x1:enabled, 0x0:disabled)  [default: disabled]")
-  ("JointCbCr",                                       m_JointCbCrMode,                                  false, "Enable joint coding of chroma residuals (JointCbCr, 0:off, 1:on)")
+  ("JointCbCr",                                       m_jointCbCrMode,                                  false, "Enable joint coding of chroma residuals (JointCbCr, 0:off, 1:on)")
   ( "IBC",                                            m_IBCMode,                                           0u, "IBCMode (0x1:enabled, 0x0:disabled)  [default: disabled]")
   ( "IBCLocalSearchRangeX",                           m_IBCLocalSearchRangeX,                            128u, "Search range of IBC local search in x direction")
   ( "IBCLocalSearchRangeY",                           m_IBCLocalSearchRangeY,                            128u, "Search range of IBC local search in y direction")
@@ -1206,7 +1206,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ExtendedRiceRRC",                                 m_rrcRiceExtensionEnableFlag,                     false, "Enable the extention of the Golomb-Rice parameter derivation for RRC")
   ("GolombRiceParameterAdaptation",                   m_persistentRiceAdaptationEnabledFlag,            false, "Enable the adaptation of the Golomb-Rice parameter over the course of each slice")
   ("AlignCABACBeforeBypass",                          m_cabacBypassAlignmentEnabledFlag,                false, "Align the CABAC engine to a defined fraction of a bit prior to coding bypass data. Must be 1 in high bit rate profile, 0 otherwise")
-  ("SAO",                                             m_bUseSAO,                                         true, "Enable Sample Adaptive Offset")
+  ("SAO",                                             m_useSao,                                         true, "Enable Sample Adaptive Offset")
   ("SaoTrueOrg",                                      m_saoTrueOrg,                                     false, "Using true original samples for SAO optimization when MCTF is enabled\n")
   ("TestSAODisableAtPictureLevel",                    m_bTestSAODisableAtPictureLevel,                  false, "Enables the testing of disabling SAO at the picture level after having analysed all blocks")
   ("SaoEncodingRate",                                 m_saoEncodingRate,                                 0.75, "When >0 SAO early picture termination is enabled for luma and chroma")
@@ -3712,14 +3712,14 @@ bool EncAppCfg::xCheckParameter()
     msg( WARNING, "****************************************************************************\n");
     m_ccalf = false;
   }
-  if (m_JointCbCrMode && (m_chromaFormatIDC == CHROMA_400))
+  if (m_jointCbCrMode && (m_chromaFormatIDC == CHROMA_400))
   {
     msg( WARNING, "****************************************************************************\n");
     msg( WARNING, "** WARNING: --JointCbCr has been disabled because the chromaFormat is 400 **\n");
     msg( WARNING, "****************************************************************************\n");
-    m_JointCbCrMode = false;
+    m_jointCbCrMode = false;
   }
-  if (m_JointCbCrMode)
+  if (m_jointCbCrMode)
   {
     xConfirmPara( m_cbCrQpOffset < -12, "Min. Joint Cb-Cr QP Offset is -12");
     xConfirmPara( m_cbCrQpOffset >  12, "Max. Joint Cb-Cr QP Offset is  12");
@@ -5044,7 +5044,7 @@ void EncAppCfg::xPrintParameter()
   msg( VERBOSE, "Tiles: %dx%d ", m_numTileCols, m_numTileRows );
   msg( VERBOSE, "Slices: %d ", m_numSlicesInPic);
   msg( VERBOSE, "MCTS:%d ", m_MCTSEncConstraint );
-  msg( VERBOSE, "SAO:%d ", (m_bUseSAO)?(1):(0));
+  msg(VERBOSE, "SAO:%d ", (m_useSao) ? (1) : (0));
   msg( VERBOSE, "ALF:%d ", m_alf ? 1 : 0 );
   msg( VERBOSE, "CCALF:%d ", m_ccalf ? 1 : 0 );
   msg(VERBOSE, "MaxNumALFAPS %d ", m_maxNumAlfAps);
@@ -5115,7 +5115,7 @@ void EncAppCfg::xPrintParameter()
     msg(VERBOSE, "AffineAmvp:%d ", m_AffineAmvp);
     msg(VERBOSE, "DMVR:%d ", m_DMVR);
     msg(VERBOSE, "MmvdDisNum:%d ", m_MmvdDisNum);
-    msg(VERBOSE, "JointCbCr:%d ", m_JointCbCrMode);
+    msg(VERBOSE, "JointCbCr:%d ", m_jointCbCrMode);
   }
   m_useColorTrans = (m_chromaFormatIDC == CHROMA_444) ? m_useColorTrans : 0u;
   msg(VERBOSE, "ACT:%d ", m_useColorTrans);

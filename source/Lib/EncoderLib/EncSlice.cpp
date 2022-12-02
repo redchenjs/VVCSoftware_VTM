@@ -858,21 +858,21 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   }
 }
 
-double EncSlice::initializeLambda(const Slice* slice, const int GOPid, const int refQP, const double dQP)
+double EncSlice::initializeLambda(const Slice *slice, const int gopId, const int refQP, const double dQP)
 {
   const int   bitDepthLuma  = slice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA);
   const int   bitDepthShift = 6 * (bitDepthLuma - 8 - DISTORTION_PRECISION_ADJUSTMENT(bitDepthLuma)) - 12;
   const int   numberBFrames = m_pcCfg->getGOPSize() - 1;
   const SliceType sliceType = slice->getSliceType();
-  const int      temporalId = m_pcCfg->getGOPEntry(GOPid).m_temporalId;
+  const int                  temporalId           = m_pcCfg->getGOPEntry(gopId).m_temporalId;
   const std::vector<double> &intraLambdaModifiers = m_pcCfg->getIntraLambdaModifier();
   // case #1: I or P slices (key-frame)
-  double dQPFactor = m_pcCfg->getGOPEntry(GOPid).m_QPFactor;
+  double dQPFactor = m_pcCfg->getGOPEntry(gopId).m_QPFactor;
   double dLambda, lambdaModifier;
 
   if (sliceType == I_SLICE)
   {
-    if ((m_pcCfg->getIntraQpFactor() >= 0.0) && (m_pcCfg->getGOPEntry(GOPid).m_sliceType != I_SLICE))
+    if ((m_pcCfg->getIntraQpFactor() >= 0.0) && (m_pcCfg->getGOPEntry(gopId).m_sliceType != I_SLICE))
     {
       dQPFactor = m_pcCfg->getIntraQpFactor();
     }
@@ -920,12 +920,12 @@ double EncSlice::initializeLambda(const Slice* slice, const int GOPid, const int
 
 #if SHARP_LUMA_DELTA_QP || ENABLE_QPA_SUB_CTU
 double EncSlice::calculateLambda(const Slice *slice,
-                                 const int    GOPid,   // entry in the GOP table
+                                 const int    gopId,   // entry in the GOP table
                                  const double refQP,   // initial slice-level QP
                                  const double dQP,     // initial double-precision QP
                                  int &        qp)              // returned integer QP.
 {
-  double dLambda = initializeLambda (slice, GOPid, int (refQP + 0.5), dQP);
+  double dLambda = initializeLambda(slice, gopId, int(refQP + 0.5), dQP);
   qp             = Clip3(-slice->getSPS()->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, int(dQP + 0.5));
 
   if (slice->getDepQuantEnabledFlag())
