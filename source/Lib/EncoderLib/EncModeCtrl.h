@@ -765,7 +765,7 @@ struct SaveLoadStructSbt
   uint8_t  numPuInfoStored;
   uint32_t puSse[SBT_NUM_SL];
   uint8_t  puSbt[SBT_NUM_SL];
-  uint8_t  puTrs[SBT_NUM_SL];
+  MtsType  puTrs[SBT_NUM_SL];
 };
 
 class SaveLoadEncInfoSbt
@@ -782,8 +782,15 @@ private:
 public:
   virtual  ~SaveLoadEncInfoSbt() { }
   void     resetSaveloadSbt( int maxSbtSize );
-  uint16_t findBestSbt( const UnitArea& area, const uint32_t curPuSse );
-  bool     saveBestSbt( const UnitArea& area, const uint32_t curPuSse, const uint8_t curPuSbt, const uint8_t curPuTrs );
+
+  struct BestSbt
+  {
+    uint8_t sbt;
+    MtsType trs;
+  };
+
+  BestSbt findBestSbt(const UnitArea &area, const uint32_t curPuSse);
+  bool    saveBestSbt(const UnitArea &area, const uint32_t curPuSse, const uint8_t curPuSbt, const MtsType curPuTrs);
 };
 
 static constexpr int MAX_STORED_CU_INFO_REFS = 4;

@@ -2955,7 +2955,7 @@ void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID, CUCtx&
 
   ts_flag            ( tu, compID );
 
-  if( tu.mtsIdx[compID] == MTS_SKIP && !tu.cs->slice->getTSResidualCodingDisabledFlag() )
+  if (tu.mtsIdx[compID] == MtsType::SKIP && !tu.cs->slice->getTSResidualCodingDisabledFlag())
   {
     residual_codingTS( tu, compID );
     return;
@@ -2970,17 +2970,17 @@ void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID, CUCtx&
 
   // parse last coeff position
   cctx.setScanPosLast( last_sig_coeff( cctx, tu, compID ) );
-  if (tu.mtsIdx[compID] != MTS_SKIP && tu.blocks[compID].height >= 4 && tu.blocks[compID].width >= 4 )
+  if (tu.mtsIdx[compID] != MtsType::SKIP && tu.blocks[compID].height >= 4 && tu.blocks[compID].width >= 4)
   {
     const int maxLfnstPos = ((tu.blocks[compID].height == 4 && tu.blocks[compID].width == 4) || (tu.blocks[compID].height == 8 && tu.blocks[compID].width == 8)) ? 7 : 15;
     cuCtx.violatesLfnstConstrained[ toChannelType(compID) ] |= cctx.scanPosLast() > maxLfnstPos;
   }
-  if( tu.mtsIdx[compID] != MTS_SKIP && tu.blocks[compID].height >= 4 && tu.blocks[compID].width >= 4 )
+  if (tu.mtsIdx[compID] != MtsType::SKIP && tu.blocks[compID].height >= 4 && tu.blocks[compID].width >= 4)
   {
     const int lfnstLastScanPosTh = isLuma( compID ) ? LFNST_LAST_SIG_LUMA : LFNST_LAST_SIG_CHROMA;
     cuCtx.lfnstLastScanPos |= cctx.scanPosLast() >= lfnstLastScanPosTh;
   }
-  if (isLuma(compID) && tu.mtsIdx[compID] != MTS_SKIP)
+  if (isLuma(compID) && tu.mtsIdx[compID] != MtsType::SKIP)
   {
     cuCtx.mtsLastScanPos |= cctx.scanPosLast() >= 1;
   }
@@ -3025,27 +3025,28 @@ void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID, CUCtx&
 
 void CABACReader::ts_flag( TransformUnit& tu, ComponentID compID )
 {
-  int tsFlag = tu.cu->getBdpcmMode(compID) != BdpcmMode::NONE || tu.mtsIdx[compID] == MTS_SKIP ? 1 : 0;
+  int tsFlag = tu.cu->getBdpcmMode(compID) != BdpcmMode::NONE || tu.mtsIdx[compID] == MtsType::SKIP ? 1 : 0;
   int ctxIdx = isLuma(compID) ? 0 : 1;
 
   if( TU::isTSAllowed ( tu, compID ) )
   {
     RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET_SIZE2( STATS__CABAC_BITS__MTS_FLAGS, tu.blocks[compID], compID );
-    tsFlag = m_binDecoder.decodeBin(Ctx::TransformSkipFlag(ctxIdx));
+    tsFlag = m_binDecoder.decodeBin(Ctx::TransformSkipFlag(ctxIdx)) != 0;
   }
 
-  tu.mtsIdx[compID] = tsFlag ? MTS_SKIP : MTS_DCT2_DCT2;
+  tu.mtsIdx[compID] = tsFlag ? MtsType::SKIP : MtsType::DCT2_DCT2;
 
-  DTRACE(g_trace_ctx, D_SYNTAX, "ts_flag() etype=%d pos=(%d,%d) mtsIdx=%d\n", COMPONENT_Y, tu.cu->lx(), tu.cu->ly(), tsFlag);
+  DTRACE(g_trace_ctx, D_SYNTAX, "ts_flag() etype=%d pos=(%d,%d) mtsIdx=%d\n", COMPONENT_Y, tu.cu->lx(), tu.cu->ly(),
+         (int) tsFlag);
 }
 
 void CABACReader::mts_idx( CodingUnit& cu, CUCtx& cuCtx )
 {
   TransformUnit &tu = *cu.firstTU;
-  int        mtsIdx = tu.mtsIdx[COMPONENT_Y]; // Transform skip flag has already been decoded
+  MtsType        mtsIdx = tu.mtsIdx[COMPONENT_Y];   // Transform skip flag has already been decoded
 
-  if( CU::isMTSAllowed( cu, COMPONENT_Y ) && !cuCtx.violatesMtsCoeffConstraint &&
-      cuCtx.mtsLastScanPos && cu.lfnstIdx == 0 && mtsIdx != MTS_SKIP)
+  if (CU::isMTSAllowed(cu, COMPONENT_Y) && !cuCtx.violatesMtsCoeffConstraint && cuCtx.mtsLastScanPos && cu.lfnstIdx == 0
+      && mtsIdx != MtsType::SKIP)
   {
     RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET_SIZE2( STATS__CABAC_BITS__MTS_FLAGS, tu.blocks[COMPONENT_Y], COMPONENT_Y );
     int ctxIdx = 0;
@@ -3054,16 +3055,17 @@ void CABACReader::mts_idx( CodingUnit& cu, CUCtx& cuCtx )
     if( symbol )
     {
       ctxIdx = 1;
-      mtsIdx = MTS_DST7_DST7; // mtsIdx = 2 -- 4
+      mtsIdx = MtsType::DST7_DST7;   // mtsIdx = 2 -- 4
       for( int i = 0; i < 3; i++, ctxIdx++ )
       {
         symbol = m_binDecoder.decodeBin(Ctx::MTSIdx(ctxIdx));
-        mtsIdx += symbol;
 
         if( !symbol )
         {
           break;
         }
+
+        mtsIdx++;
       }
     }
   }
@@ -3120,7 +3122,8 @@ void CABACReader::residual_lfnst_mode( CodingUnit& cu,  CUCtx& cuCtx  )
       const uint32_t numValidComp = getNumberValidComponents(cu.chromaFormat);
       for (uint32_t compID = COMPONENT_Y; compID < numValidComp; compID++)
       {
-        if (currTU.blocks[compID].valid() && TU::getCbf(currTU, (ComponentID)compID) && currTU.mtsIdx[compID] == MTS_SKIP)
+        if (currTU.blocks[compID].valid() && TU::getCbf(currTU, (ComponentID) compID)
+            && currTU.mtsIdx[compID] == MtsType::SKIP)
         {
           isTrSkip = true;
           break;
@@ -3421,7 +3424,7 @@ void CABACReader::residual_codingTS( TransformUnit& tu, ComponentID compID )
   {
     cctx.initSubblock         ( subSetId );
     int goRiceParam = 1;
-    if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MTS_SKIP)
+    if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MtsType::SKIP)
     {
       goRiceParam = goRiceParam + tu.cu->slice->getTsrcIndex();
     }

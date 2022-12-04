@@ -748,7 +748,7 @@ void TransformUnit::initData()
   for( unsigned i = 0; i < MAX_NUM_TBLOCKS; i++ )
   {
     cbf[i]           = 0;
-    mtsIdx[i]        = MTS_DCT2_DCT2;
+    mtsIdx[i]        = MtsType::DCT2_DCT2;
   }
   depth              = 0;
   noResidual         = false;

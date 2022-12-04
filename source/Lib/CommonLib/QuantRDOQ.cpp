@@ -515,13 +515,13 @@ void QuantRDOQ::quant(TransformUnit &tu, const ComponentID &compID, const CCoeff
   const uint32_t uiHeight       = rect.height;
 
   const CCoeffBuf &piCoef   = pSrc;
-        CoeffBuf   piQCoef  = tu.getCoeffs(compID);
+  CoeffBuf         piQCoef  = tu.getCoeffs(compID);
 
-  const bool useTransformSkip      = (tu.mtsIdx[compID] == MTS_SKIP);
+  const bool useTransformSkip = (tu.mtsIdx[compID] == MtsType::SKIP);
 
   bool useRDOQ = useTransformSkip ? m_useRDOQTS : m_useRDOQ;
 
-  if( !tu.cu->ispMode || !isLuma(compID) )
+  if (!tu.cu->ispMode || !isLuma(compID))
   {
     useRDOQ &= uiWidth > 2;
     useRDOQ &= uiHeight > 2;
@@ -589,7 +589,7 @@ void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, 
   // Represents scaling through forward transform
   int iTransformShift = getTransformShift(channelBitDepth, rect.size(), maxLog2TrDynamicRange);
 
-  if (tu.mtsIdx[compID] == MTS_SKIP && extendedPrecision)
+  if (tu.mtsIdx[compID] == MtsType::SKIP && extendedPrecision)
   {
     iTransformShift = std::max<int>(0, iTransformShift);
   }
@@ -626,7 +626,7 @@ void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, 
 
 
   const bool needSqrtAdjustment= TU::needsBlockSizeTrafoScale( tu, compID );
-  const bool   isTransformSkip = (tu.mtsIdx[compID] == MTS_SKIP);
+  const bool isTransformSkip   = tu.mtsIdx[compID] == MtsType::SKIP;
   const double *const pdErrScale = xGetErrScaleCoeffSL(scalingListType, uiLog2BlockWidth, uiLog2BlockHeight, cQP.rem(isTransformSkip));
   const int    *const piQCoef    = getQuantCoeff(scalingListType, cQP.rem(isTransformSkip), uiLog2BlockWidth, uiLog2BlockHeight);
 
@@ -1238,7 +1238,7 @@ void QuantRDOQ::xRateDistOptQuantTS( TransformUnit &tu, const ComponentID &compI
   m_bdpcm = BdpcmMode::NONE;
 
   const bool   needsSqrt2Scale = TU::needsSqrt2Scale( tu, compID );  // should always be false - transform-skipped blocks don't require sqrt(2) compensation.
-  const bool   isTransformSkip = (tu.mtsIdx[compID] == MTS_SKIP);
+  const bool   isTransformSkip         = tu.mtsIdx[compID] == MtsType::SKIP;
   const int    qBits = QUANT_SHIFT + qp.per(isTransformSkip) + (isTransformSkip ? 0 : transformShift) + (needsSqrt2Scale ? -1 : 0);  // Right shift of non-RDOQ quantizer;  level = (coeff*uiQ + offset)>>q_bits
   const int    quantisationCoefficient = g_quantScales[needsSqrt2Scale?1:0][qp.rem(isTransformSkip)];
   const double errorScale              = xGetErrScaleCoeff( TU::needsSqrt2Scale(tu, compID), width, height, qp.rem(isTransformSkip), maxLog2TrDynamicRange, channelBitDepth, isTransformSkip);
@@ -1322,7 +1322,7 @@ void QuantRDOQ::xRateDistOptQuantTS( TransformUnit &tu, const ComponentID &compI
       const BinFracBits fracBitsPar = fracBits.getFracBitsArray( cctx.parityCtxIdAbsTS() );
 
       goRiceParam = cctx.templateAbsSumTS( scanPos, dstCoeff );
-      if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MTS_SKIP)
+      if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MtsType::SKIP)
       {
         goRiceParam = goRiceParam + tu.cu->slice->getTsrcIndex();
       }
@@ -1466,8 +1466,10 @@ void QuantRDOQ::forwardBDPCM(TransformUnit &tu, const ComponentID &compID, const
 
   m_bdpcm = dirMode;
 
-  const bool   needsSqrt2Scale = TU::needsSqrt2Scale(tu, compID);  // should always be false - transform-skipped blocks don't require sqrt(2) compensation.
-  const bool   isTransformSkip = (tu.mtsIdx[compID] == MTS_SKIP);
+  const bool needsSqrt2Scale = TU::needsSqrt2Scale(
+    tu, compID);   // should always be false - transform-skipped blocks don't require sqrt(2) compensation.
+  const bool isTransformSkip = tu.mtsIdx[compID] == MtsType::SKIP;
+
   const int    qBits = QUANT_SHIFT + qp.per(isTransformSkip) + (isTransformSkip? 0 : transformShift) + ( needsSqrt2Scale ? -1 : 0);  // Right shift of non-RDOQ quantizer;  level = (coeff*uiQ + offset)>>q_bits
   const int    quantisationCoefficient = g_quantScales[needsSqrt2Scale ? 1 : 0][qp.rem(isTransformSkip)];
   const double errorScale = xGetErrScaleCoeff(TU::needsSqrt2Scale(tu, compID), width, height, qp.rem(isTransformSkip), maxLog2TrDynamicRange, channelBitDepth, isTransformSkip);
@@ -1546,7 +1548,7 @@ void QuantRDOQ::forwardBDPCM(TransformUnit &tu, const ComponentID &compID, const
       const BinFracBits fracBitsPar = fracBits.getFracBitsArray(cctx.parityCtxIdAbsTS());
 
       goRiceParam = cctx.templateAbsSumTS(scanPos, dstCoeff);
-      if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MTS_SKIP)
+      if (tu.cu->slice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag() && tu.mtsIdx[compID] == MtsType::SKIP)
       {
         goRiceParam = goRiceParam + tu.cu->slice->getTsrcIndex();
       }

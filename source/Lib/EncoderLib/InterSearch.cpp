@@ -119,7 +119,7 @@ InterSearch::InterSearch()
   m_uniMvListSize = 0;
   m_uniMvListIdx = 0;
   m_histBestSbt    = MAX_UCHAR;
-  m_histBestMtsIdx = MAX_UCHAR;
+  m_histBestMtsIdx = MtsType::NONE;
 }
 
 
@@ -9681,7 +9681,9 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
   {
     TransformUnit &tu = csFull->addTU(CS::getArea(cs, currArea, partitioner.chType), partitioner.chType);
     tu.depth          = currDepth;
-    for (int i = 0; i<MAX_NUM_TBLOCKS; i++) tu.mtsIdx[i] = MTS_DCT2_DCT2;
+
+    tu.mtsIdx.fill(MtsType::DCT2_DCT2);
+
     tu.checkTuNoResidual( partitioner.currPartIdx() );
     Position tuPos = tu.Y();
     tuPos.relativeTo(cu.Y());
@@ -9756,13 +9758,13 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       }
       else
       {
-        trModes.push_back(TrMode(0, true));   // DCT2
+        trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));   // DCT2
         nNumTransformCands = 1;
       }
       //for a SBT-no-residual TU, the RDO process should be called once, in order to get the RD cost
       if( tsAllowed && !tu.noResidual )
       {
-        trModes.push_back( TrMode( 1, true ) );
+        trModes.push_back(TrMode(MtsType::SKIP, true));
         nNumTransformCands++;
       }
 
@@ -9773,11 +9775,11 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       if( mtsAllowed )
 #endif
       {
-        for( int i = 2; i < 6; i++ )
+        for (MtsType i = MtsType::DST7_DST7; i < MtsType::NUM; i++)
         {
 #if APPLY_SBT_SL_ON_MTS
           //skip the non-best Mts mode
-          if( !tu.cu->slice->getSPS()->getUseSBT() || ( m_histBestMtsIdx == MAX_UCHAR || m_histBestMtsIdx == i ) )
+          if (!tu.cu->slice->getSPS()->getUseSBT() || (m_histBestMtsIdx == MtsType::NONE || m_histBestMtsIdx == i))
 #endif
           {
             trModes.push_back(TrMode(i, true));
@@ -9818,7 +9820,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
 
         if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()))
         {
-          if (bestTU.mtsIdx[compID] == MTS_SKIP && m_pcEncCfg->getUseTransformSkipFast())
+          if (bestTU.mtsIdx[compID] == MtsType::SKIP && m_pcEncCfg->getUseTransformSkipFast())
           {
             continue;
           }
@@ -9865,7 +9867,8 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
             m_pcTrQuant->transformNxN(tu, compID, cQP, trModes, m_pcEncCfg->getMTSInterMaxCand());
             tu.mtsIdx[compID] = trModes[0].first;
           }
-          if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[compID] == 0))
+          if (!(m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()
+                && tu.mtsIdx[compID] == MtsType::DCT2_DCT2))
           {
             m_pcTrQuant->transformNxN(tu, compID, cQP, currAbsSum, m_CABACEstimator->getCtx(), true);
           }
@@ -9913,7 +9916,8 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
         {
           *puiZeroDist += nonCoeffDist;   // initialized with zero residual distortion
         }
-        if (m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless() && tu.mtsIdx[compID] == 0)
+        if (m_pcEncCfg->getCostMode() == COST_LOSSLESS_CODING && slice.isLossless()
+            && tu.mtsIdx[compID] == MtsType::DCT2_DCT2)
         {
           currAbsSum = 0;
         }
@@ -9941,7 +9945,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
           m_CABACEstimator->residual_coding(tu, compID, &cuCtx);
           m_CABACEstimator->mts_idx(cu, &cuCtx);
 
-          if (compID == COMPONENT_Y && tu.mtsIdx[compID] > MTS_SKIP && !cuCtx.mtsLastScanPos)
+          if (compID == COMPONENT_Y && tu.mtsIdx[compID] > MtsType::SKIP && !cuCtx.mtsLastScanPos)
           {
             currCompCost = MAX_DOUBLE;
           }
@@ -10043,14 +10047,21 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
     {
       const CompArea& cbArea = tu.blocks[COMPONENT_Cb];
       const CompArea& crArea = tu.blocks[COMPONENT_Cr];
-      bool checkJointCbCr = (sps.getJointCbCrEnabledFlag()) && (!tu.noResidual) && (TU::getCbf(tu, COMPONENT_Cb) || TU::getCbf(tu, COMPONENT_Cr));
-      bool checkDCTOnly = (TU::getCbf(tu, COMPONENT_Cb) && tu.mtsIdx[COMPONENT_Cb] == MTS_DCT2_DCT2 && !TU::getCbf(tu, COMPONENT_Cr)) ||
-                          (TU::getCbf(tu, COMPONENT_Cr) && tu.mtsIdx[COMPONENT_Cr] == MTS_DCT2_DCT2 && !TU::getCbf(tu, COMPONENT_Cb)) ||
-                          (TU::getCbf(tu, COMPONENT_Cb) && tu.mtsIdx[COMPONENT_Cb] == MTS_DCT2_DCT2 && TU::getCbf(tu, COMPONENT_Cr) && tu.mtsIdx[COMPONENT_Cr] == MTS_DCT2_DCT2);
 
-      bool checkTSOnly = (TU::getCbf(tu, COMPONENT_Cb) && tu.mtsIdx[COMPONENT_Cb] == MTS_SKIP && !TU::getCbf(tu, COMPONENT_Cr)) ||
-                         (TU::getCbf(tu, COMPONENT_Cr) && tu.mtsIdx[COMPONENT_Cr] == MTS_SKIP && !TU::getCbf(tu, COMPONENT_Cb)) ||
-                         (TU::getCbf(tu, COMPONENT_Cb) && tu.mtsIdx[COMPONENT_Cb] == MTS_SKIP && TU::getCbf(tu, COMPONENT_Cr) && tu.mtsIdx[COMPONENT_Cr] == MTS_SKIP);
+      const bool cbfCb = TU::getCbf(tu, COMPONENT_Cb);
+      const bool cbfCr = TU::getCbf(tu, COMPONENT_Cr);
+
+      const bool checkJointCbCr = sps.getJointCbCrEnabledFlag() && !tu.noResidual && (cbfCb || cbfCr);
+
+      const bool dctCb = cbfCb && tu.mtsIdx[COMPONENT_Cb] == MtsType::DCT2_DCT2;
+      const bool dctCr = cbfCr && tu.mtsIdx[COMPONENT_Cr] == MtsType::DCT2_DCT2;
+
+      const bool tsCb = cbfCb && tu.mtsIdx[COMPONENT_Cb] == MtsType::SKIP;
+      const bool tsCr = cbfCr && tu.mtsIdx[COMPONENT_Cr] == MtsType::SKIP;
+
+      const bool checkDctOnly = (dctCb && !cbfCr) || (dctCr && !cbfCb) || (dctCb && dctCr);
+      const bool checkTsOnly  = (tsCb && !cbfCr) || (tsCr && !cbfCb) || (tsCb && tsCr);
+
       const int channelBitDepth = sps.getBitDepth(toChannelType(COMPONENT_Cb));
       bool      reshape         = slice.getLmcsEnabledFlag() && slice.getPicHeader()->getLmcsChromaResidualScaleFlag()
                                && tu.blocks[COMPONENT_Cb].width * tu.blocks[COMPONENT_Cb].height > 4;
@@ -10094,18 +10105,18 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
         bool        cbfDCT2 = true;
 
         TrModeList trModes;
-        if (checkDCTOnly || checkTSOnly)
+        if (checkDctOnly || checkTsOnly)
         {
           numTransformCands = 1;
         }
 
-        if (!checkTSOnly)
+        if (!checkTsOnly)
         {
-          trModes.push_back(TrMode(0, true)); // DCT2
+          trModes.push_back(TrMode(MtsType::DCT2_DCT2, true));   // DCT2
         }
-        if (tsAllowed && !checkDCTOnly)
+        if (tsAllowed && !checkDctOnly)
         {
-          trModes.push_back(TrMode(1, true));//TS
+          trModes.push_back(TrMode(MtsType::SKIP, true));   // TS
         }
         for (int modeId = 0; modeId < numTransformCands; modeId++)
         {
@@ -10126,7 +10137,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
           tu.jointCbCr = (uint8_t) cbfMask;
           // encoder bugfix: initialize mtsIdx for chroma under JointCbCrMode.
           tu.mtsIdx[codeCompId]  = trModes[modeId].first;
-          tu.mtsIdx[otherCompId] = MTS_DCT2_DCT2;
+          tu.mtsIdx[otherCompId] = MtsType::DCT2_DCT2;
           int codedCbfMask       = 0;
           if (colorTransFlag && (m_pcEncCfg->getCostMode() != COST_LOSSLESS_CODING || !slice.isLossless()))
           {
@@ -10175,7 +10186,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
             {
               m_pcTrQuant->transformNxN(tu, codeCompId, qpCbCr, trModes, m_pcEncCfg->getMTSInterMaxCand());
               tu.mtsIdx[codeCompId]  = trModes[modeId].first;
-              tu.mtsIdx[otherCompId] = MTS_DCT2_DCT2;
+              tu.mtsIdx[otherCompId] = MtsType::DCT2_DCT2;
             }
             m_pcTrQuant->transformNxN(tu, codeCompId, qpCbCr, compAbsSum, m_CABACEstimator->getCtx(), true);
           }
@@ -10204,7 +10215,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
           }
           currAbsSum = codedCbfMask;
 
-          if (!tu.mtsIdx[codeCompId])
+          if (tu.mtsIdx[codeCompId] == MtsType::DCT2_DCT2)
           {
             cbfDCT2 = (currAbsSum > 0);
           }

@@ -684,7 +684,7 @@ namespace DQIntern
   {
     CHECKD( lambda <= 0.0, "Lambda must be greater than 0" );
 
-    const int         qpDQ                  = cQP.Qp(tu.mtsIdx[compID] == MTS_SKIP) + 1;
+    const int         qpDQ                  = cQP.Qp(tu.mtsIdx[compID] == MtsType::SKIP) + 1;
     const int         qpPer                 = qpDQ / 6;
     const int         qpRem                 = qpDQ - 6 * qpPer;
     const SPS&        sps                   = *tu.cs->sps;
@@ -693,7 +693,10 @@ namespace DQIntern
     const int         channelBitDepth       = sps.getBitDepth( chType );
     const int         maxLog2TrDynamicRange = sps.getMaxLog2TrDynamicRange( chType );
     const int         nomTransformShift     = getTransformShift( channelBitDepth, area.size(), maxLog2TrDynamicRange );
-    const bool        clipTransformShift    = ( tu.mtsIdx[compID] == MTS_SKIP && sps.getSpsRangeExtension().getExtendedPrecisionProcessingFlag());
+
+    const bool clipTransformShift =
+      tu.mtsIdx[compID] == MtsType::SKIP && sps.getSpsRangeExtension().getExtendedPrecisionProcessingFlag();
+
     const bool    needsSqrt2ScaleAdjustment = TU::needsSqrt2Scale(tu, compID);
     const int         transformShift        = ( clipTransformShift ? std::max<int>( 0, nomTransformShift ) : nomTransformShift ) + (needsSqrt2ScaleAdjustment?-1:0);
     // quant parameters
@@ -748,7 +751,7 @@ namespace DQIntern
     }
 
     //----- set dequant parameters -----
-    const int         qpDQ                  = cQP.Qp(tu.mtsIdx[compID] == MTS_SKIP) + 1;
+    const int         qpDQ                  = cQP.Qp(tu.mtsIdx[compID] == MtsType::SKIP) + 1;
     const int         qpPer                 = qpDQ / 6;
     const int         qpRem                 = qpDQ - 6 * qpPer;
     const SPS&        sps                   = *tu.cs->sps;
@@ -758,7 +761,10 @@ namespace DQIntern
     const TCoeff      minTCoeff             = -( 1 << maxLog2TrDynamicRange );
     const TCoeff      maxTCoeff             =  ( 1 << maxLog2TrDynamicRange ) - 1;
     const int         nomTransformShift     = getTransformShift( channelBitDepth, area.size(), maxLog2TrDynamicRange );
-    const bool        clipTransformShift    = ( tu.mtsIdx[compID] == MTS_SKIP && sps.getSpsRangeExtension().getExtendedPrecisionProcessingFlag());
+
+    const bool clipTransformShift =
+      tu.mtsIdx[compID] == MtsType::SKIP && sps.getSpsRangeExtension().getExtendedPrecisionProcessingFlag();
+
     const bool    needsSqrt2ScaleAdjustment = TU::needsSqrt2Scale(tu, compID);
     const int         transformShift        = ( clipTransformShift ? std::max<int>( 0, nomTransformShift ) : nomTransformShift ) + (needsSqrt2ScaleAdjustment?-1:0);
     Intermediate_Int  shift                 = IQUANT_SHIFT + 1 - qpPer - transformShift + (enableScalingLists ? LOG2_SCALING_LIST_NEUTRAL_VALUE : 0);
@@ -1568,7 +1574,7 @@ namespace DQIntern
     bool zeroOut = false;
     bool zeroOutforThres = false;
     int effWidth = tuPars.m_width, effHeight = tuPars.m_height;
-    if ((tu.mtsIdx[compID] > MTS_SKIP
+    if ((tu.mtsIdx[compID] > MtsType::SKIP
          || (tu.cs->sps->getMtsEnabled() && tu.cu->sbtInfo != 0 && tuPars.m_height <= 32 && tuPars.m_width <= 32))
         && compID == COMPONENT_Y)
     {
@@ -1579,7 +1585,7 @@ namespace DQIntern
     zeroOutforThres = zeroOut || (32 < tuPars.m_height || 32 < tuPars.m_width);
     //===== find first test position =====
     int firstTestPos = numCoeff - 1;
-    if (lfnstIdx > 0 && tu.mtsIdx[compID] != MTS_SKIP && width >= 4 && height >= 4)
+    if (lfnstIdx > 0 && tu.mtsIdx[compID] != MtsType::SKIP && width >= 4 && height >= 4)
     {
       firstTestPos = ( ( width == 4 && height == 4 ) || ( width == 8 && height == 8 ) )  ? 7 : 15 ;
     }
@@ -1689,14 +1695,15 @@ DepQuant::~DepQuant()
 void DepQuant::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum,
                      const QpParam &cQP, const Ctx &ctx)
 {
-  const bool useRegularResidualCoding = tu.cu->slice->getTSResidualCodingDisabledFlag() || tu.mtsIdx[compID] != MTS_SKIP;
+  const bool useRegularResidualCoding =
+    tu.cu->slice->getTSResidualCodingDisabledFlag() || tu.mtsIdx[compID] != MtsType::SKIP;
   if( tu.cs->slice->getDepQuantEnabledFlag() && useRegularResidualCoding )
   {
     //===== scaling matrix ====
-    const int         qpDQ            = cQP.Qp(tu.mtsIdx[compID] == MTS_SKIP) + 1;
+    const int         qpDQ            = cQP.Qp(tu.mtsIdx[compID] == MtsType::SKIP) + 1;
     const int         qpPer           = qpDQ / 6;
     const int         qpRem           = qpDQ - 6 * qpPer;
-    const CompArea    &rect           = tu.blocks[compID];
+    const CompArea   &rect            = tu.blocks[compID];
     const int         width           = rect.width;
     const int         height          = rect.height;
     uint32_t          scalingListType = getScalingListType(tu.cu->predMode, compID);
@@ -1707,7 +1714,10 @@ void DepQuant::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffB
     const bool        disableSMForLFNST = tu.cs->slice->getExplicitScalingListUsed() ? tu.cs->slice->getSPS()->getDisableScalingMatrixForLfnstBlks() : false;
     const bool        isLfnstApplied = tu.cu->lfnstIdx > 0 && (tu.cu->isSepTree() ? true : isLuma(compID));
     const bool        disableSMForACT = tu.cs->slice->getSPS()->getScalingMatrixForAlternativeColourSpaceDisabledFlag() && (tu.cs->slice->getSPS()->getScalingMatrixDesignatedColourSpaceFlag() == tu.cu->colorTransform);
-    const bool        enableScalingLists = getUseScalingList(width, height, (tu.mtsIdx[compID] == MTS_SKIP), isLfnstApplied, disableSMForLFNST, disableSMForACT);
+
+    const bool enableScalingLists = getUseScalingList(width, height, tu.mtsIdx[compID] == MtsType::SKIP, isLfnstApplied,
+                                                      disableSMForLFNST, disableSMForACT);
+
     static_cast<DQIntern::DepQuant *>(p)->quant(
       tu, pSrc, compID, cQP, Quant::m_dLambda, ctx, absSum, enableScalingLists,
       Quant::getQuantCoeff(scalingListType, qpRem, log2TrWidth, log2TrHeight));
@@ -1720,13 +1730,14 @@ void DepQuant::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffB
 
 void DepQuant::dequant( const TransformUnit &tu, CoeffBuf &dstCoeff, const ComponentID &compID, const QpParam &cQP )
 {
-  const bool useRegularResidualCoding = tu.cu->slice->getTSResidualCodingDisabledFlag() || tu.mtsIdx[compID] != MTS_SKIP;
+  const bool useRegularResidualCoding =
+    tu.cu->slice->getTSResidualCodingDisabledFlag() || tu.mtsIdx[compID] != MtsType::SKIP;
   if( tu.cs->slice->getDepQuantEnabledFlag() && useRegularResidualCoding )
   {
-    const int         qpDQ            = cQP.Qp(tu.mtsIdx[compID] == MTS_SKIP) + 1;
+    const int         qpDQ            = cQP.Qp(tu.mtsIdx[compID] == MtsType::SKIP) + 1;
     const int         qpPer           = qpDQ / 6;
     const int         qpRem           = qpDQ - 6 * qpPer;
-    const CompArea    &rect           = tu.blocks[compID];
+    const CompArea   &rect            = tu.blocks[compID];
     const int         width           = rect.width;
     const int         height          = rect.height;
     uint32_t          scalingListType = getScalingListType(tu.cu->predMode, compID);
@@ -1737,7 +1748,8 @@ void DepQuant::dequant( const TransformUnit &tu, CoeffBuf &dstCoeff, const Compo
     const bool disableSMForLFNST = tu.cs->slice->getExplicitScalingListUsed() ? tu.cs->slice->getSPS()->getDisableScalingMatrixForLfnstBlks() : false;
     const bool isLfnstApplied = tu.cu->lfnstIdx > 0 && (tu.cu->isSepTree() ? true : isLuma(compID));
     const bool disableSMForACT = tu.cs->slice->getSPS()->getScalingMatrixForAlternativeColourSpaceDisabledFlag() && (tu.cs->slice->getSPS()->getScalingMatrixDesignatedColourSpaceFlag() == tu.cu->colorTransform);
-    const bool enableScalingLists = getUseScalingList(width, height, (tu.mtsIdx[compID] == MTS_SKIP), isLfnstApplied, disableSMForLFNST, disableSMForACT);
+    const bool enableScalingLists = getUseScalingList(width, height, tu.mtsIdx[compID] == MtsType::SKIP, isLfnstApplied,
+                                                      disableSMForLFNST, disableSMForACT);
     static_cast<DQIntern::DepQuant*>(p)->dequant( tu, dstCoeff, compID, cQP, enableScalingLists, Quant::getDequantCoeff(scalingListType, qpRem, log2TrWidth, log2TrHeight) );
   }
   else

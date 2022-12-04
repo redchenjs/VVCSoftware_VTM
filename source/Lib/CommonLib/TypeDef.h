@@ -85,9 +85,6 @@
 
 #define APPLY_SBT_SL_ON_MTS                               1 // apply save & load fast algorithm on inter MTS when SBT is on
 
-typedef std::pair<int, bool> TrMode;
-typedef std::pair<int, int>  TrCost;
-
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
 #define REUSE_CU_RESULTS_WITH_MULTIPLE_TUS                1
@@ -337,15 +334,39 @@ enum class TransType
   NUM
 };
 
-enum MTSIdx
+enum class MtsType : int8_t
 {
-  MTS_DCT2_DCT2 = 0,
-  MTS_SKIP = 1,
-  MTS_DST7_DST7 = 2,
-  MTS_DCT8_DST7 = 3,
-  MTS_DST7_DCT8 = 4,
-  MTS_DCT8_DCT8 = 5
+  NONE      = -1,
+  DCT2_DCT2 = 0,
+  SKIP,
+  DST7_DST7,
+  DCT8_DST7,
+  DST7_DCT8,
+  DCT8_DCT8,
+  NUM
 };
+
+static inline constexpr int operator-(const MtsType &a, const MtsType &b)
+{
+  return to_underlying(a) - to_underlying(b);
+}
+
+static inline constexpr MtsType operator+(const MtsType &a, int b)
+{
+  return static_cast<MtsType>(to_underlying(a) + b);
+}
+
+static inline MtsType operator++(MtsType &a, int)
+{
+  MtsType b = a;
+
+  a = static_cast<MtsType>(to_underlying(a) + 1);
+
+  return b;
+}
+
+typedef std::pair<MtsType, bool> TrMode;
+typedef std::pair<int, int>      TrCost;
 
 enum ISPType
 {

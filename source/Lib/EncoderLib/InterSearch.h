@@ -186,7 +186,7 @@ protected:
   uint8_t         m_sbtRdoOrder[NUMBER_SBT_MODE];       // order of SBT mode in RDO
   bool            m_skipSbtAll;                         // to skip all SBT modes for the current PU
   uint8_t         m_histBestSbt;                        // historical best SBT mode for PU of certain SSE values
-  uint8_t         m_histBestMtsIdx;                     // historical best MTS idx  for PU of certain SSE values
+  MtsType         m_histBestMtsIdx;                     // historical best MTS idx  for PU of certain SSE values
   bool            m_clipMvInSubPic;
 
 public:
@@ -207,7 +207,11 @@ public:
   uint8_t    getSbtRdoOrder         ( uint8_t idx )    { assert( m_sbtRdoOrder[idx] < NUMBER_SBT_MODE ); assert( (uint32_t)( m_estMinDistSbt[m_sbtRdoOrder[idx]] >> 2 ) < ( MAX_UINT >> 1 ) ); return m_sbtRdoOrder[idx]; }
   Distortion getEstDistSbt          ( uint8_t sbtMode) { return m_estMinDistSbt[sbtMode]; }
   void       initTuAnalyzer         ()                 { m_estMinDistSbt[NUMBER_SBT_MODE] = std::numeric_limits<uint64_t>::max(); m_skipSbtAll = false; }
-  void       setHistBestTrs         ( uint8_t sbtInfo, uint8_t mtsIdx ) { m_histBestSbt = sbtInfo; m_histBestMtsIdx = mtsIdx; }
+  void       setHistBestTrs(uint8_t sbtInfo, MtsType mtsIdx)
+  {
+    m_histBestSbt    = sbtInfo;
+    m_histBestMtsIdx = mtsIdx;
+  }
   void       initSbtRdoOrder        ( uint8_t sbtMode ) { m_sbtRdoOrder[0] = sbtMode; m_estMinDistSbt[0] = m_estMinDistSbt[sbtMode]; }
 
   void setTempBuffers               (CodingStructure ****pSlitCS, CodingStructure ****pFullCS, CodingStructure **pSaveCS );

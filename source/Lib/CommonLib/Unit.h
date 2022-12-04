@@ -463,7 +463,9 @@ struct TransformUnit : public UnitArea
   int              m_chromaResScaleInv;
 
   uint8_t        depth;
-  uint8_t        mtsIdx     [ MAX_NUM_TBLOCKS ];
+
+  std::array<MtsType, MAX_NUM_TBLOCKS> mtsIdx;
+
   bool           noResidual;
   uint8_t        jointCbCr;
   uint8_t        cbf        [ MAX_NUM_TBLOCKS ];

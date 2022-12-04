@@ -124,7 +124,9 @@ protected:
 
 private:
   DepQuant *m_quant;          //!< Quantizer
-  TCoeff    m_mtsCoeffs[NUM_TRAFO_MODES_MTS][MAX_TB_SIZEY * MAX_TB_SIZEY];
+
+  EnumArray<TCoeff[MAX_TB_SIZEY * MAX_TB_SIZEY], MtsType> m_mtsCoeffs;
+
   TCoeff   m_tempInMatrix [ 48 ];
   TCoeff   m_tempOutMatrix[ 48 ];
   static const int maxAbsIctMode = 3;
