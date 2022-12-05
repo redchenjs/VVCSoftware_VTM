@@ -72,7 +72,7 @@ struct PelBufferOps
   void(*calcBIOPar)    (const Pel* srcY0Temp, const Pel* srcY1Temp, const Pel* gradX0, const Pel* gradX1, const Pel* gradY0, const Pel* gradY1, int* dotProductTemp1, int* dotProductTemp2, int* dotProductTemp3, int* dotProductTemp5, int* dotProductTemp6, const int src0Stride, const int src1Stride, const int gradStride, const int widthG, const int heightG, const int bitDepth);
   void(*calcBIOSums)   (const Pel* srcY0Tmp, const Pel* srcY1Tmp, Pel* gradX0, Pel* gradX1, Pel* gradY0, Pel* gradY1, int xu, int yu, const int src0Stride, const int src1Stride, const int widthG, const int bitDepth, int* sumAbsGX, int* sumAbsGY, int* sumDIX, int* sumDIY, int* sumSignGY_GX);
   void(*calcBlkGradient)(int sx, int sy, int    *arraysGx2, int     *arraysGxGy, int     *arraysGxdI, int     *arraysGy2, int     *arraysGydI, int     &sGx2, int     &sGy2, int     &sGxGy, int     &sGxdI, int     &sGydI, int width, int height, int unitSize);
-  void(*copyBuffer)(Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height);
+  void (*copyBuffer)(const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height);
   void(*padding)(Pel *dst, int stride, int width, int height, int padSize);
 #if ENABLE_SIMD_OPT_BCW
   void ( *removeWeightHighFreq8)  ( Pel* src0, int src0Stride, const Pel* src1, int src1Stride, int width, int height, int shift, int bcwWeight);
@@ -90,7 +90,7 @@ struct PelBufferOps
 extern PelBufferOps g_pelBufOP;
 
 void paddingCore(Pel *ptr, int stride, int width, int height, int padSize);
-void copyBufferCore(Pel *src, int srcStride, Pel *Dst, int dstStride, int width, int height);
+void copyBufferCore(const Pel *src, int srcStride, Pel *Dst, int dstStride, int width, int height);
 
 template<typename T>
 struct AreaBuf : public Size

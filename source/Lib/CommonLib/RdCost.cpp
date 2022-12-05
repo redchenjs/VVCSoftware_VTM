@@ -369,7 +369,7 @@ void RdCost::setDistParam( DistParam &rcDP, const Pel* pOrg, const Pel* piRefY, 
   rcDP.subShift = subShiftMode;
   rcDP.step       = step;
   rcDP.maximumDistortionForEarlyExit = std::numeric_limits<Distortion>::max();
-  CHECK( useHadamard || rcDP.useMR, "only used in xDMVRCost with these default parameters (so far...)" );
+  CHECK(useHadamard || rcDP.useMR, "only used in xDmvrCost with these default parameters (so far...)");
   if ( bioApplied )
   {
     rcDP.distFunc = m_afpDistortFunc[ DF_SAD_INTERMEDIATE_BITDEPTH ];
