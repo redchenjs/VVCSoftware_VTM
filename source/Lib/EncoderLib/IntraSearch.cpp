@@ -5902,7 +5902,7 @@ void IntraSearch::xGetNextISPMode(ModeInfo& modeInfo, const ModeInfo* lastMode, 
     bool stopThisSplitForAllLFNSTs = false;
     const int thresholdSplit1ForAllLFNSTs = maxNumSubPartitions - 1;
 
-    int modes[2];
+    std::array<int, 2> modes;
     int numSubPartsBestMode[2];
 
     for (int i = 0; i < 2; i++)
@@ -5927,14 +5927,12 @@ void IntraSearch::xGetNextISPMode(ModeInfo& modeInfo, const ModeInfo* lastMode, 
       }
       else
       {
-        //we stop also if the cost is MAX_DOUBLE for both modes
-        stopThisSplit = true;
-        for (int i = 0; i < 2; i++)
+        // we stop also if the cost is MAX_DOUBLE for all modes
+        if (std::find_if(modes.begin(), modes.end(),
+                         [&](const int &x) { return ispTestedModes.getRDCost(nextISPcandSplitType, x) < MAX_DOUBLE; })
+            == modes.end())
         {
-          if (ispTestedModes.getRDCost(nextISPcandSplitType, modes[i]) < MAX_DOUBLE)
-          {
-            stopThisSplit = false;
-          }
+          stopThisSplit = true;
         }
       }
     }
