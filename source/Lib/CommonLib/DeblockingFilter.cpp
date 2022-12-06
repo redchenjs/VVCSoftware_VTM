@@ -316,8 +316,8 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
     const bool  xOff   = currTU.blocks[cu.chType].x != cu.blocks[cu.chType].x;
     const bool  yOff   = currTU.blocks[cu.chType].y != cu.blocks[cu.chType].y;
 
-    verEdgeFilter = xOff ? m_stLFCUParam.internalEdge : m_stLFCUParam.leftEdge;
-    horEdgeFilter = yOff ? m_stLFCUParam.internalEdge : m_stLFCUParam.topEdge;
+    verEdgeFilter = xOff ? m_filterCuEdge.internal : m_filterCuEdge.left;
+    horEdgeFilter = yOff ? m_filterCuEdge.internal : m_filterCuEdge.top;
 
     if (getPos(areaTu, edgeDir) % GRID_SIZE != 0)
     {
@@ -352,8 +352,8 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
     const bool xOff    = currPU.blocks[cu.chType].x != cu.blocks[cu.chType].x;
     const bool yOff    = currPU.blocks[cu.chType].y != cu.blocks[cu.chType].y;
 
-    verEdgeFilter = xOff ? m_stLFCUParam.internalEdge : m_stLFCUParam.leftEdge;
-    horEdgeFilter = yOff ? m_stLFCUParam.internalEdge : m_stLFCUParam.topEdge;
+    verEdgeFilter = xOff ? m_filterCuEdge.internal : m_filterCuEdge.left;
+    horEdgeFilter = yOff ? m_filterCuEdge.internal : m_filterCuEdge.top;
 
     if( isCuCrossedByVirtualBoundaries )
     {
@@ -373,7 +373,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
         for (uint32_t off = SUB_BLOCK_SIZE; off < areaPu.height; off += SUB_BLOCK_SIZE)
         {
           const Area mvBlockH(cu.Y().x, cu.Y().y + off, cu.Y().width, pcv.minCUHeight);
-          horEdgeFilter = m_stLFCUParam.internalEdge;
+          horEdgeFilter = m_filterCuEdge.internal;
           if( isCuCrossedByVirtualBoundaries )
           {
             xDeriveEdgefilterParam( mvBlockH.x, mvBlockH.y, 0, numHorVirBndry, verVirBndryPos, horVirBndryPos, verEdgeFilter, horEdgeFilter );
@@ -388,7 +388,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
         for (uint32_t off = SUB_BLOCK_SIZE; off < areaPu.width; off += SUB_BLOCK_SIZE)
         {
           const Area mvBlockV(cu.Y().x + off, cu.Y().y, pcv.minCUWidth, cu.Y().height);
-          verEdgeFilter = m_stLFCUParam.internalEdge;
+          verEdgeFilter = m_filterCuEdge.internal;
           if( isCuCrossedByVirtualBoundaries )
           {
             xDeriveEdgefilterParam( mvBlockV.x, mvBlockV.y, numVerVirBndry, 0, verVirBndryPos, horVirBndryPos, verEdgeFilter, horEdgeFilter );
@@ -535,8 +535,10 @@ void DeblockingFilter::xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdge
       const int gridShiftHor = LOG_GRID_SIZE - shiftHor;
       const int gridShiftVer = LOG_GRID_SIZE - shiftVer;
 
-      if ( currTU.block(comp).valid() && ( ( currTU.block(comp).y == cu.block(comp).y ) ? m_stLFCUParam.topEdge : m_stLFCUParam.internalEdge ) ) // Edge deblocking needs to be recomputed since ISP contains whole CU chroma transforms in last TU of the CU
+      if (currTU.block(comp).valid()
+          && ((currTU.block(comp).y == cu.block(comp).y) ? m_filterCuEdge.top : m_filterCuEdge.internal))
       {
+        // Edge deblocking needs to be recomputed since ISP contains whole CU chroma transforms in last TU of the CU
         for ( int x = 0; x < currTU.blocks[cIdx].width; x += minCUWidth )
         {
           const Position  posQ     = Position( currTU.blocks[ch].x + x, currTU.blocks[ch].y );
@@ -589,8 +591,10 @@ void DeblockingFilter::xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdge
       const int gridShiftHor = LOG_GRID_SIZE - shiftHor;
       const int gridShiftVer = LOG_GRID_SIZE - shiftVer;
 
-      if ( currTU.block(comp).valid() && ( ( currTU.block(comp).x == cu.block(comp).x ) ? m_stLFCUParam.leftEdge : m_stLFCUParam.internalEdge ) ) // Edge deblocking needs to be recomputed since ISP contains whole CU chroma transforms in last TU of the CU
+      if (currTU.block(comp).valid()
+          && ((currTU.block(comp).x == cu.block(comp).x) ? m_filterCuEdge.left : m_filterCuEdge.internal))
       {
+        // Edge deblocking needs to be recomputed since ISP contains whole CU chroma transforms in last TU of the CU
         for ( int y = 0; y < currTU.blocks[cIdx].height; y += minCUHeight )
         {
           const Position  posQ     = Position( currTU.blocks[ch].x, currTU.blocks[ch].y + y );
@@ -752,32 +756,29 @@ void DeblockingFilter::xSetEdgefilterMultiple(const CodingUnit &cu, const Debloc
 
 void DeblockingFilter::xSetDeblockingFilterParam( const CodingUnit& cu )
 {
-  const Slice& slice = *cu.slice;
-  const PPS&   pps   = *cu.cs->pps;
+  const bool deblockingEnabled = !cu.slice->getDeblockingFilterDisable();
 
-  if( slice.getDeblockingFilterDisable() )
+  m_filterCuEdge.left     = false;
+  m_filterCuEdge.top      = false;
+  m_filterCuEdge.internal = deblockingEnabled;
+
+  if (deblockingEnabled)
   {
-    m_stLFCUParam.leftEdge = m_stLFCUParam.topEdge = m_stLFCUParam.internalEdge = false;
-    return;
-  }
+    const PPS      &pps = *cu.cs->pps;
+    const Position &pos = cu.blocks[cu.chType].pos();
 
-  const Position& pos = cu.blocks[cu.chType].pos();
+    if (pos.x > 0)
+    {
+      CodingUnit *neighbourCu = cu.cs->getCU(pos.offset(-1, 0), cu.chType);
 
-  m_stLFCUParam.internalEdge = true;
-  m_stLFCUParam.leftEdge     = false;
-  m_stLFCUParam.topEdge      = false;
+      m_filterCuEdge.left = isNeighbourAvailable(cu, *neighbourCu, pps);
+    }
+    if (pos.y > 0)
+    {
+      CodingUnit *neighbourCu = cu.cs->getCU(pos.offset(0, -1), cu.chType);
 
-  if (pos.x > 0)
-  {
-    CodingUnit *neighbourCu = cu.cs->getCU(pos.offset(-1, 0), cu.chType);
-
-    m_stLFCUParam.leftEdge = isNeighbourAvailable(cu, *neighbourCu, pps);
-  }
-  if (pos.y > 0)
-  {
-    CodingUnit *neighbourCu = cu.cs->getCU(pos.offset(0, -1), cu.chType);
-
-    m_stLFCUParam.topEdge = isNeighbourAvailable(cu, *neighbourCu, pps);
+      m_filterCuEdge.top = isNeighbourAvailable(cu, *neighbourCu, pps);
+    }
   }
 }
 

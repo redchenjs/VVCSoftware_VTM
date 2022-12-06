@@ -95,7 +95,16 @@ class DeblockingFilter
 
 private:
   static_vector<EdgeStrengths, MAX_NUM_PARTS_IN_CTU> m_edgeStrengths[NUM_EDGE_DIR];
-  LFCUParam m_stLFCUParam;                   ///< status structure
+
+  struct CuEdgeParams
+  {
+    bool internal;
+    bool left;
+    bool top;
+  };
+
+  CuEdgeParams m_filterCuEdge;
+
   int     m_ctuXLumaSamples, m_ctuYLumaSamples;                            // location of left-edge and top-edge of CTU
 
   // shift values to convert location from luma sample units to chroma sample units
