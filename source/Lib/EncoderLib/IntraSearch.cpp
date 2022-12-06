@@ -6344,7 +6344,8 @@ bool IntraSearch::updateISPStatusFromRelCU(double bestNonISPCostCurrCu, const Mo
         {
           for (int lfnstVal = 0; lfnstVal < NUM_LFNST_NUM_PER_SET; lfnstVal++)
           {
-            if (lfnstVal == ispPredModeVal.ispLfnstIdx && (splitIdx == ISPType::VER) == ispPredModeVal.verIsp)
+            if (lfnstVal == ispPredModeVal.ispLfnstIdx
+                && splitIdx == (ispPredModeVal.verIsp == 0 ? ISPType::HOR : ISPType::VER))
             {
               continue;
             }
