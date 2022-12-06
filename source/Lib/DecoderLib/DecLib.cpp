@@ -861,7 +861,7 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
   }
   if (m_decodedPictureHashSEIEnabled)
   {
-    SEIMessages pictureHashes = getSeisByType(m_pcPic->SEIs, SEI::DECODED_PICTURE_HASH );
+    SEIMessages                  pictureHashes = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::DECODED_PICTURE_HASH);
     const SEIDecodedPictureHash *hash =
       (pictureHashes.size() > 0) ? (SEIDecodedPictureHash *) *(pictureHashes.begin()) : nullptr;
     if (pictureHashes.size() > 1)
@@ -870,14 +870,15 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
     }
     m_numberOfChecksumErrorsDetected += calcAndPrintHashStatus(((const Picture*) m_pcPic)->getRecoBuf(), hash, pcSlice->getSPS()->getBitDepths(), msgl);
 
-    SEIMessages scalableNestingSeis = getSeisByType(m_pcPic->SEIs, SEI::SCALABLE_NESTING );
+    SEIMessages scalableNestingSeis = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::SCALABLE_NESTING);
     for (auto seiIt : scalableNestingSeis)
     {
       SEIScalableNesting *nestingSei = dynamic_cast<SEIScalableNesting*>(seiIt);
       if (nestingSei->m_snSubpicFlag)
       {
         uint32_t subpicId = nestingSei->m_snSubpicId.front();
-        SEIMessages nestedPictureHashes = getSeisByType(nestingSei->m_nestedSEIs, SEI::DECODED_PICTURE_HASH);
+        SEIMessages nestedPictureHashes =
+          getSeisByType(nestingSei->m_nestedSEIs, SEI::PayloadType::DECODED_PICTURE_HASH);
         for (auto decPicHash : nestedPictureHashes)
         {
           const SubPic& subpic = pcSlice->getPPS()->getSubPic(subpicId);
@@ -1250,7 +1251,10 @@ void DecLib::checkSEIInAccessUnit()
   {
     enum NalUnitType         naluType = std::get<0>(sei);
     enum SEI::PayloadType payloadType = std::get<2>(sei);
-    if (naluType == NAL_UNIT_PREFIX_SEI && ((payloadType == SEI::BUFFERING_PERIOD || payloadType == SEI::PICTURE_TIMING || payloadType == SEI::DECODING_UNIT_INFO || payloadType == SEI::SUBPICTURE_LEVEL_INFO)))
+    if (naluType == NAL_UNIT_PREFIX_SEI
+        && ((payloadType == SEI::PayloadType::BUFFERING_PERIOD || payloadType == SEI::PayloadType::PICTURE_TIMING
+             || payloadType == SEI::PayloadType::DECODING_UNIT_INFO
+             || payloadType == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)))
     {
       bool olsIncludeAllLayersFind = false;
       for (int i = 0; i < m_vps->getNumOutputLayerSets(); i++)
@@ -1274,7 +1278,7 @@ void DecLib::checkSEIInAccessUnit()
         if (olsIncludeAllLayersFind)
         {
           olsIdxIncludeAllLayes = i;
-          if (payloadType == SEI::SUBPICTURE_LEVEL_INFO)
+          if (payloadType == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
           {
             isNonNestedSliFound = true;
           }
@@ -1283,23 +1287,23 @@ void DecLib::checkSEIInAccessUnit()
       }
       CHECK(!olsIncludeAllLayersFind, "When there is no OLS that includes all layers in the current CVS in the entire bitstream, there shall be no non-scalable-nested SEI message with payloadType equal to 0 (BP), 1 (PT), 130 (DUI), or 203 (SLI)");
     }
-    if (payloadType == SEI::SCALABILITY_DIMENSION_INFO)
+    if (payloadType == SEI::PayloadType::SCALABILITY_DIMENSION_INFO)
     {
       bSdiPresentInAu = true;
     }
-    else if (payloadType == SEI::MULTIVIEW_ACQUISITION_INFO && !bSdiPresentInAu)
+    else if (payloadType == SEI::PayloadType::MULTIVIEW_ACQUISITION_INFO && !bSdiPresentInAu)
     {
       bAuxSEIsBeforeSdiSEIPresent[0] = true;
     }
-    else if (payloadType == SEI::ALPHA_CHANNEL_INFO && !bSdiPresentInAu)
+    else if (payloadType == SEI::PayloadType::ALPHA_CHANNEL_INFO && !bSdiPresentInAu)
     {
       bAuxSEIsBeforeSdiSEIPresent[1] = true;
     }
-    else if (payloadType == SEI::DEPTH_REPRESENTATION_INFO && !bSdiPresentInAu)
+    else if (payloadType == SEI::PayloadType::DEPTH_REPRESENTATION_INFO && !bSdiPresentInAu)
     {
       bAuxSEIsBeforeSdiSEIPresent[2] = true;
     }
-    else if (payloadType == SEI::MULTIVIEW_VIEW_POSITION && !bSdiPresentInAu)
+    else if (payloadType == SEI::PayloadType::MULTIVIEW_VIEW_POSITION && !bSdiPresentInAu)
     {
       bAuxSEIsBeforeSdiSEIPresent[3] = true;
     }
@@ -1474,7 +1478,7 @@ void DecLib::checkSeiContentInAccessUnit()
   {
     return;
   }
-  std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>> seiList; //payloadType, olsId, isNestedSEI, payloadSize, payload, duiIdx, subPicId
+  std::vector<SeiPayload> seiList;   // payloadType, olsId, isNestedSEI, payloadSize, payload, duiIdx, subPicId
 
   // get the OLSs that cover all layers
   std::vector<uint32_t> olsIds;
@@ -1510,17 +1514,20 @@ void DecLib::checkSeiContentInAccessUnit()
 
     do
     {
-      int payloadType = 0;
-      int payloadLayerId = sei->m_nuhLayerId;
+      int      payloadTypeVal = 0;
+      uint32_t payloadLayerId = sei->m_nuhLayerId;
       uint32_t val = 0;
 
       do
       {
         bs.readByte(val);
-        payloadType += val;
+        payloadTypeVal += val;
       } while (val==0xFF);
 
-      if (payloadType == SEI::USER_DATA_REGISTERED_ITU_T_T35 || payloadType == SEI::USER_DATA_UNREGISTERED)
+      auto payloadType = SEI::PayloadType(payloadTypeVal);
+
+      if (payloadType == SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35
+          || payloadType == SEI::PayloadType::USER_DATA_UNREGISTERED)
       {
         break;
       }
@@ -1532,13 +1539,15 @@ void DecLib::checkSeiContentInAccessUnit()
         payloadSize += val;
       } while (val==0xFF);
 
-      if (payloadType != SEI::SCALABLE_NESTING)
+      if (payloadType != SEI::PayloadType::SCALABLE_NESTING)
       {
-        if (payloadType == SEI::BUFFERING_PERIOD || payloadType == SEI::PICTURE_TIMING || payloadType == SEI::DECODING_UNIT_INFO || payloadType == SEI::SUBPICTURE_LEVEL_INFO)
+        if (payloadType == SEI::PayloadType::BUFFERING_PERIOD || payloadType == SEI::PayloadType::PICTURE_TIMING
+            || payloadType == SEI::PayloadType::DECODING_UNIT_INFO
+            || payloadType == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
         {
           uint8_t *payload = new uint8_t[payloadSize];
           int duiIdx = 0;
-          if (payloadType == SEI::DECODING_UNIT_INFO)
+          if (payloadType == SEI::PayloadType::DECODING_UNIT_INFO)
           {
             m_seiReader.getSEIDecodingUnitInfoDuiIdx(&bs, sei->m_nalUnitType, payloadLayerId, m_HRD, payloadSize, duiIdx);
           }
@@ -1551,13 +1560,13 @@ void DecLib::checkSeiContentInAccessUnit()
           {
             if (i == 0)
             {
-              seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, olsIds.at(i), false, payloadSize, payload, duiIdx, 0));
+              seiList.push_back(SeiPayload{ payloadType, olsIds.at(i), false, payloadSize, payload, duiIdx, 0 });
             }
             else
             {
               uint8_t *payloadTemp = new uint8_t[payloadSize];
               memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-              seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, olsIds.at(i), false, payloadSize, payloadTemp, duiIdx, 0));
+              seiList.push_back(SeiPayload{ payloadType, olsIds.at(i), false, payloadSize, payloadTemp, duiIdx, 0 });
             }
           }
         }
@@ -1569,7 +1578,7 @@ void DecLib::checkSeiContentInAccessUnit()
             bs.readByte(val);
             payload[i] = (uint8_t)val;
           }
-          seiList.push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, payloadLayerId, false, payloadSize, payload, 0, 0));
+          seiList.push_back(SeiPayload{ payloadType, payloadLayerId, false, payloadSize, payload, 0, 0 });
         }
       }
       else
@@ -1585,27 +1594,29 @@ void DecLib::checkSeiContentInAccessUnit()
   // check contents of the repeated messages in list
   for (uint32_t i = 0; i < seiList.size(); i++)
   {
-    int      payloadType1 = std::get<0>(seiList[i]);
-    int      payLoadLayerId1 = std::get<1>(seiList[i]);
-    bool     payLoadNested1 = std::get<2>(seiList[i]);
-    uint32_t payloadSize1 = std::get<3>(seiList[i]);
-    uint8_t  *payload1    = std::get<4>(seiList[i]);
-    int      duiIdx1 = std::get<5>(seiList[i]);
-    int      subPicId1 = std::get<6>(seiList[i]);
+    SEI::PayloadType payloadType1    = seiList[i].payloadType;
+    int              payLoadLayerId1 = seiList[i].payloadLayerId;
+    bool             payLoadNested1  = seiList[i].payloadNested;
+    uint32_t         payloadSize1    = seiList[i].payloadSize;
+    uint8_t         *payload1        = seiList[i].payload;
+    int              duiIdx1         = seiList[i].duiIdx;
+    int              subPicId1       = seiList[i].subpicId;
 
     // compare current SEI message with remaining messages in the list
     for (uint32_t j = i+1; j < seiList.size(); j++)
     {
-      int      payloadType2 = std::get<0>(seiList[j]);
-      int      payLoadLayerId2 = std::get<1>(seiList[j]);
-      bool     payLoadNested2 = std::get<2>(seiList[j]);
-      uint32_t payloadSize2 = std::get<3>(seiList[j]);
-      uint8_t  *payload2    = std::get<4>(seiList[j]);
-      int      duiIdx2 = std::get<5>(seiList[j]);
-      int      subPicId2 = std::get<6>(seiList[j]);
+      SEI::PayloadType payloadType2    = seiList[j].payloadType;
+      int              payLoadLayerId2 = seiList[j].payloadLayerId;
+      bool             payLoadNested2  = seiList[j].payloadNested;
+      uint32_t         payloadSize2    = seiList[j].payloadSize;
+      uint8_t         *payload2        = seiList[j].payload;
+      int              duiIdx2         = seiList[j].duiIdx;
+      int              subPicId2       = seiList[j].subpicId;
 
       // check for identical SEI type, olsId or layerId, size, payload, duiIdx, and subPicId
-      if (payloadType1 == SEI::BUFFERING_PERIOD || payloadType1 == SEI::PICTURE_TIMING || payloadType1 == SEI::DECODING_UNIT_INFO || payloadType1 == SEI::SUBPICTURE_LEVEL_INFO)
+      if (payloadType1 == SEI::PayloadType::BUFFERING_PERIOD || payloadType1 == SEI::PayloadType::PICTURE_TIMING
+          || payloadType1 == SEI::PayloadType::DECODING_UNIT_INFO
+          || payloadType1 == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
       {
         CHECK((payloadType1 == payloadType2) && (payLoadLayerId1 == payLoadLayerId2) && (duiIdx1 == duiIdx2) && (subPicId1 == subPicId2) && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
       }
@@ -1632,7 +1643,7 @@ void DecLib::checkSeiContentInAccessUnit()
   // free SEI message list memory
   for (uint32_t i = 0; i < seiList.size(); i++)
   {
-    uint8_t *payload = std::get<4>(seiList[i]);
+    uint8_t *payload = seiList[i].payload;
     delete[] payload;
   }
   seiList.clear();
@@ -2060,14 +2071,14 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     if(!m_SEIs.empty())
     {
       // Check if any new Frame Field Info SEI has arrived
-      SEIMessages frameFieldSEIs = getSeisByType(m_SEIs, SEI::FRAME_FIELD_INFO);
+      SEIMessages frameFieldSEIs = getSeisByType(m_SEIs, SEI::PayloadType::FRAME_FIELD_INFO);
       if (frameFieldSEIs.size()>0)
       {
         SEIFrameFieldInfo* ff = (SEIFrameFieldInfo*) *(frameFieldSEIs.begin());
         isField    = ff->m_fieldPicFlag;
         isTopField = isField && (!ff->m_bottomFieldFlag);
       }
-      SEIMessages inclusionSEIs = getSeisByType(m_SEIs, SEI::PARAMETER_SETS_INCLUSION_INDICATION);
+      SEIMessages inclusionSEIs = getSeisByType(m_SEIs, SEI::PayloadType::PARAMETER_SETS_INCLUSION_INDICATION);
       const SEIParameterSetsInclusionIndication *inclusion =
         (inclusionSEIs.size() > 0) ? (SEIParameterSetsInclusionIndication *) *(inclusionSEIs.begin()) : nullptr;
       if (inclusion != nullptr)
@@ -2173,7 +2184,7 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     {
       // Currently only decoding Unit SEI message occurring between VCL NALUs copied
       SEIMessages &picSEI            = m_pcPic->SEIs;
-      SEIMessages  decodingUnitInfos = extractSeisByType(picSEI, SEI::DECODING_UNIT_INFO);
+      SEIMessages  decodingUnitInfos = extractSeisByType(picSEI, SEI::PayloadType::DECODING_UNIT_INFO);
       picSEI.insert(picSEI.end(), decodingUnitInfos.begin(), decodingUnitInfos.end());
       deleteSEIs(m_SEIs);
     }
@@ -2480,11 +2491,11 @@ void DecLib::xParsePrefixSEImessages()
     m_prefixSEINALUs.pop_front();
   }
   xCheckPrefixSEIMessages(m_SEIs);
-  SEIMessages scalableNestingSEIs = getSeisByType(m_SEIs, SEI::SCALABLE_NESTING);
+  SEIMessages scalableNestingSEIs = getSeisByType(m_SEIs, SEI::PayloadType::SCALABLE_NESTING);
   if (scalableNestingSEIs.size())
   {
     SEIScalableNesting *nestedSei = (SEIScalableNesting*)scalableNestingSEIs.front();
-    SEIMessages nestedSliSei = getSeisByType(nestedSei->m_nestedSEIs, SEI::SUBPICTURE_LEVEL_INFO);
+    SEIMessages         nestedSliSei = getSeisByType(nestedSei->m_nestedSEIs, SEI::PayloadType::SUBPICTURE_LEVEL_INFO);
     if (nestedSliSei.size() > 0)
     {
       AccessUnitNestedSliSeiInfo sliSeiInfo;
@@ -2502,8 +2513,8 @@ void DecLib::xParsePrefixSEImessages()
 
 void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
 {
-  SEIMessages picTimingSEIs  = getSeisByType(prefixSEIs, SEI::PICTURE_TIMING);
-  SEIMessages frameFieldSEIs = getSeisByType(prefixSEIs, SEI::FRAME_FIELD_INFO);
+  SEIMessages picTimingSEIs  = getSeisByType(prefixSEIs, SEI::PayloadType::PICTURE_TIMING);
+  SEIMessages frameFieldSEIs = getSeisByType(prefixSEIs, SEI::PayloadType::FRAME_FIELD_INFO);
 
   if (!picTimingSEIs.empty() && !frameFieldSEIs.empty())
   {
@@ -2531,7 +2542,7 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
       delete m_mvpSEIInFirstAU;
     }
     m_mvpSEIInFirstAU    = nullptr;
-    SEIMessages sdiSEIs  = getSeisByType(prefixSEIs, SEI::SCALABILITY_DIMENSION_INFO);
+    SEIMessages sdiSEIs  = getSeisByType(prefixSEIs, SEI::PayloadType::SCALABILITY_DIMENSION_INFO);
     if (!sdiSEIs.empty())
     {
       SEIScalabilityDimensionInfo *sdi = (SEIScalabilityDimensionInfo*)sdiSEIs.front();
@@ -2544,7 +2555,7 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
         }
       }
     }
-    SEIMessages maiSEIs  = getSeisByType(prefixSEIs, SEI::MULTIVIEW_ACQUISITION_INFO);
+    SEIMessages maiSEIs = getSeisByType(prefixSEIs, SEI::PayloadType::MULTIVIEW_ACQUISITION_INFO);
     if (!maiSEIs.empty())
     {
       SEIMultiviewAcquisitionInfo *mai = (SEIMultiviewAcquisitionInfo*)maiSEIs.front();
@@ -2557,7 +2568,7 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
         }
       }
     }
-    SEIMessages mvpSEIs = getSeisByType(prefixSEIs, SEI::MULTIVIEW_VIEW_POSITION);
+    SEIMessages mvpSEIs = getSeisByType(prefixSEIs, SEI::PayloadType::MULTIVIEW_VIEW_POSITION);
     if (!mvpSEIs.empty())
     {
       SEIMultiviewViewPosition *mvp = (SEIMultiviewViewPosition*)mvpSEIs.front();
@@ -2573,7 +2584,7 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
   }
   else
   {
-    SEIMessages sdiSEIs  = getSeisByType(prefixSEIs, SEI::SCALABILITY_DIMENSION_INFO);
+    SEIMessages sdiSEIs = getSeisByType(prefixSEIs, SEI::PayloadType::SCALABILITY_DIMENSION_INFO);
     CHECK(!m_sdiSEIInFirstAU && !sdiSEIs.empty(), "When an SDI SEI message is present in any AU of a CVS, an SDI SEI message shall be present for the first AU of the CVS.");
     if (!sdiSEIs.empty())
     {
@@ -2582,7 +2593,7 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
         CHECK(!m_sdiSEIInFirstAU->isSDISameContent((SEIScalabilityDimensionInfo*)*it), "All SDI SEI messages in a CVS shall have the same content.")
       }
     }
-    SEIMessages maiSEIs  = getSeisByType(prefixSEIs, SEI::MULTIVIEW_ACQUISITION_INFO);
+    SEIMessages maiSEIs = getSeisByType(prefixSEIs, SEI::PayloadType::MULTIVIEW_ACQUISITION_INFO);
     CHECK(!m_maiSEIInFirstAU && !maiSEIs.empty(), "When an MAI SEI message is present in any AU of a CVS, an MAI SEI message shall be present for the first AU of the CVS.");
     if (!maiSEIs.empty())
     {
@@ -2591,7 +2602,7 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
         CHECK(!m_maiSEIInFirstAU->isMAISameContent((SEIMultiviewAcquisitionInfo*)*it), "All MAI SEI messages in a CVS shall have the same content.")
       }
     }
-    SEIMessages mvpSEIs = getSeisByType(prefixSEIs, SEI::MULTIVIEW_VIEW_POSITION);
+    SEIMessages mvpSEIs = getSeisByType(prefixSEIs, SEI::PayloadType::MULTIVIEW_VIEW_POSITION);
     CHECK(!m_mvpSEIInFirstAU && !mvpSEIs.empty(), "When an MVP SEI message is present in any AU of a CVS, an MVP SEI message shall be present for the first AU of the CVS.");
     if (!mvpSEIs.empty())
     {
@@ -2604,21 +2615,21 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
 
   for (SEIMessages::const_iterator it=prefixSEIs.begin(); it!=prefixSEIs.end(); it++)
   {
-    if ((*it)->payloadType() == SEI::MULTIVIEW_ACQUISITION_INFO)
+    if ((*it)->payloadType() == SEI::PayloadType::MULTIVIEW_ACQUISITION_INFO)
     {
       CHECK(!m_sdiSEIInFirstAU, "When a CVS does not contain an SDI SEI message, the CVS shall not contain an MAI SEI message.");
       SEIMultiviewAcquisitionInfo *maiSei = (SEIMultiviewAcquisitionInfo*)*it;
       CHECK(m_sdiSEIInFirstAU->m_sdiNumViews - 1 != maiSei->m_maiNumViewsMinus1, "The value of num_views_minus1 shall be equal to NumViews - 1");
     }
-    else if ((*it)->payloadType() == SEI::ALPHA_CHANNEL_INFO)
+    else if ((*it)->payloadType() == SEI::PayloadType::ALPHA_CHANNEL_INFO)
     {
       CHECK(!m_sdiSEIInFirstAU, "When a CVS does not contain an SDI SEI message with sdi_aux_id[i] equal to 1 for at least one value of i, no picture in the CVS shall be associated with an ACI SEI message.");
     }
-    else if ((*it)->payloadType() == SEI::DEPTH_REPRESENTATION_INFO)
+    else if ((*it)->payloadType() == SEI::PayloadType::DEPTH_REPRESENTATION_INFO)
     {
       CHECK(!m_sdiSEIInFirstAU, "When a CVS does not contain an SDI SEI message with sdi_aux_id[i] equal to 2 for at least one value of i, no picture in the CVS shall be associated with a DRI SEI message.");
     }
-    else if ((*it)->payloadType() == SEI::MULTIVIEW_VIEW_POSITION)
+    else if ((*it)->payloadType() == SEI::PayloadType::MULTIVIEW_VIEW_POSITION)
     {
       CHECK(!m_sdiSEIInFirstAU, "When a CVS does not contain an SDI SEI message, the CVS shall not contain an MVP SEI message.");
       SEIMultiviewViewPosition *mvpSei = (SEIMultiviewViewPosition*)*it;
@@ -2629,8 +2640,8 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
 
 void DecLib::xCheckDUISEIMessages(SEIMessages &prefixSEIs)
 {
-  SEIMessages BPSEIs  = getSeisByType(prefixSEIs, SEI::BUFFERING_PERIOD);
-  SEIMessages DUISEIs = getSeisByType(prefixSEIs, SEI::DECODING_UNIT_INFO);
+  SEIMessages BPSEIs  = getSeisByType(prefixSEIs, SEI::PayloadType::BUFFERING_PERIOD);
+  SEIMessages DUISEIs = getSeisByType(prefixSEIs, SEI::PayloadType::DECODING_UNIT_INFO);
   if (BPSEIs.empty())
   {
     return;
@@ -3260,7 +3271,7 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   naluInfo.m_POC             = pcSlice->getPOC();
   xCheckMixedNalUnit(pcSlice, sps, nalu);
   m_nalUnitInfo[naluInfo.m_nuhLayerId].push_back(naluInfo);
-  SEIMessages drapSEIs = getSeisByType(m_pcPic->SEIs, SEI::DEPENDENT_RAP_INDICATION);
+  SEIMessages drapSEIs = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::DEPENDENT_RAP_INDICATION);
   if (!drapSEIs.empty())
   {
     msg(NOTICE, "Dependent RAP indication SEI decoded\n");
@@ -3273,7 +3284,7 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   {
     pcSlice->getPic()->setEdrapRapId(0);
   }
-  SEIMessages edrapSEIs = getSeisByType(m_pcPic->SEIs, SEI::EXTENDED_DRAP_INDICATION);
+  SEIMessages edrapSEIs = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::EXTENDED_DRAP_INDICATION);
   if (!edrapSEIs.empty())
   {
     msg(NOTICE, "Extended DRAP indication SEI decoded\n");

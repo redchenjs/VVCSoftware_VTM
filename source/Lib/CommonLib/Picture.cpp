@@ -1441,13 +1441,13 @@ void Picture::createGrainSynthesizer(bool firstPictureInSequence, SEIFilmGrainSy
 
 PelUnitBuf Picture::getDisplayBufFG(bool wrap)
 {
-  int                        payloadType = 0;
+  SEI::PayloadType           payloadType;
   std::list<SEI *>::iterator message;
 
   for (message = SEIs.begin(); message != SEIs.end(); ++message)
   {
     payloadType = (*message)->payloadType();
-    if (payloadType == SEI::FILM_GRAIN_CHARACTERISTICS)
+    if (payloadType == SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS)
     {
       m_grainCharacteristic->m_errorCode       = -1;
       *m_grainCharacteristic->m_fgcParameters = *static_cast<SEIFilmGrainCharacteristics *>(*message);
@@ -1469,7 +1469,7 @@ PelUnitBuf Picture::getDisplayBufFG(bool wrap)
   }
   else
   {
-    if (payloadType == SEI::FILM_GRAIN_CHARACTERISTICS)
+    if (payloadType == SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS)
     {
       msg(WARNING, "Film Grain synthesis is not performed. Error code: 0x%x \n", m_grainCharacteristic->m_errorCode);
     }
@@ -1493,13 +1493,13 @@ void Picture::createColourTransfProcessor(bool firstPictureInSequence, SEIColour
 
 PelUnitBuf Picture::getDisplayBuf()
 {
-  int payloadType = 0;
+  SEI::PayloadType          payloadType;
   std::list<SEI*>::iterator message;
 
   for (message = SEIs.begin(); message != SEIs.end(); ++message)
   {
     payloadType = (*message)->payloadType();
-    if (payloadType == SEI::COLOUR_TRANSFORM_INFO)
+    if (payloadType == SEI::PayloadType::COLOUR_TRANSFORM_INFO)
     {
       // re-init parameters
       *m_colourTranfParams->m_pColourTransfParams = *static_cast<SEIColourTransformInfo*>(*message);

@@ -51,41 +51,39 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   const SEIBufferingPeriod *bp = nullptr;
   switch (sei.payloadType())
   {
-  case SEI::USER_DATA_UNREGISTERED:
+  case SEI::PayloadType::USER_DATA_UNREGISTERED:
     xWriteSEIuserDataUnregistered(*static_cast<const SEIuserDataUnregistered*>(&sei));
     break;
-  case SEI::DECODING_UNIT_INFO:
+  case SEI::PayloadType::DECODING_UNIT_INFO:
     bp = hrd.getBufferingPeriodSEI();
     CHECK (bp == nullptr, "Buffering Period need to be initialized in HRD to allow writing of Decoding Unit Information SEI");
     xWriteSEIDecodingUnitInfo(*static_cast<const SEIDecodingUnitInfo*>(& sei), *bp, temporalId);
     break;
-  case SEI::SCALABLE_NESTING:
+  case SEI::PayloadType::SCALABLE_NESTING:
     xWriteSEIScalableNesting(bs, *static_cast<const SEIScalableNesting*>(&sei));
     break;
-  case SEI::DECODED_PICTURE_HASH:
+  case SEI::PayloadType::DECODED_PICTURE_HASH:
     xWriteSEIDecodedPictureHash(*static_cast<const SEIDecodedPictureHash*>(&sei));
     break;
-  case SEI::BUFFERING_PERIOD:
+  case SEI::PayloadType::BUFFERING_PERIOD:
     xWriteSEIBufferingPeriod(*static_cast<const SEIBufferingPeriod*>(&sei));
     hrd.setBufferingPeriodSEI(static_cast<const SEIBufferingPeriod*>(&sei));
     break;
-  case SEI::PICTURE_TIMING:
-    {
-      bp = hrd.getBufferingPeriodSEI();
-      CHECK (bp == nullptr, "Buffering Period need to be initialized in HRD to allow writing of Picture Timing SEI");
-      xWriteSEIPictureTiming(*static_cast<const SEIPictureTiming*>(&sei), *bp, temporalId);
-    }
+  case SEI::PayloadType::PICTURE_TIMING:
+    bp = hrd.getBufferingPeriodSEI();
+    CHECK(bp == nullptr, "Buffering Period need to be initialized in HRD to allow writing of Picture Timing SEI");
+    xWriteSEIPictureTiming(*static_cast<const SEIPictureTiming *>(&sei), *bp, temporalId);
     break;
-  case SEI::FRAME_FIELD_INFO:
-    xWriteSEIFrameFieldInfo(*static_cast<const SEIFrameFieldInfo*>(&sei));
+  case SEI::PayloadType::FRAME_FIELD_INFO:
+    xWriteSEIFrameFieldInfo(*static_cast<const SEIFrameFieldInfo *>(&sei));
     break;
-  case SEI::DEPENDENT_RAP_INDICATION:
-    xWriteSEIDependentRAPIndication(*static_cast<const SEIDependentRAPIndication*>(&sei));
+  case SEI::PayloadType::DEPENDENT_RAP_INDICATION:
+    xWriteSEIDependentRAPIndication(*static_cast<const SEIDependentRAPIndication *>(&sei));
     break;
-  case SEI::EXTENDED_DRAP_INDICATION:
-    xWriteSEIEdrapIndication(*static_cast<const SEIExtendedDrapIndication*>(&sei));
+  case SEI::PayloadType::EXTENDED_DRAP_INDICATION:
+    xWriteSEIEdrapIndication(*static_cast<const SEIExtendedDrapIndication *>(&sei));
     break;
-  case SEI::FRAME_PACKING:
+  case SEI::PayloadType::FRAME_PACKING:
 #if JVET_T0056_SEI_PREFIX_INDICATION
     xWriteSEIFramePacking(*static_cast<const SEIFramePacking *>(&sei), SEIPrefixIndicationIdx);
 #else
@@ -93,23 +91,23 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
 #endif
     break;
 #if GREEN_METADATA_SEI_ENABLED
-  case SEI::GREEN_METADATA:
-    xWriteSEIGreenMetadataInfo(*static_cast<const SEIGreenMetadataInfo*>(&sei));
+  case SEI::PayloadType::GREEN_METADATA:
+    xWriteSEIGreenMetadataInfo(*static_cast<const SEIGreenMetadataInfo *>(&sei));
     break;
 #endif
-  case SEI::DISPLAY_ORIENTATION:
-    xWriteSEIDisplayOrientation(*static_cast<const SEIDisplayOrientation*>(&sei));
+  case SEI::PayloadType::DISPLAY_ORIENTATION:
+    xWriteSEIDisplayOrientation(*static_cast<const SEIDisplayOrientation *>(&sei));
     break;
-  case SEI::PARAMETER_SETS_INCLUSION_INDICATION:
-    xWriteSEIParameterSetsInclusionIndication(*static_cast<const SEIParameterSetsInclusionIndication*>(&sei));
+  case SEI::PayloadType::PARAMETER_SETS_INCLUSION_INDICATION:
+    xWriteSEIParameterSetsInclusionIndication(*static_cast<const SEIParameterSetsInclusionIndication *>(&sei));
     break;
-  case SEI::MASTERING_DISPLAY_COLOUR_VOLUME:
-    xWriteSEIMasteringDisplayColourVolume(*static_cast<const SEIMasteringDisplayColourVolume*>(&sei));
+  case SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME:
+    xWriteSEIMasteringDisplayColourVolume(*static_cast<const SEIMasteringDisplayColourVolume *>(&sei));
     break;
-  case SEI::ALTERNATIVE_TRANSFER_CHARACTERISTICS:
-    xWriteSEIAlternativeTransferCharacteristics(*static_cast<const SEIAlternativeTransferCharacteristics*>(&sei));
+  case SEI::PayloadType::ALTERNATIVE_TRANSFER_CHARACTERISTICS:
+    xWriteSEIAlternativeTransferCharacteristics(*static_cast<const SEIAlternativeTransferCharacteristics *>(&sei));
     break;
-  case SEI::EQUIRECTANGULAR_PROJECTION:
+  case SEI::PayloadType::EQUIRECTANGULAR_PROJECTION:
 #if JVET_T0056_SEI_PREFIX_INDICATION
     xWriteSEIEquirectangularProjection(*static_cast<const SEIEquirectangularProjection *>(&sei),
                                        SEIPrefixIndicationIdx);
@@ -117,24 +115,24 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIEquirectangularProjection(*static_cast<const SEIEquirectangularProjection *>(&sei));
 #endif
     break;
-  case SEI::SPHERE_ROTATION:
+  case SEI::PayloadType::SPHERE_ROTATION:
 #if JVET_T0056_SEI_PREFIX_INDICATION
     xWriteSEISphereRotation(*static_cast<const SEISphereRotation *>(&sei), SEIPrefixIndicationIdx);
 #else
     xWriteSEISphereRotation(*static_cast<const SEISphereRotation *>(&sei));
 #endif
     break;
-  case SEI::OMNI_VIEWPORT:
-    xWriteSEIOmniViewport(*static_cast<const SEIOmniViewport*>(&sei));
+  case SEI::PayloadType::OMNI_VIEWPORT:
+    xWriteSEIOmniViewport(*static_cast<const SEIOmniViewport *>(&sei));
     break;
-  case SEI::REGION_WISE_PACKING:
+  case SEI::PayloadType::REGION_WISE_PACKING:
 #if JVET_T0056_SEI_PREFIX_INDICATION
     xWriteSEIRegionWisePacking(*static_cast<const SEIRegionWisePacking *>(&sei), SEIPrefixIndicationIdx);
 #else
     xWriteSEIRegionWisePacking(*static_cast<const SEIRegionWisePacking *>(&sei));
 #endif
     break;
-  case SEI::GENERALIZED_CUBEMAP_PROJECTION:
+  case SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION:
 #if JVET_T0056_SEI_PREFIX_INDICATION
     xWriteSEIGeneralizedCubemapProjection(*static_cast<const SEIGeneralizedCubemapProjection *>(&sei),
                                           SEIPrefixIndicationIdx);
@@ -142,78 +140,78 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIGeneralizedCubemapProjection(*static_cast<const SEIGeneralizedCubemapProjection *>(&sei));
 #endif
     break;
-  case SEI::SCALABILITY_DIMENSION_INFO:
-    xWriteSEIScalabilityDimensionInfo(*static_cast<const SEIScalabilityDimensionInfo*>(&sei));
+  case SEI::PayloadType::SCALABILITY_DIMENSION_INFO:
+    xWriteSEIScalabilityDimensionInfo(*static_cast<const SEIScalabilityDimensionInfo *>(&sei));
     break;
-  case SEI::MULTIVIEW_ACQUISITION_INFO:
-    xWriteSEIMultiviewAcquisitionInfo(*static_cast<const SEIMultiviewAcquisitionInfo*>(&sei));
+  case SEI::PayloadType::MULTIVIEW_ACQUISITION_INFO:
+    xWriteSEIMultiviewAcquisitionInfo(*static_cast<const SEIMultiviewAcquisitionInfo *>(&sei));
     break;
-  case SEI::MULTIVIEW_VIEW_POSITION:
-    xWriteSEIMultiviewViewPosition(*static_cast<const SEIMultiviewViewPosition*>(&sei));
+  case SEI::PayloadType::MULTIVIEW_VIEW_POSITION:
+    xWriteSEIMultiviewViewPosition(*static_cast<const SEIMultiviewViewPosition *>(&sei));
     break;
-  case SEI::ALPHA_CHANNEL_INFO:
-    xWriteSEIAlphaChannelInfo(*static_cast<const SEIAlphaChannelInfo*>(&sei));
+  case SEI::PayloadType::ALPHA_CHANNEL_INFO:
+    xWriteSEIAlphaChannelInfo(*static_cast<const SEIAlphaChannelInfo *>(&sei));
     break;
-  case SEI::DEPTH_REPRESENTATION_INFO:
-    xWriteSEIDepthRepresentationInfo(*static_cast<const SEIDepthRepresentationInfo*>(&sei));
+  case SEI::PayloadType::DEPTH_REPRESENTATION_INFO:
+    xWriteSEIDepthRepresentationInfo(*static_cast<const SEIDepthRepresentationInfo *>(&sei));
     break;
-  case SEI::USER_DATA_REGISTERED_ITU_T_T35:
-    xWriteSEIUserDataRegistered(*static_cast<const SEIUserDataRegistered*>(&sei));
+  case SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35:
+    xWriteSEIUserDataRegistered(*static_cast<const SEIUserDataRegistered *>(&sei));
     break;
-  case SEI::FILM_GRAIN_CHARACTERISTICS:
-    xWriteSEIFilmGrainCharacteristics(*static_cast<const SEIFilmGrainCharacteristics*>(&sei));
+  case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
+    xWriteSEIFilmGrainCharacteristics(*static_cast<const SEIFilmGrainCharacteristics *>(&sei));
     break;
-  case SEI::CONTENT_LIGHT_LEVEL_INFO:
-    xWriteSEIContentLightLevelInfo(*static_cast<const SEIContentLightLevelInfo*>(&sei));
+  case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
+    xWriteSEIContentLightLevelInfo(*static_cast<const SEIContentLightLevelInfo *>(&sei));
     break;
-  case SEI::AMBIENT_VIEWING_ENVIRONMENT:
-    xWriteSEIAmbientViewingEnvironment(*static_cast<const SEIAmbientViewingEnvironment*>(&sei));
+  case SEI::PayloadType::AMBIENT_VIEWING_ENVIRONMENT:
+    xWriteSEIAmbientViewingEnvironment(*static_cast<const SEIAmbientViewingEnvironment *>(&sei));
     break;
-  case SEI::CONTENT_COLOUR_VOLUME:
-    xWriteSEIContentColourVolume(*static_cast<const SEIContentColourVolume*>(&sei));
+  case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
+    xWriteSEIContentColourVolume(*static_cast<const SEIContentColourVolume *>(&sei));
     break;
-  case SEI::COLOUR_TRANSFORM_INFO:
-    xWriteSEIColourTransformInfo(*static_cast<const SEIColourTransformInfo*>(&sei));
+  case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
+    xWriteSEIColourTransformInfo(*static_cast<const SEIColourTransformInfo *>(&sei));
     break;
-  case SEI::SUBPICTURE_LEVEL_INFO:
-    xWriteSEISubpictureLevelInfo(*static_cast<const SEISubpicureLevelInfo*>(&sei));
+  case SEI::PayloadType::SUBPICTURE_LEVEL_INFO:
+    xWriteSEISubpictureLevelInfo(*static_cast<const SEISubpicureLevelInfo *>(&sei));
     break;
-  case SEI::SAMPLE_ASPECT_RATIO_INFO:
-    xWriteSEISampleAspectRatioInfo(*static_cast<const SEISampleAspectRatioInfo*>(&sei));
+  case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
+    xWriteSEISampleAspectRatioInfo(*static_cast<const SEISampleAspectRatioInfo *>(&sei));
     break;
-  case SEI::PHASE_INDICATION:
-    xWriteSEIPhaseIndication(*static_cast<const SEIPhaseIndication*>(&sei));
+  case SEI::PayloadType::PHASE_INDICATION:
+    xWriteSEIPhaseIndication(*static_cast<const SEIPhaseIndication *>(&sei));
     break;
-  case SEI::ANNOTATED_REGIONS:
-    xWriteSEIAnnotatedRegions(*static_cast<const SEIAnnotatedRegions*>(&sei));
+  case SEI::PayloadType::ANNOTATED_REGIONS:
+    xWriteSEIAnnotatedRegions(*static_cast<const SEIAnnotatedRegions *>(&sei));
     break;
 #if JVET_T0056_SEI_MANIFEST
-  case SEI::SEI_MANIFEST:
+  case SEI::PayloadType::SEI_MANIFEST:
     CHECK((SEIPrefixIndicationIdx), "wrong SEI prefix indication message");
     xWriteSEISEIManifest(*static_cast<const SEIManifest *>(&sei));
     break;
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
-  case SEI::SEI_PREFIX_INDICATION:
+  case SEI::PayloadType::SEI_PREFIX_INDICATION:
     CHECK((SEIPrefixIndicationIdx), "wrong SEI prefix indication message");
     xWriteSEISEIPrefixIndication(bs, *static_cast<const SEIPrefixIndication *>(&sei), hrd, temporalId);
     break;
 #endif
-
-  case SEI::CONSTRAINED_RASL_ENCODING:
-    xWriteSEIConstrainedRaslIndication(*static_cast<const SEIConstrainedRaslIndication*>(&sei));
+  case SEI::PayloadType::CONSTRAINED_RASL_ENCODING:
+    xWriteSEIConstrainedRaslIndication(*static_cast<const SEIConstrainedRaslIndication *>(&sei));
     break;
-  case SEI::SHUTTER_INTERVAL_INFO:
-    xWriteSEIShutterInterval(*static_cast<const SEIShutterIntervalInfo*>(&sei));
+  case SEI::PayloadType::SHUTTER_INTERVAL_INFO:
+    xWriteSEIShutterInterval(*static_cast<const SEIShutterIntervalInfo *>(&sei));
     break;
-  case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
-    xWriteSEINeuralNetworkPostFilterCharacteristics(*static_cast<const SEINeuralNetworkPostFilterCharacteristics*>(&sei));
+  case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
+    xWriteSEINeuralNetworkPostFilterCharacteristics(
+      *static_cast<const SEINeuralNetworkPostFilterCharacteristics *>(&sei));
     break;
-  case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
-    xWriteSEINeuralNetworkPostFilterActivation(*static_cast<const SEINeuralNetworkPostFilterActivation*>(&sei));
+  case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
+    xWriteSEINeuralNetworkPostFilterActivation(*static_cast<const SEINeuralNetworkPostFilterActivation *>(&sei));
     break;
-  case SEI::SEI_PROCESSING_ORDER:
-    xWriteSEIProcessingOrder(*static_cast<const SEIProcessingOrderInfo*>(&sei));
+  case SEI::PayloadType::SEI_PROCESSING_ORDER:
+    xWriteSEIProcessingOrder(*static_cast<const SEIProcessingOrderInfo *>(&sei));
     break;
   default:
     THROW("Trying to write unhandled SEI message");
@@ -263,7 +261,7 @@ uint32_t SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &sei
     numBits += payload_data_num_bits;
 
     setBitstream(&bs);
-    uint32_t payloadType = (*sei)->payloadType();
+    uint32_t payloadType = to_underlying((*sei)->payloadType());
     for (; payloadType >= 0xff; payloadType -= 0xff)
     {
       WRITE_CODE(0xff, 8, "payload_type");
@@ -652,7 +650,7 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
     WRITE_FLAG(0, "sn_zero_bit");
   }
 
-  SEIMessages bufferingPeriod = getSeisByType(sei.m_nestedSEIs, SEI::BUFFERING_PERIOD);
+  SEIMessages bufferingPeriod = getSeisByType(sei.m_nestedSEIs, SEI::PayloadType::BUFFERING_PERIOD);
   if (!bufferingPeriod.empty())
   {
     SEIBufferingPeriod *bp = (SEIBufferingPeriod*)bufferingPeriod.front();
@@ -765,7 +763,7 @@ void SEIWriter::xWriteSEISEIManifest(const SEIManifest &sei)
   WRITE_CODE(sei.m_manifestNumSeiMsgTypes, 16, "manifest_num_sei_msg_types");
   for (int i = 0; i < sei.m_manifestNumSeiMsgTypes; i++)
   {
-    WRITE_CODE(sei.m_manifestSeiPayloadType[i], 16, "manifest_sei_payload_types");
+    WRITE_CODE(to_underlying(sei.m_manifestSeiPayloadType[i]), 16, "manifest_sei_payload_types");
     WRITE_CODE(sei.m_manifestSeiDescription[i], 8, "manifest_sei_description");
   }
 }
@@ -775,7 +773,7 @@ void SEIWriter::xWriteSEISEIManifest(const SEIManifest &sei)
 //SEI prefix indication
 void SEIWriter::xWriteSEISEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd, const uint32_t temporalId)
 {
-  WRITE_CODE(sei.m_prefixSeiPayloadType, 16, "prefix_sei_payload_type");
+  WRITE_CODE(to_underlying(sei.m_prefixSeiPayloadType), 16, "prefix_sei_payload_type");
   int idx = sei.m_numSeiPrefixIndicationsMinus1 + 1;
   //If num_sei_prefix_indication cannot be determined during initialization, then determine when writing prefix databits
   if (idx <= 1) 

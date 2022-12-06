@@ -566,7 +566,7 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
   // message in the SEI NAL unit (D3.45 in ISO/IEC 23008-2).
   if (m_pcCfg->getSEIManifestSEIEnabled())
   {
-    currentMessages = extractSeisByType(localMessages, SEI::SEI_MANIFEST);
+    currentMessages = extractSeisByType(localMessages, SEI::PayloadType::SEI_MANIFEST);
     CHECK(!(currentMessages.size() <= 1), "Unspecified error");
     xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
     xClearSEIs(currentMessages, !testWrite);
@@ -576,14 +576,14 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
   if (m_pcCfg->getSEIPrefixIndicationSEIEnabled())
   {
     //There may be multiple SEI prefix indication messages at the same time
-    currentMessages = extractSeisByType(localMessages, SEI::SEI_PREFIX_INDICATION);
+    currentMessages = extractSeisByType(localMessages, SEI::PayloadType::SEI_PREFIX_INDICATION);
     xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
     xClearSEIs(currentMessages, !testWrite);
   }
 #endif 
 
   // Buffering period SEI must always be following active parameter sets
-  currentMessages = extractSeisByType(localMessages, SEI::BUFFERING_PERIOD);
+  currentMessages = extractSeisByType(localMessages, SEI::PayloadType::BUFFERING_PERIOD);
   CHECK(!(currentMessages.size() <= 1), "Unspecified error");
   xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
   xClearSEIs(currentMessages, !testWrite);
@@ -592,7 +592,7 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
   // Note: When general_same_pic_timing_in_all_ols_flag is equal to 1, PT SEI messages are required
   //       to be placed into separate NAL units. The code below conforms to the constraint even if
   //       general_same_pic_timing_in_all_ols_flag is equal to 0
-  currentMessages = extractSeisByType(localMessages, SEI::PICTURE_TIMING);
+  currentMessages = extractSeisByType(localMessages, SEI::PayloadType::PICTURE_TIMING);
   CHECK(!(currentMessages.size() <= 1), "Unspecified error");
   xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
   xClearSEIs(currentMessages, !testWrite);
@@ -612,7 +612,7 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
   if (m_pcCfg->getScalableNestingSEIEnabled())
   {
     // Scalable nesting SEI must always be the following DU info
-    currentMessages = extractSeisByType(localMessages, SEI::SCALABLE_NESTING);
+    currentMessages = extractSeisByType(localMessages, SEI::PayloadType::SCALABLE_NESTING);
     xWriteSEISeparately(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
     xClearSEIs(currentMessages, !testWrite);
   }
@@ -633,7 +633,7 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
 uint32_t EncGOP::xWriteLeadingSEIMessages (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, const SPS *sps, std::deque<DUData> &duData)
 {
   AccessUnit testAU;
-  SEIMessages picTimingSEIs = getSeisByType(seiMessages, SEI::PICTURE_TIMING);
+  SEIMessages picTimingSEIs = getSeisByType(seiMessages, SEI::PayloadType::PICTURE_TIMING);
   CHECK(!(picTimingSEIs.size() < 2), "Unspecified error");
   SEIPictureTiming *picTiming = picTimingSEIs.empty() ? nullptr : (SEIPictureTiming *) picTimingSEIs.front();
 
@@ -876,7 +876,7 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     int NumOfSEIPrefixMsg = 0;
     for (auto &it: seiMessages)
     {
-      if (it->payloadType() == SEI::SEI_MANIFEST)
+      if (it->payloadType() == SEI::PayloadType::SEI_MANIFEST)
       {
         break;
       }
@@ -884,7 +884,7 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     }
     for (auto &it: seiMessages)
     {
-      if (NumOfSEIPrefixMsg == 0 || it->payloadType() == SEI::SEI_MANIFEST)
+      if (NumOfSEIPrefixMsg == 0 || it->payloadType() == SEI::PayloadType::SEI_MANIFEST)
       {
         break;
       }
@@ -4166,7 +4166,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           // Check picture level encoding constraints/requirements
           ProfileLevelTierFeatures profileLevelTierFeatures;
           profileLevelTierFeatures.extractPTLInformation(*(pcSlice->getSPS()));
-          const SEIMessages& subPictureLevelInfoSEIs = getSeisByType(leadingSeiMessages, SEI::SUBPICTURE_LEVEL_INFO);
+          const SEIMessages &subPictureLevelInfoSEIs =
+            getSeisByType(leadingSeiMessages, SEI::PayloadType::SUBPICTURE_LEVEL_INFO);
           if (!subPictureLevelInfoSEIs.empty())
           {
             const SEISubpicureLevelInfo& seiSubpic = static_cast<const SEISubpicureLevelInfo&>(*subPictureLevelInfoSEIs.front());

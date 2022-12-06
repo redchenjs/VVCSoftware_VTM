@@ -314,7 +314,7 @@ void SubpicMergeApp::parseSEI(SEIReader &seiReader, InputNALUnit &nalu, const VP
   decodePictureHashSei = nullptr;
   for (auto& s : seis)
   {
-    if (s->payloadType() == SEI::DECODED_PICTURE_HASH)
+    if (s->payloadType() == SEI::PayloadType::DECODED_PICTURE_HASH)
     {
       decodePictureHashSei = s;
       break;
@@ -825,7 +825,9 @@ void SubpicMergeApp::copyNalUnitsToAccessUnit(AccessUnit &accessUnit, std::vecto
   {
     if (inNalu.m_nalUnitType == (NalUnitType)naluType)
     {
-      if (!(naluType == NAL_UNIT_SUFFIX_SEI && inNalu.getBitstream().getFifo().at(2) == SEI::DECODED_PICTURE_HASH))  // Don't copy decoded_picture_hash SEI
+      if (!(naluType == NAL_UNIT_SUFFIX_SEI
+            && SEI::PayloadType(inNalu.getBitstream().getFifo().at(2))
+                 == SEI::PayloadType::DECODED_PICTURE_HASH))   // Don't copy decoded_picture_hash SEI
       {
         OutputNALUnit outNalu((NalUnitType)naluType);
         copyInputNaluToOutputNalu(outNalu, inNalu);
