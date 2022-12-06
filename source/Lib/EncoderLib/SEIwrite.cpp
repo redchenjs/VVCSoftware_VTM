@@ -86,11 +86,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIEdrapIndication(*static_cast<const SEIExtendedDrapIndication*>(&sei));
     break;
   case SEI::FRAME_PACKING:
-    xWriteSEIFramePacking(*static_cast<const SEIFramePacking*>(&sei)
 #if JVET_T0056_SEI_PREFIX_INDICATION
-    , SEIPrefixIndicationIdx
-#endif 
-    );
+    xWriteSEIFramePacking(*static_cast<const SEIFramePacking *>(&sei), SEIPrefixIndicationIdx);
+#else
+    xWriteSEIFramePacking(*static_cast<const SEIFramePacking *>(&sei));
+#endif
     break;
 #if GREEN_METADATA_SEI_ENABLED
   case SEI::GREEN_METADATA:
@@ -110,35 +110,37 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIAlternativeTransferCharacteristics(*static_cast<const SEIAlternativeTransferCharacteristics*>(&sei));
     break;
   case SEI::EQUIRECTANGULAR_PROJECTION:
-    xWriteSEIEquirectangularProjection(*static_cast<const SEIEquirectangularProjection*>(&sei)
 #if JVET_T0056_SEI_PREFIX_INDICATION
-    , SEIPrefixIndicationIdx
-#endif     
-    );
+    xWriteSEIEquirectangularProjection(*static_cast<const SEIEquirectangularProjection *>(&sei),
+                                       SEIPrefixIndicationIdx);
+#else
+    xWriteSEIEquirectangularProjection(*static_cast<const SEIEquirectangularProjection *>(&sei));
+#endif
     break;
   case SEI::SPHERE_ROTATION:
-    xWriteSEISphereRotation(*static_cast<const SEISphereRotation*>(&sei)
 #if JVET_T0056_SEI_PREFIX_INDICATION
-    , SEIPrefixIndicationIdx
-#endif 
-    );
+    xWriteSEISphereRotation(*static_cast<const SEISphereRotation *>(&sei), SEIPrefixIndicationIdx);
+#else
+    xWriteSEISphereRotation(*static_cast<const SEISphereRotation *>(&sei));
+#endif
     break;
   case SEI::OMNI_VIEWPORT:
     xWriteSEIOmniViewport(*static_cast<const SEIOmniViewport*>(&sei));
     break;
   case SEI::REGION_WISE_PACKING:
-    xWriteSEIRegionWisePacking(*static_cast<const SEIRegionWisePacking*>(&sei)
 #if JVET_T0056_SEI_PREFIX_INDICATION
-    , SEIPrefixIndicationIdx
-#endif 
-    );
+    xWriteSEIRegionWisePacking(*static_cast<const SEIRegionWisePacking *>(&sei), SEIPrefixIndicationIdx);
+#else
+    xWriteSEIRegionWisePacking(*static_cast<const SEIRegionWisePacking *>(&sei));
+#endif
     break;
   case SEI::GENERALIZED_CUBEMAP_PROJECTION:
-    xWriteSEIGeneralizedCubemapProjection(*static_cast<const SEIGeneralizedCubemapProjection*>(&sei)
 #if JVET_T0056_SEI_PREFIX_INDICATION
-    , SEIPrefixIndicationIdx
-#endif 
-    );
+    xWriteSEIGeneralizedCubemapProjection(*static_cast<const SEIGeneralizedCubemapProjection *>(&sei),
+                                          SEIPrefixIndicationIdx);
+#else
+    xWriteSEIGeneralizedCubemapProjection(*static_cast<const SEIGeneralizedCubemapProjection *>(&sei));
+#endif
     break;
   case SEI::SCALABILITY_DIMENSION_INFO:
     xWriteSEIScalabilityDimensionInfo(*static_cast<const SEIScalabilityDimensionInfo*>(&sei));
@@ -661,11 +663,11 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
   writeSEImessages(bs, sei.m_nestedSEIs, m_nestingHrd, true, 0);
 }
 
-void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking& sei
 #if JVET_T0056_SEI_PREFIX_INDICATION
-    , int SEIPrefixIndicationIdx
-#endif 
-)
+void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking &sei, int SEIPrefixIndicationIdx)
+#else
+void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking &sei)
+#endif
 {
 #if JVET_T0056_SEI_PREFIX_INDICATION
   if (SEIPrefixIndicationIdx)
@@ -941,11 +943,11 @@ void SEIWriter::xWriteSEIAlternativeTransferCharacteristics(const SEIAlternative
   WRITE_CODE(sei.m_preferredTransferCharacteristics, 8, "preferred_transfer_characteristics");
 }
 
-void SEIWriter::xWriteSEIEquirectangularProjection(const SEIEquirectangularProjection &sei
 #if JVET_T0056_SEI_PREFIX_INDICATION
-    , int SEIPrefixIndicationIdx
-#endif 
-)
+void SEIWriter::xWriteSEIEquirectangularProjection(const SEIEquirectangularProjection &sei, int SEIPrefixIndicationIdx)
+#else
+void SEIWriter::xWriteSEIEquirectangularProjection(const SEIEquirectangularProjection &sei)
+#endif
 {
 #if JVET_T0056_SEI_PREFIX_INDICATION
   if (SEIPrefixIndicationIdx)
@@ -974,11 +976,11 @@ void SEIWriter::xWriteSEIEquirectangularProjection(const SEIEquirectangularProje
   }
 }
 
-void SEIWriter::xWriteSEISphereRotation(const SEISphereRotation &sei
 #if JVET_T0056_SEI_PREFIX_INDICATION
-  , int SEIPrefixIndicationIdx
+void SEIWriter::xWriteSEISphereRotation(const SEISphereRotation &sei, int SEIPrefixIndicationIdx)
+#else
+void SEIWriter::xWriteSEISphereRotation(const SEISphereRotation &sei)
 #endif
-)
 {
 #if JVET_T0056_SEI_PREFIX_INDICATION
   if (SEIPrefixIndicationIdx)
@@ -1038,11 +1040,11 @@ void SEIWriter::xWriteSEIOmniViewport(const SEIOmniViewport &sei)
   }
 }
 
-void SEIWriter::xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei
 #if JVET_T0056_SEI_PREFIX_INDICATION
-  , int SEIPrefixIndicationIdx
+void SEIWriter::xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei, int SEIPrefixIndicationIdx)
+#else
+void SEIWriter::xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei)
 #endif
-)
 {
 #if JVET_T0056_SEI_PREFIX_INDICATION
   if (SEIPrefixIndicationIdx)
@@ -1104,11 +1106,12 @@ void SEIWriter::xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei
   }
 }
 
-void SEIWriter::xWriteSEIGeneralizedCubemapProjection(const SEIGeneralizedCubemapProjection &sei
 #if JVET_T0056_SEI_PREFIX_INDICATION
-  , int SEIPrefixIndicationIdx
+void SEIWriter::xWriteSEIGeneralizedCubemapProjection(const SEIGeneralizedCubemapProjection &sei,
+                                                      int                                    SEIPrefixIndicationIdx)
+#else
+void SEIWriter::xWriteSEIGeneralizedCubemapProjection(const SEIGeneralizedCubemapProjection &sei)
 #endif
-)
 {
 #if JVET_T0056_SEI_PREFIX_INDICATION
   if (SEIPrefixIndicationIdx)
