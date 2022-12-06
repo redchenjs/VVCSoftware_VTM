@@ -124,11 +124,12 @@ protected:
 
   void xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei);
   void xWriteSEIAnnotatedRegions                  (const SEIAnnotatedRegions& sei);
-  void xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &hrd, const uint32_t temporalId
-  #if JVET_T0056_SEI_PREFIX_INDICATION
-  , int SEIPrefixIndicationIdx = 0
-#endif 
-  );
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  void xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &hrd, const uint32_t temporalId,
+                            int SEIPrefixIndicationIdx = 0);
+#else
+  void xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &hrd, const uint32_t temporalId);
+#endif
   void xWriteSEIShutterInterval(const SEIShutterIntervalInfo& sei);
   void xWriteByteAlign();
   void xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);

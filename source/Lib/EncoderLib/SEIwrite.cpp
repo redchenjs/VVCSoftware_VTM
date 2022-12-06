@@ -41,11 +41,12 @@
 //! \ingroup EncoderLib
 //! \{
 
-void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &hrd, const uint32_t temporalId
 #if JVET_T0056_SEI_PREFIX_INDICATION
-  , int SEIPrefixIndicationIdx
-#endif 
-)
+void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &hrd, const uint32_t temporalId,
+                                     int SEIPrefixIndicationIdx)
+#else
+void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &hrd, const uint32_t temporalId)
+#endif
 {
   const SEIBufferingPeriod *bp = nullptr;
   switch (sei.payloadType())
