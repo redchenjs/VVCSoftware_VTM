@@ -118,8 +118,8 @@ protected:
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
   //SEI prefix indication
-  void xWriteSEISEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd, const uint32_t temporalId);
-  int  getUESENumBits(std::string str, int codeNum);
+  void xWriteSEISEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd,
+                                    const uint32_t temporalId);
   void xWriteSEIPrefixIndicationByteAlign();
 #endif 
 

@@ -1019,11 +1019,9 @@ public:
   enum SEIManifestDescription
   {
     NO_SEI_MESSAGE           = 0,
-    NECESSARY_SEI_MESSAGE      = 1,
-    UNNECESSARY_SEI_MESSAGE    = 2,
+    NECESSARY_SEI_MESSAGE    = 1,
+    UNNECESSARY_SEI_MESSAGE  = 2,
     UNDETERMINED_SEI_MESSAGE = 3,
-
-    NUM_OF_DESCROPTION       = 255,
   };
   uint16_t                    m_manifestNumSeiMsgTypes;
   std::vector<uint16_t>       m_manifestSeiPayloadType;
