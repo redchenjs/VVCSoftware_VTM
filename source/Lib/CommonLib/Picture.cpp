@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,7 @@ Picture::Picture()
 {
   cs                   = nullptr;
   m_isSubPicBorderSaved = false;
-  m_bIsBorderExtended  = false;
+  m_extendedBorder        = false;
   m_wrapAroundValid    = false;
   m_wrapAroundOffset   = 0;
   usedByCurr           = false;
@@ -63,21 +63,28 @@ Picture::Picture()
   topField             = false;
   precedingDRAP        = false;
   edrapRapId           = -1;
-  m_colourTranfParams  = NULL;
+  m_colourTranfParams     = nullptr;
   nonReferencePictureFlag = false;
 
   for( int i = 0; i < MAX_NUM_CHANNEL_TYPE; i++ )
   {
     m_prevQP[i] = -1;
   }
-  m_spliceIdx = NULL;
+  m_spliceIdx           = nullptr;
   m_ctuNums = 0;
   layerId = NOT_VALID;
   numSlices = 1;
   unscaledPic = nullptr;
+  m_isMctfFiltered      = false;
+  m_grainCharacteristic = nullptr;
+  m_grainBuf            = nullptr;
 }
 
-void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId, const bool gopBasedTemporalFilterEnabled )
+#if JVET_Z0120_SII_SEI_PROCESSING
+void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId, const bool enablePostFilteringForHFR, const bool gopBasedTemporalFilterEnabled, const bool fgcSEIAnalysisEnabled)
+#else
+void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId, const bool gopBasedTemporalFilterEnabled, const bool fgcSEIAnalysisEnabled )
+#endif
 {
   layerId = _layerId;
   UnitArea::operator=( UnitArea( _chromaFormat, Area( Position{ 0, 0 }, size ) ) );
@@ -86,6 +93,13 @@ void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const
   M_BUFS( 0, PIC_RECONSTRUCTION ).create( _chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE );
   M_BUFS( 0, PIC_RECON_WRAP ).create( _chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE );
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (enablePostFilteringForHFR)
+  {
+    M_BUFS(0, PIC_YUV_POST_REC).create(_chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE);
+  }
+#endif
+
   if( !_decoder )
   {
     M_BUFS( 0, PIC_ORIGINAL ).    create( _chromaFormat, a );
@@ -93,6 +107,10 @@ void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const
     if(gopBasedTemporalFilterEnabled)
     {
       M_BUFS( 0, PIC_FILTERED_ORIGINAL ). create( _chromaFormat, a );
+    }
+    if ( fgcSEIAnalysisEnabled )
+    {
+      M_BUFS( 0, PIC_FILTERED_ORIGINAL_FG ).create( _chromaFormat, a );
     }
   }
 #if !KEEP_PRED_AND_RESI_SIGNALS
@@ -130,9 +148,10 @@ void Picture::destroy()
   if (m_spliceIdx)
   {
     delete[] m_spliceIdx;
-    m_spliceIdx = NULL;
+    m_spliceIdx = nullptr;
   }
-  m_invColourTransfBuf = NULL;
+  m_invColourTransfBuf = nullptr;
+  m_grainBuf           = nullptr;
 }
 
 void Picture::createTempBuffers( const unsigned _maxCUSize )
@@ -208,6 +227,11 @@ const CPelUnitBuf Picture::getRecoBuf(const UnitArea &unit, bool wrap)     const
        PelUnitBuf Picture::getRecoBuf(bool wrap)                                 { return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION); }
 const CPelUnitBuf Picture::getRecoBuf(bool wrap)                           const { return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION); }
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+       PelUnitBuf Picture::getPostRecBuf()                           { return M_BUFS(scheduler.getSplitPicId(), PIC_YUV_POST_REC); }
+const CPelUnitBuf Picture::getPostRecBuf()                     const { return M_BUFS(scheduler.getSplitPicId(), PIC_YUV_POST_REC); }
+#endif
+
 void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHeader *picHeader, APS** alfApss, APS* lmcsAps, APS* scalingListAps )
 {
   for( auto &sei : SEIs )
@@ -218,8 +242,8 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   clearSliceBuffer();
 
   const ChromaFormat chromaFormatIDC = sps.getChromaFormatIdc();
-  const int          iWidth = pps.getPicWidthInLumaSamples();
-  const int          iHeight = pps.getPicHeightInLumaSamples();
+  const int          width           = pps.getPicWidthInLumaSamples();
+  const int          height          = pps.getPicHeightInLumaSamples();
 
   if( cs )
   {
@@ -229,7 +253,11 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   {
     cs = new CodingStructure( g_globalUnitCache.cuCache, g_globalUnitCache.puCache, g_globalUnitCache.tuCache );
     cs->sps = &sps;
-    cs->create(chromaFormatIDC, Area(0, 0, iWidth, iHeight), true, (bool)sps.getPLTMode());
+#if GDR_ENABLED
+    cs->create(chromaFormatIDC, Area(0, 0, width, height), true, (bool)sps.getPLTMode(), sps.getGDREnabledFlag());
+#else
+    cs->create(chromaFormatIDC, Area(0, 0, width, height), true, (bool) sps.getPLTMode());
+#endif
   }
 
   cs->vps = vps;
@@ -238,7 +266,24 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   cs->pps     = &pps;
   picHeader->setSPSId( sps.getSPSId() );
   picHeader->setPPSId( pps.getPPSId() );
+#if GDR_ENABLED
+  picHeader->setPic(this);
+
+  PicHeader *ph = new PicHeader;
+  ph->initPicHeader();
+  *ph = *picHeader;
+  ph->setPic(this);
+
+  if (cs->picHeader)
+  {
+    delete cs->picHeader;
+    cs->picHeader = nullptr;
+  }
+
+  cs->picHeader = ph;
+#else
   cs->picHeader = picHeader;
+#endif
   memcpy(cs->alfApss, alfApss, sizeof(cs->alfApss));
   cs->lmcsAps = lmcsAps;
   cs->scalinglistAps = scalingListAps;
@@ -247,12 +292,14 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   m_scalingWindow = pps.getScalingWindow();
   mixedNaluTypesInPicFlag = pps.getMixedNaluTypesInPicFlag();
   nonReferencePictureFlag = picHeader->getNonReferencePictureFlag();
+  m_chromaFormatIDC = sps.getChromaFormatIdc();
+  m_bitDepths = sps.getBitDepths();
 
-  if (m_spliceIdx == NULL)
+  if (m_spliceIdx == nullptr)
   {
     m_ctuNums = cs->pcv->sizeInCtus;
     m_spliceIdx = new int[m_ctuNums];
-    memset(m_spliceIdx, 0, m_ctuNums * sizeof(int));
+    std::fill_n(m_spliceIdx, m_ctuNums, 0);
   }
 }
 
@@ -285,8 +332,9 @@ void Picture::fillSliceLossyLosslessArray(std::vector<uint16_t> sliceLosslessInd
     // mixed lossy/lossless slices, set only lossless slices;
     for (uint16_t i = 0; i < numElementsinsliceLosslessIndexArray; i++)
     {
-        CHECK(sliceLosslessIndexArray[i] >= numSlices || sliceLosslessIndexArray[i] < 0, "index of lossless slice is out of slice index bound");
-        m_lossylosslessSliceArray[sliceLosslessIndexArray[i]] = true;
+      CHECK(sliceLosslessIndexArray[i] >= numSlices || sliceLosslessIndexArray[i] < 0,
+            "index of lossless slice is out of slice index bound");
+      m_lossylosslessSliceArray[sliceLosslessIndexArray[i]] = true;
     }
   }
   CHECK(m_lossylosslessSliceArray.size() < numSlices, "sliceLosslessArray size is less than number of slices");
@@ -471,11 +519,130 @@ const TFilterCoeff DownsamplingFilterSRC[8][16][12] =
     }
 };
 
+#if JVET_AB0081
+const TFilterCoeff m_lumaFilter12_alt[16][12] =
+{
+{ 0, 0, 0, 0, 0, 256, 0, 0, 0, 0, 0, 0, },
+{ 1, -1, 0, 3, -12, 253, 16, -6, 2, 0, 0, 0, },
+{ 0, 0, -3, 9, -24, 250, 32, -11, 4, -1, 0, 0, },
+{ 0, 0, -4, 12, -32, 241, 52, -18, 8, -4, 2, -1, },
+{ 0, 1, -6, 15, -38, 228, 75, -28, 14, -7, 3, -1, },
+{ 0, 1, -7, 18, -43, 214, 96, -33, 16, -8, 3, -1, },
+{ 1, 0, -6, 17, -44, 196, 119, -40, 20, -10, 4, -1, },
+{ 0, 2, -9, 21, -47, 180, 139, -43, 20, -10, 4, -1, },
+{ -1, 3, -9, 21, -46, 160, 160, -46, 21, -9, 3, -1, },
+{ -1, 4, -10, 20, -43, 139, 180, -47, 21, -9, 2, 0, },
+{ -1, 4, -10, 20, -40, 119, 196, -44, 17, -6, 0, 1, },
+{ -1, 3, -8, 16, -33, 96, 214, -43, 18, -7, 1, 0, },
+{ -1, 3, -7, 14, -28, 75, 228, -38, 15, -6, 1, 0, },
+{ -1, 2, -4, 8, -18, 52, 241, -32, 12, -4, 0, 0, },
+{ 0, 0, -1, 4, -11, 32, 250, -24, 9, -3, 0, 0, },
+{ 0, 0, 0, 2, -6, 16, 253, -12, 3, 0, -1, 1, },
+};
+const TFilterCoeff m_chromaFilter6_alt[32][6] =
+{
+{0, 0, 256, 0, 0, 0, },
+{ 1, -6, 256, 6, -1, 0, },
+{ 2, -11, 254, 14, -4, 1, },
+{ 4, -18, 252, 23, -6, 1, },
+{ 6, -24, 249, 32, -9, 2, },
+{ 6, -26, 244, 41, -12, 3, },
+{ 7, -30, 239, 53, -18, 5, },
+{ 8, -34, 235, 61, -19, 5, },
+{ 10, -38, 228, 72, -22, 6, },
+{ 10, -39, 220, 84, -26, 7, },
+{ 10, -40, 213, 94, -29, 8, },
+{ 11, -42, 205, 105, -32, 9, },
+{ 11, -42, 196, 116, -35, 10, },
+{ 11, -42, 186, 128, -37, 10, },
+{ 11, -42, 177, 138, -38, 10, },
+{ 11, -41, 167, 148, -40, 11, },
+{ 11, -41, 158, 158, -41, 11, },
+{ 11, -40, 148, 167, -41, 11, },
+{ 10, -38, 138, 177, -42, 11, },
+{ 10, -37, 128, 186, -42, 11, },
+{ 10, -35, 116, 196, -42, 11, },
+{ 9, -32, 105, 205, -42, 11, },
+{ 8, -29, 94, 213, -40, 10, },
+{ 7, -26, 84, 220, -39, 10, },
+{ 6, -22, 72, 228, -38, 10, },
+{ 5, -19, 61, 235, -34, 8, },
+{ 5, -18, 53, 239, -30, 7, },
+{ 3, -12, 41, 244, -26, 6, },
+{ 2, -9, 32, 249, -24, 6, },
+{ 1, -6, 23, 252, -18, 4, },
+{ 1, -4, 14, 254, -11, 2, },
+{ 0, -1, 6, 256, -6, 1, }
+};
+
+const TFilterCoeff m_lumaFilter12[16][12] =
+{
+    { 0,     0,     0,     0,     0,   256,     0,     0,     0,     0,     0,     0, },
+    {-1,     2,    -3,     6,   -14,   254,    16,    -7,     4,    -2,     1,     0, },
+    {-1,     3,    -7,    12,   -26,   249,    35,   -15,     8,    -4,     2,     0, },
+    {-2,     5,    -9,    17,   -36,   241,    54,   -22,    12,    -6,     3,    -1, },
+    {-2,     5,   -11,    21,   -43,   230,    75,   -29,    15,    -8,     4,    -1, },
+    {-2,     6,   -13,    24,   -48,   216,    97,   -36,    19,   -10,     4,    -1, },
+    {-2,     7,   -14,    25,   -51,   200,   119,   -42,    22,   -12,     5,    -1, },
+    {-2,     7,   -14,    26,   -51,   181,   140,   -46,    24,   -13,     6,    -2, },
+    {-2,     6,   -13,    25,   -50,   162,   162,   -50,    25,   -13,     6,    -2, },
+    {-2,     6,   -13,    24,   -46,   140,   181,   -51,    26,   -14,     7,    -2, },
+    {-1,     5,   -12,    22,   -42,   119,   200,   -51,    25,   -14,     7,    -2, },
+    {-1,     4,   -10,    19,   -36,    97,   216,   -48,    24,   -13,     6,    -2, },
+    {-1,     4,    -8,    15,   -29,    75,   230,   -43,    21,   -11,     5,    -2, },
+    {-1,     3,    -6,    12,   -22,    54,   241,   -36,    17,    -9,     5,    -2, },
+    { 0,     2,    -4,     8,   -15,    35,   249,   -26,    12,    -7,     3,    -1, },
+    { 0,     1,    -2,     4,    -7,    16,   254,   -14,     6,    -3,     2,    -1, },
+};
+
+const TFilterCoeff m_chromaFilter6[32][6] =
+{
+    {0, 0, 256, 0, 0, 0},
+    {1, -6, 256, 7, -2, 0},
+    {2, -11, 253, 15, -4, 1},
+    {3, -16, 251, 23, -6, 1},
+    {4, -21, 248, 33, -10, 2},
+    {5, -25, 244, 42, -12, 2},
+    {7, -30, 239, 53, -17, 4},
+    {7, -32, 234, 62, -19, 4},
+    {8, -35, 227, 73, -22, 5},
+    {9, -38, 220, 84, -26, 7},
+    {10, -40, 213, 95, -29, 7},
+    {10, -41, 204, 106, -31, 8},
+    {10, -42, 196, 117, -34, 9},
+    {10, -41, 187, 127, -35, 8},
+    {11, -42, 177, 138, -38, 10},
+    {10, -41, 168, 148, -39, 10},
+    {10, -40, 158, 158, -40, 10},
+    {10, -39, 148, 168, -41, 10},
+    {10, -38, 138, 177, -42, 11},
+    {8, -35, 127, 187, -41, 10},
+    {9, -34, 117, 196, -42, 10},
+    {8, -31, 106, 204, -41, 10},
+    {7, -29, 95, 213, -40, 10},
+    {7, -26, 84, 220, -38, 9},
+    {5, -22, 73, 227, -35, 8},
+    {4, -19, 62, 234, -32, 7},
+    {4, -17, 53, 239, -30, 7},
+    {2, -12, 42, 244, -25, 5},
+    {2, -10, 33, 248, -21, 4},
+    {1, -6, 23, 251, -16, 3},
+    {1, -4, 15, 253, -11, 2},
+    {0, -2, 7, 256, -6, 1},
+};
+#endif
+
 void Picture::sampleRateConv( const std::pair<int, int> scalingRatio, const std::pair<int, int> compScale,
                               const CPelBuf& beforeScale, const int beforeScaleLeftOffset, const int beforeScaleTopOffset,
                               const PelBuf& afterScale, const int afterScaleLeftOffset, const int afterScaleTopOffset,
                               const int bitDepth, const bool useLumaFilter, const bool downsampling,
-                              const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag )
+#if !JVET_AB0081
+                              const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
+#else
+                              const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag,
+                              const bool rescaleForDisplay, const int upscaleFilterForDisplay
+#endif
+)
 {
   const Pel* orgSrc = beforeScale.buf;
   const int orgWidth = beforeScale.width;
@@ -497,8 +664,21 @@ void Picture::sampleRateConv( const std::pair<int, int> scalingRatio, const std:
     return;
   }
 
+#if JVET_AB0081
   const TFilterCoeff* filterHor = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
   const TFilterCoeff* filterVer = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
+  if (rescaleForDisplay)
+  {
+    if (upscaleFilterForDisplay != 0)
+    {
+      filterHor = useLumaFilter ? (upscaleFilterForDisplay == 1 ? &m_lumaFilter12_alt[0][0] : &m_lumaFilter12[0][0]) : (upscaleFilterForDisplay == 1 ? &m_chromaFilter6_alt[0][0] : &m_chromaFilter6[0][0]);
+      filterVer = useLumaFilter ? (upscaleFilterForDisplay == 1 ? &m_lumaFilter12_alt[0][0] : &m_lumaFilter12[0][0]) : (upscaleFilterForDisplay == 1 ? &m_chromaFilter6_alt[0][0] : &m_chromaFilter6[0][0]);
+    }
+  }
+#else
+  const TFilterCoeff* filterHor = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
+  const TFilterCoeff* filterVer = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
+#endif
   const int numFracPositions = useLumaFilter ? 15 : 31;
   const int numFracShift = useLumaFilter ? 4 : 5;
   const int posShiftX = SCALE_RATIO_BITS - numFracShift + compScale.first;
@@ -573,9 +753,16 @@ void Picture::sampleRateConv( const std::pair<int, int> scalingRatio, const std:
     filterVer = &DownsamplingFilterSRC[verFilter][0][0];
   }
 
+#if JVET_AB0081
+  int filterLengthsLuma[3] = { 8, 12, 12 };
+  int filterLengthsChroma[3] = { 4, 6, 6 };
+  int log2NormList[3] = { 12, 16, 16 };
+  const int filterLength = downsampling ? 12 : (rescaleForDisplay ? (useLumaFilter ? filterLengthsLuma[upscaleFilterForDisplay] : filterLengthsChroma[upscaleFilterForDisplay]) : useLumaFilter ? NTAPS_LUMA : NTAPS_CHROMA);
+  const int log2Norm = downsampling ? 14 : (rescaleForDisplay ? log2NormList[upscaleFilterForDisplay] : 12);
+#else
   const int filterLength = downsampling ? 12 : ( useLumaFilter ? NTAPS_LUMA : NTAPS_CHROMA );
   const int log2Norm = downsampling ? 14 : 12;
-
+#endif
   int *buf = new int[orgHeight * scaledWidth];
   int maxVal = ( 1 << bitDepth ) - 1;
 
@@ -640,7 +827,13 @@ void Picture::rescalePicture( const std::pair<int, int> scalingRatio,
                               const CPelUnitBuf& beforeScaling, const Window& scalingWindowBefore,
                               const PelUnitBuf& afterScaling, const Window& scalingWindowAfter,
                               const ChromaFormat chromaFormatIDC, const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
-                              const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag )
+#if !JVET_AB0081
+                              const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
+#else
+                              const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
+                              bool rescaleForDisplay, int upscaleFilterForDisplay
+#endif
+)
 {
   for( int comp = 0; comp < ::getNumberValidComponents( chromaFormatIDC ); comp++ )
   {
@@ -652,7 +845,13 @@ void Picture::rescalePicture( const std::pair<int, int> scalingRatio,
                     beforeScale, scalingWindowBefore.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ), scalingWindowBefore.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
                     afterScale, scalingWindowAfter.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ), scalingWindowAfter.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
                     bitDepths.recon[toChannelType(compID)], downsampling || useLumaFilter ? true : isLuma( compID ), downsampling,
-                    isLuma( compID ) ? 1 : horCollocatedChromaFlag, isLuma( compID ) ? 1 : verCollocatedChromaFlag );
+#if !JVET_AB0081
+                    isLuma( compID ) ? 1 : horCollocatedChromaFlag, isLuma( compID ) ? 1 : verCollocatedChromaFlag
+#else
+                    isLuma(compID) ? 1 : horCollocatedChromaFlag, isLuma(compID) ? 1 : verCollocatedChromaFlag,
+                    rescaleForDisplay, upscaleFilterForDisplay
+#endif
+    );
   }
 }
 
@@ -951,7 +1150,7 @@ void Picture::restoreSubPicBorder(int POC, int subPicX0, int subPicY0, int subPi
 
 void Picture::extendPicBorder( const PPS *pps )
 {
-  if ( m_bIsBorderExtended )
+  if (m_extendedBorder)
   {
     if( isWrapAroundEnabled( pps ) && ( !m_wrapAroundValid || m_wrapAroundOffset != pps->getWrapAroundOffset() ) )
     {
@@ -1008,7 +1207,7 @@ void Picture::extendPicBorder( const PPS *pps )
     }
   }
 
-  m_bIsBorderExtended = true;
+  m_extendedBorder = true;
 }
 
 void Picture::extendWrapBorder( const PPS *pps )
@@ -1165,7 +1364,7 @@ void Picture::addPictureToHashMapForInter()
   int picWidth = slices[0]->getPPS()->getPicWidthInLumaSamples();
   int picHeight = slices[0]->getPPS()->getPicHeightInLumaSamples();
   uint32_t* blockHashValues[2][2];
-  bool* bIsBlockSame[2][3];
+  bool     *isBlockSame[2][3];
 
   for (int i = 0; i < 2; i++)
   {
@@ -1176,25 +1375,31 @@ void Picture::addPictureToHashMapForInter()
 
     for (int j = 0; j < 3; j++)
     {
-      bIsBlockSame[i][j] = new bool[picWidth*picHeight];
+      isBlockSame[i][j] = new bool[picWidth * picHeight];
     }
   }
   m_hashMap.create(picWidth, picHeight);
-  m_hashMap.generateBlock2x2HashValue(getOrigBuf(), picWidth, picHeight, slices[0]->getSPS()->getBitDepths(), blockHashValues[0], bIsBlockSame[0]);//2x2
-  m_hashMap.generateBlockHashValue(picWidth, picHeight, 4, 4, blockHashValues[0], blockHashValues[1], bIsBlockSame[0], bIsBlockSame[1]);//4x4
-  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], bIsBlockSame[1][2], picWidth, picHeight, 4, 4);
+  m_hashMap.generateBlock2x2HashValue(getOrigBuf(), picWidth, picHeight, slices[0]->getSPS()->getBitDepths(),
+                                      blockHashValues[0], isBlockSame[0]);   // 2x2
+  m_hashMap.generateBlockHashValue(picWidth, picHeight, 4, 4, blockHashValues[0], blockHashValues[1], isBlockSame[0],
+                                   isBlockSame[1]);   // 4x4
+  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], isBlockSame[1][2], picWidth, picHeight, 4, 4);
 
-  m_hashMap.generateBlockHashValue(picWidth, picHeight, 8, 8, blockHashValues[1], blockHashValues[0], bIsBlockSame[1], bIsBlockSame[0]);//8x8
-  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[0], bIsBlockSame[0][2], picWidth, picHeight, 8, 8);
+  m_hashMap.generateBlockHashValue(picWidth, picHeight, 8, 8, blockHashValues[1], blockHashValues[0], isBlockSame[1],
+                                   isBlockSame[0]);   // 8x8
+  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[0], isBlockSame[0][2], picWidth, picHeight, 8, 8);
 
-  m_hashMap.generateBlockHashValue(picWidth, picHeight, 16, 16, blockHashValues[0], blockHashValues[1], bIsBlockSame[0], bIsBlockSame[1]);//16x16
-  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], bIsBlockSame[1][2], picWidth, picHeight, 16, 16);
+  m_hashMap.generateBlockHashValue(picWidth, picHeight, 16, 16, blockHashValues[0], blockHashValues[1], isBlockSame[0],
+                                   isBlockSame[1]);   // 16x16
+  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], isBlockSame[1][2], picWidth, picHeight, 16, 16);
 
-  m_hashMap.generateBlockHashValue(picWidth, picHeight, 32, 32, blockHashValues[1], blockHashValues[0], bIsBlockSame[1], bIsBlockSame[0]);//32x32
-  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[0], bIsBlockSame[0][2], picWidth, picHeight, 32, 32);
+  m_hashMap.generateBlockHashValue(picWidth, picHeight, 32, 32, blockHashValues[1], blockHashValues[0], isBlockSame[1],
+                                   isBlockSame[0]);   // 32x32
+  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[0], isBlockSame[0][2], picWidth, picHeight, 32, 32);
 
-  m_hashMap.generateBlockHashValue(picWidth, picHeight, 64, 64, blockHashValues[0], blockHashValues[1], bIsBlockSame[0], bIsBlockSame[1]);//64x64
-  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], bIsBlockSame[1][2], picWidth, picHeight, 64, 64);
+  m_hashMap.generateBlockHashValue(picWidth, picHeight, 64, 64, blockHashValues[0], blockHashValues[1], isBlockSame[0],
+                                   isBlockSame[1]);   // 64x64
+  m_hashMap.addToHashMapByRowWithPrecalData(blockHashValues[1], isBlockSame[1][2], picWidth, picHeight, 64, 64);
 
   m_hashMap.setInitial();
 
@@ -1207,10 +1412,71 @@ void Picture::addPictureToHashMapForInter()
 
     for (int j = 0; j < 3; j++)
     {
-      delete[] bIsBlockSame[i][j];
+      delete[] isBlockSame[i][j];
     }
   }
 }
+
+void Picture::createGrainSynthesizer(bool firstPictureInSequence, SEIFilmGrainSynthesizer *grainCharacteristics, PelStorage *grainBuf, int width, int height, ChromaFormat fmt, int bitDepth)
+{
+  m_grainCharacteristic = grainCharacteristics;
+  m_grainBuf            = grainBuf;
+
+  // Padding to make wd and ht multiple of max fgs window size(64)
+  int paddedWdFGS = ((width - 1) | 0x3F) + 1 - width;
+  int paddedHtFGS = ((height - 1) | 0x3F) + 1 - height;
+  m_padValue      = (paddedWdFGS > paddedHtFGS) ? paddedWdFGS : paddedHtFGS;
+
+  if (firstPictureInSequence)
+  {
+    // Create and initialize the Film Grain Synthesizer
+    m_grainCharacteristic->create(width, height, fmt, bitDepth, 1);
+
+    // Frame level PelStorage buffer created to blend Film Grain Noise into it
+    m_grainBuf->create(chromaFormat, Area(0, 0, width, height), 0, m_padValue, 0, false);
+
+    m_grainCharacteristic->fgsInit();
+  }
+}
+
+PelUnitBuf Picture::getDisplayBufFG(bool wrap)
+{
+  int                        payloadType = 0;
+  std::list<SEI *>::iterator message;
+
+  for (message = SEIs.begin(); message != SEIs.end(); ++message)
+  {
+    payloadType = (*message)->payloadType();
+    if (payloadType == SEI::FILM_GRAIN_CHARACTERISTICS)
+    {
+      m_grainCharacteristic->m_errorCode       = -1;
+      *m_grainCharacteristic->m_fgcParameters = *static_cast<SEIFilmGrainCharacteristics *>(*message);
+      /* Validation of Film grain characteristic parameters for the constrains of SMPTE-RDD5*/
+      m_grainCharacteristic->m_errorCode = m_grainCharacteristic->grainValidateParams();
+      break;
+    }
+  }
+
+  if (FGS_SUCCESS == m_grainCharacteristic->m_errorCode)
+  {
+    m_grainBuf->copyFrom(getRecoBuf());
+    m_grainBuf->extendBorderPel(m_padValue); // Padding to make wd and ht multiple of max fgs window size(64)
+
+    m_grainCharacteristic->m_poc = getPOC();
+    m_grainCharacteristic->grainSynthesizeAndBlend(m_grainBuf, slices[0]->getIdrPicFlag());
+
+    return *m_grainBuf;
+  }
+  else
+  {
+    if (payloadType == SEI::FILM_GRAIN_CHARACTERISTICS)
+    {
+      msg(WARNING, "Film Grain synthesis is not performed. Error code: 0x%x \n", m_grainCharacteristic->m_errorCode);
+    }
+    return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION);
+  }
+}
+
 void Picture::createColourTransfProcessor(bool firstPictureInSequence, SEIColourTransformApply* ctiCharacteristics, PelStorage* ctiBuf, int width, int height, ChromaFormat fmt, int bitDepth)
 {
   m_colourTranfParams = ctiCharacteristics;
@@ -1244,11 +1510,300 @@ PelUnitBuf Picture::getDisplayBuf()
 
   m_invColourTransfBuf->copyFrom(getRecoBuf());
 
-  if (m_colourTranfParams->m_pColourTransfParams != NULL)
+  if (m_colourTranfParams->m_pColourTransfParams != nullptr)
   {
     m_colourTranfParams->generateColourTransfLUTs();
     m_colourTranfParams->inverseColourTransform(m_invColourTransfBuf);
   }
 
   return *m_invColourTransfBuf;
+}
+
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+void Picture::copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcPicYuvDst)
+{
+  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+  int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+
+  Pel *srcPxl, *dstPxl;
+  int  srcStride, srcHeight, srcWidth;
+  int  dstStride;
+
+  for (int comp = 0; comp < numValidComponents; comp++)
+  {
+    if (comp == COMPONENT_Y)
+    {
+      srcPxl = pcPicYuvSrc->Y().buf;
+      dstPxl = pcPicYuvDst->Y().buf;
+      srcStride = pcPicYuvSrc->Y().stride;
+      srcHeight = pcPicYuvSrc->Y().height;
+      srcWidth  = pcPicYuvSrc->Y().width;
+      dstStride = pcPicYuvSrc->Y().stride;
+    }
+    else if (comp == COMPONENT_Cb)
+    {
+      srcPxl = pcPicYuvSrc->Cb().buf;
+      dstPxl = pcPicYuvDst->Cb().buf;
+      srcStride = pcPicYuvSrc->Cb().stride;
+      srcHeight = pcPicYuvSrc->Cb().height;
+      srcWidth  = pcPicYuvSrc->Cb().width;
+      dstStride = pcPicYuvSrc->Cb().stride;
+    }
+    else
+    {
+      srcPxl = pcPicYuvSrc->Cr().buf;
+      dstPxl = pcPicYuvDst->Cr().buf;
+      srcStride = pcPicYuvSrc->Cr().stride;
+      srcHeight = pcPicYuvSrc->Cr().height;
+      srcWidth  = pcPicYuvSrc->Cr().width;
+      dstStride = pcPicYuvSrc->Cr().stride;
+    }
+
+    if (srcStride == dstStride)
+    {
+      ::memcpy(dstPxl, srcPxl, sizeof(Pel) * srcStride * srcHeight /*getTotalHeight(compId)*/);
+    }
+    else
+    {
+      for (int y = 0; y < srcHeight; y++, srcPxl += srcStride, dstPxl += dstStride)
+      {
+        ::memcpy(dstPxl, srcPxl, srcWidth * sizeof(Pel));
+      }
+    }
+  }
+}
+
+Picture* Picture::findNextPicPOC(Picture* pcPic, PicList* pcListPic)
+{
+  Picture           *nextPic     = nullptr;
+  Picture           *listPic     = nullptr;
+  PicList::iterator  iterListPic = pcListPic->begin();
+  for (int i = 0; i < (int)(pcListPic->size()); i++)
+  {
+    listPic = *(iterListPic);
+    if (listPic->getPOC() == pcPic->getPOC() + 1)
+    {
+      nextPic = *(iterListPic);
+    }
+    iterListPic++;
+  }
+  return nextPic;
+}
+
+
+Picture* Picture::findPrevPicPOC(Picture* pcPic, PicList* pcListPic)
+{
+  Picture           *prevPic     = nullptr;
+  Picture           *listPic     = nullptr;
+  PicList::iterator  iterListPic = pcListPic->begin();
+  for (int i = 0; i < (int)(pcListPic->size()); i++)
+  {
+    listPic = *(iterListPic);
+    if (listPic->getPOC() == pcPic->getPOC() - 1)
+    {
+      prevPic = *(iterListPic);
+    }
+    iterListPic++;
+  }
+  return prevPic;
+}
+
+void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio)
+{
+  const SPS *sps = pcPic->cs->sps;
+  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+
+  if ((pcPic->getPOC()) % blendingRatio != 0 || pcPic->getPOC() == 0)
+    pcPic->getPostRecBuf().copyFrom(pcPic->getRecoBuf());
+
+  if ((pcPic->getPOC() + 1) % blendingRatio == 0)
+  {
+    Picture* nextPic = findNextPicPOC(pcPic, pcListPic);
+    if (nextPic)
+    {
+#if DISABLE_PRE_POST_FILTER_FOR_IDR_CRA
+      if((nextPic->m_pictureType == NAL_UNIT_CODED_SLICE_IDR_W_RADL) ||
+        (nextPic->m_pictureType == NAL_UNIT_CODED_SLICE_IDR_N_LP) ||
+        (nextPic->m_pictureType == NAL_UNIT_CODED_SLICE_CRA))
+      {
+        nextPic->getPostRecBuf().copyFrom(nextPic->getRecoBuf());
+        return;
+      }
+#endif
+      PelUnitBuf currTmp = pcPic->getRecoBuf();
+      PelUnitBuf nextTmp = nextPic->getRecoBuf();
+      PelUnitBuf postTmp = nextPic->getPostRecBuf();
+
+      PelUnitBuf* currYuv = &currTmp;
+      PelUnitBuf* nextYuv = &nextTmp;
+      PelUnitBuf* postYuv = &postTmp;
+
+      int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+      for (int chan = 0; chan < numValidComponents; chan++)
+      {
+        const ComponentID ch = ComponentID(chan);
+        const ChannelType cType = (ch == COMPONENT_Y) ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA;
+        const int bitDepth = pcPic->cs->sps->getBitDepth(cType);
+        const int maxOutputValue = (1 << bitDepth) - 1;
+
+        Pel *currPxl, *nextPxl, *postPxl;
+        int  stride, height, width;
+        if (ch == COMPONENT_Y)
+        {
+          currPxl = currYuv->Y().buf;
+          nextPxl = nextYuv->Y().buf;
+          postPxl = postYuv->Y().buf;
+          stride  = currYuv->Y().stride;
+          height  = currYuv->Y().height;
+          width   = currYuv->Y().width;
+        }
+        else if (ch == COMPONENT_Cb)
+        {
+          nextPxl = nextYuv->Cb().buf;
+          currPxl = currYuv->Cb().buf;
+          postPxl = postYuv->Cb().buf;
+          stride  = currYuv->Cb().stride;
+          height  = currYuv->Cb().height;
+          width   = currYuv->Cb().width;
+        }
+        else
+        {
+          nextPxl = nextYuv->Cr().buf;
+          currPxl = currYuv->Cr().buf;
+          postPxl = postYuv->Cr().buf;
+          stride  = currYuv->Cr().stride;
+          height  = currYuv->Cr().height;
+          width   = currYuv->Cr().width;
+        }
+        for (int y = 0; y < height; y++)
+        {
+          for (int x = 0; x < width; x++)
+          {
+#if ENABLE_USER_DEFINED_WEIGHTS
+            postPxl[x] = std::min(maxOutputValue, std::max(0, (int)(((nextPxl[x]) / SII_PF_W2) - ((currPxl[x] * SII_PF_W1) / SII_PF_W2))));
+#else
+            postPxl[x] = std::min(maxOutputValue, std::max(0, (((nextPxl[x] * (blendingRatio + 1)) / blendingRatio) - (currPxl[x] / blendingRatio))));
+#endif
+          }
+          currPxl += stride;
+          nextPxl += stride;
+          postPxl += stride;
+        }
+      }
+    }
+  }
+}
+
+void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio, int intraPeriod)
+{
+  const SPS *sps = pcPic->cs->sps;
+  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+#if DISABLE_PRE_POST_FILTER_FOR_IDR_CRA
+  if (pcPic->getPOC() == 0 ||
+    (pcPic->getPOC() % intraPeriod == 0))
+  {
+    return;
+  }
+#endif
+  if (pcPic->getPOC() % blendingRatio == 0)
+  {
+    Picture* prevPic = findPrevPicPOC(pcPic, pcListPic);
+    if (prevPic)
+    {
+      PelStorage* currYuv = &pcPic->m_bufs[PIC_ORIGINAL];
+      PelStorage* prevYuv = &prevPic->m_bufs[PIC_ORIGINAL];
+      int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+      for (int chan = 0; chan < numValidComponents; chan++)
+      {
+        const ComponentID ch = ComponentID(chan);
+        const ChannelType cType = (ch == COMPONENT_Y) ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA;
+        const int bitDepth = pcPic->cs->sps->getBitDepth(cType);
+        const int maxOutputValue = (1 << bitDepth) - 1;
+
+        Pel *currPxl, *prevPxl;
+        int  stride, height, width;
+        if (ch == COMPONENT_Y)
+        {
+          currPxl = currYuv->Y().buf;
+          prevPxl = prevYuv->Y().buf;
+          stride  = currYuv->Y().stride;
+          height  = currYuv->Y().height;
+          width   = currYuv->Y().width;
+        }
+        else if (ch == COMPONENT_Cb)
+        {
+          prevPxl = prevYuv->Cb().buf;
+          currPxl = currYuv->Cb().buf;
+          stride  = currYuv->Cb().stride;
+          height  = currYuv->Cb().height;
+          width   = currYuv->Cb().width;
+        }
+        else
+        {
+          prevPxl = prevYuv->Cr().buf;
+          currPxl = currYuv->Cr().buf;
+          stride  = currYuv->Cr().stride;
+          height  = currYuv->Cr().height;
+          width   = currYuv->Cr().width;
+        }
+
+        for (int y = 0; y < height; y++)
+        {
+          for (int x = 0; x < width; x++)
+          {
+#if ENABLE_USER_DEFINED_WEIGHTS
+            currPxl[x] = std::min(maxOutputValue, std::max(0, (int)((currPxl[x] * SII_PF_W2) + (prevPxl[x] * SII_PF_W1));
+#else
+            currPxl[x] = std::min(maxOutputValue, std::max(0, (((currPxl[x] * blendingRatio) / (blendingRatio + 1)) + (prevPxl[x] / (blendingRatio + 1)))));
+#endif
+          }
+          currPxl += stride;
+          prevPxl += stride;
+        }
+      }
+    }
+  }
+}
+#endif
+
+void Picture::copyAlfData(const Picture &p)
+{
+  CHECK(p.m_alfCtbFilterIndex.size() != m_alfCtbFilterIndex.size(), "Size mismatch");
+
+  std::copy(p.m_alfCtbFilterIndex.begin(), p.m_alfCtbFilterIndex.end(), m_alfCtbFilterIndex.begin());
+
+  for (int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++)
+  {
+    CHECK(p.m_alfCtuEnableFlag[compIdx].size() != m_alfCtuEnableFlag[compIdx].size(), "Size mismatch");
+
+    std::copy(p.m_alfCtuEnableFlag[compIdx].begin(), p.m_alfCtuEnableFlag[compIdx].end(),
+              m_alfCtuEnableFlag[compIdx].begin());
+  }
+
+  for (int compIdx = COMPONENT_Cb; compIdx < MAX_NUM_COMPONENT; compIdx++)
+  {
+    CHECK(p.m_alfCtuAlternative[compIdx].size() != m_alfCtuAlternative[compIdx].size(), "Size mismatch");
+
+    std::copy(p.m_alfCtuAlternative[compIdx].begin(), p.m_alfCtuAlternative[compIdx].end(),
+              m_alfCtuAlternative[compIdx].begin());
+  }
+}
+
+void Picture::resizeAlfData(const int numEntries)
+{
+  for (int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++)
+  {
+    m_alfCtuEnableFlag[compIdx].resize(numEntries);
+    std::fill(m_alfCtuEnableFlag[compIdx].begin(), m_alfCtuEnableFlag[compIdx].end(), 0);
+  }
+
+  m_alfCtbFilterIndex.resize(numEntries);
+  std::fill(m_alfCtbFilterIndex.begin(), m_alfCtbFilterIndex.end(), 0);
+
+  for (int compIdx = 1; compIdx < MAX_NUM_COMPONENT; compIdx++)
+  {
+    m_alfCtuAlternative[compIdx].resize(numEntries);
+    std::fill(m_alfCtuAlternative[compIdx].begin(), m_alfCtuAlternative[compIdx].end(), 0);
+  }
 }

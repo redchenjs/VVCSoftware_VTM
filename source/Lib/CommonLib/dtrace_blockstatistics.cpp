@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -320,22 +320,29 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
 
           int maskStride = 0;
           int stepX = 1;
-          Pel* SADmask;
+          Pel *sadMask;
           if (g_angle2mirror[angle] == 2)
           {
             maskStride = -GEO_WEIGHT_MASK_SIZE;
-            SADmask = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]][(GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][1]) * GEO_WEIGHT_MASK_SIZE + g_weightOffset[splitDir][hIdx][wIdx][0]];
+            sadMask    = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
+                                            [(GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][1])
+                                               * GEO_WEIGHT_MASK_SIZE
+                                             + g_weightOffset[splitDir][hIdx][wIdx][0]];
           }
           else if (g_angle2mirror[angle] == 1)
           {
             stepX = -1;
             maskStride = GEO_WEIGHT_MASK_SIZE;
-            SADmask = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]][g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE + (GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][0])];
+            sadMask    = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
+                                            [g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE
+                                             + (GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][0])];
           }
           else
           {
             maskStride = GEO_WEIGHT_MASK_SIZE;
-            SADmask = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]][g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE + g_weightOffset[splitDir][hIdx][wIdx][0]];
+            sadMask    = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
+                                            [g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE
+                                             + g_weightOffset[splitDir][hIdx][wIdx][0]];
           }
 
           int currentPartition = 0;
@@ -355,8 +362,8 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
           // process top boundary
           for( int x = 0; x < width-1; x++ )
           {
-            boundaryOfMask.push_back(*SADmask);
-            if(*SADmask != *(SADmask+stepX))
+            boundaryOfMask.push_back(*sadMask);
+            if (*sadMask != *(sadMask + stepX))
             {
               // found a change of partitions, it is a corner of both partition polygons
               oneGeoPartitioning[currentPartition].push_back(Position(TL.x + x, TL.y));
@@ -364,7 +371,7 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
               currentPartition ^= 0x01;
               oneGeoPartitioning[currentPartition].push_back(Position(TL.x + x, TL.y));
             }
-            SADmask += stepX;
+            sadMask += stepX;
           }
 
           // corner of block is a corner of the current partition
@@ -373,8 +380,8 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
           // process right boundary
           for( int y = 0; y < height-1; y++ )
           {
-            boundaryOfMask.push_back(*SADmask);
-            if(*SADmask != *(SADmask+maskStride))
+            boundaryOfMask.push_back(*sadMask);
+            if (*sadMask != *(sadMask + maskStride))
             {
               // found a change of partitions, it is a corner of both partition polygons
               oneGeoPartitioning[currentPartition].push_back(Position(TR.x, TR.y + y));
@@ -382,7 +389,7 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
               currentPartition ^= 0x01;
               oneGeoPartitioning[currentPartition].push_back(Position(TR.x, TR.y + y));
             }
-            SADmask += maskStride;
+            sadMask += maskStride;
           }
 
           // corner of block is a corner of the current partition
@@ -391,8 +398,8 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
           // process bottom boundary
           for( int x = width-1; x > 0; x-- )
           {
-            boundaryOfMask.push_back(*SADmask);
-            if(*SADmask != *(SADmask-stepX))
+            boundaryOfMask.push_back(*sadMask);
+            if (*sadMask != *(sadMask - stepX))
             {
               // found a change of partitions, it is a corner of both partition polygons
               oneGeoPartitioning[currentPartition].push_back(Position(BL.x + x, BL.y));
@@ -400,7 +407,7 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
               currentPartition ^= 0x01;
               oneGeoPartitioning[currentPartition].push_back(Position(BL.x + x, BL.y));
             }
-            SADmask -= stepX;
+            sadMask -= stepX;
           }
 
           // corner of block is a corner of the current partition
@@ -409,8 +416,8 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
           // process left boundary
           for( int y = height-1; y > 0; y-- )
           {
-            boundaryOfMask.push_back(*SADmask);
-            if(*SADmask != *(SADmask-maskStride))
+            boundaryOfMask.push_back(*sadMask);
+            if (*sadMask != *(sadMask - maskStride))
             {
               // found a change of partitions, it is a corner of both partition polygons
               oneGeoPartitioning[currentPartition].push_back(Position(TL.x, TL.y + y));
@@ -418,7 +425,7 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
               currentPartition ^= 0x01;
               oneGeoPartitioning[currentPartition].push_back(Position(TL.x, TL.y + y));
             }
-            SADmask -= maskStride;
+            sadMask -= maskStride;
           }
 
           // corner of block is a corner of the current partition
@@ -549,8 +556,10 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
           DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::SkipFlag), cu.skip);
         }
 
-        DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::BDPCM), cu.bdpcmMode);
-        DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::BDPCMChroma), cu.bdpcmModeChroma);
+        DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::BDPCM),
+                            to_underlying(cu.bdpcmMode));
+        DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::BDPCMChroma),
+                            to_underlying(cu.bdpcmModeChroma));
         DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::TileIdx), cu.tileIdx);
         DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::IndependentSliceIdx), cu.slice->getIndependentSliceIdx());
         DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::LFNSTIdx), cu.lfnstIdx);
@@ -566,7 +575,8 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
         DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::QP_Chroma), cu.qp);
         DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::SplitSeries_Chroma), (int)cu.splitSeries);
 
-        DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::BDPCMChroma), cu.bdpcmModeChroma);
+        DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::BDPCMChroma),
+                            to_underlying(cu.bdpcmModeChroma));
       }
 
 
@@ -871,7 +881,8 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
           DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::SMVDFlag), cu.smvdMode);
           DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::IMVMode), cu.imv);
           DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::RootCbf), cu.rootCbf);
-          DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::BCWIndex), cu.BcwIdx);
+          DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::BCWIndex),
+                              cu.bcwIdx);
           DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::SbtIdx), cu.getSbtIdx());
           DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::SbtPos), cu.getSbtPos());
         }
@@ -894,15 +905,17 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
               {
                 if( isLuma( ChannelType( chType ) ) )
                 {
-                  const uint32_t uiChFinalMode  = PU::getFinalIntraMode( pu, ChannelType( chType ) );
-                  DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::Luma_IntraMode), uiChFinalMode);
+                  const uint32_t chFinalMode = PU::getFinalIntraMode(pu, ChannelType(chType));
+                  DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu,
+                                      GetBlockStatisticName(BlockStatistic::Luma_IntraMode), chFinalMode);
                   DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::MultiRefIdx), pu.multiRefIdx);
                 }
                 else
                 {
-                  const uint32_t uiChFinalMode  = PU::getFinalIntraMode( pu, ChannelType( chType ) );
-                  DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::Chroma_IntraMode), uiChFinalMode);
-                    assert(0);
+                  const uint32_t chFinalMode = PU::getFinalIntraMode(pu, ChannelType(chType));
+                  DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu,
+                                             GetBlockStatisticName(BlockStatistic::Chroma_IntraMode), chFinalMode);
+                  assert(0);
                 }
               }
             }
@@ -918,8 +931,10 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
       {
         if (tu.Y().valid())
         {
-          DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Y), tu.cbf[COMPONENT_Y]);
-          DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::MTSIdx_Y), tu.mtsIdx[COMPONENT_Y]);
+          DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Y),
+                              tu.cbf[COMPONENT_Y]);
+          DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::MTSIdx_Y),
+                              to_underlying(tu.mtsIdx[COMPONENT_Y]));
         }
         if ( tu.Cb().valid() )
         {
@@ -930,8 +945,12 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
         {
           DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cb), tu.cbf[COMPONENT_Cb]);
           DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cr), tu.cbf[COMPONENT_Cr]);
-          DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::MTSIdx_Cb), tu.mtsIdx[COMPONENT_Cb]);
-          DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::MTSIdx_Cr), tu.mtsIdx[COMPONENT_Cr]);
+          DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu,
+                                     GetBlockStatisticName(BlockStatistic::MTSIdx_Cb),
+                                     to_underlying(tu.mtsIdx[COMPONENT_Cb]));
+          DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu,
+                                     GetBlockStatisticName(BlockStatistic::MTSIdx_Cr),
+                                     to_underlying(tu.mtsIdx[COMPONENT_Cr]));
         }
       }
     }
@@ -1134,7 +1153,8 @@ void writeAllCodedData(const CodingStructure & cs, const UnitArea & ctuArea)
             }
             if (CU::isBcwIdxCoded(cu))
             {
-              DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::BCWIndex), cu.BcwIdx);
+              DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu,
+                                  GetBlockStatisticName(BlockStatistic::BCWIndex), cu.bcwIdx);
             }
             break;
           }
@@ -1160,14 +1180,19 @@ void writeAllCodedData(const CodingStructure & cs, const UnitArea & ctuArea)
           if (tu.Y().valid())
           {
             DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::Cbf_Y), tu.cbf[COMPONENT_Y]);
-            DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::MTSIdx_Y), tu.mtsIdx[COMPONENT_Y]);
+            DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu,
+                                GetBlockStatisticName(BlockStatistic::MTSIdx_Y), to_underlying(tu.mtsIdx[COMPONENT_Y]));
           }
           if (!(cu.chromaFormat == CHROMA_400 || (cu.isSepTree() && cu.chType == CHANNEL_TYPE_LUMA)))
           {
             DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cb), tu.cbf[COMPONENT_Cb]);
             DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cr), tu.cbf[COMPONENT_Cr]);
-            DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::MTSIdx_Cb), tu.mtsIdx[COMPONENT_Cb]);
-            DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::MTSIdx_Cr), tu.mtsIdx[COMPONENT_Cr]);
+            DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu,
+                                       GetBlockStatisticName(BlockStatistic::MTSIdx_Cb),
+                                       to_underlying(tu.mtsIdx[COMPONENT_Cb]));
+            DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu,
+                                       GetBlockStatisticName(BlockStatistic::MTSIdx_Cr),
+                                       to_underlying(tu.mtsIdx[COMPONENT_Cr]));
           }
         }
       }

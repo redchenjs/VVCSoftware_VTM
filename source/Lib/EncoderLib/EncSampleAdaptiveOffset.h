@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,6 +81,8 @@ struct SAOStatData //data structure for SAO statistics
 
 class EncSampleAdaptiveOffset : public SampleAdaptiveOffset
 {
+  using StatDataArray = EnumArray<SAOStatData, SAOModeNewTypes>;
+
 public:
   EncSampleAdaptiveOffset();
   virtual ~EncSampleAdaptiveOffset();
@@ -88,47 +90,70 @@ public:
   //interface
   void createEncData(bool isPreDBFSamplesUsed, uint32_t numCTUsPic);
   void destroyEncData();
-  void initCABACEstimator( CABACEncoder* cabacEncoder, CtxCache* ctxCache, Slice* pcSlice );
-  void SAOProcess( CodingStructure& cs, bool* sliceEnabled, const double* lambdas,
+  void initCABACEstimator(CABACEncoder *cabacEncoder, CtxCache *ctxCache, Slice *pcSlice);
+  void SAOProcess(CodingStructure &cs, bool *sliceEnabled, const double *lambdas,
 #if ENABLE_QPA
-                   const double lambdaChromaWeight,
+                  const double lambdaChromaWeight,
 #endif
-                   const bool bTestSAODisableAtPictureLevel, const double saoEncodingRate, const double saoEncodingRateChroma, const bool isPreDBFSamplesUsed, bool isGreedyMergeEncoding, bool usingTrueOrg );
+                  const bool testSAODisableAtPictureLevel, const double saoEncodingRate,
+                  const double saoEncodingRateChroma, const bool isPreDBFSamplesUsed, bool isGreedyMergeEncoding,
+                  bool usingTrueOrg);
 
-  void disabledRate( CodingStructure& cs, SAOBlkParam* reconParams, const double saoEncodingRate, const double saoEncodingRateChroma );
-  void getPreDBFStatistics( CodingStructure& cs, bool usingTrueOrg );
-private: //methods
+  void disabledRate(CodingStructure &cs, SAOBlkParam *reconParams, const double saoEncodingRate,
+                    const double saoEncodingRateChroma);
+  void getPreDBFStatistics(CodingStructure &cs, bool usingTrueOrg);
 
-  void deriveLoopFilterBoundaryAvailibility(CodingStructure& cs, const Position &pos, bool& isLeftAvail, bool& isAboveAvail, bool& isAboveLeftAvail) const;
-  void getStatistics(std::vector<SAOStatData**>& blkStats, PelUnitBuf& orgYuv, PelUnitBuf& srcYuv, CodingStructure& cs, bool isCalculatePreDeblockSamples = false);
+private:   // methods
+  void deriveLoopFilterBoundaryAvailability(CodingStructure &cs, const Position &pos, bool &isLeftAvail,
+                                            bool &isAboveAvail, bool &isAboveLeftAvail) const;
+  void getStatistics(std::vector<StatDataArray *> &blkStats, PelUnitBuf &orgYuv, PelUnitBuf &srcYuv,
+                     CodingStructure &cs, bool isCalculatePreDeblockSamples = false);
   void decidePicParams(const Slice& slice, bool* sliceEnabled, const double saoEncodingRate, const double saoEncodingRateChroma);
-  void decideBlkParams( CodingStructure& cs, bool* sliceEnabled, std::vector<SAOStatData**>& blkStats, PelUnitBuf& srcYuv, PelUnitBuf& resYuv, SAOBlkParam* reconParams, SAOBlkParam* codedParams, const bool bTestSAODisableAtPictureLevel,
+  void decideBlkParams(CodingStructure &cs, bool *sliceEnabled, std::vector<StatDataArray *> &blkStats,
+                       PelUnitBuf &srcYuv, PelUnitBuf &resYuv, SAOBlkParam *reconParams, SAOBlkParam *codedParams,
+                       const bool testSAODisableAtPictureLevel,
 #if ENABLE_QPA
-                        const double chromaWeight,
+                       const double chromaWeight,
 #endif
-                        const double saoEncodingRate, const double saoEncodingRateChroma, const bool isGreedymergeEncoding );
-  void getBlkStats(const ComponentID compIdx, const int channelBitDepth, SAOStatData* statsDataTypes, Pel* srcBlk, Pel* orgBlk, int srcStride, int orgStride, int width, int height, bool isLeftAvail,  bool isRightAvail, bool isAboveAvail, bool isBelowAvail, bool isAboveLeftAvail, bool isAboveRightAvail, bool isCalculatePreDeblockSamples
-                 , bool isCtuCrossedByVirtualBoundaries, int horVirBndryPos[], int verVirBndryPos[], int numHorVirBndry, int numVerVirBndry
-    );
-  void deriveModeNewRDO(const BitDepths &bitDepths, int ctuRsAddr, SAOBlkParam* mergeList[NUM_SAO_MERGE_TYPES], bool* sliceEnabled, std::vector<SAOStatData**>& blkStats, SAOBlkParam& modeParam, double& modeNormCost );
-  void deriveModeMergeRDO(const BitDepths &bitDepths, int ctuRsAddr, SAOBlkParam* mergeList[NUM_SAO_MERGE_TYPES], bool* sliceEnabled, std::vector<SAOStatData**>& blkStats, SAOBlkParam& modeParam, double& modeNormCost );
-  int64_t getDistortion(const int channelBitDepth, int typeIdc, int typeAuxInfo, int* offsetVal, SAOStatData& statData);
-  void deriveOffsets(ComponentID compIdx, const int channelBitDepth, int typeIdc, SAOStatData& statData, int* quantOffsets, int& typeAuxInfo);
-  inline int64_t estSaoDist(int64_t count, int64_t offset, int64_t diffSum, int shift);
-  inline int estIterOffset(int typeIdx, double lambda, int offsetInput, int64_t count, int64_t diffSum, int shift, int bitIncrease, int64_t& bestDist, double& bestCost, int offsetTh );
-  void addPreDBFStatistics(std::vector<SAOStatData**>& blkStats);
+                       const double saoEncodingRate, const double saoEncodingRateChroma,
+                       const bool isGreedymergeEncoding);
+  void    getBlkStats(const ComponentID compIdx, const int channelBitDepth, StatDataArray &statsDataTypes, Pel *srcBlk,
+                      Pel *orgBlk, int srcStride, int orgStride, int width, int height, bool isLeftAvail,
+                      bool isRightAvail, bool isAboveAvail, bool isBelowAvail, bool isAboveLeftAvail,
+                      bool isAboveRightAvail, bool isCalculatePreDeblockSamples, bool isCtuCrossedByVirtualBoundaries,
+                      int horVirBndryPos[], int verVirBndryPos[], int numHorVirBndry, int numVerVirBndry);
+  void    deriveModeNewRDO(const BitDepths &bitDepths, int ctuRsAddr, MergeBlkParams &mergeList, bool *sliceEnabled,
+                           std::vector<StatDataArray *> &blkStats, SAOBlkParam &modeParam, double &modeNormCost);
+  void    deriveModeMergeRDO(const BitDepths &bitDepths, int ctuRsAddr, MergeBlkParams &mergeList, bool *sliceEnabled,
+                             std::vector<StatDataArray *> &blkStats, SAOBlkParam &modeParam, double &modeNormCost);
+  int64_t getDistortion(const int channelBitDepth, SAOModeNewTypes typeIdc, int typeAuxInfo, int *offsetVal,
+                        SAOStatData &statData);
+  void    deriveOffsets(ComponentID compIdx, const int channelBitDepth, SAOModeNewTypes typeIdc, SAOStatData &statData,
+                        int *quantOffsets, int &typeAuxInfo);
+
+  int64_t estSaoDist(int64_t count, int64_t offset, int64_t diffSum, int shift)
+  {
+    return (count * offset * offset - diffSum * offset * 2) >> shift;
+  }
+
+  int  estIterOffset(SAOModeNewTypes typeIdx, double lambda, int offsetInput, int64_t count, int64_t diffSum, int shift,
+                     int bitIncrease, int64_t &bestDist, double &bestCost, int offsetTh);
+  void addPreDBFStatistics(std::vector<StatDataArray *> &blkStats);
+
 private: //members
   //for RDO
-  CABACWriter*           m_CABACEstimator;
-  CtxCache*              m_CtxCache;
-  double                 m_lambda[MAX_NUM_COMPONENT];
+  CABACWriter *m_CABACEstimator{ nullptr };
+  CtxCache    *m_CtxCache{ nullptr };
+  double       m_lambda[MAX_NUM_COMPONENT];
 
   //statistics
-  std::vector<SAOStatData**>         m_statData; //[ctu][comp][classes]
-  std::vector<SAOStatData**>         m_preDBFstatData;
-  double                 m_saoDisabledRate[MAX_NUM_COMPONENT][MAX_TLAYER];
-  int                    m_skipLinesR[MAX_NUM_COMPONENT][NUM_SAO_NEW_TYPES];
-  int                    m_skipLinesB[MAX_NUM_COMPONENT][NUM_SAO_NEW_TYPES];
+  std::vector<StatDataArray *> m_statData;   //[ctu][comp][classes]
+  std::vector<StatDataArray *> m_preDBFstatData;
+
+  double m_saoDisabledRate[MAX_NUM_COMPONENT][MAX_TLAYER];
+
+  EnumArray<int, SAOModeNewTypes> m_skipLinesR[MAX_NUM_COMPONENT];
+  EnumArray<int, SAOModeNewTypes> m_skipLinesB[MAX_NUM_COMPONENT];
 };
 
 

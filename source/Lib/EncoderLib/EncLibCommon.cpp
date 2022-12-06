@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,8 +39,7 @@
 #include "EncLibCommon.h"
 
 EncLibCommon::EncLibCommon()
-  : m_apsIdStart( ALF_CTB_MAX_NUM_APS )
-  , m_spsMap( MAX_NUM_SPS )
+  : m_spsMap( MAX_NUM_SPS )
   , m_ppsMap( MAX_NUM_PPS )
   , m_apsMap( MAX_NUM_APS * MAX_NUM_APS_TYPE )
 {

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,11 +46,11 @@
 
 struct AlfCovariance
 {
-  static constexpr int MaxAlfNumClippingValues = AdaptiveLoopFilter::MaxAlfNumClippingValues;
+  static constexpr int MAX_ALF_NUM_CLIP_VALS = AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS;
   using TE = double[MAX_NUM_ALF_LUMA_COEFF][MAX_NUM_ALF_LUMA_COEFF];
   using Ty = double[MAX_NUM_ALF_LUMA_COEFF];
-  using TKE = TE[AdaptiveLoopFilter::MaxAlfNumClippingValues][AdaptiveLoopFilter::MaxAlfNumClippingValues];
-  using TKy = Ty[AdaptiveLoopFilter::MaxAlfNumClippingValues];
+  using TKE = TE[AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS][AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS];
+  using TKy = Ty[AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS];
 
   int numCoeff;
   int numBins;
@@ -61,10 +61,10 @@ struct AlfCovariance
   AlfCovariance() {}
   ~AlfCovariance() {}
 
-  void create( int size, int num_bins = MaxAlfNumClippingValues )
+  void create(int size, int _numBins = MAX_ALF_NUM_CLIP_VALS)
   {
     numCoeff = size;
-    numBins = num_bins;
+    numBins  = _numBins;
     std::memset( y, 0, sizeof( y ) );
     std::memset( E, 0, sizeof( E ) );
   }
@@ -73,10 +73,12 @@ struct AlfCovariance
   {
   }
 
-  void reset( int num_bins = -1 )
+  void reset(int _numBins = -1)
   {
-    if ( num_bins > 0 )
-      numBins = num_bins;
+    if (_numBins > 0)
+    {
+      numBins = _numBins;
+    }
     pixAcc = 0;
     std::memset( y, 0, sizeof( y ) );
     std::memset( E, 0, sizeof( E ) );
@@ -192,7 +194,7 @@ struct AlfCovariance
     return calculateError( clip, f );
   }
 
-  double optimizeFilter(const AlfFilterShape& alfShape, int* clip, double *f, bool optimize_clip) const;
+  double optimizeFilter(const AlfFilterShape &alfShape, int *clip, double *f, bool optimizeClip) const;
   double optimizeFilterClip(const AlfFilterShape& alfShape, int* clip) const
   {
     Ty f;
@@ -202,7 +204,7 @@ struct AlfCovariance
   double calculateError( const int *clip ) const;
   double calculateError( const int *clip, const double *coeff ) const { return calculateError(clip, coeff, numCoeff); }
   double calculateError( const int *clip, const double *coeff, const int numCoeff ) const;
-  double calcErrorForCoeffs( const int *clip, const int *coeff, const int numCoeff, const int bitDepth ) const;
+  double calcErrorForCoeffs(const int *clip, const int *coeff, const int numCoeff, const int fractionalBits) const;
   double calcErrorForCcAlfCoeffs(const int16_t *coeff, const int numCoeff, const int bitDepth) const;
 
   void getClipMax(const AlfFilterShape& alfShape, int *clip_max) const;
@@ -222,12 +224,13 @@ private:
 class EncAdaptiveLoopFilter : public AdaptiveLoopFilter
 {
 public:
-  inline void           setAlfWSSD(int alfWSSD) { m_alfWSSD = alfWSSD; }
-  static std::vector<double>  m_lumaLevelToWeightPLUT;
-  inline std::vector<double>& getLumaLevelWeightTable() { return m_lumaLevelToWeightPLUT; }
+  void setAlfWSSD(bool alfWSSD) { m_alfWSSD = alfWSSD; }
+  void setLumaLevelWeightTable(const std::vector<double> &weightTable) { m_lumaLevelToWeightPLUT = weightTable; }
 
 private:
-  int                    m_alfWSSD;
+  bool                m_alfWSSD{ false };
+  std::vector<double> m_lumaLevelToWeightPLUT;
+
   const EncCfg*          m_encCfg;
   AlfCovariance***       m_alfCovariance[MAX_NUM_COMPONENT];          // [compIdx][shapeIdx][ctbAddr][classIdx]
   AlfCovariance**        m_alfCovarianceFrame[MAX_NUM_CHANNEL_TYPE];   // [CHANNEL][shapeIdx][lumaClassIdx/chromaAltIdx]
@@ -251,7 +254,7 @@ private:
   int**                  m_diffFilterCoeff;
   short                  m_filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES];
   unsigned               m_bitsNewFilter[MAX_NUM_CHANNEL_TYPE];
-  int&                   m_apsIdStart;
+  int                    m_apsIdStart;
   double                 *m_ctbDistortionFixedFilter;
   double                 *m_ctbDistortionUnfilter[MAX_NUM_COMPONENT];
   std::vector<short>     m_alfCtbFilterSetIndexTmp;
@@ -277,10 +280,10 @@ private:
   bool                   m_limitCcAlf;
 
 public:
-  EncAdaptiveLoopFilter( int& apsIdStart );
+  EncAdaptiveLoopFilter();
   virtual ~EncAdaptiveLoopFilter() {}
   void  initDistortion();
-  std::vector<int> getAvaiApsIdsLuma(CodingStructure& cs, int &newApsId);
+  int   getAvailableApsIdsLuma(CodingStructure &cs);
   void  alfEncoderCtb(CodingStructure& cs, AlfParam& alfParamNewFilters
 #if ENABLE_QPA
     , const double lambdaChromaWeight
@@ -307,13 +310,20 @@ private:
                    );
 
   void   copyAlfParam( AlfParam& alfParamDst, AlfParam& alfParamSrc, ChannelType channel );
-  double mergeFiltersAndCost( AlfParam& alfParam, AlfFilterShape& alfShape, AlfCovariance* covFrame, AlfCovariance* covMerged, int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], int& uiCoeffBits );
+  double mergeFiltersAndCost(AlfParam &alfParam, AlfFilterShape &alfShape, AlfCovariance *covFrame,
+                             AlfCovariance *covMerged,
+                             int  clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF],
+                             int &coeffBitsFinal);
 
-  void   getFrameStats( ChannelType channel, int iShapeIdx );
+  void   getFrameStats(ChannelType channel, int shapeIdx);
   void   getFrameStat( AlfCovariance* frameCov, AlfCovariance** ctbCov, uint8_t* ctbEnableFlags, uint8_t* ctbAltIdx, const int numClasses, int altIdx );
   void   deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnitBuf& recYuv, CodingStructure& cs );
-  void   getBlkStats(AlfCovariance* alfCovariace, const AlfFilterShape& shape, AlfClassifier** classifier, Pel* org, const int orgStride, Pel* rec, const int recStride, const CompArea& areaDst, const CompArea& area, const ChannelType channel, int vbCTUHeight, int vbPos);
-  void   calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MaxAlfNumClippingValues], const Pel *rec, const int stride, const AlfFilterShape& shape, const int transposeIdx, const ChannelType channel, int vbDistance);
+  void   getBlkStats(AlfCovariance *alfCovariace, const AlfFilterShape &shape, AlfClassifier **classifier, Pel *org,
+                     const int orgStride, const Pel *orgLuma, const ptrdiff_t orgLumaStride, Pel *rec,
+                     const int recStride, const CompArea &areaDst, const CompArea &area, const ChannelType channel,
+                     int vbCTUHeight, int vbPos);
+  void   calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MAX_ALF_NUM_CLIP_VALS], const Pel *rec, const int stride,
+                        const AlfFilterShape &shape, const int transposeIdx, const ChannelType channel, int vbDistance);
   void   deriveStatsForCcAlfFiltering(const PelUnitBuf &orgYuv, const PelUnitBuf &recYuv, const int compIdx,
                                       const int maskStride, const uint8_t filterIdc, CodingStructure &cs);
   void   getBlkStatsCcAlf(AlfCovariance &alfCovariance, const AlfFilterShape &shape, const PelUnitBuf &orgYuv,
@@ -322,18 +332,19 @@ private:
   void   calcCovarianceCcAlf(Pel ELocal[MAX_NUM_CC_ALF_CHROMA_COEFF][1], const Pel* rec, const int stride, const AlfFilterShape& shape, int vbDistance);
   void   mergeClasses(const AlfFilterShape& alfShape, AlfCovariance* cov, AlfCovariance* covMerged, int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], const int numClasses, short filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES]);
 
-
-  double getFilterCoeffAndCost( CodingStructure& cs, double distUnfilter, ChannelType channel, bool bReCollectStat, int iShapeIdx, int& uiCoeffBits, bool onlyFilterCost = false );
+  double getFilterCoeffAndCost(CodingStructure &cs, double distUnfilter, ChannelType channel, bool bReCollectStat,
+                               int shapeIdx, int &coeffBits, bool onlyFilterCost = false);
   double deriveFilterCoeffs(AlfCovariance* cov, AlfCovariance* covMerged, int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], AlfFilterShape& alfShape, short* filterIndices, int numFilters, double errorTabForce0Coeff[MAX_NUM_ALF_CLASSES][2], AlfParam& alfParam);
   int    deriveFilterCoefficientsPredictionMode( AlfFilterShape& alfShape, int **filterSet, int** filterCoeffDiff, const int numFilters );
-  double deriveCoeffQuant( int *filterClipp, int *filterCoeffQuant, const AlfCovariance& cov, const AlfFilterShape& shape, const int bitDepth, const bool optimizeClip );
-  double deriveCtbAlfEnableFlags( CodingStructure& cs, const int iShapeIdx, ChannelType channel,
+  double deriveCoeffQuant(int *filterClipp, int *filterCoeffQuant, const AlfCovariance &cov,
+                          const AlfFilterShape &shape, const int fractionalBits, const bool optimizeClip);
+  double deriveCtbAlfEnableFlags(CodingStructure &cs, const int shapeIdx, ChannelType channel,
 #if ENABLE_QPA
-                                  const double chromaWeight,
+                                 const double chromaWeight,
 #endif
-                                  const int numClasses, const int numCoeff, double& distUnfilter );
+                                 const int numClasses, const int numCoeff, double &distUnfilter);
   void   roundFiltCoeff( int *filterCoeffQuant, double *filterCoeff, const int numCoeff, const int factor );
-  void   roundFiltCoeffCCALF(int16_t *filterCoeffQuant, double *filterCoeff, const int numCoeff, const int factor);
+  void   roundFiltCoeffCCALF(int16_t *filterCoeffQuant, double *filterCoeff, const int numCoeff, int factor);
 
   double getDistCoeffForce0( bool* codedVarBins, double errorForce0CoeffTab[MAX_NUM_ALF_CLASSES][2], int* bitsVarBin, int zeroBitsVarBin, const int numFilters);
   int    lengthUvlc( int uiCode );

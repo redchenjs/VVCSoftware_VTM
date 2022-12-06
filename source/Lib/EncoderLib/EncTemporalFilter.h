@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -66,6 +66,9 @@ public:
   Array2D() : m_width(0), m_height(0), v() { }
   Array2D(int width, int height, const T& value=T()) : m_width(0), m_height(0), v() { allocate(width, height, value); }
 
+  int w() const { return m_width;  }
+  int h() const { return m_height; }
+
   void allocate(int width, int height, const T& value=T())
   {
     m_width  = width;
@@ -104,39 +107,33 @@ public:
   EncTemporalFilter();
   ~EncTemporalFilter() {}
 
-  void init(const int frameSkip,
-    const int inputBitDepth[MAX_NUM_CHANNEL_TYPE],
-    const int msbExtendedBitDepth[MAX_NUM_CHANNEL_TYPE],
-    const int internalBitDepth[MAX_NUM_CHANNEL_TYPE],
-    const int width,
-    const int height,
-    const int *pad,
-    const bool rec709,
-    const std::string &filename,
-    const ChromaFormat inputChroma,
-    const InputColourSpaceConversion colorSpaceConv,
-    const int qp,
-    const std::map<int, double> &temporalFilterStrengths,
-    const bool gopBasedTemporalFilterFutureReference);
+  void init(const int frameSkip, const int inputBitDepth[MAX_NUM_CHANNEL_TYPE],
+            const int msbExtendedBitDepth[MAX_NUM_CHANNEL_TYPE], const int internalBitDepth[MAX_NUM_CHANNEL_TYPE],
+            const int width, const int height, const int *pad, const bool rec709, const std::string &filename,
+            const ChromaFormat inputChroma, const InputColourSpaceConversion colorSpaceConv, const int qp,
+            const std::map<int, double> &temporalFilterStrengths, const int pastRefs, const int futureRefs,
+            const int firstValidFrame, const int lastValidFrame
+            , const bool bMCTFenabled, std::map<int, int*> *adaptQPmap, const bool bBIMenabled, const int ctuSize
+            );
 
   bool filter(PelStorage *orgPic, int frame);
 
 private:
   // Private static member variables
-  static const int m_range;
   static const double m_chromaFactor;
   static const double m_sigmaMultiplier;
   static const double m_sigmaZeroPoint;
   static const int m_motionVectorFactor;
   static const int m_padding;
   static const int m_interpolationFilter[16][8];
-  static const double m_refStrengths[3][4];
+  static const double m_refStrengths[2][4];
+  static const int m_cuTreeThresh[4];
 
   // Private member variables
-  int m_FrameSkip;
+  int                        m_frameSkip;
   std::string m_inputFileName;
   int m_inputBitDepth[MAX_NUM_CHANNEL_TYPE];
-  int m_MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];
+  int                        m_msbExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];
   int m_internalBitDepth[MAX_NUM_CHANNEL_TYPE];
   ChromaFormat m_chromaFormatIDC;
   int m_sourceWidth;
@@ -147,7 +144,16 @@ private:
   bool m_clipInputVideoToRec709Range;
   InputColourSpaceConversion m_inputColourSpaceConvert;
   Area m_area;
-  bool m_gopBasedTemporalFilterFutureReference;
+
+  int m_pastRefs;
+  int m_futureRefs;
+  int m_firstValidFrame;
+  int m_lastValidFrame;
+  bool m_mctfEnabled;
+  bool m_bimEnabled;
+  int m_numCtu;
+  int m_ctuSize;
+  std::map<int, int*> *m_ctuAdaptedQP;
 
   // Private functions
   void subsampleLuma(const PelStorage &input, PelStorage &output, const int factor = 2) const;

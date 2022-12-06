@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,12 +55,13 @@ struct BinFracBits
   uint32_t intBits[2];
 };
 
-
-enum BPMType
+enum class BpmType : int
 {
-  BPM_Undefined = 0,
-  BPM_Std,
-  BPM_NUM
+  NONE = -1,
+  // List of Binary Probability Models for entropy coding
+  // The VVC standard currently defines a single model (STD)
+  STD = 0,
+  NUM
 };
 
 class ProbModelTables
@@ -135,7 +136,7 @@ public:
       q = q ^ 0xff;
     return ((q >> 2) * (range >> 5) >> 1) + 4;
   }
-  static uint8_t  getRenormBitsLPS  ( unsigned LPS )                    { return    m_RenormTable_32  [LPS>>3]; }
+  static uint8_t  getRenormBitsLPS(unsigned lpsRange) { return m_RenormTable_32[lpsRange >> 3]; }
   static uint8_t  getRenormBitsRange( unsigned range )                  { return    1; }
   uint16_t getState() const { return m_state[0] + m_state[1]; }
   void     setState(uint16_t pState)
@@ -256,7 +257,7 @@ public:
   static const CtxSet   ChromaQpAdjFlag;
   static const CtxSet   ChromaQpAdjIdc;
   static const CtxSet   ImvFlag;
-  static const CtxSet   BcwIdx;
+  static const CtxSet   bcwIdx;
   static const CtxSet   ctbAlfFlag;
   static const CtxSet   ctbAlfAlternative;
   static const CtxSet   AlfUseTemporalFilt;
@@ -300,25 +301,43 @@ public:
   CtxStore( bool dummy );
   CtxStore( const CtxStore<BinProbModel>& ctxStore );
 public:
-  void copyFrom   ( const CtxStore<BinProbModel>& src )                        { checkInit(); ::memcpy( m_Ctx,               src.m_Ctx,               sizeof( BinProbModel ) * ContextSetCfg::NumberOfContexts ); }
-  void copyFrom   ( const CtxStore<BinProbModel>& src, const CtxSet& ctxSet )  { checkInit(); ::memcpy( m_Ctx+ctxSet.Offset, src.m_Ctx+ctxSet.Offset, sizeof( BinProbModel ) * ctxSet.Size ); }
+  void copyFrom(const CtxStore<BinProbModel> &src)
+  {
+    checkInit();
+    std::copy_n(reinterpret_cast<const char *>(src.m_ctx), sizeof(BinProbModel) * ContextSetCfg::NumberOfContexts,
+                reinterpret_cast<char *>(m_ctx));
+  }
+  void copyFrom(const CtxStore<BinProbModel> &src, const CtxSet &ctxSet)
+  {
+    checkInit();
+    std::copy_n(reinterpret_cast<const char *>(src.m_ctx + ctxSet.Offset), sizeof(BinProbModel) * ctxSet.Size,
+                reinterpret_cast<char *>(m_ctx + ctxSet.Offset));
+  }
   void init       ( int qp, int initId );
   void setWinSizes( const std::vector<uint8_t>&   log2WindowSizes );
   void loadPStates( const std::vector<uint16_t>&  probStates );
   void savePStates( std::vector<uint16_t>&        probStates )  const;
 
-  const BinProbModel& operator[]      ( unsigned  ctxId  )  const { return m_Ctx[ctxId]; }
-  BinProbModel&       operator[]      ( unsigned  ctxId  )        { return m_Ctx[ctxId]; }
-  uint32_t            estFracBits     ( unsigned  bin,
-                                        unsigned  ctxId  )  const { return m_Ctx[ctxId].estFracBits(bin); }
+  const BinProbModel &operator[](unsigned ctxId) const { return m_ctx[ctxId]; }
+  BinProbModel       &operator[](unsigned ctxId) { return m_ctx[ctxId]; }
+  uint32_t            estFracBits(unsigned bin, unsigned ctxId) const { return m_ctx[ctxId].estFracBits(bin); }
 
-  BinFracBits         getFracBitsArray( unsigned  ctxId  )  const { return m_Ctx[ctxId].getFracBitsArray(); }
+  BinFracBits getFracBitsArray(unsigned ctxId) const { return m_ctx[ctxId].getFracBitsArray(); }
 
 private:
-  inline void checkInit() { if( m_Ctx ) return; m_CtxBuffer.resize( ContextSetCfg::NumberOfContexts ); m_Ctx = m_CtxBuffer.data(); }
+  inline void checkInit()
+  {
+    if (m_ctx)
+    {
+      return;
+    }
+    m_ctxBuffer.resize(ContextSetCfg::NumberOfContexts);
+    m_ctx = m_ctxBuffer.data();
+  }
+
 private:
-  std::vector<BinProbModel> m_CtxBuffer;
-  BinProbModel*             m_Ctx;
+  std::vector<BinProbModel> m_ctxBuffer;
+  BinProbModel             *m_ctx;
 };
 
 
@@ -328,12 +347,12 @@ class SubCtx
 {
   friend class Ctx;
 public:
-  SubCtx( const CtxSet& ctxSet, const Ctx& ctx ) : m_CtxSet( ctxSet          ), m_Ctx( ctx          ) {}
-  SubCtx( const SubCtx& subCtx )                 : m_CtxSet( subCtx.m_CtxSet ), m_Ctx( subCtx.m_Ctx ) {}
+  SubCtx(const CtxSet &ctxSet, const Ctx &ctx) : m_CtxSet(ctxSet), m_ctx(ctx) {}
+  SubCtx(const SubCtx &subCtx) : m_CtxSet(subCtx.m_CtxSet), m_ctx(subCtx.m_ctx) {}
   const SubCtx& operator= ( const SubCtx& ) = delete;
 private:
   const CtxSet  m_CtxSet;
-  const Ctx&    m_Ctx;
+  const Ctx    &m_ctx;
 };
 
 
@@ -348,10 +367,10 @@ public:
 public:
   const Ctx& operator= ( const Ctx& ctx )
   {
-    m_BPMType = ctx.m_BPMType;
-    switch( m_BPMType )
+    m_bpmType = ctx.m_bpmType;
+    switch (m_bpmType)
     {
-    case BPM_Std:   m_CtxStore_Std  .copyFrom( ctx.m_CtxStore_Std   );  break;
+    case BpmType::STD: m_CtxStore_Std.copyFrom(ctx.m_CtxStore_Std); break;
     default:        break;
     }
     ::memcpy( m_GRAdaptStats, ctx.m_GRAdaptStats, sizeof( unsigned ) * RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS );
@@ -360,10 +379,10 @@ public:
 
   SubCtx operator= ( SubCtx&& subCtx )
   {
-    m_BPMType = subCtx.m_Ctx.m_BPMType;
-    switch( m_BPMType )
+    m_bpmType = subCtx.m_ctx.m_bpmType;
+    switch (m_bpmType)
     {
-    case BPM_Std:   m_CtxStore_Std  .copyFrom( subCtx.m_Ctx.m_CtxStore_Std,   subCtx.m_CtxSet );  break;
+    case BpmType::STD: m_CtxStore_Std.copyFrom(subCtx.m_ctx.m_CtxStore_Std, subCtx.m_CtxSet); break;
     default:        break;
     }
     return std::move(subCtx);
@@ -371,9 +390,9 @@ public:
 
   void  init ( int qp, int initId )
   {
-    switch( m_BPMType )
+    switch (m_bpmType)
     {
-    case BPM_Std:   m_CtxStore_Std  .init( qp, initId );  break;
+    case BpmType::STD: m_CtxStore_Std.init(qp, initId); break;
     default:        break;
     }
     for( std::size_t k = 0; k < RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS; k++ )
@@ -382,37 +401,45 @@ public:
     }
   }
 
-  void riceStatReset(int bitDepth)
+  void riceStatReset(int bitDepth, bool persistentRiceAdaptationEnabledFlag)
   {
     for (std::size_t k = 0; k < RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS; k++)
     {
-      m_GRAdaptStats[k] = (bitDepth > 10) ? 2 * floorLog2(bitDepth - 10) : 0; 
+      if (persistentRiceAdaptationEnabledFlag)
+      {
+          CHECK(bitDepth <= 10,"BitDepth shall be larger than 10.");
+          m_GRAdaptStats[k] = 2 * floorLog2(bitDepth - 10);
+      }
+      else
+      {
+          m_GRAdaptStats[k] = 0;
+      }
     }
   }
 
   void  loadPStates( const std::vector<uint16_t>& probStates )
   {
-    switch( m_BPMType )
+    switch (m_bpmType)
     {
-    case BPM_Std:   m_CtxStore_Std  .loadPStates( probStates );  break;
+    case BpmType::STD: m_CtxStore_Std.loadPStates(probStates); break;
     default:        break;
     }
   }
 
   void  savePStates( std::vector<uint16_t>& probStates ) const
   {
-    switch( m_BPMType )
+    switch (m_bpmType)
     {
-    case BPM_Std:   m_CtxStore_Std  .savePStates( probStates );  break;
+    case BpmType::STD: m_CtxStore_Std.savePStates(probStates); break;
     default:        break;
     }
   }
 
   void  initCtxAndWinSize( unsigned ctxId, const Ctx& ctx, const uint8_t winSize )
   {
-    switch( m_BPMType )
+    switch (m_bpmType)
     {
-    case BPM_Std:
+    case BpmType::STD:
       m_CtxStore_Std  [ctxId] = ctx.m_CtxStore_Std  [ctxId];
       m_CtxStore_Std  [ctxId] . setLog2WindowSize   (winSize);
       break;
@@ -428,7 +455,7 @@ public:
   void                setBaseLevel(int value)                         { m_baseLevel = value; }
 
 public:
-  unsigned            getBPMType      ()                        const { return m_BPMType; }
+  BpmType             getBpmType() const { return m_bpmType; }
   const Ctx&          getCtx          ()                        const { return *this; }
   Ctx&                getCtx          ()                              { return *this; }
 
@@ -437,15 +464,15 @@ public:
 
   const FracBitsAccess&   getFracBitsAcess()  const
   {
-    switch( m_BPMType )
+    switch (m_bpmType)
     {
-    case BPM_Std:   return m_CtxStore_Std;
+    case BpmType::STD: return m_CtxStore_Std;
     default:        THROW("BPMType out of range");
     }
   }
 
 private:
-  BPMType                       m_BPMType;
+  BpmType                       m_bpmType;
   CtxStore<BinProbModel_Std>    m_CtxStore_Std;
 protected:
   unsigned                      m_GRAdaptStats[RExt__GOLOMB_RICE_ADAPTATION_STATISTICS_SETS];

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,8 +45,6 @@
 //! \ingroup CommonLib
 //! \{
 
-#define DEBLOCK_SMALLEST_BLOCK  8
-
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
@@ -54,54 +52,125 @@
 /// deblocking filter class
 class DeblockingFilter
 {
+  static constexpr int LOG_GRID_SIZE  = 2;
+  static constexpr int GRID_SIZE      = 1 << LOG_GRID_SIZE;
+  static constexpr int GRID_SIZE_CHR  = 8;
+  static constexpr int SUB_BLOCK_SIZE = 8;
+
+  class EdgeStrengths
+  {
+    // bit  7  : transform edge flag
+    // bit  6  : prediction edge flag
+    // bits 4-5: boundary strengh Cr
+    // bits 2-3: boundary strengh Cb
+    // bits 0-1: boundary strengh Y
+    uint8_t val;
+
+    static constexpr int TEM = 0x80;   // transform edge mask
+    static constexpr int PEM = 0x40;   // prediction edge mask
+    static constexpr int BPS = 2;      // bits per strength
+
+  public:
+    EdgeStrengths() : val(0) {}
+
+    void setTransEdge(bool b) { val = b ? val | TEM : val & ~TEM; }
+    bool getTransEdge() const { return (val & TEM) != 0; }
+    void setPredEdge(bool b) { val = b ? val | PEM : val & ~PEM; }
+    bool getPredEdge() const { return (val & PEM) != 0; }
+    bool hasEdge() const { return (val & (TEM | PEM)) != 0; }
+    int  getBoundaryStrength(ComponentID c) const { return (val >> (BPS * c)) & ((1 << BPS) - 1); }
+
+    EdgeStrengths &setBoundaryStrength(ComponentID c, int bs)
+    {
+      val |= bs << (BPS * c);
+      return *this;
+    }
+
+    EdgeStrengths &operator|=(const EdgeStrengths &es)
+    {
+      val |= es.val;
+      return *this;
+    }
+  };
+
 private:
-  static_vector<char, MAX_NUM_PARTS_IN_CTU> m_aapucBS       [NUM_EDGE_DIR];         ///< Bs for [Ver/Hor][Y/U/V][Blk_Idx]
-  static_vector<bool, MAX_NUM_PARTS_IN_CTU> m_aapbEdgeFilter[NUM_EDGE_DIR];
+  static_vector<EdgeStrengths, MAX_NUM_PARTS_IN_CTU> m_edgeStrengths[NUM_EDGE_DIR];
   LFCUParam m_stLFCUParam;                   ///< status structure
   int     m_ctuXLumaSamples, m_ctuYLumaSamples;                            // location of left-edge and top-edge of CTU
-  int     m_shiftHor, m_shiftVer;                                          // shift values to convert location from luma sample units to chroma sample units
-  uint8_t m_maxFilterLengthP[MAX_NUM_COMPONENT][MAX_CU_SIZE][MAX_CU_SIZE]; // maxFilterLengthP for [component][luma/chroma sample distance from left edge of CTU][luma/chroma sample distance from top edge of CTU]
-  uint8_t m_maxFilterLengthQ[MAX_NUM_COMPONENT][MAX_CU_SIZE][MAX_CU_SIZE]; // maxFilterLengthQ for [component][luma/chroma sample distance from left edge of CTU][luma/chroma sample distance from top edge of CTU]
-  bool    m_transformEdge[MAX_NUM_COMPONENT][MAX_CU_SIZE][MAX_CU_SIZE];    // transform edge flag for [component][luma/chroma sample distance from left edge of CTU][luma/chroma sample distance from top edge of CTU]
+
+  // shift values to convert location from luma sample units to chroma sample units
+  int m_shiftHor;
+  int m_shiftVer;
+
+  enum class FilterLen : uint8_t
+  {
+    _1,
+    _2,
+    _3,
+    _5,
+    _7,
+    NUM
+  };
+
+  struct FilterLenPair
+  {
+    FilterLen p;
+    FilterLen q;
+  };
+
+  static constexpr FilterLenPair DEFAULT_FL2 = { FilterLen::_7, FilterLen::_7 };
+
+  // maxFilterLen for [channel type][luma/chroma sample distance from left edge of CTU]
+  // [luma/chroma sample distance from top edge of CTU]
+  FilterLenPair m_maxFilterLen[MAX_NUM_CHANNEL_TYPE][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
+
+  // transform edge flag for [channel type][luma/chroma sample distance from left edge of CTU]
+  // [luma/chroma sample distance from top edge of CTU]
+  bool m_transformEdge[MAX_NUM_CHANNEL_TYPE][MAX_CU_SIZE / GRID_SIZE][MAX_CU_SIZE / GRID_SIZE];
+
   PelStorage                   m_encPicYuvBuffer;
   bool                         m_enc;
 private:
+  void clearFilterLengthAndTransformEdge();
 
   // set / get functions
   void xSetDeblockingFilterParam        ( const CodingUnit& cu );
 
   // filtering functions
-  unsigned
-  xGetBoundaryStrengthSingle      ( const CodingUnit& cu, const DeblockEdgeDir edgeDir, const Position& localPos, const ChannelType chType  ) const;
+  EdgeStrengths xGetBoundaryStrengthSingle(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const Position &localPos,
+                                           const ChannelType chType) const;
 
-  void xSetEdgefilterMultiple     ( const CodingUnit&     cu,
-                                    const DeblockEdgeDir  edgeDir,
-                                    const Area&           area,
-                                    const bool            bValue,
-                                    const bool            EdgeIdx = false );
-  void xEdgeFilterLuma( const CodingUnit& cu, const DeblockEdgeDir edgeDir, const int iEdge );
-  void xEdgeFilterChroma(const CodingUnit& cu, const DeblockEdgeDir edgeDir, const int iEdge);
+  void xSetEdgefilterMultiple(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const Area &area, const bool value,
+                              const bool isTransEdge);
+  void xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx);
+  void xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx);
 
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
-  void deriveLADFShift( const Pel* src, const int stride, int& shift, const DeblockEdgeDir edgeDir, const SPS sps );
-#endif
+  int deriveLADFShift(const Pel *src, const int stride, const DeblockEdgeDir edgeDir, const SPS *sps);
   void xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
                                                const TransformUnit &currTU, const int firstComponent);
-  void xSetMaxFilterLengthPQForCodingSubBlocks( const DeblockEdgeDir edgeDir, const CodingUnit& cu, const PredictionUnit& currPU, const bool& mvSubBlocks, const int& subBlockSize, const Area& areaPu );
+  void xSetMaxFilterLengthPQForCodingSubBlocks(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
+                                               const PredictionUnit &currPU, const bool &mvSubBlocks,
+                                               const Area &areaPu);
 
-  inline void xBilinearFilter     ( Pel* srcP, Pel* srcQ, int offset, int refMiddle, int refP, int refQ, int numberPSide, int numberQSide, const int* dbCoeffsP, const int* dbCoeffsQ, int tc ) const;
-  inline void xFilteringPandQ     ( Pel* src, int offset, int numberPSide, int numberQSide, int tc ) const;
-  inline void xPelFilterLuma      ( Pel* piSrc, const int iOffset, const int tc, const bool sw, const bool bPartPNoFilter, const bool bPartQNoFilter, const int iThrCut, const bool bFilterSecondP, const bool bFilterSecondQ, const ClpRng& clpRng, bool sidePisLarge = false, bool sideQisLarge = false, int maxFilterLengthP = 7, int maxFilterLengthQ = 7 ) const;
-  inline void xPelFilterChroma(Pel* piSrc, const int iOffset, const int tc, const bool sw, const bool bPartPNoFilter, const bool bPartQNoFilter, const ClpRng& clpRng, const bool largeBoundary, const bool isChromaHorCTBBoundary) const;
-  inline bool xUseStrongFiltering(Pel* piSrc, const int iOffset, const int d, const int beta, const int tc, bool sidePisLarge = false, bool sideQisLarge = false, int maxFilterLengthP = 7, int maxFilterLengthQ = 7, bool isChromaHorCTBBoundary = false) const;//move the computation outside the function
-  inline unsigned BsSet(unsigned val, const ComponentID compIdx) const;
-  inline unsigned BsGet(unsigned val, const ComponentID compIdx) const;
+  static void xFilteringPandQ(Pel *src, int offset, FilterLenPair filterLen, int tc);
+  static void xPelFilterLuma(Pel *src, const int offset, const int tc, const bool sw, const bool partPNoFilter,
+                             const bool partQNoFilter, const int thrCut, const bool bFilterSecondP,
+                             const bool bFilterSecondQ, const ClpRng &clpRng, bool sidePisLarge = false,
+                             bool sideQisLarge = false, FilterLenPair maxFilterLen = DEFAULT_FL2);
+  inline void xPelFilterChroma(Pel *src, const int offset, const int tc, const bool sw, const bool partPNoFilter,
+                               const bool partQNoFilter, const ClpRng &clpRng, const bool largeBoundary,
+                               const bool isChromaHorCTBBoundary) const;
+
+  inline bool xUseStrongFiltering(Pel *src, const int offset, const int d, const int beta, const int tc,
+                                  bool sidePisLarge = false, bool sideQisLarge = false,
+                                  FilterLenPair maxFilterLen = DEFAULT_FL2, bool isChromaHorCTBBoundary = false) const;
 
   inline bool isCrossedByVirtualBoundaries ( const int xPos, const int yPos, const int width, const int height, int& numHorVirBndry, int& numVerVirBndry, int horVirBndryPos[], int verVirBndryPos[], const PicHeader* picHeader );
   inline void xDeriveEdgefilterParam       ( const int xPos, const int yPos, const int numVerVirBndry, const int numHorVirBndry, const int verVirBndryPos[], const int horVirBndryPos[], bool &verEdgeFilter, bool &horEdgeFilter );
 
-  inline int xCalcDP(Pel* piSrc, const int iOffset, const bool isChromaHorCTBBoundary = false) const;
-  inline int xCalcDQ              ( Pel* piSrc, const int iOffset ) const;
+  inline int xCalcDP(Pel *src, const int offset, const bool isChromaHorCTBBoundary = false) const;
+  inline int xCalcDQ(Pel *src, const int offset) const;
+
   static const uint16_t sm_tcTable[MAX_QP + 3];
   static const uint8_t sm_betaTable[MAX_QP + 1];
 
@@ -116,7 +185,7 @@ public:
   PelStorage& getDbEncPicYuvBuffer() { return m_encPicYuvBuffer; }
   void  setEnc(bool b) { m_enc = b; }
 
-  void  create                    ( const unsigned uiMaxCUDepth );
+  void  create(const unsigned maxCUDepth);
   void  destroy                   ();
 
   /// picture-level deblocking filter
@@ -128,6 +197,7 @@ public:
     return sm_betaTable[ indexB ];
   }
 
+  void resetBsAndEdgeFilter(int edgeDir);
   void resetFilterLengths();
 };
 

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -256,29 +256,29 @@ int calcAndPrintHashStatus(const CPelUnitBuf& pic, const SEIDecodedPictureHash* 
     CHECK ((uint32_t)pic.bufs.size() != ( pictureHashSEI->singleCompFlag ? 1 : 3 ), "The value of dph_sei_single_component_flag shall be equal to (ChromaFormatIdc == 0).");
     switch (pictureHashSEI->method)
     {
-      case HASHTYPE_MD5:
-        {
-          hashType = "MD5";
-          numChar = calcMD5(pic, recon_digest, bitDepths);
-          break;
-        }
-      case HASHTYPE_CRC:
-        {
-          hashType = "CRC";
-          numChar = calcCRC(pic, recon_digest, bitDepths);
-          break;
-        }
-      case HASHTYPE_CHECKSUM:
-        {
-          hashType = "Checksum";
-          numChar = calcChecksum(pic, recon_digest, bitDepths);
-          break;
-        }
-      default:
-        {
-          THROW("Unknown hash type");
-          break;
-        }
+    case HashType::MD5:
+    {
+      hashType = "MD5";
+      numChar  = calcMD5(pic, recon_digest, bitDepths);
+      break;
+    }
+    case HashType::CRC:
+    {
+      hashType = "CRC";
+      numChar  = calcCRC(pic, recon_digest, bitDepths);
+      break;
+    }
+    case HashType::CHECKSUM:
+    {
+      hashType = "Checksum";
+      numChar  = calcChecksum(pic, recon_digest, bitDepths);
+      break;
+    }
+    default:
+    {
+      THROW("Unknown hash type");
+      break;
+    }
     }
   }
 

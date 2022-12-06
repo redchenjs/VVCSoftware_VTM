@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@
 #error Include CommonDef.h not TypeDef.h
 #endif
 
+#include <array>
 #include <vector>
 #include <utility>
 #include <sstream>
@@ -49,15 +50,24 @@
 #include <cstring>
 #include <assert.h>
 #include <cassert>
+#include "CommonDef.h"
 
 // clang-format off
 
 #define JVET_T0056_SEI_MANIFEST                           1 // JVET-T0056: SEI manifest SEI message
 #define JVET_T0056_SEI_PREFIX_INDICATION                  1 // JVET-T0056: SEI prefix indication SEI message
+#define JVET_AB0080                                       1 // GOP-based RPR encoder control
+#if JVET_AB0080
+#define JVET_AB0080_CHROMA_QP_FIX                         1 // fix to align chroma QP changes with luma QP changes
+#endif
+#define JVET_AB0081                                       1 // JVET-AB0081: Increased length of filters used for upscaling reconstructed pictures in VTM
 
 //########### place macros to be removed in next cycle below this line ###############
+#define JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC 1
+#define JVET_AB0072                                      1 //Green-MPEG SEI Messaging (JVET-AB0072)
 
 //########### place macros to be be kept below this line ###############
+
 #define GDR_ENABLED   1
 
 #if GDR_ENABLED
@@ -65,6 +75,7 @@
 #define GDR_ENC_TRACE  0
 #define GDR_DEC_TRACE  0
 #endif
+
 
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
 
@@ -74,12 +85,7 @@
 
 #define JVET_M0497_MATRIX_MULT                            0 // 0: Fast method; 1: Matrix multiplication
 
-#define JVET_R0107_BITSTREAM_EXTACTION                    1 // JVET-R0107 Proposal 3:Bitsteam extraction modifications
-
 #define APPLY_SBT_SL_ON_MTS                               1 // apply save & load fast algorithm on inter MTS when SBT is on
-
-typedef std::pair<int, bool> TrMode;
-typedef std::pair<int, int>  TrCost;
 
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
@@ -101,6 +107,12 @@ typedef std::pair<int, int>  TrCost;
 #define JVET_O0756_CONFIG_HDRMETRICS                      1
 #if EXTENSION_HDRTOOLS
 #define JVET_O0756_CALCULATE_HDRMETRICS                   1
+#endif
+
+#define JVET_Z0120_SII_SEI_PROCESSING                     1 // This is an example illustration of using SII SEI messages for backwards-compatible HFR video
+#if JVET_Z0120_SII_SEI_PROCESSING
+#define DISABLE_PRE_POST_FILTER_FOR_IDR_CRA               1
+#define ENABLE_USER_DEFINED_WEIGHTS                       0 // User can specify weights for both current and previous picture, such that their sum = 1
 #endif
 
 // clang-format on
@@ -125,6 +137,12 @@ typedef std::pair<int, int>  TrCost;
 
 #define KEEP_PRED_AND_RESI_SIGNALS                        0
 
+#if JVET_AB0072
+#ifndef GREEN_METADATA_SEI_ENABLED
+#define GREEN_METADATA_SEI_ENABLED 0 //JVET-AB0072: Analyser for the Green Metadata SEI
+#endif
+#endif
+
 // ====================================================================================================================
 // Debugging
 // ====================================================================================================================
@@ -133,7 +151,6 @@ typedef std::pair<int, int>  TrCost;
 
 #define PRINT_MACRO_VALUES                                1 ///< When enabled, the encoder prints out a list of the non-environment-variable controlled macros and their values on startup
 
-#define INTRA_FULL_SEARCH                                 0 ///< enables full mode search for intra estimation
 
 // TODO: rename this macro to DECODER_DEBUG_BIT_STATISTICS (may currently cause merge issues with other branches)
 // This can be enabled by the makefile
@@ -161,10 +178,6 @@ typedef std::pair<int, int>  TrCost;
 // ====================================================================================================================
 
 #define DECODER_CHECK_SUBSTREAM_AND_SLICE_TRAILING_BYTES  1 ///< TODO: integrate this macro into a broader conformance checking system.
-#define T0196_SELECTIVE_RDOQ                              1 ///< selective RDOQ
-#define U0040_MODIFIED_WEIGHTEDPREDICTION_WITH_BIPRED_AND_CLIPPING 1
-#define U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI    1 ///< Alternative transfer characteristics SEI message (JCTVC-U0033, with syntax naming from V1005)
-#define X0038_LAMBDA_FROM_QP_CAPABILITY                   1 ///< This approach derives lambda from QP+QPoffset+QPoffset2. QPoffset2 is derived from QP+QPoffset using a linear model that is clipped between 0 and 3.
                                                             // To use this capability enable config parameter LambdaFromQpEnable
 
 // ====================================================================================================================
@@ -182,8 +195,12 @@ typedef std::pair<int, int>  TrCost;
 #endif
 
 // SIMD optimizations
-#define SIMD_ENABLE                                       1
-#define ENABLE_SIMD_OPT                                 SIMD_ENABLE                                         ///< SIMD optimizations, no impact on RD performance
+#define SIMD_ENABLE                                       1                                                 ///< Enable SIMD optimizations if available on compilation environment
+#ifdef TARGET_SIMD_X86
+#define ENABLE_SIMD_OPT                                   SIMD_ENABLE                                       ///< SIMD optimizations, no impact on RD performance
+#else
+#define ENABLE_SIMD_OPT                                   0                                                 ///< SIMD optimizations, no impact on RD performance
+#endif
 #define ENABLE_SIMD_OPT_MCIF                            ( 1 && ENABLE_SIMD_OPT )                            ///< SIMD optimization for the interpolation filter, no impact on RD performance
 #define ENABLE_SIMD_OPT_BUFFER                          ( 1 && ENABLE_SIMD_OPT )                            ///< SIMD optimization for the buffer operations, no impact on RD performance
 #define ENABLE_SIMD_OPT_DIST                            ( 1 && ENABLE_SIMD_OPT )                            ///< SIMD optimization for the distortion calculations(SAD,SSE,HADAMARD), no impact on RD performance
@@ -196,15 +213,8 @@ typedef std::pair<int, int>  TrCost;
 // End of SIMD optimizations
 
 
-#define ME_ENABLE_ROUNDING_OF_MVS                         1 ///< 0 (default) = disables rounding of motion vectors when right shifted,  1 = enables rounding
-
 #define RDOQ_CHROMA_LAMBDA                                1 ///< F386: weighting of chroma for RDOQ
 
-#define U0132_TARGET_BITS_SATURATION                      1 ///< Rate control with target bits saturation method
-#ifdef  U0132_TARGET_BITS_SATURATION
-#define V0078_ADAPTIVE_LOWER_BOUND                        1 ///< Target bits saturation with adaptive lower bound
-#endif
-#define W0038_DB_OPT                                      1 ///< adaptive DB parameter selection, LoopFilterOffsetInPPS and LoopFilterDisable are set to 0 and DeblockingFilterMetric=2;
 #define W0038_CQP_ADJ                                     1 ///< chroma QP adjustment based on TL, CQPTLAdjustEnabled is set to 1;
 
 #define SHARP_LUMA_DELTA_QP                               1 ///< include non-normative LCU deltaQP and normative chromaQP change
@@ -215,9 +225,7 @@ typedef std::pair<int, int>  TrCost;
 
 #define RDOQ_CHROMA                                       1 ///< use of RDOQ in chroma
 
-#define QP_SWITCHING_FOR_PARALLEL                         1 ///< Replace floating point QP with a source-file frame number. After switching POC, increase base QP instead of frame level QP.
 
-#define LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET         1 /// JVET-L0414 (CE11.2.2) with explicit signalling of num interval, threshold and qpOffset
 // ====================================================================================================================
 // Derived macros
 // ====================================================================================================================
@@ -276,6 +284,34 @@ typedef       uint64_t        Distortion;        ///< distortion measurement
 // Enumeration
 // ====================================================================================================================
 
+// casts enum to underlying integer type
+template<typename E> constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept
+{
+  return static_cast<typename std::underlying_type<E>::type>(e);
+}
+
+// array indexed by an enum type
+template<class T, class E> struct EnumArray : public std::array<T, to_underlying(E::NUM)>
+{
+  using base            = std::array<T, to_underlying(E::NUM)>;
+  using size_type       = E;
+  using reference       = T &;
+  using const_reference = const T &;
+
+public:
+  constexpr EnumArray() : base() {}
+  constexpr EnumArray(std::initializer_list<T> l)
+  {
+    size_t j = 0;
+    for (const auto &i: l)
+    {
+      base::at(j++) = i;
+    }
+  }
+
+  reference                 operator[](size_type e) { return base::operator[](to_underlying(e)); }
+  constexpr const_reference operator[](size_type e) const { return base::operator[](to_underlying(e)); }
+};
 
 enum ApsType
 {
@@ -292,25 +328,47 @@ enum QuantFlags
   Q_SELECTIVE_RDOQ = 0x4,
 };
 
-//EMT transform tags
-enum TransType
+enum class TransType
 {
   DCT2 = 0,
-  DCT8 = 1,
-  DST7 = 2,
-  NUM_TRANS_TYPE = 3,
-  DCT2_EMT = 4
+  DCT8,
+  DST7,
+  NUM
 };
 
-enum MTSIdx
+enum class MtsType : int8_t
 {
-  MTS_DCT2_DCT2 = 0,
-  MTS_SKIP = 1,
-  MTS_DST7_DST7 = 2,
-  MTS_DCT8_DST7 = 3,
-  MTS_DST7_DCT8 = 4,
-  MTS_DCT8_DCT8 = 5
+  NONE      = -1,
+  DCT2_DCT2 = 0,
+  SKIP,
+  DST7_DST7,
+  DCT8_DST7,
+  DST7_DCT8,
+  DCT8_DCT8,
+  NUM
 };
+
+static inline constexpr int operator-(const MtsType &a, const MtsType &b)
+{
+  return to_underlying(a) - to_underlying(b);
+}
+
+static inline constexpr MtsType operator+(const MtsType &a, int b)
+{
+  return static_cast<MtsType>(to_underlying(a) + b);
+}
+
+static inline MtsType operator++(MtsType &a, int)
+{
+  MtsType b = a;
+
+  a = static_cast<MtsType>(to_underlying(a) + 1);
+
+  return b;
+}
+
+typedef std::pair<MtsType, bool> TrMode;
+typedef std::pair<int, int>      TrCost;
 
 enum ISPType
 {
@@ -350,6 +408,13 @@ enum SbtMode
   SBT_HOR_Q0 = 6,
   SBT_HOR_Q1 = 7,
   NUMBER_SBT_MODE
+};
+
+enum class BdpcmMode : uint8_t
+{
+  NONE = 0,
+  HOR,
+  VER
 };
 
 /// supported slice type
@@ -569,13 +634,20 @@ enum MESearchMethod
 };
 
 /// coefficient scanning type used in ACS
-enum CoeffScanType
+enum class CoeffScanType
 {
-  SCAN_DIAG = 0,        ///< up-right diagonal scan
-  SCAN_TRAV_HOR = 1,
-  SCAN_TRAV_VER = 2,
-  SCAN_NUMBER_OF_TYPES
+  DIAG = 0,
+  TRAV_HOR = 1,
+  TRAV_VER = 2,
+  NUM
 };
+
+static inline CoeffScanType operator++(CoeffScanType &a, int)
+{
+  CoeffScanType b = a;
+  a = static_cast<CoeffScanType>(to_underlying(a) + 1);
+  return b;
+}
 
 enum CoeffScanGroupType
 {
@@ -618,45 +690,47 @@ enum ScalingList1dStartIdx
 };
 
 // For use with decoded picture hash SEI messages, generated by encoder.
-enum HashType
+enum class HashType
 {
-  HASHTYPE_MD5             = 0,
-  HASHTYPE_CRC             = 1,
-  HASHTYPE_CHECKSUM        = 2,
-  HASHTYPE_NONE            = 3,
-  NUMBER_OF_HASHTYPES      = 4
+  NONE     = -1,
+  MD5      = 0,
+  CRC      = 1,
+  CHECKSUM = 2,
+  NUM
 };
 
-enum SAOMode //mode
+enum class SAOMode : uint8_t
 {
-  SAO_MODE_OFF = 0,
-  SAO_MODE_NEW,
-  SAO_MODE_MERGE,
-  NUM_SAO_MODES
+  OFF = 0,
+  NEW,
+  MERGE,
+  NUM
 };
 
-enum SAOModeMergeTypes
+enum class SAOModeMergeTypes : int8_t
 {
-  SAO_MERGE_LEFT =0,
-  SAO_MERGE_ABOVE,
-  NUM_SAO_MERGE_TYPES
+  NONE = -1,
+  LEFT = 0,
+  ABOVE,
+  NUM
 };
 
-
-enum SAOModeNewTypes
+enum class SAOModeNewTypes : int8_t
 {
-  SAO_TYPE_START_EO =0,
-  SAO_TYPE_EO_0 = SAO_TYPE_START_EO,
-  SAO_TYPE_EO_90,
-  SAO_TYPE_EO_135,
-  SAO_TYPE_EO_45,
+  NONE     = -1,
+  START_EO = 0,
+  EO_0     = START_EO,
+  EO_90,
+  EO_135,
+  EO_45,
 
-  SAO_TYPE_START_BO,
-  SAO_TYPE_BO = SAO_TYPE_START_BO,
+  START_BO,
+  BO = START_BO,
 
-  NUM_SAO_NEW_TYPES
+  NUM
 };
-#define NUM_SAO_EO_TYPES_LOG2 2
+
+static constexpr int NUM_SAO_EO_TYPES_LOG2 = 2;
 
 enum SAOEOClasses
 {
@@ -668,6 +742,22 @@ enum SAOEOClasses
   NUM_SAO_EO_CLASSES,
 };
 
+enum NNPC_PaddingType
+{
+  ZERO_PADDING = 0,
+  REPLICATION_PADDING = 1,
+  REFLECTION_PADDING = 2,
+  WRAP_AROUND_PADDING = 3,
+  FIXED_PADDING = 4
+};
+
+enum POST_FILTER_MODE
+{
+  EXTERNAL = 0,
+  INTERNAL = 1,
+  URI =2
+};
+
 #define NUM_SAO_BO_CLASSES_LOG2  5
 #define NUM_SAO_BO_CLASSES       (1<<NUM_SAO_BO_CLASSES_LOG2)
 
@@ -676,6 +766,7 @@ namespace Profile
   enum Name
   {
     NONE                                 = 0,
+    INTRA                                = 8,
     STILL_PICTURE                        = 64,
     MAIN_10                              = 1,
     MAIN_10_STILL_PICTURE                = MAIN_10 | STILL_PICTURE,
@@ -685,6 +776,15 @@ namespace Profile
     MAIN_10_444_STILL_PICTURE            = MAIN_10_444 | STILL_PICTURE,
     MULTILAYER_MAIN_10_444               = 49,
     MULTILAYER_MAIN_10_444_STILL_PICTURE = MULTILAYER_MAIN_10_444 | STILL_PICTURE,
+    MAIN_12                              = 2,
+    MAIN_12_444                          = 34,
+    MAIN_16_444                          = 35,
+    MAIN_12_INTRA                        = MAIN_12 | INTRA,
+    MAIN_12_444_INTRA                    = MAIN_12_444 | INTRA,
+    MAIN_16_444_INTRA                    = MAIN_16_444 | INTRA,
+    MAIN_12_STILL_PICTURE                = MAIN_12 | STILL_PICTURE,
+    MAIN_12_444_STILL_PICTURE            = MAIN_12_444 | STILL_PICTURE,
+    MAIN_16_444_STILL_PICTURE            = MAIN_16_444 | STILL_PICTURE,
   };
 }
 
@@ -747,9 +847,6 @@ enum FastInterSearchMode
 enum SPSExtensionFlagIndex
 {
   SPS_EXT__REXT           = 0,
-//SPS_EXT__MVHEVC         = 1, //for use in future versions
-//SPS_EXT__SHVC           = 2, //for use in future versions
-  SPS_EXT__NEXT           = 3,
   NUM_SPS_EXTENSION_FLAGS = 8
 };
 
@@ -797,6 +894,7 @@ enum NalUnitType
   NAL_UNIT_UNSPECIFIED_31,
   NAL_UNIT_INVALID
 };
+
 
 #if SHARP_LUMA_DELTA_QP
 enum LumaLevelToDQPMode
@@ -846,14 +944,17 @@ enum ImvMode
 // ====================================================================================================================
 
 /// parameters for adaptive loop filter
-class PicSym;
 
 #define MAX_NUM_SAO_CLASSES  32  //(NUM_SAO_EO_GROUPS > NUM_SAO_BO_GROUPS)?NUM_SAO_EO_GROUPS:NUM_SAO_BO_GROUPS
 
 struct SAOOffset
 {
   SAOMode modeIdc; // NEW, MERGE, OFF
-  int typeIdc;     // union of SAOModeMergeTypes and SAOModeNewTypes, depending on modeIdc.
+  union
+  {
+    SAOModeMergeTypes mergeType;
+    SAOModeNewTypes   newType;
+  } typeIdc;
   int typeAuxInfo; // BO: starting band index
   int offset[MAX_NUM_SAO_CLASSES];
 
@@ -882,6 +983,7 @@ private:
 
 struct BitDepths
 {
+  const int &operator[](const ChannelType ch) const { return recon[ch]; }
   int recon[MAX_NUM_CHANNEL_TYPE]; ///< the bit depth as indicated in the SPS
 };
 
@@ -974,6 +1076,31 @@ struct SEIMasteringDisplay
   uint16_t    primaries[3][2];
   uint16_t    whitePoint[2];
 };
+
+struct SEIQualityMetrics
+{
+  double psnr = 0;
+  double ssim = 0;
+  double wpsnr = 0;
+  double wspsnr = 0;
+};
+
+struct SEIComplexityMetrics
+{
+  uint32_t portionNonZeroBlocksArea = 0;
+  uint32_t portionNonZero_4_8_16BlocksArea = 0;
+  uint32_t portionNonZero_32_64_128BlocksArea = 0;
+  uint32_t portionNonZero_256_512_1024BlocksArea = 0;
+  uint32_t portionNonZero_2048_4096BlocksArea = 0;
+  uint32_t portionNonZeroTransformCoefficientsArea = 0;
+  uint32_t portionIntraPredictedBlocksArea = 0;
+  uint32_t portionBdofBlocksArea = 0;
+  uint32_t portionBiAndGpmPredictedBlocksArea = 0;
+  uint32_t portionDeblockingInstances = 0;
+  uint32_t portionSaoInstances = 0;
+  uint32_t portionAlfInstances = 0;
+};
+
 
 #if SHARP_LUMA_DELTA_QP
 struct LumaLevelToDeltaQPMapping
@@ -1107,7 +1234,7 @@ public:
   typedef T*        iterator;
   typedef T const*  const_iterator;
 
-  static const size_type max_num_elements = N;
+  static constexpr size_type max_num_elements = N;
 
   static_vector() : _size( 0 )                                 { }
   static_vector( size_t N_ ) : _size( N_ )                     { }
@@ -1269,7 +1396,7 @@ struct XUCache
   TUCache tuCache;
 };
 
-#define SIGN(x) ( (x) >= 0 ? 1 : -1 )
+
 
 //! \}
 

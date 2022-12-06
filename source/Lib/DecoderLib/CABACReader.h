@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -48,14 +48,18 @@
 class CABACReader
 {
 public:
-  CABACReader(BinDecoderBase& binDecoder) : m_BinDecoder(binDecoder), m_Bitstream(0) {}
+  CABACReader(BinDecoderBase &binDecoder) : m_binDecoder(binDecoder), m_bitstream(nullptr) {}
   virtual ~CABACReader() {}
 
 public:
   void        initCtxModels             ( Slice&                        slice );
-  void        initBitstream             ( InputBitstream*               bitstream )           { m_Bitstream = bitstream; m_BinDecoder.init( m_Bitstream ); }
-  const Ctx&  getCtx                    ()                                            const   { return m_BinDecoder.getCtx();  }
-  Ctx&        getCtx                    ()                                                    { return m_BinDecoder.getCtx();  }
+  void        initBitstream(InputBitstream *bitstream)
+  {
+    m_bitstream = bitstream;
+    m_binDecoder.init(m_bitstream);
+  }
+  const Ctx &getCtx() const { return m_binDecoder.getCtx(); }
+  Ctx       &getCtx() { return m_binDecoder.getCtx(); }
 
 public:
   // slice segment data (clause 7.3.8.1)
@@ -113,13 +117,13 @@ public:
   void        inter_pred_idc            ( PredictionUnit&               pu );
   void        ref_idx                   ( PredictionUnit&               pu,     RefPicList      eRefList );
   void        mvp_flag                  ( PredictionUnit&               pu,     RefPicList      eRefList );
-  void        Ciip_flag              ( PredictionUnit&               pu );
+  void        ciip_flag(PredictionUnit &pu);
   void        smvd_mode              ( PredictionUnit&               pu );
 
 
   // transform tree (clause 7.3.8.8)
   void        transform_tree            ( CodingStructure&              cs, Partitioner&    pm, CUCtx& cuCtx, const PartSplit ispType = TU_NO_ISP, const int subTuIdx = -1 );
-  bool        cbf_comp                  ( CodingStructure&              cs,     const CompArea& area,     unsigned depth, const bool prevCbf = false, const bool useISP = false );
+  bool cbf_comp(const CompArea &area, unsigned depth, bool prevCbf, bool useISP, BdpcmMode bdpcmMode);
 
   // mvd coding (clause 7.3.8.9)
   void        mvd_coding                ( Mv &rMvd );
@@ -146,8 +150,7 @@ private:
   unsigned    unary_max_symbol          ( unsigned ctxId0, unsigned ctxIdN, unsigned maxSymbol );
   unsigned    unary_max_eqprob          (                                   unsigned maxSymbol );
   unsigned    exp_golomb_eqprob         ( unsigned count );
-  unsigned    get_num_bits_read         () { return m_BinDecoder.getNumBitsRead(); }
-  unsigned    code_unary_fixed          ( unsigned ctxId, unsigned unary_max, unsigned fixed );
+  unsigned    get_num_bits_read() { return m_binDecoder.getNumBitsRead(); }
 
   void        xReadTruncBinCode(uint32_t& symbol, uint32_t maxSymbol);
   void        parseScanRotationModeFlag ( CodingUnit& cu,           ComponentID compBegin );
@@ -155,8 +158,8 @@ private:
   void        xAdjustPLTIndex           ( CodingUnit& cu,           Pel curLevel,          uint32_t idx, PelBuf& paletteIdx, PLTtypeBuf& paletteRunType, int maxSymbol, ComponentID compBegin );
 public:
 private:
-  BinDecoderBase& m_BinDecoder;
-  InputBitstream* m_Bitstream;
+  BinDecoderBase &m_binDecoder;
+  InputBitstream *m_bitstream;
   ScanElement*    m_scanOrder;
 };
 
@@ -164,17 +167,15 @@ private:
 class CABACDecoder
 {
 public:
-  CABACDecoder()
-    : m_CABACReaderStd  ( m_BinDecoderStd )
-    , m_CABACReader     { &m_CABACReaderStd }
-  {}
+  CABACDecoder() : m_CABACReaderStd(m_BinDecoderStd), m_CABACReader{ &m_CABACReaderStd } {}
 
-  CABACReader*                getCABACReader    ( int           id    )       { return m_CABACReader[id]; }
+  CABACReader *getCABACReader(BpmType id) { return m_CABACReader[id]; }
 
 private:
   BinDecoder_Std          m_BinDecoderStd;
   CABACReader             m_CABACReaderStd;
-  CABACReader*            m_CABACReader[BPM_NUM-1];
+
+  EnumArray<CABACReader *, BpmType> m_CABACReader;
 };
 
 #endif

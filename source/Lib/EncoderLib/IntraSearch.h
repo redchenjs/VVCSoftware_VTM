@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,10 +66,6 @@ enum PLTScanMode
 class SortingElement
 {
 public:
-  inline bool operator<(const SortingElement &other) const
-  {
-    return cnt > other.cnt;
-  }
   SortingElement() {
     cnt[0] = cnt[1] = cnt[2] = cnt[3] = 0;
     shift[0] = shift[1] = shift[2] = 0;
@@ -223,13 +219,14 @@ private:
     ModeInfo(const bool mipf, const bool miptf, const int mrid, const uint8_t ispm, const uint32_t mode) : mipFlg(mipf), mipTrFlg(miptf), mRefId(mrid), ispMod(ispm), modeId(mode) {}
     bool operator==(const ModeInfo cmp) const { return (mipFlg == cmp.mipFlg && mipTrFlg == cmp.mipTrFlg && mRefId == cmp.mRefId && ispMod == cmp.ispMod && modeId == cmp.modeId); }
   };
+
   struct ModeInfoWithCost : public ModeInfo
   {
     double rdCost;
     ModeInfoWithCost() : ModeInfo(), rdCost(MAX_DOUBLE) {}
     ModeInfoWithCost(const bool mipf, const bool miptf, const int mrid, const uint8_t ispm, const uint32_t mode, double cost) : ModeInfo(mipf, miptf, mrid, ispm, mode), rdCost(cost) {}
     bool operator==(const ModeInfoWithCost cmp) const { return (mipFlg == cmp.mipFlg && mipTrFlg == cmp.mipTrFlg && mRefId == cmp.mRefId && ispMod == cmp.ispMod && modeId == cmp.modeId && rdCost == cmp.rdCost); }
-    static bool compareModeInfoWithCost(ModeInfoWithCost a, ModeInfoWithCost b) { return a.rdCost < b.rdCost; }
+    static bool compare(const ModeInfoWithCost &a, const ModeInfoWithCost &b) { return a.rdCost < b.rdCost; }
   };
 
   struct ISPTestedModeInfo
@@ -250,6 +247,7 @@ private:
       rdCost = MAX_DOUBLE;
     }
   };
+
   struct ISPTestedModesInfo
   {
     ISPTestedModeInfo                           intraMode[NUM_LUMA_MODE][2];
@@ -328,11 +326,13 @@ private:
       numOrigModesToTest = -1;
       memset(modeHasBeenTested, 0, sizeof(modeHasBeenTested));
     }
+
     void clearISPModeInfo(int idx)
     {
       intraMode[idx][0].clear();
       intraMode[idx][1].clear();
     }
+
     void init(const int numTotalPartsHor, const int numTotalPartsVer)
     {
       clear();
@@ -357,11 +357,11 @@ private:
   ModeInfo   m_savedRdModeList[ NUM_LFNST_NUM_PER_SET ][ NUM_LUMA_MODE ];
   int32_t    m_savedNumRdModes[ NUM_LFNST_NUM_PER_SET ];
 
-  ModeInfo                                           m_savedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  char                                               m_savedBDPCMModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  double                                             m_savedRdCostFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  int                                                m_numSavedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2];
-  int                                                m_savedRdModeIdx;
+  ModeInfo  m_savedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  BdpcmMode m_savedBDPCMModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  double    m_savedRdCostFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  int       m_numSavedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2];
+  int       m_savedRdModeIdx;
 
   static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_savedRdModeListLFNST;
   static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_savedHadModeListLFNST;
@@ -371,6 +371,9 @@ private:
 
   PelStorage      m_tmpStorageLCU;
   PelStorage      m_colorTransResiBuf;
+
+  std::vector<TransformUnit *> m_orgTUs;
+
 protected:
   // interface to option
   EncCfg*         m_pcEncCfg;
@@ -399,17 +402,9 @@ public:
   IntraSearch();
   ~IntraSearch();
 
-  void init                       ( EncCfg*        pcEncCfg,
-                                    TrQuant*       pcTrQuant,
-                                    RdCost*        pcRdCost,
-                                    CABACWriter*   CABACEstimator,
-                                    CtxCache*      ctxCache,
-                                    const uint32_t     maxCUWidth,
-                                    const uint32_t     maxCUHeight,
-                                    const uint32_t     maxTotalCUDepth
-                                  , EncReshape*   m_pcReshape
-                                  , const unsigned bitDepthY
-                                  );
+  void init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, CABACWriter *CABACEstimator, CtxCache *ctxCache,
+            const uint32_t maxCUWidth, const uint32_t maxCUHeight, const uint32_t maxTotalCUDepth,
+            EncReshape *m_pcReshape, const unsigned bitDepthY);
 
   void destroy                    ();
 
@@ -427,20 +422,23 @@ public:
   double findInterCUCost          ( CodingUnit &cu );
 
 public:
-  bool estIntraPredLumaQT(CodingUnit &cu, Partitioner& pm, const double bestCostSoFar = MAX_DOUBLE, bool mtsCheckRangeFlag = false, int mtsFirstCheckId = 0, int mtsLastCheckId = 0, bool moreProbMTSIdxFirst = false, CodingStructure* bestCS = NULL);
+  bool     estIntraPredLumaQT(CodingUnit &cu, Partitioner &pm, const double bestCostSoFar = MAX_DOUBLE,
+                              bool mtsCheckRangeFlag = false, int mtsFirstCheckId = 0, int mtsLastCheckId = 0,
+                              bool moreProbMTSIdxFirst = false, CodingStructure *bestCS = nullptr);
   void estIntraPredChromaQT       ( CodingUnit &cu, Partitioner& pm, const double maxCostAllowed = MAX_DOUBLE );
   void PLTSearch                  ( CodingStructure &cs, Partitioner& partitioner, ComponentID compBegin, uint32_t numComp);
   uint64_t xFracModeBitsIntra(PredictionUnit &pu, const uint32_t &mode, const ChannelType &compID);
   void invalidateBestModeCost     () { for( int i = 0; i < NUM_LFNST_NUM_PER_SET; i++ ) m_bestModeCostValid[ i ] = false; };
 
-  void sortRdModeListFirstColorSpace(ModeInfo mode, double cost, char bdpcmMode, ModeInfo* rdModeList, double* rdCostList, char* bdpcmModeList, int& candNum);
+  void sortRdModeListFirstColorSpace(ModeInfo mode, double cost, BdpcmMode bdpcmMode, ModeInfo *rdModeList,
+                                     double *rdCostList, BdpcmMode *bdpcmModeList, int &candNum);
   void invalidateBestRdModeFirstColorSpace();
   void setSavedRdModeIdx(int idx) { m_savedRdModeIdx = idx; }
 
 #if GDR_ENABLED
-  int  getNumTopRecons(PredictionUnit &pu, int luma_dirMode, bool isChroma);
-  bool isValidIntraPredLuma(PredictionUnit &pu, int luma_dirMode);
-  bool isValidIntraPredChroma(PredictionUnit &pu, int luma_dirMode, int chroma_dirMode);
+  int  getNumTopRecons(PredictionUnit &pu, int lumaDirMode, bool isChroma);
+  bool isValidIntraPredLuma(PredictionUnit &pu, int lumaDirMode);
+  bool isValidIntraPredChroma(PredictionUnit &pu, int lumaDirMode, int chromaDirMode);
 #endif
 protected:
 
@@ -461,8 +459,11 @@ protected:
   uint64_t xGetIntraFracBitsQTChroma(TransformUnit& tu, const ComponentID &compID);
   void xEncCoeffQT                                 ( CodingStructure &cs, Partitioner& pm, const ComponentID compID, const int subTuIdx = -1, const PartSplit ispType = TU_NO_ISP, CUCtx * cuCtx = nullptr );
 
-  void xIntraCodingTUBlock        (TransformUnit &tu, const ComponentID &compID, Distortion& ruiDist, const int &default0Save1Load2 = 0, uint32_t* numSig = nullptr, std::vector<TrMode>* trModes=nullptr, const bool loadTr=false );
-  void xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &compID, Distortion& ruiDist, std::vector<TrMode>* trModes = nullptr, const bool loadTr = false);
+  void xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &compID, Distortion &dist,
+                           const int &default0Save1Load2 = 0, uint32_t *numSig = nullptr, TrModeList *trModes = nullptr,
+                           const bool loadTr = false);
+  void xIntraCodingACTTUBlock(TransformUnit &tu, const ComponentID &compID, Distortion &dist,
+                              TrModeList *trModes = nullptr, const bool loadTr = false);
 
   ChromaCbfs xRecurIntraChromaCodingQT( CodingStructure &cs, Partitioner& pm, const double bestCostSoFar = MAX_DOUBLE,                          const PartSplit ispType = TU_NO_ISP );
   bool       xRecurIntraCodingLumaQT  ( CodingStructure &cs, Partitioner& pm, bool mtsCheckRangeFlag = false, int mtsFirstCheckId = 0, int mtsLastCheckId = 0, bool moreProbMTSIdxFirst = false );
@@ -475,7 +476,8 @@ protected:
   void   calcPixelPred   (      CodingStructure& cs, Partitioner& partitioner, uint32_t    yPos,      uint32_t xPos,             ComponentID compBegin, uint32_t  numComp);
   void     preCalcPLTIndexRD      (CodingStructure& cs, Partitioner& partitioner, ComponentID compBegin, uint32_t numComp);
   void     calcPixelPredRD        (CodingStructure& cs, Partitioner& partitioner, Pel* orgBuf, Pel* pixelValue, Pel* recoValue, ComponentID compBegin, uint32_t numComp);
-  void     deriveIndexMap         (CodingStructure& cs, Partitioner& partitioner, ComponentID compBegin, uint32_t numComp, PLTScanMode pltScanMode, double& dCost, bool* idxExist);
+  void     deriveIndexMap(CodingStructure &cs, Partitioner &partitioner, ComponentID compBegin, uint32_t numComp,
+                          PLTScanMode pltScanMode, double &cost, bool *idxExist);
   bool     deriveSubblockIndexMap(CodingStructure& cs, Partitioner& partitioner, ComponentID compBegin, PLTScanMode pltScanMode, int minSubPos, int maxSubPos, const BinFracBits& fracBitsPltRunType, const BinFracBits* fracBitsPltIndexINDEX, const BinFracBits* fracBitsPltIndexCOPY, const double minCost, bool useRotate);
   double   rateDistOptPLT         (bool RunType, uint8_t RunIndex, bool prevRunType, uint8_t prevRunIndex, uint8_t aboveRunIndex, bool& prevCodedRunType, int& prevCodedRunPos, int scanPos, uint32_t width, int dist, int indexMaxValue, const BinFracBits* IndexfracBits, const BinFracBits& TypefracBits);
   uint32_t getTruncBinBits        (uint32_t symbol, uint32_t maxSymbol);

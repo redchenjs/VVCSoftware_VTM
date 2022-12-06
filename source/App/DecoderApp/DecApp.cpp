@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,9 +48,17 @@
 #endif
 #include "CommonLib/dtrace_codingstruct.h"
 
+using namespace std;
 
 //! \ingroup DecoderApp
 //! \{
+
+static int calcGcd(int a, int b)
+{
+  // assume that a >= b
+  return b == 0 ? a : calcGcd(b, a % b);
+}
+
 
 // ====================================================================================================================
 // Constructor / destructor / initialization / destroy
@@ -79,9 +87,20 @@ DecApp::DecApp()
  */
 uint32_t DecApp::decode()
 {
-  int                 poc;
-  PicList* pcListPic = NULL;
-
+  int      poc;
+  PicList *pcListPic = nullptr;
+  
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct featureCounter;
+  FeatureCounterStruct featureCounterOld;
+  ifstream bitstreamSize(m_bitstreamFileName.c_str(), ifstream::in | ifstream::binary);
+  std::streampos fsize = 0;
+  fsize = bitstreamSize.tellg();
+  bitstreamSize.seekg( 0, std::ios::end );
+  featureCounter.bytes = (int) bitstreamSize.tellg() - (int) fsize;
+  bitstreamSize.close();
+#endif
+  
   ifstream bitstreamFile(m_bitstreamFileName.c_str(), ifstream::in | ifstream::binary);
   if (!bitstreamFile)
   {
@@ -139,6 +158,12 @@ uint32_t DecApp::decode()
 
   bool bPicSkipped = false;
 
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool openedPostFile = false;
+  setShutterFilterFlag(!m_shutterIntervalPostFileName.empty());   // not apply shutter interval SEI processing if filename is not specified.
+  m_cDecLib.setShutterFilterFlag(getShutterFilterFlag());
+#endif
+
   bool isEosPresentInPu = false;
   bool isEosPresentInLastPu = false;
 
@@ -162,8 +187,15 @@ uint32_t DecApp::decode()
     m_cDecLib.setHTidExternalSetFlag(m_mTidExternalSet);
     m_cDecLib.setTOlsIdxExternalFlag(m_tOlsIdxTidExternalSet);
 
+#if GREEN_METADATA_SEI_ENABLED
+    m_cDecLib.setFeatureAnalysisFramewise( m_GMFAFramewise);
+    m_cDecLib.setGMFAFile(m_GMFAFile);
+#endif
+  
   bool gdrRecoveryPeriod[MAX_NUM_LAYER_IDS] = { false };
   bool prevPicSkipped = true;
+  int lastNaluLayerId = -1;
+  bool decodedSliceInAU = false;
 
   while (!!bitstreamFile)
   {
@@ -172,7 +204,7 @@ uint32_t DecApp::decode()
 
     // determine if next NAL unit will be the first one from a new picture
     bool bNewPicture = m_cDecLib.isNewPicture(&bitstreamFile, &bytestream);
-    bool bNewAccessUnit = bNewPicture && m_cDecLib.isNewAccessUnit( bNewPicture, &bitstreamFile, &bytestream );
+    bool bNewAccessUnit = bNewPicture && decodedSliceInAU && m_cDecLib.isNewAccessUnit( bNewPicture, &bitstreamFile, &bytestream );
     if(!bNewPicture)
     {
       AnnexBStats stats = AnnexBStats();
@@ -236,7 +268,7 @@ uint32_t DecApp::decode()
           {
             if ((nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_TRAIL) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_STSA) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_RASL) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_RADL) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_CRA) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_GDR))
             {
-              if (m_cDecLib.isSliceNaluFirstInAU(true, nalu))
+              if (decodedSliceInAU && m_cDecLib.isSliceNaluFirstInAU(true, nalu))
               {
                 m_cDecLib.resetAccessUnitNals();
                 m_cDecLib.resetAccessUnitApsNals();
@@ -262,7 +294,7 @@ uint32_t DecApp::decode()
           if ( m_iSkipFrame < skipFrameCounter  &&
               ((nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_TRAIL) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_STSA) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_RASL) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_RADL) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_CRA) || (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_GDR)))
           {
-            if (m_cDecLib.isSliceNaluFirstInAU(true, nalu))
+            if (decodedSliceInAU && m_cDecLib.isSliceNaluFirstInAU(true, nalu))
             {
               m_cDecLib.checkSeiInPictureUnit();
               m_cDecLib.resetPictureSeiNalus();
@@ -293,10 +325,18 @@ uint32_t DecApp::decode()
             m_targetDecLayerIdSet = m_cDecLib.getVPS()->m_targetLayerIdSet;
             m_targetOutputLayerIdSet = m_cDecLib.getVPS()->m_targetOutputLayerIdSet;
           }
+          if (nalu.isSlice())
+          {
+            decodedSliceInAU = true;
+          }
         }
         else
         {
           bPicSkipped = true;
+          if (nalu.isSlice())
+          {
+            m_cDecLib.setFirstSliceInPicture(false);
+          }
         }
       }
 
@@ -316,37 +356,44 @@ uint32_t DecApp::decode()
       {
         CHECK(nalu.m_nalUnitType != NAL_UNIT_EOS && nalu.m_nalUnitType != NAL_UNIT_EOB, "When an EOS NAL unit is present in a PU, it shall be the last NAL unit among all NAL units within the PU other than other EOS NAL units or an EOB NAL unit");
       }
+      lastNaluLayerId = nalu.m_nuhLayerId;
+    }
+    else
+    {
+      nalu.m_nuhLayerId = lastNaluLayerId;
     }
 
-    if ((bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS) && !m_cDecLib.getFirstSliceInSequence(nalu.m_nuhLayerId) && !bPicSkipped)
+    if (bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS)
     {
-      if (!loopFiltered[nalu.m_nuhLayerId] || bitstreamFile)
+      if (!m_cDecLib.getFirstSliceInSequence(nalu.m_nuhLayerId) && !bPicSkipped)
       {
-        m_cDecLib.executeLoopFilters();
-        m_cDecLib.finishPicture(poc, pcListPic, INFO, m_newCLVS[nalu.m_nuhLayerId]);
-      }
-      loopFiltered[nalu.m_nuhLayerId] = (nalu.m_nalUnitType == NAL_UNIT_EOS);
-      if (nalu.m_nalUnitType == NAL_UNIT_EOS)
-      {
-        m_cDecLib.setFirstSliceInSequence(true, nalu.m_nuhLayerId);
-      }
-
-      m_cDecLib.updateAssociatedIRAP();
-      m_cDecLib.updatePrevGDRInSameLayer();
-      m_cDecLib.updatePrevIRAPAndGDRSubpic();
-
-      if ( gdrRecoveryPeriod[nalu.m_nuhLayerId] )
-      {
-        if ( m_cDecLib.getGDRRecoveryPocReached() )
+        if (!loopFiltered[nalu.m_nuhLayerId] || bitstreamFile)
         {
-          gdrRecoveryPeriod[nalu.m_nuhLayerId] = false;
+          m_cDecLib.executeLoopFilters();
+          m_cDecLib.finishPicture(poc, pcListPic, INFO, m_newCLVS[nalu.m_nuhLayerId]);
+        }
+        loopFiltered[nalu.m_nuhLayerId] = (nalu.m_nalUnitType == NAL_UNIT_EOS);
+        if (nalu.m_nalUnitType == NAL_UNIT_EOS)
+        {
+          m_cDecLib.setFirstSliceInSequence(true, nalu.m_nuhLayerId);
+        }
+
+        m_cDecLib.updateAssociatedIRAP();
+        m_cDecLib.updatePrevGDRInSameLayer();
+        m_cDecLib.updatePrevIRAPAndGDRSubpic();
+
+        if (gdrRecoveryPeriod[nalu.m_nuhLayerId])
+        {
+          if (m_cDecLib.getGDRRecoveryPocReached())
+          {
+            gdrRecoveryPeriod[nalu.m_nuhLayerId] = false;
+          }
         }
       }
-    }
-    else if ( (bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS ) &&
-      m_cDecLib.getFirstSliceInSequence(nalu.m_nuhLayerId))
-    {
-      m_cDecLib.setFirstSliceInPicture (true);
+      else
+      {
+        m_cDecLib.setFirstSliceInPicture(true);
+      }
     }
 
     if( pcListPic )
@@ -364,90 +411,333 @@ uint32_t DecApp::decode()
         }
       }
 
-      if( !m_reconFileName.empty() && !m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].isOpen() )
+      int layerOutputBitDepth[MAX_NUM_CHANNEL_TYPE];
+      PicList::iterator iterPicLayer = pcListPic->begin();
+      for (; iterPicLayer != pcListPic->end(); ++iterPicLayer)
       {
-        const BitDepths &bitDepths=pcListPic->front()->cs->sps->getBitDepths(); // use bit depths of first reconstructed picture.
-        for( uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++ )
+        if ((*iterPicLayer)->layerId == nalu.m_nuhLayerId)
         {
-            if( m_outputBitDepth[channelType] == 0 )
-            {
-                m_outputBitDepth[channelType] = bitDepths.recon[channelType];
-            }
-        }
-
-        if (m_packedYUVMode && (m_outputBitDepth[CH_L] != 10 && m_outputBitDepth[CH_L] != 12))
-        {
-          EXIT ("Invalid output bit-depth for packed YUV output, aborting\n");
-        }
-
-        std::string reconFileName = m_reconFileName;
-        if( m_reconFileName.compare( "/dev/null" ) && m_cDecLib.getVPS() != nullptr && m_cDecLib.getVPS()->getMaxLayers() > 1 && xIsNaluWithinTargetOutputLayerIdSet( &nalu ) )
-        {
-          size_t pos = reconFileName.find_last_of('.');
-          std::string layerString = std::string(".layer") + std::to_string(nalu.m_nuhLayerId);
-          if (pos != string::npos)
-          {
-            reconFileName.insert(pos, layerString);
-          }
-          else
-          {
-            reconFileName.append(layerString);
-          }
-        }
-        if( ( m_cDecLib.getVPS() != nullptr && ( m_cDecLib.getVPS()->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet( &nalu ) ) ) || m_cDecLib.getVPS() == nullptr )
-        {
-          m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, bitDepths.recon ); // write mode
+          break;
         }
       }
-      // update file bitdepth shift if recon bitdepth changed between sequences
-      for( uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++ )
+      if (iterPicLayer != pcListPic->end())
       {
-        int reconBitdepth = pcListPic->front()->cs->sps->getBitDepth((ChannelType)channelType);
-        int fileBitdepth  = m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].getFileBitdepth(channelType);
-        int bitdepthShift = m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].getBitdepthShift(channelType);
-        if( fileBitdepth + bitdepthShift != reconBitdepth )
-        {
-          m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setBitdepthShift(channelType, reconBitdepth - fileBitdepth);
-        }
-      }
-      if (!m_SEICTIFileName.empty() && !m_cVideoIOYuvSEICTIFile[nalu.m_nuhLayerId].isOpen())
-      {
-        const BitDepths& bitDepths = pcListPic->front()->cs->sps->getBitDepths(); // use bit depths of first reconstructed picture.
+        BitDepths &bitDepths = (*iterPicLayer)->m_bitDepths;
+
         for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
         {
           if (m_outputBitDepth[channelType] == 0)
           {
-            m_outputBitDepth[channelType] = bitDepths.recon[channelType];
+            layerOutputBitDepth[channelType] = bitDepths.recon[channelType];
+          }
+          else
+          {
+            layerOutputBitDepth[channelType] = m_outputBitDepth[channelType];
           }
         }
-
-        if (m_packedYUVMode && (m_outputBitDepth[CH_L] != 10 && m_outputBitDepth[CH_L] != 12))
+        if (m_packedYUVMode && (layerOutputBitDepth[CH_L] != 10 && layerOutputBitDepth[CH_L] != 12))
         {
           EXIT("Invalid output bit-depth for packed YUV output, aborting\n");
         }
 
-        std::string SEICTIFileName = m_SEICTIFileName;
-        if (m_SEICTIFileName.compare("/dev/null") && m_cDecLib.getVPS() != nullptr && m_cDecLib.getVPS()->getMaxLayers() > 1 && xIsNaluWithinTargetOutputLayerIdSet(&nalu))
+        if (!m_reconFileName.empty() && !m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].isOpen())
         {
-          size_t pos = SEICTIFileName.find_last_of('.');
-          if (pos != string::npos)
+          std::string reconFileName = m_reconFileName;
+          if (m_reconFileName.compare("/dev/null") && m_cDecLib.getVPS() != nullptr && m_cDecLib.getVPS()->getMaxLayers() > 1 && xIsNaluWithinTargetOutputLayerIdSet(&nalu))
           {
-            SEICTIFileName.insert(pos, std::to_string(nalu.m_nuhLayerId));
+            size_t      pos         = reconFileName.find_last_of('.');
+            std::string layerString = std::string(".layer") + std::to_string(nalu.m_nuhLayerId);
+            if (pos != string::npos)
+            {
+              reconFileName.insert(pos, layerString);
+            }
+            else
+            {
+              reconFileName.append(layerString);
+            }
           }
-          else
+          if ((m_cDecLib.getVPS() != nullptr && (m_cDecLib.getVPS()->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet(&nalu))) || m_cDecLib.getVPS() == nullptr)
           {
-            SEICTIFileName.append(std::to_string(nalu.m_nuhLayerId));
+            if (isY4mFileExt(reconFileName))
+            {
+              const auto sps        = pcListPic->front()->cs->sps;
+            int        frameRate  = 50;
+              int        frameScale = 1;
+              if(sps->getGeneralHrdParametersPresentFlag())
+              {
+                const auto hrd                 = sps->getGeneralHrdParameters();
+                const auto olsHrdParam         = sps->getOlsHrdParameters()[sps->getMaxTLayers() - 1];
+                int        elementDurationInTc = 1;
+                if (olsHrdParam.getFixedPicRateWithinCvsFlag())
+                {
+                  elementDurationInTc = olsHrdParam.getElementDurationInTcMinus1() + 1;
+                }
+                else
+                {
+                  msg(WARNING, "\nWarning: No fixed picture rate info is found in the bitstream, best guess is used.\n");
+                }
+                frameRate  = hrd->getTimeScale() * elementDurationInTc;
+                frameScale = hrd->getNumUnitsInTick();
+                int gcd    = calcGcd(max(frameRate, frameScale), min(frameRate, frameScale));
+                frameRate /= gcd;
+                frameScale /= gcd;
+              }
+              else
+              {
+                msg(WARNING, "\nWarning: No frame rate info found in the bitstream, default 50 fps is used.\n");
+              }
+              const auto pps = pcListPic->front()->cs->pps;
+              auto confWindow = pps->getConformanceWindow();
+              const auto sx = SPS::getWinUnitX(sps->getChromaFormatIdc());
+              const auto sy = SPS::getWinUnitY(sps->getChromaFormatIdc());
+              const int picWidth = pps->getPicWidthInLumaSamples() - (confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
+              const int picHeight = pps->getPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
+              m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(picWidth, picHeight, frameRate, frameScale, layerOutputBitDepth[0], sps->getChromaFormatIdc());
+            }
+            m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].open( reconFileName, true, layerOutputBitDepth, layerOutputBitDepth, bitDepths.recon); // write mode
           }
         }
-        if ((m_cDecLib.getVPS() != nullptr && (m_cDecLib.getVPS()->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet(&nalu))) || m_cDecLib.getVPS() == nullptr)
+        // update file bitdepth shift if recon bitdepth changed between sequences
+        for( uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++ )
         {
-          m_cVideoIOYuvSEICTIFile[nalu.m_nuhLayerId].open(SEICTIFileName, true, m_outputBitDepth, m_outputBitDepth, bitDepths.recon); // write mode
+          int reconBitdepth = (*iterPicLayer)->m_bitDepths[( ChannelType) channelType];
+          int fileBitdepth  = m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].getFileBitdepth(channelType);
+          int bitdepthShift = m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].getBitdepthShift(channelType);
+          if (fileBitdepth + bitdepthShift != reconBitdepth)
+          {
+            m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setBitdepthShift(channelType, reconBitdepth - fileBitdepth);
+          }
+        }
+
+        if (!m_SEIFGSFileName.empty() && !m_videoIOYuvSEIFGSFile[nalu.m_nuhLayerId].isOpen())
+        {
+          std::string SEIFGSFileName = m_SEIFGSFileName;
+          if (m_SEIFGSFileName.compare("/dev/null") && m_cDecLib.getVPS() != nullptr && m_cDecLib.getVPS()->getMaxLayers() > 1 && xIsNaluWithinTargetOutputLayerIdSet(&nalu))
+          {
+            size_t      pos         = SEIFGSFileName.find_last_of('.');
+            std::string layerString = std::string(".layer") + std::to_string(nalu.m_nuhLayerId);
+            if (pos != string::npos)
+            {
+              SEIFGSFileName.insert(pos, layerString);
+            }
+            else
+            {
+              SEIFGSFileName.append(layerString);
+            }
+          }
+          if ((m_cDecLib.getVPS() != nullptr && (m_cDecLib.getVPS()->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet(&nalu))) || m_cDecLib.getVPS() == nullptr)
+          {
+            m_videoIOYuvSEIFGSFile[nalu.m_nuhLayerId].open(SEIFGSFileName, true, layerOutputBitDepth, layerOutputBitDepth, bitDepths.recon);   // write mode
+          }
+        }
+        // update file bitdepth shift if recon bitdepth changed between sequences
+        if (!m_SEIFGSFileName.empty())
+        {
+          for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
+          {
+            int reconBitdepth = (*iterPicLayer)->m_bitDepths[( ChannelType) channelType];
+            int fileBitdepth  = m_videoIOYuvSEIFGSFile[nalu.m_nuhLayerId].getFileBitdepth(channelType);
+            int bitdepthShift = m_videoIOYuvSEIFGSFile[nalu.m_nuhLayerId].getBitdepthShift(channelType);
+            if (fileBitdepth + bitdepthShift != reconBitdepth)
+            {
+              m_videoIOYuvSEIFGSFile[nalu.m_nuhLayerId].setBitdepthShift(channelType, reconBitdepth - fileBitdepth);
+            }
+          }
+        }
+
+        if (!m_SEICTIFileName.empty() && !m_cVideoIOYuvSEICTIFile[nalu.m_nuhLayerId].isOpen())
+        {
+          std::string SEICTIFileName = m_SEICTIFileName;
+          if (m_SEICTIFileName.compare("/dev/null") && m_cDecLib.getVPS() != nullptr && m_cDecLib.getVPS()->getMaxLayers() > 1 && xIsNaluWithinTargetOutputLayerIdSet(&nalu))
+          {
+            size_t pos = SEICTIFileName.find_last_of('.');
+            if (pos != string::npos)
+            {
+              SEICTIFileName.insert(pos, std::to_string(nalu.m_nuhLayerId));
+            }
+            else
+            {
+              SEICTIFileName.append(std::to_string(nalu.m_nuhLayerId));
+            }
+          }
+          if ((m_cDecLib.getVPS() != nullptr && (m_cDecLib.getVPS()->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet(&nalu))) || m_cDecLib.getVPS() == nullptr)
+          {
+            m_cVideoIOYuvSEICTIFile[nalu.m_nuhLayerId].open(SEICTIFileName, true, layerOutputBitDepth, layerOutputBitDepth, bitDepths.recon);   // write mode
+          }
         }
       }
       if (!m_annotatedRegionsSEIFileName.empty())
       {
         xOutputAnnotatedRegions(pcListPic);
       }
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+      PicList::iterator iterPic = pcListPic->begin();
+      Picture* pcPic = *(iterPic);
+      SEIMessages shutterIntervalInfo = getSeisByType(pcPic->SEIs, SEI::SHUTTER_INTERVAL_INFO);
+
+      if (!m_shutterIntervalPostFileName.empty())
+      {
+        bool                    hasValidSII = true;
+        SEIShutterIntervalInfo *curSIIInfo  = nullptr;
+        if ((pcPic->getPictureType() == NAL_UNIT_CODED_SLICE_IDR_W_RADL ||
+          pcPic->getPictureType() == NAL_UNIT_CODED_SLICE_IDR_N_LP) && m_newCLVS[nalu.m_nuhLayerId])
+        {
+          IdrSiiInfo curSII;
+          curSII.m_picPoc = pcPic->getPOC();
+
+          curSII.m_isValidSii                             = false;
+          curSII.m_siiInfo.m_siiEnabled                   = false;
+          curSII.m_siiInfo.m_siiNumUnitsInShutterInterval = 0;
+          curSII.m_siiInfo.m_siiTimeScale = 0;
+          curSII.m_siiInfo.m_siiMaxSubLayersMinus1 = 0;
+          curSII.m_siiInfo.m_siiFixedSIwithinCLVS = 0;
+
+          if (shutterIntervalInfo.size() > 0)
+          {
+            SEIShutterIntervalInfo *seiShutterIntervalInfo = (SEIShutterIntervalInfo*) *(shutterIntervalInfo.begin());
+            curSII.m_isValidSii                            = true;
+
+            curSII.m_siiInfo.m_siiEnabled = seiShutterIntervalInfo->m_siiEnabled;
+            curSII.m_siiInfo.m_siiNumUnitsInShutterInterval = seiShutterIntervalInfo->m_siiNumUnitsInShutterInterval;
+            curSII.m_siiInfo.m_siiTimeScale = seiShutterIntervalInfo->m_siiTimeScale;
+            curSII.m_siiInfo.m_siiMaxSubLayersMinus1 = seiShutterIntervalInfo->m_siiMaxSubLayersMinus1;
+            curSII.m_siiInfo.m_siiFixedSIwithinCLVS = seiShutterIntervalInfo->m_siiFixedSIwithinCLVS;
+            curSII.m_siiInfo.m_siiSubLayerNumUnitsInSI.clear();
+            for (int i = 0; i < seiShutterIntervalInfo->m_siiSubLayerNumUnitsInSI.size(); i++)
+            {
+              curSII.m_siiInfo.m_siiSubLayerNumUnitsInSI.push_back(seiShutterIntervalInfo->m_siiSubLayerNumUnitsInSI[i]);
+            }
+
+            uint32_t tmpInfo = (uint32_t)(m_activeSiiInfo.size() + 1);
+            m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo>(tmpInfo, curSII));
+            curSIIInfo = seiShutterIntervalInfo;
+          }
+          else
+          {
+            curSII.m_isValidSii = false;
+            hasValidSII         = false;
+            uint32_t tmpInfo = (uint32_t)(m_activeSiiInfo.size() + 1);
+            m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo>(tmpInfo, curSII));
+          }
+        }
+        else
+        {
+          if (m_activeSiiInfo.size() == 1)
+          {
+            curSIIInfo = &(m_activeSiiInfo.begin()->second.m_siiInfo);
+          }
+          else
+          {
+            bool isLast = true;
+            for (int i = 1; i < m_activeSiiInfo.size() + 1; i++)
+            {
+              if (pcPic->getPOC() <= m_activeSiiInfo.at(i).m_picPoc)
+              {
+                if (m_activeSiiInfo[i - 1].m_isValidSii)
+                {
+                  curSIIInfo = &(m_activeSiiInfo.at(i - 1).m_siiInfo);
+                }
+                else
+                {
+                  hasValidSII = false;
+                }
+                isLast = false;
+                break;
+              }
+            }
+            if (isLast)
+            {
+              uint32_t tmpInfo = (uint32_t)(m_activeSiiInfo.size());
+              curSIIInfo = &(m_activeSiiInfo.at(tmpInfo).m_siiInfo);
+            }
+          }
+        }
+
+        if (hasValidSII)
+        {
+          if (!curSIIInfo->m_siiFixedSIwithinCLVS)
+          {
+            uint32_t siiMaxSubLayersMinus1 = curSIIInfo->m_siiMaxSubLayersMinus1;
+            uint32_t numUnitsLFR = curSIIInfo->m_siiSubLayerNumUnitsInSI[0];
+            uint32_t numUnitsHFR = curSIIInfo->m_siiSubLayerNumUnitsInSI[siiMaxSubLayersMinus1];
+
+            int blending_ratio = (numUnitsLFR / numUnitsHFR);
+            bool checkEqualValuesOfSFR = true;
+            bool checkSubLayerSI       = false;
+            int i;
+
+            //supports only the case of SFR = HFR / 2
+            if (curSIIInfo->m_siiSubLayerNumUnitsInSI[siiMaxSubLayersMinus1] <
+                        curSIIInfo->m_siiSubLayerNumUnitsInSI[siiMaxSubLayersMinus1 - 1])
+            {
+              checkSubLayerSI = true;
+            }
+            else
+            {
+              fprintf(stderr, "Warning: Shutter Interval SEI message processing is disabled due to SFR != (HFR / 2) \n");
+            }
+            //check shutter interval for all sublayer remains same for SFR pictures
+            for (i = 1; i < siiMaxSubLayersMinus1; i++)
+            {
+              if (curSIIInfo->m_siiSubLayerNumUnitsInSI[0] != curSIIInfo->m_siiSubLayerNumUnitsInSI[i])
+              {
+                checkEqualValuesOfSFR = false;
+              }
+            }
+            if (!checkEqualValuesOfSFR)
+            {
+              fprintf(stderr, "Warning: Shutter Interval SEI message processing is disabled when shutter interval is not same for SFR sublayers \n");
+            }
+            if (checkSubLayerSI && checkEqualValuesOfSFR)
+            {
+              setShutterFilterFlag(numUnitsLFR == blending_ratio * numUnitsHFR);
+              setBlendingRatio(blending_ratio);
+            }
+            else
+            {
+              setShutterFilterFlag(false);
+            }
+
+            const SPS* activeSPS = pcListPic->front()->cs->sps;
+
+            if (numUnitsLFR == blending_ratio * numUnitsHFR && activeSPS->getMaxTLayers() == 1 && activeSPS->getMaxDecPicBuffering(0) == 1)
+            {
+              fprintf(stderr, "Warning: Shutter Interval SEI message processing is disabled for single TempLayer and single frame in DPB\n");
+              setShutterFilterFlag(false);
+            }
+          }
+          else
+          {
+            fprintf(stderr, "Warning: Shutter Interval SEI message processing is disabled for fixed shutter interval case\n");
+            setShutterFilterFlag(false);
+          }
+        }
+        else
+        {
+          fprintf(stderr, "Warning: Shutter Interval information should be specified in SII-SEI message\n");
+          setShutterFilterFlag(false);
+        }
+      }
+
+
+      if (iterPicLayer != pcListPic->end())
+      {
+        if ((!m_shutterIntervalPostFileName.empty()) && (!openedPostFile) && getShutterFilterFlag())
+        {
+          BitDepths &bitDepths = (*iterPicLayer)->m_bitDepths;
+          std::ofstream ofile(m_shutterIntervalPostFileName.c_str());
+          if (!ofile.good() || !ofile.is_open())
+          {
+            fprintf(stderr, "\nUnable to open file '%s' for writing shutter-interval-SEI video\n", m_shutterIntervalPostFileName.c_str());
+            exit(EXIT_FAILURE);
+          }
+          m_cTVideoIOYuvSIIPostFile.open(m_shutterIntervalPostFileName, true, layerOutputBitDepth, layerOutputBitDepth, bitDepths.recon);   // write mode
+          openedPostFile = true;
+        }
+      }
+#endif
+
       // write reconstruction to file
       if( bNewPicture )
       {
@@ -490,19 +780,32 @@ uint32_t DecApp::decode()
       m_cDecLib.CheckNoOutputPriorPicFlagsInAccessUnit();
       m_cDecLib.resetAccessUnitNoOutputPriorPicFlags();
       m_cDecLib.checkLayerIdIncludedInCvss();
+      m_cDecLib.checkSEIInAccessUnit();
+      m_cDecLib.resetAccessUnitNestedSliSeiInfo();
+      m_cDecLib.resetIsFirstAuInCvs();
       m_cDecLib.resetAccessUnitEos();
       m_cDecLib.resetAudIrapOrGdrAuFlag();
     }
     if(bNewAccessUnit)
     {
+      decodedSliceInAU = false;
       m_cDecLib.checkTidLayerIdInAccessUnit();
       m_cDecLib.resetAccessUnitSeiTids();
-      m_cDecLib.checkSEIInAccessUnit();
       m_cDecLib.resetAccessUnitSeiPayLoadTypes();
+      m_cDecLib.checkSeiContentInAccessUnit();
+      m_cDecLib.resetAccessUnitSeiNalus();
       m_cDecLib.resetAccessUnitNals();
       m_cDecLib.resetAccessUnitApsNals();
       m_cDecLib.resetAccessUnitPicInfo();
     }
+#if GREEN_METADATA_SEI_ENABLED
+    if (m_GMFA && m_GMFAFramewise && bNewPicture)
+    {
+      FeatureCounterStruct featureCounterUpdated = m_cDecLib.getFeatureCounter();
+      writeGMFAOutput(featureCounterUpdated, featureCounterOld, m_GMFAFile,false);
+      featureCounterOld = m_cDecLib.getFeatureCounter();
+    }
+#endif
   }
   if (!m_annotatedRegionsSEIFileName.empty())
   {
@@ -511,8 +814,32 @@ uint32_t DecApp::decode()
   // May need to check again one more time as in case one the bitstream has only one picture, the first check may miss it
   setOutputPicturePresentInStream();
   CHECK(!outputPicturePresentInBitstream, "It is required that there shall be at least one picture with PictureOutputFlag equal to 1 in the bitstream")
-
+  
+#if GREEN_METADATA_SEI_ENABLED
+  if (m_GMFA && m_GMFAFramewise) //Last frame
+  {
+    FeatureCounterStruct featureCounterUpdated = m_cDecLib.getFeatureCounter();
+    writeGMFAOutput(featureCounterUpdated, featureCounterOld, m_GMFAFile, false);
+    featureCounterOld = m_cDecLib.getFeatureCounter();
+  }
+  
+  if (m_GMFA)
+  {
+    // Summary
+    FeatureCounterStruct featureCounterFinal = m_cDecLib.getFeatureCounter();
+    FeatureCounterStruct dummy;
+    writeGMFAOutput(featureCounterFinal, dummy, m_GMFAFile, true);
+  }
+#endif
+  
   xFlushOutput( pcListPic );
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  if (!m_shutterIntervalPostFileName.empty() && getShutterFilterFlag())
+  {
+    m_cTVideoIOYuvSIIPostFile.close();
+  }
+#endif
 
   // get the number of checksum errors
   uint32_t nRet = m_cDecLib.getNumberOfChecksumErrorsDetected();
@@ -604,6 +931,13 @@ void DecApp::xDestroyDecLib()
       recFile.second.close();
     }
   }
+  if (!m_SEIFGSFileName.empty())
+  {
+    for (auto &recFile: m_videoIOYuvSEIFGSFile)
+    {
+      recFile.second.close();
+    }
+  }
   if (!m_SEICTIFileName.empty())
   {
     for (auto& recFile : m_cVideoIOYuvSEICTIFile)
@@ -630,21 +964,24 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
   PicList::iterator iterPic   = pcListPic->begin();
   int numPicsNotYetDisplayed = 0;
   int dpbFullness = 0;
-  const SPS* activeSPS = (pcListPic->front()->cs->sps);
   uint32_t maxNumReorderPicsHighestTid;
   uint32_t maxDecPicBufferingHighestTid;
-  uint32_t maxNrSublayers = activeSPS->getMaxTLayers();
-
   const VPS* referredVPS = pcListPic->front()->cs->vps;
-  const int temporalId = ( m_iMaxTemporalLayer == -1 || m_iMaxTemporalLayer >= maxNrSublayers ) ? maxNrSublayers - 1 : m_iMaxTemporalLayer;
 
   if( referredVPS == nullptr || referredVPS->m_numLayersInOls[referredVPS->m_targetOlsIdx] == 1 )
   {
+    const SPS* activeSPS = (pcListPic->front()->cs->sps);
+    const int temporalId = (m_iMaxTemporalLayer == -1 || m_iMaxTemporalLayer >= activeSPS->getMaxTLayers())
+      ? activeSPS->getMaxTLayers() - 1
+      : m_iMaxTemporalLayer;
     maxNumReorderPicsHighestTid = activeSPS->getMaxNumReorderPics( temporalId );
     maxDecPicBufferingHighestTid = activeSPS->getMaxDecPicBuffering( temporalId );
   }
   else
   {
+    const int temporalId = (m_iMaxTemporalLayer == -1 || m_iMaxTemporalLayer >= referredVPS->getMaxSubLayers())
+      ? referredVPS->getMaxSubLayers() - 1
+      : m_iMaxTemporalLayer;
     maxNumReorderPicsHighestTid = referredVPS->getMaxNumReorderPics( temporalId );
     maxDecPicBufferingHighestTid = referredVPS->getMaxDecPicBuffering( temporalId );
   }
@@ -654,7 +991,7 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
     Picture* pcPic = *(iterPic);
     if(pcPic->neededForOutput && pcPic->getPOC() >= m_iPOCLastDisplay)
     {
-       numPicsNotYetDisplayed++;
+      numPicsNotYetDisplayed++;
       dpbFullness++;
     }
     else if(pcPic->referenced)
@@ -692,7 +1029,7 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         numPicsNotYetDisplayed = numPicsNotYetDisplayed-2;
         if ( !m_reconFileName.empty() )
         {
-          const Window &conf = pcPicTop->cs->pps->getConformanceWindow();
+          const Window &conf = pcPicTop->getConformanceWindow();
           const bool isTff = pcPicTop->topField;
 
           bool display = true;
@@ -751,24 +1088,85 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         if (!m_reconFileName.empty())
         {
           const Window &conf = pcPic->getConformanceWindow();
-          const SPS* sps = pcPic->cs->sps;
-          ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+          ChromaFormat chromaFormatIDC = pcPic->m_chromaFormatIDC;
           if( m_upscaledOutput )
           {
-            m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture( *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
+            const SPS* sps = pcPic->cs->sps;
+#if JVET_AB0081
+            m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput,
+              NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+#else
+            m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput,
+              NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
+#endif
           }
           else
           {
-            m_cVideoIOYuvReconFile[pcPic->layerId].write( pcPic->getRecoBuf().get( COMPONENT_Y ).width, pcPic->getRecoBuf().get( COMPONENT_Y ).height, pcPic->getRecoBuf(),
-                                        m_outputColourSpaceConvert,
-                                        m_packedYUVMode,
-                                        conf.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-                                        conf.getWindowRightOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-                                        conf.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-                                        conf.getWindowBottomOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-                                        NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
+            m_cVideoIOYuvReconFile[pcPic->layerId].write(
+              pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+              pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+              conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+              m_clipOutputVideoToRec709Range);
             }
         }
+        // Perform FGS on decoded frame and write to output FGS file
+        if (!m_SEIFGSFileName.empty())
+        {
+          const Window& conf            = pcPic->getConformanceWindow();
+          const SPS* sps                = pcPic->cs->sps;
+          ChromaFormat chromaFormatIDC  = sps->getChromaFormatIdc();
+          if (m_upscaledOutput)
+          {
+#if JVET_AB0081
+            m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+              m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+#else
+            m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+              m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
+#endif
+          }
+          else
+          {
+            m_videoIOYuvSEIFGSFile[pcPic->layerId].write(
+              pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+              pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+              conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+              m_clipOutputVideoToRec709Range);
+          }
+        }
+
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+        if (!m_shutterIntervalPostFileName.empty() && getShutterFilterFlag())
+        {
+          int blendingRatio = getBlendingRatio();
+          pcPic->xOutputPostFilteredPic(pcPic, pcListPic, blendingRatio);
+
+          const Window &conf = pcPic->getConformanceWindow();
+          const SPS* sps = pcPic->cs->sps;
+          ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+
+          m_cTVideoIOYuvSIIPostFile.write(pcPic->getPostRecBuf().get(COMPONENT_Y).width,
+                                          pcPic->getPostRecBuf().get(COMPONENT_Y).height, pcPic->getPostRecBuf(),
+                                          m_outputColourSpaceConvert, m_packedYUVMode,
+                                          conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                                          conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                                          conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                                          conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                                          NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
+        }
+#endif
+
         // Perform CTI on decoded frame and write to output CTI file
         if (!m_SEICTIFileName.empty())
         {
@@ -777,17 +1175,26 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
           ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
           if (m_upscaledOutput)
           {
-            m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+#if JVET_AB0081
+            m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+              m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+#else
+            m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(
+              *sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+              m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
+#endif
           }
           else
           {
-            m_cVideoIOYuvSEICTIFile[pcPic->layerId].write(pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height, pcPic->getDisplayBuf(),
-              m_outputColourSpaceConvert, m_packedYUVMode,
+            m_cVideoIOYuvSEICTIFile[pcPic->layerId].write(
+              pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+              pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
               conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
               conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
               conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
-              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
-              NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+              m_clipOutputVideoToRec709Range);
           }
         }
         writeLineToOutputLog(pcPic);
@@ -823,14 +1230,12 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
 
   if (pcPic->fieldPic ) //Field Decoding
   {
-    PicList::iterator endPic   = pcListPic->end();
-    endPic--;
-    Picture *pcPicTop, *pcPicBottom = NULL;
+    PicList::iterator endPic = pcListPic->end();
     while (iterPic != endPic)
     {
-      pcPicTop = *(iterPic);
+      Picture *pcPicTop = *iterPic;
       iterPic++;
-      pcPicBottom = *(iterPic);
+      Picture *pcPicBottom = iterPic == endPic ? pcPicTop : *iterPic;
 
       if( pcPicTop->layerId != layerId && layerId != NOT_VALID )
       {
@@ -842,7 +1247,7 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
           // write to file
           if ( !m_reconFileName.empty() )
           {
-            const Window &conf = pcPicTop->cs->pps->getConformanceWindow();
+            const Window &conf = pcPicTop->getConformanceWindow();
             const bool    isTff   = pcPicTop->topField;
 
             m_cVideoIOYuvReconFile[pcPicTop->layerId].write( pcPicTop->getRecoBuf(), pcPicBottom->getRecoBuf(),
@@ -871,19 +1276,24 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
         pcPicTop->neededForOutput = false;
         pcPicBottom->neededForOutput = false;
 
-        if(pcPicTop)
-        {
-          pcPicTop->destroy();
-          delete pcPicTop;
-          pcPicTop = NULL;
-        }
+        pcPicTop->destroy();
+        delete pcPicTop;
+        pcPicBottom->destroy();
+        delete pcPicBottom;
+        iterPic--;
+        *iterPic = nullptr;
+        iterPic++;
+        *iterPic = nullptr;
+        iterPic++;
       }
-    }
-    if(pcPicBottom)
-    {
-      pcPicBottom->destroy();
-      delete pcPicBottom;
-      pcPicBottom = NULL;
+      else
+      {
+        pcPicTop->destroy();
+        delete pcPicTop;
+        iterPic--;
+        *iterPic = nullptr;
+        iterPic++;
+      }
     }
   }
   else //Frame decoding
@@ -904,24 +1314,84 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
           if (!m_reconFileName.empty())
           {
             const Window &conf = pcPic->getConformanceWindow();
-            const SPS* sps = pcPic->cs->sps;
-            ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+            ChromaFormat chromaFormatIDC = pcPic->m_chromaFormatIDC;
             if( m_upscaledOutput )
             {
-              m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture( *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
+              const SPS* sps = pcPic->cs->sps;
+#if JVET_AB0081
+              m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+#else
+              m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
+#endif
             }
             else
             {
-              m_cVideoIOYuvReconFile[pcPic->layerId].write( pcPic->getRecoBuf().get( COMPONENT_Y ).width, pcPic->getRecoBuf().get( COMPONENT_Y ).height, pcPic->getRecoBuf(),
-                                        m_outputColourSpaceConvert,
-                                        m_packedYUVMode,
-                                        conf.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-                                        conf.getWindowRightOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-                                        conf.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-                                        conf.getWindowBottomOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-                                        NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
+              m_cVideoIOYuvReconFile[pcPic->layerId].write(
+                pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+                pcPic->getRecoBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+                conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+                m_clipOutputVideoToRec709Range);
               }
           }
+          // Perform FGS on decoded frame and write to output FGS file
+          if (!m_SEIFGSFileName.empty())
+          {
+            const Window&           conf = pcPic->getConformanceWindow();
+            const SPS*               sps = pcPic->cs->sps;
+            ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+            if (m_upscaledOutput)
+            {
+#if JVET_AB0081
+              m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+#else
+              m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
+#endif
+            }
+            else
+            {
+              m_videoIOYuvSEIFGSFile[pcPic->layerId].write(
+                pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+                pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+                conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+                m_clipOutputVideoToRec709Range);
+            }
+          }
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+          if (!m_shutterIntervalPostFileName.empty() && getShutterFilterFlag())
+          {
+            int blendingRatio = getBlendingRatio();
+            pcPic->xOutputPostFilteredPic(pcPic, pcListPic, blendingRatio);
+
+            const Window &conf = pcPic->getConformanceWindow();
+            const SPS* sps = pcPic->cs->sps;
+            ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+
+            m_cTVideoIOYuvSIIPostFile.write(pcPic->getPostRecBuf().get(COMPONENT_Y).width,
+                                            pcPic->getPostRecBuf().get(COMPONENT_Y).height, pcPic->getPostRecBuf(),
+                                            m_outputColourSpaceConvert, m_packedYUVMode,
+                                            conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                                            conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                                            conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                                            conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                                            NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
+          }
+#endif
+
           // Perform CTI on decoded frame and write to output CTI file
           if (!m_SEICTIFileName.empty())
           {
@@ -930,17 +1400,26 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
             if (m_upscaledOutput)
             {
-              m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(*sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode, m_upscaledOutput, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+#if JVET_AB0081
+              m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+#else
+              m_cVideoIOYuvSEICTIFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
+#endif
             }
             else
             {
-              m_cVideoIOYuvSEICTIFile[pcPic->layerId].write(pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height, pcPic->getDisplayBuf(),
-                m_outputColourSpaceConvert, m_packedYUVMode,
+              m_cVideoIOYuvSEICTIFile[pcPic->layerId].write(
+                pcPic->getRecoBuf().get(COMPONENT_Y).width, pcPic->getRecoBuf().get(COMPONENT_Y).height,
+                pcPic->getDisplayBuf(), m_outputColourSpaceConvert, m_packedYUVMode,
                 conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
                 conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
                 conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
-                conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC),
-                NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+                conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+                m_clipOutputVideoToRec709Range);
             }
           }
           writeLineToOutputLog(pcPic);
@@ -954,11 +1433,15 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
         }
         pcPic->neededForOutput = false;
       }
-      if(pcPic != NULL)
+#if JVET_Z0120_SII_SEI_PROCESSING
+      if (pcPic != nullptr && (m_shutterIntervalPostFileName.empty() || !getShutterFilterFlag()))
+#else
+      if(pcPic != nullptr)
+#endif
       {
         pcPic->destroy();
         delete pcPic;
-        pcPic = NULL;
+        pcPic    = nullptr;
         *iterPic = nullptr;
       }
       iterPic++;
@@ -970,7 +1453,9 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
     pcListPic->remove_if([](Picture* p) { return p == nullptr; });
   }
   else
-  pcListPic->clear();
+  {
+    pcListPic->clear();
+  }
   m_iPOCLastDisplay = -MAX_INT;
 }
 
@@ -1084,7 +1569,7 @@ void DecApp::xOutputAnnotatedRegions(PicList* pcListPic)
       if (!m_arObjects.empty())
       {
         FILE *fpPersist = fopen(m_annotatedRegionsSEIFileName.c_str(), "ab");
-        if (fpPersist == NULL)
+        if (fpPersist == nullptr)
         {
           std::cout << "Not able to open file for writing persist SEI messages" << std::endl;
         }
@@ -1130,7 +1615,8 @@ bool DecApp::xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit* nalu ) const
     return true;
   }
 
-  return std::find( m_targetDecLayerIdSet.begin(), m_targetDecLayerIdSet.end(), nalu->m_nuhLayerId ) != m_targetDecLayerIdSet.end();
+  return std::find(m_targetDecLayerIdSet.begin(), m_targetDecLayerIdSet.end(), nalu->m_nuhLayerId)
+         != m_targetDecLayerIdSet.end();
 }
 
 /** \param nalu Input nalu to check whether its LayerId is within targetOutputLayerIdSet
@@ -1142,7 +1628,10 @@ bool DecApp::xIsNaluWithinTargetOutputLayerIdSet( const InputNALUnit* nalu ) con
     return true;
   }
 
-  return std::find( m_targetOutputLayerIdSet.begin(), m_targetOutputLayerIdSet.end(), nalu->m_nuhLayerId ) != m_targetOutputLayerIdSet.end();
+  return std::find(m_targetOutputLayerIdSet.begin(), m_targetOutputLayerIdSet.end(), nalu->m_nuhLayerId)
+         != m_targetOutputLayerIdSet.end();
 }
+
+
 
 //! \}

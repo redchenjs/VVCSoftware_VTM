@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -105,7 +105,6 @@ void BitstreamExtractorApp::xReadPicHeader(InputNALUnit &nalu)
 }
 
 
-#if JVET_R0107_BITSTREAM_EXTACTION
 Slice BitstreamExtractorApp::xParseSliceHeader(InputNALUnit &nalu)
 {
   m_hlSynaxReader.setBitstream(&nalu.getBitstream());
@@ -140,42 +139,9 @@ bool BitstreamExtractorApp::xCheckSliceSubpicture(Slice &slice, int targetSubPic
 
   return true;
 }
-#else
-bool BitstreamExtractorApp::xCheckSliceSubpicture(InputNALUnit &nalu, int targetSubPicId)
+
+bool BitstreamExtractorApp::xCheckSEIFiller(SEIMessages SEIs, int targetSubPicId, bool &rmAllFillerInSubpicExt, bool lastSliceWritten)
 {
-  m_hlSynaxReader.setBitstream(&nalu.getBitstream());
-  Slice slice;
-  slice.initSlice();
-  slice.setNalUnitType(nalu.m_nalUnitType);
-  slice.setNalUnitLayerId(nalu.m_nuhLayerId);
-  slice.setTLayer(nalu.m_temporalId);
-
-  m_hlSynaxReader.parseSliceHeader(&slice, &m_picHeader, &m_parameterSetManager, m_prevTid0Poc, m_prevPicPOC);
-
-  PPS *pps = m_parameterSetManager.getPPS(m_picHeader.getPPSId());
-  CHECK (nullptr==pps, "referenced PPS not found");
-  SPS *sps = m_parameterSetManager.getSPS(pps->getSPSId());
-  CHECK (nullptr==sps, "referenced SPS not found");
-
-  if (sps->getSubPicInfoPresentFlag())
-  {
-    // subpic ID is explicitly indicated
-    msg( VERBOSE, "found slice subpic id %d\n", slice.getSliceSubPicId());
-    return ( targetSubPicId == slice.getSliceSubPicId());
-  }
-  else
-  {
-    THROW ("Subpicture signalling disbled, cannot extract.");
-  }
-
-  return true;
-}
-#endif
-
-bool BitstreamExtractorApp::xCheckSeiSubpicture(SEIMessages SEIs, int targetSubPicId, bool &rmAllFillerInSubpicExt, bool lastSliceWritten, bool isVclNalUnitRemoved)
-{
-  bool isWriteSeiNalUnitToStream = true;
-
   for (auto sei : SEIs)
   {
     if (sei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO)
@@ -191,56 +157,10 @@ bool BitstreamExtractorApp::xCheckSeiSubpicture(SEIMessages SEIs, int targetSubP
   {
     if (sei->payloadType() == SEI::FILLER_PAYLOAD)
     {
-      isWriteSeiNalUnitToStream = rmAllFillerInSubpicExt ? false : lastSliceWritten;
-      break;
+      return (rmAllFillerInSubpicExt ? false : lastSliceWritten);
     }
   }
-
-  if (isWriteSeiNalUnitToStream)
-  {
-    for (auto sei : SEIs)
-    {
-      if (sei->payloadType() == SEI::SCALABLE_NESTING)
-      {
-        SEIScalableNesting *seiNesting = (SEIScalableNesting *)sei;
-        if (seiNesting->m_snOlsFlag == 1)
-        {
-          bool targetSubpicFound = false;
-          for (uint32_t i = 0; i < seiNesting->m_snNumSubpics; i++)
-          {
-            if (seiNesting->m_snSubpicId[i] == targetSubPicId)
-            {
-              targetSubpicFound = true;
-              break;
-            }
-          }
-          isWriteSeiNalUnitToStream &= targetSubpicFound;
-        }
-      }
-      if (!isWriteSeiNalUnitToStream)
-      {
-        break;
-      }
-    }
-  }
-
-  if (isWriteSeiNalUnitToStream && isVclNalUnitRemoved)
-  {
-    for (auto sei : SEIs)
-    {
-      if (sei->payloadType() == SEI::SCALABLE_NESTING)
-      {
-        SEIScalableNesting *seiNesting = (SEIScalableNesting *)sei;
-        if (!seiNesting->m_snSubpicFlag)
-        {
-          isWriteSeiNalUnitToStream = false;
-          break;
-        }
-      }
-    }
-  }
-
-  return isWriteSeiNalUnitToStream;
+  return true;
 }
 
 void BitstreamExtractorApp::xRewriteSPS (SPS &targetSPS, const SPS &sourceSPS, SubPic &subPic)
@@ -267,6 +187,45 @@ void BitstreamExtractorApp::xRewriteSPS (SPS &targetSPS, const SPS &sourceSPS, S
   conf.setWindowRightOffset(subpicConfWinRightOffset);
   conf.setWindowTopOffset(subpicConfWinTopOffset);
   conf.setWindowBottomOffset(subpicConfWinBottomOffset);
+
+  if (sourceSPS.getVirtualBoundariesEnabledFlag() && sourceSPS.getVirtualBoundariesPresentFlag())
+  {
+    targetSPS.setNumVerVirtualBoundaries(0);
+    for (int i = 0; i < sourceSPS.getNumVerVirtualBoundaries() ; i ++)
+    {
+      int subPicLeftX = subPic.getSubPicCtuTopLeftX() * sourceSPS.getCTUSize();
+      int subPicRightX = (subPic.getSubPicCtuTopLeftX() + subPic.getSubPicWidthInCTUs()) * sourceSPS.getCTUSize();
+      if (subPicRightX > sourceSPS.getMaxPicWidthInLumaSamples())
+      {
+        subPicRightX = sourceSPS.getMaxPicWidthInLumaSamples();
+      }
+      if ( sourceSPS.getVirtualBoundariesPosX(i) > subPicLeftX && sourceSPS.getVirtualBoundariesPosX(i) < subPicRightX)
+      {
+        targetSPS.setVirtualBoundariesPosX(targetSPS.getNumVerVirtualBoundaries(), sourceSPS.getVirtualBoundariesPosX(i) - subPicLeftX);
+        targetSPS.setNumVerVirtualBoundaries(targetSPS.getNumVerVirtualBoundaries() + 1);
+      }
+    }
+
+    targetSPS.setNumHorVirtualBoundaries(0);
+    for (int i = 0; i < sourceSPS.getNumHorVirtualBoundaries(); i++)
+    {
+      int subPicTopY = subPic.getSubPicCtuTopLeftY() * sourceSPS.getCTUSize();
+      int subPicBottomY = (subPic.getSubPicCtuTopLeftY() + subPic.getSubPicHeightInCTUs()) * sourceSPS.getCTUSize();
+      if (subPicBottomY > sourceSPS.getMaxPicHeightInLumaSamples())
+      {
+        subPicBottomY = sourceSPS.getMaxPicHeightInLumaSamples();
+      }
+      if (sourceSPS.getVirtualBoundariesPosY(i) > subPicTopY && sourceSPS.getVirtualBoundariesPosY(i) < subPicBottomY)
+      {
+        targetSPS.setVirtualBoundariesPosY(targetSPS.getNumHorVirtualBoundaries(), sourceSPS.getVirtualBoundariesPosY(i) - subPicTopY);
+        targetSPS.setNumHorVirtualBoundaries(targetSPS.getNumHorVirtualBoundaries() + 1);
+      }
+    }
+    if (targetSPS.getNumVerVirtualBoundaries() == 0 && targetSPS.getNumHorVirtualBoundaries() == 0)
+    {
+      targetSPS.setVirtualBoundariesEnabledFlag(0);
+    }
+  }
 }
 
 void BitstreamExtractorApp::xRewritePPS(PPS &targetPPS, const PPS &sourcePPS, const SPS &sourceSPS, SubPic &subPic)
@@ -282,8 +241,9 @@ void BitstreamExtractorApp::xRewritePPS(PPS &targetPPS, const PPS &sourcePPS, co
   // picture size
   targetPPS.setPicWidthInLumaSamples(subPic.getSubPicWidthInLumaSample());
   targetPPS.setPicHeightInLumaSamples(subPic.getSubPicHeightInLumaSample());
-  // todo: Conformance window
-
+  // todo: Conformance window (conf window rewriting is not needed per JVET-S0117)
+  if (sourcePPS.getScalingWindow().getWindowEnabledFlag())
+  {
   int subWidthC = SPS::getWinUnitX(sourceSPS.getChromaFormatIdc());
   int subHeightC = SPS::getWinUnitY(sourceSPS.getChromaFormatIdc());
   int subpicScalWinLeftOffset = sourcePPS.getScalingWindow().getWindowLeftOffset() - (int)subPic.getSubPicCtuTopLeftX() * sourceSPS.getCTUSize() / subWidthC;
@@ -295,7 +255,7 @@ void BitstreamExtractorApp::xRewritePPS(PPS &targetPPS, const PPS &sourcePPS, co
   Window scalingWindow;
   scalingWindow.setWindow(subpicScalWinLeftOffset, subpicScalWinRightOffset, subpicScalWinTopOffset, subpicScalWinBotOffset);
   targetPPS.setScalingWindow(scalingWindow);
-
+  }
   // Tiles
   int                   numTileCols = 1;
   int                   numTileRows = 1;
@@ -427,7 +387,7 @@ void BitstreamExtractorApp::xWriteVPS(VPS *vps, std::ostream& out, int layerId, 
   CHECK( naluOut.m_temporalId, "The value of TemporalId of VPS NAL units shall be equal to 0" );
 
   // write the VPS to the newly created NAL unit buffer
-  m_hlSyntaxWriter.setBitstream( &naluOut.m_Bitstream );
+  m_hlSyntaxWriter.setBitstream(&naluOut.m_bitstream);
   m_hlSyntaxWriter.codeVPS( vps );
 
   NALUnitEBSP naluWithHeader(naluOut);
@@ -441,7 +401,7 @@ void BitstreamExtractorApp::xWriteSPS(SPS *sps, std::ostream& out, int layerId, 
   CHECK( naluOut.m_temporalId, "The value of TemporalId of SPS NAL units shall be equal to 0" );
 
   // write the SPS to the newly created NAL unit buffer
-  m_hlSyntaxWriter.setBitstream( &naluOut.m_Bitstream );
+  m_hlSyntaxWriter.setBitstream(&naluOut.m_bitstream);
   m_hlSyntaxWriter.codeSPS( sps );
 
   NALUnitEBSP naluWithHeader(naluOut);
@@ -454,7 +414,7 @@ void BitstreamExtractorApp::xWritePPS(PPS *pps, std::ostream& out, int layerId, 
   OutputNALUnit naluOut (NAL_UNIT_PPS, layerId, temporalId);
 
   // write the PPS to the newly created NAL unit buffer
-  m_hlSyntaxWriter.setBitstream( &naluOut.m_Bitstream );
+  m_hlSyntaxWriter.setBitstream(&naluOut.m_bitstream);
   m_hlSyntaxWriter.codePPS( pps );
 
   NALUnitEBSP naluWithHeader(naluOut);
@@ -465,21 +425,17 @@ void BitstreamExtractorApp::xWritePPS(PPS *pps, std::ostream& out, int layerId, 
 // returns true, if the NAL unit is to be discarded
 bool BitstreamExtractorApp::xCheckNumSubLayers(InputNALUnit &nalu, VPS *vps)
 {
-#if JVET_R0107_BITSTREAM_EXTACTION
   bool retval = (nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_IDR_N_LP)
                 && (nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_IDR_W_RADL)
                 && (nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_CRA)
                 && !( (nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_GDR) && (m_picHeader.getRecoveryPocCnt() == 0) );
-#else
-  bool retval = (nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_IDR_N_LP) && (nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_IDR_W_RADL) && (nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_CRA);
-#endif
 
   retval &= nalu.m_temporalId >= vps->getNumSubLayersInLayerInOLS(m_targetOlsIdx, vps->getGeneralLayerIdx(nalu.m_nuhLayerId));
 
   return retval;
 }
 
-bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit& nalu, std::ostream& out, int subpicId)
+bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit& nalu, std::ostream& out, int subpicId, VPS *vps)
 {
   SEIMessages scalableNestingSEIs = getSeisByType(SEIs, SEI::SCALABLE_NESTING);
   if (scalableNestingSEIs.size())
@@ -496,12 +452,16 @@ bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit
     }
     if (std::find(sei->m_snSubpicId.begin(), sei->m_snSubpicId.end(), subpicId) != sei->m_snSubpicId.end())
     {
-      // applies to target subpicture -> extract
-      OutputNALUnit outNalu( nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId );
-      m_seiWriter.writeSEImessages(outNalu.m_Bitstream, sei->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
-      NALUnitEBSP naluWithHeader(outNalu);
-      writeAnnexBNalUnit(out, naluWithHeader, true);
-      return false;
+      // C.7 step 7.c
+      if (sei->m_snOlsFlag || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
+      {
+        // applies to target subpicture -> extract
+        OutputNALUnit outNalu( nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId );
+        m_seiWriter.writeSEImessages(outNalu.m_bitstream, sei->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
+        NALUnitEBSP naluWithHeader(outNalu);
+        writeAnnexBNalUnit(out, naluWithHeader, true);
+        return false;
+      }
     }
     else
     {
@@ -519,39 +479,83 @@ bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit
   return true;
 }
 
-bool BitstreamExtractorApp::xCheckScalableNestingSEI(SEIScalableNesting *seiNesting, InputNALUnit& nalu, VPS *vps)
+
+bool BitstreamExtractorApp::xIsTargetOlsIncludeAllVclLayers()
 {
-  int nestingLayerId;
-  bool nestingAppliedInTargetOlsLayerId = false;
-  std::vector<int> layerIdInOls = vps->getLayerIdsInOls(m_targetOlsIdx);
-
-  if (seiNesting->m_snAllLayersFlag)
+  std::ifstream bitstreamFileIn(m_bitstreamFileNameIn.c_str(), std::ifstream::in | std::ifstream::binary);
+  if (!bitstreamFileIn)
   {
-    int nestingNumLayers = vps->getMaxLayers() - vps->getGeneralLayerIdx(nalu.m_nuhLayerId);
-    for (uint32_t i = 0; i < nestingNumLayers; i++)
+    EXIT("failed to open bitstream file " << m_bitstreamFileNameIn.c_str() << " for reading");
+  }
+
+  InputByteStream bytestream(bitstreamFileIn);
+
+  bitstreamFileIn.clear();
+  bitstreamFileIn.seekg(0, std::ios::beg);
+
+  if (m_targetOlsIdx >= 0)
+  {
+    std::vector<int> layerIdInTargetOls;
+    std::vector<int> layerIdInVclNalu;
+    while (!!bitstreamFileIn)
     {
-      nestingLayerId = vps->getLayerId(vps->getGeneralLayerIdx(nalu.m_nuhLayerId) + i);
-      nestingAppliedInTargetOlsLayerId = std::find(layerIdInOls.begin(), layerIdInOls.end(), nestingLayerId) != layerIdInOls.end();
-      if (nestingAppliedInTargetOlsLayerId)
+      AnnexBStats stats = AnnexBStats();
+      InputNALUnit nalu;
+      byteStreamNALUnit(bytestream, nalu.getBitstream().getFifo(), stats);
+
+      // call actual decoding function
+      if (nalu.getBitstream().getFifo().empty())
       {
-        break;
+        msg(WARNING, "Warning: Attempt to decode an empty NAL unit");
+      }
+      else
+      {
+        read(nalu);
+
+        if (nalu.m_nalUnitType == NAL_UNIT_VPS)
+        {
+          VPS* vps = new VPS();
+          m_hlSynaxReader.setBitstream(&nalu.getBitstream());
+          m_hlSynaxReader.parseVPS(vps);
+          int vpsId = vps->getVPSId();
+          // note: storeVPS may invalidate the vps pointer!
+          m_parameterSetManager.storeVPS(vps, nalu.getBitstream().getFifo());
+          // get VPS back
+          vps = m_parameterSetManager.getVPS(vpsId);
+          m_vpsId = vps->getVPSId();
+        }
+
+        VPS *vps = nullptr;
+        if (m_vpsId > 0)
+        {
+          vps = m_parameterSetManager.getVPS(m_vpsId);
+          layerIdInTargetOls = vps->getLayerIdsInOls(m_targetOlsIdx);
+          if (NALUnit::isVclNalUnitType(nalu.m_nalUnitType))
+          {
+            if (layerIdInVclNalu.size() == 0 || nalu.m_nuhLayerId >= layerIdInVclNalu[layerIdInVclNalu.size() - 1])
+            {
+              layerIdInVclNalu.push_back(nalu.m_nuhLayerId);
+            }
+            else
+            {
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    //When LayerIdInOls[ targetOlsIdx ] does not include all values of nuh_layer_id in all VCL NAL units in the bitstream inBitstream
+    for (int i = 0; i < layerIdInVclNalu.size(); i++)
+    {
+      bool vclLayerIncludedInTargetOls = std::find(layerIdInTargetOls.begin(), layerIdInTargetOls.end(), layerIdInVclNalu[i]) != layerIdInTargetOls.end();
+      if (!vclLayerIncludedInTargetOls)
+      {
+        return false;
       }
     }
   }
-  else
-  {
-    for (uint32_t i = 0; i <= seiNesting->m_snNumLayersMinus1; i++)
-    {
-      nestingLayerId = i == 0 ? nalu.m_nuhLayerId : seiNesting->m_snLayerId[i];
-      nestingAppliedInTargetOlsLayerId = std::find(layerIdInOls.begin(), layerIdInOls.end(), nestingLayerId) != layerIdInOls.end();
-      if (nestingAppliedInTargetOlsLayerId)
-      {
-        break;
-      }
-    }
-  }
-
-  return nestingAppliedInTargetOlsLayerId;
+  return true;
 }
 
 uint32_t BitstreamExtractorApp::decode()
@@ -584,6 +588,8 @@ uint32_t BitstreamExtractorApp::decode()
   bool isVclNalUnitRemoved[MAX_VPS_LAYERS] = { false };
   bool isMultiSubpicLayer[MAX_VPS_LAYERS] = { false };
   bool rmAllFillerInSubpicExt[MAX_VPS_LAYERS] = { false };
+
+  bool targetOlsIncludeAllVclLayers = xIsTargetOlsIncludeAllVclLayers();
 
   while (!!bitstreamFileIn)
   {
@@ -634,6 +640,7 @@ uint32_t BitstreamExtractorApp::decode()
       }
 
       VPS *vps = nullptr;
+      bool isIncludedInTargetOls = true;
       if (m_targetOlsIdx >= 0 && m_vpsId >=0 )
       {
         // if there is no VPS nal unit, there shall be one OLS and one layer.
@@ -643,7 +650,8 @@ uint32_t BitstreamExtractorApp::decode()
         }
         // Remove NAL units with nal_unit_type not equal to any of VPS_NUT, DPS_NUT, and EOB_NUT and with nuh_layer_id not included in the list LayerIdInOls[targetOlsIdx].
         NalUnitType t = nalu.m_nalUnitType;
-        bool isSpecialNalTypes = t == NAL_UNIT_OPI || t == NAL_UNIT_VPS || t == NAL_UNIT_DCI || t == NAL_UNIT_EOB;
+        // remove from outBitstream all NAL units that have nuh_layer_id not included in the list LayerIdInOls[ targetOlsIdx ] and are not DCI, OPI, VPS, AUD, EOB or SEI NAL units
+        bool isSpecialNalTypes = t == NAL_UNIT_OPI || t == NAL_UNIT_VPS || t == NAL_UNIT_DCI || t == NAL_UNIT_EOB || t == NAL_UNIT_PREFIX_SEI || t == NAL_UNIT_SUFFIX_SEI;
         vps = m_parameterSetManager.getVPS(m_vpsId);
         if (m_vpsId == 0)
         {
@@ -651,10 +659,10 @@ uint32_t BitstreamExtractorApp::decode()
           vps->deriveOutputLayerSets();
         }
         uint32_t numOlss = vps->getTotalNumOLSs();
-        CHECK(m_targetOlsIdx <0  || m_targetOlsIdx >= numOlss, "target Ols shall be in the range of OLSs specified by the VPS");
-        CHECK(m_maxTemporalLayer < -1 || m_maxTemporalLayer > vps->getPtlMaxTemporalId(vps->getOlsPtlIdx(m_targetOlsIdx)), "MaxTemporalLayer shall either be equal -1 (for diabled) or in the range of 0 to vps_ptl_max_tid[ vps_ols_ptl_idx[ targetOlsIdx ] ], inclusive");
+        CHECK(m_targetOlsIdx <0  || m_targetOlsIdx >= numOlss, "target OLS shall be in the range of OLSs specified by the VPS");
+        CHECK(m_maxTemporalLayer < -1 || m_maxTemporalLayer > (int)vps->getPtlMaxTemporalId(vps->getOlsPtlIdx(m_targetOlsIdx)), "MaxTemporalLayer shall either be equal -1 (for disabled) or in the range of 0 to vps_ptl_max_tid[ vps_ols_ptl_idx[ targetOlsIdx ] ], inclusive");
         std::vector<int> layerIdInOls = vps->getLayerIdsInOls(m_targetOlsIdx);
-        bool isIncludedInTargetOls = std::find(layerIdInOls.begin(), layerIdInOls.end(), nalu.m_nuhLayerId) != layerIdInOls.end();
+        isIncludedInTargetOls = std::find(layerIdInOls.begin(), layerIdInOls.end(), nalu.m_nuhLayerId) != layerIdInOls.end();
         writeInpuNalUnitToStream &= (isSpecialNalTypes || isIncludedInTargetOls);
         writeInpuNalUnitToStream &= !xCheckNumSubLayers(nalu, vps);
         m_removeTimingSEI = !vps->getGeneralHrdParameters()->getGeneralSamePicTimingInAllOlsFlag();
@@ -791,6 +799,13 @@ uint32_t BitstreamExtractorApp::decode()
         {
           for (auto sei : SEIs)
           {
+            // remove from outBitstream all NAL units that have nuh_layer_id not included in the list LayerIdInOls[ targetOlsIdx ] and ( are SEI NAL units containing (scalable-nested SEI messages) or (non-scalable-nested SEI messages with PayloadType not equal to 0, 1, 130, or 203) )
+            bool isNonNestedHRDSEI = false;
+            if (sei->payloadType() == SEI::BUFFERING_PERIOD || sei->payloadType() == SEI::PICTURE_TIMING || sei->payloadType() == SEI::DECODING_UNIT_INFO || sei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO)
+            {
+              isNonNestedHRDSEI = true;
+            }
+            writeInpuNalUnitToStream &= isIncludedInTargetOls || (sei->payloadType() != SEI::SCALABLE_NESTING && isNonNestedHRDSEI);
             // remove unqualified scalable nesting SEI
             if (sei->payloadType() == SEI::SCALABLE_NESTING)
             {
@@ -808,43 +823,46 @@ uint32_t BitstreamExtractorApp::decode()
                 }
                 writeInpuNalUnitToStream &= targetOlsIdxInNestingAppliedOls;
               }
-              else
+              // C.6 step 9.c
+              if (writeInpuNalUnitToStream && !targetOlsIncludeAllVclLayers && !seiNesting->m_snSubpicFlag)
               {
-                writeInpuNalUnitToStream &= xCheckScalableNestingSEI(seiNesting, nalu, vps);
+                if (seiNesting->m_snOlsFlag || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
+                {
+                  OutputNALUnit outNalu(nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId);
+                  m_seiWriter.writeSEImessages(outNalu.m_bitstream, seiNesting->m_nestedSEIs, m_hrd, false,
+                                               nalu.m_temporalId);
+                  NALUnitEBSP naluWithHeader(outNalu);
+                  writeAnnexBNalUnit(bitstreamFileOut, naluWithHeader, true);
+                  writeInpuNalUnitToStream = false;
+                }
               }
             }
             // remove unqualified timing related SEI
             if (sei->payloadType() == SEI::BUFFERING_PERIOD || (m_removeTimingSEI && sei->payloadType() == SEI::PICTURE_TIMING) || sei->payloadType() == SEI::DECODING_UNIT_INFO || sei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO)
             {
-              bool targetOlsIdxGreaterThanZero = m_targetOlsIdx > 0;
-              writeInpuNalUnitToStream &= !targetOlsIdxGreaterThanZero;
+              writeInpuNalUnitToStream &= targetOlsIncludeAllVclLayers;
             }
-          }
-          if (m_subPicIdx >= 0 && writeInpuNalUnitToStream)
-          {
-            writeInpuNalUnitToStream = xCheckSeiSubpicture(SEIs, subpicIdTarget[nalu.m_nuhLayerId], rmAllFillerInSubpicExt[nalu.m_nuhLayerId], lastSliceWritten, isVclNalUnitRemoved[nalu.m_nuhLayerId]);
           }
           if (m_vpsId == -1)
           {
             delete vps;
           }
         }
-        if (m_subPicIdx >= 0)
+        writeInpuNalUnitToStream &= xCheckSEIFiller(SEIs, subpicIdTarget[nalu.m_nuhLayerId], rmAllFillerInSubpicExt[nalu.m_nuhLayerId], lastSliceWritten);
+        if (writeInpuNalUnitToStream && isVclNalUnitRemoved[nalu.m_nuhLayerId] && m_subPicIdx >= 0)
         {
-          writeInpuNalUnitToStream &= xCheckSEIsSubPicture(SEIs, nalu, bitstreamFileOut, subpicIdTarget[nalu.m_nuhLayerId]);
+          writeInpuNalUnitToStream &= xCheckSEIsSubPicture(SEIs, nalu, bitstreamFileOut, subpicIdTarget[nalu.m_nuhLayerId], vps);
         }
       }
 
-#if JVET_R0107_BITSTREAM_EXTACTION
       Slice slice;
       if (nalu.isSlice())
       {
          slice = xParseSliceHeader(nalu);
       }
-#endif
-      if (m_subPicIdx >= 0 && isMultiSubpicLayer[nalu.m_nuhLayerId] && writeInpuNalUnitToStream)
+      if (isMultiSubpicLayer[nalu.m_nuhLayerId] && writeInpuNalUnitToStream)
       {
-        if (nalu.isSlice())
+        if (m_subPicIdx >= 0 && nalu.isSlice())
         {
           writeInpuNalUnitToStream = xCheckSliceSubpicture(slice, subpicIdTarget[nalu.m_nuhLayerId]);
           if (!writeInpuNalUnitToStream)
@@ -877,7 +895,7 @@ uint32_t BitstreamExtractorApp::decode()
 
         // create output NAL unit
         OutputNALUnit out (nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId);
-        out.m_Bitstream.getFIFO() = nalu.getBitstream().getFifo();
+        out.m_bitstream.getFIFO() = nalu.getBitstream().getFifo();
         // write with start code emulation prevention
         writeNaluContent (bitstreamFileOut, out);
       }

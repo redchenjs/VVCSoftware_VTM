@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,9 +62,9 @@
 // Class definition
 // ====================================================================================================================
 
-static const uint32_t MAX_NUM_REF_LIST_ADAPT_SR = 2;
-static const uint32_t MAX_IDX_ADAPT_SR          = 33;
-static const uint32_t NUM_MV_PREDICTORS         = 3;
+static constexpr uint32_t MAX_NUM_REF_LIST_ADAPT_SR = 2;
+static constexpr uint32_t MAX_IDX_ADAPT_SR          = 33;
+static constexpr uint32_t NUM_MV_PREDICTORS         = 3;
 struct BlkRecord
 {
   std::unordered_map<Mv, Distortion> bvRecord;
@@ -77,7 +77,7 @@ struct AffineMVInfo
   int x, y, w, h;
 };
 
-#if GDR_ENABLED 
+#if GDR_ENABLED
 struct AffineMVInfoSolid
 {
   bool  affMVsSolid[2][33][3];
@@ -129,7 +129,7 @@ private:
   bool            m_affineModeSelected;
   std::unordered_map< Position, std::unordered_map< Size, BlkRecord> > m_ctuRecord;
   AffineMVInfo       *m_affMVList;
-#if GDR_ENABLED  
+#if GDR_ENABLED
   AffineMVInfoSolid  *m_affMVListSolid;
 #endif
   int             m_affMVListIdx;
@@ -140,11 +140,11 @@ private:
   int             m_uniMvListSize;
   int             m_uniMvListMaxSize;
   Distortion      m_hevcCost;
-#if GDR_ENABLED  
+#if GDR_ENABLED
   bool            m_hevcCostOk;
 #endif
   EncAffineMotion m_affineMotion;
-  PatentBvCand    m_defaultCachedBvs;
+  static_vector<Mv, IBC_NUM_CANDIDATES> m_defaultCachedBvs;
 protected:
   // interface to option
   EncCfg*         m_pcEncCfg;
@@ -154,10 +154,10 @@ protected:
   EncReshape*     m_pcReshape;
 
   // ME parameters
-  int             m_iSearchRange;
+  int             m_searchRange;
   int             m_bipredSearchRange; // Search range for bi-prediction
   MESearchMethod  m_motionEstimationSearchMethod;
-  int             m_aaiAdaptSR                  [MAX_NUM_REF_LIST_ADAPT_SR][MAX_IDX_ADAPT_SR];
+  int             m_adaptSR[MAX_NUM_REF_LIST_ADAPT_SR][MAX_IDX_ADAPT_SR];
 
   // RD computation
   CABACWriter*    m_CABACEstimator;
@@ -180,34 +180,23 @@ protected:
 
   bool            m_isInitialized;
 
-  Mv              m_acBVs[2 * IBC_NUM_CANDIDATES];
-  unsigned int    m_numBVs;
+  static_vector<Mv, 2 * IBC_NUM_CANDIDATES> m_acBVs;
   bool            m_useCompositeRef;
   Distortion      m_estMinDistSbt[NUMBER_SBT_MODE + 1]; // estimated minimum SSE value of the PU if using a SBT mode
   uint8_t         m_sbtRdoOrder[NUMBER_SBT_MODE];       // order of SBT mode in RDO
   bool            m_skipSbtAll;                         // to skip all SBT modes for the current PU
   uint8_t         m_histBestSbt;                        // historical best SBT mode for PU of certain SSE values
-  uint8_t         m_histBestMtsIdx;                     // historical best MTS idx  for PU of certain SSE values
+  MtsType         m_histBestMtsIdx;                     // historical best MTS idx  for PU of certain SSE values
   bool            m_clipMvInSubPic;
 
 public:
   InterSearch();
   virtual ~InterSearch();
 
-  void init                         ( EncCfg*        pcEncCfg,
-                                      TrQuant*       pcTrQuant,
-                                      int            iSearchRange,
-                                      int            bipredSearchRange,
-                                      MESearchMethod motionEstimationSearchMethod,
-                                      bool           useCompositeRef,
-                                      const uint32_t     maxCUWidth,
-                                      const uint32_t     maxCUHeight,
-                                      const uint32_t     maxTotalCUDepth,
-                                      RdCost*        pcRdCost,
-                                      CABACWriter*   CABACEstimator,
-                                      CtxCache*      ctxCache
-                                     , EncReshape*   m_pcReshape
-                                    );
+  void init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, int searchRange, int bipredSearchRange,
+            MESearchMethod motionEstimationSearchMethod, bool useCompositeRef, const uint32_t maxCUWidth,
+            const uint32_t maxCUHeight, const uint32_t maxTotalCUDepth, RdCost *pcRdCost, CABACWriter *CABACEstimator,
+            CtxCache *ctxCache, EncReshape *m_pcReshape);
 
   void destroy                      ();
 
@@ -218,7 +207,11 @@ public:
   uint8_t    getSbtRdoOrder         ( uint8_t idx )    { assert( m_sbtRdoOrder[idx] < NUMBER_SBT_MODE ); assert( (uint32_t)( m_estMinDistSbt[m_sbtRdoOrder[idx]] >> 2 ) < ( MAX_UINT >> 1 ) ); return m_sbtRdoOrder[idx]; }
   Distortion getEstDistSbt          ( uint8_t sbtMode) { return m_estMinDistSbt[sbtMode]; }
   void       initTuAnalyzer         ()                 { m_estMinDistSbt[NUMBER_SBT_MODE] = std::numeric_limits<uint64_t>::max(); m_skipSbtAll = false; }
-  void       setHistBestTrs         ( uint8_t sbtInfo, uint8_t mtsIdx ) { m_histBestSbt = sbtInfo; m_histBestMtsIdx = mtsIdx; }
+  void       setHistBestTrs(uint8_t sbtInfo, MtsType mtsIdx)
+  {
+    m_histBestSbt    = sbtInfo;
+    m_histBestMtsIdx = mtsIdx;
+  }
   void       initSbtRdoOrder        ( uint8_t sbtMode ) { m_sbtRdoOrder[0] = sbtMode; m_estMinDistSbt[0] = m_estMinDistSbt[sbtMode]; }
 
   void setTempBuffers               (CodingStructure ****pSlitCS, CodingStructure ****pFullCS, CodingStructure **pSaveCS );
@@ -370,7 +363,9 @@ protected:
 
   /// sub-function for motion vector refinement used in fractional-pel accuracy
 #if GDR_ENABLED
-  Distortion  xPatternRefinement(const PredictionUnit& pu, RefPicList eRefPicList, int iRefIdx, const CPelBuf* pcPatternKey, Mv baseRefMv, int iFrac, Mv& rcMvFrac, bool bAllowUseOfHadamard, bool& rbCleanCandExist);
+  Distortion xPatternRefinement(const PredictionUnit &pu, RefPicList eRefPicList, int refIdx,
+                                const CPelBuf *pcPatternKey, Mv baseRefMv, int iFrac, Mv &rcMvFrac,
+                                bool bAllowUseOfHadamard, bool &rbCleanCandExist);
 #else
   Distortion  xPatternRefinement    ( const CPelBuf* pcPatternKey, Mv baseRefMv, int iFrac, Mv& rcMvFrac, bool bAllowUseOfHadamard );
 #endif
@@ -418,21 +413,21 @@ public:
   void predInterSearch(CodingUnit& cu, Partitioner& partitioner );
 
   /// set ME search range
-  void setAdaptiveSearchRange       ( int iDir, int iRefIdx, int iSearchRange) { CHECK(iDir >= MAX_NUM_REF_LIST_ADAPT_SR || iRefIdx>=int(MAX_IDX_ADAPT_SR), "Invalid index"); m_aaiAdaptSR[iDir][iRefIdx] = iSearchRange; }
+  void setAdaptiveSearchRange(int dir, int refIdx, int searchRange)
+  {
+    CHECK(dir >= MAX_NUM_REF_LIST_ADAPT_SR || refIdx >= int(MAX_IDX_ADAPT_SR), "Invalid index");
+    m_adaptSR[dir][refIdx] = searchRange;
+  }
   bool  predIBCSearch           ( CodingUnit& cu, Partitioner& partitioner, const int localSearchRangeX, const int localSearchRangeY, IbcHashMap& ibcHashMap);
   void  xIntraPatternSearch         ( PredictionUnit& pu, IntTZSearchStruct&  cStruct, Mv& rcMv, Distortion&  ruiCost, Mv* cMvSrchRngLT, Mv* cMvSrchRngRB, Mv* pcMvPred);
   void  xSetIntraSearchRange        ( PredictionUnit& pu, int iRoiWidth, int iRoiHeight, const int localSearchRangeX, const int localSearchRangeY, Mv& rcMvSrchRngLT, Mv& rcMvSrchRngRB);
   void  resetIbcSearch()
   {
-    for (int i = 0; i < IBC_NUM_CANDIDATES; i++)
-    {
-      m_defaultCachedBvs.m_bvCands[i].setZero();
-    }
-    m_defaultCachedBvs.currCnt = 0;
+    m_defaultCachedBvs.clear();
   }
   void  xIBCEstimation   ( PredictionUnit& pu, PelUnitBuf& origBuf, Mv     *pcMvPred, Mv     &rcMv, Distortion &ruiCost, const int localSearchRangeX, const int localSearchRangeY);
-  void  xIBCSearchMVCandUpdate  ( Distortion  uiSad, int x, int y, Distortion* uiSadBestCand, Mv* cMVCand);
-  int   xIBCSearchMVChromaRefine( PredictionUnit& pu, int iRoiWidth, int iRoiHeight, int cuPelX, int cuPelY, Distortion* uiSadBestCand, Mv*     cMVCand);
+  void  xIBCSearchMVCandUpdate  ( Distortion  uiSad, int x, int y, Distortion* uiSadBestCand, static_vector<Mv, CHROMA_REFINEMENT_CANDIDATES>& cMVCand);
+  int   xIBCSearchMVChromaRefine( PredictionUnit& pu, int iRoiWidth, int iRoiHeight, int cuPelX, int cuPelY, Distortion* uiSadBestCand, static_vector<Mv, CHROMA_REFINEMENT_CANDIDATES>& cMVCand);
   void addToSortList(std::list<BlockHash>& listBlockHash, std::list<int>& listCost, int cost, const BlockHash& blockHash);
   bool predInterHashSearch(CodingUnit& cu, Partitioner& partitioner, bool& isPerfectMatch);
   bool xHashInterEstimation(PredictionUnit& pu, RefPicList& bestRefPicList, int& bestRefIndex, Mv& bestMv, Mv& bestMvd, int& bestMVPIndex, bool& isPerfectMatch);
@@ -445,165 +440,76 @@ protected:
   // Inter search (AMP)
   // -------------------------------------------------------------------------------------------------------------------
 
-  void xEstimateMvPredAMVP        ( PredictionUnit&       pu,
-                                    PelUnitBuf&           origBuf,
-                                    RefPicList            eRefPicList,
-                                    int                   iRefIdx,
-                                    Mv&                   rcMvPred,
-                                    AMVPInfo&             amvpInfo,
-                                    bool                  bFilled = false,
-                                    Distortion*           puiDistBiP = NULL
-                                  );
+  void xEstimateMvPredAMVP(PredictionUnit &pu, PelUnitBuf &origBuf, RefPicList eRefPicList, int refIdx, Mv &rcMvPred,
+                           AMVPInfo &amvpInfo, bool bFilled = false, Distortion *puiDistBiP = nullptr);
 
- #if GDR_ENABLED
-  void xCheckBestMVP(
-    PredictionUnit &pu,
-    RefPicList  eRefPicList,
-    Mv          cMv,
-    Mv&         rcMvPred,
-    int&        riMVPIdx,
-    AMVPInfo&   amvpInfo,
-    uint32_t&   ruiBits,
-    Distortion& ruiCost
-    ,
-    const uint8_t  imv
-  );
+#if GDR_ENABLED
+  void xCheckBestMVP(PredictionUnit &pu, RefPicList eRefPicList, Mv cMv, Mv &rcMvPred, int &riMVPIdx,
+                     AMVPInfo &amvpInfo, uint32_t &ruiBits, Distortion &ruiCost, const uint8_t imv);
 #else
-  void xCheckBestMVP              ( RefPicList  eRefPicList,
-                                    Mv          cMv,
-                                    Mv&         rcMvPred,
-                                    int&        riMVPIdx,
-                                    AMVPInfo&   amvpInfo,
-                                    uint32_t&       ruiBits,
-                                    Distortion& ruiCost
-                                    ,
-                                    const uint8_t  imv
-                                  );
+  void xCheckBestMVP(RefPicList eRefPicList, Mv cMv, Mv &rcMvPred, int &riMVPIdx, AMVPInfo &amvpInfo, uint32_t &ruiBits,
+                     Distortion &ruiCost, const uint8_t imv);
 #endif
 
-  Distortion xGetTemplateCost     ( const PredictionUnit& pu,
-                                    PelUnitBuf&           origBuf,
-                                    PelUnitBuf&           predBuf,
-                                    Mv                    cMvCand,
-                                    int                   iMVPIdx,
-                                    int                   iMVPNum,
-                                    RefPicList            eRefPicList,
-                                    int                   iRefIdx
-                                  );
+  Distortion xGetTemplateCost(const PredictionUnit &pu, PelUnitBuf &origBuf, PelUnitBuf &predBuf, Mv cMvCand,
+                              int mvpIdx, int mvpNum, RefPicList eRefPicList, int refIdx);
   uint32_t xCalcAffineMVBits      ( PredictionUnit& pu, Mv mvCand[3], Mv mvPred[3] );
 
   void xCopyAMVPInfo              ( AMVPInfo*   pSrc, AMVPInfo* pDst );
-  uint32_t xGetMvpIdxBits             ( int iIdx, int iNum );
-  void xGetBlkBits                ( bool bPSlice, int iPartIdx,  uint32_t uiLastMode, uint32_t uiBlkBit[3]);
-
-
+  uint32_t xGetMvpIdxBits(int idx, int num);
+  void     xGetBlkBits(bool isPSlice, uint32_t blkBit[3]);
 
   // -------------------------------------------------------------------------------------------------------------------
   // motion estimation
   // -------------------------------------------------------------------------------------------------------------------
 
 #if GDR_ENABLED
-  void xMotionEstimation          ( PredictionUnit&       pu,
-                                    PelUnitBuf&           origBuf,
-                                    RefPicList            eRefPicList,
-                                    Mv&                   rcMvPred,                                    
-                                    int                   iRefIdxPred,
-                                    Mv&                   rcMv,
-                                    bool&                 rcMvSolid,
-                                    int&                  riMVPIdx,
-                                    uint32_t&             ruiBits,
-                                    Distortion&           ruiCost,
-                                    const AMVPInfo&       amvpInfo,
-                                    bool&                 rbCleanCandExist,
-                                    bool                  bBi = false
-                                  );
+  void xMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, RefPicList eRefPicList, Mv &rcMvPred, int refIdxPred,
+                         Mv &rcMv, bool &rcMvSolid, int &riMVPIdx, uint32_t &ruiBits, Distortion &ruiCost,
+                         const AMVPInfo &amvpInfo, bool &rbCleanCandExist, bool bBi = false);
 #else
-  void xMotionEstimation          ( PredictionUnit&       pu,
-                                    PelUnitBuf&           origBuf,
-                                    RefPicList            eRefPicList,
-                                    Mv&                   rcMvPred,
-                                    int                   iRefIdxPred,
-                                    Mv&                   rcMv,
-                                    int&                  riMVPIdx,
-                                    uint32_t&                 ruiBits,
-                                    Distortion&           ruiCost,
-                                    const AMVPInfo&       amvpInfo,
-                                    bool                  bBi = false
-                                  );
+  void xMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, RefPicList eRefPicList, Mv &rcMvPred, int refIdxPred,
+                         Mv &rcMv, int &riMVPIdx, uint32_t &ruiBits, Distortion &ruiCost, const AMVPInfo &amvpInfo,
+                         bool bBi = false);
 #endif
-  void xTZSearch                  ( const PredictionUnit& pu,
-                                    RefPicList            eRefPicList,
-                                    int                   iRefIdxPred,
-                                    IntTZSearchStruct&    cStruct,
-                                    Mv&                   rcMv,
-                                    Distortion&           ruiSAD,
-                                    const Mv* const       pIntegerMv2Nx2NPred,
-                                    const bool            bExtendedSettings,
-                                    const bool            bFastSettings = false
-                                  );
+  void xTZSearch(const PredictionUnit &pu, RefPicList eRefPicList, int refIdxPred, IntTZSearchStruct &cStruct, Mv &rcMv,
+                 Distortion &ruiSAD, const Mv *const pIntegerMv2Nx2NPred, const bool bExtendedSettings,
+                 const bool bFastSettings = false);
 
-  void xTZSearchSelective         ( const PredictionUnit& pu,
-                                    RefPicList            eRefPicList,
-                                    int                   iRefIdxPred,
-                                    IntTZSearchStruct&    cStruct,
-                                    Mv&                   rcMv,
-                                    Distortion&           ruiSAD,
-                                    const Mv* const       pIntegerMv2Nx2NPred
-                                  );
+  void xTZSearchSelective(const PredictionUnit &pu, RefPicList eRefPicList, int refIdxPred, IntTZSearchStruct &cStruct,
+                          Mv &rcMv, Distortion &ruiSAD, const Mv *const pIntegerMv2Nx2NPred);
 
-  void xSetSearchRange            ( const PredictionUnit& pu,
-                                    const Mv&             cMvPred,
-                                    const int             iSrchRng,
-                                    SearchRange&          sr
-                                  , IntTZSearchStruct &  cStruct
+  void xSetSearchRange(const PredictionUnit &pu, const Mv &cMvPred, const int iSrchRng, SearchRange &sr,
+                       IntTZSearchStruct &cStruct
 #if GDR_ENABLED
-                                  , RefPicList eRefPicList
-                                  , int iRefIdx
+                       ,
+                       RefPicList eRefPicList, int refIdx
 #endif
-                                  );
+  );
 
-  void xPatternSearchFast         ( const PredictionUnit& pu,
-                                    RefPicList            eRefPicList,
-                                    int                   iRefIdxPred,
-                                    IntTZSearchStruct&    cStruct,
-                                    Mv&                   rcMv,
-                                    Distortion&           ruiSAD,
-                                    const Mv* const       pIntegerMv2Nx2NPred
-                                  );
+  void xPatternSearchFast(const PredictionUnit &pu, RefPicList eRefPicList, int refIdxPred, IntTZSearchStruct &cStruct,
+                          Mv &rcMv, Distortion &ruiSAD, const Mv *const pIntegerMv2Nx2NPred);
 
   void xPatternSearch             ( IntTZSearchStruct&    cStruct,
                                     Mv&                   rcMv,
                                     Distortion&           ruiSAD
                                   );
 
-  void xPatternSearchIntRefine    ( PredictionUnit&     pu,
-                                    IntTZSearchStruct&  cStruct,
-                                    Mv&                 rcMv,
-                                    Mv&                 rcMvPred,
-                                    int&                riMVPIdx,
-                                    uint32_t&               ruiBits,
-                                    Distortion&         ruiCost,
-                                    const AMVPInfo&     amvpInfo,
-                                    double              fWeight
+  void xPatternSearchIntRefine(PredictionUnit &pu, IntTZSearchStruct &cStruct, Mv &rcMv, Mv &rcMvPred, int &riMVPIdx,
+                               uint32_t &ruiBits, Distortion &ruiCost, const AMVPInfo &amvpInfo, double fWeight
 #if GDR_ENABLED
-                                    ,RefPicList         eRefPicList
-                                    ,int                iRefIdxPred
-                                    , bool&             rbCleanCandExist
+                               ,
+                               RefPicList eRefPicList, int refIdxPred, bool &rbCleanCandExist
 #endif
-                                  );
+  );
 
-  void xPatternSearchFracDIF      ( const PredictionUnit& pu,
-                                    RefPicList            eRefPicList,
-                                    int                   iRefIdx,
-                                    IntTZSearchStruct&    cStruct,
-                                    const Mv&             rcMvInt,
-                                    Mv&                   rcMvHalf,
-                                    Mv&                   rcMvQter,
-                                    Distortion&           ruiCost
+  void xPatternSearchFracDIF(const PredictionUnit &pu, RefPicList eRefPicList, int refIdx, IntTZSearchStruct &cStruct,
+                             const Mv &rcMvInt, Mv &rcMvHalf, Mv &rcMvQter, Distortion &ruiCost
 #if GDR_ENABLED
-                                    ,bool&                rbCleanCandExist
+                             ,
+                             bool &rbCleanCandExist
 #endif
-                                  );
+  );
 
   void xPredAffineInterSearch     ( PredictionUnit&       pu,
                                     PelUnitBuf&           origBuf,
@@ -625,48 +531,24 @@ protected:
                                   );
 
 #if GDR_ENABLED
-  void xAffineMotionEstimation    ( PredictionUnit& pu,
-                                    PelUnitBuf&     origBuf,
-                                    RefPicList      eRefPicList,
-                                    Mv              acMvPred[3],                                    
-                                    int             iRefIdxPred,
-                                    Mv              acMv[3],
-                                    bool            acMvSolid[3],
-                                    uint32_t&       ruiBits,
-                                    Distortion&     ruiCost,
-                                    int&            mvpIdx,
-                                    const AffineAMVPInfo& aamvpi,
-                                    bool&           rbCleanCandExist,
-                                    bool            bBi = false
-  );
+  void xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, RefPicList eRefPicList, Mv acMvPred[3],
+                               int refIdxPred, Mv acMv[3], bool acMvSolid[3], uint32_t &ruiBits, Distortion &ruiCost,
+                               int &mvpIdx, const AffineAMVPInfo &aamvpi, bool &rbCleanCandExist, bool bBi = false);
 #else
-  void xAffineMotionEstimation    ( PredictionUnit& pu,
-                                    PelUnitBuf&     origBuf,
-                                    RefPicList      eRefPicList,
-                                    Mv              acMvPred[3],
-                                    int             iRefIdxPred,
-                                    Mv              acMv[3],
-                                    uint32_t&           ruiBits,
-                                    Distortion&     ruiCost,
-                                    int&            mvpIdx,
-                                    const AffineAMVPInfo& aamvpi,
-                                    bool            bBi = false
-                                  );
+  void xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, RefPicList eRefPicList, Mv acMvPred[3],
+                               int refIdxPred, Mv acMv[3], uint32_t &ruiBits, Distortion &ruiCost, int &mvpIdx,
+                               const AffineAMVPInfo &aamvpi, bool bBi = false);
 #endif
 
-  void xEstimateAffineAMVP        ( PredictionUnit&  pu,
-                                    AffineAMVPInfo&  affineAMVPInfo,
-                                    PelUnitBuf&      origBuf,
-                                    RefPicList       eRefPicList,
-                                    int              iRefIdx,
-                                    Mv               acMvPred[3],
-                                    Distortion*      puiDistBiP
-                                  );
+  void xEstimateAffineAMVP(PredictionUnit &pu, AffineAMVPInfo &affineAMVPInfo, PelUnitBuf &origBuf,
+                           RefPicList eRefPicList, int refIdx, Mv acMvPred[3], Distortion *puiDistBiP);
 
 #if GDR_ENABLED
-  Distortion xGetAffineTemplateCost(PredictionUnit& pu, PelUnitBuf& origBuf, PelUnitBuf& predBuf, Mv acMvCand[3], int iMVPIdx, int iMVPNum, RefPicList eRefPicList, int iRefIdx, bool& rbOk);
+  Distortion xGetAffineTemplateCost(PredictionUnit &pu, PelUnitBuf &origBuf, PelUnitBuf &predBuf, Mv acMvCand[3],
+                                    int mvpIdx, int mvpNum, RefPicList eRefPicList, int refIdx, bool &rbOk);
 #else
-  Distortion xGetAffineTemplateCost( PredictionUnit& pu, PelUnitBuf& origBuf, PelUnitBuf& predBuf, Mv acMvCand[3], int iMVPIdx, int iMVPNum, RefPicList eRefPicList, int iRefIdx );
+  Distortion xGetAffineTemplateCost(PredictionUnit &pu, PelUnitBuf &origBuf, PelUnitBuf &predBuf, Mv acMvCand[3],
+                                    int mvpIdx, int mvpNum, RefPicList eRefPicList, int refIdx);
 #endif
 
   void xCopyAffineAMVPInfo        ( AffineAMVPInfo& src, AffineAMVPInfo& dst );
@@ -675,11 +557,10 @@ protected:
   Distortion xGetSymmetricCost( PredictionUnit& pu, PelUnitBuf& origBuf, RefPicList eCurRefPicList, const MvField& cCurMvField, MvField& cTarMvField , int bcwIdx );
 
 #if GDR_ENABLED
-  Distortion xSymmeticRefineMvSearch( 
-    PredictionUnit& pu, PelUnitBuf& origBuf, 
-    Mv& rcMvCurPred, Mv& rcMvTarPred,
-    RefPicList eRefPicList, MvField& rCurMvField, MvField& rTarMvField, 
-    Distortion uiMinCost, int searchPattern, int nSearchStepShift, uint32_t uiMaxSearchRounds , int bcwIdx, bool& rbOk );
+  Distortion xSymmeticRefineMvSearch(PredictionUnit &pu, PelUnitBuf &origBuf, Mv &rcMvCurPred, Mv &rcMvTarPred,
+                                     RefPicList eRefPicList, MvField &rCurMvField, MvField &rTarMvField,
+                                     Distortion uiMinCost, int searchPattern, int nSearchStepShift,
+                                     uint32_t uiMaxSearchRounds, int bcwIdx, bool &rbOk);
 #else
   Distortion xSymmeticRefineMvSearch( PredictionUnit& pu, PelUnitBuf& origBuf, Mv& rcMvCurPred, Mv& rcMvTarPred
     , RefPicList eRefPicList, MvField& rCurMvField, MvField& rTarMvField, Distortion uiMinCost, int searchPattern, int nSearchStepShift, uint32_t uiMaxSearchRounds , int bcwIdx );
@@ -693,19 +574,20 @@ protected:
 #endif
 
 #if GDR_ENABLED
-  bool xReadBufferedAffineUniMv(PredictionUnit& pu, RefPicList eRefPicList, int32_t iRefIdx, Mv acMvPred[3], Mv acMv[3], bool acMvSolid[3], uint32_t& ruiBits, Distortion& ruiCost
-    , int& mvpIdx, const AffineAMVPInfo& aamvpi
-  );
+  bool xReadBufferedAffineUniMv(PredictionUnit &pu, RefPicList eRefPicList, int32_t refIdx, Mv acMvPred[3], Mv acMv[3],
+                                bool acMvSolid[3], uint32_t &ruiBits, Distortion &ruiCost, int &mvpIdx,
+                                const AffineAMVPInfo &aamvpi);
 #else
-  bool xReadBufferedAffineUniMv   ( PredictionUnit& pu, RefPicList eRefPicList, int32_t iRefIdx, Mv acMvPred[3], Mv acMv[3], uint32_t& ruiBits, Distortion& ruiCost
-                                    , int& mvpIdx, const AffineAMVPInfo& aamvpi
-  );
+  bool xReadBufferedAffineUniMv(PredictionUnit &pu, RefPicList eRefPicList, int32_t refIdx, Mv acMvPred[3], Mv acMv[3],
+                                uint32_t &ruiBits, Distortion &ruiCost, int &mvpIdx, const AffineAMVPInfo &aamvpi);
 #endif
   double xGetMEDistortionWeight   ( uint8_t bcwIdx, RefPicList eRefPicList);
 #if GDR_ENABLED
-  bool xReadBufferedUniMv         (PredictionUnit& pu, RefPicList eRefPicList, int32_t iRefIdx, Mv& pcMvPred, Mv& rcMv, bool& rcMvSolid, uint32_t& ruiBits, Distortion& ruiCost);
+  bool xReadBufferedUniMv(PredictionUnit &pu, RefPicList eRefPicList, int32_t refIdx, Mv &pcMvPred, Mv &rcMv,
+                          bool &rcMvSolid, uint32_t &ruiBits, Distortion &ruiCost);
 #else
-  bool xReadBufferedUniMv         ( PredictionUnit& pu, RefPicList eRefPicList, int32_t iRefIdx, Mv& pcMvPred, Mv& rcMv, uint32_t& ruiBits, Distortion& ruiCost);
+  bool xReadBufferedUniMv(PredictionUnit &pu, RefPicList eRefPicList, int32_t refIdx, Mv &pcMvPred, Mv &rcMv,
+                          uint32_t &ruiBits, Distortion &ruiCost);
 #endif
 
   void xClipMv                    ( Mv& rcMv, const struct Position& pos, const struct Size& size, const class SPS& sps, const class PPS& pps );
@@ -738,7 +620,8 @@ protected:
   // compute symbol bits
   // -------------------------------------------------------------------------------------------------------------------
 
-  void  setWpScalingDistParam     ( int iRefIdx, RefPicList eRefPicListCur, Slice *slice );
+  void setWpScalingDistParam(int refIdx, RefPicList eRefPicListCur, Slice *slice);
+
 private:
   void  xxIBCHashSearch(PredictionUnit& pu, Mv* mvPred, int numMvPred, Mv &mv, int& idxMvPred, IbcHashMap& ibcHashMap);
 public:
@@ -747,10 +630,8 @@ public:
     , const bool luma = true, const bool chroma = true
   );
   void xEncodeInterResidualQT     (CodingStructure &cs, Partitioner &partitioner, const ComponentID &compID);
-  void xEstimateInterResidualQT   (CodingStructure &cs, Partitioner &partitioner, Distortion *puiZeroDist = NULL
-    , const bool luma = true, const bool chroma = true
-    , PelUnitBuf* orgResi = NULL
-  );
+  void     xEstimateInterResidualQT(CodingStructure &cs, Partitioner &partitioner, Distortion *puiZeroDist = nullptr,
+                                    const bool luma = true, const bool chroma = true, PelUnitBuf *orgResi = nullptr);
   uint64_t xGetSymbolFracBitsInter  (CodingStructure &cs, Partitioner &partitioner);
   uint64_t xCalcPuMeBits            (PredictionUnit& pu);
 

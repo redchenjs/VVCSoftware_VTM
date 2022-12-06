@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -116,6 +116,7 @@ void SEIBufferingPeriod::copyTo (SEIBufferingPeriod& target) const
   target.m_bpCpbCnt = m_bpCpbCnt;
   target.m_bpDecodingUnitHrdParamsPresentFlag = m_bpDecodingUnitHrdParamsPresentFlag;
   target.m_decodingUnitCpbParamsInPicTimingSeiFlag = m_decodingUnitCpbParamsInPicTimingSeiFlag;
+  target.m_decodingUnitDpbDuParamsInPicTimingSeiFlag = m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
   target.m_sublayerInitialCpbRemovalDelayPresentFlag = m_sublayerInitialCpbRemovalDelayPresentFlag;
   target.m_concatenationFlag = m_concatenationFlag;
   target.m_maxInitialRemovalDelayForConcatenation = m_maxInitialRemovalDelayForConcatenation;
@@ -470,6 +471,26 @@ uint8_t SEIPrefixIndication::getNumsOfSeiPrefixIndications(const SEI *sei)
 }
 #endif
 
+bool SEIMultiviewViewPosition::isMVPSameContent(SEIMultiviewViewPosition *mvpB)
+{
+  if (!mvpB)
+  {
+    return false;
+  }
+  if (m_mvpNumViewsMinus1 != mvpB->m_mvpNumViewsMinus1)
+  {
+    return false;
+  }
+  for (int i = 0; i <= m_mvpNumViewsMinus1; i++)
+  {
+    if (m_mvpViewPosition[i] != mvpB->m_mvpViewPosition[i])
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Static member
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
 {
@@ -483,15 +504,14 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
     case SEI::FILM_GRAIN_CHARACTERISTICS:           return "Film grain characteristics";           // not currently decoded
     case SEI::FRAME_PACKING:                        return "Frame packing arrangement";
     case SEI::DISPLAY_ORIENTATION:                  return "Display orientation";
+    case SEI::GREEN_METADATA:                       return "Green metadata";
     case SEI::PARAMETER_SETS_INCLUSION_INDICATION:  return "Parameter sets inclusion indication";
     case SEI::DECODING_UNIT_INFO:                   return "Decoding unit information";
     case SEI::SCALABLE_NESTING:                     return "Scalable nesting";
     case SEI::DECODED_PICTURE_HASH:                 return "Decoded picture hash";
     case SEI::DEPENDENT_RAP_INDICATION:             return "Dependent RAP indication";
     case SEI::MASTERING_DISPLAY_COLOUR_VOLUME:      return "Mastering display colour volume";
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
     case SEI::ALTERNATIVE_TRANSFER_CHARACTERISTICS: return "Alternative transfer characteristics";
-#endif
     case SEI::CONTENT_LIGHT_LEVEL_INFO:             return "Content light level information";
     case SEI::AMBIENT_VIEWING_ENVIRONMENT:          return "Ambient viewing environment";
     case SEI::CONTENT_COLOUR_VOLUME:                return "Content colour volume";
@@ -504,6 +524,7 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
     case SEI::ALPHA_CHANNEL_INFO:                   return "Alpha channel information";
     case SEI::DEPTH_REPRESENTATION_INFO:            return "Depth representation information";
     case SEI::MULTIVIEW_ACQUISITION_INFO:           return "Multiview acquisition information";
+    case SEI::MULTIVIEW_VIEW_POSITION:              return "Multiview view position";
     case SEI::SAMPLE_ASPECT_RATIO_INFO:             return "Sample aspect ratio information";
     case SEI::SUBPICTURE_LEVEL_INFO:                return "Subpicture level information";
     case SEI::ANNOTATED_REGIONS:                    return "Annotated Region";
@@ -515,6 +536,14 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
 #if JVET_T0056_SEI_PREFIX_INDICATION
     case SEI::SEI_PREFIX_INDICATION:                return "SEI prefix indication";
 #endif  
+    case SEI::CONSTRAINED_RASL_ENCODING:            return "Constrained RASL encoding";
+    case SEI::VDI_SEI_ENVELOPE:                     return "Video decoding interface SEI envelope";
+    case SEI::SHUTTER_INTERVAL_INFO:                return "Shutter interval information";
+    case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS: return "Neural network post-filter characteristics";
+    case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:      return "Neural network post-filter activation";
+    case SEI::PHASE_INDICATION:                     return "Phase Indication";
+
+    case SEI::SEI_PROCESSING_ORDER:                 return "SEI messages Processing order";
     default:                                        return "Unknown";
   }
 }

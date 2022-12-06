@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,7 +56,9 @@ inline void dtracePicComp( DTRACE_CHANNEL channel, CodingStructure& cs, const CP
 {
   if( !g_trace_ctx ) return;
   if( pelUnitBuf.chromaFormat == CHROMA_400 && compId != COMPONENT_Y )  return;
-  const Pel* piSrc    = pelUnitBuf.bufs[compId].buf;
+
+  const Pel *src = pelUnitBuf.bufs[compId].buf;
+
   uint32_t       uiStride = pelUnitBuf.bufs[compId].stride;
   uint32_t       uiWidth  = pelUnitBuf.bufs[compId].width;
   uint32_t       uiHeight = pelUnitBuf.bufs[compId].height;
@@ -64,7 +66,8 @@ inline void dtracePicComp( DTRACE_CHANNEL channel, CodingStructure& cs, const CP
   uint32_t       uiChromaScaleY = getComponentScaleY( compId, pelUnitBuf.chromaFormat );
 
   DTRACE                ( g_trace_ctx, channel, "\n%s: poc = %d, size=%dx%d\n\n", g_trace_ctx->getChannelName(channel), cs.slice->getPOC(), uiWidth, uiHeight );
-  DTRACE_FRAME_BLOCKWISE( g_trace_ctx, channel, piSrc, uiStride, uiWidth, uiHeight, cs.sps->getMaxCUWidth() >> uiChromaScaleX, cs.sps->getMaxCUHeight() >> uiChromaScaleY);
+  DTRACE_FRAME_BLOCKWISE(g_trace_ctx, channel, src, uiStride, uiWidth, uiHeight,
+                         cs.sps->getMaxCUWidth() >> uiChromaScaleX, cs.sps->getMaxCUHeight() >> uiChromaScaleY);
 }
 
 #define OLD_RDCOST 1

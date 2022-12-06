@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,7 @@
 #define WRITE_UVLC( value,         name)    xWriteUvlcTr ( value,         name )
 #define WRITE_SVLC( value,         name)    xWriteSvlcTr ( value,         name )
 #define WRITE_FLAG( value,         name)    xWriteFlagTr ( value,         name )
+#define WRITE_STRING( value,         name)    xWriteStringTr ( value,         name )
 
 extern bool g_HLSTraceEnable;
 #else
@@ -62,6 +63,7 @@ extern bool g_HLSTraceEnable;
 #define WRITE_UVLC( value,         name)     xWriteUvlc ( value )
 #define WRITE_SVLC( value,         name)     xWriteSvlc ( value )
 #define WRITE_FLAG( value,         name)     xWriteFlag ( value )
+#define WRITE_STRING( value,       name)     xWriteString ( value )
 
 #endif
 
@@ -73,22 +75,26 @@ protected:
 
   OutputBitstream*    m_pcBitIf;
 
-  VLCWriter() : m_pcBitIf(NULL) {}
+  VLCWriter() : m_pcBitIf(nullptr) {}
   virtual ~VLCWriter() {}
 
   void  setBitstream          ( OutputBitstream* p )  { m_pcBitIf = p;  }
   OutputBitstream* getBitstream( )                    { return m_pcBitIf; }
-  void  xWriteSCode           ( int  code,  uint32_t length );
-  void  xWriteCode            ( uint32_t uiCode, uint32_t uiLength );
+
+  void xWriteSCode(int code, uint32_t length);
+  void xWriteCode(uint32_t uiCode, uint32_t length);
+
   void  xWriteUvlc            ( uint32_t uiCode );
   void  xWriteSvlc            ( int  iCode   );
   void  xWriteFlag            ( uint32_t uiCode );
+  void  xWriteString(std::string code);
 #if ENABLE_TRACING
   void  xWriteSCodeTr         ( int value,  uint32_t  length, const char *pSymbolName);
   void  xWriteCodeTr          ( uint32_t value, uint32_t  length, const char *pSymbolName);
   void  xWriteUvlcTr          ( uint32_t value,               const char *pSymbolName);
   void  xWriteSvlcTr          ( int  value,               const char *pSymbolName);
   void  xWriteFlagTr          ( uint32_t value,               const char *pSymbolName);
+  void  xWriteStringTr        (std::string value, const char* symbolName);
 #endif
   void  xWriteRbspTrailingBits();
   bool isByteAligned()      { return (m_pcBitIf->getNumBitsUntilByteAligned() == 0); } ;
@@ -142,7 +148,7 @@ public:
   void  codePictureHeader       ( PicHeader* picHeader, bool writeRbspTrailingBits, Slice *slice = 0 );
   void  codeSliceHeader         ( Slice* pcSlice, PicHeader *picheader = 0 );
   void  codeOPI                 ( const OPI* opi );
-  void  codeConstraintInfo      ( const ConstraintInfo* cinfo );
+  void  codeConstraintInfo      ( const ConstraintInfo* cinfo, const ProfileTierLevel* ptl );
   void  codeProfileTierLevel    ( const ProfileTierLevel* ptl, bool profileTierPresentFlag, int maxNumSubLayersMinus1 );
   void  codeOlsHrdParameters(const GeneralHrdParams * generalHrd, const OlsHrdParams *olsHrd , const uint32_t firstSubLayer, const uint32_t maxNumSubLayersMinus1);
 

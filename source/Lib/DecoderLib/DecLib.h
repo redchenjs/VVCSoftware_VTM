@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,14 +68,16 @@ bool tryDecodePicture( Picture* pcPic, const int expectedPoc, const std::string&
 class DecLib
 {
 private:
-  int                     m_iMaxRefPicNum;
+  int                     m_maxRefPicNum;
   bool m_isFirstGeneralHrd;
   GeneralHrdParams        m_prevGeneralHrdParams;
 
   int                     m_prevGDRInSameLayerPOC[MAX_VPS_LAYERS]; ///< POC number of the latest GDR picture
   int                     m_prevGDRInSameLayerRecoveryPOC[MAX_VPS_LAYERS]; ///< Recovery POC number of the latest GDR picture
   NalUnitType             m_associatedIRAPType[MAX_VPS_LAYERS]; ///< NAL unit type of the previous IRAP picture
-  int                     m_pocCRA[MAX_VPS_LAYERS];            ///< POC number of the previous CRA picture
+  int                     m_pocCRA[MAX_VPS_LAYERS];             ///< POC number of the previous CRA picture
+  CheckCRAFlags           m_checkCRAFlags[MAX_VPS_LAYERS];
+  int                     m_latestDRAPPOC;
   int                     m_associatedIRAPDecodingOrderNumber[MAX_VPS_LAYERS]; ///< Decoding order number of the previous IRAP picture
   int                     m_decodingOrderCounter;
   int                     m_puCounter;
@@ -97,7 +99,7 @@ private:
   SEIMessages             m_SEIs; ///< List of SEI messages that have been received before the first slice and between slices, excluding prefix SEIs...
   SEIScalabilityDimensionInfo* m_sdiSEIInFirstAU;
   SEIMultiviewAcquisitionInfo* m_maiSEIInFirstAU;
-
+  SEIMultiviewViewPosition*    m_mvpSEIInFirstAU;
 
   // functional classes
   IntraPrediction         m_cIntraPred;
@@ -131,6 +133,8 @@ private:
   int                     m_prevTid0POC;
   bool                    m_bFirstSliceInPicture;
   bool                    m_firstPictureInSequence;
+  SEIFilmGrainSynthesizer m_grainCharacteristic;
+  PelStorage              m_grainBuf;
   SEIColourTransformApply m_colourTranfParams;
   PelStorage              m_invColourTransfBuf;
   bool                    m_firstSliceInSequence[MAX_VPS_LAYERS];
@@ -156,6 +160,9 @@ private:
   bool                    m_warningMessageSkipPicture;
 
   std::list<InputNALUnit*> m_prefixSEINALUs; /// Buffered up prefix SEI NAL Units.
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool                                m_ShutterFilterEnable;          ///< enable Post-processing with Shutter Interval SEI
+#endif
   int                     m_debugPOC;
   int                     m_debugCTU;
 
@@ -175,6 +182,14 @@ private:
   };
   std::vector<AccessUnitPicInfo> m_accessUnitPicInfo;
   std::vector<AccessUnitPicInfo> m_firstAccessUnitPicInfo;
+  struct AccessUnitNestedSliSeiInfo
+  {
+    bool m_nestedSliPresent;
+    uint32_t m_numOlssNestedSli;
+    uint32_t m_olsIdxNestedSLI[MAX_NUM_OLSS];
+  };
+  std::vector<AccessUnitNestedSliSeiInfo> m_accessUnitNestedSliSeiInfo;
+  int m_accessUnitSpsNumSubpic[MAX_VPS_LAYERS];
   struct NalUnitInfo
   {
     NalUnitType     m_nalUnitType; ///< nal_unit_type
@@ -191,8 +206,9 @@ private:
   std::vector<std::tuple<NalUnitType, int, SEI::PayloadType>> m_accessUnitSeiPayLoadTypes;
 
   std::vector<NalUnitType> m_pictureUnitNals;
-  std::list<InputNALUnit*> m_pictureSeiNalus; 
-  std::list<InputNALUnit*> m_suffixApsNalus; 
+  std::list<InputNALUnit *> m_pictureSeiNalus;
+  std::list<InputNALUnit *> m_suffixApsNalus;
+  std::list<InputNALUnit*> m_accessUnitSeiNalus;
 
   OPI*                    m_opi;
   bool                    m_mTidExternalSet;
@@ -259,7 +275,7 @@ public:
   int  getDebugPOC( )               const { return m_debugPOC; };
   void setDebugPOC( int debugPOC )        { m_debugPOC = debugPOC; };
   void resetAccessUnitNals()              { m_accessUnitNals.clear();    }
-  void resetAccessUnitPicInfo()              { m_accessUnitPicInfo.clear();    }
+  void resetAccessUnitPicInfo()           { m_accessUnitPicInfo.clear(); }
   void resetAccessUnitApsNals()           { m_accessUnitApsNals.clear(); }
   void resetAccessUnitSeiTids()           { m_accessUnitSeiTids.clear(); }
   void resetAudIrapOrGdrAuFlag()          { m_audIrapOrGdrAuFlag = false; }
@@ -267,11 +283,17 @@ public:
   void checkTidLayerIdInAccessUnit();
   void resetAccessUnitSeiPayLoadTypes()   { m_accessUnitSeiPayLoadTypes.clear(); }
   void checkSEIInAccessUnit();
+  void checkSeiContentInAccessUnit();
+  void resetAccessUnitSeiNalus();
   void checkLayerIdIncludedInCvss();
   void CheckNoOutputPriorPicFlagsInAccessUnit();
   void resetAccessUnitNoOutputPriorPicFlags() { m_accessUnitNoOutputPriorPicFlags.clear(); }
+  void checkMultiSubpicNum(int olsIdx);
+  void resetAccessUnitNestedSliSeiInfo()  { m_accessUnitNestedSliSeiInfo.clear(); }
+  void resetIsFirstAuInCvs();
   void checkSeiInPictureUnit();
   void resetPictureSeiNalus();
+  void resetPrefixSeiNalus();
   bool isSliceNaluFirstInAU( bool newPicture, InputNALUnit &nalu );
   void processSuffixApsNalus();
 
@@ -301,6 +323,21 @@ public:
   const OPI* getOPI()                     { return m_opi; }
 
   bool      getMixedNaluTypesInPicFlag();
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct m_featureCounter;
+  bool m_GMFAFramewise;
+  std::string   m_GMFAFile;
+  void setFeatureCounter (FeatureCounterStruct b ) {m_featureCounter = b;}
+  FeatureCounterStruct getFeatureCounter (){return m_featureCounter;}
+  void setGMFAFile(std::string b){m_GMFAFile = b;}
+  void setFeatureAnalysisFramewise(bool b){m_GMFAFramewise = b;}
+#endif
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool  getShutterFilterFlag()        const { return m_ShutterFilterEnable; }
+  void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
+#endif
+
 
 protected:
   void  xUpdateRasInit(Slice* slice);
@@ -322,9 +359,9 @@ protected:
   void      xUpdatePreviousTid0POC(Slice *pSlice)
   {
     if( (pSlice->getTLayer() == 0) && (pSlice->getNalUnitType() != NAL_UNIT_CODED_SLICE_RASL) && (pSlice->getNalUnitType() != NAL_UNIT_CODED_SLICE_RADL) && !pSlice->getPicHeader()->getNonReferencePictureFlag() )
-    { 
-      m_prevTid0POC = pSlice->getPOC(); 
-    }  
+    {
+      m_prevTid0POC = pSlice->getPOC();
+    }
   }
   void      xParsePrefixSEImessages();
   void      xParsePrefixSEIsForUnknownVCLNal();

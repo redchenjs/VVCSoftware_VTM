@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,9 @@
 
 #include "CommonDef.h"
 
-typedef int PosType;
-typedef uint32_t SizeType;
+using PosType  = int32_t;
+using SizeType = uint32_t;
+
 struct Position
 {
   PosType x;
@@ -94,12 +95,20 @@ struct Area : public Position, public Size
         Position  bottomRight()             const { return { (PosType) (x + width - 1), (PosType) (y + height - 1) }; }
         Position  center()                  const { return { (PosType) (x + width / 2), (PosType) (y + height / 2) }; }
 
-  bool contains(const Position &_pos)       const { return (_pos.x >= x) && (_pos.x < (x + width)) && (_pos.y >= y) && (_pos.y < (y + height)); }
   bool contains(const Area &_area)          const { return contains(_area.pos()) && contains(_area.bottomRight()); }
+  bool contains(const Position &_pos) const
+  {
+    static_assert(std::is_unsigned<SizeType>::value, "SizeType should be unsigned");
+    // NOTE: when _pos.x is smaller than x, SizeType(_pos.x - x) is a large unsigned number
+    const bool condX = SizeType(_pos.x - x) < width;
+    const bool condY = SizeType(_pos.y - y) < height;
 
-#if GDR_ENABLED  
-  bool overlap(const Area &_area) const 
-  { 
+    return condX && condY;
+  }
+
+#if GDR_ENABLED
+  bool overlap(const Area &_area) const
+  {
     Area thisArea = Area(pos(), size());
 
     if (contains(_area))
@@ -144,29 +153,24 @@ struct UnitScale
   Size     scale( const Size     &size ) const { return { size.width >> posx, size.height >> posy }; }
   Area     scale( const Area    &_area ) const { return Area( scale( _area.pos() ), scale( _area.size() ) ); }
 };
+
 namespace std
 {
-  template <>
-  struct hash<Position> : public unary_function<Position, uint64_t>
+  template<> struct hash<Position>
   {
-    uint64_t operator()(const Position& value) const
-    {
-      return (((uint64_t)value.x << 32) + value.y);
-    }
+    size_t operator()(const Position &value) const { return (((size_t) value.x << 32) + value.y); }
   };
 
-  template <>
-  struct hash<Size> : public unary_function<Size, uint64_t>
+  template<> struct hash<Size>
   {
-    uint64_t operator()(const Size& value) const
-    {
-      return (((uint64_t)value.width << 32) + value.height);
-    }
+    size_t operator()(const Size &value) const { return (((size_t) value.width << 32) + value.height); }
   };
 }
-inline size_t rsAddr(const Position &pos, const uint32_t stride, const UnitScale &unitScale )
+
+inline ptrdiff_t rsAddr(const Position &pos, const uint32_t stride, const UnitScale &unitScale)
 {
-  return (size_t)(stride >> unitScale.posx) * (size_t)(pos.y >> unitScale.posy) + (size_t)(pos.x >> unitScale.posx);
+  return (ptrdiff_t) (stride >> unitScale.posx) * (ptrdiff_t) (pos.y >> unitScale.posy)
+         + (ptrdiff_t) (pos.x >> unitScale.posx);
 }
 
 inline size_t rsAddr(const Position &pos, const Position &origin, const uint32_t stride, const UnitScale &unitScale )
@@ -174,9 +178,9 @@ inline size_t rsAddr(const Position &pos, const Position &origin, const uint32_t
   return (stride >> unitScale.posx) * ((pos.y - origin.y) >> unitScale.posy) + ((pos.x - origin.x) >> unitScale.posx);
 }
 
-inline size_t rsAddr(const Position &pos, const uint32_t stride )
+inline ptrdiff_t rsAddr(const Position &pos, const uint32_t stride)
 {
-  return stride * (size_t)pos.y + (size_t)pos.x;
+  return stride * (ptrdiff_t) pos.y + (ptrdiff_t) pos.x;
 }
 
 inline size_t rsAddr(const Position &pos, const Position &origin, const uint32_t stride )

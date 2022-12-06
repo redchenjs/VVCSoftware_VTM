@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,25 +42,28 @@
 #include "WeightPrediction.h"
 #include "CodingStructure.h"
 
-
-static inline Pel weightBidir( int w0, Pel P0, int w1, Pel P1, int round, int shift, int offset, const ClpRng& clpRng)
+static inline Pel weightBidir(const int w0, const Pel p0, const int w1, const Pel p1, const int round, const int shift,
+                              const int offset, const ClpRng &clpRng)
 {
-  return ClipPel( ( (w0*(P0 + IF_INTERNAL_OFFS) + w1*(P1 + IF_INTERNAL_OFFS) + round + (offset << (shift-1))) >> shift ), clpRng );
+  return ClipPel(
+    ((w0 * (p0 + IF_INTERNAL_OFFS) + w1 * (p1 + IF_INTERNAL_OFFS) + round + (offset * (1 << (shift - 1)))) >> shift),
+    clpRng);
 }
 
-static inline Pel weightUnidir( int w0, Pel P0, int round, int shift, int offset, const ClpRng& clpRng)
+static inline Pel weightUnidir(const int w0, const Pel p0, const int round, const int shift, const int offset,
+                               const ClpRng &clpRng)
 {
-  return ClipPel( ( (w0*(P0 + IF_INTERNAL_OFFS) + round) >> shift ) + offset, clpRng );
+  return ClipPel(((w0 * (p0 + IF_INTERNAL_OFFS) + round) >> shift) + offset, clpRng);
 }
 
-static inline Pel noWeightUnidir( Pel P0, int round, int shift, int offset, const ClpRng& clpRng)
+static inline Pel noWeightUnidir(const Pel p0, const int round, const int shift, const int offset, const ClpRng &clpRng)
 {
-  return ClipPel( ( ((P0 + IF_INTERNAL_OFFS) + round) >> shift ) + offset, clpRng );
+  return ClipPel((((p0 + IF_INTERNAL_OFFS) + round) >> shift) + offset, clpRng);
 }
 
-static inline Pel noWeightOffsetUnidir( Pel P0, int round, int shift, const ClpRng& clpRng)
+static inline Pel noWeightOffsetUnidir(const Pel p0, const int round, const int shift, const ClpRng &clpRng)
 {
-  return ClipPel( ( ((P0 + IF_INTERNAL_OFFS) + round) >> shift ), clpRng );
+  return ClipPel((((p0 + IF_INTERNAL_OFFS) + round) >> shift), clpRng);
 }
 
 
@@ -72,369 +75,246 @@ WeightPrediction::WeightPrediction()
 {
 }
 
-void WeightPrediction::getWpScaling(Slice *pcSlice, const int &iRefIdx0, const int &iRefIdx1, WPScalingParam *&wp0,
+void WeightPrediction::getWpScaling(Slice *pcSlice, const int refIdx0, const int refIdx1, WPScalingParam *&wp0,
                                     WPScalingParam *&wp1, const ComponentID maxNumComp)
 {
-  CHECK(iRefIdx0 < 0 && iRefIdx1 < 0, "Both picture reference list indizes smaller than '0'");
+  CHECK(refIdx0 < 0 && refIdx1 < 0, "Both picture reference list indices smaller than 0");
 
-  const bool wpBiPred        = pcSlice->getPPS()->getWPBiPred();
-  const bool bBiPred         = (iRefIdx0 >= 0 && iRefIdx1 >= 0);
-  const bool bUniPred        = !bBiPred;
+  const bool wpBiPred = pcSlice->getPPS()->getWPBiPred();
+  const bool biPred   = refIdx0 >= 0 && refIdx1 >= 0;
 
-  if (bUniPred || wpBiPred)
-  {
-    // explicit --------------------
-    wp0 = pcSlice->getWpScaling(REF_PIC_LIST_0, iRefIdx0);
-    wp1 = pcSlice->getWpScaling(REF_PIC_LIST_1, iRefIdx1);
-  }
-  else
-  {
-    THROW( "Unsupported WP configuration" );
-  }
+  CHECK(biPred && !wpBiPred, "Unsupported WP configuration");
 
-  if (iRefIdx0 < 0)
-  {
-    wp0 = nullptr;
-  }
-  if (iRefIdx1 < 0)
-  {
-    wp1 = nullptr;
-  }
+  wp0 = pcSlice->getWpScaling(REF_PIC_LIST_0, refIdx0);
+  wp1 = pcSlice->getWpScaling(REF_PIC_LIST_1, refIdx1);
 
-  const uint32_t numValidComponent = getNumberValidComponents(pcSlice->getSPS()->getChromaFormatIdc());
-  const bool bUseHighPrecisionPredictionWeighting = pcSlice->getSPS()->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag();
+  const int numValidComponent = getNumberValidComponents(pcSlice->getSPS()->getChromaFormatIdc());
 
-  if (bBiPred)
+  const bool useHighPrecisionPredictionWeighting =
+    pcSlice->getSPS()->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag();
+
+  if (biPred)
   {
     // Bi-predictive case
     for (int yuv = 0; yuv < numValidComponent && yuv <= maxNumComp; yuv++)
     {
       const int bitDepth = pcSlice->getSPS()->getBitDepth(toChannelType(ComponentID(yuv)));
-      const int offsetScalingFactor = bUseHighPrecisionPredictionWeighting ? 1 : (1 << (bitDepth - 8));
+
+      const int offsetScalingFactor = useHighPrecisionPredictionWeighting ? 1 : (1 << (bitDepth - 8));
 
       wp0[yuv].w      = wp0[yuv].codedWeight;
-      wp1[yuv].w      = wp1[yuv].codedWeight;
       wp0[yuv].o      = wp0[yuv].codedOffset * offsetScalingFactor;
+
+      wp1[yuv].w      = wp1[yuv].codedWeight;
       wp1[yuv].o      = wp1[yuv].codedOffset * offsetScalingFactor;
+
       wp0[yuv].offset = wp0[yuv].o + wp1[yuv].o;
       wp0[yuv].shift  = wp0[yuv].log2WeightDenom + 1;
-      wp0[yuv].round  = (1 << wp0[yuv].log2WeightDenom);
+      wp0[yuv].round  = 1 << wp0[yuv].log2WeightDenom;
+
       wp1[yuv].offset = wp0[yuv].offset;
-      wp1[yuv].shift = wp0[yuv].shift;
-      wp1[yuv].round = wp0[yuv].round;
+      wp1[yuv].shift  = wp0[yuv].shift;
+      wp1[yuv].round  = wp0[yuv].round;
     }
   }
   else
   {
     // UniPred
-    WPScalingParam *const pwp = (iRefIdx0 >= 0) ? wp0 : wp1;
+    WPScalingParam *const pwp = (refIdx0 >= 0) ? wp0 : wp1;
 
     for (int yuv = 0; yuv < numValidComponent && yuv <= maxNumComp; yuv++)
     {
-      const int bitDepth            = pcSlice->getSPS()->getBitDepth(toChannelType(ComponentID(yuv)));
-      const int offsetScalingFactor = bUseHighPrecisionPredictionWeighting ? 1 : (1 << (bitDepth - 8));
+      const int bitDepth = pcSlice->getSPS()->getBitDepth(toChannelType(ComponentID(yuv)));
+
+      const int offsetScalingFactor = useHighPrecisionPredictionWeighting ? 1 : (1 << (bitDepth - 8));
 
       pwp[yuv].w      = pwp[yuv].codedWeight;
       pwp[yuv].offset = pwp[yuv].codedOffset * offsetScalingFactor;
       pwp[yuv].shift  = pwp[yuv].log2WeightDenom;
-      pwp[yuv].round  = (pwp[yuv].log2WeightDenom >= 1) ? (1 << (pwp[yuv].log2WeightDenom - 1)) : (0);
+      pwp[yuv].round  = 1 << pwp[yuv].log2WeightDenom >> 1;
     }
   }
 }
 
-void WeightPrediction::addWeightBi(const CPelUnitBuf          &pcYuvSrc0,
-                                   const CPelUnitBuf          &pcYuvSrc1,
-                                   const ClpRngs              &clpRngs,
-                                   const WPScalingParam *const wp0,
-                                   const WPScalingParam *const wp1,
-                                         PelUnitBuf           &rpcYuvDst,
-                                   const bool                  bRoundLuma /*= true*/,
-                                   const ComponentID           maxNumComp
-                                  , bool                       lumaOnly
-                                  , bool                       chromaOnly
-)
+void WeightPrediction::addWeightBi(const CPelUnitBuf &pcYuvSrc0, const CPelUnitBuf &pcYuvSrc1, const ClpRngs &clpRngs,
+                                   const WPScalingParam *const wp0, const WPScalingParam *const wp1,
+                                   PelUnitBuf &rpcYuvDst, const ComponentID maxNumComp, bool lumaOnly, bool chromaOnly)
 {
-  const bool enableRounding[MAX_NUM_COMPONENT] = { bRoundLuma, true, true };
+  CHECK(lumaOnly && chromaOnly, "Not allowed to have both lumaOnly and chromaOnly selected");
 
-  const uint32_t numValidComponent = (const uint32_t)pcYuvSrc0.bufs.size();
+  const int numValidComponent = (int) pcYuvSrc0.bufs.size();
+  const int firstComponent    = chromaOnly ? 1 : 0;
+  const int lastComponent     = lumaOnly ? 0 : maxNumComp;
 
-  CHECK( lumaOnly && chromaOnly, "Not allowed to have both lumaOnly and chromaOnly selected" );
-  int firstComponent = chromaOnly ? 1 : 0;
-  int lastComponent = lumaOnly ? 0 : maxNumComp;
   for (int componentIndex = firstComponent; componentIndex < numValidComponent && componentIndex <= lastComponent; componentIndex++)
   {
     const ComponentID compID = ComponentID(componentIndex);
 
-    const Pel* pSrc0 = pcYuvSrc0.bufs[compID].buf;
-    const Pel* pSrc1 = pcYuvSrc1.bufs[compID].buf;
-          Pel* pDst  = rpcYuvDst.bufs[compID].buf;
+    const Pel *pSrc0 = pcYuvSrc0.bufs[compID].buf;
+    const Pel *pSrc1 = pcYuvSrc1.bufs[compID].buf;
+    Pel *      pDst  = rpcYuvDst.bufs[compID].buf;
 
-    // Luma : --------------------------------------------
-    const ClpRng& clpRng = clpRngs.comp[compID];
-    const int  w0       = wp0[compID].w;
-    const int  offset   = wp0[compID].offset;
-    const int  clipBD   = clpRng.bd;
+    const ClpRng &clpRng   = clpRngs.comp[compID];
+
+    const int w0       = wp0[compID].w;
+    const int offset   = wp0[compID].offset;
+    const int clipBD   = clpRng.bd;
     const int shiftNum = IF_INTERNAL_FRAC_BITS(clipBD);
-    const int  shift    = wp0[compID].shift + shiftNum;
-    const int  round    = (enableRounding[compID] && (shift > 0)) ? (1 << (shift - 1)) : 0;
-    const int  w1       = wp1[compID].w;
-    const int  iHeight  = rpcYuvDst.bufs[compID].height;
-    const int  iWidth   = rpcYuvDst.bufs[compID].width;
+    const int shift    = wp0[compID].shift + shiftNum;
+    const int round    = 1 << shift >> 1;
+    const int w1       = wp1[compID].w;
 
-    const uint32_t iSrc0Stride = pcYuvSrc0.bufs[compID].stride;
-    const uint32_t iSrc1Stride = pcYuvSrc1.bufs[compID].stride;
-    const uint32_t iDstStride =  rpcYuvDst.bufs[compID].stride;
+    const int height = rpcYuvDst.bufs[compID].height;
+    const int width  = rpcYuvDst.bufs[compID].width;
 
-    for (int y = iHeight - 1; y >= 0; y--)
+    const ptrdiff_t src0Stride = pcYuvSrc0.bufs[compID].stride;
+    const ptrdiff_t src1Stride = pcYuvSrc1.bufs[compID].stride;
+    const ptrdiff_t dstStride  = rpcYuvDst.bufs[compID].stride;
+
+    for (int y = 0; y < height; y++)
     {
-      // do it in batches of 4 (partial unroll)
-      int x = iWidth - 1;
-
-      for (; x >= 3; )
+      for (int x = 0; x < width; x++)
       {
-        pDst[x] = weightBidir(w0, pSrc0[x], w1, pSrc1[x], round, shift, offset, clpRng ); x--;
-        pDst[x] = weightBidir(w0, pSrc0[x], w1, pSrc1[x], round, shift, offset, clpRng ); x--;
-        pDst[x] = weightBidir(w0, pSrc0[x], w1, pSrc1[x], round, shift, offset, clpRng ); x--;
-        pDst[x] = weightBidir(w0, pSrc0[x], w1, pSrc1[x], round, shift, offset, clpRng ); x--;
-      }
-      for (; x >= 0; x--)
-      {
-        pDst[x] = weightBidir(w0, pSrc0[x], w1, pSrc1[x], round, shift, offset, clpRng );
+        pDst[x] = weightBidir(w0, pSrc0[x], w1, pSrc1[x], round, shift, offset, clpRng);
       }
 
-      pSrc0 += iSrc0Stride;
-      pSrc1 += iSrc1Stride;
-      pDst += iDstStride;
-    } // y loop
-  } // compID loop
+      pSrc0 += src0Stride;
+      pSrc1 += src1Stride;
+      pDst += dstStride;
+    }
+  }   // compID loop
 }
 
-void WeightPrediction::addWeightBiComponent(const CPelUnitBuf          &pcYuvSrc0,
-                                            const CPelUnitBuf          &pcYuvSrc1,
-                                            const ClpRngs              &clpRngs,
-                                            const WPScalingParam *const wp0,
-                                            const WPScalingParam *const wp1,
-                                                  PelUnitBuf           &rpcYuvDst,
-                                            const bool                  bRoundLuma /*= true*/,
-                                            const ComponentID           Comp)
+void WeightPrediction::addWeightUni(const CPelUnitBuf &pcYuvSrc0, const ClpRngs &clpRngs,
+                                    const WPScalingParam *const wp0, PelUnitBuf &rpcYuvDst,
+                                    const ComponentID maxNumComp, bool lumaOnly, bool chromaOnly)
 {
-  const bool enableRounding[MAX_NUM_COMPONENT] = { bRoundLuma, true, true };
-
-  const ComponentID compID = ComponentID(Comp);
-
-  const Pel* src0 = pcYuvSrc0.bufs[compID].buf;
-  const Pel* src1 = pcYuvSrc1.bufs[compID].buf;
-        Pel* dst  = rpcYuvDst.bufs[compID].buf;
-
-  // Luma : --------------------------------------------
-  const ClpRng& clpRng = clpRngs.comp[compID];
-  const int  w0       = wp0[compID].w;
-  const int  offset   = wp0[compID].offset;
-  const int  clipBD   = clpRng.bd;
-  const int shiftNum = IF_INTERNAL_FRAC_BITS(clipBD);
-  const int  shift    = wp0[compID].shift + shiftNum;
-  const int  round    = (enableRounding[compID] && (shift > 0)) ? (1 << (shift - 1)) : 0;
-  const int  w1       = wp1[compID].w;
-  const int  height  = rpcYuvDst.bufs[compID].height;
-  const int  width   = rpcYuvDst.bufs[compID].width;
-
-  const uint32_t src0Stride = pcYuvSrc0.bufs[compID].stride;
-  const uint32_t src1Stride = pcYuvSrc1.bufs[compID].stride;
-  const uint32_t dstStride =  rpcYuvDst.bufs[compID].stride;
-
-  for (int y = height - 1; y >= 0; y--)
-  {
-    // do it in batches of 4 (partial unroll)
-    int x = width - 1;
-
-    for (; x >= 3; )
-    {
-      dst[x] = weightBidir(w0, src0[x], w1, src1[x], round, shift, offset, clpRng ); x--;
-      dst[x] = weightBidir(w0, src0[x], w1, src1[x], round, shift, offset, clpRng ); x--;
-      dst[x] = weightBidir(w0, src0[x], w1, src1[x], round, shift, offset, clpRng ); x--;
-      dst[x] = weightBidir(w0, src0[x], w1, src1[x], round, shift, offset, clpRng ); x--;
-    }
-    for (; x >= 0; x--)
-    {
-      dst[x] = weightBidir(w0, src0[x], w1, src1[x], round, shift, offset, clpRng );
-    }
-
-    src0 += src0Stride;
-    src1 += src1Stride;
-    dst += dstStride;
-  } // y loop
-}
-
-void  WeightPrediction::addWeightUni(const CPelUnitBuf          &pcYuvSrc0,
-                                     const ClpRngs              &clpRngs,
-                                     const WPScalingParam *const wp0,
-                                           PelUnitBuf           &rpcYuvDst,
-                                     const ComponentID           maxNumComp
-                                    , bool                       lumaOnly
-                                    , bool                       chromaOnly
-)
-{
-  const uint32_t numValidComponent = (const uint32_t)pcYuvSrc0.bufs.size();
-
   CHECK( lumaOnly && chromaOnly, "Not allowed to have both lumaOnly and chromaOnly selected" );
-  int firstComponent = chromaOnly ? 1 : 0;
-  int lastComponent  = lumaOnly ? 0 : maxNumComp;
+
+  const int numValidComponent = (int) pcYuvSrc0.bufs.size();
+  const int firstComponent    = chromaOnly ? 1 : 0;
+  const int lastComponent     = lumaOnly ? 0 : maxNumComp;
+
   for (int componentIndex = firstComponent; componentIndex < numValidComponent && componentIndex <= lastComponent;
        componentIndex++)
   {
     const ComponentID compID = ComponentID(componentIndex);
 
-    const Pel* pSrc0 = pcYuvSrc0.bufs[compID].buf;
-          Pel* pDst  = rpcYuvDst.bufs[compID].buf;
+    const Pel *pSrc0 = pcYuvSrc0.bufs[compID].buf;
+    Pel       *pDst  = rpcYuvDst.bufs[compID].buf;
 
-    // Luma : --------------------------------------------
-    const ClpRng& clpRng    = clpRngs.comp[compID];
-    const int  w0           = wp0[compID].w;
-    const int  offset       = wp0[compID].offset;
-    const int  clipBD       = clpRng.bd;
-    const int shiftNum      = IF_INTERNAL_FRAC_BITS(clipBD);
-    const int  shift        = wp0[compID].shift + shiftNum;
-    const uint32_t iSrc0Stride  = pcYuvSrc0.bufs[compID].stride;
-    const uint32_t iDstStride   = rpcYuvDst.bufs[compID].stride;
-    const int  iHeight      = rpcYuvDst.bufs[compID].height;
-    const int  iWidth       = rpcYuvDst.bufs[compID].width;
+    const ClpRng &clpRng = clpRngs.comp[compID];
+
+    const int w0       = wp0[compID].w;
+    const int offset   = wp0[compID].offset;
+    const int clipBD   = clpRng.bd;
+    const int shiftNum = IF_INTERNAL_FRAC_BITS(clipBD);
+    const int shift    = wp0[compID].shift + shiftNum;
+    const int height   = rpcYuvDst.bufs[compID].height;
+    const int width    = rpcYuvDst.bufs[compID].width;
+
+    const ptrdiff_t src0Stride = pcYuvSrc0.bufs[compID].stride;
+    const ptrdiff_t dstStride  = rpcYuvDst.bufs[compID].stride;
 
     if (w0 != 1 << wp0[compID].shift)
     {
-      const int  round = (shift > 0) ? (1 << (shift - 1)) : 0;
-      for (int y = iHeight - 1; y >= 0; y--)
+      const int round = 1 << shift >> 1;
+      for (int y = 0; y < height; y++)
       {
-        int x = iWidth - 1;
-        for (; x >= 3; )
-        {
-          pDst[x] = weightUnidir(w0, pSrc0[x], round, shift, offset, clpRng); x--;
-          pDst[x] = weightUnidir(w0, pSrc0[x], round, shift, offset, clpRng); x--;
-          pDst[x] = weightUnidir(w0, pSrc0[x], round, shift, offset, clpRng); x--;
-          pDst[x] = weightUnidir(w0, pSrc0[x], round, shift, offset, clpRng); x--;
-        }
-        for (; x >= 0; x--)
+        for (int x = 0; x < width; x++)
         {
           pDst[x] = weightUnidir(w0, pSrc0[x], round, shift, offset, clpRng);
         }
-        pSrc0 += iSrc0Stride;
-        pDst += iDstStride;
+
+        pSrc0 += src0Stride;
+        pDst += dstStride;
       }
     }
     else
     {
-      const int  round = (shiftNum > 0) ? (1 << (shiftNum - 1)) : 0;
+      const int round = 1 << shiftNum >> 1;
       if (offset == 0)
       {
-        for (int y = iHeight - 1; y >= 0; y--)
+        for (int y = 0; y < height; y++)
         {
-          int x = iWidth - 1;
-          for (; x >= 3; )
-          {
-            pDst[x] = noWeightOffsetUnidir(pSrc0[x], round, shiftNum, clpRng); x--;
-            pDst[x] = noWeightOffsetUnidir(pSrc0[x], round, shiftNum, clpRng); x--;
-            pDst[x] = noWeightOffsetUnidir(pSrc0[x], round, shiftNum, clpRng); x--;
-            pDst[x] = noWeightOffsetUnidir(pSrc0[x], round, shiftNum, clpRng); x--;
-          }
-          for (; x >= 0; x--)
+          for (int x = 0; x < width; x++)
           {
             pDst[x] = noWeightOffsetUnidir(pSrc0[x], round, shiftNum, clpRng);
           }
-          pSrc0 += iSrc0Stride;
-          pDst += iDstStride;
+
+          pSrc0 += src0Stride;
+          pDst += dstStride;
         }
       }
       else
       {
-        for (int y = iHeight - 1; y >= 0; y--)
+        for (int y = 0; y < height; y++)
         {
-          int x = iWidth - 1;
-          for (; x >= 3; )
-          {
-            pDst[x] = noWeightUnidir(pSrc0[x], round, shiftNum, offset, clpRng); x--;
-            pDst[x] = noWeightUnidir(pSrc0[x], round, shiftNum, offset, clpRng); x--;
-            pDst[x] = noWeightUnidir(pSrc0[x], round, shiftNum, offset, clpRng); x--;
-            pDst[x] = noWeightUnidir(pSrc0[x], round, shiftNum, offset, clpRng); x--;
-          }
-          for (; x >= 0; x--)
+          for (int x = 0; x < width; x++)
           {
             pDst[x] = noWeightUnidir(pSrc0[x], round, shiftNum, offset, clpRng);
           }
-          pSrc0 += iSrc0Stride;
-          pDst += iDstStride;
+
+          pSrc0 += src0Stride;
+          pDst += dstStride;
         }
       }
     }
   }
 }
 
-void  WeightPrediction::xWeightedPredictionUni(const PredictionUnit       &pu,
-                                               const CPelUnitBuf          &pcYuvSrc,
-                                               const RefPicList           &eRefPicList,
-                                                     PelUnitBuf           &pcYuvPred,
-                                               const int                   iRefIdx_input/* = -1*/,
-                                               const ComponentID           maxNumComp
-                                              , bool                       lumaOnly
-                                              , bool                       chromaOnly
-)
+void WeightPrediction::xWeightedPredictionUni(const PredictionUnit &pu, const CPelUnitBuf &pcYuvSrc,
+                                              const RefPicList &eRefPicList, PelUnitBuf &pcYuvPred,
+                                              const int refIdxInput /* = -1*/, const ComponentID maxNumComp,
+                                              const bool lumaOnly, const bool chromaOnly)
 {
-  WPScalingParam  *pwp, *pwpTmp;
+  const int refIdx = refIdxInput < 0 ? pu.refIdx[eRefPicList] : refIdxInput;
 
-  int iRefIdx = iRefIdx_input;
-  if (iRefIdx < 0)
-  {
-    iRefIdx = pu.refIdx[eRefPicList];
-  }
+  CHECK(refIdx < 0, "Negative reference picture list index");
 
-  CHECK(iRefIdx < 0, "Negative reference picture list index");
+  WPScalingParam *pwp, *pwpTmp;
 
   if (eRefPicList == REF_PIC_LIST_0)
   {
-    getWpScaling(pu.cs->slice, iRefIdx, -1, pwp, pwpTmp, maxNumComp);
+    getWpScaling(pu.cs->slice, refIdx, -1, pwp, pwpTmp, maxNumComp);
   }
   else
   {
-    getWpScaling(pu.cs->slice, -1, iRefIdx, pwpTmp, pwp, maxNumComp);
+    getWpScaling(pu.cs->slice, -1, refIdx, pwpTmp, pwp, maxNumComp);
   }
+
   addWeightUni(pcYuvSrc, pu.cu->slice->clpRngs(), pwp, pcYuvPred, maxNumComp, lumaOnly, chromaOnly);
 }
 
-void  WeightPrediction::xWeightedPredictionBi(const PredictionUnit       &pu,
-                                              const CPelUnitBuf          &pcYuvSrc0,
-                                              const CPelUnitBuf          &pcYuvSrc1,
-                                                    PelUnitBuf           &rpcYuvDst,
-                                              const ComponentID           maxNumComp
-                                              , bool                      lumaOnly
-                                              , bool                      chromaOnly
-)
+void WeightPrediction::xWeightedPredictionBi(const PredictionUnit &pu, const CPelUnitBuf &pcYuvSrc0,
+                                             const CPelUnitBuf &pcYuvSrc1, PelUnitBuf &rpcYuvDst,
+                                             const ComponentID maxNumComp, const bool lumaOnly, const bool chromaOnly)
 {
-  const int iRefIdx0 = pu.refIdx[0];
-  const int iRefIdx1 = pu.refIdx[1];
-  WPScalingParam  *pwp0;
-  WPScalingParam  *pwp1;
+  CHECK(!pu.cs->pps->getWPBiPred(), "Weighted Bi-prediction disabled");
 
-  CHECK( !pu.cs->pps->getWPBiPred(), "Weighted Bi-prediction disabled" );
+  const int refIdx0 = pu.refIdx[0];
+  const int refIdx1 = pu.refIdx[1];
 
-  if (iRefIdx0 < 0 && iRefIdx1 < 0)
+  if (refIdx0 < 0 && refIdx1 < 0)
   {
     return;
   }
 
-  getWpScaling(pu.cu->slice, iRefIdx0, iRefIdx1, pwp0, pwp1, maxNumComp);
+  WPScalingParam *pwp0;
+  WPScalingParam *pwp1;
 
-  if (iRefIdx0 >= 0 && iRefIdx1 >= 0)
+  getWpScaling(pu.cu->slice, refIdx0, refIdx1, pwp0, pwp1, maxNumComp);
+
+  if (refIdx0 >= 0 && refIdx1 >= 0)
   {
-    addWeightBi(pcYuvSrc0, pcYuvSrc1, pu.cu->slice->clpRngs(), pwp0, pwp1, rpcYuvDst, true, maxNumComp, lumaOnly, chromaOnly);
+    addWeightBi(pcYuvSrc0, pcYuvSrc1, pu.cu->slice->clpRngs(), pwp0, pwp1, rpcYuvDst, maxNumComp, lumaOnly, chromaOnly);
   }
-  else if (iRefIdx0 >= 0 && iRefIdx1 < 0)
+  else if (refIdx0 >= 0)
   {
     addWeightUni(pcYuvSrc0, pu.cu->slice->clpRngs(), pwp0, rpcYuvDst, maxNumComp, lumaOnly, chromaOnly);
   }
-  else if (iRefIdx0 < 0 && iRefIdx1 >= 0)
-  {
-    addWeightUni(pcYuvSrc1, pu.cu->slice->clpRngs(), pwp1, rpcYuvDst, maxNumComp, lumaOnly, chromaOnly);
-  }
   else
   {
-    THROW( "Both reference picture list indizes are negative" );
+    addWeightUni(pcYuvSrc1, pu.cu->slice->clpRngs(), pwp1, rpcYuvDst, maxNumComp, lumaOnly, chromaOnly);
   }
 }

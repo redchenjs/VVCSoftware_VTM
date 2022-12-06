@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,8 @@
 #include "Slice.h"
 #include <map>
 
-void calculateParameterSetChangedFlag(bool &bChanged, const std::vector<uint8_t> *pOldData, const std::vector<uint8_t> *pNewData);
+void calculateParameterSetChangedFlag(bool &changed, const std::vector<uint8_t> *pOldData,
+                                      const std::vector<uint8_t> *pNewData);
 
 template <class T> class ParameterSetMap
 {
@@ -47,17 +48,12 @@ public:
   template <class Tm>
   struct MapData
   {
-    bool                  bChanged;
+    bool                    changed;
     std::vector<uint8_t>   *pNaluData; // Can be null
     Tm*                   parameterSet;
   };
 
-  ParameterSetMap(int maxId)
-  :m_maxId (maxId)
-  ,m_lastActiveParameterSet(NULL)
-  {
-    m_activePsId.clear();
-  }
+  ParameterSetMap(int maxId) : m_maxId(maxId), m_lastActiveParameterSet(nullptr) { m_activePsId.clear(); }
 
   ~ParameterSetMap()
   {
@@ -66,7 +62,8 @@ public:
       delete (*i).second.pNaluData;
       delete (*i).second.parameterSet;
     }
-    delete m_lastActiveParameterSet; m_lastActiveParameterSet = NULL;
+    delete m_lastActiveParameterSet;
+    m_lastActiveParameterSet = nullptr;
   }
 
   T *allocatePS(const int psId)
@@ -74,7 +71,7 @@ public:
     CHECK( psId >= m_maxId, "Invalid PS id" );
     if ( m_paramsetMap.find(psId) == m_paramsetMap.end() )
     {
-      m_paramsetMap[psId].bChanged = true;
+      m_paramsetMap[psId].changed      = true;
       m_paramsetMap[psId].pNaluData=0;
       m_paramsetMap[psId].parameterSet = new T;
       setID(m_paramsetMap[psId].parameterSet, psId);
@@ -94,7 +91,7 @@ public:
       delete m_paramsetMap[psId].parameterSet;
     }
     m_paramsetMap[psId].parameterSet = ps;
-    m_paramsetMap[psId].bChanged = true;
+    m_paramsetMap[psId].changed      = true;
   }
   void storePS(int psId, T *ps, const std::vector<uint8_t> *pNaluData)
   {
@@ -104,9 +101,9 @@ public:
       MapData<T> &mapData=m_paramsetMap[psId];
 
       // work out changed flag
-      calculateParameterSetChangedFlag(mapData.bChanged, mapData.pNaluData, pNaluData);
+      calculateParameterSetChangedFlag(mapData.changed, mapData.pNaluData, pNaluData);
 
-      if( ! mapData.bChanged )
+      if (!mapData.changed)
       {
         // just keep the old one
         delete ps;
@@ -125,7 +122,7 @@ public:
     else
     {
       m_paramsetMap[psId].parameterSet = ps;
-      m_paramsetMap[psId].bChanged = false;
+      m_paramsetMap[psId].changed      = false;
     }
     if (pNaluData != 0)
     {
@@ -171,12 +168,11 @@ public:
     }
   }
 
-
-  void setChangedFlag(int psId, bool bChanged=true)
+  void setChangedFlag(int psId, bool changed = true)
   {
     if ( m_paramsetMap.find(psId) != m_paramsetMap.end() )
     {
-      m_paramsetMap[psId].bChanged=bChanged;
+      m_paramsetMap[psId].changed = changed;
     }
   }
 
@@ -184,7 +180,7 @@ public:
   {
     if ( m_paramsetMap.find(psId) != m_paramsetMap.end() )
     {
-      m_paramsetMap[psId].bChanged=false;
+      m_paramsetMap[psId].changed = false;
     }
   }
 
@@ -193,7 +189,7 @@ public:
     const typename std::map<int,MapData<T> >::const_iterator constit=m_paramsetMap.find(psId);
     if ( constit != m_paramsetMap.end() )
     {
-      return constit->second.bChanged;
+      return constit->second.changed;
     }
     return false;
   }
@@ -201,18 +197,18 @@ public:
   T* getPS(int psId)
   {
     typename std::map<int,MapData<T> >::iterator it=m_paramsetMap.find(psId);
-    return ( it == m_paramsetMap.end() ) ? NULL : (it)->second.parameterSet;
+    return (it == m_paramsetMap.end()) ? nullptr : (it)->second.parameterSet;
   }
 
   const T* getPS(int psId) const
   {
     typename std::map<int,MapData<T> >::const_iterator it=m_paramsetMap.find(psId);
-    return ( it == m_paramsetMap.end() ) ? NULL : (it)->second.parameterSet;
+    return (it == m_paramsetMap.end()) ? nullptr : (it)->second.parameterSet;
   }
 
   T* getFirstPS()
   {
-    return (m_paramsetMap.begin() == m_paramsetMap.end() ) ? NULL : m_paramsetMap.begin()->second.parameterSet;
+    return (m_paramsetMap.begin() == m_paramsetMap.end()) ? nullptr : m_paramsetMap.begin()->second.parameterSet;
   }
 
   void setActive(int psId) { m_activePsId.push_back(psId); }

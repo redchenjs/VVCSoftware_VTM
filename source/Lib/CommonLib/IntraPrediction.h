@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,13 +61,16 @@ enum PredBuf
   NUM_PRED_BUF        = 2
 };
 
-static const uint32_t MAX_INTRA_FILTER_DEPTHS=8;
+static constexpr uint32_t MAX_INTRA_FILTER_DEPTHS=8;
 
 class IntraPrediction
 {
 protected:
   Pel      m_refBuffer[MAX_NUM_COMPONENT][NUM_PRED_BUF][(MAX_CU_SIZE * 2 + 1 + MAX_REF_LINE_IDX) * 2];
   uint32_t m_refBufferStride[MAX_NUM_COMPONENT];
+
+  static const int angTable[32];
+  static const int invAngTable[32];
 
 private:
 
@@ -126,7 +129,7 @@ protected:
 
   static bool isIntegerSlope(const int absAng) { return (0 == (absAng & 0x1F)); }
 
-  void xPredIntraBDPCM            ( const CPelBuf &pSrc, PelBuf &pDst, const uint32_t dirMode, const ClpRng& clpRng );
+  void xPredIntraBDPCM(const CPelBuf &pSrc, PelBuf &pDst, BdpcmMode dirMode, const ClpRng &clpRng);
   Pel  xGetPredValDc              ( const CPelBuf &pSrc, const Size &dstSize );
 
   void xFillReferenceSamples      ( const CPelBuf &recoBuf,      Pel* refBufUnfiltered, const CompArea &area, const CodingUnit &cu );
@@ -139,7 +142,9 @@ protected:
 
   void destroy                    ();
 
-  void xGetLMParameters(const PredictionUnit &pu, const ComponentID compID, const CompArea& chromaArea, int& a, int& b, int& iShift);
+  void xGetLMParameters(const PredictionUnit &pu, const ComponentID compID, const CompArea &chromaArea, int &a, int &b,
+                        int &shift);
+
 public:
   IntraPrediction();
   virtual ~IntraPrediction();
@@ -164,7 +169,7 @@ public:
   void initIntraMip               (const PredictionUnit &pu, const CompArea &area);
   void predIntraMip               (const ComponentID compId, PelBuf &piPred, const PredictionUnit &pu);
 
-  void geneWeightedPred           (const ComponentID compId, PelBuf &pred, const PredictionUnit &pu, Pel *srcBuf);
+  void geneWeightedPred(PelBuf &pred, const PredictionUnit &pu, const Pel *srcBuf);
   Pel* getPredictorPtr2           (const ComponentID compID, uint32_t idx) { return m_yuvExt2[compID][idx]; }
   void switchBuffer               (const PredictionUnit &pu, ComponentID compID, PelBuf srcBuff, Pel *dst);
   void geneIntrainterPred         (const CodingUnit &cu);

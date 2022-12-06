@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,9 +72,9 @@ class EncLib : public EncCfg
 {
 private:
   // picture
-  int                       m_iPOCLast;                           ///< time index (POC)
-  int                       m_iNumPicRcvd;                        ///< number of received pictures
-  uint32_t                  m_uiNumAllPicCoded;                   ///< number of coded pictures
+  int                       m_pocLast;                            ///< time index (POC)
+  int                       m_receivedPicCount;                   ///< number of received pictures
+  uint32_t                  m_codedPicCount;                      ///< number of coded pictures
   PicList&                  m_cListPic;                           ///< dynamic list of pictures
   int                       m_layerId;
 
@@ -96,9 +96,9 @@ private:
   EncSlice                  m_cSliceEncoder;                      ///< slice encoder
   EncCu                     m_cCuEncoder;                         ///< CU encoder
   // SPS
-  ParameterSetMap<SPS>&     m_spsMap;                             ///< SPS. This is the base value. This is copied to PicSym
-  ParameterSetMap<PPS>&     m_ppsMap;                             ///< PPS. This is the base value. This is copied to PicSym
-  ParameterSetMap<APS>&     m_apsMap;                             ///< APS. This is the base value. This is copied to PicSym
+  ParameterSetMap<SPS>     &m_spsMap;                             ///< SPS. This is the base value
+  ParameterSetMap<PPS>     &m_ppsMap;                             ///< PPS. This is the base value
+  ParameterSetMap<APS>     &m_apsMap;                             ///< APS. This is the base value
   PicHeader                 m_picHeader;                          ///< picture header
   // RD cost computation
   RdCost                    m_cRdCost;                            ///< RD cost computation class
@@ -121,20 +121,30 @@ private:
 
   bool                      m_doPlt;
 #if JVET_O0756_CALCULATE_HDRMETRICS
-  std::chrono::duration<long long, ratio<1, 1000000000>> m_metricTime;
+  std::chrono::duration<long long, std::ratio<1, 1000000000>> m_metricTime;
 #endif
   int                       m_picIdInGOP;
 
   VPS*                      m_vps;
 
   int*                      m_layerDecPicBuffering;
-
+  RPLList                   m_rplLists[2];
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct             m_featureCounter;
+  bool                      m_GMFAFramewise;
+  std::string   m_GMFAFile;
+#endif
 public:
   SPS*                      getSPS( int spsId ) { return m_spsMap.getPS( spsId ); };
   APS**                     getApss() { return m_apss; }
   Ctx                       m_entropyCodingSyncContextState;      ///< leave in addition to vector for compatibility
   PLTBuf                    m_palettePredictorSyncState;
-
+  const RPLList*            getRPLList(bool b) const { return &m_rplLists[b]; }
+  RPLList*                  getRPLList(bool b) { return &m_rplLists[b]; }
+  uint32_t                  getNumRPL(bool b) const { return m_rplLists[b].getNumberOfReferencePictureLists(); }
+#if JVET_AB0080
+  int                       m_gopRprPpsId;
+#endif
 protected:
   void  xGetNewPicBuffer  ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Picture*& rpcPic, int ppsId ); ///< get picture buffer which will be processed. If ppsId<0, then the ppsMap will be queried for the first match.
   void  xInitOPI(OPI& opi); ///< initialize Operating point Information (OPI) from encoder options
@@ -183,9 +193,14 @@ public:
   CtxCache*               getCtxCache           ()              { return  &m_CtxCache;             }
   RateCtrl*               getRateCtrl           ()              { return  &m_cRateCtrl;            }
 
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct getFeatureCounter(){return m_featureCounter;}
+  void setFeatureCounter(FeatureCounterStruct b){m_featureCounter=b;}
+  bool getGMFAFramewise() {return m_GMFAFramewise;}
+  void setGMFAFile(std::string b){m_GMFAFile = b;}
+#endif
 
-  void                    getActiveRefPicListNumForPOC(const SPS *sps, int POCCurr, int GOPid, uint32_t *activeL0, uint32_t *activeL1);
-  void                    selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, int ltPoc);
+  void selectReferencePictureList(Slice *slice, int pocCurr, int gopId, int ltPoc);
 
   void                   setParamSetChanged(int spsId, int ppsId);
   bool                   APSNeedsWriting(int apsId);
@@ -201,40 +216,37 @@ public:
   bool                   getPltEnc()                      const { return   m_doPlt; }
   void                   checkPltStats( Picture* pic );
 #if JVET_O0756_CALCULATE_HDRMETRICS
-  std::chrono::duration<long long, ratio<1, 1000000000>> getMetricTime()    const { return m_metricTime; };
+  std::chrono::duration<long long, std::ratio<1, 1000000000>> getMetricTime() const { return m_metricTime; };
 #endif
   // -------------------------------------------------------------------------------------------------------------------
   // encoder function
   // -------------------------------------------------------------------------------------------------------------------
 
-  /// encode several number of pictures until end-of-sequence
-  bool encodePrep( bool bEos,
-               PelStorage* pcPicYuvOrg,
-               PelStorage* pcPicYuvTrueOrg,
-               PelStorage* pcPicYuvFilteredOrg,
-               const InputColourSpaceConversion snrCSC, // used for SNR calculations. Picture in original colour space.
-               std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-               int& iNumEncoded );
+  // encode several number of pictures until end-of-sequence
+  // snrCSC used for SNR calculations. Picture in original colour space.
+  bool encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYuvTrueOrg, PelStorage *pcPicYuvFilteredOrg,
+                  PelStorage *pcPicYuvFilteredOrgForFG, const InputColourSpaceConversion snrCSC,
+                  std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded
+#if JVET_AB0080
+    , PelStorage** ppcPicYuvRPR
+#endif
+  );
 
-  bool encode( const InputColourSpaceConversion snrCSC, // used for SNR calculations. Picture in original colour space.
-               std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-               int& iNumEncoded );
+  bool encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded);
 
-  bool encodePrep( bool bEos,
-               PelStorage* pcPicYuvOrg,
-               PelStorage* pcPicYuvTrueOrg,
-               PelStorage* pcPicYuvFilteredOrg,
-               const InputColourSpaceConversion snrCSC, // used for SNR calculations. Picture in original colour space.
-               std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-               int& iNumEncoded, bool isTff );
+  bool encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYuvTrueOrg, PelStorage *pcPicYuvFilteredOrg,
+                  const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded,
+                  bool isTff);
 
-  bool encode( const InputColourSpaceConversion snrCSC, // used for SNR calculations. Picture in original colour space.
-               std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-               int& iNumEncoded, bool isTff );
+  bool encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded,
+              bool isTff);
 
-
-  void printSummary(bool isField) { m_cGOPEncoder.printOutSummary(m_uiNumAllPicCoded, isField, m_printMSEBasedSequencePSNR, 
-    m_printSequenceMSE, m_printMSSSIM, m_printHexPsnr, m_resChangeInClvsEnabled, m_spsMap.getFirstPS()->getBitDepths()); }
+  void printSummary(bool isField)
+  {
+    m_cGOPEncoder.printOutSummary(m_codedPicCount, isField, m_printMSEBasedSequencePSNR, m_printSequenceMSE,
+                                  m_printMSSSIM, m_printHexPsnr, m_resChangeInClvsEnabled,
+                                  m_spsMap.getFirstPS()->getBitDepths(), m_layerId);
+  }
 
   int getLayerId() const { return m_layerId; }
   VPS* getVPS()          { return m_vps;     }

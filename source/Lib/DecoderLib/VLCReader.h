@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,7 @@
 #define READ_UVLC(        code, name)     xReadUvlcTr (         code, name )
 #define READ_SVLC(        code, name)     xReadSvlcTr (         code, name )
 #define READ_FLAG(        code, name)     xReadFlagTr (         code, name )
+#define READ_STRING(        code, name)   xReadStringTr (         code, name )
 
 #else
 
@@ -62,6 +63,7 @@
 #define READ_UVLC(        code, name)     xReadUvlc (         code, name )
 #define READ_SVLC(        code, name)     xReadSvlc (         code, name )
 #define READ_FLAG(        code, name)     xReadFlag (         code, name )
+#define READ_STRING(        code, name)   xReadString (         code, name )
 
 #else
 
@@ -70,6 +72,7 @@
 #define READ_UVLC(        code, name)     xReadUvlc (         code )
 #define READ_SVLC(        code, name)     xReadSvlc (         code )
 #define READ_FLAG(        code, name)     xReadFlag (         code )
+#define READ_STRING(        code, name)   xReadString (         code )
 
 #endif
 
@@ -87,7 +90,7 @@ class VLCReader
 protected:
   InputBitstream*   m_pcBitstream;
 
-  VLCReader() : m_pcBitstream (NULL) {};
+  VLCReader() : m_pcBitstream(nullptr){};
   virtual ~VLCReader() {};
 
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
@@ -95,17 +98,20 @@ protected:
   void  xReadUvlc    (                uint32_t& val, const char *pSymbolName );
   void  xReadSvlc    (                 int& val, const char *pSymbolName );
   void  xReadFlag    (                uint32_t& val, const char *pSymbolName );
+  void  xReadString  (                std::string& val, const char* symbolName);
 #else
   void  xReadCode    ( uint32_t   length, uint32_t& val );
   void  xReadUvlc    (                uint32_t& val );
   void  xReadSvlc    (                 int& val );
   void  xReadFlag    (                uint32_t& val );
+  void  xReadString  (                std::string& val);
 #endif
 #if ENABLE_TRACING
   void  xReadCodeTr  ( uint32_t  length, uint32_t& rValue, const char *pSymbolName );
   void  xReadUvlcTr  (               uint32_t& rValue, const char *pSymbolName );
   void  xReadSvlcTr  (                int& rValue, const char *pSymbolName );
   void  xReadFlagTr  (               uint32_t& rValue, const char *pSymbolName );
+  void  xReadStringTr(std::string& value, const char* symbolName);
 #endif
 #if RExt__DECODER_DEBUG_BIT_STATISTICS || ENABLE_TRACING
   void  xReadSCode   ( uint32_t  length, int& val, const char *pSymbolName );
@@ -177,7 +183,7 @@ public:
   void  parseLmcsAps        ( APS* pcAPS );
   void  parseScalingListAps ( APS* pcAPS );
   void  parseVUI            ( VUI* pcVUI, SPS* pcSPS );
-  void  parseConstraintInfo   (ConstraintInfo *cinfo);
+  void  parseConstraintInfo (ConstraintInfo *cinfo, const ProfileTierLevel* ptl );
   void  parseProfileTierLevel(ProfileTierLevel *ptl, bool profileTierPresentFlag, int maxNumSubLayersMinus1);
   void  parseOlsHrdParameters(GeneralHrdParams* generalHrd, OlsHrdParams *olsHrd, uint32_t firstSubLayer, uint32_t tempLevelHigh);
   void parseGeneralHrdParameters(GeneralHrdParams *generalHrd);

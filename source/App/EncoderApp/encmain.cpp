@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,9 +47,9 @@
 //! \ingroup EncoderApp
 //! \{
 
-static const uint32_t settingNameWidth = 66;
-static const uint32_t settingHelpWidth = 84;
-static const uint32_t settingValueWidth = 3;
+static constexpr uint32_t settingNameWidth = 66;
+static constexpr uint32_t settingHelpWidth = 84;
+static constexpr uint32_t settingValueWidth = 3;
 // --------------------------------------------------------------------------------------------------------------------- //
 
 //macro value printing function
@@ -69,7 +69,6 @@ static void printMacroSettings()
     PRINT_CONSTANT( RExt__DECODER_DEBUG_BIT_STATISTICS,                         settingNameWidth, settingValueWidth );
     PRINT_CONSTANT( RExt__HIGH_BIT_DEPTH_SUPPORT,                               settingNameWidth, settingValueWidth );
     PRINT_CONSTANT( RExt__HIGH_PRECISION_FORWARD_TRANSFORM,                     settingNameWidth, settingValueWidth );
-    PRINT_CONSTANT( ME_ENABLE_ROUNDING_OF_MVS,                                  settingNameWidth, settingValueWidth );
 
     //------------------------------------------------
 
@@ -92,9 +91,7 @@ int main(int argc, char* argv[])
 #if ENABLE_SIMD_OPT
   std::string SIMD;
   df::program_options_lite::Options opts;
-  opts.addOptions()
-    ( "SIMD", SIMD, string( "" ), "" )
-    ( "c", df::program_options_lite::parseConfigFile, "" );
+  opts.addOptions()("SIMD", SIMD, std::string(""), "")("c", df::program_options_lite::parseConfigFile, "");
   df::program_options_lite::SilentReporter err;
   df::program_options_lite::scanArgv( opts, argc, ( const char** ) argv, err );
   fprintf( stdout, "[SIMD=%s] ", read_x86_extension( SIMD ) );
@@ -192,6 +189,48 @@ int main(int argc, char* argv[])
 
   if (layerIdx > 1)
   {
+    int nbLayersUsingAlf = 0;
+    int totalUsedAPSIDs = 0;
+    std::array<uint8_t, ALF_CTB_MAX_NUM_APS> usedAlfAps;
+    usedAlfAps.fill(0);
+    bool overlapAPS = false;
+    for (uint32_t i = 0; i < layerIdx; i++)
+    {
+      if (pcEncApp[i]->getALFEnabled())
+      {
+        nbLayersUsingAlf++;
+        totalUsedAPSIDs += pcEncApp[i]->getMaxNumALFAPS();
+        for (int apsid = 0; apsid < pcEncApp[i]->getMaxNumALFAPS(); apsid++)
+        {
+          usedAlfAps[apsid + pcEncApp[i]->getALFAPSIDShift()] ++;
+          if (usedAlfAps[apsid + pcEncApp[i]->getALFAPSIDShift()] > 1)
+          {
+            overlapAPS = true;
+          }
+        }
+      }
+    }
+    if (totalUsedAPSIDs > ALF_CTB_MAX_NUM_APS || overlapAPS)
+    {
+      msg(WARNING, "Number of configured ALF APS Ids exceeds maximum for multilayer, or overlap APS Ids - reconfiguring with automatic settings\n");
+      int apsShift = 0;
+      for (uint32_t i = 0; i < layerIdx; i++)
+      {
+        if (pcEncApp[i]->getALFEnabled())
+        {
+          int nbAPS = pcEncApp[i]->getMaxNumALFAPS();
+          if (totalUsedAPSIDs > ALF_CTB_MAX_NUM_APS)
+          {
+            nbAPS = std::min(nbAPS, std::max(1, ALF_CTB_MAX_NUM_APS / nbLayersUsingAlf));
+            nbAPS = std::min(nbAPS, ALF_CTB_MAX_NUM_APS - apsShift);
+          }
+          msg(WARNING, "\tlayer %d : %d: %d -> %d \n", i, nbAPS, apsShift, apsShift + nbAPS - 1);
+          pcEncApp[i]->forceMaxNumALFAPS(nbAPS);
+          pcEncApp[i]->forceALFAPSIDShift(apsShift);
+          apsShift += nbAPS;
+        }
+      }
+    }
     VPS* vps = pcEncApp[0]->getVPS();
     //check chroma format and bit-depth for dependent layers
     for (uint32_t i = 0; i < layerIdx; i++)
@@ -297,7 +336,15 @@ int main(int argc, char* argv[])
 #else
   auto encTime = std::chrono::duration_cast<std::chrono::milliseconds>( endTime - startTime).count();
 #endif
-
+#if GREEN_METADATA_SEI_ENABLED
+  for( auto & encApp : pcEncApp )
+  {
+    FeatureCounterStruct  featureCounterFinal = encApp->getFeatureCounter();
+    featureCounterFinal.bytes = encApp->getTotalNumberOfBytes();
+    FeatureCounterStruct dummy;
+    writeGMFAOutput(featureCounterFinal, dummy, encApp->getGMFAFile(),true);
+  }
+#endif
   for( auto & encApp : pcEncApp )
   {
     encApp->destroyLib();

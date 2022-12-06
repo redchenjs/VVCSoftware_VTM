@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,10 @@
 #include "CodingStructure.h"
 #include "Picture.h"
 
-CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID component, bool signHide, bool bdpcm)
+const int CoeffCodingContext::prefixCtx[8] = { 0, 0, 0, 3, 6, 10, 15, 21 };
+
+CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID component, bool signHide,
+                                       const BdpcmMode bdpcm)
   : m_compID(component)
   , m_chType(toChannelType(m_compID))
   , m_width(tu.block(m_compID).width)
@@ -48,29 +51,26 @@ CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID comp
   , m_log2CGWidth(g_log2SbbSize[floorLog2(m_width)][floorLog2(m_height)][0])
   , m_log2CGHeight(g_log2SbbSize[floorLog2(m_width)][floorLog2(m_height)][1])
   , m_log2CGSize(m_log2CGWidth + m_log2CGHeight)
-  , m_widthInGroups(std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_width) >> m_log2CGWidth)
-  , m_heightInGroups(std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_height) >> m_log2CGHeight)
+  , m_widthInGroups(getNonzeroTuSize(m_width) >> m_log2CGWidth)
+  , m_heightInGroups(getNonzeroTuSize(m_height) >> m_log2CGHeight)
   , m_log2BlockWidth((unsigned) floorLog2(m_width))
   , m_log2BlockHeight((unsigned) floorLog2(m_height))
   , m_maxNumCoeff(m_width * m_height)
   , m_signHiding(signHide)
-  , m_extendedPrecision(tu.cs->sps->getSpsRangeExtension().getExtendedPrecisionProcessingFlag() && tu.cs->sps->getBitDepth( m_chType ) > 10)
+  , m_extendedPrecision(tu.cs->sps->getSpsRangeExtension().getExtendedPrecisionProcessingFlag())
   , m_maxLog2TrDynamicRange(tu.cs->sps->getMaxLog2TrDynamicRange(m_chType))
-  , m_scanType(SCAN_DIAG)
-  , m_scan(
-      g_scanOrder[SCAN_GROUPED_4x4][m_scanType][gp_sizeIdxInfo->idxFrom(m_width)][gp_sizeIdxInfo->idxFrom(m_height)])
-  , m_scanCG(g_scanOrder[SCAN_UNGROUPED][m_scanType][gp_sizeIdxInfo->idxFrom(m_widthInGroups)]
+  , m_scan(g_scanOrder[SCAN_GROUPED_4x4][CoeffScanType::DIAG][gp_sizeIdxInfo->idxFrom(m_width)]
+                      [gp_sizeIdxInfo->idxFrom(m_height)])
+  , m_scanCG(g_scanOrder[SCAN_UNGROUPED][CoeffScanType::DIAG][gp_sizeIdxInfo->idxFrom(m_widthInGroups)]
                         [gp_sizeIdxInfo->idxFrom(m_heightInGroups)])
   , m_CtxSetLastX(Ctx::LastX[m_chType])
   , m_CtxSetLastY(Ctx::LastY[m_chType])
-  , m_maxLastPosX(g_groupIdx[std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_width) - 1])
-  , m_maxLastPosY(g_groupIdx[std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, m_height) - 1])
+  , m_maxLastPosX(g_groupIdx[getNonzeroTuSize(m_width) - 1])
+  , m_maxLastPosY(g_groupIdx[getNonzeroTuSize(m_height) - 1])
   , m_lastOffsetX(0)
   , m_lastOffsetY(0)
   , m_lastShiftX(0)
   , m_lastShiftY(0)
-  , m_TrafoBypass(tu.cs->sps->getSpsRangeExtension().getTransformSkipContextEnabledFlag()
-                  && (tu.mtsIdx[m_compID] == MTS_SKIP))
   , m_minCoeff(-(1 << tu.cs->sps->getMaxLog2TrDynamicRange(m_chType)))
   , m_maxCoeff((1 << tu.cs->sps->getMaxLog2TrDynamicRange(m_chType)) - 1)
   , m_scanPosLast(-1)
@@ -105,9 +105,9 @@ CoeffCodingContext::CoeffCodingContext(const TransformUnit &tu, ComponentID comp
   }
   else
   {
-    static const int prefix_ctx[8]  = { 0, 0, 0, 3, 6, 10, 15, 21 };
-    const_cast<int&>(m_lastOffsetX) = prefix_ctx[ log2sizeX ];
-    const_cast<int&>(m_lastOffsetY) = prefix_ctx[ log2sizeY ];;
+    const_cast<int &>(m_lastOffsetX) = prefixCtx[log2sizeX];
+    const_cast<int &>(m_lastOffsetY) = prefixCtx[log2sizeY];
+
     const_cast<int&>(m_lastShiftX)  = (log2sizeX + 1) >> 2;
     const_cast<int&>(m_lastShiftY)  = (log2sizeY + 1) >> 2;
   }
@@ -159,7 +159,7 @@ unsigned DeriveCtx::CtxModeConsFlag( const CodingStructure& cs, Partitioner& par
   const CodingUnit* cuLeft = cs.getCURestricted( pos.offset( -1, 0 ), pos, curSliceIdx, curTileIdx, partitioner.chType );
   const CodingUnit* cuAbove = cs.getCURestricted( pos.offset( 0, -1 ), pos, curSliceIdx, curTileIdx, partitioner.chType );
 
-  unsigned ctxId = ((cuAbove && cuAbove->predMode == MODE_INTRA) || (cuLeft && cuLeft->predMode == MODE_INTRA)) ? 1 : 0;
+  unsigned ctxId = ((cuAbove && CU::isIntra(*cuAbove)) || (cuLeft && CU::isIntra(*cuLeft))) ? 1 : 0;
   return ctxId;
 }
 
@@ -342,7 +342,7 @@ unsigned DeriveCtx::CtxPredModeFlag( const CodingUnit& cu )
   const CodingUnit *cuLeft  = cu.cs->getCURestricted(cu.lumaPos().offset(-1, 0), cu, CH_L);
   const CodingUnit *cuAbove = cu.cs->getCURestricted(cu.lumaPos().offset(0, -1), cu, CH_L);
 
-  unsigned ctxId = ((cuAbove && cuAbove->predMode == MODE_INTRA) || (cuLeft && cuLeft->predMode == MODE_INTRA)) ? 1 : 0;
+  unsigned ctxId = ((cuAbove && CU::isIntra(*cuAbove)) || (cuLeft && CU::isIntra(*cuLeft))) ? 1 : 0;
 
   return ctxId;
 }
@@ -369,7 +369,7 @@ void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
   pu.interDir                = interDirNeighbours[candIdx];
   pu.cu->imv = (!pu.cu->geoFlag && useAltHpelIf[candIdx]) ? IMV_HPEL : 0;
   pu.mergeIdx                = candIdx;
-  pu.mergeType               = mrgTypeNeighbours[candIdx];
+  pu.mergeType               = CU::isIBC(*pu.cu) ? MRG_TYPE_IBC : MRG_TYPE_DEFAULT_N;
   pu.mv     [REF_PIC_LIST_0] = mvFieldNeighbours[(candIdx << 1) + 0].mv;
   pu.mv     [REF_PIC_LIST_1] = mvFieldNeighbours[(candIdx << 1) + 1].mv;
   pu.mvd    [REF_PIC_LIST_0] = Mv();
@@ -405,7 +405,7 @@ void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
     pu.bv.changePrecision(MV_PRECISION_INTERNAL, MV_PRECISION_INT); // used for only integer resolution
     pu.cu->imv = pu.cu->imv == IMV_HPEL ? 0 : pu.cu->imv;
   }
-  pu.cu->BcwIdx = ( interDirNeighbours[candIdx] == 3 ) ? BcwIdx[candIdx] : BCW_DEFAULT;
+  pu.cu->bcwIdx = (interDirNeighbours[candIdx] == 3) ? bcwIdx[candIdx] : BCW_DEFAULT;
 
   PU::restrictBiPredMergeCandsOne(pu);
   pu.mmvdEncOptMode = 0;
@@ -639,7 +639,7 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx)
   pu.mvpNum[REF_PIC_LIST_1] = NOT_VALID;
   pu.cu->imv = mmvdUseAltHpelIf[fPosBaseIdx] ? IMV_HPEL : 0;
 
-  pu.cu->BcwIdx = (interDirNeighbours[fPosBaseIdx] == 3) ? BcwIdx[fPosBaseIdx] : BCW_DEFAULT;
+  pu.cu->bcwIdx = (interDirNeighbours[fPosBaseIdx] == 3) ? bcwIdx[fPosBaseIdx] : BCW_DEFAULT;
 
   for (int refList = 0; refList < 2; refList++)
   {

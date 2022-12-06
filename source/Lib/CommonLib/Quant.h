@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,7 @@ struct TrQuantParams
 class QpParam
 {
 public:
-  int Qps[2];
+  int qps[2];
   int pers[2];
   int rems[2];
 
@@ -83,7 +83,7 @@ public:
 
   QpParam(const TransformUnit& tu, const ComponentID &compID, const int QP = -MAX_INT, const bool allowACTQpoffset = true);
 
-  int Qp ( const bool ts ) const { return Qps [ts?1:0]; }
+  int Qp(const bool ts) const { return qps[ts ? 1 : 0]; }
   int per( const bool ts ) const { return pers[ts?1:0]; }
   int rem( const bool ts ) const { return rems[ts?1:0]; }
 
@@ -100,9 +100,7 @@ public:
   virtual void init( uint32_t uiMaxTrSize,
                      bool useRDOQ = false,
                      bool useRDOQTS = false,
-#if T0196_SELECTIVE_RDOQ
                      bool useSelectiveRDOQ = false
-#endif
                      );
 
 public:
@@ -136,23 +134,20 @@ public:
   virtual void setScalingList    ( ScalingList *scalingList, const int maxLog2TrDynamicRange[MAX_NUM_CHANNEL_TYPE], const BitDepths &bitDepths);
 
   // quantization
-  virtual void quant             ( TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &uiAbsSum, const QpParam &cQP, const Ctx& ctx );
+  virtual void quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum,
+                     const QpParam &cQP, const Ctx &ctx);
   // de-quantization
   virtual void dequant           ( const TransformUnit &tu, CoeffBuf &dstCoeff, const ComponentID &compID, const QpParam &cQP );
 
 protected:
 
-#if T0196_SELECTIVE_RDOQ
   bool xNeedRDOQ                 ( TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, const QpParam &cQP );
-#endif
 
   double   m_dLambda;
   uint32_t     m_uiMaxTrSize;
   bool     m_useRDOQ;
   bool     m_useRDOQTS;
-#if T0196_SELECTIVE_RDOQ
   bool     m_useSelectiveRDOQ;
-#endif
 private:
   void xInitScalingList   ( const Quant* other );
   void xDestroyScalingList();

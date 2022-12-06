@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,6 @@ namespace po = df::program_options_lite;
 /// encoder configuration class
 class EncAppCfg
 {
-#if QP_SWITCHING_FOR_PARALLEL
 public:
   template <class T>
   struct OptionalValue
@@ -78,7 +77,6 @@ public:
     T    value;
     OptionalValue() : bPresent(false), value() { }
   };
-#endif
 
 protected:
   // file I/O
@@ -92,8 +90,8 @@ protected:
   double    m_dIntraQpFactor;                                 ///< Intra Q Factor. If negative, use a default equation: 0.57*(1.0 - Clip3( 0.0, 0.5, 0.05*(double)(isField ? (GopSize-1)/2 : GopSize-1) ))
 
   // source specification
-  int       m_iFrameRate;                                     ///< source frame-rates (Hz)
-  uint32_t      m_FrameSkip;                                      ///< number of skipped frames from the beginning
+  int           m_frameRate;                                      ///< source frame-rates (Hz)
+  uint32_t      m_frameSkip;                                      ///< number of skipped frames from the beginning
   uint32_t      m_temporalSubsampleRatio;                         ///< temporal subsample ratio, 2 means code every two frames
   int       m_sourceWidth;                                   ///< source width in pixel
   int       m_sourceHeight;                                  ///< source height in pixel (when interlaced = field height)
@@ -114,13 +112,16 @@ protected:
   int       m_confWinTop;
   int       m_confWinBottom;
   int       m_sourcePadding[2];                                       ///< number of padded pixels for width and height
+  int       m_firstValidFrame;
+  int       m_lastValidFrame;
   int       m_framesToBeEncoded;                              ///< number of encoded frames
   bool      m_AccessUnitDelimiter;                            ///< add Access Unit Delimiter NAL units
   bool      m_enablePictureHeaderInSliceHeader;               ///< Enable Picture Header in Slice Header
+
   InputColourSpaceConversion m_inputColourSpaceConvert;       ///< colour space conversion to apply to input video
   bool      m_snrInternalColourSpace;                       ///< if true, then no colour space conversion is applied for snr calculation, otherwise inverse of input is applied.
   bool      m_outputInternalColourSpace;                    ///< if true, then no colour space conversion is applied for reconstructed video, otherwise inverse of input is applied.
-  ChromaFormat m_InputChromaFormatIDC;
+  ChromaFormat               m_inputChromaFormatIDC;
 
   bool      m_printMSEBasedSequencePSNR;
   bool      m_printHexPsnr;
@@ -129,8 +130,8 @@ protected:
   bool      m_printMSSSIM;
   bool      m_printWPSNR;
   bool      m_cabacZeroWordPaddingEnabled;
-  bool      m_bClipInputVideoToRec709Range;
-  bool      m_bClipOutputVideoToRec709Range;
+  bool      m_clipInputVideoToRec709Range;
+  bool      m_clipOutputVideoToRec709Range;
   bool      m_packedYUVMode;                                  ///< If true, output 10-bit and 12-bit YUV data as 5-byte and 3-byte (respectively) packed YUV data
 
   bool      m_gciPresentFlag;
@@ -189,6 +190,12 @@ protected:
   bool      m_noCraConstraintFlag;
   bool      m_noGdrConstraintFlag;
   bool      m_noApsConstraintFlag;
+  bool      m_allRapPicturesFlag;
+  bool      m_noExtendedPrecisionProcessingConstraintFlag;
+  bool      m_noTsResidualCodingRiceConstraintFlag;
+  bool      m_noRrcRiceExtensionConstraintFlag;
+  bool      m_noPersistentRiceAdaptationConstraintFlag;
+  bool      m_noReverseLastSigCoeffConstraintFlag;
 
   // profile/level
   Profile::Name m_profile;
@@ -215,16 +222,16 @@ protected:
   bool          m_oneSlicePerSubpicConstraintFlag;
   bool          m_noSubpicInfoConstraintFlag;
   // coding structure
-  int       m_iIntraPeriod;                                   ///< period of I-slice (random access period)
-#if GDR_ENABLED 
+  int m_intraPeriod;   ///< period of I-slice (random access period)
+#if GDR_ENABLED
   bool      m_gdrEnabled;
   int       m_gdrPocStart;
   int       m_gdrPeriod;
-  int       m_gdrInterval;  
-  bool      m_gdrNoHash;  
+  int       m_gdrInterval;
+  bool      m_gdrNoHash;
 #endif
-  int       m_iDecodingRefreshType;                           ///< random access type
-  int       m_iGOPSize;                                       ///< GOP size of hierarchical structure
+  int       m_intraRefreshType;                               ///< random access type
+  int       m_gopSize;                                        ///< GOP size of hierarchical structure
   int       m_drapPeriod;                                     ///< period of dependent RAP pictures
   int       m_edrapPeriod;                                    ///< period of extended dependent RAP pictures
   bool      m_rewriteParamSets;                              ///< Flag to enable rewriting of parameter sets at random access points
@@ -246,22 +253,20 @@ protected:
   bool      m_cabacBypassAlignmentEnabledFlag;
   bool      m_ISP;
   bool      m_useFastISP;                                    ///< flag for enabling fast methods for ISP
+  int       m_fastAdaptCostPredMode;                         ///< mode for cost prediction, 0..2
+  bool      m_disableFastDecisionTT;                         ///< flag for disabling fast decision for TT from BT
 
   // coding quality
-#if QP_SWITCHING_FOR_PARALLEL
   OptionalValue<uint32_t> m_qpIncrementAtSourceFrame;             ///< Optional source frame number at which all subsequent frames are to use an increased internal QP.
-#else
-  double    m_fQP;                                            ///< QP value of key-picture (floating point)
-#endif
   int       m_iQP;                                            ///< QP value of key-picture (integer)
   bool      m_useIdentityTableForNon420Chroma;
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   int       m_intraQPOffset;                                  ///< QP offset for intra slice (integer)
   bool      m_lambdaFromQPEnable;                             ///< enable flag for QP:lambda fix
-#endif
   std::string m_dQPFileName;                                  ///< QP offset for each slice (initialized from external file)
-  int*      m_aidQP;                                          ///< array of slice QP values
+
+  FrameDeltaQps m_frameDeltaQps;   // array of frame delta QP values
+
   int       m_iMaxDeltaQP;                                    ///< max. |delta QP|
   uint32_t  m_uiDeltaQpRD;                                    ///< dQP range for multi-pass slice QP optimization
   int       m_cuQpDeltaSubdiv;                                ///< Maximum subdiv for CU luma Qp adjustment (0:default)
@@ -288,10 +293,14 @@ protected:
 #endif
   SEIMasteringDisplay m_masteringDisplay;
   bool      m_smoothQPReductionEnable;
-  double    m_smoothQPReductionThreshold;
-  double    m_smoothQPReductionModelScale;
-  double    m_smoothQPReductionModelOffset;
-  int       m_smoothQPReductionLimit;
+  double    m_smoothQPReductionThresholdIntra;
+  double    m_smoothQPReductionModelScaleIntra;
+  double    m_smoothQPReductionModelOffsetIntra;
+  int       m_smoothQPReductionLimitIntra;
+  double    m_smoothQPReductionThresholdInter;
+  double    m_smoothQPReductionModelScaleInter;
+  double    m_smoothQPReductionModelOffsetInter;
+  int       m_smoothQPReductionLimitInter;
   int       m_smoothQPReductionPeriodicity;
 
   bool      m_bUseAdaptiveQP;                                 ///< Flag for enabling QP adaptation based on a psycho-visual model
@@ -301,9 +310,10 @@ protected:
   bool      m_bUseWPSNR;                                      ///< Flag to output perceptually weighted peak SNR (WPSNR) instead of PSNR
 #endif
   int       m_maxTempLayer;                                   ///< Max temporal layer
+  bool      m_isLowDelay;
 
   // coding unit (CU) definition
-  unsigned  m_uiCTUSize;
+  unsigned              m_ctuSize;
   bool m_subPicInfoPresentFlag;
   unsigned m_numSubPics;
   bool m_subPicSameSizeFlag;
@@ -318,39 +328,42 @@ protected:
   unsigned m_subPicIdLen;
   std::vector<uint16_t> m_subPicId;
   bool      m_SplitConsOverrideEnabledFlag;
-  unsigned  m_uiMinQT[3]; // 0: I slice luma; 1: P/B slice; 2: I slice chroma
+  unsigned              m_minQt[3];   // 0: I slice luma; 1: P/B slice; 2: I slice chroma
   unsigned  m_uiMaxMTTHierarchyDepth;
   unsigned  m_uiMaxMTTHierarchyDepthI;
   unsigned  m_uiMaxMTTHierarchyDepthIChroma;
-  unsigned  m_uiMaxBT[3];
-  unsigned  m_uiMaxTT[3];
+  unsigned              m_maxBt[3];
+  unsigned              m_maxTt[3];
+  int       m_ttFastSkip;
+  double    m_ttFastSkipThr;
   bool      m_dualTree;
   bool      m_LFNST;
   bool      m_useFastLFNST;
   bool      m_sbTmvpEnableFlag;
   bool      m_Affine;
   bool      m_AffineType;
+  bool      m_adaptBypassAffineMe;
   bool      m_PROF;
   bool      m_BIO;
   int       m_LMChroma;
   bool      m_horCollocatedChromaFlag;
   bool      m_verCollocatedChromaFlag;
-  int       m_MTS;                                            ///< XZ: Multiple Transform Set
+
+  int       m_mtsMode;                                        ///< XZ: Multiple Transform Set
   int       m_MTSIntraMaxCand;                                ///< XZ: Number of additional candidates to test
   int       m_MTSInterMaxCand;                                ///< XZ: Number of additional candidates to test
-  int       m_MTSImplicit;
+  int       m_mtsImplicitIntra;
+
   bool      m_SBT;                                            ///< Sub-Block Transform for inter blocks
   int       m_SBTFast64WidthTh;
   bool      m_SMVD;
   bool      m_compositeRefEnabled;
   bool      m_bcw;
   bool      m_BcwFast;
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   bool      m_LadfEnabed;
   int       m_LadfNumIntervals;
   std::vector<int> m_LadfQpOffset;
   int       m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
-#endif
 
   bool      m_ciip;
   bool      m_Geo;
@@ -358,13 +371,14 @@ protected:
   bool      m_allowDisFracMMVD;
   bool      m_AffineAmvr;
   bool      m_AffineAmvrEncOpt;
+  bool      m_AffineAmvp;
   bool      m_DMVR;
   bool      m_MMVD;
   int       m_MmvdDisNum;
   bool      m_rgbFormat;
   bool      m_useColorTrans;
   unsigned  m_PLTMode;
-  bool      m_JointCbCrMode;
+  bool      m_jointCbCrMode;
   bool      m_useChromaTS;
   unsigned  m_IBCMode;
   unsigned  m_IBCLocalSearchRangeX;
@@ -393,8 +407,8 @@ protected:
   uint32_t  m_initialCW;
   int       m_CSoffset;
   bool      m_encDbOpt;
-  unsigned  m_uiMaxCUWidth;                                   ///< max. CU width in pixel
-  unsigned  m_uiMaxCUHeight;                                  ///< max. CU height in pixel
+  unsigned              m_maxCuWidth;                                      ///< max. CU width in pixel
+  unsigned              m_maxCuHeight;                                     ///< max. CU height in pixel
   unsigned m_log2MinCuSize;                                   ///< min. CU size log2
 
   bool      m_useFastLCTU;
@@ -415,10 +429,11 @@ protected:
   // coding tools (bit-depth)
   int       m_inputBitDepth   [MAX_NUM_CHANNEL_TYPE];         ///< bit-depth of input file
   int       m_outputBitDepth  [MAX_NUM_CHANNEL_TYPE];         ///< bit-depth of output file
-  int       m_MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];      ///< bit-depth of input samples after MSB extension
+  int       m_msbExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];      ///< bit-depth of input samples after MSB extension
   int       m_internalBitDepth[MAX_NUM_CHANNEL_TYPE];         ///< bit-depth codec operates at (input/output files will be converted)
   bool      m_extendedPrecisionProcessingFlag;
   bool      m_tsrcRicePresentFlag;
+  bool      m_reverseLastSigCoeffEnabledFlag;
   bool      m_highPrecisionOffsetsEnabledFlag;
 
   //coding tools (chroma format)
@@ -426,7 +441,8 @@ protected:
 
 
   // coding tool (SAO)
-  bool      m_bUseSAO;
+  bool      m_useSao;
+  bool      m_saoTrueOrg;
   bool      m_bTestSAODisableAtPictureLevel;
   double    m_saoEncodingRate;                                ///< When >0 SAO early picture termination is enabled for luma and chroma
   double    m_saoEncodingRateChroma;                          ///< The SAO early picture termination rate to use for chroma (when m_SaoEncodingRate is >0). If <=0, use results for luma.
@@ -442,21 +458,14 @@ protected:
   int       m_deblockingFilterCbTcOffsetDiv2;                 ///< tc offset for Cb deblocking filter
   int       m_deblockingFilterCrBetaOffsetDiv2;               ///< beta offset for Cr deblocking filter
   int       m_deblockingFilterCrTcOffsetDiv2;                 ///< tc offset for Cr deblocking filter
-#if W0038_DB_OPT
   int       m_deblockingFilterMetric;                         ///< blockiness metric in encoder
-#else
-  bool      m_DeblockingFilterMetric;                         ///< blockiness metric in encoder
-#endif
-  bool      m_enableIntraReferenceSmoothing;                  ///< flag for enabling(default)/disabling intra reference smoothing/filtering
 
   // coding tools (encoder-only parameters)
   bool      m_bUseASR;                                        ///< flag for using adaptive motion search range
   bool      m_bUseHADME;                                      ///< flag for using HAD in sub-pel ME
   bool      m_useRDOQ;                                       ///< flag for using RD optimized quantization
   bool      m_useRDOQTS;                                     ///< flag for using RD optimized quantization for transform skip
-#if T0196_SELECTIVE_RDOQ
   bool      m_useSelectiveRDOQ;                               ///< flag for using selective RDOQ
-#endif
   int       m_rdPenalty;                                      ///< RD-penalty for 32x32 TU for intra in non-intra slices (0: no RD-penalty, 1: RD-penalty, 2: maximum RD-penalty)
   bool      m_bDisableIntraPUsInInterSlices;                  ///< Flag for disabling intra predicted PUs in inter slices.
   MESearchMethod m_motionEstimationSearchMethod;
@@ -514,9 +523,7 @@ protected:
   int       m_doSEITransformType;
   bool      m_parameterSetsInclusionIndicationSEIEnabled;
   int       m_selfContainedClvsFlag;
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   int       m_preferredTransferCharacteristics;
-#endif
 
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
@@ -527,6 +534,18 @@ protected:
   uint32_t  m_fgcSEIBlendingModeID;
   uint32_t  m_fgcSEILog2ScaleFactor;
   bool      m_fgcSEICompModelPresent[MAX_NUM_COMPONENT];
+  bool      m_fgcSEIAnalysisEnabled;
+  std::string m_fgcSEIExternalMask;
+  std::string m_fgcSEIExternalDenoised;
+  int       m_fgcSEITemporalFilterPastRefs;
+  int       m_fgcSEITemporalFilterFutureRefs;
+  std::map<int, double> m_fgcSEITemporalFilterStrengths;
+  bool      m_fgcSEIPerPictureSEI;
+  uint32_t  m_fgcSEINumModelValuesMinus1          [MAX_NUM_COMPONENT];
+  uint32_t  m_fgcSEINumIntensityIntervalMinus1    [MAX_NUM_COMPONENT];
+  uint32_t  m_fgcSEIIntensityIntervalLowerBound   [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES];
+  uint32_t  m_fgcSEIIntensityIntervalUpperBound   [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES];
+  uint32_t  m_fgcSEICompModelValue                [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES][MAX_NUM_MODEL_VALUES];
   // content light level SEI
   bool      m_cllSEIEnabled;
   uint32_t  m_cllSEIMaxContentLevel;
@@ -598,6 +617,10 @@ protected:
   std::vector<uint32_t>  m_maiSEIMantissaSkewFactor;
   int               m_maiSEIPrecRotationParam;
   int               m_maiSEIPrecTranslationParam;
+  // multiview acquisition information sei
+  bool              m_mvpSEIEnabled;
+  int               m_mvpSEINumViewsMinus1;
+  std::vector<uint32_t>  m_mvpSEIViewPosition;
   // alpha channel information sei
   bool      m_aciSEIEnabled;
   bool      m_aciSEICancelFlag;
@@ -691,7 +714,54 @@ protected:
   bool                 m_gcmpSEIGuardBandBoundaryExteriorFlag;
   uint32_t             m_gcmpSEIGuardBandSamplesMinus1;
 
-  CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
+  EncCfgParam::CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
+
+  bool                  m_nnPostFilterSEICharacteristicsEnabled;
+  int                   m_nnPostFilterSEICharacteristicsNumFilters;
+  uint32_t              m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
+  bool                  m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
+  bool                  m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
+  bool                  m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsInpSampleIdc[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
+  bool                  m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsColPrimaries[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsTransCharacteristics[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsMatrixCoeffs[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsInpOrderIdc[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsOutSampleIdc[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsOutOrderIdc[MAX_NUM_NN_POST_FILTERS];
+  bool                  m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPatchWidthMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsOverlap[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPaddingType[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsLumaPadding[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsCbPadding[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsCrPadding[MAX_NUM_NN_POST_FILTERS];
+  std::string           m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsComplexityIdc[MAX_NUM_NN_POST_FILTERS];
+  std::string           m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
+  std::string           m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsNumParametersIdc[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[MAX_NUM_NN_POST_FILTERS];
+  bool                  m_nnPostFilterSEIActivationEnabled;
+  uint32_t              m_nnPostFilterSEIActivationId;
+
+  bool                  m_poSEIEnabled;
+  std::vector<uint16_t> m_poSEIPayloadType;
+  std::vector<uint8_t>  m_poSEIProcessingOrder;
+  uint32_t              m_numofSEIMessages;
+
+  bool                  m_constrainedRaslEncoding;
 
   bool                  m_sampleAspectRatioInfoSEIEnabled;
   bool                  m_sariCancelFlag;
@@ -706,6 +776,16 @@ protected:
 #if JVET_T0056_SEI_PREFIX_INDICATION
   bool      m_SEIPrefixIndicationSEIEnabled;
 #endif 
+  bool                  m_phaseIndicationSEIEnabledFullResolution;
+  int                   m_piHorPhaseNumFullResolution;
+  int                   m_piHorPhaseDenMinus1FullResolution;
+  int                   m_piVerPhaseNumFullResolution;
+  int                   m_piVerPhaseDenMinus1FullResolution;
+  bool                  m_phaseIndicationSEIEnabledReducedResolution;
+  int                   m_piHorPhaseNumReducedResolution;
+  int                   m_piHorPhaseDenMinus1ReducedResolution;
+  int                   m_piVerPhaseNumReducedResolution;
+  int                   m_piVerPhaseDenMinus1ReducedResolution;
 
   bool      m_MCTSEncConstraint;
 
@@ -737,11 +817,9 @@ protected:
   bool      m_RCUseLCUSeparateModel;              ///< use separate R-lambda model at LCU level                        NOTE: code-tidy - rename to m_RCUseCtuSeparateModel
   int       m_RCInitialQP;                        ///< inital QP for rate control
   bool      m_RCForceIntraQP;                     ///< force all intra picture to use initial QP or not
-#if U0132_TARGET_BITS_SATURATION
   bool      m_RCCpbSaturationEnabled;             ///< enable target bits saturation to avoid CPB overflow and underflow
   uint32_t      m_RCCpbSize;                          ///< CPB size
   double    m_RCInitialCpbFullness;               ///< initial CPB fullness
-#endif
   ScalingListMode m_useScalingListId;                         ///< using quantization matrix
   std::string m_scalingListFileName;                          ///< quantization matrix file name
   bool      m_disableScalingMatrixForLfnstBlks;
@@ -776,6 +854,37 @@ protected:
   int       m_ImvMode;                                        ///< imv mode
   int       m_Imv4PelFast;                                    ///< imv 4-Pel fast mode
 
+  bool      m_siiSEIEnabled;
+  uint32_t  m_siiSEINumUnitsInShutterInterval;
+  uint32_t  m_siiSEITimeScale;
+  std::vector<uint32_t>     m_siiSEISubLayerNumUnitsInSI;
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool        m_ShutterFilterEnable;                          ///< enable Pre-Filtering with Shutter Interval SEI
+  std::string m_shutterIntervalPreFileName;                   ///< output Pre-Filtering video
+  int         m_SII_BlendingRatio;
+  void        setBlendingRatioSII(int value) { m_SII_BlendingRatio = value; }
+#endif
+#if GREEN_METADATA_SEI_ENABLED
+public:
+  std::string getGMFAFile ();
+  bool getGMFAUsage();
+protected:
+  std::string   m_GMFAFile;
+  bool          m_GMFA;
+  
+  int      m_greenMetadataType;
+  int      m_greenMetadataExtendedRepresentation;
+  int      m_greenMetadataGranularityType;
+  int      m_greenMetadataPeriodType;
+  int      m_greenMetadataPeriodNumSeconds;
+  int      m_greenMetadataPeriodNumPictures;
+
+  int      m_xsdNumberMetrics;
+  bool     m_xsdMetricTypePSNR;
+  bool     m_xsdMetricTypeSSIM;
+  bool     m_xsdMetricTypeWPSNR;
+  bool     m_xsdMetricTypeWSPSNR;
+#endif
   std::string m_summaryOutFilename;                           ///< filename to use for producing summary output file.
   std::string m_summaryPicFilenameBase;                       ///< Base filename to use for producing summary picture output files. The actual filenames used will have I.txt, P.txt and B.txt appended.
   uint32_t        m_summaryVerboseness;                           ///< Specifies the level of the verboseness of the text output.
@@ -791,8 +900,11 @@ protected:
   bool        m_bs2ModPOCAndType;
   bool        m_forceDecodeBitstream1;
 
-  bool        m_alf;                                          ///< Adaptive Loop Filter
-  bool        m_alfSaoTrueOrg;
+  int         m_maxNumAlfAps{ ALF_CTB_MAX_NUM_APS };
+  int         m_alfapsIDShift;
+  int         m_constantJointCbCrSignFlag;
+  bool        m_alf;                                       ///< Adaptive Loop Filter
+  bool        m_alfTrueOrg;
   double      m_alfStrengthLuma;
   bool        m_alfAllowPredefinedFilters;
   double      m_ccalfStrength;
@@ -806,22 +918,47 @@ protected:
   bool        m_rprEnabledFlag;
   double      m_scalingRatioHor;
   double      m_scalingRatioVer;
+#if JVET_AB0080
+  bool        m_gopBasedRPREnabledFlag;
+  int         m_gopBasedRPRQPThreshold;
+  double      m_scalingRatioHor2;
+  double      m_scalingRatioVer2;
+  double      m_scalingRatioHor3;
+  double      m_scalingRatioVer3;
+  double      m_psnrThresholdRPR;
+  double      m_psnrThresholdRPR2;
+  double      m_psnrThresholdRPR3;
+  int         m_qpOffsetRPR;
+  int         m_qpOffsetRPR2;
+  int         m_qpOffsetRPR3;
+#if JVET_AB0080_CHROMA_QP_FIX
+  int         m_qpOffsetChromaRPR;
+  int         m_qpOffsetChromaRPR2;
+  int         m_qpOffsetChromaRPR3;
+#endif
+#endif
   bool        m_resChangeInClvsEnabled;
   double      m_fractionOfFrames;                             ///< encode a fraction of the frames as specified in FramesToBeEncoded
   int         m_switchPocPeriod;
   int         m_upscaledOutput;                               ////< Output upscaled (2), decoded cropped but in full resolution buffer (1) or decoded cropped (0, default) picture for RPR.
+#if JVET_AB0081
+  int         m_upscaleFilterForDisplay;
+#endif
+  bool        m_craAPSreset;
+  bool        m_rprRASLtoolSwitch;
   bool        m_avoidIntraInDepLayer;
 
-  bool                  m_gopBasedTemporalFilterEnabled;               ///< GOP-based Temporal Filter enable/disable
-  bool                  m_gopBasedTemporalFilterFutureReference;       ///< Enable/disable future frame references in the GOP-based Temporal Filter
+  bool                  m_gopBasedTemporalFilterEnabled;
+  int                   m_gopBasedTemporalFilterPastRefs;
+  int                   m_gopBasedTemporalFilterFutureRefs;
   std::map<int, double> m_gopBasedTemporalFilterStrengths;             ///< Filter strength per frame for the GOP-based Temporal Filter
+  bool                  m_bimEnabled;
 
   int         m_maxLayers;
   int         m_targetOlsIdx;
   bool        m_OPIEnabled;                                     ///< enable Operating Point Information (OPI)
   int         m_maxTemporalLayer;
   int         m_layerId[MAX_VPS_LAYERS];
-  int         m_layerIdx;
   int         m_maxSublayers;
   bool        m_defaultPtlDpbHrdMaxTidFlag;
   bool        m_allIndependentLayersFlag;
@@ -834,10 +971,11 @@ protected:
   int         m_numOutputLayerSets;
   std::string m_olsOutputLayerStr[MAX_VPS_LAYERS];
   std::string m_maxTidILRefPicsPlus1Str[MAX_VPS_LAYERS];
+  bool        m_rplOfDepLayerInSh;
 
   int         m_numPtlsInVps;
-
-  CfgVPSParameters m_cfgVPSParameters;
+  int         m_ptPresentInPtl[MAX_NUM_OLSS];
+  EncCfgParam::CfgVPSParameters m_cfgVPSParameters;
   Level::Name m_levelPtl[MAX_NUM_OLSS];
   int         m_olsPtlIdx[MAX_NUM_OLSS];
 

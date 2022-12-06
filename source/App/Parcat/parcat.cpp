@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,8 +63,9 @@ bool ParcatHLSyntaxReader::parsePictureHeaderInSliceHeaderFlag(ParameterSetManag
 void ParcatHLSyntaxReader::parsePictureHeaderUpToPoc ( ParameterSetManager *parameterSetManager )
 {
   uint32_t  uiCode;
-  PPS* pps = NULL;
-  SPS* sps = NULL;
+
+  PPS *pps = nullptr;
+  SPS *sps = nullptr;
 
   uint32_t uiTmp;
   READ_FLAG(uiTmp, "ph_gdr_or_irap_pic_flag");
@@ -212,8 +213,8 @@ std::vector<uint8_t> filter_segment(const std::vector<uint8_t> & v, int idx, int
   int sz = (int) v.size();
   int nal_start, nal_end;
   int off = 0;
-  int cnt = 0;
-  bool idr_found = false;
+  int cnt[MAX_VPS_LAYERS] = { 0 };
+  bool idr_found[MAX_VPS_LAYERS] = { false };
   bool is_pre_sei_before_idr = true;
 
   std::vector<uint8_t> out;
@@ -269,6 +270,7 @@ std::vector<uint8_t> filter_segment(const std::vector<uint8_t> & v, int idx, int
       HLSReader.parsePPS( pps );
       parameterSetManager.storePPS( pps, inp_nalu.getBitstream().getFifo() );
     }
+    int nalu_layerId = nalu[0] & 0x3F;
 
     if (nalu_type == NAL_UNIT_CODED_SLICE_IDR_W_RADL || nalu_type == NAL_UNIT_CODED_SLICE_IDR_N_LP)
     {
@@ -280,7 +282,7 @@ std::vector<uint8_t> filter_segment(const std::vector<uint8_t> & v, int idx, int
       new_poc = *poc_base + poc;
       if (first_idr_slice_after_ph_nal)
       {
-        cnt--;
+        cnt[nalu_layerId]--;
       }
       first_idr_slice_after_ph_nal = false;
     }
@@ -324,7 +326,7 @@ std::vector<uint8_t> filter_segment(const std::vector<uint8_t> & v, int idx, int
 #if ENABLE_TRACING
         std::cout << "Changed poc " << poc << " to " << new_poc << std::endl;
 #endif
-        ++cnt;
+        ++cnt[nalu_layerId];
         change_poc = false;
       }
     }
@@ -332,10 +334,10 @@ std::vector<uint8_t> filter_segment(const std::vector<uint8_t> & v, int idx, int
     if(idx > 1 && (nalu_type == NAL_UNIT_CODED_SLICE_IDR_W_RADL || nalu_type == NAL_UNIT_CODED_SLICE_IDR_N_LP))
     {
       skip_next_sei = true;
-      idr_found = true;
+      idr_found[nalu_layerId] = true;
     }
     if ((idx > 1 && (nalu_type == NAL_UNIT_CODED_SLICE_IDR_W_RADL || nalu_type == NAL_UNIT_CODED_SLICE_IDR_N_LP))
-      || ((idx > 1 && !idr_found) && (nalu_type == NAL_UNIT_OPI || nalu_type == NAL_UNIT_DCI || nalu_type == NAL_UNIT_VPS || nalu_type == NAL_UNIT_SPS || nalu_type == NAL_UNIT_PPS || nalu_type == NAL_UNIT_PREFIX_APS || nalu_type == NAL_UNIT_SUFFIX_APS || nalu_type == NAL_UNIT_PH || nalu_type == NAL_UNIT_ACCESS_UNIT_DELIMITER))
+      || ((idx > 1 && !idr_found[nalu_layerId]) && (nalu_type == NAL_UNIT_OPI || nalu_type == NAL_UNIT_DCI || nalu_type == NAL_UNIT_VPS || nalu_type == NAL_UNIT_SPS || nalu_type == NAL_UNIT_PPS || nalu_type == NAL_UNIT_PREFIX_APS || nalu_type == NAL_UNIT_SUFFIX_APS || nalu_type == NAL_UNIT_PH || nalu_type == NAL_UNIT_ACCESS_UNIT_DELIMITER))
       || (nalu_type == NAL_UNIT_SUFFIX_SEI && skip_next_sei)
       || (idx > 1 && nalu_type == NAL_UNIT_PREFIX_SEI && is_pre_sei_before_idr))
     {
@@ -356,7 +358,7 @@ std::vector<uint8_t> filter_segment(const std::vector<uint8_t> & v, int idx, int
     sz -= nal_end;
   }
 
-  *poc_base += cnt;
+  *poc_base += *std::max_element(std::begin(cnt), std::end(cnt));
   return out;
 }
 
@@ -364,14 +366,14 @@ std::vector<uint8_t> process_segment(const char * path, int idx, int * poc_base,
 {
   FILE * fdi = fopen(path, "rb");
 
-  if (fdi == NULL)
+  if (fdi == nullptr)
   {
     fprintf(stderr, "Error: could not open input file: %s", path);
     exit(1);
   }
 
   fseek(fdi, 0, SEEK_END);
-  int full_sz = ftell(fdi);
+  long full_sz = ftell(fdi);
   fseek(fdi, 0, SEEK_SET);
 
   std::vector<uint8_t> v(full_sz);
@@ -404,7 +406,7 @@ int main(int argc, char * argv[])
   }
 
   FILE * fdo = fopen(argv[argc - 1], "wb");
-  if (fdo==NULL)
+  if (fdo == nullptr)
   {
     fprintf(stderr, "Error: could not open output file: %s", argv[argc - 1]);
     exit(1);

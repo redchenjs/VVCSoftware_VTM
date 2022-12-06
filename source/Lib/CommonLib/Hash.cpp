@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -107,21 +107,21 @@ void TCRCCalculatorLight::processData(unsigned char* curData, uint32_t dataLengt
 
 TComHash::TComHash()
 {
-  m_lookupTable = NULL;
+  m_lookupTable   = nullptr;
   tableHasContent = false;
   for (int i = 0; i < 5; i++)
   {
-    hashPic[i] = NULL;
+    hashPic[i] = nullptr;
   }
 }
 
 TComHash::~TComHash()
 {
   clearAll();
-  if (m_lookupTable != NULL)
+  if (m_lookupTable != nullptr)
   {
     delete[] m_lookupTable;
-    m_lookupTable = NULL;
+    m_lookupTable = nullptr;
   }
 }
 
@@ -142,7 +142,7 @@ void TComHash::create(int picWidth, int picHeight)
   {
     return;
   }
-  int maxAddr = 1 << (m_CRCBits + m_blockSizeBits);
+  int maxAddr   = 1 << (CRC_BITS + m_blockSizeBits);
   m_lookupTable = new std::vector<BlockHash>*[maxAddr];
   memset(m_lookupTable, 0, sizeof(std::vector<BlockHash>*) * maxAddr);
   tableHasContent = false;
@@ -155,28 +155,28 @@ void TComHash::clearAll()
     for (int k = 0; k < 5; k++)
     {
       delete[] hashPic[k];
-      hashPic[k] = NULL;
+      hashPic[k] = nullptr;
     }
   }
   tableHasContent = false;
-  if (m_lookupTable == NULL)
+  if (m_lookupTable == nullptr)
   {
     return;
   }
-  int maxAddr = 1 << (m_CRCBits + m_blockSizeBits);
+  int maxAddr = 1 << (CRC_BITS + m_blockSizeBits);
   for (int i = 0; i < maxAddr; i++)
   {
-    if (m_lookupTable[i] != NULL)
+    if (m_lookupTable[i] != nullptr)
     {
       delete m_lookupTable[i];
-      m_lookupTable[i] = NULL;
+      m_lookupTable[i] = nullptr;
     }
   }
 }
 
 void TComHash::addToTable(uint32_t hashValue, const BlockHash& blockHash)
 {
-  if (m_lookupTable[hashValue] == NULL)
+  if (m_lookupTable[hashValue] == nullptr)
   {
     m_lookupTable[hashValue] = new std::vector<BlockHash>;
     m_lookupTable[hashValue]->push_back(blockHash);
@@ -189,7 +189,7 @@ void TComHash::addToTable(uint32_t hashValue, const BlockHash& blockHash)
 
 int TComHash::count(uint32_t hashValue)
 {
-  if (m_lookupTable[hashValue] == NULL)
+  if (m_lookupTable[hashValue] == nullptr)
   {
     return 0;
   }
@@ -201,7 +201,7 @@ int TComHash::count(uint32_t hashValue)
 
 int TComHash::count(uint32_t hashValue) const
 {
-  if (m_lookupTable[hashValue] == NULL)
+  if (m_lookupTable[hashValue] == nullptr)
   {
     return 0;
   }
@@ -223,7 +223,7 @@ const MapIterator TComHash::getFirstIterator(uint32_t hashValue) const
 
 bool TComHash::hasExactMatch(uint32_t hashValue1, uint32_t hashValue2)
 {
-  if (m_lookupTable[hashValue1] == NULL)
+  if (m_lookupTable[hashValue1] == nullptr)
   {
     return false;
   }
@@ -341,8 +341,8 @@ void TComHash::addToHashMapByRowWithPrecalData(uint32_t* picHash[2], bool* picIs
 
   int addValue = m_blockSizeToIndex[width][height];
   CHECK(addValue < 0, "Wrong")
-  addValue <<= m_CRCBits;
-  int crcMask = 1 << m_CRCBits;
+  addValue <<= CRC_BITS;
+  int crcMask = 1 << CRC_BITS;
   crcMask -= 1;
   int blockIdx = floorLog2(width) - 2;
 
@@ -540,8 +540,8 @@ bool TComHash::getBlockHashValue(const PelUnitBuf &curPicBuf, int width, int hei
   int addValue = m_blockSizeToIndex[width][height];
 
   CHECK(addValue < 0, "Wrong")
-  addValue <<= m_CRCBits;
-  int crcMask = 1 << m_CRCBits;
+  addValue <<= CRC_BITS;
+  int crcMask = 1 << CRC_BITS;
   crcMask -= 1;
   int length = 4;
   bool includeChroma = false;

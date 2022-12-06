@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,8 @@
 #include "DecoderLib/AnnexBread.h"
 #include "DecoderLib/NALread.h"
 
+using namespace std;
+
 //! \ingroup DecoderApp
 //! \{
 
@@ -81,9 +83,6 @@ void read2(InputNALUnit& nalu)
 
 uint32_t SEIRemovalApp::decode()
 {
-//  int                 poc;
-//  PicList* pcListPic = NULL;
-
   ifstream bitstreamFileIn(m_bitstreamFileNameIn.c_str(), ifstream::in | ifstream::binary);
   if (!bitstreamFileIn)
   {

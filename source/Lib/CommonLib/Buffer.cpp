@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,9 @@
 #include "Buffer.h"
 #include "InterpolationFilter.h"
 
-void applyPROFCore(Pel* dst, int dstStride, const Pel* src, int srcStride, int width, int height, const Pel* gradX, const Pel* gradY, int gradStride, const int* dMvX, const int* dMvY, int dMvStride, const bool& bi, int shiftNum, Pel offset, const ClpRng& clpRng)
+void applyPROFCore(Pel *dst, int dstStride, const Pel *src, int srcStride, int width, int height, const Pel *gradX,
+                   const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY, int dMvStride, const bool bi,
+                   int shiftNum, Pel offset, const ClpRng &clpRng)
 {
   int idx = 0;
 
@@ -132,25 +134,27 @@ void gradFilterCore(Pel* pSrc, int srcStride, int width, int height, int gradStr
 
   if (PAD)
   {
-  gradXTmp = gradX + gradStride + 1;
-  gradYTmp = gradY + gradStride + 1;
-  for (int y = 0; y < (height - 2 * BIO_EXTEND_SIZE); y++)
-  {
-    gradXTmp[-1] = gradXTmp[0];
-    gradXTmp[width - 2 * BIO_EXTEND_SIZE] = gradXTmp[width - 2 * BIO_EXTEND_SIZE - 1];
-    gradXTmp += gradStride;
+    gradXTmp = gradX + gradStride + 1;
+    gradYTmp = gradY + gradStride + 1;
+    for (int y = 0; y < (height - 2 * BIO_EXTEND_SIZE); y++)
+    {
+      gradXTmp[-1]                          = gradXTmp[0];
+      gradXTmp[width - 2 * BIO_EXTEND_SIZE] = gradXTmp[width - 2 * BIO_EXTEND_SIZE - 1];
+      gradXTmp += gradStride;
 
-    gradYTmp[-1] = gradYTmp[0];
-    gradYTmp[width - 2 * BIO_EXTEND_SIZE] = gradYTmp[width - 2 * BIO_EXTEND_SIZE - 1];
-    gradYTmp += gradStride;
-  }
+      gradYTmp[-1]                          = gradYTmp[0];
+      gradYTmp[width - 2 * BIO_EXTEND_SIZE] = gradYTmp[width - 2 * BIO_EXTEND_SIZE - 1];
+      gradYTmp += gradStride;
+    }
 
-  gradXTmp = gradX + gradStride;
-  gradYTmp = gradY + gradStride;
-  ::memcpy(gradXTmp - gradStride, gradXTmp, sizeof(Pel)*(width));
-  ::memcpy(gradXTmp + (height - 2 * BIO_EXTEND_SIZE)*gradStride, gradXTmp + (height - 2 * BIO_EXTEND_SIZE - 1)*gradStride, sizeof(Pel)*(width));
-  ::memcpy(gradYTmp - gradStride, gradYTmp, sizeof(Pel)*(width));
-  ::memcpy(gradYTmp + (height - 2 * BIO_EXTEND_SIZE)*gradStride, gradYTmp + (height - 2 * BIO_EXTEND_SIZE - 1)*gradStride, sizeof(Pel)*(width));
+    gradXTmp = gradX + gradStride;
+    gradYTmp = gradY + gradStride;
+    ::memcpy(gradXTmp - gradStride, gradXTmp, sizeof(Pel) * (width));
+    ::memcpy(gradXTmp + (height - 2 * BIO_EXTEND_SIZE) * gradStride,
+             gradXTmp + (height - 2 * BIO_EXTEND_SIZE - 1) * gradStride, sizeof(Pel) * (width));
+    ::memcpy(gradYTmp - gradStride, gradYTmp, sizeof(Pel) * (width));
+    ::memcpy(gradYTmp + (height - 2 * BIO_EXTEND_SIZE) * gradStride,
+             gradYTmp + (height - 2 * BIO_EXTEND_SIZE - 1) * gradStride, sizeof(Pel) * (width));
   }
 }
 
@@ -219,9 +223,11 @@ void calcBlkGradientCore(int sx, int sy, int     *arraysGx2, int     *arraysGxGy
 #if ENABLE_SIMD_OPT_BCW
 void removeWeightHighFreq(int16_t* dst, int dstStride, const int16_t* src, int srcStride, int width, int height, int shift, int bcwWeight)
 {
-  int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-  int weight0 = normalizer << g_BcwLog2WeightBase;
-  int weight1 = (g_BcwWeightBase - bcwWeight)*normalizer;
+  const int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
+
+  const int weight0 = normalizer << g_bcwLog2WeightBase;
+  const int weight1 = (g_bcwWeightBase - bcwWeight) * normalizer;
+
 #define REM_HF_INC  \
   src += srcStride; \
   dst += dstStride; \
@@ -253,8 +259,9 @@ void removeHighFreq(int16_t* dst, int dstStride, const int16_t* src, int srcStri
 void removeWeightHighFreq_HBD(Pel* dst, int dstStride, const Pel* src, int srcStride, int width, int height, int shift, int bcwWeight)
 {
   Intermediate_Int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-  Intermediate_Int weight0 = normalizer << g_BcwLog2WeightBase;
-  Intermediate_Int weight1 = (g_BcwWeightBase - bcwWeight)*normalizer;
+
+  Intermediate_Int weight0 = normalizer << g_bcwLog2WeightBase;
+  Intermediate_Int weight1 = (g_bcwWeightBase - bcwWeight) * normalizer;
 #define REM_HF_INC  \
   src += srcStride; \
   dst += dstStride; \
@@ -353,7 +360,7 @@ PelBufferOps::PelBufferOps()
 
 PelBufferOps g_pelBufOP = PelBufferOps();
 
-void copyBufferCore(Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height)
+void copyBufferCore(const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height)
 {
   int numBytes = width * sizeof(Pel);
   for (int i = 0; i < height; i++)
@@ -392,7 +399,7 @@ void AreaBuf<Pel>::addWeightedAvg(const AreaBuf<const Pel> &other1, const AreaBu
 {
   const int8_t w0 = getBcwWeight(bcwIdx, REF_PIC_LIST_0);
   const int8_t w1 = getBcwWeight(bcwIdx, REF_PIC_LIST_1);
-  const int8_t log2WeightBase = g_BcwLog2WeightBase;
+  const int8_t log2WeightBase = g_bcwLog2WeightBase;
 
   const Pel* src0 = other1.buf;
   const Pel* src2 = other2.buf;
@@ -438,7 +445,7 @@ void AreaBuf<Pel>::scaleSignal(const int scale, const bool dir, const ClpRng& cl
 {
   Pel* dst = buf;
   Pel* src = buf;
-  int sign, absval;
+  int  absval;
   int maxAbsclipBD = (1<<clpRng.bd) - 1;
 
   if (dir) // forward
@@ -453,7 +460,7 @@ void AreaBuf<Pel>::scaleSignal(const int scale, const bool dir, const ClpRng& cl
       {
         for (unsigned x = 0; x < width; x++)
         {
-          sign = src[x] >= 0 ? 1 : -1;
+          const int sign = sgn2(src[x]);
           absval = sign * src[x];
           dst[x] = (Pel)Clip3(-maxAbsclipBD, maxAbsclipBD, sign * (((absval << CSCALE_FP_PREC) + (scale >> 1)) / scale));
         }
@@ -469,7 +476,7 @@ void AreaBuf<Pel>::scaleSignal(const int scale, const bool dir, const ClpRng& cl
       for (unsigned x = 0; x < width; x++)
       {
         src[x] = (Pel)Clip3((Pel)(-maxAbsclipBD - 1), (Pel)maxAbsclipBD, src[x]);
-        sign = src[x] >= 0 ? 1 : -1;
+        const int sign = sgn2(src[x]);
         absval = sign * src[x];
         int val = sign * ((absval * scale + (1 << (CSCALE_FP_PREC - 1))) >> CSCALE_FP_PREC);
         if (sizeof(Pel) == 2) // avoid overflow when storing data
@@ -505,17 +512,8 @@ void AreaBuf<Pel>::applyChromaCTI(Pel* bufY, int strideY, std::vector<Pel>& pLUT
 {
   int range = 1 << bitDepth;
   int offset = range / 2;
-  int sx = 1;
-  int sy = 1;
-  if (CHROMA_420 == chrFormat) 
-  {
-    sx = 2; 
-    sy = 2;
-  }
-  else if (CHROMA_422 == chrFormat)
-  {
-    sx = 2;
-  }
+  int sx = 1 << getComponentScaleX(COMPONENT_Cb, chrFormat);
+  int sy = 1 << getComponentScaleY(COMPONENT_Cb, chrFormat);
 
   Pel* dst = buf;
   Pel* src = buf;
@@ -548,6 +546,7 @@ void AreaBuf<Pel>::applyChromaCTI(Pel* bufY, int strideY, std::vector<Pel>& pLUT
     }
   }
 }
+
 template<>
 void AreaBuf<Pel>::addAvg( const AreaBuf<const Pel> &other1, const AreaBuf<const Pel> &other2, const ClpRng& clpRng)
 {
@@ -754,8 +753,8 @@ void AreaBuf<Pel>::linearTransform( const int scale, const int shift, const int 
 
     SIZE_AWARE_PER_EL_OP( LINTF_OP, LINTF_INC );
 
-#undef RECO_OP
-#undef RECO_INC
+#undef LINTF_OP
+#undef LINTF_INC
   }
 }
 
@@ -876,41 +875,6 @@ void PelStorage::destroy()
     }
   }
   bufs.clear();
-}
-
-PelBuf PelStorage::getBuf( const ComponentID CompID )
-{
-  return bufs[CompID];
-}
-
-const CPelBuf PelStorage::getBuf( const ComponentID CompID ) const
-{
-  return bufs[CompID];
-}
-
-PelBuf PelStorage::getBuf( const CompArea &blk )
-{
-  const PelBuf& r = bufs[blk.compID];
-
-  CHECKD( rsAddr( blk.bottomRight(), r.stride ) >= ( ( r.height - 1 ) * r.stride + r.width ), "Trying to access a buf outside of bound!" );
-
-  return PelBuf( r.buf + rsAddr( blk, r.stride ), r.stride, blk );
-}
-
-const CPelBuf PelStorage::getBuf( const CompArea &blk ) const
-{
-  const PelBuf& r = bufs[blk.compID];
-  return CPelBuf( r.buf + rsAddr( blk, r.stride ), r.stride, blk );
-}
-
-PelUnitBuf PelStorage::getBuf( const UnitArea &unit )
-{
-  return ( chromaFormat == CHROMA_400 ) ? PelUnitBuf( chromaFormat, getBuf( unit.Y() ) ) : PelUnitBuf( chromaFormat, getBuf( unit.Y() ), getBuf( unit.Cb() ), getBuf( unit.Cr() ) );
-}
-
-const CPelUnitBuf PelStorage::getBuf( const UnitArea &unit ) const
-{
-  return ( chromaFormat == CHROMA_400 ) ? CPelUnitBuf( chromaFormat, getBuf( unit.Y() ) ) : CPelUnitBuf( chromaFormat, getBuf( unit.Y() ), getBuf( unit.Cb() ), getBuf( unit.Cr() ) );
 }
 
 template<>

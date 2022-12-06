@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,8 @@
 #include "EncLib.h"
 #include <fstream>
 
+using namespace std;
+
 uint32_t calcMD5(const CPelUnitBuf& pic, PictureHash &digest, const BitDepths &bitDepths);
 uint32_t calcCRC(const CPelUnitBuf& pic, PictureHash &digest, const BitDepths &bitDepths);
 uint32_t calcChecksum(const CPelUnitBuf& pic, PictureHash &digest, const BitDepths &bitDepths);
@@ -48,7 +50,7 @@ std::string hashToString(const PictureHash &digest, int numChar);
 void SEIEncoder::initSEIFramePacking(SEIFramePacking *seiFramePacking, int currPicNum)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(seiFramePacking!=NULL), "Unspecified error");
+  CHECK(!(seiFramePacking != nullptr), "Unspecified error");
 
   seiFramePacking->m_arrangementId = m_pcCfg->getFramePackingArrangementSEIId();
   seiFramePacking->m_arrangementCancelFlag = 0;
@@ -75,7 +77,7 @@ void SEIEncoder::initSEIFramePacking(SEIFramePacking *seiFramePacking, int currP
 void SEIEncoder::initSEIParameterSetsInclusionIndication(SEIParameterSetsInclusionIndication* seiParameterSetsInclusionIndication)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(seiParameterSetsInclusionIndication != NULL), "Unspecified error");
+  CHECK(!(seiParameterSetsInclusionIndication != nullptr), "Unspecified error");
 
   seiParameterSetsInclusionIndication->m_selfContainedClvsFlag = m_pcCfg->getSelfContainedClvsFlag();
 }
@@ -229,6 +231,54 @@ void SEIEncoder::initSEIErp(SEIEquirectangularProjection* seiEquirectangularProj
     }
   }
 }
+
+#if GREEN_METADATA_SEI_ENABLED
+void SEIEncoder::initSEIGreenMetadataInfo(SEIGreenMetadataInfo* seiGreenMetadataInfo, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics,SEIComplexityMetrics greenMetadata)
+{
+  assert (m_isInitialized);
+  assert (seiGreenMetadataInfo!=NULL);
+  
+  if (m_pcCfg->getSEIGreenMetadataType() == 1) //Metadata for quality recovery after low-power encoding
+  {
+    seiGreenMetadataInfo->m_greenMetadataType = m_pcCfg->getSEIGreenMetadataType();
+    seiGreenMetadataInfo->m_xsdSubpicNumberMinus1 = m_pcCfg->getSEIXSDNumberMetrics()-1;
+    seiGreenMetadataInfo->m_xsdSubPicIdc = 1; //Only 1 Picture is supported
+    // Maximum valid value for 16-bit integer: 65535
+    (m_pcCfg->getSEIXSDMetricTypePSNR()) ? seiGreenMetadataInfo->m_xsdMetricValuePSNR  = min(int(metrics.psnr*100),65535) :  seiGreenMetadataInfo->m_xsdMetricValuePSNR = 0;
+    (m_pcCfg->getSEIXSDMetricTypeSSIM()) ? seiGreenMetadataInfo->m_xsdMetricValueSSIM  = min(int(metrics.ssim*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueSSIM  = 0;
+    (m_pcCfg->getSEIXSDMetricTypeWPSNR()) ? seiGreenMetadataInfo->m_xsdMetricValueWPSNR  = min(int(metrics.wpsnr*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueWPSNR  = 0;
+    (m_pcCfg->getSEIXSDMetricTypeWSPSNR()) ? seiGreenMetadataInfo->m_xsdMetricValueWSPSNR  = min(int(metrics.wspsnr*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueWSPSNR  = 0;
+    
+    seiGreenMetadataInfo->m_xsdMetricTypePSNR = m_pcCfg->getSEIXSDMetricTypePSNR();
+    seiGreenMetadataInfo->m_xsdMetricTypeSSIM = m_pcCfg->getSEIXSDMetricTypeSSIM();
+    seiGreenMetadataInfo->m_xsdMetricTypeWPSNR = m_pcCfg->getSEIXSDMetricTypeWPSNR();
+    seiGreenMetadataInfo->m_xsdMetricTypeWSPSNR = m_pcCfg->getSEIXSDMetricTypeWSPSNR();
+  }
+  else if(m_pcCfg->getSEIGreenMetadataType() == 0) // Metadata for decoder-complexity metrics
+  {
+    seiGreenMetadataInfo->m_greenMetadataType                   = m_pcCfg->getSEIGreenMetadataType();
+    seiGreenMetadataInfo->m_greenMetadataGranularityType        = m_pcCfg->getSEIGreenMetadataGranularityType();
+    seiGreenMetadataInfo->m_greenMetadataExtendedRepresentation = m_pcCfg->getSEIGreenMetadataExtendedRepresentation();
+    switch (m_pcCfg->getSEIGreenMetadataPeriodType())   // Period type
+    {
+    case 0:   // 0x00 complexity metrics are applicable to a single picture
+      seiGreenMetadataInfo->m_numPictures = m_pcCfg->getSEIGreenMetadataPeriodNumPictures();
+      break;
+    case 1:   // 0x01 complexity metrics are applicable to all pictures in decoding order, up to (but not including) the picture containing the next I slice
+      //
+      break;
+    case 2:   // 0x02 complexity metrics are applicable over a specified time interval in seconds
+      seiGreenMetadataInfo->m_numPictures = m_pcCfg->getSEIGreenMetadataPeriodNumPictures();
+      break;
+    case 3:   // 0x03 complexity metrics are applicable over a specified number of pictures counted in decoding order
+      seiGreenMetadataInfo->m_numSeconds = m_pcCfg->getSEIGreenMetadataPeriodNumSeconds();
+      break;
+    default:   // 0x05-0xFF reserved
+      break;   //
+    }
+  }
+}
+#endif
 
 void SEIEncoder::initSEISphereRotation(SEISphereRotation* seiSphereRotation)
 {
@@ -394,6 +444,27 @@ void SEIEncoder::initSEISampleAspectRatioInfo(SEISampleAspectRatioInfo* seiSampl
   }
 }
 
+void SEIEncoder::initSEIPhaseIndication(SEIPhaseIndication* seiPhaseIndication, int ppsId)
+{
+  CHECK(!(m_isInitialized), "seiPhaseIndication already initialized");
+  CHECK(!(seiPhaseIndication != nullptr), "Need a seiPhaseIndication for initialization (got nullptr)");
+
+  if (ppsId == 0)
+  {
+    seiPhaseIndication->m_horPhaseNum = m_pcCfg->getHorPhaseNumFullResolution();
+    seiPhaseIndication->m_horPhaseDenMinus1 = m_pcCfg->getHorPhaseDenMinus1FullResolution();
+    seiPhaseIndication->m_verPhaseNum = m_pcCfg->getVerPhaseNumFullResolution();
+    seiPhaseIndication->m_verPhaseDenMinus1 = m_pcCfg->getVerPhaseDenMinus1FullResolution();
+  }
+  else if (ppsId == ENC_PPS_ID_RPR)
+  {
+    seiPhaseIndication->m_horPhaseNum = m_pcCfg->getHorPhaseNumReducedResolution();
+    seiPhaseIndication->m_horPhaseDenMinus1 = m_pcCfg->getHorPhaseDenMinus1ReducedResolution();
+    seiPhaseIndication->m_verPhaseNum = m_pcCfg->getVerPhaseNumReducedResolution();
+    seiPhaseIndication->m_verPhaseDenMinus1 = m_pcCfg->getVerPhaseDenMinus1ReducedResolution();
+  }
+}
+
 //! initialize scalable nesting SEI message.
 //! Note: The SEI message structures input into this function will become part of the scalable nesting SEI and will be
 //!       automatically freed, when the nesting SEI is disposed.
@@ -401,7 +472,7 @@ void SEIEncoder::initSEISampleAspectRatioInfo(SEISampleAspectRatioInfo* seiSampl
 void SEIEncoder::initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, SEIMessages &nestedSEIs, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t> &subpictureIDs, uint16_t maxSubpicIdInPic)
 {
   CHECK(!(m_isInitialized), "Scalable Nesting SEI already initialized ");
-  CHECK(!(scalableNestingSEI != NULL), "No Scalable Nesting SEI object passed");
+  CHECK(!(scalableNestingSEI != nullptr), "No Scalable Nesting SEI object passed");
   CHECK (targetOLSs.size() > 0 && targetLayers.size() > 0, "Scalable Nesting SEI can apply to either OLS or layer(s), not both");
 
   scalableNestingSEI->m_snOlsFlag = (targetOLSs.size() > 0) ? 1 : 0;  // If the nested SEI messages are picture buffering SEI messages, picture timing SEI messages or sub-picture timing SEI messages, nesting_ols_flag shall be equal to 1, by default case
@@ -458,44 +529,45 @@ void SEIEncoder::initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, 
 void SEIEncoder::initDecodedPictureHashSEI(SEIDecodedPictureHash *decodedPictureHashSEI, PelUnitBuf& pic, std::string &rHashString, const BitDepths &bitDepths)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(decodedPictureHashSEI!=NULL), "Unspecified error");
+  CHECK(!(decodedPictureHashSEI != nullptr), "Unspecified error");
 
   decodedPictureHashSEI->method = m_pcCfg->getDecodedPictureHashSEIType();
   decodedPictureHashSEI->singleCompFlag = (m_pcCfg->getChromaFormatIdc() == 0);
   switch (m_pcCfg->getDecodedPictureHashSEIType())
   {
-    case HASHTYPE_MD5:
-      {
-        uint32_t numChar=calcMD5(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
-        rHashString = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
-      }
-      break;
-    case HASHTYPE_CRC:
-      {
-        uint32_t numChar=calcCRC(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
-        rHashString = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
-      }
-      break;
-    case HASHTYPE_CHECKSUM:
-    default:
-      {
-        uint32_t numChar=calcChecksum(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
-        rHashString = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
-      }
-      break;
+  case HashType::MD5:
+  {
+    uint32_t numChar = calcMD5(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
+    rHashString      = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
+    break;
+  }
+  break;
+  case HashType::CRC:
+  {
+    uint32_t numChar = calcCRC(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
+    rHashString      = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
+    break;
+  }
+  case HashType::CHECKSUM:
+  default:
+  {
+    uint32_t numChar = calcChecksum(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
+    rHashString      = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
+    break;
+  }
   }
 }
 
 void SEIEncoder::initSEIDependentRAPIndication(SEIDependentRAPIndication *seiDependentRAPIndication)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(seiDependentRAPIndication!=NULL), "Unspecified error");
+  CHECK(!(seiDependentRAPIndication != nullptr), "Unspecified error");
 }
 
 void SEIEncoder::initSEIExtendedDrapIndication(SEIExtendedDrapIndication *sei)
 {
   CHECK(!(m_isInitialized), "Extended DRAP SEI already initialized");
-  CHECK(!(sei!=NULL), "Need a seiExtendedDrapIndication for initialization (got nullptr)");
+  CHECK(!(sei != nullptr), "Need a seiExtendedDrapIndication for initialization (got nullptr)");
   sei->m_edrapIndicationRapIdMinus1 = 0;
   sei->m_edrapIndicationLeadingPicturesDecodableFlag = false;
   sei->m_edrapIndicationReservedZero12Bits = 0;
@@ -507,6 +579,44 @@ void SEIEncoder::initSEIExtendedDrapIndication(SEIExtendedDrapIndication *sei)
   }
 }
 
+void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIntervalInfo)
+{
+  assert(m_isInitialized);
+  assert(seiShutterIntervalInfo != nullptr);
+  seiShutterIntervalInfo->m_siiTimeScale = m_pcCfg->getSiiSEITimeScale();
+  seiShutterIntervalInfo->m_siiFixedSIwithinCLVS = m_pcCfg->getSiiSEIFixedSIwithinCLVS();
+  if (seiShutterIntervalInfo->m_siiFixedSIwithinCLVS == true)
+  {
+    seiShutterIntervalInfo->m_siiNumUnitsInShutterInterval = m_pcCfg->getSiiSEINumUnitsInShutterInterval();
+  }
+  else
+  {
+    seiShutterIntervalInfo->m_siiMaxSubLayersMinus1 = m_pcCfg->getSiiSEIMaxSubLayersMinus1();
+    seiShutterIntervalInfo->m_siiSubLayerNumUnitsInSI.resize(seiShutterIntervalInfo->m_siiMaxSubLayersMinus1 + 1);
+    for (int32_t i = 0; i <= seiShutterIntervalInfo->m_siiMaxSubLayersMinus1; i++)
+    {
+      seiShutterIntervalInfo->m_siiSubLayerNumUnitsInSI[i] = m_pcCfg->getSiiSEISubLayerNumUnitsInSI(i);
+    }
+  }
+}
+
+void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo)
+{
+  assert(m_isInitialized);
+  assert(seiProcessingOrderInfo != nullptr);
+
+  uint32_t numSEIMessages = m_pcCfg->getPoSEINumofSeiMessages();
+  seiProcessingOrderInfo->m_posNumofSeiMessages = numSEIMessages;
+  seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
+
+  seiProcessingOrderInfo->m_posPayloadType.resize(numSEIMessages);
+  seiProcessingOrderInfo->m_posProcessingOrder.resize(numSEIMessages);
+
+  for (uint32_t i = 0; i < numSEIMessages; i++) {
+    seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
+    seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
+  }
+}
 
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned
@@ -625,6 +735,8 @@ void SEIEncoder::readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *
       readTokenValue(ar.objectCancelFlag, failed, fic, "SEIArObjCancelFlag[c]");
       ar.objectLabelValid=false;
       ar.boundingBoxValid=false;
+      ar.boundingBoxCancelFlag=false;
+
       if (!ar.objectCancelFlag)
       {
         if (seiAnnoRegion->m_hdr.m_objectLabelPresentFlag)
@@ -634,8 +746,12 @@ void SEIEncoder::readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *
           {
             readTokenValueAndValidate<uint32_t>(ar.objLabelIdx, failed, fic, "SEIArObjectLabelIdc[c]", uint32_t(0), uint32_t(255));
           }
-          readTokenValue(ar.boundingBoxValid, failed, fic, "SEIArBoundBoxUpdateFlag[c]");
-          if (ar.boundingBoxValid)
+        }
+        readTokenValue(ar.boundingBoxValid, failed, fic, "SEIArBoundBoxUpdateFlag[c]");
+        if (ar.boundingBoxValid)
+        {
+          readTokenValue(ar.boundingBoxCancelFlag, failed, fic, "SEIArBoundBoxCancelFlag[c]");
+          if (!ar.boundingBoxCancelFlag)
           {
             readTokenValueAndValidate<uint32_t>(ar.boundingBoxTop, failed, fic, "SEIArObjTop[c]", uint32_t(0), uint32_t(0x7fffffff));
             readTokenValueAndValidate<uint32_t>(ar.boundingBoxLeft, failed, fic, "SEIArObjLeft[c]", uint32_t(0), uint32_t(0x7fffffff));
@@ -650,29 +766,29 @@ void SEIEncoder::readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *
               readTokenValueAndValidate<uint32_t>(ar.objectConfidence, failed, fic, "SEIArObjDetConf[c]", uint32_t(0), uint32_t(1<<seiAnnoRegion->m_hdr.m_objectConfidenceLength)-1);
             }
           }
-          //Compare with existing attributes to decide whether it's a static object
-          //First check whether it's an existing object (or) new object
-          auto destIt = m_pcCfg->m_arObjects.find(it->first);
-          //New object
-          if (destIt == m_pcCfg->m_arObjects.end())
-          {
-            //New object arrived, needs to be appended to the map of tracked objects
-            m_pcCfg->m_arObjects[it->first] = ar;
-          }
-          //Existing object
-          else
-          {
-            // Size remains the same
-            if(m_pcCfg->m_arObjects[it->first].boundingBoxWidth == ar.boundingBoxWidth &&
-              m_pcCfg->m_arObjects[it->first].boundingBoxHeight == ar.boundingBoxHeight)
-              {
-                if(m_pcCfg->m_arObjects[it->first].boundingBoxTop == ar.boundingBoxTop &&
-                  m_pcCfg->m_arObjects[it->first].boundingBoxLeft == ar.boundingBoxLeft)
-                  {
-                    ar.boundingBoxValid = 0;
-                  }
-              }
-          }
+        }
+        //Compare with existing attributes to decide whether it's a static object
+        //First check whether it's an existing object (or) new object
+        auto destIt = m_pcCfg->m_arObjects.find(it->first);
+        //New object
+        if (destIt == m_pcCfg->m_arObjects.end())
+        {
+           //New object arrived, needs to be appended to the map of tracked objects
+           m_pcCfg->m_arObjects[it->first] = ar;
+        }
+        //Existing object
+        else
+        {
+          // Size remains the same
+          if(m_pcCfg->m_arObjects[it->first].boundingBoxWidth == ar.boundingBoxWidth &&
+            m_pcCfg->m_arObjects[it->first].boundingBoxHeight == ar.boundingBoxHeight)
+            {
+              if(m_pcCfg->m_arObjects[it->first].boundingBoxTop == ar.boundingBoxTop &&
+                m_pcCfg->m_arObjects[it->first].boundingBoxLeft == ar.boundingBoxLeft)
+                {
+                  ar.boundingBoxValid = 0;
+                }
+            }
         }
       }
     }
@@ -682,7 +798,7 @@ void SEIEncoder::readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *
 bool SEIEncoder::initSEIAnnotatedRegions(SEIAnnotatedRegions* SEIAnnoReg, int currPOC)
 {
   assert(m_isInitialized);
-  assert(SEIAnnoReg != NULL);
+  assert(SEIAnnoReg != nullptr);
 
   // reading external Annotated Regions Information SEI message parameters from file
   if (!m_pcCfg->getAnnotatedRegionSEIFileRoot().empty())
@@ -713,19 +829,17 @@ bool SEIEncoder::initSEIAnnotatedRegions(SEIAnnotatedRegions* SEIAnnoReg, int cu
 }
 
 
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
 void SEIEncoder::initSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics *seiAltTransCharacteristics)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(seiAltTransCharacteristics!=NULL), "Unspecified error");
+  CHECK(!(seiAltTransCharacteristics != nullptr), "Unspecified error");
   //  Set SEI message parameters read from command line options
   seiAltTransCharacteristics->m_preferredTransferCharacteristics = m_pcCfg->getSEIPreferredTransferCharacteristics();
 }
-#endif
 void SEIEncoder::initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *seiFilmGrain)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(seiFilmGrain != NULL), "Unspecified error");
+  CHECK(!(seiFilmGrain != nullptr), "Unspecified error");
   //  Set SEI message parameters read from command line options
   seiFilmGrain->m_filmGrainCharacteristicsCancelFlag      = m_pcCfg->getFilmGrainCharactersticsSEICancelFlag();
   seiFilmGrain->m_filmGrainCharacteristicsPersistenceFlag = m_pcCfg->getFilmGrainCharactersticsSEIPersistenceFlag();
@@ -736,13 +850,29 @@ void SEIEncoder::initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *se
   for (int i = 0; i < MAX_NUM_COMPONENT; i++)
   {
     seiFilmGrain->m_compModel[i].presentFlag = m_pcCfg->getFGCSEICompModelPresent(i);
+    if (seiFilmGrain->m_compModel[i].presentFlag)
+    {
+      seiFilmGrain->m_compModel[i].numModelValues = 1 + m_pcCfg->getFGCSEINumModelValuesMinus1(i);
+      seiFilmGrain->m_compModel[i].numIntensityIntervals = 1 + m_pcCfg->getFGCSEINumIntensityIntervalMinus1(i);
+      seiFilmGrain->m_compModel[i].intensityValues.resize(seiFilmGrain->m_compModel[i].numIntensityIntervals);
+      for (int j = 0; j < seiFilmGrain->m_compModel[i].numIntensityIntervals; j++)
+      {
+        seiFilmGrain->m_compModel[i].intensityValues[j].intensityIntervalLowerBound = m_pcCfg->getFGCSEIIntensityIntervalLowerBound(i, j);
+        seiFilmGrain->m_compModel[i].intensityValues[j].intensityIntervalUpperBound = m_pcCfg->getFGCSEIIntensityIntervalUpperBound(i, j);
+        seiFilmGrain->m_compModel[i].intensityValues[j].compModelValue.resize(seiFilmGrain->m_compModel[i].numModelValues);
+        for (int k = 0; k < seiFilmGrain->m_compModel[i].numModelValues; k++)
+        {
+          seiFilmGrain->m_compModel[i].intensityValues[j].compModelValue[k] = m_pcCfg->getFGCSEICompModelValue(i, j, k);
+        }
+      }
+    }
   }
 }
 
 void SEIEncoder::initSEIMasteringDisplayColourVolume(SEIMasteringDisplayColourVolume *seiMDCV)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(seiMDCV != NULL), "Unspecified error");
+  CHECK(!(seiMDCV != nullptr), "Unspecified error");
   //  Set SEI message parameters read from command line options
   for (int j = 0; j <= 1; j++)
   {
@@ -759,7 +889,7 @@ void SEIEncoder::initSEIMasteringDisplayColourVolume(SEIMasteringDisplayColourVo
 void SEIEncoder::initSEIContentLightLevel(SEIContentLightLevelInfo *seiCLL)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(seiCLL != NULL), "Unspecified error");
+  CHECK(!(seiCLL != nullptr), "Unspecified error");
   //  Set SEI message parameters read from command line options
   seiCLL->m_maxContentLightLevel    = m_pcCfg->getCLLSEIMaxContentLightLevel();
   seiCLL->m_maxPicAverageLightLevel = m_pcCfg->getCLLSEIMaxPicAvgLightLevel();
@@ -768,7 +898,7 @@ void SEIEncoder::initSEIContentLightLevel(SEIContentLightLevelInfo *seiCLL)
 void SEIEncoder::initSEIAmbientViewingEnvironment(SEIAmbientViewingEnvironment *seiAmbViewEnvironment)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(seiAmbViewEnvironment != NULL), "Unspecified error");
+  CHECK(!(seiAmbViewEnvironment != nullptr), "Unspecified error");
   //  Set SEI message parameters read from command line options
   seiAmbViewEnvironment->m_ambientIlluminance = m_pcCfg->getAmbientViewingEnvironmentSEIIlluminance();
   seiAmbViewEnvironment->m_ambientLightX      = m_pcCfg->getAmbientViewingEnvironmentSEIAmbientLightX();
@@ -778,7 +908,7 @@ void SEIEncoder::initSEIAmbientViewingEnvironment(SEIAmbientViewingEnvironment *
 void SEIEncoder::initSEIContentColourVolume(SEIContentColourVolume *seiContentColourVolume)
 {
   assert(m_isInitialized);
-  assert(seiContentColourVolume != NULL);
+  assert(seiContentColourVolume != nullptr);
   seiContentColourVolume->m_ccvCancelFlag = m_pcCfg->getCcvSEICancelFlag();
   seiContentColourVolume->m_ccvPersistenceFlag = m_pcCfg->getCcvSEIPersistenceFlag();
 
@@ -815,7 +945,7 @@ void SEIEncoder::initSEIContentColourVolume(SEIContentColourVolume *seiContentCo
 void SEIEncoder::initSEIScalabilityDimensionInfo(SEIScalabilityDimensionInfo *sei)
 {
   CHECK(!(m_isInitialized), "Scalability dimension information SEI already initialized");
-  CHECK(!(sei != NULL), "Need a seiScalabilityDimensionInfo for initialization (got nullptr)");
+  CHECK(!(sei != nullptr), "Need a seiScalabilityDimensionInfo for initialization (got nullptr)");
   sei->m_sdiMaxLayersMinus1 = m_pcCfg->getSdiSEIMaxLayersMinus1();
   sei->m_sdiMultiviewInfoFlag = m_pcCfg->getSdiSEIMultiviewInfoFlag();
   sei->m_sdiAuxiliaryInfoFlag = m_pcCfg->getSdiSEIAuxiliaryInfoFlag();
@@ -876,7 +1006,7 @@ void SEIEncoder::initSEIScalabilityDimensionInfo(SEIScalabilityDimensionInfo *se
 void SEIEncoder::initSEIMultiviewAcquisitionInfo(SEIMultiviewAcquisitionInfo *sei)
 {
   CHECK(!(m_isInitialized), "Multiview acquisition information SEI already initialized");
-  CHECK(!(sei != NULL), "Need a seiMultiviewAcquisitionInfo for initialization (got nullptr)");
+  CHECK(!(sei != nullptr), "Need a seiMultiviewAcquisitionInfo for initialization (got nullptr)");
   sei->m_maiIntrinsicParamFlag        = m_pcCfg->getMaiSEIIntrinsicParamFlag();
   sei->m_maiExtrinsicParamFlag        = m_pcCfg->getMaiSEIExtrinsicParamFlag();
   sei->m_maiNumViewsMinus1            = m_pcCfg->getMaiSEINumViewsMinus1();
@@ -958,10 +1088,24 @@ void SEIEncoder::initSEIMultiviewAcquisitionInfo(SEIMultiviewAcquisitionInfo *se
   }
 }
 
+void SEIEncoder::initSEIMultiviewViewPosition(SEIMultiviewViewPosition *sei)
+{
+  CHECK(!(m_isInitialized), "Multiview view position SEI already initialized");
+  CHECK(!(sei != nullptr), "Need a seiMultiviewViewPosition for initialization (got nullptr)");
+  sei->m_mvpNumViewsMinus1 = m_pcCfg->getMvpSEINumViewsMinus1();
+
+  int numViews = sei->m_mvpNumViewsMinus1 + 1;
+  sei->m_mvpViewPosition.resize(numViews);
+  for (int i = 0; i <= sei->m_mvpNumViewsMinus1; i++)
+  {
+    sei->m_mvpViewPosition[i] = m_pcCfg->getMvpSEIViewPosition(i);
+  }
+}
+
 void SEIEncoder::initSEIAlphaChannelInfo(SEIAlphaChannelInfo *sei)
 {
   CHECK(!(m_isInitialized), "Alpha channel information SEI already initialized");
-  CHECK(!(sei != NULL), "Need a seiAlphaChannelInfo for initialization (got nullptr)");
+  CHECK(!(sei != nullptr), "Need a seiAlphaChannelInfo for initialization (got nullptr)");
   sei->m_aciCancelFlag = m_pcCfg->getAciSEICancelFlag();
   sei->m_aciUseIdc = m_pcCfg->getAciSEIUseIdc();
   sei->m_aciBitDepthMinus8 = m_pcCfg->getAciSEIBitDepthMinus8();
@@ -975,7 +1119,7 @@ void SEIEncoder::initSEIAlphaChannelInfo(SEIAlphaChannelInfo *sei)
 void SEIEncoder::initSEIDepthRepresentationInfo(SEIDepthRepresentationInfo *sei)
 {
   CHECK(!(m_isInitialized), "Depth representation information SEI already initialized");
-  CHECK(!(sei != NULL), "Need a seiDepthRepresentationInfo for initialization (got nullptr)");
+  CHECK(!(sei != nullptr), "Need a seiDepthRepresentationInfo for initialization (got nullptr)");
   sei->m_driZNearFlag = m_pcCfg->getDriSEIZNearFlag();
   sei->m_driZFarFlag = m_pcCfg->getDriSEIZFarFlag();
   sei->m_driDMinFlag = m_pcCfg->getDriSEIDMinFlag();
@@ -997,7 +1141,7 @@ void SEIEncoder::initSEIDepthRepresentationInfo(SEIDepthRepresentationInfo *sei)
 void SEIEncoder::initSEIColourTransformInfo(SEIColourTransformInfo* seiCTI)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(seiCTI != NULL), "Unspecified error");
+  CHECK(!(seiCTI != nullptr), "Unspecified error");
 
   //  Set SEI message parameters read from command line options
   seiCTI->m_id = m_pcCfg->getCtiSEIId();
@@ -1124,5 +1268,110 @@ void SEIEncoder::initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixInd
   seiSeiPrefixIndications->m_payload = sei;
 }
 #endif   
+
+void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx)
+{
+  CHECK(!(m_isInitialized), "Unspecified error");
+  CHECK(!(sei != nullptr), "Unspecified error");
+  sei->m_id = m_pcCfg->getNNPostFilterSEICharacteristicsId(filterIdx);
+  sei->m_modeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsModeIdc(filterIdx);
+#if JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
+  if (sei->m_modeIdc == POST_FILTER_MODE::URI)
+  {
+    sei->m_uriTag = m_pcCfg->getNNPostFilterSEICharacteristicsUriTag(filterIdx);
+    sei->m_uri    = m_pcCfg->getNNPostFilterSEICharacteristicsUri(filterIdx);
+  }
+#endif
+  sei->m_purposeAndFormattingFlag = m_pcCfg->getNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(filterIdx);
+  if (sei->m_purposeAndFormattingFlag)
+  {
+    sei->m_purpose = m_pcCfg->getNNPostFilterSEICharacteristicsPurpose(filterIdx);
+
+    if(sei->m_purpose == 2 || sei->m_purpose == 4)
+    {
+      sei->m_outSubCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubCFlag(filterIdx);
+    }
+    if(sei->m_purpose == 3 || sei->m_purpose == 4)
+    {
+      sei->m_picWidthInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(filterIdx);
+      sei->m_picHeightInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightInLumaSamples(filterIdx);
+    }
+
+    sei->m_componentLastFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComponentLastFlag(filterIdx);
+    sei->m_inpSampleIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpSampleIdc(filterIdx);
+
+    if(sei->m_inpSampleIdc == 4)
+    {
+      sei->m_inpTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(filterIdx);
+    }
+
+    sei->m_inpOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpOrderIdc(filterIdx);
+    sei->m_outSampleIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutSampleIdc(filterIdx);
+
+    if(sei->m_outSampleIdc == 4)
+    {
+      sei->m_outTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(filterIdx);
+    }
+    sei->m_auxInpIdc             = m_pcCfg->getNNPostFilterSEICharacteristicsAuxInpIdc(filterIdx);
+    sei->m_sepColDescriptionFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSepColDescriptionFlag(filterIdx);
+    if (sei->m_sepColDescriptionFlag)
+    {
+      sei->m_colPrimaries         = m_pcCfg->getNNPostFilterSEICharacteristicsColPrimaries(filterIdx);
+      sei->m_transCharacteristics = m_pcCfg->getNNPostFilterSEICharacteristicsTransCharacteristics(filterIdx);
+      sei->m_matrixCoeffs         = m_pcCfg->getNNPostFilterSEICharacteristicsMatrixCoeffs(filterIdx);
+    }
+
+    sei->m_outOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutOrderIdc(filterIdx);
+    sei->m_constantPatchSizeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(filterIdx);
+    sei->m_patchWidthMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchWidthMinus1(filterIdx);
+    sei->m_patchHeightMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchHeightMinus1(filterIdx);
+    sei->m_overlap = m_pcCfg->getNNPostFilterSEICharacteristicsOverlap(filterIdx);
+    sei->m_paddingType = m_pcCfg->getNNPostFilterSEICharacteristicsPaddingType(filterIdx);
+    sei->m_lumaPadding = m_pcCfg->getNNPostFilterSEICharacteristicsLumaPadding(filterIdx);
+    sei->m_cbPadding = m_pcCfg->getNNPostFilterSEICharacteristicsCbPadding(filterIdx);
+    sei->m_crPadding = m_pcCfg->getNNPostFilterSEICharacteristicsCrPadding(filterIdx);
+
+    sei->m_complexityIdc = m_pcCfg->getNNPostFilterSEICharacteristicsComplexityIdc(filterIdx);
+    if(sei->m_complexityIdc > 0)
+    {
+      if(sei->m_complexityIdc == 1)
+      {
+        sei->m_parameterTypeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsParameterTypeIdc(filterIdx);
+        sei->m_log2ParameterBitLengthMinus3 = m_pcCfg->getNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3(filterIdx);
+        sei->m_numParametersIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumParametersIdc(filterIdx);
+        sei->m_numKmacOperationsIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(filterIdx);
+      }
+    }
+#if !JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
+    sei->m_uriTag = m_pcCfg->getNNPostFilterSEICharacteristicsUriTag(filterIdx);
+    sei->m_uri = m_pcCfg->getNNPostFilterSEICharacteristicsUri(filterIdx);
+#endif
+  }
+  if (sei->m_modeIdc == 1)
+  {
+    const string payloadFilename = m_pcCfg->getNNPostFilterSEICharacteristicsPayloadFilename(filterIdx);
+    ifstream bitstreamFile(payloadFilename.c_str(), ifstream::in | ifstream::binary);
+    if (!bitstreamFile)
+    {
+      EXIT( "Failed to open bitstream file " << payloadFilename.c_str() << " for reading" ) ;
+    }
+
+    bitstreamFile.seekg(0, std::ifstream::end);
+    sei->m_payloadLength = bitstreamFile.tellg();
+    bitstreamFile.seekg(0, std::ifstream::beg);
+
+    sei->m_payloadByte = new char[sei->m_payloadLength];
+    bitstreamFile.read(sei->m_payloadByte, sei->m_payloadLength);
+    bitstreamFile.close();
+  }
+}
+
+void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei)
+{
+  CHECK(!(m_isInitialized), "Unspecified error");
+  CHECK(!(sei != nullptr), "Unspecified error");
+  sei->m_id = m_pcCfg->getNnPostFilterSEIActivationId();
+}
+
 
 //! \}

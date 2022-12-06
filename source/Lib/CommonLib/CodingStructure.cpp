@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -117,6 +117,15 @@ void CodingStructure::destroy()
 
   destroyCoeffs();
 
+#if GDR_ENABLED
+  if (picHeader && m_gdrEnabled)
+  {
+    delete picHeader;
+  }
+
+  picHeader = nullptr;
+#endif
+
   for( uint32_t i = 0; i < MAX_NUM_CHANNEL_TYPE; i++ )
   {
     delete[] m_isDecomp[ i ];
@@ -135,13 +144,6 @@ void CodingStructure::destroy()
   delete[] m_motionBuf;
   m_motionBuf = nullptr;
 
-#if GDR_ENABLED
-  if (picHeader)
-  {
-    delete picHeader;
-    picHeader = nullptr;
-  }
-#endif
 
   m_tuCache.cache( tus );
   m_puCache.cache( pus );
@@ -356,6 +358,10 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv) const
   }
 
   PicHeader     *curPh = curPic->cs->picHeader;
+  if (!curPh)
+  {
+    return false;
+  }
   bool isCurGdrPicture = curPh->getInGdrInterval();
 
   if (isCurGdrPicture)
@@ -392,7 +398,7 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv) const
   return true;
 }
 
-bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, const Picture* const refPic) const
+bool CodingStructure::isClean(const Position &IntPos, const Mv FracMv, const Picture *const refPic) const
 {
   /*
     1. non gdr picture --> false;
@@ -655,6 +661,10 @@ bool CodingStructure::isClean(const Position &IntPos, RefPicList e, int refIdx) 
   }
 
   PicHeader     *refPh = refPic->cs->picHeader;
+  if (!refPh)
+  {
+    return false;
+  }
   bool isRefGdrPicture = refPh->getInGdrInterval();
 
   if (isRefGdrPicture)
@@ -692,6 +702,11 @@ bool CodingStructure::isClean(const Position &IntPos, const Picture* const refPi
   }
 
   PicHeader     *refPh = refPic->cs->picHeader;
+  if (!refPh)
+  {
+    return false;
+  }
+
   bool isRefGdrPicture = refPh->getInGdrInterval();
 
   if (isRefGdrPicture)
@@ -730,6 +745,11 @@ bool CodingStructure::isClean(const int Intx, const int Inty, const ChannelType 
          pos in dirty area -> false
   */
   PicHeader     *curPh = picHeader;
+  if (!curPh)
+  {
+    return false;
+  }
+
   bool isCurGdrPicture = curPh->getInGdrInterval();
   if (isCurGdrPicture)
   {
@@ -1540,8 +1560,16 @@ void CodingStructure::allocateVectorsAtPicLevel()
   tus.reserve( allocSize );
 }
 
+#if GDR_ENABLED
+void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabled)
+#else
 void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused)
+#endif
 {
+#if GDR_ENABLED
+  m_gdrEnabled = isGdrEnabled;
+#endif
+
   createInternals(UnitArea(_chromaFormat, _area), isTopLayer, isPLTused);
 
   if (isTopLayer)
@@ -1550,7 +1578,11 @@ void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _are
   }
 
 #if GDR_ENABLED
-  picHeader = new PicHeader();
+  if (m_gdrEnabled)
+  {
+    picHeader = new PicHeader();
+    picHeader->initPicHeader();
+  }
 #endif
 
   m_reco.create( area );
@@ -1559,8 +1591,16 @@ void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _are
   m_orgr.create( area );
 }
 
+#if GDR_ENABLED
+void CodingStructure::create(const UnitArea& _unit, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabled)
+#else
 void CodingStructure::create(const UnitArea& _unit, const bool isTopLayer, const bool isPLTused)
+#endif
 {
+#if GDR_ENABLED
+  m_gdrEnabled = isGdrEnabled;
+#endif
+
   createInternals(_unit, isTopLayer, isPLTused);
 
   if (isTopLayer)
@@ -1569,7 +1609,11 @@ void CodingStructure::create(const UnitArea& _unit, const bool isTopLayer, const
   }
 
 #if GDR_ENABLED
-  picHeader = new PicHeader();
+  if (m_gdrEnabled)
+  {
+    picHeader = new PicHeader();
+    picHeader->initPicHeader();
+  }
 #endif
 
   m_reco.create( area );
@@ -1847,12 +1891,19 @@ void CodingStructure::initSubStructure( CodingStructure& subStruct, const Channe
   subStruct.vps       = vps;
   subStruct.pps       = pps;
 #if GDR_ENABLED
-  if (!subStruct.picHeader)
+  if (m_gdrEnabled)
   {
-    subStruct.picHeader = new PicHeader;
-    subStruct.picHeader->initPicHeader();
+    if (!subStruct.picHeader)
+    {
+      subStruct.picHeader = new PicHeader;
+      subStruct.picHeader->initPicHeader();
+    }
+    *subStruct.picHeader = *picHeader;
   }
-  *subStruct.picHeader = *picHeader;
+  else
+  {
+    subStruct.picHeader = picHeader;
+  }
 #else
   subStruct.picHeader = picHeader;
 #endif
@@ -2407,8 +2458,10 @@ const CodingUnit* CodingStructure::getCURestricted( const Position &pos, const P
   const CodingUnit* cu = getCU( pos, _chType );
   const bool wavefrontsEnabled = this->slice->getSPS()->getEntropyCodingSyncEnabledFlag();
   int ctuSizeBit = floorLog2(this->sps->getMaxCUWidth());
-  int xNbY  = pos.x << getChannelTypeScaleX( _chType, this->area.chromaFormat );
-  int xCurr = curPos.x << getChannelTypeScaleX( _chType, this->area.chromaFormat );
+
+  const int xNbY  = pos.x * (1 << getChannelTypeScaleX(_chType, this->area.chromaFormat));
+  const int xCurr = curPos.x * (1 << getChannelTypeScaleX(_chType, this->area.chromaFormat));
+
   bool addCheck = (wavefrontsEnabled && (xNbY >> ctuSizeBit) >= (xCurr >> ctuSizeBit) + 1 ) ? false : true;
   return ( cu && cu->slice->getIndependentSliceIdx() == curSliceIdx && cu->tileIdx == curTileIdx && addCheck ) ? cu : nullptr;
 }

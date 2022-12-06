@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,6 +58,8 @@ typedef void InvTrans(const TCoeff*, TCoeff*, int, int, int, int, const TCoeff, 
 // Class definition
 // ====================================================================================================================
 
+using CbfMaskList = static_vector<int, 3>;
+using TrModeList  = static_vector<TrMode, NUM_TRAFO_MODES_MTS>;
 
 /// transform and quantization class
 class TrQuant
@@ -72,12 +74,10 @@ public:
                     const uint32_t uiMaxTrSize,
                     const bool bUseRDOQ,
                     const bool bUseRDOQTS,
-#if T0196_SELECTIVE_RDOQ
                     const bool useSelectiveRDOQ,
-#endif
                     const bool bEnc
   );
-  void getTrTypes(const TransformUnit tu, const ComponentID compID, int &trTypeHor, int &trTypeVer);
+  void getTrTypes(const TransformUnit tu, const ComponentID compID, TransType &trTypeHor, TransType &trTypeVer);
 
   void fwdLfnstNxN( TCoeff* src, TCoeff* dst, const uint32_t mode, const uint32_t index, const uint32_t size, int zeroOutSize );
   void invLfnstNxN( TCoeff* src, TCoeff* dst, const uint32_t mode, const uint32_t index, const uint32_t size, int zeroOutSize, const int maxLog2TrDynamicRange );
@@ -93,15 +93,19 @@ protected:
 public:
 
   void invTransformNxN  (TransformUnit &tu, const ComponentID &compID, PelBuf &pResi, const QpParam &cQPs);
-  void transformNxN     ( TransformUnit& tu, const ComponentID& compID, const QpParam& cQP, std::vector<TrMode>* trModes, const int maxCand );
-  void transformNxN     ( TransformUnit& tu, const ComponentID& compID, const QpParam& cQP, TCoeff& uiAbsSum, const Ctx& ctx, const bool loadTr = false );
+  void transformNxN(TransformUnit &tu, const ComponentID &compID, const QpParam &cQP, TrModeList &trModes,
+                    const int maxCand);
+  void transformNxN(TransformUnit &tu, const ComponentID &compID, const QpParam &cQP, TCoeff &absSum, const Ctx &ctx,
+                    const bool loadTr = false);
 
   void transformSkipQuantOneSample(TransformUnit &tu, const ComponentID &compID, const TCoeff &resiDiff, TCoeff &coeff,    const uint32_t &uiPos, const QpParam &cQP, const bool bUseHalfRoundingPoint);
   void invTrSkipDeQuantOneSample  (TransformUnit &tu, const ComponentID &compID, const TCoeff &pcCoeff,  Pel &reconSample, const uint32_t &uiPos, const QpParam &cQP);
 
   void                        invTransformICT     ( const TransformUnit &tu, PelBuf &resCb, PelBuf &resCr );
   std::pair<int64_t,int64_t>  fwdTransformICT     ( const TransformUnit &tu, const PelBuf &resCb, const PelBuf &resCr, PelBuf& resC1, PelBuf& resC2, int jointCbCr = -1 );
-  std::vector<int>            selectICTCandidates ( const TransformUnit &tu, CompStorage* resCb, CompStorage* resCr );
+
+  void selectICTCandidates(const TransformUnit &tu, CompStorage *resCb, CompStorage *resCr,
+                           CbfMaskList &cbfMasksToTest);
 
 #if RDOQ_CHROMA_LAMBDA
   void   setLambdas  ( const double lambdas[MAX_NUM_COMPONENT] )   { m_quant->setLambdas( lambdas ); }
@@ -120,7 +124,9 @@ protected:
 
 private:
   DepQuant *m_quant;          //!< Quantizer
-  TCoeff    m_mtsCoeffs[NUM_TRAFO_MODES_MTS][MAX_TB_SIZEY * MAX_TB_SIZEY];
+
+  EnumArray<TCoeff[MAX_TB_SIZEY * MAX_TB_SIZEY], MtsType> m_mtsCoeffs;
+
   TCoeff   m_tempInMatrix [ 48 ];
   TCoeff   m_tempOutMatrix[ 48 ];
   static const int maxAbsIctMode = 3;
@@ -137,7 +143,8 @@ private:
   void xTransformSkip   (const TransformUnit &tu, const ComponentID &compID, const CPelBuf &resi, TCoeff* psCoeff);
 
   // quantization
-  void xQuant           (TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &uiAbsSum, const QpParam &cQP, const Ctx& ctx);
+  void xQuant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum, const QpParam &cQP,
+              const Ctx &ctx);
 
   // dequantization
   void xDeQuant( const TransformUnit &tu,

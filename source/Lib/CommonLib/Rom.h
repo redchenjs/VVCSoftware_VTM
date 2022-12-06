@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,14 +69,13 @@ struct ScanElement
 };
 
 extern       uint32_t   g_log2SbbSize[MAX_CU_DEPTH + 1][MAX_CU_DEPTH + 1][2];
-extern ScanElement
-  *g_scanOrder[SCAN_NUMBER_OF_GROUP_TYPES][SCAN_NUMBER_OF_TYPES][MAX_CU_SIZE / 2 + 1][MAX_CU_SIZE / 2 + 1];
+extern EnumArray<ScanElement *[MAX_CU_SIZE / 2 + 1][MAX_CU_SIZE / 2 + 1], CoeffScanType> g_scanOrder[SCAN_NUMBER_OF_GROUP_TYPES];
 extern       ScanElement   g_coefTopLeftDiagScan8x8[ MAX_CU_SIZE / 2 + 1 ][ 64 ];
 
 extern const int g_quantScales   [2/*0=4^n blocks, 1=2*4^n blocks*/][SCALING_LIST_REM_NUM];          // Q(QP%6)
 extern const int g_invQuantScales[2/*0=4^n blocks, 1=2*4^n blocks*/][SCALING_LIST_REM_NUM];          // IQ(QP%6)
 
-static const int g_numTransformMatrixSizes = 6;
+static constexpr int NUM_TRANSFORM_MATRIX_SIZES = 6;
 #if RExt__HIGH_PRECISION_FORWARD_TRANSFORM
 static const int g_transformMatrixShift[TRANSFORM_NUMBER_OF_DIRECTIONS] = { 14, 6 };
 #else
@@ -170,8 +169,8 @@ extern CDTrace* g_trace_ctx;
 
 const char* nalUnitTypeToString(NalUnitType type);
 
-extern const char *MatrixType   [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
-extern const char *MatrixType_DC[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
+extern const char *matrixType[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
+extern const char *matrixTypeDc[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
 
 extern const int g_quantTSDefault4x4   [4*4];
 extern const int g_quantIntraDefault8x8[8*8];
@@ -183,17 +182,16 @@ extern const uint32_t g_scalingListId[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
 
 extern MsgLevel g_verbosity;
 
-
-extern const int8_t g_BcwLog2WeightBase;
-extern const int8_t g_BcwWeightBase;
+extern const int8_t g_bcwLog2WeightBase;
+extern const int8_t g_bcwWeightBase;
 extern const int8_t g_BcwWeights[BCW_NUM];
 extern const int8_t g_BcwSearchOrder[BCW_NUM];
 extern       int8_t g_BcwCodingOrder[BCW_NUM];
 extern       int8_t g_BcwParsingOrder[BCW_NUM];
 
 class CodingStructure;
-int8_t getBcwWeight(uint8_t bcwIdx, uint8_t uhRefFrmList);
-void resetBcwCodingOrder(bool bRunDecoding, const CodingStructure &cs);
+int8_t   getBcwWeight(uint8_t bcwIdx, uint8_t refFrameList);
+void     resetBcwCodingOrder(bool runDecoding, const CodingStructure &cs);
 uint32_t deriveWeightIdxBits(uint8_t bcwIdx);
 
 constexpr uint8_t g_tbMax[257] = { 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
@@ -220,7 +218,7 @@ extern uint16_t g_paletteQuant[57];
 extern uint8_t g_paletteRunTopLut[5];
 extern uint8_t g_paletteRunLeftLut[5];
 
-const int g_IBCBufferSize = 256 * 128;
+static constexpr int IBC_BUFFER_SIZE = 256 * 128;
 
 void initGeoTemplate();
 extern int16_t** g_GeoParams;
@@ -228,7 +226,7 @@ extern int16_t*  g_globalGeoWeights   [GEO_NUM_PRESTORED_MASK];
 extern Pel*      g_globalGeoEncSADmask[GEO_NUM_PRESTORED_MASK];
 extern int16_t   g_weightOffset       [GEO_NUM_PARTITION_MODE][GEO_NUM_CU_SIZE][GEO_NUM_CU_SIZE][2];
 extern int8_t    g_angle2mask         [GEO_NUM_ANGLES];
-extern int8_t    g_Dis[GEO_NUM_ANGLES];
+extern int8_t    g_dis[GEO_NUM_ANGLES];
 extern int8_t    g_angle2mirror[GEO_NUM_ANGLES];
 #endif  //__TCOMROM__
 

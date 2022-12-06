@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,8 +64,9 @@ public:
   void setFlatScalingList   ( const int maxLog2TrDynamicRange[MAX_NUM_CHANNEL_TYPE], const BitDepths &bitDepths );
   void setScalingList       ( ScalingList *scalingList, const int maxLog2TrDynamicRange[MAX_NUM_CHANNEL_TYPE], const BitDepths &bitDepths);
   // quantization
-  void quant                ( TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &uiAbsSum, const QpParam &cQP, const Ctx& ctx );
-  void forwardBDPCM(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &uiAbsSum,
+  void quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum, const QpParam &cQP,
+             const Ctx &ctx);
+  void forwardBDPCM(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum,
                     const QpParam &cQP, const Ctx &ctx);
 
 private:
@@ -77,7 +78,8 @@ private:
   void    xSetErrScaleCoeff              ( uint32_t list, uint32_t sizeX, uint32_t sizeY, int qp, const int maxLog2TrDynamicRange[MAX_NUM_CHANNEL_TYPE], const BitDepths &bitDepths );
   void    xDequantSample                 ( TCoeff& pRes, TCoeff& coeff, const TrQuantParams& trQuantParams );
   // RDOQ functions
-  void xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &uiAbsSum, const QpParam &cQP, const Ctx &ctx);
+  void xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum,
+                         const QpParam &cQP, const Ctx &ctx);
 
   inline uint32_t xGetCodedLevel( double&            rd64CodedCost,
                               double&            rd64CodedCost0,
@@ -167,7 +169,7 @@ private:
   int    m_sigRateDelta       [MAX_TB_SIZEY * MAX_TB_SIZEY];
   TCoeff m_deltaU             [MAX_TB_SIZEY * MAX_TB_SIZEY];
   TCoeff m_fullCoeff          [MAX_TB_SIZEY * MAX_TB_SIZEY];
-  int   m_bdpcm;
+  BdpcmMode m_bdpcm;
   int   m_testedLevels;
 };// END CLASS DEFINITION QuantRDOQ
 

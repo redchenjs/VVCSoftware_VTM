@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -78,14 +78,14 @@ Area MCTSHelper::getTileAreaRestricted( const Area& tileArea, const int offLT, c
 
 void MCTSHelper::clipMvToArea( Mv& rcMv, const Area& block, const Area& clipArea, const SPS& sps, const int mvFracBits )
 {
-  const int iHorMax = ( clipArea.x + clipArea.width - (int)block.x - (int)block.width ) << mvFracBits;
-  const int iHorMin = ( clipArea.x - (int)block.x ) << mvFracBits;
+  const int horMax = (clipArea.x + clipArea.width - (int) block.x - (int) block.width) << mvFracBits;
+  const int horMin = (clipArea.x - (int) block.x) << mvFracBits;
 
-  const int iVerMax = ( clipArea.y + clipArea.height - (int)block.y - (int)block.height ) << mvFracBits;
-  const int iVerMin = ( clipArea.y - (int)block.y ) << mvFracBits;
+  const int verMax = (clipArea.y + clipArea.height - (int) block.y - (int) block.height) << mvFracBits;
+  const int verMin = (clipArea.y - (int) block.y) << mvFracBits;
 
-  rcMv.setHor( Clip3( iHorMin, iHorMax, rcMv.getHor() ) );
-  rcMv.setVer( Clip3( iVerMin, iVerMax, rcMv.getVer() ) );
+  rcMv.setHor(Clip3(horMin, horMax, rcMv.getHor()));
+  rcMv.setVer(Clip3(verMin, verMax, rcMv.getVer()));
 }
 
 Area MCTSHelper::getTileArea( const CodingStructure* cs, const int ctuAddr )
@@ -242,7 +242,7 @@ bool MCTSHelper::checkMvBufferForMCTSConstraint( const PredictionUnit &pu, bool 
               const MotionInfo &miA = mi;
               const MotionInfo &miB = mb.at( x + 1, y + 1 );
               Mv mvAff = miA.mv[refList] + miB.mv[refList];
-              roundAffineMv( mvAff.hor, mvAff.ver, 1 );
+              mvAff.roundAffine(1);
               getMotInfoBlockPartPos( pu, xOff, yOff, mvAff, predXLeft, predYTop, predXRight, predYBottom );
               if( !checkMVRange( mvAff, tileArea, predXLeft, predXRight + blkW, predYTop, predYBottom + blkH, chromaFormat, false, msgFlag ) )
               {
@@ -257,6 +257,7 @@ bool MCTSHelper::checkMvBufferForMCTSConstraint( const PredictionUnit &pu, bool 
 
   return true;
 }
+
 bool MCTSHelper::checkMvIsNotInRestrictedArea( const PredictionUnit &pu, const Mv& mv, const Area& restrArea, const MvPrecision mvPrec )
 {
   CHECKD( mvPrec < MV_PRECISION_INT, "Wrong MV precision!" );
@@ -271,6 +272,7 @@ bool MCTSHelper::checkMvIsNotInRestrictedArea( const PredictionUnit &pu, const M
   }
   return true;
 }
+
 bool MCTSHelper::checkMvForMCTSConstraint( const PredictionUnit &pu, const Mv& mv, const MvPrecision mvPrec )
 {
   return checkMvIsNotInRestrictedArea( pu, mv, pu.cs->picture->mctsInfo.getTileAreaSubPelRestricted( pu ), mvPrec );

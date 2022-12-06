@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -55,6 +55,7 @@ enum PictureType
   PIC_ORIGINAL,
   PIC_TRUE_ORIGINAL,
   PIC_FILTERED_ORIGINAL,
+  PIC_FILTERED_ORIGINAL_FG,
   PIC_PREDICTION,
   PIC_RESIDUAL,
   PIC_ORG_RESI,
@@ -62,6 +63,9 @@ enum PictureType
   PIC_ORIGINAL_INPUT,
   PIC_TRUE_ORIGINAL_INPUT,
   PIC_FILTERED_ORIGINAL_INPUT,
+#if JVET_Z0120_SII_SEI_PROCESSING
+  PIC_YUV_POST_REC,
+#endif
   NUM_PIC_TYPES
 };
 extern XUCache g_globalUnitCache;
@@ -98,8 +102,14 @@ public:
 
   CodingStructure(CUCache&, PUCache&, TUCache&);
 
+#if GDR_ENABLED
+  bool isGdrEnabled() { return m_gdrEnabled; }
+  void create(const UnitArea &_unit, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabled = false);
+  void create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabeld = false);
+#else
   void create(const UnitArea &_unit, const bool isTopLayer, const bool isPLTused);
   void create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused);
+#endif
 
   void destroy();
   void releaseIntermediateData();
@@ -114,7 +124,7 @@ public:
   bool refreshCrossBTV(int begX, int endX) const;
 
   bool overlapDirty() const;
-  bool dirtyCrossTTV() const;  
+  bool dirtyCrossTTV() const;
   bool dirtyCrossBTV() const;
 #endif
 
@@ -122,14 +132,14 @@ public:
   bool isClean(const ChannelType effChType) const;
   bool isClean(const Position &IntPos, RefPicList e, int refIdx) const;
   bool isClean(const Position &IntPos, const Picture* const ref_pic) const;
-  bool isClean(const Position &IntPos, Mv FracMv) const;  
+  bool isClean(const Position &IntPos, Mv FracMv) const;
   bool isClean(const Position &IntPos, Mv FracMv, const Picture* const refPic) const;
   bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, int isProf=0) const;
   bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, bool ibc) const;
-  bool isClean(const Position &IntPos, const ChannelType effChType) const;  
-  bool isClean(const int x, const int y, const ChannelType effChType) const;  
+  bool isClean(const Position &IntPos, const ChannelType effChType) const;
+  bool isClean(const int x, const int y, const ChannelType effChType) const;
   bool isClean(const Area &area, const ChannelType effChType) const;
-  
+
   bool isSubPuClean(PredictionUnit &pu, const Mv *mv) const;
 #endif
   void rebindPicBufs();
@@ -188,16 +198,20 @@ public:
 
   static_vector<double, NUM_ENC_FEATURES> features;
 
+  double     *splitRdCostBest; //[Partition::NUM_PART_SPLIT];
   double      cost;
   bool        useDbCost;
   double      costDbOffset;
   double      lumaCost;
-  uint64_t      fracBits;
+  uint64_t    fracBits;
   Distortion  dist;
   Distortion  interHad;
   TreeType    treeType; //because partitioner can not go deep to tu and cu coding (e.g., addCU()), need another variable for indicating treeType
   ModeType    modeType;
-
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct m_featureCounter;
+#endif
+  
   void initStructData  (const int &QP = MAX_INT, const bool &skipMotBuf = false);
   void initSubStructure(      CodingStructure& cs, const ChannelType chType, const UnitArea &subArea, const bool &isTuEnc);
 
@@ -266,6 +280,10 @@ private:
   int     m_offsets[ MAX_NUM_COMPONENT ];
 
   MotionInfo *m_motionBuf;
+
+#if GDR_ENABLED
+  bool m_gdrEnabled;
+#endif
 
 public:
   CodingStructure *bestParent;

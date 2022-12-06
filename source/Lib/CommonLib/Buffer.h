@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,7 +72,7 @@ struct PelBufferOps
   void(*calcBIOPar)    (const Pel* srcY0Temp, const Pel* srcY1Temp, const Pel* gradX0, const Pel* gradX1, const Pel* gradY0, const Pel* gradY1, int* dotProductTemp1, int* dotProductTemp2, int* dotProductTemp3, int* dotProductTemp5, int* dotProductTemp6, const int src0Stride, const int src1Stride, const int gradStride, const int widthG, const int heightG, const int bitDepth);
   void(*calcBIOSums)   (const Pel* srcY0Tmp, const Pel* srcY1Tmp, Pel* gradX0, Pel* gradX1, Pel* gradY0, Pel* gradY1, int xu, int yu, const int src0Stride, const int src1Stride, const int widthG, const int bitDepth, int* sumAbsGX, int* sumAbsGY, int* sumDIX, int* sumDIY, int* sumSignGY_GX);
   void(*calcBlkGradient)(int sx, int sy, int    *arraysGx2, int     *arraysGxGy, int     *arraysGxdI, int     *arraysGy2, int     *arraysGydI, int     &sGx2, int     &sGy2, int     &sGxGy, int     &sGxdI, int     &sGydI, int width, int height, int unitSize);
-  void(*copyBuffer)(Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height);
+  void (*copyBuffer)(const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height);
   void(*padding)(Pel *dst, int stride, int width, int height, int padSize);
 #if ENABLE_SIMD_OPT_BCW
   void ( *removeWeightHighFreq8)  ( Pel* src0, int src0Stride, const Pel* src1, int src1Stride, int width, int height, int shift, int bcwWeight);
@@ -81,14 +81,16 @@ struct PelBufferOps
   void ( *removeHighFreq4)        ( Pel* src0, int src0Stride, const Pel* src1, int src1Stride, int width, int height);
 #endif
   void (*profGradFilter) (Pel* pSrc, int srcStride, int width, int height, int gradStride, Pel* gradX, Pel* gradY, const int bitDepth);
-  void (*applyPROF)      (Pel* dst, int dstStride, const Pel* src, int srcStride, int width, int height, const Pel* gradX, const Pel* gradY, int gradStride, const int* dMvX, const int* dMvY, int dMvStride, const bool& bi, int shiftNum, Pel offset, const ClpRng& clpRng);
+  void (*applyPROF)(Pel *dst, int dstStride, const Pel *src, int srcStride, int width, int height, const Pel *gradX,
+                    const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY, int dMvStride, const bool bi,
+                    int shiftNum, Pel offset, const ClpRng &clpRng);
   void (*roundIntVector) (int* v, int size, unsigned int nShift, const int dmvLimit);
 };
 
 extern PelBufferOps g_pelBufOP;
 
 void paddingCore(Pel *ptr, int stride, int width, int height, int padSize);
-void copyBufferCore(Pel *src, int srcStride, Pel *Dst, int dstStride, int width, int height);
+void copyBufferCore(const Pel *src, int srcStride, Pel *Dst, int dstStride, int width, int height);
 
 template<typename T>
 struct AreaBuf : public Size
@@ -98,7 +100,7 @@ struct AreaBuf : public Size
   // the proper type causes awful lot of errors
   //ptrdiff_t stride;
 
-  AreaBuf()                                                                               : Size(),                  buf( NULL ), stride( 0 )          { }
+  AreaBuf() : Size(), buf(nullptr), stride(0) {}
   AreaBuf( T *_buf, const Size &size )                                                    : Size( size ),            buf( _buf ), stride( size.width ) { }
   AreaBuf( T *_buf, const int &_stride, const Size &size )                                : Size( size ),            buf( _buf ), stride( _stride )    { }
   AreaBuf( T *_buf, const SizeType &_width, const SizeType &_height )                     : Size( _width, _height ), buf( _buf ), stride( _width )     { }
@@ -239,55 +241,20 @@ else                                                        \
 template<typename T>
 void AreaBuf<T>::fill(const T &val)
 {
-  if( sizeof( T ) == 1 )
+  if (width == stride)
   {
-    if( width == stride )
-    {
-      ::memset( buf, reinterpret_cast< const signed char& >( val ), width * height * sizeof( T ) );
-    }
-    else
-    {
-      T* dest = buf;
-      size_t line = width * sizeof( T );
-
-      for( unsigned y = 0; y < height; y++ )
-      {
-        ::memset( dest, reinterpret_cast< const signed char& >( val ), line );
-
-        dest += stride;
-      }
-    }
-  }
-  else if( T( 0 ) == val )
-  {
-    if( width == stride )
-    {
-      ::memset( buf, 0, width * height * sizeof( T ) );
-    }
-    else
-    {
-      T* dest = buf;
-      size_t line = width * sizeof( T );
-
-      for( unsigned y = 0; y < height; y++ )
-      {
-        ::memset( dest, 0, line );
-
-        dest += stride;
-      }
-    }
+    std::fill_n(buf, width * height, val);
   }
   else
   {
     T* dest = buf;
 
-#define FILL_INC        dest      += stride
-#define FILL_OP( ADDR ) dest[ADDR] = val
+    for (unsigned y = 0; y < height; y++)
+    {
+      std::fill_n(dest, width, val);
 
-    SIZE_AWARE_PER_EL_OP( FILL_OP, FILL_INC );
-
-#undef FILL_INC
-#undef FILL_OP
+      dest += stride;
+    }
   }
 }
 
@@ -296,16 +263,15 @@ void AreaBuf<T>::memset( const int val )
 {
   if( width == stride )
   {
-    ::memset( buf, val, width * height * sizeof( T ) );
+    std::fill_n(reinterpret_cast<char *>(buf), width * height * sizeof(T), val);
   }
   else
   {
-    T* dest = buf;
-    size_t line = width * sizeof( T );
+    T *dest = buf;
 
     for( int y = 0; y < height; y++ )
     {
-      ::memset( dest, val, line );
+      std::fill_n(reinterpret_cast<char *>(dest), width * sizeof(T), val);
 
       dest += stride;
     }
@@ -419,8 +385,8 @@ void AreaBuf<Pel>::toLast( const ClpRng& clpRng );
 template<typename T>
 void AreaBuf<T>::removeWeightHighFreq(const AreaBuf<T>& other, const bool bClip, const ClpRng& clpRng, const int8_t bcwWeight)
 {
-  const int8_t bcwWeightOther = g_BcwWeightBase - bcwWeight;
-  const int8_t log2WeightBase = g_BcwLog2WeightBase;
+  const int8_t bcwWeightOther = g_bcwWeightBase - bcwWeight;
+  const int8_t log2WeightBase = g_bcwLog2WeightBase;
 
   const Pel* src = other.buf;
   const int  srcStride = other.stride;
@@ -1016,18 +982,43 @@ struct PelStorage : public PelUnitBuf
   void create( const ChromaFormat &_chromaFormat, const Area& _area, const unsigned _maxCUSize = 0, const unsigned _margin = 0, const unsigned _alignment = 0, const bool _scaleChromaMargin = true );
   void destroy();
 
-         PelBuf getBuf( const CompArea &blk );
-  const CPelBuf getBuf( const CompArea &blk ) const;
+  PelBuf getBuf(const ComponentID CompID) { return bufs[CompID]; }
 
-         PelBuf getBuf( const ComponentID CompID );
-  const CPelBuf getBuf( const ComponentID CompID ) const;
+  const CPelBuf getBuf(const ComponentID CompID) const { return bufs[CompID]; }
 
-         PelUnitBuf getBuf( const UnitArea &unit );
-  const CPelUnitBuf getBuf( const UnitArea &unit ) const;
-  Pel *getOrigin( const int id ) const { return m_origin[id]; }
+  PelBuf getBuf(const CompArea &blk)
+  {
+    const PelBuf &r = bufs[blk.compID];
+
+    CHECKD(rsAddr(blk.bottomRight(), r.stride) >= ((r.height - 1) * r.stride + r.width),
+           "Trying to access a buf outside of bound!");
+
+    return PelBuf(r.buf + rsAddr(blk, r.stride), r.stride, blk);
+  }
+
+  const CPelBuf getBuf(const CompArea &blk) const
+  {
+    const PelBuf &r = bufs[blk.compID];
+    return CPelBuf(r.buf + rsAddr(blk, r.stride), r.stride, blk);
+  }
+
+  PelUnitBuf getBuf(const UnitArea &unit)
+  {
+    return (chromaFormat == CHROMA_400)
+             ? PelUnitBuf(chromaFormat, getBuf(unit.Y()))
+             : PelUnitBuf(chromaFormat, getBuf(unit.Y()), getBuf(unit.Cb()), getBuf(unit.Cr()));
+  }
+
+  const CPelUnitBuf getBuf(const UnitArea &unit) const
+  {
+    return (chromaFormat == CHROMA_400)
+             ? CPelUnitBuf(chromaFormat, getBuf(unit.Y()))
+             : CPelUnitBuf(chromaFormat, getBuf(unit.Y()), getBuf(unit.Cb()), getBuf(unit.Cr()));
+  }
+
+  Pel *getOrigin(const int id) const { return m_origin[id]; }
 
 private:
-
   Pel *m_origin[MAX_NUM_COMPONENT];
 };
 

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,8 @@ private:
   // member functions
 
   bool  xSelectWP            (Slice *const slice, const int log2Denom);
-  bool  xSelectWPHistExtClip (Slice *const slice, const int log2Denom, const bool bDoEnhancement, const bool bClipInitialSADWP, const bool bUseHistogram);
+  bool  xSelectWPHistExtClip(Slice *const slice, const int log2Denom, const bool doEnhancement,
+                             const bool clipInitialSADWP, const bool useHistogram);
   bool  xUpdatingWPParameters(Slice *const slice, const int log2Denom);
 
 public:

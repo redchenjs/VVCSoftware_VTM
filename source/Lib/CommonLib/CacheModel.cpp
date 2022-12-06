@@ -160,7 +160,8 @@ void CacheModel::xConfigure(const std::string& filename )
   if ( m_cacheAddrMode == CACHE_MODE_2D )
   {
     int blkSize = m_cacheBlkWidth * m_cacheBlkHeight;
-    if ( m_cacheLineSize % blkSize != 0 && blkSize % m_cacheLineSize ) {
+    if (m_cacheLineSize % blkSize != 0 && blkSize % m_cacheLineSize)
+    {
       THROW("CacheLineSize shall be multiple of BlkWidth x BlkHeight or BlkWidth x BlkHeight shall be multiple of CacheLineSize in 2D mode");
     }
   }
@@ -309,10 +310,10 @@ void CacheModel::reportSequence( )
 
 void CacheModel::setRefPicture( const Picture *refPic, const ComponentID CompID )
 {
-    m_refPoc = refPic->getPOC();
-    m_base   = refPic->getOrigin( PIC_RECONSTRUCTION, CompID );
-    m_compID = CompID;
-    m_picWidth = refPic->getRecoBuf( CompID ).stride;
+  m_refPoc   = refPic->getPOC();
+  m_base     = refPic->getOrigin(PIC_RECONSTRUCTION, CompID);
+  m_compID   = CompID;
+  m_picWidth = refPic->getRecoBuf(CompID).stride;
 }
 
 bool CacheModel::xIsCacheHit( int pos, size_t addr )
@@ -412,24 +413,23 @@ size_t CacheModel::xMapAddress( size_t offset ) {
   size_t ret;
   size_t xInPic, yInPic, blkPosX, blkPosY, xInBlk, yInBlk;
 
-  switch ( m_cacheAddrMode ) {
-    case CACHE_MODE_1D : // diret mapping
-      return offset;
-    case CACHE_MODE_2D : // 2D address mapping
-      xInPic  = offset % m_picWidth;
-      yInPic  = offset / m_picWidth;
-      blkPosX = xInPic / m_cacheBlkWidth;
-      blkPosY = yInPic / m_cacheBlkHeight;
-      xInBlk  = xInPic % m_cacheBlkWidth;
-      yInBlk  = yInPic % m_cacheBlkHeight;
-      ret  = m_picWidth * blkPosY * m_cacheBlkHeight;
-      ret += blkPosX * m_cacheBlkWidth * m_cacheBlkHeight;
-      ret += yInBlk * m_cacheBlkWidth;
-      ret += xInBlk;
-      return ret;
-    default :
-      THROW( "Unknown address mode " << m_cacheAddrMode );
-      return 0;
+  switch (m_cacheAddrMode)
+  {
+  case CACHE_MODE_1D:   // diret mapping
+    return offset;
+  case CACHE_MODE_2D:   // 2D address mapping
+    xInPic  = offset % m_picWidth;
+    yInPic  = offset / m_picWidth;
+    blkPosX = xInPic / m_cacheBlkWidth;
+    blkPosY = yInPic / m_cacheBlkHeight;
+    xInBlk  = xInPic % m_cacheBlkWidth;
+    yInBlk  = yInPic % m_cacheBlkHeight;
+    ret     = m_picWidth * blkPosY * m_cacheBlkHeight;
+    ret += blkPosX * m_cacheBlkWidth * m_cacheBlkHeight;
+    ret += yInBlk * m_cacheBlkWidth;
+    ret += xInBlk;
+    return ret;
+  default: THROW("Unknown address mode " << m_cacheAddrMode); return 0;
   }
 }
 

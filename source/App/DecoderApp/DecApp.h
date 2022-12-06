@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,7 +61,24 @@ private:
   // class interface
   DecLib          m_cDecLib;                     ///< decoder class
   std::unordered_map<int, VideoIOYuv>      m_cVideoIOYuvReconFile;        ///< reconstruction YUV class
+  std::unordered_map<int, VideoIOYuv>      m_videoIOYuvSEIFGSFile;       ///< reconstruction YUV with FGS class
   std::unordered_map<int, VideoIOYuv>      m_cVideoIOYuvSEICTIFile;       ///< reconstruction YUV with CTI class
+
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool                                    m_ShutterFilterEnable;          ///< enable Post-processing with Shutter Interval SEI
+  VideoIOYuv                              m_cTVideoIOYuvSIIPostFile;      ///< post-filtered YUV class
+  int                                     m_SII_BlendingRatio;
+
+  struct IdrSiiInfo
+  {
+    SEIShutterIntervalInfo m_siiInfo;
+    uint32_t               m_picPoc;
+    bool                   m_isValidSii;
+  };
+
+  std::map<uint32_t, IdrSiiInfo> m_activeSiiInfo;
+
+#endif
 
   // for output control
   int             m_iPOCLastDisplay;              ///< last POC in display order
@@ -84,18 +101,27 @@ public:
   virtual ~DecApp         ()  {}
 
   uint32_t  decode            (); ///< main decoding function
+#if JVET_Z0120_SII_SEI_PROCESSING
+  bool  getShutterFilterFlag()        const { return m_ShutterFilterEnable; }
+  void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
+  int   getBlendingRatio()             const { return m_SII_BlendingRatio; }
+  void  setBlendingRatio(int value) { m_SII_BlendingRatio = value; }
+#endif
 
 private:
   void  xCreateDecLib     (); ///< create internal classes
   void  xDestroyDecLib    (); ///< destroy internal classes
   void  xWriteOutput      ( PicList* pcListPic , uint32_t tId); ///< write YUV to file
   void  xFlushOutput( PicList* pcListPic, const int layerId = NOT_VALID ); ///< flush all remaining decoded pictures to file
-  bool  isNewPicture(ifstream *bitstreamFile, class InputByteStream *bytestream);  ///< check if next NAL unit will be the first NAL unit from a new picture
-  bool  isNewAccessUnit(bool newPicture, ifstream *bitstreamFile, class InputByteStream *bytestream);  ///< check if next NAL unit will be the first NAL unit from a new access unit
+
+  // check if next NAL unit will be the first NAL unit from a new picture
+  bool isNewPicture(std::ifstream *bitstreamFile, class InputByteStream *bytestream);
+
+  // check if next NAL unit will be the first NAL unit from a new access unit
+  bool isNewAccessUnit(bool newPicture, std::ifstream *bitstreamFile, class InputByteStream *bytestream);
 
   void  writeLineToOutputLog(Picture * pcPic);
   void xOutputAnnotatedRegions(PicList* pcListPic);
-
 };
 
 //! \}

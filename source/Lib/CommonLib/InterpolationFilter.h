@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,18 +45,19 @@
 //! \ingroup CommonLib
 //! \{
 
-#define IF_INTERNAL_PREC 14 ///< Number of bits for internal precision
-#define IF_FILTER_PREC    6 ///< Log2 of sum of filter taps
-#define IF_INTERNAL_OFFS (1<<(IF_INTERNAL_PREC-1)) ///< Offset used internally
-#define IF_INTERNAL_PREC_BILINEAR 10 ///< Number of bits for internal precision
-#define IF_FILTER_PREC_BILINEAR   4  ///< Bilinear filter coeff precision so that intermediate value will not exceed 16 bit for SIMD - bit exact
-#define IF_INTERNAL_FRAC_BITS(bd) std::max(2, IF_INTERNAL_PREC - int(bd))
+static constexpr int IF_INTERNAL_PREC = 14;                         ///< Number of bits for internal precision
+static constexpr int IF_FILTER_PREC   = 6;                         ///< Log2 of sum of filter taps
+static constexpr int IF_INTERNAL_OFFS = (1<<(IF_INTERNAL_PREC-1));  ///< Offset used internally
+static constexpr int IF_INTERNAL_PREC_BILINEAR = 10;                ///< Number of bits for internal precision
+static constexpr int IF_FILTER_PREC_BILINEAR   = 4;                 ///< Bilinear filter coeff precision so that intermediate value will not exceed 16 bit for SIMD - bit exact
+static inline int IF_INTERNAL_FRAC_BITS(const int bd) { return std::max(2, IF_INTERNAL_PREC - bd); }
 /**
  * \brief Interpolation filter class
  */
 class InterpolationFilter
 {
-  static const TFilterCoeff m_lumaFilter4x4[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA];
+  static const TFilterCoeff m_affineLumaFilter[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA];
+
 public:
   static const TFilterCoeff m_lumaFilter[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_LUMA]; ///< Luma filter taps
   static const TFilterCoeff m_chromaFilter[CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_CHROMA]; ///< Chroma filter taps
@@ -71,15 +72,19 @@ private:
   static const TFilterCoeff m_bilinearFilterPrec4[LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS][NTAPS_BILINEAR]; ///< bilinear filter taps
 public:
   template<bool isFirst, bool isLast>
-  static void filterCopy( const ClpRng& clpRng, const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height, bool biMCForDMVR);
+  static void filterCopy(const ClpRng &clpRng, const Pel *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                         int width, int height, bool biMCForDMVR);
 
-  template<int N, bool isVertical, bool isFirst, bool isLast>
-  static void filter(const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
-  template<int N>
-  void filterHor(const ClpRng& clpRng, Pel const* src, int srcStride, Pel *dst, int dstStride, int width, int height, bool isLast, TFilterCoeff const *coeff, bool biMCForDMVR);
+  template<int N, bool isVertical, bool isFirst, bool isLast, bool biMCForDMVR>
+  static void filter(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                     int width, int height, TFilterCoeff const *coeff);
+  template<int N, bool biMCForDMVR>
+  void filterHor(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width,
+                 int height, bool isLast, TFilterCoeff const *coeff);
 
-  template<int N>
-  void filterVer(const ClpRng& clpRng, Pel const* src, int srcStride, Pel *dst, int dstStride, int width, int height, bool isFirst, bool isLast, TFilterCoeff const *coeff, bool biMCForDMVR);
+  template<int N, bool biMCForDMVR>
+  void filterVer(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width,
+                 int height, bool isFirst, bool isLast, TFilterCoeff const *coeff);
 
   static void xWeightedGeoBlk(const PredictionUnit &pu, const uint32_t width, const uint32_t height, const ComponentID compIdx, const uint8_t splitDir, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
   void weightedGeoBlk(const PredictionUnit &pu, const uint32_t width, const uint32_t height, const ComponentID compIdx, const uint8_t splitDir, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
@@ -87,12 +92,42 @@ protected:
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
   static CacheModel* m_cacheModel;
 #endif
+  enum
+  {
+    _8_TAPS,
+    _4_TAPS,
+    _2_TAPS_DMVR,
+    _6_TAPS,
+    NUM_TAP_MODES
+  };
+
+  static constexpr int tapToIdx(const int N, const bool biMCForDMVR)
+  {
+    return biMCForDMVR ? (N == 2 ? _2_TAPS_DMVR : NUM_TAP_MODES)
+                       : (N == 8 ? _8_TAPS : (N == 4 ? _4_TAPS : (N == 6 ? _6_TAPS : NUM_TAP_MODES)));
+  }
+
 public:
+  enum class Filter
+  {
+    DEFAULT = 0,
+    DMVR,
+    AFFINE,
+    RPR1,
+    RPR2,
+    AFFINE_RPR1,
+    AFFINE_RPR2,
+    HALFPEL_ALT
+  };
+
   InterpolationFilter();
   ~InterpolationFilter() {}
-  void( *m_filterHor[3][2][2] )( const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
-  void( *m_filterVer[3][2][2] )( const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, TFilterCoeff const *coeff, bool biMCForDMVR);
-  void( *m_filterCopy[2][2] )  ( const ClpRng& clpRng, Pel const *src, int srcStride, Pel *dst, int dstStride, int width, int height, bool biMCForDMVR);
+  void (*m_filterHor[NUM_TAP_MODES][2][2])(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst,
+                                           ptrdiff_t dstStride, int width, int height, TFilterCoeff const *coeff);
+  void (*m_filterVer[NUM_TAP_MODES][2][2])(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst,
+                                           ptrdiff_t dstStride, int width, int height, TFilterCoeff const *coeff);
+  void (*m_filterCopy[2][2])(const ClpRng &clpRng, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                             int width, int height, bool biMCForDMVR);
   void( *m_weightedGeoBlk )(const PredictionUnit &pu, const uint32_t width, const uint32_t height, const ComponentID compIdx, const uint8_t splitDir, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
 
   void initInterpolationFilter( bool enable );
@@ -101,12 +136,10 @@ public:
   template <X86_VEXT vext>
   void _initInterpolationFilterX86();
 #endif
-  void filterHor(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride, int width,
-                 int height, int frac, bool isLast, const ClpRng &clpRng, int nFilterIdx = 0, bool biMCForDMVR = false,
-                 bool useAltHpelIf = false);
-  void filterVer(const ComponentID compID, Pel const *src, int srcStride, Pel *dst, int dstStride, int width,
-                 int height, int frac, bool isFirst, bool isLast, const ClpRng &clpRng, int nFilterIdx = 0,
-                 bool biMCForDMVR = false, bool useAltHpelIf = false);
+  void filterHor(const ComponentID compID, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                 int width, int height, int frac, bool isLast, const ClpRng &clpRng, Filter nFilterIdx);
+  void filterVer(const ComponentID compID, Pel const *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride,
+                 int width, int height, int frac, bool isFirst, bool isLast, const ClpRng &clpRng, Filter nFilterIdx);
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
   void cacheAssign( CacheModel *cache ) { m_cacheModel = cache; }
 #endif

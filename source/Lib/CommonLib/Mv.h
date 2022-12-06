@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -137,8 +137,8 @@ public:
 
   const Mv& operator<<= (const int i)
   {
-    hor <<= i;
-    ver <<= i;
+    hor *= 1 << i;
+    ver *= 1 << i;
     return  *this;
   }
 
@@ -173,10 +173,10 @@ public:
     return !( *this == rcMv );
   }
 
-  const Mv scaleMv( int iScale ) const
+  const Mv scaleMv(int scale) const
   {
-    const int mvx = Clip3(MV_MIN, MV_MAX, (iScale * getHor() + 128 - (iScale * getHor() >= 0)) >> 8);
-    const int mvy = Clip3(MV_MIN, MV_MAX, (iScale * getVer() + 128 - (iScale * getVer() >= 0)) >> 8);
+    const int mvx = Clip3(MV_MIN, MV_MAX, (scale * getHor() + 128 - (scale * getHor() >= 0)) >> 8);
+    const int mvy = Clip3(MV_MIN, MV_MAX, (scale * getVer() + 128 - (scale * getVer() >= 0)) >> 8);
     return Mv( mvx, mvy );
   }
 
@@ -256,6 +256,14 @@ public:
     return Mv(tarMvPred.hor - hor + curMvPred.hor, tarMvPred.ver - ver + curMvPred.ver);
   }
 
+  void roundAffine(const int shift)
+  {
+    const int offset = 1 << shift >> 1;
+
+    hor = (hor + offset + (~hor >> 31)) >> shift;
+    ver = (ver + offset + (~ver >> 31)) >> shift;
+  }
+
   void clipToStorageBitDepth()
   {
     hor = Clip3( -(1 << 17), (1 << 17) - 1, hor );
@@ -272,15 +280,12 @@ public:
 
 namespace std
 {
-  template <>
-  struct hash<Mv> : public unary_function<Mv, uint64_t>
+  template<> struct hash<Mv>
   {
-    uint64_t operator()(const Mv& value) const
-    {
-      return (((uint64_t)value.hor << 32) + value.ver);
-    }
+    size_t operator()(const Mv &value) const { return (((size_t) value.hor << 32) + value.ver); }
   };
 };
+
 extern void(*clipMv) ( Mv& rcMv, const struct Position& pos, const struct Size& size, const class SPS& sps, const class PPS& pps );
 void clipMvInPic ( Mv& rcMv, const struct Position& pos, const struct Size& size, const class SPS& sps, const class PPS& pps );
 void clipMvInSubpic ( Mv& rcMv, const struct Position& pos, const struct Size& size, const class SPS& sps, const class PPS& pps );
@@ -290,8 +295,6 @@ bool wrapClipMv( Mv& rcMv, const Position& pos,
                  const SPS *sps
                , const PPS* pps
 );
-
-void roundAffineMv( int& mvx, int& mvy, int nShift );
 
 //! \}
 

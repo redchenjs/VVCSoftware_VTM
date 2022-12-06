@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,12 +38,37 @@
 
 #define JVET_O0549_ENCODER_ONLY_FILTER_POL 1 // JVET-O0549: Encoder-only GOP-based temporal filter. Program Options Lite related changes.
 
+#include <vector>
+
 #ifndef __PROGRAM_OPTIONS_LITE__
 #define __PROGRAM_OPTIONS_LITE__
 
 //! \ingroup TAppCommon
 //! \{
 
+template <class T>
+struct SMultiValueInput
+{
+  static_assert(!std::is_same<T, uint8_t>::value, "SMultiValueInput<uint8_t> is not supported");
+  static_assert(!std::is_same<T, int8_t>::value, "SMultiValueInput<int8_t> is not supported");
+  const T              minValIncl;
+  const T              maxValIncl;
+  const std::size_t    minNumValuesIncl;
+  const std::size_t    maxNumValuesIncl; // Use 0 for unlimited
+  std::vector<T> values;
+  SMultiValueInput() : minValIncl(0), maxValIncl(0), minNumValuesIncl(0), maxNumValuesIncl(0), values() { }
+  SMultiValueInput(std::vector<T> &defaults) : minValIncl(0), maxValIncl(0), minNumValuesIncl(0), maxNumValuesIncl(0), values(defaults) { }
+  SMultiValueInput(const T &minValue, const T &maxValue, std::size_t minNumberValues = 0, std::size_t maxNumberValues = 0)
+    : minValIncl(minValue), maxValIncl(maxValue), minNumValuesIncl(minNumberValues), maxNumValuesIncl(maxNumberValues), values() { }
+  SMultiValueInput(const T &minValue, const T &maxValue, std::size_t minNumberValues, std::size_t maxNumberValues, const T* defValues, const uint32_t numDefValues)
+    : minValIncl(minValue), maxValIncl(maxValue), minNumValuesIncl(minNumberValues), maxNumValuesIncl(maxNumberValues), values(defValues, defValues + numDefValues) { }
+  SMultiValueInput<T> &operator=(const std::vector<T> &userValues) { values = userValues; return *this; }
+  SMultiValueInput<T> &operator=(const SMultiValueInput<T> &userValues) { values = userValues.values; return *this; }
+
+  T readValue(const char *&pStr, bool &bSuccess);
+
+  std::istream &readValues(std::istream &in);
+};
 
 namespace df
 {
@@ -239,15 +264,15 @@ namespace df
         std::string cNameBuffer;
         std::string cDescriptionBuffer;
 
-        for (unsigned int uiK = 0; uiK < uiMaxNum; uiK++)
+        for (unsigned int k = 0; k < uiMaxNum; k++)
         {
           // it needs to be reset when extra digit is added, e.g. number 10 and above
           cNameBuffer.resize(name.size() + 10);
           cDescriptionBuffer.resize(desc.size() + 10);
 
           // isn't there are sprintf function for string??
-          sprintf((char*)cNameBuffer.c_str(), name.c_str(), uiK, uiK);
-          sprintf((char*)cDescriptionBuffer.c_str(), desc.c_str(), uiK, uiK);
+          snprintf((char *) cNameBuffer.c_str(), cNameBuffer.size(), name.c_str(), k, k);
+          snprintf((char *) cDescriptionBuffer.c_str(), cDescriptionBuffer.size(), desc.c_str(), k, k);
 
           size_t pos = cNameBuffer.find_first_of('\0');
           if (pos != std::string::npos)
@@ -255,7 +280,7 @@ namespace df
             cNameBuffer.resize(pos);
           }
 
-          parent.addOption(new Option<T>(cNameBuffer, (storage[uiK]), default_val, cDescriptionBuffer));
+          parent.addOption(new Option<T>(cNameBuffer, (storage[k]), default_val, cDescriptionBuffer));
         }
 
         return *this;
@@ -268,21 +293,21 @@ namespace df
         std::string cNameBuffer;
         std::string cDescriptionBuffer;
 
-        for (unsigned int uiK = 0; uiK < uiMaxNum; uiK++)
+        for (unsigned int k = 0; k < uiMaxNum; k++)
         {
           // it needs to be reset when extra digit is added, e.g. number 10 and above
           cNameBuffer.resize(name.size() + 10);
           cDescriptionBuffer.resize(desc.size() + 10);
 
           // isn't there are sprintf function for string??
-          sprintf((char*)cNameBuffer.c_str(), name.c_str(), uiK, uiK);
-          sprintf((char*)cDescriptionBuffer.c_str(), desc.c_str(), uiK, uiK);
+          snprintf((char *) cNameBuffer.c_str(), cNameBuffer.size(), name.c_str(), k, k);
+          snprintf((char *) cDescriptionBuffer.c_str(), cDescriptionBuffer.size(), desc.c_str(), k, k);
 
           size_t pos = cNameBuffer.find_first_of('\0');
           if (pos != std::string::npos)
             cNameBuffer.resize(pos);
 
-          parent.addOption(new Option<T>(cNameBuffer, *(storage[uiK]), default_val, cDescriptionBuffer));
+          parent.addOption(new Option<T>(cNameBuffer, *(storage[k]), default_val, cDescriptionBuffer));
         }
 
         return *this;

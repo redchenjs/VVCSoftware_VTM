@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -261,7 +261,6 @@ inline CDTrace* tracing_init( std::string& sTracingFile, std::string& sTracingRu
   if( pDtrace->getLastError() )
   {
     msg( WARNING, "%s\n", pDtrace->getErrMessage().c_str() );
-    //return NULL;
   }
 
   return pDtrace;

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -86,7 +86,7 @@ protected:
   void xIntraRecACTBlk(TransformUnit&   tu);
   void xDecodeInterTU     ( TransformUnit&   tu, const ComponentID compID );
 
-  void xDeriveCUMV        ( CodingUnit&      cu );
+  void               xDeriveCuMvs(CodingUnit &cu);
   void xReconPLT          ( CodingUnit&      cu,       ComponentID compBegin, uint32_t numComp );
   PelStorage        *m_tmpStorageLCU;
 private:

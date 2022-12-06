@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -115,8 +115,7 @@ namespace DQIntern
     unsigned          m_sbbSize;
     unsigned          m_sbbMask;
     unsigned          m_widthInSbb;
-    unsigned          m_heightInSbb;
-    CoeffScanType     m_scanType;
+    unsigned           m_heightInSbb;
     const ScanElement *m_scanSbbId2SbbPos;
     const ScanElement *m_scanId2BlkPos;
     const NbInfoSbb*  m_scanId2NbInfoSbb;
@@ -176,15 +175,14 @@ namespace DQIntern
         const uint32_t      groupWidth    = 1 << log2CGWidth;
         const uint32_t      groupHeight   = 1 << log2CGHeight;
         const uint32_t      groupSize     = groupWidth * groupHeight;
-        const CoeffScanType scanType      = SCAN_DIAG;
         const SizeType      blkWidthIdx   = gp_sizeIdxInfo->idxFrom( blockWidth  );
         const SizeType      blkHeightIdx  = gp_sizeIdxInfo->idxFrom( blockHeight );
-        const ScanElement * scanId2RP     = g_scanOrder[SCAN_GROUPED_4x4][scanType][blkWidthIdx][blkHeightIdx];
+        const ScanElement  *scanId2RP = g_scanOrder[SCAN_GROUPED_4x4][CoeffScanType::DIAG][blkWidthIdx][blkHeightIdx];
         NbInfoSbb*&         sId2NbSbb     = m_scanId2NbInfoSbbArray[hd][vd];
         NbInfoOut*&         sId2NbOut     = m_scanId2NbInfoOutArray[hd][vd];
         // consider only non-zero-out region
-        const uint32_t      blkWidthNZOut = std::min<unsigned>( JVET_C0024_ZERO_OUT_TH, blockWidth  );
-        const uint32_t      blkHeightNZOut= std::min<unsigned>( JVET_C0024_ZERO_OUT_TH, blockHeight );
+        const uint32_t      blkWidthNZOut  = getNonzeroTuSize(blockWidth);
+        const uint32_t      blkHeightNZOut = getNonzeroTuSize(blockHeight);
         const uint32_t      totalValues   = blkWidthNZOut * blkHeightNZOut;
 
         sId2NbSbb = new NbInfoSbb[ totalValues ];
@@ -342,8 +340,8 @@ namespace DQIntern
     m_chType              = chType;
     m_width               = width;
     m_height              = height;
-    const uint32_t nonzeroWidth  = std::min<uint32_t>(JVET_C0024_ZERO_OUT_TH, m_width);
-    const uint32_t nonzeroHeight = std::min<uint32_t>(JVET_C0024_ZERO_OUT_TH, m_height);
+    const uint32_t nonzeroWidth  = getNonzeroTuSize(m_width);
+    const uint32_t nonzeroHeight = getNonzeroTuSize(m_height);
     m_numCoeff                   = nonzeroWidth * nonzeroHeight;
     const int log2W       = floorLog2( m_width  );
     const int log2H       = floorLog2( m_height );
@@ -354,14 +352,13 @@ namespace DQIntern
     m_sbbMask             = m_sbbSize - 1;
     m_widthInSbb  = nonzeroWidth >> m_log2SbbWidth;
     m_heightInSbb = nonzeroHeight >> m_log2SbbHeight;
-    m_numSbb              = m_widthInSbb * m_heightInSbb;
-    m_scanType            = SCAN_DIAG;
+    m_numSbb                     = m_widthInSbb * m_heightInSbb;
     SizeType        hsbb  = gp_sizeIdxInfo->idxFrom( m_widthInSbb  );
     SizeType        vsbb  = gp_sizeIdxInfo->idxFrom( m_heightInSbb );
     SizeType        hsId  = gp_sizeIdxInfo->idxFrom( m_width  );
     SizeType        vsId  = gp_sizeIdxInfo->idxFrom( m_height );
-    m_scanSbbId2SbbPos    = g_scanOrder     [ SCAN_UNGROUPED   ][ m_scanType ][ hsbb ][ vsbb ];
-    m_scanId2BlkPos       = g_scanOrder     [ SCAN_GROUPED_4x4 ][ m_scanType ][ hsId ][ vsId ];
+    m_scanSbbId2SbbPos           = g_scanOrder[SCAN_UNGROUPED][CoeffScanType::DIAG][hsbb][vsbb];
+    m_scanId2BlkPos              = g_scanOrder[SCAN_GROUPED_4x4][CoeffScanType::DIAG][hsId][vsId];
     m_scanId2NbInfoSbb    = rom.getNbInfoSbb( log2W, log2H );
     m_scanId2NbInfoOut    = rom.getNbInfoOut( log2W, log2H );
     m_scanInfo            = new ScanInfo[ m_numCoeff ];
@@ -437,9 +434,16 @@ namespace DQIntern
       return m_sigFracBits[std::max(((int) stateId) - 1, 0)];
     }
     inline const CoeffFracBits *gtxFracBits(unsigned stateId) const { return m_gtxFracBits; }
-    inline int32_t              lastOffset(unsigned scanIdx) const
+    inline int32_t lastOffset(unsigned scanIdx, int effWidth, int effHeight, bool reverseLast) const
     {
-      return m_lastBitsX[m_scanId2Pos[scanIdx].x] + m_lastBitsY[m_scanId2Pos[scanIdx].y];
+      if (reverseLast)
+      {
+        return m_lastBitsX[effWidth - 1 - m_scanId2Pos[scanIdx].x] + m_lastBitsY[effHeight - 1 - m_scanId2Pos[scanIdx].y];
+      }
+      else
+      {
+        return m_lastBitsX[m_scanId2Pos[scanIdx].x] + m_lastBitsY[m_scanId2Pos[scanIdx].y];
+      }
     }
 
   private:
@@ -475,72 +479,81 @@ namespace DQIntern
 
   void RateEstimator::xSetLastCoeffOffset( const FracBitsAccess& fracBitsAccess, const TUParameters& tuPars, const TransformUnit& tu, const ComponentID compID )
   {
-    const ChannelType chType = ( compID == COMPONENT_Y ? CHANNEL_TYPE_LUMA : CHANNEL_TYPE_CHROMA );
-    int32_t cbfDeltaBits = 0;
-    if( compID == COMPONENT_Y && !CU::isIntra(*tu.cu) && !tu.depth )
+    const ChannelType chType = toChannelType(compID);
+
+    BinFracBits bits = { 0, 0 };
+
+    if (isLuma(chType) && !CU::isIntra(*tu.cu) && !tu.depth)
     {
-      const BinFracBits bits  = fracBitsAccess.getFracBitsArray( Ctx::QtRootCbf() );
-      cbfDeltaBits            = int32_t( bits.intBits[1] ) - int32_t( bits.intBits[0] );
+      bits = fracBitsAccess.getFracBitsArray(Ctx::QtRootCbf());
+    }
+    else if (tu.cu->ispMode && isLuma(chType))
+    {
+      bool lastCbfIsInferred = false;
+      if (CU::isISPLast(*tu.cu, tu.Y(), compID))
+      {
+        TransformUnit *tuPointer = tu.cu->firstTU;
+
+        const uint32_t nTus = tu.cu->ispMode == HOR_INTRA_SUBPARTITIONS ? tu.cu->lheight() >> floorLog2(tu.lheight())
+                                                                        : tu.cu->lwidth() >> floorLog2(tu.lwidth());
+
+        lastCbfIsInferred = true;
+        for (int tuIdx = 0; tuIdx < nTus - 1; tuIdx++)
+        {
+          if (TU::getCbfAtDepth(*tuPointer, COMPONENT_Y, tu.depth))
+          {
+            lastCbfIsInferred = false;
+            break;
+          }
+          tuPointer = tuPointer->next;
+        }
+      }
+
+      if (!lastCbfIsInferred)
+      {
+        const bool prevLumaCbf = TU::getPrevTuCbfAtDepth(tu, compID, tu.depth);
+        bits = fracBitsAccess.getFracBitsArray(Ctx::QtCbf[compID](DeriveCtx::CtxQtCbf(compID, prevLumaCbf, true)));
+      }
     }
     else
     {
-      BinFracBits bits;
-      bool prevLumaCbf           = false;
-      bool lastCbfIsInferred     = false;
-      bool useIntraSubPartitions = tu.cu->ispMode && isLuma(chType);
-      if( useIntraSubPartitions )
-      {
-        bool rootCbfSoFar = false;
-        bool isLastSubPartition = CU::isISPLast(*tu.cu, tu.Y(), compID);
-        uint32_t nTus = tu.cu->ispMode == HOR_INTRA_SUBPARTITIONS ? tu.cu->lheight() >> floorLog2(tu.lheight()) : tu.cu->lwidth() >> floorLog2(tu.lwidth());
-        if( isLastSubPartition )
-        {
-          TransformUnit* tuPointer = tu.cu->firstTU;
-          for( int tuIdx = 0; tuIdx < nTus - 1; tuIdx++ )
-          {
-            rootCbfSoFar |= TU::getCbfAtDepth(*tuPointer, COMPONENT_Y, tu.depth);
-            tuPointer     = tuPointer->next;
-          }
-          if( !rootCbfSoFar )
-          {
-            lastCbfIsInferred = true;
-          }
-        }
-        if( !lastCbfIsInferred )
-        {
-          prevLumaCbf = TU::getPrevTuCbfAtDepth(tu, compID, tu.depth);
-        }
-        bits = fracBitsAccess.getFracBitsArray(Ctx::QtCbf[compID](DeriveCtx::CtxQtCbf(compID, prevLumaCbf, true)));
-      }
-      else
-      {
-        bits = fracBitsAccess.getFracBitsArray(Ctx::QtCbf[compID](DeriveCtx::CtxQtCbf(compID, tu.cbf[COMPONENT_Cb])));
-      }
-      cbfDeltaBits = lastCbfIsInferred ? 0 : int32_t(bits.intBits[1]) - int32_t(bits.intBits[0]);
+      bits = fracBitsAccess.getFracBitsArray(Ctx::QtCbf[compID](DeriveCtx::CtxQtCbf(compID, tu.cbf[COMPONENT_Cb])));
     }
 
-    static const unsigned prefixCtx[] = { 0, 0, 0, 3, 6, 10, 15, 21 };
-    uint32_t              ctxBits  [ LAST_SIGNIFICANT_GROUPS ];
-    for( unsigned xy = 0; xy < 2; xy++ )
+    const int32_t cbfDeltaBits = int32_t(bits.intBits[1]) - int32_t(bits.intBits[0]);
+
+    for (int xy = 0; xy < 2; xy++)
     {
-      int32_t             bitOffset   = ( xy ? cbfDeltaBits : 0 );
-      int32_t*            lastBits    = ( xy ? m_lastBitsY : m_lastBitsX );
-      const unsigned      size        = ( xy ? tuPars.m_height : tuPars.m_width );
-      const unsigned      log2Size    = ceilLog2( size );
-      const bool          useYCtx     = ( xy != 0 );
-      const CtxSet&       ctxSetLast  = ( useYCtx ? Ctx::LastY : Ctx::LastX )[ chType ];
-      const unsigned      lastShift   = ( compID == COMPONENT_Y ? (log2Size+1)>>2 : Clip3<unsigned>(0,2,size>>3) );
-      const unsigned      lastOffset  = ( compID == COMPONENT_Y ? ( prefixCtx[log2Size] ) : 0 );
-      uint32_t            sumFBits    = 0;
-      unsigned            maxCtxId    = g_groupIdx[std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, size) - 1];
-      for( unsigned ctxId = 0; ctxId < maxCtxId; ctxId++ )
+      const bool isY = xy != 0;
+
+      const unsigned size       = isY ? tuPars.m_height : tuPars.m_width;
+      const int      log2Size   = ceilLog2(size);
+      const CtxSet  &ctxSetLast = (isY ? Ctx::LastY : Ctx::LastX)[chType];
+      const unsigned lastShift  = isLuma(chType) ? (log2Size + 1) >> 2 : Clip3<unsigned>(0, 2, size >> 3);
+      const unsigned lastOffset = isLuma(chType) ? CoeffCodingContext::prefixCtx[log2Size] : 0;
+      const int      nzSize     = getNonzeroTuSize(size);
+      const int      maxCtxId   = g_groupIdx[nzSize - 1];
+
+      int sumBits = isY ? cbfDeltaBits : 0;
+
+      std::array<int32_t, LAST_SIGNIFICANT_GROUPS> ctxBits;
+
+      for (int ctxId = 0; ctxId <= maxCtxId; ctxId++)
       {
-        const BinFracBits bits  = fracBitsAccess.getFracBitsArray( ctxSetLast( lastOffset + ( ctxId >> lastShift ) ) );
-        ctxBits[ ctxId ]        = sumFBits + bits.intBits[0] + ( ctxId>3 ? ((ctxId-2)>>1)<<SCALE_BITS : 0 ) + bitOffset;
-        sumFBits               +=            bits.intBits[1];
+        ctxBits[ctxId] = sumBits + (ctxId > 3 ? ((ctxId - 2) >> 1) << SCALE_BITS : 0);
+
+        if (ctxId < maxCtxId)
+        {
+          const BinFracBits bits = fracBitsAccess.getFracBitsArray(ctxSetLast(lastOffset + (ctxId >> lastShift)));
+
+          ctxBits[ctxId] += bits.intBits[0];
+          sumBits += bits.intBits[1];
+        }
       }
-      ctxBits  [ maxCtxId ]     = sumFBits + ( maxCtxId>3 ? ((maxCtxId-2)>>1)<<SCALE_BITS : 0 ) + bitOffset;
-      for (unsigned pos = 0; pos < std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, size); pos++)
+
+      int32_t *lastBits = isY ? m_lastBitsY : m_lastBitsX;
+
+      for (int pos = 0; pos < nzSize; pos++)
       {
         lastBits[pos] = ctxBits[g_groupIdx[pos]];
       }
@@ -671,7 +684,7 @@ namespace DQIntern
   {
     CHECKD( lambda <= 0.0, "Lambda must be greater than 0" );
 
-    const int         qpDQ                  = cQP.Qp(tu.mtsIdx[compID] == MTS_SKIP) + 1;
+    const int         qpDQ                  = cQP.Qp(tu.mtsIdx[compID] == MtsType::SKIP) + 1;
     const int         qpPer                 = qpDQ / 6;
     const int         qpRem                 = qpDQ - 6 * qpPer;
     const SPS&        sps                   = *tu.cs->sps;
@@ -680,7 +693,10 @@ namespace DQIntern
     const int         channelBitDepth       = sps.getBitDepth( chType );
     const int         maxLog2TrDynamicRange = sps.getMaxLog2TrDynamicRange( chType );
     const int         nomTransformShift     = getTransformShift( channelBitDepth, area.size(), maxLog2TrDynamicRange );
-    const bool        clipTransformShift    = ( tu.mtsIdx[compID] == MTS_SKIP && sps.getSpsRangeExtension().getExtendedPrecisionProcessingFlag());
+
+    const bool clipTransformShift =
+      tu.mtsIdx[compID] == MtsType::SKIP && sps.getSpsRangeExtension().getExtendedPrecisionProcessingFlag();
+
     const bool    needsSqrt2ScaleAdjustment = TU::needsSqrt2Scale(tu, compID);
     const int         transformShift        = ( clipTransformShift ? std::max<int>( 0, nomTransformShift ) : nomTransformShift ) + (needsSqrt2ScaleAdjustment?-1:0);
     // quant parameters
@@ -714,8 +730,7 @@ namespace DQIntern
     const int           numCoeff  = area.area();
     const SizeType      hsId      = gp_sizeIdxInfo->idxFrom( area.width  );
     const SizeType      vsId      = gp_sizeIdxInfo->idxFrom( area.height );
-    const CoeffScanType scanType  = SCAN_DIAG;
-    const ScanElement *scan       = g_scanOrder[SCAN_GROUPED_4x4][scanType][hsId][vsId];
+    const ScanElement  *scan      = g_scanOrder[SCAN_GROUPED_4x4][CoeffScanType::DIAG][hsId][vsId];
     const TCoeff*       qCoeff    = tu.getCoeffs( compID ).buf;
           TCoeff*       tCoeff    = recCoeff.buf;
 
@@ -736,7 +751,7 @@ namespace DQIntern
     }
 
     //----- set dequant parameters -----
-    const int         qpDQ                  = cQP.Qp(tu.mtsIdx[compID] == MTS_SKIP) + 1;
+    const int         qpDQ                  = cQP.Qp(tu.mtsIdx[compID] == MtsType::SKIP) + 1;
     const int         qpPer                 = qpDQ / 6;
     const int         qpRem                 = qpDQ - 6 * qpPer;
     const SPS&        sps                   = *tu.cs->sps;
@@ -746,7 +761,10 @@ namespace DQIntern
     const TCoeff      minTCoeff             = -( 1 << maxLog2TrDynamicRange );
     const TCoeff      maxTCoeff             =  ( 1 << maxLog2TrDynamicRange ) - 1;
     const int         nomTransformShift     = getTransformShift( channelBitDepth, area.size(), maxLog2TrDynamicRange );
-    const bool        clipTransformShift    = ( tu.mtsIdx[compID] == MTS_SKIP && sps.getSpsRangeExtension().getExtendedPrecisionProcessingFlag());
+
+    const bool clipTransformShift =
+      tu.mtsIdx[compID] == MtsType::SKIP && sps.getSpsRangeExtension().getExtendedPrecisionProcessingFlag();
+
     const bool    needsSqrt2ScaleAdjustment = TU::needsSqrt2Scale(tu, compID);
     const int         transformShift        = ( clipTransformShift ? std::max<int>( 0, nomTransformShift ) : nomTransformShift ) + (needsSqrt2ScaleAdjustment?-1:0);
     Intermediate_Int  shift                 = IQUANT_SHIFT + 1 - qpPer - transformShift + (enableScalingLists ? LOG2_SCALING_LIST_NEUTRAL_VALUE : 0);
@@ -767,7 +785,9 @@ namespace DQIntern
         {
           invQScale <<= -shift;
         }
-        Intermediate_Int  qIdx      = ( level << 1 ) + ( level > 0 ? -(state>>1) : (state>>1) );
+        Intermediate_Int qIdx = 2 * level + (level > 0 ? -(state >> 1) : (state >> 1));
+        CHECK(qIdx < minTCoeff || qIdx > maxTCoeff, "TransCoeffLevel outside allowable range");
+
         int64_t  nomTCoeff          = ((int64_t)qIdx * (int64_t)invQScale + add) >> ((shift < 0) ? 0 : shift);
         tCoeff[rasterPos]           = (TCoeff)Clip3<int64_t>(minTCoeff, maxTCoeff, nomTCoeff);
       }
@@ -1384,7 +1404,7 @@ namespace DQIntern
     bool m_extRiceRRCFlag;
 
   private:
-    void    xDecideAndUpdate  ( const TCoeff absCoeff, const ScanInfo& scanInfo, bool zeroOut, TCoeff quantCoeff);
+    void    xDecideAndUpdate  ( const TCoeff absCoeff, const ScanInfo &scanInfo, bool zeroOut, TCoeff quantCoeff, int effWidth, int effHeight, bool reverseLast );
     void    xDecide           ( const ScanPosType spt, const TCoeff absCoeff, const int lastOffset, Decision* decisions, bool zeroOut, TCoeff quantCoeff );
 
   private:
@@ -1457,13 +1477,13 @@ namespace DQIntern
     m_startState.checkRdCostStart( lastOffset, pqData[2], decisions[2] );
   }
 
-  void DepQuant::xDecideAndUpdate( const TCoeff absCoeff, const ScanInfo& scanInfo, bool zeroOut, TCoeff quantCoeff )
+  void DepQuant::xDecideAndUpdate( const TCoeff absCoeff, const ScanInfo &scanInfo, bool zeroOut, TCoeff quantCoeff, int effWidth, int effHeight, bool reverseLast )
   {
     Decision* decisions = m_trellis[ scanInfo.scanIdx ];
 
     std::swap( m_prevStates, m_currStates );
 
-    xDecide( scanInfo.spt, absCoeff, lastOffset(scanInfo.scanIdx), decisions, zeroOut, quantCoeff );
+    xDecide( scanInfo.spt, absCoeff, lastOffset(scanInfo.scanIdx, effWidth, effHeight, reverseLast), decisions, zeroOut, quantCoeff );
 
     if( scanInfo.scanIdx )
     {
@@ -1554,7 +1574,9 @@ namespace DQIntern
     bool zeroOut = false;
     bool zeroOutforThres = false;
     int effWidth = tuPars.m_width, effHeight = tuPars.m_height;
-    if( ( tu.mtsIdx[compID] > MTS_SKIP || (tu.cs->sps->getUseMTS() && tu.cu->sbtInfo != 0 && tuPars.m_height <= 32 && tuPars.m_width <= 32)) && compID == COMPONENT_Y)
+    if ((tu.mtsIdx[compID] > MtsType::SKIP
+         || (tu.cs->sps->getMtsEnabled() && tu.cu->sbtInfo != 0 && tuPars.m_height <= 32 && tuPars.m_width <= 32))
+        && compID == COMPONENT_Y)
     {
       effHeight = (tuPars.m_height == 32) ? 16 : tuPars.m_height;
       effWidth = (tuPars.m_width == 32) ? 16 : tuPars.m_width;
@@ -1563,7 +1585,7 @@ namespace DQIntern
     zeroOutforThres = zeroOut || (32 < tuPars.m_height || 32 < tuPars.m_width);
     //===== find first test position =====
     int firstTestPos = numCoeff - 1;
-    if (lfnstIdx > 0 && tu.mtsIdx[compID] != MTS_SKIP && width >= 4 && height >= 4)
+    if (lfnstIdx > 0 && tu.mtsIdx[compID] != MtsType::SKIP && width >= 4 && height >= 4)
     {
       firstTestPos = ( ( width == 4 && height == 4 ) || ( width == 8 && height == 8 ) )  ? 7 : 15 ;
     }
@@ -1616,11 +1638,11 @@ namespace DQIntern
       if (enableScalingLists)
       {
         m_quant.initQuantBlock(tu, compID, cQP, lambda, quantCoeff[scanInfo.rasterPos]);
-        xDecideAndUpdate( abs( tCoeff[scanInfo.rasterPos]), scanInfo, (zeroOut && (scanInfo.posX >= effWidth || scanInfo.posY >= effHeight)), quantCoeff[scanInfo.rasterPos] );
+        xDecideAndUpdate( abs( tCoeff[scanInfo.rasterPos]), scanInfo, (zeroOut && (scanInfo.posX >= effWidth || scanInfo.posY >= effHeight)), quantCoeff[scanInfo.rasterPos], effectWidth, effectHeight, tu.cu->slice->getReverseLastSigCoeffFlag() );
       }
       else
       {
-        xDecideAndUpdate( abs( tCoeff[scanInfo.rasterPos]), scanInfo, (zeroOut && (scanInfo.posX >= effWidth || scanInfo.posY >= effHeight)), defaultQuantisationCoefficient );
+        xDecideAndUpdate( abs( tCoeff[scanInfo.rasterPos]), scanInfo, (zeroOut && (scanInfo.posX >= effWidth || scanInfo.posY >= effHeight)), defaultQuantisationCoefficient, effectWidth, effectHeight, tu.cu->slice->getReverseLastSigCoeffFlag() );
       }
     }
 
@@ -1670,16 +1692,18 @@ DepQuant::~DepQuant()
   delete static_cast<DQIntern::DepQuant*>(p);
 }
 
-void DepQuant::quant( TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &uiAbsSum, const QpParam &cQP, const Ctx& ctx )
+void DepQuant::quant(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &pSrc, TCoeff &absSum,
+                     const QpParam &cQP, const Ctx &ctx)
 {
-  const bool useRegularResidualCoding = tu.cu->slice->getTSResidualCodingDisabledFlag() || tu.mtsIdx[compID] != MTS_SKIP;
+  const bool useRegularResidualCoding =
+    tu.cu->slice->getTSResidualCodingDisabledFlag() || tu.mtsIdx[compID] != MtsType::SKIP;
   if( tu.cs->slice->getDepQuantEnabledFlag() && useRegularResidualCoding )
   {
     //===== scaling matrix ====
-    const int         qpDQ            = cQP.Qp(tu.mtsIdx[compID] == MTS_SKIP) + 1;
+    const int         qpDQ            = cQP.Qp(tu.mtsIdx[compID] == MtsType::SKIP) + 1;
     const int         qpPer           = qpDQ / 6;
     const int         qpRem           = qpDQ - 6 * qpPer;
-    const CompArea    &rect           = tu.blocks[compID];
+    const CompArea   &rect            = tu.blocks[compID];
     const int         width           = rect.width;
     const int         height          = rect.height;
     uint32_t          scalingListType = getScalingListType(tu.cu->predMode, compID);
@@ -1690,24 +1714,30 @@ void DepQuant::quant( TransformUnit &tu, const ComponentID &compID, const CCoeff
     const bool        disableSMForLFNST = tu.cs->slice->getExplicitScalingListUsed() ? tu.cs->slice->getSPS()->getDisableScalingMatrixForLfnstBlks() : false;
     const bool        isLfnstApplied = tu.cu->lfnstIdx > 0 && (tu.cu->isSepTree() ? true : isLuma(compID));
     const bool        disableSMForACT = tu.cs->slice->getSPS()->getScalingMatrixForAlternativeColourSpaceDisabledFlag() && (tu.cs->slice->getSPS()->getScalingMatrixDesignatedColourSpaceFlag() == tu.cu->colorTransform);
-    const bool        enableScalingLists = getUseScalingList(width, height, (tu.mtsIdx[compID] == MTS_SKIP), isLfnstApplied, disableSMForLFNST, disableSMForACT);
-    static_cast<DQIntern::DepQuant*>(p)->quant( tu, pSrc, compID, cQP, Quant::m_dLambda, ctx, uiAbsSum, enableScalingLists, Quant::getQuantCoeff(scalingListType, qpRem, log2TrWidth, log2TrHeight) );
+
+    const bool enableScalingLists = getUseScalingList(width, height, tu.mtsIdx[compID] == MtsType::SKIP, isLfnstApplied,
+                                                      disableSMForLFNST, disableSMForACT);
+
+    static_cast<DQIntern::DepQuant *>(p)->quant(
+      tu, pSrc, compID, cQP, Quant::m_dLambda, ctx, absSum, enableScalingLists,
+      Quant::getQuantCoeff(scalingListType, qpRem, log2TrWidth, log2TrHeight));
   }
   else
   {
-    QuantRDOQ::quant( tu, compID, pSrc, uiAbsSum, cQP, ctx );
+    QuantRDOQ::quant(tu, compID, pSrc, absSum, cQP, ctx);
   }
 }
 
 void DepQuant::dequant( const TransformUnit &tu, CoeffBuf &dstCoeff, const ComponentID &compID, const QpParam &cQP )
 {
-  const bool useRegularResidualCoding = tu.cu->slice->getTSResidualCodingDisabledFlag() || tu.mtsIdx[compID] != MTS_SKIP;
+  const bool useRegularResidualCoding =
+    tu.cu->slice->getTSResidualCodingDisabledFlag() || tu.mtsIdx[compID] != MtsType::SKIP;
   if( tu.cs->slice->getDepQuantEnabledFlag() && useRegularResidualCoding )
   {
-    const int         qpDQ            = cQP.Qp(tu.mtsIdx[compID] == MTS_SKIP) + 1;
+    const int         qpDQ            = cQP.Qp(tu.mtsIdx[compID] == MtsType::SKIP) + 1;
     const int         qpPer           = qpDQ / 6;
     const int         qpRem           = qpDQ - 6 * qpPer;
-    const CompArea    &rect           = tu.blocks[compID];
+    const CompArea   &rect            = tu.blocks[compID];
     const int         width           = rect.width;
     const int         height          = rect.height;
     uint32_t          scalingListType = getScalingListType(tu.cu->predMode, compID);
@@ -1718,7 +1748,8 @@ void DepQuant::dequant( const TransformUnit &tu, CoeffBuf &dstCoeff, const Compo
     const bool disableSMForLFNST = tu.cs->slice->getExplicitScalingListUsed() ? tu.cs->slice->getSPS()->getDisableScalingMatrixForLfnstBlks() : false;
     const bool isLfnstApplied = tu.cu->lfnstIdx > 0 && (tu.cu->isSepTree() ? true : isLuma(compID));
     const bool disableSMForACT = tu.cs->slice->getSPS()->getScalingMatrixForAlternativeColourSpaceDisabledFlag() && (tu.cs->slice->getSPS()->getScalingMatrixDesignatedColourSpaceFlag() == tu.cu->colorTransform);
-    const bool enableScalingLists = getUseScalingList(width, height, (tu.mtsIdx[compID] == MTS_SKIP), isLfnstApplied, disableSMForLFNST, disableSMForACT);
+    const bool enableScalingLists = getUseScalingList(width, height, tu.mtsIdx[compID] == MtsType::SKIP, isLfnstApplied,
+                                                      disableSMForLFNST, disableSMForACT);
     static_cast<DQIntern::DepQuant*>(p)->dequant( tu, dstCoeff, compID, cQP, enableScalingLists, Quant::getDequantCoeff(scalingListType, qpRem, log2TrWidth, log2TrHeight) );
   }
   else

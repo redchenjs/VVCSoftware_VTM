@@ -36,8 +36,8 @@ if( CMAKE_COMPILER_IS_GNUCC )
   set( BUILD_STATIC OFF CACHE BOOL "Build static executables" )
 endif()
 
-# set c++11
-set( CMAKE_CXX_STANDARD 11 )
+# set c++14
+set( CMAKE_CXX_STANDARD 14 )
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
 
 # compile everything position independent (even static libraries)
@@ -57,7 +57,7 @@ include( ${CMAKE_SOURCE_DIR}/cmake/CMakeBuild/cmake/modules/BBuildEnv.cmake )
 # bb_enable_warnings( gcc -Wno-unused-variable )
 # bb_enable_warnings( gcc-4.8 warnings-as-errors -Wno-unused-variable )
 # for gcc 8.2:
-bb_enable_warnings( gcc warnings-as-errors -Wno-sign-compare -Wno-class-memaccess)
+bb_enable_warnings( gcc warnings-as-errors -Wno-sign-compare)
 
 if( XCODE )
   bb_enable_warnings( clang warnings-as-errors
@@ -66,7 +66,8 @@ if( XCODE )
                             -Wno-deprecated-register
                             -Wno-pessimizing-move
                             -Wno-absolute-value
-                            -Wno-unused-const-variable )
+                            -Wno-unused-const-variable
+                            -Wno-unused-command-line-argument )
 else()
   bb_enable_warnings( clang warnings-as-errors
                             -Wno-unknown-attributes
@@ -134,6 +135,7 @@ add_subdirectory( "source/App/DecoderAnalyserApp" )
 add_subdirectory( "source/App/DecoderApp" )
 add_subdirectory( "source/App/EncoderApp" )
 add_subdirectory( "source/App/SEIRemovalApp" )
+add_subdirectory( "source/App/SEIFilmGrainApp" )
 add_subdirectory( "source/App/Parcat" )
 add_subdirectory( "source/App/StreamMergeApp" )
 add_subdirectory( "source/App/BitstreamExtractorApp" )

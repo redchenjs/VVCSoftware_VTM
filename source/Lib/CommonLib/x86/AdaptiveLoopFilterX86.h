@@ -56,7 +56,7 @@ static void simdFilter5x5Blk_HBD(AlfClassifier **classifier, const PelUnitBuf &r
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int shift = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int shift   = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int round = 1 << (shift - 1);
   const __m128i offset1 = _mm_set1_epi32((1 << ((shift + 3) - 1)) - round);
 
@@ -427,7 +427,7 @@ static void simdFilter5x5Blk_HBD_AVX2(AlfClassifier **classifier, const PelUnitB
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int shift = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int shift   = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int round = 1 << (shift - 1);
   const __m256i offset1 = _mm256_set1_epi32((1 << ((shift + 3) - 1)) - round);
 
@@ -437,6 +437,12 @@ static void simdFilter5x5Blk_HBD_AVX2(AlfClassifier **classifier, const PelUnitB
   constexpr size_t step_x = 8;
   constexpr size_t step_y = 4;
 
+  if (width % step_x != 0)
+  {
+    simdFilter5x5Blk_HBD(classifier, recDst, recSrc, blkDst, blk, compId, filterSet, fClipSet, clpRng, cs, vbCTUHeight,
+                         vbPos);
+    return;
+  }
   CHECK(blk.y % step_y, "Wrong startHeight in filtering");
   CHECK(blk.x % step_x, "Wrong startWidth in filtering");
   CHECK(height % step_y, "Wrong endHeight in filtering");
@@ -566,7 +572,7 @@ static void simdDeriveClassificationBlk(AlfClassifier **classifier, int **laplac
   CHECK((blk.width & 7) != 0, "Block width must be a multiple of 8");
   CHECK((vbCTUHeight & (vbCTUHeight - 1)) != 0, "vbCTUHeight must be a power of 2");
 
-  const size_t imgStride = srcLuma.stride;
+  const ptrdiff_t imgStride = srcLuma.stride;
   const Pel *  srcExt    = srcLuma.buf;
 
   const int imgHExtended = blk.height + 4;
@@ -581,7 +587,7 @@ static void simdDeriveClassificationBlk(AlfClassifier **classifier, int **laplac
 
   for (int i = 0; i < imgHExtended; i += 2)
   {
-    const size_t offset = (i + posY - 3) * imgStride + posX - 3;
+    const ptrdiff_t offset = (i + posY - 3) * imgStride + posX - 3;
 
     const Pel *imgY0 = &srcExt[offset];
     const Pel *imgY1 = &srcExt[offset + imgStride];
@@ -827,7 +833,7 @@ static void simdFilter5x5Blk(AlfClassifier **classifier, const PelUnitBuf &recDs
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int SHIFT = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int SHIFT     = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int ROUND = 1 << (SHIFT - 1);
   const __m128i mmOffset1 = _mm_set1_epi32((1 << ((SHIFT + 3) - 1)) - ROUND);
 
@@ -1032,7 +1038,7 @@ static void simdFilter7x7Blk_HBD(AlfClassifier **classifier, const PelUnitBuf &r
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int shift = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int shift = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int round = 1 << (shift - 1);
 
   const size_t width = blk.width;
@@ -1258,7 +1264,7 @@ static void simdFilter7x7Blk_HBD_AVX2(AlfClassifier **classifier, const PelUnitB
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int shift = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int shift = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int round = 1 << (shift - 1);
 
   const size_t width = blk.width;
@@ -1487,7 +1493,7 @@ static void simdFilter7x7Blk(AlfClassifier **classifier, const PelUnitBuf &recDs
   const size_t srcStride = srcBuffer.stride;
   const size_t dstStride = dstBuffer.stride;
 
-  constexpr int SHIFT = AdaptiveLoopFilter::m_NUM_BITS - 1;
+  constexpr int SHIFT = AdaptiveLoopFilter::COEFF_SCALE_BITS;
   constexpr int ROUND = 1 << (SHIFT - 1);
 
   const size_t width  = blk.width;

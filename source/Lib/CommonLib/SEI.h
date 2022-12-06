@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,6 +62,7 @@ public:
     FILM_GRAIN_CHARACTERISTICS           = 19,
     FRAME_PACKING                        = 45,
     DISPLAY_ORIENTATION                  = 47,
+    GREEN_METADATA                       = 56,
     PARAMETER_SETS_INCLUSION_INDICATION  = 129,
     DECODING_UNIT_INFO                   = 130,
     DECODED_PICTURE_HASH                 = 132,
@@ -78,6 +79,7 @@ public:
     FRAME_FIELD_INFO                     = 168,
     DEPTH_REPRESENTATION_INFO            = 177,
     MULTIVIEW_ACQUISITION_INFO           = 179,
+    MULTIVIEW_VIEW_POSITION              = 180,
     SUBPICTURE_LEVEL_INFO                = 203,
     SAMPLE_ASPECT_RATIO_INFO             = 204,
     CONTENT_LIGHT_LEVEL_INFO             = 144,
@@ -93,6 +95,14 @@ public:
     ANNOTATED_REGIONS                    = 202,
     SCALABILITY_DIMENSION_INFO           = 205,
     EXTENDED_DRAP_INDICATION             = 206,
+    CONSTRAINED_RASL_ENCODING            = 207,
+    VDI_SEI_ENVELOPE             = 208,
+    SHUTTER_INTERVAL_INFO                = 209,
+    NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS = 210,
+    NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
+    PHASE_INDICATION                     = 212,
+
+    SEI_PROCESSING_ORDER                 = 213,
   };
 
   SEI() {}
@@ -103,6 +113,42 @@ public:
   virtual PayloadType payloadType() const = 0;
 };
 
+class SEIFillerPayload : public SEI
+{
+public:
+  PayloadType payloadType() const { return FILLER_PAYLOAD; }
+  SEIFillerPayload() {}
+  virtual ~SEIFillerPayload() {}
+
+};
+
+class SEIShutterIntervalInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return SHUTTER_INTERVAL_INFO; }
+  SEIShutterIntervalInfo() {}
+  virtual ~SEIShutterIntervalInfo() {}
+
+  bool                  m_siiEnabled;
+  unsigned              m_siiNumUnitsInShutterInterval;
+  unsigned              m_siiTimeScale;
+  unsigned              m_siiMaxSubLayersMinus1;
+  bool                  m_siiFixedSIwithinCLVS;
+  std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
+};
+
+class SEIProcessingOrderInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return SEI_PROCESSING_ORDER; }
+  SEIProcessingOrderInfo() {}
+  virtual ~SEIProcessingOrderInfo() {}
+
+  bool                   m_posEnabled;
+  std::vector<uint16_t>  m_posPayloadType;
+  std::vector<uint8_t>   m_posProcessingOrder;
+  uint32_t               m_posNumofSeiMessages;
+};
 
 class SEIEquirectangularProjection : public SEI
 {
@@ -337,6 +383,18 @@ private:
   uint32_t xGetSyntaxElementLen( int expo, int prec, int val ) const;
 };
 
+class SEIMultiviewViewPosition : public SEI
+{
+public:
+  PayloadType payloadType() const { return MULTIVIEW_VIEW_POSITION; }
+  SEIMultiviewViewPosition() { };
+  ~SEIMultiviewViewPosition() { };
+  bool isMVPSameContent(SEIMultiviewViewPosition* mvpB);
+
+  int               m_mvpNumViewsMinus1;
+  std::vector<int>  m_mvpViewPosition;
+};
+
 class SEIAlphaChannelInfo : public SEI
 {
 public:
@@ -409,7 +467,19 @@ public:
   int                   m_sariSarHeight;
 };
 
-static const uint32_t ISO_IEC_11578_LEN=16;
+class SEIPhaseIndication : public SEI
+{
+public:
+  PayloadType payloadType() const { return PHASE_INDICATION; }
+  SEIPhaseIndication() {}
+  virtual ~SEIPhaseIndication() {}
+  int                   m_horPhaseNum;
+  int                   m_horPhaseDenMinus1;
+  int                   m_verPhaseNum;
+  int                   m_verPhaseDenMinus1;
+};
+
+static constexpr uint32_t ISO_IEC_11578_LEN=16;
 
 class SEIuserDataUnregistered : public SEI
 {
@@ -508,7 +578,7 @@ public:
   bool m_cpbRemovalDelayDeltasPresentFlag;
   int  m_numCpbRemovalDelayDeltas;
   int  m_bpMaxSubLayers;
-  uint32_t m_cpbRemovalDelayDelta    [15];
+  uint32_t m_cpbRemovalDelayDelta    [16];
   bool m_bpDecodingUnitHrdParamsPresentFlag;
   bool m_decodingUnitCpbParamsInPicTimingSeiFlag;
   bool m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
@@ -662,6 +732,49 @@ public:
   int                   m_doTransformType;
 };
 
+class SEIGreenMetadata : public SEI
+{
+public:
+  PayloadType payloadType() const { return GREEN_METADATA; }
+
+  SEIGreenMetadata() {}
+  virtual ~SEIGreenMetadata() {}
+};
+
+
+class SEIGreenMetadataInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return GREEN_METADATA; }
+  SEIGreenMetadataInfo() {}
+
+  virtual ~SEIGreenMetadataInfo() {}
+  int m_greenMetadataType =-1;
+  // Metrics for quality recovery after low-power encoding
+  int m_xsdSubpicNumberMinus1 = -1; //xsd_metric_number_minus1 plus 1 indicates the number of objective quality metrics contained in the SEI message.
+#if GREEN_METADATA_SEI_ENABLED
+  int m_xsdSubPicIdc;
+#endif
+  
+  int     m_xsdMetricValuePSNR;
+  int     m_xsdMetricValueSSIM;
+  int     m_xsdMetricValueWPSNR;
+  int    m_xsdMetricValueWSPSNR;
+
+  bool     m_xsdMetricTypePSNR;
+  bool     m_xsdMetricTypeSSIM;
+  bool     m_xsdMetricTypeWPSNR;
+  bool     m_xsdMetricTypeWSPSNR;
+
+  int      m_greenMetadataGranularityType = 0;
+  int      m_greenMetadataExtendedRepresentation = 0;
+  int m_periodType= -1;
+  int m_numPictures= -1;
+  int m_numSeconds = -1;
+  SEIComplexityMetrics m_greenComplexityMetrics;
+};
+
+
 class SEIParameterSetsInclusionIndication : public SEI
 {
 public:
@@ -736,7 +849,6 @@ void xTraceSEIHeader();
 void xTraceSEIMessageType( SEI::PayloadType payloadType );
 #endif
 
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
 class SEIAlternativeTransferCharacteristics : public SEI
 {
 public:
@@ -749,7 +861,6 @@ public:
 
   uint32_t m_preferredTransferCharacteristics;
 };
-#endif
 class SEIUserDataRegistered : public SEI
 {
 public:
@@ -793,6 +904,7 @@ public:
   {
     bool  presentFlag;
     uint8_t numModelValues;
+    uint8_t numIntensityIntervals;
     std::vector<CompModelIntensityValues> intensityValues;
   };
 
@@ -965,6 +1077,7 @@ public:
     uint32_t objLabelIdx;            // only valid if bObjectLabelValid
 
     bool boundingBoxValid;
+    bool boundingBoxCancelFlag;
     uint32_t boundingBoxTop;         // only valid if bBoundingBoxValid
     uint32_t boundingBoxLeft;
     uint32_t boundingBoxWidth;
@@ -992,8 +1105,9 @@ public:
     bool      m_partialObjectFlagPresentFlag;
     bool      m_objectLabelPresentFlag;
     bool      m_objectConfidenceInfoPresentFlag;
-    uint32_t      m_objectConfidenceLength;         // Only valid if m_objectConfidenceInfoPresentFlag
+    uint32_t  m_objectConfidenceLength;         // Only valid if m_objectConfidenceInfoPresentFlag
     bool      m_objectLabelLanguagePresentFlag; // Only valid if m_objectLabelPresentFlag
+
     std::string m_annotatedRegionsObjectLabelLang;
   };
   typedef uint32_t AnnotatedRegionObjectIndex;
@@ -1018,6 +1132,130 @@ public:
   int               m_edrapIndicationNumRefRapPicsMinus1;
   std::vector<int>  m_edrapIndicationRefRapId;
 };
+
+class SEIConstrainedRaslIndication : public SEI
+{
+public:
+  PayloadType payloadType() const { return CONSTRAINED_RASL_ENCODING; }
+  SEIConstrainedRaslIndication() { }
+
+  virtual ~SEIConstrainedRaslIndication() { }
+};
+
+class SEIVDISeiEnvelope : public SEI
+{
+public:
+  PayloadType payloadType() const { return VDI_SEI_ENVELOPE; }
+
+  SEIVDISeiEnvelope() {}
+  virtual ~SEIVDISeiEnvelope() {}
+};
+
+class SEINeuralNetworkPostFilterCharacteristics : public SEI
+{
+public:
+  PayloadType payloadType() const override { return NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS; }
+  SEINeuralNetworkPostFilterCharacteristics()
+    : m_id(0)
+    , m_modeIdc(0)
+    , m_purposeAndFormattingFlag(false)
+    , m_purpose(0)
+    , m_outSubCFlag(0)
+    , m_outSubWidthC(1)
+    , m_outSubHeightC(1)
+    , m_picWidthInLumaSamples(0)
+    , m_picHeightInLumaSamples(0)
+    , m_inpTensorBitDepthMinus8(0)
+    , m_outTensorBitDepthMinus8(0)
+    , m_componentLastFlag(false)
+    , m_inpSampleIdc(0)
+    , m_auxInpIdc(0)
+    , m_sepColDescriptionFlag(false)
+    , m_colPrimaries(0)
+    , m_transCharacteristics(0)
+    , m_matrixCoeffs(0)
+    , m_inpOrderIdc(0)
+    , m_outSampleIdc(0)
+    , m_outOrderIdc(0)
+    , m_constantPatchSizeFlag(false)
+    , m_patchWidthMinus1(0)
+    , m_patchHeightMinus1(0)
+    , m_overlap(0)
+    , m_paddingType(0)
+    , m_lumaPadding(0)
+    , m_cbPadding(0)
+    , m_crPadding(0)
+    , m_payloadByte(nullptr)
+    , m_complexityIdc(0)
+    , m_uriTag("")
+    , m_uri("")
+    , m_parameterTypeIdc(0)
+    , m_log2ParameterBitLengthMinus3(0)
+    , m_numParametersIdc(0)
+    , m_numKmacOperationsIdc(0)
+  {}
+
+  ~SEINeuralNetworkPostFilterCharacteristics() override
+  {
+    if (m_payloadByte)
+    {
+      delete m_payloadByte;
+      m_payloadByte = nullptr;
+    }
+  }
+
+  uint32_t       m_id;
+  uint32_t       m_modeIdc;
+  bool           m_purposeAndFormattingFlag;
+  uint32_t       m_purpose;
+  bool           m_outSubCFlag;
+  uint8_t        m_outSubWidthC;
+  uint8_t        m_outSubHeightC;
+  uint32_t       m_picWidthInLumaSamples;
+  uint32_t       m_picHeightInLumaSamples;
+  uint32_t       m_inpTensorBitDepthMinus8;
+  uint32_t       m_outTensorBitDepthMinus8;
+  bool           m_componentLastFlag;
+  uint32_t       m_inpSampleIdc;
+  uint32_t m_auxInpIdc;
+  bool     m_sepColDescriptionFlag;
+  uint8_t  m_colPrimaries;
+  uint8_t  m_transCharacteristics;
+  uint8_t  m_matrixCoeffs;
+  uint32_t       m_inpOrderIdc;
+  uint32_t       m_outSampleIdc;
+  uint32_t       m_outOrderIdc;
+  bool           m_constantPatchSizeFlag;
+  uint32_t       m_patchWidthMinus1;
+  uint32_t       m_patchHeightMinus1;
+  uint32_t       m_overlap;
+  uint32_t       m_paddingType;
+  uint32_t       m_lumaPadding;
+  uint32_t       m_cbPadding;
+  uint32_t       m_crPadding;
+  uint64_t       m_payloadLength;
+  char*          m_payloadByte;
+  uint32_t       m_complexityIdc;
+  std::string    m_uriTag;
+  std::string    m_uri;
+  uint32_t       m_parameterTypeIdc;
+  uint32_t       m_log2ParameterBitLengthMinus3;
+  uint32_t       m_numParametersIdc;
+  uint32_t       m_numKmacOperationsIdc;
+};
+
+class SEINeuralNetworkPostFilterActivation : public SEI
+{
+public:
+  PayloadType payloadType() const { return NEURAL_NETWORK_POST_FILTER_ACTIVATION; }
+  SEINeuralNetworkPostFilterActivation()
+    : m_id(0)
+  {}
+  virtual ~SEINeuralNetworkPostFilterActivation() {}
+
+  uint32_t       m_id;
+};
+
 //! \}
 
 

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -85,6 +85,29 @@ enum EncTestModeOpts
   ETO_IMV         =  7<<ETO_IMV_SHIFT,    // bits  1-3  (imv parameter uses 3 bits)
   ETO_DUMMY       =  1<<5,                // bit   5    (dummy)
   ETO_INVALID     = 0xffffffff            // bits 0-31  (invalid option)
+};
+
+enum ExtraFeatures
+{
+  DID_HORZ_SPLIT = 0,
+  DID_VERT_SPLIT,
+  DID_QUAD_SPLIT,
+  BEST_HORZ_SPLIT_COST,
+  BEST_VERT_SPLIT_COST,
+  BEST_TRIH_SPLIT_COST,
+  BEST_TRIV_SPLIT_COST,
+  DO_TRIH_SPLIT,
+  DO_TRIV_SPLIT,
+  BEST_NON_SPLIT_COST,
+  BEST_NO_IMV_COST,
+  BEST_IMV_COST,
+  QT_BEFORE_BT,
+  IS_BEST_NOSPLIT_SKIP,
+  MAX_QT_SUB_DEPTH,
+#if REUSE_CU_RESULTS
+  IS_REUSING_CU,
+#endif
+  NUM_EXTRA_FEATURES
 };
 
 static void getAreaIdx(const Area& area, const PreCalcValues &pcv, unsigned &idx1, unsigned &idx2, unsigned &idx3, unsigned &idx4)
@@ -169,92 +192,69 @@ inline EncTestMode getCSEncMode( const CodingStructure& cs )
 // EncModeCtrl controls if specific modes should be tested
 //////////////////////////////////////////////////////////////////////////
 
+struct IspPredModeVal
+{
+  uint16_t valid : 1;
+  uint16_t notIsp : 1;
+  uint16_t verIsp : 1;
+  uint16_t ispLfnstIdx : 2;
+  uint16_t mipFlag : 1;
+  uint16_t lowIspCost : 1;
+  uint16_t bestPredModeDCT2 : 9;
+};
+
 struct ComprCUCtx
 {
   ComprCUCtx() : testModes(), extraFeatures()
   {
   }
 
-  ComprCUCtx( const CodingStructure& cs, const uint32_t _minDepth, const uint32_t _maxDepth, const uint32_t numExtraFeatures )
-    : minDepth      ( _minDepth  )
-    , maxDepth      ( _maxDepth  )
-    , testModes     (            )
-    , lastTestMode  (            )
-    , earlySkip     ( false      )
-    , isHashPerfectMatch
-                    ( false      )
-    , bestCS        ( nullptr    )
-    , bestCU        ( nullptr    )
-    , bestTU        ( nullptr    )
-    , extraFeatures (            )
-    , extraFeaturesd(            )
-    , bestInterCost ( MAX_DOUBLE )
-    , bestMtsSize2Nx2N1stPass
-                    ( MAX_DOUBLE )
-    , skipSecondMTSPass
-                    ( false )
-    , interHad      (std::numeric_limits<Distortion>::max())
-    , bestCostWithoutSplitFlags( MAX_DOUBLE )
-    , bestCostMtsFirstPassNoIsp( MAX_DOUBLE )
-    , bestCostIsp   ( MAX_DOUBLE )
-    , ispWasTested  ( false )
-    , bestPredModeDCT2
-                    ( UINT8_MAX )
-    , relatedCuIsValid
-                    ( false )
-    , ispPredModeVal( 0 )
-    , bestDCT2NonISPCost
-                    ( MAX_DOUBLE )
-    , bestNonDCT2Cost
-                    ( MAX_DOUBLE )
-    , bestISPIntraMode
-                    ( UINT8_MAX )
-    , mipFlag       ( false )
-    , ispMode       ( NOT_INTRA_SUBPARTITIONS )
-    , ispLfnstIdx   ( 0 )
-    , stopNonDCT2Transforms
-                    ( false )
+  ComprCUCtx(const CodingStructure &cs, const uint32_t _minDepth, const uint32_t _maxDepth)
+    : minDepth(_minDepth), maxDepth(_maxDepth), testModes(), lastTestMode()
   {
     getAreaIdx( cs.area.Y(), *cs.pcv, cuX, cuY, cuW, cuH );
     partIdx = ( ( cuX << 8 ) | cuY );
 
-    extraFeatures.reserve( numExtraFeatures );
-    extraFeatures.resize ( numExtraFeatures, 0 );
-
-    extraFeaturesd.reserve( numExtraFeatures );
-    extraFeaturesd.resize ( numExtraFeatures, 0.0 );
+    extraFeatures.fill(0);
+    extraFeaturesd.fill(0.0);
   }
 
-  unsigned                          minDepth;
-  unsigned                          maxDepth;
-  unsigned                          cuX, cuY, cuW, cuH, partIdx;
-  std::vector<EncTestMode>          testModes;
-  EncTestMode                       lastTestMode;
-  bool                              earlySkip;
-  bool                              isHashPerfectMatch;
-  CodingStructure                  *bestCS;
-  CodingUnit                       *bestCU;
-  TransformUnit                    *bestTU;
-  static_vector<int64_t,  30>         extraFeatures;
-  static_vector<double, 30>         extraFeaturesd;
-  double                            bestInterCost;
-  double                            bestMtsSize2Nx2N1stPass;
-  bool                              skipSecondMTSPass;
-  Distortion                        interHad;
-  double                            bestCostWithoutSplitFlags;
-  double                            bestCostMtsFirstPassNoIsp;
-  double                            bestCostIsp;
-  bool                              ispWasTested;
-  uint16_t                          bestPredModeDCT2;
-  bool                              relatedCuIsValid;
-  uint16_t                          ispPredModeVal;
-  double                            bestDCT2NonISPCost;
-  double                            bestNonDCT2Cost;
-  uint8_t                           bestISPIntraMode;
-  bool                              mipFlag;
-  uint8_t                           ispMode;
-  uint8_t                           ispLfnstIdx;
-  bool                              stopNonDCT2Transforms;
+  unsigned                 minDepth;
+  unsigned                 maxDepth;
+  unsigned                 cuX, cuY, cuW, cuH, partIdx;
+  std::vector<EncTestMode> testModes;
+  EncTestMode              lastTestMode;
+  CodingStructure         *bestCS{ nullptr };
+  CodingUnit              *bestCU{ nullptr };
+  TransformUnit           *bestTU{ nullptr };
+
+  std::array<int64_t, NUM_EXTRA_FEATURES> extraFeatures;
+  std::array<double, NUM_EXTRA_FEATURES>  extraFeaturesd;
+
+  double bestInterCost{ MAX_DOUBLE };
+  double bestMtsSize2Nx2N1stPass{ MAX_DOUBLE };
+  double bestCostWithoutSplitFlags{ MAX_DOUBLE };
+  double bestCostMtsFirstPassNoIsp{ MAX_DOUBLE };
+  double bestCostIsp{ MAX_DOUBLE };
+  double bestDCT2NonISPCost{ MAX_DOUBLE };
+  double bestNonDCT2Cost{ MAX_DOUBLE };
+
+  Distortion interHad{ std::numeric_limits<Distortion>::max() };
+
+  uint16_t       bestPredModeDCT2{ UINT8_MAX };
+  IspPredModeVal ispPredModeVal{ 0, 0, 0, 0, 0, 0, 0 };
+
+  bool earlySkip{ false };
+  bool isHashPerfectMatch{ false };
+  bool skipSecondMTSPass{ false };
+  bool ispWasTested{ false };
+  bool relatedCuIsValid{ false };
+  bool mipFlag{ false };
+  bool stopNonDCT2Transforms{ false };
+
+  uint8_t bestISPIntraMode{ UINT8_MAX };
+  uint8_t ispMode{ NOT_INTRA_SUBPARTITIONS };
+  uint8_t ispLfnstIdx{ 0 };
 
   template<typename T> T    get( int ft )       const { return typeid(T) == typeid(double) ? (T&)extraFeaturesd[ft] : T(extraFeatures[ft]); }
   template<typename T> void set( int ft, T val )      { extraFeatures [ft] = int64_t( val ); }
@@ -277,6 +277,7 @@ protected:
   int                   m_lumaLevelToDeltaQPLUT[LUMA_LEVEL_TO_DQP_LUT_MAXSIZE];
   int                   m_lumaQPOffset;
 #endif
+  std::map<int, int*>  *m_bimQPMap;
   bool                  m_fastDeltaQP;
   static_vector<ComprCUCtx, ( MAX_CU_DEPTH << 2 )> m_ComprCUCtxList;
   InterSearch*          m_pcInterSearch;
@@ -319,7 +320,7 @@ public:
   void                  initLumaDeltaQpLUT();
   int                   calculateLumaDQP  ( const CPelBuf& rcOrg );
 #endif
-  int                                 calculateLumaDQPsmooth(const CPelBuf& rcOrg, int baseQP);
+  int                                 calculateLumaDQPsmooth(const CPelBuf& rcOrg, int baseQP, double threshold, double scale, double offset, int limit);
   void setFastDeltaQp                 ( bool b )                {        m_fastDeltaQP = b;                               }
   bool getFastDeltaQp                 ()                  const { return m_fastDeltaQP;                                   }
 
@@ -341,8 +342,10 @@ public:
   uint16_t getBestPredModeDCT2        ()                  const { return m_ComprCUCtxList.back().bestPredModeDCT2; }
   bool   getRelatedCuIsValid          ()                  const { return m_ComprCUCtxList.back().relatedCuIsValid; }
   void   setRelatedCuIsValid          ( bool val )              { m_ComprCUCtxList.back().relatedCuIsValid = val; }
-  uint16_t getIspPredModeValRelCU     ()                  const { return m_ComprCUCtxList.back().ispPredModeVal; }
-  void   setIspPredModeValRelCU       ( uint16_t val )          { m_ComprCUCtxList.back().ispPredModeVal = val; }
+  IspPredModeVal getIspPredModeValRelCU() const
+  {
+    return m_ComprCUCtxList.back().ispPredModeVal;
+  }
   double getBestDCT2NonISPCostRelCU   ()                  const { return m_ComprCUCtxList.back().bestDCT2NonISPCost; }
   void   setBestDCT2NonISPCostRelCU   ( double val )            { m_ComprCUCtxList.back().bestDCT2NonISPCost = val; }
   double getBestNonDCT2Cost           ()                  const { return m_ComprCUCtxList.back().bestNonDCT2Cost; }
@@ -357,66 +360,72 @@ public:
   void setInterSearch                 (InterSearch* pcInterSearch)   { m_pcInterSearch = pcInterSearch; }
   void   setPltEnc                    ( bool b )                { m_doPlt = b; }
   bool   getPltEnc()                                      const { return m_doPlt; }
+  void   setBIMQPMap                  ( std::map<int, int*> *qpMap ) { m_bimQPMap = qpMap; }
+  int    getBIMOffset                 ( int poc, int ctuId )
+  {
+    auto it = m_bimQPMap->find(poc);
+    return (it == m_bimQPMap->end()) ? 0 : (*m_bimQPMap)[poc][ctuId];
+  }
 
 #if GDR_ENABLED
 void forceIntraMode()
-{ 
-  // remove all inter or split to force make intra      
-  int n = (int)m_ComprCUCtxList.back().testModes.size();   
-  for (int j = 0; j < n; j++) 
-  {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-
-    if (isModeInter(etm.type)) 
-    {
-      m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
-      j--;
-      n--;          
-    }
-  }  
-}
-
-void forceIntraNoSplit()
 {
-  // remove all inter or split to force make intra        
-  int n = (int)m_ComprCUCtxList.back().testModes.size();
-
-  for (int j = 0; j < n; j++) 
+  // remove all inter or split to force make intra
+  int n = (int) m_ComprCUCtxList.back().testModes.size();
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
-    if (isModeInter(etm.type) || isModeSplit(etm.type)) 
+    if (isModeInter(etm.type))
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
       n--;
     }
-  }  
+  }
+}
+
+void forceIntraNoSplit()
+{
+  // remove all inter or split to force make intra
+  int n = (int)m_ComprCUCtxList.back().testModes.size();
+
+  for (int j = 0; j < n; j++)
+  {
+    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
+
+    if (isModeInter(etm.type) || isModeSplit(etm.type))
+    {
+      m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
+      j--;
+      n--;
+    }
+  }
 }
 
 // Note: ForceInterMode
 void forceInterMode()
-{    
+{
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    if (etm.type == ETM_INTRA) 
+    if (etm.type == ETM_INTRA)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
-      n--;        
+      n--;
     }
-  }  
+  }
 }
 
 void removeHashInter()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    if (etm.type == ETM_HASH_INTER) 
+    if (etm.type == ETM_HASH_INTER)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -428,10 +437,10 @@ void removeHashInter()
 void removeMergeSkip()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    if (etm.type == ETM_MERGE_SKIP) 
+    if (etm.type == ETM_MERGE_SKIP)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -443,10 +452,10 @@ void removeMergeSkip()
 void removeInterME()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    if (etm.type == ETM_INTER_ME) 
+    if (etm.type == ETM_INTER_ME)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -458,10 +467,10 @@ void removeInterME()
 void removeAffine()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    if (etm.type == ETM_AFFINE) 
+    if (etm.type == ETM_AFFINE)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -473,10 +482,10 @@ void removeAffine()
 void removeMergeGeo()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    if (etm.type == ETM_MERGE_GEO) 
+    if (etm.type == ETM_MERGE_GEO)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -488,10 +497,10 @@ void removeMergeGeo()
 void removeIntra()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    if (etm.type == ETM_INTRA) 
+    if (etm.type == ETM_INTRA)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -501,38 +510,33 @@ void removeIntra()
 }
 
 void removeBadMode()
-{  
+{
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
-    if (etm.type == ETM_INTER_ME && ((etm.opts & ETO_IMV) >> ETO_IMV_SHIFT) > 2) 
-    {  
+    if (etm.type == ETM_INTER_ME && ((etm.opts & ETO_IMV) >> ETO_IMV_SHIFT) > 2)
+    {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
       n--;
       break;
     }
-  }  
+  }
 }
 
 bool anyPredModeLeft()
-{ 
+{
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
-    if (etm.type == ETM_HASH_INTER ||
-        etm.type == ETM_MERGE_SKIP || 
-        etm.type == ETM_INTER_ME   || 
-        etm.type == ETM_AFFINE     || 
-        etm.type == ETM_MERGE_GEO  || 
-        etm.type == ETM_INTRA      ||
-        etm.type == ETM_PALETTE    || 
-        etm.type == ETM_IBC        ||
-        etm.type == ETM_IBC_MERGE) {
+    if (etm.type == ETM_HASH_INTER || etm.type == ETM_MERGE_SKIP || etm.type == ETM_INTER_ME || etm.type == ETM_AFFINE
+        || etm.type == ETM_MERGE_GEO || etm.type == ETM_INTRA || etm.type == ETM_PALETTE || etm.type == ETM_IBC
+        || etm.type == ETM_IBC_MERGE)
+    {
       return true;
     }
   }
@@ -543,11 +547,11 @@ bool anyPredModeLeft()
 bool anyIntraIBCMode()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
-    if (etm.type == ETM_INTRA || etm.type == ETM_IBC) 
+    if (etm.type == ETM_INTRA || etm.type == ETM_IBC)
     {
       return true;
     }
@@ -559,11 +563,11 @@ bool anyIntraIBCMode()
 void forceRemoveDontSplit()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
-    if (etm.type == ETM_POST_DONT_SPLIT) 
+    if (etm.type == ETM_POST_DONT_SPLIT)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -575,27 +579,27 @@ void forceRemoveDontSplit()
 void forceVerSplitOnly()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];       
- 
-    if (etm.type != ETM_SPLIT_QT && etm.type != ETM_SPLIT_BT_V && etm.type != ETM_SPLIT_TT_V) 
+    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
+
+    if (etm.type != ETM_SPLIT_QT && etm.type != ETM_SPLIT_BT_V && etm.type != ETM_SPLIT_TT_V)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
       n--;
     }
-  }   
+  }
 }
 
 void forceRemoveTTV()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    
-    if (etm.type == ETM_SPLIT_TT_V) 
+
+    if (etm.type == ETM_SPLIT_TT_V)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -605,13 +609,13 @@ void forceRemoveTTV()
 }
 
 void forceRemoveBTV()
-{  
+{
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
-    if (etm.type == ETM_SPLIT_BT_V) 
+    if (etm.type == ETM_SPLIT_BT_V)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -623,27 +627,27 @@ void forceRemoveBTV()
 void forceRemoveQT()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
- 
-    if (etm.type == ETM_SPLIT_QT) 
+
+    if (etm.type == ETM_SPLIT_QT)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
       n--;
     }
-  }  
+  }
 }
 
 void forceRemoveHT()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
-    if (etm.type == ETM_SPLIT_BT_H || etm.type == ETM_SPLIT_TT_H) 
+    if (etm.type == ETM_SPLIT_BT_H || etm.type == ETM_SPLIT_TT_H)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -655,11 +659,11 @@ void forceRemoveHT()
 void forceRemoveQTHT()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    
-    if (etm.type == ETM_SPLIT_QT || etm.type == ETM_SPLIT_BT_H || etm.type == ETM_SPLIT_TT_H) 
+
+    if (etm.type == ETM_SPLIT_QT || etm.type == ETM_SPLIT_BT_H || etm.type == ETM_SPLIT_TT_H)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -671,11 +675,12 @@ void forceRemoveQTHT()
 void forceRemoveAllSplit()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
-    if (etm.type == ETM_SPLIT_QT || etm.type == ETM_SPLIT_BT_H || etm.type == ETM_SPLIT_BT_V || etm.type == ETM_SPLIT_TT_H || etm.type == ETM_SPLIT_TT_V) 
+    if (etm.type == ETM_SPLIT_QT || etm.type == ETM_SPLIT_BT_H || etm.type == ETM_SPLIT_BT_V
+        || etm.type == ETM_SPLIT_TT_H || etm.type == ETM_SPLIT_TT_V)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
@@ -686,19 +691,19 @@ void forceRemoveAllSplit()
 
 void forceQTonlyMode()
 {
-  // remove all split except QT  
+  // remove all split except QT
   int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
-    if (etm.type != ETM_SPLIT_QT) 
+    if (etm.type != ETM_SPLIT_QT)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
-      n--;        
+      n--;
     }
-  }    
+  }
 }
 
 const char* printType(EncTestModeType type)
@@ -733,15 +738,15 @@ const char* printType(EncTestModeType type)
 
 void printMode()
 {
-  // remove all inter or split to force make intra          
+  // remove all inter or split to force make intra
   int n = (int)m_ComprCUCtxList.back().testModes.size();
   printf("-:[");
-  for (int j = 0; j < n; j++) 
+  for (int j = 0; j < n; j++)
   {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];      
-    printf(" %s", printType(etm.type));      
+    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
+    printf(" %s", printType(etm.type));
   }
-  printf("]\n");   
+  printf("]\n");
 }
 #endif
 
@@ -760,7 +765,7 @@ struct SaveLoadStructSbt
   uint8_t  numPuInfoStored;
   uint32_t puSse[SBT_NUM_SL];
   uint8_t  puSbt[SBT_NUM_SL];
-  uint8_t  puTrs[SBT_NUM_SL];
+  MtsType  puTrs[SBT_NUM_SL];
 };
 
 class SaveLoadEncInfoSbt
@@ -777,11 +782,18 @@ private:
 public:
   virtual  ~SaveLoadEncInfoSbt() { }
   void     resetSaveloadSbt( int maxSbtSize );
-  uint16_t findBestSbt( const UnitArea& area, const uint32_t curPuSse );
-  bool     saveBestSbt( const UnitArea& area, const uint32_t curPuSse, const uint8_t curPuSbt, const uint8_t curPuTrs );
+
+  struct BestSbt
+  {
+    uint8_t sbt;
+    MtsType trs;
+  };
+
+  BestSbt findBestSbt(const UnitArea &area, const uint32_t curPuSse);
+  bool    saveBestSbt(const UnitArea &area, const uint32_t curPuSse, const uint8_t curPuSbt, const MtsType curPuTrs);
 };
 
-static const int MAX_STORED_CU_INFO_REFS = 4;
+static constexpr int MAX_STORED_CU_INFO_REFS = 4;
 
 struct CodedCUInfo
 {
@@ -793,9 +805,10 @@ struct CodedCUInfo
   bool validMv[NUM_REF_PIC_LIST_01][MAX_STORED_CU_INFO_REFS];
   Mv   saveMv [NUM_REF_PIC_LIST_01][MAX_STORED_CU_INFO_REFS];
 
-  uint8_t BcwIdx;
-  char    selectColorSpaceOption;  // 0 - test both two color spaces; 1 - only test the first color spaces; 2 - only test the second color spaces
-  uint16_t ispPredModeVal;
+  uint8_t bcwIdx;
+  char selectColorSpaceOption;   // 0 - test both two color spaces; 1 - only test the first color spaces; 2 - only test
+                                 // the second color spaces
+  IspPredModeVal ispPredModeVal;
   double   bestDCT2NonISPCost;
   double   bestCost;
   double   bestNonDCT2Cost;
@@ -826,8 +839,8 @@ public:
 
   bool isSkip ( const UnitArea& area );
   bool isMMVDSkip(const UnitArea& area);
-  bool getMv  ( const UnitArea& area, const RefPicList refPicList, const int iRefIdx,       Mv& rMv ) const;
-  void setMv  ( const UnitArea& area, const RefPicList refPicList, const int iRefIdx, const Mv& rMv );
+  bool getMv(const UnitArea &area, const RefPicList refPicList, const int refIdx, Mv &rMv) const;
+  void setMv(const UnitArea &area, const RefPicList refPicList, const int refIdx, const Mv &rMv);
 
   bool  getInter( const UnitArea& area );
   void  setBcwIdx( const UnitArea& area, uint8_t gBiIdx );
@@ -892,29 +905,6 @@ class EncModeCtrlMTnoRQT : public EncModeCtrl, public CacheBlkInfoCtrl
 #endif
   , public SaveLoadEncInfoSbt
 {
-  enum ExtraFeatures
-  {
-    DID_HORZ_SPLIT = 0,
-    DID_VERT_SPLIT,
-    DID_QUAD_SPLIT,
-    BEST_HORZ_SPLIT_COST,
-    BEST_VERT_SPLIT_COST,
-    BEST_TRIH_SPLIT_COST,
-    BEST_TRIV_SPLIT_COST,
-    DO_TRIH_SPLIT,
-    DO_TRIV_SPLIT,
-    BEST_NON_SPLIT_COST,
-    BEST_NO_IMV_COST,
-    BEST_IMV_COST,
-    QT_BEFORE_BT,
-    IS_BEST_NOSPLIT_SKIP,
-    MAX_QT_SUB_DEPTH,
-#if REUSE_CU_RESULTS
-    IS_REUSING_CU,
-#endif
-    NUM_EXTRA_FEATURES
-  };
-
   unsigned m_skipThreshold;
 #if GDR_ENABLED
   EncCfg m_encCfg;
@@ -932,8 +922,9 @@ public:
   virtual bool useModeResult      ( const EncTestMode& encTestmode, CodingStructure*& tempCS,  Partitioner& partitioner );
 
   virtual bool checkSkipOtherLfnst( const EncTestMode& encTestmode, CodingStructure*& tempCS, Partitioner& partitioner );
-};
 
+  bool xSkipTreeCandidate(const PartSplit split, const double* splitRdCostBest, const SliceType& sliceType) const;
+};
 
 //! \}
 

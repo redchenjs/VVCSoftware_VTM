@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -157,16 +157,14 @@ void ParameterSetMap<VPS>::setID(VPS* parameterSet, const int psId)
 }
 
 ProfileTierLevel::ProfileTierLevel()
-  : m_tierFlag        (Level::MAIN)
-  , m_profileIdc      (Profile::NONE)
-  , m_numSubProfile(0)
-  , m_subProfileIdc(0)
-  , m_levelIdc        (Level::NONE)
+  : m_tierFlag(Level::MAIN)
+  , m_profileIdc(Profile::NONE)
+  , m_levelIdc(Level::NONE)
   , m_frameOnlyConstraintFlag(1)
   , m_multiLayerEnabledFlag(0)
 {
-  ::memset(m_subLayerLevelPresentFlag,   0, sizeof(m_subLayerLevelPresentFlag  ));
-  ::memset(m_subLayerLevelIdc, Level::NONE, sizeof(m_subLayerLevelIdc          ));
+  m_subLayerLevelPresentFlag.fill(false);
+  m_subLayerLevelIdc.fill(Level::NONE);
 }
 
 void calculateParameterSetChangedFlag(bool &changed, const std::vector<uint8_t> *oldData, const std::vector<uint8_t> *newData)

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,6 +56,7 @@
 #if EXTENSION_360_VIDEO
 #include "AppEncHelper360/TExt360EncGop.h"
 #endif
+#include "SEIFilmGrainAnalyzer.h"
 
 #include "Analyze.h"
 #include "RateCtrl.h"
@@ -108,7 +109,7 @@ private:
 #if WCG_WPSNR
   Analyze                 m_gcAnalyzeWPSNR;
 #endif
-  Analyze                 m_gcAnalyzeAll_in;
+  Analyze m_gcAnalyzeAllField;
 #if EXTENSION_360_VIDEO
   TExt360EncGop           m_ext360;
 public:
@@ -117,16 +118,13 @@ private:
 #endif
 
   //  Data
-  bool                    m_bLongtermTestPictureHasBeenCoded;
-  bool                    m_bLongtermTestPictureHasBeenCoded2;
-  uint32_t                    m_numLongTermRefPicSPS;
-  uint32_t                    m_ltRefPicPocLsbSps[MAX_NUM_LONG_TERM_REF_PICS];
+  uint32_t                m_numLongTermRefPicSPS;
+  uint32_t                m_ltRefPicPocLsbSps[MAX_NUM_LONG_TERM_REF_PICS];
   bool                    m_ltRefPicUsedByCurrPicFlag[MAX_NUM_LONG_TERM_REF_PICS];
   int                     m_iLastIDR;
   int                     m_iGopSize;
-  int                     m_iNumPicCoded;
-  bool                    m_bFirst;
-  int                     m_iLastRecoveryPicPOC;
+  int                     m_numPicsCoded;
+  bool                    m_first;
   int                     m_latestDRAPPOC;
   int                     m_latestEDRAPPOC;
   bool                    m_latestEdrapLeadingPicDecodableFlag;
@@ -134,6 +132,8 @@ private:
   unsigned                m_riceBit[8][2];
   int                     m_preQP[2];
   int                     m_preIPOC;
+  int                     m_cntRightBottom;
+  int                     m_cntRightBottomIntra;
 
   //  Access channel
   EncLib*                 m_pcEncLib;
@@ -142,9 +142,11 @@ private:
   PicList*                m_pcListPic;
 
   HLSWriter*              m_HLSWriter;
-  DeblockingFilter*             m_pcLoopFilter;
+  DeblockingFilter       *m_pcLoopFilter;
 
   SEIWriter               m_seiWriter;
+
+  FGAnalyser m_fgAnalyzer;
 
   Picture *               m_picBg;
   Picture *               m_picOrig;
@@ -159,37 +161,46 @@ private:
   EncReshape*               m_pcReshaper;
   RateCtrl*                 m_pcRateCtrl;
   // indicate sequence first
-  bool                    m_bSeqFirst;
+  bool                    m_seqFirst;
   bool                    m_audIrapOrGdrAuFlag;
 
   EncHRD*                 m_HRD;
 
   // clean decoding refresh
-  bool                    m_bRefreshPending;
+  bool                    m_refreshPending;
   int                     m_pocCRA;
   NalUnitType             m_associatedIRAPType[MAX_VPS_LAYERS];
   int                     m_associatedIRAPPOC[MAX_VPS_LAYERS];
 
-  std::vector<int>        m_vRVM_RP;
-  uint32_t                    m_lastBPSEI[MAX_TLAYER];
-  uint32_t                    m_totalCoded[MAX_TLAYER];
-  bool                        m_rapWithLeading;
+  std::vector<int>        m_rvm;
+  uint32_t                m_lastBPSEI[MAX_TLAYER];
+  uint32_t                m_totalCoded[MAX_TLAYER];
+  bool                    m_rapWithLeading;
   bool                    m_bufferingPeriodSEIPresentInAU;
   SEIEncoder              m_seiEncoder;
-#if W0038_DB_OPT
   PelStorage*             m_pcDeblockingTempPicYuv;
-  int                     m_DBParam[MAX_ENCODER_DEBLOCKING_QUALITY_LAYERS][4];   //[layer_id][0: available; 1: bDBDisabled; 2: Beta Offset Div2; 3: Tc Offset Div2;]
-#endif
+
+  struct
+  {
+    bool   available;
+    bool   disabled;
+    int8_t betaOffsetDiv2;
+    int8_t tcOffsetDiv2;
+  } m_deblockParam[MAX_ENCODER_DEBLOCKING_QUALITY_LAYERS];
 
   // members needed for adaptive max BT size
-  uint32_t                    m_uiBlkSize[10];
-  uint32_t                    m_uiNumBlk[10];
-  uint32_t                    m_uiPrevISlicePOC;
-  bool                    m_bInitAMaxBT;
+  struct BlkStat
+  {
+    uint32_t area;
+    uint32_t count;
+  };
+  std::array<BlkStat, 8> m_blkStat;
+  uint32_t               m_prevISlicePoc;
+  bool                   m_initAMaxBt;
 
   AUWriterIf*             m_AUWriterIf;
 #if GDR_ENABLED
-  int                     m_lastGdrIntervalPoc;  
+  int m_lastGdrIntervalPoc;
 #endif
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
@@ -206,7 +217,14 @@ private:
   hdrtoolslib::ColorTransformParams   *m_pcColorTransformParams;
   hdrtoolslib::FrameFormat            *m_pcFrameFormat;
 
-  std::chrono::duration<long long, ratio<1, 1000000000>> m_metricTime;
+  std::chrono::duration<long long, std::ratio<1, 1000000000>> m_metricTime;
+#endif
+
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct m_featureCounter;
+  FeatureCounterStruct m_featureCounterReference;
+  SEIQualityMetrics m_SEIGreenQualityMetrics;
+  SEIComplexityMetrics m_SEIGreenComplexityMetrics;
 #endif
 
 public:
@@ -218,9 +236,9 @@ public:
 
   void  init        ( EncLib* pcEncLib );
 
-  void  compressGOP ( int iPOCLast, int iNumPicRcvd, PicList& rcListPic, std::list<PelUnitBuf*>& rcListPicYuvRec,
-                      bool isField, bool isTff, const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
-                      bool printMSSSIM, bool isEncodeLtRef, const int picIdInGOP);
+  void  compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::list<PelUnitBuf *> &rcListPicYuvRec,
+                    bool isField, bool isTff, const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
+                    bool printMSSSIM, bool isEncodeLtRef, const int picIdInGOP);
   void  xAttachSliceDataToNalUnit (OutputNALUnit& rNalu, OutputBitstream* pcBitstreamRedirect);
 
 
@@ -242,6 +260,10 @@ public:
   void      setLastLTRefPoc(int iLastLTRefPoc) { m_lastLTRefPoc = iLastLTRefPoc; }
   int       getLastLTRefPoc() const { return m_lastLTRefPoc; }
 
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct getFeatureCounter(){return m_featureCounter;}
+  void setFeatureCounter(FeatureCounterStruct b){m_featureCounter=b;}
+#endif
 #if GDR_ENABLED
   void      setLastGdrIntervalPoc(int p)  { m_lastGdrIntervalPoc = p; }
   int       getLastGdrIntervalPoc() const { return m_lastGdrIntervalPoc; }
@@ -249,11 +271,10 @@ public:
 
   int       getPreQP() const { return m_preQP[0]; }
 
-  void  printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const bool printMSEBasedSNR, const bool printSequenceMSE, 
-    const bool printMSSSIM, const bool printHexPsnr, const bool printRprPSNR, const BitDepths &bitDepths );
-#if W0038_DB_OPT
+  void printOutSummary(uint32_t numAllPicCoded, bool isField, const bool printMSEBasedSNR, const bool printSequenceMSE,
+                       const bool printMSSSIM, const bool printHexPsnr, const bool printRprPsnr,
+                       const BitDepths &bitDepths, int layerId);
   uint64_t  preLoopFilterPicAndCalcDist( Picture* pcPic );
-#endif
   EncSlice*  getSliceEncoder()   { return m_pcSliceEncoder; }
   NalUnitType getNalUnitType( int pocCurr, int lastIdr, bool isField );
   void arrangeCompositeReference(Slice* pcSlice, PicList& rcListPic, int pocCurr);
@@ -266,22 +287,19 @@ public:
   Analyze& getAnalyzeBData() { return m_gcAnalyzeB; }
 #endif
 #if JVET_O0756_CALCULATE_HDRMETRICS
-  std::chrono::duration<long long, ratio<1, 1000000000>> getMetricTime()    const { return m_metricTime; };
+  std::chrono::duration<long long, std::ratio<1, 1000000000>> getMetricTime() const { return m_metricTime; };
 #endif
 
 protected:
   RateCtrl* getRateCtrl()       { return m_pcRateCtrl;  }
 
 protected:
-
-  void  xInitGOP          ( int iPOCLast, int iNumPicRcvd, bool isField
-    , bool isEncodeLtRef
-  );
+  void  xInitGOP(int pocLast, int numPicRcvd, bool isField, bool isEncodeLtRef);
   void  xPicInitHashME( Picture *pic, const PPS *pps, PicList &rcListPic );
   void  xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, Picture *pic, Slice *slice);
   void  xPicInitLMCS       (Picture *pic, PicHeader *picHeader, Slice *slice);
-  void  xGetBuffer        ( PicList& rcListPic, std::list<PelUnitBuf*>& rcListPicYuvRecOut,
-                            int iNumPicRcvd, int iTimeOffset, Picture*& rpcPic, int pocCurr, bool isField );
+  void  xGetBuffer(PicList &rcListPic, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int numPicRcvd, int timeOffset,
+                   Picture *&rpcPic, int pocCurr, bool isField);
   void xGetSubpicIdsInPic(std::vector<uint16_t>& subpicIDs, const SPS* sps, const PPS* pps);
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
@@ -289,17 +307,19 @@ protected:
   void copyBuftoFrame       ( Picture* pcPic );
 #endif
 
-  void  xCalculateAddPSNRs(const bool isField, const bool isFieldTopFieldFirst, const int iGOPid, Picture* pcPic, 
-    const AccessUnit&accessUnit, PicList &rcListPic, int64_t dEncTime, const InputColourSpaceConversion snr_conversion, 
-    const bool printFrameMSE, const bool printMSSSIM, double* PSNR_Y, bool isEncodeLtRef);
-  void  xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUnit&, double dEncTime, const InputColourSpaceConversion snr_conversion, 
-    const bool printFrameMSE, const bool printMSSSIM, double* PSNR_Y, bool isEncodeLtRef);
-  void  xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture* pcPicOrgSecondField,
-                                     PelUnitBuf cPicRecFirstField, PelUnitBuf cPicRecSecondField,
-                                     const InputColourSpaceConversion snr_conversion, const bool printFrameMSE, 
-                                     const bool printMSSSIM, double* PSNR_Y, bool isEncodeLtRef);
-  double xCalculateMSSSIM (const Pel* org, const int orgStride, const Pel* rec, const int recStride, 
-    const int width, const int height, const uint32_t bitDepth);
+  void     xCalculateAddPSNRs(const bool isField, const bool isFieldTopFieldFirst, const int gopId, Picture *pcPic,
+                              const AccessUnit &accessUnit, PicList &rcListPic, int64_t dEncTime,
+                              const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
+                              const bool printMSSSIM, double *PSNR_Y, bool isEncodeLtRef);
+  void     xCalculateAddPSNR(Picture *pcPic, PelUnitBuf cPicD, const AccessUnit &, double dEncTime,
+                             const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
+                             const bool printMSSSIM, double *PSNR_Y, bool isEncodeLtRef);
+  void     xCalculateInterlacedAddPSNR(Picture *pcPicOrgFirstField, Picture *pcPicOrgSecondField,
+                                       PelUnitBuf cPicRecFirstField, PelUnitBuf cPicRecSecondField,
+                                       const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
+                                       const bool printMSSSIM, double *PSNR_Y, bool isEncodeLtRef);
+  double   xCalculateMSSSIM(const Pel *org, const int orgStride, const Pel *rec, const int recStride, const int width,
+                            const int height, const uint32_t bitDepth);
   uint64_t xFindDistortionPlane(const CPelBuf& pic0, const CPelBuf& pic1, const uint32_t rshift
 #if ENABLE_QPA
                             , const uint32_t chromaShiftHor = 0, const uint32_t chromaShiftVer = 0
@@ -312,6 +332,8 @@ protected:
 
   void xUpdateRasInit(Slice* slice);
 
+  void xUpdateRPRtmvp    ( PicHeader* pcPicHeader, Slice* pcSlice );
+
   void xWriteAccessUnitDelimiter (AccessUnit &accessUnit, Slice *slice);
 
   void xWriteFillerData (AccessUnit &accessUnit, Slice *slice, uint32_t &fdSize);
@@ -319,16 +341,18 @@ protected:
   void xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS *sps, const PPS *pps);
   void xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice);
   void xCreateFrameFieldInfoSEI (SEIMessages& seiMessages, Slice *slice, bool isField);
-  void xCreatePictureTimingSEI  (int IRAPGOPid, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, SEIMessages& duInfoSeiMessages, Slice *slice, bool isField, std::deque<DUData> &duData);
+  void xCreatePhaseIndicationSEIMessages (SEIMessages& seiMessages, Slice* slice, int ppsId);
+  void xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SEIMessages &nestedSeiMessages,
+                               SEIMessages &duInfoSeiMessages, Slice *slice, bool isField, std::deque<DUData> &duData);
   void xUpdateDuData(AccessUnit &testAU, std::deque<DUData> &duData);
   void xUpdateTimingSEI(SEIPictureTiming *pictureTimingSEI, std::deque<DUData> &duData, const SPS *sps);
   void xUpdateDuInfoSEI(SEIMessages &duInfoSeiMessages, SEIPictureTiming *pictureTimingSEI, int maxSubLayers);
   void xCreateScalableNestingSEI(SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t>& subpicIDs, uint16_t maxSubpicIdInPic);
   void xWriteSEI (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId);
-  void xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId);
+  uint32_t xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId);
   void xClearSEIs(SEIMessages& seiMessages, bool deleteMessages);
-  void xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, bool testWrite);
-  void xWriteLeadingSEIMessages  (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, const SPS *sps, std::deque<DUData> &duData);
+  uint32_t xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, bool testWrite);
+  uint32_t xWriteLeadingSEIMessages  (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, const SPS *sps, std::deque<DUData> &duData);
   void xWriteTrailingSEIMessages (SEIMessages& seiMessages, AccessUnit &accessUnit, int temporalId);
   void xWriteDuSEIMessages       (SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, std::deque<DUData> &duData);
 
@@ -338,15 +362,17 @@ protected:
   int xWriteSPS( AccessUnit &accessUnit, const SPS *sps, const int layerId = 0 );
   int xWritePPS( AccessUnit &accessUnit, const PPS *pps, const int layerId = 0 );
   int xWriteAPS( AccessUnit &accessUnit, APS *aps, const int layerId, const bool isPrefixNUT );
-  int xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool bSeqFirst, const int layerIdx);
+  int xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool bSeqFirst, const int layerIdx, bool newPPS);
   int xWritePicHeader( AccessUnit &accessUnit, PicHeader *picHeader );
 
   void applyDeblockingFilterMetric( Picture* pcPic, uint32_t uiNumSlices );
-#if W0038_DB_OPT
   void applyDeblockingFilterParameterSelection( Picture* pcPic, const uint32_t numSlices, const int gopID );
-#endif
   void xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicList& rcListPic, const ReferencePictureList *rpl0, const ReferencePictureList *rpl1 );
   bool xCheckMaxTidILRefPics(int layerIdx, Picture* refPic, bool currentPicIsIRAP);
+  void computeSignalling(Picture* pcPic, Slice* pcSlice) const;
+#if GREEN_METADATA_SEI_ENABLED
+  void xCalculateGreenComplexityMetrics(FeatureCounterStruct featureCounter, FeatureCounterStruct featureCounterReference, SEIGreenMetadataInfo* seiGreenMetadataInfo);
+#endif
 };// END CLASS DEFINITION EncGOP
 
 //! \}

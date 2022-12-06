@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,15 @@
 //! \ingroup EncoderLib
 //! \{
 
+void checkWriteError(std::ostream& out)
+{
+  if (out.fail())
+  {
+    printf ("Error writing bitstream file\n");
+    exit (EXIT_FAILURE);
+  }
+}
+
 uint32_t writeAnnexBNalUnit(std::ostream& out, const NALUnitEBSP& nalu, bool useLongStartcode)
 {
   uint32_t size = 0; /* size of annexB unit in bytes */
@@ -51,14 +60,17 @@ uint32_t writeAnnexBNalUnit(std::ostream& out, const NALUnitEBSP& nalu, bool use
   if (useLongStartcode)
   {
     out.write(reinterpret_cast<const char*>(startCodePrefix), 4);
+    checkWriteError(out);
     size += 4;
   }
   else
   {
     out.write(reinterpret_cast<const char*>(startCodePrefix+1), 3);
+    checkWriteError(out);
     size += 3;
   }
   out << nalu.m_nalUnitData.str();
+  checkWriteError(out);
   size += uint32_t(nalu.m_nalUnitData.str().size());
 
   return size;

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -118,7 +118,7 @@ void addAvg_SSE( const int16_t* src0, int src0Stride, const int16_t* src1, int s
 }
 
 template<X86_VEXT vext>
-void copyBufferSimd(Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height)
+void copyBufferSimd(const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height)
 {
   if (width < 8)
   {
@@ -127,7 +127,9 @@ void copyBufferSimd(Pel *src, int srcStride, Pel *dst, int dstStride, int width,
     for (size_t x = 0; x < width; x += 4)
     {
       if (x > width - 4)
+      {
         x = width - 4;
+      }
       for (size_t y = 0; y < height; y++)
       {
         __m128i val = _mm_loadl_epi64((const __m128i *) (src + y * srcStride + x));
@@ -140,7 +142,9 @@ void copyBufferSimd(Pel *src, int srcStride, Pel *dst, int dstStride, int width,
     for (size_t x = 0; x < width; x += 8)
     {
       if (x > width - 8)
+      {
         x = width - 8;
+      }
       for (size_t y = 0; y < height; y++)
       {
         __m128i val = _mm_loadu_si128((const __m128i *) (src + y * srcStride + x));
@@ -158,7 +162,7 @@ void paddingSimd(Pel *dst, int stride, int width, int height, int padSize)
 
   if (padSize == 1)
   {
-    for (size_t i = 0; i < height; i++)
+    for (ptrdiff_t i = 0; i < height; i++)
     {
       Pel left                = dst[i * stride];
       Pel right               = dst[i * stride + width - 1];
@@ -188,7 +192,7 @@ void paddingSimd(Pel *dst, int stride, int width, int height, int padSize)
   }
   else if (padSize == 2)
   {
-    for (size_t i = 0; i < height; i++)
+    for (ptrdiff_t i = 0; i < height; i++)
     {
       Pel left                    = dst[i * stride];
       Pel right                   = dst[i * stride + width - 1];
@@ -279,7 +283,8 @@ void calcBIOSums_SSE(const Pel* srcY0Tmp, const Pel* srcY1Tmp, Pel* gradX0, Pel*
     // Note: loading 8 values also works, but valgrind doesn't like it
     auto load6values = [](const Pel *ptr) {
       __m128i a = _mm_loadl_epi64((const __m128i *) ptr);
-      __m128i b = _mm_cvtsi32_si128(*(uint32_t *) (ptr + 4));
+      // Note: loading 4 values to avoid unaligned 32-bit load
+      __m128i b = _mm_srli_si128(_mm_loadl_epi64((const __m128i *) (ptr + 2)), 4);
       return _mm_unpacklo_epi64(a, b);
     };
 
@@ -339,8 +344,10 @@ void calcBIOSums_SSE(const Pel* srcY0Tmp, const Pel* srcY1Tmp, Pel* gradX0, Pel*
   *sumSignGY_GX  = _mm_cvtsi128_si32(sumSignGyGxTmp);
 }
 
-template< X86_VEXT vext >
-void applyPROF_SSE(Pel* dstPel, int dstStride, const Pel* srcPel, int srcStride, int width, int height, const Pel* gradX, const Pel* gradY, int gradStride, const int* dMvX, const int* dMvY, int dMvStride, const bool& bi, int shiftNum, Pel offset, const ClpRng& clpRng)
+template<X86_VEXT vext>
+void applyPROF_SSE(Pel *dstPel, int dstStride, const Pel *srcPel, int srcStride, int width, int height,
+                   const Pel *gradX, const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY, int dMvStride,
+                   const bool bi, int shiftNum, Pel offset, const ClpRng &clpRng)
 {
   CHECKD((width & 3), "block width error!");
 
@@ -807,8 +814,10 @@ void addBIOAvg4HBD_SIMD(const Pel* src0, int src0Stride, const Pel* src1, int sr
   }
 }
 
-template< X86_VEXT vext >
-void applyPROFHBD_SIMD(Pel* dstPel, int dstStride, const Pel* srcPel, int srcStride, int width, int height, const Pel* gradX, const Pel* gradY, int gradStride, const int* dMvX, const int* dMvY, int dMvStride, const bool& bi, int shiftNum, Pel offset, const ClpRng& clpRng)
+template<X86_VEXT vext>
+void applyPROFHBD_SIMD(Pel *dstPel, int dstStride, const Pel *srcPel, int srcStride, int width, int height,
+                       const Pel *gradX, const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY,
+                       int dMvStride, const bool bi, int shiftNum, Pel offset, const ClpRng &clpRng)
 {
   CHECKD((width & 3), "block width error!");
   const int dILimit = 1 << std::max<int>(clpRng.bd + 1, 13);
@@ -913,27 +922,7 @@ void applyPROFHBD_SIMD(Pel* dstPel, int dstStride, const Pel* srcPel, int srcStr
 template< X86_VEXT vext >
 void roundIntVector_SIMD(int* v, int size, unsigned int nShift, const int dmvLimit)
 {
-  CHECKD(size % 16 != 0, "Size must be multiple of 16!");
-#ifdef USE_AVX512
-  if (vext >= AVX512 && size >= 16)
-  {
-    __m512i dMvMin = _mm256_set1_epi32(-dmvLimit);
-    __m512i dMvMax = _mm256_set1_epi32( dmvLimit );
-    __m512i nOffset = _mm512_set1_epi32((1 << (nShift - 1)));
-    __m512i vones = _mm512_set1_epi32(1);
-    __m512i vzero = _mm512_setzero_si512();
-    for (int i = 0; i < size; i += 16, v += 16)
-    {
-      __m512i src = _mm512_loadu_si512(v);
-      __mmask16 mask = _mm512_cmpge_epi32_mask(src, vzero);
-      src = __mm512_add_epi32(src, nOffset);
-      __mm512i dst = _mm512_srai_epi32(_mm512_mask_sub_epi32(src, mask, src, vones), nShift);
-      dst = _mm512_min_epi32(dMvMax, _mm512_max_epi32(dMvMin, dst));
-      _mm512_storeu_si512(v, dst);
-    }
-  }
-  else
-#endif
+  CHECKD(size % 8 != 0, "Size must be multiple of 8");
 #ifdef USE_AVX2
   if (vext >= AVX2 && size >= 8)
   {
@@ -1030,25 +1019,25 @@ void gradFilter_SSE(Pel* src, int srcStride, int width, int height, int gradStri
 
   if (PAD)
   {
-  gradXTmp = gradX + gradStride + 1;
-  gradYTmp = gradY + gradStride + 1;
-  for (int y = 0; y < heightInside; y++)
-  {
-    gradXTmp[-1] = gradXTmp[0];
-    gradXTmp[widthInside] = gradXTmp[widthInside - 1];
-    gradXTmp += gradStride;
+    gradXTmp = gradX + gradStride + 1;
+    gradYTmp = gradY + gradStride + 1;
+    for (int y = 0; y < heightInside; y++)
+    {
+      gradXTmp[-1]          = gradXTmp[0];
+      gradXTmp[widthInside] = gradXTmp[widthInside - 1];
+      gradXTmp += gradStride;
 
-    gradYTmp[-1] = gradYTmp[0];
-    gradYTmp[widthInside] = gradYTmp[widthInside - 1];
-    gradYTmp += gradStride;
-  }
+      gradYTmp[-1]          = gradYTmp[0];
+      gradYTmp[widthInside] = gradYTmp[widthInside - 1];
+      gradYTmp += gradStride;
+    }
 
-  gradXTmp = gradX + gradStride;
-  gradYTmp = gradY + gradStride;
-  ::memcpy(gradXTmp - gradStride, gradXTmp, sizeof(Pel)*(width));
-  ::memcpy(gradXTmp + heightInside*gradStride, gradXTmp + (heightInside - 1)*gradStride, sizeof(Pel)*(width));
-  ::memcpy(gradYTmp - gradStride, gradYTmp, sizeof(Pel)*(width));
-  ::memcpy(gradYTmp + heightInside*gradStride, gradYTmp + (heightInside - 1)*gradStride, sizeof(Pel)*(width));
+    gradXTmp = gradX + gradStride;
+    gradYTmp = gradY + gradStride;
+    ::memcpy(gradXTmp - gradStride, gradXTmp, sizeof(Pel) * (width));
+    ::memcpy(gradXTmp + heightInside * gradStride, gradXTmp + (heightInside - 1) * gradStride, sizeof(Pel) * (width));
+    ::memcpy(gradYTmp - gradStride, gradYTmp, sizeof(Pel) * (width));
+    ::memcpy(gradYTmp + heightInside * gradStride, gradYTmp + (heightInside - 1) * gradStride, sizeof(Pel) * (width));
   }
 }
 
@@ -1205,8 +1194,8 @@ template< X86_VEXT vext, int W >
 void removeWeightHighFreq_SSE(int16_t* src0, int src0Stride, const int16_t* src1, int src1Stride, int width, int height, int shift, int bcwWeight)
 {
   int normalizer = ((1 << 16) + (bcwWeight>0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-  int weight0 = normalizer << g_BcwLog2WeightBase;
-  int weight1 = (g_BcwWeightBase - bcwWeight)*normalizer;
+  int weight0    = normalizer * (1 << g_bcwLog2WeightBase);
+  int weight1    = (g_bcwWeightBase - bcwWeight) * normalizer;
   int offset = 1 << (shift - 1);
   if (W == 8)
   {
@@ -1577,8 +1566,8 @@ void removeWeightHighFreq_HBD_SIMD(Pel* src0, int src0Stride, const Pel* src1, i
   CHECK((width & 3), "the function only supports width multiple of 4");
 
   int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-  int weight0 = normalizer << g_BcwLog2WeightBase;
-  int weight1 = (g_BcwWeightBase - bcwWeight)*normalizer;
+  int              weight0    = normalizer << g_bcwLog2WeightBase;
+  int              weight1    = (g_bcwWeightBase - bcwWeight) * normalizer;
   Intermediate_Int offset = Intermediate_Int(1) << (shift - 1);
 
 #ifdef USE_AVX2

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,6 +49,12 @@
 using namespace std;
 
 #define FLIP_PIC 0
+
+constexpr int Y4M_SIGNATURE_LENGTH    = 10;
+const char    y4mSignature[]          = "YUV4MPEG2 ";
+constexpr int Y4M_MAX_HEADER_LENGTH   = 128;
+constexpr int Y4M_FRAME_HEADER_LENGTH = 6;   // basic Y4m frame header, "FRAME" + '\n'
+const char    y4mFrameHeader[]        = "FRAME\n";
 
 // ====================================================================================================================
 // Local Functions
@@ -130,8 +136,8 @@ void VideoIOYuv::open( const std::string &fileName, bool bWriteMode, const int f
   for(uint32_t ch=0; ch<MAX_NUM_CHANNEL_TYPE; ch++)
   {
     m_fileBitdepth       [ch] = std::min<uint32_t>(fileBitDepth[ch], 16);
-    m_MSBExtendedBitDepth[ch] = MSBExtendedBitDepth[ch];
-    m_bitdepthShift      [ch] = internalBitDepth[ch] - m_MSBExtendedBitDepth[ch];
+    m_msbExtendedBitDepth[ch] = MSBExtendedBitDepth[ch];
+    m_bitdepthShift[ch]       = internalBitDepth[ch] - m_msbExtendedBitDepth[ch];
 
     if (m_fileBitdepth[ch] > 16)
     {
@@ -154,18 +160,158 @@ void VideoIOYuv::open( const std::string &fileName, bool bWriteMode, const int f
     {
       EXIT( "Failed to write reconstructed YUV file: " << fileName.c_str() );
     }
+    if (isY4mFileExt(fileName))
+    {
+      writeY4mFileHeader();
+      m_outY4m = true;
+    }
   }
   else
   {
+    if (isY4mFileExt(fileName))
+    {
+      if (m_inY4mFileHeaderLength == 0)
+      {
+        int          dummyWidth = 0, dummyHeight = 0, dummyFrameRate = 0, dummyBitDepth = 0;
+        ChromaFormat dummyChromaFormat = CHROMA_420;
+        parseY4mFileHeader(fileName, dummyWidth, dummyHeight, dummyFrameRate, dummyBitDepth, dummyChromaFormat);
+      }
+    }
     m_cHandle.open( fileName.c_str(), ios::binary | ios::in );
 
     if( m_cHandle.fail() )
     {
       EXIT( "Failed to open input YUV file: " << fileName.c_str() );
     }
+
+    if (m_inY4mFileHeaderLength)
+    {
+      m_cHandle.seekg(m_inY4mFileHeaderLength, ios::cur);
+    }
   }
 
   return;
+}
+
+void VideoIOYuv::parseY4mFileHeader(const std::string &fileName, int &width, int &height, int &frameRate, int &bitDepth,
+                               ChromaFormat &chromaFormat)
+{
+  m_cHandle.open(fileName.c_str(), ios::binary | ios::in);
+  CHECK(m_cHandle.fail(), "File open failed.")
+
+  char header[Y4M_MAX_HEADER_LENGTH];
+  m_cHandle.read(header, sizeof(header));
+  CHECK(strncmp(header, y4mSignature, Y4M_SIGNATURE_LENGTH), "The input is not a Y4M file!");
+
+  // locate the end of the header
+  for (int i = Y4M_SIGNATURE_LENGTH + 1; i < Y4M_MAX_HEADER_LENGTH; i++)
+  {
+    if (header[i] == '\n')
+    {
+      header[i]             = ' ';   // space is used as token end later
+      m_inY4mFileHeaderLength = i + 1;
+      break;
+    }
+  }
+  // parse Y4M header info
+  for (int i = Y4M_SIGNATURE_LENGTH; i < m_inY4mFileHeaderLength; i++)
+  {
+    int numerator = 0, denominator = 0, pos = 0;
+    switch (header[i])
+    {
+    case 'W': sscanf(header + i + 1, "%d", &width); break;
+    case 'H': sscanf(header + i + 1, "%d", &height); break;
+    case 'C':
+      if (strncmp(&header[i + 1], "mono", 4) == 0)
+      {
+        chromaFormat = CHROMA_400;
+        pos          = i + 5;
+      }
+      else if (strncmp(&header[i + 1], "420", 3) == 0)
+      {
+        chromaFormat = CHROMA_420;
+        pos          = i + 4;
+        if (strncmp(&header[pos], "jpeg", 4) == 0)
+        {
+          pos += 4;
+        }
+        else if (strncmp(&header[pos], "paldv", 5) == 0)
+        {
+          pos += 5;
+        }
+      }
+      else if (strncmp(&header[i + 1], "422", 3) == 0)
+      {
+        chromaFormat = CHROMA_422;
+        pos          = i + 4;
+      }
+      else if (strncmp(&header[i + 1], "444", 3) == 0)
+      {
+        chromaFormat = CHROMA_444;
+        pos          = i + 4;
+      }
+      bitDepth = 8;
+      if (header[pos] == 'p')
+      {
+        sscanf(&header[pos + 1], "%d", &bitDepth);
+      }
+      break;
+    case 'F':
+      if (sscanf(header + i + 1, "%d:%d", &numerator, &denominator) == 2)
+      {
+        if (denominator != 0)
+        {
+          frameRate = (int) (1.0 * numerator / denominator + 0.5);
+        }
+      }
+      break;
+    case 'I': CHECK(header[i + 1] != 'p', "Interlaced Y4M is not supported yet");
+    case 'A':   // not support, ignore
+    case 'X':   // not support, ignore
+      break;
+    default: CHECK(true, "Wrong Y4M file header!")
+    }
+    i = (int) (strchr(header + i + 1, ' ') - header);
+  }
+
+  m_cHandle.close();
+}
+
+void VideoIOYuv::setOutputY4mInfo(int width, int height, int frameRate, int frameScale, int bitDepth, ChromaFormat chromaFormat)
+{
+  m_outPicWidth     = width;
+  m_outPicHeight    = height;
+  m_outBitDepth     = bitDepth;
+  m_outFrameRate    = frameRate;
+  m_outFrameScale   = frameScale;
+  m_outChromaFormat = chromaFormat;
+}
+
+void VideoIOYuv::writeY4mFileHeader()
+{
+  CHECK(m_outPicWidth == 0 || m_outPicHeight == 0 || m_outBitDepth == 0 || m_outFrameRate == 0,
+        "Output Y4M file into has not been set");
+  std::string header = y4mSignature;
+  header += "W" + std::to_string(m_outPicWidth) + " ";
+  header += "H" + std::to_string(m_outPicHeight) + " ";
+  header += "F" + std::to_string(m_outFrameRate) + ":" + std::to_string(m_outFrameScale) + " ";
+  header += "Ip A0:0 ";
+  switch (m_outChromaFormat)
+  {
+  case CHROMA_400: header += "Cmono"; break;
+  case CHROMA_420: header += "C420"; break;
+  case CHROMA_422: header += "C422"; break;
+  case CHROMA_444: header += "C444"; break;
+  default: CHECK(true, "Unknow chroma format");
+  }
+  if (m_outBitDepth > 8)
+  {
+    header += "p" + std::to_string(m_outBitDepth);
+  }
+  header += "\n";
+  // not write extension/comment
+
+  m_cHandle.write(header.c_str(), header.length());
 }
 
 void VideoIOYuv::close()
@@ -215,6 +361,10 @@ void VideoIOYuv::skipFrames(uint32_t numFrames, uint32_t width, uint32_t height,
   }
   frameSize *= wordsize;
   //------------------
+  if (m_inY4mFileHeaderLength)
+  {
+    frameSize += Y4M_FRAME_HEADER_LENGTH;
+  }
 
   const streamoff offset = frameSize * numFrames;
 
@@ -889,7 +1039,8 @@ static bool writeField(ostream& fd, const Pel* top, const Pel* bottom,
  * @param format           chroma format
  * @return true for success, false in case of error
  */
-bool VideoIOYuv::read ( PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSpaceConversion ipcsc, int aiPad[2], ChromaFormat format, const bool bClipToRec709 )
+bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpaceConversion ipcsc, int aiPad[2],
+                      ChromaFormat format, const bool clipToRec709)
 {
   // check end-of-file
   if ( isEof() )
@@ -912,6 +1063,17 @@ bool VideoIOYuv::read ( PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSp
     }
   }
 
+  if (m_inY4mFileHeaderLength)
+  {
+    char frameHeader[Y4M_FRAME_HEADER_LENGTH+1];
+    m_cHandle.read(frameHeader, Y4M_FRAME_HEADER_LENGTH);
+    if (m_cHandle.eof() || m_cHandle.fail())
+    {
+      return false;
+    }
+    CHECK(strncmp(frameHeader, y4mFrameHeader, Y4M_FRAME_HEADER_LENGTH), "Wrong Y4M frame header!");
+  }
+
   const PelBuf areaBufY = picOrg.get(COMPONENT_Y);
 #if !EXTENSION_360_VIDEO
   const uint32_t stride444      = areaBufY.stride;
@@ -931,11 +1093,14 @@ bool VideoIOYuv::read ( PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSp
     const ComponentID compID = ComponentID(comp);
     const ChannelType chType=toChannelType(compID);
 
-    const int desired_bitdepth = m_MSBExtendedBitDepth[chType] + m_bitdepthShift[chType];
+    const int desired_bitdepth = m_msbExtendedBitDepth[chType] + m_bitdepthShift[chType];
 
-    const bool b709Compliance=(bClipToRec709) && (m_bitdepthShift[chType] < 0 && desired_bitdepth >= 8);     /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
-    const Pel minval = b709Compliance? ((   1 << (desired_bitdepth - 8))   ) : 0;
-    const Pel maxval = b709Compliance? ((0xff << (desired_bitdepth - 8)) -1) : (1 << desired_bitdepth) - 1;
+    const bool rec709Compliance =
+      (clipToRec709)
+      && (m_bitdepthShift[chType] < 0
+          && desired_bitdepth >= 8); /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
+    const Pel  minval = rec709Compliance ? ((1 << (desired_bitdepth - 8))) : 0;
+    const Pel  maxval = rec709Compliance ? ((0xff << (desired_bitdepth - 8)) - 1) : (1 << desired_bitdepth) - 1;
     const bool processComponent = (size_t)compID < picOrg.bufs.size();
     Pel* const dst = processComponent ? picOrg.get(compID).bufAt(0,0) : nullptr;
 #if EXTENSION_360_VIDEO
@@ -948,7 +1113,7 @@ bool VideoIOYuv::read ( PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSp
 
     if (processComponent)
     {
-      if (! verifyPlane( dst, stride444, width444, height444, pad_h444, pad_v444, compID, format, m_fileBitdepth[chType]) )
+      if (! verifyPlane( dst, stride444, width444, height444, pad_h444, pad_v444, compID, picOrg.chromaFormat, m_fileBitdepth[chType]) )
       {
          EXIT("Source image contains values outside the specified bit range!");
       }
@@ -988,10 +1153,10 @@ bool VideoIOYuv::read ( PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSp
  * @return true for success, false in case of error
  */
  // here orgWidth and orgHeight are for luma
-bool VideoIOYuv::write( uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf& pic,
-                        const InputColourSpaceConversion ipCSC,
-                        const bool bPackedYUVOutputMode,
-                        int confLeft, int confRight, int confTop, int confBottom, ChromaFormat format, const bool bClipToRec709, const bool subtractConfWindowOffsets )
+bool VideoIOYuv::write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf &pic,
+                       const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode, int confLeft,
+                       int confRight, int confTop, int confBottom, ChromaFormat format, const bool clipToRec709,
+                       const bool subtractConfWindowOffsets)
 {
   PelStorage interm;
 
@@ -1035,9 +1200,13 @@ bool VideoIOYuv::write( uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf
     {
       const ComponentID compID=ComponentID(comp);
       const ChannelType ch=toChannelType(compID);
-      const bool b709Compliance = bClipToRec709 && (-m_bitdepthShift[ch] < 0 && m_MSBExtendedBitDepth[ch] >= 8);     /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
-      const Pel minval = b709Compliance? ((   1 << (m_MSBExtendedBitDepth[ch] - 8))   ) : 0;
-      const Pel maxval = b709Compliance? ((0xff << (m_MSBExtendedBitDepth[ch] - 8)) -1) : (1 << m_MSBExtendedBitDepth[ch]) - 1;
+      const bool        rec709Compliance =
+        clipToRec709
+        && (-m_bitdepthShift[ch] < 0
+            && m_msbExtendedBitDepth[ch] >= 8); /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
+      const Pel minval = rec709Compliance ? ((1 << (m_msbExtendedBitDepth[ch] - 8))) : 0;
+      const Pel maxval =
+        rec709Compliance ? ((0xff << (m_msbExtendedBitDepth[ch] - 8)) - 1) : (1 << m_msbExtendedBitDepth[ch]) - 1;
 
       scalePlane( picZ.get(compID), -m_bitdepthShift[ch], minval, maxval);
     }
@@ -1060,6 +1229,11 @@ bool VideoIOYuv::write( uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf
     msg( WARNING, "\nWarning: writing %d x %d luma sample output picture!", width444, height444);
   }
 
+  if (m_outY4m)
+  {
+    m_cHandle.write(y4mFrameHeader, Y4M_FRAME_HEADER_LENGTH);
+  }
+
   for(uint32_t comp=0; retval && comp < ::getNumberValidComponents(format); comp++)
   {
     const ComponentID compID      = ComponentID(comp);
@@ -1068,9 +1242,8 @@ bool VideoIOYuv::write( uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf
     const uint32_t    csy         = ::getComponentScaleY(compID, format);
     const CPelBuf     area        = picO.get(compID);
     const int         planeOffset = (confLeft >> csx) + (confTop >> csy) * area.stride;
-    if( !writePlane( orgWidth, orgHeight, m_cHandle, area.bufAt( 0, 0 ) + planeOffset, is16bit, area.stride,
-                     width444, height444, compID, picO.chromaFormat, format, m_fileBitdepth[ch],
-                     bPackedYUVOutputMode ? 1 : 0))
+    if (!writePlane(orgWidth, orgHeight, m_cHandle, area.bufAt(0, 0) + planeOffset, is16bit, area.stride, width444,
+                    height444, compID, picO.chromaFormat, format, m_fileBitdepth[ch], packedYuvOutputMode ? 1 : 0))
     {
       retval = false;
     }
@@ -1079,10 +1252,9 @@ bool VideoIOYuv::write( uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf
   return retval;
 }
 
-bool VideoIOYuv::write( const CPelUnitBuf& picTop, const CPelUnitBuf& picBottom,
-                        const InputColourSpaceConversion ipCSC,
-                        const bool bPackedYUVOutputMode,
-                        int confLeft, int confRight, int confTop, int confBottom, ChromaFormat format, const bool isTff, const bool bClipToRec709 )
+bool VideoIOYuv::write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBottom, const InputColourSpaceConversion ipCSC,
+                       const bool packedYuvOutputMode, int confLeft, int confRight, int confTop, int confBottom,
+                       ChromaFormat format, const bool isTff, const bool clipToRec709)
 {
   PelStorage intermTop;
   PelStorage intermBottom;
@@ -1135,9 +1307,13 @@ bool VideoIOYuv::write( const CPelUnitBuf& picTop, const CPelUnitBuf& picBottom,
       {
         const ComponentID compID=ComponentID(comp);
         const ChannelType ch=toChannelType(compID);
-        const bool b709Compliance=bClipToRec709 && (-m_bitdepthShift[ch] < 0 && m_MSBExtendedBitDepth[ch] >= 8);     /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
-        const Pel minval = b709Compliance? ((   1 << (m_MSBExtendedBitDepth[ch] - 8))   ) : 0;
-        const Pel maxval = b709Compliance? ((0xff << (m_MSBExtendedBitDepth[ch] - 8)) -1) : (1 << m_MSBExtendedBitDepth[ch]) - 1;
+        const bool        rec709Compliance =
+          clipToRec709
+          && (-m_bitdepthShift[ch] < 0
+              && m_msbExtendedBitDepth[ch] >= 8); /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
+        const Pel minval = rec709Compliance ? ((1 << (m_msbExtendedBitDepth[ch] - 8))) : 0;
+        const Pel maxval =
+          rec709Compliance ? ((0xff << (m_msbExtendedBitDepth[ch] - 8)) - 1) : (1 << m_msbExtendedBitDepth[ch]) - 1;
 
         scalePlane( picZ.get(compID), -m_bitdepthShift[ch], minval, maxval);
       }
@@ -1174,13 +1350,9 @@ bool VideoIOYuv::write( const CPelUnitBuf& picTop, const CPelUnitBuf& picBottom,
     const uint32_t csy = ::getComponentScaleY(compID, dstChrFormat );
     const int planeOffset  = (confLeft>>csx) + ( confTop>>csy) * areaTop.stride; //offset is for entire frame - round up for top field and down for bottom field
 
-    if (!writeField (m_cHandle,
-                     (areaTop.   bufAt(0,0) + planeOffset),
-                     (areaBottom.bufAt(0,0) + planeOffset),
-                     is16bit,
-                     areaTop.stride,
-                     width444, height444, compID, dstChrFormat, format, m_fileBitdepth[ch], isTff,
-                     bPackedYUVOutputMode ? 1 : 0))
+    if (!writeField(m_cHandle, (areaTop.bufAt(0, 0) + planeOffset), (areaBottom.bufAt(0, 0) + planeOffset), is16bit,
+                    areaTop.stride, width444, height444, compID, dstChrFormat, format, m_fileBitdepth[ch], isTff,
+                    packedYuvOutputMode ? 1 : 0))
     {
       retval=false;
     }
@@ -1252,7 +1424,16 @@ void VideoIOYuv::ColourSpaceConvert(const CPelUnitBuf &src, PelUnitBuf &dest, co
   }
 }
 
-bool VideoIOYuv::writeUpscaledPicture( const SPS& sps, const PPS& pps, const CPelUnitBuf& pic, const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode, int outputChoice, ChromaFormat format, const bool bClipToRec709 )
+#if !JVET_AB0081
+bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
+                                      const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
+                                      int outputChoice, ChromaFormat format, const bool clipToRec709)
+#else
+bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
+                                      const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
+                                      int outputChoice, ChromaFormat format, const bool clipToRec709,
+                                      int upscaleFilterForDisplay)
+#endif
 {
   ChromaFormat chromaFormatIDC = sps.getChromaFormatIdc();
   bool ret = false;
@@ -1284,44 +1465,48 @@ bool VideoIOYuv::writeUpscaledPicture( const SPS& sps, const PPS& pps, const CPe
       int xScale = ( ( refPicWidth << SCALE_RATIO_BITS ) + ( curPicWidth >> 1 ) ) / curPicWidth;
       int yScale = ( ( refPicHeight << SCALE_RATIO_BITS ) + ( curPicHeight >> 1 ) ) / curPicHeight;
 
+#if JVET_AB0081
+      bool rescaleForDisplay = true;
+      Picture::rescalePicture(std::pair<int, int>(xScale, yScale), pic, pps.getScalingWindow(), upscaledPic, afterScaleWindowFullResolution, chromaFormatIDC, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag(), rescaleForDisplay, upscaleFilterForDisplay);
+#else
       Picture::rescalePicture( std::pair<int, int>( xScale, yScale ), pic, pps.getScalingWindow(), upscaledPic, afterScaleWindowFullResolution, chromaFormatIDC, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag() );
-
-      ret = write( sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), upscaledPic,
-        ipCSC,
-        bPackedYUVOutputMode,
-        confFullResolution.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-        confFullResolution.getWindowRightOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-        confFullResolution.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-        confFullResolution.getWindowBottomOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-        NUM_CHROMA_FORMAT, bClipToRec709, false );
+#endif
+      ret = write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), upscaledPic, ipCSC,
+                  packedYuvOutputMode, confFullResolution.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                  confFullResolution.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                  confFullResolution.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                  confFullResolution.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT,
+                  clipToRec709, false);
     }
     else
     {
       const Window &conf = pps.getConformanceWindow();
 
-      ret = write( sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), pic,
-        ipCSC,
-        bPackedYUVOutputMode,
-        conf.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-        conf.getWindowRightOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-        conf.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-        conf.getWindowBottomOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-        NUM_CHROMA_FORMAT, bClipToRec709, false );
+      ret =
+        write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), pic, ipCSC, packedYuvOutputMode,
+              conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+              conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+              conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT, clipToRec709, false);
     }
   }
   else
   {
     const Window &conf = pps.getConformanceWindow();
 
-    ret = write( pic.get( COMPONENT_Y ).width, pic.get( COMPONENT_Y ).height, pic,
-      ipCSC,
-      bPackedYUVOutputMode,
-      conf.getWindowLeftOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-      conf.getWindowRightOffset() * SPS::getWinUnitX( chromaFormatIDC ),
-      conf.getWindowTopOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-      conf.getWindowBottomOffset() * SPS::getWinUnitY( chromaFormatIDC ),
-      NUM_CHROMA_FORMAT, bClipToRec709 );
+    ret = write(pic.get(COMPONENT_Y).width, pic.get(COMPONENT_Y).height, pic, ipCSC, packedYuvOutputMode,
+                conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),
+                conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC),
+                conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIDC), NUM_CHROMA_FORMAT, clipToRec709);
   }
 
   return ret;
+}
+
+bool isY4mFileExt(const std::string &fileName)
+{
+  auto pos = fileName.rfind(".y4m");
+  // ".y4m" must be at the end of the file name
+  return (pos != std::string::npos && pos + 4 == fileName.length());
 }

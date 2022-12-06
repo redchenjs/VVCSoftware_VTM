@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -61,7 +61,7 @@
  //! \{
 
 
-static const int MIXED_NALU_PPS_OFFSET = 8;
+static constexpr int MIXED_NALU_PPS_OFFSET = 8;
 
 
 struct Subpicture {
@@ -494,34 +494,18 @@ void SubpicMergeApp::generateMergedStreamVPSes(std::vector<VPS*> &vpsList)
   }
 }
 
-
-/**
-  - Return subpicture ID length in bits
-*/
-int SubpicMergeApp::computeSubPicIdLen(int numSubpics)
-{
-  int subPicIdLen = 1;
-
-  while ((1 << subPicIdLen) < numSubpics)
-  {
-    subPicIdLen++;
-  }
-
-  return subPicIdLen;
-}
-
 /**
   - Create merged stream SPSes with subpicture information
 */
 void SubpicMergeApp::generateMergedStreamSPSes(std::vector<SPS*> &spsList)
 {
-  int numSubPics = (int)m_subpics->size();
+  uint32_t numSubPics = (uint32_t)m_subpics->size();
 
   for (auto &subpic : *m_subpics)
   {
     for (auto spsId : subpic.spsIds)
     {
-      CHECK(subpic.psManager.getSPS(spsId)->getSubPicInfoPresentFlag(), "Input streams containing subpictures not supported")
+      CHECK(subpic.psManager.getSPS(spsId)->getSubPicInfoPresentFlag() && subpic.psManager.getSPS(spsId)->getNumSubPics() > 1, "Input streams containing subpictures not supported");
     }
   }
 
@@ -535,8 +519,8 @@ void SubpicMergeApp::generateMergedStreamSPSes(std::vector<SPS*> &spsList)
     sps.setMaxPicHeightInLumaSamples(m_picHeight);
 
     sps.setSubPicInfoPresentFlag(true);
-    sps.setNumSubPics((uint8_t)numSubPics);
-    sps.setSubPicIdLen(computeSubPicIdLen(numSubPics + 1));
+    sps.setNumSubPics(numSubPics);
+    sps.setSubPicIdLen(ceilLog2(numSubPics));
     sps.setSubPicIdMappingExplicitlySignalledFlag(true);
     sps.setSubPicIdMappingPresentFlag(true);
 
@@ -553,7 +537,7 @@ void SubpicMergeApp::generateMergedStreamSPSes(std::vector<SPS*> &spsList)
       sps.setSubPicHeight(subPicId, (uint32_t)(subpic.height / sps.getCTUSize()));
       sps.setSubPicTreatedAsPicFlag(subPicId, true);
       sps.setLoopFilterAcrossSubpicEnabledFlag(subPicId, false);
-      sps.setSubPicId(subPicId, (uint8_t)subPicId);
+      sps.setSubPicId(subPicId, (uint16_t)subPicId);
       subPicId++;
     }
   }
@@ -828,7 +812,7 @@ void SubpicMergeApp::copyInputNaluToOutputNalu(OutputNALUnit &outNalu, InputNALU
 
   // Copy payload
   std::vector<uint8_t> &inFifo = inNalu.getBitstream().getFifo();
-  std::vector<uint8_t> &outFifo = outNalu.m_Bitstream.getFIFO();
+  std::vector<uint8_t> &outFifo = outNalu.m_bitstream.getFIFO();
   outFifo = std::vector<uint8_t>(inFifo.begin() + 2, inFifo.end());
 }
 
@@ -896,7 +880,7 @@ Subpicture &SubpicMergeApp::selectSubpicForPicHeader(bool isMixedNaluPic)
     return m_subpics->at(0);
   }
 
-  Subpicture *subpicToReturn = NULL;
+  Subpicture *subpicToReturn = nullptr;
   bool IRAPFound = false;
 
   // Find first non-IRAP subpicture
@@ -912,7 +896,7 @@ Subpicture &SubpicMergeApp::selectSubpicForPicHeader(bool isMixedNaluPic)
     }
   }
 
-  CHECK(subpicToReturn == NULL, "Could not find non-IRAP subpicture when mixed NALU types in enabled");
+  CHECK(subpicToReturn == nullptr, "Could not find non-IRAP subpicture when mixed NALU types in enabled");
 
   if (IRAPFound)
   {
@@ -942,7 +926,7 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
   if (subpic0.dciPresent)
   {
     OutputNALUnit nalu(NAL_UNIT_DCI);
-    hlsWriter.setBitstream( &nalu.m_Bitstream );
+    hlsWriter.setBitstream(&nalu.m_bitstream);
     hlsWriter.codeDCI(&subpic0.dci);
     accessUnit.push_back(new NALUnitEBSP(nalu));
   }
@@ -953,9 +937,9 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
   for (auto vps : vpsList)
   {
     OutputNALUnit nalu(NAL_UNIT_VPS);
-    hlsWriter.setBitstream( &nalu.m_Bitstream );
+    hlsWriter.setBitstream(&nalu.m_bitstream);
     hlsWriter.codeVPS(vps);
-    psManager.storeVPS(vps, nalu.m_Bitstream.getFIFO());
+    psManager.storeVPS(vps, nalu.m_bitstream.getFIFO());
     accessUnit.push_back(new NALUnitEBSP(nalu));
   }
 
@@ -965,9 +949,9 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
   for (auto sps : spsList)
   {
     OutputNALUnit nalu(NAL_UNIT_SPS);
-    hlsWriter.setBitstream( &nalu.m_Bitstream );
+    hlsWriter.setBitstream(&nalu.m_bitstream);
     hlsWriter.codeSPS(sps);
-    psManager.storeSPS(sps, nalu.m_Bitstream.getFIFO());
+    psManager.storeSPS(sps, nalu.m_bitstream.getFIFO());
     accessUnit.push_back(new NALUnitEBSP(nalu));
   }
 
@@ -976,7 +960,7 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
   // Code merged stream PPS NAL units if any was generated
   for (auto pps : ppsList)
   {
-    PPS *ppsMixed = NULL;
+    PPS *ppsMixed = nullptr;
     if (mixedNaluFlag)
     {
       ppsMixed = new PPS(*pps);
@@ -987,19 +971,19 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
     }
 
     OutputNALUnit nalu(NAL_UNIT_PPS);
-    hlsWriter.setBitstream( &nalu.m_Bitstream );
+    hlsWriter.setBitstream(&nalu.m_bitstream);
     hlsWriter.codePPS(pps);
-    psManager.storePPS(pps, nalu.m_Bitstream.getFIFO());
+    psManager.storePPS(pps, nalu.m_bitstream.getFIFO());
     accessUnit.push_back(new NALUnitEBSP(nalu));
 
     if (mixedNaluFlag)
     {
       OutputNALUnit naluMixed(NAL_UNIT_PPS);
-      hlsWriter.setBitstream( &naluMixed.m_Bitstream );
+      hlsWriter.setBitstream(&naluMixed.m_bitstream);
       ppsMixed->setPPSId(ppsMixed->getPPSId() + MIXED_NALU_PPS_OFFSET);
       ppsMixed->setMixedNaluTypesInPicFlag(true);
       hlsWriter.codePPS(ppsMixed);
-      psManager.storePPS(ppsMixed, naluMixed.m_Bitstream.getFIFO());
+      psManager.storePPS(ppsMixed, naluMixed.m_bitstream.getFIFO());
       accessUnit.push_back(new NALUnitEBSP(naluMixed));
     }
   }
@@ -1007,6 +991,7 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
   updateSliceHeadersForMergedStream(psManager);
 
   // Code merged stream prefix APS NAL units
+  std::vector<int> usedApsIds;
   for (auto &subpic : *m_subpics)
   {
     auto apsIdIt = subpic.apsIds.begin();
@@ -1014,11 +999,15 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
     {
       if (nalu.m_nalUnitType == NAL_UNIT_PREFIX_APS)
       {
+        if (std::find(usedApsIds.begin(), usedApsIds.end(), apsIdIt->first) == usedApsIds.end())
+        {
         OutputNALUnit naluOut(NAL_UNIT_PREFIX_APS, nalu.m_nuhLayerId, nalu.m_temporalId);
-        hlsWriter.setBitstream( &naluOut.m_Bitstream );
+        hlsWriter.setBitstream(&naluOut.m_bitstream);
         hlsWriter.codeAPS(subpic.psManager.getAPS(apsIdIt->first, apsIdIt->second));
         accessUnit.push_back(new NALUnitEBSP(naluOut));
         apsIdIt++;
+          usedApsIds.push_back(apsIdIt->first);
+        }
       }
     }
   }
@@ -1041,7 +1030,7 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
         if (writePicHeader)
         {
           OutputNALUnit naluOut(NAL_UNIT_PH, nalu.m_nuhLayerId, nalu.m_temporalId);  // Copy IDs from slice NALU
-          hlsWriter.setBitstream( &naluOut.m_Bitstream );
+          hlsWriter.setBitstream(&naluOut.m_bitstream);
           if (isMixedNaluPic)
           {
             subpicForPicHeader.picHeader.setPPSId(subpicForPicHeader.picHeader.getPPSId() + MIXED_NALU_PPS_OFFSET);
@@ -1051,10 +1040,10 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
           writePicHeader = false;
         }
         OutputNALUnit naluOut(nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId);
-        hlsWriter.setBitstream( &naluOut.m_Bitstream );
+        hlsWriter.setBitstream(&naluOut.m_bitstream);
         hlsWriter.codeSliceHeader(&(*slice), &subpicForPicHeader.picHeader);
-        naluOut.m_Bitstream.writeByteAlignment();
-        naluOut.m_Bitstream.addSubstream(&(*sliceData));
+        naluOut.m_bitstream.writeByteAlignment();
+        naluOut.m_bitstream.addSubstream(&(*sliceData));
         accessUnit.push_back(new NALUnitEBSP(naluOut));
         slice++;
         sliceData++;
@@ -1086,7 +1075,7 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
       seiEncoder.initSEIScalableNesting(nestingSEI, nestedSEI, targetOLS, targetLayers, subPicIds, maxSubpicIdInPic);
       OutputNALUnit nalu( NAL_UNIT_SUFFIX_SEI, layerId, temporalId );
       seiMessages.push_back(nestingSEI);
-      seiWriter.writeSEImessages(nalu.m_Bitstream, seiMessages, hrd, false, temporalId);
+      seiWriter.writeSEImessages(nalu.m_bitstream, seiMessages, hrd, false, temporalId);
       accessUnit.push_back(new NALUnitEBSP(nalu));
     }
     subpicId++;

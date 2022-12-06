@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -47,12 +47,12 @@
  // ====================================================================================================================
 
 Reshape::Reshape()
-: m_CTUFlag (false)
-, m_recReshaped (false)
-, m_reshape (true)
-, m_chromaScale (1 << CSCALE_FP_PREC)
-, m_vpduX (-1)
-, m_vpduY (-1)
+  : m_ctuFlag(false)
+  , m_recReshaped(false)
+  , m_reshape(true)
+  , m_chromaScale(1 << CSCALE_FP_PREC)
+  , m_vpduX(-1)
+  , m_vpduY(-1)
 {
 }
 
@@ -215,7 +215,10 @@ int Reshape::getPWLIdxInv(int lumaVal)
   int idxS = 0;
   for (idxS = m_sliceReshapeInfo.reshaperModelMinBinIdx; (idxS <= m_sliceReshapeInfo.reshaperModelMaxBinIdx); idxS++)
   {
-    if (lumaVal < m_reshapePivot[idxS + 1])     break;
+    if (lumaVal < m_reshapePivot[idxS + 1])
+    {
+      break;
+    }
   }
   return std::min(idxS, PIC_CODE_CW_BINS-1);
 }

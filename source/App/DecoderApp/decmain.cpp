@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,8 @@
 #include "DecApp.h"
 #include "program_options_lite.h"
 
+using namespace std;
+
 //! \ingroup DecoderApp
 //! \{
 
@@ -76,6 +78,9 @@ int main(int argc, char* argv[])
   if(!pcDecApp->parseCfg( argc, argv ))
   {
     returnCode = EXIT_FAILURE;
+
+    delete pcDecApp;
+
     return returnCode;
   }
 

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -114,22 +114,25 @@ private:
   CostMode                m_costMode;
   double                  m_distortionWeight[MAX_NUM_COMPONENT]; // only chroma values are used.
   double                  m_dLambda;
-  bool                   m_isLosslessRDCost;
+  bool                    m_isLosslessRDCost;
 
 #if WCG_EXT
   double                  m_dLambda_unadjusted; // TODO: check is necessary
-  double                  m_DistScaleUnadjusted;
-  static std::vector<double> m_reshapeLumaLevelToWeightPLUT;
-  static std::vector<double> m_lumaLevelToWeightPLUT;
-  static uint32_t         m_signalType;
-  static double           m_chromaWeight;
-  static int              m_lumaBD;
+  double                  m_distScaleUnadjusted;
+
+  static std::vector<int32_t> m_reshapeLumaLevelToWeightPLUT;   // scaled by MSE_WEIGHT_ONE
+  static std::vector<double>  m_lumaLevelToWeightPLUT;
+
+  static int32_t  m_chromaWeight;   // scaled by MSE_WEIGHT_ONE
+  static uint32_t m_signalType;
+  static int      m_lumaBD;
+
   ChromaFormat            m_cf;
 #endif
-  double                  m_DistScale;
+  double                  m_distScale;
   double                  m_dLambdaMotionSAD;
   double                  m_lambdaStore[2][3];   // 0-org; 1-act
-  double                  m_DistScaleStore[2][3]; // 0-org; 1-act
+  double                  m_distScaleStore[2][3];   // 0-org; 1-act
   bool                    m_resetStore;
   int                     m_pairCheck;
 
@@ -308,21 +311,31 @@ public:
     return uiLength2 + ( floorLog2(uiTemp2) << 1 );
   }
   Distortion     getCostOfVectorWithPredictor( const int x, const int y, const unsigned imvShift )  { return Distortion( m_motionLambda * getBitsOfVectorWithPredictor(x, y, imvShift )); }
-  uint32_t           getBitsOfVectorWithPredictor( const int x, const int y, const unsigned imvShift )  { return xGetExpGolombNumberOfBits(((x << m_iCostScale) - m_mvPredictor.getHor())>>imvShift) + xGetExpGolombNumberOfBits(((y << m_iCostScale) - m_mvPredictor.getVer())>>imvShift); }
+  uint32_t       getBitsOfVectorWithPredictor(const int x, const int y, const unsigned imvShift)
+  {
+    return xGetExpGolombNumberOfBits(((x * (1 << m_iCostScale)) - m_mvPredictor.getHor()) >> imvShift)
+           + xGetExpGolombNumberOfBits(((y * (1 << m_iCostScale)) - m_mvPredictor.getVer()) >> imvShift);
+  }
 #if WCG_EXT
-         void    saveUnadjustedLambda       ();
-         void    initLumaLevelToWeightTable (int bitDepth);
-  inline double  getWPSNRLumaLevelWeight    (int val) { return m_lumaLevelToWeightPLUT[val]; }
-  void           initLumaLevelToWeightTableReshape();
-  void           updateReshapeLumaLevelToWeightTableChromaMD (std::vector<Pel>& ILUT);
-  void           restoreReshapeLumaLevelToWeightTable        ();
-  inline double  getWPSNRReshapeLumaLevelWeight              (int val)                   { return m_reshapeLumaLevelToWeightPLUT[val]; }
-  void           setReshapeInfo                              (uint32_t type, int lumaBD) { m_signalType = type; m_lumaBD = lumaBD; }
-  void           updateReshapeLumaLevelToWeightTable         (SliceReshapeInfo &sliceReshape, Pel *wtTable, double cwt);
-  inline std::vector<double>& getLumaLevelWeightTable        ()                   { return m_lumaLevelToWeightPLUT; }
+  void saveUnadjustedLambda();
+  void initLumaLevelToWeightTable(int bitDepth);
+  void initLumaLevelToWeightTableReshape();
+  void updateReshapeLumaLevelToWeightTableChromaMD(std::vector<Pel> &ILUT);
+  void restoreReshapeLumaLevelToWeightTable();
+  void updateReshapeLumaLevelToWeightTable(SliceReshapeInfo &sliceReshape, Pel *wtTable, double cwt);
+
+  void setReshapeInfo(uint32_t type, int lumaBD)
+  {
+    m_signalType = type;
+    m_lumaBD     = lumaBD;
+  }
+
+  double               getWPSNRLumaLevelWeight(int val) { return m_lumaLevelToWeightPLUT[val]; }
+  std::vector<double> &getLumaLevelWeightTable() { return m_lumaLevelToWeightPLUT; }
 #endif
 
-  void           lambdaAdjustColorTrans(bool forward, ComponentID compID, bool applyChromaScale = false, int* resScaleInv = NULL);
+  void           lambdaAdjustColorTrans(bool forward, ComponentID compID, bool applyChromaScale = false,
+                                        int *resScaleInv = nullptr);
   void           resetStore() { m_resetStore = true; }
 
 private:
@@ -336,7 +349,7 @@ private:
   static Distortion xGetSSE16N        ( const DistParam& pcDtParam );
 
 #if WCG_EXT
-  static Distortion getWeightedMSE    (int compIdx, const Pel org, const Pel cur, const uint32_t uiShift, const Pel orgLuma);
+  static Distortion getWeightedMSE(int compIdx, const Pel org, const Pel cur, const uint32_t shift, const Pel orgLuma);
   static Distortion xGetSSE_WTD       ( const DistParam& pcDtParam );
   static Distortion xGetSSE2_WTD      ( const DistParam& pcDtParam );
   static Distortion xGetSSE4_WTD      ( const DistParam& pcDtParam );
@@ -375,20 +388,19 @@ private:
   static Distortion xGetMRHADs        ( const DistParam& pcDtParam );
 
   static Distortion xGetHADs          ( const DistParam& pcDtParam );
-  static Distortion xCalcHADs2x2      ( const Pel *piOrg, const Pel *piCurr, int iStrideOrg, int iStrideCur, int iStep );
-  static Distortion xCalcHADs4x4      ( const Pel *piOrg, const Pel *piCurr, int iStrideOrg, int iStrideCur, int iStep );
-  static Distortion xCalcHADs8x8      ( const Pel *piOrg, const Pel *piCurr, int iStrideOrg, int iStrideCur, int iStep );
+  static Distortion xCalcHADs2x2(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
+  static Distortion xCalcHADs4x4(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
+  static Distortion xCalcHADs8x8(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
 
-  static Distortion xCalcHADs16x8     ( const Pel *piOrg, const Pel *piCur, int iStrideOrg, int iStrideCur );
-  static Distortion xCalcHADs8x16     ( const Pel *piOrg, const Pel *piCur, int iStrideOrg, int iStrideCur );
-  static Distortion xCalcHADs4x8      ( const Pel *piOrg, const Pel *piCur, int iStrideOrg, int iStrideCur );
-  static Distortion xCalcHADs8x4      ( const Pel *piOrg, const Pel *piCur, int iStrideOrg, int iStrideCur );
+  static Distortion xCalcHADs16x8(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
+  static Distortion xCalcHADs8x16(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
+  static Distortion xCalcHADs4x8(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
+  static Distortion xCalcHADs8x4(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
 
 #ifdef TARGET_SIMD_X86
   template<X86_VEXT vext>
   static Distortion xGetSSE_SIMD    ( const DistParam& pcDtParam );
-  template<int iWidth, X86_VEXT vext>
-  static Distortion xGetSSE_NxN_SIMD( const DistParam& pcDtParam );
+  template<int width, X86_VEXT vext> static Distortion xGetSSE_NxN_SIMD(const DistParam &pcDtParam);
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
   template<X86_VEXT vext>
   static Distortion xGetSSE_HBD_SIMD(const DistParam& pcDtParam);
@@ -396,8 +408,7 @@ private:
 
   template<X86_VEXT vext>
   static Distortion xGetSAD_SIMD    ( const DistParam& pcDtParam );
-  template<int iWidth, X86_VEXT vext>
-  static Distortion xGetSAD_NxN_SIMD( const DistParam& pcDtParam );
+  template<int width, X86_VEXT vext> static Distortion xGetSAD_NxN_SIMD(const DistParam &pcDtParam);
   template<X86_VEXT vext>
   static Distortion xGetSAD_IBD_SIMD( const DistParam& pcDtParam );
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
@@ -422,7 +433,8 @@ private:
 public:
 
 #if WCG_EXT
-  Distortion   getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc, const CPelBuf *orgLuma = NULL );
+  Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc,
+                         const CPelBuf *orgLuma = nullptr);
 #else
   Distortion   getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc );
 #endif

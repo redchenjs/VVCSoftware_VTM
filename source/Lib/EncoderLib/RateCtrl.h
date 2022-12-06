@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,8 +48,6 @@
 #include <vector>
 #include <algorithm>
 
-using namespace std;
-
 //! \ingroup EncoderLib
 //! \{
 
@@ -57,7 +55,8 @@ using namespace std;
 #include <list>
 
 const int g_RCInvalidQPValue = -999;
-const int g_RCSmoothWindowSize = 40;
+const int g_RCSmoothWindowSizeAlpha = 20;
+const int g_RCSmoothWindowSizeBeta = 60;
 const int g_RCMaxPicListSize = 32;
 const double g_RCWeightPicTargetBitInGOP    = 0.9;
 const double g_RCWeightPicRargetBitInBuffer = 1.0 - g_RCWeightPicTargetBitInGOP;
@@ -103,12 +102,12 @@ public:
   ~EncRCSeq();
 
 public:
-  void create( int totalFrames, int targetBitrate, int frameRate, int GOPSize, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel, bool useLCUSeparateModel, int adaptiveBit );
+  void create(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel, bool useLCUSeparateModel, int adaptiveBit);
   void destroy();
   void initBitsRatio( int bitsRatio[] );
   void initGOPID2Level( int GOPID2Level[] );
-  void initPicPara( TRCParameter* picPara  = NULL );    // NULL to initial with default value
-  void initLCUPara( TRCParameter** LCUPara = NULL );    // NULL to initial with default value
+  void initPicPara(TRCParameter *picPara = nullptr);    // nullptr to initial with default value
+  void initLCUPara(TRCParameter **LCUPara = nullptr);   // nullptr to initial with default value
   void updateAfterPic ( int bits );
   void setAllBitRatio( double basicLambda, double* equaCoeffA, double* equaCoeffB );
 
@@ -117,6 +116,7 @@ public:
   int  getTargetRate()                  { return m_targetRate; }
   int  getFrameRate()                   { return m_frameRate; }
   int  getGOPSize()                     { return m_GOPSize; }
+  int  getIntraPeriod()                 { return m_intraPeriod; }
   int  getPicWidth()                    { return m_picWidth; }
   int  getPicHeight()                   { return m_picHeight; }
   int  getLCUWidth()                    { return m_LCUWidth; }
@@ -159,6 +159,7 @@ private:
   int m_targetRate;
   int m_frameRate;
   int m_GOPSize;
+  int m_intraPeriod;
   int m_picWidth;
   int m_picHeight;
   int m_LCUWidth;
@@ -193,7 +194,7 @@ public:
   ~EncRCGOP();
 
 public:
-  void create( EncRCSeq* encRCSeq, int numPic );
+  void create(EncRCSeq *encRCSeq, int numPic, bool useAdaptiveBitsRatio);
   void destroy();
   void updateAfterPicture( int bitsCost );
 
@@ -230,13 +231,13 @@ public:
   ~EncRCPic();
 
 public:
-  void create( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP, int frameLevel, list<EncRCPic*>& listPreviousPictures );
+  void create(EncRCSeq *encRCSeq, EncRCGOP *encRCGOP, int frameLevel, std::list<EncRCPic *> &listPreviousPictures);
   void destroy();
 
-  int    estimatePicQP    ( double lambda, list<EncRCPic*>& listPreviousPictures );
+  int    estimatePicQP(double lambda, std::list<EncRCPic *> &listPreviousPictures);
   int    getRefineBitsForIntra(int orgBits);
   double calculateLambdaIntra(double alpha, double beta, double MADPerPixel, double bitsPerPixel);
-  double estimatePicLambda( list<EncRCPic*>& listPreviousPictures, bool isIRAP);
+  double estimatePicLambda(std::list<EncRCPic *> &listPreviousPictures, bool isIRAP);
 
   void   updateAlphaBetaIntra(double *alpha, double *beta);
 
@@ -250,16 +251,14 @@ public:
   double clipRcAlpha(const int bitdepth, const double alpha);
   double clipRcBeta(const double beta);
 
-  void addToPictureLsit( list<EncRCPic*>& listPreviousPictures );
+  void   addToPictureLsit(std::list<EncRCPic *> &listPreviousPictures);
   double calAverageQP();
   double calAverageLambda();
 
 private:
   int xEstPicTargetBits( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP );
-  int xEstPicHeaderBits( list<EncRCPic*>& listPreviousPictures, int frameLevel );
-#if V0078_ADAPTIVE_LOWER_BOUND
+  int xEstPicHeaderBits(std::list<EncRCPic *> &listPreviousPictures, int frameLevel);
   int xEstPicLowerBound( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP );
-#endif
 
 public:
   EncRCSeq*      getRCSequence()                         { return m_encRCSeq; }
@@ -275,15 +274,11 @@ public:
   int  getPixelsLeft()                                    { return m_pixelsLeft; }
   int  getBitsCoded()                                     { return m_targetBits - m_estHeaderBits - m_bitsLeft; }
   int  getLCUCoded()                                      { return m_numberOfLCU - m_LCULeft; }
-#if V0078_ADAPTIVE_LOWER_BOUND
   int  getLowerBound()                                    { return m_lowerBound; }
-#endif
   TRCLCU* getLCU()                                        { return m_LCUs; }
   TRCLCU& getLCU( int LCUIdx )                            { return m_LCUs[LCUIdx]; }
   int  getPicActualHeaderBits()                           { return m_picActualHeaderBits; }
-#if U0132_TARGET_BITS_SATURATION
   void setBitLeft(int bits)                               { m_bitsLeft = bits; }
-#endif
   void setTargetBits( int bits )                          { m_targetBits = bits; m_bitsLeft = bits;}
   void setTotalIntraCost(double cost)                     { m_totalCostIntra = cost; }
   void getLCUInitTargetBits();
@@ -308,9 +303,7 @@ private:
   int m_targetBits;
   int m_estHeaderBits;
   int m_estPicQP;
-#if V0078_ADAPTIVE_LOWER_BOUND
   int m_lowerBound;
-#endif
   double m_estPicLambda;
 
   int m_LCULeft;
@@ -335,7 +328,7 @@ public:
   ~RateCtrl();
 
 public:
-  void init(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits, bool useLCUSeparateModel, GOPEntry GOPList[MAX_GOP]);
+  void init(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits, bool useLCUSeparateModel, GOPEntry GOPList[MAX_GOP]);
   void destroy();
   void initRCPic( int frameLevel );
   void initRCGOP( int numberOfPictures );
@@ -344,31 +337,39 @@ public:
 public:
   void       setRCQP ( int QP ) { m_RCQP = QP;   }
   int        getRCQP () const   { return m_RCQP; }
-  EncRCSeq* getRCSeq()          { CHECK( m_encRCSeq == NULL, "Object does not exist" ); return m_encRCSeq; }
-  EncRCGOP* getRCGOP()          { CHECK( m_encRCGOP == NULL, "Object does not exist" ); return m_encRCGOP; }
-  EncRCPic* getRCPic()          { CHECK( m_encRCPic == NULL, "Object does not exist" ); return m_encRCPic; }
-  list<EncRCPic*>& getPicList() { return m_listRCPictures; }
-#if U0132_TARGET_BITS_SATURATION
+  EncRCSeq  *getRCSeq()
+  {
+    CHECK(m_encRCSeq == nullptr, "Object does not exist");
+    return m_encRCSeq;
+  }
+  EncRCGOP *getRCGOP()
+  {
+    CHECK(m_encRCGOP == nullptr, "Object does not exist");
+    return m_encRCGOP;
+  }
+  EncRCPic *getRCPic()
+  {
+    CHECK(m_encRCPic == nullptr, "Object does not exist");
+    return m_encRCPic;
+  }
+  std::list<EncRCPic *> &getPicList() { return m_listRCPictures; }
   bool       getCpbSaturationEnabled()  { return m_CpbSaturationEnabled;  }
   uint32_t       getCpbState()              { return m_cpbState;       }
   uint32_t       getCpbSize()               { return m_cpbSize;        }
   uint32_t       getBufferingRate()         { return m_bufferingRate;  }
   int        updateCpbState(int actualBits);
   void       initHrdParam(const GeneralHrdParams* generalHrd, const OlsHrdParams* olsHrd, int iFrameRate, double fInitialCpbFullness);
-#endif
 
 private:
   EncRCSeq* m_encRCSeq;
   EncRCGOP* m_encRCGOP;
   EncRCPic* m_encRCPic;
-  list<EncRCPic*> m_listRCPictures;
+  std::list<EncRCPic *> m_listRCPictures;
   int        m_RCQP;
-#if U0132_TARGET_BITS_SATURATION
   bool       m_CpbSaturationEnabled;    // Enable target bits saturation to avoid CPB overflow and underflow
   int        m_cpbState;                // CPB State
   uint32_t       m_cpbSize;                 // CPB size
   uint32_t       m_bufferingRate;           // Buffering rate
-#endif
 };
 
 #endif

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -78,10 +78,10 @@ public:
 
   // interface for encoding
   /**
-   * append uiNumberOfBits least significant bits of uiBits to
+   * append numberOfBits least significant bits of bits to
    * the current bitstream
    */
-  void        write           ( uint32_t uiBits, uint32_t uiNumberOfBits );
+  void write(uint32_t bits, uint32_t numberOfBits);
 
   /** insert one bits until the bitstream is byte-aligned */
   void        writeAlignOne   ();
@@ -167,8 +167,8 @@ public:
   void resetToStart();
 
   // interface for decoding
-  void        pseudoRead      ( uint32_t uiNumberOfBits, uint32_t& ruiBits );
-  void        read            ( uint32_t uiNumberOfBits, uint32_t& ruiBits );
+  void        pseudoRead(uint32_t numberOfBits, uint32_t &ruiBits);
+  void        read(uint32_t numberOfBits, uint32_t &ruiBits);
   void        readByte        ( uint32_t &ruiBits )
   {
     CHECK( m_fifo_idx >= m_fifo.size(), "FIFO exceeded" );
@@ -190,7 +190,12 @@ public:
   uint32_t  getByteLocation              ( )                     { return m_fifo_idx                    ; }
 
   // Peek at bits in word-storage. Used in determining if we have completed reading of current bitstream and therefore slice in LCEC.
-  uint32_t        peekBits (uint32_t uiBits) { uint32_t tmp; pseudoRead(uiBits, tmp); return tmp; }
+  uint32_t peekBits(uint32_t bits)
+  {
+    uint32_t tmp;
+    pseudoRead(bits, tmp);
+    return tmp;
+  }
 
   // utility functions
   uint32_t read(uint32_t numberOfBits)      { uint32_t tmp; read(numberOfBits, tmp); return tmp; }

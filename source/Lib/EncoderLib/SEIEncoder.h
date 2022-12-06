@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,12 +48,7 @@ class EncGOP;
 class SEIEncoder
 {
 public:
-  SEIEncoder()
-    :m_pcCfg(NULL)
-    ,m_pcEncLib(NULL)
-    ,m_pcEncGOP(NULL)
-  ,m_isInitialized(false)
-  {};
+  SEIEncoder() : m_pcCfg(nullptr), m_pcEncLib(nullptr), m_pcEncGOP(nullptr), m_isInitialized(false){};
   virtual ~SEIEncoder(){};
 
   void init(EncCfg* encCfg, EncLib *encTop, EncGOP *encGOP)
@@ -70,9 +65,7 @@ public:
   void initSEIDependentRAPIndication(SEIDependentRAPIndication *sei);
   void initSEIExtendedDrapIndication(SEIExtendedDrapIndication *sei);
   void initSEIBufferingPeriod(SEIBufferingPeriod *sei, bool noLeadingPictures);
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   void initSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics *sei);
-#endif
   void initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, SEIMessages &nestedSEIs, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t> &subpictureIDs, uint16_t maxSubpicIdInPic);
   void initDecodedPictureHashSEI(SEIDecodedPictureHash *sei, PelUnitBuf& pic, std::string &rHashString, const BitDepths &bitDepths);
   void initSEIErp(SEIEquirectangularProjection *sei);
@@ -82,6 +75,7 @@ public:
   void initSEIGcmp(SEIGeneralizedCubemapProjection *sei);
   void initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SPS *sps);
   void initSEISampleAspectRatioInfo(SEISampleAspectRatioInfo *sei);
+  void initSEIPhaseIndication(SEIPhaseIndication* sei, int ppsId);
   void initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *sei);
   void initSEIMasteringDisplayColourVolume(SEIMasteringDisplayColourVolume *sei);
   void initSEIContentLightLevel(SEIContentLightLevelInfo *sei);
@@ -101,6 +95,14 @@ public:
   void initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei);
 #endif
 
+  void initSEIMultiviewViewPosition(SEIMultiviewViewPosition *sei);
+  void initSEIShutterIntervalInfo(SEIShutterIntervalInfo *sei);
+  void initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx);
+  void initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei);
+  void initSEIProcessingOrderInfo(SEIProcessingOrderInfo *sei);
+#if GREEN_METADATA_SEI_ENABLED
+  void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);
+#endif
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;

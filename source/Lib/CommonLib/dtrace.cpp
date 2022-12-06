@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2021, ITU/ISO/IEC
+ * Copyright (c) 2010-2022, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -102,8 +102,7 @@ std::vector<std::string> split( const std::string &s, char delim )
   return elems;
 }
 
-CDTrace::CDTrace( const char *filename, vstring channel_names )
-    : copy(false), m_trace_file(NULL), m_error_code( 0 )
+CDTrace::CDTrace(const char *filename, vstring channel_names) : copy(false), m_trace_file(nullptr), m_error_code(0)
 {
   if (filename)
   {
@@ -118,8 +117,8 @@ CDTrace::CDTrace( const char *filename, vstring channel_names )
   }
 }
 
-CDTrace::CDTrace( const char *filename, const dtrace_channels_t& channels )
-  : copy( false ), m_trace_file( NULL ), m_error_code( 0 )
+CDTrace::CDTrace(const char *filename, const dtrace_channels_t &channels)
+  : copy(false), m_trace_file(nullptr), m_error_code(0)
 {
   if( filename )
   {

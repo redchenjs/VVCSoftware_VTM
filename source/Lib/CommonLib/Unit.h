@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2021, ITU/ISO/IEC
+* Copyright (c) 2010-2022, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -293,13 +293,14 @@ struct CodingUnit : public UnitArea
 
   PredMode       predMode;
 
-  uint8_t          depth;   // number of all splits, applied with generalized splits
-  uint8_t          qtDepth; // number of applied quad-splits, before switching to the multi-type-tree (mtt)
-  // a triple split would increase the mtDepth by 1, but the qtDepth by 2 in the first and last part and by 1 in the middle part (because of the 1-2-1 split proportions)
-  uint8_t          btDepth; // number of applied binary splits, after switching to the mtt (or it's equivalent)
-  uint8_t          mtDepth; // the actual number of splits after switching to mtt (equals btDepth if only binary splits are allowed)
-  int8_t          chromaQpAdj;
-  int8_t          qp;
+  uint8_t depth;     // number of all splits, applied with generalized splits
+  uint8_t qtDepth;   // number of applied quad-splits, before switching to the multi-type-tree (mtt)
+  // a triple split would increase the mtDepth by 1, but the qtDepth by 2 in the first and last part and by 1 in the
+  // middle part (because of the 1-2-1 split proportions)
+  uint8_t        btDepth;   // number of binary splits after switching to MTT
+  uint8_t        mtDepth;   // number of splits after switching to MTT (equals btDepth if only binary splits)
+  int8_t         chromaQpAdj;
+  int8_t         qp;
   SplitSeries    splitSeries;
   TreeType       treeType;
   ModeType       modeType;
@@ -310,21 +311,21 @@ struct CodingUnit : public UnitArea
   int            affineType;
   bool           colorTransform;
   bool           geoFlag;
-  int            bdpcmMode;
-  int            bdpcmModeChroma;
-  uint8_t          imv;
+  BdpcmMode      bdpcmMode;
+  BdpcmMode      bdpcmModeChroma;
+  uint8_t        imv;
   bool           rootCbf;
   uint8_t        sbtInfo;
-  uint32_t           tileIdx;
-  uint8_t         mtsFlag;
-  uint32_t        lfnstIdx;
-  uint8_t         BcwIdx;
-  int             refIdxBi[2];
+  uint32_t       tileIdx;
+  uint8_t        mtsFlag;
+  uint32_t       lfnstIdx;
+  uint8_t        bcwIdx;
+  int            refIdxBi[2];
   bool           mipFlag;
 
   // needed for fast imv mode decisions
-  int8_t          imvNumCand;
-  uint8_t          smvdMode;
+  int8_t         imvNumCand;
+  uint8_t        smvdMode;
   uint8_t        ispMode;
   bool           useEscape[MAX_NUM_CHANNEL_TYPE];
   bool           useRotation[MAX_NUM_CHANNEL_TYPE];
@@ -333,7 +334,10 @@ struct CodingUnit : public UnitArea
   uint8_t        reusePLTSize[MAX_NUM_CHANNEL_TYPE];
   uint8_t        curPLTSize[MAX_NUM_CHANNEL_TYPE];
   Pel            curPLT[MAX_NUM_COMPONENT][MAXPLTSIZE];
-
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct m_featureCounter;
+#endif
+  
   CodingUnit() : chType( CH_L ) { }
   CodingUnit(const UnitArea &unit);
   CodingUnit(const ChromaFormat _chromaFormat, const Area &area);
@@ -362,6 +366,8 @@ struct CodingUnit : public UnitArea
   const bool        isLocalSepTree() const;
   const bool        isConsInter() const { return modeType == MODE_TYPE_INTER; }
   const bool        isConsIntra() const { return modeType == MODE_TYPE_INTRA; }
+
+  BdpcmMode getBdpcmMode(const ComponentID compId) const { return isLuma(compId) ? bdpcmMode : bdpcmModeChroma; }
 };
 
 // ---------------------------------------------------------------------------
@@ -390,7 +396,7 @@ struct InterPredictionData
   uint8_t     mvpNum  [NUM_REF_PIC_LIST_01];
   Mv        mvd     [NUM_REF_PIC_LIST_01];
   Mv        mv      [NUM_REF_PIC_LIST_01];
-#if GDR_ENABLED 
+#if GDR_ENABLED
   bool      mvSolid[NUM_REF_PIC_LIST_01];
   bool      mvValid[NUM_REF_PIC_LIST_01];
   bool      mvpSolid[NUM_REF_PIC_LIST_01];
@@ -457,7 +463,9 @@ struct TransformUnit : public UnitArea
   int              m_chromaResScaleInv;
 
   uint8_t        depth;
-  uint8_t        mtsIdx     [ MAX_NUM_TBLOCKS ];
+
+  std::array<MtsType, MAX_NUM_TBLOCKS> mtsIdx;
+
   bool           noResidual;
   uint8_t        jointCbCr;
   uint8_t        cbf        [ MAX_NUM_TBLOCKS ];
