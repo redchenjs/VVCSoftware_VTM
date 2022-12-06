@@ -1872,7 +1872,11 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
   else
   {
     CHECK( encTestmode.type != ETM_POST_DONT_SPLIT, "Unknown mode" );
+#if REUSE_CU_RESULTS
     if ((cuECtx.get<double>(BEST_NO_IMV_COST) == (MAX_DOUBLE * .5) || cuECtx.get<bool>(IS_REUSING_CU)) && !slice.isIntra())
+#else
+    if (cuECtx.get<double>(BEST_NO_IMV_COST) == (MAX_DOUBLE * .5) && !slice.isIntra())
+#endif
     {
       unsigned idx1, idx2, idx3, idx4;
       getAreaIdx(partitioner.currArea().Y(), *slice.getPPS()->pcv, idx1, idx2, idx3, idx4);

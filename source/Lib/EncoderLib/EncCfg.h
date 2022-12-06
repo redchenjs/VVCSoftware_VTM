@@ -1577,11 +1577,7 @@ public:
 #endif
 
   void      setChromaFormatIdc              ( ChromaFormat cf ) { m_chromaFormatIDC = cf; }
-#if REUSE_CU_RESULTS
   ChromaFormat  getChromaFormatIdc          ( ) const        { return m_chromaFormatIDC; }
-#else
-  ChromaFormat  getChromaFormatIdc          ( )              { return m_chromaFormatIDC; }
-#endif
 
 #if SHARP_LUMA_DELTA_QP
   void      setLumaLevelToDeltaQPControls( const LumaLevelToDeltaQPMapping &lumaLevelToDeltaQPMapping ) { m_lumaLevelToDeltaQPMapping=lumaLevelToDeltaQPMapping; }
