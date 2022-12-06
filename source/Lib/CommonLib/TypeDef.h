@@ -377,6 +377,8 @@ enum class ISPType : int8_t
   INTRA_SUBPARTITIONS_RESERVED
 };
 
+static inline uint32_t to_uint(ISPType t) { return to_underlying(t) - to_underlying(ISPType::NONE); }
+
 enum SbtIdx
 {
   SBT_OFF_DCT  = 0,
