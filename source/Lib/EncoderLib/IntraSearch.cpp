@@ -1177,7 +1177,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
         m_curIspLfnstIdx = 0;
         for (int i = 0; i < maxNumRDModesISP; i++)
         {
-          rdModeList.push_back(ModeInfo(false, false, 0, ISPType::INTRA_SUBPARTITIONS_RESERVED, 0));
+          rdModeList.push_back(ModeInfo(false, false, 0, ISPType::RESERVED, 0));
         }
       }
     }
@@ -1228,7 +1228,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
         cu.bdpcmMode = BdpcmMode::NONE;
         orgMode      = rdModeList[mode];
       }
-      if (cu.bdpcmMode == BdpcmMode::NONE && rdModeList[mode].ispMod == ISPType::INTRA_SUBPARTITIONS_RESERVED)
+      if (cu.bdpcmMode == BdpcmMode::NONE && rdModeList[mode].ispMod == ISPType::RESERVED)
       {
         if (mode == numNonISPModes)   // the list needs to be sorted only once
         {
@@ -1242,7 +1242,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
           }
         }
         xGetNextISPMode(rdModeList[mode], (mode > 0 ? &rdModeList[mode - 1] : nullptr), Size(width, height));
-        if (rdModeList[mode].ispMod == ISPType::INTRA_SUBPARTITIONS_RESERVED)
+        if (rdModeList[mode].ispMod == ISPType::RESERVED)
         {
           continue;
         }

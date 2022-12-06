@@ -374,7 +374,7 @@ enum class ISPType : int8_t
   HOR  = 0,
   VER,
   NUM,
-  INTRA_SUBPARTITIONS_RESERVED
+  RESERVED
 };
 
 static inline uint32_t to_uint(ISPType t) { return to_underlying(t) - to_underlying(ISPType::NONE); }
