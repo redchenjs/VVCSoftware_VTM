@@ -709,11 +709,13 @@ void HLSyntaxReader::parsePPS( PPS* pcPPS )
   READ_FLAG( uiCode,   "pps_cabac_init_present_flag" );            pcPPS->setCabacInitPresentFlag( uiCode ? true : false );
 
   READ_UVLC(uiCode, "pps_num_ref_idx_default_active_minus1[0]");
-  CHECK(uiCode >= MAX_NUM_ACTIVE_REF, "Invalid code read");
+  CHECK(uiCode >= MAX_NUM_ACTIVE_REF,
+        "The value of pps_num_ref_idx_default_active_minus1[0] shall be in the range of 0 to 14, inclusive");
   pcPPS->setNumRefIdxL0DefaultActive(uiCode+1);
 
   READ_UVLC(uiCode, "pps_num_ref_idx_default_active_minus1[1]");
-  CHECK(uiCode >= MAX_NUM_ACTIVE_REF, "Invalid code read");
+  CHECK(uiCode >= MAX_NUM_ACTIVE_REF,
+        "The value of pps_num_ref_idx_default_active_minus1[1] shall be in the range of 0 to 14, inclusive");
   pcPPS->setNumRefIdxL1DefaultActive(uiCode+1);
 
   READ_FLAG(uiCode, "pps_rpl1_idx_present_flag");
