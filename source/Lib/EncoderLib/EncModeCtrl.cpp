@@ -51,6 +51,8 @@
 
 using namespace std;
 
+static constexpr double UNSET_IMV_COST = MAX_DOUBLE * 0.125;   // Some large, unique value
+
 void EncModeCtrl::init( EncCfg *pCfg, RateCtrl *pRateCtrl, RdCost* pRdCost )
 {
   m_pcEncCfg      = pCfg;
@@ -1120,8 +1122,8 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
   cuECtx.set( BEST_TRIV_SPLIT_COST, MAX_DOUBLE );
   cuECtx.set( DO_TRIH_SPLIT,        1 );
   cuECtx.set( DO_TRIV_SPLIT,        1 );
-  cuECtx.set( BEST_IMV_COST,        MAX_DOUBLE * .5 );
-  cuECtx.set( BEST_NO_IMV_COST,     MAX_DOUBLE * .5 );
+  cuECtx.set(BEST_IMV_COST, UNSET_IMV_COST);
+  cuECtx.set(BEST_NO_IMV_COST, UNSET_IMV_COST);
   cuECtx.set( QT_BEFORE_BT,         qtBeforeBt );
   cuECtx.set( DID_QUAD_SPLIT,       false );
   cuECtx.set( IS_BEST_NOSPLIT_SKIP, false );
@@ -1873,9 +1875,9 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
   {
     CHECK( encTestmode.type != ETM_POST_DONT_SPLIT, "Unknown mode" );
 #if REUSE_CU_RESULTS
-    if ((cuECtx.get<double>(BEST_NO_IMV_COST) == (MAX_DOUBLE * .5) || cuECtx.get<bool>(IS_REUSING_CU)) && !slice.isIntra())
+    if ((cuECtx.get<double>(BEST_NO_IMV_COST) == UNSET_IMV_COST || cuECtx.get<bool>(IS_REUSING_CU)) && !slice.isIntra())
 #else
-    if (cuECtx.get<double>(BEST_NO_IMV_COST) == (MAX_DOUBLE * .5) && !slice.isIntra())
+    if (cuECtx.get<double>(BEST_NO_IMV_COST) == UNSET_IMV_COST && !slice.isIntra())
 #endif
     {
       unsigned idx1, idx2, idx3, idx4;
