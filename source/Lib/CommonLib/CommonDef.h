@@ -300,17 +300,23 @@ static constexpr int RExt__PREDICTION_WEIGHTING_ANALYSIS_DC_PRECISION = 0; ///< 
 
 static constexpr int MAX_TIMECODE_SEI_SETS =                            3; ///< Maximum number of time sets
 
-static constexpr int MAX_CU_DEPTH                                     = 7;   // log2(CTUSize)
-static constexpr int MAX_CU_SIZE =                        1<<MAX_CU_DEPTH;
-static constexpr int MIN_CU_LOG2 =                                      2;
-static constexpr int MIN_PU_SIZE =                                      4;
-static constexpr int MAX_NUM_PARTS_IN_CTU =                         ( ( MAX_CU_SIZE * MAX_CU_SIZE ) >> ( MIN_CU_LOG2 << 1 ) );
-static constexpr int MAX_NUM_TUS =                                     16; ///< Maximum number of TUs within one CU. When max TB size is 32x32, up to 16 TUs within one CU (128x128) is supported
-static constexpr int MAX_LOG2_DIFF_CU_TR_SIZE =                         3;
-static constexpr int MAX_CU_TILING_PARTITIONS = 1 << ( MAX_LOG2_DIFF_CU_TR_SIZE << 1 );
+static constexpr int MAX_CU_DEPTH         = 7;   // log2(CTUSize)
+static constexpr int MAX_CU_SIZE          = 1 << MAX_CU_DEPTH;
+static constexpr int MIN_CU_LOG2          = 2;
+static constexpr int MIN_CU_SIZE          = 1 << MIN_CU_LOG2;
+static constexpr int MAX_CU_SIZE_IN_PARTS = MAX_CU_SIZE >> MIN_CU_LOG2;
+static constexpr int MAX_NUM_PARTS_IN_CTU = MAX_CU_SIZE_IN_PARTS * MAX_CU_SIZE_IN_PARTS;
+static constexpr int MIN_PU_SIZE          = 4;
+
+// Maximum number of TUs within one CU. When max TB size is 32x32, up to 16 TUs within one CU (128x128) is supported
+static constexpr int MAX_NUM_TUS              = 16;
+static constexpr int MAX_LOG2_DIFF_CU_TR_SIZE = 3;
+static constexpr int MAX_CU_TILING_PARTITIONS = 1 << (2 * MAX_LOG2_DIFF_CU_TR_SIZE);
 
 static constexpr int LOG2_VPDU_SIZE = 6;
 static constexpr int VPDU_SIZE      = 1 << LOG2_VPDU_SIZE;
+
+static constexpr int MAX_NUM_SIZES = 8;
 
 static constexpr int PIC_MARGIN = 16;
 
