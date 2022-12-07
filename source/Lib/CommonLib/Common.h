@@ -208,6 +208,9 @@ inline Area clipArea(const Area &_area, const Area &boundingBox)
 
 class SizeIndexInfo
 {
+protected:
+  static constexpr SizeType UNUSED = std::numeric_limits<SizeType>::max();
+
 public:
   SizeIndexInfo(){}
   virtual ~SizeIndexInfo(){}
@@ -216,7 +219,11 @@ public:
   SizeType numWidths()                  { return (SizeType)m_numBlkSizes; }
   SizeType numHeights()                 { return (SizeType)m_numBlkSizes; }
   SizeType sizeFrom( SizeType idx )     { return m_idxToSizeTab[idx]; }
-  SizeType idxFrom( SizeType size )     { CHECKD( m_sizeToIdxTab[size] == std::numeric_limits<SizeType>::max(), "Index of given size does NOT EXIST!" ); return m_sizeToIdxTab[size]; }
+  SizeType idxFrom(SizeType size)
+  {
+    CHECKD(m_sizeToIdxTab[size] == UNUSED, "Index of given size does NOT EXIST!");
+    return m_sizeToIdxTab[size];
+  }
   bool     isCuSize( SizeType size )    { return m_isCuSize[size]; }
   virtual void init( SizeType maxSize ) {}
 
@@ -228,33 +235,37 @@ protected:
 
     std::vector<SizeType> grpSizes;
 
-    for( int i = 0, n = 0; i < m_sizeToIdxTab.size(); i++ )
+    int n = 0;
+
+    for( int i = 0; i < m_sizeToIdxTab.size(); i++ )
     {
-      if( m_sizeToIdxTab[i] != std::numeric_limits<SizeType>::max() )
+      if (m_sizeToIdxTab[i] != UNUSED)
       {
         m_sizeToIdxTab[i] = n;
         m_idxToSizeTab.push_back( i );
         n++;
       }
 
-      if( m_sizeToIdxTab[i] != std::numeric_limits<SizeType>::max() && m_sizeToIdxTab[i >> 1] != std::numeric_limits<SizeType>::max() && i >= 4 )
+      if (m_sizeToIdxTab[i] != UNUSED && m_sizeToIdxTab[i >> 1] != UNUSED && i >= MIN_CU_SIZE)
       {
         m_isCuSize[i] = true;
       }
 
       // collect group sizes (for coefficient group coding)
       SizeType grpSize = i >> ( ( i & 3 ) != 0 ? 1 : 2 );
-      if( m_sizeToIdxTab[i] != std::numeric_limits<SizeType>::max() && m_sizeToIdxTab[grpSize] == std::numeric_limits<SizeType>::max() )
+      if (m_sizeToIdxTab[i] != UNUSED && m_sizeToIdxTab[grpSize] == UNUSED)
       {
         grpSizes.push_back( grpSize );
       }
     }
 
+    CHECK(n > MAX_NUM_SIZES, "MAX_NUM_SIZES is too small");
+
     m_numBlkSizes = (SizeType)m_idxToSizeTab.size();
 
     for( SizeType grpSize : grpSizes )
     {
-      if( grpSize > 0 && m_sizeToIdxTab[grpSize] == std::numeric_limits<SizeType>::max() )
+      if (grpSize > 0 && m_sizeToIdxTab[grpSize] == UNUSED)
       {
         m_sizeToIdxTab[grpSize] = (SizeType)m_idxToSizeTab.size();
         m_idxToSizeTab.push_back( grpSize );
@@ -278,7 +289,7 @@ public:
   {
     for( int i = 0, n = 0; i <= maxSize; i++ )
     {
-      SizeType val = std::numeric_limits<SizeType>::max();
+      SizeType val = UNUSED;
       if( i == ( 1 << n ) )
       {
         n++;

@@ -211,8 +211,8 @@ constexpr uint8_t g_tbMax[257] = { 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 
 extern bool g_mctsDecCheckEnabled;
 
 class  Mv;
-extern Mv   g_reusedUniMVs[32][32][8][8][2][33];
-extern bool g_isReusedUniMVsFilled[32][32][8][8];
+extern Mv   g_reusedUniMVs[MAX_CU_SIZE_IN_PARTS][MAX_CU_SIZE_IN_PARTS][MAX_NUM_SIZES][MAX_NUM_SIZES][2][33];
+extern bool g_isReusedUniMVsFilled[MAX_CU_SIZE_IN_PARTS][MAX_CU_SIZE_IN_PARTS][MAX_NUM_SIZES][MAX_NUM_SIZES];
 
 extern uint16_t g_paletteQuant[57];
 extern uint8_t g_paletteRunTopLut[5];

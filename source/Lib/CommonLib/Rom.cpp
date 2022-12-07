@@ -613,9 +613,8 @@ const uint32_t g_scalingListId[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] =
   {  0,  0,  0,  0,  0,  0},  // SCALING_LIST_128x128
 };
 
-
-Mv   g_reusedUniMVs[32][32][8][8][2][33];
-bool g_isReusedUniMVsFilled[32][32][8][8];
+Mv   g_reusedUniMVs[MAX_CU_SIZE_IN_PARTS][MAX_CU_SIZE_IN_PARTS][MAX_NUM_SIZES][MAX_NUM_SIZES][2][33];
+bool g_isReusedUniMVsFilled[MAX_CU_SIZE_IN_PARTS][MAX_CU_SIZE_IN_PARTS][MAX_NUM_SIZES][MAX_NUM_SIZES];
 
 uint16_t g_paletteQuant[57];
 uint8_t g_paletteRunTopLut [5] = { 0, 1, 1, 2, 2 };
