@@ -5939,24 +5939,24 @@ void IntraSearch::xGetNextISPMode(ModeInfo& modeInfo, const ModeInfo* lastMode, 
 
     if (!stopThisSplit)
     {
-      int numSubPartsBestModeAlt[2];
+      int numSubPartsBestModeAltSplit[2];
 
       // 2) One split type may be discarded by comparing the number of sub-partitions of the best angle modes of both splits
       const ISPType otherSplit            = nextISPcandSplitType == ISPType::HOR ? ISPType::VER : ISPType::HOR;
-      numSubPartsBestModeAlt[1] =
+      numSubPartsBestModeAltSplit[1] =
         modes[1] != NOMODE_IDX ? ispTestedModes.getNumCompletedSubParts(otherSplit, modes[1]) : -1;
-      if (numSubPartsBestModeAlt[1] != -1 && numSubPartsBestMode[1] != -1
+      if (numSubPartsBestModeAltSplit[1] != -1 && numSubPartsBestMode[1] != -1
           && ispTestedModes.bestSplitSoFar != nextISPcandSplitType)
       {
-        if (numSubPartsBestModeAlt[1] > numSubPartsBestMode[1])
+        if (numSubPartsBestModeAltSplit[1] > numSubPartsBestMode[1])
         {
           stopThisSplit = true;
         }
         // both have the same number of subpartitions
-        else if (numSubPartsBestModeAlt[1] == numSubPartsBestMode[1])
+        else if (numSubPartsBestModeAltSplit[1] == numSubPartsBestMode[1])
         {
           // both have the maximum number of subpartitions, so it compares RD costs to decide
-          if (numSubPartsBestModeAlt[1] == maxNumSubPartitions)
+          if (numSubPartsBestModeAltSplit[1] == maxNumSubPartitions)
           {
             double rdCostBestMode2ThisSplit  = ispTestedModes.getRDCost(nextISPcandSplitType, modes[1]);
             double rdCostBestMode2OtherSplit = ispTestedModes.getRDCost(otherSplit, modes[1]);
@@ -5968,10 +5968,10 @@ void IntraSearch::xGetNextISPMode(ModeInfo& modeInfo, const ModeInfo* lastMode, 
           }
           else // none of them reached the maximum number of subpartitions with the best angle modes, so it compares the results with the the planar mode
           {
-            numSubPartsBestModeAlt[0] =
+            numSubPartsBestModeAltSplit[0] =
               modes[0] != -1 ? ispTestedModes.getNumCompletedSubParts(otherSplit, modes[0]) : -1;
-            if (numSubPartsBestModeAlt[0] != -1 && numSubPartsBestMode[0] != -1
-                && numSubPartsBestModeAlt[0] > numSubPartsBestMode[0])
+            if (numSubPartsBestModeAltSplit[0] != -1 && numSubPartsBestMode[0] != -1
+                && numSubPartsBestModeAltSplit[0] > numSubPartsBestMode[0])
             {
               stopThisSplit = true;
             }
