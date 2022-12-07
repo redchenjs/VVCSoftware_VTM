@@ -709,11 +709,13 @@ void HLSyntaxReader::parsePPS( PPS* pcPPS )
   READ_FLAG( uiCode,   "pps_cabac_init_present_flag" );            pcPPS->setCabacInitPresentFlag( uiCode ? true : false );
 
   READ_UVLC(uiCode, "pps_num_ref_idx_default_active_minus1[0]");
-  CHECK(uiCode > 14, "Invalid code read");
+  CHECK(uiCode >= MAX_NUM_ACTIVE_REF,
+        "The value of pps_num_ref_idx_default_active_minus1[0] shall be in the range of 0 to 14, inclusive");
   pcPPS->setNumRefIdxL0DefaultActive(uiCode+1);
 
   READ_UVLC(uiCode, "pps_num_ref_idx_default_active_minus1[1]");
-  CHECK(uiCode > 14, "Invalid code read");
+  CHECK(uiCode >= MAX_NUM_ACTIVE_REF,
+        "The value of pps_num_ref_idx_default_active_minus1[1] shall be in the range of 0 to 14, inclusive");
   pcPPS->setNumRefIdxL1DefaultActive(uiCode+1);
 
   READ_FLAG(uiCode, "pps_rpl1_idx_present_flag");
@@ -4042,11 +4044,9 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
       }
     }
   }
-  if (!pps->getRplInfoInPhFlag() && pcSlice->getIdrPicFlag() && !(sps->getIDRRefParamListPresent()))
-  {
-    pcSlice->setNumRefIdx(REF_PIC_LIST_0, 0);
-    pcSlice->setNumRefIdx(REF_PIC_LIST_1, 0);
-  }
+
+  uint32_t numActiveRefs[NUM_REF_PIC_LIST_01] = { pcSlice->isIntra() ? 0u : 1u, pcSlice->isInterB() ? 1u : 0u };
+
   if ((!pcSlice->isIntra() && pcSlice->getRPL0()->getNumRefEntries() > 1)
       || (pcSlice->isInterB() && pcSlice->getRPL1()->getNumRefEntries() > 1))
   {
@@ -4056,67 +4056,39 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
       if (pcSlice->getRPL0()->getNumRefEntries() > 1)
       {
         READ_UVLC(uiCode, "sh_num_ref_idx_active_minus1[0]");
+        CHECK(uiCode >= MAX_NUM_ACTIVE_REF,
+              "The value of sh_num_ref_idx_active_minus1[0] shall be in the range of 0 to 14, inclusive");
+        numActiveRefs[REF_PIC_LIST_0] = uiCode + 1;
       }
-      else
+      if (pcSlice->isInterB() && pcSlice->getRPL1()->getNumRefEntries() > 1)
       {
-        uiCode = 0;
-      }
-      pcSlice->setNumRefIdx(REF_PIC_LIST_0, uiCode + 1);
-      if (pcSlice->isInterB())
-      {
-        if (pcSlice->getRPL1()->getNumRefEntries() > 1)
-        {
-          READ_UVLC(uiCode, "sh_num_ref_idx_active_minus1[1]");
-        }
-        else
-        {
-          uiCode = 0;
-        }
-        pcSlice->setNumRefIdx(REF_PIC_LIST_1, uiCode + 1);
-      }
-      else
-      {
-        pcSlice->setNumRefIdx(REF_PIC_LIST_1, 0);
+        READ_UVLC(uiCode, "sh_num_ref_idx_active_minus1[1]");
+        CHECK(uiCode >= MAX_NUM_ACTIVE_REF,
+              "The value of sh_num_ref_idx_active_minus1[1] shall be in the range of 0 to 14, inclusive");
+        numActiveRefs[REF_PIC_LIST_1] = uiCode + 1;
       }
     }
     else
     {
-      if (pcSlice->getRPL0()->getNumRefEntries() >= pps->getNumRefIdxL0DefaultActive())
-      {
-        pcSlice->setNumRefIdx(REF_PIC_LIST_0, pps->getNumRefIdxL0DefaultActive());
-      }
-      else
-      {
-        pcSlice->setNumRefIdx(REF_PIC_LIST_0, pcSlice->getRPL0()->getNumRefEntries());
-      }
+      numActiveRefs[REF_PIC_LIST_0] =
+        std::min<int>(pcSlice->getRPL0()->getNumRefEntries(), pps->getNumRefIdxL0DefaultActive());
 
       if (pcSlice->isInterB())
       {
-        if (pcSlice->getRPL1()->getNumRefEntries() >= pps->getNumRefIdxL1DefaultActive())
-        {
-          pcSlice->setNumRefIdx(REF_PIC_LIST_1, pps->getNumRefIdxL1DefaultActive());
-        }
-        else
-        {
-          pcSlice->setNumRefIdx(REF_PIC_LIST_1, pcSlice->getRPL1()->getNumRefEntries());
-        }
-      }
-      else
-      {
-        pcSlice->setNumRefIdx(REF_PIC_LIST_1, 0);
+        numActiveRefs[REF_PIC_LIST_1] =
+          std::min<int>(pcSlice->getRPL1()->getNumRefEntries(), pps->getNumRefIdxL1DefaultActive());
       }
     }
   }
-  else
-  {
-    pcSlice->setNumRefIdx(REF_PIC_LIST_0, pcSlice->isIntra() ? 0 : 1);
-    pcSlice->setNumRefIdx(REF_PIC_LIST_1, pcSlice->isInterB() ? 1 : 0);
-  }
+
+  pcSlice->setNumRefIdx(REF_PIC_LIST_0, numActiveRefs[REF_PIC_LIST_0]);
+  pcSlice->setNumRefIdx(REF_PIC_LIST_1, numActiveRefs[REF_PIC_LIST_1]);
 
   if (pcSlice->isInterP() || pcSlice->isInterB())
   {
     CHECK(pcSlice->getNumRefIdx(REF_PIC_LIST_0) == 0,
           "Number of active entries in RPL0 of P or B picture shall be greater than 0");
+
     if (pcSlice->isInterB())
     {
       CHECK(pcSlice->getNumRefIdx(REF_PIC_LIST_1) == 0,

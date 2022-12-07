@@ -2436,18 +2436,27 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
     }
   }
 
-  // check if numrefidxes match the defaults. If not, override
+  // check if numbers of active references match the defaults. If not, override
+
+  CHECK(pcSlice->isIntra() && pcSlice->getNumRefIdx(REF_PIC_LIST_0) > 0, "Bad number of refs");
+  CHECK(!pcSlice->isInterB() && pcSlice->getNumRefIdx(REF_PIC_LIST_1) > 0, "Bad number of refs");
 
   if ((!pcSlice->isIntra() && pcSlice->getRPL0()->getNumRefEntries() > 1)
       || (pcSlice->isInterB() && pcSlice->getRPL1()->getNumRefEntries() > 1))
   {
-    int defaultL0 =
+    const int defaultL0 =
       std::min<int>(pcSlice->getRPL0()->getNumRefEntries(), pcSlice->getPPS()->getNumRefIdxL0DefaultActive());
-    int  defaultL1    = pcSlice->isInterB() ? std::min<int>(pcSlice->getRPL1()->getNumRefEntries(),
-                                                        pcSlice->getPPS()->getNumRefIdxL1DefaultActive())
-                                            : 0;
-    bool overrideFlag = (pcSlice->getNumRefIdx(REF_PIC_LIST_0) != defaultL0
-                         || (pcSlice->isInterB() && pcSlice->getNumRefIdx(REF_PIC_LIST_1) != defaultL1));
+
+    bool overrideFlag = pcSlice->getNumRefIdx(REF_PIC_LIST_0) != defaultL0;
+
+    if (!overrideFlag && pcSlice->isInterB())
+    {
+      const int defaultL1 =
+        std::min<int>(pcSlice->getRPL1()->getNumRefEntries(), pcSlice->getPPS()->getNumRefIdxL1DefaultActive());
+
+      overrideFlag = pcSlice->getNumRefIdx(REF_PIC_LIST_1) != defaultL1;
+    }
+
     WRITE_FLAG(overrideFlag ? 1 : 0, "sh_num_ref_idx_active_override_flag");
     if (overrideFlag)
     {
@@ -2455,30 +2464,12 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
       {
         WRITE_UVLC(pcSlice->getNumRefIdx(REF_PIC_LIST_0) - 1, "sh_num_ref_idx_active_minus1[0]");
       }
-      else
-      {
-        pcSlice->setNumRefIdx(REF_PIC_LIST_0, 1);
-      }
 
       if (pcSlice->isInterB() && pcSlice->getRPL1()->getNumRefEntries() > 1)
       {
         WRITE_UVLC(pcSlice->getNumRefIdx(REF_PIC_LIST_1) - 1, "sh_num_ref_idx_active_minus1[1]");
       }
-      else
-      {
-        pcSlice->setNumRefIdx(REF_PIC_LIST_1, pcSlice->isInterB() ? 1 : 0);
-      }
     }
-    else
-    {
-      pcSlice->setNumRefIdx(REF_PIC_LIST_0, defaultL0);
-      pcSlice->setNumRefIdx(REF_PIC_LIST_1, defaultL1);
-    }
-  }
-  else
-  {
-    pcSlice->setNumRefIdx(REF_PIC_LIST_0, pcSlice->isIntra() ? 0 : 1);
-    pcSlice->setNumRefIdx(REF_PIC_LIST_1, pcSlice->isInterB() ? 1 : 0);
   }
 
   if (!pcSlice->isIntra())
