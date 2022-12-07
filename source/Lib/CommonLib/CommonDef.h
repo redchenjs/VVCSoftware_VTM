@@ -143,9 +143,11 @@ static constexpr Distortion MAX_DISTORTION = std::numeric_limits<Distortion>::ma
 // ====================================================================================================================
 // Most of these should not be changed - they resolve the meaning of otherwise magic numbers.
 
-static constexpr int MAX_GOP =                                         64; ///< max. value of hierarchical GOP size
-static constexpr int MAX_NUM_REF_PICS =                                29; ///< max. number of pictures used for reference
-static constexpr int MAX_NUM_REF =                                     16; ///< max. number of entries in picture reference list
+static constexpr int MAX_GOP            = 64;   // max. value of hierarchical GOP size
+static constexpr int MAX_NUM_REF_PICS   = 29;   // max. number of pictures used for reference
+static constexpr int MAX_NUM_REF        = 16;   // max. number of entries in picture reference list
+static constexpr int MAX_NUM_ACTIVE_REF = 15;   // maximum number of active reference pictures
+
 static constexpr int MAX_QP =                                          63;
 static constexpr int NOT_VALID =                                       -1;
 
