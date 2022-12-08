@@ -1331,7 +1331,9 @@ public:
 
 
 // ---------------------------------------------------------------------------
-// dynamic cache
+// This class contains a pool of objects that can be used and reused
+// while minimizing the amount of required memory allocation and
+// deallocation operations.
 // ---------------------------------------------------------------------------
 
 template<typename T> class Pool
