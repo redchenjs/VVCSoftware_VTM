@@ -370,6 +370,8 @@ typedef std::pair<int, int>      TrCost;
 
 enum class ISPType : int8_t
 {
+  // Note: numbering starts at -1 (NONE) and NUM is equal to 2 (HOR and VER cases)
+  // to_uint() defined below can be used to convert to the range 0 (for NONE) to 3 (for NUM)
   NONE = -1,
   HOR  = 0,
   VER,
