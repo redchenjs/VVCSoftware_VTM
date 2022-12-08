@@ -1748,8 +1748,7 @@ bool InterSearch::predIBCSearch(CodingUnit& cu, Partitioner& partitioner, const 
       assert(pu.cu->imv>0 || pu.mvd[REF_PIC_LIST_0] == Mv());
     }
 
-    pu.refIdx[REF_PIC_LIST_0] = MAX_NUM_REF;
-
+    pu.refIdx[REF_PIC_LIST_0] = IBC_REF_IDX;
   }
 
   return true;

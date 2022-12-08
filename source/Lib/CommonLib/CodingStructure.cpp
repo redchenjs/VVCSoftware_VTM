@@ -564,7 +564,7 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, RefPicList e, i
   Picture*   refPic;
   PicHeader *refPh;
 
-  if (refIdx == MAX_NUM_REF)
+  if (refIdx == IBC_REF_IDX)
   {
     refPic = slice->getPic();
   }
@@ -578,7 +578,7 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, RefPicList e, i
     return false;
   }
 
-  if (refIdx == MAX_NUM_REF)
+  if (refIdx == IBC_REF_IDX)
   {
     refPh = picHeader;
   }

@@ -4036,7 +4036,7 @@ void EncCu::xCheckRDCostIBCMode(CodingStructure *&tempCS, CodingStructure *&best
   pu.intraDir[1] = PLANAR_IDX;   // set intra pred for ibc block
 
   pu.interDir               = 1;             // use list 0 for IBC mode
-  pu.refIdx[REF_PIC_LIST_0] = MAX_NUM_REF;   // last idx in the list
+  pu.refIdx[REF_PIC_LIST_0] = IBC_REF_IDX;   // last idx in the list
   bool bValid =
     m_pcInterSearch->predIBCSearch(cu, partitioner, m_ctuIbcSearchRangeX, m_ctuIbcSearchRangeY, m_ibcHashMap);
 

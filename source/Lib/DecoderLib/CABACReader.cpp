@@ -2106,7 +2106,7 @@ void CABACReader::prediction_unit( PredictionUnit& pu, MergeCtx& mrgCtx )
   {
     pu.interDir = 1;
     pu.cu->affine = false;
-    pu.refIdx[REF_PIC_LIST_0] = MAX_NUM_REF;
+    pu.refIdx[REF_PIC_LIST_0] = IBC_REF_IDX;
     mvd_coding(pu.mvd[REF_PIC_LIST_0]);
     if (pu.cs->sps->getMaxNumIBCMergeCand() == 1)
     {
