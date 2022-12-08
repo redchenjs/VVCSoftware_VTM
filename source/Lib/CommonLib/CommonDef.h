@@ -147,6 +147,7 @@ static constexpr int MAX_GOP            = 64;   // max. value of hierarchical GO
 static constexpr int MAX_NUM_REF_PICS   = 29;   // max. number of pictures used for reference
 static constexpr int MAX_NUM_REF        = 16;   // max. number of entries in picture reference list
 static constexpr int MAX_NUM_ACTIVE_REF = 15;   // maximum number of active reference pictures
+static constexpr int IBC_REF_IDX        = MAX_NUM_ACTIVE_REF;
 
 static constexpr int MAX_QP =                                          63;
 static constexpr int NOT_VALID =                                       -1;

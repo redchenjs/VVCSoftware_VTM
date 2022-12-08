@@ -1032,7 +1032,7 @@ void PU::getIBCMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const
 
   while (cnt < maxNumMergeCand)
   {
-    mrgCtx.mvFieldNeighbours[cnt * 2].setMvField(Mv(0, 0), MAX_NUM_REF);
+    mrgCtx.mvFieldNeighbours[cnt * 2].setMvField(Mv(0, 0), IBC_REF_IDX);
     mrgCtx.interDirNeighbours[cnt] = 1;
 #if GDR_ENABLED
     // GDR: zero mv(0,0)
@@ -1675,10 +1675,10 @@ bool PU::checkDMVRCondition(const PredictionUnit& pu)
     const int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
     const int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
 
-    const bool ref0IsScaled = refIdx0 < 0 || refIdx0 >= MAX_NUM_REF
+    const bool ref0IsScaled = refIdx0 < 0 || refIdx0 >= MAX_NUM_ACTIVE_REF
                                 ? false
                                 : pu.cu->slice->getRefPic(REF_PIC_LIST_0, refIdx0)->isRefScaled(pu.cs->pps);
-    const bool ref1IsScaled = refIdx1 < 0 || refIdx1 >= MAX_NUM_REF
+    const bool ref1IsScaled = refIdx1 < 0 || refIdx1 >= MAX_NUM_ACTIVE_REF
                                 ? false
                                 : pu.cu->slice->getRefPic(REF_PIC_LIST_1, refIdx1)->isRefScaled(pu.cs->pps);
 
@@ -5286,7 +5286,7 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
               RefPicList eRefPicList = (refList ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
 
               CHECK(CU::isIBC(*pu.cu) && eRefPicList != REF_PIC_LIST_0, "Invalid interdir for ibc mode");
-              CHECK(CU::isIBC(*pu.cu) && pu.refIdx[refList] != MAX_NUM_REF, "Invalid reference index for ibc mode");
+              CHECK(CU::isIBC(*pu.cu) && pu.refIdx[refList] != IBC_REF_IDX, "Invalid reference index for ibc mode");
               CHECK((CU::isInter(*pu.cu) && pu.refIdx[refList] >= localSlice.getNumRefIdx(eRefPicList)),
                     "Invalid reference index");
             }
