@@ -90,7 +90,7 @@ public:
   //interface
   void createEncData(bool isPreDBFSamplesUsed, uint32_t numCTUsPic);
   void destroyEncData();
-  void initCABACEstimator(CABACEncoder *cabacEncoder, CtxCache *ctxCache, Slice *pcSlice);
+  void initCABACEstimator(CABACEncoder *cabacEncoder, CtxPool *ctxPool, Slice *pcSlice);
   void SAOProcess(CodingStructure &cs, bool *sliceEnabled, const double *lambdas,
 #if ENABLE_QPA
                   const double lambdaChromaWeight,
@@ -143,7 +143,7 @@ private:   // methods
 private: //members
   //for RDO
   CABACWriter *m_CABACEstimator{ nullptr };
-  CtxCache    *m_CtxCache{ nullptr };
+  CtxPool     *m_ctxPool{ nullptr };
   double       m_lambda[MAX_NUM_COMPONENT];
 
   //statistics

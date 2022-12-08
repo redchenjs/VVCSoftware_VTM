@@ -251,7 +251,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   }
   else
   {
-    cs = new CodingStructure( g_globalUnitCache.cuCache, g_globalUnitCache.puCache, g_globalUnitCache.tuCache );
+    cs      = new CodingStructure(g_xuPool);
     cs->sps = &sps;
 #if GDR_ENABLED
     cs->create(chromaFormatIDC, Area(0, 0, width, height), true, (bool)sps.getPLTMode(), sps.getGDREnabledFlag());

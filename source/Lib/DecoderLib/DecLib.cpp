@@ -1051,7 +1051,7 @@ void  DecLib::xCreateUnavailablePicture( const PPS *pps, const int iUnavailableP
   auto const sps = m_parameterSetManager.getSPS(pps->getSPSId());
   Picture* cFillPic = xGetNewPicBuffer( *sps, *pps, 0, layerId );
 
-  cFillPic->cs = new CodingStructure( g_globalUnitCache.cuCache, g_globalUnitCache.puCache, g_globalUnitCache.tuCache );
+  cFillPic->cs      = new CodingStructure(g_xuPool);
   cFillPic->cs->sps = sps;
   cFillPic->cs->pps = pps;
   cFillPic->cs->vps = m_parameterSetManager.getVPS(sps->getVPSId());

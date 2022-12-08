@@ -791,12 +791,12 @@ void EncAdaptiveLoopFilter::destroy()
   AdaptiveLoopFilter::destroy();
 }
 
-void EncAdaptiveLoopFilter::initCABACEstimator( CABACEncoder* cabacEncoder, CtxCache* ctxCache, Slice* pcSlice
-, ParameterSetMap<APS>* apsMap )
+void EncAdaptiveLoopFilter::initCABACEstimator(CABACEncoder *cabacEncoder, CtxPool *ctxPool, Slice *pcSlice,
+                                               ParameterSetMap<APS> *apsMap)
 {
   m_apsMap = apsMap;
   m_CABACEstimator = cabacEncoder->getCABACEstimator( pcSlice->getSPS() );
-  m_CtxCache = ctxCache;
+  m_ctxPool        = ctxPool;
   m_CABACEstimator->initCtxModels( *pcSlice );
   m_CABACEstimator->resetBits();
 }
@@ -897,9 +897,9 @@ void EncAdaptiveLoopFilter::ALFProcess(CodingStructure& cs, const double *lambda
   }
   AlfParam alfParam;
   alfParam.reset();
-  const TempCtx  ctxStart(m_CtxCache, AlfCtx(m_CABACEstimator->getCtx()));
+  const TempCtx ctxStart(m_ctxPool, AlfCtx(m_CABACEstimator->getCtx()));
 
-  const TempCtx ctxStartCcAlf(m_CtxCache, SubCtx(Ctx::CcAlfFilterControlFlag, m_CABACEstimator->getCtx()));
+  const TempCtx ctxStartCcAlf(m_ctxPool, SubCtx(Ctx::CcAlfFilterControlFlag, m_CABACEstimator->getCtx()));
 
   // set available filter shapes
   alfParam.filterShapes = m_filterShapes;
@@ -1108,10 +1108,10 @@ double EncAdaptiveLoopFilter::deriveCtbAlfEnableFlags(CodingStructure &cs, const
 #endif
                                                       const int numClasses, const int numCoeff, double &distUnfilter)
 {
-  TempCtx        ctxTempStart( m_CtxCache );
-  TempCtx        ctxTempBest( m_CtxCache );
-  TempCtx        ctxTempAltStart( m_CtxCache );
-  TempCtx        ctxTempAltBest( m_CtxCache );
+  TempCtx           ctxTempStart(m_ctxPool);
+  TempCtx           ctxTempBest(m_ctxPool);
+  TempCtx           ctxTempAltStart(m_ctxPool);
+  TempCtx           ctxTempAltBest(m_ctxPool);
   const ComponentID compIDFirst = isLuma( channel ) ? COMPONENT_Y : COMPONENT_Cb;
   const ComponentID compIDLast = isLuma( channel ) ? COMPONENT_Y : COMPONENT_Cr;
   const int numAlts = isLuma( channel ) ? 1 : m_alfParamTemp.numAlternativesChroma;
@@ -1235,8 +1235,8 @@ void EncAdaptiveLoopFilter::alfEncoder( CodingStructure& cs, AlfParam& alfParam,
 #endif
                                       )
 {
-  const TempCtx  ctxStart( m_CtxCache, AlfCtx( m_CABACEstimator->getCtx() ) );
-  TempCtx        ctxBest( m_CtxCache );
+  const TempCtx ctxStart(m_ctxPool, AlfCtx(m_CABACEstimator->getCtx()));
+  TempCtx       ctxBest(m_ctxPool);
 
   double costMin = MAX_DOUBLE;
 
@@ -2643,12 +2643,12 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
 #endif
 )
 {
-  TempCtx        ctxStart(m_CtxCache, AlfCtx(m_CABACEstimator->getCtx()));
-  TempCtx        ctxBest(m_CtxCache);
-  TempCtx        ctxTempStart(m_CtxCache);
-  TempCtx        ctxTempBest(m_CtxCache);
-  TempCtx        ctxTempAltStart( m_CtxCache );
-  TempCtx        ctxTempAltBest( m_CtxCache );
+  TempCtx        ctxStart(m_ctxPool, AlfCtx(m_CABACEstimator->getCtx()));
+  TempCtx        ctxBest(m_ctxPool);
+  TempCtx        ctxTempStart(m_ctxPool);
+  TempCtx        ctxTempBest(m_ctxPool);
+  TempCtx        ctxTempAltStart(m_ctxPool);
+  TempCtx        ctxTempAltBest(m_ctxPool);
   AlfParam  alfParamNewFiltersBest = alfParamNewFilters;
   APS**          apss = cs.slice->getAlfAPSs();
   short*     alfCtbFilterSetIndex = cs.picture->getAlfCtbFilterIndex();
@@ -3516,9 +3516,9 @@ void EncAdaptiveLoopFilter::determineControlIdcValues(CodingStructure &cs, const
   double prevRate = curTotalRate;
 #endif
 
-  TempCtx ctxInitial(m_CtxCache);
-  TempCtx ctxBest(m_CtxCache);
-  TempCtx ctxStart(m_CtxCache);
+  TempCtx ctxInitial(m_ctxPool);
+  TempCtx ctxBest(m_ctxPool);
+  TempCtx ctxStart(m_ctxPool);
   ctxInitial = SubCtx(Ctx::CcAlfFilterControlFlag, m_CABACEstimator->getCtx());
   ctxBest    = SubCtx(Ctx::CcAlfFilterControlFlag, m_CABACEstimator->getCtx());
 
@@ -3758,7 +3758,8 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilter( CodingStructure& cs, ComponentID 
   int ccalfReuseApsId      = -1;
   m_reuseApsId[compID - 1] = -1;
 
-  const TempCtx ctxStartCcAlfFilterControlFlag  ( m_CtxCache, SubCtx( Ctx::CcAlfFilterControlFlag, m_CABACEstimator->getCtx() ) );
+  const TempCtx ctxStartCcAlfFilterControlFlag(m_ctxPool,
+                                               SubCtx(Ctx::CcAlfFilterControlFlag, m_CABACEstimator->getCtx()));
 
   // compute cost of not filtering
   uint64_t unfilteredDistortion = 0;

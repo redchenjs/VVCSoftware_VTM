@@ -98,8 +98,8 @@ void EncCu::create( EncCfg* encCfg )
 
       if( gp_sizeIdxInfo->isCuSize( width ) && gp_sizeIdxInfo->isCuSize( height ) )
       {
-        m_pTempCS[w][h] = new CodingStructure( m_unitCache.cuCache, m_unitCache.puCache, m_unitCache.tuCache );
-        m_pBestCS[w][h] = new CodingStructure( m_unitCache.cuCache, m_unitCache.puCache, m_unitCache.tuCache );
+        m_pTempCS[w][h] = new CodingStructure(m_unitPool);
+        m_pBestCS[w][h] = new CodingStructure(m_unitPool);
 
 #if GDR_ENABLED
         m_pTempCS[w][h]->create(chromaFormat, Area(0, 0, width, height), false, (bool)encCfg->getPLTMode(), encCfg->getGdrEnabled());
@@ -109,8 +109,8 @@ void EncCu::create( EncCfg* encCfg )
         m_pBestCS[w][h]->create(chromaFormat, Area(0, 0, width, height), false, (bool)encCfg->getPLTMode());
 #endif
 
-        m_pTempCS2[w][h] = new CodingStructure( m_unitCache.cuCache, m_unitCache.puCache, m_unitCache.tuCache );
-        m_pBestCS2[w][h] = new CodingStructure( m_unitCache.cuCache, m_unitCache.puCache, m_unitCache.tuCache );
+        m_pTempCS2[w][h] = new CodingStructure(m_unitPool);
+        m_pBestCS2[w][h] = new CodingStructure(m_unitPool);
 
 #if GDR_ENABLED
         m_pTempCS2[w][h]->create(chromaFormat, Area(0, 0, width, height), false, (bool)encCfg->getPLTMode(), encCfg->getGdrEnabled());
@@ -249,7 +249,7 @@ void EncCu::init( EncLib* pcEncLib, const SPS& sps )
   m_pcRdCost           = pcEncLib->getRdCost ();
   m_CABACEstimator     = pcEncLib->getCABACEncoder()->getCABACEstimator( &sps );
   m_CABACEstimator->setEncCu(this);
-  m_CtxCache           = pcEncLib->getCtxCache();
+  m_ctxPool            = pcEncLib->getCtxCache();
   m_pcRateCtrl         = pcEncLib->getRateCtrl();
   m_pcSliceEncoder     = pcEncLib->getSliceEncoder();
   m_deblockingFilter   = pcEncLib->getDeblockingFilter();
@@ -1134,11 +1134,11 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
 
   m_CABACEstimator->getCtx() = m_CurrCtx->start;
 
-  const TempCtx ctxStartSP( m_CtxCache, SubCtx( Ctx::SplitFlag,   m_CABACEstimator->getCtx() ) );
-  const TempCtx ctxStartQt( m_CtxCache, SubCtx( Ctx::SplitQtFlag, m_CABACEstimator->getCtx() ) );
-  const TempCtx ctxStartHv( m_CtxCache, SubCtx( Ctx::SplitHvFlag, m_CABACEstimator->getCtx() ) );
-  const TempCtx ctxStart12( m_CtxCache, SubCtx( Ctx::Split12Flag, m_CABACEstimator->getCtx() ) );
-  const TempCtx ctxStartMC( m_CtxCache, SubCtx( Ctx::ModeConsFlag, m_CABACEstimator->getCtx() ) );
+  const TempCtx ctxStartSP(m_ctxPool, SubCtx(Ctx::SplitFlag, m_CABACEstimator->getCtx()));
+  const TempCtx ctxStartQt(m_ctxPool, SubCtx(Ctx::SplitQtFlag, m_CABACEstimator->getCtx()));
+  const TempCtx ctxStartHv(m_ctxPool, SubCtx(Ctx::SplitHvFlag, m_CABACEstimator->getCtx()));
+  const TempCtx ctxStart12(m_ctxPool, SubCtx(Ctx::Split12Flag, m_CABACEstimator->getCtx()));
+  const TempCtx ctxStartMC(m_ctxPool, SubCtx(Ctx::ModeConsFlag, m_CABACEstimator->getCtx()));
   m_CABACEstimator->resetBits();
 
   m_CABACEstimator->split_cu_mode( split, *tempCS, partitioner );
@@ -2058,7 +2058,7 @@ void EncCu::xCheckDQP( CodingStructure& cs, Partitioner& partitioner, bool bKeep
 
   if( hasResidual )
   {
-    TempCtx ctxTemp( m_CtxCache );
+    TempCtx ctxTemp(m_ctxPool);
     if (!bKeepCtx)
     {
       ctxTemp = SubCtx(Ctx::DeltaQP, m_CABACEstimator->getCtx());
@@ -2134,8 +2134,8 @@ void EncCu::xCheckChromaQPOffset( CodingStructure& cs, Partitioner& partitioner 
     if (isCoded)
     {
       // estimate cost for coding cu_chroma_qp_offset
-      TempCtx ctxTempAdjFlag( m_CtxCache );
-      TempCtx ctxTempAdjIdc( m_CtxCache );
+      TempCtx ctxTempAdjFlag(m_ctxPool);
+      TempCtx ctxTempAdjIdc(m_ctxPool);
       ctxTempAdjFlag = SubCtx( Ctx::ChromaQpAdjFlag, m_CABACEstimator->getCtx() );
       ctxTempAdjIdc = SubCtx( Ctx::ChromaQpAdjIdc,   m_CABACEstimator->getCtx() );
       m_CABACEstimator->resetBits();
@@ -2339,7 +2339,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
     {
       RdModeList.clear();
       mrgTempBufSet       = true;
-      const TempCtx ctxStart(m_CtxCache, m_CABACEstimator->getCtx());
+      const TempCtx ctxStart(m_ctxPool, m_CABACEstimator->getCtx());
 
       CodingUnit &cu      = tempCS->addCU( tempCS->area, partitioner.chType );
       const double sqrtLambdaForFirstPassIntra = m_pcRdCost->getMotionLambda( ) * FRAC_BITS_SCALE;

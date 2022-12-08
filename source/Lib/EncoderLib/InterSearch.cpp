@@ -95,7 +95,7 @@ InterSearch::InterSearch()
   , m_bipredSearchRange(0)
   , m_motionEstimationSearchMethod(MESEARCH_FULL)
   , m_CABACEstimator(nullptr)
-  , m_CtxCache(nullptr)
+  , m_ctxPool(nullptr)
   , m_pTempPel(nullptr)
   , m_isInitialized(false)
 {
@@ -198,7 +198,7 @@ InterSearch::~InterSearch()
 void InterSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, int searchRange, int bipredSearchRange,
                        MESearchMethod motionEstimationSearchMethod, bool useCompositeRef, const uint32_t maxCUWidth,
                        const uint32_t maxCUHeight, const uint32_t maxTotalCUDepth, RdCost *pcRdCost,
-                       CABACWriter *CABACEstimator, CtxCache *ctxCache, EncReshape *pcReshape)
+                       CABACWriter *CABACEstimator, CtxPool *ctxPool, EncReshape *pcReshape)
 {
   CHECK(m_isInitialized, "Already initialized");
   m_defaultCachedBvs.clear();
@@ -208,7 +208,7 @@ void InterSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, int searchRange, in
   m_bipredSearchRange            = bipredSearchRange;
   m_motionEstimationSearchMethod = motionEstimationSearchMethod;
   m_CABACEstimator               = CABACEstimator;
-  m_CtxCache                     = ctxCache;
+  m_ctxPool                      = ctxPool;
   m_useCompositeRef              = useCompositeRef;
   m_pcReshape                    = pcReshape;
 
@@ -9675,8 +9675,8 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
   Distortion uiSingleDistComp [3] = { 0, 0, 0 };
   uint64_t   uiSingleFracBits[3] = { 0, 0, 0 };
 
-  const TempCtx ctxStart  ( m_CtxCache, m_CABACEstimator->getCtx() );
-  TempCtx       ctxBest   ( m_CtxCache );
+  const TempCtx ctxStart(m_ctxPool, m_CABACEstimator->getCtx());
+  TempCtx       ctxBest(m_ctxPool);
 
   if (checkFull)
   {
@@ -10642,7 +10642,7 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
   orgResidual = m_colorTransResiBuf[0].getBuf(localUnitArea);
   orgResidual.copyFrom(cs.getResiBuf());
 
-  const TempCtx ctxStart(m_CtxCache, m_CABACEstimator->getCtx());
+  const TempCtx ctxStart(m_ctxPool, m_CABACEstimator->getCtx());
   int           numAllowedColorSpace = (colorTransAllowed ? 2 : 1);
   Distortion    zeroDistortion = 0;
 

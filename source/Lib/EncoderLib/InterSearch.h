@@ -161,7 +161,7 @@ protected:
 
   // RD computation
   CABACWriter*    m_CABACEstimator;
-  CtxCache*       m_CtxCache;
+  CtxPool        *m_ctxPool;
   DistParam       m_cDistParam;
 
   RefPicList      m_currRefPicList;
@@ -196,7 +196,7 @@ public:
   void init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, int searchRange, int bipredSearchRange,
             MESearchMethod motionEstimationSearchMethod, bool useCompositeRef, const uint32_t maxCUWidth,
             const uint32_t maxCUHeight, const uint32_t maxTotalCUDepth, RdCost *pcRdCost, CABACWriter *CABACEstimator,
-            CtxCache *ctxCache, EncReshape *m_pcReshape);
+            CtxPool *ctxPool, EncReshape *m_pcReshape);
 
   void destroy                      ();
 

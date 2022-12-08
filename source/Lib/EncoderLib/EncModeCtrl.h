@@ -876,7 +876,7 @@ private:
   Pel                *m_pPcmBuf;
   bool               *m_runType;
   CodingStructure     m_dummyCS;
-  XUCache             m_dummyCache;
+  XuPool              m_dummyPool;
 
 protected:
 
@@ -886,8 +886,7 @@ protected:
   bool setFromCs( const CodingStructure& cs, const Partitioner& partitioner );
   bool isValid  ( const CodingStructure &cs, const Partitioner &partitioner, int qp );
 public:
-
-  BestEncInfoCache() : m_slice_bencinf( nullptr ), m_dummyCS( m_dummyCache.cuCache, m_dummyCache.puCache, m_dummyCache.tuCache ) {}
+  BestEncInfoCache() : m_slice_bencinf(nullptr), m_dummyCS(m_dummyPool) {}
   virtual ~BestEncInfoCache() {}
   void     init     ( const Slice &slice );
   bool     setCsFrom( CodingStructure& cs, EncTestMode& testMode, const Partitioner& partitioner ) const;
