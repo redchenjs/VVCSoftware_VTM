@@ -214,21 +214,21 @@ struct MotionInfo
 
 class BcwMotionParam
 {
-  bool       m_readOnly[2][33];       // 2 RefLists, 33 RefFrams
-  Mv         m_mv[2][33];
-  Distortion m_dist[2][33];
+  bool       m_readOnly[2][MAX_NUM_REF];   // 2 RefLists, MAX_NUM_REF RefFrams
+  Mv         m_mv[2][MAX_NUM_REF];
+  Distortion m_dist[2][MAX_NUM_REF];
 
 #if GDR_ENABLED
-  bool       m_mvSolid[2][33];
+  bool m_mvSolid[2][MAX_NUM_REF];
 #endif
 
-  bool       m_readOnlyAffine[2][2][33];
-  Mv         m_mvAffine[2][2][33][3];
-  Distortion m_distAffine[2][2][33];
-  int        m_mvpIdx[2][2][33];
+  bool       m_readOnlyAffine[2][2][MAX_NUM_REF];
+  Mv         m_mvAffine[2][2][MAX_NUM_REF][3];
+  Distortion m_distAffine[2][2][MAX_NUM_REF];
+  int        m_mvpIdx[2][2][MAX_NUM_REF];
 
 #if GDR_ENABLED
-  bool       m_mvAffineSolid[2][2][33][3];
+  bool m_mvAffineSolid[2][2][MAX_NUM_REF][3];
 #endif
 
 public:
@@ -236,29 +236,29 @@ public:
   void reset()
   {
     Mv* pMv = &(m_mv[0][0]);
-    for (int ui = 0; ui < 1 * 2 * 33; ++ui, ++pMv)
+    for (int ui = 0; ui < 1 * 2 * MAX_NUM_REF; ++ui, ++pMv)
     {
       pMv->set(std::numeric_limits<int16_t>::max(), std::numeric_limits<int16_t>::max());
     }
 
     Mv* pAffineMv = &(m_mvAffine[0][0][0][0]);
-    for (int ui = 0; ui < 2 * 2 * 33 * 3; ++ui, ++pAffineMv)
+    for (int ui = 0; ui < 2 * 2 * MAX_NUM_REF * 3; ++ui, ++pAffineMv)
     {
       pAffineMv->set(0, 0);
     }
 
-    memset(m_readOnly, false, 2 * 33 * sizeof(bool));
-    memset(m_dist, -1, 2 * 33 * sizeof(Distortion));
-    memset(m_readOnlyAffine, false, 2 * 2 * 33 * sizeof(bool));
-    memset(m_distAffine, -1, 2 * 2 * 33 * sizeof(Distortion));
-    memset( m_mvpIdx, 0, 2 * 2 * 33 * sizeof( int ) );
+    memset(m_readOnly, false, 2 * MAX_NUM_REF * sizeof(bool));
+    memset(m_dist, -1, 2 * MAX_NUM_REF * sizeof(Distortion));
+    memset(m_readOnlyAffine, false, 2 * 2 * MAX_NUM_REF * sizeof(bool));
+    memset(m_distAffine, -1, 2 * 2 * MAX_NUM_REF * sizeof(Distortion));
+    memset(m_mvpIdx, 0, 2 * 2 * MAX_NUM_REF * sizeof(int));
 
 #if GDR_ENABLED
-    memset(m_mvSolid, true, 2 * 2 * 33 * sizeof(bool));
+    memset(m_mvSolid, true, 2 * 2 * MAX_NUM_REF * sizeof(bool));
 #endif
 
 #if GDR_ENABLED
-    memset(m_mvAffineSolid, true, 2 * 2 * 33 * sizeof(bool));
+    memset(m_mvAffineSolid, true, 2 * 2 * MAX_NUM_REF * sizeof(bool));
 #endif
   }
 
