@@ -1352,6 +1352,14 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setCropOffsetBottom                                  (m_cropOffsetBottom);
   m_cEncLib.setCalculateHdrMetrics                               (m_calculateHdrMetrics);
 #endif
+
+#if JVET_T0056_SEI_MANIFEST
+  m_cEncLib.setSEIManifestSEIEnabled(m_SEIManifestSEIEnabled);
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  m_cEncLib.setSEIPrefixIndicationSEIEnabled(m_SEIPrefixIndicationSEIEnabled);
+#endif
+
   m_cEncLib.setOPIEnabled                                         ( m_OPIEnabled );
   if (m_OPIEnabled)
   {

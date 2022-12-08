@@ -770,6 +770,12 @@ protected:
   int                   m_sariSarWidth;
   int                   m_sariSarHeight;
 
+#if JVET_T0056_SEI_MANIFEST
+  bool      m_SEIManifestSEIEnabled;
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  bool      m_SEIPrefixIndicationSEIEnabled;
+#endif 
   bool                  m_phaseIndicationSEIEnabledFullResolution;
   int                   m_piHorPhaseNumFullResolution;
   int                   m_piHorPhaseDenMinus1FullResolution;

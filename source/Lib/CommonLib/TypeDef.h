@@ -54,6 +54,8 @@
 
 // clang-format off
 
+#define JVET_T0056_SEI_MANIFEST                           1 // JVET-T0056: SEI manifest SEI message
+#define JVET_T0056_SEI_PREFIX_INDICATION                  1 // JVET-T0056: SEI prefix indication SEI message
 #define JVET_AB0080                                       1 // GOP-based RPR encoder control
 #if JVET_AB0080
 #define JVET_AB0080_CHROMA_QP_FIX                         1 // fix to align chroma QP changes with luma QP changes

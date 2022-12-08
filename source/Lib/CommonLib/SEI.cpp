@@ -415,6 +415,62 @@ bool SEIMultiviewAcquisitionInfo::isMAISameContent(SEIMultiviewAcquisitionInfo *
   return true;
 }
 
+#if JVET_T0056_SEI_MANIFEST
+SEIManifest::SEIManifestDescription SEIManifest::getSEIMessageDescription(const PayloadType payloadType)
+{
+  std::vector<PayloadType> necessary = { FRAME_PACKING, EQUIRECTANGULAR_PROJECTION, GENERALIZED_CUBEMAP_PROJECTION,
+                                       SPHERE_ROTATION, REGION_WISE_PACKING };
+
+  std::vector<PayloadType> undetermined = { USER_DATA_REGISTERED_ITU_T_T35, USER_DATA_UNREGISTERED };
+
+  for (auto pt : necessary) 
+  {
+    if (payloadType == pt) 
+    {
+      return NECESSARY_SEI_MESSAGE;
+    }
+  }
+  for (auto pt: undetermined)
+  {
+    if (payloadType == pt) 
+    {
+      return UNDETERMINED_SEI_MESSAGE;
+    } 
+  }
+  return UNNECESSARY_SEI_MESSAGE;
+}
+#endif
+
+#if JVET_T0056_SEI_PREFIX_INDICATION
+uint8_t SEIPrefixIndication::getNumsOfSeiPrefixIndications(const SEI *sei)
+{
+  PayloadType payloadType = sei->payloadType();
+  CHECK((payloadType == SEI_MANIFEST), "SEI_SPI should not include SEI_manfest");
+  CHECK((payloadType == SEI_PREFIX_INDICATION), "SEI_SPI should not include itself");
+
+  //Unable to determine how many indicators are needed, it will be determined in xWriteSEIPrefixIndication() return 3
+  std::vector<PayloadType> indicationN = { REGION_WISE_PACKING };   
+  // Need two indicators to finish writing the SEI prefix indication message(return 2)
+  std::vector<PayloadType> indication2 = { SPHERE_ROTATION };   
+
+  for (auto pt: indicationN)
+  {
+    if (payloadType == pt) 
+    {
+      return 3;
+    }
+  }
+  for (auto pt: indication2)
+  {
+    if (payloadType == pt)
+    {
+      return 2;
+    }
+  }
+  return 1;
+}
+#endif
+
 bool SEIMultiviewViewPosition::isMVPSameContent(SEIMultiviewViewPosition *mvpB)
 {
   if (!mvpB)
@@ -474,6 +530,12 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
     case SEI::ANNOTATED_REGIONS:                    return "Annotated Region";
     case SEI::SCALABILITY_DIMENSION_INFO:           return "Scalability dimension information";
     case SEI::EXTENDED_DRAP_INDICATION:             return "Extended DRAP indication";
+#if JVET_T0056_SEI_MANIFEST
+    case SEI::SEI_MANIFEST:                         return "SEI manifest";
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+    case SEI::SEI_PREFIX_INDICATION:                return "SEI prefix indication";
+#endif  
     case SEI::CONSTRAINED_RASL_ENCODING:            return "Constrained RASL encoding";
     case SEI::VDI_SEI_ENVELOPE:                     return "Video decoding interface SEI envelope";
     case SEI::SHUTTER_INTERVAL_INFO:                return "Shutter interval information";

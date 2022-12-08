@@ -1240,6 +1240,35 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SP
   }
 }
 
+#if JVET_T0056_SEI_MANIFEST
+void SEIEncoder::initSEISEIManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessages)
+{
+  assert(m_isInitialized);
+  assert(seiSeiManifest != NULL);
+  seiSeiManifest->m_manifestNumSeiMsgTypes = 0;
+  for (auto &it: seiMessages)
+  {
+    seiSeiManifest->m_manifestNumSeiMsgTypes += 1;
+    auto tempPayloadType = it->payloadType();
+    seiSeiManifest->m_manifestSeiPayloadType.push_back(tempPayloadType);
+    auto description = seiSeiManifest->getSEIMessageDescription(tempPayloadType);
+    seiSeiManifest->m_manifestSeiDescription.push_back(description);
+  }
+  CHECK(seiSeiManifest->m_manifestNumSeiMsgTypes == 0, "No SEI messages available");
+}
+#endif
+
+#if JVET_T0056_SEI_PREFIX_INDICATION
+void SEIEncoder::initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei)
+{
+  assert(m_isInitialized);
+  assert(seiSeiPrefixIndications != NULL);
+  seiSeiPrefixIndications->m_prefixSeiPayloadType = sei->payloadType(); 
+  seiSeiPrefixIndications->m_numSeiPrefixIndicationsMinus1 = seiSeiPrefixIndications->getNumsOfSeiPrefixIndications(sei) - 1; 
+  seiSeiPrefixIndications->m_payload = sei;
+}
+#endif   
+
 void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx)
 {
   CHECK(!(m_isInitialized), "Unspecified error");

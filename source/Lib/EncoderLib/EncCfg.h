@@ -840,6 +840,12 @@ protected:
   std::vector<uint32_t> m_driSEINonlinearModel;
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
 
+#if JVET_T0056_SEI_MANIFEST
+  bool m_SEIManifestSEIEnabled;
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  bool m_SEIPrefixIndicationSEIEnabled;
+#endif
   //SEI message processing order
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
@@ -2395,6 +2401,18 @@ public:
   int      getDriSEINonlinearNumMinus1() const                       { return m_driSEINonlinearNumMinus1; }
   void     setDriSEINonlinearModel(const std::vector<uint32_t>& driSEINonLinearModel) { m_driSEINonlinearModel = driSEINonLinearModel; }
   uint32_t getDriSEINonlinearModel(int idx) const                                                    { return m_driSEINonlinearModel[idx]; }
+ 
+#if JVET_T0056_SEI_MANIFEST
+  //SEI manifest
+  void setSEIManifestSEIEnabled(bool b) { m_SEIManifestSEIEnabled = b; }
+  bool getSEIManifestSEIEnabled() { return m_SEIManifestSEIEnabled; }
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  //SEI prefix indication
+  void setSEIPrefixIndicationSEIEnabled(bool b) { m_SEIPrefixIndicationSEIEnabled = b; }
+  bool getSEIPrefixIndicationSEIEnabled() { return m_SEIPrefixIndicationSEIEnabled; }
+#endif
+  
   void     setConstrainedRaslencoding(bool b)                        { m_constrainedRaslEncoding = b; }
   bool     getConstrainedRaslencoding()                              { return m_constrainedRaslEncoding; }
   void     setCraAPSreset(bool b)                                    { m_craAPSreset = b; }
