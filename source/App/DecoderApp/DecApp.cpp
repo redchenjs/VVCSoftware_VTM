@@ -574,7 +574,7 @@ uint32_t DecApp::decode()
 #if JVET_Z0120_SII_SEI_PROCESSING
       PicList::iterator iterPic = pcListPic->begin();
       Picture* pcPic = *(iterPic);
-      SEIMessages shutterIntervalInfo = getSeisByType(pcPic->SEIs, SEI::SHUTTER_INTERVAL_INFO);
+      SEIMessages       shutterIntervalInfo = getSeisByType(pcPic->SEIs, SEI::PayloadType::SHUTTER_INTERVAL_INFO);
 
       if (!m_shutterIntervalPostFileName.empty())
       {
@@ -1475,7 +1475,7 @@ void DecApp::xOutputAnnotatedRegions(PicList* pcListPic)
     if (pcPic->neededForOutput)
     {
       // Check if any annotated region SEI has arrived
-      SEIMessages annotatedRegionSEIs = getSeisByType(pcPic->SEIs, SEI::ANNOTATED_REGIONS);
+      SEIMessages annotatedRegionSEIs = getSeisByType(pcPic->SEIs, SEI::PayloadType::ANNOTATED_REGIONS);
       for(auto it=annotatedRegionSEIs.begin(); it!=annotatedRegionSEIs.end(); it++)
       {
         const SEIAnnotatedRegions &seiAnnotatedRegions = *(SEIAnnotatedRegions*)(*it);

@@ -144,9 +144,9 @@ void SEIReader::parseSEImessage(InputBitstream* bs, SEIMessages& seis, const Nal
   }
   while (m_pcBitstream->getNumBitsLeft() > 8);
 
-  const SEIMessages fillerData = getSeisByType(seiListInCurNalu, SEI::FILLER_PAYLOAD);
+  const SEIMessages fillerData = getSeisByType(seiListInCurNalu, SEI::PayloadType::FILLER_PAYLOAD);
   CHECK(fillerData.size() > 0 && fillerData.size() != seiListInCurNalu.size(), "When an SEI NAL unit contains an SEI message with payloadType equal to filler payload, the SEI NAL unit shall not contain any other SEI message with payloadType not equal to filler payload");
-  const SEIMessages pictureTiming = getSeisByType(seiListInCurNalu, SEI::PICTURE_TIMING);
+  const SEIMessages pictureTiming = getSeisByType(seiListInCurNalu, SEI::PayloadType::PICTURE_TIMING);
   CHECK(hrd.getGeneralHrdParameters().getGeneralSamePicTimingInAllOlsFlag() && pictureTiming.size() > 0 && pictureTiming.size() != seiListInCurNalu.size(),
         "When general_same_pic_timing_in_all_ols_flag is equal to 1 [...], and when an SEI NAL unit contains a non-scalable-nested SEI message with "
         "payloadType equal to 1 (PT), the SEI NAL unit shall not contain any other SEI message with payloadType not equal 1.");
@@ -154,7 +154,9 @@ void SEIReader::parseSEImessage(InputBitstream* bs, SEIMessages& seis, const Nal
   xReadRbspTrailingBits();
 }
 
-void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream* bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const VPS* vps, const SPS* sps, HRD &hrd, uint32_t payloadSize, std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>> *seiList)
+void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream *bs, const NalUnitType nalUnitType,
+                                                  const uint32_t nuh_layer_id, const VPS *vps, const SPS *sps, HRD &hrd,
+                                                  uint32_t payloadSize, std::vector<SeiPayload> *seiList)
 {
   SEI *sei = nullptr;
   sei = new SEIScalableNesting;
@@ -255,17 +257,17 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
 
   if(nalUnitType == NAL_UNIT_PREFIX_SEI)
   {
-    switch (payloadType)
+    switch (SEI::PayloadType(payloadType))
     {
-    case SEI::FILLER_PAYLOAD:
+    case SEI::PayloadType::FILLER_PAYLOAD:
       sei = new SEIFillerPayload;
       xParseSEIFillerPayload((SEIFillerPayload&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::USER_DATA_UNREGISTERED:
+    case SEI::PayloadType::USER_DATA_UNREGISTERED:
       sei = new SEIuserDataUnregistered;
       xParseSEIuserDataUnregistered((SEIuserDataUnregistered&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::DECODING_UNIT_INFO:
+    case SEI::PayloadType::DECODING_UNIT_INFO:
       bp = hrd.getBufferingPeriodSEI();
       if (!bp)
       {
@@ -277,177 +279,186 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
         xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo&) *sei, payloadSize, *bp, temporalId, pDecodedMessageOutputStream);
       }
       break;
-    case SEI::BUFFERING_PERIOD:
+    case SEI::PayloadType::BUFFERING_PERIOD:
       sei = new SEIBufferingPeriod;
       xParseSEIBufferingPeriod((SEIBufferingPeriod&) *sei, payloadSize, pDecodedMessageOutputStream);
       hrd.setBufferingPeriodSEI((SEIBufferingPeriod*) sei);
       break;
-    case SEI::PICTURE_TIMING:
+    case SEI::PayloadType::PICTURE_TIMING:
+      bp = hrd.getBufferingPeriodSEI();
+      if (!bp)
       {
-        bp = hrd.getBufferingPeriodSEI();
-        if (!bp)
-        {
-          msg( WARNING, "Warning: Found Picture timing SEI message, but no active buffering period is available. Ignoring.");
-        }
-        else
-        {
-          sei = new SEIPictureTiming;
-          xParseSEIPictureTiming((SEIPictureTiming&)*sei, payloadSize, temporalId, *bp, pDecodedMessageOutputStream);
-          hrd.setPictureTimingSEI( (SEIPictureTiming*) sei );
-        }
+        msg(WARNING,
+            "Warning: Found Picture timing SEI message, but no active buffering period is available. Ignoring.");
+      }
+      else
+      {
+        sei = new SEIPictureTiming;
+        xParseSEIPictureTiming((SEIPictureTiming &) *sei, payloadSize, temporalId, *bp, pDecodedMessageOutputStream);
+        hrd.setPictureTimingSEI((SEIPictureTiming *) sei);
       }
       break;
-    case SEI::SCALABLE_NESTING:
+    case SEI::PayloadType::SCALABLE_NESTING:
       sei = new SEIScalableNesting;
-      xParseSEIScalableNesting((SEIScalableNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd, pDecodedMessageOutputStream);
+      xParseSEIScalableNesting((SEIScalableNesting &) *sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
+                               pDecodedMessageOutputStream);
       break;
-    case SEI::FRAME_FIELD_INFO:
+    case SEI::PayloadType::FRAME_FIELD_INFO:
       sei = new SEIFrameFieldInfo;
-      xParseSEIFrameFieldinfo((SEIFrameFieldInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIFrameFieldinfo((SEIFrameFieldInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::DEPENDENT_RAP_INDICATION:
+    case SEI::PayloadType::DEPENDENT_RAP_INDICATION:
       sei = new SEIDependentRAPIndication;
-      xParseSEIDependentRAPIndication((SEIDependentRAPIndication&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIDependentRAPIndication((SEIDependentRAPIndication &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::EXTENDED_DRAP_INDICATION:
+    case SEI::PayloadType::EXTENDED_DRAP_INDICATION:
       sei = new SEIExtendedDrapIndication;
-      xParseSEIExtendedDrapIndication((SEIExtendedDrapIndication&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIExtendedDrapIndication((SEIExtendedDrapIndication &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::FRAME_PACKING:
+    case SEI::PayloadType::FRAME_PACKING:
       sei = new SEIFramePacking;
-      xParseSEIFramePacking((SEIFramePacking&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIFramePacking((SEIFramePacking &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::DISPLAY_ORIENTATION:
+    case SEI::PayloadType::DISPLAY_ORIENTATION:
       sei = new SEIDisplayOrientation;
-      xParseSEIDisplayOrientation((SEIDisplayOrientation&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIDisplayOrientation((SEIDisplayOrientation &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::ANNOTATED_REGIONS:
+    case SEI::PayloadType::ANNOTATED_REGIONS:
       sei = new SEIAnnotatedRegions;
-      xParseSEIAnnotatedRegions((SEIAnnotatedRegions&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIAnnotatedRegions((SEIAnnotatedRegions &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::PARAMETER_SETS_INCLUSION_INDICATION:
+    case SEI::PayloadType::PARAMETER_SETS_INCLUSION_INDICATION:
       sei = new SEIParameterSetsInclusionIndication;
-      xParseSEIParameterSetsInclusionIndication((SEIParameterSetsInclusionIndication&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIParameterSetsInclusionIndication((SEIParameterSetsInclusionIndication &) *sei, payloadSize,
+                                                pDecodedMessageOutputStream);
       break;
-    case SEI::MASTERING_DISPLAY_COLOUR_VOLUME:
+    case SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME:
       sei = new SEIMasteringDisplayColourVolume;
-      xParseSEIMasteringDisplayColourVolume((SEIMasteringDisplayColourVolume&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIMasteringDisplayColourVolume((SEIMasteringDisplayColourVolume &) *sei, payloadSize,
+                                            pDecodedMessageOutputStream);
       break;
-    case SEI::ALTERNATIVE_TRANSFER_CHARACTERISTICS:
+    case SEI::PayloadType::ALTERNATIVE_TRANSFER_CHARACTERISTICS:
       sei = new SEIAlternativeTransferCharacteristics;
-      xParseSEIAlternativeTransferCharacteristics((SEIAlternativeTransferCharacteristics&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIAlternativeTransferCharacteristics((SEIAlternativeTransferCharacteristics &) *sei, payloadSize,
+                                                  pDecodedMessageOutputStream);
       break;
-    case SEI::EQUIRECTANGULAR_PROJECTION:
+    case SEI::PayloadType::EQUIRECTANGULAR_PROJECTION:
       sei = new SEIEquirectangularProjection;
-      xParseSEIEquirectangularProjection((SEIEquirectangularProjection&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIEquirectangularProjection((SEIEquirectangularProjection &) *sei, payloadSize,
+                                         pDecodedMessageOutputStream);
       break;
-    case SEI::SPHERE_ROTATION:
+    case SEI::PayloadType::SPHERE_ROTATION:
       sei = new SEISphereRotation;
-      xParseSEISphereRotation((SEISphereRotation&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEISphereRotation((SEISphereRotation &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::OMNI_VIEWPORT:
+    case SEI::PayloadType::OMNI_VIEWPORT:
       sei = new SEIOmniViewport;
-      xParseSEIOmniViewport((SEIOmniViewport&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIOmniViewport((SEIOmniViewport &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::REGION_WISE_PACKING:
+    case SEI::PayloadType::REGION_WISE_PACKING:
       sei = new SEIRegionWisePacking;
-      xParseSEIRegionWisePacking((SEIRegionWisePacking&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIRegionWisePacking((SEIRegionWisePacking &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::GENERALIZED_CUBEMAP_PROJECTION:
+    case SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION:
       sei = new SEIGeneralizedCubemapProjection;
-      xParseSEIGeneralizedCubemapProjection((SEIGeneralizedCubemapProjection&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIGeneralizedCubemapProjection((SEIGeneralizedCubemapProjection &) *sei, payloadSize,
+                                            pDecodedMessageOutputStream);
       break;
-    case SEI::SCALABILITY_DIMENSION_INFO:
+    case SEI::PayloadType::SCALABILITY_DIMENSION_INFO:
       sei = new SEIScalabilityDimensionInfo;
-      xParseSEIScalabilityDimensionInfo((SEIScalabilityDimensionInfo&) *sei, payloadSize, pDecodedMessageOutputStream );
+      xParseSEIScalabilityDimensionInfo((SEIScalabilityDimensionInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::GREEN_METADATA:
+    case SEI::PayloadType::GREEN_METADATA:
       sei = new SEIGreenMetadataInfo;
-      xParseSEIGreenMetadataInfo((SEIGreenMetadataInfo&) *sei,  payloadSize, pDecodedMessageOutputStream);
+      xParseSEIGreenMetadataInfo((SEIGreenMetadataInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::MULTIVIEW_ACQUISITION_INFO:
+    case SEI::PayloadType::MULTIVIEW_ACQUISITION_INFO:
       sei = new SEIMultiviewAcquisitionInfo;
-      xParseSEIMultiviewAcquisitionInfo((SEIMultiviewAcquisitionInfo&) *sei, payloadSize, pDecodedMessageOutputStream );
+      xParseSEIMultiviewAcquisitionInfo((SEIMultiviewAcquisitionInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::MULTIVIEW_VIEW_POSITION:
+    case SEI::PayloadType::MULTIVIEW_VIEW_POSITION:
       sei = new SEIMultiviewViewPosition;
-      xParseSEIMultiviewViewPosition((SEIMultiviewViewPosition&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIMultiviewViewPosition((SEIMultiviewViewPosition &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::ALPHA_CHANNEL_INFO:
+    case SEI::PayloadType::ALPHA_CHANNEL_INFO:
       sei = new SEIAlphaChannelInfo;
-      xParseSEIAlphaChannelInfo((SEIAlphaChannelInfo&) *sei, payloadSize, pDecodedMessageOutputStream );
+      xParseSEIAlphaChannelInfo((SEIAlphaChannelInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::DEPTH_REPRESENTATION_INFO:
+    case SEI::PayloadType::DEPTH_REPRESENTATION_INFO:
       sei = new SEIDepthRepresentationInfo;
-      xParseSEIDepthRepresentationInfo((SEIDepthRepresentationInfo&) *sei, payloadSize, pDecodedMessageOutputStream );
+      xParseSEIDepthRepresentationInfo((SEIDepthRepresentationInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::SUBPICTURE_LEVEL_INFO:
+    case SEI::PayloadType::SUBPICTURE_LEVEL_INFO:
       sei = new SEISubpicureLevelInfo;
-      xParseSEISubpictureLevelInfo((SEISubpicureLevelInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEISubpictureLevelInfo((SEISubpicureLevelInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::SAMPLE_ASPECT_RATIO_INFO:
+    case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
       sei = new SEISampleAspectRatioInfo;
-      xParseSEISampleAspectRatioInfo((SEISampleAspectRatioInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEISampleAspectRatioInfo((SEISampleAspectRatioInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::USER_DATA_REGISTERED_ITU_T_T35:
+    case SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35:
       sei = new SEIUserDataRegistered;
-      xParseSEIUserDataRegistered((SEIUserDataRegistered&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIUserDataRegistered((SEIUserDataRegistered &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::FILM_GRAIN_CHARACTERISTICS:
+    case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
       sei = new SEIFilmGrainCharacteristics;
-      xParseSEIFilmGrainCharacteristics((SEIFilmGrainCharacteristics&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIFilmGrainCharacteristics((SEIFilmGrainCharacteristics &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::CONTENT_LIGHT_LEVEL_INFO:
+    case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
       sei = new SEIContentLightLevelInfo;
-      xParseSEIContentLightLevelInfo((SEIContentLightLevelInfo&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIContentLightLevelInfo((SEIContentLightLevelInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::AMBIENT_VIEWING_ENVIRONMENT:
+    case SEI::PayloadType::AMBIENT_VIEWING_ENVIRONMENT:
       sei = new SEIAmbientViewingEnvironment;
-      xParseSEIAmbientViewingEnvironment((SEIAmbientViewingEnvironment&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIAmbientViewingEnvironment((SEIAmbientViewingEnvironment &) *sei, payloadSize,
+                                         pDecodedMessageOutputStream);
       break;
-    case SEI::CONTENT_COLOUR_VOLUME:
+    case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
       sei = new SEIContentColourVolume;
-      xParseSEIContentColourVolume((SEIContentColourVolume&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIContentColourVolume((SEIContentColourVolume &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::COLOUR_TRANSFORM_INFO:
+    case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
       sei = new SEIColourTransformInfo;
-      xParseSEIColourTransformInfo((SEIColourTransformInfo&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIColourTransformInfo((SEIColourTransformInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #if JVET_T0056_SEI_MANIFEST
-    case SEI::SEI_MANIFEST:
+    case SEI::PayloadType::SEI_MANIFEST:
       sei = new SEIManifest;
       xParseSEISEIManifest((SEIManifest&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
-    case SEI::SEI_PREFIX_INDICATION:
+    case SEI::PayloadType::SEI_PREFIX_INDICATION:
       sei = new SEIPrefixIndication;
       xParseSEISEIPrefixIndication((SEIPrefixIndication&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif 
-    case SEI::CONSTRAINED_RASL_ENCODING:
+#endif
+    case SEI::PayloadType::CONSTRAINED_RASL_ENCODING:
       sei = new SEIConstrainedRaslIndication;
-      xParseSEIConstrainedRaslIndication((SEIConstrainedRaslIndication&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIConstrainedRaslIndication((SEIConstrainedRaslIndication &) *sei, payloadSize,
+                                         pDecodedMessageOutputStream);
       break;
-    case SEI::SHUTTER_INTERVAL_INFO:
+    case SEI::PayloadType::SHUTTER_INTERVAL_INFO:
       sei = new SEIShutterIntervalInfo;
-      xParseSEIShutterInterval((SEIShutterIntervalInfo&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIShutterInterval((SEIShutterIntervalInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
+    case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
       sei = new SEINeuralNetworkPostFilterCharacteristics;
-      xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics&)*sei, payloadSize, sps, pDecodedMessageOutputStream);
+      xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics &) *sei, payloadSize, sps,
+                                           pDecodedMessageOutputStream);
       break;
-    case SEI::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
+    case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
       sei = new SEINeuralNetworkPostFilterActivation;
-      xParseSEINNPostFilterActivation((SEINeuralNetworkPostFilterActivation&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEINNPostFilterActivation((SEINeuralNetworkPostFilterActivation &) *sei, payloadSize,
+                                      pDecodedMessageOutputStream);
       break;
-    case SEI::PHASE_INDICATION:
+    case SEI::PayloadType::PHASE_INDICATION:
       sei = new SEIPhaseIndication;
-      xParseSEIPhaseIndication((SEIPhaseIndication&)*sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIPhaseIndication((SEIPhaseIndication &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::SEI_PROCESSING_ORDER:
+    case SEI::PayloadType::SEI_PROCESSING_ORDER:
       sei = new SEIProcessingOrderInfo;
-      xParseSEIProcessingOrder((SEIProcessingOrderInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIProcessingOrder((SEIProcessingOrderInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
@@ -455,46 +466,49 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
         uint32_t seiByte;
         sei_read_code(nullptr, 8, seiByte, "unknown prefix SEI payload byte");
       }
-      msg( WARNING, "Unknown prefix SEI message (payloadType = %d) was found!\n", payloadType);
+      msg(WARNING, "Unknown prefix SEI message (payloadType = %d) was found!\n", payloadType);
       if (pDecodedMessageOutputStream)
       {
-        (*pDecodedMessageOutputStream) << "Unknown prefix SEI message (payloadType = " << payloadType << ") was found!\n";
+        (*pDecodedMessageOutputStream) << "Unknown prefix SEI message (payloadType = " << payloadType
+                                       << ") was found!\n";
       }
       break;
     }
   }
   else
   {
-    switch (payloadType)
+    switch (SEI::PayloadType(payloadType))
     {
-      case SEI::USER_DATA_UNREGISTERED:
-        sei = new SEIuserDataUnregistered;
-        xParseSEIuserDataUnregistered((SEIuserDataUnregistered&) *sei, payloadSize, pDecodedMessageOutputStream);
-        break;
-      case SEI::DECODED_PICTURE_HASH:
-        sei = new SEIDecodedPictureHash;
-        xParseSEIDecodedPictureHash((SEIDecodedPictureHash&) *sei, payloadSize, pDecodedMessageOutputStream);
-        break;
-      case SEI::SCALABLE_NESTING:
-        sei = new SEIScalableNesting;
-        xParseSEIScalableNesting((SEIScalableNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd, pDecodedMessageOutputStream);
-        break;
-      case SEI::FILLER_PAYLOAD:
-        sei = new SEIFillerPayload;
-        xParseSEIFillerPayload((SEIFillerPayload&) *sei, payloadSize, pDecodedMessageOutputStream);
-        break;
-      default:
-        for (uint32_t i = 0; i < payloadSize; i++)
-        {
-          uint32_t seiByte;
-          sei_read_code(nullptr, 8, seiByte, "unknown suffix SEI payload byte");
-        }
-        msg( WARNING, "Unknown suffix SEI message (payloadType = %d) was found!\n", payloadType);
-        if (pDecodedMessageOutputStream)
-        {
-          (*pDecodedMessageOutputStream) << "Unknown suffix SEI message (payloadType = " << payloadType << ") was found!\n";
-        }
-        break;
+    case SEI::PayloadType::USER_DATA_UNREGISTERED:
+      sei = new SEIuserDataUnregistered;
+      xParseSEIuserDataUnregistered((SEIuserDataUnregistered &) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+    case SEI::PayloadType::DECODED_PICTURE_HASH:
+      sei = new SEIDecodedPictureHash;
+      xParseSEIDecodedPictureHash((SEIDecodedPictureHash &) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+    case SEI::PayloadType::SCALABLE_NESTING:
+      sei = new SEIScalableNesting;
+      xParseSEIScalableNesting((SEIScalableNesting &) *sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
+                               pDecodedMessageOutputStream);
+      break;
+    case SEI::PayloadType::FILLER_PAYLOAD:
+      sei = new SEIFillerPayload;
+      xParseSEIFillerPayload((SEIFillerPayload &) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+    default:
+      for (uint32_t i = 0; i < payloadSize; i++)
+      {
+        uint32_t seiByte;
+        sei_read_code(nullptr, 8, seiByte, "unknown suffix SEI payload byte");
+      }
+      msg(WARNING, "Unknown suffix SEI message (payloadType = %d) was found!\n", payloadType);
+      if (pDecodedMessageOutputStream)
+      {
+        (*pDecodedMessageOutputStream) << "Unknown suffix SEI message (payloadType = " << payloadType
+                                       << ") was found!\n";
+      }
+      break;
     }
   }
 
@@ -777,7 +791,7 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
   {
     SEIMessages tmpSEIs;
     xReadSEImessage(tmpSEIs, nalUnitType, nuhLayerId, 0, vps, sps, m_nestedHrd, decodedMessageOutputStream);
-    if (tmpSEIs.front()->payloadType() == SEI::BUFFERING_PERIOD)
+    if (tmpSEIs.front()->payloadType() == SEI::PayloadType::BUFFERING_PERIOD)
     {
       SEIBufferingPeriod *bp = (SEIBufferingPeriod*) tmpSEIs.front();
       m_nestedHrd.setBufferingPeriodSEI(bp);
@@ -944,7 +958,10 @@ void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t p
   }
 }
 
-void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD &hrd, std::ostream* decodedMessageOutputStream, std::vector<std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>> *seiList)
+void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const NalUnitType nalUnitType,
+                                               const uint32_t nuhLayerId, uint32_t payloadSize, const VPS *vps,
+                                               const SPS *sps, HRD &hrd, std::ostream *decodedMessageOutputStream,
+                                               std::vector<SeiPayload> *seiList)
 {
   uint32_t symbol;
   SEIMessages seis;
@@ -1024,13 +1041,15 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
   // read and save nested SEI messages in binary form
   for (int32_t i=0; i<sei.m_snNumSEIs; i++)
   {
-    int payloadType = 0;
+    int      payloadTypeVal = 0;
     uint32_t val = 0;
     do
     {
       sei_read_code(nullptr, 8, val, "payload_type");
-      payloadType += val;
+      payloadTypeVal += val;
     } while (val==0xFF);
+
+    auto payloadType = SEI::PayloadType(payloadTypeVal);
 
     uint32_t payloadSize = 0;
     do
@@ -1041,7 +1060,7 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
 
     uint8_t *payload = new uint8_t[payloadSize];
     int duiIdx = 0;
-    if (payloadType == SEI::DECODING_UNIT_INFO)
+    if (SEI::PayloadType(payloadType) == SEI::PayloadType::DECODING_UNIT_INFO)
     {
       const SEIBufferingPeriod *bp = nullptr;
       bp = hrd.getBufferingPeriodSEI();
@@ -1076,13 +1095,15 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
         {
           if (j == 0 && k == 0)
           {
-            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snOlsIdx[j], false, payloadSize, payload, duiIdx, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
+            seiList->push_back(SeiPayload{ payloadType, sei.m_snOlsIdx[j], false, payloadSize, payload, duiIdx,
+                                           sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0 });
           }
           else
           {
             uint8_t *payloadTemp = new uint8_t[payloadSize];
             memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snOlsIdx[j], false, payloadSize, payloadTemp, duiIdx, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
+            seiList->push_back(SeiPayload{ payloadType, sei.m_snOlsIdx[j], false, payloadSize, payloadTemp, duiIdx,
+                                           sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0 });
           }
         }
       }
@@ -1093,13 +1114,15 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
       {
         if (k == 0)
         {
-          seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, nuhLayerId, true, payloadSize, payload, duiIdx, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
+          seiList->push_back(SeiPayload{ payloadType, nuhLayerId, true, payloadSize, payload, duiIdx,
+                                         sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0 });
         }
         else
         {
           uint8_t *payloadTemp = new uint8_t[payloadSize];
           memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-          seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, nuhLayerId, true, payloadSize, payloadTemp, duiIdx, sei.m_snSubpicId[k]));
+          seiList->push_back(
+            SeiPayload{ payloadType, nuhLayerId, true, payloadSize, payloadTemp, duiIdx, sei.m_snSubpicId[k] });
         }
       }
     }
@@ -1111,13 +1134,15 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
         {
           if (j == 0 && k == 0)
           {
-            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snLayerId[j], false, payloadSize, payload, duiIdx, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
+            seiList->push_back(SeiPayload{ payloadType, sei.m_snLayerId[j], false, payloadSize, payload, duiIdx,
+                                           sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0 });
           }
           else
           {
             uint8_t *payloadTemp = new uint8_t[payloadSize];
             memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-            seiList->push_back(std::tuple<int, int, bool, uint32_t, uint8_t*, int, int>(payloadType, sei.m_snLayerId[j], false, payloadSize, payloadTemp, duiIdx, sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0));
+            seiList->push_back(SeiPayload{ payloadType, sei.m_snLayerId[j], false, payloadSize, payloadTemp, duiIdx,
+                                           sei.m_snSubpicFlag ? sei.m_snSubpicId[k] : 0 });
           }
         }
       }
@@ -1127,39 +1152,82 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sei, const Na
 
 void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, const NalUnitType nalUnitType, const VPS* vps)
 {
-  const std::vector<int> vclAssociatedSeiList { 3, 19, 45, 129, 137, 144, 145, 147, 148, 149, 150, 153, 154, 155, 156, 168, 204 };
+  const std::vector<SEI::PayloadType> vclAssociatedSeiList{
+    SEI::PayloadType::FILLER_PAYLOAD,
+    SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS,
+    SEI::PayloadType::FRAME_PACKING,
+    SEI::PayloadType::PARAMETER_SETS_INCLUSION_INDICATION,
+    SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME,
+    SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO,
+    SEI::PayloadType::DEPENDENT_RAP_INDICATION,
+    SEI::PayloadType::ALTERNATIVE_TRANSFER_CHARACTERISTICS,
+    SEI::PayloadType::AMBIENT_VIEWING_ENVIRONMENT,
+    SEI::PayloadType::CONTENT_COLOUR_VOLUME,
+    SEI::PayloadType::EQUIRECTANGULAR_PROJECTION,
+    SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION,
+    SEI::PayloadType::SPHERE_ROTATION,
+    SEI::PayloadType::REGION_WISE_PACKING,
+    SEI::PayloadType::OMNI_VIEWPORT,
+    SEI::PayloadType::FRAME_FIELD_INFO,
+    SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO,
+  };
 
   bool containBPorPTorDUIorSLI = false;
   bool containNoBPorPTorDUIorSLI = false;
 
   for (auto nestedsei : sei.m_nestedSEIs)
   {
-    CHECK(nestedsei->payloadType() == SEI::FILLER_PAYLOAD || nestedsei->payloadType() == SEI::SCALABLE_NESTING, "An SEI message that has payloadType equal to filler payload or scalable nesting shall not be contained in a scalable nesting SEI message");
+    CHECK(nestedsei->payloadType() == SEI::PayloadType::FILLER_PAYLOAD
+            || nestedsei->payloadType() == SEI::PayloadType::SCALABLE_NESTING,
+          "An SEI message that has payloadType equal to filler payload or scalable nesting shall not be contained in a "
+          "scalable nesting SEI message");
 
-    CHECK(nestedsei->payloadType() == SEI::SCALABILITY_DIMENSION_INFO, "A scalability dimension information SEI message shall not be contained in a scalable nesting SEI message");
-    CHECK(nestedsei->payloadType() == SEI::MULTIVIEW_ACQUISITION_INFO, "A multiview acquisition information SEI message shall not be contained in a scalable nesting SEI message");
+    CHECK(nestedsei->payloadType() == SEI::PayloadType::SCALABILITY_DIMENSION_INFO,
+          "A scalability dimension information SEI message shall not be contained in a scalable nesting SEI message");
+    CHECK(nestedsei->payloadType() == SEI::PayloadType::MULTIVIEW_ACQUISITION_INFO,
+          "A multiview acquisition information SEI message shall not be contained in a scalable nesting SEI message");
 
-    CHECK(nestedsei->payloadType() != SEI::FILLER_PAYLOAD && nestedsei->payloadType() != SEI::DECODED_PICTURE_HASH && nalUnitType != NAL_UNIT_PREFIX_SEI, "When a scalable nesting SEI message contains an SEI message that has payloadType not equal to filler payload or decoded picture hash, the SEI NAL unit containing the scalable nesting SEI message shall have nal_unit_type equal to PREFIX_SEI_NUT");
+    CHECK(nestedsei->payloadType() != SEI::PayloadType::FILLER_PAYLOAD
+            && nestedsei->payloadType() != SEI::PayloadType::DECODED_PICTURE_HASH && nalUnitType != NAL_UNIT_PREFIX_SEI,
+          "When a scalable nesting SEI message contains an SEI message that has payloadType not equal to filler "
+          "payload or decoded picture hash, the SEI NAL unit containing the scalable nesting SEI message shall have "
+          "nal_unit_type equal to PREFIX_SEI_NUT");
 
-    CHECK(nestedsei->payloadType() == SEI::DECODED_PICTURE_HASH && nalUnitType != NAL_UNIT_SUFFIX_SEI, "When a scalable nesting SEI message contains an SEI message that has payloadType equal to decoded picture hash, the SEI NAL unit containing the scalable nesting SEI message shall have nal_unit_type equal to SUFFIX_SEI_NUT");
+    CHECK(
+      nestedsei->payloadType() == SEI::PayloadType::DECODED_PICTURE_HASH && nalUnitType != NAL_UNIT_SUFFIX_SEI,
+      "When a scalable nesting SEI message contains an SEI message that has payloadType equal to decoded picture hash, "
+      "the SEI NAL unit containing the scalable nesting SEI message shall have nal_unit_type equal to SUFFIX_SEI_NUT");
 
-    CHECK(nestedsei->payloadType() == SEI::DECODED_PICTURE_HASH && !sei.m_snSubpicFlag, "When the scalable nesting SEI message contains an SEI message that has payloadType equal to decoded picture hash, the value of sn_subpic_flag shall be equal to 1");
+    CHECK(nestedsei->payloadType() == SEI::PayloadType::DECODED_PICTURE_HASH && !sei.m_snSubpicFlag,
+          "When the scalable nesting SEI message contains an SEI message that has payloadType equal to decoded picture "
+          "hash, the value of sn_subpic_flag shall be equal to 1");
 
-    CHECK(nestedsei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO && sei.m_snSubpicFlag, "When the scalable nesting SEI message contains an SEI message that has payloadType equal to SLI, the value of sn_subpic_flag shall be equal to 0");
+    CHECK(nestedsei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO && sei.m_snSubpicFlag,
+          "When the scalable nesting SEI message contains an SEI message that has payloadType equal to SLI, the value "
+          "of sn_subpic_flag shall be equal to 0");
 
-    CHECK(vps->getGeneralHrdParameters()->getGeneralSamePicTimingInAllOlsFlag() && nestedsei->payloadType() == SEI::PICTURE_TIMING, "When general_same_pic_timing_in_all_ols_flag is equal to 1, there shall be no SEI NAL unit that contain a scalable-nested SEI message with payloadType equal to PT");
+    CHECK(vps->getGeneralHrdParameters()->getGeneralSamePicTimingInAllOlsFlag()
+            && nestedsei->payloadType() == SEI::PayloadType::PICTURE_TIMING,
+          "When general_same_pic_timing_in_all_ols_flag is equal to 1, there shall be no SEI NAL unit that contain a "
+          "scalable-nested SEI message with payloadType equal to PT");
 
     for (int i = 0; i < vclAssociatedSeiList.size(); i++)
     {
       CHECK(nestedsei->payloadType() == vclAssociatedSeiList[i] && sei.m_snOlsFlag, "When the scalable nesting SEI message contains an SEI message that has payloadType equal to a value in vclAssociatedSeiList, the value of sn_ols_flag shall be equal to 0");
     }
 
-    if (nestedsei->payloadType() == SEI::BUFFERING_PERIOD || nestedsei->payloadType() == SEI::PICTURE_TIMING || nestedsei->payloadType() == SEI::DECODING_UNIT_INFO || nestedsei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO)
+    if (nestedsei->payloadType() == SEI::PayloadType::BUFFERING_PERIOD
+        || nestedsei->payloadType() == SEI::PayloadType::PICTURE_TIMING
+        || nestedsei->payloadType() == SEI::PayloadType::DECODING_UNIT_INFO
+        || nestedsei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
     {
       containBPorPTorDUIorSLI = true;
       CHECK(!sei.m_snOlsFlag, "When the scalable nesting SEI message contains an SEI message that has payloadType equal to BP, PT, or DUI, or SLI, the value of sn_ols_flag shall be equal to 1");
     }
-    if (!(nestedsei->payloadType() == SEI::BUFFERING_PERIOD || nestedsei->payloadType() == SEI::PICTURE_TIMING || nestedsei->payloadType() == SEI::DECODING_UNIT_INFO || nestedsei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO))
+    if (!(nestedsei->payloadType() == SEI::PayloadType::BUFFERING_PERIOD
+          || nestedsei->payloadType() == SEI::PayloadType::PICTURE_TIMING
+          || nestedsei->payloadType() == SEI::PayloadType::DECODING_UNIT_INFO
+          || nestedsei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO))
     {
       containNoBPorPTorDUIorSLI = true;
     }
@@ -2809,7 +2877,7 @@ void SeiCfgFileDump::write360SeiDump (std::string decoded360MessageFileName, SEI
     return;
   }
 
-  SEIMessages equirectangularProjectionSEIs = getSeisByType(seis, SEI::EQUIRECTANGULAR_PROJECTION);
+  SEIMessages equirectangularProjectionSEIs = getSeisByType(seis, SEI::PayloadType::EQUIRECTANGULAR_PROJECTION);
   if (!equirectangularProjectionSEIs.empty())
   {
     SEIEquirectangularProjection* sei = (SEIEquirectangularProjection*)equirectangularProjectionSEIs.front();
@@ -2818,7 +2886,8 @@ void SeiCfgFileDump::write360SeiDump (std::string decoded360MessageFileName, SEI
   }
   else
   {
-    SEIMessages generalizedCubemapProjectionSEIs = getSeisByType(seis, SEI::GENERALIZED_CUBEMAP_PROJECTION);
+    SEIMessages generalizedCubemapProjectionSEIs =
+      getSeisByType(seis, SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION);
     if (!generalizedCubemapProjectionSEIs.empty())
     {
       SEIGeneralizedCubemapProjection* sei = (SEIGeneralizedCubemapProjection*)generalizedCubemapProjectionSEIs.front();
@@ -2959,7 +3028,7 @@ void SEIReader::xParseSEISEIManifest(SEIManifest &sei, uint32_t payloadSize, std
     for (int i = 0; i < sei.m_manifestNumSeiMsgTypes; i++)
     {
       sei_read_code(pDecodedMessageOutputStream, 16, val, "manifest_sei_payload_types");
-      sei.m_manifestSeiPayloadType[i] = val;
+      sei.m_manifestSeiPayloadType[i] = static_cast<SEI::PayloadType>(val);
       sei_read_code(pDecodedMessageOutputStream, 8, val, "manifest_sei_description");
       sei.m_manifestSeiDescription[i] = val;
     }
@@ -2974,7 +3043,7 @@ void SEIReader::xParseSEISEIPrefixIndication(SEIPrefixIndication &sei, uint32_t 
   unsigned int val;
   unsigned int bitsRead = 0;
   sei_read_code(pDecodedMessageOutputStream, 16, val, "prefix_sei_payload_type");
-  sei.m_prefixSeiPayloadType = val;
+  sei.m_prefixSeiPayloadType = static_cast<SEI::PayloadType>(val);
   sei_read_code(pDecodedMessageOutputStream, 8, val, "num_sei_prefix_indications_minus1");
   sei.m_numSeiPrefixIndicationsMinus1 = val;
   if (sei.m_numSeiPrefixIndicationsMinus1 >= 0)

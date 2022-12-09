@@ -144,7 +144,7 @@ bool BitstreamExtractorApp::xCheckSEIFiller(SEIMessages SEIs, int targetSubPicId
 {
   for (auto sei : SEIs)
   {
-    if (sei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO)
+    if (sei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
     {
       SEISubpicureLevelInfo *seiSLI = (SEISubpicureLevelInfo *)sei;
       if (!seiSLI->m_cbrConstraintFlag)
@@ -155,7 +155,7 @@ bool BitstreamExtractorApp::xCheckSEIFiller(SEIMessages SEIs, int targetSubPicId
   }
   for (auto sei : SEIs)
   {
-    if (sei->payloadType() == SEI::FILLER_PAYLOAD)
+    if (sei->payloadType() == SEI::PayloadType::FILLER_PAYLOAD)
     {
       return (rmAllFillerInSubpicExt ? false : lastSliceWritten);
     }
@@ -437,7 +437,7 @@ bool BitstreamExtractorApp::xCheckNumSubLayers(InputNALUnit &nalu, VPS *vps)
 
 bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit& nalu, std::ostream& out, int subpicId, VPS *vps)
 {
-  SEIMessages scalableNestingSEIs = getSeisByType(SEIs, SEI::SCALABLE_NESTING);
+  SEIMessages scalableNestingSEIs = getSeisByType(SEIs, SEI::PayloadType::SCALABLE_NESTING);
   if (scalableNestingSEIs.size())
   {
     CHECK ( scalableNestingSEIs.size() > 1, "There shall be only one Scalable Nesting SEI in one NAL unit" );
@@ -470,7 +470,7 @@ bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit
     }
   }
   // remove not nested decoded picture hash SEIs
-  SEIMessages hashSEI = getSeisByType(SEIs, SEI::DECODED_PICTURE_HASH);
+  SEIMessages hashSEI = getSeisByType(SEIs, SEI::PayloadType::DECODED_PICTURE_HASH);
   if (hashSEI.size() > 0)
   {
     return false;
@@ -801,13 +801,17 @@ uint32_t BitstreamExtractorApp::decode()
           {
             // remove from outBitstream all NAL units that have nuh_layer_id not included in the list LayerIdInOls[ targetOlsIdx ] and ( are SEI NAL units containing (scalable-nested SEI messages) or (non-scalable-nested SEI messages with PayloadType not equal to 0, 1, 130, or 203) )
             bool isNonNestedHRDSEI = false;
-            if (sei->payloadType() == SEI::BUFFERING_PERIOD || sei->payloadType() == SEI::PICTURE_TIMING || sei->payloadType() == SEI::DECODING_UNIT_INFO || sei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO)
+            if (sei->payloadType() == SEI::PayloadType::BUFFERING_PERIOD
+                || sei->payloadType() == SEI::PayloadType::PICTURE_TIMING
+                || sei->payloadType() == SEI::PayloadType::DECODING_UNIT_INFO
+                || sei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
             {
               isNonNestedHRDSEI = true;
             }
-            writeInpuNalUnitToStream &= isIncludedInTargetOls || (sei->payloadType() != SEI::SCALABLE_NESTING && isNonNestedHRDSEI);
+            writeInpuNalUnitToStream &=
+              isIncludedInTargetOls || (sei->payloadType() != SEI::PayloadType::SCALABLE_NESTING && isNonNestedHRDSEI);
             // remove unqualified scalable nesting SEI
-            if (sei->payloadType() == SEI::SCALABLE_NESTING)
+            if (sei->payloadType() == SEI::PayloadType::SCALABLE_NESTING)
             {
               SEIScalableNesting *seiNesting = (SEIScalableNesting *)sei;
               if (seiNesting->m_snOlsFlag == 1)
@@ -838,7 +842,10 @@ uint32_t BitstreamExtractorApp::decode()
               }
             }
             // remove unqualified timing related SEI
-            if (sei->payloadType() == SEI::BUFFERING_PERIOD || (m_removeTimingSEI && sei->payloadType() == SEI::PICTURE_TIMING) || sei->payloadType() == SEI::DECODING_UNIT_INFO || sei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO)
+            if (sei->payloadType() == SEI::PayloadType::BUFFERING_PERIOD
+                || (m_removeTimingSEI && sei->payloadType() == SEI::PayloadType::PICTURE_TIMING)
+                || sei->payloadType() == SEI::PayloadType::DECODING_UNIT_INFO
+                || sei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
             {
               writeInpuNalUnitToStream &= targetOlsIncludeAllVclLayers;
             }
