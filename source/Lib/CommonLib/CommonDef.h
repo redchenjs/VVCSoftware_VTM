@@ -149,6 +149,9 @@ static constexpr int MAX_NUM_REF        = 16;   // max. number of entries in pic
 static constexpr int MAX_NUM_ACTIVE_REF = 15;   // maximum number of active reference pictures
 static constexpr int IBC_REF_IDX        = MAX_NUM_ACTIVE_REF;
 
+// Array indexed by reference list index and reference picture index
+template<class T> using RefSetArray = T[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+
 static constexpr int MAX_QP =                                          63;
 static constexpr int NOT_VALID =                                       -1;
 

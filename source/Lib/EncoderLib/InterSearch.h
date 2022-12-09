@@ -73,19 +73,19 @@ class EncModeCtrl;
 
 struct AffineMVInfo
 {
-  Mv  affMVs[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
+  RefSetArray<Mv[3]> affMVs;
   int x, y, w, h;
 };
 
 #if GDR_ENABLED
 struct AffineMVInfoSolid
 {
-  bool affMVsSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
+  RefSetArray<bool[3]> affMVsSolid;
 };
 #endif
 struct BlkUniMvInfo
 {
-  Mv  uniMvs[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+  RefSetArray<Mv> uniMvs;
   int x, y, w, h;
 };
 
@@ -167,8 +167,8 @@ protected:
   RefPicList      m_currRefPicList;
   int             m_currRefPicIndex;
   bool            m_skipFracME;
-  int             m_numHashMVStoreds[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
-  Mv              m_hashMVStoreds[NUM_REF_PIC_LIST_01][MAX_NUM_REF][5];
+  RefSetArray<int>   m_numHashMVStoreds;
+  RefSetArray<Mv[5]> m_hashMVStoreds;
 
   // Misc.
   Pel            *m_pTempPel;
@@ -176,7 +176,7 @@ protected:
   // AMVP cost computation
   uint32_t            m_auiMVPIdxCost               [AMVP_MAX_NUM_CANDS+1][AMVP_MAX_NUM_CANDS+1]; //th array bounds
 
-  Mv              m_integerMv2Nx2N              [NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+  RefSetArray<Mv> m_integerMv2Nx2N;
 
   bool            m_isInitialized;
 
@@ -280,7 +280,7 @@ public:
     }
   }
   void resetUniMvList() { m_uniMvListIdx = 0; m_uniMvListSize = 0; }
-  void insertUniMvCands(CompArea blkArea, Mv cMvTemp[NUM_REF_PIC_LIST_01][MAX_NUM_REF])
+  void insertUniMvCands(CompArea blkArea, RefSetArray<Mv> &cMvTemp)
   {
     BlkUniMvInfo* curMvInfo = m_uniMvList + m_uniMvListIdx;
     int j = 0;
@@ -298,7 +298,7 @@ public:
       curMvInfo = m_uniMvList + ((m_uniMvListIdx - 1 - j + m_uniMvListMaxSize) % (m_uniMvListMaxSize));
     }
 
-    ::memcpy(curMvInfo->uniMvs, cMvTemp, 2 * MAX_NUM_REF * sizeof(Mv));
+    ::memcpy(curMvInfo->uniMvs, cMvTemp, sizeof(cMvTemp));
     if (j == m_uniMvListSize)  // new element
     {
       curMvInfo->x = blkArea.x;
@@ -512,13 +512,13 @@ protected:
   );
 
   void xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf, int puIdx, uint32_t &lastMode,
-                              Distortion &affineCost, Mv hevcMv[NUM_REF_PIC_LIST_01][MAX_NUM_REF],
+                              Distortion &affineCost, RefSetArray<Mv> &hevcMv,
 #if GDR_ENABLED
-                              bool hevcMvSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF],
+                              RefSetArray<bool> &hevcMvSolid,
 #endif
-                              Mv mvAffine4Para[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3],
+                              RefSetArray<Mv[3]> &mvAffine4Para,
 #if GDR_ENABLED
-                              bool mvAffine4ParaSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3],
+                              RefSetArray<bool[3]> &mvAffine4ParaSolid,
 #endif
                               int refIdx4Para[NUM_REF_PIC_LIST_01], uint8_t bcwIdx = BCW_DEFAULT,
                               bool enforceBcwPred = false, uint32_t bcwIdxBits = 0);
@@ -590,8 +590,7 @@ public:
   uint32_t getWeightIdxBits       ( uint8_t bcwIdx ) { return m_estWeightIdxBits[bcwIdx]; }
   void initWeightIdxBits          ();
   void     symmvdCheckBestMvp(PredictionUnit &pu, PelUnitBuf &origBuf, Mv curMv, RefPicList curRefList,
-                              AMVPInfo amvpInfo[NUM_REF_PIC_LIST_01][MAX_NUM_REF], int32_t bcwIdx,
-                              Mv cMvPredSym[NUM_REF_PIC_LIST_01],
+                              RefSetArray<AMVPInfo> &amvpInfo, int32_t bcwIdx, Mv cMvPredSym[NUM_REF_PIC_LIST_01],
 #if GDR_ENABLED
                           bool cMvPredSymSolid[NUM_REF_PIC_LIST_01],
 #endif

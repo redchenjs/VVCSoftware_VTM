@@ -2504,7 +2504,7 @@ private:
   unsigned                    m_maxBTSize[3];                                           //!< maximum BT size
   unsigned                    m_maxTTSize[3];                                           //!< maximum TT size
 
-  WPScalingParam              m_weightPredTable[NUM_REF_PIC_LIST_01][MAX_NUM_REF][MAX_NUM_COMPONENT];   // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
+  RefSetArray<WPScalingParam[MAX_NUM_COMPONENT]> m_weightPredTable;
   int                         m_numL0Weights;                                           //!< number of weights for L0 list
   int                         m_numL1Weights;                                           //!< number of weights for L1 list
 
@@ -2783,7 +2783,7 @@ private:
   uint32_t                   m_colRefIdx;
   double                     m_lambdas[MAX_NUM_COMPONENT];
 
-  bool                       m_abEqualRef  [NUM_REF_PIC_LIST_01][MAX_NUM_REF][MAX_NUM_REF];
+  RefSetArray<bool[MAX_NUM_REF]> m_abEqualRef;
   uint32_t                   m_uiTLayer;
   bool                       m_bTLayerSwitchingFlag;
 
@@ -2795,7 +2795,7 @@ private:
 
   bool                       m_bTestWeightPred;
   bool                       m_bTestWeightBiPred;
-  WPScalingParam             m_weightPredTable[NUM_REF_PIC_LIST_01][MAX_NUM_REF][MAX_NUM_COMPONENT]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
+  RefSetArray<WPScalingParam[MAX_NUM_COMPONENT]> m_weightPredTable;
   WPACDCParam                m_weightACDCParam[MAX_NUM_COMPONENT];
   ClpRngs                    m_clpRngs;
   std::vector<uint32_t>      m_substreamSizes;
@@ -3088,14 +3088,11 @@ public:
   void                            setTestWeightPred(bool value) { m_bTestWeightPred = value; }
   bool                        testWeightBiPred( ) const                              { return m_bTestWeightBiPred;                                   }
   void                            setTestWeightBiPred(bool value) { m_bTestWeightBiPred = value; }
-  void                        setWpScaling( WPScalingParam  wp[NUM_REF_PIC_LIST_01][MAX_NUM_REF][MAX_NUM_COMPONENT] )
+  void                            setWpScaling(RefSetArray<WPScalingParam[MAX_NUM_COMPONENT]> &wp)
   {
-    memcpy(m_weightPredTable, wp, sizeof(WPScalingParam)*NUM_REF_PIC_LIST_01*MAX_NUM_REF*MAX_NUM_COMPONENT);
+    memcpy(m_weightPredTable, wp, sizeof(m_weightPredTable));
   }
-  void                        setWpScaling(WPScalingParam *wp)
-  {
-    memcpy(m_weightPredTable, wp, sizeof(WPScalingParam) * NUM_REF_PIC_LIST_01 * MAX_NUM_REF * MAX_NUM_COMPONENT);
-  }
+  void setWpScaling(WPScalingParam *wp) { memcpy(m_weightPredTable, wp, sizeof(m_weightPredTable)); }
   WPScalingParam *            getWpScalingAll()                                      { return (WPScalingParam *) m_weightPredTable;                  }
   WPScalingParam *            getWpScaling(const RefPicList refPicList, const int refIdx);
   const WPScalingParam *      getWpScaling(const RefPicList refPicList, const int refIdx) const;
