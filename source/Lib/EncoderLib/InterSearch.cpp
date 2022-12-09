@@ -2658,40 +2658,40 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 {
   CodingStructure& cs = *cu.cs;
 
-  AMVPInfo     amvp[2];
+  AMVPInfo     amvp[NUM_REF_PIC_LIST_01];
   Mv           cMvSrchRngLT;
   Mv           cMvSrchRngRB;
 
   Mv           cMvZero;
 
-  Mv           cMv[2];
-  Mv           cMvBi[2];
-  Mv           cMvTemp[2][MAX_NUM_REF];
-  Mv           cMvHevcTemp[2][MAX_NUM_REF];
+  Mv           cMv[NUM_REF_PIC_LIST_01];
+  Mv           cMvBi[NUM_REF_PIC_LIST_01];
+  Mv           cMvTemp[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+  Mv           cMvHevcTemp[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
   int          iNumPredDir = cs.slice->isInterP() ? 1 : 2;
 
-  Mv cMvPred[2][MAX_NUM_REF];
+  Mv cMvPred[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
 
-  Mv  cMvPredBi[2][MAX_NUM_REF];
-  int aaiMvpIdxBi[2][MAX_NUM_REF];
+  Mv  cMvPredBi[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+  int aaiMvpIdxBi[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
 
-  int aaiMvpIdx[2][MAX_NUM_REF];
-  int aaiMvpNum[2][MAX_NUM_REF];
+  int aaiMvpIdx[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+  int aaiMvpNum[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
 
 #if GDR_ENABLED
-  bool         cMvSolid[2];
-  bool         cMvValid[2];
-  bool         cMvBiSolid[2];
-  bool         cMvBiValid[2];
+  bool cMvSolid[NUM_REF_PIC_LIST_01];
+  bool cMvValid[NUM_REF_PIC_LIST_01];
+  bool cMvBiSolid[NUM_REF_PIC_LIST_01];
+  bool cMvBiValid[NUM_REF_PIC_LIST_01];
 
-  bool cMvPredSolid[2][MAX_NUM_REF];
-  bool cMvPredBiSolid[2][MAX_NUM_REF];
+  bool cMvPredSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+  bool cMvPredBiSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
 
-  bool cMvTempSolid[2][MAX_NUM_REF]{ { true } };
-  bool cMvTempValid[2][MAX_NUM_REF];
+  bool cMvTempSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF]{ { true } };
+  bool cMvTempValid[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
 
-  bool cMvHevcTempSolid[2][MAX_NUM_REF];
-  bool cMvHevcTempValid[2][MAX_NUM_REF];
+  bool cMvHevcTempSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+  bool cMvHevcTempValid[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
 
   bool         allOk;
   bool         bestBiPDistOk;
@@ -2702,16 +2702,18 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   bool         uiHevcCostOk;
   bool         uiAffineCostOk;
   bool         uiAffine6CostOk;
-  bool         uiCostOk[2];
+  bool         uiCostOk[NUM_REF_PIC_LIST_01];
   bool         costValidList1Ok;
 
   bool         bCleanCandExist;
 #endif
 
-  AMVPInfo aacAMVPInfo[2][MAX_NUM_REF];
+  AMVPInfo aacAMVPInfo[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
 
-  int refIdx[2] = { 0, 0 };   // If un-initialized, may cause SEGV in bi-directional prediction iterative stage.
-  int          iRefIdxBi[2] = { -1, -1 };
+  int refIdx[NUM_REF_PIC_LIST_01] = {
+    0, 0
+  };   // If un-initialized, may cause SEGV in bi-directional prediction iterative stage.
+  int iRefIdxBi[NUM_REF_PIC_LIST_01] = { -1, -1 };
 
   uint32_t mbBits[3] = { 1, 1, 0 };
 
@@ -3199,7 +3201,8 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
         unsigned idx1, idx2, idx3, idx4;
         getAreaIdx(cu.Y(), *cu.slice->getPPS()->pcv, idx1, idx2, idx3, idx4);
         CHECKD(idx3 >= MAX_NUM_SIZES || idx4 >= MAX_NUM_SIZES, "MAX_NUM_SIZES is too small");
-        ::memcpy(&(g_reusedUniMVs[idx1][idx2][idx3][idx4][0][0]), cMvTemp, 2 * MAX_NUM_REF * sizeof(Mv));
+        ::memcpy(&(g_reusedUniMVs[idx1][idx2][idx3][idx4][0][0]), cMvTemp,
+                 NUM_REF_PIC_LIST_01 * MAX_NUM_REF * sizeof(Mv));
         g_isReusedUniMVsFilled[idx1][idx2][idx3][idx4] = true;
       }
       //  Bi-predictive Motion estimation
@@ -4170,8 +4173,8 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
       uint32_t uiInterDir = pu.interDir;
       int  iSymMode = cu.smvdMode;
 
-      Mv cMvd[2];
-      uint32_t uiMvpIdx[2], uiMvpNum[2];
+      Mv       cMvd[NUM_REF_PIC_LIST_01];
+      uint32_t uiMvpIdx[NUM_REF_PIC_LIST_01], uiMvpNum[NUM_REF_PIC_LIST_01];
       uiMvpIdx[0] = pu.mvpIdx[REF_PIC_LIST_0];
       uiMvpIdx[1] = pu.mvpIdx[REF_PIC_LIST_1];
       uiMvpNum[0] = pu.mvpNum[REF_PIC_LIST_0];
@@ -4179,13 +4182,13 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
       cMvd[0]     = pu.mvd[REF_PIC_LIST_0];
       cMvd[1]     = pu.mvd[REF_PIC_LIST_1];
 
-      MvField cHevcMvField[2];
+      MvField cHevcMvField[NUM_REF_PIC_LIST_01];
       cHevcMvField[0].setMvField( pu.mv[REF_PIC_LIST_0], pu.refIdx[REF_PIC_LIST_0] );
       cHevcMvField[1].setMvField( pu.mv[REF_PIC_LIST_1], pu.refIdx[REF_PIC_LIST_1] );
 
 #if GDR_ENABLED
-      bool cHevcMvFieldSolid[2] = { true, true };
-      bool cHevcMvFieldValid[2] = { true, true };
+      bool cHevcMvFieldSolid[NUM_REF_PIC_LIST_01] = { true, true };
+      bool cHevcMvFieldValid[NUM_REF_PIC_LIST_01] = { true, true };
 
       if (isEncodeGdrClean)
       {
@@ -4198,11 +4201,11 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 
       // do affine ME & Merge
       cu.affineType = AFFINEMODEL_4PARAM;
-      Mv acMvAffine4Para[2][MAX_NUM_REF][3];
+      Mv acMvAffine4Para[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
 #if GDR_ENABLED
-      bool acMvAffine4ParaSolid[2][MAX_NUM_REF][3];
+      bool acMvAffine4ParaSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
 
-      for (int i = 0; i < 2; i++)
+      for (int i = 0; i < NUM_REF_PIC_LIST_01; i++)
       {
         for (int j = 0; j < MAX_NUM_REF; j++)
         {
@@ -6327,28 +6330,25 @@ void InterSearch::xSymmetricMotionEstimation( PredictionUnit& pu, PelUnitBuf& or
 }
 
 void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf, int puIdx, uint32_t &lastMode,
-                                         Distortion &affineCost, Mv hevcMv[2][MAX_NUM_REF]
+                                         Distortion &affineCost, Mv hevcMv[NUM_REF_PIC_LIST_01][MAX_NUM_REF],
 #if GDR_ENABLED
-                                         ,
-                                         bool hevcMvSolid[2][MAX_NUM_REF]
+                                         bool hevcMvSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF],
 #endif
-                                         ,
-                                         Mv mvAffine4Para[2][MAX_NUM_REF][3]
+                                         Mv mvAffine4Para[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3],
 #if GDR_ENABLED
-                                         ,
-                                         bool mvAffine4ParaSolid[2][MAX_NUM_REF][3]
+                                         bool mvAffine4ParaSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3],
 #endif
-                                         ,
-                                         int refIdx4Para[2], uint8_t bcwIdx, bool enforceBcwPred, uint32_t bcwIdxBits)
+                                         int refIdx4Para[NUM_REF_PIC_LIST_01], uint8_t bcwIdx, bool enforceBcwPred,
+                                         uint32_t bcwIdxBits)
 {
   const Slice &slice = *pu.cu->slice;
 
   affineCost = std::numeric_limits<Distortion>::max();
 
   Mv        cMvZero;
-  Mv        aacMv[2][3];
-  Mv        cMvBi[2][3];
-  Mv        cMvTemp[2][MAX_NUM_REF][3];
+  Mv        aacMv[NUM_REF_PIC_LIST_01][3];
+  Mv        cMvBi[NUM_REF_PIC_LIST_01][3];
+  Mv        cMvTemp[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
 
   int       iNumPredDir = slice.isInterP() ? 1 : 2;
 
@@ -6356,24 +6356,24 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
   mvNum = pu.cu->affineType ? 3 : 2;
 
   // Mvp
-  Mv  cMvPred[2][MAX_NUM_REF][3];
-  Mv  cMvPredBi[2][MAX_NUM_REF][3];
-  int aaiMvpIdxBi[2][MAX_NUM_REF];
-  int aaiMvpIdx[2][MAX_NUM_REF];
-  int aaiMvpNum[2][MAX_NUM_REF];
+  Mv  cMvPred[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
+  Mv  cMvPredBi[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
+  int aaiMvpIdxBi[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+  int aaiMvpIdx[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+  int aaiMvpNum[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
 
 #if GDR_ENABLED
-  bool      aacMvSolid[2][3];
-  bool      aacMvValid[2][3];
+  bool aacMvSolid[NUM_REF_PIC_LIST_01][3];
+  bool aacMvValid[NUM_REF_PIC_LIST_01][3];
 
-  bool cMvTempSolid[2][MAX_NUM_REF][3];
-  bool cMvTempValid[2][MAX_NUM_REF][3];
+  bool cMvTempSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
+  bool cMvTempValid[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
 
-  bool      cMvBiSolid[2][3];
-  bool      cMvBiValid[2][3];
+  bool cMvBiSolid[NUM_REF_PIC_LIST_01][3];
+  bool cMvBiValid[NUM_REF_PIC_LIST_01][3];
 
-  bool cMvPredSolid[2][MAX_NUM_REF][3];
-  bool cMvPredBiSolid[2][MAX_NUM_REF][3];
+  bool cMvPredSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
+  bool cMvPredBiSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
 
   bool      mvValidList1Solid[3];
   bool      mvValidList1Valid[3];
@@ -6383,11 +6383,13 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
   const CodingStructure &cs = *pu.cs;
   const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
-  AffineAMVPInfo aacAffineAMVPInfo[2][MAX_NUM_REF];
-  AffineAMVPInfo affiAMVPInfoTemp[2];
+  AffineAMVPInfo aacAffineAMVPInfo[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+  AffineAMVPInfo affiAMVPInfoTemp[NUM_REF_PIC_LIST_01];
 
-  int refIdx[2] = { 0, 0 };   // If un-initialized, may cause SEGV in bi-directional prediction iterative stage.
-  int           iRefIdxBi[2];
+  int refIdx[NUM_REF_PIC_LIST_01] = {
+    0, 0
+  };   // If un-initialized, may cause SEGV in bi-directional prediction iterative stage.
+  int iRefIdxBi[NUM_REF_PIC_LIST_01];
 
   uint32_t mbBits[3] = { 1, 1, 0 };
 
@@ -11144,11 +11146,12 @@ uint32_t InterSearch::xDetermineBestMvp( PredictionUnit& pu, Mv acMvTemp[3], int
 }
 
 void InterSearch::symmvdCheckBestMvp(PredictionUnit &pu, PelUnitBuf &origBuf, Mv curMv, RefPicList curRefList,
-                                     AMVPInfo amvpInfo[2][MAX_NUM_REF], int32_t bcwIdx, Mv cMvPredSym[2],
+                                     AMVPInfo amvpInfo[NUM_REF_PIC_LIST_01][MAX_NUM_REF], int32_t bcwIdx,
+                                     Mv cMvPredSym[NUM_REF_PIC_LIST_01],
 #if GDR_ENABLED
-                                     bool cMvPredSymSolid[2],
+                                     bool cMvPredSymSolid[NUM_REF_PIC_LIST_01],
 #endif
-                                     int32_t mvpIdxSym[2], Distortion &bestCost, bool skip)
+                                     int32_t mvpIdxSym[NUM_REF_PIC_LIST_01], Distortion &bestCost, bool skip)
 {
 #if GDR_ENABLED
   CodingStructure &cs = *pu.cs;

@@ -73,19 +73,19 @@ class EncModeCtrl;
 
 struct AffineMVInfo
 {
-  Mv  affMVs[2][MAX_NUM_REF][3];
+  Mv  affMVs[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
   int x, y, w, h;
 };
 
 #if GDR_ENABLED
 struct AffineMVInfoSolid
 {
-  bool affMVsSolid[2][MAX_NUM_REF][3];
+  bool affMVsSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3];
 };
 #endif
 struct BlkUniMvInfo
 {
-  Mv  uniMvs[2][MAX_NUM_REF];
+  Mv  uniMvs[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
   int x, y, w, h;
 };
 
@@ -280,7 +280,7 @@ public:
     }
   }
   void resetUniMvList() { m_uniMvListIdx = 0; m_uniMvListSize = 0; }
-  void insertUniMvCands(CompArea blkArea, Mv cMvTemp[2][MAX_NUM_REF])
+  void insertUniMvCands(CompArea blkArea, Mv cMvTemp[NUM_REF_PIC_LIST_01][MAX_NUM_REF])
   {
     BlkUniMvInfo* curMvInfo = m_uniMvList + m_uniMvListIdx;
     int j = 0;
@@ -512,20 +512,16 @@ protected:
   );
 
   void xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf, int puIdx, uint32_t &lastMode,
-                              Distortion &affineCost, Mv hevcMv[2][MAX_NUM_REF]
+                              Distortion &affineCost, Mv hevcMv[NUM_REF_PIC_LIST_01][MAX_NUM_REF],
 #if GDR_ENABLED
-                              ,
-                              bool hevcMvSolid[2][MAX_NUM_REF]
+                              bool hevcMvSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF],
 #endif
-                              ,
-                              Mv mvAffine4Para[2][MAX_NUM_REF][3]
+                              Mv mvAffine4Para[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3],
 #if GDR_ENABLED
-                              ,
-                              bool mvAffine4ParaSolid[2][MAX_NUM_REF][3]
+                              bool mvAffine4ParaSolid[NUM_REF_PIC_LIST_01][MAX_NUM_REF][3],
 #endif
-                              ,
-                              int refIdx4Para[2], uint8_t bcwIdx = BCW_DEFAULT, bool enforceBcwPred = false,
-                              uint32_t bcwIdxBits = 0);
+                              int refIdx4Para[NUM_REF_PIC_LIST_01], uint8_t bcwIdx = BCW_DEFAULT,
+                              bool enforceBcwPred = false, uint32_t bcwIdxBits = 0);
 
 #if GDR_ENABLED
   void xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, RefPicList eRefPicList, Mv acMvPred[3],
@@ -594,11 +590,12 @@ public:
   uint32_t getWeightIdxBits       ( uint8_t bcwIdx ) { return m_estWeightIdxBits[bcwIdx]; }
   void initWeightIdxBits          ();
   void     symmvdCheckBestMvp(PredictionUnit &pu, PelUnitBuf &origBuf, Mv curMv, RefPicList curRefList,
-                              AMVPInfo amvpInfo[2][MAX_NUM_REF], int32_t bcwIdx, Mv cMvPredSym[2],
+                              AMVPInfo amvpInfo[NUM_REF_PIC_LIST_01][MAX_NUM_REF], int32_t bcwIdx,
+                              Mv cMvPredSym[NUM_REF_PIC_LIST_01],
 #if GDR_ENABLED
-                          bool cMvPredSymSolid[2],
+                          bool cMvPredSymSolid[NUM_REF_PIC_LIST_01],
 #endif
-                          int32_t mvpIdxSym[2], Distortion &bestCost, bool skip = false);
+                          int32_t mvpIdxSym[NUM_REF_PIC_LIST_01], Distortion &bestCost, bool skip = false);
 protected:
 
   void xExtDIFUpSamplingH(CPelBuf* pcPattern, bool useAltHpelIf);
