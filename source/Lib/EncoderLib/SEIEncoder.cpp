@@ -1331,16 +1331,26 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     sei->m_cbPadding = m_pcCfg->getNNPostFilterSEICharacteristicsCbPadding(filterIdx);
     sei->m_crPadding = m_pcCfg->getNNPostFilterSEICharacteristicsCrPadding(filterIdx);
 
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+    sei->m_complexityInfoPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComplexityInfoPresentFlag(filterIdx);
+    if (sei->m_complexityInfoPresentFlag)
+    {
+#else
     sei->m_complexityIdc = m_pcCfg->getNNPostFilterSEICharacteristicsComplexityIdc(filterIdx);
     if(sei->m_complexityIdc > 0)
     {
       if(sei->m_complexityIdc == 1)
       {
+#endif
         sei->m_parameterTypeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsParameterTypeIdc(filterIdx);
         sei->m_log2ParameterBitLengthMinus3 = m_pcCfg->getNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3(filterIdx);
         sei->m_numParametersIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumParametersIdc(filterIdx);
         sei->m_numKmacOperationsIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(filterIdx);
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+        sei->m_totalKilobyteSize = m_pcCfg->getNNPostFilterSEICharacteristicsTotalKilobyteSize(filterIdx);
+#else
       }
+#endif
     }
 #if !JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
     sei->m_uriTag = m_pcCfg->getNNPostFilterSEICharacteristicsUriTag(filterIdx);

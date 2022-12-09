@@ -1810,12 +1810,28 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       WRITE_UVLC(sei.m_crPadding, "nnpfc_cr_padding_val");
     }
 
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+    WRITE_FLAG(sei.m_complexityInfoPresentFlag, "nnpfc_complexity_info_present_flag");
+    if (sei.m_complexityInfoPresentFlag)
+    {
+      WRITE_CODE(sei.m_parameterTypeIdc, 2, "nnpfc_parameter_type_idc");
+      if (sei.m_parameterTypeIdc != 2)
+      {
+        WRITE_CODE(sei.m_log2ParameterBitLengthMinus3, 2, "nnpfc_log2_parameter_bit_length_minus3");
+      }
+      WRITE_CODE(sei.m_numParametersIdc, 6, "nnpfc_num_parameters_idc");
+      WRITE_UVLC(sei.m_numKmacOperationsIdc, "nnpfc_num_kmac_operations_idc");
+      WRITE_UVLC(sei.m_totalKilobyteSize, "nnpfc_total_kilobyte_size");
+    }
+  }
+#else
     WRITE_UVLC(sei.m_complexityIdc, "nnpfc_complexity_idc");
     if(sei.m_complexityIdc > 0)
     {
       xWriteNNPFCComplexityElement(sei);
     }
   }
+#endif
 #if !JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
   if (sei.m_modeIdc == POST_FILTER_MODE::URI)
   {
@@ -1840,6 +1856,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
   }
 }
 
+#if !JVET_AB0135_NN_SEI_COMPLEXITY_MOD
 void SEIWriter::xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCharacteristics &sei)
 {
   if(sei.m_complexityIdc == 1)
@@ -1851,8 +1868,12 @@ void SEIWriter::xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCha
   }
     WRITE_CODE(sei.m_numParametersIdc, 6, "nnpfc_num_parameters_idc");
     WRITE_UVLC(sei.m_numKmacOperationsIdc, "nnpfc_num_kmac_operations_idc");
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+    WRITE_UVLC(sei.m_totalKilobyteSize, "nnpfc_total_kilobyte_size");
+#endif
   }
 }
+#endif
 
 void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei)
 {
