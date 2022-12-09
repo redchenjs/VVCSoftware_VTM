@@ -146,7 +146,11 @@ public:
 
   bool                   m_posEnabled;
   std::vector<uint16_t>  m_posPayloadType;
+#if JVET_AB0069_SEI_PROCESSING_ORDER
+  std::vector<uint16_t>   m_posProcessingOrder;
+#else
   std::vector<uint8_t>   m_posProcessingOrder;
+#endif
   uint32_t               m_posNumofSeiMessages;
 };
 
