@@ -521,7 +521,7 @@ void QuantRDOQ::quant(TransformUnit &tu, const ComponentID &compID, const CCoeff
 
   bool useRDOQ = useTransformSkip ? m_useRDOQTS : m_useRDOQ;
 
-  if (!tu.cu->ispMode || !isLuma(compID))
+  if (tu.cu->ispMode == ISPType::NONE || !isLuma(compID))
   {
     useRDOQ &= uiWidth > 2;
     useRDOQ &= uiHeight > 2;
@@ -579,7 +579,7 @@ void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, 
   const bool extendedPrecision     = sps.getSpsRangeExtension().getExtendedPrecisionProcessingFlag();
   const int  maxLog2TrDynamicRange = sps.getMaxLog2TrDynamicRange(chType);
 
-  const bool useIntraSubPartitions = tu.cu->ispMode && isLuma(compID);
+  const bool useIntraSubPartitions = tu.cu->ispMode != ISPType::NONE && isLuma(compID);
   /* for 422 chroma blocks, the effective scaling applied during transformation is not a power of 2, hence it cannot be
   * implemented as a bit-shift (the quantised result will be sqrt(2) * larger than required). Alternatively, adjust the
   * uiLog2TrSize applied in iTransformShift, such that the result is 1/sqrt(2) the required result (i.e. smaller)
@@ -920,7 +920,8 @@ void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, 
     {
       bool rootCbfSoFar       = false;
       bool isLastSubPartition = CU::isISPLast(*tu.cu, tu.Y(), compID);
-      uint32_t nTus = tu.cu->ispMode == HOR_INTRA_SUBPARTITIONS ? tu.cu->lheight() >> floorLog2(tu.lheight()) : tu.cu->lwidth() >> floorLog2(tu.lwidth());
+      uint32_t nTus               = tu.cu->ispMode == ISPType::HOR ? tu.cu->lheight() >> floorLog2(tu.lheight())
+                                                                   : tu.cu->lwidth() >> floorLog2(tu.lwidth());
       if( isLastSubPartition )
       {
         TransformUnit* tuPointer = tu.cu->firstTU;

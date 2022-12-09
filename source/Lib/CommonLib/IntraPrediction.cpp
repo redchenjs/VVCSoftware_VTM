@@ -374,7 +374,7 @@ void IntraPrediction::initPredIntraParams(const PredictionUnit & pu, const CompA
   const ComponentID compId = area.compID;
   const ChannelType chType = toChannelType(compId);
 
-  const bool useISP = NOT_INTRA_SUBPARTITIONS != pu.cu->ispMode && isLuma(chType);
+  const bool useISP = ISPType::NONE != pu.cu->ispMode && isLuma(chType);
 
   const Size  cuSize    = Size(pu.cu->blocks[compId].width, pu.cu->blocks[compId].height);
   const Size  puSize    = Size(area.width, area.height);
@@ -814,12 +814,12 @@ void IntraPrediction::initIntraPatternChTypeISP(const CodingUnit& cu, const Comp
   {
     Pel *refBufUnfiltered = m_refBuffer[area.compID][PRED_BUF_UNFILTERED];
     // With the first subpartition all the CU reference samples are fetched at once in a single call to xFillReferenceSamples
-    if (cu.ispMode == HOR_INTRA_SUBPARTITIONS)
+    if (cu.ispMode == ISPType::HOR)
     {
       m_leftRefLength = cu.Y().height << 1;
       m_topRefLength = cu.Y().width + area.width;
     }
-    else //if (cu.ispMode == VER_INTRA_SUBPARTITIONS)
+    else   // if (cu.ispMode == ISPType::VER)
     {
       m_leftRefLength = cu.Y().height + area.height;
       m_topRefLength = cu.Y().width << 1;
@@ -838,7 +838,7 @@ void IntraPrediction::initIntraPatternChTypeISP(const CodingUnit& cu, const Comp
 
     const int predSizeHor = m_topRefLength;
     const int predSizeVer = m_leftRefLength;
-    if (cu.ispMode == HOR_INTRA_SUBPARTITIONS)
+    if (cu.ispMode == ISPType::HOR)
     {
       Pel* src = recBuf.bufAt(0, -1);
       Pel *ref = m_refBuffer[area.compID][PRED_BUF_UNFILTERED] + m_refBufferStride[area.compID];
@@ -929,12 +929,13 @@ void IntraPrediction::xFillReferenceSamples( const CPelBuf &recoBuf, Pel* refBuf
 
   m_refBufferStride[area.compID] = predStride;
 
+  const bool useIsp    = cu.ispMode != ISPType::NONE && isLuma(area.compID);
   const bool noShift   = pcv.noChroma2x2 && area.width == 4;   // don't shift on the lowest level (chroma not-split)
-  const int  unitWidth = tuWidth <= 2 && cu.ispMode && isLuma(area.compID)
+  const int  unitWidth = tuWidth <= 2 && useIsp
                            ? tuWidth
                            : pcv.minCUWidth >> (noShift ? 0 : getComponentScaleX(area.compID, sps.getChromaFormatIdc()));
   const int  unitHeight =
-    tuHeight <= 2 && cu.ispMode && isLuma(area.compID)
+    tuHeight <= 2 && useIsp
        ? tuHeight
        : pcv.minCUHeight >> (noShift ? 0 : getComponentScaleY(area.compID, sps.getChromaFormatIdc()));
 

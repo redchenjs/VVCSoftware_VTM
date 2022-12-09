@@ -1142,7 +1142,7 @@ TransformUnit* CodingStructure::getTU( const Position &pos, const ChannelType ef
       {
         const TransformUnit& tu = *tus[idx - 1];
 
-        if( tu.cu->ispMode ) // Intra SubPartitions mode
+        if (tu.cu->ispMode != ISPType::NONE)   // Intra SubPartitions mode
         {
           //we obtain the offset to index the corresponding sub-partition
           if( subTuIdx != -1 )
@@ -1197,7 +1197,7 @@ const TransformUnit * CodingStructure::getTU( const Position &pos, const Channel
       if( isLuma( effChType ) )
       {
         const TransformUnit& tu = *tus[idx - 1];
-        if( tu.cu->ispMode ) // Intra SubPartitions mode
+        if (tu.cu->ispMode != ISPType::NONE)   // Intra SubPartitions mode
         {
           //we obtain the offset to index the corresponding sub-partition
           if( subTuIdx != -1 )
@@ -1383,7 +1383,7 @@ TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType c
       const CompArea &_selfBlk = area.blocks[i];
       const CompArea     &_blk = tu->blocks[i];
 
-      bool isIspTu = tu->cu != nullptr && tu->cu->ispMode && isLuma(_blk.compID);
+      bool isIspTu = tu->cu != nullptr && tu->cu->ispMode != ISPType::NONE && isLuma(_blk.compID);
 
       bool isFirstIspTu = false;
       if (isIspTu)

@@ -326,7 +326,7 @@ struct CodingUnit : public UnitArea
   // needed for fast imv mode decisions
   int8_t         imvNumCand;
   uint8_t        smvdMode;
-  uint8_t        ispMode;
+  ISPType        ispMode;
   bool           useEscape[MAX_NUM_CHANNEL_TYPE];
   bool           useRotation[MAX_NUM_CHANNEL_TYPE];
   bool           reuseflag[MAX_NUM_CHANNEL_TYPE][MAXPLTPREDSIZE];
@@ -378,7 +378,7 @@ struct IntraPredictionData
 {
   uint32_t  intraDir[MAX_NUM_CHANNEL_TYPE];
   bool      mipTransposedFlag;
-  int       multiRefIdx;
+  uint8_t   multiRefIdx;
 };
 
 struct InterPredictionData

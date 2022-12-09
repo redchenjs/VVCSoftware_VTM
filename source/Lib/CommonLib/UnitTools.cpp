@@ -432,13 +432,13 @@ ModeType CU::getModeTypeAtDepth( const CodingUnit& cu, const unsigned depth )
 
 bool CU::divideTuInRows( const CodingUnit &cu )
 {
-  CHECK( cu.ispMode != HOR_INTRA_SUBPARTITIONS && cu.ispMode != VER_INTRA_SUBPARTITIONS, "Intra Subpartitions type not recognized!" );
-  return cu.ispMode == HOR_INTRA_SUBPARTITIONS ? true : false;
+  CHECK(cu.ispMode != ISPType::HOR && cu.ispMode != ISPType::VER, "Intra Subpartitions type not recognized!");
+  return cu.ispMode == ISPType::HOR;
 }
 
 PartSplit CU::getISPType( const CodingUnit &cu, const ComponentID compID )
 {
-  if( cu.ispMode && isLuma( compID ) )
+  if (cu.ispMode != ISPType::NONE && isLuma(compID))
   {
     const bool tuIsDividedInRows = CU::divideTuInRows( cu );
 
@@ -490,11 +490,11 @@ bool CU::canUseISP( const int width, const int height, const int maxTrSize )
 
 bool CU::canUseLfnstWithISP( const CompArea& cuArea, const ISPType ispSplitType )
 {
-  if( ispSplitType == NOT_INTRA_SUBPARTITIONS )
+  if (ispSplitType == ISPType::NONE)
   {
     return false;
   }
-  const Size tuSize = (ispSplitType == HOR_INTRA_SUBPARTITIONS)
+  const Size tuSize = (ispSplitType == ISPType::HOR)
                         ? Size(cuArea.width, CU::getISPSplitDim(cuArea.width, cuArea.height, TU_1D_HORZ_SPLIT))
                         : Size(CU::getISPSplitDim(cuArea.width, cuArea.height, TU_1D_VERT_SPLIT), cuArea.height);
 
@@ -508,7 +508,7 @@ bool CU::canUseLfnstWithISP( const CompArea& cuArea, const ISPType ispSplitType 
 bool CU::canUseLfnstWithISP( const CodingUnit& cu, const ChannelType chType )
 {
   CHECK( !isLuma( chType ), "Wrong ISP mode!" );
-  return CU::canUseLfnstWithISP( cu.blocks[chType == CHANNEL_TYPE_LUMA ? 0 : 1], (ISPType)cu.ispMode );
+  return CU::canUseLfnstWithISP(cu.blocks[chType == CHANNEL_TYPE_LUMA ? 0 : 1], cu.ispMode);
 }
 
 uint32_t CU::getISPSplitDim( const int width, const int height, const PartSplit ispType )
@@ -544,14 +544,15 @@ uint32_t CU::getISPSplitDim( const int width, const int height, const PartSplit 
 
 bool CU::allLumaCBFsAreZero(const CodingUnit& cu)
 {
-  if (!cu.ispMode)
+  if (cu.ispMode == ISPType::NONE)
   {
     return TU::getCbf(*cu.firstTU, COMPONENT_Y) == false;
   }
   else
   {
-    const int numTotalTUs = cu.ispMode == HOR_INTRA_SUBPARTITIONS ? cu.lheight() >> floorLog2(cu.firstTU->lheight())
-                                                                  : cu.lwidth() >> floorLog2(cu.firstTU->lwidth());
+    const int      numTotalTUs = cu.ispMode == ISPType::HOR ? cu.lheight() >> floorLog2(cu.firstTU->lheight())
+                                                            : cu.lwidth() >> floorLog2(cu.firstTU->lwidth());
+
     TransformUnit* tuPtr = cu.firstTU;
     for (int tuIdx = 0; tuIdx < numTotalTUs; tuIdx++)
     {
@@ -806,7 +807,7 @@ int PU::getWideAngle( const TransformUnit &tu, const uint32_t dirMode, const Com
     return ( int ) dirMode;
   }
 
-  const CompArea&  area         = tu.cu->ispMode && isLuma(compID) ? tu.cu->blocks[compID] : tu.blocks[ compID ];
+  const CompArea  &area = tu.cu->ispMode != ISPType::NONE && isLuma(compID) ? tu.cu->blocks[compID] : tu.blocks[compID];
   int              width        = area.width;
   int              height       = area.height;
   int              modeShift[ ] = { 0, 6, 10, 12, 14, 15 };
@@ -4602,7 +4603,7 @@ bool CU::isSameSbtSize( const uint8_t sbtInfo1, const uint8_t sbtInfo2 )
 bool CU::isPredRegDiffFromTB(const CodingUnit &cu, const ComponentID compID)
 {
   return (compID == COMPONENT_Y)
-         && (cu.ispMode == VER_INTRA_SUBPARTITIONS
+         && (cu.ispMode == ISPType::VER
              && CU::isMinWidthPredEnabledForBlkSize(cu.blocks[compID].width, cu.blocks[compID].height));
 }
 
@@ -4613,7 +4614,8 @@ bool CU::isMinWidthPredEnabledForBlkSize(const int w, const int h)
 
 bool CU::isFirstTBInPredReg(const CodingUnit& cu, const ComponentID compID, const CompArea &area)
 {
-  return (compID == COMPONENT_Y) && cu.ispMode && ((area.topLeft().x - cu.Y().topLeft().x) % PRED_REG_MIN_WIDTH == 0);
+  return compID == COMPONENT_Y && cu.ispMode != ISPType::NONE
+         && ((area.topLeft().x - cu.Y().topLeft().x) % PRED_REG_MIN_WIDTH == 0);
 }
 
 void CU::adjustPredArea(CompArea &area)
@@ -4711,7 +4713,7 @@ bool CU::isMTSAllowed(const CodingUnit &cu, const ComponentID compID)
   mtsAllowed &= CU::isIntra(cu) ? cu.cs->sps->getExplicitMtsIntraEnabled()
                                 : cu.cs->sps->getExplicitMtsInterEnabled() && CU::isInter(cu);
   mtsAllowed &= cuWidth <= maxSize && cuHeight <= maxSize;
-  mtsAllowed &= !cu.ispMode;
+  mtsAllowed &= cu.ispMode == ISPType::NONE;
   mtsAllowed &= !cu.sbtInfo;
   mtsAllowed &= !(cu.bdpcmMode != BdpcmMode::NONE && cuWidth <= tsMaxSize && cuHeight <= tsMaxSize);
   return mtsAllowed;
@@ -4752,7 +4754,7 @@ bool TU::isTSAllowed(const TransformUnit &tu, const ComponentID compID)
   const int maxSize = tu.cs->sps->getLog2MaxTransformSkipBlockSize();
 
   bool tsAllowed = tu.cs->sps->getTransformSkipEnabledFlag();
-  tsAllowed &= ( !tu.cu->ispMode || !isLuma(compID) );
+  tsAllowed &= (tu.cu->ispMode == ISPType::NONE || !isLuma(compID));
   SizeType transformSkipMaxSize = 1 << maxSize;
   tsAllowed &= tu.cu->getBdpcmMode(compID) == BdpcmMode::NONE;
   tsAllowed &= tu.blocks[compID].width <= transformSkipMaxSize && tu.blocks[compID].height <= transformSkipMaxSize;
@@ -5108,14 +5110,14 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
           }
         }
 
-        if (currCU.ispMode > NOT_INTRA_SUBPARTITIONS)
+        if (currCU.ispMode > ISPType::NONE)
         {
-          if (currCU.ispMode == VER_INTRA_SUBPARTITIONS)
+          if (currCU.ispMode == ISPType::VER)
           {
             featureCounter.intraSubPartitionsVertical[cuWidthIdx][cuHeightIdx]++;
             featureCounter.intraLumaSubPartitionsVertical[cuWidthIdx][cuHeightIdx]++;
           }
-          if (currCU.ispMode == HOR_INTRA_SUBPARTITIONS)
+          if (currCU.ispMode == ISPType::HOR)
           {
             featureCounter.intraSubPartitionsHorizontal[cuWidthIdx][cuHeightIdx]++;
             featureCounter.intraLumaSubPartitionsHorizontal[cuWidthIdx][cuHeightIdx]++;
@@ -5669,14 +5671,14 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
           }
         }
 
-        if (currCU.ispMode > NOT_INTRA_SUBPARTITIONS)
+        if (currCU.ispMode > ISPType::NONE)
         {
-          if (currCU.ispMode == VER_INTRA_SUBPARTITIONS)
+          if (currCU.ispMode == ISPType::VER)
           {
             featureCounter.intraSubPartitionsVertical[cuCbWidthIdx][cuCbHeightIdx]++;
             featureCounter.intraChromaSubPartitionsVertical[cuCbWidthIdx][cuCbHeightIdx]++;
           }
-          if (currCU.ispMode == HOR_INTRA_SUBPARTITIONS)
+          if (currCU.ispMode == ISPType::HOR)
           {
             featureCounter.intraSubPartitionsHorizontal[cuCbWidthIdx][cuCbHeightIdx]++;
             featureCounter.intraChromaSubPartitionsHorizontal[cuCbWidthIdx][cuCbHeightIdx]++;
@@ -5735,14 +5737,14 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
           }
         }
 
-        if (currCU.ispMode > NOT_INTRA_SUBPARTITIONS)
+        if (currCU.ispMode > ISPType::NONE)
         {
-          if (currCU.ispMode == VER_INTRA_SUBPARTITIONS)
+          if (currCU.ispMode == ISPType::VER)
           {
             featureCounter.intraSubPartitionsVertical[cuCrWidthIdx][cuCrHeightIdx]++;
             featureCounter.intraChromaSubPartitionsVertical[cuCrWidthIdx][cuCrHeightIdx]++;
           }
-          if (currCU.ispMode == HOR_INTRA_SUBPARTITIONS)
+          if (currCU.ispMode == ISPType::HOR)
           {
             featureCounter.intraSubPartitionsHorizontal[cuCrWidthIdx][cuCrHeightIdx]++;
             featureCounter.intraSubPartitionsHorizontal[cuCrWidthIdx][cuCrHeightIdx]++;

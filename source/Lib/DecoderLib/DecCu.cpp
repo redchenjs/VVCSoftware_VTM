@@ -193,7 +193,7 @@ void DecCu::xIntraRecBlk( TransformUnit& tu, const ComponentID compID )
   bool predRegDiffFromTB = CU::isPredRegDiffFromTB(*tu.cu, compID);
   bool firstTBInPredReg = CU::isFirstTBInPredReg(*tu.cu, compID, area);
   CompArea areaPredReg(COMPONENT_Y, tu.chromaFormat, area);
-  if (tu.cu->ispMode && isLuma(compID))
+  if (tu.cu->ispMode != ISPType::NONE && isLuma(compID))
   {
     if (predRegDiffFromTB)
     {
@@ -290,11 +290,11 @@ void DecCu::xIntraRecBlk( TransformUnit& tu, const ComponentID compID )
     piResi.scaleSignal(tu.getChromaAdj(), 0, tu.cu->cs->slice->clpRng(compID));
   }
 
-  if( !tu.cu->ispMode || !isLuma( compID ) )
+  if (tu.cu->ispMode == ISPType::NONE || !isLuma(compID))
   {
     cs.setDecomp( area );
   }
-  else if( tu.cu->ispMode && isLuma( compID ) && CU::isISPFirst( *tu.cu, tu.blocks[compID], compID ) )
+  else if (tu.cu->ispMode != ISPType::NONE && isLuma(compID) && CU::isISPFirst(*tu.cu, tu.blocks[compID], compID))
   {
     cs.setDecomp( tu.cu->blocks[compID] );
   }
@@ -339,7 +339,7 @@ void DecCu::xIntraRecACTBlk(TransformUnit& tu)
 
   CHECK(!tu.Y().valid() || !tu.Cb().valid() || !tu.Cr().valid(), "Invalid TU");
   CHECK(&pu != tu.cu->firstPU, "wrong PU fetch");
-  CHECK(tu.cu->ispMode, "adaptive color transform cannot be applied to ISP");
+  CHECK(tu.cu->ispMode != ISPType::NONE, "adaptive color transform cannot be applied to ISP");
   CHECK(pu.intraDir[CHANNEL_TYPE_CHROMA] != DM_CHROMA_IDX, "chroma should use DM mode for adaptive color transform");
 
   bool flag = slice.getLmcsEnabledFlag() && (slice.isIntra() || (!slice.isIntra() && m_pcReshape->getCTUFlag()));

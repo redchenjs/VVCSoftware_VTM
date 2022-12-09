@@ -166,7 +166,7 @@ static const std::map<BlockStatistic, std::tuple<std::string, BlockStatisticType
   { BlockStatistic::JointCbCr,              std::tuple<std::string, BlockStatisticType, std::string>{"JointCbCr",                   BlockStatisticType::Flag,                   ""}},
 
   { BlockStatistic::MIPFlag,                std::tuple<std::string, BlockStatisticType, std::string>{"MIPFlag",                     BlockStatisticType::Flag,                   ""}},
-  { BlockStatistic::ISPMode,                std::tuple<std::string, BlockStatisticType, std::string>{"ISPMode",                     BlockStatisticType::Integer,                "[0, " + std::to_string(NUM_INTRA_SUBPARTITIONS_MODES) + "]"}},
+  { BlockStatistic::ISPMode,                std::tuple<std::string, BlockStatisticType, std::string>{"ISPMode",                     BlockStatisticType::Integer,                "[0, " + std::to_string(to_uint(ISPType::NUM)) + "]"}},
   { BlockStatistic::Depth,                  std::tuple<std::string, BlockStatisticType, std::string>{"Depth",                       BlockStatisticType::Integer,                "[0, 7]"}},
   { BlockStatistic::QT_Depth,               std::tuple<std::string, BlockStatisticType, std::string>{"QT_Depth",                    BlockStatisticType::Integer,                "[0, 7]"}},
   { BlockStatistic::BT_Depth,               std::tuple<std::string, BlockStatisticType, std::string>{"BT_Depth",                    BlockStatisticType::Integer,                "[0, 7]"}},
@@ -216,7 +216,6 @@ static const std::map<BlockStatistic, std::tuple<std::string, BlockStatisticType
   { BlockStatistic::SplitSeries_Chroma,            std::tuple<std::string, BlockStatisticType, std::string>{"SplitSeries_Chroma",                 BlockStatisticType::Integer,                "[0, " + std::to_string(std::numeric_limits<SplitSeries>::max()) + "]"}},
 
 };
-
 
 std::string GetBlockStatisticName(BlockStatistic statistic);
 std::string GetBlockStatisticTypeString(BlockStatistic statistic);
