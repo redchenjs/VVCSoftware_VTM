@@ -68,7 +68,7 @@ enum PictureType
 #endif
   NUM_PIC_TYPES
 };
-extern XUCache g_globalUnitCache;
+extern XuPool g_xuPool;
 
 // ---------------------------------------------------------------------------
 // coding structure
@@ -100,7 +100,7 @@ public:
   const VPS *vps;
   const PreCalcValues* pcv;
 
-  CodingStructure(CUCache&, PUCache&, TUCache&);
+  CodingStructure(XuPool &);
 
 #if GDR_ENABLED
   bool isGdrEnabled() { return m_gdrEnabled; }
@@ -263,9 +263,9 @@ private:
   unsigned m_numPUs;
   unsigned m_numTUs;
 
-  CUCache& m_cuCache;
-  PUCache& m_puCache;
-  TUCache& m_tuCache;
+  CuPool &m_cuPool;
+  PuPool &m_puPool;
+  TuPool &m_tuPool;
 
   std::vector<SAOBlkParam> m_sao;
 

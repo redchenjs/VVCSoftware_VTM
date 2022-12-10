@@ -192,7 +192,7 @@ private:
   EncModeCtrl    *m_modeCtrl;
   Pel*            m_pSharedPredTransformSkip[MAX_NUM_TBLOCKS];
 
-  XUCache         m_unitCache;
+  XuPool m_unitPool;
 
   CodingStructure ****m_pSplitCS;
   CodingStructure ****m_pFullCS;
@@ -394,7 +394,7 @@ protected:
 
   // RD computation
   CABACWriter*    m_CABACEstimator;
-  CtxCache*       m_CtxCache;
+  CtxPool        *m_ctxPool;
 
   bool            m_isInitialized;
   bool            m_bestEscape;
@@ -411,7 +411,7 @@ public:
   IntraSearch();
   ~IntraSearch();
 
-  void init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, CABACWriter *CABACEstimator, CtxCache *ctxCache,
+  void init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, CABACWriter *CABACEstimator, CtxPool *ctxPool,
             const uint32_t maxCUWidth, const uint32_t maxCUHeight, const uint32_t maxTotalCUDepth,
             EncReshape *m_pcReshape, const unsigned bitDepthY);
 

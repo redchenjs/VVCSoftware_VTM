@@ -480,26 +480,24 @@ protected:
 
 };
 
-
-
-typedef dynamic_cache<Ctx> CtxCache;
+typedef Pool<Ctx> CtxPool;
 
 class TempCtx
 {
   TempCtx( const TempCtx& ) = delete;
   const TempCtx& operator=( const TempCtx& ) = delete;
 public:
-  TempCtx ( CtxCache* cache )                     : m_ctx( *cache->get() ), m_cache( cache ) {}
-  TempCtx ( CtxCache* cache, const Ctx& ctx    )  : m_ctx( *cache->get() ), m_cache( cache ) { m_ctx = ctx; }
-  TempCtx ( CtxCache* cache, SubCtx&&   subCtx )  : m_ctx( *cache->get() ), m_cache( cache ) { m_ctx = std::forward<SubCtx>(subCtx); }
-  ~TempCtx()                                      { m_cache->cache( &m_ctx ); }
+  TempCtx(CtxPool *pool) : m_ctx(*pool->get()), m_pool(pool) {}
+  TempCtx(CtxPool *pool, const Ctx &ctx) : m_ctx(*pool->get()), m_pool(pool) { m_ctx = ctx; }
+  TempCtx(CtxPool *pool, SubCtx &&subCtx) : m_ctx(*pool->get()), m_pool(pool) { m_ctx = std::forward<SubCtx>(subCtx); }
+  ~TempCtx() { m_pool->giveBack(&m_ctx); }
   const Ctx& operator=( const Ctx& ctx )          { return ( m_ctx = ctx ); }
   SubCtx     operator=( SubCtx&&   subCtx )       { return m_ctx = std::forward<SubCtx>( subCtx ); }
   operator const Ctx& ()           const          { return m_ctx; }
   operator       Ctx& ()                          { return m_ctx; }
 private:
   Ctx&      m_ctx;
-  CtxCache* m_cache;
+  CtxPool  *m_pool;
 };
 
 

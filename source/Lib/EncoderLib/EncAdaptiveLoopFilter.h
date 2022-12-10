@@ -246,7 +246,7 @@ private:
   AlfCovariance          m_alfCovarianceMerged[ALF_NUM_OF_FILTER_TYPES][MAX_NUM_ALF_CLASSES + 2];
   int                    m_alfClipMerged[ALF_NUM_OF_FILTER_TYPES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF];
   CABACWriter*           m_CABACEstimator;
-  CtxCache*              m_CtxCache;
+  CtxPool               *m_ctxPool;
   double                 m_lambda[MAX_NUM_COMPONENT];
 
   int**                  m_filterCoeffSet; // [lumaClassIdx/chromaAltIdx][coeffIdx]
@@ -297,7 +297,7 @@ public:
     , Picture* pcPic, uint32_t numSliceSegments
   );
   int getNewCcAlfApsId(CodingStructure &cs, int cIdx);
-  void initCABACEstimator( CABACEncoder* cabacEncoder, CtxCache* ctxCache, Slice* pcSlice, ParameterSetMap<APS>* apsMap );
+  void initCABACEstimator(CABACEncoder *cabacEncoder, CtxPool *ctxPool, Slice *pcSlice, ParameterSetMap<APS> *apsMap);
   void create( const EncCfg* encCfg, const int picWidth, const int picHeight, const ChromaFormat chromaFormatIDC, const int maxCUWidth, const int maxCUHeight, const int maxCUDepth, const int inputBitDepth[MAX_NUM_CHANNEL_TYPE], const int internalBitDepth[MAX_NUM_CHANNEL_TYPE] );
   void destroy();
   void setApsIdStart( int i) { m_apsIdStart = i; }

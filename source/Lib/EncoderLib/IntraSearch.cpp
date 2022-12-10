@@ -53,16 +53,16 @@
  //! \{
 #define PLTCtx(c) SubCtx( Ctx::Palette, c )
 IntraSearch::IntraSearch()
-  : m_pSplitCS      (nullptr)
-  , m_pFullCS       (nullptr)
-  , m_pBestCS       (nullptr)
-  , m_pcEncCfg      (nullptr)
-  , m_pcTrQuant     (nullptr)
-  , m_pcRdCost      (nullptr)
-  , m_pcReshape     (nullptr)
+  : m_pSplitCS(nullptr)
+  , m_pFullCS(nullptr)
+  , m_pBestCS(nullptr)
+  , m_pcEncCfg(nullptr)
+  , m_pcTrQuant(nullptr)
+  , m_pcRdCost(nullptr)
+  , m_pcReshape(nullptr)
   , m_CABACEstimator(nullptr)
-  , m_CtxCache      (nullptr)
-  , m_isInitialized (false)
+  , m_ctxPool(nullptr)
+  , m_isInitialized(false)
 {
   for( uint32_t ch = 0; ch < MAX_NUM_TBLOCKS; ch++ )
   {
@@ -192,7 +192,7 @@ IntraSearch::~IntraSearch()
 }
 
 void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, CABACWriter *CABACEstimator,
-                       CtxCache *ctxCache, const uint32_t maxCUWidth, const uint32_t maxCUHeight,
+                       CtxPool *ctxPool, const uint32_t maxCUWidth, const uint32_t maxCUHeight,
                        const uint32_t maxTotalCUDepth, EncReshape *pcReshape, const unsigned bitDepthY)
 {
   CHECK(m_isInitialized, "Already initialized");
@@ -201,7 +201,7 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
   m_pcTrQuant      = pcTrQuant;
   m_pcRdCost       = pcRdCost;
   m_CABACEstimator = CABACEstimator;
-  m_CtxCache       = ctxCache;
+  m_ctxPool        = ctxPool;
   m_pcReshape      = pcReshape;
 
   const ChromaFormat cform = pcEncCfg->getChromaFormatIdc();
@@ -239,8 +239,8 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
     {
       if(  gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( width ) ) && gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( height ) ) )
       {
-        m_pBestCS[width][height] = new CodingStructure( m_unitCache.cuCache, m_unitCache.puCache, m_unitCache.tuCache );
-        m_pTempCS[width][height] = new CodingStructure( m_unitCache.cuCache, m_unitCache.puCache, m_unitCache.tuCache );
+        m_pBestCS[width][height] = new CodingStructure(m_unitPool);
+        m_pTempCS[width][height] = new CodingStructure(m_unitPool);
 
 #if GDR_ENABLED
         m_pBestCS[width][height]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
@@ -255,7 +255,7 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
 
         for (uint32_t layer = 0; layer < numLayersToAllocateFull; layer++)
         {
-          m_pFullCS [width][height][layer] = new CodingStructure( m_unitCache.cuCache, m_unitCache.puCache, m_unitCache.tuCache );
+          m_pFullCS[width][height][layer] = new CodingStructure(m_unitPool);
 
 #if GDR_ENABLED
           m_pFullCS[width][height][layer]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
@@ -266,7 +266,7 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
 
         for (uint32_t layer = 0; layer < numLayersToAllocateSplit; layer++)
         {
-          m_pSplitCS[width][height][layer] = new CodingStructure( m_unitCache.cuCache, m_unitCache.puCache, m_unitCache.tuCache );
+          m_pSplitCS[width][height][layer] = new CodingStructure(m_unitPool);
 #if GDR_ENABLED
           m_pSplitCS[width][height][layer]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
 #else
@@ -291,7 +291,7 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
 
   for (uint32_t depth = 0; depth < numSaveLayersToAllocate; depth++)
   {
-    m_pSaveCS[depth] = new CodingStructure( m_unitCache.cuCache, m_unitCache.puCache, m_unitCache.tuCache );
+    m_pSaveCS[depth] = new CodingStructure(m_unitPool);
 #if GDR_ENABLED
     m_pSaveCS[depth]->create(UnitArea(cform, Area(0, 0, maxCUWidth, maxCUHeight)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
 #else
@@ -532,12 +532,12 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
 
   //===== loop over partitions =====
 
-  const TempCtx ctxStart          ( m_CtxCache, m_CABACEstimator->getCtx() );
-  const TempCtx ctxStartMipFlag    ( m_CtxCache, SubCtx( Ctx::MipFlag,          m_CABACEstimator->getCtx() ) );
-  const TempCtx ctxStartIspMode    ( m_CtxCache, SubCtx( Ctx::ISPMode,          m_CABACEstimator->getCtx() ) );
-  const TempCtx ctxStartPlanarFlag ( m_CtxCache, SubCtx( Ctx::IntraLumaPlanarFlag, m_CABACEstimator->getCtx() ) );
-  const TempCtx ctxStartIntraMode(m_CtxCache, SubCtx(Ctx::IntraLumaMpmFlag, m_CABACEstimator->getCtx()));
-  const TempCtx ctxStartMrlIdx      ( m_CtxCache, SubCtx( Ctx::MultiRefLineIdx,        m_CABACEstimator->getCtx() ) );
+  const TempCtx ctxStart(m_ctxPool, m_CABACEstimator->getCtx());
+  const TempCtx ctxStartMipFlag(m_ctxPool, SubCtx(Ctx::MipFlag, m_CABACEstimator->getCtx()));
+  const TempCtx ctxStartIspMode(m_ctxPool, SubCtx(Ctx::ISPMode, m_CABACEstimator->getCtx()));
+  const TempCtx ctxStartPlanarFlag(m_ctxPool, SubCtx(Ctx::IntraLumaPlanarFlag, m_CABACEstimator->getCtx()));
+  const TempCtx ctxStartIntraMode(m_ctxPool, SubCtx(Ctx::IntraLumaMpmFlag, m_CABACEstimator->getCtx()));
+  const TempCtx ctxStartMrlIdx(m_ctxPool, SubCtx(Ctx::MultiRefLineIdx, m_CABACEstimator->getCtx()));
 
   CHECK( !cu.firstPU, "CU has no PUs" );
   // variables for saving fast intra modes scan results across multiple LFNST passes
@@ -1441,7 +1441,7 @@ void IntraSearch::estIntraPredChromaQT( CodingUnit &cu, Partitioner &partitioner
   const ChromaFormat format   = cu.chromaFormat;
   const uint32_t    numberValidComponents = getNumberValidComponents(format);
   CodingStructure &cs = *cu.cs;
-  const TempCtx ctxStart  ( m_CtxCache, m_CABACEstimator->getCtx() );
+  const TempCtx      ctxStart(m_ctxPool, m_CABACEstimator->getCtx());
 
   cs.setDecomp( cs.area.Cb(), false );
 
@@ -3889,8 +3889,8 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
   std::array<int, MAX_NUM_COMPONENT> bestModeIds;
   bestModeIds.fill(0);
 
-  const TempCtx ctxStart  ( m_CtxCache, m_CABACEstimator->getCtx() );
-  TempCtx       ctxBest   ( m_CtxCache );
+  const TempCtx ctxStart(m_ctxPool, m_CABACEstimator->getCtx());
+  TempCtx       ctxBest(m_ctxPool);
 
   CodingStructure *csSplit = nullptr;
   CodingStructure *csFull  = nullptr;
@@ -4337,8 +4337,8 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
   bool checkFull  = !partitioner.canSplit(TU_MAX_TR_SPLIT, cs);
   bool checkSplit = !checkFull;
 
-  TempCtx ctxStart(m_CtxCache, m_CABACEstimator->getCtx());
-  TempCtx ctxBest(m_CtxCache);
+  TempCtx ctxStart(m_ctxPool, m_CABACEstimator->getCtx());
+  TempCtx ctxBest(m_ctxPool);
 
   CodingStructure *csSplit = nullptr;
   CodingStructure *csFull = nullptr;
@@ -4784,7 +4784,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
         }
       }
 
-      TempCtx ctxBegin(m_CtxCache);
+      TempCtx ctxBegin(m_ctxPool);
       ctxBegin = m_CABACEstimator->getCtx();
 
       for (int modeId = 0; modeId < numTransformCands; modeId++)
@@ -5187,9 +5187,9 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
     int        maxModesTested = 0;
     bool       earlyExitISP   = false;
 
-    TempCtx ctxStartTU( m_CtxCache );
-    TempCtx ctxStart  ( m_CtxCache );
-    TempCtx ctxBest   ( m_CtxCache );
+    TempCtx ctxStartTU(m_ctxPool);
+    TempCtx ctxStart(m_ctxPool);
+    TempCtx ctxBest(m_ctxPool);
 
     ctxStartTU       = m_CABACEstimator->getCtx();
     currTU.jointCbCr = 0;

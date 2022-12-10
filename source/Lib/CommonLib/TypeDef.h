@@ -1335,39 +1335,37 @@ public:
 
 
 // ---------------------------------------------------------------------------
-// dynamic cache
+// This class contains a pool of objects that can be used and reused
+// while minimizing the amount of required memory allocation and
+// deallocation operations.
 // ---------------------------------------------------------------------------
 
-template<typename T>
-class dynamic_cache
+template<typename T> class Pool
 {
-  std::vector<T*> m_cache;
+  std::vector<T *> m_items;
 
 public:
-  ~dynamic_cache()
-  {
-    deleteEntries();
-  }
+  ~Pool() { deleteEntries(); }
 
   void deleteEntries()
   {
-    for( auto &p : m_cache )
+    for (auto &p: m_items)
     {
       delete p;
       p = nullptr;
     }
 
-    m_cache.clear();
+    m_items.clear();
   }
 
   T* get()
   {
     T* ret;
 
-    if( !m_cache.empty() )
+    if (!m_items.empty())
     {
-      ret = m_cache.back();
-      m_cache.pop_back();
+      ret = m_items.back();
+      m_items.pop_back();
     }
     else
     {
@@ -1377,27 +1375,24 @@ public:
     return ret;
   }
 
-  void cache( T* el )
-  {
-    m_cache.push_back( el );
-  }
+  void giveBack(T *el) { m_items.push_back(el); }
 
-  void cache( std::vector<T*>& vel )
+  void giveBack(std::vector<T *> &vel)
   {
-    m_cache.insert( m_cache.end(), vel.begin(), vel.end() );
+    m_items.insert(m_items.end(), vel.begin(), vel.end());
     vel.clear();
   }
 };
 
-typedef dynamic_cache<struct CodingUnit    > CUCache;
-typedef dynamic_cache<struct PredictionUnit> PUCache;
-typedef dynamic_cache<struct TransformUnit > TUCache;
+typedef Pool<struct CodingUnit>     CuPool;
+typedef Pool<struct PredictionUnit> PuPool;
+typedef Pool<struct TransformUnit>  TuPool;
 
-struct XUCache
+struct XuPool
 {
-  CUCache cuCache;
-  PUCache puCache;
-  TUCache tuCache;
+  CuPool cuPool;
+  PuPool puPool;
+  TuPool tuPool;
 };
 
 

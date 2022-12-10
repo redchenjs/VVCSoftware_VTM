@@ -157,12 +157,12 @@ private:
 
   std::vector<CtxPair>  m_ctxBuffer;
   CtxPair*              m_CurrCtx;
-  CtxCache*             m_CtxCache;
+  CtxPool              *m_ctxPool;
 
   //  Data : encoder control
   int                   m_cuChromaQpOffsetIdxPlus1; // if 0, then cu_chroma_qp_offset_flag will be 0, otherwise cu_chroma_qp_offset_flag will be 1.
 
-  XUCache               m_unitCache;
+  XuPool m_unitPool;
 
   CodingStructure    ***m_pTempCS;
   CodingStructure    ***m_pBestCS;

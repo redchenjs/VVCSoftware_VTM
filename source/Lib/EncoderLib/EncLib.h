@@ -102,7 +102,7 @@ private:
   PicHeader                 m_picHeader;                          ///< picture header
   // RD cost computation
   RdCost                    m_cRdCost;                            ///< RD cost computation class
-  CtxCache                  m_CtxCache;                           ///< buffer for temporarily stored context models
+  CtxPool                   m_ctxPool;                            ///< buffer for temporarily stored context models
   // quality control
   RateCtrl                  m_cRateCtrl;                          ///< Rate control class
 
@@ -190,7 +190,7 @@ public:
   CABACEncoder*           getCABACEncoder       ()              { return  &m_CABACEncoder;         }
 
   RdCost*                 getRdCost             ()              { return  &m_cRdCost;              }
-  CtxCache*               getCtxCache           ()              { return  &m_CtxCache;             }
+  CtxPool                *getCtxCache() { return &m_ctxPool; }
   RateCtrl*               getRateCtrl           ()              { return  &m_cRateCtrl;            }
 
 #if GREEN_METADATA_SEI_ENABLED

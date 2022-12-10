@@ -43,8 +43,7 @@
 #include "UnitTools.h"
 #include "UnitPartitioner.h"
 
-
-XUCache g_globalUnitCache = XUCache();
+XuPool g_xuPool = XuPool();
 
 const UnitScale UnitScaleArray[NUM_CHROMA_FORMAT][MAX_NUM_COMPONENT] =
 {
@@ -58,19 +57,19 @@ const UnitScale UnitScaleArray[NUM_CHROMA_FORMAT][MAX_NUM_COMPONENT] =
 // coding structure method definitions
 // ---------------------------------------------------------------------------
 
-CodingStructure::CodingStructure(CUCache& cuCache, PUCache& puCache, TUCache& tuCache)
-  : area      ()
-  , picture   ( nullptr )
-  , parent    ( nullptr )
-  , bestCS    ( nullptr )
-  , m_isTuEnc ( false )
-  , m_cuCache ( cuCache )
-  , m_puCache ( puCache )
-  , m_tuCache ( tuCache )
-  , bestParent ( nullptr )
+CodingStructure::CodingStructure(XuPool &xuPool)
+  : area()
+  , picture(nullptr)
+  , parent(nullptr)
+  , bestCS(nullptr)
+  , m_isTuEnc(false)
+  , m_cuPool(xuPool.cuPool)
+  , m_puPool(xuPool.puPool)
+  , m_tuPool(xuPool.tuPool)
+  , bestParent(nullptr)
   , tmpColorSpaceCost(MAX_DOUBLE)
   , firstColorSpaceSelected(true)
-  , resetIBCBuffer (false)
+  , resetIBCBuffer(false)
 {
   for( uint32_t i = 0; i < MAX_NUM_COMPONENT; i++ )
   {
@@ -144,10 +143,9 @@ void CodingStructure::destroy()
   delete[] m_motionBuf;
   m_motionBuf = nullptr;
 
-
-  m_tuCache.cache( tus );
-  m_puCache.cache( pus );
-  m_cuCache.cache( cus );
+  m_tuPool.giveBack(tus);
+  m_puPool.giveBack(pus);
+  m_cuPool.giveBack(cus);
 }
 
 void CodingStructure::releaseIntermediateData()
@@ -945,19 +943,19 @@ void CodingStructure::clearCuPuTuIdxMap( const UnitArea &_area, uint32_t numCu, 
   //pop cu/pu/tus
   for( int i = m_numTUs; i > numTu; i-- )
   {
-    m_tuCache.cache( tus.back() );
+    m_tuPool.giveBack(tus.back());
     tus.pop_back();
     m_numTUs--;
   }
   for( int i = m_numPUs; i > numPu; i-- )
   {
-    m_puCache.cache( pus.back() );
+    m_puPool.giveBack(pus.back());
     pus.pop_back();
     m_numPUs--;
   }
   for( int i = m_numCUs; i > numCu; i-- )
   {
-    m_cuCache.cache( cus.back() );
+    m_cuPool.giveBack(cus.back());
     cus.pop_back();
     m_numCUs--;
   }
@@ -1230,7 +1228,7 @@ const TransformUnit * CodingStructure::getTU( const Position &pos, const Channel
 
 CodingUnit& CodingStructure::addCU( const UnitArea &unit, const ChannelType chType )
 {
-  CodingUnit *cu = m_cuCache.get();
+  CodingUnit *cu = m_cuPool.get();
 
   cu->UnitArea::operator=( unit );
   cu->initData();
@@ -1282,7 +1280,7 @@ CodingUnit& CodingStructure::addCU( const UnitArea &unit, const ChannelType chTy
 
 PredictionUnit& CodingStructure::addPU( const UnitArea &unit, const ChannelType chType )
 {
-  PredictionUnit *pu = m_puCache.get();
+  PredictionUnit *pu = m_puPool.get();
 
   pu->UnitArea::operator=( unit );
   pu->initData();
@@ -1333,7 +1331,7 @@ PredictionUnit& CodingStructure::addPU( const UnitArea &unit, const ChannelType 
 
 TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType chType )
 {
-  TransformUnit *tu = m_tuCache.get();
+  TransformUnit *tu = m_tuPool.get();
 
   tu->UnitArea::operator=( unit );
   tu->initData();
@@ -2224,7 +2222,7 @@ void CodingStructure::clearTUs()
     pcu->firstTU = pcu->lastTU = nullptr;
   }
 
-  m_tuCache.cache( tus );
+  m_tuPool.giveBack(tus);
   m_numTUs = 0;
 }
 
@@ -2236,7 +2234,7 @@ void CodingStructure::clearPUs()
     memset( m_puIdx[i], 0, sizeof( *m_puIdx[0] ) * unitScale[i].scaleArea( area.blocks[i].area() ) );
   }
 
-  m_puCache.cache( pus );
+  m_puPool.giveBack(pus);
   m_numPUs = 0;
 
   for( auto &pcu : cus )
@@ -2253,7 +2251,7 @@ void CodingStructure::clearCUs()
     memset( m_cuIdx[i], 0, sizeof( *m_cuIdx[0] ) * unitScale[i].scaleArea( area.blocks[i].area() ) );
   }
 
-  m_cuCache.cache( cus );
+  m_cuPool.giveBack(cus);
   m_numCUs = 0;
 }
 

@@ -176,10 +176,10 @@ void EncSampleAdaptiveOffset::destroyEncData()
   m_preDBFstatData.clear();
 }
 
-void EncSampleAdaptiveOffset::initCABACEstimator( CABACEncoder* cabacEncoder, CtxCache* ctxCache, Slice* pcSlice )
+void EncSampleAdaptiveOffset::initCABACEstimator(CABACEncoder *cabacEncoder, CtxPool *ctxPool, Slice *pcSlice)
 {
   m_CABACEstimator = cabacEncoder->getCABACEstimator( pcSlice->getSPS() );
-  m_CtxCache       = ctxCache;
+  m_ctxPool        = ctxPool;
   m_CABACEstimator->initCtxModels( *pcSlice );
   m_CABACEstimator->resetBits();
 }
@@ -576,14 +576,14 @@ void EncSampleAdaptiveOffset::deriveModeNewRDO(const BitDepths &bitDepths, int c
 
   //pre-encode merge flags
   modeParam[COMPONENT_Y].modeIdc = SAOMode::OFF;
-  const TempCtx ctxStartBlk   ( m_CtxCache, SAOCtx( m_CABACEstimator->getCtx() ) );
+  const TempCtx ctxStartBlk(m_ctxPool, SAOCtx(m_CABACEstimator->getCtx()));
   m_CABACEstimator->sao_block_params(modeParam, bitDepths, sliceEnabled,
                                      (mergeList[SAOModeMergeTypes::LEFT] != nullptr),
                                      (mergeList[SAOModeMergeTypes::ABOVE] != nullptr), true);
-  const TempCtx ctxStartLuma  ( m_CtxCache, SAOCtx( m_CABACEstimator->getCtx() ) );
-  TempCtx       ctxBestLuma   ( m_CtxCache );
+  const TempCtx ctxStartLuma(m_ctxPool, SAOCtx(m_CABACEstimator->getCtx()));
+  TempCtx       ctxBestLuma(m_ctxPool);
 
-    //------ luma --------//
+  //------ luma --------//
   {
     const ComponentID compIdx = COMPONENT_Y;
     //"off" case as initial cost
@@ -724,8 +724,8 @@ void EncSampleAdaptiveOffset::deriveModeMergeRDO(const BitDepths &bitDepths, int
   SAOBlkParam testBlkParam;
   const int numberOfComponents = m_numberOfComponents;
 
-  const TempCtx ctxStart  ( m_CtxCache, SAOCtx( m_CABACEstimator->getCtx() ) );
-  TempCtx       ctxBest   ( m_CtxCache );
+  const TempCtx ctxStart(m_ctxPool, SAOCtx(m_CABACEstimator->getCtx()));
+  TempCtx       ctxBest(m_ctxPool);
 
   for (const auto mergeType: { SAOModeMergeTypes::LEFT, SAOModeMergeTypes::ABOVE })
   {
@@ -799,7 +799,7 @@ void EncSampleAdaptiveOffset::decideBlkParams(CodingStructure &cs, bool *sliceEn
     }
   }
 
-  const TempCtx ctxPicStart ( m_CtxCache, SAOCtx( m_CABACEstimator->getCtx() ) );
+  const TempCtx ctxPicStart(m_ctxPool, SAOCtx(m_CABACEstimator->getCtx()));
 
   SAOBlkParam modeParam;
   double minCost, modeCost;
@@ -825,8 +825,8 @@ void EncSampleAdaptiveOffset::decideBlkParams(CodingStructure &cs, bool *sliceEn
   int     mergeCtuAddr = 1; //Ctu to be merged
   int     groupSize = 1;
   double  cost[2]      = { 0, 0 };
-  TempCtx ctxBeforeMerge(m_CtxCache);
-  TempCtx ctxAfterMerge(m_CtxCache);
+  TempCtx ctxBeforeMerge(m_ctxPool);
+  TempCtx ctxAfterMerge(m_ctxPool);
 
   double totalCost = 0;   // Used if testSAODisableAtPictureLevel==true
 
@@ -849,8 +849,8 @@ void EncSampleAdaptiveOffset::decideBlkParams(CodingStructure &cs, bool *sliceEn
       const uint32_t height = (yPos + pcv.maxCUHeight > pcv.lumaHeight) ? (pcv.lumaHeight - yPos) : pcv.maxCUHeight;
       const UnitArea area(pcv.chrFormat, Area(xPos, yPos, width, height));
 
-      const TempCtx  ctxStart ( m_CtxCache, SAOCtx( m_CABACEstimator->getCtx() ) );
-      TempCtx        ctxBest  ( m_CtxCache );
+      const TempCtx ctxStart(m_ctxPool, SAOCtx(m_CABACEstimator->getCtx()));
+      TempCtx       ctxBest(m_ctxPool);
 
       if (ctuRsAddr == mergeCtuAddr - 1)
       {
