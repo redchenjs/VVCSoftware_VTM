@@ -732,7 +732,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
 
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType     (0, 65535, 0, 256*2);
+#if JVET_AB0069_SEI_PROCESSING_ORDER
+  SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
+#else
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder (0, 255, 0, 256);
+#endif
 
 #if ENABLE_TRACING
   string sTracingRule;
@@ -3309,7 +3313,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     for (uint32_t i = 0; i < m_numofSEIMessages; i++)
     {
       m_poSEIPayloadType[i]  = cfg_poSEIPayloadType.values[i];
+#if JVET_AB0069_SEI_PROCESSING_ORDER
+      m_poSEIProcessingOrder[i] = (uint16_t)cfg_poSEIProcessingOrder.values[i];
+#else
       m_poSEIProcessingOrder[i] = (uint8_t)cfg_poSEIProcessingOrder.values[i];
+#endif
       //Error check, to avoid same PayloadType with different PayloadOrder
       for (uint32_t j = 0; j < i; j++)
       {

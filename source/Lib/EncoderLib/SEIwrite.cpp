@@ -1619,7 +1619,11 @@ void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
   for (uint32_t i=0; i < sei.m_posNumofSeiMessages; i++)
   {
     WRITE_CODE(sei.m_posPayloadType[i], 16, "sei_payloadType[i]");
+#if JVET_AB0069_SEI_PROCESSING_ORDER
+    WRITE_CODE(sei.m_posProcessingOrder[i], 16, "sei_processingOrder[i]");
+#else
     WRITE_CODE(sei.m_posProcessingOrder[i], 8, "sei_processingOrder[i]");
+#endif
   }
 }
 
