@@ -646,7 +646,11 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
   {
     sei_read_code(decodedMessageOutputStream, 16, val, "sei_payloadType[i]");
     sei.m_posPayloadType[i] = val;
+#if JVET_AB0069_SEI_PROCESSING_ORDER
+    sei_read_code(decodedMessageOutputStream, 16, val, "sei_processingOrder[i]");
+#else
     sei_read_code(decodedMessageOutputStream, 8, val, "sei_processingOrder[i]");
+#endif
     sei.m_posProcessingOrder[i] = val;
   }
 }

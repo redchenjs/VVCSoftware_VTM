@@ -758,7 +758,11 @@ protected:
 
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
+#if JVET_AB0069_SEI_PROCESSING_ORDER
+  std::vector<uint16_t>  m_poSEIProcessingOrder;
+#else
   std::vector<uint8_t>  m_poSEIProcessingOrder;
+#endif
   uint32_t              m_numofSEIMessages;
 
   bool                  m_constrainedRaslEncoding;
