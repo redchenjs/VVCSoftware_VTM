@@ -163,6 +163,7 @@ private:
   int                   m_cuChromaQpOffsetIdxPlus1; // if 0, then cu_chroma_qp_offset_flag will be 0, otherwise cu_chroma_qp_offset_flag will be 1.
 
   XuPool m_unitPool;
+  PelUnitBufPool m_pelUnitBufPool;
 
   CodingStructure    ***m_pTempCS;
   CodingStructure    ***m_pBestCS;
@@ -181,10 +182,6 @@ private:
   RateCtrl*             m_pcRateCtrl;
   IbcHashMap            m_ibcHashMap;
   EncModeCtrl          *m_modeCtrl;
-
-  PelStorage            m_acMergeBuffer[MMVD_MRG_MAX_RD_BUF_NUM];
-  PelStorage            m_acRealMergeBuffer[MRG_MAX_NUM_CANDS];
-  PelStorage            m_acMergeTmpBuffer[MRG_MAX_NUM_CANDS];
 
   std::array<PelStorage, GEO_MAX_TRY_WEIGHTED_SAD> m_geoWeightedBuffers;   // weighted prediction pixels
 

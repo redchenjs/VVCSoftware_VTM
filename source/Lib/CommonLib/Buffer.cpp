@@ -963,3 +963,51 @@ void UnitBuf<Pel>::colorSpaceConvert(const UnitBuf<Pel> &other, const bool forwa
     }
   }
 }
+
+PelUnitBufPool::PelUnitBufPool()
+{
+
+}
+
+PelUnitBufPool::~PelUnitBufPool()
+{
+}
+
+void PelUnitBufPool::initPelUnitBufPool(ChromaFormat chromaFormat, int ctuWidth, int ctuHeight)
+{
+  m_chromaFormat = chromaFormat;
+  m_ctuArea.x = 0;
+  m_ctuArea.y = 0;
+  m_ctuArea.width = ctuWidth;
+  m_ctuArea.height = ctuHeight;
+}
+
+PelUnitBuf* PelUnitBufPool::getPelUnitBuf(const UnitArea& unitArea)
+{
+  PelStorage* pelStorage = m_pelStoragePool.get();
+  if (pelStorage->bufs.empty())
+  {
+    pelStorage->create(m_chromaFormat, m_ctuArea);
+  }
+  
+  PelUnitBuf* pelUnitBuf = m_pelUnitBufPool.get();
+  *pelUnitBuf = pelStorage->getBuf(unitArea);
+
+  if (m_map.find(pelUnitBuf) == m_map.end())
+  {
+    m_map[pelUnitBuf] = pelStorage;
+  }
+  else
+  {
+    CHECK(m_map[pelUnitBuf] != pelStorage, "Wrong mapping in PelUnitBufPool");
+  }
+  
+  return pelUnitBuf;
+}
+
+void PelUnitBufPool::giveBack(PelUnitBuf* p)
+{
+  CHECK(m_map.find(p) == m_map.end(), "Unknown PelUnitBuf in PelUnitBufPool");
+  m_pelStoragePool.giveBack(m_map[p]);
+  m_pelUnitBufPool.giveBack(p);
+}
