@@ -377,6 +377,8 @@ struct CodingUnit : public UnitArea
 // prediction unit
 // ---------------------------------------------------------------------------
 
+using MergeIdxPair = std::array<uint8_t, 2>;
+
 struct IntraPredictionData
 {
   EnumArray<uint32_t, ChannelType> intraDir;
@@ -390,8 +392,9 @@ struct InterPredictionData
   bool    regularMergeFlag;
   uint8_t mergeIdx;
   uint8_t geoSplitDir;
-  uint8_t geoMergeIdx0;
-  uint8_t geoMergeIdx1;
+
+  MergeIdxPair geoMergeIdx;
+
   bool    mmvdMergeFlag;
   MmvdIdx mmvdMergeIdx;
   uint8_t interDir;

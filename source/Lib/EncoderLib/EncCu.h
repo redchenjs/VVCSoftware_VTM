@@ -70,20 +70,11 @@ class EncSlice;
 struct GeoMergeCombo
 {
   int splitDir;
-  short  mergeIdx0;
-  short  mergeIdx1;
+  MergeIdxPair mergeIdx;
   double cost;
-  GeoMergeCombo() : splitDir(), mergeIdx0(-1), mergeIdx1(-1), cost(0.0) {};
-  GeoMergeCombo(int _splitDir, int _mergeIdx0, int _mergeIdx1, double _cost) : splitDir(_splitDir), mergeIdx0(_mergeIdx0), mergeIdx1(_mergeIdx1), cost(_cost) {};
-};
-
-struct GeoMotionInfo
-{
-  uint8_t   m_candIdx0;
-  uint8_t   m_candIdx1;
-
-  GeoMotionInfo(uint8_t candIdx0, uint8_t candIdx1) : m_candIdx0(candIdx0), m_candIdx1(candIdx1) { }
-  GeoMotionInfo() { m_candIdx0 = m_candIdx1 = 0; }
+  GeoMergeCombo() : splitDir(0), mergeIdx{ 0, 0 }, cost(0.0){};
+  GeoMergeCombo(int _splitDir, const MergeIdxPair &idx, double _cost)
+    : splitDir(_splitDir), mergeIdx(idx), cost(_cost){};
 };
 
 class GeoComboCostList
@@ -138,9 +129,9 @@ public:
     m_singleDistList[mergeIdx][geoIdx][partIdx] = cost;
   }
 
-  double getCost(const int splitDir, const int mergeCand0, const int mergeCand1)
+  double getCost(const int splitDir, const MergeIdxPair &mergeCand)
   {
-    return m_singleDistList[mergeCand0][splitDir][0] + m_singleDistList[mergeCand1][splitDir][1];
+    return m_singleDistList[mergeCand[0]][splitDir][0] + m_singleDistList[mergeCand[1]][splitDir][1];
   }
 };
 
@@ -196,7 +187,8 @@ private:
   std::array<int, 2>    m_bestBcwIdx;
   std::array<double, 2> m_bestBcwCost;
 
-  static const GeoMotionInfo m_geoModeTest[GEO_MAX_NUM_CANDS];
+  static const MergeIdxPair m_geoModeTest[GEO_MAX_NUM_CANDS];
+
 #if SHARP_LUMA_DELTA_QP || ENABLE_QPA_SUB_CTU
   void    updateLambda      ( Slice* slice, const int dQP,
  #if WCG_EXT && ER_CHROMA_QP_WCG_PPS

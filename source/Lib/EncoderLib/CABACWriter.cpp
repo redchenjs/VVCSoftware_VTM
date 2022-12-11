@@ -2046,8 +2046,8 @@ void CABACWriter::merge_idx( const PredictionUnit& pu )
     if( pu.cu->geoFlag )
     {
       uint8_t splitDir = pu.geoSplitDir;
-      uint8_t candIdx0 = pu.geoMergeIdx0;
-      uint8_t candIdx1 = pu.geoMergeIdx1;
+      uint8_t candIdx0 = pu.geoMergeIdx[0];
+      uint8_t candIdx1 = pu.geoMergeIdx[1];
       DTRACE( g_trace_ctx, D_SYNTAX, "merge_idx() geo_split_dir=%d\n", splitDir );
       DTRACE( g_trace_ctx, D_SYNTAX, "merge_idx() geo_idx0=%d\n", candIdx0 );
       DTRACE( g_trace_ctx, D_SYNTAX, "merge_idx() geo_idx1=%d\n", candIdx1 );

@@ -616,7 +616,7 @@ void DecCu::xReconInter(CodingUnit &cu)
   if( cu.geoFlag )
   {
     m_pcInterPred->motionCompensationGeo( cu, m_geoMrgCtx );
-    PU::spanGeoMotionInfo( *cu.firstPU, m_geoMrgCtx, cu.firstPU->geoSplitDir, cu.firstPU->geoMergeIdx0, cu.firstPU->geoMergeIdx1 );
+    PU::spanGeoMotionInfo(*cu.firstPU, m_geoMrgCtx, cu.firstPU->geoSplitDir, cu.firstPU->geoMergeIdx);
   }
   else
   {

@@ -818,8 +818,8 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
 
           if (cu.geoFlag)
           {
-            const uint8_t candIdx0 = cu.firstPU->geoMergeIdx0;
-            const uint8_t candIdx1 = cu.firstPU->geoMergeIdx1;
+            const uint8_t         candIdx0 = cu.firstPU->geoMergeIdx[0];
+            const uint8_t         candIdx1 = cu.firstPU->geoMergeIdx[1];
             std::vector<Position> geoPartitions[2];
             Position linePositions[2];
             retrieveGeoPolygons(cu, geoPartitions, linePositions);

@@ -2399,8 +2399,8 @@ void CABACReader::merge_idx( PredictionUnit& pu )
       CHECK(pu.cu->lheight() > 64 || pu.cu->lwidth() > 64, "Incorrect block size of geo flag");
       int numCandminus2 = maxNumGeoCand - 2;
       pu.mergeIdx       = 0;
-      int mergeCand0    = 0;
-      int mergeCand1    = 0;
+      uint8_t mergeCand0 = 0;
+      uint8_t mergeCand1 = 0;
       if (m_binDecoder.decodeBin(Ctx::MergeIdx()))
       {
         mergeCand0 += unary_max_eqprob(numCandminus2) + 1;
@@ -2413,8 +2413,7 @@ void CABACReader::merge_idx( PredictionUnit& pu )
         }
       }
       mergeCand1 += mergeCand1 >= mergeCand0 ? 1 : 0;
-      pu.geoMergeIdx0 = mergeCand0;
-      pu.geoMergeIdx1 = mergeCand1;
+      pu.geoMergeIdx = { mergeCand0, mergeCand1 };
       DTRACE(g_trace_ctx, D_SYNTAX, "merge_idx() geo_split_dir=%d\n", splitDir);
       DTRACE(g_trace_ctx, D_SYNTAX, "merge_idx() geo_idx0=%d\n", mergeCand0);
       DTRACE(g_trace_ctx, D_SYNTAX, "merge_idx() geo_idx1=%d\n", mergeCand1);
