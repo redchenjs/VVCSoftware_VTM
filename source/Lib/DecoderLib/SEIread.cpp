@@ -2715,6 +2715,16 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");
     sei.m_componentLastFlag = val;
 
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_format_idc");
+    sei.m_inpFormatIdc = val;
+
+    if (sei.m_inpFormatIdc == 1)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_minus8");
+      sei.m_inpTensorBitDepthMinus8 = val;
+    }
+#else
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_sample_idc");
     sei.m_inpSampleIdc = val;
 
@@ -2723,6 +2733,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_minus8");
       sei.m_inpTensorBitDepthMinus8 = val;
     }
+#endif
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
     sei.m_auxInpIdc = val;
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
@@ -2741,6 +2752,16 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
 
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_format_idc");
+    sei.m_outFormatIdc = val;
+
+    if (sei.m_outFormatIdc == 1)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_minus8");
+      sei.m_outTensorBitDepthMinus8 = val;
+    }
+#else
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_sample_idc");
     sei.m_outSampleIdc = val;
 
@@ -2749,6 +2770,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_minus8");
       sei.m_outTensorBitDepthMinus8 = val;
     }
+#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
     sei.m_outOrderIdc = val;

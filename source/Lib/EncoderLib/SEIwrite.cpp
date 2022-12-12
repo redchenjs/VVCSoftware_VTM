@@ -1773,12 +1773,20 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
 
     WRITE_FLAG(sei.m_componentLastFlag, "nnpfc_component_last_flag");
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    WRITE_UVLC(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");
+    if (sei.m_inpFormatIdc == 1)
+    {
+      WRITE_UVLC(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
+    }
+#else
     WRITE_UVLC(sei.m_inpSampleIdc, "nnpfc_inp_sample_idc");
 
     if(sei.m_inpSampleIdc == 4)
     {
       WRITE_UVLC(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
     }
+#endif
     WRITE_UVLC(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
     WRITE_FLAG(sei.m_sepColDescriptionFlag, "nnpfc_sep_col_desc_flag");
 
@@ -1790,12 +1798,20 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
 
     WRITE_UVLC(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    WRITE_UVLC(sei.m_outFormatIdc, "nnpfc_out_format_idc");
+    if (sei.m_outFormatIdc == 1)
+    {
+      WRITE_UVLC(sei.m_outTensorBitDepthMinus8, "nnpfc_out_tensor_bitdepth_minus8");
+    }
+#else
     WRITE_UVLC(sei.m_outSampleIdc, "nnpfc_out_sample_idc");
 
     if(sei.m_outSampleIdc == 4)
     {
       WRITE_UVLC(sei.m_outTensorBitDepthMinus8, "nnpfc_out_tensor_bitdepth_minus8");
     }
+#endif
 
     WRITE_UVLC(sei.m_outOrderIdc, "nnpfc_out_order_idc");
     WRITE_FLAG(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");
