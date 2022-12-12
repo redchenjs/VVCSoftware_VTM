@@ -1176,17 +1176,33 @@ void EncApp::xInitLibCfg( int layerIdx )
         m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightInLumaSamples  (m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], i);
       }
       m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+      m_cEncLib.setNNPostFilterSEICharacteristicsInpFormatIdc            (m_nnPostFilterSEICharacteristicsInpFormatIdc[i], i);
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsInpFormatIdc(i) == 1)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i], i);
+      }
+#else
       m_cEncLib.setNNPostFilterSEICharacteristicsInpSampleIdc            (m_nnPostFilterSEICharacteristicsInpSampleIdc[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsInpSampleIdc(i) == 4)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i], i);
       }
+#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsInpOrderIdc             (m_nnPostFilterSEICharacteristicsInpOrderIdc[i], i);
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+      m_cEncLib.setNNPostFilterSEICharacteristicsOutFormatIdc            (m_nnPostFilterSEICharacteristicsOutFormatIdc[i], i);
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsOutFormatIdc(i) == 1)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i], i);
+      }
+#else
       m_cEncLib.setNNPostFilterSEICharacteristicsOutSampleIdc            (m_nnPostFilterSEICharacteristicsOutSampleIdc[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsOutSampleIdc(i) == 4)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i], i);
       }
+#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsOutOrderIdc             (m_nnPostFilterSEICharacteristicsOutOrderIdc[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsConstantPatchSizeFlag   ( m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsPatchWidthMinus1        ( m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i], i);

@@ -1181,14 +1181,22 @@ public:
     , m_inpTensorBitDepthMinus8(0)
     , m_outTensorBitDepthMinus8(0)
     , m_componentLastFlag(false)
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    , m_inpFormatIdc(0)
+#else
     , m_inpSampleIdc(0)
+#endif
     , m_auxInpIdc(0)
     , m_sepColDescriptionFlag(false)
     , m_colPrimaries(0)
     , m_transCharacteristics(0)
     , m_matrixCoeffs(0)
     , m_inpOrderIdc(0)
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    , m_outFormatIdc(0)
+#else
     , m_outSampleIdc(0)
+#endif
     , m_outOrderIdc(0)
     , m_constantPatchSizeFlag(false)
     , m_patchWidthMinus1(0)
@@ -1236,14 +1244,22 @@ public:
   uint32_t       m_inpTensorBitDepthMinus8;
   uint32_t       m_outTensorBitDepthMinus8;
   bool           m_componentLastFlag;
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+  uint32_t       m_inpFormatIdc;
+#else
   uint32_t       m_inpSampleIdc;
+#endif
   uint32_t m_auxInpIdc;
   bool     m_sepColDescriptionFlag;
   uint8_t  m_colPrimaries;
   uint8_t  m_transCharacteristics;
   uint8_t  m_matrixCoeffs;
   uint32_t       m_inpOrderIdc;
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+  uint32_t       m_outFormatIdc;
+#else
   uint32_t       m_outSampleIdc;
+#endif
   uint32_t       m_outOrderIdc;
   bool           m_constantPatchSizeFlag;
   uint32_t       m_patchWidthMinus1;

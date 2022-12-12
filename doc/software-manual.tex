@@ -5611,13 +5611,18 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
     false & Specifies that the second dimension in the input tensor to the \emph{i}-th neural network post-filter and the output tensor resulting from the \emph{i}-th neural network post-filter is used for the channel. \\
   \end{tabular}
   \\
-  \Option{SEINNPostFilterCharacteristicsInpSampleIdc\emph{i}} &
+  \Option{SEINNPostFilterCharacteristicsInpFormatIdc\emph{i}} &
   \Default{0} &
-  Specifies the method of converting an input sample for the \emph{i}-th neural network post-filter.
+  Specifies the method of converting a sample value of the decoded picture to an input value to the \emph{i}-th neural network post-filter.
+  \par
+    \begin{tabular}{cp{0.35\textwidth}}
+      0 & Real numbers where the value range is 0 to 1, inclusive. \\
+      1 & Unsigned integer value range of 0 to the bit depth indicated for the input tensor (see syntax element below).
+    \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsInpTensorBitDepthMinus8\emph{i}} &
   \Default{0} &
-  Specifies the bit depth of the input tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_sample_idc = 4.
+  Specifies the bit depth of the input tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_format_idc = 1.
   \\
   \Option{SEINNPostFilterCharacteristicsAuxInpIdc\emph{i}} &
   \Default{0} &
@@ -5655,13 +5660,18 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
     3 & Four luma matrices, two chroma matrices, and a quantization parameter matrix are present in the input tensor, thus the number of channels is 7 \\
   \end{tabular}
   \\
-  \Option{SEINNPostFilterCharacteristicsOutSampleIdc\emph{i}} &
+  \Option{SEINNPostFilterCharacteristicsOutFormatIdc\emph{i}} &
   \Default{0} &
-  Specifies the method of converting an output sample for the \emph{i}-th neural network post-filter.
+  Specifies the sample values output by the \emph{i}-th neural network post-filter.
+  \par
+  \begin{tabular}{cp{0.35\textwidth}}
+    0 & Real numbers where the value range is 0 to 1, inclusive. \\
+    1 & Unsigned integer numbers where the value range is 0 to $(1 << bitDepth) - 1$ inclusive.
+  \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8\emph{i}} &
   \Default{0} &
-  Specifies the bit depth of the output tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_out_sample_idc = 4.
+  Specifies the bit depth of the output tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_out_format_idc = 1.
   \\
   \Option{SEINNPostFilterCharacteristicsOutOrderIdc\emph{i}} &
   \Default{0} &

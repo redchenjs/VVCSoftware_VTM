@@ -1298,20 +1298,30 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     }
 
     sei->m_componentLastFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComponentLastFlag(filterIdx);
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    sei->m_inpFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpFormatIdc(filterIdx);
+    if (sei->m_inpFormatIdc == 1)
+    {
+      sei->m_outTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(filterIdx);
+    }
+#else
     sei->m_inpSampleIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpSampleIdc(filterIdx);
 
     if(sei->m_inpSampleIdc == 4)
     {
       sei->m_inpTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(filterIdx);
     }
+#endif
 
     sei->m_inpOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpOrderIdc(filterIdx);
+#if !M60678_BALLOT_COMMENTS_OF_FI_03
     sei->m_outSampleIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutSampleIdc(filterIdx);
 
     if(sei->m_outSampleIdc == 4)
     {
       sei->m_outTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(filterIdx);
     }
+#endif
     sei->m_auxInpIdc             = m_pcCfg->getNNPostFilterSEICharacteristicsAuxInpIdc(filterIdx);
     sei->m_sepColDescriptionFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSepColDescriptionFlag(filterIdx);
     if (sei->m_sepColDescriptionFlag)
@@ -1321,6 +1331,13 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_matrixCoeffs         = m_pcCfg->getNNPostFilterSEICharacteristicsMatrixCoeffs(filterIdx);
     }
 
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    sei->m_outFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutFormatIdc(filterIdx);
+    if (sei->m_outFormatIdc == 1)
+    {
+      sei->m_outTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(filterIdx);
+    }
+#endif
     sei->m_outOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutOrderIdc(filterIdx);
     sei->m_constantPatchSizeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(filterIdx);
     sei->m_patchWidthMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchWidthMinus1(filterIdx);
