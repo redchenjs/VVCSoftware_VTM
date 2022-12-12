@@ -1814,9 +1814,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     cbPadding << "SEINNPostFilterCharacteristicsCbPadding" << i;
     opts.addOptions()(cbPadding.str(), m_nnPostFilterSEICharacteristicsCbPadding[i], 0u, "Specifies the Cb padding when when the padding type is fixed padding ");
 
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+    std::ostringstream complexityInfoPresentFlag;
+    complexityInfoPresentFlag << "SEINNPostFilterCharacteristicsComplexityInfoPresentFlag" << i;
+    opts.addOptions()(complexityInfoPresentFlag.str(), m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[i], false, "Specifies the value of nnpfc_complexity_info_present_flag in the Neural Network Post Filter Characteristics SEI message");
+#else
     std::ostringstream complexityIdc;
     complexityIdc << "SEINNPostFilterCharacteristicsComplexityIdc" << i;
     opts.addOptions()(complexityIdc.str(), m_nnPostFilterSEICharacteristicsComplexityIdc[i], 0u, "Specifies the value of nnpfc_complexity_idc in the Neural Network Post Filter Characteristics SEI message");
+#endif
 
     std::ostringstream uriTag;
     uriTag << "SEINNPostFilterCharacteristicsUriTag" << i;
@@ -1841,6 +1847,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream numKmacOperationsIdc;
     numKmacOperationsIdc << "SEINNPostFilterCharacteristicsNumKmacOperationsIdc" << i;
     opts.addOptions()(numKmacOperationsIdc.str(), m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], 0u, "Specifies the maximum number of operations (KMAC) per pixel in the Neural Network Post Filter Characteristics SEI message");
+
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+    std::ostringstream totalKilobyteSize; 
+    totalKilobyteSize << "SEINNPostFilterCharacteristicsTotalKilobyteSize" << i; 
+    opts.addOptions()(totalKilobyteSize.str(), m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i], 0u, "Indicates the total size in kilobytes required to store the uncompressed NN parameters in the Neural Network Post Filter Characteristics SEI message");
+#endif
 
     std::ostringstream payloadFilename;
     payloadFilename << "SEINNPostFilterCharacteristicsPayloadFilename" << i;
@@ -4769,9 +4781,14 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i] > 32766, "SEINNPostFilterCharacteristicsPatchHeightMinus1 must be in the range of 0 to 32766");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOverlap[i] > 16383, "SEINNPostFilterCharacteristicsOverlap must be in the range of 0 to 16383");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPaddingType[i] > (1 << 4) - 1, "SEINNPostFilterPaddingType must be in the range of 0 to 2^4-1");
+#if !JVET_AB0135_NN_SEI_COMPLEXITY_MOD
       xConfirmPara(m_nnPostFilterSEICharacteristicsComplexityIdc[i] > 255, "SEINNPostFilterCharacteristicsComplexityIdc must be in the range of 0 to 255");
+#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i] > 3, "SEINNPostFilterCharacteristicsLog2ParameterBitLengthMinus3 must be in the range of 0 to 3");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumParametersIdc[i] > 52, "SEINNPostFilterCharacteristicsNumParametersIdc must be in the range of 0 to 52");
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+      xConfirmPara(m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i] > (uint32_t) (((uint64_t) 1 << 32) - 1), "SEINNPostFilterCharacteristicsTotalKilobyteSize must be in the range of 0 to 2^32-1");
+#endif
     }
   }
 

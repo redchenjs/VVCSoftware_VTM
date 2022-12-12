@@ -134,7 +134,9 @@ protected:
   void xWriteSEIShutterInterval(const SEIShutterIntervalInfo& sei);
   void xWriteByteAlign();
   void xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
+#if !JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   void xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCharacteristics& sei);
+#endif
   void xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei);
   void xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei);
 #if GREEN_METADATA_SEI_ENABLED

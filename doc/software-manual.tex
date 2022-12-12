@@ -5729,9 +5729,9 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the Cb padding when when nnpfc_padding_type is equal to 4 of the \emph{i}-th neural network post-filter.
   \\
-  \Option{SEINNPostFilterCharacteristicsComplexityIdc\emph{i}} &
-  \Default{0} &
-  Specifies the nnpfc_complexity_idc of the \emph{i}-th neural network post-filter.
+  \Option{SEINNPostFilterCharacteristicsComplexityInfoPresentFlag\emph{i}} &
+  \Default{false} &
+  Specifies the nnpfc_complexity_present_flag of the \emph{i}-th neural network post-filter.
   \\
   \Option{SEINNPostFilterCharacteristicsParameterTypeIdc\emph{i}} &
   \Default{0} &
@@ -5762,6 +5762,11 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies that the maximum number of multiply-accumulate (MAC) operations per sample of the \emph{i}-th neural network post-filter is less than or equal to nnpfc_num_kmac_operations_idc * 1000.
   nnpfc_num_kmac_operations_idc = 0 specifies that the maximum number of MAC operations of the network is not specified.
+  \\
+  \Option{SEINNPostFilterCharacteristicsTotalKilobyteSize\emph{i}} &
+  \Default{0} &
+  Indicates the total size in kilobytes required to store the uncompressed NN parameters in the \emph{i}-th neural network post-filter when nnpfc_total_kilobyte_size is greater than 0. The total size in bits is a number equal to or greater than the sum of bits used to store each parameter. nnpfc_total_kilobyte_size is the total size in bits divided by 8000, rounded up.
+  nnpfc_total_kilobyte_size equal to 0 indicates that the total size required to store the parameters for the neural network is unknown.
   \\
   \Option{SEINNPostFilterCharacteristicsPayloadFilename\emph{i}} &
   \Default{""} &
