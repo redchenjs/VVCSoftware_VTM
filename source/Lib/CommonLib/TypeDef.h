@@ -999,13 +999,7 @@ enum PLTRunMode
   PLT_RUN_COPY  = 1,
   NUM_PLT_RUN   = 2
 };
-/// parameters for deblocking filter
-struct LFCUParam
-{
-  bool internalEdge;                     ///< indicates internal edge
-  bool leftEdge;                         ///< indicates left edge
-  bool topEdge;                          ///< indicates top edge
-};
+
 struct LutModel
 {
   bool             presentFlag = false;
