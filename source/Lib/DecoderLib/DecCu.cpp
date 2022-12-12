@@ -850,9 +850,8 @@ void DecCu::xDeriveCuMvs(CodingUnit &cu)
           mrgCtx.subPuMvpMiBuf = MotionBuf(m_SubPuMiBuf, bufSize);
         }
 
-        int   fPosBaseIdx = pu.mmvdMergeIdx / MMVD_MAX_REFINE_NUM;
-        PU::getInterMergeCandidates(pu, mrgCtx, 1, fPosBaseIdx + 1);
-        PU::getInterMMVDMergeCandidates(pu, mrgCtx, pu.mmvdMergeIdx);
+        PU::getInterMergeCandidates(pu, mrgCtx, 1, pu.mmvdMergeIdx.pos.baseIdx + 1);
+        PU::getInterMMVDMergeCandidates(pu, mrgCtx);
         mrgCtx.setMmvdMergeCandiInfo(pu, pu.mmvdMergeIdx);
 
         PU::spanMotionInfo(pu, mrgCtx);

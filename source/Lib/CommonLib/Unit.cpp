@@ -542,7 +542,7 @@ void PredictionUnit::initData()
   geoMergeIdx0 = MAX_UCHAR;
   geoMergeIdx1 = MAX_UCHAR;
   mmvdMergeFlag = false;
-  mmvdMergeIdx = MAX_UINT;
+  mmvdMergeIdx.val = MmvdIdx::INVALID;
   interDir    = MAX_UCHAR;
   mergeType   = MRG_TYPE_DEFAULT_N;
   bv.setZero();
