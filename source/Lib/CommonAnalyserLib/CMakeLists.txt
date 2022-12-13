@@ -65,7 +65,7 @@ if( DEFINED ENABLE_TRACING )
   endif()
 endif()
 
-if( SET_ENABLE_HIGH_BITDEPTH )
+if( DEFINED ENABLE_HIGH_BITDEPTH )
   if( ENABLE_HIGH_BITDEPTH )
     target_compile_definitions( ${LIB_NAME} PUBLIC RExt__HIGH_BIT_DEPTH_SUPPORT=1 )
   else()

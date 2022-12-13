@@ -87,7 +87,7 @@ CONFIG_OPTIONS += -DENABLE_TRACING=$(enable-tracing)
 endif
 
 ifneq ($(high-bitdepth),)
-CONFIG_OPTIONS += -DSET_ENABLE_HIGH_BITDEPTH=ON -DENABLE_HIGH_BITDEPTH=$(high-bitdepth)
+CONFIG_OPTIONS += -DENABLE_HIGH_BITDEPTH=$(high-bitdepth)
 endif
 
 ifneq ($(static),)
