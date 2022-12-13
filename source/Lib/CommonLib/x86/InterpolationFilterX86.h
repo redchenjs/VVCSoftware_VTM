@@ -1448,8 +1448,8 @@ static void simdInterpolateN2_HBD_M4_AVX2(const Pel *src, const ptrdiff_t srcStr
     mmCoeff[n] = _mm256_set1_epi32(c[n]);
   }
 
-  int srcStride2 = (srcStride << 1);
-  int dstStride2 = (dstStride << 1);
+  ptrdiff_t srcStride2 = (srcStride << 1);
+  ptrdiff_t dstStride2 = (dstStride << 1);
 
   for (int row = 0; row < height; row += 2)
   {
