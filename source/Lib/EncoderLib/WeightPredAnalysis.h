@@ -46,7 +46,7 @@ class  WeightPredAnalysis
 private:
 
   // member variables
-  WPScalingParam  m_wp[NUM_REF_PIC_LIST_01][MAX_NUM_REF][MAX_NUM_COMPONENT];
+  RefSetArray<WPScalingParam[MAX_NUM_COMPONENT]> m_wp;
 
   // member functions
 

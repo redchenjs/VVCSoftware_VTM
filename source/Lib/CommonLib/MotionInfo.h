@@ -214,21 +214,21 @@ struct MotionInfo
 
 class BcwMotionParam
 {
-  bool       m_readOnly[2][33];       // 2 RefLists, 33 RefFrams
-  Mv         m_mv[2][33];
-  Distortion m_dist[2][33];
+  RefSetArray<bool>       m_readOnly;
+  RefSetArray<Mv>         m_mv;
+  RefSetArray<Distortion> m_dist;
 
 #if GDR_ENABLED
-  bool       m_mvSolid[2][33];
+  RefSetArray<bool> m_mvSolid;
 #endif
 
-  bool       m_readOnlyAffine[2][2][33];
-  Mv         m_mvAffine[2][2][33][3];
-  Distortion m_distAffine[2][2][33];
-  int        m_mvpIdx[2][2][33];
+  RefSetArray<bool>       m_readOnlyAffine[2];
+  RefSetArray<Mv[3]>      m_mvAffine[2];
+  RefSetArray<Distortion> m_distAffine[2];
+  RefSetArray<int>        m_mvpIdx[2];
 
 #if GDR_ENABLED
-  bool       m_mvAffineSolid[2][2][33][3];
+  RefSetArray<bool[3]> m_mvAffineSolid[2];
 #endif
 
 public:
@@ -236,29 +236,26 @@ public:
   void reset()
   {
     Mv* pMv = &(m_mv[0][0]);
-    for (int ui = 0; ui < 1 * 2 * 33; ++ui, ++pMv)
+    for (int ui = 0; ui < NUM_REF_PIC_LIST_01 * MAX_NUM_REF; ++ui, ++pMv)
     {
       pMv->set(std::numeric_limits<int16_t>::max(), std::numeric_limits<int16_t>::max());
     }
 
     Mv* pAffineMv = &(m_mvAffine[0][0][0][0]);
-    for (int ui = 0; ui < 2 * 2 * 33 * 3; ++ui, ++pAffineMv)
+    for (int ui = 0; ui < 2 * NUM_REF_PIC_LIST_01 * MAX_NUM_REF * 3; ++ui, ++pAffineMv)
     {
       pAffineMv->set(0, 0);
     }
 
-    memset(m_readOnly, false, 2 * 33 * sizeof(bool));
-    memset(m_dist, -1, 2 * 33 * sizeof(Distortion));
-    memset(m_readOnlyAffine, false, 2 * 2 * 33 * sizeof(bool));
-    memset(m_distAffine, -1, 2 * 2 * 33 * sizeof(Distortion));
-    memset( m_mvpIdx, 0, 2 * 2 * 33 * sizeof( int ) );
+    std::fill_n(m_readOnly[0], sizeof(m_readOnly) / sizeof(bool), false);
+    std::fill_n(m_dist[0], sizeof(m_dist) / sizeof(Distortion), MAX_UINT64);
+    std::fill_n(m_readOnlyAffine[0][0], sizeof(m_readOnlyAffine) / sizeof(bool), false);
+    std::fill_n(m_distAffine[0][0], sizeof(m_distAffine) / sizeof(Distortion), MAX_UINT64);
+    std::fill_n(m_mvpIdx[0][0], sizeof(m_mvpIdx) / sizeof(int), 0);
 
 #if GDR_ENABLED
-    memset(m_mvSolid, true, 2 * 2 * 33 * sizeof(bool));
-#endif
-
-#if GDR_ENABLED
-    memset(m_mvAffineSolid, true, 2 * 2 * 33 * sizeof(bool));
+    std::fill_n(m_mvSolid[0], sizeof(m_mvSolid) / sizeof(bool), false);
+    std::fill_n(m_mvAffineSolid[0][0][0], sizeof(m_mvAffineSolid) / sizeof(bool), false);
 #endif
   }
 

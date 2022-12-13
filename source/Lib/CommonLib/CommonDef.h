@@ -149,6 +149,9 @@ static constexpr int MAX_NUM_REF        = 16;   // max. number of entries in pic
 static constexpr int MAX_NUM_ACTIVE_REF = 15;   // maximum number of active reference pictures
 static constexpr int IBC_REF_IDX        = MAX_NUM_ACTIVE_REF;
 
+// Array indexed by reference list index and reference picture index
+template<class T> using RefSetArray = T[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+
 static constexpr int MAX_QP =                                          63;
 static constexpr int NOT_VALID =                                       -1;
 
@@ -285,7 +288,7 @@ static constexpr int LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS        = 1 <
 static constexpr int CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS      = 1 << MV_FRAC_BITS_CHROMA;
 
 static constexpr int MAX_NUM_SUB_PICS =                         (1 << 16);
-static constexpr int MAX_NUM_LONG_TERM_REF_PICS =                      33;
+static constexpr int MAX_NUM_LONG_TERM_REF_PICS = MAX_NUM_REF;
 static constexpr int NUM_LONG_TERM_REF_PIC_SPS =                        0;
 
 
