@@ -83,7 +83,7 @@ CMAKE_OPTIONS += -DCMAKE_VERBOSE_MAKEFILE=ON
 endif
 
 ifneq ($(enable-tracing),)
-CONFIG_OPTIONS += -DSET_ENABLE_TRACING=ON -DENABLE_TRACING=$(enable-tracing)
+CONFIG_OPTIONS += -DENABLE_TRACING=$(enable-tracing)
 endif
 
 ifneq ($(parallel-split),)

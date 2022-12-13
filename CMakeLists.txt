@@ -29,8 +29,10 @@ endif()
 
 set( EXTENSION_360_VIDEO OFF CACHE BOOL "If EXTENSION_360_VIDEO is on, 360Lib will be added" )
 set( EXTENSION_HDRTOOLS OFF CACHE BOOL "If EXTENSION_HDRTOOLS is on, HDRLib will be added" )
-set( SET_ENABLE_TRACING OFF CACHE BOOL "Set ENABLE_TRACING as a compiler flag" )
-set( ENABLE_TRACING OFF CACHE BOOL "If SET_ENABLE_TRACING is on, it will be set to this value" )
+
+if (DEFINED ENABLE_TRACING)
+  set( ENABLE_TRACING OFF CACHE BOOL "ENABLE_TRACING will be set to this value" )
+endif()
 
 if( CMAKE_COMPILER_IS_GNUCC )
   set( BUILD_STATIC OFF CACHE BOOL "Build static executables" )

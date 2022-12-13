@@ -20,7 +20,7 @@ if( EXTENSION_360_VIDEO )
   target_compile_definitions( ${LIB_NAME} PUBLIC EXTENSION_360_VIDEO=1 )
 endif()
 
-if( SET_ENABLE_TRACING )
+if( DEFINED ENABLE_TRACING )
   if( ENABLE_TRACING )
     target_compile_definitions( ${LIB_NAME} PUBLIC ENABLE_TRACING=1 )
   else()
