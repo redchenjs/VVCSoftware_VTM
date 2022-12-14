@@ -2711,6 +2711,20 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_height_in_luma_samples");
       sei.m_picHeightInLumaSamples = val;
     }
+#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
+    
+    if (sei.m_purpose == NNPC_PurposeType::FRANE_RATE_UPSAMPLING)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_number_of_input_pictures_minus2");
+      sei.m_numberInputDecodedPicturesMinus2 = val;
+      sei.m_numberInterpolatedPictures.resize(sei.m_numberInputDecodedPicturesMinus2 + 1);
+      for (int i = 0; i < sei.m_numberInterpolatedPictures.size(); i++)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_interpolated_pictures");
+        sei.m_numberInterpolatedPictures[i] = val;
+      }
+    }
+#endif
 
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");
     sei.m_componentLastFlag = val;

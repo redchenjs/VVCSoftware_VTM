@@ -1771,6 +1771,16 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       WRITE_UVLC(sei.m_picWidthInLumaSamples, "nnpfc_pic_width_in_luma_samples");
       WRITE_UVLC(sei.m_picHeightInLumaSamples, "nnpfc_pic_height_in_luma_samples");
     }
+#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
+    if (sei.m_purpose == NNPC_PurposeType::CHROMA_UPSAMPLING) 
+    {
+      WRITE_UVLC(sei.m_numberInputDecodedPicturesMinus2, "nnpfc_number_of_input_pictures_minus2");
+      for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus2; ++i)
+      {
+        WRITE_UVLC(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");
+      }
+    }
+#endif
 
     WRITE_FLAG(sei.m_componentLastFlag, "nnpfc_component_last_flag");
 #if M60678_BALLOT_COMMENTS_OF_FI_03
