@@ -1072,7 +1072,7 @@ private:
 class PelUnitBufPool
 {
 private:
-  Pool<struct PelStorage>  m_pelStoragePool;
+  Pool<PelStorage> m_pelStoragePool;
   Pool<PelUnitBuf> m_pelUnitBufPool;
   std::unordered_map<PelUnitBuf*, PelStorage*> m_map;
   ChromaFormat m_chromaFormat;
@@ -1091,11 +1091,23 @@ public:
   {
     for (auto p : v)
     {
-      if (p != nullptr)
-      {
-        giveBack(p);
-      }
+      giveBack(p);
     }
+    v.clear();
+  }
+};
+
+template<size_t N>
+class PelUnitBufVector : public static_vector<PelUnitBuf*, N>
+{
+private:
+  PelUnitBufPool* m_pool;
+
+public:
+  PelUnitBufVector(PelUnitBufPool& pool) : m_pool(&pool) {}
+  ~PelUnitBufVector()
+  {
+    m_pool->giveBack(*this);
   }
 };
 #endif

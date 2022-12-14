@@ -971,6 +971,9 @@ PelUnitBufPool::PelUnitBufPool()
 
 PelUnitBufPool::~PelUnitBufPool()
 {
+  // just for debug
+  printf("\n totoal buffer %d", (int)m_map.size());
+  // just for debug
 }
 
 void PelUnitBufPool::initPelUnitBufPool(ChromaFormat chromaFormat, int ctuWidth, int ctuHeight)

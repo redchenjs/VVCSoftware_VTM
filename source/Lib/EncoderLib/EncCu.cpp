@@ -2232,11 +2232,9 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
 
   bool        bestIsSkip     = false;
   bool        bestIsMMVDSkip = true;
-  static_vector<PelUnitBuf*, MRG_MAX_NUM_CANDS> rdOrderedMrgPredBuf;
-  static_vector<PelUnitBuf*, MRG_MAX_NUM_CANDS> mrgPredBufNoCiip;
-  static_vector<PelUnitBuf*, MRG_MAX_NUM_CANDS> mrgPredBufNoMvRefine;
-  const UnitArea localUnitArea(tempCS->area.chromaFormat, Area(0, 0, tempCS->area.Y().width, tempCS->area.Y().height));
-  PelUnitBuf *singleMergeTempBuffer = m_pelUnitBufPool.getPelUnitBuf(localUnitArea);
+  PelUnitBufVector<MRG_MAX_NUM_CANDS+1> rdOrderedMrgPredBuf(m_pelUnitBufPool);
+  PelUnitBufVector<MRG_MAX_NUM_CANDS> mrgPredBufNoCiip(m_pelUnitBufPool);
+  PelUnitBufVector<MRG_MAX_NUM_CANDS> mrgPredBufNoMvRefine(m_pelUnitBufPool);
   int         insertPos;
   unsigned    numMergeSatdCand = mergeCtx.numValidMergeCand + MmvdIdx::ADD_NUM;
 
@@ -2253,6 +2251,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
 
   static_vector<ModeInfo, MRG_MAX_NUM_CANDS + MmvdIdx::ADD_NUM> rdModeList;
 
+  const UnitArea localUnitArea(tempCS->area.chromaFormat, Area(0, 0, tempCS->area.Y().width, tempCS->area.Y().height));
   for (int i = 0; i < mergeCtx.numValidMergeCand; i++)
   {
     rdModeList.push_back(ModeInfo(i, true, false, false));
@@ -2260,6 +2259,8 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
     mrgPredBufNoCiip.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
     mrgPredBufNoMvRefine.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
   }
+  rdOrderedMrgPredBuf.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
+  PelUnitBuf *singleMergeTempBuffer = rdOrderedMrgPredBuf[mergeCtx.numValidMergeCand];
 
   if (tempCS->sps->getUseMMVD())
   {
@@ -2893,11 +2894,6 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
   {
     xCalDebCost( *bestCS, partitioner );
   }
-  // recycle the buffers
-  m_pelUnitBufPool.giveBack(rdOrderedMrgPredBuf);
-  m_pelUnitBufPool.giveBack(mrgPredBufNoCiip);
-  m_pelUnitBufPool.giveBack(mrgPredBufNoMvRefine);
-  m_pelUnitBufPool.giveBack(singleMergeTempBuffer);
 }
 
 void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode)
@@ -2944,8 +2940,8 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   PU::getGeoMergeCandidates(pu, mergeCtx);
 
   const int bitsForPartitionIdx = floorLog2(GEO_NUM_PARTITION_MODE);
-  static_vector<PelUnitBuf*, MRG_MAX_NUM_CANDS> geoBuffer;
-  static_vector<PelUnitBuf*, MRG_MAX_NUM_CANDS> geoTempBuf;
+  PelUnitBufVector<MRG_MAX_NUM_CANDS> geoBuffer(m_pelUnitBufPool);
+  PelUnitBufVector<MRG_MAX_NUM_CANDS> geoTempBuf(m_pelUnitBufPool);
   DistParam distParam;
 
   const UnitArea localUnitArea(tempCS->area.chromaFormat, Area(0, 0, tempCS->area.Y().width, tempCS->area.Y().height));
@@ -2991,8 +2987,6 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
     if (m_pcEncCfg->getMCTSEncConstraint() && (!(MCTSHelper::checkMvBufferForMCTSConstraint(pu))))
     {
       tempCS->initStructData(encTestMode.qp);
-      m_pelUnitBufPool.giveBack(geoBuffer);
-      m_pelUnitBufPool.giveBack(geoTempBuf);
       return;
     }
     m_pcInterSearch->motionCompensation(pu, *geoBuffer[mergeCand], REF_PIC_LIST_X);
@@ -3028,8 +3022,6 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   }
   if (allCandsAreSame)
   {
-    m_pelUnitBufPool.giveBack(geoBuffer);
-    m_pelUnitBufPool.giveBack(geoTempBuf);
     return;
   }
 
@@ -3124,8 +3116,6 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   }
   if (comboList.list.empty())
   {
-    m_pelUnitBufPool.giveBack(geoBuffer);
-    m_pelUnitBufPool.giveBack(geoTempBuf);
     return;
   }
   comboList.sortByCost();
@@ -3252,9 +3242,6 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   {
     xCalDebCost(*bestCS, pm);
   }
-  // recycle the buffers
-  m_pelUnitBufPool.giveBack(geoBuffer);
-  m_pelUnitBufPool.giveBack(geoTempBuf);
 }
 
 void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode )
@@ -3330,7 +3317,7 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
   bool       bestIsSkip       = false;
   bool       mrgTempBufSet    = false;
   uint32_t   numMergeSatdCand = affineMergeCtx.numValidMergeCand;
-  static_vector<PelUnitBuf*, AFFINE_MRG_MAX_NUM_CANDS> mrgPredBuf;
+  PelUnitBufVector<AFFINE_MRG_MAX_NUM_CANDS> mrgPredBuf(m_pelUnitBufPool);
 
   static_vector<uint32_t, AFFINE_MRG_MAX_NUM_CANDS> rdModeList;
 
@@ -3524,7 +3511,6 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
       {
         // Do not use this mode
         tempCS->initStructData( encTestMode.qp );
-        m_pelUnitBufPool.giveBack(mrgPredBuf);
         return;
       }
       if ( mrgTempBufSet )
@@ -3632,8 +3618,6 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
   {
     xCalDebCost( *bestCS, partitioner );
   }
-  // recycle the buffers
-  m_pelUnitBufPool.giveBack(mrgPredBuf);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////
 // ibc merge/skip mode check
