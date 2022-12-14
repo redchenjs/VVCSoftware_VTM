@@ -3899,7 +3899,7 @@ Distortion RdCost::xGetMRHADs( const DistParam &rcDtParam )
 }
 
 void RdCost::setDistParam(DistParam &rcDP, const CPelBuf &org, const Pel *piRefY, ptrdiff_t iRefStride, const Pel *mask,
-                          int iMaskStride, int stepX, int iMaskStride2, int bitDepth, ComponentID compID)
+                          ptrdiff_t iMaskStride, int stepX, ptrdiff_t iMaskStride2, int bitDepth, ComponentID compID)
 {
   rcDP.bitDepth     = bitDepth;
   rcDP.compID       = compID;
@@ -3940,9 +3940,9 @@ Distortion RdCost::xGetSADwMask( const DistParam& rcDtParam )
   const int  subStep        = ( 1 << subShift);
   const ptrdiff_t strideCur       = rcDtParam.cur.stride * subStep;
   const ptrdiff_t strideOrg       = rcDtParam.org.stride * subStep;
-  const int  strideMask     = rcDtParam.maskStride * subStep;
+  const ptrdiff_t strideMask      = rcDtParam.maskStride * subStep;
   const int  stepX = rcDtParam.stepX;
-  const int  strideMask2 = rcDtParam.maskStride2;
+  const ptrdiff_t strideMask2     = rcDtParam.maskStride2;
   const uint32_t distortionShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth);
 
   Distortion sum = 0;

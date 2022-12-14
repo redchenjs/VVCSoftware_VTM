@@ -1282,8 +1282,8 @@ void InterPrediction::applyBiOptFlow(const PredictionUnit &pu, const CPelUnitBuf
 
 void InterPrediction::xAddBIOAvg4(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride,
                                   Pel *dst, ptrdiff_t dstStride, const Pel *gradX0, const Pel *gradX1,
-                                  const Pel *gradY0, const Pel *gradY1, int gradStride, int width, int height, int tmpx,
-                                  int tmpy, int shift, int offset, const ClpRng &clpRng)
+                                  const Pel *gradY0, const Pel *gradY1, ptrdiff_t gradStride, int width, int height,
+                                  int tmpx, int tmpy, int shift, int offset, const ClpRng &clpRng)
 {
   g_pelBufOP.addBIOAvg4(src0, src0Stride, src1, src1Stride, dst, dstStride, gradX0, gradX1, gradY0, gradY1, gradStride, width, height, tmpx, tmpy, shift, offset, clpRng);
 }

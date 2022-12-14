@@ -73,9 +73,9 @@ public:
   CPelBuf               orgLuma;
 #endif
   const Pel*            mask;
-  int                   maskStride;
+  ptrdiff_t             maskStride;
   int                   stepX;
-  int                   maskStride2;
+  ptrdiff_t             maskStride2;
   int                   step;
   FpDistFunc            distFunc;
   int                   bitDepth;
@@ -186,7 +186,7 @@ public:
                     int bitDepth, ComponentID compID, int width, int height, int subShiftMode = 0, int step = 1,
                     bool useHadamard = false, bool bioApplied = false);
   void setDistParam(DistParam &rcDP, const CPelBuf &org, const Pel *piRefY, ptrdiff_t iRefStride, const Pel *mask,
-                    int iMaskStride, int stepX, int iMaskStride2, int bitDepth, ComponentID compID);
+                    ptrdiff_t iMaskStride, int stepX, ptrdiff_t iMaskStride2, int bitDepth, ComponentID compID);
 
   double         getMotionLambda          ( )  { return m_dLambdaMotionSAD; }
   void           selectMotionLambda       ( )  { m_motionLambda = getMotionLambda( ); }

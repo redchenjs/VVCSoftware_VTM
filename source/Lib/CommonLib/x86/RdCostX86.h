@@ -3867,7 +3867,7 @@ Distortion RdCost::xGetSADwMask_SIMD( const DistParam &rcDtParam )
   int  subStep        = ( 1 << subShift);
   const ptrdiff_t strideSrc1     = rcDtParam.org.stride * subStep;
   const ptrdiff_t strideSrc2     = rcDtParam.cur.stride * subStep;
-  const int strideMask = rcDtParam.maskStride * subStep;
+  const ptrdiff_t strideMask     = rcDtParam.maskStride * subStep;
 
   Distortion sum = 0;
   if( vext >= AVX2 && (cols & 15 ) == 0 )

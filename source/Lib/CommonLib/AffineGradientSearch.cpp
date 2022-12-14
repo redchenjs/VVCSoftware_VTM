@@ -64,7 +64,7 @@ AffineGradientSearch::AffineGradientSearch()
 }
 
 void AffineGradientSearch::xHorizontalSobelFilter(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
-                                                  const int derivateBufStride, const int width, const int height)
+                                                  const ptrdiff_t derivateBufStride, const int width, const int height)
 {
   for ( int j = 1; j < height - 1; j++ )
   {
@@ -98,7 +98,7 @@ void AffineGradientSearch::xHorizontalSobelFilter(Pel *const pPred, const ptrdif
 }
 
 void AffineGradientSearch::xVerticalSobelFilter(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
-                                                const int derivateBufStride, const int width, const int height)
+                                                const ptrdiff_t derivateBufStride, const int width, const int height)
 {
   for ( int k = 1; k < width - 1; k++ )
   {
@@ -131,7 +131,9 @@ void AffineGradientSearch::xVerticalSobelFilter(Pel *const pPred, const ptrdiff_
   }
 }
 
-void AffineGradientSearch::xEqualCoeffComputer( Pel *pResidue, int residueStride, int **ppDerivate, int derivateBufStride, int64_t( *pEqualCoeff )[7], int width, int height, bool b6Param )
+void AffineGradientSearch::xEqualCoeffComputer(Pel *pResidue, ptrdiff_t residueStride, int **ppDerivate,
+                                               ptrdiff_t derivateBufStride, int64_t (*pEqualCoeff)[7], int width,
+                                               int height, bool b6Param)
 {
   int affineParamNum = b6Param ? 6 : 4;
 
@@ -142,7 +144,7 @@ void AffineGradientSearch::xEqualCoeffComputer( Pel *pResidue, int residueStride
     {
       int iC[6];
 
-      int idx = j * derivateBufStride + k;
+      ptrdiff_t idx = j * derivateBufStride + k;
       int cx = ((k >> 2) << 2) + 2;
       if ( !b6Param )
       {

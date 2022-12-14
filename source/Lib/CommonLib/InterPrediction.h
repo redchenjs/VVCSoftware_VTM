@@ -136,7 +136,7 @@ protected:
 
   void xAddBIOAvg4(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
                    ptrdiff_t dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel *gradY1,
-                   int gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset,
+                   ptrdiff_t gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset,
                    const ClpRng &clpRng);
   void xBioGradFilter(Pel *pSrc, ptrdiff_t srcStride, int width, int height, ptrdiff_t gradStride, Pel *gradX,
                       Pel *gradY, int bitDepth);
