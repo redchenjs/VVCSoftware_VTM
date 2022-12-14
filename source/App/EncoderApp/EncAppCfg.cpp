@@ -738,6 +738,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder (0, 255, 0, 256);
 #endif
 
+#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
+  std::vector<SMultiValueInput<uint32_t>>   cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList;
+  for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; i++)
+  {
+    cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList.push_back(SMultiValueInput<uint32_t>(0, std::numeric_limits<uint32_t>::max(), 1, 0));
+  }
+#endif
+
 #if ENABLE_TRACING
   string sTracingRule;
   string sTracingFile;
@@ -1871,6 +1879,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     payloadFilename << "SEINNPostFilterCharacteristicsPayloadFilename" << i;
     opts.addOptions()(payloadFilename.str(), m_nnPostFilterSEICharacteristicsPayloadFilename[i], string(""), "Specifies the NNR bitstream in the Neural Network Post Filter Characteristics SEI message");
 
+#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
+    std::ostringstream numberDecodedInputPics;
+    numberDecodedInputPics << "SEINNPostFilterCharacteristicsNumberInputDecodedPicsMinusTwo" << i;
+    opts.addOptions()(numberDecodedInputPics.str(), m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], 0u, "Specifies the number of decoded output pictures used as input for the post processing filter");
+
+    std::ostringstream numberInterpolatedPics;
+    numberInterpolatedPics << "SEINNPostFilterCharacteristicsNumberInterpolatedPics" << i;
+    opts.addOptions()(numberInterpolatedPics.str(), cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], "Number of pictures to interpolate");
+#endif
+
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
     opts.addOptions()("SEINNPostFilterActivationId", m_nnPostFilterSEIActivationId , 0u,        "Id of the Neural Network Post Filter on current picture");
   }
@@ -2373,6 +2391,18 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   m_chromaFormatIDC = ((tmpChromaFormat == 0) ? (m_inputChromaFormatIDC) : (numberToChromaFormat(tmpChromaFormat)));
 #if EXTENSION_360_VIDEO
   m_ext360.processOptions(ext360CfgContext);
+#endif
+
+#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
+  for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; ++i)
+  {
+    m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i] = cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i].values;
+    if (m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size() == 0)
+    {
+      m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].push_back(0);
+    }
+    CHECK(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size() < m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], "Number Interpolated Pictures List must be greater than number of decoder pictures list");
+  }
 #endif
 
   if (isY4mFileExt(m_inputFileName))

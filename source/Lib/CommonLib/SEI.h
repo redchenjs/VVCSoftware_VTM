@@ -1285,6 +1285,10 @@ public:
 #if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   uint32_t       m_totalKilobyteSize;
 #endif
+#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
+  uint32_t       m_numberInputDecodedPicturesMinus2;
+  std::vector<uint32_t> m_numberInterpolatedPictures;
+#endif
 };
 
 class SEINeuralNetworkPostFilterActivation : public SEI
