@@ -2702,13 +2702,13 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
   uint32_t iteration;
   uint32_t iterationBegin = 0;
   iteration = 2;
-  for (uint32_t uiNoResidualPass = iterationBegin; uiNoResidualPass < iteration; ++uiNoResidualPass)
+  for (uint32_t noResidualPass = iterationBegin; noResidualPass < iteration; ++noResidualPass)
   {
-    for (uint32_t uiMrgHADIdx = 0; uiMrgHADIdx < numMergeSatdCand; uiMrgHADIdx++)
+    for (uint32_t mrgHadIdx = 0; mrgHadIdx < numMergeSatdCand; mrgHadIdx++)
     {
-      uint32_t uiMergeCand = rdModeList[uiMrgHADIdx].mergeCand;
+      uint32_t uiMergeCand = rdModeList[mrgHadIdx].mergeCand;
 
-      if (uiNoResidualPass != 0 && rdModeList[uiMrgHADIdx].isCIIP)   // intrainter does not support skip mode
+      if (noResidualPass != 0 && rdModeList[mrgHadIdx].isCIIP)   // intrainter does not support skip mode
       {
         if (isTestSkipMerge[uiMergeCand])
         {
@@ -2716,8 +2716,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         }
       }
 
-      if (((uiNoResidualPass != 0) && candHasNoResidual[uiMrgHADIdx])
-       || ( (uiNoResidualPass == 0) && bestIsSkip ) )
+      if (((noResidualPass != 0) && candHasNoResidual[mrgHadIdx]) || ((noResidualPass == 0) && bestIsSkip))
       {
         continue;
       }
@@ -2737,7 +2736,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
       cu.qp               = encTestMode.qp;
       PredictionUnit &pu  = tempCS->addPU( cu, partitioner.chType );
 
-      if (uiNoResidualPass == 0 && rdModeList[uiMrgHADIdx].isCIIP)
+      if (noResidualPass == 0 && rdModeList[mrgHadIdx].isCIIP)
       {
         cu.mmvdSkip = false;
         mergeCtx.setMergeInfo(pu, uiMergeCand);
@@ -2747,7 +2746,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         CHECK(pu.intraDir[0]<0 || pu.intraDir[0]>(NUM_LUMA_MODE - 1), "out of intra mode");
         pu.intraDir[1] = DM_CHROMA_IDX;
       }
-      else if (rdModeList[uiMrgHADIdx].isMMVD)
+      else if (rdModeList[mrgHadIdx].isMMVD)
       {
         cu.mmvdSkip = true;
         pu.regularMergeFlag = true;
@@ -2823,18 +2822,18 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         }
         else
         {
-          if (rdModeList[uiMrgHADIdx].isMMVD)
+          if (rdModeList[mrgHadIdx].isMMVD)
           {
             pu.mmvdEncOptMode = 0;
             m_pcInterSearch->motionCompensatePu(pu, REF_PIC_LIST_X, true, true);
           }
-          else if (uiNoResidualPass != 0 && rdModeList[uiMrgHADIdx].isCIIP)
+          else if (noResidualPass != 0 && rdModeList[mrgHadIdx].isCIIP)
           {
             tempCS->getPredBuf().copyFrom(acMergeBuffer[uiMergeCand]);
           }
           else
           {
-            tempCS->getPredBuf().copyFrom(*acMergeTempBuffer[uiMrgHADIdx]);
+            tempCS->getPredBuf().copyFrom(*acMergeTempBuffer[mrgHadIdx]);
           }
         }
       }
@@ -2844,7 +2843,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         m_pcInterSearch->motionCompensatePu(pu, REF_PIC_LIST_X, true, true);
         pu.mvRefine = false;
       }
-      if (!cu.mmvdSkip && !pu.ciipFlag && uiNoResidualPass != 0)
+      if (!cu.mmvdSkip && !pu.ciipFlag && noResidualPass != 0)
       {
         CHECK(uiMergeCand >= mergeCtx.numValidMergeCand, "out of normal merge");
         isTestSkipMerge[uiMergeCand] = true;
@@ -2870,18 +2869,18 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
 
         if (isSolid && isValid)
         {
-          xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, uiNoResidualPass,
-                               uiNoResidualPass == 0 ? &candHasNoResidual[uiMrgHADIdx] : nullptr);
+          xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, noResidualPass,
+                               noResidualPass == 0 ? &candHasNoResidual[mrgHadIdx] : nullptr);
         }
       }
       else
       {
-        xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, uiNoResidualPass,
-                             uiNoResidualPass == 0 ? &candHasNoResidual[uiMrgHADIdx] : nullptr);
+        xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, noResidualPass,
+                             noResidualPass == 0 ? &candHasNoResidual[mrgHadIdx] : nullptr);
       }
 #else
-      xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, uiNoResidualPass,
-                           uiNoResidualPass == 0 ? &candHasNoResidual[uiMrgHADIdx] : nullptr);
+      xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, noResidualPass,
+                           noResidualPass == 0 ? &candHasNoResidual[mrgHadIdx] : nullptr);
 #endif
 
       if( m_pcEncCfg->getUseFastDecisionForMerge() && !bestIsSkip && !pu.ciipFlag)
@@ -2889,9 +2888,9 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         bestIsSkip = !bestCS->cus.empty() && bestCS->getCU( partitioner.chType )->rootCbf == 0;
       }
       tempCS->initStructData( encTestMode.qp );
-    }// end loop uiMrgHADIdx
+    }   // end loop mrgHadIdx
 
-    if( uiNoResidualPass == 0 && m_pcEncCfg->getUseEarlySkipDetection() )
+    if (noResidualPass == 0 && m_pcEncCfg->getUseEarlySkipDetection())
     {
       const CodingUnit     &bestCU = *bestCS->getCU( partitioner.chType );
       const PredictionUnit &bestPU = *bestCS->getPU( partitioner.chType );
@@ -3492,14 +3491,13 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
   uint32_t iteration;
   uint32_t iterationBegin = 0;
   iteration = 2;
-  for (uint32_t uiNoResidualPass = iterationBegin; uiNoResidualPass < iteration; ++uiNoResidualPass)
+  for (uint32_t noResidualPass = iterationBegin; noResidualPass < iteration; ++noResidualPass)
   {
-    for (uint32_t uiMrgHADIdx = 0; uiMrgHADIdx < numMergeSatdCand; uiMrgHADIdx++)
+    for (uint32_t mrgHadIdx = 0; mrgHadIdx < numMergeSatdCand; mrgHadIdx++)
     {
-      uint32_t uiMergeCand = rdModeList[uiMrgHADIdx];
+      uint32_t uiMergeCand = rdModeList[mrgHadIdx];
 
-      if ( ((uiNoResidualPass != 0) && candHasNoResidual[uiMergeCand])
-        || ((uiNoResidualPass == 0) && bestIsSkip) )
+      if (((noResidualPass != 0) && candHasNoResidual[uiMergeCand]) || ((noResidualPass == 0) && bestIsSkip))
       {
         continue;
       }
@@ -3583,18 +3581,18 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
 
         if (isSolid && isValid)
         {
-          xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, uiNoResidualPass,
-                               (uiNoResidualPass == 0 ? &candHasNoResidual[uiMergeCand] : nullptr));
+          xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, noResidualPass,
+                               (noResidualPass == 0 ? &candHasNoResidual[uiMergeCand] : nullptr));
         }
       }
       else
       {
-        xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, uiNoResidualPass,
-                             (uiNoResidualPass == 0 ? &candHasNoResidual[uiMergeCand] : nullptr));
+        xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, noResidualPass,
+                             (noResidualPass == 0 ? &candHasNoResidual[uiMergeCand] : nullptr));
       }
 #else
-      xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, uiNoResidualPass,
-                           (uiNoResidualPass == 0 ? &candHasNoResidual[uiMergeCand] : nullptr));
+      xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, noResidualPass,
+                           (noResidualPass == 0 ? &candHasNoResidual[uiMergeCand] : nullptr));
 #endif
 
       if ( m_pcEncCfg->getUseFastDecisionForMerge() && !bestIsSkip )
@@ -3613,9 +3611,9 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
 #endif
       }
       tempCS->initStructData( encTestMode.qp );
-    }// end loop uiMrgHADIdx
+    }   // end loop mrgHadIdx
 
-    if ( uiNoResidualPass == 0 && m_pcEncCfg->getUseEarlySkipDetection() )
+    if (noResidualPass == 0 && m_pcEncCfg->getUseEarlySkipDetection())
     {
       const CodingUnit     &bestCU = *bestCS->getCU( partitioner.chType );
       const PredictionUnit &bestPU = *bestCS->getPU( partitioner.chType );
