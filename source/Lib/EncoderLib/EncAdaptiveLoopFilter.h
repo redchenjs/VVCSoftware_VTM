@@ -319,17 +319,18 @@ private:
   void   getFrameStat( AlfCovariance* frameCov, AlfCovariance** ctbCov, uint8_t* ctbEnableFlags, uint8_t* ctbAltIdx, const int numClasses, int altIdx );
   void   deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnitBuf& recYuv, CodingStructure& cs );
   void   getBlkStats(AlfCovariance *alfCovariace, const AlfFilterShape &shape, AlfClassifier **classifier, Pel *org,
-                     const int orgStride, const Pel *orgLuma, const ptrdiff_t orgLumaStride, Pel *rec,
-                     const int recStride, const CompArea &areaDst, const CompArea &area, const ChannelType channel,
+                     const ptrdiff_t orgStride, const Pel *orgLuma, const ptrdiff_t orgLumaStride, Pel *rec,
+                     const ptrdiff_t recStride, const CompArea &areaDst, const CompArea &area, const ChannelType channel,
                      int vbCTUHeight, int vbPos);
-  void   calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MAX_ALF_NUM_CLIP_VALS], const Pel *rec, const int stride,
-                        const AlfFilterShape &shape, const int transposeIdx, const ChannelType channel, int vbDistance);
+  void calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MAX_ALF_NUM_CLIP_VALS], const Pel *rec, const ptrdiff_t stride,
+                      const AlfFilterShape &shape, const int transposeIdx, const ChannelType channel, int vbDistance);
   void   deriveStatsForCcAlfFiltering(const PelUnitBuf &orgYuv, const PelUnitBuf &recYuv, const int compIdx,
                                       const int maskStride, const uint8_t filterIdc, CodingStructure &cs);
   void   getBlkStatsCcAlf(AlfCovariance &alfCovariance, const AlfFilterShape &shape, const PelUnitBuf &orgYuv,
                           const PelUnitBuf &recYuv, const UnitArea &areaDst, const UnitArea &area,
                           const ComponentID compID, const int yPos);
-  void   calcCovarianceCcAlf(Pel ELocal[MAX_NUM_CC_ALF_CHROMA_COEFF][1], const Pel* rec, const int stride, const AlfFilterShape& shape, int vbDistance);
+  void   calcCovarianceCcAlf(Pel ELocal[MAX_NUM_CC_ALF_CHROMA_COEFF][1], const Pel *rec, const ptrdiff_t stride,
+                             const AlfFilterShape &shape, int vbDistance);
   void   mergeClasses(const AlfFilterShape& alfShape, AlfCovariance* cov, AlfCovariance* covMerged, int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], const int numClasses, short filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES]);
 
   double getFilterCoeffAndCost(CodingStructure &cs, double distUnfilter, ChannelType channel, bool bReCollectStat,
@@ -384,8 +385,13 @@ private:
   void deriveCcAlfFilter( CodingStructure& cs, ComponentID compID, const PelUnitBuf& orgYuv, const PelUnitBuf& tempDecYuvBuf, const PelUnitBuf& dstYuv );
   std::vector<int> getAvailableCcAlfApsIds(CodingStructure& cs, ComponentID compID);
   void xSetupCcAlfAPS( CodingStructure& cs );
-  void countLumaSwingGreaterThanThreshold(const Pel* luma, int lumaStride, int height, int width, int log2BlockWidth, int log2BlockHeight, uint64_t* lumaSwingGreaterThanThresholdCount, int lumaCountStride);
-  void countChromaSampleValueNearMidPoint(const Pel* chroma, int chromaStride, int height, int width, int log2BlockWidth, int log2BlockHeight, uint64_t* chromaSampleCountNearMidPoint, int chromaSampleCountNearMidPointStride);
+  void             countLumaSwingGreaterThanThreshold(const Pel *luma, ptrdiff_t lumaStride, int height, int width,
+                                                      int log2BlockWidth, int log2BlockHeight,
+                                                      uint64_t *lumaSwingGreaterThanThresholdCount, int lumaCountStride);
+  void             countChromaSampleValueNearMidPoint(const Pel *chroma, ptrdiff_t chromaStride, int height, int width,
+                                                      int log2BlockWidth, int log2BlockHeight,
+                                                      uint64_t *chromaSampleCountNearMidPoint,
+                                                      int       chromaSampleCountNearMidPointStride);
   void getFrameStatsCcalf(ComponentID compIdx, int filterIdc);
   void initDistortionCcalf();
 };

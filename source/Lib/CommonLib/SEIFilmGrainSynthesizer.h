@@ -155,7 +155,7 @@ typedef struct fgsProcessArgs
   Pel *                        decComp[MAX_NUM_COMPONENT];
   uint32_t                     widthComp[MAX_NUM_COMPONENT];
   uint32_t                     heightComp[MAX_NUM_COMPONENT];
-  uint32_t                     strideComp[MAX_NUM_COMPONENT];
+  ptrdiff_t                    strideComp[MAX_NUM_COMPONENT];
   SEIFilmGrainCharacteristics *pFgcParameters;
   GrainSynthesisStruct *       pGrainSynt;
   uint8_t                      bitDepth;
@@ -200,16 +200,16 @@ private:
 
   static void     deblockGrainStripe  (Pel *grainStripe, uint32_t widthComp, uint32_t heightComp, uint32_t strideComp,
                                       uint32_t blkSize);
-  static void     blendStripe(Pel *decSampleOffsetY, Pel *grainStripe, uint32_t widthComp, uint32_t strideSrc,
-                              uint32_t strideGrain, uint32_t blockHeight, uint8_t bitDepth);
-  static void     blendStripe_32x32   (Pel *decSampleOffsetY, Pel *grainStripe, uint32_t widthComp, uint32_t strideSrc,
-                                      uint32_t strideGrain, uint32_t blockHeight, uint8_t bitDepth);
+  static void     blendStripe(Pel *decSampleOffsetY, Pel *grainStripe, uint32_t widthComp, ptrdiff_t strideSrc,
+                              ptrdiff_t strideGrain, uint32_t blockHeight, uint8_t bitDepth);
+  static void     blendStripe_32x32(Pel *decSampleOffsetY, Pel *grainStripe, uint32_t widthComp, ptrdiff_t strideSrc,
+                                    ptrdiff_t strideGrain, uint32_t blockHeight, uint8_t bitDepth);
 
-  static Pel      blockAverage_8x8    (Pel *decSampleBlk8, uint32_t widthComp, uint16_t *pNumSamples, uint8_t ySize,
-                                      uint8_t xSize, uint8_t bitDepth);
-  static uint32_t blockAverage_16x16  (Pel *decSampleBlk8, uint32_t widthComp, uint16_t *pNumSamples, uint8_t ySize,
-                                      uint8_t xSize, uint8_t bitDepth);
-  static uint32_t blockAverage_32x32  (Pel *decSampleBlk32, uint32_t strideComp, uint8_t bitDepth);
+  static Pel      blockAverage_8x8(Pel *decSampleBlk8, ptrdiff_t widthComp, uint16_t *pNumSamples, uint8_t ySize,
+                                   uint8_t xSize, uint8_t bitDepth);
+  static uint32_t blockAverage_16x16(Pel *decSampleBlk8, ptrdiff_t widthComp, uint16_t *pNumSamples, uint8_t ySize,
+                                     uint8_t xSize, uint8_t bitDepth);
+  static uint32_t blockAverage_32x32(Pel *decSampleBlk32, ptrdiff_t strideComp, uint8_t bitDepth);
 
   static void     simulateGrainBlk8x8 (Pel *grainStripe, uint32_t grainStripeOffsetBlk8, GrainSynthesisStruct *pGrainSynt,
                                       uint32_t width, uint8_t log2ScaleFactor, int16_t scaleFactor, uint32_t kOffset,

@@ -972,7 +972,7 @@ bool EncLib::encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBu
 /**------------------------------------------------
  Separate interlaced frame into two fields
  -------------------------------------------------**/
-void separateFields(Pel* org, Pel* dstField, uint32_t stride, uint32_t width, uint32_t height, bool isTop)
+void separateFields(Pel *org, Pel *dstField, ptrdiff_t stride, uint32_t width, uint32_t height, bool isTop)
 {
   if (!isTop)
   {

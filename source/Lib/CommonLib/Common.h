@@ -178,12 +178,12 @@ inline size_t rsAddr(const Position &pos, const Position &origin, const uint32_t
   return (stride >> unitScale.posx) * ((pos.y - origin.y) >> unitScale.posy) + ((pos.x - origin.x) >> unitScale.posx);
 }
 
-inline ptrdiff_t rsAddr(const Position &pos, const uint32_t stride)
+inline ptrdiff_t rsAddr(const Position &pos, const ptrdiff_t stride)
 {
   return stride * (ptrdiff_t) pos.y + (ptrdiff_t) pos.x;
 }
 
-inline size_t rsAddr(const Position &pos, const Position &origin, const uint32_t stride )
+inline size_t rsAddr(const Position &pos, const Position &origin, const ptrdiff_t stride)
 {
   return stride * (pos.y - origin.y) + (pos.x - origin.x);
 }

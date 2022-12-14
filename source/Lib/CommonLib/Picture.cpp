@@ -647,12 +647,12 @@ void Picture::sampleRateConv( const std::pair<int, int> scalingRatio, const std:
   const Pel* orgSrc = beforeScale.buf;
   const int orgWidth = beforeScale.width;
   const int orgHeight = beforeScale.height;
-  const int orgStride = beforeScale.stride;
+  const ptrdiff_t orgStride = beforeScale.stride;
 
   Pel* scaledSrc = afterScale.buf;
   const int scaledWidth = afterScale.width;
   const int scaledHeight = afterScale.height;
-  const int scaledStride = afterScale.stride;
+  const ptrdiff_t scaledStride = afterScale.stride;
 
   if( orgWidth == scaledWidth && orgHeight == scaledHeight && scalingRatio == SCALE_1X && !beforeScaleLeftOffset && !beforeScaleTopOffset && !afterScaleLeftOffset && !afterScaleTopOffset )
   {
@@ -1527,8 +1527,9 @@ void Picture::copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcP
   int numValidComponents = getNumberValidComponents(chromaFormatIDC);
 
   Pel *srcPxl, *dstPxl;
-  int  srcStride, srcHeight, srcWidth;
-  int  dstStride;
+  ptrdiff_t srcStride;
+  int       srcHeight, srcWidth;
+  ptrdiff_t dstStride;
 
   for (int comp = 0; comp < numValidComponents; comp++)
   {
@@ -1648,7 +1649,8 @@ void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int ble
         const int maxOutputValue = (1 << bitDepth) - 1;
 
         Pel *currPxl, *nextPxl, *postPxl;
-        int  stride, height, width;
+        ptrdiff_t stride;
+        int       height, width;
         if (ch == COMPONENT_Y)
         {
           currPxl = currYuv->Y().buf;
@@ -1722,7 +1724,8 @@ void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blen
         const int maxOutputValue = (1 << bitDepth) - 1;
 
         Pel *currPxl, *prevPxl;
-        int  stride, height, width;
+        ptrdiff_t stride;
+        int       height, width;
         if (ch == COMPONENT_Y)
         {
           currPxl = currYuv->Y().buf;

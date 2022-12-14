@@ -363,7 +363,7 @@ void EncCu::compressCtu( CodingStructure& cs, const UnitArea& area, const unsign
 // Protected member functions
 // ====================================================================================================================
 
-static int xCalcHADs8x8_ISlice(const Pel *piOrg, const int strideOrg)
+static int xCalcHADs8x8_ISlice(const Pel *piOrg, const ptrdiff_t strideOrg)
 {
   int k, i, j, jj;
   int diff[64], m1[8][8], m2[8][8], m3[8][8], iSumHad = 0;
@@ -462,7 +462,7 @@ int  EncCu::updateCtuDataISlice(const CPelBuf buf)
   int  xBl, yBl;
   const int iBlkSize = 8;
   const Pel* pOrgInit = buf.buf;
-  int  iStrideOrig = buf.stride;
+  ptrdiff_t  iStrideOrig = buf.stride;
 
   int iSumHad = 0;
   for( yBl = 0; ( yBl + iBlkSize ) <= buf.height; yBl += iBlkSize )
@@ -3766,7 +3766,7 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
     {
       m_pcRdCost->setDistParam(distParam, tempCS->getOrgBuf().Y(), refBuf, sps.getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y, bUseHadamard);
     }
-    int            refStride = refBuf.stride;
+    ptrdiff_t      refStride = refBuf.stride;
     const UnitArea localUnitArea(tempCS->area.chromaFormat,
                                  Area(0, 0, tempCS->area.Y().width, tempCS->area.Y().height));
     int            numValidBv = mergeCtx.numValidMergeCand;

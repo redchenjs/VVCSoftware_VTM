@@ -154,31 +154,31 @@ private:
   void xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx);
   void xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdgeDir edgeDir, const int edgeIdx);
 
-  int deriveLADFShift(const Pel *src, const int stride, const DeblockEdgeDir edgeDir, const SPS *sps);
+  int  deriveLADFShift(const Pel *src, const ptrdiff_t stride, const DeblockEdgeDir edgeDir, const SPS *sps);
   void xSetMaxFilterLengthPQFromTransformSizes(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
                                                const TransformUnit &currTU, const int firstComponent);
   void xSetMaxFilterLengthPQForCodingSubBlocks(const DeblockEdgeDir edgeDir, const CodingUnit &cu,
                                                const PredictionUnit &currPU, const bool &mvSubBlocks,
                                                const Area &areaPu);
 
-  static void xFilteringPandQ(Pel *src, int offset, FilterLenPair filterLen, int tc);
-  static void xPelFilterLuma(Pel *src, const int offset, const int tc, const bool sw, const bool partPNoFilter,
+  static void xFilteringPandQ(Pel *src, ptrdiff_t offset, FilterLenPair filterLen, int tc);
+  static void xPelFilterLuma(Pel *src, const ptrdiff_t offset, const int tc, const bool sw, const bool partPNoFilter,
                              const bool partQNoFilter, const int thrCut, const bool bFilterSecondP,
                              const bool bFilterSecondQ, const ClpRng &clpRng, bool sidePisLarge = false,
                              bool sideQisLarge = false, FilterLenPair maxFilterLen = DEFAULT_FL2);
-  inline void xPelFilterChroma(Pel *src, const int offset, const int tc, const bool sw, const bool partPNoFilter,
+  inline void xPelFilterChroma(Pel *src, const ptrdiff_t offset, const int tc, const bool sw, const bool partPNoFilter,
                                const bool partQNoFilter, const ClpRng &clpRng, const bool largeBoundary,
                                const bool isChromaHorCTBBoundary) const;
 
-  inline bool xUseStrongFiltering(Pel *src, const int offset, const int d, const int beta, const int tc,
+  inline bool xUseStrongFiltering(Pel *src, const ptrdiff_t offset, const int d, const int beta, const int tc,
                                   bool sidePisLarge = false, bool sideQisLarge = false,
                                   FilterLenPair maxFilterLen = DEFAULT_FL2, bool isChromaHorCTBBoundary = false) const;
 
   inline bool isCrossedByVirtualBoundaries ( const int xPos, const int yPos, const int width, const int height, int& numHorVirBndry, int& numVerVirBndry, int horVirBndryPos[], int verVirBndryPos[], const PicHeader* picHeader );
   inline void xDeriveEdgefilterParam       ( const int xPos, const int yPos, const int numVerVirBndry, const int numHorVirBndry, const int verVirBndryPos[], const int horVirBndryPos[], bool &verEdgeFilter, bool &horEdgeFilter );
 
-  inline int xCalcDP(Pel *src, const int offset, const bool isChromaHorCTBBoundary = false) const;
-  inline int xCalcDQ(Pel *src, const int offset) const;
+  inline int xCalcDP(Pel *src, const ptrdiff_t offset, const bool isChromaHorCTBBoundary = false) const;
+  inline int xCalcDQ(Pel *src, const ptrdiff_t offset) const;
 
   static const uint16_t sm_tcTable[MAX_QP + 3];
   static const uint8_t sm_betaTable[MAX_QP + 1];

@@ -703,9 +703,9 @@ void FGAnalyser::subsample(const PelStorage &input, PelStorage &output, Componen
   const int newHeight = input.get(compID).height / factor;
 
   const Pel *srcRow    = input.get(compID).buf;
-  const int  srcStride = input.get(compID).stride;
+  const ptrdiff_t srcStride = input.get(compID).stride;
   Pel *      dstRow    = output.get(compID).buf;   // output is tmp buffer with only one component for binary mask
-  const int  dstStride = output.get(compID).stride;
+  const ptrdiff_t dstStride = output.get(compID).stride;
 
   for (int y = 0; y < newHeight; y++, srcRow += factor * srcStride, dstRow += dstStride)
   {

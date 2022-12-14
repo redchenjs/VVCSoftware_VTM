@@ -2212,10 +2212,10 @@ void EncAdaptiveLoopFilter::deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnit
               const ComponentID compID = ComponentID( compIdx );
               const CompArea& compArea = area.block( compID );
 
-              int  recStride = recBuf.get( compID ).stride;
+              ptrdiff_t recStride = recBuf.get(compID).stride;
               Pel* rec = recBuf.get( compID ).bufAt( compArea );
 
-              int  orgStride = orgYuv.get(compID).stride;
+              ptrdiff_t orgStride = orgYuv.get(compID).stride;
               Pel* org = orgYuv.get(compID).bufAt(xStart >> ::getComponentScaleX(compID, m_chromaFormat), yStart >> ::getComponentScaleY(compID, m_chromaFormat));
 
               ptrdiff_t orgLumaStride = orgYuv.get(COMPONENT_Y).stride;
@@ -2266,10 +2266,10 @@ void EncAdaptiveLoopFilter::deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnit
           const ComponentID compID   = ComponentID(compIdx);
           const CompArea &  compArea = area.block(compID);
 
-          int  recStride = recYuv.get(compID).stride;
+          ptrdiff_t recStride = recYuv.get(compID).stride;
           Pel *rec       = recYuv.get(compID).bufAt(compArea);
 
-          int  orgStride = orgYuv.get(compID).stride;
+          ptrdiff_t orgStride = orgYuv.get(compID).stride;
           Pel *org       = orgYuv.get(compID).bufAt(compArea);
 
           ptrdiff_t orgLumaStride = orgYuv.get(COMPONENT_Y).stride;
@@ -2300,10 +2300,10 @@ void EncAdaptiveLoopFilter::deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnit
 }
 
 void EncAdaptiveLoopFilter::getBlkStats(AlfCovariance *alfCovariance, const AlfFilterShape &shape,
-                                        AlfClassifier **classifier, Pel *org, const int orgStride, const Pel *orgLuma,
-                                        const ptrdiff_t orgLumaStride, Pel *rec, const int recStride,
-                                        const CompArea &areaDst, const CompArea &area, const ChannelType channel,
-                                        int vbCTUHeight, int vbPos)
+                                        AlfClassifier **classifier, Pel *org, const ptrdiff_t orgStride,
+                                        const Pel *orgLuma, const ptrdiff_t orgLumaStride, Pel *rec,
+                                        const ptrdiff_t recStride, const CompArea &areaDst, const CompArea &area,
+                                        const ChannelType channel, int vbCTUHeight, int vbPos)
 {
   Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MAX_ALF_NUM_CLIP_VALS];
 
@@ -2389,7 +2389,7 @@ void EncAdaptiveLoopFilter::getBlkStats(AlfCovariance *alfCovariance, const AlfF
 }
 
 void EncAdaptiveLoopFilter::calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MAX_ALF_NUM_CLIP_VALS], const Pel *rec,
-                                           const int stride, const AlfFilterShape &shape, const int transposeIdx,
+                                           const ptrdiff_t stride, const AlfFilterShape &shape, const int transposeIdx,
                                            const ChannelType channel, int vbDistance)
 {
   int clipTopRow = -4;
@@ -4132,7 +4132,7 @@ void EncAdaptiveLoopFilter::getBlkStatsCcAlf(AlfCovariance &alfCovariance, const
 {
   const int numberOfComponents = getNumberValidComponents( m_chromaFormat );
   const CompArea &compArea           = areaDst.block(compID);
-  int  recStride[MAX_NUM_COMPONENT];
+  ptrdiff_t       recStride[MAX_NUM_COMPONENT];
   const Pel* rec[MAX_NUM_COMPONENT];
   for ( int cIdx = 0; cIdx < numberOfComponents; cIdx++ )
   {
@@ -4140,7 +4140,7 @@ void EncAdaptiveLoopFilter::getBlkStatsCcAlf(AlfCovariance &alfCovariance, const
     rec[cIdx] = recYuv.get(ComponentID(cIdx)).bufAt(isLuma(ComponentID(cIdx)) ? area.lumaPos() : area.chromaPos());
   }
 
-  int        orgStride = orgYuv.get(compID).stride;
+  ptrdiff_t  orgStride = orgYuv.get(compID).stride;
   const Pel *org       = orgYuv.get(compID).bufAt(compArea);
 
   const ptrdiff_t orgLumaStride = orgYuv.get(COMPONENT_Y).stride;
@@ -4227,7 +4227,8 @@ void EncAdaptiveLoopFilter::getBlkStatsCcAlf(AlfCovariance &alfCovariance, const
   }
 }
 
-void EncAdaptiveLoopFilter::calcCovarianceCcAlf(Pel ELocal[MAX_NUM_CC_ALF_CHROMA_COEFF][1], const Pel *rec, const int stride, const AlfFilterShape& shape, int vbDistance)
+void EncAdaptiveLoopFilter::calcCovarianceCcAlf(Pel ELocal[MAX_NUM_CC_ALF_CHROMA_COEFF][1], const Pel *rec,
+                                                const ptrdiff_t stride, const AlfFilterShape &shape, int vbDistance)
 {
   CHECK(shape.filterType != CC_ALF, "Bad CC ALF shape");
 
@@ -4259,7 +4260,10 @@ void EncAdaptiveLoopFilter::calcCovarianceCcAlf(Pel ELocal[MAX_NUM_CC_ALF_CHROMA
   }
 }
 
-void EncAdaptiveLoopFilter::countLumaSwingGreaterThanThreshold(const Pel* luma, int lumaStride, int height, int width, int log2BlockWidth, int log2BlockHeight, uint64_t* lumaSwingGreaterThanThresholdCount, int lumaCountStride)
+void EncAdaptiveLoopFilter::countLumaSwingGreaterThanThreshold(const Pel *luma, ptrdiff_t lumaStride, int height,
+                                                               int width, int log2BlockWidth, int log2BlockHeight,
+                                                               uint64_t *lumaSwingGreaterThanThresholdCount,
+                                                               int       lumaCountStride)
 {
   const int lumaBitDepth = m_inputBitDepth[CH_L];
   const int threshold = (1 << ( m_inputBitDepth[CH_L] - 2 )) - 1;
@@ -4310,7 +4314,10 @@ void EncAdaptiveLoopFilter::countLumaSwingGreaterThanThreshold(const Pel* luma, 
   }
 }
 
-void EncAdaptiveLoopFilter::countChromaSampleValueNearMidPoint(const Pel* chroma, int chromaStride, int height, int width, int log2BlockWidth, int log2BlockHeight, uint64_t* chromaSampleCountNearMidPoint, int chromaSampleCountNearMidPointStride)
+void EncAdaptiveLoopFilter::countChromaSampleValueNearMidPoint(const Pel *chroma, ptrdiff_t chromaStride, int height,
+                                                               int width, int log2BlockWidth, int log2BlockHeight,
+                                                               uint64_t *chromaSampleCountNearMidPoint,
+                                                               int       chromaSampleCountNearMidPointStride)
 {
   const int midPoint  = (1 << m_inputBitDepth[CH_C]) >> 1;
   const int threshold = 16;

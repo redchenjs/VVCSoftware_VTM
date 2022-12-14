@@ -384,7 +384,7 @@ protected:
     SearchRange searchRange;
     const CPelBuf* pcPatternKey;
     const Pel*  piRefY;
-    int         iRefStride;
+    ptrdiff_t       iRefStride;
     int         iBestX;
     int         iBestY;
     uint32_t        uiBestRound;

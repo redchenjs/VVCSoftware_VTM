@@ -370,7 +370,7 @@ void Hash::getPixelsIn1DCharArrayByBlock2x2(const PelUnitBuf &curPicBuf, unsigne
   if (bitDepths.recon[CHANNEL_TYPE_LUMA] == 8 && bitDepths.recon[CHANNEL_TYPE_CHROMA] == 8)
   {
     Pel* curPel[MAX_NUM_COMPONENT]={nullptr};
-    int stride[MAX_NUM_COMPONENT]={0};
+    ptrdiff_t stride[MAX_NUM_COMPONENT] = { 0 };
     const int maxComponent=includeAllComponent?MAX_NUM_COMPONENT:1;
 
     for (int id = 0; id < maxComponent; id++)
@@ -406,7 +406,7 @@ void Hash::getPixelsIn1DCharArrayByBlock2x2(const PelUnitBuf &curPicBuf, unsigne
     int shift = bitDepths.recon[CHANNEL_TYPE_LUMA] - 8;
     int shiftc = includeAllComponent ? (bitDepths.recon[CHANNEL_TYPE_CHROMA] - 8) : 0;
     Pel* curPel[MAX_NUM_COMPONENT]={nullptr};
-    int stride[MAX_NUM_COMPONENT]={0};
+    ptrdiff_t stride[MAX_NUM_COMPONENT] = { 0 };
     const int maxComponent=includeAllComponent?MAX_NUM_COMPONENT:1;
 
     for (int id = 0; id < maxComponent; id++)
@@ -495,7 +495,7 @@ bool Hash::isBlock2x2ColSameValue(unsigned char *p, bool includeAllComponent)
   return true;
 }
 
-bool Hash::isHorizontalPerfectLuma(const Pel *srcPel, int stride, int width, int height)
+bool Hash::isHorizontalPerfectLuma(const Pel *srcPel, ptrdiff_t stride, int width, int height)
 {
   for (int i = 0; i < height; i++)
   {
@@ -511,7 +511,7 @@ bool Hash::isHorizontalPerfectLuma(const Pel *srcPel, int stride, int width, int
   return true;
 }
 
-bool Hash::isVerticalPerfectLuma(const Pel *srcPel, int stride, int width, int height)
+bool Hash::isVerticalPerfectLuma(const Pel *srcPel, ptrdiff_t stride, int width, int height)
 {
   for (int i = 0; i < width; i++)
   {

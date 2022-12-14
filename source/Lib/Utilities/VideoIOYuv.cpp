@@ -76,8 +76,8 @@ static void scalePlane( PelBuf& areaBuf, const int shiftbits, const Pel minval, 
 {
   const unsigned width  = areaBuf.width;
   const unsigned height = areaBuf.height;
-  const unsigned stride = areaBuf.stride;
-        Pel*        img = areaBuf.bufAt(0,0);
+  const ptrdiff_t stride = areaBuf.stride;
+  Pel            *img    = areaBuf.bufAt(0, 0);
 
   if( 0 == shiftbits )
   {
@@ -404,18 +404,9 @@ void VideoIOYuv::skipFrames(uint32_t numFrames, uint32_t width, uint32_t height,
  * @param fileBitDepth component bit depth in file
  * @return true for success, false in case of error
  */
-static bool readPlane(Pel* dst,
-                      istream& fd,
-                      bool is16bit,
-                      uint32_t stride444,
-                      uint32_t width444,
-                      uint32_t height444,
-                      uint32_t pad_x444,
-                      uint32_t pad_y444,
-                      const ComponentID compID,
-                      const ChromaFormat destFormat,
-                      const ChromaFormat fileFormat,
-                      const uint32_t fileBitDepth)
+static bool readPlane(Pel *dst, istream &fd, bool is16bit, ptrdiff_t stride444, uint32_t width444, uint32_t height444,
+                      uint32_t pad_x444, uint32_t pad_y444, const ComponentID compID, const ChromaFormat destFormat,
+                      const ChromaFormat fileFormat, const uint32_t fileBitDepth)
 {
   const uint32_t csx_file =getComponentScaleX(compID, fileFormat);
   const uint32_t csy_file =getComponentScaleY(compID, fileFormat);
@@ -427,9 +418,9 @@ static bool readPlane(Pel* dst,
   const uint32_t pad_x_dest       = pad_x444>>csx_dest;
   const uint32_t pad_y_dest       = pad_y444>>csy_dest;
 #if EXTENSION_360_VIDEO
-  const uint32_t stride_dest = stride444;
+  const ptrdiff_t stride_dest = stride444;
 #else
-  const uint32_t stride_dest      = stride444>>csx_dest;
+  const ptrdiff_t stride_dest = stride444 >> csx_dest;
 #endif
   const uint32_t full_width_dest  = width_dest+pad_x_dest;
   const uint32_t full_height_dest = height_dest+pad_y_dest;
@@ -440,7 +431,7 @@ static bool readPlane(Pel* dst,
 
   Pel  *pDstPad              = dst + stride_dest * height_dest;
   Pel  *pDstBuf              = dst;
-  const int dstbuf_stride    = stride_dest;
+  const ptrdiff_t dstbuf_stride        = stride_dest;
 
   if (compID!=COMPONENT_Y && (fileFormat==CHROMA_400 || destFormat==CHROMA_400))
   {
@@ -548,23 +539,16 @@ static bool readPlane(Pel* dst,
   return true;
 }
 
-static bool verifyPlane(Pel* dst,
-                      uint32_t stride444,
-                      uint32_t width444,
-                      uint32_t height444,
-                      uint32_t padX444,
-                      uint32_t padY444,
-                      const ComponentID compID,
-                      const ChromaFormat cFormat,
-                      const uint32_t bitDepth)
+static bool verifyPlane(Pel *dst, ptrdiff_t stride444, uint32_t width444, uint32_t height444, uint32_t padX444,
+                        uint32_t padY444, const ComponentID compID, const ChromaFormat cFormat, const uint32_t bitDepth)
 {
   const uint32_t csx =getComponentScaleX(compID, cFormat);
   const uint32_t csy =getComponentScaleY(compID, cFormat);
 
 #if EXTENSION_360_VIDEO
-  const uint32_t stride = stride444;
+  const ptrdiff_t stride = stride444;
 #else
-  const uint32_t stride = stride444>>csx;
+  const ptrdiff_t stride      = stride444 >> csx;
 #endif
   const uint32_t fullWidth  = (width444 + padX444) >> csx;
   const uint32_t fullHeight = (height444 +padY444) >> csy;
@@ -603,14 +587,9 @@ static bool verifyPlane(Pel* dst,
  * @param fileBitDepth component bit depth in file
  * @return true for success, false in case of error
  */
-static bool writePlane( uint32_t orgWidth, uint32_t orgHeight, ostream& fd, const Pel* src,
-                       const bool is16bit,
-                       const uint32_t stride_src,
-                       uint32_t width444, uint32_t height444,
-                       const ComponentID compID,
-                       const ChromaFormat srcFormat,
-                       const ChromaFormat fileFormat,
-                       const uint32_t fileBitDepth,
+static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, ostream &fd, const Pel *src, const bool is16bit,
+                       const ptrdiff_t stride_src, uint32_t width444, uint32_t height444, const ComponentID compID,
+                       const ChromaFormat srcFormat, const ChromaFormat fileFormat, const uint32_t fileBitDepth,
                        const uint32_t packedYUVOutputMode = 0)
 {
   const uint32_t csx_file =getComponentScaleX(compID, fileFormat);
@@ -629,7 +608,7 @@ static bool writePlane( uint32_t orgWidth, uint32_t orgHeight, ostream& fd, cons
   uint8_t *buf=&(bufVec[0]);
 
   const Pel *pSrcBuf         = src;
-  const int srcbuf_stride    = stride_src;
+  const ptrdiff_t srcbuf_stride   = stride_src;
 
   if (writePYUV)
   {
@@ -882,14 +861,9 @@ static bool writePlane( uint32_t orgWidth, uint32_t orgHeight, ostream& fd, cons
   return true;
 }
 
-static bool writeField(ostream& fd, const Pel* top, const Pel* bottom,
-                       const bool is16bit,
-                       const uint32_t stride_src,
-                       uint32_t width444, uint32_t height444,
-                       const ComponentID compID,
-                       const ChromaFormat srcFormat,
-                       const ChromaFormat fileFormat,
-                       const uint32_t fileBitDepth, const bool isTff,
+static bool writeField(ostream &fd, const Pel *top, const Pel *bottom, const bool is16bit, const ptrdiff_t stride_src,
+                       uint32_t width444, uint32_t height444, const ComponentID compID, const ChromaFormat srcFormat,
+                       const ChromaFormat fileFormat, const uint32_t fileBitDepth, const bool isTff,
                        const uint32_t packedYUVOutputMode = 0)
 {
   const uint32_t csx_file =getComponentScaleX(compID, fileFormat);
@@ -1076,7 +1050,7 @@ bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpac
 
   const PelBuf areaBufY = picOrg.get(COMPONENT_Y);
 #if !EXTENSION_360_VIDEO
-  const uint32_t stride444      = areaBufY.stride;
+  const ptrdiff_t stride444 = areaBufY.stride;
 #endif
   // compute actual YUV width & height excluding padding size
   const uint32_t pad_h444       = aiPad[0];
@@ -1241,7 +1215,7 @@ bool VideoIOYuv::write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf 
     const uint32_t    csx         = ::getComponentScaleX(compID, format);
     const uint32_t    csy         = ::getComponentScaleY(compID, format);
     const CPelBuf     area        = picO.get(compID);
-    const int         planeOffset = (confLeft >> csx) + (confTop >> csy) * area.stride;
+    const ptrdiff_t   planeOffset = (confLeft >> csx) + (confTop >> csy) * area.stride;
     if (!writePlane(orgWidth, orgHeight, m_cHandle, area.bufAt(0, 0) + planeOffset, is16bit, area.stride, width444,
                     height444, compID, picO.chromaFormat, format, m_fileBitdepth[ch], packedYuvOutputMode ? 1 : 0))
     {
@@ -1348,7 +1322,10 @@ bool VideoIOYuv::write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBottom, 
 
     const uint32_t csx = ::getComponentScaleX(compID, dstChrFormat );
     const uint32_t csy = ::getComponentScaleY(compID, dstChrFormat );
-    const int planeOffset  = (confLeft>>csx) + ( confTop>>csy) * areaTop.stride; //offset is for entire frame - round up for top field and down for bottom field
+    const ptrdiff_t planeOffset =
+      (confLeft >> csx)
+      + (confTop >> csy)
+          * areaTop.stride;   // offset is for entire frame - round up for top field and down for bottom field
 
     if (!writeField(m_cHandle, (areaTop.bufAt(0, 0) + planeOffset), (areaBottom.bufAt(0, 0) + planeOffset), is16bit,
                     areaTop.stride, width444, height444, compID, dstChrFormat, format, m_fileBitdepth[ch], isTff,

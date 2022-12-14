@@ -42,9 +42,9 @@
 #include "Buffer.h"
 #include "InterpolationFilter.h"
 
-void applyPROFCore(Pel *dst, int dstStride, const Pel *src, int srcStride, int width, int height, const Pel *gradX,
-                   const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY, int dMvStride, const bool bi,
-                   int shiftNum, Pel offset, const ClpRng &clpRng)
+void applyPROFCore(Pel *dst, ptrdiff_t dstStride, const Pel *src, ptrdiff_t srcStride, int width, int height,
+                   const Pel *gradX, const Pel *gradY, ptrdiff_t gradStride, const int *dMvX, const int *dMvY,
+                   ptrdiff_t dMvStride, const bool bi, int shiftNum, Pel offset, const ClpRng &clpRng)
 {
   int idx = 0;
 
@@ -71,9 +71,9 @@ void applyPROFCore(Pel *dst, int dstStride, const Pel *src, int srcStride, int w
   }
 }
 
-
-template< typename T >
-void addAvgCore( const T* src1, int src1Stride, const T* src2, int src2Stride, T* dest, int dstStride, int width, int height, int rshift, int offset, const ClpRng& clpRng )
+template<typename T>
+void addAvgCore(const T *src1, ptrdiff_t src1Stride, const T *src2, ptrdiff_t src2Stride, T *dest, ptrdiff_t dstStride,
+                int width, int height, int rshift, int offset, const ClpRng &clpRng)
 {
 #define ADD_AVG_CORE_OP( ADDR ) dest[ADDR] = ClipPel( rightShift( ( src1[ADDR] + src2[ADDR] + offset ), rshift ), clpRng )
 #define ADD_AVG_CORE_INC    \
@@ -87,7 +87,10 @@ void addAvgCore( const T* src1, int src1Stride, const T* src2, int src2Stride, T
 #undef ADD_AVG_CORE_INC
 }
 
-void addBIOAvgCore(const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel*gradY1, int gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset, const ClpRng& clpRng)
+void addBIOAvgCore(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
+                   ptrdiff_t dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel *gradY1,
+                   ptrdiff_t gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset,
+                   const ClpRng &clpRng)
 {
   int b = 0;
 
@@ -113,7 +116,8 @@ void addBIOAvgCore(const Pel* src0, int src0Stride, const Pel* src1, int src1Str
 }
 
 template<bool PAD = true>
-void gradFilterCore(Pel* pSrc, int srcStride, int width, int height, int gradStride, Pel* gradX, Pel* gradY, const int bitDepth)
+void gradFilterCore(Pel *pSrc, ptrdiff_t srcStride, int width, int height, ptrdiff_t gradStride, Pel *gradX, Pel *gradY,
+                    const int bitDepth)
 {
   Pel* srcTmp = pSrc + srcStride + 1;
   Pel* gradXTmp = gradX + gradStride + 1;
@@ -158,7 +162,9 @@ void gradFilterCore(Pel* pSrc, int srcStride, int width, int height, int gradStr
   }
 }
 
-void calcBIOSumsCore(const Pel* srcY0Tmp, const Pel* srcY1Tmp, Pel* gradX0, Pel* gradX1, Pel* gradY0, Pel* gradY1, int xu, int yu, const int src0Stride, const int src1Stride, const int widthG, const int bitDepth, int* sumAbsGX, int* sumAbsGY, int* sumDIX, int* sumDIY, int* sumSignGY_GX)
+void calcBIOSumsCore(const Pel *srcY0Tmp, const Pel *srcY1Tmp, Pel *gradX0, Pel *gradX1, Pel *gradY0, Pel *gradY1,
+                     int xu, int yu, const ptrdiff_t src0Stride, const ptrdiff_t src1Stride, const int widthG,
+                     const int bitDepth, int *sumAbsGX, int *sumAbsGY, int *sumDIX, int *sumDIY, int *sumSignGY_GX)
 {
   int shift4 = 4;
   int shift5 = 1;
@@ -221,7 +227,8 @@ void calcBlkGradientCore(int sx, int sy, int     *arraysGx2, int     *arraysGxGy
 }
 
 #if ENABLE_SIMD_OPT_BCW
-void removeWeightHighFreq(int16_t* dst, int dstStride, const int16_t* src, int srcStride, int width, int height, int shift, int bcwWeight)
+void removeWeightHighFreq(int16_t *dst, ptrdiff_t dstStride, const int16_t *src, ptrdiff_t srcStride, int width,
+                          int height, int shift, int bcwWeight)
 {
   const int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
 
@@ -241,7 +248,7 @@ void removeWeightHighFreq(int16_t* dst, int dstStride, const int16_t* src, int s
 #undef REM_HF_OP_CLIP
 }
 
-void removeHighFreq(int16_t* dst, int dstStride, const int16_t* src, int srcStride, int width, int height)
+void removeHighFreq(int16_t *dst, ptrdiff_t dstStride, const int16_t *src, ptrdiff_t srcStride, int width, int height)
 {
 #define REM_HF_INC  \
   src += srcStride; \
@@ -256,7 +263,8 @@ void removeHighFreq(int16_t* dst, int dstStride, const int16_t* src, int srcStri
 #undef REM_HF_OP_CLIP
 }
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-void removeWeightHighFreq_HBD(Pel* dst, int dstStride, const Pel* src, int srcStride, int width, int height, int shift, int bcwWeight)
+void removeWeightHighFreq_HBD(Pel *dst, ptrdiff_t dstStride, const Pel *src, ptrdiff_t srcStride, int width, int height,
+                              int shift, int bcwWeight)
 {
   Intermediate_Int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
 
@@ -275,7 +283,7 @@ void removeWeightHighFreq_HBD(Pel* dst, int dstStride, const Pel* src, int srcSt
 #undef REM_HF_OP_CLIP
 }
 
-void removeHighFreq_HBD(Pel* dst, int dstStride, const Pel* src, int srcStride, int width, int height)
+void removeHighFreq_HBD(Pel *dst, ptrdiff_t dstStride, const Pel *src, ptrdiff_t srcStride, int width, int height)
 {
 #define REM_HF_INC  \
   src += srcStride; \
@@ -293,7 +301,8 @@ void removeHighFreq_HBD(Pel* dst, int dstStride, const Pel* src, int srcStride, 
 #endif
 
 template<typename T>
-void reconstructCore( const T* src1, int src1Stride, const T* src2, int src2Stride, T* dest, int dstStride, int width, int height, const ClpRng& clpRng )
+void reconstructCore(const T *src1, ptrdiff_t src1Stride, const T *src2, ptrdiff_t src2Stride, T *dest,
+                     ptrdiff_t dstStride, int width, int height, const ClpRng &clpRng)
 {
 #define RECO_CORE_OP( ADDR ) dest[ADDR] = ClipPel( src1[ADDR] + src2[ADDR], clpRng )
 #define RECO_CORE_INC     \
@@ -307,9 +316,9 @@ void reconstructCore( const T* src1, int src1Stride, const T* src2, int src2Stri
 #undef RECO_CORE_INC
 }
 
-
 template<typename T>
-void linTfCore( const T* src, int srcStride, Pel *dst, int dstStride, int width, int height, int scale, int shift, int offset, const ClpRng& clpRng, bool bClip )
+void linTfCore(const T *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width, int height, int scale,
+               int shift, int offset, const ClpRng &clpRng, bool bClip)
 {
 #define LINTF_CORE_OP( ADDR ) dst[ADDR] = ( Pel ) bClip ? ClipPel( rightShift( scale * src[ADDR], shift ) + offset, clpRng ) : ( rightShift( scale * src[ADDR], shift ) + offset )
 #define LINTF_CORE_INC  \
@@ -360,7 +369,7 @@ PelBufferOps::PelBufferOps()
 
 PelBufferOps g_pelBufOP = PelBufferOps();
 
-void copyBufferCore(const Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height)
+void copyBufferCore(const Pel *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width, int height)
 {
   int numBytes = width * sizeof(Pel);
   for (int i = 0; i < height; i++)
@@ -369,29 +378,28 @@ void copyBufferCore(const Pel *src, int srcStride, Pel *dst, int dstStride, int 
   }
 }
 
-void paddingCore(Pel *ptr, int stride, int width, int height, int padSize)
+void paddingCore(Pel *ptr, ptrdiff_t stride, int width, int height, int padSize)
 {
   /*left and right padding*/
   Pel *ptrTemp1 = ptr;
   Pel *ptrTemp2 = ptr + (width - 1);
-  int offset = 0;
+
   for (int i = 0; i < height; i++)
   {
-    offset = stride * i;
     for (int j = 1; j <= padSize; j++)
     {
-      *(ptrTemp1 - j + offset) = *(ptrTemp1 + offset);
-      *(ptrTemp2 + j + offset) = *(ptrTemp2 + offset);
+      ptrTemp1[stride * i - j] = ptrTemp1[stride * i];
+      ptrTemp2[stride * i + j] = ptrTemp2[stride * i];
     }
   }
   /*Top and Bottom padding*/
   int numBytes = (width + padSize + padSize) * sizeof(Pel);
-  ptrTemp1 = (ptr - padSize);
-  ptrTemp2 = (ptr + (stride * (height - 1)) - padSize);
+  ptrTemp1     = ptr - padSize;
+  ptrTemp2     = ptr + stride * (height - 1) - padSize;
   for (int i = 1; i <= padSize; i++)
   {
-    memcpy(ptrTemp1 - (i * stride), (ptrTemp1), numBytes);
-    memcpy(ptrTemp2 + (i * stride), (ptrTemp2), numBytes);
+    memcpy(ptrTemp1 - i * stride, (ptrTemp1), numBytes);
+    memcpy(ptrTemp2 + i * stride, (ptrTemp2), numBytes);
   }
 }
 template<>
@@ -405,9 +413,9 @@ void AreaBuf<Pel>::addWeightedAvg(const AreaBuf<const Pel> &other1, const AreaBu
   const Pel* src2 = other2.buf;
   Pel* dest = buf;
 
-  const unsigned src1Stride = other1.stride;
-  const unsigned src2Stride = other2.stride;
-  const unsigned destStride = stride;
+  const ptrdiff_t src1Stride = other1.stride;
+  const ptrdiff_t src2Stride = other2.stride;
+  const ptrdiff_t destStride = stride;
   const int clipbd = clpRng.bd;
   const int shiftNum = IF_INTERNAL_FRAC_BITS(clipbd) + log2WeightBase;
   const int offset = (1 << (shiftNum - 1)) + (IF_INTERNAL_OFFS << log2WeightBase);
@@ -508,7 +516,8 @@ void AreaBuf<Pel>::applyLumaCTI(std::vector<Pel>& pLUTY)
 }
 
 template<>
-void AreaBuf<Pel>::applyChromaCTI(Pel* bufY, int strideY, std::vector<Pel>& pLUTC, int bitDepth, ChromaFormat chrFormat, bool fwdMap)
+void AreaBuf<Pel>::applyChromaCTI(Pel *bufY, ptrdiff_t strideY, std::vector<Pel> &pLUTC, int bitDepth,
+                                  ChromaFormat chrFormat, bool fwdMap)
 {
   int range = 1 << bitDepth;
   int offset = range / 2;
@@ -552,14 +561,14 @@ void AreaBuf<Pel>::addAvg( const AreaBuf<const Pel> &other1, const AreaBuf<const
 {
   const Pel* src0 = other1.buf;
   const Pel* src2 = other2.buf;
-        Pel* dest =        buf;
+  Pel       *dest = buf;
 
-  const unsigned src1Stride = other1.stride;
-  const unsigned src2Stride = other2.stride;
-  const unsigned destStride =        stride;
-  const int     clipbd      = clpRng.bd;
-  const int shiftNum = IF_INTERNAL_FRAC_BITS(clipbd) + 1;
-  const int     offset      = (1 << (shiftNum - 1)) + 2 * IF_INTERNAL_OFFS;
+  const ptrdiff_t src1Stride = other1.stride;
+  const ptrdiff_t src2Stride = other2.stride;
+  const ptrdiff_t destStride = stride;
+  const int       clipbd     = clpRng.bd;
+  const int       shiftNum   = IF_INTERNAL_FRAC_BITS(clipbd) + 1;
+  const int       offset     = (1 << (shiftNum - 1)) + 2 * IF_INTERNAL_OFFS;
 
 #if ENABLE_SIMD_OPT_BUFFER && defined(TARGET_SIMD_X86)
   if( ( width & 7 ) == 0 )
@@ -589,16 +598,16 @@ void AreaBuf<Pel>::addAvg( const AreaBuf<const Pel> &other1, const AreaBuf<const
 template<>
 void AreaBuf<Pel>::toLast( const ClpRng& clpRng )
 {
-        Pel* src       = buf;
-  const uint32_t srcStride = stride;
+  Pel            *src       = buf;
+  const ptrdiff_t srcStride = stride;
 
-  const int  clipbd    = clpRng.bd;
+  const int clipbd   = clpRng.bd;
   const int shiftNum = IF_INTERNAL_FRAC_BITS(clipbd);
-  const int  offset    = ( 1 << ( shiftNum - 1 ) ) + IF_INTERNAL_OFFS;
+  const int offset   = (1 << (shiftNum - 1)) + IF_INTERNAL_OFFS;
 
   if (width == 1)
   {
-    THROW( "Blocks of width = 1 not supported" );
+    THROW("Blocks of width = 1 not supported");
   }
   else if (width&2)
   {
@@ -634,14 +643,14 @@ template<>
 void AreaBuf<Pel>::copyClip( const AreaBuf<const Pel> &src, const ClpRng& clpRng )
 {
   const Pel* srcp = src.buf;
-        Pel* dest =     buf;
+  Pel       *dest = buf;
 
-  const unsigned srcStride  = src.stride;
-  const unsigned destStride = stride;
+  const ptrdiff_t srcStride  = src.stride;
+  const ptrdiff_t destStride = stride;
 
-  if( width == 1 )
+  if (width == 1)
   {
-    THROW( "Blocks of width = 1 not supported" );
+    THROW("Blocks of width = 1 not supported");
   }
   else
   {
@@ -661,17 +670,17 @@ template<>
 void AreaBuf<Pel>::roundToOutputBitdepth( const AreaBuf<const Pel> &src, const ClpRng& clpRng )
 {
   const Pel* srcp = src.buf;
-        Pel* dest =     buf;
-  const unsigned srcStride  = src.stride;
-  const unsigned destStride = stride;
+  Pel            *dest       = buf;
+  const ptrdiff_t srcStride  = src.stride;
+  const ptrdiff_t destStride = stride;
 
-  const int32_t clipbd            = clpRng.bd;
-  const int32_t shiftDefault      = IF_INTERNAL_FRAC_BITS(clipbd);
-  const int32_t offsetDefault     = (1<<(shiftDefault-1)) + IF_INTERNAL_OFFS;
+  const int32_t clipbd        = clpRng.bd;
+  const int32_t shiftDefault  = IF_INTERNAL_FRAC_BITS(clipbd);
+  const int32_t offsetDefault = (1 << (shiftDefault - 1)) + IF_INTERNAL_OFFS;
 
-  if( width == 1 )
+  if (width == 1)
   {
-    THROW( "Blocks of width = 1 not supported" );
+    THROW("Blocks of width = 1 not supported");
   }
   else
   {
@@ -693,11 +702,11 @@ void AreaBuf<Pel>::reconstruct( const AreaBuf<const Pel> &pred, const AreaBuf<co
 {
   const Pel* src1 = pred.buf;
   const Pel* src2 = resi.buf;
-        Pel* dest =      buf;
+  Pel       *dest = buf;
 
-  const unsigned src1Stride = pred.stride;
-  const unsigned src2Stride = resi.stride;
-  const unsigned destStride =      stride;
+  const ptrdiff_t src1Stride = pred.stride;
+  const ptrdiff_t src2Stride = resi.stride;
+  const ptrdiff_t destStride = stride;
 
 #if ENABLE_SIMD_OPT_BUFFER && defined(TARGET_SIMD_X86)
   if( ( width & 7 ) == 0 )
@@ -883,12 +892,12 @@ void UnitBuf<Pel>::colorSpaceConvert(const UnitBuf<Pel> &other, const bool forwa
   const Pel* pOrg0 = bufs[COMPONENT_Y].buf;
   const Pel* pOrg1 = bufs[COMPONENT_Cb].buf;
   const Pel* pOrg2 = bufs[COMPONENT_Cr].buf;
-  const int  strideOrg = bufs[COMPONENT_Y].stride;
+  const ptrdiff_t strideOrg = bufs[COMPONENT_Y].stride;
 
   Pel* pDst0 = other.bufs[COMPONENT_Y].buf;
   Pel* pDst1 = other.bufs[COMPONENT_Cb].buf;
   Pel* pDst2 = other.bufs[COMPONENT_Cr].buf;
-  const int strideDst = other.bufs[COMPONENT_Y].stride;
+  const ptrdiff_t strideDst = other.bufs[COMPONENT_Y].stride;
 
   int width = bufs[COMPONENT_Y].width;
   int height = bufs[COMPONENT_Y].height;

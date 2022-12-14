@@ -63,13 +63,14 @@ AffineGradientSearch::AffineGradientSearch()
 #endif
 }
 
-void AffineGradientSearch::xHorizontalSobelFilter( Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height )
+void AffineGradientSearch::xHorizontalSobelFilter(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                                  const ptrdiff_t derivateBufStride, const int width, const int height)
 {
   for ( int j = 1; j < height - 1; j++ )
   {
     for ( int k = 1; k < width - 1; k++ )
     {
-      int iCenter = j * predStride + k;
+      const ptrdiff_t iCenter = j * predStride + k;
 
       pDerivate[j * derivateBufStride + k] =
         (pPred[iCenter + 1 - predStride] -
@@ -96,13 +97,14 @@ void AffineGradientSearch::xHorizontalSobelFilter( Pel *const pPred, const int p
   }
 }
 
-void AffineGradientSearch::xVerticalSobelFilter( Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height )
+void AffineGradientSearch::xVerticalSobelFilter(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                                const ptrdiff_t derivateBufStride, const int width, const int height)
 {
   for ( int k = 1; k < width - 1; k++ )
   {
     for ( int j = 1; j < height - 1; j++ )
     {
-      int iCenter = j * predStride + k;
+      const ptrdiff_t iCenter = j * predStride + k;
 
       pDerivate[j * derivateBufStride + k] =
         (pPred[iCenter + predStride - 1] -
@@ -129,7 +131,9 @@ void AffineGradientSearch::xVerticalSobelFilter( Pel *const pPred, const int pre
   }
 }
 
-void AffineGradientSearch::xEqualCoeffComputer( Pel *pResidue, int residueStride, int **ppDerivate, int derivateBufStride, int64_t( *pEqualCoeff )[7], int width, int height, bool b6Param )
+void AffineGradientSearch::xEqualCoeffComputer(Pel *pResidue, ptrdiff_t residueStride, int **ppDerivate,
+                                               ptrdiff_t derivateBufStride, int64_t (*pEqualCoeff)[7], int width,
+                                               int height, bool b6Param)
 {
   int affineParamNum = b6Param ? 6 : 4;
 
@@ -140,7 +144,7 @@ void AffineGradientSearch::xEqualCoeffComputer( Pel *pResidue, int residueStride
     {
       int iC[6];
 
-      int idx = j * derivateBufStride + k;
+      ptrdiff_t idx = j * derivateBufStride + k;
       int cx = ((k >> 2) << 2) + 2;
       if ( !b6Param )
       {

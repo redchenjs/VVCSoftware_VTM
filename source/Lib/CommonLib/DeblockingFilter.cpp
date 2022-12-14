@@ -935,7 +935,8 @@ DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(con
   return tmpBs.setBoundaryStrength(COMPONENT_Y, d ? 1 : 0);
 }
 
-int DeblockingFilter::deriveLADFShift(const Pel *src, const int stride, const DeblockEdgeDir edgeDir, const SPS *sps)
+int DeblockingFilter::deriveLADFShift(const Pel *src, const ptrdiff_t stride, const DeblockEdgeDir edgeDir,
+                                      const SPS *sps)
 {
   uint32_t lumaLevel = 0;
 
@@ -972,11 +973,15 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
   const PreCalcValues& pcv = *cu.cs->pcv;
 
   PelBuf        picYuvRec = m_enc ? m_encPicYuvBuffer.getBuf( lumaArea ) : cu.cs->getRecoBuf( lumaArea );
-  Pel *          src                            = picYuvRec.buf;
-  const int      stride                         = picYuvRec.stride;
-  Pel *          tmpSrc                         = src;
-  const PPS     *pps                            = cu.cs->pps;
-  const SPS     *sps                            = cu.cs->sps;
+
+  Pel *src    = picYuvRec.buf;
+  Pel *tmpSrc = src;
+
+  const ptrdiff_t stride = picYuvRec.stride;
+
+  const PPS *pps = cu.cs->pps;
+  const SPS *sps = cu.cs->sps;
+
   const Slice   &slice    = *(cu.slice);
   const bool     spsPaletteEnabledFlag          = sps->getPLTMode();
   const int      bitDepthLuma                   = sps->getBitDepth(CHANNEL_TYPE_LUMA);
@@ -986,7 +991,8 @@ void DeblockingFilter::xEdgeFilterLuma(const CodingUnit &cu, const DeblockEdgeDi
   unsigned numParts = (((edgeDir == EDGE_VER) ? lumaArea.height / pcv.minCUHeight : lumaArea.width / pcv.minCUWidth));
   int          pelsInPart   = pcv.minCUWidth;
   unsigned     bsAbsIdx = 0, bs = 0;
-  int          offset, srcStep;
+  ptrdiff_t    offset;
+  ptrdiff_t    srcStep;
 
   int   betaOffsetDiv2  = slice.getDeblockingFilterBetaOffsetDiv2();
   int   tcOffsetDiv2    = slice.getDeblockingFilterTcOffsetDiv2();
@@ -1180,7 +1186,9 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
   PelBuf     picYuvRecCr = m_enc ? m_encPicYuvBuffer.getBuf(cu.block(COMPONENT_Cr)) : cu.cs->getRecoBuf(cu.block(COMPONENT_Cr));
   Pel *      srcCb       = picYuvRecCb.buf;
   Pel *      srcCr       = picYuvRecCr.buf;
-  const int          stride              = picYuvRecCb.stride;
+
+  const ptrdiff_t stride = picYuvRecCb.stride;
+
   const SPS         &sps                 = *cu.cs->sps;
   const Slice  &slice      = *cu.slice;
   const ChromaFormat nChromaFormat   = sps.getChromaFormatIdc();
@@ -1188,7 +1196,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
   const unsigned pelsInPartChromaH = pcv.minCUWidth >> ::getComponentScaleX(COMPONENT_Cb, nChromaFormat);
   const unsigned pelsInPartChromaV = pcv.minCUHeight >> ::getComponentScaleY(COMPONENT_Cb, nChromaFormat);
 
-  int      offset, srcStep;
+  ptrdiff_t offset, srcStep;
   unsigned loopLength;
 
   bool      partPNoFilter     = false;
@@ -1368,7 +1376,7 @@ void DeblockingFilter::xEdgeFilterChroma(const CodingUnit &cu, const DeblockEdge
   }
 }
 
-void DeblockingFilter::xFilteringPandQ(Pel *src, int offset, const FilterLenPair filterLen, int tc)
+void DeblockingFilter::xFilteringPandQ(Pel *src, ptrdiff_t offset, const FilterLenPair filterLen, int tc)
 {
   CHECK(filterLen.p <= FilterLen::_3 && filterLen.q <= FilterLen::_3, "Short filtering in long filtering function");
   Pel *srcP = src - offset;
@@ -1406,8 +1414,8 @@ void DeblockingFilter::xFilteringPandQ(Pel *src, int offset, const FilterLenPair
   {
     Pel* srcPt = srcP;
     Pel* srcQt = srcQ;
-    int offsetP = -offset;
-    int offsetQ = offset;
+    ptrdiff_t offsetP = -offset;
+    ptrdiff_t offsetQ = offset;
 
     FilterLen newNumberQSide = filterLen.q;
     FilterLen newNumberPSide = filterLen.p;
@@ -1456,10 +1464,10 @@ void DeblockingFilter::xFilteringPandQ(Pel *src, int offset, const FilterLenPair
   }
 }
 
-void DeblockingFilter::xPelFilterLuma(Pel *src, const int offset, const int tc, const bool sw, const bool partPNoFilter,
-                                      const bool partQNoFilter, const int thrCut, const bool bFilterSecondP,
-                                      const bool bFilterSecondQ, const ClpRng &clpRng, bool sidePisLarge,
-                                      bool sideQisLarge, FilterLenPair maxFilterLen)
+void DeblockingFilter::xPelFilterLuma(Pel *src, const ptrdiff_t offset, const int tc, const bool sw,
+                                      const bool partPNoFilter, const bool partQNoFilter, const int thrCut,
+                                      const bool bFilterSecondP, const bool bFilterSecondQ, const ClpRng &clpRng,
+                                      bool sidePisLarge, bool sideQisLarge, FilterLenPair maxFilterLen)
 {
   int delta;
 
@@ -1557,7 +1565,7 @@ void DeblockingFilter::xPelFilterLuma(Pel *src, const int offset, const int tc, 
   }
 }
 
-inline void DeblockingFilter::xPelFilterChroma(Pel *src, const int offset, const int tc, const bool sw,
+inline void DeblockingFilter::xPelFilterChroma(Pel *src, const ptrdiff_t offset, const int tc, const bool sw,
                                                const bool partPNoFilter, const bool partQNoFilter, const ClpRng &clpRng,
                                                const bool largeBoundary, const bool isChromaHorCTBBoundary) const
 {
@@ -1618,9 +1626,9 @@ inline void DeblockingFilter::xPelFilterChroma(Pel *src, const int offset, const
   }
 }
 
-inline bool DeblockingFilter::xUseStrongFiltering(Pel *src, const int offset, const int d, const int beta, const int tc,
-                                                  bool sidePisLarge, bool sideQisLarge, FilterLenPair maxFilterLen,
-                                                  bool isChromaHorCTBBoundary) const
+inline bool DeblockingFilter::xUseStrongFiltering(Pel *src, const ptrdiff_t offset, const int d, const int beta,
+                                                  const int tc, bool sidePisLarge, bool sideQisLarge,
+                                                  FilterLenPair maxFilterLen, bool isChromaHorCTBBoundary) const
 {
   const Pel m4  = src[0];
   const Pel m3  = src[-offset];
@@ -1677,7 +1685,7 @@ inline bool DeblockingFilter::xUseStrongFiltering(Pel *src, const int offset, co
   }
 }
 
-inline int DeblockingFilter::xCalcDP(Pel *src, const int offset, const bool isChromaHorCTBBoundary) const
+inline int DeblockingFilter::xCalcDP(Pel *src, const ptrdiff_t offset, const bool isChromaHorCTBBoundary) const
 {
   if (isChromaHorCTBBoundary)
   {
@@ -1689,7 +1697,7 @@ inline int DeblockingFilter::xCalcDP(Pel *src, const int offset, const bool isCh
   }
 }
 
-inline int DeblockingFilter::xCalcDQ(Pel *src, const int offset) const
+inline int DeblockingFilter::xCalcDQ(Pel *src, const ptrdiff_t offset) const
 {
   return abs(src[0] - 2 * src[offset] + src[offset * 2]);
 }

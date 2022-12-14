@@ -524,7 +524,7 @@ void IntraPrediction::xPredIntraAng( const CPelBuf &pSrc, PelBuf &pDst, const Ch
     std::swap(width, height);
   }
   Pel       tempArray[MAX_CU_SIZE * MAX_CU_SIZE];
-  const int dstStride = isModeVer ? pDst.stride : width;
+  const ptrdiff_t dstStride = isModeVer ? pDst.stride : width;
   Pel *     pDstBuf   = isModeVer ? pDst.buf : tempArray;
 
   // compensate for line offset in reference line buffers
@@ -646,8 +646,8 @@ void IntraPrediction::xPredIntraBDPCM(const CPelBuf &pSrc, PelBuf &pDst, const B
   const int wdt = pDst.width;
   const int hgt = pDst.height;
 
-  const int strideP = pDst.stride;
-  const int strideS = pSrc.stride;
+  const ptrdiff_t strideP = pDst.stride;
+  const ptrdiff_t strideS = pSrc.stride;
 
   CHECK(dirMode != BdpcmMode::HOR && dirMode != BdpcmMode::VER, "Incorrect BDPCM mode parameter.");
 
@@ -969,8 +969,8 @@ void IntraPrediction::xFillReferenceSamples( const CPelBuf &recoBuf, Pel* refBuf
   // ----- Step 2: fill reference samples (depending on neighborhood) -----
 
   const Pel*  srcBuf    = recoBuf.buf;
-  const int   srcStride = recoBuf.stride;
-        Pel*  ptrDst    = refBufUnfiltered;
+  const ptrdiff_t srcStride = recoBuf.stride;
+  Pel            *ptrDst    = refBufUnfiltered;
   const Pel*  ptrSrc;
   const Pel   valueDC   = 1 << (sps.getBitDepth( chType ) - 1);
 
@@ -1359,7 +1359,7 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
   int logSubWidthC  = getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, pu.chromaFormat);
   int logSubHeightC = getChannelTypeScaleY(CHANNEL_TYPE_CHROMA, pu.chromaFormat);
 
-  ptrdiff_t recStride2 = recStride << logSubHeightC;
+  const ptrdiff_t recStride2 = recStride << logSubHeightC;
 
   const CodingUnit& lumaCU = isChroma( pu.chType ) ? *pu.cs->picture->cs->getCU( lumaArea.pos(), CH_L ) : *pu.cu;
   const CodingUnit&     cu = *pu.cu;

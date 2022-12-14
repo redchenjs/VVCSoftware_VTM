@@ -663,7 +663,7 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
 void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic,
                                     const Mv &_mv, PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng,
                                     const bool bioApplied, bool isIBC, const std::pair<int, int> scalingRatio,
-                                    bool bilinearMC, Pel *srcPadBuf, int32_t srcPadStride)
+                                    bool bilinearMC, Pel *srcPadBuf, ptrdiff_t srcPadStride)
 {
   JVET_J0090_SET_REF_PICTURE( refPic, compID );
   const ChromaFormat  chFmt = pu.chromaFormat;
@@ -727,7 +727,7 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
     int  backupWidth        = width;
     int  backupHeight       = height;
     Pel *backupDstBufPtr    = dstBuf.buf;
-    int  backupDstBufStride = dstBuf.stride;
+    ptrdiff_t backupDstBufStride = dstBuf.stride;
 
     if (bioApplied && compID == COMPONENT_Y)
     {
@@ -1107,11 +1107,11 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
           CompArea(compID, chFmt, pu.blocks[compID].offset(xInt + w, yInt + h), pu.blocks[compID]), wrapRef);
 
         const Pel *ref       = refBuf.buf;
-        const int  refStride = refBuf.stride;
+        const ptrdiff_t refStride = refBuf.stride;
 
         Pel *dst =
           enableProf ? dstExtBuf.bufAt(PROF_BORDER_EXT_W, PROF_BORDER_EXT_H) : dstBuf.buf + w + h * dstBuf.stride;
-        const int dstStride = enableProf ? dstExtBuf.stride : dstBuf.stride;
+        const ptrdiff_t dstStride = enableProf ? dstExtBuf.stride : dstBuf.stride;
 
         if (yFrac == 0)
         {
@@ -1197,14 +1197,16 @@ void InterPrediction::applyBiOptFlow(const PredictionUnit &pu, const CPelUnitBuf
   Pel*          gradY0 = m_gradY0;
   Pel*          gradY1 = m_gradY1;
 
-  int           stridePredMC = widthG + 2;
-  const Pel*    srcY0 = m_filteredBlockTmp[2][COMPONENT_Y] + stridePredMC + 1;
-  const Pel*    srcY1 = m_filteredBlockTmp[3][COMPONENT_Y] + stridePredMC + 1;
-  const int     src0Stride = stridePredMC;
-  const int     src1Stride = stridePredMC;
+  const ptrdiff_t stridePredMC = widthG + 2;
+
+  const Pel *srcY0 = m_filteredBlockTmp[2][COMPONENT_Y] + stridePredMC + 1;
+  const Pel *srcY1 = m_filteredBlockTmp[3][COMPONENT_Y] + stridePredMC + 1;
+
+  const ptrdiff_t src0Stride = stridePredMC;
+  const ptrdiff_t src1Stride = stridePredMC;
 
   Pel*          dstY = yuvDst.Y().buf;
-  const int     dstStride = yuvDst.Y().stride;
+  const ptrdiff_t dstStride = yuvDst.Y().stride;
   const Pel*    srcY0Temp = srcY0;
   const Pel*    srcY1Temp = srcY1;
 
@@ -1278,14 +1280,16 @@ void InterPrediction::applyBiOptFlow(const PredictionUnit &pu, const CPelUnitBuf
   }  // yu
 }
 
-
-
-void InterPrediction::xAddBIOAvg4(const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel*gradY1, int gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset, const ClpRng& clpRng)
+void InterPrediction::xAddBIOAvg4(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride,
+                                  Pel *dst, ptrdiff_t dstStride, const Pel *gradX0, const Pel *gradX1,
+                                  const Pel *gradY0, const Pel *gradY1, ptrdiff_t gradStride, int width, int height,
+                                  int tmpx, int tmpy, int shift, int offset, const ClpRng &clpRng)
 {
   g_pelBufOP.addBIOAvg4(src0, src0Stride, src1, src1Stride, dst, dstStride, gradX0, gradX1, gradY0, gradY1, gradStride, width, height, tmpx, tmpy, shift, offset, clpRng);
 }
 
-void InterPrediction::xBioGradFilter(Pel* pSrc, int srcStride, int width, int height, int gradStride, Pel* gradX, Pel* gradY, int bitDepth)
+void InterPrediction::xBioGradFilter(Pel *pSrc, ptrdiff_t srcStride, int width, int height, ptrdiff_t gradStride,
+                                     Pel *gradX, Pel *gradY, int bitDepth)
 {
   g_pelBufOP.bioGradFilter(pSrc, srcStride, width, height, gradStride, gradX, gradY, bitDepth);
 }
@@ -1701,7 +1705,7 @@ void InterPrediction::xDmvrFinalMc(const PredictionUnit &pu, PelUnitBuf yuvSrc[N
       const auto compId = ComponentID(co);
 
       Pel *srcBufPtr    = nullptr;
-      int  srcBufStride = 0;
+      ptrdiff_t srcBufStride = 0;
 
       // when blockMoved is false, only luma data has been prefetched
       if (blockMoved || isLuma(compId))
@@ -1733,8 +1737,8 @@ auto InterPrediction::xDmvrCost(int bitDepth, const Mv &mvd, int width, int heig
   const Pel *p0 = m_dmvrInitialPred[REF_PIC_LIST_0].bufAt(DMVR_RANGE + mvd.hor, DMVR_RANGE + mvd.ver);
   const Pel *p1 = m_dmvrInitialPred[REF_PIC_LIST_1].bufAt(DMVR_RANGE - mvd.hor, DMVR_RANGE - mvd.ver);
 
-  const int s0 = m_dmvrInitialPred[REF_PIC_LIST_0].stride;
-  const int s1 = m_dmvrInitialPred[REF_PIC_LIST_1].stride;
+  const ptrdiff_t s0 = m_dmvrInitialPred[REF_PIC_LIST_0].stride;
+  const ptrdiff_t s1 = m_dmvrInitialPred[REF_PIC_LIST_1].stride;
 
   DistParam cDistParam;
   cDistParam.applyWeight = false;
@@ -1800,7 +1804,7 @@ void InterPrediction::xDmvrInitialMc(const PredictionUnit &pu, const ClpRngs &cl
 
     const int leftPixelExtra = (NTAPS_LUMA >> 1) - 1;
     Pel      *srcBufPtr      = m_yuvRefBufDmvr[l].bufs[COMPONENT_Y].bufAt(leftPixelExtra, leftPixelExtra);
-    const int srcBufStride   = m_yuvRefBufDmvr[l].bufs[COMPONENT_Y].stride;
+    const ptrdiff_t srcBufStride   = m_yuvRefBufDmvr[l].bufs[COMPONENT_Y].stride;
 
     PelUnitBuf dstBuf(CHROMA_400, m_dmvrInitialPred[l]);
 
@@ -2086,7 +2090,7 @@ bool InterPrediction::isLumaBvValid(const int ctuSize, const int xCb, const int 
 }
 
 bool InterPrediction::xPredInterBlkRPR(const std::pair<int, int> &scalingRatio, const PPS &pps, const CompArea &blk,
-                                       const Picture *refPic, const Mv &mv, Pel *dst, const int dstStride,
+                                       const Picture *refPic, const Mv &mv, Pel *dst, const ptrdiff_t dstStride,
                                        const bool bi, const bool wrapRef, const ClpRng &clpRng,
                                        const InterpolationFilter::Filter filterIndex, const bool useAltHpelIf)
 {

@@ -45,7 +45,8 @@
 #include "CommonLib/Buffer.h"
 #include "CommonLib/Unit.h"
 
-inline unsigned calcCheckSum(const int width, const int height, const Pel *p, const uint32_t stride, const int bitdepth)
+inline unsigned calcCheckSum(const int width, const int height, const Pel *p, const ptrdiff_t stride,
+                             const int bitdepth)
 {
   unsigned checksum = 0;
   for (unsigned y = 0; y < height; y++)

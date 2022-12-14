@@ -184,7 +184,8 @@ uint32_t IbcHashMap::xxComputeCrc32c16bit(uint32_t crc, const Pel pel)
 // CRC calculation in C code
 ////////////////////////////////////////////////////////
 
-unsigned int IbcHashMap::xxCalcBlockHash(const Pel* pel, const int stride, const int width, const int height, unsigned int crc)
+unsigned int IbcHashMap::xxCalcBlockHash(const Pel *pel, const ptrdiff_t stride, const int width, const int height,
+                                         unsigned int crc)
 {
   for (int y = 0; y < height; y++)
   {

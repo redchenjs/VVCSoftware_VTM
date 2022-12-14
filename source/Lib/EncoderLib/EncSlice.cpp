@@ -148,8 +148,9 @@ static inline int lumaDQPOffset (const uint32_t avgLumaValue, const int bitDepth
   return (1 - int ((3 * uint64_t (avgLumaValue * avgLumaValue)) >> uint64_t (2 * bitDepth - 1)));
 }
 
-static void filterAndCalculateAverageEnergies(const Pel *pSrc, const int srcStride, double &hpEner, const int height,
-                                              const int width, const uint32_t bitDepth /* luma bit-depth (4-16) */)
+static void filterAndCalculateAverageEnergies(const Pel *pSrc, const ptrdiff_t srcStride, double &hpEner,
+                                              const int height, const int width,
+                                              const uint32_t bitDepth /* luma bit-depth (4-16) */)
 {
   uint64_t saAct = 0;
 
@@ -1099,7 +1100,7 @@ static bool applyQPAdaptation (Picture* const pcPic,       Slice* const pcSlice,
         const uint32_t uRefScale  = g_invQuantScales[0][iQPAdapt % 6] << ((iQPAdapt / 6) + bitDepth - 4);
         const CompArea subArea    = clipArea (CompArea (COMPONENT_Y, pcPic->chromaFormat, Area ((ctuRsAddr % pcv.widthInCtus) * pcv.maxCUWidth, (ctuRsAddr / pcv.widthInCtus) * pcv.maxCUHeight, pcv.maxCUWidth, pcv.maxCUHeight)), pcPic->Y());
         const Pel*     pSrc       = pcPic->getOrigBuf (subArea).buf;
-        const SizeType srcStride  = pcPic->getOrigBuf(subArea).stride;
+        const ptrdiff_t srcStride  = pcPic->getOrigBuf(subArea).stride;
         const SizeType srcHeight  = pcPic->getOrigBuf(subArea).height;
         const SizeType srcWidth   = pcPic->getOrigBuf(subArea).width;
         uint32_t uAbsDCless = 0;
@@ -1605,8 +1606,8 @@ void EncSlice::setJointCbCrModes( CodingStructure& cs, const Position topLeftLum
     const int       y0      = ( cbArea.y > 0 ? 0 : 1 );
     const int       x1      = ( cbArea.x + cbArea.width  < cs.picture->Cb().width  ? cbArea.width  : cbArea.width  - 1 );
     const int       y1      = ( cbArea.y + cbArea.height < cs.picture->Cb().height ? cbArea.height : cbArea.height - 1 );
-    const int       cbs     = orgCb.stride;
-    const int       crs     = orgCr.stride;
+    const ptrdiff_t cbs     = orgCb.stride;
+    const ptrdiff_t crs     = orgCr.stride;
     const Pel*      pCb     = orgCb.buf + y0 * cbs;
     const Pel*      pCr     = orgCr.buf + y0 * crs;
     int64_t         sumCbCr = 0;

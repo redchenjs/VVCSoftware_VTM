@@ -318,8 +318,8 @@ protected:
                                        PelUnitBuf cPicRecFirstField, PelUnitBuf cPicRecSecondField,
                                        const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
                                        const bool printMSSSIM, double *PSNR_Y, bool isEncodeLtRef);
-  double   xCalculateMSSSIM(const Pel *org, const int orgStride, const Pel *rec, const int recStride, const int width,
-                            const int height, const uint32_t bitDepth);
+  double   xCalculateMSSSIM(const Pel *org, const ptrdiff_t orgStride, const Pel *rec, const ptrdiff_t recStride,
+                            const int width, const int height, const uint32_t bitDepth);
   uint64_t xFindDistortionPlane(const CPelBuf& pic0, const CPelBuf& pic1, const uint32_t rshift
 #if ENABLE_QPA
                             , const uint32_t chromaShiftHor = 0, const uint32_t chromaShiftVer = 0
