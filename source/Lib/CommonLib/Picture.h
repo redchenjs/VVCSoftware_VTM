@@ -258,9 +258,9 @@ public:
   PelStorage m_bufs[NUM_PIC_TYPES];
   const Picture*           unscaledPic;
 
-  TComHash           m_hashMap;
-  TComHash*          getHashMap() { return &m_hashMap; }
-  const TComHash*    getHashMap() const { return &m_hashMap; }
+  Hash               m_hashMap;
+  Hash              *getHashMap() { return &m_hashMap; }
+  const Hash        *getHashMap() const { return &m_hashMap; }
   void               addPictureToHashMapForInter();
 
   CodingStructure*   cs;

@@ -167,8 +167,9 @@ protected:
   RefPicList      m_currRefPicList;
   int             m_currRefPicIndex;
   bool            m_skipFracME;
-  RefSetArray<int>   m_numHashMVStoreds;
-  RefSetArray<Mv[5]> m_hashMVStoreds;
+
+  RefSetArray<int>                         m_numHashMVStoreds;
+  RefSetArray<Mv[Hash::NUM_LOG_BLK_SIZES]> m_hashMVStoreds;
 
   // Misc.
   Pel            *m_pTempPel;
