@@ -1117,10 +1117,10 @@ bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpac
       {
          EXIT("Source image contains values outside the specified bit range!");
       }
-#if !JVET_R0351_HIGH_BIT_DEPTH_ENABLED
+#if !RExt__HIGH_BIT_DEPTH_SUPPORT
       if (m_fileBitdepth[chType] > 14 && m_bitdepthShift[chType] < 0)
       {
-        EXIT("JVET_R0351_HIGH_BIT_DEPTH_ENABLED must be enabled for bit depths above 14 if INTERNALBITDEPTH < INPUTBITDEPTH");
+        EXIT("RExt__HIGH_BIT_DEPTH_SUPPORT must be enabled for bit depths above 14 if INTERNALBITDEPTH < INPUTBITDEPTH");
       }
 #endif
       scalePlane( picOrg.get(compID), m_bitdepthShift[chType], minval, maxval);
