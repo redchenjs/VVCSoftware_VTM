@@ -880,8 +880,8 @@ private:
   TCoeff             *m_pCoeff;
   Pel                *m_pPcmBuf;
   bool               *m_runType;
-  CodingStructure     m_dummyCS;
   XuPool              m_dummyPool;
+  CodingStructure     m_dummyCS;
 
 protected:
 
