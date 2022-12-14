@@ -2260,7 +2260,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
     mrgPredBufNoMvRefine.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
   }
   rdOrderedMrgPredBuf.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
-  PelUnitBuf *singleMergeTempBuffer = rdOrderedMrgPredBuf[mergeCtx.numValidMergeCand];
+  PelUnitBuf*& singleMergeTempBuffer = rdOrderedMrgPredBuf[mergeCtx.numValidMergeCand];
 
   if (tempCS->sps->getUseMMVD())
   {
