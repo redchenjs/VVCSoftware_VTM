@@ -2114,22 +2114,22 @@ void CABACWriter::merge_idx( const PredictionUnit& pu )
 }
 void CABACWriter::mmvd_merge_idx(const PredictionUnit& pu)
 {
-  const int var0 = pu.mmvdMergeIdx.pos.baseIdx;
-  const int var1 = pu.mmvdMergeIdx.pos.step;
-  const int var2 = pu.mmvdMergeIdx.pos.position;
+  const int mvdBaseIdx  = pu.mmvdMergeIdx.pos.baseIdx;
+  const int mvdStep     = pu.mmvdMergeIdx.pos.step;
+  const int mvdPosition = pu.mmvdMergeIdx.pos.position;
 
   if (pu.cs->sps->getMaxNumMergeCand() > 1)
   {
     static_assert(MmvdIdx::BASE_MV_NUM == 2, "");
-    assert(var0 < 2);
-    m_binEncoder.encodeBin(var0, Ctx::MmvdMergeIdx());
+    assert(mvdBaseIdx < 2);
+    m_binEncoder.encodeBin(mvdBaseIdx, Ctx::MmvdMergeIdx());
   }
-  DTRACE(g_trace_ctx, D_SYNTAX, "base_mvp_idx() base_mvp_idx=%d\n", var0);
+  DTRACE(g_trace_ctx, D_SYNTAX, "base_mvp_idx() base_mvp_idx=%d\n", mvdBaseIdx);
 
   int numStepCandMinus1 = MmvdIdx::REFINE_STEP - 1;
   if (numStepCandMinus1 > 0)
   {
-    if (var1 == 0)
+    if (mvdStep == 0)
     {
       m_binEncoder.encodeBin(0, Ctx::MmvdStepMvpIdx());
     }
@@ -2138,19 +2138,19 @@ void CABACWriter::mmvd_merge_idx(const PredictionUnit& pu)
       m_binEncoder.encodeBin(1, Ctx::MmvdStepMvpIdx());
       for (unsigned idx = 1; idx < numStepCandMinus1; idx++)
       {
-        m_binEncoder.encodeBinEP(var1 == idx ? 0 : 1);
-        if (var1 == idx)
+        m_binEncoder.encodeBinEP(mvdStep == idx ? 0 : 1);
+        if (mvdStep == idx)
         {
           break;
         }
       }
     }
   }
-  DTRACE(g_trace_ctx, D_SYNTAX, "MmvdStepMvpIdx() MmvdStepMvpIdx=%d\n", var1);
+  DTRACE(g_trace_ctx, D_SYNTAX, "MmvdStepMvpIdx() MmvdStepMvpIdx=%d\n", mvdStep);
 
-  m_binEncoder.encodeBinsEP(var2, 2);
+  m_binEncoder.encodeBinsEP(mvdPosition, 2);
 
-  DTRACE(g_trace_ctx, D_SYNTAX, "pos() pos=%d\n", var2);
+  DTRACE(g_trace_ctx, D_SYNTAX, "pos() pos=%d\n", mvdPosition);
   DTRACE(g_trace_ctx, D_SYNTAX, "mmvd_merge_idx() mmvd_merge_idx=%d\n", pu.mmvdMergeIdx.val);
 }
 
