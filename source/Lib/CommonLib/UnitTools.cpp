@@ -2344,7 +2344,7 @@ bool PU::addAffineMVPCandUnscaled( const PredictionUnit &pu, const RefPicList &r
       affiAMVPInfo.mvPosRT[affiAMVPInfo.numCand]   = outputAffineMvPos[1];
     }
 #endif
-    if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
+    if (pu.cu->affineType == AffineModel::_6_PARAMS)
     {
       outputAffineMv[2].roundAffinePrecInternal2Amvr(pu.cu->imv);
       affiAMVPInfo.mvCandLB[affiAMVPInfo.numCand] = outputAffineMv[2];
@@ -2449,7 +2449,7 @@ void PU::xInheritedAffineMv(const PredictionUnit &pu, const PredictionUnit* puNe
 
   dmvHorX = (mvRT - mvLT).getHor() << (shift - floorLog2(neiW));
   dmvHorY = (mvRT - mvLT).getVer() << (shift - floorLog2(neiW));
-  if (puNeighbour->cu->affineType == AFFINEMODEL_6PARAM && !isTopCtuBoundary)
+  if (puNeighbour->cu->affineType == AffineModel::_6_PARAMS && !isTopCtuBoundary)
   {
     dmvVerX = (mvLB - mvLT).getHor() << (shift - floorLog2(neiH));
     dmvVerY = (mvLB - mvLT).getVer() << (shift - floorLog2(neiH));
@@ -2476,7 +2476,7 @@ void PU::xInheritedAffineMv(const PredictionUnit &pu, const PredictionUnit* puNe
   rcMv[1].clipToStorageBitDepth();
 
   // v2
-  if (pu.cu->affineType == AFFINEMODEL_6PARAM)
+  if (pu.cu->affineType == AffineModel::_6_PARAMS)
   {
     rcMv[2].hor = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY + curH - posNeiY);
     rcMv[2].ver = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY + curH - posNeiY);
@@ -2520,7 +2520,7 @@ void PU::xInheritedAffineMv( const PredictionUnit &pu, const PredictionUnit* puN
 
   dmvHorX = (mvRT - mvLT).getHor() * (1 << (shift - floorLog2(neiW)));
   dmvHorY = (mvRT - mvLT).getVer() * (1 << (shift - floorLog2(neiW)));
-  if ( puNeighbour->cu->affineType == AFFINEMODEL_6PARAM && !isTopCtuBoundary )
+  if (puNeighbour->cu->affineType == AffineModel::_6_PARAMS && !isTopCtuBoundary)
   {
     dmvVerX = (mvLB - mvLT).getHor() * (1 << (shift - floorLog2(neiH)));
     dmvVerY = (mvLB - mvLT).getVer() * (1 << (shift - floorLog2(neiH)));
@@ -2547,7 +2547,7 @@ void PU::xInheritedAffineMv( const PredictionUnit &pu, const PredictionUnit* puN
   rcMv[1].clipToStorageBitDepth();
 
   // v2
-  if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
+  if (pu.cu->affineType == AffineModel::_6_PARAMS)
   {
     rcMv[2].hor = mvScaleHor + dmvHorX * (posCurX - posNeiX) + dmvVerX * (posCurY + curH - posNeiY);
     rcMv[2].ver = mvScaleVer + dmvHorY * (posCurX - posNeiX) + dmvVerY * (posCurY + curH - posNeiY);
@@ -2726,7 +2726,7 @@ void PU::fillAffineMvpCand(PredictionUnit &pu, const RefPicList &eRefPicList, co
   outputAffineMv[1].roundAffinePrecInternal2Amvr(pu.cu->imv);
   outputAffineMv[2].roundAffinePrecInternal2Amvr(pu.cu->imv);
 
-  if ( cornerMVPattern == 7 || (cornerMVPattern == 3 && pu.cu->affineType == AFFINEMODEL_4PARAM) )
+  if (cornerMVPattern == 7 || (cornerMVPattern == 3 && pu.cu->affineType == AffineModel::_4_PARAMS))
   {
     affiAMVPInfo.mvCandLT[affiAMVPInfo.numCand] = outputAffineMv[0];
     affiAMVPInfo.mvCandRT[affiAMVPInfo.numCand] = outputAffineMv[1];
@@ -3073,7 +3073,7 @@ void PU::getAffineControlPointCand(const PredictionUnit& pu, MotionInfo mi[4], b
   Mv cMv[2][4];
   int refIdx[2] = { -1, -1 };
   int dir = 0;
-  EAffineModel curType = (verNum == 2) ? AFFINEMODEL_4PARAM : AFFINEMODEL_6PARAM;
+  AffineModel curType   = (verNum == 2) ? AffineModel::_4_PARAMS : AffineModel::_6_PARAMS;
 
   if ( verNum == 2 )
   {
@@ -3291,7 +3291,7 @@ void PU::getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx
 #endif
     }
     affMrgCtx.interDirNeighbours[i] = 0;
-    affMrgCtx.affineType[i]         = AFFINEMODEL_4PARAM;
+    affMrgCtx.affineType[i]         = AffineModel::_4_PARAMS;
     affMrgCtx.mergeType[i]          = MRG_TYPE_DEFAULT_N;
     affMrgCtx.bcwIdx[i]             = BCW_DEFAULT;
   }
@@ -3372,7 +3372,7 @@ void PU::getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx
       }
       affMrgCtx.interDirNeighbours[affMrgCtx.numValidMergeCand] = mrgCtx.interDirNeighbours[pos];
 
-      affMrgCtx.affineType[affMrgCtx.numValidMergeCand] = AFFINE_MODEL_NUM;
+      affMrgCtx.affineType[affMrgCtx.numValidMergeCand] = AffineModel::NUM;
       affMrgCtx.mergeType[affMrgCtx.numValidMergeCand] = MRG_TYPE_SUBPU_ATMVP;
       if ( affMrgCtx.numValidMergeCand == mrgCandIdx )
       {
@@ -3453,7 +3453,7 @@ void PU::getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx
 #endif
       }
       affMrgCtx.interDirNeighbours[affMrgCtx.numValidMergeCand] = puNeigh->interDir;
-      affMrgCtx.affineType[affMrgCtx.numValidMergeCand]         = (EAffineModel) (puNeigh->cu->affineType);
+      affMrgCtx.affineType[affMrgCtx.numValidMergeCand]         = puNeigh->cu->affineType;
       affMrgCtx.bcwIdx[affMrgCtx.numValidMergeCand]             = puNeigh->cu->bcwIdx;
 
       if ( affMrgCtx.numValidMergeCand == mrgCandIdx )
@@ -3693,7 +3693,7 @@ void PU::getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx
       }
       affMrgCtx.interDirNeighbours[cnt] = 3;
     }
-    affMrgCtx.affineType[cnt] = AFFINEMODEL_4PARAM;
+    affMrgCtx.affineType[cnt] = AffineModel::_4_PARAMS;
 
     if ( cnt == mrgCandIdx )
     {
@@ -3727,7 +3727,7 @@ void PU::setAllAffineMv(PredictionUnit& pu, Mv affLT, Mv affRT, Mv affLB, RefPic
   {
     affLT.mvCliptoStorageBitDepth();
     affRT.mvCliptoStorageBitDepth();
-    if (pu.cu->affineType == AFFINEMODEL_6PARAM)
+    if (pu.cu->affineType == AffineModel::_6_PARAMS)
     {
       affLB.mvCliptoStorageBitDepth();
     }
@@ -3736,7 +3736,7 @@ void PU::setAllAffineMv(PredictionUnit& pu, Mv affLT, Mv affRT, Mv affLB, RefPic
   deltaMvHorX = (affRT - affLT).getHor() * (1 << (shift - floorLog2(width)));
   deltaMvHorY = (affRT - affLT).getVer() * (1 << (shift - floorLog2(width)));
   int height = pu.Y().height;
-  if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
+  if (pu.cu->affineType == AffineModel::_6_PARAMS)
   {
     deltaMvVerX = (affLB - affLT).getHor() * (1 << (shift - floorLog2(height)));
     deltaMvVerY = (affLB - affLT).getVer() * (1 << (shift - floorLog2(height)));
@@ -4446,7 +4446,7 @@ bool CU::hasSubCUNonZeroAffineMVd( const CodingUnit& cu )
     {
       if ( pu.interDir != 2 /* PRED_L1 */ )
       {
-        for ( int i = 0; i < ( cu.affineType == AFFINEMODEL_6PARAM ? 3 : 2 ); i++ )
+        for (int i = 0; i < cu.getNumAffineMvs(); i++)
         {
           nonZeroAffineMvd |= pu.mvdAffi[REF_PIC_LIST_0][i].getHor() != 0;
           nonZeroAffineMvd |= pu.mvdAffi[REF_PIC_LIST_0][i].getVer() != 0;
@@ -4457,7 +4457,7 @@ bool CU::hasSubCUNonZeroAffineMVd( const CodingUnit& cu )
       {
         if ( !pu.cu->cs->picHeader->getMvdL1ZeroFlag() || pu.interDir != 3 /* PRED_BI */ )
         {
-          for ( int i = 0; i < ( cu.affineType == AFFINEMODEL_6PARAM ? 3 : 2 ); i++ )
+          for (int i = 0; i < cu.getNumAffineMvs(); i++)
           {
             nonZeroAffineMvd |= pu.mvdAffi[REF_PIC_LIST_1][i].getHor() != 0;
             nonZeroAffineMvd |= pu.mvdAffi[REF_PIC_LIST_1][i].getVer() != 0;

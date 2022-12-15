@@ -115,12 +115,12 @@
 
 #define NVM_BITS          "[%d bit] ", (sizeof(void*) == 8 ? 64 : 32) ///< used for checking 64-bit O/S
 
-typedef enum
+enum class AffineModel : uint8_t
 {
-  AFFINEMODEL_4PARAM,
-  AFFINEMODEL_6PARAM,
-  AFFINE_MODEL_NUM
-} EAffineModel;
+  _4_PARAMS,
+  _6_PARAMS,
+  NUM
+};
 
 static constexpr int    AFFINE_ME_LIST_SIZE    =                        4;
 static constexpr int    AFFINE_ME_LIST_SIZE_LD =                        3;

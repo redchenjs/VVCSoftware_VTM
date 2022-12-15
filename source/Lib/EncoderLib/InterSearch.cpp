@@ -302,12 +302,13 @@ void InterSearch::resetSavedAffineMotion()
 }
 
 #if GDR_ENABLED
-void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int16_t affineRefIdx[2], EAffineModel affineType, int bcwIdx)
+void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int16_t affineRefIdx[2],
+                                    AffineModel affineType, int bcwIdx)
 #else
-void InterSearch::storeAffineMotion( Mv acAffineMv[2][3], int16_t affineRefIdx[2], EAffineModel affineType, int bcwIdx )
+void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], int16_t affineRefIdx[2], AffineModel affineType, int bcwIdx)
 #endif
 {
-  if ( ( bcwIdx == BCW_DEFAULT || !m_affineMotion.affine6ParaAvail ) && affineType == AFFINEMODEL_6PARAM )
+  if ((bcwIdx == BCW_DEFAULT || !m_affineMotion.affine6ParaAvail) && affineType == AffineModel::_6_PARAMS)
   {
     for ( int i = 0; i < 2; i++ )
     {
@@ -323,7 +324,7 @@ void InterSearch::storeAffineMotion( Mv acAffineMv[2][3], int16_t affineRefIdx[2
     m_affineMotion.affine6ParaAvail = true;
   }
 
-  if ( ( bcwIdx == BCW_DEFAULT || !m_affineMotion.affine4ParaAvail ) && affineType == AFFINEMODEL_4PARAM )
+  if ((bcwIdx == BCW_DEFAULT || !m_affineMotion.affine4ParaAvail) && affineType == AffineModel::_4_PARAMS)
   {
     for ( int i = 0; i < 2; i++ )
     {
@@ -4205,7 +4206,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 #endif
 
       // do affine ME & Merge
-      cu.affineType = AFFINEMODEL_4PARAM;
+      cu.affineType = AffineModel::_4_PARAMS;
       RefSetArray<Mv[3]> acMvAffine4Para;
 #if GDR_ENABLED
       RefSetArray<bool[3]> acMvAffine4ParaSolid;
@@ -4234,9 +4235,9 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
       if ( pu.cu->imv == 0 )
       {
 #if GDR_ENABLED
-        storeAffineMotion(pu.mvAffi, pu.mvAffiSolid, pu.refIdx, AFFINEMODEL_4PARAM, bcwIdx);
+        storeAffineMotion(pu.mvAffi, pu.mvAffiSolid, pu.refIdx, cu.affineType, bcwIdx);
 #else
-        storeAffineMotion( pu.mvAffi, pu.refIdx, AFFINEMODEL_4PARAM, bcwIdx );
+        storeAffineMotion(pu.mvAffi, pu.refIdx, cu.affineType, bcwIdx);
 #endif
       }
 
@@ -4327,7 +4328,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
           refIdx4Para[1] = bestRefIdx[1];
 
           Distortion uiAffine6Cost = std::numeric_limits<Distortion>::max();
-          cu.affineType = AFFINEMODEL_6PARAM;
+          cu.affineType            = AffineModel::_6_PARAMS;
 #if GDR_ENABLED
           xPredAffineInterSearch(pu, origBuf, puIdx, uiLastModeTemp, uiAffine6Cost, cMvHevcTemp, cMvHevcTempSolid, acMvAffine4Para, acMvAffine4ParaSolid, refIdx4Para, bcwIdx, enforceBcwPred,
             ((cu.slice->getSPS()->getUseBcw() == true) ? getWeightIdxBits(bcwIdx) : 0));
@@ -4339,9 +4340,9 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
           if ( pu.cu->imv == 0 )
           {
 #if GDR_ENABLED
-            storeAffineMotion(pu.mvAffi, pu.mvAffiSolid, pu.refIdx, AFFINEMODEL_6PARAM, bcwIdx);
+            storeAffineMotion(pu.mvAffi, pu.mvAffiSolid, pu.refIdx, cu.affineType, bcwIdx);
 #else
-            storeAffineMotion( pu.mvAffi, pu.refIdx, AFFINEMODEL_6PARAM, bcwIdx );
+            storeAffineMotion(pu.mvAffi, pu.refIdx, cu.affineType, bcwIdx);
 #endif
           }
 
@@ -4386,7 +4387,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
           if ( uiAffineCost <= uiAffine6Cost )
 #endif
           {
-            cu.affineType = AFFINEMODEL_4PARAM;
+            cu.affineType = AffineModel::_4_PARAMS;
             pu.interDir = bestInterDir;
             pu.refIdx[0] = bestRefIdx[0];
             pu.refIdx[1] = bestRefIdx[1];
@@ -4536,7 +4537,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 
 uint32_t InterSearch::xCalcAffineMVBits( PredictionUnit& pu, Mv acMvTemp[3], Mv acMvPred[3] )
 {
-  int mvNum  = pu.cu->affineType ? 3 : 2;
+  const int mvNum = pu.cu->getNumAffineMvs();
   m_pcRdCost->setCostScale( 0 );
   uint32_t bitsTemp = 0;
 
@@ -6357,8 +6358,7 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
 
   int       iNumPredDir = slice.isInterP() ? 1 : 2;
 
-  int mvNum = 2;
-  mvNum = pu.cu->affineType ? 3 : 2;
+  const int mvNum = pu.cu->getNumAffineMvs();
 
   // Mvp
   RefSetArray<Mv[3]> cMvPred;
@@ -6553,7 +6553,7 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
       }
 #endif
 
-      if (pu.cu->affineType == AFFINEMODEL_6PARAM && refIdx4Para[refList] != refIdxTemp)
+      if (pu.cu->affineType == AffineModel::_6_PARAMS && refIdx4Para[refList] != refIdxTemp)
       {
         xCopyAffineAMVPInfo(affiAMVPInfoTemp[eRefPicList], aacAffineAMVPInfo[refList][refIdxTemp]);
         continue;
@@ -6591,7 +6591,7 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
       }
 
       //check stored affine motion
-      bool affine4Para    = pu.cu->affineType == AFFINEMODEL_4PARAM;
+      bool affine4Para = pu.cu->affineType == AffineModel::_4_PARAMS;
       bool savedParaAvail =
         pu.cu->imv
         && ((m_affineMotion.affine4ParaRefIdx[refList] == refIdxTemp && affine4Para && m_affineMotion.affine4ParaAvail)
@@ -6661,9 +6661,8 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
         }
       }
 
-      if (pu.cu->affineType == AFFINEMODEL_4PARAM && m_affMVListSize
-        && (!pu.cu->cs->sps->getUseBcw() || bcwIdx == BCW_DEFAULT)
-        )
+      if (pu.cu->affineType == AffineModel::_4_PARAMS && m_affMVListSize
+          && (!pu.cu->cs->sps->getUseBcw() || bcwIdx == BCW_DEFAULT))
       {
         int shift = MAX_CU_DEPTH;
         for (int i = 0; i < m_affMVListSize; i++)
@@ -6772,7 +6771,7 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
           }
         }
       }
-      if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
+      if (pu.cu->affineType == AffineModel::_6_PARAMS)
       {
         Mv mvFour[3];
         mvFour[0] = mvAffine4Para[refList][refIdxTemp][0];
@@ -6943,7 +6942,8 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
       if (m_pcEncCfg->getFastMEForGenBLowDelayEnabled() && refList == 1)   // list 1
       {
         if (slice.getList1IdxToList0Idx(refIdxTemp) >= 0
-            && (pu.cu->affineType != AFFINEMODEL_6PARAM || slice.getList1IdxToList0Idx(refIdxTemp) == refIdx4Para[0]))
+            && (pu.cu->affineType != AffineModel::_6_PARAMS
+                || slice.getList1IdxToList0Idx(refIdxTemp) == refIdx4Para[0]))
         {
           int iList1ToList0Idx = slice.getList1IdxToList0Idx(refIdxTemp);
           ::memcpy(cMvTemp[1][refIdxTemp], cMvTemp[0][iList1ToList0Idx], sizeof(Mv) * 3);
@@ -7078,7 +7078,7 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
         }
 #else
         m_uniMotions.copyAffineMvFrom(cMvTemp[refList][refIdxTemp], costTemp - m_pcRdCost->getCost(bitsTemp),
-                                      (uint8_t) refList, (uint8_t) refIdxTemp, pu.cu->affineType,
+                                      (uint8_t) refList, (uint8_t) refIdxTemp, (int) pu.cu->affineType,
                                       aaiMvpIdx[refList][refIdxTemp]);
 #endif
       }
@@ -7227,7 +7227,7 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
     } // End refIdx loop
   } // end Uni-prediction
 
-  if ( pu.cu->affineType == AFFINEMODEL_4PARAM )
+  if (pu.cu->affineType == AffineModel::_4_PARAMS)
   {
     ::memcpy( mvAffine4Para, cMvTemp, sizeof( cMvTemp ) );
 #if GDR_ENABLED
@@ -7517,14 +7517,14 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
         iRefEnd   = slice.getNumRefIdx(eRefPicList) - 1;
         for (int refIdxTemp = iRefStart; refIdxTemp <= iRefEnd; refIdxTemp++)
         {
-          if (pu.cu->affineType == AFFINEMODEL_6PARAM && refIdx4Para[refList] != refIdxTemp)
+          if (pu.cu->affineType == AffineModel::_6_PARAMS && refIdx4Para[refList] != refIdxTemp)
           {
             continue;
           }
           if (m_pcEncCfg->getUseBcwFast() && (bcwIdx != BCW_DEFAULT)
               && (pu.cu->slice->getRefPic(eRefPicList, refIdxTemp)->getPOC()
                   == pu.cu->slice->getRefPic(RefPicList(1 - refList), pu.refIdx[1 - refList])->getPOC())
-              && (pu.cu->affineType == AFFINEMODEL_4PARAM && pu.cu->slice->getTLayer() > 1))
+              && (pu.cu->affineType == AffineModel::_4_PARAMS && pu.cu->slice->getTLayer() > 1))
           {
             continue;
           }
@@ -7975,7 +7975,7 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
       pu.mvpSolid[REF_PIC_LIST_0] = affiAMVPInfoTemp[0].mvSolidLT[pu.mvpIdx[0]] && affiAMVPInfoTemp[0].mvSolidRT[pu.mvpIdx[0]];
       pu.mvpSolid[REF_PIC_LIST_1] = affiAMVPInfoTemp[1].mvSolidLT[pu.mvpIdx[1]] && affiAMVPInfoTemp[1].mvSolidRT[pu.mvpIdx[1]];
 
-      if (pu.cu->affineType == AFFINEMODEL_6PARAM)
+      if (pu.cu->affineType == AffineModel::_6_PARAMS)
       {
         pu.mvpSolid[REF_PIC_LIST_0] = pu.mvpSolid[REF_PIC_LIST_0] && affiAMVPInfoTemp[0].mvSolidLB[pu.mvpIdx[0]];
         pu.mvpSolid[REF_PIC_LIST_1] = pu.mvpSolid[REF_PIC_LIST_1] && affiAMVPInfoTemp[1].mvSolidLB[pu.mvpIdx[1]];
@@ -8032,7 +8032,7 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
     {
       pu.mvpSolid[REF_PIC_LIST_0] = affiAMVPInfoTemp[0].mvSolidLT[pu.mvpIdx[0]] && affiAMVPInfoTemp[0].mvSolidRT[pu.mvpIdx[0]];
 
-      if (pu.cu->affineType == AFFINEMODEL_6PARAM)
+      if (pu.cu->affineType == AffineModel::_6_PARAMS)
       {
         pu.mvpSolid[REF_PIC_LIST_0] = pu.mvpSolid[REF_PIC_LIST_0] && affiAMVPInfoTemp[0].mvSolidLB[pu.mvpIdx[0]];
       }
@@ -8084,7 +8084,7 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
     {
       pu.mvpSolid[REF_PIC_LIST_1] = affiAMVPInfoTemp[1].mvSolidLT[pu.mvpIdx[1]] && affiAMVPInfoTemp[1].mvSolidRT[pu.mvpIdx[1]];
 
-      if (pu.cu->affineType == AFFINEMODEL_6PARAM)
+      if (pu.cu->affineType == AffineModel::_6_PARAMS)
       {
         pu.mvpSolid[REF_PIC_LIST_1] = pu.mvpSolid[REF_PIC_LIST_1] && affiAMVPInfoTemp[1].mvSolidLB[pu.mvpIdx[1]];
       }
@@ -8180,7 +8180,7 @@ void InterSearch::xCheckBestAffineMVP( PredictionUnit &pu, AffineAMVPInfo &affin
     return;
   }
 
-  int mvNum = pu.cu->affineType ? 3 : 2;
+  const int mvNum = pu.cu->getNumAffineMvs();
 
   m_pcRdCost->selectMotionLambda( );
   m_pcRdCost->setCostScale ( 0 );
@@ -8213,13 +8213,13 @@ void InterSearch::xCheckBestAffineMVP( PredictionUnit &pu, AffineAMVPInfo &affin
     if (isEncodeGdrClean)
     {
       bool curOk = affineAMVPInfo.mvSolidLT[mvpIdx] && affineAMVPInfo.mvSolidRT[mvpIdx];
-      if (pu.cu->affineType == AFFINEMODEL_6PARAM)
+      if (pu.cu->affineType == AffineModel::_6_PARAMS)
       {
         curOk = curOk && affineAMVPInfo.mvSolidLB[mvpIdx];
       }
 
       bool best_ok = affineAMVPInfo.mvSolidLT[iBestMVPIdx] && affineAMVPInfo.mvSolidRT[iBestMVPIdx];
-      if (pu.cu->affineType == AFFINEMODEL_6PARAM)
+      if (pu.cu->affineType == AffineModel::_6_PARAMS)
       {
         curOk = curOk && affineAMVPInfo.mvSolidLB[iBestMVPIdx];
       }
@@ -8328,9 +8328,9 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
 #endif
   // Set delta mv
   // malloc buffer
-  int iParaNum = pu.cu->affineType ? 7 : 5;
-  int affineParaNum = iParaNum - 1;
-  int mvNum = pu.cu->affineType ? 3 : 2;
+  const int mvNum         = pu.cu->getNumAffineMvs();
+  const int affineParaNum = 2 * mvNum;
+  const int iParaNum      = affineParaNum + 1;
   double pdEqualCoeff[7][7];
 
   int64_t  i64EqualCoeff[7][7];
@@ -8353,27 +8353,21 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
   if( m_pcEncCfg->getMCTSEncConstraint() )
   {
     Area curTileAreaRestricted = pu.cs->picture->mctsInfo.getTileAreaSubPelRestricted( pu );
-    MCTSHelper::clipMvToArea( acMvTemp[0], pu.cu->Y(), curTileAreaRestricted, *pu.cs->sps );
-    MCTSHelper::clipMvToArea( acMvTemp[1], pu.cu->Y(), curTileAreaRestricted, *pu.cs->sps );
-    if( pu.cu->affineType == AFFINEMODEL_6PARAM )
+    for (int i = 0; i < pu.cu->getNumAffineMvs(); i++)
     {
-      MCTSHelper::clipMvToArea( acMvTemp[2], pu.cu->Y(), curTileAreaRestricted, *pu.cs->sps );
+      MCTSHelper::clipMvToArea(acMvTemp[i], pu.cu->Y(), curTileAreaRestricted, *pu.cs->sps);
     }
   }
   else
   {
-    clipMv( acMvTemp[0], pu.cu->lumaPos(), pu.cu->lumaSize(), *pu.cs->sps, *pu.cs->pps );
-    clipMv( acMvTemp[1], pu.cu->lumaPos(), pu.cu->lumaSize(), *pu.cs->sps, *pu.cs->pps );
-    if( pu.cu->affineType == AFFINEMODEL_6PARAM )
+    for (int i = 0; i < pu.cu->getNumAffineMvs(); i++)
     {
-      clipMv( acMvTemp[2], pu.cu->lumaPos(), pu.cu->lumaSize(), *pu.cs->sps, *pu.cs->pps );
+      clipMv(acMvTemp[i], pu.cu->lumaPos(), pu.cu->lumaSize(), *pu.cs->sps, *pu.cs->pps);
     }
   }
-  acMvTemp[0].roundAffinePrecInternal2Amvr(pu.cu->imv);
-  acMvTemp[1].roundAffinePrecInternal2Amvr(pu.cu->imv);
-  if (pu.cu->affineType == AFFINEMODEL_6PARAM)
+  for (int i = 0; i < pu.cu->getNumAffineMvs(); i++)
   {
-    acMvTemp[2].roundAffinePrecInternal2Amvr(pu.cu->imv);
+    acMvTemp[i].roundAffinePrecInternal2Amvr(pu.cu->imv);
   }
 #if GDR_ENABLED
   bool YYOk = xPredAffineBlk(COMPONENT_Y, pu, refPic, acMvTemp, predBuf, false, pu.cs->slice->clpRng(COMPONENT_Y));
@@ -8429,7 +8423,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
   const ptrdiff_t predBufStride = predBuf.Y().stride;
   Mv prevIterMv[7][3];
   int iIterTime;
-  if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
+  if (pu.cu->affineType == AffineModel::_6_PARAMS)
   {
     iIterTime = bBi ? 3 : 4;
   }
@@ -8481,7 +8475,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
     }
 
     m_EqualCoeffComputer(piError, width, pdDerivate, width, i64EqualCoeff, width, height,
-                         (pu.cu->affineType == AFFINEMODEL_6PARAM));
+                         (pu.cu->affineType == AffineModel::_6_PARAMS));
 
     for ( int row = 0; row < iParaNum; row++ )
     {
@@ -8500,7 +8494,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
     // convert to delta mv
     dDeltaMv[0] = dAffinePara[0];
     dDeltaMv[2] = dAffinePara[2];
-    if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
+    if (pu.cu->affineType == AffineModel::_6_PARAMS)
     {
       dDeltaMv[1] = dAffinePara[1] * width + dAffinePara[0];
       dDeltaMv[3] = dAffinePara[3] * width + dAffinePara[2];
@@ -8528,7 +8522,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
     acDeltaMv[1] = Mv((int) (dDeltaMv[1] * multiShift + sgn2(dDeltaMv[1]) * 0.5) * (1 << mvShift),
                       (int) (dDeltaMv[3] * multiShift + sgn2(dDeltaMv[3]) * 0.5) * (1 << mvShift));
 
-    if ( pu.cu->affineType == AFFINEMODEL_6PARAM )
+    if (pu.cu->affineType == AffineModel::_6_PARAMS)
     {
       acDeltaMv[2] = Mv((int) (dDeltaMv[4] * multiShift + sgn2(dDeltaMv[4]) * 0.5) * (1 << mvShift),
                         (int) (dDeltaMv[5] * multiShift + sgn2(dDeltaMv[5]) * 0.5) * (1 << mvShift));
@@ -8580,7 +8574,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
       {
         if ( acMvTemp[0] == prevIterMv[k][0] && acMvTemp[1] == prevIterMv[k][1] )
         {
-          identical = pu.cu->affineType ? acMvTemp[2] == prevIterMv[k][2] : true;
+          identical = pu.cu->affineType == AffineModel::_6_PARAMS ? acMvTemp[2] == prevIterMv[k][2] : true;
           if ( identical )
           {
             break;
@@ -8777,7 +8771,8 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
     }
 
     //keep the translation;
-    if (pu.cu->affineType == AFFINEMODEL_6PARAM && mvME[1] != (mvPredTmp[1] + dMv) && mvME[2] != (mvPredTmp[2] + dMv))
+    if (pu.cu->affineType == AffineModel::_6_PARAMS && mvME[1] != (mvPredTmp[1] + dMv)
+        && mvME[2] != (mvPredTmp[2] + dMv))
     {
       ::memcpy(acMvTemp, mvME, sizeof(Mv) * 3);
 
@@ -8929,7 +8924,7 @@ void InterSearch::xEstimateAffineAMVP(PredictionUnit &pu, AffineAMVPInfo &affine
     Distortion uiTmpCost =
       xGetAffineTemplateCost(pu, origBuf, predBuf, mv, i, AMVP_MAX_NUM_CANDS, eRefPicList, refIdx, uiTmpCostOk);
     uiTmpCostOk = uiTmpCostOk && affineAMVPInfo.mvSolidLT[i] && affineAMVPInfo.mvSolidRT[i];
-    uiTmpCostOk = uiTmpCostOk && ((pu.cu->affineType == AFFINEMODEL_6PARAM) ? affineAMVPInfo.mvSolidLB[i] : true);
+    uiTmpCostOk = uiTmpCostOk && ((pu.cu->affineType == AffineModel::_6_PARAMS) ? affineAMVPInfo.mvSolidLB[i] : true);
 #else
     Distortion uiTmpCost = xGetAffineTemplateCost(pu, origBuf, predBuf, mv, i, AMVP_MAX_NUM_CANDS, eRefPicList, refIdx);
 #endif
@@ -11047,7 +11042,7 @@ bool InterSearch::xReadBufferedAffineUniMv(PredictionUnit &pu, RefPicList eRefPi
     acMvPred[2] = aamvpi.mvCandLB[mvpIdx];
 
     uint32_t mvBits = 0;
-    for (int verIdx = 0; verIdx<(pu.cu->affineType ? 3 : 2); verIdx++)
+    for (int verIdx = 0; verIdx < pu.cu->getNumAffineMvs(); verIdx++)
     {
       Mv pred = verIdx ? acMvPred[verIdx] + acMv[0] - acMvPred[0] : acMvPred[verIdx];
       pred.changePrecision(MV_PRECISION_INTERNAL, MV_PRECISION_QUARTER);
@@ -11124,7 +11119,7 @@ uint32_t InterSearch::xDetermineBestMvp( PredictionUnit& pu, Mv acMvTemp[3], int
     if (isEncodeGdrClean)
     {
       isSolid = aamvpi.mvSolidLT[i] && aamvpi.mvSolidRT[i];
-      if (pu.cu->affineType == AFFINEMODEL_6PARAM)
+      if (pu.cu->affineType == AffineModel::_6_PARAMS)
       {
         isSolid = isSolid && aamvpi.mvSolidLB[i];
       }

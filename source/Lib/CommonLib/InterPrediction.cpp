@@ -279,8 +279,8 @@ bool InterPrediction::xCheckIdenticalMotion( const PredictionUnit &pu )
         }
         else
         {
-          if ( (pu.cu->affineType == AFFINEMODEL_4PARAM && (pu.mvAffi[0][0] == pu.mvAffi[1][0]) && (pu.mvAffi[0][1] == pu.mvAffi[1][1]))
-            || (pu.cu->affineType == AFFINEMODEL_6PARAM && (pu.mvAffi[0][0] == pu.mvAffi[1][0]) && (pu.mvAffi[0][1] == pu.mvAffi[1][1]) && (pu.mvAffi[0][2] == pu.mvAffi[1][2])) )
+          if (pu.mvAffi[0][0] == pu.mvAffi[1][0] && pu.mvAffi[0][1] == pu.mvAffi[1][1]
+              && (pu.cu->affineType == AffineModel::_4_PARAMS || pu.mvAffi[0][2] == pu.mvAffi[1][2]))
           {
             return true;
           }
@@ -918,7 +918,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 
     dmvHorX = (mvRT - mvLT).getHor() * (1 << (PREC - floorLog2(widthLuma)));
     dmvHorY = (mvRT - mvLT).getVer() * (1 << (PREC - floorLog2(widthLuma)));
-    if (pu.cu->affineType == AFFINEMODEL_6PARAM)
+    if (pu.cu->affineType == AffineModel::_6_PARAMS)
     {
       dmvVerX = (mvLB - mvLT).getHor() * (1 << (PREC - floorLog2(heightLuma)));
       dmvVerY = (mvLB - mvLT).getVer() * (1 << (PREC - floorLog2(heightLuma)));

@@ -608,7 +608,8 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
               }
             }
             DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::AffineFlag), pu.cu->affine);
-            DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::AffineType), pu.cu->affineType);
+            DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu,
+                                GetBlockStatisticName(BlockStatistic::AffineType), to_underlying(pu.cu->affineType));
             DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::InterDir), pu.interDir);
 
             if (pu.interDir != 2 /* PRED_L1 */)
@@ -1075,7 +1076,9 @@ void writeAllCodedData(const CodingStructure & cs, const UnitArea & ctuArea)
                 DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu, GetBlockStatisticName(BlockStatistic::AffineFlag), pu.cu->affine);
                 if (cu.affine && !cu.firstPU->mergeFlag && cu.cs->sps->getUseAffineType())
                 {
-                  DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu, GetBlockStatisticName(BlockStatistic::AffineType), pu.cu->affineType);
+                  DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu,
+                                      GetBlockStatisticName(BlockStatistic::AffineType),
+                                      to_underlying(pu.cu->affineType));
                 }
               }
             }
