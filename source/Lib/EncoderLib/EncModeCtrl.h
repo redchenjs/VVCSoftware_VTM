@@ -120,6 +120,15 @@ static void getAreaIdx(const Area& area, const PreCalcValues &pcv, unsigned &idx
 
 struct EncTestMode
 {
+  enum struct AmvrSearchMode
+  {
+    NONE,
+    FULL_PEL,
+    FOUR_PEL,
+    FOUR_PEL_FAST,
+    HALF_PEL
+  };
+
   EncTestMode()
     : type( ETM_INVALID ), opts( ETO_INVALID  ), qp( -1  ) {}
   EncTestMode( EncTestModeType _type )
@@ -133,6 +142,8 @@ struct EncTestMode
   EncTestModeOpts opts;
   int             qp;
   double          maxCostAllowed;
+
+  AmvrSearchMode getAmvrSearchMode() const { return AmvrSearchMode((opts & ETO_IMV) >> ETO_IMV_SHIFT); }
 };
 
 
@@ -510,23 +521,6 @@ void removeIntra()
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
       n--;
-    }
-  }
-}
-
-void removeBadMode()
-{
-  int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++)
-  {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-
-    if (etm.type == ETM_INTER_ME && ((etm.opts & ETO_IMV) >> ETO_IMV_SHIFT) > 2)
-    {
-      m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
-      j--;
-      n--;
-      break;
     }
   }
 }

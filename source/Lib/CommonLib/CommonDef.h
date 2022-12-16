@@ -388,9 +388,14 @@ static constexpr int BIO_TEMP_BUFFER_SIZE         =                     (MAX_CU_
 
 static constexpr int PROF_BORDER_EXT_W            =                     1;
 static constexpr int PROF_BORDER_EXT_H            =                     1;
-static constexpr int BCW_NUM =                                          5; ///< the number of weight options
-static constexpr int BCW_DEFAULT =                                      ((uint8_t)(BCW_NUM >> 1)); ///< Default weighting index representing for w=0.5
-static constexpr int BCW_SIZE_CONSTRAINT =                            256; ///< disabling Bcw if cu size is smaller than 256
+
+static constexpr int    BCW_NUM             = 5;             // the number of weight options
+static constexpr int    BCW_DEFAULT         = BCW_NUM / 2;   // Default weighting index representing for w=0.5
+static constexpr int    BCW_SIZE_CONSTRAINT = 256;           // disabling BCW if cu size is smaller than 256
+static constexpr double BCW_COST_TH         = 1.05;
+
+static constexpr double AMVR_FAST_4PEL_TH = 1.06;
+
 static constexpr int MAX_NUM_HMVP_CANDS =                              (MRG_MAX_NUM_CANDS-1); ///< maximum number of HMVP candidates to be stored and used in merge list
 static constexpr int MAX_NUM_HMVP_AVMPCANDS =                          4; ///< maximum number of HMVP candidates to be used in AMVP list
 

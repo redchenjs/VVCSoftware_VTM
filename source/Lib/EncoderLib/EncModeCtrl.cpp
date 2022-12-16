@@ -1342,13 +1342,16 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
       const int  qp       = std::max( qpLoop, lowestQP );
       if (m_pcEncCfg->getIMV())
       {
-        m_ComprCUCtxList.back().testModes.push_back({ ETM_INTER_ME,  EncTestModeOpts( 4 << ETO_IMV_SHIFT ), qp });
+        m_ComprCUCtxList.back().testModes.push_back(
+          { ETM_INTER_ME, EncTestModeOpts(int(EncTestMode::AmvrSearchMode::HALF_PEL) << ETO_IMV_SHIFT), qp });
       }
       if( m_pcEncCfg->getIMV() || m_pcEncCfg->getUseAffineAmvr() )
       {
-        int imv = m_pcEncCfg->getIMV4PelFast() ? 3 : 2;
-        m_ComprCUCtxList.back().testModes.push_back( { ETM_INTER_ME, EncTestModeOpts( imv << ETO_IMV_SHIFT ), qp } );
-        m_ComprCUCtxList.back().testModes.push_back( { ETM_INTER_ME, EncTestModeOpts( 1 << ETO_IMV_SHIFT ), qp } );
+        const auto imv = m_pcEncCfg->getIMV4PelFast() ? EncTestMode::AmvrSearchMode::FOUR_PEL_FAST
+                                                      : EncTestMode::AmvrSearchMode::FOUR_PEL;
+        m_ComprCUCtxList.back().testModes.push_back({ ETM_INTER_ME, EncTestModeOpts(int(imv) << ETO_IMV_SHIFT), qp });
+        m_ComprCUCtxList.back().testModes.push_back(
+          { ETM_INTER_ME, EncTestModeOpts(int(EncTestMode::AmvrSearchMode::FULL_PEL) << ETO_IMV_SHIFT), qp });
       }
       // add inter modes
       if( m_pcEncCfg->getUseEarlySkipDetection() )
@@ -1619,14 +1622,15 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
           }
         }
       }
-      else if ((encTestmode.opts & ETO_IMV) != 0)
+      else if (encTestmode.getAmvrSearchMode() != EncTestMode::AmvrSearchMode::NONE)
       {
-        int imvOpt = (encTestmode.opts & ETO_IMV) >> ETO_IMV_SHIFT;
-
-        if (imvOpt == 3 && cuECtx.get<double>(BEST_NO_IMV_COST) * 1.06 < cuECtx.get<double>(BEST_IMV_COST))
+        if (encTestmode.getAmvrSearchMode() == EncTestMode::AmvrSearchMode::FOUR_PEL_FAST
+            && cuECtx.get<double>(BEST_NO_IMV_COST) * AMVR_FAST_4PEL_TH < cuECtx.get<double>(BEST_IMV_COST))
         {
           if ( !m_pcEncCfg->getUseAffineAmvr() )
-          return false;
+          {
+            return false;
+          }
         }
       }
     }
@@ -2131,16 +2135,16 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
 
   if( m_pcEncCfg->getIMV4PelFast() && m_pcEncCfg->getIMV() && encTestmode.type == ETM_INTER_ME )
   {
-    int imvMode = ( encTestmode.opts & ETO_IMV ) >> ETO_IMV_SHIFT;
+    const auto amvrSearchMode = encTestmode.getAmvrSearchMode();
 
-    if( imvMode == 1 )
+    if (amvrSearchMode == EncTestMode::AmvrSearchMode::FULL_PEL)
     {
       if( tempCS->cost < cuECtx.get<double>( BEST_IMV_COST ) )
       {
         cuECtx.set( BEST_IMV_COST, tempCS->cost );
       }
     }
-    else if( imvMode == 0 )
+    else if (amvrSearchMode == EncTestMode::AmvrSearchMode::NONE)
     {
       if( tempCS->cost < cuECtx.get<double>( BEST_NO_IMV_COST ) )
       {
