@@ -1625,7 +1625,7 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
       else if (encTestmode.getAmvrSearchMode() != EncTestMode::AmvrSearchMode::NONE)
       {
         if (encTestmode.getAmvrSearchMode() == EncTestMode::AmvrSearchMode::FOUR_PEL_FAST
-            && cuECtx.get<double>(BEST_NO_IMV_COST) * 1.06 < cuECtx.get<double>(BEST_IMV_COST))
+            && cuECtx.get<double>(BEST_NO_IMV_COST) * AMVR_FAST_4PEL_TH < cuECtx.get<double>(BEST_IMV_COST))
         {
           if ( !m_pcEncCfg->getUseAffineAmvr() )
           {

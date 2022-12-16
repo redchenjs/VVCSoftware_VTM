@@ -394,6 +394,8 @@ static constexpr int    BCW_DEFAULT         = BCW_NUM / 2;   // Default weightin
 static constexpr int    BCW_SIZE_CONSTRAINT = 256;           // disabling BCW if cu size is smaller than 256
 static constexpr double BCW_COST_TH         = 1.05;
 
+static constexpr double AMVR_FAST_4PEL_TH = 1.06;
+
 static constexpr int MAX_NUM_HMVP_CANDS =                              (MRG_MAX_NUM_CANDS-1); ///< maximum number of HMVP candidates to be stored and used in merge list
 static constexpr int MAX_NUM_HMVP_AVMPCANDS =                          4; ///< maximum number of HMVP candidates to be used in AMVP list
 
