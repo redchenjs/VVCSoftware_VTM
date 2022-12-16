@@ -84,6 +84,8 @@ void EncCu::create( EncCfg* encCfg )
   m_pTempCS2 = new CodingStructure** [numWidths];
   m_pBestCS2 = new CodingStructure** [numWidths];
 
+  m_pelUnitBufPool.initPelUnitBufPool(chromaFormat, uiMaxWidth, uiMaxHeight);
+
   for( unsigned w = 0; w < numWidths; w++ )
   {
     m_pTempCS[w] = new CodingStructure*  [numHeights];
@@ -137,16 +139,6 @@ void EncCu::create( EncCfg* encCfg )
   m_modeCtrl = new EncModeCtrlMTnoRQT();
 
   m_modeCtrl->create( *encCfg );
-
-  for (unsigned ui = 0; ui < MMVD_MRG_MAX_RD_BUF_NUM; ui++)
-  {
-    m_acMergeBuffer[ui].create( chromaFormat, Area( 0, 0, uiMaxWidth, uiMaxHeight ) );
-  }
-  for (unsigned ui = 0; ui < MRG_MAX_NUM_CANDS; ui++)
-  {
-    m_acRealMergeBuffer[ui].create(chromaFormat, Area(0, 0, uiMaxWidth, uiMaxHeight));
-    m_acMergeTmpBuffer[ui].create(chromaFormat, Area(0, 0, uiMaxWidth, uiMaxHeight));
-  }
 
   for (auto &buf: m_geoWeightedBuffers)
   {
@@ -217,16 +209,6 @@ void EncCu::destroy()
 #endif
   delete m_modeCtrl;
   m_modeCtrl = nullptr;
-
-  for (unsigned ui = 0; ui < MMVD_MRG_MAX_RD_BUF_NUM; ui++)
-  {
-    m_acMergeBuffer[ui].destroy();
-  }
-  for (unsigned ui = 0; ui < MRG_MAX_NUM_CANDS; ui++)
-  {
-    m_acRealMergeBuffer[ui].destroy();
-    m_acMergeTmpBuffer[ui].destroy();
-  }
 
   for (auto &buf: m_geoWeightedBuffers)
   {
@@ -2250,11 +2232,9 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
 
   bool        bestIsSkip     = false;
   bool        bestIsMMVDSkip = true;
-  PelUnitBuf  acMergeBuffer[MRG_MAX_NUM_CANDS];
-  PelUnitBuf  acMergeTmpBuffer[MRG_MAX_NUM_CANDS];
-  PelUnitBuf  acMergeRealBuffer[MMVD_MRG_MAX_RD_BUF_NUM];
-  PelUnitBuf *acMergeTempBuffer[MMVD_MRG_MAX_RD_NUM];
-  PelUnitBuf *singleMergeTempBuffer;
+  PelUnitBufVector<MRG_MAX_NUM_CANDS+1> rdOrderedMrgPredBuf(m_pelUnitBufPool);
+  PelUnitBufVector<MRG_MAX_NUM_CANDS> mrgPredBufNoCiip(m_pelUnitBufPool);
+  PelUnitBufVector<MRG_MAX_NUM_CANDS> mrgPredBufNoMvRefine(m_pelUnitBufPool);
   int         insertPos;
   unsigned    numMergeSatdCand = mergeCtx.numValidMergeCand + MmvdIdx::ADD_NUM;
 
@@ -2271,10 +2251,16 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
 
   static_vector<ModeInfo, MRG_MAX_NUM_CANDS + MmvdIdx::ADD_NUM> rdModeList;
 
+  const UnitArea localUnitArea(tempCS->area.chromaFormat, Area(0, 0, tempCS->area.Y().width, tempCS->area.Y().height));
   for (int i = 0; i < mergeCtx.numValidMergeCand; i++)
   {
     rdModeList.push_back(ModeInfo(i, true, false, false));
+    rdOrderedMrgPredBuf.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
+    mrgPredBufNoCiip.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
+    mrgPredBufNoMvRefine.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
   }
+  rdOrderedMrgPredBuf.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
+  PelUnitBuf*& singleMergeTempBuffer = rdOrderedMrgPredBuf.back();
 
   if (tempCS->sps->getUseMMVD())
   {
@@ -2286,20 +2272,6 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
   }
 
   bool mrgTempBufSet = false;
-
-  const UnitArea localUnitArea(tempCS->area.chromaFormat, Area(0, 0, tempCS->area.Y().width, tempCS->area.Y().height));
-  for (unsigned i = 0; i < MMVD_MRG_MAX_RD_BUF_NUM; i++)
-  {
-    acMergeRealBuffer[i] = m_acMergeBuffer[i].getBuf(localUnitArea);
-    if (i < MMVD_MRG_MAX_RD_NUM)
-    {
-      acMergeTempBuffer[i] = acMergeRealBuffer + i;
-    }
-    else
-    {
-      singleMergeTempBuffer = acMergeRealBuffer + i;
-    }
-  }
 
   bool isIntrainterEnabled = sps.getUseCiip();
   if (bestCS->area.lwidth() * bestCS->area.lheight() < 64 || bestCS->area.lwidth() >= MAX_CU_SIZE || bestCS->area.lheight() >= MAX_CU_SIZE)
@@ -2364,7 +2336,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
 
       DistParam distParam;
       const bool bUseHadamard = !tempCS->slice->getDisableSATDForRD();
-      m_pcRdCost->setDistParam (distParam, tempCS->getOrgBuf().Y(), m_acMergeBuffer[0].Y(), sps.getBitDepth (CHANNEL_TYPE_LUMA), COMPONENT_Y, bUseHadamard);
+      m_pcRdCost->setDistParam (distParam, tempCS->getOrgBuf().Y(), singleMergeTempBuffer->Y(), sps.getBitDepth (CHANNEL_TYPE_LUMA), COMPONENT_Y, bUseHadamard);
 
       const UnitArea localUnitArea( tempCS->area.chromaFormat, Area( 0, 0, tempCS->area.Y().width, tempCS->area.Y().height) );
       for( uint32_t uiMergeCand = 0; uiMergeCand < mergeCtx.numValidMergeCand; uiMergeCand++ )
@@ -2374,10 +2346,8 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         PU::spanMotionInfo( pu, mergeCtx );
         pu.mvRefine = true;
         distParam.cur = singleMergeTempBuffer->Y();
-        acMergeTmpBuffer[uiMergeCand] = m_acMergeTmpBuffer[uiMergeCand].getBuf(localUnitArea);
-        m_pcInterSearch->motionCompensation(pu, *singleMergeTempBuffer, REF_PIC_LIST_X, true, true, &(acMergeTmpBuffer[uiMergeCand]));
-        acMergeBuffer[uiMergeCand] = m_acRealMergeBuffer[uiMergeCand].getBuf(localUnitArea);
-        acMergeBuffer[uiMergeCand].copyFrom(*singleMergeTempBuffer);
+        m_pcInterSearch->motionCompensation(pu, *singleMergeTempBuffer, REF_PIC_LIST_X, true, true, mrgPredBufNoMvRefine[uiMergeCand]);
+        mrgPredBufNoCiip[uiMergeCand]->copyFrom(*singleMergeTempBuffer);
         pu.mvRefine = false;
         if (mergeCtx.interDirNeighbours[uiMergeCand] == 3)
         {
@@ -2448,15 +2418,15 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         {
           if (insertPos == rdModeList.size() - 1)
           {
-            swap(singleMergeTempBuffer, acMergeTempBuffer[insertPos]);
+            swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
           }
           else
           {
             for (uint32_t i = uint32_t(rdModeList.size()) - 1; i > insertPos; i--)
             {
-              swap(acMergeTempBuffer[i - 1], acMergeTempBuffer[i]);
+              swap(rdOrderedMrgPredBuf[i - 1], rdOrderedMrgPredBuf[i]);
             }
-            swap(singleMergeTempBuffer, acMergeTempBuffer[insertPos]);
+            swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
           }
         }
 #if !GDR_ENABLED
@@ -2478,7 +2448,6 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         for (uint32_t mergeCnt = 0; mergeCnt < std::min(std::min(NUM_MRG_SATD_CAND, (const int)mergeCtx.numValidMergeCand), 4); mergeCnt++)
         {
           uint32_t mergeCand = CiipMergeCand[mergeCnt];
-          acMergeTmpBuffer[mergeCand] = m_acMergeTmpBuffer[mergeCand].getBuf(localUnitArea);
 
           // estimate merge bits
           mergeCtx.setMergeInfo(pu, mergeCand);
@@ -2493,7 +2462,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
             m_pcIntraSearch->predIntraAng(COMPONENT_Y, pu.cs->getPredBuf(pu).Y(), pu);
             m_pcIntraSearch->switchBuffer(pu, COMPONENT_Y, pu.cs->getPredBuf(pu).Y(), m_pcIntraSearch->getPredictorPtr2(COMPONENT_Y, intraCnt));
           }
-          pu.cs->getPredBuf(pu).copyFrom(acMergeTmpBuffer[mergeCand]);
+          pu.cs->getPredBuf(pu).copyFrom(*mrgPredBufNoMvRefine[mergeCand]);
           if (pu.cs->slice->getLmcsEnabledFlag() && m_pcReshape->getCTUFlag())
           {
             pu.cs->getPredBuf(pu).Y().rspSignal(m_pcReshape->getFwdLUT());
@@ -2559,9 +2528,9 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           {
             for (int i = int(rdModeList.size()) - 1; i > insertPos; i--)
             {
-              swap(acMergeTempBuffer[i - 1], acMergeTempBuffer[i]);
+              swap(rdOrderedMrgPredBuf[i - 1], rdOrderedMrgPredBuf[i]);
             }
-            swap(singleMergeTempBuffer, acMergeTempBuffer[insertPos]);
+            swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
           }
         }
         pu.ciipFlag = false;
@@ -2638,9 +2607,9 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           {
             for (int i = int(rdModeList.size()) - 1; i > insertPos; i--)
             {
-              swap(acMergeTempBuffer[i - 1], acMergeTempBuffer[i]);
+              swap(rdOrderedMrgPredBuf[i - 1], rdOrderedMrgPredBuf[i]);
             }
-            swap(singleMergeTempBuffer, acMergeTempBuffer[insertPos]);
+            swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
           }
         }
       }
@@ -2794,7 +2763,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         {
           uint32_t bufIdx = 0;
           PelBuf tmpBuf = tempCS->getPredBuf(pu).Y();
-          tmpBuf.copyFrom(acMergeTmpBuffer[uiMergeCand].Y());
+          tmpBuf.copyFrom(mrgPredBufNoMvRefine[uiMergeCand]->Y());
           if (pu.cs->slice->getLmcsEnabledFlag() && m_pcReshape->getCTUFlag())
           {
             tmpBuf.rspSignal(m_pcReshape->getFwdLUT());
@@ -2805,18 +2774,18 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
             if (pu.chromaSize().width > 2)
             {
               tmpBuf = tempCS->getPredBuf(pu).Cb();
-              tmpBuf.copyFrom(acMergeTmpBuffer[uiMergeCand].Cb());
+              tmpBuf.copyFrom(mrgPredBufNoMvRefine[uiMergeCand]->Cb());
               m_pcIntraSearch->geneWeightedPred(tmpBuf, pu, m_pcIntraSearch->getPredictorPtr2(COMPONENT_Cb, bufIdx));
               tmpBuf = tempCS->getPredBuf(pu).Cr();
-              tmpBuf.copyFrom(acMergeTmpBuffer[uiMergeCand].Cr());
+              tmpBuf.copyFrom(mrgPredBufNoMvRefine[uiMergeCand]->Cr());
               m_pcIntraSearch->geneWeightedPred(tmpBuf, pu, m_pcIntraSearch->getPredictorPtr2(COMPONENT_Cr, bufIdx));
             }
             else
             {
               tmpBuf = tempCS->getPredBuf(pu).Cb();
-              tmpBuf.copyFrom(acMergeTmpBuffer[uiMergeCand].Cb());
+              tmpBuf.copyFrom(mrgPredBufNoMvRefine[uiMergeCand]->Cb());
               tmpBuf = tempCS->getPredBuf(pu).Cr();
-              tmpBuf.copyFrom(acMergeTmpBuffer[uiMergeCand].Cr());
+              tmpBuf.copyFrom(mrgPredBufNoMvRefine[uiMergeCand]->Cr());
             }
           }
         }
@@ -2829,11 +2798,11 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           }
           else if (noResidualPass != 0 && rdModeList[mrgHadIdx].isCIIP)
           {
-            tempCS->getPredBuf().copyFrom(acMergeBuffer[uiMergeCand]);
+            tempCS->getPredBuf().copyFrom(*mrgPredBufNoCiip[uiMergeCand]);
           }
           else
           {
-            tempCS->getPredBuf().copyFrom(*acMergeTempBuffer[mrgHadIdx]);
+            tempCS->getPredBuf().copyFrom(*rdOrderedMrgPredBuf[mrgHadIdx]);
           }
         }
       }
@@ -2971,16 +2940,16 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   PU::getGeoMergeCandidates(pu, mergeCtx);
 
   const int bitsForPartitionIdx = floorLog2(GEO_NUM_PARTITION_MODE);
-
-  PelUnitBuf geoBuffer[MRG_MAX_NUM_CANDS];
-  PelUnitBuf geoTempBuf[MRG_MAX_NUM_CANDS];
+  PelUnitBufVector<MRG_MAX_NUM_CANDS> geoBuffer(m_pelUnitBufPool);
+  PelUnitBufVector<MRG_MAX_NUM_CANDS> geoTempBuf(m_pelUnitBufPool);
   DistParam distParam;
 
   const UnitArea localUnitArea(tempCS->area.chromaFormat, Area(0, 0, tempCS->area.Y().width, tempCS->area.Y().height));
   const double sqrtLambdaForFirstPass = m_pcRdCost->getMotionLambda();
   uint8_t maxNumMergeCandidates = cu.cs->sps->getMaxNumGeoCand();
   DistParam distParamWholeBlk;
-  m_pcRdCost->setDistParam(distParamWholeBlk, tempCS->getOrgBuf().Y(), m_acMergeBuffer[0].Y().buf, m_acMergeBuffer[0].Y().stride, sps.getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y);
+  // the third arguments to setDistParam is dummy and will be updated before being used
+  m_pcRdCost->setDistParam(distParamWholeBlk, tempCS->getOrgBuf().Y(), tempCS->getOrgBuf().Y(), sps.getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y);
   Distortion bestWholeBlkSad = MAX_UINT64;
   double bestWholeBlkCost = MAX_DOUBLE;
   Distortion sadWholeBlk[GEO_MAX_NUM_UNI_CANDS];
@@ -2994,7 +2963,8 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   }
   for (uint8_t mergeCand = 0; mergeCand < maxNumMergeCandidates; mergeCand++)
   {
-    geoBuffer[mergeCand] = m_acMergeBuffer[mergeCand].getBuf(localUnitArea);
+    geoBuffer.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
+    geoTempBuf.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
     mergeCtx.setMergeInfo(pu, mergeCand);
 
     const int  listIdx    = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].refIdx == -1 ? 1 : 0;
@@ -3019,12 +2989,10 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
       tempCS->initStructData(encTestMode.qp);
       return;
     }
-    m_pcInterSearch->motionCompensation(pu, geoBuffer[mergeCand], REF_PIC_LIST_X);
-    geoTempBuf[mergeCand] = m_acMergeTmpBuffer[mergeCand].getBuf(localUnitArea);
-    geoTempBuf[mergeCand].Y().copyFrom(geoBuffer[mergeCand].Y());
-    geoTempBuf[mergeCand].Y().roundToOutputBitdepth(geoTempBuf[mergeCand].Y(), cu.slice->clpRng(COMPONENT_Y));
-    distParamWholeBlk.cur.buf = geoTempBuf[mergeCand].Y().buf;
-    distParamWholeBlk.cur.stride = geoTempBuf[mergeCand].Y().stride;
+    m_pcInterSearch->motionCompensation(pu, *geoBuffer[mergeCand], REF_PIC_LIST_X);
+    geoTempBuf[mergeCand]->Y().copyFrom(geoBuffer[mergeCand]->Y());
+    geoTempBuf[mergeCand]->Y().roundToOutputBitdepth(geoTempBuf[mergeCand]->Y(), cu.slice->clpRng(COMPONENT_Y));
+    distParamWholeBlk.cur = geoTempBuf[mergeCand]->Y();
     sadWholeBlk[mergeCand] = distParamWholeBlk.distFunc(distParamWholeBlk);
 #if GDR_ENABLED
     bool allOk = (sadWholeBlk[mergeCand] < bestWholeBlkSad);
@@ -3095,8 +3063,8 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
 
     for (uint8_t mergeCand = 0; mergeCand < maxNumMergeCandidates; mergeCand++)
     {
-      m_pcRdCost->setDistParam(distParam, tempCS->getOrgBuf().Y(), geoTempBuf[mergeCand].Y().buf,
-                               geoTempBuf[mergeCand].Y().stride, sadMask, maskStride, stepX, maskStride2,
+      m_pcRdCost->setDistParam(distParam, tempCS->getOrgBuf().Y(), geoTempBuf[mergeCand]->Y().buf,
+                               geoTempBuf[mergeCand]->Y().stride, sadMask, maskStride, stepX, maskStride2,
                                sps.getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y);
       const Distortion sadLarge = distParam.distFunc(distParam);
       const Distortion sadSmall = sadWholeBlk[mergeCand] - sadLarge;
@@ -3159,7 +3127,8 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
 
   DistParam distParamSAD2;
   const bool useHadamard = !tempCS->slice->getDisableSATDForRD();
-  m_pcRdCost->setDistParam(distParamSAD2, tempCS->getOrgBuf().Y(), m_acMergeBuffer[0].Y(),
+  // the third arguments to setDistParam is dummy and will be updated before being used
+  m_pcRdCost->setDistParam(distParamSAD2, tempCS->getOrgBuf().Y(), tempCS->getOrgBuf().Y(),
                            sps.getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y, useHadamard);
 
   const int geoNumMrgSadCand  = min(GEO_MAX_TRY_WEIGHTED_SAD, (int) comboList.list.size());
@@ -3172,8 +3141,8 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
     const int mergeCand1 = comboList.list[candidateIdx].mergeIdx1;
 
     PelUnitBuf geoBuf = m_geoWeightedBuffers[candidateIdx].getBuf(localUnitArea);
-    m_pcInterSearch->weightedGeoBlk(pu, splitDir, CHANNEL_TYPE_LUMA, geoBuf, geoBuffer[mergeCand0],
-                                    geoBuffer[mergeCand1]);
+    m_pcInterSearch->weightedGeoBlk(pu, splitDir, CHANNEL_TYPE_LUMA, geoBuf, *geoBuffer[mergeCand0],
+                                    *geoBuffer[mergeCand1]);
     distParamSAD2.cur = geoBuf.Y();
     Distortion sad    = distParamSAD2.distFunc(distParamSAD2);
 
@@ -3207,8 +3176,8 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
       const int mergeCand1   = comboList.list[candidateIdx].mergeIdx1;
 
       PelUnitBuf geoBuf = m_geoWeightedBuffers[candidateIdx].getBuf(localUnitArea);
-      m_pcInterSearch->weightedGeoBlk(pu, splitDir, CHANNEL_TYPE_CHROMA, geoBuf, geoBuffer[mergeCand0],
-                                      geoBuffer[mergeCand1]);
+      m_pcInterSearch->weightedGeoBlk(pu, splitDir, CHANNEL_TYPE_CHROMA, geoBuf, *geoBuffer[mergeCand0],
+                                      *geoBuffer[mergeCand1]);
     }
   }
 
@@ -3348,7 +3317,7 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
   bool       bestIsSkip       = false;
   bool       mrgTempBufSet    = false;
   uint32_t   numMergeSatdCand = affineMergeCtx.numValidMergeCand;
-  PelUnitBuf acMergeBuffer[AFFINE_MRG_MAX_NUM_CANDS];
+  PelUnitBufVector<AFFINE_MRG_MAX_NUM_CANDS> mrgPredBuf(m_pelUnitBufPool);
 
   static_vector<uint32_t, AFFINE_MRG_MAX_NUM_CANDS> rdModeList;
 
@@ -3391,13 +3360,14 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
 
       DistParam distParam;
       const bool bUseHadamard = !tempCS->slice->getDisableSATDForRD();
-      m_pcRdCost->setDistParam( distParam, tempCS->getOrgBuf().Y(), m_acMergeBuffer[0].Y(), sps.getBitDepth( CHANNEL_TYPE_LUMA ), COMPONENT_Y, bUseHadamard );
+      // the third arguments to setDistParam is dummy and will be updated before being used
+      m_pcRdCost->setDistParam( distParam, tempCS->getOrgBuf().Y(), tempCS->getOrgBuf().Y(), sps.getBitDepth( CHANNEL_TYPE_LUMA ), COMPONENT_Y, bUseHadamard );
 
       const UnitArea localUnitArea( tempCS->area.chromaFormat, Area( 0, 0, tempCS->area.Y().width, tempCS->area.Y().height ) );
 
       for ( uint32_t uiMergeCand = 0; uiMergeCand < affineMergeCtx.numValidMergeCand; uiMergeCand++ )
       {
-        acMergeBuffer[uiMergeCand] = m_acMergeBuffer[uiMergeCand].getBuf( localUnitArea );
+        mrgPredBuf.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
 
         // set merge information
         pu.interDir         = affineMergeCtx.interDirNeighbours[uiMergeCand];
@@ -3435,9 +3405,9 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
           affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][2] = isValid;
         }
 #endif
-        distParam.cur = acMergeBuffer[uiMergeCand].Y();
+        distParam.cur = mrgPredBuf[uiMergeCand]->Y();
 
-        m_pcInterSearch->motionCompensation(pu, acMergeBuffer[uiMergeCand], REF_PIC_LIST_X, true, false, nullptr);
+        m_pcInterSearch->motionCompensation(pu, *mrgPredBuf[uiMergeCand], REF_PIC_LIST_X, true, false, nullptr);
 
         Distortion uiSad = distParam.distFunc( distParam );
         uint32_t   uiBitsCand = uiMergeCand + 1;
@@ -3545,7 +3515,7 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
       }
       if ( mrgTempBufSet )
       {
-        tempCS->getPredBuf().copyFrom(acMergeBuffer[uiMergeCand], true, false);   // Copy Luma Only
+        tempCS->getPredBuf().copyFrom(*mrgPredBuf[uiMergeCand], true, false);   // Copy Luma Only
         m_pcInterSearch->motionCompensatePu(pu, REF_PIC_LIST_X, false, true);
       }
       else

@@ -46,6 +46,7 @@
 #include <string.h>
 #include <type_traits>
 #include <typeinfo>
+#include <unordered_map>
 
 // ---------------------------------------------------------------------------
 // AreaBuf struct
@@ -1068,4 +1069,45 @@ private:
   Pel* m_memory;
 };
 
+class PelUnitBufPool
+{
+private:
+  Pool<PelStorage> m_pelStoragePool;
+  Pool<PelUnitBuf> m_pelUnitBufPool;
+  std::unordered_map<PelUnitBuf*, PelStorage*> m_map;
+  ChromaFormat m_chromaFormat;
+  Area m_ctuArea;
+
+public:
+  PelUnitBufPool();
+  ~PelUnitBufPool();
+
+  void initPelUnitBufPool(ChromaFormat chromaFormat, int ctuWidth, int ctuHeight);
+  PelUnitBuf* getPelUnitBuf(const UnitArea& unitArea);
+  void giveBack(PelUnitBuf* p);
+
+  template<size_t N>
+  void giveBack(static_vector<PelUnitBuf*, N>& v)
+  {
+    for (auto p : v)
+    {
+      giveBack(p);
+    }
+    v.clear();
+  }
+};
+
+template<size_t N>
+class PelUnitBufVector : public static_vector<PelUnitBuf*, N>
+{
+private:
+  PelUnitBufPool* m_pool;
+
+public:
+  PelUnitBufVector(PelUnitBufPool& pool) : m_pool(&pool) {}
+  ~PelUnitBufVector()
+  {
+    m_pool->giveBack(*this);
+  }
+};
 #endif
