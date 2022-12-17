@@ -2764,7 +2764,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
       checkAffine = false;
       if (bestCU != nullptr && bestCU->affine)
       {
-        if (bestCU->firstPU->mergeFlag == false || bestCU->firstPU->mergeType != MRG_TYPE_SUBPU_ATMVP)
+        if (!bestCU->firstPU->mergeFlag || bestCU->firstPU->mergeType != MergeType::SUBPU_ATMVP)
         {
           checkAffine = !cs.slice->getMeetBiPredT();
         }

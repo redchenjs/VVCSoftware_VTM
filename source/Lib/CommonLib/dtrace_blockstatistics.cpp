@@ -594,7 +594,8 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
             if( pu.mergeFlag )
             {
               DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::MergeIdx),  pu.mergeIdx);
-              DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::MergeType), pu.mergeType);
+              DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu,
+                                  GetBlockStatisticName(BlockStatistic::MergeType), to_underlying(pu.mergeType));
               DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::MMVDMergeFlag),  pu.mmvdMergeFlag);
               if (cu.mmvdSkip || pu.mmvdMergeFlag)
               {
@@ -1037,7 +1038,8 @@ void writeAllCodedData(const CodingStructure & cs, const UnitArea & ctuArea)
             if (pu.mergeFlag)
             {
               DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu, GetBlockStatisticName(BlockStatistic::MergeIdx),  pu.mergeIdx);
-              DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu, GetBlockStatisticName(BlockStatistic::MergeType), pu.mergeType);
+              DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu,
+                                  GetBlockStatisticName(BlockStatistic::MergeType), to_underlying(pu.mergeType));
               DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu, GetBlockStatisticName(BlockStatistic::MMVDMergeFlag), pu.mmvdMergeFlag);
               if (pu.mmvdMergeFlag)
               {

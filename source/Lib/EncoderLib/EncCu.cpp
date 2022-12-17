@@ -3363,7 +3363,7 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
         cu.bcwIdx           = affineMergeCtx.bcwIdx[uiMergeCand];
 
         pu.mergeType = affineMergeCtx.mergeType[uiMergeCand];
-        if ( pu.mergeType == MRG_TYPE_SUBPU_ATMVP )
+        if (pu.mergeType == MergeType::SUBPU_ATMVP)
         {
           pu.refIdx[0] = affineMergeCtx.mvFieldNeighbours[uiMergeCand][0][0].refIdx;
           pu.refIdx[1] = affineMergeCtx.mvFieldNeighbours[uiMergeCand][0][1].refIdx;
@@ -3474,7 +3474,7 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
       cu.bcwIdx     = affineMergeCtx.bcwIdx[uiMergeCand];
 
       pu.mergeType = affineMergeCtx.mergeType[uiMergeCand];
-      if ( pu.mergeType == MRG_TYPE_SUBPU_ATMVP )
+      if (pu.mergeType == MergeType::SUBPU_ATMVP)
       {
         pu.refIdx[0] = affineMergeCtx.mvFieldNeighbours[uiMergeCand][0][0].refIdx;
         pu.refIdx[1] = affineMergeCtx.mvFieldNeighbours[uiMergeCand][0][1].refIdx;

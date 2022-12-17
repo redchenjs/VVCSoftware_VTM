@@ -311,7 +311,7 @@ void InterPrediction::xSubPuMC(PredictionUnit &pu, PelUnitBuf &predBuf, const Re
 
   subPu.cs        = pu.cs;
   subPu.cu        = pu.cu;
-  subPu.mergeType = MRG_TYPE_DEFAULT_N;
+  subPu.mergeType = MergeType::DEFAULT_N;
 
   bool isAffine = pu.cu->affine;
   subPu.cu->affine = false;
@@ -1477,13 +1477,14 @@ void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf
                        ( refIdx1 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_1, refIdx1 )->isRefScaled( pu.cs->pps ) );
     bioApplied = refIsScaled ? false : bioApplied;
     bool dmvrApplied = (pu.mvRefine) && PU::checkDMVRCondition(pu);
-    if ((pu.lumaSize().width > MAX_BDOF_APPLICATION_REGION || pu.lumaSize().height > MAX_BDOF_APPLICATION_REGION) && pu.mergeType != MRG_TYPE_SUBPU_ATMVP && (bioApplied && !dmvrApplied))
+    if ((pu.lumaSize().width > MAX_BDOF_APPLICATION_REGION || pu.lumaSize().height > MAX_BDOF_APPLICATION_REGION)
+        && pu.mergeType != MergeType::SUBPU_ATMVP && (bioApplied && !dmvrApplied))
     {
       xSubPuBio(pu, predBuf, eRefPicList, predBufWOBIO);
     }
     else
     {
-      if (pu.mergeType != MRG_TYPE_DEFAULT_N && pu.mergeType != MRG_TYPE_IBC)
+      if (pu.mergeType != MergeType::DEFAULT_N && pu.mergeType != MergeType::IBC)
       {
         CHECK(predBufWOBIO != nullptr, "the case should not happen!");
         xSubPuMC(pu, predBuf, eRefPicList, luma, chroma);

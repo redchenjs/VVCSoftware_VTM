@@ -365,7 +365,7 @@ void DeblockingFilter::xDeblockCU( CodingUnit& cu, const DeblockEdgeDir edgeDir 
     edgeIdx.push_back((getPos(currPU.blocks[cu.chType], edgeDir) - getPos(cu.blocks[cu.chType], edgeDir))
                       >> LOG_GRID_SIZE);
 
-    if ((currPU.mergeFlag && (currPU.mergeType == MRG_TYPE_SUBPU_ATMVP)) || cu.affine)
+    if ((currPU.mergeFlag && currPU.mergeType == MergeType::SUBPU_ATMVP) || cu.affine)
     {
       mvSubBlocks = true;
       if (edgeDir == EDGE_HOR)
