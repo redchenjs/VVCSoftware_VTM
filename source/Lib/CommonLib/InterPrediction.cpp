@@ -66,7 +66,6 @@ InterPrediction::InterPrediction()
   , m_gradY0(nullptr)
   , m_gradX1(nullptr)
   , m_gradY1(nullptr)
-  , m_subPuMC(false)
   , m_IBCBufferWidth(0)
 {
   for( uint32_t ch = 0; ch < MAX_NUM_COMPONENT; ch++ )
@@ -327,8 +326,6 @@ void InterPrediction::xSubPuMC(PredictionUnit &pu, PelUnitBuf &predBuf, const Re
 
   bool scaled = pu.cu->slice->getRefPic( REF_PIC_LIST_0, 0 )->isRefScaled( pu.cs->pps ) || ( pu.cs->slice->getSliceType() == B_SLICE ? pu.cu->slice->getRefPic( REF_PIC_LIST_1, 0 )->isRefScaled( pu.cs->pps ) : false );
 
-  m_subPuMC = true;
-
   for (int fstDim = fstStart; fstDim < fstEnd; fstDim += fstStep)
   {
     for (int secDim = secStart; secDim < secEnd; secDim += secStep)
@@ -361,11 +358,10 @@ void InterPrediction::xSubPuMC(PredictionUnit &pu, PelUnitBuf &predBuf, const Re
       PelUnitBuf subPredBuf = predBuf.subBuf(UnitAreaRelative(pu, subPu));
       subPu.mmvdEncOptMode = 0;
       subPu.mvRefine = false;
-      motionCompensation(subPu, subPredBuf, eRefPicList, luma, chroma, nullptr);
+      motionCompensation(subPu, subPredBuf, eRefPicList, luma, chroma, nullptr, true);
       secDim = later - secStep;
     }
   }
-  m_subPuMC = false;
 
   pu.cu->affine = isAffine;
 }
@@ -455,7 +451,7 @@ void InterPrediction::xSubPuBio(PredictionUnit &pu, PelUnitBuf &predBuf, const R
       if (yuvDstTmp)
       {
         PelUnitBuf subPredBufTmp = yuvDstTmp->subBuf(UnitAreaRelative(pu, subPu));
-        motionCompensation(subPu, subPredBuf, eRefPicList, true, true, &subPredBufTmp);
+        motionCompensation(subPu, subPredBuf, eRefPicList, true, true, &subPredBufTmp, false);
       }
       else
       {
@@ -540,7 +536,7 @@ void InterPrediction::xPredInterUni(const PredictionUnit &pu, const RefPicList &
 }
 
 void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, const bool luma, const bool chroma,
-                                   PelUnitBuf *yuvPredTmp)
+                                   PelUnitBuf *yuvPredTmp, const bool isSubPu)
 {
   const PPS   &pps   = *pu.cs->pps;
   const Slice &slice = *pu.cs->slice;
@@ -554,7 +550,7 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
   bool bioApplied = false;
   if (pu.cs->sps->getBDOFEnabledFlag() && !pu.cs->picHeader->getBdofDisabledFlag())
   {
-    if (pu.cu->affine || m_subPuMC)
+    if (pu.cu->affine || isSubPu)
     {
       bioApplied = false;
     }
@@ -1402,7 +1398,8 @@ void InterPrediction::xWeightedAverage(const PredictionUnit &pu, const CPelUnitB
 }
 
 void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf, const RefPicList eRefPicList,
-                                         const bool luma, const bool chroma, PelUnitBuf *predBufWOBIO)
+                                         const bool luma, const bool chroma, PelUnitBuf *predBufWOBIO,
+                                         const bool isSubPu)
 {
   // Note: there appears to be an interaction with weighted prediction that
   // makes the code follow different paths if chroma is on or off (in the encoder).
@@ -1458,7 +1455,7 @@ void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf
     bool bioApplied = false;
     if (pu.cs->sps->getBDOFEnabledFlag() && !pu.cs->picHeader->getBdofDisabledFlag())
     {
-      if (pu.cu->affine || m_subPuMC)
+      if (pu.cu->affine || isSubPu)
       {
         bioApplied = false;
       }
@@ -1498,7 +1495,7 @@ void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf
       }
       else
       {
-        xPredInterBi(pu, predBuf, luma, chroma, predBufWOBIO);
+        xPredInterBi(pu, predBuf, luma, chroma, predBufWOBIO, isSubPu);
       }
     }
   }
@@ -1512,7 +1509,7 @@ void InterPrediction::motionCompensateCu(CodingUnit &cu, const RefPicList eRefPi
   {
     PelUnitBuf predBuf = cu.cs->getPredBuf( pu );
     pu.mvRefine = true;
-    motionCompensation(pu, predBuf, eRefPicList, luma, chroma, nullptr);
+    motionCompensation(pu, predBuf, eRefPicList, luma, chroma, nullptr, false);
     pu.mvRefine = false;
   }
 }
@@ -1521,7 +1518,7 @@ void InterPrediction::motionCompensatePu(PredictionUnit &pu, const RefPicList eR
                                          const bool chroma)
 {
   PelUnitBuf predBuf = pu.cs->getPredBuf( pu );
-  motionCompensation(pu, predBuf, eRefPicList, luma, chroma, nullptr);
+  motionCompensation(pu, predBuf, eRefPicList, luma, chroma, nullptr, false);
 }
 
 int InterPrediction::rightShiftMSB(int numer, int denom)
@@ -1544,7 +1541,7 @@ void InterPrediction::motionCompensationGeo( CodingUnit &cu, MergeCtx &geoMrgCtx
     geoMrgCtx.setMergeInfo( pu, candIdx0 );
     PU::spanMotionInfo( pu );
     // TODO: check 4:0:0 interaction with weighted prediction.
-    motionCompensation(pu, tmpGeoBuf0, REF_PIC_LIST_X, true, isChromaEnabled(pu.chromaFormat), nullptr);
+    motionCompensation(pu, tmpGeoBuf0, REF_PIC_LIST_X, true, isChromaEnabled(pu.chromaFormat), nullptr, false);
     if( g_mctsDecCheckEnabled && !MCTSHelper::checkMvBufferForMCTSConstraint( pu, true ) )
     {
       printf( "DECODER_GEO_PU: pu motion vector across tile boundaries (%d,%d,%d,%d)\n", pu.lx(), pu.ly(), pu.lwidth(), pu.lheight() );
@@ -1553,7 +1550,7 @@ void InterPrediction::motionCompensationGeo( CodingUnit &cu, MergeCtx &geoMrgCtx
     geoMrgCtx.setMergeInfo( pu, candIdx1 );
     PU::spanMotionInfo( pu );
     // TODO: check 4:0:0 interaction with weighted prediction.
-    motionCompensation(pu, tmpGeoBuf1, REF_PIC_LIST_X, true, isChromaEnabled(pu.chromaFormat), nullptr);
+    motionCompensation(pu, tmpGeoBuf1, REF_PIC_LIST_X, true, isChromaEnabled(pu.chromaFormat), nullptr, false);
     if( g_mctsDecCheckEnabled && !MCTSHelper::checkMvBufferForMCTSConstraint( pu, true ) )
     {
       printf( "DECODER_GEO_PU: pu motion vector across tile boundaries (%d,%d,%d,%d)\n", pu.lx(), pu.ly(), pu.lwidth(), pu.lheight() );
