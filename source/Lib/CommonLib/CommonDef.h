@@ -125,6 +125,7 @@ enum class AffineModel : uint8_t
 static constexpr int    AFFINE_ME_LIST_SIZE    =                        4;
 static constexpr int    AFFINE_ME_LIST_SIZE_LD =                        3;
 static constexpr double AFFINE_ME_LIST_MVP_TH  =                        1.0;
+static constexpr int    AFFINE_MAX_NUM_CP      = 3;   // maximum number of control points for affine
 
 // ====================================================================================================================
 // Common constants

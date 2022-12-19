@@ -878,20 +878,20 @@ void DecCu::xDeriveCuMvs(CodingUnit &cu)
           pu.mergeType      = affineMergeCtx.mergeType[pu.mergeIdx];
           if (pu.mergeType == MRG_TYPE_SUBPU_ATMVP)
           {
-            pu.refIdx[0] = affineMergeCtx.mvFieldNeighbours[(pu.mergeIdx << 1) + 0][0].refIdx;
-            pu.refIdx[1] = affineMergeCtx.mvFieldNeighbours[(pu.mergeIdx << 1) + 1][0].refIdx;
+            pu.refIdx[0] = affineMergeCtx.mvFieldNeighbours[pu.mergeIdx][0][0].refIdx;
+            pu.refIdx[1] = affineMergeCtx.mvFieldNeighbours[pu.mergeIdx][0][1].refIdx;
           }
           else
           {
-            for (int i = 0; i < 2; ++i)
+            for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
             {
-              if (pu.cs->slice->getNumRefIdx(RefPicList(i)) > 0)
+              if (pu.cs->slice->getNumRefIdx(l) > 0)
               {
-                MvField *mvField = affineMergeCtx.mvFieldNeighbours[(pu.mergeIdx << 1) + i];
-                pu.mvpIdx[i]     = 0;
-                pu.mvpNum[i]     = 0;
-                pu.mvd[i]        = Mv();
-                PU::setAllAffineMvField(pu, mvField, RefPicList(i));
+                auto &mvField = affineMergeCtx.mvFieldNeighbours[pu.mergeIdx];
+                pu.mvpIdx[l]  = 0;
+                pu.mvpNum[l]  = 0;
+                pu.mvd[l]     = Mv();
+                PU::setAllAffineMvField(pu, mvField, l);
               }
             }
           }

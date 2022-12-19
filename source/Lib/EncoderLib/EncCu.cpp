@@ -2352,8 +2352,8 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         pu.mvRefine = false;
         if (mergeCtx.interDirNeighbours[uiMergeCand] == 3)
         {
-          mergeCtx.mvFieldNeighbours[2*uiMergeCand].mv   = pu.mv[0];
-          mergeCtx.mvFieldNeighbours[2*uiMergeCand+1].mv = pu.mv[1];
+          mergeCtx.mvFieldNeighbours[uiMergeCand][0].mv = pu.mv[0];
+          mergeCtx.mvFieldNeighbours[uiMergeCand][1].mv = pu.mv[1];
           {
             int dx, dy, i, j, num = 0;
             dy = std::min<int>(pu.lumaSize().height, DMVR_SUBCU_HEIGHT);
@@ -2385,26 +2385,19 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           bool isSolid = true;
           bool isValid = true;
 
-          if (mergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 0].refIdx >= 0)
+          for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
           {
-            Mv mv = mergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 0].mv;
-            int ridx = mergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 0].refIdx;
+            const int refIdx = mergeCtx.mvFieldNeighbours[uiMergeCand][l].refIdx;
 
-            mergeCtx.mvValid[(uiMergeCand << 1) + 0] = cs->isClean(pu.Y().bottomRight(), mv, REF_PIC_LIST_0, ridx);
+            if (refIdx >= 0)
+            {
+              Mv mv = mergeCtx.mvFieldNeighbours[uiMergeCand][l].mv;
 
-            isSolid = isSolid && mergeCtx.mvSolid[(uiMergeCand << 1) + 0];
-            isValid = isValid && mergeCtx.mvValid[(uiMergeCand << 1) + 0];
-          }
+              mergeCtx.mvValid[uiMergeCand][l] = cs->isClean(pu.Y().bottomRight(), mv, l, refIdx);
 
-          if (mergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 1].refIdx >= 0) \
-          {
-            Mv mv = mergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 1].mv;
-            int ridx = mergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 1].refIdx;
-
-            mergeCtx.mvValid[(uiMergeCand << 1) + 1] = cs->isClean(pu.Y().bottomRight(), mv, REF_PIC_LIST_1, ridx);
-
-            isSolid = isSolid && mergeCtx.mvSolid[(uiMergeCand << 1) + 1];
-            isValid = isValid && mergeCtx.mvValid[(uiMergeCand << 1) + 1];
+              isSolid &= mergeCtx.mvSolid[uiMergeCand][l];
+              isValid &= mergeCtx.mvValid[uiMergeCand][l];
+            }
           }
 
           if (!isValid || !isSolid)
@@ -2493,26 +2486,18 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
             bool isSolid = true;
             bool isValid = true;
 
-            if (mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].refIdx >= 0)
+            for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
             {
-              Mv mv = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].mv;
-              int ridx = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].refIdx;
+              if (mergeCtx.mvFieldNeighbours[mergeCand][l].refIdx >= 0)
+              {
+                Mv  mv     = mergeCtx.mvFieldNeighbours[mergeCand][l].mv;
+                int refIdx = mergeCtx.mvFieldNeighbours[mergeCand][l].refIdx;
 
-              mergeCtx.mvValid[(mergeCand << 1) + 0] = cs->isClean(pu.Y().bottomRight(), mv, REF_PIC_LIST_0, ridx);
+                mergeCtx.mvValid[mergeCand][l] = cs->isClean(pu.Y().bottomRight(), mv, l, refIdx);
 
-              isSolid = isSolid && mergeCtx.mvSolid[(mergeCand << 1) + 0];
-              isValid = isValid && mergeCtx.mvValid[(mergeCand << 1) + 0];
-            }
-
-            if (mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 1].refIdx >= 0)
-            {
-              Mv mv = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 1].mv;
-              int ridx = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 1].refIdx;
-
-              mergeCtx.mvValid[(mergeCand << 1) + 1] = cs->isClean(pu.Y().bottomRight(), mv, REF_PIC_LIST_1, ridx);
-
-              isSolid = isSolid && mergeCtx.mvSolid[(mergeCand << 1) + 1];
-              isValid = isValid && mergeCtx.mvValid[(mergeCand << 1) + 1];
+                isSolid &= mergeCtx.mvSolid[mergeCand][l];
+                isValid &= mergeCtx.mvValid[mergeCand][l];
+              }
             }
 
             if (!isValid || !isSolid)
@@ -2968,12 +2953,12 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
     geoTempBuf.push_back(m_pelUnitBufPool.getPelUnitBuf(localUnitArea));
     mergeCtx.setMergeInfo(pu, mergeCand);
 
-    const int  listIdx    = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].refIdx == -1 ? 1 : 0;
+    const int  listIdx    = mergeCtx.mvFieldNeighbours[mergeCand][0].refIdx == -1 ? 1 : 0;
     const auto refPicList = RefPicList(listIdx);
-    const int  refIdx     = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + listIdx].refIdx;
+    const int  refIdx     = mergeCtx.mvFieldNeighbours[mergeCand][listIdx].refIdx;
 
     pocMrg[mergeCand]  = tempCS->slice->getRefPic(refPicList, refIdx)->getPOC();
-    mergeMv[mergeCand] = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + listIdx].mv;
+    mergeMv[mergeCand] = mergeCtx.mvFieldNeighbours[mergeCand][listIdx].mv;
 
     for (int i = 0; i < mergeCand; i++)
     {
@@ -2999,8 +2984,8 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
     bool allOk = (sadWholeBlk[mergeCand] < bestWholeBlkSad);
     if (isEncodeGdrClean)
     {
-      bool isSolid = mergeCtx.mvSolid[(mergeCand << 1) + listIdx];
-      bool isValid = mergeCtx.mvValid[(mergeCand << 1) + listIdx];
+      bool isSolid = mergeCtx.mvSolid[mergeCand][listIdx];
+      bool isValid = mergeCtx.mvValid[mergeCand][listIdx];
       allOk = allOk && isSolid && isValid;
     }
 #endif
@@ -3091,10 +3076,9 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
 #if GDR_ENABLED
       if (isEncodeGdrClean)
       {
-        if (!mergeCtx.mvSolid[2 * mergeCand0 + 0] || !mergeCtx.mvSolid[2 * mergeCand0 + 1]
-            || !mergeCtx.mvSolid[2 * mergeCand1 + 0] || !mergeCtx.mvSolid[2 * mergeCand1 + 1]
-            || !mergeCtx.mvValid[2 * mergeCand0 + 0] || !mergeCtx.mvValid[2 * mergeCand0 + 1]
-            || !mergeCtx.mvValid[2 * mergeCand1 + 0] || !mergeCtx.mvValid[2 * mergeCand1 + 1])
+        if (!mergeCtx.mvSolid[mergeCand0][0] || !mergeCtx.mvSolid[mergeCand0][1] || !mergeCtx.mvSolid[mergeCand1][0]
+            || !mergeCtx.mvSolid[mergeCand1][1] || !mergeCtx.mvValid[mergeCand0][0] || !mergeCtx.mvValid[mergeCand0][1]
+            || !mergeCtx.mvValid[mergeCand1][0] || !mergeCtx.mvValid[mergeCand1][1])
         {
           // don't insert candidate into comboList so we don't have to test for cleanliness later
           continue;
@@ -3381,14 +3365,14 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
         pu.mergeType = affineMergeCtx.mergeType[uiMergeCand];
         if ( pu.mergeType == MRG_TYPE_SUBPU_ATMVP )
         {
-          pu.refIdx[0] = affineMergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 0][0].refIdx;
-          pu.refIdx[1] = affineMergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 1][0].refIdx;
+          pu.refIdx[0] = affineMergeCtx.mvFieldNeighbours[uiMergeCand][0][0].refIdx;
+          pu.refIdx[1] = affineMergeCtx.mvFieldNeighbours[uiMergeCand][0][1].refIdx;
           PU::spanMotionInfo( pu, mrgCtx );
         }
         else
         {
-          PU::setAllAffineMvField( pu, affineMergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 0], REF_PIC_LIST_0 );
-          PU::setAllAffineMvField( pu, affineMergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 1], REF_PIC_LIST_1 );
+          PU::setAllAffineMvField(pu, affineMergeCtx.mvFieldNeighbours[uiMergeCand], REF_PIC_LIST_0);
+          PU::setAllAffineMvField(pu, affineMergeCtx.mvFieldNeighbours[uiMergeCand], REF_PIC_LIST_1);
 
           PU::spanMotionInfo( pu );
         }
@@ -3397,13 +3381,12 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
         if (isEncodeGdrClean)
         {
           Mv zero = Mv(0, 0);
-          bool isValid = cs->isSubPuClean(pu, &zero);
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][0] = isValid;
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][1] = isValid;
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][2] = isValid;
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][0] = isValid;
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][1] = isValid;
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][2] = isValid;
+          const bool isValid = cs->isSubPuClean(pu, &zero);
+          for (auto &c: affineMergeCtx.mvValid[uiMergeCand])
+          {
+            c[0] = isValid;
+            c[1] = isValid;
+          }
         }
 #endif
         distParam.cur = mrgPredBuf[uiMergeCand]->Y();
@@ -3420,15 +3403,12 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
 #if GDR_ENABLED
         if (isEncodeGdrClean)
         {
-          bool isSolid0 = affineMergeCtx.mvSolid[(uiMergeCand << 1) + 0][0] && affineMergeCtx.mvSolid[(uiMergeCand << 1) + 0][1] && affineMergeCtx.mvSolid[(uiMergeCand << 1) + 0][2];
-          bool isSolid1 = affineMergeCtx.mvSolid[(uiMergeCand << 1) + 1][0] && affineMergeCtx.mvSolid[(uiMergeCand << 1) + 1][1] && affineMergeCtx.mvSolid[(uiMergeCand << 1) + 1][2];
-          bool isValid0 = affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][0] && affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][1] && affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][2];
-          bool isValid1 = affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][0] && affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][1] && affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][2];
+          bool isSolid0 = affineMergeCtx.isSolid(uiMergeCand, REF_PIC_LIST_0);
+          bool isSolid1 = affineMergeCtx.isSolid(uiMergeCand, REF_PIC_LIST_1);
+          bool isValid0 = affineMergeCtx.isValid(uiMergeCand, REF_PIC_LIST_0);
+          bool isValid1 = affineMergeCtx.isValid(uiMergeCand, REF_PIC_LIST_1);
 
-          bool isSolid = isSolid0 && isSolid1;
-          bool isValid = isValid0 && isValid1;
-
-          if (!isSolid || !isValid)
+          if (!isSolid0 || !isSolid1 || !isValid0 || !isValid1)
           {
             cost = MAX_DOUBLE;
           }
@@ -3496,14 +3476,14 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
       pu.mergeType = affineMergeCtx.mergeType[uiMergeCand];
       if ( pu.mergeType == MRG_TYPE_SUBPU_ATMVP )
       {
-        pu.refIdx[0] = affineMergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 0][0].refIdx;
-        pu.refIdx[1] = affineMergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 1][0].refIdx;
+        pu.refIdx[0] = affineMergeCtx.mvFieldNeighbours[uiMergeCand][0][0].refIdx;
+        pu.refIdx[1] = affineMergeCtx.mvFieldNeighbours[uiMergeCand][0][1].refIdx;
         PU::spanMotionInfo( pu, mrgCtx );
       }
       else
       {
-        PU::setAllAffineMvField( pu, affineMergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 0], REF_PIC_LIST_0 );
-        PU::setAllAffineMvField( pu, affineMergeCtx.mvFieldNeighbours[(uiMergeCand << 1) + 1], REF_PIC_LIST_1 );
+        PU::setAllAffineMvField(pu, affineMergeCtx.mvFieldNeighbours[uiMergeCand], REF_PIC_LIST_0);
+        PU::setAllAffineMvField(pu, affineMergeCtx.mvFieldNeighbours[uiMergeCand], REF_PIC_LIST_1);
 
         PU::spanMotionInfo( pu );
       }
@@ -3525,32 +3505,25 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
       }
 
 #if GDR_ENABLED
-      bool isSolid = true;
-      bool isValid = true;
-
       if (isEncodeGdrClean)
       {
         if (bestIsSkip)
         {
           Mv zero = Mv(0, 0);
-          bool isValid = cs->isSubPuClean(pu, &zero);
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][0] = isValid;
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][1] = isValid;
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][2] = isValid;
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][0] = isValid;
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][1] = isValid;
-          affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][2] = isValid;
+          const bool isValid = cs->isSubPuClean(pu, &zero);
+          for (auto &c: affineMergeCtx.mvValid[uiMergeCand])
+          {
+            c[0] = isValid;
+            c[1] = isValid;
+          }
         }
 
-        bool isSolid0 = affineMergeCtx.mvSolid[(uiMergeCand << 1) + 0][0] && affineMergeCtx.mvSolid[(uiMergeCand << 1) + 0][1] && affineMergeCtx.mvSolid[(uiMergeCand << 1) + 0][2];
-        bool isSolid1 = affineMergeCtx.mvSolid[(uiMergeCand << 1) + 1][0] && affineMergeCtx.mvSolid[(uiMergeCand << 1) + 1][1] && affineMergeCtx.mvSolid[(uiMergeCand << 1) + 1][2];
-        bool isValid0 = affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][0] && affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][1] && affineMergeCtx.mvValid[(uiMergeCand << 1) + 0][2];
-        bool isValid1 = affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][0] && affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][1] && affineMergeCtx.mvValid[(uiMergeCand << 1) + 1][2];
+        const bool isSolid0 = affineMergeCtx.isSolid(uiMergeCand, REF_PIC_LIST_0);
+        const bool isSolid1 = affineMergeCtx.isSolid(uiMergeCand, REF_PIC_LIST_1);
+        const bool isValid0 = affineMergeCtx.isValid(uiMergeCand, REF_PIC_LIST_0);
+        const bool isValid1 = affineMergeCtx.isValid(uiMergeCand, REF_PIC_LIST_1);
 
-        isSolid = isSolid0 && isSolid1;
-        isValid = isValid0 && isValid1;
-
-        if (isSolid && isValid)
+        if (isSolid0 && isSolid1 && isValid0 && isValid1)
         {
           xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, noResidualPass,
                                (noResidualPass == 0 ? &candHasNoResidual[uiMergeCand] : nullptr));
@@ -3597,17 +3570,17 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
         }
         else if ( m_pcEncCfg->getMotionEstimationSearchMethod() != MESEARCH_SELECTIVE )
         {
-          int absolute_MV = 0;
+          uint32_t sumAbsMv = 0;
 
-          for ( uint32_t uiRefListIdx = 0; uiRefListIdx < 2; uiRefListIdx++ )
+          for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
           {
-            if ( slice.getNumRefIdx( RefPicList( uiRefListIdx ) ) > 0 )
+            if (slice.getNumRefIdx(l) > 0)
             {
-              absolute_MV += bestPU.mvd[uiRefListIdx].getAbsHor() + bestPU.mvd[uiRefListIdx].getAbsVer();
+              sumAbsMv += bestPU.mvd[l].getAbsHor() + bestPU.mvd[l].getAbsVer();
             }
           }
 
-          if ( absolute_MV == 0 )
+          if (sumAbsMv == 0)
           {
             m_modeCtrl->setEarlySkipDetected();
           }
@@ -3777,26 +3750,18 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
         bool isSolid = true;
         bool isValid = true;
 
-        if (mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].refIdx >= 0)
+        for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
         {
-          Mv mv = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].mv;
-          int ridx = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].refIdx;
+          if (mergeCtx.mvFieldNeighbours[mergeCand][l].refIdx >= 0)
+          {
+            Mv  mv   = mergeCtx.mvFieldNeighbours[mergeCand][l].mv;
+            int ridx = mergeCtx.mvFieldNeighbours[mergeCand][l].refIdx;
 
-          mergeCtx.mvValid[(mergeCand << 1) + 0] = tempCS->isClean(pu.Y().bottomRight(), mv, REF_PIC_LIST_0, ridx, true);
+            mergeCtx.mvValid[mergeCand][l] = tempCS->isClean(pu.Y().bottomRight(), mv, l, ridx, true);
 
-          isSolid = isSolid && mergeCtx.mvSolid[(mergeCand << 1) + 0];
-          isValid = isValid && mergeCtx.mvValid[(mergeCand << 1) + 0];
-        }
-
-        if (mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 1].refIdx >= 0)
-        {
-          Mv mv = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 1].mv;
-          int ridx = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 1].refIdx;
-
-          mergeCtx.mvValid[(mergeCand << 1) + 1] = tempCS->isClean(pu.Y().bottomRight(), mv, REF_PIC_LIST_1, ridx, true);
-
-          isSolid = isSolid && mergeCtx.mvSolid[(mergeCand << 1) + 1];
-          isValid = isValid && mergeCtx.mvValid[(mergeCand << 1) + 1];
+            isSolid &= mergeCtx.mvSolid[mergeCand][l];
+            isValid &= mergeCtx.mvValid[mergeCand][l];
+          }
         }
 
         if (!isValid || !isSolid)
@@ -3878,19 +3843,15 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
 
               if (isEncodeGdrClean)
               {
-                if (mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].refIdx >= 0)
+                for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
                 {
-                  Mv mv = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].mv;
-                  int ridx = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].refIdx;
+                  if (mergeCtx.mvFieldNeighbours[mergeCand][l].refIdx >= 0)
+                  {
+                    Mv  mv     = mergeCtx.mvFieldNeighbours[mergeCand][l].mv;
+                    int refIdx = mergeCtx.mvFieldNeighbours[mergeCand][l].refIdx;
 
-                  mergeCtx.mvValid[(mergeCand << 1) + 0] = cs.isClean(pu.Y().bottomRight(), mv, REF_PIC_LIST_0, ridx, true);
-                }
-
-                if (mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 1].refIdx >= 0)
-                {
-                  Mv mv = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 1].mv;
-                  int ridx = mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 1].refIdx;
-                  mergeCtx.mvValid[(mergeCand << 1) + 1] = cs.isClean(pu.Y().bottomRight(), mv, REF_PIC_LIST_1, ridx, true);
+                    mergeCtx.mvValid[mergeCand][l] = cs.isClean(pu.Y().bottomRight(), mv, l, refIdx, true);
+                  }
                 }
               }
             }
@@ -3904,15 +3865,13 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
             {
               bool mvSolid = true;
               bool mvValid = true;
-              if (mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 0].refIdx >= 0)
+              for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
               {
-                mvSolid = mvSolid && mergeCtx.mvSolid[(mergeCand << 1) + 0];
-                mvValid = mvValid && mergeCtx.mvValid[(mergeCand << 1) + 0];
-              }
-              if (mergeCtx.mvFieldNeighbours[(mergeCand << 1) + 1].refIdx >= 0)
-              {
-                mvSolid = mvSolid && mergeCtx.mvSolid[(mergeCand << 1) + 1];
-                mvValid = mvValid && mergeCtx.mvValid[(mergeCand << 1) + 1];
+                if (mergeCtx.mvFieldNeighbours[mergeCand][l].refIdx >= 0)
+                {
+                  mvSolid &= mergeCtx.mvSolid[mergeCand][l];
+                  mvValid &= mergeCtx.mvValid[mergeCand][l];
+                }
               }
 
               if (mvSolid && mvValid)

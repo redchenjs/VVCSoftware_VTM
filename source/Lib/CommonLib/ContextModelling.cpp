@@ -370,32 +370,30 @@ void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
   pu.cu->imv = (!pu.cu->geoFlag && useAltHpelIf[candIdx]) ? IMV_HPEL : 0;
   pu.mergeIdx                = candIdx;
   pu.mergeType               = CU::isIBC(*pu.cu) ? MRG_TYPE_IBC : MRG_TYPE_DEFAULT_N;
-  pu.mv     [REF_PIC_LIST_0] = mvFieldNeighbours[(candIdx << 1) + 0].mv;
-  pu.mv     [REF_PIC_LIST_1] = mvFieldNeighbours[(candIdx << 1) + 1].mv;
-  pu.mvd    [REF_PIC_LIST_0] = Mv();
-  pu.mvd    [REF_PIC_LIST_1] = Mv();
-  pu.refIdx [REF_PIC_LIST_0] = mvFieldNeighbours[( candIdx << 1 ) + 0].refIdx;
-  pu.refIdx [REF_PIC_LIST_1] = mvFieldNeighbours[( candIdx << 1 ) + 1].refIdx;
-  pu.mvpIdx [REF_PIC_LIST_0] = NOT_VALID;
-  pu.mvpIdx [REF_PIC_LIST_1] = NOT_VALID;
-  pu.mvpNum [REF_PIC_LIST_0] = NOT_VALID;
-  pu.mvpNum [REF_PIC_LIST_1] = NOT_VALID;
+
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
+  {
+    pu.mv[l]     = mvFieldNeighbours[candIdx][l].mv;
+    pu.mvd[l]    = Mv();
+    pu.refIdx[l] = mvFieldNeighbours[candIdx][l].refIdx;
+    pu.mvpIdx[l] = NOT_VALID;
+    pu.mvpNum[l] = NOT_VALID;
+  }
 #if GDR_ENABLED
   CodingStructure &cs = *pu.cs;
   const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 
   if (isEncodeGdrClean)
   {
-    Mv mv0 = pu.mv[REF_PIC_LIST_0];
-    Mv mv1 = pu.mv[REF_PIC_LIST_1];
+    for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
+    {
+      Mv mv = pu.mv[l];
 
-    int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
-    int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
+      int refIdx = pu.refIdx[l];
 
-    pu.mvSolid[REF_PIC_LIST_0] = mvSolid[(candIdx << 1) + 0];
-    pu.mvSolid[REF_PIC_LIST_1] = mvSolid[(candIdx << 1) + 1];
-    pu.mvValid[REF_PIC_LIST_0] = cs.isClean(pu.Y().topRight(), mv0, REF_PIC_LIST_0, refIdx0);
-    pu.mvValid[REF_PIC_LIST_1] = cs.isClean(pu.Y().topRight(), mv1, REF_PIC_LIST_1, refIdx1);
+      pu.mvSolid[l] = mvSolid[candIdx][l];
+      pu.mvValid[l] = cs.isClean(pu.Y().topRight(), mv, l, refIdx);
+    }
   }
 #endif
 
