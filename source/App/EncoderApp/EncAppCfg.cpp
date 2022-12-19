@@ -1100,7 +1100,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("IDRRefParamList",                                 m_idrRefParamList,                            false, "Enable indication of reference picture list syntax elements in slice headers of IDR pictures")
   // motion search options
   ("DisableIntraInInter",                             m_bDisableIntraPUsInInterSlices,                  false, "Flag to disable intra PUs in inter slices")
-  ("FastSearch",                                      tmpMotionEstimationSearchMethod,  int(MESEARCH_DIAMOND), "0:Full search 1:Diamond 2:Selective 3:Enhanced Diamond")
+  ("FastSearch",                                      tmpMotionEstimationSearchMethod,  to_underlying(MESearchMethod::DIAMOND), "0:Full search 1:Diamond 2:Selective 3:Enhanced Diamond")
   ("SearchRange,-sr",                                 m_iSearchRange,                                      96, "Motion search range")
   ("BipredSearchRange",                               m_bipredSearchRange,                                  4, "Motion search range for bipred refinement")
   ("MinSearchWindow",                                 m_minSearchWindow,                                    8, "Minimum motion search window size for the adaptive window ME")
@@ -2432,7 +2432,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   CHECK( tmpFastInterSearchMode<0 || tmpFastInterSearchMode>FASTINTERSEARCH_MODE3, "Error in cfg" );
   m_fastInterSearchMode = FastInterSearchMode(tmpFastInterSearchMode);
 
-  CHECK( tmpMotionEstimationSearchMethod < 0 || tmpMotionEstimationSearchMethod >= MESEARCH_NUMBER_OF_METHODS, "Error in cfg" );
+  CHECK(tmpMotionEstimationSearchMethod < to_underlying(MESearchMethod::FULL)
+          || tmpMotionEstimationSearchMethod >= to_underlying(MESearchMethod::NUM),
+        "Error in cfg");
   m_motionEstimationSearchMethod=MESearchMethod(tmpMotionEstimationSearchMethod);
 
   if (extendedProfile == ExtendedProfileName::AUTO)

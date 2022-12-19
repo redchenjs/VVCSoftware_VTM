@@ -2871,7 +2871,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         {
           m_modeCtrl->setEarlySkipDetected();
         }
-        else if( m_pcEncCfg->getMotionEstimationSearchMethod() != MESEARCH_SELECTIVE )
+        else if (m_pcEncCfg->getMotionEstimationSearchMethod() != MESearchMethod::SELECTIVE)
         {
           int absolute_MV = 0;
 
@@ -3595,7 +3595,7 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
         {
           m_modeCtrl->setEarlySkipDetected();
         }
-        else if ( m_pcEncCfg->getMotionEstimationSearchMethod() != MESEARCH_SELECTIVE )
+        else if (m_pcEncCfg->getMotionEstimationSearchMethod() != MESearchMethod::SELECTIVE)
         {
           int absolute_MV = 0;
 

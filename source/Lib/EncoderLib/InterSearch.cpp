@@ -93,7 +93,7 @@ InterSearch::InterSearch()
   , m_pcReshape(nullptr)
   , m_searchRange(0)
   , m_bipredSearchRange(0)
-  , m_motionEstimationSearchMethod(MESEARCH_FULL)
+  , m_motionEstimationSearchMethod(MESearchMethod::FULL)
   , m_CABACEstimator(nullptr)
   , m_ctxPool(nullptr)
   , m_pTempPel(nullptr)
@@ -4979,7 +4979,7 @@ void InterSearch::xMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, Ref
   m_currRefPicIndex = refIdxPred;
   m_skipFracME = false;
   //  Do integer search
-  if( ( m_motionEstimationSearchMethod == MESEARCH_FULL ) || bBi || bQTBTMV )
+  if (m_motionEstimationSearchMethod == MESearchMethod::FULL || bBi || bQTBTMV)
   {
     cStruct.subShiftMode = m_pcEncCfg->getFastInterSearchMode() == FASTINTERSEARCH_MODE1 || m_pcEncCfg->getFastInterSearchMode() == FASTINTERSEARCH_MODE3 ? 2 : 0;
     m_pcRdCost->setDistParam(m_cDistParam, *cStruct.pcPatternKey, cStruct.piRefY, cStruct.iRefStride, m_lumaClpRng.bd, COMPONENT_Y, cStruct.subShiftMode);
@@ -5040,14 +5040,25 @@ void InterSearch::xMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, Ref
   {
     rcMv = cIntMv;
 
-    cStruct.subShiftMode = ( !m_pcEncCfg->getRestrictMESampling() && m_pcEncCfg->getMotionEstimationSearchMethod() == MESEARCH_SELECTIVE ) ? 1 :
-                            ( m_pcEncCfg->getFastInterSearchMode() == FASTINTERSEARCH_MODE1 || m_pcEncCfg->getFastInterSearchMode() == FASTINTERSEARCH_MODE3 ) ? 2 : 0;
+    cStruct.subShiftMode =
+      !m_pcEncCfg->getRestrictMESampling() && m_pcEncCfg->getMotionEstimationSearchMethod() == MESearchMethod::SELECTIVE
+        ? 1
+      : m_pcEncCfg->getFastInterSearchMode() == FASTINTERSEARCH_MODE1
+          || m_pcEncCfg->getFastInterSearchMode() == FASTINTERSEARCH_MODE3
+        ? 2
+        : 0;
     xTZSearch(pu, eRefPicList, refIdxPred, cStruct, rcMv, ruiCost, nullptr, false, true);
   }
   else
   {
-    cStruct.subShiftMode = ( !m_pcEncCfg->getRestrictMESampling() && m_pcEncCfg->getMotionEstimationSearchMethod() == MESEARCH_SELECTIVE ) ? 1 :
-                            ( m_pcEncCfg->getFastInterSearchMode() == FASTINTERSEARCH_MODE1 || m_pcEncCfg->getFastInterSearchMode() == FASTINTERSEARCH_MODE3 ) ? 2 : 0;
+    cStruct.subShiftMode =
+      !m_pcEncCfg->getRestrictMESampling() && m_pcEncCfg->getMotionEstimationSearchMethod() == MESearchMethod::SELECTIVE
+        ? 1
+      : m_pcEncCfg->getFastInterSearchMode() == FASTINTERSEARCH_MODE1
+          || m_pcEncCfg->getFastInterSearchMode() == FASTINTERSEARCH_MODE3
+        ? 2
+        : 0;
+
     rcMv = rcMvPred;
     const Mv *pIntegerMv2Nx2NPred = 0;
     xPatternSearchFast(pu, eRefPicList, refIdxPred, cStruct, rcMv, ruiCost, pIntegerMv2Nx2NPred);
@@ -5280,19 +5291,19 @@ void InterSearch::xPatternSearchFast(const PredictionUnit &pu, RefPicList eRefPi
 {
   switch ( m_motionEstimationSearchMethod )
   {
-  case MESEARCH_DIAMOND:
+  case MESearchMethod::DIAMOND:
     xTZSearch(pu, eRefPicList, refIdxPred, cStruct, rcMv, ruiSAD, pIntegerMv2Nx2NPred, false);
     break;
 
-  case MESEARCH_SELECTIVE:
+  case MESearchMethod::SELECTIVE:
     xTZSearchSelective(pu, eRefPicList, refIdxPred, cStruct, rcMv, ruiSAD, pIntegerMv2Nx2NPred);
     break;
 
-  case MESEARCH_DIAMOND_ENHANCED:
+  case MESearchMethod::DIAMOND_ENHANCED:
     xTZSearch(pu, eRefPicList, refIdxPred, cStruct, rcMv, ruiSAD, pIntegerMv2Nx2NPred, true);
     break;
 
-  case MESEARCH_FULL: // shouldn't get here.
+  case MESearchMethod::FULL:   // shouldn't get here.
   default:
     break;
   }
