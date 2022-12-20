@@ -131,7 +131,7 @@ public:
 #endif
   VPS * getVPS() { return m_cEncLib.getVPS(); }
   int   getChromaFormatIDC() const { return m_cEncLib.getChromaFormatIdc(); }
-  int   getBitDepth() const { return m_cEncLib.getBitDepth(CHANNEL_TYPE_LUMA); }
+  int   getBitDepth() const { return m_cEncLib.getBitDepth(ChannelType::LUMA); }
   bool  getALFEnabled() { return m_cEncLib.getUseALF(); }
   int   getMaxNumALFAPS() { return m_cEncLib.getMaxNumALFAPS(); }
   int   getALFAPSIDShift() { return m_cEncLib.getALFAPSIDShift(); }

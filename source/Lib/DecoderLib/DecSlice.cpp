@@ -119,8 +119,8 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
   cabacReader.initCtxModels( *slice );
 
   // Quantization parameter
-    pic->m_prevQP[0] = pic->m_prevQP[1] = slice->getSliceQp();
-  CHECK( pic->m_prevQP[0] == std::numeric_limits<int>::max(), "Invalid previous QP" );
+  pic->m_prevQP.fill(slice->getSliceQp());
+  CHECK(pic->m_prevQP[ChannelType::LUMA] == std::numeric_limits<int>::max(), "Invalid previous QP");
 
   DTRACE( g_trace_ctx, D_HEADER, "=========== POC: %d ===========\n", slice->getPOC() );
 
@@ -187,7 +187,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
         cabacReader.initCtxModels( *slice );
         cs.resetPrevPLT(cs.prevPLT);
       }
-      pic->m_prevQP[0] = pic->m_prevQP[1] = slice->getSliceQp();
+      pic->m_prevQP.fill(slice->getSliceQp());
     }
     else if( ctuXPosInCtus == tileXPosInCtus && wavefrontsEnabled )
     {
@@ -197,14 +197,16 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
         cabacReader.initCtxModels( *slice );
         cs.resetPrevPLT(cs.prevPLT);
       }
-      if( cs.getCURestricted( pos.offset(0, -1), pos, slice->getIndependentSliceIdx(), tileIdx, CH_L ) )
+      if (cs.getCURestricted(pos.offset(0, -1), pos, slice->getIndependentSliceIdx(), tileIdx, ChannelType::LUMA))
       {
         // Top is available, so use it.
         cabacReader.getCtx() = m_entropyCodingSyncContextState;
-        cabacReader.getCtx().riceStatReset(slice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA), slice->getSPS()->getSpsRangeExtension().getPersistentRiceAdaptationEnabledFlag());
+        cabacReader.getCtx().riceStatReset(
+          slice->getSPS()->getBitDepth(ChannelType::LUMA),
+          slice->getSPS()->getSpsRangeExtension().getPersistentRiceAdaptationEnabledFlag());
         cs.setPrevPLT(m_palettePredictorSyncState);
       }
-      pic->m_prevQP[0] = pic->m_prevQP[1] = slice->getSliceQp();
+      pic->m_prevQP.fill(slice->getSliceQp());
     }
 
     bool updateBcwCodingOrder = cs.slice->getSliceType() == B_SLICE && ctuIdx == 0;

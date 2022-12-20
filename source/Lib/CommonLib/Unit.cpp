@@ -251,8 +251,32 @@ const UnitArea UnitArea::singleChan(const ChannelType chType) const
 // coding unit method definitions
 // ---------------------------------------------------------------------------
 
-CodingUnit::CodingUnit(const UnitArea &unit)                                : UnitArea(unit),                 cs(nullptr), slice(nullptr), chType( CH_L ), next(nullptr), firstPU(nullptr), lastPU(nullptr), firstTU(nullptr), lastTU(nullptr) { initData(); }
-CodingUnit::CodingUnit(const ChromaFormat _chromaFormat, const Area &_area) : UnitArea(_chromaFormat, _area), cs(nullptr), slice(nullptr), chType( CH_L ), next(nullptr), firstPU(nullptr), lastPU(nullptr), firstTU(nullptr), lastTU(nullptr) { initData(); }
+CodingUnit::CodingUnit(const UnitArea &unit)
+  : UnitArea(unit)
+  , cs(nullptr)
+  , slice(nullptr)
+  , chType(ChannelType::LUMA)
+  , next(nullptr)
+  , firstPU(nullptr)
+  , lastPU(nullptr)
+  , firstTU(nullptr)
+  , lastTU(nullptr)
+{
+  initData();
+}
+CodingUnit::CodingUnit(const ChromaFormat _chromaFormat, const Area &_area)
+  : UnitArea(_chromaFormat, _area)
+  , cs(nullptr)
+  , slice(nullptr)
+  , chType(ChannelType::LUMA)
+  , next(nullptr)
+  , firstPU(nullptr)
+  , lastPU(nullptr)
+  , firstTU(nullptr)
+  , lastTU(nullptr)
+{
+  initData();
+}
 
 CodingUnit& CodingUnit::operator=( const CodingUnit& other )
 {
@@ -430,7 +454,7 @@ const bool CodingUnit::checkCCLMAllowed() const
     {
       //disallow CCLM if luma 64x64 block uses BT or TT or NS with ISP
       const Position lumaRefPos( chromaPos().x << getComponentScaleX( COMPONENT_Cb, chromaFormat ), chromaPos().y << getComponentScaleY( COMPONENT_Cb, chromaFormat ) );
-      const CodingUnit* colLumaCu = cs->picture->cs->getCU( lumaRefPos, CHANNEL_TYPE_LUMA );
+      const CodingUnit *colLumaCu = cs->picture->cs->getCU(lumaRefPos, ChannelType::LUMA);
 
       if( colLumaCu->lwidth() < 64 || colLumaCu->lheight() < 64 ) //further split at 64x64 luma node
       {
@@ -521,14 +545,22 @@ uint8_t CodingUnit::getSbtTuSplit() const
 // prediction unit method definitions
 // ---------------------------------------------------------------------------
 
-PredictionUnit::PredictionUnit(const UnitArea &unit)                                : UnitArea(unit)                , cu(nullptr), cs(nullptr), chType( CH_L ), next(nullptr) { initData(); }
-PredictionUnit::PredictionUnit(const ChromaFormat _chromaFormat, const Area &_area) : UnitArea(_chromaFormat, _area), cu(nullptr), cs(nullptr), chType( CH_L ), next(nullptr) { initData(); }
+PredictionUnit::PredictionUnit(const UnitArea &unit)
+  : UnitArea(unit), cu(nullptr), cs(nullptr), chType(ChannelType::LUMA), next(nullptr)
+{
+  initData();
+}
+PredictionUnit::PredictionUnit(const ChromaFormat _chromaFormat, const Area &_area)
+  : UnitArea(_chromaFormat, _area), cu(nullptr), cs(nullptr), chType(ChannelType::LUMA), next(nullptr)
+{
+  initData();
+}
 
 void PredictionUnit::initData()
 {
   // intra data - need this default initialization for PCM
-  intraDir[0] = DC_IDX;
-  intraDir[1] = PLANAR_IDX;
+  intraDir[ChannelType::LUMA]   = DC_IDX;
+  intraDir[ChannelType::CHROMA] = PLANAR_IDX;
   mipTransposedFlag = false;
   multiRefIdx = 0;
 
@@ -576,10 +608,7 @@ void PredictionUnit::initData()
 
 PredictionUnit& PredictionUnit::operator=(const IntraPredictionData& predData)
 {
-  for (uint32_t i = 0; i < MAX_NUM_CHANNEL_TYPE; i++)
-  {
-    intraDir[i] = predData.intraDir[i];
-  }
+  intraDir          = predData.intraDir;
   mipTransposedFlag = predData.mipTransposedFlag;
   multiRefIdx = predData.multiRefIdx;
 
@@ -627,10 +656,7 @@ PredictionUnit& PredictionUnit::operator=(const InterPredictionData& predData)
 
 PredictionUnit& PredictionUnit::operator=( const PredictionUnit& other )
 {
-  for( uint32_t i = 0; i < MAX_NUM_CHANNEL_TYPE; i++ )
-  {
-    intraDir[ i ] = other.intraDir[ i ];
-  }
+  intraDir          = other.intraDir;
   mipTransposedFlag = other.mipTransposedFlag;
   multiRefIdx = other.multiRefIdx;
 
@@ -710,7 +736,8 @@ CMotionBuf PredictionUnit::getMotionBuf() const
 // transform unit method definitions
 // ---------------------------------------------------------------------------
 
-TransformUnit::TransformUnit(const UnitArea& unit) : UnitArea(unit), cu(nullptr), cs(nullptr), chType( CH_L ), next( nullptr )
+TransformUnit::TransformUnit(const UnitArea &unit)
+  : UnitArea(unit), cu(nullptr), cs(nullptr), chType(ChannelType::LUMA), next(nullptr)
 {
   for( unsigned i = 0; i < MAX_NUM_TBLOCKS; i++ )
   {
@@ -718,15 +745,13 @@ TransformUnit::TransformUnit(const UnitArea& unit) : UnitArea(unit), cu(nullptr)
     m_pcmbuf[i] = nullptr;
   }
 
-  for (unsigned i = 0; i < MAX_NUM_TBLOCKS - 1; i++)
-  {
-    m_runType[i] = nullptr;
-  }
+  m_runType.fill(nullptr);
 
   initData();
 }
 
-TransformUnit::TransformUnit(const ChromaFormat _chromaFormat, const Area &_area) : UnitArea(_chromaFormat, _area), cu(nullptr), cs(nullptr), chType( CH_L ), next( nullptr )
+TransformUnit::TransformUnit(const ChromaFormat _chromaFormat, const Area &_area)
+  : UnitArea(_chromaFormat, _area), cu(nullptr), cs(nullptr), chType(ChannelType::LUMA), next(nullptr)
 {
   for( unsigned i = 0; i < MAX_NUM_TBLOCKS; i++ )
   {
@@ -734,10 +759,7 @@ TransformUnit::TransformUnit(const ChromaFormat _chromaFormat, const Area &_area
     m_pcmbuf[i] = nullptr;
   }
 
-  for (unsigned i = 0; i < MAX_NUM_TBLOCKS - 1; i++)
-  {
-    m_runType[i] = nullptr;
-  }
+  m_runType.fill(nullptr);
 
   initData();
 }
@@ -755,7 +777,7 @@ void TransformUnit::initData()
   m_chromaResScaleInv = 0;
 }
 
-void TransformUnit::init(TCoeff **coeffs, Pel **pcmbuf, bool **runType)
+void TransformUnit::init(TCoeff **coeffs, Pel **pcmbuf, EnumArray<bool *, ChannelType> &runType)
 {
   uint32_t numBlocks = getNumberValidTBlocks(*cs->pcv);
 
@@ -765,10 +787,9 @@ void TransformUnit::init(TCoeff **coeffs, Pel **pcmbuf, bool **runType)
     m_pcmbuf[i] = pcmbuf[i];
   }
 
-  // numBlocks is either 1 for 4:0:0, or 3 otherwise. It would perhaps be better to loop over getNumberValidChannels(*cs->pcv.chrFormat) for m_runType.
-  for (uint32_t i = 0; i < std::max<uint32_t>(2, numBlocks)-1; i++)
+  for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(cs->pcv->chrFormat); chType++)
   {
-    m_runType[i] = runType[i];
+    m_runType[chType] = runType[chType];
   }
 }
 
@@ -794,16 +815,21 @@ TransformUnit& TransformUnit::operator=(const TransformUnit& other)
       std::copy_n(other.m_pcmbuf[i], area, m_pcmbuf[i]);
     }
 
-    if (cu->slice->getSPS()->getPLTMode() && i < MAX_NUM_CHANNEL_TYPE)
-    {
-      if (m_runType[i] && other.m_runType[i] && m_runType[i] != other.m_runType[i])
-      {
-        std::copy_n(other.m_runType[i], area, m_runType[i]);
-      }
-    }
-
     cbf[i]    = other.cbf[i];
     mtsIdx[i] = other.mtsIdx[i];
+  }
+
+  if (cu->slice->getSPS()->getPLTMode())
+  {
+    for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(cs->pcv->chrFormat); chType++)
+    {
+      if (m_runType[chType] != nullptr && other.m_runType[chType] != nullptr
+          && m_runType[chType] != other.m_runType[chType])
+      {
+        const uint32_t area = block(chType).area();
+        std::copy_n(other.m_runType[chType], area, m_runType[chType]);
+      }
+    }
   }
 
   depth      = other.depth;
@@ -830,11 +856,13 @@ void TransformUnit::copyComponentFrom(const TransformUnit& other, const Componen
     std::copy_n(other.m_pcmbuf[i], area, m_pcmbuf[i]);
   }
 
-  if (i == COMPONENT_Y || i == COMPONENT_Cb)
+  const ChannelType chType = toChannelType(i);
+  if (i == getFirstComponentOfChannel(chType))
   {
-    if (m_runType[i] && other.m_runType[i] && m_runType[i] != other.m_runType[i])
+    if (m_runType[chType] != nullptr && other.m_runType[chType] != nullptr
+        && m_runType[chType] != other.m_runType[chType])
     {
-      std::copy_n(other.m_runType[i], area, m_runType[i]);
+      std::copy_n(other.m_runType[chType], area, m_runType[chType]);
     }
   }
 
@@ -854,27 +882,31 @@ const CPelBuf   TransformUnit::getPcmbuf(const ComponentID id) const { return CP
        PelBuf       TransformUnit::getcurPLTIdx(const ComponentID id)         { return        PelBuf(m_pcmbuf[id], blocks[id]); }
 const CPelBuf       TransformUnit::getcurPLTIdx(const ComponentID id)   const { return       CPelBuf(m_pcmbuf[id], blocks[id]); }
 
-       PLTtypeBuf   TransformUnit::getrunType  (const ComponentID id)         { return   PLTtypeBuf(m_runType[id], blocks[id]); }
-const CPLTtypeBuf   TransformUnit::getrunType  (const ComponentID id)   const { return  CPLTtypeBuf(m_runType[id], blocks[id]); }
+PLTtypeBuf        TransformUnit::getrunType(const ChannelType id) { return PLTtypeBuf(m_runType[id], block(id)); }
+const CPLTtypeBuf TransformUnit::getrunType(const ChannelType id) const
+{
+  return CPLTtypeBuf(m_runType[id], block(id));
+}
 
        PLTescapeBuf TransformUnit::getescapeValue(const ComponentID id)       { return  PLTescapeBuf(m_coeffs[id], blocks[id]); }
 const CPLTescapeBuf TransformUnit::getescapeValue(const ComponentID id) const { return CPLTescapeBuf(m_coeffs[id], blocks[id]); }
 
       Pel*          TransformUnit::getPLTIndex   (const ComponentID id)       { return  m_pcmbuf[id];    }
-      bool*         TransformUnit::getRunTypes   (const ComponentID id)       { return  m_runType[id];   }
+      bool         *TransformUnit::getRunTypes(const ChannelType id) { return m_runType[id]; }
 
-void TransformUnit::checkTuNoResidual( unsigned idx )
-{
-  if( CU::getSbtIdx( cu->sbtInfo ) == SBT_OFF_DCT )
-  {
-    return;
-  }
+      void TransformUnit::checkTuNoResidual(unsigned idx)
+      {
+        if (CU::getSbtIdx(cu->sbtInfo) == SBT_OFF_DCT)
+        {
+          return;
+        }
 
-  if( ( CU::getSbtPos( cu->sbtInfo ) == SBT_POS0 && idx == 1 ) || ( CU::getSbtPos( cu->sbtInfo ) == SBT_POS1 && idx == 0 ) )
-  {
-    noResidual = true;
-  }
-}
+        if ((CU::getSbtPos(cu->sbtInfo) == SBT_POS0 && idx == 1)
+            || (CU::getSbtPos(cu->sbtInfo) == SBT_POS1 && idx == 0))
+        {
+          noResidual = true;
+        }
+      }
 
 int TransformUnit::getTbAreaAfterCoefZeroOut(ComponentID compID) const
 {

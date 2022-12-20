@@ -88,8 +88,9 @@ public:
   UnitScale        unitScale[MAX_NUM_COMPONENT];
 
   int         baseQP;
-  int         prevQP[MAX_NUM_CHANNEL_TYPE];
-  int         currQP[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<int, ChannelType> prevQP;
+  EnumArray<int, ChannelType> currQP;
+
   int         chromaQpAdj;
   const SPS *sps;
   const PPS *pps;
@@ -167,13 +168,13 @@ public:
   PredictionUnit *getPU(const Position &pos, const ChannelType _chType);
   TransformUnit  *getTU(const Position &pos, const ChannelType _chType, const int subTuIdx = -1);
 
-  const CodingUnit     *getCU(const ChannelType &_chType) const { return getCU(area.blocks[_chType].pos(), _chType); }
-  const PredictionUnit *getPU(const ChannelType &_chType) const { return getPU(area.blocks[_chType].pos(), _chType); }
-  const TransformUnit  *getTU(const ChannelType &_chType) const { return getTU(area.blocks[_chType].pos(), _chType); }
+  const CodingUnit     *getCU(const ChannelType _chType) const { return getCU(area.block(_chType).pos(), _chType); }
+  const PredictionUnit *getPU(const ChannelType _chType) const { return getPU(area.block(_chType).pos(), _chType); }
+  const TransformUnit  *getTU(const ChannelType _chType) const { return getTU(area.block(_chType).pos(), _chType); }
 
-  CodingUnit     *getCU(const ChannelType &_chType ) { return getCU(area.blocks[_chType].pos(), _chType); }
-  PredictionUnit *getPU(const ChannelType &_chType ) { return getPU(area.blocks[_chType].pos(), _chType); }
-  TransformUnit  *getTU(const ChannelType &_chType ) { return getTU(area.blocks[_chType].pos(), _chType); }
+  CodingUnit     *getCU(const ChannelType _chType) { return getCU(area.block(_chType).pos(), _chType); }
+  PredictionUnit *getPU(const ChannelType _chType) { return getPU(area.block(_chType).pos(), _chType); }
+  TransformUnit  *getTU(const ChannelType _chType) { return getTU(area.block(_chType).pos(), _chType); }
 
   const CodingUnit     *getCURestricted(const Position &pos, const Position curPos, const unsigned curSliceIdx, const unsigned curTileIdx, const ChannelType _chType) const;
   const CodingUnit     *getCURestricted(const Position &pos, const CodingUnit& curCu,                               const ChannelType _chType) const;
@@ -254,10 +255,10 @@ private:
   // needed for TU encoding
   bool m_isTuEnc;
 
-  unsigned *m_cuIdx   [MAX_NUM_CHANNEL_TYPE];
-  unsigned *m_puIdx   [MAX_NUM_CHANNEL_TYPE];
-  unsigned *m_tuIdx   [MAX_NUM_CHANNEL_TYPE];
-  bool     *m_isDecomp[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<unsigned *, ChannelType> m_cuIdx;
+  EnumArray<unsigned *, ChannelType> m_puIdx;
+  EnumArray<unsigned *, ChannelType> m_tuIdx;
+  EnumArray<bool *, ChannelType>     m_isDecomp;
 
   unsigned m_numCUs;
   unsigned m_numPUs;
@@ -276,7 +277,7 @@ private:
 
   TCoeff *m_coeffs [ MAX_NUM_COMPONENT ];
   Pel    *m_pcmbuf [ MAX_NUM_COMPONENT ];
-  bool   *m_runType[ MAX_NUM_CHANNEL_TYPE ];
+  EnumArray<bool *, ChannelType> m_runType;
   int     m_offsets[ MAX_NUM_COMPONENT ];
 
   MotionInfo *m_motionBuf;

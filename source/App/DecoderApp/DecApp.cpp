@@ -411,7 +411,8 @@ uint32_t DecApp::decode()
         }
       }
 
-      int layerOutputBitDepth[MAX_NUM_CHANNEL_TYPE];
+      BitDepths layerOutputBitDepth;
+
       PicList::iterator iterPicLayer = pcListPic->begin();
       for (; iterPicLayer != pcListPic->end(); ++iterPicLayer)
       {
@@ -424,18 +425,19 @@ uint32_t DecApp::decode()
       {
         BitDepths &bitDepths = (*iterPicLayer)->m_bitDepths;
 
-        for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
+        for (auto channelType: { ChannelType::LUMA, ChannelType::CHROMA })
         {
           if (m_outputBitDepth[channelType] == 0)
           {
-            layerOutputBitDepth[channelType] = bitDepths.recon[channelType];
+            layerOutputBitDepth[channelType] = bitDepths[channelType];
           }
           else
           {
             layerOutputBitDepth[channelType] = m_outputBitDepth[channelType];
           }
         }
-        if (m_packedYUVMode && (layerOutputBitDepth[CH_L] != 10 && layerOutputBitDepth[CH_L] != 12))
+        if (m_packedYUVMode
+            && (layerOutputBitDepth[ChannelType::LUMA] != 10 && layerOutputBitDepth[ChannelType::LUMA] != 12))
         {
           EXIT("Invalid output bit-depth for packed YUV output, aborting\n");
         }
@@ -492,13 +494,16 @@ uint32_t DecApp::decode()
               const auto sy = SPS::getWinUnitY(sps->getChromaFormatIdc());
               const int picWidth = pps->getPicWidthInLumaSamples() - (confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
               const int picHeight = pps->getPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
-              m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(picWidth, picHeight, frameRate, frameScale, layerOutputBitDepth[0], sps->getChromaFormatIdc());
+              m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(picWidth, picHeight, frameRate, frameScale,
+                                                                         layerOutputBitDepth[ChannelType::LUMA],
+                                                                         sps->getChromaFormatIdc());
             }
-            m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].open( reconFileName, true, layerOutputBitDepth, layerOutputBitDepth, bitDepths.recon); // write mode
+            m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].open(reconFileName, true, layerOutputBitDepth,
+                                                           layerOutputBitDepth, bitDepths);   // write mode
           }
         }
         // update file bitdepth shift if recon bitdepth changed between sequences
-        for( uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++ )
+        for (auto channelType: { ChannelType::LUMA, ChannelType::CHROMA })
         {
           int reconBitdepth = (*iterPicLayer)->m_bitDepths[( ChannelType) channelType];
           int fileBitdepth  = m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].getFileBitdepth(channelType);
@@ -527,13 +532,14 @@ uint32_t DecApp::decode()
           }
           if ((m_cDecLib.getVPS() != nullptr && (m_cDecLib.getVPS()->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet(&nalu))) || m_cDecLib.getVPS() == nullptr)
           {
-            m_videoIOYuvSEIFGSFile[nalu.m_nuhLayerId].open(SEIFGSFileName, true, layerOutputBitDepth, layerOutputBitDepth, bitDepths.recon);   // write mode
+            m_videoIOYuvSEIFGSFile[nalu.m_nuhLayerId].open(SEIFGSFileName, true, layerOutputBitDepth,
+                                                           layerOutputBitDepth, bitDepths);   // write mode
           }
         }
         // update file bitdepth shift if recon bitdepth changed between sequences
         if (!m_SEIFGSFileName.empty())
         {
-          for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
+          for (const auto channelType: { ChannelType::LUMA, ChannelType::CHROMA })
           {
             int reconBitdepth = (*iterPicLayer)->m_bitDepths[( ChannelType) channelType];
             int fileBitdepth  = m_videoIOYuvSEIFGSFile[nalu.m_nuhLayerId].getFileBitdepth(channelType);
@@ -562,7 +568,8 @@ uint32_t DecApp::decode()
           }
           if ((m_cDecLib.getVPS() != nullptr && (m_cDecLib.getVPS()->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet(&nalu))) || m_cDecLib.getVPS() == nullptr)
           {
-            m_cVideoIOYuvSEICTIFile[nalu.m_nuhLayerId].open(SEICTIFileName, true, layerOutputBitDepth, layerOutputBitDepth, bitDepths.recon);   // write mode
+            m_cVideoIOYuvSEICTIFile[nalu.m_nuhLayerId].open(SEICTIFileName, true, layerOutputBitDepth,
+                                                            layerOutputBitDepth, bitDepths);   // write mode
           }
         }
       }
@@ -732,7 +739,8 @@ uint32_t DecApp::decode()
             fprintf(stderr, "\nUnable to open file '%s' for writing shutter-interval-SEI video\n", m_shutterIntervalPostFileName.c_str());
             exit(EXIT_FAILURE);
           }
-          m_cTVideoIOYuvSIIPostFile.open(m_shutterIntervalPostFileName, true, layerOutputBitDepth, layerOutputBitDepth, bitDepths.recon);   // write mode
+          m_cTVideoIOYuvSIIPostFile.open(m_shutterIntervalPostFileName, true, layerOutputBitDepth, layerOutputBitDepth,
+                                         bitDepths);   // write mode
           openedPostFile = true;
         }
       }

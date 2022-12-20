@@ -539,7 +539,7 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
 
     for( const CodingUnit &cu : cs.traverseCUs( CS::getArea( cs, ctuArea, chType ), chType ) )
     {
-      if( chType == CHANNEL_TYPE_LUMA )
+      if (isLuma(chType))
       {
         DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::PredMode), cu.predMode);
         DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::Depth), cu.depth);
@@ -565,7 +565,7 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
         DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::LFNSTIdx), cu.lfnstIdx);
         DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::MMVDSkipFlag), cu.mmvdSkip);
       }
-      else if( chType == CHANNEL_TYPE_CHROMA )
+      else if (chType == ChannelType::CHROMA)
       {
         DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::Depth_Chroma), cu.depth);
         DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::QT_Depth_Chroma), cu.qtDepth);
@@ -604,7 +604,9 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
               DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::CiipFlag),  pu.ciipFlag);
               if (pu.ciipFlag)
               {
-                DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::Luma_IntraMode),  pu.intraDir[COMPONENT_Y]);
+                DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu,
+                                    GetBlockStatisticName(BlockStatistic::Luma_IntraMode),
+                                    pu.intraDir[ChannelType::LUMA]);
               }
             }
             DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::AffineFlag), pu.cu->affine);
@@ -891,21 +893,19 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
         break;
       case MODE_INTRA:
         {
-          if(chType == CHANNEL_TYPE_LUMA)
+          if (isLuma(chType))
           {
             DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::MIPFlag), cu.mipFlag);
             DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, cu, GetBlockStatisticName(BlockStatistic::ISPMode), to_uint(cu.ispMode));
           }
 
-          const uint32_t numChType = ::getNumberValidChannels( cu.chromaFormat );
-
-          for( uint32_t chType = CHANNEL_TYPE_LUMA; chType < numChType; chType++ )
+          for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(cu.chromaFormat); chType++)
           {
-            if( cu.blocks[chType].valid() )
+            if (cu.block(chType).valid())
             {
               for( const PredictionUnit &pu : CU::traversePUs( cu ) )
               {
-                if( isLuma( ChannelType( chType ) ) )
+                if (isLuma(chType))
                 {
                   const uint32_t chFinalMode = PU::getFinalIntraMode(pu, ChannelType(chType));
                   DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu,
@@ -943,7 +943,7 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
           DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::JointCbCr), tu.jointCbCr);
         }
 
-        if( !(cu.chromaFormat == CHROMA_400 || (cu.isSepTree() && cu.chType == CHANNEL_TYPE_LUMA)) )
+        if (!(cu.chromaFormat == CHROMA_400 || (cu.isSepTree() && isLuma(cu.chType))))
         {
           DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cb), tu.cbf[COMPONENT_Cb]);
           DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cr), tu.cbf[COMPONENT_Cr]);
@@ -973,7 +973,7 @@ void writeAllCodedData(const CodingStructure & cs, const UnitArea & ctuArea)
 
     for (const CodingUnit &cu : cs.traverseCUs(CS::getArea(cs, ctuArea, chType), chType))
     {
-      if( chType == CHANNEL_TYPE_LUMA )
+      if (isLuma(chType))
       {
         DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, cu, GetBlockStatisticName(BlockStatistic::Depth), cu.depth);
         DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, cu, GetBlockStatisticName(BlockStatistic::QT_Depth), cu.qtDepth);
@@ -996,7 +996,7 @@ void writeAllCodedData(const CodingStructure & cs, const UnitArea & ctuArea)
         DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, cu, GetBlockStatisticName(BlockStatistic::PredMode), cu.predMode);
 
       }
-      else if (chType == CHANNEL_TYPE_CHROMA )
+      else if (chType == ChannelType::CHROMA)
       {
         DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, cu, GetBlockStatisticName(BlockStatistic::Depth_Chroma), cu.depth);
         DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, cu, GetBlockStatisticName(BlockStatistic::QT_Depth_Chroma), cu.qtDepth);
@@ -1018,9 +1018,11 @@ void writeAllCodedData(const CodingStructure & cs, const UnitArea & ctuArea)
             {
               DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu, GetBlockStatisticName(BlockStatistic::Luma_IntraMode), PU::getFinalIntraMode(pu, ChannelType(chType)));
             }
-            if (!(pu.chromaFormat == CHROMA_400 || (pu.cu->isSepTree() && pu.chType == CHANNEL_TYPE_LUMA)))
+            if (!(pu.chromaFormat == CHROMA_400 || (pu.cu->isSepTree() && isLuma(pu.chType))))
             {
-              DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu, GetBlockStatisticName(BlockStatistic::Chroma_IntraMode), PU::getFinalIntraMode(pu, CHANNEL_TYPE_CHROMA));
+              DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu,
+                                         GetBlockStatisticName(BlockStatistic::Chroma_IntraMode),
+                                         PU::getFinalIntraMode(pu, ChannelType::CHROMA));
             }
             if (cu.Y().valid() && isLuma(cu.chType))
             {
@@ -1059,8 +1061,12 @@ void writeAllCodedData(const CodingStructure & cs, const UnitArea & ctuArea)
                 {
                   if (cu.Y().valid())
                   {
-                    DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu, GetBlockStatisticName(BlockStatistic::Luma_IntraMode), pu.intraDir[0]);
-                    DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu, GetBlockStatisticName(BlockStatistic::Chroma_IntraMode), pu.intraDir[1]);
+                    DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu,
+                                        GetBlockStatisticName(BlockStatistic::Luma_IntraMode),
+                                        pu.intraDir[ChannelType::LUMA]);
+                    DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, pu,
+                                        GetBlockStatisticName(BlockStatistic::Chroma_IntraMode),
+                                        pu.intraDir[ChannelType::CHROMA]);
                   }
                 }
               }
@@ -1188,7 +1194,7 @@ void writeAllCodedData(const CodingStructure & cs, const UnitArea & ctuArea)
             DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu,
                                 GetBlockStatisticName(BlockStatistic::MTSIdx_Y), to_underlying(tu.mtsIdx[COMPONENT_Y]));
           }
-          if (!(cu.chromaFormat == CHROMA_400 || (cu.isSepTree() && cu.chType == CHANNEL_TYPE_LUMA)))
+          if (!(cu.chromaFormat == CHROMA_400 || (cu.isSepTree() && isLuma(cu.chType))))
           {
             DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cb), tu.cbf[COMPONENT_Cb]);
             DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cr), tu.cbf[COMPONENT_Cr]);

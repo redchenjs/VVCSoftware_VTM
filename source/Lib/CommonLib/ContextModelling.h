@@ -140,7 +140,7 @@ public:
 
     int ctxOfs = int(std::min<TCoeff>((sumAbs+1)>>1, 3)) + ( diag < 2 ? 4 : 0 );
 
-    if( m_chType == CHANNEL_TYPE_LUMA )
+    if (isLuma(m_chType))
     {
       ctxOfs += diag < 5 ? 4 : 0;
     }
@@ -156,7 +156,9 @@ public:
     if( m_tmplCpDiag != -1 )
     {
       offset  = int(std::min<TCoeff>( m_tmplCpSum1, 4 )) + 1;
-      offset += ( !m_tmplCpDiag ? ( m_chType == CHANNEL_TYPE_LUMA ? 15 : 5 ) : m_chType == CHANNEL_TYPE_LUMA ? m_tmplCpDiag < 3 ? 10 : ( m_tmplCpDiag < 10 ? 5 : 0 ) : 0 );
+      offset += (!m_tmplCpDiag      ? (isLuma(m_chType) ? 15 : 5)
+                 : isLuma(m_chType) ? m_tmplCpDiag < 3 ? 10 : (m_tmplCpDiag < 10 ? 5 : 0)
+                                    : 0);
     }
     return uint8_t(offset);
   }
@@ -569,19 +571,17 @@ class CUCtx
 public:
   CUCtx()              : isDQPCoded(false), isChromaQpAdjCoded(false),
                          qgStart(false)
-                         {
-                           violatesLfnstConstrained[CHANNEL_TYPE_LUMA  ] = false;
-                           violatesLfnstConstrained[CHANNEL_TYPE_CHROMA] = false;
-                           lfnstLastScanPos                              = false;
-                           violatesMtsCoeffConstraint                    = false;
-                           mtsLastScanPos                                = false;
-                         }
+  {
+    violatesLfnstConstrained.fill(false);
+    lfnstLastScanPos           = false;
+    violatesMtsCoeffConstraint = false;
+    mtsLastScanPos             = false;
+  }
   CUCtx(int _qp)       : isDQPCoded(false), isChromaQpAdjCoded(false),
                          qgStart(false),
                          qp(_qp)
                          {
-                           violatesLfnstConstrained[CHANNEL_TYPE_LUMA  ] = false;
-                           violatesLfnstConstrained[CHANNEL_TYPE_CHROMA] = false;
+                           violatesLfnstConstrained.fill(false);
                            lfnstLastScanPos                              = false;
                            violatesMtsCoeffConstraint                    = false;
                            mtsLastScanPos                                = false;
@@ -593,7 +593,7 @@ public:
   bool      qgStart;
   bool      lfnstLastScanPos;
   int8_t    qp;                   // used as a previous(last) QP and for QP prediction
-  bool      violatesLfnstConstrained[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<bool, ChannelType> violatesLfnstConstrained;
   bool      violatesMtsCoeffConstraint;
   bool      mtsLastScanPos;
 };

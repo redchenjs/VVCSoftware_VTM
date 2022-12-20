@@ -962,16 +962,16 @@ void HLSyntaxReader::parseAlfAps( APS* aps )
   param.reset();
   param.enabledFlag[COMPONENT_Y] = param.enabledFlag[COMPONENT_Cb] = param.enabledFlag[COMPONENT_Cr] = true;
   READ_FLAG(code, "alf_luma_new_filter");
-  param.newFilterFlag[CHANNEL_TYPE_LUMA] = code;
+  param.newFilterFlag[ChannelType::LUMA] = code;
 
   if (aps->chromaPresentFlag)
   {
     READ_FLAG(code, "alf_chroma_new_filter");
-    param.newFilterFlag[CHANNEL_TYPE_CHROMA] = code;
+    param.newFilterFlag[ChannelType::CHROMA] = code;
   }
   else
   {
-    param.newFilterFlag[CHANNEL_TYPE_CHROMA] = 0;
+    param.newFilterFlag[ChannelType::CHROMA] = 0;
   }
 
   CcAlfFilterParam ccAlfParam = aps->getCcAlfAPSParam();
@@ -993,15 +993,15 @@ void HLSyntaxReader::parseAlfAps( APS* aps )
   {
     ccAlfParam.newCcAlfFilter[COMPONENT_Cr - 1] = 0;
   }
-  CHECK(param.newFilterFlag[CHANNEL_TYPE_LUMA] == 0 && param.newFilterFlag[CHANNEL_TYPE_CHROMA] == 0
+  CHECK(param.newFilterFlag[ChannelType::LUMA] == 0 && param.newFilterFlag[ChannelType::CHROMA] == 0
           && ccAlfParam.newCcAlfFilter[COMPONENT_Cb - 1] == 0 && ccAlfParam.newCcAlfFilter[COMPONENT_Cr - 1] == 0,
         "bitstream conformance error: one of alf_luma_filter_signal_flag, alf_chroma_filter_signal_flag, "
         "alf_cross_component_cb_filter_signal_flag, and alf_cross_component_cr_filter_signal_flag shall be nonzero");
 
-  if (param.newFilterFlag[CHANNEL_TYPE_LUMA])
+  if (param.newFilterFlag[ChannelType::LUMA])
   {
     READ_FLAG(code, "alf_luma_clip");
-    param.nonLinearFlag[CHANNEL_TYPE_LUMA] = code ? true : false;
+    param.nonLinearFlag[ChannelType::LUMA] = code ? true : false;
     READ_UVLC(code, "alf_luma_num_filters_signalled_minus1");
     param.numLumaFilters = code + 1;
     if (param.numLumaFilters > 1)
@@ -1019,10 +1019,10 @@ void HLSyntaxReader::parseAlfAps( APS* aps )
     }
     alfFilter( param, false, 0 );
   }
-  if (param.newFilterFlag[CHANNEL_TYPE_CHROMA])
+  if (param.newFilterFlag[ChannelType::CHROMA])
   {
     READ_FLAG(code, "alf_nonlinear_enable_flag_chroma");
-    param.nonLinearFlag[CHANNEL_TYPE_CHROMA] = code ? true : false;
+    param.nonLinearFlag[ChannelType::CHROMA] = code ? true : false;
 
     if( MAX_NUM_ALF_ALTERNATIVES_CHROMA > 1 )
     {
@@ -1578,10 +1578,10 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
   {
     CHECK(uiCode + 8 > ProfileFeatures::getProfileFeatures(profile)->maxBitDepth, "sps_bitdepth_minus8 exceeds range supported by signalled profile");
   }
-  pcSPS->setBitDepth(CHANNEL_TYPE_LUMA, 8 + uiCode);
-  pcSPS->setBitDepth(CHANNEL_TYPE_CHROMA, 8 + uiCode);
-  pcSPS->setQpBDOffset(CHANNEL_TYPE_LUMA, (int) (6*uiCode) );
-  pcSPS->setQpBDOffset(CHANNEL_TYPE_CHROMA, (int) (6*uiCode) );
+  pcSPS->setBitDepth(ChannelType::LUMA, 8 + uiCode);
+  pcSPS->setBitDepth(ChannelType::CHROMA, 8 + uiCode);
+  pcSPS->setQpBDOffset(ChannelType::LUMA, (int) (6 * uiCode));
+  pcSPS->setQpBDOffset(ChannelType::CHROMA, (int) (6 * uiCode));
 
   READ_FLAG( uiCode, "sps_entropy_coding_sync_enabled_flag" );       pcSPS->setEntropyCodingSyncEnabledFlag(uiCode == 1);
   READ_FLAG( uiCode, "sps_entry_point_offsets_present_flag");   pcSPS->setEntryPointsPresentFlag(uiCode == 1);
@@ -1740,7 +1740,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
       int32_t qpTableStart = 0;
       READ_SVLC(qpTableStart, "sps_qp_table_starts_minus26");
       chromaQpMappingTableParams.setQpTableStartMinus26(i, qpTableStart);
-      CHECK(qpTableStart < -26 - pcSPS->getQpBDOffset(CHANNEL_TYPE_LUMA) || qpTableStart > 36,
+      CHECK(qpTableStart < -26 - pcSPS->getQpBDOffset(ChannelType::LUMA) || qpTableStart > 36,
             "The value of sps_qp_table_start_minus26[ i ] shall be in the range of -26 - QpBdOffset to 36 inclusive");
       READ_UVLC(uiCode, "sps_num_points_in_qp_table_minus1");
       chromaQpMappingTableParams.setNumPtsInCQPTableMinus1(i, uiCode);
@@ -1758,7 +1758,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
       chromaQpMappingTableParams.setDeltaQpInValMinus1(i, deltaQpInValMinus1);
       chromaQpMappingTableParams.setDeltaQpOutVal(i, deltaQpOutVal);
     }
-    pcSPS->setChromaQpMappingTableFromParams(chromaQpMappingTableParams, pcSPS->getQpBDOffset(CHANNEL_TYPE_CHROMA));
+    pcSPS->setChromaQpMappingTableFromParams(chromaQpMappingTableParams, pcSPS->getQpBDOffset(ChannelType::CHROMA));
     pcSPS->derivedChromaQPMappingTables();
   }
 
@@ -1985,9 +1985,9 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
   if (pcSPS->getTransformSkipEnabledFlag() || pcSPS->getPLTMode())
   {
     READ_UVLC(uiCode, "sps_internal_bit_depth_minus_input_bit_depth");
-    pcSPS->setInternalMinusInputBitDepth(CHANNEL_TYPE_LUMA, uiCode);
+    pcSPS->setInternalMinusInputBitDepth(ChannelType::LUMA, uiCode);
     CHECK(uiCode > 8, "Invalid sps_internal_bit_depth_minus_input_bit_depth signalled");
-    pcSPS->setInternalMinusInputBitDepth(CHANNEL_TYPE_CHROMA, uiCode);
+    pcSPS->setInternalMinusInputBitDepth(ChannelType::CHROMA, uiCode);
   }
   READ_FLAG(uiCode, "sps_ibc_enabled_flag");                                    pcSPS->setIBCFlag(uiCode);
   if (pcSPS->getIBCFlag())
@@ -2154,7 +2154,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
       sps_extension_flags[i] = uiCode!=0;
     }
 
-    if (pcSPS->getBitDepth(CHANNEL_TYPE_LUMA) <= 10)
+    if (pcSPS->getBitDepth(ChannelType::LUMA) <= 10)
     {
       CHECK(sps_extension_flags[SPS_EXT__REXT] == 1,
             "The value of sps_range_extension_flag shall be 0 when BitDepth is less than or equal to 10.");
@@ -2723,7 +2723,8 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
 
           APS *apsToCheckLuma = parameterSetManager->getAPS(apsId, ALF_APS);
           CHECK(apsToCheckLuma == nullptr, "referenced APS not found");
-          CHECK(apsToCheckLuma->getAlfAPSParam().newFilterFlag[CHANNEL_TYPE_LUMA] != 1, "bitstream conformance error, alf_luma_filter_signal_flag shall be equal to 1");
+          CHECK(apsToCheckLuma->getAlfAPSParam().newFilterFlag[ChannelType::LUMA] != 1,
+                "bitstream conformance error, alf_luma_filter_signal_flag shall be equal to 1");
         }
 
         if (sps->getChromaFormatIdc() != CHROMA_400)
@@ -2740,7 +2741,8 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
           picHeader->setAlfApsIdChroma(uiCode);
           APS* apsToCheckChroma = parameterSetManager->getAPS(uiCode, ALF_APS);
           CHECK(apsToCheckChroma == nullptr, "referenced APS not found");
-          CHECK(apsToCheckChroma->getAlfAPSParam().newFilterFlag[CHANNEL_TYPE_CHROMA] != 1, "bitstream conformance error, alf_chroma_filter_signal_flag shall be equal to 1");
+          CHECK(apsToCheckChroma->getAlfAPSParam().newFilterFlag[ChannelType::CHROMA] != 1,
+                "bitstream conformance error, alf_chroma_filter_signal_flag shall be equal to 1");
         }
         if (sps->getCCALFEnabledFlag())
         {
@@ -3352,24 +3354,24 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
     if (pps->getSaoInfoInPhFlag())
     {
       READ_FLAG(uiCode, "ph_sao_luma_enabled_flag");
-      picHeader->setSaoEnabledFlag(CHANNEL_TYPE_LUMA, uiCode != 0);
+      picHeader->setSaoEnabledFlag(ChannelType::LUMA, uiCode != 0);
 
       if (sps->getChromaFormatIdc() != CHROMA_400)
       {
         READ_FLAG(uiCode, "ph_sao_chroma_enabled_flag");
-        picHeader->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, uiCode != 0);
+        picHeader->setSaoEnabledFlag(ChannelType::CHROMA, uiCode != 0);
       }
     }
     else
     {
-      picHeader->setSaoEnabledFlag(CHANNEL_TYPE_LUMA,   true);
-      picHeader->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, sps->getChromaFormatIdc() != CHROMA_400);
+      picHeader->setSaoEnabledFlag(ChannelType::LUMA, true);
+      picHeader->setSaoEnabledFlag(ChannelType::CHROMA, sps->getChromaFormatIdc() != CHROMA_400);
     }
   }
   else
   {
-    picHeader->setSaoEnabledFlag(CHANNEL_TYPE_LUMA,   false);
-    picHeader->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, false);
+    picHeader->setSaoEnabledFlag(ChannelType::LUMA, false);
+    picHeader->setSaoEnabledFlag(ChannelType::CHROMA, false);
   }
 
 
@@ -3771,7 +3773,8 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
 
         APS *apsToCheckLuma = parameterSetManager->getAPS(apsId, ALF_APS);
         CHECK(apsToCheckLuma == nullptr, "referenced APS not found");
-        CHECK(apsToCheckLuma->getAlfAPSParam().newFilterFlag[CHANNEL_TYPE_LUMA] != 1, "bitstream conformance error, alf_luma_filter_signal_flag shall be equal to 1");
+        CHECK(apsToCheckLuma->getAlfAPSParam().newFilterFlag[ChannelType::LUMA] != 1,
+              "bitstream conformance error, alf_luma_filter_signal_flag shall be equal to 1");
       }
 
       if (hasChroma)
@@ -3788,7 +3791,8 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
         pcSlice->setAlfApsIdChroma(uiCode);
         APS* apsToCheckChroma = parameterSetManager->getAPS(uiCode, ALF_APS);
         CHECK(apsToCheckChroma == nullptr, "referenced APS not found");
-        CHECK(apsToCheckChroma->getAlfAPSParam().newFilterFlag[CHANNEL_TYPE_CHROMA] != 1, "bitstream conformance error, alf_chroma_filter_signal_flag shall be equal to 1");
+        CHECK(apsToCheckChroma->getAlfAPSParam().newFilterFlag[ChannelType::CHROMA] != 1,
+              "bitstream conformance error, alf_chroma_filter_signal_flag shall be equal to 1");
       }
     }
 
@@ -4188,7 +4192,7 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
   pcSlice->setSliceQp(26 + pps->getPicInitQPMinus26() + qpDelta);
   pcSlice->setSliceQpBase(pcSlice->getSliceQp());
 
-  CHECK(pcSlice->getSliceQp() < -sps->getQpBDOffset(CHANNEL_TYPE_LUMA), "Invalid slice QP delta");
+  CHECK(pcSlice->getSliceQp() < -sps->getQpBDOffset(ChannelType::LUMA), "Invalid slice QP delta");
   CHECK(pcSlice->getSliceQp() > MAX_QP, "Invalid slice QP");
 
   if (pps->getSliceChromaQpFlag())
@@ -4242,12 +4246,12 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
   if (sps->getSAOEnabledFlag() && !pps->getSaoInfoInPhFlag())
   {
     READ_FLAG(uiCode, "sh_sao_luma_used_flag");
-    pcSlice->setSaoEnabledFlag(CHANNEL_TYPE_LUMA, uiCode != 0);
+    pcSlice->setSaoEnabledFlag(ChannelType::LUMA, uiCode != 0);
 
     if (hasChroma)
     {
       READ_FLAG(uiCode, "sh_sao_chroma_used_flag");
-      pcSlice->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, uiCode != 0);
+      pcSlice->setSaoEnabledFlag(ChannelType::CHROMA, uiCode != 0);
     }
   }
 
@@ -4894,7 +4898,9 @@ void HLSyntaxReader::parsePredWeightTable( Slice* pcSlice, const SPS *sps )
         CHECK(deltaWeight > 127, "delta_luma_weight_lx shall be in the rage of -128 to 127");
         wp[COMPONENT_Y].codedWeight = (deltaWeight + (1 << wp[COMPONENT_Y].log2WeightDenom));
         READ_SVLC(wp[COMPONENT_Y].codedOffset, listIdx == 0 ? "luma_offset_l0[i]" : "luma_offset_l1[i]");
-        const int range=sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag() ? (1<<sps->getBitDepth(CHANNEL_TYPE_LUMA))/2 : 128;
+        const int range = sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag()
+                            ? (1 << sps->getBitDepth(ChannelType::LUMA)) / 2
+                            : 128;
         CHECK(wp[0].codedOffset < -range, "luma_offset_lx shall be in the rage of -128 to 127");
         CHECK(wp[0].codedOffset >= range, "luma_offset_lx shall be in the rage of -128 to 127");
       }
@@ -4907,7 +4913,9 @@ void HLSyntaxReader::parsePredWeightTable( Slice* pcSlice, const SPS *sps )
       {
         if (wp[COMPONENT_Cb].presentFlag)
         {
-          int range=sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag() ? (1<<sps->getBitDepth(CHANNEL_TYPE_CHROMA))/2 : 128;
+          int range = sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag()
+                        ? (1 << sps->getBitDepth(ChannelType::CHROMA)) / 2
+                        : 128;
           for ( int j=1 ; j<numValidComp ; j++ )
           {
             int deltaWeight;
@@ -5026,7 +5034,9 @@ void HLSyntaxReader::parsePredWeightTable(PicHeader *picHeader, const PPS *pps, 
         CHECK(deltaWeight > 127, "delta_luma_weight_lx shall be in the rage of -128 to 127");
         wp[COMPONENT_Y].codedWeight = (deltaWeight + (1 << wp[COMPONENT_Y].log2WeightDenom));
         READ_SVLC(wp[COMPONENT_Y].codedOffset, numRef == 0 ? "luma_offset_l0[i]" : "luma_offset_l1[i]");
-        const int range = sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag() ? (1 << sps->getBitDepth(CHANNEL_TYPE_LUMA)) / 2 : 128;
+        const int range = sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag()
+                            ? (1 << sps->getBitDepth(ChannelType::LUMA)) / 2
+                            : 128;
         CHECK(wp[0].codedOffset < -range, "luma_offset_lx shall be in the rage of -128 to 127");
         CHECK(wp[0].codedOffset >= range, "luma_offset_lx shall be in the rage of -128 to 127");
       }
@@ -5039,7 +5049,9 @@ void HLSyntaxReader::parsePredWeightTable(PicHeader *picHeader, const PPS *pps, 
       {
         if (wp[COMPONENT_Cb].presentFlag)
         {
-          int range = sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag() ? (1 << sps->getBitDepth(CHANNEL_TYPE_CHROMA)) / 2 : 128;
+          int range = sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag()
+                        ? (1 << sps->getBitDepth(ChannelType::CHROMA)) / 2
+                        : 128;
           for (int j = 1; j < numValidComp; j++)
           {
             int deltaWeight;
@@ -5271,7 +5283,7 @@ void HLSyntaxReader::alfFilter( AlfParam& alfParam, const bool isChroma, const i
   }
 
   // Clipping values coding
-  if ( alfParam.nonLinearFlag[isChroma] )
+  if (alfParam.nonLinearFlag[isChroma ? ChannelType::CHROMA : ChannelType::LUMA])
   {
     // Filter coefficients
     for( int ind = 0; ind < numFilters; ++ind )

@@ -234,7 +234,7 @@ public:
   bool longTerm;
   bool topField;
   bool fieldPic;
-  int  m_prevQP[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<int, ChannelType> m_prevQP;
   bool precedingDRAP; // preceding a DRAP picture in decoding order
   int  edrapRapId;
   bool nonReferencePictureFlag;

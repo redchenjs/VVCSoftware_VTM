@@ -178,11 +178,11 @@ bool tryDecodePicture( Picture* pcEncPic, const int expectedPoc, const std::stri
                 {
                   pcEncPic->cs->initStructData();
 
-                  pcEncPic->cs->copyStructure( *pic->cs, CH_L, true, true );
+                  pcEncPic->cs->copyStructure(*pic->cs, ChannelType::LUMA, true, true);
 
                   if( CS::isDualITree( *pcEncPic->cs ) )
                   {
-                    pcEncPic->cs->copyStructure( *pic->cs, CH_C, true, true );
+                    pcEncPic->cs->copyStructure(*pic->cs, ChannelType::CHROMA, true, true);
                   }
 
                   for( auto &cu : pcEncPic->cs->cus )
@@ -226,11 +226,11 @@ bool tryDecodePicture( Picture* pcEncPic, const int expectedPoc, const std::stri
                     pcEncPic->copySAO(*pic, 1);
                   }
 
-                  pcEncPic->cs->copyStructure(*pic->cs, CH_L, true, true);
+                  pcEncPic->cs->copyStructure(*pic->cs, ChannelType::LUMA, true, true);
 
                   if (CS::isDualITree(*pcEncPic->cs))
                   {
-                    pcEncPic->cs->copyStructure(*pic->cs, CH_C, true, true);
+                    pcEncPic->cs->copyStructure(*pic->cs, ChannelType::CHROMA, true, true);
                   }
                 }
                 goOn = false; // exit the loop return
@@ -674,7 +674,7 @@ void DecLib::executeLoopFilters()
     {
       for (uint32_t xPos = 0; xPos < pcv.lumaWidth; xPos += pcv.maxCUWidth)
       {
-        const CodingUnit *cu = cs.getCU(Position(xPos, yPos), CHANNEL_TYPE_LUMA);
+        const CodingUnit *cu = cs.getCU(Position(xPos, yPos), ChannelType::LUMA);
         if (cu->slice->getLmcsEnabledFlag())
         {
           const uint32_t width  = (xPos + pcv.maxCUWidth > pcv.lumaWidth) ? (pcv.lumaWidth - xPos) : pcv.maxCUWidth;
@@ -1067,8 +1067,8 @@ void  DecLib::xCreateUnavailablePicture( const PPS *pps, const int iUnavailableP
   cFillPic->subLayerNonReferencePictureDueToSTSA = false;
   cFillPic->unscaledPic = cFillPic;
 
-  uint32_t yFill = 1 << (sps->getBitDepth(CHANNEL_TYPE_LUMA) - 1);
-  uint32_t cFill = 1 << (sps->getBitDepth(CHANNEL_TYPE_CHROMA) - 1);
+  uint32_t yFill = 1 << (sps->getBitDepth(ChannelType::LUMA) - 1);
+  uint32_t cFill = 1 << (sps->getBitDepth(ChannelType::CHROMA) - 1);
   cFillPic->getRecoBuf().Y().fill(yFill);
   cFillPic->getRecoBuf().Cb().fill(cFill);
   cFillPic->getRecoBuf().Cr().fill(cFill);
@@ -1867,7 +1867,10 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
 
       CHECK( sps->getChromaFormatIdc() == CHROMA_400 && lmcsAPS->chromaPresentFlag, "When ChromaArrayType is equal to 0, the value of aps_chroma_present_flag of an LMCS_APS shall be equal to 0");
 
-      CHECK( lmcsAPS->getReshaperAPSInfo().maxNbitsNeededDeltaCW - 1 < 0 || lmcsAPS->getReshaperAPSInfo().maxNbitsNeededDeltaCW - 1 > sps->getBitDepth(CHANNEL_TYPE_LUMA) - 2, "The value of lmcs_delta_cw_prec_minus1 of an LMCS_APS shall be in the range of 0 to BitDepth 2, inclusive" );
+      CHECK(
+        lmcsAPS->getReshaperAPSInfo().maxNbitsNeededDeltaCW - 1 < 0
+          || lmcsAPS->getReshaperAPSInfo().maxNbitsNeededDeltaCW - 1 > sps->getBitDepth(ChannelType::LUMA) - 2,
+        "The value of lmcs_delta_cw_prec_minus1 of an LMCS_APS shall be in the range of 0 to BitDepth 2, inclusive");
 
       CHECK( lmcsAPS->getTemporalId() > pSlice->getTLayer(), "TemporalId shall be less than or equal to the TemporalId of the coded slice NAL unit" );
       //ToDO: APS NAL unit containing the APS RBSP shall have nuh_layer_id either equal to the nuh_layer_id of a coded slice NAL unit that referrs it, or equal to the nuh_layer_id of a direct dependent layer of the layer containing a coded slice NAL unit that referrs it.
@@ -1999,7 +2002,8 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     xParsePrefixSEImessages();
 
 #if RExt__HIGH_BIT_DEPTH_SUPPORT==0
-    if (sps->getSpsRangeExtension().getExtendedPrecisionProcessingFlag() || sps->getBitDepth(CHANNEL_TYPE_LUMA)>12 || sps->getBitDepth(CHANNEL_TYPE_CHROMA)>12 )
+    if (sps->getSpsRangeExtension().getExtendedPrecisionProcessingFlag() || sps->getBitDepth(ChannelType::LUMA) > 12
+        || sps->getBitDepth(ChannelType::CHROMA) > 12)
     {
       THROW("High bit depth support must be enabled at compile-time in order to decode this bitstream\n");
     }
@@ -2015,8 +2019,12 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     m_apcSlicePilot->setPicHeader(m_pcPic->cs->picHeader);
 #endif
 
-    m_pcPic->createGrainSynthesizer(m_firstPictureInSequence, &m_grainCharacteristic, &m_grainBuf, pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(), sps->getChromaFormatIdc(), sps->getBitDepth(CHANNEL_TYPE_LUMA));
-    m_pcPic->createColourTransfProcessor(m_firstPictureInSequence, &m_colourTranfParams, &m_invColourTransfBuf, pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(), sps->getChromaFormatIdc(), sps->getBitDepth(CHANNEL_TYPE_LUMA));
+    m_pcPic->createGrainSynthesizer(m_firstPictureInSequence, &m_grainCharacteristic, &m_grainBuf,
+                                    pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(),
+                                    sps->getChromaFormatIdc(), sps->getBitDepth(ChannelType::LUMA));
+    m_pcPic->createColourTransfProcessor(m_firstPictureInSequence, &m_colourTranfParams, &m_invColourTransfBuf,
+                                         pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(),
+                                         sps->getChromaFormatIdc(), sps->getBitDepth(ChannelType::LUMA));
     m_firstPictureInSequence = false;
     m_pcPic->createTempBuffers( m_pcPic->cs->pps->pcv->maxCUWidth );
     m_pcPic->cs->createCoeffs((bool)m_pcPic->cs->sps->getPLTMode());
@@ -2050,19 +2058,21 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
 
     // Initialise the various objects for the new set of settings
     const int maxDepth = floorLog2(sps->getMaxCUWidth()) - pps->pcv->minCUWidthLog2;
-    const uint32_t  log2SaoOffsetScaleLuma   = (uint32_t) std::max(0, sps->getBitDepth(CHANNEL_TYPE_LUMA  ) - MAX_SAO_TRUNCATED_BITDEPTH);
-    const uint32_t  log2SaoOffsetScaleChroma = (uint32_t) std::max(0, sps->getBitDepth(CHANNEL_TYPE_CHROMA) - MAX_SAO_TRUNCATED_BITDEPTH);
+    const uint32_t log2SaoOffsetScaleLuma =
+      (uint32_t) std::max(0, sps->getBitDepth(ChannelType::LUMA) - MAX_SAO_TRUNCATED_BITDEPTH);
+    const uint32_t log2SaoOffsetScaleChroma =
+      (uint32_t) std::max(0, sps->getBitDepth(ChannelType::CHROMA) - MAX_SAO_TRUNCATED_BITDEPTH);
     m_cSAO.create( pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(),
                    sps->getChromaFormatIdc(),
                    sps->getMaxCUWidth(), sps->getMaxCUHeight(),
                    maxDepth,
                    log2SaoOffsetScaleLuma, log2SaoOffsetScaleChroma );
     m_deblockingFilter.create(maxDepth);
-    m_cIntraPred.init( sps->getChromaFormatIdc(), sps->getBitDepth( CHANNEL_TYPE_LUMA ) );
+    m_cIntraPred.init(sps->getChromaFormatIdc(), sps->getBitDepth(ChannelType::LUMA));
     m_cInterPred.init( &m_cRdCost, sps->getChromaFormatIdc(), sps->getMaxCUHeight() );
     if (sps->getUseLmcs())
     {
-      m_cReshaper.createDec(sps->getBitDepth(CHANNEL_TYPE_LUMA));
+      m_cReshaper.createDec(sps->getBitDepth(ChannelType::LUMA));
     }
 
     bool isField = false;
@@ -2115,7 +2125,8 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     if( sps->getALFEnabledFlag() )
     {
       const int maxDepth = floorLog2(sps->getMaxCUWidth()) - sps->getLog2MinCodingBlockSize();
-      m_cALF.create( pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(), sps->getChromaFormatIdc(), sps->getMaxCUWidth(), sps->getMaxCUHeight(), maxDepth, sps->getBitDepths().recon);
+      m_cALF.create(pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(), sps->getChromaFormatIdc(),
+                    sps->getMaxCUWidth(), sps->getMaxCUHeight(), maxDepth, sps->getBitDepths());
     }
     pSlice->m_ccAlfFilterControl[0] = m_cALF.getCcAlfControlIdc(COMPONENT_Cb);
     pSlice->m_ccAlfFilterControl[1] = m_cALF.getCcAlfControlIdc(COMPONENT_Cr);
@@ -2279,7 +2290,7 @@ void DecLib::xCheckParameterSetConstraints(const int layerId)
     CHECK( sps->getMaxPicWidthInLumaSamples() > vps->getOlsDpbPicSize( vps->m_targetOlsIdx ).width, "sps_pic_width_max_in_luma_samples shall be less than or equal to the value of vps_ols_dpb_pic_width[ i ]" );
     CHECK( sps->getMaxPicHeightInLumaSamples() > vps->getOlsDpbPicSize( vps->m_targetOlsIdx ).height, "sps_pic_height_max_in_luma_samples shall be less than or equal to the value of vps_ols_dpb_pic_height[ i ]" );
     CHECK( sps->getChromaFormatIdc() > vps->getOlsDpbChromaFormatIdc( vps->m_targetOlsIdx ), "sps_chroma_format_idc shall be less than or equal to the value of vps_ols_dpb_chroma_format[ i ]");
-    CHECK((sps->getBitDepth(CHANNEL_TYPE_LUMA) - 8) > vps->getOlsDpbBitDepthMinus8(vps->m_targetOlsIdx),
+    CHECK((sps->getBitDepth(ChannelType::LUMA) - 8) > vps->getOlsDpbBitDepthMinus8(vps->m_targetOlsIdx),
           "sps_bitdepth_minus8 shall be less than or equal to the value of vps_ols_dpb_bitdepth_minus8[ i ]");
   }
 
@@ -2290,7 +2301,7 @@ void DecLib::xCheckParameterSetConstraints(const int layerId)
   {
     int curLayerIdx = vps->getGeneralLayerIdx(layerId);
     int curLayerChromaFormat = sps->getChromaFormatIdc();
-    int curLayerBitDepth = sps->getBitDepth(CHANNEL_TYPE_LUMA);
+    int curLayerBitDepth     = sps->getBitDepth(ChannelType::LUMA);
 
     if( slice->isClvssPu() && m_bFirstSliceInPicture )
     {
@@ -2437,7 +2448,7 @@ void DecLib::xCheckParameterSetConstraints(const int layerId)
   const ProfileFeatures *profileFeatures = ptlFeatures.getProfileFeatures();
   if (profileFeatures != nullptr)
   {
-    CHECK(sps->getBitDepth(CHANNEL_TYPE_LUMA) > profileFeatures->maxBitDepth, "Bit depth exceeds profile limit");
+    CHECK(sps->getBitDepth(ChannelType::LUMA) > profileFeatures->maxBitDepth, "Bit depth exceeds profile limit");
     CHECK(sps->getChromaFormatIdc() > profileFeatures->maxChromaFormat, "Chroma format exceeds profile limit");
   }
   else
@@ -3055,7 +3066,7 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
 
   if (pcSlice->getSPS()->getSpsRangeExtension().getRrcRiceExtensionEnableFlag())
   {
-    int bitDepth = pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA);
+    int bitDepth  = pcSlice->getSPS()->getBitDepth(ChannelType::LUMA);
     int baseLevel = (bitDepth > 12) ? (pcSlice->isIntra() ? 5 : 2 * 5 ) : (pcSlice->isIntra() ? 2 * 5 : 3 * 5);
     pcSlice->setRiceBaseLevel(baseLevel);
   }

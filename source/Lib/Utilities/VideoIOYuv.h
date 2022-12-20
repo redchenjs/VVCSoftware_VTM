@@ -56,9 +56,11 @@ class VideoIOYuv
 {
 private:
   std::fstream m_cHandle;                            ///< file handle
-  int       m_fileBitdepth[MAX_NUM_CHANNEL_TYPE]; ///< bitdepth of input/output video file
-  int          m_msbExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];   ///< bitdepth after addition of MSBs (with value 0)
-  int       m_bitdepthShift[MAX_NUM_CHANNEL_TYPE];  ///< number of bits to increase or decrease image by before/after write/read
+  ///
+  BitDepths m_fileBitdepth;          // bitdepth of input/output video file
+  BitDepths m_msbExtendedBitDepth;   // bitdepth after addition of MSBs (with value 0)
+  BitDepths m_bitdepthShift;         // number of bits to increase or decrease image by before/after write/read
+
   int          m_inY4mFileHeaderLength = 0;
   int          m_outPicWidth           = 0;
   int          m_outPicHeight          = 0;
@@ -76,9 +78,9 @@ public:
                           ChromaFormat &chromaFormat);
   void setOutputY4mInfo(int width, int height, int frameRate, int frameScale, int bitDepth, ChromaFormat chromaFormat);
   void writeY4mFileHeader();
-  void open(const std::string &fileName, bool bWriteMode, const int fileBitDepth[MAX_NUM_CHANNEL_TYPE],
-            const int MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE],
-            const int internalBitDepth[MAX_NUM_CHANNEL_TYPE]);   ///< open or create file
+  void open(const std::string &fileName, bool bWriteMode, const BitDepths &fileBitDepth,
+            const BitDepths &MSBExtendedBitDepth,
+            const BitDepths &internalBitDepth);                  ///< open or create file
   void close();                                                  ///< close file
 #if EXTENSION_360_VIDEO
   void skipFrames(int numFrames, uint32_t width, uint32_t height, ChromaFormat format);
@@ -109,9 +111,9 @@ public:
   bool  isEof ();                                           ///< check for end-of-file
   bool  isFail();                                           ///< check for failure
   bool  isOpen() { return m_cHandle.is_open(); }
-  void  setBitdepthShift( int ch, int bd )  { m_bitdepthShift[ch] = bd;   }
-  int   getBitdepthShift( int ch )          { return m_bitdepthShift[ch]; }
-  int   getFileBitdepth( int ch )           { return m_fileBitdepth[ch];  }
+  void  setBitdepthShift(ChannelType ch, int bd) { m_bitdepthShift[ch] = bd; }
+  int   getBitdepthShift(ChannelType ch) { return m_bitdepthShift[ch]; }
+  int   getFileBitdepth(ChannelType ch) { return m_fileBitdepth[ch]; }
 
   bool writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
 #if !JVET_AB0081

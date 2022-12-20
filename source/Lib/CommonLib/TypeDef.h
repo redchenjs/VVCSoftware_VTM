@@ -439,12 +439,22 @@ enum ChromaFormat
   NUM_CHROMA_FORMAT = 4
 };
 
-enum ChannelType
+enum class ChannelType : uint8_t
 {
-  CHANNEL_TYPE_LUMA    = 0,
-  CHANNEL_TYPE_CHROMA  = 1,
-  MAX_NUM_CHANNEL_TYPE = 2
+  LUMA   = 0,
+  CHROMA = 1,
+  NUM
 };
+
+static inline ChannelType operator++(ChannelType &ch, int)
+{
+  ChannelType r = ch;
+
+  ch = static_cast<ChannelType>(static_cast<int>(ch) + 1);
+  return r;
+}
+
+static constexpr auto MAX_NUM_CHANNEL_TYPE = to_underlying(ChannelType::NUM);
 
 enum TreeType
 {
@@ -459,9 +469,6 @@ enum ModeType
   MODE_TYPE_INTER = 1, //can try inter
   MODE_TYPE_INTRA = 2, //can try intra, ibc, palette
 };
-
-#define CH_L CHANNEL_TYPE_LUMA
-#define CH_C CHANNEL_TYPE_CHROMA
 
 enum ComponentID
 {
@@ -994,13 +1001,7 @@ private:
 
 };
 
-
-
-struct BitDepths
-{
-  const int &operator[](const ChannelType ch) const { return recon[ch]; }
-  int recon[MAX_NUM_CHANNEL_TYPE]; ///< the bit depth as indicated in the SPS
-};
+using BitDepths = EnumArray<int, ChannelType>;
 
 enum PLTRunMode
 {

@@ -233,7 +233,7 @@ private:
 
   const EncCfg*          m_encCfg;
   AlfCovariance***       m_alfCovariance[MAX_NUM_COMPONENT];          // [compIdx][shapeIdx][ctbAddr][classIdx]
-  AlfCovariance**        m_alfCovarianceFrame[MAX_NUM_CHANNEL_TYPE];   // [CHANNEL][shapeIdx][lumaClassIdx/chromaAltIdx]
+  EnumArray<AlfCovariance **, ChannelType> m_alfCovarianceFrame;   // [CHANNEL][shapeIdx][lumaClassIdx/chromaAltIdx]
   uint8_t*               m_ctuEnableFlagTmp[MAX_NUM_COMPONENT];
   uint8_t*               m_ctuEnableFlagTmp2[MAX_NUM_COMPONENT];
   uint8_t*               m_ctuAlternativeTmp[MAX_NUM_COMPONENT];
@@ -253,7 +253,9 @@ private:
   int**                  m_filterClippSet; // [lumaClassIdx/chromaAltIdx][coeffIdx]
   int**                  m_diffFilterCoeff;
   short                  m_filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES];
-  unsigned               m_bitsNewFilter[MAX_NUM_CHANNEL_TYPE];
+
+  EnumArray<unsigned, ChannelType> m_bitsNewFilter;
+
   int                    m_apsIdStart;
   double                 *m_ctbDistortionFixedFilter;
   double                 *m_ctbDistortionUnfilter[MAX_NUM_COMPONENT];
@@ -298,7 +300,9 @@ public:
   );
   int getNewCcAlfApsId(CodingStructure &cs, int cIdx);
   void initCABACEstimator(CABACEncoder *cabacEncoder, CtxPool *ctxPool, Slice *pcSlice, ParameterSetMap<APS> *apsMap);
-  void create( const EncCfg* encCfg, const int picWidth, const int picHeight, const ChromaFormat chromaFormatIDC, const int maxCUWidth, const int maxCUHeight, const int maxCUDepth, const int inputBitDepth[MAX_NUM_CHANNEL_TYPE], const int internalBitDepth[MAX_NUM_CHANNEL_TYPE] );
+  void create(const EncCfg *encCfg, const int picWidth, const int picHeight, const ChromaFormat chromaFormatIDC,
+              const int maxCUWidth, const int maxCUHeight, const int maxCUDepth, const BitDepths &inputBitDepth,
+              const BitDepths &internalBitDepth);
   void destroy();
   void setApsIdStart( int i) { m_apsIdStart = i; }
 

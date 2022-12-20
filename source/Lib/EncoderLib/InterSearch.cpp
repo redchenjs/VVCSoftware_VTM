@@ -733,7 +733,10 @@ Distortion InterSearch::xPatternRefinement( const CPelBuf* pcPatternKey,
 
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
   bool                   diskOk           = false;
   bool                   distBestOk       = false;
   bool allOk = true;
@@ -841,7 +844,8 @@ Distortion InterSearch::xGetInterPredictionError( PredictionUnit& pu, PelUnitBuf
   DistParam cDistParam;
   cDistParam.applyWeight = false;
 
-  m_pcRdCost->setDistParam(cDistParam, origBuf.Y(), predBuf.Y(), pu.cs->sps->getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y, m_pcEncCfg->getUseHADME() && !pu.cu->slice->getDisableSATDForRD());
+  m_pcRdCost->setDistParam(cDistParam, origBuf.Y(), predBuf.Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA),
+                           COMPONENT_Y, m_pcEncCfg->getUseHADME() && !pu.cu->slice->getDisableSATDForRD());
 
   return (Distortion)cDistParam.distFunc( cDistParam );
 }
@@ -925,12 +929,15 @@ int InterSearch::xIBCSearchMVChromaRefine(PredictionUnit& pu,
 
 #if GDR_ENABLED
     CodingStructure &cs = *pu.cs;
-    const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+    const bool       isEncodeGdrClean =
+      cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+      && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+          || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 
     if (isEncodeGdrClean)
     {
       Position curBR(cuPelX + roiWidth + cMVCand[cand].getHor() - 1, cuPelY + roiHeight + cMVCand[cand].getVer() - 1);    // is this correct???
-      if (!cs.isClean(curBR, CHANNEL_TYPE_LUMA))
+      if (!cs.isClean(curBR, ChannelType::LUMA))
       {
         continue;
       }
@@ -975,7 +982,7 @@ int InterSearch::xIBCSearchMVChromaRefine(PredictionUnit& pu,
       {
         for (int col = 0; col < width; col++)
         {
-          tempSad += ((abs(pRef[col] - pOrg[col])) >> (pu.cs->sps->getBitDepth(CHANNEL_TYPE_CHROMA) - 8));
+          tempSad += ((abs(pRef[col] - pOrg[col])) >> (pu.cs->sps->getBitDepth(ChannelType::CHROMA) - 8));
         }
         pRef += refStride;
         pOrg += orgStride;
@@ -1041,7 +1048,10 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
 
 #if GDR_ENABLED
   CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool       isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
   for (int cand = 0; cand < CHROMA_REFINEMENT_CANDIDATES; cand++)
@@ -1084,7 +1094,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
         if (isEncodeGdrClean)
         {
           Position BvBR(cuPelX + roiWidth + xPred - 1, cuPelY + roiHeight + yPred - 1);
-          validCand = validCand && cs.isClean(BvBR, CHANNEL_TYPE_LUMA);
+          validCand = validCand && cs.isClean(BvBR, ChannelType::LUMA);
         }
 #endif
         if (validCand)
@@ -1114,7 +1124,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
       if (isEncodeGdrClean)
       {
         Position BvBR(cuPelX + roiWidth - 1, cuPelY + roiHeight + y - 1);
-        if (!cs.isClean(BvBR, CHANNEL_TYPE_LUMA))
+        if (!cs.isClean(BvBR, ChannelType::LUMA))
         {
           continue;
         }
@@ -1149,7 +1159,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
       if (isEncodeGdrClean)
       {
         Position BvBR(cuPelX + roiWidth + x - 1, cuPelY + roiHeight - 1);
-        if (!cs.isClean(BvBR, CHANNEL_TYPE_LUMA))
+        if (!cs.isClean(BvBR, ChannelType::LUMA))
         {
           continue;
         }
@@ -1215,7 +1225,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
           if (isEncodeGdrClean)
           {
             Position BvBR(cuPelX + roiWidth + x - 1, cuPelY + roiHeight + y - 1);
-            if (!cs.isClean(BvBR, CHANNEL_TYPE_LUMA))
+            if (!cs.isClean(BvBR, ChannelType::LUMA))
             {
               continue;
             }
@@ -1270,7 +1280,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
           if (isEncodeGdrClean)
           {
             Position BvBR(cuPelX + roiWidth + x - 1, cuPelY + roiHeight + y - 1);
-            if (!cs.isClean(BvBR, CHANNEL_TYPE_LUMA))
+            if (!cs.isClean(BvBR, ChannelType::LUMA))
             {
               continue;
             }
@@ -1339,7 +1349,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
           if (isEncodeGdrClean)
           {
             Position BvBR(cuPelX + roiWidth + x - 1, cuPelY + roiHeight + y - 1);
-            if (!cs.isClean(BvBR, CHANNEL_TYPE_LUMA))
+            if (!cs.isClean(BvBR, ChannelType::LUMA))
             {
               continue;
             }
@@ -1422,7 +1432,10 @@ void InterSearch::xIBCEstimation(PredictionUnit& pu, PelUnitBuf& origBuf,
 
 #if GDR_ENABLED
   CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool       isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
   if ((pu.cs->slice->getLmcsEnabledFlag() && m_pcReshape->getCTUFlag()))
@@ -1472,7 +1485,7 @@ void InterSearch::xIBCEstimation(PredictionUnit& pu, PelUnitBuf& origBuf,
       if (isEncodeGdrClean)
       {
         Position BvBR(cuPelX + iRoiWidth + xBv - 1, cuPelY + iRoiHeight + yBv - 1);
-        validCand = validCand && cs.isClean(BvBR, CHANNEL_TYPE_LUMA);
+        validCand = validCand && cs.isClean(BvBR, ChannelType::LUMA);
       }
       if (validCand && searchBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xBv, yBv, lcuWidth))
 #else
@@ -1516,7 +1529,7 @@ void InterSearch::xIBCEstimation(PredictionUnit& pu, PelUnitBuf& origBuf,
         if (isEncodeGdrClean)
         {
           Position BvBR(cuPelX + iRoiWidth + xPred - 1, cuPelY + iRoiHeight + yPred - 1);
-          validCand = cs.isClean(BvBR, CHANNEL_TYPE_LUMA);
+          validCand = cs.isClean(BvBR, ChannelType::LUMA);
         }
         if (validCand && searchBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xPred, yPred, lcuWidth))
 #else
@@ -1612,7 +1625,10 @@ bool InterSearch::predIBCSearch(CodingUnit& cu, Partitioner& partitioner, const 
     CHECK(pu.cu != &cu, "PU is contained in another CU");
 #if GDR_ENABLED
     CodingStructure &cs = *pu.cs;
-    const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+    const bool       isEncodeGdrClean =
+      cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+      && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+          || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
 #if GDR_ENABLED
@@ -1762,7 +1778,10 @@ void InterSearch::xxIBCHashSearch(PredictionUnit& pu, Mv* mvPred, int numMvPred,
 
 #if GDR_ENABLED
   CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool       isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
   std::vector<Position> candPos;
   if (ibcHashMap.ibcHashMatch(pu.Y(), candPos, *pu.cs, m_pcEncCfg->getIBCHashSearchMaxCand(), m_pcEncCfg->getIBCHashSearchRange4SmallBlk()))
@@ -1780,7 +1799,7 @@ void InterSearch::xxIBCHashSearch(PredictionUnit& pu, Mv* mvPred, int numMvPred,
     for (std::vector<Position>::iterator pos = candPos.begin(); pos != candPos.end(); pos++)
     {
       Position bottomRight = pos->offset(pu.Y().width - 1, pu.Y().height - 1);
-      if (pu.cs->isDecomp(*pos, CHANNEL_TYPE_LUMA) && pu.cs->isDecomp(bottomRight, CHANNEL_TYPE_LUMA))
+      if (pu.cs->isDecomp(*pos, ChannelType::LUMA) && pu.cs->isDecomp(bottomRight, ChannelType::LUMA))
       {
         Position tmp = *pos - pu.Y().pos();
         Mv candMv;
@@ -1792,7 +1811,7 @@ void InterSearch::xxIBCHashSearch(PredictionUnit& pu, Mv* mvPred, int numMvPred,
         }
 #if GDR_ENABLED
         Position BvBR(cuPelX + roiWidth + candMv.getHor() - 1, cuPelY + roiHeight + candMv.getVer() - 1);
-        if (isEncodeGdrClean && !cs.isClean(BvBR, CHANNEL_TYPE_LUMA))
+        if (isEncodeGdrClean && !cs.isClean(BvBR, ChannelType::LUMA))
         {
           continue;
         }
@@ -2001,7 +2020,10 @@ bool InterSearch::xRectHashInterEstimation(PredictionUnit& pu, RefPicList& bestR
 
 #if GDR_ENABLED
   CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool       isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
   for (int k = 0; k < baseNum; k++)
@@ -2329,7 +2351,10 @@ bool InterSearch::xHashInterEstimation(PredictionUnit& pu, RefPicList& bestRefPi
 
 #if GDR_ENABLED
   CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool       isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
   BlockHash currBlockHash;
   currBlockHash.x = xPos;
@@ -2747,7 +2772,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   bool checkAffine    = (pu.cu->imv == 0 || pu.cu->slice->getSPS()->getAffineAmvrEnabledFlag()) && pu.cu->imv != IMV_HPEL;
   bool checkNonAffine = pu.cu->imv == 0 || pu.cu->imv == IMV_HPEL || (pu.cu->slice->getSPS()->getAMVREnabledFlag() &&
                                             pu.cu->imv <= (pu.cu->slice->getSPS()->getAMVREnabledFlag() ? IMV_4PEL : 0));
-  CodingUnit *bestCU  = pu.cu->cs->bestCS != nullptr ? pu.cu->cs->bestCS->getCU( CHANNEL_TYPE_LUMA ) : nullptr;
+  CodingUnit *bestCU         = pu.cu->cs->bestCS != nullptr ? pu.cu->cs->bestCS->getCU(ChannelType::LUMA) : nullptr;
   bool trySmvd        = ( bestCU != nullptr && pu.cu->imv == 2 && checkAffine ) ? ( !bestCU->firstPU->mergeFlag && !bestCU->affine ) : true;
   if ( pu.cu->imv && bestCU != nullptr && checkAffine )
   {
@@ -2778,7 +2803,10 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   }
 
 #if GDR_ENABLED
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
   const bool init_value = true;
 #endif
 
@@ -2831,7 +2859,8 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
 #endif
 
   {
-    if (pu.cu->cs->bestParent != nullptr && pu.cu->cs->bestParent->getCU(CHANNEL_TYPE_LUMA) != nullptr && pu.cu->cs->bestParent->getCU(CHANNEL_TYPE_LUMA)->affine == false)
+    if (pu.cu->cs->bestParent != nullptr && pu.cu->cs->bestParent->getCU(ChannelType::LUMA) != nullptr
+        && pu.cu->cs->bestParent->getCU(ChannelType::LUMA)->affine == false)
     {
       m_skipProf = true;
     }
@@ -4567,7 +4596,10 @@ void InterSearch::xEstimateMvPredAMVP(PredictionUnit &pu, PelUnitBuf &origBuf, R
   AMVPInfo*  pcAMVPInfo = &rAMVPInfo;
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
 #if GDR_ENABLED
@@ -4724,7 +4756,10 @@ void InterSearch::xCheckBestMVP ( RefPicList eRefPicList, Mv cMv, Mv& rcMvPred, 
 {
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
   bool iBestMvBitsOk = false;
   bool iMvBitsOk = false;
 #endif
@@ -4839,7 +4874,8 @@ Distortion InterSearch::xGetTemplateCost(const PredictionUnit &pu, PelUnitBuf &o
 
   // calc distortion
 
-  uiCost = m_pcRdCost->getDistPart(origBuf.Y(), predBuf.Y(), pu.cs->sps->getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y, DF_SAD);
+  uiCost =
+    m_pcRdCost->getDistPart(origBuf.Y(), predBuf.Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA), COMPONENT_Y, DF_SAD);
   uiCost += m_pcRdCost->getCost(m_auiMVPIdxCost[mvpIdx][mvpNum]);
 
   return uiCost;
@@ -4877,7 +4913,7 @@ Distortion InterSearch::xGetAffineTemplateCost(PredictionUnit &pu, PelUnitBuf &o
 
   // calc distortion
   enum DFunc distFunc = (pu.cs->slice->getDisableSATDForRD()) ? DF_SAD : DF_HAD;
-  uiCost = m_pcRdCost->getDistPart(origBuf.Y(), predBuf.Y(), pu.cs->sps->getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y,
+  uiCost = m_pcRdCost->getDistPart(origBuf.Y(), predBuf.Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA), COMPONENT_Y,
                                    distFunc);
   uiCost += m_pcRdCost->getCost(m_auiMVPIdxCost[mvpIdx][mvpNum]);
   DTRACE( g_trace_ctx, D_COMMON, " (%d) affineTemplateCost=%d\n", DTRACE_GET_COUNTER(g_trace_ctx,D_COMMON), uiCost );
@@ -5338,7 +5374,10 @@ void InterSearch::xTZSearch(const PredictionUnit &pu, RefPicList eRefPicList, in
 
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
   int searchRange = m_searchRange;
   if( m_pcEncCfg->getMCTSEncConstraint() )
@@ -5888,7 +5927,10 @@ void InterSearch::xPatternSearchIntRefine(PredictionUnit& pu, IntTZSearchStruct&
 {
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
   CHECK( pu.cu->imv == 0 || pu.cu->imv == IMV_HPEL , "xPatternSearchIntRefine(): Sub-pel MV used.");
@@ -6158,7 +6200,10 @@ Distortion InterSearch::xGetSymmetricCost( PredictionUnit& pu, PelUnitBuf& origB
 
   // calc distortion
   DFunc distFunc = (!pu.cu->slice->getDisableSATDForRD()) ? DF_HAD : DF_SAD;
-  cost = (Distortion)floor( fWeight * (double)m_pcRdCost->getDistPart( bufTmp.Y(), predBufB.Y(), pu.cs->sps->getBitDepth( CHANNEL_TYPE_LUMA ), COMPONENT_Y, distFunc ) );
+  cost =
+    (Distortion) floor(fWeight
+                       * (double) m_pcRdCost->getDistPart(
+                         bufTmp.Y(), predBufB.Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA), COMPONENT_Y, distFunc));
   return(cost);
 }
 
@@ -6172,7 +6217,10 @@ Distortion InterSearch::xSymmeticRefineMvSearch( PredictionUnit &pu, PelUnitBuf&
 {
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
   bool uiCostOk;
   bool uiMinCostOk = rOk;
 #endif
@@ -6397,7 +6445,10 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
   bool      mvHevcSolid[3];
 
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
   RefSetArray<AffineAMVPInfo> aacAffineAMVPInfo;
   AffineAMVPInfo affiAMVPInfoTemp[NUM_REF_PIC_LIST_01];
@@ -8183,7 +8234,10 @@ void InterSearch::xCheckBestAffineMVP( PredictionUnit &pu, AffineAMVPInfo &affin
 {
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
   if ( affineAMVPInfo.numCand < 2 )
@@ -8294,7 +8348,10 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
   }
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
   bool acMvValid[3];
 #endif
 
@@ -8387,7 +8444,8 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
 #endif
 
   // get error
-  uiCostBest = m_pcRdCost->getDistPart(predBuf.Y(), pBuf->Y(), pu.cs->sps->getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y, distFunc);
+  uiCostBest =
+    m_pcRdCost->getDistPart(predBuf.Y(), pBuf->Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA), COMPONENT_Y, distFunc);
 
   // get cost with mv
   m_pcRdCost->setCostScale(0);
@@ -8605,7 +8663,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
 #endif
 
     // get error
-    Distortion costTemp = m_pcRdCost->getDistPart(predBuf.Y(), pBuf->Y(), pu.cs->sps->getBitDepth(CHANNEL_TYPE_LUMA),
+    Distortion costTemp = m_pcRdCost->getDistPart(predBuf.Y(), pBuf->Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA),
                                                   COMPONENT_Y, distFunc);
     DTRACE(g_trace_ctx, D_COMMON, " (%d) costTemp=%d\n", DTRACE_GET_COUNTER(g_trace_ctx, D_COMMON), costTemp);
 
@@ -8703,7 +8761,8 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
 #endif
 
     // get error
-    Distortion costTemp = m_pcRdCost->getDistPart(predBuf.Y(), pBuf->Y(), pu.cs->sps->getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y, distFunc);
+    Distortion costTemp = m_pcRdCost->getDistPart(predBuf.Y(), pBuf->Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA),
+                                                  COMPONENT_Y, distFunc);
     // get cost with mv
     m_pcRdCost->setCostScale(0);
     uint32_t bitsTemp = ruiBits;
@@ -8843,7 +8902,8 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
             }
 #endif
 
-            Distortion costTemp = m_pcRdCost->getDistPart(predBuf.Y(), pBuf->Y(), pu.cs->sps->getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y, distFunc);
+            Distortion costTemp = m_pcRdCost->getDistPart(
+              predBuf.Y(), pBuf->Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA), COMPONENT_Y, distFunc);
             uint32_t bitsTemp = ruiBits;
             bitsTemp += xCalcAffineMVBits(pu, acMvTemp, acMvPred);
             costTemp = (Distortion)(floor(fWeight * (double)costTemp) + (double)m_pcRdCost->getCost(bitsTemp));
@@ -8914,7 +8974,10 @@ void InterSearch::xEstimateAffineAMVP(PredictionUnit &pu, AffineAMVPInfo &affine
 
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
   bool uiBestCostOk = false;
 #endif
 
@@ -11116,7 +11179,10 @@ uint32_t InterSearch::xDetermineBestMvp( PredictionUnit& pu, Mv acMvTemp[3], int
   uint32_t minBits = std::numeric_limits<uint32_t>::max();
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool             isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
   for ( int i = 0; i < aamvpi.numCand; i++ )
@@ -11166,7 +11232,10 @@ void InterSearch::symmvdCheckBestMvp(PredictionUnit &pu, PelUnitBuf &origBuf, Mv
 {
 #if GDR_ENABLED
   CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool       isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
   bool bestCostOk = true;
   bool costOk = true;
   bool allOk;
@@ -11239,7 +11308,10 @@ void InterSearch::symmvdCheckBestMvp(PredictionUnit &pu, PelUnitBuf &origBuf, Mv
       }
       // calc distortion
       DFunc distFunc = (!pu.cu->slice->getDisableSATDForRD()) ? DF_HAD : DF_SAD;
-      Distortion cost = (Distortion)floor( fWeight * (double)m_pcRdCost->getDistPart( bufTmp.Y(), predBufB.Y(), pu.cs->sps->getBitDepth( CHANNEL_TYPE_LUMA ), COMPONENT_Y, distFunc ) );
+      Distortion cost     = (Distortion) floor(
+            fWeight
+            * (double) m_pcRdCost->getDistPart(bufTmp.Y(), predBufB.Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA),
+                                               COMPONENT_Y, distFunc));
 
       Mv pred = amvpCur.mvCand[i];
       pred.changeTransPrecInternal2Amvr(pu.cu->imv);

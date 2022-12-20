@@ -144,8 +144,8 @@ void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& c
   if( isLeafQG ) // QG at deepest level
   {
     int deltaQP = m_pcEncCfg->getMaxDeltaQP();
-    minQP = Clip3( -sps.getQpBDOffset( CHANNEL_TYPE_LUMA ), MAX_QP, baseQP - deltaQP );
-    maxQP = Clip3( -sps.getQpBDOffset( CHANNEL_TYPE_LUMA ), MAX_QP, baseQP + deltaQP );
+    minQP               = Clip3(-sps.getQpBDOffset(ChannelType::LUMA), MAX_QP, baseQP - deltaQP);
+    maxQP               = Clip3(-sps.getQpBDOffset(ChannelType::LUMA), MAX_QP, baseQP + deltaQP);
     Position pos = partitioner.currQgPos;
     const int ctuSize = sps.getCTUSize();
     const int ctuId = ( pos.y / ctuSize ) * ( ( cs.picture->lwidth() + ctuSize - 1 ) / ctuSize ) + ( pos.x / ctuSize );
@@ -161,7 +161,7 @@ void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& c
   else // deeper than QG
   {
     minQP = cs.currQP[partitioner.chType];
-    maxQP = cs.currQP[partitioner.chType];
+    maxQP = minQP;
   }
 }
 
@@ -241,7 +241,7 @@ int EncModeCtrl::calculateLumaDQP( const CPelBuf& rcOrg )
     avg = ( double ) maxVal * m_pcEncCfg->getLumaLevelToDeltaQPMapping().maxMethodWeight;
   }
 #endif
-  int lumaBD = m_pcEncCfg->getBitDepth(CHANNEL_TYPE_LUMA);
+  int lumaBD     = m_pcEncCfg->getBitDepth(ChannelType::LUMA);
   int lumaIdxOrg = Clip3<int>(0, int(1 << lumaBD) - 1, int(avg + 0.5));
   int lumaIdx = lumaBD < 10 ? lumaIdxOrg << (10 - lumaBD) : lumaBD > 10 ? lumaIdxOrg >> (lumaBD - 10) : lumaIdxOrg;
   int QP = m_lumaLevelToDeltaQPLUT[lumaIdx];
@@ -844,7 +844,8 @@ void BestEncInfoCache::init( const Slice &slice )
           {
             TCoeff *coeff[MAX_NUM_TBLOCKS] = { 0, };
             Pel    *pcmbf[MAX_NUM_TBLOCKS] = { 0, };
-            bool   *runType[MAX_NUM_TBLOCKS - 1] = { 0, };
+            EnumArray<bool *, ChannelType> runType;
+            runType.fill(nullptr);
 
 #if REUSE_CU_RESULTS_WITH_MULTIPLE_TUS
             for( int i = 0; i < MAX_NUM_TUS; i++ )
@@ -856,10 +857,12 @@ void BestEncInfoCache::init( const Slice &slice )
               {
                 coeff[i] = coeffPtr; coeffPtr += area.blocks[i].area();
                 pcmbf[i] = pcmPtr;   pcmPtr += area.blocks[i].area();
-                if (i < 2)
+                const auto        compId = ComponentID(i);
+                const ChannelType chType = toChannelType(compId);
+                if (compId == getFirstComponentOfChannel(chType) && runTypePtr != nullptr)
                 {
-                  runType[i] = runTypePtr;
-                  runTypePtr += runTypePtr ? area.blocks[i].area() : 0;
+                  runType[chType] = runTypePtr;
+                  runTypePtr += area.blocks[i].area();
                 }
               }
 
@@ -1103,8 +1106,8 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
 
   m_ComprCUCtxList.push_back(ComprCUCtx(cs, minDepth, maxDepth));
 
-  const CodingUnit* cuLeft  = cs.getCU( cs.area.blocks[partitioner.chType].pos().offset( -1, 0 ), partitioner.chType );
-  const CodingUnit* cuAbove = cs.getCU( cs.area.blocks[partitioner.chType].pos().offset( 0, -1 ), partitioner.chType );
+  const CodingUnit *cuLeft  = cs.getCU(cs.area.block(partitioner.chType).pos().offset(-1, 0), partitioner.chType);
+  const CodingUnit *cuAbove = cs.getCU(cs.area.block(partitioner.chType).pos().offset(0, -1), partitioner.chType);
 
   const bool qtBeforeBt =
     ((cuLeft && cuAbove && cuLeft->qtDepth > partitioner.currQtDepth && cuAbove->qtDepth > partitioner.currQtDepth)
@@ -1135,7 +1138,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
   {
     if (m_pcEncCfg->getUseAdaptiveQP())
     {
-      baseQP = Clip3(-cs.sps->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, baseQP + xComputeDQP(cs, partitioner));
+      baseQP = Clip3(-cs.sps->getQpBDOffset(ChannelType::LUMA), MAX_QP, baseQP + xComputeDQP(cs, partitioner));
     }
 #if ENABLE_QPA_SUB_CTU
     else if (m_pcEncCfg->getUsePerceptQPA() && !m_pcEncCfg->getUseRateCtrl() && cs.pps->getUseDQP() && cs.slice->getCuQpDeltaSubdiv() > 0)
@@ -1159,7 +1162,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
       {
         m_lumaQPOffset = calculateLumaDQP (cs.getOrgBuf (clipArea (cs.area.Y(), cs.picture->Y())));
       }
-      baseQP = Clip3 (-cs.sps->getQpBDOffset (CHANNEL_TYPE_LUMA), MAX_QP, baseQP - m_lumaQPOffset);
+      baseQP = Clip3(-cs.sps->getQpBDOffset(ChannelType::LUMA), MAX_QP, baseQP - m_lumaQPOffset);
     }
 #endif
     if (m_pcEncCfg->getSmoothQPReductionEnable())
@@ -1190,7 +1193,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
           }
         }
       }
-      baseQP = Clip3(-cs.sps->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, baseQP + smoothQPoffset);
+      baseQP = Clip3(-cs.sps->getQpBDOffset(ChannelType::LUMA), MAX_QP, baseQP + smoothQPoffset);
     }
   }
   int minQP = baseQP;
@@ -1198,7 +1201,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
 
   xGetMinMaxQP( minQP, maxQP, cs, partitioner, baseQP, *cs.sps, *cs.pps, CU_QUAD_SPLIT );
   bool checkIbc = true;
-  if (partitioner.chType == CHANNEL_TYPE_CHROMA)
+  if (partitioner.chType == ChannelType::CHROMA)
   {
     checkIbc = false;
   }
@@ -1327,7 +1330,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
     if (cs.sps->getIBCFlag() && checkIbc)
     {
       m_ComprCUCtxList.back().testModes.push_back({ ETM_IBC,         ETO_STANDARD,  qp });
-      if (partitioner.chType == CHANNEL_TYPE_LUMA)
+      if (isLuma(partitioner.chType))
       {
         m_ComprCUCtxList.back().testModes.push_back({ ETM_IBC_MERGE,   ETO_STANDARD,  qp });
       }
@@ -1541,7 +1544,8 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
         {
           DistParam distParam;
           const bool useHad = true;
-          m_pcRdCost->setDistParam( distParam, cs.getOrgBuf( COMPONENT_Y ), cuECtx.bestCS->getPredBuf( COMPONENT_Y ), cs.sps->getBitDepth( CHANNEL_TYPE_LUMA ), COMPONENT_Y, useHad );
+          m_pcRdCost->setDistParam(distParam, cs.getOrgBuf(COMPONENT_Y), cuECtx.bestCS->getPredBuf(COMPONENT_Y),
+                                   cs.sps->getBitDepth(ChannelType::LUMA), COMPONENT_Y, useHad);
           cuECtx.interHad = distParam.distFunc( distParam );
         }
       }
@@ -1902,7 +1906,7 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
       setFromCs( *bestCS, partitioner );
 
 #endif
-      if( partitioner.modeType == MODE_TYPE_INTRA && partitioner.chType == CHANNEL_TYPE_LUMA )
+      if (partitioner.modeType == MODE_TYPE_INTRA && isLuma(partitioner.chType))
       {
         return false; //not set best coding mode for intra coding pass
       }
@@ -2170,9 +2174,9 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
     {
       if( tempCS->cus.size() > 2 )
       {
-        int h_2 = tempCS->area.blocks[partitioner.chType].height / 2;
-        int cu1_h = tempCS->cus.front()->blocks[partitioner.chType].height;
-        int cu2_h = tempCS->cus.back()->blocks[partitioner.chType].height;
+        int h_2   = tempCS->area.block(partitioner.chType).height / 2;
+        int cu1_h = tempCS->cus.front()->block(partitioner.chType).height;
+        int cu2_h = tempCS->cus.back()->block(partitioner.chType).height;
 
         cuECtx.set( DO_TRIH_SPLIT, cu1_h < h_2 || cu2_h < h_2 || partitioner.currMtDepth + 1 == maxMtD );
       }
@@ -2181,9 +2185,9 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
     {
       if( tempCS->cus.size() > 2 )
       {
-        int w_2 = tempCS->area.blocks[partitioner.chType].width / 2;
-        int cu1_w = tempCS->cus.front()->blocks[partitioner.chType].width;
-        int cu2_w = tempCS->cus.back()->blocks[partitioner.chType].width;
+        int w_2   = tempCS->area.block(partitioner.chType).width / 2;
+        int cu1_w = tempCS->cus.front()->block(partitioner.chType).width;
+        int cu2_w = tempCS->cus.back()->block(partitioner.chType).width;
 
         cuECtx.set( DO_TRIV_SPLIT, cu1_w < w_2 || cu2_w < w_2 || partitioner.currMtDepth + 1 == maxMtD );
       }

@@ -72,53 +72,52 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
   std::string ignore;
 #endif
   po::Options opts;
+  // clang-format off
   opts.addOptions()
 
   ("help",                      do_help,                               false,      "this help text")
   ("BitstreamFile,b",           m_bitstreamFileName,                   string(""), "bitstream input file name")
   ("ReconFile,o",               m_reconFileName,                       string(""), "reconstructed YUV output file name\n")
-
-  ("OplFile,-opl",              m_oplFilename ,                        string(""), "opl-file name without extension for conformance testing\n")
+  ("OplFile,-opl",              m_oplFilename,                         string(""), "opl-file name without extension for conformance testing\n")
 
 #if ENABLE_SIMD_OPT
   ("SIMD",                      ignore,                                string(""), "SIMD extension to use (SCALAR, SSE41, SSE42, AVX, AVX2, AVX512), default: the highest supported extension\n")
 #endif
-
   ("WarnUnknowParameter,w",     warnUnknowParameter,                   0,          "warn for unknown configuration parameters instead of failing")
   ("SkipFrames,s",              m_iSkipFrame,                          0,          "number of frames to skip before random access")
-  ("OutputBitDepth,d",          m_outputBitDepth[CHANNEL_TYPE_LUMA],   0,          "bit depth of YUV output luma component (default: use 0 for native depth)")
-  ("OutputBitDepthC,d",         m_outputBitDepth[CHANNEL_TYPE_CHROMA], 0,          "bit depth of YUV output chroma component (default: use luma output bit-depth)")
+  ("OutputBitDepth,d",          m_outputBitDepth[ChannelType::LUMA],   0,          "bit depth of YUV output luma component (default: use 0 for native depth)")
+  ("OutputBitDepthC,d",         m_outputBitDepth[ChannelType::CHROMA], 0,          "bit depth of YUV output chroma component (default: use luma output bit-depth)")
   ("OutputColourSpaceConvert",  outputColourSpaceConvert,              string(""), "Colour space conversion to apply to input 444 video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(false))
-  ("MaxTemporalLayer,t",        m_iMaxTemporalLayer,                   500,    "Maximum Temporal Layer to be decoded. -1 to decode all layers")
-  ("TargetOutputLayerSet,p",    m_targetOlsIdx,                        500,    "Target output layer set index")
+  ("MaxTemporalLayer,t",        m_iMaxTemporalLayer,                   500,        "Maximum Temporal Layer to be decoded. -1 to decode all layers")
+  ("TargetOutputLayerSet,p",    m_targetOlsIdx,                        500,        "Target output layer set index")
 #if JVET_Z0120_SII_SEI_PROCESSING
   ("SEIShutterIntervalPostFilename,-sii", m_shutterIntervalPostFileName, string(""), "Post Filtering with Shutter Interval SEI. If empty, no filtering is applied (ignore SEI message)\n")
 #endif
-  ("SEIDecodedPictureHash,-dph",m_decodedPictureHashSEIEnabled,        1,          "Control handling of decoded picture hash SEI messages\n"
+  ("SEIDecodedPictureHash,-dph", m_decodedPictureHashSEIEnabled,       1,          "Control handling of decoded picture hash SEI messages\n"
                                                                                    "\t1: check hash in SEI messages if available in the bitstream\n"
                                                                                    "\t0: ignore SEI message")
   ("SEINoDisplay",              m_decodedNoDisplaySEIEnabled,          true,       "Control handling of decoded no display SEI messages")
   ("TarDecLayerIdSetFile,l",    cfg_TargetDecLayerIdSetFile,           string(""), "targetDecLayerIdSet file name. The file should include white space separated LayerId values to be decoded. Omitting the option or a value of -1 in the file decodes all layers.")
-  ("SEIColourRemappingInfoFilename",  m_colourRemapSEIFileName,        string(""), "Colour Remapping YUV output file name. If empty, no remapping is applied (ignore SEI message)\n")
+  ("SEIColourRemappingInfoFilename", m_colourRemapSEIFileName,         string(""), "Colour Remapping YUV output file name. If empty, no remapping is applied (ignore SEI message)\n")
   ("SEICTIFilename",            m_SEICTIFileName,                      string(""), "CTI YUV output file name. If empty, no Colour Transform is applied (ignore SEI message)\n")
   ("SEIFGSFilename",            m_SEIFGSFileName,                      string(""), "FGS YUV output file name. If empty, no film grain is applied (ignore SEI message)\n")
-  ("SEIAnnotatedRegionsInfoFilename",  m_annotatedRegionsSEIFileName,   string(""), "Annotated regions output file name. If empty, no object information will be saved (ignore SEI message)\n")
-  ("OutputDecodedSEIMessagesFilename",  m_outputDecodedSEIMessagesFilename,    string(""), "When non empty, output decoded SEI messages to the indicated file. If file is '-', then output to stdout\n")
+  ("SEIAnnotatedRegionsInfoFilename", m_annotatedRegionsSEIFileName,   string(""), "Annotated regions output file name. If empty, no object information will be saved (ignore SEI message)\n")
+  ("OutputDecodedSEIMessagesFilename", m_outputDecodedSEIMessagesFilename, string(""), "When non empty, output decoded SEI messages to the indicated file. If file is '-', then output to stdout\n")
 #if JVET_S0257_DUMP_360SEI_MESSAGE
-  ("360DumpFile",  m_outputDecoded360SEIMessagesFilename, string(""), "When non empty, output decoded 360 SEI messages to the indicated file.\n")
+  ("360DumpFile",               m_outputDecoded360SEIMessagesFilename, string(""), "When non empty, output decoded 360 SEI messages to the indicated file.\n")
 #endif
   ("ClipOutputVideoToRec709Range",      m_clipOutputVideoToRec709Range,  false,   "If true then clip output video to the Rec. 709 Range on saving")
   ("PYUV",                      m_packedYUVMode,                       false,      "If true then output 10-bit and 12-bit YUV data as 5-byte and 3-byte (respectively) packed YUV data. Ignored for interlaced output.")
 #if ENABLE_TRACING
-  ("TraceChannelsList",         bTracingChannelsList,                        false, "List all available tracing channels" )
-  ("TraceRule",                 sTracingRule,                         string( "" ), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")" )
-  ("TraceFile",                 sTracingFile,                         string( "" ), "Tracing file" )
+  ("TraceChannelsList",         bTracingChannelsList,                  false,      "List all available tracing channels")
+  ("TraceRule",                 sTracingRule,                          string(""), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")")
+  ("TraceFile",                 sTracingFile,                          string(""), "Tracing file")
 #endif
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
-  ("CacheCfg",                  m_cacheCfgFile,                       string( "" ), "CacheCfg File" )
+  ("CacheCfg",                  m_cacheCfgFile,                        string(""), "CacheCfg File")
 #endif
 #if RExt__DECODER_DEBUG_STATISTICS
-  ("Stats",                     m_statMode,                           3,           "Control decoder debugging statistic output mode\n"
+  ("Stats",                     m_statMode,                            3,          "Control decoder debugging statistic output mode\n"
                                                                                    "\t0: disable statistic\n"
                                                                                    "\t1: enable bit statistic\n"
                                                                                    "\t2: enable tool statistic\n"
@@ -136,9 +135,10 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
   ("UpscaleFilterForDisplay",  m_upscaleFilterForDisplay,                 1,       "Filters used for upscaling reconstruction to full resolution (2: ECM 12 - tap luma and 6 - tap chroma MC filters, 1 : Alternative 12 - tap luma and 6 - tap chroma filters, 0 : VVC 8 - tap luma and 4 - tap chroma MC filters)")
 #endif
 #if GDR_LEAK_TEST
-  ("RandomAccessPos",          m_gdrPocRandomAccess,                    0,         "POC of GDR Random access picture\n" )
+  ("RandomAccessPos",           m_gdrPocRandomAccess,                  0,          "POC of GDR Random access picture\n")
 #endif // GDR_LEAK_TEST
-  ;
+    ;
+  // clang-format on
 
   po::setDefaults(opts);
   po::ErrorReporter err;
@@ -176,9 +176,9 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
 
   g_mctsDecCheckEnabled = m_mctsCheck;
   // Chroma output bit-depth
-  if( m_outputBitDepth[CHANNEL_TYPE_LUMA] != 0 && m_outputBitDepth[CHANNEL_TYPE_CHROMA] == 0 )
+  if (m_outputBitDepth[ChannelType::LUMA] != 0 && m_outputBitDepth[ChannelType::CHROMA] == 0)
   {
-    m_outputBitDepth[CHANNEL_TYPE_CHROMA] = m_outputBitDepth[CHANNEL_TYPE_LUMA];
+    m_outputBitDepth[ChannelType::CHROMA] = m_outputBitDepth[ChannelType::LUMA];
   }
 
   m_outputColourSpaceConvert = stringToInputColourSpaceConvert(outputColourSpaceConvert, false);
@@ -286,10 +286,7 @@ DecAppCfg::DecAppCfg()
 , m_statMode(0)
 , m_mctsCheck(false)
 {
-  for (uint32_t channelTypeIndex = 0; channelTypeIndex < MAX_NUM_CHANNEL_TYPE; channelTypeIndex++)
-  {
-    m_outputBitDepth[channelTypeIndex] = 0;
-  }
+  m_outputBitDepth.fill(0);
 }
 
 DecAppCfg::~DecAppCfg()

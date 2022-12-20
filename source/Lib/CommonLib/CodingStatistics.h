@@ -250,7 +250,8 @@ public:
   {
   }
 
-  CodingStatisticsClassType( const CodingStatisticsType t, const ChannelType chid ) : type( t ), subClass( ( chid + MAX_NUM_COMPONENT + 1 ) * CODING_STATS_NUM_SIZES )
+  CodingStatisticsClassType(const CodingStatisticsType t, const ChannelType chid)
+    : type(t), subClass((to_underlying(chid) + MAX_NUM_COMPONENT + 1) * CODING_STATS_NUM_SIZES)
   {
   }
 
@@ -258,7 +259,11 @@ public:
   {
   }
 
-  CodingStatisticsClassType( const CodingStatisticsType t, const uint32_t width, const uint32_t height, const ChannelType chid ) : type( t ), subClass( ( chid + MAX_NUM_COMPONENT + 1 ) * CODING_STATS_NUM_SIZES + gp_sizeIdxInfo->idxFrom( height ) * CODING_STATS_NUM_WIDTHS + gp_sizeIdxInfo->idxFrom( width ) )
+  CodingStatisticsClassType(const CodingStatisticsType t, const uint32_t width, const uint32_t height,
+                            const ChannelType chid)
+    : type(t)
+    , subClass((to_underlying(chid) + MAX_NUM_COMPONENT + 1) * CODING_STATS_NUM_SIZES
+               + gp_sizeIdxInfo->idxFrom(height) * CODING_STATS_NUM_WIDTHS + gp_sizeIdxInfo->idxFrom(width))
   {
   }
 

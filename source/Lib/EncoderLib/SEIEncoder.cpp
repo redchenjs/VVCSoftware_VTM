@@ -1155,7 +1155,7 @@ void SEIEncoder::initSEIColourTransformInfo(SEIColourTransformInfo* seiCTI)
   seiCTI->m_numberChromaLutMinus1 = m_pcCfg->getCtiSEINbChromaLut() - 1;
   seiCTI->m_chromaOffset = m_pcCfg->getCtiSEIChromaOffset();
 
-  seiCTI->m_bitdepth = m_pcCfg->getBitDepth(CHANNEL_TYPE_LUMA);
+  seiCTI->m_bitdepth = m_pcCfg->getBitDepth(ChannelType::LUMA);
 
   for (int i = 0; i < MAX_NUM_COMPONENT; i++) {
     seiCTI->m_lut[i] = m_pcCfg->getCtiSEILut(i);

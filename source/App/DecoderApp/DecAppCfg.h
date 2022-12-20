@@ -62,7 +62,8 @@ protected:
   std::string   m_oplFilename;                        ///< filename to output conformance log.
 
   int           m_iSkipFrame;                           ///< counter for frames prior to the random access point to skip
-  int           m_outputBitDepth[MAX_NUM_CHANNEL_TYPE]; ///< bit depth used for writing output
+  BitDepths     m_outputBitDepth;                       // bit depth used for writing output
+
   InputColourSpaceConversion m_outputColourSpaceConvert;
   int           m_targetOlsIdx;                       ///< target output layer set
   std::vector<int> m_targetOutputLayerIdSet;          ///< set of LayerIds to be outputted

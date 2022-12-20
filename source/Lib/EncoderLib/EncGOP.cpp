@@ -229,25 +229,25 @@ void EncGOP::init ( EncLib* pcEncLib )
   {
     m_fgAnalyzer.init(m_pcCfg->getSourceWidth(), m_pcCfg->getSourceHeight(), m_pcCfg->getSourcePadding(0),
                       m_pcCfg->getSourcePadding(1), IPCOLOURSPACE_UNCHANGED, false, m_pcCfg->getChromaFormatIdc(),
-                      *(BitDepths *) m_pcCfg->getInputBitDepth(), *(BitDepths *) m_pcCfg->getBitDepth(),
-                      m_pcCfg->getFrameSkip(), m_pcCfg->getFGCSEICompModelPresent(),
-                      m_pcCfg->getFilmGrainExternalMask(), m_pcCfg->getFilmGrainExternalDenoised());
+                      m_pcCfg->getInputBitDepth(), m_pcCfg->getBitDepth(), m_pcCfg->getFrameSkip(),
+                      m_pcCfg->getFGCSEICompModelPresent(), m_pcCfg->getFilmGrainExternalMask(),
+                      m_pcCfg->getFilmGrainExternalDenoised());
   }
 
 #if WCG_EXT
   if (m_pcCfg->getLmcs())
   {
-    pcEncLib->getRdCost()->setReshapeInfo(m_pcCfg->getReshapeSignalType(), m_pcCfg->getBitDepth(CHANNEL_TYPE_LUMA));
+    pcEncLib->getRdCost()->setReshapeInfo(m_pcCfg->getReshapeSignalType(), m_pcCfg->getBitDepth(ChannelType::LUMA));
     pcEncLib->getRdCost()->initLumaLevelToWeightTableReshape();
   }
   else if (m_pcCfg->getLumaLevelToDeltaQPMapping().mode)
   {
-    pcEncLib->getRdCost()->setReshapeInfo(RESHAPE_SIGNAL_PQ, m_pcCfg->getBitDepth(CHANNEL_TYPE_LUMA));
+    pcEncLib->getRdCost()->setReshapeInfo(RESHAPE_SIGNAL_PQ, m_pcCfg->getBitDepth(ChannelType::LUMA));
     pcEncLib->getRdCost()->initLumaLevelToWeightTableReshape();
   }
   else if (m_pcCfg->getPrintWPSNR())
   {
-    pcEncLib->getRdCost()->initLumaLevelToWeightTable(m_pcCfg->getBitDepth(CHANNEL_TYPE_LUMA));
+    pcEncLib->getRdCost()->initLumaLevelToWeightTable(m_pcCfg->getBitDepth(ChannelType::LUMA));
   }
 
   const bool alfWSSD = m_pcCfg->getLmcs() && m_pcCfg->getReshapeSignalType() == RESHAPE_SIGNAL_PQ;
@@ -278,7 +278,7 @@ void EncGOP::init ( EncLib* pcEncLib )
     double maxSampleValue                       = m_pcCfg->getMaxSampleValue();
     hdrtoolslib::SampleRange sampleRange        = m_pcCfg->getSampleRange();
     hdrtoolslib::ChromaFormat chFmt             = hdrtoolslib::ChromaFormat(m_pcCfg->getChromaFormatIdc());
-    int bitDepth = m_pcCfg->getBitDepth(CHANNEL_TYPE_LUMA);
+    int                          bitDepth          = m_pcCfg->getBitDepth(ChannelType::LUMA);
     hdrtoolslib::ColorPrimaries colorPrimaries  = m_pcCfg->getColorPrimaries();
     bool enableTFunctionLUT                     = m_pcCfg->getEnableTFunctionLUT();
     hdrtoolslib::ChromaLocation* chromaLocation = new hdrtoolslib::ChromaLocation[2];
@@ -1531,8 +1531,9 @@ cabac_zero_word_padding(const Slice *const pcSlice,
   const int minCuHeight = 1 << pcSlice->getSPS()->getLog2MinCodingBlockSize();
   const int paddedWidth = ( ( pcSlice->getPPS()->getPicWidthInLumaSamples() + minCuWidth - 1 ) / minCuWidth ) * minCuWidth;
   const int paddedHeight = ( ( pcSlice->getPPS()->getPicHeightInLumaSamples() + minCuHeight - 1 ) / minCuHeight ) * minCuHeight;
-  const int rawBits = paddedWidth * paddedHeight *
-                         (sps.getBitDepth(CHANNEL_TYPE_LUMA) + ((2*sps.getBitDepth(CHANNEL_TYPE_CHROMA))>>log2subWidthCxsubHeightC));
+  const int rawBits =
+    paddedWidth * paddedHeight
+    * (sps.getBitDepth(ChannelType::LUMA) + ((2 * sps.getBitDepth(ChannelType::CHROMA)) >> log2subWidthCxsubHeightC));
   const int vclByteScaleFactor_x3 = ( 32 + 4 * (plt.getTier()==Level::HIGH ? 1 : 0) );
   const std::size_t threshold = (vclByteScaleFactor_x3*numBytesInVclNalUnits/3) + (rawBits/32);
   // "The value of BinCountsInPicNalUnits shall be less than or equal to vclByteScaleFactor * NumBytesInPicVclNalUnits     + ( RawMinCuBits * PicSizeInMinCbsY ) / 32."
@@ -2012,8 +2013,9 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
     double dLambda_scale = 1.0 - Clip3( 0.0, 0.5, 0.05*(double)NumberBFrames );
     double dQPFactor     = 0.57*dLambda_scale;
     int    SHIFT_QP      = 12;
-    int bitdepth_luma_qp_scale = 6 * (slice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) - 8
-                                - DISTORTION_PRECISION_ADJUSTMENT(slice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA)));
+    int    bitdepth_luma_qp_scale = 6
+                                 * (slice->getSPS()->getBitDepth(ChannelType::LUMA) - 8
+                                    - DISTORTION_PRECISION_ADJUSTMENT(slice->getSPS()->getBitDepth(ChannelType::LUMA)));
     double qp_temp = (double) sliceQP + bitdepth_luma_qp_scale - SHIFT_QP;
     lambda = dQPFactor*pow( 2.0, qp_temp/3.0 );
   }
@@ -2062,7 +2064,7 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
     sliceQP = m_pcRateCtrl->getRCPic()->estimatePicQP( lambda, listPreviousPicture );
   }
 
-  sliceQP = Clip3( -slice->getSPS()->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, sliceQP );
+  sliceQP = Clip3(-slice->getSPS()->getQpBDOffset(ChannelType::LUMA), MAX_QP, sliceQP);
   m_pcRateCtrl->getRCPic()->setPicEstQP( sliceQP );
 
   m_pcSliceEncoder->resetQP( pic, sliceQP, lambda );
@@ -2290,7 +2292,7 @@ void EncGOP::computeSignalling(Picture* pcPic, Slice* pcSlice) const
       int tsrcIndex = Clip3<int>(0, 7, winCentre / 6);
       if (ignored > total)
       {
-        tsrcIndex = std::min(tsrcIndex, std::max(0, pcPic->cs->sps->getBitDepth(CHANNEL_TYPE_LUMA) - 9));
+        tsrcIndex = std::min(tsrcIndex, std::max(0, pcPic->cs->sps->getBitDepth(ChannelType::LUMA) - 9));
       }
       pcSlice->setTsrcIndex(tsrcIndex);
     }
@@ -2827,10 +2829,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         if (identicalToSps && sps->getUseDualITree())
         {
           identicalToSps =
-            picHeader->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA) == sps->getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA)
-            && picHeader->getMaxMTTHierarchyDepth(I_SLICE, CHANNEL_TYPE_CHROMA) == sps->getMaxMTTHierarchyDepthIChroma()
-            && picHeader->getMaxBTSize(I_SLICE, CHANNEL_TYPE_CHROMA) == sps->getMaxBTSizeIChroma()
-            && picHeader->getMaxTTSize(I_SLICE, CHANNEL_TYPE_CHROMA) == sps->getMaxTTSizeIChroma();
+            picHeader->getMinQTSize(I_SLICE, ChannelType::CHROMA) == sps->getMinQTSize(I_SLICE, ChannelType::CHROMA)
+            && picHeader->getMaxMTTHierarchyDepth(I_SLICE, ChannelType::CHROMA) == sps->getMaxMTTHierarchyDepthIChroma()
+            && picHeader->getMaxBTSize(I_SLICE, ChannelType::CHROMA) == sps->getMaxBTSizeIChroma()
+            && picHeader->getMaxTTSize(I_SLICE, ChannelType::CHROMA) == sps->getMaxTTSizeIChroma();
         }
       }
 
@@ -3486,7 +3488,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         {
           for (uint32_t xPos = 0; xPos < pcv.lumaWidth; xPos += pcv.maxCUWidth)
           {
-            const CodingUnit* cu = cs.getCU(Position(xPos, yPos), CHANNEL_TYPE_LUMA);
+            const CodingUnit *cu = cs.getCU(Position(xPos, yPos), ChannelType::LUMA);
             if (cu->slice->getLmcsEnabledFlag())
             {
               const uint32_t width = (xPos + pcv.maxCUWidth > pcv.lumaWidth) ? (pcv.lumaWidth - xPos) : pcv.maxCUWidth;
@@ -3514,8 +3516,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         const uint32_t widthInCtus = ( picWidth + maxCUWidth - 1 ) / maxCUWidth;
         const uint32_t heightInCtus = ( picHeight + maxCUHeight - 1 ) / maxCUHeight;
         const uint32_t numCtuInFrame = widthInCtus * heightInCtus;
-        const uint32_t  log2SaoOffsetScaleLuma   = (uint32_t) std::max(0, pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA  ) - MAX_SAO_TRUNCATED_BITDEPTH);
-        const uint32_t  log2SaoOffsetScaleChroma = (uint32_t) std::max(0, pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_CHROMA) - MAX_SAO_TRUNCATED_BITDEPTH);
+        const uint32_t log2SaoOffsetScaleLuma =
+          (uint32_t) std::max(0, pcSlice->getSPS()->getBitDepth(ChannelType::LUMA) - MAX_SAO_TRUNCATED_BITDEPTH);
+        const uint32_t log2SaoOffsetScaleChroma =
+          (uint32_t) std::max(0, pcSlice->getSPS()->getBitDepth(ChannelType::CHROMA) - MAX_SAO_TRUNCATED_BITDEPTH);
 
         m_pcSAO->create( picWidth, picHeight, chromaFormatIDC, maxCUWidth, maxCUHeight, maxTotalCUDepth, log2SaoOffsetScaleLuma, log2SaoOffsetScaleChroma );
         m_pcSAO->destroyEncData();
@@ -3586,14 +3590,14 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         {
           if (pcPic->slices[s]->isLossless() && m_pcCfg->getCostMode() == COST_LOSSLESS_CODING)
           {
-            pcPic->slices[s]->setSaoEnabledFlag(CHANNEL_TYPE_LUMA, false);
-            pcPic->slices[s]->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, false);
+            pcPic->slices[s]->setSaoEnabledFlag(ChannelType::LUMA, false);
+            pcPic->slices[s]->setSaoEnabledFlag(ChannelType::CHROMA, false);
           }
           else
           {
-            pcPic->slices[s]->setSaoEnabledFlag(CHANNEL_TYPE_LUMA, sliceEnabled[COMPONENT_Y]);
+            pcPic->slices[s]->setSaoEnabledFlag(ChannelType::LUMA, sliceEnabled[COMPONENT_Y]);
             CHECK(!(sliceEnabled[COMPONENT_Cb] == sliceEnabled[COMPONENT_Cr]), "Unspecified error");
-            pcPic->slices[s]->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, sliceEnabled[COMPONENT_Cb]);
+            pcPic->slices[s]->setSaoEnabledFlag(ChannelType::CHROMA, sliceEnabled[COMPONENT_Cb]);
           }
         }
 #if GREEN_METADATA_SEI_ENABLED
@@ -4026,8 +4030,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           // code SAO parameters in picture header or slice headers
           if( !m_pcCfg->getSliceLevelSao() )
           {
-            picHeader->setSaoEnabledFlag(CHANNEL_TYPE_LUMA,   pcSlice->getSaoEnabledFlag(CHANNEL_TYPE_LUMA  ));
-            picHeader->setSaoEnabledFlag(CHANNEL_TYPE_CHROMA, pcSlice->getSaoEnabledFlag(CHANNEL_TYPE_CHROMA));
+            picHeader->setSaoEnabledFlag(ChannelType::LUMA, pcSlice->getSaoEnabledFlag(ChannelType::LUMA));
+            picHeader->setSaoEnabledFlag(ChannelType::CHROMA, pcSlice->getSaoEnabledFlag(ChannelType::CHROMA));
           }
 
           // code ALF parameters in picture header or slice headers
@@ -6146,8 +6150,8 @@ void EncGOP::arrangeCompositeReference(Slice* pcSlice, PicList& rcListPic, int p
     minCtuCost[i].cost = 1e10;
     minCtuCost[i].ctuIdx = -1;
   }
-  int bitIncrementY = pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) - 8;
-  int bitIncrementUV = pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_CHROMA) - 8;
+  int bitIncrementY  = pcSlice->getSPS()->getBitDepth(ChannelType::LUMA) - 8;
+  int bitIncrementUV = pcSlice->getSPS()->getBitDepth(ChannelType::CHROMA) - 8;
   for (int y = 0; y < height; y += cuMaxHeight)
   {
     for (int x = 0; x < width; x += cuMaxWidth)
@@ -6337,7 +6341,7 @@ void EncGOP::applyDeblockingFilterMetric( Picture* pcPic, uint32_t uiNumSlices )
   Pel p0, p1, p2, q0, q1, q2;
 
   int qp = pcSlice->getSliceQp();
-  const int bitDepthLuma=pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA);
+  const int bitDepthLuma  = pcSlice->getSPS()->getBitDepth(ChannelType::LUMA);
   int bitdepthScale = 1 << (bitDepthLuma-8);
   int beta = DeblockingFilter::getBeta( qp ) * bitdepthScale;
   const int thr2 = (beta>>2);

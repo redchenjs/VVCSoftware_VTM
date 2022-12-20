@@ -130,16 +130,17 @@ static void scalePlane( PelBuf& areaBuf, const int shiftbits, const Pel minval, 
  * \param MSBExtendedBitDepth
  * \param internalBitDepth bit-depth array to scale image data to/from when reading/writing.
  */
-void VideoIOYuv::open( const std::string &fileName, bool bWriteMode, const int fileBitDepth[MAX_NUM_CHANNEL_TYPE], const int MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE], const int internalBitDepth[MAX_NUM_CHANNEL_TYPE] )
+void VideoIOYuv::open(const std::string &fileName, bool bWriteMode, const BitDepths &fileBitDepth,
+                      const BitDepths &MSBExtendedBitDepth, const BitDepths &internalBitDepth)
 {
   //NOTE: files cannot have bit depth greater than 16
-  for(uint32_t ch=0; ch<MAX_NUM_CHANNEL_TYPE; ch++)
+  for (const auto chType: { ChannelType::LUMA, ChannelType::CHROMA })
   {
-    m_fileBitdepth       [ch] = std::min<uint32_t>(fileBitDepth[ch], 16);
-    m_msbExtendedBitDepth[ch] = MSBExtendedBitDepth[ch];
-    m_bitdepthShift[ch]       = internalBitDepth[ch] - m_msbExtendedBitDepth[ch];
+    m_fileBitdepth[chType]        = std::min<uint32_t>(fileBitDepth[chType], 16);
+    m_msbExtendedBitDepth[chType] = MSBExtendedBitDepth[chType];
+    m_bitdepthShift[chType]       = internalBitDepth[chType] - m_msbExtendedBitDepth[chType];
 
-    if (m_fileBitdepth[ch] > 16)
+    if (m_fileBitdepth[chType] > 16)
     {
       if (bWriteMode)
       {
@@ -1029,9 +1030,9 @@ bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpac
 
   bool is16bit = false;
 
-  for(uint32_t ch=0; ch<MAX_NUM_CHANNEL_TYPE; ch++)
+  for (const auto bd: m_fileBitdepth)
   {
-    if (m_fileBitdepth[ch] > 8)
+    if (bd > 8)
     {
       is16bit=true;
     }
@@ -1080,14 +1081,16 @@ bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpac
 #if EXTENSION_360_VIDEO
     const uint32_t stride444 = picOrg.get(compID).stride;
 #endif
-    if ( ! readPlane( dst, m_cHandle, is16bit, stride444, width444, height444, pad_h444, pad_v444, compID, picOrg.chromaFormat, format, m_fileBitdepth[chType]))
+    if (!readPlane(dst, m_cHandle, is16bit, stride444, width444, height444, pad_h444, pad_v444, compID,
+                   picOrg.chromaFormat, format, m_fileBitdepth[chType]))
     {
       return false;
     }
 
     if (processComponent)
     {
-      if (! verifyPlane( dst, stride444, width444, height444, pad_h444, pad_v444, compID, picOrg.chromaFormat, m_fileBitdepth[chType]) )
+      if (!verifyPlane(dst, stride444, width444, height444, pad_h444, pad_v444, compID, picOrg.chromaFormat,
+                       m_fileBitdepth[chType]))
       {
          EXIT("Source image contains values outside the specified bit range!");
       }
@@ -1097,7 +1100,7 @@ bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpac
         EXIT("RExt__HIGH_BIT_DEPTH_SUPPORT must be enabled for bit depths above 14 if INTERNALBITDEPTH < INPUTBITDEPTH");
       }
 #endif
-      scalePlane( picOrg.get(compID), m_bitdepthShift[chType], minval, maxval);
+      scalePlane(picOrg.get(compID), m_bitdepthShift[chType], minval, maxval);
     }
   }
 
@@ -1144,15 +1147,18 @@ bool VideoIOYuv::write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf 
 
   // compute actual YUV frame size excluding padding size
   bool is16bit = false;
-  bool nonZeroBitDepthShift=false;
-
-  for(uint32_t ch=0; ch<MAX_NUM_CHANNEL_TYPE; ch++)
+  for (const auto bd: m_fileBitdepth)
   {
-    if (m_fileBitdepth[ch] > 8)
+    if (bd > 8)
     {
       is16bit=true;
     }
-    if (m_bitdepthShift[ch] != 0)
+  }
+
+  bool nonZeroBitDepthShift = false;
+  for (const auto bdShift: m_bitdepthShift)
+  {
+    if (bdShift != 0)
     {
       nonZeroBitDepthShift=true;
     }
@@ -1182,7 +1188,7 @@ bool VideoIOYuv::write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf 
       const Pel maxval =
         rec709Compliance ? ((0xff << (m_msbExtendedBitDepth[ch] - 8)) - 1) : (1 << m_msbExtendedBitDepth[ch]) - 1;
 
-      scalePlane( picZ.get(compID), -m_bitdepthShift[ch], minval, maxval);
+      scalePlane(picZ.get(compID), -m_bitdepthShift[ch], minval, maxval);
     }
   }
 
@@ -1244,15 +1250,18 @@ bool VideoIOYuv::write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBottom, 
   const CPelUnitBuf& picBottomC = (ipCSC==IPCOLOURSPACE_UNCHANGED) ? picBottom : intermBottom;
 
   bool is16bit = false;
-  bool nonZeroBitDepthShift=false;
-
-  for(uint32_t ch=0; ch<MAX_NUM_CHANNEL_TYPE; ch++)
+  for (const auto bd: m_fileBitdepth)
   {
-    if (m_fileBitdepth[ch] > 8)
+    if (bd > 8)
     {
       is16bit=true;
     }
-    if (m_bitdepthShift[ch] != 0)
+  }
+
+  bool nonZeroBitDepthShift = false;
+  for (const auto bdShift: m_bitdepthShift)
+  {
+    if (bdShift != 0)
     {
       nonZeroBitDepthShift=true;
     }
@@ -1289,7 +1298,7 @@ bool VideoIOYuv::write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBottom, 
         const Pel maxval =
           rec709Compliance ? ((0xff << (m_msbExtendedBitDepth[ch] - 8)) - 1) : (1 << m_msbExtendedBitDepth[ch]) - 1;
 
-        scalePlane( picZ.get(compID), -m_bitdepthShift[ch], minval, maxval);
+        scalePlane(picZ.get(compID), -m_bitdepthShift[ch], minval, maxval);
       }
     }
   }

@@ -252,7 +252,8 @@ void EncCu::init( EncLib* pcEncLib, const SPS& sps )
 // Public member functions
 // ====================================================================================================================
 
-void EncCu::compressCtu( CodingStructure& cs, const UnitArea& area, const unsigned ctuRsAddr, const int prevQP[], const int currQP[] )
+void EncCu::compressCtu(CodingStructure &cs, const UnitArea &area, const unsigned ctuRsAddr,
+                        const EnumArray<int, ChannelType> &prevQP, const EnumArray<int, ChannelType> &currQP)
 {
   m_modeCtrl->initCTUEncoding( *cs.slice );
   cs.treeType = TREE_D;
@@ -261,7 +262,7 @@ void EncCu::compressCtu( CodingStructure& cs, const UnitArea& area, const unsign
   cs.slice->m_mapPltCost[1].clear();
   // init the partitioning manager
   QTBTPartitioner partitioner;
-  partitioner.initCtu(area, CH_L, *cs.slice);
+  partitioner.initCtu(area, ChannelType::LUMA, *cs.slice);
   if (m_pcEncCfg->getIBCMode())
   {
     if (area.lx() == 0 && area.ly() == 0)
@@ -294,9 +295,9 @@ void EncCu::compressCtu( CodingStructure& cs, const UnitArea& area, const unsign
 
   cs.initSubStructure(*tempCS, partitioner.chType, partitioner.currArea(), false);
   cs.initSubStructure(*bestCS, partitioner.chType, partitioner.currArea(), false);
-  tempCS->currQP[CH_L] = bestCS->currQP[CH_L] =
-  tempCS->baseQP       = bestCS->baseQP       = currQP[CH_L];
-  tempCS->prevQP[CH_L] = bestCS->prevQP[CH_L] = prevQP[CH_L];
+  tempCS->currQP[ChannelType::LUMA] = bestCS->currQP[ChannelType::LUMA] = tempCS->baseQP = bestCS->baseQP =
+    currQP[ChannelType::LUMA];
+  tempCS->prevQP[ChannelType::LUMA] = bestCS->prevQP[ChannelType::LUMA] = prevQP[ChannelType::LUMA];
 
   xCompressCU(tempCS, bestCS, partitioner);
   cs.slice->m_mapPltCost[0].clear();
@@ -310,13 +311,13 @@ void EncCu::compressCtu( CodingStructure& cs, const UnitArea& area, const unsign
   {
     m_CABACEstimator->getCtx() = m_CurrCtx->start;
 
-    partitioner.initCtu(area, CH_C, *cs.slice);
+    partitioner.initCtu(area, ChannelType::CHROMA, *cs.slice);
 
     cs.initSubStructure(*tempCS, partitioner.chType, partitioner.currArea(), false);
     cs.initSubStructure(*bestCS, partitioner.chType, partitioner.currArea(), false);
-    tempCS->currQP[CH_C] = bestCS->currQP[CH_C] =
-    tempCS->baseQP       = bestCS->baseQP       = currQP[CH_C];
-    tempCS->prevQP[CH_C] = bestCS->prevQP[CH_C] = prevQP[CH_C];
+    tempCS->currQP[ChannelType::CHROMA] = bestCS->currQP[ChannelType::CHROMA] = tempCS->baseQP = bestCS->baseQP =
+      currQP[ChannelType::CHROMA];
+    tempCS->prevQP[ChannelType::CHROMA] = bestCS->prevQP[ChannelType::CHROMA] = prevQP[ChannelType::CHROMA];
 
     xCompressCU(tempCS, bestCS, partitioner);
 
@@ -727,7 +728,7 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
       const Position chromaCentral(tempCS->area.Cb().chromaPos().offset(tempCS->area.Cb().chromaSize().width >> 1, tempCS->area.Cb().chromaSize().height >> 1));
       const Position lumaRefPos(chromaCentral.x << getComponentScaleX(COMPONENT_Cb, tempCS->area.chromaFormat), chromaCentral.y << getComponentScaleY(COMPONENT_Cb, tempCS->area.chromaFormat));
       const CodingStructure* baseCS = bestCS->picture->cs;
-      const CodingUnit* colLumaCu = baseCS->getCU(lumaRefPos, CHANNEL_TYPE_LUMA);
+      const CodingUnit      *colLumaCu = baseCS->getCU(lumaRefPos, ChannelType::LUMA);
 
       if (colLumaCu)
       {
@@ -981,17 +982,17 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
   // QP from last processed CU for further processing
   //copy the qp of the last non-chroma CU
   int numCUInThisNode = (int)bestCS->cus.size();
-  if( numCUInThisNode > 1 && bestCS->cus.back()->chType == CHANNEL_TYPE_CHROMA && !CS::isDualITree( *bestCS ) )
+  if (numCUInThisNode > 1 && bestCS->cus.back()->chType == ChannelType::CHROMA && !CS::isDualITree(*bestCS))
   {
-    CHECK( bestCS->cus[numCUInThisNode-2]->chType != CHANNEL_TYPE_LUMA, "wrong chType" );
-    bestCS->prevQP[partitioner.chType] = bestCS->cus[numCUInThisNode-2]->qp;
+    CHECK(bestCS->cus[numCUInThisNode - 2]->chType != ChannelType::LUMA, "wrong chType");
+    bestCS->prevQP[partitioner.chType] = bestCS->cus[numCUInThisNode - 2]->qp;
   }
   else
   {
     bestCS->prevQP[partitioner.chType] = bestCS->cus.back()->qp;
   }
-  if ((!slice.isIntra() || slice.getSPS()->getIBCFlag()) && partitioner.chType == CHANNEL_TYPE_LUMA
-      && bestCS->cus.size() == 1 && (CU::isInter(*bestCS->cus.back()) || CU::isIBC(*bestCS->cus.back()))
+  if ((!slice.isIntra() || slice.getSPS()->getIBCFlag()) && isLuma(partitioner.chType) && bestCS->cus.size() == 1
+      && (CU::isInter(*bestCS->cus.back()) || CU::isIBC(*bestCS->cus.back()))
       && bestCS->area.Y() == (*bestCS->cus.back()).Y())
   {
     const CodingUnit&     cu = *bestCS->cus.front();
@@ -1058,7 +1059,7 @@ void EncCu::updateLambda(Slice *slice, const int dQP,
   if (useWCGChromaControl)
   {
     const double lambda = m_pcSliceEncoder->initializeLambda (slice, m_pcSliceEncoder->getGopId(), slice->getSliceQp(), (double)dQP);
-    const int clippedQP = Clip3 (-slice->getSPS()->getQpBDOffset (CHANNEL_TYPE_LUMA), MAX_QP, dQP);
+    const int clippedQP = Clip3(-slice->getSPS()->getQpBDOffset(ChannelType::LUMA), MAX_QP, dQP);
 
     m_pcSliceEncoder->setUpLambda (slice, lambda, clippedQP);
     return;
@@ -1100,7 +1101,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
 {
   const int qp                = encTestMode.qp;
   const Slice &slice          = *tempCS->slice;
-  const int oldPrevQp         = tempCS->prevQP[partitioner.chType];
+  const int    oldPrevQp         = tempCS->prevQP[partitioner.chType];
   const auto oldMotionLut     = tempCS->motionLut;
 #if ENABLE_QPA_SUB_CTU
   const PPS &pps              = *tempCS->pps;
@@ -1142,20 +1143,20 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
 
     int64_t approxBits = numChild << SCALE_BITS;
 
-    const double factor = ( tempCS->currQP[partitioner.chType] > 30 ? 1.11 : 1.085 )
-      + ( isChroma( partitioner.chType ) ? 0.2 : 0.0 );
+    const double factor =
+      (tempCS->currQP[partitioner.chType] > 30 ? 1.11 : 1.085) + (isChroma(partitioner.chType) ? 0.2 : 0.0);
 
     costTemp = m_pcRdCost->calcRdCost( uint64_t( m_CABACEstimator->getEstFracBits() + approxBits + ( ( bestCS->fracBits ) / factor ) ), Distortion( bestCS->dist / factor ) ) + bestCS->costDbOffset / factor;
   }
   else if (m_pcEncCfg->getFastAdaptCostPredMode() == 1)
   {
-    const double factor = ( tempCS->currQP[partitioner.chType] > 30 ? 1.1 : 1.075 )
-    + (isChroma(partitioner.chType) ? 0.2 : 0.0);
+    const double factor =
+      (tempCS->currQP[partitioner.chType] > 30 ? 1.1 : 1.075) + (isChroma(partitioner.chType) ? 0.2 : 0.0);
     costTemp = m_pcRdCost->calcRdCost( uint64_t( m_CABACEstimator->getEstFracBits() + ( ( bestCS->fracBits ) / factor ) ), Distortion( bestCS->dist / factor ) ) + bestCS->costDbOffset / factor;
   }
   else
   {
-    const double factor = ( tempCS->currQP[partitioner.chType] > 30 ? 1.1 : 1.075 );
+    const double factor = (tempCS->currQP[partitioner.chType] > 30 ? 1.1 : 1.075);
     costTemp = m_pcRdCost->calcRdCost( uint64_t( m_CABACEstimator->getEstFracBits() + ( ( bestCS->fracBits ) / factor ) ), Distortion( bestCS->dist / factor ) ) + bestCS->costDbOffset / factor;
   }
   tempCS->useDbCost = m_pcEncCfg->getUseEncDbOpt();
@@ -1190,7 +1191,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
   {
     if( chromaNotSplit )
     {
-      CHECK( partitioner.chType != CHANNEL_TYPE_LUMA, "chType must be luma" );
+      CHECK(partitioner.chType != ChannelType::LUMA, "chType must be luma");
       tempCS->treeType = partitioner.treeType = TREE_L;
     }
     else
@@ -1253,7 +1254,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
         m_CurrCtx--;
         partitioner.exitCurrSplit();
         xCheckBestMode( tempCS, bestCS, partitioner, encTestMode );
-        if( partitioner.chType == CHANNEL_TYPE_LUMA )
+        if (isLuma(partitioner.chType))
         {
           tempCS->motionLut = oldMotionLut;
         }
@@ -1294,7 +1295,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
           tempCS->useDbCost = m_pcEncCfg->getUseEncDbOpt();
           m_CurrCtx--;
           partitioner.exitCurrSplit();
-          if( partitioner.chType == CHANNEL_TYPE_LUMA )
+          if (isLuma(partitioner.chType))
           {
             tempCS->motionLut = oldMotionLut;
           }
@@ -1351,9 +1352,9 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
       if( !deltaQpCodedBeforeThisNode )
       {
         //get pred QP of the QG
-        const CodingUnit* cuFirst = qgCS->getCU( CHANNEL_TYPE_LUMA );
+        const CodingUnit *cuFirst = qgCS->getCU(ChannelType::LUMA);
         CHECK( cuFirst->lumaPos() != partitioner.currQgPos, "First cu of the Qg is wrong" );
-        int predQp = CU::predictQP( *cuFirst, qgCS->prevQP[CHANNEL_TYPE_LUMA] );
+        const int predQp = CU::predictQP(*cuFirst, qgCS->prevQP[ChannelType::LUMA]);
 
         //revise to predQP
         int firstCuHasResidual = (int)tempCS->cus.size();
@@ -1379,7 +1380,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
 
     if (isChromaEnabled(tempCS->pcv->chrFormat))
     {
-      partitioner.chType = CHANNEL_TYPE_CHROMA;
+      partitioner.chType = ChannelType::CHROMA;
       tempCS->treeType = partitioner.treeType = TREE_C;
 
       m_CurrCtx++;
@@ -1411,7 +1412,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
 
 
     //recover luma tree status
-    partitioner.chType = CHANNEL_TYPE_LUMA;
+    partitioner.chType   = ChannelType::LUMA;
     partitioner.treeType = TREE_D;
     partitioner.modeType = MODE_TYPE_ALL;
   }
@@ -1553,8 +1554,12 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
   int    bestMtsFlag             =   0;
   int    bestLfnstIdx            =   0;
 
-  const int  maxLfnstIdx         = ( partitioner.isSepTree( *tempCS ) && partitioner.chType == CHANNEL_TYPE_CHROMA && ( partitioner.currArea().lwidth() < 8 || partitioner.currArea().lheight() < 8 ) )
-                                   || ( partitioner.currArea().lwidth() > sps.getMaxTbSize() || partitioner.currArea().lheight() > sps.getMaxTbSize() ) ? 0 : 2;
+  const int  maxLfnstIdx         = (partitioner.isSepTree(*tempCS) && partitioner.chType == ChannelType::CHROMA
+                           && (partitioner.currArea().lwidth() < 8 || partitioner.currArea().lheight() < 8))
+                              || (partitioner.currArea().lwidth() > sps.getMaxTbSize()
+                                  || partitioner.currArea().lheight() > sps.getMaxTbSize())
+                                     ? 0
+                                     : 2;
   bool       skipOtherLfnst      = false;
   int        startLfnstIdx       = 0;
   int        endLfnstIdx         = sps.getUseLFNST() ? maxLfnstIdx : 0;
@@ -1575,7 +1580,8 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
   {
     CHECK(tempCS->treeType != TREE_D || partitioner.treeType != TREE_D, "localtree should not be applied when adaptive color transform is enabled");
     CHECK(tempCS->modeType != MODE_TYPE_ALL || partitioner.modeType != MODE_TYPE_ALL, "localtree should not be applied when adaptive color transform is enabled");
-    CHECK(adaptiveColorTrans && (CS::isDualITree(*tempCS) || partitioner.chType != CHANNEL_TYPE_LUMA), "adaptive color transform cannot be applied to dual-tree");
+    CHECK(adaptiveColorTrans && (CS::isDualITree(*tempCS) || partitioner.chType != ChannelType::LUMA),
+          "adaptive color transform cannot be applied to dual-tree");
   }
 
   for( int trGrpIdx = 0; trGrpIdx < grpNumMax; trGrpIdx++ )
@@ -1648,7 +1654,7 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
               m_modeCtrl->setISPLfnstIdx(cu.lfnstIdx);
               m_modeCtrl->setMIPFlagISPPass(cu.mipFlag);
               m_modeCtrl->setBestISPIntraModeRelCU(
-                cu.ispMode != ISPType::NONE ? PU::getFinalIntraMode(*cu.firstPU, CHANNEL_TYPE_LUMA) : NOMODE_IDX);
+                cu.ispMode != ISPType::NONE ? PU::getFinalIntraMode(*cu.firstPU, ChannelType::LUMA) : NOMODE_IDX);
               m_modeCtrl->setBestDCT2NonISPCostRelCU(m_modeCtrl->getMtsFirstPassNoIspCost());
             }
 
@@ -1696,10 +1702,15 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
             }
           }
 
-          if( tempCS->area.chromaFormat != CHROMA_400 && ( partitioner.chType == CHANNEL_TYPE_CHROMA || !cu.isSepTree() ) && !cu.colorTransform )
+          if (tempCS->area.chromaFormat != CHROMA_400 && (partitioner.chType == ChannelType::CHROMA || !cu.isSepTree())
+              && !cu.colorTransform)
           {
             TUIntraSubPartitioner subTuPartitioner( partitioner );
-            m_pcIntraSearch->estIntraPredChromaQT( cu, ( !useIntraSubPartitions || ( cu.isSepTree() && !isLuma( CHANNEL_TYPE_CHROMA ) ) ) ? partitioner : subTuPartitioner, maxCostAllowedForChroma );
+            m_pcIntraSearch->estIntraPredChromaQT(
+              cu,
+              (!useIntraSubPartitions || (cu.isSepTree() && !isLuma(ChannelType::CHROMA))) ? partitioner
+                                                                                           : subTuPartitioner,
+              maxCostAllowedForChroma);
             if (useIntraSubPartitions && cu.ispMode == ISPType::NONE)
             {
               //At this point the temp cost is larger than the best cost. Therefore, we can already skip the remaining calculations
@@ -1932,7 +1943,7 @@ void EncCu::xCheckPLT(CodingStructure *&tempCS, CodingStructure *&bestCS, Partit
     {
       m_pcIntraSearch->PLTSearch(*tempCS, partitioner, COMPONENT_Y, 1);
     }
-    if (tempCS->area.chromaFormat != CHROMA_400 && (partitioner.chType == CHANNEL_TYPE_CHROMA))
+    if (tempCS->area.chromaFormat != CHROMA_400 && (partitioner.chType == ChannelType::CHROMA))
     {
       m_pcIntraSearch->PLTSearch(*tempCS, partitioner, COMPONENT_Cb, 2);
     }
@@ -1969,7 +1980,7 @@ void EncCu::xCheckPLT(CodingStructure *&tempCS, CodingStructure *&bestCS, Partit
     {
       m_CABACEstimator->cu_palette_info(cu, COMPONENT_Y, 1, cuCtx);
     }
-    if (tempCS->area.chromaFormat != CHROMA_400 && (partitioner.chType == CHANNEL_TYPE_CHROMA))
+    if (tempCS->area.chromaFormat != CHROMA_400 && (partitioner.chType == ChannelType::CHROMA))
     {
       m_CABACEstimator->cu_palette_info(cu, COMPONENT_Cb, 2, cuCtx);
     }
@@ -2040,7 +2051,7 @@ void EncCu::xCheckDQP( CodingStructure& cs, Partitioner& partitioner, bool bKeep
     }
   }
 
-  int predQP = CU::predictQP( *cuFirst, cs.prevQP[partitioner.chType] );
+  int predQP = CU::predictQP(*cuFirst, cs.prevQP[partitioner.chType]);
 
   if( hasResidual )
   {
@@ -2222,7 +2233,9 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
     pu.regularMergeFlag = true;
 #if GDR_ENABLED
     cs = pu.cs;
-    isEncodeGdrClean = cs->sps->getGDREnabledFlag() && cs->pcv->isEncoder && ((cs->picHeader->getInGdrInterval() && cs->isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs->picHeader->getNumVerVirtualBoundaries() == 0));
+    isEncodeGdrClean = cs->sps->getGDREnabledFlag() && cs->pcv->isEncoder
+                       && ((cs->picHeader->getInGdrInterval() && cs->isClean(pu.Y().topRight(), ChannelType::LUMA))
+                           || (cs->picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
   }
   bool candHasNoResidual[MRG_MAX_NUM_CANDS + MmvdIdx::ADD_NUM];
@@ -2337,7 +2350,8 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
 
       DistParam distParam;
       const bool bUseHadamard = !tempCS->slice->getDisableSATDForRD();
-      m_pcRdCost->setDistParam (distParam, tempCS->getOrgBuf().Y(), singleMergeTempBuffer->Y(), sps.getBitDepth (CHANNEL_TYPE_LUMA), COMPONENT_Y, bUseHadamard);
+      m_pcRdCost->setDistParam(distParam, tempCS->getOrgBuf().Y(), singleMergeTempBuffer->Y(),
+                               sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y, bUseHadamard);
 
       const UnitArea localUnitArea( tempCS->area.chromaFormat, Area( 0, 0, tempCS->area.Y().width, tempCS->area.Y().height) );
       for( uint32_t uiMergeCand = 0; uiMergeCand < mergeCtx.numValidMergeCand; uiMergeCand++ )
@@ -2447,7 +2461,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           mergeCtx.setMergeInfo(pu, mergeCand);
 
           // first round
-          pu.intraDir[0] = PLANAR_IDX;
+          pu.intraDir[ChannelType::LUMA] = PLANAR_IDX;
           uint32_t intraCnt = 0;
           // generate intrainter Y prediction
           if (mergeCnt == 0)
@@ -2618,8 +2632,8 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         {
           if (rdModeList[mergeCnt].isCIIP)
           {
-            pu.intraDir[0] = PLANAR_IDX;
-            pu.intraDir[1] = DM_CHROMA_IDX;
+            pu.intraDir[ChannelType::LUMA]   = PLANAR_IDX;
+            pu.intraDir[ChannelType::CHROMA] = DM_CHROMA_IDX;
             if (pu.chromaSize().width == 2)
             {
               continue;
@@ -2697,9 +2711,10 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         mergeCtx.setMergeInfo(pu, uiMergeCand);
         pu.ciipFlag = true;
         pu.regularMergeFlag = false;
-        pu.intraDir[0] = PLANAR_IDX;
-        CHECK(pu.intraDir[0]<0 || pu.intraDir[0]>(NUM_LUMA_MODE - 1), "out of intra mode");
-        pu.intraDir[1] = DM_CHROMA_IDX;
+        pu.intraDir[ChannelType::LUMA] = PLANAR_IDX;
+        CHECK(pu.intraDir[ChannelType::LUMA] < 0 || pu.intraDir[ChannelType::LUMA] > (NUM_LUMA_MODE - 1),
+              "out of intra mode");
+        pu.intraDir[ChannelType::CHROMA] = DM_CHROMA_IDX;
       }
       else if (rdModeList[mrgHadIdx].isMMVD)
       {
@@ -2918,7 +2933,10 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   PredictionUnit &pu = tempCS->addPU(cu, pm.chType);
 #if GDR_ENABLED
   CodingStructure &cs = *pu.cs;
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+  const bool       isEncodeGdrClean =
+    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
   pu.mergeFlag = true;
@@ -2935,7 +2953,8 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   uint8_t maxNumMergeCandidates = cu.cs->sps->getMaxNumGeoCand();
   DistParam distParamWholeBlk;
   // the third arguments to setDistParam is dummy and will be updated before being used
-  m_pcRdCost->setDistParam(distParamWholeBlk, tempCS->getOrgBuf().Y(), tempCS->getOrgBuf().Y(), sps.getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y);
+  m_pcRdCost->setDistParam(distParamWholeBlk, tempCS->getOrgBuf().Y(), tempCS->getOrgBuf().Y(),
+                           sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y);
   Distortion bestWholeBlkSad = MAX_UINT64;
   double bestWholeBlkCost = MAX_DOUBLE;
   Distortion sadWholeBlk[GEO_MAX_NUM_UNI_CANDS];
@@ -3051,7 +3070,7 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
     {
       m_pcRdCost->setDistParam(distParam, tempCS->getOrgBuf().Y(), geoTempBuf[mergeCand]->Y().buf,
                                geoTempBuf[mergeCand]->Y().stride, sadMask, maskStride, stepX, maskStride2,
-                               sps.getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y);
+                               sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y);
       const Distortion sadLarge = distParam.distFunc(distParam);
       const Distortion sadSmall = sadWholeBlk[mergeCand] - sadLarge;
 
@@ -3114,7 +3133,7 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   const bool useHadamard = !tempCS->slice->getDisableSATDForRD();
   // the third arguments to setDistParam is dummy and will be updated before being used
   m_pcRdCost->setDistParam(distParamSAD2, tempCS->getOrgBuf().Y(), tempCS->getOrgBuf().Y(),
-                           sps.getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y, useHadamard);
+                           sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y, useHadamard);
 
   const int geoNumMrgSadCand  = min(GEO_MAX_TRY_WEIGHTED_SAD, (int) comboList.list.size());
   int geoNumMrgSatdCand = min(GEO_MAX_TRY_WEIGHTED_SATD, (int) comboList.list.size());
@@ -3126,7 +3145,7 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
     const int mergeCand1 = comboList.list[candidateIdx].mergeIdx1;
 
     PelUnitBuf geoBuf = m_geoWeightedBuffers[candidateIdx].getBuf(localUnitArea);
-    m_pcInterSearch->weightedGeoBlk(pu, splitDir, CHANNEL_TYPE_LUMA, geoBuf, *geoBuffer[mergeCand0],
+    m_pcInterSearch->weightedGeoBlk(pu, splitDir, ChannelType::LUMA, geoBuf, *geoBuffer[mergeCand0],
                                     *geoBuffer[mergeCand1]);
     distParamSAD2.cur = geoBuf.Y();
     Distortion sad    = distParamSAD2.distFunc(distParamSAD2);
@@ -3161,7 +3180,7 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
       const int mergeCand1   = comboList.list[candidateIdx].mergeIdx1;
 
       PelUnitBuf geoBuf = m_geoWeightedBuffers[candidateIdx].getBuf(localUnitArea);
-      m_pcInterSearch->weightedGeoBlk(pu, splitDir, CHANNEL_TYPE_CHROMA, geoBuf, *geoBuffer[mergeCand0],
+      m_pcInterSearch->weightedGeoBlk(pu, splitDir, ChannelType::CHROMA, geoBuf, *geoBuffer[mergeCand0],
                                       *geoBuffer[mergeCand1]);
     }
   }
@@ -3283,7 +3302,9 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
     pu.regularMergeFlag = false;
 #if GDR_ENABLED
     cs = pu.cs;
-    isEncodeGdrClean = cs->sps->getGDREnabledFlag() && cs->pcv->isEncoder && ((cs->picHeader->getInGdrInterval() && cs->isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (cs->picHeader->getNumVerVirtualBoundaries() == 0));
+    isEncodeGdrClean = cs->sps->getGDREnabledFlag() && cs->pcv->isEncoder
+                       && ((cs->picHeader->getInGdrInterval() && cs->isClean(pu.Y().topRight(), ChannelType::LUMA))
+                           || (cs->picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
     PU::getAffineMergeCand( pu, affineMergeCtx );
 
@@ -3346,7 +3367,8 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
       DistParam distParam;
       const bool bUseHadamard = !tempCS->slice->getDisableSATDForRD();
       // the third arguments to setDistParam is dummy and will be updated before being used
-      m_pcRdCost->setDistParam( distParam, tempCS->getOrgBuf().Y(), tempCS->getOrgBuf().Y(), sps.getBitDepth( CHANNEL_TYPE_LUMA ), COMPONENT_Y, bUseHadamard );
+      m_pcRdCost->setDistParam(distParam, tempCS->getOrgBuf().Y(), tempCS->getOrgBuf().Y(),
+                               sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y, bUseHadamard);
 
       const UnitArea localUnitArea( tempCS->area.chromaFormat, Area( 0, 0, tempCS->area.Y().width, tempCS->area.Y().height ) );
 
@@ -3597,7 +3619,7 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
 // ibc merge/skip mode check
 void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode)
 {
-  CHECK(partitioner.chType == CHANNEL_TYPE_CHROMA, "chroma IBC is derived");
+  CHECK(partitioner.chType == ChannelType::CHROMA, "chroma IBC is derived");
 
   // don't use IBC for large CUs
   if (tempCS->area.lwidth() > IBC_MAX_CU_SIZE || tempCS->area.lheight() > IBC_MAX_CU_SIZE)
@@ -3635,7 +3657,7 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
     cu.geoFlag = false;
     PU::getIBCMergeCandidates(pu, mergeCtx);
 #if GDR_ENABLED
-    gdrClean = tempCS->isClean(pu.Y().topRight(), CHANNEL_TYPE_LUMA);
+    gdrClean = tempCS->isClean(pu.Y().topRight(), ChannelType::LUMA);
 #endif
   }
 #if GDR_ENABLED
@@ -3703,12 +3725,13 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
       PelBuf          tmpLuma = m_tmpStorageLCU->getBuf(tmpArea);
       tmpLuma.copyFrom(tempCS->getOrgBuf().Y());
       tmpLuma.rspSignal(m_pcReshape->getFwdLUT());
-      m_pcRdCost->setDistParam(distParam, tmpLuma, refBuf, sps.getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y,
+      m_pcRdCost->setDistParam(distParam, tmpLuma, refBuf, sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y,
                                bUseHadamard);
     }
     else
     {
-      m_pcRdCost->setDistParam(distParam, tempCS->getOrgBuf().Y(), refBuf, sps.getBitDepth(CHANNEL_TYPE_LUMA), COMPONENT_Y, bUseHadamard);
+      m_pcRdCost->setDistParam(distParam, tempCS->getOrgBuf().Y(), refBuf, sps.getBitDepth(ChannelType::LUMA),
+                               COMPONENT_Y, bUseHadamard);
     }
     ptrdiff_t      refStride = refBuf.stride;
     const UnitArea localUnitArea(tempCS->area.chromaFormat,
@@ -3826,8 +3849,8 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
             cu.sbtInfo = 0;
 
             PredictionUnit &pu = tempCS->addPU(cu, partitioner.chType);// tempCS->addPU(cu);
-            pu.intraDir[0] = DC_IDX; // set intra pred for ibc block
-            pu.intraDir[1] = PLANAR_IDX; // set intra pred for ibc block
+            pu.intraDir[ChannelType::LUMA]   = DC_IDX;                               // set intra pred for ibc block
+            pu.intraDir[ChannelType::CHROMA] = PLANAR_IDX;                           // set intra pred for ibc block
             cu.mmvdSkip = false;
             pu.mmvdMergeFlag = false;
             pu.regularMergeFlag = false;
@@ -3972,8 +3995,8 @@ void EncCu::xCheckRDCostIBCMode(CodingStructure *&tempCS, CodingStructure *&best
   pu.mmvdMergeFlag    = false;
   pu.regularMergeFlag = false;
 
-  pu.intraDir[0] = DC_IDX;       // set intra pred for ibc block
-  pu.intraDir[1] = PLANAR_IDX;   // set intra pred for ibc block
+  pu.intraDir[ChannelType::LUMA]   = DC_IDX;       // set intra pred for ibc block
+  pu.intraDir[ChannelType::CHROMA] = PLANAR_IDX;   // set intra pred for ibc block
 
   pu.interDir               = 1;             // use list 0 for IBC mode
   pu.refIdx[REF_PIC_LIST_0] = IBC_REF_IDX;   // last idx in the list
@@ -4089,7 +4112,10 @@ void EncCu::xCheckRDCostInter( CodingStructure *&tempCS, CodingStructure *&bestC
     bool    testBcw = bcwIdx != BCW_DEFAULT;
 
 #if GDR_ENABLED
-  const bool isEncodeGdrClean = tempCS->sps->getGDREnabledFlag() && tempCS->pcv->isEncoder && ((tempCS->picHeader->getInGdrInterval() && tempCS->isClean(cu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (tempCS->picHeader->getNumVerVirtualBoundaries() == 0));
+    const bool isEncodeGdrClean =
+      tempCS->sps->getGDREnabledFlag() && tempCS->pcv->isEncoder
+      && ((tempCS->picHeader->getInGdrInterval() && tempCS->isClean(cu.Y().topRight(), ChannelType::LUMA))
+          || (tempCS->picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
     m_pcInterSearch->predInterSearch(cu, partitioner);
 
@@ -4279,7 +4305,10 @@ bool EncCu::xCheckRDCostInterAmvr(CodingStructure *&tempCS, CodingStructure *&be
     CU::addPUs(cu);
 
 #if GDR_ENABLED
-    const bool isEncodeGdrClean = tempCS->sps->getGDREnabledFlag() && tempCS->pcv->isEncoder && ((tempCS->picHeader->getInGdrInterval() && tempCS->isClean(cu.Y().topRight(), CHANNEL_TYPE_LUMA)) || (tempCS->picHeader->getNumVerVirtualBoundaries() == 0));
+    const bool isEncodeGdrClean =
+      tempCS->sps->getGDREnabledFlag() && tempCS->pcv->isEncoder
+      && ((tempCS->picHeader->getInGdrInterval() && tempCS->isClean(cu.Y().topRight(), ChannelType::LUMA))
+          || (tempCS->picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
     if (testAltHpelFilter)
     {
@@ -4457,7 +4486,10 @@ void EncCu::xCalDebCost( CodingStructure &cs, Partitioner &partitioner, bool cal
   m_deblockingFilter->setEnc(true);
   const ChromaFormat format = cs.area.chromaFormat;
   CodingUnit*                cu = cs.getCU(partitioner.chType);
-  const Position lumaPos = cu->Y().valid() ? cu->Y().pos() : recalcPosition( format, cu->chType, CHANNEL_TYPE_LUMA, cu->blocks[cu->chType].pos() );
+
+  const Position lumaPos      = cu->Y().valid()
+                                  ? cu->Y().pos()
+                                  : recalcPosition(format, cu->chType, ChannelType::LUMA, cu->block(cu->chType).pos());
   bool topEdgeAvai = lumaPos.y > 0 && ((lumaPos.y % 4) == 0);
   bool leftEdgeAvai = lumaPos.x > 0 && ((lumaPos.x % 4) == 0);
   bool anyEdgeAvai = topEdgeAvai || leftEdgeAvai;
@@ -4489,7 +4521,9 @@ void EncCu::xCalDebCost( CodingStructure &cs, Partitioner &partitioner, bool cal
     PelStorage&          picDbBuf = m_deblockingFilter->getDbEncPicYuvBuffer();
 
     //deblock neighbour pixels
-    const Size     lumaSize = cu->Y().valid() ? cu->Y().size() : recalcSize( format, cu->chType, CHANNEL_TYPE_LUMA, cu->blocks[cu->chType].size() );
+    const Size lumaSize = cu->Y().valid()
+                            ? cu->Y().size()
+                            : recalcSize(format, cu->chType, ChannelType::LUMA, cu->block(cu->chType).size());
 
     const int verOffset = lumaPos.y > 7 ? 8 : 4;
     const int horOffset = lumaPos.x > 7 ? 8 : 4;

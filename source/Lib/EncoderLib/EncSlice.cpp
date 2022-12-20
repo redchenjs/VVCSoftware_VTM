@@ -201,8 +201,8 @@ static int getGlaringColorQPOffset (Picture* const pcPic, const int ctuAddr, Sli
 {
   const PreCalcValues& pcv  = *pcPic->cs->pcv;
   const ChromaFormat chrFmt = pcPic->chromaFormat;
-  const uint32_t chrWidth   = pcv.maxCUWidth  >> getChannelTypeScaleX (CH_C, chrFmt);
-  const uint32_t chrHeight  = pcv.maxCUHeight >> getChannelTypeScaleY (CH_C, chrFmt);
+  const uint32_t       chrWidth   = pcv.maxCUWidth >> getChannelTypeScaleX(ChannelType::CHROMA, chrFmt);
+  const uint32_t       chrHeight  = pcv.maxCUHeight >> getChannelTypeScaleY(ChannelType::CHROMA, chrFmt);
   const int      midLevel   = 1 << (bitDepth - 1);
   int chrValue = MAX_INT;
   avgLumaValue = (pcSlice != nullptr) ? 0 : (uint32_t)pcPic->getOrigBuf().Y().computeAvg();
@@ -256,7 +256,7 @@ static int getGlaringColorQPOffset (Picture* const pcPic, const int ctuAddr, Sli
 
 static int applyQPAdaptationChroma (Picture* const pcPic, Slice* const pcSlice, EncCfg* const pcEncCfg, const int sliceQP)
 {
-  const int bitDepth               = pcSlice->getSPS()->getBitDepth (CHANNEL_TYPE_LUMA); // overall image bit-depth
+  const int bitDepth                  = pcSlice->getSPS()->getBitDepth(ChannelType::LUMA);   // overall image bit-depth
   double hpEner[MAX_NUM_COMPONENT] = {0.0, 0.0, 0.0};
   int    optSliceChromaQpOffset[2] = {0, 0};
   int    savedLumaQP               = -1;
@@ -500,7 +500,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
     dLambda = calculateLambda(rpcSlice, gopId, dQP, dQP, qp);
 #else
     dLambda = initializeLambda(rpcSlice, gopId, int(dQP + 0.5), dQP);
-    qp      = Clip3(-rpcSlice->getSPS()->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, int(dQP + 0.5));
+    qp      = Clip3(-rpcSlice->getSPS()->getQpBDOffset(ChannelType::LUMA), MAX_QP, int(dQP + 0.5));
 #endif
 
     m_vdRdPicLambda[iDQpIdx] = dLambda;
@@ -635,7 +635,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   if (m_pcCfg->getUseRecalculateQPAccordingToLambda())
   {
     dQP = xGetQPValueAccordingToLambda( dLambda );
-    qp  = Clip3(-rpcSlice->getSPS()->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, (int) floor(dQP + 0.5));
+    qp  = Clip3(-rpcSlice->getSPS()->getQpBDOffset(ChannelType::LUMA), MAX_QP, (int) floor(dQP + 0.5));
   }
 
   rpcSlice->setSliceQp(qp);
@@ -849,7 +849,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
 
   if (rpcSlice->getSPS()->getSpsRangeExtension().getRrcRiceExtensionEnableFlag())
   {
-    int bitDepth = rpcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA);
+    int bitDepth  = rpcSlice->getSPS()->getBitDepth(ChannelType::LUMA);
     int baseLevel = (bitDepth > 12) ? (rpcSlice->isIntra() ? 5 : 2 * 5) : (rpcSlice->isIntra() ? 2 * 5 : 3 * 5);
     rpcSlice->setRiceBaseLevel(baseLevel);
   }
@@ -861,7 +861,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
 
 double EncSlice::initializeLambda(const Slice *slice, const int gopId, const int refQP, const double dQP)
 {
-  const int   bitDepthLuma  = slice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA);
+  const int                  bitDepthLuma         = slice->getSPS()->getBitDepth(ChannelType::LUMA);
   const int   bitDepthShift = 6 * (bitDepthLuma - 8 - DISTORTION_PRECISION_ADJUSTMENT(bitDepthLuma)) - 12;
   const int   numberBFrames = m_pcCfg->getGOPSize() - 1;
   const SliceType sliceType = slice->getSliceType();
@@ -927,7 +927,7 @@ double EncSlice::calculateLambda(const Slice *slice,
                                  int &        qp)              // returned integer QP.
 {
   double dLambda = initializeLambda(slice, gopId, int(refQP + 0.5), dQP);
-  qp             = Clip3(-slice->getSPS()->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, int(dQP + 0.5));
+  qp             = Clip3(-slice->getSPS()->getQpBDOffset(ChannelType::LUMA), MAX_QP, int(dQP + 0.5));
 
   if (slice->getDepQuantEnabledFlag())
   {
@@ -962,7 +962,7 @@ static bool applyQPAdaptation (Picture* const pcPic,       Slice* const pcSlice,
                                const bool useSharpLumaDQP,
                                const bool useFrameWiseQPA, const int previouslyAdaptedLumaQP = -1)
 {
-  const int  bitDepth    = pcSlice->getSPS()->getBitDepth (CHANNEL_TYPE_LUMA);
+  const int  bitDepth        = pcSlice->getSPS()->getBitDepth(ChannelType::LUMA);
   const int  iQPIndex    = pcSlice->getSliceQp(); // initial QP index for current slice, used in following loops
   bool   sliceQPModified = false;
   uint32_t   meanLuma    = MAX_UINT;
@@ -1184,7 +1184,7 @@ static int applyQPAdaptationSubCtu (CodingStructure &cs, const UnitArea ctuArea,
 {
   const PreCalcValues &pcv = *cs.pcv;
   const Picture     *pcPic = cs.picture;
-  const int       bitDepth = cs.slice->getSPS()->getBitDepth (CHANNEL_TYPE_LUMA); // overall image bit-depth
+  const int            bitDepth     = cs.slice->getSPS()->getBitDepth(ChannelType::LUMA);   // overall image bit-depth
   const int   adaptedCtuQP = pcPic ? pcPic->m_iOffsetCtu[ctuAddr] : cs.slice->getSliceQpBase();
 
   if (!pcPic || cs.slice->getCuQpDeltaSubdiv() == 0)
@@ -1313,7 +1313,8 @@ void EncSlice::setLosslessSlice(Picture* pcPic, bool islossless)
   {
     if (islossless)
     {
-      int losslessQp = LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP - ((slice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) - 8) * 6);
+      int losslessQp =
+        LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP - ((slice->getSPS()->getBitDepth(ChannelType::LUMA) - 8) * 6);
       slice->setSliceQp(losslessQp); // update the slice/base QPs
 
       slice->setTSResidualCodingDisabledFlag(m_pcCfg->getTSRCdisableLL() ? true : false);
@@ -1351,10 +1352,10 @@ void EncSlice::precompressSlice( Picture* pcPic )
   uint32_t       uiQpIdxBest = 0;
 
   double dFrameLambda;
-  int SHIFT_QP = 12
+  int    SHIFT_QP = 12
                  + 6
-                     * (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) - 8
-                        - DISTORTION_PRECISION_ADJUSTMENT(pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA)));
+                     * (pcSlice->getSPS()->getBitDepth(ChannelType::LUMA) - 8
+                        - DISTORTION_PRECISION_ADJUSTMENT(pcSlice->getSPS()->getBitDepth(ChannelType::LUMA)));
 
   // set frame lambda
   if (m_pcCfg->getGOPSize() > 1)
@@ -1402,7 +1403,7 @@ void EncSlice::calCostSliceI(Picture* pcPic) // TODO: this only analyses the fir
   Slice * const  pcSlice           = pcPic->slices[getSliceSegmentIdx()];
   const PreCalcValues& pcv         = *pcPic->cs->pcv;
   const SPS     &sps               = *(pcSlice->getSPS());
-  const int      shift             = sps.getBitDepth(CHANNEL_TYPE_LUMA)-8;
+  const int            shift             = sps.getBitDepth(ChannelType::LUMA) - 8;
   const int      offset            = (shift>0)?(1<<(shift-1)):0;
 
   for( uint32_t ctuIdx = 0; ctuIdx < pcSlice->getNumCtuInSlice(); ctuIdx++ )
@@ -1427,7 +1428,7 @@ void EncSlice::calCostPictureI(Picture* picture)
   Slice * const  slice = picture->slices[getSliceSegmentIdx()];
   const PreCalcValues& pcv = *picture->cs->pcv;
   const SPS     &sps = *(slice->getSPS());
-  const int      shift = sps.getBitDepth(CHANNEL_TYPE_LUMA) - 8;
+  const int            shift         = sps.getBitDepth(ChannelType::LUMA) - 8;
   const int      offset = (shift>0) ? (1 << (shift - 1)) : 0;
 
   for (uint32_t ctuIdx = 0; ctuIdx < picture->m_ctuNums; ctuIdx++)
@@ -1456,7 +1457,7 @@ void EncSlice::compressSlice( Picture* pcPic, const bool bCompressEntireSlice, c
 
   if (pcSlice->getSPS()->getSpsRangeExtension().getRrcRiceExtensionEnableFlag())
   {
-    int bitDepth = pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA);
+    int bitDepth  = pcSlice->getSPS()->getBitDepth(ChannelType::LUMA);
     int baseLevel = (bitDepth > 12) ? (pcSlice->isIntra() ? 5 : 2 * 5 ) : (pcSlice->isIntra() ? 2 * 5 : 3 * 5);
     pcSlice->setRiceBaseLevel(baseLevel);
   }
@@ -1497,9 +1498,9 @@ void EncSlice::compressSlice( Picture* pcPic, const bool bCompressEntireSlice, c
     xCheckWPEnable( pcSlice );
   }
 
-  pcPic->m_prevQP[0] = pcPic->m_prevQP[1] = pcSlice->getSliceQp();
+  pcPic->m_prevQP.fill(pcSlice->getSliceQp());
 
-  CHECK( pcPic->m_prevQP[0] == std::numeric_limits<int>::max(), "Invalid previous QP" );
+  CHECK(pcPic->m_prevQP[ChannelType::LUMA] == std::numeric_limits<int>::max(), "Invalid previous QP");
 
   CodingStructure&  cs          = *pcPic->cs;
   cs.slice    = pcSlice;
@@ -1518,10 +1519,10 @@ void EncSlice::compressSlice( Picture* pcPic, const bool bCompressEntireSlice, c
                            (m_pcCfg->getBaseQP() >= 38) || (m_pcCfg->getSourceWidth() <= 512 && m_pcCfg->getSourceHeight() <= 320), m_adaptedLumaQP))
     {
       m_CABACEstimator->initCtxModels (*pcSlice);
-      pcPic->m_prevQP[0] = pcPic->m_prevQP[1] = pcSlice->getSliceQp();
+      pcPic->m_prevQP.fill(pcSlice->getSliceQp());
       if (pcSlice->getFirstCtuRsAddrInSlice() == 0)
       {
-        cs.currQP[0] = cs.currQP[1] = pcSlice->getSliceQp(); // cf code above
+        cs.currQP.fill(pcSlice->getSliceQp());
       }
     }
   }
@@ -1659,12 +1660,12 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
   }
 #endif
 
-  int prevQP[2];
-  int currQP[2];
-  prevQP[0] = prevQP[1] = pcSlice->getSliceQp();
-  currQP[0] = currQP[1] = pcSlice->getSliceQp();
+  EnumArray<int, ChannelType> prevQP;
+  EnumArray<int, ChannelType> currQP;
 
-  prevQP[0] = prevQP[1] = pcSlice->getSliceQp();
+  prevQP.fill(pcSlice->getSliceQp());
+  currQP.fill(pcSlice->getSliceQp());
+
   if ( pcSlice->getSPS()->getFpelMmvdEnabledFlag() ||
       (pcSlice->getSPS()->getIBCFlag() && m_pcCuEncoder->getEncCfg()->getIBCHashSearch()))
   {
@@ -1676,7 +1677,7 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
     }
     if ((pcSlice->getSPS()->getSpsRangeExtension().getTSRCRicePresentFlag())
         && (m_pcGOPEncoder->getPreQP() != pcSlice->getSliceQp()) && (pcPic->cs->pps->getNumSlicesInPic() == 1)
-        && (pcSlice->getTsrcIndex() > 0) && (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) <= 12))
+        && (pcSlice->getTsrcIndex() > 0) && (pcSlice->getSPS()->getBitDepth(ChannelType::LUMA) <= 12))
     {
       uint32_t totalCtu  = 0;
       uint32_t hashRatio = 0;
@@ -1752,23 +1753,24 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
     {
       pCABACWriter->initCtxModels( *pcSlice );
       cs.resetPrevPLT(cs.prevPLT);
-      prevQP[0] = prevQP[1] = pcSlice->getSliceQp();
+      prevQP.fill(pcSlice->getSliceQp());
     }
     else if (cs.pps->ctuIsTileColBd( ctuXPosInCtus ) && pEncLib->getEntropyCodingSyncEnabledFlag())
     {
       // reset and then update contexts to the state at the end of the top CTU (if within current slice and tile).
       pCABACWriter->initCtxModels( *pcSlice );
       cs.resetPrevPLT(cs.prevPLT);
-      if( cs.getCURestricted( pos.offset(0, -1), pos, pcSlice->getIndependentSliceIdx(), cs.pps->getTileIdx( pos ), CH_L ) )
+      if (cs.getCURestricted(pos.offset(0, -1), pos, pcSlice->getIndependentSliceIdx(), cs.pps->getTileIdx(pos),
+                             ChannelType::LUMA))
       {
         // Top is available, we use it.
         pCABACWriter->getCtx() = pEncLib->m_entropyCodingSyncContextState;
         pCABACWriter->getCtx().riceStatReset(
-          pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA),
+          pcSlice->getSPS()->getBitDepth(ChannelType::LUMA),
           pcSlice->getSPS()->getSpsRangeExtension().getPersistentRiceAdaptationEnabledFlag());
         cs.setPrevPLT(pEncLib->m_palettePredictorSyncState);
       }
-      prevQP[0] = prevQP[1] = pcSlice->getSliceQp();
+      prevQP.fill(pcSlice->getSliceQp());
     }
 
 
@@ -1799,7 +1801,7 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
           estQP     = pRateCtrl->getRCPic()->getLCUEstQP    ( estLambda, pcSlice->getSliceQp() );
         }
 
-        estQP     = Clip3( -pcSlice->getSPS()->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, estQP );
+        estQP = Clip3(-pcSlice->getSPS()->getQpBDOffset(ChannelType::LUMA), MAX_QP, estQP);
 
         pRdCost->setLambda(estLambda, pcSlice->getSPS()->getBitDepths());
 #if WCG_EXT
@@ -1851,7 +1853,7 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
 #endif
       pRdCost->setLambda (newLambda, pcSlice->getSPS()->getBitDepths());
 #endif
-      currQP[0] = currQP[1] = adaptedQP;
+      currQP.fill(adaptedQP);
     }
 #endif
 
@@ -1905,12 +1907,12 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
       int numberOfEffectivePixels    = 0;
 
       int numberOfSkipPixel = 0;
-      for (auto &cu : cs.traverseCUs(ctuArea, CH_L))
+      for (auto &cu: cs.traverseCUs(ctuArea, ChannelType::LUMA))
       {
         numberOfSkipPixel += cu.skip*cu.lumaSize().area();
       }
 
-      for( auto &cu : cs.traverseCUs( ctuArea, CH_L ) )
+      for (auto &cu: cs.traverseCUs(ctuArea, ChannelType::LUMA))
       {
         if( !cu.skip || cu.rootCbf )
         {
@@ -1919,7 +1921,7 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
         }
       }
       double skipRatio = (double)numberOfSkipPixel / ctuArea.lumaSize().area();
-      CodingUnit* cu = cs.getCU( ctuArea.lumaPos(), CH_L );
+      CodingUnit *cu        = cs.getCU(ctuArea.lumaPos(), ChannelType::LUMA);
 
       if ( numberOfEffectivePixels == 0 )
       {
@@ -2003,7 +2005,7 @@ void EncSlice::encodeSlice   ( Picture* pcPic, OutputBitstream* pcSubstreams, ui
 
   DTRACE( g_trace_ctx, D_HEADER, "=========== POC: %d ===========\n", pcSlice->getPOC() );
 
-  pcPic->m_prevQP[0] = pcPic->m_prevQP[1] = pcSlice->getSliceQp();
+  pcPic->m_prevQP.fill(pcSlice->getSliceQp());
 
   const PreCalcValues& pcv = *cs.pcv;
   const uint32_t widthInCtus   = pcv.widthInCtus;
@@ -2041,12 +2043,13 @@ void EncSlice::encodeSlice   ( Picture* pcPic, OutputBitstream* pcSubstreams, ui
         m_CABACWriter->initCtxModels( *pcSlice );
         cs.resetPrevPLT(cs.prevPLT);
       }
-      if( cs.getCURestricted( pos.offset( 0, -1 ), pos, pcSlice->getIndependentSliceIdx(), cs.pps->getTileIdx( pos ), CH_L ) )
+      if (cs.getCURestricted(pos.offset(0, -1), pos, pcSlice->getIndependentSliceIdx(), cs.pps->getTileIdx(pos),
+                             ChannelType::LUMA))
       {
         // Top is available, so use it.
         m_CABACWriter->getCtx() = m_entropyCodingSyncContextState;
         m_CABACWriter->getCtx().riceStatReset(
-          pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA),
+          pcSlice->getSPS()->getBitDepth(ChannelType::LUMA),
           pcSlice->getSPS()->getSpsRangeExtension().getPersistentRiceAdaptationEnabledFlag());
         cs.setPrevPLT(m_palettePredictorSyncState);
       }

@@ -1471,7 +1471,7 @@ private:
   bool              m_entropyCodingSyncEnabledFlag;                    //!< Flag for enabling WPP
   bool              m_entryPointPresentFlag;                           //!< Flag for indicating the presence of entry points
   int               m_qpBDOffset[MAX_NUM_CHANNEL_TYPE];
-  int               m_internalMinusInputBitDepth[MAX_NUM_CHANNEL_TYPE]; //  max(0, internal bitdepth - input bitdepth);                                          }
+  BitDepths         m_internalMinusInputBitDepth;   //  max(0, internal bitdepth - input bitdepth)
 
   bool              m_sbtmvpEnabledFlag;
   bool              m_bdofEnabledFlag;
@@ -1674,9 +1674,10 @@ public:
   void                    setSplitConsOverrideEnabledFlag(bool b)                                         { m_partitionOverrideEnalbed = b; }
   bool                    getSplitConsOverrideEnabledFlag()                                         const { return m_partitionOverrideEnalbed; }
   void                    setMinQTSizes(unsigned*   minQT)                                                { m_minQT[0] = minQT[0]; m_minQT[1] = minQT[1]; m_minQT[2] = minQT[2]; }
-  unsigned                getMinQTSize(SliceType   slicetype,
-                                       ChannelType chType = CHANNEL_TYPE_LUMA)
-                                                                                                    const { return slicetype == I_SLICE ? (chType == CHANNEL_TYPE_LUMA ? m_minQT[0] : m_minQT[2]) : m_minQT[1]; }
+  unsigned                getMinQTSize(SliceType slicetype, ChannelType chType = ChannelType::LUMA) const
+  {
+    return slicetype == I_SLICE ? (isLuma(chType) ? m_minQT[0] : m_minQT[2]) : m_minQT[1];
+  }
   void                    setMaxMTTHierarchyDepth(unsigned    maxMTTHierarchyDepth,
                                         unsigned    maxMTTHierarchyDepthI,
                                         unsigned    maxMTTHierarchyDepthIChroma)
@@ -1765,20 +1766,24 @@ public:
   uint32_t                getLog2MaxTbSize() const                                                        { return  m_log2MaxTbSize;                                             }
   uint32_t                getMaxTbSize() const                                                            { return  1 << m_log2MaxTbSize;                                        }
   // Bit-depth
-  int                     getBitDepth(ChannelType type) const                                             { return m_bitDepths.recon[type];                                      }
-  void                    setBitDepth(ChannelType type, int u )                                           { m_bitDepths.recon[type] = u;                                         }
+  int                     getBitDepth(const ChannelType type) const { return m_bitDepths[type]; }
+  void                    setBitDepth(const ChannelType type, int u) { m_bitDepths[type] = u; }
   const BitDepths&        getBitDepths() const                                                            { return m_bitDepths;                                                  }
 
   bool                    getEntropyCodingSyncEnabledFlag() const                                         { return m_entropyCodingSyncEnabledFlag;                               }
   void                    setEntropyCodingSyncEnabledFlag(bool val)                                       { m_entropyCodingSyncEnabledFlag = val;                                }
   bool                    getEntryPointsPresentFlag() const                                               { return m_entryPointPresentFlag;                                      }
   void                    setEntryPointsPresentFlag(bool val)                                             { m_entryPointPresentFlag = val;                                       }
-  int                     getMaxLog2TrDynamicRange(ChannelType channelType) const                         { return getSpsRangeExtension().getExtendedPrecisionProcessingFlag() ? std::min<int>(20, int(m_bitDepths.recon[channelType] + 6)) : 15; }
-  int                     getDifferentialLumaChromaBitDepth() const                                       { return int(m_bitDepths.recon[CHANNEL_TYPE_LUMA]) - int(m_bitDepths.recon[CHANNEL_TYPE_CHROMA]); }
-  int                     getQpBDOffset(ChannelType type) const                                           { return m_qpBDOffset[type];                                           }
-  void                    setQpBDOffset(ChannelType type, int i)                                          { m_qpBDOffset[type] = i;                                              }
-  int                     getInternalMinusInputBitDepth(ChannelType type) const                           { return m_internalMinusInputBitDepth[type];                                           }
-  void                    setInternalMinusInputBitDepth(ChannelType type, int i)                          { m_internalMinusInputBitDepth[type] = i;                                              }
+  int                     getMaxLog2TrDynamicRange(ChannelType channelType) const
+  {
+    return getSpsRangeExtension().getExtendedPrecisionProcessingFlag()
+             ? std::min<int>(20, int(m_bitDepths[channelType] + 6))
+             : 15;
+  }
+  int  getQpBDOffset(ChannelType type) const { return m_qpBDOffset[int(type)]; }
+  void setQpBDOffset(ChannelType type, int i) { m_qpBDOffset[int(type)] = i; }
+  int  getInternalMinusInputBitDepth(ChannelType type) const { return m_internalMinusInputBitDepth[type]; }
+  void setInternalMinusInputBitDepth(ChannelType type, int i) { m_internalMinusInputBitDepth[type] = i; }
 
   void                    setSAOEnabledFlag(bool bVal)                                                    { m_saoEnabledFlag = bVal;                                                    }
   bool                    getSAOEnabledFlag() const                                                       { return m_saoEnabledFlag;                                                    }
@@ -2474,7 +2479,7 @@ private:
   bool                        m_profDisabledFlag;                                       //!< picture level PROF disable flag
   bool                        m_jointCbCrSignFlag;                                      //!< joint Cb/Cr residual sign flag
   int                         m_qpDelta;                                                //!< value of Qp delta
-  bool                        m_saoEnabledFlag[MAX_NUM_CHANNEL_TYPE];                   //!< sao enabled flags for each channel
+  EnumArray<bool, ChannelType> m_saoEnabledFlag;   // sao enabled flags for each channel
   bool                        m_alfEnabledFlag[MAX_NUM_COMPONENT];                      //!< alf enabled flags for each component
   int                         m_numAlfApsIdsLuma;                                       //!< number of alf aps active for the picture
 
@@ -2599,8 +2604,8 @@ public:
   bool                        getJointCbCrSignFlag() const                              { return m_jointCbCrSignFlag;                                                                  }
   void                        setQpDelta(int b)                                         { m_qpDelta = b;                                                                               }
   int                         getQpDelta() const                                        { return m_qpDelta;                                                                            }
-  void                        setSaoEnabledFlag(ChannelType chType, bool b)             { m_saoEnabledFlag[chType] = b;                                                                }
-  bool                        getSaoEnabledFlag(ChannelType chType) const               { return m_saoEnabledFlag[chType];                                                             }
+  void                        setSaoEnabledFlag(const ChannelType chType, bool b) { m_saoEnabledFlag[chType] = b; }
+  bool                        getSaoEnabledFlag(const ChannelType chType) const { return m_saoEnabledFlag[chType]; }
   void                        setAlfEnabledFlag(ComponentID compId, bool b)             { m_alfEnabledFlag[compId] = b;                                                                }
   bool                        getAlfEnabledFlag(ComponentID compId) const               { return m_alfEnabledFlag[compId];                                                             }
   void                        setNumAlfApsIdsLuma(int i)                                { m_numAlfApsIdsLuma = i;                                                                      }
@@ -2662,14 +2667,23 @@ public:
   void                        setMaxBTSizes(unsigned*   maxBT)                          { m_maxBTSize[0] = maxBT[0]; m_maxBTSize[1] = maxBT[1]; m_maxBTSize[2] = maxBT[2];                                     }
   void                        setMaxTTSizes(unsigned*   maxTT)                          { m_maxTTSize[0] = maxTT[0]; m_maxTTSize[1] = maxTT[1]; m_maxTTSize[2] = maxTT[2];                                     }
 
-  unsigned                    getMinQTSize(SliceType   slicetype,
-                                       ChannelType chType = CHANNEL_TYPE_LUMA) const    { return slicetype == I_SLICE ? (chType == CHANNEL_TYPE_LUMA ? m_minQT[0] : m_minQT[2]) : m_minQT[1];                                              }
-  unsigned                    getMaxMTTHierarchyDepth(SliceType   slicetype,
-                                       ChannelType chType = CHANNEL_TYPE_LUMA) const    { return slicetype == I_SLICE ? (chType == CHANNEL_TYPE_LUMA ? m_maxMTTHierarchyDepth[0] : m_maxMTTHierarchyDepth[2]) : m_maxMTTHierarchyDepth[1]; }
-  unsigned                    getMaxBTSize(SliceType   slicetype,
-                                       ChannelType chType = CHANNEL_TYPE_LUMA) const    { return slicetype == I_SLICE ? (chType == CHANNEL_TYPE_LUMA ? m_maxBTSize[0] : m_maxBTSize[2]) : m_maxBTSize[1];                                  }
-  unsigned                    getMaxTTSize(SliceType   slicetype,
-                                       ChannelType chType = CHANNEL_TYPE_LUMA) const    { return slicetype == I_SLICE ? (chType == CHANNEL_TYPE_LUMA ? m_maxTTSize[0] : m_maxTTSize[2]) : m_maxTTSize[1];                                  }
+  unsigned getMinQTSize(SliceType slicetype, ChannelType chType = ChannelType::LUMA) const
+  {
+    return slicetype == I_SLICE ? (isLuma(chType) ? m_minQT[0] : m_minQT[2]) : m_minQT[1];
+  }
+  unsigned getMaxMTTHierarchyDepth(SliceType slicetype, ChannelType chType = ChannelType::LUMA) const
+  {
+    return slicetype == I_SLICE ? (isLuma(chType) ? m_maxMTTHierarchyDepth[0] : m_maxMTTHierarchyDepth[2])
+                                : m_maxMTTHierarchyDepth[1];
+  }
+  unsigned getMaxBTSize(SliceType slicetype, ChannelType chType = ChannelType::LUMA) const
+  {
+    return slicetype == I_SLICE ? (isLuma(chType) ? m_maxBTSize[0] : m_maxBTSize[2]) : m_maxBTSize[1];
+  }
+  unsigned getMaxTTSize(SliceType slicetype, ChannelType chType = ChannelType::LUMA) const
+  {
+    return slicetype == I_SLICE ? (isLuma(chType) ? m_maxTTSize[0] : m_maxTTSize[2]) : m_maxTTSize[1];
+  }
 
   void              setAlfApsIdsLuma(const AlfApsList &apsIDs) { m_alfApsIdsLuma = apsIDs; }
   const AlfApsList &getAlfApsIdsLuma() const { return m_alfApsIdsLuma; }
@@ -2701,7 +2715,7 @@ class Slice
 
 private:
   //  Bitstream writing
-  bool                       m_saoEnabledFlag[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<bool, ChannelType> m_saoEnabledFlag;
   int                        m_poc;
   int                        m_iLastIDR;
   int                        m_prevGDRInSameLayerPOC;  //< the previous GDR in the same layer
@@ -2853,8 +2867,8 @@ public:
 
   void                        setAlfAPSs(APS** apss)                                 { memcpy(m_alfApss, apss, sizeof(m_alfApss));                   }
   APS**                       getAlfAPSs()                                           { return m_alfApss;                                             }
-  void                        setSaoEnabledFlag(ChannelType chType, bool s)          {m_saoEnabledFlag[chType] =s;                                   }
-  bool                        getSaoEnabledFlag(ChannelType chType) const            { return m_saoEnabledFlag[chType];                              }
+  void                        setSaoEnabledFlag(const ChannelType chType, bool s) { m_saoEnabledFlag[chType] = s; }
+  bool                        getSaoEnabledFlag(const ChannelType chType) const { return m_saoEnabledFlag[chType]; }
   ReferencePictureList*       getRPL0()                                              { return &m_RPL0;                                              }
   ReferencePictureList*       getRPL1()                                              { return &m_RPL1;                                              }
   void                        setRPL0idx(int rplIdx)                                 { m_rpl0Idx = rplIdx;                                          }
@@ -3202,37 +3216,40 @@ private:
 class PreCalcValues
 {
 public:
-  PreCalcValues( const SPS& sps, const PPS& pps, bool _isEncoder )
-    : chrFormat           ( sps.getChromaFormatIdc() )
-    , multiBlock422       ( false )
-    , maxCUWidth          ( sps.getMaxCUWidth() )
-    , maxCUHeight         ( sps.getMaxCUHeight() )
-    , maxCUWidthMask      ( maxCUWidth  - 1 )
-    , maxCUHeightMask     ( maxCUHeight - 1 )
-    , maxCUWidthLog2      ( floorLog2( maxCUWidth  ) )
-    , maxCUHeightLog2     ( floorLog2( maxCUHeight ) )
-    , minCUWidth          ( 1 << MIN_CU_LOG2 )
-    , minCUHeight         ( 1 << MIN_CU_LOG2 )
-    , minCUWidthLog2      ( floorLog2( minCUWidth  ) )
-    , minCUHeightLog2     ( floorLog2( minCUHeight ) )
-    , partsInCtuWidth     ( maxCUWidth >> MIN_CU_LOG2)
-    , partsInCtuHeight    ( maxCUHeight >> MIN_CU_LOG2)
-    , partsInCtu          ( partsInCtuWidth * partsInCtuHeight )
-    , widthInCtus         ( (pps.getPicWidthInLumaSamples () + sps.getMaxCUWidth () - 1) / sps.getMaxCUWidth () )
-    , heightInCtus        ( (pps.getPicHeightInLumaSamples() + sps.getMaxCUHeight() - 1) / sps.getMaxCUHeight() )
-    , sizeInCtus          ( widthInCtus * heightInCtus )
-    , lumaWidth           ( pps.getPicWidthInLumaSamples() )
-    , lumaHeight          ( pps.getPicHeightInLumaSamples() )
-    , fastDeltaQPCuMaxSize( Clip3(1u << sps.getLog2MinCodingBlockSize(), sps.getMaxCUHeight(), 32u) )
-    , noChroma2x2         (  false )
-    , isEncoder           ( _isEncoder )
-    , ISingleTree         ( !sps.getUseDualITree() )
-    , maxBtDepth          { sps.getMaxMTTHierarchyDepthI(), sps.getMaxMTTHierarchyDepth(), sps.getMaxMTTHierarchyDepthIChroma() }
-    , minBtSize           { 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize() }
-    , maxBtSize           { sps.getMaxBTSizeI(), sps.getMaxBTSize(), sps.getMaxBTSizeIChroma() }
-    , minTtSize           { 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize() }
-    , maxTtSize           { sps.getMaxTTSizeI(), sps.getMaxTTSize(), sps.getMaxTTSizeIChroma() }
-    , minQtSize           { sps.getMinQTSize(I_SLICE, CHANNEL_TYPE_LUMA), sps.getMinQTSize(B_SLICE, CHANNEL_TYPE_LUMA), sps.getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA) }
+  PreCalcValues(const SPS &sps, const PPS &pps, bool _isEncoder)
+    : chrFormat(sps.getChromaFormatIdc())
+    , multiBlock422(false)
+    , maxCUWidth(sps.getMaxCUWidth())
+    , maxCUHeight(sps.getMaxCUHeight())
+    , maxCUWidthMask(maxCUWidth - 1)
+    , maxCUHeightMask(maxCUHeight - 1)
+    , maxCUWidthLog2(floorLog2(maxCUWidth))
+    , maxCUHeightLog2(floorLog2(maxCUHeight))
+    , minCUWidth(1 << MIN_CU_LOG2)
+    , minCUHeight(1 << MIN_CU_LOG2)
+    , minCUWidthLog2(floorLog2(minCUWidth))
+    , minCUHeightLog2(floorLog2(minCUHeight))
+    , partsInCtuWidth(maxCUWidth >> MIN_CU_LOG2)
+    , partsInCtuHeight(maxCUHeight >> MIN_CU_LOG2)
+    , partsInCtu(partsInCtuWidth * partsInCtuHeight)
+    , widthInCtus((pps.getPicWidthInLumaSamples() + sps.getMaxCUWidth() - 1) / sps.getMaxCUWidth())
+    , heightInCtus((pps.getPicHeightInLumaSamples() + sps.getMaxCUHeight() - 1) / sps.getMaxCUHeight())
+    , sizeInCtus(widthInCtus * heightInCtus)
+    , lumaWidth(pps.getPicWidthInLumaSamples())
+    , lumaHeight(pps.getPicHeightInLumaSamples())
+    , fastDeltaQPCuMaxSize(Clip3(1u << sps.getLog2MinCodingBlockSize(), sps.getMaxCUHeight(), 32u))
+    , noChroma2x2(false)
+    , isEncoder(_isEncoder)
+    , ISingleTree(!sps.getUseDualITree())
+    , maxBtDepth{ sps.getMaxMTTHierarchyDepthI(), sps.getMaxMTTHierarchyDepth(), sps.getMaxMTTHierarchyDepthIChroma() }
+    , minBtSize{ 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize(),
+                 1u << sps.getLog2MinCodingBlockSize() }
+    , maxBtSize{ sps.getMaxBTSizeI(), sps.getMaxBTSize(), sps.getMaxBTSizeIChroma() }
+    , minTtSize{ 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize(),
+                 1u << sps.getLog2MinCodingBlockSize() }
+    , maxTtSize{ sps.getMaxTTSizeI(), sps.getMaxTTSize(), sps.getMaxTTSizeIChroma() }
+    , minQtSize{ sps.getMinQTSize(I_SLICE, ChannelType::LUMA), sps.getMinQTSize(B_SLICE, ChannelType::LUMA),
+                 sps.getMinQTSize(I_SLICE, ChannelType::CHROMA) }
   {}
 
   const ChromaFormat chrFormat;

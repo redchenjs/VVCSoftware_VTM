@@ -2959,7 +2959,7 @@ void SeiCfgFileDump::xDumpSEIEquirectangularProjection     (SEIEquirectangularPr
     if (fp)
     {
       int chromaFormatTable[4] = {400, 420, 422, 444};
-      fprintf(fp, "InputBitDepth                 : %d    # Input bitdepth\n", sps->getBitDepth(CHANNEL_TYPE_LUMA));
+      fprintf(fp, "InputBitDepth                 : %d    # Input bitdepth\n", sps->getBitDepth(ChannelType::LUMA));
       fprintf(fp, "InputChromaFormat             : %d    # Ratio of luminance to chrominance samples\n", chromaFormatTable[sps->getChromaFormatIdc()]);
       fprintf(fp, "SourceWidth                   : %d    # Input  frame width\n", sps->getMaxPicWidthInLumaSamples());
       fprintf(fp, "SourceHeight                  : %d    # Input  frame height\n\n", sps->getMaxPicHeightInLumaSamples());
@@ -3033,7 +3033,7 @@ void SeiCfgFileDump::xDumpSEIGeneralizedCubemapProjection  (SEIGeneralizedCubema
       if (fp)
       {
         int chromaFormatTable[4] = {400, 420, 422, 444};
-        fprintf(fp, "InputBitDepth                 : %d    # Input bitdepth\n", sps->getBitDepth(CHANNEL_TYPE_LUMA));
+        fprintf(fp, "InputBitDepth                 : %d    # Input bitdepth\n", sps->getBitDepth(ChannelType::LUMA));
         fprintf(fp, "InputChromaFormat             : %d    # Ratio of luminance to chrominance samples\n", chromaFormatTable[sps->getChromaFormatIdc()]);
         fprintf(fp, "SourceWidth                   : %d    # Input  frame width\n", sps->getMaxPicWidthInLumaSamples());
         fprintf(fp, "SourceHeight                  : %d    # Input  frame height\n\n", sps->getMaxPicHeightInLumaSamples());

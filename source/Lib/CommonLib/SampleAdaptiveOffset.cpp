@@ -176,7 +176,7 @@ int SampleAdaptiveOffset::getMergeList(CodingStructure &cs, int ctuRsAddr, SAOBl
 
   int ctuX = ctuRsAddr % pcv.widthInCtus;
   int ctuY = ctuRsAddr / pcv.widthInCtus;
-  const CodingUnit& cu = *cs.getCU(Position(ctuX*pcv.maxCUWidth, ctuY*pcv.maxCUHeight), CH_L);
+  const CodingUnit &cu   = *cs.getCU(Position(ctuX * pcv.maxCUWidth, ctuY * pcv.maxCUHeight), ChannelType::LUMA);
   int mergedCTUPos;
   int numValidMergeCandidates = 0;
 
@@ -691,15 +691,15 @@ void SampleAdaptiveOffset::deriveLoopFilterBoundaryAvailability(CodingStructure 
 {
   const int width = cs.pcv->maxCUWidth;
   const int height = cs.pcv->maxCUHeight;
-  const CodingUnit* cuCurr = cs.getCU(pos, CH_L);
-  const CodingUnit* cuLeft = cs.getCU(pos.offset(-width, 0), CH_L);
-  const CodingUnit* cuRight = cs.getCU(pos.offset(width, 0), CH_L);
-  const CodingUnit* cuAbove = cs.getCU(pos.offset(0, -height), CH_L);
-  const CodingUnit* cuBelow = cs.getCU(pos.offset(0, height), CH_L);
-  const CodingUnit* cuAboveLeft = cs.getCU(pos.offset(-width, -height), CH_L);
-  const CodingUnit* cuAboveRight = cs.getCU(pos.offset(width, -height), CH_L);
-  const CodingUnit* cuBelowLeft = cs.getCU(pos.offset(-width, height), CH_L);
-  const CodingUnit* cuBelowRight = cs.getCU(pos.offset(width, height), CH_L);
+  const CodingUnit *cuCurr       = cs.getCU(pos, ChannelType::LUMA);
+  const CodingUnit *cuLeft       = cs.getCU(pos.offset(-width, 0), ChannelType::LUMA);
+  const CodingUnit *cuRight      = cs.getCU(pos.offset(width, 0), ChannelType::LUMA);
+  const CodingUnit *cuAbove      = cs.getCU(pos.offset(0, -height), ChannelType::LUMA);
+  const CodingUnit *cuBelow      = cs.getCU(pos.offset(0, height), ChannelType::LUMA);
+  const CodingUnit *cuAboveLeft  = cs.getCU(pos.offset(-width, -height), ChannelType::LUMA);
+  const CodingUnit *cuAboveRight = cs.getCU(pos.offset(width, -height), ChannelType::LUMA);
+  const CodingUnit *cuBelowLeft  = cs.getCU(pos.offset(-width, height), ChannelType::LUMA);
+  const CodingUnit *cuBelowRight = cs.getCU(pos.offset(width, height), ChannelType::LUMA);
 
   // check cross slice flags
   const bool isLoopFilterAcrossSlicePPS = cs.pps->getLoopFilterAcrossSlicesEnabledFlag();

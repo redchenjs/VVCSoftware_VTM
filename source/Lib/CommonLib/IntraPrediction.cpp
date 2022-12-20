@@ -692,8 +692,8 @@ void IntraPrediction::geneWeightedPred(PelBuf &pred, const PredictionUnit &pu, c
   const Position posBL = pu.Y().bottomLeft();
   const Position posTR = pu.Y().topRight();
 
-  const PredictionUnit *neigh0 = pu.cs->getPURestricted(posBL.offset(-1, 0), pu, CHANNEL_TYPE_LUMA);
-  const PredictionUnit *neigh1 = pu.cs->getPURestricted(posTR.offset(0, -1), pu, CHANNEL_TYPE_LUMA);
+  const PredictionUnit *neigh0 = pu.cs->getPURestricted(posBL.offset(-1, 0), pu, ChannelType::LUMA);
+  const PredictionUnit *neigh1 = pu.cs->getPURestricted(posTR.offset(0, -1), pu, ChannelType::LUMA);
 
   const bool isNeigh0Intra = neigh0 != nullptr && (CU::isIntra(*neigh0->cu));
   const bool isNeigh1Intra = neigh1 != nullptr && (CU::isIntra(*neigh1->cu));
@@ -805,10 +805,10 @@ void IntraPrediction::initIntraPatternChTypeISP(const CodingUnit& cu, const Comp
 
   const Position posLT = area;
 
-  bool isLeftAvail = (cs.getCURestricted(posLT.offset(-1, 0), cu, CHANNEL_TYPE_LUMA) != nullptr)
-                     && cs.isDecomp(posLT.offset(-1, 0), CHANNEL_TYPE_LUMA);
-  bool isAboveAvail = (cs.getCURestricted(posLT.offset(0, -1), cu, CHANNEL_TYPE_LUMA) != nullptr)
-                      && cs.isDecomp(posLT.offset(0, -1), CHANNEL_TYPE_LUMA);
+  bool isLeftAvail = (cs.getCURestricted(posLT.offset(-1, 0), cu, ChannelType::LUMA) != nullptr)
+                     && cs.isDecomp(posLT.offset(-1, 0), ChannelType::LUMA);
+  bool isAboveAvail = (cs.getCURestricted(posLT.offset(0, -1), cu, ChannelType::LUMA) != nullptr)
+                      && cs.isDecomp(posLT.offset(0, -1), ChannelType::LUMA);
   // ----- Step 1: unfiltered reference samples -----
   if (cu.blocks[area.compID].x == area.x && cu.blocks[area.compID].y == area.y)
   {
@@ -1332,7 +1332,7 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
   int  dstStride = 0;
   Pel *pDst0     = nullptr;
 
-  int curChromaMode = pu.intraDir[1];
+  const int curChromaMode = pu.intraDir[ChannelType::CHROMA];
   if ((curChromaMode == MDLM_L_IDX) || (curChromaMode == MDLM_T_IDX))
   {
     dstStride = 2 * MAX_CU_SIZE + 1;
@@ -1344,7 +1344,9 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
     pDst0     = m_piTemp + dstStride + 1;   // MMLM_SAMPLE_NEIGHBOR_LINES;
   }
   //assert 420 chroma subsampling
-  CompArea lumaArea = CompArea( COMPONENT_Y, pu.chromaFormat, chromaArea.lumaPos(), recalcSize( pu.chromaFormat, CHANNEL_TYPE_CHROMA, CHANNEL_TYPE_LUMA, chromaArea.size() ) );//needed for correct pos/size (4x4 Tus)
+  CompArea lumaArea = CompArea(COMPONENT_Y, pu.chromaFormat, chromaArea.lumaPos(),
+                               recalcSize(pu.chromaFormat, ChannelType::CHROMA, ChannelType::LUMA,
+                                          chromaArea.size()));   // needed for correct pos/size (4x4 Tus)
 
   CHECK(lumaArea.width == chromaArea.width && CHROMA_444 != pu.chromaFormat, "");
   CHECK(lumaArea.height == chromaArea.height && CHROMA_444 != pu.chromaFormat && CHROMA_422 != pu.chromaFormat, "");
@@ -1356,12 +1358,13 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
   Pel const *   pRecSrc0  = srcBuf.bufAt(0, 0);
   ptrdiff_t     recStride = srcBuf.stride;
 
-  int logSubWidthC  = getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, pu.chromaFormat);
-  int logSubHeightC = getChannelTypeScaleY(CHANNEL_TYPE_CHROMA, pu.chromaFormat);
+  int logSubWidthC  = getChannelTypeScaleX(ChannelType::CHROMA, pu.chromaFormat);
+  int logSubHeightC = getChannelTypeScaleY(ChannelType::CHROMA, pu.chromaFormat);
 
   const ptrdiff_t recStride2 = recStride << logSubHeightC;
 
-  const CodingUnit& lumaCU = isChroma( pu.chType ) ? *pu.cs->picture->cs->getCU( lumaArea.pos(), CH_L ) : *pu.cu;
+  const CodingUnit &lumaCU =
+    isChroma(pu.chType) ? *pu.cs->picture->cs->getCU(lumaArea.pos(), ChannelType::LUMA) : *pu.cu;
   const CodingUnit&     cu = *pu.cu;
 
   const CompArea& area = isChroma( pu.chType ) ? chromaArea : lumaArea;
@@ -1632,30 +1635,31 @@ void IntraPrediction::xGetLMParameters(const PredictionUnit &pu, const Component
   int avaiAboveUnits = 0;
   int avaiLeftUnits = 0;
 
-  int curChromaMode = pu.intraDir[1];
+  const int curChromaMode = pu.intraDir[ChannelType::CHROMA];
   bool neighborFlags[4 * MAX_NUM_PART_IDXS_IN_CTU_WIDTH + 1];
   std::fill_n(neighborFlags, totalUnits, false);
 
   bool aboveAvailable, leftAvailable;
 
-  int availableUnit =
-    isAboveAvailable(cu, CHANNEL_TYPE_CHROMA, posLT, aboveUnits, unitWidth,
-    (neighborFlags + leftUnits + leftBelowUnits + 1));
+  int availableUnit = isAboveAvailable(cu, ChannelType::CHROMA, posLT, aboveUnits, unitWidth,
+                                       (neighborFlags + leftUnits + leftBelowUnits + 1));
   aboveAvailable = availableUnit == tuWidthInUnits;
 
-  availableUnit =
-    isLeftAvailable(cu, CHANNEL_TYPE_CHROMA, posLT, leftUnits, unitHeight,
-    (neighborFlags + leftUnits + leftBelowUnits - 1));
+  availableUnit = isLeftAvailable(cu, ChannelType::CHROMA, posLT, leftUnits, unitHeight,
+                                  (neighborFlags + leftUnits + leftBelowUnits - 1));
   leftAvailable = availableUnit == tuHeightInUnits;
   if (leftAvailable) // if left is not available, then the below left is not available
   {
     avaiLeftUnits = tuHeightInUnits;
-    avaiLeftBelowUnits = isBelowLeftAvailable(cu, CHANNEL_TYPE_CHROMA, chromaArea.bottomLeftComp(chromaArea.compID), leftBelowUnits, unitHeight, (neighborFlags + leftBelowUnits - 1));
+    avaiLeftBelowUnits = isBelowLeftAvailable(cu, ChannelType::CHROMA, chromaArea.bottomLeftComp(chromaArea.compID),
+                                              leftBelowUnits, unitHeight, (neighborFlags + leftBelowUnits - 1));
   }
   if (aboveAvailable) // if above is not available, then  the above right is not available.
   {
     avaiAboveUnits = tuWidthInUnits;
-    avaiAboveRightUnits = isAboveRightAvailable(cu, CHANNEL_TYPE_CHROMA, chromaArea.topRightComp(chromaArea.compID), aboveRightUnits, unitWidth, (neighborFlags + leftUnits + leftBelowUnits + aboveUnits + 1));
+    avaiAboveRightUnits =
+      isAboveRightAvailable(cu, ChannelType::CHROMA, chromaArea.topRightComp(chromaArea.compID), aboveRightUnits,
+                            unitWidth, (neighborFlags + leftUnits + leftBelowUnits + aboveUnits + 1));
   }
   Pel *srcColor0, *curChroma0;
   int srcStride;
@@ -1674,7 +1678,7 @@ void IntraPrediction::xGetLMParameters(const PredictionUnit &pu, const Component
   srcColor0 = temp.bufAt(0, 0);
   curChroma0 = getPredictorPtr(compID);
 
-  const int internalBitDepth = sps.getBitDepth(CHANNEL_TYPE_CHROMA);
+  const int internalBitDepth = sps.getBitDepth(ChannelType::CHROMA);
 
   int minLuma[2] = {  MAX_INT, 0 };
   int maxLuma[2] = { -MAX_INT, 0 };
@@ -1843,17 +1847,17 @@ void IntraPrediction::predIntraMip( const ComponentID compId, PelBuf &piPred, co
   bool     transposeFlag = false;
   if (compId == COMPONENT_Y)
   {
-    modeIdx       = pu.intraDir[CHANNEL_TYPE_LUMA];
+    modeIdx       = pu.intraDir[ChannelType::LUMA];
     transposeFlag = pu.mipTransposedFlag;
   }
   else
   {
     const PredictionUnit &coLocatedLumaPU = PU::getCoLocatedLumaPU(pu);
 
-    CHECK(pu.intraDir[CHANNEL_TYPE_CHROMA] != DM_CHROMA_IDX, "Error: MIP is only supported for chroma with DM_CHROMA.");
+    CHECK(pu.intraDir[ChannelType::CHROMA] != DM_CHROMA_IDX, "Error: MIP is only supported for chroma with DM_CHROMA.");
     CHECK(!coLocatedLumaPU.cu->mipFlag, "Error: Co-located luma CU should use MIP.");
 
-    modeIdx       = coLocatedLumaPU.intraDir[CHANNEL_TYPE_LUMA];
+    modeIdx       = coLocatedLumaPU.intraDir[ChannelType::LUMA];
     transposeFlag = coLocatedLumaPU.mipTransposedFlag;
   }
   const int bitDepth = pu.cu->slice->getSPS()->getBitDepth(toChannelType(compId));
@@ -1950,12 +1954,12 @@ void IntraPrediction::reorderPLT(CodingStructure& cs, Partitioner& partitioner, 
         }
         if( isLuma(partitioner.chType) )
         {
-          curPLTtmp[COMPONENT_Cb][pltSizetmp] = 1 << (cs.sps->getBitDepth(CHANNEL_TYPE_CHROMA) - 1);
-          curPLTtmp[COMPONENT_Cr][pltSizetmp] = 1 << (cs.sps->getBitDepth(CHANNEL_TYPE_CHROMA) - 1);
+          curPLTtmp[COMPONENT_Cb][pltSizetmp] = 1 << (cs.sps->getBitDepth(ChannelType::CHROMA) - 1);
+          curPLTtmp[COMPONENT_Cr][pltSizetmp] = 1 << (cs.sps->getBitDepth(ChannelType::CHROMA) - 1);
         }
         else
         {
-          curPLTtmp[COMPONENT_Y][pltSizetmp] = 1 << (cs.sps->getBitDepth(CHANNEL_TYPE_LUMA) - 1);
+          curPLTtmp[COMPONENT_Y][pltSizetmp] = 1 << (cs.sps->getBitDepth(ChannelType::LUMA) - 1);
         }
       }
       else

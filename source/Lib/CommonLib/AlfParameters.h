@@ -110,7 +110,7 @@ using AlfApsList = static_vector<int, ALF_CTB_MAX_NUM_APS>;
 struct AlfParam
 {
   bool                         enabledFlag[MAX_NUM_COMPONENT];                          // alf_slice_enable_flag, alf_chroma_idc
-  bool                         nonLinearFlag[MAX_NUM_CHANNEL_TYPE];                     // alf_[luma/chroma]_clip_flag
+  EnumArray<bool, ChannelType> nonLinearFlag;
   short                        lumaCoeff[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF]; // alf_coeff_luma_delta[i][j]
   Pel                          lumaClipp[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF]; // alf_clipp_luma_[i][j]
   int                          numAlternativesChroma;                                                  // alf_chroma_num_alts_minus_one + 1
@@ -120,8 +120,8 @@ struct AlfParam
   bool                         alfLumaCoeffFlag[MAX_NUM_ALF_CLASSES];                   // alf_luma_coeff_flag[i]
   int                          numLumaFilters;                                          // number_of_filters_minus1 + 1
   bool                         alfLumaCoeffDeltaFlag;                                   // alf_luma_coeff_delta_flag
-  std::vector<AlfFilterShape>* filterShapes;
-  bool                         newFilterFlag[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<std::vector<AlfFilterShape>, ChannelType> *filterShapes;
+  EnumArray<bool, ChannelType>                         newFilterFlag;
 
   AlfParam()
   {
@@ -131,7 +131,7 @@ struct AlfParam
   void reset()
   {
     std::memset( enabledFlag, false, sizeof( enabledFlag ) );
-    std::memset( nonLinearFlag, false, sizeof( nonLinearFlag ) );
+    nonLinearFlag.fill(false);
     std::memset( lumaCoeff, 0, sizeof( lumaCoeff ) );
     std::memset( lumaClipp, 0, sizeof( lumaClipp ) );
     numAlternativesChroma = 1;
@@ -141,13 +141,13 @@ struct AlfParam
     std::memset( alfLumaCoeffFlag, true, sizeof( alfLumaCoeffFlag ) );
     numLumaFilters = 1;
     alfLumaCoeffDeltaFlag = false;
-    memset(newFilterFlag, 0, sizeof(newFilterFlag));
+    newFilterFlag.fill(false);
   }
 
   const AlfParam& operator = ( const AlfParam& src )
   {
     std::memcpy( enabledFlag, src.enabledFlag, sizeof( enabledFlag ) );
-    std::memcpy( nonLinearFlag, src.nonLinearFlag, sizeof( nonLinearFlag ) );
+    nonLinearFlag = src.nonLinearFlag;
     std::memcpy( lumaCoeff, src.lumaCoeff, sizeof( lumaCoeff ) );
     std::memcpy( lumaClipp, src.lumaClipp, sizeof( lumaClipp ) );
     numAlternativesChroma = src.numAlternativesChroma;
@@ -158,7 +158,7 @@ struct AlfParam
     numLumaFilters = src.numLumaFilters;
     alfLumaCoeffDeltaFlag = src.alfLumaCoeffDeltaFlag;
     filterShapes = src.filterShapes;
-    std::memcpy(newFilterFlag, src.newFilterFlag, sizeof(newFilterFlag));
+    newFilterFlag         = src.newFilterFlag;
     return *this;
   }
 
@@ -168,7 +168,7 @@ struct AlfParam
     {
       return false;
     }
-    if( memcmp( nonLinearFlag, other.nonLinearFlag, sizeof( nonLinearFlag ) ) )
+    if (nonLinearFlag == other.nonLinearFlag)
     {
       return false;
     }
@@ -196,7 +196,7 @@ struct AlfParam
     {
       return false;
     }
-    if( memcmp( newFilterFlag, other.newFilterFlag, sizeof( newFilterFlag ) ) )
+    if (newFilterFlag == other.newFilterFlag)
     {
       return false;
     }

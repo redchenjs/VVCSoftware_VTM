@@ -139,7 +139,7 @@ namespace PU
 {
   int      getLMSymbolList(const PredictionUnit &pu, int *modeList);
   int      getIntraMPMs(const PredictionUnit &pu, unsigned *mpm);
-  bool     isMIP(const PredictionUnit &pu, const ChannelType &chType = CHANNEL_TYPE_LUMA);
+  bool     isMIP(const PredictionUnit &pu, const ChannelType chType = ChannelType::LUMA);
   bool     isDMChromaMIP(const PredictionUnit &pu);
   uint32_t getIntraDirLuma(const PredictionUnit &pu);
   void     getIntraChromaCandModes(const PredictionUnit &pu, unsigned modeList[NUM_CHROMA_MODE]);
