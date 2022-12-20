@@ -323,8 +323,6 @@ struct CodingUnit : public UnitArea
   int            refIdxBi[2];
   bool           mipFlag;
 
-  // needed for fast imv mode decisions
-  int8_t         imvNumCand;
   uint8_t        smvdMode;
   ISPType        ispMode;
   bool           useEscape[MAX_NUM_CHANNEL_TYPE];
