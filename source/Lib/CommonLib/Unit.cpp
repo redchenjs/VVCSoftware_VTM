@@ -279,7 +279,6 @@ CodingUnit& CodingUnit::operator=( const CodingUnit& other )
   lfnstIdx          = other.lfnstIdx;
   tileIdx           = other.tileIdx;
   imv               = other.imv;
-  imvNumCand        = other.imvNumCand;
   bcwIdx            = other.bcwIdx;
   for (int i = 0; i<2; i++)
   {
@@ -341,7 +340,6 @@ void CodingUnit::initData()
   lfnstIdx          = 0;
   tileIdx           = 0;
   imv               = 0;
-  imvNumCand        = 0;
   bcwIdx            = BCW_DEFAULT;
   for (int i = 0; i < 2; i++)
   {
