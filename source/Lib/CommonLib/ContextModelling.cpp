@@ -495,8 +495,7 @@ void MergeCtx::getMmvdDeltaMv(const Slice& slice, const MmvdIdx candIdx, Mv delt
 
 void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
 {
-  const Slice &slice = *pu.cs->slice;
-  Mv tempMv[2];
+  Mv tempMv[NUM_REF_PIC_LIST_01];
 
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;

@@ -3787,16 +3787,16 @@ PredictionUnit* EncCu::getPuForInterPrediction(CodingStructure* cs)
   {
     CHECK(cs->getCU(ChannelType::LUMA) != nullptr, "Wrong CU/PU setting in CS");
     CodingUnit &cu = cs->addCU(cs->area, ChannelType::LUMA);
-    cu.slice = cs->slice;
-    cu.tileIdx = cs->pps->getTileIdx(cs->area.lumaPos());
-    cu.skip = false;
-    cu.mmvdSkip = false;
-    cu.geoFlag = false;
-    cu.predMode = MODE_INTER;
-    cu.chromaQpAdj = m_cuChromaQpOffsetIdxPlus1;
-    cu.qp = cs->currQP[ChannelType::LUMA];
     pu = &cs->addPU(cu, ChannelType::LUMA);
   }
+  pu->cu->slice = cs->slice;
+  pu->cu->tileIdx = cs->pps->getTileIdx(cs->area.lumaPos());
+  pu->cu->skip = false;
+  pu->cu->mmvdSkip = false;
+  pu->cu->geoFlag = false;
+  pu->cu->predMode = MODE_INTER;
+  pu->cu->chromaQpAdj = m_cuChromaQpOffsetIdxPlus1;
+  pu->cu->qp = cs->currQP[ChannelType::LUMA];
 
   return pu;
 }
