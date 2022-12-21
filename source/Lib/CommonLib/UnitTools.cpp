@@ -3863,7 +3863,7 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx &mrgCtx, c
 #if GDR_ENABLED
       if (isEncodeGdrClean)
       {
-        isSubPuSolid[REF_PIC_LIST_0] = mrgCtx.mvSolid[REF_PIC_LIST_0];
+        isSubPuSolid[REF_PIC_LIST_0] = mrgCtx.mvSolid[0][REF_PIC_LIST_0];
       }
 #endif
     }
@@ -3874,7 +3874,7 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx &mrgCtx, c
 #if GDR_ENABLED
       if (isEncodeGdrClean)
       {
-        isSubPuSolid[REF_PIC_LIST_1] = mrgCtx.mvSolid[REF_PIC_LIST_1];
+        isSubPuSolid[REF_PIC_LIST_1] = mrgCtx.mvSolid[0][REF_PIC_LIST_1];
       }
 #endif
     }
@@ -4264,7 +4264,7 @@ void PU::getGeoMergeCandidates( const PredictionUnit &pu, MergeCtx& geoMrgCtx )
         RefPicList refPicList = parity ? REF_PIC_LIST_1 : REF_PIC_LIST_0;
 
         geoMrgCtx.mvSolid[geoMrgCtx.numValidMergeCand][!parity] = true;
-        geoMrgCtx.mvSolid[geoMrgCtx.numValidMergeCand][parity]  = tmpMergeCtx.mvSolid[(i << 1) + parity];
+        geoMrgCtx.mvSolid[geoMrgCtx.numValidMergeCand][parity]  = tmpMergeCtx.mvSolid[i][parity];
         geoMrgCtx.mvValid[geoMrgCtx.numValidMergeCand][!parity] = true;
         geoMrgCtx.mvValid[geoMrgCtx.numValidMergeCand][parity] =
           cs.isClean(pu.Y().bottomRight(), mv, refPicList, refIdx);
