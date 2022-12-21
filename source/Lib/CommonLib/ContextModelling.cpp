@@ -413,6 +413,86 @@ void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
   pu.mmvdEncOptMode = 0;
 }
 
+void MergeCtx::getMmvdDeltaMv(const Slice& slice, const MmvdIdx candIdx, Mv deltaMv[NUM_REF_PIC_LIST_01]) const
+{
+  const int mvdBaseIdx = candIdx.pos.baseIdx;
+  const int mvdStep = candIdx.pos.step;
+  const int mvdPosition = candIdx.pos.position;
+
+  int offset = 1 << (mvdStep + MV_FRACTIONAL_BITS_DIFF);
+  if (slice.getPicHeader()->getDisFracMMVD())
+  {
+    offset <<= 2;
+  }
+  const int refList0 = mmvdBaseMv[mvdBaseIdx][REF_PIC_LIST_0].refIdx;
+  const int refList1 = mmvdBaseMv[mvdBaseIdx][REF_PIC_LIST_1].refIdx;
+
+  const Mv dMvTable[4] = { Mv(offset,0), Mv(-offset,0), Mv(0, offset), Mv(0, -offset) };
+  if ((refList0 != -1) && (refList1 != -1))
+  {
+    const int poc0 = slice.getRefPOC(REF_PIC_LIST_0, refList0);
+    const int poc1 = slice.getRefPOC(REF_PIC_LIST_1, refList1);
+    const int currPoc = slice.getPOC();
+    deltaMv[0] = dMvTable[mvdPosition];
+
+    if ((poc0 - currPoc) == (poc1 - currPoc))
+    {
+      deltaMv[1] = deltaMv[0];
+    }
+    else if (abs(poc1 - currPoc) > abs(poc0 - currPoc))
+    {
+      const int scale = PU::getDistScaleFactor(currPoc, poc0, currPoc, poc1);
+      deltaMv[1] = deltaMv[0];
+      const bool isL0RefLongTerm = slice.getRefPic(REF_PIC_LIST_0, refList0)->longTerm;
+      const bool isL1RefLongTerm = slice.getRefPic(REF_PIC_LIST_1, refList1)->longTerm;
+      if (isL0RefLongTerm || isL1RefLongTerm)
+      {
+        if ((poc1 - currPoc)*(poc0 - currPoc) > 0)
+        {
+          deltaMv[0] = deltaMv[1];
+        }
+        else
+        {
+          deltaMv[0].set(-1 * deltaMv[1].getHor(), -1 * deltaMv[1].getVer());
+        }
+      }
+      else
+      {
+        deltaMv[0] = deltaMv[1].getScaledMv(scale);
+      }
+    }
+    else
+    {
+      const int scale = PU::getDistScaleFactor(currPoc, poc1, currPoc, poc0);
+      const bool isL0RefLongTerm = slice.getRefPic(REF_PIC_LIST_0, refList0)->longTerm;
+      const bool isL1RefLongTerm = slice.getRefPic(REF_PIC_LIST_1, refList1)->longTerm;
+      if (isL0RefLongTerm || isL1RefLongTerm)
+      {
+        if ((poc1 - currPoc)*(poc0 - currPoc) > 0)
+        {
+          deltaMv[1] = deltaMv[0];
+        }
+        else
+        {
+          deltaMv[1].set(-1 * deltaMv[0].getHor(), -1 * deltaMv[0].getVer());
+        }
+      }
+      else
+      {
+        deltaMv[1] = deltaMv[0].getScaledMv(scale);
+      }
+    }
+  }
+  else if (refList0 != -1)
+  {
+    deltaMv[0] = dMvTable[mvdPosition];
+  }
+  else if (refList1 != -1)
+  {
+    deltaMv[1] = dMvTable[mvdPosition];
+  }
+}
+
 void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
 {
   const Slice &slice = *pu.cs->slice;
@@ -426,9 +506,9 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
         || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
 #endif
 
+  getMmvdDeltaMv(*pu.cs->slice, candIdx, tempMv);
   const int mvdBaseIdx  = candIdx.pos.baseIdx;
   const int mvdStep     = candIdx.pos.step;
-  const int mvdPosition = candIdx.pos.position;
 
   int offset = 1 << (mvdStep + MV_FRACTIONAL_BITS_DIFF);
   if ( pu.cu->slice->getPicHeader()->getDisFracMMVD() )
@@ -440,73 +520,6 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
 
   if ((refList0 != -1) && (refList1 != -1))
   {
-    const int poc0 = slice.getRefPOC(REF_PIC_LIST_0, refList0);
-    const int poc1 = slice.getRefPOC(REF_PIC_LIST_1, refList1);
-    const int currPoc = slice.getPOC();
-    if (mvdPosition == 0)
-    {
-      tempMv[0] = Mv(offset, 0);
-    }
-    else if (mvdPosition == 1)
-    {
-      tempMv[0] = Mv(-offset, 0);
-    }
-    else if (mvdPosition == 2)
-    {
-      tempMv[0] = Mv(0, offset);
-    }
-    else
-    {
-      tempMv[0] = Mv(0, -offset);
-    }
-    if ((poc0 - currPoc) == (poc1 - currPoc))
-    {
-      tempMv[1] = tempMv[0];
-    }
-    else if (abs(poc1 - currPoc) > abs(poc0 - currPoc))
-    {
-      const int scale = PU::getDistScaleFactor(currPoc, poc0, currPoc, poc1);
-      tempMv[1] = tempMv[0];
-      const bool isL0RefLongTerm = slice.getRefPic(REF_PIC_LIST_0, refList0)->longTerm;
-      const bool isL1RefLongTerm = slice.getRefPic(REF_PIC_LIST_1, refList1)->longTerm;
-      if (isL0RefLongTerm || isL1RefLongTerm)
-      {
-        if ((poc1 - currPoc)*(poc0 - currPoc) > 0)
-        {
-          tempMv[0] = tempMv[1];
-        }
-        else
-        {
-          tempMv[0].set(-1 * tempMv[1].getHor(), -1 * tempMv[1].getVer());
-        }
-      }
-      else
-      {
-        tempMv[0] = tempMv[1].getScaledMv(scale);
-      }
-    }
-    else
-    {
-      const int scale = PU::getDistScaleFactor(currPoc, poc1, currPoc, poc0);
-      const bool isL0RefLongTerm = slice.getRefPic(REF_PIC_LIST_0, refList0)->longTerm;
-      const bool isL1RefLongTerm = slice.getRefPic(REF_PIC_LIST_1, refList1)->longTerm;
-      if (isL0RefLongTerm || isL1RefLongTerm)
-      {
-        if ((poc1 - currPoc)*(poc0 - currPoc) > 0)
-        {
-          tempMv[1] = tempMv[0];
-        }
-        else
-        {
-          tempMv[1].set(-1 * tempMv[0].getHor(), -1 * tempMv[0].getVer());
-        }
-      }
-      else
-      {
-        tempMv[1] = tempMv[0].getScaledMv(scale);
-      }
-    }
-
     pu.interDir = 3;
     pu.mv[REF_PIC_LIST_0]     = mmvdBaseMv[mvdBaseIdx][0].mv + tempMv[0];
     pu.refIdx[REF_PIC_LIST_0] = refList0;
@@ -534,22 +547,6 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
   }
   else if (refList0 != -1)
   {
-    if (mvdPosition == 0)
-    {
-      tempMv[0] = Mv(offset, 0);
-    }
-    else if (mvdPosition == 1)
-    {
-      tempMv[0] = Mv(-offset, 0);
-    }
-    else if (mvdPosition == 2)
-    {
-      tempMv[0] = Mv(0, offset);
-    }
-    else
-    {
-      tempMv[0] = Mv(0, -offset);
-    }
     pu.interDir = 1;
     pu.mv[REF_PIC_LIST_0]     = mmvdBaseMv[mvdBaseIdx][0].mv + tempMv[0];
     pu.refIdx[REF_PIC_LIST_0] = refList0;
@@ -578,22 +575,6 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
   }
   else if (refList1 != -1)
   {
-    if (mvdPosition == 0)
-    {
-      tempMv[1] = Mv(offset, 0);
-    }
-    else if (mvdPosition == 1)
-    {
-      tempMv[1] = Mv(-offset, 0);
-    }
-    else if (mvdPosition == 2)
-    {
-      tempMv[1] = Mv(0, offset);
-    }
-    else
-    {
-      tempMv[1] = Mv(0, -offset);
-    }
     pu.interDir = 2;
     pu.mv[REF_PIC_LIST_0] = Mv(0, 0);
     pu.refIdx[REF_PIC_LIST_0] = -1;

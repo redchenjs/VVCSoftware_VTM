@@ -280,6 +280,11 @@ protected:
   void xCheckRDCostIBCModeMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode );
 
   void xCheckPLT              ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode );
+
+  PredictionUnit* getPuForInterPrediction(CodingStructure* cs);
+  template<size_t N>
+  unsigned int updateRdCheckingNum(double threshold, unsigned int numMergeSatdCand, static_vector<double, N>& costList);
+  void checkEarlySkip(const CodingStructure* bestCS, const Partitioner &partitioner);
 };
 
 //! \}
