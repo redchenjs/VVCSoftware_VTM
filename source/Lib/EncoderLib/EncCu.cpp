@@ -3828,17 +3828,17 @@ void EncCu::checkEarlySkip(const CodingStructure* bestCS, const Partitioner &par
     }
     else if (m_pcEncCfg->getMotionEstimationSearchMethod() != MESearchMethod::SELECTIVE)
     {
-      int absolute_MV = 0;
+      int mvdAbsSum = 0;
 
-      for (uint32_t uiRefListIdx = 0; uiRefListIdx < 2; uiRefListIdx++)
+      for (auto l : { REF_PIC_LIST_0, REF_PIC_LIST_1 })
       {
-        if (bestCS->slice->getNumRefIdx(RefPicList(uiRefListIdx)) > 0)
+        if (bestCS->slice->getNumRefIdx(l) > 0)
         {
-          absolute_MV += bestPU.mvd[uiRefListIdx].getAbsHor() + bestPU.mvd[uiRefListIdx].getAbsVer();
+          mvdAbsSum += bestPU.mvd[l].getAbsHor() + bestPU.mvd[l].getAbsVer();
         }
       }
 
-      if (absolute_MV == 0)
+      if (mvdAbsSum == 0)
       {
         m_modeCtrl->setEarlySkipDetected();
       }
