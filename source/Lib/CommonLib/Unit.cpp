@@ -574,7 +574,7 @@ void PredictionUnit::initData()
   mmvdMergeFlag = false;
   mmvdMergeIdx.val = MmvdIdx::INVALID;
   interDir    = MAX_UCHAR;
-  mergeType   = MRG_TYPE_DEFAULT_N;
+  mergeType        = MergeType::DEFAULT_N;
   bv.setZero();
   bvd.setZero();
   mvRefine = false;

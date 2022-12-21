@@ -927,14 +927,13 @@ enum LumaLevelToDQPMode
 };
 #endif
 
-enum MergeType
+enum class MergeType : uint8_t
 {
-  MRG_TYPE_DEFAULT_N        = 0, // 0
-  MRG_TYPE_SUBPU_ATMVP,
-  MRG_TYPE_IBC,
-  NUM_MRG_TYPE                   // 5
+  DEFAULT_N = 0,
+  SUBPU_ATMVP,
+  IBC,
+  NUM
 };
-
 
 //////////////////////////////////////////////////////////////////////////
 // Encoder modes to try out

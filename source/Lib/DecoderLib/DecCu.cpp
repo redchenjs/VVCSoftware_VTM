@@ -880,7 +880,7 @@ void DecCu::xDeriveCuMvs(CodingUnit &cu)
           pu.cu->affineType = affineMergeCtx.affineType[pu.mergeIdx];
           pu.cu->bcwIdx     = affineMergeCtx.bcwIdx[pu.mergeIdx];
           pu.mergeType      = affineMergeCtx.mergeType[pu.mergeIdx];
-          if (pu.mergeType == MRG_TYPE_SUBPU_ATMVP)
+          if (pu.mergeType == MergeType::SUBPU_ATMVP)
           {
             pu.refIdx[0] = affineMergeCtx.mvFieldNeighbours[pu.mergeIdx][0][0].refIdx;
             pu.refIdx[1] = affineMergeCtx.mvFieldNeighbours[pu.mergeIdx][0][1].refIdx;

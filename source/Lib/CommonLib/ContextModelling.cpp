@@ -370,7 +370,7 @@ void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
   pu.interDir                = interDirNeighbours[candIdx];
   pu.cu->imv = (!pu.cu->geoFlag && useAltHpelIf[candIdx]) ? IMV_HPEL : 0;
   pu.mergeIdx                = candIdx;
-  pu.mergeType               = CU::isIBC(*pu.cu) ? MRG_TYPE_IBC : MRG_TYPE_DEFAULT_N;
+  pu.mergeType               = CU::isIBC(*pu.cu) ? MergeType::IBC : MergeType::DEFAULT_N;
 
   for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
   {
@@ -625,7 +625,7 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
   pu.mergeFlag        = true;
   pu.regularMergeFlag = true;
   pu.mergeIdx         = candIdx.val;
-  pu.mergeType        = MRG_TYPE_DEFAULT_N;
+  pu.mergeType        = MergeType::DEFAULT_N;
 
   pu.mvd[REF_PIC_LIST_0] = Mv();
   pu.mvd[REF_PIC_LIST_1] = Mv();

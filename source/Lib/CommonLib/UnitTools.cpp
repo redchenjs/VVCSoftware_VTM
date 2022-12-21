@@ -1694,7 +1694,7 @@ bool PU::checkDMVRCondition(const PredictionUnit& pu)
                                 ? false
                                 : pu.cu->slice->getRefPic(REF_PIC_LIST_1, refIdx1)->isRefScaled(pu.cs->pps);
 
-    return pu.mergeFlag && pu.mergeType == MRG_TYPE_DEFAULT_N && !pu.ciipFlag && !pu.cu->affine && !pu.mmvdMergeFlag
+    return pu.mergeFlag && pu.mergeType == MergeType::DEFAULT_N && !pu.ciipFlag && !pu.cu->affine && !pu.mmvdMergeFlag
            && !pu.cu->mmvdSkip && PU::isSimpleSymmetricBiPred(pu) && PU::dmvrBdofSizeCheck(pu) && !ref0IsScaled
            && !ref1IsScaled;
   }
@@ -2279,7 +2279,8 @@ bool PU::addAffineMVPCandUnscaled( const PredictionUnit &pu, const RefPicList &r
 
   neibPU = cs.getPURestricted( neibPos, pu, pu.chType );
 
-  if (neibPU == nullptr || !CU::isInter(*neibPU->cu) || !neibPU->cu->affine || neibPU->mergeType != MRG_TYPE_DEFAULT_N)
+  if (neibPU == nullptr || !CU::isInter(*neibPU->cu) || !neibPU->cu->affine
+      || neibPU->mergeType != MergeType::DEFAULT_N)
   {
     return false;
   }
@@ -3220,7 +3221,7 @@ const int getAvailableAffineNeighboursForLeftPredictor( const PredictionUnit &pu
   const unsigned plevel = pu.cs->sps->getLog2ParallelMergeLevelMinus2() + 2;
 
   const PredictionUnit *puLeftBottom = pu.cs->getPURestricted( posLB.offset( -1, 1 ), pu, pu.chType );
-  if (puLeftBottom && puLeftBottom->cu->affine && puLeftBottom->mergeType == MRG_TYPE_DEFAULT_N
+  if (puLeftBottom && puLeftBottom->cu->affine && puLeftBottom->mergeType == MergeType::DEFAULT_N
       && PU::isDiffMER(pu.lumaPos(), posLB.offset(-1, 1), plevel))
   {
     npu[num++] = puLeftBottom;
@@ -3228,7 +3229,7 @@ const int getAvailableAffineNeighboursForLeftPredictor( const PredictionUnit &pu
   }
 
   const PredictionUnit* puLeft = pu.cs->getPURestricted( posLB.offset( -1, 0 ), pu, pu.chType );
-  if (puLeft && puLeft->cu->affine && puLeft->mergeType == MRG_TYPE_DEFAULT_N
+  if (puLeft && puLeft->cu->affine && puLeft->mergeType == MergeType::DEFAULT_N
       && PU::isDiffMER(pu.lumaPos(), posLB.offset(-1, 0), plevel))
   {
     npu[num++] = puLeft;
@@ -3246,7 +3247,7 @@ const int getAvailableAffineNeighboursForAbovePredictor( const PredictionUnit &p
   int num = numAffNeighLeft;
 
   const PredictionUnit* puAboveRight = pu.cs->getPURestricted( posRT.offset( 1, -1 ), pu, pu.chType );
-  if (puAboveRight && puAboveRight->cu->affine && puAboveRight->mergeType == MRG_TYPE_DEFAULT_N
+  if (puAboveRight && puAboveRight->cu->affine && puAboveRight->mergeType == MergeType::DEFAULT_N
       && PU::isDiffMER(pu.lumaPos(), posRT.offset(1, -1), plevel))
   {
     npu[num++] = puAboveRight;
@@ -3254,7 +3255,7 @@ const int getAvailableAffineNeighboursForAbovePredictor( const PredictionUnit &p
   }
 
   const PredictionUnit* puAbove = pu.cs->getPURestricted( posRT.offset( 0, -1 ), pu, pu.chType );
-  if (puAbove && puAbove->cu->affine && puAbove->mergeType == MRG_TYPE_DEFAULT_N
+  if (puAbove && puAbove->cu->affine && puAbove->mergeType == MergeType::DEFAULT_N
       && PU::isDiffMER(pu.lumaPos(), posRT.offset(0, -1), plevel))
   {
     npu[num++] = puAbove;
@@ -3262,7 +3263,7 @@ const int getAvailableAffineNeighboursForAbovePredictor( const PredictionUnit &p
   }
 
   const PredictionUnit *puAboveLeft = pu.cs->getPURestricted( posLT.offset( -1, -1 ), pu, pu.chType );
-  if (puAboveLeft && puAboveLeft->cu->affine && puAboveLeft->mergeType == MRG_TYPE_DEFAULT_N
+  if (puAboveLeft && puAboveLeft->cu->affine && puAboveLeft->mergeType == MergeType::DEFAULT_N
       && PU::isDiffMER(pu.lumaPos(), posLT.offset(-1, -1), plevel))
   {
     npu[num++] = puAboveLeft;
@@ -3303,7 +3304,7 @@ void PU::getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx
     }
     affMrgCtx.interDirNeighbours[i] = 0;
     affMrgCtx.affineType[i]         = AffineModel::_4_PARAMS;
-    affMrgCtx.mergeType[i]          = MRG_TYPE_DEFAULT_N;
+    affMrgCtx.mergeType[i]          = MergeType::DEFAULT_N;
     affMrgCtx.bcwIdx[i]             = BCW_DEFAULT;
   }
 #if GDR_ENABLED
@@ -3387,7 +3388,7 @@ void PU::getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx
       affMrgCtx.interDirNeighbours[affMrgCtx.numValidMergeCand] = mrgCtx.interDirNeighbours[pos];
 
       affMrgCtx.affineType[affMrgCtx.numValidMergeCand] = AffineModel::NUM;
-      affMrgCtx.mergeType[affMrgCtx.numValidMergeCand] = MRG_TYPE_SUBPU_ATMVP;
+      affMrgCtx.mergeType[affMrgCtx.numValidMergeCand]  = MergeType::SUBPU_ATMVP;
       if ( affMrgCtx.numValidMergeCand == mrgCandIdx )
       {
         return;
@@ -4036,7 +4037,7 @@ void PU::spanMotionInfo( PredictionUnit &pu, const MergeCtx &mrgCtx )
 {
   MotionBuf mb = pu.getMotionBuf();
 
-  if (!pu.mergeFlag || pu.mergeType == MRG_TYPE_DEFAULT_N || pu.mergeType == MRG_TYPE_IBC)
+  if (!pu.mergeFlag || pu.mergeType == MergeType::DEFAULT_N || pu.mergeType == MergeType::IBC)
   {
     MotionInfo mi;
 
@@ -4087,7 +4088,7 @@ void PU::spanMotionInfo( PredictionUnit &pu, const MergeCtx &mrgCtx )
       mb.fill( mi );
     }
   }
-  else if (pu.mergeType == MRG_TYPE_SUBPU_ATMVP)
+  else if (pu.mergeType == MergeType::SUBPU_ATMVP)
   {
     CHECK(mrgCtx.subPuMvpMiBuf.area() == 0 || !mrgCtx.subPuMvpMiBuf.buf, "Buffer not initialized");
     mb.copyFrom(mrgCtx.subPuMvpMiBuf);
@@ -4704,11 +4705,11 @@ uint8_t CU::getValidBcwIdx( const CodingUnit &cu )
   {
     return cu.bcwIdx;
   }
-  else if( cu.firstPU->interDir == 3 && cu.firstPU->mergeFlag && cu.firstPU->mergeType == MRG_TYPE_DEFAULT_N )
+  else if (cu.firstPU->interDir == 3 && cu.firstPU->mergeFlag && cu.firstPU->mergeType == MergeType::DEFAULT_N)
   {
     // This is intended to do nothing here.
   }
-  else if( cu.firstPU->mergeFlag && cu.firstPU->mergeType == MRG_TYPE_SUBPU_ATMVP )
+  else if (cu.firstPU->mergeFlag && cu.firstPU->mergeType == MergeType::SUBPU_ATMVP)
   {
     CHECK(cu.bcwIdx != BCW_DEFAULT, " cu.bcwIdx != BCW_DEFAULT ");
   }
