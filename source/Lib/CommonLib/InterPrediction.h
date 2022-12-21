@@ -113,8 +113,7 @@ protected:
   Pel*                 m_gradX0;
   Pel*                 m_gradY0;
   Pel*                 m_gradX1;
-  Pel*                 m_gradY1;
-  bool                 m_subPuMC;
+  Pel                 *m_gradY1;
 
   int                  m_IBCBufferWidth;
   PelStorage           m_IBCBuffer;
@@ -123,7 +122,8 @@ protected:
   void            applyBiOptFlow(const PredictionUnit &pu, const CPelUnitBuf &yuvSrc0, const CPelUnitBuf &yuvSrc1, const int &refIdx0, const int &refIdx1, PelUnitBuf &yuvDst, const BitDepths &clipBitDepths);
   void xPredInterUni(const PredictionUnit &pu, const RefPicList &eRefPicList, PelUnitBuf &pcYuvPred, const bool bi,
                      const bool bioApplied, const bool luma, const bool chroma);
-  void xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, bool luma, bool chroma, PelUnitBuf *yuvPredTmp);
+  void xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, bool luma, bool chroma, PelUnitBuf *yuvPredTmp,
+                    bool isSubPu);
 
   void xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic, const Mv &_mv,
                      PelUnitBuf &dstPic, bool bi, const ClpRng &clpRng, bool bioApplied, bool isIBC,
@@ -176,11 +176,11 @@ public:
 
   // inter
   void motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf, RefPicList eRefPicList, bool luma, bool chroma,
-                          PelUnitBuf *predBufWOBIO);
+                          PelUnitBuf *predBufWOBIO, bool isSubPu);
 
   void motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf, RefPicList eRefPicList)
   {
-    motionCompensation(pu, predBuf, eRefPicList, true, true, nullptr);
+    motionCompensation(pu, predBuf, eRefPicList, true, true, nullptr, false);
   }
 
   void motionCompensatePu(PredictionUnit &pu, RefPicList eRefPicList, bool luma, bool chroma);
