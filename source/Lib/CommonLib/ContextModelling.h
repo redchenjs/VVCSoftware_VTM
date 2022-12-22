@@ -618,13 +618,13 @@ public:
   bool          hasMergedCandList;
 
   MotionBuf     subPuMvpMiBuf;
-  MotionBuf     subPuMvpExtMiBuf;
   MvField       mmvdBaseMv[MmvdIdx::BASE_MV_NUM][2];
 #if GDR_ENABLED
   bool mmvdSolid[MmvdIdx::BASE_MV_NUM][2];
   bool mmvdValid[MmvdIdx::BASE_MV_NUM][2];
 #endif
   void          setMmvdMergeCandiInfo(PredictionUnit &pu, MmvdIdx candIdx);
+  void          getMmvdDeltaMv(const Slice& slice, const MmvdIdx candIdx, Mv deltaMv[NUM_REF_PIC_LIST_01]) const;
   bool          mmvdUseAltHpelIf[MmvdIdx::BASE_MV_NUM];
   bool          useAltHpelIf      [ MRG_MAX_NUM_CANDS ];
   void setMergeInfo( PredictionUnit& pu, int candIdx );

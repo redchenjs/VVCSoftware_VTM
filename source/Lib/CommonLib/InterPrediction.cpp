@@ -563,6 +563,10 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
   {
     bioApplied = false;
   }
+  if (!luma)
+  {
+    bioApplied = false;
+  }
 
   bool dmvrApplied = (pu.mvRefine) && PU::checkDMVRCondition(pu);
 
