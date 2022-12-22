@@ -3105,8 +3105,7 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
       pu->mergeFlag        = true;
       pu->regularMergeFlag = false;
       pu->geoSplitDir      = comboList.list[candidateIdx].splitDir;
-      pu->geoMergeIdx0     = (uint8_t) comboList.list[candidateIdx].mergeIdx0;
-      pu->geoMergeIdx1     = (uint8_t) comboList.list[candidateIdx].mergeIdx1;
+      pu->geoMergeIdx      = comboList.list[candidateIdx].mergeIdx;
       pu->mmvdMergeFlag    = false;
       pu->mmvdMergeIdx.val = MmvdIdx::INVALID;
       pu->cu->geoFlag      = true;
