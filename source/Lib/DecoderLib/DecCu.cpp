@@ -984,7 +984,7 @@ void DecCu::xDeriveCuMvs(CodingUnit &cu)
             CHECK( pu.mvpIdx[REF_PIC_LIST_0], "mvpIdx for IBC mode should be 0" );
           }
           pu.mv[REF_PIC_LIST_0] = amvpInfo.mvCand[pu.mvpIdx[REF_PIC_LIST_0]] + mvd;
-          pu.mv[REF_PIC_LIST_0].mvCliptoStorageBitDepth();
+          pu.mv[REF_PIC_LIST_0].foldToStorageBitDepth();
         }
         else
         {
@@ -1001,7 +1001,7 @@ void DecCu::xDeriveCuMvs(CodingUnit &cu)
                 pu.mvd[eRefList].changeTransPrecAmvr2Internal(pu.cu->imv);
               }
               pu.mv[eRefList] = amvpInfo.mvCand[pu.mvpIdx[eRefList]] + pu.mvd[eRefList];
-              pu.mv[eRefList].mvCliptoStorageBitDepth();
+              pu.mv[eRefList].foldToStorageBitDepth();
             }
           }
         }

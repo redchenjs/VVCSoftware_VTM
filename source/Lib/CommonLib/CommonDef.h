@@ -504,12 +504,11 @@ static constexpr int MV_MANTISSA_UPPER_LIMIT = ((1 << (MV_MANTISSA_BITCOUNT - 1)
 static constexpr int MV_MANTISSA_LIMIT       = (1 << (MV_MANTISSA_BITCOUNT - 1));
 static constexpr int MV_EXPONENT_MASK        = ((1 << MV_EXPONENT_BITCOUNT) - 1);
 
-static constexpr int MV_BITS =                                   18;
-static constexpr int MV_MAX =              (1 << (MV_BITS - 1)) - 1;
-static constexpr int MV_MIN =                 -(1 << (MV_BITS - 1));
-
-static constexpr int MVD_MAX =                            (1 << 17) - 1;
-static constexpr int MVD_MIN =                               -(1 << 17);
+static constexpr int MV_BITS = 18;
+static constexpr int MV_MAX  = (1 << (MV_BITS - 1)) - 1;
+static constexpr int MV_MIN  = -(1 << (MV_BITS - 1));
+static constexpr int MVD_MAX = MV_MAX;
+static constexpr int MVD_MIN = MV_MIN;
 
 static constexpr int PIC_ANALYZE_CW_BINS =                           32;
 static constexpr int PIC_CODE_CW_BINS =                              16;
