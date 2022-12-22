@@ -4311,16 +4311,18 @@ void PU::getGeoMergeCandidates( const PredictionUnit &pu, MergeCtx& geoMrgCtx )
 }
 
 void PU::spanGeoMotionInfo(PredictionUnit &pu, const MergeCtx &geoMrgCtx, const uint8_t splitDir,
-                           const uint8_t candIdx0, const uint8_t candIdx1)
+                           const MergeIdxPair &candIdx)
 {
   pu.geoSplitDir  = splitDir;
-  pu.geoMergeIdx0 = candIdx0;
-  pu.geoMergeIdx1 = candIdx1;
+  pu.geoMergeIdx  = candIdx;
   MotionBuf mb = pu.getMotionBuf();
 
   MotionInfo biMv;
   biMv.isInter  = true;
   biMv.sliceIdx = pu.cs->slice->getIndependentSliceIdx();
+
+  const uint8_t &candIdx0 = candIdx[0];
+  const uint8_t &candIdx1 = candIdx[1];
 
   if( geoMrgCtx.interDirNeighbours[candIdx0] == 1 && geoMrgCtx.interDirNeighbours[candIdx1] == 2 )
   {

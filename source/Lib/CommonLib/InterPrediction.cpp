@@ -1531,37 +1531,33 @@ int InterPrediction::rightShiftMSB(int numer, int denom)
 void InterPrediction::motionCompensationGeo( CodingUnit &cu, MergeCtx &geoMrgCtx )
 {
   const uint8_t splitDir = cu.firstPU->geoSplitDir;
-  const uint8_t candIdx0 = cu.firstPU->geoMergeIdx0;
-  const uint8_t candIdx1 = cu.firstPU->geoMergeIdx1;
+
   for( auto &pu : CU::traversePUs( cu ) )
   {
-    const UnitArea localUnitArea( cu.cs->area.chromaFormat, Area( 0, 0, pu.lwidth(), pu.lheight() ) );
-    PelUnitBuf tmpGeoBuf0 = m_geoPartBuf[0].getBuf( localUnitArea );
-    PelUnitBuf tmpGeoBuf1 = m_geoPartBuf[1].getBuf( localUnitArea );
-    PelUnitBuf predBuf    = cu.cs->getPredBuf( pu );
+    const UnitArea localUnitArea(cu.cs->area.chromaFormat, Area(0, 0, pu.lwidth(), pu.lheight()));
 
-    geoMrgCtx.setMergeInfo( pu, candIdx0 );
-    PU::spanMotionInfo( pu );
-    // TODO: check 4:0:0 interaction with weighted prediction.
-    motionCompensation(pu, tmpGeoBuf0, REF_PIC_LIST_X, true, isChromaEnabled(pu.chromaFormat), nullptr, false);
-    if( g_mctsDecCheckEnabled && !MCTSHelper::checkMvBufferForMCTSConstraint( pu, true ) )
+    PelUnitBuf predBuf = cu.cs->getPredBuf(pu);
+    PelUnitBuf tmpGeoBuf[2];
+
+    for (int i = 0; i < 2; i++)
     {
-      printf( "DECODER_GEO_PU: pu motion vector across tile boundaries (%d,%d,%d,%d)\n", pu.lx(), pu.ly(), pu.lwidth(), pu.lheight() );
+      tmpGeoBuf[i] = m_geoPartBuf[i].getBuf(localUnitArea);
+
+      geoMrgCtx.setMergeInfo(pu, cu.firstPU->geoMergeIdx[i]);
+      PU::spanMotionInfo(pu);
+      // TODO: check 4:0:0 interaction with weighted prediction.
+      motionCompensation(pu, tmpGeoBuf[i], REF_PIC_LIST_X, true, isChromaEnabled(pu.chromaFormat), nullptr, false);
+      if (g_mctsDecCheckEnabled && !MCTSHelper::checkMvBufferForMCTSConstraint(pu, true))
+      {
+        printf("DECODER_GEO_PU: pu motion vector across tile boundaries (%d,%d,%d,%d)\n", pu.lx(), pu.ly(), pu.lwidth(),
+               pu.lheight());
+      }
     }
 
-    geoMrgCtx.setMergeInfo( pu, candIdx1 );
-    PU::spanMotionInfo( pu );
-    // TODO: check 4:0:0 interaction with weighted prediction.
-    motionCompensation(pu, tmpGeoBuf1, REF_PIC_LIST_X, true, isChromaEnabled(pu.chromaFormat), nullptr, false);
-    if( g_mctsDecCheckEnabled && !MCTSHelper::checkMvBufferForMCTSConstraint( pu, true ) )
-    {
-      printf( "DECODER_GEO_PU: pu motion vector across tile boundaries (%d,%d,%d,%d)\n", pu.lx(), pu.ly(), pu.lwidth(), pu.lheight() );
-    }
-
-    weightedGeoBlk(pu, splitDir, ChannelType::LUMA, predBuf, tmpGeoBuf0, tmpGeoBuf1);
+    weightedGeoBlk(pu, splitDir, ChannelType::LUMA, predBuf, tmpGeoBuf[0], tmpGeoBuf[1]);
     if (isChromaEnabled(pu.chromaFormat))
     {
-      weightedGeoBlk(pu, splitDir, ChannelType::CHROMA, predBuf, tmpGeoBuf0, tmpGeoBuf1);
+      weightedGeoBlk(pu, splitDir, ChannelType::CHROMA, predBuf, tmpGeoBuf[0], tmpGeoBuf[1]);
     }
   }
 }

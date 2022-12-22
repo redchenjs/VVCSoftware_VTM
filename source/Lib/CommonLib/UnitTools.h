@@ -195,8 +195,8 @@ namespace PU
   bool isLMCMode                      (                          unsigned mode);
   bool isLMCModeEnabled(const PredictionUnit &pu, unsigned mode);
   void getGeoMergeCandidates          (const PredictionUnit &pu, MergeCtx &GeoMrgCtx);
-  void spanGeoMotionInfo(PredictionUnit &pu, const MergeCtx &GeoMrgCtx, const uint8_t splitDir, const uint8_t candIdx0,
-                         const uint8_t candIdx1);
+  void spanGeoMotionInfo(PredictionUnit &pu, const MergeCtx &GeoMrgCtx, const uint8_t splitDir,
+                         const MergeIdxPair &candIdx);
   bool addNeighborMv  (const Mv& currMv, static_vector<Mv, IBC_NUM_CANDIDATES>& neighborMvs);
   void getIbcMVPsEncOnly(PredictionUnit &pu, static_vector<Mv, IBC_NUM_CANDIDATES>& mvPred);
   bool getDerivedBV(PredictionUnit &pu, const Mv& currentMv, Mv& derivedMv);

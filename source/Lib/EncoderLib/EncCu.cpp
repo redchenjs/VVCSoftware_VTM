@@ -60,13 +60,13 @@ using namespace std;
 
 // ====================================================================================================================
 
-const GeoMotionInfo EncCu::m_geoModeTest[GEO_MAX_NUM_CANDS] = {
-  GeoMotionInfo(0, 1), GeoMotionInfo(1, 0), GeoMotionInfo(0, 2), GeoMotionInfo(1, 2), GeoMotionInfo(2, 0),
-  GeoMotionInfo(2, 1), GeoMotionInfo(0, 3), GeoMotionInfo(1, 3), GeoMotionInfo(2, 3), GeoMotionInfo(3, 0),
-  GeoMotionInfo(3, 1), GeoMotionInfo(3, 2), GeoMotionInfo(0, 4), GeoMotionInfo(1, 4), GeoMotionInfo(2, 4),
-  GeoMotionInfo(3, 4), GeoMotionInfo(4, 0), GeoMotionInfo(4, 1), GeoMotionInfo(4, 2), GeoMotionInfo(4, 3),
-  GeoMotionInfo(0, 5), GeoMotionInfo(1, 5), GeoMotionInfo(2, 5), GeoMotionInfo(3, 5), GeoMotionInfo(4, 5),
-  GeoMotionInfo(5, 0), GeoMotionInfo(5, 1), GeoMotionInfo(5, 2), GeoMotionInfo(5, 3), GeoMotionInfo(5, 4)
+const MergeIdxPair EncCu::m_geoModeTest[GEO_MAX_NUM_CANDS] = {
+  MergeIdxPair{ 0, 1 }, MergeIdxPair{ 1, 0 }, MergeIdxPair{ 0, 2 }, MergeIdxPair{ 1, 2 }, MergeIdxPair{ 2, 0 },
+  MergeIdxPair{ 2, 1 }, MergeIdxPair{ 0, 3 }, MergeIdxPair{ 1, 3 }, MergeIdxPair{ 2, 3 }, MergeIdxPair{ 3, 0 },
+  MergeIdxPair{ 3, 1 }, MergeIdxPair{ 3, 2 }, MergeIdxPair{ 0, 4 }, MergeIdxPair{ 1, 4 }, MergeIdxPair{ 2, 4 },
+  MergeIdxPair{ 3, 4 }, MergeIdxPair{ 4, 0 }, MergeIdxPair{ 4, 1 }, MergeIdxPair{ 4, 2 }, MergeIdxPair{ 4, 3 },
+  MergeIdxPair{ 0, 5 }, MergeIdxPair{ 1, 5 }, MergeIdxPair{ 2, 5 }, MergeIdxPair{ 3, 5 }, MergeIdxPair{ 4, 5 },
+  MergeIdxPair{ 5, 0 }, MergeIdxPair{ 5, 1 }, MergeIdxPair{ 5, 2 }, MergeIdxPair{ 5, 3 }, MergeIdxPair{ 5, 4 }
 };
 
 EncCu::EncCu() {}
@@ -3090,15 +3090,14 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
 
   for (int geoMotionIdx = 0; geoMotionIdx < maxNumMergeCandidates * (maxNumMergeCandidates - 1); geoMotionIdx++)
   {
-    const int mergeCand0 = m_geoModeTest[geoMotionIdx].m_candIdx0;
-    const int mergeCand1 = m_geoModeTest[geoMotionIdx].m_candIdx1;
+    const MergeIdxPair mergeIdxPair = m_geoModeTest[geoMotionIdx];
 
 #if GDR_ENABLED
       if (isEncodeGdrClean)
       {
-        if (!mergeCtx.mvSolid[mergeCand0][0] || !mergeCtx.mvSolid[mergeCand0][1] || !mergeCtx.mvSolid[mergeCand1][0]
-            || !mergeCtx.mvSolid[mergeCand1][1] || !mergeCtx.mvValid[mergeCand0][0] || !mergeCtx.mvValid[mergeCand0][1]
-            || !mergeCtx.mvValid[mergeCand1][0] || !mergeCtx.mvValid[mergeCand1][1])
+        if (!mergeCtx.mvSolid[mergeIdxPair[0]][0] || !mergeCtx.mvSolid[mergeIdxPair[0]][1] || !mergeCtx.mvSolid[mergeIdxPair[1]][0]
+            || !mergeCtx.mvSolid[mergeIdxPair[1]][1] || !mergeCtx.mvValid[mergeIdxPair[0]][0] || !mergeCtx.mvValid[mergeIdxPair[0]][1]
+            || !mergeCtx.mvValid[mergeIdxPair[1]][0] || !mergeCtx.mvValid[mergeIdxPair[1]][1])
         {
           // don't insert candidate into comboList so we don't have to test for cleanliness later
           continue;
@@ -3108,7 +3107,7 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
 
       for (int splitDir = 0; splitDir < GEO_NUM_PARTITION_MODE; splitDir++)
       {
-        double tempCost = m_geoCostList.getCost(splitDir, mergeCand0, mergeCand1);
+        double tempCost = m_geoCostList.getCost(splitDir, mergeIdxPair);
 
         if (tempCost > bestWholeBlkCost)
         {
@@ -3116,7 +3115,7 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
         }
 
         tempCost = tempCost + (double) bitsForPartitionIdx * sqrtLambdaForFirstPass;
-        comboList.list.push_back(GeoMergeCombo(splitDir, mergeCand0, mergeCand1, tempCost));
+        comboList.list.push_back(GeoMergeCombo(splitDir, mergeIdxPair, tempCost));
       }
   }
   if (comboList.list.empty())
@@ -3142,8 +3141,8 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   for (int candidateIdx = 0; candidateIdx < geoNumMrgSadCand; candidateIdx++)
   {
     const int splitDir   = comboList.list[candidateIdx].splitDir;
-    const int mergeCand0 = comboList.list[candidateIdx].mergeIdx0;
-    const int mergeCand1 = comboList.list[candidateIdx].mergeIdx1;
+    const int mergeCand0 = comboList.list[candidateIdx].mergeIdx[0];
+    const int mergeCand1 = comboList.list[candidateIdx].mergeIdx[1];
 
     PelUnitBuf geoBuf = m_geoWeightedBuffers[candidateIdx].getBuf(localUnitArea);
     m_pcInterSearch->weightedGeoBlk(pu, splitDir, ChannelType::LUMA, geoBuf, *geoBuffer[mergeCand0],
@@ -3175,14 +3174,13 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
     // Generate chroma predictions
     for (int i = 0; i < geoNumMrgSatdCand; i++)
     {
-      const int candidateIdx = geoRdModeList[i];
-      const int splitDir     = comboList.list[candidateIdx].splitDir;
-      const int mergeCand0   = comboList.list[candidateIdx].mergeIdx0;
-      const int mergeCand1   = comboList.list[candidateIdx].mergeIdx1;
+      const int          candidateIdx = geoRdModeList[i];
+      const int          splitDir     = comboList.list[candidateIdx].splitDir;
+      const MergeIdxPair mergeCand    = comboList.list[candidateIdx].mergeIdx;
 
       PelUnitBuf geoBuf = m_geoWeightedBuffers[candidateIdx].getBuf(localUnitArea);
-      m_pcInterSearch->weightedGeoBlk(pu, splitDir, ChannelType::CHROMA, geoBuf, *geoBuffer[mergeCand0],
-                                      *geoBuffer[mergeCand1]);
+      m_pcInterSearch->weightedGeoBlk(pu, splitDir, ChannelType::CHROMA, geoBuf, *geoBuffer[mergeCand[0]],
+                                      *geoBuffer[mergeCand[1]]);
     }
   }
 
@@ -3224,12 +3222,11 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
       pu.mergeFlag        = true;
       pu.regularMergeFlag = false;
       pu.geoSplitDir      = comboList.list[candidateIdx].splitDir;
-      pu.geoMergeIdx0     = (uint8_t) comboList.list[candidateIdx].mergeIdx0;
-      pu.geoMergeIdx1     = (uint8_t) comboList.list[candidateIdx].mergeIdx1;
+      pu.geoMergeIdx      = comboList.list[candidateIdx].mergeIdx;
       pu.mmvdMergeFlag    = false;
       pu.mmvdMergeIdx.val = MmvdIdx::INVALID;
 
-      PU::spanGeoMotionInfo(pu, mergeCtx, pu.geoSplitDir, pu.geoMergeIdx0, pu.geoMergeIdx1);
+      PU::spanGeoMotionInfo(pu, mergeCtx, pu.geoSplitDir, pu.geoMergeIdx);
       PelUnitBuf geoBuf = m_geoWeightedBuffers[candidateIdx].getBuf(localUnitArea);
       tempCS->getPredBuf().copyFrom(geoBuf);
 

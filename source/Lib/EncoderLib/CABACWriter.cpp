@@ -2045,9 +2045,9 @@ void CABACWriter::merge_idx( const PredictionUnit& pu )
   {
     if( pu.cu->geoFlag )
     {
-      uint8_t splitDir = pu.geoSplitDir;
-      uint8_t candIdx0 = pu.geoMergeIdx0;
-      uint8_t candIdx1 = pu.geoMergeIdx1;
+      const uint8_t splitDir = pu.geoSplitDir;
+      const uint8_t candIdx0 = pu.geoMergeIdx[0];
+      uint8_t       candIdx1 = pu.geoMergeIdx[1];
       DTRACE( g_trace_ctx, D_SYNTAX, "merge_idx() geo_split_dir=%d\n", splitDir );
       DTRACE( g_trace_ctx, D_SYNTAX, "merge_idx() geo_idx0=%d\n", candIdx0 );
       DTRACE( g_trace_ctx, D_SYNTAX, "merge_idx() geo_idx1=%d\n", candIdx1 );
@@ -2057,7 +2057,7 @@ void CABACWriter::merge_idx( const PredictionUnit& pu )
       CHECK(maxNumGeoCand < 2, "Incorrect max number of geo candidates");
       CHECK(candIdx0 >= maxNumGeoCand, "Incorrect candIdx0");
       CHECK(candIdx1 >= maxNumGeoCand, "Incorrect candIdx1");
-      int numCandminus2 = maxNumGeoCand - 2;
+      const int numCandminus2 = maxNumGeoCand - 2;
       m_binEncoder.encodeBin(candIdx0 == 0 ? 0 : 1, Ctx::MergeIdx());
       if( candIdx0 > 0 )
       {
