@@ -709,8 +709,8 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
     }
 
     PelBuf & dstBuf = dstPic.bufs[compID];
-    unsigned width  = dstBuf.width;
-    unsigned height = dstBuf.height;
+    const unsigned width  = dstBuf.width;
+    const unsigned height = dstBuf.height;
 
     CPelBuf refBuf;
     {
@@ -724,18 +724,13 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
       refBuf.stride = srcPadStride;
     }
     // backup data
-    int  backupWidth        = width;
-    int  backupHeight       = height;
     Pel *backupDstBufPtr    = dstBuf.buf;
     ptrdiff_t backupDstBufStride = dstBuf.stride;
 
     if (bioApplied && compID == COMPONENT_Y)
     {
-      width  = width + 2 * BIO_EXTEND_SIZE + 2;
-      height = height + 2 * BIO_EXTEND_SIZE + 2;
-
       // change MC output
-      dstBuf.stride = width;
+      dstBuf.stride = width + 2 * BIO_EXTEND_SIZE + 2;
       dstBuf.buf    = m_filteredBlockTmp[2 + m_iRefListIdx][compID] + 2 * dstBuf.stride + 2;
     }
 
@@ -745,13 +740,13 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
 
     if (yFrac == 0)
     {
-      m_if.filterHor(compID, refBuf.buf, refBuf.stride, dstBuf.buf, dstBuf.stride, backupWidth, backupHeight, xFrac,
-                     rndRes, clpRng, filterIdx);
+      m_if.filterHor(compID, refBuf.buf, refBuf.stride, dstBuf.buf, dstBuf.stride, width, height, xFrac, rndRes, clpRng,
+                     filterIdx);
     }
     else if (xFrac == 0)
     {
-      m_if.filterVer(compID, refBuf.buf, refBuf.stride, dstBuf.buf, dstBuf.stride, backupWidth, backupHeight, yFrac,
-                     true, rndRes, clpRng, filterIdx);
+      m_if.filterVer(compID, refBuf.buf, refBuf.stride, dstBuf.buf, dstBuf.stride, width, height, yFrac, true, rndRes,
+                     clpRng, filterIdx);
     }
     else
     {
@@ -760,16 +755,15 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
       const int filterSize = bilinearMC ? NTAPS_BILINEAR : (isLuma(compID) ? NTAPS_LUMA : NTAPS_CHROMA);
       const int margin     = (filterSize >> 1) - 1;
 
-      m_if.filterHor(compID, refBuf.bufAt(0, -margin), refBuf.stride, tmpBuf.buf, tmpBuf.stride, backupWidth,
-                     backupHeight + filterSize - 1, xFrac, false, clpRng, filterIdx);
+      m_if.filterHor(compID, refBuf.bufAt(0, -margin), refBuf.stride, tmpBuf.buf, tmpBuf.stride, width,
+                     height + filterSize - 1, xFrac, false, clpRng, filterIdx);
       JVET_J0090_SET_CACHE_ENABLE(false);
-      m_if.filterVer(compID, tmpBuf.bufAt(0, margin), tmpBuf.stride, dstBuf.buf, dstBuf.stride, backupWidth,
-                     backupHeight, yFrac, false, rndRes, clpRng, filterIdx);
+      m_if.filterVer(compID, tmpBuf.bufAt(0, margin), tmpBuf.stride, dstBuf.buf, dstBuf.stride, width, height, yFrac,
+                     false, rndRes, clpRng, filterIdx);
     }
-    JVET_J0090_SET_CACHE_ENABLE(
-      (srcPadStride == 0)
-      && (bioApplied
-          == false));   // Enabled only in non-DMVR-non-BDOF process, In DMVR process, srcPadStride is always non-zero
+    // Enabled only in non-DMVR-non-BDOF process, In DMVR process, srcPadStride is always non-zero
+    JVET_J0090_SET_CACHE_ENABLE(srcPadStride == 0 && !bioApplied);
+
     if (bioApplied && compID == COMPONENT_Y)
     {
       const int shift = IF_INTERNAL_FRAC_BITS(clpRng.bd);
@@ -777,7 +771,7 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
       int        yOffset = (yFrac < 8) ? 1 : 0;
       const Pel *refPel  = refBuf.buf - yOffset * refBuf.stride - xOffset;
       Pel *      dstPel  = m_filteredBlockTmp[2 + m_iRefListIdx][compID] + dstBuf.stride + 1;
-      for (int w = 0; w < (width - 2 * BIO_EXTEND_SIZE); w++)
+      for (int w = 0; w < width + 2; w++)
       {
         Pel val   = leftShift_round(refPel[w], shift);
         dstPel[w] = val - (Pel) IF_INTERNAL_OFFS;
@@ -785,29 +779,27 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
 
       refPel = refBuf.buf + (1 - yOffset) * refBuf.stride - xOffset;
       dstPel = m_filteredBlockTmp[2 + m_iRefListIdx][compID] + 2 * dstBuf.stride + 1;
-      for (int h = 0; h < (height - 2 * BIO_EXTEND_SIZE - 2); h++)
+      for (int h = 0; h < height; h++)
       {
-        Pel val   = leftShift_round(refPel[0], shift);
-        dstPel[0] = val - (Pel) IF_INTERNAL_OFFS;
+        const ptrdiff_t idxLeft  = 0;
+        const ptrdiff_t idxRight = width + 2 * BIO_EXTEND_SIZE - 1;
 
-        val               = leftShift_round(refPel[width - 3], shift);
-        dstPel[width - 3] = val - (Pel) IF_INTERNAL_OFFS;
+        dstPel[idxLeft]  = leftShift_round(refPel[idxLeft], shift) - (Pel) IF_INTERNAL_OFFS;
+        dstPel[idxRight] = leftShift_round(refPel[idxRight], shift) - (Pel) IF_INTERNAL_OFFS;
 
         refPel += refBuf.stride;
         dstPel += dstBuf.stride;
       }
 
-      refPel = refBuf.buf + (height - 2 * BIO_EXTEND_SIZE - 2 + 1 - yOffset) * refBuf.stride - xOffset;
-      dstPel = m_filteredBlockTmp[2 + m_iRefListIdx][compID] + (height - 2 * BIO_EXTEND_SIZE) * dstBuf.stride + 1;
-      for (int w = 0; w < (width - 2 * BIO_EXTEND_SIZE); w++)
+      refPel = refBuf.buf + (height + 1 - yOffset) * refBuf.stride - xOffset;
+      dstPel = m_filteredBlockTmp[2 + m_iRefListIdx][compID] + (height + 2) * dstBuf.stride + 1;
+      for (int w = 0; w < width + 2; w++)
       {
         Pel val   = leftShift_round(refPel[w], shift);
         dstPel[w] = val - (Pel) IF_INTERNAL_OFFS;
       }
 
       // restore data
-      width         = backupWidth;
-      height        = backupHeight;
       dstBuf.buf    = backupDstBufPtr;
       dstBuf.stride = backupDstBufStride;
     }
