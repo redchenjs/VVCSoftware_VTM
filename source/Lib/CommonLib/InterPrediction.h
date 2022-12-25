@@ -84,7 +84,6 @@ protected:
 
   RdCost*              m_pcRdCost;
 
-  int                  m_iRefListIdx;
   PelStorage           m_geoPartBuf[2];
 
   static constexpr int MVBUFFER_SIZE = MAX_CU_SIZE / MIN_PU_SIZE;
@@ -127,11 +126,13 @@ protected:
 
   void xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic, const Mv &_mv,
                      PelUnitBuf &dstPic, bool bi, const ClpRng &clpRng, bool bioApplied, bool isIBC,
-                     const std::pair<int, int> scalingRatio, bool bilinearMC, Pel *srcPadBuf, ptrdiff_t srcPadStride);
+                     const std::pair<int, int> scalingRatio, bool bilinearMC, Pel *srcPadBuf, ptrdiff_t srcPadStride,
+                     Pel *bdofDstBuf);
   void xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic, const Mv &_mv,
-                     PelUnitBuf &dstPic, bool bi, const ClpRng &clpRng, bool bioApplied, bool isIBC)
+                     PelUnitBuf &dstPic, bool bi, const ClpRng &clpRng, bool bioApplied, bool isIBC, RefPicList l)
   {
-    xPredInterBlk(compID, pu, refPic, _mv, dstPic, bi, clpRng, bioApplied, isIBC, SCALE_1X, false, nullptr, 0);
+    xPredInterBlk(compID, pu, refPic, _mv, dstPic, bi, clpRng, bioApplied, isIBC, SCALE_1X, false, nullptr, 0,
+                  isLuma(compID) && bioApplied ? m_filteredBlockTmp[2 + l][compID] : nullptr);
   }
 
   void xAddBIOAvg4(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,

@@ -206,8 +206,6 @@ void InterPrediction::init( RdCost* pcRdCost, ChromaFormat chromaFormatIDC, cons
     m_colorTransResiBuf[1].create(UnitArea(chromaFormatIDC, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
     m_colorTransResiBuf[2].create(UnitArea(chromaFormatIDC, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
 
-    m_iRefListIdx = -1;
-
     m_gradX0 = (Pel*)xMalloc(Pel, BIO_TEMP_BUFFER_SIZE);
     m_gradY0 = (Pel*)xMalloc(Pel, BIO_TEMP_BUFFER_SIZE);
     m_gradX1 = (Pel*)xMalloc(Pel, BIO_TEMP_BUFFER_SIZE);
@@ -512,8 +510,7 @@ void InterPrediction::xPredInterUni(const PredictionUnit &pu, const RefPicList &
     }
     if ( pu.cu->affine )
     {
-      CHECK( bioApplied, "BIO is not allowed with affine" );
-      m_iRefListIdx = eRefPicList;
+      CHECK(bioApplied, "BIO is not allowed with affine");
       bool genChromaMv = (!luma && chroma && compID == COMPONENT_Cb);
       xPredAffineBlk(compID, pu, pu.cu->slice->getRefPic(eRefPicList, refIdx)->unscaledPic, mv, pcYuvPred, bi,
                      pu.cu->slice->clpRng(compID), genChromaMv, pu.cu->slice->getScalingRatio(eRefPicList, refIdx));
@@ -523,13 +520,14 @@ void InterPrediction::xPredInterUni(const PredictionUnit &pu, const RefPicList &
       if (isIBC)
       {
         xPredInterBlk(compID, pu, pu.cu->slice->getPic(), mv[0], pcYuvPred, bi, pu.cu->slice->clpRng(compID),
-                      bioApplied, isIBC);
+                      bioApplied, isIBC, eRefPicList);
       }
       else
       {
         xPredInterBlk(compID, pu, pu.cu->slice->getRefPic(eRefPicList, refIdx)->unscaledPic, mv[0], pcYuvPred, bi,
                       pu.cu->slice->clpRng(compID), bioApplied, isIBC,
-                      pu.cu->slice->getScalingRatio(eRefPicList, refIdx), false, nullptr, 0);
+                      pu.cu->slice->getScalingRatio(eRefPicList, refIdx), false, nullptr, 0,
+                      isLuma(compID) && bioApplied ? m_filteredBlockTmp[2 + eRefPicList][compID] : nullptr);
       }
     }
   }
@@ -587,7 +585,6 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
     CHECK(CU::isIBC(*pu.cu) && eRefPicList != REF_PIC_LIST_0, "Invalid interdir for ibc mode");
     CHECK(CU::isIBC(*pu.cu) && pu.refIdx[refList] != IBC_REF_IDX, "Invalid reference index for ibc mode");
     CHECK((CU::isInter(*pu.cu) && pu.refIdx[refList] >= slice.getNumRefIdx(eRefPicList)), "Invalid reference index");
-    m_iRefListIdx = refList;
 
     PelUnitBuf pcMbBuf = ( pu.chromaFormat == CHROMA_400 ?
                            PelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[refList][0], pcYuvPred.Y())) :
@@ -663,7 +660,7 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
 void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic,
                                     const Mv &_mv, PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng,
                                     const bool bioApplied, bool isIBC, const std::pair<int, int> scalingRatio,
-                                    bool bilinearMC, Pel *srcPadBuf, ptrdiff_t srcPadStride)
+                                    bool bilinearMC, Pel *srcPadBuf, ptrdiff_t srcPadStride, Pel *bdofDstBuf)
 {
   JVET_J0090_SET_REF_PICTURE( refPic, compID );
   const ChromaFormat  chFmt = pu.chromaFormat;
@@ -727,11 +724,11 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
     Pel *backupDstBufPtr    = dstBuf.buf;
     ptrdiff_t backupDstBufStride = dstBuf.stride;
 
-    if (bioApplied && compID == COMPONENT_Y)
+    if (nullptr != bdofDstBuf)
     {
       // change MC output
       dstBuf.stride = width + 2 * BIO_EXTEND_SIZE + 2;
-      dstBuf.buf    = m_filteredBlockTmp[2 + m_iRefListIdx][compID] + 2 * dstBuf.stride + 2;
+      dstBuf.buf    = bdofDstBuf + 2 * dstBuf.stride + 2;
     }
 
     const auto filterIdx =
@@ -770,7 +767,7 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
       int        xOffset = (xFrac < 8) ? 1 : 0;
       int        yOffset = (yFrac < 8) ? 1 : 0;
       const Pel *refPel  = refBuf.buf - yOffset * refBuf.stride - xOffset;
-      Pel *      dstPel  = m_filteredBlockTmp[2 + m_iRefListIdx][compID] + dstBuf.stride + 1;
+      Pel       *dstPel  = bdofDstBuf + dstBuf.stride + 1;
       for (int w = 0; w < width + 2; w++)
       {
         Pel val   = leftShift_round(refPel[w], shift);
@@ -778,7 +775,7 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
       }
 
       refPel = refBuf.buf + (1 - yOffset) * refBuf.stride - xOffset;
-      dstPel = m_filteredBlockTmp[2 + m_iRefListIdx][compID] + 2 * dstBuf.stride + 1;
+      dstPel = bdofDstBuf + 2 * dstBuf.stride + 1;
       for (int h = 0; h < height; h++)
       {
         const ptrdiff_t idxLeft  = 0;
@@ -792,7 +789,7 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
       }
 
       refPel = refBuf.buf + (height + 1 - yOffset) * refBuf.stride - xOffset;
-      dstPel = m_filteredBlockTmp[2 + m_iRefListIdx][compID] + (height + 2) * dstBuf.stride + 1;
+      dstPel = bdofDstBuf + (height + 2) * dstBuf.stride + 1;
       for (int w = 0; w < width + 2; w++)
       {
         Pel val   = leftShift_round(refPel[w], shift);
@@ -1666,8 +1663,7 @@ void InterPrediction::xDmvrFinalMc(const PredictionUnit &pu, PelUnitBuf yuvSrc[N
 
   for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
   {
-    Mv cMv        = pu.mv[l];
-    m_iRefListIdx = l;
+    Mv cMv = pu.mv[l];
 
     const Picture *refPic = pu.cu->slice->getRefPic(l, pu.refIdx[l])->unscaledPic;
 
@@ -1712,7 +1708,8 @@ void InterPrediction::xDmvrFinalMc(const PredictionUnit &pu, PelUnitBuf yuvSrc[N
 
       JVET_J0090_SET_CACHE_ENABLE(false);
       xPredInterBlk(compId, pu, refPic, cMvClipped, yuvSrc[l], true, pu.cs->slice->getClpRngs().comp[compId], applyBdof,
-                    false, pu.cu->slice->getScalingRatio(l, pu.refIdx[l]), false, srcBufPtr, srcBufStride);
+                    false, pu.cu->slice->getScalingRatio(l, pu.refIdx[l]), false, srcBufPtr, srcBufStride,
+                    isLuma(compId) && applyBdof ? m_filteredBlockTmp[2 + l][compId] : nullptr);
       JVET_J0090_SET_CACHE_ENABLE(false);
     }
   }
@@ -1796,7 +1793,7 @@ void InterPrediction::xDmvrInitialMc(const PredictionUnit &pu, const ClpRngs &cl
 
     xPredInterBlk(COMPONENT_Y, pu, pu.cu->slice->getRefPic(l, pu.refIdx[l])->unscaledPic, mergeMv, dstBuf, true,
                   clpRngs.comp[COMPONENT_Y], false, false, pu.cu->slice->getScalingRatio(l, pu.refIdx[l]), true,
-                  srcBufPtr, srcBufStride);
+                  srcBufPtr, srcBufStride, nullptr);
   }
 }
 
