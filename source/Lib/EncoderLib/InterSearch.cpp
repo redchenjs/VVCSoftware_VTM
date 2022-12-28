@@ -4865,7 +4865,8 @@ Distortion InterSearch::xGetTemplateCost(const PredictionUnit &pu, PelUnitBuf &o
   // prediction pattern
   const bool bi = pu.cu->slice->testWeightPred() && pu.cu->slice->getSliceType()==P_SLICE;
 
-  xPredInterBlk(COMPONENT_Y, pu, picRef, cMvCand, predBuf, bi, pu.cu->slice->clpRng(COMPONENT_Y), false, false);
+  xPredInterBlk(COMPONENT_Y, pu, picRef, cMvCand, predBuf, bi, pu.cu->slice->clpRng(COMPONENT_Y), false, false,
+                eRefPicList);
 
   if ( bi )
   {
@@ -4899,7 +4900,6 @@ Distortion InterSearch::xGetAffineTemplateCost(PredictionUnit &pu, PelUnitBuf &o
   const bool bi = pu.cu->slice->testWeightPred() && pu.cu->slice->getSliceType()==P_SLICE;
   Mv mv[3];
   memcpy(mv, acMvCand, sizeof(mv));
-  m_iRefListIdx = eRefPicList;
 
 #if GDR_ENABLED
   rbOk = xPredAffineBlk(COMPONENT_Y, pu, picRef, mv, predBuf, bi, pu.cu->slice->clpRng(COMPONENT_Y));
@@ -6168,7 +6168,8 @@ Distortion InterSearch::xGetSymmetricCost( PredictionUnit& pu, PelUnitBuf& origB
   }
   else
   {
-    xPredInterBlk( COMPONENT_Y, pu, picRefA, mvA, predBufA, false, pu.cu->slice->clpRng( COMPONENT_Y ), false, false );
+    xPredInterBlk(COMPONENT_Y, pu, picRefA, mvA, predBufA, false, pu.cu->slice->clpRng(COMPONENT_Y), false, false,
+                  eCurRefPicList);
   }
 
   // get prediction of eTarRefPicList
@@ -6185,7 +6186,8 @@ Distortion InterSearch::xGetSymmetricCost( PredictionUnit& pu, PelUnitBuf& origB
   }
   else
   {
-    xPredInterBlk( COMPONENT_Y, pu, picRefB, mvB, predBufB, false, pu.cu->slice->clpRng( COMPONENT_Y ), false, false );
+    xPredInterBlk(COMPONENT_Y, pu, picRefB, mvB, predBufB, false, pu.cu->slice->clpRng(COMPONENT_Y), false, false,
+                  eTarRefPicList);
   }
 
   PelUnitBuf bufTmp = m_tmpStorageLCU.getBuf( UnitAreaRelative( *pu.cu, pu ) );
@@ -8363,8 +8365,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
   double        fWeight       = 1.0;
 
   PelUnitBuf  origBufTmp = m_tmpStorageLCU.getBuf( UnitAreaRelative( *pu.cu, pu ) );
-  enum DFunc distFunc = (pu.cs->slice->getDisableSATDForRD()) ? DF_SAD : DF_HAD;
-  m_iRefListIdx = eRefPicList;
+  enum DFunc  distFunc   = (pu.cs->slice->getDisableSATDForRD()) ? DF_SAD : DF_HAD;
 
   // if Bi, set to ( 2 * Org - ListX )
   if ( bBi )
@@ -11259,7 +11260,8 @@ void InterSearch::symmvdCheckBestMvp(PredictionUnit &pu, PelUnitBuf &origBuf, Mv
   }
   else
   {
-    xPredInterBlk( COMPONENT_Y, pu, picRefA, mvA, predBufA, false, pu.cu->slice->clpRng( COMPONENT_Y ), false, false );
+    xPredInterBlk(COMPONENT_Y, pu, picRefA, mvA, predBufA, false, pu.cu->slice->clpRng(COMPONENT_Y), false, false,
+                  curRefList);
   }
   PelUnitBuf bufTmp = m_tmpStorageLCU.getBuf( UnitAreaRelative( *pu.cu, pu ) );
   bufTmp.copyFrom( origBuf );
@@ -11297,7 +11299,8 @@ void InterSearch::symmvdCheckBestMvp(PredictionUnit &pu, PelUnitBuf &origBuf, Mv
       }
       else
       {
-        xPredInterBlk( COMPONENT_Y, pu, picRefB, mvB, predBufB, false, pu.cu->slice->clpRng( COMPONENT_Y ), false, false );
+        xPredInterBlk(COMPONENT_Y, pu, picRefB, mvB, predBufB, false, pu.cu->slice->clpRng(COMPONENT_Y), false, false,
+                      tarRefList);
       }
       // calc distortion
       DFunc distFunc = (!pu.cu->slice->getDisableSATDForRD()) ? DF_HAD : DF_SAD;
