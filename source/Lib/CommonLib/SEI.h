@@ -1297,10 +1297,18 @@ public:
   PayloadType payloadType() const { return PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION; }
   SEINeuralNetworkPostFilterActivation()
     : m_id(0)
+#if JVET_AB0050
+    , m_cancelFlag(false)
+    , m_persistenceFlag(false)
+#endif
   {}
   virtual ~SEINeuralNetworkPostFilterActivation() {}
 
   uint32_t       m_id;
+#if JVET_AB0050
+  bool           m_cancelFlag;
+  bool           m_persistenceFlag;
+#endif
 };
 
 //! \}
