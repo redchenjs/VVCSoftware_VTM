@@ -62,7 +62,7 @@ public:
                                          std::vector<SeiPayload> *seiList);
   void getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, HRD &hrd, uint32_t payloadSize, int& duiIdx);
 #if JVET_AB0049
-  int nnpfcProcessed;
+  bool nnpfcProcessed;
   std::vector<int> nnpfcValues;
 #endif
   

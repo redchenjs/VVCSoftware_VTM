@@ -457,7 +457,8 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEINNPostFilterActivation((SEINeuralNetworkPostFilterActivation &) *sei, payloadSize,
                                       pDecodedMessageOutputStream);
 #if JVET_AB0049
-      assert(nnpfcValues.size() > 0);
+      nnpfcProcessed = false;
+      CHECK(nnpfcValues.size() == 0, "At leaset one NNPFC SEI message should precede NNPFA")
       for(int i=0; i<nnpfcValues.size(); ++i)
       {
         if(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id == nnpfcValues[i])
@@ -465,7 +466,7 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
           nnpfcProcessed = true;
         }
       }
-      assert(nnpfcProcessed); // No NNPFC, no NNPFA
+      CHECK(!nnpfcProcessed, "No NNPFC, no NNPFA")
       nnpfcProcessed = false;
 #endif 
       break;
