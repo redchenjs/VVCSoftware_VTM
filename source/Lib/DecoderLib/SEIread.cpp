@@ -465,7 +465,7 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
           nnpfcProcessed = true;
         }
       }
-      assert(nnpfcProcessed == true); // No NNPFC, no NNPFA
+      assert(nnpfcProcessed); // No NNPFC, no NNPFA
       nnpfcProcessed = false;
 #endif 
       break;
