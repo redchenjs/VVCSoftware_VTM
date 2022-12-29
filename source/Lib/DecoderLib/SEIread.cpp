@@ -446,11 +446,28 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEINeuralNetworkPostFilterCharacteristics;
       xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics &) *sei, payloadSize, sps,
                                            pDecodedMessageOutputStream);
+        
+        
+#if JVET_AB0049
+      nnpfcValues.push_back(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id);
+#endif
       break;
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
       sei = new SEINeuralNetworkPostFilterActivation;
       xParseSEINNPostFilterActivation((SEINeuralNetworkPostFilterActivation &) *sei, payloadSize,
                                       pDecodedMessageOutputStream);
+#if JVET_AB0049
+      assert(nnpfcValues.size() > 0);
+      for(int i=0; i<nnpfcValues.size(); ++i)
+      {
+        if(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id == nnpfcValues[i])
+        {
+          nnpfcProcessed = true;
+        }
+      }
+      assert(nnpfcProcessed == true); // No NNPFC, no NNPFA
+      nnpfcProcessed = false;
+#endif 
       break;
     case SEI::PayloadType::PHASE_INDICATION:
       sei = new SEIPhaseIndication;
@@ -2629,6 +2646,9 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfc_id" );
   sei.m_id = val;
+#if JVET_AB0049
+  CHECK((sei.m_id >= 256 && sei.m_id <= 511) || (sei.m_id >= (1<<31) && sei.m_id <= (uint32_t)(((uint64_t)1 << 32) - 2)), "Reserved nnpfc_id value, shall ignore the SEI message");
+#endif
 
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfc_mode_idc" );
   sei.m_modeIdc = val;
@@ -2903,6 +2923,9 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
 
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_id" );
   sei.m_id =val;
+#if JVET_AB0049
+  CHECK((sei.m_id >= 256 && sei.m_id <= 511) || (sei.m_id >= (1<<31) && sei.m_id <= (uint32_t)(((uint64_t)1 << 32) - 2)), "Reserved nnpfa_id value, shall ignore the SEI message");
+#endif
 }
 
 void SEIReader::xParseSEIPhaseIndication(SEIPhaseIndication& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)

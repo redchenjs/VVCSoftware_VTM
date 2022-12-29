@@ -1295,6 +1295,37 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_picWidthInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(filterIdx);
       sei->m_picHeightInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightInLumaSamples(filterIdx);
+#if JVET_AB0049
+      int confWinLeftOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowLeftOffset();
+      int confWinTopOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowTopOffset();
+      int confWinRightOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowRightOffset();
+      int confWinBottomOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowBottomOffset();
+      int ppsPicWidthInLumaSample  = m_pcEncLib->getPPS(0)->getPicWidthInLumaSamples();
+      int ppsPicHeightInLumaSample = m_pcEncLib->getPPS(0)->getPicHeightInLumaSamples();
+      ChromaFormat chromaFormatIDC = m_pcEncLib->getSPS(0)->getChromaFormatIdc();
+      uint8_t      subWidthC;
+      uint8_t      subHeightC;
+      if (chromaFormatIDC == ChromaFormat::CHROMA_420)
+      {
+        subWidthC  = 2;
+        subHeightC = 2;
+      }
+      else if (chromaFormatIDC == ChromaFormat::CHROMA_422)
+      {
+        subWidthC  = 2;
+        subHeightC = 1;
+      }
+      else
+      {
+        subWidthC  = 1;
+        subHeightC = 1;
+      }
+      
+      int croppedWidth = ppsPicWidthInLumaSample - subWidthC * (confWinRightOffset + confWinLeftOffset);
+      int croppedHeight = ppsPicHeightInLumaSample - subHeightC * (confWinBottomOffset + confWinTopOffset);
+      assert(sei->m_picWidthInLumaSamples >= croppedWidth && sei->m_picWidthInLumaSamples <= croppedWidth * 16 - 1);
+      assert(sei->m_picHeightInLumaSamples >= croppedHeight && sei->m_picHeightInLumaSamples <= croppedHeight * 16 - 1);
+#endif
     }
 #if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
     if (sei->m_purpose == NNPC_PurposeType::FRANE_RATE_UPSAMPLING)
