@@ -181,6 +181,25 @@ static constexpr int MAX_VPS_SUBLAYERS =                                7;
 static constexpr int MAX_NUM_OLSS =                                   256;
 static constexpr int MAX_VPS_OLS_MODE_IDC =                             2;
 
+static constexpr int MAX_NUM_VPS = 16;
+static constexpr int MAX_NUM_SPS = 16;
+static constexpr int MAX_NUM_PPS = 64;
+static constexpr int MAX_NUM_APS(ApsType t)
+{
+  switch (t)
+  {
+  case ApsType::ALF:
+  case ApsType::SCALING_LIST:
+    return 8;
+  case ApsType::LMCS:
+    return 4;
+  default:
+    return 32;
+  }
+}
+static constexpr int NUM_APS_TYPE_LEN = 3;   // Currently APS Type has 3 bits
+static constexpr int MAX_NUM_APS_TYPE = 8;   // Currently APS Type has 3 bits so the max type is 8
+
 static constexpr int MAX_NUM_NN_POST_FILTERS =                          8;
 
 static constexpr int MIP_MAX_WIDTH =                                   MAX_TB_SIZEY;
@@ -197,9 +216,9 @@ static constexpr int MAX_NUM_CC_ALF_CHROMA_COEFF    =               8;
 static constexpr int CCALF_DYNAMIC_RANGE            =               6;
 static constexpr int CCALF_BITS_PER_COEFF_LEVEL     =               3;
 
-static constexpr int ALF_FIXED_FILTER_NUM        =                     64;
-static constexpr int ALF_CTB_MAX_NUM_APS         =                      8;
-static constexpr int NUM_FIXED_FILTER_SETS       =                     16;
+static constexpr int ALF_FIXED_FILTER_NUM  = 64;
+static constexpr int ALF_CTB_MAX_NUM_APS   = MAX_NUM_APS(ApsType::ALF);
+static constexpr int NUM_FIXED_FILTER_SETS = 16;
 
 static constexpr int MAX_BDOF_APPLICATION_REGION =                     16;
 
@@ -210,13 +229,6 @@ static constexpr int CU_DQP_TU_CMAX =                                   5; ///< 
 static constexpr int CU_DQP_EG_k =                                      0; ///< expgolomb order
 
 static constexpr int SBH_THRESHOLD =                                    4; ///< value of the fixed SBH controlling threshold
-
-static constexpr int MAX_NUM_VPS =                                     16;
-static constexpr int MAX_NUM_SPS =                                     16;
-static constexpr int MAX_NUM_PPS =                                     64;
-static constexpr int MAX_NUM_APS =                                     32;  //Currently APS ID has 5 bits
-static constexpr int NUM_APS_TYPE_LEN =                                 3;  //Currently APS Type has 3 bits
-static constexpr int MAX_NUM_APS_TYPE =                                 8;  //Currently APS Type has 3 bits so the max type is 8
 
 static constexpr int MAX_TILE_COLS = 30;   // Maximum number of tile columns
 static constexpr int MAX_TILES     = 990;  // Maximum number of tiles

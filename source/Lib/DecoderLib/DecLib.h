@@ -60,7 +60,9 @@ class InputNALUnit;
 //! \ingroup DecoderLib
 //! \{
 
-bool tryDecodePicture( Picture* pcPic, const int expectedPoc, const std::string& bitstreamFileName, ParameterSetMap<APS> *apsMap = nullptr, bool bDecodeUntilPocFound = false, int debugCTU = -1, int debugPOC = -1 );
+bool tryDecodePicture(Picture *pcPic, const int expectedPoc, const std::string &bitstreamFileName,
+                      EnumArray<ParameterSetMap<APS>, ApsType> *apsMap = nullptr, bool bDecodeUntilPocFound = false,
+                      int debugCTU = -1, int debugPOC = -1);
 // Class definition
 // ====================================================================================================================
 
@@ -198,7 +200,7 @@ private:
     int             m_POC;             /// the picture order
   };
   std::vector<NalUnitInfo> m_nalUnitInfo[MAX_VPS_LAYERS];
-  std::vector<int> m_accessUnitApsNals;
+  EnumArray<std::vector<int>, ApsType> m_accessUnitApsNals;
   std::vector<int> m_accessUnitSeiTids;
   std::vector<bool> m_accessUnitNoOutputPriorPicFlags;
 
@@ -224,7 +226,7 @@ public:
   int                     m_targetSubPicIdx;
 
   DCI*                    m_dci;
-  ParameterSetMap<APS>*   m_apsMapEnc;
+  EnumArray<ParameterSetMap<APS>, ApsType> *m_apsMapEnc;
 #if GDR_LEAK_TEST
 public:
   int                     m_gdrPocRandomAccess;
@@ -276,7 +278,13 @@ public:
   void setDebugPOC( int debugPOC )        { m_debugPOC = debugPOC; };
   void resetAccessUnitNals()              { m_accessUnitNals.clear();    }
   void resetAccessUnitPicInfo()           { m_accessUnitPicInfo.clear(); }
-  void resetAccessUnitApsNals()           { m_accessUnitApsNals.clear(); }
+  void resetAccessUnitApsNals()
+  {
+    for (auto &nals: m_accessUnitApsNals)
+    {
+      nals.clear();
+    }
+  }
   void resetAccessUnitSeiTids()           { m_accessUnitSeiTids.clear(); }
   void resetAudIrapOrGdrAuFlag()          { m_audIrapOrGdrAuFlag = false; }
   void resetAccessUnitEos()               { memset(m_accessUnitEos, false, sizeof(m_accessUnitEos)); }
@@ -308,7 +316,7 @@ public:
     m_cTrQuantScalingList.init(nullptr, MAX_TB_SIZEY, false, false, false, false);
   }
 
-  void  setAPSMapEnc( ParameterSetMap<APS>* apsMap ) { m_apsMapEnc = apsMap;  }
+  void  setAPSMapEnc(EnumArray<ParameterSetMap<APS>, ApsType> *apsMap) { m_apsMapEnc = apsMap; }
   bool  isNewPicture( std::ifstream *bitstreamFile, class InputByteStream *bytestream );
   bool  isNewAccessUnit( bool newPicture, std::ifstream *bitstreamFile, class InputByteStream *bytestream );
 

@@ -1779,7 +1779,8 @@ bool isPicEncoded( int targetPoc, int curPoc, int curTLayer, int gopSize, int in
   return curTLayer <= tarTL && curId == 0;
 }
 
-void trySkipOrDecodePicture( bool& decPic, bool& encPic, const EncCfg& cfg, Picture* pcPic, ParameterSetMap<APS> *apsMap )
+void trySkipOrDecodePicture(bool &decPic, bool &encPic, const EncCfg &cfg, Picture *pcPic,
+                            EnumArray<ParameterSetMap<APS>, ApsType> *apsMap)
 {
   // check if we should decode a leading bitstream
   if( !cfg.getDecodeBitstream( 0 ).empty() )
@@ -2186,13 +2187,13 @@ void EncGOP::xPicInitLMCS(Picture *pic, PicHeader *picHeader, Slice *slice)
       APS* lmcsAPS = picHeader->getLmcsAPS();
       if (lmcsAPS == nullptr)
       {
-        ParameterSetMap<APS> *apsMap = m_pcEncLib->getApsMap();
-        lmcsAPS = apsMap->getPS((apsId << NUM_APS_TYPE_LEN) + LMCS_APS);
+        ParameterSetMap<APS> *apsMap = m_pcEncLib->getApsMap(ApsType::LMCS);
+        lmcsAPS                      = apsMap->getPS(apsId);
         if (lmcsAPS == nullptr)
         {
-          lmcsAPS = apsMap->allocatePS((apsId << NUM_APS_TYPE_LEN) + LMCS_APS);
+          lmcsAPS = apsMap->allocatePS(apsId);
           lmcsAPS->setAPSId(apsId);
-          lmcsAPS->setAPSType(LMCS_APS);
+          lmcsAPS->setAPSType(ApsType::LMCS);
         }
         picHeader->setLmcsAPS(lmcsAPS);
       }
@@ -2204,7 +2205,7 @@ void EncGOP::xPicInitLMCS(Picture *pic, PicHeader *picHeader, Slice *slice)
       memcpy(tInfo.reshaperModelBinCWDelta, sInfo.reshaperModelBinCWDelta, sizeof(int)*(PIC_CODE_CW_BINS));
       tInfo.maxNbitsNeededDeltaCW = sInfo.maxNbitsNeededDeltaCW;
       tInfo.chrResScalingOffset = sInfo.chrResScalingOffset;
-      m_pcEncLib->getApsMap()->setChangedFlag((lmcsAPS->getAPSId() << NUM_APS_TYPE_LEN) + LMCS_APS);
+      m_pcEncLib->getApsMap(ApsType::LMCS)->setChangedFlag(lmcsAPS->getAPSId());
     }
 
 
@@ -3171,7 +3172,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     bool decPic = false;
     bool encPic = false;
     // test if we can skip the picture entirely or decode instead of encoding
-    trySkipOrDecodePicture( decPic, encPic, *m_pcCfg, pcPic, m_pcEncLib->getApsMap() );
+    trySkipOrDecodePicture(decPic, encPic, *m_pcCfg, pcPic, m_pcEncLib->getApsMaps());
 
     pcPic->cs->slice = pcSlice; // please keep this
 #if ENABLE_QPA
@@ -3214,8 +3215,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       int apsId = std::min<int>( 7, m_pcEncLib->getVPS() == nullptr ? 0 : m_pcEncLib->getVPS()->getGeneralLayerIdx( m_pcEncLib->getLayerId() ) );
       picHeader->setScalingListAPSId( apsId );
 
-      ParameterSetMap<APS> *apsMap = m_pcEncLib->getApsMap();
-      APS*  scalingListAPS = apsMap->getPS( ( apsId << NUM_APS_TYPE_LEN ) + SCALING_LIST_APS );
+      ParameterSetMap<APS> *apsMap         = m_pcEncLib->getApsMap(ApsType::SCALING_LIST);
+      APS                  *scalingListAPS = apsMap->getPS(apsId);
       assert(scalingListAPS != nullptr);
       picHeader->setScalingListAPS( scalingListAPS );
     }
@@ -3614,7 +3615,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         {
           pcPic->slices[s]->setAlfEnabledFlag(COMPONENT_Y, false);
         }
-        m_pcALF->initCABACEstimator(m_pcEncLib->getCABACEncoder(), m_pcEncLib->getCtxCache(), pcSlice, m_pcEncLib->getApsMap());
+        m_pcALF->initCABACEstimator(m_pcEncLib->getCABACEncoder(), m_pcEncLib->getCtxCache(), pcSlice,
+                                    m_pcEncLib->getApsMap(ApsType::ALF));
 #if GREEN_METADATA_SEI_ENABLED
         cs.m_featureCounter.resetALF();
 #endif
@@ -3705,45 +3707,44 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
             m_pcALF->setApsIdStart(m_pcCfg->getALFAPSIDShift() + m_pcCfg->getMaxNumALFAPS());
 
-            ParameterSetMap<APS>* apsMap = m_pcEncLib->getApsMap();
+            ParameterSetMap<APS> *apsMap = m_pcEncLib->getApsMap(ApsType::ALF);
             apsMap->clearActive();
 
            for (int apsId = m_pcCfg->getALFAPSIDShift(); apsId < m_pcCfg->getALFAPSIDShift() + m_pcCfg->getMaxNumALFAPS(); apsId++)
            {
-              int psId = ( apsId << NUM_APS_TYPE_LEN ) + ALF_APS;
-              APS* aps = apsMap->getPS( psId );
-              if( aps )
-              {
-                // Check if this APS is currently the active one (used in current slice)
-                bool activeAps = false;
-                bool activeApsCcAlf = false;
-                // Luma
-                for( int i = 0; i < sliceApsIdsLuma.size(); i++ )
-                {
-                  if( aps->getAPSId() == sliceApsIdsLuma[i] )
-                  {
-                    activeAps = true;
-                    break;
-                  }
-                }
-                // Chroma
-                activeAps |= aps->getAPSId() == pcSlice->getAlfApsIdChroma();
-                // CC-ALF
-                activeApsCcAlf |= pcSlice->getCcAlfCbEnabledFlag() && aps->getAPSId() == pcSlice->getCcAlfCbApsId();
-                activeApsCcAlf |= pcSlice->getCcAlfCrEnabledFlag() && aps->getAPSId() == pcSlice->getCcAlfCrApsId();
-                if( !activeAps && !activeApsCcAlf )
-                {
-                  apsMap->clearChangedFlag( psId );
-                }
-                if( !activeAps  )
-                {
-                  aps->getAlfAPSParam().reset();
-                }
-                if( !activeApsCcAlf )
-                {
-                  aps->getCcAlfAPSParam().reset();
-                }
-              }
+             APS *aps = apsMap->getPS(apsId);
+             if (aps)
+             {
+               // Check if this APS is currently the active one (used in current slice)
+               bool activeAps      = false;
+               bool activeApsCcAlf = false;
+               // Luma
+               for (int i = 0; i < sliceApsIdsLuma.size(); i++)
+               {
+                 if (aps->getAPSId() == sliceApsIdsLuma[i])
+                 {
+                   activeAps = true;
+                   break;
+                 }
+               }
+               // Chroma
+               activeAps |= aps->getAPSId() == pcSlice->getAlfApsIdChroma();
+               // CC-ALF
+               activeApsCcAlf |= pcSlice->getCcAlfCbEnabledFlag() && aps->getAPSId() == pcSlice->getCcAlfCbApsId();
+               activeApsCcAlf |= pcSlice->getCcAlfCrEnabledFlag() && aps->getAPSId() == pcSlice->getCcAlfCrApsId();
+               if (!activeAps && !activeApsCcAlf)
+               {
+                 apsMap->clearChangedFlag(apsId);
+               }
+               if (!activeAps)
+               {
+                 aps->getAlfAPSParam().reset();
+               }
+               if (!activeApsCcAlf)
+               {
+                 aps->getCcAlfAPSParam().reset();
+               }
+             }
             }
           }
         }
@@ -3752,9 +3753,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         int changedApsId = -1;
         for (int apsId = m_pcCfg->getALFAPSIDShift() + m_pcCfg->getMaxNumALFAPS() - 1; apsId >= m_pcCfg->getALFAPSIDShift(); apsId--)
         {
-          ParameterSetMap<APS>* apsMap = m_pcEncLib->getApsMap();
-          int psId = ( apsId << NUM_APS_TYPE_LEN ) + ALF_APS;
-          APS* aps = apsMap->getPS( psId );
+          ParameterSetMap<APS> *apsMap = m_pcEncLib->getApsMap(ApsType::ALF);
+          APS                  *aps    = apsMap->getPS(apsId);
           if( aps )
           {
             // In slice, replace the old APS (from decoder map) with the APS from encoder map due to later checks while bitstream writing
@@ -3762,7 +3762,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
             {
               pcSlice->getAlfAPSs()[apsId] = aps;
             }
-            if( apsMap->getChangedFlag( psId ) )
+            if (apsMap->getChangedFlag(apsId))
             {
               changedApsId = apsId;
             }
@@ -3845,11 +3845,12 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         //only 1 LMCS data for 1 picture
         int apsId = picHeader->getLmcsAPSId();
-        ParameterSetMap<APS> *apsMap = m_pcEncLib->getApsMap();
 
-        APS *aps = apsId >= 0 ? apsMap->getPS((apsId << NUM_APS_TYPE_LEN) + LMCS_APS) : nullptr;
+        ParameterSetMap<APS> *apsMapLmcs = m_pcEncLib->getApsMap(ApsType::LMCS);
 
-        bool writeAPS = aps && apsMap->getChangedFlag((apsId << NUM_APS_TYPE_LEN) + LMCS_APS);
+        APS *aps = apsId >= 0 ? apsMapLmcs->getPS(apsId) : nullptr;
+
+        bool writeAPS = aps && apsMapLmcs->getChangedFlag(apsId);
 #if GDR_ENABLED // note : insert APS at every GDR picture
         if (aps)
         {
@@ -3860,7 +3861,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         {
           aps->chromaPresentFlag = pcSlice->getSPS()->getChromaFormatIdc() != CHROMA_400;
           actualTotalBits += xWriteAPS( accessUnit, aps, m_pcEncLib->getLayerId(), true );
-          apsMap->clearChangedFlag((apsId << NUM_APS_TYPE_LEN) + LMCS_APS);
+          apsMapLmcs->clearChangedFlag(apsId);
 #if GDR_ENABLED
           if (!pcSlice->isInterGDR())
           {
@@ -3876,9 +3877,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       if( pcSlice->getSPS()->getScalingListFlag() && ( m_pcCfg->getUseScalingListId() == SCALING_LIST_FILE_READ ) )
       {
         int apsId = picHeader->getScalingListAPSId();
-        ParameterSetMap<APS> *apsMap = m_pcEncLib->getApsMap();
-        APS* aps = apsMap->getPS( ( apsId << NUM_APS_TYPE_LEN ) + SCALING_LIST_APS );
-        bool writeAPS = aps && apsMap->getChangedFlag( ( apsId << NUM_APS_TYPE_LEN ) + SCALING_LIST_APS );
+        ParameterSetMap<APS> *apsMapSl = m_pcEncLib->getApsMap(ApsType::SCALING_LIST);
+        APS                  *aps      = apsMapSl->getPS(apsId);
+        bool                  writeAPS = aps && apsMapSl->getChangedFlag(apsId);
 #if GDR_ENABLED // note : insert APS at every GDR picture
         if (aps && apsId >= 0)
         {
@@ -3889,7 +3890,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         {
           aps->chromaPresentFlag = pcSlice->getSPS()->getChromaFormatIdc() != CHROMA_400;
           actualTotalBits += xWriteAPS( accessUnit, aps, m_pcEncLib->getLayerId(), true );
-          apsMap->clearChangedFlag( ( apsId << NUM_APS_TYPE_LEN ) + SCALING_LIST_APS );
+          apsMapSl->clearChangedFlag(apsId);
 #if GDR_ENABLED
           if (!pcSlice->isInterGDR())
           {
@@ -3905,26 +3906,26 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         for (int apsId = m_pcCfg->getALFAPSIDShift(); apsId < m_pcCfg->getALFAPSIDShift() + m_pcCfg->getMaxNumALFAPS(); apsId++)
         {
-          ParameterSetMap<APS> *apsMap = m_pcEncLib->getApsMap();
+          ParameterSetMap<APS> *apsMapAlf = m_pcEncLib->getApsMap(ApsType::ALF);
 
-          APS* aps = apsMap->getPS((apsId << NUM_APS_TYPE_LEN) + ALF_APS);
-          bool writeAPS = aps && apsMap->getChangedFlag((apsId << NUM_APS_TYPE_LEN) + ALF_APS);
+          APS *aps      = apsMapAlf->getPS(apsId);
+          bool writeAPS = aps && apsMapAlf->getChangedFlag(apsId);
           if (!aps && pcSlice->getAlfAPSs() && pcSlice->getAlfAPSs()[apsId])
           {
             writeAPS = true;
             aps = pcSlice->getAlfAPSs()[apsId]; // use asp from slice header
-            *apsMap->allocatePS((apsId << NUM_APS_TYPE_LEN) + ALF_APS) = *aps; //allocate and cpy
+            *apsMapAlf->allocatePS(apsId) = *aps;                         // allocate and cpy
             m_pcALF->setApsIdStart( apsId );
           }
           else if (pcSlice->getCcAlfCbEnabledFlag() && !aps && apsId == pcSlice->getCcAlfCbApsId())
           {
             writeAPS = true;
-            aps = apsMap->getPS((pcSlice->getCcAlfCbApsId() << NUM_APS_TYPE_LEN) + ALF_APS);
+            aps      = apsMapAlf->getPS(pcSlice->getCcAlfCbApsId());
           }
           else if (pcSlice->getCcAlfCrEnabledFlag() && !aps && apsId == pcSlice->getCcAlfCrApsId())
           {
             writeAPS = true;
-            aps = apsMap->getPS((pcSlice->getCcAlfCrApsId() << NUM_APS_TYPE_LEN) + ALF_APS);
+            aps      = apsMapAlf->getPS(pcSlice->getCcAlfCrApsId());
           }
 #if GDR_ENABLED // note : insert APS at every GDR picture
           if (aps && apsId >= 0)
@@ -3936,7 +3937,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           {
             aps->chromaPresentFlag = pcSlice->getSPS()->getChromaFormatIdc() != CHROMA_400;
             actualTotalBits += xWriteAPS( accessUnit, aps, m_pcEncLib->getLayerId(), true );
-            apsMap->clearChangedFlag((apsId << NUM_APS_TYPE_LEN) + ALF_APS);
+            apsMapAlf->clearChangedFlag(apsId);
 #if GDR_ENABLED
             if (!pcSlice->isInterGDR())
             {

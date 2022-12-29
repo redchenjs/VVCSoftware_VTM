@@ -540,8 +540,8 @@ void EncAdaptiveLoopFilter::create(const EncCfg *encCfg, const int picWidth, con
   }
   m_alfCtbFilterSetIndexTmp.resize(m_numCTUsInPic);
   memset(m_clipDefaultEnc, 0, sizeof(m_clipDefaultEnc));
-  m_apsIdCcAlfStart[0] = (int) MAX_NUM_APS;
-  m_apsIdCcAlfStart[1] = (int) MAX_NUM_APS;
+  m_apsIdCcAlfStart[0] = MAX_NUM_APS(ApsType::ALF);
+  m_apsIdCcAlfStart[1] = MAX_NUM_APS(ApsType::ALF);
   for( int compIdx = 1; compIdx < MAX_NUM_COMPONENT; compIdx++ )
   {
     int numFilters = MAX_NUM_CC_ALF_FILTERS;
@@ -805,10 +805,10 @@ void EncAdaptiveLoopFilter::xSetupCcAlfAPS( CodingStructure &cs )
   if (m_ccAlfFilterParam.ccAlfFilterEnabled[COMPONENT_Cb - 1])
   {
     int  ccAlfCbApsId = cs.slice->getCcAlfCbApsId();
-    APS* aps = m_apsMap->getPS((cs.slice->getCcAlfCbApsId() << NUM_APS_TYPE_LEN) + ALF_APS);
+    APS *aps          = m_apsMap->getPS(cs.slice->getCcAlfCbApsId());
     if (aps == nullptr)
     {
-      aps = m_apsMap->allocatePS((ccAlfCbApsId << NUM_APS_TYPE_LEN) + ALF_APS);
+      aps = m_apsMap->allocatePS(ccAlfCbApsId);
       aps->setTemporalId(cs.slice->getTLayer());
     }
     aps->getCcAlfAPSParam().ccAlfFilterEnabled[COMPONENT_Cb - 1] = 1;
@@ -821,11 +821,11 @@ void EncAdaptiveLoopFilter::xSetupCcAlfAPS( CodingStructure &cs )
                   aps->getCcAlfAPSParam().ccAlfCoeff[COMPONENT_Cb - 1][filterIdx]);
     }
     aps->setAPSId(ccAlfCbApsId);
-    aps->setAPSType(ALF_APS);
+    aps->setAPSType(ApsType::ALF);
     if (m_reuseApsId[COMPONENT_Cb - 1] < 0)
     {
       aps->getCcAlfAPSParam().newCcAlfFilter[COMPONENT_Cb - 1] = 1;
-      m_apsMap->setChangedFlag((ccAlfCbApsId << NUM_APS_TYPE_LEN) + ALF_APS, true);
+      m_apsMap->setChangedFlag(ccAlfCbApsId, true);
       aps->setTemporalId(cs.slice->getTLayer());
     }
     cs.slice->setCcAlfCbEnabledFlag(true);
@@ -837,10 +837,10 @@ void EncAdaptiveLoopFilter::xSetupCcAlfAPS( CodingStructure &cs )
   if (m_ccAlfFilterParam.ccAlfFilterEnabled[COMPONENT_Cr - 1])
   {
     int  ccAlfCrApsId = cs.slice->getCcAlfCrApsId();
-    APS* aps = m_apsMap->getPS((cs.slice->getCcAlfCrApsId() << NUM_APS_TYPE_LEN) + ALF_APS);
+    APS *aps          = m_apsMap->getPS(cs.slice->getCcAlfCrApsId());
     if (aps == nullptr)
     {
-      aps = m_apsMap->allocatePS((ccAlfCrApsId << NUM_APS_TYPE_LEN) + ALF_APS);
+      aps = m_apsMap->allocatePS(ccAlfCrApsId);
       aps->setTemporalId(cs.slice->getTLayer());
     }
     aps->getCcAlfAPSParam().ccAlfFilterEnabled[COMPONENT_Cr - 1] = 1;
@@ -856,10 +856,10 @@ void EncAdaptiveLoopFilter::xSetupCcAlfAPS( CodingStructure &cs )
     if (m_reuseApsId[COMPONENT_Cr - 1] < 0)
     {
       aps->getCcAlfAPSParam().newCcAlfFilter[COMPONENT_Cr - 1] = 1;
-      m_apsMap->setChangedFlag((ccAlfCrApsId << NUM_APS_TYPE_LEN) + ALF_APS, true);
+      m_apsMap->setChangedFlag(ccAlfCrApsId, true);
       aps->setTemporalId(cs.slice->getTLayer());
     }
-    aps->setAPSType(ALF_APS);
+    aps->setAPSType(ApsType::ALF);
     cs.slice->setCcAlfCrEnabledFlag(true);
   }
   else
@@ -884,8 +884,8 @@ void EncAdaptiveLoopFilter::ALFProcess(CodingStructure& cs, const double *lambda
     m_apsMap->clearActive();
     for (int i = m_encCfg->getALFAPSIDShift(); i < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(); i++)
     {
-      APS* alfAPS = m_apsMap->getPS((i << NUM_APS_TYPE_LEN) + ALF_APS);
-      m_apsMap->clearChangedFlag((i << NUM_APS_TYPE_LEN) + ALF_APS);
+      APS *alfAPS = m_apsMap->getPS(i);
+      m_apsMap->clearChangedFlag(i);
       if (alfAPS)
       {
         alfAPS->getAlfAPSParam().reset();
@@ -1054,8 +1054,8 @@ void EncAdaptiveLoopFilter::ALFProcess(CodingStructure& cs, const double *lambda
   {
     for (int32_t lumaAlfApsId : cs.slice->getAlfApsIdsLuma())
     {
-      APS* aps = (lumaAlfApsId >= 0) ? m_apsMap->getPS((lumaAlfApsId << NUM_APS_TYPE_LEN) + ALF_APS) : nullptr;
-      if (aps && m_apsMap->getChangedFlag((lumaAlfApsId << NUM_APS_TYPE_LEN) + ALF_APS))
+      APS *aps = (lumaAlfApsId >= 0) ? m_apsMap->getPS(lumaAlfApsId) : nullptr;
+      if (aps && m_apsMap->getChangedFlag(lumaAlfApsId))
       {
         aps->getCcAlfAPSParam().newCcAlfFilter[0] = false;
           aps->getCcAlfAPSParam().newCcAlfFilter[1] = false;
@@ -1063,8 +1063,8 @@ void EncAdaptiveLoopFilter::ALFProcess(CodingStructure& cs, const double *lambda
     }
   }
   int chromaAlfApsId = ( cs.slice->getAlfEnabledFlag(COMPONENT_Cb) || cs.slice->getAlfEnabledFlag(COMPONENT_Cr) ) ? cs.slice->getAlfApsIdChroma() : -1;
-  APS* aps = (chromaAlfApsId >= 0) ? m_apsMap->getPS((chromaAlfApsId << NUM_APS_TYPE_LEN) + ALF_APS) : nullptr;
-  if (aps && m_apsMap->getChangedFlag((chromaAlfApsId << NUM_APS_TYPE_LEN) + ALF_APS))
+  APS *aps            = (chromaAlfApsId >= 0) ? m_apsMap->getPS(chromaAlfApsId) : nullptr;
+  if (aps && m_apsMap->getChangedFlag(chromaAlfApsId))
   {
     aps->getCcAlfAPSParam().newCcAlfFilter[0] = false;
     aps->getCcAlfAPSParam().newCcAlfFilter[1] = false;
@@ -2577,7 +2577,7 @@ int EncAdaptiveLoopFilter::getAvailableApsIdsLuma(CodingStructure &cs)
 
   for (int i = firstApsId; i < lastApsId; i++)
   {
-    apss[i] = m_apsMap->getPS((i << NUM_APS_TYPE_LEN) + ALF_APS);
+    apss[i] = m_apsMap->getPS(i);
   }
 
   AlfApsList result;
@@ -2921,24 +2921,24 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
     }
     if (alfParamNewFiltersBest.newFilterFlag[ChannelType::LUMA])
     {
-      APS* newAPS = m_apsMap->getPS((newApsId << NUM_APS_TYPE_LEN) + ALF_APS);
+      APS *newAPS = m_apsMap->getPS(newApsId);
       if (newAPS == nullptr)
       {
-        newAPS = m_apsMap->allocatePS((newApsId << NUM_APS_TYPE_LEN) + ALF_APS);
+        newAPS = m_apsMap->allocatePS(newApsId);
         newAPS->setAPSId(newApsId);
-        newAPS->setAPSType(ALF_APS);
+        newAPS->setAPSType(ApsType::ALF);
       }
       newAPS->setAlfAPSParam(alfParamNewFiltersBest);
       newAPS->setTemporalId( cs.slice->getTLayer() );
       newAPS->getAlfAPSParam().newFilterFlag[ChannelType::CHROMA] = false;
-      m_apsMap->setChangedFlag((newApsId << NUM_APS_TYPE_LEN) + ALF_APS);
+      m_apsMap->setChangedFlag(newApsId);
       m_apsIdStart = newApsId;
     }
 
     const AlfApsList &apsIds = cs.slice->getAlfApsIdsLuma();
     for (int i = 0; i < (int)cs.slice->getNumAlfApsIdsLuma(); i++)
     {
-      apss[apsIds[i]] = m_apsMap->getPS((apsIds[i] << NUM_APS_TYPE_LEN) + ALF_APS);
+      apss[apsIds[i]] = m_apsMap->getPS(apsIds[i]);
     }
   }
 
@@ -2990,7 +2990,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
       {
         continue;
       }
-      APS *curAPS = m_apsMap->getPS((curApsId << NUM_APS_TYPE_LEN) + ALF_APS);
+      APS *curAPS = m_apsMap->getPS(curApsId);
 
       double curCost = m_lambda[COMPONENT_Cb] * 3;
       if (!reuseExistingAPS)
@@ -3125,11 +3125,11 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
       copyCtuAlternativeChroma(m_ctuAlternative, m_ctuAlternativeTmp);
       if (cs.slice->getAlfApsIdChroma() == newApsIdChroma)   // new filter
       {
-        APS *newAPS = m_apsMap->getPS((newApsIdChroma << NUM_APS_TYPE_LEN) + ALF_APS);
+        APS *newAPS = m_apsMap->getPS(newApsIdChroma);
         if (newAPS == nullptr)
         {
-          newAPS = m_apsMap->allocatePS((newApsIdChroma << NUM_APS_TYPE_LEN) + ALF_APS);
-          newAPS->setAPSType(ALF_APS);
+          newAPS = m_apsMap->allocatePS(newApsIdChroma);
+          newAPS->setAPSType(ApsType::ALF);
           newAPS->setAPSId(newApsIdChroma);
           newAPS->getAlfAPSParam().reset();
         }
@@ -3150,11 +3150,10 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
             newAPS->getAlfAPSParam().chromaClipp[altIdx][i] = alfParamNewFilters.chromaClipp[altIdx][i];
           }
         }
-        m_apsMap->setChangedFlag((newApsIdChroma << NUM_APS_TYPE_LEN) + ALF_APS);
+        m_apsMap->setChangedFlag(newApsIdChroma);
         m_apsIdStart = newApsIdChroma;
       }
-      apss[cs.slice->getAlfApsIdChroma()] =
-        m_apsMap->getPS((cs.slice->getAlfApsIdChroma() << NUM_APS_TYPE_LEN) + ALF_APS);
+      apss[cs.slice->getAlfApsIdChroma()] = m_apsMap->getPS(cs.slice->getAlfApsIdChroma());
     }
   }
 }
@@ -3658,7 +3657,7 @@ std::vector<int> EncAdaptiveLoopFilter::getAvailableCcAlfApsIds(CodingStructure&
   APS** apss = cs.slice->getAlfAPSs();
   for (int i = m_encCfg->getALFAPSIDShift(); i < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(); i++)
   {
-    apss[i] = m_apsMap->getPS((i << NUM_APS_TYPE_LEN) + ALF_APS);
+    apss[i] = m_apsMap->getPS(i);
   }
 
   std::vector<int> result;
@@ -3814,7 +3813,8 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilter( CodingStructure& cs, ComponentID 
       }
       if ( referencingExistingAps )
       {
-        maxNumberOfFiltersBeingTested = m_apsMap->getPS((apsIds[testFilterIdx] << NUM_APS_TYPE_LEN) + ALF_APS)->getCcAlfAPSParam().ccAlfFilterCount[compID - 1];
+        maxNumberOfFiltersBeingTested =
+          m_apsMap->getPS(apsIds[testFilterIdx])->getCcAlfAPSParam().ccAlfFilterCount[compID - 1];
         ccAlfFilterCount = maxNumberOfFiltersBeingTested;
         for (int filterIdx = 0; filterIdx < maxNumberOfFiltersBeingTested; filterIdx++)
         {
@@ -3822,7 +3822,8 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilter( CodingStructure& cs, ComponentID 
           memcpy(ccAlfFilterCoeff[filterIdx], m_ccAlfFilterParam.ccAlfCoeff[compID - 1][filterIdx],
                  sizeof(ccAlfFilterCoeff[filterIdx]));
         }
-        memcpy( ccAlfFilterCoeff, m_apsMap->getPS((apsIds[testFilterIdx] << NUM_APS_TYPE_LEN) + ALF_APS)->getCcAlfAPSParam().ccAlfCoeff[compID - 1], sizeof(ccAlfFilterCoeff) );
+        memcpy(ccAlfFilterCoeff, m_apsMap->getPS(apsIds[testFilterIdx])->getCcAlfAPSParam().ccAlfCoeff[compID - 1],
+               sizeof(ccAlfFilterCoeff));
       }
       else
       {

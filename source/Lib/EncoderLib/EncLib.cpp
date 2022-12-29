@@ -55,20 +55,20 @@ using namespace std;
 // Constructor / destructor / create / destroy
 // ====================================================================================================================
 
-EncLib::EncLib( EncLibCommon* encLibCommon )
-  : m_cListPic( encLibCommon->getPictureBuffer() )
-  , m_spsMap( encLibCommon->getSpsMap() )
-  , m_ppsMap( encLibCommon->getPpsMap() )
-  , m_apsMap( encLibCommon->getApsMap() )
-  , m_AUWriterIf( nullptr )
+EncLib::EncLib(EncLibCommon *encLibCommon)
+  : m_cListPic(encLibCommon->getPictureBuffer())
+  , m_spsMap(encLibCommon->getSpsMap())
+  , m_ppsMap(encLibCommon->getPpsMap())
+  , m_apsMaps(encLibCommon->getApsMaps())
+  , m_AUWriterIf(nullptr)
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
   , m_cacheModel()
 #endif
   , m_lmcsAPS(nullptr)
-  , m_scalinglistAPS( nullptr )
-  , m_doPlt( true )
-  , m_vps( encLibCommon->getVPS() )
-  , m_layerDecPicBuffering( encLibCommon->getDecPicBuffering() )
+  , m_scalinglistAPS(nullptr)
+  , m_doPlt(true)
+  , m_vps(encLibCommon->getVPS())
+  , m_layerDecPicBuffering(encLibCommon->getDecPicBuffering())
 {
   m_pocLast          = -1;
   m_receivedPicCount = 0;
@@ -154,9 +154,9 @@ void EncLib::init(AUWriterIf *auWriterIf)
 
   SPS &sps0 = *(m_spsMap.allocatePS( m_vps->getGeneralLayerIdx( m_layerId ) )); // NOTE: implementations that use more than 1 SPS need to be aware of activation issues.
   PPS &pps0 = *( m_ppsMap.allocatePS( m_vps->getGeneralLayerIdx( m_layerId ) ) );
-  APS &aps0 = *( m_apsMap.allocatePS( SCALING_LIST_APS ) );
+  APS &aps0 = *(m_apsMaps[ApsType::SCALING_LIST].allocatePS(0));
   aps0.setAPSId( 0 );
-  aps0.setAPSType( SCALING_LIST_APS );
+  aps0.setAPSType(ApsType::SCALING_LIST);
 
   if (getAvoidIntraInDepLayer() && getNumRefLayers(m_vps->getGeneralLayerIdx( getLayerId())) > 0)
   {
@@ -500,7 +500,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
 #if ER_CHROMA_QP_WCG_PPS
   if( m_wcgChromaQpControl.isEnabled() )
   {
-    xInitScalingLists( sps0, *m_apsMap.getPS( 1 ) );
+    xInitScalingLists(sps0, *m_apsMaps[ApsType::SCALING_LIST].getPS(1));
     xInitScalingLists( sps0, aps0 );
   }
   else
@@ -510,7 +510,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
   }
   if (m_resChangeInClvsEnabled)
   {
-    xInitScalingLists( sps0, *m_apsMap.getPS( ENC_PPS_ID_RPR ) );
+    xInitScalingLists(sps0, *m_apsMaps[ApsType::SCALING_LIST].getPS(ENC_PPS_ID_RPR));
   }
   if (getUseCompositeRef())
   {
@@ -2535,12 +2535,6 @@ void EncLib::setParamSetChanged(int spsId, int ppsId)
 {
   m_ppsMap.setChangedFlag(ppsId);
   m_spsMap.setChangedFlag(spsId);
-}
-bool EncLib::APSNeedsWriting(int apsId)
-{
-  bool isChanged = m_apsMap.getChangedFlag(apsId);
-  m_apsMap.clearChangedFlag(apsId);
-  return isChanged;
 }
 
 bool EncLib::PPSNeedsWriting(int ppsId)

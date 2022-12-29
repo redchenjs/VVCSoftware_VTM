@@ -529,15 +529,15 @@ void HLSWriter::codeAPS( APS* pcAPS )
   WRITE_CODE(pcAPS->getAPSId(), 5, "adaptation_parameter_set_id");
   WRITE_FLAG(pcAPS->chromaPresentFlag, "aps_chroma_present_flag");
 
-  if (pcAPS->getAPSType() == ALF_APS)
+  if (pcAPS->getAPSType() == ApsType::ALF)
   {
     codeAlfAps(pcAPS);
   }
-  else if (pcAPS->getAPSType() == LMCS_APS)
+  else if (pcAPS->getAPSType() == ApsType::LMCS)
   {
     codeLmcsAps (pcAPS);
   }
-  else if( pcAPS->getAPSType() == SCALING_LIST_APS )
+  else if (pcAPS->getAPSType() == ApsType::SCALING_LIST)
   {
     codeScalingListAps( pcAPS );
   }

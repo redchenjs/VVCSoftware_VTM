@@ -312,11 +312,12 @@ public:
   constexpr const_reference operator[](size_type e) const { return base::operator[](to_underlying(e)); }
 };
 
-enum ApsType
+enum class ApsType : uint8_t
 {
-  ALF_APS = 0,
-  LMCS_APS = 1,
-  SCALING_LIST_APS = 2,
+  ALF = 0,
+  LMCS,
+  SCALING_LIST,
+  NUM
 };
 
 enum QuantFlags
