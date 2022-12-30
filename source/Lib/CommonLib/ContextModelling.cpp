@@ -507,13 +507,7 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
 
   getMmvdDeltaMv(*pu.cs->slice, candIdx, tempMv);
   const int mvdBaseIdx  = candIdx.pos.baseIdx;
-  const int mvdStep     = candIdx.pos.step;
 
-  int offset = 1 << (mvdStep + MV_FRACTIONAL_BITS_DIFF);
-  if ( pu.cu->slice->getPicHeader()->getDisFracMMVD() )
-  {
-    offset <<= 2;
-  }
   const int refList0 = mmvdBaseMv[mvdBaseIdx][0].refIdx;
   const int refList1 = mmvdBaseMv[mvdBaseIdx][1].refIdx;
 
