@@ -1003,6 +1003,17 @@ private:
 
 using BitDepths = EnumArray<int, ChannelType>;
 
+struct ScalingRatio
+{
+  static constexpr int BITS = 14;
+
+  int x;
+  int y;
+
+  bool operator==(const ScalingRatio &s) const { return x == s.x && y == s.y; }
+  bool operator!=(const ScalingRatio &s) const { return x != s.x || y != s.y; }
+};
+
 enum PLTRunMode
 {
   PLT_RUN_INDEX = 0,

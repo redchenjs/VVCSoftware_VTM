@@ -97,7 +97,7 @@ void CS::setRefinedMotionField(CodingStructure &cs)
 }
 // CU tools
 
-bool CU::getRprScaling( const SPS* sps, const PPS* curPPS, Picture* refPic, int& xScale, int& yScale )
+bool CU::getRprScaling(const SPS *sps, const PPS *curPPS, Picture *refPic, ScalingRatio &scalingRatio)
 {
   const int subWidthC  = SPS::getWinUnitX(sps->getChromaFormatIdc());
   const int subHeightC = SPS::getWinUnitY(sps->getChromaFormatIdc());
@@ -132,8 +132,10 @@ bool CU::getRprScaling( const SPS* sps, const PPS* curPPS, Picture* refPic, int&
   CHECK(curPicScalWinHeight > refPicScalWinHeight * 8,
         "curPicScalWinHeight shall be less than or equal to refPicScalWinHeight * 8");
 
-  xScale = (int) (((refPicScalWinWidth << SCALE_RATIO_BITS) + (curPicScalWinWidth >> 1)) / curPicScalWinWidth);
-  yScale = (int) (((refPicScalWinHeight << SCALE_RATIO_BITS) + (curPicScalWinHeight >> 1)) / curPicScalWinHeight);
+  scalingRatio.x =
+    (int) (((refPicScalWinWidth << ScalingRatio::BITS) + (curPicScalWinWidth >> 1)) / curPicScalWinWidth);
+  scalingRatio.y =
+    (int) (((refPicScalWinHeight << ScalingRatio::BITS) + (curPicScalWinHeight >> 1)) / curPicScalWinHeight);
 
   const int maxPicWidth  = sps->getMaxPicWidthInLumaSamples();    // sps_pic_width_max_in_luma_samples
   const int maxPicHeight = sps->getMaxPicHeightInLumaSamples();   // sps_pic_height_max_in_luma_samples

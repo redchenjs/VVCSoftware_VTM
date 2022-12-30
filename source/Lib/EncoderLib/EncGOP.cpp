@@ -5000,11 +5000,10 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     const CPelBuf& upscaledOrg = (sps.getUseLmcs() || m_pcCfg->getGopBasedTemporalFilterEnabled()) ? pcPic->M_BUFS( 0, PIC_TRUE_ORIGINAL_INPUT).get( COMPONENT_Y ) : pcPic->M_BUFS( 0, PIC_ORIGINAL_INPUT).get( COMPONENT_Y );
     upscaledRec.create( pic.chromaFormat, Area( Position(), upscaledOrg ) );
 
-    int xScale, yScale;
+    ScalingRatio scalingRatio;
     // it is assumed that full resolution picture PPS has ppsId 0
     const PPS* pps = m_pcEncLib->getPPS(0);
-    CU::getRprScaling( &sps, pps, pcPic, xScale, yScale );
-    std::pair<int, int> scalingRatio = std::pair<int, int>( xScale, yScale );
+    CU::getRprScaling(&sps, pps, pcPic, scalingRatio);
 
 #if JVET_AB0081
     bool rescaleForDisplay = true;
@@ -5313,16 +5312,15 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
       msg(NOTICE, " [L%d", refList);
       for (int refIndex = 0; refIndex < pcSlice->getNumRefIdx(RefPicList(refList)); refIndex++)
       {
-        const std::pair<int, int> &scaleRatio = pcSlice->getScalingRatio(RefPicList(refList), refIndex);
+        const ScalingRatio &scaleRatio = pcSlice->getScalingRatio(RefPicList(refList), refIndex);
 
         if (pcPic->cs->picHeader->getEnableTMVPFlag() && pcSlice->getColFromL0Flag() == bool(1 - refList)
             && pcSlice->getColRefIdx() == refIndex)
         {
-          if( scaleRatio.first != 1 << SCALE_RATIO_BITS || scaleRatio.second != 1 << SCALE_RATIO_BITS )
+          if (scaleRatio != SCALE_1X)
           {
             msg(NOTICE, " %dc(%1.2lfx, %1.2lfx)", pcSlice->getRefPOC(RefPicList(refList), refIndex),
-                double(scaleRatio.first) / (1 << SCALE_RATIO_BITS),
-                double(scaleRatio.second) / (1 << SCALE_RATIO_BITS));
+                double(scaleRatio.x) / (1 << ScalingRatio::BITS), double(scaleRatio.y) / (1 << ScalingRatio::BITS));
           }
           else
           {
@@ -5331,11 +5329,10 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
         }
         else
         {
-          if( scaleRatio.first != 1 << SCALE_RATIO_BITS || scaleRatio.second != 1 << SCALE_RATIO_BITS )
+          if (scaleRatio != SCALE_1X)
           {
             msg(NOTICE, " %d(%1.2lfx, %1.2lfx)", pcSlice->getRefPOC(RefPicList(refList), refIndex),
-                double(scaleRatio.first) / (1 << SCALE_RATIO_BITS),
-                double(scaleRatio.second) / (1 << SCALE_RATIO_BITS));
+                double(scaleRatio.x) / (1 << ScalingRatio::BITS), double(scaleRatio.y) / (1 << ScalingRatio::BITS));
           }
           else
           {

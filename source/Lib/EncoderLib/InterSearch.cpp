@@ -2082,7 +2082,7 @@ bool InterSearch::xRectHashInterEstimation(PredictionUnit& pu, RefPicList& bestR
       }
       m_numHashMVStoreds[eRefPicList][refIdx] = 0;
 
-      const std::pair<int, int>& scaleRatio = pu.cu->slice->getScalingRatio( eRefPicList, refIdx );
+      const ScalingRatio &scaleRatio = pu.cu->slice->getScalingRatio(eRefPicList, refIdx);
       if( scaleRatio != SCALE_1X )
       {
         continue;
@@ -2384,7 +2384,7 @@ bool InterSearch::xHashInterEstimation(PredictionUnit& pu, RefPicList& bestRefPi
       }
       m_numHashMVStoreds[eRefPicList][refIdx] = 0;
 
-      const std::pair<int, int>& scaleRatio = pu.cu->slice->getScalingRatio( eRefPicList, refIdx );
+      const ScalingRatio &scaleRatio = pu.cu->slice->getScalingRatio(eRefPicList, refIdx);
       if( scaleRatio != SCALE_1X )
       {
         continue;

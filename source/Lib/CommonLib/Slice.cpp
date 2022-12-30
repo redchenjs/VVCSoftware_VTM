@@ -4453,9 +4453,7 @@ void Slice::scaleRefPicList( Picture *scaledRefPic[ ], PicHeader *picHeader, APS
       // if rescaling is needed, otherwise just reuse the original picture pointer; it is needed for motion field, otherwise motion field requires a copy as well
       // reference resampling for the whole picture is not applied at decoder
 
-      int xScale, yScale;
-      CU::getRprScaling( sps, pps, m_apcRefPicList[refList][rIdx], xScale, yScale );
-      m_scalingRatio[refList][rIdx] = std::pair<int, int>( xScale, yScale );
+      CU::getRprScaling(sps, pps, m_apcRefPicList[refList][rIdx], m_scalingRatio[refList][rIdx]);
 
       CHECK( m_apcRefPicList[refList][rIdx]->unscaledPic == nullptr, "unscaledPic is not properly set" );
 
@@ -4525,11 +4523,11 @@ void Slice::scaleRefPicList( Picture *scaledRefPic[ ], PicHeader *picHeader, APS
 
           // rescale the reference picture
           const bool downsampling = m_apcRefPicList[refList][rIdx]->getRecoBuf().Y().width >= scaledRefPic[j]->getRecoBuf().Y().width && m_apcRefPicList[refList][rIdx]->getRecoBuf().Y().height >= scaledRefPic[j]->getRecoBuf().Y().height;
-          Picture::rescalePicture( m_scalingRatio[refList][rIdx],
-                                   m_apcRefPicList[refList][rIdx]->getRecoBuf(), m_apcRefPicList[refList][rIdx]->slices[0]->getPPS()->getScalingWindow(),
-                                   scaledRefPic[j]->getRecoBuf(), pps->getScalingWindow(),
-                                   sps->getChromaFormatIdc(), sps->getBitDepths(), true, downsampling,
-                                   sps->getHorCollocatedChromaFlag(), sps->getVerCollocatedChromaFlag() );
+          Picture::rescalePicture(m_scalingRatio[refList][rIdx], m_apcRefPicList[refList][rIdx]->getRecoBuf(),
+                                  m_apcRefPicList[refList][rIdx]->slices[0]->getPPS()->getScalingWindow(),
+                                  scaledRefPic[j]->getRecoBuf(), pps->getScalingWindow(), sps->getChromaFormatIdc(),
+                                  sps->getBitDepths(), true, downsampling, sps->getHorCollocatedChromaFlag(),
+                                  sps->getVerCollocatedChromaFlag());
           scaledRefPic[j]->unscaledPic = m_apcRefPicList[refList][rIdx];
           scaledRefPic[j]->extendPicBorder( getPPS() );
 

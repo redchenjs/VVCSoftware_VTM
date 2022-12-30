@@ -713,12 +713,8 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
       double upscaledPSNR = 0.0;
       if (poc % getGOPSize() == 0)
       {
-        int xScale = 32768;
-        int yScale = 32768;
-        std::pair<int, int> downScalingRatio = std::pair<int, int>(xScale, yScale);
-        xScale = 8192;
-        yScale = 8192;
-        std::pair<int, int> upScalingRatio = std::pair<int, int>(xScale, yScale);
+        ScalingRatio downScalingRatio{ 32768, 32768 };
+        ScalingRatio upScalingRatio{ 8192, 8192 };
 
         const PPS* orgPPS = m_ppsMap.getPS(0);
         const SPS* orgSPS = m_spsMap.getPS(orgPPS->getSPSId());
@@ -848,9 +844,10 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
       int refPicWidth = refPPS->getPicWidthInLumaSamples()   - SPS::getWinUnitX( pSPS->getChromaFormatIdc() ) * ( refScalingWindow.getWindowLeftOffset() + refScalingWindow.getWindowRightOffset() );
       int refPicHeight = refPPS->getPicHeightInLumaSamples() - SPS::getWinUnitY( pSPS->getChromaFormatIdc() ) * ( refScalingWindow.getWindowTopOffset()  + refScalingWindow.getWindowBottomOffset() );
 
-      int xScale = ( ( refPicWidth << SCALE_RATIO_BITS ) + ( curPicWidth >> 1 ) ) / curPicWidth;
-      int yScale = ( ( refPicHeight << SCALE_RATIO_BITS ) + ( curPicHeight >> 1 ) ) / curPicHeight;
-      std::pair<int, int> scalingRatio = std::pair<int, int>( xScale, yScale );
+      const int xScale = ((refPicWidth << ScalingRatio::BITS) + (curPicWidth >> 1)) / curPicWidth;
+      const int yScale = ((refPicHeight << ScalingRatio::BITS) + (curPicHeight >> 1)) / curPicHeight;
+
+      const ScalingRatio scalingRatio = { xScale, yScale };
 
       Picture::rescalePicture(scalingRatio, *pcPicYuvOrg, refPPS->getScalingWindow(), pcPicCurr->getOrigBuf(),
                               pPPS->getScalingWindow(), chromaFormatIDC, pSPS->getBitDepths(), true, true,

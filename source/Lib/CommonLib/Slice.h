@@ -2782,8 +2782,7 @@ private:
   int                        m_hierPredLayerIdx;   // hierarchical prediction layer index
   Picture*                   m_scaledRefPicList[NUM_REF_PIC_LIST_01][MAX_NUM_REF + 1];
   Picture*                   m_savedRefPicList[NUM_REF_PIC_LIST_01][MAX_NUM_REF + 1];
-  std::pair<int, int>        m_scalingRatio[NUM_REF_PIC_LIST_01][MAX_NUM_REF_PICS];
-
+  ScalingRatio               m_scalingRatio[NUM_REF_PIC_LIST_01][MAX_NUM_REF_PICS];
 
   // access channel
   const VPS*                 m_pcVPS;
@@ -3177,7 +3176,11 @@ public:
   void                        scaleRefPicList( Picture *scaledRefPic[ ], PicHeader *picHeader, APS** apss, APS* lmcsAps, APS* scalingListAps, const bool isDecoder );
   void                        freeScaledRefPicList( Picture *scaledRefPic[] );
   bool                        checkRPR();
-  const std::pair<int, int>&  getScalingRatio( const RefPicList refPicList, const int refIdx )  const { CHECK( refIdx < 0, "Invalid reference index" ); return m_scalingRatio[refPicList][refIdx]; }
+  const ScalingRatio         &getScalingRatio(const RefPicList refPicList, const int refIdx) const
+  {
+    CHECK(refIdx < 0, "Invalid reference index");
+    return m_scalingRatio[refPicList][refIdx];
+  }
   void                        setNumSubstream( const SPS *sps, const PPS *pps );
   void                        setNumEntryPoints( const SPS *sps, const PPS *pps );
   uint32_t                    getNumEntryPoints( ) const { return m_numEntryPoints;  }
