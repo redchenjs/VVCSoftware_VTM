@@ -1118,11 +1118,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
 
   m_CABACEstimator->getCtx() = m_CurrCtx->start;
 
-  const TempCtx ctxStartSP(m_ctxPool, SubCtx(Ctx::SplitFlag, m_CABACEstimator->getCtx()));
-  const TempCtx ctxStartQt(m_ctxPool, SubCtx(Ctx::SplitQtFlag, m_CABACEstimator->getCtx()));
-  const TempCtx ctxStartHv(m_ctxPool, SubCtx(Ctx::SplitHvFlag, m_CABACEstimator->getCtx()));
-  const TempCtx ctxStart12(m_ctxPool, SubCtx(Ctx::Split12Flag, m_CABACEstimator->getCtx()));
-  const TempCtx ctxStartMC(m_ctxPool, SubCtx(Ctx::ModeConsFlag, m_CABACEstimator->getCtx()));
+  const TempCtx ctxStart(m_ctxPool, SubCtx(Ctx::ctxPartition, m_CABACEstimator->getCtx()));
   m_CABACEstimator->resetBits();
 
   m_CABACEstimator->split_cu_mode( split, *tempCS, partitioner );
@@ -1166,11 +1162,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
   }
   const double cost = costTemp;
 
-  m_CABACEstimator->getCtx() = SubCtx( Ctx::SplitFlag,   ctxStartSP );
-  m_CABACEstimator->getCtx() = SubCtx( Ctx::SplitQtFlag, ctxStartQt );
-  m_CABACEstimator->getCtx() = SubCtx( Ctx::SplitHvFlag, ctxStartHv );
-  m_CABACEstimator->getCtx() = SubCtx( Ctx::Split12Flag, ctxStart12 );
-  m_CABACEstimator->getCtx() = SubCtx( Ctx::ModeConsFlag, ctxStartMC );
+  m_CABACEstimator->getCtx() = SubCtx(Ctx::ctxPartition, ctxStart);
   if (cost > bestCS->cost + bestCS->costDbOffset
 #if ENABLE_QPA_SUB_CTU
     || (m_pcEncCfg->getUsePerceptQPA() && !m_pcEncCfg->getUseRateCtrl() && pps.getUseDQP() && (slice.getCuQpDeltaSubdiv() > 0) && (split == CU_HORZ_SPLIT || split == CU_VERT_SPLIT) &&
