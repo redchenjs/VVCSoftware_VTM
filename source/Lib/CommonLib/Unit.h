@@ -409,9 +409,8 @@ struct InterPredictionData
   MvpType   mvpType[NUM_REF_PIC_LIST_01];
   Position  mvpPos[NUM_REF_PIC_LIST_01];
 #endif
-  int16_t     refIdx  [NUM_REF_PIC_LIST_01];
+  int16_t   refIdx[NUM_REF_PIC_LIST_01];
   MergeType mergeType;
-  bool      mvRefine;
   Mv        mvdL0SubPu[MAX_NUM_SUBCU_DMVR];
   Mv        mvdAffi [NUM_REF_PIC_LIST_01][3];
   Mv        mvAffi[NUM_REF_PIC_LIST_01][3];

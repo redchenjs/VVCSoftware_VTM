@@ -354,8 +354,7 @@ void InterPrediction::xSubPuMC(PredictionUnit &pu, PelUnitBuf &predBuf, const Re
       subPu.UnitArea::operator=(UnitArea(pu.chromaFormat, Area(x, y, dx, dy)));
       subPu = curMi;
       PelUnitBuf subPredBuf = predBuf.subBuf(UnitAreaRelative(pu, subPu));
-      subPu.mmvdEncOptMode = 0;
-      subPu.mvRefine = false;
+      subPu.mmvdEncOptMode  = 0;
       motionCompensation(subPu, subPredBuf, eRefPicList, luma, chroma, nullptr, true);
       secDim = later - secStep;
     }
@@ -415,16 +414,16 @@ void InterPrediction::xSubPuBio(PredictionUnit &pu, PelUnitBuf &predBuf, const R
 #endif
   PredictionUnit subPu;
 
-  subPu.cs = pu.cs;
-  subPu.cu = pu.cu;
-  subPu.mergeType = pu.mergeType;
-  subPu.mmvdMergeFlag = pu.mmvdMergeFlag;
+  subPu.cs             = pu.cs;
+  subPu.cu             = pu.cu;
+  subPu.mergeType      = pu.mergeType;
+  subPu.mmvdMergeFlag  = pu.mmvdMergeFlag;
   subPu.mmvdEncOptMode = pu.mmvdEncOptMode;
-  subPu.mergeFlag = pu.mergeFlag;
-  subPu.ciipFlag = pu.ciipFlag;
-  subPu.mvRefine = pu.mvRefine;
-  subPu.refIdx[0] = pu.refIdx[0];
-  subPu.refIdx[1] = pu.refIdx[1];
+  subPu.mergeFlag      = pu.mergeFlag;
+  subPu.ciipFlag       = pu.ciipFlag;
+  subPu.refIdx[0]      = pu.refIdx[0];
+  subPu.refIdx[1]      = pu.refIdx[1];
+
   int  fstStart = puPos.y;
   int  secStart = puPos.x;
   int  fstEnd = puPos.y + puSize.height;
@@ -566,7 +565,7 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
     bioApplied = false;
   }
 
-  bool dmvrApplied = (pu.mvRefine) && PU::checkDMVRCondition(pu);
+  bool dmvrApplied = !isSubPu && PU::checkDMVRCondition(pu);
 
   bool refIsScaled = ( refIdx0 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_0, refIdx0 )->isRefScaled( pu.cs->pps ) ) ||
                      ( refIdx1 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_1, refIdx1 )->isRefScaled( pu.cs->pps ) );
@@ -1467,7 +1466,7 @@ void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf
     bool refIsScaled = ( refIdx0 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_0, refIdx0 )->isRefScaled( pu.cs->pps ) ) ||
                        ( refIdx1 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_1, refIdx1 )->isRefScaled( pu.cs->pps ) );
     bioApplied = refIsScaled ? false : bioApplied;
-    bool dmvrApplied = (pu.mvRefine) && PU::checkDMVRCondition(pu);
+    bool dmvrApplied = !isSubPu && PU::checkDMVRCondition(pu);
     if ((pu.lumaSize().width > MAX_BDOF_APPLICATION_REGION || pu.lumaSize().height > MAX_BDOF_APPLICATION_REGION)
         && pu.mergeType != MergeType::SUBPU_ATMVP && (bioApplied && !dmvrApplied))
     {
@@ -1502,10 +1501,8 @@ void InterPrediction::motionCompensateCu(CodingUnit &cu, const RefPicList eRefPi
 {
   for( auto &pu : CU::traversePUs( cu ) )
   {
-    PelUnitBuf predBuf = cu.cs->getPredBuf( pu );
-    pu.mvRefine = true;
+    PelUnitBuf predBuf = cu.cs->getPredBuf(pu);
     motionCompensation(pu, predBuf, eRefPicList, luma, chroma, nullptr, false);
-    pu.mvRefine = false;
   }
 }
 

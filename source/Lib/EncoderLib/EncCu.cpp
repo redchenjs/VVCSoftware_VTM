@@ -2336,13 +2336,11 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
       {
         mergeCtx.setMergeInfo( *pu, uiMergeCand );
 
-        PU::spanMotionInfo( *pu, mergeCtx );
-        pu->mvRefine = true;
+        PU::spanMotionInfo(*pu, mergeCtx);
         distParam.cur = singleMergeTempBuffer->Y();
         m_pcInterSearch->motionCompensation(*pu, *singleMergeTempBuffer, REF_PIC_LIST_X, true, true,
                                             mrgPredBufNoMvRefine[uiMergeCand], false);
         mrgPredBufNoCiip[uiMergeCand]->copyFrom(*singleMergeTempBuffer);
-        pu->mvRefine = false;
         if (mergeCtx.interDirNeighbours[uiMergeCand] == 3)
         {
           mergeCtx.mvFieldNeighbours[uiMergeCand][0].mv = pu->mv[0];
@@ -2529,14 +2527,12 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           mergeCtx.setMmvdMergeCandiInfo(*pu, mmvdIdx);
 
           PU::spanMotionInfo(*pu, mergeCtx);
-          pu->mvRefine = true;
           distParam.cur = singleMergeTempBuffer->Y();
           pu->mmvdEncOptMode = (mmvdIdx.pos.step > 2 ? 2 : 1);
           CHECK(!pu->mmvdMergeFlag, "MMVD merge should be set");
           // Don't do chroma MC here
           m_pcInterSearch->motionCompensation(*pu, *singleMergeTempBuffer, REF_PIC_LIST_X, true, false, nullptr, false);
           pu->mmvdEncOptMode = 0;
-          pu->mvRefine = false;
           Distortion uiSad = distParam.distFunc(distParam);
 
           m_CABACEstimator->getCtx() = ctxStart;
@@ -2746,9 +2742,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
       }
       else
       {
-        pu->mvRefine = true;
         m_pcInterSearch->motionCompensatePu(*pu, REF_PIC_LIST_X, true, true);
-        pu->mvRefine = false;
       }
       if (!pu->cu->mmvdSkip && !pu->ciipFlag && noResidualPass != 0)
       {
