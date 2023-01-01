@@ -523,7 +523,7 @@ void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNal
     msg(INFO, " with index %i", inNalu.m_nalUnitType);
     // Copy payload from input nalu to output nalu. Code copied from SubpicMergeApp::copyInputNaluToOutputNalu().
     vector<uint8_t> &inFifo  = inNalu.getBitstream().getFifo();
-    vector<uint8_t> &outFifo = outNalu.m_bitstream.getFIFO();
+    vector<uint8_t> &outFifo = outNalu.m_bitstream.getFifo();
     outFifo                  = vector<uint8_t>(inFifo.begin() + 2, inFifo.end());
     break;
   }

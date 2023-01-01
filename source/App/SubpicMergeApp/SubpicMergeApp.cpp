@@ -812,7 +812,7 @@ void SubpicMergeApp::copyInputNaluToOutputNalu(OutputNALUnit &outNalu, InputNALU
 
   // Copy payload
   std::vector<uint8_t> &inFifo = inNalu.getBitstream().getFifo();
-  std::vector<uint8_t> &outFifo = outNalu.m_bitstream.getFIFO();
+  std::vector<uint8_t> &outFifo = outNalu.m_bitstream.getFifo();
   outFifo = std::vector<uint8_t>(inFifo.begin() + 2, inFifo.end());
 }
 
@@ -941,7 +941,7 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
     OutputNALUnit nalu(NAL_UNIT_VPS);
     hlsWriter.setBitstream(&nalu.m_bitstream);
     hlsWriter.codeVPS(vps);
-    psManager.storeVPS(vps, nalu.m_bitstream.getFIFO());
+    psManager.storeVPS(vps, nalu.m_bitstream.getFifo());
     accessUnit.push_back(new NALUnitEBSP(nalu));
   }
 
@@ -953,7 +953,7 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
     OutputNALUnit nalu(NAL_UNIT_SPS);
     hlsWriter.setBitstream(&nalu.m_bitstream);
     hlsWriter.codeSPS(sps);
-    psManager.storeSPS(sps, nalu.m_bitstream.getFIFO());
+    psManager.storeSPS(sps, nalu.m_bitstream.getFifo());
     accessUnit.push_back(new NALUnitEBSP(nalu));
   }
 
@@ -975,7 +975,7 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
     OutputNALUnit nalu(NAL_UNIT_PPS);
     hlsWriter.setBitstream(&nalu.m_bitstream);
     hlsWriter.codePPS(pps);
-    psManager.storePPS(pps, nalu.m_bitstream.getFIFO());
+    psManager.storePPS(pps, nalu.m_bitstream.getFifo());
     accessUnit.push_back(new NALUnitEBSP(nalu));
 
     if (mixedNaluFlag)
@@ -985,7 +985,7 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
       ppsMixed->setPPSId(ppsMixed->getPPSId() + MIXED_NALU_PPS_OFFSET);
       ppsMixed->setMixedNaluTypesInPicFlag(true);
       hlsWriter.codePPS(ppsMixed);
-      psManager.storePPS(ppsMixed, naluMixed.m_bitstream.getFIFO());
+      psManager.storePPS(ppsMixed, naluMixed.m_bitstream.getFifo());
       accessUnit.push_back(new NALUnitEBSP(naluMixed));
     }
   }

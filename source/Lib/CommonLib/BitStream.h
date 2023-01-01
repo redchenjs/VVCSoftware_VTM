@@ -50,6 +50,12 @@
 //! \ingroup CommonLib
 //! \{
 
+static constexpr int      BITS_PER_BYTE_LOG2 = 3;
+static constexpr int      BITS_PER_BYTE      = 1 << BITS_PER_BYTE_LOG2;
+static constexpr int      BITS_PER_BYTE_MASK = BITS_PER_BYTE - 1;
+static constexpr int      BITS_PER_WORD      = BITS_PER_BYTE * sizeof(uint32_t);
+static constexpr uint32_t BYTE_MASK          = (1 << BITS_PER_BYTE) - 1;
+
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
@@ -68,9 +74,9 @@ class OutputBitstream
    */
   std::vector<uint8_t> m_fifo;
 
-  uint32_t m_num_held_bits; /// number of bits not flushed to bytestream.
-  uint8_t m_held_bits; /// the bits held and not flushed to bytestream.
-                             /// this value is always msb-aligned, bigendian.
+  uint32_t m_numHeldBits;   /// number of bits not flushed to bytestream.
+  uint8_t  m_heldBits;      /// the bits held and not flushed to bytestream.
+                            /// this value is always msb-aligned, bigendian.
 public:
   // create / destroy
   OutputBitstream();
@@ -97,7 +103,7 @@ public:
    * NB, data is arranged such that subsequent bytes in the
    * bytestream are stored in ascending addresses.
    */
-  uint8_t* getByteStream() const;
+  const uint8_t *getByteStream() const;
 
   /**
    * Return the number of valid bytes available from  getByteStream()
@@ -113,25 +119,24 @@ public:
    * returns the number of bits that need to be written to
    * achieve byte alignment.
    */
-  int getNumBitsUntilByteAligned() const { return (8 - m_num_held_bits) & 0x7; }
+  int getNumBitsUntilByteAligned() const { return (8 - m_numHeldBits) & 0x7; }
 
   /**
    * Return the number of bits that have been written since the last clear()
    */
-  uint32_t getNumberOfWrittenBits() const { return uint32_t(m_fifo.size()) * 8 + m_num_held_bits; }
+  uint32_t getNumberOfWrittenBits() const { return uint32_t(m_fifo.size()) * 8 + m_numHeldBits; }
 
   void insertAt(const OutputBitstream& src, uint32_t pos);
 
   /**
    * Return a reference to the internal fifo
    */
-  std::vector<uint8_t>& getFIFO() { return m_fifo; }
+  std::vector<uint8_t> &getFifo() { return m_fifo; }
 
-  uint8_t getHeldBits  ()          { return m_held_bits;          }
+  uint8_t getHeldBits() { return m_heldBits; }
 
-  //OutputBitstream& operator= (const OutputBitstream& src);
   /** Return a reference to the internal fifo */
-  const std::vector<uint8_t>& getFIFO() const { return m_fifo; }
+  const std::vector<uint8_t> &getFifo() const { return m_fifo; }
 
   void          addSubstream    ( OutputBitstream* pcSubstream );
   void writeByteAlignment();
@@ -150,10 +155,10 @@ protected:
   std::vector<uint8_t> m_fifo; /// FIFO for storage of complete bytes
   std::vector<uint32_t>    m_emulationPreventionByteLocation;
 
-  uint32_t m_fifo_idx; /// Read index into m_fifo
+  uint32_t m_fifoIdx;   /// Read index into m_fifo
 
-  uint32_t m_num_held_bits;
-  uint8_t m_held_bits;
+  uint32_t  m_numHeldBits;
+  uint8_t   m_heldBits;
   uint32_t  m_numBitsRead;
 
 public:
@@ -167,12 +172,12 @@ public:
   void resetToStart();
 
   // interface for decoding
-  void        pseudoRead(uint32_t numberOfBits, uint32_t &ruiBits);
+  void        pseudoRead(uint32_t numberOfBits, uint32_t &bits);
   void        read(uint32_t numberOfBits, uint32_t &ruiBits);
   void        readByte        ( uint32_t &ruiBits )
   {
-    CHECK( m_fifo_idx >= m_fifo.size(), "FIFO exceeded" );
-    ruiBits = m_fifo[m_fifo_idx++];
+    CHECK(m_fifoIdx >= m_fifo.size(), "FIFO exceeded");
+    ruiBits = m_fifo[m_fifoIdx++];
 #if ENABLE_TRACING
     m_numBitsRead += 8;
 #endif
@@ -180,14 +185,14 @@ public:
 
   void        peekPreviousByte( uint32_t &byte )
   {
-    CHECK( m_fifo_idx == 0, "FIFO empty" );
-    byte = m_fifo[m_fifo_idx - 1];
+    CHECK(m_fifoIdx == 0, "FIFO empty");
+    byte = m_fifo[m_fifoIdx - 1];
   }
 
   uint32_t        readOutTrailingBits ();
-  uint8_t getHeldBits  ()          { return m_held_bits;          }
+  uint8_t          getHeldBits() { return m_heldBits; }
   OutputBitstream& operator= (const OutputBitstream& src);
-  uint32_t  getByteLocation              ( )                     { return m_fifo_idx                    ; }
+  uint32_t         getByteLocation() { return m_fifoIdx; }
 
   // Peek at bits in word-storage. Used in determining if we have completed reading of current bitstream and therefore slice in LCEC.
   uint32_t peekBits(uint32_t bits)
@@ -200,9 +205,9 @@ public:
   // utility functions
   uint32_t read(uint32_t numberOfBits)      { uint32_t tmp; read(numberOfBits, tmp); return tmp; }
   uint32_t readByte()                   { uint32_t tmp; readByte( tmp ); return tmp; }
-  uint32_t getNumBitsUntilByteAligned() { return m_num_held_bits & (0x7); }
-  uint32_t getNumBitsLeft()             { return 8*((uint32_t)m_fifo.size() - m_fifo_idx) + m_num_held_bits; }
-  InputBitstream *extractSubstream( uint32_t uiNumBits ); // Read the nominated number of bits, and return as a bitstream.
+  uint32_t        getNumBitsUntilByteAligned() { return m_numHeldBits & (0x7); }
+  uint32_t        getNumBitsLeft() { return 8 * ((uint32_t) m_fifo.size() - m_fifoIdx) + m_numHeldBits; }
+  InputBitstream *extractSubstream(uint32_t numBits);   // Read the nominated number of bits, and return as a bitstream.
   uint32_t  getNumBitsRead()            { return m_numBitsRead; }
   uint32_t  readByteAlignment();
 
