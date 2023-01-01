@@ -4575,74 +4575,74 @@ void RdCost::_initRdCostX86()
 {
   /* SIMD SSE implementation shifts the final sum instead of every addend
    * resulting in slightly different result compared to the scalar impl. */
-  //m_afpDistortFunc[DF_SSE    ] = xGetSSE_SIMD<Pel, Pel, vext>;
-  //m_afpDistortFunc[DF_SSE2   ] = xGetSSE_SIMD<Pel, Pel, vext>;
-  //m_afpDistortFunc[DF_SSE4   ] = xGetSSE_NxN_SIMD<Pel, Pel, 4,  vext>;
-  //m_afpDistortFunc[DF_SSE8   ] = xGetSSE_NxN_SIMD<Pel, Pel, 8,  vext>;
-  //m_afpDistortFunc[DF_SSE16  ] = xGetSSE_NxN_SIMD<Pel, Pel, 16, vext>;
-  //m_afpDistortFunc[DF_SSE32  ] = xGetSSE_NxN_SIMD<Pel, Pel, 32, vext>;
-  //m_afpDistortFunc[DF_SSE64  ] = xGetSSE_NxN_SIMD<Pel, Pel, 64, vext>;
-  //m_afpDistortFunc[DF_SSE16N ] = xGetSSE_SIMD<Pel, Pel, vext>;
+  // m_distortionFunc[DFunc::SSE    ] = xGetSSE_SIMD<Pel, Pel, vext>;
+  // m_distortionFunc[DFunc::SSE2   ] = xGetSSE_SIMD<Pel, Pel, vext>;
+  // m_distortionFunc[DFunc::SSE4   ] = xGetSSE_NxN_SIMD<Pel, Pel, 4,  vext>;
+  // m_distortionFunc[DFunc::SSE8   ] = xGetSSE_NxN_SIMD<Pel, Pel, 8,  vext>;
+  // m_distortionFunc[DFunc::SSE16  ] = xGetSSE_NxN_SIMD<Pel, Pel, 16, vext>;
+  // m_distortionFunc[DFunc::SSE32  ] = xGetSSE_NxN_SIMD<Pel, Pel, 32, vext>;
+  // m_distortionFunc[DFunc::SSE64  ] = xGetSSE_NxN_SIMD<Pel, Pel, 64, vext>;
+  // m_distortionFunc[DFunc::SSE16N ] = xGetSSE_SIMD<Pel, Pel, vext>;
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-  m_afpDistortFunc[DF_SAD] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD2] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD4] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD8] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD16] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD32] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD64] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD16N] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD12] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD24] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD48] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD_INTERMEDIATE_BITDEPTH] = xGetSAD_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD_WITH_MASK] = xGetSADwMask_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD]                       = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD2]                      = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD4]                      = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD8]                      = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD16]                     = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD32]                     = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD64]                     = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD16N]                    = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD12]                     = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD24]                     = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD48]                     = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD_INTERMEDIATE_BITDEPTH] = xGetSAD_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD_WITH_MASK]             = xGetSADwMask_HBD_SIMD<vext>;
 
-  m_afpDistortFunc[DF_HAD] = xGetHADs_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD2] = xGetHADs_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD4] = xGetHADs_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD8] = xGetHADs_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD16] = xGetHADs_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD32] = xGetHADs_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD64] = xGetHADs_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD16N] = xGetHADs_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD]    = xGetHADs_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD2]   = xGetHADs_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD4]   = xGetHADs_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD8]   = xGetHADs_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD16]  = xGetHADs_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD32]  = xGetHADs_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD64]  = xGetHADs_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD16N] = xGetHADs_HBD_SIMD<vext>;
 
 #if FULL_NBIT
-  m_afpDistortFunc[DF_SSE] = xGetSSE_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SSE2] = xGetSSE_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SSE4] = xGetSSE_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SSE8] = xGetSSE_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SSE16] = xGetSSE_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SSE32] = xGetSSE_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SSE64] = xGetSSE_HBD_SIMD<vext>;
-  m_afpDistortFunc[DF_SSE16N] = xGetSSE_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SSE]    = xGetSSE_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SSE2]   = xGetSSE_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SSE4]   = xGetSSE_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SSE8]   = xGetSSE_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SSE16]  = xGetSSE_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SSE32]  = xGetSSE_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SSE64]  = xGetSSE_HBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SSE16N] = xGetSSE_HBD_SIMD<vext>;
 #endif
 #else
-  m_afpDistortFunc[DF_SAD    ] = xGetSAD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD2   ] = xGetSAD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD4   ] = xGetSAD_NxN_SIMD<4,  vext>;
-  m_afpDistortFunc[DF_SAD8   ] = xGetSAD_NxN_SIMD<8,  vext>;
-  m_afpDistortFunc[DF_SAD16  ] = xGetSAD_NxN_SIMD<16, vext>;
-  m_afpDistortFunc[DF_SAD32  ] = xGetSAD_NxN_SIMD<32, vext>;
-  m_afpDistortFunc[DF_SAD64  ] = xGetSAD_NxN_SIMD<64, vext>;
-  m_afpDistortFunc[DF_SAD16N]  = xGetSAD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD]    = xGetSAD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD2]   = xGetSAD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD4]   = xGetSAD_NxN_SIMD<4, vext>;
+  m_distortionFunc[DFunc::SAD8]   = xGetSAD_NxN_SIMD<8, vext>;
+  m_distortionFunc[DFunc::SAD16]  = xGetSAD_NxN_SIMD<16, vext>;
+  m_distortionFunc[DFunc::SAD32]  = xGetSAD_NxN_SIMD<32, vext>;
+  m_distortionFunc[DFunc::SAD64]  = xGetSAD_NxN_SIMD<64, vext>;
+  m_distortionFunc[DFunc::SAD16N] = xGetSAD_SIMD<vext>;
 
-  m_afpDistortFunc[DF_SAD12  ] = RdCost::xGetSAD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD24  ] = RdCost::xGetSAD_SIMD<vext>;
-  m_afpDistortFunc[DF_SAD48  ] = RdCost::xGetSAD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD12] = RdCost::xGetSAD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD24] = RdCost::xGetSAD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD48] = RdCost::xGetSAD_SIMD<vext>;
 
-  m_afpDistortFunc[DF_HAD]     = RdCost::xGetHADs_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD2]    = RdCost::xGetHADs_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD4]    = RdCost::xGetHADs_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD8]    = RdCost::xGetHADs_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD16]   = RdCost::xGetHADs_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD32]   = RdCost::xGetHADs_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD64]   = RdCost::xGetHADs_SIMD<vext>;
-  m_afpDistortFunc[DF_HAD16N]  = RdCost::xGetHADs_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD]    = RdCost::xGetHADs_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD2]   = RdCost::xGetHADs_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD4]   = RdCost::xGetHADs_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD8]   = RdCost::xGetHADs_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD16]  = RdCost::xGetHADs_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD32]  = RdCost::xGetHADs_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD64]  = RdCost::xGetHADs_SIMD<vext>;
+  m_distortionFunc[DFunc::HAD16N] = RdCost::xGetHADs_SIMD<vext>;
 
-  m_afpDistortFunc[DF_SAD_INTERMEDIATE_BITDEPTH] = RdCost::xGetSAD_IBD_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD_INTERMEDIATE_BITDEPTH] = RdCost::xGetSAD_IBD_SIMD<vext>;
 
-  m_afpDistortFunc[DF_SAD_WITH_MASK] = xGetSADwMask_SIMD<vext>;
+  m_distortionFunc[DFunc::SAD_WITH_MASK] = xGetSADwMask_SIMD<vext>;
 #endif
 }
 

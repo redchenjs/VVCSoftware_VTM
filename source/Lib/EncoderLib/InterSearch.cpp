@@ -4875,8 +4875,8 @@ Distortion InterSearch::xGetTemplateCost(const PredictionUnit &pu, PelUnitBuf &o
 
   // calc distortion
 
-  uiCost =
-    m_pcRdCost->getDistPart(origBuf.Y(), predBuf.Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA), COMPONENT_Y, DF_SAD);
+  uiCost = m_pcRdCost->getDistPart(origBuf.Y(), predBuf.Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA), COMPONENT_Y,
+                                   DFunc::SAD);
   uiCost += m_pcRdCost->getCost(m_auiMVPIdxCost[mvpIdx][mvpNum]);
 
   return uiCost;
@@ -4912,7 +4912,7 @@ Distortion InterSearch::xGetAffineTemplateCost(PredictionUnit &pu, PelUnitBuf &o
   }
 
   // calc distortion
-  enum DFunc distFunc = (pu.cs->slice->getDisableSATDForRD()) ? DF_SAD : DF_HAD;
+  const DFunc distFunc = (pu.cs->slice->getDisableSATDForRD()) ? DFunc::SAD : DFunc::HAD;
   uiCost = m_pcRdCost->getDistPart(origBuf.Y(), predBuf.Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA), COMPONENT_Y,
                                    distFunc);
   uiCost += m_pcRdCost->getCost(m_auiMVPIdxCost[mvpIdx][mvpNum]);
@@ -6197,7 +6197,7 @@ Distortion InterSearch::xGetSymmetricCost( PredictionUnit& pu, PelUnitBuf& origB
   double fWeight = xGetMEDistortionWeight(pu.cu->bcwIdx, eTarRefPicList);
 
   // calc distortion
-  DFunc distFunc = (!pu.cu->slice->getDisableSATDForRD()) ? DF_HAD : DF_SAD;
+  const DFunc distFunc = (!pu.cu->slice->getDisableSATDForRD()) ? DFunc::HAD : DFunc::SAD;
   cost =
     (Distortion) floor(fWeight
                        * (double) m_pcRdCost->getDistPart(
@@ -8365,7 +8365,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
   double        fWeight       = 1.0;
 
   PelUnitBuf  origBufTmp = m_tmpStorageLCU.getBuf( UnitAreaRelative( *pu.cu, pu ) );
-  enum DFunc  distFunc   = (pu.cs->slice->getDisableSATDForRD()) ? DF_SAD : DF_HAD;
+  const DFunc distFunc   = (pu.cs->slice->getDisableSATDForRD()) ? DFunc::SAD : DFunc::HAD;
 
   // if Bi, set to ( 2 * Org - ListX )
   if ( bBi )
@@ -9466,7 +9466,8 @@ void InterSearch::calcMinDistSbt( CodingStructure &cs, const CodingUnit& cu, con
       const ComponentID compID = ComponentID( comp );
       CPelBuf pred = cs.getPredBuf( compID );
       CPelBuf org  = cs.getOrgBuf( compID );
-      m_estMinDistSbt[NUMBER_SBT_MODE] += m_pcRdCost->getDistPart( org, pred, cs.sps->getBitDepth( toChannelType( compID ) ), compID, DF_SSE );
+      m_estMinDistSbt[NUMBER_SBT_MODE] +=
+        m_pcRdCost->getDistPart(org, pred, cs.sps->getBitDepth(toChannelType(compID)), compID, DFunc::SSE);
     }
     return;
   }
@@ -9950,7 +9951,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
 
           {
             nonCoeffDist = m_pcRdCost->getDistPart(zeroBuf, orgResi, channelBitDepth, compID,
-                                                   DF_SSE);   // initialized with zero residual distortion
+                                                   DFunc::SSE);   // initialized with zero residual distortion
           }
 
           if (!tu.noResidual)
@@ -10027,7 +10028,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
               resiBuf.scaleSignal(tu.getChromaAdj(), 0, tu.cu->cs->slice->clpRng(compID));
             }
 
-            currCompDist = m_pcRdCost->getDistPart(orgResiBuf, resiBuf, channelBitDepth, compID, DF_SSE);
+            currCompDist = m_pcRdCost->getDistPart(orgResiBuf, resiBuf, channelBitDepth, compID, DFunc::SSE);
 
 #if WCG_EXT
             currCompCost = m_pcRdCost->calcRdCost(currCompFracBits, currCompDist, false);
@@ -10103,7 +10104,8 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       for (uint32_t c = 0; c < numTBlocks; c++)
       {
         const ComponentID compID = (ComponentID)c;
-        uiSingleDistComp[c] = m_pcRdCost->getDistPart(orgResidual.bufs[c], invColorTransResidual.bufs[c], sps.getBitDepth(toChannelType(compID)), compID, DF_SSE);
+        uiSingleDistComp[c]      = m_pcRdCost->getDistPart(orgResidual.bufs[c], invColorTransResidual.bufs[c],
+                                                           sps.getBitDepth(toChannelType(compID)), compID, DFunc::SSE);
         minCost[c] = m_pcRdCost->calcRdCost(uiSingleFracBits[c], uiSingleDistComp[c]);
       }
     }
@@ -10322,22 +10324,22 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
 
               currCompDistY =
                 m_pcRdCost->getDistPart(orgResidual.bufs[COMPONENT_Y], invColorTransResidual.bufs[COMPONENT_Y],
-                                        sps.getBitDepth(toChannelType(COMPONENT_Y)), COMPONENT_Y, DF_SSE);
+                                        sps.getBitDepth(toChannelType(COMPONENT_Y)), COMPONENT_Y, DFunc::SSE);
               currCompDistCb =
                 m_pcRdCost->getDistPart(orgResidual.bufs[COMPONENT_Cb], invColorTransResidual.bufs[COMPONENT_Cb],
-                                        sps.getBitDepth(toChannelType(COMPONENT_Cb)), COMPONENT_Cb, DF_SSE);
+                                        sps.getBitDepth(toChannelType(COMPONENT_Cb)), COMPONENT_Cb, DFunc::SSE);
               currCompDistCr =
                 m_pcRdCost->getDistPart(orgResidual.bufs[COMPONENT_Cr], invColorTransResidual.bufs[COMPONENT_Cr],
-                                        sps.getBitDepth(toChannelType(COMPONENT_Cr)), COMPONENT_Cr, DF_SSE);
+                                        sps.getBitDepth(toChannelType(COMPONENT_Cr)), COMPONENT_Cr, DFunc::SSE);
               currCompCost = m_pcRdCost->calcRdCost(uiSingleFracBits[COMPONENT_Y] + currCompFracBits,
                                                     currCompDistY + currCompDistCr + currCompDistCb, false);
             }
             else
             {
-              currCompDistCb =
-                m_pcRdCost->getDistPart(csFull->getOrgResiBuf(cbArea), cbResi, channelBitDepth, COMPONENT_Cb, DF_SSE);
-              currCompDistCr =
-                m_pcRdCost->getDistPart(csFull->getOrgResiBuf(crArea), crResi, channelBitDepth, COMPONENT_Cr, DF_SSE);
+              currCompDistCb = m_pcRdCost->getDistPart(csFull->getOrgResiBuf(cbArea), cbResi, channelBitDepth,
+                                                       COMPONENT_Cb, DFunc::SSE);
+              currCompDistCr = m_pcRdCost->getDistPart(csFull->getOrgResiBuf(crArea), crResi, channelBitDepth,
+                                                       COMPONENT_Cr, DFunc::SSE);
 #if WCG_EXT
               currCompCost = m_pcRdCost->calcRdCost(currCompFracBits, currCompDistCr + currCompDistCb, false);
 #else
@@ -10623,18 +10625,19 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
           PelBuf tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
           tmpRecLuma.copyFrom(reco);
           tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
-          distortion += m_pcRdCost->getDistPart(org, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID, DF_SSE_WTD, &orgLuma);
+          distortion += m_pcRdCost->getDistPart(org, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
+                                                DFunc::SSE_WTD, &orgLuma);
         }
         else
         {
-          distortion +=
-            m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID, DF_SSE_WTD, &orgLuma);
+          distortion += m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID,
+                                                DFunc::SSE_WTD, &orgLuma);
         }
       }
       else
 #endif
       {
-        distortion += m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID, DF_SSE);
+        distortion += m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID, DFunc::SSE);
       }
     }
 
@@ -10787,7 +10790,7 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
         ComponentID   componentID = (ComponentID) compIdx;
         const CPelBuf zeroBuf(m_pTempPel, localUnitArea.blocks[compIdx]);
         zeroDistortion += m_pcRdCost->getDistPart(zeroBuf, orgResidual.bufs[compIdx],
-                                                  sps.getBitDepth(toChannelType(componentID)), componentID, DF_SSE);
+                                                  sps.getBitDepth(toChannelType(componentID)), componentID, DFunc::SSE);
       }
       xEstimateInterResidualQT(cs, partitioner, nullptr, luma, chroma, &orgResidual);
     }
@@ -10966,17 +10969,19 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
         PelBuf tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
         tmpRecLuma.copyFrom(reco);
         tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
-        finalDistortion += m_pcRdCost->getDistPart(org, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID, DF_SSE_WTD, &orgLuma);
+        finalDistortion += m_pcRdCost->getDistPart(org, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
+                                                   DFunc::SSE_WTD, &orgLuma);
       }
       else
       {
-        finalDistortion += m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID, DF_SSE_WTD, &orgLuma);
+        finalDistortion +=
+          m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID, DFunc::SSE_WTD, &orgLuma);
       }
     }
     else
 #endif
     {
-      finalDistortion += m_pcRdCost->getDistPart( org, reco, sps.getBitDepth( toChannelType( compID ) ), compID, DF_SSE );
+      finalDistortion += m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID, DFunc::SSE);
     }
   }
 
@@ -11303,7 +11308,7 @@ void InterSearch::symmvdCheckBestMvp(PredictionUnit &pu, PelUnitBuf &origBuf, Mv
                       tarRefList);
       }
       // calc distortion
-      DFunc distFunc = (!pu.cu->slice->getDisableSATDForRD()) ? DF_HAD : DF_SAD;
+      const DFunc distFunc = (!pu.cu->slice->getDisableSATDForRD()) ? DFunc::HAD : DFunc::SAD;
       Distortion cost     = (Distortion) floor(
             fWeight
             * (double) m_pcRdCost->getDistPart(bufTmp.Y(), predBufB.Y(), pu.cs->sps->getBitDepth(ChannelType::LUMA),
