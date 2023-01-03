@@ -1615,7 +1615,7 @@ void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
 void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
 {
 #if JVET_AB0051
-  assert(sei.m_posNumofSeiMessages > 1);
+  CHECK(sei.m_posNumofSeiMessages < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
 #endif
   for (uint32_t i=0; i < sei.m_posNumofSeiMessages; i++)
   {
