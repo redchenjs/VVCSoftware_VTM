@@ -1779,9 +1779,7 @@ void CABACWriter::prediction_unit( const PredictionUnit& pu )
   else if (CU::isIBC(*pu.cu))
   {
     ref_idx(pu, REF_PIC_LIST_0);
-    Mv mvd = pu.mvd[REF_PIC_LIST_0];
-    mvd.changeIbcPrecInternal2Amvr(pu.cu->imv);
-    mvd_coding(mvd, 0); // already changed to signaling precision
+    mvd_coding(pu, pu.mvd[REF_PIC_LIST_0], pu.cu->imv);
     if (pu.cs->sps->getMaxNumIBCMergeCand() == 1)
     {
       CHECK( pu.mvpIdx[REF_PIC_LIST_0], "mvpIdx for IBC mode should be 0" );
@@ -1803,16 +1801,12 @@ void CABACWriter::prediction_unit( const PredictionUnit& pu )
       {
         for (int i = 0; i < pu.cu->getNumAffineMvs(); i++)
         {
-          Mv mvd = pu.mvdAffi[REF_PIC_LIST_0][i];
-          mvd.changeAffinePrecInternal2Amvr(pu.cu->imv);
-          mvd_coding(mvd, 0); // already changed to signaling precision
+          mvd_coding(pu, pu.mvdAffi[REF_PIC_LIST_0][i], pu.cu->imv);
         }
       }
       else
       {
-        Mv mvd = pu.mvd[REF_PIC_LIST_0];
-        mvd.changeTransPrecInternal2Amvr(pu.cu->imv);
-        mvd_coding(mvd, 0); // already changed to signaling precision
+        mvd_coding(pu, pu.mvd[REF_PIC_LIST_0], pu.cu->imv);
       }
       mvp_flag    ( pu, REF_PIC_LIST_0 );
     }
@@ -1827,16 +1821,12 @@ void CABACWriter::prediction_unit( const PredictionUnit& pu )
           {
             for (int i = 0; i < pu.cu->getNumAffineMvs(); i++)
             {
-              Mv mvd = pu.mvdAffi[REF_PIC_LIST_1][i];
-              mvd.changeAffinePrecInternal2Amvr(pu.cu->imv);
-              mvd_coding(mvd, 0);   // already changed to signaling precision
+              mvd_coding(pu, pu.mvdAffi[REF_PIC_LIST_1][i], pu.cu->imv);
             }
           }
           else
           {
-            Mv mvd = pu.mvd[REF_PIC_LIST_1];
-            mvd.changeTransPrecInternal2Amvr(pu.cu->imv);
-            mvd_coding(mvd, 0);   // already changed to signaling precision
+            mvd_coding(pu, pu.mvd[REF_PIC_LIST_1], pu.cu->imv);
           }
         }
       }
@@ -2338,32 +2328,25 @@ void CABACWriter::cbf_comp(bool cbf, const CompArea &area, unsigned depth, const
 //================================================================================
 //  clause 7.3.8.9
 //--------------------------------------------------------------------------------
-//    void  mvd_coding( pu, refList )
 //================================================================================
-void CABACWriter::mvd_coding( const Mv &rMvd, int8_t imv )
+void CABACWriter::mvd_coding(const PredictionUnit& pu, Mv mvd, int amvr)
 {
-  int       horMvd = rMvd.getHor();
-  int       verMvd = rMvd.getVer();
-  if ( imv > 0 )
+  if (CU::isIBC(*pu.cu))
   {
-    CHECK((horMvd % 2) != 0 && (verMvd % 2) != 0, "IMV: MVD is not a multiple of 2");
-    horMvd >>= 1;
-    verMvd >>= 1;
-    if (imv < IMV_HPEL)
-    {
-      CHECK((horMvd % 2) != 0 && (verMvd % 2) != 0, "IMV: MVD is not a multiple of 4");
-      horMvd >>= 1;
-      verMvd >>= 1;
-      if (imv == IMV_4PEL)//IMV_4PEL
-      {
-        CHECK((horMvd % 4) != 0 && (verMvd % 4) != 0, "IMV: MVD is not a multiple of 16");
-        horMvd >>= 2;
-        verMvd >>= 2;
-      }
-    }
+    mvd.changeIbcPrecInternal2Amvr(amvr);
   }
-  unsigned  horAbs  = unsigned( horMvd < 0 ? -horMvd : horMvd );
-  unsigned  verAbs  = unsigned( verMvd < 0 ? -verMvd : verMvd );
+  else if (pu.cu->affine)
+  {
+    mvd.changeAffinePrecInternal2Amvr(amvr);
+  }
+  else
+  {
+    mvd.changeTransPrecInternal2Amvr(amvr);
+  }
+  const int horMvd = mvd.getHor();
+  const int verMvd = mvd.getVer();
+  const unsigned  horAbs  = unsigned( horMvd < 0 ? -horMvd : horMvd );
+  const unsigned  verAbs  = unsigned( verMvd < 0 ? -verMvd : verMvd );
 
 
   // abs_mvd_greater0_flag[ 0 | 1 ]

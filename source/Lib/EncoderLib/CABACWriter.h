@@ -144,7 +144,7 @@ public:
   void cbf_comp(bool cbf, const CompArea &area, unsigned depth, bool prevCbf, bool useISP, BdpcmMode bdpcmMode);
 
   // mvd coding (clause 7.3.8.9)
-  void        mvd_coding                ( const Mv &rMvd, int8_t imv );
+  void        mvd_coding                ( const PredictionUnit& pu, Mv mvd, int amvr );
   // transform unit (clause 7.3.8.10)
   void        transform_unit            ( const TransformUnit&          tu,       CUCtx&            cuCtx,  Partitioner& pm,       const int subTuCounter = -1 );
   void        cu_qp_delta               ( const CodingUnit&             cu,       int               predQP, const int8_t qp );
