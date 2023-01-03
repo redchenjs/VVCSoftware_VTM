@@ -235,7 +235,6 @@ private:
   AlfCovariance***       m_alfCovariance[MAX_NUM_COMPONENT];          // [compIdx][shapeIdx][ctbAddr][classIdx]
   EnumArray<AlfCovariance **, ChannelType> m_alfCovarianceFrame;   // [CHANNEL][shapeIdx][lumaClassIdx/chromaAltIdx]
   uint8_t*               m_ctuEnableFlagTmp[MAX_NUM_COMPONENT];
-  uint8_t*               m_ctuEnableFlagTmp2[MAX_NUM_COMPONENT];
   uint8_t*               m_ctuAlternativeTmp[MAX_NUM_COMPONENT];
   AlfCovariance***       m_alfCovarianceCcAlf[2];           // [compIdx-1][shapeIdx][filterIdx][ctbAddr]
   AlfCovariance**        m_alfCovarianceFrameCcAlf[2];      // [compIdx-1][shapeIdx][filterIdx]

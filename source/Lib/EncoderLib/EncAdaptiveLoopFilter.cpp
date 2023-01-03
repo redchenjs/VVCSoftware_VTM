@@ -484,7 +484,6 @@ void EncAdaptiveLoopFilter::create(const EncCfg *encCfg, const int picWidth, con
   for( int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++ )
   {
     m_ctuEnableFlagTmp[compIdx] = new uint8_t[m_numCTUsInPic];
-    m_ctuEnableFlagTmp2[compIdx] = new uint8_t[m_numCTUsInPic];
     if( isLuma( ComponentID(compIdx) ) )
     {
       m_ctuAlternativeTmp[compIdx] = nullptr;
@@ -611,12 +610,6 @@ void EncAdaptiveLoopFilter::destroy()
     {
       delete[] m_ctuEnableFlagTmp[compIdx];
       m_ctuEnableFlagTmp[compIdx] = nullptr;
-    }
-
-    if( m_ctuEnableFlagTmp2[compIdx] )
-    {
-      delete[] m_ctuEnableFlagTmp2[compIdx];
-      m_ctuEnableFlagTmp2[compIdx] = nullptr;
     }
 
     if( m_ctuAlternativeTmp[compIdx] )
