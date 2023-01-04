@@ -2345,10 +2345,9 @@ void CABACWriter::mvd_coding(const PredictionUnit& pu, Mv mvd, int amvr)
   }
   const int horMvd = mvd.getHor();
   const int verMvd = mvd.getVer();
-  const unsigned  horAbs  = unsigned( horMvd < 0 ? -horMvd : horMvd );
-  const unsigned  verAbs  = unsigned( verMvd < 0 ? -verMvd : verMvd );
-
-
+  const unsigned int horAbs = std::abs(horMvd);
+  const unsigned int verAbs = std::abs(verMvd);
+  
   // abs_mvd_greater0_flag[ 0 | 1 ]
   m_binEncoder.encodeBin((horAbs > 0), Ctx::Mvd());
   m_binEncoder.encodeBin((verAbs > 0), Ctx::Mvd());
