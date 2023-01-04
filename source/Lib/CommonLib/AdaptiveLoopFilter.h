@@ -153,8 +153,9 @@ protected:
   int**                        m_laplacian[NUM_DIRECTIONS];
   int *                        m_laplacianPtr[NUM_DIRECTIONS][m_CLASSIFICATION_BLK_SIZE + 5];
   int m_laplacianData[NUM_DIRECTIONS][m_CLASSIFICATION_BLK_SIZE + 5][m_CLASSIFICATION_BLK_SIZE + 5];
-  uint8_t*                     m_ctuEnableFlag[MAX_NUM_COMPONENT];
-  uint8_t*                     m_ctuAlternative[MAX_NUM_COMPONENT];
+
+  AlfMode *m_modes[MAX_NUM_COMPONENT];
+
   PelStorage                   m_tempBuf;
   PelStorage                   m_tempBuf2;
   BitDepths                    m_inputBitDepth;
@@ -172,6 +173,12 @@ protected:
   int                          m_alfVBChmaCTUHeight;
   ChromaFormat                 m_chromaFormat;
   ClpRngs                      m_clpRngs;
+
+  short *getCoeffs(AlfMode m)
+  {
+    return isAlfLumaFixed(m) ? m_fixedFilterSetCoeffDec[m - AlfMode::LUMA_FIXED0] : m_coeffApsLuma[m - AlfMode::LUMA0];
+  }
+  Pel *getClipVals(AlfMode m) { return isAlfLumaFixed(m) ? m_clipDefault : m_clippApsLuma[m - AlfMode::LUMA0]; }
 };
 
 #endif

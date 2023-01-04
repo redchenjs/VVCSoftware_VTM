@@ -931,6 +931,38 @@ enum class MergeType : uint8_t
   NUM
 };
 
+static constexpr int MAX_NUM_APS(ApsType t)
+{
+  switch (t)
+  {
+  case ApsType::ALF:
+  case ApsType::SCALING_LIST:
+    return 8;
+  case ApsType::LMCS:
+    return 4;
+  default:
+    return 32;
+  }
+}
+
+static constexpr int NUM_FIXED_FILTER_SETS           = 16;
+static constexpr int ALF_CTB_MAX_NUM_APS             = MAX_NUM_APS(ApsType::ALF);
+static constexpr int MAX_NUM_ALF_ALTERNATIVES_CHROMA = 8;
+
+enum class AlfMode : int8_t
+{
+  OFF         = -1,
+  LUMA_FIXED0 = 0,
+  LUMA0       = LUMA_FIXED0 + NUM_FIXED_FILTER_SETS,
+  CHROMA0     = LUMA0 + ALF_CTB_MAX_NUM_APS,
+  NUM         = CHROMA0 + MAX_NUM_ALF_ALTERNATIVES_CHROMA
+};
+
+inline AlfMode operator+(AlfMode i, int j) { return static_cast<AlfMode>(to_underlying(i) + j); }
+inline int     operator-(AlfMode i, AlfMode j) { return to_underlying(i) - to_underlying(j); }
+
+inline bool isAlfLumaFixed(AlfMode m) { return m >= AlfMode::LUMA_FIXED0 && m < AlfMode::LUMA0; }
+
 //////////////////////////////////////////////////////////////////////////
 // Encoder modes to try out
 //////////////////////////////////////////////////////////////////////////

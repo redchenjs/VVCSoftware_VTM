@@ -483,16 +483,6 @@ void EncAdaptiveLoopFilter::create(const EncCfg *encCfg, const int picWidth, con
 
   for( int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++ )
   {
-    m_ctuEnableFlagTmp[compIdx] = new uint8_t[m_numCTUsInPic];
-    if( isLuma( ComponentID(compIdx) ) )
-    {
-      m_ctuAlternativeTmp[compIdx] = nullptr;
-    }
-    else
-    {
-      m_ctuAlternativeTmp[compIdx] = new uint8_t[m_numCTUsInPic];
-      std::fill_n( m_ctuAlternativeTmp[compIdx], m_numCTUsInPic, 0 );
-    }
     ChannelType chType = toChannelType( ComponentID( compIdx ) );
     int numClasses = compIdx ? 1 : MAX_NUM_ALF_CLASSES;
 
@@ -536,8 +526,9 @@ void EncAdaptiveLoopFilter::create(const EncCfg *encCfg, const int picWidth, con
   for (int comp = 0; comp < MAX_NUM_COMPONENT; comp++)
   {
     m_ctbDistortionUnfilter[comp] = new double[m_numCTUsInPic];
+    m_indexTmpVec[comp].resize(m_numCTUsInPic);
+    m_indexTmp[comp] = m_indexTmpVec[comp].data();
   }
-  m_alfCtbFilterSetIndexTmp.resize(m_numCTUsInPic);
   memset(m_clipDefaultEnc, 0, sizeof(m_clipDefaultEnc));
   m_apsIdCcAlfStart[0] = MAX_NUM_APS(ApsType::ALF);
   m_apsIdCcAlfStart[1] = MAX_NUM_APS(ApsType::ALF);
@@ -606,18 +597,6 @@ void EncAdaptiveLoopFilter::destroy()
 
   for( int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++ )
   {
-    if( m_ctuEnableFlagTmp[compIdx] )
-    {
-      delete[] m_ctuEnableFlagTmp[compIdx];
-      m_ctuEnableFlagTmp[compIdx] = nullptr;
-    }
-
-    if( m_ctuAlternativeTmp[compIdx] )
-    {
-      delete[] m_ctuAlternativeTmp[compIdx];
-      m_ctuAlternativeTmp[compIdx] = nullptr;
-    }
-
     if( m_alfCovariance[compIdx] )
     {
       ChannelType chType = toChannelType( ComponentID( compIdx ) );
@@ -902,8 +881,7 @@ void EncAdaptiveLoopFilter::ALFProcess(CodingStructure& cs, const double *lambda
   // set CTU ALF enable flags, it was already reset before ALF process
   for( int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++ )
   {
-    m_ctuEnableFlag[compIdx] = cs.picture->getAlfCtuEnableFlag( compIdx );
-    m_ctuAlternative[compIdx] = cs.picture->getAlfCtuAlternativeData( compIdx );
+    m_modes[compIdx] = cs.picture->getAlfModes(compIdx);
   }
 
   // reset ALF parameters
@@ -989,29 +967,30 @@ void EncAdaptiveLoopFilter::ALFProcess(CodingStructure& cs, const double *lambda
   // get CTB stats for filtering
   deriveStatsForFiltering( orgYuv, recYuv, cs );
 
+  AlfMode *indexPtr = cs.slice->getPic()->getAlfModes(COMPONENT_Y);
   for (int ctbIdx = 0; ctbIdx < m_numCTUsInPic; ctbIdx++)
   {
-    cs.slice->getPic()->getAlfCtbFilterIndex()[ctbIdx] = NUM_FIXED_FILTER_SETS;
+    indexPtr[ctbIdx] = AlfMode::LUMA0;
   }
   // consider using new filter (only)
   alfParam.newFilterFlag[ChannelType::LUMA]   = true;
   alfParam.newFilterFlag[ChannelType::CHROMA] = true;
   cs.slice->setNumAlfApsIdsLuma(1); // Only new filter for RD cost optimization
   // derive filter (luma)
-  alfEncoder(cs, alfParam, orgYuv, recYuv, cs.getRecoBuf(), ChannelType::LUMA
+  firstPass(cs, alfParam, orgYuv, recYuv, cs.getRecoBuf(), ChannelType::LUMA
 #if ENABLE_QPA
-             ,
-             lambdaChromaWeight
+            ,
+            lambdaChromaWeight
 #endif
   );
 
   // derive filter (chroma)
   if (!(m_encCfg->getMaxNumALFAPS() == 0) && isChromaEnabled(cs.pcv->chrFormat)) // Find ALF parameters for chroma if ALF APS is enabled
   {
-    alfEncoder(cs, alfParam, orgYuv, recYuv, cs.getRecoBuf(), ChannelType::CHROMA
+    firstPass(cs, alfParam, orgYuv, recYuv, cs.getRecoBuf(), ChannelType::CHROMA
 #if ENABLE_QPA
-               ,
-               lambdaChromaWeight
+              ,
+              lambdaChromaWeight
 #endif
     );
   }
@@ -1033,9 +1012,9 @@ void EncAdaptiveLoopFilter::ALFProcess(CodingStructure& cs, const double *lambda
       for (uint32_t ctuIdx = 0; ctuIdx < pcPic->slices[s]->getNumCtuInSlice(); ctuIdx++)
       {
         uint32_t ctuRsAddr = pcPic->slices[s]->getCtuAddrInSlice(ctuIdx);
-        m_ctuEnableFlag[COMPONENT_Y][ctuRsAddr] = 0;
-        m_ctuEnableFlag[COMPONENT_Cb][ctuRsAddr] = 0;
-        m_ctuEnableFlag[COMPONENT_Cr][ctuRsAddr] = 0;
+        m_modes[COMPONENT_Y][ctuRsAddr]  = AlfMode::OFF;
+        m_modes[COMPONENT_Cb][ctuRsAddr] = AlfMode::OFF;
+        m_modes[COMPONENT_Cr][ctuRsAddr] = AlfMode::OFF;
       }
     }
   }
@@ -1107,18 +1086,19 @@ double EncAdaptiveLoopFilter::deriveCtbAlfEnableFlags(CodingStructure &cs, const
   TempCtx           ctxTempAltBest(m_ctxPool);
   const ComponentID compIDFirst = isLuma( channel ) ? COMPONENT_Y : COMPONENT_Cb;
   const ComponentID compIDLast = isLuma( channel ) ? COMPONENT_Y : COMPONENT_Cr;
+
   const int numAlts = isLuma( channel ) ? 1 : m_alfParamTemp.numAlternativesChroma;
 
   double cost = 0;
   distUnfilter = 0;
 
-  setEnableFlag(m_alfParamTemp, channel, true);
+  setSliceEnabledFlag(m_alfParamTemp, channel, true);
 #if ENABLE_QPA
   CHECK ((chromaWeight > 0.0) && (cs.slice->getFirstCtuRsAddrInSlice() != 0), "incompatible start CTU address, must be 0");
 #endif
 
   reconstructCoeff(m_alfParamTemp, channel, true, isLuma(channel));
-  for( int altIdx = 0; altIdx < (isLuma(channel) ? 1 : MAX_NUM_ALF_ALTERNATIVES_CHROMA); altIdx++)
+  for (int altIdx = 0; altIdx < numAlts; altIdx++)
   {
     for (int classIdx = 0; classIdx < (isLuma(channel) ? MAX_NUM_ALF_CLASSES : 1); classIdx++)
     {
@@ -1144,12 +1124,11 @@ double EncAdaptiveLoopFilter::deriveCtbAlfEnableFlags(CodingStructure &cs, const
 
       ctxTempStart = AlfCtx( m_CABACEstimator->getCtx() );
       m_CABACEstimator->resetBits();
-      m_ctuEnableFlag[compID][ctuIdx] = 1;
+      m_modes[compID][ctuIdx] = isLuma(channel) ? AlfMode::LUMA0 : AlfMode::CHROMA0;
       m_CABACEstimator->codeAlfCtuEnableFlag( cs, ctuIdx, compID, &m_alfParamTemp );
       if( isLuma( channel ) )
       {
         // Evaluate cost of signaling filter set index for convergence of filters enabled flag / filter derivation
-        assert( cs.slice->getPic()->getAlfCtbFilterIndex()[ctuIdx] == NUM_FIXED_FILTER_SETS );
         assert( cs.slice->getNumAlfApsIdsLuma() == 1 );
         m_CABACEstimator->codeAlfCtuFilterIndex(cs, ctuIdx, m_alfParamTemp.enabledFlag[COMPONENT_Y]);
       }
@@ -1173,7 +1152,7 @@ double EncAdaptiveLoopFilter::deriveCtbAlfEnableFlags(CodingStructure &cs, const
             m_CABACEstimator->getCtx() = AlfCtx( ctxTempAltStart );
           }
           m_CABACEstimator->resetBits();
-          m_ctuAlternative[compID][ctuIdx] = altIdx;
+          m_modes[compID][ctuIdx] = AlfMode::CHROMA0 + altIdx;
           m_CABACEstimator->codeAlfCtuAlternative( cs, ctuIdx, compID, &m_alfParamTemp );
           double r_altCost = ctuLambda * FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
 
@@ -1189,13 +1168,14 @@ double EncAdaptiveLoopFilter::deriveCtbAlfEnableFlags(CodingStructure &cs, const
             ctxTempBest = AlfCtx( m_CABACEstimator->getCtx() );
           }
         }
-        m_ctuAlternative[compID][ctuIdx] = bestAltIdx;
+        m_modes[compID][ctuIdx] = AlfMode::CHROMA0 + bestAltIdx;
         costOn += bestAltCost;
       }
 
+      AlfMode bestIdxOn          = m_modes[compID][ctuIdx];
       m_CABACEstimator->getCtx() = AlfCtx( ctxTempStart );
       m_CABACEstimator->resetBits();
-      m_ctuEnableFlag[compID][ctuIdx] = 0;
+      m_modes[compID][ctuIdx] = AlfMode::OFF;
       m_CABACEstimator->codeAlfCtuEnableFlag( cs, ctuIdx, compID, &m_alfParamTemp);
       double costOff = distUnfilterCtu + ctuLambda * FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
 
@@ -1203,12 +1183,11 @@ double EncAdaptiveLoopFilter::deriveCtbAlfEnableFlags(CodingStructure &cs, const
       {
         cost += costOn;
         m_CABACEstimator->getCtx() = AlfCtx( ctxTempBest );
-        m_ctuEnableFlag[compID][ctuIdx] = 1;
+        m_modes[compID][ctuIdx]    = bestIdxOn;
       }
       else
       {
         cost += costOff;
-        m_ctuEnableFlag[compID][ctuIdx] = 0;
         distUnfilter += distUnfilterCtu;
       }
     }
@@ -1216,17 +1195,19 @@ double EncAdaptiveLoopFilter::deriveCtbAlfEnableFlags(CodingStructure &cs, const
 
   if( isChroma( channel ) )
   {
-    setEnableFlag(m_alfParamTemp, channel, m_ctuEnableFlag);
+    setSliceEnabledFlag(m_alfParamTemp, channel, m_modes);
   }
 
   return cost;
 }
 
-void EncAdaptiveLoopFilter::alfEncoder( CodingStructure& cs, AlfParam& alfParam, const PelUnitBuf& orgUnitBuf, const PelUnitBuf& recExtBuf, const PelUnitBuf& recBuf, const ChannelType channel
+void EncAdaptiveLoopFilter::firstPass(CodingStructure &cs, AlfParam &alfParam, const PelUnitBuf &orgUnitBuf,
+                                      const PelUnitBuf &recExtBuf, const PelUnitBuf &recBuf, const ChannelType channel
 #if ENABLE_QPA
-                                      , const double lambdaChromaWeight // = 0.0
+                                      ,
+                                      const double lambdaChromaWeight   // = 0.0
 #endif
-                                      )
+)
 {
   const TempCtx ctxStart(m_ctxPool, AlfCtx(m_CABACEstimator->getCtx()));
   TempCtx       ctxBest(m_ctxPool);
@@ -1252,23 +1233,23 @@ void EncAdaptiveLoopFilter::alfEncoder( CodingStructure& cs, AlfParam& alfParam,
     if( cost < costMin )
     {
       costMin = cost;
-      setEnableFlag( alfParam, channel, false );
+      setSliceEnabledFlag(alfParam, channel, false);
       // no CABAC signalling
       ctxBest = AlfCtx( ctxStart );
-      setCtuEnableFlag( m_ctuEnableFlagTmp, channel, 0 );
-      if( isChroma(channel) )
-      {
-        setCtuAlternativeChroma( m_ctuAlternativeTmp, 0 );
-      }
+      setCtuEnableFlag(m_indexTmp, channel, AlfMode::OFF);
     }
 
     // For chroma, nonlinear flag is checked for each alternative filter
     const bool useNonlinearAlf =
       isLuma(channel) ? m_encCfg->getUseNonLinearAlfLuma() : m_encCfg->getUseNonLinearAlfChroma();
-    const int nonLinearFlagMax = useNonlinearAlf ? 1 : 0;
 
-    for (int nonLinearFlag = 0; nonLinearFlag <= nonLinearFlagMax; nonLinearFlag++)
+    for (bool nonLinearFlag: { false, true })
     {
+      if (nonLinearFlag && !useNonlinearAlf)
+      {
+        continue;
+      }
+
       for (int numAlternatives = isLuma(channel) ? 1 : getMaxNumAlternativesChroma(); numAlternatives > 0;
            numAlternatives--)
       {
@@ -1277,15 +1258,20 @@ void EncAdaptiveLoopFilter::alfEncoder( CodingStructure& cs, AlfParam& alfParam,
           m_alfParamTemp.numAlternativesChroma = numAlternatives;
         }
         // 2. all CTUs are on
-        setEnableFlag(m_alfParamTemp, channel, true);
+        setSliceEnabledFlag(m_alfParamTemp, channel, true);
         m_alfParamTemp.nonLinearFlag[channel] = nonLinearFlag;
         m_CABACEstimator->getCtx()            = AlfCtx(ctxStart);
-        setCtuEnableFlag(m_ctuEnableFlag, channel, 1);
+
         // all alternatives are on
         if (isChroma(channel))
         {
-          initCtuAlternativeChroma(m_ctuAlternative);
+          initCtuAlternativeChroma(m_modes);
         }
+        else
+        {
+          setCtuEnableFlag(m_modes, channel, AlfMode::LUMA0);
+        }
+
         cost = getFilterCoeffAndCost(cs, 0, channel, true, shapeIdx, coeffBits);
 
         if (cost < costMin)
@@ -1294,11 +1280,7 @@ void EncAdaptiveLoopFilter::alfEncoder( CodingStructure& cs, AlfParam& alfParam,
           costMin                  = cost;
           copyAlfParam(alfParam, m_alfParamTemp, channel);
           ctxBest = AlfCtx(m_CABACEstimator->getCtx());
-          setCtuEnableFlag(m_ctuEnableFlagTmp, channel, 1);
-          if (isChroma(channel))
-          {
-            copyCtuAlternativeChroma(m_ctuAlternativeTmp, m_ctuAlternative);
-          }
+          copyIndices(m_indexTmp, m_modes, channel);
         }
 
         // 3. CTU decision
@@ -1308,25 +1290,24 @@ void EncAdaptiveLoopFilter::alfEncoder( CodingStructure& cs, AlfParam& alfParam,
 
         for (int iter = 0; iter < iterNum; iter++)
         {
-          if ((iter & 0x01) == 0)
+          if (iter % 2 == 0)
           {
             m_CABACEstimator->getCtx() = AlfCtx(ctxStart);
+
             cost                       = m_lambda[isLuma(channel) ? COMPONENT_Y : COMPONENT_Cb] * coeffBits;
+
             cost += deriveCtbAlfEnableFlags(cs, shapeIdx, channel,
 #if ENABLE_QPA
                                             lambdaChromaWeight,
 #endif
                                             numClasses, alfFilterShape[shapeIdx].numCoeff, distUnfilter);
+
             if (cost < costMin)
             {
               m_bitsNewFilter[channel] = coeffBits;
               costMin                  = cost;
               ctxBest                  = AlfCtx(m_CABACEstimator->getCtx());
-              copyCtuEnableFlag(m_ctuEnableFlagTmp, m_ctuEnableFlag, channel);
-              if (isChroma(channel))
-              {
-                copyCtuAlternativeChroma(m_ctuAlternativeTmp, m_ctuAlternative);
-              }
+              copyIndices(m_indexTmp, m_modes, channel);
               copyAlfParam(alfParam, m_alfParamTemp, channel);
             }
             else if (cost >= prevItCost)
@@ -1348,11 +1329,8 @@ void EncAdaptiveLoopFilter::alfEncoder( CodingStructure& cs, AlfParam& alfParam,
     }// for nonLineaFlag
   }//for shapeIdx
   m_CABACEstimator->getCtx() = AlfCtx( ctxBest );
-  if( isChroma(channel) )
-  {
-    copyCtuAlternativeChroma( m_ctuAlternative, m_ctuAlternativeTmp );
-  }
-  copyCtuEnableFlag( m_ctuEnableFlag, m_ctuEnableFlagTmp, channel );
+
+  copyIndices(m_modes, m_indexTmp, channel);
 }
 
 void EncAdaptiveLoopFilter::copyAlfParam( AlfParam& alfParamDst, AlfParam& alfParamSrc, ChannelType channel )
@@ -1457,7 +1435,7 @@ double EncAdaptiveLoopFilter::getFilterCoeffAndCost(CodingStructure &cs, double 
     if( isLuma( channel ) )
     {
       // Evaluate cost of signaling filter set index for convergence of filters enabled flag / filter derivation
-      assert( cs.slice->getPic()->getAlfCtbFilterIndex()[ctuIdx] == NUM_FIXED_FILTER_SETS );
+      assert(cs.slice->getPic()->getAlfModes(COMPONENT_Y)[ctuIdx] == AlfMode::LUMA0);
       assert( cs.slice->getNumAlfApsIdsLuma() == 1 );
       m_CABACEstimator->codeAlfCtuFilterIndex(cs, ctuIdx, m_alfParamTemp.enabledFlag[COMPONENT_Y]);
     }
@@ -2080,28 +2058,29 @@ void EncAdaptiveLoopFilter::getFrameStats(ChannelType channel, int shapeIdx)
     if( isLuma( channel ) )
     {
       getFrameStat(m_alfCovarianceFrame[ChannelType::LUMA][shapeIdx], m_alfCovariance[COMPONENT_Y][shapeIdx],
-                   m_ctuEnableFlag[COMPONENT_Y], nullptr, numClasses, altIdx);
+                   m_modes[COMPONENT_Y], numClasses, altIdx);
     }
     else
     {
       getFrameStat(m_alfCovarianceFrame[ChannelType::CHROMA][shapeIdx], m_alfCovariance[COMPONENT_Cb][shapeIdx],
-                   m_ctuEnableFlag[COMPONENT_Cb], m_ctuAlternative[COMPONENT_Cb], numClasses, altIdx);
+                   m_modes[COMPONENT_Cb], numClasses, altIdx);
       getFrameStat(m_alfCovarianceFrame[ChannelType::CHROMA][shapeIdx], m_alfCovariance[COMPONENT_Cr][shapeIdx],
-                   m_ctuEnableFlag[COMPONENT_Cr], m_ctuAlternative[COMPONENT_Cr], numClasses, altIdx);
+                   m_modes[COMPONENT_Cr], numClasses, altIdx);
     }
   }
 }
 
-void EncAdaptiveLoopFilter::getFrameStat( AlfCovariance* frameCov, AlfCovariance** ctbCov, uint8_t* ctbEnableFlags, uint8_t* ctbAltIdx, const int numClasses, int altIdx )
+void EncAdaptiveLoopFilter::getFrameStat(AlfCovariance *frameCov, AlfCovariance **ctbCov, AlfMode *ctbEnableFlags,
+                                         const int numClasses, int altIdx)
 {
-  const ChannelType channel = (!ctbAltIdx ? ChannelType::LUMA : ChannelType::CHROMA);
+  const ChannelType channel = numClasses > 1 ? ChannelType::LUMA : ChannelType::CHROMA;
   for( int ctuIdx = 0; ctuIdx < m_numCTUsInPic; ctuIdx++ )
   {
-    if( ctbEnableFlags[ctuIdx]  )
+    if (ctbEnableFlags[ctuIdx] != AlfMode::OFF)
     {
       for( int classIdx = 0; classIdx < numClasses; classIdx++ )
       {
-        if( isLuma( channel ) || altIdx == ctbAltIdx[ctuIdx] )
+        if (isLuma(channel) || altIdx == ctbEnableFlags[ctuIdx] - AlfMode::CHROMA0)
         {
           frameCov[isLuma( channel ) ? classIdx : altIdx] += ctbCov[ctuIdx][classIdx];
         }
@@ -2504,9 +2483,7 @@ void EncAdaptiveLoopFilter::calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MA
   }
 }
 
-
-
-void EncAdaptiveLoopFilter::setEnableFlag( AlfParam& alfSlicePara, ChannelType channel, bool val )
+void EncAdaptiveLoopFilter::setSliceEnabledFlag(AlfParam &alfSlicePara, ChannelType channel, bool val)
 {
   if (isLuma(channel))
   {
@@ -2514,51 +2491,47 @@ void EncAdaptiveLoopFilter::setEnableFlag( AlfParam& alfSlicePara, ChannelType c
   }
   else
   {
-    alfSlicePara.enabledFlag[COMPONENT_Cb] = alfSlicePara.enabledFlag[COMPONENT_Cr] = val;
+    alfSlicePara.enabledFlag[COMPONENT_Cb] = val;
+    alfSlicePara.enabledFlag[COMPONENT_Cr] = val;
   }
 }
 
-void EncAdaptiveLoopFilter::setEnableFlag( AlfParam& alfSlicePara, ChannelType channel, uint8_t** ctuFlags )
+void EncAdaptiveLoopFilter::setSliceEnabledFlag(AlfParam &alfSlicePara, ChannelType channel,
+                                                AlfMode *ctuFlags[MAX_NUM_COMPONENT])
 {
   const ComponentID compIDFirst = isLuma( channel ) ? COMPONENT_Y : COMPONENT_Cb;
   const ComponentID compIDLast = isLuma( channel ) ? COMPONENT_Y : COMPONENT_Cr;
   for( int compId = compIDFirst; compId <= compIDLast; compId++ )
   {
-    alfSlicePara.enabledFlag[compId] = false;
-    for( int i = 0; i < m_numCTUsInPic; i++ )
-    {
-      if( ctuFlags[compId][i] )
-      {
-        alfSlicePara.enabledFlag[compId] = true;
-        break;
-      }
-    }
+    alfSlicePara.enabledFlag[compId] =
+      std::any_of(ctuFlags[compId], ctuFlags[compId] + m_numCTUsInPic, [](AlfMode x) { return x != AlfMode::OFF; });
   }
 }
 
-void EncAdaptiveLoopFilter::copyCtuEnableFlag( uint8_t** ctuFlagsDst, uint8_t** ctuFlagsSrc, ChannelType channel )
+void EncAdaptiveLoopFilter::copyIndices(AlfMode *ctuFlagsDst[MAX_NUM_COMPONENT],
+                                        AlfMode *ctuFlagsSrc[MAX_NUM_COMPONENT], ChannelType channel)
 {
   if( isLuma( channel ) )
   {
-    memcpy( ctuFlagsDst[COMPONENT_Y], ctuFlagsSrc[COMPONENT_Y], sizeof( uint8_t ) * m_numCTUsInPic );
+    std::copy_n(ctuFlagsSrc[COMPONENT_Y], m_numCTUsInPic, ctuFlagsDst[COMPONENT_Y]);
   }
   else
   {
-    memcpy( ctuFlagsDst[COMPONENT_Cb], ctuFlagsSrc[COMPONENT_Cb], sizeof( uint8_t ) * m_numCTUsInPic );
-    memcpy( ctuFlagsDst[COMPONENT_Cr], ctuFlagsSrc[COMPONENT_Cr], sizeof( uint8_t ) * m_numCTUsInPic );
+    std::copy_n(ctuFlagsSrc[COMPONENT_Cb], m_numCTUsInPic, ctuFlagsDst[COMPONENT_Cb]);
+    std::copy_n(ctuFlagsSrc[COMPONENT_Cr], m_numCTUsInPic, ctuFlagsDst[COMPONENT_Cr]);
   }
 }
 
-void EncAdaptiveLoopFilter::setCtuEnableFlag( uint8_t** ctuFlags, ChannelType channel, uint8_t val )
+void EncAdaptiveLoopFilter::setCtuEnableFlag(AlfMode *ctuFlags[MAX_NUM_COMPONENT], ChannelType channel, AlfMode val)
 {
   if( isLuma( channel ) )
   {
-    memset( ctuFlags[COMPONENT_Y], val, sizeof( uint8_t ) * m_numCTUsInPic );
+    std::fill_n(ctuFlags[COMPONENT_Y], m_numCTUsInPic, val);
   }
   else
   {
-    memset( ctuFlags[COMPONENT_Cb], val, sizeof( uint8_t ) * m_numCTUsInPic );
-    memset( ctuFlags[COMPONENT_Cr], val, sizeof( uint8_t ) * m_numCTUsInPic );
+    std::fill_n(ctuFlags[COMPONENT_Cb], m_numCTUsInPic, val);
+    std::fill_n(ctuFlags[COMPONENT_Cr], m_numCTUsInPic, val);
   }
 }
 
@@ -2644,18 +2617,16 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
   TempCtx        ctxTempAltStart(m_ctxPool);
   TempCtx        ctxTempAltBest(m_ctxPool);
   AlfParam  alfParamNewFiltersBest = alfParamNewFilters;
-  APS**          apss = cs.slice->getAlfAPSs();
-  short*     alfCtbFilterSetIndex = cs.picture->getAlfCtbFilterIndex();
-  EnumArray<bool, ChannelType> hasNewFilters          = { { alfParamNewFilters.enabledFlag[COMPONENT_Y],
-                                                            alfParamNewFilters.enabledFlag[COMPONENT_Cb]
-                                                              || alfParamNewFilters.enabledFlag[COMPONENT_Cr] } };
+  
+  APS **apss = cs.slice->getAlfAPSs();
+
   initDistortion();
 
   //luma
   m_alfParamTemp = alfParamNewFilters;
-  setCtuEnableFlag(m_ctuEnableFlag, ChannelType::LUMA, 1);
+  setCtuEnableFlag(m_modes, ChannelType::LUMA, AlfMode::LUMA0);
   getFrameStats(ChannelType::LUMA, 0);
-  setCtuEnableFlag(m_ctuEnableFlag, ChannelType::LUMA, 0);
+  setCtuEnableFlag(m_modes, ChannelType::LUMA, AlfMode::OFF);
   double costOff = getUnfilteredDistortion(m_alfCovarianceFrame[ChannelType::LUMA][0], ChannelType::LUMA);
 
   const int         newApsId = getAvailableApsIdsLuma(cs);
@@ -2664,55 +2635,65 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
   double costMin = MAX_DOUBLE;
   reconstructCoeffAPSs(cs, true, false, true);
 
-  const int numLoops = hasNewFilters[ChannelType::LUMA] ? 2 : 1;
-  for (int useNewFilter = 0; useNewFilter < numLoops; useNewFilter++)
+  for (bool useNewFilter: { false, true })
   {
-    int bitsNewFilter = 0;
-    if (useNewFilter == 1)
+    if (useNewFilter && !alfParamNewFilters.enabledFlag[COMPONENT_Y])
     {
-      if (!hasNewFilters[ChannelType::LUMA])
-      {
-        continue;
-      }
-      else
-      {
-        bitsNewFilter = m_bitsNewFilter[ChannelType::LUMA];
-        reconstructCoeff(alfParamNewFilters, ChannelType::LUMA, true, true);
-      }
+      continue;
     }
-    int numIter = useNewFilter ? 2 : 1;
+
+    int bitsNewFilter = 0;
+    if (useNewFilter)
+    {
+      bitsNewFilter = m_bitsNewFilter[ChannelType::LUMA];
+      reconstructCoeff(alfParamNewFilters, ChannelType::LUMA, true, true);
+    }
+
     for (int numTemporalAps = 0; numTemporalAps <= apsIds.size(); numTemporalAps++)
     {
-      if ((m_encCfg->getMaxNumALFAPS()==0) && ((numTemporalAps + useNewFilter) > 0))
+      const int numApss = numTemporalAps + (useNewFilter ? 1 : 0);
+
+      if (m_encCfg->getMaxNumALFAPS() == 0 && numApss > 0)
       {
         continue;
       }
-      if (numTemporalAps + useNewFilter > std::min(ALF_CTB_MAX_NUM_APS - 1, m_encCfg->getMaxNumALFAPS()))
+
+      if (numApss > std::min(ALF_CTB_MAX_NUM_APS - 1, m_encCfg->getMaxNumALFAPS()))
       {
         continue;
       }
-      cs.slice->setNumAlfApsIdsLuma(numTemporalAps + useNewFilter);
-      int numFilterSet = NUM_FIXED_FILTER_SETS + numTemporalAps + useNewFilter;
-      if (numTemporalAps == apsIds.size() && numTemporalAps > 0 && useNewFilter && newApsId == apsIds.back()) //last temporalAPS is occupied by new filter set and this temporal APS becomes unavailable
+
+      cs.slice->setNumAlfApsIdsLuma(numApss);
+
+      const int numFilterSet = NUM_FIXED_FILTER_SETS + numApss;
+
+      if (numTemporalAps == apsIds.size() && numTemporalAps > 0 && useNewFilter && newApsId == apsIds.back())
       {
+        // last temporalAPS is occupied by new filter set and this temporal APS becomes unavailable
         continue;
       }
+
+      const int numIter = useNewFilter ? 2 : 1;
+
       for (int iter = 0; iter < numIter; iter++)
       {
         m_alfParamTemp = alfParamNewFilters;
         m_alfParamTemp.enabledFlag[COMPONENT_Y] = true;
-        double curCost                          = 3 * m_lambda[COMPONENT_Y];
-        if (iter > 0)  //re-derive new filter-set
+
+        double curCost = 3 * m_lambda[COMPONENT_Y];
+
+        if (iter > 0)
         {
+          // re-derive new filter-set
           double dDistOrgNewFilter = 0;
           int blocksUsingNewFilter = 0;
           for (int ctbIdx = 0; ctbIdx < m_numCTUsInPic; ctbIdx++)
           {
-            if (m_ctuEnableFlag[COMPONENT_Y][ctbIdx] && alfCtbFilterSetIndex[ctbIdx] != NUM_FIXED_FILTER_SETS)
+            if (m_modes[COMPONENT_Y][ctbIdx] != AlfMode::LUMA0)
             {
-              m_ctuEnableFlag[COMPONENT_Y][ctbIdx] = 0;
+              m_modes[COMPONENT_Y][ctbIdx] = AlfMode::OFF;
             }
-            else if (m_ctuEnableFlag[COMPONENT_Y][ctbIdx] && alfCtbFilterSetIndex[ctbIdx] == NUM_FIXED_FILTER_SETS)
+            else
             {
               blocksUsingNewFilter++;
               dDistOrgNewFilter += m_ctbDistortionUnfilter[COMPONENT_Y][ctbIdx];
@@ -2730,41 +2711,51 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
               }
             }
           }
+
           if (blocksUsingNewFilter > 0 && blocksUsingNewFilter < m_numCTUsInPic)
           {
             int bitNL[2] = { 0, 0 };
-            double errNL[2] = { 0.0, 0.0 };
-            m_alfParamTemp.nonLinearFlag[ChannelType::LUMA] = true;
-            if (m_encCfg->getUseNonLinearAlfLuma())
-            {
-              errNL[1]         = getFilterCoeffAndCost(cs, 0, ChannelType::LUMA, true, 0, bitNL[1], true);
-              m_alfParamTempNL = m_alfParamTemp;
-            }
-            else
-            {
-              errNL[1] = MAX_DOUBLE;
-            }
-            m_alfParamTemp.nonLinearFlag[ChannelType::LUMA] = false;
-            errNL[0] = getFilterCoeffAndCost(cs, 0, ChannelType::LUMA, true, 0, bitNL[0], true);
+            double errNL[2] = { MAX_DOUBLE, MAX_DOUBLE };
 
-            int bitsNewFilterTempLuma = bitNL[0];
-            double err = errNL[0];
-            if (errNL[1]  < errNL[0])
+            for (bool nonlinearFlag: { true, false })
             {
-              err = errNL[1];
-              bitsNewFilterTempLuma = bitNL[1];
+              if (nonlinearFlag && !m_encCfg->getUseNonLinearAlfLuma())
+              {
+                continue;
+              }
+
+              m_alfParamTemp.nonLinearFlag[ChannelType::LUMA] = nonlinearFlag;
+
+              const int idx = nonlinearFlag ? 1 : 0;
+              errNL[idx]    = getFilterCoeffAndCost(cs, 0, ChannelType::LUMA, true, 0, bitNL[idx], true);
+
+              if (nonlinearFlag)
+              {
+                m_alfParamTempNL = m_alfParamTemp;
+              }
+            }
+
+            const bool   useNonlinear          = errNL[1] < errNL[0];
+            const int    bitsNewFilterTempLuma = bitNL[useNonlinear ? 1 : 0];
+            const double err                   = errNL[useNonlinear ? 1 : 0];
+
+            if (useNonlinear)
+            {
               m_alfParamTemp = m_alfParamTempNL;
             }
-            if (dDistOrgNewFilter + m_lambda[COMPONENT_Y] * m_bitsNewFilter[ChannelType::LUMA]
-                < err)   // re-derived filter is not good, skip
+
+            if (dDistOrgNewFilter + m_lambda[COMPONENT_Y] * m_bitsNewFilter[ChannelType::LUMA] < err)
             {
+              // re-derived filter is not good, skip
               continue;
             }
+
             reconstructCoeff(m_alfParamTemp, ChannelType::LUMA, true, true);
             bitsNewFilter = bitsNewFilterTempLuma;
           }
-          else //no blocks using new filter, skip
+          else
           {
+            // no block or all blocks using new filter, skip
             continue;
           }
         }
@@ -2773,25 +2764,24 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
         for (int ctbIdx = 0; ctbIdx < m_numCTUsInPic; ctbIdx++)
         {
           double distUnfilterCtb = m_ctbDistortionUnfilter[COMPONENT_Y][ctbIdx];
-          //ctb on
-          m_ctuEnableFlag[COMPONENT_Y][ctbIdx] = 1;
+          // ctb on
           double         costOn = MAX_DOUBLE;
           ctxTempStart = AlfCtx(m_CABACEstimator->getCtx());
-          int iBestFilterSetIdx = 0;
-          int firstFilterSetIdx = 0;
-          if (!m_encCfg->getALFAllowPredefinedFilters())
-          {
-            firstFilterSetIdx = NUM_FIXED_FILTER_SETS;
-          }
+          int bestFilterSetIdx  = 0;
+
+          const int firstFilterSetIdx = m_encCfg->getALFAllowPredefinedFilters() ? 0 : NUM_FIXED_FILTER_SETS;
+
           for (int filterSetIdx = firstFilterSetIdx; filterSetIdx < numFilterSet; filterSetIdx++)
           {
+            m_modes[COMPONENT_Y][ctbIdx] = AlfMode::LUMA_FIXED0 + filterSetIdx;
+
             //rate
             m_CABACEstimator->getCtx() = AlfCtx(ctxTempStart);
             m_CABACEstimator->resetBits();
             m_CABACEstimator->codeAlfCtuEnableFlag(cs, ctbIdx, COMPONENT_Y, &m_alfParamTemp);
-            alfCtbFilterSetIndex[ctbIdx] = filterSetIdx;
             m_CABACEstimator->codeAlfCtuFilterIndex(cs, ctbIdx, m_alfParamTemp.enabledFlag[COMPONENT_Y]);
             double rateOn = FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
+
             //distortion
             double dist = distUnfilterCtb;
             for (int classIdx = 0; classIdx < MAX_NUM_ALF_CLASSES; classIdx++)
@@ -2811,16 +2801,12 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
                   pCoeff = m_coeffFinal;
                   pClipp = m_clippFinal;
                 }
-                else if (useNewFilter)
-                {
-                  pCoeff = m_coeffApsLuma[filterSetIdx - 1 - NUM_FIXED_FILTER_SETS];
-                  pClipp = m_clippApsLuma[filterSetIdx - 1 - NUM_FIXED_FILTER_SETS];
-                }
                 else
                 {
-                  pCoeff = m_coeffApsLuma[filterSetIdx - NUM_FIXED_FILTER_SETS];
-                  pClipp = m_clippApsLuma[filterSetIdx - NUM_FIXED_FILTER_SETS];
+                  pCoeff = m_coeffApsLuma[filterSetIdx - (useNewFilter ? 1 : 0) - NUM_FIXED_FILTER_SETS];
+                  pClipp = m_clippApsLuma[filterSetIdx - (useNewFilter ? 1 : 0) - NUM_FIXED_FILTER_SETS];
                 }
+
                 for (int i = 0; i < MAX_NUM_ALF_LUMA_COEFF; i++)
                 {
                   m_filterTmp[i] = pCoeff[classIdx * MAX_NUM_ALF_LUMA_COEFF + i];
@@ -2836,11 +2822,11 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
             {
               ctxTempBest = AlfCtx(m_CABACEstimator->getCtx());
               costOn = costOnTmp;
-              iBestFilterSetIdx = filterSetIdx;
+              bestFilterSetIdx = filterSetIdx;
             }
           }
           //ctb off
-          m_ctuEnableFlag[COMPONENT_Y][ctbIdx] = 0;
+          m_modes[COMPONENT_Y][ctbIdx] = AlfMode::OFF;
           //rate
           m_CABACEstimator->getCtx() = AlfCtx(ctxTempStart);
           m_CABACEstimator->resetBits();
@@ -2851,16 +2837,15 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
           if (costOn < costOff)
           {
             m_CABACEstimator->getCtx() = AlfCtx(ctxTempBest);
-            m_ctuEnableFlag[COMPONENT_Y][ctbIdx] = 1;
-            alfCtbFilterSetIndex[ctbIdx] = iBestFilterSetIdx;
+            m_modes[COMPONENT_Y][ctbIdx] = AlfMode::LUMA_FIXED0 + bestFilterSetIdx;
             curCost += costOn;
           }
           else
           {
-            m_ctuEnableFlag[COMPONENT_Y][ctbIdx] = 0;
             curCost += costOff;
           }
         } //for(ctbIdx)
+
         int tmpBits = bitsNewFilter + 3 * (numFilterSet - NUM_FIXED_FILTER_SETS);
         curCost += tmpBits * m_lambda[COMPONENT_Y];
         if (curCost < costMin)
@@ -2875,16 +2860,12 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
             }
             else
             {
-              bestApsIds[i] = apsIds[i - useNewFilter];
+              bestApsIds[i] = apsIds[i - (useNewFilter ? 1 : 0)];
             }
           }
           alfParamNewFiltersBest = m_alfParamTemp;
           ctxBest = AlfCtx(m_CABACEstimator->getCtx());
-          copyCtuEnableFlag(m_ctuEnableFlagTmp, m_ctuEnableFlag, ChannelType::LUMA);
-          for (int ctuIdx = 0; ctuIdx < m_numCTUsInPic; ctuIdx++)
-          {
-            m_alfCtbFilterSetIndexTmp[ctuIdx] = alfCtbFilterSetIndex[ctuIdx];
-          }
+          copyIndices(m_indexTmp, m_modes, ChannelType::LUMA);
           alfParamNewFiltersBest.newFilterFlag[ChannelType::LUMA] = useNewFilter;
         }
       }//for (int iter = 0; iter < numIter; iter++)
@@ -2898,8 +2879,8 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
   {
     cs.slice->resetAlfEnabledFlag();
     cs.slice->setNumAlfApsIdsLuma(0);
-    setCtuEnableFlag(m_ctuEnableFlag, ChannelType::LUMA, 0);
-    setCtuEnableFlag(m_ctuEnableFlag, ChannelType::CHROMA, 0);
+    setCtuEnableFlag(m_modes, ChannelType::LUMA, AlfMode::OFF);
+    setCtuEnableFlag(m_modes, ChannelType::CHROMA, AlfMode::OFF);
     return;
   }
   else
@@ -2907,11 +2888,9 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
     cs.slice->setAlfEnabledFlag(COMPONENT_Y, true);
     cs.slice->setNumAlfApsIdsLuma((int)bestApsIds.size());
     cs.slice->setAlfApsIdsLuma(bestApsIds);
-    copyCtuEnableFlag(m_ctuEnableFlag, m_ctuEnableFlagTmp, ChannelType::LUMA);
-    for (int ctuIdx = 0; ctuIdx < m_numCTUsInPic; ctuIdx++)
-    {
-      alfCtbFilterSetIndex[ctuIdx] = m_alfCtbFilterSetIndexTmp[ctuIdx];
-    }
+
+    copyIndices(m_modes, m_indexTmp, ChannelType::LUMA);
+
     if (alfParamNewFiltersBest.newFilterFlag[ChannelType::LUMA])
     {
       APS *newAPS = m_apsMap->getPS(newApsId);
@@ -2936,15 +2915,15 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
   }
 
   //chroma
-  if (!(m_encCfg->getMaxNumALFAPS() == 0) && isChromaEnabled(cs.pcv->chrFormat))   //  Find ALF parameters for chroma if ALF APS is enabled.
+  if (m_encCfg->getMaxNumALFAPS() != 0
+      && isChromaEnabled(cs.pcv->chrFormat))   //  Find ALF parameters for chroma if ALF APS is enabled.
   {
     m_alfParamTemp = alfParamNewFiltersBest;
     if (m_alfParamTemp.numAlternativesChroma < 1)
     {
       m_alfParamTemp.numAlternativesChroma = 1;
     }
-    setCtuAlternativeChroma(m_ctuAlternative, 0);
-    setCtuEnableFlag(m_ctuEnableFlag, ChannelType::CHROMA, 1);
+    setCtuEnableFlag(m_modes, ChannelType::CHROMA, AlfMode::CHROMA0);
     getFrameStats(ChannelType::CHROMA, 0);
     costOff = getUnfilteredDistortion(m_alfCovarianceFrame[ChannelType::CHROMA][0], ChannelType::CHROMA);
     costMin = MAX_DOUBLE;
@@ -2975,6 +2954,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
         }
       }
     }
+
     for (int curApsId = m_encCfg->getALFAPSIDShift(); curApsId < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(); curApsId++)
     {
       const bool reuseExistingAPS = curApsId != newApsIdChroma;
@@ -3008,10 +2988,12 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
         m_alfParamTemp.enabledFlag[compId] = true;
         for (int ctbIdx = 0; ctbIdx < m_numCTUsInPic; ctbIdx++)
         {
+          // set to first mode for rate calculation of CTU enable flag
+          m_modes[compId][ctbIdx] = AlfMode::CHROMA0;
+
           double distUnfilterCtu = m_ctbDistortionUnfilter[compId][ctbIdx];
           // cost on
-          m_ctuEnableFlag[compId][ctbIdx] = 1;
-          ctxTempStart                    = AlfCtx(m_CABACEstimator->getCtx());
+          ctxTempStart = AlfCtx(m_CABACEstimator->getCtx());
           // rate
           m_CABACEstimator->getCtx() = AlfCtx(ctxTempStart);
           m_CABACEstimator->resetBits();
@@ -3033,12 +3015,13 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
           ctxTempAltStart    = AlfCtx(ctxTempBest);
           for (int altIdx = 0; altIdx < numAlts; ++altIdx)
           {
+            m_modes[compId][ctbIdx] = AlfMode::CHROMA0 + altIdx;
+
             if (altIdx)
             {
               m_CABACEstimator->getCtx() = AlfCtx(ctxTempAltStart);
             }
             m_CABACEstimator->resetBits();
-            m_ctuAlternative[compId][ctbIdx] = altIdx;
             m_CABACEstimator->codeAlfCtuAlternative(cs, ctbIdx, compId, &m_alfParamTemp);
             double altRate   = FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
             double r_altCost = ctuLambda * altRate;
@@ -3061,13 +3044,12 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
               dist        = altDist;
             }
           }
-          m_ctuAlternative[compId][ctbIdx] = bestAltIdx;
           rateOn += bestAltRate;
           dist += distUnfilterCtu;
           // cost
           double costOn = dist + ctuLambda * rateOn;
           // cost off
-          m_ctuEnableFlag[compId][ctbIdx] = 0;
+          m_modes[compId][ctbIdx] = AlfMode::OFF;
           // rate
           m_CABACEstimator->getCtx() = AlfCtx(ctxTempStart);
           m_CABACEstimator->resetBits();
@@ -3077,18 +3059,17 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
           if (costOn < costOff)
           {
             m_CABACEstimator->getCtx()      = AlfCtx(ctxTempBest);
-            m_ctuEnableFlag[compId][ctbIdx] = 1;
+            m_modes[compId][ctbIdx]         = AlfMode::CHROMA0 + bestAltIdx;
             curCost += costOn;
           }
           else
           {
-            m_ctuEnableFlag[compId][ctbIdx] = 0;
             curCost += costOff;
           }
         }
       }
       // chroma idc
-      setEnableFlag(m_alfParamTemp, ChannelType::CHROMA, m_ctuEnableFlag);
+      setSliceEnabledFlag(m_alfParamTemp, ChannelType::CHROMA, m_modes);
 
       if (curCost < costMin)
       {
@@ -3096,8 +3077,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
         cs.slice->setAlfApsIdChroma(curApsId);
         cs.slice->setAlfEnabledFlag(COMPONENT_Cb, m_alfParamTemp.enabledFlag[COMPONENT_Cb]);
         cs.slice->setAlfEnabledFlag(COMPONENT_Cr, m_alfParamTemp.enabledFlag[COMPONENT_Cr]);
-        copyCtuEnableFlag(m_ctuEnableFlagTmp, m_ctuEnableFlag, ChannelType::CHROMA);
-        copyCtuAlternativeChroma(m_ctuAlternativeTmp, m_ctuAlternative);
+        copyIndices(m_indexTmp, m_modes, ChannelType::CHROMA);
       }
     }
 
@@ -3110,12 +3090,11 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
     {
       cs.slice->setAlfEnabledFlag(COMPONENT_Cb, false);
       cs.slice->setAlfEnabledFlag(COMPONENT_Cr, false);
-      setCtuEnableFlag(m_ctuEnableFlag, ChannelType::CHROMA, 0);
+      setCtuEnableFlag(m_modes, ChannelType::CHROMA, AlfMode::OFF);
     }
     else
     {
-      copyCtuEnableFlag(m_ctuEnableFlag, m_ctuEnableFlagTmp, ChannelType::CHROMA);
-      copyCtuAlternativeChroma(m_ctuAlternative, m_ctuAlternativeTmp);
+      copyIndices(m_modes, m_indexTmp, ChannelType::CHROMA);
       if (cs.slice->getAlfApsIdChroma() == newApsIdChroma)   // new filter
       {
         APS *newAPS = m_apsMap->getPS(newApsIdChroma);
@@ -3157,8 +3136,8 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
   {
     return;
   }
-  reconstructCoeffAPSs(cs, true, cs.slice->getAlfEnabledFlag(COMPONENT_Cb) || cs.slice->getAlfEnabledFlag(COMPONENT_Cr), false);
-  short* alfCtuFilterIndex = cs.slice->getPic()->getAlfCtbFilterIndex();
+  reconstructCoeffAPSs(cs, true, cs.slice->getAlfEnabledFlag(COMPONENT_Cb) || cs.slice->getAlfEnabledFlag(COMPONENT_Cr),
+                       false);
   PelUnitBuf& recBuf = cs.getRecoBufRef();
   const PreCalcValues& pcv = *cs.pcv;
 
@@ -3174,10 +3153,10 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
       const int width = (xPos + pcv.maxCUWidth > pcv.lumaWidth) ? (pcv.lumaWidth - xPos) : pcv.maxCUWidth;
       const int height = (yPos + pcv.maxCUHeight > pcv.lumaHeight) ? (pcv.lumaHeight - yPos) : pcv.maxCUHeight;
 
-      bool ctuEnableFlag = m_ctuEnableFlag[COMPONENT_Y][ctuIdx];
+      bool ctuEnableFlag = m_modes[COMPONENT_Y][ctuIdx] != AlfMode::OFF;
       for (int compIdx = 1; compIdx < MAX_NUM_COMPONENT; compIdx++)
       {
-        ctuEnableFlag |= m_ctuEnableFlag[compIdx][ctuIdx] > 0;
+        ctuEnableFlag |= m_modes[compIdx][ctuIdx] != AlfMode::OFF;
       }
       int rasterSliceAlfPad = 0;
       if ( ctuEnableFlag && isCrossedByVirtualBoundaries( cs, xPos, yPos, width, height, clipTop, clipBottom, clipLeft, clipRight, numHorVirBndry, numVerVirBndry, horVirBndryPos, verVirBndryPos, rasterSliceAlfPad ) )
@@ -3214,23 +3193,13 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
             buf.extendBorderPel(MAX_ALF_PADDING_SIZE);
             buf = buf.subBuf(UnitArea(cs.area.chromaFormat, Area(clipL ? 0 : MAX_ALF_PADDING_SIZE, clipT ? 0 : MAX_ALF_PADDING_SIZE, w, h)));
 
-            if (m_ctuEnableFlag[COMPONENT_Y][ctuIdx])
+            if (m_modes[COMPONENT_Y][ctuIdx] != AlfMode::OFF)
             {
               const Area blkSrc(0, 0, w, h);
               const Area blkDst(xStart, yStart, w, h);
-              short filterSetIndex = alfCtuFilterIndex[ctuIdx];
-              short *coeff;
-              Pel *clip;
-              if (filterSetIndex >= NUM_FIXED_FILTER_SETS)
-              {
-                coeff = m_coeffApsLuma[filterSetIndex - NUM_FIXED_FILTER_SETS];
-                clip = m_clippApsLuma[filterSetIndex - NUM_FIXED_FILTER_SETS];
-              }
-              else
-              {
-                coeff = m_fixedFilterSetCoeffDec[filterSetIndex];
-                clip = m_clipDefault;
-              }
+              const AlfMode m     = m_modes[COMPONENT_Y][ctuIdx];
+              const short  *coeff = getCoeffs(m);
+              const Pel    *clip  = getClipVals(m);
 #if GREEN_METADATA_SEI_ENABLED
               cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
               cs.m_featureCounter.alfLumaPels += (width * height);
@@ -3244,13 +3213,13 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
               ComponentID compID = ComponentID(compIdx);
               const int chromaScaleX = getComponentScaleX(compID, recBuf.chromaFormat);
               const int chromaScaleY = getComponentScaleY(compID, recBuf.chromaFormat);
-              if (m_ctuEnableFlag[compIdx][ctuIdx])
+              if (m_modes[compIdx][ctuIdx] != AlfMode::OFF)
               {
                 const Area blkSrc(0, 0, w >> chromaScaleX, h >> chromaScaleY);
                 const Area blkDst(xStart >> chromaScaleX, yStart >> chromaScaleY, w >> chromaScaleX, h >> chromaScaleY);
-                const int alt_num = m_ctuAlternative[compID][ctuIdx];
-                m_filter5x5Blk(m_classifier, recBuf, buf, blkDst, blkSrc, compID, m_chromaCoeffFinal[alt_num],
-                               m_chromaClippFinal[alt_num], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
+                const int  altNum = m_modes[compID][ctuIdx] - AlfMode::CHROMA0;
+                m_filter5x5Blk(m_classifier, recBuf, buf, blkDst, blkSrc, compID, m_chromaCoeffFinal[altNum],
+                               m_chromaClippFinal[altNum], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
                                m_alfVBChmaPos);
 #if GREEN_METADATA_SEI_ENABLED
                 cs.m_featureCounter.alfChromaType5+= ((width >> chromaScaleX) * (height >> chromaScaleY) / 16);
@@ -3268,22 +3237,12 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
       else
       {
         const UnitArea area(cs.area.chromaFormat, Area(xPos, yPos, width, height));
-        if (m_ctuEnableFlag[COMPONENT_Y][ctuIdx])
+        if (m_modes[COMPONENT_Y][ctuIdx] != AlfMode::OFF)
         {
           Area   blk(xPos, yPos, width, height);
-          short  filterSetIndex = alfCtuFilterIndex[ctuIdx];
-          short *coeff;
-          Pel *clip;
-          if (filterSetIndex >= NUM_FIXED_FILTER_SETS)
-          {
-            coeff = m_coeffApsLuma[filterSetIndex - NUM_FIXED_FILTER_SETS];
-            clip  = m_clippApsLuma[filterSetIndex - NUM_FIXED_FILTER_SETS];
-          }
-          else
-          {
-            coeff = m_fixedFilterSetCoeffDec[filterSetIndex];
-            clip  = m_clipDefault;
-          }
+          const AlfMode m     = m_modes[COMPONENT_Y][ctuIdx];
+          const short  *coeff = getCoeffs(m);
+          const Pel    *clip  = getClipVals(m);
           m_filter7x7Blk(m_classifier, recBuf, recExtBuf, blk, blk, COMPONENT_Y, coeff, clip,
                          m_clpRngs.comp[COMPONENT_Y], cs, m_alfVBLumaCTUHeight, m_alfVBLumaPos);
 #if GREEN_METADATA_SEI_ENABLED
@@ -3297,12 +3256,12 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
           ComponentID compID       = ComponentID(compIdx);
           const int   chromaScaleX = getComponentScaleX(compID, recBuf.chromaFormat);
           const int   chromaScaleY = getComponentScaleY(compID, recBuf.chromaFormat);
-          if (m_ctuEnableFlag[compIdx][ctuIdx])
+          if (m_modes[compIdx][ctuIdx] != AlfMode::OFF)
           {
             Area      blk(xPos >> chromaScaleX, yPos >> chromaScaleY, width >> chromaScaleX, height >> chromaScaleY);
-            const int alt_num = m_ctuAlternative[compID][ctuIdx];
-            m_filter5x5Blk(m_classifier, recBuf, recExtBuf, blk, blk, compID, m_chromaCoeffFinal[alt_num],
-                           m_chromaClippFinal[alt_num], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
+            const int altNum = m_modes[compID][ctuIdx] - AlfMode::CHROMA0;
+            m_filter5x5Blk(m_classifier, recBuf, recExtBuf, blk, blk, compID, m_chromaCoeffFinal[altNum],
+                           m_chromaClippFinal[altNum], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
                            m_alfVBChmaPos);
 #if GREEN_METADATA_SEI_ENABLED
             cs.m_featureCounter.alfChromaType5+= ((width >> chromaScaleX) * (height >> chromaScaleY) / 16) ;
@@ -3316,33 +3275,13 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
   }
 }
 
-void EncAdaptiveLoopFilter::copyCtuAlternativeChroma( uint8_t* ctuAltsDst[MAX_NUM_COMPONENT], uint8_t* ctuAltsSrc[MAX_NUM_COMPONENT] )
+void EncAdaptiveLoopFilter::initCtuAlternativeChroma(AlfMode *ctuAlts[MAX_NUM_COMPONENT])
 {
-  std::copy_n( ctuAltsSrc[COMPONENT_Cb], m_numCTUsInPic, ctuAltsDst[COMPONENT_Cb] );
-  std::copy_n( ctuAltsSrc[COMPONENT_Cr], m_numCTUsInPic, ctuAltsDst[COMPONENT_Cr] );
-}
-
-void EncAdaptiveLoopFilter::setCtuAlternativeChroma( uint8_t* ctuAlts[MAX_NUM_COMPONENT], uint8_t val )
-{
-  std::fill_n( ctuAlts[COMPONENT_Cb], m_numCTUsInPic, val );
-  std::fill_n( ctuAlts[COMPONENT_Cr], m_numCTUsInPic, val );
-}
-
-void EncAdaptiveLoopFilter::initCtuAlternativeChroma( uint8_t* ctuAlts[MAX_NUM_COMPONENT] )
-{
-  uint8_t altIdx = 0;
+  int altIdx = 0;
   for( int ctuIdx = 0; ctuIdx < m_numCTUsInPic; ++ctuIdx )
   {
-    ctuAlts[COMPONENT_Cb][ctuIdx] = altIdx;
-    if( (ctuIdx+1) * m_alfParamTemp.numAlternativesChroma >= (altIdx+1)*m_numCTUsInPic )
-    {
-      ++altIdx;
-    }
-  }
-  altIdx = 0;
-  for( int ctuIdx = 0; ctuIdx < m_numCTUsInPic; ++ctuIdx )
-  {
-    ctuAlts[COMPONENT_Cr][ctuIdx] = altIdx;
+    ctuAlts[COMPONENT_Cb][ctuIdx] = AlfMode::CHROMA0 + altIdx;
+    ctuAlts[COMPONENT_Cr][ctuIdx] = AlfMode::CHROMA0 + altIdx;
     if( (ctuIdx+1) * m_alfParamTemp.numAlternativesChroma >= (altIdx+1)*m_numCTUsInPic )
     {
       ++altIdx;
