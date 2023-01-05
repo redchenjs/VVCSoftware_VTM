@@ -748,11 +748,11 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setUseLadf                                           ( m_LadfEnabed );
   if ( m_LadfEnabed )
   {
-    m_cEncLib.setLadfNumIntervals                                ( m_LadfNumIntervals);
-    for ( int k = 0; k < m_LadfNumIntervals; k++ )
+    m_cEncLib.setLadfNumIntervals(m_ladfNumIntervals);
+    for (int k = 0; k < m_ladfNumIntervals; k++)
     {
-      m_cEncLib.setLadfQpOffset( m_LadfQpOffset[k], k );
-      m_cEncLib.setLadfIntervalLowerBound(m_LadfIntervalLowerBound[k], k);
+      m_cEncLib.setLadfQpOffset(m_ladfQpOffset[k], k);
+      m_cEncLib.setLadfIntervalLowerBound(m_ladfIntervalLowerBound[k], k);
     }
   }
   m_cEncLib.setUseCiip                                        ( m_ciip );
