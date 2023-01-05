@@ -4822,9 +4822,17 @@ bool EncAppCfg::xCheckParameter()
   {
     for (int i = 0; i < m_nnPostFilterSEICharacteristicsNumFilters; i++)
     {
+#if JVET_AB0049
+      xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > MAX_NNPFC_ID, "SEINNPostFilterCharacteristicsId must be in the range of 0 to 2^32-2");
+#else
       xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > (uint32_t)(((uint64_t)1 << 32) - 2), "SEINNPostFilterCharacteristicsId must be in the range of 0 to 2^32-2");
+#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsModeIdc[i] > 255, "SEINNPostFilterCharacteristicsModeIdc must be in the range of 0 to 255");
+#if JVET_AB0049
+      xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 1023, "SEINNPostFilterCharacteristicsPurpose must be in the range of 0 to 1023");
+#else
       xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > (uint32_t)(((uint64_t)1 << 32) - 2), "SEINNPostFilterCharacteristicsPurpose must be in the range of 0 to 2^32-2");
+#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsInpTensorBitDepthMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8 must be in the range of 0 to 24");
 #if M60678_BALLOT_COMMENTS_OF_FI_03
@@ -4859,7 +4867,11 @@ bool EncAppCfg::xCheckParameter()
 
   if (m_nnPostFilterSEIActivationEnabled)
   {
+  #if JVET_AB0049
+    xConfirmPara(m_nnPostFilterSEIActivationId > MAX_NNPFA_ID, "SEINNPostFilterActivationId must be in the range of 0 to 2^32-2");
+  #else
     xConfirmPara(m_nnPostFilterSEIActivationId > (1 << 20) - 1, "SEINNPostFilterActivationId must be in the range of 0 to 2^20-1");
+  #endif
   }
 
   if (m_phaseIndicationSEIEnabledFullResolution)
