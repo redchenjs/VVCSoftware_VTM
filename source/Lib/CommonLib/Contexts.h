@@ -275,6 +275,7 @@ public:
   static const CtxSet   Sao;
   static const CtxSet   Alf;
   static const CtxSet   Palette;
+  static const CtxSet   ctxPartition;
 
 public:
   static const std::vector<uint8_t>&  getInitTable( unsigned initId );

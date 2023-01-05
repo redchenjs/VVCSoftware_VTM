@@ -882,6 +882,10 @@ const CtxSet ContextSetCfg::Sao = { ContextSetCfg::SaoMergeFlag, ContextSetCfg::
 
 const CtxSet ContextSetCfg::Alf = { ContextSetCfg::ctbAlfFlag, ContextSetCfg::ctbAlfAlternative, ContextSetCfg::AlfUseTemporalFilt };
 
+const CtxSet ContextSetCfg::ctxPartition = { ContextSetCfg::SplitFlag, ContextSetCfg::SplitQtFlag,
+                                             ContextSetCfg::SplitHvFlag, ContextSetCfg::Split12Flag,
+                                             ContextSetCfg::ModeConsFlag };
+
 template<class BinProbModel> CtxStore<BinProbModel>::CtxStore() : m_ctxBuffer(), m_ctx(nullptr) {}
 
 template<class BinProbModel>
