@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -163,7 +163,7 @@ class ScalingList
 public:
              ScalingList();
   virtual    ~ScalingList()                                                 { }
-  
+
   int*       getScalingListAddress(uint32_t scalingListId)                    { return &(m_scalingListCoef[scalingListId][0]);            } //!< get matrix coefficient
   const int* getScalingListAddress(uint32_t scalingListId) const              { return &(m_scalingListCoef[scalingListId][0]);            } //!< get matrix coefficient
   void       checkPredMode(uint32_t scalingListId);
@@ -558,14 +558,14 @@ class ProfileTierLevel
 {
   Level::Tier       m_tierFlag;
   Profile::Name     m_profileIdc;
-  uint8_t           m_numSubProfile;
-  std::vector<uint32_t>          m_subProfileIdc;
   Level::Name       m_levelIdc;
   bool              m_frameOnlyConstraintFlag;
   bool              m_multiLayerEnabledFlag;
   ConstraintInfo    m_constraintInfo;
+
   std::array<bool, MAX_TLAYER - 1>    m_subLayerLevelPresentFlag;
   std::array<Level::Name, MAX_TLAYER> m_subLayerLevelIdc;
+  std::vector<uint32_t>               m_subProfileIdc;
 
 public:
                 ProfileTierLevel();
@@ -579,8 +579,8 @@ public:
   uint32_t      getSubProfileIdc(int i) const               { return m_subProfileIdc[i]; }
   void          setSubProfileIdc(int i, uint32_t x)         { m_subProfileIdc[i] = x; }
 
-  uint8_t       getNumSubProfile() const                    { return m_numSubProfile; }
-  void          setNumSubProfile(uint8_t x)                 { m_numSubProfile = x; m_subProfileIdc.resize(m_numSubProfile); }
+  uint8_t getNumSubProfile() const { return (uint8_t) m_subProfileIdc.size(); }
+  void    setNumSubProfile(uint8_t x) { m_subProfileIdc.resize(x); }
 
   Level::Name   getLevelIdc() const                         { return m_levelIdc;                    }
   void          setLevelIdc(Level::Name x)                  { m_levelIdc = x;                       }
@@ -603,6 +603,25 @@ public:
   friend bool             operator != (const ProfileTierLevel& op1, const ProfileTierLevel& op2);
 };
 
+
+struct CheckCRAFlags
+{
+  CheckCRAFlags()
+  {
+    clear();
+  }
+
+  void clear()
+  {
+    seenTrailingFieldPic = false;
+    seenLeadingFieldPic = false;
+    trailingFieldHadRefIssue = false;
+  }
+
+  bool seenTrailingFieldPic;     ///< whether or not have seen trailing field picture after CRA
+  bool seenLeadingFieldPic;      ///< whether or not have seen leading field picture after CRA
+  bool trailingFieldHadRefIssue; ///< whether or not first trailing field picture had forbidden references pictures
+};
 
 
 class SliceReshapeInfo
@@ -1108,6 +1127,8 @@ public:
   void              setPtlMaxTemporalId(int idx, uint32_t val)           { m_ptlMaxTemporalId[idx] = val; }
 
   void              setProfileTierLevel(const std::vector<ProfileTierLevel> &val)   { m_vpsProfileTierLevel = val; }
+  void              setProfileTierLevel(int layerIdx, const ProfileTierLevel val)   { m_vpsProfileTierLevel[layerIdx] = val; }
+  void              resizePTL(int val)                                   { m_vpsProfileTierLevel.resize(val); }
   const ProfileTierLevel& getProfileTierLevel(int idx)             const { return m_vpsProfileTierLevel[idx]; }
 
   uint32_t          getOlsPtlIdx(int idx)                          const { return m_olsPtlIdx[idx]; }
@@ -1231,26 +1252,26 @@ private:
 
 public:
   VUI()
-    : m_progressiveSourceFlag             (false) // Default values as documented in VVC D10 are used
-    , m_interlacedSourceFlag              (false)
-    , m_nonPackedFlag                     (false)
-    , m_nonProjectedFlag                  (false)
-    , m_aspectRatioInfoPresentFlag        (false) 
-    , m_aspectRatioConstantFlag           (false)
-    , m_aspectRatioIdc                    (0)
-    , m_sarWidth                          (0)
-    , m_sarHeight                         (0)
-    , m_overscanInfoPresentFlag           (false)
-    , m_overscanAppropriateFlag           (false)
-    , m_colourDescriptionPresentFlag      (false)
-    , m_colourPrimaries                   (2)
-    , m_transferCharacteristics           (2)
-    , m_matrixCoefficients                (2)
-    , m_videoFullRangeFlag                (false)
-    , m_chromaLocInfoPresentFlag          (false)
-    , m_chromaSampleLocTypeTopField       (6)
-    , m_chromaSampleLocTypeBottomField    (6)
-    , m_chromaSampleLocType               (6)
+    : m_progressiveSourceFlag(false)   // Default values as documented in VVC D10 are used
+    , m_interlacedSourceFlag(false)
+    , m_nonPackedFlag(false)
+    , m_nonProjectedFlag(false)
+    , m_aspectRatioInfoPresentFlag(false)
+    , m_aspectRatioConstantFlag(false)
+    , m_aspectRatioIdc(0)
+    , m_sarWidth(0)
+    , m_sarHeight(0)
+    , m_overscanInfoPresentFlag(false)
+    , m_overscanAppropriateFlag(false)
+    , m_colourDescriptionPresentFlag(false)
+    , m_colourPrimaries(2)
+    , m_transferCharacteristics(2)
+    , m_matrixCoefficients(2)
+    , m_videoFullRangeFlag(false)
+    , m_chromaLocInfoPresentFlag(false)
+    , m_chromaSampleLocTypeTopField(6)
+    , m_chromaSampleLocTypeBottomField(6)
+    , m_chromaSampleLocType(6)
   {}
 
   virtual           ~VUI() {}
@@ -1424,8 +1445,8 @@ private:
   unsigned    m_maxTTSize[3];
   bool        m_idrRefParamList;
   unsigned    m_dualITree;
-  uint32_t              m_uiMaxCUWidth;
-  uint32_t              m_uiMaxCUHeight;
+  uint32_t          m_maxCuWidth;
+  uint32_t          m_maxCuHeight;
 
   RPLList           m_RPLList0;
   RPLList           m_RPLList1;
@@ -1443,21 +1464,21 @@ private:
 
   bool              m_transformSkipEnabledFlag;
   int               m_log2MaxTransformSkipBlockSize;
-  bool              m_BDPCMEnabledFlag;
+  bool              m_bdpcmEnabledFlag;
   bool              m_jointCbCrEnabledFlag;
   // Parameter
   BitDepths         m_bitDepths;
   bool              m_entropyCodingSyncEnabledFlag;                    //!< Flag for enabling WPP
   bool              m_entryPointPresentFlag;                           //!< Flag for indicating the presence of entry points
   int               m_qpBDOffset[MAX_NUM_CHANNEL_TYPE];
-  int               m_internalMinusInputBitDepth[MAX_NUM_CHANNEL_TYPE]; //  max(0, internal bitdepth - input bitdepth);                                          }
+  BitDepths         m_internalMinusInputBitDepth;   //  max(0, internal bitdepth - input bitdepth)
 
   bool              m_sbtmvpEnabledFlag;
   bool              m_bdofEnabledFlag;
   bool              m_fpelMmvdEnabledFlag;
-  bool              m_BdofControlPresentInPhFlag;
-  bool              m_DmvrControlPresentInPhFlag;
-  bool              m_ProfControlPresentInPhFlag;
+  bool              m_bdofControlPresentInPhFlag;
+  bool              m_dmvrControlPresentInPhFlag;
+  bool              m_profControlPresentInPhFlag;
   uint32_t          m_bitsForPoc;
   bool              m_pocMsbCycleFlag;
   uint32_t          m_pocMsbCycleLen;
@@ -1475,7 +1496,7 @@ private:
 
   bool              m_saoEnabledFlag;
 
-  bool              m_bTemporalIdNestingFlag; // temporal_id_nesting_flag
+  bool m_temporalIdNestingFlag;   // temporal_id_nesting_flag
 
   bool              m_scalingListEnabledFlag;
   bool              m_depQuantEnabledFlag;            //!< dependent quantization enabled flag
@@ -1489,7 +1510,7 @@ private:
   uint32_t          m_maxDecPicBuffering[MAX_TLAYER];
   uint32_t          m_maxLatencyIncreasePlus1[MAX_TLAYER];
 
-  bool              m_generalHrdParametersPresentFlag;
+  bool             m_generalHrdParametersPresentFlag;
   GeneralHrdParams m_generalHrdParams;
   OlsHrdParams     m_olsHrdParams[MAX_TLAYER];
 
@@ -1527,12 +1548,10 @@ private:
   bool              m_bcw;                        //
   bool              m_ciip;
   bool              m_Geo;
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   bool              m_LadfEnabled;
   int               m_LadfNumIntervals;
   int               m_LadfQpOffset[MAX_LADF_INTERVALS];
   int               m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
-#endif
   bool              m_MRL;
   bool              m_MIP;
   ChromaQpMappingTable m_chromaQpMappingTable;
@@ -1542,7 +1561,9 @@ private:
   bool              m_rprEnabledFlag;
   bool              m_resChangeInClvsEnabledFlag;
   bool              m_interLayerPresentFlag;
-
+#if JVET_AB0080
+  bool              m_gopBasedRPREnabledFlag;
+#endif
   uint32_t          m_log2ParallelMergeLevelMinus2;
   bool              m_ppsValidFlag[64];
   Size              m_scalingWindowSizeInPPS[64];
@@ -1553,7 +1574,7 @@ private:
   bool              m_scalingMatrixAlternativeColourSpaceDisabledFlag;
   bool              m_scalingMatrixDesignatedColourSpaceFlag;
 
-  bool m_disableScalingMatrixForLfnstBlks; 
+  bool m_disableScalingMatrixForLfnstBlks;
 
 public:
 
@@ -1653,9 +1674,10 @@ public:
   void                    setSplitConsOverrideEnabledFlag(bool b)                                         { m_partitionOverrideEnalbed = b; }
   bool                    getSplitConsOverrideEnabledFlag()                                         const { return m_partitionOverrideEnalbed; }
   void                    setMinQTSizes(unsigned*   minQT)                                                { m_minQT[0] = minQT[0]; m_minQT[1] = minQT[1]; m_minQT[2] = minQT[2]; }
-  unsigned                getMinQTSize(SliceType   slicetype,
-                                       ChannelType chType = CHANNEL_TYPE_LUMA)
-                                                                                                    const { return slicetype == I_SLICE ? (chType == CHANNEL_TYPE_LUMA ? m_minQT[0] : m_minQT[2]) : m_minQT[1]; }
+  unsigned                getMinQTSize(SliceType slicetype, ChannelType chType = ChannelType::LUMA) const
+  {
+    return slicetype == I_SLICE ? (isLuma(chType) ? m_minQT[0] : m_minQT[2]) : m_minQT[1];
+  }
   void                    setMaxMTTHierarchyDepth(unsigned    maxMTTHierarchyDepth,
                                         unsigned    maxMTTHierarchyDepthI,
                                         unsigned    maxMTTHierarchyDepthIChroma)
@@ -1686,16 +1708,16 @@ public:
   void                    setUseDualITree(bool b) { m_dualITree = b; }
   bool                    getUseDualITree()                                      const { return m_dualITree; }
 
-  void                    setMaxCUWidth( uint32_t u )                                                         { m_uiMaxCUWidth = u;                                                  }
-  uint32_t                    getMaxCUWidth() const                                                           { return  m_uiMaxCUWidth;                                              }
-  void                    setMaxCUHeight( uint32_t u )                                                        { m_uiMaxCUHeight = u;                                                 }
-  uint32_t                    getMaxCUHeight() const                                                          { return  m_uiMaxCUHeight;                                             }
+  void                        setMaxCUWidth(uint32_t u) { m_maxCuWidth = u; }
+  uint32_t                    getMaxCUWidth() const { return m_maxCuWidth; }
+  void                        setMaxCUHeight(uint32_t u) { m_maxCuHeight = u; }
+  uint32_t                    getMaxCUHeight() const { return m_maxCuHeight; }
   bool                    getTransformSkipEnabledFlag() const                                                 { return m_transformSkipEnabledFlag;                                   }
   void                    setTransformSkipEnabledFlag( bool b )                                               { m_transformSkipEnabledFlag = b;                                      }
   uint32_t                getLog2MaxTransformSkipBlockSize() const                                            { return m_log2MaxTransformSkipBlockSize;                              }
   void                    setLog2MaxTransformSkipBlockSize(uint32_t u)                                        { m_log2MaxTransformSkipBlockSize = u;                                 }
-  bool                    getBDPCMEnabledFlag() const                                                         { return m_BDPCMEnabledFlag;                                           }
-  void                    setBDPCMEnabledFlag( bool b )                                                       { m_BDPCMEnabledFlag = b;                                              }
+  bool                        getBDPCMEnabledFlag() const { return m_bdpcmEnabledFlag; }
+  void                        setBDPCMEnabledFlag(bool b) { m_bdpcmEnabledFlag = b; }
   // clang-format off
   void     setBitsForPOC(uint32_t val) { m_bitsForPoc = val; }
   uint32_t getBitsForPOC() const { return m_bitsForPoc; }
@@ -1744,20 +1766,24 @@ public:
   uint32_t                getLog2MaxTbSize() const                                                        { return  m_log2MaxTbSize;                                             }
   uint32_t                getMaxTbSize() const                                                            { return  1 << m_log2MaxTbSize;                                        }
   // Bit-depth
-  int                     getBitDepth(ChannelType type) const                                             { return m_bitDepths.recon[type];                                      }
-  void                    setBitDepth(ChannelType type, int u )                                           { m_bitDepths.recon[type] = u;                                         }
+  int                     getBitDepth(const ChannelType type) const { return m_bitDepths[type]; }
+  void                    setBitDepth(const ChannelType type, int u) { m_bitDepths[type] = u; }
   const BitDepths&        getBitDepths() const                                                            { return m_bitDepths;                                                  }
 
   bool                    getEntropyCodingSyncEnabledFlag() const                                         { return m_entropyCodingSyncEnabledFlag;                               }
   void                    setEntropyCodingSyncEnabledFlag(bool val)                                       { m_entropyCodingSyncEnabledFlag = val;                                }
   bool                    getEntryPointsPresentFlag() const                                               { return m_entryPointPresentFlag;                                      }
   void                    setEntryPointsPresentFlag(bool val)                                             { m_entryPointPresentFlag = val;                                       }
-  int                     getMaxLog2TrDynamicRange(ChannelType channelType) const                         { return getSpsRangeExtension().getExtendedPrecisionProcessingFlag() ? std::min<int>(20, int(m_bitDepths.recon[channelType] + 6)) : 15; }
-  int                     getDifferentialLumaChromaBitDepth() const                                       { return int(m_bitDepths.recon[CHANNEL_TYPE_LUMA]) - int(m_bitDepths.recon[CHANNEL_TYPE_CHROMA]); }
-  int                     getQpBDOffset(ChannelType type) const                                           { return m_qpBDOffset[type];                                           }
-  void                    setQpBDOffset(ChannelType type, int i)                                          { m_qpBDOffset[type] = i;                                              }
-  int                     getInternalMinusInputBitDepth(ChannelType type) const                           { return m_internalMinusInputBitDepth[type];                                           }
-  void                    setInternalMinusInputBitDepth(ChannelType type, int i)                          { m_internalMinusInputBitDepth[type] = i;                                              }
+  int                     getMaxLog2TrDynamicRange(ChannelType channelType) const
+  {
+    return getSpsRangeExtension().getExtendedPrecisionProcessingFlag()
+             ? std::min<int>(20, int(m_bitDepths[channelType] + 6))
+             : 15;
+  }
+  int  getQpBDOffset(ChannelType type) const { return m_qpBDOffset[int(type)]; }
+  void setQpBDOffset(ChannelType type, int i) { m_qpBDOffset[int(type)] = i; }
+  int  getInternalMinusInputBitDepth(ChannelType type) const { return m_internalMinusInputBitDepth[type]; }
+  void setInternalMinusInputBitDepth(ChannelType type, int i) { m_internalMinusInputBitDepth[type] = i; }
 
   void                    setSAOEnabledFlag(bool bVal)                                                    { m_saoEnabledFlag = bVal;                                                    }
   bool                    getSAOEnabledFlag() const                                                       { return m_saoEnabledFlag;                                                    }
@@ -1785,14 +1811,14 @@ public:
   void                    setUseDMVR(bool b)                                                              { m_DMVR = b;    }
   bool                    getUseMMVD()const                                                               { return m_MMVD; }
   void                    setUseMMVD(bool b)                                                              { m_MMVD = b;    }
-  bool                    getBdofControlPresentInPhFlag()const                                            { return m_BdofControlPresentInPhFlag; }
-  void                    setBdofControlPresentInPhFlag(bool b)                                           { m_BdofControlPresentInPhFlag = b;    }
+  bool                    getBdofControlPresentInPhFlag() const { return m_bdofControlPresentInPhFlag; }
+  void                    setBdofControlPresentInPhFlag(bool b) { m_bdofControlPresentInPhFlag = b; }
 
-  bool                    getDmvrControlPresentInPhFlag()const                                            { return m_DmvrControlPresentInPhFlag; }
-  void                    setDmvrControlPresentInPhFlag(bool b)                                           { m_DmvrControlPresentInPhFlag = b;    }
+  bool getDmvrControlPresentInPhFlag() const { return m_dmvrControlPresentInPhFlag; }
+  void setDmvrControlPresentInPhFlag(bool b) { m_dmvrControlPresentInPhFlag = b; }
 
-  bool                    getProfControlPresentInPhFlag()const                                            { return m_ProfControlPresentInPhFlag; }
-  void                    setProfControlPresentInPhFlag(bool b)                                           { m_ProfControlPresentInPhFlag = b;    }
+  bool                    getProfControlPresentInPhFlag() const { return m_profControlPresentInPhFlag; }
+  void                    setProfControlPresentInPhFlag(bool b) { m_profControlPresentInPhFlag = b; }
   uint32_t                getMaxTLayers() const                                                           { return m_uiMaxTLayers; }
   void                    setMaxTLayers( uint32_t uiMaxTLayers )                                          { CHECK( uiMaxTLayers > MAX_TLAYER, "Invalid number T-layers" ); m_uiMaxTLayers = uiMaxTLayers; }
 
@@ -1804,8 +1830,8 @@ public:
   bool getSubLayerDpbParamsFlag() const { return m_subLayerDpbParamsFlag; }
   // clang-format on
 
-  bool                    getTemporalIdNestingFlag() const                                                { return m_bTemporalIdNestingFlag;                                     }
-  void                    setTemporalIdNestingFlag(bool value) { m_bTemporalIdNestingFlag = value; }
+  bool getTemporalIdNestingFlag() const { return m_temporalIdNestingFlag; }
+  void setTemporalIdNestingFlag(bool value) { m_temporalIdNestingFlag = value; }
 
   bool                    getScalingListFlag() const                                                      { return m_scalingListEnabledFlag;                                     }
   void                    setScalingListFlag( bool b )                                                    { m_scalingListEnabledFlag  = b;                                       }
@@ -1921,7 +1947,6 @@ public:
   bool      getUseSMVD()                                                  const     { return m_SMVD; }
   void      setUseBcw             ( bool b )                                        { m_bcw = b; }
   bool      getUseBcw             ()                                      const     { return m_bcw; }
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   void      setLadfEnabled        ( bool b )                                        { m_LadfEnabled = b; }
   bool      getLadfEnabled        ()                                      const     { return m_LadfEnabled; }
   void      setLadfNumIntervals   ( int i )                                         { m_LadfNumIntervals = i; }
@@ -1930,7 +1955,6 @@ public:
   int       getLadfQpOffset       ( int idx )                             const     { return m_LadfQpOffset[ idx ]; }
   void      setLadfIntervalLowerBound( int value, int idx )                         { m_LadfIntervalLowerBound[ idx ] = value; }
   int       getLadfIntervalLowerBound( int idx )                          const     { return m_LadfIntervalLowerBound[ idx ]; }
-#endif
 
   void      setUseCiip         ( bool b )                                        { m_ciip = b; }
   bool      getUseCiip         ()                                      const     { return m_ciip; }
@@ -1956,6 +1980,10 @@ public:
 
   bool      getRprEnabledFlag()                                           const     { return m_rprEnabledFlag; }
   void      setRprEnabledFlag( bool flag )                                          { m_rprEnabledFlag = flag; }
+#if JVET_AB0080
+  bool      getGOPBasedRPREnabledFlag()                                   const     { return m_gopBasedRPREnabledFlag; }
+  void      setGOPBasedRPREnabledFlag(bool flag)                                    { m_gopBasedRPREnabledFlag = flag; }
+#endif
   bool      getInterLayerPresentFlag()                                        const { return m_interLayerPresentFlag; }
   void      setInterLayerPresentFlag( bool b )                                      { m_interLayerPresentFlag = b; }
   bool      getResChangeInClvsEnabledFlag()                               const     { return m_resChangeInClvsEnabledFlag; }
@@ -1983,7 +2011,7 @@ private:
   int              m_picInitQPMinus26;
   bool             m_useDQP;
   bool             m_usePPSChromaTool;
-  bool             m_bSliceChromaQpFlag;       // slicelevel_chroma_qp_flag
+  bool             m_sliceChromaQpFlag;   // slicelevel_chroma_qp_flag
 
   int              m_layerId;
   int              m_temporalId;
@@ -1998,7 +2026,10 @@ private:
 
   // Chroma QP Adjustments
   int              m_chromaQpOffsetListLen; // size (excludes the null entry used in the following array).
-  ChromaQpAdj      m_ChromaQpAdjTableIncludingNullEntry[1+MAX_QP_OFFSET_LIST_SIZE]; //!< Array includes entry [0] for the null offset used when cu_chroma_qp_offset_flag=0, and entries [cu_chroma_qp_offset_idx+1...] otherwise
+
+  // Array includes entry [0] for the null offset used when  cu_chroma_qp_offset_flag=0, and entries
+  // [cu_chroma_qp_offset_idx+1...] otherwis
+  ChromaQpAdj m_chromaQpAdjTableIncludingNullEntry[1 + MAX_QP_OFFSET_LIST_SIZE];
 
   uint32_t             m_numRefIdxL0DefaultActive;
   uint32_t             m_numRefIdxL1DefaultActive;
@@ -2007,7 +2038,7 @@ private:
 
   bool             m_useWeightedPred;                   //!< Use of Weighting Prediction (P_SLICE)
   bool             m_useWeightedBiPred;                 //!< Use of Weighting Bi-Prediction (B_SLICE)
-  bool             m_OutputFlagPresentFlag;             //!< Indicates the presence of output_flag in slice header
+  bool             m_outputFlagPresentFlag;             //!< Indicates the presence of output_flag in slice header
   uint32_t         m_numSubPics;                        //!< number of sub-pictures used - must match SPS
   bool             m_subPicIdMappingInPpsFlag;
   uint32_t         m_subPicIdLen;                       //!< sub-picture ID length in bits
@@ -2099,16 +2130,15 @@ public:
   void                   setUseDQP( bool b )                                              { m_useDQP   = b;                               }
   bool                   getPPSChromaToolFlag()                                     const { return  m_usePPSChromaTool;                   }
   void                   setPPSChromaToolFlag(bool b)                                     { m_usePPSChromaTool = b;                       }
-  bool                   getSliceChromaQpFlag() const                                     { return  m_bSliceChromaQpFlag;                 }
-  void                   setSliceChromaQpFlag( bool b )                                   { m_bSliceChromaQpFlag = b;                     }
-
+  bool                   getSliceChromaQpFlag() const { return m_sliceChromaQpFlag; }
+  void                   setSliceChromaQpFlag(bool b) { m_sliceChromaQpFlag = b; }
 
   bool                   getJointCbCrQpOffsetPresentFlag() const                          { return m_chromaJointCbCrQpOffsetPresentFlag;   }
   void                   setJointCbCrQpOffsetPresentFlag(bool b)                          { m_chromaJointCbCrQpOffsetPresentFlag = b;      }
 
   void                   setQpOffset(ComponentID compID, int i )
   {
-    if      (compID==COMPONENT_Cb)
+    if (compID == COMPONENT_Cb)
     {
       m_chromaCbQpOffset = i;
     }
@@ -2137,7 +2167,9 @@ public:
   const ChromaQpAdj&     getChromaQpOffsetListEntry( int cuChromaQpOffsetIdxPlus1 ) const
   {
     CHECK(cuChromaQpOffsetIdxPlus1 >= m_chromaQpOffsetListLen+1, "Invalid chroma QP offset");
-    return m_ChromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1]; // Array includes entry [0] for the null offset used when cu_chroma_qp_offset_flag=0, and entries [cu_chroma_qp_offset_idx+1...] otherwise
+    return m_chromaQpAdjTableIncludingNullEntry
+      [cuChromaQpOffsetIdxPlus1];   // Array includes entry [0] for the null offset used when
+                                    // cu_chroma_qp_offset_flag=0, and entries [cu_chroma_qp_offset_idx+1...] otherwise
   }
 
   void                   setChromaQpOffsetListEntry( int cuChromaQpOffsetIdxPlus1, int cbOffset, int crOffset, int jointCbCrOffset )
@@ -2145,9 +2177,9 @@ public:
     // Array includes entry [0] for the null offset used when cu_chroma_qp_offset_flag=0, and entries
     // [cu_chroma_qp_offset_idx+1...] otherwise
     CHECK(cuChromaQpOffsetIdxPlus1 == 0 || cuChromaQpOffsetIdxPlus1 > MAX_QP_OFFSET_LIST_SIZE, "Invalid chroma QP offset");
-    m_ChromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.cbOffset        = cbOffset;
-    m_ChromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.crOffset        = crOffset;
-    m_ChromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.jointCbCrOffset = jointCbCrOffset;
+    m_chromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.cbOffset        = cbOffset;
+    m_chromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.crOffset        = crOffset;
+    m_chromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.jointCbCrOffset = jointCbCrOffset;
     m_chromaQpOffsetListLen = std::max(m_chromaQpOffsetListLen, cuChromaQpOffsetIdxPlus1);
   }
 
@@ -2165,13 +2197,13 @@ public:
   void                   setWPBiPred( bool b )                                            { m_useWeightedBiPred = b;                      }
 
   void                   setWrapAroundEnabledFlag(bool b)                                 { m_wrapAroundEnabledFlag = b;                  }
-  bool                   getWrapAroundEnabledFlag() const                                 { return m_wrapAroundEnabledFlag;               }  
+  bool                   getWrapAroundEnabledFlag() const { return m_wrapAroundEnabledFlag; }
   void                   setPicWidthMinusWrapAroundOffset(unsigned offset)                { m_picWidthMinusWrapAroundOffset = offset;     }
   unsigned               getPicWidthMinusWrapAroundOffset() const                         { return m_picWidthMinusWrapAroundOffset;       }
   void                   setWrapAroundOffset(unsigned offset)                             { m_wrapAroundOffset = offset;                  }
   unsigned               getWrapAroundOffset() const                                      { return m_wrapAroundOffset;                    }
-  void                   setOutputFlagPresentFlag( bool b )                               { m_OutputFlagPresentFlag = b;                  }
-  bool                   getOutputFlagPresentFlag() const                                 { return m_OutputFlagPresentFlag;               }
+  void                   setOutputFlagPresentFlag(bool b) { m_outputFlagPresentFlag = b; }
+  bool                   getOutputFlagPresentFlag() const { return m_outputFlagPresentFlag; }
   void                   setNumSubPics(uint32_t u )                                       { CHECK( u >= MAX_NUM_SUB_PICS, "Maximum number of subpictures exceeded" );
                                                                                             m_numSubPics = u;
                                                                                             m_subPicId.resize(m_numSubPics);
@@ -2340,7 +2372,7 @@ public:
   APS();
   virtual                ~APS();
 
-  int                    getAPSId() const                                                 { return m_APSId;                               }
+  uint8_t                getAPSId() const { return m_APSId; }
   void                   setAPSId(int i)                                                  { m_APSId = i;                                  }
 
   ApsType                getAPSType() const                                               { return m_APSType;                             }
@@ -2392,8 +2424,8 @@ inline bool WPScalingParam::isWeighted(const WPScalingParam *wp)
 
 struct WPACDCParam
 {
-  int64_t iAC;
-  int64_t iDC;
+  int64_t ac;
+  int64_t dc;
 };
 
 // picture header class
@@ -2447,10 +2479,12 @@ private:
   bool                        m_profDisabledFlag;                                       //!< picture level PROF disable flag
   bool                        m_jointCbCrSignFlag;                                      //!< joint Cb/Cr residual sign flag
   int                         m_qpDelta;                                                //!< value of Qp delta
-  bool                        m_saoEnabledFlag[MAX_NUM_CHANNEL_TYPE];                   //!< sao enabled flags for each channel
+  EnumArray<bool, ChannelType> m_saoEnabledFlag;   // sao enabled flags for each channel
   bool                        m_alfEnabledFlag[MAX_NUM_COMPONENT];                      //!< alf enabled flags for each component
   int                         m_numAlfApsIdsLuma;                                       //!< number of alf aps active for the picture
-  std::vector<int>            m_alfApsIdsLuma;                                          //!< list of alf aps for the picture
+
+  AlfApsList m_alfApsIdsLuma;   // list of ALF APSs for the picture
+
   int                         m_alfApsIdChroma;                                         //!< chroma alf aps ID
   bool m_ccalfEnabledFlag[MAX_NUM_COMPONENT];
   int  m_ccalfCbApsId;
@@ -2475,7 +2509,7 @@ private:
   unsigned                    m_maxBTSize[3];                                           //!< maximum BT size
   unsigned                    m_maxTTSize[3];                                           //!< maximum TT size
 
-  WPScalingParam              m_weightPredTable[NUM_REF_PIC_LIST_01][MAX_NUM_REF][MAX_NUM_COMPONENT];   // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
+  RefSetArray<WPScalingParam[MAX_NUM_COMPONENT]> m_weightPredTable;
   int                         m_numL0Weights;                                           //!< number of weights for L0 list
   int                         m_numL1Weights;                                           //!< number of weights for L1 list
 
@@ -2498,7 +2532,10 @@ public:
   bool                        getGdrPicFlag() const                                     { return m_gdrPicFlag;                                                                         }
 #if GDR_ENABLED
   void                        setInGdrInterval(bool b)                                  { m_inGdrInterval = b;                                                                         }
-  bool                        getInGdrInterval() const                                  { return m_inGdrInterval;                                                                      }  
+  bool                        getInGdrInterval() const
+  {
+    return m_inGdrInterval;
+  }
 #endif
   void                        setRecoveryPocCnt( uint32_t u )                           { m_recoveryPocCnt = u;                                                                        }
   uint32_t                    getRecoveryPocCnt() const                                 { return m_recoveryPocCnt;                                                                     }
@@ -2567,8 +2604,8 @@ public:
   bool                        getJointCbCrSignFlag() const                              { return m_jointCbCrSignFlag;                                                                  }
   void                        setQpDelta(int b)                                         { m_qpDelta = b;                                                                               }
   int                         getQpDelta() const                                        { return m_qpDelta;                                                                            }
-  void                        setSaoEnabledFlag(ChannelType chType, bool b)             { m_saoEnabledFlag[chType] = b;                                                                }
-  bool                        getSaoEnabledFlag(ChannelType chType) const               { return m_saoEnabledFlag[chType];                                                             }
+  void                        setSaoEnabledFlag(const ChannelType chType, bool b) { m_saoEnabledFlag[chType] = b; }
+  bool                        getSaoEnabledFlag(const ChannelType chType) const { return m_saoEnabledFlag[chType]; }
   void                        setAlfEnabledFlag(ComponentID compId, bool b)             { m_alfEnabledFlag[compId] = b;                                                                }
   bool                        getAlfEnabledFlag(ComponentID compId) const               { return m_alfEnabledFlag[compId];                                                             }
   void                        setNumAlfApsIdsLuma(int i)                                { m_numAlfApsIdsLuma = i;                                                                      }
@@ -2630,23 +2667,26 @@ public:
   void                        setMaxBTSizes(unsigned*   maxBT)                          { m_maxBTSize[0] = maxBT[0]; m_maxBTSize[1] = maxBT[1]; m_maxBTSize[2] = maxBT[2];                                     }
   void                        setMaxTTSizes(unsigned*   maxTT)                          { m_maxTTSize[0] = maxTT[0]; m_maxTTSize[1] = maxTT[1]; m_maxTTSize[2] = maxTT[2];                                     }
 
-  unsigned                    getMinQTSize(SliceType   slicetype,
-                                       ChannelType chType = CHANNEL_TYPE_LUMA) const    { return slicetype == I_SLICE ? (chType == CHANNEL_TYPE_LUMA ? m_minQT[0] : m_minQT[2]) : m_minQT[1];                                              }
-  unsigned                    getMaxMTTHierarchyDepth(SliceType   slicetype,
-                                       ChannelType chType = CHANNEL_TYPE_LUMA) const    { return slicetype == I_SLICE ? (chType == CHANNEL_TYPE_LUMA ? m_maxMTTHierarchyDepth[0] : m_maxMTTHierarchyDepth[2]) : m_maxMTTHierarchyDepth[1]; }
-  unsigned                    getMaxBTSize(SliceType   slicetype,
-                                       ChannelType chType = CHANNEL_TYPE_LUMA) const    { return slicetype == I_SLICE ? (chType == CHANNEL_TYPE_LUMA ? m_maxBTSize[0] : m_maxBTSize[2]) : m_maxBTSize[1];                                  }
-  unsigned                    getMaxTTSize(SliceType   slicetype,
-                                       ChannelType chType = CHANNEL_TYPE_LUMA) const    { return slicetype == I_SLICE ? (chType == CHANNEL_TYPE_LUMA ? m_maxTTSize[0] : m_maxTTSize[2]) : m_maxTTSize[1];                                  }
+  unsigned getMinQTSize(SliceType slicetype, ChannelType chType = ChannelType::LUMA) const
+  {
+    return slicetype == I_SLICE ? (isLuma(chType) ? m_minQT[0] : m_minQT[2]) : m_minQT[1];
+  }
+  unsigned getMaxMTTHierarchyDepth(SliceType slicetype, ChannelType chType = ChannelType::LUMA) const
+  {
+    return slicetype == I_SLICE ? (isLuma(chType) ? m_maxMTTHierarchyDepth[0] : m_maxMTTHierarchyDepth[2])
+                                : m_maxMTTHierarchyDepth[1];
+  }
+  unsigned getMaxBTSize(SliceType slicetype, ChannelType chType = ChannelType::LUMA) const
+  {
+    return slicetype == I_SLICE ? (isLuma(chType) ? m_maxBTSize[0] : m_maxBTSize[2]) : m_maxBTSize[1];
+  }
+  unsigned getMaxTTSize(SliceType slicetype, ChannelType chType = ChannelType::LUMA) const
+  {
+    return slicetype == I_SLICE ? (isLuma(chType) ? m_maxTTSize[0] : m_maxTTSize[2]) : m_maxTTSize[1];
+  }
 
-  void                        setAlfApsIdsLuma(std::vector<int> apsIDs)                 { m_alfApsIdsLuma.resize(m_numAlfApsIdsLuma);
-                                                                                          for (int i = 0; i < m_numAlfApsIdsLuma; i++)
-                                                                                          {
-                                                                                            m_alfApsIdsLuma[i] = apsIDs[i];
-                                                                                          }
-                                                                                        }
-
-  std::vector<int>            getAlfApsIdsLuma() const                                  { return m_alfApsIdsLuma; }
+  void              setAlfApsIdsLuma(const AlfApsList &apsIDs) { m_alfApsIdsLuma = apsIDs; }
+  const AlfApsList &getAlfApsIdsLuma() const { return m_alfApsIdsLuma; }
 
   void                        setWpScaling(WPScalingParam *wp)
   {
@@ -2675,8 +2715,8 @@ class Slice
 
 private:
   //  Bitstream writing
-  bool                       m_saoEnabledFlag[MAX_NUM_CHANNEL_TYPE];
-  int                         m_poc;
+  EnumArray<bool, ChannelType> m_saoEnabledFlag;
+  int                        m_poc;
   int                        m_iLastIDR;
   int                        m_prevGDRInSameLayerPOC;  //< the previous GDR in the same layer
   int                        m_iAssociatedIRAP;
@@ -2695,10 +2735,10 @@ private:
   std::vector<int>           m_edrapRefRapIds;
   int                        m_latestEDRAPPOC;
   bool                       m_latestEdrapLeadingPicDecodableFlag;
-  ReferencePictureList        m_RPL0;            //< RPL for L0 when present in slice header
-  ReferencePictureList        m_RPL1;            //< RPL for L1 when present in slice header
-  int                         m_rpl0Idx;              //< index of used RPL in the SPS or -1 for local RPL in the slice header
-  int                         m_rpl1Idx;              //< index of used RPL in the SPS or -1 for local RPL in the slice header
+  ReferencePictureList       m_RPL0;      //< RPL for L0 when present in slice header
+  ReferencePictureList       m_RPL1;      //< RPL for L1 when present in slice header
+  int                        m_rpl0Idx;   //< index of used RPL in the SPS or -1 for local RPL in the slice header
+  int                        m_rpl1Idx;   //< index of used RPL in the SPS or -1 for local RPL in the slice header
   NalUnitType                m_eNalUnitType;         ///< Nal unit type for the slice
   bool                       m_pictureHeaderInSliceHeader;
   uint32_t                   m_nuhLayerId;           ///< Nal unit layer id
@@ -2706,7 +2746,7 @@ private:
   bool                       m_noOutputOfPriorPicsFlag;           //!< no output of prior pictures flag
   int                        m_iSliceQp;
   int                        m_iSliceQpBase;
-  bool                       m_ChromaQpAdjEnabled;
+  bool                       m_chromaQpAdjEnabled;
   bool                       m_lmcsEnabledFlag;
   bool                       m_explicitScalingListUsed;
   bool                       m_deblockingFilterDisable;
@@ -2718,7 +2758,7 @@ private:
   int                        m_deblockingFilterCrBetaOffsetDiv2;  //< beta offset for deblocking filter
   int                        m_deblockingFilterCrTcOffsetDiv2;    //< tc offset for deblocking filter
   bool                       m_depQuantEnabledFlag;               //!< dependent quantization enabled flag
-  int                        m_riceBaseLevelValue;    //< baseLevel value for abs_remainder 
+  int                        m_riceBaseLevelValue;                //< baseLevel value for abs_remainder
   bool                       m_reverseLastSigCoeffFlag;
   bool                       m_signDataHidingEnabledFlag;         //!< sign data hiding enabled flag
   bool                       m_tsResidualCodingDisabledFlag;
@@ -2739,11 +2779,10 @@ private:
   Picture*                   m_apcRefPicList [NUM_REF_PIC_LIST_01][MAX_NUM_REF+1];
   int                        m_aiRefPOCList  [NUM_REF_PIC_LIST_01][MAX_NUM_REF+1];
   bool                       m_bIsUsedAsLongTerm[NUM_REF_PIC_LIST_01][MAX_NUM_REF+1];
-  int                        m_iDepth;
+  int                        m_hierPredLayerIdx;   // hierarchical prediction layer index
   Picture*                   m_scaledRefPicList[NUM_REF_PIC_LIST_01][MAX_NUM_REF + 1];
   Picture*                   m_savedRefPicList[NUM_REF_PIC_LIST_01][MAX_NUM_REF + 1];
-  std::pair<int, int>        m_scalingRatio[NUM_REF_PIC_LIST_01][MAX_NUM_REF_PICS];
-
+  ScalingRatio               m_scalingRatio[NUM_REF_PIC_LIST_01][MAX_NUM_REF_PICS];
 
   // access channel
   const VPS*                 m_pcVPS;
@@ -2757,7 +2796,7 @@ private:
   uint32_t                   m_colRefIdx;
   double                     m_lambdas[MAX_NUM_COMPONENT];
 
-  bool                       m_abEqualRef  [NUM_REF_PIC_LIST_01][MAX_NUM_REF][MAX_NUM_REF];
+  RefSetArray<bool[MAX_NUM_REF]> m_abEqualRef;
   uint32_t                   m_uiTLayer;
   bool                       m_bTLayerSwitchingFlag;
 
@@ -2769,7 +2808,7 @@ private:
 
   bool                       m_bTestWeightPred;
   bool                       m_bTestWeightBiPred;
-  WPScalingParam             m_weightPredTable[NUM_REF_PIC_LIST_01][MAX_NUM_REF][MAX_NUM_COMPONENT]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
+  RefSetArray<WPScalingParam[MAX_NUM_COMPONENT]> m_weightPredTable;
   WPACDCParam                m_weightACDCParam[MAX_NUM_COMPONENT];
   ClpRngs                    m_clpRngs;
   std::vector<uint32_t>      m_substreamSizes;
@@ -2790,7 +2829,9 @@ private:
   APS*                       m_alfApss[ALF_CTB_MAX_NUM_APS];
   bool                       m_alfEnabledFlag[MAX_NUM_COMPONENT];
   int                        m_numAlfApsIdsLuma;
-  std::vector<int>           m_alfApsIdsLuma;
+
+  AlfApsList m_alfApsIdsLuma;
+
   int                        m_alfApsIdChroma;
   bool                       m_ccAlfCbEnabledFlag;
   bool                       m_ccAlfCrEnabledFlag;
@@ -2798,9 +2839,12 @@ private:
   int                        m_ccAlfCrApsId;
   bool                       m_disableSATDForRd{ false };
   bool                       m_isLossless{ false };
-  int                        m_tsrc_index;
+  int                        m_tsrcIndex{ 0 };
   unsigned                   m_riceBit[8];
   int                        m_cntRightBottom;
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct m_featureCounter;
+#endif
 
 public:
                               Slice();
@@ -2822,8 +2866,8 @@ public:
 
   void                        setAlfAPSs(APS** apss)                                 { memcpy(m_alfApss, apss, sizeof(m_alfApss));                   }
   APS**                       getAlfAPSs()                                           { return m_alfApss;                                             }
-  void                        setSaoEnabledFlag(ChannelType chType, bool s)          {m_saoEnabledFlag[chType] =s;                                   }
-  bool                        getSaoEnabledFlag(ChannelType chType) const            { return m_saoEnabledFlag[chType];                              }
+  void                        setSaoEnabledFlag(const ChannelType chType, bool s) { m_saoEnabledFlag[chType] = s; }
+  bool                        getSaoEnabledFlag(const ChannelType chType) const { return m_saoEnabledFlag[chType]; }
   ReferencePictureList*       getRPL0()                                              { return &m_RPL0;                                              }
   ReferencePictureList*       getRPL1()                                              { return &m_RPL1;                                              }
   void                        setRPL0idx(int rplIdx)                                 { m_rpl0Idx = rplIdx;                                          }
@@ -2853,7 +2897,7 @@ public:
   bool                        getUseWeightedPrediction() const                       { return( (m_eSliceType==P_SLICE && testWeightPred()) || (m_eSliceType==B_SLICE && testWeightBiPred()) ); }
   int                         getSliceQpDelta() const                                { return m_iSliceQpDelta;                                       }
   int                         getSliceChromaQpDelta(ComponentID compID) const        { return isLuma(compID) ? 0 : m_iSliceChromaQpDelta[compID];    }
-  bool                        getUseChromaQpAdj() const                              { return m_ChromaQpAdjEnabled;                                  }
+  bool                        getUseChromaQpAdj() const { return m_chromaQpAdjEnabled; }
   bool                        getDeblockingFilterDisable() const                     { return m_deblockingFilterDisable;                             }
   bool                        getDeblockingFilterOverrideFlag() const                { return m_deblockingFilterOverrideFlag;                        }
   int                         getDeblockingFilterBetaOffsetDiv2()const               { return m_deblockingFilterBetaOffsetDiv2;                      }
@@ -2877,7 +2921,7 @@ public:
   const Picture*              getPic() const                                         { return m_pcPic;                                               }
   Picture *                   getRefPic(RefPicList e, int refIdx) const { return m_apcRefPicList[e][refIdx]; }
   int                         getRefPOC(RefPicList e, int refIdx) const { return m_aiRefPOCList[e][refIdx]; }
-  int                         getDepth() const                                       { return m_iDepth;                                              }
+  int                         getHierPredLayerIdx() const { return m_hierPredLayerIdx; }
   bool                        getColFromL0Flag() const                               { return m_colFromL0Flag;                                       }
   uint32_t                    getColRefIdx() const                                   { return m_colRefIdx;                                           }
   void                        checkColRefIdx(uint32_t curSliceSegmentIdx, const Picture* pic);
@@ -2898,7 +2942,7 @@ public:
   // CLVSS PU is either an IRAP PU with NoOutputBeforeRecoveryFlag equal to 1 or a GDR PU with NoOutputBeforeRecoveryFlag equal to 1.
   bool                        isClvssPu() const                                      { return m_eNalUnitType >= NAL_UNIT_CODED_SLICE_IDR_W_RADL && m_eNalUnitType <= NAL_UNIT_CODED_SLICE_GDR && !m_pcPPS->getMixedNaluTypesInPicFlag() && m_pcPicHeader->getNoOutputBeforeRecoveryFlag(); }
   bool                        isIDRorBLA() const { return (getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_W_RADL) || (getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP); }
-  void                        checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int pocCRA, PicList& rcListPic);
+  void                        checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int pocCRA, CheckCRAFlags &flags, PicList& rcListPic);
   void                        checkSTSA(PicList& rcListPic);
   void                        checkRPL(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int associatedIRAPDecodingOrderNumber, PicList& rcListPic);
   void                        decodingRefreshMarking(int& pocCRA, bool& bRefreshPending, PicList& rcListPic, const bool bEfficientFieldIRAPEnabled);
@@ -2906,7 +2950,7 @@ public:
   void                        setSliceQp( int i )                                    { m_iSliceQp          = i;                                      }
   void                        setSliceQpDelta( int i )                               { m_iSliceQpDelta     = i;                                      }
   void                        setSliceChromaQpDelta( ComponentID compID, int i )     { m_iSliceChromaQpDelta[compID] = isLuma(compID) ? 0 : i;       }
-  void                        setUseChromaQpAdj( bool b )                            { m_ChromaQpAdjEnabled = b;                                     }
+  void                        setUseChromaQpAdj(bool b) { m_chromaQpAdjEnabled = b; }
   void                        setDeblockingFilterDisable( bool b )                   { m_deblockingFilterDisable= b;                                 }
   void                        setDeblockingFilterOverrideFlag( bool b )              { m_deblockingFilterOverrideFlag = b;                           }
   void                        setDeblockingFilterBetaOffsetDiv2( int i )             { m_deblockingFilterBetaOffsetDiv2 = i;                         }
@@ -2916,19 +2960,19 @@ public:
   void                        setDeblockingFilterCrBetaOffsetDiv2( int i )           { m_deblockingFilterCrBetaOffsetDiv2 = i;                         }
   void                        setDeblockingFilterCrTcOffsetDiv2( int i )             { m_deblockingFilterCrTcOffsetDiv2 = i;                           }
   void                        setDepQuantEnabledFlag( bool b )                       { m_depQuantEnabledFlag = b;                                                                   }
-  bool                        getDepQuantEnabledFlag() const                         { return m_depQuantEnabledFlag;                                                                }  
+  bool                        getDepQuantEnabledFlag() const { return m_depQuantEnabledFlag; }
   void                        setRiceBaseLevel(int b) { m_riceBaseLevelValue = b; }
   int                         getRiceBaseLevel() const { return m_riceBaseLevelValue; }
   void                        setReverseLastSigCoeffFlag( bool b )                   { m_reverseLastSigCoeffFlag = b;                                }
   bool                        getReverseLastSigCoeffFlag() const                     { return m_reverseLastSigCoeffFlag;                             }
   void                        setSignDataHidingEnabledFlag( bool b )                 { m_signDataHidingEnabledFlag = b;                                                             }
-  bool                        getSignDataHidingEnabledFlag() const                   { return m_signDataHidingEnabledFlag;                                                          }  
+  bool                        getSignDataHidingEnabledFlag() const { return m_signDataHidingEnabledFlag; }
   void                        setTSResidualCodingDisabledFlag(bool b) { m_tsResidualCodingDisabledFlag = b; }
   bool                        getTSResidualCodingDisabledFlag() const { return m_tsResidualCodingDisabledFlag; }
 
   void                        setNumRefIdx( RefPicList e, int i )                    { m_aiNumRefIdx[e]    = i;                                      }
   void                        setPic( Picture* p )                                   { m_pcPic             = p;                                      }
-  void                        setDepth( int iDepth )                                 { m_iDepth            = iDepth;                                 }
+  void                        setHierPredLayerIdx(int idx) { m_hierPredLayerIdx = idx; }
 
   void                        constructRefPicList(PicList& rcListPic);
   void                        setRefPOCList();
@@ -2949,9 +2993,15 @@ public:
   bool                        isInterB() const                                       { return m_eSliceType == B_SLICE;                               }
   bool                        isInterP() const                                       { return m_eSliceType == P_SLICE;                               }
 #if GDR_ENABLED
-  bool                        isInterGDR() const { return (m_eSliceType == B_SLICE && m_eNalUnitType == NAL_UNIT_CODED_SLICE_GDR); }  
+  bool isInterGDR() const
+  {
+    return (m_eSliceType == B_SLICE && m_eNalUnitType == NAL_UNIT_CODED_SLICE_GDR);
+  }
 #endif
-
+#if GREEN_METADATA_SEI_ENABLED
+  void setFeatureCounter (FeatureCounterStruct b ) {m_featureCounter = b;}
+  FeatureCounterStruct getFeatureCounter (){return m_featureCounter;}
+#endif
   bool                        getEnableDRAPSEI () const                              { return m_enableDRAPSEI;                                       }
   void                        setEnableDRAPSEI ( bool b )                            { m_enableDRAPSEI = b;                                          }
   bool                        getUseLTforDRAP () const                               { return m_useLTforDRAP;                                        }
@@ -3051,14 +3101,11 @@ public:
   void                            setTestWeightPred(bool value) { m_bTestWeightPred = value; }
   bool                        testWeightBiPred( ) const                              { return m_bTestWeightBiPred;                                   }
   void                            setTestWeightBiPred(bool value) { m_bTestWeightBiPred = value; }
-  void                        setWpScaling( WPScalingParam  wp[NUM_REF_PIC_LIST_01][MAX_NUM_REF][MAX_NUM_COMPONENT] )
+  void                            setWpScaling(RefSetArray<WPScalingParam[MAX_NUM_COMPONENT]> &wp)
   {
-    memcpy(m_weightPredTable, wp, sizeof(WPScalingParam)*NUM_REF_PIC_LIST_01*MAX_NUM_REF*MAX_NUM_COMPONENT);
+    memcpy(m_weightPredTable, wp, sizeof(m_weightPredTable));
   }
-  void                        setWpScaling(WPScalingParam *wp)
-  {
-    memcpy(m_weightPredTable, wp, sizeof(WPScalingParam) * NUM_REF_PIC_LIST_01 * MAX_NUM_REF * MAX_NUM_COMPONENT);
-  }
+  void setWpScaling(WPScalingParam *wp) { memcpy(m_weightPredTable, wp, sizeof(m_weightPredTable)); }
   WPScalingParam *            getWpScalingAll()                                      { return (WPScalingParam *) m_weightPredTable;                  }
   WPScalingParam *            getWpScaling(const RefPicList refPicList, const int refIdx);
   const WPScalingParam *      getWpScaling(const RefPicList refPicList, const int refIdx) const;
@@ -3106,15 +3153,10 @@ public:
   void                        setNumAlfApsIdsLuma(int i) { m_numAlfApsIdsLuma = i; }
   int                         getAlfApsIdChroma() const { return m_alfApsIdChroma; }
   void                        setAlfApsIdChroma(int i) { m_alfApsIdChroma = i; }
-  std::vector<int>            getAlfApsIdsLuma() const { return m_alfApsIdsLuma; }
-  void                        setAlfApsIdsLuma(std::vector<int> apsIDs)
-  {
-    m_alfApsIdsLuma.resize(m_numAlfApsIdsLuma);
-    for (int i = 0; i < m_numAlfApsIdsLuma; i++)
-    {
-      m_alfApsIdsLuma[i] = apsIDs[i];
-    }
-  }
+
+  const AlfApsList &getAlfApsIdsLuma() const { return m_alfApsIdsLuma; }
+  void              setAlfApsIdsLuma(const AlfApsList &apsIDs) { m_alfApsIdsLuma = apsIDs; }
+
   void resetCcAlCbfEnabledFlag() { m_ccAlfCbEnabledFlag = 0; }
   void resetCcAlCrfEnabledFlag() { m_ccAlfCrEnabledFlag = 0; }
 
@@ -3134,7 +3176,11 @@ public:
   void                        scaleRefPicList( Picture *scaledRefPic[ ], PicHeader *picHeader, APS** apss, APS* lmcsAps, APS* scalingListAps, const bool isDecoder );
   void                        freeScaledRefPicList( Picture *scaledRefPic[] );
   bool                        checkRPR();
-  const std::pair<int, int>&  getScalingRatio( const RefPicList refPicList, const int refIdx )  const { CHECK( refIdx < 0, "Invalid reference index" ); return m_scalingRatio[refPicList][refIdx]; }
+  const ScalingRatio         &getScalingRatio(const RefPicList refPicList, const int refIdx) const
+  {
+    CHECK(refIdx < 0, "Invalid reference index");
+    return m_scalingRatio[refPicList][refIdx];
+  }
   void                        setNumSubstream( const SPS *sps, const PPS *pps );
   void                        setNumEntryPoints( const SPS *sps, const PPS *pps );
   uint32_t                    getNumEntryPoints( ) const { return m_numEntryPoints;  }
@@ -3142,8 +3188,16 @@ public:
 
   CcAlfFilterParam            m_ccAlfFilterParam;
   uint8_t*                    m_ccAlfFilterControl[2];
-  void                        set_tsrc_index(int v) { m_tsrc_index = v; }
-  int                         get_tsrc_index() const { return m_tsrc_index; }
+
+  void setTsrcIndex(int v)
+  {
+    m_tsrcIndex = v;
+  }
+  int getTsrcIndex() const
+  {
+    return m_tsrcIndex;
+  }
+
   void                        setRiceBit(int idx, int i) { m_riceBit[idx] = i; }
   unsigned                    getRiceBit(int idx) const { return m_riceBit[idx]; }
 
@@ -3165,37 +3219,40 @@ private:
 class PreCalcValues
 {
 public:
-  PreCalcValues( const SPS& sps, const PPS& pps, bool _isEncoder )
-    : chrFormat           ( sps.getChromaFormatIdc() )
-    , multiBlock422       ( false )
-    , maxCUWidth          ( sps.getMaxCUWidth() )
-    , maxCUHeight         ( sps.getMaxCUHeight() )
-    , maxCUWidthMask      ( maxCUWidth  - 1 )
-    , maxCUHeightMask     ( maxCUHeight - 1 )
-    , maxCUWidthLog2      ( floorLog2( maxCUWidth  ) )
-    , maxCUHeightLog2     ( floorLog2( maxCUHeight ) )
-    , minCUWidth          ( 1 << MIN_CU_LOG2 )
-    , minCUHeight         ( 1 << MIN_CU_LOG2 )
-    , minCUWidthLog2      ( floorLog2( minCUWidth  ) )
-    , minCUHeightLog2     ( floorLog2( minCUHeight ) )
-    , partsInCtuWidth     ( maxCUWidth >> MIN_CU_LOG2)
-    , partsInCtuHeight    ( maxCUHeight >> MIN_CU_LOG2)
-    , partsInCtu          ( partsInCtuWidth * partsInCtuHeight )
-    , widthInCtus         ( (pps.getPicWidthInLumaSamples () + sps.getMaxCUWidth () - 1) / sps.getMaxCUWidth () )
-    , heightInCtus        ( (pps.getPicHeightInLumaSamples() + sps.getMaxCUHeight() - 1) / sps.getMaxCUHeight() )
-    , sizeInCtus          ( widthInCtus * heightInCtus )
-    , lumaWidth           ( pps.getPicWidthInLumaSamples() )
-    , lumaHeight          ( pps.getPicHeightInLumaSamples() )
-    , fastDeltaQPCuMaxSize( Clip3(1u << sps.getLog2MinCodingBlockSize(), sps.getMaxCUHeight(), 32u) )
-    , noChroma2x2         (  false )
-    , isEncoder           ( _isEncoder )
-    , ISingleTree         ( !sps.getUseDualITree() )
-    , maxBtDepth          { sps.getMaxMTTHierarchyDepthI(), sps.getMaxMTTHierarchyDepth(), sps.getMaxMTTHierarchyDepthIChroma() }
-    , minBtSize           { 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize() }
-    , maxBtSize           { sps.getMaxBTSizeI(), sps.getMaxBTSize(), sps.getMaxBTSizeIChroma() }
-    , minTtSize           { 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize() }
-    , maxTtSize           { sps.getMaxTTSizeI(), sps.getMaxTTSize(), sps.getMaxTTSizeIChroma() }
-    , minQtSize           { sps.getMinQTSize(I_SLICE, CHANNEL_TYPE_LUMA), sps.getMinQTSize(B_SLICE, CHANNEL_TYPE_LUMA), sps.getMinQTSize(I_SLICE, CHANNEL_TYPE_CHROMA) }
+  PreCalcValues(const SPS &sps, const PPS &pps, bool _isEncoder)
+    : chrFormat(sps.getChromaFormatIdc())
+    , multiBlock422(false)
+    , maxCUWidth(sps.getMaxCUWidth())
+    , maxCUHeight(sps.getMaxCUHeight())
+    , maxCUWidthMask(maxCUWidth - 1)
+    , maxCUHeightMask(maxCUHeight - 1)
+    , maxCUWidthLog2(floorLog2(maxCUWidth))
+    , maxCUHeightLog2(floorLog2(maxCUHeight))
+    , minCUWidth(1 << MIN_CU_LOG2)
+    , minCUHeight(1 << MIN_CU_LOG2)
+    , minCUWidthLog2(floorLog2(minCUWidth))
+    , minCUHeightLog2(floorLog2(minCUHeight))
+    , partsInCtuWidth(maxCUWidth >> MIN_CU_LOG2)
+    , partsInCtuHeight(maxCUHeight >> MIN_CU_LOG2)
+    , partsInCtu(partsInCtuWidth * partsInCtuHeight)
+    , widthInCtus((pps.getPicWidthInLumaSamples() + sps.getMaxCUWidth() - 1) / sps.getMaxCUWidth())
+    , heightInCtus((pps.getPicHeightInLumaSamples() + sps.getMaxCUHeight() - 1) / sps.getMaxCUHeight())
+    , sizeInCtus(widthInCtus * heightInCtus)
+    , lumaWidth(pps.getPicWidthInLumaSamples())
+    , lumaHeight(pps.getPicHeightInLumaSamples())
+    , fastDeltaQPCuMaxSize(Clip3(1u << sps.getLog2MinCodingBlockSize(), sps.getMaxCUHeight(), 32u))
+    , noChroma2x2(false)
+    , isEncoder(_isEncoder)
+    , ISingleTree(!sps.getUseDualITree())
+    , maxBtDepth{ sps.getMaxMTTHierarchyDepthI(), sps.getMaxMTTHierarchyDepth(), sps.getMaxMTTHierarchyDepthIChroma() }
+    , minBtSize{ 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize(),
+                 1u << sps.getLog2MinCodingBlockSize() }
+    , maxBtSize{ sps.getMaxBTSizeI(), sps.getMaxBTSize(), sps.getMaxBTSizeIChroma() }
+    , minTtSize{ 1u << sps.getLog2MinCodingBlockSize(), 1u << sps.getLog2MinCodingBlockSize(),
+                 1u << sps.getLog2MinCodingBlockSize() }
+    , maxTtSize{ sps.getMaxTTSizeI(), sps.getMaxTTSize(), sps.getMaxTTSizeIChroma() }
+    , minQtSize{ sps.getMinQTSize(I_SLICE, ChannelType::LUMA), sps.getMinQTSize(B_SLICE, ChannelType::LUMA),
+                 sps.getMinQTSize(I_SLICE, ChannelType::CHROMA) }
   {}
 
   const ChromaFormat chrFormat;

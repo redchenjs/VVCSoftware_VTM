@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -258,9 +258,7 @@ public:
 private:
   int xEstPicTargetBits( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP );
   int xEstPicHeaderBits(std::list<EncRCPic *> &listPreviousPictures, int frameLevel);
-#if V0078_ADAPTIVE_LOWER_BOUND
   int xEstPicLowerBound( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP );
-#endif
 
 public:
   EncRCSeq*      getRCSequence()                         { return m_encRCSeq; }
@@ -276,15 +274,11 @@ public:
   int  getPixelsLeft()                                    { return m_pixelsLeft; }
   int  getBitsCoded()                                     { return m_targetBits - m_estHeaderBits - m_bitsLeft; }
   int  getLCUCoded()                                      { return m_numberOfLCU - m_LCULeft; }
-#if V0078_ADAPTIVE_LOWER_BOUND
   int  getLowerBound()                                    { return m_lowerBound; }
-#endif
   TRCLCU* getLCU()                                        { return m_LCUs; }
   TRCLCU& getLCU( int LCUIdx )                            { return m_LCUs[LCUIdx]; }
   int  getPicActualHeaderBits()                           { return m_picActualHeaderBits; }
-#if U0132_TARGET_BITS_SATURATION
   void setBitLeft(int bits)                               { m_bitsLeft = bits; }
-#endif
   void setTargetBits( int bits )                          { m_targetBits = bits; m_bitsLeft = bits;}
   void setTotalIntraCost(double cost)                     { m_totalCostIntra = cost; }
   void getLCUInitTargetBits();
@@ -309,9 +303,7 @@ private:
   int m_targetBits;
   int m_estHeaderBits;
   int m_estPicQP;
-#if V0078_ADAPTIVE_LOWER_BOUND
   int m_lowerBound;
-#endif
   double m_estPicLambda;
 
   int m_LCULeft;
@@ -361,14 +353,12 @@ public:
     return m_encRCPic;
   }
   std::list<EncRCPic *> &getPicList() { return m_listRCPictures; }
-#if U0132_TARGET_BITS_SATURATION
   bool       getCpbSaturationEnabled()  { return m_CpbSaturationEnabled;  }
   uint32_t       getCpbState()              { return m_cpbState;       }
   uint32_t       getCpbSize()               { return m_cpbSize;        }
   uint32_t       getBufferingRate()         { return m_bufferingRate;  }
   int        updateCpbState(int actualBits);
   void       initHrdParam(const GeneralHrdParams* generalHrd, const OlsHrdParams* olsHrd, int iFrameRate, double fInitialCpbFullness);
-#endif
 
 private:
   EncRCSeq* m_encRCSeq;
@@ -376,12 +366,10 @@ private:
   EncRCPic* m_encRCPic;
   std::list<EncRCPic *> m_listRCPictures;
   int        m_RCQP;
-#if U0132_TARGET_BITS_SATURATION
   bool       m_CpbSaturationEnabled;    // Enable target bits saturation to avoid CPB overflow and underflow
   int        m_cpbState;                // CPB State
   uint32_t       m_cpbSize;                 // CPB size
   uint32_t       m_bufferingRate;           // Buffering rate
-#endif
 };
 
 #endif

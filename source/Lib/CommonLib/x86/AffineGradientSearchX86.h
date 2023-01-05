@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,7 +70,8 @@ inter3 = _mm_add_epi64(inter0, inter3);                                         
 }
 
 template<X86_VEXT vext>
-static void simdHorizontalSobelFilter( Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height )
+static void simdHorizontalSobelFilter(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                      const ptrdiff_t derivateBufStride, const int width, const int height)
 {
   __m128i mmPred[4];
   __m128i mm2xPred[2];
@@ -133,7 +134,8 @@ static void simdHorizontalSobelFilter( Pel *const pPred, const int predStride, i
 }
 
 template<X86_VEXT vext>
-static void simdVerticalSobelFilter( Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height )
+static void simdVerticalSobelFilter(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                    const ptrdiff_t derivateBufStride, const int width, const int height)
 {
   __m128i mmPred[4];
   __m128i mmIntermediates[6];
@@ -196,7 +198,9 @@ static void simdVerticalSobelFilter( Pel *const pPred, const int predStride, int
 }
 
 template<X86_VEXT vext>
-static void simdEqualCoeffComputer( Pel *pResidue, int residueStride, int **ppDerivate, int derivateBufStride, int64_t( *pEqualCoeff )[7], int width, int height, bool b6Param )
+static void simdEqualCoeffComputer(Pel *pResidue, ptrdiff_t residueStride, int **ppDerivate,
+                                   ptrdiff_t derivateBufStride, int64_t (*pEqualCoeff)[7], int width, int height,
+                                   bool b6Param)
 {
   __m128i mmFour;
   __m128i mmTmp[4];
@@ -211,7 +215,7 @@ static void simdEqualCoeffComputer( Pel *pResidue, int residueStride, int **ppDe
 
 
   int n = b6Param ? 6 : 4;
-  int idx1 = 0, idx2 = 0;
+  ptrdiff_t idx1 = 0, idx2 = 0;
   idx1 = -2 * derivateBufStride - 4;
   idx2 = -derivateBufStride - 4;
 
@@ -308,7 +312,8 @@ static void simdEqualCoeffComputer( Pel *pResidue, int residueStride, int **ppDe
 }
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
 template<X86_VEXT vext>
-static void simdHorizontalSobelFilter_HBD_SIMD(Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height)
+static void simdHorizontalSobelFilter_HBD_SIMD(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                               const ptrdiff_t derivateBufStride, const int width, const int height)
 {
   __m128i pred[4];
   __m128i pred2x[2];
@@ -413,7 +418,8 @@ static void simdHorizontalSobelFilter_HBD_SIMD(Pel *const pPred, const int predS
 }
 
 template<X86_VEXT vext>
-static void simdVerticalSobelFilter_HBD_SIMD(Pel *const pPred, const int predStride, int *const pDerivate, const int derivateBufStride, const int width, const int height)
+static void simdVerticalSobelFilter_HBD_SIMD(Pel *const pPred, const ptrdiff_t predStride, int *const pDerivate,
+                                             const ptrdiff_t derivateBufStride, const int width, const int height)
 {
   __m128i pred[4];
   __m128i intermediates[6];
@@ -536,7 +542,9 @@ inter3 = _mm256_add_epi64(inter0, inter3);                                      
 }
 
 template<X86_VEXT vext>
-static void simdEqualCoeffComputer_HBD_SIMD(Pel *pResidue, int residueStride, int **ppDerivate, int derivateBufStride, int64_t(*pEqualCoeff)[7], int width, int height, bool b6Param)
+static void simdEqualCoeffComputer_HBD_SIMD(Pel *pResidue, ptrdiff_t residueStride, int **ppDerivate,
+                                            ptrdiff_t derivateBufStride, int64_t (*pEqualCoeff)[7], int width,
+                                            int height, bool b6Param)
 {
   int n = b6Param ? 6 : 4;
   CHECK((width & 8), "width of affine block should be multiple of 8");
@@ -544,8 +552,8 @@ static void simdEqualCoeffComputer_HBD_SIMD(Pel *pResidue, int residueStride, in
 #if USE_AVX2
   if (vext >= AVX2)
   {
-    int idx1 = -2 * derivateBufStride - 8;
-    int idx2 = -derivateBufStride - 8;
+    ptrdiff_t idx1 = -2 * derivateBufStride - 8;
+    ptrdiff_t idx2 = -derivateBufStride - 8;
 
     __m256i tmp[4];
     __m256i intermediate[4];
@@ -650,8 +658,8 @@ static void simdEqualCoeffComputer_HBD_SIMD(Pel *pResidue, int residueStride, in
   else
 #endif
   {
-    int idx1 = -2 * derivateBufStride - 4;
-    int idx2 = -derivateBufStride - 4;
+    ptrdiff_t idx1 = -2 * derivateBufStride - 4;
+    ptrdiff_t idx2 = -derivateBufStride - 4;
 
     __m128i four;
     __m128i tmp[4];

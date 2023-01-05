@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2022, ITU/ISO/IEC
+* Copyright (c) 2010-2023, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -75,13 +75,17 @@ public:
   unsigned          decodeRemAbsEP      ( unsigned goRicePar, unsigned cutoff, int maxLog2TrDynamicRange );
   unsigned          decodeBinTrm        ();
   void              align               ();
-  unsigned          getNumBitsRead      () { return m_Bitstream->getNumBitsRead() + m_bitsNeeded; }
+  unsigned          getNumBitsRead()
+  {
+    return m_bitstream->getNumBitsRead() + m_bitsNeeded;
+  }
+
 private:
   unsigned          decodeAlignedBinsEP ( unsigned numBins  );
 protected:
-  InputBitstream*   m_Bitstream;
-  uint32_t          m_Range;
-  uint32_t          m_Value;
+  InputBitstream   *m_bitstream;
+  uint32_t          m_range;
+  uint32_t          m_value;
   int32_t           m_bitsNeeded;
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
   const CodingStatisticsClassType* ptype;
@@ -98,7 +102,7 @@ public:
   ~TBinDecoder() {}
   unsigned decodeBin ( unsigned ctxId );
 private:
-  CtxStore<BinProbModel>& m_Ctx;
+  CtxStore<BinProbModel> &m_ctx;
 };
 
 

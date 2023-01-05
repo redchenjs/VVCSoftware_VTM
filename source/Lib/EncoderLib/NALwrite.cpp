@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -87,7 +87,7 @@ void writeNaluContent(ostream& out, OutputNALUnit& nalu)
    *  - 0x00000302
    *  - 0x00000303
    */
-  vector<uint8_t>& rbsp   = nalu.m_Bitstream.getFIFO();
+  vector<uint8_t> &rbsp = nalu.m_bitstream.getFifo();
 
   vector<uint8_t> outputBuffer;
   outputBuffer.resize(rbsp.size()*2+1); //there can never be enough emulation_prevention_three_bytes to require this much space

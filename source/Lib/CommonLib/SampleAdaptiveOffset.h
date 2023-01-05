@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,58 +49,62 @@
 // Constants
 // ====================================================================================================================
 
-#define MAX_SAO_TRUNCATED_BITDEPTH     10
+static constexpr int MAX_SAO_TRUNCATED_BITDEPTH = 10;
 
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
-
-template <typename T> int sgn(T val)
-{
-  return (T(0) < val) - (val < T(0));
-}
 
 class SampleAdaptiveOffset
 {
 public:
   SampleAdaptiveOffset();
   virtual ~SampleAdaptiveOffset();
-  void SAOProcess( CodingStructure& cs, SAOBlkParam* saoBlkParams
-                   );
-  void create( int picWidth, int picHeight, ChromaFormat format, uint32_t maxCUWidth, uint32_t maxCUHeight, uint32_t maxCUDepth, uint32_t lumaBitShift, uint32_t chromaBitShift );
-  void destroy();
-  static int getMaxOffsetQVal(const int channelBitDepth) { return (1<<(std::min<int>(channelBitDepth,MAX_SAO_TRUNCATED_BITDEPTH)-5))-1; } //Table 9-32, inclusive
-  void setReshaper(Reshape * p) { m_pcReshape = p; }
-protected:
-  void deriveLoopFilterBoundaryAvailibility(CodingStructure& cs, const Position &pos,
-    bool& isLeftAvail,
-    bool& isRightAvail,
-    bool& isAboveAvail,
-    bool& isBelowAvail,
-    bool& isAboveLeftAvail,
-    bool& isAboveRightAvail,
-    bool& isBelowLeftAvail,
-    bool& isBelowRightAvail
-    ) const;
 
-  void offsetBlock(const int channelBitDepth, const ClpRng& clpRng, int typeIdx, int* offset, const Pel* srcBlk, Pel* resBlk, int srcStride, int resStride,  int width, int height
-                  , bool isLeftAvail, bool isRightAvail, bool isAboveAvail, bool isBelowAvail, bool isAboveLeftAvail, bool isAboveRightAvail, bool isBelowLeftAvail, bool isBelowRightAvail
-                  , bool isCtuCrossedByVirtualBoundaries, int horVirBndryPos[], int verVirBndryPos[], int numHorVirBndry, int numVerVirBndry
-    );
-  void invertQuantOffsets(ComponentID compIdx, int typeIdc, int typeAuxInfo, int* dstOffsets, int* srcOffsets);
-  void reconstructBlkSAOParam(SAOBlkParam& recParam, SAOBlkParam* mergeList[NUM_SAO_MERGE_TYPES]);
-  int  getMergeList(CodingStructure& cs, int ctuRsAddr, SAOBlkParam* blkParams, SAOBlkParam* mergeList[NUM_SAO_MERGE_TYPES]);
-  void offsetCTU(const UnitArea& area, const CPelUnitBuf& src, PelUnitBuf& res, SAOBlkParam& saoblkParam, CodingStructure& cs);
-  void xReconstructBlkSAOParams(CodingStructure& cs, SAOBlkParam* saoBlkParams);
-  bool isCrossedByVirtualBoundaries(const int xPos, const int yPos, const int width, const int height, int& numHorVirBndry, int& numVerVirBndry, int horVirBndryPos[], int verVirBndryPos[], const PicHeader* picHeader);
-  inline bool isProcessDisabled(int xPos, int yPos, int numVerVirBndry, int numHorVirBndry, int verVirBndryPos[], int horVirBndryPos[])
+  void SAOProcess(CodingStructure &cs, SAOBlkParam *saoBlkParams);
+  void create(int picWidth, int picHeight, ChromaFormat format, uint32_t maxCUWidth, uint32_t maxCUHeight,
+              uint32_t maxCUDepth, uint32_t lumaBitShift, uint32_t chromaBitShift);
+  void setReshaper(Reshape *p) { m_pcReshape = p; }
+  void destroy();
+
+  static int getMaxOffsetQVal(const int channelBitDepth)
   {
-    bool bDisabledFlag = false;
+    return (1 << (std::min<int>(channelBitDepth, MAX_SAO_TRUNCATED_BITDEPTH) - 5)) - 1;
+  }   // Table 9-32, inclusive
+
+protected:
+  using MergeBlkParams = EnumArray<SAOBlkParam *, SAOModeMergeTypes>;
+
+  void deriveLoopFilterBoundaryAvailability(CodingStructure &cs, const Position &pos, bool &isLeftAvail,
+                                            bool &isRightAvail, bool &isAboveAvail, bool &isBelowAvail,
+                                            bool &isAboveLeftAvail, bool &isAboveRightAvail, bool &isBelowLeftAvail,
+                                            bool &isBelowRightAvail) const;
+
+  void offsetBlock(const int channelBitDepth, const ClpRng &clpRng, SAOModeNewTypes typeIdx, int *offset,
+                   const Pel *srcBlk, Pel *resBlk, ptrdiff_t srcStride, ptrdiff_t resStride, int width, int height,
+                   bool isLeftAvail, bool isRightAvail, bool isAboveAvail, bool isBelowAvail, bool isAboveLeftAvail,
+                   bool isAboveRightAvail, bool isBelowLeftAvail, bool isBelowRightAvail,
+                   bool isCtuCrossedByVirtualBoundaries, int horVirBndryPos[], int verVirBndryPos[], int numHorVirBndry,
+                   int numVerVirBndry);
+  void invertQuantOffsets(ComponentID compIdx, SAOModeNewTypes typeIdc, int typeAuxInfo, int *dstOffsets,
+                          int *srcOffsets);
+  void reconstructBlkSAOParam(SAOBlkParam &recParam, MergeBlkParams &mergeList);
+  int  getMergeList(CodingStructure &cs, int ctuRsAddr, SAOBlkParam *blkParams, MergeBlkParams &mergeList);
+  void offsetCTU(const UnitArea &area, const CPelUnitBuf &src, PelUnitBuf &res, SAOBlkParam &saoblkParam,
+                 CodingStructure &cs);
+  void xReconstructBlkSAOParams(CodingStructure &cs, SAOBlkParam *saoBlkParams);
+  bool isCrossedByVirtualBoundaries(const int xPos, const int yPos, const int width, const int height,
+                                    int &numHorVirBndry, int &numVerVirBndry, int horVirBndryPos[],
+                                    int verVirBndryPos[], const PicHeader *picHeader);
+  bool isProcessDisabled(int xPos, int yPos, int numVerVirBndry, int numHorVirBndry, int verVirBndryPos[],
+                         int horVirBndryPos[])
+  {
+    bool disabledFlag = false;
     for (int i = 0; i < numVerVirBndry; i++)
     {
       if ((xPos == verVirBndryPos[i]) || (xPos == verVirBndryPos[i] - 1))
       {
-        bDisabledFlag = true;
+        disabledFlag = true;
         break;
       }
     }
@@ -108,13 +112,14 @@ protected:
     {
       if ((yPos == horVirBndryPos[i]) || (yPos == horVirBndryPos[i] - 1))
       {
-        bDisabledFlag = true;
+        disabledFlag = true;
         break;
       }
     }
-    return bDisabledFlag;
+    return disabledFlag;
   }
-  Reshape* m_pcReshape;
+  Reshape *m_pcReshape;
+
 protected:
   uint32_t m_offsetStepLog2[MAX_NUM_COMPONENT]; //offset step
   PelStorage m_tempBuf;

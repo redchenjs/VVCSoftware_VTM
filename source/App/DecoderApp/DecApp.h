@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,14 +69,14 @@ private:
   VideoIOYuv                              m_cTVideoIOYuvSIIPostFile;      ///< post-filtered YUV class
   int                                     m_SII_BlendingRatio;
 
-  typedef struct 
+  struct IdrSiiInfo
   {
     SEIShutterIntervalInfo m_siiInfo;
     uint32_t               m_picPoc;
-    uint8_t                m_isValidSii;
-  }IdrSiiInfo_s;
+    bool                   m_isValidSii;
+  };
 
-  std::map<uint32_t, IdrSiiInfo_s>      m_activeSiiInfo;
+  std::map<uint32_t, IdrSiiInfo> m_activeSiiInfo;
 
 #endif
 
@@ -122,7 +122,6 @@ private:
 
   void  writeLineToOutputLog(Picture * pcPic);
   void xOutputAnnotatedRegions(PicList* pcListPic);
-
 };
 
 //! \}

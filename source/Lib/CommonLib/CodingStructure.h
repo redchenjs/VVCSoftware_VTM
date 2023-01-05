@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2022, ITU/ISO/IEC
+* Copyright (c) 2010-2023, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@ enum PictureType
 #endif
   NUM_PIC_TYPES
 };
-extern XUCache g_globalUnitCache;
+extern XuPool g_xuPool;
 
 // ---------------------------------------------------------------------------
 // coding structure
@@ -88,8 +88,9 @@ public:
   UnitScale        unitScale[MAX_NUM_COMPONENT];
 
   int         baseQP;
-  int         prevQP[MAX_NUM_CHANNEL_TYPE];
-  int         currQP[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<int, ChannelType> prevQP;
+  EnumArray<int, ChannelType> currQP;
+
   int         chromaQpAdj;
   const SPS *sps;
   const PPS *pps;
@@ -100,7 +101,7 @@ public:
   const VPS *vps;
   const PreCalcValues* pcv;
 
-  CodingStructure(CUCache&, PUCache&, TUCache&);
+  CodingStructure(XuPool &);
 
 #if GDR_ENABLED
   bool isGdrEnabled() { return m_gdrEnabled; }
@@ -124,7 +125,7 @@ public:
   bool refreshCrossBTV(int begX, int endX) const;
 
   bool overlapDirty() const;
-  bool dirtyCrossTTV() const;  
+  bool dirtyCrossTTV() const;
   bool dirtyCrossBTV() const;
 #endif
 
@@ -132,14 +133,14 @@ public:
   bool isClean(const ChannelType effChType) const;
   bool isClean(const Position &IntPos, RefPicList e, int refIdx) const;
   bool isClean(const Position &IntPos, const Picture* const ref_pic) const;
-  bool isClean(const Position &IntPos, Mv FracMv) const;  
+  bool isClean(const Position &IntPos, Mv FracMv) const;
   bool isClean(const Position &IntPos, Mv FracMv, const Picture* const refPic) const;
   bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, int isProf=0) const;
   bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, bool ibc) const;
-  bool isClean(const Position &IntPos, const ChannelType effChType) const;  
-  bool isClean(const int x, const int y, const ChannelType effChType) const;  
+  bool isClean(const Position &IntPos, const ChannelType effChType) const;
+  bool isClean(const int x, const int y, const ChannelType effChType) const;
   bool isClean(const Area &area, const ChannelType effChType) const;
-  
+
   bool isSubPuClean(PredictionUnit &pu, const Mv *mv) const;
 #endif
   void rebindPicBufs();
@@ -167,13 +168,13 @@ public:
   PredictionUnit *getPU(const Position &pos, const ChannelType _chType);
   TransformUnit  *getTU(const Position &pos, const ChannelType _chType, const int subTuIdx = -1);
 
-  const CodingUnit     *getCU(const ChannelType &_chType) const { return getCU(area.blocks[_chType].pos(), _chType); }
-  const PredictionUnit *getPU(const ChannelType &_chType) const { return getPU(area.blocks[_chType].pos(), _chType); }
-  const TransformUnit  *getTU(const ChannelType &_chType) const { return getTU(area.blocks[_chType].pos(), _chType); }
+  const CodingUnit     *getCU(const ChannelType _chType) const { return getCU(area.block(_chType).pos(), _chType); }
+  const PredictionUnit *getPU(const ChannelType _chType) const { return getPU(area.block(_chType).pos(), _chType); }
+  const TransformUnit  *getTU(const ChannelType _chType) const { return getTU(area.block(_chType).pos(), _chType); }
 
-  CodingUnit     *getCU(const ChannelType &_chType ) { return getCU(area.blocks[_chType].pos(), _chType); }
-  PredictionUnit *getPU(const ChannelType &_chType ) { return getPU(area.blocks[_chType].pos(), _chType); }
-  TransformUnit  *getTU(const ChannelType &_chType ) { return getTU(area.blocks[_chType].pos(), _chType); }
+  CodingUnit     *getCU(const ChannelType _chType) { return getCU(area.block(_chType).pos(), _chType); }
+  PredictionUnit *getPU(const ChannelType _chType) { return getPU(area.block(_chType).pos(), _chType); }
+  TransformUnit  *getTU(const ChannelType _chType) { return getTU(area.block(_chType).pos(), _chType); }
 
   const CodingUnit     *getCURestricted(const Position &pos, const Position curPos, const unsigned curSliceIdx, const unsigned curTileIdx, const ChannelType _chType) const;
   const CodingUnit     *getCURestricted(const Position &pos, const CodingUnit& curCu,                               const ChannelType _chType) const;
@@ -203,12 +204,15 @@ public:
   bool        useDbCost;
   double      costDbOffset;
   double      lumaCost;
-  uint64_t      fracBits;
+  uint64_t    fracBits;
   Distortion  dist;
   Distortion  interHad;
   TreeType    treeType; //because partitioner can not go deep to tu and cu coding (e.g., addCU()), need another variable for indicating treeType
   ModeType    modeType;
-
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct m_featureCounter;
+#endif
+  
   void initStructData  (const int &QP = MAX_INT, const bool &skipMotBuf = false);
   void initSubStructure(      CodingStructure& cs, const ChannelType chType, const UnitArea &subArea, const bool &isTuEnc);
 
@@ -251,18 +255,18 @@ private:
   // needed for TU encoding
   bool m_isTuEnc;
 
-  unsigned *m_cuIdx   [MAX_NUM_CHANNEL_TYPE];
-  unsigned *m_puIdx   [MAX_NUM_CHANNEL_TYPE];
-  unsigned *m_tuIdx   [MAX_NUM_CHANNEL_TYPE];
-  bool     *m_isDecomp[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<unsigned *, ChannelType> m_cuIdx;
+  EnumArray<unsigned *, ChannelType> m_puIdx;
+  EnumArray<unsigned *, ChannelType> m_tuIdx;
+  EnumArray<bool *, ChannelType>     m_isDecomp;
 
   unsigned m_numCUs;
   unsigned m_numPUs;
   unsigned m_numTUs;
 
-  CUCache& m_cuCache;
-  PUCache& m_puCache;
-  TUCache& m_tuCache;
+  CuPool &m_cuPool;
+  PuPool &m_puPool;
+  TuPool &m_tuPool;
 
   std::vector<SAOBlkParam> m_sao;
 
@@ -273,7 +277,7 @@ private:
 
   TCoeff *m_coeffs [ MAX_NUM_COMPONENT ];
   Pel    *m_pcmbuf [ MAX_NUM_COMPONENT ];
-  bool   *m_runType[ MAX_NUM_CHANNEL_TYPE ];
+  EnumArray<bool *, ChannelType> m_runType;
   int     m_offsets[ MAX_NUM_COMPONENT ];
 
   MotionInfo *m_motionBuf;

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,26 +70,11 @@ class EncSlice;
 struct GeoMergeCombo
 {
   int splitDir;
-  int mergeIdx0;
-  int mergeIdx1;
+  MergeIdxPair mergeIdx;
   double cost;
-  GeoMergeCombo() : splitDir(), mergeIdx0(-1), mergeIdx1(-1), cost(0.0) {};
-  GeoMergeCombo(int _splitDir, int _mergeIdx0, int _mergeIdx1, double _cost) : splitDir(_splitDir), mergeIdx0(_mergeIdx0), mergeIdx1(_mergeIdx1), cost(_cost) {};
-};
-struct GeoMotionInfo
-{
-  uint8_t   m_candIdx0;
-  uint8_t   m_candIdx1;
-
-  GeoMotionInfo(uint8_t candIdx0, uint8_t candIdx1) : m_candIdx0(candIdx0), m_candIdx1(candIdx1) { }
-  GeoMotionInfo() { m_candIdx0 = m_candIdx1 = 0; }
-};
-struct SmallerThanComboCost
-{
-  inline bool operator() (const GeoMergeCombo& first, const GeoMergeCombo& second)
-  {
-    return (first.cost < second.cost);
-  }
+  GeoMergeCombo() : splitDir(0), mergeIdx{ 0, 0 }, cost(0.0){};
+  GeoMergeCombo(int _splitDir, const MergeIdxPair &idx, double _cost)
+    : splitDir(_splitDir), mergeIdx(idx), cost(_cost){};
 };
 
 class GeoComboCostList
@@ -97,55 +82,57 @@ class GeoComboCostList
 public:
   GeoComboCostList() {};
   ~GeoComboCostList() {};
-  std::vector<GeoMergeCombo> list;  
-  
-  void sortByCost() { std::stable_sort(list.begin(), list.end(), SmallerThanComboCost()); };
+  std::vector<GeoMergeCombo> list;
+
+  void sortByCost()
+  {
+    std::stable_sort(list.begin(), list.end(),
+                     [](const GeoMergeCombo &a, const GeoMergeCombo &b) { return a.cost < b.cost; });
+  };
 };
-struct SingleGeoMergeEntry
-{
-  int mergeIdx;
-  double cost;
-  SingleGeoMergeEntry() : mergeIdx(0), cost(MAX_DOUBLE) {};
-  SingleGeoMergeEntry(int _mergeIdx, double _cost) : mergeIdx(_mergeIdx), cost(_cost) {};
-};
+
 class FastGeoCostList
 {
+  int m_maxNumGeoCand{ 0 };
+
+  using CostArray = double[GEO_NUM_PARTITION_MODE][2];
+
+  CostArray *m_singleDistList{ nullptr };
+
 public:
-  FastGeoCostList() { numGeoTemplatesInitialized = 0; };
+  FastGeoCostList() {}
   ~FastGeoCostList()
   {
-    for (int partIdx = 0; partIdx < 2; partIdx++)
-    {
-      for (int splitDir = 0; splitDir < GEO_NUM_PARTITION_MODE; splitDir++)
-      {
-        delete[] singleDistList[partIdx][splitDir];
-      }
-      delete[] singleDistList[partIdx];
-      singleDistList[partIdx] = nullptr;
-    }
-  };
-  SingleGeoMergeEntry** singleDistList[2];
-  void init(int numTemplates, int maxNumGeoCand)
+    delete[] m_singleDistList;
+    m_singleDistList = nullptr;
+  }
+
+  void init(int maxNumGeoCand)
   {
-    if (numGeoTemplatesInitialized == 0 || numGeoTemplatesInitialized < numTemplates)
+    if (m_maxNumGeoCand != maxNumGeoCand)
     {
-      for (int partIdx = 0; partIdx < 2; partIdx++)
-      {
-        singleDistList[partIdx] = new SingleGeoMergeEntry*[numTemplates];
-        for (int splitDir = 0; splitDir < numTemplates; splitDir++)
-        {
-          singleDistList[partIdx][splitDir] = new SingleGeoMergeEntry[maxNumGeoCand];
-        }
-      }
-      numGeoTemplatesInitialized = numTemplates;
+      delete[] m_singleDistList;
+      m_singleDistList = nullptr;
+
+      CHECK(maxNumGeoCand > MRG_MAX_NUM_CANDS, "Too many candidates");
+      m_singleDistList = new CostArray[maxNumGeoCand];
+      m_maxNumGeoCand  = maxNumGeoCand;
     }
   }
+
   void insert(int geoIdx, int partIdx, int mergeIdx, double cost)
   {
-    assert(geoIdx < numGeoTemplatesInitialized);
-    singleDistList[partIdx][geoIdx][mergeIdx] = SingleGeoMergeEntry(mergeIdx, cost);
+    CHECKD(geoIdx >= GEO_NUM_PARTITION_MODE, "geoIdx is too large");
+    CHECKD(mergeIdx >= m_maxNumGeoCand, "mergeIdx is too large");
+    CHECKD(partIdx >= 2, "partIdx is too large");
+
+    m_singleDistList[mergeIdx][geoIdx][partIdx] = cost;
   }
-  int numGeoTemplatesInitialized;
+
+  double getCost(const int splitDir, const MergeIdxPair &mergeCand)
+  {
+    return m_singleDistList[mergeCand[0]][splitDir][0] + m_singleDistList[mergeCand[1]][splitDir][1];
+  }
 };
 
 class EncCu
@@ -159,14 +146,15 @@ private:
     Ctx best;
   };
 
-  std::vector<CtxPair>  m_CtxBuffer;
+  std::vector<CtxPair>  m_ctxBuffer;
   CtxPair*              m_CurrCtx;
-  CtxCache*             m_CtxCache;
+  CtxPool              *m_ctxPool;
 
   //  Data : encoder control
   int                   m_cuChromaQpOffsetIdxPlus1; // if 0, then cu_chroma_qp_offset_flag will be 0, otherwise cu_chroma_qp_offset_flag will be 1.
 
-  XUCache               m_unitCache;
+  XuPool m_unitPool;
+  PelUnitBufPool m_pelUnitBufPool;
 
   CodingStructure    ***m_pTempCS;
   CodingStructure    ***m_pBestCS;
@@ -186,20 +174,21 @@ private:
   IbcHashMap            m_ibcHashMap;
   EncModeCtrl          *m_modeCtrl;
 
-  PelStorage            m_acMergeBuffer[MMVD_MRG_MAX_RD_BUF_NUM];
-  PelStorage            m_acRealMergeBuffer[MRG_MAX_NUM_CANDS];
-  PelStorage            m_acMergeTmpBuffer[MRG_MAX_NUM_CANDS];
-  PelStorage            m_acGeoWeightedBuffer[GEO_MAX_TRY_WEIGHTED_SAD]; // to store weighted prediction pixles
-  FastGeoCostList       m_GeoCostList;
+  std::array<PelStorage, GEO_MAX_TRY_WEIGHTED_SAD> m_geoWeightedBuffers;   // weighted prediction pixels
+
+  FastGeoCostList       m_geoCostList;
   double                m_AFFBestSATDCost;
   double                m_mergeBestSATDCost;
   MotionInfo            m_SubPuMiBuf      [( MAX_CU_SIZE * MAX_CU_SIZE ) >> ( MIN_CU_LOG2 << 1 )];
 
   int                   m_ctuIbcSearchRangeX;
   int                   m_ctuIbcSearchRangeY;
-  int                   m_bestBcwIdx[2];
-  double                m_bestBcwCost[2];
-  GeoMotionInfo         m_GeoModeTest[GEO_MAX_NUM_CANDS];
+
+  std::array<int, 2>    m_bestBcwIdx;
+  std::array<double, 2> m_bestBcwCost;
+
+  static const MergeIdxPair m_geoModeTest[GEO_MAX_NUM_CANDS];
+
 #if SHARP_LUMA_DELTA_QP || ENABLE_QPA_SUB_CTU
   void    updateLambda      ( Slice* slice, const int dQP,
  #if WCG_EXT && ER_CHROMA_QP_WCG_PPS
@@ -208,6 +197,9 @@ private:
                               const bool updateRdCostLambda );
 #endif
   double                m_sbtCostSave[2];
+
+  GeoComboCostList m_comboList;
+
 public:
   /// copy parameters from encoder class
   void  init                ( EncLib* pcEncLib, const SPS& sps );
@@ -220,7 +212,8 @@ public:
   void  destroy             ();
 
   /// CTU analysis function
-  void  compressCtu         ( CodingStructure& cs, const UnitArea& area, const unsigned ctuRsAddr, const int prevQP[], const int currQP[] );
+  void compressCtu(CodingStructure &cs, const UnitArea &area, const unsigned ctuRsAddr,
+                   const EnumArray<int, ChannelType> &prevQP, const EnumArray<int, ChannelType> &currQP);
   /// CTU encoding function
   int   updateCtuDataISlice ( const CPelBuf buf );
 
@@ -258,7 +251,8 @@ protected:
   void xCheckRDCostAffineMerge2Nx2N
                               ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode );
   void xCheckRDCostInter      ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode );
-  bool xCheckRDCostInterIMV(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode, double &bestIntPelCost);
+  bool xCheckRDCostInterAmvr(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm,
+                             const EncTestMode &encTestMode, double &bestIntPelCost);
   void xEncodeDontSplit       ( CodingStructure &cs, Partitioner &partitioner);
 
   void xCheckRDCostMerge2Nx2N ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode );
@@ -286,6 +280,11 @@ protected:
   void xCheckRDCostIBCModeMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode );
 
   void xCheckPLT              ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode );
+
+  PredictionUnit* getPuForInterPrediction(CodingStructure* cs);
+  template<size_t N>
+  unsigned int updateRdCheckingNum(double threshold, unsigned int numMergeSatdCand, static_vector<double, N>& costList);
+  void checkEarlySkip(const CodingStructure* bestCS, const Partitioner &partitioner);
 };
 
 //! \}

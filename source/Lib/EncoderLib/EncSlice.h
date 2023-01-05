@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,10 +98,11 @@ private:
 #endif
 
 public:
-  double  initializeLambda(const Slice* slice, const int GOPid, const int refQP, const double dQP); // called by calculateLambda() and updateLambda()
+  double initializeLambda(const Slice *slice, const int gopId, const int refQP,
+                          const double dQP);   // called by calculateLambda() and updateLambda()
 #if SHARP_LUMA_DELTA_QP || ENABLE_QPA_SUB_CTU
   int     getGopId() const { return m_gopID; }
-  double  calculateLambda(const Slice *slice, const int GOPid, const double refQP, const double dQP, int &qp);
+  double  calculateLambda(const Slice *slice, const int gopId, const double refQP, const double dQP, int &qp);
 #endif
   void setUpLambda(Slice *slice, const double dLambda, int qp);
 

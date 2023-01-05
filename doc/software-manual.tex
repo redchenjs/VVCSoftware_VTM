@@ -205,7 +205,7 @@ fontsize=\footnotesize}
 \maketitle
 \begin{abstract}
 This document is a user manual describing usage of the VTM reference software
-for the VVC project. It applies to version 18.0 of the software.
+for the VVC project. It applies to version 19.0 of the software.
 \end{abstract}
 
 \tableofcontents
@@ -245,7 +245,7 @@ The software may be retrieved from the GitLab server located at:
 Table~\ref{tab:project-files} lists the compiler environments and versions 
 for which building the software is tested.
 
-Note that the software makes use of C++11 language features, which may not
+Note that the software makes use of C++14 language features, which may not
 be available in older compilers.
 
 \begin{table}[ht]
@@ -901,13 +901,106 @@ Specifies the value of sps_ref_pic_resampling_enabled_flag.
 \Option{ScalingRatioHor} &
 %\ShortOption{\None} &
 \Default{1.0} &
-Scaling ratio in horizontal direction for reference picture resampling.
+Scaling ratio in horizontal direction for reference picture resampling. When GOPBasedRPR is true unless ratio is defined the ratio will be set to 2.0.
 \\
 
 \Option{ScalingRatioVer} &
 %\ShortOption{\None} &
 \Default{1.0} &
-Scaling ratio in vertical direction for reference picture resampling.
+Scaling ratio in vertical direction for reference picture resampling. When GOPBasedRPR is true unless ratio is defined the ratio will be set to 2.0.
+\\
+
+\Option{GOPBasedRPR} &
+%\ShortOption{\None} &
+\Default{false} &
+Enables decision to encode pictures in GOP in full resolution or one of three downscaled resolutions (default is $1/2$, $2/3$ and $4/5$ in both dimensions).
+First picture in GOP is rescaled to half resolution and then upscaled to full resolution. The luma PSNR of the rescaled picture compared to the source picture is compared with
+PSNR thresholds for respective resolution: $(PsnrThresholdRPR - (QP - 37) * 0.5) < upscaledPSNR$.
+The smallest resolution that has PSNR above the threshold is selected.
+\\
+
+\Option{GOPBasedRPRQPTh} &
+%\ShortOption{\None} &
+\Default{32} &
+QP threshold parameter that determines which QP GOP-based RPR is invoked for given by $QP >= GOPBasedRPRQPTh$.
+\\
+
+\Option{ScalingRatioHor2} &
+%\ShortOption{\None} &
+\Default{1.5} &
+Scaling ratio in hor direction for GOP based RPR ($2/3$).
+\\
+
+\Option{ScalingRatioVer2} &
+%\ShortOption{\None} &
+\Default{1.5} &
+Scaling ratio in ver direction for GOP based RPR ($2/3$).
+\\
+
+\Option{ScalingRatioHor3} &
+%\ShortOption{\None} &
+\Default{1.25} &
+Scaling ratio in hor direction for GOP based RPR ($4/5$).
+\\
+
+\Option{ScalingRatioVer3} &
+%\ShortOption{\None} &
+\Default{1.25} &
+Scaling ratio in ver direction for GOP based RPR ($4/5$).
+\\
+
+\Option{PsnrThresholdRPR} &
+%\ShortOption{\None} &
+\Default{47.0} &
+PSNR threshold for GOP based RPR for the case of ScalingRatioVer and ScalingRatioHor ($1/2$).
+\\
+
+\Option{PsnrThresholdRPR2} &
+%\ShortOption{\None} &
+\Default{44.0} &
+PSNR threshold for GOP based RPR for the case of ScalingRatioVer2 and ScalingRatioHor2 ($2/3$).
+\\
+
+\Option{PsnrThresholdRPR3} &
+%\ShortOption{\None} &
+\Default{41.0} &
+PSNR threshold for GOP based RPR for the case of ScalingRatioVer3 and ScalingRatioHor3 ($4/5$).
+\\
+
+\Option{QpOffsetRPR} &
+%\ShortOption{\None} &
+\Default{-6} &
+QP offset for luma when encoding in reduced resolution with GOP based RPR ($1/2$).
+\\
+
+\Option{QpOffsetRPR2} &
+%\ShortOption{\None} &
+\Default{-4} &
+QP offset for luma when encoding in reduced resolution with GOP based RPR ($2/3$).
+\\
+
+\Option{QpOffsetRPR3} &
+%\ShortOption{\None} &
+\Default{-2} &
+QP offset for luma when encoding in reduced resolution with GOP based RPR ($4/5$).
+\\
+
+\Option{QpOffsetChromaRPR} &
+%\ShortOption{\None} &
+\Default{-6} &
+QP offset for chroma when encoding in reduced resolution with GOP based RPR ($1/2$).
+\\
+
+\Option{QpOffsetChromaRPR2} &
+%\ShortOption{\None} &
+\Default{-4} &
+QP offset for chroma when encoding in reduced resolution with GOP based RPR ($2/3$).
+\\
+
+\Option{QpOffsetChromaRPR3} &
+%\ShortOption{\None} &
+\Default{-2} &
+QP offset for chroma when encoding in reduced resolution with GOP based RPR ($4/5$).
 \\
 
 \Option{FractionNumFrames} &
@@ -925,9 +1018,14 @@ POC period at which resolution is changed.
 \Option{UpscaledOutput} &
 %\ShortOption{\None} &
 \Default{0} &
-Picture output options: output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for reference picture resampling.
+Picture output options: output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for reference picture resampling. When GOPBasedRPR is true it will be set to 2.
 \\
 
+\Option{UpscaleFilterForDisplay} &
+%\ShortOption{\None} &
+\Default{1} &
+Filters used for upscaling reconstruction to full resolution (2: ECM 12-tap luma and 6-tap chroma MC filters, 1: Alternative 12-tap luma and 6-tap chroma filters, 0: VVC 8-tap luma and 4-tap chroma MC filters).
+\\
 
 \end{OptionTableNoShorthand}
 
@@ -2128,8 +2226,14 @@ The lower value has higher speedup and also has higher coding loss.
 \begin{OptionTableNoShorthand}{Quantization parameters}{tab:quantization}
 \Option{QP (-q)} &
 %\ShortOption{-q} &
-\Default{30.0} &
-Specifies the base value of the quantization parameter. If it is non-integer, the QP is switched once during encoding.
+\Default{30} &
+Specifies the base value of the quantization parameter (QP).
+\\
+
+\Option{QPIncrementFrame (-qpif)} &
+%\ShortOption{\None} &
+\Default{Undefined} &
+Specifies a frame number in the input video file. If this value is defined, the base QP value is incremented by 1 for all frames that have a frame number equal to or larger than the specified frame number. This option may be used for rate matching as it enables to obtain average bitrates that are between bitrates obtainable with fixed base QP values.
 \\
 
 \Option{IntraQPOffset} &
@@ -3737,6 +3841,8 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   177 & Depth Representation Information         & Table \ref{tab:sei-dri} \\
   179 & Multiview Acquisition Information        & Table \ref{tab:sei-mai} \\
   180 & Multiview View Position                  & Table \ref{tab:sei-mvp} \\
+  200 & SEI manifest                             & Table \ref{tab:sei-sei-manifest} \\
+  201 & SEI prefix indication                    & Table \ref{tab:sei-sei-prefix-indication} \\
   202 & Annotated regions information            & Table \ref{tab:sei-annotated-regions} \\  
   203 & Subpicture Level Information             & Table \ref{tab:sei-subpic-level} \\  
   204 & Sample Aspect Ratio Information          & Table \ref{tab:sei-sari} \\  
@@ -4183,24 +4289,71 @@ Specifies the rotation and mirroring to be applied to the picture.
 \end{OptionTableNoShorthand}
 
 
-
 \begin{OptionTableNoShorthand}{Green Metadata SEI message encoder parameters}{tab:sei-green-metadata}
 \Option{SEIGreenMetadataType} &
-\Default{0} &
+\Default{-1} &
 Specifies the type of metadata that is present in the SEI message.
 \par
 \begin{tabular}{cp{0.35\textwidth}}
-  0 & Reserved \\
-  1 & Metadata enabling quality recovery after low-power encoding is present \\
+	-1 & Disabled \\
+	0 & Metadata for decoder complexity metrics \\
+	1 & Metadata enabling quality recovery after low-power encoding\\
 \end{tabular}
 \\
-\Option{SEIXSDMetricType} &
+\Option{SEIGreenMetadataPeriodType} &
 \Default{0} &
-Indicates the type of the objective quality metric.
+Indicates the period type of metadata.
 \par
 \begin{tabular}{cp{0.35\textwidth}}
-  0 & PSNR is used as objective quality metric \\
+	0 & Metadata are applicable to a single picture  \\
+	1 & Metadata are applicable to all pictures in decoding order, up to (but not including) the picture containing the next I slice (not implemented) \\
+	2 & Metadata are applicable to all pictures over a specified time interval in seconds \\
+	3 & Metadata are applicable over a specified number of pictures counted in decoding order \\
 \end{tabular}
+\\
+\Option{SEIGreenMetadataPeriodTypeSeconds} &
+\Default{1} &
+Indicates the number of seconds over which metadata should be valid (if SEIGreenMetadataPeriodType == 2)
+\\
+\Option{SEIGreenMetadataPeriodTypePictures} &
+\Default{1} &
+Indicates the number of pictures, counted in decoding order, over which metadata should be valid (if SEIGreenMetadataPeriodType == 3)
+\\
+\Option{SEIGreenMetadataExtendedRepresentation} &
+\Default{0} &
+Enables or disables the signaling of extended complexity metrics (if SEIGreenMetadataType == 0)
+\\
+\Option{GMFA} &
+\Default{false} &
+Enables or disables the output of a file containing analysis statistics for green metadata generation (if SEIGreenMetadataType == 0)
+\\
+\Option{GMFAFile} &
+\Default{} &
+File name for GMFA output file.
+\\
+\Option{GMFAFramewise} &
+\Default{false} &
+Enables or disables frame-wise output of the statistics. If disabled, statistics are calculated for the complete bit stream.
+\\
+\Option{SEIXSDMetricNumber} &
+\Default{1} &
+Number of quality metrics to be signaled (if SEIGreenMetadataType == 1)
+\\
+\Option{SEIXSDMetricTypePSNR} &
+\Default{false} &
+Enables or disables sending of PSNR metric.
+\\
+\Option{SEIXSDMetricTypeSSIM} &
+\Default{false} &
+Enables or disables sending of SSIM metric.
+\\
+\Option{SEIXSDMetricTypeWPSNR} &
+\Default{false} &
+Enables or disables sending of wPSNR metric.
+\\
+\Option{SEIXSDMetricTypeWSPSNR} &
+\Default{false} &
+Enables or disables sending of WS-PSNR metric.
 \\
 \end{OptionTableNoShorthand}
 
@@ -5174,6 +5327,20 @@ Enables (true) or disables (false) the insertion of Frame-Field Information SEI 
 \\
 \end{OptionTableNoShorthand}
 
+\begin{OptionTableNoShorthand}{SEI manifest SEI message encoder parameters}{tab:sei-sei-manifest}
+\Option{SEISEIManifestEnabled} &
+\Default{false} &
+Enables (true) or disables (false) the SEI manifest SEI message.
+\\
+\end{OptionTableNoShorthand}
+
+\begin{OptionTableNoShorthand}{SEI prefix indication SEI message encoder parameters}{tab:sei-sei-prefix-indication}
+\Option{SEISEIPrefixIndicationEnabled} &
+\Default{false} &
+Enables (true) or disables (false) the SEI prefix indication SEI message.
+\\
+\end{OptionTableNoShorthand}
+
 \begin{OptionTableNoShorthand}{Annotated Regions SEI message encoder parameters}{tab:sei-annotated-regions}
 \Option{SEIAnnotatedRegionsFileRoot (-cri)} &
 \Default{\NotSet} &
@@ -5395,6 +5562,14 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the nnpfc_mode_idc of the \emph{i}-th neural network post-filter.
   \\
+  \Option{SEINNPostFilterCharacteristicsUriTag{i}} &
+  \Default{""} &
+  specifies that the post-processing filter of the \emph{i}-th neural network post-filter is a neural network identified by a specified tag URI.
+  \\
+  \Option{SEINNPostFilterCharacteristicsUri{i}} &
+  \Default{""} &
+  specifies that the post-processing filter of the \emph{i}-th neural network post-filter is a neural network information URI.
+  \\
   \Option{SEINNPostFilterCharacteristicsPurposeAndFormattingFlag\emph{i}} &
   \Default{false} &
   When true (non-zero) specifies, for the \emph{i}-th neural network post-filter, that the filter purpose, input formatting, output formatting and complexity are present.
@@ -5409,6 +5584,7 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
     2 & Chroma upsampling from the 4:2:0 chroma format to the 4:2:2 or 4:4:4 chroma format, or from the 4:2:2 chroma format to the 4:4:4 chroma format \\
     3 & Increasing the width or height of the cropped decoded output picture without changing the chroma format \\
     4 & Increasing the width or height of the cropped decoded output picture and upsampling the chroma format \\
+    5 & Frame rate upsampling \\
   \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsOutSubWidthCFlag\emph{i}} &
@@ -5436,13 +5612,18 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
     false & Specifies that the second dimension in the input tensor to the \emph{i}-th neural network post-filter and the output tensor resulting from the \emph{i}-th neural network post-filter is used for the channel. \\
   \end{tabular}
   \\
-  \Option{SEINNPostFilterCharacteristicsInpSampleIdc\emph{i}} &
+  \Option{SEINNPostFilterCharacteristicsInpFormatIdc\emph{i}} &
   \Default{0} &
-  Specifies the method of converting an input sample for the \emph{i}-th neural network post-filter.
+  Specifies the method of converting a sample value of the decoded picture to an input value to the \emph{i}-th neural network post-filter.
+  \par
+    \begin{tabular}{cp{0.35\textwidth}}
+      0 & Real numbers where the value range is 0 to 1, inclusive. \\
+      1 & Unsigned integer value range of 0 to the bit depth indicated for the input tensor (see syntax element below).
+    \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsInpTensorBitDepthMinus8\emph{i}} &
   \Default{0} &
-  Specifies the bit depth of the input tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_sample_idc = 4.
+  Specifies the bit depth of the input tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_format_idc = 1.
   \\
   \Option{SEINNPostFilterCharacteristicsAuxInpIdc\emph{i}} &
   \Default{0} &
@@ -5480,13 +5661,18 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
     3 & Four luma matrices, two chroma matrices, and a quantization parameter matrix are present in the input tensor, thus the number of channels is 7 \\
   \end{tabular}
   \\
-  \Option{SEINNPostFilterCharacteristicsOutSampleIdc\emph{i}} &
+  \Option{SEINNPostFilterCharacteristicsOutFormatIdc\emph{i}} &
   \Default{0} &
-  Specifies the method of converting an output sample for the \emph{i}-th neural network post-filter.
+  Specifies the sample values output by the \emph{i}-th neural network post-filter.
+  \par
+  \begin{tabular}{cp{0.35\textwidth}}
+    0 & Real numbers where the value range is 0 to 1, inclusive. \\
+    1 & Unsigned integer numbers where the value range is 0 to $(1 << bitDepth) - 1$ inclusive.
+  \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8\emph{i}} &
   \Default{0} &
-  Specifies the bit depth of the output tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_out_sample_idc = 4.
+  Specifies the bit depth of the output tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_out_format_idc = 1.
   \\
   \Option{SEINNPostFilterCharacteristicsOutOrderIdc\emph{i}} &
   \Default{0} &
@@ -5554,9 +5740,9 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the Cb padding when when nnpfc_padding_type is equal to 4 of the \emph{i}-th neural network post-filter.
   \\
-  \Option{SEINNPostFilterCharacteristicsComplexityIdc\emph{i}} &
-  \Default{0} &
-  Specifies the nnpfc_complexity_idc of the \emph{i}-th neural network post-filter.
+  \Option{SEINNPostFilterCharacteristicsComplexityInfoPresentFlag\emph{i}} &
+  \Default{false} &
+  Specifies the nnpfc_complexity_present_flag of the \emph{i}-th neural network post-filter.
   \\
   \Option{SEINNPostFilterCharacteristicsParameterTypeIdc\emph{i}} &
   \Default{0} &
@@ -5588,18 +5774,22 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   Specifies that the maximum number of multiply-accumulate (MAC) operations per sample of the \emph{i}-th neural network post-filter is less than or equal to nnpfc_num_kmac_operations_idc * 1000.
   nnpfc_num_kmac_operations_idc = 0 specifies that the maximum number of MAC operations of the network is not specified.
   \\
+  \Option{SEINNPostFilterCharacteristicsTotalKilobyteSize\emph{i}} &
+  \Default{0} &
+  Indicates the total size in kilobytes required to store the uncompressed NN parameters in the \emph{i}-th neural network post-filter when nnpfc_total_kilobyte_size is greater than 0. The total size in bits is a number equal to or greater than the sum of bits used to store each parameter. nnpfc_total_kilobyte_size is the total size in bits divided by 8000, rounded up.
+  nnpfc_total_kilobyte_size equal to 0 indicates that the total size required to store the parameters for the neural network is unknown.
+  \\
   \Option{SEINNPostFilterCharacteristicsPayloadFilename\emph{i}} &
   \Default{""} &
   Specifies the NNR bitstream of the \emph{i}-th neural network post-filter.
   \\
-  \Option{SEINNPostFilterCharacteristicsUriTag{i}} &
-  \Default{""} &
-  specifies that the post-processing filter of the \emph{i}-th neural network post-filter is a neural network identified by a specified tag URI.
+  \Option{SEINNPostFilterCharacteristicsNumberInputDecodedPicsMinusTwo\emph{i}} &
+  \Default{0} &
+  Specifies the number of decoded output pictures minus 2 used as input for the \emph{i}-th neural network post-filter.
   \\
-  \Option{SEINNPostFilterCharacteristicsUri{i}} &
-  \Default{""} &
-  specifies that the post-processing filter of the \emph{i}-th neural network post-filter is a neural network information URI.
-
+  \Option{SEINNPostFilterCharacteristicsNumberInterpolatedPics\emph{i}} &
+  \Default{0} &
+  Specifies the number of interpolated pictures generated by the \emph{i}-th neural network post-filter between the i th and (i+1) th picture used as input for the post processing filter.
   \\
 \end{OptionTableNoShorthand}
 
@@ -5802,6 +5992,12 @@ Defines the maximum temporal layer to be decoded. If -1, then all layers are dec
 \Default{\NotSet} &
 Specifies the targetDecLayerIdSet file name. The file would contain white-space separated LayerId values of the layers that are to be decoded.
 Omitting the parameter, or using a value of -1 in the file decodes all layers.
+\\
+
+\Option{UpscaleFilterForDisplay} &
+%\ShortOption{\None} &
+\Default{1} &
+Filters used for upscaling reconstruction to full resolution (2: ECM 12-tap luma and 6-tap chroma MC filters, 1: Alternative 12-tap luma and 6-tap chroma filters, 0: VVC 8-tap luma and 4-tap chroma MC filters).
 \\
 
 \Option{OutputBitDepth (-d)} &
@@ -6134,6 +6330,38 @@ DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL,
 \end{minted}
 \end{description}
 
+
+\section{Coding tool statistics extension for green metadata}
+\label{sec:green-meta-sei}
+
+The encoder and the decoder include an extension that generates coding tool statistic. In the encoder, the extension calculates green metadata for encoding green SEI messages, in particular complexity metrics for decoder power reduction. The decoder extension can be used for cross-checking the correct functionality of the encoding extension.
+
+The output of the analyzer can be enabled with the option 'GMFA' (Green Metadata Feature Analyzer). The output file name is specified with the flag 'GMFAFile'.
+Furthermore, it is possible to generate a framewise analysis with the option 'GMFAFramewise'. The output file is generated in a Matlab-readable way. Here is an example for both the encoder and the decoder:
+
+\begin{minted}{bash}
+bin/EncoderAppStatic -b bitstream.vvc  --GMFA 1 --GMFAFramewise=1 --GMFAFile="bitstream.m" [encoder options]
+
+bin/DecoderAppStatic -b bitstream.vvc  --GMFA 1 --GMFAFramewise=1 --GMFAFile="bitstream.m" [decoder options]
+\end{minted}
+
+The output file contains arrays with statistics on the use of coding tools on block-size level. As an example, the number of intra-coded blocks is returned as:
+
+\begin{minted}{bash}
+n.intraBlocks = [...
+0  0  0  0  0  0  0  0 ;...
+0  0  0  16412  2142  54  0  0 ;...
+0  0  41654  41906  9780  665  27  0 ;...
+0  0  23494  22855  8641  906  26  0 ;...
+0  0  4670  4797  4030  1215  60  0 ;...
+0  0  433  507  881  1104  84  0 ;...
+0  0  38  48  43  122  131  0 ;...
+0  0  0  0  0  0  0  0 ];
+\end{minted}
+
+The horizontal position indicates the logarithm to the basis 2 block width (1, 2, 4, .., 128) and the vertical position the block height, accordingly. In this example, the bit stream contains $16{,}412$ intra-coded blocks of size $8\times 2$.
+
+More information can be found in JVET-P0085 and \url{10.1109/ICIP40778.2020.9190840}.
 
 
 

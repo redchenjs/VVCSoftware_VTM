@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -184,7 +184,8 @@ uint32_t IbcHashMap::xxComputeCrc32c16bit(uint32_t crc, const Pel pel)
 // CRC calculation in C code
 ////////////////////////////////////////////////////////
 
-unsigned int IbcHashMap::xxCalcBlockHash(const Pel* pel, const int stride, const int width, const int height, unsigned int crc)
+unsigned int IbcHashMap::xxCalcBlockHash(const Pel *pel, const ptrdiff_t stride, const int width, const int height,
+                                         unsigned int crc)
 {
   for (int y = 0; y < height; y++)
   {
@@ -200,8 +201,8 @@ unsigned int IbcHashMap::xxCalcBlockHash(const Pel* pel, const int stride, const
 template<ChromaFormat chromaFormat>
 void IbcHashMap::xxBuildPicHashMap(const PelUnitBuf& pic)
 {
-  const int chromaScalingX = getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, chromaFormat);
-  const int chromaScalingY = getChannelTypeScaleY(CHANNEL_TYPE_CHROMA, chromaFormat);
+  const int chromaScalingX     = getChannelTypeScaleX(ChannelType::CHROMA, chromaFormat);
+  const int chromaScalingY     = getChannelTypeScaleY(ChannelType::CHROMA, chromaFormat);
   const int chromaMinBlkWidth = MIN_PU_SIZE >> chromaScalingX;
   const int chromaMinBlkHeight = MIN_PU_SIZE >> chromaScalingY;
 
@@ -302,7 +303,8 @@ bool IbcHashMap::ibcHashMatch(const Area& lumaArea, std::vector<Position>& cand,
       bool wholeBlockMatch = true;
       if (lumaArea.width > MIN_PU_SIZE || lumaArea.height > MIN_PU_SIZE)
       {
-        if (!cs.isDecomp(bottomRight, CHANNEL_TYPE_LUMA) || bottomRight.x >= m_picWidth || bottomRight.y >= m_picHeight || topLeft.x < 0 || topLeft.y < 0)
+        if (!cs.isDecomp(bottomRight, ChannelType::LUMA) || bottomRight.x >= m_picWidth || bottomRight.y >= m_picHeight
+            || topLeft.x < 0 || topLeft.y < 0)
         {
           continue;
         }
@@ -318,7 +320,8 @@ bool IbcHashMap::ibcHashMatch(const Area& lumaArea, std::vector<Position>& cand,
       else
       {
         CHECK(topLeft != *refBlockPos, "4x4 target block should not have offset!");
-        if (abs(topLeft.x - lumaArea.x) > searchRange4SmallBlk || abs(topLeft.y - lumaArea.y) > searchRange4SmallBlk || !cs.isDecomp(bottomRight, CHANNEL_TYPE_LUMA))
+        if (abs(topLeft.x - lumaArea.x) > searchRange4SmallBlk || abs(topLeft.y - lumaArea.y) > searchRange4SmallBlk
+            || !cs.isDecomp(bottomRight, ChannelType::LUMA))
         {
           continue;
         }

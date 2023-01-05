@@ -83,15 +83,11 @@ CMAKE_OPTIONS += -DCMAKE_VERBOSE_MAKEFILE=ON
 endif
 
 ifneq ($(enable-tracing),)
-CONFIG_OPTIONS += -DSET_ENABLE_TRACING=ON -DENABLE_TRACING=$(enable-tracing)
+CONFIG_OPTIONS += -DENABLE_TRACING=$(enable-tracing)
 endif
 
-ifneq ($(parallel-split),)
-CONFIG_OPTIONS += -DSET_ENABLE_SPLIT_PARALLELISM=ON -DENABLE_SPLIT_PARALLELISM=$(parallel-split)
-endif
-
-ifneq ($(parallel-wpp),)
-CONFIG_OPTIONS += -DSET_ENABLE_WPP_PARALLELISM=ON -DENABLE_WPP_PARALLELISM=$(parallel-wpp)
+ifneq ($(high-bitdepth),)
+CONFIG_OPTIONS += -DENABLE_HIGH_BITDEPTH=$(high-bitdepth)
 endif
 
 ifneq ($(static),)

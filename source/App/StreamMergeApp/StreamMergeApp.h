@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 #include <stdio.h>
 #include <fstream>
 #include <iostream>
-#include "CommonDef.h" 
+#include "CommonDef.h"
 #include "NALread.h"
 #include "CABACWriter.h"
 #include "AnnexBread.h"

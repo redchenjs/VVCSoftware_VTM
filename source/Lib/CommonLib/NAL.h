@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,21 +61,13 @@ struct NALUnit
   , m_nuhReservedZeroBit(src.m_nuhReservedZeroBit)
   { }
   /** construct an NALunit structure with given header values. */
-  NALUnit(
-    NalUnitType nalUnitType,
-    int         temporalId = 0,
-    uint32_t nuhReservedZeroBit = 0,
-    uint32_t forbiddenZeroBit = 0,
-    int         nuhLayerId = 0)
-    :m_nalUnitType (nalUnitType)
-    ,m_temporalId  (temporalId)
-    ,m_nuhLayerId  (nuhLayerId)
-#if JVET_O0179_PROPOSALB
+  NALUnit(NalUnitType nalUnitType, int temporalId = 0, uint32_t nuhReservedZeroBit = 0, uint32_t forbiddenZeroBit = 0,
+          int nuhLayerId = 0)
+    : m_nalUnitType(nalUnitType)
+    , m_temporalId(temporalId)
+    , m_nuhLayerId(nuhLayerId)
     , m_forbiddenZeroBit(forbiddenZeroBit)
     , m_nuhReservedZeroBit(nuhReservedZeroBit)
-#endif
-
-
   {}
 
   /** default constructor - no initialization; must be performed by user */

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -169,7 +169,7 @@ private:
   int    m_sigRateDelta       [MAX_TB_SIZEY * MAX_TB_SIZEY];
   TCoeff m_deltaU             [MAX_TB_SIZEY * MAX_TB_SIZEY];
   TCoeff m_fullCoeff          [MAX_TB_SIZEY * MAX_TB_SIZEY];
-  int   m_bdpcm;
+  BdpcmMode m_bdpcm;
   int   m_testedLevels;
 };// END CLASS DEFINITION QuantRDOQ
 

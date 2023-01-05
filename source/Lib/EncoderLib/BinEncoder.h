@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2022, ITU/ISO/IEC
+* Copyright (c) 2010-2023, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -141,19 +141,20 @@ public:
   ~BinCounter() {}
 public:
   void      reset   ();
-  void      addCtx  ( unsigned ctxId )          { m_NumBinsCtx[ctxId]++; }
-  void      addEP   ( unsigned num   )          { m_NumBinsEP+=num; }
-  void      addEP   ()                          { m_NumBinsEP++; }
-  void      addTrm  ()                          { m_NumBinsTrm++; }
+  void      addCtx(unsigned ctxId) { m_numBinsCtx[ctxId]++; }
+  void      addEP(unsigned num) { m_numBinsEP += num; }
+  void      addEP() { m_numBinsEP++; }
+  void      addTrm() { m_numBinsTrm++; }
   uint32_t  getAll  ()                  const;
-  uint32_t  getCtx  ( unsigned ctxId )  const   { return m_NumBinsCtx[ctxId]; }
-  uint32_t  getEP   ()                  const   { return m_NumBinsEP; }
-  uint32_t  getTrm  ()                  const   { return m_NumBinsTrm; }
+  uint32_t  getCtx(unsigned ctxId) const { return m_numBinsCtx[ctxId]; }
+  uint32_t  getEP() const { return m_numBinsEP; }
+  uint32_t  getTrm() const { return m_numBinsTrm; }
+
 private:
-  std::vector<uint32_t> m_CtxBinsCodedBuffer;
-  uint32_t*             m_NumBinsCtx;
-  uint32_t              m_NumBinsEP;
-  uint32_t              m_NumBinsTrm;
+  std::vector<uint32_t> m_ctxBinsCodedBuffer;
+  uint32_t             *m_numBinsCtx;
+  uint32_t              m_numBinsEP;
+  uint32_t              m_numBinsTrm;
 };
 
 
@@ -186,7 +187,11 @@ public:
                                   int      maxLog2TrDynamicRange    );
   void      encodeBinTrm        ( unsigned bin                      );
   void      align               ();
-  unsigned  getNumWrittenBits   () { return ( m_Bitstream->getNumberOfWrittenBits() + 8 * m_numBufferedBytes + 23 - m_bitsLeft ); }
+  unsigned  getNumWrittenBits()
+  {
+    return (m_bitstream->getNumberOfWrittenBits() + 8 * m_numBufferedBytes + 23 - m_bitsLeft);
+  }
+
 public:
   uint32_t  getNumBins          ()                          { return BinCounter::getAll(); }
   bool      isEncoding          ()                          { return true; }
@@ -194,13 +199,13 @@ protected:
   void      encodeAlignedBinsEP ( unsigned bins,  unsigned numBins  );
   void      writeOut            ();
 protected:
-  OutputBitstream*        m_Bitstream;
-  uint32_t                m_Low;
-  uint32_t                m_Range;
+  OutputBitstream        *m_bitstream;
+  uint32_t                m_low;
+  uint32_t                m_range;
   uint32_t                m_bufferedByte;
   int32_t                 m_numBufferedBytes;
   int32_t                 m_bitsLeft;
-  BinStore                m_BinStore;
+  BinStore                m_binStore;
 };
 
 
@@ -213,11 +218,11 @@ public:
   ~TBinEncoder() {}
   void  encodeBin   ( unsigned bin, unsigned ctxId );
 public:
-  void            setBinStorage     ( bool b )          { m_BinStore.setUse(b); }
-  const BinStore* getBinStore       ()          const   { return &m_BinStore; }
+  void            setBinStorage(bool b) { m_binStore.setUse(b); }
+  const BinStore *getBinStore() const { return &m_binStore; }
   BinEncIf*       getTestBinEncoder ()          const;
 private:
-  CtxStore<BinProbModel>& m_Ctx;
+  CtxStore<BinProbModel> &m_ctx;
 };
 
 
@@ -234,18 +239,23 @@ public:
 public:
   void      init                ( OutputBitstream* bitstream )        {}
   void      uninit              ()                                    {}
-  void      start               ()                                    { m_EstFracBits = 0; }
+  void      start() { m_estFracBits = 0; }
   void      finish              ()                                    {}
-  void      restart             ()                                    { m_EstFracBits = (m_EstFracBits >> SCALE_BITS) << SCALE_BITS; }
-  void      reset               ( int qp, int initId )                { Ctx::init( qp, initId ); m_EstFracBits = 0;}
-public:
-  void      resetBits           ()                                    { m_EstFracBits = 0; }
+  void      restart() { m_estFracBits = (m_estFracBits >> SCALE_BITS) << SCALE_BITS; }
+  void      reset(int qp, int initId)
+  {
+    Ctx::init(qp, initId);
+    m_estFracBits = 0;
+  }
 
-  uint64_t  getEstFracBits      ()                              const { return m_EstFracBits; }
+public:
+  void resetBits() { m_estFracBits = 0; }
+
+  uint64_t  getEstFracBits() const { return m_estFracBits; }
   unsigned  getNumBins          ( unsigned ctxId )              const { THROW( "not supported for BitEstimator" ); return 0; }
 public:
-  void      encodeBinEP         ( unsigned bin                      ) { m_EstFracBits += BinProbModelBase::estFracBitsEP (); }
-  void      encodeBinsEP        ( unsigned bins,  unsigned numBins  ) { m_EstFracBits += BinProbModelBase::estFracBitsEP ( numBins ); }
+  void      encodeBinEP(unsigned bin) { m_estFracBits += BinProbModelBase::estFracBitsEP(); }
+  void      encodeBinsEP(unsigned bins, unsigned numBins) { m_estFracBits += BinProbModelBase::estFracBitsEP(numBins); }
   void      encodeRemAbsEP      ( unsigned bins,
                                   unsigned goRicePar,
                                   unsigned cutoff,
@@ -254,10 +264,14 @@ public:
 public:
   uint32_t  getNumBins          ()                                      { THROW("Not supported"); return 0; }
   bool      isEncoding          ()                                      { return false; }
-  unsigned  getNumWrittenBits   ()                                      { /*THROW( "Not supported" );*/ return (uint32_t)( 0/*m_EstFracBits*//* >> SCALE_BITS*/ ); }
+  unsigned  getNumWrittenBits()
+  {
+    // THROW( "Not supported" );
+    return (uint32_t) 0 /*(m_estFracBits >> SCALE_BITS)*/;
+  }
 
 protected:
-  uint64_t                m_EstFracBits;
+  uint64_t m_estFracBits;
 };
 
 
@@ -268,13 +282,13 @@ class TBitEstimator : public BitEstimatorBase
 public:
   TBitEstimator ();
   ~TBitEstimator() {}
-  void encodeBin    ( unsigned bin, unsigned ctxId )  { m_Ctx[ctxId].estFracBitsUpdate( bin, m_EstFracBits ); }
-  void encodeBinTrm ( unsigned bin )                  { m_EstFracBits += BinProbModel::estFracBitsTrm( bin ); }
+  void            encodeBin(unsigned bin, unsigned ctxId) { m_ctx[ctxId].estFracBitsUpdate(bin, m_estFracBits); }
+  void            encodeBinTrm(unsigned bin) { m_estFracBits += BinProbModel::estFracBitsTrm(bin); }
   void            setBinStorage     ( bool b )        {}
   const BinStore* getBinStore       ()          const { return 0; }
   BinEncIf*       getTestBinEncoder ()          const { return 0; }
 private:
-  CtxStore<BinProbModel>& m_Ctx;
+  CtxStore<BinProbModel> &m_ctx;
 };
 
 

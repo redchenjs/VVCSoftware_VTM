@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,8 @@
 #include <cmath>
 
 using namespace std;
+
+static constexpr double UNSET_IMV_COST = MAX_DOUBLE * 0.125;   // Some large, unique value
 
 void EncModeCtrl::init( EncCfg *pCfg, RateCtrl *pRateCtrl, RdCost* pRdCost )
 {
@@ -142,8 +144,8 @@ void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& c
   if( isLeafQG ) // QG at deepest level
   {
     int deltaQP = m_pcEncCfg->getMaxDeltaQP();
-    minQP = Clip3( -sps.getQpBDOffset( CHANNEL_TYPE_LUMA ), MAX_QP, baseQP - deltaQP );
-    maxQP = Clip3( -sps.getQpBDOffset( CHANNEL_TYPE_LUMA ), MAX_QP, baseQP + deltaQP );
+    minQP               = Clip3(-sps.getQpBDOffset(ChannelType::LUMA), MAX_QP, baseQP - deltaQP);
+    maxQP               = Clip3(-sps.getQpBDOffset(ChannelType::LUMA), MAX_QP, baseQP + deltaQP);
     Position pos = partitioner.currQgPos;
     const int ctuSize = sps.getCTUSize();
     const int ctuId = ( pos.y / ctuSize ) * ( ( cs.picture->lwidth() + ctuSize - 1 ) / ctuSize ) + ( pos.x / ctuSize );
@@ -159,7 +161,7 @@ void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& c
   else // deeper than QG
   {
     minQP = cs.currQP[partitioner.chType];
-    maxQP = cs.currQP[partitioner.chType];
+    maxQP = minQP;
   }
 }
 
@@ -239,7 +241,7 @@ int EncModeCtrl::calculateLumaDQP( const CPelBuf& rcOrg )
     avg = ( double ) maxVal * m_pcEncCfg->getLumaLevelToDeltaQPMapping().maxMethodWeight;
   }
 #endif
-  int lumaBD = m_pcEncCfg->getBitDepth(CHANNEL_TYPE_LUMA);
+  int lumaBD     = m_pcEncCfg->getBitDepth(ChannelType::LUMA);
   int lumaIdxOrg = Clip3<int>(0, int(1 << lumaBD) - 1, int(avg + 0.5));
   int lumaIdx = lumaBD < 10 ? lumaIdxOrg << (10 - lumaBD) : lumaBD > 10 ? lumaIdxOrg >> (lumaBD - 10) : lumaIdxOrg;
   int QP = m_lumaLevelToDeltaQPLUT[lumaIdx];
@@ -427,7 +429,7 @@ void CacheBlkInfoCtrl::init( const Slice &slice )
           {
             if( m_codedCUInfo[x][y][wIdx][hIdx] )
             {
-              memset( m_codedCUInfo[x][y][wIdx][hIdx], 0, sizeof( CodedCUInfo ) );
+              std::fill_n(reinterpret_cast<char *>(m_codedCUInfo[x][y][wIdx][hIdx]), sizeof(CodedCUInfo), 0);
             }
           }
         }
@@ -543,7 +545,7 @@ void SaveLoadEncInfoSbt::destroy()
   delete[] m_saveLoadSbt;
 }
 
-uint16_t SaveLoadEncInfoSbt::findBestSbt( const UnitArea& area, const uint32_t curPuSse )
+SaveLoadEncInfoSbt::BestSbt SaveLoadEncInfoSbt::findBestSbt(const UnitArea &area, const uint32_t curPuSse)
 {
   unsigned idx1, idx2, idx3, idx4;
   getAreaIdx( area.Y(), *m_sliceSbt->getPPS()->pcv, idx1, idx2, idx3, idx4 );
@@ -553,14 +555,15 @@ uint16_t SaveLoadEncInfoSbt::findBestSbt( const UnitArea& area, const uint32_t c
   {
     if( curPuSse == pSbtSave->puSse[i] )
     {
-      return pSbtSave->puSbt[i] + ( pSbtSave->puTrs[i] << 8 );
+      return { pSbtSave->puSbt[i], pSbtSave->puTrs[i] };
     }
   }
 
-  return MAX_UCHAR + ( MAX_UCHAR << 8 );
+  return { MAX_UCHAR, MtsType::NONE };
 }
 
-bool SaveLoadEncInfoSbt::saveBestSbt( const UnitArea& area, const uint32_t curPuSse, const uint8_t curPuSbt, const uint8_t curPuTrs )
+bool SaveLoadEncInfoSbt::saveBestSbt(const UnitArea &area, const uint32_t curPuSse, const uint8_t curPuSbt,
+                                     const MtsType curPuTrs)
 {
   unsigned idx1, idx2, idx3, idx4;
   getAreaIdx( area.Y(), *m_sliceSbt->getPPS()->pcv, idx1, idx2, idx3, idx4 );
@@ -841,7 +844,8 @@ void BestEncInfoCache::init( const Slice &slice )
           {
             TCoeff *coeff[MAX_NUM_TBLOCKS] = { 0, };
             Pel    *pcmbf[MAX_NUM_TBLOCKS] = { 0, };
-            bool   *runType[MAX_NUM_TBLOCKS - 1] = { 0, };
+            EnumArray<bool *, ChannelType> runType;
+            runType.fill(nullptr);
 
 #if REUSE_CU_RESULTS_WITH_MULTIPLE_TUS
             for( int i = 0; i < MAX_NUM_TUS; i++ )
@@ -853,10 +857,12 @@ void BestEncInfoCache::init( const Slice &slice )
               {
                 coeff[i] = coeffPtr; coeffPtr += area.blocks[i].area();
                 pcmbf[i] = pcmPtr;   pcmPtr += area.blocks[i].area();
-                if (i < 2)
+                const auto        compId = ComponentID(i);
+                const ChannelType chType = toChannelType(compId);
+                if (compId == getFirstComponentOfChannel(chType) && runTypePtr != nullptr)
                 {
-                  runType[i] = runTypePtr;
-                  runTypePtr += runTypePtr ? area.blocks[i].area() : 0;
+                  runType[chType] = runTypePtr;
+                  runTypePtr += area.blocks[i].area();
                 }
               }
 
@@ -1098,16 +1104,17 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
     }
   }
 
-  m_ComprCUCtxList.push_back( ComprCUCtx( cs, minDepth, maxDepth, NUM_EXTRA_FEATURES ) );
+  m_ComprCUCtxList.push_back(ComprCUCtx(cs, minDepth, maxDepth));
 
-  const CodingUnit* cuLeft  = cs.getCU( cs.area.blocks[partitioner.chType].pos().offset( -1, 0 ), partitioner.chType );
-  const CodingUnit* cuAbove = cs.getCU( cs.area.blocks[partitioner.chType].pos().offset( 0, -1 ), partitioner.chType );
+  const CodingUnit *cuLeft  = cs.getCU(cs.area.block(partitioner.chType).pos().offset(-1, 0), partitioner.chType);
+  const CodingUnit *cuAbove = cs.getCU(cs.area.block(partitioner.chType).pos().offset(0, -1), partitioner.chType);
 
-  const bool qtBeforeBt = ( (  cuLeft  &&  cuAbove  && cuLeft ->qtDepth > partitioner.currQtDepth && cuAbove->qtDepth > partitioner.currQtDepth )
-                         || (  cuLeft  && !cuAbove  && cuLeft ->qtDepth > partitioner.currQtDepth )
-                         || ( !cuLeft  &&  cuAbove  && cuAbove->qtDepth > partitioner.currQtDepth )
-                         || ( !cuAbove && !cuLeft   && cs.area.lwidth() >= ( 32 << cs.slice->getDepth() ) ) )
-                         && ( cs.area.lwidth() > ( cs.pcv->getMinQtSize( *cs.slice, partitioner.chType ) << 1 ) );
+  const bool qtBeforeBt =
+    ((cuLeft && cuAbove && cuLeft->qtDepth > partitioner.currQtDepth && cuAbove->qtDepth > partitioner.currQtDepth)
+     || (cuLeft && !cuAbove && cuLeft->qtDepth > partitioner.currQtDepth)
+     || (!cuLeft && cuAbove && cuAbove->qtDepth > partitioner.currQtDepth)
+     || (!cuAbove && !cuLeft && cs.area.lwidth() >= (32 << cs.slice->getHierPredLayerIdx())))
+    && (cs.area.lwidth() > (cs.pcv->getMinQtSize(*cs.slice, partitioner.chType) << 1));
 
   // set features
   ComprCUCtx &cuECtx  = m_ComprCUCtxList.back();
@@ -1118,8 +1125,8 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
   cuECtx.set( BEST_TRIV_SPLIT_COST, MAX_DOUBLE );
   cuECtx.set( DO_TRIH_SPLIT,        1 );
   cuECtx.set( DO_TRIV_SPLIT,        1 );
-  cuECtx.set( BEST_IMV_COST,        MAX_DOUBLE * .5 );
-  cuECtx.set( BEST_NO_IMV_COST,     MAX_DOUBLE * .5 );
+  cuECtx.set(BEST_IMV_COST, UNSET_IMV_COST);
+  cuECtx.set(BEST_NO_IMV_COST, UNSET_IMV_COST);
   cuECtx.set( QT_BEFORE_BT,         qtBeforeBt );
   cuECtx.set( DID_QUAD_SPLIT,       false );
   cuECtx.set( IS_BEST_NOSPLIT_SKIP, false );
@@ -1131,7 +1138,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
   {
     if (m_pcEncCfg->getUseAdaptiveQP())
     {
-      baseQP = Clip3(-cs.sps->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, baseQP + xComputeDQP(cs, partitioner));
+      baseQP = Clip3(-cs.sps->getQpBDOffset(ChannelType::LUMA), MAX_QP, baseQP + xComputeDQP(cs, partitioner));
     }
 #if ENABLE_QPA_SUB_CTU
     else if (m_pcEncCfg->getUsePerceptQPA() && !m_pcEncCfg->getUseRateCtrl() && cs.pps->getUseDQP() && cs.slice->getCuQpDeltaSubdiv() > 0)
@@ -1155,7 +1162,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
       {
         m_lumaQPOffset = calculateLumaDQP (cs.getOrgBuf (clipArea (cs.area.Y(), cs.picture->Y())));
       }
-      baseQP = Clip3 (-cs.sps->getQpBDOffset (CHANNEL_TYPE_LUMA), MAX_QP, baseQP - m_lumaQPOffset);
+      baseQP = Clip3(-cs.sps->getQpBDOffset(ChannelType::LUMA), MAX_QP, baseQP - m_lumaQPOffset);
     }
 #endif
     if (m_pcEncCfg->getSmoothQPReductionEnable())
@@ -1186,7 +1193,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
           }
         }
       }
-      baseQP = Clip3(-cs.sps->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, baseQP + smoothQPoffset);
+      baseQP = Clip3(-cs.sps->getQpBDOffset(ChannelType::LUMA), MAX_QP, baseQP + smoothQPoffset);
     }
   }
   int minQP = baseQP;
@@ -1194,7 +1201,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
 
   xGetMinMaxQP( minQP, maxQP, cs, partitioner, baseQP, *cs.sps, *cs.pps, CU_QUAD_SPLIT );
   bool checkIbc = true;
-  if (partitioner.chType == CHANNEL_TYPE_CHROMA)
+  if (partitioner.chType == ChannelType::CHROMA)
   {
     checkIbc = false;
   }
@@ -1323,7 +1330,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
     if (cs.sps->getIBCFlag() && checkIbc)
     {
       m_ComprCUCtxList.back().testModes.push_back({ ETM_IBC,         ETO_STANDARD,  qp });
-      if (partitioner.chType == CHANNEL_TYPE_LUMA)
+      if (isLuma(partitioner.chType))
       {
         m_ComprCUCtxList.back().testModes.push_back({ ETM_IBC_MERGE,   ETO_STANDARD,  qp });
       }
@@ -1338,13 +1345,16 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
       const int  qp       = std::max( qpLoop, lowestQP );
       if (m_pcEncCfg->getIMV())
       {
-        m_ComprCUCtxList.back().testModes.push_back({ ETM_INTER_ME,  EncTestModeOpts( 4 << ETO_IMV_SHIFT ), qp });
+        m_ComprCUCtxList.back().testModes.push_back(
+          { ETM_INTER_ME, EncTestModeOpts(int(EncTestMode::AmvrSearchMode::HALF_PEL) << ETO_IMV_SHIFT), qp });
       }
       if( m_pcEncCfg->getIMV() || m_pcEncCfg->getUseAffineAmvr() )
       {
-        int imv = m_pcEncCfg->getIMV4PelFast() ? 3 : 2;
-        m_ComprCUCtxList.back().testModes.push_back( { ETM_INTER_ME, EncTestModeOpts( imv << ETO_IMV_SHIFT ), qp } );
-        m_ComprCUCtxList.back().testModes.push_back( { ETM_INTER_ME, EncTestModeOpts( 1 << ETO_IMV_SHIFT ), qp } );
+        const auto imv = m_pcEncCfg->getIMV4PelFast() ? EncTestMode::AmvrSearchMode::FOUR_PEL_FAST
+                                                      : EncTestMode::AmvrSearchMode::FOUR_PEL;
+        m_ComprCUCtxList.back().testModes.push_back({ ETM_INTER_ME, EncTestModeOpts(int(imv) << ETO_IMV_SHIFT), qp });
+        m_ComprCUCtxList.back().testModes.push_back(
+          { ETM_INTER_ME, EncTestModeOpts(int(EncTestMode::AmvrSearchMode::FULL_PEL) << ETO_IMV_SHIFT), qp });
       }
       // add inter modes
       if( m_pcEncCfg->getUseEarlySkipDetection() )
@@ -1534,7 +1544,8 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
         {
           DistParam distParam;
           const bool useHad = true;
-          m_pcRdCost->setDistParam( distParam, cs.getOrgBuf( COMPONENT_Y ), cuECtx.bestCS->getPredBuf( COMPONENT_Y ), cs.sps->getBitDepth( CHANNEL_TYPE_LUMA ), COMPONENT_Y, useHad );
+          m_pcRdCost->setDistParam(distParam, cs.getOrgBuf(COMPONENT_Y), cuECtx.bestCS->getPredBuf(COMPONENT_Y),
+                                   cs.sps->getBitDepth(ChannelType::LUMA), COMPONENT_Y, useHad);
           cuECtx.interHad = distParam.distFunc( distParam );
         }
       }
@@ -1580,7 +1591,8 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
   else if (encTestmode.type == ETM_IBC || encTestmode.type == ETM_IBC_MERGE)
   {
     // IBC MODES
-    return sps.getIBCFlag() && (partitioner.currArea().lumaSize().width < 128 && partitioner.currArea().lumaSize().height < 128);
+    return sps.getIBCFlag() && partitioner.currArea().lumaSize().width <= IBC_MAX_CU_SIZE
+           && partitioner.currArea().lumaSize().height <= IBC_MAX_CU_SIZE;
   }
   else if( isModeInter( encTestmode ) )
   {
@@ -1614,14 +1626,15 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
           }
         }
       }
-      else if ((encTestmode.opts & ETO_IMV) != 0)
+      else if (encTestmode.getAmvrSearchMode() != EncTestMode::AmvrSearchMode::NONE)
       {
-        int imvOpt = (encTestmode.opts & ETO_IMV) >> ETO_IMV_SHIFT;
-
-        if (imvOpt == 3 && cuECtx.get<double>(BEST_NO_IMV_COST) * 1.06 < cuECtx.get<double>(BEST_IMV_COST))
+        if (encTestmode.getAmvrSearchMode() == EncTestMode::AmvrSearchMode::FOUR_PEL_FAST
+            && cuECtx.get<double>(BEST_NO_IMV_COST) * AMVR_FAST_4PEL_TH < cuECtx.get<double>(BEST_IMV_COST))
         {
           if ( !m_pcEncCfg->getUseAffineAmvr() )
-          return false;
+          {
+            return false;
+          }
         }
       }
     }
@@ -1869,10 +1882,15 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
   else
   {
     CHECK( encTestmode.type != ETM_POST_DONT_SPLIT, "Unknown mode" );
-    if ((cuECtx.get<double>(BEST_NO_IMV_COST) == (MAX_DOUBLE * .5) || cuECtx.get<bool>(IS_REUSING_CU)) && !slice.isIntra())
+#if REUSE_CU_RESULTS
+    if ((cuECtx.get<double>(BEST_NO_IMV_COST) == UNSET_IMV_COST || cuECtx.get<bool>(IS_REUSING_CU)) && !slice.isIntra())
+#else
+    if (cuECtx.get<double>(BEST_NO_IMV_COST) == UNSET_IMV_COST && !slice.isIntra())
+#endif
     {
       unsigned idx1, idx2, idx3, idx4;
       getAreaIdx(partitioner.currArea().Y(), *slice.getPPS()->pcv, idx1, idx2, idx3, idx4);
+      CHECKD(idx3 >= MAX_NUM_SIZES || idx4 >= MAX_NUM_SIZES, "MAX_NUM_SIZES is too small");
       if (g_isReusedUniMVsFilled[idx1][idx2][idx3][idx4])
       {
         m_pcInterSearch->insertUniMvCands(partitioner.currArea().Y(), g_reusedUniMVs[idx1][idx2][idx3][idx4]);
@@ -1888,7 +1906,7 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
       setFromCs( *bestCS, partitioner );
 
 #endif
-      if( partitioner.modeType == MODE_TYPE_INTRA && partitioner.chType == CHANNEL_TYPE_LUMA )
+      if (partitioner.modeType == MODE_TYPE_INTRA && isLuma(partitioner.chType))
       {
         return false; //not set best coding mode for intra coding pass
       }
@@ -1963,23 +1981,13 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
           if ( m_pcEncCfg->getUseFastISP() && cuECtx.ispWasTested && ( !relatedCU.relatedCuIsValid || bestCS->cost < relatedCU.bestCost ) )
           {
             // Compact data
-            int bit0 = true;
-            int bit1 = cuECtx.ispMode == NOT_INTRA_SUBPARTITIONS ? 1 : 0;
-            int bit2 = cuECtx.ispMode == VER_INTRA_SUBPARTITIONS;
-            int bit3 = cuECtx.ispLfnstIdx > 0;
-            int bit4 = cuECtx.ispLfnstIdx == 2;
-            int bit5 = cuECtx.mipFlag;
-            int bit6 = cuECtx.bestCostIsp < cuECtx.bestNonDCT2Cost * 0.95;
-            int val =
-              (bit0) |
-              (bit1 << 1) |
-              (bit2 << 2) |
-              (bit3 << 3) |
-              (bit4 << 4) |
-              (bit5 << 5) |
-              (bit6 << 6) |
-              ( cuECtx.bestPredModeDCT2 << 9 );
-            relatedCU.ispPredModeVal     = val;
+            relatedCU.ispPredModeVal.valid            = 1;
+            relatedCU.ispPredModeVal.notIsp           = cuECtx.ispMode == ISPType::NONE ? 1 : 0;
+            relatedCU.ispPredModeVal.verIsp           = cuECtx.ispMode == ISPType::VER;
+            relatedCU.ispPredModeVal.ispLfnstIdx      = cuECtx.ispLfnstIdx;
+            relatedCU.ispPredModeVal.mipFlag          = cuECtx.mipFlag;
+            relatedCU.ispPredModeVal.lowIspCost       = cuECtx.bestCostIsp < cuECtx.bestNonDCT2Cost * 0.95;
+            relatedCU.ispPredModeVal.bestPredModeDCT2 = cuECtx.bestPredModeDCT2;
             relatedCU.bestDCT2NonISPCost = cuECtx.bestDCT2NonISPCost;
             relatedCU.bestCost           = bestCS->cost;
             relatedCU.bestNonDCT2Cost    = cuECtx.bestNonDCT2Cost;
@@ -2007,7 +2015,7 @@ bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double*
 
   if (!(m_pcEncCfg->getFastTTskip() & FAST_METHOD_TT_ENC_SPEEDUP_ISLICE))
   {
-    if (sliceType == I_SLICE) 
+    if (sliceType == I_SLICE)
     {
       return false;
     }
@@ -2015,8 +2023,8 @@ bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double*
 
   if (!(m_pcEncCfg->getFastTTskip() & FAST_METHOD_TT_ENC_SPEEDUP_BSLICE))
   {
-    if (sliceType == B_SLICE) 
-    { 
+    if (sliceType == B_SLICE)
+    {
       return false;
     }
   }
@@ -2028,7 +2036,7 @@ bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double*
     {
       if (splitRdCostBest[CTU_LEVEL] < MAX_DOUBLE && splitRdCostBest[CU_HORZ_SPLIT] < MAX_DOUBLE)
       {
-        if (splitRdCostBest[CU_HORZ_SPLIT] > ttEncSpeedRate * splitRdCostBest[CTU_LEVEL]) 
+        if (splitRdCostBest[CU_HORZ_SPLIT] > ttEncSpeedRate * splitRdCostBest[CTU_LEVEL])
         {
           res = true;
         }
@@ -2039,7 +2047,7 @@ bool EncModeCtrlMTnoRQT::xSkipTreeCandidate(const PartSplit split, const double*
     {
       if (splitRdCostBest[CU_HORZ_SPLIT] < MAX_DOUBLE && splitRdCostBest[CU_VERT_SPLIT] < MAX_DOUBLE)
       {
-        if (splitRdCostBest[CU_HORZ_SPLIT] > horXorVerRate * splitRdCostBest[CU_VERT_SPLIT]) 
+        if (splitRdCostBest[CU_HORZ_SPLIT] > horXorVerRate * splitRdCostBest[CU_VERT_SPLIT])
         {
           res = true;
         }
@@ -2123,7 +2131,7 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
     {
       cuECtx.bestMtsSize2Nx2N1stPass   = tempCS->cost;
     }
-    if( !cu.ispMode )
+    if (cu.ispMode == ISPType::NONE)
     {
       cuECtx.bestCostMtsFirstPassNoIsp = tempCS->cost;
     }
@@ -2131,16 +2139,16 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
 
   if( m_pcEncCfg->getIMV4PelFast() && m_pcEncCfg->getIMV() && encTestmode.type == ETM_INTER_ME )
   {
-    int imvMode = ( encTestmode.opts & ETO_IMV ) >> ETO_IMV_SHIFT;
+    const auto amvrSearchMode = encTestmode.getAmvrSearchMode();
 
-    if( imvMode == 1 )
+    if (amvrSearchMode == EncTestMode::AmvrSearchMode::FULL_PEL)
     {
       if( tempCS->cost < cuECtx.get<double>( BEST_IMV_COST ) )
       {
         cuECtx.set( BEST_IMV_COST, tempCS->cost );
       }
     }
-    else if( imvMode == 0 )
+    else if (amvrSearchMode == EncTestMode::AmvrSearchMode::NONE)
     {
       if( tempCS->cost < cuECtx.get<double>( BEST_NO_IMV_COST ) )
       {
@@ -2166,9 +2174,9 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
     {
       if( tempCS->cus.size() > 2 )
       {
-        int h_2 = tempCS->area.blocks[partitioner.chType].height / 2;
-        int cu1_h = tempCS->cus.front()->blocks[partitioner.chType].height;
-        int cu2_h = tempCS->cus.back()->blocks[partitioner.chType].height;
+        int h_2   = tempCS->area.block(partitioner.chType).height / 2;
+        int cu1_h = tempCS->cus.front()->block(partitioner.chType).height;
+        int cu2_h = tempCS->cus.back()->block(partitioner.chType).height;
 
         cuECtx.set( DO_TRIH_SPLIT, cu1_h < h_2 || cu2_h < h_2 || partitioner.currMtDepth + 1 == maxMtD );
       }
@@ -2177,9 +2185,9 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
     {
       if( tempCS->cus.size() > 2 )
       {
-        int w_2 = tempCS->area.blocks[partitioner.chType].width / 2;
-        int cu1_w = tempCS->cus.front()->blocks[partitioner.chType].width;
-        int cu2_w = tempCS->cus.back()->blocks[partitioner.chType].width;
+        int w_2   = tempCS->area.block(partitioner.chType).width / 2;
+        int cu1_w = tempCS->cus.front()->block(partitioner.chType).width;
+        int cu2_w = tempCS->cus.back()->block(partitioner.chType).width;
 
         cuECtx.set( DO_TRIV_SPLIT, cu1_w < w_2 || cu2_w < w_2 || partitioner.currMtDepth + 1 == maxMtD );
       }

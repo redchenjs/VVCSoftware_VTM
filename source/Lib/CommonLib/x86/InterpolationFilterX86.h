@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1448,8 +1448,8 @@ static void simdInterpolateN2_HBD_M4_AVX2(const Pel *src, const ptrdiff_t srcStr
     mmCoeff[n] = _mm256_set1_epi32(c[n]);
   }
 
-  int srcStride2 = (srcStride << 1);
-  int dstStride2 = (dstStride << 1);
+  ptrdiff_t srcStride2 = (srcStride << 1);
+  ptrdiff_t dstStride2 = (dstStride << 1);
 
   for (int row = 0; row < height; row += 2)
   {
@@ -1701,9 +1701,9 @@ void xWeightedGeoBlk_HBD_SIMD(const PredictionUnit &pu, const uint32_t width, co
   Pel* dst = predDst.get(compIdx).buf;
   Pel* src0 = predSrc0.get(compIdx).buf;
   Pel* src1 = predSrc1.get(compIdx).buf;
-  int32_t strideDst = predDst.get(compIdx).stride;
-  int32_t strideSrc0 = predSrc0.get(compIdx).stride;
-  int32_t strideSrc1 = predSrc1.get(compIdx).stride;
+  ptrdiff_t strideDst  = predDst.get(compIdx).stride;
+  ptrdiff_t strideSrc0 = predSrc0.get(compIdx).stride;
+  ptrdiff_t strideSrc1 = predSrc1.get(compIdx).stride;
 
   const char    log2WeightBase = 3;
   const ClpRng  clpRng = pu.cu->slice->clpRngs().comp[compIdx];
@@ -2228,9 +2228,9 @@ void xWeightedGeoBlk_SSE(const PredictionUnit &pu, const uint32_t width, const u
   Pel* dst = predDst.get(compIdx).buf;
   Pel* src0 = predSrc0.get(compIdx).buf;
   Pel* src1 = predSrc1.get(compIdx).buf;
-  int32_t strideDst = predDst.get(compIdx).stride;
-  int32_t strideSrc0 = predSrc0.get(compIdx).stride;
-  int32_t strideSrc1 = predSrc1.get(compIdx).stride;
+  ptrdiff_t strideDst  = predDst.get(compIdx).stride;
+  ptrdiff_t strideSrc0 = predSrc0.get(compIdx).stride;
+  ptrdiff_t strideSrc1 = predSrc1.get(compIdx).stride;
 
   const char    log2WeightBase = 3;
   const ClpRng  clpRng = pu.cu->slice->clpRngs().comp[compIdx];

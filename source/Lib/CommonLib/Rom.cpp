@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <iomanip>
+
+constexpr int MmvdIdx::ADD_NUM;
+constexpr int MmvdIdx::BASE_MV_NUM;
 
 // ====================================================================================================================
 // Initialize / destroy functions
@@ -114,7 +117,7 @@ public:
     {
       //------------------------------------------------
 
-      case SCAN_DIAG:
+      case CoeffScanType::DIAG:
 
         if ((m_column == m_blockWidth - 1) || (m_line == 0)) //if we reach the end of a rank, go diagonally down to the next one
         {
@@ -134,7 +137,7 @@ public:
         }
         break;
 
-      case SCAN_TRAV_HOR:
+      case CoeffScanType::TRAV_HOR:
         if (m_line % 2 == 0)
         {
           if (m_column == (m_blockWidth - 1))
@@ -161,7 +164,7 @@ public:
         }
         break;
 
-      case SCAN_TRAV_VER:
+      case CoeffScanType::TRAV_VER:
         if (m_column % 2 == 0)
         {
           if (m_line == (m_blockHeight - 1))
@@ -191,7 +194,7 @@ public:
 
       default:
 
-        THROW("ERROR: Unknown scan type \"" << m_scanType << "\"in ScanGenerator::GetNextIndex");
+        THROW("ERROR: Unknown scan type \"" << to_underlying(m_scanType) << "\"in ScanGenerator::GetNextIndex");
         break;
     }
 
@@ -297,10 +300,9 @@ void initROM()
 
       //non-grouped scan orders
 
-      for (uint32_t scanTypeIndex = 0; scanTypeIndex < SCAN_NUMBER_OF_TYPES; scanTypeIndex++)
+      for (auto scanType = CoeffScanType::DIAG; scanType < CoeffScanType::NUM; scanType++)
       {
-        const CoeffScanType scanType = CoeffScanType(scanTypeIndex);
-        ScanElement *       scan     = nullptr;
+        ScanElement *scan = nullptr;
 
         if (blockWidthIdx < sizeInfo.numWidths() && blockHeightIdx < sizeInfo.numHeights())
         {
@@ -337,21 +339,19 @@ void initROM()
 
       const uint32_t  groupWidth     = 1 << log2CGWidth;
       const uint32_t  groupHeight    = 1 << log2CGHeight;
-      const uint32_t  widthInGroups = std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, blockWidth) >> log2CGWidth;
-      const uint32_t  heightInGroups = std::min<unsigned>(JVET_C0024_ZERO_OUT_TH, blockHeight) >> log2CGHeight;
+      const uint32_t  widthInGroups  = getNonzeroTuSize(blockWidth) >> log2CGWidth;
+      const uint32_t  heightInGroups = getNonzeroTuSize(blockHeight) >> log2CGHeight;
 
       const uint32_t  groupSize      = groupWidth    * groupHeight;
       const uint32_t  totalGroups    = widthInGroups * heightInGroups;
 
-      for (uint32_t scanTypeIndex = 0; scanTypeIndex < SCAN_NUMBER_OF_TYPES; scanTypeIndex++)
+      for (auto scanType = CoeffScanType::DIAG; scanType < CoeffScanType::NUM; scanType++)
       {
-        const CoeffScanType scanType = CoeffScanType(scanTypeIndex);
-
         ScanElement *scan = new ScanElement[totalValues];
 
         g_scanOrder[SCAN_GROUPED_4x4][scanType][blockWidthIdx][blockHeightIdx] = scan;
 
-        if ( blockWidth > JVET_C0024_ZERO_OUT_TH || blockHeight > JVET_C0024_ZERO_OUT_TH )
+        if (blockWidth > MAX_NONZERO_TU_SIZE || blockHeight > MAX_NONZERO_TU_SIZE)
         {
           for (uint32_t i = 0; i < totalValues; i++)
           {
@@ -438,14 +438,14 @@ void destroyROM()
 
   for (uint32_t groupTypeIndex = 0; groupTypeIndex < SCAN_NUMBER_OF_GROUP_TYPES; groupTypeIndex++)
   {
-    for (uint32_t scanOrderIndex = 0; scanOrderIndex < SCAN_NUMBER_OF_TYPES; scanOrderIndex++)
+    for (auto scanOrder = CoeffScanType::DIAG; scanOrder < CoeffScanType::NUM; scanOrder++)
     {
       for (uint32_t blockWidthIdx = 0; blockWidthIdx <= numWidths; blockWidthIdx++)
       {
         for (uint32_t blockHeightIdx = 0; blockHeightIdx <= numHeights; blockHeightIdx++)
         {
-          delete[] g_scanOrder[groupTypeIndex][scanOrderIndex][blockWidthIdx][blockHeightIdx];
-          g_scanOrder[groupTypeIndex][scanOrderIndex][blockWidthIdx][blockHeightIdx] = nullptr;
+          delete[] g_scanOrder[groupTypeIndex][scanOrder][blockWidthIdx][blockHeightIdx];
+          g_scanOrder[groupTypeIndex][scanOrder][blockWidthIdx][blockHeightIdx] = nullptr;
         }
       }
     }
@@ -526,7 +526,7 @@ UnitScale g_miScaling( MIN_CU_LOG2, MIN_CU_LOG2 );
 int g_riceT[4] = { 32,128, 512, 2048 };
 int g_riceShift[5] = { 0, 2, 4, 6, 8 };
 // scanning order table
-ScanElement *g_scanOrder[SCAN_NUMBER_OF_GROUP_TYPES][SCAN_NUMBER_OF_TYPES][MAX_CU_SIZE / 2 + 1][MAX_CU_SIZE / 2 + 1];
+EnumArray<ScanElement *[MAX_CU_SIZE / 2 + 1][MAX_CU_SIZE / 2 + 1], CoeffScanType> g_scanOrder[SCAN_NUMBER_OF_GROUP_TYPES];
 ScanElement  g_coefTopLeftDiagScan8x8[ MAX_CU_SIZE / 2 + 1 ][ 64 ];
 
 const uint32_t g_minInGroup[LAST_SIGNIFICANT_GROUPS] = { 0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96 };
@@ -538,104 +538,35 @@ const uint32_t g_groupIdx[MAX_TB_SIZEY] = { 0,  1,  2,  3,  4,  4,  5,  5,  6,  
 
 const uint32_t g_goRiceParsCoeff[32] = { 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2,
                                          2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3 };
-const char *MatrixType[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] =
-{
-  {
-    "INTRA1X1_LUMA",
-    "INTRA1X1_CHROMAU",
-    "INTRA1X1_CHROMAV",
-    "INTER1X1_LUMA",
-    "INTER1X1_CHROMAU",
-    "INTER1X1_CHROMAV"
-  },
-  {
-    "INTRA2X2_LUMA",
-    "INTRA2X2_CHROMAU",
-    "INTRA2X2_CHROMAV",
-    "INTER2X2_LUMA",
-    "INTER2X2_CHROMAU",
-    "INTER2X2_CHROMAV"
-  },
-  {
-    "INTRA4X4_LUMA",
-    "INTRA4X4_CHROMAU",
-    "INTRA4X4_CHROMAV",
-    "INTER4X4_LUMA",
-    "INTER4X4_CHROMAU",
-    "INTER4X4_CHROMAV"
-  },
-  {
-    "INTRA8X8_LUMA",
-    "INTRA8X8_CHROMAU",
-    "INTRA8X8_CHROMAV",
-    "INTER8X8_LUMA",
-    "INTER8X8_CHROMAU",
-    "INTER8X8_CHROMAV"
-  },
-  {
-    "INTRA16X16_LUMA",
-    "INTRA16X16_CHROMAU",
-    "INTRA16X16_CHROMAV",
-    "INTER16X16_LUMA",
-    "INTER16X16_CHROMAU",
-    "INTER16X16_CHROMAV"
-  },
-  {
-    "INTRA32X32_LUMA",
-    "INTRA32X32_CHROMAU",
-    "INTRA32X32_CHROMAV",
-    "INTER32X32_LUMA",
-    "INTER32X32_CHROMAU",
-    "INTER32X32_CHROMAV"
-  },
-  {
-    "INTRA64X64_LUMA",
-    "INTRA64X64_CHROMAU",
-    "INTRA64X64_CHROMAV",
-    "INTER64X64_LUMA",
-    "INTER64X64_CHROMAU",
-    "INTER64X64_CHROMAV"
-  },
-  {
-  },
+
+const char *matrixType[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] = {
+  { "INTRA1X1_LUMA", "INTRA1X1_CHROMAU", "INTRA1X1_CHROMAV", "INTER1X1_LUMA", "INTER1X1_CHROMAU", "INTER1X1_CHROMAV" },
+  { "INTRA2X2_LUMA", "INTRA2X2_CHROMAU", "INTRA2X2_CHROMAV", "INTER2X2_LUMA", "INTER2X2_CHROMAU", "INTER2X2_CHROMAV" },
+  { "INTRA4X4_LUMA", "INTRA4X4_CHROMAU", "INTRA4X4_CHROMAV", "INTER4X4_LUMA", "INTER4X4_CHROMAU", "INTER4X4_CHROMAV" },
+  { "INTRA8X8_LUMA", "INTRA8X8_CHROMAU", "INTRA8X8_CHROMAV", "INTER8X8_LUMA", "INTER8X8_CHROMAU", "INTER8X8_CHROMAV" },
+  { "INTRA16X16_LUMA", "INTRA16X16_CHROMAU", "INTRA16X16_CHROMAV", "INTER16X16_LUMA", "INTER16X16_CHROMAU",
+    "INTER16X16_CHROMAV" },
+  { "INTRA32X32_LUMA", "INTRA32X32_CHROMAU", "INTRA32X32_CHROMAV", "INTER32X32_LUMA", "INTER32X32_CHROMAU",
+    "INTER32X32_CHROMAV" },
+  { "INTRA64X64_LUMA", "INTRA64X64_CHROMAU", "INTRA64X64_CHROMAV", "INTER64X64_LUMA", "INTER64X64_CHROMAU",
+    "INTER64X64_CHROMAV" },
+  {},
 };
 
-const char *MatrixType_DC[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] =
-{
-  {  //1x1
-  },
+const char *matrixTypeDc[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] = {
   {
+    // 1x1
   },
-  {
-  },
-  {
-  },
-  {
-    "INTRA16X16_LUMA_DC",
-    "INTRA16X16_CHROMAU_DC",
-    "INTRA16X16_CHROMAV_DC",
-    "INTER16X16_LUMA_DC",
-    "INTER16X16_CHROMAU_DC",
-    "INTER16X16_CHROMAV_DC"
-  },
-  {
-    "INTRA32X32_LUMA_DC",
-    "INTRA32X32_CHROMAU_DC",
-    "INTRA32X32_CHROMAV_DC",
-    "INTER32X32_LUMA_DC",
-    "INTER32X32_CHROMAU_DC",
-    "INTER32X32_CHROMAV_DC"
-  },
-  {
-    "INTRA64X64_LUMA_DC",
-    "INTRA64X64_CHROMAU_DC",
-    "INTRA64X64_CHROMAV_DC",
-    "INTER64X64_LUMA_DC",
-    "INTER64X64_CHROMAU_DC",
-    "INTER64X64_CHROMAV_DC"
-  },
-  {
-  },
+  {},
+  {},
+  {},
+  { "INTRA16X16_LUMA_DC", "INTRA16X16_CHROMAU_DC", "INTRA16X16_CHROMAV_DC", "INTER16X16_LUMA_DC",
+    "INTER16X16_CHROMAU_DC", "INTER16X16_CHROMAV_DC" },
+  { "INTRA32X32_LUMA_DC", "INTRA32X32_CHROMAU_DC", "INTRA32X32_CHROMAV_DC", "INTER32X32_LUMA_DC",
+    "INTER32X32_CHROMAU_DC", "INTER32X32_CHROMAV_DC" },
+  { "INTRA64X64_LUMA_DC", "INTRA64X64_CHROMAU_DC", "INTRA64X64_CHROMAV_DC", "INTER64X64_LUMA_DC",
+    "INTER64X64_CHROMAU_DC", "INTER64X64_CHROMAV_DC" },
+  {},
 };
 
 const int g_quantTSDefault4x4[4 * 4] =
@@ -685,9 +616,8 @@ const uint32_t g_scalingListId[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] =
   {  0,  0,  0,  0,  0,  0},  // SCALING_LIST_128x128
 };
 
-
-Mv   g_reusedUniMVs[32][32][8][8][2][33];
-bool g_isReusedUniMVsFilled[32][32][8][8];
+RefSetArray<Mv> g_reusedUniMVs[MAX_CU_SIZE_IN_PARTS][MAX_CU_SIZE_IN_PARTS][MAX_NUM_SIZES][MAX_NUM_SIZES];
+bool g_isReusedUniMVsFilled[MAX_CU_SIZE_IN_PARTS][MAX_CU_SIZE_IN_PARTS][MAX_NUM_SIZES][MAX_NUM_SIZES];
 
 uint16_t g_paletteQuant[57];
 uint8_t g_paletteRunTopLut [5] = { 0, 1, 1, 2, 2 };
@@ -725,17 +655,17 @@ void initGeoTemplate()
     int distanceX = angleIdx;
     int distanceY = (distanceX + (GEO_NUM_ANGLES >> 2)) % GEO_NUM_ANGLES;
 
-    int16_t rho = (g_Dis[distanceX] * 2 * GEO_MAX_CU_SIZE) + (g_Dis[distanceY] * 2 * GEO_MAX_CU_SIZE);
+    int16_t rho = (g_dis[distanceX] * 2 * GEO_MAX_CU_SIZE) + (g_dis[distanceY] * 2 * GEO_MAX_CU_SIZE);
 
     constexpr int16_t maskOffset = (2*GEO_MAX_CU_SIZE - GEO_WEIGHT_MASK_SIZE) >> 1;
     int index = 0;
     for( int y = 0; y < GEO_WEIGHT_MASK_SIZE; y++ )
     {
-      int16_t lookUpY = (((y + maskOffset) << 1) + 1) * g_Dis[distanceY];
+      int16_t lookUpY = (((y + maskOffset) << 1) + 1) * g_dis[distanceY];
       for( int x = 0; x < GEO_WEIGHT_MASK_SIZE; x++, index++ )
       {
         int16_t sx_i = ((x + maskOffset) << 1) + 1;
-        int16_t weightIdx = sx_i * g_Dis[distanceX] + lookUpY - rho;
+        int16_t weightIdx                                    = sx_i * g_dis[distanceX] + lookUpY - rho;
         int weightLinearIdx = 32 + weightIdx;
         g_globalGeoWeights[g_angle2mask[angleIdx]][index] = Clip3(0, 8, (weightLinearIdx + 4) >> 3);
         g_globalGeoEncSADmask[g_angle2mask[angleIdx]][index] = weightIdx > 0 ? 1 : 0;
@@ -778,7 +708,10 @@ int16_t*  g_globalGeoWeights   [GEO_NUM_PRESTORED_MASK];
 Pel*      g_globalGeoEncSADmask[GEO_NUM_PRESTORED_MASK];
 int16_t   g_weightOffset       [GEO_NUM_PARTITION_MODE][GEO_NUM_CU_SIZE][GEO_NUM_CU_SIZE][2];
 int8_t    g_angle2mask[GEO_NUM_ANGLES] = { 0, -1, 1, 2, 3, 4, -1, -1, 5, -1, -1, 4, 3, 2, 1, -1, 0, -1, 1, 2, 3, 4, -1, -1, 5, -1, -1, 4, 3, 2, 1, -1 };
-int8_t    g_Dis[GEO_NUM_ANGLES] = { 8, 8, 8, 8, 4, 4, 2, 1, 0, -1, -2, -4, -4, -8, -8, -8, -8, -8, -8, -8, -4, -4, -2, -1, 0, 1, 2, 4, 4, 8, 8, 8 };
+
+int8_t g_dis[GEO_NUM_ANGLES] = { 8,  8,  8,  8,  4,  4,  2,  1,  0, -1, -2, -4, -4, -8, -8, -8,
+                                 -8, -8, -8, -8, -4, -4, -2, -1, 0, 1,  2,  4,  4,  8,  8,  8 };
+
 int8_t    g_angle2mirror[GEO_NUM_ANGLES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2 };
 //! \}
 

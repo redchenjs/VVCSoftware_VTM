@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,7 +70,7 @@ void Canny::gradient(PelStorage *buff1, PelStorage *buff2, unsigned int width, u
   buff1 - magnitude; buff2 - orientation (Only luma in buff2)
   */
 
-  // 360 degrees are split into the 8 equal parts; edge direction is quantized 
+  // 360 degrees are split into the 8 equal parts; edge direction is quantized
   const double edge_threshold_22_5  = 22.5;
   const double edge_threshold_67_5  = 67.5;
   const double edge_threshold_112_5 = 112.5;
@@ -459,9 +459,10 @@ FGAnalyser::~FGAnalyser()
 
 // initialize film grain parameters
 void FGAnalyser::init(const int width, const int height, const int sourcePaddingWidth, const int sourcePaddingHeight,
-                      const InputColourSpaceConversion ipCSC, bool clipInputVideoToRec709Range, const ChromaFormat inputChroma,
-                      const BitDepths &inputBitDepths, const BitDepths &outputBitDepths, const int frameSkip, 
-                      const bool doAnalysis[], std::string filmGrainExternalMask, std::string filmGrainExternalDenoised)
+                      const InputColourSpaceConversion ipCSC, bool clipInputVideoToRec709Range,
+                      const ChromaFormat inputChroma, const BitDepths &inputBitDepths, const BitDepths &outputBitDepths,
+                      const int frameSkip, const bool doAnalysis[], std::string filmGrainExternalMask,
+                      std::string filmGrainExternalDenoised)
 {
   m_log2ScaleFactor = 2;
   for (int i = 0; i < MAX_NUM_COMPONENT; i++)
@@ -477,7 +478,8 @@ void FGAnalyser::init(const int width, const int height, const int sourcePadding
       m_compModel[i].intensityValues[j].compModelValue.resize(MAX_ALLOWED_MODEL_VALUES);
       for (int k = 0; k < m_compModel[i].numModelValues; k++)
       {
-        m_compModel[i].intensityValues[j].compModelValue[k] = 26 - 13 * (toChannelType((ComponentID) i));   // half intensity for chroma. Provided value is default value, manually tuned.
+        // half intensity for chroma. Provided value is default value, manually tuned.
+        m_compModel[i].intensityValues[j].compModelValue[k] = i == 0 ? 26 : 13;
       }
     }
     m_doAnalysis[i] = doAnalysis[i];
@@ -523,7 +525,7 @@ void FGAnalyser::initBufs(Picture *pic)
   if (!m_filmGrainExternalDenoised.empty())         // read external denoised frame
   {
     VideoIOYuv yuvFrames;
-    yuvFrames.open(m_filmGrainExternalDenoised, false, m_bitDepthsIn.recon, m_bitDepthsIn.recon, m_bitDepths.recon);
+    yuvFrames.open(m_filmGrainExternalDenoised, false, m_bitDepthsIn, m_bitDepthsIn, m_bitDepths);
     yuvFrames.skipFrames(pic->getPOC() + m_frameSkip, m_workingBuf->Y().width - m_sourcePadding[0],
                          m_workingBuf->Y().height - m_sourcePadding[1], m_chromaFormatIDC);
     if (!yuvFrames.read(*m_workingBuf, dummyPicBufferTO, m_ipCSC, m_sourcePadding,
@@ -541,7 +543,7 @@ void FGAnalyser::initBufs(Picture *pic)
   if (!m_filmGrainExternalMask.empty())   // read external mask
   {
     VideoIOYuv yuvFrames;
-    yuvFrames.open(m_filmGrainExternalMask, false, m_bitDepthsIn.recon, m_bitDepthsIn.recon, m_bitDepths.recon);
+    yuvFrames.open(m_filmGrainExternalMask, false, m_bitDepthsIn, m_bitDepthsIn, m_bitDepths);
     yuvFrames.skipFrames(pic->getPOC() + m_frameSkip, m_maskBuf->Y().width - m_sourcePadding[0],
                          m_maskBuf->Y().height - m_sourcePadding[1], m_chromaFormatIDC);
     if (!yuvFrames.read(*m_maskBuf, dummyPicBufferTO, m_ipCSC, m_sourcePadding,
@@ -702,9 +704,9 @@ void FGAnalyser::subsample(const PelStorage &input, PelStorage &output, Componen
   const int newHeight = input.get(compID).height / factor;
 
   const Pel *srcRow    = input.get(compID).buf;
-  const int  srcStride = input.get(compID).stride;
+  const ptrdiff_t srcStride = input.get(compID).stride;
   Pel *      dstRow    = output.get(compID).buf;   // output is tmp buffer with only one component for binary mask
-  const int  dstStride = output.get(compID).stride;
+  const ptrdiff_t dstStride = output.get(compID).stride;
 
   for (int y = 0; y < newHeight; y++, srcRow += factor * srcStride, dstRow += dstStride)
   {
@@ -1021,7 +1023,7 @@ int FGAnalyser::cutoff_frequency(std::vector<double> &mean)
   int size = (int) intersectionPointList.size();
 
   if (size > 0)
-  {                                                                         
+  {
     return Clip3<int>(2, 14, (intersectionPointList[size - 1] - 1) >> 2);   // clip to RDD5 range, (h-3)/4 + 0.5
   }
   else

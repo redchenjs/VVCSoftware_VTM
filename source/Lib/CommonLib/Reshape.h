@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2022, ITU/ISO/IEC
+* Copyright (c) 2010-2023, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -55,7 +55,7 @@ class Reshape
 {
 protected:
   SliceReshapeInfo        m_sliceReshapeInfo;
-  bool                    m_CTUFlag;
+  bool                    m_ctuFlag;
   bool                    m_recReshaped;
   std::vector<Pel>        m_invLUT;
   std::vector<Pel>        m_fwdLUT;
@@ -83,8 +83,8 @@ public:
   std::vector<Pel>&  getInvLUT() { return m_invLUT; }
   std::vector<int>&  getChromaAdjHelpLUT() { return m_chromaAdjHelpLUT; }
 
-  bool getCTUFlag()              { return m_CTUFlag; }
-  void setCTUFlag(bool b       ) { m_CTUFlag = b; }
+  bool getCTUFlag() { return m_ctuFlag; }
+  void setCTUFlag(bool b) { m_ctuFlag = b; }
 
   bool getRecReshaped()          { return m_recReshaped; }
   void setRecReshaped(bool b)    { m_recReshaped = b; }

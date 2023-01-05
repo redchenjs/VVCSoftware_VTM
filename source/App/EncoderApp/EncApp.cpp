@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,7 +59,7 @@ EncApp::EncApp( fstream& bitStream, EncLibCommon* encLibCommon )
   : m_cEncLib( encLibCommon )
   , m_bitstream( bitStream )
 {
-  m_iFrameRcvd = 0;
+  m_frameRcvd      = 0;
   m_totalBytes = 0;
   m_essentialBytes = 0;
 #if JVET_O0756_CALCULATE_HDRMETRICS
@@ -73,7 +73,7 @@ EncApp::~EncApp()
 {
 }
 
-void EncApp::xInitLibCfg()
+void EncApp::xInitLibCfg( int layerIdx )
 {
   VPS& vps = *m_cEncLib.getVPS();
   if (m_targetOlsIdx != 500)
@@ -205,42 +205,43 @@ void EncApp::xInitLibCfg()
   for (int i = 0; i < vps.getNumPtls(); i++)
   {
     if( i > 0 )
-      vps.setPtPresentFlag                                         (i, 0);
+      vps.setPtPresentFlag(i, m_ptPresentInPtl[i]);
     vps.setPtlMaxTemporalId                                      (i, vps.getMaxSubLayers() - 1);
   }
   for (int i = 0; i < vps.getNumOutputLayerSets(); i++)
   {
     vps.setOlsPtlIdx                                             (i, m_olsPtlIdx[i]);
   }
-  std::vector<ProfileTierLevel> ptls;
-  ptls.resize(vps.getNumPtls());
-  // PTL0 shall be the same as the one signalled in the SPS
-  ptls[0].setLevelIdc                                            ( m_level );
-  ptls[0].setProfileIdc                                          ( m_profile);
-  ptls[0].setTierFlag                                            ( m_levelTier );
-  ptls[0].setFrameOnlyConstraintFlag                             ( m_frameOnlyConstraintFlag);
-  ptls[0].setMultiLayerEnabledFlag                               ( m_multiLayerEnabledFlag);
+  if (layerIdx == 0)
+  {
+    vps.resizePTL(vps.getNumPtls());
+  }
+  ProfileTierLevel ptl;
+  ptl.setLevelIdc                                            ( m_level );
+  ptl.setProfileIdc                                          ( m_profile);
+  ptl.setTierFlag                                            ( m_levelTier );
+  ptl.setFrameOnlyConstraintFlag                             ( m_frameOnlyConstraintFlag);
+  CHECK(m_numRefLayers[layerIdx] > 0 && !m_multiLayerEnabledFlag, "ptl_multilayer_enabled_flag shall be equal to 1 when target layer use inter layer prediction");
+  ptl.setMultiLayerEnabledFlag                               ( m_multiLayerEnabledFlag);
   CHECK((m_profile == Profile::MAIN_10 || m_profile == Profile::MAIN_10_444 || \
          m_profile == Profile::MAIN_10_STILL_PICTURE || m_profile == Profile::MAIN_10_444_STILL_PICTURE || \
          m_profile == Profile::MAIN_12 || m_profile == Profile::MAIN_12_INTRA || m_profile == Profile::MAIN_12_STILL_PICTURE || \
          m_profile == Profile::MAIN_12_444 || m_profile == Profile::MAIN_12_444_INTRA || m_profile == Profile::MAIN_12_444_STILL_PICTURE || \
          m_profile == Profile::MAIN_16_444 || m_profile == Profile::MAIN_16_444_INTRA || m_profile == Profile::MAIN_16_444_STILL_PICTURE) \
           && m_multiLayerEnabledFlag, "ptl_multilayer_enabled_flag shall be equal to 0 for non-multilayer profiles");
-  ptls[0].setNumSubProfile                                       ( m_numSubProfile );
+  ptl.setNumSubProfile                                       ( m_numSubProfile );
   for (int i = 0; i < m_numSubProfile; i++)
   {
-    ptls[0].setSubProfileIdc                                   (i, m_subProfile[i]);
+    ptl.setSubProfileIdc                                     (i, m_subProfile[i]);
   }
-  for(int i = 1; i < vps.getNumPtls(); i++)
-  {
-    ptls[i].setLevelIdc                                          (m_levelPtl[i]);
-  }
-  vps.setProfileTierLevel(ptls);
+  if ( 0 < layerIdx )
+    ptl.setLevelIdc                                          ( m_levelPtl[layerIdx] );
+  vps.setProfileTierLevel(layerIdx, ptl);
   vps.setVPSExtensionFlag                                        ( false );
   m_cEncLib.setProfile                                           ( m_profile);
   m_cEncLib.setLevel                                             ( m_levelTier, m_level);
   m_cEncLib.setFrameOnlyConstraintFlag                           ( m_frameOnlyConstraintFlag);
-  m_cEncLib.setMultiLayerEnabledFlag                             ( m_multiLayerEnabledFlag || m_maxLayers > 1);
+  m_cEncLib.setMultiLayerEnabledFlag                             ( m_multiLayerEnabledFlag);
   m_cEncLib.setNumSubProfile                                     ( m_numSubProfile );
   for (int i = 0; i < m_numSubProfile; i++)
   {
@@ -255,17 +256,34 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setPrintWPSNR                                        ( m_printWPSNR );
   m_cEncLib.setCabacZeroWordPaddingEnabled                       ( m_cabacZeroWordPaddingEnabled );
 
-  m_cEncLib.setFrameRate                                         ( m_iFrameRate );
-  m_cEncLib.setFrameSkip                                         ( m_FrameSkip );
+  m_cEncLib.setFrameRate(m_frameRate);
+  m_cEncLib.setFrameSkip(m_frameSkip);
   m_cEncLib.setTemporalSubsampleRatio                            ( m_temporalSubsampleRatio );
   m_cEncLib.setSourceWidth                                       ( m_sourceWidth );
   m_cEncLib.setSourceHeight                                      ( m_sourceHeight );
-  m_cEncLib.setConformanceWindow                                 ( m_confWinLeft / SPS::getWinUnitX( m_InputChromaFormatIDC ), m_confWinRight / SPS::getWinUnitX( m_InputChromaFormatIDC ), m_confWinTop / SPS::getWinUnitY( m_InputChromaFormatIDC ), m_confWinBottom / SPS::getWinUnitY( m_InputChromaFormatIDC ) );
+  m_cEncLib.setConformanceWindow(m_confWinLeft / SPS::getWinUnitX(m_inputChromaFormatIDC),
+                                 m_confWinRight / SPS::getWinUnitX(m_inputChromaFormatIDC),
+                                 m_confWinTop / SPS::getWinUnitY(m_inputChromaFormatIDC),
+                                 m_confWinBottom / SPS::getWinUnitY(m_inputChromaFormatIDC));
   m_cEncLib.setScalingRatio                                      ( m_scalingRatioHor, m_scalingRatioVer );
+#if JVET_AB0080
+  m_cEncLib.setGOPBasedRPREnabledFlag                            (m_gopBasedRPREnabledFlag);
+  m_cEncLib.setGOPBasedRPRQPThreshold                            (m_gopBasedRPRQPThreshold);
+  m_cEncLib.setScalingRatio2                                     (m_scalingRatioHor2, m_scalingRatioVer2);
+  m_cEncLib.setScalingRatio3                                     (m_scalingRatioHor3, m_scalingRatioVer3);
+  m_cEncLib.setPsnrThresholdRPR                                  (m_psnrThresholdRPR, m_psnrThresholdRPR2, m_psnrThresholdRPR3);
+  m_cEncLib.setQpOffsetRPR                                       (m_qpOffsetRPR, m_qpOffsetRPR2, m_qpOffsetRPR3);
+#if JVET_AB0080_CHROMA_QP_FIX
+  m_cEncLib.setQpOffsetChromaRPR                                 (m_qpOffsetChromaRPR, m_qpOffsetChromaRPR2, m_qpOffsetChromaRPR3);
+#endif
+#endif
   m_cEncLib.setRprEnabled                                        (m_rprEnabledFlag);
   m_cEncLib.setResChangeInClvsEnabled                            ( m_resChangeInClvsEnabled );
   m_cEncLib.setSwitchPocPeriod                                   ( m_switchPocPeriod );
   m_cEncLib.setUpscaledOutput                                    ( m_upscaledOutput );
+#if JVET_AB0081
+  m_cEncLib.setUpscaleFilerForDisplay                            (m_upscaleFilterForDisplay);
+#endif
   m_cEncLib.setFramesToBeEncoded                                 ( m_framesToBeEncoded );
   m_cEncLib.setValidFrames(m_firstValidFrame, m_lastValidFrame);
   m_cEncLib.setAvoidIntraInDepLayer                              ( m_avoidIntraInDepLayer );
@@ -298,19 +316,24 @@ void EncApp::xInitLibCfg()
     m_cEncLib.setNoCuQpDeltaConstraintFlag(m_noCuQpDeltaConstraintFlag);
 
     m_cEncLib.setNoTrailConstraintFlag(m_noTrailConstraintFlag);
-    CHECK(m_noTrailConstraintFlag && m_iIntraPeriod != 1, "TRAIL shall be deactivated when m_noTrailConstraintFlag is equal to 1");
+    CHECK(m_noTrailConstraintFlag && m_intraPeriod != 1,
+          "TRAIL shall be deactivated when m_noTrailConstraintFlag is equal to 1");
 
     m_cEncLib.setNoStsaConstraintFlag(m_noStsaConstraintFlag);
-    CHECK(m_noStsaConstraintFlag && (m_iIntraPeriod != 1 || xHasNonZeroTemporalID()), "STSA shall be deactivated when m_noStsaConstraintFlag is equal to 1");
+    CHECK(m_noStsaConstraintFlag && (m_intraPeriod != 1 || xHasNonZeroTemporalID()),
+          "STSA shall be deactivated when m_noStsaConstraintFlag is equal to 1");
 
     m_cEncLib.setNoRaslConstraintFlag(m_noRaslConstraintFlag);
-    CHECK(m_noRaslConstraintFlag && (m_iIntraPeriod != 1 || xHasLeadingPicture()), "RASL shall be deactivated when m_noRaslConstraintFlag is equal to 1");
+    CHECK(m_noRaslConstraintFlag && (m_intraPeriod != 1 || xHasLeadingPicture()),
+          "RASL shall be deactivated when m_noRaslConstraintFlag is equal to 1");
 
     m_cEncLib.setNoRadlConstraintFlag(m_noRadlConstraintFlag);
-    CHECK(m_noRadlConstraintFlag && (m_iIntraPeriod != 1 || xHasLeadingPicture()), "RADL shall be deactivated when m_noRadlConstraintFlag is equal to 1");
+    CHECK(m_noRadlConstraintFlag && (m_intraPeriod != 1 || xHasLeadingPicture()),
+          "RADL shall be deactivated when m_noRadlConstraintFlag is equal to 1");
 
     m_cEncLib.setNoCraConstraintFlag(m_noCraConstraintFlag);
-    CHECK(m_noCraConstraintFlag && (m_iDecodingRefreshType == 1), "CRA shall be deactivated when m_noCraConstraintFlag is equal to 1");
+    CHECK(m_noCraConstraintFlag && (m_intraRefreshType == 1),
+          "CRA shall be deactivated when m_noCraConstraintFlag is equal to 1");
 
     m_cEncLib.setNoRprConstraintFlag(m_noRprConstraintFlag);
     CHECK(m_noRprConstraintFlag && m_rprEnabledFlag, "Reference picture resampling shall be deactivated when m_noRprConstraintFlag is equal to 1");
@@ -319,7 +342,8 @@ void EncApp::xInitLibCfg()
     CHECK(m_noResChangeInClvsConstraintFlag && m_resChangeInClvsEnabled, "Resolution change in CLVS shall be deactivated when m_noResChangeInClvsConstraintFlag is equal to 1");
 
     m_cEncLib.setMaxBitDepthConstraintIdc(m_maxBitDepthConstraintIdc);
-    CHECK(m_internalBitDepth[CHANNEL_TYPE_LUMA] > m_maxBitDepthConstraintIdc, "Internal bit depth shall be less than or equal to m_maxBitDepthConstraintIdc");
+    CHECK(m_internalBitDepth[ChannelType::LUMA] > m_maxBitDepthConstraintIdc,
+          "Internal bit depth shall be less than or equal to m_maxBitDepthConstraintIdc");
 
     m_cEncLib.setMaxChromaFormatConstraintIdc(m_maxChromaFormatConstraintIdc);
     CHECK(m_chromaFormatIDC > m_maxChromaFormatConstraintIdc, "Chroma format Idc shall be less than or equal to m_maxBitDepthConstraintIdc");
@@ -331,13 +355,14 @@ void EncApp::xInitLibCfg()
     CHECK(m_noQtbttDualTreeIntraConstraintFlag && m_dualTree, "Dual tree shall be deactivated when m_bNoQtbttDualTreeIntraConstraintFlag is equal to 1");
 
     m_cEncLib.setMaxLog2CtuSizeConstraintIdc(m_maxLog2CtuSizeConstraintIdc);
-    CHECK( m_uiCTUSize > (1<<(m_maxLog2CtuSizeConstraintIdc)), "CTUSize shall be less than or equal to 1 << m_maxLog2CtuSize");
+    CHECK(m_ctuSize > (1 << (m_maxLog2CtuSizeConstraintIdc)),
+          "CTUSize shall be less than or equal to 1 << m_maxLog2CtuSize");
 
     m_cEncLib.setNoPartitionConstraintsOverrideConstraintFlag(m_noPartitionConstraintsOverrideConstraintFlag);
     CHECK(m_noPartitionConstraintsOverrideConstraintFlag && m_SplitConsOverrideEnabledFlag, "Partition override shall be deactivated when m_noPartitionConstraintsOverrideConstraintFlag is equal to 1");
 
     m_cEncLib.setNoSaoConstraintFlag(m_noSaoConstraintFlag);
-    CHECK(m_noSaoConstraintFlag && m_bUseSAO, "SAO shall be deactivated when m_bNoSaoConstraintFlag is equal to 1");
+    CHECK(m_noSaoConstraintFlag && m_useSao, "SAO shall be deactivated when m_bNoSaoConstraintFlag is equal to 1");
 
     m_cEncLib.setNoAlfConstraintFlag(m_noAlfConstraintFlag);
     CHECK(m_noAlfConstraintFlag && m_alf, "ALF shall be deactivated when m_bNoAlfConstraintFlag is equal to 1");
@@ -405,7 +430,8 @@ void EncApp::xInitLibCfg()
     CHECK(m_noBDPCMConstraintFlag && m_useBDPCM, "BDPCM shall be deactivated when m_noBDPCMConstraintFlag is equal to 1");
 
     m_cEncLib.setNoJointCbCrConstraintFlag(m_noJointCbCrConstraintFlag);
-    CHECK(m_noJointCbCrConstraintFlag && m_JointCbCrMode, "JCCR shall be deactivated when m_noJointCbCrConstraintFlag is equal to 1");
+    CHECK(m_noJointCbCrConstraintFlag && m_jointCbCrMode,
+          "JCCR shall be deactivated when m_noJointCbCrConstraintFlag is equal to 1");
 
     m_cEncLib.setNoDepQuantConstraintFlag(m_noDepQuantConstraintFlag);
     CHECK(m_noDepQuantConstraintFlag && m_depQuantEnabledFlag, "DQ shall be deactivated when m_bNoDepQuantConstraintFlag is equal to 1");
@@ -538,7 +564,7 @@ void EncApp::xInitLibCfg()
   }
 
   //====== Coding Structure ========
-  m_cEncLib.setIntraPeriod                                       ( m_iIntraPeriod );
+  m_cEncLib.setIntraPeriod(m_intraPeriod);
 #if GDR_ENABLED
   m_cEncLib.setGdrEnabled                                        ( m_gdrEnabled );
   m_cEncLib.setGdrPeriod                                         ( m_gdrPeriod );
@@ -546,8 +572,8 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setGdrInterval                                       ( m_gdrInterval);
   m_cEncLib.setGdrNoHash                                         ( m_gdrNoHash );
 #endif
-  m_cEncLib.setDecodingRefreshType                               ( m_iDecodingRefreshType );
-  m_cEncLib.setGOPSize                                           ( m_iGOPSize );
+  m_cEncLib.setDecodingRefreshType(m_intraRefreshType);
+  m_cEncLib.setGOPSize(m_gopSize);
   m_cEncLib.setDrapPeriod                                        ( m_drapPeriod );
   m_cEncLib.setEdrapPeriod                                       ( m_edrapPeriod );
   m_cEncLib.setReWriteParamSets                                  ( m_rewriteParamSets );
@@ -570,10 +596,8 @@ void EncApp::xInitLibCfg()
 
   m_cEncLib.setBaseQP                                            ( m_iQP );
 
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   m_cEncLib.setIntraQPOffset                                     ( m_intraQPOffset );
   m_cEncLib.setLambdaFromQPEnable                                ( m_lambdaFromQPEnable );
-#endif
   m_cEncLib.setChromaQpMappingTableParams                        (m_chromaQpMappingTableParams);
 
   m_cEncLib.setSourcePadding                                     ( m_sourcePadding );
@@ -595,11 +619,7 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setDeblockingFilterCbTcOffset                        ( m_deblockingFilterCbTcOffsetDiv2    );
   m_cEncLib.setDeblockingFilterCrBetaOffset                      ( m_deblockingFilterCrBetaOffsetDiv2  );
   m_cEncLib.setDeblockingFilterCrTcOffset                        ( m_deblockingFilterCrTcOffsetDiv2    );
-#if W0038_DB_OPT
   m_cEncLib.setDeblockingFilterMetric                            ( m_deblockingFilterMetric );
-#else
-  m_cEncLib.setDeblockingFilterMetric                            ( m_DeblockingFilterMetric );
-#endif
 
   //====== Motion search ========
   m_cEncLib.setDisableIntraPUsInInterSlices                      ( m_bDisableIntraPUsInInterSlices );
@@ -658,20 +678,16 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setSmoothQPReductionModelScaleInter                  (m_smoothQPReductionModelScaleInter);
   m_cEncLib.setSmoothQPReductionModelOffsetInter                 (m_smoothQPReductionModelOffsetInter);
   m_cEncLib.setSmoothQPReductionLimitInter                       (m_smoothQPReductionLimitInter);
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
   m_cEncLib.setDeltaQpRD( (m_costMode==COST_LOSSLESS_CODING) ? 0 : m_uiDeltaQpRD );
-#else
-  m_cEncLib.setDeltaQpRD                                         ( m_uiDeltaQpRD  );
-#endif
   m_cEncLib.setFastDeltaQp                                       ( m_bFastDeltaQP  );
   m_cEncLib.setUseASR                                            ( m_bUseASR      );
   m_cEncLib.setUseHADME                                          ( m_bUseHADME    );
-  m_cEncLib.setdQPs                                              ( m_aidQP        );
+  m_cEncLib.setdQPs(m_frameDeltaQps);
   m_cEncLib.setUseRDOQ                                           ( m_useRDOQ     );
   m_cEncLib.setUseRDOQTS                                         ( m_useRDOQTS   );
   m_cEncLib.setUseSelectiveRDOQ                                  ( m_useSelectiveRDOQ );
   m_cEncLib.setRDpenalty                                         ( m_rdPenalty );
-  m_cEncLib.setCTUSize                                           ( m_uiCTUSize );
+  m_cEncLib.setCTUSize(m_ctuSize);
   m_cEncLib.setSubPicInfoPresentFlag                             ( m_subPicInfoPresentFlag );
   if(m_subPicInfoPresentFlag)
   {
@@ -699,11 +715,11 @@ void EncApp::xInitLibCfg()
 
   m_cEncLib.setUseSplitConsOverride                              ( m_SplitConsOverrideEnabledFlag );
   // convert the Intra Chroma minQT setting from chroma unit to luma unit
-  m_uiMinQT[2] <<= getChannelTypeScaleX(CHANNEL_TYPE_CHROMA, m_chromaFormatIDC);
-  m_cEncLib.setMinQTSizes                                        ( m_uiMinQT );
+  m_minQt[2] <<= getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC);
+  m_cEncLib.setMinQTSizes(m_minQt);
   m_cEncLib.setMaxMTTHierarchyDepth                              ( m_uiMaxMTTHierarchyDepth, m_uiMaxMTTHierarchyDepthI, m_uiMaxMTTHierarchyDepthIChroma );
-  m_cEncLib.setMaxBTSizes                                        ( m_uiMaxBT );
-  m_cEncLib.setMaxTTSizes                                        ( m_uiMaxTT );
+  m_cEncLib.setMaxBTSizes(m_maxBt);
+  m_cEncLib.setMaxTTSizes(m_maxTt);
   m_cEncLib.setFastTTskip                                        ( m_ttFastSkip );
   m_cEncLib.setFastTTskipThr                                     ( m_ttFastSkipThr );
   m_cEncLib.setDualITree                                         ( m_dualTree );
@@ -729,7 +745,6 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setUseSMVD                                           ( m_SMVD );
   m_cEncLib.setUseBcw                                            ( m_bcw );
   m_cEncLib.setUseBcwFast                                        ( m_BcwFast );
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   m_cEncLib.setUseLadf                                           ( m_LadfEnabed );
   if ( m_LadfEnabed )
   {
@@ -740,7 +755,6 @@ void EncApp::xInitLibCfg()
       m_cEncLib.setLadfIntervalLowerBound(m_LadfIntervalLowerBound[k], k);
     }
   }
-#endif
   m_cEncLib.setUseCiip                                        ( m_ciip );
   m_cEncLib.setUseGeo                                            ( m_Geo );
   m_cEncLib.setUseHashME                                         ( m_HashME );
@@ -755,7 +769,7 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setRGBFormatFlag(m_rgbFormat);
   m_cEncLib.setUseColorTrans(m_useColorTrans);
   m_cEncLib.setPLTMode                                           ( m_PLTMode );
-  m_cEncLib.setJointCbCr                                         ( m_JointCbCrMode );
+  m_cEncLib.setJointCbCr(m_jointCbCrMode);
   m_cEncLib.setIBCMode                                           ( m_IBCMode );
   m_cEncLib.setIBCLocalSearchRangeX                              ( m_IBCLocalSearchRangeX );
   m_cEncLib.setIBCLocalSearchRangeY                              ( m_IBCLocalSearchRangeY );
@@ -784,8 +798,8 @@ void EncApp::xInitLibCfg()
     }
   }
 
-  m_cEncLib.setMaxCUWidth                                        ( m_uiCTUSize );
-  m_cEncLib.setMaxCUHeight                                       ( m_uiCTUSize );
+  m_cEncLib.setMaxCUWidth(m_ctuSize);
+  m_cEncLib.setMaxCUHeight(m_ctuSize);
   m_cEncLib.setLog2MinCodingBlockSize                            ( m_log2MinCuSize );
   m_cEncLib.setLog2MaxTbSize                                     ( m_log2MaxTbSize );
   m_cEncLib.setUseEncDbOpt(m_encDbOpt);
@@ -826,10 +840,10 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setDisableFastDecisionTT                             (m_disableFastDecisionTT);
 
   // set internal bit-depth and constants
-  for (uint32_t channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
+  for (const auto channelType: { ChannelType::LUMA, ChannelType::CHROMA })
   {
-    m_cEncLib.setBitDepth((ChannelType)channelType, m_internalBitDepth[channelType]);
-    m_cEncLib.setInputBitDepth((ChannelType)channelType, m_inputBitDepth[channelType]);
+    m_cEncLib.setBitDepth(channelType, m_internalBitDepth[channelType]);
+    m_cEncLib.setInputBitDepth(channelType, m_inputBitDepth[channelType]);
   }
 
   m_cEncLib.setMaxNumMergeCand                                   ( m_maxNumMergeCand );
@@ -871,7 +885,7 @@ void EncApp::xInitLibCfg()
 
   //====== Sub-picture and Slices ========
   m_cEncLib.setSingleSlicePerSubPicFlagFlag                      ( m_singleSlicePerSubPicFlag );
-  m_cEncLib.setUseSAO                                            ( m_bUseSAO );
+  m_cEncLib.setUseSAO(m_useSao);
   m_cEncLib.setSaoTrueOrg                                        ( m_saoTrueOrg );
   m_cEncLib.setTestSAODisableAtPictureLevel                      ( m_bTestSAODisableAtPictureLevel );
   m_cEncLib.setSaoEncodingRate                                   ( m_saoEncodingRate );
@@ -903,6 +917,22 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setDoSEITransformType                                ( m_doSEITransformType);
   m_cEncLib.setParameterSetsInclusionIndicationSEIEnabled        (m_parameterSetsInclusionIndicationSEIEnabled);
   m_cEncLib.setSelfContainedClvsFlag                             (m_selfContainedClvsFlag);
+#if GREEN_METADATA_SEI_ENABLED
+  m_cEncLib.setGMFAFile(m_GMFAFile);
+  m_cEncLib.setSEIGreenMetadataInfoSEIEnable                     ( m_greenMetadataType );
+  m_cEncLib.setSEIGreenMetadataExtendedRepresentation            ( m_greenMetadataExtendedRepresentation);
+  m_cEncLib.setSEIGreenMetadataGranularityType                   ( m_greenMetadataGranularityType);
+  m_cEncLib.setSEIGreenMetadataType                              ( m_greenMetadataType );
+  m_cEncLib.setSEIGreenMetadataPeriodType                        ( m_greenMetadataPeriodType );
+  m_cEncLib.setSEIGreenMetadataPeriodNumPictures                 (m_greenMetadataPeriodNumPictures);
+  m_cEncLib.setSEIGreenMetadataPeriodNumSeconds                  (m_greenMetadataPeriodNumSeconds);
+  //Metrics for quality recovery after low-power encoding
+  m_cEncLib.setSEIXSDNumberMetrics                               (m_xsdNumberMetrics);
+  m_cEncLib.setSEIXSDMetricTypePSNR                              (m_xsdMetricTypePSNR);
+  m_cEncLib.setSEIXSDMetricTypeSSIM                              (m_xsdMetricTypeSSIM);
+  m_cEncLib.setSEIXSDMetricTypeWPSNR                             (m_xsdMetricTypeWPSNR);
+  m_cEncLib.setSEIXSDMetricTypeWSPSNR                            (m_xsdMetricTypeWSPSNR);
+#endif
   m_cEncLib.setErpSEIEnabled                                     ( m_erpSEIEnabled );
   m_cEncLib.setErpSEICancelFlag                                  ( m_erpSEICancelFlag );
   m_cEncLib.setErpSEIPersistenceFlag                             ( m_erpSEIPersistenceFlag );
@@ -974,7 +1004,6 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setSariAspectRatioIdc                                (m_sariAspectRatioIdc);
   m_cEncLib.setSariSarWidth                                      (m_sariSarWidth);
   m_cEncLib.setSariSarHeight                                     (m_sariSarHeight);
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   m_cEncLib.setPhaseIndicationSEIEnabledFullResolution           (m_phaseIndicationSEIEnabledFullResolution);
   m_cEncLib.setHorPhaseNumFullResolution                         (m_piHorPhaseNumFullResolution);
   m_cEncLib.setHorPhaseDenMinus1FullResolution                   (m_piHorPhaseDenMinus1FullResolution);
@@ -985,13 +1014,10 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setHorPhaseDenMinus1ReducedResolution                (m_piHorPhaseDenMinus1ReducedResolution);
   m_cEncLib.setVerPhaseNumReducedResolution                      (m_piVerPhaseNumReducedResolution);
   m_cEncLib.setVerPhaseDenMinus1ReducedResolution                (m_piVerPhaseDenMinus1ReducedResolution);
-#endif
   m_cEncLib.setMCTSEncConstraint                                 ( m_MCTSEncConstraint);
   m_cEncLib.setMasteringDisplaySEI                               ( m_masteringDisplay );
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
   m_cEncLib.setSEIAlternativeTransferCharacteristicsSEIEnable    ( m_preferredTransferCharacteristics>=0     );
   m_cEncLib.setSEIPreferredTransferCharacteristics               ( uint8_t(m_preferredTransferCharacteristics) );
-#endif
   // film grain charcteristics
   m_cEncLib.setFilmGrainCharactersticsSEIEnabled                 (m_fgcSEIEnabled);
   m_cEncLib.setFilmGrainCharactersticsSEICancelFlag              (m_fgcSEICancelFlag);
@@ -1003,9 +1029,9 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setFilmGrainAnalysisEnabled                          (m_fgcSEIAnalysisEnabled);
   m_cEncLib.setFilmGrainExternalMask                             (m_fgcSEIExternalMask);
   m_cEncLib.setFilmGrainExternalDenoised                         (m_fgcSEIExternalDenoised);
-  m_cEncLib.setFilmGrainTemporalFilterPastRefs                   (m_fgcSEITemporalFilterPastRefs);  
+  m_cEncLib.setFilmGrainTemporalFilterPastRefs(m_fgcSEITemporalFilterPastRefs);
   m_cEncLib.setFilmGrainTemporalFilterFutureRefs                 (m_fgcSEITemporalFilterFutureRefs);
-  m_cEncLib.setFilmGrainTemporalFilterStrengths                  (m_fgcSEITemporalFilterStrengths); 
+  m_cEncLib.setFilmGrainTemporalFilterStrengths(m_fgcSEITemporalFilterStrengths);
   m_cEncLib.setFilmGrainCharactersticsSEIPerPictureSEI           (m_fgcSEIPerPictureSEI);
   for (int i = 0; i < MAX_NUM_COMPONENT; i++) {
     m_cEncLib.setFGCSEICompModelPresent                          (m_fgcSEICompModelPresent[i], i);
@@ -1042,7 +1068,7 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setCtiSEICrossComponentInferred(m_ctiSEICrossComponentInferred);
   m_cEncLib.setCtiSEINbChromaLut(m_ctiSEINumberChromaLut);
   m_cEncLib.setCtiSEIChromaOffset(m_ctiSEIChromaOffset);
-  for (int i = 0; i < MAX_NUM_COMPONENT; i++) 
+  for (int i = 0; i < MAX_NUM_COMPONENT; i++)
   {
     m_cEncLib.setCtiSEILut(m_ctiSEILut[i], i);
   }
@@ -1137,113 +1163,98 @@ void EncApp::xInitLibCfg()
   {
     m_cEncLib.setNNPostFilterSEICharacteristicsId                      (m_nnPostFilterSEICharacteristicsId[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsModeIdc                 (m_nnPostFilterSEICharacteristicsModeIdc[i], i);
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
     m_cEncLib.setNNPostFilterSEICharacteristicsPurposeAndFormattingFlag( m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[i], i);
     if (m_cEncLib.getNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(i))
     {
       m_cEncLib.setNNPostFilterSEICharacteristicsPurpose                 (m_nnPostFilterSEICharacteristicsPurpose[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 2  || m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 4)
       {
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
         m_cEncLib.setNNPostFilterSEICharacteristicsOutSubCFlag(m_nnPostFilterSEICharacteristicsOutSubCFlag[i], i);
-#else
-        m_cEncLib.setNNPostFilterSEICharacteristicsOutSubWidthCFlag        (m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[i], i);
-        m_cEncLib.setNNPostFilterSEICharacteristicsOutSubHeightCFlag       (m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[i], i);
-#endif
       }
       if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 3  || m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 4)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthInLumaSamples   (m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightInLumaSamples  (m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], i);
       }
+#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 5)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsNumberInterpolatedPictures( m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i], i);
+      }
+#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+      m_cEncLib.setNNPostFilterSEICharacteristicsInpFormatIdc            (m_nnPostFilterSEICharacteristicsInpFormatIdc[i], i);
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsInpFormatIdc(i) == 1)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i], i);
+      }
+#else
       m_cEncLib.setNNPostFilterSEICharacteristicsInpSampleIdc            (m_nnPostFilterSEICharacteristicsInpSampleIdc[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsInpSampleIdc(i) == 4)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i], i);
       }
+#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsInpOrderIdc             (m_nnPostFilterSEICharacteristicsInpOrderIdc[i], i);
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+      m_cEncLib.setNNPostFilterSEICharacteristicsOutFormatIdc            (m_nnPostFilterSEICharacteristicsOutFormatIdc[i], i);
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsOutFormatIdc(i) == 1)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i], i);
+      }
+#else
       m_cEncLib.setNNPostFilterSEICharacteristicsOutSampleIdc            (m_nnPostFilterSEICharacteristicsOutSampleIdc[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsOutSampleIdc(i) == 4)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i], i);
       }
+#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsOutOrderIdc             (m_nnPostFilterSEICharacteristicsOutOrderIdc[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsConstantPatchSizeFlag   ( m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsPatchWidthMinus1        ( m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsPatchHeightMinus1       ( m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsOverlap                 ( m_nnPostFilterSEICharacteristicsOverlap[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsPaddingType             ( m_nnPostFilterSEICharacteristicsPaddingType[i], i);
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
       m_cEncLib.setNNPostFilterSEICharacteristicsLumaPadding             (m_nnPostFilterSEICharacteristicsLumaPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCrPadding               (m_nnPostFilterSEICharacteristicsCrPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCbPadding               (m_nnPostFilterSEICharacteristicsCbPadding[i], i);
-#endif
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+      m_cEncLib.setNNPostFilterSEICharacteristicsComplexityInfoPresentFlag (m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[i], i);
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsComplexityInfoPresentFlag(i))
+#else
       m_cEncLib.setNNPostFilterSEICharacteristicsComplexityIdc           ( m_nnPostFilterSEICharacteristicsComplexityIdc[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsComplexityIdc(i) > 0)
+#endif
       {
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
       m_cEncLib.setNNPostFilterSEICharacteristicsLumaPadding             (m_nnPostFilterSEICharacteristicsLumaPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCrPadding               (m_nnPostFilterSEICharacteristicsCrPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCbPadding               (m_nnPostFilterSEICharacteristicsCbPadding[i], i);
-#endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
       m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeIdc        (m_nnPostFilterSEICharacteristicsParameterTypeIdc[i], i);
-#else
-        m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeFlag       ( m_nnPostFilterSEICharacteristicsParameterTypeFlag[i], i);
-#endif
         m_cEncLib.setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3     ( m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumParametersIdc        ( m_nnPostFilterSEICharacteristicsNumParametersIdc[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumKmacOperationsIdc    ( m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], i);
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+        m_cEncLib.setNNPostFilterSEICharacteristicsTotalKilobyteSize       ( m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i], i);
+#endif
+
       }
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
       m_cEncLib.setNNPostFilterSEICharacteristicsUriTag                  ( m_nnPostFilterSEICharacteristicsUriTag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsUri                     ( m_nnPostFilterSEICharacteristicsUri[i], i);
-#endif
     }
     if (m_cEncLib.getNNPostFilterSEICharacteristicsModeIdc(i) == 1)
     {
       m_cEncLib.setNNPostFilterSEICharacteristicsPayloadFilename(m_nnPostFilterSEICharacteristicsPayloadFilename[i], i);
     }
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS 
     m_cEncLib.setNNPostFilterSEICharacteristicsAuxInpIdc               (m_nnPostFilterSEICharacteristicsAuxInpIdc[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsSepColDescriptionFlag   (m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[i], i);
-    if (m_cEncLib.getNNPostFilterSEICharacteristicsSepColDescriptionFlag(i)){
+    if (m_cEncLib.getNNPostFilterSEICharacteristicsSepColDescriptionFlag(i))
+    {
       m_cEncLib.setNNPostFilterSEICharacteristicsColPrimaries          (m_nnPostFilterSEICharacteristicsColPrimaries[i],i);
       m_cEncLib.setNNPostFilterSEICharacteristicsTransCharacteristics  (m_nnPostFilterSEICharacteristicsTransCharacteristics[i],i);
       m_cEncLib.setNNPostFilterSEICharacteristicsMatrixCoeffs          (m_nnPostFilterSEICharacteristicsMatrixCoeffs[i],i);
     }
-#endif
-#else
-    m_cEncLib.setNNPostFilterSEICharacteristicsPurpose                 (m_nnPostFilterSEICharacteristicsPurpose[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOutSubWidthCFlag        (m_nnPostFilterSEICharacteristicsOutSubWidthCFlag[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOutSubHeightCFlag       (m_nnPostFilterSEICharacteristicsOutSubHeightCFlag[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthInLumaSamples   (m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightInLumaSamples  (m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i], i);
-
-    m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsInpSampleIdc            (m_nnPostFilterSEICharacteristicsInpSampleIdc[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsInpOrderIdc             (m_nnPostFilterSEICharacteristicsInpOrderIdc[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOutSampleIdc            (m_nnPostFilterSEICharacteristicsOutSampleIdc[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOutOrderIdc             (m_nnPostFilterSEICharacteristicsOutOrderIdc[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsConstantPatchSizeFlag   ( m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPatchWidthMinus1        ( m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPatchHeightMinus1       ( m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsOverlap                 ( m_nnPostFilterSEICharacteristicsOverlap[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPaddingType             ( m_nnPostFilterSEICharacteristicsPaddingType[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPayloadFilename         ( m_nnPostFilterSEICharacteristicsPayloadFilename[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsComplexityIdc           ( m_nnPostFilterSEICharacteristicsComplexityIdc[i], i);
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
-    m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeIdc        (m_nnPostFilterSEICharacteristicsParameterTypeIdc[i], i);
-#else
-    m_cEncLib.setNNPostFilterSEICharacteristicsParameterTypeFlag       ( m_nnPostFilterSEICharacteristicsParameterTypeFlag[i], i);
-#endif
-    m_cEncLib.setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3     ( m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsNumParametersIdc        ( m_nnPostFilterSEICharacteristicsNumParametersIdc[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsNumKmacOperationsIdc    ( m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], i);
-#endif
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
   m_cEncLib.setNnPostFilterSEIActivationId                       (m_nnPostFilterSEIActivationId);
@@ -1279,11 +1290,9 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setUseLCUSeparateModel                               ( m_RCUseLCUSeparateModel );
   m_cEncLib.setInitialQP                                         ( m_RCInitialQP );
   m_cEncLib.setForceIntraQP                                      ( m_RCForceIntraQP );
-#if U0132_TARGET_BITS_SATURATION
   m_cEncLib.setCpbSaturationEnabled                              ( m_RCCpbSaturationEnabled );
   m_cEncLib.setCpbSize                                           ( m_RCCpbSize );
   m_cEncLib.setInitialCpbFullness                                ( m_RCInitialCpbFullness );
-#endif
   m_cEncLib.setCostMode                                          ( m_costMode );
   m_cEncLib.setTSRCdisableLL                                     ( m_TSRCdisableLL );
   m_cEncLib.setUseRecalculateQPAccordingToLambda                 ( m_recalculateQPAccordingToLambda );
@@ -1293,12 +1302,10 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setSiiSEITimeScale(m_siiSEITimeScale);
   m_cEncLib.setSiiSEISubLayerNumUnitsInSI(m_siiSEISubLayerNumUnitsInSI);
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   m_cEncLib.setPoSEIEnabled                                      (m_poSEIEnabled);
   m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
   m_cEncLib.setPoSEINumofSeiMessages                             (m_numofSEIMessages);
-#endif
 
   m_cEncLib.setVuiParametersPresentFlag                          ( m_vuiParametersPresentFlag );
   m_cEncLib.setSamePicTimingInAllOLS                             (m_samePicTimingInAllOLS);
@@ -1347,6 +1354,9 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setCCALFStrengthTarget                               (m_ccalfStrengthTarget);
   m_cEncLib.setUseCCALF                                          ( m_ccalf );
   m_cEncLib.setCCALFQpThreshold                                  ( m_ccalfQpThreshold );
+#if JVET_AB0080
+  m_cEncLib.setGOPBasedRPRQPThreshold                            (m_gopBasedRPRQPThreshold);
+#endif
   m_cEncLib.setLmcs                                              ( m_lmcsEnabled );
   m_cEncLib.setReshapeSignalType                                 ( m_reshapeSignalType );
   m_cEncLib.setReshapeIntraCMD                                   ( m_intraCMD );
@@ -1375,6 +1385,14 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setCropOffsetBottom                                  (m_cropOffsetBottom);
   m_cEncLib.setCalculateHdrMetrics                               (m_calculateHdrMetrics);
 #endif
+
+#if JVET_T0056_SEI_MANIFEST
+  m_cEncLib.setSEIManifestSEIEnabled(m_SEIManifestSEIEnabled);
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  m_cEncLib.setSEIPrefixIndicationSEIEnabled(m_SEIPrefixIndicationSEIEnabled);
+#endif
+
   m_cEncLib.setOPIEnabled                                         ( m_OPIEnabled );
   if (m_OPIEnabled)
   {
@@ -1399,22 +1417,28 @@ void EncApp::xInitLibCfg()
 void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
 {
   // Video I/O
-  m_cVideoIOYuvInputFile.open( m_inputFileName,     false, m_inputBitDepth, m_MSBExtendedBitDepth, m_internalBitDepth );  // read  mode
+  m_cVideoIOYuvInputFile.open(m_inputFileName, false, m_inputBitDepth, m_msbExtendedBitDepth,
+                              m_internalBitDepth);   // read  mode
 #if EXTENSION_360_VIDEO
-  m_cVideoIOYuvInputFile.skipFrames(m_FrameSkip, m_inputFileWidth, m_inputFileHeight, m_InputChromaFormatIDC);
+  m_cVideoIOYuvInputFile.skipFrames(m_frameSkip, m_inputFileWidth, m_inputFileHeight, m_inputChromaFormatIDC);
 #else
   const int sourceHeight = m_isField ? m_iSourceHeightOrg : m_sourceHeight;
-  m_cVideoIOYuvInputFile.skipFrames(m_FrameSkip, m_sourceWidth - m_sourcePadding[0], sourceHeight - m_sourcePadding[1], m_InputChromaFormatIDC);
+  m_cVideoIOYuvInputFile.skipFrames(m_frameSkip, m_sourceWidth - m_sourcePadding[0], sourceHeight - m_sourcePadding[1],
+                                    m_inputChromaFormatIDC);
 #endif
   if (!m_reconFileName.empty())
   {
-    if (m_packedYUVMode && ((m_outputBitDepth[CH_L] != 10 && m_outputBitDepth[CH_L] != 12)
-        || ((m_sourceWidth & (1 + (m_outputBitDepth[CH_L] & 3))) != 0)))
+    if (m_packedYUVMode
+        && ((m_outputBitDepth[ChannelType::LUMA] != 10 && m_outputBitDepth[ChannelType::LUMA] != 12)
+            || ((m_sourceWidth & (1 + (m_outputBitDepth[ChannelType::LUMA] & 3))) != 0)))
     {
       EXIT ("Invalid output bit-depth or image width for packed YUV output, aborting\n");
     }
-    if (m_packedYUVMode && (m_chromaFormatIDC != CHROMA_400) && ((m_outputBitDepth[CH_C] != 10 && m_outputBitDepth[CH_C] != 12)
-        || (((m_sourceWidth / SPS::getWinUnitX (m_chromaFormatIDC)) & (1 + (m_outputBitDepth[CH_C] & 3))) != 0)))
+    if (m_packedYUVMode && (m_chromaFormatIDC != CHROMA_400)
+        && ((m_outputBitDepth[ChannelType::CHROMA] != 10 && m_outputBitDepth[ChannelType::CHROMA] != 12)
+            || (((m_sourceWidth / SPS::getWinUnitX(m_chromaFormatIDC))
+                 & (1 + (m_outputBitDepth[ChannelType::CHROMA] & 3)))
+                != 0)))
     {
       EXIT ("Invalid chroma output bit-depth or image width for packed YUV output, aborting\n");
     }
@@ -1437,7 +1461,8 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
       const auto sx = SPS::getWinUnitX(m_chromaFormatIDC);
       const auto sy = SPS::getWinUnitY(m_chromaFormatIDC);
       m_cVideoIOYuvReconFile.setOutputY4mInfo(m_sourceWidth - (m_confWinLeft + m_confWinRight) * sx,
-        m_sourceHeight - (m_confWinTop + m_confWinBottom) * sy, m_iFrameRate, 1, m_internalBitDepth[0], m_chromaFormatIDC);
+                                              m_sourceHeight - (m_confWinTop + m_confWinBottom) * sy, m_frameRate, 1,
+                                              m_internalBitDepth[ChannelType::LUMA], m_chromaFormatIDC);
     }
     m_cVideoIOYuvReconFile.open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, m_internalBitDepth );  // write mode
   }
@@ -1452,7 +1477,7 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
   m_cEncLib.create( layerId );
 
   // create the output buffer
-  for( int i = 0; i < (m_iGOPSize + 1 + (m_isField ? 1 : 0)); i++ )
+  for (int i = 0; i < (m_gopSize + 1 + (m_isField ? 1 : 0)); i++)
   {
     recBufList.push_back( new PelUnitBuf );
   }
@@ -1497,6 +1522,17 @@ void EncApp::createLib( const int layerIdx )
     m_filteredOrgPic = new PelStorage;
     m_filteredOrgPic->create( unitArea );
   }
+#if JVET_AB0080
+  if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag)
+  {
+    UnitArea unitAreaRPR10(m_chromaFormatIDC, Area(0, 0, m_sourceWidth, sourceHeight));
+    UnitArea unitAreaRPR20(m_chromaFormatIDC, Area(0, 0, m_sourceWidth / 2, sourceHeight / 2));
+    m_rprPic[0] = new PelStorage;
+    m_rprPic[0]->create(unitAreaRPR10);
+    m_rprPic[1] = new PelStorage;
+    m_rprPic[1]->create(unitAreaRPR20);
+  }
+#endif
   if (m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty())
   {
     m_filteredOrgPicForFG = new PelStorage;
@@ -1518,7 +1554,7 @@ void EncApp::createLib( const int layerIdx )
   }
 
   // initialize internal class & member variables and VPS
-  xInitLibCfg();
+  xInitLibCfg( layerIdx );
   const int layerId = m_cEncLib.getVPS() == nullptr ? 0 : m_cEncLib.getVPS()->getLayerId( layerIdx );
   xCreateLib( m_recBufList, layerId );
   xInitLib();
@@ -1531,23 +1567,20 @@ void EncApp::createLib( const int layerIdx )
 
   if( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
   {
-    m_temporalFilter.init(m_FrameSkip, m_inputBitDepth, m_MSBExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
-                          sourceHeight, m_sourcePadding, m_bClipInputVideoToRec709Range, m_inputFileName,
+    m_temporalFilter.init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
+                          sourceHeight, m_sourcePadding, m_clipInputVideoToRec709Range, m_inputFileName,
                           m_chromaFormatIDC, m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
                           m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs, m_firstValidFrame,
-                          m_lastValidFrame
-                          , m_gopBasedTemporalFilterEnabled, m_cEncLib.getAdaptQPmap(), m_cEncLib.getBIM(), m_uiCTUSize
-                          );
+                          m_lastValidFrame, m_gopBasedTemporalFilterEnabled, m_cEncLib.getAdaptQPmap(),
+                          m_cEncLib.getBIM(), m_ctuSize);
   }
   if ( m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty() )
   {
-    m_temporalFilterForFG.init(m_FrameSkip, m_inputBitDepth, m_MSBExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
-                               sourceHeight, m_sourcePadding, m_bClipInputVideoToRec709Range, m_inputFileName,
+    m_temporalFilterForFG.init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
+                               sourceHeight, m_sourcePadding, m_clipInputVideoToRec709Range, m_inputFileName,
                                m_chromaFormatIDC, m_inputColourSpaceConvert, m_iQP, m_fgcSEITemporalFilterStrengths,
                                m_fgcSEITemporalFilterPastRefs, m_fgcSEITemporalFilterFutureRefs, m_firstValidFrame,
-                               m_lastValidFrame
-                               , true, m_cEncLib.getAdaptQPmap(), m_cEncLib.getBIM(), m_uiCTUSize
-                               );
+                               m_lastValidFrame, true, m_cEncLib.getAdaptQPmap(), m_cEncLib.getBIM(), m_ctuSize);
   }
 }
 
@@ -1577,6 +1610,16 @@ void EncApp::destroyLib()
   m_trueOrgPic->destroy();
   delete m_trueOrgPic;
   delete m_orgPic;
+#if JVET_AB0080
+  if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag)
+  {
+    for (int i = 0; i < 2; i++)
+    {
+      m_rprPic[i]->destroy();
+      delete m_rprPic[i];
+    }
+  }
+#endif
   if ( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
   {
     m_filteredOrgPic->destroy();
@@ -1618,35 +1661,38 @@ bool EncApp::encodePrep( bool& eos )
   }
   else
   {
-    m_cVideoIOYuvInputFile.read( *m_orgPic, *m_trueOrgPic, ipCSC, m_sourcePadding, m_InputChromaFormatIDC, m_bClipInputVideoToRec709Range );
+    m_cVideoIOYuvInputFile.read(*m_orgPic, *m_trueOrgPic, ipCSC, m_sourcePadding, m_inputChromaFormatIDC,
+                                m_clipInputVideoToRec709Range);
   }
 #else
-  m_cVideoIOYuvInputFile.read( *m_orgPic, *m_trueOrgPic, ipCSC, m_sourcePadding, m_InputChromaFormatIDC, m_bClipInputVideoToRec709Range );
+  m_cVideoIOYuvInputFile.read(*m_orgPic, *m_trueOrgPic, ipCSC, m_sourcePadding, m_inputChromaFormatIDC,
+                              m_clipInputVideoToRec709Range);
 #endif
 
   if (m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty())
   {
     m_filteredOrgPicForFG->copyFrom(*m_orgPic);
-    m_temporalFilterForFG.filter(m_filteredOrgPicForFG, m_iFrameRcvd);
+    m_temporalFilterForFG.filter(m_filteredOrgPicForFG, m_frameRcvd);
   }
   if ( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
   {
-    m_temporalFilter.filter(m_orgPic, m_iFrameRcvd);
+    m_temporalFilter.filter(m_orgPic, m_frameRcvd);
     m_filteredOrgPic->copyFrom(*m_orgPic);
   }
 
   // increase number of received frames
-  m_iFrameRcvd++;
+  m_frameRcvd++;
 
-  eos = ( m_isField && ( m_iFrameRcvd == ( m_framesToBeEncoded >> 1 ) ) ) || ( !m_isField && ( m_iFrameRcvd == m_framesToBeEncoded ) );
+  eos =
+    (m_isField && (m_frameRcvd == (m_framesToBeEncoded >> 1))) || (!m_isField && (m_frameRcvd == m_framesToBeEncoded));
 
   // if end of file (which is only detected on a read failure) flush the encoder of any queued pictures
   if( m_cVideoIOYuvInputFile.isEof() )
   {
     m_flush = true;
     eos = true;
-    m_iFrameRcvd--;
-    m_cEncLib.setFramesToBeEncoded( m_iFrameRcvd );
+    m_frameRcvd--;
+    m_cEncLib.setFramesToBeEncoded(m_frameRcvd);
   }
 
   bool keepDoing = false;
@@ -1658,14 +1704,19 @@ bool EncApp::encodePrep( bool& eos )
   }
   else
   {
-    keepDoing = m_cEncLib.encodePrep( eos, m_flush ? 0 : m_orgPic, m_flush ? 0 : m_trueOrgPic, m_flush ? 0 : m_filteredOrgPic, m_flush ? 0 : m_filteredOrgPicForFG, snrCSC, m_recBufList, m_numEncoded );
+    keepDoing = m_cEncLib.encodePrep( eos, m_flush ? 0 : m_orgPic, m_flush ? 0 : m_trueOrgPic, m_flush ? 0 : m_filteredOrgPic, m_flush ? 0 : m_filteredOrgPicForFG, snrCSC, m_recBufList, m_numEncoded
+#if JVET_AB0080
+      , m_rprPic
+#endif
+    );
   }
 
 #if JVET_Z0120_SII_SEI_PROCESSING
   if (m_ShutterFilterEnable && !m_shutterIntervalPreFileName.empty())
   {
-    m_cTVideoIOYuvSIIPreFile.write(m_orgPic->get(COMPONENT_Y).width, m_orgPic->get(COMPONENT_Y).height, *m_orgPic, m_inputColourSpaceConvert, m_packedYUVMode,
-      m_confWinLeft, m_confWinRight, m_confWinTop, m_confWinBottom, NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+    m_cTVideoIOYuvSIIPreFile.write(m_orgPic->get(COMPONENT_Y).width, m_orgPic->get(COMPONENT_Y).height, *m_orgPic,
+                                   m_inputColourSpaceConvert, m_packedYUVMode, m_confWinLeft, m_confWinRight,
+                                   m_confWinTop, m_confWinBottom, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
   }
 #endif
 
@@ -1703,10 +1754,12 @@ bool EncApp::encode()
     if( m_temporalSubsampleRatio > 1 )
     {
 #if EXTENSION_360_VIDEO
-      m_cVideoIOYuvInputFile.skipFrames( m_temporalSubsampleRatio - 1, m_inputFileWidth, m_inputFileHeight, m_InputChromaFormatIDC );
+      m_cVideoIOYuvInputFile.skipFrames(m_temporalSubsampleRatio - 1, m_inputFileWidth, m_inputFileHeight,
+                                        m_inputChromaFormatIDC);
 #else
     const int sourceHeight = m_isField ? m_iSourceHeightOrg : m_sourceHeight;
-    m_cVideoIOYuvInputFile.skipFrames( m_temporalSubsampleRatio - 1, m_sourceWidth - m_sourcePadding[0], sourceHeight - m_sourcePadding[1], m_InputChromaFormatIDC );
+    m_cVideoIOYuvInputFile.skipFrames(m_temporalSubsampleRatio - 1, m_sourceWidth - m_sourcePadding[0],
+                                      sourceHeight - m_sourcePadding[1], m_inputChromaFormatIDC);
 #endif
     }
   }
@@ -1761,16 +1814,60 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
       {
         const int layerId = getVPS() ? getVPS()->getGeneralLayerIdx(m_cEncLib.getLayerId()) : 0;
         const SPS& sps = *m_cEncLib.getSPS(layerId);
+#if JVET_AB0080
+        int ppsID = layerId;
+        if (m_gopBasedRPREnabledFlag  && (m_cEncLib.getBaseQP() >= m_cEncLib.getGOPBasedRPRQPThreshold()))
+        {
+          const PPS& pps1 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR);
+          const PPS& pps2 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR2);
+          const PPS& pps3 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR3);
+          if (pps1.getPicWidthInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).width && pps1.getPicHeightInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).height)
+          {
+            ppsID = ENC_PPS_ID_RPR;
+          }
+          else if (pps2.getPicWidthInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).width && pps2.getPicHeightInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).height)
+          {
+            ppsID = ENC_PPS_ID_RPR2;
+          }
+          else if (pps3.getPicWidthInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).width && pps3.getPicHeightInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).height)
+          {
+            ppsID = ENC_PPS_ID_RPR3;
+          }
+          else
+          {
+            ppsID = layerId;
+          }
+        }
+        else
+        {
+          ppsID = (sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) ? ENC_PPS_ID_RPR : layerId;
+        }
+        const PPS& pps = *m_cEncLib.getPPS(ppsID);
+#else
         const PPS& pps = *m_cEncLib.getPPS((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) ? ENC_PPS_ID_RPR : layerId);
+#endif
         if( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() )
         {
-          m_cVideoIOYuvReconFile.writeUpscaledPicture( sps, pps, *pcPicYuvRec, ipCSC, m_packedYUVMode, m_cEncLib.getUpscaledOutput(), NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range );
+#if JVET_AB0081
+          m_cVideoIOYuvReconFile.writeUpscaledPicture(sps, pps, *pcPicYuvRec, ipCSC, m_packedYUVMode,
+                                                      m_cEncLib.getUpscaledOutput(), NUM_CHROMA_FORMAT,
+                                                      m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+#else
+          m_cVideoIOYuvReconFile.writeUpscaledPicture(sps, pps, *pcPicYuvRec, ipCSC, m_packedYUVMode,
+                                                      m_cEncLib.getUpscaledOutput(), NUM_CHROMA_FORMAT,
+                                                      m_clipOutputVideoToRec709Range);
+#endif
         }
         else
         {
           Window confWindowPPS = pps.getConformanceWindow();
-          m_cVideoIOYuvReconFile.write(pcPicYuvRec->get(COMPONENT_Y).width, pcPicYuvRec->get(COMPONENT_Y).height, *pcPicYuvRec, ipCSC, m_packedYUVMode,
-            confWindowPPS.getWindowLeftOffset()*SPS::getWinUnitX(m_cEncLib.getChromaFormatIdc()), confWindowPPS.getWindowRightOffset()*SPS::getWinUnitX(m_cEncLib.getChromaFormatIdc()), confWindowPPS.getWindowTopOffset()*SPS::getWinUnitY(m_cEncLib.getChromaFormatIdc()), confWindowPPS.getWindowBottomOffset() * SPS::getWinUnitY(m_cEncLib.getChromaFormatIdc()), NUM_CHROMA_FORMAT, m_bClipOutputVideoToRec709Range);
+          m_cVideoIOYuvReconFile.write(
+            pcPicYuvRec->get(COMPONENT_Y).width, pcPicYuvRec->get(COMPONENT_Y).height, *pcPicYuvRec, ipCSC,
+            m_packedYUVMode, confWindowPPS.getWindowLeftOffset() * SPS::getWinUnitX(m_cEncLib.getChromaFormatIdc()),
+            confWindowPPS.getWindowRightOffset() * SPS::getWinUnitX(m_cEncLib.getChromaFormatIdc()),
+            confWindowPPS.getWindowTopOffset() * SPS::getWinUnitY(m_cEncLib.getChromaFormatIdc()),
+            confWindowPPS.getWindowBottomOffset() * SPS::getWinUnitY(m_cEncLib.getChromaFormatIdc()), NUM_CHROMA_FORMAT,
+            m_clipOutputVideoToRec709Range);
         }
       }
     }
@@ -1826,7 +1923,7 @@ void EncApp::rateStatsAccum(const AccessUnit& au, const std::vector<uint32_t>& a
 
 void EncApp::printRateSummary()
 {
-  double time = (double) m_iFrameRcvd / m_iFrameRate * m_temporalSubsampleRatio;
+  double time = (double) m_frameRcvd / m_frameRate * m_temporalSubsampleRatio;
   msg( DETAILS,"Bytes written to file: %u (%.3f kbps)\n", m_totalBytes, 0.008 * m_totalBytes / time );
   if (m_summaryVerboseness > 0)
   {
@@ -1839,7 +1936,7 @@ void EncApp::printChromaFormat()
   if( g_verbosity >= DETAILS )
   {
     std::cout << std::setw(43) << "Input ChromaFormatIDC = ";
-    switch (m_InputChromaFormatIDC)
+    switch (m_inputChromaFormatIDC)
     {
     case CHROMA_400:  std::cout << "  4:0:0"; break;
     case CHROMA_420:  std::cout << "  4:2:0"; break;
@@ -1863,5 +1960,24 @@ void EncApp::printChromaFormat()
     std::cout << "\n" << std::endl;
   }
 }
+
+#if GREEN_METADATA_SEI_ENABLED
+void EncApp::featureToFile(std::ofstream& featureFile,int feature[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1], std::string featureName)
+{
+  featureFile <<   "\tn." << featureName << " = [...\n\t";
+  for (size_t i = 0; i < MAX_CU_DEPTH+1; i++)
+  {
+    for (size_t j = 0; j < MAX_CU_DEPTH+1; j++)
+    {
+      featureFile << " " << feature[j][i] << " ";
+    }
+    if (i != MAX_CU_DEPTH)
+    {
+      featureFile << ";... \n\t";
+    }
+  }
+  featureFile << "]; \n ";
+}
+#endif
 
 //! \}

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,7 +74,7 @@ private:
 #if JVET_Z0120_SII_SEI_PROCESSING
   VideoIOYuv        m_cTVideoIOYuvSIIPreFile;      ///< output pre-filtered file
 #endif
-  int               m_iFrameRcvd;                 ///< number of received frames
+  int               m_frameRcvd;   ///< number of received frames
   uint32_t          m_essentialBytes;
   uint32_t          m_totalBytes;
   std::fstream     &m_bitstream;
@@ -85,7 +85,7 @@ private:
 private:
   // initialization
   void xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId );         ///< create files & encoder class
-  void xInitLibCfg ();                           ///< initialize internal variables
+  void xInitLibCfg ( int layerIdx );             ///< initialize internal variables
   void xInitLib();                               ///< initialize encoder class
   void xDestroyLib ();                           ///< destroy encoder class
 
@@ -100,6 +100,9 @@ private:
   PelStorage*            m_trueOrgPic;
   PelStorage*            m_orgPic;
   PelStorage*            m_filteredOrgPic;
+#if JVET_AB0080
+  PelStorage*            m_rprPic[2];
+#endif
 #if EXTENSION_360_VIDEO
   TExt360AppEncTop*      m_ext360;
 #endif
@@ -107,6 +110,9 @@ private:
   PelStorage*            m_filteredOrgPicForFG;
   EncTemporalFilter      m_temporalFilterForFG;
   bool m_flush;
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct      m_featureCounter;
+#endif
 
 public:
   EncApp(std::fstream &bitStream, EncLibCommon *encLibCommon);
@@ -125,12 +131,17 @@ public:
 #endif
   VPS * getVPS() { return m_cEncLib.getVPS(); }
   int   getChromaFormatIDC() const { return m_cEncLib.getChromaFormatIdc(); }
-  int   getBitDepth() const { return m_cEncLib.getBitDepth(CHANNEL_TYPE_LUMA); }
+  int   getBitDepth() const { return m_cEncLib.getBitDepth(ChannelType::LUMA); }
   bool  getALFEnabled() { return m_cEncLib.getUseALF(); }
   int   getMaxNumALFAPS() { return m_cEncLib.getMaxNumALFAPS(); }
   int   getALFAPSIDShift() { return m_cEncLib.getALFAPSIDShift(); }
   void  forceMaxNumALFAPS(int n) { m_cEncLib.setMaxNumALFAPS(n); }
   void  forceALFAPSIDShift(int n) { m_cEncLib.setALFAPSIDShift(n); }
+#if GREEN_METADATA_SEI_ENABLED
+  uint32_t getTotalNumberOfBytes() {return m_totalBytes;}
+  FeatureCounterStruct getFeatureCounter(){return m_cEncLib.getFeatureCounter();}
+  void      featureToFile(std::ofstream& featureFile,int feature[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1], std::string featureName);
+#endif
 };// END CLASS DEFINITION EncApp
 
 //! \}

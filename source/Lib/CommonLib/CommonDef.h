@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,10 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
+
+#if GREEN_METADATA_SEI_ENABLED
+#include <fstream>
+#endif
 
 
 #if _MSC_VER > 1000
@@ -111,16 +115,17 @@
 
 #define NVM_BITS          "[%d bit] ", (sizeof(void*) == 8 ? 64 : 32) ///< used for checking 64-bit O/S
 
-typedef enum
+enum class AffineModel : uint8_t
 {
-  AFFINEMODEL_4PARAM,
-  AFFINEMODEL_6PARAM,
-  AFFINE_MODEL_NUM
-} EAffineModel;
+  _4_PARAMS,
+  _6_PARAMS,
+  NUM
+};
 
 static constexpr int    AFFINE_ME_LIST_SIZE    =                        4;
 static constexpr int    AFFINE_ME_LIST_SIZE_LD =                        3;
 static constexpr double AFFINE_ME_LIST_MVP_TH  =                        1.0;
+static constexpr int    AFFINE_MAX_NUM_CP      = 3;   // maximum number of control points for affine
 
 // ====================================================================================================================
 // Common constants
@@ -139,9 +144,15 @@ static constexpr Distortion MAX_DISTORTION = std::numeric_limits<Distortion>::ma
 // ====================================================================================================================
 // Most of these should not be changed - they resolve the meaning of otherwise magic numbers.
 
-static constexpr int MAX_GOP =                                         64; ///< max. value of hierarchical GOP size
-static constexpr int MAX_NUM_REF_PICS =                                29; ///< max. number of pictures used for reference
-static constexpr int MAX_NUM_REF =                                     16; ///< max. number of entries in picture reference list
+static constexpr int MAX_GOP            = 64;   // max. value of hierarchical GOP size
+static constexpr int MAX_NUM_REF_PICS   = 29;   // max. number of pictures used for reference
+static constexpr int MAX_NUM_REF        = 16;   // max. number of entries in picture reference list
+static constexpr int MAX_NUM_ACTIVE_REF = 15;   // maximum number of active reference pictures
+static constexpr int IBC_REF_IDX        = MAX_NUM_ACTIVE_REF;
+
+// Array indexed by reference list index and reference picture index
+template<class T> using RefSetArray = T[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+
 static constexpr int MAX_QP =                                          63;
 static constexpr int NOT_VALID =                                       -1;
 
@@ -170,6 +181,25 @@ static constexpr int MAX_VPS_SUBLAYERS =                                7;
 static constexpr int MAX_NUM_OLSS =                                   256;
 static constexpr int MAX_VPS_OLS_MODE_IDC =                             2;
 
+static constexpr int MAX_NUM_VPS = 16;
+static constexpr int MAX_NUM_SPS = 16;
+static constexpr int MAX_NUM_PPS = 64;
+static constexpr int MAX_NUM_APS(ApsType t)
+{
+  switch (t)
+  {
+  case ApsType::ALF:
+  case ApsType::SCALING_LIST:
+    return 8;
+  case ApsType::LMCS:
+    return 4;
+  default:
+    return 32;
+  }
+}
+static constexpr int NUM_APS_TYPE_LEN = 3;   // Currently APS Type has 3 bits
+static constexpr int MAX_NUM_APS_TYPE = 8;   // Currently APS Type has 3 bits so the max type is 8
+
 static constexpr int MAX_NUM_NN_POST_FILTERS =                          8;
 
 static constexpr int MIP_MAX_WIDTH =                                   MAX_TB_SIZEY;
@@ -186,9 +216,9 @@ static constexpr int MAX_NUM_CC_ALF_CHROMA_COEFF    =               8;
 static constexpr int CCALF_DYNAMIC_RANGE            =               6;
 static constexpr int CCALF_BITS_PER_COEFF_LEVEL     =               3;
 
-static constexpr int ALF_FIXED_FILTER_NUM        =                     64;
-static constexpr int ALF_CTB_MAX_NUM_APS         =                      8;
-static constexpr int NUM_FIXED_FILTER_SETS       =                     16;
+static constexpr int ALF_FIXED_FILTER_NUM  = 64;
+static constexpr int ALF_CTB_MAX_NUM_APS   = MAX_NUM_APS(ApsType::ALF);
+static constexpr int NUM_FIXED_FILTER_SETS = 16;
 
 static constexpr int MAX_BDOF_APPLICATION_REGION =                     16;
 
@@ -199,13 +229,6 @@ static constexpr int CU_DQP_TU_CMAX =                                   5; ///< 
 static constexpr int CU_DQP_EG_k =                                      0; ///< expgolomb order
 
 static constexpr int SBH_THRESHOLD =                                    4; ///< value of the fixed SBH controlling threshold
-
-static constexpr int MAX_NUM_VPS =                                     16;
-static constexpr int MAX_NUM_SPS =                                     16;
-static constexpr int MAX_NUM_PPS =                                     64;
-static constexpr int MAX_NUM_APS =                                     32;  //Currently APS ID has 5 bits
-static constexpr int NUM_APS_TYPE_LEN =                                 3;  //Currently APS Type has 3 bits
-static constexpr int MAX_NUM_APS_TYPE =                                 8;  //Currently APS Type has 3 bits so the max type is 8
 
 static constexpr int MAX_TILE_COLS = 30;   // Maximum number of tile columns
 static constexpr int MAX_TILES     = 990;  // Maximum number of tiles
@@ -278,7 +301,7 @@ static constexpr int LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS        = 1 <
 static constexpr int CHROMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS      = 1 << MV_FRAC_BITS_CHROMA;
 
 static constexpr int MAX_NUM_SUB_PICS =                         (1 << 16);
-static constexpr int MAX_NUM_LONG_TERM_REF_PICS =                      33;
+static constexpr int MAX_NUM_LONG_TERM_REF_PICS = MAX_NUM_REF;
 static constexpr int NUM_LONG_TERM_REF_PIC_SPS =                        0;
 
 
@@ -296,18 +319,30 @@ static constexpr int RExt__PREDICTION_WEIGHTING_ANALYSIS_DC_PRECISION = 0; ///< 
 
 static constexpr int MAX_TIMECODE_SEI_SETS =                            3; ///< Maximum number of time sets
 
-static constexpr int MAX_CU_DEPTH                                     = 7;   // log2(CTUSize)
-static constexpr int MAX_CU_SIZE =                        1<<MAX_CU_DEPTH;
-static constexpr int MIN_CU_LOG2 =                                      2;
-static constexpr int MIN_PU_SIZE =                                      4;
-static constexpr int MAX_NUM_PARTS_IN_CTU =                         ( ( MAX_CU_SIZE * MAX_CU_SIZE ) >> ( MIN_CU_LOG2 << 1 ) );
-static constexpr int MAX_NUM_TUS =                                     16; ///< Maximum number of TUs within one CU. When max TB size is 32x32, up to 16 TUs within one CU (128x128) is supported
-static constexpr int MAX_LOG2_DIFF_CU_TR_SIZE =                         3;
-static constexpr int MAX_CU_TILING_PARTITIONS = 1 << ( MAX_LOG2_DIFF_CU_TR_SIZE << 1 );
+static constexpr int MAX_CU_DEPTH         = 7;   // log2(CTUSize)
+static constexpr int MAX_CU_SIZE          = 1 << MAX_CU_DEPTH;
+static constexpr int MIN_CU_LOG2          = 2;
+static constexpr int MIN_CU_SIZE          = 1 << MIN_CU_LOG2;
+static constexpr int MAX_CU_SIZE_IN_PARTS = MAX_CU_SIZE >> MIN_CU_LOG2;
+static constexpr int MAX_NUM_PARTS_IN_CTU = MAX_CU_SIZE_IN_PARTS * MAX_CU_SIZE_IN_PARTS;
+static constexpr int MIN_PU_SIZE          = 4;
+
+// Maximum number of TUs within one CU. When max TB size is 32x32, up to 16 TUs within one CU (128x128) is supported
+static constexpr int MAX_NUM_TUS              = 16;
+static constexpr int MAX_LOG2_DIFF_CU_TR_SIZE = 3;
+static constexpr int MAX_CU_TILING_PARTITIONS = 1 << (2 * MAX_LOG2_DIFF_CU_TR_SIZE);
+
+static constexpr int LOG2_VPDU_SIZE = 6;
+static constexpr int VPDU_SIZE      = 1 << LOG2_VPDU_SIZE;
+
+static constexpr int MAX_NUM_SIZES = 8;
 
 static constexpr int PIC_MARGIN = 16;
 
-static constexpr int JVET_C0024_ZERO_OUT_TH =                          32;
+static constexpr int MAX_NONZERO_TU_SIZE = 32;
+
+// returns the size of the part of a TU that is not zero'ed out
+static inline constexpr int getNonzeroTuSize(int s) { return std::min(s, MAX_NONZERO_TU_SIZE); }
 
 static constexpr int MAX_NUM_PART_IDXS_IN_CTU_WIDTH = MAX_CU_SIZE/MIN_PU_SIZE; ///< maximum number of partition indices across the width of a CTU (or height of a CTU)
 static constexpr int SCALING_LIST_REM_NUM =                             6;
@@ -332,12 +367,31 @@ static constexpr int LAST_SIGNIFICANT_GROUPS =                         14;
 
 static constexpr int AFFINE_SUBBLOCK_SIZE = 4;   // Minimum affine MC block size
 
-static constexpr int MMVD_REFINE_STEP =                                 8; ///< max number of distance step
-static constexpr int MMVD_MAX_REFINE_NUM =                              (MMVD_REFINE_STEP * 4); ///< max number of candidate from a base candidate
-static constexpr int MMVD_BASE_MV_NUM =                                 2; ///< max number of base candidate
-static constexpr int MMVD_ADD_NUM =                                     (MMVD_MAX_REFINE_NUM * MMVD_BASE_MV_NUM);///< total number of mmvd candidate
 static constexpr int MMVD_MRG_MAX_RD_NUM =                              MRG_MAX_NUM_CANDS;
 static constexpr int MMVD_MRG_MAX_RD_BUF_NUM =                          (MMVD_MRG_MAX_RD_NUM + 1);///< increase buffer size by 1
+
+union MmvdIdx
+{
+  using T = uint8_t;
+
+  static constexpr int LOG_REFINE_STEP = 3;
+  static constexpr int REFINE_STEP     = 1 << LOG_REFINE_STEP;
+  static constexpr int LOG_BASE_MV_NUM = 1;
+  static constexpr int BASE_MV_NUM     = 1 << LOG_BASE_MV_NUM;
+  static constexpr int MAX_REFINE_NUM  = 4 * REFINE_STEP;
+  static constexpr int ADD_NUM         = MAX_REFINE_NUM * BASE_MV_NUM;
+  static constexpr int INVALID         = std::numeric_limits<T>::max();
+
+  struct
+  {
+    T baseIdx : LOG_BASE_MV_NUM;
+    T step : LOG_REFINE_STEP;
+    T position : 2;
+  } pos;
+  T val;
+};
+
+static_assert(sizeof(MmvdIdx::val) == sizeof(MmvdIdx::pos), "MmvdIdx::val is not wide enough");
 
 static constexpr int MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_LUMA =      28;
 static constexpr int MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_CHROMA =    28;
@@ -347,29 +401,35 @@ static constexpr int BIO_TEMP_BUFFER_SIZE         =                     (MAX_CU_
 
 static constexpr int PROF_BORDER_EXT_W            =                     1;
 static constexpr int PROF_BORDER_EXT_H            =                     1;
-static constexpr int BCW_NUM =                                          5; ///< the number of weight options
-static constexpr int BCW_DEFAULT =                                      ((uint8_t)(BCW_NUM >> 1)); ///< Default weighting index representing for w=0.5
-static constexpr int BCW_SIZE_CONSTRAINT =                            256; ///< disabling Bcw if cu size is smaller than 256
+
+static constexpr int    BCW_NUM             = 5;             // the number of weight options
+static constexpr int    BCW_DEFAULT         = BCW_NUM / 2;   // Default weighting index representing for w=0.5
+static constexpr int    BCW_SIZE_CONSTRAINT = 256;           // disabling BCW if cu size is smaller than 256
+static constexpr double BCW_COST_TH         = 1.05;
+
+static constexpr double AMVR_FAST_4PEL_TH = 1.06;
+
 static constexpr int MAX_NUM_HMVP_CANDS =                              (MRG_MAX_NUM_CANDS-1); ///< maximum number of HMVP candidates to be stored and used in merge list
 static constexpr int MAX_NUM_HMVP_AVMPCANDS =                          4; ///< maximum number of HMVP candidates to be used in AMVP list
 
 static constexpr int ALF_VB_POS_ABOVE_CTUROW_LUMA = 4;
 static constexpr int ALF_VB_POS_ABOVE_CTUROW_CHMA = 2;
 
-#if W0038_DB_OPT
 static constexpr int MAX_ENCODER_DEBLOCKING_QUALITY_LAYERS =           8 ;
-#endif
 
 #if SHARP_LUMA_DELTA_QP
 static constexpr uint32_t LUMA_LEVEL_TO_DQP_LUT_MAXSIZE =                1024; ///< max LUT size for QP offset based on luma
 
 #endif
-static constexpr int DMVR_SUBCU_WIDTH = 16;
-static constexpr int DMVR_SUBCU_HEIGHT = 16;
-static constexpr int DMVR_SUBCU_WIDTH_LOG2 = 4;
+static constexpr int DMVR_SUBCU_WIDTH_LOG2  = 4;
 static constexpr int DMVR_SUBCU_HEIGHT_LOG2 = 4;
-static constexpr int MAX_NUM_SUBCU_DMVR = ((MAX_CU_SIZE * MAX_CU_SIZE) >> (DMVR_SUBCU_WIDTH_LOG2 + DMVR_SUBCU_HEIGHT_LOG2));
-static constexpr int DMVR_NUM_ITERATION = 2;
+static constexpr int DMVR_SUBCU_WIDTH       = 1 << DMVR_SUBCU_WIDTH_LOG2;
+static constexpr int DMVR_SUBCU_HEIGHT      = 1 << DMVR_SUBCU_HEIGHT_LOG2;
+static constexpr int MAX_NUM_SUBCU_DMVR = MAX_CU_SIZE * MAX_CU_SIZE >> (DMVR_SUBCU_WIDTH_LOG2 + DMVR_SUBCU_HEIGHT_LOG2);
+
+static constexpr int DMVR_RANGE = 2;
+static constexpr int DMVR_SPAN  = 2 * DMVR_RANGE + 1;
+static constexpr int DMVR_AREA  = DMVR_SPAN * DMVR_SPAN;
 
 //QTBT high level parameters
 //for I slice luma CTB configuration para.
@@ -415,9 +475,7 @@ static constexpr int NTAPS_CHROMA_AFFINE = 4;   // Number of taps for chroma aff
 static constexpr int NTAPS_BILINEAR      = 2;   // Number of taps for bilinear filter
 static constexpr int MAX_FILTER_SIZE     = NTAPS_LUMA > NTAPS_CHROMA ? NTAPS_LUMA : NTAPS_CHROMA;
 
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
 static constexpr int MAX_LADF_INTERVALS       =                         5; /// max number of luma adaptive deblocking filter qp offset intervals
-#endif
 
 static constexpr int ATMVP_SUB_BLOCK_SIZE =                             3; ///< sub-block size for ATMVP
 static constexpr int GEO_MAX_NUM_UNI_CANDS =                            6;
@@ -445,6 +503,7 @@ static constexpr int LDT_MODE_TYPE_INHERIT =                            0; ///< 
 static constexpr int LDT_MODE_TYPE_INFER =                              1; ///< No need to signal mode_constraint_flag, and the modeType of the region is inferred as MODE_TYPE_INTRA
 static constexpr int LDT_MODE_TYPE_SIGNAL =                             2; ///< Need to signal mode_constraint_flag, and the modeType of the region is determined by the flag
 
+static constexpr int IBC_MAX_CU_SIZE                      = 64;
 static constexpr int IBC_MAX_CAND_SIZE = 16; // max block size for ibc search
 static constexpr int IBC_NUM_CANDIDATES = 64; ///< Maximum number of candidates to store/test
 static constexpr int CHROMA_REFINEMENT_CANDIDATES = 8; /// 8 candidates BV to choose from
@@ -457,12 +516,11 @@ static constexpr int MV_MANTISSA_UPPER_LIMIT = ((1 << (MV_MANTISSA_BITCOUNT - 1)
 static constexpr int MV_MANTISSA_LIMIT       = (1 << (MV_MANTISSA_BITCOUNT - 1));
 static constexpr int MV_EXPONENT_MASK        = ((1 << MV_EXPONENT_BITCOUNT) - 1);
 
-static constexpr int MV_BITS =                                   18;
-static constexpr int MV_MAX =              (1 << (MV_BITS - 1)) - 1;
-static constexpr int MV_MIN =                 -(1 << (MV_BITS - 1));
-
-static constexpr int MVD_MAX =                            (1 << 17) - 1;
-static constexpr int MVD_MIN =                               -(1 << 17);
+static constexpr int MV_BITS = 18;
+static constexpr int MV_MAX  = (1 << (MV_BITS - 1)) - 1;
+static constexpr int MV_MIN  = -(1 << (MV_BITS - 1));
+static constexpr int MVD_MAX = MV_MAX;
+static constexpr int MVD_MIN = MV_MIN;
 
 static constexpr int PIC_ANALYZE_CW_BINS =                           32;
 static constexpr int PIC_CODE_CW_BINS =                              16;
@@ -485,9 +543,13 @@ static constexpr int PLT_FAST_RATIO = 100;
 static constexpr int  EPBIN_WEIGHT_FACTOR =                           4;
 #endif
 static constexpr int ENC_PPS_ID_RPR =                                 3;
-static constexpr int SCALE_RATIO_BITS =                              14;
+#if JVET_AB0080
+static constexpr int ENC_PPS_ID_RPR2 = 5;
+static constexpr int ENC_PPS_ID_RPR3 = 7;
+#endif
 static constexpr int MAX_SCALING_RATIO =                              2;  // max downsampling ratio for RPR
-static const     std::pair<int, int> SCALE_1X = std::pair<int, int>( 1 << SCALE_RATIO_BITS, 1 << SCALE_RATIO_BITS );  // scale ratio 1x
+static constexpr ScalingRatio SCALE_1X = { 1 << ScalingRatio::BITS, 1 << ScalingRatio::BITS };   // scale ratio 1x
+
 static constexpr int DELTA_QP_ACT[4] =                  { -5, 1, 3, 1 };
 static constexpr int MAX_TSRC_RICE =                                  8;  ///<Maximum supported TSRC Rice parameter
 static constexpr int MIN_TSRC_RICE =                                  1;  ///<Minimum supported TSRC Rice parameter
@@ -505,6 +567,11 @@ static constexpr int BIT_DEPTH_8 =                                    8;
 
 static constexpr int MSE_WEIGHT_FRAC_BITS = 16;
 static constexpr int MSE_WEIGHT_ONE       = 1 << MSE_WEIGHT_FRAC_BITS;
+
+static constexpr int CBF_MASK_CB   = 2;
+static constexpr int CBF_MASK_CR   = 1;
+static constexpr int CBF_MASK_CBCR = CBF_MASK_CB | CBF_MASK_CR;
+
 // ====================================================================================================================
 // SEI and related constants
 // ====================================================================================================================
@@ -539,6 +606,18 @@ template <typename T> inline void Check3( T minVal, T maxVal, T a)
 {
   CHECK( ( a > maxVal ) || ( a < minVal ), "ERROR: Range check " << minVal << " >= " << a << " <= " << maxVal << " failed" );
 }  ///< general min/max clip
+
+template<typename T> inline constexpr int sgn(const T val)
+{
+  // return -1 for val < 0, 0 for val == 0, and 1 for val > 0
+  return (T(0) < val ? 1 : 0) - (val < T(0) ? 1 : 0);
+}
+
+template<typename T> inline constexpr int sgn2(const T val)
+{
+  // return -1 for val < 0, and 1 for val >= 0
+  return val >= T(0) ? 1 : -1;
+}
 
 extern MsgLevel g_verbosity;
 
@@ -623,6 +702,189 @@ T* aligned_malloc(size_t len, size_t alignement) {
 #    define ALWAYS_INLINE
 #endif
 
+#if GREEN_METADATA_SEI_ENABLED
+struct FeatureCounterStruct// Bit Stream Feature Analyzer structure containing all specific features
+{
+  int  width = -1;
+  int  height = -1;
+  int  bytes = -1;
+  int  baseQP[64] = {  0  };
+  int  isYUV400 = -1;
+  int  isYUV420 = -1;
+  int  isYUV422 = -1;
+  int  isYUV444 = -1;
+  int  is8bit = -1;
+  int  is10bit = -1;
+  int  is12bit = -1;
+  int  iSlices = 0;
+  int  bSlices = 0;
+  int  pSlices = 0;
+  
+  int  intraBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaPlaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaDcBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaHvdBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaHvBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaAngBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaPlaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaDcBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaHvdBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaHvBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaAngBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaCrossCompBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraPDPCBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaPDPCBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaPDPCBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraMIPBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaMIPBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaMIPBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraSubPartitionsHorizontal[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaSubPartitionsHorizontal[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaSubPartitionsHorizontal[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraSubPartitionsVertical[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraLumaSubPartitionsVertical[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  intraChromaSubPartitionsVertical[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  IBCBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  IBCLumaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  IBCChromaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  // Inter-Features
+  int  interBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interLumaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interChromaBlockSizes[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  interInterBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interLumaInterBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interChromaInterBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  interSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interLumaSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interChromaSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  interMergeBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interLumaMergeBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  interChromaMergeBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  affine[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineLuma[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineChroma[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  affineMerge[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineLumaMerge[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineChromaMerge[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  affineInter[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineLumaInter[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineChromaInter[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  affineSkip[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineLumaSkip[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  affineChromaSkip[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  geo[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  geoLuma[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  geoChroma[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int64_t  biPredPel = 0;
+  int64_t  uniPredPel = 0;
+  int64_t  fracPelHor = 0;
+  int64_t  fracPelVer = 0;
+  int64_t  fracPelBoth = 0;
+  int64_t  copyCUPel = 0;
+  int64_t  affineFracPelHor = 0;
+  int64_t  affineFracPelVer = 0;
+  int64_t  affineFracPelBoth = 0;
+  int64_t  affineCopyCUPel = 0;
+  int  dmvrBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  bdofBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  // Transform
+  int  transformBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  transformLumaBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  transformChromaBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int  transformSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  transformLumaSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  int  transformChromaSkipBlocks[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1] = { { 0 } };
+  
+  int64_t  transformLFNST4 = 0;
+  int64_t  transformLFNST8 = 0;
+  //Coefficent
+  int64_t  nrOfCoeff = 0;
+  int64_t  coeffG1 = 0;
+  double   valueOfCoeff = 0;
+  //In-Loop Filter
+  int64_t  boundaryStrength[3] = { 0 };
+  int64_t  boundaryStrengthPel[3] = { 0 };
+  int64_t  saoLumaBO = 0;
+  int64_t  saoLumaEO = 0;
+  int64_t  saoChromaBO = 0;
+  int64_t  saoChromaEO = 0;
+  int64_t  saoLumaPels = 0;
+  int64_t  saoChromaPels = 0;
+  int64_t  alfLumaType7 = 0;
+  int64_t  alfChromaType5 = 0;
+  int64_t  alfLumaPels = 0;
+  int64_t  alfChromaPels = 0;
+  int64_t  ccalf           = 0;
+  
+  void resetBoundaryStrengths()
+  {
+    for (int i = 0; i < 3; i++)
+    {
+      boundaryStrength[i] = 0;
+      boundaryStrengthPel[i] = 0;
+    }
+  }
+  
+  void addBoundaryStrengths(const FeatureCounterStruct &c)
+  {
+    for (int i = 0; i < 3; i++)
+    {
+      boundaryStrength[i] += c.boundaryStrength[i];
+      boundaryStrengthPel[i] += c.boundaryStrengthPel[i];
+    }
+  }
+  
+  void resetSAO()
+  {
+    saoLumaBO = 0;
+    saoLumaEO = 0;
+    saoChromaBO = 0;
+    saoChromaEO = 0;
+    saoLumaPels = 0;
+    saoChromaPels = 0;
+  }
+  
+  void addSAO(const FeatureCounterStruct &c)
+  {
+    saoLumaBO += c.saoLumaBO;
+    saoLumaEO += c.saoLumaEO;
+    saoChromaBO += c.saoChromaBO;
+    saoChromaEO += c.saoChromaEO;
+    saoLumaPels += c.saoLumaPels;
+    saoChromaPels += c.saoChromaPels;
+  }
+  
+  void resetALF()
+  {
+    alfLumaType7   = 0;
+    alfChromaType5 = 0;
+    alfLumaPels = 0;
+    alfChromaPels = 0;
+    ccalf = 0;
+  }
+  
+  void addALF(const FeatureCounterStruct &c)
+  {
+    alfLumaType7 += c.alfLumaType7;
+    alfChromaType5 += c.alfChromaType5;
+    alfLumaPels += c.alfLumaPels;
+    alfChromaPels += c.alfChromaPels;
+    ccalf += c.ccalf;
+  }
+};
+#endif
+
+
 #if ENABLE_SIMD_OPT
 #ifdef TARGET_SIMD_X86
 typedef enum{
@@ -694,7 +956,6 @@ static inline int ceilLog2(uint32_t x)
 {
   return (x==0) ? -1 : floorLog2(x - 1) + 1;
 }
-
 
 //CASE-BREAK for breakpoints
 #if defined ( _MSC_VER ) && defined ( _DEBUG )

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -373,7 +373,7 @@ std::vector<uint8_t> process_segment(const char * path, int idx, int * poc_base,
   }
 
   fseek(fdi, 0, SEEK_END);
-  int full_sz = ftell(fdi);
+  long full_sz = ftell(fdi);
   fseek(fdi, 0, SEEK_SET);
 
   std::vector<uint8_t> v(full_sz);

@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2022, ITU/ISO/IEC
+* Copyright (c) 2010-2023, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -47,12 +47,12 @@
  // ====================================================================================================================
 
 Reshape::Reshape()
-: m_CTUFlag (false)
-, m_recReshaped (false)
-, m_reshape (true)
-, m_chromaScale (1 << CSCALE_FP_PREC)
-, m_vpduX (-1)
-, m_vpduY (-1)
+  : m_ctuFlag(false)
+  , m_recReshaped(false)
+  , m_reshape(true)
+  , m_chromaScale(1 << CSCALE_FP_PREC)
+  , m_vpduX(-1)
+  , m_vpduY(-1)
 {
 }
 
@@ -144,15 +144,15 @@ int  Reshape::calculateChromaAdjVpduNei(TransformUnit &tu, const CompArea &areaY
     const CodingUnit *cuAbove, *cuLeft;
     if (CS::isDualITree(cs) && cs.slice->getSliceType() == I_SLICE)
     {
-      topLeftLuma = tu.cs->picture->cs->getCU(topLeft, CHANNEL_TYPE_LUMA);
-      cuAbove = cs.picture->cs->getCURestricted(topLeftLuma->lumaPos().offset(0, -1), *topLeftLuma, CHANNEL_TYPE_LUMA);
-      cuLeft  = cs.picture->cs->getCURestricted(topLeftLuma->lumaPos().offset(-1, 0), *topLeftLuma, CHANNEL_TYPE_LUMA);
+      topLeftLuma = tu.cs->picture->cs->getCU(topLeft, ChannelType::LUMA);
+      cuAbove = cs.picture->cs->getCURestricted(topLeftLuma->lumaPos().offset(0, -1), *topLeftLuma, ChannelType::LUMA);
+      cuLeft  = cs.picture->cs->getCURestricted(topLeftLuma->lumaPos().offset(-1, 0), *topLeftLuma, ChannelType::LUMA);
     }
     else
     {
-      topLeftLuma = cs.getCU(topLeft, CHANNEL_TYPE_LUMA);
-      cuAbove = cs.getCURestricted(topLeftLuma->lumaPos().offset(0, -1), *topLeftLuma, CHANNEL_TYPE_LUMA);
-      cuLeft  = cs.getCURestricted(topLeftLuma->lumaPos().offset(-1, 0), *topLeftLuma, CHANNEL_TYPE_LUMA);
+      topLeftLuma = cs.getCU(topLeft, ChannelType::LUMA);
+      cuAbove     = cs.getCURestricted(topLeftLuma->lumaPos().offset(0, -1), *topLeftLuma, ChannelType::LUMA);
+      cuLeft      = cs.getCURestricted(topLeftLuma->lumaPos().offset(-1, 0), *topLeftLuma, ChannelType::LUMA);
     }
 
     xPos = topLeftLuma->lumaPos().x;
@@ -160,14 +160,14 @@ int  Reshape::calculateChromaAdjVpduNei(TransformUnit &tu, const CompArea &areaY
 
     CompArea lumaArea = CompArea(COMPONENT_Y, tu.chromaFormat, topLeftLuma->lumaPos(), topLeftLuma->lumaSize(), true);
     PelBuf piRecoY = cs.picture->getRecoBuf(lumaArea);
-    int strideY = piRecoY.stride;
+    ptrdiff_t strideY     = piRecoY.stride;
     int chromaScale = (1 << CSCALE_FP_PREC);
     int lumaValue = -1;
 
     Pel* recSrc0 = piRecoY.bufAt(0, 0);
     const uint32_t picH = tu.cs->picture->lheight();
     const uint32_t picW = tu.cs->picture->lwidth();
-    const Pel   valueDC = 1 << (tu.cs->sps->getBitDepth(CHANNEL_TYPE_LUMA) - 1);
+    const Pel      valueDC = 1 << (tu.cs->sps->getBitDepth(ChannelType::LUMA) - 1);
     int32_t recLuma = 0;
     int pelnum = 0;
     if (cuLeft != nullptr)

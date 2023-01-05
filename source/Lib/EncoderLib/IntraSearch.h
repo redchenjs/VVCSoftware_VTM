@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -112,11 +112,12 @@ public:
       uint32_t absError = 0;
       if (isChroma((ComponentID) comp))
       {
-        absError += int(double(std::abs(data[comp] - element.data[comp])) * PLT_CHROMA_WEIGHTING) >> (bitDepths.recon[CHANNEL_TYPE_CHROMA] - PLT_ENCBITDEPTH);
+        absError += int(double(std::abs(data[comp] - element.data[comp])) * PLT_CHROMA_WEIGHTING)
+                    >> (bitDepths[ChannelType::CHROMA] - PLT_ENCBITDEPTH);
       }
       else
       {
-        absError += (std::abs(data[comp] - element.data[comp]))>> (bitDepths.recon[CHANNEL_TYPE_LUMA] - PLT_ENCBITDEPTH);
+        absError += (std::abs(data[comp] - element.data[comp])) >> (bitDepths[ChannelType::LUMA] - PLT_ENCBITDEPTH);
       }
       if (absError > errorLimit)
       {
@@ -132,14 +133,14 @@ public:
     uint32_t sumAd = 0;
     for (int comp = compBegin; comp < (compBegin + numComp); comp++)
     {
-      ChannelType chType = (comp > 0) ? CHANNEL_TYPE_CHROMA : CHANNEL_TYPE_LUMA;
+      ChannelType chType = (comp > 0) ? ChannelType::CHROMA : ChannelType::LUMA;
       if (lossless)
       {
         sumAd += (std::abs(data[comp] - element.data[comp]));
       }
       else
       {
-      sumAd += (std::abs(data[comp] - element.data[comp]) >> (bitDepths.recon[chType] - PLT_ENCBITDEPTH));
+        sumAd += (std::abs(data[comp] - element.data[comp]) >> (bitDepths[chType] - PLT_ENCBITDEPTH));
       }
     }
     return sumAd;
@@ -192,7 +193,7 @@ private:
   EncModeCtrl    *m_modeCtrl;
   Pel*            m_pSharedPredTransformSkip[MAX_NUM_TBLOCKS];
 
-  XUCache         m_unitCache;
+  XuPool m_unitPool;
 
   CodingStructure ****m_pSplitCS;
   CodingStructure ****m_pFullCS;
@@ -211,21 +212,29 @@ private:
   {
     bool     mipFlg; // CU::mipFlag
     bool     mipTrFlg; // PU::mipTransposedFlag
-    int      mRefId; // PU::multiRefIdx
-    uint8_t  ispMod; // CU::ispMode
-    uint32_t modeId; // PU::intraDir[CHANNEL_TYPE_LUMA]
+    uint8_t  mRefId;   // PU::multiRefIdx
+    ISPType  ispMod;   // CU::ispMode
+    uint32_t modeId;   // PU::intraDir[ChannelType::LUMA]
 
-    ModeInfo() : mipFlg(false), mipTrFlg(false), mRefId(0), ispMod(NOT_INTRA_SUBPARTITIONS), modeId(0) {}
-    ModeInfo(const bool mipf, const bool miptf, const int mrid, const uint8_t ispm, const uint32_t mode) : mipFlg(mipf), mipTrFlg(miptf), mRefId(mrid), ispMod(ispm), modeId(mode) {}
+    ModeInfo() : mipFlg(false), mipTrFlg(false), mRefId(0), ispMod(ISPType::NONE), modeId(0) {}
+    ModeInfo(const bool mipf, const bool miptf, const int mrid, const ISPType ispm, const uint32_t mode)
+      : mipFlg(mipf), mipTrFlg(miptf), mRefId(mrid), ispMod(ispm), modeId(mode)
+    {
+    }
     bool operator==(const ModeInfo cmp) const { return (mipFlg == cmp.mipFlg && mipTrFlg == cmp.mipTrFlg && mRefId == cmp.mRefId && ispMod == cmp.ispMod && modeId == cmp.modeId); }
   };
+
   struct ModeInfoWithCost : public ModeInfo
   {
     double rdCost;
     ModeInfoWithCost() : ModeInfo(), rdCost(MAX_DOUBLE) {}
-    ModeInfoWithCost(const bool mipf, const bool miptf, const int mrid, const uint8_t ispm, const uint32_t mode, double cost) : ModeInfo(mipf, miptf, mrid, ispm, mode), rdCost(cost) {}
+    ModeInfoWithCost(const bool mipf, const bool miptf, const int mrid, const ISPType ispm, const uint32_t mode,
+                     double cost)
+      : ModeInfo(mipf, miptf, mrid, ispm, mode), rdCost(cost)
+    {
+    }
     bool operator==(const ModeInfoWithCost cmp) const { return (mipFlg == cmp.mipFlg && mipTrFlg == cmp.mipTrFlg && mRefId == cmp.mRefId && ispMod == cmp.ispMod && modeId == cmp.modeId && rdCost == cmp.rdCost); }
-    static bool compareModeInfoWithCost(ModeInfoWithCost a, ModeInfoWithCost b) { return a.rdCost < b.rdCost; }
+    static bool compare(const ModeInfoWithCost &a, const ModeInfoWithCost &b) { return a.rdCost < b.rdCost; }
   };
 
   struct ISPTestedModeInfo
@@ -240,76 +249,77 @@ private:
       numCompSubParts = numParts;
       rdCost = cost;
     }
+
     void clear()
     {
       numCompSubParts = -1;
       rdCost = MAX_DOUBLE;
     }
   };
+
   struct ISPTestedModesInfo
   {
-    ISPTestedModeInfo                           intraMode[NUM_LUMA_MODE][2];
-    bool                                        modeHasBeenTested[NUM_LUMA_MODE][2];
-    int                                         numTotalParts[2];
-    static_vector<int, FAST_UDI_MAX_RDMODE_NUM> testedModes[2];
-    int                                         bestModeSoFar;
-    ISPType                                     bestSplitSoFar;
-    int                                         bestMode[2];
-    double                                      bestCost[2];
-    int                                         numTestedModes[2];
-    int                                         candIndexInList[2];
-    bool                                        splitIsFinished[2];
-    int                                         numOrigModesToTest;
+    EnumArray<ISPTestedModeInfo, ISPType> intraMode[NUM_LUMA_MODE];
+
+    EnumArray<static_vector<int, FAST_UDI_MAX_RDMODE_NUM>, ISPType> testedModes;
+
+    EnumArray<bool, ISPType>   modeHasBeenTested[NUM_LUMA_MODE];
+    EnumArray<bool, ISPType>   splitIsFinished;
+    EnumArray<int, ISPType>    numTotalParts;
+    EnumArray<int, ISPType>    bestMode;
+    EnumArray<int, ISPType>    numTestedModes;
+    EnumArray<int, ISPType>    candIndexInList;
+    EnumArray<double, ISPType> bestCost;
+
+    int     bestModeSoFar;
+    ISPType bestSplitSoFar;
+    int     numOrigModesToTest;
 
     // set a tested mode results
-    void setModeResults(ISPType splitType, int iModeIdx, int numCompletedParts, double rdCost, double currentBestCost)
+    void setModeResults(const ISPType splitType, const int modeIdx, int numCompletedParts, double rdCost,
+                        double currentBestCost)
     {
-      const unsigned st = splitType - 1;
-      CHECKD(st > 1, "The split type is invalid!");
-      const int maxNumParts = numTotalParts[st];
-      intraMode[iModeIdx][st].setMode(numCompletedParts, numCompletedParts == maxNumParts ? rdCost : MAX_DOUBLE);
-      testedModes[st].push_back(iModeIdx);
-      numTestedModes[st]++;
-      modeHasBeenTested[iModeIdx][st] = true;
-      if (numCompletedParts == maxNumParts && rdCost < bestCost[st])   // best mode update
+      const int maxNumParts = numTotalParts[splitType];
+      intraMode[modeIdx][splitType].setMode(numCompletedParts, numCompletedParts == maxNumParts ? rdCost : MAX_DOUBLE);
+      testedModes[splitType].push_back(modeIdx);
+      numTestedModes[splitType]++;
+      modeHasBeenTested[modeIdx][splitType] = true;
+      if (numCompletedParts == maxNumParts && rdCost < bestCost[splitType])   // best mode update
       {
-        bestMode[st] = iModeIdx;
-        bestCost[st] = rdCost;
+        bestMode[splitType] = modeIdx;
+        bestCost[splitType] = rdCost;
       }
       if (numCompletedParts == maxNumParts && rdCost < currentBestCost)   // best mode update
       {
-        bestModeSoFar = iModeIdx;
+        bestModeSoFar  = modeIdx;
         bestSplitSoFar = splitType;
       }
     }
 
-    int getNumCompletedSubParts(ISPType splitType, int iModeIdx)
+    int getNumCompletedSubParts(const ISPType splitType, const int modeIdx)
     {
-      const unsigned st = splitType - 1;
-      CHECK(st < 0 || st > 1, "The split type is invalid!");
-      CHECK(iModeIdx < 0 || iModeIdx >(NUM_LUMA_MODE - 1), "The modeIdx is invalid");
-      return modeHasBeenTested[iModeIdx][st] ? intraMode[iModeIdx][st].numCompSubParts : -1;
+      CHECKD(splitType != ISPType::HOR && splitType != ISPType::VER, "The split type is invalid!");
+      CHECKD(modeIdx < 0 || modeIdx > (NUM_LUMA_MODE - 1), "The modeIdx is invalid");
+      return modeHasBeenTested[modeIdx][splitType] ? intraMode[modeIdx][splitType].numCompSubParts : -1;
     }
 
-    double getRDCost(ISPType splitType, int iModeIdx)
+    double getRDCost(const ISPType splitType, const int modeIdx)
     {
-      const unsigned st = splitType - 1;
-      CHECKD(st > 1, "The split type is invalid!");
-      return modeHasBeenTested[iModeIdx][st] ? intraMode[iModeIdx][st].rdCost : MAX_DOUBLE;
+      CHECKD(splitType != ISPType::HOR && splitType != ISPType::VER, "The split type is invalid!");
+      return modeHasBeenTested[modeIdx][splitType] ? intraMode[modeIdx][splitType].rdCost : MAX_DOUBLE;
     }
 
     // get a tested intra mode index
-    int getTestedIntraMode(ISPType splitType, int pos)
+    int getTestedIntraMode(const ISPType splitType, const int pos)
     {
-      const unsigned st = splitType - 1;
-      CHECKD(st > 1, "The split type is invalid!");
-      return pos < testedModes[st].size() ? testedModes[st].at(pos) : -1;
+      CHECKD(splitType != ISPType::HOR && splitType != ISPType::VER, "The split type is invalid!");
+      return pos < testedModes[splitType].size() ? testedModes[splitType].at(pos) : NOMODE_IDX;
     }
 
     // set everything to default values
     void clear()
     {
-      for (int splitIdx = 0; splitIdx < NUM_INTRA_SUBPARTITIONS_MODES - 1; splitIdx++)
+      for (const auto splitIdx: { ISPType::HOR, ISPType::VER })
       {
         numTestedModes [splitIdx] = 0;
         candIndexInList[splitIdx] = 0;
@@ -317,30 +327,34 @@ private:
         splitIsFinished[splitIdx] = false;
         testedModes    [splitIdx].clear();
         bestCost       [splitIdx] = MAX_DOUBLE;
-        bestMode       [splitIdx] = -1;
+        bestMode[splitIdx]        = NOMODE_IDX;
       }
-      bestModeSoFar = -1;
-      bestSplitSoFar = NOT_INTRA_SUBPARTITIONS;
+      bestModeSoFar      = NOMODE_IDX;
+      bestSplitSoFar     = ISPType::NONE;
       numOrigModesToTest = -1;
-      memset(modeHasBeenTested, 0, sizeof(modeHasBeenTested));
+      for (int i = 0; i < NUM_LUMA_MODE; i++)
+      {
+        modeHasBeenTested[i].fill(false);
+      }
     }
+
     void clearISPModeInfo(int idx)
     {
-      intraMode[idx][0].clear();
-      intraMode[idx][1].clear();
+      intraMode[idx][ISPType::HOR].clear();
+      intraMode[idx][ISPType::VER].clear();
     }
+
     void init(const int numTotalPartsHor, const int numTotalPartsVer)
     {
       clear();
-      const int horSplit = HOR_INTRA_SUBPARTITIONS - 1, verSplit = VER_INTRA_SUBPARTITIONS - 1;
-      numTotalParts  [horSplit] = numTotalPartsHor;
-      numTotalParts  [verSplit] = numTotalPartsVer;
-      splitIsFinished[horSplit] = (numTotalParts[horSplit] == 0);
-      splitIsFinished[verSplit] = (numTotalParts[verSplit] == 0);
+      numTotalParts[ISPType::HOR]   = numTotalPartsHor;
+      numTotalParts[ISPType::VER]   = numTotalPartsVer;
+      splitIsFinished[ISPType::HOR] = (numTotalParts[ISPType::HOR] == 0);
+      splitIsFinished[ISPType::VER] = (numTotalParts[ISPType::VER] == 0);
     }
   };
 
-  static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_ispCandListHor, m_ispCandListVer;
+  EnumArray<static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM>, ISPType> m_ispCandList;
   static_vector<ModeInfoWithCost, FAST_UDI_MAX_RDMODE_NUM> m_regIntraRDListWithCosts;
 
   ISPTestedModesInfo m_ispTestedModes[NUM_LFNST_NUM_PER_SET];
@@ -353,11 +367,11 @@ private:
   ModeInfo   m_savedRdModeList[ NUM_LFNST_NUM_PER_SET ][ NUM_LUMA_MODE ];
   int32_t    m_savedNumRdModes[ NUM_LFNST_NUM_PER_SET ];
 
-  ModeInfo                                           m_savedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  char                                               m_savedBDPCMModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  double                                             m_savedRdCostFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
-  int                                                m_numSavedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2];
-  int                                                m_savedRdModeIdx;
+  ModeInfo  m_savedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  BdpcmMode m_savedBDPCMModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  double    m_savedRdCostFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2][FAST_UDI_MAX_RDMODE_NUM];
+  int       m_numSavedRdModeFirstColorSpace[4 * NUM_LFNST_NUM_PER_SET * 2];
+  int       m_savedRdModeIdx;
 
   static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_savedRdModeListLFNST;
   static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> m_savedHadModeListLFNST;
@@ -367,6 +381,9 @@ private:
 
   PelStorage      m_tmpStorageLCU;
   PelStorage      m_colorTransResiBuf;
+
+  std::vector<TransformUnit *> m_orgTUs;
+
 protected:
   // interface to option
   EncCfg*         m_pcEncCfg;
@@ -378,7 +395,7 @@ protected:
 
   // RD computation
   CABACWriter*    m_CABACEstimator;
-  CtxCache*       m_CtxCache;
+  CtxPool        *m_ctxPool;
 
   bool            m_isInitialized;
   bool            m_bestEscape;
@@ -395,17 +412,9 @@ public:
   IntraSearch();
   ~IntraSearch();
 
-  void init                       ( EncCfg*        pcEncCfg,
-                                    TrQuant*       pcTrQuant,
-                                    RdCost*        pcRdCost,
-                                    CABACWriter*   CABACEstimator,
-                                    CtxCache*      ctxCache,
-                                    const uint32_t     maxCUWidth,
-                                    const uint32_t     maxCUHeight,
-                                    const uint32_t     maxTotalCUDepth
-                                  , EncReshape*   m_pcReshape
-                                  , const unsigned bitDepthY
-                                  );
+  void init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, CABACWriter *CABACEstimator, CtxPool *ctxPool,
+            const uint32_t maxCUWidth, const uint32_t maxCUHeight, const uint32_t maxTotalCUDepth,
+            EncReshape *m_pcReshape, const unsigned bitDepthY);
 
   void destroy                    ();
 
@@ -431,7 +440,8 @@ public:
   uint64_t xFracModeBitsIntra(PredictionUnit &pu, const uint32_t &mode, const ChannelType &compID);
   void invalidateBestModeCost     () { for( int i = 0; i < NUM_LFNST_NUM_PER_SET; i++ ) m_bestModeCostValid[ i ] = false; };
 
-  void sortRdModeListFirstColorSpace(ModeInfo mode, double cost, char bdpcmMode, ModeInfo* rdModeList, double* rdCostList, char* bdpcmModeList, int& candNum);
+  void sortRdModeListFirstColorSpace(ModeInfo mode, double cost, BdpcmMode bdpcmMode, ModeInfo *rdModeList,
+                                     double *rdCostList, BdpcmMode *bdpcmModeList, int &candNum);
   void invalidateBestRdModeFirstColorSpace();
   void setSavedRdModeIdx(int idx) { m_savedRdModeIdx = idx; }
 
@@ -482,11 +492,14 @@ protected:
   double   rateDistOptPLT         (bool RunType, uint8_t RunIndex, bool prevRunType, uint8_t prevRunIndex, uint8_t aboveRunIndex, bool& prevCodedRunType, int& prevCodedRunPos, int scanPos, uint32_t width, int dist, int indexMaxValue, const BinFracBits* IndexfracBits, const BinFracBits& TypefracBits);
   uint32_t getTruncBinBits        (uint32_t symbol, uint32_t maxSymbol);
   uint32_t getEpExGolombNumBins   (uint32_t symbol, uint32_t count);
+
   void xGetNextISPMode                    ( ModeInfo& modeInfo, const ModeInfo* lastMode, const Size cuSize );
-  bool xSortISPCandList                   ( double bestCostSoFar, double bestNonISPCost, ModeInfo bestNonISPMode );
-  void xSortISPCandListLFNST              ( );
-  void xFindAlreadyTestedNearbyIntraModes ( int currentLfnstIdx, int currentIntraMode, int* refLfnstIdx, int* leftIntraMode, int* rightIntraMode, ISPType ispOption, int windowSize );
-  bool updateISPStatusFromRelCU           ( double bestNonISPCostCurrCu, ModeInfo bestNonISPModeCurrCu, int& bestISPModeInRelCU );
+  bool xSortISPCandList(double bestCostSoFar, double bestNonISPCost, const ModeInfo &bestNonISPMode);
+  void xSortISPCandListLFNST();
+  void xFindAlreadyTestedNearbyIntraModes(int currentIntraMode, int &refLfnstIdx, std::array<int, 2> &similarModes,
+                                          ISPType ispOption, int windowSize);
+  bool updateISPStatusFromRelCU(double bestNonISPCostCurrCu, const ModeInfo &bestNonISPModeCurrCu,
+                                int &bestISPModeInRelCU);
   void xFinishISPModes                    ( );
 };// END CLASS DEFINITION EncSearch
 

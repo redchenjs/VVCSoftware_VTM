@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,8 @@
 #include "CommonLib/Buffer.h"
 #include "CommonLib/Unit.h"
 
-inline unsigned calcCheckSum(const int width, const int height, const Pel *p, const uint32_t stride, const int bitdepth)
+inline unsigned calcCheckSum(const int width, const int height, const Pel *p, const ptrdiff_t stride,
+                             const int bitdepth)
 {
   unsigned checksum = 0;
   for (unsigned y = 0; y < height; y++)
@@ -147,13 +148,11 @@ inline void dtraceCRC(CDTrace *trace_ctx, DTRACE_CHANNEL channel, const CodingSt
                       const CPelUnitBuf &pelUnitBuf, const Area *parea = nullptr)
 {
   const Area& area = parea ? *parea : cs.area.Y();
-  DTRACE( trace_ctx, channel, " CRC: %6lld %3d @(%4d,%4d) [%2dx%2d] ,Checksum(%x %x %x)\n",
-      DTRACE_GET_COUNTER( g_trace_ctx, channel ),
-      cs.slice->getPOC(),
-      area.x, area.y, area.width, area.height,
-      calcCheckSum( pelUnitBuf.bufs[COMPONENT_Y], cs.sps->getBitDepth (CHANNEL_TYPE_LUMA)),
-      calcCheckSum( pelUnitBuf.bufs[COMPONENT_Cb], cs.sps->getBitDepth (CHANNEL_TYPE_CHROMA)),
-      calcCheckSum( pelUnitBuf.bufs[COMPONENT_Cr], cs.sps->getBitDepth (CHANNEL_TYPE_CHROMA)));
+  DTRACE(trace_ctx, channel, " CRC: %6lld %3d @(%4d,%4d) [%2dx%2d] ,Checksum(%x %x %x)\n",
+         DTRACE_GET_COUNTER(g_trace_ctx, channel), cs.slice->getPOC(), area.x, area.y, area.width, area.height,
+         calcCheckSum(pelUnitBuf.bufs[COMPONENT_Y], cs.sps->getBitDepth(ChannelType::LUMA)),
+         calcCheckSum(pelUnitBuf.bufs[COMPONENT_Cb], cs.sps->getBitDepth(ChannelType::CHROMA)),
+         calcCheckSum(pelUnitBuf.bufs[COMPONENT_Cr], cs.sps->getBitDepth(ChannelType::CHROMA)));
 }
 
 inline void dtraceCCRC(CDTrace *trace_ctx, DTRACE_CHANNEL channel, const CodingStructure &cs, const CPelBuf &pelBuf,

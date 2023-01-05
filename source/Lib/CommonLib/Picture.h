@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2022, ITU/ISO/IEC
+* Copyright (c) 2010-2023, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -171,24 +171,38 @@ struct Picture : public UnitArea
   void          setSpliceIdx(uint32_t idx, int poc) { m_spliceIdx[idx] = poc; }
   void          createSpliceIdx(int nums);
   bool          getSpliceFull();
-  static void   sampleRateConv( const std::pair<int, int> scalingRatio, const std::pair<int, int> compScale,
-                                const CPelBuf& beforeScale, const int beforeScaleLeftOffset, const int beforeScaleTopOffset,
-                                const PelBuf& afterScale, const int afterScaleLeftOffset, const int afterScaleTopOffset,
-                                const int bitDepth, const bool useLumaFilter, const bool downsampling,
-                                const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag );
+  static void   sampleRateConv(const ScalingRatio scalingRatio, int scaleX, int scaleY, const CPelBuf &beforeScale,
+                               const int beforeScaleLeftOffset, const int beforeScaleTopOffset, const PelBuf &afterScale,
+                               const int afterScaleLeftOffset, const int afterScaleTopOffset, const int bitDepth,
+                               const bool useLumaFilter, const bool downsampling,
+#if !JVET_AB0081
+                             const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
+#else
+                              const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag,
+                              const bool rescaleForDisplay, const int upscaleFilterForDisplay
+#endif
+  );
 
-  static void   rescalePicture( const std::pair<int, int> scalingRatio,
-                                const CPelUnitBuf& beforeScaling, const Window& scalingWindowBefore,
-                                const PelUnitBuf& afterScaling, const Window& scalingWindowAfter,
-                                const ChromaFormat chromaFormatIDC, const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
-                                const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag );
+  static void rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf &beforeScaling,
+                             const Window &scalingWindowBefore, const PelUnitBuf &afterScaling,
+                             const Window &scalingWindowAfter, const ChromaFormat chromaFormatIDC,
+                             const BitDepths &bitDepths, const bool useLumaFilter, const bool downsampling,
+#if !JVET_AB0081
+                             const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
+#else
+                              const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
+                              bool rescaleForDisplay = false, int upscaleFilterForDisplay = 0
+#endif
+  );
 
 private:
   Window        m_conformanceWindow;
   Window        m_scalingWindow;
   int           m_decodingOrderNumber;
   NalUnitType   m_pictureType;
-
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct m_featureCounter;
+#endif
 public:
   bool m_isSubPicBorderSaved;
 
@@ -203,7 +217,11 @@ public:
   void    saveSubPicBorder(int POC, int subPicX0, int subPicY0, int subPicWidth, int subPicHeight);
   void  extendSubPicBorder(int POC, int subPicX0, int subPicY0, int subPicWidth, int subPicHeight);
   void restoreSubPicBorder(int POC, int subPicX0, int subPicY0, int subPicWidth, int subPicHeight);
-
+#if GREEN_METADATA_SEI_ENABLED
+  void setFeatureCounter (FeatureCounterStruct b ) { m_featureCounter = b;}
+  FeatureCounterStruct getFeatureCounter (){return m_featureCounter;}
+#endif
+  
   bool getSubPicSaved()          { return m_isSubPicBorderSaved; }
   void setSubPicSaved(bool bVal) { m_isSubPicBorderSaved = bVal; }
   bool     m_extendedBorder;
@@ -216,7 +234,7 @@ public:
   bool longTerm;
   bool topField;
   bool fieldPic;
-  int  m_prevQP[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<int, ChannelType> m_prevQP;
   bool precedingDRAP; // preceding a DRAP picture in decoding order
   int  edrapRapId;
   bool nonReferencePictureFlag;
@@ -240,9 +258,9 @@ public:
   PelStorage m_bufs[NUM_PIC_TYPES];
   const Picture*           unscaledPic;
 
-  TComHash           m_hashMap;
-  TComHash*          getHashMap() { return &m_hashMap; }
-  const TComHash*    getHashMap() const { return &m_hashMap; }
+  Hash               m_hashMap;
+  Hash              *getHashMap() { return &m_hashMap; }
+  const Hash        *getHashMap() const { return &m_hashMap; }
   void               addPictureToHashMapForInter();
 
   CodingStructure*   cs;
@@ -278,6 +296,12 @@ private:
   UnitArea m_ctuArea;
 #endif
 
+  std::vector<uint8_t> m_alfCtuEnableFlag[MAX_NUM_COMPONENT];
+  std::vector<short>   m_alfCtbFilterIndex;
+  std::vector<uint8_t> m_alfCtuAlternative[MAX_NUM_COMPONENT];
+
+  std::vector<SAOBlkParam> m_sao[2];
+
 public:
   SAOBlkParam    *getSAO(int id = 0)                        { return &m_sao[id][0]; };
   void            resizeSAO(unsigned numEntries, int dstid) { m_sao[dstid].resize(numEntries); }
@@ -286,46 +310,17 @@ public:
 #if ENABLE_QPA
   std::vector<double>     m_uEnerHpCtu;                         ///< CTU-wise L2 or squared L1 norm of high-passed luma input
   std::vector<Pel>        m_iOffsetCtu;                         ///< CTU-wise DC offset (later QP index offset) of luma input
- #if ENABLE_QPA_SUB_CTU
+#if ENABLE_QPA_SUB_CTU
   std::vector<int8_t>     m_subCtuQP;                           ///< sub-CTU-wise adapted QPs for delta-QP depth of 1 or more
- #endif
+#endif
 #endif
 
-  std::vector<SAOBlkParam> m_sao[2];
+  void copyAlfData(const Picture &p);
+  void resizeAlfData(int numEntries);
 
-  std::vector<uint8_t> m_alfCtuEnableFlag[MAX_NUM_COMPONENT];
-  uint8_t* getAlfCtuEnableFlag( int compIdx ) { return m_alfCtuEnableFlag[compIdx].data(); }
-  std::vector<uint8_t>* getAlfCtuEnableFlag() { return m_alfCtuEnableFlag; }
-  void resizeAlfCtuEnableFlag( int numEntries )
-  {
-    for( int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++ )
-    {
-      m_alfCtuEnableFlag[compIdx].resize( numEntries );
-      std::fill( m_alfCtuEnableFlag[compIdx].begin(), m_alfCtuEnableFlag[compIdx].end(), 0 );
-    }
-  }
-  std::vector<short> m_alfCtbFilterIndex;
-  short* getAlfCtbFilterIndex() { return m_alfCtbFilterIndex.data(); }
-  std::vector<short>& getAlfCtbFilterIndexVec() { return m_alfCtbFilterIndex; }
-  void resizeAlfCtbFilterIndex(int numEntries)
-  {
-    m_alfCtbFilterIndex.resize(numEntries);
-    for (int i = 0; i < numEntries; i++)
-    {
-      m_alfCtbFilterIndex[i] = 0;
-    }
-  }
-  std::vector<uint8_t> m_alfCtuAlternative[MAX_NUM_COMPONENT];
-  std::vector<uint8_t>& getAlfCtuAlternative( int compIdx ) { return m_alfCtuAlternative[compIdx]; }
-  uint8_t* getAlfCtuAlternativeData( int compIdx ) { return m_alfCtuAlternative[compIdx].data(); }
-  void resizeAlfCtuAlternative( int numEntries )
-  {
-    for( int compIdx = 1; compIdx < MAX_NUM_COMPONENT; compIdx++ )
-    {
-      m_alfCtuAlternative[compIdx].resize( numEntries );
-      std::fill( m_alfCtuAlternative[compIdx].begin(), m_alfCtuAlternative[compIdx].end(), 0 );
-    }
-  }
+  uint8_t *getAlfCtuEnableFlag(int compIdx) { return m_alfCtuEnableFlag[compIdx].data(); }
+  short   *getAlfCtbFilterIndex() { return m_alfCtbFilterIndex.data(); }
+  uint8_t *getAlfCtuAlternativeData(int compIdx) { return m_alfCtuAlternative[compIdx].data(); }
 };
 
 int calcAndPrintHashStatus(const CPelUnitBuf& pic, const class SEIDecodedPictureHash* pictureHashSEI, const BitDepths &bitDepths, const MsgLevel msgl);

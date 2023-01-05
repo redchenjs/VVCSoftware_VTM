@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,19 +62,40 @@ protected:
   void xWriteSEIFrameFieldInfo(const SEIFrameFieldInfo& sei);
   void xWriteSEIDependentRAPIndication(const SEIDependentRAPIndication& sei);
   void xWriteSEIEdrapIndication(const SEIExtendedDrapIndication& sei);
-  void xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableNesting& sei);
-  void xWriteSEIFramePacking(const SEIFramePacking& sei);
+  void xWriteSEIScalableNesting(OutputBitstream &bs, const SEIScalableNesting &sei);
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  void xWriteSEIFramePacking(const SEIFramePacking &sei, int SEIPrefixIndicationIdx = 0);
+#else
+  void xWriteSEIFramePacking(const SEIFramePacking &sei);
+#endif
   void xWriteSEIDisplayOrientation(const SEIDisplayOrientation& sei);
   void xWriteSEIParameterSetsInclusionIndication(const SEIParameterSetsInclusionIndication& sei);
   void xWriteSEIMasteringDisplayColourVolume( const SEIMasteringDisplayColourVolume& sei);
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
-  void xWriteSEIAlternativeTransferCharacteristics(const SEIAlternativeTransferCharacteristics& sei);
+  void xWriteSEIAlternativeTransferCharacteristics(const SEIAlternativeTransferCharacteristics &sei);
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  void xWriteSEIEquirectangularProjection(const SEIEquirectangularProjection &sei, int SEIPrefixIndicationIdx = 0);
+#else
+  void xWriteSEIEquirectangularProjection(const SEIEquirectangularProjection &sei);
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  void xWriteSEISphereRotation(const SEISphereRotation &sei, int SEIPrefixIndicationIdx = 0);
+#else
+  void xWriteSEISphereRotation(const SEISphereRotation &sei);
 #endif
   void xWriteSEIEquirectangularProjection         (const SEIEquirectangularProjection &sei);
   void xWriteSEISphereRotation                    (const SEISphereRotation &sei);
-  void xWriteSEIOmniViewport                      (const SEIOmniViewport& sei);
-  void xWriteSEIRegionWisePacking                 (const SEIRegionWisePacking &sei);
-  void xWriteSEIGeneralizedCubemapProjection      (const SEIGeneralizedCubemapProjection &sei);
+  void xWriteSEIOmniViewport(const SEIOmniViewport &sei);
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  void xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei, int SEIPrefixIndicationIdx = 0);
+#else
+  void xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei);
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  void xWriteSEIGeneralizedCubemapProjection(const SEIGeneralizedCubemapProjection &sei,
+                                             int                                    SEIPrefixIndicationIdx = 0);
+#else
+  void xWriteSEIGeneralizedCubemapProjection(const SEIGeneralizedCubemapProjection &sei);
+#endif
   void xWriteSEIScalabilityDimensionInfo          (const SEIScalabilityDimensionInfo& sei);
   void xWriteSEIMultiviewAcquisitionInfo          (const SEIMultiviewAcquisitionInfo& sei);
   void xWriteSEIMultiviewViewPosition             (const SEIMultiviewViewPosition& sei);
@@ -83,25 +104,43 @@ protected:
   void xWriteSEIDepthRepInfoElement               (double f);
   void xWriteSEISubpictureLevelInfo               (const SEISubpicureLevelInfo &sei);
   void xWriteSEISampleAspectRatioInfo             (const SEISampleAspectRatioInfo &sei);
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
   void xWriteSEIPhaseIndication                   (const SEIPhaseIndication&sei);
-#endif
   void xWriteSEIConstrainedRaslIndication         (const SEIConstrainedRaslIndication &sei);
   void xWriteSEIUserDataRegistered(const SEIUserDataRegistered& sei);
   void xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacteristics& sei);
   void xWriteSEIContentLightLevelInfo(const SEIContentLightLevelInfo& sei);
   void xWriteSEIAmbientViewingEnvironment(const SEIAmbientViewingEnvironment& sei);
   void xWriteSEIContentColourVolume(const SEIContentColourVolume &sei);
+
+#if JVET_T0056_SEI_MANIFEST
+  //SEI manifest
+  void xWriteSEISEIManifest(const SEIManifest &sei);
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  //SEI prefix indication
+  void xWriteSEISEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd,
+                                    const uint32_t temporalId);
+  void xWriteSEIPrefixIndicationByteAlign();
+#endif 
+
   void xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei);
   void xWriteSEIAnnotatedRegions                  (const SEIAnnotatedRegions& sei);
+#if JVET_T0056_SEI_PREFIX_INDICATION
+  void xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &hrd, const uint32_t temporalId,
+                            int SEIPrefixIndicationIdx = 0);
+#else
+  void xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &hrd, const uint32_t temporalId);
+#endif
   void xWriteSEIShutterInterval(const SEIShutterIntervalInfo& sei);
-  void xWriteSEIpayloadData(OutputBitstream &bs, const SEI& sei, HRD &hrd, const uint32_t temporalId);
   void xWriteByteAlign();
   void xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
+#if !JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   void xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCharacteristics& sei);
+#endif
   void xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei);
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
   void xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei);
+#if GREEN_METADATA_SEI_ENABLED
+  void xWriteSEIGreenMetadataInfo                 (const SEIGreenMetadataInfo &sei);
 #endif
 protected:
   HRD m_nestingHrd;

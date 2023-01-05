@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -716,7 +716,6 @@ int EncRCPic::xEstPicHeaderBits( list<EncRCPic*>& listPreviousPictures, int fram
   return estHeaderBits;
 }
 
-#if V0078_ADAPTIVE_LOWER_BOUND
 int EncRCPic::xEstPicLowerBound(EncRCSeq* encRCSeq, EncRCGOP* encRCGOP)
 {
   int lowerBound = 0;
@@ -754,7 +753,6 @@ int EncRCPic::xEstPicLowerBound(EncRCSeq* encRCSeq, EncRCGOP* encRCGOP)
 
   return lowerBound;
 }
-#endif
 
 void EncRCPic::addToPictureLsit( list<EncRCPic*>& listPreviousPictures )
 {
@@ -796,9 +794,7 @@ void EncRCPic::create( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP, int frameLevel, l
   int LCUHeight      = encRCSeq->getLCUHeight();
   int picWidthInLCU  = ( picWidth  % LCUWidth  ) == 0 ? picWidth  / LCUWidth  : picWidth  / LCUWidth  + 1;
   int picHeightInLCU = ( picHeight % LCUHeight ) == 0 ? picHeight / LCUHeight : picHeight / LCUHeight + 1;
-#if V0078_ADAPTIVE_LOWER_BOUND
   m_lowerBound       = xEstPicLowerBound( encRCSeq, encRCGOP );
-#endif
 
   m_LCULeft         = m_numberOfLCU;
   m_bitsLeft       -= m_estHeaderBits;
@@ -1897,12 +1893,10 @@ void RateCtrl::init(int totalFrames, int targetBitrate, int frameRate, int GOPSi
   {
     m_encRCSeq->initLCUPara();
   }
-#if U0132_TARGET_BITS_SATURATION
   m_CpbSaturationEnabled = false;
   m_cpbSize              = targetBitrate;
   m_cpbState             = (uint32_t)(m_cpbSize*0.5f);
   m_bufferingRate        = (int)(targetBitrate / frameRate);
-#endif
 
   delete[] bitsRatio;
   delete[] GOPID2Level;
@@ -1921,7 +1915,6 @@ void RateCtrl::initRCGOP( int numberOfPictures )
   m_encRCGOP->create(m_encRCSeq, numberOfPictures, useAdaptiveBitsRatio);
 }
 
-#if U0132_TARGET_BITS_SATURATION
 int  RateCtrl::updateCpbState(int actualBits)
 {
   int cpbState = 1;
@@ -1949,7 +1942,6 @@ void RateCtrl::initHrdParam(const GeneralHrdParams* generalHrd, const OlsHrdPara
   m_bufferingRate = (uint32_t)(((olsHrd->getBitRateValueMinus1(0, 0) + 1) << (6 + generalHrd->getBitRateScale())) / iFrameRate);
   msg(NOTICE, "\nHRD - [Initial CPB state %6d] [CPB Size %6d] [Buffering Rate %6d]\n", m_cpbState, m_cpbSize, m_bufferingRate);
 }
-#endif
 
 void RateCtrl::destroyRCGOP()
 {

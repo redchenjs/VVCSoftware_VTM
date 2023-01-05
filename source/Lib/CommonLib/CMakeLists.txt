@@ -55,14 +55,22 @@ if( EXTENSION_HDRTOOLS )
   target_compile_definitions( ${LIB_NAME} PUBLIC EXTENSION_HDRTOOLS=1 )
 endif()
 
-if( SET_ENABLE_TRACING )
+if( DEFINED ENABLE_TRACING )
   if( ENABLE_TRACING )
     target_compile_definitions( ${LIB_NAME} PUBLIC ENABLE_TRACING=1 )
   else()
     target_compile_definitions( ${LIB_NAME} PUBLIC ENABLE_TRACING=0 )
   endif()
 endif()
-  
+
+if( DEFINED ENABLE_HIGH_BITDEPTH )
+  if( ENABLE_HIGH_BITDEPTH )
+    target_compile_definitions( ${LIB_NAME} PUBLIC RExt__HIGH_BIT_DEPTH_SUPPORT=1 )
+  else()
+    target_compile_definitions( ${LIB_NAME} PUBLIC RExt__HIGH_BIT_DEPTH_SUPPORT=0 )
+  endif()
+endif()
+
 target_include_directories( ${LIB_NAME} PUBLIC . .. ./x86 ../libmd5 )
 target_link_libraries( ${LIB_NAME} )
 

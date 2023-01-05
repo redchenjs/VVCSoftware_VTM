@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,8 @@ protected:
   std::string   m_oplFilename;                        ///< filename to output conformance log.
 
   int           m_iSkipFrame;                           ///< counter for frames prior to the random access point to skip
-  int           m_outputBitDepth[MAX_NUM_CHANNEL_TYPE]; ///< bit depth used for writing output
+  BitDepths     m_outputBitDepth;                       // bit depth used for writing output
+
   InputColourSpaceConversion m_outputColourSpaceConvert;
   int           m_targetOlsIdx;                       ///< target output layer set
   std::vector<int> m_targetOutputLayerIdSet;          ///< set of LayerIds to be outputted
@@ -85,13 +86,20 @@ protected:
   std::string   m_shutterIntervalPostFileName;        ///< output Post Filtering file name
 #endif
 
-  bool          m_bClipOutputVideoToRec709Range;      ///< If true, clip the output video to the Rec 709 range on saving.
+  bool m_clipOutputVideoToRec709Range;   ///< If true, clip the output video to the Rec 709 range on saving.
   bool          m_packedYUVMode;                      ///< If true, output 10-bit and 12-bit YUV data as 5-byte and 3-byte (respectively) packed YUV data
   std::string   m_cacheCfgFile;                       ///< Config file of cache model
   int           m_statMode;                           ///< Config statistic mode (0 - bit stat, 1 - tool stat, 3 - both)
   bool          m_mctsCheck;
-
+#if GREEN_METADATA_SEI_ENABLED
+  bool          m_GMFA;
+  std::string   m_GMFAFile;
+  bool          m_GMFAFramewise;
+#endif
   int          m_upscaledOutput;                     ////< Output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for RPR.
+#if JVET_AB0081
+  int          m_upscaleFilterForDisplay;
+#endif
   int           m_targetSubPicIdx;                    ///< Specify which subpicture shall be write to output, using subpicture index
 #if GDR_LEAK_TEST
   int           m_gdrPocRandomAccess;                   ///<

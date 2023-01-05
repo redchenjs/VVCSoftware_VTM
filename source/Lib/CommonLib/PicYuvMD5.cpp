@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,7 +64,7 @@ static void md5_block(MD5& md5, const Pel* plane, uint32_t n)
  * is adjusted to OUTBIT_BITDEPTH_DIV8.
  */
 template<uint32_t OUTPUT_BITDEPTH_DIV8>
-static void md5_plane(MD5& md5, const Pel* plane, uint32_t width, uint32_t height, uint32_t stride)
+static void md5_plane(MD5& md5, const Pel* plane, uint32_t width, uint32_t height, ptrdiff_t stride)
 {
   /* N is the number of samples to process per md5 update.
    * All N samples must fit in buf */
@@ -86,8 +86,7 @@ static void md5_plane(MD5& md5, const Pel* plane, uint32_t width, uint32_t heigh
   }
 }
 
-
-uint32_t compCRC(int bitdepth, const Pel* plane, uint32_t width, uint32_t height, uint32_t stride, PictureHash &digest)
+uint32_t compCRC(int bitdepth, const Pel *plane, uint32_t width, uint32_t height, ptrdiff_t stride, PictureHash &digest)
 {
   uint32_t crcMsb;
   uint32_t bitVal;
@@ -135,12 +134,14 @@ uint32_t calcCRC(const CPelUnitBuf& pic, PictureHash &digest, const BitDepths &b
   {
     const ComponentID compID = ComponentID(chan);
     const CPelBuf area = pic.get(compID);
-    digestLen = compCRC(bitDepths.recon[toChannelType(compID)], area.bufAt(0, 0), area.width, area.height, area.stride, digest );
+    digestLen =
+      compCRC(bitDepths[toChannelType(compID)], area.bufAt(0, 0), area.width, area.height, area.stride, digest);
   }
   return digestLen;
 }
 
-uint32_t compChecksum(int bitdepth, const Pel* plane, uint32_t width, uint32_t height, uint32_t stride, PictureHash &digest, const BitDepths &/*bitDepths*/)
+uint32_t compChecksum(int bitdepth, const Pel *plane, uint32_t width, uint32_t height, ptrdiff_t stride,
+                      PictureHash &digest, const BitDepths & /*bitDepths*/)
 {
   uint32_t checksum = 0;
   uint8_t xor_mask;
@@ -174,7 +175,8 @@ uint32_t calcChecksum(const CPelUnitBuf& pic, PictureHash &digest, const BitDept
   {
     const ComponentID compID=ComponentID(chan);
     const CPelBuf area = pic.get(compID);
-    digestLen=compChecksum(bitDepths.recon[toChannelType(compID)], area.bufAt(0,0), area.width, area.height, area.stride, digest, bitDepths);
+    digestLen = compChecksum(bitDepths[toChannelType(compID)], area.bufAt(0, 0), area.width, area.height, area.stride,
+                             digest, bitDepths);
   }
   return digestLen;
 }
@@ -194,7 +196,7 @@ uint32_t calcMD5WithCropping(const CPelUnitBuf &pic, PictureHash &digest, const 
                              const int leftOffset, const int rightOffset, const int topOffset, const int bottomOffset)
 {
   /* choose an md5_plane packing function based on the system bitdepth */
-  typedef void (*MD5PlaneFunc)(MD5&, const Pel*, uint32_t, uint32_t, uint32_t);
+  typedef void (*MD5PlaneFunc)(MD5 &, const Pel *, uint32_t, uint32_t, ptrdiff_t);
   MD5PlaneFunc md5_plane_func;
 
   MD5 md5[MAX_NUM_COMPONENT];
@@ -211,7 +213,7 @@ uint32_t calcMD5WithCropping(const CPelUnitBuf &pic, PictureHash &digest, const 
     const int         compRightOffset  = rightOffset >> chromaScaleX;
     const int         compTopOffset    = topOffset >> chromaScaleY;
     const int         compBottomOffset = bottomOffset >> chromaScaleY;
-    md5_plane_func = bitDepths.recon[toChannelType(compID)] <= 8 ? (MD5PlaneFunc)md5_plane<1> : (MD5PlaneFunc)md5_plane<2>;
+    md5_plane_func = bitDepths[toChannelType(compID)] <= 8 ? (MD5PlaneFunc) md5_plane<1> : (MD5PlaneFunc) md5_plane<2>;
     uint8_t tmp_digest[MD5_DIGEST_STRING_LENGTH];
     md5_plane_func(md5[compID], area.bufAt(compLeftOffset, compTopOffset),
                    area.width - compRightOffset - compLeftOffset, area.height - compTopOffset - compBottomOffset,
@@ -256,29 +258,29 @@ int calcAndPrintHashStatus(const CPelUnitBuf& pic, const SEIDecodedPictureHash* 
     CHECK ((uint32_t)pic.bufs.size() != ( pictureHashSEI->singleCompFlag ? 1 : 3 ), "The value of dph_sei_single_component_flag shall be equal to (ChromaFormatIdc == 0).");
     switch (pictureHashSEI->method)
     {
-      case HASHTYPE_MD5:
-        {
-          hashType = "MD5";
-          numChar = calcMD5(pic, recon_digest, bitDepths);
-          break;
-        }
-      case HASHTYPE_CRC:
-        {
-          hashType = "CRC";
-          numChar = calcCRC(pic, recon_digest, bitDepths);
-          break;
-        }
-      case HASHTYPE_CHECKSUM:
-        {
-          hashType = "Checksum";
-          numChar = calcChecksum(pic, recon_digest, bitDepths);
-          break;
-        }
-      default:
-        {
-          THROW("Unknown hash type");
-          break;
-        }
+    case HashType::MD5:
+    {
+      hashType = "MD5";
+      numChar  = calcMD5(pic, recon_digest, bitDepths);
+      break;
+    }
+    case HashType::CRC:
+    {
+      hashType = "CRC";
+      numChar  = calcCRC(pic, recon_digest, bitDepths);
+      break;
+    }
+    case HashType::CHECKSUM:
+    {
+      hashType = "Checksum";
+      numChar  = calcChecksum(pic, recon_digest, bitDepths);
+      break;
+    }
+    default:
+    {
+      THROW("Unknown hash type");
+      break;
+    }
     }
   }
 

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -94,7 +94,7 @@ struct AffineAMVPInfo
   Mv       mvCandLB[ AMVP_MAX_NUM_CANDS_MEM ];  ///< array of affine motion vector predictor candidates for left-bottom corner
   unsigned numCand;                       ///< number of motion vector predictor candidates
 #if GDR_ENABLED
-  bool     allCandSolidInAbove;  
+  bool allCandSolidInAbove;
 
   bool     mvSolidLT[AMVP_MAX_NUM_CANDS_MEM];
   bool     mvSolidRT[AMVP_MAX_NUM_CANDS_MEM];
@@ -107,7 +107,7 @@ struct AffineAMVPInfo
   MvpType  mvTypeLT[AMVP_MAX_NUM_CANDS_MEM];
   MvpType  mvTypeRT[AMVP_MAX_NUM_CANDS_MEM];
   MvpType  mvTypeLB[AMVP_MAX_NUM_CANDS_MEM];
-  
+
   Position mvPosLT[AMVP_MAX_NUM_CANDS_MEM];
   Position mvPosRT[AMVP_MAX_NUM_CANDS_MEM];
   Position mvPosLB[AMVP_MAX_NUM_CANDS_MEM];
@@ -214,21 +214,21 @@ struct MotionInfo
 
 class BcwMotionParam
 {
-  bool       m_readOnly[2][33];       // 2 RefLists, 33 RefFrams
-  Mv         m_mv[2][33];
-  Distortion m_dist[2][33];
-  
+  RefSetArray<bool>       m_readOnly;
+  RefSetArray<Mv>         m_mv;
+  RefSetArray<Distortion> m_dist;
+
 #if GDR_ENABLED
-  bool       m_mvSolid[2][33];
+  RefSetArray<bool> m_mvSolid;
 #endif
 
-  bool       m_readOnlyAffine[2][2][33];
-  Mv         m_mvAffine[2][2][33][3];
-  Distortion m_distAffine[2][2][33];
-  int        m_mvpIdx[2][2][33];
+  EnumArray<RefSetArray<bool>, AffineModel>       m_readOnlyAffine;
+  EnumArray<RefSetArray<Mv[3]>, AffineModel>      m_mvAffine;
+  EnumArray<RefSetArray<Distortion>, AffineModel> m_distAffine;
+  EnumArray<RefSetArray<int>, AffineModel>        m_mvpIdx;
 
 #if GDR_ENABLED
-  bool       m_mvAffineSolid[2][2][33][3];
+  EnumArray<RefSetArray<bool[3]>, AffineModel> m_mvAffineSolid;
 #endif
 
 public:
@@ -236,40 +236,40 @@ public:
   void reset()
   {
     Mv* pMv = &(m_mv[0][0]);
-    for (int ui = 0; ui < 1 * 2 * 33; ++ui, ++pMv)
+    for (int ui = 0; ui < NUM_REF_PIC_LIST_01 * MAX_NUM_REF; ++ui, ++pMv)
     {
       pMv->set(std::numeric_limits<int16_t>::max(), std::numeric_limits<int16_t>::max());
     }
 
-    Mv* pAffineMv = &(m_mvAffine[0][0][0][0]);
-    for (int ui = 0; ui < 2 * 2 * 33 * 3; ++ui, ++pAffineMv)
+    Mv *pAffineMv = &(m_mvAffine[AffineModel::_4_PARAMS][0][0][0]);
+    for (int ui = 0; ui < 2 * NUM_REF_PIC_LIST_01 * MAX_NUM_REF * 3; ++ui, ++pAffineMv)
     {
       pAffineMv->set(0, 0);
     }
 
-    memset(m_readOnly, false, 2 * 33 * sizeof(bool));
-    memset(m_dist, -1, 2 * 33 * sizeof(Distortion));
-    memset(m_readOnlyAffine, false, 2 * 2 * 33 * sizeof(bool));
-    memset(m_distAffine, -1, 2 * 2 * 33 * sizeof(Distortion));
-    memset( m_mvpIdx, 0, 2 * 2 * 33 * sizeof( int ) );
+    std::fill_n(m_readOnly[0], sizeof(m_readOnly) / sizeof(bool), false);
+    std::fill_n(m_dist[0], sizeof(m_dist) / sizeof(Distortion), MAX_UINT64);
+    std::fill_n(m_readOnlyAffine[AffineModel::_4_PARAMS][0], sizeof(m_readOnlyAffine) / sizeof(bool), false);
+    std::fill_n(m_distAffine[AffineModel::_4_PARAMS][0], sizeof(m_distAffine) / sizeof(Distortion), MAX_UINT64);
+    std::fill_n(m_mvpIdx[AffineModel::_4_PARAMS][0], sizeof(m_mvpIdx) / sizeof(int), 0);
 
 #if GDR_ENABLED
-    memset(m_mvSolid, true, 2 * 2 * 33 * sizeof(bool));
-#endif
-
-#if GDR_ENABLED
-    memset(m_mvAffineSolid, true, 2 * 2 * 33 * sizeof(bool));
+    std::fill_n(m_mvSolid[0], sizeof(m_mvSolid) / sizeof(bool), false);
+    std::fill_n(m_mvAffineSolid[AffineModel::_4_PARAMS][0][0], sizeof(m_mvAffineSolid) / sizeof(bool), false);
 #endif
   }
 
   void setReadMode(bool b, uint32_t refList, uint32_t refIdx) { m_readOnly[refList][refIdx] = b; }
   bool isReadMode(uint32_t refList, uint32_t refIdx) { return m_readOnly[refList][refIdx]; }
 
-  void setReadModeAffine(bool b, uint32_t refList, uint32_t refIdx, int bP4)
+  void setReadModeAffine(bool b, uint32_t refList, uint32_t refIdx, AffineModel am)
   {
-    m_readOnlyAffine[bP4][refList][refIdx] = b;
+    m_readOnlyAffine[am][refList][refIdx] = b;
   }
-  bool isReadModeAffine(uint32_t refList, uint32_t refIdx, int bP4) { return m_readOnlyAffine[bP4][refList][refIdx]; }
+  bool isReadModeAffine(uint32_t refList, uint32_t refIdx, AffineModel am)
+  {
+    return m_readOnlyAffine[am][refList][refIdx];
+  }
 
   Mv &getMv(uint32_t refList, uint32_t refIdx) { return m_mv[refList][refIdx]; }
 
@@ -303,45 +303,41 @@ public:
   }
 #endif
 
-  Mv &getAffineMv(uint32_t refList, uint32_t refIdx, uint32_t affineMvIdx, int bP4)
-  {
-    return m_mvAffine[bP4][refList][refIdx][affineMvIdx];
-  }
-
-  void copyAffineMvFrom(Mv (&racAffineMvs)[3], Distortion dist, uint32_t refList, uint32_t refIdx, int bP4,
+  void copyAffineMvFrom(Mv (&racAffineMvs)[3], Distortion dist, uint32_t refList, uint32_t refIdx, AffineModel am,
                         const int mvpIdx)
   {
-    memcpy(m_mvAffine[bP4][refList][refIdx], racAffineMvs, 3 * sizeof(Mv));
-    m_distAffine[bP4][refList][refIdx] = dist;
-    m_mvpIdx[bP4][refList][refIdx]     = mvpIdx;
+    memcpy(m_mvAffine[am][refList][refIdx], racAffineMvs, 3 * sizeof(Mv));
+    m_distAffine[am][refList][refIdx] = dist;
+    m_mvpIdx[am][refList][refIdx]     = mvpIdx;
   }
 
-  void copyAffineMvTo(Mv acAffineMvs[3], Distortion &dist, uint32_t refList, uint32_t refIdx, int bP4, int &mvpIdx)
+  void copyAffineMvTo(Mv acAffineMvs[3], Distortion &dist, uint32_t refList, uint32_t refIdx, AffineModel am,
+                      int &mvpIdx)
   {
-    memcpy(acAffineMvs, m_mvAffine[bP4][refList][refIdx], 3 * sizeof(Mv));
-    dist   = m_distAffine[bP4][refList][refIdx];
-    mvpIdx = m_mvpIdx[bP4][refList][refIdx];
+    memcpy(acAffineMvs, m_mvAffine[am][refList][refIdx], 3 * sizeof(Mv));
+    dist   = m_distAffine[am][refList][refIdx];
+    mvpIdx = m_mvpIdx[am][refList][refIdx];
   }
 
 #if GDR_ENABLED
   void copyAffineMvFrom(Mv (&racAffineMvs)[3], bool (&racAffineMvsSolid)[3], Distortion dist, uint32_t refList,
-                        uint32_t refIdx, int bP4, const int mvpIdx)
+                        uint32_t refIdx, AffineModel am, const int mvpIdx)
   {
-    memcpy(m_mvAffine[bP4][refList][refIdx], racAffineMvs, 3 * sizeof(Mv));
-    memcpy(m_mvAffineSolid[bP4][refList][refIdx], racAffineMvsSolid, 3 * sizeof(bool));
-    m_distAffine[bP4][refList][refIdx] = dist;
-    m_mvpIdx[bP4][refList][refIdx]     = mvpIdx;
+    memcpy(m_mvAffine[am][refList][refIdx], racAffineMvs, 3 * sizeof(Mv));
+    memcpy(m_mvAffineSolid[am][refList][refIdx], racAffineMvsSolid, 3 * sizeof(bool));
+    m_distAffine[am][refList][refIdx] = dist;
+    m_mvpIdx[am][refList][refIdx]     = mvpIdx;
   }
 #endif
 
 #if GDR_ENABLED
   void copyAffineMvTo(Mv acAffineMvs[3], bool acAffineMvsSolid[3], Distortion &dist, uint32_t refList, uint32_t refIdx,
-                      int bP4, int &mvpIdx)
+                      AffineModel am, int &mvpIdx)
   {
-    memcpy(acAffineMvs, m_mvAffine[bP4][refList][refIdx], 3 * sizeof(Mv));
-    memcpy(acAffineMvsSolid, m_mvAffineSolid[bP4][refList][refIdx], 3 * sizeof(bool));
-    dist   = m_distAffine[bP4][refList][refIdx];
-    mvpIdx = m_mvpIdx[bP4][refList][refIdx];
+    memcpy(acAffineMvs, m_mvAffine[am][refList][refIdx], 3 * sizeof(Mv));
+    memcpy(acAffineMvsSolid, m_mvAffineSolid[am][refList][refIdx], 3 * sizeof(bool));
+    dist   = m_distAffine[am][refList][refIdx];
+    mvpIdx = m_mvpIdx[am][refList][refIdx];
   }
 #endif
 };
@@ -349,10 +345,5 @@ struct LutMotionCand
 {
   static_vector<MotionInfo, MAX_NUM_HMVP_CANDS> lut;
   static_vector<MotionInfo, MAX_NUM_HMVP_CANDS> lutIbc;
-};
-struct PatentBvCand
-{
-  Mv m_bvCands[IBC_NUM_CANDIDATES];
-  int currCnt;
 };
 #endif // __MOTIONINFO__

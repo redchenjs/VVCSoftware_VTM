@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -107,7 +107,7 @@ private:
 
   double            m_lowThresholdRatio   = 0.1;               // low threshold rato
   int               m_highThresholdRatio  = 3;                 // high threshold rato
-  
+
   void gradient   ( PelStorage* buff1, PelStorage* buff2,
                     unsigned int width, unsigned int height,
                     unsigned int convWidthS, unsigned int convHeightS, unsigned int bitDepth, ComponentID compID );

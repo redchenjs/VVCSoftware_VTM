@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,7 @@ Slice::Slice()
   , m_eSliceType(I_SLICE)
   , m_noOutputOfPriorPicsFlag(0)
   , m_iSliceQp(0)
-  , m_ChromaQpAdjEnabled(false)
+  , m_chromaQpAdjEnabled(false)
   , m_lmcsEnabledFlag(0)
   , m_explicitScalingListUsed(0)
   , m_deblockingFilterDisable(false)
@@ -82,7 +82,7 @@ Slice::Slice()
   , m_biDirPred(false)
   , m_lmChromaCheckDisable(false)
   , m_iSliceQpDelta(0)
-  , m_iDepth(0)
+  , m_hierPredLayerIdx(0)
   , m_pcSPS(nullptr)
   , m_pcPPS(nullptr)
   , m_pcPic(nullptr)
@@ -104,7 +104,6 @@ Slice::Slice()
   , m_encCABACTableIdx(I_SLICE)
   , m_iProcessingStartTime(0)
   , m_dProcessingTime(0)
-  , m_tsrc_index(0)
 {
   for (uint32_t i = 0; i < MAX_TSRC_RICE; i++)
   {
@@ -144,10 +143,7 @@ Slice::Slice()
   resetWpScaling();
   initWpAcDcParam();
 
-  for(int ch=0; ch < MAX_NUM_CHANNEL_TYPE; ch++)
-  {
-    m_saoEnabledFlag[ch] = false;
-  }
+  m_saoEnabledFlag.fill(false);
 
   memset(m_alfApss, 0, sizeof(m_alfApss));
   m_ccAlfFilterParam.reset();
@@ -253,8 +249,8 @@ void Slice::inheritFromPicHeader( PicHeader *picHeader, const PPS *pps, const SP
     setDeblockingFilterCrTcOffsetDiv2   ( getDeblockingFilterTcOffsetDiv2()   );
   }
 
-  setSaoEnabledFlag(CHANNEL_TYPE_LUMA,     picHeader->getSaoEnabledFlag(CHANNEL_TYPE_LUMA));
-  setSaoEnabledFlag(CHANNEL_TYPE_CHROMA,   picHeader->getSaoEnabledFlag(CHANNEL_TYPE_CHROMA));
+  setSaoEnabledFlag(ChannelType::LUMA, picHeader->getSaoEnabledFlag(ChannelType::LUMA));
+  setSaoEnabledFlag(ChannelType::CHROMA, picHeader->getSaoEnabledFlag(ChannelType::CHROMA));
 
   setAlfEnabledFlag(COMPONENT_Y,  picHeader->getAlfEnabledFlag(COMPONENT_Y));
   setAlfEnabledFlag(COMPONENT_Cb, picHeader->getAlfEnabledFlag(COMPONENT_Cb));
@@ -322,11 +318,11 @@ void Slice::setNumEntryPoints(const SPS *sps, const PPS *pps)
 void Slice::setDefaultClpRng( const SPS& sps )
 {
   m_clpRngs.comp[COMPONENT_Y].min = m_clpRngs.comp[COMPONENT_Cb].min  = m_clpRngs.comp[COMPONENT_Cr].min = 0;
-  m_clpRngs.comp[COMPONENT_Y].max                                     = (1<< sps.getBitDepth(CHANNEL_TYPE_LUMA))-1;
-  m_clpRngs.comp[COMPONENT_Y].bd  = sps.getBitDepth(CHANNEL_TYPE_LUMA);
+  m_clpRngs.comp[COMPONENT_Y].max  = (1 << sps.getBitDepth(ChannelType::LUMA)) - 1;
+  m_clpRngs.comp[COMPONENT_Y].bd   = sps.getBitDepth(ChannelType::LUMA);
   m_clpRngs.comp[COMPONENT_Y].n   = 0;
-  m_clpRngs.comp[COMPONENT_Cb].max = m_clpRngs.comp[COMPONENT_Cr].max = (1<< sps.getBitDepth(CHANNEL_TYPE_CHROMA))-1;
-  m_clpRngs.comp[COMPONENT_Cb].bd  = m_clpRngs.comp[COMPONENT_Cr].bd  = sps.getBitDepth(CHANNEL_TYPE_CHROMA);
+  m_clpRngs.comp[COMPONENT_Cb].max = m_clpRngs.comp[COMPONENT_Cr].max = (1 << sps.getBitDepth(ChannelType::CHROMA)) - 1;
+  m_clpRngs.comp[COMPONENT_Cb].bd = m_clpRngs.comp[COMPONENT_Cr].bd = sps.getBitDepth(ChannelType::CHROMA);
   m_clpRngs.comp[COMPONENT_Cb].n   = m_clpRngs.comp[COMPONENT_Cr].n   = 0;
   m_clpRngs.used = m_clpRngs.chroma = false;
 }
@@ -572,16 +568,33 @@ void Slice::checkColRefIdx(uint32_t curSliceSegmentIdx, const Picture* pic)
   }
 }
 
-void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int pocCRA, PicList& rcListPic)
+void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int pocCRA, CheckCRAFlags &flags, PicList& rcListPic)
 {
   if (pocCRA < MAX_UINT && getPOC() > pocCRA)
   {
+    if (flags.seenLeadingFieldPic && flags.trailingFieldHadRefIssue)
+    {
+      THROW("Invalid state");
+    }
+
     uint32_t numRefPic = pRPL0->getNumberOfShorttermPictures() + pRPL0->getNumberOfLongtermPictures() + pRPL0->getNumberOfInterLayerPictures();
     for (int i = 0; i < numRefPic; i++)
     {
       if (!pRPL0->isRefPicLongterm(i))
       {
-        CHECK(getPOC() + pRPL0->getRefPicIdentifier(i) < pocCRA, "Invalid state");
+        if (getPOC() + pRPL0->getRefPicIdentifier(i) < pocCRA)
+        {
+          // report error immediately if we are
+          //   processing frames
+          //   or this is second trailing field picture
+          //   or this is trailing field picture after leading field picture
+          //   or this is active reference picture of trailing field picture
+          CHECK(!getSPS()->getFieldSeqFlag() || flags.seenTrailingFieldPic || flags.seenLeadingFieldPic || i < getNumRefIdx(REF_PIC_LIST_0), "Invalid state");
+
+          // otherwise, we are checking non-active reference picture of first trailing field picture
+          flags.trailingFieldHadRefIssue = true;
+          return;
+        }
       }
       else if (!pRPL0->isInterLayerRefPic(i))
       {
@@ -594,8 +607,12 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
         }
         const Picture *ltrp =
           xGetLongTermRefPic(rcListPic, ltrpPoc, pRPL0->getDeltaPocMSBPresentFlag(i), m_pcPic->layerId);
-        CHECK(ltrp == nullptr, "Long-term pic not found");
-        CHECK(ltrp->getPOC() < pocCRA, "Invalid state");
+        if (ltrp == nullptr || ltrp->getPOC() < pocCRA)
+        {
+          CHECK(!getSPS()->getFieldSeqFlag() || flags.seenTrailingFieldPic || flags.seenLeadingFieldPic || i < getNumRefIdx(REF_PIC_LIST_0), "Invalid state");
+          flags.trailingFieldHadRefIssue = true;
+          return;
+        }
       }
     }
     numRefPic = pRPL1->getNumberOfShorttermPictures() + pRPL1->getNumberOfLongtermPictures() + pRPL1->getNumberOfInterLayerPictures();
@@ -603,7 +620,12 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
     {
       if (!pRPL1->isRefPicLongterm(i))
       {
-        CHECK(getPOC() + pRPL1->getRefPicIdentifier(i) < pocCRA, "Invalid state");
+        if (getPOC() + pRPL1->getRefPicIdentifier(i) < pocCRA)
+        {
+          CHECK(!getSPS()->getFieldSeqFlag() || flags.seenTrailingFieldPic || flags.seenLeadingFieldPic || i < getNumRefIdx(REF_PIC_LIST_1), "Invalid state");
+          flags.trailingFieldHadRefIssue = true;
+          return;
+        }
       }
       else if( !pRPL1->isInterLayerRefPic( i ) )
       {
@@ -616,10 +638,24 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
         }
         const Picture *ltrp =
           xGetLongTermRefPic(rcListPic, ltrpPoc, pRPL1->getDeltaPocMSBPresentFlag(i), m_pcPic->layerId);
-        CHECK(ltrp == nullptr, "Long-term pic not found");
-        CHECK(ltrp->getPOC() < pocCRA, "Invalid state");
+        if (ltrp == nullptr || ltrp->getPOC() < pocCRA)
+        {
+          CHECK(!getSPS()->getFieldSeqFlag() || flags.seenTrailingFieldPic || flags.seenLeadingFieldPic || i < getNumRefIdx(REF_PIC_LIST_1), "Invalid state");
+          flags.trailingFieldHadRefIssue = true;
+          return;
+        }
       }
     }
+
+    if (getSPS()->getFieldSeqFlag())
+    {
+      flags.seenTrailingFieldPic = true;
+    }
+  }
+  else if (getSPS()->getFieldSeqFlag() && getPOC() < pocCRA)
+  {
+    flags.seenLeadingFieldPic = true;
+    flags.trailingFieldHadRefIssue = false;
   }
 }
 
@@ -902,7 +938,7 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
   m_eSliceType           = pSrc->m_eSliceType;
   m_iSliceQp             = pSrc->m_iSliceQp;
   m_iSliceQpBase         = pSrc->m_iSliceQpBase;
-  m_ChromaQpAdjEnabled              = pSrc->m_ChromaQpAdjEnabled;
+  m_chromaQpAdjEnabled                = pSrc->m_chromaQpAdjEnabled;
   m_deblockingFilterDisable         = pSrc->m_deblockingFilterDisable;
   m_deblockingFilterOverrideFlag    = pSrc->m_deblockingFilterOverrideFlag;
   m_deblockingFilterBetaOffsetDiv2  = pSrc->m_deblockingFilterBetaOffsetDiv2;
@@ -914,7 +950,7 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
   m_depQuantEnabledFlag               = pSrc->m_depQuantEnabledFlag;
   m_signDataHidingEnabledFlag         = pSrc->m_signDataHidingEnabledFlag;
   m_tsResidualCodingDisabledFlag      = pSrc->m_tsResidualCodingDisabledFlag;
-  m_tsrc_index                        = pSrc->m_tsrc_index;
+  m_tsrcIndex                         = pSrc->m_tsrcIndex;
 
   for (i = 0; i < MAX_TSRC_RICE; i++)
   {
@@ -959,7 +995,7 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
   }
   if (cpyAlmostAll)
   {
-    m_iDepth = pSrc->m_iDepth;
+    m_hierPredLayerIdx = pSrc->m_hierPredLayerIdx;
   }
 
   // access channel
@@ -1018,10 +1054,7 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
     }
   }
 
-  for( uint32_t ch = 0 ; ch < MAX_NUM_CHANNEL_TYPE; ch++)
-  {
-    m_saoEnabledFlag[ch] = pSrc->m_saoEnabledFlag[ch];
-  }
+  m_saoEnabledFlag = pSrc->m_saoEnabledFlag;
 
   m_cabacInitFlag                 = pSrc->m_cabacInitFlag;
   memcpy(m_alfApss, pSrc->m_alfApss, sizeof(m_alfApss)); // this might be quite unsafe
@@ -2200,8 +2233,8 @@ void  Slice::initWpAcDcParam()
 {
   for(int iComp = 0; iComp < MAX_NUM_COMPONENT; iComp++ )
   {
-    m_weightACDCParam[iComp].iAC = 0;
-    m_weightACDCParam[iComp].iDC = 0;
+    m_weightACDCParam[iComp].ac = 0;
+    m_weightACDCParam[iComp].dc = 0;
   }
 }
 
@@ -2719,7 +2752,7 @@ PicHeader::PicHeader()
 {
   memset(m_virtualBoundariesPosX,                   0,    sizeof(m_virtualBoundariesPosX));
   memset(m_virtualBoundariesPosY,                   0,    sizeof(m_virtualBoundariesPosY));
-  memset(m_saoEnabledFlag,                          0,    sizeof(m_saoEnabledFlag));
+  m_saoEnabledFlag.fill(false);
   memset(m_alfEnabledFlag,                          0,    sizeof(m_alfEnabledFlag));
   memset(m_minQT,                                   0,    sizeof(m_minQT));
   memset(m_maxMTTHierarchyDepth,                    0,    sizeof(m_maxMTTHierarchyDepth));
@@ -2804,7 +2837,7 @@ void PicHeader::initPicHeader()
   m_numL1Weights                                  = 0;
   memset(m_virtualBoundariesPosX,                   0,    sizeof(m_virtualBoundariesPosX));
   memset(m_virtualBoundariesPosY,                   0,    sizeof(m_virtualBoundariesPosY));
-  memset(m_saoEnabledFlag,                          0,    sizeof(m_saoEnabledFlag));
+  m_saoEnabledFlag.fill(false);
   memset(m_alfEnabledFlag,                          0,    sizeof(m_alfEnabledFlag));
   memset(m_minQT,                                   0,    sizeof(m_minQT));
   memset(m_maxMTTHierarchyDepth,                    0,    sizeof(m_maxMTTHierarchyDepth));
@@ -2917,8 +2950,8 @@ SPS::SPS()
   , m_maxMTTHierarchyDepth{ MAX_BT_DEPTH, MAX_BT_DEPTH_INTER, MAX_BT_DEPTH_C }
   , m_maxBTSize{ 0, 0, 0 }
   , m_maxTTSize{ 0, 0, 0 }
-  , m_uiMaxCUWidth(32)
-  , m_uiMaxCUHeight(32)
+  , m_maxCuWidth(32)
+  , m_maxCuHeight(32)
   , m_numRPL0(0)
   , m_numRPL1(0)
   , m_rpl1CopyFromRpl0Flag(false)
@@ -2928,17 +2961,16 @@ SPS::SPS()
   // Tool list
   , m_transformSkipEnabledFlag(false)
   , m_log2MaxTransformSkipBlockSize(2)
-  , m_BDPCMEnabledFlag(false)
+  , m_bdpcmEnabledFlag(false)
   , m_jointCbCrEnabledFlag(false)
   , m_entropyCodingSyncEnabledFlag(false)
   , m_entryPointPresentFlag(false)
-  , m_internalMinusInputBitDepth{ 0, 0 }
   , m_sbtmvpEnabledFlag(false)
   , m_bdofEnabledFlag(false)
   , m_fpelMmvdEnabledFlag(false)
-  , m_BdofControlPresentInPhFlag(false)
-  , m_DmvrControlPresentInPhFlag(false)
-  , m_ProfControlPresentInPhFlag(false)
+  , m_bdofControlPresentInPhFlag(false)
+  , m_dmvrControlPresentInPhFlag(false)
+  , m_profControlPresentInPhFlag(false)
   , m_bitsForPoc(8)
   , m_pocMsbCycleFlag(false)
   , m_pocMsbCycleLen(1)
@@ -2951,7 +2983,7 @@ SPS::SPS()
   , m_useWeightPred(false)
   , m_useWeightedBiPred(false)
   , m_saoEnabledFlag(false)
-  , m_bTemporalIdNestingFlag(false)
+  , m_temporalIdNestingFlag(false)
   , m_scalingListEnabledFlag(false)
   , m_virtualBoundariesEnabledFlag(0)
   , m_virtualBoundariesPresentFlag(0)
@@ -2975,12 +3007,10 @@ SPS::SPS()
   , m_PROF(false)
   , m_ciip(false)
   , m_Geo(false)
-#if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   , m_LadfEnabled(false)
   , m_LadfNumIntervals(0)
   , m_LadfQpOffset{ 0 }
   , m_LadfIntervalLowerBound{ 0 }
-#endif
   , m_MRL(false)
   , m_MIP(false)
   , m_GDREnabledFlag(true)
@@ -2995,9 +3025,10 @@ SPS::SPS()
   , m_scalingMatrixDesignatedColourSpaceFlag(true)
   , m_disableScalingMatrixForLfnstBlks(true)
 {
+  m_bitDepths.fill(8);
+  m_internalMinusInputBitDepth.fill(0);
   for(int ch=0; ch<MAX_NUM_CHANNEL_TYPE; ch++)
   {
-    m_bitDepths.recon[ch] = 8;
     m_qpBDOffset   [ch] = 0;
   }
 
@@ -3153,7 +3184,7 @@ PPS::PPS()
   , m_picInitQPMinus26(0)
   , m_useDQP(false)
   , m_usePPSChromaTool(false)
-  , m_bSliceChromaQpFlag(false)
+  , m_sliceChromaQpFlag(false)
   , m_chromaCbQpOffset(0)
   , m_chromaCrQpOffset(0)
   , m_chromaCbCrQpOffset(0)
@@ -3199,9 +3230,9 @@ PPS::PPS()
 {
   // Array includes entry [0] for the null offset used when cu_chroma_qp_offset_flag=0. This is initialised here
   // and never subsequently changed.
-  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.cbOffset        = 0;
-  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.crOffset        = 0;
-  m_ChromaQpAdjTableIncludingNullEntry[0].u.comp.jointCbCrOffset = 0;
+  m_chromaQpAdjTableIncludingNullEntry[0].u.comp.cbOffset        = 0;
+  m_chromaQpAdjTableIncludingNullEntry[0].u.comp.crOffset        = 0;
+  m_chromaQpAdjTableIncludingNullEntry[0].u.comp.jointCbCrOffset = 0;
   m_tileColWidth.clear();
   m_tileRowHeight.clear();
   m_tileColBd.clear();
@@ -3663,7 +3694,9 @@ const SubPic& PPS::getSubPicFromPos(const Position& pos)  const
 
 const SubPic&  PPS::getSubPicFromCU(const CodingUnit& cu) const
 {
-  const Position lumaPos = cu.Y().valid() ? cu.Y().pos() : recalcPosition(cu.chromaFormat, cu.chType, CHANNEL_TYPE_LUMA, cu.blocks[cu.chType].pos());
+  const Position lumaPos = cu.Y().valid()
+                             ? cu.Y().pos()
+                             : recalcPosition(cu.chromaFormat, cu.chType, ChannelType::LUMA, cu.block(cu.chType).pos());
   return getSubPicFromPos(lumaPos);
 }
 
@@ -3934,7 +3967,7 @@ void ScalingList::codePredScalingList(int* scalingList, const int* scalingListPr
   int deltaValue = 0;
   int matrixSize = (scalingListId < SCALING_LIST_1D_START_4x4) ? 2 : (scalingListId < SCALING_LIST_1D_START_8x8) ? 4 : 8;
   int coefNum = matrixSize*matrixSize;
-  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
+  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][CoeffScanType::DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
   int nextCoef = 0;
 
   int8_t data;
@@ -3975,7 +4008,7 @@ void ScalingList::codeScalingList(int* scalingList, int scalingListDC, int scali
 {
   int matrixSize = (scalingListId < SCALING_LIST_1D_START_4x4) ? 2 : (scalingListId < SCALING_LIST_1D_START_8x8) ? 4 : 8;
   int coefNum = matrixSize * matrixSize;
-  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
+  ScanElement *scan = g_scanOrder[SCAN_UNGROUPED][CoeffScanType::DIAG][gp_sizeIdxInfo->idxFrom(matrixSize)][gp_sizeIdxInfo->idxFrom(matrixSize)];
   int nextCoef = SCALING_LIST_START_VALUE;
   int8_t data;
   const int *src = scalingList;
@@ -4094,7 +4127,7 @@ static void outputScalingListHelp(std::ostream &os)
     {
       if (!(((sizeIdc == SCALING_LIST_64x64) && (listIdc % (SCALING_LIST_NUM / SCALING_LIST_PRED_MODES) != 0)) || ((sizeIdc == SCALING_LIST_2x2) && (listIdc % (SCALING_LIST_NUM / SCALING_LIST_PRED_MODES) == 0))))
       {
-        os << "  " << MatrixType[sizeIdc][listIdc] << '\n';
+        os << "  " << matrixType[sizeIdc][listIdc] << '\n';
       }
     }
   }
@@ -4111,7 +4144,7 @@ void ScalingList::outputScalingLists(std::ostream &os) const
       if (!((sizeIdc== SCALING_LIST_64x64 && listIdc % (SCALING_LIST_NUM / SCALING_LIST_PRED_MODES) != 0) || (sizeIdc == SCALING_LIST_2x2 && listIdc < 4)))
       {
         const int *src = getScalingListAddress(scalingListId);
-        os << (MatrixType[sizeIdc][listIdc]) << " =\n  ";
+        os << (matrixType[sizeIdc][listIdc]) << " =\n  ";
         for(uint32_t y=0; y<size; y++)
         {
           for(uint32_t x=0; x<size; x++, src++)
@@ -4122,7 +4155,7 @@ void ScalingList::outputScalingLists(std::ostream &os) const
         }
         if(sizeIdc > SCALING_LIST_8x8)
         {
-          os << MatrixType_DC[sizeIdc][listIdc] << " = \n  " << std::setw(3) << getScalingListDC(scalingListId) << "\n";
+          os << matrixTypeDc[sizeIdc][listIdc] << " = \n  " << std::setw(3) << getScalingListDC(scalingListId) << "\n";
         }
         os << "\n";
         scalingListId++;
@@ -4174,18 +4207,19 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
           while ((!feof(fp)) && (!found))
           {
             char *ret = fgets(line, LINE_SIZE, fp);
-            char *findNamePosition = ret == nullptr ? nullptr : strstr(line, MatrixType[sizeIdc][listIdc]);
+            char *findNamePosition = ret == nullptr ? nullptr : strstr(line, matrixType[sizeIdc][listIdc]);
             // This could be a match against the DC string as well, so verify it isn't
             if (findNamePosition != nullptr
-                && (MatrixType_DC[sizeIdc][listIdc] == nullptr
-                    || strstr(line, MatrixType_DC[sizeIdc][listIdc]) == nullptr))
+                && (matrixTypeDc[sizeIdc][listIdc] == nullptr
+                    || strstr(line, matrixTypeDc[sizeIdc][listIdc]) == nullptr))
             {
               found = true;
             }
           }
           if (!found)
           {
-            msg( ERROR, "Error: cannot find Matrix %s from scaling list file %s\n", MatrixType[sizeIdc][listIdc], fileName.c_str());
+            msg(ERROR, "Error: cannot find Matrix %s from scaling list file %s\n", matrixType[sizeIdc][listIdc],
+                fileName.c_str());
             return true;
 
           }
@@ -4195,12 +4229,16 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
           int data;
           if (fscanf(fp, "%d,", &data)!=1)
           {
-            msg( ERROR, "Error: cannot read value #%d for Matrix %s from scaling list file %s at file position %ld\n", i, MatrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
+            msg(ERROR, "Error: cannot read value #%d for Matrix %s from scaling list file %s at file position %ld\n", i,
+                matrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
             return true;
           }
           if (data<0 || data>255)
           {
-            msg( ERROR, "Error: QMatrix entry #%d of value %d for Matrix %s from scaling list file %s at file position %ld is out of range (0 to 255)\n", i, data, MatrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
+            msg(ERROR,
+                "Error: QMatrix entry #%d of value %d for Matrix %s from scaling list file %s at file position %ld is "
+                "out of range (0 to 255)\n",
+                i, data, matrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
             return true;
           }
           src[i] = data;
@@ -4217,7 +4255,7 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
             while ((!feof(fp)) && (!found))
             {
               char *ret = fgets(line, LINE_SIZE, fp);
-              char *findNamePosition = ret == nullptr ? nullptr : strstr(line, MatrixType_DC[sizeIdc][listIdc]);
+              char *findNamePosition = ret == nullptr ? nullptr : strstr(line, matrixTypeDc[sizeIdc][listIdc]);
               if (findNamePosition != nullptr)
               {
                 // This won't be a match against the non-DC string.
@@ -4226,19 +4264,24 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
             }
             if (!found)
             {
-              msg( ERROR, "Error: cannot find DC Matrix %s from scaling list file %s\n", MatrixType_DC[sizeIdc][listIdc], fileName.c_str());
+              msg(ERROR, "Error: cannot find DC Matrix %s from scaling list file %s\n", matrixTypeDc[sizeIdc][listIdc],
+                  fileName.c_str());
               return true;
             }
           }
           int data;
           if (fscanf(fp, "%d,", &data)!=1)
           {
-            msg( ERROR, "Error: cannot read DC %s from scaling list file %s at file position %ld\n", MatrixType_DC[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
+            msg(ERROR, "Error: cannot read DC %s from scaling list file %s at file position %ld\n",
+                matrixTypeDc[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
             return true;
           }
           if (data<0 || data>255)
           {
-            msg( ERROR, "Error: DC value %d for Matrix %s from scaling list file %s at file position %ld is out of range (0 to 255)\n", data, MatrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
+            msg(ERROR,
+                "Error: DC value %d for Matrix %s from scaling list file %s at file position %ld is out of range (0 to "
+                "255)\n",
+                data, matrixType[sizeIdc][listIdc], fileName.c_str(), ftell(fp));
             return true;
           }
           //overwrite DC value when size of matrix is larger than 16x16
@@ -4319,14 +4362,15 @@ bool ScalingList::isLumaScalingList( int scalingListId) const
 
 uint32_t PreCalcValues::getValIdx( const Slice &slice, const ChannelType chType ) const
 {
-  return slice.isIntra() ? ( ISingleTree ? 0 : ( chType << 1 ) ) : 1;
+  return slice.isIntra() ? (ISingleTree || isLuma(chType) ? 0 : 2) : 1;
 }
 
 uint32_t PreCalcValues::getMaxBtDepth( const Slice &slice, const ChannelType chType ) const
 {
   if ( slice.getPicHeader()->getSplitConsOverrideFlag() )
   {
-    return slice.getPicHeader()->getMaxMTTHierarchyDepth( slice.getSliceType(), ISingleTree ? CHANNEL_TYPE_LUMA : chType);
+    return slice.getPicHeader()->getMaxMTTHierarchyDepth(slice.getSliceType(),
+                                                         ISingleTree ? ChannelType::LUMA : chType);
   }
   else
   {
@@ -4343,7 +4387,7 @@ uint32_t PreCalcValues::getMaxBtSize( const Slice &slice, const ChannelType chTy
 {
   if (slice.getPicHeader()->getSplitConsOverrideFlag())
   {
-    return slice.getPicHeader()->getMaxBTSize( slice.getSliceType(), ISingleTree ? CHANNEL_TYPE_LUMA : chType);
+    return slice.getPicHeader()->getMaxBTSize(slice.getSliceType(), ISingleTree ? ChannelType::LUMA : chType);
   }
   else
   {
@@ -4360,7 +4404,7 @@ uint32_t PreCalcValues::getMaxTtSize( const Slice &slice, const ChannelType chTy
 {
   if (slice.getPicHeader()->getSplitConsOverrideFlag())
   {
-    return slice.getPicHeader()->getMaxTTSize( slice.getSliceType(), ISingleTree ? CHANNEL_TYPE_LUMA : chType);
+    return slice.getPicHeader()->getMaxTTSize(slice.getSliceType(), ISingleTree ? ChannelType::LUMA : chType);
   }
   else
   {
@@ -4371,7 +4415,7 @@ uint32_t PreCalcValues::getMinQtSize( const Slice &slice, const ChannelType chTy
 {
   if (slice.getPicHeader()->getSplitConsOverrideFlag())
   {
-    return slice.getPicHeader()->getMinQTSize( slice.getSliceType(), ISingleTree ? CHANNEL_TYPE_LUMA : chType);
+    return slice.getPicHeader()->getMinQTSize(slice.getSliceType(), ISingleTree ? ChannelType::LUMA : chType);
   }
   else
   {
@@ -4409,9 +4453,7 @@ void Slice::scaleRefPicList( Picture *scaledRefPic[ ], PicHeader *picHeader, APS
       // if rescaling is needed, otherwise just reuse the original picture pointer; it is needed for motion field, otherwise motion field requires a copy as well
       // reference resampling for the whole picture is not applied at decoder
 
-      int xScale, yScale;
-      CU::getRprScaling( sps, pps, m_apcRefPicList[refList][rIdx], xScale, yScale );
-      m_scalingRatio[refList][rIdx] = std::pair<int, int>( xScale, yScale );
+      CU::getRprScaling(sps, pps, m_apcRefPicList[refList][rIdx], m_scalingRatio[refList][rIdx]);
 
       CHECK( m_apcRefPicList[refList][rIdx]->unscaledPic == nullptr, "unscaledPic is not properly set" );
 
@@ -4481,11 +4523,11 @@ void Slice::scaleRefPicList( Picture *scaledRefPic[ ], PicHeader *picHeader, APS
 
           // rescale the reference picture
           const bool downsampling = m_apcRefPicList[refList][rIdx]->getRecoBuf().Y().width >= scaledRefPic[j]->getRecoBuf().Y().width && m_apcRefPicList[refList][rIdx]->getRecoBuf().Y().height >= scaledRefPic[j]->getRecoBuf().Y().height;
-          Picture::rescalePicture( m_scalingRatio[refList][rIdx],
-                                   m_apcRefPicList[refList][rIdx]->getRecoBuf(), m_apcRefPicList[refList][rIdx]->slices[0]->getPPS()->getScalingWindow(),
-                                   scaledRefPic[j]->getRecoBuf(), pps->getScalingWindow(),
-                                   sps->getChromaFormatIdc(), sps->getBitDepths(), true, downsampling,
-                                   sps->getHorCollocatedChromaFlag(), sps->getVerCollocatedChromaFlag() );
+          Picture::rescalePicture(m_scalingRatio[refList][rIdx], m_apcRefPicList[refList][rIdx]->getRecoBuf(),
+                                  m_apcRefPicList[refList][rIdx]->slices[0]->getPPS()->getScalingWindow(),
+                                  scaledRefPic[j]->getRecoBuf(), pps->getScalingWindow(), sps->getChromaFormatIdc(),
+                                  sps->getBitDepths(), true, downsampling, sps->getHorCollocatedChromaFlag(),
+                                  sps->getVerCollocatedChromaFlag());
           scaledRefPic[j]->unscaledPic = m_apcRefPicList[refList][rIdx];
           scaledRefPic[j]->extendPicBorder( getPPS() );
 
@@ -4805,10 +4847,6 @@ bool             operator == (const ProfileTierLevel& op1, const ProfileTierLeve
     return false;
   }
   if (op1.m_profileIdc != op2.m_profileIdc)
-  {
-    return false;
-  }
-  if (op1.m_numSubProfile != op2.m_numSubProfile)
   {
     return false;
   }

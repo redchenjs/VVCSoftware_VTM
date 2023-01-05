@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,9 +56,11 @@ class VideoIOYuv
 {
 private:
   std::fstream m_cHandle;                            ///< file handle
-  int       m_fileBitdepth[MAX_NUM_CHANNEL_TYPE]; ///< bitdepth of input/output video file
-  int       m_MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];  ///< bitdepth after addition of MSBs (with value 0)
-  int       m_bitdepthShift[MAX_NUM_CHANNEL_TYPE];  ///< number of bits to increase or decrease image by before/after write/read
+  ///
+  BitDepths m_fileBitdepth;          // bitdepth of input/output video file
+  BitDepths m_msbExtendedBitDepth;   // bitdepth after addition of MSBs (with value 0)
+  BitDepths m_bitdepthShift;         // number of bits to increase or decrease image by before/after write/read
+
   int          m_inY4mFileHeaderLength = 0;
   int          m_outPicWidth           = 0;
   int          m_outPicHeight          = 0;
@@ -76,9 +78,9 @@ public:
                           ChromaFormat &chromaFormat);
   void setOutputY4mInfo(int width, int height, int frameRate, int frameScale, int bitDepth, ChromaFormat chromaFormat);
   void writeY4mFileHeader();
-  void open(const std::string &fileName, bool bWriteMode, const int fileBitDepth[MAX_NUM_CHANNEL_TYPE],
-            const int MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE],
-            const int internalBitDepth[MAX_NUM_CHANNEL_TYPE]);   ///< open or create file
+  void open(const std::string &fileName, bool bWriteMode, const BitDepths &fileBitDepth,
+            const BitDepths &MSBExtendedBitDepth,
+            const BitDepths &internalBitDepth);                  ///< open or create file
   void close();                                                  ///< close file
 #if EXTENSION_360_VIDEO
   void skipFrames(int numFrames, uint32_t width, uint32_t height, ChromaFormat format);
@@ -89,31 +91,42 @@ public:
 
 
   // If fileFormat=NUM_CHROMA_FORMAT, use the format defined by pPicYuvTrueOrg
-  bool  read ( PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSpaceConversion ipcsc, int aiPad[2], ChromaFormat fileFormat=NUM_CHROMA_FORMAT, const bool bClipToRec709=false );     ///< read one frame with padding parameter
+  bool read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpaceConversion ipcsc, int aiPad[2],
+            ChromaFormat fileFormat   = NUM_CHROMA_FORMAT,
+            const bool   clipToRec709 = false);   ///< read one frame with padding parameter
 
   // If fileFormat=NUM_CHROMA_FORMAT, use the format defined by pPicYuv
-  bool  write( uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf& pic,
-               const InputColourSpaceConversion ipCSC,
-               const bool bPackedYUVOutputMode,
-               int confLeft = 0, int confRight = 0, int confTop = 0, int confBottom = 0, ChromaFormat format = NUM_CHROMA_FORMAT, const bool bClipToRec709 = false, const bool subtractConfWindowOffsets = true ); ///< write one YUV frame with padding parameter
+  bool write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf &pic, const InputColourSpaceConversion ipCSC,
+             const bool packedYuvOutputMode, int confLeft = 0, int confRight = 0, int confTop = 0, int confBottom = 0,
+             ChromaFormat format = NUM_CHROMA_FORMAT, const bool clipToRec709 = false,
+             const bool subtractConfWindowOffsets = true);   ///< write one YUV frame with padding parameter
 
   // If fileFormat=NUM_CHROMA_FORMAT, use the format defined by pPicYuvTop and pPicYuvBottom
-  bool  write( const CPelUnitBuf& picTop, const CPelUnitBuf& picBot,
-               const InputColourSpaceConversion ipCSC,
-               const bool bPackedYUVOutputMode,
-               int confLeft = 0, int confRight = 0, int confTop = 0, int confBottom = 0, ChromaFormat format = NUM_CHROMA_FORMAT, const bool isTff = false, const bool bClipToRec709 = false );
+  bool write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBot, const InputColourSpaceConversion ipCSC,
+             const bool packedYuvOutputMode, int confLeft = 0, int confRight = 0, int confTop = 0, int confBottom = 0,
+             ChromaFormat format = NUM_CHROMA_FORMAT, const bool isTff = false, const bool clipToRec709 = false);
 
   static void ColourSpaceConvert(const CPelUnitBuf &src, PelUnitBuf &dest, const InputColourSpaceConversion conversion, bool bIsForwards);
 
   bool  isEof ();                                           ///< check for end-of-file
   bool  isFail();                                           ///< check for failure
   bool  isOpen() { return m_cHandle.is_open(); }
-  void  setBitdepthShift( int ch, int bd )  { m_bitdepthShift[ch] = bd;   }
-  int   getBitdepthShift( int ch )          { return m_bitdepthShift[ch]; }
-  int   getFileBitdepth( int ch )           { return m_fileBitdepth[ch];  }
+  void  setBitdepthShift(ChannelType ch, int bd) { m_bitdepthShift[ch] = bd; }
+  int   getBitdepthShift(ChannelType ch) { return m_bitdepthShift[ch]; }
+  int   getFileBitdepth(ChannelType ch) { return m_fileBitdepth[ch]; }
 
-  bool  writeUpscaledPicture( const SPS& sps, const PPS& pps, const CPelUnitBuf& pic,
-    const InputColourSpaceConversion ipCSC, const bool bPackedYUVOutputMode, int outputChoice = 0, ChromaFormat format = NUM_CHROMA_FORMAT, const bool bClipToRec709 = false ); ///< write one upsaled YUV frame
+  bool writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
+#if !JVET_AB0081
+                            const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
+                            int outputChoice = 0, ChromaFormat format = NUM_CHROMA_FORMAT,
+                            const bool clipToRec709 = false);   ///< write one upsaled YUV frame
+#else
+                            const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
+                            int outputChoice = 0, ChromaFormat format = NUM_CHROMA_FORMAT,
+                            const bool clipToRec709            = false,
+                            int        upscaleFilterForDisplay = 1);   ///< write one upsaled YUV frame
+#endif
+
 
 };
 

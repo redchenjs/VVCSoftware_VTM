@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -232,6 +232,54 @@ void SEIEncoder::initSEIErp(SEIEquirectangularProjection* seiEquirectangularProj
   }
 }
 
+#if GREEN_METADATA_SEI_ENABLED
+void SEIEncoder::initSEIGreenMetadataInfo(SEIGreenMetadataInfo* seiGreenMetadataInfo, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics,SEIComplexityMetrics greenMetadata)
+{
+  assert (m_isInitialized);
+  assert (seiGreenMetadataInfo!=NULL);
+  
+  if (m_pcCfg->getSEIGreenMetadataType() == 1) //Metadata for quality recovery after low-power encoding
+  {
+    seiGreenMetadataInfo->m_greenMetadataType = m_pcCfg->getSEIGreenMetadataType();
+    seiGreenMetadataInfo->m_xsdSubpicNumberMinus1 = m_pcCfg->getSEIXSDNumberMetrics()-1;
+    seiGreenMetadataInfo->m_xsdSubPicIdc = 1; //Only 1 Picture is supported
+    // Maximum valid value for 16-bit integer: 65535
+    (m_pcCfg->getSEIXSDMetricTypePSNR()) ? seiGreenMetadataInfo->m_xsdMetricValuePSNR  = min(int(metrics.psnr*100),65535) :  seiGreenMetadataInfo->m_xsdMetricValuePSNR = 0;
+    (m_pcCfg->getSEIXSDMetricTypeSSIM()) ? seiGreenMetadataInfo->m_xsdMetricValueSSIM  = min(int(metrics.ssim*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueSSIM  = 0;
+    (m_pcCfg->getSEIXSDMetricTypeWPSNR()) ? seiGreenMetadataInfo->m_xsdMetricValueWPSNR  = min(int(metrics.wpsnr*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueWPSNR  = 0;
+    (m_pcCfg->getSEIXSDMetricTypeWSPSNR()) ? seiGreenMetadataInfo->m_xsdMetricValueWSPSNR  = min(int(metrics.wspsnr*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueWSPSNR  = 0;
+    
+    seiGreenMetadataInfo->m_xsdMetricTypePSNR = m_pcCfg->getSEIXSDMetricTypePSNR();
+    seiGreenMetadataInfo->m_xsdMetricTypeSSIM = m_pcCfg->getSEIXSDMetricTypeSSIM();
+    seiGreenMetadataInfo->m_xsdMetricTypeWPSNR = m_pcCfg->getSEIXSDMetricTypeWPSNR();
+    seiGreenMetadataInfo->m_xsdMetricTypeWSPSNR = m_pcCfg->getSEIXSDMetricTypeWSPSNR();
+  }
+  else if(m_pcCfg->getSEIGreenMetadataType() == 0) // Metadata for decoder-complexity metrics
+  {
+    seiGreenMetadataInfo->m_greenMetadataType                   = m_pcCfg->getSEIGreenMetadataType();
+    seiGreenMetadataInfo->m_greenMetadataGranularityType        = m_pcCfg->getSEIGreenMetadataGranularityType();
+    seiGreenMetadataInfo->m_greenMetadataExtendedRepresentation = m_pcCfg->getSEIGreenMetadataExtendedRepresentation();
+    switch (m_pcCfg->getSEIGreenMetadataPeriodType())   // Period type
+    {
+    case 0:   // 0x00 complexity metrics are applicable to a single picture
+      seiGreenMetadataInfo->m_numPictures = m_pcCfg->getSEIGreenMetadataPeriodNumPictures();
+      break;
+    case 1:   // 0x01 complexity metrics are applicable to all pictures in decoding order, up to (but not including) the picture containing the next I slice
+      //
+      break;
+    case 2:   // 0x02 complexity metrics are applicable over a specified time interval in seconds
+      seiGreenMetadataInfo->m_numPictures = m_pcCfg->getSEIGreenMetadataPeriodNumPictures();
+      break;
+    case 3:   // 0x03 complexity metrics are applicable over a specified number of pictures counted in decoding order
+      seiGreenMetadataInfo->m_numSeconds = m_pcCfg->getSEIGreenMetadataPeriodNumSeconds();
+      break;
+    default:   // 0x05-0xFF reserved
+      break;   //
+    }
+  }
+}
+#endif
+
 void SEIEncoder::initSEISphereRotation(SEISphereRotation* seiSphereRotation)
 {
   CHECK(!(m_isInitialized), "seiSphereRotation already initialized");
@@ -396,7 +444,6 @@ void SEIEncoder::initSEISampleAspectRatioInfo(SEISampleAspectRatioInfo* seiSampl
   }
 }
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
 void SEIEncoder::initSEIPhaseIndication(SEIPhaseIndication* seiPhaseIndication, int ppsId)
 {
   CHECK(!(m_isInitialized), "seiPhaseIndication already initialized");
@@ -417,7 +464,6 @@ void SEIEncoder::initSEIPhaseIndication(SEIPhaseIndication* seiPhaseIndication, 
     seiPhaseIndication->m_verPhaseDenMinus1 = m_pcCfg->getVerPhaseDenMinus1ReducedResolution();
   }
 }
-#endif
 
 //! initialize scalable nesting SEI message.
 //! Note: The SEI message structures input into this function will become part of the scalable nesting SEI and will be
@@ -489,25 +535,26 @@ void SEIEncoder::initDecodedPictureHashSEI(SEIDecodedPictureHash *decodedPicture
   decodedPictureHashSEI->singleCompFlag = (m_pcCfg->getChromaFormatIdc() == 0);
   switch (m_pcCfg->getDecodedPictureHashSEIType())
   {
-    case HASHTYPE_MD5:
-      {
-        uint32_t numChar=calcMD5(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
-        rHashString = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
-      }
-      break;
-    case HASHTYPE_CRC:
-      {
-        uint32_t numChar=calcCRC(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
-        rHashString = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
-      }
-      break;
-    case HASHTYPE_CHECKSUM:
-    default:
-      {
-        uint32_t numChar=calcChecksum(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
-        rHashString = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
-      }
-      break;
+  case HashType::MD5:
+  {
+    uint32_t numChar = calcMD5(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
+    rHashString      = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
+    break;
+  }
+  break;
+  case HashType::CRC:
+  {
+    uint32_t numChar = calcCRC(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
+    rHashString      = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
+    break;
+  }
+  case HashType::CHECKSUM:
+  default:
+  {
+    uint32_t numChar = calcChecksum(pic, decodedPictureHashSEI->m_pictureHash, bitDepths);
+    rHashString      = hashToString(decodedPictureHashSEI->m_pictureHash, numChar);
+    break;
+  }
   }
 }
 
@@ -553,7 +600,6 @@ void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIn
   }
 }
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
 void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo)
 {
   assert(m_isInitialized);
@@ -571,7 +617,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
   }
 }
-#endif
 
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned
@@ -784,7 +829,6 @@ bool SEIEncoder::initSEIAnnotatedRegions(SEIAnnotatedRegions* SEIAnnoReg, int cu
 }
 
 
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
 void SEIEncoder::initSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics *seiAltTransCharacteristics)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
@@ -792,7 +836,6 @@ void SEIEncoder::initSEIAlternativeTransferCharacteristics(SEIAlternativeTransfe
   //  Set SEI message parameters read from command line options
   seiAltTransCharacteristics->m_preferredTransferCharacteristics = m_pcCfg->getSEIPreferredTransferCharacteristics();
 }
-#endif
 void SEIEncoder::initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *seiFilmGrain)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
@@ -1112,7 +1155,7 @@ void SEIEncoder::initSEIColourTransformInfo(SEIColourTransformInfo* seiCTI)
   seiCTI->m_numberChromaLutMinus1 = m_pcCfg->getCtiSEINbChromaLut() - 1;
   seiCTI->m_chromaOffset = m_pcCfg->getCtiSEIChromaOffset();
 
-  seiCTI->m_bitdepth = m_pcCfg->getBitDepth(CHANNEL_TYPE_LUMA);
+  seiCTI->m_bitdepth = m_pcCfg->getBitDepth(ChannelType::LUMA);
 
   for (int i = 0; i < MAX_NUM_COMPONENT; i++) {
     seiCTI->m_lut[i] = m_pcCfg->getCtiSEILut(i);
@@ -1197,89 +1240,143 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SP
   }
 }
 
+#if JVET_T0056_SEI_MANIFEST
+void SEIEncoder::initSEISEIManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessages)
+{
+  assert(m_isInitialized);
+  assert(seiSeiManifest != NULL);
+  seiSeiManifest->m_manifestNumSeiMsgTypes = 0;
+  for (auto &it: seiMessages)
+  {
+    seiSeiManifest->m_manifestNumSeiMsgTypes += 1;
+    auto tempPayloadType = it->payloadType();
+    seiSeiManifest->m_manifestSeiPayloadType.push_back(tempPayloadType);
+    auto description = seiSeiManifest->getSEIMessageDescription(tempPayloadType);
+    seiSeiManifest->m_manifestSeiDescription.push_back(description);
+  }
+  CHECK(seiSeiManifest->m_manifestNumSeiMsgTypes == 0, "No SEI messages available");
+}
+#endif
+
+#if JVET_T0056_SEI_PREFIX_INDICATION
+void SEIEncoder::initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei)
+{
+  assert(m_isInitialized);
+  assert(seiSeiPrefixIndications != NULL);
+  seiSeiPrefixIndications->m_prefixSeiPayloadType = sei->payloadType(); 
+  seiSeiPrefixIndications->m_numSeiPrefixIndicationsMinus1 = seiSeiPrefixIndications->getNumsOfSeiPrefixIndications(sei) - 1; 
+  seiSeiPrefixIndications->m_payload = sei;
+}
+#endif   
+
 void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
   CHECK(!(sei != nullptr), "Unspecified error");
   sei->m_id = m_pcCfg->getNNPostFilterSEICharacteristicsId(filterIdx);
   sei->m_modeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsModeIdc(filterIdx);
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
+#if JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
+  if (sei->m_modeIdc == POST_FILTER_MODE::URI)
+  {
+    sei->m_uriTag = m_pcCfg->getNNPostFilterSEICharacteristicsUriTag(filterIdx);
+    sei->m_uri    = m_pcCfg->getNNPostFilterSEICharacteristicsUri(filterIdx);
+  }
+#endif
   sei->m_purposeAndFormattingFlag = m_pcCfg->getNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(filterIdx);
   if (sei->m_purposeAndFormattingFlag)
-#else
-  if (sei->m_modeIdc == 1)
-#endif
   {
     sei->m_purpose = m_pcCfg->getNNPostFilterSEICharacteristicsPurpose(filterIdx);
 
     if(sei->m_purpose == 2 || sei->m_purpose == 4)
     {
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
       sei->m_outSubCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubCFlag(filterIdx);
-#else
-      sei->m_outSubWidthCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubWidthCFlag(filterIdx);
-      sei->m_outSubHeightCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubHeightCFlag(filterIdx);
-#endif
     }
     if(sei->m_purpose == 3 || sei->m_purpose == 4)
     {
       sei->m_picWidthInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(filterIdx);
       sei->m_picHeightInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightInLumaSamples(filterIdx);
     }
+#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
+    if (sei->m_purpose == NNPC_PurposeType::FRANE_RATE_UPSAMPLING)
+    {
+      sei->m_numberInputDecodedPicturesMinus2 = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2(filterIdx);
+      sei->m_numberInterpolatedPictures = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInterpolatedPictures(filterIdx);
+    }
+#endif
 
     sei->m_componentLastFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComponentLastFlag(filterIdx);
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    sei->m_inpFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpFormatIdc(filterIdx);
+    if (sei->m_inpFormatIdc == 1)
+    {
+      sei->m_outTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(filterIdx);
+    }
+#else
     sei->m_inpSampleIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpSampleIdc(filterIdx);
 
     if(sei->m_inpSampleIdc == 4)
     {
       sei->m_inpTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(filterIdx);
     }
+#endif
 
     sei->m_inpOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpOrderIdc(filterIdx);
+#if !M60678_BALLOT_COMMENTS_OF_FI_03
     sei->m_outSampleIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutSampleIdc(filterIdx);
 
     if(sei->m_outSampleIdc == 4)
     {
       sei->m_outTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(filterIdx);
     }
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
-    sei->m_AuxInpIdc = m_pcCfg->getNNPostFilterSEICharacteristicsAuxInpIdc(filterIdx);
-    sei->m_SepColDescriptionFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSepColDescriptionFlag(filterIdx);
-    if(sei->m_SepColDescriptionFlag){
-      sei->m_ColPrimaries = m_pcCfg->getNNPostFilterSEICharacteristicsColPrimaries(filterIdx);
-      sei->m_TransCharacteristics = m_pcCfg->getNNPostFilterSEICharacteristicsTransCharacteristics(filterIdx);
-      sei->m_MatrixCoeffs = m_pcCfg->getNNPostFilterSEICharacteristicsMatrixCoeffs(filterIdx);
+#endif
+    sei->m_auxInpIdc             = m_pcCfg->getNNPostFilterSEICharacteristicsAuxInpIdc(filterIdx);
+    sei->m_sepColDescriptionFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSepColDescriptionFlag(filterIdx);
+    if (sei->m_sepColDescriptionFlag)
+    {
+      sei->m_colPrimaries         = m_pcCfg->getNNPostFilterSEICharacteristicsColPrimaries(filterIdx);
+      sei->m_transCharacteristics = m_pcCfg->getNNPostFilterSEICharacteristicsTransCharacteristics(filterIdx);
+      sei->m_matrixCoeffs         = m_pcCfg->getNNPostFilterSEICharacteristicsMatrixCoeffs(filterIdx);
+    }
+
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    sei->m_outFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutFormatIdc(filterIdx);
+    if (sei->m_outFormatIdc == 1)
+    {
+      sei->m_outTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(filterIdx);
     }
 #endif
-
     sei->m_outOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutOrderIdc(filterIdx);
     sei->m_constantPatchSizeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(filterIdx);
     sei->m_patchWidthMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchWidthMinus1(filterIdx);
     sei->m_patchHeightMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchHeightMinus1(filterIdx);
     sei->m_overlap = m_pcCfg->getNNPostFilterSEICharacteristicsOverlap(filterIdx);
     sei->m_paddingType = m_pcCfg->getNNPostFilterSEICharacteristicsPaddingType(filterIdx);
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
     sei->m_lumaPadding = m_pcCfg->getNNPostFilterSEICharacteristicsLumaPadding(filterIdx);
     sei->m_cbPadding = m_pcCfg->getNNPostFilterSEICharacteristicsCbPadding(filterIdx);
     sei->m_crPadding = m_pcCfg->getNNPostFilterSEICharacteristicsCrPadding(filterIdx);
-#endif
 
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+    sei->m_complexityInfoPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComplexityInfoPresentFlag(filterIdx);
+    if (sei->m_complexityInfoPresentFlag)
+    {
+#else
     sei->m_complexityIdc = m_pcCfg->getNNPostFilterSEICharacteristicsComplexityIdc(filterIdx);
     if(sei->m_complexityIdc > 0)
     {
       if(sei->m_complexityIdc == 1)
       {
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
-        sei->m_parameterTypeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsParameterTypeIdc(filterIdx);
-#else
-        sei->m_parameterTypeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsParameterTypeFlag(filterIdx);
 #endif
+        sei->m_parameterTypeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsParameterTypeIdc(filterIdx);
         sei->m_log2ParameterBitLengthMinus3 = m_pcCfg->getNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3(filterIdx);
         sei->m_numParametersIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumParametersIdc(filterIdx);
         sei->m_numKmacOperationsIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(filterIdx);
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+        sei->m_totalKilobyteSize = m_pcCfg->getNNPostFilterSEICharacteristicsTotalKilobyteSize(filterIdx);
+#else
       }
+#endif
     }
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+#if !JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
     sei->m_uriTag = m_pcCfg->getNNPostFilterSEICharacteristicsUriTag(filterIdx);
     sei->m_uri = m_pcCfg->getNNPostFilterSEICharacteristicsUri(filterIdx);
 #endif

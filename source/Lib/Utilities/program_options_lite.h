@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -264,15 +264,15 @@ namespace df
         std::string cNameBuffer;
         std::string cDescriptionBuffer;
 
-        for (unsigned int uiK = 0; uiK < uiMaxNum; uiK++)
+        for (unsigned int k = 0; k < uiMaxNum; k++)
         {
           // it needs to be reset when extra digit is added, e.g. number 10 and above
           cNameBuffer.resize(name.size() + 10);
           cDescriptionBuffer.resize(desc.size() + 10);
 
           // isn't there are sprintf function for string??
-          sprintf((char*)cNameBuffer.c_str(), name.c_str(), uiK, uiK);
-          sprintf((char*)cDescriptionBuffer.c_str(), desc.c_str(), uiK, uiK);
+          snprintf((char *) cNameBuffer.c_str(), cNameBuffer.size(), name.c_str(), k, k);
+          snprintf((char *) cDescriptionBuffer.c_str(), cDescriptionBuffer.size(), desc.c_str(), k, k);
 
           size_t pos = cNameBuffer.find_first_of('\0');
           if (pos != std::string::npos)
@@ -280,7 +280,7 @@ namespace df
             cNameBuffer.resize(pos);
           }
 
-          parent.addOption(new Option<T>(cNameBuffer, (storage[uiK]), default_val, cDescriptionBuffer));
+          parent.addOption(new Option<T>(cNameBuffer, (storage[k]), default_val, cDescriptionBuffer));
         }
 
         return *this;
@@ -293,21 +293,21 @@ namespace df
         std::string cNameBuffer;
         std::string cDescriptionBuffer;
 
-        for (unsigned int uiK = 0; uiK < uiMaxNum; uiK++)
+        for (unsigned int k = 0; k < uiMaxNum; k++)
         {
           // it needs to be reset when extra digit is added, e.g. number 10 and above
           cNameBuffer.resize(name.size() + 10);
           cDescriptionBuffer.resize(desc.size() + 10);
 
           // isn't there are sprintf function for string??
-          sprintf((char*)cNameBuffer.c_str(), name.c_str(), uiK, uiK);
-          sprintf((char*)cDescriptionBuffer.c_str(), desc.c_str(), uiK, uiK);
+          snprintf((char *) cNameBuffer.c_str(), cNameBuffer.size(), name.c_str(), k, k);
+          snprintf((char *) cDescriptionBuffer.c_str(), cDescriptionBuffer.size(), desc.c_str(), k, k);
 
           size_t pos = cNameBuffer.find_first_of('\0');
           if (pos != std::string::npos)
             cNameBuffer.resize(pos);
 
-          parent.addOption(new Option<T>(cNameBuffer, *(storage[uiK]), default_val, cDescriptionBuffer));
+          parent.addOption(new Option<T>(cNameBuffer, *(storage[k]), default_val, cDescriptionBuffer));
         }
 
         return *this;

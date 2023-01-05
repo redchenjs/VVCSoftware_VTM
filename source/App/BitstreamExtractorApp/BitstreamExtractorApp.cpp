@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -144,7 +144,7 @@ bool BitstreamExtractorApp::xCheckSEIFiller(SEIMessages SEIs, int targetSubPicId
 {
   for (auto sei : SEIs)
   {
-    if (sei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO)
+    if (sei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
     {
       SEISubpicureLevelInfo *seiSLI = (SEISubpicureLevelInfo *)sei;
       if (!seiSLI->m_cbrConstraintFlag)
@@ -155,7 +155,7 @@ bool BitstreamExtractorApp::xCheckSEIFiller(SEIMessages SEIs, int targetSubPicId
   }
   for (auto sei : SEIs)
   {
-    if (sei->payloadType() == SEI::FILLER_PAYLOAD)
+    if (sei->payloadType() == SEI::PayloadType::FILLER_PAYLOAD)
     {
       return (rmAllFillerInSubpicExt ? false : lastSliceWritten);
     }
@@ -189,7 +189,7 @@ void BitstreamExtractorApp::xRewriteSPS (SPS &targetSPS, const SPS &sourceSPS, S
   conf.setWindowBottomOffset(subpicConfWinBottomOffset);
 
   if (sourceSPS.getVirtualBoundariesEnabledFlag() && sourceSPS.getVirtualBoundariesPresentFlag())
-  { 
+  {
     targetSPS.setNumVerVirtualBoundaries(0);
     for (int i = 0; i < sourceSPS.getNumVerVirtualBoundaries() ; i ++)
     {
@@ -387,7 +387,7 @@ void BitstreamExtractorApp::xWriteVPS(VPS *vps, std::ostream& out, int layerId, 
   CHECK( naluOut.m_temporalId, "The value of TemporalId of VPS NAL units shall be equal to 0" );
 
   // write the VPS to the newly created NAL unit buffer
-  m_hlSyntaxWriter.setBitstream( &naluOut.m_Bitstream );
+  m_hlSyntaxWriter.setBitstream(&naluOut.m_bitstream);
   m_hlSyntaxWriter.codeVPS( vps );
 
   NALUnitEBSP naluWithHeader(naluOut);
@@ -401,7 +401,7 @@ void BitstreamExtractorApp::xWriteSPS(SPS *sps, std::ostream& out, int layerId, 
   CHECK( naluOut.m_temporalId, "The value of TemporalId of SPS NAL units shall be equal to 0" );
 
   // write the SPS to the newly created NAL unit buffer
-  m_hlSyntaxWriter.setBitstream( &naluOut.m_Bitstream );
+  m_hlSyntaxWriter.setBitstream(&naluOut.m_bitstream);
   m_hlSyntaxWriter.codeSPS( sps );
 
   NALUnitEBSP naluWithHeader(naluOut);
@@ -414,7 +414,7 @@ void BitstreamExtractorApp::xWritePPS(PPS *pps, std::ostream& out, int layerId, 
   OutputNALUnit naluOut (NAL_UNIT_PPS, layerId, temporalId);
 
   // write the PPS to the newly created NAL unit buffer
-  m_hlSyntaxWriter.setBitstream( &naluOut.m_Bitstream );
+  m_hlSyntaxWriter.setBitstream(&naluOut.m_bitstream);
   m_hlSyntaxWriter.codePPS( pps );
 
   NALUnitEBSP naluWithHeader(naluOut);
@@ -437,7 +437,7 @@ bool BitstreamExtractorApp::xCheckNumSubLayers(InputNALUnit &nalu, VPS *vps)
 
 bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit& nalu, std::ostream& out, int subpicId, VPS *vps)
 {
-  SEIMessages scalableNestingSEIs = getSeisByType(SEIs, SEI::SCALABLE_NESTING);
+  SEIMessages scalableNestingSEIs = getSeisByType(SEIs, SEI::PayloadType::SCALABLE_NESTING);
   if (scalableNestingSEIs.size())
   {
     CHECK ( scalableNestingSEIs.size() > 1, "There shall be only one Scalable Nesting SEI in one NAL unit" );
@@ -457,7 +457,7 @@ bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit
       {
         // applies to target subpicture -> extract
         OutputNALUnit outNalu( nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId );
-        m_seiWriter.writeSEImessages(outNalu.m_Bitstream, sei->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
+        m_seiWriter.writeSEImessages(outNalu.m_bitstream, sei->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
         NALUnitEBSP naluWithHeader(outNalu);
         writeAnnexBNalUnit(out, naluWithHeader, true);
         return false;
@@ -470,7 +470,7 @@ bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit
     }
   }
   // remove not nested decoded picture hash SEIs
-  SEIMessages hashSEI = getSeisByType(SEIs, SEI::DECODED_PICTURE_HASH);
+  SEIMessages hashSEI = getSeisByType(SEIs, SEI::PayloadType::DECODED_PICTURE_HASH);
   if (hashSEI.size() > 0)
   {
     return false;
@@ -779,7 +779,7 @@ uint32_t BitstreamExtractorApp::decode()
         m_hlSynaxReader.parseAPS( aps );
         msg (VERBOSE, "APS Info: APS ID = %d Type = %d Layer = %d\n", aps->getAPSId(), aps->getAPSType(), nalu.m_nuhLayerId);
         int apsId = aps->getAPSId();
-        int apsType = aps->getAPSType();
+        ApsType apsType = aps->getAPSType();
         // note: storeAPS may invalidate the aps pointer!
         m_parameterSetManager.storeAPS(aps, nalu.getBitstream().getFifo());
         // get APS back
@@ -801,13 +801,17 @@ uint32_t BitstreamExtractorApp::decode()
           {
             // remove from outBitstream all NAL units that have nuh_layer_id not included in the list LayerIdInOls[ targetOlsIdx ] and ( are SEI NAL units containing (scalable-nested SEI messages) or (non-scalable-nested SEI messages with PayloadType not equal to 0, 1, 130, or 203) )
             bool isNonNestedHRDSEI = false;
-            if (sei->payloadType() == SEI::BUFFERING_PERIOD || sei->payloadType() == SEI::PICTURE_TIMING || sei->payloadType() == SEI::DECODING_UNIT_INFO || sei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO)
+            if (sei->payloadType() == SEI::PayloadType::BUFFERING_PERIOD
+                || sei->payloadType() == SEI::PayloadType::PICTURE_TIMING
+                || sei->payloadType() == SEI::PayloadType::DECODING_UNIT_INFO
+                || sei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
             {
               isNonNestedHRDSEI = true;
             }
-            writeInpuNalUnitToStream &= isIncludedInTargetOls || (sei->payloadType() != SEI::SCALABLE_NESTING && isNonNestedHRDSEI);
+            writeInpuNalUnitToStream &=
+              isIncludedInTargetOls || (sei->payloadType() != SEI::PayloadType::SCALABLE_NESTING && isNonNestedHRDSEI);
             // remove unqualified scalable nesting SEI
-            if (sei->payloadType() == SEI::SCALABLE_NESTING)
+            if (sei->payloadType() == SEI::PayloadType::SCALABLE_NESTING)
             {
               SEIScalableNesting *seiNesting = (SEIScalableNesting *)sei;
               if (seiNesting->m_snOlsFlag == 1)
@@ -829,7 +833,8 @@ uint32_t BitstreamExtractorApp::decode()
                 if (seiNesting->m_snOlsFlag || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
                 {
                   OutputNALUnit outNalu(nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId);
-                  m_seiWriter.writeSEImessages(outNalu.m_Bitstream, seiNesting->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
+                  m_seiWriter.writeSEImessages(outNalu.m_bitstream, seiNesting->m_nestedSEIs, m_hrd, false,
+                                               nalu.m_temporalId);
                   NALUnitEBSP naluWithHeader(outNalu);
                   writeAnnexBNalUnit(bitstreamFileOut, naluWithHeader, true);
                   writeInpuNalUnitToStream = false;
@@ -837,7 +842,10 @@ uint32_t BitstreamExtractorApp::decode()
               }
             }
             // remove unqualified timing related SEI
-            if (sei->payloadType() == SEI::BUFFERING_PERIOD || (m_removeTimingSEI && sei->payloadType() == SEI::PICTURE_TIMING) || sei->payloadType() == SEI::DECODING_UNIT_INFO || sei->payloadType() == SEI::SUBPICTURE_LEVEL_INFO)
+            if (sei->payloadType() == SEI::PayloadType::BUFFERING_PERIOD
+                || (m_removeTimingSEI && sei->payloadType() == SEI::PayloadType::PICTURE_TIMING)
+                || sei->payloadType() == SEI::PayloadType::DECODING_UNIT_INFO
+                || sei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
             {
               writeInpuNalUnitToStream &= targetOlsIncludeAllVclLayers;
             }
@@ -894,7 +902,7 @@ uint32_t BitstreamExtractorApp::decode()
 
         // create output NAL unit
         OutputNALUnit out (nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId);
-        out.m_Bitstream.getFIFO() = nalu.getBitstream().getFifo();
+        out.m_bitstream.getFifo() = nalu.getBitstream().getFifo();
         // write with start code emulation prevention
         writeNaluContent (bitstreamFileOut, out);
       }

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,7 @@ struct TrQuantParams
 class QpParam
 {
 public:
-  int Qps[2];
+  int qps[2];
   int pers[2];
   int rems[2];
 
@@ -83,7 +83,7 @@ public:
 
   QpParam(const TransformUnit& tu, const ComponentID &compID, const int QP = -MAX_INT, const bool allowACTQpoffset = true);
 
-  int Qp ( const bool ts ) const { return Qps [ts?1:0]; }
+  int Qp(const bool ts) const { return qps[ts ? 1 : 0]; }
   int per( const bool ts ) const { return pers[ts?1:0]; }
   int rem( const bool ts ) const { return rems[ts?1:0]; }
 

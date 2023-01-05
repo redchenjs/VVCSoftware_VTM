@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -204,7 +204,7 @@ struct AlfCovariance
   double calculateError( const int *clip ) const;
   double calculateError( const int *clip, const double *coeff ) const { return calculateError(clip, coeff, numCoeff); }
   double calculateError( const int *clip, const double *coeff, const int numCoeff ) const;
-  double calcErrorForCoeffs( const int *clip, const int *coeff, const int numCoeff, const int bitDepth ) const;
+  double calcErrorForCoeffs(const int *clip, const int *coeff, const int numCoeff, const int fractionalBits) const;
   double calcErrorForCcAlfCoeffs(const int16_t *coeff, const int numCoeff, const int bitDepth) const;
 
   void getClipMax(const AlfFilterShape& alfShape, int *clip_max) const;
@@ -233,9 +233,8 @@ private:
 
   const EncCfg*          m_encCfg;
   AlfCovariance***       m_alfCovariance[MAX_NUM_COMPONENT];          // [compIdx][shapeIdx][ctbAddr][classIdx]
-  AlfCovariance**        m_alfCovarianceFrame[MAX_NUM_CHANNEL_TYPE];   // [CHANNEL][shapeIdx][lumaClassIdx/chromaAltIdx]
+  EnumArray<AlfCovariance **, ChannelType> m_alfCovarianceFrame;   // [CHANNEL][shapeIdx][lumaClassIdx/chromaAltIdx]
   uint8_t*               m_ctuEnableFlagTmp[MAX_NUM_COMPONENT];
-  uint8_t*               m_ctuEnableFlagTmp2[MAX_NUM_COMPONENT];
   uint8_t*               m_ctuAlternativeTmp[MAX_NUM_COMPONENT];
   AlfCovariance***       m_alfCovarianceCcAlf[2];           // [compIdx-1][shapeIdx][filterIdx][ctbAddr]
   AlfCovariance**        m_alfCovarianceFrameCcAlf[2];      // [compIdx-1][shapeIdx][filterIdx]
@@ -246,14 +245,16 @@ private:
   AlfCovariance          m_alfCovarianceMerged[ALF_NUM_OF_FILTER_TYPES][MAX_NUM_ALF_CLASSES + 2];
   int                    m_alfClipMerged[ALF_NUM_OF_FILTER_TYPES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF];
   CABACWriter*           m_CABACEstimator;
-  CtxCache*              m_CtxCache;
+  CtxPool               *m_ctxPool;
   double                 m_lambda[MAX_NUM_COMPONENT];
 
   int**                  m_filterCoeffSet; // [lumaClassIdx/chromaAltIdx][coeffIdx]
   int**                  m_filterClippSet; // [lumaClassIdx/chromaAltIdx][coeffIdx]
   int**                  m_diffFilterCoeff;
   short                  m_filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES];
-  unsigned               m_bitsNewFilter[MAX_NUM_CHANNEL_TYPE];
+
+  EnumArray<unsigned, ChannelType> m_bitsNewFilter;
+
   int                    m_apsIdStart;
   double                 *m_ctbDistortionFixedFilter;
   double                 *m_ctbDistortionUnfilter[MAX_NUM_COMPONENT];
@@ -283,7 +284,7 @@ public:
   EncAdaptiveLoopFilter();
   virtual ~EncAdaptiveLoopFilter() {}
   void  initDistortion();
-  std::vector<int> getAvaiApsIdsLuma(CodingStructure& cs, int &newApsId);
+  int   getAvailableApsIdsLuma(CodingStructure &cs);
   void  alfEncoderCtb(CodingStructure& cs, AlfParam& alfParamNewFilters
 #if ENABLE_QPA
     , const double lambdaChromaWeight
@@ -297,8 +298,10 @@ public:
     , Picture* pcPic, uint32_t numSliceSegments
   );
   int getNewCcAlfApsId(CodingStructure &cs, int cIdx);
-  void initCABACEstimator( CABACEncoder* cabacEncoder, CtxCache* ctxCache, Slice* pcSlice, ParameterSetMap<APS>* apsMap );
-  void create( const EncCfg* encCfg, const int picWidth, const int picHeight, const ChromaFormat chromaFormatIDC, const int maxCUWidth, const int maxCUHeight, const int maxCUDepth, const int inputBitDepth[MAX_NUM_CHANNEL_TYPE], const int internalBitDepth[MAX_NUM_CHANNEL_TYPE] );
+  void initCABACEstimator(CABACEncoder *cabacEncoder, CtxPool *ctxPool, Slice *pcSlice, ParameterSetMap<APS> *apsMap);
+  void create(const EncCfg *encCfg, const int picWidth, const int picHeight, const ChromaFormat chromaFormatIDC,
+              const int maxCUWidth, const int maxCUHeight, const int maxCUDepth, const BitDepths &inputBitDepth,
+              const BitDepths &internalBitDepth);
   void destroy();
   void setApsIdStart( int i) { m_apsIdStart = i; }
 
@@ -319,31 +322,33 @@ private:
   void   getFrameStat( AlfCovariance* frameCov, AlfCovariance** ctbCov, uint8_t* ctbEnableFlags, uint8_t* ctbAltIdx, const int numClasses, int altIdx );
   void   deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnitBuf& recYuv, CodingStructure& cs );
   void   getBlkStats(AlfCovariance *alfCovariace, const AlfFilterShape &shape, AlfClassifier **classifier, Pel *org,
-                     const int orgStride, const Pel *orgLuma, const ptrdiff_t orgLumaStride, Pel *rec,
-                     const int recStride, const CompArea &areaDst, const CompArea &area, const ChannelType channel,
+                     const ptrdiff_t orgStride, const Pel *orgLuma, const ptrdiff_t orgLumaStride, Pel *rec,
+                     const ptrdiff_t recStride, const CompArea &areaDst, const CompArea &area, const ChannelType channel,
                      int vbCTUHeight, int vbPos);
-  void   calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MAX_ALF_NUM_CLIP_VALS], const Pel *rec, const int stride,
-                        const AlfFilterShape &shape, const int transposeIdx, const ChannelType channel, int vbDistance);
+  void calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MAX_ALF_NUM_CLIP_VALS], const Pel *rec, const ptrdiff_t stride,
+                      const AlfFilterShape &shape, const int transposeIdx, const ChannelType channel, int vbDistance);
   void   deriveStatsForCcAlfFiltering(const PelUnitBuf &orgYuv, const PelUnitBuf &recYuv, const int compIdx,
                                       const int maskStride, const uint8_t filterIdc, CodingStructure &cs);
   void   getBlkStatsCcAlf(AlfCovariance &alfCovariance, const AlfFilterShape &shape, const PelUnitBuf &orgYuv,
                           const PelUnitBuf &recYuv, const UnitArea &areaDst, const UnitArea &area,
                           const ComponentID compID, const int yPos);
-  void   calcCovarianceCcAlf(Pel ELocal[MAX_NUM_CC_ALF_CHROMA_COEFF][1], const Pel* rec, const int stride, const AlfFilterShape& shape, int vbDistance);
+  void   calcCovarianceCcAlf(Pel ELocal[MAX_NUM_CC_ALF_CHROMA_COEFF][1], const Pel *rec, const ptrdiff_t stride,
+                             const AlfFilterShape &shape, int vbDistance);
   void   mergeClasses(const AlfFilterShape& alfShape, AlfCovariance* cov, AlfCovariance* covMerged, int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], const int numClasses, short filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES]);
 
   double getFilterCoeffAndCost(CodingStructure &cs, double distUnfilter, ChannelType channel, bool bReCollectStat,
                                int shapeIdx, int &coeffBits, bool onlyFilterCost = false);
   double deriveFilterCoeffs(AlfCovariance* cov, AlfCovariance* covMerged, int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], AlfFilterShape& alfShape, short* filterIndices, int numFilters, double errorTabForce0Coeff[MAX_NUM_ALF_CLASSES][2], AlfParam& alfParam);
   int    deriveFilterCoefficientsPredictionMode( AlfFilterShape& alfShape, int **filterSet, int** filterCoeffDiff, const int numFilters );
-  double deriveCoeffQuant( int *filterClipp, int *filterCoeffQuant, const AlfCovariance& cov, const AlfFilterShape& shape, const int bitDepth, const bool optimizeClip );
+  double deriveCoeffQuant(int *filterClipp, int *filterCoeffQuant, const AlfCovariance &cov,
+                          const AlfFilterShape &shape, const int fractionalBits, const bool optimizeClip);
   double deriveCtbAlfEnableFlags(CodingStructure &cs, const int shapeIdx, ChannelType channel,
 #if ENABLE_QPA
                                  const double chromaWeight,
 #endif
                                  const int numClasses, const int numCoeff, double &distUnfilter);
   void   roundFiltCoeff( int *filterCoeffQuant, double *filterCoeff, const int numCoeff, const int factor );
-  void   roundFiltCoeffCCALF(int16_t *filterCoeffQuant, double *filterCoeff, const int numCoeff, const int factor);
+  void   roundFiltCoeffCCALF(int16_t *filterCoeffQuant, double *filterCoeff, const int numCoeff, int factor);
 
   double getDistCoeffForce0( bool* codedVarBins, double errorForce0CoeffTab[MAX_NUM_ALF_CLASSES][2], int* bitsVarBin, int zeroBitsVarBin, const int numFilters);
   int    lengthUvlc( int uiCode );
@@ -383,8 +388,13 @@ private:
   void deriveCcAlfFilter( CodingStructure& cs, ComponentID compID, const PelUnitBuf& orgYuv, const PelUnitBuf& tempDecYuvBuf, const PelUnitBuf& dstYuv );
   std::vector<int> getAvailableCcAlfApsIds(CodingStructure& cs, ComponentID compID);
   void xSetupCcAlfAPS( CodingStructure& cs );
-  void countLumaSwingGreaterThanThreshold(const Pel* luma, int lumaStride, int height, int width, int log2BlockWidth, int log2BlockHeight, uint64_t* lumaSwingGreaterThanThresholdCount, int lumaCountStride);
-  void countChromaSampleValueNearMidPoint(const Pel* chroma, int chromaStride, int height, int width, int log2BlockWidth, int log2BlockHeight, uint64_t* chromaSampleCountNearMidPoint, int chromaSampleCountNearMidPointStride);
+  void             countLumaSwingGreaterThanThreshold(const Pel *luma, ptrdiff_t lumaStride, int height, int width,
+                                                      int log2BlockWidth, int log2BlockHeight,
+                                                      uint64_t *lumaSwingGreaterThanThresholdCount, int lumaCountStride);
+  void             countChromaSampleValueNearMidPoint(const Pel *chroma, ptrdiff_t chromaStride, int height, int width,
+                                                      int log2BlockWidth, int log2BlockHeight,
+                                                      uint64_t *chromaSampleCountNearMidPoint,
+                                                      int       chromaSampleCountNearMidPointStride);
   void getFrameStatsCcalf(ComponentID compIdx, int filterIdc);
   void initDistortionCcalf();
 };

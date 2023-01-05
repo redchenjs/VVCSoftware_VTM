@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,46 +44,23 @@
 static constexpr double WEIGHT_PRED_SAD_RELATIVE_TO_NON_WEIGHT_PRED_SAD=0.99; // NOTE: U0040 used 0.95
 
 //! calculate SAD values for both WP version and non-WP version.
-static
-int64_t xCalcSADvalueWP(const int   bitDepth,
-                      const Pel  *pOrgPel,
-                      const Pel  *pRefPel,
-                      const int   width,
-                      const int   height,
-                      const int   orgStride,
-                      const int   refStride,
-                      const int   log2Denom,
-                      const int   weight,
-                      const int   offset,
-                      const bool  useHighPrecision);
+static int64_t xCalcSADvalueWP(const int bitDepth, const Pel *pOrgPel, const Pel *pRefPel, const int width,
+                               const int height, const ptrdiff_t orgStride, const ptrdiff_t refStride,
+                               const int log2Denom, const int weight, const int offset, const bool useHighPrecision);
 
 //! calculate SAD values for both WP version and non-WP version.
-static
-int64_t xCalcSADvalueWPOptionalClip(const int   bitDepth,
-                                  const Pel  *pOrgPel,
-                                  const Pel  *pRefPel,
-                                  const int   width,
-                                  const int   height,
-                                  const int   orgStride,
-                                  const int   refStride,
-                                  const int   log2Denom,
-                                  const int   weight,
-                                  const int   offset,
-                                  const bool  useHighPrecision,
-                                  const bool  clipped);
+static int64_t xCalcSADvalueWPOptionalClip(const int bitDepth, const Pel *pOrgPel, const Pel *pRefPel, const int width,
+                                           const int height, const ptrdiff_t orgStride, const ptrdiff_t refStride,
+                                           const int log2Denom, const int weight, const int offset,
+                                           const bool useHighPrecision, const bool clipped);
 
 // -----------------------------------------------------------------------------
 // Helper functions
 
 
 //! calculate Histogram for array of pixels
-static
-void xCalcHistogram(const Pel  *pPel,
-                    std::vector<int> &histogram,
-                    const int   width,
-                    const int   height,
-                    const int   stride,
-                    const int   maxPel)
+static void xCalcHistogram(const Pel *pPel, std::vector<int> &histogram, const int width, const int height,
+                           const ptrdiff_t stride, const int maxPel)
 {
   histogram.clear();
   histogram.resize(maxPel);
@@ -253,7 +230,7 @@ void WeightPredAnalysis::xCalcACDCParamSlice(Slice *const slice)
 
     // calculate DC/AC value for channel
 
-    const int stride = compBuf.stride;
+    const ptrdiff_t stride = compBuf.stride;
     const int width  = compBuf.width;
     const int height = compBuf.height;
 
@@ -288,8 +265,8 @@ void WeightPredAnalysis::xCalcACDCParamSlice(Slice *const slice)
     }
 
     const int fixedBitShift = (slice->getSPS()->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag())?RExt__PREDICTION_WEIGHTING_ANALYSIS_DC_PRECISION:0;
-    weightACDCParam[compID].iDC = (((orgDC<<fixedBitShift)+(sample>>1)) / sample);
-    weightACDCParam[compID].iAC = orgAC;
+    weightACDCParam[compID].dc = (((orgDC << fixedBitShift) + (sample >> 1)) / sample);
+    weightACDCParam[compID].ac = orgAC;
   }
 
   slice->setWpAcDcParam(weightACDCParam);
@@ -423,11 +400,11 @@ bool WeightPredAnalysis::xUpdatingWPParameters(Slice *const slice, const int log
         const int         realOffset    = ((int)1<<(realLog2Denom-1));
 
         // current frame
-        const int64_t currDC = currWeightACDCParam[comp].iDC;
-        const int64_t currAC = currWeightACDCParam[comp].iAC;
+        const int64_t currDC = currWeightACDCParam[comp].dc;
+        const int64_t currAC = currWeightACDCParam[comp].ac;
         // reference frame
-        const int64_t refDC  = refWeightACDCParam[comp].iDC;
-        const int64_t refAC  = refWeightACDCParam[comp].iAC;
+        const int64_t refDC = refWeightACDCParam[comp].dc;
+        const int64_t refAC = refWeightACDCParam[comp].ac;
 
         // calculating codedWeight and codedOffset params
         const double weightUnquantized =
@@ -490,10 +467,11 @@ bool WeightPredAnalysis::xSelectWPHistExtClip(Slice *const slice, const int log2
       {
         const ComponentID  compID     = ComponentID(comp);
         const Pel         *pRef       = slice->getRefPic(eRefPicList, refIdxTemp)->getRecoBuf().get(compID).buf;
-        const int          refStride  = slice->getRefPic(eRefPicList, refIdxTemp)->getRecoBuf().get(compID).stride;;
+        const ptrdiff_t    refStride  = slice->getRefPic(eRefPicList, refIdxTemp)->getRecoBuf().get(compID).stride;
+        ;
         const CPelBuf      compBuf    = pPic.get( compID );
         const Pel         *pOrg       = compBuf.buf;
-        const int          orgStride  = compBuf.stride;
+        const ptrdiff_t    orgStride  = compBuf.stride;
         const int          width      = compBuf.width;
         const int          height     = compBuf.height;
         const int          bitDepth   = slice->getSPS()->getBitDepth(toChannelType(compID));
@@ -654,9 +632,9 @@ bool WeightPredAnalysis::xSelectWP(Slice *const slice, const int log2Denom)
         const ComponentID  compID     = ComponentID(comp);
         const CPelBuf      compBuf    = pPic.get( compID );
         const Pel         *pRef       = slice->getRefPic(eRefPicList, refIdxTemp)->getRecoBuf().get( compID ).buf;
-        const int          refStride  = slice->getRefPic(eRefPicList, refIdxTemp)->getRecoBuf().get( compID ).stride;
+        const ptrdiff_t    refStride  = slice->getRefPic(eRefPicList, refIdxTemp)->getRecoBuf().get(compID).stride;
         const Pel         *pOrg       = compBuf.buf;
-        const int          orgStride  = compBuf.stride;
+        const ptrdiff_t    orgStride  = compBuf.stride;
         const int          width      = compBuf.width;
         const int          height     = compBuf.height;
         const int          bitDepth   = slice->getSPS()->getBitDepth(toChannelType(compID));
@@ -690,18 +668,9 @@ bool WeightPredAnalysis::xSelectWP(Slice *const slice, const int log2Denom)
 
 // Alternatively, a SSE-based measure could be used instead.
 // The respective function has been removed as it currently redundant.
-static
-int64_t xCalcSADvalueWP(const int   bitDepth,
-                      const Pel  *pOrgPel,
-                      const Pel  *pRefPel,
-                      const int   width,
-                      const int   height,
-                      const int   orgStride,
-                      const int   refStride,
-                      const int   log2Denom,
-                      const int   weight,
-                      const int   offset,
-                      const bool  useHighPrecision)
+static int64_t xCalcSADvalueWP(const int bitDepth, const Pel *pOrgPel, const Pel *pRefPel, const int width,
+                               const int height, const ptrdiff_t orgStride, const ptrdiff_t refStride,
+                               const int log2Denom, const int weight, const int offset, const bool useHighPrecision)
 {
   const int64_t realLog2Denom = useHighPrecision ? log2Denom : (log2Denom + (bitDepth - 8));
   const int64_t realOffset    = ((int64_t)offset)<<realLog2Denom;
@@ -720,19 +689,10 @@ int64_t xCalcSADvalueWP(const int   bitDepth,
   return SAD;
 }
 
-static
-int64_t xCalcSADvalueWPOptionalClip(const int   bitDepth,
-                                  const Pel  *pOrgPel,
-                                  const Pel  *pRefPel,
-                                  const int   width,
-                                  const int   height,
-                                  const int   orgStride,
-                                  const int   refStride,
-                                  const int   log2Denom,
-                                  const int   weight,
-                                  const int   offset,
-                                  const bool  useHighPrecision,
-                                  const bool  clipped)
+static int64_t xCalcSADvalueWPOptionalClip(const int bitDepth, const Pel *pOrgPel, const Pel *pRefPel, const int width,
+                                           const int height, const ptrdiff_t orgStride, const ptrdiff_t refStride,
+                                           const int log2Denom, const int weight, const int offset,
+                                           const bool useHighPrecision, const bool clipped)
 {
   int64_t sad = 0;
   if (clipped)

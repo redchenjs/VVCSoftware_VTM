@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,10 @@
 struct CoeffCodingContext
 {
 public:
-  CoeffCodingContext( const TransformUnit& tu, ComponentID component, bool signHide, bool bdpcm = false );
+  static const int prefixCtx[8];
+
+  CoeffCodingContext(const TransformUnit &tu, ComponentID component, bool signHide, const BdpcmMode bdpcm);
+
 public:
   void  initSubblock     ( int SubsetId, bool sigGroupFlag = false );
 public:
@@ -84,9 +87,7 @@ public:
   bool            isSigGroup(int scanPosCG) const { return m_sigCoeffGroupFlag[m_scanCG[scanPosCG].idx]; }
   bool            isSigGroup      ()                        const { return m_sigCoeffGroupFlag[ m_subSetPos ]; }
   bool            signHiding      ()                        const { return m_signHiding; }
-  bool            hideSign        ( int       posFirst,
-                                    int       posLast   )   const { return ( m_signHiding && ( posLast - posFirst >= SBH_THRESHOLD ) ); }
-  CoeffScanType   scanType        ()                        const { return m_scanType; }
+  bool hideSign(int posFirst, int posLast) const { return (m_signHiding && (posLast - posFirst >= SBH_THRESHOLD)); }
   unsigned        blockPos(int scanPos) const { return m_scan[scanPos].idx; }
   unsigned        posX(int scanPos) const { return m_scan[scanPos].x; }
   unsigned        posY(int scanPos) const { return m_scan[scanPos].y; }
@@ -97,7 +98,7 @@ public:
   int             numCtxBins      ()                        const { return   m_remainingContextBins;      }
   void            setNumCtxBins   ( int n )                       {          m_remainingContextBins  = n; }
   unsigned        sigGroupCtxId   ( bool ts = false     )   const { return ts ? m_sigGroupCtxIdTS : m_sigGroupCtxId; }
-  bool            bdpcm           ()                        const { return m_bdpcm; }
+  BdpcmMode       bdpcm() const { return m_bdpcm; }
 
   void            decimateNumCtxBins(int n) { m_remainingContextBins -= n; }
   void            increaseNumCtxBins(int n) { m_remainingContextBins += n; }
@@ -139,7 +140,7 @@ public:
 
     int ctxOfs = int(std::min<TCoeff>((sumAbs+1)>>1, 3)) + ( diag < 2 ? 4 : 0 );
 
-    if( m_chType == CHANNEL_TYPE_LUMA )
+    if (isLuma(m_chType))
     {
       ctxOfs += diag < 5 ? 4 : 0;
     }
@@ -155,7 +156,9 @@ public:
     if( m_tmplCpDiag != -1 )
     {
       offset  = int(std::min<TCoeff>( m_tmplCpSum1, 4 )) + 1;
-      offset += ( !m_tmplCpDiag ? ( m_chType == CHANNEL_TYPE_LUMA ? 15 : 5 ) : m_chType == CHANNEL_TYPE_LUMA ? m_tmplCpDiag < 3 ? 10 : ( m_tmplCpDiag < 10 ? 5 : 0 ) : 0 );
+      offset += (!m_tmplCpDiag      ? (isLuma(m_chType) ? 15 : 5)
+                 : isLuma(m_chType) ? m_tmplCpDiag < 3 ? 10 : (m_tmplCpDiag < 10 ? 5 : 0)
+                                    : 0);
     }
     return uint8_t(offset);
   }
@@ -219,12 +222,12 @@ public:
     {
       riceStat = (riceStat + floorLog2((uint32_t)rem) + 2) >> 1;
     }
-    else 
+    else
     {
       riceStat = (riceStat + floorLog2((uint32_t)rem)) >> 1;
     }
   }
-  
+
   unsigned templateAbsCompare(TCoeff sum)
   {
     int rangeIdx = 0;
@@ -325,7 +328,7 @@ public:
     unsigned riceParam = g_goRiceParsCoeff[sumAbs];
     return riceParam;
   }
-  
+
   unsigned deriveRiceExt(int scanPos, const TCoeff* coeff, int baseLevel)
   {
     unsigned riceParam = templateAbsSumExt(scanPos, coeff, baseLevel);
@@ -355,7 +358,7 @@ public:
   unsigned parityCtxIdAbsTS   ()                  const { return m_tsParFlagCtxSet(      0 ); }
   unsigned greaterXCtxIdAbsTS ( uint8_t offset )  const { return m_tsGtxFlagCtxSet( offset ); }
 
-  unsigned lrg1CtxIdAbsTS(int scanPos, const TCoeff* coeff, int bdpcm)
+  unsigned lrg1CtxIdAbsTS(int scanPos, const TCoeff *coeff, const BdpcmMode bdpcm)
   {
     const uint32_t  posY = m_scan[scanPos].y;
     const uint32_t  posX = m_scan[scanPos].x;
@@ -364,7 +367,7 @@ public:
     int             numPos = 0;
 #define UPDATE(x) {TCoeff a=abs(x);numPos+=int(!!a);}
 
-    if (bdpcm)
+    if (bdpcm != BdpcmMode::NONE)
     {
       numPos = 3;
     }
@@ -384,12 +387,7 @@ public:
     return m_tsLrg1FlagCtxSet(numPos);
   }
 
-  template <typename T> int sgn(T val)
-  {
-    return (T(0) < val) - (val < T(0));
-  }
-
-  unsigned signCtxIdAbsTS(int scanPos, const TCoeff* coeff, int bdpcm)
+  unsigned signCtxIdAbsTS(int scanPos, const TCoeff *coeff, const BdpcmMode bdpcm)
   {
     const uint32_t  posY = m_scan[scanPos].y;
     const uint32_t  posX = m_scan[scanPos].x;
@@ -419,7 +417,7 @@ public:
     {
       signCtx = 2;
     }
-    if (bdpcm)
+    if (bdpcm != BdpcmMode::NONE)
     {
       signCtx += 3;
     }
@@ -444,7 +442,7 @@ public:
     }
   }
 
-  int deriveModCoeff(int rightPixel, int belowPixel, TCoeff absCoeff, int bdpcm = 0)
+  int deriveModCoeff(int rightPixel, int belowPixel, TCoeff absCoeff, const bool bdpcm)
   {
 
     if (absCoeff == 0)
@@ -455,7 +453,7 @@ public:
 
     int absCoeffMod = int(absCoeff);
 
-    if (bdpcm == 0)
+    if (!bdpcm)
     {
       pred1 = std::max(absBelow, absRight);
 
@@ -527,7 +525,6 @@ private:
   const bool                m_signHiding;
   const bool                m_extendedPrecision;
   const int                 m_maxLog2TrDynamicRange;
-  CoeffScanType             m_scanType;
   const ScanElement *       m_scan;
   const ScanElement *       m_scanCG;
   const CtxSet              m_CtxSetLastX;
@@ -538,7 +535,6 @@ private:
   const int                 m_lastOffsetY;
   const int                 m_lastShiftX;
   const int                 m_lastShiftY;
-  const bool                m_TrafoBypass;
   const TCoeff              m_minCoeff;
   const TCoeff              m_maxCoeff;
   // modified
@@ -563,9 +559,9 @@ private:
   CtxSet                    m_tsSignFlagCtxSet;
   int                       m_remainingContextBins;
   std::bitset<MLS_GRP_NUM>  m_sigCoeffGroupFlag;
-  const bool                m_bdpcm;
-  int                       m_cctxBaseLevel; 
-  TCoeff                    m_histValue;    
+  const BdpcmMode           m_bdpcm;
+  int                       m_cctxBaseLevel;
+  TCoeff                    m_histValue;
   bool                      m_updateHist;
 };
 
@@ -575,19 +571,17 @@ class CUCtx
 public:
   CUCtx()              : isDQPCoded(false), isChromaQpAdjCoded(false),
                          qgStart(false)
-                         {
-                           violatesLfnstConstrained[CHANNEL_TYPE_LUMA  ] = false;
-                           violatesLfnstConstrained[CHANNEL_TYPE_CHROMA] = false;
-                           lfnstLastScanPos                              = false;
-                           violatesMtsCoeffConstraint                    = false;
-                           mtsLastScanPos                                = false;
-                         }
+  {
+    violatesLfnstConstrained.fill(false);
+    lfnstLastScanPos           = false;
+    violatesMtsCoeffConstraint = false;
+    mtsLastScanPos             = false;
+  }
   CUCtx(int _qp)       : isDQPCoded(false), isChromaQpAdjCoded(false),
                          qgStart(false),
                          qp(_qp)
                          {
-                           violatesLfnstConstrained[CHANNEL_TYPE_LUMA  ] = false;
-                           violatesLfnstConstrained[CHANNEL_TYPE_CHROMA] = false;
+                           violatesLfnstConstrained.fill(false);
                            lfnstLastScanPos                              = false;
                            violatesMtsCoeffConstraint                    = false;
                            mtsLastScanPos                                = false;
@@ -599,7 +593,7 @@ public:
   bool      qgStart;
   bool      lfnstLastScanPos;
   int8_t    qp;                   // used as a previous(last) QP and for QP prediction
-  bool      violatesLfnstConstrained[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<bool, ChannelType> violatesLfnstConstrained;
   bool      violatesMtsCoeffConstraint;
   bool      mtsLastScanPos;
 };
@@ -610,13 +604,13 @@ public:
   MergeCtx() : numValidMergeCand(0), hasMergedCandList(false) {}
   ~MergeCtx() {}
 public:
-  MvField       mvFieldNeighbours [ MRG_MAX_NUM_CANDS << 1 ]; // double length for mv of both lists
-#if GDR_ENABLED 
+  MvField mvFieldNeighbours[MRG_MAX_NUM_CANDS][2];
+#if GDR_ENABLED
   // note : check if source of mv and mv itself is valid
-  bool          mvSolid           [MRG_MAX_NUM_CANDS << 1];  
-  bool          mvValid           [MRG_MAX_NUM_CANDS << 1];
-  Position      mvPos             [MRG_MAX_NUM_CANDS << 1];
-  MvpType       mvType            [MRG_MAX_NUM_CANDS << 1];
+  bool     mvSolid[MRG_MAX_NUM_CANDS][2];
+  bool     mvValid[MRG_MAX_NUM_CANDS][2];
+  Position mvPos[MRG_MAX_NUM_CANDS][2];
+  MvpType  mvType[MRG_MAX_NUM_CANDS][2];
 #endif
   uint8_t       bcwIdx[MRG_MAX_NUM_CANDS];
   unsigned char interDirNeighbours[ MRG_MAX_NUM_CANDS      ];
@@ -624,14 +618,14 @@ public:
   bool          hasMergedCandList;
 
   MotionBuf     subPuMvpMiBuf;
-  MotionBuf     subPuMvpExtMiBuf;
-  MvField mmvdBaseMv[MMVD_BASE_MV_NUM][2];
-#if GDR_ENABLED   
-  bool          mmvdSolid[MMVD_BASE_MV_NUM][2];
-  bool          mmvdValid[MMVD_BASE_MV_NUM][2];
+  MvField       mmvdBaseMv[MmvdIdx::BASE_MV_NUM][2];
+#if GDR_ENABLED
+  bool mmvdSolid[MmvdIdx::BASE_MV_NUM][2];
+  bool mmvdValid[MmvdIdx::BASE_MV_NUM][2];
 #endif
-  void setMmvdMergeCandiInfo(PredictionUnit& pu, int candIdx);
-  bool          mmvdUseAltHpelIf  [ MMVD_BASE_MV_NUM ];
+  void          setMmvdMergeCandiInfo(PredictionUnit &pu, MmvdIdx candIdx);
+  void          getMmvdDeltaMv(const Slice& slice, const MmvdIdx candIdx, Mv deltaMv[NUM_REF_PIC_LIST_01]) const;
+  bool          mmvdUseAltHpelIf[MmvdIdx::BASE_MV_NUM];
   bool          useAltHpelIf      [ MRG_MAX_NUM_CANDS ];
   void setMergeInfo( PredictionUnit& pu, int candIdx );
 };
@@ -639,16 +633,42 @@ public:
 class AffineMergeCtx
 {
 public:
-  AffineMergeCtx() : numValidMergeCand( 0 ) { for ( unsigned i = 0; i < AFFINE_MRG_MAX_NUM_CANDS; i++ ) affineType[i] = AFFINEMODEL_4PARAM; }
+  AffineMergeCtx() : numValidMergeCand(0)
+  {
+    for (int i = 0; i < AFFINE_MRG_MAX_NUM_CANDS; i++)
+    {
+      affineType[i] = AffineModel::_4_PARAMS;
+    }
+  }
   ~AffineMergeCtx() {}
 public:
-  MvField       mvFieldNeighbours[AFFINE_MRG_MAX_NUM_CANDS << 1][3]; // double length for mv of both lists
+  std::array<MvField[2], AFFINE_MAX_NUM_CP> mvFieldNeighbours[AFFINE_MRG_MAX_NUM_CANDS];
 #if GDR_ENABLED
-  bool          mvSolid[AFFINE_MRG_MAX_NUM_CANDS << 1][3];   
-  bool          mvValid[AFFINE_MRG_MAX_NUM_CANDS << 1][3];
+  std::array<bool[2], AFFINE_MAX_NUM_CP> mvSolid[AFFINE_MRG_MAX_NUM_CANDS];
+  std::array<bool[2], AFFINE_MAX_NUM_CP> mvValid[AFFINE_MRG_MAX_NUM_CANDS];
+
+  bool isSolid(const int idx, const int l)
+  {
+    bool solid = true;
+    for (auto &c: mvSolid[idx])
+    {
+      solid &= c[l];
+    }
+    return solid;
+  }
+
+  bool isValid(const int idx, const int l)
+  {
+    bool valid = true;
+    for (auto &c: mvValid[idx])
+    {
+      valid &= c[l];
+    }
+    return valid;
+  }
 #endif
   unsigned char interDirNeighbours[AFFINE_MRG_MAX_NUM_CANDS];
-  EAffineModel  affineType[AFFINE_MRG_MAX_NUM_CANDS];
+  AffineModel   affineType[AFFINE_MRG_MAX_NUM_CANDS];
   uint8_t       bcwIdx[AFFINE_MRG_MAX_NUM_CANDS];
   int           numValidMergeCand;
   int           maxNumMergeCand;

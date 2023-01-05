@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -60,7 +60,9 @@ class InputNALUnit;
 //! \ingroup DecoderLib
 //! \{
 
-bool tryDecodePicture( Picture* pcPic, const int expectedPoc, const std::string& bitstreamFileName, ParameterSetMap<APS> *apsMap = nullptr, bool bDecodeUntilPocFound = false, int debugCTU = -1, int debugPOC = -1 );
+bool tryDecodePicture(Picture *pcPic, const int expectedPoc, const std::string &bitstreamFileName,
+                      EnumArray<ParameterSetMap<APS>, ApsType> *apsMap = nullptr, bool bDecodeUntilPocFound = false,
+                      int debugCTU = -1, int debugPOC = -1);
 // Class definition
 // ====================================================================================================================
 
@@ -75,7 +77,9 @@ private:
   int                     m_prevGDRInSameLayerPOC[MAX_VPS_LAYERS]; ///< POC number of the latest GDR picture
   int                     m_prevGDRInSameLayerRecoveryPOC[MAX_VPS_LAYERS]; ///< Recovery POC number of the latest GDR picture
   NalUnitType             m_associatedIRAPType[MAX_VPS_LAYERS]; ///< NAL unit type of the previous IRAP picture
-  int                     m_pocCRA[MAX_VPS_LAYERS];            ///< POC number of the previous CRA picture
+  int                     m_pocCRA[MAX_VPS_LAYERS];             ///< POC number of the previous CRA picture
+  CheckCRAFlags           m_checkCRAFlags[MAX_VPS_LAYERS];
+  int                     m_latestDRAPPOC;
   int                     m_associatedIRAPDecodingOrderNumber[MAX_VPS_LAYERS]; ///< Decoding order number of the previous IRAP picture
   int                     m_decodingOrderCounter;
   int                     m_puCounter;
@@ -196,7 +200,7 @@ private:
     int             m_POC;             /// the picture order
   };
   std::vector<NalUnitInfo> m_nalUnitInfo[MAX_VPS_LAYERS];
-  std::vector<int> m_accessUnitApsNals;
+  EnumArray<std::vector<int>, ApsType> m_accessUnitApsNals;
   std::vector<int> m_accessUnitSeiTids;
   std::vector<bool> m_accessUnitNoOutputPriorPicFlags;
 
@@ -204,8 +208,8 @@ private:
   std::vector<std::tuple<NalUnitType, int, SEI::PayloadType>> m_accessUnitSeiPayLoadTypes;
 
   std::vector<NalUnitType> m_pictureUnitNals;
-  std::list<InputNALUnit*> m_pictureSeiNalus; 
-  std::list<InputNALUnit*> m_suffixApsNalus; 
+  std::list<InputNALUnit *> m_pictureSeiNalus;
+  std::list<InputNALUnit *> m_suffixApsNalus;
   std::list<InputNALUnit*> m_accessUnitSeiNalus;
 
   OPI*                    m_opi;
@@ -222,7 +226,7 @@ public:
   int                     m_targetSubPicIdx;
 
   DCI*                    m_dci;
-  ParameterSetMap<APS>*   m_apsMapEnc;
+  EnumArray<ParameterSetMap<APS>, ApsType> *m_apsMapEnc;
 #if GDR_LEAK_TEST
 public:
   int                     m_gdrPocRandomAccess;
@@ -274,7 +278,13 @@ public:
   void setDebugPOC( int debugPOC )        { m_debugPOC = debugPOC; };
   void resetAccessUnitNals()              { m_accessUnitNals.clear();    }
   void resetAccessUnitPicInfo()           { m_accessUnitPicInfo.clear(); }
-  void resetAccessUnitApsNals()           { m_accessUnitApsNals.clear(); }
+  void resetAccessUnitApsNals()
+  {
+    for (auto &nals: m_accessUnitApsNals)
+    {
+      nals.clear();
+    }
+  }
   void resetAccessUnitSeiTids()           { m_accessUnitSeiTids.clear(); }
   void resetAudIrapOrGdrAuFlag()          { m_audIrapOrGdrAuFlag = false; }
   void resetAccessUnitEos()               { memset(m_accessUnitEos, false, sizeof(m_accessUnitEos)); }
@@ -306,7 +316,7 @@ public:
     m_cTrQuantScalingList.init(nullptr, MAX_TB_SIZEY, false, false, false, false);
   }
 
-  void  setAPSMapEnc( ParameterSetMap<APS>* apsMap ) { m_apsMapEnc = apsMap;  }
+  void  setAPSMapEnc(EnumArray<ParameterSetMap<APS>, ApsType> *apsMap) { m_apsMapEnc = apsMap; }
   bool  isNewPicture( std::ifstream *bitstreamFile, class InputByteStream *bytestream );
   bool  isNewAccessUnit( bool newPicture, std::ifstream *bitstreamFile, class InputByteStream *bytestream );
 
@@ -321,11 +331,21 @@ public:
   const OPI* getOPI()                     { return m_opi; }
 
   bool      getMixedNaluTypesInPicFlag();
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct m_featureCounter;
+  bool m_GMFAFramewise;
+  std::string   m_GMFAFile;
+  void setFeatureCounter (FeatureCounterStruct b ) {m_featureCounter = b;}
+  FeatureCounterStruct getFeatureCounter (){return m_featureCounter;}
+  void setGMFAFile(std::string b){m_GMFAFile = b;}
+  void setFeatureAnalysisFramewise(bool b){m_GMFAFramewise = b;}
+#endif
 
 #if JVET_Z0120_SII_SEI_PROCESSING
   bool  getShutterFilterFlag()        const { return m_ShutterFilterEnable; }
   void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
 #endif
+
 
 protected:
   void  xUpdateRasInit(Slice* slice);
@@ -347,9 +367,9 @@ protected:
   void      xUpdatePreviousTid0POC(Slice *pSlice)
   {
     if( (pSlice->getTLayer() == 0) && (pSlice->getNalUnitType() != NAL_UNIT_CODED_SLICE_RASL) && (pSlice->getNalUnitType() != NAL_UNIT_CODED_SLICE_RADL) && !pSlice->getPicHeader()->getNonReferencePictureFlag() )
-    { 
-      m_prevTid0POC = pSlice->getPOC(); 
-    }  
+    {
+      m_prevTid0POC = pSlice->getPOC();
+    }
   }
   void      xParsePrefixSEImessages();
   void      xParsePrefixSEIsForUnknownVCLNal();

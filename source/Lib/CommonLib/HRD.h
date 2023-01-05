@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2022, ITU/ISO/IEC
+* Copyright (c) 2010-2023, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -192,14 +192,11 @@ inline void checkBPSyntaxElementLength(const SEIBufferingPeriod* bp1, const SEIB
 class HRD
 {
 public:
-  HRD()
-  :m_bufferingPeriodInitialized (false)
-  , m_pictureTimingAvailable    (false)	
-  {};
+  HRD() : m_bufferingPeriodInitialized(false), m_pictureTimingAvailable(false){};
 
   virtual ~HRD()
   {};
-  void                 setGeneralHrdParameters(GeneralHrdParams &generalHrdParam) { m_generalHrdParams = generalHrdParam; }
+  void                 setGeneralHrdParameters(const GeneralHrdParams &generalHrdParam) { m_generalHrdParams = generalHrdParam; }
   GeneralHrdParams        getGeneralHrdParameters() const { return m_generalHrdParams; }
   const GeneralHrdParams& getGeneralHrdParameters() { return m_generalHrdParams; }
 
@@ -214,7 +211,7 @@ public:
     {
       checkBPSyntaxElementLength(bp, &m_bufferingPeriodSEI);
     }
-    bp->copyTo(m_bufferingPeriodSEI); 
+    bp->copyTo(m_bufferingPeriodSEI);
     m_bufferingPeriodInitialized = true;
   }
 

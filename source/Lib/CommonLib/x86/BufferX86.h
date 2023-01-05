@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,8 +48,9 @@
 #if ENABLE_SIMD_OPT_BUFFER
 #ifdef TARGET_SIMD_X86
 
-template< X86_VEXT vext, int W >
-void addAvg_SSE( const int16_t* src0, int src0Stride, const int16_t* src1, int src1Stride, int16_t *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng )
+template<X86_VEXT vext, int W>
+void addAvg_SSE(const int16_t *src0, ptrdiff_t src0Stride, const int16_t *src1, ptrdiff_t src1Stride, int16_t *dst,
+                ptrdiff_t dstStride, int width, int height, int shift, int offset, const ClpRng &clpRng)
 {
   if( W == 8 )
   {
@@ -118,7 +119,7 @@ void addAvg_SSE( const int16_t* src0, int src0Stride, const int16_t* src1, int s
 }
 
 template<X86_VEXT vext>
-void copyBufferSimd(Pel *src, int srcStride, Pel *dst, int dstStride, int width, int height)
+void copyBufferSimd(const Pel *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width, int height)
 {
   if (width < 8)
   {
@@ -154,8 +155,7 @@ void copyBufferSimd(Pel *src, int srcStride, Pel *dst, int dstStride, int width,
   }
 }
 
-template<X86_VEXT vext>
-void paddingSimd(Pel *dst, int stride, int width, int height, int padSize)
+template<X86_VEXT vext> void paddingSimd(Pel *dst, ptrdiff_t stride, int width, int height, int padSize)
 {
   size_t extWidth = width + 2 * padSize;
   CHECK(extWidth < 8, "width plus 2 times padding size must be at least 8");
@@ -232,8 +232,11 @@ void paddingSimd(Pel *dst, int stride, int width, int height, int padSize)
   }
 }
 
-template< X86_VEXT vext >
-void addBIOAvg4_SSE(const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel*gradY1, int gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset, const ClpRng& clpRng)
+template<X86_VEXT vext>
+void addBIOAvg4_SSE(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
+                    ptrdiff_t dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel *gradY1,
+                    ptrdiff_t gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset,
+                    const ClpRng &clpRng)
 {
   __m128i c        = _mm_unpacklo_epi16(_mm_set1_epi16(tmpx), _mm_set1_epi16(tmpy));
   __m128i vibdimin = _mm_set1_epi16(clpRng.min);
@@ -265,8 +268,10 @@ void addBIOAvg4_SSE(const Pel* src0, int src0Stride, const Pel* src1, int src1St
   }
 }
 
-template< X86_VEXT vext >
-void calcBIOSums_SSE(const Pel* srcY0Tmp, const Pel* srcY1Tmp, Pel* gradX0, Pel* gradX1, Pel* gradY0, Pel* gradY1, int xu, int yu, const int src0Stride, const int src1Stride, const int widthG, const int bitDepth, int* sumAbsGX, int* sumAbsGY, int* sumDIX, int* sumDIY, int* sumSignGY_GX)
+template<X86_VEXT vext>
+void calcBIOSums_SSE(const Pel *srcY0Tmp, const Pel *srcY1Tmp, Pel *gradX0, Pel *gradX1, Pel *gradY0, Pel *gradY1,
+                     int xu, int yu, const ptrdiff_t src0Stride, const ptrdiff_t src1Stride, const int widthG,
+                     const int bitDepth, int *sumAbsGX, int *sumAbsGY, int *sumDIX, int *sumDIY, int *sumSignGY_GX)
 
 {
   int shift4 = 4;
@@ -345,9 +350,9 @@ void calcBIOSums_SSE(const Pel* srcY0Tmp, const Pel* srcY1Tmp, Pel* gradX0, Pel*
 }
 
 template<X86_VEXT vext>
-void applyPROF_SSE(Pel *dstPel, int dstStride, const Pel *srcPel, int srcStride, int width, int height,
-                   const Pel *gradX, const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY, int dMvStride,
-                   const bool bi, int shiftNum, Pel offset, const ClpRng &clpRng)
+void applyPROF_SSE(Pel *dstPel, ptrdiff_t dstStride, const Pel *srcPel, ptrdiff_t srcStride, int width, int height,
+                   const Pel *gradX, const Pel *gradY, ptrdiff_t gradStride, const int *dMvX, const int *dMvY,
+                   ptrdiff_t dMvStride, const bool bi, int shiftNum, Pel offset, const ClpRng &clpRng)
 {
   CHECKD((width & 3), "block width error!");
 
@@ -485,8 +490,9 @@ void applyPROF_SSE(Pel *dstPel, int dstStride, const Pel *srcPel, int srcStride,
   }
 }
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-template< X86_VEXT vext, bool PAD = true >
-void gradFilterHBD_SIMD(Pel* src, int srcStride, int width, int height, int gradStride, Pel* gradX, Pel* gradY, const int bitDepth)
+template<X86_VEXT vext, bool PAD = true>
+void gradFilterHBD_SIMD(Pel *src, ptrdiff_t srcStride, int width, int height, ptrdiff_t gradStride, Pel *gradX,
+                        Pel *gradY, const int bitDepth)
 {
   Pel* srcTmp = src + srcStride + 1;
   Pel* gradXTmp = gradX + gradStride + 1;
@@ -569,8 +575,10 @@ void gradFilterHBD_SIMD(Pel* src, int srcStride, int width, int height, int grad
   }
 }
 
-template< X86_VEXT vext >
-void calcBIOSumsHBD_SIMD(const Pel* srcY0Tmp, const Pel* srcY1Tmp, Pel* gradX0, Pel* gradX1, Pel* gradY0, Pel* gradY1, int xu, int yu, const int src0Stride, const int src1Stride, const int widthG, const int bitDepth, int* sumAbsGX, int* sumAbsGY, int* sumDIX, int* sumDIY, int* sumSignGY_GX)
+template<X86_VEXT vext>
+void calcBIOSumsHBD_SIMD(const Pel *srcY0Tmp, const Pel *srcY1Tmp, Pel *gradX0, Pel *gradX1, Pel *gradY0, Pel *gradY1,
+                         int xu, int yu, const ptrdiff_t src0Stride, const ptrdiff_t src1Stride, const int widthG,
+                         const int bitDepth, int *sumAbsGX, int *sumAbsGY, int *sumDIX, int *sumDIY, int *sumSignGY_GX)
 {
   int shift4 = 4;
   int shift5 = 1;
@@ -735,8 +743,11 @@ void calcBIOSumsHBD_SIMD(const Pel* srcY0Tmp, const Pel* srcY1Tmp, Pel* gradX0, 
   }
 }
 
-template< X86_VEXT vext >
-void addBIOAvg4HBD_SIMD(const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel*gradY1, int gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset, const ClpRng& clpRng)
+template<X86_VEXT vext>
+void addBIOAvg4HBD_SIMD(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
+                        ptrdiff_t dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel *gradY1,
+                        ptrdiff_t gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset,
+                        const ClpRng &clpRng)
 {
 #ifdef USE_AVX2
   if (vext >= AVX2)
@@ -747,10 +758,10 @@ void addBIOAvg4HBD_SIMD(const Pel* src0, int src0Stride, const Pel* src1, int sr
     __m256i vibdimin = _mm256_set1_epi32(clpRng.min);
     __m256i vibdimax = _mm256_set1_epi32(clpRng.max);
 
-    int src0Stride2 = (src0Stride << 1);
-    int src1Stride2 = (src1Stride << 1);
-    int dstStride2 = (dstStride << 1);
-    int gradStride2 = (gradStride << 1);
+    ptrdiff_t src0Stride2 = (src0Stride << 1);
+    ptrdiff_t src1Stride2 = (src1Stride << 1);
+    ptrdiff_t dstStride2  = (dstStride << 1);
+    ptrdiff_t gradStride2 = (gradStride << 1);
 
     for (int y = 0; y < height; y += 2)
     {
@@ -815,9 +826,9 @@ void addBIOAvg4HBD_SIMD(const Pel* src0, int src0Stride, const Pel* src1, int sr
 }
 
 template<X86_VEXT vext>
-void applyPROFHBD_SIMD(Pel *dstPel, int dstStride, const Pel *srcPel, int srcStride, int width, int height,
-                       const Pel *gradX, const Pel *gradY, int gradStride, const int *dMvX, const int *dMvY,
-                       int dMvStride, const bool bi, int shiftNum, Pel offset, const ClpRng &clpRng)
+void applyPROFHBD_SIMD(Pel *dstPel, ptrdiff_t dstStride, const Pel *srcPel, ptrdiff_t srcStride, int width, int height,
+                       const Pel *gradX, const Pel *gradY, ptrdiff_t gradStride, const int *dMvX, const int *dMvY,
+                       ptrdiff_t dMvStride, const bool bi, int shiftNum, Pel offset, const ClpRng &clpRng)
 {
   CHECKD((width & 3), "block width error!");
   const int dILimit = 1 << std::max<int>(clpRng.bd + 1, 13);
@@ -957,8 +968,9 @@ void roundIntVector_SIMD(int* v, int size, unsigned int nShift, const int dmvLim
   }
 }
 
-template< X86_VEXT vext, bool PAD = true>
-void gradFilter_SSE(Pel* src, int srcStride, int width, int height, int gradStride, Pel* gradX, Pel* gradY, const int bitDepth)
+template<X86_VEXT vext, bool PAD = true>
+void gradFilter_SSE(Pel *src, ptrdiff_t srcStride, int width, int height, ptrdiff_t gradStride, Pel *gradX, Pel *gradY,
+                    const int bitDepth)
 {
   Pel* srcTmp = src + srcStride + 1;
   Pel* gradXTmp = gradX + gradStride + 1;
@@ -1106,8 +1118,9 @@ void calcBlkGradient_SSE(int sx, int sy, int     *arraysGx2, int     *arraysGxGy
   sGydI = _mm_cvtsi128_si32(mmGydITotal);
 }
 
-template< X86_VEXT vext, int W >
-void reco_SSE( const int16_t* src0, int src0Stride, const int16_t* src1, int src1Stride, int16_t *dst, int dstStride, int width, int height, const ClpRng& clpRng )
+template<X86_VEXT vext, int W>
+void reco_SSE(const int16_t *src0, ptrdiff_t src0Stride, const int16_t *src1, ptrdiff_t src1Stride, int16_t *dst,
+              ptrdiff_t dstStride, int width, int height, const ClpRng &clpRng)
 {
   if( W == 8 )
   {
@@ -1190,8 +1203,9 @@ void reco_SSE( const int16_t* src0, int src0Stride, const int16_t* src1, int src
 }
 
 #if ENABLE_SIMD_OPT_BCW
-template< X86_VEXT vext, int W >
-void removeWeightHighFreq_SSE(int16_t* src0, int src0Stride, const int16_t* src1, int src1Stride, int width, int height, int shift, int bcwWeight)
+template<X86_VEXT vext, int W>
+void removeWeightHighFreq_SSE(int16_t *src0, ptrdiff_t src0Stride, const int16_t *src1, ptrdiff_t src1Stride, int width,
+                              int height, int shift, int bcwWeight)
 {
   int normalizer = ((1 << 16) + (bcwWeight>0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
   int weight0    = normalizer * (1 << g_bcwLog2WeightBase);
@@ -1267,8 +1281,9 @@ void removeWeightHighFreq_SSE(int16_t* src0, int src0Stride, const int16_t* src1
   }
 }
 
-template< X86_VEXT vext, int W >
-void removeHighFreq_SSE(int16_t* src0, int src0Stride, const int16_t* src1, int src1Stride, int width, int height)
+template<X86_VEXT vext, int W>
+void removeHighFreq_SSE(int16_t *src0, ptrdiff_t src0Stride, const int16_t *src1, ptrdiff_t src1Stride, int width,
+                        int height)
 {
   if (W == 8)
   {
@@ -1359,9 +1374,9 @@ template<> inline void do_clip<true,  __m128i>( __m128i& vreg, __m128i& vbdmin, 
 template<> inline void do_clip<true,  __m256i>( __m256i& vreg, __m256i& vbdmin, __m256i& vbdmax ) { vreg = _mm256_min_epi16( vbdmax, _mm256_max_epi16( vbdmin, vreg ) ); }
 #endif
 
-
 template<X86_VEXT vext, int W, bool doAdd, bool mult, bool doShift, bool shiftR, bool clip>
-void linTf_SSE( const Pel* src, int srcStride, Pel *dst, int dstStride, int width, int height, int scale, int shift, int offset, const ClpRng& clpRng )
+void linTf_SSE(const Pel *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width, int height, int scale,
+               int shift, int offset, const ClpRng &clpRng)
 {
   if( vext >= AVX2 && ( width & 7 ) == 0 && W == 8 )
   {
@@ -1423,8 +1438,9 @@ void linTf_SSE( const Pel* src, int srcStride, Pel *dst, int dstStride, int widt
   }
 }
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-template< X86_VEXT vext, int W >
-void addAvg_HBD_SIMD(const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, int width, int height, int shift, int offset, const ClpRng& clpRng)
+template<X86_VEXT vext, int W>
+void addAvg_HBD_SIMD(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
+                     ptrdiff_t dstStride, int width, int height, int shift, int offset, const ClpRng &clpRng)
 {
   CHECK((width & 3), "the function only supports width multiple of 4");
 
@@ -1476,8 +1492,9 @@ void addAvg_HBD_SIMD(const Pel* src0, int src0Stride, const Pel* src1, int src1S
   }
 }
 
-template< X86_VEXT vext, int W >
-void reco_HBD_SIMD(const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, int width, int height, const ClpRng& clpRng)
+template<X86_VEXT vext, int W>
+void reco_HBD_SIMD(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
+                   ptrdiff_t dstStride, int width, int height, const ClpRng &clpRng)
 {
   CHECK((width & 3), "the function only supports width multiple of 4");
 
@@ -1525,8 +1542,9 @@ void reco_HBD_SIMD(const Pel* src0, int src0Stride, const Pel* src1, int src1Str
 }
 
 #if ENABLE_SIMD_OPT_BCW
-template< X86_VEXT vext, int W >
-void removeHighFreq_HBD_SIMD(Pel* src0, int src0Stride, const Pel* src1, int src1Stride, int width, int height)
+template<X86_VEXT vext, int W>
+void removeHighFreq_HBD_SIMD(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
+                             int height)
 {
   CHECK((width & 3), "the function only supports width multiple of 4");
   for (int row = 0; row < height; row++)
@@ -1560,8 +1578,9 @@ void removeHighFreq_HBD_SIMD(Pel* src0, int src0Stride, const Pel* src1, int src
   }
 }
 
-template< X86_VEXT vext, int W >
-void removeWeightHighFreq_HBD_SIMD(Pel* src0, int src0Stride, const Pel* src1, int src1Stride, int width, int height, int shift, int bcwWeight)
+template<X86_VEXT vext, int W>
+void removeWeightHighFreq_HBD_SIMD(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
+                                   int height, int shift, int bcwWeight)
 {
   CHECK((width & 3), "the function only supports width multiple of 4");
 
@@ -1650,7 +1669,8 @@ template<> inline void do_clip_hbd<true, __m256i>(__m256i& vreg, __m256i& vbdmin
 #endif
 
 template<X86_VEXT vext, int W, bool doAdd, bool mult, bool doShift, bool shiftR, bool clip>
-void linTf_HBD_SIMD(const Pel* src, int srcStride, Pel *dst, int dstStride, int width, int height, int scale, int shift, int offset, const ClpRng& clpRng)
+void linTf_HBD_SIMD(const Pel *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width, int height,
+                    int scale, int shift, int offset, const ClpRng &clpRng)
 {
   CHECK((width & 3), "the function only supports width multiple of 4");
 
@@ -1703,7 +1723,8 @@ void linTf_HBD_SIMD(const Pel* src, int srcStride, Pel *dst, int dstStride, int 
 }
 #endif
 template<X86_VEXT vext, int W>
-void linTf_SSE_entry( const Pel* src, int srcStride, Pel *dst, int dstStride, int width, int height, int scale, int shift, int offset, const ClpRng& clpRng, bool clip )
+void linTf_SSE_entry(const Pel *src, ptrdiff_t srcStride, Pel *dst, ptrdiff_t dstStride, int width, int height,
+                     int scale, int shift, int offset, const ClpRng &clpRng, bool clip)
 {
   int fn = ( offset == 0 ? 16 : 0 ) + ( scale == 1 ? 8 : 0 ) + ( shift == 0 ? 4 : 0 ) + ( shift < 0 ? 2 : 0 ) + ( !clip ? 1 : 0 );
 

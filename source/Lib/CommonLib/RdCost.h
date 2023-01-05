@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,7 @@
 #include "Slice.h"
 #include "RdCostWeightPrediction.h"
 #include <math.h>
+#include <functional>
 
 //! \ingroup CommonLib
 //! \{
@@ -56,8 +57,7 @@ class EncCfg;
 // Type definition
 // ====================================================================================================================
 
-// for function pointer
-typedef Distortion (*FpDistFunc) (const DistParam&);
+using DistFunc = std::function<Distortion(const DistParam &)>;
 
 // ====================================================================================================================
 // Class definition
@@ -73,11 +73,11 @@ public:
   CPelBuf               orgLuma;
 #endif
   const Pel*            mask;
-  int                   maskStride;
+  ptrdiff_t             maskStride;
   int                   stepX;
-  int                   maskStride2;
+  ptrdiff_t             maskStride2;
   int                   step;
-  FpDistFunc            distFunc;
+  DistFunc              distFunc;
   int                   bitDepth;
 
   bool                  useMR;
@@ -110,15 +110,15 @@ class RdCost
 private:
   // for distortion
 
-  static FpDistFunc       m_afpDistortFunc[DF_TOTAL_FUNCTIONS]; // [eDFunc]
+  static EnumArray<DistFunc, DFunc> m_distortionFunc;
   CostMode                m_costMode;
   double                  m_distortionWeight[MAX_NUM_COMPONENT]; // only chroma values are used.
   double                  m_dLambda;
-  bool                   m_isLosslessRDCost;
+  bool                    m_isLosslessRDCost;
 
 #if WCG_EXT
   double                  m_dLambda_unadjusted; // TODO: check is necessary
-  double                  m_DistScaleUnadjusted;
+  double                  m_distScaleUnadjusted;
 
   static std::vector<int32_t> m_reshapeLumaLevelToWeightPLUT;   // scaled by MSE_WEIGHT_ONE
   static std::vector<double>  m_lumaLevelToWeightPLUT;
@@ -129,10 +129,10 @@ private:
 
   ChromaFormat            m_cf;
 #endif
-  double                  m_DistScale;
+  double                  m_distScale;
   double                  m_dLambdaMotionSAD;
   double                  m_lambdaStore[2][3];   // 0-org; 1-act
-  double                  m_DistScaleStore[2][3]; // 0-org; 1-act
+  double                  m_distScaleStore[2][3];   // 0-org; 1-act
   bool                    m_resetStore;
   int                     m_pairCheck;
 
@@ -143,6 +143,35 @@ private:
   int                     m_iCostScale;
 
   double                  m_dCost; // for ibc
+
+  template<bool allowOddSizes> static DFuncDiff sizeOffset(const uint32_t width)
+  {
+    if (width <= 64 && isPowerOf2(width))
+    {
+      return static_cast<DFuncDiff>(floorLog2(width));
+    }
+    else if (width % 16 == 0)
+    {
+      return DFunc::SAD16N - DFunc::SAD;
+    }
+    else if (allowOddSizes && width == 12)
+    {
+      return DFunc::SAD12 - DFunc::SAD;
+    }
+    else if (allowOddSizes && width == 24)
+    {
+      return DFunc::SAD24 - DFunc::SAD;
+    }
+    else if (allowOddSizes && width == 48)
+    {
+      return DFunc::SAD48 - DFunc::SAD;
+    }
+    else
+    {
+      return DFunc::SAD - DFunc::SAD;
+    }
+  }
+
 public:
   RdCost();
   virtual ~RdCost();
@@ -179,10 +208,14 @@ public:
   void          _initRdCostX86();
 #endif
 
-  void           setDistParam( DistParam &rcDP, const CPelBuf &org, const Pel* piRefY , int iRefStride, int bitDepth, ComponentID compID, int subShiftMode = 0, int step = 1, bool useHadamard = false );
+  void setDistParam(DistParam &rcDP, const CPelBuf &org, const Pel *piRefY, ptrdiff_t iRefStride, int bitDepth,
+                    ComponentID compID, int subShiftMode = 0, int step = 1, bool useHadamard = false);
   void           setDistParam( DistParam &rcDP, const CPelBuf &org, const CPelBuf &cur, int bitDepth, ComponentID compID, bool useHadamard = false );
-  void           setDistParam( DistParam &rcDP, const Pel* pOrg, const Pel* piRefY, int iOrgStride, int iRefStride, int bitDepth, ComponentID compID, int width, int height, int subShiftMode = 0, int step = 1, bool useHadamard = false, bool bioApplied = false );
-  void           setDistParam( DistParam &rcDP, const CPelBuf &org, const Pel* piRefY, int iRefStride, const Pel* mask, int iMaskStride, int stepX, int iMaskStride2, int bitDepth,  ComponentID compID);
+  void setDistParam(DistParam &rcDP, const Pel *pOrg, const Pel *piRefY, ptrdiff_t iOrgStride, ptrdiff_t iRefStride,
+                    int bitDepth, ComponentID compID, int width, int height, int subShiftMode = 0, int step = 1,
+                    bool useHadamard = false, bool bioApplied = false);
+  void setDistParam(DistParam &rcDP, const CPelBuf &org, const Pel *piRefY, ptrdiff_t iRefStride, const Pel *mask,
+                    ptrdiff_t iMaskStride, int stepX, ptrdiff_t iMaskStride2, int bitDepth, ComponentID compID);
 
   double         getMotionLambda          ( )  { return m_dLambdaMotionSAD; }
   void           selectMotionLambda       ( )  { m_motionLambda = getMotionLambda( ); }
@@ -388,14 +421,17 @@ private:
   static Distortion xGetMRHADs        ( const DistParam& pcDtParam );
 
   static Distortion xGetHADs          ( const DistParam& pcDtParam );
-  static Distortion xCalcHADs2x2(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
-  static Distortion xCalcHADs4x4(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
-  static Distortion xCalcHADs8x8(const Pel *piOrg, const Pel *piCurr, int strideOrg, int strideCur, int step);
+  static Distortion xCalcHADs2x2(const Pel *piOrg, const Pel *piCurr, ptrdiff_t strideOrg, ptrdiff_t strideCur,
+                                 int step);
+  static Distortion xCalcHADs4x4(const Pel *piOrg, const Pel *piCurr, ptrdiff_t strideOrg, ptrdiff_t strideCur,
+                                 int step);
+  static Distortion xCalcHADs8x8(const Pel *piOrg, const Pel *piCurr, ptrdiff_t strideOrg, ptrdiff_t strideCur,
+                                 int step);
 
-  static Distortion xCalcHADs16x8(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
-  static Distortion xCalcHADs8x16(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
-  static Distortion xCalcHADs4x8(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
-  static Distortion xCalcHADs8x4(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur);
+  static Distortion xCalcHADs16x8(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur);
+  static Distortion xCalcHADs8x16(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur);
+  static Distortion xCalcHADs4x8(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur);
+  static Distortion xCalcHADs8x4(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur);
 
 #ifdef TARGET_SIMD_X86
   template<X86_VEXT vext>
@@ -433,13 +469,15 @@ private:
 public:
 
 #if WCG_EXT
-  Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc,
+  Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc distFunc,
                          const CPelBuf *orgLuma = nullptr);
 #else
-  Distortion   getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc );
+  Distortion    getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
+                            DFunc distFunc);
 #endif
 
-  Distortion   getDistPart(const CPelBuf &org, const CPelBuf &cur, const Pel* mask, int bitDepth, const ComponentID compID, DFunc eDFunc);
+  Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, const Pel *mask, int bitDepth,
+                         const ComponentID compID, DFunc distFunc);
 };// END CLASS DEFINITION RdCost
 
 //! \}

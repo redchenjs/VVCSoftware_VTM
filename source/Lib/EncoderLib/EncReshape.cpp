@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2022, ITU/ISO/IEC
+* Copyright (c) 2010-2023, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@
 
 EncReshape::EncReshape()
 {
-  m_CTUFlag      = false;
+  m_ctuFlag      = false;
   m_srcReshaped  = false;
   m_recReshaped  = false;
   m_reshape      = true;
@@ -184,7 +184,7 @@ void EncReshape::calcSeqStats(Picture *pcPic, SeqInfo &stats)
   PelBuf picY = pcPic->getOrigBuf(COMPONENT_Y);
   const int width = picY.width;
   const int height = picY.height;
-  const int stride = picY.stride;
+  const ptrdiff_t stride  = picY.stride;
   uint32_t winLens = (m_binNum == PIC_CODE_CW_BINS) ? (std::min(height, width) / 240) : 2;
   winLens = winLens > 0 ? winLens : 1;
 
@@ -412,7 +412,7 @@ void EncReshape::calcSeqStats(Picture *pcPic, SeqInfo &stats)
     PelBuf picV = pcPic->getOrigBuf(COMPONENT_Cr);
     const int widthC = picU.width;
     const int heightC = picU.height;
-    const int strideC = picU.stride;
+    const ptrdiff_t strideC = picU.stride;
     double avgU = 0.0, avgV = 0.0;
     double varU = 0.0, varV = 0.0;
     for (int y = 0; y < heightC; y++)
@@ -688,7 +688,7 @@ void EncReshape::preAnalyzerLMCS(Picture *pcPic, const uint32_t signalType, cons
         PelBuf picY = pcPic->getOrigBuf(COMPONENT_Y);
         const int width = picY.width;
         const int height = picY.height;
-        const int stride = picY.stride;
+        const ptrdiff_t stride = picY.stride;
         uint32_t binCnt[PIC_CODE_CW_BINS];
         std::fill_n(binCnt, m_binNum, 0);
 
@@ -731,7 +731,7 @@ void EncReshape::preAnalyzerLMCS(Picture *pcPic, const uint32_t signalType, cons
           PelBuf picV = pcPic->getOrigBuf(COMPONENT_Cr);
           const int widthC = picU.width;
           const int heightC = picU.height;
-          const int strideC = picU.stride;
+          const ptrdiff_t strideC = picU.stride;
           double avgU = 0.0, avgV = 0.0;
           double varU = 0.0, varV = 0.0;
           for (int y = 0; y < heightC; y++)

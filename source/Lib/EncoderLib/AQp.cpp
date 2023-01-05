@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,7 +71,7 @@ void AQpPreanalyzer::preanalyze( Picture* pcEPic )
   const CPelBuf lumaPlane = pcEPic->getOrigBuf().Y();
   const int     width     = lumaPlane.width;
   const int     height    = lumaPlane.height;
-  const int     stride    = lumaPlane.stride;
+  const ptrdiff_t stride    = lumaPlane.stride;
 
   for ( uint32_t d = 0; d < pcEPic->aqlayer.size(); d++ )
   {

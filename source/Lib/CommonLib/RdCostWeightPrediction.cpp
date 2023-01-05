@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,12 +41,12 @@
 
 #include <math.h>
 
-static Distortion xCalcHADs2x2w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCurr, int strideOrg,
-                                int strideCur, int step);
-static Distortion xCalcHADs4x4w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCurr, int strideOrg,
-                                int strideCur, int step);
-static Distortion xCalcHADs8x8w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCurr, int strideOrg,
-                                int strideCur, int step);
+static Distortion xCalcHADs2x2w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCurr, ptrdiff_t strideOrg,
+                                ptrdiff_t strideCur, int step);
+static Distortion xCalcHADs4x4w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCurr, ptrdiff_t strideOrg,
+                                ptrdiff_t strideCur, int step);
+static Distortion xCalcHADs8x8w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCurr, ptrdiff_t strideOrg,
+                                ptrdiff_t strideCur, int step);
 
 // --------------------------------------------------------------------------------------------------------------------
 // SAD
@@ -60,8 +60,8 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
   const Pel            *piOrg      = rcDtParam.org.buf;
   const Pel            *piCur      = rcDtParam.cur.buf;
   const int             cols       = rcDtParam.org.width;
-  const int             strideCur  = rcDtParam.cur.stride;
-  const int             strideOrg  = rcDtParam.org.stride;
+  const ptrdiff_t       strideCur  = rcDtParam.cur.stride;
+  const ptrdiff_t       strideOrg  = rcDtParam.org.stride;
   const ComponentID     compID     = rcDtParam.compID;
 
   CHECK( compID >= MAX_NUM_COMPONENT, "Invalid component" );
@@ -76,25 +76,6 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
 
   Distortion sum = 0;
 
-#if !U0040_MODIFIED_WEIGHTEDPREDICTION_WITH_BIPRED_AND_CLIPPING
-  for (int rows = rcDtParam.org.height; rows != 0; rows--)
-  {
-    for (int n = 0; n < cols; n++)
-    {
-      const Pel pred = ( (w0*piCur[n] + round) >> shift ) + offset ;
-
-      sum += abs(piOrg[n] - pred);
-    }
-    if (rcDtParam.maximumDistortionForEarlyExit < (sum >> distortionShift))
-    {
-      return sum >> distortionShift;
-    }
-    piOrg += strideOrg;
-    piCur += strideCur;
-  }
-
-  //rcDtParam.compID = MAX_NUM_COMPONENT;  // reset for DEBUG (assert test)
-#else
   ClpRng clpRng; // this just affects the cost
   clpRng.min = 0;
   clpRng.max = (1 << rcDtParam.bitDepth) - 1;
@@ -225,7 +206,6 @@ Distortion RdCostWeightPrediction::xGetSADw( const DistParam &rcDtParam )
     }
   }
   //rcDtParam.compIdx = MAX_NUM_COMPONENT;  // reset for DEBUG (assert test)
-#endif
 
   return sum >> distortionShift;
 }
@@ -243,8 +223,8 @@ Distortion RdCostWeightPrediction::xGetSSEw( const DistParam &rcDtParam )
   const Pel            *piOrg      = rcDtParam.org.buf;
   const Pel            *piCur      = rcDtParam.cur.buf;
   const int             cols       = rcDtParam.org.width;
-  const int             strideCur  = rcDtParam.cur.stride;
-  const int             strideOrg  = rcDtParam.org.stride;
+  const ptrdiff_t       strideCur  = rcDtParam.cur.stride;
+  const ptrdiff_t       strideOrg  = rcDtParam.org.stride;
   const ComponentID     compID     = rcDtParam.compID;
 
   CHECK( rcDtParam.subShift != 0, "Subshift not supported" ); // NOTE: what is this protecting?
@@ -259,21 +239,6 @@ Distortion RdCostWeightPrediction::xGetSSEw( const DistParam &rcDtParam )
 
   Distortion sum = 0;
 
-#if !U0040_MODIFIED_WEIGHTEDPREDICTION_WITH_BIPRED_AND_CLIPPING
-  for (int rows = rcDtParam.org.height; rows != 0; rows--)
-  {
-    for (int n = 0; n < cols; n++)
-    {
-      const Pel pred     = ( (w0*piCur[n] + round) >> shift ) + offset ;
-      const Pel residual = piOrg[n] - pred;
-      sum += ( Distortion(residual) * Distortion(residual) ) >> distortionShift;
-    }
-    piOrg += strideOrg;
-    piCur += strideCur;
-  }
-
-  //rcDtParam.compIdx = MAX_NUM_COMPONENT; // reset for DEBUG (assert test)
-#else
   if (rcDtParam.isBiPred)
   {
     for (int rows = rcDtParam.org.height; rows != 0; rows--)
@@ -308,7 +273,6 @@ Distortion RdCostWeightPrediction::xGetSSEw( const DistParam &rcDtParam )
   }
 
   //rcDtParam.compIdx = MAX_NUM_COMPONENT; // reset for DEBUG (assert test)
-#endif
 
   return sum;
 }
@@ -318,8 +282,8 @@ Distortion RdCostWeightPrediction::xGetSSEw( const DistParam &rcDtParam )
 // HADAMARD with step (used in fractional search)
 // --------------------------------------------------------------------------------------------------------------------
 //! get weighted Hadamard cost for 2x2 block
-Distortion xCalcHADs2x2w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur,
-                         int step)
+Distortion xCalcHADs2x2w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg,
+                         ptrdiff_t strideCur, int step)
 {
   const int round  = wpCur.round;
   const int shift  = wpCur.shift;
@@ -356,8 +320,8 @@ Distortion xCalcHADs2x2w(const WPScalingParam &wpCur, const Pel *piOrg, const Pe
 
 
 //! get weighted Hadamard cost for 4x4 block
-Distortion xCalcHADs4x4w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur,
-                         int step)
+Distortion xCalcHADs4x4w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg,
+                         ptrdiff_t strideCur, int step)
 {
   const int round  = wpCur.round;
   const int shift  = wpCur.shift;
@@ -466,8 +430,8 @@ Distortion xCalcHADs4x4w(const WPScalingParam &wpCur, const Pel *piOrg, const Pe
 
 
 //! get weighted Hadamard cost for 8x8 block
-Distortion xCalcHADs8x8w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur,
-                         int step)
+Distortion xCalcHADs8x8w(const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg,
+                         ptrdiff_t strideCur, int step)
 {
   Distortion sad=0;
   TCoeff diff[64], m1[8][8], m2[8][8], m3[8][8];
@@ -591,8 +555,8 @@ Distortion RdCostWeightPrediction::xGetHADsw( const DistParam &rcDtParam )
   const Pel        *piCur      = rcDtParam.cur.buf;
   const int         rows       = rcDtParam.org.height;
   const int         cols       = rcDtParam.org.width;
-  const int         strideCur  = rcDtParam.cur.stride;
-  const int         strideOrg  = rcDtParam.org.stride;
+  const ptrdiff_t   strideCur  = rcDtParam.cur.stride;
+  const ptrdiff_t   strideOrg  = rcDtParam.org.stride;
   const int         step       = rcDtParam.step;
   const ComponentID compIdx    = rcDtParam.compID;
   CHECK(compIdx>=MAX_NUM_COMPONENT, "Invalid component");
@@ -602,8 +566,8 @@ Distortion RdCostWeightPrediction::xGetHADsw( const DistParam &rcDtParam )
 
   if ((rows % 8 == 0) && (cols % 8 == 0))
   {
-    const int offsetOrg = strideOrg << 3;
-    const int offsetCur = strideCur << 3;
+    const ptrdiff_t offsetOrg = strideOrg << 3;
+    const ptrdiff_t offsetCur = strideCur << 3;
     for (int y = 0; y < rows; y += 8)
     {
       for (int x = 0; x < cols; x += 8)
@@ -616,8 +580,8 @@ Distortion RdCostWeightPrediction::xGetHADsw( const DistParam &rcDtParam )
   }
   else if ((rows % 4 == 0) && (cols % 4 == 0))
   {
-    const int offsetOrg = strideOrg << 2;
-    const int offsetCur = strideCur << 2;
+    const ptrdiff_t offsetOrg = strideOrg << 2;
+    const ptrdiff_t offsetCur = strideCur << 2;
 
     for (int y = 0; y < rows; y += 4)
     {

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,11 +98,11 @@ private:
   // SPS
   ParameterSetMap<SPS>     &m_spsMap;                             ///< SPS. This is the base value
   ParameterSetMap<PPS>     &m_ppsMap;                             ///< PPS. This is the base value
-  ParameterSetMap<APS>     &m_apsMap;                             ///< APS. This is the base value
+  EnumArray<ParameterSetMap<APS>, ApsType> &m_apsMaps;                            ///< APS. This is the base value
   PicHeader                 m_picHeader;                          ///< picture header
   // RD cost computation
   RdCost                    m_cRdCost;                            ///< RD cost computation class
-  CtxCache                  m_CtxCache;                           ///< buffer for temporarily stored context models
+  CtxPool                   m_ctxPool;                            ///< buffer for temporarily stored context models
   // quality control
   RateCtrl                  m_cRateCtrl;                          ///< Rate control class
 
@@ -129,7 +129,11 @@ private:
 
   int*                      m_layerDecPicBuffering;
   RPLList                   m_rplLists[2];
-
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct             m_featureCounter;
+  bool                      m_GMFAFramewise;
+  std::string   m_GMFAFile;
+#endif
 public:
   SPS*                      getSPS( int spsId ) { return m_spsMap.getPS( spsId ); };
   APS**                     getApss() { return m_apss; }
@@ -138,7 +142,9 @@ public:
   const RPLList*            getRPLList(bool b) const { return &m_rplLists[b]; }
   RPLList*                  getRPLList(bool b) { return &m_rplLists[b]; }
   uint32_t                  getNumRPL(bool b) const { return m_rplLists[b].getNumberOfReferencePictureLists(); }
-
+#if JVET_AB0080
+  int                       m_gopRprPpsId;
+#endif
 protected:
   void  xGetNewPicBuffer  ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Picture*& rpcPic, int ppsId ); ///< get picture buffer which will be processed. If ppsId<0, then the ppsMap will be queried for the first match.
   void  xInitOPI(OPI& opi); ///< initialize Operating point Information (OPI) from encoder options
@@ -184,22 +190,28 @@ public:
   CABACEncoder*           getCABACEncoder       ()              { return  &m_CABACEncoder;         }
 
   RdCost*                 getRdCost             ()              { return  &m_cRdCost;              }
-  CtxCache*               getCtxCache           ()              { return  &m_CtxCache;             }
+  CtxPool                *getCtxCache() { return &m_ctxPool; }
   RateCtrl*               getRateCtrl           ()              { return  &m_cRateCtrl;            }
 
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct getFeatureCounter(){return m_featureCounter;}
+  void setFeatureCounter(FeatureCounterStruct b){m_featureCounter=b;}
+  bool getGMFAFramewise() {return m_GMFAFramewise;}
+  void setGMFAFile(std::string b){m_GMFAFile = b;}
+#endif
 
-  void                    selectReferencePictureList(Slice* slice, int POCCurr, int GOPid, int ltPoc);
+  void selectReferencePictureList(Slice *slice, int pocCurr, int gopId, int ltPoc);
 
   void                   setParamSetChanged(int spsId, int ppsId);
-  bool                   APSNeedsWriting(int apsId);
   bool                   PPSNeedsWriting(int ppsId);
   bool                   SPSNeedsWriting(int spsId);
   const PPS* getPPS( int Id ) { return m_ppsMap.getPS( Id); }
-  const APS*             getAPS(int Id) { return m_apsMap.getPS(Id); }
+  const APS             *getAPS(int Id, ApsType apsType) { return m_apsMaps[apsType].getPS(Id); }
 
   EncReshape*            getReshaper()                          { return  &m_cReshaper; }
 
-  ParameterSetMap<APS>*  getApsMap() { return &m_apsMap; }
+  ParameterSetMap<APS>                     *getApsMap(ApsType apsType) { return &m_apsMaps[apsType]; }
+  EnumArray<ParameterSetMap<APS>, ApsType> *getApsMaps() { return &m_apsMaps; }
 
   bool                   getPltEnc()                      const { return   m_doPlt; }
   void                   checkPltStats( Picture* pic );
@@ -214,7 +226,11 @@ public:
   // snrCSC used for SNR calculations. Picture in original colour space.
   bool encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYuvTrueOrg, PelStorage *pcPicYuvFilteredOrg,
                   PelStorage *pcPicYuvFilteredOrgForFG, const InputColourSpaceConversion snrCSC,
-                  std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded);
+                  std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded
+#if JVET_AB0080
+    , PelStorage** ppcPicYuvRPR
+#endif
+  );
 
   bool encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded);
 

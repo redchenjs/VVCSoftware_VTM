@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@ class SPS;
 class SEI
 {
 public:
-  enum PayloadType
+  enum class PayloadType : uint16_t
   {
     BUFFERING_PERIOD                     = 0,
     PICTURE_TIMING                       = 1,
@@ -69,38 +69,40 @@ public:
     SCALABLE_NESTING                     = 133,
     MASTERING_DISPLAY_COLOUR_VOLUME      = 137,
     COLOUR_TRANSFORM_INFO                = 142,
+    CONTENT_LIGHT_LEVEL_INFO             = 144,
     DEPENDENT_RAP_INDICATION             = 145,
+    ALTERNATIVE_TRANSFER_CHARACTERISTICS = 147,
+    AMBIENT_VIEWING_ENVIRONMENT          = 148,
+    CONTENT_COLOUR_VOLUME                = 149,
     EQUIRECTANGULAR_PROJECTION           = 150,
+    GENERALIZED_CUBEMAP_PROJECTION       = 153,
     SPHERE_ROTATION                      = 154,
     REGION_WISE_PACKING                  = 155,
     OMNI_VIEWPORT                        = 156,
-    GENERALIZED_CUBEMAP_PROJECTION       = 153,
     ALPHA_CHANNEL_INFO                   = 165,
     FRAME_FIELD_INFO                     = 168,
     DEPTH_REPRESENTATION_INFO            = 177,
     MULTIVIEW_ACQUISITION_INFO           = 179,
     MULTIVIEW_VIEW_POSITION              = 180,
-    SUBPICTURE_LEVEL_INFO                = 203,
-    SAMPLE_ASPECT_RATIO_INFO             = 204,
-    CONTENT_LIGHT_LEVEL_INFO             = 144,
-    ALTERNATIVE_TRANSFER_CHARACTERISTICS = 147,
-    AMBIENT_VIEWING_ENVIRONMENT          = 148,
-    CONTENT_COLOUR_VOLUME                = 149,
-    ANNOTATED_REGIONS                    = 202,
-    SCALABILITY_DIMENSION_INFO           = 205,
-    EXTENDED_DRAP_INDICATION             = 206,
-    CONSTRAINED_RASL_ENCODING            = 207,
-    VDI_SEI_ENVELOPE             = 208,
-    SHUTTER_INTERVAL_INFO                = 209,
+#if JVET_T0056_SEI_MANIFEST
+    SEI_MANIFEST = 200,
+#endif
+#if JVET_T0056_SEI_PREFIX_INDICATION
+    SEI_PREFIX_INDICATION = 201,
+#endif
+    SUBPICTURE_LEVEL_INFO                      = 203,
+    SAMPLE_ASPECT_RATIO_INFO                   = 204,
+    ANNOTATED_REGIONS                          = 202,
+    SCALABILITY_DIMENSION_INFO                 = 205,
+    EXTENDED_DRAP_INDICATION                   = 206,
+    CONSTRAINED_RASL_ENCODING                  = 207,
+    VDI_SEI_ENVELOPE                           = 208,
+    SHUTTER_INTERVAL_INFO                      = 209,
     NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS = 210,
     NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
-    PHASE_INDICATION                     = 212,
-#endif
+    PHASE_INDICATION                           = 212,
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
-    SEI_PROCESSING_ORDER                 = 213,
-#endif
+    SEI_PROCESSING_ORDER = 213,
   };
 
   SEI() {}
@@ -111,10 +113,21 @@ public:
   virtual PayloadType payloadType() const = 0;
 };
 
+struct SeiPayload
+{
+  SEI::PayloadType payloadType;
+  uint32_t         payloadLayerId;
+  bool             payloadNested;
+  uint32_t         payloadSize;
+  uint8_t         *payload;
+  int              duiIdx;
+  int              subpicId;
+};
+
 class SEIFillerPayload : public SEI
 {
 public:
-  PayloadType payloadType() const { return FILLER_PAYLOAD; }
+  PayloadType payloadType() const { return PayloadType::FILLER_PAYLOAD; }
   SEIFillerPayload() {}
   virtual ~SEIFillerPayload() {}
 
@@ -123,7 +136,7 @@ public:
 class SEIShutterIntervalInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return SHUTTER_INTERVAL_INFO; }
+  PayloadType payloadType() const { return PayloadType::SHUTTER_INTERVAL_INFO; }
   SEIShutterIntervalInfo() {}
   virtual ~SEIShutterIntervalInfo() {}
 
@@ -135,25 +148,27 @@ public:
   std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
 };
 
-#if JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER
 class SEIProcessingOrderInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return SEI_PROCESSING_ORDER; }
+  PayloadType payloadType() const { return PayloadType::SEI_PROCESSING_ORDER; }
   SEIProcessingOrderInfo() {}
   virtual ~SEIProcessingOrderInfo() {}
 
   bool                   m_posEnabled;
   std::vector<uint16_t>  m_posPayloadType;
+#if JVET_AB0069_SEI_PROCESSING_ORDER
+  std::vector<uint16_t>   m_posProcessingOrder;
+#else
   std::vector<uint8_t>   m_posProcessingOrder;
+#endif
   uint32_t               m_posNumofSeiMessages;
 };
-#endif
 
 class SEIEquirectangularProjection : public SEI
 {
 public:
-  PayloadType payloadType() const { return EQUIRECTANGULAR_PROJECTION; }
+  PayloadType payloadType() const { return PayloadType::EQUIRECTANGULAR_PROJECTION; }
 
   SEIEquirectangularProjection()  {}
   virtual ~SEIEquirectangularProjection() {}
@@ -169,7 +184,7 @@ public:
 class SEISphereRotation : public SEI
 {
 public:
-  PayloadType payloadType() const { return SPHERE_ROTATION; }
+  PayloadType payloadType() const { return PayloadType::SPHERE_ROTATION; }
 
   SEISphereRotation()  {}
   virtual ~SEISphereRotation() {}
@@ -184,7 +199,7 @@ public:
 class SEIOmniViewport : public SEI
 {
 public:
-  PayloadType payloadType() const { return OMNI_VIEWPORT; }
+  PayloadType payloadType() const { return PayloadType::OMNI_VIEWPORT; }
 
   SEIOmniViewport() {}
   virtual ~SEIOmniViewport() {}
@@ -208,7 +223,7 @@ public:
 class SEIRegionWisePacking : public SEI
 {
 public:
-  PayloadType payloadType() const { return REGION_WISE_PACKING; }
+  PayloadType payloadType() const { return PayloadType::REGION_WISE_PACKING; }
   SEIRegionWisePacking() {}
   virtual ~SEIRegionWisePacking() {}
   bool                  m_rwpCancelFlag;
@@ -240,7 +255,7 @@ public:
 class SEIGeneralizedCubemapProjection : public SEI
 {
 public:
-  PayloadType payloadType() const { return GENERALIZED_CUBEMAP_PROJECTION; }
+  PayloadType payloadType() const { return PayloadType::GENERALIZED_CUBEMAP_PROJECTION; }
 
   SEIGeneralizedCubemapProjection()  {}
   virtual ~SEIGeneralizedCubemapProjection() {}
@@ -264,7 +279,7 @@ public:
 class SEIScalabilityDimensionInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return SCALABILITY_DIMENSION_INFO; }
+  PayloadType payloadType() const { return PayloadType::SCALABILITY_DIMENSION_INFO; }
   SEIScalabilityDimensionInfo()
   : m_sdiNumViews (0)
   , m_sdiMaxLayersMinus1 (0)
@@ -291,7 +306,7 @@ public:
 class SEIMultiviewAcquisitionInfo : public SEI
 {
 public:
-  PayloadType payloadType( ) const { return MULTIVIEW_ACQUISITION_INFO; }
+  PayloadType payloadType() const { return PayloadType::MULTIVIEW_ACQUISITION_INFO; }
   SEIMultiviewAcquisitionInfo ( ) { };
   ~SEIMultiviewAcquisitionInfo( ) { };
   SEI* getCopy( ) const { return new SEIMultiviewAcquisitionInfo(*this); };
@@ -386,7 +401,7 @@ private:
 class SEIMultiviewViewPosition : public SEI
 {
 public:
-  PayloadType payloadType() const { return MULTIVIEW_VIEW_POSITION; }
+  PayloadType payloadType() const { return PayloadType::MULTIVIEW_VIEW_POSITION; }
   SEIMultiviewViewPosition() { };
   ~SEIMultiviewViewPosition() { };
   bool isMVPSameContent(SEIMultiviewViewPosition* mvpB);
@@ -398,7 +413,7 @@ public:
 class SEIAlphaChannelInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return ALPHA_CHANNEL_INFO; }
+  PayloadType payloadType() const { return PayloadType::ALPHA_CHANNEL_INFO; }
   SEIAlphaChannelInfo()
   : m_aciCancelFlag (false)
   , m_aciUseIdc (0)
@@ -424,7 +439,7 @@ public:
 class SEIDepthRepresentationInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return DEPTH_REPRESENTATION_INFO; }
+  PayloadType payloadType() const { return PayloadType::DEPTH_REPRESENTATION_INFO; }
   SEIDepthRepresentationInfo()
   : m_driZNearFlag (false)
   , m_driZFarFlag (false)
@@ -457,7 +472,7 @@ public:
 class SEISampleAspectRatioInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return SAMPLE_ASPECT_RATIO_INFO; }
+  PayloadType payloadType() const { return PayloadType::SAMPLE_ASPECT_RATIO_INFO; }
   SEISampleAspectRatioInfo() {}
   virtual ~SEISampleAspectRatioInfo() {}
   bool                  m_sariCancelFlag;
@@ -467,11 +482,10 @@ public:
   int                   m_sariSarHeight;
 };
 
-#if JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE
 class SEIPhaseIndication : public SEI
 {
 public:
-  PayloadType payloadType() const { return PHASE_INDICATION; }
+  PayloadType payloadType() const { return PayloadType::PHASE_INDICATION; }
   SEIPhaseIndication() {}
   virtual ~SEIPhaseIndication() {}
   int                   m_horPhaseNum;
@@ -479,14 +493,13 @@ public:
   int                   m_verPhaseNum;
   int                   m_verPhaseDenMinus1;
 };
-#endif
 
 static constexpr uint32_t ISO_IEC_11578_LEN=16;
 
 class SEIuserDataUnregistered : public SEI
 {
 public:
-  PayloadType payloadType() const { return USER_DATA_UNREGISTERED; }
+  PayloadType payloadType() const { return PayloadType::USER_DATA_UNREGISTERED; }
 
   SEIuserDataUnregistered()
     : userData(0)
@@ -505,7 +518,7 @@ public:
 class SEIDecodedPictureHash : public SEI
 {
 public:
-  PayloadType payloadType() const { return DECODED_PICTURE_HASH; }
+  PayloadType payloadType() const { return PayloadType::DECODED_PICTURE_HASH; }
 
   SEIDecodedPictureHash() {}
   virtual ~SEIDecodedPictureHash() {}
@@ -519,7 +532,7 @@ public:
 class SEIDependentRAPIndication : public SEI
 {
 public:
-  PayloadType payloadType() const { return DEPENDENT_RAP_INDICATION; }
+  PayloadType payloadType() const { return PayloadType::DEPENDENT_RAP_INDICATION; }
   SEIDependentRAPIndication() { }
 
   virtual ~SEIDependentRAPIndication() { }
@@ -529,7 +542,7 @@ public:
 class SEIBufferingPeriod : public SEI
 {
 public:
-  PayloadType payloadType() const { return BUFFERING_PERIOD; }
+  PayloadType payloadType() const { return PayloadType::BUFFERING_PERIOD; }
   void copyTo (SEIBufferingPeriod& target) const;
 
   SEIBufferingPeriod()
@@ -596,7 +609,7 @@ public:
 class SEIPictureTiming : public SEI
 {
 public:
-  PayloadType payloadType() const { return PICTURE_TIMING; }
+  PayloadType payloadType() const { return PayloadType::PICTURE_TIMING; }
   void copyTo (SEIPictureTiming& target) const;
 
   SEIPictureTiming()
@@ -644,7 +657,7 @@ public:
 class SEIDecodingUnitInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return DECODING_UNIT_INFO; }
+  PayloadType payloadType() const { return PayloadType::DECODING_UNIT_INFO; }
 
   SEIDecodingUnitInfo()
     : m_decodingUnitIdx(0)
@@ -666,7 +679,7 @@ public:
 class SEIFrameFieldInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return FRAME_FIELD_INFO; }
+  PayloadType payloadType() const { return PayloadType::FRAME_FIELD_INFO; }
 
   SEIFrameFieldInfo()
     : m_fieldPicFlag(false)
@@ -696,7 +709,7 @@ public:
 class SEIFramePacking : public SEI
 {
 public:
-  PayloadType payloadType() const { return FRAME_PACKING; }
+  PayloadType payloadType() const { return PayloadType::FRAME_PACKING; }
 
   SEIFramePacking() {}
   virtual ~SEIFramePacking() {}
@@ -724,7 +737,7 @@ public:
 class SEIDisplayOrientation : public SEI
 {
 public:
-  PayloadType payloadType() const { return DISPLAY_ORIENTATION; }
+  PayloadType payloadType() const { return PayloadType::DISPLAY_ORIENTATION; }
 
   SEIDisplayOrientation() {}
   virtual ~SEIDisplayOrientation() {}
@@ -737,7 +750,7 @@ public:
 class SEIGreenMetadata : public SEI
 {
 public:
-  PayloadType payloadType() const { return GREEN_METADATA; }
+  PayloadType payloadType() const { return PayloadType::GREEN_METADATA; }
 
   SEIGreenMetadata() {}
   virtual ~SEIGreenMetadata() {}
@@ -747,14 +760,17 @@ public:
 class SEIGreenMetadataInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return GREEN_METADATA; }
+  PayloadType payloadType() const { return PayloadType::GREEN_METADATA; }
   SEIGreenMetadataInfo() {}
 
   virtual ~SEIGreenMetadataInfo() {}
   int m_greenMetadataType =-1;
   // Metrics for quality recovery after low-power encoding
   int m_xsdSubpicNumberMinus1 = -1; //xsd_metric_number_minus1 plus 1 indicates the number of objective quality metrics contained in the SEI message.
-
+#if GREEN_METADATA_SEI_ENABLED
+  int m_xsdSubPicIdc;
+#endif
+  
   int     m_xsdMetricValuePSNR;
   int     m_xsdMetricValueSSIM;
   int     m_xsdMetricValueWPSNR;
@@ -777,7 +793,7 @@ public:
 class SEIParameterSetsInclusionIndication : public SEI
 {
 public:
-  PayloadType payloadType() const { return PARAMETER_SETS_INCLUSION_INDICATION; }
+  PayloadType payloadType() const { return PayloadType::PARAMETER_SETS_INCLUSION_INDICATION; }
   SEIParameterSetsInclusionIndication() {}
   virtual ~SEIParameterSetsInclusionIndication() {}
 
@@ -787,11 +803,11 @@ public:
 class SEIMasteringDisplayColourVolume : public SEI
 {
 public:
-    PayloadType payloadType() const { return MASTERING_DISPLAY_COLOUR_VOLUME; }
-    SEIMasteringDisplayColourVolume() {}
-    virtual ~SEIMasteringDisplayColourVolume(){}
+  PayloadType payloadType() const { return PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME; }
+  SEIMasteringDisplayColourVolume() {}
+  virtual ~SEIMasteringDisplayColourVolume() {}
 
-    SEIMasteringDisplay values;
+  SEIMasteringDisplay values;
 };
 
 typedef std::list<SEI*> SEIMessages;
@@ -808,7 +824,7 @@ void deleteSEIs (SEIMessages &seiList);
 class SEIScalableNesting : public SEI
 {
 public:
-  PayloadType payloadType() const { return SCALABLE_NESTING; }
+  PayloadType payloadType() const { return PayloadType::SCALABLE_NESTING; }
 
   SEIScalableNesting()
   : m_snOlsFlag (false)
@@ -848,11 +864,10 @@ void xTraceSEIHeader();
 void xTraceSEIMessageType( SEI::PayloadType payloadType );
 #endif
 
-#if U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI
 class SEIAlternativeTransferCharacteristics : public SEI
 {
 public:
-  PayloadType payloadType() const { return ALTERNATIVE_TRANSFER_CHARACTERISTICS; }
+  PayloadType payloadType() const { return PayloadType::ALTERNATIVE_TRANSFER_CHARACTERISTICS; }
 
   SEIAlternativeTransferCharacteristics() : m_preferredTransferCharacteristics(18)
   { }
@@ -861,11 +876,10 @@ public:
 
   uint32_t m_preferredTransferCharacteristics;
 };
-#endif
 class SEIUserDataRegistered : public SEI
 {
 public:
-  PayloadType payloadType() const { return USER_DATA_REGISTERED_ITU_T_T35; }
+  PayloadType payloadType() const { return PayloadType::USER_DATA_REGISTERED_ITU_T_T35; }
 
   SEIUserDataRegistered() {}
   virtual ~SEIUserDataRegistered() {}
@@ -877,7 +891,7 @@ public:
 class SEIFilmGrainCharacteristics : public SEI
 {
 public:
-  PayloadType payloadType() const { return FILM_GRAIN_CHARACTERISTICS; }
+  PayloadType payloadType() const { return PayloadType::FILM_GRAIN_CHARACTERISTICS; }
 
   SEIFilmGrainCharacteristics() {}
   virtual ~SEIFilmGrainCharacteristics() {}
@@ -916,7 +930,7 @@ public:
 class SEIContentLightLevelInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return CONTENT_LIGHT_LEVEL_INFO; }
+  PayloadType payloadType() const { return PayloadType::CONTENT_LIGHT_LEVEL_INFO; }
   SEIContentLightLevelInfo() { }
 
   virtual ~SEIContentLightLevelInfo() { }
@@ -928,7 +942,7 @@ public:
 class SEIAmbientViewingEnvironment : public SEI
 {
 public:
-  PayloadType payloadType() const { return AMBIENT_VIEWING_ENVIRONMENT; }
+  PayloadType payloadType() const { return PayloadType::AMBIENT_VIEWING_ENVIRONMENT; }
   SEIAmbientViewingEnvironment() { }
 
   virtual ~SEIAmbientViewingEnvironment() { }
@@ -941,7 +955,7 @@ public:
 class SEIColourTransformInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return COLOUR_TRANSFORM_INFO; }
+  PayloadType payloadType() const { return PayloadType::COLOUR_TRANSFORM_INFO; }
   SEIColourTransformInfo() { }
 
   virtual ~SEIColourTransformInfo() { }
@@ -963,7 +977,7 @@ public:
 class SEIContentColourVolume : public SEI
 {
 public:
-  PayloadType payloadType() const { return CONTENT_COLOUR_VOLUME; }
+  PayloadType payloadType() const { return PayloadType::CONTENT_COLOUR_VOLUME; }
   SEIContentColourVolume() {}
   virtual ~SEIContentColourVolume() {}
 
@@ -986,7 +1000,7 @@ public:
 class SEISubpicureLevelInfo : public SEI
 {
 public:
-  PayloadType payloadType() const { return SUBPICTURE_LEVEL_INFO; }
+  PayloadType payloadType() const { return PayloadType::SUBPICTURE_LEVEL_INFO; }
   SEISubpicureLevelInfo()
   : m_numRefLevels(0)
   , m_explicitFractionPresentFlag (false)
@@ -1008,10 +1022,53 @@ public:
   std::vector<std::vector<std::vector<int>>> m_refLevelFraction;
 };
 
+#if JVET_T0056_SEI_MANIFEST
+class SEIManifest : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::SEI_MANIFEST; }
+
+  SEIManifest() {}
+  virtual ~SEIManifest() {}
+
+  enum SEIManifestDescription
+  {
+    NO_SEI_MESSAGE           = 0,
+    NECESSARY_SEI_MESSAGE    = 1,
+    UNNECESSARY_SEI_MESSAGE  = 2,
+    UNDETERMINED_SEI_MESSAGE = 3,
+  };
+  uint16_t                    m_manifestNumSeiMsgTypes;
+  std::vector<PayloadType>    m_manifestSeiPayloadType;
+  std::vector<uint8_t>        m_manifestSeiDescription;
+
+  SEIManifestDescription getSEIMessageDescription(const PayloadType payloadType);
+};
+#endif
+
+#if JVET_T0056_SEI_PREFIX_INDICATION
+class SEIPrefixIndication : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::SEI_PREFIX_INDICATION; }
+
+  SEIPrefixIndication() {}
+  virtual ~SEIPrefixIndication() {}
+
+  PayloadType                   m_prefixSeiPayloadType;
+  uint8_t                       m_numSeiPrefixIndicationsMinus1;
+  std::vector<uint16_t>         m_numBitsInPrefixIndicationMinus1;
+  std::vector<std::vector<int>> m_seiPrefixDataBit;
+  const SEI*                    m_payload;
+
+  uint8_t getNumsOfSeiPrefixIndications(const SEI *sei);
+};
+#endif  
+
 class SEIAnnotatedRegions : public SEI
 {
 public:
-  PayloadType payloadType() const { return ANNOTATED_REGIONS; }
+  PayloadType payloadType() const { return PayloadType::ANNOTATED_REGIONS; }
   SEIAnnotatedRegions() {}
   virtual ~SEIAnnotatedRegions() {}
 
@@ -1061,8 +1118,9 @@ public:
     bool      m_partialObjectFlagPresentFlag;
     bool      m_objectLabelPresentFlag;
     bool      m_objectConfidenceInfoPresentFlag;
-    uint32_t      m_objectConfidenceLength;         // Only valid if m_objectConfidenceInfoPresentFlag
+    uint32_t  m_objectConfidenceLength;         // Only valid if m_objectConfidenceInfoPresentFlag
     bool      m_objectLabelLanguagePresentFlag; // Only valid if m_objectLabelPresentFlag
+
     std::string m_annotatedRegionsObjectLabelLang;
   };
   typedef uint32_t AnnotatedRegionObjectIndex;
@@ -1076,7 +1134,7 @@ public:
 class SEIExtendedDrapIndication : public SEI
 {
 public:
-  PayloadType payloadType() const { return EXTENDED_DRAP_INDICATION; }
+  PayloadType payloadType() const { return PayloadType::EXTENDED_DRAP_INDICATION; }
 
   SEIExtendedDrapIndication() {}
   virtual ~SEIExtendedDrapIndication() {}
@@ -1091,7 +1149,7 @@ public:
 class SEIConstrainedRaslIndication : public SEI
 {
 public:
-  PayloadType payloadType() const { return CONSTRAINED_RASL_ENCODING; }
+  PayloadType payloadType() const { return PayloadType::CONSTRAINED_RASL_ENCODING; }
   SEIConstrainedRaslIndication() { }
 
   virtual ~SEIConstrainedRaslIndication() { }
@@ -1100,7 +1158,7 @@ public:
 class SEIVDISeiEnvelope : public SEI
 {
 public:
-  PayloadType payloadType() const { return VDI_SEI_ENVELOPE; }
+  PayloadType payloadType() const { return PayloadType::VDI_SEI_ENVELOPE; }
 
   SEIVDISeiEnvelope() {}
   virtual ~SEIVDISeiEnvelope() {}
@@ -1109,62 +1167,60 @@ public:
 class SEINeuralNetworkPostFilterCharacteristics : public SEI
 {
 public:
-  PayloadType payloadType() const override { return NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS; }
+  PayloadType payloadType() const override { return PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS; }
   SEINeuralNetworkPostFilterCharacteristics()
-  : m_id(0)
-  , m_modeIdc(0)
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
-  , m_purposeAndFormattingFlag(false)
-#endif
-  , m_purpose(0)
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
+    : m_id(0)
+    , m_modeIdc(0)
+    , m_purposeAndFormattingFlag(false)
+    , m_purpose(0)
     , m_outSubCFlag(0)
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
+    , m_picWidthInLumaSamples(0)
+    , m_picHeightInLumaSamples(0)
+    , m_inpTensorBitDepthMinus8(0)
+    , m_outTensorBitDepthMinus8(0)
+    , m_componentLastFlag(false)
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    , m_inpFormatIdc(0)
 #else
-  , m_outSubWidthCFlag(false)
-  , m_outSubHeightCFlag(false)
+    , m_inpSampleIdc(0)
 #endif
-  , m_picWidthInLumaSamples(0)
-  , m_picHeightInLumaSamples(0)
-  , m_inpTensorBitDepthMinus8(0)
-  , m_outTensorBitDepthMinus8(0)
-  , m_componentLastFlag(false)
-  , m_inpSampleIdc(0)
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS
-  , m_AuxInpIdc(0)
-  , m_SepColDescriptionFlag(false)
-  , m_ColPrimaries(0)
-  , m_TransCharacteristics(0)
-  , m_MatrixCoeffs(0)
-#endif
-  , m_inpOrderIdc(0)
-  , m_outSampleIdc(0)
-  , m_outOrderIdc(0)
-  , m_constantPatchSizeFlag(false)
-  , m_patchWidthMinus1(0)
-  , m_patchHeightMinus1(0)
-  , m_overlap(0)
-  , m_paddingType(0)
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
-  , m_lumaPadding(0)
-  , m_cbPadding(0)
-  , m_crPadding(0)
-#endif
-  , m_payloadByte(nullptr)
-  , m_complexityIdc(0)
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
-  , m_uriTag("")
-  , m_uri("")
-#endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
-  , m_parameterTypeIdc(0)
+    , m_auxInpIdc(0)
+    , m_sepColDescriptionFlag(false)
+    , m_colPrimaries(0)
+    , m_transCharacteristics(0)
+    , m_matrixCoeffs(0)
+    , m_inpOrderIdc(0)
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+    , m_outFormatIdc(0)
 #else
-  , m_parameterTypeFlag(false)
+    , m_outSampleIdc(0)
 #endif
-  , m_log2ParameterBitLengthMinus3(0)
-  , m_numParametersIdc(0)
-  , m_numKmacOperationsIdc(0)
+    , m_outOrderIdc(0)
+    , m_constantPatchSizeFlag(false)
+    , m_patchWidthMinus1(0)
+    , m_patchHeightMinus1(0)
+    , m_overlap(0)
+    , m_paddingType(0)
+    , m_lumaPadding(0)
+    , m_cbPadding(0)
+    , m_crPadding(0)
+    , m_payloadByte(nullptr)
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+    , m_complexityInfoPresentFlag(false)
+#else
+    , m_complexityIdc(0)
+#endif
+    , m_uriTag("")
+    , m_uri("")
+    , m_parameterTypeIdc(0)
+    , m_log2ParameterBitLengthMinus3(0)
+    , m_numParametersIdc(0)
+    , m_numKmacOperationsIdc(0)
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+    , m_totalKilobyteSize(0)
+#endif
   {}
 
   ~SEINeuralNetworkPostFilterCharacteristics() override
@@ -1178,65 +1234,67 @@ public:
 
   uint32_t       m_id;
   uint32_t       m_modeIdc;
-#if JVET_AA0056_GATING_FILTER_CHARACTERISTICS
   bool           m_purposeAndFormattingFlag;
-#endif
   uint32_t       m_purpose;
-#if JVET_AA0054_CHROMA_FORMAT_FLAG
   bool           m_outSubCFlag;
   uint8_t        m_outSubWidthC;
   uint8_t        m_outSubHeightC;
-#else
-  bool           m_outSubWidthCFlag;
-  bool           m_outSubHeightCFlag;
-#endif
   uint32_t       m_picWidthInLumaSamples;
   uint32_t       m_picHeightInLumaSamples;
   uint32_t       m_inpTensorBitDepthMinus8;
   uint32_t       m_outTensorBitDepthMinus8;
   bool           m_componentLastFlag;
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+  uint32_t       m_inpFormatIdc;
+#else
   uint32_t       m_inpSampleIdc;
-#if JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS 
-  uint32_t       m_AuxInpIdc;
-  bool           m_SepColDescriptionFlag;
-  uint8_t        m_ColPrimaries;
-  uint8_t        m_TransCharacteristics;
-  uint8_t        m_MatrixCoeffs;
 #endif
+  uint32_t m_auxInpIdc;
+  bool     m_sepColDescriptionFlag;
+  uint8_t  m_colPrimaries;
+  uint8_t  m_transCharacteristics;
+  uint8_t  m_matrixCoeffs;
   uint32_t       m_inpOrderIdc;
+#if M60678_BALLOT_COMMENTS_OF_FI_03
+  uint32_t       m_outFormatIdc;
+#else
   uint32_t       m_outSampleIdc;
+#endif
   uint32_t       m_outOrderIdc;
   bool           m_constantPatchSizeFlag;
   uint32_t       m_patchWidthMinus1;
   uint32_t       m_patchHeightMinus1;
   uint32_t       m_overlap;
   uint32_t       m_paddingType;
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
   uint32_t       m_lumaPadding;
   uint32_t       m_cbPadding;
   uint32_t       m_crPadding;
-#endif
   uint64_t       m_payloadLength;
   char*          m_payloadByte;
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+  bool           m_complexityInfoPresentFlag;
+#else
   uint32_t       m_complexityIdc;
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
+#endif
   std::string    m_uriTag;
   std::string    m_uri;
-#endif
-#if JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK
   uint32_t       m_parameterTypeIdc;
-#else
-  bool           m_parameterTypeFlag;
-#endif
   uint32_t       m_log2ParameterBitLengthMinus3;
   uint32_t       m_numParametersIdc;
   uint32_t       m_numKmacOperationsIdc;
+#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+  uint32_t       m_totalKilobyteSize;
+#endif
+#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
+  uint32_t       m_numberInputDecodedPicturesMinus2;
+  std::vector<uint32_t> m_numberInterpolatedPictures;
+#endif
 };
 
 class SEINeuralNetworkPostFilterActivation : public SEI
 {
 public:
-  PayloadType payloadType() const { return NEURAL_NETWORK_POST_FILTER_ACTIVATION; }
+  PayloadType payloadType() const { return PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION; }
   SEINeuralNetworkPostFilterActivation()
     : m_id(0)
   {}

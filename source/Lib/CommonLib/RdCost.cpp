@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,8 +47,7 @@
 //! \ingroup CommonLib
 //! \{
 
-
-FpDistFunc RdCost::m_afpDistortFunc[DF_TOTAL_FUNCTIONS] = { nullptr, };
+EnumArray<DistFunc, DFunc> RdCost::m_distortionFunc;
 
 RdCost::RdCost()
 {
@@ -70,16 +69,16 @@ double RdCost::calcRdCost( uint64_t fracBits, Distortion distortion )
     return MAX_DOUBLE;
   }
 #if WCG_EXT
-  return ( useUnadjustedLambda ? m_DistScaleUnadjusted : m_DistScale ) * double( distortion ) + double( fracBits );
+  return (useUnadjustedLambda ? m_distScaleUnadjusted : m_distScale) * double(distortion) + double(fracBits);
 #else
-  return m_DistScale * double( distortion ) + double( fracBits );
+  return m_distScale * double(distortion) + double(fracBits);
 #endif
 }
 
 void RdCost::setLambda( double dLambda, const BitDepths &bitDepths )
 {
   m_dLambda             = dLambda;
-  m_DistScale           = double(1<<SCALE_BITS) / m_dLambda;
+  m_distScale           = double(1 << SCALE_BITS) / m_dLambda;
   m_dLambdaMotionSAD    = sqrt(m_dLambda);
 }
 
@@ -94,10 +93,10 @@ void RdCost::lambdaAdjustColorTrans(bool forward, ComponentID componentID, bool 
       double lamdbaAdjustRate = pow(2.0, delta_QP / 3.0);
 
       m_lambdaStore[0][component] = m_dLambda;
-      m_DistScaleStore[0][component] = m_DistScale;
+      m_distScaleStore[0][component] = m_distScale;
 
       m_lambdaStore[1][component] = m_dLambda * lamdbaAdjustRate;
-      m_DistScaleStore[1][component] = double(1 << SCALE_BITS) / m_lambdaStore[1][component];
+      m_distScaleStore[1][component] = double(1 << SCALE_BITS) / m_lambdaStore[1][component];
     }
     m_resetStore = false;
   }
@@ -114,99 +113,99 @@ void RdCost::lambdaAdjustColorTrans(bool forward, ComponentID componentID, bool 
   }
 
   m_dLambda = m_lambdaStore[m_pairCheck][componentID];
-  m_DistScale = m_DistScaleStore[m_pairCheck][componentID];
+  m_distScale = m_distScaleStore[m_pairCheck][componentID];
   if (applyChromaScale)
   {
     CHECK(m_pairCheck == 0 || componentID == COMPONENT_Y, "wrong lambda adjustment for CS");
     double cResScale = (double)(1 << CSCALE_FP_PREC) / (double)(*resScaleInv);
     m_dLambda = m_dLambda / (cResScale*cResScale);
-    m_DistScale = double(1 << SCALE_BITS) / m_dLambda;
+    m_distScale      = double(1 << SCALE_BITS) / m_dLambda;
   }
   if (m_pairCheck == 0)
   {
-    CHECK(m_DistScale != m_DistScaleUnadjusted, "lambda should be adjusted to the original value");
+    CHECK(m_distScale != m_distScaleUnadjusted, "lambda should be adjusted to the original value");
   }
 }
 
-// Initialize Function Pointer by [eDFunc]
+// Initialize Function Pointer by [distFunc]
 void RdCost::init()
 {
-  m_afpDistortFunc[DF_SSE    ] = RdCost::xGetSSE;
-  m_afpDistortFunc[DF_SSE2   ] = RdCost::xGetSSE;
-  m_afpDistortFunc[DF_SSE4   ] = RdCost::xGetSSE4;
-  m_afpDistortFunc[DF_SSE8   ] = RdCost::xGetSSE8;
-  m_afpDistortFunc[DF_SSE16  ] = RdCost::xGetSSE16;
-  m_afpDistortFunc[DF_SSE32  ] = RdCost::xGetSSE32;
-  m_afpDistortFunc[DF_SSE64  ] = RdCost::xGetSSE64;
-  m_afpDistortFunc[DF_SSE16N ] = RdCost::xGetSSE16N;
+  m_distortionFunc[DFunc::SSE]    = RdCost::xGetSSE;
+  m_distortionFunc[DFunc::SSE2]   = RdCost::xGetSSE;
+  m_distortionFunc[DFunc::SSE4]   = RdCost::xGetSSE4;
+  m_distortionFunc[DFunc::SSE8]   = RdCost::xGetSSE8;
+  m_distortionFunc[DFunc::SSE16]  = RdCost::xGetSSE16;
+  m_distortionFunc[DFunc::SSE32]  = RdCost::xGetSSE32;
+  m_distortionFunc[DFunc::SSE64]  = RdCost::xGetSSE64;
+  m_distortionFunc[DFunc::SSE16N] = RdCost::xGetSSE16N;
 
-  m_afpDistortFunc[DF_SAD    ] = RdCost::xGetSAD;
-  m_afpDistortFunc[DF_SAD2   ] = RdCost::xGetSAD;
-  m_afpDistortFunc[DF_SAD4   ] = RdCost::xGetSAD4;
-  m_afpDistortFunc[DF_SAD8   ] = RdCost::xGetSAD8;
-  m_afpDistortFunc[DF_SAD16  ] = RdCost::xGetSAD16;
-  m_afpDistortFunc[DF_SAD32  ] = RdCost::xGetSAD32;
-  m_afpDistortFunc[DF_SAD64  ] = RdCost::xGetSAD64;
-  m_afpDistortFunc[DF_SAD16N ] = RdCost::xGetSAD16N;
+  m_distortionFunc[DFunc::SAD]    = RdCost::xGetSAD;
+  m_distortionFunc[DFunc::SAD2]   = RdCost::xGetSAD;
+  m_distortionFunc[DFunc::SAD4]   = RdCost::xGetSAD4;
+  m_distortionFunc[DFunc::SAD8]   = RdCost::xGetSAD8;
+  m_distortionFunc[DFunc::SAD16]  = RdCost::xGetSAD16;
+  m_distortionFunc[DFunc::SAD32]  = RdCost::xGetSAD32;
+  m_distortionFunc[DFunc::SAD64]  = RdCost::xGetSAD64;
+  m_distortionFunc[DFunc::SAD16N] = RdCost::xGetSAD16N;
 
-  m_afpDistortFunc[DF_SAD12  ] = RdCost::xGetSAD12;
-  m_afpDistortFunc[DF_SAD24  ] = RdCost::xGetSAD24;
-  m_afpDistortFunc[DF_SAD48  ] = RdCost::xGetSAD48;
+  m_distortionFunc[DFunc::SAD12] = RdCost::xGetSAD12;
+  m_distortionFunc[DFunc::SAD24] = RdCost::xGetSAD24;
+  m_distortionFunc[DFunc::SAD48] = RdCost::xGetSAD48;
 
-  m_afpDistortFunc[DF_HAD    ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD2   ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD4   ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD8   ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD16  ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD32  ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD64  ] = RdCost::xGetHADs;
-  m_afpDistortFunc[DF_HAD16N ] = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD]    = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD2]   = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD4]   = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD8]   = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD16]  = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD32]  = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD64]  = RdCost::xGetHADs;
+  m_distortionFunc[DFunc::HAD16N] = RdCost::xGetHADs;
 
-  m_afpDistortFunc[DF_MRSAD    ] = RdCost::xGetMRSAD;
-  m_afpDistortFunc[DF_MRSAD2   ] = RdCost::xGetMRSAD;
-  m_afpDistortFunc[DF_MRSAD4   ] = RdCost::xGetMRSAD4;
-  m_afpDistortFunc[DF_MRSAD8   ] = RdCost::xGetMRSAD8;
-  m_afpDistortFunc[DF_MRSAD16  ] = RdCost::xGetMRSAD16;
-  m_afpDistortFunc[DF_MRSAD32  ] = RdCost::xGetMRSAD32;
-  m_afpDistortFunc[DF_MRSAD64  ] = RdCost::xGetMRSAD64;
-  m_afpDistortFunc[DF_MRSAD16N ] = RdCost::xGetMRSAD16N;
+  m_distortionFunc[DFunc::MRSAD]    = RdCost::xGetMRSAD;
+  m_distortionFunc[DFunc::MRSAD2]   = RdCost::xGetMRSAD;
+  m_distortionFunc[DFunc::MRSAD4]   = RdCost::xGetMRSAD4;
+  m_distortionFunc[DFunc::MRSAD8]   = RdCost::xGetMRSAD8;
+  m_distortionFunc[DFunc::MRSAD16]  = RdCost::xGetMRSAD16;
+  m_distortionFunc[DFunc::MRSAD32]  = RdCost::xGetMRSAD32;
+  m_distortionFunc[DFunc::MRSAD64]  = RdCost::xGetMRSAD64;
+  m_distortionFunc[DFunc::MRSAD16N] = RdCost::xGetMRSAD16N;
 
-  m_afpDistortFunc[DF_MRSAD12  ] = RdCost::xGetMRSAD12;
-  m_afpDistortFunc[DF_MRSAD24  ] = RdCost::xGetMRSAD24;
-  m_afpDistortFunc[DF_MRSAD48  ] = RdCost::xGetMRSAD48;
+  m_distortionFunc[DFunc::MRSAD12] = RdCost::xGetMRSAD12;
+  m_distortionFunc[DFunc::MRSAD24] = RdCost::xGetMRSAD24;
+  m_distortionFunc[DFunc::MRSAD48] = RdCost::xGetMRSAD48;
 
-  m_afpDistortFunc[DF_MRHAD    ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD2   ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD4   ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD8   ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD16  ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD32  ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD64  ] = RdCost::xGetMRHADs;
-  m_afpDistortFunc[DF_MRHAD16N ] = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD]    = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD2]   = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD4]   = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD8]   = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD16]  = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD32]  = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD64]  = RdCost::xGetMRHADs;
+  m_distortionFunc[DFunc::MRHAD16N] = RdCost::xGetMRHADs;
 
-  m_afpDistortFunc[DF_SAD_FULL_NBIT   ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT2  ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT4  ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT8  ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT16 ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT32 ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT64 ] = RdCost::xGetSAD_full;
-  m_afpDistortFunc[DF_SAD_FULL_NBIT16N] = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT]    = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT2]   = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT4]   = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT8]   = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT16]  = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT32]  = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT64]  = RdCost::xGetSAD_full;
+  m_distortionFunc[DFunc::SAD_FULL_NBIT16N] = RdCost::xGetSAD_full;
 
 #if WCG_EXT
-  m_afpDistortFunc[DF_SSE_WTD   ] = RdCost::xGetSSE_WTD;
-  m_afpDistortFunc[DF_SSE2_WTD  ] = RdCost::xGetSSE2_WTD;
-  m_afpDistortFunc[DF_SSE4_WTD  ] = RdCost::xGetSSE4_WTD;
-  m_afpDistortFunc[DF_SSE8_WTD  ] = RdCost::xGetSSE8_WTD;
-  m_afpDistortFunc[DF_SSE16_WTD ] = RdCost::xGetSSE16_WTD;
-  m_afpDistortFunc[DF_SSE32_WTD ] = RdCost::xGetSSE32_WTD;
-  m_afpDistortFunc[DF_SSE64_WTD ] = RdCost::xGetSSE64_WTD;
-  m_afpDistortFunc[DF_SSE16N_WTD] = RdCost::xGetSSE16N_WTD;
+  m_distortionFunc[DFunc::SSE_WTD]    = RdCost::xGetSSE_WTD;
+  m_distortionFunc[DFunc::SSE2_WTD]   = RdCost::xGetSSE2_WTD;
+  m_distortionFunc[DFunc::SSE4_WTD]   = RdCost::xGetSSE4_WTD;
+  m_distortionFunc[DFunc::SSE8_WTD]   = RdCost::xGetSSE8_WTD;
+  m_distortionFunc[DFunc::SSE16_WTD]  = RdCost::xGetSSE16_WTD;
+  m_distortionFunc[DFunc::SSE32_WTD]  = RdCost::xGetSSE32_WTD;
+  m_distortionFunc[DFunc::SSE64_WTD]  = RdCost::xGetSSE64_WTD;
+  m_distortionFunc[DFunc::SSE16N_WTD] = RdCost::xGetSSE16N_WTD;
 #endif
 
-  m_afpDistortFunc[DF_SAD_INTERMEDIATE_BITDEPTH] = RdCost::xGetSAD;
+  m_distortionFunc[DFunc::SAD_INTERMEDIATE_BITDEPTH] = RdCost::xGetSAD;
 
-  m_afpDistortFunc[DF_SAD_WITH_MASK] = RdCost::xGetSADwMask;
+  m_distortionFunc[DFunc::SAD_WITH_MASK] = RdCost::xGetSADwMask;
 
 #if ENABLE_SIMD_OPT_DIST
 #ifdef TARGET_SIMD_X86
@@ -222,7 +221,8 @@ void RdCost::init()
   m_pairCheck    = 0;
 }
 
-void RdCost::setDistParam( DistParam &rcDP, const CPelBuf &org, const Pel* piRefY, int iRefStride, int bitDepth, ComponentID compID, int subShiftMode, int step, bool useHadamard )
+void RdCost::setDistParam(DistParam &rcDP, const CPelBuf &org, const Pel *piRefY, ptrdiff_t iRefStride, int bitDepth,
+                          ComponentID compID, int subShiftMode, int step, bool useHadamard)
 {
   rcDP.bitDepth   = bitDepth;
   rcDP.compID     = compID;
@@ -239,37 +239,17 @@ void RdCost::setDistParam( DistParam &rcDP, const CPelBuf &org, const Pel* piRef
   rcDP.step         = step;
   rcDP.maximumDistortionForEarlyExit = std::numeric_limits<Distortion>::max();
 
-  int DFOffset = ( rcDP.useMR ? DF_MRSAD - DF_SAD : 0 );
   if( !useHadamard )
   {
-    if( org.width == 12 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD12 + DFOffset ];
-    }
-    else if( org.width == 24 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD24 + DFOffset ];
-    }
-    else if( org.width == 48 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD48 + DFOffset ];
-    }
-    else if( isPowerOf2( org.width ) )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD + DFOffset + floorLog2( org.width ) ];
-    }
-    else
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD + DFOffset ];
-    }
-  }
-  else if( isPowerOf2( org.width ) )
-  {
-    rcDP.distFunc = m_afpDistortFunc[ DF_HAD + DFOffset + floorLog2( org.width ) ];
+    const DFunc baseIdx = rcDP.useMR ? DFunc::MRSAD : DFunc::SAD;
+
+    rcDP.distFunc = m_distortionFunc[baseIdx + sizeOffset<true>(org.width)];
   }
   else
   {
-    rcDP.distFunc = m_afpDistortFunc[ DF_HAD + DFOffset ];
+    const DFunc baseIdx = rcDP.useMR ? DFunc::MRHAD : DFunc::HAD;
+
+    rcDP.distFunc = m_distortionFunc[baseIdx + sizeOffset<false>(org.width)];
   }
 
   // initialize
@@ -319,40 +299,25 @@ void RdCost::setDistParam( DistParam &rcDP, const CPelBuf &org, const CPelBuf &c
   rcDP.bitDepth     = bitDepth;
   rcDP.compID       = compID;
 
-  const int DFOffset = ( rcDP.useMR ? DF_MRSAD - DF_SAD : 0 );
-
   if( !useHadamard )
   {
-    if( org.width == 12 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD12 + DFOffset ];
-    }
-    else if( org.width == 24 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD24 + DFOffset ];
-    }
-    else if( org.width == 48 )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD48 + DFOffset ];
-    }
-    else if( isPowerOf2( org.width) )
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD + DFOffset + floorLog2( org.width ) ];
-    }
-    else
-    {
-      rcDP.distFunc = m_afpDistortFunc[ DF_SAD + DFOffset ];
-    }
+    const DFunc baseIdx = rcDP.useMR ? DFunc::MRSAD : DFunc::SAD;
+
+    rcDP.distFunc = m_distortionFunc[baseIdx + sizeOffset<true>(org.width)];
   }
   else
   {
-    rcDP.distFunc = m_afpDistortFunc[ DF_HAD + DFOffset + floorLog2( org.width ) ];
+    const DFunc baseIdx = rcDP.useMR ? DFunc::MRHAD : DFunc::HAD;
+
+    rcDP.distFunc = m_distortionFunc[baseIdx + sizeOffset<false>(org.width)];
   }
 
   rcDP.maximumDistortionForEarlyExit = std::numeric_limits<Distortion>::max();
 }
 
-void RdCost::setDistParam( DistParam &rcDP, const Pel* pOrg, const Pel* piRefY, int iOrgStride, int iRefStride, int bitDepth, ComponentID compID, int width, int height, int subShiftMode, int step, bool useHadamard, bool bioApplied )
+void RdCost::setDistParam(DistParam &rcDP, const Pel *pOrg, const Pel *piRefY, ptrdiff_t iOrgStride,
+                          ptrdiff_t iRefStride, int bitDepth, ComponentID compID, int width, int height,
+                          int subShiftMode, int step, bool useHadamard, bool bioApplied)
 {
   rcDP.bitDepth   = bitDepth;
   rcDP.compID     = compID;
@@ -369,35 +334,22 @@ void RdCost::setDistParam( DistParam &rcDP, const Pel* pOrg, const Pel* piRefY, 
   rcDP.subShift = subShiftMode;
   rcDP.step       = step;
   rcDP.maximumDistortionForEarlyExit = std::numeric_limits<Distortion>::max();
-  CHECK( useHadamard || rcDP.useMR, "only used in xDMVRCost with these default parameters (so far...)" );
+  CHECK(useHadamard || rcDP.useMR, "only used in xDmvrCost with these default parameters (so far...)");
   if ( bioApplied )
   {
-    rcDP.distFunc = m_afpDistortFunc[ DF_SAD_INTERMEDIATE_BITDEPTH ];
+    rcDP.distFunc = m_distortionFunc[DFunc::SAD_INTERMEDIATE_BITDEPTH];
     return;
   }
 
-  if( width == 12 )
-  {
-    rcDP.distFunc = m_afpDistortFunc[ DF_SAD12 ];
-  }
-  else if( width == 24 )
-  {
-    rcDP.distFunc = m_afpDistortFunc[ DF_SAD24 ];
-  }
-  else if( width == 48 )
-  {
-    rcDP.distFunc = m_afpDistortFunc[ DF_SAD48 ];
-  }
-  else
-  {
-    rcDP.distFunc = m_afpDistortFunc[ DF_SAD + floorLog2( width ) ];
-  }
+  rcDP.distFunc = m_distortionFunc[DFunc::SAD + sizeOffset<true>(width)];
 }
 
 #if WCG_EXT
-Distortion RdCost::getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc, const CPelBuf *orgLuma )
+Distortion RdCost::getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
+                               DFunc distFunc, const CPelBuf *orgLuma)
 #else
-Distortion RdCost::getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc eDFunc )
+    Distortion RdCost::getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
+                                   DFunc distFunc)
 #endif
 {
   DistParam cDtParam;
@@ -424,14 +376,7 @@ Distortion RdCost::getDistPart( const CPelBuf &org, const CPelBuf &cur, int bitD
   }
 #endif
 
-  if( isPowerOf2( org.width ) )
-  {
-    cDtParam.distFunc = m_afpDistortFunc[eDFunc + floorLog2(org.width)];
-  }
-  else
-  {
-    cDtParam.distFunc = m_afpDistortFunc[eDFunc];
-  }
+  cDtParam.distFunc = m_distortionFunc[distFunc + sizeOffset<false>(org.width)];
 
   if (isChroma(compID))
   {
@@ -460,8 +405,8 @@ Distortion RdCost::xGetSAD_full( const DistParam& rcDtParam )
   const int  width     = rcDtParam.org.width;
   const int  subShift  = rcDtParam.subShift;
   const int  subStep   = (1 << subShift);
-  const int  strideCur = rcDtParam.cur.stride * subStep;
-  const int  strideOrg = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideCur = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideOrg = rcDtParam.org.stride * subStep;
 
   Distortion sum = 0;
 
@@ -492,8 +437,8 @@ Distortion RdCost::xGetSAD( const DistParam& rcDtParam )
   int            rows            = rcDtParam.org.height;
   const int      subShift        = rcDtParam.subShift;
   const int      subStep         = (1 << subShift);
-  const int      strideCur       = rcDtParam.cur.stride * subStep;
-  const int      strideOrg       = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideCur       = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideOrg       = rcDtParam.org.stride * subStep;
   const uint32_t distortionShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth);
 
   Distortion sum = 0;
@@ -528,8 +473,8 @@ Distortion RdCost::xGetSAD4( const DistParam& rcDtParam )
   int        rows      = rcDtParam.org.height;
   const int  subShift  = rcDtParam.subShift;
   const int  subStep   = (1 << subShift);
-  const int  strideCur = rcDtParam.cur.stride * subStep;
-  const int  strideOrg = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideCur = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideOrg = rcDtParam.org.stride * subStep;
 
   Distortion sum = 0;
 
@@ -560,8 +505,8 @@ Distortion RdCost::xGetSAD8( const DistParam& rcDtParam )
   int        rows       = rcDtParam.org.height;
   const int  subShift   = rcDtParam.subShift;
   const int  subStep    = (1 << subShift);
-  const int  strideCur  = rcDtParam.cur.stride * subStep;
-  const int  strideOrg  = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideCur  = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideOrg  = rcDtParam.org.stride * subStep;
 
   Distortion sum = 0;
 
@@ -596,8 +541,8 @@ Distortion RdCost::xGetSAD16( const DistParam& rcDtParam )
   int        rows       = rcDtParam.org.height;
   const int  subShift   = rcDtParam.subShift;
   const int  subStep    = (1 << subShift);
-  const int  strideCur  = rcDtParam.cur.stride * subStep;
-  const int  strideOrg  = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideCur  = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideOrg  = rcDtParam.org.stride * subStep;
 
   Distortion sum = 0;
 
@@ -640,8 +585,8 @@ Distortion RdCost::xGetSAD12( const DistParam& rcDtParam )
   int        rows       = rcDtParam.org.height;
   const int  subShift   = rcDtParam.subShift;
   const int  subStep    = (1 << subShift);
-  const int  strideCur  = rcDtParam.cur.stride * subStep;
-  const int  strideOrg  = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideCur  = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideOrg  = rcDtParam.org.stride * subStep;
 
   Distortion sum = 0;
 
@@ -676,8 +621,8 @@ Distortion RdCost::xGetSAD16N( const DistParam &rcDtParam )
   const int  cols      = rcDtParam.org.width;
   const int  subShift  = rcDtParam.subShift;
   const int  subStep   = (1 << subShift);
-  const int  strideCur = rcDtParam.cur.stride * subStep;
-  const int  strideOrg = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideCur = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideOrg = rcDtParam.org.stride * subStep;
 
   Distortion sum = 0;
 
@@ -722,8 +667,8 @@ Distortion RdCost::xGetSAD32( const DistParam &rcDtParam )
   int        rows       = rcDtParam.org.height;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  int        strideCur  = rcDtParam.cur.stride * subStep;
-  int        strideOrg  = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride * subStep;
 
   Distortion sum = 0;
 
@@ -782,8 +727,8 @@ Distortion RdCost::xGetSAD24( const DistParam &rcDtParam )
   int        rows       = rcDtParam.org.height;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  int        strideCur  = rcDtParam.cur.stride * subStep;
-  int        strideOrg  = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride * subStep;
 
   Distortion sum = 0;
 
@@ -834,8 +779,8 @@ Distortion RdCost::xGetSAD64( const DistParam &rcDtParam )
   int        rows       = rcDtParam.org.height;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  int        strideCur  = rcDtParam.cur.stride * subStep;
-  int        strideOrg  = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride * subStep;
 
   Distortion sum = 0;
 
@@ -926,8 +871,8 @@ Distortion RdCost::xGetSAD48( const DistParam &rcDtParam )
   int        rows       = rcDtParam.org.height;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  int        strideCur  = rcDtParam.cur.stride * subStep;
-  int        strideOrg  = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride * subStep;
 
   Distortion sum = 0;
 
@@ -1005,8 +950,8 @@ Distortion RdCost::xGetMRSAD( const DistParam& rcDtParam )
   int            rows            = rcDtParam.org.height;
   const int      subShift        = rcDtParam.subShift;
   const int      subStep         = (1 << subShift);
-  const int      strideCur       = rcDtParam.cur.stride * subStep;
-  const int      strideOrg       = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideCur       = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideOrg       = rcDtParam.org.stride * subStep;
   const uint32_t distortionShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth);
 
   int32_t deltaSum = 0;
@@ -1047,8 +992,8 @@ Distortion RdCost::xGetMRSAD4( const DistParam& rcDtParam )
   int        rows      = rcDtParam.org.height;
   int        subShift  = rcDtParam.subShift;
   int        subStep   = (1 << subShift);
-  int        strideCur = rcDtParam.cur.stride * subStep;
-  int        strideOrg = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg = rcDtParam.org.stride * subStep;
 
   int32_t deltaSum = 0;
   for (int r = rows; r != 0; r -= subStep, piOrg += strideOrg, piCur += strideCur)
@@ -1086,8 +1031,8 @@ Distortion RdCost::xGetMRSAD8( const DistParam& rcDtParam )
   int        rows       = rcDtParam.org.height;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  int        strideCur  = rcDtParam.cur.stride * subStep;
-  int        strideOrg  = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride * subStep;
 
   int32_t deltaSum = 0;
   for (int r = rows; r != 0; r -= subStep, piOrg += strideOrg, piCur += strideCur)
@@ -1132,8 +1077,8 @@ Distortion RdCost::xGetMRSAD16( const DistParam& rcDtParam )
   int        rows       = rcDtParam.org.height;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  int        strideCur  = rcDtParam.cur.stride * subStep;
-  int        strideOrg  = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride * subStep;
 
   int32_t deltaSum = 0;
   for (int r = rows; r != 0; r -= subStep, piOrg += strideOrg, piCur += strideCur)
@@ -1194,8 +1139,8 @@ Distortion RdCost::xGetMRSAD12( const DistParam& rcDtParam )
   int        rows       = rcDtParam.org.height;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  int        strideCur  = rcDtParam.cur.stride * subStep;
-  int        strideOrg  = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride * subStep;
 
   int32_t deltaSum = 0;
   for (int r = rows; r != 0; r -= subStep, piOrg += strideOrg, piCur += strideCur)
@@ -1249,8 +1194,8 @@ Distortion RdCost::xGetMRSAD16N( const DistParam &rcDtParam )
   int        cols      = rcDtParam.org.width;
   int        subShift  = rcDtParam.subShift;
   int        subStep   = (1 << subShift);
-  int        strideCur = rcDtParam.cur.stride * subStep;
-  int        strideOrg = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg = rcDtParam.org.stride * subStep;
 
   int32_t deltaSum = 0;
   for (int r = rows; r != 0; r -= subStep, piOrg += strideOrg, piCur += strideCur)
@@ -1316,8 +1261,8 @@ Distortion RdCost::xGetMRSAD32( const DistParam &rcDtParam )
   int        rows       = rcDtParam.org.height;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  int        strideCur  = rcDtParam.cur.stride * subStep;
-  int        strideOrg  = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride * subStep;
 
   int32_t deltaSum = 0;
   for (int r = rows; r != 0; r -= subStep, piOrg += strideOrg, piCur += strideCur)
@@ -1410,8 +1355,8 @@ Distortion RdCost::xGetMRSAD24( const DistParam &rcDtParam )
   int        rows       = rcDtParam.org.height;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  int        strideCur  = rcDtParam.cur.stride * subStep;
-  int        strideOrg  = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride * subStep;
 
   int32_t deltaSum = 0;
   for (int r = rows; r != 0; r -= subStep, piOrg += strideOrg, piCur += strideCur)
@@ -1488,8 +1433,8 @@ Distortion RdCost::xGetMRSAD64( const DistParam &rcDtParam )
   int        rows       = rcDtParam.org.height;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  int        strideCur  = rcDtParam.cur.stride * subStep;
-  int        strideOrg  = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride * subStep;
 
   int32_t deltaSum = 0;
   for (int r = rows; r != 0; r -= subStep, piOrg += strideOrg, piCur += strideCur)
@@ -1646,8 +1591,8 @@ Distortion RdCost::xGetMRSAD48( const DistParam &rcDtParam )
   int        rows       = rcDtParam.org.height;
   int        subShift   = rcDtParam.subShift;
   int        subStep    = (1 << subShift);
-  int        strideCur  = rcDtParam.cur.stride * subStep;
-  int        strideOrg  = rcDtParam.org.stride * subStep;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride * subStep;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride * subStep;
 
   int32_t deltaSum = 0;
   for (int r = rows; r != 0; r -= subStep, piOrg += strideOrg, piCur += strideCur)
@@ -1780,8 +1725,8 @@ Distortion RdCost::xGetSSE( const DistParam &rcDtParam )
   const Pel* piCur      = rcDtParam.cur.buf;
   int        rows       = rcDtParam.org.height;
   int        cols       = rcDtParam.org.width;
-  int        strideCur  = rcDtParam.cur.stride;
-  int        strideOrg  = rcDtParam.org.stride;
+  ptrdiff_t  strideCur  = rcDtParam.cur.stride;
+  ptrdiff_t  strideOrg  = rcDtParam.org.stride;
 
   Distortion sum     = 0;
   uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
@@ -1813,8 +1758,8 @@ Distortion RdCost::xGetSSE4( const DistParam &rcDtParam )
   const Pel* piOrg   = rcDtParam.org.buf;
   const Pel* piCur   = rcDtParam.cur.buf;
   int        rows      = rcDtParam.org.height;
-  int        strideOrg = rcDtParam.org.stride;
-  int        strideCur = rcDtParam.cur.stride;
+  ptrdiff_t  strideOrg = rcDtParam.org.stride;
+  ptrdiff_t  strideCur = rcDtParam.cur.stride;
 
   Distortion sum     = 0;
   uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
@@ -1850,8 +1795,8 @@ Distortion RdCost::xGetSSE8( const DistParam &rcDtParam )
   const Pel* piOrg   = rcDtParam.org.buf;
   const Pel* piCur   = rcDtParam.cur.buf;
   int        rows      = rcDtParam.org.height;
-  int        strideOrg = rcDtParam.org.stride;
-  int        strideCur = rcDtParam.cur.stride;
+  ptrdiff_t  strideOrg = rcDtParam.org.stride;
+  ptrdiff_t  strideCur = rcDtParam.cur.stride;
 
   Distortion sum     = 0;
   uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
@@ -1895,8 +1840,8 @@ Distortion RdCost::xGetSSE16( const DistParam &rcDtParam )
   const Pel* piOrg   = rcDtParam.org.buf;
   const Pel* piCur   = rcDtParam.cur.buf;
   int        rows      = rcDtParam.org.height;
-  int        strideOrg = rcDtParam.org.stride;
-  int        strideCur = rcDtParam.cur.stride;
+  ptrdiff_t  strideOrg = rcDtParam.org.stride;
+  ptrdiff_t  strideCur = rcDtParam.cur.stride;
 
   Distortion sum     = 0;
   uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
@@ -1955,8 +1900,8 @@ Distortion RdCost::xGetSSE16N( const DistParam &rcDtParam )
   const Pel* piCur   = rcDtParam.cur.buf;
   int        rows      = rcDtParam.org.height;
   int        cols      = rcDtParam.org.width;
-  int        strideOrg = rcDtParam.org.stride;
-  int        strideCur = rcDtParam.cur.stride;
+  ptrdiff_t  strideOrg = rcDtParam.org.stride;
+  ptrdiff_t  strideCur = rcDtParam.cur.stride;
 
   Distortion sum     = 0;
   uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
@@ -2018,8 +1963,8 @@ Distortion RdCost::xGetSSE32( const DistParam &rcDtParam )
   const Pel* piOrg   = rcDtParam.org.buf;
   const Pel* piCur   = rcDtParam.cur.buf;
   int        rows      = rcDtParam.org.height;
-  int        strideOrg = rcDtParam.org.stride;
-  int        strideCur = rcDtParam.cur.stride;
+  ptrdiff_t  strideOrg = rcDtParam.org.stride;
+  ptrdiff_t  strideCur = rcDtParam.cur.stride;
 
   Distortion sum     = 0;
   uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
@@ -2111,8 +2056,8 @@ Distortion RdCost::xGetSSE64( const DistParam &rcDtParam )
   const Pel* piOrg   = rcDtParam.org.buf;
   const Pel* piCur   = rcDtParam.cur.buf;
   int        rows      = rcDtParam.org.height;
-  int        strideOrg = rcDtParam.org.stride;
-  int        strideCur = rcDtParam.cur.stride;
+  ptrdiff_t  strideOrg = rcDtParam.org.stride;
+  ptrdiff_t  strideCur = rcDtParam.cur.stride;
 
   Distortion sum     = 0;
   uint32_t   shift   = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth) << 1;
@@ -2261,7 +2206,7 @@ Distortion RdCost::xGetSSE64( const DistParam &rcDtParam )
 // HADAMARD with step (used in fractional search)
 // --------------------------------------------------------------------------------------------------------------------
 
-Distortion RdCost::xCalcHADs2x2(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur, int step)
+Distortion RdCost::xCalcHADs2x2(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur, int step)
 {
   Distortion satd = 0;
   TCoeff diff[4], m[4];
@@ -2287,7 +2232,7 @@ Distortion RdCost::xCalcHADs2x2(const Pel *piOrg, const Pel *piCur, int strideOr
   return satd;
 }
 
-Distortion RdCost::xCalcHADs4x4(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur, int step)
+Distortion RdCost::xCalcHADs4x4(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur, int step)
 {
   int k;
   Distortion satd = 0;
@@ -2388,7 +2333,7 @@ Distortion RdCost::xCalcHADs4x4(const Pel *piOrg, const Pel *piCur, int strideOr
   return satd;
 }
 
-Distortion RdCost::xCalcHADs8x8(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur, int step)
+Distortion RdCost::xCalcHADs8x8(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur, int step)
 {
   int k, i, j, jj;
   Distortion sad = 0;
@@ -2489,7 +2434,7 @@ Distortion RdCost::xCalcHADs8x8(const Pel *piOrg, const Pel *piCur, int strideOr
   return sad;
 }
 
-Distortion RdCost::xCalcHADs16x8(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur)
+Distortion RdCost::xCalcHADs16x8(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur)
 {   //need to add SIMD implementation ,JCA
   int k, i, j, jj, sad = 0;
   int diff[128], m1[8][16], m2[8][16];
@@ -2639,7 +2584,7 @@ Distortion RdCost::xCalcHADs16x8(const Pel *piOrg, const Pel *piCur, int strideO
   return sad;
 }
 
-Distortion RdCost::xCalcHADs8x16(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur)
+Distortion RdCost::xCalcHADs8x16(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur)
 {
   int k, i, j, jj, sad = 0;
   int diff[128], m1[16][8], m2[16][8];
@@ -2779,7 +2724,7 @@ Distortion RdCost::xCalcHADs8x16(const Pel *piOrg, const Pel *piCur, int strideO
 
   return sad;
 }
-Distortion RdCost::xCalcHADs4x8(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur)
+Distortion RdCost::xCalcHADs4x8(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur)
 {
   int k, i, j, jj, sad = 0;
   int diff[32], m1[8][4], m2[8][4];
@@ -2857,7 +2802,7 @@ Distortion RdCost::xCalcHADs4x8(const Pel *piOrg, const Pel *piCur, int strideOr
   return sad;
 }
 
-Distortion RdCost::xCalcHADs8x4(const Pel *piOrg, const Pel *piCur, int strideOrg, int strideCur)
+Distortion RdCost::xCalcHADs8x4(const Pel *piOrg, const Pel *piCur, ptrdiff_t strideOrg, ptrdiff_t strideCur)
 {
   int k, i, j, jj, sad = 0;
   int diff[32], m1[4][8], m2[4][8];
@@ -2950,8 +2895,8 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
   const Pel* piCur = rcDtParam.cur.buf;
   const int  rows      = rcDtParam.org.height;
   const int  cols      = rcDtParam.org.width;
-  const int  strideCur = rcDtParam.cur.stride;
-  const int  strideOrg = rcDtParam.org.stride;
+  const ptrdiff_t strideCur = rcDtParam.cur.stride;
+  const ptrdiff_t strideOrg = rcDtParam.org.stride;
   const int  step      = rcDtParam.step;
 
   int  x = 0, y = 0;
@@ -3008,8 +2953,8 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
   }
   else if ((rows % 8 == 0) && (cols % 8 == 0))
   {
-    int offsetOrg = strideOrg << 3;
-    int offsetCur = strideCur << 3;
+    ptrdiff_t offsetOrg = strideOrg << 3;
+    ptrdiff_t offsetCur = strideCur << 3;
     for (y = 0; y < rows; y += 8)
     {
       for (x = 0; x < cols; x += 8)
@@ -3022,8 +2967,8 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
   }
   else if ((rows % 4 == 0) && (cols % 4 == 0))
   {
-    int offsetOrg = strideOrg << 2;
-    int offsetCur = strideCur << 2;
+    ptrdiff_t offsetOrg = strideOrg << 2;
+    ptrdiff_t offsetCur = strideCur << 2;
 
     for (y = 0; y < rows; y += 4)
     {
@@ -3037,8 +2982,8 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
   }
   else if ((rows % 2 == 0) && (cols % 2 == 0))
   {
-    int offsetOrg = strideOrg << 1;
-    int offsetCur = strideCur << 1;
+    ptrdiff_t offsetOrg = strideOrg << 1;
+    ptrdiff_t offsetCur = strideCur << 1;
     for (y = 0; y < rows; y += 2)
     {
       for (x = 0; x < cols; x += 2)
@@ -3069,7 +3014,7 @@ std::vector<double> RdCost::m_lumaLevelToWeightPLUT;
 void RdCost::saveUnadjustedLambda()
 {
   m_dLambda_unadjusted = m_dLambda;
-  m_DistScaleUnadjusted = m_DistScale;
+  m_distScaleUnadjusted = m_distScale;
 }
 
 void RdCost::initLumaLevelToWeightTable(int bitDepth)
@@ -3223,10 +3168,10 @@ Distortion RdCost::xGetSSE_WTD( const DistParam &rcDtParam )
   const Pel* piOrg = rcDtParam.org.buf;
   const Pel* piCur = rcDtParam.cur.buf;
   const int     cols             = rcDtParam.org.width;
-  const int     strideCur        = rcDtParam.cur.stride;
-  const int     strideOrg        = rcDtParam.org.stride;
+  const ptrdiff_t strideCur        = rcDtParam.cur.stride;
+  const ptrdiff_t strideOrg        = rcDtParam.org.stride;
   const Pel* piOrgLuma        = rcDtParam.orgLuma.buf;
-  const int     strideOrgLuma    = rcDtParam.orgLuma.stride;
+  const ptrdiff_t strideOrgLuma    = rcDtParam.orgLuma.stride;
   const size_t  cShift  = rcDtParam.cShiftX;
   const size_t  cShiftY = rcDtParam.cShiftY;
 
@@ -3257,8 +3202,8 @@ Distortion RdCost::xGetSSE2_WTD( const DistParam &rcDtParam )
   int           rows                = rcDtParam.org.height;
   const Pel* piOrg = rcDtParam.org.buf;
   const Pel* piCur = rcDtParam.cur.buf;
-  const int     strideCur           = rcDtParam.cur.stride;
-  const int     strideOrg           = rcDtParam.org.stride;
+  const ptrdiff_t strideCur           = rcDtParam.cur.stride;
+  const ptrdiff_t strideOrg           = rcDtParam.org.stride;
   const Pel* piOrgLuma           = rcDtParam.orgLuma.buf;
   const size_t  strideOrgLuma       = rcDtParam.orgLuma.stride;
   const size_t  cShift  = rcDtParam.cShiftX;
@@ -3292,8 +3237,8 @@ Distortion RdCost::xGetSSE4_WTD( const DistParam &rcDtParam )
   int           rows             = rcDtParam.org.height;
   const Pel* piOrg = rcDtParam.org.buf;
   const Pel* piCur = rcDtParam.cur.buf;
-  const int     strideCur        = rcDtParam.cur.stride;
-  const int     strideOrg        = rcDtParam.org.stride;
+  const ptrdiff_t strideCur        = rcDtParam.cur.stride;
+  const ptrdiff_t strideOrg        = rcDtParam.org.stride;
   const Pel* piOrgLuma        = rcDtParam.orgLuma.buf;
   const size_t  strideOrgLuma    = rcDtParam.orgLuma.stride;
   const size_t  cShift  = rcDtParam.cShiftX;
@@ -3333,8 +3278,8 @@ Distortion RdCost::xGetSSE8_WTD( const DistParam &rcDtParam )
   int           rows             = rcDtParam.org.height;
   const Pel* piOrg = rcDtParam.org.buf;
   const Pel* piCur = rcDtParam.cur.buf;
-  const int     strideCur        = rcDtParam.cur.stride;
-  const int     strideOrg        = rcDtParam.org.stride;
+  const ptrdiff_t strideCur        = rcDtParam.cur.stride;
+  const ptrdiff_t strideOrg        = rcDtParam.org.stride;
   const Pel* piOrgLuma        = rcDtParam.orgLuma.buf;
   const size_t  strideOrgLuma    = rcDtParam.orgLuma.stride;
   const size_t  cShift  = rcDtParam.cShiftX;
@@ -3384,8 +3329,8 @@ Distortion RdCost::xGetSSE16_WTD( const DistParam &rcDtParam )
   int           rows             = rcDtParam.org.height;
   const Pel* piOrg = rcDtParam.org.buf;
   const Pel* piCur = rcDtParam.cur.buf;
-  const int     strideCur        = rcDtParam.cur.stride;
-  const int     strideOrg        = rcDtParam.org.stride;
+  const ptrdiff_t strideCur        = rcDtParam.cur.stride;
+  const ptrdiff_t strideOrg        = rcDtParam.org.stride;
   const Pel* piOrgLuma        = rcDtParam.orgLuma.buf;
   const size_t  strideOrgLuma    = rcDtParam.orgLuma.stride;
   const size_t  cShift  = rcDtParam.cShiftX;
@@ -3459,8 +3404,8 @@ Distortion RdCost::xGetSSE16N_WTD( const DistParam &rcDtParam )
   const Pel* piOrg = rcDtParam.org.buf;
   const Pel* piCur = rcDtParam.cur.buf;
   const int     cols             = rcDtParam.org.width;
-  const int     strideCur        = rcDtParam.cur.stride;
-  const int     strideOrg        = rcDtParam.org.stride;
+  const ptrdiff_t strideCur        = rcDtParam.cur.stride;
+  const ptrdiff_t strideOrg        = rcDtParam.org.stride;
   const Pel* piOrgLuma        = rcDtParam.orgLuma.buf;
   const size_t  strideOrgLuma    = rcDtParam.orgLuma.stride;
   const size_t  cShift  = rcDtParam.cShiftX;
@@ -3537,8 +3482,8 @@ Distortion RdCost::xGetSSE32_WTD( const DistParam &rcDtParam )
   int           rows             = rcDtParam.org.height;
   const Pel* piOrg = rcDtParam.org.buf;
   const Pel* piCur = rcDtParam.cur.buf;
-  const int     strideCur        = rcDtParam.cur.stride;
-  const int     strideOrg        = rcDtParam.org.stride;
+  const ptrdiff_t strideCur        = rcDtParam.cur.stride;
+  const ptrdiff_t strideOrg        = rcDtParam.org.stride;
   const Pel* piOrgLuma        = rcDtParam.orgLuma.buf;
   const size_t  strideOrgLuma    = rcDtParam.orgLuma.stride;
   const size_t  cShift  = rcDtParam.cShiftX;
@@ -3661,8 +3606,8 @@ Distortion RdCost::xGetSSE64_WTD( const DistParam &rcDtParam )
   int           rows             = rcDtParam.org.height;
   const Pel* piOrg = rcDtParam.org.buf;
   const Pel* piCur = rcDtParam.cur.buf;
-  const int     strideCur        = rcDtParam.cur.stride;
-  const int     strideOrg        = rcDtParam.org.stride;
+  const ptrdiff_t strideCur        = rcDtParam.cur.stride;
+  const ptrdiff_t strideOrg        = rcDtParam.org.stride;
   const Pel* piOrgLuma        = rcDtParam.orgLuma.buf;
   const size_t  strideOrgLuma    = rcDtParam.orgLuma.stride;
   const size_t  cShift  = rcDtParam.cShiftX;
@@ -3892,10 +3837,11 @@ Distortion RdCost::xGetMRHADs( const DistParam &rcDtParam )
   DistParam modDistParam = rcDtParam;
   modDistParam.org = modOrg;
 
-  return m_afpDistortFunc[DF_HAD]( modDistParam );
+  return m_distortionFunc[DFunc::HAD](modDistParam);
 }
 
-void RdCost::setDistParam( DistParam &rcDP, const CPelBuf &org, const Pel* piRefY, int iRefStride, const Pel* mask, int iMaskStride, int stepX, int iMaskStride2, int bitDepth, ComponentID compID)
+void RdCost::setDistParam(DistParam &rcDP, const CPelBuf &org, const Pel *piRefY, ptrdiff_t iRefStride, const Pel *mask,
+                          ptrdiff_t iMaskStride, int stepX, ptrdiff_t iMaskStride2, int bitDepth, ComponentID compID)
 {
   rcDP.bitDepth     = bitDepth;
   rcDP.compID       = compID;
@@ -3917,7 +3863,7 @@ void RdCost::setDistParam( DistParam &rcDP, const CPelBuf &org, const Pel* piRef
   rcDP.maximumDistortionForEarlyExit = std::numeric_limits<Distortion>::max();
 
   // set Cost function for motion estimation with Mask
-  rcDP.distFunc = m_afpDistortFunc[ DF_SAD_WITH_MASK ];
+  rcDP.distFunc = m_distortionFunc[DFunc::SAD_WITH_MASK];
 }
 
 Distortion RdCost::xGetSADwMask( const DistParam& rcDtParam )
@@ -3934,11 +3880,11 @@ Distortion RdCost::xGetSADwMask( const DistParam& rcDtParam )
   int        rows           = rcDtParam.org.height;
   const int  subShift       = rcDtParam.subShift;
   const int  subStep        = ( 1 << subShift);
-  const int  strideCur      = rcDtParam.cur.stride * subStep;
-  const int  strideOrg      = rcDtParam.org.stride * subStep;
-  const int  strideMask     = rcDtParam.maskStride * subStep;
+  const ptrdiff_t strideCur       = rcDtParam.cur.stride * subStep;
+  const ptrdiff_t strideOrg       = rcDtParam.org.stride * subStep;
+  const ptrdiff_t strideMask      = rcDtParam.maskStride * subStep;
   const int  stepX = rcDtParam.stepX;
-  const int  strideMask2 = rcDtParam.maskStride2;
+  const ptrdiff_t strideMask2     = rcDtParam.maskStride2;
   const uint32_t distortionShift = DISTORTION_PRECISION_ADJUSTMENT(rcDtParam.bitDepth);
 
   Distortion sum = 0;

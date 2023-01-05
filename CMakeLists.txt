@@ -29,15 +29,20 @@ endif()
 
 set( EXTENSION_360_VIDEO OFF CACHE BOOL "If EXTENSION_360_VIDEO is on, 360Lib will be added" )
 set( EXTENSION_HDRTOOLS OFF CACHE BOOL "If EXTENSION_HDRTOOLS is on, HDRLib will be added" )
-set( SET_ENABLE_TRACING OFF CACHE BOOL "Set ENABLE_TRACING as a compiler flag" )
-set( ENABLE_TRACING OFF CACHE BOOL "If SET_ENABLE_TRACING is on, it will be set to this value" )
+
+if (DEFINED ENABLE_TRACING)
+  set( ENABLE_TRACING OFF CACHE BOOL "ENABLE_TRACING will be set to this value" )
+endif()
+if (DEFINED ENABLE_HIGH_BITDEPTH)
+  set( ENABLE_HIGH_BITDEPTH OFF CACHE BOOL "ENABLE_HIGH_BITDEPTH will be set to this value" )
+endif()
 
 if( CMAKE_COMPILER_IS_GNUCC )
   set( BUILD_STATIC OFF CACHE BOOL "Build static executables" )
 endif()
 
-# set c++11
-set( CMAKE_CXX_STANDARD 11 )
+# set c++14
+set( CMAKE_CXX_STANDARD 14 )
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
 
 # compile everything position independent (even static libraries)
@@ -57,7 +62,7 @@ include( ${CMAKE_SOURCE_DIR}/cmake/CMakeBuild/cmake/modules/BBuildEnv.cmake )
 # bb_enable_warnings( gcc -Wno-unused-variable )
 # bb_enable_warnings( gcc-4.8 warnings-as-errors -Wno-unused-variable )
 # for gcc 8.2:
-bb_enable_warnings( gcc warnings-as-errors -Wno-sign-compare -Wno-class-memaccess)
+bb_enable_warnings( gcc warnings-as-errors -Wno-sign-compare)
 
 if( XCODE )
   bb_enable_warnings( clang warnings-as-errors

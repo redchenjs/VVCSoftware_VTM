@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -791,9 +791,9 @@ void InterpolationFilter::xWeightedGeoBlk(const PredictionUnit &pu, const uint32
   Pel*    dst = predDst.get(compIdx).buf;
   Pel*    src0 = predSrc0.get(compIdx).buf;
   Pel*    src1 = predSrc1.get(compIdx).buf;
-  int32_t strideDst = predDst.get(compIdx).stride - width;
-  int32_t strideSrc0 = predSrc0.get(compIdx).stride - width;
-  int32_t strideSrc1 = predSrc1.get(compIdx).stride - width;
+  ptrdiff_t strideDst  = predDst.get(compIdx).stride - width;
+  ptrdiff_t strideSrc0 = predSrc0.get(compIdx).stride - width;
+  ptrdiff_t strideSrc1 = predSrc1.get(compIdx).stride - width;
 
   const char    log2WeightBase = 3;
   const ClpRng  clipRng = pu.cu->slice->clpRngs().comp[compIdx];

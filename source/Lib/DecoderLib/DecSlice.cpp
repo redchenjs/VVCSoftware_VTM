@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
 
   const SPS*     sps          = slice->getSPS();
   Picture*       pic          = slice->getPic();
-  CABACReader&   cabacReader  = *m_CABACDecoder->getCABACReader( 0 );
+  CABACReader   &cabacReader  = *m_CABACDecoder->getCABACReader(BpmType::STD);
 
   // setup coding structure
   CodingStructure& cs = *pic->cs;
@@ -98,9 +98,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
 
   if (slice->getFirstCtuRsAddrInSlice() == 0)
   {
-    cs.picture->resizeAlfCtuEnableFlag( cs.pcv->sizeInCtus );
-    cs.picture->resizeAlfCtbFilterIndex(cs.pcv->sizeInCtus);
-    cs.picture->resizeAlfCtuAlternative( cs.pcv->sizeInCtus );
+    cs.picture->resizeAlfData(cs.pcv->sizeInCtus);
   }
 
   const unsigned numSubstreams = slice->getNumberOfSubstreamSizes() + 1;
@@ -121,8 +119,8 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
   cabacReader.initCtxModels( *slice );
 
   // Quantization parameter
-    pic->m_prevQP[0] = pic->m_prevQP[1] = slice->getSliceQp();
-  CHECK( pic->m_prevQP[0] == std::numeric_limits<int>::max(), "Invalid previous QP" );
+  pic->m_prevQP.fill(slice->getSliceQp());
+  CHECK(pic->m_prevQP[ChannelType::LUMA] == std::numeric_limits<int>::max(), "Invalid previous QP");
 
   DTRACE( g_trace_ctx, D_HEADER, "=========== POC: %d ===========\n", slice->getPOC() );
 
@@ -189,7 +187,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
         cabacReader.initCtxModels( *slice );
         cs.resetPrevPLT(cs.prevPLT);
       }
-      pic->m_prevQP[0] = pic->m_prevQP[1] = slice->getSliceQp();
+      pic->m_prevQP.fill(slice->getSliceQp());
     }
     else if( ctuXPosInCtus == tileXPosInCtus && wavefrontsEnabled )
     {
@@ -199,14 +197,16 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
         cabacReader.initCtxModels( *slice );
         cs.resetPrevPLT(cs.prevPLT);
       }
-      if( cs.getCURestricted( pos.offset(0, -1), pos, slice->getIndependentSliceIdx(), tileIdx, CH_L ) )
+      if (cs.getCURestricted(pos.offset(0, -1), pos, slice->getIndependentSliceIdx(), tileIdx, ChannelType::LUMA))
       {
         // Top is available, so use it.
         cabacReader.getCtx() = m_entropyCodingSyncContextState;
-        cabacReader.getCtx().riceStatReset(slice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA), slice->getSPS()->getSpsRangeExtension().getPersistentRiceAdaptationEnabledFlag());
+        cabacReader.getCtx().riceStatReset(
+          slice->getSPS()->getBitDepth(ChannelType::LUMA),
+          slice->getSPS()->getSpsRangeExtension().getPersistentRiceAdaptationEnabledFlag());
         cs.setPrevPLT(m_palettePredictorSyncState);
       }
-      pic->m_prevQP[0] = pic->m_prevQP[1] = slice->getSliceQp();
+      pic->m_prevQP.fill(slice->getSliceQp());
     }
 
     bool updateBcwCodingOrder = cs.slice->getSliceType() == B_SLICE && ctuIdx == 0;
@@ -234,7 +234,12 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
     cabacReader.coding_tree_unit( cs, ctuArea, pic->m_prevQP, ctuRsAddr );
 
     m_pcCuDecoder->decompressCtu( cs, ctuArea );
-
+#if GREEN_METADATA_SEI_ENABLED
+    FeatureCounterStruct featureCounter = slice->getFeatureCounter();
+    countFeatures( featureCounter, cs,ctuArea);
+    slice->setFeatureCounter(featureCounter);
+#endif
+    
     if( ctuXPosInCtus == tileXPosInCtus && wavefrontsEnabled )
     {
       m_entropyCodingSyncContextState = cabacReader.getCtx();
@@ -287,7 +292,40 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
       }
     }
   }
-
+  
+#if GREEN_METADATA_SEI_ENABLED
+  FeatureCounterStruct featureCounter = slice->getFeatureCounter();
+  featureCounter.baseQP[slice->getSliceQpBase()] ++;
+  if (featureCounter.isYUV400 == -1)
+  {
+    featureCounter.isYUV400 = sps->getChromaFormatIdc() == CHROMA_400 ? 1 : 0;
+    featureCounter.isYUV420 = sps->getChromaFormatIdc() == CHROMA_420 ? 1 : 0;
+    featureCounter.isYUV422 = sps->getChromaFormatIdc() == CHROMA_422 ? 1 : 0;
+    featureCounter.isYUV444 = sps->getChromaFormatIdc() == CHROMA_444 ? 1 : 0;
+  }
+  
+  if (featureCounter.is8bit == -1)
+  {
+    featureCounter.is8bit  = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 8) ? 1 : 0;
+    featureCounter.is10bit = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 10) ? 1 : 0;
+    featureCounter.is12bit = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 12) ? 1 : 0;
+  }
+  
+  if (slice->getSliceType() == B_SLICE)
+  {
+    featureCounter.bSlices++;
+  }
+  else if (slice->getSliceType() == P_SLICE)
+  {
+    featureCounter.pSlices++;
+  }
+  else
+  {
+    featureCounter.iSlices++;
+  }
+  slice->setFeatureCounter(featureCounter);
+#endif
+  
   // deallocate all created substreams, including internal buffers.
   for( auto substr: ppcSubstreams )
   {

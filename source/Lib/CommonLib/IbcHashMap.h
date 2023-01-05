@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,8 @@ private:
   unsigned int**  m_pos2Hash;
   std::unordered_map<unsigned int, std::vector<Position>> m_hash2Pos;
 
-  unsigned int xxCalcBlockHash(const Pel* pel, const int stride, const int width, const int height, unsigned int crc);
+  unsigned int xxCalcBlockHash(const Pel *pel, const ptrdiff_t stride, const int width, const int height,
+                               unsigned int crc);
 
   template<ChromaFormat chromaFormat>
   void    xxBuildPicHashMap(const PelUnitBuf& pic);

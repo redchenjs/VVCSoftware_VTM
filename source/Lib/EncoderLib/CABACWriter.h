@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2022, ITU/ISO/IEC
+* Copyright (c) 2010-2023, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -51,39 +51,45 @@ class EncCu;
 class CABACWriter
 {
 public:
-  CABACWriter(BinEncIf &binEncoder) : m_BinEncoder(binEncoder), m_Bitstream(0)
+  CABACWriter(BinEncIf &binEncoder) : m_binEncoder(binEncoder), m_bitstream(nullptr)
   {
-    m_TestCtx = m_BinEncoder.getCtx();
-    m_EncCu   = nullptr;
+    m_testCtx = m_binEncoder.getCtx();
+    m_encCu   = nullptr;
   }
   virtual ~CABACWriter() {}
 
 public:
   void        initCtxModels             ( const Slice&                  slice );
-  void        setEncCu(EncCu* pcEncCu) { m_EncCu = pcEncCu; }
+  void        setEncCu(EncCu *pcEncCu) { m_encCu = pcEncCu; }
   SliceType   getCtxInitId              ( const Slice&                  slice );
-  void        initBitstream             ( OutputBitstream*              bitstream )           { m_Bitstream = bitstream; m_BinEncoder.init( m_Bitstream ); }
+  void        initBitstream(OutputBitstream *bitstream)
+  {
+    m_bitstream = bitstream;
+    m_binEncoder.init(m_bitstream);
+  }
 
-  const Ctx&  getCtx                    ()                                            const   { return m_BinEncoder.getCtx();  }
-  Ctx&        getCtx                    ()                                                    { return m_BinEncoder.getCtx();  }
+  const Ctx &getCtx() const { return m_binEncoder.getCtx(); }
+  Ctx       &getCtx() { return m_binEncoder.getCtx(); }
 
-  void        start                     ()                                                    { m_BinEncoder.start(); }
-  void        resetBits                 ()                                                    { m_BinEncoder.resetBits(); }
-  uint64_t    getEstFracBits            ()                                            const   { return m_BinEncoder.getEstFracBits(); }
-  uint32_t    getNumBins                ()                                                    { return m_BinEncoder.getNumBins(); }
-  bool        isEncoding                ()                                                    { return m_BinEncoder.isEncoding(); }
+  void     start() { m_binEncoder.start(); }
+  void     resetBits() { m_binEncoder.resetBits(); }
+  uint64_t getEstFracBits() const { return m_binEncoder.getEstFracBits(); }
+  uint32_t getNumBins() { return m_binEncoder.getNumBins(); }
+  bool     isEncoding() { return m_binEncoder.isEncoding(); }
 
 public:
   // slice segment data (clause 7.3.8.1)
   void        end_of_slice              ();
 
   // coding tree unit (clause 7.3.8.2)
-  void        coding_tree_unit          (       CodingStructure&        cs,       const UnitArea&   area,       int (&qps)[2],  unsigned ctuRsAddr,  bool skipSao = false, bool skipAlf = false );
+  void coding_tree_unit(CodingStructure &cs, const UnitArea &area, EnumArray<int, ChannelType> &qps, unsigned ctuRsAddr,
+                        bool skipSao = false, bool skipAlf = false);
 
   // sao (clause 7.3.8.3)
   void        sao                       ( const Slice&                  slice,    unsigned          ctuRsAddr );
-  void        sao_block_pars            ( const SAOBlkParam&            saoPars,  const BitDepths&  bitDepths,  bool* sliceEnabled, bool leftMergeAvail, bool aboveMergeAvail, bool onlyEstMergeInfo );
-  void        sao_offset_pars           ( const SAOOffset&              ctbPars,  ComponentID       compID,     bool sliceEnabled,  int bitDepth );
+  void        sao_block_params(const SAOBlkParam &saoPars, const BitDepths &bitDepths, const bool *sliceEnabled,
+                               bool leftMergeAvail, bool aboveMergeAvail, bool onlyEstMergeInfo);
+  void        sao_offset_params(const SAOOffset &ctbPars, ComponentID compID, bool sliceEnabled, int bitDepth);
   // coding (quad)tree (clause 7.3.8.4)
   void        coding_tree               ( const CodingStructure&        cs,       Partitioner&      pm,         CUCtx& cuCtx, Partitioner* pPartitionerChroma = nullptr, CUCtx* pCuCtxChroma = nullptr);
   void        split_cu_mode             ( const PartSplit               split,    const CodingStructure& cs,    Partitioner& pm );
@@ -129,13 +135,13 @@ public:
   void        ref_idx                   ( const PredictionUnit&         pu,       RefPicList        eRefList );
   void        mvp_flag                  ( const PredictionUnit&         pu,       RefPicList        eRefList );
 
-  void        Ciip_flag              ( const PredictionUnit&         pu );
+  void        ciip_flag(const PredictionUnit &pu);
   void        smvd_mode              ( const PredictionUnit&         pu );
 
 
   // transform tree (clause 7.3.8.8)
   void        transform_tree            ( const CodingStructure&        cs,       Partitioner&      pm,     CUCtx& cuCtx,                         const PartSplit ispType = TU_NO_ISP, const int subTuIdx = -1 );
-  void        cbf_comp                  ( const CodingStructure&        cs,       bool              cbf,    const CompArea& area, unsigned depth, const bool prevCbf = false, const bool useISP = false );
+  void cbf_comp(bool cbf, const CompArea &area, unsigned depth, bool prevCbf, bool useISP, BdpcmMode bdpcmMode);
 
   // mvd coding (clause 7.3.8.9)
   void        mvd_coding                ( const Mv &rMvd, int8_t imv );
@@ -173,19 +179,15 @@ private:
   void        unary_max_symbol          ( unsigned symbol, unsigned ctxId0, unsigned ctxIdN, unsigned maxSymbol );
   void        unary_max_eqprob          ( unsigned symbol,                                   unsigned maxSymbol );
   void        exp_golomb_eqprob         ( unsigned symbol, unsigned count );
-  void        code_unary_fixed          ( unsigned symbol, unsigned ctxId, unsigned unary_max, unsigned fixed );
-
-  // statistic
-  unsigned    get_num_written_bits()    { return m_BinEncoder.getNumWrittenBits(); }
 
   void  xWriteTruncBinCode(uint32_t uiSymbol, uint32_t uiMaxSymbol);
   void        codeScanRotationModeFlag   ( const CodingUnit& cu,     ComponentID compBegin);
   void        xEncodePLTPredIndicator    ( const CodingUnit& cu,     uint32_t    maxPltSize, ComponentID compBegin);
 private:
-  BinEncIf&         m_BinEncoder;
-  OutputBitstream*  m_Bitstream;
-  Ctx               m_TestCtx;
-  EncCu*            m_EncCu;
+  BinEncIf         &m_binEncoder;
+  OutputBitstream  *m_bitstream;
+  Ctx               m_testCtx;
+  EncCu            *m_encCu;
   ScanElement*      m_scanOrder;
 };
 
@@ -195,21 +197,23 @@ class CABACEncoder
 {
 public:
   CABACEncoder()
-    : m_CABACWriterStd      ( m_BinEncoderStd )
-    , m_CABACEstimatorStd   ( m_BitEstimatorStd )
-    , m_CABACWriter         { &m_CABACWriterStd,   }
-    , m_CABACEstimator      { &m_CABACEstimatorStd }
+    : m_CABACWriterStd(m_BinEncoderStd)
+    , m_CABACEstimatorStd(m_BitEstimatorStd)
+    , m_CABACWriter{ &m_CABACWriterStd }
+    , m_CABACEstimator{ &m_CABACEstimatorStd }
   {}
 
-  CABACWriter*                getCABACWriter          ( const SPS*   sps   )        { return m_CABACWriter   [0]; }
-  CABACWriter*                getCABACEstimator       ( const SPS*   sps   )        { return m_CABACEstimator[0]; }
+  CABACWriter *getCABACWriter(const SPS *sps) { return m_CABACWriter[BpmType::STD]; }
+  CABACWriter *getCABACEstimator(const SPS *sps) { return m_CABACEstimator[BpmType::STD]; }
+
 private:
   BinEncoder_Std      m_BinEncoderStd;
   BitEstimator_Std    m_BitEstimatorStd;
   CABACWriter         m_CABACWriterStd;
   CABACWriter         m_CABACEstimatorStd;
-  CABACWriter*        m_CABACWriter   [BPM_NUM-1];
-  CABACWriter*        m_CABACEstimator[BPM_NUM-1];
+
+  EnumArray<CABACWriter *, BpmType> m_CABACWriter;
+  EnumArray<CABACWriter *, BpmType> m_CABACEstimator;
 };
 
 //! \}

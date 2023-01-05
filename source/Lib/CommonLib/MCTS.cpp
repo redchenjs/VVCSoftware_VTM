@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -242,7 +242,7 @@ bool MCTSHelper::checkMvBufferForMCTSConstraint( const PredictionUnit &pu, bool 
               const MotionInfo &miA = mi;
               const MotionInfo &miB = mb.at( x + 1, y + 1 );
               Mv mvAff = miA.mv[refList] + miB.mv[refList];
-              mvAff.roundAffine(1);
+              mvAff >>= 1;
               getMotInfoBlockPartPos( pu, xOff, yOff, mvAff, predXLeft, predYTop, predXRight, predYBottom );
               if( !checkMVRange( mvAff, tileArea, predXLeft, predXRight + blkW, predYTop, predYBottom + blkH, chromaFormat, false, msgFlag ) )
               {
@@ -260,9 +260,9 @@ bool MCTSHelper::checkMvBufferForMCTSConstraint( const PredictionUnit &pu, bool 
 
 bool MCTSHelper::checkMvIsNotInRestrictedArea( const PredictionUnit &pu, const Mv& mv, const Area& restrArea, const MvPrecision mvPrec )
 {
-  CHECKD( mvPrec < MV_PRECISION_INT, "Wrong MV precision!" );
+  CHECKD(mvPrec < MvPrecision::ONE, "Wrong MV precision!");
   Mv testMv = mv;
-  testMv >>= mvPrec - MV_PRECISION_INT;
+  testMv >>= mvPrec - MvPrecision::ONE;
   Area targetArea = pu.Y();
   targetArea.repositionTo( targetArea.offset( testMv.getHor(), testMv.getVer() ) );
   if( !restrArea.contains( targetArea ) )

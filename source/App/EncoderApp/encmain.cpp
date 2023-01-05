@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -109,7 +109,6 @@ int main(int argc, char* argv[])
   int layerIdx = 0;
 
   initROM();
-  TComHash::initBlockSizeToIndex();
 
   char** layerArgv = new char*[argc];
 
@@ -336,7 +335,15 @@ int main(int argc, char* argv[])
 #else
   auto encTime = std::chrono::duration_cast<std::chrono::milliseconds>( endTime - startTime).count();
 #endif
-
+#if GREEN_METADATA_SEI_ENABLED
+  for( auto & encApp : pcEncApp )
+  {
+    FeatureCounterStruct  featureCounterFinal = encApp->getFeatureCounter();
+    featureCounterFinal.bytes = encApp->getTotalNumberOfBytes();
+    FeatureCounterStruct dummy;
+    writeGMFAOutput(featureCounterFinal, dummy, encApp->getGMFAFile(),true);
+  }
+#endif
   for( auto & encApp : pcEncApp )
   {
     encApp->destroyLib();

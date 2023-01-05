@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -84,27 +84,20 @@ protected:
 
   RdCost*              m_pcRdCost;
 
-  int                  m_iRefListIdx;
   PelStorage           m_geoPartBuf[2];
 
   static constexpr int MVBUFFER_SIZE = MAX_CU_SIZE / MIN_PU_SIZE;
 
   Mv*                  m_storedMv;
- /*buffers for bilinear Filter data for DMVR refinement*/
-  Pel*                 m_cYuvPredTempDMVRL0;
-  Pel*                 m_cYuvPredTempDMVRL1;
-  int                  m_biLinearBufStride;
-  /*buffers for padded data*/
-  PelUnitBuf           m_cYuvRefBuffDMVRL0;
-  PelUnitBuf           m_cYuvRefBuffDMVRL1;
-  Pel*                 m_cRefSamplesDMVRL0[MAX_NUM_COMPONENT];
-  Pel*                 m_cRefSamplesDMVRL1[MAX_NUM_COMPONENT];
-  Mv m_pSearchOffset[25] = { Mv(-2,-2), Mv(-1,-2), Mv(0,-2), Mv(1,-2), Mv(2,-2),
-                             Mv(-2,-1), Mv(-1,-1), Mv(0,-1), Mv(1,-1), Mv(2,-1),
-                             Mv(-2, 0), Mv(-1, 0), Mv(0, 0), Mv(1, 0), Mv(2, 0),
-                             Mv(-2, 1), Mv(-1, 1), Mv(0, 1), Mv(1, 1), Mv(2, 1),
-                             Mv(-2, 2), Mv(-1, 2), Mv(0, 2), Mv(1, 2), Mv(2, 2) };
-  uint64_t m_SADsArray[((2 * DMVR_NUM_ITERATION) + 1) * ((2 * DMVR_NUM_ITERATION) + 1)];
+  // buffers for initial prediction that is used to calculate DMVR refinement
+  Pel   *m_yuvPredTempDmvr[NUM_REF_PIC_LIST_01];
+  PelBuf m_dmvrInitialPred[NUM_REF_PIC_LIST_01];
+
+  // buffers for padded data, initially filled by xDmvrPrefetch(), padded by xDmvrPad()
+  Pel       *m_refSamplesDmvr[NUM_REF_PIC_LIST_01][MAX_NUM_COMPONENT];
+  PelUnitBuf m_yuvRefBufDmvr[NUM_REF_PIC_LIST_01];
+
+  static const std::array<Mv, DMVR_AREA> m_dmvrSearchOffsets;
 
   static constexpr int AFFINE_SUBBLOCK_WIDTH_EXT  = AFFINE_SUBBLOCK_SIZE + 2 * PROF_BORDER_EXT_W;
   static constexpr int AFFINE_SUBBLOCK_HEIGHT_EXT = AFFINE_SUBBLOCK_SIZE + 2 * PROF_BORDER_EXT_H;
@@ -119,8 +112,7 @@ protected:
   Pel*                 m_gradX0;
   Pel*                 m_gradY0;
   Pel*                 m_gradX1;
-  Pel*                 m_gradY1;
-  bool                 m_subPuMC;
+  Pel                 *m_gradY1;
 
   int                  m_IBCBufferWidth;
   PelStorage           m_IBCBuffer;
@@ -129,36 +121,45 @@ protected:
   void            applyBiOptFlow(const PredictionUnit &pu, const CPelUnitBuf &yuvSrc0, const CPelUnitBuf &yuvSrc1, const int &refIdx0, const int &refIdx1, PelUnitBuf &yuvDst, const BitDepths &clipBitDepths);
   void xPredInterUni(const PredictionUnit &pu, const RefPicList &eRefPicList, PelUnitBuf &pcYuvPred, const bool bi,
                      const bool bioApplied, const bool luma, const bool chroma);
-  void xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, const bool luma = true, const bool chroma = true,
-                    PelUnitBuf *yuvPredTmp = nullptr);
-  void xPredInterBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic, const Mv &_mv,
-                     PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng, const bool bioApplied, bool isIBC,
-                     const std::pair<int, int> scalingRatio = SCALE_1X, SizeType dmvrWidth = 0, SizeType dmvrHeight = 0,
-                     bool bilinearMC = false, Pel *srcPadBuf = nullptr, int32_t srcPadStride = 0);
+  void xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, bool luma, bool chroma, PelUnitBuf *yuvPredTmp,
+                    bool isSubPu);
 
-  void xAddBIOAvg4              (const Pel* src0, int src0Stride, const Pel* src1, int src1Stride, Pel *dst, int dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel*gradY1, int gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset, const ClpRng& clpRng);
-  void xBioGradFilter           (Pel* pSrc, int srcStride, int width, int height, int gradStride, Pel* gradX, Pel* gradY, int bitDepth);
+  void xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic, const Mv &_mv,
+                     PelUnitBuf &dstPic, bool bi, const ClpRng &clpRng, bool bioApplied, bool isIBC,
+                     const ScalingRatio scalingRatio, bool bilinearMC, Pel *srcPadBuf, ptrdiff_t srcPadStride,
+                     Pel *bdofDstBuf);
+  void xPredInterBlk(const ComponentID compID, const PredictionUnit &pu, const Picture *refPic, const Mv &_mv,
+                     PelUnitBuf &dstPic, bool bi, const ClpRng &clpRng, bool bioApplied, bool isIBC, RefPicList l)
+  {
+    xPredInterBlk(compID, pu, refPic, _mv, dstPic, bi, clpRng, bioApplied, isIBC, SCALE_1X, false, nullptr, 0,
+                  isLuma(compID) && bioApplied ? m_filteredBlockTmp[2 + l][compID] : nullptr);
+  }
+
+  void xAddBIOAvg4(const Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, Pel *dst,
+                   ptrdiff_t dstStride, const Pel *gradX0, const Pel *gradX1, const Pel *gradY0, const Pel *gradY1,
+                   ptrdiff_t gradStride, int width, int height, int tmpx, int tmpy, int shift, int offset,
+                   const ClpRng &clpRng);
+  void xBioGradFilter(Pel *pSrc, ptrdiff_t srcStride, int width, int height, ptrdiff_t gradStride, Pel *gradX,
+                      Pel *gradY, int bitDepth);
   void xCalcBIOPar              (const Pel* srcY0Temp, const Pel* srcY1Temp, const Pel* gradX0, const Pel* gradX1, const Pel* gradY0, const Pel* gradY1, int* dotProductTemp1, int* dotProductTemp2, int* dotProductTemp3, int* dotProductTemp5, int* dotProductTemp6, const int src0Stride, const int src1Stride, const int gradStride, const int widthG, const int heightG, int bitDepth);
   void xCalcBlkGradient         (int sx, int sy, int    *arraysGx2, int     *arraysGxGy, int     *arraysGxdI, int     *arraysGy2, int     *arraysGydI, int     &sGx2, int     &sGy2, int     &sGxGy, int     &sGxdI, int     &sGydI, int width, int height, int unitSize);
   void xWeightedAverage(const PredictionUnit &pu, const CPelUnitBuf &pcYuvSrc0, const CPelUnitBuf &pcYuvSrc1,
-                        PelUnitBuf &pcYuvDst, const BitDepths &clipBitDepths, const ClpRngs &clpRngs,
-                        const bool bioApplied, const bool lumaOnly = false, const bool chromaOnly = false,
-                        PelUnitBuf *yuvDstTmp = nullptr);
+                        PelUnitBuf &pcYuvDst, const BitDepths &clipBitDepths, const ClpRngs &clpRngs, bool bioApplied,
+                        bool lumaOnly, bool chromaOnly, PelUnitBuf *yuvDstTmp);
 #if GDR_ENABLED
   bool xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic, const Mv *_mv,
                       PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng, const bool genChromaMv = false,
-                      const std::pair<int, int> scalingRatio = SCALE_1X);
+                      const ScalingRatio = SCALE_1X);
 #else
   void xPredAffineBlk(const ComponentID &compID, const PredictionUnit &pu, const Picture *refPic, const Mv *_mv,
                       PelUnitBuf &dstPic, const bool bi, const ClpRng &clpRng, const bool genChromaMv = false,
-                      const std::pair<int, int> scalingRatio = SCALE_1X);
+                      const ScalingRatio = SCALE_1X);
 #endif
 
   static bool xCheckIdenticalMotion( const PredictionUnit& pu );
 
-  void xSubPuMC(PredictionUnit& pu, PelUnitBuf& predBuf, const RefPicList &eRefPicList = REF_PIC_LIST_X, const bool luma = true, const bool chroma = true);
-  void xSubPuBio(PredictionUnit &pu, PelUnitBuf &predBuf, const RefPicList &eRefPicList = REF_PIC_LIST_X,
-                 PelUnitBuf *yuvDstTmp = nullptr);
+  void xSubPuMC(PredictionUnit &pu, PelUnitBuf &predBuf, const RefPicList &eRefPicList, bool luma, bool chroma);
+  void xSubPuBio(PredictionUnit &pu, PelUnitBuf &predBuf, const RefPicList &eRefPicList, PelUnitBuf *yuvDstTmp);
   void destroy();
 
 
@@ -175,27 +176,35 @@ public:
   void    init                (RdCost* pcRdCost, ChromaFormat chromaFormatIDC, const int ctuSize);
 
   // inter
-  void    motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf, const RefPicList &eRefPicList = REF_PIC_LIST_X,
-                             const bool luma = true, const bool chroma = true, PelUnitBuf *predBufWOBIO = nullptr);
-  void    motionCompensation  (PredictionUnit &pu, const RefPicList &eRefPicList = REF_PIC_LIST_X
-    , const bool luma = true, const bool chroma = true
-  );
-  void    motionCompensation  (CodingUnit &cu,     const RefPicList &eRefPicList = REF_PIC_LIST_X
-    , const bool luma = true, const bool chroma = true
-  );
+  void motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf, RefPicList eRefPicList, bool luma, bool chroma,
+                          PelUnitBuf *predBufWOBIO, bool isSubPu);
+
+  void motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf, RefPicList eRefPicList)
+  {
+    motionCompensation(pu, predBuf, eRefPicList, true, true, nullptr, false);
+  }
+
+  void motionCompensatePu(PredictionUnit &pu, RefPicList eRefPicList, bool luma, bool chroma);
+  void motionCompensateCu(CodingUnit &cu, RefPicList eRefPicList, bool luma, bool chroma);
 
   void    motionCompensationGeo(CodingUnit &cu, MergeCtx &GeoMrgCtx);
-  void    weightedGeoBlk(PredictionUnit &pu, const uint8_t splitDir, int32_t channel, PelUnitBuf& predDst, PelUnitBuf& predSrc0, PelUnitBuf& predSrc1);
-  void xPrefetch(PredictionUnit& pu, PelUnitBuf &pcPad, RefPicList refId, bool forLuma);
-  void xPad(PredictionUnit& pu, PelUnitBuf &pcPad, RefPicList refId);
-  void xFinalPaddedMCForDMVR(PredictionUnit& pu, PelUnitBuf &pcYuvSrc0, PelUnitBuf &pcYuvSrc1, PelUnitBuf &pcPad0, PelUnitBuf &pcPad1, const bool bioApplied
-    , const Mv startMV[NUM_REF_PIC_LIST_01]
-    , bool blockMoved
-  );
-  void xBIPMVRefine(int bd, Pel *pRefL0, Pel *pRefL1, uint64_t& minCost, int16_t *deltaMV, uint64_t *pSADsArray, int width, int height);
-  uint64_t xDMVRCost(int bitDepth, Pel* pRef, uint32_t refStride, const Pel* pOrg, uint32_t orgStride, int width, int height);
-  void xinitMC(PredictionUnit& pu, const ClpRngs &clpRngs);
-  void xProcessDMVR(PredictionUnit& pu, PelUnitBuf &pcYuvDst, const ClpRngs &clpRngs, const bool bioApplied );
+  void    weightedGeoBlk(PredictionUnit &pu, const uint8_t splitDir, ChannelType channel, PelUnitBuf &predDst,
+                         PelUnitBuf &predSrc0, PelUnitBuf &predSrc1);
+
+  // DMVR related definitions
+  using DmvrDist = int32_t;
+
+  static constexpr DmvrDist UNDEFINED_DMVR_DIST = -1;
+
+  void     xDmvrPrefetch(const PredictionUnit &pu, bool forLuma);
+  void     xDmvrPad(const PredictionUnit &pu);
+  void     xDmvrFinalMc(const PredictionUnit &pu, PelUnitBuf yuvSrc[NUM_REF_PIC_LIST_01], bool applyBdof,
+                        const Mv startMV[NUM_REF_PIC_LIST_01], bool blockMoved);
+  void     xDmvrIntegerRefine(int bd, DmvrDist &minCost, Mv &deltaMv, DmvrDist *sadPtr, int width, int height);
+  Mv       xDmvrSubpelRefine(const DmvrDist *sadPtr);
+  DmvrDist xDmvrCost(int bitDepth, const Mv &mvd, int width, int height);
+  void     xDmvrInitialMc(const PredictionUnit &pu, const ClpRngs &clpRngs);
+  void     xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, const ClpRngs &clpRngs, const bool applyBdof);
 
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
   void    cacheAssign( CacheModel *cache );
@@ -206,8 +215,8 @@ public:
   void resetVPDUforIBC(const ChromaFormat chromaFormatIDC, const int ctuSize, const int vSize, const int xPos, const int yPos);
   bool isLumaBvValid(const int ctuSize, const int xCb, const int yCb, const int width, const int height, const int xBv, const int yBv);
 
-  bool xPredInterBlkRPR(const std::pair<int, int> &scalingRatio, const PPS &pps, const CompArea &blk,
-                        const Picture *refPic, const Mv &mv, Pel *dst, const int dstStride, const bool bi,
+  bool xPredInterBlkRPR(const ScalingRatio scalingRatio, const PPS &pps, const CompArea &blk,
+                        const Picture *refPic, const Mv &mv, Pel *dst, const ptrdiff_t dstStride, const bool bi,
                         const bool wrapRef, const ClpRng &clpRng, const InterpolationFilter::Filter filterIndex,
                         const bool useAltHpelIf = false);
 };

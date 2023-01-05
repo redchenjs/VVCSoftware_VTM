@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,8 +62,8 @@
 // Class definition
 // ====================================================================================================================
 
-static constexpr uint32_t MAX_NUM_REF_LIST_ADAPT_SR = 2;
-static constexpr uint32_t MAX_IDX_ADAPT_SR          = 33;
+static constexpr uint32_t MAX_NUM_REF_LIST_ADAPT_SR = NUM_REF_PIC_LIST_01;
+static constexpr uint32_t MAX_IDX_ADAPT_SR          = MAX_NUM_REF;
 static constexpr uint32_t NUM_MV_PREDICTORS         = 3;
 struct BlkRecord
 {
@@ -73,19 +73,19 @@ class EncModeCtrl;
 
 struct AffineMVInfo
 {
-  Mv  affMVs[2][33][3];
+  RefSetArray<Mv[3]> affMVs;
   int x, y, w, h;
 };
 
-#if GDR_ENABLED 
+#if GDR_ENABLED
 struct AffineMVInfoSolid
 {
-  bool  affMVsSolid[2][33][3];
+  RefSetArray<bool[3]> affMVsSolid;
 };
 #endif
 struct BlkUniMvInfo
 {
-  Mv uniMvs[2][33];
+  RefSetArray<Mv> uniMvs;
   int x, y, w, h;
 };
 
@@ -129,7 +129,7 @@ private:
   bool            m_affineModeSelected;
   std::unordered_map< Position, std::unordered_map< Size, BlkRecord> > m_ctuRecord;
   AffineMVInfo       *m_affMVList;
-#if GDR_ENABLED  
+#if GDR_ENABLED
   AffineMVInfoSolid  *m_affMVListSolid;
 #endif
   int             m_affMVListIdx;
@@ -140,11 +140,11 @@ private:
   int             m_uniMvListSize;
   int             m_uniMvListMaxSize;
   Distortion      m_hevcCost;
-#if GDR_ENABLED  
+#if GDR_ENABLED
   bool            m_hevcCostOk;
 #endif
   EncAffineMotion m_affineMotion;
-  PatentBvCand    m_defaultCachedBvs;
+  static_vector<Mv, IBC_NUM_CANDIDATES> m_defaultCachedBvs;
 protected:
   // interface to option
   EncCfg*         m_pcEncCfg;
@@ -161,14 +161,15 @@ protected:
 
   // RD computation
   CABACWriter*    m_CABACEstimator;
-  CtxCache*       m_CtxCache;
+  CtxPool        *m_ctxPool;
   DistParam       m_cDistParam;
 
   RefPicList      m_currRefPicList;
   int             m_currRefPicIndex;
   bool            m_skipFracME;
-  int             m_numHashMVStoreds[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
-  Mv              m_hashMVStoreds[NUM_REF_PIC_LIST_01][MAX_NUM_REF][5];
+
+  RefSetArray<int>                         m_numHashMVStoreds;
+  RefSetArray<Mv[Hash::NUM_LOG_BLK_SIZES]> m_hashMVStoreds;
 
   // Misc.
   Pel            *m_pTempPel;
@@ -176,18 +177,17 @@ protected:
   // AMVP cost computation
   uint32_t            m_auiMVPIdxCost               [AMVP_MAX_NUM_CANDS+1][AMVP_MAX_NUM_CANDS+1]; //th array bounds
 
-  Mv              m_integerMv2Nx2N              [NUM_REF_PIC_LIST_01][MAX_NUM_REF];
+  RefSetArray<Mv> m_integerMv2Nx2N;
 
   bool            m_isInitialized;
 
-  Mv              m_acBVs[2 * IBC_NUM_CANDIDATES];
-  unsigned int    m_numBVs;
+  static_vector<Mv, 2 * IBC_NUM_CANDIDATES> m_acBVs;
   bool            m_useCompositeRef;
   Distortion      m_estMinDistSbt[NUMBER_SBT_MODE + 1]; // estimated minimum SSE value of the PU if using a SBT mode
   uint8_t         m_sbtRdoOrder[NUMBER_SBT_MODE];       // order of SBT mode in RDO
   bool            m_skipSbtAll;                         // to skip all SBT modes for the current PU
   uint8_t         m_histBestSbt;                        // historical best SBT mode for PU of certain SSE values
-  uint8_t         m_histBestMtsIdx;                     // historical best MTS idx  for PU of certain SSE values
+  MtsType         m_histBestMtsIdx;                     // historical best MTS idx  for PU of certain SSE values
   bool            m_clipMvInSubPic;
 
 public:
@@ -197,7 +197,7 @@ public:
   void init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, int searchRange, int bipredSearchRange,
             MESearchMethod motionEstimationSearchMethod, bool useCompositeRef, const uint32_t maxCUWidth,
             const uint32_t maxCUHeight, const uint32_t maxTotalCUDepth, RdCost *pcRdCost, CABACWriter *CABACEstimator,
-            CtxCache *ctxCache, EncReshape *m_pcReshape);
+            CtxPool *ctxPool, EncReshape *m_pcReshape);
 
   void destroy                      ();
 
@@ -208,7 +208,11 @@ public:
   uint8_t    getSbtRdoOrder         ( uint8_t idx )    { assert( m_sbtRdoOrder[idx] < NUMBER_SBT_MODE ); assert( (uint32_t)( m_estMinDistSbt[m_sbtRdoOrder[idx]] >> 2 ) < ( MAX_UINT >> 1 ) ); return m_sbtRdoOrder[idx]; }
   Distortion getEstDistSbt          ( uint8_t sbtMode) { return m_estMinDistSbt[sbtMode]; }
   void       initTuAnalyzer         ()                 { m_estMinDistSbt[NUMBER_SBT_MODE] = std::numeric_limits<uint64_t>::max(); m_skipSbtAll = false; }
-  void       setHistBestTrs         ( uint8_t sbtInfo, uint8_t mtsIdx ) { m_histBestSbt = sbtInfo; m_histBestMtsIdx = mtsIdx; }
+  void       setHistBestTrs(uint8_t sbtInfo, MtsType mtsIdx)
+  {
+    m_histBestSbt    = sbtInfo;
+    m_histBestMtsIdx = mtsIdx;
+  }
   void       initSbtRdoOrder        ( uint8_t sbtMode ) { m_sbtRdoOrder[0] = sbtMode; m_estMinDistSbt[0] = m_estMinDistSbt[sbtMode]; }
 
   void setTempBuffers               (CodingStructure ****pSlitCS, CodingStructure ****pFullCS, CodingStructure **pSaveCS );
@@ -277,7 +281,7 @@ public:
     }
   }
   void resetUniMvList() { m_uniMvListIdx = 0; m_uniMvListSize = 0; }
-  void insertUniMvCands(CompArea blkArea, Mv cMvTemp[2][33])
+  void insertUniMvCands(CompArea blkArea, RefSetArray<Mv> &cMvTemp)
   {
     BlkUniMvInfo* curMvInfo = m_uniMvList + m_uniMvListIdx;
     int j = 0;
@@ -295,7 +299,7 @@ public:
       curMvInfo = m_uniMvList + ((m_uniMvListIdx - 1 - j + m_uniMvListMaxSize) % (m_uniMvListMaxSize));
     }
 
-    ::memcpy(curMvInfo->uniMvs, cMvTemp, 2 * 33 * sizeof(Mv));
+    ::memcpy(curMvInfo->uniMvs, cMvTemp, sizeof(cMvTemp));
     if (j == m_uniMvListSize)  // new element
     {
       curMvInfo->x = blkArea.x;
@@ -349,11 +353,14 @@ public:
     }
   }
   void resetSavedAffineMotion();
+
 #if GDR_ENABLED
-  void storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int16_t affineRefIdx[2], EAffineModel affineType, int bcwIdx);
+  void storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int16_t affineRefIdx[2],
+                         AffineModel affineType, int bcwIdx);
 #else
-  void storeAffineMotion( Mv acAffineMv[2][3], int16_t affineRefIdx[2], EAffineModel affineType, int bcwIdx );
+  void storeAffineMotion(Mv acAffineMv[2][3], int16_t affineRefIdx[2], AffineModel affineType, int bcwIdx);
 #endif
+
   bool searchBv(PredictionUnit& pu, int xPos, int yPos, int width, int height, int picWidth, int picHeight, int xBv, int yBv, int ctuSize);
   void setClipMvInSubPic(bool flag) { m_clipMvInSubPic = flag; }
 protected:
@@ -380,7 +387,7 @@ protected:
     SearchRange searchRange;
     const CPelBuf* pcPatternKey;
     const Pel*  piRefY;
-    int         iRefStride;
+    ptrdiff_t       iRefStride;
     int         iBestX;
     int         iBestY;
     uint32_t        uiBestRound;
@@ -420,15 +427,11 @@ public:
   void  xSetIntraSearchRange        ( PredictionUnit& pu, int iRoiWidth, int iRoiHeight, const int localSearchRangeX, const int localSearchRangeY, Mv& rcMvSrchRngLT, Mv& rcMvSrchRngRB);
   void  resetIbcSearch()
   {
-    for (int i = 0; i < IBC_NUM_CANDIDATES; i++)
-    {
-      m_defaultCachedBvs.m_bvCands[i].setZero();
-    }
-    m_defaultCachedBvs.currCnt = 0;
+    m_defaultCachedBvs.clear();
   }
   void  xIBCEstimation   ( PredictionUnit& pu, PelUnitBuf& origBuf, Mv     *pcMvPred, Mv     &rcMv, Distortion &ruiCost, const int localSearchRangeX, const int localSearchRangeY);
-  void  xIBCSearchMVCandUpdate  ( Distortion  uiSad, int x, int y, Distortion* uiSadBestCand, Mv* cMVCand);
-  int   xIBCSearchMVChromaRefine( PredictionUnit& pu, int iRoiWidth, int iRoiHeight, int cuPelX, int cuPelY, Distortion* uiSadBestCand, Mv*     cMVCand);
+  void  xIBCSearchMVCandUpdate  ( Distortion  uiSad, int x, int y, Distortion* uiSadBestCand, static_vector<Mv, CHROMA_REFINEMENT_CANDIDATES>& cMVCand);
+  int   xIBCSearchMVChromaRefine( PredictionUnit& pu, int iRoiWidth, int iRoiHeight, int cuPelX, int cuPelY, Distortion* uiSadBestCand, static_vector<Mv, CHROMA_REFINEMENT_CANDIDATES>& cMVCand);
   void addToSortList(std::list<BlockHash>& listBlockHash, std::list<int>& listCost, int cost, const BlockHash& blockHash);
   bool predInterHashSearch(CodingUnit& cu, Partitioner& partitioner, bool& isPerfectMatch);
   bool xHashInterEstimation(PredictionUnit& pu, RefPicList& bestRefPicList, int& bestRefIndex, Mv& bestMv, Mv& bestMvd, int& bestMVPIndex, bool& isPerfectMatch);
@@ -512,24 +515,17 @@ protected:
 #endif
   );
 
-  void xPredAffineInterSearch     ( PredictionUnit&       pu,
-                                    PelUnitBuf&           origBuf,
-                                    int                   puIdx,
-                                    uint32_t&                 lastMode,
-                                    Distortion&           affineCost,
-                                    Mv                    hevcMv[2][33]
+  void xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf, int puIdx, uint32_t &lastMode,
+                              Distortion &affineCost, RefSetArray<Mv> &hevcMv,
 #if GDR_ENABLED
-                                  , bool                  hevcMvSolid[2][33]
+                              RefSetArray<bool> &hevcMvSolid,
 #endif
-                                  , Mv                    mvAffine4Para[2][33][3]
+                              RefSetArray<Mv[3]> &mvAffine4Para,
 #if GDR_ENABLED
-                                  , bool                  mvAffine4ParaSolid[2][33][3]
+                              RefSetArray<bool[3]> &mvAffine4ParaSolid,
 #endif
-                                  , int                   refIdx4Para[2]
-                                  , uint8_t               bcwIdx = BCW_DEFAULT
-                                  , bool                  enforceBcwPred = false
-                                  , uint32_t              bcwIdxBits = 0
-                                  );
+                              int refIdx4Para[NUM_REF_PIC_LIST_01], uint8_t bcwIdx = BCW_DEFAULT,
+                              bool enforceBcwPred = false, uint32_t bcwIdxBits = 0);
 
 #if GDR_ENABLED
   void xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, RefPicList eRefPicList, Mv acMvPred[3],
@@ -558,11 +554,10 @@ protected:
   Distortion xGetSymmetricCost( PredictionUnit& pu, PelUnitBuf& origBuf, RefPicList eCurRefPicList, const MvField& cCurMvField, MvField& cTarMvField , int bcwIdx );
 
 #if GDR_ENABLED
-  Distortion xSymmeticRefineMvSearch( 
-    PredictionUnit& pu, PelUnitBuf& origBuf, 
-    Mv& rcMvCurPred, Mv& rcMvTarPred,
-    RefPicList eRefPicList, MvField& rCurMvField, MvField& rTarMvField, 
-    Distortion uiMinCost, int searchPattern, int nSearchStepShift, uint32_t uiMaxSearchRounds , int bcwIdx, bool& rbOk );
+  Distortion xSymmeticRefineMvSearch(PredictionUnit &pu, PelUnitBuf &origBuf, Mv &rcMvCurPred, Mv &rcMvTarPred,
+                                     RefPicList eRefPicList, MvField &rCurMvField, MvField &rTarMvField,
+                                     Distortion uiMinCost, int searchPattern, int nSearchStepShift,
+                                     uint32_t uiMaxSearchRounds, int bcwIdx, bool &rbOk);
 #else
   Distortion xSymmeticRefineMvSearch( PredictionUnit& pu, PelUnitBuf& origBuf, Mv& rcMvCurPred, Mv& rcMvTarPred
     , RefPicList eRefPicList, MvField& rCurMvField, MvField& rTarMvField, Distortion uiMinCost, int searchPattern, int nSearchStepShift, uint32_t uiMaxSearchRounds , int bcwIdx );
@@ -598,21 +593,12 @@ public:
   void resetBufferedUniMotions    () { m_uniMotions.reset(); }
   uint32_t getWeightIdxBits       ( uint8_t bcwIdx ) { return m_estWeightIdxBits[bcwIdx]; }
   void initWeightIdxBits          ();
-  void symmvdCheckBestMvp(
-    PredictionUnit& pu,
-    PelUnitBuf& origBuf,
-    Mv curMv,
-    RefPicList curRefList,
-    AMVPInfo amvpInfo[2][33],
-    int32_t bcwIdx,
-    Mv cMvPredSym[2],
+  void     symmvdCheckBestMvp(PredictionUnit &pu, PelUnitBuf &origBuf, Mv curMv, RefPicList curRefList,
+                              RefSetArray<AMVPInfo> &amvpInfo, int32_t bcwIdx, Mv cMvPredSym[NUM_REF_PIC_LIST_01],
 #if GDR_ENABLED
-    bool cMvPredSymSolid[2],
+                          bool cMvPredSymSolid[NUM_REF_PIC_LIST_01],
 #endif
-    int32_t mvpIdxSym[2],
-    Distortion& bestCost,
-    bool skip = false
-    );
+                          int32_t mvpIdxSym[NUM_REF_PIC_LIST_01], Distortion &bestCost, bool skip = false);
 protected:
 
   void xExtDIFUpSamplingH(CPelBuf* pcPattern, bool useAltHpelIf);

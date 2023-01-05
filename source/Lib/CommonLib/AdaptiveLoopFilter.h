@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,15 +67,16 @@ enum Direction
 class AdaptiveLoopFilter
 {
 public:
+  static constexpr int COEFF_SCALE_BITS = 7;   // 8-bit signed values
+
   static inline Pel clipALF(const Pel clip, const Pel ref, const Pel val0, const Pel val1)
   {
     return Clip3<Pel>(-clip, +clip, val0-ref) + Clip3<Pel>(-clip, +clip, val1-ref);
   }
 
-  static constexpr int ALF_NUM_CLIP_VALS[MAX_NUM_CHANNEL_TYPE] = { 4, 4 };
+  static const EnumArray<int, ChannelType> ALF_NUM_CLIP_VALS;
   static constexpr int MAX_ALF_NUM_CLIP_VALS                   = 4;
 
-  static constexpr int   m_NUM_BITS = 8;
   static constexpr int   m_CLASSIFICATION_BLK_SIZE = 32;   // non-normative, local buffer size
 
   AdaptiveLoopFilter();
@@ -83,7 +84,8 @@ public:
   void reconstructCoeffAPSs(CodingStructure& cs, bool luma, bool chroma, bool isRdo);
   void reconstructCoeff(AlfParam& alfParam, ChannelType channel, const bool isRdo, const bool isRedo = false);
   void ALFProcess(CodingStructure& cs);
-  void create( const int picWidth, const int picHeight, const ChromaFormat format, const int maxCUWidth, const int maxCUHeight, const int maxCUDepth, const int inputBitDepth[MAX_NUM_CHANNEL_TYPE] );
+  void        create(const int picWidth, const int picHeight, const ChromaFormat format, const int maxCUWidth,
+                     const int maxCUHeight, const int maxCUDepth, const BitDepths &inputBitDepth);
   void destroy();
   static void deriveClassificationBlk(AlfClassifier **classifier, int **laplacian[NUM_DIRECTIONS],
                                       const CPelBuf &srcLuma, const Area &blkDst, const Area &blk, const int shift,
@@ -129,7 +131,7 @@ public:
 
 protected:
   bool isCrossedByVirtualBoundaries( const CodingStructure& cs, const int xPos, const int yPos, const int width, const int height, bool& clipTop, bool& clipBottom, bool& clipLeft, bool& clipRight, int& numHorVirBndry, int& numVerVirBndry, int horVirBndryPos[], int verVirBndryPos[], int& rasterSliceAlfPad );
-  static constexpr int   m_scaleBits = 7; // 8-bits
+
   CcAlfFilterParam       m_ccAlfFilterParam;
   uint8_t*               m_ccAlfFilterControl[2];
   static const int             m_classToFilterMapping[NUM_FIXED_FILTER_SETS][MAX_NUM_ALF_CLASSES];
@@ -141,9 +143,9 @@ protected:
   bool                         m_created = false;
   short                        m_chromaCoeffFinal[MAX_NUM_ALF_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];
   AlfParam*                    m_alfParamChroma;
-  Pel                          m_alfClippingValues[MAX_NUM_CHANNEL_TYPE][MAX_ALF_NUM_CLIP_VALS];
+  EnumArray<std::array<Pel, MAX_ALF_NUM_CLIP_VALS>, ChannelType> m_alfClippingValues;
   std::vector<AlfFilterShape>  m_filterShapesCcAlf[2];
-  std::vector<AlfFilterShape>  m_filterShapes[MAX_NUM_CHANNEL_TYPE];
+  EnumArray<std::vector<AlfFilterShape>, ChannelType>            m_filterShapes;
   AlfClassifier**              m_classifier;
   short                        m_coeffFinal[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];
   Pel                          m_clippFinal[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];
@@ -155,7 +157,7 @@ protected:
   uint8_t*                     m_ctuAlternative[MAX_NUM_COMPONENT];
   PelStorage                   m_tempBuf;
   PelStorage                   m_tempBuf2;
-  int                          m_inputBitDepth[MAX_NUM_CHANNEL_TYPE];
+  BitDepths                    m_inputBitDepth;
   int                          m_picWidth;
   int                          m_picHeight;
   int                          m_maxCUWidth;

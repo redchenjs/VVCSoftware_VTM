@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2022, ITU/ISO/IEC
+* Copyright (c) 2010-2023, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -52,9 +52,7 @@
 #define READ_UVLC(        code, name)     xReadUvlcTr (         code, name )
 #define READ_SVLC(        code, name)     xReadSvlcTr (         code, name )
 #define READ_FLAG(        code, name)     xReadFlagTr (         code, name )
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
 #define READ_STRING(        code, name)   xReadStringTr (         code, name )
-#endif
 
 #else
 
@@ -65,9 +63,7 @@
 #define READ_UVLC(        code, name)     xReadUvlc (         code, name )
 #define READ_SVLC(        code, name)     xReadSvlc (         code, name )
 #define READ_FLAG(        code, name)     xReadFlag (         code, name )
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
 #define READ_STRING(        code, name)   xReadString (         code, name )
-#endif
 
 #else
 
@@ -76,9 +72,7 @@
 #define READ_UVLC(        code, name)     xReadUvlc (         code )
 #define READ_SVLC(        code, name)     xReadSvlc (         code )
 #define READ_FLAG(        code, name)     xReadFlag (         code )
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
 #define READ_STRING(        code, name)   xReadString (         code )
-#endif
 
 #endif
 
@@ -104,26 +98,20 @@ protected:
   void  xReadUvlc    (                uint32_t& val, const char *pSymbolName );
   void  xReadSvlc    (                 int& val, const char *pSymbolName );
   void  xReadFlag    (                uint32_t& val, const char *pSymbolName );
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   void  xReadString  (                std::string& val, const char* symbolName);
-#endif
 #else
   void  xReadCode    ( uint32_t   length, uint32_t& val );
   void  xReadUvlc    (                uint32_t& val );
   void  xReadSvlc    (                 int& val );
   void  xReadFlag    (                uint32_t& val );
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   void  xReadString  (                std::string& val);
-#endif
 #endif
 #if ENABLE_TRACING
   void  xReadCodeTr  ( uint32_t  length, uint32_t& rValue, const char *pSymbolName );
   void  xReadUvlcTr  (               uint32_t& rValue, const char *pSymbolName );
   void  xReadSvlcTr  (                int& rValue, const char *pSymbolName );
   void  xReadFlagTr  (               uint32_t& rValue, const char *pSymbolName );
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
   void  xReadStringTr(std::string& value, const char* symbolName);
-#endif
 #endif
 #if RExt__DECODER_DEBUG_BIT_STATISTICS || ENABLE_TRACING
   void  xReadSCode   ( uint32_t  length, int& val, const char *pSymbolName );

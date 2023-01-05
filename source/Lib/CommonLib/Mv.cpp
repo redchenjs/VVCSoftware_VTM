@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,9 +40,12 @@
 #include "Common.h"
 #include "Slice.h"
 
-const MvPrecision Mv::m_amvrPrecision[4] = { MV_PRECISION_QUARTER, MV_PRECISION_INT, MV_PRECISION_4PEL, MV_PRECISION_HALF }; // for cu.imv=0, 1, 2 and 3
-const MvPrecision Mv::m_amvrPrecAffine[3] = { MV_PRECISION_QUARTER, MV_PRECISION_SIXTEENTH, MV_PRECISION_INT }; // for cu.imv=0, 1 and 2
-const MvPrecision Mv::m_amvrPrecIbc[3] = { MV_PRECISION_INT, MV_PRECISION_INT, MV_PRECISION_4PEL }; // for cu.imv=0, 1 and 2
+const MvPrecision Mv::m_amvrPrecision[4]  = { MvPrecision::QUARTER, MvPrecision::ONE, MvPrecision::FOUR,
+                                              MvPrecision::HALF };   // for cu.imv=0, 1, 2 and 3
+const MvPrecision Mv::m_amvrPrecAffine[3] = { MvPrecision::QUARTER, MvPrecision::SIXTEENTH,
+                                              MvPrecision::ONE };   // for cu.imv=0, 1 and 2
+const MvPrecision Mv::m_amvrPrecIbc[3]    = { MvPrecision::ONE, MvPrecision::ONE,
+                                              MvPrecision::FOUR };   // for cu.imv=0, 1 and 2
 
 void (*clipMv) ( Mv& rcMv, const struct Position& pos, const struct Size& size, const class SPS& sps, const class PPS& pps );
 

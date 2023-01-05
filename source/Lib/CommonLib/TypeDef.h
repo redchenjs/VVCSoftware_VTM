@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@
 #error Include CommonDef.h not TypeDef.h
 #endif
 
+#include <array>
 #include <vector>
 #include <utility>
 #include <sstream>
@@ -49,21 +50,26 @@
 #include <cstring>
 #include <assert.h>
 #include <cassert>
+#include "CommonDef.h"
 
 // clang-format off
 
-
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AA0056_GATING_FILTER_CHARACTERISTICS         1 // JVET-AA0056 AHG9: on syntax gating in the neural-network post-filter characteristics SEI message
-#define JVET_AA0100_SEPERATE_COLOR_CHARACTERISTICS        1 // JVET-AA0100 AHG9: On auxiliary input and separate colour description in the neural-network post-filter characteristics SEI message
-#define JVET_AA0067_NNPFC_SEI_FIX                         1 // JVET-AA0067 AHG9: Some specification improvements for neural-network post-filter characteristics SEI message	
-#define JVET_AA0110_PHASE_INDICATION_SEI_MESSAGE          1 //  Software support of Phase Indication SEI message
-#define JVET_AA0054_CHROMA_FORMAT_FLAG                    1 // JVET-AA0054 PROPOSAL2: Signalling improvements to specify output chroma information
-#define JVET_AA0054_CHROMA_UPSAMPLING_CONSTRAINT          1 // JVET-AA0054 PROPOSAL3: Constraint to prevent chroma upsampling when input chroma format is monochrome or YUV444
-#define JVET_AA0102_JVET_AA2027_SEI_PROCESSING_ORDER      1 // JVET-AA0102 and JVET-AA2027: SEI processing order SEI message in VVC (Draft 1) (SEI processing order SEI message carries information indicating the preferred processing order, as determined by the encoder)
-#define JVET_AA0055_SIGNAL_ADDITIONAL_PADDING             1 // JVET-AA0055 PROPOSAL A: Allow for signalling additional padding types for the neural network
-#define JVET_AA0055_SUPPORT_BINARY_NEURAL_NETWORK         1 // JVET-AA0055 PROPOSAL B: Allow for signalling the use of binary neural network
-#define JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA           1 // JVET-AA0054_PROPOSAL1: Method to specify neural network post filter data via an external URL
+
+#define JVET_T0056_SEI_MANIFEST                           1 // JVET-T0056: SEI manifest SEI message
+#define JVET_T0056_SEI_PREFIX_INDICATION                  1 // JVET-T0056: SEI prefix indication SEI message
+#define JVET_AB0069_SEI_PROCESSING_ORDER                  1 // JVET-AB0069: SEI processing order SEI message update
+#define JVET_AB0135_NN_SEI_COMPLEXITY_MOD                 1 // JVET-AB0135: Modification of comlexity parameters in NN characteristics SEI message
+#define JVET_AB0080                                       1 // GOP-based RPR encoder control
+#if JVET_AB0080
+#define JVET_AB0080_CHROMA_QP_FIX                         1 // fix to align chroma QP changes with luma QP changes
+#endif
+#define JVET_AB0081                                       1 // JVET-AB0081: Increased length of filters used for upscaling reconstructed pictures in VTM
+#define JVET_AB0058_NN_FRAME_RATE_UPSAMPLING              1 // JVET-AB0058: Allow for signalling nn frame rate upsampling
+
+#define JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC 1
+#define JVET_AB0072                                      1 //Green-MPEG SEI Messaging (JVET-AB0072)
+#define M60678_BALLOT_COMMENTS_OF_FI_03                  1 // m60678: Ballot comments of FI_03
 
 //########### place macros to be be kept below this line ###############
 
@@ -78,16 +84,11 @@
 
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
 
-#define JVET_R0351_HIGH_BIT_DEPTH_ENABLED                 0 // JVET-R0351: high bit depth coding enabled (increases accuracies of some calculations, e.g. transforms)
-
 #define JVET_R0164_MEAN_SCALED_SATD                       1 // JVET-R0164: Use a mean scaled version of SATD in encoder decisions
 
 #define JVET_M0497_MATRIX_MULT                            0 // 0: Fast method; 1: Matrix multiplication
 
 #define APPLY_SBT_SL_ON_MTS                               1 // apply save & load fast algorithm on inter MTS when SBT is on
-
-typedef std::pair<int, bool> TrMode;
-typedef std::pair<int, int>  TrCost;
 
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
@@ -139,6 +140,12 @@ typedef std::pair<int, int>  TrCost;
 
 #define KEEP_PRED_AND_RESI_SIGNALS                        0
 
+#if JVET_AB0072
+#ifndef GREEN_METADATA_SEI_ENABLED
+#define GREEN_METADATA_SEI_ENABLED 0 //JVET-AB0072: Analyser for the Green Metadata SEI
+#endif
+#endif
+
 // ====================================================================================================================
 // Debugging
 // ====================================================================================================================
@@ -147,7 +154,6 @@ typedef std::pair<int, int>  TrCost;
 
 #define PRINT_MACRO_VALUES                                1 ///< When enabled, the encoder prints out a list of the non-environment-variable controlled macros and their values on startup
 
-#define INTRA_FULL_SEARCH                                 0 ///< enables full mode search for intra estimation
 
 // TODO: rename this macro to DECODER_DEBUG_BIT_STATISTICS (may currently cause merge issues with other branches)
 // This can be enabled by the makefile
@@ -175,9 +181,6 @@ typedef std::pair<int, int>  TrCost;
 // ====================================================================================================================
 
 #define DECODER_CHECK_SUBSTREAM_AND_SLICE_TRAILING_BYTES  1 ///< TODO: integrate this macro into a broader conformance checking system.
-#define U0040_MODIFIED_WEIGHTEDPREDICTION_WITH_BIPRED_AND_CLIPPING 1
-#define U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI    1 ///< Alternative transfer characteristics SEI message (JCTVC-U0033, with syntax naming from V1005)
-#define X0038_LAMBDA_FROM_QP_CAPABILITY                   1 ///< This approach derives lambda from QP+QPoffset+QPoffset2. QPoffset2 is derived from QP+QPoffset using a linear model that is clipped between 0 and 3.
                                                             // To use this capability enable config parameter LambdaFromQpEnable
 
 // ====================================================================================================================
@@ -187,11 +190,7 @@ typedef std::pair<int, int>  TrCost;
 
 // This can be enabled by the makefile
 #ifndef RExt__HIGH_BIT_DEPTH_SUPPORT
-#if JVET_R0351_HIGH_BIT_DEPTH_ENABLED
-#define RExt__HIGH_BIT_DEPTH_SUPPORT                      1 ///< 0 (default) use data type definitions for 8-10 bit video, 1 = use larger data types to allow for up to 16-bit video (originally developed as part of N0188)
-#else
 #define RExt__HIGH_BIT_DEPTH_SUPPORT                      0 ///< 0 (default) use data type definitions for 8-10 bit video, 1 = use larger data types to allow for up to 16-bit video (originally developed as part of N0188)
-#endif
 #endif
 
 // SIMD optimizations
@@ -215,11 +214,6 @@ typedef std::pair<int, int>  TrCost;
 
 #define RDOQ_CHROMA_LAMBDA                                1 ///< F386: weighting of chroma for RDOQ
 
-#define U0132_TARGET_BITS_SATURATION                      1 ///< Rate control with target bits saturation method
-#ifdef  U0132_TARGET_BITS_SATURATION
-#define V0078_ADAPTIVE_LOWER_BOUND                        1 ///< Target bits saturation with adaptive lower bound
-#endif
-#define W0038_DB_OPT                                      1 ///< adaptive DB parameter selection, LoopFilterOffsetInPPS and LoopFilterDisable are set to 0 and DeblockingFilterMetric=2;
 #define W0038_CQP_ADJ                                     1 ///< chroma QP adjustment based on TL, CQPTLAdjustEnabled is set to 1;
 
 #define SHARP_LUMA_DELTA_QP                               1 ///< include non-normative LCU deltaQP and normative chromaQP change
@@ -230,9 +224,7 @@ typedef std::pair<int, int>  TrCost;
 
 #define RDOQ_CHROMA                                       1 ///< use of RDOQ in chroma
 
-#define QP_SWITCHING_FOR_PARALLEL                         1 ///< Replace floating point QP with a source-file frame number. After switching POC, increase base QP instead of frame level QP.
 
-#define LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET         1 /// JVET-L0414 (CE11.2.2) with explicit signalling of num interval, threshold and qpOffset
 // ====================================================================================================================
 // Derived macros
 // ====================================================================================================================
@@ -291,12 +283,41 @@ typedef       uint64_t        Distortion;        ///< distortion measurement
 // Enumeration
 // ====================================================================================================================
 
-
-enum ApsType
+// casts enum to underlying integer type
+template<typename E> constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept
 {
-  ALF_APS = 0,
-  LMCS_APS = 1,
-  SCALING_LIST_APS = 2,
+  return static_cast<typename std::underlying_type<E>::type>(e);
+}
+
+// array indexed by an enum type
+template<class T, class E> struct EnumArray : public std::array<T, to_underlying(E::NUM)>
+{
+  using base            = std::array<T, to_underlying(E::NUM)>;
+  using size_type       = E;
+  using reference       = T &;
+  using const_reference = const T &;
+
+public:
+  constexpr EnumArray() : base() {}
+  constexpr EnumArray(std::initializer_list<T> l)
+  {
+    size_t j = 0;
+    for (const auto &i: l)
+    {
+      base::at(j++) = i;
+    }
+  }
+
+  reference                 operator[](size_type e) { return base::operator[](to_underlying(e)); }
+  constexpr const_reference operator[](size_type e) const { return base::operator[](to_underlying(e)); }
+};
+
+enum class ApsType : uint8_t
+{
+  ALF = 0,
+  LMCS,
+  SCALING_LIST,
+  NUM
 };
 
 enum QuantFlags
@@ -307,34 +328,60 @@ enum QuantFlags
   Q_SELECTIVE_RDOQ = 0x4,
 };
 
-//EMT transform tags
-enum TransType
+enum class TransType
 {
   DCT2 = 0,
-  DCT8 = 1,
-  DST7 = 2,
-  NUM_TRANS_TYPE = 3,
-  DCT2_EMT = 4
+  DCT8,
+  DST7,
+  NUM
 };
 
-enum MTSIdx
+enum class MtsType : int8_t
 {
-  MTS_DCT2_DCT2 = 0,
-  MTS_SKIP = 1,
-  MTS_DST7_DST7 = 2,
-  MTS_DCT8_DST7 = 3,
-  MTS_DST7_DCT8 = 4,
-  MTS_DCT8_DCT8 = 5
+  NONE      = -1,
+  DCT2_DCT2 = 0,
+  SKIP,
+  DST7_DST7,
+  DCT8_DST7,
+  DST7_DCT8,
+  DCT8_DCT8,
+  NUM
 };
 
-enum ISPType
+static inline constexpr int operator-(const MtsType &a, const MtsType &b)
 {
-  NOT_INTRA_SUBPARTITIONS       = 0,
-  HOR_INTRA_SUBPARTITIONS       = 1,
-  VER_INTRA_SUBPARTITIONS       = 2,
-  NUM_INTRA_SUBPARTITIONS_MODES = 3,
-  INTRA_SUBPARTITIONS_RESERVED  = 4
+  return to_underlying(a) - to_underlying(b);
+}
+
+static inline constexpr MtsType operator+(const MtsType &a, int b)
+{
+  return static_cast<MtsType>(to_underlying(a) + b);
+}
+
+static inline MtsType operator++(MtsType &a, int)
+{
+  MtsType b = a;
+
+  a = static_cast<MtsType>(to_underlying(a) + 1);
+
+  return b;
+}
+
+typedef std::pair<MtsType, bool> TrMode;
+typedef std::pair<int, int>      TrCost;
+
+enum class ISPType : int8_t
+{
+  // Note: numbering starts at -1 (NONE) and NUM is equal to 2 (HOR and VER cases)
+  // to_uint() defined below can be used to convert to the range 0 (for NONE) to 3 (for NUM)
+  NONE = -1,
+  HOR  = 0,
+  VER,
+  NUM,
+  RESERVED
 };
+
+static inline uint32_t to_uint(ISPType t) { return to_underlying(t) - to_underlying(ISPType::NONE); }
 
 enum SbtIdx
 {
@@ -367,6 +414,13 @@ enum SbtMode
   NUMBER_SBT_MODE
 };
 
+enum class BdpcmMode : uint8_t
+{
+  NONE = 0,
+  HOR,
+  VER
+};
+
 /// supported slice type
 enum SliceType
 {
@@ -386,12 +440,22 @@ enum ChromaFormat
   NUM_CHROMA_FORMAT = 4
 };
 
-enum ChannelType
+enum class ChannelType : uint8_t
 {
-  CHANNEL_TYPE_LUMA    = 0,
-  CHANNEL_TYPE_CHROMA  = 1,
-  MAX_NUM_CHANNEL_TYPE = 2
+  LUMA   = 0,
+  CHROMA = 1,
+  NUM
 };
+
+static inline ChannelType operator++(ChannelType &ch, int)
+{
+  ChannelType r = ch;
+
+  ch = static_cast<ChannelType>(static_cast<int>(ch) + 1);
+  return r;
+}
+
+static constexpr auto MAX_NUM_CHANNEL_TYPE = to_underlying(ChannelType::NUM);
 
 enum TreeType
 {
@@ -406,9 +470,6 @@ enum ModeType
   MODE_TYPE_INTER = 1, //can try inter
   MODE_TYPE_INTRA = 2, //can try intra, ibc, palette
 };
-
-#define CH_L CHANNEL_TYPE_LUMA
-#define CH_C CHANNEL_TYPE_CHROMA
 
 enum ComponentID
 {
@@ -476,85 +537,105 @@ enum RefPicList
 #define L1 REF_PIC_LIST_1
 
 /// distortion function index
-enum DFunc
+enum class DFunc
 {
-  DF_SSE             = 0,             ///< general size SSE
-  DF_SSE2            = DF_SSE+1,      ///<   2xM SSE
-  DF_SSE4            = DF_SSE+2,      ///<   4xM SSE
-  DF_SSE8            = DF_SSE+3,      ///<   8xM SSE
-  DF_SSE16           = DF_SSE+4,      ///<  16xM SSE
-  DF_SSE32           = DF_SSE+5,      ///<  32xM SSE
-  DF_SSE64           = DF_SSE+6,      ///<  64xM SSE
-  DF_SSE16N          = DF_SSE+7,      ///< 16NxM SSE
+  // SSE functions by size
+  SSE = 0,
+  SSE2,
+  SSE4,
+  SSE8,
+  SSE16,
+  SSE32,
+  SSE64,
+  SSE16N,
 
-  DF_SAD             = 8,             ///< general size SAD
-  DF_SAD2            = DF_SAD+1,      ///<   2xM SAD
-  DF_SAD4            = DF_SAD+2,      ///<   4xM SAD
-  DF_SAD8            = DF_SAD+3,      ///<   8xM SAD
-  DF_SAD16           = DF_SAD+4,      ///<  16xM SAD
-  DF_SAD32           = DF_SAD+5,      ///<  32xM SAD
-  DF_SAD64           = DF_SAD+6,      ///<  64xM SAD
-  DF_SAD16N          = DF_SAD+7,      ///< 16NxM SAD
+  // SAD functions by size
+  SAD,
+  SAD2,
+  SAD4,
+  SAD8,
+  SAD16,
+  SAD32,
+  SAD64,
+  SAD16N,
 
-  DF_HAD             = 16,            ///< general size Hadamard
-  DF_HAD2            = DF_HAD+1,      ///<   2xM HAD
-  DF_HAD4            = DF_HAD+2,      ///<   4xM HAD
-  DF_HAD8            = DF_HAD+3,      ///<   8xM HAD
-  DF_HAD16           = DF_HAD+4,      ///<  16xM HAD
-  DF_HAD32           = DF_HAD+5,      ///<  32xM HAD
-  DF_HAD64           = DF_HAD+6,      ///<  64xM HAD
-  DF_HAD16N          = DF_HAD+7,      ///< 16NxM HAD
+  // HAD functions by size
+  HAD,
+  HAD2,
+  HAD4,
+  HAD8,
+  HAD16,
+  HAD32,
+  HAD64,
+  HAD16N,
 
-  DF_SAD12           = 24,
-  DF_SAD24           = 25,
-  DF_SAD48           = 26,
+  // SAD functions by size (odd sizes)
+  SAD12,
+  SAD24,
+  SAD48,
 
-  DF_MRSAD           = 27,            ///< general size MR SAD
-  DF_MRSAD2          = DF_MRSAD+1,    ///<   2xM MR SAD
-  DF_MRSAD4          = DF_MRSAD+2,    ///<   4xM MR SAD
-  DF_MRSAD8          = DF_MRSAD+3,    ///<   8xM MR SAD
-  DF_MRSAD16         = DF_MRSAD+4,    ///<  16xM MR SAD
-  DF_MRSAD32         = DF_MRSAD+5,    ///<  32xM MR SAD
-  DF_MRSAD64         = DF_MRSAD+6,    ///<  64xM MR SAD
-  DF_MRSAD16N        = DF_MRSAD+7,    ///< 16NxM MR SAD
+  // Mean-removed versions
+  // NOTE: order must be the same as the regular versions above
 
-  DF_MRHAD           = 35,            ///< general size MR Hadamard
-  DF_MRHAD2          = DF_MRHAD+1,    ///<   2xM MR HAD
-  DF_MRHAD4          = DF_MRHAD+2,    ///<   4xM MR HAD
-  DF_MRHAD8          = DF_MRHAD+3,    ///<   8xM MR HAD
-  DF_MRHAD16         = DF_MRHAD+4,    ///<  16xM MR HAD
-  DF_MRHAD32         = DF_MRHAD+5,    ///<  32xM MR HAD
-  DF_MRHAD64         = DF_MRHAD+6,    ///<  64xM MR HAD
-  DF_MRHAD16N        = DF_MRHAD+7,    ///< 16NxM MR HAD
+  MRSAD,
+  MRSAD2,
+  MRSAD4,
+  MRSAD8,
+  MRSAD16,
+  MRSAD32,
+  MRSAD64,
+  MRSAD16N,
 
-  DF_MRSAD12         = 43,
-  DF_MRSAD24         = 44,
-  DF_MRSAD48         = 45,
+  MRHAD,
+  MRHAD2,
+  MRHAD4,
+  MRHAD8,
+  MRHAD16,
+  MRHAD32,
+  MRHAD64,
+  MRHAD16N,
 
-  DF_SAD_FULL_NBIT    = 46,
-  DF_SAD_FULL_NBIT2   = DF_SAD_FULL_NBIT+1,    ///<   2xM SAD with full bit usage
-  DF_SAD_FULL_NBIT4   = DF_SAD_FULL_NBIT+2,    ///<   4xM SAD with full bit usage
-  DF_SAD_FULL_NBIT8   = DF_SAD_FULL_NBIT+3,    ///<   8xM SAD with full bit usage
-  DF_SAD_FULL_NBIT16  = DF_SAD_FULL_NBIT+4,    ///<  16xM SAD with full bit usage
-  DF_SAD_FULL_NBIT32  = DF_SAD_FULL_NBIT+5,    ///<  32xM SAD with full bit usage
-  DF_SAD_FULL_NBIT64  = DF_SAD_FULL_NBIT+6,    ///<  64xM SAD with full bit usage
-  DF_SAD_FULL_NBIT16N = DF_SAD_FULL_NBIT+7,    ///< 16NxM SAD with full bit usage
+  MRSAD12,
+  MRSAD24,
+  MRSAD48,
 
-  DF_SSE_WTD          = 54,                ///< general size SSE
-  DF_SSE2_WTD         = DF_SSE_WTD+1,      ///<   4xM SSE
-  DF_SSE4_WTD         = DF_SSE_WTD+2,      ///<   4xM SSE
-  DF_SSE8_WTD         = DF_SSE_WTD+3,      ///<   8xM SSE
-  DF_SSE16_WTD        = DF_SSE_WTD+4,      ///<  16xM SSE
-  DF_SSE32_WTD        = DF_SSE_WTD+5,      ///<  32xM SSE
-  DF_SSE64_WTD        = DF_SSE_WTD+6,      ///<  64xM SSE
-  DF_SSE16N_WTD       = DF_SSE_WTD+7,      ///< 16NxM SSE
-  DF_DEFAULT_ORI      = DF_SSE_WTD+8,
+  // Full precision versions of SAD functions
+  SAD_FULL_NBIT,
+  SAD_FULL_NBIT2,
+  SAD_FULL_NBIT4,
+  SAD_FULL_NBIT8,
+  SAD_FULL_NBIT16,
+  SAD_FULL_NBIT32,
+  SAD_FULL_NBIT64,
+  SAD_FULL_NBIT16N,
 
-  DF_SAD_INTERMEDIATE_BITDEPTH = 63,
+  // Weighted SSE functions by size
+  SSE_WTD,
+  SSE2_WTD,
+  SSE4_WTD,
+  SSE8_WTD,
+  SSE16_WTD,
+  SSE32_WTD,
+  SSE64_WTD,
+  SSE16N_WTD,
 
-  DF_SAD_WITH_MASK   = 64,
-  DF_TOTAL_FUNCTIONS = 65
+  SAD_INTERMEDIATE_BITDEPTH,
+
+  SAD_WITH_MASK,
+
+  NUM
 };
+
+enum class DFuncDiff;
+
+static inline DFuncDiff operator-(const DFunc &a, const DFunc &b)
+{
+  return static_cast<DFuncDiff>(to_underlying(a) - to_underlying(b));
+}
+static inline DFunc operator+(const DFunc &a, const DFuncDiff &b)
+{
+  return static_cast<DFunc>(to_underlying(a) + to_underlying(b));
+}
 
 /// motion vector predictor direction used in AMVP
 enum MvpDir
@@ -574,23 +655,30 @@ enum TransformDirection
 };
 
 /// supported ME search methods
-enum MESearchMethod
+enum class MESearchMethod : int
 {
-  MESEARCH_FULL              = 0,
-  MESEARCH_DIAMOND           = 1,
-  MESEARCH_SELECTIVE         = 2,
-  MESEARCH_DIAMOND_ENHANCED  = 3,
-  MESEARCH_NUMBER_OF_METHODS = 4
+  FULL = 0,
+  DIAMOND,
+  SELECTIVE,
+  DIAMOND_ENHANCED,
+  NUM
 };
 
 /// coefficient scanning type used in ACS
-enum CoeffScanType
+enum class CoeffScanType
 {
-  SCAN_DIAG = 0,        ///< up-right diagonal scan
-  SCAN_TRAV_HOR = 1,
-  SCAN_TRAV_VER = 2,
-  SCAN_NUMBER_OF_TYPES
+  DIAG = 0,
+  TRAV_HOR = 1,
+  TRAV_VER = 2,
+  NUM
 };
+
+static inline CoeffScanType operator++(CoeffScanType &a, int)
+{
+  CoeffScanType b = a;
+  a = static_cast<CoeffScanType>(to_underlying(a) + 1);
+  return b;
+}
 
 enum CoeffScanGroupType
 {
@@ -633,45 +721,47 @@ enum ScalingList1dStartIdx
 };
 
 // For use with decoded picture hash SEI messages, generated by encoder.
-enum HashType
+enum class HashType
 {
-  HASHTYPE_MD5             = 0,
-  HASHTYPE_CRC             = 1,
-  HASHTYPE_CHECKSUM        = 2,
-  HASHTYPE_NONE            = 3,
-  NUMBER_OF_HASHTYPES      = 4
+  NONE     = -1,
+  MD5      = 0,
+  CRC      = 1,
+  CHECKSUM = 2,
+  NUM
 };
 
-enum SAOMode //mode
+enum class SAOMode : uint8_t
 {
-  SAO_MODE_OFF = 0,
-  SAO_MODE_NEW,
-  SAO_MODE_MERGE,
-  NUM_SAO_MODES
+  OFF = 0,
+  NEW,
+  MERGE,
+  NUM
 };
 
-enum SAOModeMergeTypes
+enum class SAOModeMergeTypes : int8_t
 {
-  SAO_MERGE_LEFT =0,
-  SAO_MERGE_ABOVE,
-  NUM_SAO_MERGE_TYPES
+  NONE = -1,
+  LEFT = 0,
+  ABOVE,
+  NUM
 };
 
-
-enum SAOModeNewTypes
+enum class SAOModeNewTypes : int8_t
 {
-  SAO_TYPE_START_EO =0,
-  SAO_TYPE_EO_0 = SAO_TYPE_START_EO,
-  SAO_TYPE_EO_90,
-  SAO_TYPE_EO_135,
-  SAO_TYPE_EO_45,
+  NONE     = -1,
+  START_EO = 0,
+  EO_0     = START_EO,
+  EO_90,
+  EO_135,
+  EO_45,
 
-  SAO_TYPE_START_BO,
-  SAO_TYPE_BO = SAO_TYPE_START_BO,
+  START_BO,
+  BO = START_BO,
 
-  NUM_SAO_NEW_TYPES
+  NUM
 };
-#define NUM_SAO_EO_TYPES_LOG2 2
+
+static constexpr int NUM_SAO_EO_TYPES_LOG2 = 2;
 
 enum SAOEOClasses
 {
@@ -683,7 +773,6 @@ enum SAOEOClasses
   NUM_SAO_EO_CLASSES,
 };
 
-#if JVET_AA0055_SIGNAL_ADDITIONAL_PADDING
 enum NNPC_PaddingType
 {
   ZERO_PADDING = 0,
@@ -692,16 +781,25 @@ enum NNPC_PaddingType
   WRAP_AROUND_PADDING = 3,
   FIXED_PADDING = 4
 };
+
+#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
+enum NNPC_PurposeType
+{
+  UNKONWN = 0,
+  VISUAL_QUALITY_IMPROVEMENT = 1,
+  CHROMA_UPSAMPLING = 2,
+  INCREASE_PICT_DIMENSION_WITHOUT_CHROMA_UPSAMPLING = 3,
+  INCREASE_PICT_DIMENSION_WITH_CHROMA_UPSMAPLING = 4,
+  FRANE_RATE_UPSAMPLING = 5
+};
 #endif
 
-#if JVET_AA0054_SPECIFY_NN_POST_FILTER_DATA
 enum POST_FILTER_MODE
 {
   EXTERNAL = 0,
   INTERNAL = 1,
   URI =2
 };
-#endif
 
 #define NUM_SAO_BO_CLASSES_LOG2  5
 #define NUM_SAO_BO_CLASSES       (1<<NUM_SAO_BO_CLASSES_LOG2)
@@ -840,6 +938,7 @@ enum NalUnitType
   NAL_UNIT_INVALID
 };
 
+
 #if SHARP_LUMA_DELTA_QP
 enum LumaLevelToDQPMode
 {
@@ -849,14 +948,13 @@ enum LumaLevelToDQPMode
 };
 #endif
 
-enum MergeType
+enum class MergeType : uint8_t
 {
-  MRG_TYPE_DEFAULT_N        = 0, // 0
-  MRG_TYPE_SUBPU_ATMVP,
-  MRG_TYPE_IBC,
-  NUM_MRG_TYPE                   // 5
+  DEFAULT_N = 0,
+  SUBPU_ATMVP,
+  IBC,
+  NUM
 };
-
 
 //////////////////////////////////////////////////////////////////////////
 // Encoder modes to try out
@@ -894,7 +992,11 @@ enum ImvMode
 struct SAOOffset
 {
   SAOMode modeIdc; // NEW, MERGE, OFF
-  int typeIdc;     // union of SAOModeMergeTypes and SAOModeNewTypes, depending on modeIdc.
+  union
+  {
+    SAOModeMergeTypes mergeType;
+    SAOModeNewTypes   newType;
+  } typeIdc;
   int typeAuxInfo; // BO: starting band index
   int offset[MAX_NUM_SAO_CLASSES];
 
@@ -919,12 +1021,17 @@ private:
 
 };
 
+using BitDepths = EnumArray<int, ChannelType>;
 
-
-struct BitDepths
+struct ScalingRatio
 {
-  const int &operator[](const ChannelType ch) const { return recon[ch]; }
-  int recon[MAX_NUM_CHANNEL_TYPE]; ///< the bit depth as indicated in the SPS
+  static constexpr int BITS = 14;
+
+  int x;
+  int y;
+
+  bool operator==(const ScalingRatio &s) const { return x == s.x && y == s.y; }
+  bool operator!=(const ScalingRatio &s) const { return x != s.x || y != s.y; }
 };
 
 enum PLTRunMode
@@ -933,13 +1040,7 @@ enum PLTRunMode
   PLT_RUN_COPY  = 1,
   NUM_PLT_RUN   = 2
 };
-/// parameters for deblocking filter
-struct LFCUParam
-{
-  bool internalEdge;                     ///< indicates internal edge
-  bool leftEdge;                         ///< indicates left edge
-  bool topEdge;                          ///< indicates top edge
-};
+
 struct LutModel
 {
   bool             presentFlag = false;
@@ -1271,39 +1372,37 @@ public:
 
 
 // ---------------------------------------------------------------------------
-// dynamic cache
+// This class contains a pool of objects that can be used and reused
+// while minimizing the amount of required memory allocation and
+// deallocation operations.
 // ---------------------------------------------------------------------------
 
-template<typename T>
-class dynamic_cache
+template<typename T> class Pool
 {
-  std::vector<T*> m_cache;
+  std::vector<T *> m_items;
 
 public:
-  ~dynamic_cache()
-  {
-    deleteEntries();
-  }
+  ~Pool() { deleteEntries(); }
 
   void deleteEntries()
   {
-    for( auto &p : m_cache )
+    for (auto &p: m_items)
     {
       delete p;
       p = nullptr;
     }
 
-    m_cache.clear();
+    m_items.clear();
   }
 
   T* get()
   {
     T* ret;
 
-    if( !m_cache.empty() )
+    if (!m_items.empty())
     {
-      ret = m_cache.back();
-      m_cache.pop_back();
+      ret = m_items.back();
+      m_items.pop_back();
     }
     else
     {
@@ -1313,30 +1412,27 @@ public:
     return ret;
   }
 
-  void cache( T* el )
-  {
-    m_cache.push_back( el );
-  }
+  void giveBack(T *el) { m_items.push_back(el); }
 
-  void cache( std::vector<T*>& vel )
+  void giveBack(std::vector<T *> &vel)
   {
-    m_cache.insert( m_cache.end(), vel.begin(), vel.end() );
+    m_items.insert(m_items.end(), vel.begin(), vel.end());
     vel.clear();
   }
 };
 
-typedef dynamic_cache<struct CodingUnit    > CUCache;
-typedef dynamic_cache<struct PredictionUnit> PUCache;
-typedef dynamic_cache<struct TransformUnit > TUCache;
+typedef Pool<struct CodingUnit>     CuPool;
+typedef Pool<struct PredictionUnit> PuPool;
+typedef Pool<struct TransformUnit>  TuPool;
 
-struct XUCache
+struct XuPool
 {
-  CUCache cuCache;
-  PUCache puCache;
-  TUCache tuCache;
+  CuPool cuPool;
+  PuPool puPool;
+  TuPool tuPool;
 };
 
-#define SIGN(x) ( (x) >= 0 ? 1 : -1 )
+
 
 //! \}
 

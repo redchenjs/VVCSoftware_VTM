@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2022, ITU/ISO/IEC
+ * Copyright (c) 2010-2023, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -94,8 +94,8 @@ inline void dtraceModeCost(CodingStructure &cs, double lambda)
   }
 
   bool isIntra = CU::isIntra( *cs.cus.front() );
-  int intraModeL = isIntra ? cs.pus.front()->intraDir[0] : 0;
-  int intraModeC = isIntra ? cs.pus.front()->intraDir[1] : 0;
+  int  intraModeL = isIntra ? cs.pus.front()->intraDir[ChannelType::LUMA] : 0;
+  int  intraModeC = isIntra ? cs.pus.front()->intraDir[ChannelType::CHROMA] : 0;
   if (isIntra && intraModeC == DM_CHROMA_IDX)
     intraModeC = 68;
   int imvVal = 0;
@@ -123,7 +123,7 @@ inline void dtraceBestMode(CodingStructure *&tempCS, CodingStructure *&bestCS, d
   ChannelType chType = tempCS->cus.back()->chType;
 
   // if the last CU does not align with the CS, we probably are at the edge
-  bSplitCS |= tempCS->cus.back()->blocks[chType].bottomRight() != tempCS->area.blocks[chType].bottomRight();
+  bSplitCS |= tempCS->cus.back()->block(chType).bottomRight() != tempCS->area.block(chType).bottomRight();
 
   Distortion tempDist = tempCS->dist;
 
@@ -147,8 +147,8 @@ inline void dtraceBestMode(CodingStructure *&tempCS, CodingStructure *&bestCS, d
   }
 
   bool isIntra = CU::isIntra( *tempCS->cus[0] );
-  int intraModeL = isIntra ? tempCS->pus[0]->intraDir[0] : 0;
-  int intraModeC = isIntra ? tempCS->pus[0]->intraDir[1] : 0;
+  int  intraModeL = isIntra ? tempCS->pus[0]->intraDir[ChannelType::LUMA] : 0;
+  int  intraModeC = isIntra ? tempCS->pus[0]->intraDir[ChannelType::CHROMA] : 0;
 
   if(!bSplitCS)
   {
