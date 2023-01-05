@@ -4851,33 +4851,6 @@ uint32_t getCtuAddr( const Position& pos, const PreCalcValues& pcv )
   return ( pos.x >> pcv.maxCUWidthLog2 ) + ( pos.y >> pcv.maxCUHeightLog2 ) * pcv.widthInCtus;
 }
 
-int getNumModesMip(const Size& block)
-{
-  switch( getMipSizeId(block) )
-  {
-  case 0: return 16;
-  case 1: return  8;
-  case 2: return  6;
-  default: THROW( "Invalid mipSizeId" );
-  }
-}
-
-int getMipSizeId(const Size& block)
-{
-  if( block.width == 4 && block.height == 4 )
-  {
-    return 0;
-  }
-  else if( block.width == 4 || block.height == 4 || (block.width == 8 && block.height == 8) )
-  {
-    return 1;
-  }
-  else
-  {
-    return 2;
-  }
-}
-
 bool allowLfnstWithMip(const Size& block)
 {
   if (block.width >= 16 && block.height >= 16)

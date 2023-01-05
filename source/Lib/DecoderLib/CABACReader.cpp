@@ -43,6 +43,7 @@
 #include "CommonLib/SampleAdaptiveOffset.h"
 #include "CommonLib/dtrace_next.h"
 #include "CommonLib/Picture.h"
+#include "CommonLib/MatrixIntraPrediction.h"
 
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
 #include "CommonLib/CodingStatistics.h"
@@ -3696,7 +3697,7 @@ void CABACReader::mip_pred_mode( PredictionUnit &pu )
   pu.mipTransposedFlag = bool(m_binDecoder.decodeBinEP());
 
   uint32_t mipMode;
-  const int numModes = getNumModesMip( pu.Y() );
+  const int numModes = MatrixIntraPrediction::getNumModesMip(pu.Y());
   xReadTruncBinCode( mipMode, numModes );
   pu.intraDir[ChannelType::LUMA] = mipMode;
   CHECKD(pu.intraDir[ChannelType::LUMA] < 0 || pu.intraDir[ChannelType::LUMA] >= numModes, "Invalid MIP mode");

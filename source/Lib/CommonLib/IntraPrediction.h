@@ -111,8 +111,6 @@ private:
   Pel* m_pMdlmTemp; // for MDLM mode
   MatrixIntraPrediction m_matrixIntraPred;
 
-
-
 protected:
   ChromaFormat  m_currChromaFormat;
 
