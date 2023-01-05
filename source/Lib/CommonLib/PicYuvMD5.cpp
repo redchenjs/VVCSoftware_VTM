@@ -64,7 +64,7 @@ static void md5_block(MD5& md5, const Pel* plane, uint32_t n)
  * is adjusted to OUTBIT_BITDEPTH_DIV8.
  */
 template<uint32_t OUTPUT_BITDEPTH_DIV8>
-static void md5_plane(MD5& md5, const Pel* plane, uint32_t width, uint32_t height, uint32_t stride)
+static void md5_plane(MD5& md5, const Pel* plane, uint32_t width, uint32_t height, ptrdiff_t stride)
 {
   /* N is the number of samples to process per md5 update.
    * All N samples must fit in buf */
