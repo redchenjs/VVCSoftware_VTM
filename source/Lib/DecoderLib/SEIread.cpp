@@ -653,6 +653,9 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
 #endif
     sei.m_posProcessingOrder[i] = val;
   }
+#if JVET_AB0051
+  CHECK(i<2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
+#endif
 }
 
 /**

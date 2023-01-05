@@ -3362,7 +3362,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if (m_poSEIEnabled)
   {
+#if JVET_AB0051
+    assert(cfg_poSEIPayloadType.values.size() > 1);
+#else
     assert(cfg_poSEIPayloadType.values.size() > 0);
+#endif
     assert(cfg_poSEIProcessingOrder.values.size() == cfg_poSEIPayloadType.values.size());
     m_numofSEIMessages = (uint32_t)cfg_poSEIPayloadType.values.size();
     m_poSEIPayloadType.resize(m_numofSEIMessages);
