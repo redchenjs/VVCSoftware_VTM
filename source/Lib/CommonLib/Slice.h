@@ -1548,12 +1548,15 @@ private:
   bool              m_bcw;                        //
   bool              m_ciip;
   bool              m_Geo;
-  bool              m_LadfEnabled;
-  int               m_LadfNumIntervals;
-  int               m_LadfQpOffset[MAX_LADF_INTERVALS];
-  int               m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
+
+  bool m_ladfEnabled;
+  int  m_ladfNumIntervals;
+  int  m_ladfQpOffset[MAX_LADF_INTERVALS];
+  int  m_ladfIntervalLowerBound[MAX_LADF_INTERVALS];
+
   bool              m_MRL;
   bool              m_MIP;
+
   ChromaQpMappingTable m_chromaQpMappingTable;
   bool m_GDREnabledFlag;
   bool              m_SubLayerCbpParametersPresentFlag;
@@ -1565,8 +1568,8 @@ private:
   bool              m_gopBasedRPREnabledFlag;
 #endif
   uint32_t          m_log2ParallelMergeLevelMinus2;
-  bool              m_ppsValidFlag[64];
-  Size              m_scalingWindowSizeInPPS[64];
+  bool              m_ppsValidFlag[MAX_NUM_PPS];
+  Size              m_scalingWindowSizeInPPS[MAX_NUM_PPS];
   uint32_t          m_maxNumMergeCand;
   uint32_t          m_maxNumAffineMergeCand;
   uint32_t          m_maxNumIBCMergeCand;
@@ -1947,14 +1950,14 @@ public:
   bool      getUseSMVD()                                                  const     { return m_SMVD; }
   void      setUseBcw             ( bool b )                                        { m_bcw = b; }
   bool      getUseBcw             ()                                      const     { return m_bcw; }
-  void      setLadfEnabled        ( bool b )                                        { m_LadfEnabled = b; }
-  bool      getLadfEnabled        ()                                      const     { return m_LadfEnabled; }
-  void      setLadfNumIntervals   ( int i )                                         { m_LadfNumIntervals = i; }
-  int       getLadfNumIntervals   ()                                      const     { return m_LadfNumIntervals; }
-  void      setLadfQpOffset       ( int value, int idx )                            { m_LadfQpOffset[ idx ] = value; }
-  int       getLadfQpOffset       ( int idx )                             const     { return m_LadfQpOffset[ idx ]; }
-  void      setLadfIntervalLowerBound( int value, int idx )                         { m_LadfIntervalLowerBound[ idx ] = value; }
-  int       getLadfIntervalLowerBound( int idx )                          const     { return m_LadfIntervalLowerBound[ idx ]; }
+  void      setLadfEnabled(bool b) { m_ladfEnabled = b; }
+  bool      getLadfEnabled() const { return m_ladfEnabled; }
+  void      setLadfNumIntervals(int i) { m_ladfNumIntervals = i; }
+  int       getLadfNumIntervals() const { return m_ladfNumIntervals; }
+  void      setLadfQpOffset(int value, int idx) { m_ladfQpOffset[idx] = value; }
+  int       getLadfQpOffset(int idx) const { return m_ladfQpOffset[idx]; }
+  void      setLadfIntervalLowerBound(int value, int idx) { m_ladfIntervalLowerBound[idx] = value; }
+  int       getLadfIntervalLowerBound(int idx) const { return m_ladfIntervalLowerBound[idx]; }
 
   void      setUseCiip         ( bool b )                                        { m_ciip = b; }
   bool      getUseCiip         ()                                      const     { return m_ciip; }

@@ -361,9 +361,9 @@ protected:
   bool      m_bcw;
   bool      m_BcwFast;
   bool      m_LadfEnabed;
-  int       m_LadfNumIntervals;
-  std::vector<int> m_LadfQpOffset;
-  int       m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
+  int              m_ladfNumIntervals;
+  std::vector<int> m_ladfQpOffset;
+  int              m_ladfIntervalLowerBound[MAX_LADF_INTERVALS];
 
   bool      m_ciip;
   bool      m_Geo;

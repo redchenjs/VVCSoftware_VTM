@@ -354,10 +354,10 @@ protected:
   bool      m_compositeRefEnabled;        //composite reference
   bool      m_bcw;
   bool      m_BcwFast;
-  bool      m_LadfEnabled;
-  int       m_LadfNumIntervals;
-  int       m_LadfQpOffset[MAX_LADF_INTERVALS];
-  int       m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
+  bool      m_ladfEnabled;
+  int       m_ladfNumIntervals;
+  int       m_ladfQpOffset[MAX_LADF_INTERVALS];
+  int       m_ladfIntervalLowerBound[MAX_LADF_INTERVALS];
 
   bool      m_ciip;
   bool      m_Geo;
@@ -1429,15 +1429,14 @@ public:
   void      setUseBcwFast                   ( uint32_t b )   { m_BcwFast = b; }
   bool      getUseBcwFast                   ()         const { return m_BcwFast; }
 
-  void      setUseLadf                      ( bool b )       { m_LadfEnabled = b; }
-  bool      getUseLadf                      ()         const { return m_LadfEnabled; }
-  void      setLadfNumIntervals             ( int i )        { m_LadfNumIntervals = i; }
-  int       getLadfNumIntervals             ()         const { return m_LadfNumIntervals; }
-  void      setLadfQpOffset                 ( int value, int idx ){ m_LadfQpOffset[ idx ] = value; }
-  int       getLadfQpOffset                 ( int idx ) const { return m_LadfQpOffset[ idx ]; }
-  void      setLadfIntervalLowerBound       ( int value, int idx ){ m_LadfIntervalLowerBound[ idx ] = value; }
-  int       getLadfIntervalLowerBound       ( int idx ) const { return m_LadfIntervalLowerBound[ idx ]; }
-
+  void setUseLadf(bool b) { m_ladfEnabled = b; }
+  bool getUseLadf() const { return m_ladfEnabled; }
+  void setLadfNumIntervals(int i) { m_ladfNumIntervals = i; }
+  int  getLadfNumIntervals() const { return m_ladfNumIntervals; }
+  void setLadfQpOffset(int value, int idx) { m_ladfQpOffset[idx] = value; }
+  int  getLadfQpOffset(int idx) const { return m_ladfQpOffset[idx]; }
+  void setLadfIntervalLowerBound(int value, int idx) { m_ladfIntervalLowerBound[idx] = value; }
+  int  getLadfIntervalLowerBound(int idx) const { return m_ladfIntervalLowerBound[idx]; }
 
   void      setUseCiip                   ( bool b )       { m_ciip = b; }
   bool      getUseCiip                   ()         const { return m_ciip; }
