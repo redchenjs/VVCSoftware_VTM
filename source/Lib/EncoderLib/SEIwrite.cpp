@@ -213,6 +213,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::SEI_PROCESSING_ORDER:
     xWriteSEIProcessingOrder(*static_cast<const SEIProcessingOrderInfo *>(&sei));
     break;
+#if JVET_AB0070_POST_FILTER_HINT
+  case SEI::PayloadType::POST_FILTER_HINT:
+    xWriteSEIPostFilterHint(*static_cast<const SEIPostFilterHint *>(&sei));
+    break;
+#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -1905,4 +1910,26 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
 {
   WRITE_UVLC(sei.m_id, "nnpfa_id");
 }
+
+#if JVET_AB0070_POST_FILTER_HINT
+void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
+{
+  WRITE_FLAG(sei.m_filterHintCancelFlag, "filter_hint_cancel_flag");
+  if (sei.m_filterHintCancelFlag == false)
+  {
+    WRITE_FLAG(sei.m_filterHintPersistenceFlag, "filter_hint_persistence_flag");
+    WRITE_UVLC(sei.m_filterHintSizeY, "filter_hint_size_y");
+    WRITE_UVLC(sei.m_filterHintSizeX, "filter_hint_size_x");
+    WRITE_CODE(sei.m_filterHintType, 2, "filter_hint_type");
+    WRITE_FLAG(sei.m_filterHintChromaCoeffPresentFlag, "filter_hint_chroma_coeff_present_flag");
+
+    assert(sei.m_filterHintValues.size()
+           == (sei.m_filterHintChromaCoeffPresentFlag ? 3 : 1) * sei.m_filterHintSizeX * sei.m_filterHintSizeY);
+    for (uint32_t i = 0; i < sei.m_filterHintValues.size(); i++)
+    {
+      WRITE_SVLC(sei.m_filterHintValues[i], "filter_hint_value[][][]");
+    }
+  }
+}
+#endif
 //! \}
