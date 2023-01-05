@@ -365,7 +365,7 @@ protected:
   int xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool bSeqFirst, const int layerIdx, bool newPPS);
   int xWritePicHeader( AccessUnit &accessUnit, PicHeader *picHeader );
 
-  void applyDeblockingFilterMetric( Picture* pcPic, uint32_t uiNumSlices );
+  void applyDeblockingFilterMetric(Picture *pic);
   void applyDeblockingFilterParameterSelection( Picture* pcPic, const uint32_t numSlices, const int gopID );
   void xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicList& rcListPic, const ReferencePictureList *rpl0, const ReferencePictureList *rpl1 );
   bool xCheckMaxTidILRefPics(int layerIdx, Picture* refPic, bool currentPicIsIRAP);
