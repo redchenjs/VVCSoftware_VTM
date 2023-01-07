@@ -576,7 +576,6 @@ void PredictionUnit::initData()
   mergeType        = MergeType::DEFAULT_N;
   bv.setZero();
   bvd.setZero();
-  mvRefine = false;
   for (uint32_t i = 0; i < MAX_NUM_SUBCU_DMVR; i++)
   {
     mvdL0SubPu[i].setZero();
@@ -609,29 +608,31 @@ PredictionUnit& PredictionUnit::operator=(const IntraPredictionData& predData)
 {
   intraDir          = predData.intraDir;
   mipTransposedFlag = predData.mipTransposedFlag;
-  multiRefIdx = predData.multiRefIdx;
+  multiRefIdx       = predData.multiRefIdx;
 
   return *this;
 }
 
 PredictionUnit& PredictionUnit::operator=(const InterPredictionData& predData)
 {
-  mergeFlag   = predData.mergeFlag;
+  mergeFlag        = predData.mergeFlag;
   regularMergeFlag = predData.regularMergeFlag;
-  mergeIdx    = predData.mergeIdx;
-  geoSplitDir  = predData.geoSplitDir;
+  mergeIdx         = predData.mergeIdx;
+  geoSplitDir      = predData.geoSplitDir;
   geoMergeIdx      = predData.geoMergeIdx;
-  mmvdMergeFlag = predData.mmvdMergeFlag;
-  mmvdMergeIdx = predData.mmvdMergeIdx;
-  interDir    = predData.interDir;
-  mergeType   = predData.mergeType;
-  bv          = predData.bv;
-  bvd         = predData.bvd;
-  mvRefine = predData.mvRefine;
+  mmvdMergeFlag    = predData.mmvdMergeFlag;
+  mmvdMergeIdx     = predData.mmvdMergeIdx;
+  interDir         = predData.interDir;
+  mergeType        = predData.mergeType;
+  bv               = predData.bv;
+  bvd              = predData.bvd;
+  ciipFlag         = predData.ciipFlag;
+
   for (uint32_t i = 0; i < MAX_NUM_SUBCU_DMVR; i++)
   {
     mvdL0SubPu[i] = predData.mvdL0SubPu[i];
   }
+
   for (uint32_t i = 0; i < NUM_REF_PIC_LIST_01; i++)
   {
     mvpIdx[i]   = predData.mvpIdx[i];
@@ -648,7 +649,7 @@ PredictionUnit& PredictionUnit::operator=(const InterPredictionData& predData)
       mvAffi[i][j] = predData.mvAffi[i][j];
     }
   }
-  ciipFlag = predData.ciipFlag;
+
   return *this;
 }
 
@@ -656,24 +657,26 @@ PredictionUnit& PredictionUnit::operator=( const PredictionUnit& other )
 {
   intraDir          = other.intraDir;
   mipTransposedFlag = other.mipTransposedFlag;
-  multiRefIdx = other.multiRefIdx;
+  multiRefIdx       = other.multiRefIdx;
 
-  mergeFlag   = other.mergeFlag;
+  mergeFlag        = other.mergeFlag;
   regularMergeFlag = other.regularMergeFlag;
-  mergeIdx    = other.mergeIdx;
-  geoSplitDir  = other.geoSplitDir;
+  mergeIdx         = other.mergeIdx;
+  geoSplitDir      = other.geoSplitDir;
   geoMergeIdx      = other.geoMergeIdx;
-  mmvdMergeFlag = other.mmvdMergeFlag;
-  mmvdMergeIdx = other.mmvdMergeIdx;
-  interDir    = other.interDir;
-  mergeType   = other.mergeType;
-  bv          = other.bv;
-  bvd         = other.bvd;
-  mvRefine = other.mvRefine;
+  mmvdMergeFlag    = other.mmvdMergeFlag;
+  mmvdMergeIdx     = other.mmvdMergeIdx;
+  interDir         = other.interDir;
+  mergeType        = other.mergeType;
+  bv               = other.bv;
+  bvd              = other.bvd;
+  ciipFlag         = other.ciipFlag;
+
   for (uint32_t i = 0; i < MAX_NUM_SUBCU_DMVR; i++)
   {
     mvdL0SubPu[i] = other.mvdL0SubPu[i];
   }
+
   for (uint32_t i = 0; i < NUM_REF_PIC_LIST_01; i++)
   {
     mvpIdx[i]   = other.mvpIdx[i];
@@ -690,7 +693,7 @@ PredictionUnit& PredictionUnit::operator=( const PredictionUnit& other )
       mvAffi[i][j] = other.mvAffi[i][j];
     }
   }
-  ciipFlag = other.ciipFlag;
+
   return *this;
 }
 
