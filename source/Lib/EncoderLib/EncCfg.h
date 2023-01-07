@@ -737,6 +737,10 @@ protected:
 
   bool                    m_nnPostFilterSEIActivationEnabled;
   uint32_t                m_nnPostFilterSEIActivationId;
+#if JVET_AB0050
+  bool                    m_nnPostFilterSEIActivationCancelFlag;
+  bool                    m_nnPostFilterSEIActivationPersistenceFlag;
+#endif
 
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
@@ -1982,6 +1986,12 @@ public:
   bool        getNnPostFilterSEIActivationEnabled() const                                                               { return m_nnPostFilterSEIActivationEnabled; }
   void        setNnPostFilterSEIActivationId(uint32_t id)                                                               { m_nnPostFilterSEIActivationId = id; }
   uint32_t    getNnPostFilterSEIActivationId() const                                                                    { return m_nnPostFilterSEIActivationId; }
+#if JVET_AB0050
+  void setNnPostFilterSEIActivationCancelFlag(bool cancelFlag)                                                          { m_nnPostFilterSEIActivationCancelFlag = cancelFlag; }
+  bool getNnPostFilterSEIActivationCancelFlag() const                                                                   { return m_nnPostFilterSEIActivationCancelFlag;}
+  void setNnPostFilterSEIActivationPersistenceFlag(bool persistenceFlag)                                                          { m_nnPostFilterSEIActivationPersistenceFlag = persistenceFlag; }
+  bool getNnPostFilterSEIActivationPersistenceFlag() const                                                                   { return m_nnPostFilterSEIActivationPersistenceFlag;}
+#endif
 
   void  setBufferingPeriodSEIEnabled(bool b)                         { m_bufferingPeriodSEIEnabled = b; }
   bool  getBufferingPeriodSEIEnabled() const                         { return m_bufferingPeriodSEIEnabled; }
