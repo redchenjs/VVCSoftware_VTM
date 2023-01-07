@@ -265,18 +265,17 @@ uint32_t deriveWeightIdxBits(uint8_t bcwIdx) // Note: align this with TEncSbac::
   return numBits;
 }
 
-uint32_t g_log2SbbSize[MAX_CU_DEPTH + 1][MAX_CU_DEPTH + 1][2] =
-//===== luma/chroma =====
-{
-  { { 0,0 },{ 0,1 },{ 0,2 },{ 0,3 },{ 0,4 },{ 0,4 },{ 0,4 },{ 0,4 } },
-  { { 1,0 },{ 1,1 },{ 1,1 },{ 1,3 },{ 1,3 },{ 1,3 },{ 1,3 },{ 1,3 } },
-  { { 2,0 },{ 1,1 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 } },
-  { { 3,0 },{ 3,1 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 } },
-  { { 4,0 },{ 3,1 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 } },
-  { { 4,0 },{ 3,1 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 } },
-  { { 4,0 },{ 3,1 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 } },
-  { { 4,0 },{ 3,1 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 },{ 2,2 } }
+Size g_log2TxSubblockSize[MAX_CU_DEPTH + 1][MAX_CU_DEPTH + 1] = {
+  { { 0, 0 }, { 0, 1 }, { 0, 2 }, { 0, 3 }, { 0, 4 }, { 0, 4 }, { 0, 4 }, { 0, 4 } },
+  { { 1, 0 }, { 1, 1 }, { 1, 1 }, { 1, 3 }, { 1, 3 }, { 1, 3 }, { 1, 3 }, { 1, 3 } },
+  { { 2, 0 }, { 1, 1 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 } },
+  { { 3, 0 }, { 3, 1 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 } },
+  { { 4, 0 }, { 3, 1 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 } },
+  { { 4, 0 }, { 3, 1 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 } },
+  { { 4, 0 }, { 3, 1 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 } },
+  { { 4, 0 }, { 3, 1 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 } }
 };
+
 // initialize ROM variables
 void initROM()
 {
@@ -333,9 +332,9 @@ void initROM()
       //--------------------------------------------------------------------------------------------------
 
       //grouped scan orders
-      const uint32_t* log2Sbb        = g_log2SbbSize[floorLog2(blockWidth)][floorLog2(blockHeight)];
-      const uint32_t  log2CGWidth    = log2Sbb[0];
-      const uint32_t  log2CGHeight   = log2Sbb[1];
+      const Size    &log2TxSubblockSize = g_log2TxSubblockSize[floorLog2(blockWidth)][floorLog2(blockHeight)];
+      const uint32_t log2CGWidth        = log2TxSubblockSize.width;
+      const uint32_t log2CGHeight       = log2TxSubblockSize.height;
 
       const uint32_t  groupWidth     = 1 << log2CGWidth;
       const uint32_t  groupHeight    = 1 << log2CGHeight;
