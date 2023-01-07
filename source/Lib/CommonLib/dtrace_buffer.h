@@ -81,8 +81,8 @@ inline void dtraceCoeffBuf( DTRACE_CHANNEL channnel, const CCoeffBuf& coefBuf, c
 {
   int x0 = ua.blocks[compId].x;
   int y0 = ua.blocks[compId].y;
-  const uint32_t    uiStride = coefBuf.stride;
-  const TCoeff* piReco   = coefBuf.buf;
+  const ptrdiff_t   uiStride = coefBuf.stride;
+  const TCoeff*     piReco   = coefBuf.buf;
   const uint32_t    uiWidth  = ua.blocks[compId].width;
   const uint32_t    uiHeight = ua.blocks[compId].height;
   DTRACE(g_trace_ctx, channnel, "@(%4d,%4d) [%2dx%2d] comp=%d predmode=%d \n", x0, y0, uiWidth, uiHeight, compId, predMode);
@@ -93,8 +93,8 @@ inline void dtracePelBuf( DTRACE_CHANNEL channnel, const CPelBuf& pelBuf, const 
 {
   int x0 = ua.block(compId).x;
   int y0 = ua.block(compId).y;
-  const uint32_t    uiStride     = pelBuf.stride;
-  const Pel*    piReco       = pelBuf.buf;
+  const ptrdiff_t   uiStride     = pelBuf.stride;
+  const Pel*        piReco       = pelBuf.buf;
   const uint32_t    uiWidth      = ua.block(compId).width;
   const uint32_t    uiHeight     = ua.block(compId).height;
   DTRACE      ( g_trace_ctx, channnel,   "@(%4d,%4d) [%2dx%2d] comp=%d predmode=%d \n", x0, y0, uiWidth, uiHeight, compId, predMode );
@@ -107,8 +107,8 @@ inline void dtraceBlockRec( const CPelUnitBuf& pelUnitBuf, const UnitArea& ua, P
   {
     const int     x0           = ua.lumaPos().x;
     const int     y0           = ua.lumaPos().y;
-    const uint32_t    uiStride     = pelUnitBuf.Y().stride;
-    const Pel*    piReco       = pelUnitBuf.Y().buf;
+    const ptrdiff_t   uiStride     = pelUnitBuf.Y().stride;
+    const Pel*        piReco       = pelUnitBuf.Y().buf;
     const uint32_t    uiWidth      = ua.lumaSize().width;
     const uint32_t    uiHeight     = ua.lumaSize().height;
     DTRACE      ( g_trace_ctx, D_REC_CB_LUMA,   "%d, x=%d, y=%d, size=%dx%d, predmode=%d \n", zIdx, x0, y0, uiWidth, uiHeight, predMode );
@@ -120,7 +120,7 @@ inline void dtraceBlockRec( const CPelUnitBuf& pelUnitBuf, const UnitArea& ua, P
     const int     y0           = ua.blocks[1].y;
     const uint32_t    uiWidth      = ua.blocks[1].width;
     const uint32_t    uiHeight     = ua.blocks[1].height;
-    const uint32_t    uiCStride    = pelUnitBuf.Cb().stride;
+    const ptrdiff_t   uiCStride    = pelUnitBuf.Cb().stride;
     const Pel*    piRecoU      = pelUnitBuf.Cb().buf;
     const Pel*    piRecoV      = pelUnitBuf.Cr().buf;
     DTRACE      ( g_trace_ctx, D_REC_CB_CHROMA, "%d, x=%d, y=%d, size=%dx%d, predmode=%d \n", zIdx, x0, y0, uiWidth, uiHeight, predMode );
@@ -134,7 +134,7 @@ inline void dtraceUnitComp( DTRACE_CHANNEL channel, CPelUnitBuf& pelUnitBuf, con
   if( !g_trace_ctx ) return;
   if( pelUnitBuf.chromaFormat == CHROMA_400 && compId != COMPONENT_Y )  return;
   const Pel* piReco   = pelUnitBuf.bufs[compId].buf;
-  uint32_t       uiStride = pelUnitBuf.bufs[compId].stride;
+  ptrdiff_t      uiStride = pelUnitBuf.bufs[compId].stride;
   uint32_t       uiWidth  = ua.blocks[compId].width;
   uint32_t       uiHeight = ua.blocks[compId].height;
   int x0              = ua.lumaPos().x;
