@@ -80,6 +80,10 @@ protected:
 #endif
   void  xWriteRbspTrailingBits();
   bool isByteAligned()      { return (m_pcBitIf->getNumBitsUntilByteAligned() == 0); } ;
+
+private:
+  void  xWriteVlc           ( uint32_t    value );
+
 };
 
 

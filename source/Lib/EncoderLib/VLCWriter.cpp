@@ -102,11 +102,8 @@ void VLCWriter::xWriteCode( const uint32_t value, const uint32_t length, const c
 #endif
 }
 
-#if ENABLE_TRACING
-void VLCWriter::xWriteUvlc( uint32_t value, const char *symbolName )
-#else
-void VLCWriter::xWriteUvlc( uint32_t value, const char* )
-#endif
+// write the VLC code without tracing
+void VLCWriter::xWriteVlc( uint32_t value )
 {
   uint32_t length   = 1;
   uint32_t temp     = ++value;
@@ -120,6 +117,15 @@ void VLCWriter::xWriteUvlc( uint32_t value, const char* )
   // Take care of cases where length > 32
   m_pcBitIf->write(0, length >> 1);
   m_pcBitIf->write(value, (length + 1) >> 1);
+}
+
+#if ENABLE_TRACING
+void VLCWriter::xWriteUvlc( const uint32_t value, const char *symbolName )
+#else
+void VLCWriter::xWriteUvlc( const uint32_t value, const char* )
+#endif
+{
+  xWriteVlc(value);
 
 #if ENABLE_TRACING
   if( g_HLSTraceEnable )
@@ -129,10 +135,10 @@ void VLCWriter::xWriteUvlc( uint32_t value, const char* )
 #endif
 }
 
-void  VLCWriter::xWriteSvlc( int value, const char *symbolName )
+void  VLCWriter::xWriteSvlc( const int value, const char *symbolName )
 {
   uint32_t unsigendValue = uint32_t( value <= 0 ? (-value)<<1 : (value<<1)-1);
-  xWriteUvlc( unsigendValue, symbolName );
+  xWriteVlc( unsigendValue );
 
 #if ENABLE_TRACING
   if( g_HLSTraceEnable )
