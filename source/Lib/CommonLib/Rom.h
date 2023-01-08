@@ -87,8 +87,10 @@ static const int g_transformMatrixShift[TRANSFORM_NUMBER_OF_DIRECTIONS] = {  6, 
 // ====================================================================================================================
 // Scanning order & context mapping table
 // ====================================================================================================================
-extern int g_riceT[4];
-extern int g_riceShift[5];
+extern const std::array<TCoeff, 4> g_riceThreshold;
+
+extern const std::array<uint8_t, g_riceThreshold.size() + 1> g_riceShift;
+
 extern const uint32_t g_groupIdx[MAX_TB_SIZEY];
 extern const uint32_t g_minInGroup[LAST_SIGNIFICANT_GROUPS];
 extern const uint32_t g_goRiceParsCoeff[32];

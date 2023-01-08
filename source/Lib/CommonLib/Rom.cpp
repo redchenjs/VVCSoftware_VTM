@@ -522,8 +522,10 @@ UnitScale g_miScaling( MIN_CU_LOG2, MIN_CU_LOG2 );
 // ====================================================================================================================
 // Scanning order & context model mapping
 // ====================================================================================================================
-int g_riceT[4] = { 32,128, 512, 2048 };
-int g_riceShift[5] = { 0, 2, 4, 6, 8 };
+const std::array<TCoeff, 4> g_riceThreshold = { 32, 128, 512, 2048 };
+
+const std::array<uint8_t, g_riceThreshold.size() + 1> g_riceShift = { 0, 2, 4, 6, 8 };
+
 // scanning order table
 EnumArray<ScanElement *[MAX_CU_SIZE / 2 + 1][MAX_CU_SIZE / 2 + 1], CoeffScanType> g_scanOrder[SCAN_NUMBER_OF_GROUP_TYPES];
 ScanElement  g_coefTopLeftDiagScan8x8[ MAX_CU_SIZE / 2 + 1 ][ 64 ];
