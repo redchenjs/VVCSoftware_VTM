@@ -191,15 +191,15 @@ void VLCReader::xReadString( std::string& value, const char*  )
 #endif
 {
   uint32_t code;
-  char* codeIn = (char*)&code;
-  *codeIn = ' ';
-  while (*codeIn != '\0')
+  value = "";
+  do
   {
     m_pcBitstream->read(8, code);
-    codeIn = (char*)&code;
-//    value.append(codeIn);
-    value += (char) code;
-  }
+    if (code != 0)
+    {
+      value += (char) code;
+    }
+  } while (code != 0);
 
 #if ENABLE_TRACING
   DTRACE(g_trace_ctx, D_HEADER, "%-50s u(1)  : %s\n", symbolName, value.c_str());
