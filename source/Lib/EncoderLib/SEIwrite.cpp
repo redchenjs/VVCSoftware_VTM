@@ -285,7 +285,9 @@ uint32_t SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &sei
     /* payloadData */
 #if ENABLE_TRACING
     if (g_HLSTraceEnable)
+    {
       xTraceSEIMessageType((*sei)->payloadType());
+    }
 #endif
 
     xWriteSEIpayloadData(bs, **sei, hrd, temporalId);
@@ -360,10 +362,12 @@ void SEIWriter::xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei, const 
     {
       if (i < bp.m_bpMaxSubLayers - 1)
       {
-      xWriteFlag(sei.m_duiSubLayerDelaysPresentFlag[i], "dui_sub_layer_delays_present_flag[i]");
+        xWriteFlag(sei.m_duiSubLayerDelaysPresentFlag[i], "dui_sub_layer_delays_present_flag[i]");
       }
       if( sei.m_duiSubLayerDelaysPresentFlag[i] )
+      {
         xWriteCode( sei.m_duSptCpbRemovalDelayIncrement[i], bp.getDuCpbRemovalDelayIncrementLength(), "du_spt_cpb_removal_delay_increment[i]");
+      }
     }
   }
   if (!bp.m_decodingUnitDpbDuParamsInPicTimingSeiFlag)
@@ -548,7 +552,9 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
         for( int i = temporalId; i <= bp.m_bpMaxSubLayers - 1; i ++ )
         {
           if( sei.m_ptSubLayerDelaysPresentFlag[i] )
+          {
             xWriteCode( sei.m_duCommonCpbRemovalDelayMinus1[i], bp.m_duCpbRemovalDelayIncrementLength, "du_common_cpb_removal_delay_increment_minus1[i]" );
+          }
         }
       }
       for( int i = 0; i <= sei.m_numDecodingUnitsMinus1; i ++ )
@@ -559,7 +565,9 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
           for( int j = temporalId; j <= bp.m_bpMaxSubLayers - 1; j ++ )
           {
             if( sei.m_ptSubLayerDelaysPresentFlag[j] )
+            {
               xWriteCode( sei.m_duCpbRemovalDelayMinus1[i * bp.m_bpMaxSubLayers + j], bp.m_duCpbRemovalDelayIncrementLength, "du_cpb_removal_delay_increment_minus1[i][j]" );
+            }
           }
         }
       }
