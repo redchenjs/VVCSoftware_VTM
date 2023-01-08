@@ -924,41 +924,23 @@ void CABACWriter::cu_bcw_flag(const CodingUnit& cu)
   DTRACE(g_trace_ctx, D_SYNTAX, "cu_bcw_flag() bcw_idx=%d\n", cu.bcwIdx ? 1 : 0);
 }
 
-void CABACWriter::xWriteTruncBinCode(uint32_t symbol, uint32_t maxSymbol)
+void CABACWriter::xWriteTruncBinCode(const uint32_t symbol, const uint32_t numSymbols)
 {
-  int thresh;
-  if (maxSymbol > 256)
-  {
-    int threshVal = 1 << 8;
-    thresh = 8;
-    while (threshVal <= maxSymbol)
-    {
-      thresh++;
-      threshVal <<= 1;
-    }
-    thresh--;
-  }
-  else
-  {
-    thresh = g_tbMax[maxSymbol];
-  }
+  CHECKD(symbol >= numSymbols, "symbol must be less than numSymbols");
 
-  int val = 1 << thresh;
-  assert(val <= maxSymbol);
-  assert((val << 1) > maxSymbol);
-  assert(symbol < maxSymbol);
-  int b = maxSymbol - val;
-  assert(b < val);
+  const int thresh = floorLog2(numSymbols);
+
+  const int val = 1 << thresh;
+
+  const int b = numSymbols - val;
+
   if (symbol < val - b)
   {
     m_binEncoder.encodeBinsEP(symbol, thresh);
   }
   else
   {
-    symbol += val - b;
-    assert(symbol < (val << 1));
-    assert((symbol >> 1) >= val - b);
-    m_binEncoder.encodeBinsEP(symbol, thresh + 1);
+    m_binEncoder.encodeBinsEP(symbol + val - b, thresh + 1);
   }
 }
 

@@ -153,7 +153,7 @@ private:
   unsigned    exp_golomb_eqprob         ( unsigned count );
   unsigned    get_num_bits_read() { return m_binDecoder.getNumBitsRead(); }
 
-  void        xReadTruncBinCode(uint32_t& symbol, uint32_t maxSymbol);
+  void        xReadTruncBinCode(uint32_t &symbol, uint32_t numSymbols);
   void        parseScanRotationModeFlag ( CodingUnit& cu,           ComponentID compBegin );
   void        xDecodePLTPredIndicator   ( CodingUnit& cu,           uint32_t maxPLTSize,   ComponentID compBegin );
   void        xAdjustPLTIndex           ( CodingUnit& cu,           Pel curLevel,          uint32_t idx, PelBuf& paletteIdx, PLTtypeBuf& paletteRunType, int maxSymbol, ComponentID compBegin );
