@@ -1068,32 +1068,6 @@ namespace DQIntern
     unsigned                  effHeight;
   };
 
-  unsigned templateAbsCompare(TCoeff sum)
-  {
-    int rangeIdx = 0;
-    if (sum < g_riceT[0])
-    {
-      rangeIdx = 0;
-    }
-    else if (sum < g_riceT[1])
-    {
-      rangeIdx = 1;
-    }
-    else if (sum < g_riceT[2])
-    {
-      rangeIdx = 2;
-    }
-    else if (sum < g_riceT[3])
-    {
-      rangeIdx = 3;
-    }
-    else
-    {
-      rangeIdx = 4;
-    }
-    return g_riceShift[rangeIdx];
-  }
-
   State::State( const RateEstimator& rateEst, CommonCtx& commonCtx, const int stateId )
     : m_sbbFracBits     { { 0, 0 } }
     , m_stateId         ( stateId )
@@ -1212,7 +1186,7 @@ namespace DQIntern
 #undef UPDATE
         if (extRiceFlag)
         {
-          unsigned currentShift = templateAbsCompare(sumAbs);
+          unsigned currentShift = CoeffCodingContext::templateAbsCompare(sumAbs);
           sumAbs = sumAbs >> currentShift;
           int sumAll = std::max(std::min(31, (int)sumAbs - (int)baseLevel), 0);
           m_goRicePar = g_goRiceParsCoeff[sumAll];
@@ -1261,7 +1235,7 @@ namespace DQIntern
 #undef UPDATE
         if (extRiceFlag)
         {
-          unsigned currentShift = templateAbsCompare(sumAbs);
+          unsigned currentShift = CoeffCodingContext::templateAbsCompare(sumAbs);
           sumAbs = sumAbs >> currentShift;
           sumAbs = std::min<TCoeff>(31, sumAbs);
           m_goRicePar = g_goRiceParsCoeff[sumAbs];
