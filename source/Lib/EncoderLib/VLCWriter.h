@@ -63,21 +63,13 @@ protected:
   void  setBitstream          ( OutputBitstream* p )  { m_pcBitIf = p;  }
   OutputBitstream* getBitstream( )                    { return m_pcBitIf; }
 
-#if ENABLE_TRACING
   void  xWriteSCode         ( int         value, uint32_t  length, const char *symbolName );
   void  xWriteCode          ( uint32_t    value, uint32_t  length, const char *symbolName );
   void  xWriteUvlc          ( uint32_t    value,                   const char *symbolName );
   void  xWriteSvlc          ( int         value,                   const char *symbolName );
   void  xWriteFlag          ( uint32_t    value,                   const char *symbolName );
   void  xWriteString        ( const std::string &value,            const char *symbolName );
-#else
-  void  xWriteSCode         ( int         value, uint32_t  length, const char* );
-  void  xWriteCode          ( uint32_t    value, uint32_t  length, const char* );
-  void  xWriteUvlc          ( uint32_t    value,                   const char* );
-  void  xWriteSvlc          ( int         value,                   const char* );
-  void  xWriteFlag          ( uint32_t    value,                   const char* );
-  void  xWriteString        ( const std::string &value,            const char* );
-#endif
+
   void  xWriteRbspTrailingBits();
   bool isByteAligned()      { return (m_pcBitIf->getNumBitsUntilByteAligned() == 0); } ;
 

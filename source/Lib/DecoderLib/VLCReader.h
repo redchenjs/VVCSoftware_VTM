@@ -60,21 +60,12 @@ protected:
   VLCReader() : m_pcBitstream(nullptr){};
   virtual ~VLCReader() {};
 
-#if RExt__DECODER_DEBUG_BIT_STATISTICS || ENABLE_TRACING
   void  xReadCode    ( uint32_t length, uint32_t& val,    const char *symbolName );
   void  xReadSCode   ( uint32_t length, int& val,         const char *symbolName );
   void  xReadUvlc    (                  uint32_t& val,    const char *symbolName );
   void  xReadSvlc    (                  int& val,         const char *symbolName );
   void  xReadFlag    (                  uint32_t& val,    const char *symbolName );
   void  xReadString  (                  std::string& val, const char *symbolName );
-#else
-  void  xReadCode    ( uint32_t length, uint32_t& val,    const char* );
-  void  xReadSCode   ( uint32_t length, int& val,         const char* );
-  void  xReadUvlc    (                  uint32_t& val,    const char* );
-  void  xReadSvlc    (                  int& val,         const char* );
-  void  xReadFlag    (                  uint32_t& val,    const char* );
-  void  xReadString  (                  std::string& val, const char* );
-#endif
 
 public:
   void  setBitstream ( InputBitstream* p )   { m_pcBitstream = p; }
