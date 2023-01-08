@@ -1320,35 +1320,16 @@ void CABACReader::cu_bcw_flag(CodingUnit& cu)
   DTRACE(g_trace_ctx, D_SYNTAX, "cu_bcw_flag() bcw_idx=%d\n", cu.bcwIdx ? 1 : 0);
 }
 
-void CABACReader::xReadTruncBinCode(uint32_t& symbol, uint32_t maxSymbol)
+void CABACReader::xReadTruncBinCode(uint32_t &symbol, uint32_t numSymbols)
 {
-  int thresh;
-  if (maxSymbol > 256)
-  {
-    int threshVal = 1 << 8;
-    thresh = 8;
-    while (threshVal <= maxSymbol)
-    {
-      thresh++;
-      threshVal <<= 1;
-    }
-    thresh--;
-  }
-  else
-  {
-    thresh = g_tbMax[maxSymbol];
-  }
+  const int thresh = floorLog2(numSymbols);
+  const int val    = 1 << thresh;
+  const int b      = numSymbols - val;
 
-  int val = 1 << thresh;
-  int b = maxSymbol - val;
-  symbol  = m_binDecoder.decodeBinsEP(thresh);
+  symbol = m_binDecoder.decodeBinsEP(thresh);
   if (symbol >= val - b)
   {
-    uint32_t altSymbol;
-    altSymbol = m_binDecoder.decodeBinEP();
-    symbol <<= 1;
-    symbol += altSymbol;
-    symbol -= (val - b);
+    symbol = 2 * symbol - (val - b) + m_binDecoder.decodeBinEP();
   }
 }
 

@@ -180,7 +180,7 @@ private:
   void        unary_max_eqprob          ( unsigned symbol,                                   unsigned maxSymbol );
   void        exp_golomb_eqprob         ( unsigned symbol, unsigned count );
 
-  void  xWriteTruncBinCode(uint32_t uiSymbol, uint32_t uiMaxSymbol);
+  void        xWriteTruncBinCode(uint32_t symbol, uint32_t numSymbols);
   void        codeScanRotationModeFlag   ( const CodingUnit& cu,     ComponentID compBegin);
   void        xEncodePLTPredIndicator    ( const CodingUnit& cu,     uint32_t    maxPltSize, ComponentID compBegin);
 private:

@@ -2454,40 +2454,17 @@ uint32_t IntraSearch::getEpExGolombNumBins(uint32_t symbol, uint32_t count)
   return numBins;
 }
 
-uint32_t IntraSearch::getTruncBinBits(uint32_t symbol, uint32_t maxSymbol)
+uint32_t IntraSearch::getTruncBinBits(const uint32_t symbol, const uint32_t numSymbols)
 {
-  uint32_t idxCodeBit = 0;
-  uint32_t thresh;
-  if (maxSymbol > 256)
-  {
-    uint32_t threshVal = 1 << 8;
-    thresh = 8;
-    while (threshVal <= maxSymbol)
-    {
-      thresh++;
-      threshVal <<= 1;
-    }
-    thresh--;
-  }
-  else
-  {
-    thresh = g_tbMax[maxSymbol];
-  }
-  uint32_t uiVal = 1 << thresh;
-  assert(uiVal <= maxSymbol);
-  assert((uiVal << 1) > maxSymbol);
-  assert(symbol < maxSymbol);
-  uint32_t b = maxSymbol - uiVal;
-  assert(b < uiVal);
-  if (symbol < uiVal - b)
-  {
-    idxCodeBit = thresh;
-  }
-  else
-  {
-    idxCodeBit = thresh + 1;
-  }
-  return idxCodeBit;
+  CHECKD(symbol >= numSymbols, "symbol must be less than numSymbols");
+
+  const uint32_t thresh = floorLog2(numSymbols);
+
+  const uint32_t val = 1 << thresh;
+
+  const uint32_t b = numSymbols - val;
+
+  return symbol < val - b ? thresh : thresh + 1;
 }
 
 void IntraSearch::calcPixelPred(CodingStructure& cs, Partitioner& partitioner, uint32_t yPos, uint32_t xPos, ComponentID compBegin, uint32_t numComp)
