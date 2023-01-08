@@ -59,8 +59,8 @@ void VLCWriter::xWriteSCode( const int value, const uint32_t length, const char 
 void VLCWriter::xWriteSCode( const int value, const uint32_t length, const char* )
 #endif
 {
-  assert ( length > 0 && length<=32 );
-  assert( length==32 || (value>=-(1<<(length-1)) && value<(1<<(length-1))) );
+  CHECK ( length < 1 || length > 32, "Syntax element length must be in range 1..32" );
+  CHECK (!( length==32 || (value>=-(1<<(length-1)) && value<(1<<(length-1)))), "Invalid syntax element" );
   m_pcBitIf->write( length==32 ? uint32_t(value) : ( uint32_t(value)&((1<<length)-1) ), length );
 
 #if ENABLE_TRACING
@@ -652,7 +652,7 @@ void HLSWriter::codeLmcsAps( APS* pcAPS )
   SliceReshapeInfo param = pcAPS->getReshaperAPSInfo();
   xWriteUvlc(param.reshaperModelMinBinIdx, "lmcs_min_bin_idx");
   xWriteUvlc(PIC_CODE_CW_BINS - 1 - param.reshaperModelMaxBinIdx, "lmcs_delta_max_bin_idx");
-  assert(param.maxNbitsNeededDeltaCW > 0);
+  CHECKD(param.maxNbitsNeededDeltaCW < 1, "maxNbitsNeededDeltaCW must be equal to or greater than 1");
   xWriteUvlc(param.maxNbitsNeededDeltaCW - 1, "lmcs_delta_cw_prec_minus1");
 
   for (int i = param.reshaperModelMinBinIdx; i <= param.reshaperModelMaxBinIdx; i++)

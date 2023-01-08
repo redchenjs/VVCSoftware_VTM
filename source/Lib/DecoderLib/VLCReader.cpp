@@ -213,9 +213,9 @@ void VLCReader::xReadSCode (const uint32_t length, int& value, const char* )
 #endif
 {
   uint32_t val;
-  assert ( length > 0 && length<=32);
+  CHECK ( length < 1 || length > 32, "Syntax element length must be in range 1..32");
   m_pcBitstream->read (length, val);
-  value= length>=32 ? int(val) : ( (-int( val & (uint32_t(1)<<(length-1)))) | int(val) );
+  value = length>=32 ? int(val) : ( (-int( val & (uint32_t(1)<<(length-1)))) | int(val) );
 
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
   CodingStatistics::IncrementStatisticEP(symbolName, length, value);
@@ -1083,7 +1083,7 @@ void HLSyntaxReader::parseLmcsAps( APS* aps )
   xReadUvlc(code, "lmcs_min_bin_idx");                             info.reshaperModelMinBinIdx = code;
   xReadUvlc(code, "lmcs_delta_max_bin_idx");                       info.reshaperModelMaxBinIdx = PIC_CODE_CW_BINS - 1 - code;
   xReadUvlc(code, "lmcs_delta_cw_prec_minus1");                    info.maxNbitsNeededDeltaCW = code + 1;
-  assert(info.maxNbitsNeededDeltaCW > 0);
+
   for (uint32_t i = info.reshaperModelMinBinIdx; i <= info.reshaperModelMaxBinIdx; i++)
   {
     xReadCode(info.maxNbitsNeededDeltaCW, code, "lmcs_delta_abs_cw[ i ]");
@@ -2995,7 +2995,7 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
         }
         else
         {
-          assert(picHeader->getRPLIdx(0) != -1);
+          CHECK(picHeader->getRPLIdx(0) == -1, "Invalid reference picture index");
           picHeader->setRPLIdx( listIdx, picHeader->getRPLIdx(0));
           *rpl = *sps->getRPLList( listIdx )->getReferencePictureList(picHeader->getRPLIdx( listIdx ));
         }
@@ -3970,7 +3970,7 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
       }
       else
       {
-        assert(pcSlice->getRPL0idx() != -1);
+        CHECK(pcSlice->getRPL0idx() == -1, "Invalid reference picture index");
         pcSlice->setRPL1idx(pcSlice->getRPL0idx());
         *rpl1 = *sps->getRPLList1()->getReferencePictureList(pcSlice->getRPL0idx());
       }
