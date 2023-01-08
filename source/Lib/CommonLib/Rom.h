@@ -68,7 +68,8 @@ struct ScanElement
   uint16_t y;
 };
 
-extern       uint32_t   g_log2SbbSize[MAX_CU_DEPTH + 1][MAX_CU_DEPTH + 1][2];
+extern Size g_log2TxSubblockSize[MAX_CU_DEPTH + 1][MAX_CU_DEPTH + 1];
+
 extern EnumArray<ScanElement *[MAX_CU_SIZE / 2 + 1][MAX_CU_SIZE / 2 + 1], CoeffScanType> g_scanOrder[SCAN_NUMBER_OF_GROUP_TYPES];
 extern       ScanElement   g_coefTopLeftDiagScan8x8[ MAX_CU_SIZE / 2 + 1 ][ 64 ];
 
