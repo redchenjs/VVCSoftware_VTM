@@ -52,7 +52,7 @@
 
 void SEIReader::sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName)
 {
-  READ_SCODE(length, code, pSymbolName);
+  xReadSCode(length, code, pSymbolName);
   if (pOS)
   {
     (*pOS) << "  " << std::setw(55) << pSymbolName << ": " << code << "\n";
@@ -61,7 +61,7 @@ void SEIReader::sei_read_scode(std::ostream *pOS, uint32_t length, int& code, co
 
 void SEIReader::sei_read_code(std::ostream *pOS, uint32_t length, uint32_t &ruiCode, const char *pSymbolName)
 {
-  READ_CODE(length, ruiCode, pSymbolName);
+  xReadCode(length, ruiCode, pSymbolName);
   if (pOS)
   {
     (*pOS) << "  " << std::setw(55) << pSymbolName << ": " << ruiCode << "\n";
@@ -70,7 +70,7 @@ void SEIReader::sei_read_code(std::ostream *pOS, uint32_t length, uint32_t &ruiC
 
 void SEIReader::sei_read_uvlc(std::ostream *pOS, uint32_t& ruiCode, const char *pSymbolName)
 {
-  READ_UVLC(ruiCode, pSymbolName);
+  xReadUvlc(ruiCode, pSymbolName);
   if (pOS)
   {
     (*pOS) << "  " << std::setw(55) << pSymbolName << ": " << ruiCode << "\n";
@@ -79,7 +79,7 @@ void SEIReader::sei_read_uvlc(std::ostream *pOS, uint32_t& ruiCode, const char *
 
 void SEIReader::sei_read_svlc(std::ostream *pOS, int& ruiCode, const char *pSymbolName)
 {
-  READ_SVLC(ruiCode, pSymbolName);
+  xReadSvlc(ruiCode, pSymbolName);
   if (pOS)
   {
     (*pOS) << "  " << std::setw(55) << pSymbolName << ": " << ruiCode << "\n";
@@ -88,7 +88,7 @@ void SEIReader::sei_read_svlc(std::ostream *pOS, int& ruiCode, const char *pSymb
 
 void SEIReader::sei_read_flag(std::ostream *pOS, uint32_t& ruiCode, const char *pSymbolName)
 {
-  READ_FLAG(ruiCode, pSymbolName);
+  xReadFlag(ruiCode, pSymbolName);
   if (pOS)
   {
     (*pOS) << "  " << std::setw(55) << pSymbolName << ": " << (ruiCode?1:0) << "\n";
@@ -97,7 +97,7 @@ void SEIReader::sei_read_flag(std::ostream *pOS, uint32_t& ruiCode, const char *
 
 void SEIReader::sei_read_string(std::ostream* os, std::string& code, const char* symbolName)
 {
-  READ_STRING(code, symbolName);
+  xReadString(code, symbolName);
   if (os)
   {
     (*os) << "  " << std::setw(55) << symbolName << ": " << code << "\n";
@@ -116,13 +116,6 @@ static inline void output_sei_message_header(SEI &sei, std::ostream *pDecodedMes
                                    << "\n";
   }
 }
-
-#undef READ_CODE
-#undef READ_SCODE
-#undef READ_SVLC
-#undef READ_UVLC
-#undef READ_FLAG
-
 
 /**
  * unmarshal a single SEI message from bitstream bs

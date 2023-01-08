@@ -45,39 +45,6 @@
 #include "CommonLib/ParameterSetManager.h"
 #include "CABACReader.h"
 
-#if ENABLE_TRACING
-
-#define READ_SCODE(length, code, name)    xReadSCode  ( length, code, name )
-#define READ_CODE(length, code, name)     xReadCodeTr ( length, code, name )
-#define READ_UVLC(        code, name)     xReadUvlcTr (         code, name )
-#define READ_SVLC(        code, name)     xReadSvlcTr (         code, name )
-#define READ_FLAG(        code, name)     xReadFlagTr (         code, name )
-#define READ_STRING(        code, name)   xReadStringTr (         code, name )
-
-#else
-
-#if RExt__DECODER_DEBUG_BIT_STATISTICS
-
-#define READ_SCODE(length, code, name)    xReadSCode( length, code, name )
-#define READ_CODE(length, code, name)     xReadCode ( length, code, name )
-#define READ_UVLC(        code, name)     xReadUvlc (         code, name )
-#define READ_SVLC(        code, name)     xReadSvlc (         code, name )
-#define READ_FLAG(        code, name)     xReadFlag (         code, name )
-#define READ_STRING(        code, name)   xReadString (         code, name )
-
-#else
-
-#define READ_SCODE(length, code, name)    xReadSCode ( length, code )
-#define READ_CODE(length, code, name)     xReadCode ( length, code )
-#define READ_UVLC(        code, name)     xReadUvlc (         code )
-#define READ_SVLC(        code, name)     xReadSvlc (         code )
-#define READ_FLAG(        code, name)     xReadFlag (         code )
-#define READ_STRING(        code, name)   xReadString (         code )
-
-#endif
-
-#endif
-
 //! \ingroup DecoderLib
 //! \{
 
@@ -93,30 +60,20 @@ protected:
   VLCReader() : m_pcBitstream(nullptr){};
   virtual ~VLCReader() {};
 
-#if RExt__DECODER_DEBUG_BIT_STATISTICS
-  void  xReadCode    ( uint32_t   length, uint32_t& val, const char *pSymbolName );
-  void  xReadUvlc    (                uint32_t& val, const char *pSymbolName );
-  void  xReadSvlc    (                 int& val, const char *pSymbolName );
-  void  xReadFlag    (                uint32_t& val, const char *pSymbolName );
-  void  xReadString  (                std::string& val, const char* symbolName);
-#else
-  void  xReadCode    ( uint32_t   length, uint32_t& val );
-  void  xReadUvlc    (                uint32_t& val );
-  void  xReadSvlc    (                 int& val );
-  void  xReadFlag    (                uint32_t& val );
-  void  xReadString  (                std::string& val);
-#endif
-#if ENABLE_TRACING
-  void  xReadCodeTr  ( uint32_t  length, uint32_t& rValue, const char *pSymbolName );
-  void  xReadUvlcTr  (               uint32_t& rValue, const char *pSymbolName );
-  void  xReadSvlcTr  (                int& rValue, const char *pSymbolName );
-  void  xReadFlagTr  (               uint32_t& rValue, const char *pSymbolName );
-  void  xReadStringTr(std::string& value, const char* symbolName);
-#endif
 #if RExt__DECODER_DEBUG_BIT_STATISTICS || ENABLE_TRACING
-  void  xReadSCode   ( uint32_t  length, int& val, const char *pSymbolName );
+  void  xReadCode    ( uint32_t length, uint32_t& val,    const char *symbolName );
+  void  xReadSCode   ( uint32_t length, int& val,         const char *symbolName );
+  void  xReadUvlc    (                  uint32_t& val,    const char *symbolName );
+  void  xReadSvlc    (                  int& val,         const char *symbolName );
+  void  xReadFlag    (                  uint32_t& val,    const char *symbolName );
+  void  xReadString  (                  std::string& val, const char *symbolName );
 #else
-  void  xReadSCode   ( uint32_t  length, int& val );
+  void  xReadCode    ( uint32_t length, uint32_t& val,    const char* );
+  void  xReadSCode   ( uint32_t length, int& val,         const char* );
+  void  xReadUvlc    (                  uint32_t& val,    const char* );
+  void  xReadSvlc    (                  int& val,         const char* );
+  void  xReadFlag    (                  uint32_t& val,    const char* );
+  void  xReadString  (                  std::string& val, const char* );
 #endif
 
 public:
@@ -127,8 +84,6 @@ protected:
   void xReadRbspTrailingBits();
   bool isByteAligned() { return (m_pcBitstream->getNumBitsUntilByteAligned() == 0 ); }
 };
-
-
 
 class AUDReader: public VLCReader
 {
