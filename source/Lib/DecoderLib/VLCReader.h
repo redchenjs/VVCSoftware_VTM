@@ -74,14 +74,6 @@ public:
 protected:
   void xReadRbspTrailingBits();
   bool isByteAligned() { return (m_pcBitstream->getNumBitsUntilByteAligned() == 0 ); }
-
-private:
-#if RExt__DECODER_DEBUG_BIT_STATISTICS
-  void xReadVlc(uint32_t& value, const char *symbolName );
-#else
-  void xReadVlc(uint32_t& value, const char* );
-#endif
-
 };
 
 class AUDReader: public VLCReader

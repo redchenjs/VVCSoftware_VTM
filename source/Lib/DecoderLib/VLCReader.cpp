@@ -77,10 +77,10 @@ void  VLCReader::xReadCode( const uint32_t length, uint32_t& value, const char* 
 #endif
 }
 
-#if RExt__DECODER_DEBUG_BIT_STATISTICS
-void  VLCReader::xReadVlc(uint32_t& value, const char *symbolName )
+#if ENABLE_TRACING || RExt__DECODER_DEBUG_BIT_STATISTICS
+void  VLCReader::xReadUvlc(uint32_t& value, const char *symbolName )
 #else
-void  VLCReader::xReadVlc(uint32_t& value, const char* )
+void  VLCReader::xReadUvlc(uint32_t& value, const char* )
 #endif
 {
   uint32_t suffix    = 0;
@@ -108,27 +108,59 @@ void  VLCReader::xReadVlc(uint32_t& value, const char* )
     totalLen += length + length;
 #endif
   }
+
   value = suffix;
 
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
   CodingStatistics::IncrementStatisticEP(symbolName, int(totalLen), value);
 #endif
-}
-
-void  VLCReader::xReadUvlc(uint32_t& value, const char *symbolName )
-{
-  xReadVlc(value, symbolName);
 
 #if ENABLE_TRACING
   DTRACE( g_trace_ctx, D_HEADER, "%-50s ue(v) : %u\n", symbolName, value );
 #endif
 }
 
+#if ENABLE_TRACING || RExt__DECODER_DEBUG_BIT_STATISTICS
 void  VLCReader::xReadSvlc( int& value, const char *symbolName )
+#else
+void  VLCReader::xReadSvlc( int& value, const char* )
+#endif
 {
-  uint32_t unsignedVal;
-  xReadVlc(unsignedVal, symbolName);
-  value = (unsignedVal & 1) ? -(int) (unsignedVal >> 1) : (int) (unsignedVal >> 1);
+  uint32_t prefixBit = 0;
+  uint32_t suffix = 0;
+
+#if RExt__DECODER_DEBUG_BIT_STATISTICS
+  uint32_t totalLen=1;
+#endif
+
+  m_pcBitstream->read(1, prefixBit);
+
+  if (0 == prefixBit)
+  {
+    uint32_t length = 0;
+
+    while ( prefixBit == 0 )
+    {
+      m_pcBitstream->read(1, prefixBit);
+      length++;
+    }
+
+    m_pcBitstream->read(length, suffix);
+
+    suffix += (1 << length);
+    value = (suffix & 1) ? -(int) (suffix >> 1) : (int) (suffix >> 1);
+
+#if RExt__DECODER_DEBUG_BIT_STATISTICS
+    totalLen += length + length;
+#endif
+  }
+  else
+  {
+    value = 0;
+  }
+#if RExt__DECODER_DEBUG_BIT_STATISTICS
+  CodingStatistics::IncrementStatisticEP(symbolName, int(totalLen), suffix);
+#endif
 
 #if ENABLE_TRACING
   DTRACE( g_trace_ctx, D_HEADER, "%-50s se(v) : %d\n", symbolName, value );
