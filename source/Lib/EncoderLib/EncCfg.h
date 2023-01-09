@@ -876,6 +876,17 @@ protected:
 #endif
   uint32_t              m_numofSEIMessages;
 
+#if JVET_AB0070_POST_FILTER_HINT
+  bool                 m_postFilterHintSEIEnabled;
+  bool                 m_postFilterHintSEICancelFlag;
+  bool                 m_postFilterHintSEIPersistenceFlag;
+  uint32_t             m_postFilterHintSEISizeY;
+  uint32_t             m_postFilterHintSEISizeX;
+  uint32_t             m_postFilterHintSEIType;
+  bool                 m_postFilterHintSEIChromaCoeffPresentFlag;
+  std::vector<int32_t> m_postFilterHintValues;
+#endif
+
   bool      m_constrainedRaslEncoding;
 
   //====== Weighted Prediction ========
@@ -2489,6 +2500,25 @@ public:
 #endif
   void     setPoSEINumofSeiMessages(uint32_t i)                      { m_numofSEIMessages = i; }
   uint32_t getPoSEINumofSeiMessages()                          const { return m_numofSEIMessages; }
+
+#if JVET_AB0070_POST_FILTER_HINT
+  void     setPostFilterHintSEIEnabled(bool b) { m_postFilterHintSEIEnabled = b; }
+  bool     getPostFilterHintSEIEnabled() { return m_postFilterHintSEIEnabled; }
+  void     setPostFilterHintSEICancelFlag(bool b) { m_postFilterHintSEICancelFlag = b; }
+  bool     getPostFilterHintSEICancelFlag() { return m_postFilterHintSEICancelFlag; }
+  void     setPostFilterHintSEIPersistenceFlag(bool b) { m_postFilterHintSEIPersistenceFlag = b; }
+  bool     getPostFilterHintSEIPersistenceFlag() { return m_postFilterHintSEIPersistenceFlag; }
+  void     setPostFilterHintSEISizeY(uint32_t i) { m_postFilterHintSEISizeY = i; }
+  uint32_t getPostFilterHintSEISizeY() { return m_postFilterHintSEISizeY; }
+  void     setPostFilterHintSEISizeX(uint32_t i) { m_postFilterHintSEISizeX = i; }
+  uint32_t getPostFilterHintSEISizeX() { return m_postFilterHintSEISizeX; }
+  void     setPostFilterHintSEIType(uint32_t i) { m_postFilterHintSEIType = i; }
+  uint32_t getPostFilterHintSEIType() { return m_postFilterHintSEIType; }
+  void     setPostFilterHintSEIChromaCoeffPresentFlag(bool b) { m_postFilterHintSEIChromaCoeffPresentFlag = b; }
+  bool     getPostFilterHintSEIChromaCoeffPresentFlag() { return m_postFilterHintSEIChromaCoeffPresentFlag; }
+  void     setPostFilterHintSEIValues(const std::vector<int32_t> &b) { m_postFilterHintValues = b; }
+  int32_t  getPostFilterHintSEIValues(int32_t idx) const { return m_postFilterHintValues[idx]; }
+#endif
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
   void         setWPBiPred            ( bool b )                     { m_useWeightedBiPred = b;    }

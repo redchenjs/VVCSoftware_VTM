@@ -618,6 +618,29 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   }
 }
 
+#if JVET_AB0070_POST_FILTER_HINT
+void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
+{
+  assert(m_isInitialized);
+  assert(seiPostFilterHint != nullptr);
+
+  seiPostFilterHint->m_filterHintCancelFlag             = m_pcCfg->getPostFilterHintSEICancelFlag();
+  seiPostFilterHint->m_filterHintPersistenceFlag        = m_pcCfg->getPostFilterHintSEIPersistenceFlag();
+  seiPostFilterHint->m_filterHintSizeY                  = m_pcCfg->getPostFilterHintSEISizeY();
+  seiPostFilterHint->m_filterHintSizeX                  = m_pcCfg->getPostFilterHintSEISizeX();
+  seiPostFilterHint->m_filterHintType                   = m_pcCfg->getPostFilterHintSEIType();
+  seiPostFilterHint->m_filterHintChromaCoeffPresentFlag = m_pcCfg->getPostFilterHintSEIChromaCoeffPresentFlag();
+
+  seiPostFilterHint->m_filterHintValues.resize((seiPostFilterHint->m_filterHintChromaCoeffPresentFlag ? 3 : 1)
+                                               * seiPostFilterHint->m_filterHintSizeY
+                                               * seiPostFilterHint->m_filterHintSizeX);
+  for (uint32_t i = 0; i < seiPostFilterHint->m_filterHintValues.size(); i++)
+  {
+    seiPostFilterHint->m_filterHintValues[i] = m_pcCfg->getPostFilterHintSEIValues(i);
+  }
+}
+#endif
+
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned
                            bool         &failed,        /// used and updated
