@@ -3406,10 +3406,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #if JVET_AB0070_POST_FILTER_HINT
   if (m_postFilterHintSEIEnabled)
   {
-    CHECK(cfg_postFilterHintSEIValues.values.size() > 0, "The number of filter coefficient shall be greater than zero");
-    CHECK(cfg_postFilterHintSEIValues.values.size()
-           == (m_postFilterHintSEIChromaCoeffPresentFlag ? 3 : 1) * m_postFilterHintSEISizeY
-                * m_postFilterHintSEISizeX, "The number of filter coefficient shall match the matrix size and considering whether filters for chroma is present of not");
+    CHECK(cfg_postFilterHintSEIValues.values.size() <= 0, "The number of filter coefficient shall be greater than zero");
+    CHECK(!(cfg_postFilterHintSEIValues.values.size() == ((m_postFilterHintSEIChromaCoeffPresentFlag ? 3 : 1) * m_postFilterHintSEISizeY * m_postFilterHintSEISizeX)), "The number of filter coefficient shall match the matrix size and considering whether filters for chroma is present of not");
     m_postFilterHintValues.resize(cfg_postFilterHintSEIValues.values.size());
 
     for (uint32_t i = 0; i < m_postFilterHintValues.size(); i++)

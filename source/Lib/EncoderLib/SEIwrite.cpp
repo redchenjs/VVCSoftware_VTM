@@ -1923,9 +1923,7 @@ void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
     WRITE_CODE(sei.m_filterHintType, 2, "filter_hint_type");
     WRITE_FLAG(sei.m_filterHintChromaCoeffPresentFlag, "filter_hint_chroma_coeff_present_flag");
 
-    CHECK(sei.m_filterHintValues.size()
-           == (sei.m_filterHintChromaCoeffPresentFlag ? 3 : 1) * sei.m_filterHintSizeX * sei.m_filterHintSizeY,
-           "The number of filter coefficient shall match the matrix size and considering whether filters for chroma is present of not");
+    CHECK(!(sei.m_filterHintValues.size() == ((sei.m_filterHintChromaCoeffPresentFlag ? 3 : 1) * sei.m_filterHintSizeX * sei.m_filterHintSizeY)), "The number of filter coefficient shall match the matrix size and considering whether filters for chroma is present of not");
     for (uint32_t i = 0; i < sei.m_filterHintValues.size(); i++)
     {
       WRITE_SVLC(sei.m_filterHintValues[i], "filter_hint_value[][][]");
