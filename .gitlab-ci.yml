@@ -32,6 +32,11 @@ build_ubuntu2004:
    tags:
       - ubuntu2004
 
+build_ubuntu2204:
+   extends: .build_template_linux
+   tags:
+      - ubuntu2204
+
 build_vc191x:
    extends: .build_template
    tags:
