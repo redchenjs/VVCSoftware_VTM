@@ -1932,19 +1932,19 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
 #if JVET_AB0070_POST_FILTER_HINT
 void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
 {
-  WRITE_FLAG(sei.m_filterHintCancelFlag, "filter_hint_cancel_flag");
+  xWriteFlag(sei.m_filterHintCancelFlag, "filter_hint_cancel_flag");
   if (sei.m_filterHintCancelFlag == false)
   {
-    WRITE_FLAG(sei.m_filterHintPersistenceFlag, "filter_hint_persistence_flag");
-    WRITE_UVLC(sei.m_filterHintSizeY, "filter_hint_size_y");
-    WRITE_UVLC(sei.m_filterHintSizeX, "filter_hint_size_x");
-    WRITE_CODE(sei.m_filterHintType, 2, "filter_hint_type");
-    WRITE_FLAG(sei.m_filterHintChromaCoeffPresentFlag, "filter_hint_chroma_coeff_present_flag");
+    xWriteFlag(sei.m_filterHintPersistenceFlag, "filter_hint_persistence_flag");
+    xWriteUvlc(sei.m_filterHintSizeY, "filter_hint_size_y");
+    xWriteUvlc(sei.m_filterHintSizeX, "filter_hint_size_x");
+    xWriteCode(sei.m_filterHintType, 2, "filter_hint_type");
+    xWriteFlag(sei.m_filterHintChromaCoeffPresentFlag, "filter_hint_chroma_coeff_present_flag");
 
     CHECK(!(sei.m_filterHintValues.size() == ((sei.m_filterHintChromaCoeffPresentFlag ? 3 : 1) * sei.m_filterHintSizeX * sei.m_filterHintSizeY)), "The number of filter coefficient shall match the matrix size and considering whether filters for chroma is present of not");
     for (uint32_t i = 0; i < sei.m_filterHintValues.size(); i++)
     {
-      WRITE_SVLC(sei.m_filterHintValues[i], "filter_hint_value[][][]");
+      xWriteSvlc(sei.m_filterHintValues[i], "filter_hint_value[][][]");
     }
   }
 }
