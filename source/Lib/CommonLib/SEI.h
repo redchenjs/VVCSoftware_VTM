@@ -60,6 +60,9 @@ public:
     USER_DATA_REGISTERED_ITU_T_T35       = 4,
     USER_DATA_UNREGISTERED               = 5,
     FILM_GRAIN_CHARACTERISTICS           = 19,
+#if JVET_AB0070_POST_FILTER_HINT
+    POST_FILTER_HINT = 22,
+#endif
     FRAME_PACKING                        = 45,
     DISPLAY_ORIENTATION                  = 47,
     GREEN_METADATA                       = 56,
@@ -1310,6 +1313,25 @@ public:
   bool           m_persistenceFlag;
 #endif
 };
+
+#if JVET_AB0070_POST_FILTER_HINT
+class SEIPostFilterHint : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::POST_FILTER_HINT; }
+
+  SEIPostFilterHint() {}
+  virtual ~SEIPostFilterHint() {}
+
+  bool             m_filterHintCancelFlag;
+  bool             m_filterHintPersistenceFlag;
+  uint32_t         m_filterHintSizeY;
+  uint32_t         m_filterHintSizeX;
+  uint32_t         m_filterHintType;
+  bool             m_filterHintChromaCoeffPresentFlag;
+  std::vector<int> m_filterHintValues;   // values stored in linear array, [ ( ( component * sizeY + y ) * SizeX ) + x ]
+};
+#endif
 
 //! \}
 

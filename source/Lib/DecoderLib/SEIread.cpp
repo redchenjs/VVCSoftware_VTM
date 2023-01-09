@@ -478,6 +478,12 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIProcessingOrderInfo;
       xParseSEIProcessingOrder((SEIProcessingOrderInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
+#if JVET_AB0070_POST_FILTER_HINT
+    case SEI::PayloadType::POST_FILTER_HINT:
+      sei = new SEIPostFilterHint;
+      xParseSEIPostFilterHint((SEIPostFilterHint &) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -2959,6 +2965,38 @@ void SEIReader::xParseSEIPhaseIndication(SEIPhaseIndication& sei, uint32_t paylo
   CHECK(sei.m_horPhaseNum > sei.m_horPhaseDenMinus1 + 1, "The value of hor_phase_num shall be in the range of 0 to hor_phase_den_minus1 + 1, inclusive");
   CHECK(sei.m_verPhaseNum > sei.m_verPhaseDenMinus1 + 1, "The value of ver_phase_num shall be in the range of 0 to ver_phase_den_minus1 + 1, inclusive");
 }
+
+#if JVET_AB0070_POST_FILTER_HINT
+void SEIReader::xParseSEIPostFilterHint(SEIPostFilterHint &sei, uint32_t payloadSize,
+                                        std::ostream *pDecodedMessageOutputStream)
+{
+  uint32_t val;
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+
+  sei_read_flag(pDecodedMessageOutputStream, val, "filter_hint_cancel_flag");
+  sei.m_filterHintCancelFlag = val;
+  if (sei.m_filterHintCancelFlag == false)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "filter_hint_persistence_flag");
+    sei.m_filterHintPersistenceFlag = val;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "filter_hint_size_y");
+    sei.m_filterHintSizeY = val;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "filter_hint_size_x");
+    sei.m_filterHintSizeX = val;
+    sei_read_code(pDecodedMessageOutputStream, 2, val, "filter_hint_type");
+    sei.m_filterHintType = val;
+    sei_read_flag(pDecodedMessageOutputStream, val, "filter_hint_chroma_coeff_present_flag");
+    sei.m_filterHintChromaCoeffPresentFlag = val;
+
+    sei.m_filterHintValues.resize((sei.m_filterHintChromaCoeffPresentFlag ? 3 : 1) * sei.m_filterHintSizeX
+                                  * sei.m_filterHintSizeY);
+    for (uint32_t i = 0; i < sei.m_filterHintValues.size(); i++)
+    {
+      sei_read_svlc(pDecodedMessageOutputStream, sei.m_filterHintValues[i], "filter_hint_value[][][]");
+    }
+  }
+}
+#endif
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE
 void SeiCfgFileDump::write360SeiDump (std::string decoded360MessageFileName, SEIMessages& seis, const SPS* sps)

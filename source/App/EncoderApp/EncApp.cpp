@@ -1307,6 +1307,17 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
   m_cEncLib.setPoSEINumofSeiMessages                             (m_numofSEIMessages);
 
+#if JVET_AB0070_POST_FILTER_HINT
+  m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
+  m_cEncLib.setPostFilterHintSEICancelFlag(m_postFilterHintSEICancelFlag);
+  m_cEncLib.setPostFilterHintSEIPersistenceFlag(m_postFilterHintSEIPersistenceFlag);
+  m_cEncLib.setPostFilterHintSEISizeY(m_postFilterHintSEISizeY);
+  m_cEncLib.setPostFilterHintSEISizeX(m_postFilterHintSEISizeX);
+  m_cEncLib.setPostFilterHintSEIType(m_postFilterHintSEIType);
+  m_cEncLib.setPostFilterHintSEIChromaCoeffPresentFlag(m_postFilterHintSEIChromaCoeffPresentFlag);
+  m_cEncLib.setPostFilterHintSEIValues(m_postFilterHintValues);
+#endif
+
   m_cEncLib.setVuiParametersPresentFlag                          ( m_vuiParametersPresentFlag );
   m_cEncLib.setSamePicTimingInAllOLS                             (m_samePicTimingInAllOLS);
   m_cEncLib.setAspectRatioInfoPresentFlag                        ( m_aspectRatioInfoPresentFlag);

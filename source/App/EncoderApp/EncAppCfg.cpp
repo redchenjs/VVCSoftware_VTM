@@ -742,6 +742,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder (0, 255, 0, 256);
 #endif
 
+#if JVET_AB0070_POST_FILTER_HINT
+  SMultiValueInput<int32_t> cfg_postFilterHintSEIValues(INT32_MIN + 1, INT32_MAX, 1 * 1 * 1, 15 * 15 * 3);
+#endif
+
 #if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
   std::vector<SMultiValueInput<uint32_t>>   cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList;
   for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; i++)
@@ -1595,6 +1599,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
+
+#if JVET_AB0070_POST_FILTER_HINT
+  ("SEIPostFilterHintEnabled",                        m_postFilterHintSEIEnabled,                        false, "Control generation of post-filter Hint SEI message")
+  ("SEIPostFilterHintCancelFlag",                     m_postFilterHintSEICancelFlag,                     false, "Specifies the persistence of any previous post-filter Hint SEI message in output order")
+  ("SEIPostFilterHintPersistenceFlag",                m_postFilterHintSEIPersistenceFlag,                false, "Specifies the persistence of the post-filter Hint SEI message for the current layer")
+  ("SEIPostFilterHintSizeY",                          m_postFilterHintSEISizeY,                             1u, "Specifies the vertical size of the post-filter coefficient or correlation array")
+  ("SEIPostFilterHintSizeX",                          m_postFilterHintSEISizeX,                             1u, "Specifies the horizontal size of the post-filter coefficient or correlation array")
+  ("SEIPostFilterHintType",                           m_postFilterHintSEIType,                              0u, "Specifies the type of the post-filter: 2D-FIR filter (0, default), 1D-FIR filters (1) or Cross-correlation matrix (0)")
+  ("SEIPostFilterHintChromaCoeffPresentFlag",         m_postFilterHintSEIChromaCoeffPresentFlag,         false, "Specifies the presence of post-filter coefficients for chroma")
+  ("SEIPostFilterHintValue",                          cfg_postFilterHintSEIValues, cfg_postFilterHintSEIValues, "Specifies post-filter coefficients or elements of a cross-correlation matrix")
+#endif
 
 #if JVET_T0056_SEI_MANIFEST
   //SEI manifest
@@ -3401,6 +3416,20 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     assert(m_poSEIPayloadType.size() > 0);
     assert(m_poSEIProcessingOrder.size() == m_poSEIPayloadType.size());
   }
+
+#if JVET_AB0070_POST_FILTER_HINT
+  if (m_postFilterHintSEIEnabled)
+  {
+    CHECK(cfg_postFilterHintSEIValues.values.size() <= 0, "The number of filter coefficient shall be greater than zero");
+    CHECK(!(cfg_postFilterHintSEIValues.values.size() == ((m_postFilterHintSEIChromaCoeffPresentFlag ? 3 : 1) * m_postFilterHintSEISizeY * m_postFilterHintSEISizeX)), "The number of filter coefficient shall match the matrix size and considering whether filters for chroma is present of not");
+    m_postFilterHintValues.resize(cfg_postFilterHintSEIValues.values.size());
+
+    for (uint32_t i = 0; i < m_postFilterHintValues.size(); i++)
+    {
+      m_postFilterHintValues[i] = cfg_postFilterHintSEIValues.values[i];
+    }
+  }
+#endif
 
   if( m_costMode == COST_LOSSLESS_CODING )
   {

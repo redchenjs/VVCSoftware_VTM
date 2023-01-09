@@ -73,6 +73,8 @@
 #define JVET_AB0072                                      1 //Green-MPEG SEI Messaging (JVET-AB0072)
 #define M60678_BALLOT_COMMENTS_OF_FI_03                  1 // m60678: Ballot comments of FI_03
 
+#define JVET_AB0070_POST_FILTER_HINT                      1 // JVET-AB0070: post-filter hint SEI
+
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
