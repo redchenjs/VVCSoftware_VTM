@@ -3406,7 +3406,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #if JVET_AB0070_POST_FILTER_HINT
   if (m_postFilterHintSEIEnabled)
   {
-    assert(cfg_postFilterHintSEIValues.values.size() > 0);
+    CHECK(cfg_postFilterHintSEIValues.values.size() > 0, "The number of filter coefficient shall be greater than zero");
     assert(cfg_postFilterHintSEIValues.values.size()
            == (m_postFilterHintSEIChromaCoeffPresentFlag ? 3 : 1) * m_postFilterHintSEISizeY
                 * m_postFilterHintSEISizeX);
