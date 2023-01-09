@@ -621,8 +621,8 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
 #if JVET_AB0070_POST_FILTER_HINT
 void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
 {
-  assert(m_isInitialized);
-  assert(seiPostFilterHint != nullptr);
+  CHECK(m_isInitialized, "The post-filter hint SEI message needs to be initialized");
+  CHECK(seiPostFilterHint != nullptr, "Failed to get the handler to the SEI message");
 
   seiPostFilterHint->m_filterHintCancelFlag             = m_pcCfg->getPostFilterHintSEICancelFlag();
   seiPostFilterHint->m_filterHintPersistenceFlag        = m_pcCfg->getPostFilterHintSEIPersistenceFlag();
