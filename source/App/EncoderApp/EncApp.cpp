@@ -199,24 +199,25 @@ void EncApp::xInitLibCfg( int layerIdx )
       }
     }
   }
-  CHECK( m_numPtlsInVps == 0, "There has to be at least one PTL structure in the VPS." );
-  vps.setNumPtls                                                 ( m_numPtlsInVps );
-  vps.setPtPresentFlag                                           (0, 1);
+  CHECK(m_numPtlsInVps == 0, "There has to be at least one PTL structure in the VPS.");
+  vps.setNumPtls(m_numPtlsInVps);
+  vps.setPtPresentFlag(0, true);
   for (int i = 0; i < vps.getNumPtls(); i++)
   {
     if( i > 0 )
-      vps.setPtPresentFlag(i, m_ptPresentInPtl[i]);
+    {
+      vps.setPtPresentFlag(i, m_ptPresentInPtl[i] != 0);
+    }
     vps.setPtlMaxTemporalId                                      (i, vps.getMaxSubLayers() - 1);
   }
   for (int i = 0; i < vps.getNumOutputLayerSets(); i++)
   {
     vps.setOlsPtlIdx                                             (i, m_olsPtlIdx[i]);
   }
-  if (layerIdx == 0)
-  {
-    vps.resizePTL(vps.getNumPtls());
-  }
-  ProfileTierLevel ptl;
+
+  CHECK(layerIdx >= vps.getNumPtls(),
+        "Insufficient number of Profile/Tier/Level entries in VPS. Consider increasing NumPTLsInVPS");
+  ProfileTierLevel &ptl = vps.getProfileTierLevel(layerIdx);
   ptl.setLevelIdc                                            ( m_level );
   ptl.setProfileIdc                                          ( m_profile);
   ptl.setTierFlag                                            ( m_levelTier );
@@ -235,8 +236,9 @@ void EncApp::xInitLibCfg( int layerIdx )
     ptl.setSubProfileIdc                                     (i, m_subProfile[i]);
   }
   if ( 0 < layerIdx )
+  {
     ptl.setLevelIdc                                          ( m_levelPtl[layerIdx] );
-  vps.setProfileTierLevel(layerIdx, ptl);
+  }
   vps.setVPSExtensionFlag                                        ( false );
   m_cEncLib.setProfile                                           ( m_profile);
   m_cEncLib.setLevel                                             ( m_levelTier, m_level);
