@@ -316,33 +316,35 @@ void retrieveGeoPolygons(const CodingUnit& cu, std::vector<Position> (&geoPartit
         int16_t width = 1 << (wIdx + GEO_MIN_CU_LOG2);
         for( int splitDir = 0; splitDir < GEO_NUM_PARTITION_MODE; splitDir++ )
         {
-          int16_t angle         = g_GeoParams[splitDir][0];
+          const int angle = g_geoParams[splitDir].angleIdx;
 
           int maskStride = 0;
           int stepX = 1;
           Pel *sadMask;
+
+          const int16_t *wOffset = g_weightOffset[splitDir][hIdx][wIdx];
+
           if (g_angle2mirror[angle] == 2)
           {
             maskStride = -GEO_WEIGHT_MASK_SIZE;
-            sadMask    = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
-                                            [(GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][1])
-                                               * GEO_WEIGHT_MASK_SIZE
-                                             + g_weightOffset[splitDir][hIdx][wIdx][0]];
+
+            sadMask =
+              &g_globalGeoEncSADmask[g_angle2mask[angle]]
+                                    [(GEO_WEIGHT_MASK_SIZE - 1 - wOffset[1]) * GEO_WEIGHT_MASK_SIZE + wOffset[0]];
           }
           else if (g_angle2mirror[angle] == 1)
           {
             stepX = -1;
             maskStride = GEO_WEIGHT_MASK_SIZE;
-            sadMask    = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
-                                            [g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE
-                                             + (GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][0])];
+
+            sadMask = &g_globalGeoEncSADmask[g_angle2mask[angle]][wOffset[1] * GEO_WEIGHT_MASK_SIZE
+                                                                  + (GEO_WEIGHT_MASK_SIZE - 1 - wOffset[0])];
           }
           else
           {
             maskStride = GEO_WEIGHT_MASK_SIZE;
-            sadMask    = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
-                                            [g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE
-                                             + g_weightOffset[splitDir][hIdx][wIdx][0]];
+
+            sadMask = &g_globalGeoEncSADmask[g_angle2mask[angle]][wOffset[1] * GEO_WEIGHT_MASK_SIZE + wOffset[0]];
           }
 
           int currentPartition = 0;

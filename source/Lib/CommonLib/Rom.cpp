@@ -453,12 +453,6 @@ void destroyROM()
   delete gp_sizeIdxInfo;
   gp_sizeIdxInfo = nullptr;
 
-  for( int modeIdx = 0; modeIdx < GEO_NUM_PARTITION_MODE; modeIdx++ )
-  {
-    delete[] g_GeoParams[modeIdx];
-    g_GeoParams[modeIdx] = nullptr;
-  }
-  delete[] g_GeoParams;
   for( int i = 0; i < GEO_NUM_PRESTORED_MASK; i++ )
   {
     delete[] g_globalGeoWeights   [i];
@@ -626,7 +620,6 @@ uint8_t g_paletteRunLeftLut[5] = { 0, 1, 2, 3, 4 };
 
 void initGeoTemplate()
 {
-  g_GeoParams = new int16_t*[GEO_NUM_PARTITION_MODE];
   int modeIdx = 0;
   for( int angleIdx = 0; angleIdx < GEO_NUM_ANGLES; angleIdx++ )
   {
@@ -638,9 +631,8 @@ void initGeoTemplate()
       {
         continue;
       }
-      g_GeoParams[modeIdx]    = new int16_t[2];
-      g_GeoParams[modeIdx][0] = (int16_t)angleIdx;
-      g_GeoParams[modeIdx][1] = (int16_t)distanceIdx;
+      g_geoParams[modeIdx].angleIdx    = angleIdx;
+      g_geoParams[modeIdx].distanceIdx = distanceIdx;
       modeIdx++;
     }
   }
@@ -676,25 +668,30 @@ void initGeoTemplate()
 
   for( int hIdx = 0; hIdx < GEO_NUM_CU_SIZE; hIdx++ )
   {
-    int16_t height = 1 << ( hIdx + GEO_MIN_CU_LOG2);
+    const int height = 1 << (hIdx + GEO_MIN_CU_LOG2);
     for( int wIdx = 0; wIdx < GEO_NUM_CU_SIZE; wIdx++ )
     {
-      int16_t width = 1 << (wIdx + GEO_MIN_CU_LOG2);
+      const int width = 1 << (wIdx + GEO_MIN_CU_LOG2);
       for( int splitDir = 0; splitDir < GEO_NUM_PARTITION_MODE; splitDir++ )
       {
-        int16_t angle         = g_GeoParams[splitDir][0];
-        int16_t distance      = g_GeoParams[splitDir][1];
-        int16_t offsetX       = (GEO_WEIGHT_MASK_SIZE - width) >> 1;
-        int16_t offsetY       = (GEO_WEIGHT_MASK_SIZE - height) >> 1;
+        const int angle    = g_geoParams[splitDir].angleIdx;
+        const int distance = g_geoParams[splitDir].distanceIdx;
+
+        int offsetX = (GEO_WEIGHT_MASK_SIZE - width) >> 1;
+        int offsetY = (GEO_WEIGHT_MASK_SIZE - height) >> 1;
+
         if( distance > 0 )
         {
-          if( angle % 16 == 8 || (angle % 16 != 0 && height >= width) )
+          const int angleMod = angle % (GEO_NUM_ANGLES / 2);
+          if (angleMod == GEO_NUM_ANGLES / 4 || (angleMod != 0 && height >= width))
           {
-            offsetY += angle < 16 ? ((distance * (int32_t)height) >> 3) : -((distance * (int32_t)height) >> 3);
+            const int d = distance * height >> 3;
+            offsetY += angle < GEO_NUM_ANGLES / 2 ? d : -d;
           }
           else
           {
-            offsetX += angle < 16 ? ((distance * (int32_t)width) >> 3) : -((distance * (int32_t)width) >> 3);
+            const int d = distance * width >> 3;
+            offsetX += angle < GEO_NUM_ANGLES / 2 ? d : -d;
           }
         }
         g_weightOffset[splitDir][hIdx][wIdx][0] = offsetX;
@@ -704,7 +701,8 @@ void initGeoTemplate()
   }
 }
 
-int16_t** g_GeoParams;
+GeoParam g_geoParams[GEO_NUM_PARTITION_MODE];
+
 int16_t*  g_globalGeoWeights   [GEO_NUM_PRESTORED_MASK];
 Pel*      g_globalGeoEncSADmask[GEO_NUM_PRESTORED_MASK];
 int16_t   g_weightOffset       [GEO_NUM_PARTITION_MODE][GEO_NUM_CU_SIZE][GEO_NUM_CU_SIZE][2];

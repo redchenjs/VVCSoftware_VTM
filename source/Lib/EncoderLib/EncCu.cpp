@@ -2929,32 +2929,33 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
     int maskStride = 0, maskStride2 = 0;
     int stepX = 1;
     Pel    *sadMask;
-    int16_t angle = g_GeoParams[splitDir][0];
+
+    const int angle = g_geoParams[splitDir].angleIdx;
+
+    const int16_t *wOffset = g_weightOffset[splitDir][hIdx][wIdx];
+
     if (g_angle2mirror[angle] == 2)
     {
       maskStride = -GEO_WEIGHT_MASK_SIZE;
       maskStride2 = -(int)pu->lwidth();
-      sadMask     = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
-                                      [(GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][1])
-                                         * GEO_WEIGHT_MASK_SIZE
-                                       + g_weightOffset[splitDir][hIdx][wIdx][0]];
+      sadMask     = &g_globalGeoEncSADmask[g_angle2mask[angle]]
+                                      [(GEO_WEIGHT_MASK_SIZE - 1 - wOffset[1]) * GEO_WEIGHT_MASK_SIZE + wOffset[0]];
     }
     else if (g_angle2mirror[angle] == 1)
     {
       stepX = -1;
       maskStride2 = pu->lwidth();
       maskStride = GEO_WEIGHT_MASK_SIZE;
-      sadMask     = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
-                                      [g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE
-                                       + (GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][0])];
+
+      sadMask = &g_globalGeoEncSADmask[g_angle2mask[angle]]
+                                      [wOffset[1] * GEO_WEIGHT_MASK_SIZE + (GEO_WEIGHT_MASK_SIZE - 1 - wOffset[0])];
     }
     else
     {
       maskStride = GEO_WEIGHT_MASK_SIZE;
       maskStride2 = -(int)pu->lwidth();
-      sadMask     = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
-                                      [g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE
-                                       + g_weightOffset[splitDir][hIdx][wIdx][0]];
+
+      sadMask = &g_globalGeoEncSADmask[g_angle2mask[angle]][wOffset[1] * GEO_WEIGHT_MASK_SIZE + wOffset[0]];
     }
 
     for (uint8_t mergeCand = 0; mergeCand < maxNumMergeCandidates; mergeCand++)

@@ -213,7 +213,15 @@ extern uint8_t g_paletteRunLeftLut[5];
 static constexpr int IBC_BUFFER_SIZE = 256 * 128;
 
 void initGeoTemplate();
-extern int16_t** g_GeoParams;
+
+struct GeoParam
+{
+  uint8_t angleIdx : GEO_LOG2_NUM_ANGLES;
+  uint8_t distanceIdx : GEO_LOG2_NUM_DISTANCES;
+};
+
+extern GeoParam g_geoParams[GEO_NUM_PARTITION_MODE];
+
 extern int16_t*  g_globalGeoWeights   [GEO_NUM_PRESTORED_MASK];
 extern Pel*      g_globalGeoEncSADmask[GEO_NUM_PRESTORED_MASK];
 extern int16_t   g_weightOffset       [GEO_NUM_PARTITION_MODE][GEO_NUM_CU_SIZE][GEO_NUM_CU_SIZE][2];

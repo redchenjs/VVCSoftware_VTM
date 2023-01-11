@@ -4359,11 +4359,12 @@ void PU::spanGeoMotionInfo(PredictionUnit &pu, const MergeCtx &geoMrgCtx, const 
     biMv.refIdx[1] = geoMrgCtx.mvFieldNeighbours[candIdx1][1].refIdx;
   }
 
-  int16_t angle = g_GeoParams[splitDir][0];
+  const int angle       = g_geoParams[splitDir].angleIdx;
+  const int distanceIdx = g_geoParams[splitDir].distanceIdx;
+
   int tpmMask = 0;
   int lookUpY = 0, motionIdx = 0;
-  bool isFlip = angle >= 13 && angle <= 27;
-  int distanceIdx = g_GeoParams[splitDir][1];
+  bool isFlip    = angle >= 13 && angle <= 27;
   int distanceX = angle;
   int distanceY = (distanceX + (GEO_NUM_ANGLES >> 2)) % GEO_NUM_ANGLES;
   int offsetX = (-(int)pu.lwidth()) >> 1;
