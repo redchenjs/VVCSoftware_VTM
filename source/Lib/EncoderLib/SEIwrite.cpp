@@ -1813,6 +1813,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
     }
 #endif
+    xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
     xWriteFlag(sei.m_sepColDescriptionFlag, "nnpfc_sep_col_desc_flag");
 
@@ -1822,8 +1823,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteCode(sei.m_transCharacteristics, 8, "nnpfc_trans_characteristics");
       xWriteCode(sei.m_matrixCoeffs, 8, "nnpfc_matrix_coeffs");
     }
-
-    xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
 #if M60678_BALLOT_COMMENTS_OF_FI_03
     xWriteUvlc(sei.m_outFormatIdc, "nnpfc_out_format_idc");
     if (sei.m_outFormatIdc == 1)
@@ -1885,7 +1884,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     xWriteString(sei.m_uri, "nnpfc_uri");
   }
 #endif
-  if (sei.m_modeIdc == 1)
+  if (sei.m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
   {
     while (!isByteAligned())
     {

@@ -2771,6 +2771,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_inpTensorBitDepthMinus8 = val;
     }
 #endif
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
+    sei.m_inpOrderIdc = val;
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
     sei.m_auxInpIdc = val;
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
@@ -2785,9 +2787,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_matrix_coeffs");
       sei.m_matrixCoeffs = val;
     }
-
-    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
-    sei.m_inpOrderIdc = val;
 
 #if M60678_BALLOT_COMMENTS_OF_FI_03
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_format_idc");
@@ -2895,7 +2894,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
   }
 #endif
 
-  if (sei.m_modeIdc == 1)
+  if (sei.m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
   {
     while (!isByteAligned())
     {

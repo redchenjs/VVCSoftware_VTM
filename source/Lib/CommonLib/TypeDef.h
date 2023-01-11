@@ -800,9 +800,8 @@ enum NNPC_PurposeType
 
 enum POST_FILTER_MODE
 {
-  EXTERNAL = 0,
-  INTERNAL = 1,
-  URI =2
+  ISO_IEC_15938_17 = 0,
+  URI = 1
 };
 
 #define NUM_SAO_BO_CLASSES_LOG2  5

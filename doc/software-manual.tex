@@ -5625,13 +5625,15 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
     5 & Frame rate upsampling \\
   \end{tabular}
   \\
-  \Option{SEINNPostFilterCharacteristicsOutSubWidthCFlag\emph{i}} &
+  \Option{SEINNPostFilterCharacteristicsOutSubCFlag\emph{i}} &
   \Default{false} &
-  When true (non-zero) specifies, for the \emph{i}-th neural network post-filter, the output SubWidthC (horizontal chroma subsampling ratio relative to luma) is smaller than the input SubWidthC.
-  \\
-  \Option{SEINNPostFilterCharacteristicsOutSubHeightCFlag\emph{i}} &
-  \Default{false} &
-  When true (non-zero) specifies, for the \emph{i}-th neural network post-filter, the output SubHeightC (vertical chroma subsampling ratio relative to luma) is smaller than the input SubHeightC.
+  Specifies the values of outSubWidthC and outSubHeightC
+  \par
+    \begin{tabular}{cp{0.35\textwidth}}
+      true & outSubWidthC is equal to 1 and outSubHeightC is equal to 1 \\
+      false & outSubWidthC is equal to 2 and outSubHeightC is equal to 1 \\
+    \end{tabular}
+    \\
   \\
   \Option{SEINNPostFilterCharacteristicsPicWidthInLumaSamples\emph{i}} &
   \Default{0} &
