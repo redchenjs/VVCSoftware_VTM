@@ -2484,6 +2484,7 @@ void DecLib::xParsePrefixSEIsForUnknownVCLNal()
     // do nothing?
     msg( NOTICE, "Discarding Prefix SEI associated with unknown VCL NAL unit.\n");
     delete m_prefixSEINALUs.front();
+    m_prefixSEINALUs.pop_front();
   }
   // TODO: discard following suffix SEIs as well?
 }
