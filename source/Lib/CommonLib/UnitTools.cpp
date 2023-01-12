@@ -4359,11 +4359,12 @@ void PU::spanGeoMotionInfo(PredictionUnit &pu, const MergeCtx &geoMrgCtx, const 
     biMv.refIdx[1] = geoMrgCtx.mvFieldNeighbours[candIdx1][1].refIdx;
   }
 
-  int16_t angle = g_GeoParams[splitDir][0];
+  const int angle       = g_geoParams[splitDir].angleIdx;
+  const int distanceIdx = g_geoParams[splitDir].distanceIdx;
+
   int tpmMask = 0;
   int lookUpY = 0, motionIdx = 0;
-  bool isFlip = angle >= 13 && angle <= 27;
-  int distanceIdx = g_GeoParams[splitDir][1];
+  bool isFlip    = angle >= 13 && angle <= 27;
   int distanceX = angle;
   int distanceY = (distanceX + (GEO_NUM_ANGLES >> 2)) % GEO_NUM_ANGLES;
   int offsetX = (-(int)pu.lwidth()) >> 1;
@@ -4849,33 +4850,6 @@ bool TU::getPrevTuCbfAtDepth( const TransformUnit &currentTu, const ComponentID 
 uint32_t getCtuAddr( const Position& pos, const PreCalcValues& pcv )
 {
   return ( pos.x >> pcv.maxCUWidthLog2 ) + ( pos.y >> pcv.maxCUHeightLog2 ) * pcv.widthInCtus;
-}
-
-int getNumModesMip(const Size& block)
-{
-  switch( getMipSizeId(block) )
-  {
-  case 0: return 16;
-  case 1: return  8;
-  case 2: return  6;
-  default: THROW( "Invalid mipSizeId" );
-  }
-}
-
-int getMipSizeId(const Size& block)
-{
-  if( block.width == 4 && block.height == 4 )
-  {
-    return 0;
-  }
-  else if( block.width == 4 || block.height == 4 || (block.width == 8 && block.height == 8) )
-  {
-    return 1;
-  }
-  else
-  {
-    return 2;
-  }
 }
 
 bool allowLfnstWithMip(const Size& block)

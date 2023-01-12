@@ -803,27 +803,33 @@ void InterpolationFilter::xWeightedGeoBlk(const PredictionUnit &pu, const uint32
   const uint32_t scaleX = getComponentScaleX(compIdx, pu.chromaFormat);
   const uint32_t scaleY = getComponentScaleY(compIdx, pu.chromaFormat);
 
-  int16_t angle = g_GeoParams[splitDir][0];
+  const int angle = g_geoParams[splitDir].angleIdx;
+
   int16_t wIdx = floorLog2(pu.lwidth()) - GEO_MIN_CU_LOG2;
   int16_t hIdx = floorLog2(pu.lheight()) - GEO_MIN_CU_LOG2;
   int16_t stepX = 1 << scaleX;
   int16_t stepY = 0;
   int16_t* weight = nullptr;
+
+  const int16_t *wOffset = g_weightOffset[splitDir][hIdx][wIdx];
+
   if (g_angle2mirror[angle] == 2)
   {
     stepY = -(int)((GEO_WEIGHT_MASK_SIZE << scaleY) + pu.lwidth());
-    weight = &g_globalGeoWeights[g_angle2mask[angle]][(GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][1]) * GEO_WEIGHT_MASK_SIZE + g_weightOffset[splitDir][hIdx][wIdx][0]];
+    weight = &g_globalGeoWeights[g_angle2mask[angle]]
+                                [(GEO_WEIGHT_MASK_SIZE - 1 - wOffset[1]) * GEO_WEIGHT_MASK_SIZE + wOffset[0]];
   }
   else if (g_angle2mirror[angle] == 1)
   {
     stepX = -1 << scaleX;
     stepY = (GEO_WEIGHT_MASK_SIZE << scaleY) + pu.lwidth();
-    weight = &g_globalGeoWeights[g_angle2mask[angle]][g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE + (GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][0])];
+    weight = &g_globalGeoWeights[g_angle2mask[angle]]
+                                [wOffset[1] * GEO_WEIGHT_MASK_SIZE + (GEO_WEIGHT_MASK_SIZE - 1 - wOffset[0])];
   }
   else
   {
     stepY = (GEO_WEIGHT_MASK_SIZE << scaleY) - pu.lwidth();
-    weight = &g_globalGeoWeights[g_angle2mask[angle]][g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE + g_weightOffset[splitDir][hIdx][wIdx][0]];
+    weight = &g_globalGeoWeights[g_angle2mask[angle]][wOffset[1] * GEO_WEIGHT_MASK_SIZE + wOffset[0]];
   }
   for( int y = 0; y < height; y++ )
   {

@@ -130,6 +130,7 @@ static constexpr int    AFFINE_MAX_NUM_CP      = 3;   // maximum number of contr
 // ====================================================================================================================
 // Common constants
 // ====================================================================================================================
+
 static constexpr uint64_t MAX_UINT64 =                  0xFFFFFFFFFFFFFFFFU;
 static constexpr uint32_t MAX_UINT =                            0xFFFFFFFFU; ///< max. value of unsigned 32-bit integer
 static constexpr int      MAX_INT =                              2147483647; ///< max. value of signed 32-bit integer
@@ -486,8 +487,12 @@ static constexpr int GEO_MIN_CU_SIZE =               1 << GEO_MIN_CU_LOG2;
 static constexpr int GEO_MAX_CU_SIZE =               1 << GEO_MAX_CU_LOG2;
 static constexpr int GEO_NUM_CU_SIZE = ( GEO_MAX_CU_LOG2 - GEO_MIN_CU_LOG2 ) + 1;
 static constexpr int GEO_NUM_PARTITION_MODE =                          64;
-static constexpr int GEO_NUM_ANGLES =                                  32;
-static constexpr int GEO_NUM_DISTANCES =                                4;
+
+static constexpr int GEO_LOG2_NUM_ANGLES    = 5;
+static constexpr int GEO_NUM_ANGLES         = 1 << GEO_LOG2_NUM_ANGLES;
+static constexpr int GEO_LOG2_NUM_DISTANCES = 2;
+static constexpr int GEO_NUM_DISTANCES      = 1 << GEO_LOG2_NUM_DISTANCES;
+
 static constexpr int GEO_NUM_PRESTORED_MASK =                           6;
 static constexpr int GEO_WEIGHT_MASK_SIZE = 3 * (GEO_MAX_CU_SIZE >> 3) * 2 + GEO_MAX_CU_SIZE;
 static constexpr int GEO_MV_MASK_SIZE =         GEO_WEIGHT_MASK_SIZE >> 2;
@@ -575,6 +580,11 @@ static constexpr int CBF_MASK_CBCR = CBF_MASK_CB | CBF_MASK_CR;
 // ====================================================================================================================
 // SEI and related constants
 // ====================================================================================================================
+
+#if JVET_AB0049
+static const uint32_t MAX_NNPFA_ID =                               0xfffffffe; // Maximum supported nnpfa_id
+static const uint32_t MAX_NNPFC_ID =                               0xfffffffe; // Maximum supported nnpfc_id
+#endif
 #if JVET_Z0120_SII_SEI_PROCESSING
 static constexpr double SII_PF_W2 =                                       0.6; // weight for current picture
 static constexpr double SII_PF_W1 =                                       0.4; // weight for previous picture , it must be equal to 1.0 - SII_PF_W2

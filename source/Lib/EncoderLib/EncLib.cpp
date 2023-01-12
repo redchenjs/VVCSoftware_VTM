@@ -143,9 +143,7 @@ void EncLib::destroy ()
   m_cRateCtrl.          destroy();
   m_cReshaper.          destroy();
   m_cInterSearch.       destroy();
-  m_cIntraSearch.       destroy();
-
-  return;
+  m_cIntraSearch.destroy();
 }
 
 void EncLib::init(AUWriterIf *auWriterIf)
@@ -255,7 +253,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
     int curPicHeightY = height;                                     // pps_pic_height_in_luma_samples
     int max8MinCbSizeY = std::max((int)8, (1 << sps0.getLog2MinCodingBlockSize())); // Max(8, MinCbSizeY)
     //Warning message of potential scaling window size violation
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < MAX_NUM_PPS; i++)
     {
       if (sps0.getPPSValidFlag(i))
       {
@@ -277,7 +275,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
 
     if( pps.getWrapAroundEnabledFlag() )
     {
-      int minCbSizeY = (1 << sps0.getLog2MinCodingBlockSize());
+      const int minCbSizeY = 1 << sps0.getLog2MinCodingBlockSize();
       pps.setPicWidthMinusWrapAroundOffset      ((pps.getPicWidthInLumaSamples()/minCbSizeY) - (m_wrapAroundOffset * pps.getPicWidthInLumaSamples() / pps0.getPicWidthInLumaSamples() / minCbSizeY) );
       pps.setWrapAroundOffset                   (minCbSizeY * (pps.getPicWidthInLumaSamples() / minCbSizeY - pps.getPicWidthMinusWrapAroundOffset()));
 
@@ -337,7 +335,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
     int curPicHeightY = height;                                     // pps_pic_height_in_luma_samples
     int max8MinCbSizeY = std::max((int)8, (1 << sps0.getLog2MinCodingBlockSize())); // Max(8, MinCbSizeY)
                                                                                     //Warning message of potential scaling window size violation
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < MAX_NUM_PPS; i++)
     {
       if (sps0.getPPSValidFlag(i))
       {
@@ -414,7 +412,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
     int curPicHeightY = height;                                     // pps_pic_height_in_luma_samples
     int max8MinCbSizeY = std::max((int)8, (1 << sps0.getLog2MinCodingBlockSize())); // Max(8, MinCbSizeY)
                                                                                     //Warning message of potential scaling window size violation
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < MAX_NUM_PPS; i++)
     {
       if (sps0.getPPSValidFlag(i))
       {
@@ -432,7 +430,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
 
     if (pps.getWrapAroundEnabledFlag())
     {
-      int minCbSizeY = (1 << sps0.getLog2MinCodingBlockSize());
+      const int minCbSizeY = 1 << sps0.getLog2MinCodingBlockSize();
       pps.setPicWidthMinusWrapAroundOffset((pps.getPicWidthInLumaSamples() / minCbSizeY) - (m_wrapAroundOffset * pps.getPicWidthInLumaSamples() / pps0.getPicWidthInLumaSamples() / minCbSizeY));
       pps.setWrapAroundOffset(minCbSizeY * (pps.getPicWidthInLumaSamples() / minCbSizeY - pps.getPicWidthMinusWrapAroundOffset()));
 
@@ -563,7 +561,7 @@ void EncLib::xInitScalingLists( SPS &sps, APS &aps )
     aps.getScalingList().setDefaultScalingList();
     CHECK( aps.getScalingList().xParseScalingList( getScalingListFileName() ), "Error Parsing Scaling List Input File" );
     aps.getScalingList().checkDcOfMatrix();
-    if( aps.getScalingList().isNotDefaultScalingList() == false )
+    if (!aps.getScalingList().isNotDefaultScalingList())
     {
       setUseScalingListId( SCALING_LIST_DEFAULT );
     }
@@ -837,12 +835,22 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
 
       const PPS *refPPS = m_ppsMap.getPS( 0 );
       const Window& curScalingWindow = pPPS->getScalingWindow();
-      int curPicWidth = pPPS->getPicWidthInLumaSamples()   - SPS::getWinUnitX( pSPS->getChromaFormatIdc() ) * ( curScalingWindow.getWindowLeftOffset() + curScalingWindow.getWindowRightOffset() );
-      int curPicHeight = pPPS->getPicHeightInLumaSamples() - SPS::getWinUnitY( pSPS->getChromaFormatIdc() ) * ( curScalingWindow.getWindowTopOffset()  + curScalingWindow.getWindowBottomOffset() );
+
+      const int curPicWidth = pPPS->getPicWidthInLumaSamples()
+                              - SPS::getWinUnitX(pSPS->getChromaFormatIdc())
+                                  * (curScalingWindow.getWindowLeftOffset() + curScalingWindow.getWindowRightOffset());
+      const int curPicHeight = pPPS->getPicHeightInLumaSamples()
+                               - SPS::getWinUnitY(pSPS->getChromaFormatIdc())
+                                   * (curScalingWindow.getWindowTopOffset() + curScalingWindow.getWindowBottomOffset());
 
       const Window& refScalingWindow = refPPS->getScalingWindow();
-      int refPicWidth = refPPS->getPicWidthInLumaSamples()   - SPS::getWinUnitX( pSPS->getChromaFormatIdc() ) * ( refScalingWindow.getWindowLeftOffset() + refScalingWindow.getWindowRightOffset() );
-      int refPicHeight = refPPS->getPicHeightInLumaSamples() - SPS::getWinUnitY( pSPS->getChromaFormatIdc() ) * ( refScalingWindow.getWindowTopOffset()  + refScalingWindow.getWindowBottomOffset() );
+
+      const int refPicWidth = refPPS->getPicWidthInLumaSamples()
+                              - SPS::getWinUnitX(pSPS->getChromaFormatIdc())
+                                  * (refScalingWindow.getWindowLeftOffset() + refScalingWindow.getWindowRightOffset());
+      const int refPicHeight = refPPS->getPicHeightInLumaSamples()
+                               - SPS::getWinUnitY(pSPS->getChromaFormatIdc())
+                                   * (refScalingWindow.getWindowTopOffset() + refScalingWindow.getWindowBottomOffset());
 
       const int xScale = ((refPicWidth << ScalingRatio::BITS) + (curPicWidth >> 1)) / curPicWidth;
       const int yScale = ((refPicHeight << ScalingRatio::BITS) + (curPicHeight >> 1)) / curPicHeight;
@@ -943,7 +951,7 @@ bool EncLib::encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBu
   m_picIdInGOP++;
 
   // go over all pictures in a GOP excluding the first IRAP
-  if (m_picIdInGOP != m_gopSize && m_pocLast)
+  if (m_picIdInGOP != m_gopSize && m_pocLast != 0)
   {
     return true;
   }
@@ -983,7 +991,6 @@ void separateFields(Pel *org, Pel *dstField, ptrdiff_t stride, uint32_t width, u
     dstField += stride;
     org += stride*2;
   }
-
 }
 
 bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYuvTrueOrg,
@@ -1069,7 +1076,6 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYu
         AQpPreanalyzer::preanalyze( pcField );
       }
     }
-
   }
 
   if (m_receivedPicCount && (flush || m_pocLast == 1 || m_receivedPicCount == m_gopSize))
@@ -1134,11 +1140,11 @@ void EncLib::xGetNewPicBuffer ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Pict
 
   // At this point, the SPS and PPS can be considered activated - they are copied to the new Pic.
   const PPS *pPPS=(ppsId<0) ? m_ppsMap.getFirstPS() : m_ppsMap.getPS(ppsId);
-  CHECK(!(pPPS!=0), "Unspecified error");
+  CHECK(pPPS == nullptr, "PPS not found");
   const PPS &pps=*pPPS;
 
   const SPS *pSPS=m_spsMap.getPS(pps.getSPSId());
-  CHECK(!(pSPS!=0), "Unspecified error");
+  CHECK(pSPS == nullptr, "SPS not found");
   const SPS &sps=*pSPS;
 
   Slice::sortPicList(m_cListPic);
@@ -1201,9 +1207,9 @@ void EncLib::xGetNewPicBuffer ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Pict
     }
     if ( getUseAdaptiveQP() )
     {
-      const uint32_t iMaxDQPLayer = m_picHeader.getCuQpDeltaSubdivIntra()/2+1;
-      rpcPic->aqlayer.resize( iMaxDQPLayer );
-      for (uint32_t d = 0; d < iMaxDQPLayer; d++)
+      const uint32_t maxDqpLayer = m_picHeader.getCuQpDeltaSubdivIntra() / 2 + 1;
+      rpcPic->aqlayer.resize(maxDqpLayer);
+      for (uint32_t d = 0; d < maxDqpLayer; d++)
       {
         rpcPic->aqlayer[d] = new AQpLayer( pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples(), sps.getMaxCUWidth() >> d, sps.getMaxCUHeight() >> d );
       }
@@ -1269,12 +1275,11 @@ void EncLib::xInitVPS( const SPS& sps )
     }
   }
 
-  //for( int i = 0; i < m_vps->m_numDpbParams; i++ )
   for( int i = 0; i < m_vps->m_numOutputLayersInOls.size(); i++ )
   {
     if ( m_vps->getNumLayersInOls(i) > 1 )
     {
-      int dpbIdx = m_vps->getOlsDpbParamsIdx( i );
+      const int dpbIdx = m_vps->getOlsDpbParamsIdx(i);
 
       if( m_vps->getMaxSubLayers() == 1 )
       {
@@ -1355,8 +1360,7 @@ void EncLib::xInitDCI(DCI& dci, const SPS& sps)
 {
   dci.setMaxSubLayersMinus1(sps.getMaxTLayers() - 1);
   std::vector<ProfileTierLevel> ptls;
-  ptls.resize(1);
-  ptls[0] = *sps.getProfileTierLevel();
+  ptls.push_back(*sps.getProfileTierLevel());
   dci.setProfileTierLevel(ptls);
 }
 
@@ -1526,16 +1530,16 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setUseSBT                             ( m_SBT );
   sps.setUseSMVD                ( m_SMVD );
   sps.setUseBcw                ( m_bcw );
-  sps.setLadfEnabled           ( m_LadfEnabled );
-  if ( m_LadfEnabled )
+  sps.setLadfEnabled(m_ladfEnabled);
+  if (m_ladfEnabled)
   {
-    sps.setLadfNumIntervals    ( m_LadfNumIntervals );
-    for ( int k = 0; k < m_LadfNumIntervals; k++ )
+    sps.setLadfNumIntervals(m_ladfNumIntervals);
+    for (int k = 0; k < m_ladfNumIntervals; k++)
     {
-      sps.setLadfQpOffset( m_LadfQpOffset[k], k );
-      sps.setLadfIntervalLowerBound( m_LadfIntervalLowerBound[k], k );
+      sps.setLadfQpOffset(m_ladfQpOffset[k], k);
+      sps.setLadfIntervalLowerBound(m_ladfIntervalLowerBound[k], k);
     }
-    CHECK( m_LadfIntervalLowerBound[0] != 0, "abnormal value set to LadfIntervalLowerBound[0]" );
+    CHECK(m_ladfIntervalLowerBound[0] != 0, "abnormal value set to LadfIntervalLowerBound[0]");
   }
 
   sps.setUseCiip            ( m_ciip );
@@ -1786,7 +1790,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
   }
   bool useDeltaQp = getCuQpDeltaSubdiv() > 0;
 
-  if((getMaxDeltaQP() != 0 )|| getUseAdaptiveQP())
+  if (getMaxDeltaQP() != 0 || getUseAdaptiveQP())
   {
     useDeltaQp = true;
   }
@@ -1818,19 +1822,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     useDeltaQp = false;
   }
 
-
-  if ( m_RCEnableRateControl )
-  {
-    pps.setUseDQP(true);
-  }
-  else if (useDeltaQp)
-  {
-    pps.setUseDQP(true);
-  }
-  else
-  {
-    pps.setUseDQP(false);
-  }
+  pps.setUseDQP(m_RCEnableRateControl || useDeltaQp);
 
   if ( m_cuChromaQpOffsetList.size() > 0 )
   {
@@ -1863,7 +1855,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     pps.setPicInitQPMinus26( std::min( maxDQP, std::max( minDQP, baseQp ) ));
   }
 
-  if (sps.getJointCbCrEnabledFlag() == false || getChromaFormatIdc() == CHROMA_400)
+  if (!sps.getJointCbCrEnabledFlag() || getChromaFormatIdc() == CHROMA_400)
   {
     pps.setJointCbCrQpOffsetPresentFlag(false);
   }
@@ -2216,7 +2208,7 @@ void EncLib::xInitAPS(APS &aps)
 
 void EncLib::xInitRPL(SPS &sps)
 {
-  const bool                 isFieldCoding = sps.getFieldSeqFlag();
+  const bool isFieldCoding = sps.getFieldSeqFlag();
 
   int numRPLCandidates = getRPLCandidateSize(0);
   // To allocate one additional memory for RPL of POC1 (first bottom field) which is not specified in cfg file
@@ -2414,7 +2406,7 @@ void EncLib::xInitRPL(SPS &sps)
 
 void EncLib::selectReferencePictureList(Slice *slice, int pocCurr, int gopId, int ltPoc)
 {
-  bool isEncodeLtRef = (pocCurr == ltPoc);
+  const bool isEncodeLtRef = (pocCurr == ltPoc);
   if (m_compositeRefEnabled && isEncodeLtRef)
   {
     pocCurr++;
@@ -2524,9 +2516,7 @@ void EncLib::selectReferencePictureList(Slice *slice, int pocCurr, int gopId, in
     slice->setRPL0idx(RPLIdx);
     slice->setRPL1idx(RPLIdx);
   }
-
 }
-
 
 void EncLib::setParamSetChanged(int spsId, int ppsId)
 {
@@ -2536,14 +2526,14 @@ void EncLib::setParamSetChanged(int spsId, int ppsId)
 
 bool EncLib::PPSNeedsWriting(int ppsId)
 {
-  bool changed = m_ppsMap.getChangedFlag(ppsId);
+  const bool changed = m_ppsMap.getChangedFlag(ppsId);
   m_ppsMap.clearChangedFlag(ppsId);
   return changed;
 }
 
 bool EncLib::SPSNeedsWriting(int spsId)
 {
-  bool changed = m_spsMap.getChangedFlag(spsId);
+  const bool changed = m_spsMap.getChangedFlag(spsId);
   m_spsMap.clearChangedFlag(spsId);
   return changed;
 }
@@ -2569,14 +2559,7 @@ void EncLib::checkPltStats( Picture* pic )
 
     }
   }
-  if (pltArea * PLT_FAST_RATIO < totalArea)
-  {
-    m_doPlt = false;
-  }
-  else
-  {
-    m_doPlt = true;
-  }
+  m_doPlt = pltArea * PLT_FAST_RATIO >= totalArea;
 }
 
 int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const

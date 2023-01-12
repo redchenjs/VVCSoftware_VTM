@@ -1712,23 +1712,30 @@ void xWeightedGeoBlk_HBD_SIMD(const PredictionUnit &pu, const uint32_t width, co
 
   int16_t wIdx = floorLog2(pu.lwidth()) - GEO_MIN_CU_LOG2;
   int16_t hIdx = floorLog2(pu.lheight()) - GEO_MIN_CU_LOG2;
-  int16_t angle = g_GeoParams[splitDir][0];
+
+  const int angle = g_geoParams[splitDir].angleIdx;
+
   int16_t stepY = 0;
   int16_t* weight = nullptr;
+
+  const int16_t *wOffset = g_weightOffset[splitDir][hIdx][wIdx];
+
   if (g_angle2mirror[angle] == 2)
   {
     stepY = -GEO_WEIGHT_MASK_SIZE;
-    weight = &g_globalGeoWeights[g_angle2mask[angle]][(GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][1]) * GEO_WEIGHT_MASK_SIZE + g_weightOffset[splitDir][hIdx][wIdx][0]];
+    weight = &g_globalGeoWeights[g_angle2mask[angle]]
+                                [(GEO_WEIGHT_MASK_SIZE - 1 - wOffset[1]) * GEO_WEIGHT_MASK_SIZE + wOffset[0]];
   }
   else if (g_angle2mirror[angle] == 1)
   {
     stepY = GEO_WEIGHT_MASK_SIZE;
-    weight = &g_globalGeoWeights[g_angle2mask[angle]][g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE + (GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][0])];
+    weight = &g_globalGeoWeights[g_angle2mask[angle]]
+                                [wOffset[1] * GEO_WEIGHT_MASK_SIZE + (GEO_WEIGHT_MASK_SIZE - 1 - wOffset[0])];
   }
   else
   {
     stepY = GEO_WEIGHT_MASK_SIZE;
-    weight = &g_globalGeoWeights[g_angle2mask[angle]][g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE + g_weightOffset[splitDir][hIdx][wIdx][0]];
+    weight = &g_globalGeoWeights[g_angle2mask[angle]][wOffset[1] * GEO_WEIGHT_MASK_SIZE + wOffset[0]];
   }
 
   const __m128i mmEight = _mm_set1_epi16(8);
@@ -2239,7 +2246,9 @@ void xWeightedGeoBlk_SSE(const PredictionUnit &pu, const uint32_t width, const u
 
   int16_t wIdx = floorLog2(pu.lwidth()) - GEO_MIN_CU_LOG2;
   int16_t hIdx = floorLog2(pu.lheight()) - GEO_MIN_CU_LOG2;
-  int16_t angle = g_GeoParams[splitDir][0];
+
+  const int angle = g_geoParams[splitDir].angleIdx;
+
   int16_t stepY = 0;
   int16_t* weight = nullptr;
   if (g_angle2mirror[angle] == 2)

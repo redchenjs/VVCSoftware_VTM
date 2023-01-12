@@ -227,9 +227,7 @@ namespace TU
   int            getICTMode         ( const TransformUnit &tu, int jointCbCr = -1 );
 }
 
-uint32_t getCtuAddr        (const Position& pos, const PreCalcValues &pcv);
-int  getNumModesMip   (const Size& block);
-int getMipSizeId      (const Size& block);
+uint32_t getCtuAddr(const Position &pos, const PreCalcValues &pcv);
 bool allowLfnstWithMip(const Size& block);
 #if GREEN_METADATA_SEI_ENABLED
 void writeGMFAOutput(FeatureCounterStruct& featureCounter, FeatureCounterStruct& featureCounterReference, std::string GMFAFile, bool lastFrame);

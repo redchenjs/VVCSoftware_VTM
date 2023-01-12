@@ -68,7 +68,8 @@ struct ScanElement
   uint16_t y;
 };
 
-extern       uint32_t   g_log2SbbSize[MAX_CU_DEPTH + 1][MAX_CU_DEPTH + 1][2];
+extern Size g_log2TxSubblockSize[MAX_CU_DEPTH + 1][MAX_CU_DEPTH + 1];
+
 extern EnumArray<ScanElement *[MAX_CU_SIZE / 2 + 1][MAX_CU_SIZE / 2 + 1], CoeffScanType> g_scanOrder[SCAN_NUMBER_OF_GROUP_TYPES];
 extern       ScanElement   g_coefTopLeftDiagScan8x8[ MAX_CU_SIZE / 2 + 1 ][ 64 ];
 
@@ -86,8 +87,10 @@ static const int g_transformMatrixShift[TRANSFORM_NUMBER_OF_DIRECTIONS] = {  6, 
 // ====================================================================================================================
 // Scanning order & context mapping table
 // ====================================================================================================================
-extern int g_riceT[4];
-extern int g_riceShift[5];
+extern const std::array<TCoeff, 4> g_riceThreshold;
+
+extern const std::array<uint8_t, g_riceThreshold.size() + 1> g_riceShift;
+
 extern const uint32_t g_groupIdx[MAX_TB_SIZEY];
 extern const uint32_t g_minInGroup[LAST_SIGNIFICANT_GROUPS];
 extern const uint32_t g_goRiceParsCoeff[32];
@@ -194,17 +197,6 @@ int8_t   getBcwWeight(uint8_t bcwIdx, uint8_t refFrameList);
 void     resetBcwCodingOrder(bool runDecoding, const CodingStructure &cs);
 uint32_t deriveWeightIdxBits(uint8_t bcwIdx);
 
-constexpr uint8_t g_tbMax[257] = { 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7,
-7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8 };
-
 //! \}
 
 
@@ -221,7 +213,15 @@ extern uint8_t g_paletteRunLeftLut[5];
 static constexpr int IBC_BUFFER_SIZE = 256 * 128;
 
 void initGeoTemplate();
-extern int16_t** g_GeoParams;
+
+struct GeoParam
+{
+  uint8_t angleIdx : GEO_LOG2_NUM_ANGLES;
+  uint8_t distanceIdx : GEO_LOG2_NUM_DISTANCES;
+};
+
+extern GeoParam g_geoParams[GEO_NUM_PARTITION_MODE];
+
 extern int16_t*  g_globalGeoWeights   [GEO_NUM_PRESTORED_MASK];
 extern Pel*      g_globalGeoEncSADmask[GEO_NUM_PRESTORED_MASK];
 extern int16_t   g_weightOffset       [GEO_NUM_PARTITION_MODE][GEO_NUM_CU_SIZE][GEO_NUM_CU_SIZE][2];

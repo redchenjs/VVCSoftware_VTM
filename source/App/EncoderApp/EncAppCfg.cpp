@@ -696,10 +696,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>        cfg_mvpSEIViewPosition             (0, 63, 0, std::numeric_limits<uint32_t>::max());
 
   SMultiValueInput<uint32_t>        cfg_driSEINonlinearModel           (0, 31, 0, std::numeric_limits<uint32_t>::max());
+
   const int defaultLadfQpOffset[3] = { 1, 0, 1 };
   const int defaultLadfIntervalLowerBound[2] = { 350, 833 };
-  SMultiValueInput<int>  cfg_LadfQpOffset                    ( -MAX_QP, MAX_QP, 2, MAX_LADF_INTERVALS, defaultLadfQpOffset, 3 );
-  SMultiValueInput<int>  cfg_LadfIntervalLowerBound          ( 0, std::numeric_limits<int>::max(), 1, MAX_LADF_INTERVALS - 1, defaultLadfIntervalLowerBound, 2 );
+
+  SMultiValueInput<int> cfg_ladfQpOffset(-MAX_QP, MAX_QP, 2, MAX_LADF_INTERVALS, defaultLadfQpOffset, 3);
+  SMultiValueInput<int> cfg_ladfIntervalLowerBound(0, std::numeric_limits<int>::max(), 1, MAX_LADF_INTERVALS - 1,
+                                                   defaultLadfIntervalLowerBound, 2);
+
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosX       (0, std::numeric_limits<uint32_t>::max(), 0, 3);
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosY       (0, std::numeric_limits<uint32_t>::max(), 0, 3);
 
@@ -736,6 +740,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
 #else
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder (0, 255, 0, 256);
+#endif
+
+#if JVET_AB0070_POST_FILTER_HINT
+  SMultiValueInput<int32_t> cfg_postFilterHintSEIValues(INT32_MIN + 1, INT32_MAX, 1 * 1 * 1, 15 * 15 * 3);
 #endif
 
 #if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
@@ -1015,9 +1023,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("BCW",                                             m_bcw,                                            false, "Enable Generalized Bi-prediction(Bcw)")
   ("BcwFast",                                         m_BcwFast,                                        false, "Fast methods for Generalized Bi-prediction(Bcw)\n")
   ("LADF",                                            m_LadfEnabed,                                     false, "Luma adaptive deblocking filter QP Offset(L0414)")
-  ("LadfNumIntervals",                                m_LadfNumIntervals,                                   3, "LADF number of intervals (2-5, inclusive)")
-  ("LadfQpOffset",                                    cfg_LadfQpOffset,                      cfg_LadfQpOffset, "LADF QP offset")
-  ("LadfIntervalLowerBound",                          cfg_LadfIntervalLowerBound,  cfg_LadfIntervalLowerBound, "LADF lower bound for 2nd lowest interval")
+  ("LadfNumIntervals",                                m_ladfNumIntervals,                                   3, "LADF number of intervals (2-5, inclusive)")
+  ("LadfQpOffset",                                    cfg_ladfQpOffset,                      cfg_ladfQpOffset, "LADF QP offset")
+  ("LadfIntervalLowerBound",                          cfg_ladfIntervalLowerBound,  cfg_ladfIntervalLowerBound, "LADF lower bound for 2nd lowest interval")
   ("CIIP",                                            m_ciip,                                           false, "Enable CIIP mode")
   ("Geo",                                             m_Geo,                                            false, "Enable geometric partitioning mode (0:off, 1:on)")
   ("HashME",                                          m_HashME,                                         false, "Enable hash motion estimation (0:off, 1:on)")
@@ -1592,6 +1600,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
 
+#if JVET_AB0070_POST_FILTER_HINT
+  ("SEIPostFilterHintEnabled",                        m_postFilterHintSEIEnabled,                        false, "Control generation of post-filter Hint SEI message")
+  ("SEIPostFilterHintCancelFlag",                     m_postFilterHintSEICancelFlag,                     false, "Specifies the persistence of any previous post-filter Hint SEI message in output order")
+  ("SEIPostFilterHintPersistenceFlag",                m_postFilterHintSEIPersistenceFlag,                false, "Specifies the persistence of the post-filter Hint SEI message for the current layer")
+  ("SEIPostFilterHintSizeY",                          m_postFilterHintSEISizeY,                             1u, "Specifies the vertical size of the post-filter coefficient or correlation array")
+  ("SEIPostFilterHintSizeX",                          m_postFilterHintSEISizeX,                             1u, "Specifies the horizontal size of the post-filter coefficient or correlation array")
+  ("SEIPostFilterHintType",                           m_postFilterHintSEIType,                              0u, "Specifies the type of the post-filter: 2D-FIR filter (0, default), 1D-FIR filters (1) or Cross-correlation matrix (0)")
+  ("SEIPostFilterHintChromaCoeffPresentFlag",         m_postFilterHintSEIChromaCoeffPresentFlag,         false, "Specifies the presence of post-filter coefficients for chroma")
+  ("SEIPostFilterHintValue",                          cfg_postFilterHintSEIValues, cfg_postFilterHintSEIValues, "Specifies post-filter coefficients or elements of a cross-correlation matrix")
+#endif
+
 #if JVET_T0056_SEI_MANIFEST
   //SEI manifest
   ("SEISEIManifestEnabled",                           m_SEIManifestSEIEnabled,                           false, "Controls if SEI Manifest SEI messages enabled")
@@ -1891,6 +1910,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
     opts.addOptions()("SEINNPostFilterActivationId", m_nnPostFilterSEIActivationId , 0u,        "Id of the Neural Network Post Filter on current picture");
+#if JVET_AB0050
+    opts.addOptions()("SEINNPostFilterActivationCancelFlag", m_nnPostFilterSEIActivationCancelFlag, false, "Control use of the target neural network post filter established by any previous NNPFA SEI message");
+    opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
+#endif
   }
 
   po::setDefaults(opts);
@@ -2769,13 +2792,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if ( m_LadfEnabed )
   {
-    CHECK( m_LadfNumIntervals != cfg_LadfQpOffset.values.size(), "size of LadfQpOffset must be equal to LadfNumIntervals");
-    CHECK( m_LadfNumIntervals - 1 != cfg_LadfIntervalLowerBound.values.size(), "size of LadfIntervalLowerBound must be equal to LadfNumIntervals - 1");
-    m_LadfQpOffset = cfg_LadfQpOffset.values;
-    m_LadfIntervalLowerBound[0] = 0;
-    for (int k = 1; k < m_LadfNumIntervals; k++)
+    CHECK(m_ladfNumIntervals != cfg_ladfQpOffset.values.size(),
+          "size of LadfQpOffset must be equal to LadfNumIntervals");
+    CHECK(m_ladfNumIntervals - 1 != cfg_ladfIntervalLowerBound.values.size(),
+          "size of LadfIntervalLowerBound must be equal to LadfNumIntervals - 1");
+    m_ladfQpOffset              = cfg_ladfQpOffset.values;
+    m_ladfIntervalLowerBound[0] = 0;
+    for (int k = 1; k < m_ladfNumIntervals; k++)
     {
-      m_LadfIntervalLowerBound[k] = cfg_LadfIntervalLowerBound.values[k - 1];
+      m_ladfIntervalLowerBound[k] = cfg_ladfIntervalLowerBound.values[k - 1];
     }
   }
 
@@ -3362,7 +3387,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if (m_poSEIEnabled)
   {
+#if JVET_AB0051
+    assert(cfg_poSEIPayloadType.values.size() > 1);
+#else
     assert(cfg_poSEIPayloadType.values.size() > 0);
+#endif
     assert(cfg_poSEIProcessingOrder.values.size() == cfg_poSEIPayloadType.values.size());
     m_numofSEIMessages = (uint32_t)cfg_poSEIPayloadType.values.size();
     m_poSEIPayloadType.resize(m_numofSEIMessages);
@@ -3387,6 +3416,20 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     assert(m_poSEIPayloadType.size() > 0);
     assert(m_poSEIProcessingOrder.size() == m_poSEIPayloadType.size());
   }
+
+#if JVET_AB0070_POST_FILTER_HINT
+  if (m_postFilterHintSEIEnabled)
+  {
+    CHECK(cfg_postFilterHintSEIValues.values.size() <= 0, "The number of filter coefficient shall be greater than zero");
+    CHECK(!(cfg_postFilterHintSEIValues.values.size() == ((m_postFilterHintSEIChromaCoeffPresentFlag ? 3 : 1) * m_postFilterHintSEISizeY * m_postFilterHintSEISizeX)), "The number of filter coefficient shall match the matrix size and considering whether filters for chroma is present of not");
+    m_postFilterHintValues.resize(cfg_postFilterHintSEIValues.values.size());
+
+    for (uint32_t i = 0; i < m_postFilterHintValues.size(); i++)
+    {
+      m_postFilterHintValues[i] = cfg_postFilterHintSEIValues.values[i];
+    }
+  }
+#endif
 
   if( m_costMode == COST_LOSSLESS_CODING )
   {
@@ -4818,9 +4861,17 @@ bool EncAppCfg::xCheckParameter()
   {
     for (int i = 0; i < m_nnPostFilterSEICharacteristicsNumFilters; i++)
     {
+#if JVET_AB0049
+      xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > MAX_NNPFC_ID, "SEINNPostFilterCharacteristicsId must be in the range of 0 to 2^32-2");
+#else
       xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > (uint32_t)(((uint64_t)1 << 32) - 2), "SEINNPostFilterCharacteristicsId must be in the range of 0 to 2^32-2");
+#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsModeIdc[i] > 255, "SEINNPostFilterCharacteristicsModeIdc must be in the range of 0 to 255");
+#if JVET_AB0049
+      xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 1023, "SEINNPostFilterCharacteristicsPurpose must be in the range of 0 to 1023");
+#else
       xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > (uint32_t)(((uint64_t)1 << 32) - 2), "SEINNPostFilterCharacteristicsPurpose must be in the range of 0 to 2^32-2");
+#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsInpTensorBitDepthMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8 must be in the range of 0 to 24");
 #if M60678_BALLOT_COMMENTS_OF_FI_03
@@ -4855,7 +4906,11 @@ bool EncAppCfg::xCheckParameter()
 
   if (m_nnPostFilterSEIActivationEnabled)
   {
+  #if JVET_AB0049
+    xConfirmPara(m_nnPostFilterSEIActivationId > MAX_NNPFA_ID, "SEINNPostFilterActivationId must be in the range of 0 to 2^32-2");
+  #else
     xConfirmPara(m_nnPostFilterSEIActivationId > (1 << 20) - 1, "SEINNPostFilterActivationId must be in the range of 0 to 2^20-1");
+  #endif
   }
 
   if (m_phaseIndicationSEIEnabledFullResolution)

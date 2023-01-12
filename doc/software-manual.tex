@@ -3806,7 +3806,7 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
    16 & Progressive refinement segment start     & (Not handled)\\
    17 & Progressive refinement segment end       & (Not handled)\\
    19 & Film grain characteristics               & Table \ref{tab:sei-film-grain} \\
-   22 & Post-filter hint                         & (Not handled)\\
+   22 & Post-filter hint                         & Table \ref{tab:sei-post-filter hint} \\
    23 & Tone mapping information                 & Table \ref{tab:sei-tone-mapping-info} \\
    45 & Frame packing arrangement                & Table \ref{tab:sei-frame-packing-arrangement} \\
    47 & Display orientation                      & Table \ref{tab:sei-display-orientation} \\
@@ -4048,6 +4048,44 @@ Specifies the component model values on colour component 1.
 \Option{SEIFGCCompModelValuesComp2} &
 \Default{0} &
 Specifies the component model values on colour component 2.
+\\
+\end{OptionTableNoShorthand}
+
+\begin{OptionTableNoShorthand}{Post-filter Hint SEI message encoder parameters}{tab:sei-post-filter hint}
+\Option{SEIPostFilterHintEnabled} &
+\Default{1} &
+Specifies whether post-filter hint SEI message to be generated or not.
+\\
+\Option{SEIPostFilterHintCancelFlag} &
+\Default{0} &
+Specifies whether this SEI message cancels the previous post-filter hint SEI message.
+\\
+\Option{SEIPostFilterHintPersistenceFlag} &
+\Default{0} &
+Specifies whether this SEI message applies to just one picture or sequence of pictures.
+\\
+\Option{SEIPostFilterHintSizeY} &
+\Default{1} &
+Specifies the vertical size of the coefficient matrix for the filters.
+\\
+\Option{SEIPostFilterHintSizeX} &
+\Default{1} &
+Specifies the horizontal size of the coefficient matrix for the filters.
+\\
+\Option{SEIPostFilterHintType} &
+\Default{0} &
+Specifies the type of the filters.
+\\
+\Option{SEIPostFilterHintChromaCoeffPresentFlag} &
+\Default{0} &
+Specifies whether filters for chroma components are present of not.
+\\
+\Option{SEIPostFilterHintValue} &
+\Default{\None} &
+Array of filter coefficients.
+The number of coefficients should be
+If SEIPostFilterHintChromaCoeffPresentFlag is 0 then SEIPostFilterHintSizeY * SEIPostFilterHintSizeY
+Else if SEIPostFilterHintChromaCoeffPresentFlag is 0 then SEIPostFilterHintSizeY * SEIPostFilterHintSizeY * 3
 \\
 \end{OptionTableNoShorthand}
 
@@ -5587,13 +5625,15 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
     5 & Frame rate upsampling \\
   \end{tabular}
   \\
-  \Option{SEINNPostFilterCharacteristicsOutSubWidthCFlag\emph{i}} &
+  \Option{SEINNPostFilterCharacteristicsOutSubCFlag\emph{i}} &
   \Default{false} &
-  When true (non-zero) specifies, for the \emph{i}-th neural network post-filter, the output SubWidthC (horizontal chroma subsampling ratio relative to luma) is smaller than the input SubWidthC.
-  \\
-  \Option{SEINNPostFilterCharacteristicsOutSubHeightCFlag\emph{i}} &
-  \Default{false} &
-  When true (non-zero) specifies, for the \emph{i}-th neural network post-filter, the output SubHeightC (vertical chroma subsampling ratio relative to luma) is smaller than the input SubHeightC.
+  Specifies the values of outSubWidthC and outSubHeightC
+  \par
+    \begin{tabular}{cp{0.35\textwidth}}
+      true & outSubWidthC is equal to 1 and outSubHeightC is equal to 1 \\
+      false & outSubWidthC is equal to 2 and outSubHeightC is equal to 1 \\
+    \end{tabular}
+    \\
   \\
   \Option{SEINNPostFilterCharacteristicsPicWidthInLumaSamples\emph{i}} &
   \Default{0} &
@@ -5801,6 +5841,14 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Option{SEINNPostFilterActivationId} &
   \Default{0} &
   Specifies the id of the neural network post-filter.
+  \\
+  \Option{SEINNPostFilterActivationCancelFlag} &
+  \Default{false} &
+  Indicates that the NNPFA SEI message cancels the persistence (true) or follows (false).
+  \\
+  \Option{SEINNPostFilterActivationPersistenceFlag} &
+  \Default{false} &
+  Specifies the persistence of the target neural-network post-processing filter for the current layer.
   \\
 \end{OptionTableNoShorthand}
 

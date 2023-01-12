@@ -618,6 +618,29 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   }
 }
 
+#if JVET_AB0070_POST_FILTER_HINT
+void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
+{
+  CHECK(!m_isInitialized, "The post-filter hint SEI message needs to be initialized");
+  CHECK(seiPostFilterHint == nullptr, "Failed to get the handler to the SEI message");
+
+  seiPostFilterHint->m_filterHintCancelFlag             = m_pcCfg->getPostFilterHintSEICancelFlag();
+  seiPostFilterHint->m_filterHintPersistenceFlag        = m_pcCfg->getPostFilterHintSEIPersistenceFlag();
+  seiPostFilterHint->m_filterHintSizeY                  = m_pcCfg->getPostFilterHintSEISizeY();
+  seiPostFilterHint->m_filterHintSizeX                  = m_pcCfg->getPostFilterHintSEISizeX();
+  seiPostFilterHint->m_filterHintType                   = m_pcCfg->getPostFilterHintSEIType();
+  seiPostFilterHint->m_filterHintChromaCoeffPresentFlag = m_pcCfg->getPostFilterHintSEIChromaCoeffPresentFlag();
+
+  seiPostFilterHint->m_filterHintValues.resize((seiPostFilterHint->m_filterHintChromaCoeffPresentFlag ? 3 : 1)
+                                               * seiPostFilterHint->m_filterHintSizeY
+                                               * seiPostFilterHint->m_filterHintSizeX);
+  for (uint32_t i = 0; i < seiPostFilterHint->m_filterHintValues.size(); i++)
+  {
+    seiPostFilterHint->m_filterHintValues[i] = m_pcCfg->getPostFilterHintSEIValues(i);
+  }
+}
+#endif
+
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned
                            bool         &failed,        /// used and updated
@@ -1295,6 +1318,37 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_picWidthInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(filterIdx);
       sei->m_picHeightInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightInLumaSamples(filterIdx);
+#if JVET_AB0049
+      int confWinLeftOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowLeftOffset();
+      int confWinTopOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowTopOffset();
+      int confWinRightOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowRightOffset();
+      int confWinBottomOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowBottomOffset();
+      int ppsPicWidthInLumaSample  = m_pcEncLib->getPPS(0)->getPicWidthInLumaSamples();
+      int ppsPicHeightInLumaSample = m_pcEncLib->getPPS(0)->getPicHeightInLumaSamples();
+      ChromaFormat chromaFormatIDC = m_pcEncLib->getSPS(0)->getChromaFormatIdc();
+      uint8_t      subWidthC;
+      uint8_t      subHeightC;
+      if (chromaFormatIDC == ChromaFormat::CHROMA_420)
+      {
+        subWidthC  = 2;
+        subHeightC = 2;
+      }
+      else if (chromaFormatIDC == ChromaFormat::CHROMA_422)
+      {
+        subWidthC  = 2;
+        subHeightC = 1;
+      }
+      else
+      {
+        subWidthC  = 1;
+        subHeightC = 1;
+      }
+      
+      int croppedWidth = ppsPicWidthInLumaSample - subWidthC * (confWinRightOffset + confWinLeftOffset);
+      int croppedHeight = ppsPicHeightInLumaSample - subHeightC * (confWinBottomOffset + confWinTopOffset);
+      CHECK(!(sei->m_picWidthInLumaSamples >= croppedWidth && sei->m_picWidthInLumaSamples <= croppedWidth * 16 - 1), "m_picWidthInLumaSamples shall be in the range of croppedWidth to croppedWidth * 16 - 1");
+      CHECK(!(sei->m_picHeightInLumaSamples >= croppedHeight && sei->m_picHeightInLumaSamples <= croppedHeight * 16 - 1), "m_picHeightInLumaSamples shall be in the range of croppedHeight to croppedHeight * 16 - 1");
+#endif
     }
 #if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
     if (sei->m_purpose == NNPC_PurposeType::FRANE_RATE_UPSAMPLING)
@@ -1405,6 +1459,13 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
   CHECK(!(m_isInitialized), "Unspecified error");
   CHECK(!(sei != nullptr), "Unspecified error");
   sei->m_id = m_pcCfg->getNnPostFilterSEIActivationId();
+#if JVET_AB0050
+  sei->m_cancelFlag  = m_pcCfg->getNnPostFilterSEIActivationCancelFlag();
+  if(!sei->m_cancelFlag)
+  {
+    sei->m_persistenceFlag = m_pcCfg->getNnPostFilterSEIActivationPersistenceFlag();
+  }
+#endif
 }
 
 

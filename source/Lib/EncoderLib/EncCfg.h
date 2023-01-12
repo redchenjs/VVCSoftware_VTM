@@ -354,10 +354,10 @@ protected:
   bool      m_compositeRefEnabled;        //composite reference
   bool      m_bcw;
   bool      m_BcwFast;
-  bool      m_LadfEnabled;
-  int       m_LadfNumIntervals;
-  int       m_LadfQpOffset[MAX_LADF_INTERVALS];
-  int       m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
+  bool      m_ladfEnabled;
+  int       m_ladfNumIntervals;
+  int       m_ladfQpOffset[MAX_LADF_INTERVALS];
+  int       m_ladfIntervalLowerBound[MAX_LADF_INTERVALS];
 
   bool      m_ciip;
   bool      m_Geo;
@@ -737,6 +737,10 @@ protected:
 
   bool                    m_nnPostFilterSEIActivationEnabled;
   uint32_t                m_nnPostFilterSEIActivationId;
+#if JVET_AB0050
+  bool                    m_nnPostFilterSEIActivationCancelFlag;
+  bool                    m_nnPostFilterSEIActivationPersistenceFlag;
+#endif
 
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
@@ -875,6 +879,17 @@ protected:
   std::vector<uint8_t>  m_poSEIProcessingOrder;
 #endif
   uint32_t              m_numofSEIMessages;
+
+#if JVET_AB0070_POST_FILTER_HINT
+  bool                 m_postFilterHintSEIEnabled;
+  bool                 m_postFilterHintSEICancelFlag;
+  bool                 m_postFilterHintSEIPersistenceFlag;
+  uint32_t             m_postFilterHintSEISizeY;
+  uint32_t             m_postFilterHintSEISizeX;
+  uint32_t             m_postFilterHintSEIType;
+  bool                 m_postFilterHintSEIChromaCoeffPresentFlag;
+  std::vector<int32_t> m_postFilterHintValues;
+#endif
 
   bool      m_constrainedRaslEncoding;
 
@@ -1429,15 +1444,14 @@ public:
   void      setUseBcwFast                   ( uint32_t b )   { m_BcwFast = b; }
   bool      getUseBcwFast                   ()         const { return m_BcwFast; }
 
-  void      setUseLadf                      ( bool b )       { m_LadfEnabled = b; }
-  bool      getUseLadf                      ()         const { return m_LadfEnabled; }
-  void      setLadfNumIntervals             ( int i )        { m_LadfNumIntervals = i; }
-  int       getLadfNumIntervals             ()         const { return m_LadfNumIntervals; }
-  void      setLadfQpOffset                 ( int value, int idx ){ m_LadfQpOffset[ idx ] = value; }
-  int       getLadfQpOffset                 ( int idx ) const { return m_LadfQpOffset[ idx ]; }
-  void      setLadfIntervalLowerBound       ( int value, int idx ){ m_LadfIntervalLowerBound[ idx ] = value; }
-  int       getLadfIntervalLowerBound       ( int idx ) const { return m_LadfIntervalLowerBound[ idx ]; }
-
+  void setUseLadf(bool b) { m_ladfEnabled = b; }
+  bool getUseLadf() const { return m_ladfEnabled; }
+  void setLadfNumIntervals(int i) { m_ladfNumIntervals = i; }
+  int  getLadfNumIntervals() const { return m_ladfNumIntervals; }
+  void setLadfQpOffset(int value, int idx) { m_ladfQpOffset[idx] = value; }
+  int  getLadfQpOffset(int idx) const { return m_ladfQpOffset[idx]; }
+  void setLadfIntervalLowerBound(int value, int idx) { m_ladfIntervalLowerBound[idx] = value; }
+  int  getLadfIntervalLowerBound(int idx) const { return m_ladfIntervalLowerBound[idx]; }
 
   void      setUseCiip                   ( bool b )       { m_ciip = b; }
   bool      getUseCiip                   ()         const { return m_ciip; }
@@ -1983,6 +1997,12 @@ public:
   bool        getNnPostFilterSEIActivationEnabled() const                                                               { return m_nnPostFilterSEIActivationEnabled; }
   void        setNnPostFilterSEIActivationId(uint32_t id)                                                               { m_nnPostFilterSEIActivationId = id; }
   uint32_t    getNnPostFilterSEIActivationId() const                                                                    { return m_nnPostFilterSEIActivationId; }
+#if JVET_AB0050
+  void setNnPostFilterSEIActivationCancelFlag(bool cancelFlag)                                                          { m_nnPostFilterSEIActivationCancelFlag = cancelFlag; }
+  bool getNnPostFilterSEIActivationCancelFlag() const                                                                   { return m_nnPostFilterSEIActivationCancelFlag;}
+  void setNnPostFilterSEIActivationPersistenceFlag(bool persistenceFlag)                                                          { m_nnPostFilterSEIActivationPersistenceFlag = persistenceFlag; }
+  bool getNnPostFilterSEIActivationPersistenceFlag() const                                                                   { return m_nnPostFilterSEIActivationPersistenceFlag;}
+#endif
 
   void  setBufferingPeriodSEIEnabled(bool b)                         { m_bufferingPeriodSEIEnabled = b; }
   bool  getBufferingPeriodSEIEnabled() const                         { return m_bufferingPeriodSEIEnabled; }
@@ -2489,6 +2509,25 @@ public:
 #endif
   void     setPoSEINumofSeiMessages(uint32_t i)                      { m_numofSEIMessages = i; }
   uint32_t getPoSEINumofSeiMessages()                          const { return m_numofSEIMessages; }
+
+#if JVET_AB0070_POST_FILTER_HINT
+  void     setPostFilterHintSEIEnabled(bool b) { m_postFilterHintSEIEnabled = b; }
+  bool     getPostFilterHintSEIEnabled() { return m_postFilterHintSEIEnabled; }
+  void     setPostFilterHintSEICancelFlag(bool b) { m_postFilterHintSEICancelFlag = b; }
+  bool     getPostFilterHintSEICancelFlag() { return m_postFilterHintSEICancelFlag; }
+  void     setPostFilterHintSEIPersistenceFlag(bool b) { m_postFilterHintSEIPersistenceFlag = b; }
+  bool     getPostFilterHintSEIPersistenceFlag() { return m_postFilterHintSEIPersistenceFlag; }
+  void     setPostFilterHintSEISizeY(uint32_t i) { m_postFilterHintSEISizeY = i; }
+  uint32_t getPostFilterHintSEISizeY() { return m_postFilterHintSEISizeY; }
+  void     setPostFilterHintSEISizeX(uint32_t i) { m_postFilterHintSEISizeX = i; }
+  uint32_t getPostFilterHintSEISizeX() { return m_postFilterHintSEISizeX; }
+  void     setPostFilterHintSEIType(uint32_t i) { m_postFilterHintSEIType = i; }
+  uint32_t getPostFilterHintSEIType() { return m_postFilterHintSEIType; }
+  void     setPostFilterHintSEIChromaCoeffPresentFlag(bool b) { m_postFilterHintSEIChromaCoeffPresentFlag = b; }
+  bool     getPostFilterHintSEIChromaCoeffPresentFlag() { return m_postFilterHintSEIChromaCoeffPresentFlag; }
+  void     setPostFilterHintSEIValues(const std::vector<int32_t> &b) { m_postFilterHintValues = b; }
+  int32_t  getPostFilterHintSEIValues(int32_t idx) const { return m_postFilterHintValues[idx]; }
+#endif
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
   void         setWPBiPred            ( bool b )                     { m_useWeightedBiPred = b;    }

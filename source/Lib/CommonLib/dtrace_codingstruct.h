@@ -59,7 +59,7 @@ inline void dtracePicComp( DTRACE_CHANNEL channel, CodingStructure& cs, const CP
 
   const Pel *src = pelUnitBuf.bufs[compId].buf;
 
-  uint32_t       uiStride = pelUnitBuf.bufs[compId].stride;
+  ptrdiff_t      uiStride = pelUnitBuf.bufs[compId].stride;
   uint32_t       uiWidth  = pelUnitBuf.bufs[compId].width;
   uint32_t       uiHeight = pelUnitBuf.bufs[compId].height;
   uint32_t       uiChromaScaleX = getComponentScaleX( compId, pelUnitBuf.chromaFormat );

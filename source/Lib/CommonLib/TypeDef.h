@@ -55,7 +55,9 @@
 // clang-format off
 
 //########### place macros to be removed in next cycle below this line ###############
-
+#define JVET_AB0051                                       1 // JVET-AB0051: Modification of SEI processing order SEI message
+#define JVET_AB0049                                       1 // JVET-AB0049: Modification of NNPFC
+#define JVET_AB0050                                       1 // JVET-AB0050: Add two flags for NNPFA
 #define JVET_T0056_SEI_MANIFEST                           1 // JVET-T0056: SEI manifest SEI message
 #define JVET_T0056_SEI_PREFIX_INDICATION                  1 // JVET-T0056: SEI prefix indication SEI message
 #define JVET_AB0069_SEI_PROCESSING_ORDER                  1 // JVET-AB0069: SEI processing order SEI message update
@@ -70,6 +72,8 @@
 #define JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC 1
 #define JVET_AB0072                                      1 //Green-MPEG SEI Messaging (JVET-AB0072)
 #define M60678_BALLOT_COMMENTS_OF_FI_03                  1 // m60678: Ballot comments of FI_03
+
+#define JVET_AB0070_POST_FILTER_HINT                      1 // JVET-AB0070: post-filter hint SEI
 
 //########### place macros to be be kept below this line ###############
 
@@ -796,9 +800,8 @@ enum NNPC_PurposeType
 
 enum POST_FILTER_MODE
 {
-  EXTERNAL = 0,
-  INTERNAL = 1,
-  URI =2
+  ISO_IEC_15938_17 = 0,
+  URI = 1
 };
 
 #define NUM_SAO_BO_CLASSES_LOG2  5

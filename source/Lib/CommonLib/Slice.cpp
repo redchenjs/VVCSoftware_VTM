@@ -3007,10 +3007,10 @@ SPS::SPS()
   , m_PROF(false)
   , m_ciip(false)
   , m_Geo(false)
-  , m_LadfEnabled(false)
-  , m_LadfNumIntervals(0)
-  , m_LadfQpOffset{ 0 }
-  , m_LadfIntervalLowerBound{ 0 }
+  , m_ladfEnabled(false)
+  , m_ladfNumIntervals(0)
+  , m_ladfQpOffset{ 0 }
+  , m_ladfIntervalLowerBound{ 0 }
   , m_MRL(false)
   , m_MIP(false)
   , m_GDREnabledFlag(true)

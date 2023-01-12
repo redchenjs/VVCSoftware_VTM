@@ -56,7 +56,7 @@ bool ParcatHLSyntaxReader::parsePictureHeaderInSliceHeaderFlag(ParameterSetManag
 
 
   uint32_t  uiCode;
-  READ_FLAG(uiCode, "sh_picture_header_in_slice_header_flag");
+  xReadFlag(uiCode, "sh_picture_header_in_slice_header_flag");
   return (uiCode==1);
 }
 
@@ -68,19 +68,19 @@ void ParcatHLSyntaxReader::parsePictureHeaderUpToPoc ( ParameterSetManager *para
   SPS *sps = nullptr;
 
   uint32_t uiTmp;
-  READ_FLAG(uiTmp, "ph_gdr_or_irap_pic_flag");
-  READ_FLAG(uiCode, "ph_non_ref_pic_flag");
+  xReadFlag(uiTmp, "ph_gdr_or_irap_pic_flag");
+  xReadFlag(uiCode, "ph_non_ref_pic_flag");
   if( uiTmp )
   {
-    READ_FLAG( uiCode, "ph_gdr_pic_flag" );
+    xReadFlag( uiCode, "ph_gdr_pic_flag" );
   }
-  READ_FLAG(uiCode, "ph_inter_slice_allowed_flag");
+  xReadFlag(uiCode, "ph_inter_slice_allowed_flag");
   if (uiCode)
   {
-    READ_FLAG(uiCode, "ph_intra_slice_allowed_flag");
+    xReadFlag(uiCode, "ph_intra_slice_allowed_flag");
   }
   // parameter sets
-  READ_UVLC(uiCode, "ph_pic_parameter_set_id");
+  xReadUvlc(uiCode, "ph_pic_parameter_set_id");
   pps = parameterSetManager->getPPS(uiCode);
   CHECK(pps == 0, "Invalid PPS");
   sps = parameterSetManager->getSPS(pps->getSPSId());

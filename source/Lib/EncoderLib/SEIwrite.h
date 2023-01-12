@@ -142,6 +142,9 @@ protected:
 #if GREEN_METADATA_SEI_ENABLED
   void xWriteSEIGreenMetadataInfo                 (const SEIGreenMetadataInfo &sei);
 #endif
+#if JVET_AB0070_POST_FILTER_HINT
+  void xWriteSEIPostFilterHint(const SEIPostFilterHint &sei);
+#endif
 protected:
   HRD m_nestingHrd;
 };

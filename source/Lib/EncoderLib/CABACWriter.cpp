@@ -924,41 +924,23 @@ void CABACWriter::cu_bcw_flag(const CodingUnit& cu)
   DTRACE(g_trace_ctx, D_SYNTAX, "cu_bcw_flag() bcw_idx=%d\n", cu.bcwIdx ? 1 : 0);
 }
 
-void CABACWriter::xWriteTruncBinCode(uint32_t symbol, uint32_t maxSymbol)
+void CABACWriter::xWriteTruncBinCode(const uint32_t symbol, const uint32_t numSymbols)
 {
-  int thresh;
-  if (maxSymbol > 256)
-  {
-    int threshVal = 1 << 8;
-    thresh = 8;
-    while (threshVal <= maxSymbol)
-    {
-      thresh++;
-      threshVal <<= 1;
-    }
-    thresh--;
-  }
-  else
-  {
-    thresh = g_tbMax[maxSymbol];
-  }
+  CHECKD(symbol >= numSymbols, "symbol must be less than numSymbols");
 
-  int val = 1 << thresh;
-  assert(val <= maxSymbol);
-  assert((val << 1) > maxSymbol);
-  assert(symbol < maxSymbol);
-  int b = maxSymbol - val;
-  assert(b < val);
+  const int thresh = floorLog2(numSymbols);
+
+  const int val = 1 << thresh;
+
+  const int b = numSymbols - val;
+
   if (symbol < val - b)
   {
     m_binEncoder.encodeBinsEP(symbol, thresh);
   }
   else
   {
-    symbol += val - b;
-    assert(symbol < (val << 1));
-    assert((symbol >> 1) >= val - b);
-    m_binEncoder.encodeBinsEP(symbol, thresh + 1);
+    m_binEncoder.encodeBinsEP(symbol + val - b, thresh + 1);
   }
 }
 
@@ -1779,9 +1761,7 @@ void CABACWriter::prediction_unit( const PredictionUnit& pu )
   else if (CU::isIBC(*pu.cu))
   {
     ref_idx(pu, REF_PIC_LIST_0);
-    Mv mvd = pu.mvd[REF_PIC_LIST_0];
-    mvd.changeIbcPrecInternal2Amvr(pu.cu->imv);
-    mvd_coding(mvd, 0); // already changed to signaling precision
+    mvd_coding(pu, pu.mvd[REF_PIC_LIST_0], pu.cu->imv);
     if (pu.cs->sps->getMaxNumIBCMergeCand() == 1)
     {
       CHECK( pu.mvpIdx[REF_PIC_LIST_0], "mvpIdx for IBC mode should be 0" );
@@ -1803,16 +1783,12 @@ void CABACWriter::prediction_unit( const PredictionUnit& pu )
       {
         for (int i = 0; i < pu.cu->getNumAffineMvs(); i++)
         {
-          Mv mvd = pu.mvdAffi[REF_PIC_LIST_0][i];
-          mvd.changeAffinePrecInternal2Amvr(pu.cu->imv);
-          mvd_coding(mvd, 0); // already changed to signaling precision
+          mvd_coding(pu, pu.mvdAffi[REF_PIC_LIST_0][i], pu.cu->imv);
         }
       }
       else
       {
-        Mv mvd = pu.mvd[REF_PIC_LIST_0];
-        mvd.changeTransPrecInternal2Amvr(pu.cu->imv);
-        mvd_coding(mvd, 0); // already changed to signaling precision
+        mvd_coding(pu, pu.mvd[REF_PIC_LIST_0], pu.cu->imv);
       }
       mvp_flag    ( pu, REF_PIC_LIST_0 );
     }
@@ -1827,16 +1803,12 @@ void CABACWriter::prediction_unit( const PredictionUnit& pu )
           {
             for (int i = 0; i < pu.cu->getNumAffineMvs(); i++)
             {
-              Mv mvd = pu.mvdAffi[REF_PIC_LIST_1][i];
-              mvd.changeAffinePrecInternal2Amvr(pu.cu->imv);
-              mvd_coding(mvd, 0);   // already changed to signaling precision
+              mvd_coding(pu, pu.mvdAffi[REF_PIC_LIST_1][i], pu.cu->imv);
             }
           }
           else
           {
-            Mv mvd = pu.mvd[REF_PIC_LIST_1];
-            mvd.changeTransPrecInternal2Amvr(pu.cu->imv);
-            mvd_coding(mvd, 0);   // already changed to signaling precision
+            mvd_coding(pu, pu.mvd[REF_PIC_LIST_1], pu.cu->imv);
           }
         }
       }
@@ -2338,34 +2310,26 @@ void CABACWriter::cbf_comp(bool cbf, const CompArea &area, unsigned depth, const
 //================================================================================
 //  clause 7.3.8.9
 //--------------------------------------------------------------------------------
-//    void  mvd_coding( pu, refList )
 //================================================================================
-void CABACWriter::mvd_coding( const Mv &rMvd, int8_t imv )
+void CABACWriter::mvd_coding(const PredictionUnit& pu, Mv mvd, int amvr)
 {
-  int       horMvd = rMvd.getHor();
-  int       verMvd = rMvd.getVer();
-  if ( imv > 0 )
+  if (CU::isIBC(*pu.cu))
   {
-    CHECK((horMvd % 2) != 0 && (verMvd % 2) != 0, "IMV: MVD is not a multiple of 2");
-    horMvd >>= 1;
-    verMvd >>= 1;
-    if (imv < IMV_HPEL)
-    {
-      CHECK((horMvd % 2) != 0 && (verMvd % 2) != 0, "IMV: MVD is not a multiple of 4");
-      horMvd >>= 1;
-      verMvd >>= 1;
-      if (imv == IMV_4PEL)//IMV_4PEL
-      {
-        CHECK((horMvd % 4) != 0 && (verMvd % 4) != 0, "IMV: MVD is not a multiple of 16");
-        horMvd >>= 2;
-        verMvd >>= 2;
-      }
-    }
+    mvd.changeIbcPrecInternal2Amvr(amvr);
   }
-  unsigned  horAbs  = unsigned( horMvd < 0 ? -horMvd : horMvd );
-  unsigned  verAbs  = unsigned( verMvd < 0 ? -verMvd : verMvd );
-
-
+  else if (pu.cu->affine)
+  {
+    mvd.changeAffinePrecInternal2Amvr(amvr);
+  }
+  else
+  {
+    mvd.changeTransPrecInternal2Amvr(amvr);
+  }
+  const int horMvd = mvd.getHor();
+  const int verMvd = mvd.getVer();
+  const unsigned int horAbs = std::abs(horMvd);
+  const unsigned int verAbs = std::abs(verMvd);
+  
   // abs_mvd_greater0_flag[ 0 | 1 ]
   m_binEncoder.encodeBin((horAbs > 0), Ctx::Mvd());
   m_binEncoder.encodeBin((verAbs > 0), Ctx::Mvd());
@@ -3490,7 +3454,7 @@ void CABACWriter::mip_pred_mode( const PredictionUnit& pu )
 {
   m_binEncoder.encodeBinEP((pu.mipTransposedFlag ? 1 : 0));
 
-  const int numModes = getNumModesMip( pu.Y() );
+  const int numModes = MatrixIntraPrediction::getNumModesMip(pu.Y());
   CHECKD(pu.intraDir[ChannelType::LUMA] < 0 || pu.intraDir[ChannelType::LUMA] >= numModes, "Invalid MIP mode");
   xWriteTruncBinCode(pu.intraDir[ChannelType::LUMA], numModes);
 

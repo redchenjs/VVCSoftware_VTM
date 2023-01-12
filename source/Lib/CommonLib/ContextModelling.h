@@ -228,31 +228,17 @@ public:
     }
   }
 
-  unsigned templateAbsCompare(TCoeff sum)
+  static unsigned templateAbsCompare(TCoeff sum)
   {
-    int rangeIdx = 0;
-    if (sum < g_riceT[0])
+    for (int rangeIdx = 0; rangeIdx < g_riceThreshold.size(); rangeIdx++)
     {
-      rangeIdx = 0;
-    }
-    else if (sum < g_riceT[1])
-    {
-      rangeIdx = 1;
-    }
-    else if (sum < g_riceT[2])
-    {
-      rangeIdx = 2;
-    }
-    else if (sum < g_riceT[3])
-    {
-      rangeIdx = 3;
-    }
-    else
-    {
-      rangeIdx = 4;
+      if (sum < g_riceThreshold[rangeIdx])
+      {
+        return g_riceShift[rangeIdx];
+      }
     }
 
-    return g_riceShift[rangeIdx];
+    return g_riceShift[g_riceThreshold.size()];
   }
 
   unsigned templateAbsSumExt(int scanPos, const TCoeff* coeff, int baseLevel)
@@ -304,7 +290,7 @@ public:
       sum += m_histValue;
     }
 
-    int currentShift = templateAbsCompare(sum);
+    const int currentShift = templateAbsCompare(sum);
     sum = sum >> currentShift;
     if (baseLevel == 0)
     {

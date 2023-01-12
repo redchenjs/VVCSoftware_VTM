@@ -170,8 +170,8 @@ namespace DQIntern
         }
         const uint32_t      blockWidth    = (1 << hd);
         const uint32_t      blockHeight   = (1 << vd);
-        const uint32_t      log2CGWidth   = g_log2SbbSize[hd][vd][0];
-        const uint32_t      log2CGHeight  = g_log2SbbSize[hd][vd][1];
+        const uint32_t      log2CGWidth   = g_log2TxSubblockSize[hd][vd].width;
+        const uint32_t      log2CGHeight  = g_log2TxSubblockSize[hd][vd].height;
         const uint32_t      groupWidth    = 1 << log2CGWidth;
         const uint32_t      groupHeight   = 1 << log2CGHeight;
         const uint32_t      groupSize     = groupWidth * groupHeight;
@@ -343,16 +343,19 @@ namespace DQIntern
     const uint32_t nonzeroWidth  = getNonzeroTuSize(m_width);
     const uint32_t nonzeroHeight = getNonzeroTuSize(m_height);
     m_numCoeff                   = nonzeroWidth * nonzeroHeight;
-    const int log2W       = floorLog2( m_width  );
-    const int log2H       = floorLog2( m_height );
-    m_log2SbbWidth        = g_log2SbbSize[ log2W ][ log2H ][0];
-    m_log2SbbHeight       = g_log2SbbSize[ log2W ][ log2H ][1];
-    m_log2SbbSize         = m_log2SbbWidth + m_log2SbbHeight;
-    m_sbbSize             = ( 1 << m_log2SbbSize );
-    m_sbbMask             = m_sbbSize - 1;
-    m_widthInSbb  = nonzeroWidth >> m_log2SbbWidth;
-    m_heightInSbb = nonzeroHeight >> m_log2SbbHeight;
-    m_numSbb                     = m_widthInSbb * m_heightInSbb;
+
+    const int log2W = floorLog2(m_width);
+    const int log2H = floorLog2(m_height);
+
+    m_log2SbbWidth  = g_log2TxSubblockSize[log2W][log2H].width;
+    m_log2SbbHeight = g_log2TxSubblockSize[log2W][log2H].height;
+    m_log2SbbSize   = m_log2SbbWidth + m_log2SbbHeight;
+    m_sbbSize       = 1 << m_log2SbbSize;
+    m_sbbMask       = m_sbbSize - 1;
+    m_widthInSbb    = nonzeroWidth >> m_log2SbbWidth;
+    m_heightInSbb   = nonzeroHeight >> m_log2SbbHeight;
+    m_numSbb        = m_widthInSbb * m_heightInSbb;
+
     SizeType        hsbb  = gp_sizeIdxInfo->idxFrom( m_widthInSbb  );
     SizeType        vsbb  = gp_sizeIdxInfo->idxFrom( m_heightInSbb );
     SizeType        hsId  = gp_sizeIdxInfo->idxFrom( m_width  );
@@ -1068,32 +1071,6 @@ namespace DQIntern
     unsigned                  effHeight;
   };
 
-  unsigned templateAbsCompare(TCoeff sum)
-  {
-    int rangeIdx = 0;
-    if (sum < g_riceT[0])
-    {
-      rangeIdx = 0;
-    }
-    else if (sum < g_riceT[1])
-    {
-      rangeIdx = 1;
-    }
-    else if (sum < g_riceT[2])
-    {
-      rangeIdx = 2;
-    }
-    else if (sum < g_riceT[3])
-    {
-      rangeIdx = 3;
-    }
-    else
-    {
-      rangeIdx = 4;
-    }
-    return g_riceShift[rangeIdx];
-  }
-
   State::State( const RateEstimator& rateEst, CommonCtx& commonCtx, const int stateId )
     : m_sbbFracBits     { { 0, 0 } }
     , m_stateId         ( stateId )
@@ -1212,7 +1189,7 @@ namespace DQIntern
 #undef UPDATE
         if (extRiceFlag)
         {
-          unsigned currentShift = templateAbsCompare(sumAbs);
+          unsigned currentShift = CoeffCodingContext::templateAbsCompare(sumAbs);
           sumAbs = sumAbs >> currentShift;
           int sumAll = std::max(std::min(31, (int)sumAbs - (int)baseLevel), 0);
           m_goRicePar = g_goRiceParsCoeff[sumAll];
@@ -1261,7 +1238,7 @@ namespace DQIntern
 #undef UPDATE
         if (extRiceFlag)
         {
-          unsigned currentShift = templateAbsCompare(sumAbs);
+          unsigned currentShift = CoeffCodingContext::templateAbsCompare(sumAbs);
           sumAbs = sumAbs >> currentShift;
           sumAbs = std::min<TCoeff>(31, sumAbs);
           m_goRicePar = g_goRiceParsCoeff[sumAbs];

@@ -158,7 +158,7 @@ inline void tracing_uninit( CDTrace *pDtrace )
 
 
 template< typename Tsrc >
-void dtrace_block( CDTrace *trace_ctx, DTRACE_CHANNEL channel, Tsrc *buf, unsigned stride, unsigned block_w, unsigned block_h )
+void dtrace_block( CDTrace *trace_ctx, DTRACE_CHANNEL channel, Tsrc *buf, ptrdiff_t stride, unsigned block_w, unsigned block_h )
 {
   unsigned i, j;
   for( j = 0; j < block_h; j++ )
@@ -174,7 +174,7 @@ void dtrace_block( CDTrace *trace_ctx, DTRACE_CHANNEL channel, Tsrc *buf, unsign
 }
 
 template< typename Tsrc >
-void dtrace_frame_blockwise( CDTrace *trace_ctx, DTRACE_CHANNEL channel, Tsrc *buf, unsigned stride, unsigned frm_w, unsigned frm_h, unsigned block_w, unsigned block_h )
+void dtrace_frame_blockwise( CDTrace *trace_ctx, DTRACE_CHANNEL channel, Tsrc *buf, ptrdiff_t stride, unsigned frm_w, unsigned frm_h, unsigned block_w, unsigned block_h )
 {
   unsigned i, j, block;
   for( j = 0, block = 0; j < frm_h; j += block_h )

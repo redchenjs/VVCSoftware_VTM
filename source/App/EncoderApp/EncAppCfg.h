@@ -361,9 +361,9 @@ protected:
   bool      m_bcw;
   bool      m_BcwFast;
   bool      m_LadfEnabed;
-  int       m_LadfNumIntervals;
-  std::vector<int> m_LadfQpOffset;
-  int       m_LadfIntervalLowerBound[MAX_LADF_INTERVALS];
+  int              m_ladfNumIntervals;
+  std::vector<int> m_ladfQpOffset;
+  int              m_ladfIntervalLowerBound[MAX_LADF_INTERVALS];
 
   bool      m_ciip;
   bool      m_Geo;
@@ -775,6 +775,10 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
 #endif
+#if JVET_AB0050
+  bool                    m_nnPostFilterSEIActivationCancelFlag;
+  bool                    m_nnPostFilterSEIActivationPersistenceFlag;
+#endif
 
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
@@ -784,6 +788,17 @@ protected:
   std::vector<uint8_t>  m_poSEIProcessingOrder;
 #endif
   uint32_t              m_numofSEIMessages;
+
+#if JVET_AB0070_POST_FILTER_HINT
+  bool                 m_postFilterHintSEIEnabled;
+  bool                 m_postFilterHintSEICancelFlag;
+  bool                 m_postFilterHintSEIPersistenceFlag;
+  uint32_t             m_postFilterHintSEISizeY;
+  uint32_t             m_postFilterHintSEISizeX;
+  uint32_t             m_postFilterHintSEIType;
+  bool                 m_postFilterHintSEIChromaCoeffPresentFlag;
+  std::vector<int32_t> m_postFilterHintValues;
+#endif
 
   bool                  m_constrainedRaslEncoding;
 

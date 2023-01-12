@@ -1118,11 +1118,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
 
   m_CABACEstimator->getCtx() = m_CurrCtx->start;
 
-  const TempCtx ctxStartSP(m_ctxPool, SubCtx(Ctx::SplitFlag, m_CABACEstimator->getCtx()));
-  const TempCtx ctxStartQt(m_ctxPool, SubCtx(Ctx::SplitQtFlag, m_CABACEstimator->getCtx()));
-  const TempCtx ctxStartHv(m_ctxPool, SubCtx(Ctx::SplitHvFlag, m_CABACEstimator->getCtx()));
-  const TempCtx ctxStart12(m_ctxPool, SubCtx(Ctx::Split12Flag, m_CABACEstimator->getCtx()));
-  const TempCtx ctxStartMC(m_ctxPool, SubCtx(Ctx::ModeConsFlag, m_CABACEstimator->getCtx()));
+  const TempCtx ctxStart(m_ctxPool, SubCtx(Ctx::ctxPartition, m_CABACEstimator->getCtx()));
   m_CABACEstimator->resetBits();
 
   m_CABACEstimator->split_cu_mode( split, *tempCS, partitioner );
@@ -1166,11 +1162,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
   }
   const double cost = costTemp;
 
-  m_CABACEstimator->getCtx() = SubCtx( Ctx::SplitFlag,   ctxStartSP );
-  m_CABACEstimator->getCtx() = SubCtx( Ctx::SplitQtFlag, ctxStartQt );
-  m_CABACEstimator->getCtx() = SubCtx( Ctx::SplitHvFlag, ctxStartHv );
-  m_CABACEstimator->getCtx() = SubCtx( Ctx::Split12Flag, ctxStart12 );
-  m_CABACEstimator->getCtx() = SubCtx( Ctx::ModeConsFlag, ctxStartMC );
+  m_CABACEstimator->getCtx() = SubCtx(Ctx::ctxPartition, ctxStart);
   if (cost > bestCS->cost + bestCS->costDbOffset
 #if ENABLE_QPA_SUB_CTU
     || (m_pcEncCfg->getUsePerceptQPA() && !m_pcEncCfg->getUseRateCtrl() && pps.getUseDQP() && (slice.getCuQpDeltaSubdiv() > 0) && (split == CU_HORZ_SPLIT || split == CU_VERT_SPLIT) &&
@@ -2344,13 +2336,11 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
       {
         mergeCtx.setMergeInfo( *pu, uiMergeCand );
 
-        PU::spanMotionInfo( *pu, mergeCtx );
-        pu->mvRefine = true;
+        PU::spanMotionInfo(*pu, mergeCtx);
         distParam.cur = singleMergeTempBuffer->Y();
         m_pcInterSearch->motionCompensation(*pu, *singleMergeTempBuffer, REF_PIC_LIST_X, true, true,
                                             mrgPredBufNoMvRefine[uiMergeCand], false);
         mrgPredBufNoCiip[uiMergeCand]->copyFrom(*singleMergeTempBuffer);
-        pu->mvRefine = false;
         if (mergeCtx.interDirNeighbours[uiMergeCand] == 3)
         {
           mergeCtx.mvFieldNeighbours[uiMergeCand][0].mv = pu->mv[0];
@@ -2537,14 +2527,12 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           mergeCtx.setMmvdMergeCandiInfo(*pu, mmvdIdx);
 
           PU::spanMotionInfo(*pu, mergeCtx);
-          pu->mvRefine = true;
           distParam.cur = singleMergeTempBuffer->Y();
           pu->mmvdEncOptMode = (mmvdIdx.pos.step > 2 ? 2 : 1);
           CHECK(!pu->mmvdMergeFlag, "MMVD merge should be set");
           // Don't do chroma MC here
           m_pcInterSearch->motionCompensation(*pu, *singleMergeTempBuffer, REF_PIC_LIST_X, true, false, nullptr, false);
           pu->mmvdEncOptMode = 0;
-          pu->mvRefine = false;
           Distortion uiSad = distParam.distFunc(distParam);
 
           m_CABACEstimator->getCtx() = ctxStart;
@@ -2754,9 +2742,7 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
       }
       else
       {
-        pu->mvRefine = true;
         m_pcInterSearch->motionCompensatePu(*pu, REF_PIC_LIST_X, true, true);
-        pu->mvRefine = false;
       }
       if (!pu->cu->mmvdSkip && !pu->ciipFlag && noResidualPass != 0)
       {
@@ -2943,32 +2929,33 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
     int maskStride = 0, maskStride2 = 0;
     int stepX = 1;
     Pel    *sadMask;
-    int16_t angle = g_GeoParams[splitDir][0];
+
+    const int angle = g_geoParams[splitDir].angleIdx;
+
+    const int16_t *wOffset = g_weightOffset[splitDir][hIdx][wIdx];
+
     if (g_angle2mirror[angle] == 2)
     {
       maskStride = -GEO_WEIGHT_MASK_SIZE;
       maskStride2 = -(int)pu->lwidth();
-      sadMask     = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
-                                      [(GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][1])
-                                         * GEO_WEIGHT_MASK_SIZE
-                                       + g_weightOffset[splitDir][hIdx][wIdx][0]];
+      sadMask     = &g_globalGeoEncSADmask[g_angle2mask[angle]]
+                                      [(GEO_WEIGHT_MASK_SIZE - 1 - wOffset[1]) * GEO_WEIGHT_MASK_SIZE + wOffset[0]];
     }
     else if (g_angle2mirror[angle] == 1)
     {
       stepX = -1;
       maskStride2 = pu->lwidth();
       maskStride = GEO_WEIGHT_MASK_SIZE;
-      sadMask     = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
-                                      [g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE
-                                       + (GEO_WEIGHT_MASK_SIZE - 1 - g_weightOffset[splitDir][hIdx][wIdx][0])];
+
+      sadMask = &g_globalGeoEncSADmask[g_angle2mask[angle]]
+                                      [wOffset[1] * GEO_WEIGHT_MASK_SIZE + (GEO_WEIGHT_MASK_SIZE - 1 - wOffset[0])];
     }
     else
     {
       maskStride = GEO_WEIGHT_MASK_SIZE;
       maskStride2 = -(int)pu->lwidth();
-      sadMask     = &g_globalGeoEncSADmask[g_angle2mask[g_GeoParams[splitDir][0]]]
-                                      [g_weightOffset[splitDir][hIdx][wIdx][1] * GEO_WEIGHT_MASK_SIZE
-                                       + g_weightOffset[splitDir][hIdx][wIdx][0]];
+
+      sadMask = &g_globalGeoEncSADmask[g_angle2mask[angle]][wOffset[1] * GEO_WEIGHT_MASK_SIZE + wOffset[0]];
     }
 
     for (uint8_t mergeCand = 0; mergeCand < maxNumMergeCandidates; mergeCand++)

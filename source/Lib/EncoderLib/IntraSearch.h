@@ -490,7 +490,7 @@ protected:
                           PLTScanMode pltScanMode, double &cost, bool *idxExist);
   bool     deriveSubblockIndexMap(CodingStructure& cs, Partitioner& partitioner, ComponentID compBegin, PLTScanMode pltScanMode, int minSubPos, int maxSubPos, const BinFracBits& fracBitsPltRunType, const BinFracBits* fracBitsPltIndexINDEX, const BinFracBits* fracBitsPltIndexCOPY, const double minCost, bool useRotate);
   double   rateDistOptPLT         (bool RunType, uint8_t RunIndex, bool prevRunType, uint8_t prevRunIndex, uint8_t aboveRunIndex, bool& prevCodedRunType, int& prevCodedRunPos, int scanPos, uint32_t width, int dist, int indexMaxValue, const BinFracBits* IndexfracBits, const BinFracBits& TypefracBits);
-  uint32_t getTruncBinBits        (uint32_t symbol, uint32_t maxSymbol);
+  uint32_t getTruncBinBits(uint32_t symbol, uint32_t numSymbols);
   uint32_t getEpExGolombNumBins   (uint32_t symbol, uint32_t count);
 
   void xGetNextISPMode                    ( ModeInfo& modeInfo, const ModeInfo* lastMode, const Size cuSize );

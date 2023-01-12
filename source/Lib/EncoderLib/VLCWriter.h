@@ -48,26 +48,8 @@
 //! \{
 
 #if ENABLE_TRACING
-
-#define WRITE_SCODE( value, length, name)   xWriteSCodeTr ( value, length, name )
-#define WRITE_CODE( value, length, name)    xWriteCodeTr ( value, length, name )
-#define WRITE_UVLC( value,         name)    xWriteUvlcTr ( value,         name )
-#define WRITE_SVLC( value,         name)    xWriteSvlcTr ( value,         name )
-#define WRITE_FLAG( value,         name)    xWriteFlagTr ( value,         name )
-#define WRITE_STRING( value,         name)    xWriteStringTr ( value,         name )
-
 extern bool g_HLSTraceEnable;
-#else
-#define WRITE_SCODE( value, length, name)    xWriteSCode ( value, length )
-#define WRITE_CODE( value, length, name)     xWriteCode ( value, length )
-#define WRITE_UVLC( value,         name)     xWriteUvlc ( value )
-#define WRITE_SVLC( value,         name)     xWriteSvlc ( value )
-#define WRITE_FLAG( value,         name)     xWriteFlag ( value )
-#define WRITE_STRING( value,       name)     xWriteString ( value )
-
 #endif
-
-
 
 class VLCWriter
 {
@@ -81,25 +63,20 @@ protected:
   void  setBitstream          ( OutputBitstream* p )  { m_pcBitIf = p;  }
   OutputBitstream* getBitstream( )                    { return m_pcBitIf; }
 
-  void xWriteSCode(int code, uint32_t length);
-  void xWriteCode(uint32_t uiCode, uint32_t length);
+  void  xWriteSCode         ( int         value, uint32_t  length, const char *symbolName );
+  void  xWriteCode          ( uint32_t    value, uint32_t  length, const char *symbolName );
+  void  xWriteUvlc          ( uint32_t    value,                   const char *symbolName );
+  void  xWriteSvlc          ( int         value,                   const char *symbolName );
+  void  xWriteFlag          ( uint32_t    value,                   const char *symbolName );
+  void  xWriteString        ( const std::string &value,            const char *symbolName );
 
-  void  xWriteUvlc            ( uint32_t uiCode );
-  void  xWriteSvlc            ( int  iCode   );
-  void  xWriteFlag            ( uint32_t uiCode );
-  void  xWriteString(std::string code);
-#if ENABLE_TRACING
-  void  xWriteSCodeTr         ( int value,  uint32_t  length, const char *pSymbolName);
-  void  xWriteCodeTr          ( uint32_t value, uint32_t  length, const char *pSymbolName);
-  void  xWriteUvlcTr          ( uint32_t value,               const char *pSymbolName);
-  void  xWriteSvlcTr          ( int  value,               const char *pSymbolName);
-  void  xWriteFlagTr          ( uint32_t value,               const char *pSymbolName);
-  void  xWriteStringTr        (std::string value, const char* symbolName);
-#endif
   void  xWriteRbspTrailingBits();
   bool isByteAligned()      { return (m_pcBitIf->getNumBitsUntilByteAligned() == 0); } ;
-};
 
+private:
+  void  xWriteVlc           ( uint32_t    value );
+
+};
 
 
 class AUDWriter : public VLCWriter
