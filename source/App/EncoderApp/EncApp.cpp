@@ -215,9 +215,7 @@ void EncApp::xInitLibCfg( int layerIdx )
     vps.setOlsPtlIdx                                             (i, m_olsPtlIdx[i]);
   }
 
-  CHECK(layerIdx >= vps.getNumPtls(),
-        "Insufficient number of Profile/Tier/Level entries in VPS. Consider increasing NumPTLsInVPS");
-  ProfileTierLevel &ptl = vps.getProfileTierLevel(layerIdx);
+  ProfileTierLevel ptl;
   ptl.setLevelIdc                                            ( m_level );
   ptl.setProfileIdc                                          ( m_profile);
   ptl.setTierFlag                                            ( m_levelTier );
@@ -239,6 +237,10 @@ void EncApp::xInitLibCfg( int layerIdx )
   {
     ptl.setLevelIdc                                          ( m_levelPtl[layerIdx] );
   }
+  CHECK(layerIdx >= vps.getNumPtls(),
+        "Insufficient number of Profile/Tier/Level entries in VPS. Consider increasing NumPTLsInVPS");
+  vps.setProfileTierLevel(layerIdx, ptl);
+
   vps.setVPSExtensionFlag                                        ( false );
   m_cEncLib.setProfile                                           ( m_profile);
   m_cEncLib.setLevel                                             ( m_levelTier, m_level);

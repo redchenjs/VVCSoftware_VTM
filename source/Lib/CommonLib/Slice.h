@@ -1133,7 +1133,7 @@ public:
   uint32_t          getPtlMaxTemporalId(int idx)                   const { return m_ptlMaxTemporalId[idx]; }
   void              setPtlMaxTemporalId(int idx, uint32_t val)           { m_ptlMaxTemporalId[idx] = val; }
 
-  ProfileTierLevel       &getProfileTierLevel(int idx) { return m_vpsProfileTierLevel[idx]; }
+  void setProfileTierLevel(int idx, const ProfileTierLevel &ptl) { m_vpsProfileTierLevel[idx] = ptl; }
   const ProfileTierLevel &getProfileTierLevel(int idx) const { return m_vpsProfileTierLevel[idx]; }
 
   uint32_t          getOlsPtlIdx(int idx)                          const { return m_olsPtlIdx[idx]; }
