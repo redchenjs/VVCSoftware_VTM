@@ -78,7 +78,7 @@ protected:
   void xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId,
                                       uint32_t payloadSize, const VPS *vps, const SPS *sps, HRD &hrd,
                                       std::ostream *decodedMessageOutputStream, std::vector<SeiPayload> *seiList);
-  void xCheckScalableNestingConstraints       (const SEIScalableNesting& sei, const NalUnitType nalUnitType, const VPS* vps);
+  void xCheckScalableNestingConstraints       (const SEIScalableNesting& sei, const NalUnitType nalUnitType, const GeneralHrdParams* generalHrd);
   void xParseSEIFrameFieldinfo                (SEIFrameFieldInfo& sei,                uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIGreenMetadataInfo             (SEIGreenMetadataInfo& sei,             uint32_t payLoadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIDependentRAPIndication        (SEIDependentRAPIndication& sei,        uint32_t payLoadSize,                     std::ostream *pDecodedMessageOutputStream);

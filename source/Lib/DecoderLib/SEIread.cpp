@@ -829,7 +829,13 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
     tmpSEIs.clear();
   }
 
-  xCheckScalableNestingConstraints(sei, nalUnitType, vps);
+  const GeneralHrdParams *generalHrd = vps && vps->getVPSGeneralHrdParamsPresentFlag()
+    ? vps->getGeneralHrdParameters()
+    : sps->getGeneralHrdParametersPresentFlag()
+      ? sps->getGeneralHrdParameters()
+      : nullptr;
+  
+  xCheckScalableNestingConstraints(sei, nalUnitType, generalHrd);
 
   if (decodedMessageOutputStream)
   {
@@ -1174,7 +1180,7 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
   }
 }
 
-void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, const NalUnitType nalUnitType, const VPS* vps)
+void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, const NalUnitType nalUnitType, const GeneralHrdParams* generalHrd)
 {
   const std::vector<SEI::PayloadType> vclAssociatedSeiList{
     SEI::PayloadType::FILLER_PAYLOAD,
@@ -1230,7 +1236,7 @@ void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, 
           "When the scalable nesting SEI message contains an SEI message that has payloadType equal to SLI, the value "
           "of sn_subpic_flag shall be equal to 0");
 
-    CHECK(vps->getGeneralHrdParameters()->getGeneralSamePicTimingInAllOlsFlag()
+    CHECK(generalHrd && generalHrd->getGeneralSamePicTimingInAllOlsFlag()
             && nestedsei->payloadType() == SEI::PayloadType::PICTURE_TIMING,
           "When general_same_pic_timing_in_all_ols_flag is equal to 1, there shall be no SEI NAL unit that contain a "
           "scalable-nested SEI message with payloadType equal to PT");
