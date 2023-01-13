@@ -409,9 +409,7 @@ bool StreamMergeApp::preInjectNalu(MergeLayer &layer, InputNALUnit &inNalu, Outp
       vps->setLayerId(i, i);   // Because we use layer IDs that are layer indices.
     }
     vps->setMaxLayers(m_numInputStreams);
-    vector<ProfileTierLevel> ptls;
-    ptls.push_back(ProfileTierLevel());
-    vps->setProfileTierLevel(ptls);
+    vps->setNumPtls(1);
     layer.vpsIdMapping[0] = vps->getVPSId();
     layer.psManager.storeVPS(vps, hlsReader.getBitstream()->getFifo());
     hlsWriter.codeVPS(vps);
