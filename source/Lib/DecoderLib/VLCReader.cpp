@@ -2359,11 +2359,11 @@ void HLSyntaxReader::parseVPS(VPS* pcVPS)
     if(i > 0)
     {
       xReadFlag(uiCode, "vps_pt_present_flag");
-      pcVPS->setPtPresentFlag(i, uiCode);
+      pcVPS->setPtPresentFlag(i, uiCode != 0);
     }
     else
     {
-      pcVPS->setPtPresentFlag(0, 1);
+      pcVPS->setPtPresentFlag(0, true);
     }
     if (!pcVPS->getDefaultPtlDpbHrdMaxTidFlag())
     {
@@ -2383,19 +2383,21 @@ void HLSyntaxReader::parseVPS(VPS* pcVPS)
     cnt++;
   }
   CHECK(cnt >= 8, "Read more than '8' alignment bits");
-  std::vector<ProfileTierLevel> ptls;
-  ptls.resize(pcVPS->getNumPtls());
+
   for (int i = 0; i < pcVPS->getNumPtls(); i++)
   {
-    parseProfileTierLevel(&ptls[i], pcVPS->getPtPresentFlag(i), pcVPS->getPtlMaxTemporalId(i));
+    ProfileTierLevel ptl;
+    parseProfileTierLevel(&ptl, pcVPS->getPtPresentFlag(i), pcVPS->getPtlMaxTemporalId(i));
+
     if (!pcVPS->getPtPresentFlag(i))
     {
-      ptls[i].setProfileIdc(ptls[i - 1].getProfileIdc());
-      ptls[i].setTierFlag(ptls[i - 1].getTierFlag());
-      *ptls[i].getConstraintInfo() = *ptls[i - 1].getConstraintInfo();
+      CHECK(i == 0, "Profile/Tier should always be present for first entry");
+
+      ptl.copyProfileTierConstraintsFrom(pcVPS->getProfileTierLevel(i - 1));
     }
+    pcVPS->setProfileTierLevel(i, ptl);
   }
-  pcVPS->setProfileTierLevel(ptls);
+
   for (int i = 0; i < pcVPS->getTotalNumOLSs(); i++)
   {
     if (pcVPS->getNumPtls() > 1 && pcVPS->getNumPtls() != pcVPS->getTotalNumOLSs())

@@ -2285,7 +2285,7 @@ void EncLib::xInitRPL(SPS &sps)
         {
           for (int refLayerIdx : refLayersIdx)
           {
-            rpl->setRefPicIdentifier(numRefActive + validNumILRef, 0, true, true, m_vps->getInterLayerRefIdc(m_layerId, refLayerIdx));
+            rpl->setRefPicIdentifier(numRefActive + validNumILRef, 0, true, true, m_vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
             validNumILRef++;
           }
           rpl->setNumberOfInterLayerPictures(validNumILRef);

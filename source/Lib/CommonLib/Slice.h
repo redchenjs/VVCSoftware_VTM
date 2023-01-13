@@ -601,6 +601,13 @@ public:
   void                    setSubLayerLevelIdc(int i, Level::Name x)    { m_subLayerLevelIdc[i] = x;      }
   friend bool             operator == (const ProfileTierLevel& op1, const ProfileTierLevel& op2);
   friend bool             operator != (const ProfileTierLevel& op1, const ProfileTierLevel& op2);
+
+  void copyProfileTierConstraintsFrom(const ProfileTierLevel &ptl)
+  {
+    m_profileIdc     = ptl.m_profileIdc;
+    m_tierFlag       = ptl.m_tierFlag;
+    m_constraintInfo = ptl.m_constraintInfo;
+  }
 };
 
 
@@ -1117,8 +1124,8 @@ public:
   bool              getOlsOutputLayerFlag(uint32_t ols, uint32_t layer) const { return m_vpsOlsOutputLayerFlag[ols][layer]; }
   void              setOlsOutputLayerFlag(uint32_t ols, uint32_t layer, bool t) { m_vpsOlsOutputLayerFlag[ols][layer] = t; }
 
-  uint32_t          getNumPtls()                                   const { return m_vpsNumPtls; }
-  void              setNumPtls(uint32_t val)                             { m_vpsNumPtls = val; }
+  uint32_t getNumPtls() const { return (uint32_t) m_vpsProfileTierLevel.size(); }
+  void     setNumPtls(uint32_t val) { m_vpsProfileTierLevel.resize(val); }
 
   bool              getPtPresentFlag(int idx)                      const { return m_ptPresentFlag[idx]; }
   void              setPtPresentFlag(int idx, bool val)                  { m_ptPresentFlag[idx] = val; }
@@ -1126,10 +1133,8 @@ public:
   uint32_t          getPtlMaxTemporalId(int idx)                   const { return m_ptlMaxTemporalId[idx]; }
   void              setPtlMaxTemporalId(int idx, uint32_t val)           { m_ptlMaxTemporalId[idx] = val; }
 
-  void              setProfileTierLevel(const std::vector<ProfileTierLevel> &val)   { m_vpsProfileTierLevel = val; }
-  void              setProfileTierLevel(int layerIdx, const ProfileTierLevel val)   { m_vpsProfileTierLevel[layerIdx] = val; }
-  void              resizePTL(int val)                                   { m_vpsProfileTierLevel.resize(val); }
-  const ProfileTierLevel& getProfileTierLevel(int idx)             const { return m_vpsProfileTierLevel[idx]; }
+  void setProfileTierLevel(int idx, const ProfileTierLevel &ptl) { m_vpsProfileTierLevel[idx] = ptl; }
+  const ProfileTierLevel &getProfileTierLevel(int idx) const { return m_vpsProfileTierLevel[idx]; }
 
   uint32_t          getOlsPtlIdx(int idx)                          const { return m_olsPtlIdx[idx]; }
   void              setOlsPtlIdx(int idx, uint32_t val)                  { m_olsPtlIdx[idx] = val; }
