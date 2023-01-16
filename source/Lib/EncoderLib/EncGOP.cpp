@@ -3424,9 +3424,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
   
       if (m_featureCounter.is8bit == -1)
       {
-        m_featureCounter.is8bit  = (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) == 8) ? 1 : 0;
-        m_featureCounter.is10bit = (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) == 10) ? 1 : 0;
-        m_featureCounter.is12bit = (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) == 12) ? 1 : 0;
+        m_featureCounter.is8bit  = (pcSlice->getSPS()->getBitDepth(ChannelType::LUMA) == 8) ? 1 : 0;
+        m_featureCounter.is10bit = (pcSlice->getSPS()->getBitDepth(ChannelType::LUMA) == 10) ? 1 : 0;
+        m_featureCounter.is12bit = (pcSlice->getSPS()->getBitDepth(ChannelType::LUMA) == 12) ? 1 : 0;
       }
   
   

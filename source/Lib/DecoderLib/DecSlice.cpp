@@ -306,9 +306,9 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
   
   if (featureCounter.is8bit == -1)
   {
-    featureCounter.is8bit  = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 8) ? 1 : 0;
-    featureCounter.is10bit = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 10) ? 1 : 0;
-    featureCounter.is12bit = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 12) ? 1 : 0;
+    featureCounter.is8bit  = (sps->getBitDepth(ChannelType::LUMA) == 8) ? 1 : 0;
+    featureCounter.is10bit = (sps->getBitDepth(ChannelType::LUMA) == 10) ? 1 : 0;
+    featureCounter.is12bit = (sps->getBitDepth(ChannelType::LUMA) == 12) ? 1 : 0;
   }
   
   if (slice->getSliceType() == B_SLICE)
