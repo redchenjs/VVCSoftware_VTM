@@ -5071,8 +5071,8 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
 {
   SizeType             cuWidthIdx     = MAX_UINT;
   SizeType             cuHeightIdx    = MAX_UINT;
-  
-  for (auto &currCU: cs.traverseCUs(ctuArea, CHANNEL_TYPE_LUMA))
+
+  for (auto &currCU: cs.traverseCUs(ctuArea, ChannelType::LUMA))
   {
     cuWidthIdx  = floorLog2(currCU.lwidth());
     cuHeightIdx = floorLog2(currCU.lheight());
@@ -5087,7 +5087,7 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
           if ((puWidthIdx <= MAX_CU_DEPTH+1) && (puHeightIdx <= MAX_CU_DEPTH+1))
           {
             featureCounter.intraBlockSizes[puWidthIdx][puHeightIdx]++;
-            SizeType lumaPredDir = currPU.intraDir[CHANNEL_TYPE_LUMA];
+            SizeType lumaPredDir = currPU.intraDir[ChannelType::LUMA];
             if (currCU.mipFlag)
             {
               featureCounter.intraMIPBlockSizes[puWidthIdx][puHeightIdx]++;
@@ -5623,7 +5623,7 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
     }
   }
 
-  for (auto &currCU: cs.traverseCUs(ctuArea, CHANNEL_TYPE_CHROMA))
+  for (auto &currCU: cs.traverseCUs(ctuArea, ChannelType::CHROMA))
   {
     SizeType cuCbWidthIdx  = floorLog2(currCU.Cb().width);
     SizeType cuCbHeightIdx = floorLog2(currCU.Cb().height);
@@ -5641,7 +5641,7 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
           if ((chromaWidthIdx <= MAX_CU_DEPTH+1) && (chromaHeightIdx <= MAX_CU_DEPTH+1))
           {
             featureCounter.intraBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
-            SizeType chromaPredDir = currPU.intraDir[CHANNEL_TYPE_CHROMA];
+            SizeType chromaPredDir = currPU.intraDir[ChannelType::CHROMA];
             // Intra Prediction Direction
             if (currCU.mipFlag)
             {
@@ -5707,7 +5707,7 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
           SizeType chromaWidthIdx  = floorLog2(currPU.Cr().width);
           SizeType chromaHeightIdx = floorLog2(currPU.Cr().height);
           featureCounter.intraBlockSizes[chromaWidthIdx][chromaHeightIdx]++;
-          SizeType chromaPredDir = currPU.intraDir[CHANNEL_TYPE_CHROMA];
+          SizeType chromaPredDir = currPU.intraDir[ChannelType::CHROMA];
           if ((chromaWidthIdx <= MAX_CU_DEPTH + 1) && (chromaHeightIdx <= MAX_CU_DEPTH + 1))
           {
             if (currCU.mipFlag)
