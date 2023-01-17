@@ -226,7 +226,7 @@ public:
   int                     m_targetSubPicIdx;
 
   DCI*                    m_dci;
-  EnumArray<ParameterSetMap<APS>, ApsType> *m_apsMapEnc;
+  EnumArray<ParameterSetMap<APS>, ApsType> *m_apsMapEnc = nullptr;
 #if GDR_LEAK_TEST
 public:
   int                     m_gdrPocRandomAccess;
