@@ -242,13 +242,8 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
         m_pBestCS[width][height] = new CodingStructure(m_unitPool);
         m_pTempCS[width][height] = new CodingStructure(m_unitPool);
 
-#if GDR_ENABLED
-        m_pBestCS[width][height]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
-        m_pTempCS[width][height]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
-#else
         m_pBestCS[width][height]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode());
         m_pTempCS[width][height]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode());
-#endif
 
         m_pFullCS[width][height]  = new CodingStructure *[numLayersToAllocateFull];
         m_pSplitCS[width][height] = new CodingStructure *[numLayersToAllocateSplit];
@@ -257,21 +252,13 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
         {
           m_pFullCS[width][height][layer] = new CodingStructure(m_unitPool);
 
-#if GDR_ENABLED
-          m_pFullCS[width][height][layer]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
-#else
           m_pFullCS[width][height][layer]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode());
-#endif
         }
 
         for (uint32_t layer = 0; layer < numLayersToAllocateSplit; layer++)
         {
           m_pSplitCS[width][height][layer] = new CodingStructure(m_unitPool);
-#if GDR_ENABLED
-          m_pSplitCS[width][height][layer]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
-#else
           m_pSplitCS[width][height][layer]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode());
-#endif
         }
       }
       else
@@ -292,11 +279,7 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
   for (uint32_t depth = 0; depth < numSaveLayersToAllocate; depth++)
   {
     m_pSaveCS[depth] = new CodingStructure(m_unitPool);
-#if GDR_ENABLED
-    m_pSaveCS[depth]->create(UnitArea(cform, Area(0, 0, maxCUWidth, maxCUHeight)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
-#else
     m_pSaveCS[depth]->create(UnitArea(cform, Area(0, 0, maxCUWidth, maxCUHeight)), false, (bool)pcEncCfg->getPLTMode());
-#endif
   }
 
   m_isInitialized = true;
@@ -441,14 +424,13 @@ int IntraSearch::getNumTopRecons(PredictionUnit &pu, int lumaDirMode, bool isChr
 bool IntraSearch::isValidIntraPredLuma(PredictionUnit &pu, int lumaDirMode)
 {
   bool isValid  = true;
-  PicHeader *ph = pu.cs->picHeader;
 
-  if (ph->getInGdrInterval())
+  if (pu.cs->picture->gdrParam.inGdrInterval)
   {
     int x = pu.Y().x;
 
     // count num of recons on the top
-    int virX             = ph->getVirtualBoundariesPosX(0);
+    int virX             = pu.cs->picture->gdrParam.verBoundary;
     int numOfTopRecons   = getNumTopRecons(pu, lumaDirMode, false);
 
     // check if recon is out of boundary
@@ -465,9 +447,8 @@ bool IntraSearch::isValidIntraPredChroma(PredictionUnit &pu, int lumaDirMode, in
 {
   bool isValid = true;
   CodingStructure *cs = pu.cs;
-  PicHeader       *ph = cs->picHeader;
 
-  if (ph->getInGdrInterval())
+  if (pu.cs->picture->gdrParam.inGdrInterval)
   {
     // note: chroma cordinate
     int cbX = pu.Cb().x;
@@ -484,7 +465,7 @@ bool IntraSearch::isValidIntraPredChroma(PredictionUnit &pu, int lumaDirMode, in
     int lumaH = cbH << chromaScaleY;
 
     int numOfTopRecons = lumaW;
-    int virX           = ph->getVirtualBoundariesPosX(0);
+    int virX           = pu.cs->picture->gdrParam.verBoundary;
 
     // count num of recons on the top
     switch (chromaDirMode)
@@ -606,7 +587,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
 
   auto &pu = *cu.firstPU;
 #if GDR_ENABLED
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && cs.picHeader->getInGdrInterval()
+  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && cs.picture->gdrParam.inGdrInterval
                                 && cs.isClean(pu.Y().topRight(), ChannelType::LUMA);
 #endif
   bool validReturn = false;

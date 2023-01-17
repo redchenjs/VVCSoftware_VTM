@@ -384,8 +384,8 @@ void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
   CodingStructure &cs = *pu.cs;
   const bool       isEncodeGdrClean =
     cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
-    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
-        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+    && ((cs.picture->gdrParam.inGdrInterval && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picture->gdrParam.verBoundary == -1));
 
   if (isEncodeGdrClean)
   {
@@ -501,8 +501,8 @@ void MergeCtx::setMmvdMergeCandiInfo(PredictionUnit &pu, const MmvdIdx candIdx)
   const CodingStructure &cs = *pu.cs;
   const bool             isEncodeGdrClean =
     cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
-    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
-        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+    && ((cs.picture->gdrParam.inGdrInterval && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+        || (cs.picture->gdrParam.verBoundary == -1));
 #endif
 
   getMmvdDeltaMv(*pu.cs->slice, candIdx, tempMv);

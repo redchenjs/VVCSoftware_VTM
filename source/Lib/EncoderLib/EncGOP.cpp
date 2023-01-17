@@ -382,7 +382,7 @@ int EncGOP::xWriteAPS( AccessUnit &accessUnit, APS *aps, const int layerId, cons
 #if GDR_ENC_TRACE
   if (aps)
   {
-    printf("-aps ty:%d id:%d\n", aps->getAPSType(), aps->getAPSId());
+    printf("-aps ty:%d id:%d\n", to_underlying(aps->getAPSType()), aps->getAPSId());
   }
 #endif
 
@@ -2162,7 +2162,7 @@ void EncGOP::xPicInitLMCS(Picture *pic, PicHeader *picHeader, Slice *slice)
     picHeader->setLmcsChromaResidualScaleFlag(m_pcReshaper->getSliceReshaperInfo().getSliceReshapeChromaAdj() == 1);
 
 #if GDR_ENABLED
-    if (slice->getSPS()->getGDREnabledFlag() && picHeader->getInGdrInterval())
+    if (slice->getSPS()->getGDREnabledFlag() && slice->getPic()->gdrParam.inGdrInterval)
     {
       picHeader->setLmcsChromaResidualScaleFlag(false);
     }
@@ -3441,7 +3441,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         picHeader->setLmcsEnabledFlag(true);
 #if GDR_ENABLED
-        if (cs.sps->getGDREnabledFlag() && picHeader->getInGdrInterval())
+        if (cs.sps->getGDREnabledFlag() && pcPic->gdrParam.inGdrInterval)
         {
           picHeader->setLmcsChromaResidualScaleFlag(false);
         }
@@ -4035,6 +4035,13 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           {
             pcSlice->setPictureHeaderInSliceHeader(false);
             actualTotalBits += xWritePicHeader(accessUnit, pcPic->cs->picHeader);
+#if GDR_ENC_TRACE
+            printf("-gdr_pic_flag:%d\n", picHeader->getGdrPicFlag());
+            printf("-recovery_poc_cnt:%d\n", picHeader->getRecoveryPocCnt());
+            printf("-InGdrInterval:%d\n", pcPic->gdrParam.inGdrInterval);
+            printf("-pic_lmcs_enabled_flag:%d\n", picHeader->getLmcsEnabledFlag() ? 1 : 0);
+            printf("-pic_chroma_residual_scale_flag:%d\n", picHeader->getLmcsChromaResidualScaleFlag() ? 1 : 0);
+#endif
           }
           else
           {
@@ -4171,7 +4178,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       std::string digestStr;
 #if GDR_ENABLED
       // note : generate hash sei only for non-gdr pictures
-      bool genHash = !(m_pcCfg->getGdrNoHash() && pcSlice->getPicHeader()->getInGdrInterval());
+      bool genHash = !(m_pcCfg->getGdrNoHash() && pcSlice->getPic()->gdrParam.inGdrInterval);
       if (m_pcCfg->getDecodedPictureHashSEIType() != HashType::NONE && genHash)
 #else
       if (m_pcCfg->getDecodedPictureHashSEIType() != HashType::NONE)
@@ -4288,7 +4295,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       xWriteTrailingSEIMessages(trailingSeiMessages, accessUnit, pcSlice->getTLayer());
 
 #if GDR_ENABLED
-      if (!(m_pcCfg->getGdrNoHash() && pcSlice->getPicHeader()->getInGdrInterval()))
+      if (!(m_pcCfg->getGdrNoHash() && pcSlice->getPic()->gdrParam.inGdrInterval))
       {
         printHash(m_pcCfg->getDecodedPictureHashSEIType(), digestStr);
       }

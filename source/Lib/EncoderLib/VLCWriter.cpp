@@ -1630,11 +1630,6 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
   {
     picHeader->setRecoveryPocCnt( -1 );
   }
-#if GDR_ENC_TRACE
-  printf("-gdr_pic_flag:%d\n", picHeader->getGdrPicFlag());
-  printf("-recovery_poc_cnt:%d\n", picHeader->getRecoveryPocCnt());
-  printf("-InGdrInterval:%d\n", picHeader->getInGdrInterval());
-#endif
   // PH extra bits are not written in the reference encoder
   // as these bits are reserved for future extensions
   // for( i = 0; i < NumExtraPhBits; i++ )
@@ -1730,10 +1725,6 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     picHeader->setLmcsEnabledFlag(false);
     picHeader->setLmcsChromaResidualScaleFlag(false);
   }
-#if GDR_ENC_TRACE
-  printf("-pic_lmcs_enabled_flag:%d\n", picHeader->getLmcsEnabledFlag() ? 1 : 0);
-  printf("-pic_chroma_residual_scale_flag:%d\n", picHeader->getLmcsChromaResidualScaleFlag() ? 1 : 0);
-#endif
 
   // quantization scaling lists
   if( sps->getScalingListFlag() )
@@ -2232,6 +2223,13 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
   if (pcSlice->getPictureHeaderInSliceHeader())
   {
     codePictureHeader(picHeader, false);
+#if GDR_ENC_TRACE
+    printf("-gdr_pic_flag:%d\n", picHeader->getGdrPicFlag());
+    printf("-recovery_poc_cnt:%d\n", picHeader->getRecoveryPocCnt());
+    printf("-InGdrInterval:%d\n", pcSlice->getPic()->gdrParam.inGdrInterval);
+    printf("-pic_lmcs_enabled_flag:%d\n", picHeader->getLmcsEnabledFlag() ? 1 : 0);
+    printf("-pic_chroma_residual_scale_flag:%d\n", picHeader->getLmcsChromaResidualScaleFlag() ? 1 : 0);
+#endif
   }
 
   if (pcSlice->getSPS()->getSubPicInfoPresentFlag())

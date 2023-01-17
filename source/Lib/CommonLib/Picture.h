@@ -59,6 +59,14 @@ typedef std::list<SEI*> SEIMessages;
 
 #define M_BUFS(JID,PID) m_bufs[PID]
 
+#if GDR_ENABLED
+struct GdrPicParam
+{
+  bool inGdrInterval = false;
+  int  verBoundary   = -1;
+};
+#endif
+
 struct Picture : public UnitArea
 {
   uint32_t margin;
@@ -256,6 +264,9 @@ public:
   void               addPictureToHashMapForInter();
 
   CodingStructure*   cs;
+#if GDR_ENABLED
+  GdrPicParam        gdrParam;
+#endif
   std::deque<Slice*> slices;
   SEIMessages        SEIs;
 

@@ -222,6 +222,11 @@ private:
   int                     m_maxDecSliceAddrInSubPic;
   int                     m_clsVPSid;
 
+#if GDR_ENABLED
+  int m_lastGdrPoc;
+  int m_lastGdrRecoveryPocCnt;
+#endif
+
 public:
   int                     m_targetSubPicIdx;
 
@@ -271,6 +276,13 @@ public:
   void  setDecoded360SEIMessageFileName(std::string &Dump360SeiFileName) { m_decoded360SeiDumpFileName = Dump360SeiFileName; }
 #endif
   uint32_t  getNumberOfChecksumErrorsDetected() const { return m_numberOfChecksumErrorsDetected; }
+
+#if GDR_ENABLED
+  void setLastGdrPoc(int poc) { m_lastGdrPoc = poc;  }
+  int  getLastGdrPoc()        { return m_lastGdrPoc; }
+  void setLastGdrRecoveryPocCnt(int recoveryPocCnt) { m_lastGdrRecoveryPocCnt = recoveryPocCnt; }
+  int  getLastGdrRecoveryPocCnt()                     { return m_lastGdrRecoveryPocCnt; }
+#endif
 
   int  getDebugCTU( )               const { return m_debugCTU; }
   void setDebugCTU( int debugCTU )        { m_debugCTU = debugCTU; }
