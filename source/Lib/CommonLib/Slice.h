@@ -1020,7 +1020,6 @@ private:
   uint32_t              m_directRefLayerIdx[MAX_VPS_LAYERS][MAX_VPS_LAYERS];
   uint32_t              m_generalLayerIdx[MAX_VPS_LAYERS];
 
-  uint32_t              m_vpsNumPtls;
   bool                  m_ptPresentFlag[MAX_NUM_OLSS];
   uint32_t              m_ptlMaxTemporalId[MAX_NUM_OLSS];
   std::vector<ProfileTierLevel> m_vpsProfileTierLevel;
