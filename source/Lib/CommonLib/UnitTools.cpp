@@ -857,7 +857,7 @@ bool PU::addMergeHmvpCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int
   bool  vbOnCtuBoundary = true;
   if (isEncodeGdrClean)
   {
-    vbOnCtuBoundary = (pu.cs->picture->gdrParam.verBoundary == -1) || (pu.cs->picHeader->getVirtualBoundariesPosX(0) % pu.cs->sps->getMaxCUWidth() == 0);
+    vbOnCtuBoundary = (pu.cs->picture->gdrParam.verBoundary == -1) || (pu.cs->picture->gdrParam.verBoundary % pu.cs->sps->getMaxCUWidth() == 0);
     allCandSolidInAbove = allCandSolidInAbove && vbOnCtuBoundary;
   }
 #endif
@@ -3011,7 +3011,7 @@ void PU::addAMVPHMVPCand(const PredictionUnit &pu, const RefPicList eRefPicList,
   bool vbOnCtuBoundary = true;
   if (isEncodeGdrClean)
   {
-    vbOnCtuBoundary = (pu.cs->picture->gdrParam.verBoundary == -1) || (pu.cs->picHeader->getVirtualBoundariesPosX(0) % pu.cs->sps->getMaxCUWidth() == 0);
+    vbOnCtuBoundary = (pu.cs->picture->gdrParam.verBoundary == -1) || (pu.cs->picture->gdrParam.verBoundary % pu.cs->sps->getMaxCUWidth() == 0);
     allCandSolidInAbove = allCandSolidInAbove && vbOnCtuBoundary;
   }
 #endif

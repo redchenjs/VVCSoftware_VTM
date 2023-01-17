@@ -5194,7 +5194,7 @@ void InterSearch::xSetSearchRange(const PredictionUnit &pu, const Mv &cMvPred, c
       const bool isIntLumaMv = (cFPMvPred.getHor() % iMvLumaFrac) == 0;
       const bool isIntChromaMv = (cFPMvPred.getHor() % iMvChromaFrac) == 0;
 
-      const int scaled_endx = pu.cs->slice->getRefPic(eRefPicList, refIdx)->cs->picHeader->getVirtualBoundariesPosX(0)
+      const int scaled_endx = pu.cs->slice->getRefPic(eRefPicList, refIdx)->cs->picture->gdrParam.verBoundary
                               << iMvShift;
 
       const Position OrigFracPos = Position(LastPos.x << iMvShift, LastPos.y << iMvShift);
