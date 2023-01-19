@@ -867,11 +867,7 @@ protected:
   //SEI message processing order
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
-#if JVET_AB0069_SEI_PROCESSING_ORDER
   std::vector<uint16_t>  m_poSEIProcessingOrder;
-#else
-  std::vector<uint8_t>  m_poSEIProcessingOrder;
-#endif
   uint32_t              m_numofSEIMessages;
 
 #if JVET_AB0070_POST_FILTER_HINT
@@ -2488,13 +2484,8 @@ public:
   bool     getPoSEIEnabled()                                         { return m_poSEIEnabled; }
   void     setPoSEIPayloadType(const std::vector<uint16_t>& b)       { m_poSEIPayloadType = b; }
   uint16_t getPoSEIPayloadType(uint16_t idx)                   const { return m_poSEIPayloadType[idx]; }
-#if JVET_AB0069_SEI_PROCESSING_ORDER
   void     setPoSEIProcessingOrder(const std::vector<uint16_t>& b) { m_poSEIProcessingOrder = b; }
   uint16_t  getPoSEIProcessingOrder(uint16_t idx)              const { return m_poSEIProcessingOrder[idx]; }
-#else
-  void     setPoSEIProcessingOrder(const std::vector<uint8_t>& b)    { m_poSEIProcessingOrder = b; }
-  uint8_t  getPoSEIProcessingOrder(uint8_t idx)                const { return m_poSEIProcessingOrder[idx]; }
-#endif
   void     setPoSEINumofSeiMessages(uint32_t i)                      { m_numofSEIMessages = i; }
   uint32_t getPoSEINumofSeiMessages()                          const { return m_numofSEIMessages; }
 
