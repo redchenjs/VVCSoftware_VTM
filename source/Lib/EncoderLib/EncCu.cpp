@@ -103,24 +103,14 @@ void EncCu::create( EncCfg* encCfg )
         m_pTempCS[w][h] = new CodingStructure(m_unitPool);
         m_pBestCS[w][h] = new CodingStructure(m_unitPool);
 
-#if GDR_ENABLED
-        m_pTempCS[w][h]->create(chromaFormat, Area(0, 0, width, height), false, (bool)encCfg->getPLTMode(), encCfg->getGdrEnabled());
-        m_pBestCS[w][h]->create(chromaFormat, Area(0, 0, width, height), false, (bool)encCfg->getPLTMode(), encCfg->getGdrEnabled());
-#else
         m_pTempCS[w][h]->create(chromaFormat, Area(0, 0, width, height), false, (bool)encCfg->getPLTMode());
         m_pBestCS[w][h]->create(chromaFormat, Area(0, 0, width, height), false, (bool)encCfg->getPLTMode());
-#endif
 
         m_pTempCS2[w][h] = new CodingStructure(m_unitPool);
         m_pBestCS2[w][h] = new CodingStructure(m_unitPool);
 
-#if GDR_ENABLED
-        m_pTempCS2[w][h]->create(chromaFormat, Area(0, 0, width, height), false, (bool)encCfg->getPLTMode(), encCfg->getGdrEnabled());
-        m_pBestCS2[w][h]->create(chromaFormat, Area(0, 0, width, height), false, (bool)encCfg->getPLTMode(), encCfg->getGdrEnabled());
-#else
         m_pTempCS2[w][h]->create(chromaFormat, Area(0, 0, width, height), false, (bool)encCfg->getPLTMode());
         m_pBestCS2[w][h]->create(chromaFormat, Area(0, 0, width, height), false, (bool)encCfg->getPLTMode());
-#endif
       }
       else
       {
@@ -556,7 +546,7 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
 #if GDR_ENABLED
   if (m_pcEncCfg->getGdrEnabled())
   {
-    bool isInGdrInterval = slice.getPicHeader()->getInGdrInterval();
+    bool isInGdrInterval = slice.getPic()->gdrParam.inGdrInterval;
 
     // 1.0 applicable to inter picture only
     if (isInGdrInterval)
@@ -2224,8 +2214,8 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
 #if GDR_ENABLED
   cs = pu->cs;
   isEncodeGdrClean = cs->sps->getGDREnabledFlag() && cs->pcv->isEncoder
-    && ((cs->picHeader->getInGdrInterval() && cs->isClean(pu->Y().topRight(), ChannelType::LUMA))
-      || (cs->picHeader->getNumVerVirtualBoundaries() == 0));
+    && ((cs->picture->gdrParam.inGdrInterval && cs->isClean(pu->Y().topRight(), ChannelType::LUMA))
+      || (cs->picture->gdrParam.verBoundary == -1));
 #endif
 
   bool candHasNoResidual[MRG_MAX_NUM_CANDS + MmvdIdx::ADD_NUM];
@@ -2825,8 +2815,8 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   CodingStructure &cs = *pu->cs;
   const bool       isEncodeGdrClean =
     cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
-    && ((cs.picHeader->getInGdrInterval() && cs.isClean(pu->Y().topRight(), ChannelType::LUMA))
-        || (cs.picHeader->getNumVerVirtualBoundaries() == 0));
+    && ((cs.picture->gdrParam.inGdrInterval && cs.isClean(pu->Y().topRight(), ChannelType::LUMA))
+        || (cs.picture->gdrParam.verBoundary == -1));
 #endif
 
   pu->mergeFlag = true;
@@ -3163,8 +3153,8 @@ void EncCu::xCheckRDCostAffineMerge2Nx2N( CodingStructure *&tempCS, CodingStruct
 #if GDR_ENABLED
   cs = pu->cs;
   isEncodeGdrClean = cs->sps->getGDREnabledFlag() && cs->pcv->isEncoder
-    && ((cs->picHeader->getInGdrInterval() && cs->isClean(pu->Y().topRight(), ChannelType::LUMA))
-      || (cs->picHeader->getNumVerVirtualBoundaries() == 0));
+    && ((cs->picture->gdrParam.inGdrInterval && cs->isClean(pu->Y().topRight(), ChannelType::LUMA))
+      || (cs->picture->gdrParam.verBoundary == -1));
 #endif
   PU::getAffineMergeCand(*pu, affineMergeCtx);
 
@@ -3465,7 +3455,7 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
 #endif
   }
 #if GDR_ENABLED
-  const bool isEncodeGdrClean = tempCS->sps->getGDREnabledFlag() && tempCS->pcv->isEncoder && tempCS->picHeader->getInGdrInterval() && gdrClean;
+  const bool isEncodeGdrClean = tempCS->sps->getGDREnabledFlag() && tempCS->pcv->isEncoder && tempCS->picture->gdrParam.inGdrInterval && gdrClean;
   bool *MrgSolid = nullptr;
   bool *MrgValid = nullptr;
 #endif
@@ -3984,8 +3974,8 @@ void EncCu::xCheckRDCostInter( CodingStructure *&tempCS, CodingStructure *&bestC
 #if GDR_ENABLED
     const bool isEncodeGdrClean =
       tempCS->sps->getGDREnabledFlag() && tempCS->pcv->isEncoder
-      && ((tempCS->picHeader->getInGdrInterval() && tempCS->isClean(cu.Y().topRight(), ChannelType::LUMA))
-          || (tempCS->picHeader->getNumVerVirtualBoundaries() == 0));
+      && ((tempCS->picture->gdrParam.inGdrInterval && tempCS->isClean(cu.Y().topRight(), ChannelType::LUMA))
+          || (tempCS->picture->gdrParam.verBoundary == -1));
 #endif
     m_pcInterSearch->predInterSearch(cu, partitioner);
 
@@ -4177,8 +4167,8 @@ bool EncCu::xCheckRDCostInterAmvr(CodingStructure *&tempCS, CodingStructure *&be
 #if GDR_ENABLED
     const bool isEncodeGdrClean =
       tempCS->sps->getGDREnabledFlag() && tempCS->pcv->isEncoder
-      && ((tempCS->picHeader->getInGdrInterval() && tempCS->isClean(cu.Y().topRight(), ChannelType::LUMA))
-          || (tempCS->picHeader->getNumVerVirtualBoundaries() == 0));
+      && ((tempCS->picture->gdrParam.inGdrInterval && tempCS->isClean(cu.Y().topRight(), ChannelType::LUMA))
+          || (tempCS->picture->gdrParam.verBoundary == -1));
 #endif
     if (testAltHpelFilter)
     {

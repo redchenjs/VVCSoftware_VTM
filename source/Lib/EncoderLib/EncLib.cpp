@@ -509,13 +509,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
                   sps0.getMaxCUWidth(), sps0.getMaxCUWidth() + 16, false, m_layerId,
                   getGopBasedTemporalFilterEnabled());
     picBg->getRecoBuf().fill(0);
-#if GDR_ENABLED
-    PicHeader *picHeader = new PicHeader();
-    xInitPicHeader(*picHeader, sps0, pps0);
-    picBg->finalInit( m_vps, sps0, pps0, picHeader, m_apss, m_lmcsAPS, m_scalinglistAPS );
-#else
     picBg->finalInit( m_vps, sps0, pps0, &m_picHeader, m_apss, m_lmcsAPS, m_scalinglistAPS );
-#endif
     picBg->allocateNewSlice();
     picBg->createSpliceIdx(pps0.pcv->sizeInCtus);
     m_cGOPEncoder.setPicBg(picBg);
@@ -632,13 +626,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
     const SPS *sps = m_spsMap.getPS( pps->getSPSId() );
 
     picCurr->M_BUFS( 0, PIC_ORIGINAL ).copyFrom( m_cGOPEncoder.getPicBg()->getRecoBuf() );
-#if GDR_ENABLED
-    PicHeader *picHeader = new PicHeader();
-    xInitPicHeader(*picHeader, *sps, *pps);
-    picCurr->finalInit( m_vps, *sps, *pps, picHeader, m_apss, m_lmcsAPS, m_scalinglistAPS );
-#else
     picCurr->finalInit( m_vps, *sps, *pps, &m_picHeader, m_apss, m_lmcsAPS, m_scalinglistAPS );
-#endif
     picCurr->poc = m_pocLast - 1;
     m_pocLast -= 2;
 
@@ -858,13 +846,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
         pcPicCurr->M_BUFS( 0, PIC_FILTERED_ORIGINAL_FG ).swap( *pcPicYuvFilteredOrgForFG );
       }
     }
-#if GDR_ENABLED
-    PicHeader *picHeader = new PicHeader();
-    xInitPicHeader(*picHeader, *pSPS, *pPPS);
-    pcPicCurr->finalInit( m_vps, *pSPS, *pPPS, picHeader, m_apss, m_lmcsAPS, m_scalinglistAPS );
-#else
     pcPicCurr->finalInit( m_vps, *pSPS, *pPPS, &m_picHeader, m_apss, m_lmcsAPS, m_scalinglistAPS );
-#endif
 
     pcPicCurr->poc = m_pocLast;
 
@@ -1020,14 +1002,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYu
       const PPS *pPPS = ( ppsID < 0 ) ? m_ppsMap.getFirstPS() : m_ppsMap.getPS( ppsID );
       const SPS *pSPS = m_spsMap.getPS( pPPS->getSPSId() );
 
-#if GDR_ENABLED
-      PicHeader *picHeader = new PicHeader();
-      xInitPicHeader(*picHeader, *pSPS, *pPPS);
-      pcField->finalInit( m_vps, *pSPS, *pPPS, picHeader, m_apss, m_lmcsAPS, m_scalinglistAPS );
-#else
       pcField->finalInit( m_vps, *pSPS, *pPPS, &m_picHeader, m_apss, m_lmcsAPS, m_scalinglistAPS );
-#endif
-
       pcField->poc           = m_pocLast;
       pcField->reconstructed = false;
 

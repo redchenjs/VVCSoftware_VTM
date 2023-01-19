@@ -283,9 +283,6 @@ void FDReader::parseFillerData(InputBitstream* bs, uint32_t &fdSize)
 
 HLSyntaxReader::HLSyntaxReader()
 {
-#if GDR_ENABLED
-  m_lastGdrPoc = -1;
-#endif
 }
 
 HLSyntaxReader::~HLSyntaxReader()
@@ -4450,37 +4447,6 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
       pcSlice->addSubstreamSize(entryPointOffset [ idx ] );
     }
   }
-#if GDR_ENABLED
-  int curPoc = pcSlice->getPOC();
-
-  if (picHeader->getGdrPicFlag())
-  {
-    setLastGdrPoc(curPoc);
-    setLastGdrRecoveryPocCnt(pcSlice->getPicHeader()->getRecoveryPocCnt());
-  }
-
-  int recoveryPocCnt = getLastGdrRecoveryPocCnt();
-
-  if (getLastGdrPoc() > 0 && (getLastGdrPoc() <= curPoc) && (curPoc < (getLastGdrPoc() + recoveryPocCnt)))
-  {
-    picHeader->setInGdrInterval(true);
-  }
-  else
-  {
-    picHeader->setInGdrInterval(false);
-  }
-#endif
-
-#if GDR_DEC_TRACE
-  printf("-gdr_pic_flag:%d\n", picHeader->getGdrPicFlag() ? 1 : 0);
-  printf("-recovery_poc_cnt:%d\n", picHeader->getRecoveryPocCnt());
-#if GDR_ENABLED
-  printf("-inGdrInterval:%d\n", picHeader->getInGdrInterval());
-#endif
-
-  printf("-lmcs_enable : %d\n", picHeader->getLmcsEnabledFlag() ? 1 : 0);
-  printf("-lmcs_chroma : %d\n", picHeader->getLmcsChromaResidualScaleFlag() ? 1 : 0);
-#endif
   return;
 }
 

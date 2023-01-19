@@ -459,6 +459,9 @@ DecLib::DecLib()
   , m_maxDecSubPicIdx(0)
   , m_maxDecSliceAddrInSubPic(-1)
   , m_clsVPSid(0)
+#if GDR_ENABLED
+  , m_lastGdrPoc (-1)
+#endif
   , m_targetSubPicIdx(0)
   , m_dci(nullptr)
 {
@@ -640,13 +643,6 @@ Picture* DecLib::xGetNewPicBuffer( const SPS &sps, const PPS &pps, const uint32_
       pcPic->create( sps.getChromaFormatIdc(), Size( pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples() ), sps.getMaxCUWidth(), sps.getMaxCUWidth() + PIC_MARGIN, true, layerId );
 #endif
     }
-#if GDR_ENABLED // picHeader should be deleted in case pcPic slot gets reused
-    if (pcPic && pcPic->cs && pcPic->cs->picHeader)
-    {
-      delete pcPic->cs->picHeader;
-      pcPic->cs->picHeader = nullptr;
-    }
-#endif
   }
 
   pcPic->setBorderExtension( false );
@@ -3148,6 +3144,31 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     }
     pcSlice->getPic()->numSlices = pps->getNumSlicesInPic();
     pcSlice->getPic()->sliceSubpicIdx.clear();
+#if GDR_ENABLED
+    const int curPoc = pcSlice->getPOC();
+    const PicHeader *picHeader = pcSlice->getPicHeader();
+
+    if (picHeader->getGdrPicFlag())
+    {
+      setLastGdrPoc(curPoc);
+      setLastGdrRecoveryPocCnt(pcSlice->getPicHeader()->getRecoveryPocCnt());
+    }
+
+    const int recoveryPocCnt = getLastGdrRecoveryPocCnt();
+
+    pcSlice->getPic()->gdrParam.inGdrInterval = (getLastGdrPoc() > 0 && (getLastGdrPoc() <= curPoc) && (curPoc < (getLastGdrPoc() + recoveryPocCnt)));
+  #endif
+
+  #if GDR_DEC_TRACE
+    printf("-gdr_pic_flag:%d\n", picHeader->getGdrPicFlag() ? 1 : 0);
+    printf("-recovery_poc_cnt:%d\n", picHeader->getRecoveryPocCnt());
+  #if GDR_ENABLED
+    printf("-inGdrInterval:%d\n", pcSlice->getPic()->gdrParam.inGdrInterval);
+  #endif
+
+    printf("-lmcs_enable : %d\n", picHeader->getLmcsEnabledFlag() ? 1 : 0);
+    printf("-lmcs_chroma : %d\n", picHeader->getLmcsChromaResidualScaleFlag() ? 1 : 0);
+#endif
   }
   pcSlice->getPic()->sliceSubpicIdx.push_back(pps->getSubPicIdxFromSubPicId(pcSlice->getSliceSubPicId()));
   pcSlice->checkCRA(pcSlice->getRPL0(), pcSlice->getRPL1(), m_pocCRA[nalu.m_nuhLayerId], m_checkCRAFlags[nalu.m_nuhLayerId], m_cListPic);
@@ -3163,12 +3184,7 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     CU::checkConformanceILRP(pcSlice);
   }
 
-#if GDR_ENABLED
-  PicHeader *picHeader = nullptr; // picHeader is not necessary for scaledReference picture at decoder but should not share picHeader with non-scaled picture
-  pcSlice->scaleRefPicList(scaledRefPic, picHeader, m_parameterSetManager.getAPSs(), m_picHeader.getLmcsAPS(), m_picHeader.getScalingListAPS(), true);
-#else
   pcSlice->scaleRefPicList( scaledRefPic, m_pcPic->cs->picHeader, m_parameterSetManager.getAPSs(), m_picHeader.getLmcsAPS(), m_picHeader.getScalingListAPS(), true );
-#endif
 
   if (!pcSlice->isIntra())
   {

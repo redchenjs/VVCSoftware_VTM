@@ -250,11 +250,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   {
     cs      = new CodingStructure(g_xuPool);
     cs->sps = &sps;
-#if GDR_ENABLED
-    cs->create(chromaFormatIDC, Area(0, 0, width, height), true, (bool)sps.getPLTMode(), sps.getGDREnabledFlag());
-#else
     cs->create(chromaFormatIDC, Area(0, 0, width, height), true, (bool) sps.getPLTMode());
-#endif
   }
 
   cs->vps = vps;
@@ -263,24 +259,8 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   cs->pps     = &pps;
   picHeader->setSPSId( sps.getSPSId() );
   picHeader->setPPSId( pps.getPPSId() );
-#if GDR_ENABLED
-  picHeader->setPic(this);
-
-  PicHeader *ph = new PicHeader;
-  ph->initPicHeader();
-  *ph = *picHeader;
-  ph->setPic(this);
-
-  if (cs->picHeader)
-  {
-    delete cs->picHeader;
-    cs->picHeader = nullptr;
-  }
-
-  cs->picHeader = ph;
-#else
   cs->picHeader = picHeader;
-#endif
+
   memcpy(cs->alfApss, alfApss, sizeof(cs->alfApss));
   cs->lmcsAps = lmcsAps;
   cs->scalinglistAps = scalingListAps;

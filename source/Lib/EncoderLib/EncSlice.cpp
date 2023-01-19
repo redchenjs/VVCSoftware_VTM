@@ -745,7 +745,8 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
 
     pcPic->cs->picHeader->setGdrPicFlag(false);
     pcPic->cs->picHeader->setRecoveryPocCnt(0);
-    pcPic->cs->picHeader->setInGdrInterval(false);
+
+    pcPic->gdrParam.inGdrInterval = false;
 
     pcPic->cs->picHeader->setVirtualBoundariesPresentFlag(false);
 
@@ -767,7 +768,8 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
     // for none gdr period pictures
     if ((curPoc < gdrPocStart) || isOutGdrInterval)
     {
-      pcPic->cs->picHeader->setInGdrInterval(false);
+      pcPic->gdrParam.inGdrInterval = false;
+      pcPic->gdrParam.verBoundary = -1;
       pcPic->cs->picHeader->setVirtualBoundariesPresentFlag(false);
 
       pcPic->cs->picHeader->setNumHorVirtualBoundaries(0);
@@ -782,11 +784,11 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
     {
       if (curPoc == recoveryPicPoc)
       {
-        pcPic->cs->picHeader->setInGdrInterval(false);
+        pcPic->gdrParam.inGdrInterval = false;
       }
       else
       {
-        pcPic->cs->picHeader->setInGdrInterval(true);
+        pcPic->gdrParam.inGdrInterval = true;
       }
 
       pcPic->cs->picHeader->setVirtualBoundariesPresentFlag(true);
@@ -836,6 +838,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
       }
 
       pcPic->cs->picHeader->setVirtualBoundariesPosX(endGdrX, 0);
+      pcPic->gdrParam.verBoundary = endGdrX;
 
 #if GDR_ENC_TRACE
       printf("\n");

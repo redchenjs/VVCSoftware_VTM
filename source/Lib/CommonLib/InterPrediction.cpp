@@ -864,8 +864,8 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 #if GDR_ENABLED
   bool allOk = true;
   const bool isEncodeGdrClean = sps.getGDREnabledFlag() && cs.pcv->isEncoder
-                                && ((ph.getInGdrInterval() && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
-                                    || ph.getNumVerVirtualBoundaries() == 0);
+                                && ((cs.picture->gdrParam.inGdrInterval && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
+                                    || cs.picture->gdrParam.verBoundary == -1);
   const int pux = pu.lx();
   const int puy = pu.ly();
 #endif

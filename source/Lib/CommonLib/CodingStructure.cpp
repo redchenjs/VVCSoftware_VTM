@@ -85,9 +85,7 @@ CodingStructure::CodingStructure(XuPool &xuPool)
   m_isDecomp.fill(nullptr);
 
   m_motionBuf     = nullptr;
-#if GDR_ENABLED
   picHeader = nullptr;
-#endif
 
   features.resize( NUM_ENC_FEATURES );
   treeType = TREE_D;
@@ -108,15 +106,6 @@ void CodingStructure::destroy()
   m_orgr.destroy();
 
   destroyCoeffs();
-
-#if GDR_ENABLED
-  if (picHeader && m_gdrEnabled)
-  {
-    delete picHeader;
-  }
-
-  picHeader = nullptr;
-#endif
 
   for (auto &ptr: m_isDecomp)
   {
@@ -332,11 +321,7 @@ bool CodingStructure::dirtyCrossBTV() const
 
   return true;
 }
-#endif
 
-
-
-#if GDR_ENABLED
 bool CodingStructure::isClean(const Position &IntPos, Mv FracMv) const
 {
   /*
@@ -352,31 +337,25 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv) const
     return false;
   }
 
-  PicHeader     *curPh = curPic->cs->picHeader;
-  if (!curPh)
-  {
-    return false;
-  }
-  bool isCurGdrPicture = curPh->getInGdrInterval();
+  bool isCurGdrPicture = curPic->gdrParam.inGdrInterval;
 
   if (isCurGdrPicture)
   {
     const int lumaPixelAway = 4;
     const int chromaPixelAway = 5;
 
-    const int iMvShift = MV_FRACTIONAL_BITS_INTERNAL;
-    const int iMvLumaFrac = (1 << iMvShift);
-    const int iMvChromaFrac = (iMvLumaFrac << 1);
+    const int mvShift = MV_FRACTIONAL_BITS_INTERNAL;
+    const int mvLumaFrac = (1 << mvShift);
+    const int mvChromaFrac = (mvLumaFrac << 1);
 
-    const bool isIntLumaMv = (FracMv.getHor() % iMvLumaFrac) == 0;
-    const bool isIntChromaMv = (FracMv.getHor() % iMvChromaFrac) == 0;
+    const bool isIntLumaMv = (FracMv.getHor() % mvLumaFrac) == 0;
+    const bool isIntChromaMv = (FracMv.getHor() % mvChromaFrac) == 0;
 
-    const int scaledEndX = curPh->getVirtualBoundariesPosX(0) << iMvShift;
+    const int scaledEndX = curPic->gdrParam.verBoundary << mvShift;
 
-
-    const Position OrigFracPos = Position(IntPos.x << iMvShift, IntPos.y << iMvShift);
-    const int lastLumaPos = ((OrigFracPos.x / iMvLumaFrac)   * iMvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << iMvShift));
-    const int lastChromaPos = ((OrigFracPos.x / iMvChromaFrac) * iMvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << iMvShift));
+    const Position OrigFracPos = Position(IntPos.x << mvShift, IntPos.y << mvShift);
+    const int lastLumaPos = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
+    const int lastChromaPos = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
 
     const int lastPelPos = std::max(lastLumaPos, lastChromaPos);
 
@@ -406,36 +385,25 @@ bool CodingStructure::isClean(const Position &IntPos, const Mv FracMv, const Pic
     return false;
   }
 
-  if (!refPic->cs)
-  {
-    return false;
-  }
-
-  PicHeader *refPh = refPic->cs->picHeader;
-  if (!refPh)
-  {
-    return false;
-  }
-
-  bool isRefGdrPicture = refPh->getInGdrInterval();
+  bool isRefGdrPicture = refPic->gdrParam.inGdrInterval;
 
   if (isRefGdrPicture)
   {
     const int lumaPixelAway = 4;
     const int chromaPixelAway = 5;
 
-    const int iMvShift = MV_FRACTIONAL_BITS_INTERNAL;
-    const int iMvLumaFrac = (1 << iMvShift);
-    const int iMvChromaFrac = (iMvLumaFrac << 1);
+    const int mvShift = MV_FRACTIONAL_BITS_INTERNAL;
+    const int mvLumaFrac = (1 << mvShift);
+    const int mvChromaFrac = (mvLumaFrac << 1);
 
-    const bool isIntLumaMv = (FracMv.getHor() % iMvLumaFrac) == 0;
-    const bool isIntChromaMv = (FracMv.getHor() % iMvChromaFrac) == 0;
+    const bool isIntLumaMv = (FracMv.getHor() % mvLumaFrac) == 0;
+    const bool isIntChromaMv = (FracMv.getHor() % mvChromaFrac) == 0;
 
-    const int  scaledEndX = refPh->getVirtualBoundariesPosX(0) << iMvShift;
+    const int  scaledEndX = refPic->gdrParam.verBoundary << mvShift;
 
-    const Position OrigFracPos = Position((IntPos.x) << iMvShift, IntPos.y << iMvShift);
-    const int lastLumaPos = ((OrigFracPos.x / iMvLumaFrac)   * iMvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << iMvShift));
-    const int lastChromaPos = ((OrigFracPos.x / iMvChromaFrac) * iMvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << iMvShift));
+    const Position OrigFracPos = Position((IntPos.x) << mvShift, IntPos.y << mvShift);
+    const int lastLumaPos = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
+    const int lastChromaPos = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
 
     const int lastPelPos = std::max(lastLumaPos, lastChromaPos);
 
@@ -451,7 +419,7 @@ bool CodingStructure::isClean(const Position &IntPos, const Mv FracMv, const Pic
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
     if (isCurGdrPicture)
     {
@@ -486,38 +454,26 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, RefPicList e, i
     return false;
   }
 
-  if (!refPic->cs)
-  {
-    return false;
-  }
-
-  PicHeader *refPh = refPic->cs->picHeader;
-
-  if (!refPh)
-  {
-    return false;
-  }
-
-  bool isRefGdrPicture = refPh->getInGdrInterval();
+  bool isRefGdrPicture = refPic->gdrParam.inGdrInterval;
 
   if (isRefGdrPicture)
   {
     const int lumaPixelAway   = 4 + (isProf << 0);
     const int chromaPixelAway = 4 + (isProf << 1);
 
-    const int iMvShift      = MV_FRACTIONAL_BITS_INTERNAL;
-    const int iMvLumaFrac   = (1 << iMvShift);
-    const int iMvChromaFrac = (iMvLumaFrac << 1);
+    const int mvShift      = MV_FRACTIONAL_BITS_INTERNAL;
+    const int mvLumaFrac   = (1 << mvShift);
+    const int mvChromaFrac = (mvLumaFrac << 1);
 
-    const bool isIntLumaMv      = (FracMv.getHor() % iMvLumaFrac  ) == 0;
-    const bool isIntChromaMv    = isProf ? false : (FracMv.getHor() % iMvChromaFrac) == 0;
+    const bool isIntLumaMv      = (FracMv.getHor() % mvLumaFrac  ) == 0;
+    const bool isIntChromaMv    = isProf ? false : (FracMv.getHor() % mvChromaFrac) == 0;
 
-    const int  scaledEndX      = refPh->getVirtualBoundariesPosX(0) << iMvShift;
+    const int  scaledEndX      = refPic->gdrParam.verBoundary << mvShift;
 
 
-    const Position OrigFracPos  = Position((IntPos.x) << iMvShift, IntPos.y << iMvShift);
-    const int lastLumaPos     = ((OrigFracPos.x / iMvLumaFrac)   * iMvLumaFrac)   + FracMv.getHor() + (isIntLumaMv   ? 0 : (lumaPixelAway   << iMvShift));
-    const int lastChromaPos   = ((OrigFracPos.x / iMvChromaFrac) * iMvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << iMvShift)) ;
+    const Position OrigFracPos  = Position((IntPos.x) << mvShift, IntPos.y << mvShift);
+    const int lastLumaPos     = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac)   + FracMv.getHor() + (isIntLumaMv   ? 0 : (lumaPixelAway   << mvShift));
+    const int lastChromaPos   = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift)) ;
 
     const int lastPelPos    = std::max(lastLumaPos, lastChromaPos);
 
@@ -533,7 +489,7 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, RefPicList e, i
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
     if (isCurGdrPicture)
     {
@@ -557,7 +513,6 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, RefPicList e, i
   if (refIdx < 0) return false;
 
   Picture*   refPic;
-  PicHeader *refPh;
 
   if (refIdx == IBC_REF_IDX)
   {
@@ -573,44 +528,25 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, RefPicList e, i
     return false;
   }
 
-  if (refIdx == IBC_REF_IDX)
-  {
-    refPh = picHeader;
-  }
-  else
-  {
-    if (refPic->cs)
-    {
-      return false;
-    }
-
-    refPh = refPic->cs->picHeader;
-  }
-
-  if (!refPh)
-  {
-    return false;
-  }
-
-  bool isRefGdrPicture = refPh->getInGdrInterval();
+  bool isRefGdrPicture = refPic->gdrParam.inGdrInterval;
 
   if (isRefGdrPicture)
   {
     const int lumaPixelAway = 4;
     const int chromaPixelAway = 5;
 
-    const int iMvShift = MV_FRACTIONAL_BITS_INTERNAL;
-    const int iMvLumaFrac = (1 << iMvShift);
-    const int iMvChromaFrac = (iMvLumaFrac << 1);
+    const int mvShift = MV_FRACTIONAL_BITS_INTERNAL;
+    const int mvLumaFrac = (1 << mvShift);
+    const int mvChromaFrac = (mvLumaFrac << 1);
 
-    const bool isIntLumaMv = (FracMv.getHor() % iMvLumaFrac) == 0;
-    const bool isIntChromaMv = (FracMv.getHor() % iMvChromaFrac) == 0;
+    const bool isIntLumaMv = (FracMv.getHor() % mvLumaFrac) == 0;
+    const bool isIntChromaMv = (FracMv.getHor() % mvChromaFrac) == 0;
 
-    const int  scaledEndX = refPh->getVirtualBoundariesPosX(0) << iMvShift;
+    const int  scaledEndX = refPic->gdrParam.verBoundary << mvShift;
 
-    const Position OrigFracPos = Position((IntPos.x) << iMvShift, IntPos.y << iMvShift);
-    const int lastLumaPos = ((OrigFracPos.x / iMvLumaFrac)   * iMvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << iMvShift));
-    const int lastChromaPos = ((OrigFracPos.x / iMvChromaFrac) * iMvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << iMvShift));
+    const Position OrigFracPos = Position((IntPos.x) << mvShift, IntPos.y << mvShift);
+    const int lastLumaPos = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
+    const int lastChromaPos = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
 
     const int lastPelPos = std::max(lastLumaPos, lastChromaPos);
 
@@ -626,7 +562,7 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, RefPicList e, i
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
     if (isCurGdrPicture)
     {
@@ -655,16 +591,11 @@ bool CodingStructure::isClean(const Position &IntPos, RefPicList e, int refIdx) 
     return false;
   }
 
-  PicHeader     *refPh = refPic->cs->picHeader;
-  if (!refPh)
-  {
-    return false;
-  }
-  bool isRefGdrPicture = refPh->getInGdrInterval();
+  bool isRefGdrPicture = refPic->gdrParam.inGdrInterval;
 
   if (isRefGdrPicture)
   {
-    if (IntPos.x < refPh->getVirtualBoundariesPosX(0))
+    if (IntPos.x < refPic->gdrParam.verBoundary)
     {
       return true;
     }
@@ -676,7 +607,7 @@ bool CodingStructure::isClean(const Position &IntPos, RefPicList e, int refIdx) 
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
     if (isCurGdrPicture)
     {
@@ -696,17 +627,11 @@ bool CodingStructure::isClean(const Position &IntPos, const Picture* const refPi
     return false;
   }
 
-  PicHeader     *refPh = refPic->cs->picHeader;
-  if (!refPh)
-  {
-    return false;
-  }
-
-  bool isRefGdrPicture = refPh->getInGdrInterval();
+  bool isRefGdrPicture = refPic->gdrParam.inGdrInterval;
 
   if (isRefGdrPicture)
   {
-    if (IntPos.x < refPh->getVirtualBoundariesPosX(0))
+    if (IntPos.x < refPic->gdrParam.verBoundary)
     {
       return true;
     }
@@ -718,7 +643,7 @@ bool CodingStructure::isClean(const Position &IntPos, const Picture* const refPi
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
     if (isCurGdrPicture)
     {
@@ -739,16 +664,11 @@ bool CodingStructure::isClean(const int Intx, const int Inty, const ChannelType 
          pos in clean area -> true
          pos in dirty area -> false
   */
-  PicHeader     *curPh = picHeader;
-  if (!curPh)
-  {
-    return false;
-  }
 
-  bool isCurGdrPicture = curPh->getInGdrInterval();
+  bool isCurGdrPicture = picture->gdrParam.inGdrInterval;
   if (isCurGdrPicture)
   {
-    int virboundary_endx = curPh->getVirtualBoundariesPosX(0);
+    int virboundary_endx = picture->gdrParam.verBoundary;
 
     virboundary_endx = virboundary_endx >> to_underlying(effChType);
     if (Intx < virboundary_endx)
@@ -1566,16 +1486,8 @@ void CodingStructure::allocateVectorsAtPicLevel()
   tus.reserve( allocSize );
 }
 
-#if GDR_ENABLED
-void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabled)
-#else
 void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused)
-#endif
 {
-#if GDR_ENABLED
-  m_gdrEnabled = isGdrEnabled;
-#endif
-
   createInternals(UnitArea(_chromaFormat, _area), isTopLayer, isPLTused);
 
   if (isTopLayer)
@@ -1583,44 +1495,20 @@ void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _are
     return;
   }
 
-#if GDR_ENABLED
-  if (m_gdrEnabled)
-  {
-    picHeader = new PicHeader();
-    picHeader->initPicHeader();
-  }
-#endif
-
   m_reco.create( area );
   m_pred.create( area );
   m_resi.create( area );
   m_orgr.create( area );
 }
 
-#if GDR_ENABLED
-void CodingStructure::create(const UnitArea& _unit, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabled)
-#else
 void CodingStructure::create(const UnitArea& _unit, const bool isTopLayer, const bool isPLTused)
-#endif
 {
-#if GDR_ENABLED
-  m_gdrEnabled = isGdrEnabled;
-#endif
-
   createInternals(_unit, isTopLayer, isPLTused);
 
   if (isTopLayer)
   {
     return;
   }
-
-#if GDR_ENABLED
-  if (m_gdrEnabled)
-  {
-    picHeader = new PicHeader();
-    picHeader->initPicHeader();
-  }
-#endif
 
   m_reco.create( area );
   m_pred.create( area );
@@ -1894,23 +1782,7 @@ void CodingStructure::initSubStructure( CodingStructure& subStruct, const Channe
   subStruct.sps       = sps;
   subStruct.vps       = vps;
   subStruct.pps       = pps;
-#if GDR_ENABLED
-  if (m_gdrEnabled)
-  {
-    if (!subStruct.picHeader)
-    {
-      subStruct.picHeader = new PicHeader;
-      subStruct.picHeader->initPicHeader();
-    }
-    *subStruct.picHeader = *picHeader;
-  }
-  else
-  {
-    subStruct.picHeader = picHeader;
-  }
-#else
   subStruct.picHeader = picHeader;
-#endif
 
   memcpy(subStruct.alfApss, alfApss, sizeof(alfApss));
 
