@@ -56,7 +56,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AB0072                                      1 //Green-MPEG SEI Messaging (JVET-AB0072)
 #define M60678_BALLOT_COMMENTS_OF_FI_03                  1 // m60678: Ballot comments of FI_03
 
 #define JVET_AB0070_POST_FILTER_HINT                      1 // JVET-AB0070: post-filter hint SEI
@@ -130,10 +129,8 @@
 
 #define KEEP_PRED_AND_RESI_SIGNALS                        0
 
-#if JVET_AB0072
 #ifndef GREEN_METADATA_SEI_ENABLED
 #define GREEN_METADATA_SEI_ENABLED 0 //JVET-AB0072: Analyser for the Green Metadata SEI
-#endif
 #endif
 
 // ====================================================================================================================
