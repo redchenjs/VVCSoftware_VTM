@@ -1457,13 +1457,11 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
   CHECK(!(m_isInitialized), "Unspecified error");
   CHECK(!(sei != nullptr), "Unspecified error");
   sei->m_id = m_pcCfg->getNnPostFilterSEIActivationId();
-#if JVET_AB0050
   sei->m_cancelFlag  = m_pcCfg->getNnPostFilterSEIActivationCancelFlag();
   if(!sei->m_cancelFlag)
   {
     sei->m_persistenceFlag = m_pcCfg->getNnPostFilterSEIActivationPersistenceFlag();
   }
-#endif
 }
 
 

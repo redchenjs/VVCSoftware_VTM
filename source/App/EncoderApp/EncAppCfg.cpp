@@ -1910,10 +1910,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
     opts.addOptions()("SEINNPostFilterActivationId", m_nnPostFilterSEIActivationId , 0u,        "Id of the Neural Network Post Filter on current picture");
-#if JVET_AB0050
     opts.addOptions()("SEINNPostFilterActivationCancelFlag", m_nnPostFilterSEIActivationCancelFlag, false, "Control use of the target neural network post filter established by any previous NNPFA SEI message");
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
-#endif
   }
 
   po::setDefaults(opts);

@@ -775,10 +775,8 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
 #endif
-#if JVET_AB0050
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
-#endif
 
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;

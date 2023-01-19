@@ -1917,13 +1917,11 @@ void SEIWriter::xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCha
 void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei)
 {
   xWriteUvlc(sei.m_id, "nnpfa_id");
-#if JVET_AB0050
   xWriteFlag(sei.m_cancelFlag, "nnpfa_cancel_flag");
   if(!sei.m_cancelFlag)
   {
     xWriteFlag(sei.m_persistenceFlag, "nnpfa_persistence_flag");
   }
-#endif
 }
 
 #if JVET_AB0070_POST_FILTER_HINT

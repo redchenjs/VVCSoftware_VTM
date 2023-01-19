@@ -2924,7 +2924,6 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_id" );
   sei.m_id =val;
   CHECK((sei.m_id >= 256 && sei.m_id <= 511) || (sei.m_id >= (1<<31) && sei.m_id <= MAX_NNPFA_ID), "Reserved nnpfa_id value, shall ignore the SEI message");
-#if JVET_AB0050
   sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_cancel_flag" );
   sei.m_cancelFlag = val;
 
@@ -2933,7 +2932,6 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
     sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_persistence_flag" );
     sei.m_persistenceFlag = val;
   }
-#endif
 }
 
 void SEIReader::xParseSEIPhaseIndication(SEIPhaseIndication& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
