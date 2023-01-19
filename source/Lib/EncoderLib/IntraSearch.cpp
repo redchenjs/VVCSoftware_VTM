@@ -1235,8 +1235,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
         {
           if (m_pcEncCfg->getUseFastISP())
           {
-            m_modeCtrl->setMIPFlagISPPass(bestPuMode.mipFlg);
-            m_modeCtrl->setBestPredModeDCT2(bestPuMode.modeId);
+            m_modeCtrl->setBestPredModeDCT2(bestPuMode.modeId, bestPuMode.mipFlg);
           }
           if (!xSortISPCandList(bestCurrentCost, csBest->cost, bestPuMode))
           {
