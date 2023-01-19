@@ -2828,21 +2828,11 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_crPadding = val;
     }
 
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_complexity_info_present_flag");
     sei.m_complexityInfoPresentFlag = val;
 
     if (sei.m_complexityInfoPresentFlag)
     {
-#else
-    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_complexity_idc");
-    sei.m_complexityIdc = val;
-
-    if(sei.m_complexityIdc > 0)
-    {
-      if(sei.m_complexityIdc == 1)
-      {
-#endif
         sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_parameter_type_idc");
         sei.m_parameterTypeIdc = val;
         if (sei.m_parameterTypeIdc != 2)
@@ -2857,12 +2847,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_num_kmac_operations_idc");
         sei.m_numKmacOperationsIdc = val;
 
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
         sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_total_kilobyte_size");
         sei.m_totalKilobyteSize = val;
-#else
-      }
-#endif
     }
   }
 #if !JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC

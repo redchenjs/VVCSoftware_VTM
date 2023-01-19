@@ -754,20 +754,14 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsCbPadding[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsCrPadding[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   bool                  m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t              m_nnPostFilterSEICharacteristicsComplexityIdc[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::string           m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsNumParametersIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   uint32_t              m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
-#endif
 
   bool                  m_nnPostFilterSEIActivationEnabled;
   uint32_t              m_nnPostFilterSEIActivationId;

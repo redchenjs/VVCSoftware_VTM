@@ -1198,20 +1198,14 @@ public:
     , m_cbPadding(0)
     , m_crPadding(0)
     , m_payloadByte(nullptr)
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
     , m_complexityInfoPresentFlag(false)
-#else
-    , m_complexityIdc(0)
-#endif
     , m_uriTag("")
     , m_uri("")
     , m_parameterTypeIdc(0)
     , m_log2ParameterBitLengthMinus3(0)
     , m_numParametersIdc(0)
     , m_numKmacOperationsIdc(0)
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
     , m_totalKilobyteSize(0)
-#endif
   {}
 
   ~SEINeuralNetworkPostFilterCharacteristics() override
@@ -1262,20 +1256,14 @@ public:
   uint32_t       m_crPadding;
   uint64_t       m_payloadLength;
   char*          m_payloadByte;
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   bool           m_complexityInfoPresentFlag;
-#else
-  uint32_t       m_complexityIdc;
-#endif
   std::string    m_uriTag;
   std::string    m_uri;
   uint32_t       m_parameterTypeIdc;
   uint32_t       m_log2ParameterBitLengthMinus3;
   uint32_t       m_numParametersIdc;
   uint32_t       m_numKmacOperationsIdc;
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   uint32_t       m_totalKilobyteSize;
-#endif
 #if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
   uint32_t       m_numberInputDecodedPicturesMinus2;
   std::vector<uint32_t> m_numberInterpolatedPictures;

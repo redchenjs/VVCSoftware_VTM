@@ -1224,13 +1224,8 @@ void EncApp::xInitLibCfg( int layerIdx )
       m_cEncLib.setNNPostFilterSEICharacteristicsLumaPadding             (m_nnPostFilterSEICharacteristicsLumaPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCrPadding               (m_nnPostFilterSEICharacteristicsCrPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCbPadding               (m_nnPostFilterSEICharacteristicsCbPadding[i], i);
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
       m_cEncLib.setNNPostFilterSEICharacteristicsComplexityInfoPresentFlag (m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsComplexityInfoPresentFlag(i))
-#else
-      m_cEncLib.setNNPostFilterSEICharacteristicsComplexityIdc           ( m_nnPostFilterSEICharacteristicsComplexityIdc[i], i);
-      if (m_cEncLib.getNNPostFilterSEICharacteristicsComplexityIdc(i) > 0)
-#endif
       {
       m_cEncLib.setNNPostFilterSEICharacteristicsLumaPadding             (m_nnPostFilterSEICharacteristicsLumaPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCrPadding               (m_nnPostFilterSEICharacteristicsCrPadding[i], i);
@@ -1239,9 +1234,7 @@ void EncApp::xInitLibCfg( int layerIdx )
         m_cEncLib.setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3     ( m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumParametersIdc        ( m_nnPostFilterSEICharacteristicsNumParametersIdc[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumKmacOperationsIdc    ( m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], i);
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
         m_cEncLib.setNNPostFilterSEICharacteristicsTotalKilobyteSize       ( m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i], i);
-#endif
 
       }
       m_cEncLib.setNNPostFilterSEICharacteristicsUriTag                  ( m_nnPostFilterSEICharacteristicsUriTag[i], i);

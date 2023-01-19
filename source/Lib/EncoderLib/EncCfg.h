@@ -716,20 +716,14 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsCrPadding[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsCbPadding[MAX_NUM_NN_POST_FILTERS];
   std::string             m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   bool                    m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t                m_nnPostFilterSEICharacteristicsComplexityIdc[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::string             m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
   std::string             m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsNumParametersIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   uint32_t                m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
-#endif
 #if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
   uint32_t                m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t>   m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
@@ -1951,13 +1945,8 @@ public:
   void        setNNPostFilterSEICharacteristicsCrPadding(uint32_t crPadding, int filterIdx) { m_nnPostFilterSEICharacteristicsCrPadding[filterIdx] = crPadding; }
   uint32_t    getNNPostFilterSEICharacteristicsCrPadding(int filterIdx) const { return m_nnPostFilterSEICharacteristicsCrPadding[filterIdx]; }
 
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   void        setNNPostFilterSEICharacteristicsComplexityInfoPresentFlag(bool complexityInfoPresentFlag, int filterIdx) { m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[filterIdx] = complexityInfoPresentFlag; }
   bool        getNNPostFilterSEICharacteristicsComplexityInfoPresentFlag(int filterIdx) const                           { return m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[filterIdx]; }
-#else
-  void        setNNPostFilterSEICharacteristicsComplexityIdc (uint32_t complexityIdc , int filterIdx)                   { m_nnPostFilterSEICharacteristicsComplexityIdc[filterIdx] = complexityIdc ; }
-  uint32_t    getNNPostFilterSEICharacteristicsComplexityIdc (int filterIdx) const                                      { return m_nnPostFilterSEICharacteristicsComplexityIdc[filterIdx]; }
-#endif
   void        setNNPostFilterSEICharacteristicsUriTag(std::string uriTag, int filterIdx)                                { m_nnPostFilterSEICharacteristicsUriTag[filterIdx] = uriTag; }
   std::string getNNPostFilterSEICharacteristicsUriTag(int filterIdx) const                                              { return m_nnPostFilterSEICharacteristicsUriTag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsUri(std::string uri, int filterIdx)                                      { m_nnPostFilterSEICharacteristicsUri[filterIdx] = uri; }
@@ -1970,10 +1959,8 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsNumParametersIdc  (int filterIdx) const                                  { return m_nnPostFilterSEICharacteristicsNumParametersIdc[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsNumKmacOperationsIdc(uint32_t numKmacOperationsIdc   , int filterIdx)    { m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[filterIdx] = numKmacOperationsIdc   ; }
   uint32_t    getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(int filterIdx) const                                { return m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[filterIdx]; }
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   void        setNNPostFilterSEICharacteristicsTotalKilobyteSize(uint32_t totalKilobyteSize, int filterIdx)             { m_nnPostFilterSEICharacteristicsTotalKilobyteSize[filterIdx] = totalKilobyteSize; }
   uint32_t    getNNPostFilterSEICharacteristicsTotalKilobyteSize(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsTotalKilobyteSize[filterIdx]; }
-#endif
 
   void        setNNPostFilterSEICharacteristicsPayloadFilename(std::string payloadFilename, int filterIdx)              { m_nnPostFilterSEICharacteristicsPayloadFilename[filterIdx] = payloadFilename; }
   std::string getNNPostFilterSEICharacteristicsPayloadFilename(int filterIdx) const                                     { return m_nnPostFilterSEICharacteristicsPayloadFilename[filterIdx]; }
