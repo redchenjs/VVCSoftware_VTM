@@ -55,7 +55,6 @@
 // clang-format off
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AB0081                                       1 // JVET-AB0081: Increased length of filters used for upscaling reconstructed pictures in VTM
 #define JVET_AB0058_NN_FRAME_RATE_UPSAMPLING              1 // JVET-AB0058: Allow for signalling nn frame rate upsampling
 
 #define JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC 1

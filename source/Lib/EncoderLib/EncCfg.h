@@ -1019,9 +1019,7 @@ protected:
   bool        m_resChangeInClvsEnabled;
   int         m_switchPocPeriod;
   int         m_upscaledOutput;
-#if JVET_AB0081
   int         m_upscaleFilterForDisplay;
-#endif
   int         m_numRefLayers[MAX_VPS_LAYERS];
   bool        m_avoidIntraInDepLayer;
   bool        m_craAPSreset;
@@ -2769,10 +2767,8 @@ public:
   void        setSwitchPocPeriod( int p )                            { m_switchPocPeriod = p;}
   void        setUpscaledOutput( int b )                             { m_upscaledOutput = b; }
   int         getUpscaledOutput()                              const { return m_upscaledOutput; }
-#if JVET_AB0081
   void        setUpscaleFilerForDisplay(int b)                       { m_upscaleFilterForDisplay = b; }
   int         getUpscaleFilerForDisplay()                      const { return m_upscaleFilterForDisplay; }
-#endif
 
   void        setNumRefLayers( int* numRefLayers )                   { std::memcpy( m_numRefLayers, numRefLayers, sizeof( m_numRefLayers ) ); }
   int         getNumRefLayers( int layerIdx )                  const { return m_numRefLayers[layerIdx];  }

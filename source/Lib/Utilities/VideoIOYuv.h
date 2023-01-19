@@ -116,16 +116,10 @@ public:
   int   getFileBitdepth(ChannelType ch) { return m_fileBitdepth[ch]; }
 
   bool writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
-#if !JVET_AB0081
-                            const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
-                            int outputChoice = 0, ChromaFormat format = NUM_CHROMA_FORMAT,
-                            const bool clipToRec709 = false);   ///< write one upsaled YUV frame
-#else
                             const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
                             int outputChoice = 0, ChromaFormat format = NUM_CHROMA_FORMAT,
                             const bool clipToRec709            = false,
                             int        upscaleFilterForDisplay = 1);   ///< write one upsaled YUV frame
-#endif
 
 
 };
