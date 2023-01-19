@@ -808,9 +808,7 @@ protected:
   int                   m_sariSarHeight;
 
   bool      m_SEIManifestSEIEnabled;
-#if JVET_T0056_SEI_PREFIX_INDICATION
   bool      m_SEIPrefixIndicationSEIEnabled;
-#endif 
   bool                  m_phaseIndicationSEIEnabledFullResolution;
   int                   m_piHorPhaseNumFullResolution;
   int                   m_piHorPhaseDenMinus1FullResolution;

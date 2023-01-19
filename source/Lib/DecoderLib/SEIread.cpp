@@ -418,12 +418,10 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIManifest;
       xParseSEISEIManifest((SEIManifest&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_T0056_SEI_PREFIX_INDICATION
     case SEI::PayloadType::SEI_PREFIX_INDICATION:
       sei = new SEIPrefixIndication;
       xParseSEISEIPrefixIndication((SEIPrefixIndication&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     case SEI::PayloadType::CONSTRAINED_RASL_ENCODING:
       sei = new SEIConstrainedRaslIndication;
       xParseSEIConstrainedRaslIndication((SEIConstrainedRaslIndication &) *sei, payloadSize,
@@ -3147,7 +3145,6 @@ void SEIReader::xParseSEISEIManifest(SEIManifest &sei, uint32_t payloadSize, std
   }
 }
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 void SEIReader::xParseSEISEIPrefixIndication(SEIPrefixIndication &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
@@ -3181,6 +3178,5 @@ void SEIReader::xParseSEISEIPrefixIndication(SEIPrefixIndication &sei, uint32_t 
     }
   }
 }
-#endif  
 
 //! \}

@@ -89,9 +89,7 @@ public:
   void initSEIColourTransformInfo(SEIColourTransformInfo* sei);
   void readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *seiAnnoRegion, bool &failed);
   void initSEISEIManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessage);
-#if JVET_T0056_SEI_PREFIX_INDICATION
   void initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei);
-#endif
 
   void initSEIMultiviewViewPosition(SEIMultiviewViewPosition *sei);
   void initSEIShutterIntervalInfo(SEIShutterIntervalInfo *sei);

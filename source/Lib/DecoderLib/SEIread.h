@@ -107,9 +107,7 @@ protected:
   void xParseSEIExtendedDrapIndication        (SEIExtendedDrapIndication& sei,        uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIColourTransformInfo           (SEIColourTransformInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
   void xParseSEISEIManifest                   (SEIManifest& sei,                      uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
-#if JVET_T0056_SEI_PREFIX_INDICATION
   void xParseSEISEIPrefixIndication           (SEIPrefixIndication& sei,              uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
-#endif
   void xParseSEIConstrainedRaslIndication     (SEIConstrainedRaslIndication& sei,     uint32_t payLoadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics& sei, uint32_t payloadSize, const SPS* sps, std::ostream* pDecodedMessageOutputStream);

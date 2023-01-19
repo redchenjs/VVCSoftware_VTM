@@ -1279,7 +1279,6 @@ void SEIEncoder::initSEISEIManifest(SEIManifest *seiSeiManifest, const SEIMessag
   CHECK(seiSeiManifest->m_manifestNumSeiMsgTypes == 0, "No SEI messages available");
 }
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 void SEIEncoder::initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei)
 {
   assert(m_isInitialized);
@@ -1288,7 +1287,6 @@ void SEIEncoder::initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixInd
   seiSeiPrefixIndications->m_numSeiPrefixIndicationsMinus1 = seiSeiPrefixIndications->getNumsOfSeiPrefixIndications(sei) - 1; 
   seiSeiPrefixIndications->m_payload = sei;
 }
-#endif   
 
 void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx)
 {

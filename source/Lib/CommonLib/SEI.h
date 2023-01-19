@@ -88,9 +88,7 @@ public:
     MULTIVIEW_ACQUISITION_INFO           = 179,
     MULTIVIEW_VIEW_POSITION              = 180,
     SEI_MANIFEST = 200,
-#if JVET_T0056_SEI_PREFIX_INDICATION
     SEI_PREFIX_INDICATION = 201,
-#endif
     SUBPICTURE_LEVEL_INFO                      = 203,
     SAMPLE_ASPECT_RATIO_INFO                   = 204,
     ANNOTATED_REGIONS                          = 202,
@@ -1045,7 +1043,6 @@ public:
   SEIManifestDescription getSEIMessageDescription(const PayloadType payloadType);
 };
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 class SEIPrefixIndication : public SEI
 {
 public:
@@ -1062,7 +1059,6 @@ public:
 
   uint8_t getNumsOfSeiPrefixIndications(const SEI *sei);
 };
-#endif  
 
 class SEIAnnotatedRegions : public SEI
 {

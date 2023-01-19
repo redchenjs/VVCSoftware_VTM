@@ -560,7 +560,6 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
     xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
     xClearSEIs(currentMessages, !testWrite);
   }
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (m_pcCfg->getSEIPrefixIndicationSEIEnabled())
   {
     //There may be multiple SEI prefix indication messages at the same time
@@ -568,7 +567,6 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
     xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
     xClearSEIs(currentMessages, !testWrite);
   }
-#endif 
 
   // Buffering period SEI must always be following active parameter sets
   currentMessages = extractSeisByType(localMessages, SEI::PayloadType::BUFFERING_PERIOD);
@@ -852,7 +850,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     m_seiEncoder.initSEISEIManifest(seiSEIManifest, seiMessages);
     seiMessages.push_back(seiSEIManifest);
   }
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (m_pcCfg->getSEIPrefixIndicationSEIEnabled())
   {
     int numSeiPrefixMsg = 0;
@@ -876,7 +873,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
       numSeiPrefixMsg--;
     }
   }
-#endif
 
   if (m_pcCfg->getConstrainedRaslencoding())
   {

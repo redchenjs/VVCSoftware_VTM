@@ -1402,9 +1402,7 @@ void EncApp::xInitLibCfg( int layerIdx )
 #endif
 
   m_cEncLib.setSEIManifestSEIEnabled(m_SEIManifestSEIEnabled);
-#if JVET_T0056_SEI_PREFIX_INDICATION
   m_cEncLib.setSEIPrefixIndicationSEIEnabled(m_SEIPrefixIndicationSEIEnabled);
-#endif
 
   m_cEncLib.setOPIEnabled                                         ( m_OPIEnabled );
   if (m_OPIEnabled)

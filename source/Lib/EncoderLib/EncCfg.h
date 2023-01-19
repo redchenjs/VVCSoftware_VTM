@@ -863,9 +863,7 @@ protected:
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
 
   bool m_SEIManifestSEIEnabled;
-#if JVET_T0056_SEI_PREFIX_INDICATION
   bool m_SEIPrefixIndicationSEIEnabled;
-#endif
   //SEI message processing order
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
@@ -2474,11 +2472,9 @@ public:
   //SEI manifest
   void setSEIManifestSEIEnabled(bool b) { m_SEIManifestSEIEnabled = b; }
   bool getSEIManifestSEIEnabled() { return m_SEIManifestSEIEnabled; }
-#if JVET_T0056_SEI_PREFIX_INDICATION
   //SEI prefix indication
   void setSEIPrefixIndicationSEIEnabled(bool b) { m_SEIPrefixIndicationSEIEnabled = b; }
   bool getSEIPrefixIndicationSEIEnabled() { return m_SEIPrefixIndicationSEIEnabled; }
-#endif
   
   void     setConstrainedRaslencoding(bool b)                        { m_constrainedRaslEncoding = b; }
   bool     getConstrainedRaslencoding()                              { return m_constrainedRaslEncoding; }
