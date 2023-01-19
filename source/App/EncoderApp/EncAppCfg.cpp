@@ -1641,7 +1641,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "RPR",                                            m_rprEnabledFlag,                          true, "Reference Sample Resolution" )
   ("ScalingRatioHor",                                 m_scalingRatioHor,                          1.0, "Scaling ratio in hor direction")
   ("ScalingRatioVer",                                 m_scalingRatioVer,                          1.0, "Scaling ratio in ver direction")
-#if JVET_AB0080
   ("GOPBasedRPR",                                     m_gopBasedRPREnabledFlag,                 false, "Enables decision to encode pictures in GOP in full resolution or one of three downscaled resolutions(default is 1/2, 2/3 and 4/5 in both dimensions)")
   ("GOPBasedRPRQPTh",                                 m_gopBasedRPRQPThreshold,                    32, "QP threshold parameter that determines which QP GOP-based RPR is invoked for given by QP >= GOPBasedRPRQPTh")
   ("ScalingRatioHor2",                                m_scalingRatioHor2,                         1.5, "Scaling ratio in hor direction for GOP based RPR (2/3)")
@@ -1658,7 +1657,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("QpOffsetChromaRPR",                               m_qpOffsetChromaRPR,                         -6, "QP offset for RPR (-6 for 0.5x)")
   ("QpOffsetChromaRPR2",                              m_qpOffsetChromaRPR2,                        -4, "QP offset for RPR2 (-4 for 2/3x)")
   ("QpOffsetChromaRPR3",                              m_qpOffsetChromaRPR3,                        -2, "QP offset for RPR3 (-2 for 4/5x)")
-#endif
 #endif
   ( "FractionNumFrames",                              m_fractionOfFrames,                         1.0, "Encode a fraction of the specified in FramesToBeEncoded frames" )
   ( "SwitchPocPeriod",                                m_switchPocPeriod,                            0, "Switch POC period for RPR" )
@@ -1902,7 +1900,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   po::ErrorReporter err;
   const list<const char*>& argv_unhandled = po::scanArgv(opts, argc, (const char**) argv, err);
 
-#if JVET_AB0080
   if (m_gopBasedRPREnabledFlag)
   {
     m_upscaledOutput = 2;
@@ -1913,9 +1910,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
   m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag;
-#else
-  m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0;
-#endif
   m_resChangeInClvsEnabled = m_resChangeInClvsEnabled && m_rprEnabledFlag;
 
   if( m_constrainedRaslEncoding )
@@ -5290,13 +5284,11 @@ void EncAppCfg::xPrintParameter()
   if (m_resChangeInClvsEnabled)
   {
     msg( VERBOSE, "RPR:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor, m_scalingRatioVer, m_switchPocPeriod );
-#if JVET_AB0080
     if (m_gopBasedRPREnabledFlag)
     {
       msg(VERBOSE, "RPR2:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor2, m_scalingRatioVer2, m_switchPocPeriod);
       msg(VERBOSE, "RPR3:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor3, m_scalingRatioVer3, m_switchPocPeriod);
     }
-#endif
   }
   else
   {

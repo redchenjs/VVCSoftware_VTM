@@ -941,7 +941,6 @@ protected:
   bool        m_rprEnabledFlag;
   double      m_scalingRatioHor;
   double      m_scalingRatioVer;
-#if JVET_AB0080
   bool        m_gopBasedRPREnabledFlag;
   int         m_gopBasedRPRQPThreshold;
   double      m_scalingRatioHor2;
@@ -958,7 +957,6 @@ protected:
   int         m_qpOffsetChromaRPR;
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
-#endif
 #endif
   bool        m_resChangeInClvsEnabled;
   double      m_fractionOfFrames;                             ///< encode a fraction of the frames as specified in FramesToBeEncoded

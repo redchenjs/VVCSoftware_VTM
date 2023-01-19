@@ -142,9 +142,7 @@ public:
   const RPLList*            getRPLList(bool b) const { return &m_rplLists[b]; }
   RPLList*                  getRPLList(bool b) { return &m_rplLists[b]; }
   uint32_t                  getNumRPL(bool b) const { return m_rplLists[b].getNumberOfReferencePictureLists(); }
-#if JVET_AB0080
   int                       m_gopRprPpsId;
-#endif
 protected:
   void  xGetNewPicBuffer  ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Picture*& rpcPic, int ppsId ); ///< get picture buffer which will be processed. If ppsId<0, then the ppsMap will be queried for the first match.
   void  xInitOPI(OPI& opi); ///< initialize Operating point Information (OPI) from encoder options
@@ -227,9 +225,7 @@ public:
   bool encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYuvTrueOrg, PelStorage *pcPicYuvFilteredOrg,
                   PelStorage *pcPicYuvFilteredOrgForFG, const InputColourSpaceConversion snrCSC,
                   std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded
-#if JVET_AB0080
     , PelStorage** ppcPicYuvRPR
-#endif
   );
 
   bool encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded);

@@ -1000,7 +1000,6 @@ protected:
 #endif
   double      m_scalingRatioHor;
   double      m_scalingRatioVer;
-#if JVET_AB0080
   bool        m_gopBasedRPREnabledFlag;
   int         m_gopBasedRPRQPThreshold;
   double      m_scalingRatioHor2;
@@ -1017,7 +1016,6 @@ protected:
   int         m_qpOffsetChromaRPR;
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
-#endif
 #endif
   bool        m_rprEnabledFlag;
   bool        m_resChangeInClvsEnabled;
@@ -2753,7 +2751,6 @@ public:
   void        setRprEnabled(bool b)                                   { m_rprEnabledFlag = b; }
   bool        isRprEnabled()                                    const { return m_rprEnabledFlag; }
   void        setScalingRatio( double hor, double ver )              { m_scalingRatioHor = hor, m_scalingRatioVer = ver;  }
-#if JVET_AB0080
   void        setGOPBasedRPREnabledFlag(bool b)                      { m_gopBasedRPREnabledFlag = b; }
 #if JVET_AB0080_CHROMA_QP_FIX
   bool        getGOPBasedRPREnabledFlag()                            const { return m_gopBasedRPREnabledFlag; }
@@ -2772,7 +2769,6 @@ public:
   int         getQpOffsetChromaRPR()                                  const { return m_qpOffsetChromaRPR; }
   int         getQpOffsetChromaRPR2()                                 const { return m_qpOffsetChromaRPR2; }
   int         getQpOffsetChromaRPR3()                                 const { return m_qpOffsetChromaRPR3; }
-#endif
 #endif
   void        setResChangeInClvsEnabled(bool b)                      { m_resChangeInClvsEnabled = b; }
   bool        isResChangeInClvsEnabled()                        const { return m_resChangeInClvsEnabled; }

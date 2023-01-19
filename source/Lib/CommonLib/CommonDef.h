@@ -548,10 +548,8 @@ static constexpr int PLT_FAST_RATIO = 100;
 static constexpr int  EPBIN_WEIGHT_FACTOR =                           4;
 #endif
 static constexpr int ENC_PPS_ID_RPR =                                 3;
-#if JVET_AB0080
 static constexpr int ENC_PPS_ID_RPR2 = 5;
 static constexpr int ENC_PPS_ID_RPR3 = 7;
-#endif
 static constexpr int MAX_SCALING_RATIO =                              2;  // max downsampling ratio for RPR
 static constexpr ScalingRatio SCALE_1X = { 1 << ScalingRatio::BITS, 1 << ScalingRatio::BITS };   // scale ratio 1x
 
