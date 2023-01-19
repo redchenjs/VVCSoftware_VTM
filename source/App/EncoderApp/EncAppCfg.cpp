@@ -1611,10 +1611,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPostFilterHintValue",                          cfg_postFilterHintSEIValues, cfg_postFilterHintSEIValues, "Specifies post-filter coefficients or elements of a cross-correlation matrix")
 #endif
 
-#if JVET_T0056_SEI_MANIFEST
   //SEI manifest
   ("SEISEIManifestEnabled",                           m_SEIManifestSEIEnabled,                           false, "Controls if SEI Manifest SEI messages enabled")
-#endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
   //SEI prefix indication
   ("SEISEIPrefixIndicationEnabled",                   m_SEIPrefixIndicationSEIEnabled,                   false, "Controls if SEI Prefix Indications SEI messages enabled")

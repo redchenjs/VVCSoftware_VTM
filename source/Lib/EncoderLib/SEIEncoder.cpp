@@ -1263,7 +1263,6 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SP
   }
 }
 
-#if JVET_T0056_SEI_MANIFEST
 void SEIEncoder::initSEISEIManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessages)
 {
   assert(m_isInitialized);
@@ -1279,7 +1278,6 @@ void SEIEncoder::initSEISEIManifest(SEIManifest *seiSeiManifest, const SEIMessag
   }
   CHECK(seiSeiManifest->m_manifestNumSeiMsgTypes == 0, "No SEI messages available");
 }
-#endif
 
 #if JVET_T0056_SEI_PREFIX_INDICATION
 void SEIEncoder::initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei)

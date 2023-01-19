@@ -87,9 +87,7 @@ public:
     DEPTH_REPRESENTATION_INFO            = 177,
     MULTIVIEW_ACQUISITION_INFO           = 179,
     MULTIVIEW_VIEW_POSITION              = 180,
-#if JVET_T0056_SEI_MANIFEST
     SEI_MANIFEST = 200,
-#endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
     SEI_PREFIX_INDICATION = 201,
 #endif
@@ -1025,7 +1023,6 @@ public:
   std::vector<std::vector<std::vector<int>>> m_refLevelFraction;
 };
 
-#if JVET_T0056_SEI_MANIFEST
 class SEIManifest : public SEI
 {
 public:
@@ -1047,7 +1044,6 @@ public:
 
   SEIManifestDescription getSEIMessageDescription(const PayloadType payloadType);
 };
-#endif
 
 #if JVET_T0056_SEI_PREFIX_INDICATION
 class SEIPrefixIndication : public SEI

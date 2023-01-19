@@ -551,7 +551,6 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
 #endif
   // The case that a specific SEI is not present is handled in xWriteSEI (empty list)
 
-#if JVET_T0056_SEI_MANIFEST
   // When SEI Manifest SEI message is present in an SEI NAL unit, the SEI Manifest SEI message shall be the first SEI
   // message in the SEI NAL unit (D3.45 in ISO/IEC 23008-2).
   if (m_pcCfg->getSEIManifestSEIEnabled())
@@ -561,7 +560,6 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
     xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
     xClearSEIs(currentMessages, !testWrite);
   }
-#endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
   if (m_pcCfg->getSEIPrefixIndicationSEIEnabled())
   {
@@ -846,7 +844,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     seiMessages.push_back(seiCTI);
   }
 
-#if JVET_T0056_SEI_MANIFEST
   // Make sure that sei_manifest and sei_prefix are the last two initialized sei_msg, otherwise it will cause these two
   // Sei messages to not be able to enter all SEI messages
   if (m_pcCfg->getSEIManifestSEIEnabled())
@@ -855,7 +852,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     m_seiEncoder.initSEISEIManifest(seiSEIManifest, seiMessages);
     seiMessages.push_back(seiSEIManifest);
   }
-#endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
   if (m_pcCfg->getSEIPrefixIndicationSEIEnabled())
   {

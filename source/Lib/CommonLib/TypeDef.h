@@ -55,7 +55,6 @@
 // clang-format off
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_T0056_SEI_MANIFEST                           1 // JVET-T0056: SEI manifest SEI message
 #define JVET_T0056_SEI_PREFIX_INDICATION                  1 // JVET-T0056: SEI prefix indication SEI message
 #define JVET_AB0069_SEI_PROCESSING_ORDER                  1 // JVET-AB0069: SEI processing order SEI message update
 #define JVET_AB0135_NN_SEI_COMPLEXITY_MOD                 1 // JVET-AB0135: Modification of comlexity parameters in NN characteristics SEI message

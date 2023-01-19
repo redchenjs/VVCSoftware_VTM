@@ -414,12 +414,10 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIColourTransformInfo;
       xParseSEIColourTransformInfo((SEIColourTransformInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_T0056_SEI_MANIFEST
     case SEI::PayloadType::SEI_MANIFEST:
       sei = new SEIManifest;
       xParseSEISEIManifest((SEIManifest&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
     case SEI::PayloadType::SEI_PREFIX_INDICATION:
       sei = new SEIPrefixIndication;
@@ -3129,7 +3127,6 @@ void SeiCfgFileDump::xDumpSEIGeneralizedCubemapProjection  (SEIGeneralizedCubema
 
 #endif
 
-#if JVET_T0056_SEI_MANIFEST
 void SEIReader::xParseSEISEIManifest(SEIManifest &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
@@ -3149,7 +3146,6 @@ void SEIReader::xParseSEISEIManifest(SEIManifest &sei, uint32_t payloadSize, std
     }
   }
 }
-#endif
 
 #if JVET_T0056_SEI_PREFIX_INDICATION
 void SEIReader::xParseSEISEIPrefixIndication(SEIPrefixIndication &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)

@@ -185,12 +185,10 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::ANNOTATED_REGIONS:
     xWriteSEIAnnotatedRegions(*static_cast<const SEIAnnotatedRegions *>(&sei));
     break;
-#if JVET_T0056_SEI_MANIFEST
   case SEI::PayloadType::SEI_MANIFEST:
     CHECK((SEIPrefixIndicationIdx), "wrong SEI prefix indication message");
     xWriteSEISEIManifest(*static_cast<const SEIManifest *>(&sei));
     break;
-#endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
   case SEI::PayloadType::SEI_PREFIX_INDICATION:
     CHECK((SEIPrefixIndicationIdx), "wrong SEI prefix indication message");
@@ -770,7 +768,6 @@ void SEIWriter::xWriteSEIMasteringDisplayColourVolume(const SEIMasteringDisplayC
   xWriteCode( sei.values.minLuminance,     32,  "mdcv_min_display_mastering_luminance" );
 }
 
-#if JVET_T0056_SEI_MANIFEST
 void SEIWriter::xWriteSEISEIManifest(const SEIManifest &sei)
 {
   xWriteCode(sei.m_manifestNumSeiMsgTypes, 16, "manifest_num_sei_msg_types");
@@ -780,7 +777,6 @@ void SEIWriter::xWriteSEISEIManifest(const SEIManifest &sei)
     xWriteCode(sei.m_manifestSeiDescription[i], 8, "manifest_sei_description");
   }
 }
-#endif  
 
 #if JVET_T0056_SEI_PREFIX_INDICATION
 //SEI prefix indication

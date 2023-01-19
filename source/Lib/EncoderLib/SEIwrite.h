@@ -112,10 +112,8 @@ protected:
   void xWriteSEIAmbientViewingEnvironment(const SEIAmbientViewingEnvironment& sei);
   void xWriteSEIContentColourVolume(const SEIContentColourVolume &sei);
 
-#if JVET_T0056_SEI_MANIFEST
   //SEI manifest
   void xWriteSEISEIManifest(const SEIManifest &sei);
-#endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
   //SEI prefix indication
   void xWriteSEISEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd,

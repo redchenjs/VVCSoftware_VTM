@@ -1401,9 +1401,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setCalculateHdrMetrics                               (m_calculateHdrMetrics);
 #endif
 
-#if JVET_T0056_SEI_MANIFEST
   m_cEncLib.setSEIManifestSEIEnabled(m_SEIManifestSEIEnabled);
-#endif
 #if JVET_T0056_SEI_PREFIX_INDICATION
   m_cEncLib.setSEIPrefixIndicationSEIEnabled(m_SEIPrefixIndicationSEIEnabled);
 #endif
