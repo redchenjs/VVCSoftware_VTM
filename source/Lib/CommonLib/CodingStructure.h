@@ -121,9 +121,7 @@ public:
   bool overlapDirty() const;
   bool dirtyCrossTTV() const;
   bool dirtyCrossBTV() const;
-#endif
 
-#if GDR_ENABLED
   bool isClean(const ChannelType effChType) const;
   bool isClean(const Position &IntPos, RefPicList e, int refIdx) const;
   bool isClean(const Position &IntPos, const Picture* const ref_pic) const;

@@ -419,7 +419,7 @@ bool CodingStructure::isClean(const Position &IntPos, const Mv FracMv, const Pic
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
     if (isCurGdrPicture)
     {
@@ -489,7 +489,7 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, RefPicList e, i
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
     if (isCurGdrPicture)
     {
@@ -643,7 +643,7 @@ bool CodingStructure::isClean(const Position &IntPos, const Picture* const refPi
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
     if (isCurGdrPicture)
     {
