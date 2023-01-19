@@ -736,23 +736,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
 
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType     (0, 65535, 0, 256*2);
-#if JVET_AB0069_SEI_PROCESSING_ORDER
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
-#else
-  SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder (0, 255, 0, 256);
-#endif
 
-#if JVET_AB0070_POST_FILTER_HINT
   SMultiValueInput<int32_t> cfg_postFilterHintSEIValues(INT32_MIN + 1, INT32_MAX, 1 * 1 * 1, 15 * 15 * 3);
-#endif
 
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
   std::vector<SMultiValueInput<uint32_t>>   cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList;
   for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; i++)
   {
     cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList.push_back(SMultiValueInput<uint32_t>(0, std::numeric_limits<uint32_t>::max(), 1, 0));
   }
-#endif
 
 #if ENABLE_TRACING
   string sTracingRule;
@@ -1600,7 +1592,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
 
-#if JVET_AB0070_POST_FILTER_HINT
   ("SEIPostFilterHintEnabled",                        m_postFilterHintSEIEnabled,                        false, "Control generation of post-filter Hint SEI message")
   ("SEIPostFilterHintCancelFlag",                     m_postFilterHintSEICancelFlag,                     false, "Specifies the persistence of any previous post-filter Hint SEI message in output order")
   ("SEIPostFilterHintPersistenceFlag",                m_postFilterHintSEIPersistenceFlag,                false, "Specifies the persistence of the post-filter Hint SEI message for the current layer")
@@ -1609,16 +1600,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPostFilterHintType",                           m_postFilterHintSEIType,                              0u, "Specifies the type of the post-filter: 2D-FIR filter (0, default), 1D-FIR filters (1) or Cross-correlation matrix (0)")
   ("SEIPostFilterHintChromaCoeffPresentFlag",         m_postFilterHintSEIChromaCoeffPresentFlag,         false, "Specifies the presence of post-filter coefficients for chroma")
   ("SEIPostFilterHintValue",                          cfg_postFilterHintSEIValues, cfg_postFilterHintSEIValues, "Specifies post-filter coefficients or elements of a cross-correlation matrix")
-#endif
 
-#if JVET_T0056_SEI_MANIFEST
   //SEI manifest
   ("SEISEIManifestEnabled",                           m_SEIManifestSEIEnabled,                           false, "Controls if SEI Manifest SEI messages enabled")
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   //SEI prefix indication
   ("SEISEIPrefixIndicationEnabled",                   m_SEIPrefixIndicationSEIEnabled,                   false, "Controls if SEI Prefix Indications SEI messages enabled")
-#endif
 
   ("DebugBitstream",                                  m_decodeBitstreams[0],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
   ("DebugPOC",                                        m_switchPOC,                                 -1, "If DebugBitstream is present, load frames up to this POC from this bitstream. Starting with DebugPOC, return to normal encoding." )
@@ -1649,7 +1635,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "RPR",                                            m_rprEnabledFlag,                          true, "Reference Sample Resolution" )
   ("ScalingRatioHor",                                 m_scalingRatioHor,                          1.0, "Scaling ratio in hor direction")
   ("ScalingRatioVer",                                 m_scalingRatioVer,                          1.0, "Scaling ratio in ver direction")
-#if JVET_AB0080
   ("GOPBasedRPR",                                     m_gopBasedRPREnabledFlag,                 false, "Enables decision to encode pictures in GOP in full resolution or one of three downscaled resolutions(default is 1/2, 2/3 and 4/5 in both dimensions)")
   ("GOPBasedRPRQPTh",                                 m_gopBasedRPRQPThreshold,                    32, "QP threshold parameter that determines which QP GOP-based RPR is invoked for given by QP >= GOPBasedRPRQPTh")
   ("ScalingRatioHor2",                                m_scalingRatioHor2,                         1.5, "Scaling ratio in hor direction for GOP based RPR (2/3)")
@@ -1662,18 +1647,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("QpOffsetRPR",                                     m_qpOffsetRPR,                               -6, "QP offset for RPR (-6 for 1/2)")
   ("QpOffsetRPR2",                                    m_qpOffsetRPR2,                              -4, "QP offset for RPR2 (-4 for 2/3)")
   ("QpOffsetRPR3",                                    m_qpOffsetRPR3,                              -2, "QP offset for RPR3 (-2 for 4/5)")
-#if JVET_AB0080_CHROMA_QP_FIX
   ("QpOffsetChromaRPR",                               m_qpOffsetChromaRPR,                         -6, "QP offset for RPR (-6 for 0.5x)")
   ("QpOffsetChromaRPR2",                              m_qpOffsetChromaRPR2,                        -4, "QP offset for RPR2 (-4 for 2/3x)")
   ("QpOffsetChromaRPR3",                              m_qpOffsetChromaRPR3,                        -2, "QP offset for RPR3 (-2 for 4/5x)")
-#endif
-#endif
   ( "FractionNumFrames",                              m_fractionOfFrames,                         1.0, "Encode a fraction of the specified in FramesToBeEncoded frames" )
   ( "SwitchPocPeriod",                                m_switchPocPeriod,                            0, "Switch POC period for RPR" )
   ( "UpscaledOutput",                                 m_upscaledOutput,                             0, "Output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for RPR" )
-#if JVET_AB0081
   ("UpscaleFilterForDisplay",                         m_upscaleFilterForDisplay,                    1, "Filters used for upscaling reconstruction to full resolution (2: ECM 12-tap luma and 6-tap chroma MC filters, 1: Alternative 12-tap luma and 6-tap chroma filters, 0: VVC 8-tap luma and 4-tap chroma MC filters)")
-#endif
   ( "MaxLayers",                                      m_maxLayers,                                  1, "Max number of layers" )
   ( "EnableOperatingPointInformation",                m_OPIEnabled,                             false, "Enables writing of Operating Point Information (OPI)" )
   ( "MaxTemporalLayer",                               m_maxTemporalLayer,                         500, "Maximum temporal layer to be signalled in OPI" )
@@ -1776,15 +1756,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()(componentLastFlag.str(), m_nnPostFilterSEICharacteristicsComponentLastFlag[i], false, "Specifies the channel component is located in the last dimension for the Neural Network Post Filter Characteristics SEI message");
 
 
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     std::ostringstream inpFormatIdc;
     inpFormatIdc << "SEINNPostFilterCharacteristicsInpFormatIdc" << i;
     opts.addOptions()(inpFormatIdc.str(), m_nnPostFilterSEICharacteristicsInpFormatIdc[i], 0u, "Specifies the method of converting an input sample in the the Neural Network Post Filter Characteristics SEI message");
-#else
-    std::ostringstream inpSampleIdc;
-    inpSampleIdc << "SEINNPostFilterCharacteristicsInpSampleIdc" << i;
-    opts.addOptions()(inpSampleIdc.str(), m_nnPostFilterSEICharacteristicsInpSampleIdc[i], 0u, "Specifies the method of converting an input sample in the the Neural Network Post Filter Characteristics SEI message");
-#endif
     std::ostringstream auxInpIdc;
     auxInpIdc << "SEINNPostFilterCharacteristicsAuxInpIdc" << i;
     opts.addOptions()(auxInpIdc.str(), m_nnPostFilterSEICharacteristicsAuxInpIdc[i], 0u, "Specifies the auxillary input index in the Nueral Network Post Filter Characteristics SEI message");
@@ -1808,15 +1782,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     inpOrderIdc << "SEINNPostFilterCharacteristicsInpOrderIdc" << i;
     opts.addOptions()(inpOrderIdc.str(), m_nnPostFilterSEICharacteristicsInpOrderIdc[i], 0u, "Specifies the method of ordering the input sample arrays in the Neural Network Post Filter Characteristics SEI message");
 
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     std::ostringstream outFormatIdc;
     outFormatIdc << "SEINNPostFilterCharacteristicsOutFormatIdc" << i;
     opts.addOptions()(outFormatIdc.str(), m_nnPostFilterSEICharacteristicsOutFormatIdc[i], 0u, "Specifies the method of converting an output sample in the the Neural Network Post Filter Characteristics SEI message");
-#else
-    std::ostringstream outSampleIdc;
-    outSampleIdc << "SEINNPostFilterCharacteristicsOutSampleIdc" << i;
-    opts.addOptions()(outSampleIdc.str(), m_nnPostFilterSEICharacteristicsOutSampleIdc[i], 0u, "Specifies the method of converting an output sample in the the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream outOrderIdc;
     outOrderIdc << "SEINNPostFilterCharacteristicsOutOrderIdc" << i;
@@ -1854,15 +1822,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     cbPadding << "SEINNPostFilterCharacteristicsCbPadding" << i;
     opts.addOptions()(cbPadding.str(), m_nnPostFilterSEICharacteristicsCbPadding[i], 0u, "Specifies the Cb padding when when the padding type is fixed padding ");
 
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
     std::ostringstream complexityInfoPresentFlag;
     complexityInfoPresentFlag << "SEINNPostFilterCharacteristicsComplexityInfoPresentFlag" << i;
     opts.addOptions()(complexityInfoPresentFlag.str(), m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[i], false, "Specifies the value of nnpfc_complexity_info_present_flag in the Neural Network Post Filter Characteristics SEI message");
-#else
-    std::ostringstream complexityIdc;
-    complexityIdc << "SEINNPostFilterCharacteristicsComplexityIdc" << i;
-    opts.addOptions()(complexityIdc.str(), m_nnPostFilterSEICharacteristicsComplexityIdc[i], 0u, "Specifies the value of nnpfc_complexity_idc in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream uriTag;
     uriTag << "SEINNPostFilterCharacteristicsUriTag" << i;
@@ -1888,17 +1850,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     numKmacOperationsIdc << "SEINNPostFilterCharacteristicsNumKmacOperationsIdc" << i;
     opts.addOptions()(numKmacOperationsIdc.str(), m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], 0u, "Specifies the maximum number of operations (KMAC) per pixel in the Neural Network Post Filter Characteristics SEI message");
 
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
     std::ostringstream totalKilobyteSize; 
     totalKilobyteSize << "SEINNPostFilterCharacteristicsTotalKilobyteSize" << i; 
     opts.addOptions()(totalKilobyteSize.str(), m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i], 0u, "Indicates the total size in kilobytes required to store the uncompressed NN parameters in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream payloadFilename;
     payloadFilename << "SEINNPostFilterCharacteristicsPayloadFilename" << i;
     opts.addOptions()(payloadFilename.str(), m_nnPostFilterSEICharacteristicsPayloadFilename[i], string(""), "Specifies the NNR bitstream in the Neural Network Post Filter Characteristics SEI message");
 
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
     std::ostringstream numberDecodedInputPics;
     numberDecodedInputPics << "SEINNPostFilterCharacteristicsNumberInputDecodedPicsMinusTwo" << i;
     opts.addOptions()(numberDecodedInputPics.str(), m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], 0u, "Specifies the number of decoded output pictures used as input for the post processing filter");
@@ -1906,21 +1865,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream numberInterpolatedPics;
     numberInterpolatedPics << "SEINNPostFilterCharacteristicsNumberInterpolatedPics" << i;
     opts.addOptions()(numberInterpolatedPics.str(), cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], "Number of pictures to interpolate");
-#endif
 
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
     opts.addOptions()("SEINNPostFilterActivationId", m_nnPostFilterSEIActivationId , 0u,        "Id of the Neural Network Post Filter on current picture");
-#if JVET_AB0050
     opts.addOptions()("SEINNPostFilterActivationCancelFlag", m_nnPostFilterSEIActivationCancelFlag, false, "Control use of the target neural network post filter established by any previous NNPFA SEI message");
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
-#endif
   }
 
   po::setDefaults(opts);
   po::ErrorReporter err;
   const list<const char*>& argv_unhandled = po::scanArgv(opts, argc, (const char**) argv, err);
 
-#if JVET_AB0080
   if (m_gopBasedRPREnabledFlag)
   {
     m_upscaledOutput = 2;
@@ -1931,9 +1886,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
   m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag;
-#else
-  m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0;
-#endif
   m_resChangeInClvsEnabled = m_resChangeInClvsEnabled && m_rprEnabledFlag;
 
   if( m_constrainedRaslEncoding )
@@ -2416,7 +2368,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   m_ext360.processOptions(ext360CfgContext);
 #endif
 
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
   for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; ++i)
   {
     m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i] = cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i].values;
@@ -2426,7 +2377,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
     CHECK(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size() < m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], "Number Interpolated Pictures List must be greater than number of decoder pictures list");
   }
-#endif
 
   if (isY4mFileExt(m_inputFileName))
   {
@@ -3387,11 +3337,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if (m_poSEIEnabled)
   {
-#if JVET_AB0051
     assert(cfg_poSEIPayloadType.values.size() > 1);
-#else
-    assert(cfg_poSEIPayloadType.values.size() > 0);
-#endif
     assert(cfg_poSEIProcessingOrder.values.size() == cfg_poSEIPayloadType.values.size());
     m_numofSEIMessages = (uint32_t)cfg_poSEIPayloadType.values.size();
     m_poSEIPayloadType.resize(m_numofSEIMessages);
@@ -3399,11 +3345,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     for (uint32_t i = 0; i < m_numofSEIMessages; i++)
     {
       m_poSEIPayloadType[i]  = cfg_poSEIPayloadType.values[i];
-#if JVET_AB0069_SEI_PROCESSING_ORDER
       m_poSEIProcessingOrder[i] = (uint16_t)cfg_poSEIProcessingOrder.values[i];
-#else
-      m_poSEIProcessingOrder[i] = (uint8_t)cfg_poSEIProcessingOrder.values[i];
-#endif
       //Error check, to avoid same PayloadType with different PayloadOrder
       for (uint32_t j = 0; j < i; j++)
       {
@@ -3417,7 +3359,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     assert(m_poSEIProcessingOrder.size() == m_poSEIPayloadType.size());
   }
 
-#if JVET_AB0070_POST_FILTER_HINT
   if (m_postFilterHintSEIEnabled)
   {
     CHECK(cfg_postFilterHintSEIValues.values.size() <= 0, "The number of filter coefficient shall be greater than zero");
@@ -3429,7 +3370,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_postFilterHintValues[i] = cfg_postFilterHintSEIValues.values[i];
     }
   }
-#endif
 
   if( m_costMode == COST_LOSSLESS_CODING )
   {
@@ -4861,56 +4801,31 @@ bool EncAppCfg::xCheckParameter()
   {
     for (int i = 0; i < m_nnPostFilterSEICharacteristicsNumFilters; i++)
     {
-#if JVET_AB0049
       xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > MAX_NNPFC_ID, "SEINNPostFilterCharacteristicsId must be in the range of 0 to 2^32-2");
-#else
-      xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > (uint32_t)(((uint64_t)1 << 32) - 2), "SEINNPostFilterCharacteristicsId must be in the range of 0 to 2^32-2");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsModeIdc[i] > 255, "SEINNPostFilterCharacteristicsModeIdc must be in the range of 0 to 255");
-#if JVET_AB0049
       xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 1023, "SEINNPostFilterCharacteristicsPurpose must be in the range of 0 to 1023");
-#else
-      xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > (uint32_t)(((uint64_t)1 << 32) - 2), "SEINNPostFilterCharacteristicsPurpose must be in the range of 0 to 2^32-2");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsInpTensorBitDepthMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8 must be in the range of 0 to 24");
-#if M60678_BALLOT_COMMENTS_OF_FI_03
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpFormatIdc[i] > 255, "SEINNPostFilterCharacteristicsInpFormatIdc must be in the range of 0 to 255");
-#else
-      xConfirmPara(m_nnPostFilterSEICharacteristicsInpSampleIdc[i] > 255, "SEINNPostFilterCharacteristicsInpSampleIdc must be in the range of 0 to 255");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpOrderIdc[i] > 255, "SEINNPostFilterCharacteristicsInpOrderIdc must be in the range of  0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsColPrimaries[i] > 255, "m_nnPostFilterSEICharacteristicsColPrimaries must in the range 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsTransCharacteristics[i] > 255, "m_nnPostFilterSEICharacteristicsTransCharacteristics must in the range 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsMatrixCoeffs[i] > 255, "m_nnPostFilterSEICharacteristicsMatrixCoeffs must in the range 0 to 255");
-#if M60678_BALLOT_COMMENTS_OF_FI_03
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutFormatIdc[i] > 255, "SEINNPostFilterCharacteristicsOutFormatIdc must be in the range of 0 to 255");
-#else
-      xConfirmPara(m_nnPostFilterSEICharacteristicsOutSampleIdc[i] > 255, "SEINNPostFilterCharacteristicsOutSampleIdc must be in the range of 0 to 255");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutOrderIdc[i] > 255, "SEINNPostFilterCharacteristicsOutOrderIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i] > 32766, "SEINNPostFilterCharacteristicsPatchWidthMinus1 must be in the range of 0 to 32766");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i] > 32766, "SEINNPostFilterCharacteristicsPatchHeightMinus1 must be in the range of 0 to 32766");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOverlap[i] > 16383, "SEINNPostFilterCharacteristicsOverlap must be in the range of 0 to 16383");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPaddingType[i] > (1 << 4) - 1, "SEINNPostFilterPaddingType must be in the range of 0 to 2^4-1");
-#if !JVET_AB0135_NN_SEI_COMPLEXITY_MOD
-      xConfirmPara(m_nnPostFilterSEICharacteristicsComplexityIdc[i] > 255, "SEINNPostFilterCharacteristicsComplexityIdc must be in the range of 0 to 255");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i] > 3, "SEINNPostFilterCharacteristicsLog2ParameterBitLengthMinus3 must be in the range of 0 to 3");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumParametersIdc[i] > 52, "SEINNPostFilterCharacteristicsNumParametersIdc must be in the range of 0 to 52");
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
       xConfirmPara(m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i] > (uint32_t) (((uint64_t) 1 << 32) - 1), "SEINNPostFilterCharacteristicsTotalKilobyteSize must be in the range of 0 to 2^32-1");
-#endif
     }
   }
 
   if (m_nnPostFilterSEIActivationEnabled)
   {
-  #if JVET_AB0049
     xConfirmPara(m_nnPostFilterSEIActivationId > MAX_NNPFA_ID, "SEINNPostFilterActivationId must be in the range of 0 to 2^32-2");
-  #else
-    xConfirmPara(m_nnPostFilterSEIActivationId > (1 << 20) - 1, "SEINNPostFilterActivationId must be in the range of 0 to 2^20-1");
-  #endif
   }
 
   if (m_phaseIndicationSEIEnabledFullResolution)
@@ -5333,13 +5248,11 @@ void EncAppCfg::xPrintParameter()
   if (m_resChangeInClvsEnabled)
   {
     msg( VERBOSE, "RPR:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor, m_scalingRatioVer, m_switchPocPeriod );
-#if JVET_AB0080
     if (m_gopBasedRPREnabledFlag)
     {
       msg(VERBOSE, "RPR2:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor2, m_scalingRatioVer2, m_switchPocPeriod);
       msg(VERBOSE, "RPR3:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor3, m_scalingRatioVer3, m_switchPocPeriod);
     }
-#endif
   }
   else
   {

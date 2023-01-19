@@ -270,24 +270,18 @@ void EncApp::xInitLibCfg( int layerIdx )
                                  m_confWinTop / SPS::getWinUnitY(m_inputChromaFormatIDC),
                                  m_confWinBottom / SPS::getWinUnitY(m_inputChromaFormatIDC));
   m_cEncLib.setScalingRatio                                      ( m_scalingRatioHor, m_scalingRatioVer );
-#if JVET_AB0080
   m_cEncLib.setGOPBasedRPREnabledFlag                            (m_gopBasedRPREnabledFlag);
   m_cEncLib.setGOPBasedRPRQPThreshold                            (m_gopBasedRPRQPThreshold);
   m_cEncLib.setScalingRatio2                                     (m_scalingRatioHor2, m_scalingRatioVer2);
   m_cEncLib.setScalingRatio3                                     (m_scalingRatioHor3, m_scalingRatioVer3);
   m_cEncLib.setPsnrThresholdRPR                                  (m_psnrThresholdRPR, m_psnrThresholdRPR2, m_psnrThresholdRPR3);
   m_cEncLib.setQpOffsetRPR                                       (m_qpOffsetRPR, m_qpOffsetRPR2, m_qpOffsetRPR3);
-#if JVET_AB0080_CHROMA_QP_FIX
   m_cEncLib.setQpOffsetChromaRPR                                 (m_qpOffsetChromaRPR, m_qpOffsetChromaRPR2, m_qpOffsetChromaRPR3);
-#endif
-#endif
   m_cEncLib.setRprEnabled                                        (m_rprEnabledFlag);
   m_cEncLib.setResChangeInClvsEnabled                            ( m_resChangeInClvsEnabled );
   m_cEncLib.setSwitchPocPeriod                                   ( m_switchPocPeriod );
   m_cEncLib.setUpscaledOutput                                    ( m_upscaledOutput );
-#if JVET_AB0081
   m_cEncLib.setUpscaleFilerForDisplay                            (m_upscaleFilterForDisplay);
-#endif
   m_cEncLib.setFramesToBeEncoded                                 ( m_framesToBeEncoded );
   m_cEncLib.setValidFrames(m_firstValidFrame, m_lastValidFrame);
   m_cEncLib.setAvoidIntraInDepLayer                              ( m_avoidIntraInDepLayer );
@@ -1180,41 +1174,23 @@ void EncApp::xInitLibCfg( int layerIdx )
         m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthInLumaSamples   (m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightInLumaSamples  (m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], i);
       }
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
       if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 5)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInterpolatedPictures( m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i], i);
       }
-#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
-#if M60678_BALLOT_COMMENTS_OF_FI_03
       m_cEncLib.setNNPostFilterSEICharacteristicsInpFormatIdc            (m_nnPostFilterSEICharacteristicsInpFormatIdc[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsInpFormatIdc(i) == 1)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i], i);
       }
-#else
-      m_cEncLib.setNNPostFilterSEICharacteristicsInpSampleIdc            (m_nnPostFilterSEICharacteristicsInpSampleIdc[i], i);
-      if (m_cEncLib.getNNPostFilterSEICharacteristicsInpSampleIdc(i) == 4)
-      {
-        m_cEncLib.setNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i], i);
-      }
-#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsInpOrderIdc             (m_nnPostFilterSEICharacteristicsInpOrderIdc[i], i);
-#if M60678_BALLOT_COMMENTS_OF_FI_03
       m_cEncLib.setNNPostFilterSEICharacteristicsOutFormatIdc            (m_nnPostFilterSEICharacteristicsOutFormatIdc[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsOutFormatIdc(i) == 1)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i], i);
       }
-#else
-      m_cEncLib.setNNPostFilterSEICharacteristicsOutSampleIdc            (m_nnPostFilterSEICharacteristicsOutSampleIdc[i], i);
-      if (m_cEncLib.getNNPostFilterSEICharacteristicsOutSampleIdc(i) == 4)
-      {
-        m_cEncLib.setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8 (m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i], i);
-      }
-#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsOutOrderIdc             (m_nnPostFilterSEICharacteristicsOutOrderIdc[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsConstantPatchSizeFlag   ( m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsPatchWidthMinus1        ( m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i], i);
@@ -1224,13 +1200,8 @@ void EncApp::xInitLibCfg( int layerIdx )
       m_cEncLib.setNNPostFilterSEICharacteristicsLumaPadding             (m_nnPostFilterSEICharacteristicsLumaPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCrPadding               (m_nnPostFilterSEICharacteristicsCrPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCbPadding               (m_nnPostFilterSEICharacteristicsCbPadding[i], i);
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
       m_cEncLib.setNNPostFilterSEICharacteristicsComplexityInfoPresentFlag (m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsComplexityInfoPresentFlag(i))
-#else
-      m_cEncLib.setNNPostFilterSEICharacteristicsComplexityIdc           ( m_nnPostFilterSEICharacteristicsComplexityIdc[i], i);
-      if (m_cEncLib.getNNPostFilterSEICharacteristicsComplexityIdc(i) > 0)
-#endif
       {
       m_cEncLib.setNNPostFilterSEICharacteristicsLumaPadding             (m_nnPostFilterSEICharacteristicsLumaPadding[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsCrPadding               (m_nnPostFilterSEICharacteristicsCrPadding[i], i);
@@ -1239,9 +1210,7 @@ void EncApp::xInitLibCfg( int layerIdx )
         m_cEncLib.setNNPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3     ( m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumParametersIdc        ( m_nnPostFilterSEICharacteristicsNumParametersIdc[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsNumKmacOperationsIdc    ( m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], i);
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
         m_cEncLib.setNNPostFilterSEICharacteristicsTotalKilobyteSize       ( m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i], i);
-#endif
 
       }
       m_cEncLib.setNNPostFilterSEICharacteristicsUriTag                  ( m_nnPostFilterSEICharacteristicsUriTag[i], i);
@@ -1311,7 +1280,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
   m_cEncLib.setPoSEINumofSeiMessages                             (m_numofSEIMessages);
 
-#if JVET_AB0070_POST_FILTER_HINT
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
   m_cEncLib.setPostFilterHintSEICancelFlag(m_postFilterHintSEICancelFlag);
   m_cEncLib.setPostFilterHintSEIPersistenceFlag(m_postFilterHintSEIPersistenceFlag);
@@ -1320,7 +1288,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPostFilterHintSEIType(m_postFilterHintSEIType);
   m_cEncLib.setPostFilterHintSEIChromaCoeffPresentFlag(m_postFilterHintSEIChromaCoeffPresentFlag);
   m_cEncLib.setPostFilterHintSEIValues(m_postFilterHintValues);
-#endif
 
   m_cEncLib.setVuiParametersPresentFlag                          ( m_vuiParametersPresentFlag );
   m_cEncLib.setSamePicTimingInAllOLS                             (m_samePicTimingInAllOLS);
@@ -1369,9 +1336,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setCCALFStrengthTarget                               (m_ccalfStrengthTarget);
   m_cEncLib.setUseCCALF                                          ( m_ccalf );
   m_cEncLib.setCCALFQpThreshold                                  ( m_ccalfQpThreshold );
-#if JVET_AB0080
   m_cEncLib.setGOPBasedRPRQPThreshold                            (m_gopBasedRPRQPThreshold);
-#endif
   m_cEncLib.setLmcs                                              ( m_lmcsEnabled );
   m_cEncLib.setReshapeSignalType                                 ( m_reshapeSignalType );
   m_cEncLib.setReshapeIntraCMD                                   ( m_intraCMD );
@@ -1401,12 +1366,8 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setCalculateHdrMetrics                               (m_calculateHdrMetrics);
 #endif
 
-#if JVET_T0056_SEI_MANIFEST
   m_cEncLib.setSEIManifestSEIEnabled(m_SEIManifestSEIEnabled);
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   m_cEncLib.setSEIPrefixIndicationSEIEnabled(m_SEIPrefixIndicationSEIEnabled);
-#endif
 
   m_cEncLib.setOPIEnabled                                         ( m_OPIEnabled );
   if (m_OPIEnabled)
@@ -1537,7 +1498,6 @@ void EncApp::createLib( const int layerIdx )
     m_filteredOrgPic = new PelStorage;
     m_filteredOrgPic->create( unitArea );
   }
-#if JVET_AB0080
   if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag)
   {
     UnitArea unitAreaRPR10(m_chromaFormatIDC, Area(0, 0, m_sourceWidth, sourceHeight));
@@ -1547,7 +1507,6 @@ void EncApp::createLib( const int layerIdx )
     m_rprPic[1] = new PelStorage;
     m_rprPic[1]->create(unitAreaRPR20);
   }
-#endif
   if (m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty())
   {
     m_filteredOrgPicForFG = new PelStorage;
@@ -1625,7 +1584,6 @@ void EncApp::destroyLib()
   m_trueOrgPic->destroy();
   delete m_trueOrgPic;
   delete m_orgPic;
-#if JVET_AB0080
   if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag)
   {
     for (int i = 0; i < 2; i++)
@@ -1634,7 +1592,6 @@ void EncApp::destroyLib()
       delete m_rprPic[i];
     }
   }
-#endif
   if ( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
   {
     m_filteredOrgPic->destroy();
@@ -1720,9 +1677,7 @@ bool EncApp::encodePrep( bool& eos )
   else
   {
     keepDoing = m_cEncLib.encodePrep( eos, m_flush ? 0 : m_orgPic, m_flush ? 0 : m_trueOrgPic, m_flush ? 0 : m_filteredOrgPic, m_flush ? 0 : m_filteredOrgPicForFG, snrCSC, m_recBufList, m_numEncoded
-#if JVET_AB0080
       , m_rprPic
-#endif
     );
   }
 
@@ -1829,7 +1784,6 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
       {
         const int layerId = getVPS() ? getVPS()->getGeneralLayerIdx(m_cEncLib.getLayerId()) : 0;
         const SPS& sps = *m_cEncLib.getSPS(layerId);
-#if JVET_AB0080
         int ppsID = layerId;
         if (m_gopBasedRPREnabledFlag  && (m_cEncLib.getBaseQP() >= m_cEncLib.getGOPBasedRPRQPThreshold()))
         {
@@ -1858,20 +1812,11 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
           ppsID = (sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) ? ENC_PPS_ID_RPR : layerId;
         }
         const PPS& pps = *m_cEncLib.getPPS(ppsID);
-#else
-        const PPS& pps = *m_cEncLib.getPPS((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) ? ENC_PPS_ID_RPR : layerId);
-#endif
         if( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() )
         {
-#if JVET_AB0081
           m_cVideoIOYuvReconFile.writeUpscaledPicture(sps, pps, *pcPicYuvRec, ipCSC, m_packedYUVMode,
                                                       m_cEncLib.getUpscaledOutput(), NUM_CHROMA_FORMAT,
                                                       m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
-#else
-          m_cVideoIOYuvReconFile.writeUpscaledPicture(sps, pps, *pcPicYuvRec, ipCSC, m_packedYUVMode,
-                                                      m_cEncLib.getUpscaledOutput(), NUM_CHROMA_FORMAT,
-                                                      m_clipOutputVideoToRec709Range);
-#endif
         }
         else
         {

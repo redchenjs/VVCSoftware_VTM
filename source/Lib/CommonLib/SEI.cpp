@@ -415,7 +415,6 @@ bool SEIMultiviewAcquisitionInfo::isMAISameContent(SEIMultiviewAcquisitionInfo *
   return true;
 }
 
-#if JVET_T0056_SEI_MANIFEST
 SEIManifest::SEIManifestDescription SEIManifest::getSEIMessageDescription(const PayloadType payloadType)
 {
   std::vector<PayloadType> necessary = { PayloadType::FRAME_PACKING, PayloadType::EQUIRECTANGULAR_PROJECTION,
@@ -441,9 +440,7 @@ SEIManifest::SEIManifestDescription SEIManifest::getSEIMessageDescription(const 
   }
   return UNNECESSARY_SEI_MESSAGE;
 }
-#endif
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 uint8_t SEIPrefixIndication::getNumsOfSeiPrefixIndications(const SEI *sei)
 {
   PayloadType payloadType = sei->payloadType();
@@ -471,7 +468,6 @@ uint8_t SEIPrefixIndication::getNumsOfSeiPrefixIndications(const SEI *sei)
   }
   return 1;
 }
-#endif
 
 bool SEIMultiviewViewPosition::isMVPSameContent(SEIMultiviewViewPosition *mvpB)
 {
@@ -529,12 +525,8 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::ANNOTATED_REGIONS, "Annotated Region" },
   { SEI::PayloadType::SCALABILITY_DIMENSION_INFO, "Scalability dimension information" },
   { SEI::PayloadType::EXTENDED_DRAP_INDICATION, "Extended DRAP indication" },
-#if JVET_T0056_SEI_MANIFEST
   { SEI::PayloadType::SEI_MANIFEST, "SEI manifest" },
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   { SEI::PayloadType::SEI_PREFIX_INDICATION, "SEI prefix indication" },
-#endif
   { SEI::PayloadType::CONSTRAINED_RASL_ENCODING, "Constrained RASL encoding" },
   { SEI::PayloadType::VDI_SEI_ENVELOPE, "Video decoding interface SEI envelope" },
   { SEI::PayloadType::SHUTTER_INTERVAL_INFO, "Shutter interval information" },

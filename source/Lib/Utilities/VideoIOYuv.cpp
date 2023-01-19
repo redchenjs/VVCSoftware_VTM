@@ -1410,16 +1410,10 @@ void VideoIOYuv::ColourSpaceConvert(const CPelUnitBuf &src, PelUnitBuf &dest, co
   }
 }
 
-#if !JVET_AB0081
-bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
-                                      const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
-                                      int outputChoice, ChromaFormat format, const bool clipToRec709)
-#else
 bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
                                       const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
                                       int outputChoice, ChromaFormat format, const bool clipToRec709,
                                       int upscaleFilterForDisplay)
-#endif
 {
   ChromaFormat chromaFormatIDC = sps.getChromaFormatIdc();
   bool ret = false;
@@ -1451,17 +1445,11 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
       const int xScale = ((refPicWidth << ScalingRatio::BITS) + (curPicWidth >> 1)) / curPicWidth;
       const int yScale = ((refPicHeight << ScalingRatio::BITS) + (curPicHeight >> 1)) / curPicHeight;
 
-#if JVET_AB0081
       bool rescaleForDisplay = true;
       Picture::rescalePicture({ xScale, yScale }, pic, pps.getScalingWindow(), upscaledPic,
                               afterScaleWindowFullResolution, chromaFormatIDC, sps.getBitDepths(), false, false,
                               sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag(), rescaleForDisplay,
                               upscaleFilterForDisplay);
-#else
-      Picture::rescalePicture({ xScale, yScale }, pic, pps.getScalingWindow(), upscaledPic,
-                              afterScaleWindowFullResolution, chromaFormatIDC, sps.getBitDepths(), false, false,
-                              sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag());
-#endif
       ret = write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), upscaledPic, ipCSC,
                   packedYuvOutputMode, confFullResolution.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
                   confFullResolution.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIDC),

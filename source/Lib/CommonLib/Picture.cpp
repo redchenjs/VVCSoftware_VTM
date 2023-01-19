@@ -516,7 +516,6 @@ const TFilterCoeff DownsamplingFilterSRC[8][16][12] =
     }
 };
 
-#if JVET_AB0081
 const TFilterCoeff m_lumaFilter12_alt[16][12] =
 {
 { 0, 0, 0, 0, 0, 256, 0, 0, 0, 0, 0, 0, },
@@ -627,19 +626,14 @@ const TFilterCoeff m_chromaFilter6[32][6] =
     {1, -4, 15, 253, -11, 2},
     {0, -2, 7, 256, -6, 1},
 };
-#endif
 
 void Picture::sampleRateConv(const ScalingRatio scalingRatio, const int scaleX, const int scaleY,
                              const CPelBuf &beforeScale, const int beforeScaleLeftOffset,
                              const int beforeScaleTopOffset, const PelBuf &afterScale, const int afterScaleLeftOffset,
                              const int afterScaleTopOffset, const int bitDepth, const bool useLumaFilter,
                              const bool downsampling,
-#if !JVET_AB0081
-                             const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
-#else
                               const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag,
                               const bool rescaleForDisplay, const int upscaleFilterForDisplay
-#endif
 )
 {
   const Pel* orgSrc = beforeScale.buf;
@@ -662,7 +656,6 @@ void Picture::sampleRateConv(const ScalingRatio scalingRatio, const int scaleX, 
     return;
   }
 
-#if JVET_AB0081
   const TFilterCoeff* filterHor = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
   const TFilterCoeff* filterVer = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
   if (rescaleForDisplay)
@@ -673,10 +666,6 @@ void Picture::sampleRateConv(const ScalingRatio scalingRatio, const int scaleX, 
       filterVer = useLumaFilter ? (upscaleFilterForDisplay == 1 ? &m_lumaFilter12_alt[0][0] : &m_lumaFilter12[0][0]) : (upscaleFilterForDisplay == 1 ? &m_chromaFilter6_alt[0][0] : &m_chromaFilter6[0][0]);
     }
   }
-#else
-  const TFilterCoeff* filterHor = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
-  const TFilterCoeff* filterVer = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
-#endif
   const int numFracPositions = useLumaFilter ? 15 : 31;
   const int numFracShift = useLumaFilter ? 4 : 5;
 
@@ -757,16 +746,11 @@ void Picture::sampleRateConv(const ScalingRatio scalingRatio, const int scaleX, 
     filterVer = &DownsamplingFilterSRC[verFilter][0][0];
   }
 
-#if JVET_AB0081
   int filterLengthsLuma[3] = { 8, 12, 12 };
   int filterLengthsChroma[3] = { 4, 6, 6 };
   int log2NormList[3] = { 12, 16, 16 };
   const int filterLength = downsampling ? 12 : (rescaleForDisplay ? (useLumaFilter ? filterLengthsLuma[upscaleFilterForDisplay] : filterLengthsChroma[upscaleFilterForDisplay]) : useLumaFilter ? NTAPS_LUMA : NTAPS_CHROMA);
   const int log2Norm = downsampling ? 14 : (rescaleForDisplay ? log2NormList[upscaleFilterForDisplay] : 12);
-#else
-  const int filterLength = downsampling ? 12 : ( useLumaFilter ? NTAPS_LUMA : NTAPS_CHROMA );
-  const int log2Norm = downsampling ? 14 : 12;
-#endif
   int *buf = new int[orgHeight * scaledWidth];
   int maxVal = ( 1 << bitDepth ) - 1;
 
@@ -832,12 +816,8 @@ void Picture::rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf 
                              const Window &scalingWindowBefore, const PelUnitBuf &afterScaling,
                              const Window &scalingWindowAfter, const ChromaFormat chromaFormatIDC,
                              const BitDepths &bitDepths, const bool useLumaFilter, const bool downsampling,
-#if !JVET_AB0081
-                             const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
-#else
                               const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
                               bool rescaleForDisplay, int upscaleFilterForDisplay
-#endif
 )
 {
   for( int comp = 0; comp < ::getNumberValidComponents( chromaFormatIDC ); comp++ )
@@ -854,12 +834,8 @@ void Picture::rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf 
       scalingWindowAfter.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
       scalingWindowAfter.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC), bitDepths[toChannelType(compID)],
       downsampling || useLumaFilter ? true : isLuma(compID), downsampling,
-#if !JVET_AB0081
-      isLuma(compID) ? 1 : horCollocatedChromaFlag, isLuma(compID) ? 1 : verCollocatedChromaFlag
-#else
       isLuma(compID) ? 1 : horCollocatedChromaFlag, isLuma(compID) ? 1 : verCollocatedChromaFlag, rescaleForDisplay,
       upscaleFilterForDisplay
-#endif
     );
   }
 }

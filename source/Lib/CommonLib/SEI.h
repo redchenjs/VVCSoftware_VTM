@@ -60,9 +60,7 @@ public:
     USER_DATA_REGISTERED_ITU_T_T35       = 4,
     USER_DATA_UNREGISTERED               = 5,
     FILM_GRAIN_CHARACTERISTICS           = 19,
-#if JVET_AB0070_POST_FILTER_HINT
     POST_FILTER_HINT = 22,
-#endif
     FRAME_PACKING                        = 45,
     DISPLAY_ORIENTATION                  = 47,
     GREEN_METADATA                       = 56,
@@ -87,12 +85,8 @@ public:
     DEPTH_REPRESENTATION_INFO            = 177,
     MULTIVIEW_ACQUISITION_INFO           = 179,
     MULTIVIEW_VIEW_POSITION              = 180,
-#if JVET_T0056_SEI_MANIFEST
     SEI_MANIFEST = 200,
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
     SEI_PREFIX_INDICATION = 201,
-#endif
     SUBPICTURE_LEVEL_INFO                      = 203,
     SAMPLE_ASPECT_RATIO_INFO                   = 204,
     ANNOTATED_REGIONS                          = 202,
@@ -160,11 +154,7 @@ public:
 
   bool                   m_posEnabled;
   std::vector<uint16_t>  m_posPayloadType;
-#if JVET_AB0069_SEI_PROCESSING_ORDER
   std::vector<uint16_t>   m_posProcessingOrder;
-#else
-  std::vector<uint8_t>   m_posProcessingOrder;
-#endif
   uint32_t               m_posNumofSeiMessages;
 };
 
@@ -1025,7 +1015,6 @@ public:
   std::vector<std::vector<std::vector<int>>> m_refLevelFraction;
 };
 
-#if JVET_T0056_SEI_MANIFEST
 class SEIManifest : public SEI
 {
 public:
@@ -1047,9 +1036,7 @@ public:
 
   SEIManifestDescription getSEIMessageDescription(const PayloadType payloadType);
 };
-#endif
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 class SEIPrefixIndication : public SEI
 {
 public:
@@ -1066,7 +1053,6 @@ public:
 
   uint8_t getNumsOfSeiPrefixIndications(const SEI *sei);
 };
-#endif  
 
 class SEIAnnotatedRegions : public SEI
 {
@@ -1184,22 +1170,14 @@ public:
     , m_inpTensorBitDepthMinus8(0)
     , m_outTensorBitDepthMinus8(0)
     , m_componentLastFlag(false)
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     , m_inpFormatIdc(0)
-#else
-    , m_inpSampleIdc(0)
-#endif
     , m_auxInpIdc(0)
     , m_sepColDescriptionFlag(false)
     , m_colPrimaries(0)
     , m_transCharacteristics(0)
     , m_matrixCoeffs(0)
     , m_inpOrderIdc(0)
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     , m_outFormatIdc(0)
-#else
-    , m_outSampleIdc(0)
-#endif
     , m_outOrderIdc(0)
     , m_constantPatchSizeFlag(false)
     , m_patchWidthMinus1(0)
@@ -1210,20 +1188,14 @@ public:
     , m_cbPadding(0)
     , m_crPadding(0)
     , m_payloadByte(nullptr)
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
     , m_complexityInfoPresentFlag(false)
-#else
-    , m_complexityIdc(0)
-#endif
     , m_uriTag("")
     , m_uri("")
     , m_parameterTypeIdc(0)
     , m_log2ParameterBitLengthMinus3(0)
     , m_numParametersIdc(0)
     , m_numKmacOperationsIdc(0)
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
     , m_totalKilobyteSize(0)
-#endif
   {}
 
   ~SEINeuralNetworkPostFilterCharacteristics() override
@@ -1247,22 +1219,14 @@ public:
   uint32_t       m_inpTensorBitDepthMinus8;
   uint32_t       m_outTensorBitDepthMinus8;
   bool           m_componentLastFlag;
-#if M60678_BALLOT_COMMENTS_OF_FI_03
   uint32_t       m_inpFormatIdc;
-#else
-  uint32_t       m_inpSampleIdc;
-#endif
   uint32_t m_auxInpIdc;
   bool     m_sepColDescriptionFlag;
   uint8_t  m_colPrimaries;
   uint8_t  m_transCharacteristics;
   uint8_t  m_matrixCoeffs;
   uint32_t       m_inpOrderIdc;
-#if M60678_BALLOT_COMMENTS_OF_FI_03
   uint32_t       m_outFormatIdc;
-#else
-  uint32_t       m_outSampleIdc;
-#endif
   uint32_t       m_outOrderIdc;
   bool           m_constantPatchSizeFlag;
   uint32_t       m_patchWidthMinus1;
@@ -1274,24 +1238,16 @@ public:
   uint32_t       m_crPadding;
   uint64_t       m_payloadLength;
   char*          m_payloadByte;
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   bool           m_complexityInfoPresentFlag;
-#else
-  uint32_t       m_complexityIdc;
-#endif
   std::string    m_uriTag;
   std::string    m_uri;
   uint32_t       m_parameterTypeIdc;
   uint32_t       m_log2ParameterBitLengthMinus3;
   uint32_t       m_numParametersIdc;
   uint32_t       m_numKmacOperationsIdc;
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   uint32_t       m_totalKilobyteSize;
-#endif
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
   uint32_t       m_numberInputDecodedPicturesMinus2;
   std::vector<uint32_t> m_numberInterpolatedPictures;
-#endif
 };
 
 class SEINeuralNetworkPostFilterActivation : public SEI
@@ -1300,21 +1256,16 @@ public:
   PayloadType payloadType() const { return PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION; }
   SEINeuralNetworkPostFilterActivation()
     : m_id(0)
-#if JVET_AB0050
     , m_cancelFlag(false)
     , m_persistenceFlag(false)
-#endif
   {}
   virtual ~SEINeuralNetworkPostFilterActivation() {}
 
   uint32_t       m_id;
-#if JVET_AB0050
   bool           m_cancelFlag;
   bool           m_persistenceFlag;
-#endif
 };
 
-#if JVET_AB0070_POST_FILTER_HINT
 class SEIPostFilterHint : public SEI
 {
 public:
@@ -1331,7 +1282,6 @@ public:
   bool             m_filterHintChromaCoeffPresentFlag;
   std::vector<int> m_filterHintValues;   // values stored in linear array, [ ( ( component * sizeY + y ) * SizeX ) + x ]
 };
-#endif
 
 //! \}
 

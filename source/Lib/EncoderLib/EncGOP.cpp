@@ -551,7 +551,6 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
 #endif
   // The case that a specific SEI is not present is handled in xWriteSEI (empty list)
 
-#if JVET_T0056_SEI_MANIFEST
   // When SEI Manifest SEI message is present in an SEI NAL unit, the SEI Manifest SEI message shall be the first SEI
   // message in the SEI NAL unit (D3.45 in ISO/IEC 23008-2).
   if (m_pcCfg->getSEIManifestSEIEnabled())
@@ -561,8 +560,6 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
     xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
     xClearSEIs(currentMessages, !testWrite);
   }
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (m_pcCfg->getSEIPrefixIndicationSEIEnabled())
   {
     //There may be multiple SEI prefix indication messages at the same time
@@ -570,7 +567,6 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
     xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
     xClearSEIs(currentMessages, !testWrite);
   }
-#endif 
 
   // Buffering period SEI must always be following active parameter sets
   currentMessages = extractSeisByType(localMessages, SEI::PayloadType::BUFFERING_PERIOD);
@@ -846,7 +842,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     seiMessages.push_back(seiCTI);
   }
 
-#if JVET_T0056_SEI_MANIFEST
   // Make sure that sei_manifest and sei_prefix are the last two initialized sei_msg, otherwise it will cause these two
   // Sei messages to not be able to enter all SEI messages
   if (m_pcCfg->getSEIManifestSEIEnabled())
@@ -855,8 +850,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     m_seiEncoder.initSEISEIManifest(seiSEIManifest, seiMessages);
     seiMessages.push_back(seiSEIManifest);
   }
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (m_pcCfg->getSEIPrefixIndicationSEIEnabled())
   {
     int numSeiPrefixMsg = 0;
@@ -880,7 +873,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
       numSeiPrefixMsg--;
     }
   }
-#endif
 
   if (m_pcCfg->getConstrainedRaslencoding())
   {
@@ -996,7 +988,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     seiMessages.push_back(nnpfActivationSEI);
   }
 
-#if JVET_AB0070_POST_FILTER_HINT
   if (m_pcCfg->getPostFilterHintSEIEnabled())
   {
     SEIPostFilterHint *postFilterHintSEI = new SEIPostFilterHint;
@@ -1004,7 +995,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     m_seiEncoder.initSEIPostFilterHint(postFilterHintSEI);
     seiMessages.push_back(postFilterHintSEI);
   }
-#endif
 }
 
 void EncGOP::xCreatePhaseIndicationSEIMessages(SEIMessages& seiMessages, Slice* slice, int ppsId)
@@ -3166,7 +3156,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     if (pcSlice->getPPS()->getSliceChromaQpFlag() && CS::isDualITree (*pcSlice->getPic()->cs))
 #endif
     {
-#if JVET_AB0080_CHROMA_QP_FIX
       if (!(pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR || pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2 || pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3))
       {
         // overwrite chroma qp offset for dual tree
@@ -3178,16 +3167,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         }
         m_pcSliceEncoder->setUpLambda(pcSlice, pcSlice->getLambdas()[0], pcSlice->getSliceQp());
       }
-#else
-      // overwrite chroma qp offset for dual tree
-      pcSlice->setSliceChromaQpDelta(COMPONENT_Cb, m_pcCfg->getChromaCbQpOffsetDualTree());
-      pcSlice->setSliceChromaQpDelta(COMPONENT_Cr, m_pcCfg->getChromaCrQpOffsetDualTree());
-      if (pcSlice->getSPS()->getJointCbCrEnabledFlag())
-      {
-        pcSlice->setSliceChromaQpDelta(JOINT_CbCr, m_pcCfg->getChromaCbCrQpOffsetDualTree());
-      }
-      m_pcSliceEncoder->setUpLambda(pcSlice, pcSlice->getLambdas()[0], pcSlice->getSliceQp());
-#endif
     }
 
     xPicInitLMCS(pcPic, picHeader, pcSlice);
@@ -5001,12 +4980,8 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     const PPS* pps = m_pcEncLib->getPPS(0);
     CU::getRprScaling(&sps, pps, pcPic, scalingRatio);
 
-#if JVET_AB0081
     bool rescaleForDisplay = true;
     Picture::rescalePicture(scalingRatio, picC, pcPic->getScalingWindow(), upscaledRec, pps->getScalingWindow(), format, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag(), rescaleForDisplay, m_pcCfg->getUpscaleFilerForDisplay());
-#else
-    Picture::rescalePicture( scalingRatio, picC, pcPic->getScalingWindow(), upscaledRec, pps->getScalingWindow(), format, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag() );
-#endif
   }
 
   for (int comp = 0; comp < ::getNumberValidComponents(formatD); comp++)

@@ -728,22 +728,14 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
-#if M60678_BALLOT_COMMENTS_OF_FI_03
   uint32_t              m_nnPostFilterSEICharacteristicsInpFormatIdc[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t              m_nnPostFilterSEICharacteristicsInpSampleIdc[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsColPrimaries[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsTransCharacteristics[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsMatrixCoeffs[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsInpOrderIdc[MAX_NUM_NN_POST_FILTERS];
-#if M60678_BALLOT_COMMENTS_OF_FI_03
   uint32_t              m_nnPostFilterSEICharacteristicsOutFormatIdc[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t              m_nnPostFilterSEICharacteristicsOutSampleIdc[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsOutOrderIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPatchWidthMinus1[MAX_NUM_NN_POST_FILTERS];
@@ -754,42 +746,27 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsCbPadding[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsCrPadding[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   bool                  m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t              m_nnPostFilterSEICharacteristicsComplexityIdc[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::string           m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsNumParametersIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   uint32_t              m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
-#endif
 
   bool                  m_nnPostFilterSEIActivationEnabled;
   uint32_t              m_nnPostFilterSEIActivationId;
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
-#endif
-#if JVET_AB0050
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
-#endif
 
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
-#if JVET_AB0069_SEI_PROCESSING_ORDER
   std::vector<uint16_t>  m_poSEIProcessingOrder;
-#else
-  std::vector<uint8_t>  m_poSEIProcessingOrder;
-#endif
   uint32_t              m_numofSEIMessages;
 
-#if JVET_AB0070_POST_FILTER_HINT
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
   bool                 m_postFilterHintSEIPersistenceFlag;
@@ -798,7 +775,6 @@ protected:
   uint32_t             m_postFilterHintSEIType;
   bool                 m_postFilterHintSEIChromaCoeffPresentFlag;
   std::vector<int32_t> m_postFilterHintValues;
-#endif
 
   bool                  m_constrainedRaslEncoding;
 
@@ -809,12 +785,8 @@ protected:
   int                   m_sariSarWidth;
   int                   m_sariSarHeight;
 
-#if JVET_T0056_SEI_MANIFEST
   bool      m_SEIManifestSEIEnabled;
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   bool      m_SEIPrefixIndicationSEIEnabled;
-#endif 
   bool                  m_phaseIndicationSEIEnabledFullResolution;
   int                   m_piHorPhaseNumFullResolution;
   int                   m_piHorPhaseDenMinus1FullResolution;
@@ -957,7 +929,6 @@ protected:
   bool        m_rprEnabledFlag;
   double      m_scalingRatioHor;
   double      m_scalingRatioVer;
-#if JVET_AB0080
   bool        m_gopBasedRPREnabledFlag;
   int         m_gopBasedRPRQPThreshold;
   double      m_scalingRatioHor2;
@@ -970,19 +941,14 @@ protected:
   int         m_qpOffsetRPR;
   int         m_qpOffsetRPR2;
   int         m_qpOffsetRPR3;
-#if JVET_AB0080_CHROMA_QP_FIX
   int         m_qpOffsetChromaRPR;
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
-#endif
-#endif
   bool        m_resChangeInClvsEnabled;
   double      m_fractionOfFrames;                             ///< encode a fraction of the frames as specified in FramesToBeEncoded
   int         m_switchPocPeriod;
   int         m_upscaledOutput;                               ////< Output upscaled (2), decoded cropped but in full resolution buffer (1) or decoded cropped (0, default) picture for RPR.
-#if JVET_AB0081
   int         m_upscaleFilterForDisplay;
-#endif
   bool        m_craAPSreset;
   bool        m_rprRASLtoolSwitch;
   bool        m_avoidIntraInDepLayer;
