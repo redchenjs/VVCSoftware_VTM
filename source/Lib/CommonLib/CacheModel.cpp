@@ -64,28 +64,6 @@ enum CacheAddressMap
 
 namespace po = df::program_options_lite;
 
-void* cache_mem_align_malloc(int size, int alignSize)
-{
-  unsigned char *alignBuf;
-  unsigned char *buf = (unsigned char *)malloc(size + 2 * alignSize + sizeof(void **));
-  if (buf)
-  {
-    alignBuf = buf + alignSize + sizeof(void **);
-    alignBuf -= (intptr_t)alignBuf & (alignSize - 1);
-    *((void **)(alignBuf - sizeof(void **))) = buf;
-    return alignBuf;
-  }
-  return nullptr; // memory keep fail
-}
-
-void cache_mem_align_free(void *ptr)
-{
-  if ( ptr )
-  {
-    free(*(((void **)ptr) - 1));
-  }
-}
-
 CacheModel::CacheModel()
 {
   m_cacheEnable       = false;
