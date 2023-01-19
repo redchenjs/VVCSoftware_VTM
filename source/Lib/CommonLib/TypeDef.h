@@ -55,7 +55,6 @@
 // clang-format off
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AB0058_NN_FRAME_RATE_UPSAMPLING              1 // JVET-AB0058: Allow for signalling nn frame rate upsampling
 
 #define JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC 1
 #define JVET_AB0072                                      1 //Green-MPEG SEI Messaging (JVET-AB0072)
@@ -774,7 +773,6 @@ enum NNPC_PaddingType
   FIXED_PADDING = 4
 };
 
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
 enum NNPC_PurposeType
 {
   UNKONWN = 0,
@@ -784,7 +782,6 @@ enum NNPC_PurposeType
   INCREASE_PICT_DIMENSION_WITH_CHROMA_UPSMAPLING = 4,
   FRANE_RATE_UPSAMPLING = 5
 };
-#endif
 
 enum POST_FILTER_MODE
 {

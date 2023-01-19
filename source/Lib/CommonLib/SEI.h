@@ -1264,10 +1264,8 @@ public:
   uint32_t       m_numParametersIdc;
   uint32_t       m_numKmacOperationsIdc;
   uint32_t       m_totalKilobyteSize;
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
   uint32_t       m_numberInputDecodedPicturesMinus2;
   std::vector<uint32_t> m_numberInterpolatedPictures;
-#endif
 };
 
 class SEINeuralNetworkPostFilterActivation : public SEI

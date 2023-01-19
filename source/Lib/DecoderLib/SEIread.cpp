@@ -2724,7 +2724,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_height_in_luma_samples");
       sei.m_picHeightInLumaSamples = val;
     }
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
     
     if (sei.m_purpose == NNPC_PurposeType::FRANE_RATE_UPSAMPLING)
     {
@@ -2737,7 +2736,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_numberInterpolatedPictures[i] = val;
       }
     }
-#endif
 
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");
     sei.m_componentLastFlag = val;

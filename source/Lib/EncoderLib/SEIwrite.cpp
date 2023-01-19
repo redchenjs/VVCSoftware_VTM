@@ -1709,7 +1709,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_picWidthInLumaSamples, "nnpfc_pic_width_in_luma_samples");
       xWriteUvlc(sei.m_picHeightInLumaSamples, "nnpfc_pic_height_in_luma_samples");
     }
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
     if (sei.m_purpose == NNPC_PurposeType::CHROMA_UPSAMPLING) 
     {
       xWriteUvlc(sei.m_numberInputDecodedPicturesMinus2, "nnpfc_number_of_input_pictures_minus2");
@@ -1718,7 +1717,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteUvlc(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");
       }
     }
-#endif
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
 #if M60678_BALLOT_COMMENTS_OF_FI_03
