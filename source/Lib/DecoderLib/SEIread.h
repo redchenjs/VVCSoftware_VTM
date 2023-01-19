@@ -61,10 +61,8 @@ public:
                                          const VPS *vps, const SPS *sps, HRD &hrd, uint32_t payloadSize,
                                          std::vector<SeiPayload> *seiList);
   void getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, HRD &hrd, uint32_t payloadSize, int& duiIdx);
-#if JVET_AB0049
   bool nnpfcProcessed;
   std::vector<int> nnpfcValues;
-#endif
   
 protected:
   void xReadSEImessage                        (SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream);

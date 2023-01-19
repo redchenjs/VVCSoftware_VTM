@@ -55,7 +55,6 @@
 // clang-format off
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AB0049                                       1 // JVET-AB0049: Modification of NNPFC
 #define JVET_AB0050                                       1 // JVET-AB0050: Add two flags for NNPFA
 #define JVET_T0056_SEI_MANIFEST                           1 // JVET-T0056: SEI manifest SEI message
 #define JVET_T0056_SEI_PREFIX_INDICATION                  1 // JVET-T0056: SEI prefix indication SEI message
