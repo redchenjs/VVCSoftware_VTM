@@ -531,7 +531,6 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
                                                   : m_pcCfg->getGOPEntry(gopId).m_CbQPoffset;
     int        crQP   = bUseIntraOrPeriodicOffset ? m_pcCfg->getSliceChromaOffsetQpIntraOrPeriodic(true)
                                                   : m_pcCfg->getGOPEntry(gopId).m_CrQPoffset;
-#if JVET_AB0080_CHROMA_QP_FIX
     // adjust chroma QP such that it corresponds to the luma QP change when encoding in reduced resolution
     if (m_pcCfg->getGOPBasedRPREnabledFlag())
     {
@@ -556,7 +555,6 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
         crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR3());
       }
     }
-#endif
     int cbCrQP = (cbQP + crQP) >> 1; // use floor of average chroma QP offset for joint-Cb/Cr coding
 
     cbQP = Clip3( -12, 12, cbQP + rpcSlice->getPPS()->getQpOffset(COMPONENT_Cb) ) - rpcSlice->getPPS()->getQpOffset(COMPONENT_Cb);

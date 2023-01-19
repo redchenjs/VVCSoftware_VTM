@@ -220,9 +220,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
 
     pps.setPicWidthInLumaSamples( width );
     pps.setPicHeightInLumaSamples( height );
-#if JVET_AB0080_CHROMA_QP_FIX
     pps.setSliceChromaQpFlag(true);
-#endif
     Window conformanceWindow;
     conformanceWindow.setWindow( 0, ( width - scaledWidth ) / SPS::getWinUnitX( sps0.getChromaFormatIdc() ), 0, ( height - scaledHeight ) / SPS::getWinUnitY( sps0.getChromaFormatIdc() ) );
     if (pps.getPicWidthInLumaSamples() == sps0.getMaxPicWidthInLumaSamples() && pps.getPicHeightInLumaSamples() == sps0.getMaxPicHeightInLumaSamples())
@@ -301,9 +299,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
 
     pps.setPicWidthInLumaSamples(width);
     pps.setPicHeightInLumaSamples(height);
-#if JVET_AB0080_CHROMA_QP_FIX
     pps.setSliceChromaQpFlag(true);
-#endif
 
     Window conformanceWindow;
     conformanceWindow.setWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0, (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
@@ -378,9 +374,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
 
     pps.setPicWidthInLumaSamples(width);
     pps.setPicHeightInLumaSamples(height);
-#if JVET_AB0080_CHROMA_QP_FIX
     pps.setSliceChromaQpFlag(true);
-#endif
 
     Window conformanceWindow;
     conformanceWindow.setWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0, (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
@@ -1911,7 +1905,6 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
   {
     pps.setSliceChromaQpFlag(m_chromaCbQpOffsetDualTree != 0 || m_chromaCrQpOffsetDualTree != 0 || m_chromaCbCrQpOffsetDualTree != 0);
   }
-#if JVET_AB0080_CHROMA_QP_FIX
   if (m_gopBasedRPREnabledFlag)
   {
     if (pps.getPPSId() == ENC_PPS_ID_RPR || pps.getPPSId() == ENC_PPS_ID_RPR2 || pps.getPPSId() == ENC_PPS_ID_RPR3)
@@ -1919,7 +1912,6 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
       pps.setSliceChromaQpFlag(true);
     }
   }
-#endif
   int minCbSizeY = (1 << sps.getLog2MinCodingBlockSize());
   pps.setWrapAroundEnabledFlag                ( m_wrapAround );
   if( m_wrapAround )

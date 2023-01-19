@@ -1012,11 +1012,9 @@ protected:
   int         m_qpOffsetRPR;
   int         m_qpOffsetRPR2;
   int         m_qpOffsetRPR3;
-#if JVET_AB0080_CHROMA_QP_FIX
   int         m_qpOffsetChromaRPR;
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
-#endif
   bool        m_rprEnabledFlag;
   bool        m_resChangeInClvsEnabled;
   int         m_switchPocPeriod;
@@ -2752,9 +2750,7 @@ public:
   bool        isRprEnabled()                                    const { return m_rprEnabledFlag; }
   void        setScalingRatio( double hor, double ver )              { m_scalingRatioHor = hor, m_scalingRatioVer = ver;  }
   void        setGOPBasedRPREnabledFlag(bool b)                      { m_gopBasedRPREnabledFlag = b; }
-#if JVET_AB0080_CHROMA_QP_FIX
   bool        getGOPBasedRPREnabledFlag()                            const { return m_gopBasedRPREnabledFlag; }
-#endif
   void        setGOPBasedRPRQPThreshold(int qp)                      { m_gopBasedRPRQPThreshold = qp; }
   int         getGOPBasedRPRQPThreshold()                            const { return m_gopBasedRPRQPThreshold; }
   void        setScalingRatio2(double hor, double ver)               { m_scalingRatioHor2 = hor, m_scalingRatioVer2 = ver; }
@@ -2764,12 +2760,10 @@ public:
   int         getQpOffsetRPR()                                       const { return m_qpOffsetRPR; }
   int         getQpOffsetRPR2()                                      const { return m_qpOffsetRPR2; }
   int         getQpOffsetRPR3()                                      const { return m_qpOffsetRPR3; }
-#if JVET_AB0080_CHROMA_QP_FIX
   void        setQpOffsetChromaRPR(int qpOffsetChroma, int qpOffsetChroma2, int qpOffsetChroma3) { m_qpOffsetChromaRPR = qpOffsetChroma, m_qpOffsetChromaRPR2 = qpOffsetChroma2, m_qpOffsetChromaRPR3 = qpOffsetChroma3; }
   int         getQpOffsetChromaRPR()                                  const { return m_qpOffsetChromaRPR; }
   int         getQpOffsetChromaRPR2()                                 const { return m_qpOffsetChromaRPR2; }
   int         getQpOffsetChromaRPR3()                                 const { return m_qpOffsetChromaRPR3; }
-#endif
   void        setResChangeInClvsEnabled(bool b)                      { m_resChangeInClvsEnabled = b; }
   bool        isResChangeInClvsEnabled()                        const { return m_resChangeInClvsEnabled; }
   void        setSwitchPocPeriod( int p )                            { m_switchPocPeriod = p;}

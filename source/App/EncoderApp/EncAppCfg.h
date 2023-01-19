@@ -953,11 +953,9 @@ protected:
   int         m_qpOffsetRPR;
   int         m_qpOffsetRPR2;
   int         m_qpOffsetRPR3;
-#if JVET_AB0080_CHROMA_QP_FIX
   int         m_qpOffsetChromaRPR;
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
-#endif
   bool        m_resChangeInClvsEnabled;
   double      m_fractionOfFrames;                             ///< encode a fraction of the frames as specified in FramesToBeEncoded
   int         m_switchPocPeriod;
