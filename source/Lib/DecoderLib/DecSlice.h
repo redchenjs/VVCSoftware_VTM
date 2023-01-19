@@ -38,9 +38,7 @@
 #ifndef __DECSLICE__
 #define __DECSLICE__
 
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #include "CommonLib/CommonDef.h"
 #include "CommonLib/BitStream.h"

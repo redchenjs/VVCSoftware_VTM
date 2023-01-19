@@ -47,26 +47,22 @@
 #include <fstream>
 #endif
 
+#ifdef _MSC_VER
+#if _MSC_VER < 1910
+#error "MS Visual Studio version not supported. Please upgrade to Visual Studio 2017 or higher (or use other compilers)"
+#endif
 
-#if _MSC_VER > 1000
+#include <intrin.h>
+
 // disable "signed and unsigned mismatch"
 #pragma warning( disable : 4018 )
 // disable bool coercion "performance warning"
 #pragma warning( disable : 4800 )
-#endif // _MSC_VER > 1000
+#endif
 
 #include "CommonSimdCfg.h"
 #include "TypeDef.h"
 #include "version.h"
-
-// MS Visual Studio before 2014 does not support required C++11 features
-#ifdef _MSC_VER
-#if _MSC_VER < 1900
-#error "MS Visual Studio version not supported. Please upgrade to Visual Studio 2015 or higher (or use other compilers)"
-#endif
-
-#include <intrin.h>
-#endif
 
 //! \ingroup CommonLib
 //! \{
@@ -93,7 +89,7 @@
 
 #ifdef __INTEL_COMPILER
 #define NVM_COMPILEDBY  "[ICC %d]", __INTEL_COMPILER
-#elif  _MSC_VER
+#elif defined _MSC_VER
 #define NVM_COMPILEDBY  "[VS %d]", _MSC_VER
 #endif
 
