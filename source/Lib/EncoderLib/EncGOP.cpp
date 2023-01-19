@@ -988,7 +988,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     seiMessages.push_back(nnpfActivationSEI);
   }
 
-#if JVET_AB0070_POST_FILTER_HINT
   if (m_pcCfg->getPostFilterHintSEIEnabled())
   {
     SEIPostFilterHint *postFilterHintSEI = new SEIPostFilterHint;
@@ -996,7 +995,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     m_seiEncoder.initSEIPostFilterHint(postFilterHintSEI);
     seiMessages.push_back(postFilterHintSEI);
   }
-#endif
 }
 
 void EncGOP::xCreatePhaseIndicationSEIMessages(SEIMessages& seiMessages, Slice* slice, int ppsId)

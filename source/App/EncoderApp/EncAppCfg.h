@@ -767,7 +767,6 @@ protected:
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   uint32_t              m_numofSEIMessages;
 
-#if JVET_AB0070_POST_FILTER_HINT
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
   bool                 m_postFilterHintSEIPersistenceFlag;
@@ -776,7 +775,6 @@ protected:
   uint32_t             m_postFilterHintSEIType;
   bool                 m_postFilterHintSEIChromaCoeffPresentFlag;
   std::vector<int32_t> m_postFilterHintValues;
-#endif
 
   bool                  m_constrainedRaslEncoding;
 

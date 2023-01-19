@@ -57,7 +57,6 @@
 //########### place macros to be removed in next cycle below this line ###############
 
 
-#define JVET_AB0070_POST_FILTER_HINT                      1 // JVET-AB0070: post-filter hint SEI
 
 //########### place macros to be be kept below this line ###############
 

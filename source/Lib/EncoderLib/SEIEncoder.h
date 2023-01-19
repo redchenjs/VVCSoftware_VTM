@@ -96,9 +96,7 @@ public:
   void initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx);
   void initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei);
   void initSEIProcessingOrderInfo(SEIProcessingOrderInfo *sei);
-#if JVET_AB0070_POST_FILTER_HINT
   void initSEIPostFilterHint(SEIPostFilterHint *sei);
-#endif
 #if GREEN_METADATA_SEI_ENABLED
   void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);
 #endif

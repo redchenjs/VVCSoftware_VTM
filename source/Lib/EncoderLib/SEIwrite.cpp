@@ -185,11 +185,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::SEI_PROCESSING_ORDER:
     xWriteSEIProcessingOrder(*static_cast<const SEIProcessingOrderInfo *>(&sei));
     break;
-#if JVET_AB0070_POST_FILTER_HINT
   case SEI::PayloadType::POST_FILTER_HINT:
     xWriteSEIPostFilterHint(*static_cast<const SEIPostFilterHint *>(&sei));
     break;
-#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -1788,7 +1786,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
   }
 }
 
-#if JVET_AB0070_POST_FILTER_HINT
 void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
 {
   xWriteFlag(sei.m_filterHintCancelFlag, "filter_hint_cancel_flag");
@@ -1807,5 +1804,4 @@ void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
     }
   }
 }
-#endif
 //! \}
