@@ -1294,13 +1294,11 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
   CHECK(!(sei != nullptr), "Unspecified error");
   sei->m_id = m_pcCfg->getNNPostFilterSEICharacteristicsId(filterIdx);
   sei->m_modeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsModeIdc(filterIdx);
-#if JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
   if (sei->m_modeIdc == POST_FILTER_MODE::URI)
   {
     sei->m_uriTag = m_pcCfg->getNNPostFilterSEICharacteristicsUriTag(filterIdx);
     sei->m_uri    = m_pcCfg->getNNPostFilterSEICharacteristicsUri(filterIdx);
   }
-#endif
   sei->m_purposeAndFormattingFlag = m_pcCfg->getNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(filterIdx);
   if (sei->m_purposeAndFormattingFlag)
   {
@@ -1410,10 +1408,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_numKmacOperationsIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(filterIdx);
         sei->m_totalKilobyteSize = m_pcCfg->getNNPostFilterSEICharacteristicsTotalKilobyteSize(filterIdx);
     }
-#if !JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
-    sei->m_uriTag = m_pcCfg->getNNPostFilterSEICharacteristicsUriTag(filterIdx);
-    sei->m_uri = m_pcCfg->getNNPostFilterSEICharacteristicsUri(filterIdx);
-#endif
   }
   if (sei->m_modeIdc == 1)
   {

@@ -1684,7 +1684,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 {
   xWriteUvlc(sei.m_id, "nnpfc_id");
   xWriteUvlc(sei.m_modeIdc, "nnpfc_mode_idc");
-#if JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
   if (sei.m_modeIdc == POST_FILTER_MODE::URI)
   {
     while (!isByteAligned())
@@ -1694,7 +1693,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     xWriteString(sei.m_uriTag, "nnpfc_uri_tag");
     xWriteString(sei.m_uri, "nnpfc_uri");
   }
-#endif
   xWriteFlag(sei.m_purposeAndFormattingFlag, "nnpfc_purpose_and_formatting_flag");
   if (sei.m_purposeAndFormattingFlag)
   {
@@ -1784,17 +1782,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_totalKilobyteSize, "nnpfc_total_kilobyte_size");
     }
   }
-#if !JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
-  if (sei.m_modeIdc == POST_FILTER_MODE::URI)
-  {
-    while (!isByteAligned())
-    {
-      xWriteFlag(0, "nnpfc_reserved_zero_bit");
-    }
-    xWriteString(sei.m_uriTag, "nnpfc_uri_tag");
-    xWriteString(sei.m_uri, "nnpfc_uri");
-  }
-#endif
   if (sei.m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
   {
     while (!isByteAligned())
