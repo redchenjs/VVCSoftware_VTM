@@ -2738,7 +2738,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");
     sei.m_componentLastFlag = val;
 
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_format_idc");
     sei.m_inpFormatIdc = val;
 
@@ -2747,16 +2746,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_minus8");
       sei.m_inpTensorBitDepthMinus8 = val;
     }
-#else
-    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_sample_idc");
-    sei.m_inpSampleIdc = val;
-
-    if(sei.m_inpSampleIdc == 4)
-    {
-      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_minus8");
-      sei.m_inpTensorBitDepthMinus8 = val;
-    }
-#endif
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
@@ -2774,7 +2763,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_matrixCoeffs = val;
     }
 
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_format_idc");
     sei.m_outFormatIdc = val;
 
@@ -2783,16 +2771,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_minus8");
       sei.m_outTensorBitDepthMinus8 = val;
     }
-#else
-    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_sample_idc");
-    sei.m_outSampleIdc = val;
-
-    if(sei.m_outSampleIdc == 4)
-    {
-      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_minus8");
-      sei.m_outTensorBitDepthMinus8 = val;
-    }
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
     sei.m_outOrderIdc = val;

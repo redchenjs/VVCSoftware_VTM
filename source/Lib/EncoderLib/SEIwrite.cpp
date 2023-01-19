@@ -1717,20 +1717,11 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");
     if (sei.m_inpFormatIdc == 1)
     {
       xWriteUvlc(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
     }
-#else
-    xWriteUvlc(sei.m_inpSampleIdc, "nnpfc_inp_sample_idc");
-
-    if(sei.m_inpSampleIdc == 4)
-    {
-      xWriteUvlc(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
-    }
-#endif
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
     xWriteFlag(sei.m_sepColDescriptionFlag, "nnpfc_sep_col_desc_flag");
@@ -1741,20 +1732,11 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteCode(sei.m_transCharacteristics, 8, "nnpfc_trans_characteristics");
       xWriteCode(sei.m_matrixCoeffs, 8, "nnpfc_matrix_coeffs");
     }
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     xWriteUvlc(sei.m_outFormatIdc, "nnpfc_out_format_idc");
     if (sei.m_outFormatIdc == 1)
     {
       xWriteUvlc(sei.m_outTensorBitDepthMinus8, "nnpfc_out_tensor_bitdepth_minus8");
     }
-#else
-    xWriteUvlc(sei.m_outSampleIdc, "nnpfc_out_sample_idc");
-
-    if(sei.m_outSampleIdc == 4)
-    {
-      xWriteUvlc(sei.m_outTensorBitDepthMinus8, "nnpfc_out_tensor_bitdepth_minus8");
-    }
-#endif
 
     xWriteUvlc(sei.m_outOrderIdc, "nnpfc_out_order_idc");
     xWriteFlag(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");

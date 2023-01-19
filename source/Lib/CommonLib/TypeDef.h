@@ -56,7 +56,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define M60678_BALLOT_COMMENTS_OF_FI_03                  1 // m60678: Ballot comments of FI_03
 
 #define JVET_AB0070_POST_FILTER_HINT                      1 // JVET-AB0070: post-filter hint SEI
 
