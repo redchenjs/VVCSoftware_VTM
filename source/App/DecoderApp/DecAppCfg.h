@@ -38,9 +38,7 @@
 #ifndef __DECAPPCFG__
 #define __DECAPPCFG__
 
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #include "CommonLib/CommonDef.h"
 #include <vector>

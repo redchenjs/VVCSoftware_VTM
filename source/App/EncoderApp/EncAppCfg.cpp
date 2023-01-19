@@ -560,7 +560,7 @@ static uint32_t getMaxSlicesByLevel( Level::Name level )
     \param  argv        array of arguments
     \retval             true when success
  */
-#if _MSC_VER > 1000
+#ifdef _MSC_VER
 // Disable optimizations to avoid long compile times
 #pragma optimize( "", off )
 #endif
@@ -3410,7 +3410,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   return true;
 }
-#if _MSC_VER > 1000
+#ifdef _MSC_VER
+// Restore optimizations
 #pragma optimize( "", on )
 #endif
 

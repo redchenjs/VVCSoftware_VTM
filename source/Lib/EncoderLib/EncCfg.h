@@ -38,9 +38,7 @@
 #ifndef __ENCCFG__
 #define __ENCCFG__
 
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #include "CommonLib/CommonDef.h"
 #include "CommonLib/Slice.h"

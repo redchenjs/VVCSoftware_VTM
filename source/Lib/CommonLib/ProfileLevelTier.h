@@ -38,9 +38,7 @@
 #ifndef __PROFILE_LEVEL_TIER__
 #define __PROFILE_LEVEL_TIER__
 
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #include "CommonLib/CommonDef.h"
 #include <stdint.h>

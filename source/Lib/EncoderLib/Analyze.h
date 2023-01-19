@@ -38,9 +38,7 @@
 #ifndef __ANALYZE__
 #define __ANALYZE__
 
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #include <stdio.h>
 #include <memory.h>
@@ -187,15 +185,11 @@ public:
 
   void printOut(std::string &header, std::string &metrics, const std::string &delim, ChromaFormat chFmt,
                 bool printMSEBasedSNR, bool printSequenceMSE, bool printMSSSIM, bool printHexPsnr, bool printRprPsnr,
-                const BitDepths &bitDepths, bool useWPSNR, bool printHdrMetrics)
+                const BitDepths &bitDepths, bool useWPSNR, [[maybe_unused]] bool printHdrMetrics)
   {
-#if !JVET_O0756_CALCULATE_HDRMETRICS
-    (void) printHdrMetrics;   // unused parameter
-#endif
+    std::ostringstream headeross, metricoss;
 
-    std::ostringstream headeross,metricoss;
-    // no generic lambda in C++11...
-    auto addFieldD = [&](const std::string &header, const char *fmt, double x, bool withchroma = true)
+    auto addField = [&](const std::string &header, const char *fmt, auto x, bool withchroma = true)
     {
       if (!withchroma)
       {
@@ -204,26 +198,6 @@ public:
       char buffer[512];
       headeross<<header;
       snprintf(buffer,512,fmt,x);
-      metricoss<<buffer;
-    };
-
-    auto addFieldL = [&](const std::string &header, const char *fmt, uint64_t x, bool withchroma = true)
-    {
-      if (!withchroma)
-      {
-        return;
-      }
-      char buffer[512];
-      headeross<<header;
-      snprintf(buffer,512,fmt,x);
-      metricoss<<buffer;
-    };
-
-    auto addFieldS = [&](const std::string &header, const char *fmt, const char *s)
-    {
-      char buffer[512];
-      headeross<<header;
-      snprintf(buffer,512,fmt,s);
       metricoss<<buffer;
     };
 
@@ -259,9 +233,9 @@ public:
       }
     }
 
-    addFieldL("\tTotal Frames","\t%-8d    ",getNumPic());
-    addFieldS(" |  ",                  " %s ",delim.c_str());
-    addFieldD("Bitrate      ", "%-12.4lf ",getBits() * scale);
+    addField("\tTotal Frames", "\t%-8d    ", getNumPic());
+    addField(" |  ", " %s ", delim.c_str());
+    addField("Bitrate      ", "%-12.4lf ", getBits() * scale);
 
     const bool withchroma=(chFmt != CHROMA_400);
     double psnrYUV = MAX_DOUBLE;
@@ -273,23 +247,23 @@ public:
 
     if (useWPSNR)
     {
-      addFieldD("Y-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Y));
-      addFieldD("U-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Cb), withchroma);
-      addFieldD("V-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Cr), withchroma);
-      addFieldD("YUV-WPSNR ", "%-8.4lf  ", psnrYUV, withchroma);
+      addField("Y-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Y));
+      addField("U-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Cb), withchroma);
+      addField("V-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Cr), withchroma);
+      addField("YUV-WPSNR ", "%-8.4lf  ", psnrYUV, withchroma);
     }
     else
     {
-      addFieldD("Y-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Y) / (double) getNumPic());
-      addFieldD("U-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Cb) / (double) getNumPic(), withchroma);
-      addFieldD("V-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Cr) / (double) getNumPic(), withchroma);
-      addFieldD("YUV-PSNR ", "%-8.4lf ", psnrYUV, withchroma);
+      addField("Y-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Y) / (double) getNumPic());
+      addField("U-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Cb) / (double) getNumPic(), withchroma);
+      addField("V-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Cr) / (double) getNumPic(), withchroma);
+      addField("YUV-PSNR ", "%-8.4lf ", psnrYUV, withchroma);
     }
 #if JVET_O0756_CALCULATE_HDRMETRICS
     if (printHdrMetrics && withchroma)
     {
-      addFieldD("DeltaE   ", "%-8.4lf ", getDeltaE() / (double) getNumPic());
-      addFieldD("PSNRL    ", "%-8.4lf ", getPsnrL() / (double) getNumPic());
+      addField("DeltaE   ", "%-8.4lf ", getDeltaE() / (double) getNumPic());
+      addField("PSNRL    ", "%-8.4lf ", getPsnrL() / (double) getNumPic());
     }
 #endif
 #if EXTENSION_360_VIDEO
@@ -299,55 +273,55 @@ public:
     {
       if (useWPSNR)
       {
-        addFieldL("xY-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Y) ));
-        addFieldL("xU-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Cb)), withchroma);
-        addFieldL("xV-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Cr)), withchroma);
+        addField("xY-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Y)));
+        addField("xU-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Cb)), withchroma);
+        addField("xV-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Cr)), withchroma);
       }
       else
       {
-        addFieldL("xY-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Y) / (double) getNumPic()));
-        addFieldL("xU-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Cb) / (double) getNumPic()),
-                  withchroma);
-        addFieldL("xV-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Cr) / (double) getNumPic()),
-                  withchroma);
+        addField("xY-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Y) / (double) getNumPic()));
+        addField("xU-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Cb) / (double) getNumPic()),
+                 withchroma);
+        addField("xV-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Cr) / (double) getNumPic()),
+                 withchroma);
       }
     }
 #if JVET_O0756_CALCULATE_HDRMETRICS
     if (printHdrMetrics && printHexPsnr && withchroma)
     {
-      addFieldL("xDeltaE          ", "%-16" PRIx64 " ", hexValue(getDeltaE() / (double) getNumPic()));
-      addFieldL("xPSNRL           ", "%-16" PRIx64 " " , hexValue(getPsnrL() / (double) getNumPic()));
+      addField("xDeltaE          ", "%-16" PRIx64 " ", hexValue(getDeltaE() / (double) getNumPic()));
+      addField("xPSNRL           ", "%-16" PRIx64 " ", hexValue(getPsnrL() / (double) getNumPic()));
     }
 #endif
     if (printMSSSIM)
     {
-      addFieldD("Y-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Y) / (double) getNumPic());
-      addFieldD("U-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Cb) / (double) getNumPic(), withchroma);
-      addFieldD("V-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Cr) / (double) getNumPic(), withchroma);
+      addField("Y-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Y) / (double) getNumPic());
+      addField("U-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Cb) / (double) getNumPic(), withchroma);
+      addField("V-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Cr) / (double) getNumPic(), withchroma);
     }
     if (printSequenceMSE)
     {
-      addFieldD("Y-MSE      ", "%-10.4lf ", m_mseYuvFrame[COMPONENT_Y] / (double) getNumPic());
-      addFieldD("U-MSE      ", "%-10.4lf ", m_mseYuvFrame[COMPONENT_Cb] / (double) getNumPic(), withchroma);
-      addFieldD("V-MSE      ", "%-10.4lf ", m_mseYuvFrame[COMPONENT_Cr] / (double) getNumPic(), withchroma);
-      addFieldD("YUV-MSE    ", "%-10.4lf ",mseYUV, withchroma);
+      addField("Y-MSE      ", "%-10.4lf ", m_mseYuvFrame[COMPONENT_Y] / (double) getNumPic());
+      addField("U-MSE      ", "%-10.4lf ", m_mseYuvFrame[COMPONENT_Cb] / (double) getNumPic(), withchroma);
+      addField("V-MSE      ", "%-10.4lf ", m_mseYuvFrame[COMPONENT_Cr] / (double) getNumPic(), withchroma);
+      addField("YUV-MSE    ", "%-10.4lf ", mseYUV, withchroma);
     }
 
     if (printMSEBasedSNR && !printRprPsnr)
     {
-      addFieldD("MSE-Y-PSNR   ", "%-8.4lf     ", mseBasedSNR[COMPONENT_Y]);
-      addFieldD("MSE-U-PSNR   ", "%-8.4lf     ", mseBasedSNR[COMPONENT_Cb], withchroma);
-      addFieldD("MSE-V-PSNR   ", "%-8.4lf     ", mseBasedSNR[COMPONENT_Cr], withchroma);
-      addFieldD("MSE-YUV-PSNR ", "%-8.4lf     ", psnrYUV, withchroma);
+      addField("MSE-Y-PSNR   ", "%-8.4lf     ", mseBasedSNR[COMPONENT_Y]);
+      addField("MSE-U-PSNR   ", "%-8.4lf     ", mseBasedSNR[COMPONENT_Cb], withchroma);
+      addField("MSE-V-PSNR   ", "%-8.4lf     ", mseBasedSNR[COMPONENT_Cr], withchroma);
+      addField("MSE-YUV-PSNR ", "%-8.4lf     ", psnrYUV, withchroma);
     }
     if (printRprPsnr)
     {
-      addFieldD("Y-PSNR1  ", "%-8.4lf ", mseBasedSNR[COMPONENT_Y]);
-      addFieldD("U-PSNR1  ", "%-8.4lf ", mseBasedSNR[COMPONENT_Cb], withchroma);
-      addFieldD("V-PSNR1  ", "%-8.4lf ", mseBasedSNR[COMPONENT_Cr], withchroma);
-      addFieldD("Y-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Y]/ (double)getNumPic());
-      addFieldD("U-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Cb]/ (double)getNumPic(), withchroma);
-      addFieldD("V-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Cr]/ (double)getNumPic(), withchroma);
+      addField("Y-PSNR1  ", "%-8.4lf ", mseBasedSNR[COMPONENT_Y]);
+      addField("U-PSNR1  ", "%-8.4lf ", mseBasedSNR[COMPONENT_Cb], withchroma);
+      addField("V-PSNR1  ", "%-8.4lf ", mseBasedSNR[COMPONENT_Cr], withchroma);
+      addField("Y-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Y] / (double) getNumPic());
+      addField("U-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Cb] / (double) getNumPic(), withchroma);
+      addField("V-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Cr] / (double) getNumPic(), withchroma);
     }
     header=headeross.str();
     metrics=metricoss.str();
