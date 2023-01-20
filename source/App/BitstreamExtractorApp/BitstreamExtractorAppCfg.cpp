@@ -42,7 +42,6 @@
 #include "CommonLib/dtrace_next.h"
 #endif
 
-using namespace std;
 namespace po = df::program_options_lite;
 
 
@@ -65,37 +64,39 @@ namespace po = df::program_options_lite;
   int  verbosity;
 
   po::Options opts;
-  opts.addOptions()
 
+  // clang-format off
+  opts.addOptions()
   ("help",                      printHelp,                             false,      "This help text")
-  ("BitstreamFileIn,b",         m_bitstreamFileNameIn,                 string(""), "Bitstream input file name")
-  ("BitstreamFileOut,o",        m_bitstreamFileNameOut,                string(""), "bitstream output file name")
+  ("BitstreamFileIn,b",         m_bitstreamFileNameIn,                 std::string(""), "Bitstream input file name")
+  ("BitstreamFileOut,o",        m_bitstreamFileNameOut,                std::string(""), "bitstream output file name")
   ("MaxTemporalLayer,t",        m_maxTemporalLayer,                    -1,         "Maximum Temporal Layer to be decoded. -1 to decode all layers")
   ("TargetOutputLayerSet,p",    m_targetOlsIdx,                        -1,         "Target output layer set index")
   ("SubPicIdx,s",               m_subPicIdx,                           -1,         "Target subpic index for target output layers that containing multiple subpictures. -1 to decode all subpictures")
 
 #if ENABLE_TRACING
   ("TraceChannelsList",         printTracingChannelsList,              false,        "List all available tracing channels" )
-  ("TraceRule",                 tracingRule,                           string( "" ), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")" )
-  ("TraceFile",                 tracingFile,                           string( "" ), "Tracing file" )
+  ("TraceRule",                 tracingRule,                           std::string( "" ), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")" )
+  ("TraceFile",                 tracingFile,                           std::string( "" ), "Tracing file" )
 #endif
 
   ("Verbosity,v",               verbosity,                             (int)VERBOSE, "Specifies the level of the verboseness")
   ("WarnUnknowParameter,w",     warnUnknownParameter,                  false,        "Warn for unknown configuration parameters instead of failing")
   ;
+  // clang-format on
 
   po::setDefaults(opts);
   po::ErrorReporter err;
-  const list<const char*>& argv_unhandled = po::scanArgv(opts, argc, (const char**) argv, err);
+  const std::list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **) argv, err);
 
-  for (list<const char*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
+  for (std::list<const char *>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
   {
     std::cerr << "Unhandled argument ignored: "<< *it << std::endl;
   }
 
   if (argc == 1 || printHelp)
   {
-    po::doHelp(cout, opts);
+    po::doHelp(std::cout, opts);
     return false;
   }
 

@@ -46,8 +46,6 @@
 #include "EncLibCommon.h"
 #include "CommonLib/ProfileLevelTier.h"
 
-using namespace std;
-
 //! \ingroup EncoderLib
 //! \{
 
@@ -1524,7 +1522,8 @@ void EncLib::xInitSPS( SPS& sps )
   {
     sps.setBitDepth(channelType, m_bitDepth[channelType]);
     sps.setQpBDOffset(channelType, (6 * (m_bitDepth[channelType] - 8)));
-    sps.setInternalMinusInputBitDepth(channelType, max(0, (m_bitDepth[channelType] - m_inputBitDepth[channelType])));
+    sps.setInternalMinusInputBitDepth(channelType,
+                                      std::max(0, (m_bitDepth[channelType] - m_inputBitDepth[channelType])));
   }
 
   sps.setEntropyCodingSyncEnabledFlag( m_entropyCodingSyncEnabledFlag );
@@ -1825,11 +1824,11 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     const double dcrQP = m_wcgChromaQpControl.chromaCrQpScale * chromaQp;
     const int cbQP =(int)(dcbQP + ( dcbQP < 0 ? -0.5 : 0.5) );
     const int crQP =(int)(dcrQP + ( dcrQP < 0 ? -0.5 : 0.5) );
-    pps.setQpOffset(COMPONENT_Cb, Clip3( -12, 12, min(0, cbQP) + m_chromaCbQpOffset ));
-    pps.setQpOffset(COMPONENT_Cr, Clip3( -12, 12, min(0, crQP) + m_chromaCrQpOffset));
+    pps.setQpOffset(COMPONENT_Cb, Clip3(-12, 12, std::min(0, cbQP) + m_chromaCbQpOffset));
+    pps.setQpOffset(COMPONENT_Cr, Clip3(-12, 12, std::min(0, crQP) + m_chromaCrQpOffset));
     if(pps.getJointCbCrQpOffsetPresentFlag())
     {
-      pps.setQpOffset(JOINT_CbCr, Clip3(-12, 12, (min(0, cbQP) + min(0, crQP)) / 2 + m_chromaCbCrQpOffset));
+      pps.setQpOffset(JOINT_CbCr, Clip3(-12, 12, (std::min(0, cbQP) + std::min(0, crQP)) / 2 + m_chromaCbCrQpOffset));
     }
     else
     {

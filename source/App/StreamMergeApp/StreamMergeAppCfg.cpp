@@ -41,7 +41,6 @@
 #include "StreamMergeAppCfg.h"
 #include "Utilities/program_options_lite.h"
 
-using namespace std;
 namespace po = df::program_options_lite;
 
 //! \ingroup DecoderApp

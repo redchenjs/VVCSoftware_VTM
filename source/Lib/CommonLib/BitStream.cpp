@@ -41,8 +41,6 @@
 #include <string.h>
 #include <memory.h>
 
-using namespace std;
-
 //! \ingroup CommonLib
 //! \{
 
@@ -173,7 +171,7 @@ void   OutputBitstream::addSubstream( OutputBitstream* pcSubstream )
 {
   uint32_t numBits = pcSubstream->getNumberOfWrittenBits();
 
-  const vector<uint8_t> &rbsp = pcSubstream->getFifo();
+  const std::vector<uint8_t> &rbsp = pcSubstream->getFifo();
   for (const uint8_t byte: rbsp)
   {
     write(byte, BITS_PER_BYTE);
@@ -196,10 +194,10 @@ void OutputBitstream::writeByteAlignment()
 int OutputBitstream::countStartCodeEmulations()
 {
   uint32_t cnt = 0;
-  vector<uint8_t> &rbsp = getFifo();
-  for (vector<uint8_t>::iterator it = rbsp.begin(); it != rbsp.end();)
+  std::vector<uint8_t> &rbsp = getFifo();
+  for (std::vector<uint8_t>::iterator it = rbsp.begin(); it != rbsp.end();)
   {
-    vector<uint8_t>::iterator found = it;
+    std::vector<uint8_t>::iterator found = it;
     do
     {
       // find the next emulated 00 00 {00,01,02,03}
@@ -239,7 +237,7 @@ void InputBitstream::pseudoRead(uint32_t numberOfBits, uint32_t &bits)
   uint8_t  savedHeldBits    = m_heldBits;
   uint32_t savedFifoIdx     = m_fifoIdx;
 
-  uint32_t numBitsToRead = min(numberOfBits, getNumBitsLeft());
+  uint32_t numBitsToRead = std::min(numberOfBits, getNumBitsLeft());
   read(numBitsToRead, bits);
   bits <<= (numberOfBits - numBitsToRead);
 

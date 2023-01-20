@@ -40,9 +40,6 @@
 #include "CommonLib/UnitTools.h"
 #include "IbcHashMap.h"
 
-
-using namespace std;
-
 //! \ingroup IbcHashMap
 //! \{
 

@@ -55,7 +55,6 @@
 #define MACRO_TO_STRING_HELPER(val) #val
 #define MACRO_TO_STRING(val) MACRO_TO_STRING_HELPER(val)
 
-using namespace std;
 namespace po = df::program_options_lite;
 
 enum ExtendedProfileName   // this is used for determining profile strings, where multiple profiles map to a single
@@ -304,10 +303,9 @@ static std::string enumToString(P map[], uint32_t mapLen, const T val)
   return std::string();
 }
 
-template<typename T, typename P>
-static istream& readStrToEnum(P map[], uint32_t mapLen, istream &in, T &val)
+template<typename T, typename P> static std::istream &readStrToEnum(P map[], uint32_t mapLen, std::istream &in, T &val)
 {
-  string str;
+  std::string str;
   in >> str;
 
   for (uint32_t i = 0; i < mapLen; i++)
@@ -319,44 +317,42 @@ static istream& readStrToEnum(P map[], uint32_t mapLen, istream &in, T &val)
     }
   }
   /* not found */
-  in.setstate(ios::failbit);
+  in.setstate(std::ios::failbit);
 found:
   return in;
 }
 
 //inline to prevent compiler warnings for "unused static function"
 
-static inline istream& operator >> (istream &in, ExtendedProfileName &profile)
+static inline std::istream &operator>>(std::istream &in, ExtendedProfileName &profile)
 {
   return readStrToEnum(strToExtendedProfile, sizeof(strToExtendedProfile)/sizeof(*strToExtendedProfile), in, profile);
 }
 
 namespace Level
 {
-  static inline istream& operator >> (istream &in, Tier &tier)
+  static inline std::istream &operator>>(std::istream &in, Tier &tier)
   {
     return readStrToEnum(strToTier, sizeof(strToTier)/sizeof(*strToTier), in, tier);
   }
 
-  static inline istream& operator >> (istream &in, Name &level)
+  static inline std::istream &operator>>(std::istream &in, Name &level)
   {
     return readStrToEnum(strToLevel, sizeof(strToLevel)/sizeof(*strToLevel), in, level);
   }
 }
 
-static inline istream& operator >> (istream &in, CostMode &mode)
+static inline std::istream &operator>>(std::istream &in, CostMode &mode)
 {
   return readStrToEnum(strToCostMode, sizeof(strToCostMode)/sizeof(*strToCostMode), in, mode);
 }
 
-static inline istream& operator >> (istream &in, ScalingListMode &mode)
+static inline std::istream &operator>>(std::istream &in, ScalingListMode &mode)
 {
   return readStrToEnum(strToScalingListMode, sizeof(strToScalingListMode)/sizeof(*strToScalingListMode), in, mode);
 }
 
-
-template <class T>
-static inline istream& operator >> (std::istream &in, SMultiValueInput<T> &values)
+template<class T> static inline std::istream &operator>>(std::istream &in, SMultiValueInput<T> &values)
 {
   return values.readValues(in);
 }
@@ -377,14 +373,15 @@ T SMultiValueInput<T>::readValue(const char *&pStr, bool &bSuccess)
   return val;
 }
 
-template <class T>
-istream& SMultiValueInput<T>::readValues(std::istream &in)
+template<class T> std::istream &SMultiValueInput<T>::readValues(std::istream &in)
 {
   values.clear();
-  string str;
+  std::string str;
   while (!in.eof())
   {
-    string tmp; in >> tmp; str+=" " + tmp;
+    std::string tmp;
+    in >> tmp;
+    str += " " + tmp;
   }
   if (!str.empty())
   {
@@ -398,13 +395,13 @@ istream& SMultiValueInput<T>::readValues(std::istream &in)
       T val=readValue(pStr, bSuccess);
       if (!bSuccess)
       {
-        in.setstate(ios::failbit);
+        in.setstate(std::ios::failbit);
         break;
       }
 
       if (maxNumValuesIncl != 0 && values.size() >= maxNumValuesIncl)
       {
-        in.setstate(ios::failbit);
+        in.setstate(std::ios::failbit);
         break;
       }
       values.push_back(val);
@@ -419,13 +416,12 @@ istream& SMultiValueInput<T>::readValues(std::istream &in)
   }
   if (values.size() < minNumValuesIncl)
   {
-    in.setstate(ios::failbit);
+    in.setstate(std::ios::failbit);
   }
   return in;
 }
 
-template <class T>
-static inline istream& operator >> (std::istream &in, EncAppCfg::OptionalValue<T> &value)
+template<class T> static inline std::istream &operator>>(std::istream &in, EncAppCfg::OptionalValue<T> &value)
 {
   in >> std::ws;
   if (in.eof())
@@ -440,8 +436,7 @@ static inline istream& operator >> (std::istream &in, EncAppCfg::OptionalValue<T
   return in;
 }
 
-template <class T1, class T2>
-static inline istream& operator >> (std::istream& in, std::map<T1, T2>& map)
+template<class T1, class T2> static inline std::istream &operator>>(std::istream &in, std::map<T1, T2> &map)
 {
   T1 key;
   T2 value;
@@ -452,7 +447,7 @@ static inline istream& operator >> (std::istream& in, std::map<T1, T2>& map)
   }
   catch (...)
   {
-    in.setstate(ios::failbit);
+    in.setstate(std::ios::failbit);
   }
 
   map[key] = value;
@@ -576,8 +571,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   int tmpMotionEstimationSearchMethod;
   int tmpDecodedPictureHashSEIMappedType;
   int tmpSubpicDecodedPictureHashMappedType;
-  string inputColourSpaceConvert;
-  string inputPathPrefix;
+  std::string         inputColourSpaceConvert;
+  std::string         inputPathPrefix;
   ExtendedProfileName extendedProfile;
 
   // Multi-value input fields:                                // minval, maxval (incl), min_entries, max_entries (incl) [, default values, number of default values]
@@ -747,8 +742,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
 #if ENABLE_TRACING
-  string sTracingRule;
-  string sTracingFile;
+  std::string sTracingRule;
+  std::string sTracingFile;
   bool   bTracingChannelsList = false;
 #endif
 #if ENABLE_SIMD_OPT
@@ -765,15 +760,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("WarnUnknowParameter,w",                           warnUnknowParameter,                                  0, "warn for unknown configuration parameters instead of failing")
   ("isSDR",                                           sdr,                                              false, "compatibility")
 #if ENABLE_SIMD_OPT
-  ("SIMD",                                            ignore,                                      string(""), "SIMD extension to use (SCALAR, SSE41, SSE42, AVX, AVX2, AVX512), default: the highest supported extension\n")
+  ("SIMD",                                            ignore,                                      std::string(""), "SIMD extension to use (SCALAR, SSE41, SSE42, AVX, AVX2, AVX512), default: the highest supported extension\n")
 #endif
   // File, I/O and source parameters
-  ("InputFile,i",                                     m_inputFileName,                             string(""), "Original YUV input file name")
-  ("InputPathPrefix,-ipp",                            inputPathPrefix,                             string(""), "pathname to prepend to input filename")
-  ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
-  ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
+  ("InputFile,i",                                     m_inputFileName,                             std::string(""), "Original YUV input file name")
+  ("InputPathPrefix,-ipp",                            inputPathPrefix,                             std::string(""), "pathname to prepend to input filename")
+  ("BitstreamFile,b",                                 m_bitstreamFileName,                         std::string(""), "Bitstream output file name")
+  ("ReconFile,o",                                     m_reconFileName,                             std::string(""), "Reconstructed YUV output file name")
 #if JVET_Z0120_SII_SEI_PROCESSING
-  ("SEIShutterIntervalPreFilename,-sii",              m_shutterIntervalPreFileName, string(""), "File name of Pre-Filtering video. If empty, not output video\n")
+  ("SEIShutterIntervalPreFilename,-sii",              m_shutterIntervalPreFileName, std::string(""), "File name of Pre-Filtering video. If empty, not output video\n")
 #endif
   ("SourceWidth,-wdt",                                m_sourceWidth,                                       0, "Source picture width")
   ("SourceHeight,-hgt",                               m_sourceHeight,                                      0, "Source picture height")
@@ -788,7 +783,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("TSRCRicePresent",                                 m_tsrcRicePresentFlag,                            false, "Indicate that TSRC Rice information is present in slice header (not valid in V1 profiles)")
   ("ReverseLastSigCoeff",                             m_reverseLastSigCoeffEnabledFlag,                 false, "enable reverse last significant coefficient postion in RRC (not valid in V1 profiles)")
   ("HighPrecisionPredictionWeighting",                m_highPrecisionOffsetsEnabledFlag,                false, "Use high precision option for weighted prediction (not valid in V1 profiles)")
-  ("InputColourSpaceConvert",                         inputColourSpaceConvert,                     string(""), "Colour space conversion to apply to input video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(true))
+  ("InputColourSpaceConvert",                         inputColourSpaceConvert,                     std::string(""), "Colour space conversion to apply to input video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(true))
   ("SNRInternalColourSpace",                          m_snrInternalColourSpace,                         false, "If true, then no colour space conversion is applied prior to SNR, otherwise inverse of input is applied.")
   ("OutputInternalColourSpace",                       m_outputInternalColourSpace,                      false, "If true, then no colour space conversion is applied for reconstructed video, otherwise inverse of input is applied.")
   ("InputChromaFormat",                               tmpInputChromaFormat,                               420, "InputChromaFormatIDC")
@@ -816,8 +811,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ClipInputVideoToRec709Range",                     m_clipInputVideoToRec709Range,                   false, "If true then clip input video to the Rec. 709 Range on loading when InternalBitDepth is less than MSBExtendedBitDepth")
   ("ClipOutputVideoToRec709Range",                    m_clipOutputVideoToRec709Range,                  false, "If true then clip output video to the Rec. 709 Range on saving when OutputBitDepth is less than InternalBitDepth")
   ("PYUV",                                            m_packedYUVMode,                                  false, "If true then output 10-bit and 12-bit YUV data as 5-byte and 3-byte (respectively) packed YUV data. Ignored for interlaced output.")
-  ("SummaryOutFilename",                              m_summaryOutFilename,                          string(), "Filename to use for producing summary output file. If empty, do not produce a file.")
-  ("SummaryPicFilenameBase",                          m_summaryPicFilenameBase,                      string(), "Base filename to use for producing summary picture output files. The actual filenames used will have I.txt, P.txt and B.txt appended. If empty, do not produce a file.")
+  ("SummaryOutFilename",                              m_summaryOutFilename,                          std::string(), "Filename to use for producing summary output file. If empty, do not produce a file.")
+  ("SummaryPicFilenameBase",                          m_summaryPicFilenameBase,                      std::string(), "Base filename to use for producing summary picture output files. The actual filenames used will have I.txt, P.txt and B.txt appended. If empty, do not produce a file.")
   ("SummaryVerboseness",                              m_summaryVerboseness,                                0u, "Specifies the level of the verboseness of the text output")
   ("Verbosity,v",                                     m_verbosity,                               (int)VERBOSE, "Specifies the level of the verboseness")
 
@@ -850,7 +845,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIXSDMetricTypeWSPSNR",                          m_xsdMetricTypeWSPSNR,                             false, "Set to 'true' if WSSPSNR shall be signalled. ")
   ("SEIGreenMetadataExtendedRepresentation",          m_greenMetadataExtendedRepresentation,                 0, "Specifies whether reduced or extended set of complexity metrics is signelled. ")
   ("GMFA",                                            m_GMFA,                                            false, "Write output file for the Green-Metadata analyzer for decoder complexity metrics (JVET-P0085)\n")
-  ("GMFAFile",                                        m_GMFAFile,                                   string(""), "File for the Green Metadata Bit Stream Feature Analyzer output (JVET-P0085)\n")
+  ("GMFAFile",                                        m_GMFAFile,                                   std::string(""), "File for the Green Metadata Bit Stream Feature Analyzer output (JVET-P0085)\n")
 #endif
   //Field coding parameters
   ("FieldCoding",                                     m_isField,                                        false, "Signals if it's a field based coding")
@@ -1189,7 +1184,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("PerceptQPA,-qpa",                                 m_bUsePerceptQPA,                                 false, "perceptually motivated input-adaptive QP modification (default: 0 = off, ignored if -aq is set)")
   ("WPSNR,-wpsnr",                                    m_bUseWPSNR,                                      false, "output perceptually weighted peak SNR (WPSNR) instead of PSNR")
 #endif
-  ("dQPFile,m",                                       m_dQPFileName,                               string(""), "dQP file name")
+  ("dQPFile,m",                                       m_dQPFileName,                               std::string(""), "dQP file name")
   ("RDOQ",                                            m_useRDOQ,                                         true)
   ("RDOQTS",                                          m_useRDOQTS,                                       true)
   ("SelectiveRDOQ",                                   m_useSelectiveRDOQ,                               false, "Enable selective RDOQ")
@@ -1248,7 +1243,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("WaveFrontSynchro",                                m_entropyCodingSyncEnabledFlag,                   false, "0: entropy coding sync disabled; 1 entropy coding sync enabled")
   ("EntryPointsPresent",                              m_entryPointPresentFlag,                           true, "0: entry points is not present; 1 entry points may be present in slice header")
   ("ScalingList",                                     m_useScalingListId,                    SCALING_LIST_OFF, "0/off: no scaling list, 1/default: default scaling lists, 2/file: scaling lists specified in ScalingListFile")
-  ("ScalingListFile",                                 m_scalingListFileName,                       string(""), "Scaling list file name. Use an empty string to produce help.")
+  ("ScalingListFile",                                 m_scalingListFileName,                       std::string(""), "Scaling list file name. Use an empty string to produce help.")
   ("DisableScalingMatrixForLFNST",                    m_disableScalingMatrixForLfnstBlks,                true, "Disable scaling matrices, when enabled, for LFNST-coded blocks")
   ("DisableScalingMatrixForAlternativeColourSpace",   m_disableScalingMatrixForAlternativeColourSpace,  false, "Disable scaling matrices when the colour space is not equal to the designated colour space of scaling matrix")
   ("ScalingMatrixDesignatedColourSpace",              m_scalingMatrixDesignatedColourSpace,              true, "Indicates if the designated colour space of scaling matrices is equal to the original colour space")
@@ -1412,7 +1407,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISubpicLevelInfoRefLevels", cfg_sliRefLevels, cfg_sliRefLevels, "List of reference levels for Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoExplicitFraction", m_cfgSubpictureLevelInfoSEI.m_explicitFraction, false, "Enable sending of explicit fractions in Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoNumSubpics", m_cfgSubpictureLevelInfoSEI.m_numSubpictures, 1, "Number of subpictures for Subpicture Level Information SEI messages")
-("SEIAnnotatedRegionsFileRoot,-ar", m_arSEIFileRoot, string(""), "Annotated region SEI parameters root file name (wo num ext); only the file name base is to be added. Underscore and POC would be automatically addded to . E.g. \"-ar ar\" will search for files ar_0.txt, ar_1.txt, ...")
+("SEIAnnotatedRegionsFileRoot,-ar", m_arSEIFileRoot, std::string(""), "Annotated region SEI parameters root file name (wo num ext); only the file name base is to be added. Underscore and POC would be automatically addded to . E.g. \"-ar ar\" will search for files ar_0.txt, ar_1.txt, ...")
 ("SEISubpicLevelInfoMaxSublayers", m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers, 1, "Number of sublayers for Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoSublayerInfoPresentFlag", m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag, false, "Enable sending of level information for all sublayers in Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoRefLevelFractions", cfg_sliFractions, cfg_sliFractions, "List of subpicture level fractions for Subpicture Level Information SEI messages")
@@ -1440,8 +1435,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
 #if ENABLE_TRACING
 ("TraceChannelsList", bTracingChannelsList, false, "List all available tracing channels")
-("TraceRule", sTracingRule, string(""), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")")
-("TraceFile", sTracingFile, string(""), "Tracing file")
+("TraceRule", sTracingRule, std::string(""), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")")
+("TraceFile", sTracingFile, std::string(""), "Tracing file")
 #endif
 // film grain characteristics SEI
   ("SEIFGCEnabled",                                   m_fgcSEIEnabled,                                   false, "Control generation of the film grain characteristics SEI message")
@@ -1455,8 +1450,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIFGCCompModelPresentComp1",                     m_fgcSEICompModelPresent[1],                       false, "Specifies the presence of film grain modelling on colour component 1.")
   ("SEIFGCCompModelPresentComp2",                     m_fgcSEICompModelPresent[2],                       false, "Specifies the presence of film grain modelling on colour component 2.")
   ("SEIFGCAnalysisEnabled",                           m_fgcSEIAnalysisEnabled,                           false, "Control adaptive film grain parameter estimation - film grain analysis")
-  ("SEIFGCExternalMask",                              m_fgcSEIExternalMask,                       string( "" ), "Read external file with mask for film grain analysis. If empty string, use internally calculated mask.")
-  ("SEIFGCExternalDenoised",                          m_fgcSEIExternalDenoised,                   string( "" ), "Read external file with denoised sequence for film grain analysis. If empty string, use MCTF for denoising.")
+  ("SEIFGCExternalMask",                              m_fgcSEIExternalMask,                       std::string( "" ), "Read external file with mask for film grain analysis. If empty string, use internally calculated mask.")
+  ("SEIFGCExternalDenoised",                          m_fgcSEIExternalDenoised,                   std::string( "" ), "Read external file with denoised sequence for film grain analysis. If empty string, use MCTF for denoising.")
   ("SEIFGCTemporalFilterPastRefs",                    m_fgcSEITemporalFilterPastRefs,          TF_DEFAULT_REFS, "Number of past references for temporal prefilter")
   ("SEIFGCTemporalFilterFutureRefs",                  m_fgcSEITemporalFilterFutureRefs,        TF_DEFAULT_REFS, "Number of future references for temporal prefilter")
   ("SEIFGCTemporalFilterStrengthFrame*",              m_fgcSEITemporalFilterStrengths, std::map<int, double>(), "Strength for every * frame in FGC-specific temporal filter, where * is an integer.")
@@ -1606,10 +1601,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   //SEI prefix indication
   ("SEISEIPrefixIndicationEnabled",                   m_SEIPrefixIndicationSEIEnabled,                   false, "Controls if SEI Prefix Indications SEI messages enabled")
 
-  ("DebugBitstream",                                  m_decodeBitstreams[0],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
+  ("DebugBitstream",                                  m_decodeBitstreams[0],             std::string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
   ("DebugPOC",                                        m_switchPOC,                                 -1, "If DebugBitstream is present, load frames up to this POC from this bitstream. Starting with DebugPOC, return to normal encoding." )
-  ("DecodeBitstream1",                                m_decodeBitstreams[0],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
-  ("DecodeBitstream2",                                m_decodeBitstreams[1],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
+  ("DecodeBitstream1",                                m_decodeBitstreams[0],             std::string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
+  ("DecodeBitstream2",                                m_decodeBitstreams[1],             std::string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
   ("SwitchPOC",                                       m_switchPOC,                                 -1, "If DebugBitstream is present, load frames up to this POC from this bitstream. Starting with DebugPOC, return to normal encoding." )
   ("SwitchDQP",                                       m_switchDQP,                                  0, "delta QP applied to picture with switchPOC and subsequent pictures." )
   ("FastForwardToPOC",                                m_fastForwardToPOC,                          -1, "Get to encoding the specified POC as soon as possible by skipping temporal layers irrelevant for the specified POC." )
@@ -1663,18 +1658,18 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "MaxSublayers",                                   m_maxSublayers,                               7, "Max number of Sublayers")
   ( "DefaultPtlDpbHrdMaxTidFlag",                     m_defaultPtlDpbHrdMaxTidFlag,              true, "specifies that the syntax elements vps_ptl_max_tid[ i ], vps_dpb_max_tid[ i ], and vps_hrd_max_tid[ i ] are not present and are inferred to be equal to the default value vps_max_sublayers_minus1")
   ( "AllIndependentLayersFlag",                       m_allIndependentLayersFlag,                true, "All layers are independent layer")
-  ("AllowablePredDirection",                          m_predDirectionArray, string(""),                "prediction directions allowed for i-th temporal layer")
+  ("AllowablePredDirection",                          m_predDirectionArray, std::string(""),                "prediction directions allowed for i-th temporal layer")
   ( "LayerId%d",                                      m_layerId,                    0, MAX_VPS_LAYERS, "Layer ID")
   ( "NumRefLayers%d",                                 m_numRefLayers,               0, MAX_VPS_LAYERS, "Number of direct reference layer index of i-th layer")
-  ( "RefLayerIdx%d",                                  m_refLayerIdxStr,    string(""), MAX_VPS_LAYERS, "Reference layer index(es)")
+  ( "RefLayerIdx%d",                                  m_refLayerIdxStr,    std::string(""), MAX_VPS_LAYERS, "Reference layer index(es)")
   ( "EachLayerIsAnOlsFlag",                           m_eachLayerIsAnOlsFlag,                    true, "Each layer is an OLS layer flag")
   ( "OlsModeIdc",                                     m_olsModeIdc,                                 0, "Output layer set mode")
   ( "NumOutputLayerSets",                             m_numOutputLayerSets,                         1, "Number of output layer sets")
-  ( "OlsOutputLayer%d",                               m_olsOutputLayerStr, string(""), MAX_VPS_LAYERS, "Output layer index of i-th OLS")
+  ( "OlsOutputLayer%d",                               m_olsOutputLayerStr, std::string(""), MAX_VPS_LAYERS, "Output layer index of i-th OLS")
   ( "NumPTLsInVPS",                                   m_numPtlsInVps,                               1, "Number of profile_tier_level structures in VPS" )
   ( "PtPresentInPTL%d",                               m_ptPresentInPtl,               0, MAX_NUM_OLSS, "Profile/Tier present in i-th PTL")
   ( "AvoidIntraInDepLayers",                          m_avoidIntraInDepLayer,                    true, "Replaces I pictures in dependent layers with B pictures" )
-  ( "MaxTidILRefPicsPlusOneLayerId%d",                m_maxTidILRefPicsPlus1Str, string(""), MAX_VPS_LAYERS, "Maximum temporal ID for inter-layer reference pictures plus 1 of i-th layer, 0 for IRAP only")
+  ( "MaxTidILRefPicsPlusOneLayerId%d",                m_maxTidILRefPicsPlus1Str, std::string(""), MAX_VPS_LAYERS, "Maximum temporal ID for inter-layer reference pictures plus 1 of i-th layer, 0 for IRAP only")
   ( "RPLofDepLayerInSH",                              m_rplOfDepLayerInSh,                      false, "define Reference picture lists in slice header instead of SPS for dependant layers")
     ;
 
@@ -1828,11 +1823,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
     std::ostringstream uriTag;
     uriTag << "SEINNPostFilterCharacteristicsUriTag" << i;
-    opts.addOptions()(uriTag.str(), m_nnPostFilterSEICharacteristicsUriTag[i], string(""), "Specifies the neural network uri tag in the Neural Network Post Filter Characteristics SEI message");
+    opts.addOptions()(
+      uriTag.str(), m_nnPostFilterSEICharacteristicsUriTag[i], std::string(""),
+      "Specifies the neural network uri tag in the Neural Network Post Filter Characteristics SEI message");
 
     std::ostringstream uri;
     uri << "SEINNPostFilterCharacteristicsUri" << i;
-    opts.addOptions()(uri.str(), m_nnPostFilterSEICharacteristicsUri[i], string(""), "Specifies the neural network information uri in the Neural Network Post Filter Characteristics SEI message");
+    opts.addOptions()(
+      uri.str(), m_nnPostFilterSEICharacteristicsUri[i], std::string(""),
+      "Specifies the neural network information uri in the Neural Network Post Filter Characteristics SEI message");
 
     std::ostringstream parameterTypeIdc;
     parameterTypeIdc << "SEINNPostFilterCharacteristicsParameterTypeIdc" << i;
@@ -1856,7 +1855,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
     std::ostringstream payloadFilename;
     payloadFilename << "SEINNPostFilterCharacteristicsPayloadFilename" << i;
-    opts.addOptions()(payloadFilename.str(), m_nnPostFilterSEICharacteristicsPayloadFilename[i], string(""), "Specifies the NNR bitstream in the Neural Network Post Filter Characteristics SEI message");
+    opts.addOptions()(payloadFilename.str(), m_nnPostFilterSEICharacteristicsPayloadFilename[i], std::string(""),
+                      "Specifies the NNR bitstream in the Neural Network Post Filter Characteristics SEI message");
 
     std::ostringstream numberDecodedInputPics;
     numberDecodedInputPics << "SEINNPostFilterCharacteristicsNumberInputDecodedPicsMinusTwo" << i;
@@ -1874,7 +1874,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   po::setDefaults(opts);
   po::ErrorReporter err;
-  const list<const char*>& argv_unhandled = po::scanArgv(opts, argc, (const char**) argv, err);
+  const std::list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **) argv, err);
 
   if (m_gopBasedRPREnabledFlag)
   {
@@ -2077,7 +2077,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
-  for (list<const char*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
+  for (std::list<const char *>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
   {
     msg( ERROR, "Unhandled argument ignored: `%s'\n", *it);
   }
@@ -2085,7 +2085,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   if (argc == 1 || do_help)
   {
     /* argc == 1: no options have been specified */
-    po::doHelp(cout, opts);
+    po::doHelp(std::cout, opts);
     return false;
   }
 
@@ -4232,11 +4232,11 @@ bool EncAppCfg::xCheckParameter()
         }
 
         m_RPLList0[m_gopSize + extraRPLs].m_numRefPics = newRefs0;
-        m_RPLList0[m_gopSize + extraRPLs].m_numRefPicsActive =
-          min(m_RPLList0[m_gopSize + extraRPLs].m_numRefPics, m_RPLList0[m_gopSize + extraRPLs].m_numRefPicsActive);
+        m_RPLList0[m_gopSize + extraRPLs].m_numRefPicsActive = std::min(
+          m_RPLList0[m_gopSize + extraRPLs].m_numRefPics, m_RPLList0[m_gopSize + extraRPLs].m_numRefPicsActive);
         m_RPLList1[m_gopSize + extraRPLs].m_numRefPics = newRefs1;
-        m_RPLList1[m_gopSize + extraRPLs].m_numRefPicsActive =
-          min(m_RPLList1[m_gopSize + extraRPLs].m_numRefPics, m_RPLList1[m_gopSize + extraRPLs].m_numRefPicsActive);
+        m_RPLList1[m_gopSize + extraRPLs].m_numRefPicsActive = std::min(
+          m_RPLList1[m_gopSize + extraRPLs].m_numRefPics, m_RPLList1[m_gopSize + extraRPLs].m_numRefPicsActive);
         curGOP = m_gopSize + extraRPLs;
         extraRPLs++;
       }

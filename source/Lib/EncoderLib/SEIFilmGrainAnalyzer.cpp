@@ -37,8 +37,6 @@
 
 #include "SEIFilmGrainAnalyzer.h"
 
-using namespace std;
-
 constexpr double FGAnalyser::m_tapFilter[3];
 
 // ====================================================================================================================
@@ -909,8 +907,8 @@ void FGAnalyser::estimate_scaling_factors(std::vector<int> &data_x, std::vector<
 void FGAnalyser::estimate_cutoff_freq(const std::vector<PelMatrix> &blocks, ComponentID compID)
 {
   PelMatrixDouble mean_squared_dct_grain(DATA_BASE_SIZE, std::vector<double>(DATA_BASE_SIZE));
-  vector<double>  vec_mean_dct_grain_row(DATA_BASE_SIZE, 0.0);
-  vector<double>  vec_mean_dct_grain_col(DATA_BASE_SIZE, 0.0);
+  std::vector<double> vec_mean_dct_grain_row(DATA_BASE_SIZE, 0.0);
+  std::vector<double> vec_mean_dct_grain_col(DATA_BASE_SIZE, 0.0);
   static bool     isFirstCutoffEst[MAX_NUM_COMPONENT] = {true, true, true };
 
   int num_blocks = (int) blocks.size();
@@ -1284,14 +1282,14 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
   }
 
   // release memory for data_x and data_y, and clear previous vectors
-  vector<int>().swap(tmp_data_x);
-  vector<int>().swap(tmp_data_y);
+  std::vector<int>().swap(tmp_data_x);
+  std::vector<int>().swap(tmp_data_y);
   if (second_pass)
   {
-    vector<int>().swap(data_x);
-    vector<int>().swap(data_y);
-    vector<double>().swap(coeffs);
-    vector<double>().swap(scalingVec);
+    std::vector<int>().swap(data_x);
+    std::vector<int>().swap(data_y);
+    std::vector<double>().swap(coeffs);
+    std::vector<double>().swap(scalingVec);
   }
 
   for (i = 1; i <= data_pairs; i++)

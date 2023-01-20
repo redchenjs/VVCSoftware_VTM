@@ -41,7 +41,6 @@
 #include "SEIRemovalAppCfg.h"
 #include "Utilities/program_options_lite.h"
 
-using namespace std;
 namespace po = df::program_options_lite;
 
 //! \ingroup DecoderApp
@@ -59,11 +58,12 @@ bool SEIRemovalAppCfg::parseCfg( int argc, char* argv[] )
   bool do_help = false;
   int warnUnknowParameter = 0;
   po::Options opts;
-  opts.addOptions()
 
+  // clang-format off
+  opts.addOptions()
   ("help",                      do_help,                               false,      "this help text")
-  ("BitstreamFileIn,b",         m_bitstreamFileNameIn,                 string(""), "bitstream input file name")
-  ("BitstreamFileOut,o",        m_bitstreamFileNameOut,                string(""), "bitstream output file name")
+  ("BitstreamFileIn,b",         m_bitstreamFileNameIn,                 std::string(""), "bitstream input file name")
+  ("BitstreamFileOut,o",        m_bitstreamFileNameOut,                std::string(""), "bitstream output file name")
   ("DiscardPrefixSEI,p",        m_discardPrefixSEIs,                   false,      "remove all prefix SEIs (default: 0)")
   ("DiscardSuffixSEI,s",        m_discardSuffixSEIs,                   true,       "remove all suffix SEIs (default: 1)")
   ("NumSkip",                   m_numNALUnitsToSkip,                   0,          "number of NAL units to skip (counted inclusive the units skipped with -p/-s options)" )
@@ -71,19 +71,20 @@ bool SEIRemovalAppCfg::parseCfg( int argc, char* argv[] )
 
   ("WarnUnknowParameter,w",     warnUnknowParameter,                   0,          "warn for unknown configuration parameters instead of failing")
   ;
+  // clang-format on
 
   po::setDefaults(opts);
   po::ErrorReporter err;
-  const list<const char*>& argv_unhandled = po::scanArgv(opts, argc, (const char**) argv, err);
+  const std::list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **) argv, err);
 
-  for (list<const char*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
+  for (std::list<const char *>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
   {
     std::cerr << "Unhandled argument ignored: "<< *it << std::endl;
   }
 
   if (argc == 1 || do_help)
   {
-    po::doHelp(cout, opts);
+    po::doHelp(std::cout, opts);
     return false;
   }
 

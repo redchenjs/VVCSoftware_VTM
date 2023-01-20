@@ -53,8 +53,6 @@
 #include <cmath>
 #include <algorithm>
 
-using namespace std;
-
 //! \ingroup EncoderLib
 //! \{
 
@@ -2166,7 +2164,7 @@ void EncCu::xCheckRDCostHashInter( CodingStructure *&tempCS, CodingStructure *&b
     }
   }
   tempCS->initStructData(encTestMode.qp);
-  int minSize = min(cu.lwidth(), cu.lheight());
+  int minSize = std::min(cu.lwidth(), cu.lheight());
   if (minSize < 64)
   {
     isPerfectMatch = false;
@@ -2380,15 +2378,15 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
         {
           if (insertPos == rdModeList.size() - 1)
           {
-            swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
+            std::swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
           }
           else
           {
             for (uint32_t i = uint32_t(rdModeList.size()) - 1; i > insertPos; i--)
             {
-              swap(rdOrderedMrgPredBuf[i - 1], rdOrderedMrgPredBuf[i]);
+              std::swap(rdOrderedMrgPredBuf[i - 1], rdOrderedMrgPredBuf[i]);
             }
-            swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
+            std::swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
           }
         }
 #if !GDR_ENABLED
@@ -2482,9 +2480,9 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           {
             for (int i = int(rdModeList.size()) - 1; i > insertPos; i--)
             {
-              swap(rdOrderedMrgPredBuf[i - 1], rdOrderedMrgPredBuf[i]);
+              std::swap(rdOrderedMrgPredBuf[i - 1], rdOrderedMrgPredBuf[i]);
             }
-            swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
+            std::swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
           }
         }
         pu->ciipFlag = false;
@@ -2559,9 +2557,9 @@ void EncCu::xCheckRDCostMerge2Nx2N( CodingStructure *&tempCS, CodingStructure *&
           {
             for (int i = int(rdModeList.size()) - 1; i > insertPos; i--)
             {
-              swap(rdOrderedMrgPredBuf[i - 1], rdOrderedMrgPredBuf[i]);
+              std::swap(rdOrderedMrgPredBuf[i - 1], rdOrderedMrgPredBuf[i]);
             }
-            swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
+            std::swap(singleMergeTempBuffer, rdOrderedMrgPredBuf[insertPos]);
           }
         }
       }
@@ -3015,8 +3013,8 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
   m_pcRdCost->setDistParam(distParamSAD2, tempCS->getOrgBuf().Y(), tempCS->getOrgBuf().Y(),
                            sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y, useHadamard);
 
-  const int geoNumMrgSadCand  = min(GEO_MAX_TRY_WEIGHTED_SAD, (int) comboList.list.size());
-  int geoNumMrgSatdCand = min(GEO_MAX_TRY_WEIGHTED_SATD, (int) comboList.list.size());
+  const int geoNumMrgSadCand  = std::min(GEO_MAX_TRY_WEIGHTED_SAD, (int) comboList.list.size());
+  int       geoNumMrgSatdCand = std::min(GEO_MAX_TRY_WEIGHTED_SATD, (int) comboList.list.size());
 
   for (int candidateIdx = 0; candidateIdx < geoNumMrgSadCand; candidateIdx++)
   {

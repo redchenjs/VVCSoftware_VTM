@@ -44,14 +44,12 @@
 #include "CommonLib/dtrace_next.h"
 #endif
 
-using namespace std;
 namespace po = df::program_options_lite;
 
 //! \ingroup SEIFilmGrainApp
 //! \{
 
-template <class T>
-static inline istream& operator >> (std::istream &in, SMultiValueInput<T> &values)
+template<class T> static inline std::istream &operator>>(std::istream &in, SMultiValueInput<T> &values)
 {
   return values.readValues(in);
 }
@@ -72,14 +70,15 @@ T SMultiValueInput<T>::readValue(const char *&pStr, bool &bSuccess)
   return val;
 }
 
-template <class T>
-istream& SMultiValueInput<T>::readValues(std::istream &in)
+template<class T> std::istream &SMultiValueInput<T>::readValues(std::istream &in)
 {
   values.clear();
-  string str;
+  std::string str;
   while (!in.eof())
   {
-    string tmp; in >> tmp; str += " " + tmp;
+    std::string tmp;
+    in >> tmp;
+    str += " " + tmp;
   }
   if (!str.empty())
   {
@@ -93,13 +92,13 @@ istream& SMultiValueInput<T>::readValues(std::istream &in)
       T val = readValue(pStr, bSuccess);
       if (!bSuccess)
       {
-        in.setstate(ios::failbit);
+        in.setstate(std::ios::failbit);
         break;
       }
 
       if (maxNumValuesIncl != 0 && values.size() >= maxNumValuesIncl)
       {
-        in.setstate(ios::failbit);
+        in.setstate(std::ios::failbit);
         break;
       }
       values.push_back(val);
@@ -114,7 +113,7 @@ istream& SMultiValueInput<T>::readValues(std::istream &in)
   }
   if (values.size() < minNumValuesIncl)
   {
-    in.setstate(ios::failbit);
+    in.setstate(std::ios::failbit);
   }
   return in;
 }
@@ -148,12 +147,13 @@ bool SEIFilmGrainAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>    cfg_FgcSEICompModelValueComp2(0, 65535, 0, 256 * 6);
 
   po::Options opts;
-  opts.addOptions()
 
+  // clang-format off
+  opts.addOptions()
   ("help",                      do_help,                               false,      "this help text")
   ("c",                         po::parseConfigFile,                               "film grain configuration file name")
-  ("BitstreamFileIn,b",         m_bitstreamFileNameIn,                 string(""), "bitstream input file name")
-  ("BitstreamFileOut,o",        m_bitstreamFileNameOut,                string(""), "bitstream output file name")
+  ("BitstreamFileIn,b",         m_bitstreamFileNameIn,                 std::string(""), "bitstream input file name")
+  ("BitstreamFileOut,o",        m_bitstreamFileNameOut,                std::string(""), "bitstream output file name")
   ("SEIFilmGrainOption",        m_seiFilmGrainOption,                  0,          "process FGC SEI option (0:disable, 1:remove, 2:insert, 3:change)" )
   ("SEIFilmGrainPrint",         m_seiFilmGrainPrint,                   false,      "print output film grain characteristics SEI message (1:enable)")
 // film grain characteristics SEI
@@ -187,24 +187,25 @@ bool SEIFilmGrainAppCfg::parseCfg( int argc, char* argv[] )
 
 #if ENABLE_TRACING
   ("TraceChannelsList",         printTracingChannelsList,              false,      "List all available tracing channels" )
-  ("TraceRule",                 tracingRule,                           string(""), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")" )
-  ("TraceFile",                 tracingFile,                           string(""), "Tracing file" )
+  ("TraceRule",                 tracingRule,                           std::string(""), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")" )
+  ("TraceFile",                 tracingFile,                           std::string(""), "Tracing file" )
 #endif
   ("WarnUnknowParameter,w",     warnUnknowParameter,                   0,          "warn for unknown configuration parameters instead of failing")
   ;
+  // clang-format on
 
   po::setDefaults(opts);
   po::ErrorReporter err;
-  const list<const char*>& argv_unhandled = po::scanArgv(opts, argc, (const char**) argv, err);
+  const std::list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **) argv, err);
 
-  for (list<const char*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
+  for (std::list<const char *>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
   {
     std::cerr << "Unhandled argument ignored: "<< *it << std::endl;
   }
 
   if (argc == 1 || do_help)
   {
-    po::doHelp(cout, opts);
+    po::doHelp(std::cout, opts);
     return false;
   }
 

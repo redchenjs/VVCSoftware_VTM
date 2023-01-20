@@ -59,8 +59,6 @@
 
 #include "DecoderLib/DecLib.h"
 
-using namespace std;
-
 //! \ingroup EncoderLib
 //! \{
 
@@ -2041,14 +2039,14 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
       m_pcRateCtrl->getRCPic()->setTargetBits( bits );
     }
 
-    list<EncRCPic*> listPreviousPicture = m_pcRateCtrl->getPicList();
+    std::list<EncRCPic *> listPreviousPicture = m_pcRateCtrl->getPicList();
     m_pcRateCtrl->getRCPic()->getLCUInitTargetBits();
     lambda  = m_pcRateCtrl->getRCPic()->estimatePicLambda( listPreviousPicture, slice->isIRAP());
     sliceQP = m_pcRateCtrl->getRCPic()->estimatePicQP( lambda, listPreviousPicture );
   }
   else    // normal case
   {
-    list<EncRCPic*> listPreviousPicture = m_pcRateCtrl->getPicList();
+    std::list<EncRCPic *> listPreviousPicture = m_pcRateCtrl->getPicList();
     lambda  = m_pcRateCtrl->getRCPic()->estimatePicLambda( listPreviousPicture, slice->isIRAP());
     sliceQP = m_pcRateCtrl->getRCPic()->estimatePicQP( lambda, listPreviousPicture );
   }
@@ -2324,7 +2322,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
   if( isField && picIdInGOP == 0 )
   {
-    for (int gopId = 0; gopId < max(2, m_iGopSize); gopId++)
+    for (int gopId = 0; gopId < std::max(2, m_iGopSize); gopId++)
     {
       m_pcCfg->setEncodedFlag(gopId, false);
     }
@@ -2706,11 +2704,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     {
       pcSlice->setNumRefIdx(REF_PIC_LIST_0, (pcSlice->isIntra())
                                               ? 0
-                                              : min(m_pcCfg->getRPLEntry(0, gopId).m_numRefPicsActive + 1,
+                                              : std::min(m_pcCfg->getRPLEntry(0, gopId).m_numRefPicsActive + 1,
                                                     pcSlice->getRpl(REF_PIC_LIST_0)->getNumberOfActivePictures()));
       pcSlice->setNumRefIdx(REF_PIC_LIST_1, (!pcSlice->isInterB())
                                               ? 0
-                                              : min(m_pcCfg->getRPLEntry(1, gopId).m_numRefPicsActive + 1,
+                                              : std::min(m_pcCfg->getRPLEntry(1, gopId).m_numRefPicsActive + 1,
                                                     pcSlice->getRpl(REF_PIC_LIST_1)->getNumberOfActivePictures()));
     }
     else
@@ -5193,9 +5191,8 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
       uint64_t xPsnr[MAX_NUM_COMPONENT];
       for (int i = 0; i < MAX_NUM_COMPONENT; i++)
       {
-        copy(reinterpret_cast<uint8_t *>(&dPSNR[i]),
-             reinterpret_cast<uint8_t *>(&dPSNR[i]) + sizeof(dPSNR[i]),
-             reinterpret_cast<uint8_t *>(&xPsnr[i]));
+        std::copy(reinterpret_cast<uint8_t *>(&dPSNR[i]), reinterpret_cast<uint8_t *>(&dPSNR[i]) + sizeof(dPSNR[i]),
+                  reinterpret_cast<uint8_t *>(&xPsnr[i]));
       }
       msg(NOTICE, " [xY %16" PRIx64 " xU %16" PRIx64 " xV %16" PRIx64 "]", xPsnr[COMPONENT_Y], xPsnr[COMPONENT_Cb], xPsnr[COMPONENT_Cr]);
 
@@ -5223,9 +5220,9 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
         uint64_t xPsnrWeighted[MAX_NUM_COMPONENT];
         for (int i = 0; i < MAX_NUM_COMPONENT; i++)
         {
-          copy(reinterpret_cast<uint8_t *>(&dPSNRWeighted[i]),
-               reinterpret_cast<uint8_t *>(&dPSNRWeighted[i]) + sizeof(dPSNRWeighted[i]),
-               reinterpret_cast<uint8_t *>(&xPsnrWeighted[i]));
+          std::copy(reinterpret_cast<uint8_t *>(&dPSNRWeighted[i]),
+                    reinterpret_cast<uint8_t *>(&dPSNRWeighted[i]) + sizeof(dPSNRWeighted[i]),
+                    reinterpret_cast<uint8_t *>(&xPsnrWeighted[i]));
         }
         msg(NOTICE, " [xWY %16" PRIx64 " xWU %16" PRIx64 " xWV %16" PRIx64 "]", xPsnrWeighted[COMPONENT_Y], xPsnrWeighted[COMPONENT_Cb], xPsnrWeighted[COMPONENT_Cr]);
       }
@@ -6171,8 +6168,8 @@ void EncGOP::arrangeCompositeReference(Slice* pcSlice, PicList& rcListPic, int p
         {
           if (minCtuCost[i].cost > minCtuCost[i + 1].cost)
           {
-            swap(minCtuCost[i].cost, minCtuCost[i + 1].cost);
-            swap(minCtuCost[i].ctuIdx, minCtuCost[i + 1].ctuIdx);
+            std::swap(minCtuCost[i].cost, minCtuCost[i + 1].cost);
+            std::swap(minCtuCost[i].ctuIdx, minCtuCost[i + 1].ctuIdx);
           }
         }
         // 2) compare the current cost with the largest cost

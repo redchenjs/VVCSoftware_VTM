@@ -44,8 +44,6 @@
 #include "CommonLib/CodingStatistics.h"
 #endif
 
-using namespace std;
-
 //! \ingroup DecoderLib
 //! \{
 
@@ -57,11 +55,7 @@ using namespace std;
  * of std::ios_base::failure is thrown.  The contsnts of stats will
  * be correct at this point.
  */
-static void
-_byteStreamNALUnit(
-  InputByteStream& bs,
-  vector<uint8_t>& nalUnit,
-  AnnexBStats& stats)
+static void _byteStreamNALUnit(InputByteStream &bs, std::vector<uint8_t> &nalUnit, AnnexBStats &stats)
 {
   /* At the beginning of the decoding process, the decoder initialises its
    * current position in the byte stream to the beginning of the byte stream.
@@ -196,11 +190,7 @@ _byteStreamNALUnit(
  * Returns false if EOF was reached (NB, nalunit data may be valid),
  *         otherwise true.
  */
-bool
-byteStreamNALUnit(
-  InputByteStream& bs,
-  vector<uint8_t>& nalUnit,
-  AnnexBStats& stats)
+bool byteStreamNALUnit(InputByteStream &bs, std::vector<uint8_t> &nalUnit, AnnexBStats &stats)
 {
   bool eof = false;
   try
