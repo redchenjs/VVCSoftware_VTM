@@ -349,8 +349,11 @@ public:
   void   setIspCost                   ( double val )            { m_ComprCUCtxList.back().bestCostIsp = val; }
   bool   getISPWasTested              ()                  const { return m_ComprCUCtxList.back().ispWasTested; }
   void   setISPWasTested              ( bool val )              { m_ComprCUCtxList.back().ispWasTested = val; }
-  void   setBestPredModeDCT2          ( uint16_t val )          { m_ComprCUCtxList.back().bestPredModeDCT2 = val; }
-  uint16_t getBestPredModeDCT2        ()                  const { return m_ComprCUCtxList.back().bestPredModeDCT2; }
+  void   setBestPredModeDCT2          ( uint16_t intraMode, bool mipFlag )          
+  { 
+    m_ComprCUCtxList.back().bestPredModeDCT2 = intraMode; 
+    m_ComprCUCtxList.back().mipFlag = mipFlag; 
+  }
   bool   getRelatedCuIsValid          ()                  const { return m_ComprCUCtxList.back().relatedCuIsValid; }
   void   setRelatedCuIsValid          ( bool val )              { m_ComprCUCtxList.back().relatedCuIsValid = val; }
   IspPredModeVal getIspPredModeValRelCU() const
@@ -363,7 +366,6 @@ public:
   void   setBestNonDCT2Cost           ( double val )            { m_ComprCUCtxList.back().bestNonDCT2Cost = val; }
   uint8_t getBestISPIntraModeRelCU    ()                  const { return m_ComprCUCtxList.back().bestISPIntraMode; }
   void   setBestISPIntraModeRelCU     ( uint8_t val )           { m_ComprCUCtxList.back().bestISPIntraMode = val; }
-  void   setMIPFlagISPPass            ( bool val )              { m_ComprCUCtxList.back().mipFlag = val; }
 
   void setISPMode(const ISPType val)
   {

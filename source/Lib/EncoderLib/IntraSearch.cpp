@@ -1216,7 +1216,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
         {
           if (m_pcEncCfg->getUseFastISP())
           {
-            m_modeCtrl->setBestPredModeDCT2(bestPuMode.modeId);
+            m_modeCtrl->setBestPredModeDCT2(bestPuMode.modeId, bestPuMode.mipFlg);
           }
           if (!xSortISPCandList(bestCurrentCost, csBest->cost, bestPuMode))
           {
@@ -6287,10 +6287,10 @@ bool IntraSearch::updateISPStatusFromRelCU(double bestNonISPCostCurrCu, const Mo
     double costRatio           = bestNonISPCostCurrCu / bestNonISPCostRelCU;
     bool   bestModeCurrCuIsMip = bestNonISPModeCurrCu.mipFlg;
     bool   isSameTypeOfMode    = bestModeRelCuIsMip == bestModeCurrCuIsMip;
-    bool   bothModesAreAngular = bestNonISPModeCurrCu.modeId > DC_IDX && relatedCuIntraMode > DC_IDX;
+    bool   bothModesAreAngular = isSameTypeOfMode && !bestModeCurrCuIsMip && bestNonISPModeCurrCu.modeId > DC_IDX && relatedCuIntraMode > DC_IDX;
     bool   modesAreComparable =
       isSameTypeOfMode
-      && (bestModeCurrCuIsMip || bestNonISPModeCurrCu.modeId == relatedCuIntraMode
+      && (bestNonISPModeCurrCu.modeId == relatedCuIntraMode
           || (bothModesAreAngular && abs(relatedCuIntraMode - (int) bestNonISPModeCurrCu.modeId) <= 5));
 
     CHECK(!ispPredModeVal.valid, "Wrong ISP relCU status");
