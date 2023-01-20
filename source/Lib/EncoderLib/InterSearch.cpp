@@ -53,8 +53,6 @@
 #include <math.h>
 #include <limits>
 
-using namespace std;
-
 //! \ingroup EncoderLib
 //! \{
 
@@ -1916,7 +1914,7 @@ void InterSearch::selectMatchesInter(const MapIterator& itBegin, int count, std:
 void InterSearch::selectRectangleMatchesInter(const MapIterator& itBegin, int count, std::list<BlockHash>& listBlockHash, const BlockHash& currBlockHash, int width, int height, int idxNonSimple, unsigned int* &hashValues, int baseNum, int picWidth, int picHeight, bool isHorizontal, uint16_t* curHashPic)
 {
   const int maxReturnNumber = 5;
-  int baseSize = min(width, height);
+  int          baseSize        = std::min(width, height);
   unsigned int crcMask = 1 << 16;
   crcMask -= 1;
 
@@ -1990,7 +1988,7 @@ bool InterSearch::xRectHashInterEstimation(PredictionUnit& pu, RefPicList& bestR
   int width = pu.cu->lumaSize().width;
   int height = pu.cu->lumaSize().height;
 
-  int baseSize = min(width, height);
+  int  baseSize     = std::min(width, height);
   bool isHorizontal = true;;
   int baseNum = 0;
   if (height < width)
@@ -2098,7 +2096,7 @@ bool InterSearch::xRectHashInterEstimation(PredictionUnit& pu, RefPicList& bestR
           continue;
         }
 
-        list<BlockHash> listBlockHash;
+        std::list<BlockHash> listBlockHash;
         selectRectangleMatchesInter(pu.cu->slice->getRefPic(eRefPicList, refIdx)->getHashMap()->getFirstIterator(hashValue1s[idxNonSimple]), count, listBlockHash, currBlockHash, width, height, idxNonSimple, hashValue2s, baseNum, picWidth, picHeight, isHorizontal, pu.cu->slice->getRefPic(eRefPicList, refIdx)->getHashMap()->getHashPic(baseSize));
 
         m_numHashMVStoreds[eRefPicList][refIdx] = int(listBlockHash.size());
@@ -2151,7 +2149,7 @@ bool InterSearch::xRectHashInterEstimation(PredictionUnit& pu, RefPicList& bestR
         m_pcRdCost->selectMotionLambda( );
         m_pcRdCost->setCostScale(0);
 
-        list<BlockHash>::iterator it;
+        std::list<BlockHash>::iterator it;
         int countMV = 0;
         for (it = listBlockHash.begin(); it != listBlockHash.end(); ++it)
         {
@@ -2400,7 +2398,7 @@ bool InterSearch::xHashInterEstimation(PredictionUnit& pu, RefPicList& bestRefPi
           continue;
         }
 
-        list<BlockHash> listBlockHash;
+        std::list<BlockHash> listBlockHash;
         selectMatchesInter(pu.cu->slice->getRefPic(eRefPicList, refIdx)->getHashMap()->getFirstIterator(hashValue1), count, listBlockHash, currBlockHash);
         m_numHashMVStoreds[eRefPicList][refIdx] = (int)listBlockHash.size();
         if (listBlockHash.empty())
@@ -2468,7 +2466,7 @@ bool InterSearch::xHashInterEstimation(PredictionUnit& pu, RefPicList& bestRefPi
         m_pcRdCost->selectMotionLambda( );
         m_pcRdCost->setCostScale(0);
 
-        list<BlockHash>::iterator it;
+        std::list<BlockHash>::iterator it;
         int countMV = 0;
         for (it = listBlockHash.begin(); it != listBlockHash.end(); ++it)
         {
@@ -5512,7 +5510,7 @@ void InterSearch::xTZSearch(const PredictionUnit &pu, RefPicList eRefPicList, in
   }
   if (m_pcEncCfg->getUseHashME() && (m_currRefPicList == 0 || pu.cu->slice->getList1IdxToList0Idx(m_currRefPicIndex) < 0))
   {
-    int minSize = min(pu.cu->lumaSize().width, pu.cu->lumaSize().height);
+    int minSize = std::min(pu.cu->lumaSize().width, pu.cu->lumaSize().height);
     if (minSize < 128 && minSize >= 4)
     {
       int numberOfOtherMvps = m_numHashMVStoreds[m_currRefPicList][m_currRefPicIndex];
@@ -5815,7 +5813,7 @@ void InterSearch::xTZSearchSelective(const PredictionUnit &pu, RefPicList eRefPi
   }
   if (m_pcEncCfg->getUseHashME() && (m_currRefPicList == 0 || pu.cu->slice->getList1IdxToList0Idx(m_currRefPicIndex) < 0))
   {
-    int minSize = min(pu.cu->lumaSize().width, pu.cu->lumaSize().height);
+    int minSize = std::min(pu.cu->lumaSize().width, pu.cu->lumaSize().height);
     if (minSize < 128 && minSize >= 4)
     {
       int numberOfOtherMvps = m_numHashMVStoreds[m_currRefPicList][m_currRefPicIndex];

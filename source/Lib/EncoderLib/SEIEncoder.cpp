@@ -37,8 +37,6 @@
 #include "EncLib.h"
 #include <fstream>
 
-using namespace std;
-
 uint32_t calcMD5(const CPelUnitBuf& pic, PictureHash &digest, const BitDepths &bitDepths);
 uint32_t calcCRC(const CPelUnitBuf& pic, PictureHash &digest, const BitDepths &bitDepths);
 uint32_t calcChecksum(const CPelUnitBuf& pic, PictureHash &digest, const BitDepths &bitDepths);
@@ -244,11 +242,19 @@ void SEIEncoder::initSEIGreenMetadataInfo(SEIGreenMetadataInfo* seiGreenMetadata
     seiGreenMetadataInfo->m_xsdSubpicNumberMinus1 = m_pcCfg->getSEIXSDNumberMetrics()-1;
     seiGreenMetadataInfo->m_xsdSubPicIdc = 1; //Only 1 Picture is supported
     // Maximum valid value for 16-bit integer: 65535
-    (m_pcCfg->getSEIXSDMetricTypePSNR()) ? seiGreenMetadataInfo->m_xsdMetricValuePSNR  = min(int(metrics.psnr*100),65535) :  seiGreenMetadataInfo->m_xsdMetricValuePSNR = 0;
-    (m_pcCfg->getSEIXSDMetricTypeSSIM()) ? seiGreenMetadataInfo->m_xsdMetricValueSSIM  = min(int(metrics.ssim*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueSSIM  = 0;
-    (m_pcCfg->getSEIXSDMetricTypeWPSNR()) ? seiGreenMetadataInfo->m_xsdMetricValueWPSNR  = min(int(metrics.wpsnr*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueWPSNR  = 0;
-    (m_pcCfg->getSEIXSDMetricTypeWSPSNR()) ? seiGreenMetadataInfo->m_xsdMetricValueWSPSNR  = min(int(metrics.wspsnr*100),65535) : seiGreenMetadataInfo->m_xsdMetricValueWSPSNR  = 0;
-    
+    (m_pcCfg->getSEIXSDMetricTypePSNR())
+      ? seiGreenMetadataInfo->m_xsdMetricValuePSNR = std::min(int(metrics.psnr * 100), 65535)
+      : seiGreenMetadataInfo->m_xsdMetricValuePSNR = 0;
+    (m_pcCfg->getSEIXSDMetricTypeSSIM())
+      ? seiGreenMetadataInfo->m_xsdMetricValueSSIM = std::min(int(metrics.ssim * 100), 65535)
+      : seiGreenMetadataInfo->m_xsdMetricValueSSIM = 0;
+    (m_pcCfg->getSEIXSDMetricTypeWPSNR())
+      ? seiGreenMetadataInfo->m_xsdMetricValueWPSNR = std::min(int(metrics.wpsnr * 100), 65535)
+      : seiGreenMetadataInfo->m_xsdMetricValueWPSNR = 0;
+    (m_pcCfg->getSEIXSDMetricTypeWSPSNR())
+      ? seiGreenMetadataInfo->m_xsdMetricValueWSPSNR = std::min(int(metrics.wspsnr * 100), 65535)
+      : seiGreenMetadataInfo->m_xsdMetricValueWSPSNR = 0;
+
     seiGreenMetadataInfo->m_xsdMetricTypePSNR = m_pcCfg->getSEIXSDMetricTypePSNR();
     seiGreenMetadataInfo->m_xsdMetricTypeSSIM = m_pcCfg->getSEIXSDMetricTypeSSIM();
     seiGreenMetadataInfo->m_xsdMetricTypeWPSNR = m_pcCfg->getSEIXSDMetricTypeWPSNR();
@@ -514,7 +520,7 @@ void SEIEncoder::initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, 
     scalableNestingSEI->m_snSubpicFlag = 1;
     scalableNestingSEI->m_snNumSubpics = (uint32_t) subpictureIDs.size();
     scalableNestingSEI->m_snSubpicId   = subpictureIDs;
-    scalableNestingSEI->m_snSubpicIdLen = max(1, ceilLog2(maxSubpicIdInPic + 1));
+    scalableNestingSEI->m_snSubpicIdLen = std::max(1, ceilLog2(maxSubpicIdInPic + 1));
     CHECK ( scalableNestingSEI->m_snSubpicIdLen > 16, "Subpicture ID too large. Length must be <= 16 bits");
   }
   scalableNestingSEI->m_nestedSEIs.clear();
@@ -1390,8 +1396,8 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
   }
   if (sei->m_modeIdc == 1)
   {
-    const string payloadFilename = m_pcCfg->getNNPostFilterSEICharacteristicsPayloadFilename(filterIdx);
-    ifstream bitstreamFile(payloadFilename.c_str(), ifstream::in | ifstream::binary);
+    const std::string payloadFilename = m_pcCfg->getNNPostFilterSEICharacteristicsPayloadFilename(filterIdx);
+    std::ifstream     bitstreamFile(payloadFilename.c_str(), std::ifstream::in | std::ifstream::binary);
     if (!bitstreamFile)
     {
       EXIT( "Failed to open bitstream file " << payloadFilename.c_str() << " for reading" ) ;

@@ -52,14 +52,12 @@
 #include "CommonLib/CodingStatistics.h"
 #endif
 
-using namespace std;
-
 //! \ingroup DecoderLib
 //! \{
-static void convertPayloadToRBSP(vector<uint8_t>& nalUnitBuf, InputBitstream *bitstream, bool isVclNalUnit)
+static void convertPayloadToRBSP(std::vector<uint8_t> &nalUnitBuf, InputBitstream *bitstream, bool isVclNalUnit)
 {
   uint32_t zeroCount = 0;
-  vector<uint8_t>::iterator it_read, it_write;
+  std::vector<uint8_t>::iterator it_read, it_write;
 
   uint32_t pos = 0;
   bitstream->clearEmulationPreventionByteLocation();
@@ -162,7 +160,7 @@ void readNalUnitHeader(InputNALUnit& nalu)
 void read(InputNALUnit& nalu)
 {
   InputBitstream &bitstream = nalu.getBitstream();
-  vector<uint8_t>& nalUnitBuf=bitstream.getFifo();
+  std::vector<uint8_t> &nalUnitBuf = bitstream.getFifo();
   // perform anti-emulation prevention
   const NalUnitType nut = (NalUnitType)(nalUnitBuf[1] >> 3);
   convertPayloadToRBSP(nalUnitBuf, &bitstream, nut <= NAL_UNIT_RESERVED_IRAP_VCL_11);

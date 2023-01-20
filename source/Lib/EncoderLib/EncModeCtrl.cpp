@@ -49,8 +49,6 @@
 
 #include <cmath>
 
-using namespace std;
-
 static constexpr double UNSET_IMV_COST = MAX_DOUBLE * 0.125;   // Some large, unique value
 
 void EncModeCtrl::init( EncCfg *pCfg, RateCtrl *pRateCtrl, RdCost* pRdCost )
@@ -323,7 +321,7 @@ int EncModeCtrl::calculateLumaDQPsmooth(const CPelBuf& rcOrg, int baseQP, double
     }
     if (diff < thr)
     {
-      qp = max(limit, min(0, (int)(scale*(double)baseQP + offset)));
+      qp = std::max(limit, std::min(0, (int) (scale * (double) baseQP + offset)));
     }
   }
   return qp;
@@ -1386,7 +1384,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
       }
       if (m_pcEncCfg->getUseHashME())
       {
-        int minSize = min(cs.area.lwidth(), cs.area.lheight());
+        int minSize = std::min(cs.area.lwidth(), cs.area.lheight());
         if (minSize < 128 && minSize >= 4)
         {
           m_ComprCUCtxList.back().testModes.push_back({ ETM_HASH_INTER, ETO_STANDARD, qp });

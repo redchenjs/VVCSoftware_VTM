@@ -48,8 +48,6 @@
 #endif
 #include "CommonLib/dtrace_codingstruct.h"
 
-using namespace std;
-
 //! \ingroup DecoderApp
 //! \{
 
@@ -93,15 +91,15 @@ uint32_t DecApp::decode()
 #if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct featureCounter;
   FeatureCounterStruct featureCounterOld;
-  ifstream bitstreamSize(m_bitstreamFileName.c_str(), ifstream::in | ifstream::binary);
+  std::ifstream        bitstreamSize(m_bitstreamFileName.c_str(), std::ifstream::in | std::ifstream::binary);
   std::streampos fsize = 0;
   fsize = bitstreamSize.tellg();
   bitstreamSize.seekg( 0, std::ios::end );
   featureCounter.bytes = (int) bitstreamSize.tellg() - (int) fsize;
   bitstreamSize.close();
 #endif
-  
-  ifstream bitstreamFile(m_bitstreamFileName.c_str(), ifstream::in | ifstream::binary);
+
+  std::ifstream bitstreamFile(m_bitstreamFileName.c_str(), std::ifstream::in | std::ifstream::binary);
   if (!bitstreamFile)
   {
     EXIT( "Failed to open bitstream file " << m_bitstreamFileName.c_str() << " for reading" ) ;
@@ -449,7 +447,7 @@ uint32_t DecApp::decode()
           {
             size_t      pos         = reconFileName.find_last_of('.');
             std::string layerString = std::string(".layer") + std::to_string(nalu.m_nuhLayerId);
-            if (pos != string::npos)
+            if (pos != std::string::npos)
             {
               reconFileName.insert(pos, layerString);
             }
@@ -480,7 +478,7 @@ uint32_t DecApp::decode()
                 }
                 frameRate  = hrd->getTimeScale() * elementDurationInTc;
                 frameScale = hrd->getNumUnitsInTick();
-                int gcd    = calcGcd(max(frameRate, frameScale), min(frameRate, frameScale));
+                int gcd    = calcGcd(std::max(frameRate, frameScale), std::min(frameRate, frameScale));
                 frameRate /= gcd;
                 frameScale /= gcd;
               }
@@ -521,7 +519,7 @@ uint32_t DecApp::decode()
           {
             size_t      pos         = SEIFGSFileName.find_last_of('.');
             std::string layerString = std::string(".layer") + std::to_string(nalu.m_nuhLayerId);
-            if (pos != string::npos)
+            if (pos != std::string::npos)
             {
               SEIFGSFileName.insert(pos, layerString);
             }
@@ -557,7 +555,7 @@ uint32_t DecApp::decode()
           if (m_SEICTIFileName.compare("/dev/null") && m_cDecLib.getVPS() != nullptr && m_cDecLib.getVPS()->getMaxLayers() > 1 && xIsNaluWithinTargetOutputLayerIdSet(&nalu))
           {
             size_t pos = SEICTIFileName.find_last_of('.');
-            if (pos != string::npos)
+            if (pos != std::string::npos)
             {
               SEICTIFileName.insert(pos, std::to_string(nalu.m_nuhLayerId));
             }
@@ -617,7 +615,7 @@ uint32_t DecApp::decode()
             }
 
             uint32_t tmpInfo = (uint32_t)(m_activeSiiInfo.size() + 1);
-            m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo>(tmpInfo, curSII));
+            m_activeSiiInfo.insert(std::pair<uint32_t, IdrSiiInfo>(tmpInfo, curSII));
             curSIIInfo = seiShutterIntervalInfo;
           }
           else
@@ -625,7 +623,7 @@ uint32_t DecApp::decode()
             curSII.m_isValidSii = false;
             hasValidSII         = false;
             uint32_t tmpInfo = (uint32_t)(m_activeSiiInfo.size() + 1);
-            m_activeSiiInfo.insert(pair<uint32_t, IdrSiiInfo>(tmpInfo, curSII));
+            m_activeSiiInfo.insert(std::pair<uint32_t, IdrSiiInfo>(tmpInfo, curSII));
           }
         }
         else

@@ -41,8 +41,6 @@
 
 #define LAMBDA_PREC                                           1000000
 
-using namespace std;
-
 //sequence level
 EncRCSeq::EncRCSeq()
 {
@@ -618,7 +616,9 @@ void EncRCGOP::updateAfterPicture( int bitsCost )
 
 int EncRCGOP::xEstGOPTargetBits( EncRCSeq* encRCSeq, int GOPSize )
 {
-  int realInfluencePicture = min(g_RCSmoothWindowSizeAlpha * GOPSize / max(encRCSeq->getIntraPeriod(), 32) + g_RCSmoothWindowSizeBeta, encRCSeq->getFramesLeft());
+  int realInfluencePicture =
+    std::min(g_RCSmoothWindowSizeAlpha * GOPSize / std::max(encRCSeq->getIntraPeriod(), 32) + g_RCSmoothWindowSizeBeta,
+             encRCSeq->getFramesLeft());
   int averageTargetBitsPerPic = (int)( encRCSeq->getTargetBits() / encRCSeq->getTotalFrames() );
   int currentTargetBitsPerPic = (int)( ( encRCSeq->getBitsLeft() - averageTargetBitsPerPic * (encRCSeq->getFramesLeft() - realInfluencePicture) ) / realInfluencePicture );
   int targetBits = currentTargetBitsPerPic * GOPSize;
@@ -692,12 +692,12 @@ int EncRCPic::xEstPicTargetBits( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP )
   return targetBits;
 }
 
-int EncRCPic::xEstPicHeaderBits( list<EncRCPic*>& listPreviousPictures, int frameLevel )
+int EncRCPic::xEstPicHeaderBits(std::list<EncRCPic *> &listPreviousPictures, int frameLevel)
 {
   int numPreviousPics   = 0;
   int totalPreviousBits = 0;
 
-  list<EncRCPic*>::iterator it;
+  std::list<EncRCPic *>::iterator it;
   for ( it = listPreviousPictures.begin(); it != listPreviousPictures.end(); it++ )
   {
     if ( (*it)->getFrameLevel() == frameLevel )
@@ -754,7 +754,7 @@ int EncRCPic::xEstPicLowerBound(EncRCSeq* encRCSeq, EncRCGOP* encRCGOP)
   return lowerBound;
 }
 
-void EncRCPic::addToPictureLsit( list<EncRCPic*>& listPreviousPictures )
+void EncRCPic::addToPictureLsit(std::list<EncRCPic *> &listPreviousPictures)
 {
   if ( listPreviousPictures.size() > g_RCMaxPicListSize )
   {
@@ -767,7 +767,8 @@ void EncRCPic::addToPictureLsit( list<EncRCPic*>& listPreviousPictures )
   listPreviousPictures.push_back( this );
 }
 
-void EncRCPic::create( EncRCSeq* encRCSeq, EncRCGOP* encRCGOP, int frameLevel, list<EncRCPic*>& listPreviousPictures )
+void EncRCPic::create(EncRCSeq *encRCSeq, EncRCGOP *encRCGOP, int frameLevel,
+                      std::list<EncRCPic *> &listPreviousPictures)
 {
   destroy();
   m_encRCSeq = encRCSeq;
@@ -839,8 +840,7 @@ void EncRCPic::destroy()
   m_encRCGOP = nullptr;
 }
 
-
-double EncRCPic::estimatePicLambda( list<EncRCPic*>& listPreviousPictures, bool isIRAP)
+double EncRCPic::estimatePicLambda(std::list<EncRCPic *> &listPreviousPictures, bool isIRAP)
 {
   double alpha         = m_encRCSeq->getPicPara( m_frameLevel ).m_alpha;
   double beta          = m_encRCSeq->getPicPara( m_frameLevel ).m_beta;
@@ -873,7 +873,7 @@ double EncRCPic::estimatePicLambda( list<EncRCPic*>& listPreviousPictures, bool 
   double lastLevelLambda = -1.0;
   double lastPicLambda   = -1.0;
   double lastValidLambda = -1.0;
-  list<EncRCPic*>::iterator it;
+  std::list<EncRCPic *>::iterator it;
   for ( it = listPreviousPictures.begin(); it != listPreviousPictures.end(); it++ )
   {
     if ( (*it)->getFrameLevel() == m_frameLevel )
@@ -951,7 +951,7 @@ double EncRCPic::estimatePicLambda( list<EncRCPic*>& listPreviousPictures, bool 
   return estLambda;
 }
 
-int EncRCPic::estimatePicQP( double lambda, list<EncRCPic*>& listPreviousPictures )
+int EncRCPic::estimatePicQP(double lambda, std::list<EncRCPic *> &listPreviousPictures)
 {
   int bitdepth_luma_scale =
     2
@@ -963,7 +963,7 @@ int EncRCPic::estimatePicQP( double lambda, list<EncRCPic*>& listPreviousPicture
   int lastLevelQP = g_RCInvalidQPValue;
   int lastPicQP   = g_RCInvalidQPValue;
   int lastValidQP = g_RCInvalidQPValue;
-  list<EncRCPic*>::iterator it;
+  std::list<EncRCPic *>::iterator it;
   for ( it = listPreviousPictures.begin(); it != listPreviousPictures.end(); it++ )
   {
     if ( (*it)->getFrameLevel() == m_frameLevel )
@@ -1002,7 +1002,7 @@ double EncRCPic::getLCUTargetBpp(bool isIRAP)
 
   if (isIRAP)
   {
-    int bitrateWindow = min(4, m_LCULeft);
+    int    bitrateWindow = std::min(4, m_LCULeft);
     double MAD      = getLCU(LCUIdx).m_costIntra;
 
     if (m_remainingCostIntra > 0.1 )
@@ -1023,7 +1023,7 @@ double EncRCPic::getLCUTargetBpp(bool isIRAP)
     {
       totalWeight += m_LCUs[i].m_bitWeight;
     }
-    int realInfluenceLCU = min( g_RCLCUSmoothWindowSize, getLCULeft() );
+    int realInfluenceLCU = std::min(g_RCLCUSmoothWindowSize, getLCULeft());
     avgBits = (int)( m_LCUs[LCUIdx].m_bitWeight - ( totalWeight - m_bitsLeft ) / realInfluenceLCU + 0.5 );
   }
 
@@ -1397,8 +1397,8 @@ double EncRCPic::getLCUEstLambdaAndQP(double bpp, int clipPicQP, int *estQP)
 
   if ( clipNeighbourQP > g_RCInvalidQPValue )
   {
-    maxQP = min(clipNeighbourQP + 1, maxQP);
-    minQP = max(clipNeighbourQP - 1, minQP);
+    maxQP = std::min(clipNeighbourQP + 1, maxQP);
+    minQP = std::max(clipNeighbourQP - 1, minQP);
   }
 
   int bitdepth_luma_scale =

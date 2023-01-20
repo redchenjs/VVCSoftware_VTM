@@ -44,8 +44,6 @@
 #include "DecoderLib/AnnexBread.h"
 #include "DecoderLib/NALread.h"
 
-using namespace std;
-
 //! \ingroup DecoderApp
 //! \{
 
@@ -83,18 +81,18 @@ void read2(InputNALUnit& nalu)
 
 uint32_t SEIRemovalApp::decode()
 {
-  ifstream bitstreamFileIn(m_bitstreamFileNameIn.c_str(), ifstream::in | ifstream::binary);
+  std::ifstream bitstreamFileIn(m_bitstreamFileNameIn.c_str(), std::ifstream::in | std::ifstream::binary);
   if (!bitstreamFileIn)
   {
     EXIT( "failed to open bitstream file " << m_bitstreamFileNameIn.c_str() << " for reading" ) ;
   }
 
-  ofstream bitstreamFileOut(m_bitstreamFileNameOut.c_str(), ifstream::out | ifstream::binary);
+  std::ofstream bitstreamFileOut(m_bitstreamFileNameOut.c_str(), std::ifstream::out | std::ifstream::binary);
 
   InputByteStream bytestream(bitstreamFileIn);
 
   bitstreamFileIn.clear();
-  bitstreamFileIn.seekg( 0, ios::beg );
+  bitstreamFileIn.seekg(0, std::ios::beg);
 
   int unitCnt = 0;
 

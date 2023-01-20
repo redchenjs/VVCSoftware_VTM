@@ -46,8 +46,6 @@
 #include "EncoderLib/AnnexBwrite.h"
 #include "EncoderLib/EncLibCommon.h"
 
-using namespace std;
-
 //! \ingroup EncoderApp
 //! \{
 
@@ -55,9 +53,7 @@ using namespace std;
 // Constructor / destructor / initialization / destroy
 // ====================================================================================================================
 
-EncApp::EncApp( fstream& bitStream, EncLibCommon* encLibCommon )
-  : m_cEncLib( encLibCommon )
-  , m_bitstream( bitStream )
+EncApp::EncApp(std::fstream &bitStream, EncLibCommon *encLibCommon) : m_cEncLib(encLibCommon), m_bitstream(bitStream)
 {
   m_frameRcvd      = 0;
   m_totalBytes = 0;
@@ -138,7 +134,7 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         for (int j = 0, k = 0; j < i; j++)
         {
-          if (m_refLayerIdxStr[i].find(to_string(j)) != std::string::npos)
+          if (m_refLayerIdxStr[i].find(std::to_string(j)) != std::string::npos)
           {
             vps.setDirectRefLayerFlag(i, j, true);
             vps.setInterLayerRefIdc( i, j, k );
@@ -149,10 +145,10 @@ void EncApp::xInitLibCfg( int layerIdx )
             vps.setDirectRefLayerFlag(i, j, false);
           }
         }
-        string::size_type beginStr = m_maxTidILRefPicsPlus1Str[i].find_first_not_of(" ", 0);
-        string::size_type endStr = m_maxTidILRefPicsPlus1Str[i].find_first_of(" ", beginStr);
+        std::string::size_type beginStr = m_maxTidILRefPicsPlus1Str[i].find_first_not_of(" ", 0);
+        std::string::size_type endStr   = m_maxTidILRefPicsPlus1Str[i].find_first_of(" ", beginStr);
         int t = 0;
-        while (string::npos != beginStr || string::npos != endStr)
+        while (std::string::npos != beginStr || std::string::npos != endStr)
         {
           m_cfgVPSParameters.m_maxTidILRefPicsPlus1[i][t++] = std::stoi(m_maxTidILRefPicsPlus1Str[i].substr(beginStr, endStr - beginStr));
           beginStr = m_maxTidILRefPicsPlus1Str[i].find_first_not_of(" ", endStr);
@@ -186,7 +182,7 @@ void EncApp::xInitLibCfg( int layerIdx )
         {
           for (int j = 0; j < vps.getMaxLayers(); j++)
           {
-            if (m_olsOutputLayerStr[i].find(to_string(j)) != std::string::npos)
+            if (m_olsOutputLayerStr[i].find(std::to_string(j)) != std::string::npos)
             {
               vps.setOlsOutputLayerFlag(i, j, 1);
             }
@@ -1423,7 +1419,7 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
     if( m_reconFileName.compare( "/dev/null" ) &&  (m_maxLayers > 1) )
     {
       size_t pos = reconFileName.find_last_of('.');
-      if (pos != string::npos)
+      if (pos != std::string::npos)
       {
         reconFileName.insert( pos, std::to_string( layerId ) );
       }
@@ -1520,7 +1516,7 @@ void EncApp::createLib( const int layerIdx )
 
   if( !m_bitstream.is_open() )
   {
-    m_bitstream.open( m_bitstreamFileName.c_str(), fstream::binary | fstream::out );
+    m_bitstream.open(m_bitstreamFileName.c_str(), std::fstream::binary | std::fstream::out);
     if( !m_bitstream )
     {
       EXIT( "Failed to open bitstream file " << m_bitstreamFileName.c_str() << " for writing\n" );
@@ -1837,7 +1833,7 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
 
 void EncApp::outputAU( const AccessUnit& au )
 {
-  const vector<uint32_t>& stats = writeAnnexBAccessUnit(m_bitstream, au);
+  const std::vector<uint32_t> &stats = writeAnnexBAccessUnit(m_bitstream, au);
   rateStatsAccum(au, stats);
   m_bitstream.flush();
 }
@@ -1849,7 +1845,7 @@ void EncApp::outputAU( const AccessUnit& au )
 void EncApp::rateStatsAccum(const AccessUnit& au, const std::vector<uint32_t>& annexBsizes)
 {
   AccessUnit::const_iterator it_au = au.begin();
-  vector<uint32_t>::const_iterator it_stats = annexBsizes.begin();
+  std::vector<uint32_t>::const_iterator it_stats = annexBsizes.begin();
 
   for (; it_au != au.end(); it_au++, it_stats++)
   {

@@ -46,8 +46,6 @@
 #include "VideoIOYuv.h"
 #include "CommonLib/Unit.h"
 
-using namespace std;
-
 #define FLIP_PIC 0
 
 constexpr int Y4M_SIGNATURE_LENGTH    = 10;
@@ -155,7 +153,7 @@ void VideoIOYuv::open(const std::string &fileName, bool bWriteMode, const BitDep
 
   if ( bWriteMode )
   {
-    m_cHandle.open( fileName.c_str(), ios::binary | ios::out );
+    m_cHandle.open(fileName.c_str(), std::ios::binary | std::ios::out);
 
     if( m_cHandle.fail() )
     {
@@ -178,7 +176,7 @@ void VideoIOYuv::open(const std::string &fileName, bool bWriteMode, const BitDep
         parseY4mFileHeader(fileName, dummyWidth, dummyHeight, dummyFrameRate, dummyBitDepth, dummyChromaFormat);
       }
     }
-    m_cHandle.open( fileName.c_str(), ios::binary | ios::in );
+    m_cHandle.open(fileName.c_str(), std::ios::binary | std::ios::in);
 
     if( m_cHandle.fail() )
     {
@@ -187,7 +185,7 @@ void VideoIOYuv::open(const std::string &fileName, bool bWriteMode, const BitDep
 
     if (m_inY4mFileHeaderLength)
     {
-      m_cHandle.seekg(m_inY4mFileHeaderLength, ios::cur);
+      m_cHandle.seekg(m_inY4mFileHeaderLength, std::ios::cur);
     }
   }
 
@@ -197,7 +195,7 @@ void VideoIOYuv::open(const std::string &fileName, bool bWriteMode, const BitDep
 void VideoIOYuv::parseY4mFileHeader(const std::string &fileName, int &width, int &height, int &frameRate, int &bitDepth,
                                ChromaFormat &chromaFormat)
 {
-  m_cHandle.open(fileName.c_str(), ios::binary | ios::in);
+  m_cHandle.open(fileName.c_str(), std::ios::binary | std::ios::in);
   CHECK(m_cHandle.fail(), "File open failed.")
 
   char header[Y4M_MAX_HEADER_LENGTH];
@@ -349,7 +347,7 @@ void VideoIOYuv::skipFrames(uint32_t numFrames, uint32_t width, uint32_t height,
 
   //------------------
   //set the frame size according to the chroma format
-  streamoff frameSize = 0;
+  std::streamoff frameSize = 0;
   uint32_t wordsize=1; // default to 8-bit, unless a channel with more than 8-bits is detected.
   for (uint32_t component = 0; component < getNumberValidComponents(format); component++)
   {
@@ -367,10 +365,10 @@ void VideoIOYuv::skipFrames(uint32_t numFrames, uint32_t width, uint32_t height,
     frameSize += Y4M_FRAME_HEADER_LENGTH;
   }
 
-  const streamoff offset = frameSize * numFrames;
+  const std::streamoff offset = frameSize * numFrames;
 
   /* attempt to seek */
-  if (!!m_cHandle.seekg(offset, ios::cur))
+  if (!!m_cHandle.seekg(offset, std::ios::cur))
   {
     return; /* success */
   }
@@ -378,8 +376,8 @@ void VideoIOYuv::skipFrames(uint32_t numFrames, uint32_t width, uint32_t height,
 
   /* fall back to consuming the input */
   char buf[512];
-  const streamoff offset_mod_bufsize = offset % sizeof(buf);
-  for (streamoff i = 0; i < offset - offset_mod_bufsize; i += sizeof(buf))
+  const std::streamoff offset_mod_bufsize = offset % sizeof(buf);
+  for (std::streamoff i = 0; i < offset - offset_mod_bufsize; i += sizeof(buf))
   {
     m_cHandle.read(buf, sizeof(buf));
   }
@@ -405,9 +403,9 @@ void VideoIOYuv::skipFrames(uint32_t numFrames, uint32_t width, uint32_t height,
  * @param fileBitDepth component bit depth in file
  * @return true for success, false in case of error
  */
-static bool readPlane(Pel *dst, istream &fd, bool is16bit, ptrdiff_t stride444, uint32_t width444, uint32_t height444,
-                      uint32_t pad_x444, uint32_t pad_y444, const ComponentID compID, const ChromaFormat destFormat,
-                      const ChromaFormat fileFormat, const uint32_t fileBitDepth)
+static bool readPlane(Pel *dst, std::istream &fd, bool is16bit, ptrdiff_t stride444, uint32_t width444,
+                      uint32_t height444, uint32_t pad_x444, uint32_t pad_y444, const ComponentID compID,
+                      const ChromaFormat destFormat, const ChromaFormat fileFormat, const uint32_t fileBitDepth)
 {
   const uint32_t csx_file =getComponentScaleX(compID, fileFormat);
   const uint32_t csy_file =getComponentScaleY(compID, fileFormat);
@@ -452,7 +450,7 @@ static bool readPlane(Pel *dst, istream &fd, bool is16bit, ptrdiff_t stride444, 
     if (fileFormat!=CHROMA_400)
     {
       const uint32_t height_file      = height444>>csy_file;
-      fd.seekg(height_file*stride_file, ios::cur);
+      fd.seekg(height_file * stride_file, std::ios::cur);
       if (fd.eof() || fd.fail() )
       {
         return false;
@@ -588,7 +586,7 @@ static bool verifyPlane(Pel *dst, ptrdiff_t stride444, uint32_t width444, uint32
  * @param fileBitDepth component bit depth in file
  * @return true for success, false in case of error
  */
-static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, ostream &fd, const Pel *src, const bool is16bit,
+static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, const Pel *src, const bool is16bit,
                        const ptrdiff_t stride_src, uint32_t width444, uint32_t height444, const ComponentID compID,
                        const ChromaFormat srcFormat, const ChromaFormat fileFormat, const uint32_t fileBitDepth,
                        const uint32_t packedYUVOutputMode = 0)
@@ -862,10 +860,10 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, ostream &fd, const
   return true;
 }
 
-static bool writeField(ostream &fd, const Pel *top, const Pel *bottom, const bool is16bit, const ptrdiff_t stride_src,
-                       uint32_t width444, uint32_t height444, const ComponentID compID, const ChromaFormat srcFormat,
-                       const ChromaFormat fileFormat, const uint32_t fileBitDepth, const bool isTff,
-                       const uint32_t packedYUVOutputMode = 0)
+static bool writeField(std::ostream &fd, const Pel *top, const Pel *bottom, const bool is16bit,
+                       const ptrdiff_t stride_src, uint32_t width444, uint32_t height444, const ComponentID compID,
+                       const ChromaFormat srcFormat, const ChromaFormat fileFormat, const uint32_t fileBitDepth,
+                       const bool isTff, const uint32_t packedYUVOutputMode = 0)
 {
   const uint32_t csx_file =getComponentScaleX(compID, fileFormat);
   const uint32_t csy_file =getComponentScaleY(compID, fileFormat);
