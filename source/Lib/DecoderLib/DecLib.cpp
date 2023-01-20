@@ -3971,7 +3971,7 @@ bool DecLib::isNewPicture(std::ifstream *bitstreamFile, class InputByteStream *b
   // save stream position for backup
 #if RExt__DECODER_DEBUG_STATISTICS
   CodingStatistics::CodingStatisticsData* backupStats = new CodingStatistics::CodingStatisticsData(CodingStatistics::GetStatistics());
-  std::streampos location = bitstreamFile->tellg() - std::streampos(bytestream->GetNumBufferedBytes());
+  std::streampos location = bitstreamFile->tellg() - std::streampos(bytestream->getNumBufferedBytes());
 #else
   std::streampos location = bitstreamFile->tellg();
 #endif
@@ -4080,7 +4080,7 @@ bool DecLib::isNewAccessUnit( bool newPicture, std::ifstream *bitstreamFile, cla
   // save stream position for backup
 #if RExt__DECODER_DEBUG_STATISTICS
   CodingStatistics::CodingStatisticsData* backupStats = new CodingStatistics::CodingStatisticsData(CodingStatistics::GetStatistics());
-  std::streampos location = bitstreamFile->tellg() - std::streampos(bytestream->GetNumBufferedBytes());
+  std::streampos location = bitstreamFile->tellg() - std::streampos(bytestream->getNumBufferedBytes());
 #else
   std::streampos location = bitstreamFile->tellg();
 #endif
