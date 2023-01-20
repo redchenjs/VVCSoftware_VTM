@@ -31,9 +31,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __SLICE__
-#define __SLICE__
-
 #pragma once
 
 #include <array>
@@ -3292,5 +3289,3 @@ void xTraceSliceHeader();
 void xTraceAccessUnitDelimiter();
 void xTraceFillerData();
 #endif
-
-#endif // __SLICE__
