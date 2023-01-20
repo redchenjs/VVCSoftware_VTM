@@ -38,10 +38,7 @@
 
 #pragma once
 
-#ifndef __ANNEXBREAD__
-#define __ANNEXBREAD__
-
-#include <stdint.h>
+#include <cstdint>
 #include <istream>
 #include <vector>
 
@@ -62,10 +59,7 @@ public:
    *
    * Side-effects: the exception mask of istream is set to eofbit
    */
-  InputByteStream(std::istream& istream)
-  : m_NumFutureBytes(0)
-  , m_FutureBytes(0)
-  , m_Input(istream)
+  InputByteStream(std::istream &istream) : m_numFutureBytes(0), m_futureBytes(0), m_input(istream)
   {
     istream.exceptions(std::istream::eofbit | std::istream::badbit);
   }
@@ -76,8 +70,8 @@ public:
    */
   void reset()
   {
-    m_NumFutureBytes = 0;
-    m_FutureBytes = 0;
+    m_numFutureBytes = 0;
+    m_futureBytes    = 0;
   }
 
   /**
@@ -87,18 +81,18 @@ public:
   bool eofBeforeNBytes(uint32_t n)
   {
     CHECK(n > 4, "Unsupported look-ahead value");
-    if (m_NumFutureBytes >= n)
+    if (m_numFutureBytes >= n)
     {
       return false;
     }
 
-    n -= m_NumFutureBytes;
+    n -= m_numFutureBytes;
     try
     {
       for (uint32_t i = 0; i < n; i++)
       {
-        m_FutureBytes = (m_FutureBytes << 8) | m_Input.get();
-        m_NumFutureBytes++;
+        m_futureBytes = (m_futureBytes << 8) | m_input.get();
+        m_numFutureBytes++;
       }
     }
     catch (...)
@@ -123,7 +117,7 @@ public:
   uint32_t peekBytes(uint32_t n)
   {
     eofBeforeNBytes(n);
-    return m_FutureBytes >> 8*(m_NumFutureBytes - n);
+    return m_futureBytes >> 8 * (m_numFutureBytes - n);
   }
 
   /**
@@ -134,15 +128,15 @@ public:
    */
   uint8_t readByte()
   {
-    if (!m_NumFutureBytes)
+    if (m_numFutureBytes == 0)
     {
-      uint8_t byte = m_Input.get();
+      uint8_t byte = m_input.get();
       return byte;
     }
-    m_NumFutureBytes--;
-    uint8_t wanted_byte = m_FutureBytes >> 8*m_NumFutureBytes;
-    m_FutureBytes &= ~(0xff << 8*m_NumFutureBytes);
-    return wanted_byte;
+    m_numFutureBytes--;
+    const uint8_t wantedByte = m_futureBytes >> 8 * m_numFutureBytes;
+    m_futureBytes &= ~(0xff << 8 * m_numFutureBytes);
+    return wantedByte;
   }
 
   /**
@@ -161,13 +155,13 @@ public:
   }
 
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
-  uint32_t GetNumBufferedBytes() const { return m_NumFutureBytes; }
+  uint32_t getNumBufferedBytes() const { return m_numFutureBytes; }
 #endif
 
 private:
-  uint32_t m_NumFutureBytes; /* number of valid bytes in m_FutureBytes */
-  uint32_t m_FutureBytes; /* bytes that have been peeked */
-  std::istream& m_Input; /* Input stream to read from */
+  uint32_t      m_numFutureBytes; /* number of valid bytes in m_futureBytes */
+  uint32_t      m_futureBytes;    /* bytes that have been peeked */
+  std::istream &m_input;          /* Input stream to read from */
 };
 
 /**
@@ -195,5 +189,3 @@ struct AnnexBStats
 bool byteStreamNALUnit(InputByteStream& bs, std::vector<uint8_t>& nalUnit, AnnexBStats& stats);
 
 //! \}
-
-#endif

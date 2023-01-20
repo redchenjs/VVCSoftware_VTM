@@ -144,7 +144,7 @@ public:
   * returns true if an EOF will be encountered within the next
   * n bytes.
   */
-  bool eofBeforeNBytes(uint32_t n, std::istream& m_Input)
+  bool eofBeforeNBytes(uint32_t n, std::istream &m_input)
   {
     CHECK(n > 4, "Unsupported look-ahead value");
     if (m_numFutureBytes >= n)
@@ -157,8 +157,8 @@ public:
     {
       for (uint32_t i = 0; i < n; i++)
       {
-        m_futureBytes = (m_futureBytes << 8) | m_Input.get();
-          m_numFutureBytes++;
+        m_futureBytes = (m_futureBytes << 8) | m_input.get();
+        m_numFutureBytes++;
       }
     }
     catch (...)
@@ -180,9 +180,9 @@ public:
   * is undefined.
   *
   */
-  uint32_t peekBytes(uint32_t n, std::istream& m_Input)
+  uint32_t peekBytes(uint32_t n, std::istream &m_input)
   {
-    eofBeforeNBytes(n, m_Input);
+    eofBeforeNBytes(n, m_input);
     return m_futureBytes >> 8 * (m_numFutureBytes - n);
   }
 
@@ -192,17 +192,17 @@ public:
   * If bytestream is already at EOF prior to a call to readByte(),
   * an exception std::ios_base::failure is thrown.
   */
-  uint8_t readByte(std::istream& m_Input)
+  uint8_t readByte(std::istream &m_input)
   {
     if (!m_numFutureBytes)
     {
-      uint8_t byte = m_Input.get();
+      uint8_t byte = m_input.get();
       return byte;
     }
     m_numFutureBytes--;
-    uint8_t wanted_byte = m_futureBytes >> 8 * m_numFutureBytes;
+    uint8_t wantedByte = m_futureBytes >> 8 * m_numFutureBytes;
     m_futureBytes &= ~(0xff << 8 * m_numFutureBytes);
-    return wanted_byte;
+    return wantedByte;
   }
 
   /**
@@ -210,12 +210,12 @@ public:
   * bytestream are interpreted as bigendian when assembling
   * the return value.
   */
-  uint32_t readBytes(uint32_t n, std::istream& m_Input)
+  uint32_t readBytes(uint32_t n, std::istream &m_input)
   {
     uint32_t val = 0;
     for (uint32_t i = 0; i < n; i++)
     {
-      val = (val << 8) | readByte(m_Input);
+      val = (val << 8) | readByte(m_input);
     }
     return val;
   }
