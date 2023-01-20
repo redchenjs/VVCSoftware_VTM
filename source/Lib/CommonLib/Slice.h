@@ -31,45 +31,26 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** \file     Slice.h
-    \brief    slice header and SPS class (header)
-*/
-
-#ifndef __SLICE__
-#define __SLICE__
+#pragma once
 
 #include <array>
 #include <cstring>
 #include <list>
 #include <map>
 #include <vector>
+#include <unordered_map>
 #include "CommonDef.h"
 #include "Rom.h"
 #include "ChromaFormat.h"
 #include "Common.h"
 #include "HRD.h"
-#include <unordered_map>
 #include "AlfParameters.h"
 
-//! \ingroup CommonLib
-//! \{
-#include "CommonLib/MotionInfo.h"
-struct MotionInfo;
-
-
 struct Picture;
-class Pic;
 class TrQuant;
-// ====================================================================================================================
-// Constants
-// ====================================================================================================================
 class PreCalcValues;
 
 typedef std::list<Picture*> PicList;
-
-// ====================================================================================================================
-// Class definition
-// ====================================================================================================================
 
 struct DpbParameters
 {
@@ -3308,5 +3289,3 @@ void xTraceSliceHeader();
 void xTraceAccessUnitDelimiter();
 void xTraceFillerData();
 #endif
-
-#endif // __SLICE__
