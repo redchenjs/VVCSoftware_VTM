@@ -168,17 +168,18 @@ void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& c
 
 int EncModeCtrl::xComputeDQP( const CodingStructure &cs, const Partitioner &partitioner )
 {
-  Picture* picture    = cs.picture;
-  unsigned uiAQDepth  = std::min( partitioner.currSubdiv/2, ( uint32_t ) picture->aqlayer.size() - 1 );
-  AQpLayer* pcAQLayer = picture->aqlayer[uiAQDepth];
+  const Picture *picture = cs.picture;
 
-  double dMaxQScale   = pow( 2.0, m_pcEncCfg->getQPAdaptationRange() / 6.0 );
-  double dAvgAct      = pcAQLayer->getAvgActivity();
-  double dCUAct       = pcAQLayer->getActivity( cs.area.Y().topLeft() );
-  double dNormAct     = ( dMaxQScale*dCUAct + dAvgAct ) / ( dCUAct + dMaxQScale*dAvgAct );
-  double dQpOffset    = log( dNormAct ) / log( 2.0 ) * 6.0;
-  int    iQpOffset    = int( floor( dQpOffset + 0.49999 ) );
-  return iQpOffset;
+  const unsigned  aqDepth = std::min(partitioner.currSubdiv / 2, (uint32_t) picture->aqlayer.size() - 1);
+  const AQpLayer *aqLayer = picture->aqlayer[aqDepth];
+
+  const double maxQpScale   = pow(2.0, m_pcEncCfg->getQPAdaptationRange() / 6.0);
+  const double avgActivity  = aqLayer->getAvgActivity();
+  const double cuActivity   = aqLayer->getActivity(cs.area.Y().topLeft());
+  const double normActivity = (maxQpScale * cuActivity + avgActivity) / (cuActivity + maxQpScale * avgActivity);
+  const double qpOffset     = std::log2(normActivity) * 6.0;
+
+  return int(floor(qpOffset + 0.49999));
 }
 
 
