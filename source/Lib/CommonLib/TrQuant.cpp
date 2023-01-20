@@ -760,7 +760,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   }
 #endif
 
-  ALIGN_DATA( MEMORY_ALIGN_DEF_SIZE, TCoeff block[MAX_TB_SIZEY * MAX_TB_SIZEY] );
+  alignas(MEMORY_ALIGN_DEF_SIZE) TCoeff block[MAX_TB_SIZEY * MAX_TB_SIZEY];
 
   const Pel *resiBuf    = resi.buf;
   const ptrdiff_t resiStride = resi.stride;

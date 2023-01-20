@@ -42,6 +42,7 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include <cstdlib>
 
 #if GREEN_METADATA_SEI_ENABLED
 #include <fstream>
@@ -637,51 +638,22 @@ inline void msg( MsgLevel level, const char* fmt, ... )
 
 template<typename T> bool isPowerOf2( const T val ) { return ( val & ( val - 1 ) ) == 0; }
 
-#define MEMORY_ALIGN_DEF_SIZE       32  // for use with avx2 (256 bit)
-#define CACHE_MEM_ALIGN_SIZE      1024
+constexpr size_t MEMORY_ALIGN_DEF_SIZE = 32;   // for use with avx2 (256 bit)
+constexpr size_t CACHE_MEM_ALIGN_SIZE  = 1024;
 
-#define ALIGNED_MALLOC              1   ///< use 32-bit aligned malloc/free
-
-#if ALIGNED_MALLOC
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
-void *cache_mem_align_malloc(int size, int align_size);
-void cache_mem_align_free(void *ptr);
-#define xMalloc(type, len)          cache_mem_align_malloc(sizeof(type) * len, CACHE_MEM_ALIGN_SIZE)
-#define xFree(ptr)                  cache_mem_align_free(ptr)
-#elif     ( _WIN32 && ( _MSC_VER > 1300 ) ) || defined (__MINGW64_VERSION_MAJOR)
-#define xMalloc( type, len )        _aligned_malloc( sizeof(type)*(len), MEMORY_ALIGN_DEF_SIZE )
-#define xFree( ptr )                _aligned_free  ( ptr )
-#elif defined (__MINGW32__)
-#define xMalloc( type, len )        __mingw_aligned_malloc( sizeof(type)*(len), MEMORY_ALIGN_DEF_SIZE )
-#define xFree( ptr )                __mingw_aligned_free( ptr )
+constexpr size_t MALLOC_ALIGN_SIZE = CACHE_MEM_ALIGN_SIZE;
 #else
-namespace detail {
-template<typename T>
-T* aligned_malloc(size_t len, size_t alignement) {
-  T *p = nullptr;
-  if( posix_memalign( (void**)&p, alignement, sizeof(T)*(len) ) )
-  {
-    THROW("posix_memalign failed");
-  }
-  return p;
-}
-}
-#define xMalloc( type, len )        detail::aligned_malloc<type>( len, MEMORY_ALIGN_DEF_SIZE )
-#define xFree( ptr )                free( ptr )
+constexpr size_t MALLOC_ALIGN_SIZE = MEMORY_ALIGN_DEF_SIZE;
 #endif
 
+#if defined _MSC_VER || defined __MINGW64_VERSION_MAJOR
+// Some compilers don't support std::aligned_alloc even though it is standardized
+#define xMalloc(type, len) _aligned_malloc(sizeof(type) * (len), MEMORY_ALIGN_DEF_SIZE)
+#define xFree(ptr) _aligned_free(ptr)
 #else
-#define xMalloc( type, len )        malloc   ( sizeof(type)*(len) )
-#define xFree( ptr )                free     ( ptr )
-#endif //#if ALIGNED_MALLOC
-
-#if defined _MSC_VER
-#define ALIGN_DATA(nBytes,v) __declspec(align(nBytes)) v
-#else
-//#elif defined linux
-#define ALIGN_DATA(nBytes,v) v __attribute__ ((aligned (nBytes)))
-//#else
-//#error unknown platform
+#define xMalloc(type, len) std::aligned_alloc(MALLOC_ALIGN_SIZE, sizeof(type) * (len))
+#define xFree(ptr) std::free(ptr)
 #endif
 
 #if defined(__GNUC__) && !defined(__clang__)
