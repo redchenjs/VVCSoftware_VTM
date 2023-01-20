@@ -84,11 +84,11 @@ public:
   int     getRefPicIdentifier(int idx) const;
   bool    isRefPicLongterm(int idx) const;
 
-  void    setNumberOfShorttermPictures(int numberOfStrp);
-  int     getNumberOfShorttermPictures() const;
+  void setNumberOfShorttermPictures(int n) { m_numberOfShorttermPictures = n; }
+  int  getNumberOfShorttermPictures() const { return m_numberOfShorttermPictures; }
 
-  void    setNumberOfLongtermPictures(int numberOfLtrp);
-  int     getNumberOfLongtermPictures() const;
+  void setNumberOfLongtermPictures(int n) { m_numberOfLongtermPictures = n; }
+  int  getNumberOfLongtermPictures() const { return m_numberOfLongtermPictures; }
 
   void setLtrpInSliceHeaderFlag(bool flag) { m_ltrpInSliceHeaderFlag = flag; }
   bool getLtrpInSliceHeaderFlag() const { return m_ltrpInSliceHeaderFlag; }
@@ -1433,10 +1433,8 @@ private:
   uint32_t          m_maxCuWidth;
   uint32_t          m_maxCuHeight;
 
-  RPLList           m_RPLList0;
-  RPLList           m_RPLList1;
-  uint32_t          m_numRPL0;
-  uint32_t          m_numRPL1;
+  RPLList  m_rplList[NUM_REF_PIC_LIST_01];
+  uint32_t m_numRpl[NUM_REF_PIC_LIST_01];
 
   bool              m_rpl1CopyFromRpl0Flag;
   bool              m_rpl1IdxPresentFlag;
@@ -1723,17 +1721,10 @@ public:
   const std::vector<bool> getExtraSHBitPresentFlags() const                                                   { return m_extraSHBitPresentFlag;                                      }
   void                    setMaxNumReorderPics(int i, uint32_t tlayer)                                        { m_maxNumReorderPics[tlayer] = i;                                        }
   int                     getMaxNumReorderPics(uint32_t tlayer) const                                         { return m_maxNumReorderPics[tlayer];                                     }
-  void                    createRPLList0(int numRPL);
-  void                    createRPLList1(int numRPL);
-  const RPLList*          getRPLList( bool b ) const                                                          { return b==1 ? &m_RPLList1 : &m_RPLList0;                             }
-  RPLList*                getRPLList( bool b )                                                                { return b==1 ? &m_RPLList1 : &m_RPLList0;                             }
-  uint32_t                getNumRPL( bool b ) const                                                           { return b==1 ? m_numRPL1   : m_numRPL0;                               }
-  const RPLList*          getRPLList0() const                                                                 { return &m_RPLList0;                                                  }
-  RPLList*                getRPLList0()                                                                       { return &m_RPLList0;                                                  }
-  const RPLList*          getRPLList1() const                                                                 { return &m_RPLList1;                                                  }
-  RPLList*                getRPLList1()                                                                       { return &m_RPLList1;                                                  }
-  uint32_t                getNumRPL0() const                                                                  { return m_numRPL0;                                                    }
-  uint32_t                getNumRPL1() const                                                                  { return m_numRPL1;                                                    }
+  void                    createRplList(RefPicList l, int numRPL);
+  const RPLList          *getRplList(RefPicList l) const { return &m_rplList[l]; }
+  RPLList                *getRplList(RefPicList l) { return &m_rplList[l]; }
+  uint32_t                getNumRpl(RefPicList l) const { return m_numRpl[l]; }
   void                    setRPL1CopyFromRPL0Flag(bool isCopy)                                                { m_rpl1CopyFromRpl0Flag = isCopy;                                     }
   bool                    getRPL1CopyFromRPL0Flag() const                                                     { return m_rpl1CopyFromRpl0Flag;                                       }
   bool                    getRPL1IdxPresentFlag() const                                                       { return m_rpl1IdxPresentFlag;                                         }
@@ -2015,8 +2006,7 @@ private:
   // [cu_chroma_qp_offset_idx+1...] otherwis
   ChromaQpAdj m_chromaQpAdjTableIncludingNullEntry[1 + MAX_QP_OFFSET_LIST_SIZE];
 
-  uint32_t             m_numRefIdxL0DefaultActive;
-  uint32_t             m_numRefIdxL1DefaultActive;
+  uint32_t m_numRefIdxDefaultActive[NUM_REF_PIC_LIST_01];
 
   bool             m_rpl1IdxPresentFlag;
 
@@ -2167,10 +2157,8 @@ public:
     m_chromaQpOffsetListLen = std::max(m_chromaQpOffsetListLen, cuChromaQpOffsetIdxPlus1);
   }
 
-  void                   setNumRefIdxL0DefaultActive(uint32_t ui)                             { m_numRefIdxL0DefaultActive=ui;                }
-  uint32_t                   getNumRefIdxL0DefaultActive() const                              { return m_numRefIdxL0DefaultActive;            }
-  void                   setNumRefIdxL1DefaultActive(uint32_t ui)                             { m_numRefIdxL1DefaultActive=ui;                }
-  uint32_t                   getNumRefIdxL1DefaultActive() const                              { return m_numRefIdxL1DefaultActive;            }
+  void setNumRefIdxDefaultActive(RefPicList l, int n) { m_numRefIdxDefaultActive[l] = n; }
+  int  getNumRefIdxDefaultActive(RefPicList l) const { return m_numRefIdxDefaultActive[l]; }
 
   void                   setRpl1IdxPresentFlag(bool isPresent)                            { m_rpl1IdxPresentFlag = isPresent;             }
   uint32_t               getRpl1IdxPresentFlag() const                                    { return m_rpl1IdxPresentFlag;                  }
@@ -2441,10 +2429,8 @@ private:
   unsigned                    m_virtualBoundariesPosX[3];                               //!< horizontal virtual boundary positions
   unsigned                    m_virtualBoundariesPosY[3];                               //!< vertical virtual boundary positions
   bool                        m_picOutputFlag;                                          //!< picture output flag
-  ReferencePictureList        m_RPL0;                                              //!< RPL for L0 when present in picture header
-  ReferencePictureList        m_RPL1;                                              //!< RPL for L1 when present in picture header
-  int                         m_rpl0Idx;                                                //!< index of used RPL in the SPS or -1 for local RPL in the picture header
-  int                         m_rpl1Idx;                                                //!< index of used RPL in the SPS or -1 for local RPL in the picture header
+  ReferencePictureList        m_rpl[NUM_REF_PIC_LIST_01];
+  int m_rplIdx[NUM_REF_PIC_LIST_01];   // index of used RPL in the SPS or -1 for local RPL in the picture header
   bool                        m_picInterSliceAllowedFlag;                               //!< inter slice allowed flag in PH
   bool                        m_picIntraSliceAllowedFlag;                               //!< intra slice allowed flag in PH
   bool                        m_splitConsOverrideFlag;                                  //!< partitioning constraint override flag
@@ -2494,8 +2480,8 @@ private:
   unsigned                    m_maxTTSize[3];                                           //!< maximum TT size
 
   RefSetArray<WPScalingParam[MAX_NUM_COMPONENT]> m_weightPredTable;
-  int                         m_numL0Weights;                                           //!< number of weights for L0 list
-  int                         m_numL1Weights;                                           //!< number of weights for L1 list
+
+  int m_numWeights[NUM_REF_PIC_LIST_01];   // number of weights for each list
 
 public:
                               PicHeader();
@@ -2536,15 +2522,9 @@ public:
   unsigned                    getVirtualBoundariesPosY(unsigned idx) const              { CHECK( idx >= 3, "boundary index exceeds valid range" ); return m_virtualBoundariesPosY[idx];}
   void                        setPicOutputFlag( bool b )                                { m_picOutputFlag = b;                                                                         }
   bool                        getPicOutputFlag() const                                  { return m_picOutputFlag;                                                                      }
-  ReferencePictureList*       getRPL( bool b )                                          { return (b==1) ? getRPL1() : getRPL0();                                                       }
-  void                        setRPLIdx( bool b, int rplIdx)                            { if(b==1) { m_rpl1Idx = rplIdx; } else { m_rpl0Idx = rplIdx; }                                }
-  int                         getRPLIdx( bool b ) const                                 { return b==1 ? m_rpl1Idx : m_rpl0Idx;                                                         }
-  ReferencePictureList*       getRPL0()                                                 { return &m_RPL0;                                                                              }
-  ReferencePictureList*       getRPL1()                                                 { return &m_RPL1;                                                                              }
-  void                        setRPL0idx(int rplIdx)                                    { m_rpl0Idx = rplIdx;                                                                          }
-  void                        setRPL1idx(int rplIdx)                                    { m_rpl1Idx = rplIdx;                                                                          }
-  int                         getRPL0idx() const                                        { return m_rpl0Idx;                                                                            }
-  int                         getRPL1idx() const                                        { return m_rpl1Idx;                                                                            }
+  int                         getRplIdx(RefPicList l) const { return m_rplIdx[l]; }
+  ReferencePictureList       *getRpl(RefPicList l) { return &m_rpl[l]; }
+  void                        setRplIdx(RefPicList l, int rplIdx) { m_rplIdx[l] = rplIdx; }
   void                        setPicInterSliceAllowedFlag(bool b)                       { m_picInterSliceAllowedFlag = b; }
   bool                        getPicInterSliceAllowedFlag() const                       { return m_picInterSliceAllowedFlag; }
   void                        setPicIntraSliceAllowedFlag(bool b)                       { m_picIntraSliceAllowedFlag = b; }
@@ -2673,10 +2653,8 @@ public:
   WPScalingParam *            getWpScaling(const RefPicList refPicList, const int refIdx);
   WPScalingParam*             getWpScalingAll()                                        { return (WPScalingParam *) m_weightPredTable; }
   void                        resetWpScaling();
-  void                        setNumL0Weights(int b)                                   { m_numL0Weights = b;                          }
-  int                         getNumL0Weights()                                        { return m_numL0Weights;                       }
-  void                        setNumL1Weights(int b)                                   { m_numL1Weights = b;                          }
-  int                         getNumL1Weights()                                        { return m_numL1Weights;                       }
+  void                        setNumWeights(RefPicList l, int n) { m_numWeights[l] = n; }
+  int                         getNumWeights(RefPicList l) { return m_numWeights[l]; }
 
   void                        setNoOutputBeforeRecoveryFlag( bool val )                { m_noOutputBeforeRecoveryFlag = val;  }
   bool                        getNoOutputBeforeRecoveryFlag() const                    { return m_noOutputBeforeRecoveryFlag; }
@@ -2712,10 +2690,8 @@ private:
   std::vector<int>           m_edrapRefRapIds;
   int                        m_latestEDRAPPOC;
   bool                       m_latestEdrapLeadingPicDecodableFlag;
-  ReferencePictureList       m_RPL0;      //< RPL for L0 when present in slice header
-  ReferencePictureList       m_RPL1;      //< RPL for L1 when present in slice header
-  int                        m_rpl0Idx;   //< index of used RPL in the SPS or -1 for local RPL in the slice header
-  int                        m_rpl1Idx;   //< index of used RPL in the SPS or -1 for local RPL in the slice header
+  ReferencePictureList         m_rpl[NUM_REF_PIC_LIST_01];
+  int m_rplIdx[NUM_REF_PIC_LIST_01];   //< index of used RPL in the SPS or -1 for local RPL in the slice header
   NalUnitType                m_eNalUnitType;         ///< Nal unit type for the slice
   bool                       m_pictureHeaderInSliceHeader;
   uint32_t                   m_nuhLayerId;           ///< Nal unit layer id
@@ -2843,14 +2819,11 @@ public:
 
   void                        setAlfAPSs(APS** apss)                                 { memcpy(m_alfApss, apss, sizeof(m_alfApss));                   }
   APS**                       getAlfAPSs()                                           { return m_alfApss;                                             }
-  void                        setSaoEnabledFlag(const ChannelType chType, bool s) { m_saoEnabledFlag[chType] = s; }
-  bool                        getSaoEnabledFlag(const ChannelType chType) const { return m_saoEnabledFlag[chType]; }
-  ReferencePictureList*       getRPL0()                                              { return &m_RPL0;                                              }
-  ReferencePictureList*       getRPL1()                                              { return &m_RPL1;                                              }
-  void                        setRPL0idx(int rplIdx)                                 { m_rpl0Idx = rplIdx;                                          }
-  void                        setRPL1idx(int rplIdx)                                 { m_rpl1Idx = rplIdx;                                          }
-  int                         getRPL0idx() const                                     { return m_rpl0Idx;                                            }
-  int                         getRPL1idx() const                                     { return m_rpl1Idx;                                            }
+  void                        setSaoEnabledFlag(ChannelType chType, bool s) { m_saoEnabledFlag[chType] = s; }
+  bool                        getSaoEnabledFlag(ChannelType chType) const { return m_saoEnabledFlag[chType]; }
+  ReferencePictureList       *getRpl(RefPicList l) { return &m_rpl[l]; }
+  void                        setRplIdx(RefPicList l, int rplIdx) { m_rplIdx[l] = rplIdx; }
+  int                         getRplIdx(RefPicList l) const { return m_rplIdx[l]; }
   void                        setLastIDR(int iIDRPOC)                                { m_iLastIDR = iIDRPOC;                                         }
   int                         getLastIDR() const                                     { return m_iLastIDR;                                            }
   void                        setPrevGDRInSameLayerPOC(int prevGDRInSameLayerPOC)    { m_prevGDRInSameLayerPOC = prevGDRInSameLayerPOC;              }
@@ -2919,6 +2892,10 @@ public:
   // CLVSS PU is either an IRAP PU with NoOutputBeforeRecoveryFlag equal to 1 or a GDR PU with NoOutputBeforeRecoveryFlag equal to 1.
   bool                        isClvssPu() const                                      { return m_eNalUnitType >= NAL_UNIT_CODED_SLICE_IDR_W_RADL && m_eNalUnitType <= NAL_UNIT_CODED_SLICE_GDR && !m_pcPPS->getMixedNaluTypesInPicFlag() && m_pcPicHeader->getNoOutputBeforeRecoveryFlag(); }
   bool                        isIDRorBLA() const { return (getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_W_RADL) || (getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP); }
+  bool                        isLeadingPic() const
+  {
+    return getNalUnitType() == NAL_UNIT_CODED_SLICE_RADL || getNalUnitType() == NAL_UNIT_CODED_SLICE_RASL;
+  }
   void                        checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int pocCRA, CheckCRAFlags &flags, PicList& rcListPic);
   void                        checkSTSA(PicList& rcListPic);
   void                        checkRPL(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int associatedIRAPDecodingOrderNumber, PicList& rcListPic);

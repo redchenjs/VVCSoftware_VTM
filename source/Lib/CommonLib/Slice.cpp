@@ -55,8 +55,7 @@ Slice::Slice()
   , m_prevGDRSubpicPOC(-MAX_INT)
   , m_prevIRAPSubpicPOC(-MAX_INT)
   , m_prevIRAPSubpicType(NAL_UNIT_INVALID)
-  , m_rpl0Idx(-1)
-  , m_rpl1Idx(-1)
+  , m_rplIdx{ -1, -1 }
   , m_eNalUnitType(NAL_UNIT_CODED_SLICE_IDR_W_RADL)
   , m_pictureHeaderInSliceHeader(false)
   , m_eSliceType(I_SLICE)
@@ -216,18 +215,11 @@ void Slice::inheritFromPicHeader( PicHeader *picHeader, const PPS *pps, const SP
 {
   if (pps->getRplInfoInPhFlag())
   {
-    setRPL0idx( picHeader->getRPL0idx() );
-    m_RPL0 = *picHeader->getRPL0();
-    if(getRPL0idx() != -1)
+    for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
     {
-      m_RPL0 = *sps->getRPLList0()->getReferencePictureList(getRPL0idx());
-    }
-
-    setRPL1idx( picHeader->getRPL1idx() );
-    m_RPL1 = *picHeader->getRPL1();
-    if(getRPL1idx() != -1)
-    {
-      m_RPL1 = *sps->getRPLList1()->getReferencePictureList(getRPL1idx());
+      const int rplIdx = picHeader->getRplIdx(l);
+      setRplIdx(l, rplIdx);
+      m_rpl[l] = rplIdx == -1 ? *picHeader->getRpl(l) : *sps->getRplList(l)->getReferencePictureList(rplIdx);
     }
   }
 
@@ -423,11 +415,10 @@ void Slice::setRefPOCList       ()
 
 void Slice::setList1IdxToList0Idx()
 {
-  int idxL0, idxL1;
-  for ( idxL1 = 0; idxL1 < getNumRefIdx( REF_PIC_LIST_1 ); idxL1++ )
+  for (int idxL1 = 0; idxL1 < getNumRefIdx(REF_PIC_LIST_1); idxL1++)
   {
     m_list1IdxToList0Idx[idxL1] = -1;
-    for ( idxL0 = 0; idxL0 < getNumRefIdx( REF_PIC_LIST_0 ); idxL0++ )
+    for (int idxL0 = 0; idxL0 < getNumRefIdx(REF_PIC_LIST_0); idxL0++)
     {
       if ( m_apcRefPicList[REF_PIC_LIST_0][idxL0]->getPOC() == m_apcRefPicList[REF_PIC_LIST_1][idxL1]->getPOC() )
       {
@@ -448,84 +439,54 @@ void Slice::constructRefPicList(PicList& rcListPic)
     return;
   }
 
-  Picture *pcRefPic = nullptr;
-
-  uint32_t numOfActiveRef = 0;
-  //construct L0
-  numOfActiveRef = getNumRefIdx(REF_PIC_LIST_0);
-  int layerIdx = m_pcPic->cs->vps == nullptr ? 0 : m_pcPic->cs->vps->getGeneralLayerIdx( m_pcPic->layerId );
-
-  for (int ii = 0; ii < m_RPL0.getNumRefEntries(); ii++)
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
   {
-    if( m_RPL0.isInterLayerRefPic( ii ) )
-    {
-      CHECK( m_RPL0.getInterLayerRefPicIdx( ii ) == NOT_VALID, "Wrong ILRP index" );
+    const uint32_t numOfActiveRef = getNumRefIdx(l);
 
-      int refLayerId = m_pcPic->cs->vps->getLayerId( m_pcPic->cs->vps->getDirectRefLayerIdx( layerIdx, m_RPL0.getInterLayerRefPicIdx( ii ) ) );
+    for (int ii = 0; ii < m_rpl[l].getNumRefEntries(); ii++)
+    {
+      Picture *refPic = nullptr;
 
-      pcRefPic = xGetRefPic( rcListPic, getPOC(), refLayerId );
-      pcRefPic->longTerm = true;
-    }
-    else if (!m_RPL0.isRefPicLongterm(ii))
-    {
-      pcRefPic = xGetRefPic(rcListPic, getPOC() + m_RPL0.getRefPicIdentifier(ii), m_pcPic->layerId);
-      pcRefPic->longTerm = false;
-    }
-    else
-    {
-      int pocBits = getSPS()->getBitsForPOC();
-      int pocMask = (1 << pocBits) - 1;
-      int ltrpPoc = m_RPL0.getRefPicIdentifier(ii) & pocMask;
-      if(m_RPL0.getDeltaPocMSBPresentFlag(ii))
+      if (m_rpl[l].isInterLayerRefPic(ii))
       {
-        ltrpPoc += getPOC() - m_RPL0.getDeltaPocMSBCycleLT(ii) * (pocMask + 1) - (getPOC() & pocMask);
+        const VPS *vps = m_pcPic->cs->vps;
+
+        const int interLayerIdx = m_rpl[l].getInterLayerRefPicIdx(ii);
+        CHECK(interLayerIdx == NOT_VALID, "Wrong ILRP index");
+
+        const int layerIdx   = vps->getGeneralLayerIdx(m_pcPic->layerId);
+        const int refLayerId = vps->getLayerId(vps->getDirectRefLayerIdx(layerIdx, interLayerIdx));
+
+        refPic = xGetRefPic(rcListPic, getPOC(), refLayerId);
+
+        refPic->longTerm = true;
       }
-      pcRefPic = xGetLongTermRefPicCandidate( rcListPic, ltrpPoc, m_RPL0.getDeltaPocMSBPresentFlag( ii ), m_pcPic->layerId );
-      pcRefPic->longTerm = true;
-    }
-    if(ii < numOfActiveRef)
-    {
-      pcRefPic->extendPicBorder( getPPS() );
-      m_apcRefPicList[REF_PIC_LIST_0][ii] = pcRefPic;
-      m_bIsUsedAsLongTerm[REF_PIC_LIST_0][ii] = pcRefPic->longTerm;
-    }
-  }
-
-  //construct L1
-  numOfActiveRef = getNumRefIdx(REF_PIC_LIST_1);
-  for (int ii = 0; ii < m_RPL1.getNumRefEntries(); ii++)
-  {
-    if( m_RPL1.isInterLayerRefPic( ii ) )
-    {
-      CHECK( m_RPL1.getInterLayerRefPicIdx( ii ) == NOT_VALID, "Wrong ILRP index" );
-
-      int refLayerId = m_pcPic->cs->vps->getLayerId( m_pcPic->cs->vps->getDirectRefLayerIdx( layerIdx, m_RPL1.getInterLayerRefPicIdx( ii ) ) );
-
-      pcRefPic = xGetRefPic( rcListPic, getPOC(), refLayerId );
-      pcRefPic->longTerm = true;
-    }
-    else if (!m_RPL1.isRefPicLongterm(ii))
-    {
-      pcRefPic = xGetRefPic(rcListPic, getPOC() + m_RPL1.getRefPicIdentifier(ii), m_pcPic->layerId);
-      pcRefPic->longTerm = false;
-    }
-    else
-    {
-      int pocBits = getSPS()->getBitsForPOC();
-      int pocMask = (1 << pocBits) - 1;
-      int ltrpPoc = m_RPL1.getRefPicIdentifier(ii) & pocMask;
-      if(m_RPL1.getDeltaPocMSBPresentFlag(ii))
+      else if (!m_rpl[l].isRefPicLongterm(ii))
       {
-        ltrpPoc += getPOC() - m_RPL1.getDeltaPocMSBCycleLT(ii) * (pocMask + 1) - (getPOC() & pocMask);
+        refPic = xGetRefPic(rcListPic, getPOC() + m_rpl[l].getRefPicIdentifier(ii), m_pcPic->layerId);
+
+        refPic->longTerm = false;
       }
-      pcRefPic = xGetLongTermRefPicCandidate( rcListPic, ltrpPoc, m_RPL1.getDeltaPocMSBPresentFlag( ii ), m_pcPic->layerId );
-      pcRefPic->longTerm = true;
-    }
-    if(ii < numOfActiveRef)
-    {
-      pcRefPic->extendPicBorder( getPPS() );
-      m_apcRefPicList[REF_PIC_LIST_1][ii] = pcRefPic;
-      m_bIsUsedAsLongTerm[REF_PIC_LIST_1][ii] = pcRefPic->longTerm;
+      else
+      {
+        const int  pocBits   = getSPS()->getBitsForPOC();
+        const int  pocMask   = (1 << pocBits) - 1;
+        int        ltrpPoc   = m_rpl[l].getRefPicIdentifier(ii) & pocMask;
+        const bool pocHasMsb = m_rpl[l].getDeltaPocMSBPresentFlag(ii);
+        if (pocHasMsb)
+        {
+          ltrpPoc += (getPOC() & ~pocMask) - m_rpl[l].getDeltaPocMSBCycleLT(ii) * (pocMask + 1);
+        }
+        refPic = xGetLongTermRefPicCandidate(rcListPic, ltrpPoc, pocHasMsb, m_pcPic->layerId);
+
+        refPic->longTerm = true;
+      }
+      if (ii < numOfActiveRef)
+      {
+        refPic->extendPicBorder(getPPS());
+        m_apcRefPicList[l][ii]     = refPic;
+        m_bIsUsedAsLongTerm[l][ii] = refPic->longTerm;
+      }
     }
   }
 }
@@ -577,7 +538,7 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
       THROW("Invalid state");
     }
 
-    uint32_t numRefPic = pRPL0->getNumberOfShorttermPictures() + pRPL0->getNumberOfLongtermPictures() + pRPL0->getNumberOfInterLayerPictures();
+    uint32_t numRefPic = pRPL0->getNumRefEntries();
     for (int i = 0; i < numRefPic; i++)
     {
       if (!pRPL0->isRefPicLongterm(i))
@@ -615,7 +576,7 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
         }
       }
     }
-    numRefPic = pRPL1->getNumberOfShorttermPictures() + pRPL1->getNumberOfLongtermPictures() + pRPL1->getNumberOfInterLayerPictures();
+    numRefPic = pRPL1->getNumRefEntries();
     for (int i = 0; i < numRefPic; i++)
     {
       if (!pRPL1->isRefPicLongterm(i))
@@ -667,9 +628,11 @@ void Slice::checkRPL(const ReferencePictureList* pRPL0, const ReferencePictureLi
 
   int irapPOC = getAssociatedIRAPPOC();
 
-  int numEntries[] = { pRPL0->getNumberOfShorttermPictures() + pRPL0->getNumberOfLongtermPictures() + pRPL0->getNumberOfInterLayerPictures(), pRPL1->getNumberOfShorttermPictures() + pRPL1->getNumberOfLongtermPictures() + pRPL1->getNumberOfInterLayerPictures() };
-  const int numActiveEntries[] = { getNumRefIdx( REF_PIC_LIST_0 ), getNumRefIdx( REF_PIC_LIST_1 ) };
-  const ReferencePictureList* rpl[] = { pRPL0, pRPL1 };
+  const int numEntries[NUM_REF_PIC_LIST_01]       = { pRPL0->getNumRefEntries(), pRPL1->getNumRefEntries() };
+  const int numActiveEntries[NUM_REF_PIC_LIST_01] = { getNumRefIdx(REF_PIC_LIST_0), getNumRefIdx(REF_PIC_LIST_1) };
+
+  const ReferencePictureList *rpl[NUM_REF_PIC_LIST_01] = { pRPL0, pRPL1 };
+
   const bool fieldSeqFlag = getSPS()->getFieldSeqFlag();
   const int layerIdx = m_pcPic->cs->vps == nullptr ? 0 : m_pcPic->cs->vps->getGeneralLayerIdx( m_pcPic->layerId );
 
@@ -1001,11 +964,8 @@ void Slice::copySliceInfo(Slice *pSrc, bool cpyAlmostAll)
   // access channel
   if (cpyAlmostAll)
   {
-    m_RPL0 = pSrc->m_RPL0;
-  }
-  if (cpyAlmostAll)
-  {
-    m_RPL1 = pSrc->m_RPL1;
+    m_rpl[REF_PIC_LIST_0] = pSrc->m_rpl[REF_PIC_LIST_0];
+    m_rpl[REF_PIC_LIST_1] = pSrc->m_rpl[REF_PIC_LIST_1];
   }
   m_iLastIDR             = pSrc->m_iLastIDR;
 
@@ -1402,162 +1362,103 @@ void Slice::checkSubpicTypeConstraints(PicList& rcListPic, const ReferencePictur
     }
   }
 
-  //subpic RPL related constraints
-  Picture* pcRefPic;
-  int refPicPOC;
-  int refPicDecodingOrderNumber;
-
-  int numEntriesL0 = pRPL0->getNumberOfShorttermPictures() + pRPL0->getNumberOfLongtermPictures() + pRPL0->getNumberOfInterLayerPictures();
-  int numEntriesL1 = pRPL1->getNumberOfShorttermPictures() + pRPL1->getNumberOfLongtermPictures() + pRPL1->getNumberOfInterLayerPictures();
-
-  int numActiveEntriesL0 = getNumRefIdx(REF_PIC_LIST_0);
-  int numActiveEntriesL1 = getNumRefIdx(REF_PIC_LIST_1);
-
-  int layerIdx = m_pcPic->cs->vps == nullptr ? 0 : m_pcPic->cs->vps->getGeneralLayerIdx(m_pcPic->layerId);
-  for (int i = 0; i < numEntriesL0; i++)
+  // subpic RPL related constraints
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
   {
-    if (pRPL0->isInterLayerRefPic(i))
+    const ReferencePictureList *rpl = l == REF_PIC_LIST_0 ? pRPL0 : pRPL1;
+
+    const int numEntries       = rpl->getNumRefEntries();
+    const int numActiveEntries = getNumRefIdx(l);
+
+    for (int i = 0; i < numEntries; i++)
     {
-      int refLayerId = m_pcPic->cs->vps->getLayerId(m_pcPic->cs->vps->getDirectRefLayerIdx(layerIdx, pRPL0->getInterLayerRefPicIdx(i)));
-      pcRefPic = xGetRefPic(rcListPic, getPOC(), refLayerId);
-      refPicPOC = pcRefPic->getPOC();
-    }
-    else if (!pRPL0->isRefPicLongterm(i))
-    {
-      refPicPOC = getPOC() + pRPL0->getRefPicIdentifier(i);
-      pcRefPic = xGetRefPic(rcListPic, refPicPOC, m_pcPic->layerId);
-    }
-    else
-    {
-      int pocBits = getSPS()->getBitsForPOC();
-      int pocMask = (1 << pocBits) - 1;
-      int ltrpPoc = pRPL0->getRefPicIdentifier(i) & pocMask;
-      if(pRPL0->getDeltaPocMSBPresentFlag(i))
+      Picture *refPic;
+      int      refPicPOC;
+
+      if (rpl->isInterLayerRefPic(i))
       {
-        ltrpPoc += getPOC() - pRPL0->getDeltaPocMSBCycleLT(i) * (pocMask + 1) - (getPOC() & pocMask);
+        const VPS *vps        = m_pcPic->cs->vps;
+        const int  layerIdx   = vps->getGeneralLayerIdx(m_pcPic->layerId);
+        const int  refLayerId = vps->getLayerId(vps->getDirectRefLayerIdx(layerIdx, rpl->getInterLayerRefPicIdx(i)));
+
+        refPic    = xGetRefPic(rcListPic, getPOC(), refLayerId);
+        refPicPOC = refPic->getPOC();
       }
-      pcRefPic = xGetLongTermRefPic(rcListPic, ltrpPoc, pRPL0->getDeltaPocMSBPresentFlag(i), m_pcPic->layerId);
-      refPicPOC = pcRefPic->getPOC();
-    }
-
-    if (pcRefPic) // the checks are for all reference picture, but we may not have an inactive reference picture, if starting with a CRA
-    {
-      refPicDecodingOrderNumber = pcRefPic->getDecodingOrderNumber();
-
-      if (nalUnitType == NAL_UNIT_CODED_SLICE_CRA || nalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL || nalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP)
+      else if (!rpl->isRefPicLongterm(i))
       {
-        CHECK(refPicPOC < prevIRAPSubpicPOC || refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo, "When the current subpicture, with nuh_layer_id equal to a particular value "
-              "layerId and subpicture index equal to a particular value subpicIdx, is an IRAP subpicture, there shall be no picture referred to by an entry in RefPicList[0] that "
-              "precedes, in output order or decoding order,any preceding picture, in decoding order (when present), containing an IRAP subpicture with nuh_layer_id equal to "
-              "layerId and subpicture index equal to subpicIdx");
+        refPicPOC = getPOC() + rpl->getRefPicIdentifier(i);
+        refPic    = xGetRefPic(rcListPic, refPicPOC, m_pcPic->layerId);
       }
-
-      if (prevIRAPSubpicPOC < getPOC() && !getSPS()->getFieldSeqFlag())
+      else
       {
-        CHECK(refPicPOC < prevIRAPSubpicPOC || refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo, "When the current subpicture follows an IRAP subpicture having the same value "
-              "of nuh_layer_id and the same value of subpicture index in both decoding and output order, there shall be no picture referred to by an active entry in RefPicList[ 0 ] "
-              "that precedes the picture containing that IRAP subpicture in output order or decoding order");
-      }
-
-      if (i < numActiveEntriesL0)
-      {
-        if (prevIRAPSubpicPOC < getPOC())
+        int pocBits = getSPS()->getBitsForPOC();
+        int pocMask = (1 << pocBits) - 1;
+        int ltrpPoc = pRPL0->getRefPicIdentifier(i) & pocMask;
+        if (rpl->getDeltaPocMSBPresentFlag(i))
         {
-          CHECK(refPicPOC < prevIRAPSubpicPOC || refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo, "When the current subpicture follows an IRAP subpicture having the same value "
-                "of nuh_layer_id and the same value of subpicture index and the leading subpictures, if any, associated with that IRAP subpicture in both decoding and output order, "
-                "there shall be no picture referred to by an entry in RefPicList[ 0 ] that precedes the picture containing that IRAP subpicture in output order or decoding order");
+          ltrpPoc += getPOC() - pRPL0->getDeltaPocMSBCycleLT(i) * (pocMask + 1) - (getPOC() & pocMask);
+        }
+        refPic    = xGetLongTermRefPic(rcListPic, ltrpPoc, rpl->getDeltaPocMSBPresentFlag(i), m_pcPic->layerId);
+        refPicPOC = refPic->getPOC();
+      }
+
+      // checks are for all reference pictures, but inactive reference pictures may be missing if starting with a CRA
+      if (refPic != nullptr)
+      {
+        const int refPicDecodingOrderNumber = refPic->getDecodingOrderNumber();
+
+        if (nalUnitType == NAL_UNIT_CODED_SLICE_CRA || nalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL
+            || nalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP)
+        {
+          CHECK(refPicPOC < prevIRAPSubpicPOC || refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo,
+                "When the current subpicture, with nuh_layer_id equal to a particular value layerId and subpicture "
+                "index equal to a particular value subpicIdx, is an IRAP subpicture, there shall be no picture "
+                "referred to by an entry in RefPicList[i] that precedes, in output order or decoding order,any "
+                "preceding picture, in decoding order (when present), containing an IRAP subpicture with nuh_layer_id "
+                "equal to layerId and subpicture index equal to subpicIdx");
         }
 
-        if (nalUnitType == NAL_UNIT_CODED_SLICE_RADL)
+        if (prevIRAPSubpicPOC < getPOC() && !getSPS()->getFieldSeqFlag())
         {
-          CHECK(refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo, "When the current subpicture, with nuh_layer_id equal to a particular value layerId and subpicture index equal "
-                "to a particular value subpicIdx, is a RADL subpicture, there shall be no active entry in RefPicList[ 0 ] that is a picture that precedes the picture containing the"
-                "associated IRAP subpicture in decoding order");
+          CHECK(refPicPOC < prevIRAPSubpicPOC || refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo,
+                "When the current subpicture follows an IRAP subpicture having the same value of nuh_layer_id and the "
+                "same value of subpicture index in both decoding and output order, there shall be no picture referred "
+                "to by an active entry in RefPicList[ i ] that precedes the picture containing that IRAP subpicture in "
+                "output order or decoding order");
+        }
 
-          if (pcRefPic->layerId == m_nuhLayerId)
+        if (i < numActiveEntries)
+        {
+          if (prevIRAPSubpicPOC < getPOC())
           {
-            for (int i = 0; i < pcRefPic->numSlices; i++)
-            {
-              if (pcRefPic->sliceSubpicIdx[i] == curSubpicIdx)
-              {
-                CHECK(pcRefPic->slices[i]->getNalUnitType() == NAL_UNIT_CODED_SLICE_RASL, "When the current subpicture, with nuh_layer_id equal to a particular value layerId and "
-                      "subpicture index equal to a particular value subpicIdx, is a RADL subpicture, there shall be no active entry in RefPicList[ 0 ] that is a picture with "
-                      "nuh_layer_id equal to layerId containing a RASL subpicture with subpicture index equal to subpicIdx");
-              }
-            }
+            CHECK(refPicPOC < prevIRAPSubpicPOC || refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo,
+                  "When the current subpicture follows an IRAP subpicture having the same value "
+                  "of nuh_layer_id and the same value of subpicture index and the leading subpictures, if any, "
+                  "associated with that IRAP subpicture in both decoding and output order, "
+                  "there shall be no picture referred to by an entry in RefPicList[ i ] that precedes the picture "
+                  "containing that IRAP subpicture in output order or decoding order");
           }
-        }
-      }
-    }
-  }
 
-  for (int i = 0; i < numEntriesL1; i++)
-  {
-    if (pRPL1->isInterLayerRefPic(i))
-    {
-      int refLayerId = m_pcPic->cs->vps->getLayerId(m_pcPic->cs->vps->getDirectRefLayerIdx(layerIdx, pRPL1->getInterLayerRefPicIdx(i)));
-      pcRefPic = xGetRefPic(rcListPic, getPOC(), refLayerId);
-      refPicPOC = pcRefPic->getPOC();
-    }
-    else if (!pRPL1->isRefPicLongterm(i))
-    {
-      refPicPOC = getPOC() + pRPL1->getRefPicIdentifier(i);
-      pcRefPic = xGetRefPic(rcListPic, refPicPOC, m_pcPic->layerId);
-    }
-    else
-    {
-      int pocBits = getSPS()->getBitsForPOC();
-      int pocMask = (1 << pocBits) - 1;
-      int ltrpPoc = pRPL1->getRefPicIdentifier(i) & pocMask;
-      if (pRPL1->getDeltaPocMSBPresentFlag(i))
-      {
-        ltrpPoc += getPOC() - pRPL1->getDeltaPocMSBCycleLT(i) * (pocMask + 1) - (getPOC() & pocMask);
-      }
-      pcRefPic = xGetLongTermRefPic(rcListPic, ltrpPoc, pRPL1->getDeltaPocMSBPresentFlag(i), m_pcPic->layerId);
-      refPicPOC = pcRefPic->getPOC();
-    }
-    if (pcRefPic) // the checks are for all reference picture, but we may not have an inactive reference picture, if starting with a CRA
-    {
-      refPicDecodingOrderNumber = pcRefPic->getDecodingOrderNumber();
-
-      if (nalUnitType == NAL_UNIT_CODED_SLICE_CRA || nalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL || nalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP)
-      {
-        CHECK(refPicPOC < prevIRAPSubpicPOC || refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo, "When the current subpicture, with nuh_layer_id equal to a particular value"
-              "layerId and subpicture index equal to a particular value subpicIdx, is an IRAP subpicture, there shall be no picture referred to by an entry in RefPicList[1] that"
-              "precedes, in output order or decoding order,any preceding picture, in decoding order (when present), containing an IRAP subpicture with nuh_layer_id equal to "
-              "layerId and subpicture index equal to subpicIdx");
-      }
-
-      if (prevIRAPSubpicPOC < getPOC() && !getSPS()->getFieldSeqFlag())
-      {
-        CHECK(refPicPOC < prevIRAPSubpicPOC || refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo, "When the current subpicture follows an IRAP subpicture having the same value "
-              "of nuh_layer_id and the same value of subpicture index in both decoding and output order, there shall be no picture referred to by an active entry in RefPicList[ 1 ] "
-              "that precedes the picture containing that IRAP subpicture in output order or decoding order");
-      }
-      if (i < numActiveEntriesL1)
-      {
-        if (prevIRAPSubpicPOC < getPOC())
-        {
-          CHECK(refPicPOC < prevIRAPSubpicPOC || refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo, "When the current subpicture follows an IRAP subpicture having the same value "
-                "of nuh_layer_id and the same value of subpicture index and the leading subpictures, if any, associated with that IRAP subpicture in both decoding and output order, "
-                "there shall be no picture referred to by an entry in RefPicList[ 1 ] that precedes the picture containing that IRAP subpicture in output order or decoding order");
-        }
-
-        if (nalUnitType == NAL_UNIT_CODED_SLICE_RADL)
-        {
-          CHECK(refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo, "When the current subpicture, with nuh_layer_id equal to a particular value layerId and subpicture index equal "
-                "to a particular value subpicIdx, is a RADL subpicture, there shall be no active entry in RefPicList[ 1 ] that is a picture that precedes the picture containing the"
-                "associated IRAP subpicture in decoding order");
-
-          if (pcRefPic->layerId == m_nuhLayerId)
+          if (nalUnitType == NAL_UNIT_CODED_SLICE_RADL)
           {
-            for (int i = 0; i < pcRefPic->numSlices; i++)
+            CHECK(refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo,
+                  "When the current subpicture, with nuh_layer_id equal to a particular value layerId and subpicture "
+                  "index equal to a particular value subpicIdx, is a RADL subpicture, there shall be no active entry "
+                  "in RefPicList[ i ] that is a picture that precedes the picture containing the associated IRAP "
+                  "subpicture in decoding order");
+
+            if (refPic->layerId == m_nuhLayerId)
             {
-              if (pcRefPic->sliceSubpicIdx[i] == curSubpicIdx)
+              for (int i = 0; i < refPic->numSlices; i++)
               {
-                CHECK(pcRefPic->slices[i]->getNalUnitType() == NAL_UNIT_CODED_SLICE_RASL, "When the current subpicture, with nuh_layer_id equal to a particular value layerId and "
-                      "subpicture index equal to a particular value subpicIdx, is a RADL subpicture, there shall be no active entry in RefPicList[ 1 ] that is a picture with "
-                      "nuh_layer_id equal to layerId containing a RASL subpicture with subpicture index equal to subpicIdx");
+                if (refPic->sliceSubpicIdx[i] == curSubpicIdx)
+                {
+                  CHECK(refPic->slices[i]->getNalUnitType() == NAL_UNIT_CODED_SLICE_RASL,
+                        "When the current subpicture, with nuh_layer_id equal to a particular value layerId and "
+                        "subpicture index equal to a particular value subpicIdx, is a RADL subpicture, there shall be "
+                        "no active entry in RefPicList[ i ] that is a picture with nuh_layer_id equal to layerId "
+                        "containing a RASL subpicture with subpicture index equal to subpicIdx");
+                }
               }
             }
           }
@@ -1571,259 +1472,156 @@ void Slice::checkSubpicTypeConstraints(PicList& rcListPic, const ReferencePictur
 //Function for applying picture marking based on the Reference Picture List
 void Slice::applyReferencePictureListBasedMarking( PicList& rcListPic, const ReferencePictureList *pRPL0, const ReferencePictureList *pRPL1, const int layerId, const PPS& pps ) const
 {
-  int i, isReference;
   checkLeadingPictureRestrictions(rcListPic, pps);
 
-  bool isNeedToCheck = (this->getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP || this->getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_W_RADL) && !pps.getMixedNaluTypesInPicFlag() ? false : true;
-
   // mark long-term reference pictures in List0
-  for( i = 0; i < pRPL0->getNumberOfShorttermPictures() + pRPL0->getNumberOfLongtermPictures() + pRPL0->getNumberOfInterLayerPictures(); i++ )
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
   {
-    if( !pRPL0->isRefPicLongterm( i ) || pRPL0->isInterLayerRefPic( i ) )
-    {
-      continue;
-    }
+    const ReferencePictureList *rpl = l == REF_PIC_LIST_0 ? pRPL0 : pRPL1;
 
-    int isAvailable = 0;
-    PicList::iterator iterPic = rcListPic.begin();
-    while (iterPic != rcListPic.end())
+    for (int i = 0; i < rpl->getNumRefEntries(); i++)
     {
-      Picture* rpcPic = *(iterPic++);
-      if (!rpcPic->referenced)
+      if (!rpl->isRefPicLongterm(i) || rpl->isInterLayerRefPic(i))
       {
         continue;
       }
-      int pocCycle = 1 << (rpcPic->cs->sps->getBitsForPOC());
-      int curPoc = rpcPic->getPOC();
-      int refPoc = pRPL0->getRefPicIdentifier(i) & (pocCycle - 1);
-      if(pRPL0->getDeltaPocMSBPresentFlag(i))
+
+      bool isAvailable = false;
+      for (const Picture *pic: rcListPic)
       {
-        refPoc += getPOC() - pRPL0->getDeltaPocMSBCycleLT(i) * pocCycle - (getPOC() & (pocCycle - 1));
-      }
-      else
-      {
-        curPoc = curPoc & (pocCycle - 1);
-      }
-      if (rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced)
-      {
-        isAvailable = 1;
-        break;
-      }
-    }
-    // if there was no such long-term check the short terms
-    if (!isAvailable)
-    {
-      iterPic = rcListPic.begin();
-      while (iterPic != rcListPic.end())
-      {
-        Picture* rpcPic = *(iterPic++);
-        if (!rpcPic->referenced)
+        if (!pic->referenced)
         {
           continue;
         }
-        int pocCycle = 1 << (rpcPic->cs->sps->getBitsForPOC());
-        int curPoc = rpcPic->getPOC();
-        int refPoc = pRPL0->getRefPicIdentifier(i) & (pocCycle - 1);
-        if(pRPL0->getDeltaPocMSBPresentFlag(i))
+        int pocCycle = 1 << (pic->cs->sps->getBitsForPOC());
+        int curPoc   = pic->getPOC();
+        int refPoc   = rpl->getRefPicIdentifier(i) & (pocCycle - 1);
+        if (rpl->getDeltaPocMSBPresentFlag(i))
         {
-          refPoc += getPOC() - pRPL0->getDeltaPocMSBCycleLT(i) * pocCycle - (getPOC() & (pocCycle - 1));
+          refPoc += getPOC() - rpl->getDeltaPocMSBCycleLT(i) * pocCycle - (getPOC() & (pocCycle - 1));
         }
         else
         {
           curPoc = curPoc & (pocCycle - 1);
         }
-        if (!rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced)
+        if (pic->longTerm && curPoc == refPoc && pic->referenced)
         {
-          isAvailable = 1;
-          rpcPic->longTerm = true;
+          isAvailable = true;
           break;
+        }
+      }
+      // if there was no such long-term check the short terms
+      if (!isAvailable)
+      {
+        for (Picture *pic: rcListPic)
+        {
+          if (!pic->referenced)
+          {
+            continue;
+          }
+          int pocCycle = 1 << (pic->cs->sps->getBitsForPOC());
+          int curPoc   = pic->getPOC();
+          int refPoc   = rpl->getRefPicIdentifier(i) & (pocCycle - 1);
+          if (rpl->getDeltaPocMSBPresentFlag(i))
+          {
+            refPoc += getPOC() - rpl->getDeltaPocMSBCycleLT(i) * pocCycle - (getPOC() & (pocCycle - 1));
+          }
+          else
+          {
+            curPoc = curPoc & (pocCycle - 1);
+          }
+          if (!pic->longTerm && curPoc == refPoc && pic->referenced)
+          {
+            isAvailable   = true;
+            pic->longTerm = true;
+            break;
+          }
         }
       }
     }
   }
 
-  // mark long-term reference pictures in List1
-  for( i = 0; i < pRPL1->getNumberOfShorttermPictures() + pRPL1->getNumberOfLongtermPictures() + pRPL1->getNumberOfInterLayerPictures(); i++ )
+  if (isIDRorBLA() && !pps.getMixedNaluTypesInPicFlag())
   {
-    if( !pRPL1->isRefPicLongterm( i ) || pRPL1->isInterLayerRefPic( i ) )
-    {
-      continue;
-    }
-
-    int isAvailable = 0;
-    PicList::iterator iterPic = rcListPic.begin();
-    while (iterPic != rcListPic.end())
-    {
-      Picture* rpcPic = *(iterPic++);
-      if (!rpcPic->referenced)
-      {
-        continue;
-      }
-      int pocCycle = 1 << (rpcPic->cs->sps->getBitsForPOC());
-      int curPoc = rpcPic->getPOC();
-      int refPoc = pRPL1->getRefPicIdentifier(i) & (pocCycle - 1);
-      if(pRPL1->getDeltaPocMSBPresentFlag(i))
-      {
-        refPoc += getPOC() - pRPL1->getDeltaPocMSBCycleLT(i) * pocCycle - (getPOC() & (pocCycle - 1));
-      }
-      else
-      {
-        curPoc = curPoc & (pocCycle - 1);
-      }
-      if (rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced && rpcPic->reconstructed && rpcPic->layerId == getNalUnitLayerId())
-      {
-        isAvailable = 1;
-        break;
-      }
-    }
-    // if there was no such long-term check the short terms
-    if (!isAvailable)
-    {
-      iterPic = rcListPic.begin();
-      while (iterPic != rcListPic.end())
-      {
-        Picture* rpcPic = *(iterPic++);
-        if (!rpcPic->referenced)
-        {
-          continue;
-        }
-        int pocCycle = 1 << (rpcPic->cs->sps->getBitsForPOC());
-        int curPoc = rpcPic->getPOC();
-        int refPoc = pRPL1->getRefPicIdentifier(i) & (pocCycle - 1);
-        if(pRPL1->getDeltaPocMSBPresentFlag(i))
-        {
-          refPoc += getPOC() - pRPL1->getDeltaPocMSBCycleLT(i) * pocCycle - (getPOC() & (pocCycle - 1));
-        }
-        else
-        {
-          curPoc = curPoc & (pocCycle - 1);
-        }
-        if (!rpcPic->longTerm && curPoc == refPoc && rpcPic->referenced && rpcPic->reconstructed && rpcPic->layerId == getNalUnitLayerId())
-        {
-          isAvailable = 1;
-          rpcPic->longTerm = true;
-          break;
-        }
-      }
-    }
+    return;
   }
 
   // loop through all pictures in the reference picture buffer
-  PicList::iterator iterPic = rcListPic.begin();
-  while (iterPic != rcListPic.end())
+  for (Picture *pic: rcListPic)
   {
-    Picture* pcPic = *(iterPic++);
-
-    if (!pcPic->referenced)
+    if (!pic->referenced)
     {
       continue;
     }
 
-    isReference = 0;
-    // loop through all pictures in the Reference Picture Set
-    // to see if the picture should be kept as reference picture
-    for( i = 0; isNeedToCheck && !isReference && i < pRPL0->getNumberOfShorttermPictures() + pRPL0->getNumberOfLongtermPictures() + pRPL0->getNumberOfInterLayerPictures(); i++ )
-    {
-      if( pRPL0->isInterLayerRefPic( i ) )
-      {
-        // Diagonal inter-layer prediction is not allowed
-        CHECK( pRPL0->getRefPicIdentifier( i ), "ILRP identifier should be 0" );
+    bool isReference = false;
 
-        if (pcPic->poc == m_poc)
-        {
-          isReference = 1;
-          pcPic->longTerm = true;
-        }
-      }
-      else if (pcPic->layerId == layerId)
+    for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
+    {
+      const ReferencePictureList *rpl = l == REF_PIC_LIST_0 ? pRPL0 : pRPL1;
+
+      // loop through all pictures in the Reference Picture Set
+      // to see if the picture should be kept as reference picture
+      for (int i = 0; !isReference && i < rpl->getNumRefEntries(); i++)
       {
-        if (!(pRPL0->isRefPicLongterm(i)))
+        if (rpl->isInterLayerRefPic(i))
         {
-          if (pcPic->poc == this->getPOC() + pRPL0->getRefPicIdentifier(i))
+          // Diagonal inter-layer prediction is not allowed
+          CHECK(rpl->getRefPicIdentifier(i), "ILRP identifier should be 0");
+
+          if (pic->poc == m_poc)
           {
-            isReference     = 1;
-            pcPic->longTerm = false;
+            isReference   = true;
+            pic->longTerm = true;
           }
         }
-        else
+        else if (pic->layerId == layerId)
         {
-          int pocCycle = 1 << (pcPic->cs->sps->getBitsForPOC());
-          int curPoc   = pcPic->poc;
-          int refPoc   = pRPL0->getRefPicIdentifier(i) & (pocCycle - 1);
-          if (pRPL0->getDeltaPocMSBPresentFlag(i))
+          if (!rpl->isRefPicLongterm(i))
           {
-            refPoc += getPOC() - pRPL0->getDeltaPocMSBCycleLT(i) * pocCycle - (getPOC() & (pocCycle - 1));
+            if (pic->poc == getPOC() + rpl->getRefPicIdentifier(i))
+            {
+              isReference   = true;
+              pic->longTerm = false;
+            }
           }
           else
           {
-            curPoc = curPoc & (pocCycle - 1);
-          }
-          if (pcPic->longTerm && curPoc == refPoc)
-          {
-            isReference     = 1;
-            pcPic->longTerm = true;
+            const int pocCycle = 1 << pic->cs->sps->getBitsForPOC();
+            const int pocMask  = pocCycle - 1;
+            int       curPoc   = pic->poc;
+            int       refPoc   = rpl->getRefPicIdentifier(i) & pocMask;
+            if (rpl->getDeltaPocMSBPresentFlag(i))
+            {
+              refPoc += (getPOC() & ~pocMask) - rpl->getDeltaPocMSBCycleLT(i) * pocCycle;
+            }
+            else
+            {
+              curPoc &= pocMask;
+            }
+            if (pic->longTerm && curPoc == refPoc)
+            {
+              isReference   = true;
+              pic->longTerm = true;
+            }
           }
         }
       }
     }
 
-    for( i = 0; isNeedToCheck && !isReference && i < pRPL1->getNumberOfShorttermPictures() + pRPL1->getNumberOfLongtermPictures() + pRPL1->getNumberOfInterLayerPictures(); i++ )
-    {
-      if( pRPL1->isInterLayerRefPic( i ) )
-      {
-        // Diagonal inter-layer prediction is not allowed
-        CHECK( pRPL1->getRefPicIdentifier( i ), "ILRP identifier should be 0" );
-
-        if (pcPic->poc == m_poc)
-        {
-          isReference = 1;
-          pcPic->longTerm = true;
-        }
-      }
-      else if( pcPic->layerId == layerId )
-      {
-        if (!(pRPL1->isRefPicLongterm(i)))
-        {
-          if (pcPic->poc == this->getPOC() + pRPL1->getRefPicIdentifier(i))
-          {
-            isReference     = 1;
-            pcPic->longTerm = false;
-          }
-        }
-        else
-        {
-          int pocCycle = 1 << (pcPic->cs->sps->getBitsForPOC());
-          int curPoc   = pcPic->poc;
-          int refPoc   = pRPL1->getRefPicIdentifier(i) & (pocCycle - 1);
-          if (pRPL1->getDeltaPocMSBPresentFlag(i))
-          {
-            refPoc += getPOC() - pRPL1->getDeltaPocMSBCycleLT(i) * pocCycle - (getPOC() & (pocCycle - 1));
-          }
-          else
-          {
-            curPoc = curPoc & (pocCycle - 1);
-          }
-          if (pcPic->longTerm && curPoc == refPoc)
-          {
-            isReference     = 1;
-            pcPic->longTerm = true;
-          }
-        }
-      }
-    }
     // mark the picture as "unused for reference" if it is not in
     // the Reference Picture List
-    if (pcPic->layerId == layerId && pcPic->poc != m_poc && isReference == 0)
+    if (pic->layerId == layerId && pic->poc != m_poc && !isReference)
     {
-      pcPic->referenced = false;
-      pcPic->longTerm = false;
+      pic->referenced = false;
+      pic->longTerm   = false;
     }
 
     // sanity checks
-    if (pcPic->referenced)
+    if (pic->referenced)
     {
       //check that pictures of higher temporal layers are not used
-      CHECK(pcPic->usedByCurr && !(pcPic->temporalId <= this->getTLayer()), "Invalid state");
+      CHECK(pic->usedByCurr && pic->temporalId > this->getTLayer(), "Invalid state");
     }
   }
 }
@@ -1839,7 +1637,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
     return 0;   // Assume that all pic in the DPB will be flushed anyway so no need to check.
   }
 
-  int numberOfPictures = pRPL->getNumberOfLongtermPictures() + pRPL->getNumberOfShorttermPictures() + pRPL->getNumberOfInterLayerPictures();
+  int numberOfPictures = pRPL->getNumRefEntries();
   //Check long term ref pics
   for (int ii = 0; pRPL->getNumberOfLongtermPictures() > 0 && ii < numberOfPictures; ii++)
   {
@@ -2058,7 +1856,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
 
 bool Slice::isPOCInRefPicList(const ReferencePictureList *rpl, int poc )
 {
-  for( int i = 0; i < rpl->getNumberOfLongtermPictures() + rpl->getNumberOfShorttermPictures() + rpl->getNumberOfInterLayerPictures(); i++ )
+  for (int i = 0; i < rpl->getNumRefEntries(); i++)
   {
     if( rpl->isInterLayerRefPic( i ) )
     {
@@ -2695,59 +2493,57 @@ uint32_t VPS::getMaxTidinTOls(int m_targetOlsIdx)
 // ------------------------------------------------------------------------------------------------
 
 PicHeader::PicHeader()
-: m_valid                                         ( 0 )
-, m_nonReferencePictureFlag                       ( 0 )
-, m_gdrPicFlag                                    ( 0 )
-, m_recoveryPocCnt                                ( -1 )
-, m_noOutputBeforeRecoveryFlag                    ( false )
-, m_handleCraAsCvsStartFlag                       ( false )
-, m_handleGdrAsCvsStartFlag                       ( false )
-, m_spsId                                         ( -1 )
-, m_ppsId                                         ( -1 )
-, m_pocMsbPresentFlag                             ( 0 )
-, m_pocMsbVal                                     ( 0 )
-, m_virtualBoundariesEnabledFlag                  ( 0 )
-, m_virtualBoundariesPresentFlag                  ( 0 )
-, m_numVerVirtualBoundaries                       ( 0 )
-, m_numHorVirtualBoundaries                       ( 0 )
-, m_picOutputFlag                                 ( true )
-, m_rpl0Idx                                       ( 0 )
-, m_rpl1Idx                                       ( 0 )
-, m_splitConsOverrideFlag                         ( 0 )
-, m_cuQpDeltaSubdivIntra                          ( 0 )
-, m_cuQpDeltaSubdivInter                          ( 0 )
-, m_cuChromaQpOffsetSubdivIntra                   ( 0 )
-, m_cuChromaQpOffsetSubdivInter                   ( 0 )
-, m_enableTMVPFlag                                ( true )
-, m_picColFromL0Flag                              ( true )
-, m_mvdL1ZeroFlag                                 ( 0 )
-, m_maxNumAffineMergeCand                         ( AFFINE_MRG_MAX_NUM_CANDS )
-, m_disFracMMVD                                   ( 0 )
-, m_bdofDisabledFlag                              ( 0 )
-, m_dmvrDisabledFlag                              ( 0 )
-, m_profDisabledFlag                              ( 0 )
-, m_jointCbCrSignFlag                             ( 0 )
-, m_qpDelta                                       ( 0 )
-, m_numAlfApsIdsLuma                              ( 0 )
-, m_alfApsIdsLuma                                 ( 0 )
-, m_alfApsIdChroma                                ( 0 )
-, m_deblockingFilterOverrideFlag                  ( 0 )
-, m_deblockingFilterDisable                       ( 0 )
-, m_deblockingFilterBetaOffsetDiv2                ( 0 )
-, m_deblockingFilterTcOffsetDiv2                  ( 0 )
-, m_deblockingFilterCbBetaOffsetDiv2              ( 0 )
-, m_deblockingFilterCbTcOffsetDiv2                ( 0 )
-, m_deblockingFilterCrBetaOffsetDiv2              ( 0 )
-, m_deblockingFilterCrTcOffsetDiv2                ( 0 )
-, m_lmcsEnabledFlag                               ( 0 )
-, m_lmcsApsId                                     ( -1 )
-, m_lmcsAps                                       ( nullptr )
-, m_lmcsChromaResidualScaleFlag                   ( 0 )
-, m_explicitScalingListEnabledFlag                ( 0 )
-, m_scalingListApsId                              ( -1 )
-, m_scalingListAps                                ( nullptr )
-, m_numL0Weights                                  ( 0 )
-, m_numL1Weights                                  ( 0 )
+  : m_valid(0)
+  , m_nonReferencePictureFlag(0)
+  , m_gdrPicFlag(0)
+  , m_recoveryPocCnt(-1)
+  , m_noOutputBeforeRecoveryFlag(false)
+  , m_handleCraAsCvsStartFlag(false)
+  , m_handleGdrAsCvsStartFlag(false)
+  , m_spsId(-1)
+  , m_ppsId(-1)
+  , m_pocMsbPresentFlag(0)
+  , m_pocMsbVal(0)
+  , m_virtualBoundariesEnabledFlag(0)
+  , m_virtualBoundariesPresentFlag(0)
+  , m_numVerVirtualBoundaries(0)
+  , m_numHorVirtualBoundaries(0)
+  , m_picOutputFlag(true)
+  , m_rplIdx{ 0, 0 }
+  , m_splitConsOverrideFlag(0)
+  , m_cuQpDeltaSubdivIntra(0)
+  , m_cuQpDeltaSubdivInter(0)
+  , m_cuChromaQpOffsetSubdivIntra(0)
+  , m_cuChromaQpOffsetSubdivInter(0)
+  , m_enableTMVPFlag(true)
+  , m_picColFromL0Flag(true)
+  , m_mvdL1ZeroFlag(0)
+  , m_maxNumAffineMergeCand(AFFINE_MRG_MAX_NUM_CANDS)
+  , m_disFracMMVD(0)
+  , m_bdofDisabledFlag(0)
+  , m_dmvrDisabledFlag(0)
+  , m_profDisabledFlag(0)
+  , m_jointCbCrSignFlag(0)
+  , m_qpDelta(0)
+  , m_numAlfApsIdsLuma(0)
+  , m_alfApsIdsLuma(0)
+  , m_alfApsIdChroma(0)
+  , m_deblockingFilterOverrideFlag(0)
+  , m_deblockingFilterDisable(0)
+  , m_deblockingFilterBetaOffsetDiv2(0)
+  , m_deblockingFilterTcOffsetDiv2(0)
+  , m_deblockingFilterCbBetaOffsetDiv2(0)
+  , m_deblockingFilterCbTcOffsetDiv2(0)
+  , m_deblockingFilterCrBetaOffsetDiv2(0)
+  , m_deblockingFilterCrTcOffsetDiv2(0)
+  , m_lmcsEnabledFlag(0)
+  , m_lmcsApsId(-1)
+  , m_lmcsAps(nullptr)
+  , m_lmcsChromaResidualScaleFlag(0)
+  , m_explicitScalingListEnabledFlag(0)
+  , m_scalingListApsId(-1)
+  , m_scalingListAps(nullptr)
+  , m_numWeights{ 0, 0 }
 {
   memset(m_virtualBoundariesPosX,                   0,    sizeof(m_virtualBoundariesPosX));
   memset(m_virtualBoundariesPosY,                   0,    sizeof(m_virtualBoundariesPosY));
@@ -2758,17 +2554,14 @@ PicHeader::PicHeader()
   memset(m_maxBTSize,                               0,    sizeof(m_maxBTSize));
   memset(m_maxTTSize,                               0,    sizeof(m_maxTTSize));
 
-  m_RPL0.setNumberOfActivePictures(0);
-  m_RPL0.setNumberOfShorttermPictures(0);
-  m_RPL0.setNumberOfLongtermPictures(0);
-  m_RPL0.setLtrpInSliceHeaderFlag(0);
-  m_RPL0.setNumberOfInterLayerPictures( 0 );
-
-  m_RPL1.setNumberOfActivePictures(0);
-  m_RPL1.setNumberOfShorttermPictures(0);
-  m_RPL1.setNumberOfLongtermPictures(0);
-  m_RPL1.setLtrpInSliceHeaderFlag(0);
-  m_RPL1.setNumberOfInterLayerPictures( 0 );
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
+  {
+    m_rpl[l].setNumberOfActivePictures(0);
+    m_rpl[l].setNumberOfShorttermPictures(0);
+    m_rpl[l].setNumberOfLongtermPictures(0);
+    m_rpl[l].setLtrpInSliceHeaderFlag(0);
+    m_rpl[l].setNumberOfInterLayerPictures(0);
+  }
 
   m_alfApsIdsLuma.resize(0);
 
@@ -2798,8 +2591,8 @@ void PicHeader::initPicHeader()
   m_numVerVirtualBoundaries                       = 0;
   m_numHorVirtualBoundaries                       = 0;
   m_picOutputFlag                                 = true;
-  m_rpl0Idx                                       = 0;
-  m_rpl1Idx                                       = 0;
+  m_rplIdx[REF_PIC_LIST_0]                        = 0;
+  m_rplIdx[REF_PIC_LIST_1]                        = 0;
   m_splitConsOverrideFlag                         = 0;
   m_cuQpDeltaSubdivIntra                          = 0;
   m_cuQpDeltaSubdivInter                          = 0;
@@ -2832,8 +2625,8 @@ void PicHeader::initPicHeader()
   m_explicitScalingListEnabledFlag                = 0;
   m_scalingListApsId                              = -1;
   m_scalingListAps                                = nullptr;
-  m_numL0Weights                                  = 0;
-  m_numL1Weights                                  = 0;
+  m_numWeights[REF_PIC_LIST_0]                    = 0;
+  m_numWeights[REF_PIC_LIST_1]                    = 0;
   memset(m_virtualBoundariesPosX,                   0,    sizeof(m_virtualBoundariesPosX));
   memset(m_virtualBoundariesPosY,                   0,    sizeof(m_virtualBoundariesPosY));
   m_saoEnabledFlag.fill(false);
@@ -2843,15 +2636,13 @@ void PicHeader::initPicHeader()
   memset(m_maxBTSize,                               0,    sizeof(m_maxBTSize));
   memset(m_maxTTSize,                               0,    sizeof(m_maxTTSize));
 
-  m_RPL0.setNumberOfActivePictures(0);
-  m_RPL0.setNumberOfShorttermPictures(0);
-  m_RPL0.setNumberOfLongtermPictures(0);
-  m_RPL0.setLtrpInSliceHeaderFlag(0);
-
-  m_RPL1.setNumberOfActivePictures(0);
-  m_RPL1.setNumberOfShorttermPictures(0);
-  m_RPL1.setNumberOfLongtermPictures(0);
-  m_RPL1.setLtrpInSliceHeaderFlag(0);
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
+  {
+    m_rpl[l].setNumberOfActivePictures(0);
+    m_rpl[l].setNumberOfShorttermPictures(0);
+    m_rpl[l].setNumberOfLongtermPictures(0);
+    m_rpl[l].setLtrpInSliceHeaderFlag(0);
+  }
 
   m_alfApsIdsLuma.resize(0);
 #if GDR_ENABLED
@@ -2951,8 +2742,7 @@ SPS::SPS()
   , m_maxTTSize{ 0, 0, 0 }
   , m_maxCuWidth(32)
   , m_maxCuHeight(32)
-  , m_numRPL0(0)
-  , m_numRPL1(0)
+  , m_numRpl{ 0, 0 }
   , m_rpl1CopyFromRpl0Flag(false)
   , m_rpl1IdxPresentFlag(false)
   , m_allRplEntriesHasSameSignFlag(true)
@@ -3049,22 +2839,13 @@ SPS::~SPS()
 {
 }
 
-void  SPS::createRPLList0(int numRPL)
+void SPS::createRplList(RefPicList l, int numRPL)
 {
-  m_RPLList0.destroy();
-  m_RPLList0.create(numRPL);
-  m_numRPL0 = numRPL;
-  m_rpl1IdxPresentFlag = (m_numRPL0 != m_numRPL1) ? true : false;
+  m_rplList[l].destroy();
+  m_rplList[l].create(numRPL);
+  m_numRpl[l]          = numRPL;
+  m_rpl1IdxPresentFlag = m_numRpl[REF_PIC_LIST_0] != m_numRpl[REF_PIC_LIST_1];
 }
-void  SPS::createRPLList1(int numRPL)
-{
-  m_RPLList1.destroy();
-  m_RPLList1.create(numRPL);
-  m_numRPL1 = numRPL;
-
-  m_rpl1IdxPresentFlag = (m_numRPL0 != m_numRPL1) ? true : false;
-}
-
 
 const int SPS::m_winUnitX[]={1,2,2,1};
 const int SPS::m_winUnitY[]={1,2,1,1};
@@ -3188,8 +2969,7 @@ PPS::PPS()
   , m_chromaCrQpOffset(0)
   , m_chromaCbCrQpOffset(0)
   , m_chromaQpOffsetListLen(0)
-  , m_numRefIdxL0DefaultActive(1)
-  , m_numRefIdxL1DefaultActive(1)
+  , m_numRefIdxDefaultActive{ 1, 1 }
   , m_rpl1IdxPresentFlag(false)
   , m_numSubPics(1)
   , m_subPicIdMappingInPpsFlag(0)
@@ -3821,26 +3601,6 @@ bool ReferencePictureList::isRefPicLongterm(int idx) const
   return m_isLongtermRefPic[idx];
 }
 
-void ReferencePictureList::setNumberOfShorttermPictures(int numberOfStrp)
-{
-  m_numberOfShorttermPictures = numberOfStrp;
-}
-
-int ReferencePictureList::getNumberOfShorttermPictures() const
-{
-  return m_numberOfShorttermPictures;
-}
-
-void ReferencePictureList::setNumberOfLongtermPictures(int numberOfLtrp)
-{
-  m_numberOfLongtermPictures = numberOfLtrp;
-}
-
-int ReferencePictureList::getNumberOfLongtermPictures() const
-{
-  return m_numberOfLongtermPictures;
-}
-
 void ReferencePictureList::setPOC(int idx, int POC)
 {
   m_POC[idx] = POC;
@@ -3865,7 +3625,7 @@ void ReferencePictureList::printRefPicInfo() const
 {
   //DTRACE(g_trace_ctx, D_RPSINFO, "RefPics = { ");
   printf("RefPics = { ");
-  int numRefPic = getNumberOfShorttermPictures() + getNumberOfLongtermPictures();
+  int numRefPic = getNumRefEntries();
   for (int ii = 0; ii < numRefPic; ii++)
   {
     //DTRACE(g_trace_ctx, D_RPSINFO, "%d%s ", m_refPicIdentifier[ii], (m_isLongtermRefPic[ii] == 1) ? "[LT]" : "[ST]");
