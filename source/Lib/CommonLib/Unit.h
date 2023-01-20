@@ -520,7 +520,7 @@ private:
 #include <iterator>
 
 template<typename T>
-class UnitIterator : public std::iterator<std::forward_iterator_tag, T>
+class UnitIterator
 {
 private:
   T* m_punit;
