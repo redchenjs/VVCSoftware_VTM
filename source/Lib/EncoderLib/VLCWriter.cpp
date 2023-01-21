@@ -1515,10 +1515,10 @@ void HLSWriter::codeVPS(const VPS* pcVPS)
 
       for( int j = ( pcVPS->m_sublayerDpbParamsPresentFlag ? 0 : pcVPS->m_dpbMaxTemporalId[i] ); j <= pcVPS->m_dpbMaxTemporalId[i]; j++ )
       {
-        CHECK(pcVPS->m_dpbParameters[i].m_maxDecPicBuffering[j] < 1, "MaxDecPicBuffering must be greater than 0");
-        xWriteUvlc(pcVPS->m_dpbParameters[i].m_maxDecPicBuffering[j] - 1, "dpb_max_dec_pic_buffering_minus1[i]");
-        xWriteUvlc( pcVPS->m_dpbParameters[i].m_maxNumReorderPics[j], "dpb_max_num_reorder_pics[i]" );
-        xWriteUvlc( pcVPS->m_dpbParameters[i].m_maxLatencyIncreasePlus1[j], "dpb_max_latency_increase_plus1[i]" );
+        CHECK(pcVPS->m_dpbParameters[i].maxDecPicBuffering[j] < 1, "MaxDecPicBuffering must be greater than 0");
+        xWriteUvlc(pcVPS->m_dpbParameters[i].maxDecPicBuffering[j] - 1, "dpb_max_dec_pic_buffering_minus1[i]");
+        xWriteUvlc( pcVPS->m_dpbParameters[i].maxNumReorderPics[j], "dpb_max_num_reorder_pics[i]" );
+        xWriteUvlc( pcVPS->m_dpbParameters[i].maxLatencyIncreasePlus1[j], "dpb_max_latency_increase_plus1[i]" );
       }
     }
 

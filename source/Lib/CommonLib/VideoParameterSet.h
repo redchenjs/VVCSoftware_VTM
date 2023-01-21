@@ -37,14 +37,11 @@
 #include "HRD.h"
 #include "ProfileTierLevel.h"
 
-class OlsHrdParams;
-class GeneralHrdParams;
-
 struct DpbParameters
 {
-  int m_maxDecPicBuffering[MAX_TLAYER] = { 0 };
-  int m_maxNumReorderPics[MAX_TLAYER] = { 0 };
-  int m_maxLatencyIncreasePlus1[MAX_TLAYER] = { 0 };
+  int maxDecPicBuffering[MAX_TLAYER] = { 0 };
+  int maxNumReorderPics[MAX_TLAYER] = { 0 };
+  int maxLatencyIncreasePlus1[MAX_TLAYER] = { 0 };
 };
 
 class VPS
@@ -209,8 +206,8 @@ public:
   int               getTargetOlsIdx() { return m_targetOlsIdx; }
   void              setTargetOlsIdx(uint32_t t) { m_targetOlsIdx = t; }
 
-  int               getMaxDecPicBuffering( int temporalId ) const        { return m_dpbParameters[m_olsDpbParamsIdx[m_targetOlsIdx]].m_maxDecPicBuffering[temporalId]; }
-  int               getMaxNumReorderPics( int temporalId ) const         { return m_dpbParameters[m_olsDpbParamsIdx[m_targetOlsIdx]].m_maxNumReorderPics[temporalId]; }
+  int               getMaxDecPicBuffering( int temporalId ) const        { return m_dpbParameters[m_olsDpbParamsIdx[m_targetOlsIdx]].maxDecPicBuffering[temporalId]; }
+  int               getMaxNumReorderPics( int temporalId ) const         { return m_dpbParameters[m_olsDpbParamsIdx[m_targetOlsIdx]].maxNumReorderPics[temporalId]; }
   int               getTotalNumOLSs() const                              { return m_totalNumOLSs; }
   int               getNumMultiLayeredOlss() const                       { return m_numMultiLayeredOlss; }
   Size              getOlsDpbPicSize( int olsIdx ) const                 { return m_olsDpbPicSize[olsIdx];          }
