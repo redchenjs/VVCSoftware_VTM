@@ -46,7 +46,7 @@
 #include "CommonLib/CodingStatistics.h"
 #endif
 #include "CommonLib/AdaptiveLoopFilter.h"
-#include "CommonLib/ProfileLevelTier.h"
+#include "CommonLib/ProfileTierLevel.h"
 
 // ====================================================================================================================
 // Protected member functions

@@ -50,7 +50,7 @@
 #include "EncoderLib/RateCtrl.h"
 
 #include "CommonLib/dtrace_next.h"
-#include "CommonLib/ProfileLevelTier.h"
+#include "CommonLib/ProfileTierLevel.h"
 
 #define MACRO_TO_STRING_HELPER(val) #val
 #define MACRO_TO_STRING(val) MACRO_TO_STRING_HELPER(val)

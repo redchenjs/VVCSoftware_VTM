@@ -36,18 +36,69 @@
 */
 
 
-#include "ProfileLevelTier.h"
+#include "ProfileTierLevel.h"
 #include "CommonLib/Slice.h"
 #include <math.h>
 
-uint32_t
-LevelTierFeatures::getMaxPicWidthInLumaSamples()  const
+bool operator == (const ProfileTierLevel& op1, const ProfileTierLevel& op2)
+{
+  if (op1.m_tierFlag != op2.m_tierFlag)
+  {
+    return false;
+  }
+  if (op1.m_profileIdc != op2.m_profileIdc)
+  {
+    return false;
+  }
+  if (op1.m_levelIdc != op2.m_levelIdc)
+  {
+    return false;
+  }
+  if (op1.m_frameOnlyConstraintFlag != op2.m_frameOnlyConstraintFlag)
+  {
+    return false;
+  }
+  if (op1.m_multiLayerEnabledFlag != op2.m_multiLayerEnabledFlag)
+  {
+    return false;
+  }
+  if (op1.m_constraintInfo != op2.m_constraintInfo)
+  {
+    return false;
+  }
+  if (op1.m_subProfileIdc != op2.m_subProfileIdc)
+  {
+    return false;
+  }
+
+  for (int i = 0; i < MAX_TLAYER - 1; i++)
+  {
+    if (op1.m_subLayerLevelPresentFlag[i] != op2.m_subLayerLevelPresentFlag[i])
+    {
+      return false;
+    }
+  }
+  for (int i = 0; i < MAX_TLAYER; i++)
+  {
+    if (op1.m_subLayerLevelIdc[i] != op2.m_subLayerLevelIdc[i])
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool             operator != (const ProfileTierLevel& op1, const ProfileTierLevel& op2)
+{
+  return !(op1 == op2);
+}
+
+uint32_t LevelTierFeatures::getMaxPicWidthInLumaSamples()  const
 {
   return uint32_t(sqrt(maxLumaPs*8.0));
 }
 
-uint32_t
-LevelTierFeatures::getMaxPicHeightInLumaSamples() const
+uint32_t LevelTierFeatures::getMaxPicHeightInLumaSamples() const
 {
   return uint32_t(sqrt(maxLumaPs*8.0));
 }

@@ -44,7 +44,7 @@
 #include "CommonLib/dtrace_next.h"
 #include "EncAdaptiveLoopFilter.h"
 #include "CommonLib/AdaptiveLoopFilter.h"
-#include "CommonLib/ProfileLevelTier.h"
+#include "CommonLib/ProfileTierLevel.h"
 
 //! \ingroup EncoderLib
 //! \{

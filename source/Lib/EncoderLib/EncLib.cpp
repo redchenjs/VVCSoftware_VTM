@@ -44,7 +44,7 @@
 #include "CommonLib/CommonDef.h"
 #include "CommonLib/ChromaFormat.h"
 #include "EncLibCommon.h"
-#include "CommonLib/ProfileLevelTier.h"
+#include "CommonLib/ProfileTierLevel.h"
 
 //! \ingroup EncoderLib
 //! \{
