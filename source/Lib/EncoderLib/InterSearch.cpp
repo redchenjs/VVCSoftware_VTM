@@ -138,7 +138,7 @@ void InterSearch::destroy()
   {
     m_tmpPredStorage[i].destroy();
   }
-  m_tmpStorageLCU.destroy();
+  m_tmpStorageCtu.destroy();
   m_tmpAffiStorage.destroy();
 
   if (m_tmpAffiError != nullptr)
@@ -241,7 +241,7 @@ void InterSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, int searchRange, in
   {
     m_tmpPredStorage[i].create( UnitArea( cform, Area( 0, 0, MAX_CU_SIZE, MAX_CU_SIZE ) ) );
   }
-  m_tmpStorageLCU.create( UnitArea( cform, Area( 0, 0, MAX_CU_SIZE, MAX_CU_SIZE ) ) );
+  m_tmpStorageCtu.create(UnitArea(cform, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
   m_tmpAffiStorage.create( UnitArea( cform, Area( 0, 0, MAX_CU_SIZE, MAX_CU_SIZE ) ) );
   m_tmpAffiError = new Pel[MAX_CU_SIZE * MAX_CU_SIZE];
   m_tmpAffiDeri[0] = new int[MAX_CU_SIZE * MAX_CU_SIZE];
@@ -835,7 +835,7 @@ Distortion InterSearch::xPatternRefinement( const CPelBuf* pcPatternKey,
 
 Distortion InterSearch::xGetInterPredictionError( PredictionUnit& pu, PelUnitBuf& origBuf, const RefPicList &eRefPicList )
 {
-  PelUnitBuf predBuf = m_tmpStorageLCU.getBuf( UnitAreaRelative(*pu.cu, pu) );
+  PelUnitBuf predBuf = m_tmpStorageCtu.getBuf(UnitAreaRelative(*pu.cu, pu));
 
   motionCompensation( pu, predBuf, eRefPicList );
 
@@ -1440,7 +1440,7 @@ void InterSearch::xIBCEstimation(PredictionUnit& pu, PelUnitBuf& origBuf,
   {
     const CompArea &area = pu.blocks[COMPONENT_Y];
     CompArea    tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-    tmpOrgLuma = m_tmpStorageLCU.getBuf(tmpArea);
+    tmpOrgLuma = m_tmpStorageCtu.getBuf(tmpArea);
     tmpOrgLuma.copyFrom(tmpPattern);
     tmpOrgLuma.rspSignal(m_pcReshape->getFwdLUT());
     pcPatternKey = (CPelBuf*)&tmpOrgLuma;
@@ -4631,7 +4631,7 @@ void InterSearch::xEstimateMvPredAMVP(PredictionUnit &pu, PelUnitBuf &origBuf, R
   }
 #endif
 
-  PelUnitBuf predBuf = m_tmpStorageLCU.getBuf( UnitAreaRelative(*pu.cu, pu) );
+  PelUnitBuf predBuf = m_tmpStorageCtu.getBuf(UnitAreaRelative(*pu.cu, pu));
 
   //-- Check Minimum Cost.
   for( i = 0 ; i < pcAMVPInfo->numCand; i++)
@@ -4948,7 +4948,7 @@ void InterSearch::xMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBuf, Ref
   int    iSrchRng   = (bBi ? m_bipredSearchRange : m_searchRange);
   double fWeight    = 1.0;
 
-  PelUnitBuf  origBufTmp = m_tmpStorageLCU.getBuf( UnitAreaRelative(*pu.cu, pu) );
+  PelUnitBuf  origBufTmp = m_tmpStorageCtu.getBuf(UnitAreaRelative(*pu.cu, pu));
   PelUnitBuf* pBuf       = &origBuf;
 
   if(bBi) // Bi-predictive ME
@@ -6184,7 +6184,7 @@ Distortion InterSearch::xGetSymmetricCost( PredictionUnit& pu, PelUnitBuf& origB
                   eTarRefPicList);
   }
 
-  PelUnitBuf bufTmp = m_tmpStorageLCU.getBuf( UnitAreaRelative( *pu.cu, pu ) );
+  PelUnitBuf bufTmp = m_tmpStorageCtu.getBuf(UnitAreaRelative(*pu.cu, pu));
   bufTmp.copyFrom( origBuf );
   bufTmp.removeHighFreq(predBufA, m_pcEncCfg->getClipForBiPredMeEnabled(), pu.cu->slice->clpRngs(),
                         getBcwWeight(pu.cu->bcwIdx, eTarRefPicList));
@@ -6626,7 +6626,7 @@ void InterSearch::xPredAffineInterSearch(PredictionUnit &pu, PelUnitBuf &origBuf
         }
 #endif
       }
-      PelUnitBuf predBuf = m_tmpStorageLCU.getBuf( UnitAreaRelative(*pu.cu, pu) );
+      PelUnitBuf predBuf = m_tmpStorageCtu.getBuf(UnitAreaRelative(*pu.cu, pu));
 #if GDR_ENABLED
       bool uiCandCostOk = true;
       Distortion uiCandCost   = xGetAffineTemplateCost(pu, origBuf, predBuf, mvHevc, aaiMvpIdx[refList][refIdxTemp],
@@ -8358,7 +8358,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
   PelUnitBuf*   pBuf = &origBuf;
   double        fWeight       = 1.0;
 
-  PelUnitBuf  origBufTmp = m_tmpStorageLCU.getBuf( UnitAreaRelative( *pu.cu, pu ) );
+  PelUnitBuf  origBufTmp = m_tmpStorageCtu.getBuf(UnitAreaRelative(*pu.cu, pu));
   const DFunc distFunc   = (pu.cs->slice->getDisableSATDForRD()) ? DFunc::SAD : DFunc::HAD;
 
   // if Bi, set to ( 2 * Org - ListX )
@@ -8973,7 +8973,7 @@ void InterSearch::xEstimateAffineAMVP(PredictionUnit &pu, AffineAMVPInfo &affine
   PU::fillAffineMvpCand(pu, eRefPicList, refIdx, affineAMVPInfo);
   CHECK( affineAMVPInfo.numCand == 0, "Assertion failed." );
 
-  PelUnitBuf predBuf = m_tmpStorageLCU.getBuf( UnitAreaRelative(*pu.cu, pu) );
+  PelUnitBuf predBuf = m_tmpStorageCtu.getBuf(UnitAreaRelative(*pu.cu, pu));
 
   // initialize Mvp index & Mvp
   iBestIdx = 0;
@@ -10615,8 +10615,9 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
         if (compID == COMPONENT_Y && !(m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()))
         {
           const CompArea &areaY = cu.Y();
-          CompArea      tmpArea1(COMPONENT_Y, areaY.chromaFormat, Position(0, 0), areaY.size());
-          PelBuf tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
+
+          CompArea tmpArea1(COMPONENT_Y, areaY.chromaFormat, Position(0, 0), areaY.size());
+          PelBuf   tmpRecLuma = m_tmpStorageCtu.getBuf(tmpArea1);
           tmpRecLuma.copyFrom(reco);
           tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
           distortion += m_pcRdCost->getDistPart(org, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
@@ -10657,7 +10658,7 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
     {
       const CompArea &areaY = cu.Y();
       CompArea      tmpArea(COMPONENT_Y, areaY.chromaFormat, Position(0, 0), areaY.size());
-      PelBuf tmpPred = m_tmpStorageLCU.getBuf(tmpArea);
+      PelBuf          tmpPred = m_tmpStorageCtu.getBuf(tmpArea);
       tmpPred.copyFrom(cs.getPredBuf(COMPONENT_Y));
 
       if (!cu.firstPU->ciipFlag && !CU::isIBC(cu))
@@ -10909,7 +10910,7 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
     {
       const CompArea &areaY = cu.Y();
       CompArea      tmpArea(COMPONENT_Y, areaY.chromaFormat, Position(0, 0), areaY.size());
-      PelBuf tmpPred = m_tmpStorageLCU.getBuf(tmpArea);
+      PelBuf          tmpPred = m_tmpStorageCtu.getBuf(tmpArea);
       tmpPred.copyFrom(cs.getPredBuf(COMPONENT_Y));
 
       if (!cu.firstPU->ciipFlag && !CU::isIBC(cu))
@@ -10959,8 +10960,9 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
       if (compID == COMPONENT_Y && !(m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()) )
       {
         const CompArea &areaY = cu.Y();
-        CompArea      tmpArea1(COMPONENT_Y, areaY.chromaFormat, Position(0, 0), areaY.size());
-        PelBuf tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
+
+        CompArea tmpArea1(COMPONENT_Y, areaY.chromaFormat, Position(0, 0), areaY.size());
+        PelBuf   tmpRecLuma = m_tmpStorageCtu.getBuf(tmpArea1);
         tmpRecLuma.copyFrom(reco);
         tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
         finalDistortion += m_pcRdCost->getDistPart(org, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
@@ -11262,7 +11264,7 @@ void InterSearch::symmvdCheckBestMvp(PredictionUnit &pu, PelUnitBuf &origBuf, Mv
     xPredInterBlk(COMPONENT_Y, pu, picRefA, mvA, predBufA, false, pu.cu->slice->clpRng(COMPONENT_Y), false, false,
                   curRefList);
   }
-  PelUnitBuf bufTmp = m_tmpStorageLCU.getBuf( UnitAreaRelative( *pu.cu, pu ) );
+  PelUnitBuf bufTmp = m_tmpStorageCtu.getBuf(UnitAreaRelative(*pu.cu, pu));
   bufTmp.copyFrom( origBuf );
   bufTmp.removeHighFreq(predBufA, m_pcEncCfg->getClipForBiPredMeEnabled(), pu.cu->slice->clpRngs(),
                         getBcwWeight(pu.cu->bcwIdx, tarRefList));

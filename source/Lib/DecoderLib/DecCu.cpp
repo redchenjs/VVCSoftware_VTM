@@ -59,10 +59,7 @@
 // Constructor / destructor / create / destroy
 // ====================================================================================================================
 
-DecCu::DecCu()
-{
-  m_tmpStorageLCU = nullptr;
-}
+DecCu::DecCu() : m_tmpStorageCtu(nullptr) {}
 
 DecCu::~DecCu()
 {
@@ -78,20 +75,20 @@ void DecCu::init( TrQuant* pcTrQuant, IntraPrediction* pcIntra, InterPrediction*
 void DecCu::initDecCuReshaper  (Reshape* pcReshape, ChromaFormat chromaFormatIDC)
 {
   m_pcReshape = pcReshape;
-  if (m_tmpStorageLCU == nullptr)
+  if (m_tmpStorageCtu == nullptr)
   {
-    m_tmpStorageLCU = new PelStorage;
-    m_tmpStorageLCU->create(UnitArea(chromaFormatIDC, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
+    m_tmpStorageCtu = new PelStorage;
+    m_tmpStorageCtu->create(UnitArea(chromaFormatIDC, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
   }
 
 }
 void DecCu::destoryDecCuReshaprBuf()
 {
-  if (m_tmpStorageLCU)
+  if (m_tmpStorageCtu)
   {
-    m_tmpStorageLCU->destroy();
-    delete m_tmpStorageLCU;
-    m_tmpStorageLCU = nullptr;
+    m_tmpStorageCtu->destroy();
+    delete m_tmpStorageCtu;
+    m_tmpStorageCtu = nullptr;
   }
 }
 
@@ -309,7 +306,7 @@ void DecCu::xIntraRecBlk( TransformUnit& tu, const ComponentID compID )
   if (slice.getLmcsEnabledFlag() && (m_pcReshape->getCTUFlag() || slice.isIntra()) && compID == COMPONENT_Y)
   {
 #if REUSE_CU_RESULTS
-    tmpPred = m_tmpStorageLCU->getBuf(tmpArea);
+    tmpPred = m_tmpStorageCtu->getBuf(tmpArea);
     tmpPred.copyFrom(piPred);
 #endif
   }
@@ -427,7 +424,7 @@ void DecCu::xIntraRecACTBlk(TransformUnit& tu)
     if (slice.getLmcsEnabledFlag() && (m_pcReshape->getCTUFlag() || slice.isIntra()) && compID == COMPONENT_Y)
     {
       CompArea tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-      tmpPred = m_tmpStorageLCU->getBuf(tmpArea);
+      tmpPred = m_tmpStorageCtu->getBuf(tmpArea);
       tmpPred.copyFrom(piPred);
     }
 
@@ -681,7 +678,7 @@ void DecCu::xReconInter(CodingUnit &cu)
 #if REUSE_CU_RESULTS
       if (cs.pcv->isEncoder)
       {
-        tmpPred = m_tmpStorageLCU->getBuf(tmpArea);
+        tmpPred = m_tmpStorageCtu->getBuf(tmpArea);
         tmpPred.copyFrom(cs.getPredBuf(cu).get(COMPONENT_Y));
       }
 #endif

@@ -157,7 +157,7 @@ void IntraSearch::destroy()
     m_pSharedPredTransformSkip[ch] = nullptr;
   }
 
-  m_tmpStorageLCU.destroy();
+  m_tmpStorageCtu.destroy();
   m_colorTransResiBuf.destroy();
   m_isInitialized = false;
   if (m_indexError[0] != nullptr)
@@ -207,7 +207,7 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
   const ChromaFormat cform = pcEncCfg->getChromaFormatIdc();
 
   IntraPrediction::init(cform, pcEncCfg->getBitDepth(ChannelType::LUMA));
-  m_tmpStorageLCU.create(UnitArea(cform, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
+  m_tmpStorageCtu.create(UnitArea(cform, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
   m_colorTransResiBuf.create(UnitArea(cform, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
 
   for( uint32_t ch = 0; ch < MAX_NUM_TBLOCKS; ch++ )
@@ -649,7 +649,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
           if (cu.slice->getLmcsEnabledFlag() && m_pcReshape->getCTUFlag())
           {
             CompArea tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-            PelBuf   tmpOrg = m_tmpStorageLCU.getBuf(tmpArea);
+            PelBuf   tmpOrg = m_tmpStorageCtu.getBuf(tmpArea);
             tmpOrg.copyFrom(piOrg);
             tmpOrg.rspSignal(m_pcReshape->getFwdLUT());
             m_pcRdCost->setDistParam(distParamSad, tmpOrg, piPred, sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y,
@@ -1933,8 +1933,9 @@ void IntraSearch::PLTSearch(CodingStructure &cs, Partitioner& partitioner, Compo
       if (compID == COMPONENT_Y && !(m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()))
       {
         const CompArea &areaY = cu.Y();
+
         CompArea tmpArea1(COMPONENT_Y, areaY.chromaFormat, Position(0, 0), areaY.size());
-        PelBuf   tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
+        PelBuf   tmpRecLuma = m_tmpStorageCtu.getBuf(tmpArea1);
         tmpRecLuma.copyFrom(reco);
         tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
         distortion += m_pcRdCost->getDistPart(org, tmpRecLuma, cs.sps->getBitDepth(toChannelType(compID)), compID,
@@ -3326,7 +3327,7 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
     if (slice.getLmcsEnabledFlag() && m_pcReshape->getCTUFlag() && compID == COMPONENT_Y)
     {
       CompArea      tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-      PelBuf tmpPred = m_tmpStorageLCU.getBuf(tmpArea);
+      PelBuf        tmpPred = m_tmpStorageCtu.getBuf(tmpArea);
       tmpPred.copyFrom(piPred);
       piResi.rspSignal(m_pcReshape->getFwdLUT());
       piResi.subtract(tmpPred);
@@ -3510,7 +3511,7 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
   if (slice.getLmcsEnabledFlag() && m_pcReshape->getCTUFlag() && compID == COMPONENT_Y)
   {
     CompArea      tmpArea(COMPONENT_Y, area.chromaFormat, Position(0,0), area.size());
-    PelBuf tmpPred = m_tmpStorageLCU.getBuf(tmpArea);
+    PelBuf        tmpPred = m_tmpStorageCtu.getBuf(tmpArea);
     tmpPred.copyFrom(piPred);
     piReco.reconstruct(tmpPred, piResi, cs.slice->clpRng(compID));
   }
@@ -3532,8 +3533,8 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
     const CPelBuf orgLuma = cs.getOrgBuf( cs.area.blocks[COMPONENT_Y] );
     if (compID == COMPONENT_Y  && !(m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()))
     {
-      CompArea      tmpArea1(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-      PelBuf tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
+      CompArea tmpArea1(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
+      PelBuf   tmpRecLuma = m_tmpStorageCtu.getBuf(tmpArea1);
       tmpRecLuma.copyFrom(piReco);
       tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
       dist += m_pcRdCost->getDistPart(piOrg, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID, DFunc::SSE_WTD,
@@ -4374,7 +4375,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
       if (slice.getLmcsEnabledFlag() && m_pcReshape->getCTUFlag() && compID == COMPONENT_Y)
       {
         CompArea tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-        PelBuf   tmpPred = m_tmpStorageLCU.getBuf(tmpArea);
+        PelBuf   tmpPred = m_tmpStorageCtu.getBuf(tmpArea);
         tmpPred.copyFrom(piPred);
         piResi.rspSignal(m_pcReshape->getFwdLUT());
         piResi.subtract(tmpPred);
@@ -4845,8 +4846,8 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
         const CPelBuf orgLuma = csFull->getOrgBuf(csFull->area.blocks[COMPONENT_Y]);
         if (compID == COMPONENT_Y && !(m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()))
         {
-          CompArea      tmpArea1(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-          PelBuf tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
+          CompArea tmpArea1(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
+          PelBuf   tmpRecLuma = m_tmpStorageCtu.getBuf(tmpArea1);
           tmpRecLuma.copyFrom(piReco);
           tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
           totalDist += m_pcRdCost->getDistPart(piOrg, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
@@ -4963,7 +4964,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
               if (compID == COMPONENT_Y && !(m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()))
               {
                 CompArea tmpArea1(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-                PelBuf   tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
+                PelBuf   tmpRecLuma = m_tmpStorageCtu.getBuf(tmpArea1);
                 tmpRecLuma.copyFrom(piReco);
                 tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
                 distTmp += m_pcRdCost->getDistPart(piOrg, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,

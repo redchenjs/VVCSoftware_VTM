@@ -113,7 +113,7 @@ private:
   EncModeCtrl     *m_modeCtrl;
 
   PelStorage      m_tmpPredStorage              [NUM_REF_PIC_LIST_01];
-  PelStorage      m_tmpStorageLCU;
+  PelStorage      m_tmpStorageCtu;
   PelStorage      m_tmpAffiStorage;
   Pel*            m_tmpAffiError;
   int*            m_tmpAffiDeri[2];

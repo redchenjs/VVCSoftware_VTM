@@ -184,10 +184,11 @@ void EncCu::destroy()
   delete[] m_pTempCS2; m_pTempCS2 = nullptr;
 
 #if REUSE_CU_RESULTS
-  if (m_tmpStorageLCU)
+  if (m_tmpStorageCtu)
   {
-    m_tmpStorageLCU->destroy();
-    delete m_tmpStorageLCU;  m_tmpStorageLCU = nullptr;
+    m_tmpStorageCtu->destroy();
+    delete m_tmpStorageCtu;
+    m_tmpStorageCtu = nullptr;
   }
 #endif
 
@@ -3513,7 +3514,7 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
     {
       const CompArea &area = cu.blocks[COMPONENT_Y];
       CompArea        tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-      PelBuf          tmpLuma = m_tmpStorageLCU->getBuf(tmpArea);
+      PelBuf          tmpLuma = m_tmpStorageCtu->getBuf(tmpArea);
       tmpLuma.copyFrom(tempCS->getOrgBuf().Y());
       tmpLuma.rspSignal(m_pcReshape->getFwdLUT());
       m_pcRdCost->setDistParam(distParam, tmpLuma, refBuf, sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y,
@@ -4489,8 +4490,8 @@ Distortion EncCu::getDistortionDb( CodingStructure &cs, CPelBuf org, CPelBuf rec
   {
     if ( compID == COMPONENT_Y && !afterDb && !m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled())
     {
-      CompArea    tmpArea( COMPONENT_Y, cs.area.chromaFormat, Position( 0, 0 ), compArea.size() );
-      PelBuf tmpRecLuma = m_tmpStorageLCU->getBuf( tmpArea );
+      CompArea tmpArea(COMPONENT_Y, cs.area.chromaFormat, Position(0, 0), compArea.size());
+      PelBuf   tmpRecLuma = m_tmpStorageCtu->getBuf(tmpArea);
       tmpRecLuma.copyFrom( reco );
       tmpRecLuma.rspSignal( m_pcReshape->getInvLUT() );
       dist += m_pcRdCost->getDistPart(org, tmpRecLuma, cs.sps->getBitDepth(toChannelType(compID)), compID,
@@ -4506,8 +4507,8 @@ Distortion EncCu::getDistortionDb( CodingStructure &cs, CPelBuf org, CPelBuf rec
   {
     if ( compID == COMPONENT_Y && afterDb )
     {
-      CompArea    tmpArea( COMPONENT_Y, cs.area.chromaFormat, Position( 0, 0 ), compArea.size() );
-      PelBuf tmpRecLuma = m_tmpStorageLCU->getBuf( tmpArea );
+      CompArea tmpArea(COMPONENT_Y, cs.area.chromaFormat, Position(0, 0), compArea.size());
+      PelBuf   tmpRecLuma = m_tmpStorageCtu->getBuf(tmpArea);
       tmpRecLuma.copyFrom( reco );
       tmpRecLuma.rspSignal( m_pcReshape->getFwdLUT() );
       dist += m_pcRdCost->getDistPart(org, tmpRecLuma, cs.sps->getBitDepth(toChannelType(compID)), compID, DFunc::SSE);
@@ -4973,8 +4974,9 @@ void EncCu::xReuseCachedResult( CodingStructure *&tempCS, CodingStructure *&best
           if (compID == COMPONENT_Y && !(m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()))
           {
             const CompArea &area = cu.blocks[COMPONENT_Y];
-            CompArea        tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-            PelBuf          tmpRecLuma = m_tmpStorageLCU->getBuf(tmpArea);
+
+            CompArea tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
+            PelBuf   tmpRecLuma = m_tmpStorageCtu->getBuf(tmpArea);
             tmpRecLuma.copyFrom(reco);
             tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
             finalDistortion += m_pcRdCost->getDistPart(org, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
