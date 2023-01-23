@@ -41,10 +41,10 @@ class PreCalcValues;
 class SliceMap
 {
 private:
-  uint32_t               m_sliceID;                           //!< slice identifier (slice index for rectangular slices, slice address for raser-scan slices)
-  uint32_t               m_numTilesInSlice;                   //!< number of tiles in slice (raster-scan slices only)
-  uint32_t               m_numCtuInSlice;                     //!< number of CTUs in the slice
-  std::vector<uint32_t>  m_ctuAddrInSlice;                    //!< raster-scan addresses of all the CTUs in the slice
+  uint32_t               m_sliceID;                           // slice identifier (slice index for rectangular slices, slice address for raser-scan slices)
+  uint32_t               m_numTilesInSlice;                   // number of tiles in slice (raster-scan slices only)
+  uint32_t               m_numCtuInSlice;                     // number of CTUs in the slice
+  std::vector<uint32_t>  m_ctuAddrInSlice;                    // raster-scan addresses of all the CTUs in the slice
 
 public:
   SliceMap();
@@ -85,11 +85,11 @@ public:
 class RectSlice
 {
 private:
-  uint32_t         m_tileIdx;                           //!< tile index corresponding to the first CTU in the slice
-  uint32_t         m_sliceWidthInTiles;                 //!< slice width in units of tiles
-  uint32_t         m_sliceHeightInTiles;                //!< slice height in units of tiles
-  uint32_t         m_numSlicesInTile;                   //!< number of slices in current tile for the special case of multiple slices inside a single tile
-  uint32_t         m_sliceHeightInCtu;                  //!< slice height in units of CTUs for the special case of multiple slices inside a single tile
+  uint32_t         m_tileIdx;                           // tile index corresponding to the first CTU in the slice
+  uint32_t         m_sliceWidthInTiles;                 // slice width in units of tiles
+  uint32_t         m_sliceHeightInTiles;                // slice height in units of tiles
+  uint32_t         m_numSlicesInTile;                   // number of slices in current tile for the special case of multiple slices inside a single tile
+  uint32_t         m_sliceHeightInCtu;                  // slice height in units of CTUs for the special case of multiple slices inside a single tile
 
 public:
   RectSlice();
@@ -111,26 +111,26 @@ public:
 class SubPic
 {
 private:
-  uint32_t         m_subPicID;                                  //!< ID of subpicture
-  uint32_t         m_subPicIdx;                                 //!< Index of subpicture
-  uint32_t         m_numCTUsInSubPic;                           //!< number of CTUs contained in this sub-picture
-  uint32_t         m_subPicCtuTopLeftX;                         //!< horizontal position of top left CTU of the subpicture in unit of CTU
-  uint32_t         m_subPicCtuTopLeftY;                         //!< vertical position of top left CTU of the subpicture in unit of CTU
-  uint32_t         m_subPicWidth;                               //!< the width of subpicture in units of CTU
-  uint32_t         m_subPicHeight;                              //!< the height of subpicture in units of CTU
-  uint32_t         m_subPicWidthInLumaSample;                   //!< the width of subpicture in units of luma sample
-  uint32_t         m_subPicHeightInLumaSample;                  //!< the height of subpicture in units of luma sample
-  uint32_t         m_firstCtuInSubPic;                          //!< the raster scan index of the first CTU in a subpicture
-  uint32_t         m_lastCtuInSubPic;                           //!< the raster scan index of the last CTU in a subpicture
-  uint32_t         m_subPicLeft;                                //!< the position of left boundary
-  uint32_t         m_subPicRight;                               //!< the position of right boundary
-  uint32_t         m_subPicTop;                                 //!< the position of top boundary
-  uint32_t         m_subPicBottom;                              //!< the position of bottom boundary
-  std::vector<uint32_t> m_ctuAddrInSubPic;                      //!< raster scan addresses of all the CTUs in the slice
+  uint32_t         m_subPicID;                                  // ID of subpicture
+  uint32_t         m_subPicIdx;                                 // Index of subpicture
+  uint32_t         m_numCTUsInSubPic;                           // number of CTUs contained in this sub-picture
+  uint32_t         m_subPicCtuTopLeftX;                         // horizontal position of top left CTU of the subpicture in unit of CTU
+  uint32_t         m_subPicCtuTopLeftY;                         // vertical position of top left CTU of the subpicture in unit of CTU
+  uint32_t         m_subPicWidth;                               // the width of subpicture in units of CTU
+  uint32_t         m_subPicHeight;                              // the height of subpicture in units of CTU
+  uint32_t         m_subPicWidthInLumaSample;                   // the width of subpicture in units of luma sample
+  uint32_t         m_subPicHeightInLumaSample;                  // the height of subpicture in units of luma sample
+  uint32_t         m_firstCtuInSubPic;                          // the raster scan index of the first CTU in a subpicture
+  uint32_t         m_lastCtuInSubPic;                           // the raster scan index of the last CTU in a subpicture
+  uint32_t         m_subPicLeft;                                // the position of left boundary
+  uint32_t         m_subPicRight;                               // the position of right boundary
+  uint32_t         m_subPicTop;                                 // the position of top boundary
+  uint32_t         m_subPicBottom;                              // the position of bottom boundary
+  std::vector<uint32_t> m_ctuAddrInSubPic;                      // raster scan addresses of all the CTUs in the slice
 
-  bool             m_treatedAsPicFlag;                          //!< whether the subpicture is treated as a picture in the decoding process excluding in-loop filtering operations
-  bool             m_loopFilterAcrossSubPicEnabledFlag;         //!< whether in-loop filtering operations may be performed across the boundaries of the subpicture
-  uint32_t         m_numSlicesInSubPic;                         //!< Number of slices contained in this subpicture
+  bool             m_treatedAsPicFlag;                          // whether the subpicture is treated as a picture in the decoding process excluding in-loop filtering operations
+  bool             m_loopFilterAcrossSubPicEnabledFlag;         // whether in-loop filtering operations may be performed across the boundaries of the subpicture
+  uint32_t         m_numSlicesInSubPic;                         // Number of slices contained in this subpicture
 
 public:
   SubPic();
@@ -263,39 +263,39 @@ private:
 
   bool             m_rpl1IdxPresentFlag;
 
-  bool             m_useWeightedPred;                   //!< Use of Weighting Prediction (P_SLICE)
-  bool             m_useWeightedBiPred;                 //!< Use of Weighting Bi-Prediction (B_SLICE)
-  bool             m_outputFlagPresentFlag;             //!< Indicates the presence of output_flag in slice header
-  uint32_t         m_numSubPics;                        //!< number of sub-pictures used - must match SPS
+  bool             m_useWeightedPred;                   // Use of Weighting Prediction (P_SLICE)
+  bool             m_useWeightedBiPred;                 // Use of Weighting Bi-Prediction (B_SLICE)
+  bool             m_outputFlagPresentFlag;             // Indicates the presence of output_flag in slice header
+  uint32_t         m_numSubPics;                        // number of sub-pictures used - must match SPS
   bool             m_subPicIdMappingInPpsFlag;
-  uint32_t         m_subPicIdLen;                       //!< sub-picture ID length in bits
+  uint32_t         m_subPicIdLen;                       // sub-picture ID length in bits
 
-  std::vector<uint16_t> m_subPicId;                     //!< sub-picture ID for each sub-picture in the sequence
-  bool             m_noPicPartitionFlag;                //!< no picture partitioning flag - single slice, single tile
-  uint8_t          m_log2CtuSize;                       //!< log2 of the CTU size - required to match corresponding value in SPS
-  uint8_t          m_ctuSize;                           //!< CTU size
-  uint32_t         m_picWidthInCtu;                     //!< picture width in units of CTUs
-  uint32_t         m_picHeightInCtu;                    //!< picture height in units of CTUs
-  uint32_t         m_numExpTileCols;                    //!< number of explicitly specified tile columns
-  uint32_t         m_numExpTileRows;                    //!< number of explicitly specified tile rows
-  uint32_t         m_numTileCols;                       //!< number of tile columns
-  uint32_t         m_numTileRows;                       //!< number of tile rows
-  std::vector<uint32_t> m_tileColWidth;                 //!< tile column widths in units of CTUs
-  std::vector<uint32_t> m_tileRowHeight;                //!< tile row heights in units of CTUs
-  std::vector<uint32_t> m_tileColBd;                    //!< tile column left-boundaries in units of CTUs
-  std::vector<uint32_t> m_tileRowBd;                    //!< tile row top-boundaries in units of CTUs
-  std::vector<uint32_t> m_ctuToTileCol;                 //!< mapping between CTU horizontal address and tile column index
-  std::vector<uint32_t> m_ctuToTileRow;                 //!< mapping between CTU vertical address and tile row index
-  bool             m_rectSliceFlag;                     //!< rectangular slice flag
-  bool             m_singleSlicePerSubPicFlag;          //!< single slice per sub-picture flag
-  std::vector<uint32_t> m_ctuToSubPicIdx;               //!< mapping between CTU and Sub-picture index
-  uint32_t         m_numSlicesInPic;                    //!< number of rectangular slices in the picture (raster-scan slice specified at slice level)
-  bool             m_tileIdxDeltaPresentFlag;           //!< tile index delta present flag
-  std::vector<RectSlice> m_rectSlices;                  //!< list of rectangular slice signalling parameters
-  std::vector<SliceMap>  m_sliceMap;                    //!< list of CTU maps for each slice in the picture
-  std::vector<SubPic>      m_subPics;                   //!< list of subpictures in the picture
-  bool             m_loopFilterAcrossTilesEnabledFlag;  //!< loop filtering applied across tiles flag
-  bool             m_loopFilterAcrossSlicesEnabledFlag; //!< loop filtering applied across slices flag
+  std::vector<uint16_t> m_subPicId;                     // sub-picture ID for each sub-picture in the sequence
+  bool             m_noPicPartitionFlag;                // no picture partitioning flag - single slice, single tile
+  uint8_t          m_log2CtuSize;                       // log2 of the CTU size - required to match corresponding value in SPS
+  uint8_t          m_ctuSize;                           // CTU size
+  uint32_t         m_picWidthInCtu;                     // picture width in units of CTUs
+  uint32_t         m_picHeightInCtu;                    // picture height in units of CTUs
+  uint32_t         m_numExpTileCols;                    // number of explicitly specified tile columns
+  uint32_t         m_numExpTileRows;                    // number of explicitly specified tile rows
+  uint32_t         m_numTileCols;                       // number of tile columns
+  uint32_t         m_numTileRows;                       // number of tile rows
+  std::vector<uint32_t> m_tileColWidth;                 // tile column widths in units of CTUs
+  std::vector<uint32_t> m_tileRowHeight;                // tile row heights in units of CTUs
+  std::vector<uint32_t> m_tileColBd;                    // tile column left-boundaries in units of CTUs
+  std::vector<uint32_t> m_tileRowBd;                    // tile row top-boundaries in units of CTUs
+  std::vector<uint32_t> m_ctuToTileCol;                 // mapping between CTU horizontal address and tile column index
+  std::vector<uint32_t> m_ctuToTileRow;                 // mapping between CTU vertical address and tile row index
+  bool             m_rectSliceFlag;                     // rectangular slice flag
+  bool             m_singleSlicePerSubPicFlag;          // single slice per sub-picture flag
+  std::vector<uint32_t> m_ctuToSubPicIdx;               // mapping between CTU and Sub-picture index
+  uint32_t         m_numSlicesInPic;                    // number of rectangular slices in the picture (raster-scan slice specified at slice level)
+  bool             m_tileIdxDeltaPresentFlag;           // tile index delta present flag
+  std::vector<RectSlice> m_rectSlices;                  // list of rectangular slice signalling parameters
+  std::vector<SliceMap>  m_sliceMap;                    // list of CTU maps for each slice in the picture
+  std::vector<SubPic>      m_subPics;                   // list of subpictures in the picture
+  bool             m_loopFilterAcrossTilesEnabledFlag;  // loop filtering applied across tiles flag
+  bool             m_loopFilterAcrossSlicesEnabledFlag; // loop filtering applied across slices flag
 
 
   bool             m_cabacInitPresentFlag;
@@ -523,20 +523,20 @@ public:
   bool                   getDeblockingFilterControlPresentFlag() const                    { return m_deblockingFilterControlPresentFlag;  }
   void                   setDeblockingFilterOverrideEnabledFlag( bool val )               { m_deblockingFilterOverrideEnabledFlag = val;  }
   bool                   getDeblockingFilterOverrideEnabledFlag() const                   { return m_deblockingFilterOverrideEnabledFlag; }
-  void                   setPPSDeblockingFilterDisabledFlag(bool val)                     { m_ppsDeblockingFilterDisabledFlag = val;      } //!< set offset for deblocking filter disabled
-  bool                   getPPSDeblockingFilterDisabledFlag() const                       { return m_ppsDeblockingFilterDisabledFlag;     } //!< get offset for deblocking filter disabled
-  void                   setDeblockingFilterBetaOffsetDiv2(int val)                       { m_deblockingFilterBetaOffsetDiv2 = val;       } //!< set beta offset for deblocking filter
-  int                    getDeblockingFilterBetaOffsetDiv2() const                        { return m_deblockingFilterBetaOffsetDiv2;      } //!< get beta offset for deblocking filter
-  void                   setDeblockingFilterTcOffsetDiv2(int val)                         { m_deblockingFilterTcOffsetDiv2 = val;         } //!< set tc offset for deblocking filter
-  int                    getDeblockingFilterTcOffsetDiv2() const                          { return m_deblockingFilterTcOffsetDiv2;        } //!< get tc offset for deblocking filter
-  void                   setDeblockingFilterCbBetaOffsetDiv2(int val)                     { m_deblockingFilterCbBetaOffsetDiv2 = val;     } //!< set beta offset for Cb deblocking filter
-  int                    getDeblockingFilterCbBetaOffsetDiv2() const                      { return m_deblockingFilterCbBetaOffsetDiv2;    } //!< get beta offset for Cb deblocking filter
-  void                   setDeblockingFilterCbTcOffsetDiv2(int val)                       { m_deblockingFilterCbTcOffsetDiv2 = val;       } //!< set tc offset for Cb deblocking filter
-  int                    getDeblockingFilterCbTcOffsetDiv2() const                        { return m_deblockingFilterCbTcOffsetDiv2;      } //!< get tc offset for Cb deblocking filter
-  void                   setDeblockingFilterCrBetaOffsetDiv2(int val)                     { m_deblockingFilterCrBetaOffsetDiv2 = val;     } //!< set beta offset for Cr deblocking filter
-  int                    getDeblockingFilterCrBetaOffsetDiv2() const                      { return m_deblockingFilterCrBetaOffsetDiv2;    } //!< get beta offset for Cr deblocking filter
-  void                   setDeblockingFilterCrTcOffsetDiv2(int val)                       { m_deblockingFilterCrTcOffsetDiv2 = val;       } //!< set tc offset for Cr deblocking filter
-  int                    getDeblockingFilterCrTcOffsetDiv2() const                        { return m_deblockingFilterCrTcOffsetDiv2;      } //!< get tc offset for Cr deblocking filter
+  void                   setPPSDeblockingFilterDisabledFlag(bool val)                     { m_ppsDeblockingFilterDisabledFlag = val;      }
+  bool                   getPPSDeblockingFilterDisabledFlag() const                       { return m_ppsDeblockingFilterDisabledFlag;     }
+  void                   setDeblockingFilterBetaOffsetDiv2(int val)                       { m_deblockingFilterBetaOffsetDiv2 = val;       }
+  int                    getDeblockingFilterBetaOffsetDiv2() const                        { return m_deblockingFilterBetaOffsetDiv2;      }
+  void                   setDeblockingFilterTcOffsetDiv2(int val)                         { m_deblockingFilterTcOffsetDiv2 = val;         }
+  int                    getDeblockingFilterTcOffsetDiv2() const                          { return m_deblockingFilterTcOffsetDiv2;        }
+  void                   setDeblockingFilterCbBetaOffsetDiv2(int val)                     { m_deblockingFilterCbBetaOffsetDiv2 = val;     }
+  int                    getDeblockingFilterCbBetaOffsetDiv2() const                      { return m_deblockingFilterCbBetaOffsetDiv2;    }
+  void                   setDeblockingFilterCbTcOffsetDiv2(int val)                       { m_deblockingFilterCbTcOffsetDiv2 = val;       }
+  int                    getDeblockingFilterCbTcOffsetDiv2() const                        { return m_deblockingFilterCbTcOffsetDiv2;      }
+  void                   setDeblockingFilterCrBetaOffsetDiv2(int val)                     { m_deblockingFilterCrBetaOffsetDiv2 = val;     }
+  int                    getDeblockingFilterCrBetaOffsetDiv2() const                      { return m_deblockingFilterCrBetaOffsetDiv2;    }
+  void                   setDeblockingFilterCrTcOffsetDiv2(int val)                       { m_deblockingFilterCrTcOffsetDiv2 = val;       }
+  int                    getDeblockingFilterCrTcOffsetDiv2() const                        { return m_deblockingFilterCrTcOffsetDiv2;      }
   bool                   getListsModificationPresentFlag() const                          { return m_listsModificationPresentFlag;        }
   void                   setListsModificationPresentFlag( bool b )                        { m_listsModificationPresentFlag = b;           }
   bool                   getPictureHeaderExtensionPresentFlag() const                     { return m_pictureHeaderExtensionPresentFlag;     }

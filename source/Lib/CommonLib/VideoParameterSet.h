@@ -84,8 +84,10 @@ private:
   std::vector<std::vector<int>> m_outputLayerIdInOls;
   std::vector<std::vector<int>> m_numSubLayersInLayerInOLS;
 
-  std::vector<int> m_multiLayerOlsIdxToOlsIdx; // mapping from multi-layer OLS index to OLS index. Initialized in deriveOutputLayerSets()
-                                               // m_multiLayerOlsIdxToOlsIdx[n] is the OLSidx of the n-th multi-layer OLS.
+  // mapping from multi-layer OLS index to OLS index. Initialized in deriveOutputLayerSets()
+  // m_multiLayerOlsIdxToOlsIdx[n] is the OLSidx of the n-th multi-layer OLS.
+  std::vector<int> m_multiLayerOlsIdxToOlsIdx;
+
 public:
   std::vector<std::vector<OlsHrdParams>> m_olsHrdParams;
   int                           m_totalNumOLSs;
@@ -95,8 +97,8 @@ public:
   std::vector<DpbParameters>    m_dpbParameters;
   bool                          m_sublayerDpbParamsPresentFlag;
   std::vector<int>              m_dpbMaxTemporalId;
-  std::vector<int>              m_targetOutputLayerIdSet;          ///< set of LayerIds to be outputted
-  std::vector<int>              m_targetLayerIdSet;                ///< set of LayerIds to be included in the sub-bitstream extraction process.
+  std::vector<int>              m_targetOutputLayerIdSet;          // set of LayerIds to be outputted
+  std::vector<int>              m_targetLayerIdSet;                // set of LayerIds to be included in the sub-bitstream extraction process.
   int                           m_targetOlsIdx;
   std::vector<int>              m_numOutputLayersInOls;
   std::vector<int>              m_numLayersInOls;

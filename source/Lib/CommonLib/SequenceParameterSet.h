@@ -395,7 +395,7 @@ private:
   uint32_t              m_maxHeightInLumaSamples;
   Window                m_conformanceWindow;
   bool                  m_subPicInfoPresentFlag;                // indicates the presence of sub-picture info
-  uint32_t              m_numSubPics;                        //!< number of sub-pictures used
+  uint32_t              m_numSubPics;                        // number of sub-pictures used
   bool                  m_independentSubPicsFlag;
   bool                  m_subPicSameSizeFlag;
   std::vector<uint32_t> m_subPicCtuTopLeftX;
@@ -406,8 +406,8 @@ private:
   std::vector<bool>     m_loopFilterAcrossSubpicEnabledFlag;
   bool                  m_subPicIdMappingExplicitlySignalledFlag;
   bool                  m_subPicIdMappingPresentFlag;
-  uint32_t              m_subPicIdLen;                       //!< sub-picture ID length in bits
-  std::vector<uint16_t> m_subPicId;                          //!< sub-picture ID for each sub-picture in the sequence
+  uint32_t              m_subPicIdLen;                       // sub-picture ID length in bits
+  std::vector<uint16_t> m_subPicId;                          // sub-picture ID for each sub-picture in the sequence
 
   int               m_log2MinCodingBlockSize;
   unsigned    m_CTUSize;
@@ -439,8 +439,8 @@ private:
   bool              m_jointCbCrEnabledFlag;
   // Parameter
   BitDepths         m_bitDepths;
-  bool              m_entropyCodingSyncEnabledFlag;                    //!< Flag for enabling WPP
-  bool              m_entryPointPresentFlag;                           //!< Flag for indicating the presence of entry points
+  bool              m_entropyCodingSyncEnabledFlag;                    // Flag for enabling WPP
+  bool              m_entryPointPresentFlag;                           // Flag for indicating the presence of entry points
   int               m_qpBDOffset[MAX_NUM_CHANNEL_TYPE];
   BitDepths         m_internalMinusInputBitDepth;   //  max(0, internal bitdepth - input bitdepth)
 
@@ -462,22 +462,22 @@ private:
   uint32_t          m_ltRefPicPocLsbSps[MAX_NUM_LONG_TERM_REF_PICS];
   bool              m_usedByCurrPicLtSPSFlag[MAX_NUM_LONG_TERM_REF_PICS];
   uint32_t          m_log2MaxTbSize;
-  bool              m_useWeightPred;                     //!< Use of Weighting Prediction (P_SLICE)
-  bool              m_useWeightedBiPred;                 //!< Use of Weighting Bi-Prediction (B_SLICE)
+  bool              m_useWeightPred;                     // Use of Weighting Prediction (P_SLICE)
+  bool              m_useWeightedBiPred;                 // Use of Weighting Bi-Prediction (B_SLICE)
 
   bool              m_saoEnabledFlag;
 
   bool m_temporalIdNestingFlag;   // temporal_id_nesting_flag
 
   bool              m_scalingListEnabledFlag;
-  bool              m_depQuantEnabledFlag;            //!< dependent quantization enabled flag
-  bool              m_signDataHidingEnabledFlag;      //!< sign data hiding enabled flag
-  bool              m_virtualBoundariesEnabledFlag;   //!< Enable virtual boundaries tool
-  bool              m_virtualBoundariesPresentFlag;   //!< disable loop filtering across virtual boundaries
-  unsigned          m_numVerVirtualBoundaries;                         //!< number of vertical virtual boundaries
-  unsigned          m_numHorVirtualBoundaries;                         //!< number of horizontal virtual boundaries
-  unsigned          m_virtualBoundariesPosX[3];                        //!< horizontal position of each vertical virtual boundary
-  unsigned          m_virtualBoundariesPosY[3];                        //!< vertical position of each horizontal virtual boundary
+  bool              m_depQuantEnabledFlag;            // dependent quantization enabled flag
+  bool              m_signDataHidingEnabledFlag;      // sign data hiding enabled flag
+  bool              m_virtualBoundariesEnabledFlag;   // Enable virtual boundaries tool
+  bool              m_virtualBoundariesPresentFlag;   // disable loop filtering across virtual boundaries
+  unsigned          m_numVerVirtualBoundaries;                         // number of vertical virtual boundaries
+  unsigned          m_numHorVirtualBoundaries;                         // number of horizontal virtual boundaries
+  unsigned          m_virtualBoundariesPosX[3];                        // horizontal position of each vertical virtual boundary
+  unsigned          m_virtualBoundariesPosY[3];                        // vertical position of each horizontal virtual boundary
   uint32_t          m_maxDecPicBuffering[MAX_TLAYER];
   uint32_t          m_maxLatencyIncreasePlus1[MAX_TLAYER];
 
@@ -688,10 +688,8 @@ public:
   void                    setLog2MaxTransformSkipBlockSize(uint32_t u)                                        { m_log2MaxTransformSkipBlockSize = u;                                 }
   bool                        getBDPCMEnabledFlag() const { return m_bdpcmEnabledFlag; }
   void                        setBDPCMEnabledFlag(bool b) { m_bdpcmEnabledFlag = b; }
-  // clang-format off
   void     setBitsForPOC(uint32_t val) { m_bitsForPoc = val; }
   uint32_t getBitsForPOC() const { return m_bitsForPoc; }
-  // clang-format on
 
   void                    setPocMsbCycleFlag(bool b)                                                          { m_pocMsbCycleFlag = b;                                               }
   bool                    getPocMsbCycleFlag() const                                                          { return m_pocMsbCycleFlag;                                            }
@@ -717,13 +715,11 @@ public:
   void                    setAllActiveRplEntriesHasSameSignFlag(bool isAllSame)                               { m_allRplEntriesHasSameSignFlag = isAllSame;                          }
   bool                    getAllActiveRplEntriesHasSameSignFlag() const                                       { return m_allRplEntriesHasSameSignFlag;                               }
 
-  // clang-format off
   void setLongTermRefsPresent(bool val) { m_longTermRefsPresent = val; }
   bool getLongTermRefsPresent() const { return m_longTermRefsPresent; }
 
   void setSPSTemporalMVPEnabledFlag(bool val) { m_temporalMvpEnabledFlag = val; }
   bool getSPSTemporalMVPEnabledFlag() const { return m_temporalMvpEnabledFlag; }
-  // clang-format on
 
   void                    setLog2MaxTbSize( uint32_t u )                                                  { m_log2MaxTbSize = u;                                                 }
   uint32_t                getLog2MaxTbSize() const                                                        { return  m_log2MaxTbSize;                                             }
@@ -751,7 +747,6 @@ public:
   void                    setSAOEnabledFlag(bool bVal)                                                    { m_saoEnabledFlag = bVal;                                                    }
   bool                    getSAOEnabledFlag() const                                                       { return m_saoEnabledFlag;                                                    }
 
-  // clang-format off
   void setALFEnabledFlag(bool val) { m_alfEnabledFlag = val; }
   bool getALFEnabledFlag() const { return m_alfEnabledFlag; }
 
@@ -763,7 +758,6 @@ public:
 
   void setSbTMVPEnabledFlag(bool val) { m_sbtmvpEnabledFlag = val; }
   bool getSbTMVPEnabledFlag() const { return m_sbtmvpEnabledFlag; }
-  // clang-format on
 
   void                    setBDOFEnabledFlag(bool b)                                                      { m_bdofEnabledFlag = b; }
   bool                    getBDOFEnabledFlag() const                                                      { return m_bdofEnabledFlag; }
@@ -788,10 +782,8 @@ public:
   bool                    getPtlDpbHrdParamsPresentFlag()  const                                          { return m_ptlDpbHrdParamsPresentFlag;     }
   void                    setPtlDpbHrdParamsPresentFlag(bool b)                                           {        m_ptlDpbHrdParamsPresentFlag = b; }
 
-  // clang-format off
   void setSubLayerDpbParamsFlag(bool val) { m_subLayerDpbParamsFlag = val; }
   bool getSubLayerDpbParamsFlag() const { return m_subLayerDpbParamsFlag; }
-  // clang-format on
 
   bool getTemporalIdNestingFlag() const { return m_temporalIdNestingFlag; }
   void setTemporalIdNestingFlag(bool value) { m_temporalIdNestingFlag = value; }
