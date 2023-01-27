@@ -652,7 +652,13 @@ constexpr size_t MALLOC_ALIGN_SIZE = MEMORY_ALIGN_DEF_SIZE;
 #define xMalloc(type, len) _aligned_malloc(sizeof(type) * (len), MEMORY_ALIGN_DEF_SIZE)
 #define xFree(ptr) _aligned_free(ptr)
 #else
-#define xMalloc(type, len) std::aligned_alloc(MALLOC_ALIGN_SIZE, sizeof(type) * (len))
+template<typename T> inline void* alignedAllocAdjustSize(size_t len)
+{
+  // std::aligned_alloc requires that the size parameter is an integral multiple of the alignment
+  const size_t numBytes = (sizeof(T) * len + MALLOC_ALIGN_SIZE - 1) & ~(MALLOC_ALIGN_SIZE - 1);
+  return std::aligned_alloc(MALLOC_ALIGN_SIZE, numBytes);
+}
+#define xMalloc(type, len) alignedAllocAdjustSize<type>(len)
 #define xFree(ptr) std::free(ptr)
 #endif
 
