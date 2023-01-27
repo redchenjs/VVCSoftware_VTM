@@ -41,10 +41,10 @@ class PreCalcValues;
 class SliceMap
 {
 private:
-  uint32_t               m_sliceID;                           // slice identifier (slice index for rectangular slices, slice address for raser-scan slices)
-  uint32_t               m_numTilesInSlice;                   // number of tiles in slice (raster-scan slices only)
-  uint32_t               m_numCtuInSlice;                     // number of CTUs in the slice
-  std::vector<uint32_t>  m_ctuAddrInSlice;                    // raster-scan addresses of all the CTUs in the slice
+  uint32_t               m_sliceID;           // slice identifier (slice index for rectangular slices, slice address for raser-scan slices)
+  uint32_t               m_numTilesInSlice;   // number of tiles in slice (raster-scan slices only)
+  uint32_t               m_numCtuInSlice;     // number of CTUs in the slice
+  std::vector<uint32_t>  m_ctuAddrInSlice;    // raster-scan addresses of all the CTUs in the slice
 
 public:
   SliceMap();
@@ -85,11 +85,11 @@ public:
 class RectSlice
 {
 private:
-  uint32_t         m_tileIdx;                           // tile index corresponding to the first CTU in the slice
-  uint32_t         m_sliceWidthInTiles;                 // slice width in units of tiles
-  uint32_t         m_sliceHeightInTiles;                // slice height in units of tiles
-  uint32_t         m_numSlicesInTile;                   // number of slices in current tile for the special case of multiple slices inside a single tile
-  uint32_t         m_sliceHeightInCtu;                  // slice height in units of CTUs for the special case of multiple slices inside a single tile
+  uint32_t         m_tileIdx;             // tile index corresponding to the first CTU in the slice
+  uint32_t         m_sliceWidthInTiles;   // slice width in units of tiles
+  uint32_t         m_sliceHeightInTiles;  // slice height in units of tiles
+  uint32_t         m_numSlicesInTile;     // number of slices in current tile for the special case of multiple slices inside a single tile
+  uint32_t         m_sliceHeightInCtu;    // slice height in units of CTUs for the special case of multiple slices inside a single tile
 
 public:
   RectSlice();
@@ -173,7 +173,9 @@ public:
   void                  addCTUsToSubPic(std::vector<uint32_t> ctuAddrInSlice)
   {
     for (auto ctu:ctuAddrInSlice)
+    {
       m_ctuAddrInSubPic.push_back(ctu);
+    }
   }
   void  addAllCtusInPicToSubPic(uint32_t startX, uint32_t stopX, uint32_t startY, uint32_t stopY, uint32_t picWidthInCtbsY)
   {
@@ -196,15 +198,16 @@ public:
   bool             getloopFilterAcrossEnabledFlag()  const { return  m_loopFilterAcrossSubPicEnabledFlag;     }
 
   bool             isFirstCTUinSubPic(uint32_t ctuAddr) const { return  ctuAddr == m_firstCtuInSubPic;  }
-  bool              isLastCTUinSubPic(uint32_t ctuAddr) const { return  ctuAddr == m_lastCtuInSubPic;   }
+  bool             isLastCTUinSubPic(uint32_t ctuAddr)  const { return  ctuAddr == m_lastCtuInSubPic;   }
   void             setNumSlicesInSubPic( uint32_t val )    { m_numSlicesInSubPic = val; }
   uint32_t         getNumSlicesInSubPic() const            { return m_numSlicesInSubPic; }
-  bool             containsCtu(const Position& pos) const
+
+  bool containsCtu(const Position& pos) const
   {
     return pos.x >= m_subPicCtuTopLeftX && pos.x < m_subPicCtuTopLeftX + m_subPicWidth &&
            pos.y >= m_subPicCtuTopLeftY && pos.y < m_subPicCtuTopLeftY + m_subPicHeight;
   }
-  bool             containsCtu(int ctuAddr) const
+  bool containsCtu(int ctuAddr) const
   {
     for (auto & addr : m_ctuAddrInSubPic)
     {
@@ -221,7 +224,8 @@ struct ChromaQpAdj
 {
   union
   {
-    struct {
+    struct
+    {
       int cbOffset;
       int crOffset;
       int jointCbCrOffset;
@@ -234,8 +238,8 @@ struct ChromaQpAdj
 class PPS
 {
 private:
-  int              m_ppsId;   // pic_parameter_set_id
-  int              m_spsId;   // seq_parameter_set_id
+  int              m_ppsId = 0;   // pic_parameter_set_id
+  int              m_spsId = 0;   // seq_parameter_set_id
   int              m_picInitQPMinus26;
   bool             m_useDQP;
   bool             m_usePPSChromaTool;
@@ -257,9 +261,9 @@ private:
 
   // Array includes entry [0] for the null offset used when  cu_chroma_qp_offset_flag=0, and entries
   // [cu_chroma_qp_offset_idx+1...] otherwis
-  ChromaQpAdj m_chromaQpAdjTableIncludingNullEntry[1 + MAX_QP_OFFSET_LIST_SIZE];
+  ChromaQpAdj      m_chromaQpAdjTableIncludingNullEntry[1 + MAX_QP_OFFSET_LIST_SIZE];
 
-  uint32_t m_numRefIdxDefaultActive[NUM_REF_PIC_LIST_01];
+  uint32_t         m_numRefIdxDefaultActive[NUM_REF_PIC_LIST_01];
 
   bool             m_rpl1IdxPresentFlag;
 
@@ -300,17 +304,17 @@ private:
 
   bool             m_cabacInitPresentFlag;
 
-  bool             m_pictureHeaderExtensionPresentFlag;   //< picture header extension flags present in picture headers or not
+  bool             m_pictureHeaderExtensionPresentFlag;   // picture header extension flags present in picture headers or not
   bool             m_sliceHeaderExtensionPresentFlag;
   bool             m_deblockingFilterControlPresentFlag;
   bool             m_deblockingFilterOverrideEnabledFlag;
   bool             m_ppsDeblockingFilterDisabledFlag;
-  int              m_deblockingFilterBetaOffsetDiv2;    //< beta offset for deblocking filter
-  int              m_deblockingFilterTcOffsetDiv2;      //< tc offset for deblocking filter
-  int              m_deblockingFilterCbBetaOffsetDiv2;    //< beta offset for Cb deblocking filter
-  int              m_deblockingFilterCbTcOffsetDiv2;      //< tc offset for Cb deblocking filter
-  int              m_deblockingFilterCrBetaOffsetDiv2;    //< beta offset for Cr deblocking filter
-  int              m_deblockingFilterCrTcOffsetDiv2;      //< tc offset for Cr deblocking filter
+  int              m_deblockingFilterBetaOffsetDiv2;      // beta offset for deblocking filter
+  int              m_deblockingFilterTcOffsetDiv2;        // tc offset for deblocking filter
+  int              m_deblockingFilterCbBetaOffsetDiv2;    // beta offset for Cb deblocking filter
+  int              m_deblockingFilterCbTcOffsetDiv2;      // tc offset for Cb deblocking filter
+  int              m_deblockingFilterCrBetaOffsetDiv2;    // beta offset for Cr deblocking filter
+  int              m_deblockingFilterCrTcOffsetDiv2;      // tc offset for Cr deblocking filter
   bool             m_listsModificationPresentFlag;
 
   bool             m_rplInfoInPhFlag;
@@ -336,20 +340,20 @@ public:
   PreCalcValues   *pcv;
 
 public:
-                         PPS();
-  virtual                ~PPS();
+  PPS();
+  virtual ~PPS();
 
-  int  getPPSId() const { return m_ppsId; }
-  void setPPSId(int i) { m_ppsId = i; }
-  int  getSPSId() const { return m_spsId; }
-  void setSPSId(int i) { m_spsId = i; }
+  int                    getPPSId() const  { return m_ppsId; }
+  void                   setPPSId(int i)   { m_ppsId = i; }
+  int                    getSPSId() const  { return m_spsId; }
+  void                   setSPSId(int i)   { m_spsId = i; }
 
-  void                   setTemporalId( int i )                                           { m_temporalId = i;                             }
-  int                    getTemporalId()                                            const { return m_temporalId;                          }
-  void                   setPuCounter(int i)                                              { m_puCounter = i;                              }
-  int                    getPuCounter()                                             const { return m_puCounter;                           }
-  void                   setLayerId( int i )                                              { m_layerId = i;                                }
-  int                    getLayerId()                                               const { return m_layerId;                             }
+  void                   setTemporalId( int i ) { m_temporalId = i; }
+  int                    getTemporalId() const  { return m_temporalId; }
+  void                   setPuCounter(int i)    { m_puCounter = i; }
+  int                    getPuCounter() const   { return m_puCounter; }
+  void                   setLayerId( int i )    { m_layerId = i; }
+  int                    getLayerId() const     { return m_layerId; }
 
   int                    getPicInitQPMinus26() const                                      { return  m_picInitQPMinus26;                   }
   void                   setPicInitQPMinus26( int i )                                     { m_picInitQPMinus26 = i;                       }
@@ -357,31 +361,13 @@ public:
   void                   setUseDQP( bool b )                                              { m_useDQP   = b;                               }
   bool                   getPPSChromaToolFlag()                                     const { return  m_usePPSChromaTool;                   }
   void                   setPPSChromaToolFlag(bool b)                                     { m_usePPSChromaTool = b;                       }
-  bool                   getSliceChromaQpFlag() const { return m_sliceChromaQpFlag; }
-  void                   setSliceChromaQpFlag(bool b) { m_sliceChromaQpFlag = b; }
+  bool                   getSliceChromaQpFlag() const                                     { return m_sliceChromaQpFlag; }
+  void                   setSliceChromaQpFlag(bool b)                                     { m_sliceChromaQpFlag = b; }
 
   bool                   getJointCbCrQpOffsetPresentFlag() const                          { return m_chromaJointCbCrQpOffsetPresentFlag;   }
   void                   setJointCbCrQpOffsetPresentFlag(bool b)                          { m_chromaJointCbCrQpOffsetPresentFlag = b;      }
 
-  void                   setQpOffset(ComponentID compID, int i )
-  {
-    if (compID == COMPONENT_Cb)
-    {
-      m_chromaCbQpOffset = i;
-    }
-    else if (compID==COMPONENT_Cr)
-    {
-      m_chromaCrQpOffset = i;
-    }
-    else if (compID==JOINT_CbCr)
-    {
-      m_chromaCbCrQpOffset = i;
-    }
-    else
-    {
-      THROW( "Invalid chroma QP offset" );
-    }
-  }
+  void                   setQpOffset(ComponentID compID, int i );
   int                    getQpOffset(ComponentID compID) const
   {
     return (compID==COMPONENT_Y) ? 0 : (compID==COMPONENT_Cb ? m_chromaCbQpOffset : compID==COMPONENT_Cr ? m_chromaCrQpOffset : m_chromaCbCrQpOffset );
@@ -390,35 +376,18 @@ public:
   bool                   getCuChromaQpOffsetListEnabledFlag() const                       { return getChromaQpOffsetListLen()>0;            }
   int                    getChromaQpOffsetListLen() const                                 { return m_chromaQpOffsetListLen;                 }
   void                   clearChromaQpOffsetList()                                        { m_chromaQpOffsetListLen = 0;                    }
+  const ChromaQpAdj&     getChromaQpOffsetListEntry(int cuChromaQpOffsetIdxPlus1) const;
+  void                   setChromaQpOffsetListEntry(int cuChromaQpOffsetIdxPlus1, int cbOffset, int crOffset, int jointCbCrOffset);
 
-  const ChromaQpAdj&     getChromaQpOffsetListEntry( int cuChromaQpOffsetIdxPlus1 ) const
-  {
-    CHECK(cuChromaQpOffsetIdxPlus1 >= m_chromaQpOffsetListLen+1, "Invalid chroma QP offset");
-    return m_chromaQpAdjTableIncludingNullEntry
-      [cuChromaQpOffsetIdxPlus1];   // Array includes entry [0] for the null offset used when
-                                    // cu_chroma_qp_offset_flag=0, and entries [cu_chroma_qp_offset_idx+1...] otherwise
-  }
-
-  void                   setChromaQpOffsetListEntry( int cuChromaQpOffsetIdxPlus1, int cbOffset, int crOffset, int jointCbCrOffset )
-  {
-    // Array includes entry [0] for the null offset used when cu_chroma_qp_offset_flag=0, and entries
-    // [cu_chroma_qp_offset_idx+1...] otherwise
-    CHECK(cuChromaQpOffsetIdxPlus1 == 0 || cuChromaQpOffsetIdxPlus1 > MAX_QP_OFFSET_LIST_SIZE, "Invalid chroma QP offset");
-    m_chromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.cbOffset        = cbOffset;
-    m_chromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.crOffset        = crOffset;
-    m_chromaQpAdjTableIncludingNullEntry[cuChromaQpOffsetIdxPlus1].u.comp.jointCbCrOffset = jointCbCrOffset;
-    m_chromaQpOffsetListLen = std::max(m_chromaQpOffsetListLen, cuChromaQpOffsetIdxPlus1);
-  }
-
-  void setNumRefIdxDefaultActive(RefPicList l, int n) { m_numRefIdxDefaultActive[l] = n; }
-  int  getNumRefIdxDefaultActive(RefPicList l) const { return m_numRefIdxDefaultActive[l]; }
+  void                   setNumRefIdxDefaultActive(RefPicList l, int n)                   { m_numRefIdxDefaultActive[l] = n; }
+  int                    getNumRefIdxDefaultActive(RefPicList l) const                    { return m_numRefIdxDefaultActive[l]; }
 
   void                   setRpl1IdxPresentFlag(bool isPresent)                            { m_rpl1IdxPresentFlag = isPresent;             }
   uint32_t               getRpl1IdxPresentFlag() const                                    { return m_rpl1IdxPresentFlag;                  }
 
-  bool                   getUseWP() const { return m_useWeightedPred; }
+  bool                   getUseWP() const                                                 { return m_useWeightedPred; }
   bool                   getWPBiPred() const                                              { return m_useWeightedBiPred;                   }
-  void                   setUseWP(bool b) { m_useWeightedPred = b; }
+  void                   setUseWP(bool b)                                                  { m_useWeightedPred = b; }
   void                   setWPBiPred( bool b )                                            { m_useWeightedBiPred = b;                      }
 
   void                   setWrapAroundEnabledFlag(bool b)                                 { m_wrapAroundEnabledFlag = b;                  }
@@ -506,22 +475,20 @@ public:
   void                   initTiles();
   void                   initRectSlices();
   void                   initRectSliceMap(const SPS  *sps);
-  std::vector<SubPic>    getSubPics()  const                                              {return m_subPics;          };
-  SubPic                 getSubPic(uint32_t idx) const                                    { return m_subPics[idx]; }
+  std::vector<SubPic>    getSubPics()  const                                              { return m_subPics; };
+  SubPic                 getSubPic(uint32_t idx) const                                    { return m_subPics[idx];}
   void                   initSubPic(const SPS &sps);
   const SubPic&          getSubPicFromPos(const Position& pos)  const;
   const SubPic&          getSubPicFromCU (const CodingUnit& cu) const;
-  void                   initRasterSliceMap( std::vector<uint32_t> sizes );
+  void                   initRasterSliceMap(const std::vector<uint32_t> &sizes );
   void                   checkSliceMap();
-  SliceMap               getSliceMap( int idx ) const                                     { CHECK( idx >= m_numSlicesInPic, "Slice index exceeds valid range" );    return m_sliceMap[idx];                             }
-
-
+  SliceMap               getSliceMap(int idx) const                                       { CHECK( idx >= m_numSlicesInPic, "Slice index exceeds valid range" ); return m_sliceMap[idx];                             }
 
   void                   setCabacInitPresentFlag( bool flag )                             { m_cabacInitPresentFlag = flag;                }
   bool                   getCabacInitPresentFlag() const                                  { return m_cabacInitPresentFlag;                }
-  void                   setDeblockingFilterControlPresentFlag( bool val )                { m_deblockingFilterControlPresentFlag = val;   }
+  void                   setDeblockingFilterControlPresentFlag(bool val)                  { m_deblockingFilterControlPresentFlag = val;   }
   bool                   getDeblockingFilterControlPresentFlag() const                    { return m_deblockingFilterControlPresentFlag;  }
-  void                   setDeblockingFilterOverrideEnabledFlag( bool val )               { m_deblockingFilterOverrideEnabledFlag = val;  }
+  void                   setDeblockingFilterOverrideEnabledFlag(bool val)                 { m_deblockingFilterOverrideEnabledFlag = val;  }
   bool                   getDeblockingFilterOverrideEnabledFlag() const                   { return m_deblockingFilterOverrideEnabledFlag; }
   void                   setPPSDeblockingFilterDisabledFlag(bool val)                     { m_ppsDeblockingFilterDisabledFlag = val;      }
   bool                   getPPSDeblockingFilterDisabledFlag() const                       { return m_ppsDeblockingFilterDisabledFlag;     }
@@ -538,9 +505,9 @@ public:
   void                   setDeblockingFilterCrTcOffsetDiv2(int val)                       { m_deblockingFilterCrTcOffsetDiv2 = val;       }
   int                    getDeblockingFilterCrTcOffsetDiv2() const                        { return m_deblockingFilterCrTcOffsetDiv2;      }
   bool                   getListsModificationPresentFlag() const                          { return m_listsModificationPresentFlag;        }
-  void                   setListsModificationPresentFlag( bool b )                        { m_listsModificationPresentFlag = b;           }
-  bool                   getPictureHeaderExtensionPresentFlag() const                     { return m_pictureHeaderExtensionPresentFlag;     }
-  void                   setPictureHeaderExtensionPresentFlag(bool val)                   { m_pictureHeaderExtensionPresentFlag = val;      }
+  void                   setListsModificationPresentFlag(bool b)                          { m_listsModificationPresentFlag = b;           }
+  bool                   getPictureHeaderExtensionPresentFlag() const                     { return m_pictureHeaderExtensionPresentFlag;   }
+  void                   setPictureHeaderExtensionPresentFlag(bool val)                   { m_pictureHeaderExtensionPresentFlag = val;    }
   bool                   getSliceHeaderExtensionPresentFlag() const                       { return m_sliceHeaderExtensionPresentFlag;     }
   void                   setSliceHeaderExtensionPresentFlag(bool val)                     { m_sliceHeaderExtensionPresentFlag = val;      }
 
@@ -558,23 +525,23 @@ public:
   bool                   getQpDeltaInfoInPhFlag() const                                   { return m_qpDeltaInfoInPhFlag; }
 
 
-  void                    setPicWidthInLumaSamples( uint32_t u )                          { m_picWidthInLumaSamples = u; }
+  void                    setPicWidthInLumaSamples(uint32_t u)                            { m_picWidthInLumaSamples = u; }
   uint32_t                getPicWidthInLumaSamples() const                                { return  m_picWidthInLumaSamples; }
-  void                    setPicHeightInLumaSamples( uint32_t u )                         { m_picHeightInLumaSamples = u; }
+  void                    setPicHeightInLumaSamples(uint32_t u)                           { m_picHeightInLumaSamples = u; }
   uint32_t                getPicHeightInLumaSamples() const                               { return  m_picHeightInLumaSamples; }
 
   void                    setConformanceWindowFlag(bool flag)                             { m_conformanceWindowFlag = flag; }
   bool                    getConformanceWindowFlag() const                                { return m_conformanceWindowFlag; }
   Window&                 getConformanceWindow()                                          { return  m_conformanceWindow; }
   const Window&           getConformanceWindow() const                                    { return  m_conformanceWindow; }
-  void                    setConformanceWindow( Window& conformanceWindow )               { m_conformanceWindow = conformanceWindow; }
+  void                    setConformanceWindow(Window& conformanceWindow)                 { m_conformanceWindow = conformanceWindow; }
 
   void                    setExplicitScalingWindowFlag(bool flag)                         { m_explicitScalingWindowFlag = flag; }
   bool                    getExplicitScalingWindowFlag() const                            { return m_explicitScalingWindowFlag; }
   Window&                 getScalingWindow()                                              { return  m_scalingWindow; }
-  const Window&           getScalingWindow()                                        const { return  m_scalingWindow; }
-  void                    setScalingWindow( Window& scalingWindow )                       { m_scalingWindow = scalingWindow; }
+  const Window&           getScalingWindow() const                                        { return  m_scalingWindow; }
+  void                    setScalingWindow(Window& scalingWindow)                         { m_scalingWindow = scalingWindow; }
 
   bool                    getMixedNaluTypesInPicFlag() const                              { return m_mixedNaluTypesInPicFlag; }
-  void                    setMixedNaluTypesInPicFlag( const bool flag )                   { m_mixedNaluTypesInPicFlag = flag; }
+  void                    setMixedNaluTypesInPicFlag(bool flag)                           { m_mixedNaluTypesInPicFlag = flag; }
 };

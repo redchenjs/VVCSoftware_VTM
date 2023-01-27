@@ -1729,7 +1729,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
       chromaQpMappingTableParams.setDeltaQpOutVal(i, deltaQpOutVal);
     }
     pcSPS->setChromaQpMappingTableFromParams(chromaQpMappingTableParams, pcSPS->getQpBDOffset(ChannelType::CHROMA));
-    pcSPS->derivedChromaQPMappingTables();
+    pcSPS->deriveChromaQPMappingTables();
   }
 
 
@@ -1959,7 +1959,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
     CHECK(uiCode > 8, "Invalid sps_internal_bit_depth_minus_input_bit_depth signalled");
     pcSPS->setInternalMinusInputBitDepth(ChannelType::CHROMA, uiCode);
   }
-  xReadFlag(uiCode, "sps_ibc_enabled_flag");                                    pcSPS->setIBCFlag(uiCode);
+  xReadFlag(uiCode, "sps_ibc_enabled_flag");                                    pcSPS->setIBCFlag(uiCode != 0);
   if (pcSPS->getIBCFlag())
   {
     xReadUvlc(uiCode, "sps_six_minus_max_num_ibc_merge_cand");

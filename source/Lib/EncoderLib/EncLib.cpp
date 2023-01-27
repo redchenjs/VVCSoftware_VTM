@@ -1498,7 +1498,7 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setUseDMVR                            ( m_DMVR );
   sps.setUseColorTrans(m_useColorTrans);
   sps.setPLTMode                            ( m_PLTMode);
-  sps.setIBCFlag                            ( m_IBCMode);
+  sps.setIBCFlag                            ( m_IBCMode != 0);
   sps.setWrapAroundEnabledFlag                      ( m_wrapAround );
   // ADD_NEW_TOOL : (encoder lib) set tool enabling flags and associated parameters here
   sps.setUseISP                             ( m_ISP );
@@ -1600,7 +1600,7 @@ void EncLib::xInitSPS( SPS& sps )
   int numQpTables = m_chromaQpMappingTableParams.getSameCQPTableForAllChromaFlag() ? 1 : (sps.getJointCbCrEnabledFlag() ? 3 : 2);
   m_chromaQpMappingTableParams.setNumQpTables(numQpTables);
   sps.setChromaQpMappingTableFromParams(m_chromaQpMappingTableParams, sps.getQpBDOffset(ChannelType::CHROMA));
-  sps.derivedChromaQPMappingTables();
+  sps.deriveChromaQPMappingTables();
 
   if( getPictureTimingSEIEnabled() || getDecodingUnitInfoSEIEnabled() || getCpbSaturationEnabled() )
   {

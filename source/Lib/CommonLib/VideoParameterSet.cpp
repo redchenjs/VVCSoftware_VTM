@@ -94,10 +94,6 @@ VPS::VPS()
   }
 }
 
-VPS::~VPS()
-{
-}
-
 void VPS::deriveOutputLayerSets()
 {
   if( m_vpsEachLayerIsAnOlsFlag || m_vpsOlsModeIdc < 2 )

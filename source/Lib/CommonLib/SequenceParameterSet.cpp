@@ -141,7 +141,7 @@ void ChromaQpMappingTable::setParams(const ChromaQpMappingTableParams &params, c
     m_deltaQpOutVal[i] = params.m_deltaQpOutVal[i];
   }
 }
-void ChromaQpMappingTable::derivedChromaQPMappingTables()
+void ChromaQpMappingTable::deriveChromaQPMappingTables()
 {
   for (int i = 0; i < getNumQpTables(); i++)
   {
@@ -194,7 +194,7 @@ SPS::SPS()
   , m_SBT(false)
   , m_ISP(false)
   , m_chromaFormatIdc(CHROMA_420)
-  , m_uiMaxTLayers(1)
+  , m_maxSubLayers(1)
   , m_ptlDpbHrdParamsPresentFlag(1)
   , m_subLayerDpbParamsFlag(0)
   // Structure
@@ -239,9 +239,7 @@ SPS::SPS()
   , m_numExtraPHBytes(0)
   , m_numExtraSHBytes(0)
   , m_numLongTermRefPicSPS(0)
-
   , m_log2MaxTbSize(6)
-
   , m_useWeightPred(false)
   , m_useWeightedBiPred(false)
   , m_saoEnabledFlag(false)
@@ -256,7 +254,7 @@ SPS::SPS()
   , m_vuiParametersPresentFlag(false)
   , m_vuiParameters()
   , m_wrapAroundEnabledFlag(false)
-  , m_IBCFlag(0)
+  , m_ibcFlag(0)
   , m_PLTMode(0)
   , m_lmcsEnabled(false)
   , m_AMVREnabledFlag(false)
@@ -312,7 +310,20 @@ SPS::~SPS()
 {
 }
 
-void SPS::createRplList(RefPicList l, int numRPL)
+void SPS::setNumSubPics(const uint32_t u)
+{
+  CHECK( u >= MAX_NUM_SUB_PICS, "Maximum number of subpictures exceeded" );
+  m_numSubPics = u;
+  m_subPicCtuTopLeftX.resize(m_numSubPics);
+  m_subPicCtuTopLeftY.resize(m_numSubPics);
+  m_subPicWidth.resize(m_numSubPics);
+  m_subPicHeight.resize(m_numSubPics);
+  m_subPicTreatedAsPicFlag.resize(m_numSubPics);
+  m_loopFilterAcrossSubpicEnabledFlag.resize(m_numSubPics);
+  m_subPicId.resize(m_numSubPics);
+}
+
+void SPS::createRplList(const RefPicList l, const int numRPL)
 {
   m_rplList[l].destroy();
   m_rplList[l].create(numRPL);
@@ -320,5 +331,5 @@ void SPS::createRplList(RefPicList l, int numRPL)
   m_rpl1IdxPresentFlag = m_numRpl[REF_PIC_LIST_0] != m_numRpl[REF_PIC_LIST_1];
 }
 
-const int SPS::m_winUnitX[]={1,2,2,1};
-const int SPS::m_winUnitY[]={1,2,1,1};
+const int SPS::m_winUnitX[]={ 1,2,2,1 };
+const int SPS::m_winUnitY[]={ 1,2,1,1 };
