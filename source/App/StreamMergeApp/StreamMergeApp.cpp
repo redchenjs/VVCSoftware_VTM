@@ -544,12 +544,12 @@ uint32_t StreamMergeApp::mergeStreams()
     // Prep other values.
     layer.bs = new InputByteStream(*(layer.fp));
 
-    VPS vps;
-    vps.setMaxLayers((uint32_t) layers->size());
-    vps.setLayerId(layer.id, layer.id);   // Layer ID is rewritten here.
-    layer.vpsIdMapping.insert({ vps.getVPSId(), 0 });
-    vps.setVPSId(0);
-    layer.psManager.storeVPS(&vps, std::vector<uint8_t>()); // Create VPS with default values (VTM slice header parser needs this)
+    VPS* vps = new VPS;
+    vps->setMaxLayers((uint32_t) layers->size());
+    vps->setLayerId(layer.id, layer.id);   // Layer ID is rewritten here.
+    layer.vpsIdMapping.insert({ vps->getVPSId(), 0 });
+    vps->setVPSId(0);
+    layer.psManager.storeVPS(vps, std::vector<uint8_t>()); // Create VPS with default values (VTM slice header parser needs this)
   }
 
   // Loop over layers until every one is entirely read.
