@@ -86,7 +86,8 @@ protected:
 
   void               xDeriveCuMvs(CodingUnit &cu);
   void xReconPLT          ( CodingUnit&      cu,       ComponentID compBegin, uint32_t numComp );
-  PelStorage        *m_tmpStorageLCU;
+  PelStorage        *m_tmpStorageCtu;
+
 private:
   TrQuant*          m_pcTrQuant;
   IntraPrediction*  m_pcIntraPred;
