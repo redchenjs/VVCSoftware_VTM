@@ -740,7 +740,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
 #if JVET_AC0058_SEI
   SMultiValueInput<uint16_t>   cfg_poSEINumofPrefixByte(0, 255, 0, 256);
-  SMultiValueInput<uint16_t>   cfg_poSEIPrefixByte(0, 255, 0, 256);
+  SMultiValueInput<uint16_t>   cfg_poSEIPrefixByte     (0, 255, 0, 256);
 #endif
 
   SMultiValueInput<int32_t> cfg_postFilterHintSEIValues(INT32_MIN + 1, INT32_MAX, 1 * 1 * 1, 15 * 15 * 3);
@@ -3444,7 +3444,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         {
           for (uint32_t j = 0; j < i; j++)
           {
-            if ((m_poSEIPayloadType[j] == m_poSEIPayloadType[i]))
+            if (m_poSEIPayloadType[j] == m_poSEIPayloadType[i])
             {
               auto numofPrefixBytes = std::min(m_poSEINumofPrefixByte[i], m_poSEINumofPrefixByte[j]);
               if (std::equal(m_poSEIPrefixByte[i].begin() + 1, m_poSEIPrefixByte[i].begin() + numofPrefixBytes - 1, m_poSEIPrefixByte[j].begin()))
