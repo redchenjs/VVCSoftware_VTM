@@ -1302,6 +1302,11 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
   m_cEncLib.setPoSEINumofSeiMessages                             (m_numofSEIMessages);
 
+#if JVET_AC0058_SEI
+  m_cEncLib.setPoSEINumofPrefixByte                              (m_poSEINumofPrefixByte);
+  m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
+#endif
+
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
   m_cEncLib.setPostFilterHintSEICancelFlag(m_postFilterHintSEICancelFlag);
   m_cEncLib.setPostFilterHintSEIPersistenceFlag(m_postFilterHintSEIPersistenceFlag);

@@ -654,6 +654,36 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
   uint32_t i,b;
   uint32_t NumSEIMessages, val;
   output_sei_message_header(sei, decodedMessageOutputStream, payloadSize);
+
+#if JVET_AC0058_SEI
+  //Here payload is in Bytes, Since "sei_payloadType" is 2 Bytes + "sei_payloadOrder" is 2 Byte so total = 4 Bytes
+  //To get Maximum number of SEI messages, just do payloadSize/4
+  NumSEIMessages = payloadSize / 4;
+  sei.m_posPayloadType.resize(NumSEIMessages);
+  sei.m_posProcessingOrder.resize(NumSEIMessages);
+  sei.m_posNumofPrefixByte.resize(NumSEIMessages);
+  sei.m_posPrefixByte.resize(NumSEIMessages);
+  for (i = 0, b = 0; b < payloadSize; i++, b += 4)
+  {
+    sei_read_code(decodedMessageOutputStream, 16, val, "sei_payloadType[i]");
+    sei.m_posPayloadType[i] = val;
+    if (sei.m_posPayloadType[i] == (uint16_t)SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
+    {
+      sei_read_code(decodedMessageOutputStream, 8, val, "sei_numofPrefixByte[i]");
+      sei.m_posNumofPrefixByte[i] = val;
+      sei.m_posPrefixByte[i].resize(sei.m_posNumofPrefixByte[i]);
+      b ++;
+      for (uint32_t j = 0; j < sei.m_posNumofPrefixByte[i]; j++)
+      {
+        sei_read_code(decodedMessageOutputStream, 8, val, "sei_prefixByte[i]");
+        sei.m_posPrefixByte[i][j] = val;
+      }
+      b += sei.m_posNumofPrefixByte[i];
+    }
+    sei_read_code(decodedMessageOutputStream, 16, val, "sei_processingOrder[i]");
+    sei.m_posProcessingOrder[i] = val;
+  }
+#else
   //Here payload is in Bytes, Since "sei_payloadType" is 2 Bytes + "sei_payloadOrder" is 1 Byte so total = 3 Bytes
   //To get Number of SEI messages, just do payloadSize/3
   NumSEIMessages = payloadSize / 3;
@@ -666,6 +696,7 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
     sei_read_code(decodedMessageOutputStream, 16, val, "sei_processingOrder[i]");
     sei.m_posProcessingOrder[i] = val;
   }
+#endif
   CHECK(i<2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
 }
 

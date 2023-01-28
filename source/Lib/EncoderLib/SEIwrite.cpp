@@ -1557,6 +1557,16 @@ void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
   for (uint32_t i=0; i < sei.m_posNumofSeiMessages; i++)
   {
     xWriteCode(sei.m_posPayloadType[i], 16, "sei_payloadType[i]");
+#if JVET_AC0058_SEI
+    if (sei.m_posPayloadType[i] == (uint16_t)SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
+    {
+      xWriteCode(sei.m_posNumofPrefixByte[i], 8, "sei_numofPrefixByte[i]");
+      for (uint32_t j = 0; j < sei.m_posNumofPrefixByte[i]; j++)
+      {
+        xWriteCode(sei.m_posPrefixByte[i][j], 8, "sei_prefixByte[i]");
+      }
+    }
+#endif
     xWriteCode(sei.m_posProcessingOrder[i], 16, "sei_processingOrder[i]");
   }
 }
