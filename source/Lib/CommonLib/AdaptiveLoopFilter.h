@@ -174,11 +174,11 @@ protected:
   ChromaFormat                 m_chromaFormat;
   ClpRngs                      m_clpRngs;
 
-  short *getCoeffs(AlfMode m)
+  short* getCoeffVals(AlfMode m)
   {
     return isAlfLumaFixed(m) ? m_fixedFilterSetCoeffDec[m - AlfMode::LUMA_FIXED0] : m_coeffApsLuma[m - AlfMode::LUMA0];
   }
-  Pel *getClipVals(AlfMode m) { return isAlfLumaFixed(m) ? m_clipDefault : m_clippApsLuma[m - AlfMode::LUMA0]; }
+  Pel* getClipVals(AlfMode m) { return isAlfLumaFixed(m) ? m_clipDefault : m_clippApsLuma[m - AlfMode::LUMA0]; }
 };
 
 #endif

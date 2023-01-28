@@ -509,8 +509,8 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
               const Area blkDst( xStart, yStart, w, h );
               deriveClassification( m_classifier, buf.get(COMPONENT_Y), blkDst, blkSrc );
               const AlfMode m     = lumaModes[ctuIdx];
-              const short  *coeff = getCoeffs(m);
-              const Pel    *clip  = getClipVals(m);
+              const short*  coeff = getCoeffVals(m);
+              const Pel*    clip  = getClipVals(m);
 #if GREEN_METADATA_SEI_ENABLED
               cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
               cs.m_featureCounter.alfLumaPels += (width * height);
@@ -574,8 +574,8 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
           Area blk( xPos, yPos, width, height );
           deriveClassification( m_classifier, tmpYuv.get( COMPONENT_Y ), blk, blk );
           const AlfMode m     = lumaModes[ctuIdx];
-          const short  *coeff = getCoeffs(m);
-          const Pel    *clip  = getClipVals(m);
+          const short*  coeff = getCoeffVals(m);
+          const Pel*    clip  = getClipVals(m);
 #if GREEN_METADATA_SEI_ENABLED
           cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
           cs.m_featureCounter.alfLumaPels += (width * height);

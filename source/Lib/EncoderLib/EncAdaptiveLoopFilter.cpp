@@ -3198,8 +3198,8 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
               const Area blkSrc(0, 0, w, h);
               const Area blkDst(xStart, yStart, w, h);
               const AlfMode m     = m_modes[COMPONENT_Y][ctuIdx];
-              const short  *coeff = getCoeffs(m);
-              const Pel    *clip  = getClipVals(m);
+              const short*  coeff = getCoeffVals(m);
+              const Pel*    clip  = getClipVals(m);
 #if GREEN_METADATA_SEI_ENABLED
               cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
               cs.m_featureCounter.alfLumaPels += (width * height);
@@ -3241,8 +3241,8 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
         {
           Area   blk(xPos, yPos, width, height);
           const AlfMode m     = m_modes[COMPONENT_Y][ctuIdx];
-          const short  *coeff = getCoeffs(m);
-          const Pel    *clip  = getClipVals(m);
+          const short*  coeff = getCoeffVals(m);
+          const Pel*    clip  = getClipVals(m);
           m_filter7x7Blk(m_classifier, recBuf, recExtBuf, blk, blk, COMPONENT_Y, coeff, clip,
                          m_clpRngs.comp[COMPONENT_Y], cs, m_alfVBLumaCTUHeight, m_alfVBLumaPos);
 #if GREEN_METADATA_SEI_ENABLED
