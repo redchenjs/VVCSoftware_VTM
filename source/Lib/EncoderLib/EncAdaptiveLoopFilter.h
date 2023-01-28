@@ -234,8 +234,6 @@ private:
   const EncCfg*          m_encCfg;
   AlfCovariance***       m_alfCovariance[MAX_NUM_COMPONENT];          // [compIdx][shapeIdx][ctbAddr][classIdx]
   EnumArray<AlfCovariance **, ChannelType> m_alfCovarianceFrame;   // [CHANNEL][shapeIdx][lumaClassIdx/chromaAltIdx]
-  uint8_t*               m_ctuEnableFlagTmp[MAX_NUM_COMPONENT];
-  uint8_t*               m_ctuAlternativeTmp[MAX_NUM_COMPONENT];
   AlfCovariance***       m_alfCovarianceCcAlf[2];           // [compIdx-1][shapeIdx][filterIdx][ctbAddr]
   AlfCovariance**        m_alfCovarianceFrameCcAlf[2];      // [compIdx-1][shapeIdx][filterIdx]
 
@@ -258,7 +256,8 @@ private:
   int                    m_apsIdStart;
   double                 *m_ctbDistortionFixedFilter;
   double                 *m_ctbDistortionUnfilter[MAX_NUM_COMPONENT];
-  std::vector<short>     m_alfCtbFilterSetIndexTmp;
+  std::vector<AlfMode>    m_indexTmpVec[MAX_NUM_COMPONENT];
+  AlfMode                *m_indexTmp[MAX_NUM_COMPONENT];
   AlfParam               m_alfParamTempNL;
   int                    m_clipDefaultEnc[MAX_NUM_ALF_LUMA_COEFF];
   int                    m_filterTmp[MAX_NUM_ALF_LUMA_COEFF];
@@ -306,11 +305,13 @@ public:
   void setApsIdStart( int i) { m_apsIdStart = i; }
 
 private:
-  void   alfEncoder( CodingStructure& cs, AlfParam& alfParam, const PelUnitBuf& orgUnitBuf, const PelUnitBuf& recExtBuf, const PelUnitBuf& recBuf, const ChannelType channel
+  void firstPass(CodingStructure &cs, AlfParam &alfParam, const PelUnitBuf &orgUnitBuf, const PelUnitBuf &recExtBuf,
+                 const PelUnitBuf &recBuf, const ChannelType channel
 #if ENABLE_QPA
-                   , const double lambdaChromaWeight = 0.0
+                 ,
+                 const double lambdaChromaWeight = 0.0
 #endif
-                   );
+  );
 
   void   copyAlfParam( AlfParam& alfParamDst, AlfParam& alfParamSrc, ChannelType channel );
   double mergeFiltersAndCost(AlfParam &alfParam, AlfFilterShape &alfShape, AlfCovariance *covFrame,
@@ -319,7 +320,8 @@ private:
                              int &coeffBitsFinal);
 
   void   getFrameStats(ChannelType channel, int shapeIdx);
-  void   getFrameStat( AlfCovariance* frameCov, AlfCovariance** ctbCov, uint8_t* ctbEnableFlags, uint8_t* ctbAltIdx, const int numClasses, int altIdx );
+  void   getFrameStat(AlfCovariance *frameCov, AlfCovariance **ctbCov, AlfMode *ctbEnableFlags, const int numClasses,
+                      int altIdx);
   void   deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnitBuf& recYuv, CodingStructure& cs );
   void   getBlkStats(AlfCovariance *alfCovariace, const AlfFilterShape &shape, AlfClassifier **classifier, Pel *org,
                      const ptrdiff_t orgStride, const Pel *orgLuma, const ptrdiff_t orgLumaStride, Pel *rec,
@@ -365,13 +367,12 @@ private:
   double getUnfilteredDistortion( AlfCovariance* cov, const int numClasses );
   double getFilteredDistortion( AlfCovariance* cov, const int numClasses, const int numFiltersMinus1, const int numCoeff );
 
-  void setEnableFlag( AlfParam& alfSlicePara, ChannelType channel, bool val );
-  void setEnableFlag( AlfParam& alfSlicePara, ChannelType channel, uint8_t** ctuFlags );
-  void setCtuEnableFlag( uint8_t** ctuFlags, ChannelType channel, uint8_t val );
-  void copyCtuEnableFlag( uint8_t** ctuFlagsDst, uint8_t** ctuFlagsSrc, ChannelType channel );
-  void initCtuAlternativeChroma( uint8_t* ctuAlts[MAX_NUM_COMPONENT] );
-  void setCtuAlternativeChroma( uint8_t* ctuAlts[MAX_NUM_COMPONENT], uint8_t val );
-  void copyCtuAlternativeChroma( uint8_t* ctuAltsDst[MAX_NUM_COMPONENT], uint8_t* ctuAltsSrc[MAX_NUM_COMPONENT] );
+  void setSliceEnabledFlag(AlfParam &alfSlicePara, ChannelType channel, bool val);
+  void setSliceEnabledFlag(AlfParam &alfSlicePara, ChannelType channel, AlfMode *ctuFlags[MAX_NUM_COMPONENT]);
+  void setCtuEnableFlag(AlfMode *ctuFlags[MAX_NUM_COMPONENT], ChannelType channel, AlfMode val);
+  void copyIndices(AlfMode *ctuFlagsDst[MAX_NUM_COMPONENT], AlfMode *ctuFlagsSrc[MAX_NUM_COMPONENT],
+                   ChannelType channel);
+  void initCtuAlternativeChroma(AlfMode *ctuAlts[MAX_NUM_COMPONENT]);
   int getMaxNumAlternativesChroma( );
   int  getCoeffRateCcAlf(short chromaCoeff[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF], bool filterEnabled[MAX_NUM_CC_ALF_FILTERS], uint8_t filterCount, ComponentID compID);
   void deriveCcAlfFilterCoeff( ComponentID compID, const PelUnitBuf& recYuv, const PelUnitBuf& recYuvExt, short filterCoeff[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF], const uint8_t filterIdx );

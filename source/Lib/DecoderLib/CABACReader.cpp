@@ -185,34 +185,38 @@ void CABACReader::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
     {
       if (cs.slice->getAlfEnabledFlag((ComponentID)compIdx))
       {
-        uint8_t* ctbAlfFlag = cs.slice->getPic()->getAlfCtuEnableFlag( compIdx );
+        AlfMode *alfModes = cs.slice->getPic()->getAlfModes(compIdx);
         int ctx = 0;
-        ctx += leftCTUAddr > -1 ? ( ctbAlfFlag[leftCTUAddr] ? 1 : 0 ) : 0;
-        ctx += aboveCTUAddr > -1 ? ( ctbAlfFlag[aboveCTUAddr] ? 1 : 0 ) : 0;
+        ctx += leftCTUAddr > -1 ? (alfModes[leftCTUAddr] != AlfMode::OFF ? 1 : 0) : 0;
+        ctx += aboveCTUAddr > -1 ? (alfModes[aboveCTUAddr] != AlfMode::OFF ? 1 : 0) : 0;
 
         RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET(STATS__CABAC_BITS__ALF);
-        ctbAlfFlag[ctuRsAddr] = m_binDecoder.decodeBin(Ctx::ctbAlfFlag(compIdx * 3 + ctx));
+        const bool enabled = m_binDecoder.decodeBin(Ctx::alfCtbFlag(compIdx * 3 + ctx)) != 0;
 
-        if (isLuma((ComponentID)compIdx) && ctbAlfFlag[ctuRsAddr])
+        if (!enabled)
         {
-          readAlfCtuFilterIndex(cs, ctuRsAddr);
+          alfModes[ctuRsAddr] = AlfMode::OFF;
         }
-        if( isChroma( (ComponentID)compIdx ) )
+        else
         {
-          int apsIdx = cs.slice->getAlfApsIdChroma();
-          CHECK(cs.slice->getAlfAPSs()[apsIdx] == nullptr, "APS not initialized");
-          const AlfParam& alfParam = cs.slice->getAlfAPSs()[apsIdx]->getAlfAPSParam();
-          const int numAlts = alfParam.numAlternativesChroma;
-          uint8_t* ctbAlfAlternative = cs.slice->getPic()->getAlfCtuAlternativeData( compIdx );
-          ctbAlfAlternative[ctuRsAddr] = 0;
-          if( ctbAlfFlag[ctuRsAddr] )
+          if (isLuma((ComponentID) compIdx))
           {
+            readAlfCtuFilterIndex(cs, ctuRsAddr);
+          }
+          else
+          {
+            const int apsIdx = cs.slice->getAlfApsIdChroma();
+            CHECK(cs.slice->getAlfAPSs()[apsIdx] == nullptr, "APS not initialized");
+            const AlfParam &alfParam = cs.slice->getAlfAPSs()[apsIdx]->getAlfAPSParam();
+            const int       numAlts  = alfParam.numAlternativesChroma;
+
             uint8_t decoded = 0;
             while (decoded < numAlts - 1 && m_binDecoder.decodeBin(Ctx::ctbAlfAlternative(compIdx - 1)))
             {
               ++ decoded;
             }
-            ctbAlfAlternative[ctuRsAddr] = decoded;
+
+            alfModes[ctuRsAddr] = AlfMode::CHROMA0 + decoded;
           }
         }
       }
@@ -266,31 +270,28 @@ void CABACReader::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
 
 void CABACReader::readAlfCtuFilterIndex(CodingStructure& cs, unsigned ctuRsAddr)
 {
-  short* alfCtbFilterSetIndex = cs.slice->getPic()->getAlfCtbFilterIndex();
-  unsigned numAps = cs.slice->getNumAlfApsIdsLuma();
-  unsigned numAvailableFiltSets = numAps + NUM_FIXED_FILTER_SETS;
-  uint32_t filtIndex = 0;
-  if (numAvailableFiltSets > NUM_FIXED_FILTER_SETS)
+  const int  numAps        = cs.slice->getNumAlfApsIdsLuma();
+  const bool alfUseApsFlag = numAps > 0 && m_binDecoder.decodeBin(Ctx::alfUseApsFlag()) != 0;
+
+  AlfMode m;
+  if (alfUseApsFlag)
   {
-    unsigned usePrevFilt = m_binDecoder.decodeBin(Ctx::AlfUseTemporalFilt());
-    if (usePrevFilt)
+    uint32_t alfLumaPrevFilterIdx = 0;
+    if (numAps > 1)
     {
-      if (numAps > 1)
-      {
-        xReadTruncBinCode(filtIndex, numAvailableFiltSets - NUM_FIXED_FILTER_SETS);
-      }
-      filtIndex += (unsigned)(NUM_FIXED_FILTER_SETS);
+      xReadTruncBinCode(alfLumaPrevFilterIdx, numAps);
     }
-    else
-    {
-      xReadTruncBinCode(filtIndex, NUM_FIXED_FILTER_SETS);
-    }
+    m = AlfMode::LUMA0 + alfLumaPrevFilterIdx;
   }
   else
   {
-    xReadTruncBinCode(filtIndex, NUM_FIXED_FILTER_SETS);
+    uint32_t alfLumaFixedFilterIdx = 0;
+    xReadTruncBinCode(alfLumaFixedFilterIdx, ALF_NUM_FIXED_FILTER_SETS);
+    m = AlfMode::LUMA_FIXED0 + alfLumaFixedFilterIdx;
   }
-  alfCtbFilterSetIndex[ctuRsAddr] = filtIndex;
+
+  AlfMode *alfModes   = cs.slice->getPic()->getAlfModes(COMPONENT_Y);
+  alfModes[ctuRsAddr] = m;
 }
 
 void CABACReader::ccAlfFilterControlIdc(CodingStructure &cs, const ComponentID compID, const int curIdx,

@@ -1062,7 +1062,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("UseNonLinearAlfLuma",                             m_useNonLinearAlfLuma,                             true, "Non-linear adaptive loop filters for Luma Channel")
   ("UseNonLinearAlfChroma",                           m_useNonLinearAlfChroma,                           true, "Non-linear adaptive loop filters for Chroma Channels")
   ("MaxNumAlfAlternativesChroma",                     m_maxNumAlfAlternativesChroma,
-                                                                    (unsigned)MAX_NUM_ALF_ALTERNATIVES_CHROMA, std::string("Maximum number of alternative Chroma filters (1-") + std::to_string(MAX_NUM_ALF_ALTERNATIVES_CHROMA) + std::string (", inclusive)") )
+                                                                    (unsigned)ALF_MAX_NUM_ALTERNATIVES_CHROMA, std::string("Maximum number of alternative Chroma filters (1-") + std::to_string(ALF_MAX_NUM_ALTERNATIVES_CHROMA) + std::string (", inclusive)") )
   ("MRL",                                             m_MRL,                                            false,  "Enable MRL (multiple reference line intra prediction)")
   ("MIP",                                             m_MIP,                                             true,  "Enable MIP (matrix-based intra prediction)")
   ("FastMIP",                                         m_useFastMIP,                                     false,  "Fast encoder search for MIP (matrix-based intra prediction)")
@@ -2839,7 +2839,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if ( m_alf )
   {
-    CHECK( m_maxNumAlfAlternativesChroma < 1 || m_maxNumAlfAlternativesChroma > MAX_NUM_ALF_ALTERNATIVES_CHROMA, std::string("The maximum number of ALF Chroma filter alternatives must be in the range (1-") + std::to_string(MAX_NUM_ALF_ALTERNATIVES_CHROMA) + std::string (", inclusive)") );
+    CHECK(m_maxNumAlfAlternativesChroma < 1 || m_maxNumAlfAlternativesChroma > ALF_MAX_NUM_ALTERNATIVES_CHROMA,
+          std::string("The maximum number of ALF Chroma filter alternatives must be in the range (1-")
+            + std::to_string(ALF_MAX_NUM_ALTERNATIVES_CHROMA) + std::string(", inclusive)"));
   }
 
   // reading external dQP description from file

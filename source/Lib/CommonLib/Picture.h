@@ -299,9 +299,7 @@ private:
   UnitArea m_ctuArea;
 #endif
 
-  std::vector<uint8_t> m_alfCtuEnableFlag[MAX_NUM_COMPONENT];
-  std::vector<short>   m_alfCtbFilterIndex;
-  std::vector<uint8_t> m_alfCtuAlternative[MAX_NUM_COMPONENT];
+  std::vector<AlfMode> m_alfModes[MAX_NUM_COMPONENT];
 
   std::vector<SAOBlkParam> m_sao[2];
 
@@ -321,9 +319,7 @@ public:
   void copyAlfData(const Picture &p);
   void resizeAlfData(int numEntries);
 
-  uint8_t *getAlfCtuEnableFlag(int compIdx) { return m_alfCtuEnableFlag[compIdx].data(); }
-  short   *getAlfCtbFilterIndex() { return m_alfCtbFilterIndex.data(); }
-  uint8_t *getAlfCtuAlternativeData(int compIdx) { return m_alfCtuAlternative[compIdx].data(); }
+  AlfMode *getAlfModes(int compIdx) { return m_alfModes[compIdx].data(); }
 };
 
 int calcAndPrintHashStatus(const CPelUnitBuf& pic, const class SEIDecodedPictureHash* pictureHashSEI, const BitDepths &bitDepths, const MsgLevel msgl);
