@@ -5239,9 +5239,8 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
           int64_t xdeltaE[MAX_NUM_COMPONENT];
           for (int i = 0; i < 1; i++)
           {
-            copy(reinterpret_cast<uint8_t *>(&deltaE[i]),
-                 reinterpret_cast<uint8_t *>(&deltaE[i]) + sizeof(deltaE[i]),
-                 reinterpret_cast<uint8_t *>(&xdeltaE[i]));
+            std::copy_n(reinterpret_cast<uint8_t*>(&deltaE[i]), sizeof(deltaE[i]),
+                        reinterpret_cast<uint8_t*>(&xdeltaE[i]));
           }
           msg(NOTICE, " [xDeltaE%d %16" PRIx64 "]", (int)m_pcCfg->getWhitePointDeltaE(i), xdeltaE[0]);
         }
@@ -5255,9 +5254,8 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
           int64_t xpsnrL[MAX_NUM_COMPONENT];
           for (int i = 0; i < 1; i++)
           {
-            copy(reinterpret_cast<uint8_t *>(&psnrL[i]),
-                 reinterpret_cast<uint8_t *>(&psnrL[i]) + sizeof(psnrL[i]),
-                 reinterpret_cast<uint8_t *>(&xpsnrL[i]));
+            std::copy_n(reinterpret_cast<uint8_t*>(&psnrL[i]), sizeof(psnrL[i]),
+                        reinterpret_cast<uint8_t*>(&xpsnrL[i]));
           }
 
           msg(NOTICE, " [xPSNRL%d %16" PRIx64 "]", (int) m_pcCfg->getWhitePointDeltaE(i), xpsnrL[0]);
