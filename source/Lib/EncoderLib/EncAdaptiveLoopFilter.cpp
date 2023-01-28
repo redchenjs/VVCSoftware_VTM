@@ -466,10 +466,10 @@ void EncAdaptiveLoopFilter::create(const EncCfg *encCfg, const int picWidth, con
   CHECK( encCfg == nullptr, "encCfg must not be null" );
   m_encCfg = encCfg;
 
-  for( int channelIdx = 0; channelIdx < MAX_NUM_CHANNEL_TYPE; channelIdx++ )
+  for (const auto chType: { ChannelType::LUMA, ChannelType::CHROMA })
   {
-    ChannelType chType = (ChannelType)channelIdx;
-    int numClasses = channelIdx ? MAX_NUM_ALF_ALTERNATIVES_CHROMA : MAX_NUM_ALF_CLASSES;
+    const int numClasses = isLuma(chType) ? MAX_NUM_ALF_CLASSES : ALF_MAX_NUM_ALTERNATIVES_CHROMA;
+
     m_alfCovarianceFrame[chType] = new AlfCovariance *[m_filterShapes[chType].size()];
     for (int i = 0; i != m_filterShapes[chType].size(); i++)
     {
@@ -510,8 +510,8 @@ void EncAdaptiveLoopFilter::create(const EncCfg *encCfg, const int picWidth, con
     }
   }
 
-  m_filterCoeffSet = new int*[std::max(MAX_NUM_ALF_CLASSES, MAX_NUM_ALF_ALTERNATIVES_CHROMA)];
-  m_filterClippSet = new int*[std::max(MAX_NUM_ALF_CLASSES, MAX_NUM_ALF_ALTERNATIVES_CHROMA)];
+  m_filterCoeffSet  = new int*[std::max(MAX_NUM_ALF_CLASSES, ALF_MAX_NUM_ALTERNATIVES_CHROMA)];
+  m_filterClippSet  = new int*[std::max(MAX_NUM_ALF_CLASSES, ALF_MAX_NUM_ALTERNATIVES_CHROMA)];
   m_diffFilterCoeff = new int*[MAX_NUM_ALF_CLASSES];
 
   for( int i = 0; i < MAX_NUM_ALF_CLASSES; i++ )
@@ -2115,7 +2115,7 @@ void EncAdaptiveLoopFilter::deriveStatsForFiltering( PelUnitBuf& orgYuv, PelUnit
   // init Frame stats buffers
   for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(m_chromaFormat); chType++)
   {
-    const int numAlts    = isLuma(chType) ? 1 : MAX_NUM_ALF_ALTERNATIVES_CHROMA;
+    const int numAlts    = isLuma(chType) ? 1 : ALF_MAX_NUM_ALTERNATIVES_CHROMA;
     const int numClasses = isLuma(chType) ? MAX_NUM_ALF_CLASSES : 1;
 
     for( int altIdx = 0; altIdx < numAlts; ++altIdx )
@@ -2665,7 +2665,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
 
       cs.slice->setNumAlfApsIdsLuma(numApss);
 
-      const int numFilterSet = NUM_FIXED_FILTER_SETS + numApss;
+      const int numFilterSet = ALF_NUM_FIXED_FILTER_SETS + numApss;
 
       if (numTemporalAps == apsIds.size() && numTemporalAps > 0 && useNewFilter && newApsId == apsIds.back())
       {
@@ -2769,7 +2769,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
           ctxTempStart = AlfCtx(m_CABACEstimator->getCtx());
           int bestFilterSetIdx  = 0;
 
-          const int firstFilterSetIdx = m_encCfg->getALFAllowPredefinedFilters() ? 0 : NUM_FIXED_FILTER_SETS;
+          const int firstFilterSetIdx = m_encCfg->getALFAllowPredefinedFilters() ? 0 : ALF_NUM_FIXED_FILTER_SETS;
 
           for (int filterSetIdx = firstFilterSetIdx; filterSetIdx < numFilterSet; filterSetIdx++)
           {
@@ -2786,7 +2786,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
             double dist = distUnfilterCtb;
             for (int classIdx = 0; classIdx < MAX_NUM_ALF_CLASSES; classIdx++)
             {
-              if (filterSetIdx < NUM_FIXED_FILTER_SETS)
+              if (filterSetIdx < ALF_NUM_FIXED_FILTER_SETS)
               {
                 int filterIdx = m_classToFilterMapping[filterSetIdx][classIdx];
                 dist += m_alfCovariance[COMPONENT_Y][0][ctbIdx][classIdx].calcErrorForCoeffs(
@@ -2796,15 +2796,15 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
               {
                 short *pCoeff;
                 Pel *pClipp;
-                if (useNewFilter && filterSetIdx == NUM_FIXED_FILTER_SETS)
+                if (useNewFilter && filterSetIdx == ALF_NUM_FIXED_FILTER_SETS)
                 {
                   pCoeff = m_coeffFinal;
                   pClipp = m_clippFinal;
                 }
                 else
                 {
-                  pCoeff = m_coeffApsLuma[filterSetIdx - (useNewFilter ? 1 : 0) - NUM_FIXED_FILTER_SETS];
-                  pClipp = m_clippApsLuma[filterSetIdx - (useNewFilter ? 1 : 0) - NUM_FIXED_FILTER_SETS];
+                  pCoeff = m_coeffApsLuma[filterSetIdx - (useNewFilter ? 1 : 0) - ALF_NUM_FIXED_FILTER_SETS];
+                  pClipp = m_clippApsLuma[filterSetIdx - (useNewFilter ? 1 : 0) - ALF_NUM_FIXED_FILTER_SETS];
                 }
 
                 for (int i = 0; i < MAX_NUM_ALF_LUMA_COEFF; i++)
@@ -2846,12 +2846,12 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
           }
         } //for(ctbIdx)
 
-        int tmpBits = bitsNewFilter + 3 * (numFilterSet - NUM_FIXED_FILTER_SETS);
+        int tmpBits = bitsNewFilter + 3 * (numFilterSet - ALF_NUM_FIXED_FILTER_SETS);
         curCost += tmpBits * m_lambda[COMPONENT_Y];
         if (curCost < costMin)
         {
           costMin = curCost;
-          bestApsIds.resize(numFilterSet - NUM_FIXED_FILTER_SETS);
+          bestApsIds.resize(numFilterSet - ALF_NUM_FIXED_FILTER_SETS);
           for (int i = 0; i < bestApsIds.size(); i++)
           {
             if (i == 0 && useNewFilter)
@@ -3114,7 +3114,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
         newAPS->getAlfAPSParam().nonLinearFlag[ChannelType::CHROMA] =
           alfParamNewFilters.nonLinearFlag[ChannelType::CHROMA];
         newAPS->setTemporalId(cs.slice->getTLayer());
-        for (int altIdx = 0; altIdx < MAX_NUM_ALF_ALTERNATIVES_CHROMA; ++altIdx)
+        for (int altIdx = 0; altIdx < ALF_MAX_NUM_ALTERNATIVES_CHROMA; ++altIdx)
         {
           for (int i = 0; i < MAX_NUM_ALF_CHROMA_COEFF; i++)
           {

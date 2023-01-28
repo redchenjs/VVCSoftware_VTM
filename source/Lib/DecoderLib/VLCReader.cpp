@@ -994,7 +994,7 @@ void HLSyntaxReader::parseAlfAps( APS* aps )
     xReadFlag(code, "alf_nonlinear_enable_flag_chroma");
     param.nonLinearFlag[ChannelType::CHROMA] = code ? true : false;
 
-    if( MAX_NUM_ALF_ALTERNATIVES_CHROMA > 1 )
+    if constexpr (ALF_MAX_NUM_ALTERNATIVES_CHROMA > 1)
     {
       xReadUvlc( code, "alf_chroma_num_alts_minus1" );
     }

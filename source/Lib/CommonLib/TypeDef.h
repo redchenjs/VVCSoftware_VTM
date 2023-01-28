@@ -945,17 +945,17 @@ static constexpr int MAX_NUM_APS(ApsType t)
   }
 }
 
-static constexpr int NUM_FIXED_FILTER_SETS           = 16;
+static constexpr int ALF_NUM_FIXED_FILTER_SETS       = 16;
 static constexpr int ALF_CTB_MAX_NUM_APS             = MAX_NUM_APS(ApsType::ALF);
-static constexpr int MAX_NUM_ALF_ALTERNATIVES_CHROMA = 8;
+static constexpr int ALF_MAX_NUM_ALTERNATIVES_CHROMA = 8;
 
 enum class AlfMode : int8_t
 {
   OFF         = -1,
   LUMA_FIXED0 = 0,
-  LUMA0       = LUMA_FIXED0 + NUM_FIXED_FILTER_SETS,
+  LUMA0       = LUMA_FIXED0 + ALF_NUM_FIXED_FILTER_SETS,
   CHROMA0     = LUMA0 + ALF_CTB_MAX_NUM_APS,
-  NUM         = CHROMA0 + MAX_NUM_ALF_ALTERNATIVES_CHROMA
+  NUM         = CHROMA0 + ALF_MAX_NUM_ALTERNATIVES_CHROMA
 };
 
 inline AlfMode operator+(AlfMode i, int j) { return static_cast<AlfMode>(to_underlying(i) + j); }

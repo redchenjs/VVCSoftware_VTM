@@ -286,7 +286,7 @@ void CABACReader::readAlfCtuFilterIndex(CodingStructure& cs, unsigned ctuRsAddr)
   else
   {
     uint32_t alfLumaFixedFilterIdx = 0;
-    xReadTruncBinCode(alfLumaFixedFilterIdx, NUM_FIXED_FILTER_SETS);
+    xReadTruncBinCode(alfLumaFixedFilterIdx, ALF_NUM_FIXED_FILTER_SETS);
     m = AlfMode::LUMA_FIXED0 + alfLumaFixedFilterIdx;
   }
 

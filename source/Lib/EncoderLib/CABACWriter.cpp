@@ -3499,7 +3499,7 @@ void CABACWriter::codeAlfCtuFilterIndex(CodingStructure& cs, uint32_t ctuRsAddr,
   else
   {
     const uint32_t alfLumaFixedFilterIdx = m - AlfMode::LUMA_FIXED0;
-    xWriteTruncBinCode(alfLumaFixedFilterIdx, NUM_FIXED_FILTER_SETS);
+    xWriteTruncBinCode(alfLumaFixedFilterIdx, ALF_NUM_FIXED_FILTER_SETS);
   }
 }
 

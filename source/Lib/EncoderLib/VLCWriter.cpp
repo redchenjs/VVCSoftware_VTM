@@ -592,7 +592,7 @@ void HLSWriter::codeAlfAps( APS* pcAPS )
   if (param.newFilterFlag[ChannelType::CHROMA])
   {
     xWriteFlag(param.nonLinearFlag[ChannelType::CHROMA], "alf_nonlinear_enable_flag_chroma");
-    if( MAX_NUM_ALF_ALTERNATIVES_CHROMA > 1 )
+    if constexpr (ALF_MAX_NUM_ALTERNATIVES_CHROMA > 1)
     {
       xWriteUvlc( param.numAlternativesChroma - 1, "alf_chroma_num_alts_minus1" );
     }
