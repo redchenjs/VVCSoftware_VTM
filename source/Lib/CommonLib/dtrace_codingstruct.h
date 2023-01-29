@@ -54,8 +54,14 @@
 
 inline void dtracePicComp( DTRACE_CHANNEL channel, CodingStructure& cs, const CPelUnitBuf& pelUnitBuf, ComponentID compId )
 {
-  if( !g_trace_ctx ) return;
-  if( pelUnitBuf.chromaFormat == CHROMA_400 && compId != COMPONENT_Y )  return;
+  if (!g_trace_ctx)
+  {
+    return;
+  }
+  if (!isChromaEnabled(pelUnitBuf.chromaFormat) && compId != COMPONENT_Y)
+  {
+    return;
+  }
 
   const Pel *src = pelUnitBuf.bufs[compId].buf;
 

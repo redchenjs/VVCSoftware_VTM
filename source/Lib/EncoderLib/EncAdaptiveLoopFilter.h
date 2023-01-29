@@ -298,9 +298,9 @@ public:
   );
   int getNewCcAlfApsId(CodingStructure &cs, int cIdx);
   void initCABACEstimator(CABACEncoder *cabacEncoder, CtxPool *ctxPool, Slice *pcSlice, ParameterSetMap<APS> *apsMap);
-  void create(const EncCfg *encCfg, const int picWidth, const int picHeight, const ChromaFormat chromaFormatIDC,
-              const int maxCUWidth, const int maxCUHeight, const int maxCUDepth, const BitDepths &inputBitDepth,
-              const BitDepths &internalBitDepth);
+  void create(const EncCfg* encCfg, const int picWidth, const int picHeight, const ChromaFormat chromaFormatIdc,
+              const int maxCUWidth, const int maxCUHeight, const int maxCUDepth, const BitDepths& inputBitDepth,
+              const BitDepths& internalBitDepth);
   void destroy();
   void setApsIdStart( int i) { m_apsIdStart = i; }
 

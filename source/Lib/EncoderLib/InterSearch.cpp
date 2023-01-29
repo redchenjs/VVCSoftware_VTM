@@ -9372,9 +9372,7 @@ void InterSearch::xEncodeInterResidualQT(CodingStructure &cs, Partitioner &parti
 
     CHECK(CU::isIntra(cu), "Inter search provided with intra CU");
 
-    if( cu.chromaFormat != CHROMA_400
-      && (!cu.isSepTree() || isChroma(partitioner.chType))
-      )
+    if (isChromaEnabled(cu.chromaFormat) && (!cu.isSepTree() || isChroma(partitioner.chType)))
     {
       {
         const bool chroma_cbf = TU::getCbfAtDepth(currTU, COMPONENT_Cb, currDepth);
@@ -10502,7 +10500,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       for (auto &currTU: csSplit->traverseTUs(currArea, partitioner.chType))
       {
         TU::setCbfAtDepth(currTU, COMPONENT_Y, currDepth, compCbf[COMPONENT_Y]);
-        if( currArea.chromaFormat != CHROMA_400 )
+        if (isChromaEnabled(currArea.chromaFormat))
         {
           TU::setCbfAtDepth(currTU, COMPONENT_Cb, currDepth, compCbf[COMPONENT_Cb]);
           TU::setCbfAtDepth(currTU, COMPONENT_Cr, currDepth, compCbf[COMPONENT_Cr]);
@@ -10510,7 +10508,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       }
 
       anyCbfSet = compCbf[COMPONENT_Y];
-      if (currArea.chromaFormat != CHROMA_400)
+      if (isChromaEnabled(currArea.chromaFormat))
       {
         anyCbfSet |= compCbf[COMPONENT_Cb];
         anyCbfSet |= compCbf[COMPONENT_Cr];

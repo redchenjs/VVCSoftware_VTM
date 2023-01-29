@@ -703,7 +703,7 @@ bool PU::isMIP(const PredictionUnit &pu, const ChannelType chType)
 
 bool PU::isDMChromaMIP(const PredictionUnit &pu)
 {
-  return !pu.cu->isSepTree() && (pu.chromaFormat == CHROMA_444) && getCoLocatedLumaPU(pu).cu->mipFlag;
+  return !pu.cu->isSepTree() && (pu.chromaFormat == ChromaFormat::_444) && getCoLocatedLumaPU(pu).cu->mipFlag;
 }
 
 uint32_t PU::getIntraDirLuma( const PredictionUnit &pu )
@@ -779,7 +779,8 @@ uint32_t PU::getFinalIntraMode( const PredictionUnit &pu, const ChannelType &chT
   {
     intraMode = getCoLocatedIntraLumaMode(pu);
   }
-  if (pu.chromaFormat == CHROMA_422 && !isLuma(chType) && intraMode < NUM_LUMA_MODE)   // map directional, planar and dc
+  if (pu.chromaFormat == ChromaFormat::_422 && !isLuma(chType)
+      && intraMode < NUM_LUMA_MODE)   // map directional, planar and dc
   {
     intraMode = g_chroma422IntraAngleMappingTable[intraMode];
   }

@@ -268,7 +268,7 @@ void QTBTPartitioner::initCtu( const UnitArea& ctuArea, const ChannelType _chTyp
   currQtDepth = 0;
   currSubdiv  = 0;
   currQgPos   = ctuArea.lumaPos();
-  currQgChromaPos = ctuArea.chromaFormat != CHROMA_400 ? ctuArea.chromaPos() : Position();
+  currQgChromaPos     = isChromaEnabled(ctuArea.chromaFormat) ? ctuArea.chromaPos() : Position();
   currImplicitBtDepth = 0;
   chType      = _chType;
 
@@ -650,7 +650,7 @@ void QTBTPartitioner::exitCurrSplit()
   {
     currQgPos = currArea().lumaPos();
   }
-  if( currArea().chromaFormat != CHROMA_400 && currQgChromaEnable() )
+  if (isChromaEnabled(currArea().chromaFormat) && currQgChromaEnable())
   {
     currQgChromaPos = currArea().chromaPos();
   }
@@ -907,7 +907,7 @@ Partitioning PartitionerImpl::getCUSubPartitions( const UnitArea &cuArea, const 
       {
         ret.resize( 4 );
 
-        if( cuArea.chromaFormat == CHROMA_400 )
+        if (!isChromaEnabled(cuArea.chromaFormat))
         {
           CompArea  blkY = cuArea.Y();
           blkY.width >>= 1;
@@ -1101,7 +1101,8 @@ void PartitionerImpl::getTUIntraSubPartitions( Partitioning &sub, const UnitArea
     THROW( "Unknown TU sub-partitioning" );
   }
   //we only partition luma, so there is going to be only one chroma tu at the end (unless it is dual tree, in which case there won't be any chroma components)
-  uint32_t partitionsWithoutChroma = (cs.area.chromaFormat == CHROMA_400) ? 0 : (isDualTree ? nPartitions : nPartitions - 1);
+  uint32_t partitionsWithoutChroma =
+    !isChromaEnabled(cs.area.chromaFormat) ? 0 : (isDualTree ? nPartitions : nPartitions - 1);
   for( uint32_t i = 0; i < partitionsWithoutChroma; i++ )
   {
     CompArea& blkCb = sub[i].blocks[COMPONENT_Cb];

@@ -160,11 +160,20 @@ static inline ChromaFormat numberToChromaFormat(const int val)
 {
   switch (val)
   {
-    case 400: return CHROMA_400; break;
-    case 420: return CHROMA_420; break;
-    case 422: return CHROMA_422; break;
-    case 444: return CHROMA_444; break;
-    default:  return NUM_CHROMA_FORMAT;
+  case 400:
+    return ChromaFormat::_400;
+    break;
+  case 420:
+    return ChromaFormat::_420;
+    break;
+  case 422:
+    return ChromaFormat::_422;
+    break;
+  case 444:
+    return ChromaFormat::_444;
+    break;
+  default:
+    return ChromaFormat::UNDEFINED;
   }
 }
 
@@ -566,11 +575,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   int tmpChromaFormat;
   int tmpInputChromaFormat;
   int tmpConstraintChromaFormat;
+  int tmpMaxChromaFormatConstraintIdc;
   int tmpWeightedPredictionMethod;
   int tmpFastInterSearchMode;
   int tmpMotionEstimationSearchMethod;
   int tmpDecodedPictureHashSEIMappedType;
   int tmpSubpicDecodedPictureHashMappedType;
+
   std::string         inputColourSpaceConvert;
   std::string         inputPathPrefix;
   ExtendedProfileName extendedProfile;
@@ -887,7 +898,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("AllLayersIndependentConstraintFlag",              m_allLayersIndependentConstraintFlag,             false, "Indicate that all layers are independent")
   ("OnePictureOnlyConstraintFlag",                    m_onePictureOnlyConstraintFlag,                   false, "Value of general_intra_constraint_flag. Can only be used for single frame encodings. Will be set to true for still picture profiles")
   ("MaxBitDepthConstraintIdc",                        m_maxBitDepthConstraintIdc,                          16u, "Indicate that sps_bitdepth_minus8 plus 8 shall be in the range of 0 to m_maxBitDepthConstraintIdc")
-  ("MaxChromaFormatConstraintIdc",                    m_maxChromaFormatConstraintIdc,                        3, "Indicate that sps_chroma_format_idc shall be in the range of 0 to m_maxChromaFormatConstraintIdc")
+  ("MaxChromaFormatConstraintIdc",                    tmpMaxChromaFormatConstraintIdc,                        3, "Indicate that sps_chroma_format_idc shall be in the range of 0 to m_maxChromaFormatConstraintIdc")
   ("NoTrailConstraintFlag",                           m_noTrailConstraintFlag,                          false, "Indicate that TRAIL is deactivated")
   ("NoStsaConstraintFlag",                            m_noStsaConstraintFlag,                           false, "Indicate that STSA is deactivated")
   ("NoRaslConstraintFlag",                            m_noRaslConstraintFlag,                           false, "Indicate that RSAL is deactivated")
@@ -2451,7 +2462,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
   m_inputChromaFormatIDC = numberToChromaFormat(tmpInputChromaFormat);
-  m_chromaFormatIDC = ((tmpChromaFormat == 0) ? (m_inputChromaFormatIDC) : (numberToChromaFormat(tmpChromaFormat)));
+  m_chromaFormatIdc = ((tmpChromaFormat == 0) ? (m_inputChromaFormatIDC) : (numberToChromaFormat(tmpChromaFormat)));
 #if EXTENSION_360_VIDEO
   m_ext360.processOptions(ext360CfgContext);
 #endif
@@ -2486,18 +2497,18 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   if (isY4mFileExt(m_inputFileName))
   {
     int          width = 0, height = 0, frameRate = 0, inputBitDepth = 0;
-    ChromaFormat chromaFormat = CHROMA_420;
+    ChromaFormat chromaFormat = ChromaFormat::_420;
     VideoIOYuv   inputFile;
     inputFile.parseY4mFileHeader(m_inputFileName, width, height, frameRate, inputBitDepth, chromaFormat);
     if (width != m_sourceWidth || height != m_sourceHeight || frameRate != m_frameRate
-        || inputBitDepth != m_inputBitDepth[ChannelType::LUMA] || chromaFormat != m_chromaFormatIDC)
+        || inputBitDepth != m_inputBitDepth[ChannelType::LUMA] || chromaFormat != m_chromaFormatIdc)
     {
       msg(WARNING, "\nWarning: Y4M file info is different from input setting. Using the info from Y4M file\n");
       m_sourceWidth            = width;
       m_sourceHeight           = height;
       m_frameRate              = frameRate;
       m_inputBitDepth.fill(inputBitDepth);
-      m_chromaFormatIDC        = chromaFormat;
+      m_chromaFormatIdc        = chromaFormat;
       m_msbExtendedBitDepth    = m_inputBitDepth;
     }
   }
@@ -2560,7 +2571,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
   {
-    m_chromaFormatConstraint       = (tmpConstraintChromaFormat == 0) ? m_chromaFormatIDC : numberToChromaFormat(tmpConstraintChromaFormat);
+    m_chromaFormatConstraint =
+      (tmpConstraintChromaFormat == 0) ? m_chromaFormatIdc : numberToChromaFormat(tmpConstraintChromaFormat);
+    m_maxChromaFormatConstraintIdc = numberToChromaFormat(tmpMaxChromaFormatConstraintIdc);
+
     if (m_bitDepthConstraint == 0)
     {
       if (m_profile != Profile::NONE)
@@ -2578,13 +2592,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           "MaxBitDepthConstraint setting does not allow the specified luma bit depth to be coded.");
     CHECK(m_bitDepthConstraint < m_internalBitDepth[ChannelType::CHROMA],
           "MaxBitDepthConstraint setting does not allow the specified chroma bit depth to be coded.");
-    CHECK(m_chromaFormatConstraint < m_chromaFormatIDC, "MaxChromaFormatConstraint setting does not allow the specified chroma format to be coded.");
-    CHECK(m_chromaFormatConstraint >= NUM_CHROMA_FORMAT, "Bad value given for MaxChromaFormatConstraint setting.")
+    CHECK(m_chromaFormatConstraint < m_chromaFormatIdc,
+          "MaxChromaFormatConstraint setting does not allow the specified chroma format to be coded.");
+    CHECK(m_chromaFormatConstraint >= ChromaFormat::NUM, "Bad value given for MaxChromaFormatConstraint setting.")
     CHECK(m_bitDepthConstraint < 8 || m_bitDepthConstraint>16, "MaxBitDepthConstraint setting must be in the range 8 to 16 (inclusive)");
   }
 
   m_inputColourSpaceConvert = stringToInputColourSpaceConvert(inputColourSpaceConvert, true);
-  m_rgbFormat = (m_inputColourSpaceConvert == IPCOLOURSPACE_RGBtoGBR && m_chromaFormatIDC == CHROMA_444) ? true : false;
+  m_rgbFormat = m_inputColourSpaceConvert == IPCOLOURSPACE_RGBtoGBR && m_chromaFormatIdc == ChromaFormat::_444;
   if (m_profile == Profile::MAIN_12 || m_profile == Profile::MAIN_12_INTRA || m_profile == Profile::MAIN_12_STILL_PICTURE ||
       m_profile == Profile::MAIN_12_444 || m_profile == Profile::MAIN_12_444_INTRA || m_profile == Profile::MAIN_12_444_STILL_PICTURE ||
       m_profile == Profile::MAIN_16_444 || m_profile == Profile::MAIN_16_444_INTRA || m_profile == Profile::MAIN_16_444_STILL_PICTURE)
@@ -2631,11 +2646,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           m_sourcePadding[1] = m_confWinBottom << 1;
         }
       }
-      if (m_sourcePadding[0] % SPS::getWinUnitX(m_chromaFormatIDC) != 0)
+      if (m_sourcePadding[0] % SPS::getWinUnitX(m_chromaFormatIdc) != 0)
       {
         EXIT( "Error: picture width is not an integer multiple of the specified chroma subsampling");
       }
-      if (m_sourcePadding[1] % SPS::getWinUnitY(m_chromaFormatIDC) != 0)
+      if (m_sourcePadding[1] % SPS::getWinUnitY(m_chromaFormatIdc) != 0)
       {
         EXIT( "Error: picture height is not an integer multiple of the specified chroma subsampling");
       }
@@ -2680,16 +2695,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     for(int i = 0; i < m_numSubPics; i++)
     {
       CHECK((m_subPicCtuTopLeftX[i] * m_ctuSize)
-              >= (m_sourceWidth - m_confWinRight * SPS::getWinUnitX(m_chromaFormatIDC)),
+              >= (m_sourceWidth - m_confWinRight * SPS::getWinUnitX(m_chromaFormatIdc)),
             "No subpicture can be located completely outside of the conformance cropping window");
       CHECK(((m_subPicCtuTopLeftX[i] + m_subPicWidth[i]) * m_ctuSize)
-              <= (m_confWinLeft * SPS::getWinUnitX(m_chromaFormatIDC)),
+              <= (m_confWinLeft * SPS::getWinUnitX(m_chromaFormatIdc)),
             "No subpicture can be located completely outside of the conformance cropping window");
       CHECK((m_subPicCtuTopLeftY[i] * m_ctuSize)
-              >= (m_sourceHeight - m_confWinBottom * SPS::getWinUnitY(m_chromaFormatIDC)),
+              >= (m_sourceHeight - m_confWinBottom * SPS::getWinUnitY(m_chromaFormatIdc)),
             "No subpicture can be located completely outside of the conformance cropping window");
       CHECK(((m_subPicCtuTopLeftY[i] + m_subPicHeight[i]) * m_ctuSize)
-              <= (m_confWinTop * SPS::getWinUnitY(m_chromaFormatIDC)),
+              <= (m_confWinTop * SPS::getWinUnitY(m_chromaFormatIdc)),
             "No subpicture can be located completely outside of the conformance cropping window");
     }
   }
@@ -2755,7 +2770,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   CHECK(cfg_qpInValCb.values.size() != cfg_qpOutValCb.values.size(), "Chroma QP table for Cb is incomplete.");
   CHECK(cfg_qpInValCr.values.size() != cfg_qpOutValCr.values.size(), "Chroma QP table for Cr is incomplete.");
   CHECK(cfg_qpInValCbCr.values.size() != cfg_qpOutValCbCr.values.size(), "Chroma QP table for CbCr is incomplete.");
-  if (m_useIdentityTableForNon420Chroma && m_chromaFormatIDC != CHROMA_420)
+  if (m_useIdentityTableForNon420Chroma && m_chromaFormatIdc != ChromaFormat::_420)
   {
     m_chromaQpMappingTableParams.m_sameCQPTableForAllChromaFlag = true;
 
@@ -2883,7 +2898,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
-  if (m_chromaFormatIDC != CHROMA_420)
+  if (m_chromaFormatIdc != ChromaFormat::_420)
   {
     if (!m_horCollocatedChromaFlag)
     {
@@ -3598,15 +3613,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
 int EncAppCfg::xAutoDetermineProfile()
 {
-  const int maxBitDepth = std::max(
-    m_internalBitDepth[ChannelType::LUMA],
-    m_internalBitDepth[m_chromaFormatIDC == ChromaFormat::CHROMA_400 ? ChannelType::LUMA : ChannelType::CHROMA]);
+  const int maxBitDepth =
+    std::max(m_internalBitDepth[ChannelType::LUMA], m_internalBitDepth[getLastChannel(m_chromaFormatIdc)]);
   m_profile=Profile::NONE;
 
-  switch (m_chromaFormatIDC)
+  switch (m_chromaFormatIdc)
   {
-  case ChromaFormat::CHROMA_400:
-  case ChromaFormat::CHROMA_420:
+  case ChromaFormat::_400:
+  case ChromaFormat::_420:
     if (maxBitDepth <= 10)
     {
       if (m_level == Level::LEVEL15_5 && m_framesToBeEncoded == 1)
@@ -3633,8 +3647,8 @@ int EncAppCfg::xAutoDetermineProfile()
     }
     break;
 
-  case ChromaFormat::CHROMA_422:
-  case ChromaFormat::CHROMA_444:
+  case ChromaFormat::_422:
+  case ChromaFormat::_444:
     if (maxBitDepth <= 10)
     {
       if (m_level == Level::LEVEL15_5 && m_framesToBeEncoded == 1)
@@ -3800,10 +3814,10 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara( (check_sps_range_extension_flag == 1) ,
                  "RExt tools (Extended Precision Processing, RRC Rice Extension, Persistent Rice Adaptation and TSRC Rice Extension) must be disabled for BitDepth is less than or equal to 10 (the value of sps_range_extension_flag shall be 0 when BitDepth is less than or equal to 10.)");
   }
-  xConfirmPara( m_chromaFormatIDC >= NUM_CHROMA_FORMAT,                                     "ChromaFormatIDC must be either 400, 420, 422 or 444" );
+  xConfirmPara(m_chromaFormatIdc >= ChromaFormat::NUM, "ChromaFormatIDC must be either 400, 420, 422 or 444");
   std::string sTempIPCSC="InputColourSpaceConvert must be empty, "+getListOfColourSpaceConverts(true);
   xConfirmPara( m_inputColourSpaceConvert >= NUMBER_INPUT_COLOUR_SPACE_CONVERSIONS,         sTempIPCSC.c_str() );
-  xConfirmPara(m_inputChromaFormatIDC >= NUM_CHROMA_FORMAT, "InputChromaFormatIDC must be either 400, 420, 422 or 444");
+  xConfirmPara(m_inputChromaFormatIDC >= ChromaFormat::NUM, "InputChromaFormatIDC must be either 400, 420, 422 or 444");
   xConfirmPara(m_frameRate <= 0, "Frame rate must be more than 1");
   xConfirmPara( m_framesToBeEncoded <= 0,                                                   "Total Number Of Frames encoded must be more than 0" );
   xConfirmPara( m_framesToBeEncoded < m_switchPOC,                                          "debug POC out of range" );
@@ -3914,7 +3928,7 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara( m_cbQpOffsetDualTree >  12,   "Max. Chroma Cb QP Offset for dual tree is  12" );
   xConfirmPara( m_crQpOffsetDualTree < -12,   "Min. Chroma Cr QP Offset for dual tree is -12" );
   xConfirmPara( m_crQpOffsetDualTree >  12,   "Max. Chroma Cr QP Offset for dual tree is  12" );
-  if (m_dualTree && (m_chromaFormatIDC == CHROMA_400))
+  if (m_dualTree && !isChromaEnabled(m_chromaFormatIdc))
   {
     msg( WARNING, "****************************************************************************\n");
     msg( WARNING, "** WARNING: --DualITree has been disabled because the chromaFormat is 400 **\n");
@@ -3945,14 +3959,14 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara(m_ccalfStrengthTarget < 0.0, "CCALFStrengthTarget is less than 0. Valid range is 0.0 <= CCALFStrengthTarget <= 1.0");
     xConfirmPara(m_ccalfStrengthTarget > 1.0, "CCALFStrengthTarget is greater than 1. Valid range is 0.0 <= CCALFStrengthTarget <= 1.0");
   }
-  if (m_ccalf && (m_chromaFormatIDC == CHROMA_400))
+  if (m_ccalf && !isChromaEnabled(m_chromaFormatIdc))
   {
     msg( WARNING, "****************************************************************************\n");
     msg( WARNING, "** WARNING: --CCALF has been disabled because the chromaFormat is 400     **\n");
     msg( WARNING, "****************************************************************************\n");
     m_ccalf = false;
   }
-  if (m_jointCbCrMode && (m_chromaFormatIDC == CHROMA_400))
+  if (m_jointCbCrMode && !isChromaEnabled(m_chromaFormatIdc))
   {
     msg( WARNING, "****************************************************************************\n");
     msg( WARNING, "** WARNING: --JointCbCr has been disabled because the chromaFormat is 400 **\n");
@@ -3986,9 +4000,9 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara((m_sourceWidth % minCuSize ) || (m_sourceHeight % minCuSize),              "Picture width or height is not a multiple of minCuSize");
   const int minDiff =
     (int) floorLog2(m_minQt[2])
-    - std::max(MIN_CU_LOG2, (int) m_log2MinCuSize - (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC));
+    - std::max(MIN_CU_LOG2, (int) m_log2MinCuSize - (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc));
   xConfirmPara( minDiff < 0 ,                                                               "Min Chroma QT size in I slices is smaller than Min Luma CU size even considering color format");
-  xConfirmPara((m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC))
+  xConfirmPara((m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc))
                  > std::min(64, (int) m_ctuSize),
                "Min Chroma QT size in I slices should be smaller than or equal to CTB size or CB size after implicit "
                "split of CTB");
@@ -4005,7 +4019,7 @@ bool EncAppCfg::xCheckParameter()
                "Maximum BT size for luma block in non I slice should be larger than minimum QT size");
   xConfirmPara(m_maxBt[1] > m_ctuSize,
                "Maximum BT size for luma block in non I slice should be smaller than or equal to CTUSize");
-  xConfirmPara(m_maxBt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
+  xConfirmPara(m_maxBt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc)),
                "Maximum BT size for chroma block in I slice should be larger than minimum QT size");
   xConfirmPara(m_maxBt[2] > m_ctuSize,
                "Maximum BT size for chroma block in I slice should be smaller than or equal to CTUSize");
@@ -4017,7 +4031,7 @@ bool EncAppCfg::xCheckParameter()
                "Maximum TT size for luma block in non I slice should be larger than minimum QT size");
   xConfirmPara(m_maxTt[1] > m_ctuSize,
                "Maximum TT size for luma block in non I slice should be smaller than or equal to CTUSize");
-  xConfirmPara(m_maxTt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
+  xConfirmPara(m_maxTt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc)),
                "Maximum TT size for chroma block in I slice should be larger than minimum QT size");
   xConfirmPara(m_maxTt[2] > m_ctuSize,
                "Maximum TT size for chroma block in I slice should be smaller than or equal to CTUSize");
@@ -4032,9 +4046,9 @@ bool EncAppCfg::xCheckParameter()
   }
   if (m_uiMaxMTTHierarchyDepthIChroma == 0)
   {
-    xConfirmPara(m_maxBt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
+    xConfirmPara(m_maxBt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc)),
                  "MaxBTChromaISlice shall be equal to MinQTChromaISlice when MaxMTTHierarchyDepthISliceC is 0.");
-    xConfirmPara(m_maxTt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
+    xConfirmPara(m_maxTt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc)),
                  "MaxTTChromaISlice shall be equal to MinQTChromaISlice when MaxMTTHierarchyDepthISliceC is 0.");
   }
   if (m_uiMaxMTTHierarchyDepth == 0)
@@ -4101,17 +4115,24 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara(m_ccalf, "CCALF cannot be enabled when ALF APS is disabled");
   }
 
-  xConfirmPara( m_sourceWidth  % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Picture width must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_sourceHeight % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Picture height must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_sourceWidth % SPS::getWinUnitX(m_chromaFormatIdc) != 0,
+               "Picture width must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_sourceHeight % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
+               "Picture height must be an integer multiple of the specified chroma subsampling");
 
-  xConfirmPara( m_sourcePadding[0] % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Horizontal padding must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_sourcePadding[1] % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Vertical padding must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_sourcePadding[0] % SPS::getWinUnitX(m_chromaFormatIdc) != 0,
+               "Horizontal padding must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_sourcePadding[1] % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
+               "Vertical padding must be an integer multiple of the specified chroma subsampling");
 
-  xConfirmPara( m_confWinLeft   % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Left conformance window offset must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_confWinRight  % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Right conformance window offset must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_confWinTop    % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Top conformance window offset must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_confWinBottom % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Bottom conformance window offset must be an integer multiple of the specified chroma subsampling");
-
+  xConfirmPara(m_confWinLeft % SPS::getWinUnitX(m_chromaFormatIdc) != 0,
+               "Left conformance window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_confWinRight % SPS::getWinUnitX(m_chromaFormatIdc) != 0,
+               "Right conformance window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_confWinTop % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
+               "Top conformance window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_confWinBottom % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
+               "Bottom conformance window offset must be an integer multiple of the specified chroma subsampling");
 
   // max CU width and height should be power of 2
   uint32_t ui = m_maxCuWidth;
@@ -4866,8 +4887,14 @@ bool EncAppCfg::xCheckParameter()
   if( m_erpSEIEnabled && !m_erpSEICancelFlag )
   {
     xConfirmPara( m_erpSEIGuardBandType < 0 || m_erpSEIGuardBandType > 8, "SEIEquirectangularprojectionGuardBandType must be in the range of 0 to 7");
-    xConfirmPara( (m_chromaFormatIDC == CHROMA_420 || m_chromaFormatIDC == CHROMA_422) && (m_erpSEILeftGuardBandWidth%2 == 1), "SEIEquirectangularprojectionLeftGuardBandWidth must be an even number for 4:2:0 or 4:2:2 chroma format");
-    xConfirmPara( (m_chromaFormatIDC == CHROMA_420 || m_chromaFormatIDC == CHROMA_422) && (m_erpSEIRightGuardBandWidth%2 == 1), "SEIEquirectangularprojectionRightGuardBandWidth must be an even number for 4:2:0 or 4:2:2 chroma format");
+    xConfirmPara(
+      (m_chromaFormatIdc == ChromaFormat::_420 || m_chromaFormatIdc == ChromaFormat::_422)
+        && (m_erpSEILeftGuardBandWidth % 2 == 1),
+      "SEIEquirectangularprojectionLeftGuardBandWidth must be an even number for 4:2:0 or 4:2:2 chroma format");
+    xConfirmPara(
+      (m_chromaFormatIdc == ChromaFormat::_420 || m_chromaFormatIdc == ChromaFormat::_422)
+        && (m_erpSEIRightGuardBandWidth % 2 == 1),
+      "SEIEquirectangularprojectionRightGuardBandWidth must be an even number for 4:2:0 or 4:2:2 chroma format");
   }
 
   if( m_sphereRotationSEIEnabled && !m_sphereRotationSEICancelFlag )
@@ -5387,10 +5414,10 @@ void EncAppCfg::xPrintParameter()
     msg(VERBOSE, "MmvdDisNum:%d ", m_MmvdDisNum);
     msg(VERBOSE, "JointCbCr:%d ", m_jointCbCrMode);
   }
-  m_useColorTrans = (m_chromaFormatIDC == CHROMA_444) ? m_useColorTrans : 0u;
-  msg(VERBOSE, "ACT:%d ", m_useColorTrans);
-    msg(VERBOSE, "PLT:%d ", m_PLTMode);
-    msg(VERBOSE, "IBC:%d ", m_IBCMode);
+  m_useColorTrans = m_chromaFormatIdc == ChromaFormat::_444 ? m_useColorTrans : false;
+  msg(VERBOSE, "ACT:%d ", m_useColorTrans ? 1 : 0);
+  msg(VERBOSE, "PLT:%d ", m_PLTMode);
+  msg(VERBOSE, "IBC:%d ", m_IBCMode);
   msg( VERBOSE, "HashME:%d ", m_HashME );
   msg( VERBOSE, "WrapAround:%d ", m_wrapAround);
   if( m_wrapAround )

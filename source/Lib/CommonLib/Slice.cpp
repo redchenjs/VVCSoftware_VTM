@@ -2358,7 +2358,6 @@ void PicHeader::resetWpScaling()
   }
 }
 
-
 APS::APS()
 : m_APSId(0)
 , m_temporalId( 0 )

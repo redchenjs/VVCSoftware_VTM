@@ -79,8 +79,8 @@ void Canny::gradient(PelStorage *buff1, PelStorage *buff2, unsigned int width, u
 
   // tmp buffs
   PelStorage tmpBuf1, tmpBuf2;
-  tmpBuf1.create(CHROMA_400, Area(0, 0, width, height));
-  tmpBuf2.create(CHROMA_400, Area(0, 0, width, height));
+  tmpBuf1.create(ChromaFormat::_400, Area(0, 0, width, height));
+  tmpBuf2.create(ChromaFormat::_400, Area(0, 0, width, height));
 
   buff1->get(compID).extendBorderPel(padding, padding);
 
@@ -306,7 +306,7 @@ void Canny::detect_edges(const PelStorage *orig, PelStorage *dest, unsigned int 
 
   // tmp buff
   PelStorage orientationBuf;
-  orientationBuf.create(CHROMA_400, Area(0, 0, width, height));
+  orientationBuf.create(ChromaFormat::_400, Area(0, 0, width, height));
 
   dest->get(compID).copyFrom(orig->getBuf(compID));   // we skip blur in canny detector to catch as much as possible edges and textures
 
@@ -353,7 +353,7 @@ int Morph::dilation(PelStorage *buff, unsigned int bitDepth, ComponentID compID,
   Pel strongPel = ((Pel) 1 << bitDepth) - 1;
 
   PelStorage tmpBuf;
-  tmpBuf.create(CHROMA_400, Area(0, 0, width, height));
+  tmpBuf.create(ChromaFormat::_400, Area(0, 0, width, height));
   tmpBuf.bufs[0].copyFrom(buff->get(compID));
 
   buff->get(compID).extendBorderPel(padding, padding);
@@ -404,7 +404,7 @@ int Morph::erosion(PelStorage *buff, unsigned int bitDepth, ComponentID compID, 
   unsigned int padding    = windowSize / 2;
 
   PelStorage tmpBuf;
-  tmpBuf.create(CHROMA_400, Area(0, 0, width, height));
+  tmpBuf.create(ChromaFormat::_400, Area(0, 0, width, height));
   tmpBuf.bufs[0].copyFrom(buff->get(compID));
 
   buff->get(compID).extendBorderPel(padding, padding);
@@ -484,7 +484,7 @@ void FGAnalyser::init(const int width, const int height, const int sourcePadding
   }
 
   // initialize picture parameters and create buffers
-  m_chromaFormatIDC = inputChroma;
+  m_chromaFormatIdc             = inputChroma;
   m_bitDepthsIn                 = inputBitDepths;
   m_bitDepths                   = outputBitDepths;
   m_sourcePadding[0]            = sourcePaddingWidth;
@@ -525,9 +525,9 @@ void FGAnalyser::initBufs(Picture *pic)
     VideoIOYuv yuvFrames;
     yuvFrames.open(m_filmGrainExternalDenoised, false, m_bitDepthsIn, m_bitDepthsIn, m_bitDepths);
     yuvFrames.skipFrames(pic->getPOC() + m_frameSkip, m_workingBuf->Y().width - m_sourcePadding[0],
-                         m_workingBuf->Y().height - m_sourcePadding[1], m_chromaFormatIDC);
-    if (!yuvFrames.read(*m_workingBuf, dummyPicBufferTO, m_ipCSC, m_sourcePadding,
-                        m_chromaFormatIDC, m_clipInputVideoToRec709Range))
+                         m_workingBuf->Y().height - m_sourcePadding[1], m_chromaFormatIdc);
+    if (!yuvFrames.read(*m_workingBuf, dummyPicBufferTO, m_ipCSC, m_sourcePadding, m_chromaFormatIdc,
+                        m_clipInputVideoToRec709Range))
     {
       THROW("ERROR: EOF OR READ FAIL.\n");   // eof or read fail
     }
@@ -543,9 +543,9 @@ void FGAnalyser::initBufs(Picture *pic)
     VideoIOYuv yuvFrames;
     yuvFrames.open(m_filmGrainExternalMask, false, m_bitDepthsIn, m_bitDepthsIn, m_bitDepths);
     yuvFrames.skipFrames(pic->getPOC() + m_frameSkip, m_maskBuf->Y().width - m_sourcePadding[0],
-                         m_maskBuf->Y().height - m_sourcePadding[1], m_chromaFormatIDC);
-    if (!yuvFrames.read(*m_maskBuf, dummyPicBufferTO, m_ipCSC, m_sourcePadding,
-                        m_chromaFormatIDC, m_clipInputVideoToRec709Range))
+                         m_maskBuf->Y().height - m_sourcePadding[1], m_chromaFormatIdc);
+    if (!yuvFrames.read(*m_maskBuf, dummyPicBufferTO, m_ipCSC, m_sourcePadding, m_chromaFormatIdc,
+                        m_clipInputVideoToRec709Range))
     {
       THROW("ERROR: EOF OR READ FAIL.\n");   // eof or read fail
     }
@@ -612,7 +612,7 @@ void FGAnalyser::findMask()
   maskSubsampled4->create(m_maskBuf->chromaFormat, Area(0, 0, newWidth4, newHeight4), 0, padding, 0, false);
   maskUpsampled->create(m_maskBuf->chromaFormat, Area(0, 0, width, height), 0, padding, 0, false);
 
-  for (int compIdx = 0; compIdx < getNumberValidComponents(m_chromaFormatIDC); compIdx++)
+  for (int compIdx = 0; compIdx < getNumberValidComponents(m_chromaFormatIdc); compIdx++)
   {
     ComponentID compID    = ComponentID(compIdx);
     ChannelType channelId = toChannelType(compID);
@@ -795,7 +795,7 @@ void FGAnalyser::estimate_grain_parameters()
     blockSize = BLK_32;
   }
 
-  for (int compIdx = 0; compIdx < getNumberValidComponents(m_chromaFormatIDC); compIdx++)
+  for (int compIdx = 0; compIdx < getNumberValidComponents(m_chromaFormatIdc); compIdx++)
   {   // loop over components
     ComponentID compID    = ComponentID(compIdx);
     ChannelType channelId = toChannelType(compID);

@@ -212,7 +212,7 @@ void IbcHashMap::xxBuildPicHashMap(const PelUnitBuf& pic)
   {
     // row pointer
     pelY = pic.Y().bufAt(0, pos.y);
-    if (chromaFormat != CHROMA_400)
+    if (isChromaEnabled(chromaFormat))
     {
       int chromaY = pos.y >> chromaScalingY;
       pelCb = pic.Cb().bufAt(0, chromaY);
@@ -228,7 +228,7 @@ void IbcHashMap::xxBuildPicHashMap(const PelUnitBuf& pic)
       hashValue = xxCalcBlockHash(&pelY[pos.x], pic.Y().stride, MIN_PU_SIZE, MIN_PU_SIZE, hashValue);
 
       // chroma part
-      if (chromaFormat != CHROMA_400)
+      if (isChromaEnabled(chromaFormat))
       {
         int chromaX = pos.x >> chromaScalingX;
         hashValue = xxCalcBlockHash(&pelCb[chromaX], pic.Cb().stride, chromaMinBlkWidth, chromaMinBlkHeight, hashValue);
@@ -248,17 +248,17 @@ void IbcHashMap::rebuildPicHashMap(const PelUnitBuf& pic)
 
   switch (pic.chromaFormat)
   {
-  case CHROMA_400:
-    xxBuildPicHashMap<CHROMA_400>(pic);
+  case ChromaFormat::_400:
+    xxBuildPicHashMap<ChromaFormat::_400>(pic);
     break;
-  case CHROMA_420:
-    xxBuildPicHashMap<CHROMA_420>(pic);
+  case ChromaFormat::_420:
+    xxBuildPicHashMap<ChromaFormat::_420>(pic);
     break;
-  case CHROMA_422:
-    xxBuildPicHashMap<CHROMA_422>(pic);
+  case ChromaFormat::_422:
+    xxBuildPicHashMap<ChromaFormat::_422>(pic);
     break;
-  case CHROMA_444:
-    xxBuildPicHashMap<CHROMA_444>(pic);
+  case ChromaFormat::_444:
+    xxBuildPicHashMap<ChromaFormat::_444>(pic);
     break;
   default:
     THROW("invalid chroma fomat");

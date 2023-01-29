@@ -326,7 +326,7 @@ void DeblockingFilter::deblockCu(CodingUnit &cu, const EdgeDir edgeDir)
 
     if (getPos(areaTu, edgeDir) % GRID_SIZE != 0)
     {
-      if (cu.chromaFormat != CHROMA_400 && currTU.block(COMPONENT_Cb).valid())
+      if (isChromaEnabled(cu.chromaFormat) && currTU.block(COMPONENT_Cb).valid())
       {
         if (getPos(currTU.block(COMPONENT_Cb), edgeDir) % GRID_SIZE == 0)
         {
@@ -429,7 +429,7 @@ void DeblockingFilter::deblockCu(CodingUnit &cu, const EdgeDir edgeDir)
           cu.m_featureCounter.boundaryStrengthPel[bsY] += pelsInPart;
 #endif
         }
-        if(cu.treeType != TREE_L && cu.chromaFormat != CHROMA_400 && cu.blocks[COMPONENT_Cb].valid())
+        if (cu.treeType != TREE_L && isChromaEnabled(cu.chromaFormat) && cu.blocks[COMPONENT_Cb].valid())
         {
           es |= xGetBoundaryStrengthSingle(cu, edgeDir, localPos, ChannelType::CHROMA);
 #if GREEN_METADATA_SEI_ENABLED
@@ -462,7 +462,7 @@ void DeblockingFilter::deblockCu(CodingUnit &cu, const EdgeDir edgeDir)
       xEdgeFilterLuma( cu, edgeDir, edge );
     }
 
-    if ( pcv.chrFormat != CHROMA_400 && cu.blocks[COMPONENT_Cb].valid() )
+    if (isChromaEnabled(pcv.chrFormat) && cu.blocks[COMPONENT_Cb].valid())
     {
       if (cu.ispMode == ISPType::NONE || edge == 0)
       {
@@ -855,7 +855,7 @@ DeblockingFilter::EdgeStrengths DeblockingFilter::xGetBoundaryStrengthSingle(con
         tmpBs.setBoundaryStrength(COMPONENT_Y, 1);
       }
     }
-    else if (pcv.chrFormat != CHROMA_400)
+    else if (isChromaEnabled(pcv.chrFormat))
     {
       if (TU::getCbf(tuQ, COMPONENT_Cb) || TU::getCbf(tuP, COMPONENT_Cb) || tuQ.jointCbCr || tuP.jointCbCr)
       {

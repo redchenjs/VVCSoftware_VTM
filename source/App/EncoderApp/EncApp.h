@@ -130,7 +130,7 @@ public:
   std::chrono::duration<long long, std::ratio<1, 1000000000>> getMetricTime() const { return m_metricTime; };
 #endif
   VPS * getVPS() { return m_cEncLib.getVPS(); }
-  int   getChromaFormatIDC() const { return m_cEncLib.getChromaFormatIdc(); }
+  ChromaFormat getChromaFormatIDC() const { return m_cEncLib.getChromaFormatIdc(); }
   int   getBitDepth() const { return m_cEncLib.getBitDepth(ChannelType::LUMA); }
   bool  getALFEnabled() { return m_cEncLib.getUseALF(); }
   int   getMaxNumALFAPS() { return m_cEncLib.getMaxNumALFAPS(); }

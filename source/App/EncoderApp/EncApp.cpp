@@ -347,7 +347,8 @@ void EncApp::xInitLibCfg( int layerIdx )
           "Internal bit depth shall be less than or equal to m_maxBitDepthConstraintIdc");
 
     m_cEncLib.setMaxChromaFormatConstraintIdc(m_maxChromaFormatConstraintIdc);
-    CHECK(m_chromaFormatIDC > m_maxChromaFormatConstraintIdc, "Chroma format Idc shall be less than or equal to m_maxBitDepthConstraintIdc");
+    CHECK(m_chromaFormatIdc > m_maxChromaFormatConstraintIdc,
+          "Chroma format Idc shall be less than or equal to m_maxBitDepthConstraintIdc");
 
     m_cEncLib.setNoMttConstraintFlag(m_noMttConstraintFlag);
     CHECK(m_noMttConstraintFlag && (m_uiMaxMTTHierarchyDepth || m_uiMaxMTTHierarchyDepthI || m_uiMaxMTTHierarchyDepthIChroma), "Mtt shall be deactivated when m_bNoMttConstraintFlag is equal to 1");
@@ -508,7 +509,7 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setOnePictureOnlyConstraintFlag(false);
     m_cEncLib.setIntraOnlyConstraintFlag(false);
     m_cEncLib.setMaxBitDepthConstraintIdc(16);
-    m_cEncLib.setMaxChromaFormatConstraintIdc(3);
+    m_cEncLib.setMaxChromaFormatConstraintIdc(ChromaFormat::_444);
     m_cEncLib.setNoMttConstraintFlag(false);
     m_cEncLib.setNoQtbttDualTreeIntraConstraintFlag(false);
     m_cEncLib.setNoPartitionConstraintsOverrideConstraintFlag(false);
@@ -650,7 +651,7 @@ void EncApp::xInitLibCfg( int layerIdx )
 #if W0038_CQP_ADJ
   m_cEncLib.setSliceChromaOffsetQpIntraOrPeriodic                ( m_sliceChromaQpOffsetPeriodicity, m_sliceChromaQpOffsetIntraOrPeriodic );
 #endif
-  m_cEncLib.setChromaFormatIdc                                   ( m_chromaFormatIDC  );
+  m_cEncLib.setChromaFormatIdc(m_chromaFormatIdc);
   m_cEncLib.setUseAdaptiveQP                                     ( m_bUseAdaptiveQP  );
   m_cEncLib.setQPAdaptationRange                                 ( m_iQPAdaptationRange );
 #if ENABLE_QPA
@@ -716,7 +717,7 @@ void EncApp::xInitLibCfg( int layerIdx )
 
   m_cEncLib.setUseSplitConsOverride                              ( m_SplitConsOverrideEnabledFlag );
   // convert the Intra Chroma minQT setting from chroma unit to luma unit
-  m_minQt[2] <<= getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC);
+  m_minQt[2] <<= getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc);
   m_cEncLib.setMinQTSizes(m_minQt);
   m_cEncLib.setMaxMTTHierarchyDepth                              ( m_uiMaxMTTHierarchyDepth, m_uiMaxMTTHierarchyDepthI, m_uiMaxMTTHierarchyDepthIChroma );
   m_cEncLib.setMaxBTSizes(m_maxBt);
@@ -1481,9 +1482,9 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
     {
       EXIT ("Invalid output bit-depth or image width for packed YUV output, aborting\n");
     }
-    if (m_packedYUVMode && (m_chromaFormatIDC != CHROMA_400)
+    if (m_packedYUVMode && isChromaEnabled(m_chromaFormatIdc)
         && ((m_outputBitDepth[ChannelType::CHROMA] != 10 && m_outputBitDepth[ChannelType::CHROMA] != 12)
-            || (((m_sourceWidth / SPS::getWinUnitX(m_chromaFormatIDC))
+            || (((m_sourceWidth / SPS::getWinUnitX(m_chromaFormatIdc))
                  & (1 + (m_outputBitDepth[ChannelType::CHROMA] & 3)))
                 != 0)))
     {
@@ -1505,11 +1506,11 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
     }
     if (isY4mFileExt(reconFileName))
     {
-      const auto sx = SPS::getWinUnitX(m_chromaFormatIDC);
-      const auto sy = SPS::getWinUnitY(m_chromaFormatIDC);
+      const auto sx = SPS::getWinUnitX(m_chromaFormatIdc);
+      const auto sy = SPS::getWinUnitY(m_chromaFormatIdc);
       m_cVideoIOYuvReconFile.setOutputY4mInfo(m_sourceWidth - (m_confWinLeft + m_confWinRight) * sx,
                                               m_sourceHeight - (m_confWinTop + m_confWinBottom) * sy, m_frameRate, 1,
-                                              m_internalBitDepth[ChannelType::LUMA], m_chromaFormatIDC);
+                                              m_internalBitDepth[ChannelType::LUMA], m_chromaFormatIdc);
     }
     m_cVideoIOYuvReconFile.open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, m_internalBitDepth );  // write mode
   }
@@ -1558,7 +1559,7 @@ void EncApp::xInitLib()
 void EncApp::createLib( const int layerIdx )
 {
   const int sourceHeight = m_isField ? m_iSourceHeightOrg : m_sourceHeight;
-  UnitArea unitArea( m_chromaFormatIDC, Area( 0, 0, m_sourceWidth, sourceHeight ) );
+  UnitArea  unitArea(m_chromaFormatIdc, Area(0, 0, m_sourceWidth, sourceHeight));
 
   m_orgPic = new PelStorage;
   m_trueOrgPic = new PelStorage;
@@ -1566,7 +1567,7 @@ void EncApp::createLib( const int layerIdx )
   m_trueOrgPic->create( unitArea );
   if (m_sourceScalingRatioHor != 1.0 || m_sourceScalingRatioVer != 1.0)
   {
-    UnitArea unitAreaPrescale( m_chromaFormatIDC, Area( 0, 0, m_sourceWidthBeforeScale, m_sourceHeightBeforeScale) );
+    UnitArea unitAreaPrescale(m_chromaFormatIdc, Area(0, 0, m_sourceWidthBeforeScale, m_sourceHeightBeforeScale));
     m_orgPicBeforeScale = new PelStorage;
     m_trueOrgPicBeforeScale = new PelStorage;
     m_orgPicBeforeScale->create( unitAreaPrescale );
@@ -1579,8 +1580,8 @@ void EncApp::createLib( const int layerIdx )
   }
   if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag)
   {
-    UnitArea unitAreaRPR10(m_chromaFormatIDC, Area(0, 0, m_sourceWidth, sourceHeight));
-    UnitArea unitAreaRPR20(m_chromaFormatIDC, Area(0, 0, m_sourceWidth / 2, sourceHeight / 2));
+    UnitArea unitAreaRPR10(m_chromaFormatIdc, Area(0, 0, m_sourceWidth, sourceHeight));
+    UnitArea unitAreaRPR20(m_chromaFormatIdc, Area(0, 0, m_sourceWidth / 2, sourceHeight / 2));
     m_rprPic[0] = new PelStorage;
     m_rprPic[0]->create(unitAreaRPR10);
     m_rprPic[1] = new PelStorage;
@@ -1622,7 +1623,7 @@ void EncApp::createLib( const int layerIdx )
   {
     m_temporalFilter.init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
                           sourceHeight, m_sourcePadding, m_clipInputVideoToRec709Range, m_inputFileName,
-                          m_chromaFormatIDC, m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
+                          m_chromaFormatIdc, m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
                           m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs, m_firstValidFrame,
                           m_lastValidFrame, m_gopBasedTemporalFilterEnabled, m_cEncLib.getAdaptQPmap(),
                           m_cEncLib.getBIM(), m_ctuSize);
@@ -1631,7 +1632,7 @@ void EncApp::createLib( const int layerIdx )
   {
     m_temporalFilterForFG.init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
                                sourceHeight, m_sourcePadding, m_clipInputVideoToRec709Range, m_inputFileName,
-                               m_chromaFormatIDC, m_inputColourSpaceConvert, m_iQP, m_fgcSEITemporalFilterStrengths,
+                               m_chromaFormatIdc, m_inputColourSpaceConvert, m_iQP, m_fgcSEITemporalFilterStrengths,
                                m_fgcSEITemporalFilterPastRefs, m_fgcSEITemporalFilterFutureRefs, m_firstValidFrame,
                                m_lastValidFrame, true, m_cEncLib.getAdaptQPmap(), m_cEncLib.getBIM(), m_ctuSize);
   }
@@ -1732,8 +1733,8 @@ bool EncApp::encodePrep( bool& eos )
                                 m_clipInputVideoToRec709Range);
     int w0 = m_sourceWidthBeforeScale;
     int h0 = m_sourceHeightBeforeScale;
-    int w1 = m_orgPic->get(COMPONENT_Y).width - SPS::getWinUnitX(m_chromaFormatIDC) * (m_confWinLeft + m_confWinRight);
-    int h1 = m_orgPic->get(COMPONENT_Y).height - SPS::getWinUnitY(m_chromaFormatIDC) * (m_confWinTop + m_confWinBottom);
+    int w1 = m_orgPic->get(COMPONENT_Y).width - SPS::getWinUnitX(m_chromaFormatIdc) * (m_confWinLeft + m_confWinRight);
+    int h1 = m_orgPic->get(COMPONENT_Y).height - SPS::getWinUnitY(m_chromaFormatIdc) * (m_confWinTop + m_confWinBottom);
     int xScale = ((w0 << ScalingRatio::BITS) + (w1 >> 1)) / w1;
     int yScale = ((h0 << ScalingRatio::BITS) + (h1 >> 1)) / h1;
     ScalingRatio scalingRatio = { xScale, yScale };
@@ -1797,7 +1798,8 @@ bool EncApp::encodePrep( bool& eos )
   {
     m_cTVideoIOYuvSIIPreFile.write(m_orgPic->get(COMPONENT_Y).width, m_orgPic->get(COMPONENT_Y).height, *m_orgPic,
                                    m_inputColourSpaceConvert, m_packedYUVMode, m_confWinLeft, m_confWinRight,
-                                   m_confWinTop, m_confWinBottom, NUM_CHROMA_FORMAT, m_clipOutputVideoToRec709Range);
+                                   m_confWinTop, m_confWinBottom, ChromaFormat::UNDEFINED,
+                                   m_clipOutputVideoToRec709Range);
   }
 #endif
 
@@ -1879,10 +1881,10 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
 
       if (!m_reconFileName.empty())
       {
-        m_cVideoIOYuvReconFile.write( *pcPicYuvRecTop, *pcPicYuvRecBottom,
-                                      ipCSC,
-                                      false, // TODO: m_packedYUVMode,
-                                      m_confWinLeft, m_confWinRight, m_confWinTop, m_confWinBottom, NUM_CHROMA_FORMAT, m_isTopFieldFirst );
+        m_cVideoIOYuvReconFile.write(*pcPicYuvRecTop, *pcPicYuvRecBottom, ipCSC,
+                                     false,   // TODO: m_packedYUVMode,
+                                     m_confWinLeft, m_confWinRight, m_confWinTop, m_confWinBottom,
+                                     ChromaFormat::UNDEFINED, m_isTopFieldFirst);
       }
    }
   }
@@ -1930,7 +1932,7 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         if( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() )
         {
           m_cVideoIOYuvReconFile.writeUpscaledPicture(sps, pps, *pcPicYuvRec, ipCSC, m_packedYUVMode,
-                                                      m_cEncLib.getUpscaledOutput(), NUM_CHROMA_FORMAT,
+                                                      m_cEncLib.getUpscaledOutput(), ChromaFormat::UNDEFINED,
                                                       m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
         }
         else
@@ -1941,8 +1943,8 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
             m_packedYUVMode, confWindowPPS.getWindowLeftOffset() * SPS::getWinUnitX(m_cEncLib.getChromaFormatIdc()),
             confWindowPPS.getWindowRightOffset() * SPS::getWinUnitX(m_cEncLib.getChromaFormatIdc()),
             confWindowPPS.getWindowTopOffset() * SPS::getWinUnitY(m_cEncLib.getChromaFormatIdc()),
-            confWindowPPS.getWindowBottomOffset() * SPS::getWinUnitY(m_cEncLib.getChromaFormatIdc()), NUM_CHROMA_FORMAT,
-            m_clipOutputVideoToRec709Range);
+            confWindowPPS.getWindowBottomOffset() * SPS::getWinUnitY(m_cEncLib.getChromaFormatIdc()),
+            ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
         }
       }
     }
@@ -2013,10 +2015,18 @@ void EncApp::printChromaFormat()
     std::cout << std::setw(43) << "Input ChromaFormatIDC = ";
     switch (m_inputChromaFormatIDC)
     {
-    case CHROMA_400:  std::cout << "  4:0:0"; break;
-    case CHROMA_420:  std::cout << "  4:2:0"; break;
-    case CHROMA_422:  std::cout << "  4:2:2"; break;
-    case CHROMA_444:  std::cout << "  4:4:4"; break;
+    case ChromaFormat::_400:
+      std::cout << "  4:0:0";
+      break;
+    case ChromaFormat::_420:
+      std::cout << "  4:2:0";
+      break;
+    case ChromaFormat::_422:
+      std::cout << "  4:2:2";
+      break;
+    case ChromaFormat::_444:
+      std::cout << "  4:4:4";
+      break;
     default:
       THROW( "invalid chroma fomat");
     }
@@ -2025,10 +2035,18 @@ void EncApp::printChromaFormat()
     std::cout << std::setw(43) << "Output (internal) ChromaFormatIDC = ";
     switch (m_cEncLib.getChromaFormatIdc())
     {
-    case CHROMA_400:  std::cout << "  4:0:0"; break;
-    case CHROMA_420:  std::cout << "  4:2:0"; break;
-    case CHROMA_422:  std::cout << "  4:2:2"; break;
-    case CHROMA_444:  std::cout << "  4:4:4"; break;
+    case ChromaFormat::_400:
+      std::cout << "  4:0:0";
+      break;
+    case ChromaFormat::_420:
+      std::cout << "  4:2:0";
+      break;
+    case ChromaFormat::_422:
+      std::cout << "  4:2:2";
+      break;
+    case ChromaFormat::_444:
+      std::cout << "  4:4:4";
+      break;
     default:
       THROW( "invalid chroma fomat");
     }

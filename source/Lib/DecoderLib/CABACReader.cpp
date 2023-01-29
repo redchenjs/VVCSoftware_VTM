@@ -241,8 +241,7 @@ void CABACReader::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
     }
   }
 
-
-  if ( CS::isDualITree(cs) && cs.pcv->chrFormat != CHROMA_400 && cs.pcv->maxCUWidth > 64 )
+  if (CS::isDualITree(cs) && isChromaEnabled(cs.pcv->chrFormat) && cs.pcv->maxCUWidth > 64)
   {
     QTBTPartitioner chromaPartitioner;
     chromaPartitioner.initCtu(area, ChannelType::CHROMA, *cs.slice);
@@ -255,7 +254,7 @@ void CABACReader::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
   {
     coding_tree(cs, partitioner, cuCtx);
     qps[ChannelType::LUMA] = cuCtx.qp;
-    if( CS::isDualITree( cs ) && cs.pcv->chrFormat != CHROMA_400 )
+    if (CS::isDualITree(cs) && isChromaEnabled(cs.pcv->chrFormat))
     {
       CUCtx cuCtxChroma(qps[ChannelType::CHROMA]);
       partitioner.initCtu(area, ChannelType::CHROMA, *cs.slice);
@@ -356,7 +355,7 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
 
   const bool sliceSaoLumaFlag = slice.getSaoEnabledFlag(ChannelType::LUMA);
   const bool sliceSaoChromaFlag =
-    slice.getSaoEnabledFlag(ChannelType::CHROMA) && sps.getChromaFormatIdc() != CHROMA_400;
+    slice.getSaoEnabledFlag(ChannelType::CHROMA) && isChromaEnabled(sps.getChromaFormatIdc());
 
   saoCtuParams[COMPONENT_Y].modeIdc  = SAOMode::OFF;
   saoCtuParams[COMPONENT_Cb].modeIdc = SAOMode::OFF;
@@ -713,7 +712,7 @@ void CABACReader::coding_tree( CodingStructure& cs, Partitioner& partitioner, CU
     if( cu.isLocalSepTree() )
     {
       compBegin = COMPONENT_Y;
-      numComp = (cu.chromaFormat != CHROMA_400)?3: 1;
+      numComp   = getNumberValidComponents(cu.chromaFormat);
       jointPLT = true;
     }
     else
@@ -733,7 +732,7 @@ void CABACReader::coding_tree( CodingStructure& cs, Partitioner& partitioner, CU
   else
   {
     compBegin = COMPONENT_Y;
-    numComp = (cu.chromaFormat != CHROMA_400) ? 3 : 1;
+    numComp   = getNumberValidComponents(cu.chromaFormat);
     jointPLT = true;
   }
   if (CU::isPLT(cu))
@@ -910,21 +909,14 @@ void CABACReader::coding_unit( CodingUnit &cu, Partitioner &partitioner, CUCtx& 
       {
         cu_palette_info(cu, COMPONENT_Y, 1, cuCtx);
       }
-      if (cu.chromaFormat != CHROMA_400 && (partitioner.chType == ChannelType::CHROMA))
+      if (isChromaEnabled(cu.chromaFormat) && partitioner.chType == ChannelType::CHROMA)
       {
         cu_palette_info(cu, COMPONENT_Cb, 2, cuCtx);
       }
     }
     else
     {
-      if( cu.chromaFormat != CHROMA_400 )
-      {
-        cu_palette_info(cu, COMPONENT_Y, 3, cuCtx);
-      }
-      else
-      {
-        cu_palette_info(cu, COMPONENT_Y, 1, cuCtx);
-      }
+      cu_palette_info(cu, COMPONENT_Y, getNumberValidComponents(cu.chromaFormat), cuCtx);
     }
     end_of_ctu(cu, cuCtx);
     return;
@@ -1479,7 +1471,7 @@ void CABACReader::intra_luma_pred_modes( CodingUnit &cu )
 
 void CABACReader::intra_chroma_pred_modes( CodingUnit& cu )
 {
-  if (cu.chromaFormat == CHROMA_400 || (cu.isSepTree() && isLuma(cu.chType)))
+  if (!isChromaEnabled(cu.chromaFormat) || (cu.isSepTree() && isLuma(cu.chType)))
   {
     return;
   }
@@ -1491,7 +1483,7 @@ void CABACReader::intra_chroma_pred_modes( CodingUnit& cu )
   }
   PredictionUnit *pu = cu.firstPU;
 
-  CHECK(pu->cu != &cu, "Inkonsistent PU-CU mapping");
+  CHECK(pu->cu != &cu, "Inconsistent PU-CU mapping");
   intra_chroma_pred_mode(*pu);
 }
 
@@ -1697,7 +1689,7 @@ void CABACReader::end_of_ctu( CodingUnit& cu, CUCtx& cuCtx )
 
   if (((rbPos.x & cu.cs->pcv->maxCUWidthMask) == 0 || rbPos.x == cu.cs->pps->getPicWidthInLumaSamples())
       && ((rbPos.y & cu.cs->pcv->maxCUHeightMask) == 0 || rbPos.y == cu.cs->pps->getPicHeightInLumaSamples())
-      && (!cu.isSepTree() || cu.chromaFormat == CHROMA_400 || isChroma(cu.chType)))
+      && (!cu.isSepTree() || !isChromaEnabled(cu.chromaFormat) || isChroma(cu.chType)))
   {
     cuCtx.isDQPCoded = ( cu.cs->pps->getUseDQP() && !cuCtx.isDQPCoded );
   }
@@ -2734,10 +2726,10 @@ void CABACReader::transform_unit( TransformUnit& tu, CUCtx& cuCtx, Partitioner& 
   chromaCbfs.Cb = chromaCbfs.Cr = false;
 
   const bool chromaCbfISP =
-    area.chromaFormat != CHROMA_400 && area.blocks[COMPONENT_Cb].valid() && cu.ispMode != ISPType::NONE;
+    isChromaEnabled(area.chromaFormat) && area.blocks[COMPONENT_Cb].valid() && cu.ispMode != ISPType::NONE;
 
   // cbf_cb & cbf_cr
-  if (area.chromaFormat != CHROMA_400 && area.blocks[COMPONENT_Cb].valid()
+  if (isChromaEnabled(area.chromaFormat) && area.blocks[COMPONENT_Cb].valid()
       && (!cu.isSepTree() || partitioner.chType == ChannelType::CHROMA)
       && (cu.ispMode == ISPType::NONE || chromaCbfISP))
   {
@@ -2805,12 +2797,12 @@ void CABACReader::transform_unit( TransformUnit& tu, CUCtx& cuCtx, Partitioner& 
       TU::setCbfAtDepth(tu, COMPONENT_Y, trDepth, (cbfY ? 1 : 0));
     }
   }
-  if (area.chromaFormat != CHROMA_400 && (cu.ispMode == ISPType::NONE || chromaCbfISP))
+  if (isChromaEnabled(area.chromaFormat) && (cu.ispMode == ISPType::NONE || chromaCbfISP))
   {
     TU::setCbfAtDepth(tu, COMPONENT_Cb, trDepth, (chromaCbfs.Cb ? 1 : 0));
     TU::setCbfAtDepth(tu, COMPONENT_Cr, trDepth, (chromaCbfs.Cr ? 1 : 0));
   }
-  bool        lumaOnly   = ( cu.chromaFormat == CHROMA_400 || !tu.blocks[COMPONENT_Cb].valid() );
+  bool        lumaOnly   = !isChromaEnabled(cu.chromaFormat) || !tu.blocks[COMPONENT_Cb].valid();
   bool        cbfLuma    = ( tu.cbf[ COMPONENT_Y ] != 0 );
   bool        cbfChroma  = ( lumaOnly ? false : ( chromaCbfs.Cb || chromaCbfs.Cr ) );
 

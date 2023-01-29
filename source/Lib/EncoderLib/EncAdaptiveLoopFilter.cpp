@@ -457,12 +457,12 @@ EncAdaptiveLoopFilter::EncAdaptiveLoopFilter()
   m_alfCovarianceFrameCcAlf[1] = nullptr;
 }
 
-void EncAdaptiveLoopFilter::create(const EncCfg *encCfg, const int picWidth, const int picHeight,
-                                   const ChromaFormat chromaFormatIDC, const int maxCUWidth, const int maxCUHeight,
-                                   const int maxCUDepth, const BitDepths &inputBitDepth,
-                                   const BitDepths &internalBitDepth)
+void EncAdaptiveLoopFilter::create(const EncCfg* encCfg, const int picWidth, const int picHeight,
+                                   const ChromaFormat chromaFormatIdc, const int maxCUWidth, const int maxCUHeight,
+                                   const int maxCUDepth, const BitDepths& inputBitDepth,
+                                   const BitDepths& internalBitDepth)
 {
-  AdaptiveLoopFilter::create( picWidth, picHeight, chromaFormatIDC, maxCUWidth, maxCUHeight, maxCUDepth, inputBitDepth );
+  AdaptiveLoopFilter::create(picWidth, picHeight, chromaFormatIdc, maxCUWidth, maxCUHeight, maxCUDepth, inputBitDepth);
   CHECK( encCfg == nullptr, "encCfg must not be null" );
   m_encCfg = encCfg;
 
@@ -563,9 +563,12 @@ void EncAdaptiveLoopFilter::create(const EncCfg *encCfg, const int picWidth, con
   }
   m_filterControl         = new uint8_t[m_numCTUsInPic];
   m_bestFilterControl     = new uint8_t[m_numCTUsInPic];
-  uint32_t area           = (picWidth >> getComponentScaleX(COMPONENT_Cb,chromaFormatIDC))*(picHeight >> getComponentScaleY(COMPONENT_Cb,chromaFormatIDC));
+  uint32_t area           = (picWidth >> getComponentScaleX(COMPONENT_Cb, chromaFormatIdc))
+                  * (picHeight >> getComponentScaleY(COMPONENT_Cb, chromaFormatIdc));
   m_bufOrigin             = ( Pel* ) xMalloc( Pel, area );
-  m_buf                   = new PelBuf( m_bufOrigin, picWidth >> getComponentScaleX(COMPONENT_Cb,chromaFormatIDC), picWidth >> getComponentScaleX(COMPONENT_Cb,chromaFormatIDC), picHeight >> getComponentScaleY(COMPONENT_Cb,chromaFormatIDC) );
+  m_buf                   = new PelBuf(m_bufOrigin, picWidth >> getComponentScaleX(COMPONENT_Cb, chromaFormatIdc),
+                                       picWidth >> getComponentScaleX(COMPONENT_Cb, chromaFormatIdc),
+                                       picHeight >> getComponentScaleY(COMPONENT_Cb, chromaFormatIdc));
   m_lumaSwingGreaterThanThresholdCount = new uint64_t[m_numCTUsInPic];
   m_chromaSampleCountNearMidPoint = new uint64_t[m_numCTUsInPic];
 }

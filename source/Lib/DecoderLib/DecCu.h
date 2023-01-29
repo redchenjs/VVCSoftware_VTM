@@ -68,7 +68,7 @@ public:
   void  decompressCtu     ( CodingStructure& cs, const UnitArea& ctuArea );
   Reshape*          m_pcReshape;
   Reshape* getReshape     () { return m_pcReshape; }
-  void initDecCuReshaper  ( Reshape* pcReshape, ChromaFormat chromaFormatIDC) ;
+  void              initDecCuReshaper(Reshape* pcReshape, ChromaFormat chromaFormatIdc);
   void destoryDecCuReshaprBuf();
 
   /// reconstruct Ctu information

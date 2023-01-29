@@ -193,7 +193,6 @@ SPS::SPS()
   , m_MMVD(false)
   , m_SBT(false)
   , m_ISP(false)
-  , m_chromaFormatIdc(CHROMA_420)
   , m_maxSubLayers(1)
   , m_ptlDpbHrdParamsPresentFlag(1)
   , m_subLayerDpbParamsFlag(0)
@@ -330,6 +329,3 @@ void SPS::createRplList(const RefPicList l, const int numRPL)
   m_numRpl[l]          = numRPL;
   m_rpl1IdxPresentFlag = m_numRpl[REF_PIC_LIST_0] != m_numRpl[REF_PIC_LIST_1];
 }
-
-const int SPS::m_winUnitX[]={ 1,2,2,1 };
-const int SPS::m_winUnitY[]={ 1,2,1,1 };

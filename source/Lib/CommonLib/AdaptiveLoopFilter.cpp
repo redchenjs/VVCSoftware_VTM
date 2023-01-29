@@ -735,10 +735,10 @@ void AdaptiveLoopFilter::create(const int picWidth, const int picHeight, const C
   m_filterShapes[ChannelType::LUMA].push_back(AlfFilterShape(7));
   m_filterShapes[ChannelType::CHROMA].push_back(AlfFilterShape(5));
   m_alfVBLumaPos = m_maxCUHeight - ALF_VB_POS_ABOVE_CTUROW_LUMA;
-  m_alfVBChmaPos = (m_maxCUHeight >> ((m_chromaFormat == CHROMA_420) ? 1 : 0)) - ALF_VB_POS_ABOVE_CTUROW_CHMA;
+  m_alfVBChmaPos = (m_maxCUHeight >> ((m_chromaFormat == ChromaFormat::_420) ? 1 : 0)) - ALF_VB_POS_ABOVE_CTUROW_CHMA;
 
   m_alfVBLumaCTUHeight = m_maxCUHeight;
-  m_alfVBChmaCTUHeight = (m_maxCUHeight >> ((m_chromaFormat == CHROMA_420) ? 1 : 0));
+  m_alfVBChmaCTUHeight = (m_maxCUHeight >> ((m_chromaFormat == ChromaFormat::_420) ? 1 : 0));
 
   CHECK(ALF_NUM_CLIP_VALS[ChannelType::LUMA] < 1, "ALF_NUM_CLIP_VALS[ChannelType::LUMA] must be at least one");
   m_alfClippingValues[ChannelType::LUMA][0] = 1 << m_inputBitDepth[ChannelType::LUMA];

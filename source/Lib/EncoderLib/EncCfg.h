@@ -183,7 +183,7 @@ protected:
   bool      m_onePictureOnlyConstraintFlag;
   bool      m_bIntraOnlyConstraintFlag;
   uint32_t  m_maxBitDepthConstraintIdc;
-  int  m_maxChromaFormatConstraintIdc;
+  ChromaFormat m_maxChromaFormatConstraintIdc;
   bool      m_allLayersIndependentConstraintFlag;
   bool      m_noMrlConstraintFlag;
   bool      m_noIspConstraintFlag;
@@ -470,7 +470,7 @@ protected:
   int       m_sliceChromaQpOffsetIntraOrPeriodic[2/*Cb,Cr*/]; ///< Chroma Cb QP Offset at slice level for I slice or for periodic inter slices as defined by SliceChromaQPOffsetPeriodicity. Replaces offset in the GOP table.
 #endif
 
-  ChromaFormat m_chromaFormatIDC;
+  ChromaFormat m_chromaFormatIdc;
 
   bool      m_extendedPrecisionProcessingFlag;
   bool      m_tsrcRicePresentFlag;
@@ -1074,8 +1074,8 @@ public:
   void      setIntraOnlyConstraintFlag(bool val) { m_bIntraOnlyConstraintFlag = val; }
   uint32_t  getMaxBitDepthConstraintIdc() const { return m_maxBitDepthConstraintIdc; }
   void      setMaxBitDepthConstraintIdc(uint32_t u) { m_maxBitDepthConstraintIdc = u; }
-  int       getMaxChromaFormatConstraintIdc() const { return m_maxChromaFormatConstraintIdc; }
-  void      setMaxChromaFormatConstraintIdc(int u) { m_maxChromaFormatConstraintIdc = u; }
+  ChromaFormat  getMaxChromaFormatConstraintIdc() const { return m_maxChromaFormatConstraintIdc; }
+  void          setMaxChromaFormatConstraintIdc(ChromaFormat cf) { m_maxChromaFormatConstraintIdc = cf; }
   bool          getGciPresentFlag() const { return m_gciPresentFlag; }
   void          setGciPresentFlag(bool b) { m_gciPresentFlag = b; }
   bool          getAllLayersIndependentConstraintFlag() const { return m_allLayersIndependentConstraintFlag; }
@@ -1637,8 +1637,8 @@ public:
   uint32_t      getSliceChromaOffsetQpPeriodicity() const                                                           { return m_sliceChromaQpOffsetPeriodicity; }
 #endif
 
-  void      setChromaFormatIdc              ( ChromaFormat cf ) { m_chromaFormatIDC = cf; }
-  ChromaFormat  getChromaFormatIdc          ( ) const        { return m_chromaFormatIDC; }
+  void         setChromaFormatIdc(ChromaFormat cf) { m_chromaFormatIdc = cf; }
+  ChromaFormat getChromaFormatIdc() const { return m_chromaFormatIdc; }
 
 #if SHARP_LUMA_DELTA_QP
   void      setLumaLevelToDeltaQPControls( const LumaLevelToDeltaQPMapping &lumaLevelToDeltaQPMapping ) { m_lumaLevelToDeltaQPMapping=lumaLevelToDeltaQPMapping; }

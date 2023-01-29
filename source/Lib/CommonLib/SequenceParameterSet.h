@@ -385,7 +385,7 @@ private:
   bool              m_MMVD;
   bool              m_SBT;
   bool              m_ISP;
-  ChromaFormat      m_chromaFormatIdc;
+  ChromaFormat      m_chromaFormatIdc = ChromaFormat::_420;
 
   uint32_t          m_maxSubLayers;           // maximum number of temporal layers
 
@@ -549,9 +549,6 @@ private:
   bool              m_scalingMatrixDesignatedColourSpaceFlag;
 
   bool              m_disableScalingMatrixForLfnstBlks;
-
-  static const int  m_winUnitX[NUM_CHROMA_FORMAT];
-  static const int  m_winUnitY[NUM_CHROMA_FORMAT];
 
 public:
 
@@ -963,8 +960,7 @@ public:
   void      setScalingMatrixDesignatedColourSpaceFlag(bool b)             { m_scalingMatrixDesignatedColourSpaceFlag = b; }
   bool      getScalingMatrixDesignatedColourSpaceFlag() const             { return m_scalingMatrixDesignatedColourSpaceFlag; }
 
-
-  static int getWinUnitX (ChromaFormat chromaFormatIdc) { CHECK(chromaFormatIdc < 0 || chromaFormatIdc >= NUM_CHROMA_FORMAT, "Invalid chroma format parameter"); return m_winUnitX[chromaFormatIdc]; }
-  static int getWinUnitY (ChromaFormat chromaFormatIdc) { CHECK(chromaFormatIdc < 0 || chromaFormatIdc >= NUM_CHROMA_FORMAT, "Invalid chroma format parameter"); return m_winUnitY[chromaFormatIdc]; }
+  static int getWinUnitX(ChromaFormat cf) { return 1 << getChannelTypeScaleX(ChannelType::CHROMA, cf); }
+  static int getWinUnitY(ChromaFormat cf) { return 1 << getChannelTypeScaleY(ChannelType::CHROMA, cf); }
 };
 

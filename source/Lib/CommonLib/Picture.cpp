@@ -238,7 +238,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   SEIs.clear();
   clearSliceBuffer();
 
-  const ChromaFormat chromaFormatIDC = sps.getChromaFormatIdc();
+  const ChromaFormat chromaFormatIdc = sps.getChromaFormatIdc();
   const int          width           = pps.getPicWidthInLumaSamples();
   const int          height          = pps.getPicHeightInLumaSamples();
 
@@ -250,7 +250,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   {
     cs      = new CodingStructure(g_xuPool);
     cs->sps = &sps;
-    cs->create(chromaFormatIDC, Area(0, 0, width, height), true, (bool) sps.getPLTMode());
+    cs->create(chromaFormatIdc, Area(0, 0, width, height), true, (bool) sps.getPLTMode());
   }
 
   cs->vps = vps;
@@ -269,7 +269,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   m_scalingWindow = pps.getScalingWindow();
   mixedNaluTypesInPicFlag = pps.getMixedNaluTypesInPicFlag();
   nonReferencePictureFlag = picHeader->getNonReferencePictureFlag();
-  m_chromaFormatIDC = sps.getChromaFormatIdc();
+  m_chromaFormatIdc       = sps.getChromaFormatIdc();
   m_bitDepths = sps.getBitDepths();
 
   if (m_spliceIdx == nullptr)
@@ -792,31 +792,27 @@ void Picture::sampleRateConv(const ScalingRatio scalingRatio, const int scaleX, 
   delete[] buf;
 }
 
-void Picture::rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf &beforeScaling,
-                             const Window &scalingWindowBefore, const PelUnitBuf &afterScaling,
-                             const Window &scalingWindowAfter, const ChromaFormat chromaFormatIDC,
-                             const BitDepths &bitDepths, const bool useLumaFilter, const bool downsampling,
-                              const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
-                              bool rescaleForDisplay, int upscaleFilterForDisplay
-)
+void Picture::rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf& beforeScaling,
+                             const Window& scalingWindowBefore, const PelUnitBuf& afterScaling,
+                             const Window& scalingWindowAfter, const ChromaFormat chromaFormatIdc,
+                             const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
+                             const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
+                             bool rescaleForDisplay, int upscaleFilterForDisplay)
 {
-  for( int comp = 0; comp < ::getNumberValidComponents( chromaFormatIDC ); comp++ )
+  for (int comp = 0; comp < ::getNumberValidComponents(chromaFormatIdc); comp++)
   {
     ComponentID compID = ComponentID( comp );
     const CPelBuf& beforeScale = beforeScaling.get( compID );
     const PelBuf& afterScale = afterScaling.get( compID );
 
     sampleRateConv(
-      scalingRatio,
-      ::getComponentScaleX(compID, chromaFormatIDC), ::getComponentScaleY(compID, chromaFormatIDC),
-      beforeScale, scalingWindowBefore.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
-      scalingWindowBefore.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC), afterScale,
-      scalingWindowAfter.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
-      scalingWindowAfter.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC), bitDepths[toChannelType(compID)],
-      downsampling || useLumaFilter ? true : isLuma(compID), downsampling,
-      isLuma(compID) ? 1 : horCollocatedChromaFlag, isLuma(compID) ? 1 : verCollocatedChromaFlag, rescaleForDisplay,
-      upscaleFilterForDisplay
-    );
+      scalingRatio, ::getComponentScaleX(compID, chromaFormatIdc), ::getComponentScaleY(compID, chromaFormatIdc),
+      beforeScale, scalingWindowBefore.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
+      scalingWindowBefore.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc), afterScale,
+      scalingWindowAfter.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
+      scalingWindowAfter.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc), bitDepths[toChannelType(compID)],
+      downsampling || useLumaFilter ? true : isLuma(compID), downsampling, isLuma(compID) ? 1 : horCollocatedChromaFlag,
+      isLuma(compID) ? 1 : verCollocatedChromaFlag, rescaleForDisplay, upscaleFilterForDisplay);
   }
 }
 
@@ -1273,7 +1269,7 @@ const CPelBuf Picture::getBuf( const CompArea &blk, const PictureType &type ) co
 
 PelUnitBuf Picture::getBuf( const UnitArea &unit, const PictureType &type )
 {
-  if( chromaFormat == CHROMA_400 )
+  if (!isChromaEnabled(chromaFormat))
   {
     return PelUnitBuf( chromaFormat, getBuf( unit.Y(), type ) );
   }
@@ -1285,7 +1281,7 @@ PelUnitBuf Picture::getBuf( const UnitArea &unit, const PictureType &type )
 
 const CPelUnitBuf Picture::getBuf( const UnitArea &unit, const PictureType &type ) const
 {
-  if( chromaFormat == CHROMA_400 )
+  if (!isChromaEnabled(chromaFormat))
   {
     return CPelUnitBuf( chromaFormat, getBuf( unit.Y(), type ) );
   }
@@ -1488,8 +1484,8 @@ PelUnitBuf Picture::getDisplayBuf()
 #if JVET_Z0120_SII_SEI_PROCESSING
 void Picture::copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcPicYuvDst)
 {
-  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
-  int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+  const ChromaFormat chromaFormatIdc    = sps->getChromaFormatIdc();
+  int                numValidComponents = getNumberValidComponents(chromaFormatIdc);
 
   Pel *srcPxl, *dstPxl;
   ptrdiff_t srcStride;
@@ -1578,7 +1574,7 @@ Picture* Picture::findPrevPicPOC(Picture* pcPic, PicList* pcListPic)
 void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio)
 {
   const SPS *sps = pcPic->cs->sps;
-  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+  const ChromaFormat chromaFormatIdc = sps->getChromaFormatIdc();
 
   if ((pcPic->getPOC()) % blendingRatio != 0 || pcPic->getPOC() == 0)
     pcPic->getPostRecBuf().copyFrom(pcPic->getRecoBuf());
@@ -1605,7 +1601,7 @@ void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int ble
       PelUnitBuf* nextYuv = &nextTmp;
       PelUnitBuf* postYuv = &postTmp;
 
-      int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+      int numValidComponents = getNumberValidComponents(chromaFormatIdc);
       for (int chan = 0; chan < numValidComponents; chan++)
       {
         const ComponentID ch = ComponentID(chan);
@@ -1665,7 +1661,7 @@ void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int ble
 void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio, int intraPeriod)
 {
   const SPS *sps = pcPic->cs->sps;
-  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+  const ChromaFormat chromaFormatIdc = sps->getChromaFormatIdc();
 #if DISABLE_PRE_POST_FILTER_FOR_IDR_CRA
   if (pcPic->getPOC() == 0 ||
     (pcPic->getPOC() % intraPeriod == 0))
@@ -1680,7 +1676,7 @@ void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blen
     {
       PelStorage* currYuv = &pcPic->m_bufs[PIC_ORIGINAL];
       PelStorage* prevYuv = &prevPic->m_bufs[PIC_ORIGINAL];
-      int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+      const int   numValidComponents = getNumberValidComponents(chromaFormatIdc);
       for (int chan = 0; chan < numValidComponents; chan++)
       {
         const ComponentID ch = ComponentID(chan);

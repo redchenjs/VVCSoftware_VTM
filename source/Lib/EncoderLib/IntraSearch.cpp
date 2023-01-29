@@ -1821,7 +1821,7 @@ void IntraSearch::PLTSearch(CodingStructure &cs, Partitioner& partitioner, Compo
     {
       memset(cu.reuseflag[COMPONENT_Y], false, sizeof(bool) * MAXPLTPREDSIZE);
       compBeginTmp = COMPONENT_Y;
-      numCompTmp   = (cu.chromaFormat != CHROMA_400) ? 3 : 1;
+      numCompTmp   = getNumberValidComponents(cu.chromaFormat);
     }
     for (int curIdx = 0; curIdx < cu.curPLTSize[compBegin]; curIdx++)
     {
@@ -2608,9 +2608,8 @@ void IntraSearch::derivePLTLossy(CodingStructure& cs, Partitioner& partitioner, 
 
       ComponentID tmpCompBegin = compBegin;
       int tmpNumComp = numComp;
-      if( cs.sps->getChromaFormatIdc() != CHROMA_444 &&
-          numComp == 3 &&
-         (x != ((x >> scaleX) << scaleX) || (y != ((y >> scaleY) << scaleY))) )
+      if (cs.sps->getChromaFormatIdc() != ChromaFormat::_444 && numComp == 3
+          && (x != ((x >> scaleX) << scaleX) || (y != ((y >> scaleY) << scaleY))))
       {
         tmpCompBegin = COMPONENT_Y;
         tmpNumComp   = 1;
@@ -2669,7 +2668,7 @@ void IntraSearch::derivePLTLossy(CodingStructure& cs, Partitioner& partitioner, 
     }
   }
 
-  if( cs.sps->getChromaFormatIdc() != CHROMA_444 && numComp == 3 )
+  if (cs.sps->getChromaFormatIdc() != ChromaFormat::_444 && numComp == 3)
   {
     for( int i = 0; i < idx; i++ )
     {
@@ -2746,7 +2745,8 @@ void IntraSearch::derivePLTLossy(CodingStructure& cs, Partitioner& partitioner, 
     {
       ComponentID tmpCompBegin = compBegin;
       int tmpNumComp = numComp;
-      if( cs.sps->getChromaFormatIdc() != CHROMA_444 && numComp == 3 && pelListSort[i].getCnt(COMPONENT_Cb) == 0 )
+      if (cs.sps->getChromaFormatIdc() != ChromaFormat::_444 && numComp == 3
+          && pelListSort[i].getCnt(COMPONENT_Cb) == 0)
       {
         tmpCompBegin = COMPONENT_Y;
         tmpNumComp   = 1;
@@ -2846,7 +2846,8 @@ void IntraSearch::derivePLTLossy(CodingStructure& cs, Partitioner& partitioner, 
       }
       if( !duplicate )
       {
-        if( cs.sps->getChromaFormatIdc() != CHROMA_444 && numComp == 3 && pelListSort[i].getCnt(COMPONENT_Cb) == 0 )
+        if (cs.sps->getChromaFormatIdc() != ChromaFormat::_444 && numComp == 3
+            && pelListSort[i].getCnt(COMPONENT_Cb) == 0)
         {
           if( best != -1 )
           {

@@ -2727,15 +2727,15 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei.m_purpose = val;
 #endif
 
-    ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+    ChromaFormat chromaFormatIdc = sps->getChromaFormatIdc();
     uint8_t      subWidthC;
     uint8_t      subHeightC;
-    if (chromaFormatIDC == ChromaFormat::CHROMA_420)
+    if (chromaFormatIdc == ChromaFormat::_420)
     {
       subWidthC  = 2;
       subHeightC = 2;
     }
-    else if (chromaFormatIDC == ChromaFormat::CHROMA_422)
+    else if (chromaFormatIdc == ChromaFormat::_422)
     {
       subWidthC  = 2;
       subHeightC = 1;
@@ -2793,12 +2793,13 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #if JVET_AC0154
     if((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
     {
-      CHECK(((chromaFormatIDC != ChromaFormat::CHROMA_400) || (sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0),
-          "When ChromaFormatIdc or nnpfc_purpose & 0x02 is not equal to 0, nnpfc_purpose & 0x20 shall be equal to 0");
+      CHECK(((chromaFormatIdc != ChromaFormat::_400) || (sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0),
+            "When ChromaFormatIdc or nnpfc_purpose & 0x02 is not equal to 0, nnpfc_purpose & 0x20 shall be equal to 0");
 
       sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_out_colour_format_idc");
       sei.m_outColourFormatIdc = ChromaFormat(val);
-      CHECK(sei.m_outColourFormatIdc == 0, "The value of nnpfc_out_colour_format_idc shall not be equal to 0");
+      CHECK(sei.m_outColourFormatIdc == ChromaFormat::_400,
+            "The value of nnpfc_out_colour_format_idc shall not be equal to 0");
 
       sei.m_outSubWidthC  = SPS::getWinUnitX(sei.m_outColourFormatIdc);
       sei.m_outSubHeightC = SPS::getWinUnitY(sei.m_outColourFormatIdc);
@@ -3099,7 +3100,7 @@ void SeiCfgFileDump::xDumpSEIEquirectangularProjection     (SEIEquirectangularPr
     FILE *fp = fopen(decoded360MessageFileName.c_str(), "w");
     if (fp)
     {
-      int chromaFormatTable[4] = {400, 420, 422, 444};
+      EnumArray<int, ChromaFormat> chromaFormatTable = { 400, 420, 422, 444 };
       fprintf(fp, "InputBitDepth                 : %d    # Input bitdepth\n", sps->getBitDepth(ChannelType::LUMA));
       fprintf(fp, "InputChromaFormat             : %d    # Ratio of luminance to chrominance samples\n", chromaFormatTable[sps->getChromaFormatIdc()]);
       fprintf(fp, "SourceWidth                   : %d    # Input  frame width\n", sps->getMaxPicWidthInLumaSamples());
@@ -3173,7 +3174,7 @@ void SeiCfgFileDump::xDumpSEIGeneralizedCubemapProjection  (SEIGeneralizedCubema
       FILE *fp = fopen(decoded360MessageFileName.c_str(), "w");
       if (fp)
       {
-        int chromaFormatTable[4] = {400, 420, 422, 444};
+        const EnumArray<int, ChromaFormat> chromaFormatTable = { 400, 420, 422, 444 };
         fprintf(fp, "InputBitDepth                 : %d    # Input bitdepth\n", sps->getBitDepth(ChannelType::LUMA));
         fprintf(fp, "InputChromaFormat             : %d    # Ratio of luminance to chrominance samples\n", chromaFormatTable[sps->getChromaFormatIdc()]);
         fprintf(fp, "SourceWidth                   : %d    # Input  frame width\n", sps->getMaxPicWidthInLumaSamples());

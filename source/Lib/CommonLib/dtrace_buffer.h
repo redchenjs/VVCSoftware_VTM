@@ -131,8 +131,14 @@ inline void dtraceBlockRec( const CPelUnitBuf& pelUnitBuf, const UnitArea& ua, P
 
 inline void dtraceUnitComp( DTRACE_CHANNEL channel, CPelUnitBuf& pelUnitBuf, const UnitArea& ua, ComponentID compId, PredMode predMode, uint32_t zIdx = 0 )
 {
-  if( !g_trace_ctx ) return;
-  if( pelUnitBuf.chromaFormat == CHROMA_400 && compId != COMPONENT_Y )  return;
+  if (!g_trace_ctx)
+  {
+    return;
+  }
+  if (!isChromaEnabled(pelUnitBuf.chromaFormat) && compId != COMPONENT_Y)
+  {
+    return;
+  }
   const Pel* piReco   = pelUnitBuf.bufs[compId].buf;
   ptrdiff_t      uiStride = pelUnitBuf.bufs[compId].stride;
   uint32_t       uiWidth  = ua.blocks[compId].width;

@@ -295,7 +295,10 @@ public:
   /// copy parameters from encoder class
   void  init                ( EncLib* pcEncLib, const SPS& sps );
 
-  void setDecCuReshaperInEncCU(EncReshape* pcReshape, ChromaFormat chromaFormatIDC) { initDecCuReshaper((Reshape*) pcReshape, chromaFormatIDC); }
+  void setDecCuReshaperInEncCU(EncReshape* pcReshape, ChromaFormat chromaFormatIdc)
+  {
+    initDecCuReshaper((Reshape*) pcReshape, chromaFormatIdc);
+  }
   /// create internal buffers
   void  create              ( EncCfg* encCfg );
 

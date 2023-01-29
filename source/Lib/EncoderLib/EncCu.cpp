@@ -499,7 +499,7 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
     if( !CS::isDualITree(*tempCS) && partitioner.treeType != TREE_D )
     {
       compBegin = COMPONENT_Y;
-      numComp = (tempCS->area.chromaFormat != CHROMA_400)?3: 1;
+      numComp   = getNumberValidComponents(tempCS->area.chromaFormat);
       jointPLT = true;
     }
     else
@@ -519,7 +519,7 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
   else
   {
     compBegin = COMPONENT_Y;
-    numComp = (tempCS->area.chromaFormat != CHROMA_400) ? 3 : 1;
+    numComp   = getNumberValidComponents(tempCS->area.chromaFormat);
     jointPLT = true;
   }
   SplitSeries splitmode = -1;
@@ -1696,8 +1696,8 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
             }
           }
 
-          if (tempCS->area.chromaFormat != CHROMA_400 && (partitioner.chType == ChannelType::CHROMA || !cu.isSepTree())
-              && !cu.colorTransform)
+          if (isChromaEnabled(tempCS->area.chromaFormat)
+              && (partitioner.chType == ChannelType::CHROMA || !cu.isSepTree()) && !cu.colorTransform)
           {
             TUIntraSubPartitioner subTuPartitioner( partitioner );
             m_pcIntraSearch->estIntraPredChromaQT(
@@ -1757,11 +1757,11 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
           // Check if low frequency non-separable transform (LFNST) is too expensive
           if (lfnstIdx && !cuCtx.lfnstLastScanPos && cu.ispMode == ISPType::NONE)
           {
-            bool cbfAtZeroDepth = cu.isSepTree() ?
-                                       cu.rootCbf
-                                     : (tempCS->area.chromaFormat != CHROMA_400 && std::min( cu.firstTU->blocks[ 1 ].width, cu.firstTU->blocks[ 1 ].height ) < 4) ?
-                                            TU::getCbfAtDepth( *cu.firstTU, COMPONENT_Y, 0 )
-                                          : cu.rootCbf;
+            bool cbfAtZeroDepth = cu.isSepTree() ? cu.rootCbf
+                                  : (isChromaEnabled(tempCS->area.chromaFormat)
+                                     && std::min(cu.firstTU->blocks[1].width, cu.firstTU->blocks[1].height) < 4)
+                                    ? TU::getCbfAtDepth(*cu.firstTU, COMPONENT_Y, 0)
+                                    : cu.rootCbf;
             if( cbfAtZeroDepth )
             {
               tempCS->cost = MAX_DOUBLE;
@@ -1937,21 +1937,14 @@ void EncCu::xCheckPLT(CodingStructure *&tempCS, CodingStructure *&bestCS, Partit
     {
       m_pcIntraSearch->PLTSearch(*tempCS, partitioner, COMPONENT_Y, 1);
     }
-    if (tempCS->area.chromaFormat != CHROMA_400 && (partitioner.chType == ChannelType::CHROMA))
+    if (isChromaEnabled(tempCS->area.chromaFormat) && partitioner.chType == ChannelType::CHROMA)
     {
       m_pcIntraSearch->PLTSearch(*tempCS, partitioner, COMPONENT_Cb, 2);
     }
   }
   else
   {
-    if( cu.chromaFormat != CHROMA_400 )
-    {
-      m_pcIntraSearch->PLTSearch(*tempCS, partitioner, COMPONENT_Y, 3);
-    }
-    else
-    {
-      m_pcIntraSearch->PLTSearch(*tempCS, partitioner, COMPONENT_Y, 1);
-    }
+    m_pcIntraSearch->PLTSearch(*tempCS, partitioner, COMPONENT_Y, getNumberValidComponents(cu.chromaFormat));
   }
 
 
@@ -1974,21 +1967,14 @@ void EncCu::xCheckPLT(CodingStructure *&tempCS, CodingStructure *&bestCS, Partit
     {
       m_CABACEstimator->cu_palette_info(cu, COMPONENT_Y, 1, cuCtx);
     }
-    if (tempCS->area.chromaFormat != CHROMA_400 && (partitioner.chType == ChannelType::CHROMA))
+    if (isChromaEnabled(tempCS->area.chromaFormat) && (partitioner.chType == ChannelType::CHROMA))
     {
       m_CABACEstimator->cu_palette_info(cu, COMPONENT_Cb, 2, cuCtx);
     }
   }
   else
   {
-    if( cu.chromaFormat != CHROMA_400 )
-    {
-      m_CABACEstimator->cu_palette_info(cu, COMPONENT_Y, 3, cuCtx);
-    }
-    else
-    {
-      m_CABACEstimator->cu_palette_info(cu, COMPONENT_Y, 1, cuCtx);
-    }
+    m_CABACEstimator->cu_palette_info(cu, COMPONENT_Y, getNumberValidComponents(cu.chromaFormat), cuCtx);
   }
   tempCS->fracBits = m_CABACEstimator->getEstFracBits();
   tempCS->cost = m_pcRdCost->calcRdCost(tempCS->fracBits, tempCS->dist);
@@ -5125,7 +5111,9 @@ void EncCu::xCalDebCost( CodingStructure &cs, Partitioner &partitioner, bool cal
   if ( calDist )
   {
     ComponentID compStr = ( cu->isSepTree() && !isLuma( partitioner.chType ) ) ? COMPONENT_Cb : COMPONENT_Y;
-    ComponentID compEnd = ( ( cu->isSepTree() && isLuma( partitioner.chType ) ) || cs.area.chromaFormat == CHROMA_400 ) ? COMPONENT_Y : COMPONENT_Cr;
+    ComponentID compEnd = (cu->isSepTree() && isLuma(partitioner.chType)) || !isChromaEnabled(cs.area.chromaFormat)
+                            ? COMPONENT_Y
+                            : COMPONENT_Cr;
     Distortion finalDistortion = 0;
     for ( int comp = compStr; comp <= compEnd; comp++ )
     {
@@ -5141,7 +5129,9 @@ void EncCu::xCalDebCost( CodingStructure &cs, Partitioner &partitioner, bool cal
   if ( anyEdgeAvai && m_pcEncCfg->getUseEncDbOpt() )
   {
     ComponentID compStr = ( cu->isSepTree() && !isLuma( partitioner.chType ) ) ? COMPONENT_Cb : COMPONENT_Y;
-    ComponentID compEnd = ( ( cu->isSepTree() &&  isLuma( partitioner.chType ) ) || cs.area.chromaFormat == CHROMA_400 ) ? COMPONENT_Y : COMPONENT_Cr;
+    ComponentID compEnd = (cu->isSepTree() && isLuma(partitioner.chType)) || !isChromaEnabled(cs.area.chromaFormat)
+                            ? COMPONENT_Y
+                            : COMPONENT_Cr;
 
     const UnitArea currCsArea = clipArea(cs.area, *cs.picture);
 

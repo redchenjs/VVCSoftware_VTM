@@ -167,7 +167,7 @@ private:
   bool                             m_clipInputVideoToRec709Range;
   BitDepths                        m_bitDepthsIn;
   int                              m_frameSkip;
-  ChromaFormat  m_chromaFormatIDC;
+  ChromaFormat                     m_chromaFormatIdc;
   BitDepths     m_bitDepths;
   bool          m_doAnalysis[MAX_NUM_COMPONENT] = { false, false, false };
 

@@ -255,7 +255,7 @@ public:
   InterPrediction();
   virtual ~InterPrediction();
 
-  void    init                (RdCost* pcRdCost, ChromaFormat chromaFormatIDC, const int ctuSize);
+  void init(RdCost* pcRdCost, ChromaFormat chromaFormatIdc, const int ctuSize);
 
   // inter
   void motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf, RefPicList eRefPicList, bool luma, bool chroma,
@@ -292,9 +292,11 @@ public:
   void    cacheAssign( CacheModel *cache );
 #endif
   static bool isSubblockVectorSpreadOverLimit( int a, int b, int c, int d, int predType );
+
   void xFillIBCBuffer(CodingUnit &cu);
-  void resetIBCBuffer(const ChromaFormat chromaFormatIDC, const int ctuSize);
-  void resetVPDUforIBC(const ChromaFormat chromaFormatIDC, const int ctuSize, const int vSize, const int xPos, const int yPos);
+  void resetIBCBuffer(const ChromaFormat chromaFormatIdc, const int ctuSize);
+  void resetVPDUforIBC(const ChromaFormat chromaFormatIdc, const int ctuSize, const int vSize, const int xPos,
+                       const int yPos);
   bool isLumaBvValid(const int ctuSize, const int xCb, const int yCb, const int width, const int height, const int xBv, const int yBv);
 
   bool xPredInterBlkRPR(const ScalingRatio scalingRatio, const PPS &pps, const CompArea &blk,

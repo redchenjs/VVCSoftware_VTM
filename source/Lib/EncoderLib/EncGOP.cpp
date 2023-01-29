@@ -2270,8 +2270,8 @@ void EncGOP::computeSignalling(Picture* pcPic, Slice* pcSlice) const
     uint32_t freq[128] = {};
     static const int offsetRLSCP = 15; // Equivalent to 2.5 bits
     for (ComponentID compID = COMPONENT_Y;
-                     compID <= (pcPic->chromaFormat == CHROMA_400 ? COMPONENT_Y : COMPONENT_Cr);
-                     compID = ComponentID(compID + 1))
+         compID <= (!isChromaEnabled(pcPic->chromaFormat) ? COMPONENT_Y : COMPONENT_Cr);
+         compID = ComponentID(compID + 1))
     {
       int bitDepth = pcPic->cs->sps->getBitDepth(toChannelType(compID));
       int qpBase = offsetRLSCP + 4 - (bitDepth - 8) * 6;
@@ -2471,10 +2471,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     const int picHeight = pcPic->cs->pps->getPicHeightInLumaSamples();
     const int maxCUWidth = pcPic->cs->sps->getMaxCUWidth();
     const int maxCUHeight = pcPic->cs->sps->getMaxCUHeight();
-    const ChromaFormat chromaFormatIDC = pcPic->cs->sps->getChromaFormatIdc();
+    const ChromaFormat chromaFormatIdc = pcPic->cs->sps->getChromaFormatIdc();
     const int maxTotalCUDepth = floorLog2(maxCUWidth) - pcPic->cs->sps->getLog2MinCodingBlockSize();
 
-    m_pcSliceEncoder->create( picWidth, picHeight, chromaFormatIDC, maxCUWidth, maxCUHeight, maxTotalCUDepth );
+    m_pcSliceEncoder->create(picWidth, picHeight, chromaFormatIdc, maxCUWidth, maxCUHeight, maxTotalCUDepth);
 
     pcPic->createTempBuffers( pcPic->cs->pps->pcv->maxCUWidth );
     pcPic->cs->createCoeffs((bool)pcPic->cs->sps->getPLTMode());
@@ -3430,10 +3430,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       m_featureCounter.baseQP[pcPic->getLossyQPValue()] ++;
       if (m_featureCounter.isYUV420 == -1)
       {
-        m_featureCounter.isYUV400 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_400 ? 1 : 0;
-        m_featureCounter.isYUV420 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_420 ? 1 : 0;
-        m_featureCounter.isYUV422 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_422 ? 1 : 0;
-        m_featureCounter.isYUV444 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_444 ? 1 : 0;
+        m_featureCounter.isYUV400 = pcSlice->getSPS()->getChromaFormatIdc() == ChromaFormat::_400 ? 1 : 0;
+        m_featureCounter.isYUV420 = pcSlice->getSPS()->getChromaFormatIdc() == ChromaFormat::_420 ? 1 : 0;
+        m_featureCounter.isYUV422 = pcSlice->getSPS()->getChromaFormatIdc() == ChromaFormat::_422 ? 1 : 0;
+        m_featureCounter.isYUV444 = pcSlice->getSPS()->getChromaFormatIdc() == ChromaFormat::_444 ? 1 : 0;
       }
   
       if (m_featureCounter.is8bit == -1)
@@ -3522,7 +3522,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         const uint32_t log2SaoOffsetScaleChroma =
           (uint32_t) std::max(0, pcSlice->getSPS()->getBitDepth(ChannelType::CHROMA) - MAX_SAO_TRUNCATED_BITDEPTH);
 
-        m_pcSAO->create( picWidth, picHeight, chromaFormatIDC, maxCUWidth, maxCUHeight, maxTotalCUDepth, log2SaoOffsetScaleLuma, log2SaoOffsetScaleChroma );
+        m_pcSAO->create(picWidth, picHeight, chromaFormatIdc, maxCUWidth, maxCUHeight, maxTotalCUDepth,
+                        log2SaoOffsetScaleLuma, log2SaoOffsetScaleChroma);
         m_pcSAO->destroyEncData();
         m_pcSAO->createEncData( m_pcCfg->getSaoCtuBoundary(), numCtuInFrame );
         m_pcSAO->setReshaper( m_pcReshaper );
@@ -3609,7 +3610,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       if( pcSlice->getSPS()->getALFEnabledFlag() )
       {
         m_pcALF->destroy();
-        m_pcALF->create( m_pcCfg, picWidth, picHeight, chromaFormatIDC, maxCUWidth, maxCUHeight, maxTotalCUDepth, m_pcCfg->getBitDepth(), m_pcCfg->getInputBitDepth() );
+        m_pcALF->create(m_pcCfg, picWidth, picHeight, chromaFormatIdc, maxCUWidth, maxCUHeight, maxTotalCUDepth,
+                        m_pcCfg->getBitDepth(), m_pcCfg->getInputBitDepth());
 
         for (int s = 0; s < numSliceSegments; s++)
         {
@@ -3865,7 +3867,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 #endif
         if (writeAPS)
         {
-          aps->chromaPresentFlag = pcSlice->getSPS()->getChromaFormatIdc() != CHROMA_400;
+          aps->chromaPresentFlag = isChromaEnabled(pcSlice->getSPS()->getChromaFormatIdc());
           actualTotalBits += xWriteAPS( accessUnit, aps, m_pcEncLib->getLayerId(), true );
           apsMapLmcs->clearChangedFlag(apsId);
 #if GDR_ENABLED
@@ -3894,7 +3896,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 #endif
         if( writeAPS )
         {
-          aps->chromaPresentFlag = pcSlice->getSPS()->getChromaFormatIdc() != CHROMA_400;
+          aps->chromaPresentFlag = isChromaEnabled(pcSlice->getSPS()->getChromaFormatIdc());
           actualTotalBits += xWriteAPS( accessUnit, aps, m_pcEncLib->getLayerId(), true );
           apsMapSl->clearChangedFlag(apsId);
 #if GDR_ENABLED
@@ -3941,7 +3943,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 #endif
           if (writeAPS )
           {
-            aps->chromaPresentFlag = pcSlice->getSPS()->getChromaFormatIdc() != CHROMA_400;
+            aps->chromaPresentFlag = isChromaEnabled(pcSlice->getSPS()->getChromaFormatIdc());
             actualTotalBits += xWriteAPS( accessUnit, aps, m_pcEncLib->getLayerId(), true );
             apsMapAlf->clearChangedFlag(apsId);
 #if GDR_ENABLED
@@ -5747,7 +5749,7 @@ void EncGOP::xCalculateHDRMetrics( Picture* pcPic, double deltaE[hdrtoolslib::NB
 
   ChromaFormat chFmt =  pcPic->chromaFormat;
 
-  if (chFmt != CHROMA_444)
+  if (chFmt != ChromaFormat::_444)
   {
     m_pcConvertFormat->process(m_ppcFrameOrg[1], m_ppcFrameOrg[0]);
     m_pcConvertFormat->process(m_ppcFrameRec[1], m_ppcFrameRec[0]);
@@ -5791,7 +5793,7 @@ void EncGOP::copyBuftoFrame( Picture* pcPic )
   uint16_t* vOrg = m_ppcFrameOrg[0]->m_ui16Comp[hdrtoolslib::Cr_COMP];
   uint16_t* vRec = m_ppcFrameRec[0]->m_ui16Comp[hdrtoolslib::Cr_COMP];
 
-  if (chFmt == CHROMA_444)
+  if (chFmt == ChromaFormat::_444)
   {
     yOrg = m_ppcFrameOrg[1]->m_ui16Comp[hdrtoolslib::Y_COMP];
     yRec = m_ppcFrameRec[1]->m_ui16Comp[hdrtoolslib::Y_COMP];
@@ -5810,7 +5812,7 @@ void EncGOP::copyBuftoFrame( Picture* pcPic )
     }
   }
 
-  if (chFmt != CHROMA_444)
+  if (chFmt != ChromaFormat::_444)
   {
     height >>= 1;
     width  >>= 1;

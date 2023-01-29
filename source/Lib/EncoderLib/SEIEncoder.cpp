@@ -538,7 +538,7 @@ void SEIEncoder::initDecodedPictureHashSEI(SEIDecodedPictureHash *decodedPicture
   CHECK(!(decodedPictureHashSEI != nullptr), "Unspecified error");
 
   decodedPictureHashSEI->method = m_pcCfg->getDecodedPictureHashSEIType();
-  decodedPictureHashSEI->singleCompFlag = (m_pcCfg->getChromaFormatIdc() == 0);
+  decodedPictureHashSEI->singleCompFlag = !isChromaEnabled(m_pcCfg->getChromaFormatIdc());
   switch (m_pcCfg->getDecodedPictureHashSEIType())
   {
   case HashType::MD5:
@@ -1364,15 +1364,16 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       int confWinBottomOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowBottomOffset();
       int ppsPicWidthInLumaSample  = m_pcEncLib->getPPS(0)->getPicWidthInLumaSamples();
       int ppsPicHeightInLumaSample = m_pcEncLib->getPPS(0)->getPicHeightInLumaSamples();
-      ChromaFormat chromaFormatIDC = m_pcEncLib->getSPS(0)->getChromaFormatIdc();
+
+      const ChromaFormat chromaFormatIdc = m_pcEncLib->getSPS(0)->getChromaFormatIdc();
       uint8_t      subWidthC;
       uint8_t      subHeightC;
-      if (chromaFormatIDC == ChromaFormat::CHROMA_420)
+      if (chromaFormatIdc == ChromaFormat::_420)
       {
         subWidthC  = 2;
         subHeightC = 2;
       }
-      else if (chromaFormatIDC == ChromaFormat::CHROMA_422)
+      else if (chromaFormatIdc == ChromaFormat::_422)
       {
         subWidthC  = 2;
         subHeightC = 1;
