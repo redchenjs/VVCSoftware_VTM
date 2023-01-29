@@ -58,6 +58,7 @@
 
 #define JVET_AC0139_UNIFIED_MERGE                         1
 #define JVET_AC0096                                       1
+#define JVET_AC0058_SEI                                   1
 
 //########### place macros to be be kept below this line ###############
 
@@ -69,7 +70,6 @@
 #define GDR_DEC_TRACE  0
 #endif
 
-#define JVET_AC0058_SEI                                   1 // JVET-AC0058: SEI processing order SEI message enhancement for T35 SEIs
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
 
 #define JVET_R0164_MEAN_SCALED_SATD                       1 // JVET-R0164: Use a mean scaled version of SATD in encoder decisions
