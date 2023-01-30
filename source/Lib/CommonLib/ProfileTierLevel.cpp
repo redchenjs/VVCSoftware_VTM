@@ -93,7 +93,7 @@ bool operator == (const ProfileTierLevel& op1, const ProfileTierLevel& op2)
   return true;
 }
 
-bool             operator != (const ProfileTierLevel& op1, const ProfileTierLevel& op2)
+bool operator != (const ProfileTierLevel& op1, const ProfileTierLevel& op2)
 {
   return !(op1 == op2);
 }
@@ -174,14 +174,12 @@ const ProfileFeatures *ProfileFeatures::getProfileFeatures(const Profile::Name p
   return &validProfiles[i];
 }
 
-void
-ProfileLevelTierFeatures::extractPTLInformation(const SPS &sps)
+void ProfileLevelTierFeatures::extractPTLInformation(const SPS &sps)
 {
   extractPTLInformation(*sps.getProfileTierLevel());
 }
 
-void
-ProfileLevelTierFeatures::extractPTLInformation(const ProfileTierLevel &ptl)
+void ProfileLevelTierFeatures::extractPTLInformation(const ProfileTierLevel &ptl)
 {
   const ProfileTierLevel &spsPtl = ptl;
 
