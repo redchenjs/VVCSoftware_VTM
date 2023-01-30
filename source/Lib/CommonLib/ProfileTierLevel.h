@@ -54,7 +54,7 @@ class ProfileTierLevel
   std::vector<uint32_t>               m_subProfileIdc;
 
 public:
-                ProfileTierLevel();
+  ProfileTierLevel();
 
   Level::Tier   getTierFlag() const                         { return m_tierFlag;                    }
   void          setTierFlag(Level::Tier x)                  { m_tierFlag = x;                       }

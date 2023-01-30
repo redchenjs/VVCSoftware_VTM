@@ -31,14 +31,19 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** \file     ProfileLevelTier.cpp
-    \brief    Handle profile, level and tier information.
-*/
-
-
 #include "ProfileTierLevel.h"
 #include "CommonLib/Slice.h"
-#include <math.h>
+
+ProfileTierLevel::ProfileTierLevel()
+  : m_tierFlag(Level::MAIN)
+  , m_profileIdc(Profile::NONE)
+  , m_levelIdc(Level::NONE)
+  , m_frameOnlyConstraintFlag(true)
+  , m_multiLayerEnabledFlag(false)
+{
+  m_subLayerLevelPresentFlag.fill(false);
+  m_subLayerLevelIdc.fill(Level::NONE);
+}
 
 bool operator == (const ProfileTierLevel& op1, const ProfileTierLevel& op2)
 {

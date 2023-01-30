@@ -36,57 +36,6 @@
 #include "PictureParameterSet.h"
 #include "Slice.h"
 
-SliceMap::SliceMap()
-: m_sliceID              (0)
-, m_numTilesInSlice      (0)
-, m_numCtuInSlice        (0)
-{
-  m_ctuAddrInSlice.clear();
-}
-
-SliceMap::~SliceMap()
-{
-  m_numCtuInSlice = 0;
-  m_ctuAddrInSlice.clear();
-}
-
-RectSlice::RectSlice()
-: m_tileIdx            (0)
-, m_sliceWidthInTiles  (0)
-, m_sliceHeightInTiles (0)
-, m_numSlicesInTile    (0)
-, m_sliceHeightInCtu   (0)
-{
-}
-
-RectSlice::~RectSlice()
-{
-}
-
-SubPic::SubPic()
-: m_subPicID              (0)
-, m_numCTUsInSubPic       (0)
-, m_subPicCtuTopLeftX     (0)
-, m_subPicCtuTopLeftY     (0)
-, m_subPicWidth           (0)
-, m_subPicHeight          (0)
-, m_firstCtuInSubPic      (0)
-, m_lastCtuInSubPic       (0)
-, m_subPicLeft            (0)
-, m_subPicRight           (0)
-, m_subPicTop             (0)
-, m_subPicBottom          (0)
-, m_treatedAsPicFlag                  (false)
-, m_loopFilterAcrossSubPicEnabledFlag (false)
-{
-  m_ctuAddrInSubPic.clear();
-}
-
-SubPic::~SubPic()
-{
-  m_ctuAddrInSubPic.clear();
-}
-
 PPS::PPS()
   : m_ppsId(0)
   , m_spsId(0)
@@ -141,31 +90,10 @@ PPS::PPS()
   m_chromaQpAdjTableIncludingNullEntry[0].u.comp.cbOffset        = 0;
   m_chromaQpAdjTableIncludingNullEntry[0].u.comp.crOffset        = 0;
   m_chromaQpAdjTableIncludingNullEntry[0].u.comp.jointCbCrOffset = 0;
-  m_tileColWidth.clear();
-  m_tileRowHeight.clear();
-  m_tileColBd.clear();
-  m_tileRowBd.clear();
-  m_ctuToTileCol.clear();
-  m_ctuToTileRow.clear();
-  m_ctuToSubPicIdx.clear();
-  m_rectSlices.clear();
-  m_sliceMap.clear();
-  m_subPics.clear();
 }
 
 PPS::~PPS()
 {
-  m_tileColWidth.clear();
-  m_tileRowHeight.clear();
-  m_tileColBd.clear();
-  m_tileRowBd.clear();
-  m_ctuToTileCol.clear();
-  m_ctuToTileRow.clear();
-  m_ctuToSubPicIdx.clear();
-  m_rectSlices.clear();
-  m_sliceMap.clear();
-
-  m_subPics.clear();
   delete pcv;
 }
 

@@ -41,14 +41,14 @@ class PreCalcValues;
 class SliceMap
 {
 private:
-  uint32_t               m_sliceID;           // slice identifier (slice index for rectangular slices, slice address for raser-scan slices)
-  uint32_t               m_numTilesInSlice;   // number of tiles in slice (raster-scan slices only)
-  uint32_t               m_numCtuInSlice;     // number of CTUs in the slice
-  std::vector<uint32_t>  m_ctuAddrInSlice;    // raster-scan addresses of all the CTUs in the slice
+  uint32_t               m_sliceID = 0;         // slice identifier (slice index for rectangular slices, slice address for raser-scan slices)
+  uint32_t               m_numTilesInSlice = 0; // number of tiles in slice (raster-scan slices only)
+  uint32_t               m_numCtuInSlice = 0;   // number of CTUs in the slice
+  std::vector<uint32_t>  m_ctuAddrInSlice;      // raster-scan addresses of all the CTUs in the slice
 
 public:
-  SliceMap();
-  virtual ~SliceMap();
+  SliceMap() {};
+  virtual ~SliceMap() {};
 
   void                   setSliceID( uint32_t u )             { m_sliceID = u;            }
   uint32_t               getSliceID() const                   { return m_sliceID;         }
@@ -85,15 +85,15 @@ public:
 class RectSlice
 {
 private:
-  uint32_t         m_tileIdx;             // tile index corresponding to the first CTU in the slice
-  uint32_t         m_sliceWidthInTiles;   // slice width in units of tiles
-  uint32_t         m_sliceHeightInTiles;  // slice height in units of tiles
-  uint32_t         m_numSlicesInTile;     // number of slices in current tile for the special case of multiple slices inside a single tile
-  uint32_t         m_sliceHeightInCtu;    // slice height in units of CTUs for the special case of multiple slices inside a single tile
+  uint32_t         m_tileIdx = 0;             // tile index corresponding to the first CTU in the slice
+  uint32_t         m_sliceWidthInTiles = 0;   // slice width in units of tiles
+  uint32_t         m_sliceHeightInTiles = 0;  // slice height in units of tiles
+  uint32_t         m_numSlicesInTile = 0;     // number of slices in current tile for the special case of multiple slices inside a single tile
+  uint32_t         m_sliceHeightInCtu = 0;    // slice height in units of CTUs for the special case of multiple slices inside a single tile
 
 public:
-  RectSlice();
-  virtual ~RectSlice();
+  RectSlice() {};
+  virtual ~RectSlice() {};
 
   void             setSliceWidthInTiles( uint32_t u )   { m_sliceWidthInTiles = u;      }
   uint32_t         getSliceWidthInTiles( ) const        { return  m_sliceWidthInTiles;  }
@@ -111,30 +111,30 @@ public:
 class SubPic
 {
 private:
-  uint32_t         m_subPicID;                                  // ID of subpicture
-  uint32_t         m_subPicIdx;                                 // Index of subpicture
-  uint32_t         m_numCTUsInSubPic;                           // number of CTUs contained in this sub-picture
-  uint32_t         m_subPicCtuTopLeftX;                         // horizontal position of top left CTU of the subpicture in unit of CTU
-  uint32_t         m_subPicCtuTopLeftY;                         // vertical position of top left CTU of the subpicture in unit of CTU
-  uint32_t         m_subPicWidth;                               // the width of subpicture in units of CTU
-  uint32_t         m_subPicHeight;                              // the height of subpicture in units of CTU
-  uint32_t         m_subPicWidthInLumaSample;                   // the width of subpicture in units of luma sample
-  uint32_t         m_subPicHeightInLumaSample;                  // the height of subpicture in units of luma sample
-  uint32_t         m_firstCtuInSubPic;                          // the raster scan index of the first CTU in a subpicture
-  uint32_t         m_lastCtuInSubPic;                           // the raster scan index of the last CTU in a subpicture
-  uint32_t         m_subPicLeft;                                // the position of left boundary
-  uint32_t         m_subPicRight;                               // the position of right boundary
-  uint32_t         m_subPicTop;                                 // the position of top boundary
-  uint32_t         m_subPicBottom;                              // the position of bottom boundary
+  uint32_t         m_subPicID = 0;                              // ID of subpicture
+  uint32_t         m_subPicIdx = 0;                             // Index of subpicture
+  uint32_t         m_numCTUsInSubPic = 0;                       // number of CTUs contained in this sub-picture
+  uint32_t         m_subPicCtuTopLeftX = 0;                     // horizontal position of top left CTU of the subpicture in unit of CTU
+  uint32_t         m_subPicCtuTopLeftY = 0;                     // vertical position of top left CTU of the subpicture in unit of CTU
+  uint32_t         m_subPicWidth = 0;                           // the width of subpicture in units of CTU
+  uint32_t         m_subPicHeight = 0;                          // the height of subpicture in units of CTU
+  uint32_t         m_subPicWidthInLumaSample = 0;               // the width of subpicture in units of luma sample
+  uint32_t         m_subPicHeightInLumaSample = 0;              // the height of subpicture in units of luma sample
+  uint32_t         m_firstCtuInSubPic = 0;                      // the raster scan index of the first CTU in a subpicture
+  uint32_t         m_lastCtuInSubPic = 0;                       // the raster scan index of the last CTU in a subpicture
+  uint32_t         m_subPicLeft = 0;                            // the position of left boundary
+  uint32_t         m_subPicRight = 0;                           // the position of right boundary
+  uint32_t         m_subPicTop = 0;                             // the position of top boundary
+  uint32_t         m_subPicBottom = 0;                          // the position of bottom boundary
   std::vector<uint32_t> m_ctuAddrInSubPic;                      // raster scan addresses of all the CTUs in the slice
 
-  bool             m_treatedAsPicFlag;                          // whether the subpicture is treated as a picture in the decoding process excluding in-loop filtering operations
-  bool             m_loopFilterAcrossSubPicEnabledFlag;         // whether in-loop filtering operations may be performed across the boundaries of the subpicture
-  uint32_t         m_numSlicesInSubPic;                         // Number of slices contained in this subpicture
+  bool             m_treatedAsPicFlag = false;                  // whether the subpicture is treated as a picture in the decoding process excluding in-loop filtering operations
+  bool             m_loopFilterAcrossSubPicEnabledFlag = false; // whether in-loop filtering operations may be performed across the boundaries of the subpicture
+  uint32_t         m_numSlicesInSubPic = 0;                     // Number of slices contained in this subpicture
 
 public:
-  SubPic();
-  virtual ~SubPic();
+  SubPic() {};
+  virtual ~SubPic() {};
 
   void             setSubPicID (uint32_t u)                {         m_subPicID = u;       }
   uint32_t         getSubPicID   ()                  const { return  m_subPicID;           }
