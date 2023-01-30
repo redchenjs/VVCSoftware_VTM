@@ -20,6 +20,8 @@ stages:
       - make realclean
       - make all
       - make realclean
+      - make release high-bitdepth=true
+      - make realclean
       - make linuxbuild enable-tracing=true
 
 build_macos:
@@ -42,6 +44,8 @@ build_ubuntu2204-gcc12:
    script:
       - make realclean
       - make all toolset=gcc-12
+      - make realclean
+      - make release high-bitdepth=true toolset=gcc-12
       - make realclean
       - make linuxbuild enable-tracing=true toolset=gcc-12
    tags:
