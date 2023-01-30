@@ -31,6 +31,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cmath>
 #include "ProfileTierLevel.h"
 #include "CommonLib/Slice.h"
 
