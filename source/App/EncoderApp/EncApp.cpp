@@ -239,7 +239,7 @@ void EncApp::xInitLibCfg( int layerIdx )
 
   vps.setVPSExtensionFlag                                        ( false );
   m_cEncLib.setProfile                                           ( m_profile);
-  m_cEncLib.setLevel                                             ( m_levelTier, m_level);
+  m_cEncLib.setTierLevel                                         ( m_levelTier, m_level);
   m_cEncLib.setFrameOnlyConstraintFlag                           ( m_frameOnlyConstraintFlag);
   m_cEncLib.setMultiLayerEnabledFlag                             ( m_multiLayerEnabledFlag);
   m_cEncLib.setNumSubProfile                                     ( m_numSubProfile );

@@ -245,7 +245,7 @@ protected:
 
   /* profile & level */
   Profile::Name m_profile;
-  Level::Tier   m_levelTier;
+  Level::Tier   m_tier;
   Level::Name   m_level;
   bool m_frameOnlyConstraintFlag;
   bool m_multiLayerEnabledFlag;
@@ -1020,7 +1020,7 @@ public:
   {}
   std::map<uint32_t, SEIAnnotatedRegions::AnnotatedRegionObject> m_arObjects;
   void setProfile(Profile::Name profile) { m_profile = profile; }
-  void setLevel(Level::Tier tier, Level::Name level) { m_levelTier = tier; m_level = level; }
+  void setTierLevel(Level::Tier tier, Level::Name level) { m_tier = tier; m_level = level; }
   bool      getFrameOnlyConstraintFlag() const { return m_frameOnlyConstraintFlag; }
   void      setFrameOnlyConstraintFlag(bool b) { m_frameOnlyConstraintFlag = b;    }
   bool      getMultiLayerEnabledFlag() const   { return m_multiLayerEnabledFlag;   }

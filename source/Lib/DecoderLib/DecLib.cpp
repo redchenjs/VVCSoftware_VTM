@@ -2445,7 +2445,7 @@ void DecLib::xCheckParameterSetConstraints(const int layerId)
       ? vps->getProfileTierLevel(vps->getOlsPtlIdx(vps->m_targetOlsIdx))
       : *sps->getProfileTierLevel();
 
-  ProfileLevelTierFeatures ptlFeatures;
+  ProfileTierLevelFeatures ptlFeatures;
   ptlFeatures.extractPTLInformation(ptl);
   const ProfileFeatures *profileFeatures = ptlFeatures.getProfileFeatures();
   if (profileFeatures != nullptr)
@@ -2458,12 +2458,12 @@ void DecLib::xCheckParameterSetConstraints(const int layerId)
     CHECK(sps->getProfileTierLevel()->getProfileIdc() != Profile::NONE, "Unknown profile");
     msg(WARNING, "Warning: Profile set to none or unknown value\n");
   }
-  const LevelTierFeatures *levelTierFeatures = ptlFeatures.getLevelTierFeatures();
-  if (levelTierFeatures != nullptr)
+  const TierLevelFeatures *tierLevelFeatures = ptlFeatures.getTierLevelFeatures();
+  if (tierLevelFeatures != nullptr)
   {
-    CHECK(pps->getNumTileColumns() > levelTierFeatures->maxTileCols,
+    CHECK(pps->getNumTileColumns() > tierLevelFeatures->maxTileCols,
           "Number of tile columns signaled in PPS exceeds level limit");
-    CHECK(pps->getNumTiles() > levelTierFeatures->maxTilesPerAu, "Number of tiles signaled in PPS exceeds level limit");
+    CHECK(pps->getNumTiles() > tierLevelFeatures->maxTilesPerAu, "Number of tiles signaled in PPS exceeds level limit");
   }
   else if (profileFeatures != nullptr)
   {

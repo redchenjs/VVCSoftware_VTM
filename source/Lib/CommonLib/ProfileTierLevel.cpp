@@ -99,19 +99,19 @@ bool operator != (const ProfileTierLevel& op1, const ProfileTierLevel& op2)
   return !(op1 == op2);
 }
 
-uint32_t LevelTierFeatures::getMaxPicWidthInLumaSamples()  const
+uint32_t TierLevelFeatures::getMaxPicWidthInLumaSamples()  const
 {
   return uint32_t(sqrt(maxLumaPs*8.0));
 }
 
-uint32_t LevelTierFeatures::getMaxPicHeightInLumaSamples() const
+uint32_t TierLevelFeatures::getMaxPicHeightInLumaSamples() const
 {
   return uint32_t(sqrt(maxLumaPs*8.0));
 }
 
 static const uint64_t MAX_CNFUINT64 = std::numeric_limits<uint64_t>::max();
 
-static const LevelTierFeatures mainLevelTierInfo[] =
+static const TierLevelFeatures mainTierLevelInfo[] =
 {
       //  level,       maxlumaps,      maxcpb[tier],,  maxSlicesPerAu,maxTilesPerAu,cols, maxLumaSr,       maxBr[tier],,    minCr[tier],,
     { Level::LEVEL1  ,    36864, {      350,        0 },       16,        1,        1,     552960ULL, {     128,        0 }, { 2, 0} },
@@ -136,28 +136,28 @@ static const ProfileFeatures validProfiles[] = {
 // profile, pNameString, maxBitDepth, maxChrFmt, lvl15.5, cpbvcl, cpbnal, fcf*1000, mincr*100, levelInfo
 // most constrained profiles must appear first.
   { Profile::MAIN_10_STILL_PICTURE, "Main_10_Still_Picture", 10, CHROMA_420, true, 1000, 1100, 1875, 100,
-    mainLevelTierInfo, true },
+    mainTierLevelInfo, true },
   { Profile::MULTILAYER_MAIN_10_STILL_PICTURE, "Multilayer_Main_10_Still_Picture", 10, CHROMA_420, true, 1000, 1100,
-    1875, 100, mainLevelTierInfo, true },
+    1875, 100, mainTierLevelInfo, true },
   { Profile::MAIN_10_444_STILL_PICTURE, "Main_444_10_Still_Picture", 10, CHROMA_444, true, 2500, 2750, 3750, 75,
-    mainLevelTierInfo, true },
+    mainTierLevelInfo, true },
   { Profile::MULTILAYER_MAIN_10_444_STILL_PICTURE, "Multilayer_Main_444_10_Still_Picture", 10, CHROMA_444, true, 2500,
-    2750, 3750, 75, mainLevelTierInfo, true },
-  { Profile::MAIN_10, "Main_10", 10, CHROMA_420, true, 1000, 1100, 1875, 100, mainLevelTierInfo, false },
-  { Profile::MULTILAYER_MAIN_10, "Multilayer_Main_10", 10, CHROMA_420, true, 1000, 1100, 1875, 100, mainLevelTierInfo,
+    2750, 3750, 75, mainTierLevelInfo, true },
+  { Profile::MAIN_10, "Main_10", 10, CHROMA_420, true, 1000, 1100, 1875, 100, mainTierLevelInfo, false },
+  { Profile::MULTILAYER_MAIN_10, "Multilayer_Main_10", 10, CHROMA_420, true, 1000, 1100, 1875, 100, mainTierLevelInfo,
     false },
-  { Profile::MAIN_10_444, "Main_444_10", 10, CHROMA_444, true, 2500, 2750, 3750, 75, mainLevelTierInfo, false },
+  { Profile::MAIN_10_444, "Main_444_10", 10, CHROMA_444, true, 2500, 2750, 3750, 75, mainTierLevelInfo, false },
   { Profile::MULTILAYER_MAIN_10_444, "Multilayer_Main_444_10", 10, CHROMA_444, true, 2500, 2750, 3750, 75,
-    mainLevelTierInfo, false },
-  { Profile::MAIN_12, "Main_12", 12, CHROMA_420, true, 1200, 1320, 1875, 100, mainLevelTierInfo, false },
-  { Profile::MAIN_12_INTRA, "Main_12_Intra", 12, CHROMA_420, true, 2400, 2640, 1875, 100, mainLevelTierInfo, false },
-  { Profile::MAIN_12_STILL_PICTURE, "Main_12_Still_Picture", 12, CHROMA_420, true, 2400, 2640, 1875, 100, mainLevelTierInfo, false },
-  { Profile::MAIN_12_444, "Main_12_444", 12, CHROMA_444, true, 3000, 3300, 3750, 75, mainLevelTierInfo, false },
-  { Profile::MAIN_12_444_INTRA, "Main_12_444_Intra", 12, CHROMA_444, true, 6000, 6600, 3750, 75, mainLevelTierInfo, false },
-  { Profile::MAIN_12_444_STILL_PICTURE, "Main_12_444_Still_Picture", 12, CHROMA_444, true, 6000, 6600, 3750, 75, mainLevelTierInfo, false },
-  { Profile::MAIN_16_444, "Main_16_444", 16, CHROMA_444, true, 4000, 4400, 6000, 75, mainLevelTierInfo, false },
-  { Profile::MAIN_16_444_INTRA, "Main_16_444_Intra", 16, CHROMA_444, true, 8000, 8800, 6000, 75, mainLevelTierInfo, false },
-  { Profile::MAIN_16_444_STILL_PICTURE, "Main_16_444_Still_Picture", 16, CHROMA_444, true, 8000, 8800, 6000, 75, mainLevelTierInfo, false },
+    mainTierLevelInfo, false },
+  { Profile::MAIN_12, "Main_12", 12, CHROMA_420, true, 1200, 1320, 1875, 100, mainTierLevelInfo, false },
+  { Profile::MAIN_12_INTRA, "Main_12_Intra", 12, CHROMA_420, true, 2400, 2640, 1875, 100, mainTierLevelInfo, false },
+  { Profile::MAIN_12_STILL_PICTURE, "Main_12_Still_Picture", 12, CHROMA_420, true, 2400, 2640, 1875, 100, mainTierLevelInfo, false },
+  { Profile::MAIN_12_444, "Main_12_444", 12, CHROMA_444, true, 3000, 3300, 3750, 75, mainTierLevelInfo, false },
+  { Profile::MAIN_12_444_INTRA, "Main_12_444_Intra", 12, CHROMA_444, true, 6000, 6600, 3750, 75, mainTierLevelInfo, false },
+  { Profile::MAIN_12_444_STILL_PICTURE, "Main_12_444_Still_Picture", 12, CHROMA_444, true, 6000, 6600, 3750, 75, mainTierLevelInfo, false },
+  { Profile::MAIN_16_444, "Main_16_444", 16, CHROMA_444, true, 4000, 4400, 6000, 75, mainTierLevelInfo, false },
+  { Profile::MAIN_16_444_INTRA, "Main_16_444_Intra", 16, CHROMA_444, true, 8000, 8800, 6000, 75, mainTierLevelInfo, false },
+  { Profile::MAIN_16_444_STILL_PICTURE, "Main_16_444_Still_Picture", 16, CHROMA_444, true, 8000, 8800, 6000, 75, mainTierLevelInfo, false },
   { Profile::NONE, 0 },
 };
 
@@ -175,17 +175,17 @@ const ProfileFeatures *ProfileFeatures::getProfileFeatures(const Profile::Name p
   return &validProfiles[i];
 }
 
-void ProfileLevelTierFeatures::extractPTLInformation(const SPS &sps)
+void ProfileTierLevelFeatures::extractPTLInformation(const SPS &sps)
 {
   extractPTLInformation(*sps.getProfileTierLevel());
 }
 
-void ProfileLevelTierFeatures::extractPTLInformation(const ProfileTierLevel &ptl)
+void ProfileTierLevelFeatures::extractPTLInformation(const ProfileTierLevel &ptl)
 {
   const ProfileTierLevel &spsPtl = ptl;
 
-  m_pProfile = nullptr;
-  m_pLevelTier = nullptr;
+  m_profile = nullptr;
+  m_tierLevel = nullptr;
   m_tier = spsPtl.getTierFlag();
 
   // Identify the profile from the profile Idc, and possibly other constraints.
@@ -193,30 +193,30 @@ void ProfileLevelTierFeatures::extractPTLInformation(const ProfileTierLevel &ptl
   {
     if (spsPtl.getProfileIdc() == validProfiles[i].profile)
     {
-      m_pProfile = &(validProfiles[i]);
+      m_profile = &(validProfiles[i]);
       break;
     }
   }
 
-  if (m_pProfile != nullptr)
+  if (m_profile != nullptr)
   {
     // Now identify the level:
-    const LevelTierFeatures *pLTF = m_pProfile->pLevelTiersListInfo;
+    const TierLevelFeatures *tlf = m_profile->tierLevelListInfo;
     const Level::Name spsLevelName = spsPtl.getLevelIdc();
-    if (spsLevelName!=Level::LEVEL15_5 || m_pProfile->canUseLevel15p5)
+    if (spsLevelName!=Level::LEVEL15_5 || m_profile->canUseLevel15p5)
     {
-      for(int i=0; pLTF[i].level!=Level::NONE; i++)
+      for(int i=0; tlf[i].level!=Level::NONE; i++)
       {
-        if (pLTF[i].level == spsLevelName)
+        if (tlf[i].level == spsLevelName)
         {
-          m_pLevelTier = &(pLTF[i]);
+          m_tierLevel = &(tlf[i]);
         }
       }
     }
   }
-  if (m_pProfile)
+  if (m_profile)
   {
-    Profile::Name profile = m_pProfile->profile;
+    Profile::Name profile = m_profile->profile;
     if (profile == Profile::MAIN_10 || profile == Profile::MAIN_10_444 ||
         profile == Profile::MULTILAYER_MAIN_10 || profile == Profile::MULTILAYER_MAIN_10_444)
     {
@@ -229,31 +229,31 @@ void ProfileLevelTierFeatures::extractPTLInformation(const ProfileTierLevel &ptl
   }
 }
 
-double ProfileLevelTierFeatures::getMinCr() const
+double ProfileTierLevelFeatures::getMinCr() const
 {
-  return (m_pLevelTier!=0 && m_pProfile!=0) ? (m_pProfile->minCrScaleFactorx100 * m_pLevelTier->minCrBase[m_tier?1:0] / m_hbrFactor)/100.0 : 0.0 ;
+  return (m_tierLevel!=0 && m_profile!=0) ? (m_profile->minCrScaleFactorx100 * m_tierLevel->minCrBase[m_tier?1:0] / m_hbrFactor)/100.0 : 0.0 ;
 }
 
-uint64_t ProfileLevelTierFeatures::getCpbSizeInBits() const
+uint64_t ProfileTierLevelFeatures::getCpbSizeInBits() const
 {
-  return (m_pLevelTier!=0 && m_pProfile!=0) ? uint64_t(m_pProfile->cpbVclFactor) * m_pLevelTier->maxCpb[m_tier?1:0] * m_hbrFactor : uint64_t(0);
+  return (m_tierLevel!=0 && m_profile!=0) ? uint64_t(m_profile->cpbVclFactor) * m_tierLevel->maxCpb[m_tier?1:0] * m_hbrFactor : uint64_t(0);
 }
 
-uint32_t ProfileLevelTierFeatures::getMaxDpbSize( uint32_t picSizeMaxInSamplesY ) const
+uint32_t ProfileTierLevelFeatures::getMaxDpbSize( uint32_t picSizeMaxInSamplesY ) const
 {
   const uint32_t maxDpbPicBuf = 8;
   uint32_t       maxDpbSize;
 
-  if (m_pLevelTier->level == Level::LEVEL15_5)
+  if (m_tierLevel->level == Level::LEVEL15_5)
   {
     // maxDpbSize is unconstrained in this case
     maxDpbSize = std::numeric_limits<uint32_t>::max();
   }
-  else if (2 * picSizeMaxInSamplesY <= m_pLevelTier->maxLumaPs)
+  else if (2 * picSizeMaxInSamplesY <= m_tierLevel->maxLumaPs)
   {
     maxDpbSize = 2 * maxDpbPicBuf;
   }
-  else if (3 * picSizeMaxInSamplesY <= 2 * m_pLevelTier->maxLumaPs)
+  else if (3 * picSizeMaxInSamplesY <= 2 * m_tierLevel->maxLumaPs)
   {
     maxDpbSize = 3 * maxDpbPicBuf / 2;
   }
