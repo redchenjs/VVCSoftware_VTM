@@ -613,7 +613,11 @@ public:
   void          getMmvdDeltaMv(const Slice& slice, const MmvdIdx candIdx, Mv deltaMv[NUM_REF_PIC_LIST_01]) const;
   bool          mmvdUseAltHpelIf[MmvdIdx::BASE_MV_NUM];
   bool          useAltHpelIf      [ MRG_MAX_NUM_CANDS ];
+#if JVET_AC0139_UNIFIED_MERGE
+  void setMergeInfo( PredictionUnit& pu, int candIdx ) const;
+#else
   void setMergeInfo( PredictionUnit& pu, int candIdx );
+#endif
 };
 
 class AffineMergeCtx
@@ -663,6 +667,93 @@ public:
   MergeType     mergeType[AFFINE_MRG_MAX_NUM_CANDS];
 };
 
+#if JVET_AC0139_UNIFIED_MERGE
+class MergeItem
+{
+private:
+  PelStorage m_pelStorage;
+  std::vector<MotionInfo> m_mvStorage;
+
+public:
+  enum class MergeItemType
+  {
+    REGULAR,
+    SBTMVP,
+    AFFINE,
+    MMVD,
+    CIIP,
+    GPM,
+    IBC,
+    NUM,
+  };
+
+  double        cost;
+  std::array<MvField[2], AFFINE_MAX_NUM_CP> mvField;
+  int           mergeIdx;
+  uint8_t       bcwIdx;
+  uint8_t       interDir;
+  bool          useAltHpelIf;
+  AffineModel   affineType;
+
+  bool          noResidual;
+  bool          noBdofRefine;
+
+  bool          lumaPredReady;
+  bool          chromaPredReady;
+
+  MergeItemType mergeItemType;
+  MotionBuf     mvBuf;
+
+#if GDR_ENABLED
+  bool          mvSolid[2];
+  bool          mvValid[2];
+#endif
+
+  MergeItem();
+  ~MergeItem();
+
+  void          create(ChromaFormat chromaFormat, const Area& area);
+  void          importMergeInfo(const MergeCtx& mergeCtx, int _mergeIdx, MergeItemType _mergeItemType, PredictionUnit& pu);
+  void          importMergeInfo(const AffineMergeCtx& mergeCtx, int _mergeIdx, MergeItemType _mergeItemType, const UnitArea& unitArea);
+  bool          exportMergeInfo(PredictionUnit& pu, bool forceNoResidual);
+  PelUnitBuf    getPredBuf(const UnitArea& unitArea) { return m_pelStorage.getBuf(unitArea); }
+  MotionBuf     getMvBuf(const UnitArea& unitArea) { return MotionBuf(m_mvStorage.data(), g_miScaling.scale(unitArea.lumaSize())); }
+
+  static int getGpmUnfiedIndex(int splitDir, const MergeIdxPair& geoMergeIdx)
+  {
+    return (splitDir << 8) | (geoMergeIdx[0] << 4) | geoMergeIdx[1];
+  }
+  static void updateGpmIdx(int mergeIdx, uint8_t& splitDir, MergeIdxPair& geoMergeIdx)
+  {
+    splitDir = (mergeIdx >> 8) & 0xFF;
+    geoMergeIdx[0] = (mergeIdx >> 4) & 0xF;
+    geoMergeIdx[1] = mergeIdx & 0xF;
+  }
+};
+
+class MergeItemList
+{
+private:
+  Pool<MergeItem> m_mergeItemPool;
+  std::vector<MergeItem *> m_list;
+  size_t m_maxTrackingNum = 0;
+  ChromaFormat  m_chromaFormat;
+  Area m_ctuArea;
+
+public:
+  MergeItemList();
+  ~MergeItemList();
+
+  void          init(size_t maxSize, ChromaFormat chromaFormat, int ctuWidth, int ctuHeight);
+  MergeItem*    allocateNewMergeItem();
+  void          insertMergeItemToList(MergeItem* p);
+  void          resetList(size_t maxTrackingNum);
+  MergeItem*    getMergeItemInList(size_t index);
+  size_t        size() { return m_list.size(); }
+
+};
+
+#endif
 
 namespace DeriveCtx
 {

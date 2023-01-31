@@ -415,6 +415,14 @@ protected:
   bool      m_usePbIntraFast;
   bool      m_useAMaxBT;
   bool      m_useFastMrg;
+#if JVET_AC0139_UNIFIED_MERGE
+  int       m_maxMergeRdCandNumTotal;
+  int       m_mergeRdCandQuotaRegular;
+  int       m_mergeRdCandQuotaRegularSmallBlk;
+  int       m_mergeRdCandQuotaSubBlk;
+  int       m_mergeRdCandQuotaCiip;
+  int       m_mergeRdCandQuotaGpm;
+#endif
   bool      m_e0023FastEnc;
   bool      m_contentBasedFastQtbt;
   bool      m_useNonLinearAlfLuma;

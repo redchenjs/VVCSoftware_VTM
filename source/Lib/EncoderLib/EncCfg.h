@@ -397,6 +397,14 @@ protected:
   bool      m_encDbOpt;
   bool      m_useFastLCTU;
   bool      m_useFastMrg;
+#if JVET_AC0139_UNIFIED_MERGE
+  int       m_maxMergeRdCandNumTotal;
+  int       m_mergeRdCandQuotaRegular;
+  int       m_mergeRdCandQuotaRegularSmallBlk;
+  int       m_mergeRdCandQuotaSubBlk;
+  int       m_mergeRdCandQuotaCiip;
+  int       m_mergeRdCandQuotaGpm;
+#endif
   bool      m_usePbIntraFast;
   bool      m_useAMaxBT;
   bool      m_e0023FastEnc;
@@ -1503,6 +1511,20 @@ public:
   bool      getUseFastLCTU                  () const         { return m_useFastLCTU; }
   void      setUseFastMerge                 ( bool  n )      { m_useFastMrg = n; }
   bool      getUseFastMerge                 () const         { return m_useFastMrg; }
+#if JVET_AC0139_UNIFIED_MERGE
+  void      setMaxMergeRdCandNumTotal       ( int n )        { m_maxMergeRdCandNumTotal = n;}
+  int       getMaxMergeRdCandNumTotal       () const         { return m_maxMergeRdCandNumTotal;}
+  void      setMergeRdCandQuotaRegular      ( int n )        { m_mergeRdCandQuotaRegular = n;}
+  int       getMergeRdCandQuotaRegular      () const         { return m_mergeRdCandQuotaRegular;}
+  void      setMergeRdCandQuotaRegularSmallBlk( int n )      { m_mergeRdCandQuotaRegularSmallBlk = n;}
+  int       getMergeRdCandQuotaRegularSmallBlk() const       { return m_mergeRdCandQuotaRegularSmallBlk;}
+  void      setMergeRdCandQuotaSubBlk       ( int n )        { m_mergeRdCandQuotaSubBlk = n;}
+  int       getMergeRdCandQuotaSubBlk       () const         { return m_mergeRdCandQuotaSubBlk;}
+  void      setMergeRdCandQuotaCiip         ( int n )        { m_mergeRdCandQuotaCiip = n;}
+  int       getMergeRdCandQuotaCiip         () const         { return m_mergeRdCandQuotaCiip;}
+  void      setMergeRdCandQuotaGpm          ( int n )        { m_mergeRdCandQuotaGpm = n;}
+  int       getMergeRdCandQuotaGpm          () const         { return m_mergeRdCandQuotaGpm;}
+#endif
   void      setUsePbIntraFast               ( bool  n )      { m_usePbIntraFast = n; }
   bool      getUsePbIntraFast               () const         { return m_usePbIntraFast; }
   void      setUseAMaxBT                    ( bool  n )      { m_useAMaxBT = n; }
