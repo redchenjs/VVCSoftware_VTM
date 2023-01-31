@@ -2217,6 +2217,41 @@ The default value is 1.075 and the recommended setting value should be between 1
 The lower value has higher speedup and also has higher coding loss.
 \\
 
+\Option{MaxMergeRdCandNumTotal} &
+%\ShortOption{\None} &
+\Default{15} &
+Specifies the max total number of merge candidates in full RD checking. The actual total number for each CU is the minimum of MaxMergeRdCandNumTotal and the sum of applicable quota parameters.
+\\
+
+\Option{MergeRdCandQuotaRegular} &
+%\ShortOption{\None} &
+\Default{4} &
+Specifies the quota of regular merge candidates of blocks with 64 or more luma samples in full RD checking. 
+\\
+
+\Option{MergeRdCandQuotaRegularSmallBlk} &
+%\ShortOption{\None} &
+\Default{4} &
+Specifies the quota of regular merge candidates of blocks with less than 64 luma samples in full RD checking. 
+\\
+
+\Option{MergeRdCandQuotaSubBlk} &
+%\ShortOption{\None} &
+\Default{2} &
+Specifies the quota of sub-block merge candidates in full RD checking. 
+\\
+
+\OptionMergeRdCandQuotaCiip} &
+%\ShortOption{\None} &
+\Default{1} &
+Specifies the quota of CIIP merge candidates in full RD checking. 
+\\
+
+\Option{MergeRdCandQuotaGpm} &
+%\ShortOption{\None} &
+\Default{8} &
+Specifies the quota of GPM merge candidates in full RD checking. 
+\\
 
 \end{OptionTableNoShorthand}
 

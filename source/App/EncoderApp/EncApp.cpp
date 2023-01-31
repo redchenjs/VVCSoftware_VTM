@@ -803,6 +803,14 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setUseFastDecisionForMerge                           ( m_useFastDecisionForMerge  );
   m_cEncLib.setUseEarlySkipDetection                             ( m_useEarlySkipDetection );
   m_cEncLib.setUseFastMerge                                      ( m_useFastMrg );
+#if JVET_AC0139_UNIFIED_MERGE
+  m_cEncLib.setMaxMergeRdCandNumTotal                            ( m_maxMergeRdCandNumTotal );
+  m_cEncLib.setMergeRdCandQuotaRegular                           ( m_mergeRdCandQuotaRegular );
+  m_cEncLib.setMergeRdCandQuotaRegularSmallBlk                   ( m_mergeRdCandQuotaRegularSmallBlk );
+  m_cEncLib.setMergeRdCandQuotaSubBlk                            ( m_mergeRdCandQuotaSubBlk);
+  m_cEncLib.setMergeRdCandQuotaCiip                              ( m_mergeRdCandQuotaCiip );
+  m_cEncLib.setMergeRdCandQuotaGpm                               ( m_mergeRdCandQuotaGpm );
+#endif
   m_cEncLib.setUsePbIntraFast                                    ( m_usePbIntraFast );
   m_cEncLib.setUseAMaxBT                                         ( m_useAMaxBT );
   m_cEncLib.setUseE0023FastEnc                                   ( m_e0023FastEnc );

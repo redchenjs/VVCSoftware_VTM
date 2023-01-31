@@ -731,8 +731,7 @@ Distortion InterSearch::xPatternRefinement( const CPelBuf* pcPatternKey,
 
 #if GDR_ENABLED
   const CodingStructure &cs = *pu.cs;
-  const bool             isEncodeGdrClean =
-    cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
+  const bool             isEncodeGdrClean =   cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder
     && ((cs.picture->gdrParam.inGdrInterval && cs.isClean(pu.Y().topRight(), ChannelType::LUMA))
         || (cs.picture->gdrParam.verBoundary == -1));
   bool                   diskOk           = false;
