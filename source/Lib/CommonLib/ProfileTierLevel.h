@@ -97,7 +97,7 @@ public:
 };
 
 
-struct LevelTierFeatures
+struct TierLevelFeatures
 {
   Level::Name level;
   uint32_t    maxLumaPs;
@@ -125,28 +125,28 @@ struct ProfileFeatures
   uint32_t                 cpbNalFactor;
   uint32_t                 formatCapabilityFactorx1000;
   uint32_t                 minCrScaleFactorx100;
-  const LevelTierFeatures *pLevelTiersListInfo;
+  const TierLevelFeatures *tierLevelListInfo;
   bool                     onePictureOnlyFlagMustBe1;
 
   static const ProfileFeatures *getProfileFeatures(const Profile::Name p);
 };
 
 
-class ProfileLevelTierFeatures
+class ProfileTierLevelFeatures
 {
   private:
-    const ProfileFeatures   *m_pProfile;
-    const LevelTierFeatures *m_pLevelTier;
+    const ProfileFeatures   *m_profile;
+    const TierLevelFeatures *m_tierLevel;
     Level::Tier              m_tier;
     int                      m_hbrFactor;
   public:
-    ProfileLevelTierFeatures() : m_pProfile(nullptr), m_pLevelTier(nullptr), m_tier(Level::MAIN) {}
+    ProfileTierLevelFeatures() : m_profile(nullptr), m_tierLevel(nullptr), m_tier(Level::MAIN) {}
 
     void extractPTLInformation(const SPS &sps);
     void extractPTLInformation(const ProfileTierLevel &ptl);
 
-    const ProfileFeatures     *getProfileFeatures()   const { return m_pProfile; }
-    const LevelTierFeatures   *getLevelTierFeatures() const { return m_pLevelTier; }
+    const ProfileFeatures     *getProfileFeatures()   const { return m_profile; }
+    const TierLevelFeatures   *getTierLevelFeatures() const { return m_tierLevel; }
     Level::Tier                getTier()              const { return m_tier; }
     uint64_t getCpbSizeInBits()                       const;
     double getMinCr()                                 const;

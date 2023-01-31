@@ -1181,8 +1181,8 @@ void EncLib::xInitVPS( const SPS& sps )
 
   m_vps->m_olsHrdParams.clear();
   m_vps->m_olsHrdParams.resize(m_vps->getNumOlsTimingHrdParamsMinus1(), std::vector<OlsHrdParams>(m_vps->getMaxSubLayers()));
-  ProfileLevelTierFeatures profileLevelTierFeatures;
-  profileLevelTierFeatures.extractPTLInformation( sps );
+  ProfileTierLevelFeatures profileTierLevelFeatures;
+  profileTierLevelFeatures.extractPTLInformation( sps );
   m_vps->setMaxTidIlRefPicsPlus1(m_cfgVPSParameters.m_maxTidILRefPicsPlus1);
   m_vps->deriveOutputLayerSets();
   m_vps->deriveTargetOutputLayerSet( m_vps->m_targetOlsIdx );
@@ -1258,11 +1258,11 @@ void EncLib::xInitVPS( const SPS& sps )
 
       for( int j = ( m_vps->m_sublayerDpbParamsPresentFlag ? 0 : m_vps->m_dpbMaxTemporalId[dpbIdx] ); j <= m_vps->m_dpbMaxTemporalId[dpbIdx]; j++ )
       {
-        m_vps->m_dpbParameters[dpbIdx].maxDecPicBuffering[j] = decPicBuffering[j] > 0 ? decPicBuffering[j] : profileLevelTierFeatures.getMaxDpbSize( m_vps->getOlsDpbPicSize( i ).width * m_vps->getOlsDpbPicSize( i ).height );
+        m_vps->m_dpbParameters[dpbIdx].maxDecPicBuffering[j] = decPicBuffering[j] > 0 ? decPicBuffering[j] : profileTierLevelFeatures.getMaxDpbSize( m_vps->getOlsDpbPicSize( i ).width * m_vps->getOlsDpbPicSize( i ).height );
         m_vps->m_dpbParameters[dpbIdx].maxNumReorderPics[j] = m_vps->m_dpbParameters[dpbIdx].maxDecPicBuffering[j] - 1;
         m_vps->m_dpbParameters[dpbIdx].maxLatencyIncreasePlus1[j] = 0;
 
-        CHECK( m_vps->m_dpbParameters[dpbIdx].maxDecPicBuffering[j] > profileLevelTierFeatures.getMaxDpbSize( m_vps->getOlsDpbPicSize( i ).width * m_vps->getOlsDpbPicSize( i ).height ), "DPB size is not sufficient" );
+        CHECK( m_vps->m_dpbParameters[dpbIdx].maxDecPicBuffering[j] > profileTierLevelFeatures.getMaxDpbSize( m_vps->getOlsDpbPicSize( i ).width * m_vps->getOlsDpbPicSize( i ).height ), "DPB size is not sufficient" );
       }
 
       for( int j = ( m_vps->m_sublayerDpbParamsPresentFlag ? m_vps->m_dpbMaxTemporalId[dpbIdx] : 0 ); j < m_vps->m_dpbMaxTemporalId[dpbIdx]; j++ )
@@ -1388,7 +1388,7 @@ void EncLib::xInitSPS( SPS& sps )
   cinfo->setNoReverseLastSigCoeffConstraintFlag(m_noReverseLastSigCoeffConstraintFlag);
 
   profileTierLevel->setLevelIdc                    (m_level);
-  profileTierLevel->setTierFlag                    (m_levelTier);
+  profileTierLevel->setTierFlag                    (m_tier);
   profileTierLevel->setProfileIdc                  (m_profile);
   profileTierLevel->setFrameOnlyConstraintFlag     (m_frameOnlyConstraintFlag);
   profileTierLevel->setMultiLayerEnabledFlag       (m_multiLayerEnabledFlag);

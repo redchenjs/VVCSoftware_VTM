@@ -1442,15 +1442,15 @@ void EncGOP::xUpdateDuInfoSEI(SEIMessages &duInfoSeiMessages, SEIPictureTiming *
 }
 
 static void
-validateMinCrRequirements(const ProfileLevelTierFeatures &plt, std::size_t numBytesInVclNalUnits, const Picture *pPic, const EncCfg *pCfg)
+validateMinCrRequirements(const ProfileTierLevelFeatures &plt, std::size_t numBytesInVclNalUnits, const Picture *pPic, const EncCfg *pCfg)
 {
   //  numBytesInVclNalUnits shall be less than or equal to
   //     FormatCapabilityFactor * MaxLumaSr * framePeriod / MinCr,
   //     ( = FormatCapabilityFactor * MaxLumaSr / (MinCr * frameRate),
-  if (plt.getLevelTierFeatures() && plt.getProfileFeatures() && plt.getLevelTierFeatures()->level!=Level::LEVEL15_5)
+  if (plt.getTierLevelFeatures() && plt.getProfileFeatures() && plt.getTierLevelFeatures()->level!=Level::LEVEL15_5)
   {
     const uint32_t formatCapabilityFactorx1000 = plt.getProfileFeatures()->formatCapabilityFactorx1000;
-    const uint64_t maxLumaSr = plt.getLevelTierFeatures()->maxLumaSr;
+    const uint64_t maxLumaSr = plt.getTierLevelFeatures()->maxLumaSr;
     const uint32_t frameRate = pCfg->getFrameRate();
     const double   minCr = plt.getMinCr();
     const double   denominator = (minCr * frameRate * 1000);
@@ -1468,14 +1468,14 @@ validateMinCrRequirements(const ProfileLevelTierFeatures &plt, std::size_t numBy
 }
 
 static void
-validateMinCrRequirements(const ProfileLevelTierFeatures &plt, std::size_t numBytesInVclNalUnits, const Slice *pSlice, const EncCfg *pCfg, const SEISubpicureLevelInfo &seiSubpic, const int subPicIdx, const int layerId)
+validateMinCrRequirements(const ProfileTierLevelFeatures &plt, std::size_t numBytesInVclNalUnits, const Slice *pSlice, const EncCfg *pCfg, const SEISubpicureLevelInfo &seiSubpic, const int subPicIdx, const int layerId)
 {
-  if (plt.getLevelTierFeatures() && plt.getProfileFeatures())
+  if (plt.getTierLevelFeatures() && plt.getProfileFeatures())
   {
     if (plt.getTier() == Level::Tier::MAIN)
     {
       const uint32_t formatCapabilityFactorx1000 = plt.getProfileFeatures()->formatCapabilityFactorx1000;
-      const uint64_t maxLumaSr = plt.getLevelTierFeatures()->maxLumaSr;
+      const uint64_t maxLumaSr = plt.getTierLevelFeatures()->maxLumaSr;
       const double   denomx1000x256 = (256 * plt.getMinCr() * pCfg->getFrameRate() * 1000 * 256);
 
       for (int i = 0; i < seiSubpic.m_numRefLevels; i++)
@@ -1508,7 +1508,7 @@ cabac_zero_word_padding(const Slice *const pcSlice,
                         const std::size_t numZeroWordsAlreadyInserted,
                               std::ostringstream &nalUnitData,
                         const bool cabacZeroWordPaddingEnabled,
-                        const ProfileLevelTierFeatures &plt)
+                        const ProfileTierLevelFeatures &plt)
 {
   const SPS &sps=*(pcSlice->getSPS());
   const ChromaFormat format = sps.getChromaFormatIdc();
@@ -4133,27 +4133,27 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         if (pcSlice->isLastSliceInSubpic())
         {
           // Check picture level encoding constraints/requirements
-          ProfileLevelTierFeatures profileLevelTierFeatures;
-          profileLevelTierFeatures.extractPTLInformation(*(pcSlice->getSPS()));
+          ProfileTierLevelFeatures profileTierLevelFeatures;
+          profileTierLevelFeatures.extractPTLInformation(*(pcSlice->getSPS()));
           const SEIMessages &subPictureLevelInfoSEIs =
             getSeisByType(leadingSeiMessages, SEI::PayloadType::SUBPICTURE_LEVEL_INFO);
           if (!subPictureLevelInfoSEIs.empty())
           {
             const SEISubpicureLevelInfo& seiSubpic = static_cast<const SEISubpicureLevelInfo&>(*subPictureLevelInfoSEIs.front());
-            validateMinCrRequirements(profileLevelTierFeatures, subPicStats[subpicIdx].numBytesInVclNalUnits, pcSlice, m_pcCfg, seiSubpic, subpicIdx, m_pcEncLib->getLayerId());
+            validateMinCrRequirements(profileTierLevelFeatures, subPicStats[subpicIdx].numBytesInVclNalUnits, pcSlice, m_pcCfg, seiSubpic, subpicIdx, m_pcEncLib->getLayerId());
           }
           sumZeroWords += cabac_zero_word_padding(pcSlice, pcPic, subPicStats[subpicIdx].numBinsWritten, subPicStats[subpicIdx].numBytesInVclNalUnits, 0,
-                                                  accessUnit.back()->m_nalUnitData, m_pcCfg->getCabacZeroWordPaddingEnabled(), profileLevelTierFeatures);
+                                                  accessUnit.back()->m_nalUnitData, m_pcCfg->getCabacZeroWordPaddingEnabled(), profileTierLevelFeatures);
         }
       } // end iteration over slices
 
       {
         // Check picture level encoding constraints/requirements
-        ProfileLevelTierFeatures profileLevelTierFeatures;
-        profileLevelTierFeatures.extractPTLInformation(*(pcSlice->getSPS()));
-        validateMinCrRequirements(profileLevelTierFeatures, numBytesInVclNalUnits, pcPic, m_pcCfg);
+        ProfileTierLevelFeatures profileTierLevelFeatures;
+        profileTierLevelFeatures.extractPTLInformation(*(pcSlice->getSPS()));
+        validateMinCrRequirements(profileTierLevelFeatures, numBytesInVclNalUnits, pcPic, m_pcCfg);
         // cabac_zero_words processing
-        cabac_zero_word_padding(pcSlice, pcPic, binCountsInNalUnits, numBytesInVclNalUnits, sumZeroWords, accessUnit.back()->m_nalUnitData, m_pcCfg->getCabacZeroWordPaddingEnabled(), profileLevelTierFeatures);
+        cabac_zero_word_padding(pcSlice, pcPic, binCountsInNalUnits, numBytesInVclNalUnits, sumZeroWords, accessUnit.back()->m_nalUnitData, m_pcCfg->getCabacZeroWordPaddingEnabled(), profileTierLevelFeatures);
       }
 
       //-- For time output for each slice
