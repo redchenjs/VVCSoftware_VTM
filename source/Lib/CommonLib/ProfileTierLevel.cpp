@@ -31,23 +31,80 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** \file     ProfileLevelTier.cpp
-    \brief    Handle profile, level and tier information.
-*/
-
-
-#include "ProfileLevelTier.h"
+#include <cmath>
+#include "ProfileTierLevel.h"
 #include "CommonLib/Slice.h"
-#include <math.h>
 
-uint32_t
-LevelTierFeatures::getMaxPicWidthInLumaSamples()  const
+ProfileTierLevel::ProfileTierLevel()
+  : m_tierFlag(Level::MAIN)
+  , m_profileIdc(Profile::NONE)
+  , m_levelIdc(Level::NONE)
+  , m_frameOnlyConstraintFlag(true)
+  , m_multiLayerEnabledFlag(false)
+{
+  m_subLayerLevelPresentFlag.fill(false);
+  m_subLayerLevelIdc.fill(Level::NONE);
+}
+
+bool operator == (const ProfileTierLevel& op1, const ProfileTierLevel& op2)
+{
+  if (op1.m_tierFlag != op2.m_tierFlag)
+  {
+    return false;
+  }
+  if (op1.m_profileIdc != op2.m_profileIdc)
+  {
+    return false;
+  }
+  if (op1.m_levelIdc != op2.m_levelIdc)
+  {
+    return false;
+  }
+  if (op1.m_frameOnlyConstraintFlag != op2.m_frameOnlyConstraintFlag)
+  {
+    return false;
+  }
+  if (op1.m_multiLayerEnabledFlag != op2.m_multiLayerEnabledFlag)
+  {
+    return false;
+  }
+  if (op1.m_constraintInfo != op2.m_constraintInfo)
+  {
+    return false;
+  }
+  if (op1.m_subProfileIdc != op2.m_subProfileIdc)
+  {
+    return false;
+  }
+
+  for (int i = 0; i < MAX_TLAYER - 1; i++)
+  {
+    if (op1.m_subLayerLevelPresentFlag[i] != op2.m_subLayerLevelPresentFlag[i])
+    {
+      return false;
+    }
+  }
+  for (int i = 0; i < MAX_TLAYER; i++)
+  {
+    if (op1.m_subLayerLevelIdc[i] != op2.m_subLayerLevelIdc[i])
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool operator != (const ProfileTierLevel& op1, const ProfileTierLevel& op2)
+{
+  return !(op1 == op2);
+}
+
+uint32_t LevelTierFeatures::getMaxPicWidthInLumaSamples()  const
 {
   return uint32_t(sqrt(maxLumaPs*8.0));
 }
 
-uint32_t
-LevelTierFeatures::getMaxPicHeightInLumaSamples() const
+uint32_t LevelTierFeatures::getMaxPicHeightInLumaSamples() const
 {
   return uint32_t(sqrt(maxLumaPs*8.0));
 }
@@ -118,14 +175,12 @@ const ProfileFeatures *ProfileFeatures::getProfileFeatures(const Profile::Name p
   return &validProfiles[i];
 }
 
-void
-ProfileLevelTierFeatures::extractPTLInformation(const SPS &sps)
+void ProfileLevelTierFeatures::extractPTLInformation(const SPS &sps)
 {
   extractPTLInformation(*sps.getProfileTierLevel());
 }
 
-void
-ProfileLevelTierFeatures::extractPTLInformation(const ProfileTierLevel &ptl)
+void ProfileLevelTierFeatures::extractPTLInformation(const ProfileTierLevel &ptl)
 {
   const ProfileTierLevel &spsPtl = ptl;
 

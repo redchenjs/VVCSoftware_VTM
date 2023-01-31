@@ -44,7 +44,7 @@
 #include "CommonLib/CommonDef.h"
 #include "CommonLib/ChromaFormat.h"
 #include "EncLibCommon.h"
-#include "CommonLib/ProfileLevelTier.h"
+#include "CommonLib/ProfileTierLevel.h"
 
 //! \ingroup EncoderLib
 //! \{
@@ -1258,23 +1258,23 @@ void EncLib::xInitVPS( const SPS& sps )
 
       for( int j = ( m_vps->m_sublayerDpbParamsPresentFlag ? 0 : m_vps->m_dpbMaxTemporalId[dpbIdx] ); j <= m_vps->m_dpbMaxTemporalId[dpbIdx]; j++ )
       {
-        m_vps->m_dpbParameters[dpbIdx].m_maxDecPicBuffering[j] = decPicBuffering[j] > 0 ? decPicBuffering[j] : profileLevelTierFeatures.getMaxDpbSize( m_vps->getOlsDpbPicSize( i ).width * m_vps->getOlsDpbPicSize( i ).height );
-        m_vps->m_dpbParameters[dpbIdx].m_maxNumReorderPics[j] = m_vps->m_dpbParameters[dpbIdx].m_maxDecPicBuffering[j] - 1;
-        m_vps->m_dpbParameters[dpbIdx].m_maxLatencyIncreasePlus1[j] = 0;
+        m_vps->m_dpbParameters[dpbIdx].maxDecPicBuffering[j] = decPicBuffering[j] > 0 ? decPicBuffering[j] : profileLevelTierFeatures.getMaxDpbSize( m_vps->getOlsDpbPicSize( i ).width * m_vps->getOlsDpbPicSize( i ).height );
+        m_vps->m_dpbParameters[dpbIdx].maxNumReorderPics[j] = m_vps->m_dpbParameters[dpbIdx].maxDecPicBuffering[j] - 1;
+        m_vps->m_dpbParameters[dpbIdx].maxLatencyIncreasePlus1[j] = 0;
 
-        CHECK( m_vps->m_dpbParameters[dpbIdx].m_maxDecPicBuffering[j] > profileLevelTierFeatures.getMaxDpbSize( m_vps->getOlsDpbPicSize( i ).width * m_vps->getOlsDpbPicSize( i ).height ), "DPB size is not sufficient" );
+        CHECK( m_vps->m_dpbParameters[dpbIdx].maxDecPicBuffering[j] > profileLevelTierFeatures.getMaxDpbSize( m_vps->getOlsDpbPicSize( i ).width * m_vps->getOlsDpbPicSize( i ).height ), "DPB size is not sufficient" );
       }
 
       for( int j = ( m_vps->m_sublayerDpbParamsPresentFlag ? m_vps->m_dpbMaxTemporalId[dpbIdx] : 0 ); j < m_vps->m_dpbMaxTemporalId[dpbIdx]; j++ )
       {
         // When dpb_max_dec_pic_buffering_minus1[ dpbIdx ] is not present for dpbIdx in the range of 0 to maxSubLayersMinus1 - 1, inclusive, due to subLayerInfoFlag being equal to 0, it is inferred to be equal to dpb_max_dec_pic_buffering_minus1[ maxSubLayersMinus1 ].
-        m_vps->m_dpbParameters[dpbIdx].m_maxDecPicBuffering[j] = m_vps->m_dpbParameters[dpbIdx].m_maxDecPicBuffering[m_vps->m_dpbMaxTemporalId[dpbIdx]];
+        m_vps->m_dpbParameters[dpbIdx].maxDecPicBuffering[j] = m_vps->m_dpbParameters[dpbIdx].maxDecPicBuffering[m_vps->m_dpbMaxTemporalId[dpbIdx]];
 
         // When dpb_max_num_reorder_pics[ dpbIdx ] is not present for dpbIdx in the range of 0 to maxSubLayersMinus1 - 1, inclusive, due to subLayerInfoFlag being equal to 0, it is inferred to be equal to dpb_max_num_reorder_pics[ maxSubLayersMinus1 ].
-        m_vps->m_dpbParameters[dpbIdx].m_maxNumReorderPics[j] = m_vps->m_dpbParameters[dpbIdx].m_maxNumReorderPics[m_vps->m_dpbMaxTemporalId[dpbIdx]];
+        m_vps->m_dpbParameters[dpbIdx].maxNumReorderPics[j] = m_vps->m_dpbParameters[dpbIdx].maxNumReorderPics[m_vps->m_dpbMaxTemporalId[dpbIdx]];
 
         // When dpb_max_latency_increase_plus1[ dpbIdx ] is not present for dpbIdx in the range of 0 to maxSubLayersMinus1 - 1, inclusive, due to subLayerInfoFlag being equal to 0, it is inferred to be equal to dpb_max_latency_increase_plus1[ maxSubLayersMinus1 ].
-        m_vps->m_dpbParameters[dpbIdx].m_maxLatencyIncreasePlus1[j] = m_vps->m_dpbParameters[dpbIdx].m_maxLatencyIncreasePlus1[m_vps->m_dpbMaxTemporalId[dpbIdx]];
+        m_vps->m_dpbParameters[dpbIdx].maxLatencyIncreasePlus1[j] = m_vps->m_dpbParameters[dpbIdx].maxLatencyIncreasePlus1[m_vps->m_dpbMaxTemporalId[dpbIdx]];
       }
     }
   }
@@ -1498,7 +1498,7 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setUseDMVR                            ( m_DMVR );
   sps.setUseColorTrans(m_useColorTrans);
   sps.setPLTMode                            ( m_PLTMode);
-  sps.setIBCFlag                            ( m_IBCMode);
+  sps.setIBCFlag                            ( m_IBCMode != 0);
   sps.setWrapAroundEnabledFlag                      ( m_wrapAround );
   // ADD_NEW_TOOL : (encoder lib) set tool enabling flags and associated parameters here
   sps.setUseISP                             ( m_ISP );
@@ -1600,7 +1600,7 @@ void EncLib::xInitSPS( SPS& sps )
   int numQpTables = m_chromaQpMappingTableParams.getSameCQPTableForAllChromaFlag() ? 1 : (sps.getJointCbCrEnabledFlag() ? 3 : 2);
   m_chromaQpMappingTableParams.setNumQpTables(numQpTables);
   sps.setChromaQpMappingTableFromParams(m_chromaQpMappingTableParams, sps.getQpBDOffset(ChannelType::CHROMA));
-  sps.derivedChromaQPMappingTables();
+  sps.deriveChromaQPMappingTables();
 
   if( getPictureTimingSEIEnabled() || getDecodingUnitInfoSEIEnabled() || getCpbSaturationEnabled() )
   {

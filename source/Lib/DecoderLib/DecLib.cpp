@@ -42,7 +42,7 @@
 #include "CommonLib/dtrace_buffer.h"
 #include "CommonLib/Buffer.h"
 #include "CommonLib/UnitTools.h"
-#include "CommonLib/ProfileLevelTier.h"
+#include "CommonLib/ProfileTierLevel.h"
 
 #include <fstream>
 #include <set>

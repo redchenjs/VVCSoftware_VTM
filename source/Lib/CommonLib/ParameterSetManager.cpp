@@ -155,17 +155,6 @@ void ParameterSetMap<VPS>::setID(VPS* parameterSet, const int psId)
   parameterSet->setVPSId(psId);
 }
 
-ProfileTierLevel::ProfileTierLevel()
-  : m_tierFlag(Level::MAIN)
-  , m_profileIdc(Profile::NONE)
-  , m_levelIdc(Level::NONE)
-  , m_frameOnlyConstraintFlag(1)
-  , m_multiLayerEnabledFlag(0)
-{
-  m_subLayerLevelPresentFlag.fill(false);
-  m_subLayerLevelIdc.fill(Level::NONE);
-}
-
 void calculateParameterSetChangedFlag(bool &changed, const std::vector<uint8_t> *oldData, const std::vector<uint8_t> *newData)
 {
   if (!changed)

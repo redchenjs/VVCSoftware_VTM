@@ -46,7 +46,7 @@
 #include "CommonLib/CodingStatistics.h"
 #endif
 #include "CommonLib/AdaptiveLoopFilter.h"
-#include "CommonLib/ProfileLevelTier.h"
+#include "CommonLib/ProfileTierLevel.h"
 
 // ====================================================================================================================
 // Protected member functions
@@ -1729,7 +1729,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
       chromaQpMappingTableParams.setDeltaQpOutVal(i, deltaQpOutVal);
     }
     pcSPS->setChromaQpMappingTableFromParams(chromaQpMappingTableParams, pcSPS->getQpBDOffset(ChannelType::CHROMA));
-    pcSPS->derivedChromaQPMappingTables();
+    pcSPS->deriveChromaQPMappingTables();
   }
 
 
@@ -1959,7 +1959,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
     CHECK(uiCode > 8, "Invalid sps_internal_bit_depth_minus_input_bit_depth signalled");
     pcSPS->setInternalMinusInputBitDepth(ChannelType::CHROMA, uiCode);
   }
-  xReadFlag(uiCode, "sps_ibc_enabled_flag");                                    pcSPS->setIBCFlag(uiCode);
+  xReadFlag(uiCode, "sps_ibc_enabled_flag");                                    pcSPS->setIBCFlag(uiCode != 0);
   if (pcSPS->getIBCFlag())
   {
     xReadUvlc(uiCode, "sps_six_minus_max_num_ibc_merge_cand");
@@ -2443,21 +2443,21 @@ void HLSyntaxReader::parseVPS(VPS* pcVPS)
       for( int j = ( pcVPS->m_sublayerDpbParamsPresentFlag ? 0 : pcVPS->m_dpbMaxTemporalId[i] ); j <= pcVPS->m_dpbMaxTemporalId[i]; j++ )
       {
         xReadUvlc(uiCode, "dpb_max_dec_pic_buffering_minus1[i]");
-        pcVPS->m_dpbParameters[i].m_maxDecPicBuffering[j] = uiCode + 1;
-        xReadUvlc( uiCode, "dpb_max_num_reorder_pics[i]" );          pcVPS->m_dpbParameters[i].m_maxNumReorderPics[j] = uiCode;
-        xReadUvlc( uiCode, "dpb_max_latency_increase_plus1[i]" );    pcVPS->m_dpbParameters[i].m_maxLatencyIncreasePlus1[j] = uiCode;
+        pcVPS->m_dpbParameters[i].maxDecPicBuffering[j] = uiCode + 1;
+        xReadUvlc( uiCode, "dpb_max_num_reorder_pics[i]" );          pcVPS->m_dpbParameters[i].maxNumReorderPics[j] = uiCode;
+        xReadUvlc( uiCode, "dpb_max_latency_increase_plus1[i]" );    pcVPS->m_dpbParameters[i].maxLatencyIncreasePlus1[j] = uiCode;
       }
 
       for( int j = ( pcVPS->m_sublayerDpbParamsPresentFlag ? pcVPS->m_dpbMaxTemporalId[i] : 0 ); j < pcVPS->m_dpbMaxTemporalId[i]; j++ )
       {
         // When dpb_max_dec_pic_buffering_minus1[ i ] is not present for i in the range of 0 to maxSubLayersMinus1 - 1, inclusive, due to subLayerInfoFlag being equal to 0, it is inferred to be equal to dpb_max_dec_pic_buffering_minus1[ maxSubLayersMinus1 ].
-        pcVPS->m_dpbParameters[i].m_maxDecPicBuffering[j] = pcVPS->m_dpbParameters[i].m_maxDecPicBuffering[pcVPS->m_dpbMaxTemporalId[i]];
+        pcVPS->m_dpbParameters[i].maxDecPicBuffering[j] = pcVPS->m_dpbParameters[i].maxDecPicBuffering[pcVPS->m_dpbMaxTemporalId[i]];
 
         // When dpb_max_num_reorder_pics[ i ] is not present for i in the range of 0 to maxSubLayersMinus1 - 1, inclusive, due to subLayerInfoFlag being equal to 0, it is inferred to be equal to dpb_max_num_reorder_pics[ maxSubLayersMinus1 ].
-        pcVPS->m_dpbParameters[i].m_maxNumReorderPics[j] = pcVPS->m_dpbParameters[i].m_maxNumReorderPics[pcVPS->m_dpbMaxTemporalId[i]];
+        pcVPS->m_dpbParameters[i].maxNumReorderPics[j] = pcVPS->m_dpbParameters[i].maxNumReorderPics[pcVPS->m_dpbMaxTemporalId[i]];
 
         // When dpb_max_latency_increase_plus1[ i ] is not present for i in the range of 0 to maxSubLayersMinus1 - 1, inclusive, due to subLayerInfoFlag being equal to 0, it is inferred to be equal to dpb_max_latency_increase_plus1[ maxSubLayersMinus1 ].
-        pcVPS->m_dpbParameters[i].m_maxLatencyIncreasePlus1[j] = pcVPS->m_dpbParameters[i].m_maxLatencyIncreasePlus1[pcVPS->m_dpbMaxTemporalId[i]];
+        pcVPS->m_dpbParameters[i].maxLatencyIncreasePlus1[j] = pcVPS->m_dpbParameters[i].maxLatencyIncreasePlus1[pcVPS->m_dpbMaxTemporalId[i]];
       }
     }
 
