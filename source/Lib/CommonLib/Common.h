@@ -109,15 +109,13 @@ struct Area : public Position, public Size
 #if GDR_ENABLED
   bool overlaps(const Area &_area) const
   {
-    const Area thisArea = Area(pos(), size());
-
     // check cases where one area contains the other completely
     if (contains(_area))
     {
       return false;
     }
 
-    if (_area.contains(thisArea))
+    if (_area.contains(*this))
     {
       return false;
     }

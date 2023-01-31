@@ -281,7 +281,7 @@ bool CodingStructure::dirtyCrossBTV() const
   return !allclean;
 }
 
-bool CodingStructure::isClean(const Position &IntPos, const Mv &FracMv) const
+bool CodingStructure::isClean(const Position &intPos, const Mv &fracMv) const
 {
   /*
     1. non gdr picture --> false;
@@ -307,14 +307,14 @@ bool CodingStructure::isClean(const Position &IntPos, const Mv &FracMv) const
     const int mvLumaFrac = (1 << mvShift);
     const int mvChromaFrac = (mvLumaFrac << 1);
 
-    const bool isIntLumaMv = (FracMv.getHor() % mvLumaFrac) == 0;
-    const bool isIntChromaMv = (FracMv.getHor() % mvChromaFrac) == 0;
+    const bool isIntLumaMv = (fracMv.getHor() % mvLumaFrac) == 0;
+    const bool isIntChromaMv = (fracMv.getHor() % mvChromaFrac) == 0;
 
     const int scaledEndX = curPic->gdrParam.verBoundary << mvShift;
 
-    const Position OrigFracPos = Position(IntPos.x << mvShift, IntPos.y << mvShift);
-    const int lastLumaPos = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
-    const int lastChromaPos = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
+    const Position OrigFracPos = Position(intPos.x << mvShift, intPos.y << mvShift);
+    const int lastLumaPos = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac) + fracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
+    const int lastChromaPos = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
 
     const int lastPelPos = std::max(lastLumaPos, lastChromaPos);
 
@@ -324,7 +324,7 @@ bool CodingStructure::isClean(const Position &IntPos, const Mv &FracMv) const
   return true;
 }
 
-bool CodingStructure::isClean(const Position &IntPos, const Mv &FracMv, const Picture *const refPic) const
+bool CodingStructure::isClean(const Position &intPos, const Mv &fracMv, const Picture *const refPic) const
 {
   /*
     1. non gdr picture --> false;
@@ -348,14 +348,14 @@ bool CodingStructure::isClean(const Position &IntPos, const Mv &FracMv, const Pi
     const int mvLumaFrac = (1 << mvShift);
     const int mvChromaFrac = (mvLumaFrac << 1);
 
-    const bool isIntLumaMv = (FracMv.getHor() % mvLumaFrac) == 0;
-    const bool isIntChromaMv = (FracMv.getHor() % mvChromaFrac) == 0;
+    const bool isIntLumaMv = (fracMv.getHor() % mvLumaFrac) == 0;
+    const bool isIntChromaMv = (fracMv.getHor() % mvChromaFrac) == 0;
 
     const int  scaledEndX = refPic->gdrParam.verBoundary << mvShift;
 
-    const Position OrigFracPos = Position((IntPos.x) << mvShift, IntPos.y << mvShift);
-    const int lastLumaPos = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
-    const int lastChromaPos = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
+    const Position OrigFracPos = Position((intPos.x) << mvShift, intPos.y << mvShift);
+    const int lastLumaPos = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac) + fracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
+    const int lastChromaPos = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
 
     const int lastPelPos = std::max(lastLumaPos, lastChromaPos);
 
@@ -370,8 +370,7 @@ bool CodingStructure::isClean(const Position &IntPos, const Mv &FracMv, const Pi
   }
 }
 
-
-bool CodingStructure::isClean(const Position &IntPos, const Mv &FracMv, RefPicList e, int refIdx, int isProf) const
+bool CodingStructure::isClean(const Position &intPos, const Mv &fracMv, RefPicList e, int refIdx, bool isSubPu) const
 {
   /*
     1. non gdr picture --> false;
@@ -384,8 +383,8 @@ bool CodingStructure::isClean(const Position &IntPos, const Mv &FracMv, RefPicLi
     return false;
   }
 
-  const Picture* const refPic = slice->getRefPic(e, refIdx);
-  const bool isExceedNumRef = (refIdx < slice->getNumRefIdx(e)) ? false : true;
+  const Picture* refPic = (refIdx == IBC_REF_IDX) ? slice->getPic() : slice->getRefPic(e, refIdx);
+  const bool isExceedNumRef = isSubPu && (refIdx >= slice->getNumRefIdx(e));
 
   if (!refPic || isExceedNumRef)
   {
@@ -396,22 +395,22 @@ bool CodingStructure::isClean(const Position &IntPos, const Mv &FracMv, RefPicLi
 
   if (isRefGdrPicture)
   {
-    const int lumaPixelAway   = 4 + (isProf << 0);
-    const int chromaPixelAway = 4 + (isProf << 1);
+    const int lumaPixelAway   = 4 + (isSubPu? 1 : 0);
+    const int chromaPixelAway = 4 + (isSubPu? 2 : 0);
 
     const int mvShift      = MV_FRACTIONAL_BITS_INTERNAL;
     const int mvLumaFrac   = (1 << mvShift);
     const int mvChromaFrac = (mvLumaFrac << 1);
 
-    const bool isIntLumaMv      = (FracMv.getHor() % mvLumaFrac  ) == 0;
-    const bool isIntChromaMv    = isProf ? false : (FracMv.getHor() % mvChromaFrac) == 0;
+    const bool isIntLumaMv      = (fracMv.getHor() % mvLumaFrac  ) == 0;
+    const bool isIntChromaMv    = isSubPu ? false : (fracMv.getHor() % mvChromaFrac) == 0;
 
     const int  scaledEndX      = refPic->gdrParam.verBoundary << mvShift;
 
 
-    const Position OrigFracPos  = Position((IntPos.x) << mvShift, IntPos.y << mvShift);
-    const int lastLumaPos     = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac)   + FracMv.getHor() + (isIntLumaMv   ? 0 : (lumaPixelAway   << mvShift));
-    const int lastChromaPos   = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift)) ;
+    const Position OrigFracPos  = Position((intPos.x) << mvShift, intPos.y << mvShift);
+    const int lastLumaPos     = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac)   + fracMv.getHor() + (isIntLumaMv   ? 0 : (lumaPixelAway   << mvShift));
+    const int lastChromaPos   = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift)) ;
 
     const int lastPelPos    = std::max(lastLumaPos, lastChromaPos);
 
@@ -426,58 +425,7 @@ bool CodingStructure::isClean(const Position &IntPos, const Mv &FracMv, RefPicLi
   }
 }
 
-bool CodingStructure::isClean(const Position &IntPos, const Mv &FracMv, RefPicList e, int refIdx, bool ibc) const
-{
-  /*
-    1. non gdr picture --> false;
-    2. gdr picture
-         pos in clean area -> true
-         pos in dirty area -> false
-  */
-  if (refIdx < 0) return false;
-
-  const Picture* refPic = (refIdx == IBC_REF_IDX) ? slice->getPic() : slice->getRefPic(e, refIdx);
-
-  if (!refPic)
-  {
-    return false;
-  }
-
-  const bool isRefGdrPicture = refPic->gdrParam.inGdrInterval;
-
-  if (isRefGdrPicture)
-  {
-    const int lumaPixelAway = 4;
-    const int chromaPixelAway = 5;
-
-    const int mvShift = MV_FRACTIONAL_BITS_INTERNAL;
-    const int mvLumaFrac = (1 << mvShift);
-    const int mvChromaFrac = (mvLumaFrac << 1);
-
-    const bool isIntLumaMv = (FracMv.getHor() % mvLumaFrac) == 0;
-    const bool isIntChromaMv = (FracMv.getHor() % mvChromaFrac) == 0;
-
-    const int  scaledEndX = refPic->gdrParam.verBoundary << mvShift;
-
-    const Position OrigFracPos = Position((IntPos.x) << mvShift, IntPos.y << mvShift);
-    const int lastLumaPos = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
-    const int lastChromaPos = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
-
-    const int lastPelPos = std::max(lastLumaPos, lastChromaPos);
-
-    return (lastPelPos < scaledEndX);
-  }
-  else
-  {
-    // refPic is normal picture
-    const bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
-
-    return !isCurGdrPicture;
-  }
-}
-
-
-bool CodingStructure::isClean(const Position &IntPos, RefPicList e, int refIdx) const
+bool CodingStructure::isClean(const Position &intPos, RefPicList e, int refIdx) const
 {
   /*
     1. non gdr picture --> false;
@@ -496,7 +444,7 @@ bool CodingStructure::isClean(const Position &IntPos, RefPicList e, int refIdx) 
 
   if (isRefGdrPicture)
   {
-    return (IntPos.x < refPic->gdrParam.verBoundary);
+    return (intPos.x < refPic->gdrParam.verBoundary);
   }
   else
   {
@@ -507,7 +455,7 @@ bool CodingStructure::isClean(const Position &IntPos, RefPicList e, int refIdx) 
   }
 }
 
-bool CodingStructure::isClean(const Position &IntPos, const Picture* const refPic) const
+bool CodingStructure::isClean(const Position &intPos, const Picture* const refPic) const
 {
   if (!refPic)
   {
@@ -518,7 +466,7 @@ bool CodingStructure::isClean(const Position &IntPos, const Picture* const refPi
 
   if (isRefGdrPicture)
   {
-    return (IntPos.x < refPic->gdrParam.verBoundary);
+    return (intPos.x < refPic->gdrParam.verBoundary);
   }
   else
   {
@@ -529,7 +477,7 @@ bool CodingStructure::isClean(const Position &IntPos, const Picture* const refPi
   }
 }
 
-bool CodingStructure::isClean(const int Intx, const int Inty, const ChannelType effChType) const
+bool CodingStructure::isClean(const int x, const int y, const ChannelType effChType) const
 {
   /*
     1. non gdr picture --> false;
@@ -541,16 +489,16 @@ bool CodingStructure::isClean(const int Intx, const int Inty, const ChannelType 
   const bool isCurGdrPicture = picture->gdrParam.inGdrInterval;
   if (isCurGdrPicture)
   {
-    const int virboundary_endx = picture->gdrParam.verBoundary >> to_underlying(effChType);
-    return (Intx < virboundary_endx);
+    const int verBoundaryForChannelType = picture->gdrParam.verBoundary >> to_underlying(effChType);
+    return (x < verBoundaryForChannelType);
   }
 
   return true;
 }
 
-bool CodingStructure::isClean(const Position &IntPos, const ChannelType effChType) const
+bool CodingStructure::isClean(const Position &intPos, const ChannelType effChType) const
 {
-  return isClean(IntPos.x, IntPos.y, effChType);
+  return isClean(intPos.x, intPos.y, effChType);
 }
 
 bool CodingStructure::isClean(const Area &area, const ChannelType effChType) const
@@ -582,7 +530,7 @@ bool CodingStructure::isSubPuClean(const PredictionUnit &pu, const Mv *mv) const
     const Position puPos = pu.Y().pos();
     const Size subPuSize = Size(4, 4);
 
-    const int isProf = 1;
+    const bool isSubPu = true;
 
     for (int y = 0; y < mb.height; y++)
     {
@@ -597,7 +545,7 @@ bool CodingStructure::isSubPuClean(const PredictionUnit &pu, const Mv *mv) const
         // check if SubPu with L0 is Out of boundary
         if (mi.refIdx[0] >= 0)
         {
-          if (!isClean(subPuTR, mi.mv[0], REF_PIC_LIST_0, mi.refIdx[0], isProf))
+          if (!isClean(subPuTR, mi.mv[0], REF_PIC_LIST_0, mi.refIdx[0], isSubPu))
           {
             return false;
           }
@@ -606,7 +554,7 @@ bool CodingStructure::isSubPuClean(const PredictionUnit &pu, const Mv *mv) const
         // check if SubPu wiht L1 is Out of boundary
         if (mi.refIdx[1] >= 0)
         {
-          if (!isClean(subPuTR, mi.mv[1], REF_PIC_LIST_1, mi.refIdx[1], isProf))
+          if (!isClean(subPuTR, mi.mv[1], REF_PIC_LIST_1, mi.refIdx[1], isSubPu))
           {
             return false;
           }
