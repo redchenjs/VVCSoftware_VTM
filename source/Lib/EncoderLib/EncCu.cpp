@@ -5791,5 +5791,301 @@ void EncCu::xReuseCachedResult( CodingStructure *&tempCS, CodingStructure *&best
 }
 #endif
 
+#if JVET_AC0139_UNIFIED_MERGE
+MergeItem::MergeItem()
+{
+
+}
+MergeItem::~MergeItem()
+{
+
+}
+
+void MergeItem::create(ChromaFormat chromaFormat, const Area& area)
+{
+  if (m_pelStorage.bufs.empty())
+  {
+    m_pelStorage.create(chromaFormat, area);
+    m_mvStorage.resize(area.area() >> (MIN_CU_LOG2 << 1));
+  }
+
+  // reset data
+  cost = MAX_DOUBLE;
+  mergeIdx = 0;
+  bcwIdx = 0;
+  interDir = 0;
+  useAltHpelIf = false;
+  affineType = AffineModel::_4_PARAMS;
+  mergeItemType = MergeItemType::NUM;
+
+  noBdofRefine = false;
+  noResidual = false;
+
+  lumaPredReady = false;
+  chromaPredReady = false;
+}
+
+void MergeItem::importMergeInfo(const MergeCtx& mergeCtx, int _mergeIdx, MergeItemType _mergeItemType, PredictionUnit& pu)
+{
+  mergeIdx = _mergeIdx;
+  mergeItemType = _mergeItemType;
+
+  if (mergeItemType != MergeItemType::GPM)
+  {
+    mvField[0][REF_PIC_LIST_0] = mergeCtx.mvFieldNeighbours[mergeIdx][REF_PIC_LIST_0];
+    mvField[0][REF_PIC_LIST_1] = mergeCtx.mvFieldNeighbours[mergeIdx][REF_PIC_LIST_1];
+    interDir = mergeCtx.interDirNeighbours[mergeIdx];
+    bcwIdx = mergeCtx.bcwIdx[mergeIdx];
+    useAltHpelIf = mergeCtx.useAltHpelIf[mergeIdx];
+  }
+
+  switch (_mergeItemType)
+  {
+  case MergeItemType::REGULAR:
+    break;
+
+  case MergeItemType::CIIP:
+    break;
+
+  case MergeItemType::MMVD:
+  {
+    MmvdIdx candIdx;
+    candIdx.val = mergeIdx;
+    const int mmvdBaseIdx = candIdx.pos.baseIdx;
+    mvField[0][REF_PIC_LIST_0] = mergeCtx.mmvdBaseMv[mmvdBaseIdx][REF_PIC_LIST_0];
+    mvField[0][REF_PIC_LIST_1] = mergeCtx.mmvdBaseMv[mmvdBaseIdx][REF_PIC_LIST_1];
+    Mv tempMv[NUM_REF_PIC_LIST_01];
+    mergeCtx.getMmvdDeltaMv(*pu.cs->slice, candIdx, tempMv);
+    mvField[0][REF_PIC_LIST_0].mv += tempMv[REF_PIC_LIST_0];
+    mvField[0][REF_PIC_LIST_1].mv += tempMv[REF_PIC_LIST_1];
+    interDir = mergeCtx.interDirNeighbours[mmvdBaseIdx];
+    bcwIdx = mergeCtx.bcwIdx[mmvdBaseIdx];
+    useAltHpelIf = mergeCtx.useAltHpelIf[mmvdBaseIdx];
+    break;
+  }
+  case MergeItemType::GPM:
+    mvField[0][REF_PIC_LIST_0].setMvField(Mv(0, 0), -1);
+    mvField[0][REF_PIC_LIST_1].setMvField(Mv(0, 0), -1);
+    bcwIdx = BCW_DEFAULT;
+    useAltHpelIf = false;
+    MergeItem::updateGpmIdx(mergeIdx, pu.geoSplitDir, pu.geoMergeIdx);
+    pu.mergeFlag = true;
+    pu.cu->affine = false;
+    pu.cu->geoFlag = true;
+    pu.mergeType = MergeType::DEFAULT_N;
+    PU::spanMotionInfo(pu, getMvBuf(pu));
+    PU::spanGeoMotionInfo(pu, mergeCtx, pu.geoSplitDir, pu.geoMergeIdx);
+    getMvBuf(pu).copyFrom(pu.getMotionBuf());
+    break;
+
+  case MergeItemType::IBC:
+  default:
+    THROW("Wrong merge item type");
+  }
+}
+
+void MergeItem::importMergeInfo(const AffineMergeCtx& mergeCtx, int _mergeIdx, MergeItemType _mergeItemType, const UnitArea& unitArea)
+{
+  mergeIdx = _mergeIdx;
+  mergeItemType = _mergeItemType;
+
+  affineType = mergeCtx.affineType[mergeIdx];
+  interDir = mergeCtx.interDirNeighbours[mergeIdx];
+  bcwIdx = mergeCtx.bcwIdx[mergeIdx];
+  useAltHpelIf = false;
+
+  switch (_mergeItemType)
+  {
+  case MergeItemType::SBTMVP:
+    mvField = mergeCtx.mvFieldNeighbours[mergeIdx];
+    getMvBuf(unitArea).copyFrom(mergeCtx.mrgCtx->subPuMvpMiBuf);
+    break;
+
+  case MergeItemType::AFFINE:
+    mvField = mergeCtx.mvFieldNeighbours[mergeIdx];
+    break;
+
+  default:
+    THROW("Wrong merge item type");
+  }
+}
+
+bool MergeItem::exportMergeInfo(PredictionUnit& pu, bool forceNoResidual)
+{
+  pu.mergeFlag = true;
+  pu.regularMergeFlag = false;
+  pu.mmvdMergeFlag = false;
+  pu.interDir = interDir;
+  pu.mergeIdx = mergeIdx;
+  pu.mergeType = MergeType::DEFAULT_N;
+  pu.mv[REF_PIC_LIST_0] = mvField[0][REF_PIC_LIST_0].mv;
+  pu.mv[REF_PIC_LIST_1] = mvField[0][REF_PIC_LIST_1].mv;
+  pu.refIdx[REF_PIC_LIST_0] = mvField[0][REF_PIC_LIST_0].refIdx;
+  pu.refIdx[REF_PIC_LIST_1] = mvField[0][REF_PIC_LIST_1].refIdx;
+  pu.mvd[REF_PIC_LIST_0] = Mv();
+  pu.mvd[REF_PIC_LIST_1] = Mv();
+  pu.mvpIdx[REF_PIC_LIST_0] = NOT_VALID;
+  pu.mvpIdx[REF_PIC_LIST_1] = NOT_VALID;
+  pu.mvpNum[REF_PIC_LIST_0] = NOT_VALID;
+  pu.mvpNum[REF_PIC_LIST_1] = NOT_VALID;
+  pu.cu->bcwIdx = (interDir == 3) ? bcwIdx : BCW_DEFAULT;
+  pu.mmvdEncOptMode = 0;
+  pu.cu->mmvdSkip = false;
+  pu.cu->affine = false;
+  pu.cu->affineType = AffineModel::_4_PARAMS;
+  pu.cu->geoFlag = false;
+  pu.cu->mtsFlag = false;
+  pu.ciipFlag = false;
+  pu.cu->imv = (!pu.cu->geoFlag && useAltHpelIf) ? IMV_HPEL : 0;
+
+  const bool resetCiip2Regular = mergeItemType == MergeItemType::CIIP && forceNoResidual;
+  MergeItemType updatedType = resetCiip2Regular ? MergeItemType::REGULAR : mergeItemType;
+  switch (updatedType)
+  {
+  case MergeItemType::REGULAR:
+    pu.regularMergeFlag = true;
+    PU::restrictBiPredMergeCandsOne(pu);
+    break;
+
+  case MergeItemType::CIIP:
+    CHECK(forceNoResidual, "Cannot force no residuals for CIIP");
+    pu.ciipFlag = true;
+    pu.intraDir[ChannelType::LUMA] = PLANAR_IDX;
+    pu.intraDir[ChannelType::CHROMA] = DM_CHROMA_IDX;
+    break;
+
+  case MergeItemType::MMVD:
+    pu.mmvdMergeFlag = true;
+    pu.mmvdMergeIdx.val = mergeIdx;
+    pu.regularMergeFlag = true;
+    if (forceNoResidual)
+    {
+      pu.cu->mmvdSkip = true;
+    }
+    PU::restrictBiPredMergeCandsOne(pu);
+    break;
+
+  case MergeItemType::SBTMVP:
+    pu.cu->affine = true;
+    pu.mergeType = MergeType::SUBPU_ATMVP;
+    break;
+
+  case MergeItemType::AFFINE:
+    pu.cu->affine = true;
+    pu.cu->affineType = affineType;
+    PU::setAllAffineMvField(pu, mvField, REF_PIC_LIST_0);
+    PU::setAllAffineMvField(pu, mvField, REF_PIC_LIST_1);
+    break;
+
+  case MergeItemType::GPM:
+    pu.mergeIdx = -1;
+    pu.cu->geoFlag = true;
+    pu.cu->bcwIdx = BCW_DEFAULT;
+    MergeItem::updateGpmIdx(mergeIdx, pu.geoSplitDir, pu.geoMergeIdx);
+    pu.cu->imv = 0;
+    break;
+
+  case MergeItemType::IBC:
+  default:
+    THROW("Wrong merge item type");
+  }
+
+  if (mergeItemType == MergeItemType::GPM)
+  {
+    pu.getMotionBuf().copyFrom(getMvBuf(pu));
+  }
+  else
+  {
+    PU::spanMotionInfo(pu, getMvBuf(pu));
+  }
+
+#if GDR_ENABLED
+  CodingStructure &cs = *pu.cs;
+  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder 
+    && ((cs.picture->gdrParam.inGdrInterval && cs.isClean(pu.Y().topRight(), ChannelType::LUMA)) 
+    || (cs.picture->gdrParam.verBoundary == -1));
+  if (isEncodeGdrClean)
+  {
+    Mv mv0 = pu.mv[REF_PIC_LIST_0];
+    Mv mv1 = pu.mv[REF_PIC_LIST_1];
+
+    int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
+    int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
+
+    pu.mvSolid[REF_PIC_LIST_0] = mvSolid[0];
+    pu.mvSolid[REF_PIC_LIST_1] = mvSolid[1];
+    pu.mvValid[REF_PIC_LIST_0] = cs.isClean(pu.Y().topRight(), mv0, REF_PIC_LIST_0, refIdx0);
+    pu.mvValid[REF_PIC_LIST_1] = cs.isClean(pu.Y().topRight(), mv1, REF_PIC_LIST_1, refIdx1);
+  }
+#endif
+
+  return resetCiip2Regular;
+}
+
+MergeItemList::MergeItemList()
+{
+
+}
+
+MergeItemList::~MergeItemList()
+{
+}
+
+void MergeItemList::init(size_t maxSize, ChromaFormat chromaFormat, int ctuWidth, int ctuHeight)
+{
+  m_list.reserve(maxSize + 1); // to avoid reallocation when inserting a new item
+  m_chromaFormat = chromaFormat;
+  m_ctuArea.x = 0;
+  m_ctuArea.y = 0;
+  m_ctuArea.width = ctuWidth;
+  m_ctuArea.height = ctuHeight;
+}
+
+MergeItem* MergeItemList::allocateNewMergeItem()
+{
+  MergeItem* p = m_mergeItemPool.get();
+  p->create(m_chromaFormat, m_ctuArea);
+
+  return p;
+}
+
+void MergeItemList::insertMergeItemToList(MergeItem* p)
+{
+  if (m_list.empty())
+  {
+    m_list.push_back(p);
+  }
+  else if (m_list.size() == m_maxTrackingNum && p->cost >= m_list.back()->cost)
+  {
+    m_mergeItemPool.giveBack(p);
+  }
+  else
+  {
+    if (m_list.size() == m_maxTrackingNum)
+    {
+      m_mergeItemPool.giveBack(m_list.back());
+      m_list.pop_back();
+    }
+    auto it = std::find_if(m_list.begin(), m_list.end(), [&p](const MergeItem *mi) { return p->cost < mi->cost; });
+    m_list.insert(it, p);
+  }
+}
+
+MergeItem* MergeItemList::getMergeItemInList(size_t index)
+{
+  return index < m_maxTrackingNum ? m_list[index] : nullptr;
+}
+
+void MergeItemList::resetList(size_t maxTrackingNum)
+{
+  for (auto p : m_list)
+  {
+    m_mergeItemPool.giveBack(p);
+  }
+  m_list.clear();
+  m_list.reserve(maxTrackingNum);
+  m_maxTrackingNum = maxTrackingNum;
+}
+#endif
 
 //! \}

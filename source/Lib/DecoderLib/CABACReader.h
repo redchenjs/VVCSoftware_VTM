@@ -106,15 +106,15 @@ public:
   void        cu_palette_info           ( CodingUnit&                   cu,     ComponentID     compBegin, uint32_t numComp, CUCtx& cuCtx );
   void        cuPaletteSubblockInfo     ( CodingUnit&                   cu,     ComponentID     compBegin, uint32_t numComp, int subSetId, uint32_t& prevRunPos, unsigned& prevRunType );
   // prediction unit (clause 7.3.8.6)
-  void        prediction_unit           ( PredictionUnit&               pu,     MergeCtx&       mrgCtx );
+  void        prediction_unit           ( PredictionUnit&               pu );
   void        merge_flag                ( PredictionUnit&               pu );
   void        merge_data                ( PredictionUnit&               pu );
   void        affine_flag               ( CodingUnit&                   cu );
   void        subblock_merge_flag       ( CodingUnit&                   cu );
   void        merge_idx                 ( PredictionUnit&               pu );
   void        mmvd_merge_idx(PredictionUnit&               pu);
-  void        imv_mode                  ( CodingUnit&                   cu,     MergeCtx&       mrgCtx );
-  void        affine_amvr_mode          ( CodingUnit&                   cu,     MergeCtx&       mrgCtx );
+  void        imv_mode                  ( CodingUnit&                   cu );
+  void        affine_amvr_mode          ( CodingUnit&                   cu );
   void        inter_pred_idc            ( PredictionUnit&               pu );
   void        ref_idx                   ( PredictionUnit&               pu,     RefPicList      eRefList );
   void        mvp_flag                  ( PredictionUnit&               pu,     RefPicList      eRefList );

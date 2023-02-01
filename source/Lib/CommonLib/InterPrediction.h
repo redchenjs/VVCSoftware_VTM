@@ -48,7 +48,6 @@
 #include "Picture.h"
 
 #include "RdCost.h"
-#include "ContextModelling.h"
 // forward declaration
 class Mv;
 
@@ -59,6 +58,89 @@ class Mv;
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
+
+class MergeCtx
+{
+public:
+  MergeCtx() : numValidMergeCand(0), hasMergedCandList(false) {}
+  ~MergeCtx() {}
+public:
+  MvField mvFieldNeighbours[MRG_MAX_NUM_CANDS][2];
+#if GDR_ENABLED
+  // note : check if source of mv and mv itself is valid
+  bool     mvSolid[MRG_MAX_NUM_CANDS][2];
+  bool     mvValid[MRG_MAX_NUM_CANDS][2];
+  Position mvPos[MRG_MAX_NUM_CANDS][2];
+  MvpType  mvType[MRG_MAX_NUM_CANDS][2];
+#endif
+  uint8_t       bcwIdx[MRG_MAX_NUM_CANDS];
+  unsigned char interDirNeighbours[ MRG_MAX_NUM_CANDS      ];
+  int           numValidMergeCand;
+  bool          hasMergedCandList;
+
+  MotionBuf     subPuMvpMiBuf;
+  MvField       mmvdBaseMv[MmvdIdx::BASE_MV_NUM][2];
+#if GDR_ENABLED
+  bool mmvdSolid[MmvdIdx::BASE_MV_NUM][2];
+  bool mmvdValid[MmvdIdx::BASE_MV_NUM][2];
+#endif
+  void          setMmvdMergeCandiInfo(PredictionUnit &pu, MmvdIdx candIdx);
+  void          getMmvdDeltaMv(const Slice& slice, const MmvdIdx candIdx, Mv deltaMv[NUM_REF_PIC_LIST_01]) const;
+  bool          mmvdUseAltHpelIf[MmvdIdx::BASE_MV_NUM];
+  bool          useAltHpelIf      [ MRG_MAX_NUM_CANDS ];
+#if JVET_AC0139_UNIFIED_MERGE
+  void setMergeInfo( PredictionUnit& pu, int candIdx ) const;
+#else
+  void setMergeInfo( PredictionUnit& pu, int candIdx );
+#endif
+};
+
+class AffineMergeCtx
+{
+public:
+  AffineMergeCtx() : numValidMergeCand(0)
+  {
+    for (int i = 0; i < AFFINE_MRG_MAX_NUM_CANDS; i++)
+    {
+      affineType[i] = AffineModel::_4_PARAMS;
+    }
+  }
+  ~AffineMergeCtx() {}
+public:
+  std::array<MvField[2], AFFINE_MAX_NUM_CP> mvFieldNeighbours[AFFINE_MRG_MAX_NUM_CANDS];
+#if GDR_ENABLED
+  std::array<bool[2], AFFINE_MAX_NUM_CP> mvSolid[AFFINE_MRG_MAX_NUM_CANDS];
+  std::array<bool[2], AFFINE_MAX_NUM_CP> mvValid[AFFINE_MRG_MAX_NUM_CANDS];
+
+  bool isSolid(const int idx, const int l)
+  {
+    bool solid = true;
+    for (auto &c: mvSolid[idx])
+    {
+      solid &= c[l];
+    }
+    return solid;
+  }
+
+  bool isValid(const int idx, const int l)
+  {
+    bool valid = true;
+    for (auto &c: mvValid[idx])
+    {
+      valid &= c[l];
+    }
+    return valid;
+  }
+#endif
+  unsigned char interDirNeighbours[AFFINE_MRG_MAX_NUM_CANDS];
+  AffineModel   affineType[AFFINE_MRG_MAX_NUM_CANDS];
+  uint8_t       bcwIdx[AFFINE_MRG_MAX_NUM_CANDS];
+  int           numValidMergeCand;
+  int           maxNumMergeCand;
+
+  MergeCtx     *mrgCtx;
+  MergeType     mergeType[AFFINE_MRG_MAX_NUM_CANDS];
+};
 
 class InterPrediction : public WeightPrediction
 {
