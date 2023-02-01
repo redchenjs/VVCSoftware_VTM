@@ -772,6 +772,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
   ("SourceWidth,-wdt",                                m_sourceWidth,                                       0, "Source picture width")
   ("SourceHeight,-hgt",                               m_sourceHeight,                                      0, "Source picture height")
+  ("SourceScalingRatioHor",                           m_sourceScalingRatioHor,                           1.0, "Source picture  horizontal scaling ratio")
+  ("SourceScalingRatioVer",                           m_sourceScalingRatioVer,                           1.0, "Source picture vertical scaling ratio")
   ("InputBitDepth",                                   m_inputBitDepth[ChannelType::LUMA],                   8, "Bit-depth of input file")
   ("OutputBitDepth",                                  m_outputBitDepth[ChannelType::LUMA],                  0, "Bit-depth of output file (default:InternalBitDepth)")
   ("MSBExtendedBitDepth",                             m_msbExtendedBitDepth[ChannelType::LUMA],             0, "bit depth of luma component after addition of MSBs of value 0 (used for synthesising High Dynamic Range source material). (default:InputBitDepth)")
@@ -2112,6 +2114,19 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   /*
    * Set any derived parameters
    */
+
+  if ( m_sourceScalingRatioHor != 1.0 || m_sourceScalingRatioVer != 1.0 ) 
+  {
+    m_sourceWidthBeforeScale = m_sourceWidth;
+    m_sourceHeightBeforeScale = m_sourceHeight;
+    m_sourceWidth    = int(round(m_sourceWidth*m_sourceScalingRatioHor));
+    m_sourceHeight   = int(round(m_sourceHeight*m_sourceScalingRatioVer));
+  }
+  else 
+  {
+    m_sourceWidthBeforeScale = 0;
+    m_sourceHeightBeforeScale = 0;
+  }
 #if EXTENSION_360_VIDEO
   m_inputFileWidth = m_sourceWidth;
   m_inputFileHeight = m_sourceHeight;

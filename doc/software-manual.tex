@@ -639,6 +639,16 @@ Specifies the output locally reconstructed video file. If more than one layer is
 Specifies the width and height of the input video in luma samples.
 \\
 
+
+\Option{SourceScalingRatioHor}%
+\Option{SourceScalingRatioVer} &
+\Default{1.0}%
+\Default{1.0} &
+Specifies a scaling ratio to apply in hor and vert direction to the pictures read from input video file.
+Note: The SourceWidth and SourceHeight are multiplied by these scaling factors. This option is useful for spatial scalability in a multi layer scenario to use enhancement layer source when base layer source is not available. 
+\\
+
+
 \Option{InputBitDepth}
  &
 %\ShortOption{\None} &
