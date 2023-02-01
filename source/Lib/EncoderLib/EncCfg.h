@@ -1009,6 +1009,15 @@ protected:
   int         m_qpOffsetChromaRPR;
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
+#if JVET_AC0096
+  int         m_RPRSwitchingResolutionOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
+  int         m_RPRSwitchingQPOffsetOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
+  int         m_RPRSwitchingListSize;
+  bool        m_rprFunctionalityTestingEnabledFlag;
+  bool        m_rprPopulatePPSatIntraFlag;
+  int         m_rprSwitchingSegmentSize;
+  double      m_rprSwitchingTime;
+#endif
   bool        m_rprEnabledFlag;
   bool        m_resChangeInClvsEnabled;
   int         m_switchPocPeriod;
@@ -2756,6 +2765,26 @@ public:
   int         getQpOffsetChromaRPR()                                  const { return m_qpOffsetChromaRPR; }
   int         getQpOffsetChromaRPR2()                                 const { return m_qpOffsetChromaRPR2; }
   int         getQpOffsetChromaRPR3()                                 const { return m_qpOffsetChromaRPR3; }
+#if JVET_AC0096
+  bool      getRprFunctionalityTestingEnabledFlag()                   const { return m_rprFunctionalityTestingEnabledFlag; }
+  void      setRprFunctionalityTestingEnabledFlag(bool flag)          { m_rprFunctionalityTestingEnabledFlag = flag; }
+  bool      getRprPopulatePPSatIntraFlag()                            const { return m_rprPopulatePPSatIntraFlag; }
+  void      setRprPopulatePPSatIntraFlag(bool flag)                   { m_rprPopulatePPSatIntraFlag = flag; }
+  int       getRPRSwitchingSegmentSize()                              const { return m_rprSwitchingSegmentSize; }
+  void      setRPRSwitchingSegmentSize(int size)                      { m_rprSwitchingSegmentSize = size; }
+  int       getRPRSwitchingListSize()                                 const { return m_RPRSwitchingListSize; }
+  void      setRPRSwitchingListSize(int size)                         { m_RPRSwitchingListSize = size; }
+  double    getRPRSwitchingTime()                                     const { return m_rprSwitchingTime; }
+  void      setRPRSwitchingTime(int size)                             { m_rprSwitchingTime = size; }
+  void      setRPRSwitchingResolutionOrderList(int value, int idx)    { m_RPRSwitchingResolutionOrderList[idx] = value; }
+  int       getRPRSwitchingResolutionOrderList(int idx)               const { return m_RPRSwitchingResolutionOrderList[idx]; }
+  void      setRPRSwitchingQPOffsetOrderList(int value, int idx)      { m_RPRSwitchingQPOffsetOrderList[idx] = value; }
+  int       getRPRSwitchingQPOffsetOrderList(int idx)                 const { return m_RPRSwitchingQPOffsetOrderList[idx]; }
+  int       getRPRSwitchingSegment(int currPoc)                       const { return (currPoc / m_rprSwitchingSegmentSize % m_RPRSwitchingListSize); }
+  int       getRPRSwitchingPPSID(int rprSegment)                      const { int res2ppsid[4] = { 0, ENC_PPS_ID_RPR3, ENC_PPS_ID_RPR2, ENC_PPS_ID_RPR };
+                                                                              return res2ppsid[m_RPRSwitchingResolutionOrderList[rprSegment]];
+  }
+#endif
   void        setResChangeInClvsEnabled(bool b)                      { m_resChangeInClvsEnabled = b; }
   bool        isResChangeInClvsEnabled()                        const { return m_resChangeInClvsEnabled; }
   void        setSwitchPocPeriod( int p )                            { m_switchPocPeriod = p;}

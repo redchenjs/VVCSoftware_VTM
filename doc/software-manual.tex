@@ -1003,6 +1003,44 @@ QP offset for chroma when encoding in reduced resolution with GOP based RPR ($2/
 QP offset for chroma when encoding in reduced resolution with GOP based RPR ($4/5$).
 \\
 
+\Option{RPRFunctionalityTesting} &
+%\ShortOption{\None} &
+\Default{false} &
+Enables testing of RPR functionality according to defined order of resolutions from full resolution or one of three downscaled resolutions (default is $1/2$, $2/3$ and $4/5$ in both dimensions).
+The order is defined in RPRSwitchingResolutionOrderList and QP settings in RPRSwitchingResolutionOrderList and number of frames for each resolution in
+RPRSwitchingSegmentSize or according to RPRSwitchingTime if thats non-zero.
+\\
+
+\Option{RPRSwitchingResolutionOrderList} &
+%\ShortOption{\None} &
+\Default{"1, 0, 2, 0, 3, 0, 1, 0, 2, 0, 3, 0"} &
+Order of resolutions for each segment for RPR functionality testing where 0,1,2,3 corresponds to full resolution,4/5,2/3 and 1/2.
+\\
+
+\Option{RPRSwitchingQPOffsetOrderList} &
+%\ShortOption{\None} &
+\Default{"-2, 0, -4, 0, -6, 0, -2, 0, -4, 0, -6, 0"} &
+Order of QP offset for each segment for RPR functionality testing, where the QP is modified according to the given offset.
+\\
+
+\Option{RPRSwitchingSegmentSize} &
+%\ShortOption{\None} &
+\Default{32} &
+Segment size with same resolution for RPR functionality testing.
+\\
+
+\Option{RPRSwitchingTime} &
+%\ShortOption{\None} &
+\Default{0.0} &
+Segment switching time in seconds for RPR functionality testing, when non-zero it defines the segment size according to frame rate (multiple of 8).
+\\
+
+\Option{RPRPopulatePPSatIntra} &
+%\ShortOption{\None} &
+\Default{false} &
+Populate all PPS which can be used for RPR at the Intra, e.g. full-res, 4/5, 2/3 and 1/2.
+\\
+
 \Option{FractionNumFrames} &
 %\ShortOption{\None} &
 \Default{1.0} &

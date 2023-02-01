@@ -419,7 +419,49 @@ int EncGOP::xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool
 
   if( newPPS ) // Note this assumes that all changes to the PPS are made at the EncLib level prior to picture creation (EncLib::xGetNewPicBuffer).
   {
+#if JVET_AC0096
+    if (m_pcEncLib->getRprPopulatePPSatIntraFlag())
+    {
+      if (slice->isIntra())
+      {
+        actualTotalBits += xWritePPS(accessUnit, slice->getPPS(), m_pcEncLib->getLayerId());
+        if (!(slice->getPPS()->getPPSId() == 0))
+        {
+          const PPS* pPPS = m_pcEncLib->getPPS(0);
+          actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
+        }
+        if (!(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR))
+        {
+          const PPS* pPPS = m_pcEncLib->getPPS(ENC_PPS_ID_RPR);
+          actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
+        }
+        if (!(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2))
+        {
+          const PPS* pPPS = m_pcEncLib->getPPS(ENC_PPS_ID_RPR2);
+          actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
+        }
+        if (!(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3))
+        {
+          const PPS* pPPS = m_pcEncLib->getPPS(ENC_PPS_ID_RPR3);
+          actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
+        }
+      }
+      else
+      {
+        if (!(slice->getPPS()->getPPSId() == 0) && !(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR) && !(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2) && !(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3))
+        {
+          const PPS* pPPS = m_pcEncLib->getPPS(0);
+          actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
+        }
+      }
+    }
+    else
+    {
+      actualTotalBits += xWritePPS(accessUnit, slice->getPPS(), m_pcEncLib->getLayerId());
+    }
+#else
     actualTotalBits += xWritePPS( accessUnit, slice->getPPS(), m_pcEncLib->getLayerId() );
+#endif
   }
 
   return actualTotalBits;
