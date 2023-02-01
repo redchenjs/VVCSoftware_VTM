@@ -312,9 +312,9 @@ bool CodingStructure::isClean(const Position &intPos, const Mv &fracMv) const
 
     const int scaledEndX = curPic->gdrParam.verBoundary << mvShift;
 
-    const Position OrigFracPos = Position(intPos.x << mvShift, intPos.y << mvShift);
-    const int lastLumaPos = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac) + fracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
-    const int lastChromaPos = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
+    const Position origFracPos = Position(intPos.x << mvShift, intPos.y << mvShift);
+    const int lastLumaPos = ((origFracPos.x / mvLumaFrac)   * mvLumaFrac) + fracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
+    const int lastChromaPos = ((origFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
 
     const int lastPelPos = std::max(lastLumaPos, lastChromaPos);
 
@@ -353,9 +353,9 @@ bool CodingStructure::isClean(const Position &intPos, const Mv &fracMv, const Pi
 
     const int  scaledEndX = refPic->gdrParam.verBoundary << mvShift;
 
-    const Position OrigFracPos = Position((intPos.x) << mvShift, intPos.y << mvShift);
-    const int lastLumaPos = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac) + fracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
-    const int lastChromaPos = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
+    const Position origFracPos = Position((intPos.x) << mvShift, intPos.y << mvShift);
+    const int lastLumaPos = ((origFracPos.x / mvLumaFrac)   * mvLumaFrac) + fracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
+    const int lastChromaPos = ((origFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
 
     const int lastPelPos = std::max(lastLumaPos, lastChromaPos);
 
@@ -405,12 +405,12 @@ bool CodingStructure::isClean(const Position &intPos, const Mv &fracMv, RefPicLi
     const bool isIntLumaMv      = (fracMv.getHor() % mvLumaFrac  ) == 0;
     const bool isIntChromaMv    = isSubPu ? false : (fracMv.getHor() % mvChromaFrac) == 0;
 
-    const int  scaledEndX      = refPic->gdrParam.verBoundary << mvShift;
+    const int  scaledEndX       = refPic->gdrParam.verBoundary << mvShift;
 
 
-    const Position OrigFracPos  = Position((intPos.x) << mvShift, intPos.y << mvShift);
-    const int lastLumaPos     = ((OrigFracPos.x / mvLumaFrac)   * mvLumaFrac)   + fracMv.getHor() + (isIntLumaMv   ? 0 : (lumaPixelAway   << mvShift));
-    const int lastChromaPos   = ((OrigFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift)) ;
+    const Position origFracPos = Position((intPos.x) << mvShift, intPos.y << mvShift);
+    const int lastLumaPos      = ((origFracPos.x / mvLumaFrac)   * mvLumaFrac)   + fracMv.getHor() + (isIntLumaMv   ? 0 : (lumaPixelAway   << mvShift));
+    const int lastChromaPos    = ((origFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift)) ;
 
     const int lastPelPos    = std::max(lastLumaPos, lastChromaPos);
 
