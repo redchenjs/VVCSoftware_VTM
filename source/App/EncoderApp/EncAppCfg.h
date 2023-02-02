@@ -95,6 +95,10 @@ protected:
   uint32_t      m_temporalSubsampleRatio;                         ///< temporal subsample ratio, 2 means code every two frames
   int       m_sourceWidth;                                   ///< source width in pixel
   int       m_sourceHeight;                                  ///< source height in pixel (when interlaced = field height)
+  double    m_sourceScalingRatioHor;                          ////< source scaling ratio Horizontal
+  double    m_sourceScalingRatioVer;                          ////< source scaling ratio Vertical
+  int       m_sourceWidthBeforeScale;                         ///< source width in pixel before applying source scaling ratio Horizontal 
+  int       m_sourceHeightBeforeScale;                        ///< source height in pixel before applying source scaling ratio Vertical (when interlaced = field height)
 #if EXTENSION_360_VIDEO
   int       m_inputFileWidth;                                 ///< width of image in input file  (this is equivalent to sourceWidth,  if sourceWidth  is not subsequently altered due to padding)
   int       m_inputFileHeight;                                ///< height of image in input file (this is equivalent to sourceHeight, if sourceHeight is not subsequently altered due to padding)

@@ -889,8 +889,7 @@ void CABACReader::coding_unit( CodingUnit &cu, Partitioner &partitioner, CUCtx& 
   {
     cu.colorTransform = false;
     cs.addEmptyTUs( partitioner );
-    MergeCtx           mrgCtx;
-    prediction_unit  ( pu, mrgCtx );
+    prediction_unit  ( pu );
     end_of_ctu( cu, cuCtx );
     return;
   }
@@ -1023,7 +1022,7 @@ void CABACReader::cu_skip_flag( CodingUnit& cu )
   }
 }
 
-void CABACReader::imv_mode( CodingUnit& cu, MergeCtx& mrgCtx )
+void CABACReader::imv_mode( CodingUnit& cu )
 {
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET( STATS__CABAC_BITS__OTHER );
 
@@ -1077,7 +1076,7 @@ void CABACReader::imv_mode( CodingUnit& cu, MergeCtx& mrgCtx )
   DTRACE( g_trace_ctx, D_SYNTAX, "imv_mode() IMVFlag=%d\n", cu.imv );
 }
 
-void CABACReader::affine_amvr_mode( CodingUnit& cu, MergeCtx& mrgCtx )
+void CABACReader::affine_amvr_mode( CodingUnit& cu )
 {
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET( STATS__CABAC_BITS__OTHER );
 
@@ -1270,15 +1269,14 @@ void CABACReader::cu_pred_data( CodingUnit &cu )
     cu.predMode = MODE_IBC;
     return;
   }
-  MergeCtx mrgCtx;
 
   for( auto &pu : CU::traversePUs( cu ) )
   {
-    prediction_unit( pu, mrgCtx );
+    prediction_unit( pu );
   }
 
-  imv_mode   ( cu, mrgCtx );
-  affine_amvr_mode( cu, mrgCtx );
+  imv_mode   ( cu );
+  affine_amvr_mode( cu );
   cu_bcw_flag( cu );
 }
 
@@ -2084,7 +2082,7 @@ void CABACReader::xAdjustPLTIndex(CodingUnit& cu, Pel curLevel, uint32_t idx, Pe
 //    void  mvp_flag        ( pu, refList );
 //================================================================================
 
-void CABACReader::prediction_unit( PredictionUnit& pu, MergeCtx& mrgCtx )
+void CABACReader::prediction_unit( PredictionUnit& pu )
 {
   if( pu.cu->skip )
   {

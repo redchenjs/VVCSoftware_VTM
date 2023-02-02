@@ -1419,8 +1419,16 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
   m_cVideoIOYuvInputFile.skipFrames(m_frameSkip, m_inputFileWidth, m_inputFileHeight, m_inputChromaFormatIDC);
 #else
   const int sourceHeight = m_isField ? m_iSourceHeightOrg : m_sourceHeight;
-  m_cVideoIOYuvInputFile.skipFrames(m_frameSkip, m_sourceWidth - m_sourcePadding[0], sourceHeight - m_sourcePadding[1],
-                                    m_inputChromaFormatIDC);
+  if (m_sourceScalingRatioHor != 1.0 || m_sourceScalingRatioVer != 1.0)
+  {
+    m_cVideoIOYuvInputFile.skipFrames(m_frameSkip, m_sourceWidthBeforeScale, m_sourceHeightBeforeScale,
+                                      m_inputChromaFormatIDC);
+  }
+  else
+  {
+    m_cVideoIOYuvInputFile.skipFrames(m_frameSkip, m_sourceWidth - m_sourcePadding[0],
+                                      sourceHeight - m_sourcePadding[1], m_inputChromaFormatIDC);
+  }
 #endif
   if (!m_reconFileName.empty())
   {
@@ -1513,6 +1521,14 @@ void EncApp::createLib( const int layerIdx )
   m_trueOrgPic = new PelStorage;
   m_orgPic->create( unitArea );
   m_trueOrgPic->create( unitArea );
+  if (m_sourceScalingRatioHor != 1.0 || m_sourceScalingRatioVer != 1.0)
+  {
+    UnitArea unitAreaPrescale( m_chromaFormatIDC, Area( 0, 0, m_sourceWidthBeforeScale, m_sourceHeightBeforeScale) );
+    m_orgPicBeforeScale = new PelStorage;
+    m_trueOrgPicBeforeScale = new PelStorage;
+    m_orgPicBeforeScale->create( unitAreaPrescale );
+    m_trueOrgPicBeforeScale->create( unitAreaPrescale );
+  }
   if ( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
   {
     m_filteredOrgPic = new PelStorage;
@@ -1604,6 +1620,15 @@ void EncApp::destroyLib()
   m_trueOrgPic->destroy();
   delete m_trueOrgPic;
   delete m_orgPic;
+
+  if (m_sourceScalingRatioHor != 1.0 || m_sourceScalingRatioVer != 1.0)
+  {
+    m_orgPicBeforeScale->destroy();
+    m_trueOrgPicBeforeScale->destroy();
+    delete m_trueOrgPicBeforeScale;
+    delete m_orgPicBeforeScale;
+  }
+
   if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag)
   {
     for (int i = 0; i < 2; i++)
@@ -1657,8 +1682,31 @@ bool EncApp::encodePrep( bool& eos )
                                 m_clipInputVideoToRec709Range);
   }
 #else
-  m_cVideoIOYuvInputFile.read(*m_orgPic, *m_trueOrgPic, ipCSC, m_sourcePadding, m_inputChromaFormatIDC,
-                              m_clipInputVideoToRec709Range);
+  if (m_sourceScalingRatioHor != 1.0 || m_sourceScalingRatioVer != 1.0)
+  {
+    int noPadding[2] = { 0 };
+    m_cVideoIOYuvInputFile.read(*m_orgPicBeforeScale, *m_trueOrgPicBeforeScale, ipCSC, noPadding, m_inputChromaFormatIDC,
+                                m_clipInputVideoToRec709Range);
+    int w0 = m_sourceWidthBeforeScale;
+    int h0 = m_sourceHeightBeforeScale;
+    int w1 = m_orgPic->get(COMPONENT_Y).width - SPS::getWinUnitX(m_chromaFormatIDC) * (m_confWinLeft + m_confWinRight);
+    int h1 = m_orgPic->get(COMPONENT_Y).height - SPS::getWinUnitY(m_chromaFormatIDC) * (m_confWinTop + m_confWinBottom);
+    int xScale = ((w0 << ScalingRatio::BITS) + (w1 >> 1)) / w1;
+    int yScale = ((h0 << ScalingRatio::BITS) + (h1 >> 1)) / h1;
+    ScalingRatio scalingRatio = { xScale, yScale };
+    Window conformanceWindow1;
+    conformanceWindow1.setWindow(m_confWinLeft, m_confWinRight, m_confWinTop, m_confWinBottom);
+    
+    bool downsampling = (m_sourceWidthBeforeScale > m_sourceWidth) || (m_sourceHeightBeforeScale > m_sourceHeight);
+    bool useLumaFilter = downsampling;
+    Picture::rescalePicture(scalingRatio, *m_orgPicBeforeScale, Window(), *m_orgPic, conformanceWindow1, m_inputChromaFormatIDC , m_internalBitDepth,useLumaFilter,downsampling,m_horCollocatedChromaFlag,m_verCollocatedChromaFlag );
+    m_trueOrgPic->copyFrom(*m_orgPic);
+  }
+  else
+  {
+    m_cVideoIOYuvInputFile.read(*m_orgPic, *m_trueOrgPic, ipCSC, m_sourcePadding, m_inputChromaFormatIDC,
+                                m_clipInputVideoToRec709Range);
+  }
 #endif
 
   if (m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty())
