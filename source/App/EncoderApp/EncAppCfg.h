@@ -957,9 +957,9 @@ protected:
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
 #if JVET_AC0096
-  int         m_RPRSwitchingResolutionOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
-  int         m_RPRSwitchingQPOffsetOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
-  int         m_RPRSwitchingListSize;
+  int         m_rprSwitchingResolutionOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
+  int         m_rprSwitchingQPOffsetOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
+  int         m_rprSwitchingListSize;
   bool        m_rprFunctionalityTestingEnabledFlag;
   bool        m_rprPopulatePPSatIntraFlag;
   int         m_rprSwitchingSegmentSize;

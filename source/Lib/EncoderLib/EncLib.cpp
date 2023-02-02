@@ -766,12 +766,12 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
       if (poc % m_rprSwitchingSegmentSize == 0)
       {
         ppsID = 0;
-        bool  bApplyRpr = false;
+        bool  applyRpr = false;
         int currPoc = poc + m_frameSkip;
-        int rprSegment = getRPRSwitchingSegment(currPoc);
-        int thePPSID = getRPRSwitchingPPSID(rprSegment);
-        bApplyRpr = thePPSID != 0;
-        if (bApplyRpr)
+        int rprSegment = getRprSwitchingSegment(currPoc);
+        int thePPSID = getRprSwitchingPPSID(rprSegment);
+        applyRpr = thePPSID != 0;
+        if (applyRpr)
         {
           ppsID = thePPSID;
         }
@@ -2624,8 +2624,8 @@ int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
     if (!m_gopBasedRPREnabledFlag && m_rprFunctionalityTestingEnabledFlag)
     {
       int currPoc = pSlice->getPOC() + m_frameSkip;
-      int rprSegment = EncCfg::getRPRSwitchingSegment(currPoc);
-      qp += EncCfg::m_RPRSwitchingQPOffsetOrderList[rprSegment];
+      int rprSegment = EncCfg::getRprSwitchingSegment(currPoc);
+      qp += EncCfg::m_rprSwitchingQPOffsetOrderList[rprSegment];
     }
 #endif
   }

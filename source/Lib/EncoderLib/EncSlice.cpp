@@ -547,9 +547,9 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
       if (m_pcCfg->getRprFunctionalityTestingEnabledFlag())
       {
         int currPoc = rpcSlice->getPOC() + m_pcCfg->getFrameSkip();
-        int rprSegment = m_pcCfg->getRPRSwitchingSegment(currPoc);
-        cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getRPRSwitchingQPOffsetOrderList(rprSegment));
-        crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getRPRSwitchingQPOffsetOrderList(rprSegment));
+        int rprSegment = m_pcCfg->getRprSwitchingSegment(currPoc);
+        cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getRprSwitchingQPOffsetOrderList(rprSegment));
+        crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getRprSwitchingQPOffsetOrderList(rprSegment));
       }
       else
       {

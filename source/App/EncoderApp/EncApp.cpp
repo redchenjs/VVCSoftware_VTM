@@ -275,7 +275,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setQpOffsetChromaRPR                                 (m_qpOffsetChromaRPR, m_qpOffsetChromaRPR2, m_qpOffsetChromaRPR3);
 #if JVET_AC0096
   m_cEncLib.setRprFunctionalityTestingEnabledFlag                (m_rprFunctionalityTestingEnabledFlag);
-  m_cEncLib.setRPRSwitchingSegmentSize                           (m_rprSwitchingSegmentSize);
+  m_cEncLib.setRprSwitchingSegmentSize                           (m_rprSwitchingSegmentSize);
   m_cEncLib.setRprPopulatePPSatIntraFlag                         (m_rprPopulatePPSatIntraFlag);
 #endif
   m_cEncLib.setRprEnabled                                        (m_rprEnabledFlag);
@@ -757,12 +757,12 @@ void EncApp::xInitLibCfg( int layerIdx )
 #if JVET_AC0096
   if (m_rprFunctionalityTestingEnabledFlag)
   {
-    for (int k = 0; k < m_RPRSwitchingListSize; k++)
+    for (int k = 0; k < m_rprSwitchingListSize; k++)
     {
-      m_cEncLib.setRPRSwitchingResolutionOrderList(m_RPRSwitchingResolutionOrderList[k], k);
-      m_cEncLib.setRPRSwitchingQPOffsetOrderList(m_RPRSwitchingQPOffsetOrderList[k], k);
+      m_cEncLib.setRprSwitchingResolutionOrderList(m_rprSwitchingResolutionOrderList[k], k);
+      m_cEncLib.setRprSwitchingQPOffsetOrderList(m_rprSwitchingQPOffsetOrderList[k], k);
     }
-    m_cEncLib.setRPRSwitchingListSize(m_RPRSwitchingListSize);
+    m_cEncLib.setRprSwitchingListSize(m_rprSwitchingListSize);
   }
 #endif
   m_cEncLib.setUseCiip                                        ( m_ciip );
