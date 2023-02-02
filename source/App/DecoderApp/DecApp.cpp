@@ -1009,13 +1009,13 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
 
   iterPic = pcListPic->begin();
 
-  if (numPicsNotYetDisplayed>2)
+  if (numPicsNotYetDisplayed>=2)
   {
     iterPic++;
   }
 
   Picture* pcPic = *(iterPic);
-  if( numPicsNotYetDisplayed>2 && pcPic->fieldPic ) //Field Decoding
+  if( numPicsNotYetDisplayed>=2 && pcPic->fieldPic ) //Field Decoding
   {
     PicList::iterator endPic   = pcListPic->end();
     endPic--;
@@ -1024,12 +1024,23 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
     {
       Picture* pcPicTop = *(iterPic);
       iterPic++;
-      Picture* pcPicBottom = *(iterPic);
+      PicList::iterator iterPic2 = iterPic;
+      while (iterPic2 != pcListPic->end())
+      {
+        if ((*iterPic2)->layerId == pcPicTop->layerId && (*iterPic2)->fieldPic && (*iterPic2)->topField != pcPicTop->topField)
+        {
+          break;
+        }
+        iterPic2++;
+      }
+      if (iterPic2 == pcListPic->end())
+        continue;
+      
+      Picture* pcPicBottom = *(iterPic2);
 
       if ( pcPicTop->neededForOutput && pcPicBottom->neededForOutput &&
           (numPicsNotYetDisplayed >  maxNumReorderPicsHighestTid || dpbFullness > maxDecPicBufferingHighestTid) &&
-          (!(pcPicTop->getPOC()%2) && pcPicBottom->getPOC() == pcPicTop->getPOC()+1) &&
-          (pcPicTop->getPOC() == m_iPOCLastDisplay+1 || m_iPOCLastDisplay < 0))
+          pcPicBottom->getPOC() >= m_iPOCLastDisplay )
       {
         // write to file
         numPicsNotYetDisplayed = numPicsNotYetDisplayed-2;
@@ -1223,14 +1234,24 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
     {
       Picture *pcPicTop = *iterPic;
       iterPic++;
-      Picture *pcPicBottom = iterPic == endPic ? pcPicTop : *iterPic;
 
-      if( pcPicTop->layerId != layerId && layerId != NOT_VALID )
+      if (pcPicTop == nullptr || (pcPicTop->layerId != layerId && layerId != NOT_VALID))
       {
         continue;
       }
 
-      if ( pcPicTop->neededForOutput && pcPicBottom->neededForOutput && !(pcPicTop->getPOC()%2) && (pcPicBottom->getPOC() == pcPicTop->getPOC()+1) )
+      PicList::iterator iterPic2 = iterPic;
+      while (iterPic2 != endPic)
+      {
+        if ((*iterPic2) != nullptr && (*iterPic2)->layerId == pcPicTop->layerId && (*iterPic2)->fieldPic && (*iterPic2)->topField != pcPicTop->topField)
+        {
+          break;
+        }
+        iterPic2++;
+      }
+      Picture *pcPicBottom = iterPic2 == endPic ? nullptr : *iterPic2;
+
+      if (pcPicBottom != nullptr && pcPicTop->neededForOutput && pcPicBottom->neededForOutput)
       {
           // write to file
           if ( !m_reconFileName.empty() )
@@ -1271,8 +1292,7 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
         iterPic--;
         *iterPic = nullptr;
         iterPic++;
-        *iterPic = nullptr;
-        iterPic++;
+        *iterPic2 = nullptr;
       }
       else
       {
