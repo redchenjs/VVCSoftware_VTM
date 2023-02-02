@@ -1319,7 +1319,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
 #endif
 
 #if JVET_AC0127
-    if(sei->m_purpose & 0x02 != 0)
+    if((sei->m_purpose & 0x02) != 0)
 #else
     if(sei->m_purpose == 2 || sei->m_purpose == 4)
 #endif
@@ -1333,7 +1333,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     }
 #endif
 #if JVET_AC0127
-    if(sei->m_purpose & 0x04 != 0)
+    if((sei->m_purpose & 0x04) != 0)
 #else
     if(sei->m_purpose == 3 || sei->m_purpose == 4)
 #endif
@@ -1371,7 +1371,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       CHECK(!(sei->m_picHeightInLumaSamples >= croppedHeight && sei->m_picHeightInLumaSamples <= croppedHeight * 16 - 1), "m_picHeightInLumaSamples shall be in the range of croppedHeight to croppedHeight * 16 - 1");
     }
 #if JVET_AC0127
-    if(sei->m_purpose & 0x08 != 0)
+    if((sei->m_purpose & 0x08) != 0)
 #else
     if (sei->m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING)
 #endif
