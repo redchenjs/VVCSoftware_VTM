@@ -1680,6 +1680,9 @@ void SEIWriter::xWriteSEIGreenMetadataInfo(const SEIGreenMetadataInfo& sei)
 
 void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics &sei)
 {
+#if JVET_AC0127
+  xWriteCode(sei.m_purpose, 16, "nnpfc_purpose");
+#endif
   xWriteUvlc(sei.m_id, "nnpfc_id");
   xWriteUvlc(sei.m_modeIdc, "nnpfc_mode_idc");
   if (sei.m_modeIdc == POST_FILTER_MODE::URI)
@@ -1694,9 +1697,18 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
   xWriteFlag(sei.m_purposeAndFormattingFlag, "nnpfc_purpose_and_formatting_flag");
   if (sei.m_purposeAndFormattingFlag)
   {
+#if !JVET_AC0127
     xWriteUvlc(sei.m_purpose, "nnpfc_purpose");
+#endif
+#if JVET_AC0127
+    xWriteUvlc(sei.m_numberInputDecodedPicturesMinus1, "nnpfc_number_of_input_pictures_minus1");
+#endif
 
+#if JVET_AC0127
+    if((sei.m_purpose & 0x02) != 0)
+#else
     if(sei.m_purpose == 2 || sei.m_purpose == 4)
+#endif
     {
       xWriteFlag(sei.m_outSubCFlag, "nnpfc_out_sub_c_flag");
     }
@@ -1706,18 +1718,38 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteCode(uint32_t(sei.m_outColourFormatIdc), 2, "nnpfc_out_colour_format_idc");
     }
 #endif
+#if JVET_AC0127
+    if((sei.m_purpose & 0x04) != 0)
+#else
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
+#endif
     {
       xWriteUvlc(sei.m_picWidthInLumaSamples, "nnpfc_pic_width_in_luma_samples");
       xWriteUvlc(sei.m_picHeightInLumaSamples, "nnpfc_pic_height_in_luma_samples");
     }
-    if (sei.m_purpose == NNPC_PurposeType::CHROMA_UPSAMPLING) 
+
+#if JVET_AC0127
+    if((sei.m_purpose & 0x08) != 0)
+#else
+    if (sei.m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING) 
+#endif
     {
+#if JVET_AC0127
+      for (int i = 0; i < sei.m_numberInputDecodedPicturesMinus1; ++i)
+      {
+        xWriteUvlc(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");
+      }
+      for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; ++i)
+      {
+        xWriteFlag(sei.m_inputPicOutputFlag[i], "nnpfc_input_pic_output_flag");
+      }
+#else
       xWriteUvlc(sei.m_numberInputDecodedPicturesMinus2, "nnpfc_number_of_input_pictures_minus2");
       for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus2; ++i)
       {
         xWriteUvlc(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");
       }
+#endif
     }
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
