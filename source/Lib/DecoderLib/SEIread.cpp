@@ -121,16 +121,22 @@ static inline void output_sei_message_header(SEI &sei, std::ostream *pDecodedMes
  * unmarshal a single SEI message from bitstream bs
  */
  // note: for independent parsing no parameter set should not be required here
-void SEIReader::parseSEImessage(InputBitstream* bs, SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream)
+bool SEIReader::parseSEImessage(InputBitstream* bs, SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream)
 {
   SEIMessages   seiListInCurNalu;
   setBitstream(bs);
   CHECK(m_pcBitstream->getNumBitsUntilByteAligned(), "Bitstream not aligned");
 
+  bool atLeastOneSeiMessageRead = false;
+
   do
   {
-    xReadSEImessage(seis, nalUnitType, nuh_layer_id, temporalId, vps, sps, hrd, pDecodedMessageOutputStream);
-    seiListInCurNalu.push_back(seis.back());
+    const bool seiMessageRead = xReadSEImessage(seis, nalUnitType, nuh_layer_id, temporalId, vps, sps, hrd, pDecodedMessageOutputStream);
+    if (seiMessageRead)
+    {
+      seiListInCurNalu.push_back(seis.back());
+      atLeastOneSeiMessageRead = true;
+    }
     /* SEI messages are an integer number of bytes, something has failed
     * in the parsing if bitstream not byte-aligned */
     CHECK(m_pcBitstream->getNumBitsUntilByteAligned(), "Bitstream not aligned");
@@ -145,6 +151,8 @@ void SEIReader::parseSEImessage(InputBitstream* bs, SEIMessages& seis, const Nal
         "payloadType equal to 1 (PT), the SEI NAL unit shall not contain any other SEI message with payloadType not equal 1.");
 
   xReadRbspTrailingBits();
+
+  return atLeastOneSeiMessageRead;
 }
 
 void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream *bs, const NalUnitType nalUnitType,
@@ -211,7 +219,7 @@ void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitTy
   }
 }
 
-void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream)
+bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream)
 {
 #if ENABLE_TRACING
   xTraceSEIHeader();
@@ -566,6 +574,8 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
   /* restore primary bitstream for sei_message */
   delete getBitstream();
   setBitstream(bs);
+
+  return sei != nullptr;
 }
 
 void SEIReader::xParseSEIFillerPayload(SEIFillerPayload &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
@@ -798,19 +808,22 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
   for (int32_t i=0; i<sei.m_snNumSEIs; i++)
   {
     SEIMessages tmpSEIs;
-    xReadSEImessage(tmpSEIs, nalUnitType, nuhLayerId, 0, vps, sps, m_nestedHrd, decodedMessageOutputStream);
-    if (tmpSEIs.front()->payloadType() == SEI::PayloadType::BUFFERING_PERIOD)
+    const bool seiMessageRead = xReadSEImessage(tmpSEIs, nalUnitType, nuhLayerId, 0, vps, sps, m_nestedHrd, decodedMessageOutputStream);
+    if (seiMessageRead)
     {
-      SEIBufferingPeriod *bp = (SEIBufferingPeriod*) tmpSEIs.front();
-      m_nestedHrd.setBufferingPeriodSEI(bp);
-      const SEIBufferingPeriod *nonNestedBp = hrd.getBufferingPeriodSEI();
-      if (nonNestedBp)
+      if (tmpSEIs.front()->payloadType() == SEI::PayloadType::BUFFERING_PERIOD)
       {
-        checkBPSyntaxElementLength(nonNestedBp, bp);
+        SEIBufferingPeriod *bp = (SEIBufferingPeriod*)tmpSEIs.front();
+        m_nestedHrd.setBufferingPeriodSEI(bp);
+        const SEIBufferingPeriod *nonNestedBp = hrd.getBufferingPeriodSEI();
+        if (nonNestedBp)
+        {
+          checkBPSyntaxElementLength(nonNestedBp, bp);
+        }
       }
+      sei.m_nestedSEIs.push_back(tmpSEIs.front());
+      tmpSEIs.clear();
     }
-    sei.m_nestedSEIs.push_back(tmpSEIs.front());
-    tmpSEIs.clear();
   }
 
   const GeneralHrdParams *generalHrd = vps && vps->getVPSGeneralHrdParamsPresentFlag()
