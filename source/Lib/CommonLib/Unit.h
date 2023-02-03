@@ -454,6 +454,8 @@ struct PredictionUnit : public UnitArea, public IntraPredictionData, public Inte
   const MotionInfo& getMotionInfo( const Position& pos ) const;
   MotionBuf         getMotionBuf();
   CMotionBuf        getMotionBuf() const;
+
+  bool isAffineBlock() const {return cu->affine && mergeType != MergeType::SUBPU_ATMVP;}
 };
 
 // ---------------------------------------------------------------------------

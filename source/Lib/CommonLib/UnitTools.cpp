@@ -2281,8 +2281,7 @@ bool PU::addAffineMVPCandUnscaled( const PredictionUnit &pu, const RefPicList &r
 
   neibPU = cs.getPURestricted( neibPos, pu, pu.chType );
 
-  if (neibPU == nullptr || !CU::isInter(*neibPU->cu) || !neibPU->cu->affine
-      || neibPU->mergeType != MergeType::DEFAULT_N)
+  if (neibPU == nullptr || !neibPU->isAffineBlock())
   {
     return false;
   }
@@ -3223,7 +3222,7 @@ const int getAvailableAffineNeighboursForLeftPredictor( const PredictionUnit &pu
   const unsigned plevel = pu.cs->sps->getLog2ParallelMergeLevelMinus2() + 2;
 
   const PredictionUnit *puLeftBottom = pu.cs->getPURestricted( posLB.offset( -1, 1 ), pu, pu.chType );
-  if (puLeftBottom && puLeftBottom->cu->affine && puLeftBottom->mergeType == MergeType::DEFAULT_N
+  if (puLeftBottom && puLeftBottom->isAffineBlock()
       && PU::isDiffMER(pu.lumaPos(), posLB.offset(-1, 1), plevel))
   {
     npu[num++] = puLeftBottom;
@@ -3231,7 +3230,7 @@ const int getAvailableAffineNeighboursForLeftPredictor( const PredictionUnit &pu
   }
 
   const PredictionUnit* puLeft = pu.cs->getPURestricted( posLB.offset( -1, 0 ), pu, pu.chType );
-  if (puLeft && puLeft->cu->affine && puLeft->mergeType == MergeType::DEFAULT_N
+  if (puLeft && puLeft->isAffineBlock()
       && PU::isDiffMER(pu.lumaPos(), posLB.offset(-1, 0), plevel))
   {
     npu[num++] = puLeft;
@@ -3249,7 +3248,7 @@ const int getAvailableAffineNeighboursForAbovePredictor( const PredictionUnit &p
   int num = numAffNeighLeft;
 
   const PredictionUnit* puAboveRight = pu.cs->getPURestricted( posRT.offset( 1, -1 ), pu, pu.chType );
-  if (puAboveRight && puAboveRight->cu->affine && puAboveRight->mergeType == MergeType::DEFAULT_N
+  if (puAboveRight && puAboveRight->isAffineBlock()
       && PU::isDiffMER(pu.lumaPos(), posRT.offset(1, -1), plevel))
   {
     npu[num++] = puAboveRight;
@@ -3257,7 +3256,7 @@ const int getAvailableAffineNeighboursForAbovePredictor( const PredictionUnit &p
   }
 
   const PredictionUnit* puAbove = pu.cs->getPURestricted( posRT.offset( 0, -1 ), pu, pu.chType );
-  if (puAbove && puAbove->cu->affine && puAbove->mergeType == MergeType::DEFAULT_N
+  if (puAbove && puAbove->isAffineBlock()
       && PU::isDiffMER(pu.lumaPos(), posRT.offset(0, -1), plevel))
   {
     npu[num++] = puAbove;
@@ -3265,7 +3264,7 @@ const int getAvailableAffineNeighboursForAbovePredictor( const PredictionUnit &p
   }
 
   const PredictionUnit *puAboveLeft = pu.cs->getPURestricted( posLT.offset( -1, -1 ), pu, pu.chType );
-  if (puAboveLeft && puAboveLeft->cu->affine && puAboveLeft->mergeType == MergeType::DEFAULT_N
+  if (puAboveLeft && puAboveLeft->isAffineBlock()
       && PU::isDiffMER(pu.lumaPos(), posLT.offset(-1, -1), plevel))
   {
     npu[num++] = puAboveLeft;
