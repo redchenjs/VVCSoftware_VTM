@@ -57,7 +57,7 @@
 //########### place macros to be removed in next cycle below this line ###############
 
 #define JVET_AC0139_UNIFIED_MERGE                         1
-
+#define JVET_AC0096                                       1
 
 //########### place macros to be be kept below this line ###############
 

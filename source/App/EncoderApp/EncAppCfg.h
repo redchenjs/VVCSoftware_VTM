@@ -956,6 +956,15 @@ protected:
   int         m_qpOffsetChromaRPR;
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
+#if JVET_AC0096
+  int         m_rprSwitchingResolutionOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
+  int         m_rprSwitchingQPOffsetOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
+  int         m_rprSwitchingListSize;
+  bool        m_rprFunctionalityTestingEnabledFlag;
+  bool        m_rprPopulatePPSatIntraFlag;
+  int         m_rprSwitchingSegmentSize;
+  double      m_rprSwitchingTime;
+#endif
   bool        m_resChangeInClvsEnabled;
   double      m_fractionOfFrames;                             ///< encode a fraction of the frames as specified in FramesToBeEncoded
   int         m_switchPocPeriod;
