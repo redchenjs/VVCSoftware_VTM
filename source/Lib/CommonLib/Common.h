@@ -107,29 +107,26 @@ struct Area : public Position, public Size
   }
 
 #if GDR_ENABLED
-  bool overlap(const Area &_area) const
+  bool overlaps(const Area &_area) const
   {
-    Area thisArea = Area(pos(), size());
-
+    // check cases where one area contains the other completely
     if (contains(_area))
-      return false;
-
-    if (_area.contains(thisArea))
-      return false;
-
-    bool topLeft  = contains(_area.topLeft());
-    bool topRight = contains(_area.topRight());
-    bool botLeft  = contains(_area.bottomLeft());
-    bool botRight = contains(_area.bottomRight());
-
-    int sum = (topLeft ? 1 : 0) + (topRight ? 1 : 0) + (botLeft ? 1 : 0) + (botRight ? 1 : 0);
-
-    if (0 < sum && sum < 4)
     {
-      return true;
+      return false;
     }
 
-    return false;
+    if (_area.contains(*this))
+    {
+      return false;
+    }
+
+    // at least one of the corners should be outside here
+    const bool topLeft  = contains(_area.topLeft());
+    const bool topRight = contains(_area.topRight());
+    const bool botLeft  = contains(_area.bottomLeft());
+    const bool botRight = contains(_area.bottomRight());
+
+    return topLeft || topRight || botLeft || botRight;
   }
 #endif
 

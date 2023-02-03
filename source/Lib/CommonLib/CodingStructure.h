@@ -123,17 +123,16 @@ public:
   bool dirtyCrossBTV() const;
 
   bool isClean(const ChannelType effChType) const;
-  bool isClean(const Position &IntPos, RefPicList e, int refIdx) const;
-  bool isClean(const Position &IntPos, const Picture* const ref_pic) const;
-  bool isClean(const Position &IntPos, Mv FracMv) const;
-  bool isClean(const Position &IntPos, Mv FracMv, const Picture* const refPic) const;
-  bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, int isProf=0) const;
-  bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, bool ibc) const;
-  bool isClean(const Position &IntPos, const ChannelType effChType) const;
+  bool isClean(const Position &intPos, RefPicList e, int refIdx) const;
+  bool isClean(const Position &intPos, const Picture* const ref_pic) const;
+  bool isClean(const Position &intPos, const Mv &fracMv) const;
+  bool isClean(const Position &intPos, const Mv &fracMv, const Picture* const refPic) const;
+  bool isClean(const Position &intPos, const Mv &fracMv, RefPicList e, int refIdx, bool isSubPu = false) const;
+  bool isClean(const Position &intPos, const ChannelType effChType) const;
   bool isClean(const int x, const int y, const ChannelType effChType) const;
   bool isClean(const Area &area, const ChannelType effChType) const;
 
-  bool isSubPuClean(PredictionUnit &pu, const Mv *mv) const;
+  bool isSubPuClean(const PredictionUnit &pu, const Mv *mv) const;
 #endif
   void rebindPicBufs();
 

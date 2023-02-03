@@ -5194,9 +5194,9 @@ void InterSearch::xSetSearchRange(const PredictionUnit &pu, const Mv &cMvPred, c
       const int scaled_endx = pu.cs->slice->getRefPic(eRefPicList, refIdx)->cs->picture->gdrParam.verBoundary
                               << iMvShift;
 
-      const Position OrigFracPos = Position(LastPos.x << iMvShift, LastPos.y << iMvShift);
-      const int last_luma_pos = ((OrigFracPos.x / iMvLumaFrac)   * iMvLumaFrac) + cFPMvPred.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << iMvShift));
-      const int last_chroma_pos = ((OrigFracPos.x / iMvChromaFrac) * iMvChromaFrac) + cFPMvPred.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << iMvShift));
+      const Position origFracPos = Position(LastPos.x << iMvShift, LastPos.y << iMvShift);
+      const int last_luma_pos = ((origFracPos.x / iMvLumaFrac)   * iMvLumaFrac) + cFPMvPred.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << iMvShift));
+      const int last_chroma_pos = ((origFracPos.x / iMvChromaFrac) * iMvChromaFrac) + cFPMvPred.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << iMvShift));
 
       const int last_pel_pos = std::max(last_luma_pos, last_chroma_pos);
 

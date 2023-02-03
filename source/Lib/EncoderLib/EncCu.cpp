@@ -3859,7 +3859,7 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
             Mv  mv   = mergeCtx.mvFieldNeighbours[mergeCand][l].mv;
             int ridx = mergeCtx.mvFieldNeighbours[mergeCand][l].refIdx;
 
-            mergeCtx.mvValid[mergeCand][l] = tempCS->isClean(pu.Y().bottomRight(), mv, l, ridx, true);
+            mergeCtx.mvValid[mergeCand][l] = tempCS->isClean(pu.Y().bottomRight(), mv, l, ridx);
 
             isSolid &= mergeCtx.mvSolid[mergeCand][l];
             isValid &= mergeCtx.mvValid[mergeCand][l];
@@ -3952,7 +3952,7 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
                     Mv  mv     = mergeCtx.mvFieldNeighbours[mergeCand][l].mv;
                     int refIdx = mergeCtx.mvFieldNeighbours[mergeCand][l].refIdx;
 
-                    mergeCtx.mvValid[mergeCand][l] = cs.isClean(pu.Y().bottomRight(), mv, l, refIdx, true);
+                    mergeCtx.mvValid[mergeCand][l] = cs.isClean(pu.Y().bottomRight(), mv, l, refIdx);
                   }
                 }
               }
