@@ -1435,7 +1435,8 @@ double EncAdaptiveLoopFilter::getFilterCoeffAndCost(CodingStructure &cs, double 
     if( isLuma( channel ) )
     {
       // Evaluate cost of signaling filter set index for convergence of filters enabled flag / filter derivation
-      assert(cs.slice->getPic()->getAlfModes(COMPONENT_Y)[ctuIdx] == AlfMode::LUMA0);
+      assert(cs.slice->getPic()->getAlfModes(COMPONENT_Y)[ctuIdx] == AlfMode::LUMA0
+             || cs.slice->getPic()->getAlfModes(COMPONENT_Y)[ctuIdx] == AlfMode::OFF);
       assert( cs.slice->getNumAlfApsIdsLuma() == 1 );
       m_CABACEstimator->codeAlfCtuFilterIndex(cs, ctuIdx, m_alfParamTemp.enabledFlag[COMPONENT_Y]);
     }
