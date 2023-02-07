@@ -1731,7 +1731,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 #if BIT_MASKING_NNPFC_PURPOSE
     if((sei.m_purpose & 0x08) != 0)
 #else
-    if (sei.m_purpose == NNPC_PurposeType::CHROMA_UPSAMPLING) 
+    if (sei.m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING) 
 #endif
     {
 #if BIT_MASKING_NNPFC_PURPOSE
