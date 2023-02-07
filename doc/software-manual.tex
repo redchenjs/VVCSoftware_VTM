@@ -5707,12 +5707,13 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   Specifies the purpose of the \emph{i}-th neural network post-filter.
   \par
   \begin{tabular}{cp{0.35\textwidth}}
-    0 & Unknown or unspecified \\
-    1 & Visual quality improvement \\
-    2 & Chroma upsampling from the 4:2:0 chroma format to the 4:2:2 or 4:4:4 chroma format, or from the 4:2:2 chroma format to the 4:4:4 chroma format \\
-    3 & Increasing the width or height of the cropped decoded output picture without changing the chroma format \\
-    4 & Increasing the width or height of the cropped decoded output picture and upsampling the chroma format \\
-    5 & Frame rate upsampling \\
+    0 & Determined by the application \\
+    (nnpfc\_purpose \& 0x01)  !=  0 & Visual quality improvement \\
+    (nnpfc\_purpose \& 0x02)  !=  0 & Chroma upsampling from the 4:2:0 chroma format to the 4:2:2 or 4:4:4 chroma format, or from the 4:2:2 chroma format to the 4:4:4 chroma format \\
+    (nnpfc\_purpose \& 0x04)  !=  0 & Resolution upsampling (increasing the width or height) \\
+    (nnpfc\_purpose \& 0x08)  !=  0 & Frame rate upsampling \\
+    (nnpfc\_purpose \& 0x10)  !=  0 & Bit depth upsampling \\
+    (nnpfc\_purpose \& 0x20)  !=  0 & Colourization \\
   \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsOutSubCFlag\emph{i}} &
@@ -5724,6 +5725,16 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
       false & outSubWidthC is equal to 2 and outSubHeightC is equal to 1 \\
     \end{tabular}
     \\
+  \\
+  \Option{SEINNPostFilterCharacteristicsOutColourFormatIdc\emph{i}} &
+  \Default{0} &
+  Specifies the colour format of the NNPF output.
+  \par
+  \begin{tabular}{cp{0.35\textwidth}}
+    1 & The colour format of the NNPF output is the 4:2:0 format \\
+    2 & The colour format of the NNPF output is the 4:2:2 format \\
+    3 & The colour format of the NNPF output is the 4:4:4 format \\
+  \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsPicWidthInLumaSamples\emph{i}} &
   \Default{0} &
