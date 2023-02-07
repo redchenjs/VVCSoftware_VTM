@@ -772,13 +772,13 @@ protected:
 
   bool                  m_nnPostFilterSEIActivationEnabled;
   uint32_t              m_nnPostFilterSEIActivationId;
-  #if BIT_MASKING_NNPFC_PURPOSE
+  #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   #else
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[MAX_NUM_NN_POST_FILTERS];
   #endif
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
-  #if BIT_MASKING_NNPFC_PURPOSE
+  #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   #endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;

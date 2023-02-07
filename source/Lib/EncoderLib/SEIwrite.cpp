@@ -1680,7 +1680,7 @@ void SEIWriter::xWriteSEIGreenMetadataInfo(const SEIGreenMetadataInfo& sei)
 
 void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics &sei)
 {
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   xWriteCode(sei.m_purpose, 16, "nnpfc_purpose");
 #endif
   xWriteUvlc(sei.m_id, "nnpfc_id");
@@ -1697,14 +1697,14 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
   xWriteFlag(sei.m_purposeAndFormattingFlag, "nnpfc_purpose_and_formatting_flag");
   if (sei.m_purposeAndFormattingFlag)
   {
-#if !BIT_MASKING_NNPFC_PURPOSE
+#if !JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     xWriteUvlc(sei.m_purpose, "nnpfc_purpose");
 #endif
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     xWriteUvlc(sei.m_numberInputDecodedPicturesMinus1, "nnpfc_number_of_input_pictures_minus1");
 #endif
 
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei.m_purpose & 0x02) != 0)
 #else
     if(sei.m_purpose == 2 || sei.m_purpose == 4)
@@ -1718,7 +1718,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteCode(uint32_t(sei.m_outColourFormatIdc), 2, "nnpfc_out_colour_format_idc");
     }
 #endif
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei.m_purpose & 0x04) != 0)
 #else
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
@@ -1728,13 +1728,13 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_picHeightInLumaSamples, "nnpfc_pic_height_in_luma_samples");
     }
 
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei.m_purpose & 0x08) != 0)
 #else
     if (sei.m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING) 
 #endif
     {
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       for (int i = 0; i < sei.m_numberInputDecodedPicturesMinus1; ++i)
       {
         xWriteUvlc(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");

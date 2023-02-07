@@ -2650,7 +2650,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
   uint32_t val;
 
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     sei_read_code(pDecodedMessageOutputStream, 16, val, "nnpfc_purpose");
     sei.m_purpose = val;
     CHECK(sei.m_purpose >= 64 && sei.m_purpose <= 65535, "Reserved nnpfc_purpose value");
@@ -2685,7 +2685,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
   if (sei.m_purposeAndFormattingFlag)
   {
-#if !BIT_MASKING_NNPFC_PURPOSE
+#if !JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_purpose");
     sei.m_purpose = val;
 #endif
@@ -2709,12 +2709,12 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       subHeightC = 1;
     }
 
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_number_of_input_pictures_minus1");
       sei.m_numberInputDecodedPicturesMinus1 = val;
 #endif
 
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei.m_purpose & 0x02) != 0)
 #else
     if(sei.m_purpose == 2 || sei.m_purpose == 4)
@@ -2745,7 +2745,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     }
 #endif
 
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     CHECK(((subWidthC == 1) && (subHeightC == 1)) && ((sei.m_purpose & 0x02) != 0),
           "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose & 0x02 shall be equal to 0");
 #else
@@ -2774,7 +2774,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     }
 #endif
 
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei.m_purpose & 0x04) != 0)
 #else
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
@@ -2786,13 +2786,13 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_picHeightInLumaSamples = val;
     }
 
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei.m_purpose & 0x08) != 0)
 #else
     if(sei.m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING)
 #endif
     {
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       CHECK(sei.m_numberInputDecodedPicturesMinus1 <= 0, "If nnpfc_purpose is FRAME_RATE_UPSAMPLING, nnpfc_num_input_pics_minus1 shall be greater than 0");
       sei.m_numberInterpolatedPictures.resize(sei.m_numberInputDecodedPicturesMinus1);
 #else
@@ -2820,7 +2820,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       }
 #endif
 
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       for (int i = 0; i <= sei.m_numberInterpolatedPictures.size(); i++)
       {
         sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_input_pic_output_flag");
@@ -2868,7 +2868,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
     sei.m_outOrderIdc = val;
-#if BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     CHECK(((sei.m_purpose & 0x02) != 0)  && (sei.m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 3.")
 #endif
 
