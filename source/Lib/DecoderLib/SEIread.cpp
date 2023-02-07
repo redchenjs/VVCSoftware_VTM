@@ -2726,7 +2726,11 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     }
     CHECK(((subWidthC == 1) && (subHeightC == 1)) && ((sei.m_purpose == 2) || (sei.m_purpose == 4)),
           "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose shall not be equal to 2 or 4");
-#if NNPFC_NEW_PURPOSE
+
+#if UPDATE_NNPFC_PURPOSE
+    CHECK(((chromaFormatIDC != 0) || (sei.m_purpose & 0x02) != 0) && ((sei.m_purpose & 0x20) != 0),
+          "When ChromaFormatIdc or nnpfc_purpose & 0x02 is not equal to 0, nnpfc_purpose & 0x20 shall be equal to 0");
+
     if((sei.m_purpose & 0x20) != 0)
     {
       sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_out_colour_format_idc");
@@ -2767,11 +2771,25 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_number_of_input_pictures_minus2");
       sei.m_numberInputDecodedPicturesMinus2 = val;
       sei.m_numberInterpolatedPictures.resize(sei.m_numberInputDecodedPicturesMinus2 + 1);
+#if UPDATE_NNPFC_PURPOSE
+      bool allZeroFlag = false;
+      for (int i = 0; i < sei.m_numberInterpolatedPictures.size(); i++)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_interpolated_pictures");
+        sei.m_numberInterpolatedPictures[i] = val;
+        if(sei.m_numberInterpolatedPictures[i] > 0)
+        {
+          allZeroFlag = true;
+        }
+      }
+      CHECK(!allZeroFlag, "At least one value of nnpfc_interpolated_pics[i] shall be greater than 0");
+#else
       for (int i = 0; i < sei.m_numberInterpolatedPictures.size(); i++)
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_interpolated_pictures");
         sei.m_numberInterpolatedPictures[i] = val;
       }
+#endif
     }
 
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");

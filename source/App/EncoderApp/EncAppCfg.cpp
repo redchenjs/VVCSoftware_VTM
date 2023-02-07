@@ -1754,7 +1754,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     outSubWidthCFlag << "SEINNPostFilterCharacteristicsOutSubCFlag" << i;
     opts.addOptions()(outSubWidthCFlag.str(), m_nnPostFilterSEICharacteristicsOutSubCFlag[i], false, "Specifies output chroma format when upsampling");
 
-#if NNPFC_NEW_PURPOSE
+#if UPDATE_NNPFC_PURPOSE
     std::ostringstream outColourFormatIdc;
     outColourFormatIdc << "SEINNPostFilterCharacteristicsOutColourFormatIdc" << i;
     opts.addOptions()(outColourFormatIdc.str(), m_nnPostFilterSEICharacteristicsOutColourFormatIdc[i], 1u, "Specifies output chroma format for colourization purpose");

@@ -1191,7 +1191,7 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsOutSubCFlag(m_nnPostFilterSEICharacteristicsOutSubCFlag[i], i);
       }
-#if NNPFC_NEW_PURPOSE
+#if UPDATE_NNPFC_PURPOSE
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & 0x20) != 0)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsOutColourFormatIdc(m_nnPostFilterSEICharacteristicsOutColourFormatIdc[i], i);
