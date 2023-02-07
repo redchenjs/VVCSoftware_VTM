@@ -1700,7 +1700,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     {
       xWriteFlag(sei.m_outSubCFlag, "nnpfc_out_sub_c_flag");
     }
-#if UPDATE_NNPFC_PURPOSE
+#if JVET_AC0154
     if((sei.m_purpose & 0x20) != 0)
     {
       xWriteCode(sei.m_outColourFormatIdc, 2, "nnpfc_out_colour_format_idc");

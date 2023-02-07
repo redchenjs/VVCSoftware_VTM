@@ -1165,7 +1165,7 @@ public:
     , m_outSubCFlag(0)
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
-#if UPDATE_NNPFC_PURPOSE
+#if JVET_AC0154
     , m_outColourFormatIdc(1)
 #endif
     , m_picWidthInLumaSamples(0)
@@ -1217,7 +1217,7 @@ public:
   bool           m_outSubCFlag;
   uint8_t        m_outSubWidthC;
   uint8_t        m_outSubHeightC;
-  #if UPDATE_NNPFC_PURPOSE
+  #if JVET_AC0154
   uint32_t        m_outColourFormatIdc;
   #endif
   uint32_t       m_picWidthInLumaSamples;
