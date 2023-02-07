@@ -59,7 +59,8 @@
 #define JVET_AC0139_UNIFIED_MERGE                         1
 #define JVET_AC0096                                       1
 #define JVET_AC0154                                       1
-#define JVET_AC0127                                       1 // Combine the picture rate upsampling with other NNPF purposes
+#define BIT_MASKING_NNPFC_PURPOSE                         1 
+
 
 
 //########### place macros to be be kept below this line ###############

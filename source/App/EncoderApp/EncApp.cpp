@@ -1204,13 +1204,13 @@ void EncApp::xInitLibCfg( int layerIdx )
       }
       if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 5)
       {
-#if JVET_AC0127
+#if BIT_MASKING_NNPFC_PURPOSE
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i], i);
 #else
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], i);
 #endif
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInterpolatedPictures( m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i], i);
-#if JVET_AC0127
+#if BIT_MASKING_NNPFC_PURPOSE
         m_cEncLib.setNNPostFilterSEICharacteristicsInputPicOutputFlag( m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i], i);
 #endif    
       }
