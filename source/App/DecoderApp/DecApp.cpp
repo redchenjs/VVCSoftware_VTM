@@ -1034,7 +1034,9 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         iterPic2++;
       }
       if (iterPic2 == pcListPic->end())
+      {
         continue;
+      }
       
       Picture* pcPicBottom = *(iterPic2);
 
