@@ -2437,11 +2437,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     {
       m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].push_back(0);
     }
+
 #if BIT_MASKING_NNPFC_PURPOSE
+    for(int j=0; j<m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size(); ++j)
+    {
+      CHECK(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i][j] > 63, "The value of nnpfc_interpolated_pics[i] shall be in the range of 0 to 63, inclusive");
+    }
     CHECK(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size() < m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] - 1, "Number Interpolated Pictures List must be greater than number of decoder pictures list");
 #else
     CHECK(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size() < m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], "Number Interpolated Pictures List must be greater than number of decoder pictures list");
 #endif
+
 #if BIT_MASKING_NNPFC_PURPOSE
     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i].values;
     if (m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i].size() == 0)
