@@ -1754,6 +1754,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     outSubWidthCFlag << "SEINNPostFilterCharacteristicsOutSubCFlag" << i;
     opts.addOptions()(outSubWidthCFlag.str(), m_nnPostFilterSEICharacteristicsOutSubCFlag[i], false, "Specifies output chroma format when upsampling");
 
+#if NNPFC_NEW_PURPOSE
+    std::ostringstream outColourFormatIdc;
+    outColourFormatIdc << "SEINNPostFilterCharacteristicsOutColourFormatIdc" << i;
+    opts.addOptions()(outColourFormatIdc.str(), m_nnPostFilterSEICharacteristicsOutColourFormatIdc[i], 1u, "Specifies output chroma format for colourization purpose");
+#endif
+
     std::ostringstream picWidthInLumaSamples;
     picWidthInLumaSamples << "SEINNPostFilterCharacteristicsPicWidthInLumaSamples" << i;
     opts.addOptions()(picWidthInLumaSamples.str(), m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], 0u, "Specifies the horizontal luma sample counts of the output picture in the Neural Network Post Filter Characteristics SEI message");

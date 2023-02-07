@@ -1191,6 +1191,12 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsOutSubCFlag(m_nnPostFilterSEICharacteristicsOutSubCFlag[i], i);
       }
+#if NNPFC_NEW_PURPOSE
+      if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & 0x20) != 0)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsOutColourFormatIdc(m_nnPostFilterSEICharacteristicsOutColourFormatIdc[i], i);
+      }
+#endif
       if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 3  || m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 4)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthInLumaSamples   (m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], i);

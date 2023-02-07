@@ -2726,6 +2726,34 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     }
     CHECK(((subWidthC == 1) && (subHeightC == 1)) && ((sei.m_purpose == 2) || (sei.m_purpose == 4)),
           "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose shall not be equal to 2 or 4");
+#if NNPFC_NEW_PURPOSE
+    if((sei.m_purpose & 0x20) != 0)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_out_colour_format_idc");
+      sei.m_outColourFormatIdc = val;
+      CHECK(sei.m_outColourFormatIdc == 0, "The value of nnpfc_out_colour_format_idc shall not be equal to 0");
+      if (sei.m_outColourFormatIdc == 1)
+      {
+        sei.m_outSubWidthC = 2;
+        sei.m_outSubHeightC = 2;
+      }
+      else if (sei.m_outColourFormatIdc == 2)
+      {
+        sei.m_outSubWidthC = 2;
+        sei.m_outSubHeightC = 1;
+      }
+      else if (sei.m_outColourFormatIdc == 3)
+      {
+        sei.m_outSubWidthC = 1;
+        sei.m_outSubHeightC = 1;
+      }
+      if (((sei.m_purpose & 0x02) == 0) && ((sei.m_purpose & 0x20) == 0))
+      {
+        sei.m_outSubWidthC  = subWidthC;
+        sei.m_outSubHeightC = subHeightC;
+      }
+    }
+#endif
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_width_in_luma_samples");

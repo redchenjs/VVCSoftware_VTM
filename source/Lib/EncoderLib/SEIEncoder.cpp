@@ -1312,6 +1312,12 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_outSubCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubCFlag(filterIdx);
     }
+#if NNPFC_NEW_PURPOSE
+    if((sei->m_purpose & 0x20) != 0)
+    {
+      sei->m_outColourFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutColourFormatIdc(filterIdx);
+    }
+#endif
     if(sei->m_purpose == 3 || sei->m_purpose == 4)
     {
       sei->m_picWidthInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(filterIdx);
