@@ -2728,7 +2728,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
           "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose shall not be equal to 2 or 4");
 
 #if JVET_AC0154
-    CHECK(((chromaFormatIDC != 0) || (sei.m_purpose & 0x02) != 0) && ((sei.m_purpose & 0x20) != 0),
+    CHECK(((chromaFormatIDC != ChromaFormat::CHROMA_400) || (sei.m_purpose & 0x02) != 0) && ((sei.m_purpose & 0x20) != 0),
           "When ChromaFormatIdc or nnpfc_purpose & 0x02 is not equal to 0, nnpfc_purpose & 0x20 shall be equal to 0");
 
     if((sei.m_purpose & 0x20) != 0)
@@ -2736,25 +2736,16 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_out_colour_format_idc");
       sei.m_outColourFormatIdc = val;
       CHECK(sei.m_outColourFormatIdc == 0, "The value of nnpfc_out_colour_format_idc shall not be equal to 0");
-      if (sei.m_outColourFormatIdc == 1)
-      {
-        sei.m_outSubWidthC = 2;
-        sei.m_outSubHeightC = 2;
-      }
-      else if (sei.m_outColourFormatIdc == 2)
-      {
-        sei.m_outSubWidthC = 2;
-        sei.m_outSubHeightC = 1;
-      }
-      else if (sei.m_outColourFormatIdc == 3)
-      {
-        sei.m_outSubWidthC = 1;
-        sei.m_outSubHeightC = 1;
-      }
+
       if (((sei.m_purpose & 0x02) == 0) && ((sei.m_purpose & 0x20) == 0))
       {
         sei.m_outSubWidthC  = subWidthC;
         sei.m_outSubHeightC = subHeightC;
+      }
+      else
+      {
+      sei.m_outSubWidthC  = SPS::getWinUnitX((ChromaFormat) sei.m_outColourFormatIdc);
+      sei.m_outSubHeightC = SPS::getWinUnitY((ChromaFormat) sei.m_outColourFormatIdc);
       }
     }
 #endif
