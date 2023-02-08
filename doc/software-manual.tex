@@ -768,6 +768,13 @@ When 1, the Mean Square Error (MSE) values of the entire sequence will also be o
 When 1, weighted PSNR (wPSNR) values of the entire sequence will also be output.
 \\
 
+\Option{PrintRefLayerMetrics} &
+%\ShortOption{\None} &
+\Default{false} &
+When 1, PSNR between current layer and the first reference layer (rescaled to the current layer size if needed) of the entire sequence will also be output. Only the first reference layer is processed for this metric.
+\\
+
+
 \Option{SummaryOutFilename} &
 %\ShortOption{\None} &
 \Default{false} &

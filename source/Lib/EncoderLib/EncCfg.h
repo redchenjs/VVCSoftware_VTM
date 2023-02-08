@@ -1027,7 +1027,8 @@ protected:
   bool        m_avoidIntraInDepLayer;
   bool        m_craAPSreset;
   bool        m_rprRASLtoolSwitch;
-
+  bool        m_refLayerMetricsEnabled;
+  
 public:
   EncCfg()
   {
@@ -2787,6 +2788,8 @@ public:
 #endif
   void        setResChangeInClvsEnabled(bool b)                      { m_resChangeInClvsEnabled = b; }
   bool        isResChangeInClvsEnabled()                        const { return m_resChangeInClvsEnabled; }
+  void        setRefLayerMetricsEnabled(bool b)                      { m_refLayerMetricsEnabled = b; } 
+  bool        isRefLayerMetricsEnabled()                       const { return m_refLayerMetricsEnabled;}
   void        setSwitchPocPeriod( int p )                            { m_switchPocPeriod = p;}
   void        setUpscaledOutput( int b )                             { m_upscaledOutput = b; }
   int         getUpscaledOutput()                              const { return m_upscaledOutput; }
