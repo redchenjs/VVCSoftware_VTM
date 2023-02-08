@@ -1218,7 +1218,7 @@ public:
   uint8_t        m_outSubWidthC;
   uint8_t        m_outSubHeightC;
   #if JVET_AC0154
-  uint32_t        m_outColourFormatIdc;
+  uint32_t       m_outColourFormatIdc;
   #endif
   uint32_t       m_picWidthInLumaSamples;
   uint32_t       m_picHeightInLumaSamples;
