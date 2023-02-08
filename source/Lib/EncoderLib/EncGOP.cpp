@@ -100,6 +100,7 @@ EncGOP::EncGOP()
   }
   ::memset(m_associatedIRAPPOC, 0, sizeof(m_associatedIRAPPOC));
   m_pcDeblockingTempPicYuv = nullptr;
+  m_pcRefLayerRescaledPicYuv = nullptr;
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
   m_ppcFrameOrg             = nullptr;
@@ -192,6 +193,13 @@ void  EncGOP::destroy()
   {
     m_fgAnalyzer.destroy();
   }
+  if (m_pcRefLayerRescaledPicYuv)
+  {
+    m_pcRefLayerRescaledPicYuv->destroy();
+    delete m_pcRefLayerRescaledPicYuv;
+    m_pcRefLayerRescaledPicYuv= nullptr;
+  }
+
 }
 
 void EncGOP::init ( EncLib* pcEncLib )
@@ -5018,6 +5026,49 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     Picture::rescalePicture(scalingRatio, picC, pcPic->getScalingWindow(), upscaledRec, pps->getScalingWindow(), format, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag(), rescaleForDisplay, m_pcCfg->getUpscaleFilerForDisplay());
   }
 
+  Picture* picRefLayer = nullptr;
+  if (m_pcEncLib->isRefLayerMetricsEnabled())
+  {
+    const VPS* vps = pcPic->cs->vps;
+    if (vps && m_pcEncLib->getNumRefLayers(vps->getGeneralLayerIdx(pcPic->layerId)) > 0)
+    {
+      int layerIdx = vps->getGeneralLayerIdx(pcPic->layerId);
+      int refLayerId = vps->getLayerId(vps->getDirectRefLayerIdx(layerIdx,0));
+
+      for (Picture* p: *m_pcEncLib->getListPic())
+      {
+        if (p->layerId == refLayerId  && p->poc == pcPic->poc)
+        {
+          picRefLayer = p;
+          break;
+        }
+      }
+      if (picRefLayer) 
+      {
+        const CPelUnitBuf& pub1 = org;
+        const CPelUnitBuf& pub0 = picRefLayer->getRecoBuf();
+        Window& wScaling0 = picRefLayer->getScalingWindow();
+        Window& wScaling1 = pcPic->getScalingWindow();
+        int w0 = pub0.get(COMPONENT_Y).width - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( wScaling0.getWindowLeftOffset() + wScaling0.getWindowRightOffset() );
+        int h0 = pub0.get(COMPONENT_Y).height - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( wScaling0.getWindowTopOffset()  + wScaling0.getWindowBottomOffset() );
+        int w1 = pub1.get(COMPONENT_Y).width - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( wScaling1.getWindowLeftOffset() + wScaling1.getWindowRightOffset() );
+        int h1 = pub1.get(COMPONENT_Y).height - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( wScaling1.getWindowTopOffset()  + wScaling1.getWindowBottomOffset() );
+        int xScale = ((w0 << ScalingRatio::BITS) + (w1 >> 1)) / w1;
+        int yScale = ((h0 << ScalingRatio::BITS) + ( h1 >> 1 )) / h1;
+        ScalingRatio scalingRatio = { xScale, yScale };          
+      
+        if (m_pcRefLayerRescaledPicYuv == nullptr)
+        {
+          m_pcRefLayerRescaledPicYuv = new PelStorage();
+          m_pcRefLayerRescaledPicYuv->create(pub1.chromaFormat, Area(Position(), pub1.get(COMPONENT_Y)));
+        }
+
+        Picture::rescalePicture( scalingRatio, pub0, wScaling0, *m_pcRefLayerRescaledPicYuv, wScaling1, format, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag() );
+        m_pcEncLib->setRefLayerRescaledAvailable(true);
+      }
+    }
+  }
+
   for (int comp = 0; comp < ::getNumberValidComponents(formatD); comp++)
   {
     const ComponentID compID = ComponentID(comp);
@@ -5091,6 +5142,17 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 
       upscaledPSNR[comp] = upscaledSSD ? 10.0 * log10( (double)maxval * maxval * upscaledWidth * upscaledHeight / (double)upscaledSSD ) : 999.99;
     }
+    else if (picRefLayer)
+    {
+      const CPelBuf& p = m_pcRefLayerRescaledPicYuv->get(compID);
+      const CPelBuf& o = org.get(compID);
+#if ENABLE_QPA
+      const uint64_t upscaledSSD = xFindDistortionPlane(p, o, useWPSNR ? bitDepth : 0, ::getComponentScaleX(compID, format), ::getComponentScaleY(compID, format));
+#else
+      const uint64_t upscaledSSD = xFindDistortionPlane(p, o, 0);
+#endif
+      upscaledPSNR[comp] = upscaledSSD ? 10.0 * log10((double) fRefValue / (double) upscaledSSD) : 999.99;
+     }
   }
 
 #if EXTENSION_360_VIDEO
@@ -5353,6 +5415,11 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     {
       msg( NOTICE, " [Y2 %6.4lf dB  U2 %6.4lf dB  V2 %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr] );
     }
+    else if (m_pcEncLib->isRefLayerRescaledAvailable())
+    {
+      msg(NOTICE, " [Y2 %6.4lf dB  U2 %6.4lf dB  V2 %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr]);
+    } 
+
   }
   else if( g_verbosity >= INFO )
   {

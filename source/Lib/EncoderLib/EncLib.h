@@ -143,6 +143,7 @@ public:
   RPLList                  *getRplList(RefPicList l) { return &m_rplLists[l]; }
   uint32_t                  getNumRpl(RefPicList l) const { return m_rplLists[l].getNumberOfReferencePictureLists(); }
   int                       m_gopRprPpsId;
+  bool                      m_refLayerRescaledAvailable;
 protected:
   void  xGetNewPicBuffer  ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Picture*& rpcPic, int ppsId ); ///< get picture buffer which will be processed. If ppsId<0, then the ppsMap will be queried for the first match.
   void  xInitOPI(OPI& opi); ///< initialize Operating point Information (OPI) from encoder options
@@ -190,6 +191,8 @@ public:
   RdCost*                 getRdCost             ()              { return  &m_cRdCost;              }
   CtxPool                *getCtxCache() { return &m_ctxPool; }
   RateCtrl*               getRateCtrl           ()              { return  &m_cRateCtrl;            }
+  void                    setRefLayerRescaledAvailable(bool b)  { m_refLayerRescaledAvailable = b; }
+  bool                    isRefLayerRescaledAvailable() const   { return m_refLayerRescaledAvailable; }
 
 #if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct getFeatureCounter(){return m_featureCounter;}
@@ -240,8 +243,9 @@ public:
   void printSummary(bool isField)
   {
     m_cGOPEncoder.printOutSummary(m_codedPicCount, isField, m_printMSEBasedSequencePSNR, m_printSequenceMSE,
-                                  m_printMSSSIM, m_printHexPsnr, m_resChangeInClvsEnabled,
+                                  m_printMSSSIM, m_printHexPsnr, (m_resChangeInClvsEnabled || m_refLayerRescaledAvailable),
                                   m_spsMap.getFirstPS()->getBitDepths(), m_layerId);
+
   }
 
   int getLayerId() const { return m_layerId; }

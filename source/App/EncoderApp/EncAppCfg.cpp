@@ -1676,6 +1676,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "EnableOperatingPointInformation",                m_OPIEnabled,                             false, "Enables writing of Operating Point Information (OPI)" )
   ( "MaxTemporalLayer",                               m_maxTemporalLayer,                         500, "Maximum temporal layer to be signalled in OPI" )
   ( "TargetOutputLayerSet",                           m_targetOlsIdx,                             500, "Target output layer set index to be signalled in OPI" )
+  ( "PrintRefLayerMetrics",                           m_refMetricsEnabled,                      false, "0 (default) do not print ref layer metrics, 1 = print ref layer metrics based on current layer source")
   ;
   opts.addOptions()
   ( "MaxSublayers",                                   m_maxSublayers,                               7, "Max number of Sublayers")

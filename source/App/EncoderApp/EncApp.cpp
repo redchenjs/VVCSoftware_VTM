@@ -287,6 +287,8 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setValidFrames(m_firstValidFrame, m_lastValidFrame);
   m_cEncLib.setAvoidIntraInDepLayer                              ( m_avoidIntraInDepLayer );
 
+  m_cEncLib.setRefLayerMetricsEnabled(m_refMetricsEnabled);
+  m_cEncLib.setRefLayerRescaledAvailable(false);
   //====== SPS constraint flags =======
   m_cEncLib.setGciPresentFlag                                    ( m_gciPresentFlag );
   if (m_cEncLib.getGciPresentFlag())
