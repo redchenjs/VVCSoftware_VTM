@@ -1313,7 +1313,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_outSubCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubCFlag(filterIdx);
     }
 #if JVET_AC0154
-    if((sei->m_purpose & 0x20) != 0)
+    if((sei->m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
     {
       sei->m_outColourFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutColourFormatIdc(filterIdx);
     }
