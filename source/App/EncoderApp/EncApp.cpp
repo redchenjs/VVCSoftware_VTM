@@ -1188,7 +1188,7 @@ void EncApp::xInitLibCfg( int layerIdx )
     {
       m_cEncLib.setNNPostFilterSEICharacteristicsPurpose                 (m_nnPostFilterSEICharacteristicsPurpose[i], i);
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-      if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & 0x02) != 0)
+      if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
 #else
       if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 2  || m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 4)
 #endif
@@ -1202,7 +1202,7 @@ void EncApp::xInitLibCfg( int layerIdx )
       }
 #endif
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-      if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & 0x04) != 0)
+      if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
 #else
       if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 3  || m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 4)
 #endif
@@ -1211,7 +1211,7 @@ void EncApp::xInitLibCfg( int layerIdx )
         m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightInLumaSamples  (m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], i);
       }
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-      if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & 0x08) != 0)
+      if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
 #else
       if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 5)
 #endif

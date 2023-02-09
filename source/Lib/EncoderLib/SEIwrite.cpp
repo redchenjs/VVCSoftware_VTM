@@ -1705,7 +1705,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 #endif
 
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    if((sei.m_purpose & 0x02) != 0)
+    if((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
 #else
     if(sei.m_purpose == 2 || sei.m_purpose == 4)
 #endif
@@ -1719,7 +1719,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
 #endif
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    if((sei.m_purpose & 0x04) != 0)
+    if((sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
 #else
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
 #endif
@@ -1729,7 +1729,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
 
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    if((sei.m_purpose & 0x08) != 0)
+    if((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
 #else
     if (sei.m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING) 
 #endif

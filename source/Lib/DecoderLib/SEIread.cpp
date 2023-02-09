@@ -2715,7 +2715,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #endif
 
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    if((sei.m_purpose & 0x02) != 0)
+    if((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
 #else
     if(sei.m_purpose == 2 || sei.m_purpose == 4)
 #endif
@@ -2746,7 +2746,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #endif
 
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    CHECK(((subWidthC == 1) && (subHeightC == 1)) && ((sei.m_purpose & 0x02) != 0),
+    CHECK(((subWidthC == 1) && (subHeightC == 1)) && ((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0),
           "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose & 0x02 shall be equal to 0");
 #else
     CHECK(((subWidthC == 1) && (subHeightC == 1)) && ((sei.m_purpose == 2) || (sei.m_purpose == 4)),
@@ -2775,7 +2775,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #endif
 
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    if((sei.m_purpose & 0x04) != 0)
+    if((sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
 #else
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
 #endif
@@ -2787,7 +2787,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     }
 
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    if((sei.m_purpose & 0x08) != 0)
+    if((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
 #else
     if(sei.m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING)
 #endif
@@ -2869,7 +2869,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
     sei.m_outOrderIdc = val;
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    CHECK(((sei.m_purpose & 0x02) != 0)  && (sei.m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 3.")
+    CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)  && (sei.m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 3.")
 #endif
 
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_constant_patch_size_flag");
