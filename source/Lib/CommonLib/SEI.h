@@ -1166,7 +1166,7 @@ public:
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
 #if JVET_AC0154
-    , m_outColourFormatIdc(1)
+    , m_outColourFormatIdc(ChromaFormat::CHROMA_420)
 #endif
     , m_picWidthInLumaSamples(0)
     , m_picHeightInLumaSamples(0)
@@ -1218,7 +1218,7 @@ public:
   uint8_t        m_outSubWidthC;
   uint8_t        m_outSubHeightC;
   #if JVET_AC0154
-  uint32_t       m_outColourFormatIdc;
+  ChromaFormat   m_outColourFormatIdc;
   #endif
   uint32_t       m_picWidthInLumaSamples;
   uint32_t       m_picHeightInLumaSamples;

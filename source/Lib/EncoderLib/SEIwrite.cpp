@@ -1703,7 +1703,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 #if JVET_AC0154
     if((sei.m_purpose & 0x20) != 0)
     {
-      xWriteCode(sei.m_outColourFormatIdc, 2, "nnpfc_out_colour_format_idc");
+      xWriteCode(uint32_t(sei.m_outColourFormatIdc), 2, "nnpfc_out_colour_format_idc");
     }
 #endif
     if(sei.m_purpose == 3 || sei.m_purpose == 4)

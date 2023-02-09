@@ -2736,11 +2736,11 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
           "When ChromaFormatIdc or nnpfc_purpose & 0x02 is not equal to 0, nnpfc_purpose & 0x20 shall be equal to 0");
 
       sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_out_colour_format_idc");
-      sei.m_outColourFormatIdc = val;
+      sei.m_outColourFormatIdc = ChromaFormat(val);
       CHECK(sei.m_outColourFormatIdc == 0, "The value of nnpfc_out_colour_format_idc shall not be equal to 0");
 
-      sei.m_outSubWidthC  = SPS::getWinUnitX((ChromaFormat) sei.m_outColourFormatIdc);
-      sei.m_outSubHeightC = SPS::getWinUnitY((ChromaFormat) sei.m_outColourFormatIdc);
+      sei.m_outSubWidthC  = SPS::getWinUnitX(sei.m_outColourFormatIdc);
+      sei.m_outSubHeightC = SPS::getWinUnitY(sei.m_outColourFormatIdc);
     }
 
     if (((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) == 0) && ((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) == 0))
