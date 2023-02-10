@@ -535,7 +535,7 @@ void HLSyntaxReader::parsePPS( PPS* pcPPS )
     {
       pcPPS->setSingleSlicePerSubPicFlag(0);
     }
-    if (pcPPS->getRectSliceFlag() & !(pcPPS->getSingleSlicePerSubPicFlag()))
+    if (pcPPS->getRectSliceFlag() && !(pcPPS->getSingleSlicePerSubPicFlag()))
     {
       int32_t tileIdx = 0;
 
