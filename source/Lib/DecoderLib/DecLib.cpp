@@ -394,6 +394,7 @@ DecLib::DecLib()
   , m_prevGeneralHrdParams()
   , m_latestDRAPPOC(MAX_INT)
   , m_latestEDRAPPOC(MAX_INT)
+  , m_latestEDRAPIndicationLeadingPicturesDecodableFlag(false)
   , m_associatedIRAPDecodingOrderNumber{ 0 }
   , m_decodingOrderCounter(0)
   , m_puCounter(0)
@@ -3331,9 +3332,11 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     {
       pcSlice->addEdrapRefRapIds(seiEdrap->m_edrapIndicationRefRapId[i]);
     }
+    m_latestEDRAPIndicationLeadingPicturesDecodableFlag = seiEdrap->m_edrapIndicationLeadingPicturesDecodableFlag;
     m_latestEDRAPPOC = pcSlice->getPOC();
   }
   pcSlice->setLatestEDRAPPOC(m_latestEDRAPPOC);
+  pcSlice->setLatestEdrapLeadingPicDecodableFlag(m_latestEDRAPIndicationLeadingPicturesDecodableFlag);
   pcSlice->checkConformanceForEDRAP(nalu.m_temporalId);
 
   Quant *quant = m_cTrQuant.getQuant();
