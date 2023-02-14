@@ -675,12 +675,12 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
       sei_read_code(decodedMessageOutputStream, 8, val, "po_num_t35_byte[i]");
       sei.m_posPrefixByte[i].resize(val);
       b ++;
-      for (uint32_t j = 0; j < val; j++)
+      for (uint32_t j = 0; j < sei.m_posPrefixByte[i].size(); j++)
       {
         sei_read_code(decodedMessageOutputStream, 8, val, "po_t35_byte[i][j]");
         sei.m_posPrefixByte[i][j] = val;
       }
-      b += val;
+      b += (uint32_t)sei.m_posPrefixByte[i].size();
     }
     sei_read_code(decodedMessageOutputStream, 16, val, "po_sei_processing_order[i]");
     sei.m_posProcessingOrder[i] = val;
