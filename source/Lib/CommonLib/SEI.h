@@ -155,9 +155,10 @@ public:
   bool                   m_posEnabled;
   std::vector<uint16_t>  m_posPayloadType;
   std::vector<uint16_t>   m_posProcessingOrder;
-  uint32_t               m_posNumofSeiMessages;
 #if JVET_AC0058_SEI
   std::vector<std::vector<uint8_t>> m_posPrefixByte;
+#else
+  uint32_t               m_posNumofSeiMessages;
 #endif
 };
 

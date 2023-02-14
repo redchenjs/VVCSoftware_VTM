@@ -1553,22 +1553,30 @@ void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
 
 void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
 {
-  CHECK(sei.m_posNumofSeiMessages < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
-  for (uint32_t i=0; i < sei.m_posNumofSeiMessages; i++)
+#if JVET_AC0058_SEI
+  CHECK(sei.m_posPayloadType.size() < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
+  for (uint32_t i = 0; i < sei.m_posPayloadType.size(); i++)
   {
     xWriteCode(sei.m_posPayloadType[i], 16, "po_sei_payload_type[i]");
-#if JVET_AC0058_SEI
-    if (sei.m_posPayloadType[i] == (uint16_t)SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
+
+    if (sei.m_posPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
     {
       xWriteCode((uint32_t)sei.m_posPrefixByte[i].size(), 8, "po_num_t35_byte[i]");
       for (uint32_t j = 0; j < sei.m_posPrefixByte[i].size(); j++)
       {
         xWriteCode(sei.m_posPrefixByte[i][j], 8, "po_t35_byte[i][j]");
       }
+      xWriteCode(sei.m_posProcessingOrder[i], 16, "po_sei_processing_order[i]");
     }
-#endif
+  }
+#else
+  CHECK(sei.m_posNumofSeiMessages < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
+  for (uint32_t i=0; i < sei.m_posNumofSeiMessages; i++)
+  {
+    xWriteCode(sei.m_posPayloadType[i], 16, "po_sei_payload_type[i]");
     xWriteCode(sei.m_posProcessingOrder[i], 16, "po_sei_processing_order[i]");
   }
+#endif
 }
 
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)

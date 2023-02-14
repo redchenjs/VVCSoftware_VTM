@@ -612,14 +612,16 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   assert(seiProcessingOrderInfo != nullptr);
 
   uint32_t numSEIMessages = m_pcCfg->getPoSEINumofSeiMessages();
+#if JVET_AC0058_SEI
+  seiProcessingOrderInfo->m_posPrefixByte.resize(numSEIMessages);
+#else  
   seiProcessingOrderInfo->m_posNumofSeiMessages = numSEIMessages;
+#endif
   seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
 
   seiProcessingOrderInfo->m_posPayloadType.resize(numSEIMessages);
   seiProcessingOrderInfo->m_posProcessingOrder.resize(numSEIMessages);
-#if JVET_AC0058_SEI
-  seiProcessingOrderInfo->m_posPrefixByte.resize(numSEIMessages);
-#endif
+
   for (uint32_t i = 0; i < numSEIMessages; i++) {
     seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
