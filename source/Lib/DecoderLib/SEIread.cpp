@@ -652,17 +652,17 @@ void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t p
 void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t payloadSize, std::ostream *decodedMessageOutputStream)
 {
   uint32_t i,b;
-  uint32_t NumSEIMessages, val;
+  uint32_t NumMaxSEIMessages, val;
   output_sei_message_header(sei, decodedMessageOutputStream, payloadSize);
 
 #if JVET_AC0058_SEI
-  //Here payload is in Bytes, Since "sei_payloadType" is 2 Bytes + "sei_payloadOrder" is 2 Byte so total = 4 Bytes
-  //To get Maximum number of SEI messages, just do payloadSize/4
-  NumSEIMessages = payloadSize / 4;
-  sei.m_posPayloadType.resize(NumSEIMessages);
-  sei.m_posProcessingOrder.resize(NumSEIMessages);
-  sei.m_posNumofPrefixByte.resize(NumSEIMessages);
-  sei.m_posPrefixByte.resize(NumSEIMessages);
+  //Here payload is in Bytes. Since each entry is at least 4 bytes (2 byte "sei_payloadType" + 2 byte "sei_payloadOrder"),
+  //the maximum number of entry is payloadSize/4
+  NumMaxSEIMessages = payloadSize / 4;
+  sei.m_posPayloadType.resize(NumMaxSEIMessages);
+  sei.m_posProcessingOrder.resize(NumMaxSEIMessages);
+  sei.m_posNumofPrefixByte.resize(NumMaxSEIMessages);
+  sei.m_posPrefixByte.resize(NumMaxSEIMessages);
   for (i = 0, b = 0; b < payloadSize; i++, b += 4)
   {
     sei_read_code(decodedMessageOutputStream, 16, val, "po_sei_payload_type[i]");
@@ -683,6 +683,11 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
     sei_read_code(decodedMessageOutputStream, 16, val, "po_sei_processing_order[i]");
     sei.m_posProcessingOrder[i] = val;
   }
+  // resize vectors to match the number of valid entries
+  sei.m_posPayloadType.resize(i);
+  sei.m_posProcessingOrder.resize(i);
+  sei.m_posNumofPrefixByte.resize(i);
+  sei.m_posPrefixByte.resize(i);
 #else
   //Here payload is in Bytes, Since "sei_payloadType" is 2 Bytes + "sei_payloadOrder" is 1 Byte so total = 3 Bytes
   //To get Number of SEI messages, just do payloadSize/3
