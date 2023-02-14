@@ -59,7 +59,7 @@
 #define JVET_AC0139_UNIFIED_MERGE                         1
 #define JVET_AC0096                                       1
 #define JVET_AC0058_SEI                                   1
-
+#define JVET_AC0154                                       1
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
@@ -761,6 +761,18 @@ enum NNPC_PaddingType
   FIXED_PADDING = 4
 };
 
+#if JVET_AC0154
+enum NNPC_PurposeType
+{
+  UNKONWN                    = 0,
+  VISUAL_QUALITY_IMPROVEMENT = 1,
+  CHROMA_UPSAMPLING          = 2,
+  RESOLUTION_UPSAMPLING      = 4,
+  FRAME_RATE_UPSAMPLING      = 8,
+  BIT_DEPTH_UPSAMPLING       = 16,
+  COLOURIZATION              = 32
+};
+#else
 enum NNPC_PurposeType
 {
   UNKONWN = 0,
@@ -768,8 +780,9 @@ enum NNPC_PurposeType
   CHROMA_UPSAMPLING = 2,
   INCREASE_PICT_DIMENSION_WITHOUT_CHROMA_UPSAMPLING = 3,
   INCREASE_PICT_DIMENSION_WITH_CHROMA_UPSMAPLING = 4,
-  FRANE_RATE_UPSAMPLING = 5
+  FRAME_RATE_UPSAMPLING = 5
 };
+#endif
 
 enum POST_FILTER_MODE
 {

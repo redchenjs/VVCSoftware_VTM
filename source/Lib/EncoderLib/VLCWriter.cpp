@@ -374,7 +374,7 @@ void HLSWriter::codePPS( const PPS* pcPPS )
     {
       xWriteFlag(pcPPS->getSingleSlicePerSubPicFlag( ) ? 1 : 0, "pps_single_slice_per_subpic_flag");
     }
-    if (pcPPS->getRectSliceFlag() & !(pcPPS->getSingleSlicePerSubPicFlag()))
+    if (pcPPS->getRectSliceFlag() && !(pcPPS->getSingleSlicePerSubPicFlag()))
     {
       xWriteUvlc( pcPPS->getNumSlicesInPic( ) - 1, "pps_num_slices_in_pic_minus1" );
       if ((pcPPS->getNumSlicesInPic() - 1) > 1)

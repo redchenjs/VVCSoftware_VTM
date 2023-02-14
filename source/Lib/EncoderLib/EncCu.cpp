@@ -6029,6 +6029,11 @@ MergeItemList::MergeItemList()
 
 MergeItemList::~MergeItemList()
 {
+  for (auto p : m_list)
+  {
+    m_mergeItemPool.giveBack(p);
+  }
+  m_list.clear();
 }
 
 void MergeItemList::init(size_t maxSize, ChromaFormat chromaFormat, int ctuWidth, int ctuHeight)

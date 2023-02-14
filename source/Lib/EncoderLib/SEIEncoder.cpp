@@ -1322,6 +1322,12 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_outSubCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubCFlag(filterIdx);
     }
+#if JVET_AC0154
+    if((sei->m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
+    {
+      sei->m_outColourFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutColourFormatIdc(filterIdx);
+    }
+#endif
     if(sei->m_purpose == 3 || sei->m_purpose == 4)
     {
       sei->m_picWidthInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(filterIdx);
@@ -1356,7 +1362,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       CHECK(!(sei->m_picWidthInLumaSamples >= croppedWidth && sei->m_picWidthInLumaSamples <= croppedWidth * 16 - 1), "m_picWidthInLumaSamples shall be in the range of croppedWidth to croppedWidth * 16 - 1");
       CHECK(!(sei->m_picHeightInLumaSamples >= croppedHeight && sei->m_picHeightInLumaSamples <= croppedHeight * 16 - 1), "m_picHeightInLumaSamples shall be in the range of croppedHeight to croppedHeight * 16 - 1");
     }
-    if (sei->m_purpose == NNPC_PurposeType::FRANE_RATE_UPSAMPLING)
+    if (sei->m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING)
     {
       sei->m_numberInputDecodedPicturesMinus2 = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2(filterIdx);
       sei->m_numberInterpolatedPictures = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInterpolatedPictures(filterIdx);

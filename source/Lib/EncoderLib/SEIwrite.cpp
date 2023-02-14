@@ -1710,6 +1710,12 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     {
       xWriteFlag(sei.m_outSubCFlag, "nnpfc_out_sub_c_flag");
     }
+#if JVET_AC0154
+    if((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
+    {
+      xWriteCode(uint32_t(sei.m_outColourFormatIdc), 2, "nnpfc_out_colour_format_idc");
+    }
+#endif
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
     {
       xWriteUvlc(sei.m_picWidthInLumaSamples, "nnpfc_pic_width_in_luma_samples");

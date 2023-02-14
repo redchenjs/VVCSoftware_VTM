@@ -2750,13 +2750,37 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_outSubHeightC = 1;
       }
     }
+#if !JVET_AC0154
     else
     {
       sei.m_outSubWidthC  = subWidthC;
       sei.m_outSubHeightC = subHeightC;
     }
+#endif
     CHECK(((subWidthC == 1) && (subHeightC == 1)) && ((sei.m_purpose == 2) || (sei.m_purpose == 4)),
           "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose shall not be equal to 2 or 4");
+
+#if JVET_AC0154
+    if((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
+    {
+      CHECK(((chromaFormatIDC != ChromaFormat::CHROMA_400) || (sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0),
+          "When ChromaFormatIdc or nnpfc_purpose & 0x02 is not equal to 0, nnpfc_purpose & 0x20 shall be equal to 0");
+
+      sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_out_colour_format_idc");
+      sei.m_outColourFormatIdc = ChromaFormat(val);
+      CHECK(sei.m_outColourFormatIdc == 0, "The value of nnpfc_out_colour_format_idc shall not be equal to 0");
+
+      sei.m_outSubWidthC  = SPS::getWinUnitX(sei.m_outColourFormatIdc);
+      sei.m_outSubHeightC = SPS::getWinUnitY(sei.m_outColourFormatIdc);
+    }
+
+    if (((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) == 0) && ((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) == 0))
+    {
+      sei.m_outSubWidthC  = subWidthC;
+      sei.m_outSubHeightC = subHeightC;
+    }
+#endif
+
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_width_in_luma_samples");
@@ -2765,16 +2789,30 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_picHeightInLumaSamples = val;
     }
     
-    if (sei.m_purpose == NNPC_PurposeType::FRANE_RATE_UPSAMPLING)
+    if (sei.m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING)
     {
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_number_of_input_pictures_minus2");
       sei.m_numberInputDecodedPicturesMinus2 = val;
       sei.m_numberInterpolatedPictures.resize(sei.m_numberInputDecodedPicturesMinus2 + 1);
+#if JVET_AC0154
+      bool allZeroFlag = false;
+      for (int i = 0; i < sei.m_numberInterpolatedPictures.size(); i++)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_interpolated_pictures");
+        sei.m_numberInterpolatedPictures[i] = val;
+        if(sei.m_numberInterpolatedPictures[i] > 0)
+        {
+          allZeroFlag = true;
+        }
+      }
+      CHECK(!allZeroFlag, "At least one value of nnpfc_interpolated_pics[i] shall be greater than 0");
+#else
       for (int i = 0; i < sei.m_numberInterpolatedPictures.size(); i++)
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_interpolated_pictures");
         sei.m_numberInterpolatedPictures[i] = val;
       }
+#endif
     }
 
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");
