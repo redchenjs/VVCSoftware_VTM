@@ -618,7 +618,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   seiProcessingOrderInfo->m_posPayloadType.resize(numSEIMessages);
   seiProcessingOrderInfo->m_posProcessingOrder.resize(numSEIMessages);
 #if JVET_AC0058_SEI
-  seiProcessingOrderInfo->m_posNumofPrefixByte.resize(numSEIMessages);
   seiProcessingOrderInfo->m_posPrefixByte.resize(numSEIMessages);
 #endif
   for (uint32_t i = 0; i < numSEIMessages; i++) {
@@ -627,7 +626,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
 #if JVET_AC0058_SEI
     if (seiProcessingOrderInfo->m_posPayloadType[i] == (uint16_t)SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
     {
-      seiProcessingOrderInfo->m_posNumofPrefixByte[i] = m_pcCfg->getPoSEINumofPrefixByte(i);
       seiProcessingOrderInfo->m_posPrefixByte[i] = m_pcCfg->getPoSEIPrefixByte(i);
     }
 #endif

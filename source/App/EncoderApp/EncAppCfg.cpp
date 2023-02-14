@@ -3424,7 +3424,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_poSEIPayloadType.resize(m_numofSEIMessages);
     m_poSEIProcessingOrder.resize(m_numofSEIMessages);
 #if JVET_AC0058_SEI
-    m_poSEINumofPrefixByte.resize(m_numofSEIMessages);
     m_poSEIPrefixByte.resize(m_numofSEIMessages);
     uint16_t prefixByteIdx = 0;
 #endif
@@ -3435,9 +3434,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #if JVET_AC0058_SEI
       if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
       {
-        m_poSEINumofPrefixByte[i] = cfg_poSEINumofPrefixByte.values[i];
-        m_poSEIPrefixByte[i].resize(m_poSEINumofPrefixByte[i]);
-        for (uint32_t j = 0; j < m_poSEINumofPrefixByte[i]; j++)
+        m_poSEIPrefixByte[i].resize(cfg_poSEINumofPrefixByte.values[i]);
+        for (uint32_t j = 0; j < cfg_poSEINumofPrefixByte.values[i]; j++)
         {
           m_poSEIPrefixByte[i][j] = (uint8_t)cfg_poSEIPrefixByte.values[prefixByteIdx++];
         }
@@ -3452,7 +3450,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           {
             if (m_poSEIPayloadType[j] == m_poSEIPayloadType[i])
             {
-              auto numofPrefixBytes = std::min(m_poSEINumofPrefixByte[i], m_poSEINumofPrefixByte[j]);
+              auto numofPrefixBytes =
+                std::min(cfg_poSEINumofPrefixByte.values[i], cfg_poSEINumofPrefixByte.values[j]);
               if (std::equal(m_poSEIPrefixByte[i].begin() + 1, m_poSEIPrefixByte[i].begin() + numofPrefixBytes - 1, m_poSEIPrefixByte[j].begin()))
               {
                 assert(m_poSEIProcessingOrder[j] == m_poSEIProcessingOrder[i]);

@@ -863,7 +863,7 @@ protected:
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   uint32_t              m_numofSEIMessages;
 #if JVET_AC0058_SEI
-  std::vector<uint16_t> m_poSEINumofPrefixByte;
+  //std::vector<uint16_t> m_poSEINumofPrefixByte;
   std::vector<std::vector<uint8_t>>  m_poSEIPrefixByte;
 #endif
   bool                 m_postFilterHintSEIEnabled;
@@ -2486,8 +2486,6 @@ public:
   void     setPoSEINumofSeiMessages(uint32_t i)                      { m_numofSEIMessages = i; }
   uint32_t getPoSEINumofSeiMessages()                          const { return m_numofSEIMessages; }
 #if JVET_AC0058_SEI
-  void     setPoSEINumofPrefixByte(const std::vector<uint16_t>& b)   { m_poSEINumofPrefixByte = b; }
-  uint16_t  getPoSEINumofPrefixByte(uint16_t idx)              const { return m_poSEINumofPrefixByte[idx]; }
   void     setPoSEIPrefixByte(const std::vector<std::vector<uint8_t>>& b) { m_poSEIPrefixByte = b; }
   std::vector<uint8_t>  getPoSEIPrefixByte(uint16_t idx)       const { return m_poSEIPrefixByte[idx]; }
 #endif

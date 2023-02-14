@@ -1560,8 +1560,8 @@ void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
 #if JVET_AC0058_SEI
     if (sei.m_posPayloadType[i] == (uint16_t)SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
     {
-      xWriteCode(sei.m_posNumofPrefixByte[i], 8, "po_num_t35_byte[i]");
-      for (uint32_t j = 0; j < sei.m_posNumofPrefixByte[i]; j++)
+      xWriteCode((uint32_t)sei.m_posPrefixByte[i].size(), 8, "po_num_t35_byte[i]");
+      for (uint32_t j = 0; j < sei.m_posPrefixByte[i].size(); j++)
       {
         xWriteCode(sei.m_posPrefixByte[i][j], 8, "po_t35_byte[i][j]");
       }

@@ -782,7 +782,6 @@ protected:
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   uint32_t              m_numofSEIMessages;
 #if JVET_AC0058_SEI
-  std::vector<uint16_t> m_poSEINumofPrefixByte;
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
 #endif
 

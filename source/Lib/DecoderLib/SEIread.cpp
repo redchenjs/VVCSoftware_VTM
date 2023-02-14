@@ -661,7 +661,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
   NumMaxSEIMessages = payloadSize / 4;
   sei.m_posPayloadType.resize(NumMaxSEIMessages);
   sei.m_posProcessingOrder.resize(NumMaxSEIMessages);
-  sei.m_posNumofPrefixByte.resize(NumMaxSEIMessages);
   sei.m_posPrefixByte.resize(NumMaxSEIMessages);
   for (i = 0, b = 0; b < payloadSize; i++, b += 4)
   {
@@ -670,15 +669,14 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
     if (sei.m_posPayloadType[i] == (uint16_t)SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
     {
       sei_read_code(decodedMessageOutputStream, 8, val, "po_num_t35_byte[i]");
-      sei.m_posNumofPrefixByte[i] = val;
-      sei.m_posPrefixByte[i].resize(sei.m_posNumofPrefixByte[i]);
+      sei.m_posPrefixByte[i].resize(val);
       b ++;
-      for (uint32_t j = 0; j < sei.m_posNumofPrefixByte[i]; j++)
+      for (uint32_t j = 0; j < val; j++)
       {
         sei_read_code(decodedMessageOutputStream, 8, val, "po_t35_byte[i][j]");
         sei.m_posPrefixByte[i][j] = val;
       }
-      b += sei.m_posNumofPrefixByte[i];
+      b += val;
     }
     sei_read_code(decodedMessageOutputStream, 16, val, "po_sei_processing_order[i]");
     sei.m_posProcessingOrder[i] = val;
@@ -686,7 +684,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
   // resize vectors to match the number of valid entries
   sei.m_posPayloadType.resize(i);
   sei.m_posProcessingOrder.resize(i);
-  sei.m_posNumofPrefixByte.resize(i);
   sei.m_posPrefixByte.resize(i);
 #else
   //Here payload is in Bytes, Since "sei_payloadType" is 2 Bytes + "sei_payloadOrder" is 1 Byte so total = 3 Bytes

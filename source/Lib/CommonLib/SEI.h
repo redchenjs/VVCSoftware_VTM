@@ -157,7 +157,6 @@ public:
   std::vector<uint16_t>   m_posProcessingOrder;
   uint32_t               m_posNumofSeiMessages;
 #if JVET_AC0058_SEI
-  std::vector<uint16_t>  m_posNumofPrefixByte;
   std::vector<std::vector<uint8_t>> m_posPrefixByte;
 #endif
 };

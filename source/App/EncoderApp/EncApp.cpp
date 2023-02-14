@@ -1309,7 +1309,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPoSEINumofSeiMessages                             (m_numofSEIMessages);
 
 #if JVET_AC0058_SEI
-  m_cEncLib.setPoSEINumofPrefixByte                              (m_poSEINumofPrefixByte);
   m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
 #endif
 
