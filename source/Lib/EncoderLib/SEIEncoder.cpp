@@ -611,27 +611,33 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   assert(m_isInitialized);
   assert(seiProcessingOrderInfo != nullptr);
 
-  uint32_t numSEIMessages = m_pcCfg->getPoSEINumofSeiMessages();
+
 #if JVET_AC0058_SEI
-  seiProcessingOrderInfo->m_posPrefixByte.resize(numSEIMessages);
-#else  
-  seiProcessingOrderInfo->m_posNumofSeiMessages = numSEIMessages;
-#endif
+  seiProcessingOrderInfo->m_posPrefixByte.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
-
-  seiProcessingOrderInfo->m_posPayloadType.resize(numSEIMessages);
-  seiProcessingOrderInfo->m_posProcessingOrder.resize(numSEIMessages);
-
-  for (uint32_t i = 0; i < numSEIMessages; i++) {
+  seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
+  seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
+  for (uint32_t i = 0; i < m_pcCfg->getPoSEIPayloadTypeSize(); i++)
+  {
     seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
-#if JVET_AC0058_SEI
-    if (seiProcessingOrderInfo->m_posPayloadType[i] == (uint16_t)SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
+    if (seiProcessingOrderInfo->m_posPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
     {
       seiProcessingOrderInfo->m_posPrefixByte[i] = m_pcCfg->getPoSEIPrefixByte(i);
     }
-#endif
   }
+#else  
+  uint32_t numSEIMessages = m_pcCfg->getPoSEINumofSeiMessages();
+  seiProcessingOrderInfo->m_posNumofSeiMessages = numSEIMessages;
+  seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
+  seiProcessingOrderInfo->m_posPayloadType.resize(numSEIMessages);
+  seiProcessingOrderInfo->m_posProcessingOrder.resize(numSEIMessages);
+  for (uint32_t i = 0; i < numSEIMessages; i++) 
+  {
+    seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
+    seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
+  }
+#endif
 }
 
 void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)

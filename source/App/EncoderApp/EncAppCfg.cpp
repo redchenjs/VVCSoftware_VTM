@@ -3420,27 +3420,24 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     assert(cfg_poSEIPayloadType.values.size() > 1);
     assert(cfg_poSEIProcessingOrder.values.size() == cfg_poSEIPayloadType.values.size());
-    m_numofSEIMessages = (uint32_t)cfg_poSEIPayloadType.values.size();
-    m_poSEIPayloadType.resize(m_numofSEIMessages);
-    m_poSEIProcessingOrder.resize(m_numofSEIMessages);
 #if JVET_AC0058_SEI
-    m_poSEIPrefixByte.resize(m_numofSEIMessages);
+    m_poSEIPayloadType.resize((uint32_t) cfg_poSEIPayloadType.values.size());
+    m_poSEIProcessingOrder.resize((uint32_t) cfg_poSEIPayloadType.values.size());
+    m_poSEIPrefixByte.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     uint16_t prefixByteIdx = 0;
-#endif
-    for (uint32_t i = 0; i < m_numofSEIMessages; i++)
+    for (uint32_t i = 0; i < (uint32_t) cfg_poSEIPayloadType.values.size(); i++)
     {
-      m_poSEIPayloadType[i]  = cfg_poSEIPayloadType.values[i];
-      m_poSEIProcessingOrder[i] = (uint16_t)cfg_poSEIProcessingOrder.values[i];
-#if JVET_AC0058_SEI
-      if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
+      m_poSEIPayloadType[i]     = cfg_poSEIPayloadType.values[i];
+      m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
+      if (m_poSEIPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
       {
         m_poSEIPrefixByte[i].resize(cfg_poSEINumofPrefixByte.values[i]);
         for (uint32_t j = 0; j < cfg_poSEINumofPrefixByte.values[i]; j++)
         {
-          m_poSEIPrefixByte[i][j] = (uint8_t)cfg_poSEIPrefixByte.values[prefixByteIdx++];
+          m_poSEIPrefixByte[i][j] = (uint8_t) cfg_poSEIPrefixByte.values[prefixByteIdx++];
         }
       }
-      //Error check, to avoid same PayloadType and same prefix bytes when present with different PayloadOrder
+      // Error check, to avoid same PayloadType and same prefix bytes when present with different PayloadOrder
       for (uint32_t j = 0; j < i; j++)
       {
         auto payloadType = SEI::PayloadType(cfg_poSEIPayloadType.values[i]);
@@ -3450,9 +3447,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           {
             if (m_poSEIPayloadType[j] == m_poSEIPayloadType[i])
             {
-              auto numofPrefixBytes =
-                std::min(cfg_poSEINumofPrefixByte.values[i], cfg_poSEINumofPrefixByte.values[j]);
-              if (std::equal(m_poSEIPrefixByte[i].begin() + 1, m_poSEIPrefixByte[i].begin() + numofPrefixBytes - 1, m_poSEIPrefixByte[j].begin()))
+              auto numofPrefixBytes = std::min(cfg_poSEINumofPrefixByte.values[i], cfg_poSEINumofPrefixByte.values[j]);
+              if (std::equal(m_poSEIPrefixByte[i].begin() + 1, m_poSEIPrefixByte[i].begin() + numofPrefixBytes - 1,
+                             m_poSEIPrefixByte[j].begin()))
               {
                 assert(m_poSEIProcessingOrder[j] == m_poSEIProcessingOrder[i]);
               }
@@ -3460,7 +3457,18 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           }
         }
       }
+    }
+    // Error check, to avoid all SEI messages share the same PayloadOrder
+    assert(!std::equal(cfg_poSEIProcessingOrder.values.begin() + 1, cfg_poSEIProcessingOrder.values.end(),
+                       cfg_poSEIProcessingOrder.values.begin()));
 #else
+    m_numofSEIMessages = (uint32_t)cfg_poSEIPayloadType.values.size();
+    m_poSEIPayloadType.resize(m_numofSEIMessages);
+    m_poSEIProcessingOrder.resize(m_numofSEIMessages);
+    for (uint32_t i = 0; i < m_numofSEIMessages; i++)
+    {
+      m_poSEIPayloadType[i]  = cfg_poSEIPayloadType.values[i];
+      m_poSEIProcessingOrder[i] = (uint16_t)cfg_poSEIProcessingOrder.values[i];
       //Error check, to avoid same PayloadType with different PayloadOrder
       for (uint32_t j = 0; j < i; j++)
       {
@@ -3469,11 +3477,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           assert(m_poSEIProcessingOrder[j]== m_poSEIProcessingOrder[i]);
         }
       }
-#endif
     }
-#if JVET_AC0058_SEI
-    //Error check, to avoid all SEI messages share the same PayloadOrder 
-    assert(!std::equal(cfg_poSEIProcessingOrder.values.begin() + 1, cfg_poSEIProcessingOrder.values.end(), cfg_poSEIProcessingOrder.values.begin()));
 #endif
     assert(m_poSEIPayloadType.size() > 0);
     assert(m_poSEIProcessingOrder.size() == m_poSEIPayloadType.size());
