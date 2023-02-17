@@ -80,6 +80,8 @@ private:
   int                     m_pocCRA[MAX_VPS_LAYERS];             ///< POC number of the previous CRA picture
   CheckCRAFlags           m_checkCRAFlags[MAX_VPS_LAYERS];
   int                     m_latestDRAPPOC;
+  int                     m_latestEDRAPPOC;
+  bool                    m_latestEDRAPIndicationLeadingPicturesDecodableFlag;
   int                     m_associatedIRAPDecodingOrderNumber[MAX_VPS_LAYERS]; ///< Decoding order number of the previous IRAP picture
   int                     m_decodingOrderCounter;
   int                     m_puCounter;
