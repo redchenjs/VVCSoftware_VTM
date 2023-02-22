@@ -718,6 +718,10 @@ protected:
   bool                    m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPatchWidthMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AC0344_NNPFC_PATCH
+  uint32_t                m_nnPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1[MAX_NUM_NN_POST_FILTERS];
+#endif
   uint32_t                m_nnPostFilterSEICharacteristicsOverlap[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPaddingType[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsLumaPadding[MAX_NUM_NN_POST_FILTERS];
@@ -1970,6 +1974,12 @@ public:
   void        setNNPostFilterSEICharacteristicsPatchWidthMinus1(uint32_t patchWidthMinus1, int filterIdx)               { m_nnPostFilterSEICharacteristicsPatchWidthMinus1[filterIdx] = patchWidthMinus1; }
   uint32_t    getNNPostFilterSEICharacteristicsPatchWidthMinus1(int filterIdx) const                                    { return m_nnPostFilterSEICharacteristicsPatchWidthMinus1[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsPatchHeightMinus1(uint32_t patchHeightMinus1, int filterIdx)             { m_nnPostFilterSEICharacteristicsPatchHeightMinus1[filterIdx] = patchHeightMinus1; }
+#if JVET_AC0344_NNPFC_PATCH
+  void        setNNPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1(uint32_t extendedPatchWidthCdDeltaMinus1, int filterIdx)   { m_nnPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1[filterIdx] = extendedPatchWidthCdDeltaMinus1; }
+  uint32_t    getNNPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1(int filterIdx) const                                       { return m_nnPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1(uint32_t extendedPatchHeightCdDeltaMinus1, int filterIdx) { m_nnPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1[filterIdx] = extendedPatchHeightCdDeltaMinus1; }
+  uint32_t    getNNPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1(int filterIdx) const                                      { return m_nnPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1[filterIdx]; }
+#endif
   uint32_t    getNNPostFilterSEICharacteristicsPatchHeightMinus1(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsPatchHeightMinus1[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsOverlap(uint32_t overlap, int filterIdx)                                 { m_nnPostFilterSEICharacteristicsOverlap[filterIdx] = overlap; }
   uint32_t    getNNPostFilterSEICharacteristicsOverlap(int filterIdx) const                                             { return m_nnPostFilterSEICharacteristicsOverlap[filterIdx]; }

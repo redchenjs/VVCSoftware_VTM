@@ -1859,6 +1859,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     patchHeightMinus1 << "SEINNPostFilterCharacteristicsPatchHeightMinus1" << i;
     opts.addOptions()(patchHeightMinus1.str(), m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i], 0u, "Specifies the vertical sample counts of a patch in the Neural Network Post Filter Characteristics SEI message");
 
+#if JVET_AC0344_NNPFC_PATCH
+    std::ostringstream extendedPatchWidthCdDeltaMinus1;
+    extendedPatchWidthCdDeltaMinus1 << "SEINNPostFilterCharacteristicsExtendedPatchWidthCdDeltaMinus1" << i;
+    opts.addOptions()(extendedPatchWidthCdDeltaMinus1.str(), m_nnPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1[i], 0u, "Specifies the extended horizontal sample counts of a patch in the Neural Network Post Filter Characteristics SEI message");
+
+    std::ostringstream extendedPatchHeightCdDeltaMinus1;
+    extendedPatchHeightCdDeltaMinus1 << "SEINNPostFilterCharacteristicsExtendedPatchHeightCdDeltaMinus1" << i;
+    opts.addOptions()(extendedPatchHeightCdDeltaMinus1.str(), m_nnPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1[i], 0u, "Specifies the extended vertical sample counts of a patch in the Neural Network Post Filter Characteristics SEI message");
+#endif
+
     std::ostringstream overlap;
     overlap << "SEINNPostFilterCharacteristicsOverlap" << i;
     opts.addOptions()(overlap.str(), m_nnPostFilterSEICharacteristicsOverlap[i], 0u, "Specifies the overlap in the Neural Network Post Filter Characteristics SEI message");

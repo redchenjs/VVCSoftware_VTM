@@ -5849,8 +5849,6 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \par
   \begin{tabular}{p{0.49\columnwidth}}
     When nnpfc_constant_patch_size_flag is true (non-zero), specifies the horizontal sample counts of the patch size required for the input to the \emph{i}-th neural network post-filter. \\
-    When nnpfc_constant_patch_size_flag is false, any positive integer multiple of ( nnpfc_patch_width_minus1 + 1 ) may be used as the horizontal sample counts of the patch size used for the input to the \emph{i}-th neural network post-filter. \\
-  \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsPatchHeightMinus1\emph{i}} &
   \Default{0} &
@@ -5858,7 +5856,22 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \par
   \begin{tabular}{p{0.49\columnwidth}}
     When nnpfc_constant_patch_size_flag is true (non-zero), specifies the vertical sample counts of the patch size required for the input to the \emph{i}-th neural network post-filter. \\
-    When nnpfc_constant_patch_size_flag is false, any positive integer multiple of ( nnpfc_patch_height_minus1 + 1 ) may be used as the vertical sample counts of the patch size used for the input to the \emph{i}-th neural network post-filter. \\
+  \end{tabular}
+  \\
+  \Option{SEINNPostFilterCharacteristicsExtendedPatchWidthCdDeltaMinus1\emph{i}} &
+  \Default{0} &
+  Specifies the extended patch width for the \emph{i}-th neural network post-filter.
+  \par
+  \begin{tabular}{p{0.49\columnwidth}}
+    When nnpfc_constant_patch_size_flag is false (zero),  nnpfc_extended_patch_width_cd_delta_minus1+1+2*nnpfc_overlap indicates a common divisor of the all allowed values of the width of an extended patch for the input to the \emph{i}-th neural network post-filter. \\
+  \end{tabular}
+  \\
+  \Option{SEINNPostFilterCharacteristicsExtendedPatchHeightCdDeltaMinus1\emph{i}} &
+  \Default{0} &
+  Specifies the extended patch height \emph{i}-th neural network post-filter.
+  \par
+  \begin{tabular}{p{0.49\columnwidth}}
+    When nnpfc_constant_patch_size_flag is false (zero),  nnpfc_extended_patch_height_cd_delta_minus1+1+2*nnpfc_overlap indicates a common divisor of the all allowed values of the height of an extended patch for the input to the \emph{i}-th neural network post-filter. \\
   \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsOverlap\emph{i}} &
