@@ -787,7 +787,12 @@ protected:
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
-  uint32_t              m_numofSEIMessages;
+#if JVET_AC0058_SEI
+  std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
+#else
+  uint32_t m_numofSEIMessages;
+#endif
+
 
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;

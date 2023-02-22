@@ -868,8 +868,12 @@ protected:
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
+#if JVET_AC0058_SEI
+  //std::vector<uint16_t> m_poSEINumofPrefixByte;
+  std::vector<std::vector<uint8_t>>  m_poSEIPrefixByte;
+#else
   uint32_t              m_numofSEIMessages;
-
+#endif
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
   bool                 m_postFilterHintSEIPersistenceFlag;
@@ -2496,9 +2500,14 @@ public:
   uint16_t getPoSEIPayloadType(uint16_t idx)                   const { return m_poSEIPayloadType[idx]; }
   void     setPoSEIProcessingOrder(const std::vector<uint16_t>& b) { m_poSEIProcessingOrder = b; }
   uint16_t  getPoSEIProcessingOrder(uint16_t idx)              const { return m_poSEIProcessingOrder[idx]; }
-  void     setPoSEINumofSeiMessages(uint32_t i)                      { m_numofSEIMessages = i; }
+#if JVET_AC0058_SEI
+  uint32_t getPoSEIPayloadTypeSize()                           const { return (uint32_t)m_poSEIPayloadType.size(); }
+  void     setPoSEIPrefixByte(const std::vector<std::vector<uint8_t>>& b) { m_poSEIPrefixByte = b; }
+  std::vector<uint8_t>  getPoSEIPrefixByte(uint16_t idx)       const { return m_poSEIPrefixByte[idx]; }
+#else
   uint32_t getPoSEINumofSeiMessages()                          const { return m_numofSEIMessages; }
-
+  void     setPoSEINumofSeiMessages(uint32_t i)                      { m_numofSEIMessages = i; }
+#endif
   void     setPostFilterHintSEIEnabled(bool b) { m_postFilterHintSEIEnabled = b; }
   bool     getPostFilterHintSEIEnabled() { return m_postFilterHintSEIEnabled; }
   void     setPostFilterHintSEICancelFlag(bool b) { m_postFilterHintSEICancelFlag = b; }
