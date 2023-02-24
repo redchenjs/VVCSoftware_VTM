@@ -1782,6 +1782,23 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     picHeightInLumaSamples << "SEINNPostFilterCharacteristicsPicHeightInLumaSamples" << i;
     opts.addOptions()(picHeightInLumaSamples.str(), m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], 0u, "Specifies the vertical luma sample counts of the output picture in the Neural Network Post Filter Characteristics SEI message");
 
+#if JVET_AC0061_TENSOR_BITDEPTH
+    std::ostringstream inpTensorBitDepthLumaMinus8;
+    inpTensorBitDepthLumaMinus8 << "SEINNPostFilterCharacteristicsInpTensorBitDepthLumaMinusEight" << i;
+    opts.addOptions()(inpTensorBitDepthLumaMinus8.str(), m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[i], 0u, "Specifies the bit depth of the input tensor luma minus 8 in the Neural Network Post Filter Characteristics SEI message");
+
+    std::ostringstream inpTensorBitDepthChromaMinus8;
+    inpTensorBitDepthChromaMinus8 << "SEINNPostFilterCharacteristicsInpTensorBitDepthChromaMinusEight" << i;
+    opts.addOptions()(inpTensorBitDepthChromaMinus8.str(), m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[i], 0u, "Specifies the bit depth of the input tensor chroma minus 8 in the Neural Network Post Filter Characteristics SEI message");
+
+    std::ostringstream outTensorBitDepthLumaMinus8;
+    outTensorBitDepthLumaMinus8 << "SEINNPostFilterCharacteristicsOutTensorBitDepthLumaMinusEight" << i;
+    opts.addOptions()(outTensorBitDepthLumaMinus8.str(), m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[i], 0u, "Specifies the bit depth of the output tensor luma minus 8 in the Neural Network Post Filter Characteristics SEI message");
+
+    std::ostringstream outTensorBitDepthChromaMinus8;
+    outTensorBitDepthChromaMinus8 << "SEINNPostFilterCharacteristicsOutTensorBitDepthChromaMinusEight" << i;
+    opts.addOptions()(outTensorBitDepthChromaMinus8.str(), m_nnPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8[i], 0u, "Specifies the bit depth of the output tensor chroma minus 8 in the Neural Network Post Filter Characteristics SEI message");
+#else
     std::ostringstream inpTensorBitDepthMinus8;
     inpTensorBitDepthMinus8 << "SEINNPostFilterCharacteristicsInpTensorBitDepthMinus8" << i;
     opts.addOptions()(inpTensorBitDepthMinus8.str(), m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i], 0u, "Specifies the bit depth of the input tensor minus 8 in the Neural Network Post Filter Characteristics SEI message");
@@ -1789,6 +1806,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream outTensorBitDepthMinus8;
     outTensorBitDepthMinus8 << "SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8" << i;
     opts.addOptions()(outTensorBitDepthMinus8.str(), m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i], 0u, "Specifies the bit depth of the output tensor minus 8 in the Neural Network Post Filter Characteristics SEI message");
+#endif
 
     std::ostringstream componentLastFlag;
     componentLastFlag << "SEINNPostFilterCharacteristicsComponentLastFlag" << i;
@@ -4977,8 +4995,15 @@ bool EncAppCfg::xCheckParameter()
     #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 63, "SEINNPostFilterCharacteristicsNumberInputDecodedPicturesMinus1 must be in the range of 0 to 63");
     #endif
+#if JVET_AC0061_TENSOR_BITDEPTH
+      xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[i] > 24, "SEINNPostFilterCharacteristicsInpTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[i] > 24, "SEINNPostFilterCharacteristicsInpTensorBitDepthChromaMinus8 must be in the range of 0 to 24");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[i] > 24, "SEINNPostFilterCharacteristicsOutTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8[i] > 24, "SEINNPostFilterCharacteristicsOutTensorBitDepthChromaMinus8 must be in the range of 0 to 24");
+#else
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsInpTensorBitDepthMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8 must be in the range of 0 to 24");
+#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpFormatIdc[i] > 255, "SEINNPostFilterCharacteristicsInpFormatIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpOrderIdc[i] > 255, "SEINNPostFilterCharacteristicsInpOrderIdc must be in the range of  0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsColPrimaries[i] > 255, "m_nnPostFilterSEICharacteristicsColPrimaries must in the range 0 to 255");
