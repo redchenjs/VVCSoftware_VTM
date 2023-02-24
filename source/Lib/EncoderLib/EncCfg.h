@@ -696,8 +696,15 @@ protected:
 #endif
   uint32_t                m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AC0061_TENSOR_BITDEPTH
+  uint32_t                m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
+#else
   uint32_t                m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
+#endif
   bool                    m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsInpFormatIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
@@ -1907,10 +1914,21 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsPicHeightInLumaSamples(uint32_t picHeightInLumaSamples, int filterIdx)   { m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[filterIdx] = picHeightInLumaSamples; }
   uint32_t    getNNPostFilterSEICharacteristicsPicHeightInLumaSamples(int filterIdx) const                              { return m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[filterIdx]; }
+#if JVET_AC0061_TENSOR_BITDEPTH
+  void        setNNPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8(uint32_t inpTensorBitDepthLumaMinus8, int filterIdx)     { m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[filterIdx] = inpTensorBitDepthLumaMinus8; }
+  uint32_t    getNNPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8(int filterIdx) const                                     { return m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8(uint32_t inpTensorBitDepthChromaMinus8, int filterIdx) { m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[filterIdx] = inpTensorBitDepthChromaMinus8; }
+  uint32_t    getNNPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8(uint32_t outTensorBitDepthLumaMinus8, int filterIdx)     { m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[filterIdx] = outTensorBitDepthLumaMinus8; }
+  uint32_t    getNNPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8(int filterIdx) const                                     { return m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8(uint32_t outTensorBitDepthChromaMinus8, int filterIdx) { m_nnPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8[filterIdx] = outTensorBitDepthChromaMinus8; }
+  uint32_t    getNNPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8(int filterIdx) const                                   { return m_nnPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8[filterIdx]; }
+#else
   void        setNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(uint32_t inpTensorBitDepthMinus8, int filterIdx) { m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[filterIdx] = inpTensorBitDepthMinus8; }
   uint32_t    getNNPostFilterSEICharacteristicsInpTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(uint32_t outTensorBitDepthMinus8, int filterIdx) { m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx] = outTensorBitDepthMinus8; }
   uint32_t    getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[filterIdx]; }
+#endif
   void setNNPostFilterSEICharacteristicsAuxInpIdc(uint32_t auxInpIdc, int filterIdx)
   {
     m_nnPostFilterSEICharacteristicsAuxInpIdc[filterIdx] = auxInpIdc;

@@ -60,6 +60,7 @@
 #define JVET_AC0096                                       1
 #define JVET_AC0154                                       1
 #define JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE             1 
+#define JVET_AC0061_TENSOR_BITDEPTH                       1
 
 
 

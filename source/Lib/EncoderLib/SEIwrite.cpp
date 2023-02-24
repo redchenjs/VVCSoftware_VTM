@@ -1756,7 +1756,12 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");
     if (sei.m_inpFormatIdc == 1)
     {
+#if JVET_AC0061_TENSOR_BITDEPTH
+      xWriteUvlc(sei.m_inpTensorBitDepthLumaMinus8, "nnpfc_inp_tensor_bitdepth_luma_minus8");
+      xWriteUvlc(sei.m_inpTensorBitDepthChromaMinus8, "nnpfc_inp_tensor_bitdepth_chroma_minus8");
+#else
       xWriteUvlc(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
+#endif
     }
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
@@ -1771,7 +1776,12 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     xWriteUvlc(sei.m_outFormatIdc, "nnpfc_out_format_idc");
     if (sei.m_outFormatIdc == 1)
     {
+#if JVET_AC0061_TENSOR_BITDEPTH
+      xWriteUvlc(sei.m_outTensorBitDepthLumaMinus8, "nnpfc_out_tensor_bitdepth_luma_minus8");
+      xWriteUvlc(sei.m_outTensorBitDepthChromaMinus8, "nnpfc_out_tensor_bitdepth_chroma_minus8");
+#else
       xWriteUvlc(sei.m_outTensorBitDepthMinus8, "nnpfc_out_tensor_bitdepth_minus8");
+#endif
     }
 
     xWriteUvlc(sei.m_outOrderIdc, "nnpfc_out_order_idc");
