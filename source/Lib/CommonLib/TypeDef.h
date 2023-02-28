@@ -62,7 +62,7 @@
 #define JVET_AC0154                                       1
 #define JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE             1 
 #define JVET_AC0061_TENSOR_BITDEPTH                       1
-
+#define JVET_AC0062_CONSTRAINT_CHECK                      1
 
 
 //########### place macros to be be kept below this line ###############
