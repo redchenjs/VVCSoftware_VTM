@@ -2835,6 +2835,8 @@ public:
   int       getRprSwitchingPPSID(int rprSegment)                      const { int res2ppsid[4] = { 0, ENC_PPS_ID_RPR3, ENC_PPS_ID_RPR2, ENC_PPS_ID_RPR };
                                                                               return res2ppsid[m_rprSwitchingResolutionOrderList[rprSegment]];
   }
+  int       getRprResolutionIndex(int ppsId)                           const { int ppsid2res[8] = { 0, -1, -1, 3, -1, 2, -1, 1 };
+                                                                               return ppsid2res[ppsId];}
 #endif
   void        setResChangeInClvsEnabled(bool b)                      { m_resChangeInClvsEnabled = b; }
   bool        isResChangeInClvsEnabled()                        const { return m_resChangeInClvsEnabled; }

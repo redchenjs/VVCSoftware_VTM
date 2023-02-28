@@ -143,6 +143,7 @@ public:
   RPLList                  *getRplList(RefPicList l) { return &m_rplLists[l]; }
   uint32_t                  getNumRpl(RefPicList l) const { return m_rplLists[l].getNumberOfReferencePictureLists(); }
   int                       m_gopRprPpsId;
+  bool                      m_rprPPSCodedAfterIntraList[4]; // 4 resolutions, full, 5/6, 2/3 and 1/2
   bool                      m_refLayerRescaledAvailable;
 protected:
   void  xGetNewPicBuffer  ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Picture*& rpcPic, int ppsId ); ///< get picture buffer which will be processed. If ppsId<0, then the ppsMap will be queried for the first match.
@@ -213,6 +214,9 @@ public:
 
   ParameterSetMap<APS>                     *getApsMap(ApsType apsType) { return &m_apsMaps[apsType]; }
   EnumArray<ParameterSetMap<APS>, ApsType> *getApsMaps() { return &m_apsMaps; }
+
+  void                   setRprPPSCodedAfterIntra(int num, bool isCoded) { m_rprPPSCodedAfterIntraList[num] = isCoded; }
+  bool                   getRprPPSCodedAfterIntra(int num) { return m_rprPPSCodedAfterIntraList[num]; }
 
   bool                   getPltEnc()                      const { return   m_doPlt; }
   void                   checkPltStats( Picture* pic );

@@ -3833,6 +3833,47 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
       // it is assumed that layerIdx equal to 0 is always present
       bool newPPS = m_pcEncLib->PPSNeedsWriting(pcSlice->getPPS()->getPPSId());
+      if (m_pcEncLib->getRprFunctionalityTestingEnabledFlag() || m_pcEncLib->getGOPBasedRPREnabledFlag())
+      {
+        if (newPPS)
+        {
+          m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(pcSlice->getPPS()->getPPSId()), true);
+        }
+        // here a PPS needs to be encoded for an inter picture if PPS is different from any RPR PPS written after and including the intra
+        if ((m_pcEncLib->getRprFunctionalityTestingEnabledFlag() && (pcSlice->getPOC() % m_pcEncLib->getRprSwitchingSegmentSize()) == 0) ||
+          (m_pcEncLib->getGOPBasedRPREnabledFlag() && (pcSlice->getPOC() % m_pcEncLib->getGOPSize()) == 0))
+        {
+          if (pcSlice->isIntra())
+          {
+            // at intra all PPS coded after Intra is reset except the current one
+            if (pcSlice->getPPS()->getPPSId() != 0)
+            {
+              m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(0), false);
+            }
+            if (pcSlice->getPPS()->getPPSId() != ENC_PPS_ID_RPR)
+            {
+              m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(ENC_PPS_ID_RPR), false);
+            }
+            if (pcSlice->getPPS()->getPPSId() != ENC_PPS_ID_RPR2)
+            {
+              m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(ENC_PPS_ID_RPR2), false);
+            }
+            if (pcSlice->getPPS()->getPPSId() != ENC_PPS_ID_RPR3)
+            {
+              m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(ENC_PPS_ID_RPR3), false);
+            }
+          }
+          else
+          {
+            if (!m_pcEncLib->getRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(pcSlice->getPPS()->getPPSId())))
+            {
+              // here a forced coding of a pps is enabled
+              newPPS = true;
+              m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(pcSlice->getPPS()->getPPSId()), true);
+            }
+          }
+        }
+      }
       actualTotalBits += xWriteParameterSets(accessUnit, pcSlice, writePS, layerIdx, newPPS);
 
       if (writePS)
