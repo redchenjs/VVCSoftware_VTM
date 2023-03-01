@@ -1925,7 +1925,15 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
   if (m_gopBasedRPREnabledFlag)
 #endif
   {
-    if (pps.getPPSId() == ENC_PPS_ID_RPR || pps.getPPSId() == ENC_PPS_ID_RPR2 || pps.getPPSId() == ENC_PPS_ID_RPR3)
+    bool isRprPPS = false;
+    for (int nr = 0; nr < NUM_RPR_PPS; nr++)
+    {
+      if ((pps.getPPSId() == RPR_PPS_ID[nr]) && (RPR_PPS_ID[nr] != 0))
+      {
+        isRprPPS = true;
+      }
+    }
+    if (isRprPPS)
     {
       pps.setSliceChromaQpFlag(true);
     }

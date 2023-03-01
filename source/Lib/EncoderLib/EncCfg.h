@@ -2832,11 +2832,17 @@ public:
   void      setRprSwitchingQPOffsetOrderList(int value, int idx)      { m_rprSwitchingQPOffsetOrderList[idx] = value; }
   int       getRprSwitchingQPOffsetOrderList(int idx)                 const { return m_rprSwitchingQPOffsetOrderList[idx]; }
   int       getRprSwitchingSegment(int currPoc)                       const { return (currPoc / m_rprSwitchingSegmentSize % m_rprSwitchingListSize); }
-  int       getRprSwitchingPPSID(int rprSegment)                      const { int res2ppsid[4] = { 0, ENC_PPS_ID_RPR3, ENC_PPS_ID_RPR2, ENC_PPS_ID_RPR };
-                                                                              return res2ppsid[m_rprSwitchingResolutionOrderList[rprSegment]];
-  }
-  int       getRprResolutionIndex(int ppsId)                           const { int ppsid2res[8] = { 0, -1, -1, 3, -1, 2, -1, 1 };
-                                                                               return ppsid2res[ppsId];}
+  int       getRprSwitchingPPSID(int rprSegment)                      const { return RPR_PPS_ID[m_rprSwitchingResolutionOrderList[rprSegment]];}
+  int       getRprResolutionIndex(int ppsId)                          const { int num = -1;
+                                                                              for (int nr = 0; nr < NUM_RPR_PPS; nr++)
+                                                                              {
+                                                                                if (RPR_PPS_ID[nr] == ppsId)
+                                                                                {
+                                                                                  num = nr;
+                                                                                }
+                                                                              }
+                                                                              return num;
+                                                                             }
 #endif
   void        setResChangeInClvsEnabled(bool b)                      { m_resChangeInClvsEnabled = b; }
   bool        isResChangeInClvsEnabled()                        const { return m_resChangeInClvsEnabled; }

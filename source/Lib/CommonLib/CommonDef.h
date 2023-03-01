@@ -534,6 +534,8 @@ static constexpr int  EPBIN_WEIGHT_FACTOR =                           4;
 static constexpr int ENC_PPS_ID_RPR =                                 3;
 static constexpr int ENC_PPS_ID_RPR2 = 5;
 static constexpr int ENC_PPS_ID_RPR3 = 7;
+static constexpr int NUM_RPR_PPS = 4;
+static constexpr int RPR_PPS_ID[NUM_RPR_PPS] = { 0, ENC_PPS_ID_RPR3, ENC_PPS_ID_RPR2, ENC_PPS_ID_RPR };
 static constexpr int MAX_SCALING_RATIO =                              2;  // max downsampling ratio for RPR
 static constexpr ScalingRatio SCALE_1X = { 1 << ScalingRatio::BITS, 1 << ScalingRatio::BITS };   // scale ratio 1x
 

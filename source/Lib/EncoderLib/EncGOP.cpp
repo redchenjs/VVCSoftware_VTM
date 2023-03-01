@@ -433,30 +433,26 @@ int EncGOP::xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool
       if (slice->isIntra())
       {
         actualTotalBits += xWritePPS(accessUnit, slice->getPPS(), m_pcEncLib->getLayerId());
-        if (!(slice->getPPS()->getPPSId() == 0))
+        for (int nr = 0; nr < NUM_RPR_PPS; nr++)
         {
-          const PPS* pPPS = m_pcEncLib->getPPS(0);
-          actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
-        }
-        if (!(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR))
-        {
-          const PPS* pPPS = m_pcEncLib->getPPS(ENC_PPS_ID_RPR);
-          actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
-        }
-        if (!(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2))
-        {
-          const PPS* pPPS = m_pcEncLib->getPPS(ENC_PPS_ID_RPR2);
-          actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
-        }
-        if (!(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3))
-        {
-          const PPS* pPPS = m_pcEncLib->getPPS(ENC_PPS_ID_RPR3);
-          actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
+          if (slice->getPPS()->getPPSId() != RPR_PPS_ID[nr])
+          {
+            const PPS* pPPS = m_pcEncLib->getPPS(RPR_PPS_ID[nr]);
+            actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
+          }
         }
       }
       else
       {
-        if (!(slice->getPPS()->getPPSId() == 0) && !(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR) && !(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2) && !(slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3))
+        bool isRprPPS = false;
+        for (int nr = 0; nr < NUM_RPR_PPS; nr++)
+        {
+          if (slice->getPPS()->getPPSId() == RPR_PPS_ID[nr])
+          {
+            isRprPPS = true;
+          }
+        }
+        if (!isRprPPS)
         {
           const PPS* pPPS = m_pcEncLib->getPPS(0);
           actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
@@ -3191,7 +3187,15 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     if (pcSlice->getPPS()->getSliceChromaQpFlag() && CS::isDualITree (*pcSlice->getPic()->cs))
 #endif
     {
-      if (!(pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR || pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2 || pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3))
+      bool isRprPPS = false;
+      for (int nr = 0; nr < NUM_RPR_PPS; nr++)
+      {
+        if ((pcSlice->getPPS()->getPPSId() == RPR_PPS_ID[nr]) && (RPR_PPS_ID[nr] != 0))
+        {
+          isRprPPS = true;
+        }
+      }
+      if (!isRprPPS)
       {
         // overwrite chroma qp offset for dual tree
         pcSlice->setSliceChromaQpDelta(COMPONENT_Cb, m_pcCfg->getChromaCbQpOffsetDualTree());
@@ -3845,22 +3849,13 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         {
           if (pcSlice->isIntra())
           {
-            // at intra all PPS coded after Intra is reset except the current one
-            if (pcSlice->getPPS()->getPPSId() != 0)
+            for (int nr = 0; nr < NUM_RPR_PPS; nr++)
             {
-              m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(0), false);
-            }
-            if (pcSlice->getPPS()->getPPSId() != ENC_PPS_ID_RPR)
-            {
-              m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(ENC_PPS_ID_RPR), false);
-            }
-            if (pcSlice->getPPS()->getPPSId() != ENC_PPS_ID_RPR2)
-            {
-              m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(ENC_PPS_ID_RPR2), false);
-            }
-            if (pcSlice->getPPS()->getPPSId() != ENC_PPS_ID_RPR3)
-            {
-              m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(ENC_PPS_ID_RPR3), false);
+              // at intra all PPS coded after Intra is reset except the current one
+              if (pcSlice->getPPS()->getPPSId() != RPR_PPS_ID[nr])
+              {
+                m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(RPR_PPS_ID[nr]), false);
+              }
             }
           }
           else
