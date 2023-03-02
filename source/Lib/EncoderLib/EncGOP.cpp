@@ -1947,10 +1947,12 @@ void EncGOP::xPicInitHashME( Picture *pic, const PPS *pps, PicList &rcListPic )
 
     if (refPic->poc != pic->poc && refPic->referenced)
     {
-      if (!refPic->getHashMap()->isInitial())
+      bool validPOC = ((refPic->getPOC() == m_pcCfg->getUseHashMEPOCToCheck()) && !m_pcCfg->getUseHashMEPOCChecked() && (pic->poc >= m_pcCfg->getUseHashMEPOCToCheck()));
+      if (!refPic->getHashMap()->isInitial() || validPOC)
       {
-        if (refPic->getPOC() == 0)
+        if (validPOC)
         {
+          m_pcCfg->setUseHashMEPOCChecked(true);
           Pel* picSrc = refPic->getOrigBuf().get(COMPONENT_Y).buf;
           ptrdiff_t stridePic = refPic->getOrigBuf().get(COMPONENT_Y).stride;
           int picWidth = refPic->lwidth();
@@ -2793,6 +2795,24 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       CU::checkConformanceILRP(pcSlice);
     }
 
+    if (m_pcCfg->getUseHashMEPOCChecked())
+    {
+      if (pcPic->getPOC() > m_pcCfg->getUseHashMENextPOCToCheck())
+      {
+        if (m_pcCfg->getUseHashMEPOCToCheck() != m_pcCfg->getUseHashMENextPOCToCheck())
+        {
+          // now can we move the new intra poc in slot 2 to the active slot
+          m_pcCfg->setUseHashMEPOCToCheck(m_pcCfg->getUseHashMENextPOCToCheck());
+          m_pcCfg->setUseHashMEPOCChecked(false);
+          m_pcCfg->setUseHashME(m_pcCfg->getUseHashMECfgEnable()); // initialize hashME for next intra picture
+        }
+      }
+    }
+    if (pcSlice->isIntra())
+    {
+      // in-case the previous intra not has been checked we need to put the new intra poc in another slot
+      m_pcCfg->setUseHashMENextPOCToCheck(pcSlice->getPOC());
+    }
     xPicInitHashME( pcPic, pcSlice->getPPS(), rcListPic );
 
     if (m_pcCfg->getUseAMaxBT())
