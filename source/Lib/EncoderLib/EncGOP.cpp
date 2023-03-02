@@ -1957,8 +1957,8 @@ void EncGOP::xPicInitHashME( Picture *pic, const PPS *pps, PicList &rcListPic )
         {
           Pel* picSrc = refPic->getOrigBuf().get(COMPONENT_Y).buf;
           ptrdiff_t stridePic = refPic->getOrigBuf().get(COMPONENT_Y).stride;
-          int picWidth = pps->getPicWidthInLumaSamples();
-          int picHeight = pps->getPicHeightInLumaSamples();
+          int picWidth = refPic->lwidth();
+          int picHeight = refPic->lheight();
           int blockSize = 4;
           int allNum = 0;
           int simpleNum = 0;
