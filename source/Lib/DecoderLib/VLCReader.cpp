@@ -2968,16 +2968,13 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
         // use list from SPS
         int rplIdx = 0;
 
-        if (l == REF_PIC_LIST_0 || pps->getRpl1IdxPresentFlag())
+        if (numRplsInSps > 1 && (l == REF_PIC_LIST_0 || pps->getRpl1IdxPresentFlag()))
         {
-          if (numRplsInSps > 1)
-          {
-            int numBits = ceilLog2(numRplsInSps);
-            xReadCode(numBits, uiCode, "rpl_idx[i]");
-            rplIdx = uiCode;
-          }
+          int numBits = ceilLog2(numRplsInSps);
+          xReadCode(numBits, uiCode, "rpl_idx[i]");
+          rplIdx = uiCode;
         }
-        else
+        else if(numRplsInSps != 1)
         {
           rplIdx = picHeader->getRplIdx(REF_PIC_LIST_0);
           CHECK(rplIdx == -1, "There should be a list 0 RPL");
