@@ -72,9 +72,7 @@ const uint8_t IntraPrediction::m_aucIntraFilter[MAX_INTRA_FILTER_DEPTHS] =
 // Constructor / destructor / initialize
 // ====================================================================================================================
 
-IntraPrediction::IntraPrediction()
-:
-  m_currChromaFormat( NUM_CHROMA_FORMAT )
+IntraPrediction::IntraPrediction() : m_currChromaFormat(ChromaFormat::UNDEFINED)
 {
   for (uint32_t ch = 0; ch < MAX_NUM_COMPONENT; ch++)
   {
@@ -110,15 +108,14 @@ void IntraPrediction::destroy()
   m_pMdlmTemp = nullptr;
 }
 
-void IntraPrediction::init(ChromaFormat chromaFormatIDC, const unsigned bitDepthY)
+void IntraPrediction::init(ChromaFormat chromaFormatIdc, const unsigned bitDepthY)
 {
-  if (m_yuvExt2[COMPONENT_Y][0] != nullptr && m_currChromaFormat != chromaFormatIDC)
+  if (m_yuvExt2[COMPONENT_Y][0] != nullptr && m_currChromaFormat != chromaFormatIdc)
   {
     destroy();
   }
 
-  m_currChromaFormat = chromaFormatIDC;
-
+  m_currChromaFormat = chromaFormatIdc;
 
   if (m_yuvExt2[COMPONENT_Y][0] == nullptr) // check if first is null (in which case, nothing initialised yet)
   {
@@ -1348,8 +1345,10 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
                                recalcSize(pu.chromaFormat, ChannelType::CHROMA, ChannelType::LUMA,
                                           chromaArea.size()));   // needed for correct pos/size (4x4 Tus)
 
-  CHECK(lumaArea.width == chromaArea.width && CHROMA_444 != pu.chromaFormat, "");
-  CHECK(lumaArea.height == chromaArea.height && CHROMA_444 != pu.chromaFormat && CHROMA_422 != pu.chromaFormat, "");
+  CHECK(lumaArea.width == chromaArea.width && ChromaFormat::_444 != pu.chromaFormat, "");
+  CHECK(lumaArea.height == chromaArea.height && ChromaFormat::_444 != pu.chromaFormat
+          && ChromaFormat::_422 != pu.chromaFormat,
+        "");
 
   const SizeType chromaWidth  = chromaArea.width;
   const SizeType chromaHeight = chromaArea.height;
@@ -1441,7 +1440,7 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
     for (int i = 0; i < chromaWidth + addedAboveRight; i++)
     {
       const bool leftPadding = i == 0 && !leftIsAvailable;
-      if (pu.chromaFormat == CHROMA_444)
+      if (pu.chromaFormat == ChromaFormat::_444)
       {
         src     = pRecSrc0 - recStride;
         pDst[i] = src[i];
@@ -1451,7 +1450,7 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
         src     = pRecSrc0 - recStride;
         pDst[i] = (src[2 * i] * 2 + src[2 * i - (leftPadding ? 0 : 1)] + src[2 * i + 1] + 2) >> 2;
       }
-      else if (pu.chromaFormat == CHROMA_422)
+      else if (pu.chromaFormat == ChromaFormat::_422)
       {
         src = pRecSrc0 - recStride2;
 
@@ -1501,11 +1500,11 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
 
     for (int j = 0; j < chromaHeight + addedLeftBelow; j++)
     {
-      if (pu.chromaFormat == CHROMA_444)
+      if (pu.chromaFormat == ChromaFormat::_444)
       {
         pDst[0] = src[0];
       }
-      else if (pu.chromaFormat == CHROMA_422)
+      else if (pu.chromaFormat == ChromaFormat::_422)
       {
         int s = 2;
         s += src[0] * 2;
@@ -1547,11 +1546,11 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
   {
     for (int i = 0; i < chromaWidth; i++)
     {
-      if (pu.chromaFormat == CHROMA_444)
+      if (pu.chromaFormat == ChromaFormat::_444)
       {
         pDst0[i] = pRecSrc0[i];
       }
-      else if (pu.chromaFormat == CHROMA_422)
+      else if (pu.chromaFormat == ChromaFormat::_422)
       {
         const bool leftPadding  = i == 0 && !leftIsAvailable;
 
@@ -1576,7 +1575,7 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
       }
       else
       {
-        CHECK(pu.chromaFormat != CHROMA_420, "Chroma format must be 4:2:0 for vertical filtering");
+        CHECK(pu.chromaFormat != ChromaFormat::_420, "Chroma format must be 4:2:0 for vertical filtering");
         const bool leftPadding = i == 0 && !leftIsAvailable;
 
         int s = 4;

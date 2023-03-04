@@ -136,10 +136,11 @@ private:
   BitDepths m_msbExtendedBitDepth;
   BitDepths m_internalBitDepth;
 
-  ChromaFormat m_chromaFormatIDC;
+  ChromaFormat m_chromaFormatIdc;
   int m_sourceWidth;
   int m_sourceHeight;
   int m_QP;
+
   std::map<int, double> m_temporalFilterStrengths;
   int m_pad[2];
   bool m_clipInputVideoToRec709Range;

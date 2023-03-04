@@ -422,14 +422,15 @@ enum SliceType
   NUMBER_OF_SLICE_TYPES = 3
 };
 
-/// chroma formats (according to how the monochrome or the color planes are intended to be coded)
-enum ChromaFormat
+// chroma formats (according to how the monochrome or the color planes are intended to be coded)
+enum class ChromaFormat : uint8_t
 {
-  CHROMA_400        = 0,
-  CHROMA_420        = 1,
-  CHROMA_422        = 2,
-  CHROMA_444        = 3,
-  NUM_CHROMA_FORMAT = 4
+  _400 = 0,
+  _420,
+  _422,
+  _444,
+  NUM,
+  UNDEFINED = NUM
 };
 
 enum class ChannelType : uint8_t
@@ -1208,7 +1209,7 @@ public:
 public:
   bool sigChroma( ChromaFormat chromaFormat ) const
   {
-    if( chromaFormat == CHROMA_400 )
+    if (chromaFormat == ChromaFormat::_400)
     {
       return false;
     }

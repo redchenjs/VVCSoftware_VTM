@@ -107,7 +107,8 @@ void EncLib::create( const int layerId )
 
   if (!m_deblockingFilterDisable && m_encDbOpt)
   {
-    m_deblockingFilter.initEncPicYuvBuffer(m_chromaFormatIDC, Size(getSourceWidth(), getSourceHeight()), getMaxCUWidth());
+    m_deblockingFilter.initEncPicYuvBuffer(m_chromaFormatIdc, Size(getSourceWidth(), getSourceHeight()),
+                                           getMaxCUWidth());
   }
 
   if (m_lmcsEnabled)
@@ -557,7 +558,7 @@ void EncLib::xInitScalingLists( SPS &sps, APS &aps )
     {
       setUseScalingListId( SCALING_LIST_DEFAULT );
     }
-    aps.getScalingList().setChromaScalingListPresentFlag((sps.getChromaFormatIdc()!=CHROMA_400));
+    aps.getScalingList().setChromaScalingListPresentFlag(isChromaEnabled(sps.getChromaFormatIdc()));
     quant->setScalingList( &( aps.getScalingList() ), maxLog2TrDynamicRange, sps.getBitDepths() );
     quant->setUseScalingList(true);
 
@@ -827,7 +828,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
         pcPicCurr->M_BUFS( 0, PIC_FILTERED_ORIGINAL_INPUT ).getBuf( COMPONENT_Cr ).copyFrom( pcPicYuvFilteredOrg->getBuf( COMPONENT_Cr ) );
       }
 
-      const ChromaFormat chromaFormatIDC = pSPS->getChromaFormatIdc();
+      const ChromaFormat chromaFormatIdc = pSPS->getChromaFormatIdc();
 
       const PPS *refPPS = m_ppsMap.getPS( 0 );
       const Window& curScalingWindow = pPPS->getScalingWindow();
@@ -854,15 +855,15 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
       const ScalingRatio scalingRatio = { xScale, yScale };
 
       Picture::rescalePicture(scalingRatio, *pcPicYuvOrg, refPPS->getScalingWindow(), pcPicCurr->getOrigBuf(),
-                              pPPS->getScalingWindow(), chromaFormatIDC, pSPS->getBitDepths(), true, true,
+                              pPPS->getScalingWindow(), chromaFormatIdc, pSPS->getBitDepths(), true, true,
                               pSPS->getHorCollocatedChromaFlag(), pSPS->getVerCollocatedChromaFlag());
       Picture::rescalePicture(scalingRatio, *cPicYuvTrueOrg, refPPS->getScalingWindow(), pcPicCurr->getTrueOrigBuf(),
-                              pPPS->getScalingWindow(), chromaFormatIDC, pSPS->getBitDepths(), true, true,
+                              pPPS->getScalingWindow(), chromaFormatIdc, pSPS->getBitDepths(), true, true,
                               pSPS->getHorCollocatedChromaFlag(), pSPS->getVerCollocatedChromaFlag());
       if (getGopBasedTemporalFilterEnabled())
       {
         Picture::rescalePicture(scalingRatio, *pcPicYuvFilteredOrg, refPPS->getScalingWindow(),
-                                pcPicCurr->getFilteredOrigBuf(), pPPS->getScalingWindow(), chromaFormatIDC,
+                                pcPicCurr->getFilteredOrigBuf(), pPPS->getScalingWindow(), chromaFormatIdc,
                                 pSPS->getBitDepths(), true, true, pSPS->getHorCollocatedChromaFlag(),
                                 pSPS->getVerCollocatedChromaFlag());
       }
@@ -1248,7 +1249,8 @@ void EncLib::xInitVPS( const SPS& sps )
       {
         m_vps->setOlsDpbPicWidth( olsIdx, std::max<int>( sps.getMaxPicWidthInLumaSamples(), m_vps->getOlsDpbPicSize( olsIdx ).width ) );
         m_vps->setOlsDpbPicHeight( olsIdx, std::max<int>( sps.getMaxPicHeightInLumaSamples(), m_vps->getOlsDpbPicSize( olsIdx ).height ) );
-        m_vps->setOlsDpbChromaFormatIdc( olsIdx, std::max<int>(sps.getChromaFormatIdc(), m_vps->getOlsDpbChromaFormatIdc( olsIdx )));
+        m_vps->setOlsDpbChromaFormatIdc(olsIdx,
+                                        std::max(sps.getChromaFormatIdc(), m_vps->getOlsDpbChromaFormatIdc(olsIdx)));
         m_vps->setOlsDpbBitDepthMinus8(
           olsIdx, std::max<int>(sps.getBitDepth(ChannelType::LUMA) - 8, m_vps->getOlsDpbBitDepthMinus8(olsIdx)));
       }
@@ -1365,7 +1367,7 @@ void EncLib::xInitSPS( SPS& sps )
   cinfo->setOnePictureOnlyConstraintFlag(m_onePictureOnlyConstraintFlag);
   cinfo->setIntraOnlyConstraintFlag         (m_intraOnlyConstraintFlag);
   cinfo->setMaxBitDepthConstraintIdc    (m_maxBitDepthConstraintIdc);
-  cinfo->setMaxChromaFormatConstraintIdc((int)m_maxChromaFormatConstraintIdc);
+  cinfo->setMaxChromaFormatConstraintIdc(m_maxChromaFormatConstraintIdc);
   cinfo->setAllLayersIndependentConstraintFlag (m_allLayersIndependentConstraintFlag);
   cinfo->setNoMrlConstraintFlag (m_noMrlConstraintFlag);
   cinfo->setNoIspConstraintFlag (m_noIspConstraintFlag);
@@ -1485,7 +1487,7 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setMaxCUWidth             ( m_maxCUWidth        );
   sps.setMaxCUHeight            ( m_maxCUHeight       );
   sps.setLog2MinCodingBlockSize ( m_log2MinCUSize );
-  sps.setChromaFormatIdc        ( m_chromaFormatIDC   );
+  sps.setChromaFormatIdc(m_chromaFormatIdc);
 
   sps.setCTUSize                             ( m_CTUSize );
   sps.setSplitConsOverrideEnabledFlag        ( m_useSplitConsOverride );
@@ -1841,7 +1843,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     pps.setPicInitQPMinus26( std::min( maxDQP, std::max( minDQP, baseQp ) ));
   }
 
-  if (!sps.getJointCbCrEnabledFlag() || getChromaFormatIdc() == CHROMA_400)
+  if (!sps.getJointCbCrEnabledFlag() || !isChromaEnabled(getChromaFormatIdc()))
   {
     pps.setJointCbCrQpOffsetPresentFlag(false);
   }
@@ -1908,14 +1910,14 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     }
   }
  #if ENABLE_QPA
-  if ((getUsePerceptQPA() || getSliceChromaOffsetQpPeriodicity() > 0) && (getChromaFormatIdc() != CHROMA_400))
+  if ((getUsePerceptQPA() || getSliceChromaOffsetQpPeriodicity() > 0) && isChromaEnabled(getChromaFormatIdc()))
   {
     chromaDeltaQpEnabled = true;
   }
  #endif
   pps.setSliceChromaQpFlag(chromaDeltaQpEnabled);
 #endif
-  if (!pps.getSliceChromaQpFlag() && sps.getUseDualITree() && (getChromaFormatIdc() != CHROMA_400))
+  if (!pps.getSliceChromaQpFlag() && sps.getUseDualITree() && isChromaEnabled(getChromaFormatIdc()))
   {
     pps.setSliceChromaQpFlag(m_chromaCbQpOffsetDualTree != 0 || m_chromaCrQpOffsetDualTree != 0 || m_chromaCbCrQpOffsetDualTree != 0);
   }
@@ -2050,7 +2052,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
   {
     chromaDbfOffsetNotSameAsLuma = false;
   }
-  if ((sps.getChromaFormatIdc() != CHROMA_400) && (chromaQPOffsetNotZero || chromaDbfOffsetNotSameAsLuma))
+  if (isChromaEnabled(sps.getChromaFormatIdc()) && (chromaQPOffsetNotZero || chromaDbfOffsetNotSameAsLuma))
   {
     pps.setPPSChromaToolFlag(true);
   }

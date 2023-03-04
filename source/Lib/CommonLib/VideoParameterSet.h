@@ -90,6 +90,7 @@ private:
 
 public:
   std::vector<std::vector<OlsHrdParams>> m_olsHrdParams;
+
   int                           m_totalNumOLSs;
   int                           m_numMultiLayeredOlss;
   uint32_t                      m_multiLayerOlsIdx[MAX_NUM_OLSS];
@@ -103,7 +104,7 @@ public:
   std::vector<int>              m_numOutputLayersInOls;
   std::vector<int>              m_numLayersInOls;
   std::vector<std::vector<int>> m_layerIdInOls;
-  std::vector<int>              m_olsDpbChromaFormatIdc;
+  std::vector<ChromaFormat>     m_olsDpbChromaFormatIdc;
   std::vector<int>              m_olsDpbBitDepthMinus8;
 
 public:
@@ -216,9 +217,9 @@ public:
   void              setOlsDpbPicSize( int olsIdx, Size size )            { m_olsDpbPicSize[olsIdx] = size; }
   void              setOlsDpbPicWidth( int olsIdx, int width )           { m_olsDpbPicSize[olsIdx].width = width; }
   void              setOlsDpbPicHeight( int olsIdx, int height )         { m_olsDpbPicSize[olsIdx].height = height; }
-  int               getOlsDpbChromaFormatIdc(int olsIdx) const           { return m_olsDpbChromaFormatIdc[olsIdx]; }
+  ChromaFormat      getOlsDpbChromaFormatIdc(int olsIdx) const { return m_olsDpbChromaFormatIdc[olsIdx]; }
   int               getOlsDpbBitDepthMinus8(int olsIdx) const            { return m_olsDpbBitDepthMinus8[olsIdx]; }
-  void              setOlsDpbChromaFormatIdc(int olsIdx, int chromaFormatIdc)  { m_olsDpbChromaFormatIdc[olsIdx] = chromaFormatIdc; }
+  void              setOlsDpbChromaFormatIdc(int olsIdx, ChromaFormat cf) { m_olsDpbChromaFormatIdc[olsIdx] = cf; }
   void              setOlsDpbBitDepthMinus8(int olsIdx, int bitDepthMinus8) { m_olsDpbBitDepthMinus8[olsIdx] = bitDepthMinus8; }
 
   int               getOlsDpbParamsIdx( int olsIdx ) const               { return m_olsDpbParamsIdx[olsIdx]; }

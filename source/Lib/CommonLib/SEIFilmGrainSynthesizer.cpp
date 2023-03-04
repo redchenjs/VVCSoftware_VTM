@@ -215,7 +215,7 @@ static const uint32_t deblockFactor[13] =
 SEIFilmGrainSynthesizer::SEIFilmGrainSynthesizer()
   : m_width(0)
   , m_height(0)
-  , m_chromaFormat(NUM_CHROMA_FORMAT)
+  , m_chromaFormat(ChromaFormat::UNDEFINED)
   , m_bitDepth(0)
   , m_idrPicId(0)
   , m_grainSynt(nullptr)
@@ -264,7 +264,7 @@ void SEIFilmGrainSynthesizer::destroy()
 
 void SEIFilmGrainSynthesizer::grainSynthesizeAndBlend(PelStorage* pGrainBuf, bool isIdrPic)
 {
-  uint8_t     numComp = MAX_NUM_COMPONENT, compCtr; /* number of color components */
+  uint8_t     compCtr; /* number of color components */
   uint8_t     color_offset[MAX_NUM_COMPONENT];
   uint32_t    widthComp[MAX_NUM_COMPONENT], heightComp[MAX_NUM_COMPONENT];
   ptrdiff_t   strideComp[MAX_NUM_COMPONENT];
@@ -283,26 +283,24 @@ void SEIFilmGrainSynthesizer::grainSynthesizeAndBlend(PelStorage* pGrainBuf, boo
     return;
   }
 
+  const int numComp = getNumberValidComponents(m_chromaFormat);
+
   widthComp[0]  = m_width;
   heightComp[0] = m_height;
 
-  if (CHROMA_420 == m_chromaFormat)
+  if (ChromaFormat::_420 == m_chromaFormat)
   {
     widthComp[1]  = (m_width >> 1);
     widthComp[2]  = (m_width >> 1);
     heightComp[1] = (m_height >> 1);
     heightComp[2] = (m_height >> 1);
   }
-  else if (CHROMA_422 == m_chromaFormat)
+  else if (ChromaFormat::_422 == m_chromaFormat)
   {
     widthComp[1]  = (m_width >> 1);
     widthComp[2]  = (m_width >> 1);
     heightComp[1] = m_height;
     heightComp[2] = m_height;
-  }
-  else if (CHROMA_400 == m_chromaFormat)
-  {
-    numComp = 1;
   }
 
   /*Allocate memory for offsets assuming 16x16 block size,
@@ -323,7 +321,7 @@ void SEIFilmGrainSynthesizer::grainSynthesizeAndBlend(PelStorage* pGrainBuf, boo
   strideComp[1] = 0;
   strideComp[2] = 0;
 
-  if (CHROMA_400 != m_chromaFormat)
+  if (isChromaEnabled(m_chromaFormat))
   {
     strideComp[1] = pGrainBuf->bufs[1].stride;
     strideComp[2] = pGrainBuf->bufs[2].stride;
@@ -407,7 +405,6 @@ void SEIFilmGrainSynthesizer::grainSynthesizeAndBlend(PelStorage* pGrainBuf, boo
 /* Also down converts the chroma model values for 4:2:0 and 4:2:2 chroma_formats */
 uint8_t SEIFilmGrainSynthesizer::grainValidateParams()
 {
-  uint8_t   numComp = MAX_NUM_COMPONENT; /* number of color components */
   uint8_t   compCtr, intensityCtr, multiGrainCheck[MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES] = { { 0 } };
   uint16_t  multiGrainCtr;
   uint8_t   limitCompModelVal1[10] = { 0 }, limitCompModelVal2[10] = { 0 };
@@ -423,14 +420,12 @@ uint8_t SEIFilmGrainSynthesizer::grainValidateParams()
   {
     return FGS_INVALID_HEIGHT; /* Height not  supported */
   }
-  if ((m_chromaFormat < MIN_CHROMA_FORMAT_IDC) || (m_chromaFormat > MAX_CHROMA_FORMAT_IDC))
+  if (m_chromaFormat == ChromaFormat::UNDEFINED)
   {
     return FGS_INVALID_CHROMA_FORMAT; /* Chroma format not supported */
   }
-  if (m_chromaFormat == MIN_CHROMA_FORMAT_IDC) /* Mono Chrome */
-  {
-    numComp = 1;
-  }
+
+  const int numComp = getNumberValidComponents(m_chromaFormat);
 
   if ((m_bitDepth < MIN_BIT_DEPTH) || (m_bitDepth > MAX_BIT_DEPTH))
   {
@@ -538,9 +533,9 @@ uint8_t SEIFilmGrainSynthesizer::grainValidateParams()
         }
 
         /* conversion of component model values for 4:2:0 and 4:4:4 */
-        if (CHROMA_444 != m_chromaFormat && (compCtr > 0))
+        if (ChromaFormat::_444 != m_chromaFormat && (compCtr > 0))
         {
-          if (CHROMA_420 == m_chromaFormat) /* 4:2:0 */
+          if (ChromaFormat::_420 == m_chromaFormat) /* 4:2:0 */
           {
             m_fgcParameters->m_compModel[compCtr].intensityValues[intensityCtr].compModelValue[0] >>= 1;
             m_fgcParameters->m_compModel[compCtr].intensityValues[intensityCtr].compModelValue[1] =
@@ -551,7 +546,7 @@ uint8_t SEIFilmGrainSynthesizer::grainValidateParams()
               (m_fgcParameters->m_compModel[compCtr].intensityValues[intensityCtr].compModelValue[2] << 1));
 
           }
-          else if (CHROMA_422 == m_chromaFormat)/* 4:2:2 */
+          else if (ChromaFormat::_422 == m_chromaFormat) /* 4:2:2 */
           {
             m_fgcParameters->m_compModel[compCtr].intensityValues[intensityCtr].compModelValue[0] =
               (m_fgcParameters->m_compModel[compCtr].intensityValues[intensityCtr].compModelValue[0] * SCALE_DOWN_422) >> Q_FORMAT_SCALING;

@@ -234,13 +234,13 @@ int main(int argc, char* argv[])
     //check chroma format and bit-depth for dependent layers
     for (uint32_t i = 0; i < layerIdx; i++)
     {
-      int curLayerChromaFormatIdc = pcEncApp[i]->getChromaFormatIDC();
+      const ChromaFormat curLayerChromaFormatIdc = pcEncApp[i]->getChromaFormatIDC();
       int curLayerBitDepth = pcEncApp[i]->getBitDepth();
       for (uint32_t j = 0; j < layerIdx; j++)
       {
         if (vps->getDirectRefLayerFlag(i, j))
         {
-          int refLayerChromaFormatIdcInVPS = pcEncApp[j]->getChromaFormatIDC();
+          const ChromaFormat refLayerChromaFormatIdcInVPS = pcEncApp[j]->getChromaFormatIDC();
           CHECK(curLayerChromaFormatIdc != refLayerChromaFormatIdcInVPS, "The chroma formats of the current layer and the reference layer are different");
           int refLayerBitDepthInVPS = pcEncApp[j]->getBitDepth();
           CHECK(curLayerBitDepth != refLayerBitDepthInVPS, "The bit-depth of the current layer and the reference layer are different");

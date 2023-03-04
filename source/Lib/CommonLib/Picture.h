@@ -187,13 +187,12 @@ struct Picture : public UnitArea
                               const bool rescaleForDisplay, const int upscaleFilterForDisplay
   );
 
-  static void rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf &beforeScaling,
-                             const Window &scalingWindowBefore, const PelUnitBuf &afterScaling,
-                             const Window &scalingWindowAfter, const ChromaFormat chromaFormatIDC,
-                             const BitDepths &bitDepths, const bool useLumaFilter, const bool downsampling,
-                              const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
-                              bool rescaleForDisplay = false, int upscaleFilterForDisplay = 0
-  );
+  static void rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf& beforeScaling,
+                             const Window& scalingWindowBefore, const PelUnitBuf& afterScaling,
+                             const Window& scalingWindowAfter, const ChromaFormat chromaFormatIdc,
+                             const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
+                             const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
+                             bool rescaleForDisplay = false, int upscaleFilterForDisplay = 0);
 
 private:
   Window        m_conformanceWindow;
@@ -291,7 +290,7 @@ public:
   MCTSInfo     mctsInfo;
   std::vector<AQpLayer*> aqlayer;
 
-  ChromaFormat m_chromaFormatIDC;
+  ChromaFormat m_chromaFormatIdc;
   BitDepths    m_bitDepths;
 
 #if !KEEP_PRED_AND_RESI_SIGNALS

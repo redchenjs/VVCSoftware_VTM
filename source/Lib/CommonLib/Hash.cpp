@@ -235,7 +235,7 @@ void Hash::generateBlock2x2HashValue(const PelUnitBuf &curPicBuf, int picWidth, 
 
   int length = width * 2;
   bool includeChroma = false;
-  if ((curPicBuf).chromaFormat == CHROMA_444)
+  if ((curPicBuf).chromaFormat == ChromaFormat::_444)
   {
     length *= 3;
     includeChroma = true;
@@ -362,7 +362,7 @@ void Hash::getPixelsIn1DCharArrayByBlock2x2(const PelUnitBuf &curPicBuf, unsigne
                                             int yStart, const BitDepths &bitDepths, bool includeAllComponent)
 {
   ChromaFormat fmt = (curPicBuf).chromaFormat;
-  if (fmt != CHROMA_444)
+  if (fmt != ChromaFormat::_444)
   {
     includeAllComponent = false;
   }
@@ -535,7 +535,7 @@ bool Hash::getBlockHashValue(const PelUnitBuf &curPicBuf, int width, int height,
   addValue <<= CRC_BITS;
   const int crcMask = (1 << CRC_BITS) - 1;
 
-  const bool includeChroma = (curPicBuf).chromaFormat == CHROMA_444;
+  const bool includeChroma = (curPicBuf).chromaFormat == ChromaFormat::_444;
 
   static_vector<uint8_t, 12> p;
   p.resize(4 * (includeChroma ? 3 : 1));

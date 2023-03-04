@@ -237,7 +237,7 @@ public:
     addField(" |  ", " %s ", delim.c_str());
     addField("Bitrate      ", "%-12.4lf ", getBits() * scale);
 
-    const bool withchroma=(chFmt != CHROMA_400);
+    const bool withchroma = isChromaEnabled(chFmt);
     double psnrYUV = MAX_DOUBLE;
     double mseYUV  = MAX_DOUBLE;
     if (withchroma)
@@ -336,34 +336,34 @@ public:
     double dScale   = dFps / 1000 / (double) m_picCount;
     switch (chFmt)
     {
-    case CHROMA_400:
+    case ChromaFormat::_400:
       fprintf(pFile, "%f\t %f\n", getBits() * dScale, getPsnr(COMPONENT_Y) / (double) getNumPic());
       break;
-    case CHROMA_420:
-    case CHROMA_422:
-    case CHROMA_444:
-    {
-      double PSNRyuv = MAX_DOUBLE;
-      double mseYuv  = MAX_DOUBLE;
-
-      calculateCombinedValues(chFmt, PSNRyuv, mseYuv, bitDepths);
-
-      fprintf(pFile, "%f\t %f\t %f\t %f\t %f", getBits() * dScale, getPsnr(COMPONENT_Y) / (double) getNumPic(),
-              getPsnr(COMPONENT_Cb) / (double) getNumPic(), getPsnr(COMPONENT_Cr) / (double) getNumPic(), PSNRyuv);
-
-      if (printSequenceMSE)
+    case ChromaFormat::_420:
+    case ChromaFormat::_422:
+    case ChromaFormat::_444:
       {
-        fprintf(pFile, "\t %f\t %f\t %f\t %f\n", m_mseYuvFrame[COMPONENT_Y] / (double) getNumPic(),
-                m_mseYuvFrame[COMPONENT_Cb] / (double) getNumPic(), m_mseYuvFrame[COMPONENT_Cr] / (double) getNumPic(),
-                mseYuv);
-      }
-      else
-      {
-        fprintf(pFile, "\n");
-      }
+        double PSNRyuv = MAX_DOUBLE;
+        double mseYuv  = MAX_DOUBLE;
 
-      break;
-    }
+        calculateCombinedValues(chFmt, PSNRyuv, mseYuv, bitDepths);
+
+        fprintf(pFile, "%f\t %f\t %f\t %f\t %f", getBits() * dScale, getPsnr(COMPONENT_Y) / (double) getNumPic(),
+                getPsnr(COMPONENT_Cb) / (double) getNumPic(), getPsnr(COMPONENT_Cr) / (double) getNumPic(), PSNRyuv);
+
+        if (printSequenceMSE)
+        {
+          fprintf(pFile, "\t %f\t %f\t %f\t %f\n", m_mseYuvFrame[COMPONENT_Y] / (double) getNumPic(),
+                  m_mseYuvFrame[COMPONENT_Cb] / (double) getNumPic(),
+                  m_mseYuvFrame[COMPONENT_Cr] / (double) getNumPic(), mseYuv);
+        }
+        else
+        {
+          fprintf(pFile, "\n");
+        }
+
+        break;
+      }
 
     default:
       THROW("Unknown format during print out");

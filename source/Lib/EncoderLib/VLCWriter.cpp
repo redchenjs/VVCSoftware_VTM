@@ -966,7 +966,7 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
     xWriteUvlc(floorLog2(pcSPS->getMaxBTSizeI()) - floorLog2(pcSPS->getMinQTSize(I_SLICE)), "sps_log2_diff_max_bt_min_qt_intra_slice_luma");
     xWriteUvlc(floorLog2(pcSPS->getMaxTTSizeI()) - floorLog2(pcSPS->getMinQTSize(I_SLICE)), "sps_log2_diff_max_tt_min_qt_intra_slice_luma");
   }
-  if( pcSPS->getChromaFormatIdc() != CHROMA_400 )
+  if (isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xWriteFlag(pcSPS->getUseDualITree(), "sps_qtbtt_dual_tree_intra_flag");
   }
@@ -1013,7 +1013,7 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
   }
   xWriteFlag(pcSPS->getUseLFNST() ? 1 : 0, "sps_lfnst_enabled_flag");
 
-  if (pcSPS->getChromaFormatIdc() != CHROMA_400)
+  if (isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xWriteFlag(pcSPS->getJointCbCrEnabledFlag(), "sps_joint_cbcr_enabled_flag");
     const ChromaQpMappingTable& chromaQpMappingTable = pcSPS->getChromaQpMappingTable();
@@ -1036,7 +1036,7 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
 
   xWriteFlag( pcSPS->getSAOEnabledFlag(),                                            "sps_sao_enabled_flag");
   xWriteFlag( pcSPS->getALFEnabledFlag(),                                            "sps_alf_enabled_flag" );
-  if (pcSPS->getALFEnabledFlag() && pcSPS->getChromaFormatIdc() != CHROMA_400)
+  if (pcSPS->getALFEnabledFlag() && isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xWriteFlag( pcSPS->getCCALFEnabledFlag(),                                            "sps_ccalf_enabled_flag" );
   }
@@ -1140,11 +1140,11 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
   xWriteFlag( pcSPS->getUseISP() ? 1 : 0,                                             "sps_isp_enabled_flag");
   xWriteFlag( pcSPS->getUseMRL() ? 1 : 0,                                             "sps_mrl_enabled_flag");
   xWriteFlag( pcSPS->getUseMIP() ? 1 : 0,                                             "sps_mip_enabled_flag");
-  if( pcSPS->getChromaFormatIdc() != CHROMA_400)
+  if (isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xWriteFlag( pcSPS->getUseLMChroma() ? 1 : 0,                                      "sps_cclm_enabled_flag");
   }
-  if( pcSPS->getChromaFormatIdc() == CHROMA_420 )
+  if (pcSPS->getChromaFormatIdc() == ChromaFormat::_420)
   {
     xWriteFlag( pcSPS->getHorCollocatedChromaFlag() ? 1 : 0, "sps_chroma_horizontal_collocated_flag" );
     xWriteFlag( pcSPS->getVerCollocatedChromaFlag() ? 1 : 0, "sps_chroma_vertical_collocated_flag" );
@@ -1156,7 +1156,7 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
   }
   CHECK(pcSPS->getMaxNumMergeCand() > MRG_MAX_NUM_CANDS, "More merge candidates signalled than supported");
   xWriteFlag(pcSPS->getPLTMode() ? 1 : 0,                                                    "sps_palette_enabled_flag" );
-  if (pcSPS->getChromaFormatIdc() == CHROMA_444 && pcSPS->getLog2MaxTbSize() != 6)
+  if (pcSPS->getChromaFormatIdc() == ChromaFormat::_444 && pcSPS->getLog2MaxTbSize() != 6)
   {
     xWriteFlag(pcSPS->getUseColorTrans() ? 1 : 0, "sps_act_enabled_flag");
   }
@@ -1528,7 +1528,7 @@ void HLSWriter::codeVPS(const VPS* pcVPS)
       {
         xWriteUvlc( pcVPS->getOlsDpbPicSize( i ).width, "vps_ols_dpb_pic_width[i]" );
         xWriteUvlc( pcVPS->getOlsDpbPicSize( i ).height, "vps_ols_dpb_pic_height[i]" );
-        xWriteCode( pcVPS->m_olsDpbChromaFormatIdc[i], 2, "vps_ols_dpb_chroma_format[i]");
+        xWriteCode(to_underlying(pcVPS->m_olsDpbChromaFormatIdc[i]), 2, "vps_ols_dpb_chroma_format[i]");
         const Profile::Name profile = pcVPS->getProfileTierLevel(pcVPS->getOlsPtlIdx(i)).getProfileIdc();
         if (profile != Profile::NONE)
         {
@@ -1655,7 +1655,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
         }
 
         const int alfChromaIdc = picHeader->getAlfEnabledFlag(COMPONENT_Cb) + picHeader->getAlfEnabledFlag(COMPONENT_Cr) * 2 ;
-        if (sps->getChromaFormatIdc() != CHROMA_400)
+        if (isChromaEnabled(sps->getChromaFormatIdc()))
         {
           xWriteCode(picHeader->getAlfEnabledFlag(COMPONENT_Cb), 1, "ph_alf_cb_enabled_flag");
           xWriteCode(picHeader->getAlfEnabledFlag(COMPONENT_Cr), 1, "ph_alf_cr_enabled_flag");
@@ -1704,7 +1704,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     if (picHeader->getLmcsEnabledFlag())
     {
       xWriteCode(picHeader->getLmcsAPSId(), 2, "ph_lmcs_aps_id");
-      if (sps->getChromaFormatIdc() != CHROMA_400)
+      if (isChromaEnabled(sps->getChromaFormatIdc()))
       {
         xWriteFlag(picHeader->getLmcsChromaResidualScaleFlag(), "ph_chroma_residual_scale_flag");
       }
@@ -2123,7 +2123,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     if (pps->getSaoInfoInPhFlag())
     {
       xWriteFlag(picHeader->getSaoEnabledFlag(ChannelType::LUMA), "ph_sao_luma_enabled_flag");
-      if (sps->getChromaFormatIdc() != CHROMA_400)
+      if (isChromaEnabled(sps->getChromaFormatIdc()))
       {
         xWriteFlag(picHeader->getSaoEnabledFlag(ChannelType::CHROMA), "ph_sao_chroma_enabled_flag");
       }
@@ -2660,7 +2660,8 @@ void  HLSWriter::codeConstraintInfo  ( const ConstraintInfo* cinfo, const Profil
 
     /* picture format */
     xWriteCode(16 - cinfo->getMaxBitDepthConstraintIdc(), 4, "gci_sixteen_minus_max_bitdepth_constraint_idc");
-    xWriteCode(3 - cinfo->getMaxChromaFormatConstraintIdc(), 2, "gci_three_minus_max_chroma_format_constraint_idc");
+    xWriteCode(3 - to_underlying(cinfo->getMaxChromaFormatConstraintIdc()), 2,
+               "gci_three_minus_max_chroma_format_constraint_idc");
 
     /* NAL unit type related */
     xWriteFlag(cinfo->getNoMixedNaluTypesInPicConstraintFlag() ? 1 : 0, "gci_no_mixed_nalu_types_in_pic_constraint_flag");

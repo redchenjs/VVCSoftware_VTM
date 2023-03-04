@@ -79,7 +79,7 @@ const int EncTemporalFilter::m_cuTreeThresh[4] =
 
 EncTemporalFilter::EncTemporalFilter()
   : m_frameSkip(0)
-  , m_chromaFormatIDC(NUM_CHROMA_FORMAT)
+  , m_chromaFormatIdc(ChromaFormat::UNDEFINED)
   , m_sourceWidth(0)
   , m_sourceHeight(0)
   , m_QP(0)
@@ -108,8 +108,8 @@ void EncTemporalFilter::init(const int frameSkip, const BitDepths &inputBitDepth
     m_pad[i] = pad[i];
   }
   m_clipInputVideoToRec709Range = rec709;
-  m_inputFileName   = filename;
-  m_chromaFormatIDC = inputChromaFormatIDC;
+  m_inputFileName               = filename;
+  m_chromaFormatIdc             = inputChromaFormatIDC;
   m_inputColourSpaceConvert = colorSpaceConv;
   m_area = Area(0, 0, width, height);
   m_QP   = qp;
@@ -154,14 +154,14 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
     const int  lastFrame      = std::min(currentFilePoc + m_futureRefs, m_lastValidFrame);
     VideoIOYuv yuvFrames;
     yuvFrames.open(m_inputFileName, false, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth);
-    yuvFrames.skipFrames(firstFrame, m_sourceWidth - m_pad[0], m_sourceHeight - m_pad[1], m_chromaFormatIDC);
+    yuvFrames.skipFrames(firstFrame, m_sourceWidth - m_pad[0], m_sourceHeight - m_pad[1], m_chromaFormatIdc);
 
     std::deque<TemporalFilterSourcePicInfo> srcFrameInfo;
 
     // subsample original picture so it only needs to be done once
     PelStorage origPadded;
 
-    origPadded.create(m_chromaFormatIDC, m_area, 0, m_padding);
+    origPadded.create(m_chromaFormatIdc, m_area, 0, m_padding);
     origPadded.copyFrom(*orgPic);
     origPadded.extendBorderPel(m_padding, m_padding);
 
@@ -176,16 +176,17 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
     {
       if (poc == currentFilePoc)
       { // hop over frame that will be filtered
-        yuvFrames.skipFrames(1, m_sourceWidth - m_pad[0], m_sourceHeight - m_pad[1], m_chromaFormatIDC);
+        yuvFrames.skipFrames(1, m_sourceWidth - m_pad[0], m_sourceHeight - m_pad[1], m_chromaFormatIdc);
         continue;
       }
       srcFrameInfo.push_back(TemporalFilterSourcePicInfo());
       TemporalFilterSourcePicInfo &srcPic = srcFrameInfo.back();
 
       PelStorage dummyPicBufferTO; // Only used temporary in yuvFrames.read
-      srcPic.picBuffer.create(m_chromaFormatIDC, m_area, 0, m_padding);
-      dummyPicBufferTO.create(m_chromaFormatIDC, m_area, 0, m_padding);
-      if (!yuvFrames.read(srcPic.picBuffer, dummyPicBufferTO, m_inputColourSpaceConvert, m_pad, m_chromaFormatIDC, m_clipInputVideoToRec709Range))
+      srcPic.picBuffer.create(m_chromaFormatIdc, m_area, 0, m_padding);
+      dummyPicBufferTO.create(m_chromaFormatIdc, m_area, 0, m_padding);
+      if (!yuvFrames.read(srcPic.picBuffer, dummyPicBufferTO, m_inputColourSpaceConvert, m_pad, m_chromaFormatIdc,
+                          m_clipInputVideoToRec709Range))
       {
         // eof or read fail
         srcPic.picBuffer.destroy();
@@ -201,7 +202,7 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
 
     // filter
     PelStorage newOrgPic;
-    newOrgPic.create(m_chromaFormatIDC, m_area, 0, m_padding);
+    newOrgPic.create(m_chromaFormatIdc, m_area, 0, m_padding);
     double overallStrength = -1.0;
     for (std::map<int, double>::iterator it = m_temporalFilterStrengths.begin(); it != m_temporalFilterStrengths.end();
          ++it)
@@ -303,7 +304,7 @@ void EncTemporalFilter::subsampleLuma(const PelStorage &input, PelStorage &outpu
 {
   const int newWidth  = input.Y().width  / factor;
   const int newHeight = input.Y().height / factor;
-  output.create(m_chromaFormatIDC, Area(0, 0, newWidth, newHeight), 0, m_padding);
+  output.create(m_chromaFormatIdc, Area(0, 0, newWidth, newHeight), 0, m_padding);
 
   const Pel* srcRow   = input.Y().buf;
   const ptrdiff_t srcStride      = input.Y().stride;
@@ -576,11 +577,11 @@ void EncTemporalFilter::applyMotion(const Array2D<MotionVector> &mvs, const PelS
 {
   static const int lumaBlockSize = 8;
 
-  for(int c = 0; c < getNumberValidComponents(m_chromaFormatIDC); c++)
+  for (int c = 0; c < getNumberValidComponents(m_chromaFormatIdc); c++)
   {
-    const ComponentID compID = (ComponentID)c;
-    const int csx = getComponentScaleX(compID, m_chromaFormatIDC);
-    const int csy = getComponentScaleY(compID, m_chromaFormatIDC);
+    const auto compID     = ComponentID(c);
+    const int  csx        = getComponentScaleX(compID, m_chromaFormatIdc);
+    const int  csy        = getComponentScaleY(compID, m_chromaFormatIdc);
     const int blockSizeX = lumaBlockSize >> csx;
     const int blockSizeY = lumaBlockSize >> csy;
     const int height = input.bufs[c].height;
@@ -666,7 +667,7 @@ void EncTemporalFilter::bilateralFilter(const PelStorage &orgPic,
   std::vector<PelStorage> correctedPics(numRefs);
   for (int i = 0; i < numRefs; i++)
   {
-    correctedPics[i].create(m_chromaFormatIDC, m_area, 0, m_padding);
+    correctedPics[i].create(m_chromaFormatIdc, m_area, 0, m_padding);
     applyMotion(srcFrameInfo[i].mvs, srcFrameInfo[i].picBuffer, correctedPics[i]);
   }
 
@@ -675,7 +676,7 @@ void EncTemporalFilter::bilateralFilter(const PelStorage &orgPic,
   const double lumaSigmaSq = (m_QP - m_sigmaZeroPoint) * (m_QP - m_sigmaZeroPoint) * m_sigmaMultiplier;
   const double chromaSigmaSq = 30 * 30;
 
-  for(int c = 0; c < getNumberValidComponents(m_chromaFormatIDC); c++)
+  for (int c = 0; c < getNumberValidComponents(m_chromaFormatIdc); c++)
   {
     const ComponentID compID = (ComponentID)c;
     const int height = orgPic.bufs[c].height;
@@ -688,9 +689,10 @@ void EncTemporalFilter::bilateralFilter(const PelStorage &orgPic,
     const double weightScaling = overallStrength * (isChroma(compID) ? m_chromaFactor : 0.4);
     const Pel         maxSampleValue        = (1 << m_internalBitDepth[toChannelType(compID)]) - 1;
     const double bitDepthDiffWeighting = 1024.0 / (maxSampleValue + 1);
+
     const int lumaBlockSize = 8;
-    const int csx = getComponentScaleX(compID, m_chromaFormatIDC);
-    const int csy = getComponentScaleY(compID, m_chromaFormatIDC);
+    const int csx           = getComponentScaleX(compID, m_chromaFormatIdc);
+    const int csy           = getComponentScaleY(compID, m_chromaFormatIdc);
     const int blockSizeX = lumaBlockSize >> csx;
     const int blockSizeY = lumaBlockSize >> csy;
 

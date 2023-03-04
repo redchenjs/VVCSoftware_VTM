@@ -47,7 +47,7 @@ class ConstraintInfo
   bool              m_noSubpicInfoConstraintFlag;
   bool              m_intraOnlyConstraintFlag;
   uint32_t          m_maxBitDepthConstraintIdc;
-  int               m_maxChromaFormatConstraintIdc;
+  ChromaFormat      m_maxChromaFormatConstraintIdc;
   bool              m_onePictureOnlyConstraintFlag;
   bool              m_allLayersIndependentConstraintFlag;
   bool              m_noMrlConstraintFlag;
@@ -122,10 +122,10 @@ public:
     , m_noRectSliceConstraintFlag(false)
     , m_oneSlicePerSubpicConstraintFlag(false)
     , m_noSubpicInfoConstraintFlag(false)
-    , m_intraOnlyConstraintFlag  (false)
-    , m_maxBitDepthConstraintIdc  (  16)
-    , m_maxChromaFormatConstraintIdc(CHROMA_444)
-    , m_onePictureOnlyConstraintFlag (false)
+    , m_intraOnlyConstraintFlag(false)
+    , m_maxBitDepthConstraintIdc(16)
+    , m_maxChromaFormatConstraintIdc(ChromaFormat::_444)
+    , m_onePictureOnlyConstraintFlag(false)
     , m_allLayersIndependentConstraintFlag(false)
     , m_noMrlConstraintFlag(false)
     , m_noIspConstraintFlag(false)
@@ -144,47 +144,47 @@ public:
     , m_noQtbttDualTreeIntraConstraintFlag(false)
     , m_maxLog2CtuSizeConstraintIdc(8)
     , m_noPartitionConstraintsOverrideConstraintFlag(false)
-    , m_noSaoConstraintFlag      (false)
-    , m_noAlfConstraintFlag      (false)
-    , m_noCCAlfConstraintFlag      (false)
+    , m_noSaoConstraintFlag(false)
+    , m_noAlfConstraintFlag(false)
+    , m_noCCAlfConstraintFlag(false)
     , m_noWeightedPredictionConstraintFlag(false)
     , m_noRefWraparoundConstraintFlag(false)
     , m_noTemporalMvpConstraintFlag(false)
-    , m_noSbtmvpConstraintFlag   (false)
-    , m_noAmvrConstraintFlag     (false)
-    , m_noBdofConstraintFlag     (false)
-    , m_noDmvrConstraintFlag     (false)
-    , m_noCclmConstraintFlag     (false)
-    , m_noMtsConstraintFlag      (false)
-    , m_noSbtConstraintFlag      (false)
+    , m_noSbtmvpConstraintFlag(false)
+    , m_noAmvrConstraintFlag(false)
+    , m_noBdofConstraintFlag(false)
+    , m_noDmvrConstraintFlag(false)
+    , m_noCclmConstraintFlag(false)
+    , m_noMtsConstraintFlag(false)
+    , m_noSbtConstraintFlag(false)
     , m_noAffineMotionConstraintFlag(false)
-    , m_noBcwConstraintFlag      (false)
-    , m_noIbcConstraintFlag      (false)
-    , m_noCiipConstraintFlag  (false)
-    , m_noGeoConstraintFlag      (false)
-    , m_noLadfConstraintFlag     (false)
+    , m_noBcwConstraintFlag(false)
+    , m_noIbcConstraintFlag(false)
+    , m_noCiipConstraintFlag(false)
+    , m_noGeoConstraintFlag(false)
+    , m_noLadfConstraintFlag(false)
     , m_noTransformSkipConstraintFlag(false)
     , m_noLumaTransformSize64ConstraintFlag(false)
-    , m_noBDPCMConstraintFlag    (false)
-    , m_noJointCbCrConstraintFlag (false)
-    , m_noCuQpDeltaConstraintFlag  (false)
-    , m_noDepQuantConstraintFlag (false)
+    , m_noBDPCMConstraintFlag(false)
+    , m_noJointCbCrConstraintFlag(false)
+    , m_noCuQpDeltaConstraintFlag(false)
+    , m_noDepQuantConstraintFlag(false)
     , m_noSignDataHidingConstraintFlag(false)
     , m_noMixedNaluTypesInPicConstraintFlag(false)
-    , m_noTrailConstraintFlag (false)
-    , m_noStsaConstraintFlag (false)
-    , m_noRaslConstraintFlag (false)
-    , m_noRadlConstraintFlag (false)
-    , m_noIdrConstraintFlag (false)
-    , m_noCraConstraintFlag (false)
-    , m_noGdrConstraintFlag (false)
-    , m_noApsConstraintFlag (false)
-    , m_allRapPicturesFlag (false)
-    , m_noExtendedPrecisionProcessingConstraintFlag (false)
-    , m_noTsResidualCodingRiceConstraintFlag (false)
-    , m_noRrcRiceExtensionConstraintFlag (false)
-    , m_noPersistentRiceAdaptationConstraintFlag (false)
-    , m_noReverseLastSigCoeffConstraintFlag (false)
+    , m_noTrailConstraintFlag(false)
+    , m_noStsaConstraintFlag(false)
+    , m_noRaslConstraintFlag(false)
+    , m_noRadlConstraintFlag(false)
+    , m_noIdrConstraintFlag(false)
+    , m_noCraConstraintFlag(false)
+    , m_noGdrConstraintFlag(false)
+    , m_noApsConstraintFlag(false)
+    , m_allRapPicturesFlag(false)
+    , m_noExtendedPrecisionProcessingConstraintFlag(false)
+    , m_noTsResidualCodingRiceConstraintFlag(false)
+    , m_noRrcRiceExtensionConstraintFlag(false)
+    , m_noPersistentRiceAdaptationConstraintFlag(false)
+    , m_noReverseLastSigCoeffConstraintFlag(false)
   {}
 
 
@@ -194,9 +194,8 @@ public:
   uint32_t      getMaxBitDepthConstraintIdc() const { return m_maxBitDepthConstraintIdc; }
   void          setMaxBitDepthConstraintIdc(uint32_t bitDepth) { m_maxBitDepthConstraintIdc = bitDepth; }
 
-  int           getMaxChromaFormatConstraintIdc() const { return m_maxChromaFormatConstraintIdc; }
-  void          setMaxChromaFormatConstraintIdc(int fmt) { m_maxChromaFormatConstraintIdc = fmt; }
-
+  ChromaFormat getMaxChromaFormatConstraintIdc() const { return m_maxChromaFormatConstraintIdc; }
+  void         setMaxChromaFormatConstraintIdc(ChromaFormat fmt) { m_maxChromaFormatConstraintIdc = fmt; }
 
   bool          getNoRprConstraintFlag() const { return m_noRprConstraintFlag; }
   void          setNoRprConstraintFlag(bool b) { m_noRprConstraintFlag = b; }

@@ -42,7 +42,7 @@
 #include "Buffer.h"
 
 SEIColourTransformApply::SEIColourTransformApply()
-  : m_width(0), m_height(0), m_chromaFormat(NUM_CHROMA_FORMAT), m_bitDepth(0), m_pColourTransfParams(nullptr)
+  : m_width(0), m_height(0), m_chromaFormat(ChromaFormat::UNDEFINED), m_bitDepth(0), m_pColourTransfParams(nullptr)
 {
 }
 
@@ -67,7 +67,7 @@ SEIColourTransformApply::~SEIColourTransformApply()
 
 void SEIColourTransformApply::inverseColourTransform(PelStorage* transformBuf)
 {
-  uint8_t   numComp = m_chromaFormat ? MAX_NUM_COMPONENT : 1;
+  const int numComp = getNumberValidComponents(m_chromaFormat);
   PelBuf*   buffY   = &transformBuf->Y();
   PelBuf*   buffCb  = &transformBuf->Cb();
   PelBuf*   buffCr  = &transformBuf->Cr();
@@ -90,7 +90,7 @@ void SEIColourTransformApply::inverseColourTransform(PelStorage* transformBuf)
 
 void SEIColourTransformApply::generateColourTransfLUTs()
 {
-  uint8_t numComp     = m_chromaFormat ? MAX_NUM_COMPONENT : 1;
+  const int numComp         = getNumberValidComponents(m_chromaFormat);
   int numPreLutPoints = 1 << m_pColourTransfParams->m_log2NumberOfPointsPerLut;
   int dynamicRange    = 1 << m_bitDepth;
   const int orgCW     = dynamicRange / numPreLutPoints;

@@ -1170,7 +1170,7 @@ public:
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
 #if JVET_AC0154
-    , m_outColourFormatIdc(ChromaFormat::CHROMA_420)
+    , m_outColourFormatIdc(ChromaFormat::_420)
 #endif
     , m_picWidthInLumaSamples(0)
     , m_picHeightInLumaSamples(0)

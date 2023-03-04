@@ -1629,7 +1629,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
     CHECK(uiCode > ctbLog2SizeY - minQtLog2SizeIntraY, "The value of sps_log2_diff_max_tt_min_qt_intra_slice_luma shall be in the range of 0 to CtbLog2SizeY - MinQtLog2SizeIntraY");
     CHECK(maxTTSize[0] > 64, "The value of sps_log2_diff_max_tt_min_qt_intra_slice_luma shall be in the range of 0 to min(6,CtbLog2SizeY) - MinQtLog2SizeIntraY");
   }
-  if( pcSPS->getChromaFormatIdc() != CHROMA_400 )
+  if (isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xReadFlag(uiCode, "sps_qtbtt_dual_tree_intra_flag");           pcSPS->setUseDualITree(uiCode);
   }
@@ -1698,7 +1698,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
   }
   xReadFlag(uiCode, "sps_lfnst_enabled_flag");                    pcSPS->setUseLFNST(uiCode != 0);
 
-  if (pcSPS->getChromaFormatIdc() != CHROMA_400)
+  if (isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xReadFlag(uiCode, "sps_joint_cbcr_enabled_flag");                pcSPS->setJointCbCrEnabledFlag(uiCode ? true : false);
     ChromaQpMappingTableParams chromaQpMappingTableParams;
@@ -1735,7 +1735,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
 
   xReadFlag( uiCode, "sps_sao_enabled_flag" );                      pcSPS->setSAOEnabledFlag ( uiCode ? true : false );
   xReadFlag( uiCode, "sps_alf_enabled_flag" );                      pcSPS->setALFEnabledFlag ( uiCode ? true : false );
-  if (pcSPS->getALFEnabledFlag() && pcSPS->getChromaFormatIdc() != CHROMA_400)
+  if (pcSPS->getALFEnabledFlag() && isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xReadFlag( uiCode, "sps_ccalf_enabled_flag" );                      pcSPS->setCCALFEnabledFlag ( uiCode ? true : false );
   }
@@ -1923,7 +1923,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
   xReadFlag(uiCode, "sps_isp_enabled_flag");                        pcSPS->setUseISP( uiCode != 0 );
   xReadFlag(uiCode, "sps_mrl_enabled_flag");                        pcSPS->setUseMRL( uiCode != 0 );
   xReadFlag(uiCode, "sps_mip_enabled_flag");                        pcSPS->setUseMIP( uiCode != 0 );
-  if( pcSPS->getChromaFormatIdc() != CHROMA_400)
+  if (isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xReadFlag( uiCode, "sps_cclm_enabled_flag" );                   pcSPS->setUseLMChroma( uiCode != 0 );
   }
@@ -1931,7 +1931,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
   {
     pcSPS->setUseLMChroma(0);
   }
-  if( pcSPS->getChromaFormatIdc() == CHROMA_420 )
+  if (pcSPS->getChromaFormatIdc() == ChromaFormat::_420)
   {
     xReadFlag( uiCode, "sps_chroma_horizontal_collocated_flag" );   pcSPS->setHorCollocatedChromaFlag( uiCode != 0 );
     xReadFlag( uiCode, "sps_chroma_vertical_collocated_flag" );     pcSPS->setVerCollocatedChromaFlag( uiCode != 0 );
@@ -1944,7 +1944,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
   xReadFlag( uiCode,  "sps_palette_enabled_flag");                                pcSPS->setPLTMode                ( uiCode != 0 );
   CHECK((profile == Profile::MAIN_12 || profile == Profile::MAIN_12_INTRA || profile == Profile::MAIN_12_STILL_PICTURE)
     && uiCode != 0, "sps_palette_enabled_flag shall be equal to 0 for Main 12 (420) profiles");
-  if (pcSPS->getChromaFormatIdc() == CHROMA_444 && pcSPS->getLog2MaxTbSize() != 6)
+  if (pcSPS->getChromaFormatIdc() == ChromaFormat::_444 && pcSPS->getLog2MaxTbSize() != 6)
   {
     xReadFlag(uiCode, "sps_act_enabled_flag");                                pcSPS->setUseColorTrans(uiCode != 0);
   }
@@ -2468,7 +2468,8 @@ void HLSyntaxReader::parseVPS(VPS* pcVPS)
       {
         xReadUvlc( uiCode, "vps_ols_dpb_pic_width[i]" ); pcVPS->setOlsDpbPicWidth( i, uiCode );
         xReadUvlc( uiCode, "vps_ols_dpb_pic_height[i]" ); pcVPS->setOlsDpbPicHeight( i, uiCode );
-        xReadCode( 2, uiCode, "vps_ols_dpb_chroma_format[i]"); pcVPS->setOlsDpbChromaFormatIdc(i, uiCode);
+        xReadCode(2, uiCode, "vps_ols_dpb_chroma_format[i]");
+        pcVPS->setOlsDpbChromaFormatIdc(i, static_cast<ChromaFormat>(uiCode));
         xReadUvlc( uiCode, "vps_ols_dpb_bitdepth_minus8[i]"); pcVPS->setOlsDpbBitDepthMinus8(i, uiCode);
         const Profile::Name profile = pcVPS->getProfileTierLevel(pcVPS->getOlsPtlIdx(i)).getProfileIdc();
         if (profile != Profile::NONE)
@@ -2698,7 +2699,7 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
                 "bitstream conformance error, alf_luma_filter_signal_flag shall be equal to 1");
         }
 
-        if (sps->getChromaFormatIdc() != CHROMA_400)
+        if (isChromaEnabled(sps->getChromaFormatIdc()))
         {
           xReadCode(1, uiCode, "ph_alf_cb_enabled_flag");
           alfCbEnabledFlag = uiCode != 0;
@@ -2774,7 +2775,7 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
       xReadCode(2, uiCode, "ph_lmcs_aps_id");
       picHeader->setLmcsAPSId(uiCode);
 
-      if (sps->getChromaFormatIdc() != CHROMA_400)
+      if (isChromaEnabled(sps->getChromaFormatIdc()))
       {
         xReadFlag(uiCode, "ph_chroma_residual_scale_flag");
         picHeader->setLmcsChromaResidualScaleFlag(uiCode != 0);
@@ -3318,7 +3319,7 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
       xReadFlag(uiCode, "ph_sao_luma_enabled_flag");
       picHeader->setSaoEnabledFlag(ChannelType::LUMA, uiCode != 0);
 
-      if (sps->getChromaFormatIdc() != CHROMA_400)
+      if (isChromaEnabled(sps->getChromaFormatIdc()))
       {
         xReadFlag(uiCode, "ph_sao_chroma_enabled_flag");
         picHeader->setSaoEnabledFlag(ChannelType::CHROMA, uiCode != 0);
@@ -3327,7 +3328,7 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
     else
     {
       picHeader->setSaoEnabledFlag(ChannelType::LUMA, true);
-      picHeader->setSaoEnabledFlag(ChannelType::CHROMA, sps->getChromaFormatIdc() != CHROMA_400);
+      picHeader->setSaoEnabledFlag(ChannelType::CHROMA, isChromaEnabled(sps->getChromaFormatIdc()));
     }
   }
   else
@@ -3564,7 +3565,7 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
 
   const ChromaFormat chFmt        = sps->getChromaFormatIdc();
   const uint32_t     numValidComp = getNumberValidComponents(chFmt);
-  const bool         hasChroma    = (chFmt != CHROMA_400);
+  const bool         hasChroma    = isChromaEnabled(chFmt);
 
   // picture order count
   uiCode = picHeader->getPocLsb();
@@ -4747,7 +4748,7 @@ void HLSyntaxReader::parsePredWeightTable( Slice* pcSlice, const SPS *sps )
 {
   const ChromaFormat chFmt        = sps->getChromaFormatIdc();
   const int          numValidComp = int(getNumberValidComponents(chFmt));
-  const bool         hasChroma    = (chFmt != CHROMA_400);
+  const bool         hasChroma    = isChromaEnabled(chFmt);
 
   uint32_t log2WeightDenomLuma       = 0;
   uint32_t log2WeightDenomChroma     = 0;

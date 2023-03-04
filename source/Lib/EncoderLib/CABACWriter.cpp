@@ -198,7 +198,7 @@ void CABACWriter::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
     }
   }
 
-  if ( CS::isDualITree(cs) && cs.pcv->chrFormat != CHROMA_400 && cs.pcv->maxCUWidth > 64 )
+  if (CS::isDualITree(cs) && isChromaEnabled(cs.pcv->chrFormat) && cs.pcv->maxCUWidth > 64)
   {
     CUCtx           chromaCuCtx(qps[ChannelType::CHROMA]);
     QTBTPartitioner chromaPartitioner;
@@ -211,7 +211,7 @@ void CABACWriter::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
   {
     coding_tree(cs, partitioner, cuCtx);
     qps[ChannelType::LUMA] = cuCtx.qp;
-    if( CS::isDualITree( cs ) && cs.pcv->chrFormat != CHROMA_400 )
+    if (CS::isDualITree(cs) && isChromaEnabled(cs.pcv->chrFormat))
     {
       CUCtx cuCtxChroma(qps[ChannelType::CHROMA]);
       partitioner.initCtu(area, ChannelType::CHROMA, *cs.slice);
@@ -243,7 +243,7 @@ void CABACWriter::sao( const Slice& slice, unsigned ctuRsAddr )
 
   const bool sliceSaoLumaFlag = slice.getSaoEnabledFlag(ChannelType::LUMA);
   const bool sliceSaoChromaFlag =
-    slice.getSaoEnabledFlag(ChannelType::CHROMA) && sps.getChromaFormatIdc() != CHROMA_400;
+    slice.getSaoEnabledFlag(ChannelType::CHROMA) && isChromaEnabled(sps.getChromaFormatIdc());
 
   if (!sliceSaoLumaFlag && !sliceSaoChromaFlag)
   {
@@ -685,21 +685,14 @@ void CABACWriter::coding_unit( const CodingUnit& cu, Partitioner& partitioner, C
       {
         cu_palette_info(cu, COMPONENT_Y, 1, cuCtx);
       }
-      if (cu.chromaFormat != CHROMA_400 && (partitioner.chType == ChannelType::CHROMA))
+      if (isChromaEnabled(cu.chromaFormat) && partitioner.chType == ChannelType::CHROMA)
       {
         cu_palette_info(cu, COMPONENT_Cb, 2, cuCtx);
       }
     }
     else
     {
-      if( cu.chromaFormat != CHROMA_400 )
-      {
-        cu_palette_info(cu, COMPONENT_Y, 3, cuCtx);
-      }
-      else
-      {
-        cu_palette_info(cu, COMPONENT_Y, 1, cuCtx);
-      }
+      cu_palette_info(cu, COMPONENT_Y, getNumberValidComponents(cu.chromaFormat), cuCtx);
     }
     end_of_ctu(cu, cuCtx);
     return;
@@ -1210,7 +1203,7 @@ void CABACWriter::intra_luma_pred_mode( const PredictionUnit& pu )
 
 void CABACWriter::intra_chroma_pred_modes( const CodingUnit& cu )
 {
-  if (cu.chromaFormat == CHROMA_400 || (cu.isSepTree() && isLuma(cu.chType)))
+  if (!isChromaEnabled(cu.chromaFormat) || (cu.isSepTree() && isLuma(cu.chType)))
   {
     return;
   }
@@ -1427,9 +1420,7 @@ void CABACWriter::end_of_ctu( const CodingUnit& cu, CUCtx& cuCtx )
 {
   const bool    isLastSubCUOfCtu  = CU::isLastSubCUOfCtu( cu );
 
-  if ( isLastSubCUOfCtu
-    && ( !cu.isSepTree() || cu.chromaFormat == CHROMA_400 || isChroma( cu.chType ) )
-      )
+  if (isLastSubCUOfCtu && (!cu.isSepTree() || !isChromaEnabled(cu.chromaFormat) || isChroma(cu.chType)))
   {
     cuCtx.isDQPCoded = ( cu.cs->pps->getUseDQP() && !cuCtx.isDQPCoded );
   }
@@ -2380,7 +2371,7 @@ void CABACWriter::transform_unit( const TransformUnit& tu, CUCtx& cuCtx, Partiti
   CHECK(tu.depth != trDepth, " transform unit should be not be futher partitioned");
 
   // cbf_cb & cbf_cr
-  if (area.chromaFormat != CHROMA_400)
+  if (isChromaEnabled(area.chromaFormat))
   {
     const bool chromaCbfISP = area.blocks[COMPONENT_Cb].valid() && cu.ispMode != ISPType::NONE;
     if (area.blocks[COMPONENT_Cb].valid() && (!cu.isSepTree() || partitioner.chType == ChannelType::CHROMA)
@@ -2462,7 +2453,7 @@ void CABACWriter::transform_unit( const TransformUnit& tu, CUCtx& cuCtx, Partiti
       }
     }
   }
-  bool        lumaOnly  = ( cu.chromaFormat == CHROMA_400 || !tu.blocks[COMPONENT_Cb].valid() );
+  bool        lumaOnly  = !isChromaEnabled(cu.chromaFormat) || !tu.blocks[COMPONENT_Cb].valid();
   bool        cbf[3]    = { TU::getCbf( tu, COMPONENT_Y ), chromaCbfs.Cb, chromaCbfs.Cr };
   bool        cbfLuma   = ( cbf[ COMPONENT_Y ] != 0 );
   bool        cbfChroma = false;

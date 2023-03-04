@@ -45,14 +45,6 @@
 
 XuPool g_xuPool = XuPool();
 
-const UnitScale UnitScaleArray[NUM_CHROMA_FORMAT][MAX_NUM_COMPONENT] =
-{
-  { {2,2}, {0,0}, {0,0} },  // 4:0:0
-  { {2,2}, {1,1}, {1,1} },  // 4:2:0
-  { {2,2}, {1,2}, {1,2} },  // 4:2:2
-  { {2,2}, {2,2}, {2,2} }   // 4:4:4
-};
-
 // ---------------------------------------------------------------------------
 // coding structure method definitions
 // ---------------------------------------------------------------------------
@@ -628,7 +620,9 @@ void CodingStructure::setDecomp(const UnitArea &_area, const bool _isCoded /*= t
 
 const int CodingStructure::signalModeCons( const PartSplit split, Partitioner &partitioner, const ModeType modeTypeParent ) const
 {
-  if (CS::isDualITree(*this) || modeTypeParent != MODE_TYPE_ALL || partitioner.currArea().chromaFormat == CHROMA_444 || partitioner.currArea().chromaFormat == CHROMA_400 )
+  if (CS::isDualITree(*this) || modeTypeParent != MODE_TYPE_ALL
+      || partitioner.currArea().chromaFormat == ChromaFormat::_444
+      || !isChromaEnabled(partitioner.currArea().chromaFormat))
   {
     return LDT_MODE_TYPE_INHERIT;
   }
@@ -1286,7 +1280,7 @@ cTUTraverser CodingStructure::traverseTUs( const UnitArea& unit, const ChannelTy
 
 void CodingStructure::allocateVectorsAtPicLevel()
 {
-  const int  twice = ( !pcv->ISingleTree && slice->isIRAP() && pcv->chrFormat != CHROMA_400 ) ? 2 : 1;
+  const int  twice     = !pcv->ISingleTree && slice->isIRAP() && isChromaEnabled(pcv->chrFormat) ? 2 : 1;
   size_t     allocSize = twice * unitScale[COMPONENT_Y].scale(area.blocks[COMPONENT_Y].size()).area();
 
   cus.reserve( allocSize );
@@ -1328,7 +1322,14 @@ void CodingStructure::createInternals(const UnitArea& _unit, const bool isTopLay
 {
   area = _unit;
 
-  memcpy( unitScale, UnitScaleArray[area.chromaFormat], sizeof( unitScale ) );
+  for (int i = 0; i < unitScale.size(); i++)
+  {
+    const auto c       = ComponentID(i);
+    const bool present = isLuma(c) || isChromaEnabled(area.chromaFormat);
+    const int  scaleX  = present ? 2 >> getComponentScaleX(c, area.chromaFormat) : 0;
+    const int  scaleY  = present ? 2 >> getComponentScaleY(c, area.chromaFormat) : 0;
+    unitScale[i]       = UnitScale(scaleX, scaleY);
+  }
 
   picture = nullptr;
   parent  = nullptr;
@@ -2088,7 +2089,7 @@ const CPelBuf CodingStructure::getBuf( const CompArea &blk, const PictureType &t
 PelUnitBuf CodingStructure::getBuf( const UnitArea &unit, const PictureType &type )
 {
   // no parent fetching for buffers
-  if( area.chromaFormat == CHROMA_400 )
+  if (!isChromaEnabled(area.chromaFormat))
   {
     return PelUnitBuf( area.chromaFormat, getBuf( unit.Y(), type ) );
   }
@@ -2101,7 +2102,7 @@ PelUnitBuf CodingStructure::getBuf( const UnitArea &unit, const PictureType &typ
 const CPelUnitBuf CodingStructure::getBuf( const UnitArea &unit, const PictureType &type ) const
 {
   // no parent fetching for buffers
-  if( area.chromaFormat == CHROMA_400 )
+  if (!isChromaEnabled(area.chromaFormat))
   {
     return CPelUnitBuf( area.chromaFormat, getBuf( unit.Y(), type ) );
   }

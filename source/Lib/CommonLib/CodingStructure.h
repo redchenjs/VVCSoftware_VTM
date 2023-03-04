@@ -85,7 +85,7 @@ public:
   CodingStructure *bestCS;
   Slice           *slice;
 
-  UnitScale        unitScale[MAX_NUM_COMPONENT];
+  std::array<UnitScale, MAX_NUM_COMPONENT> unitScale;
 
   int         baseQP;
   EnumArray<int, ChannelType> prevQP;
@@ -362,8 +362,10 @@ private:
   inline const CPelUnitBuf   getBuf(const UnitArea &unit, const PictureType &type) const;
 };
 
-
-static inline uint32_t getNumberValidTBlocks(const PreCalcValues& pcv) { return (pcv.chrFormat==CHROMA_400) ? 1 : ( pcv.multiBlock422 ? MAX_NUM_TBLOCKS : MAX_NUM_COMPONENT ); }
+static inline uint32_t getNumberValidTBlocks(const PreCalcValues& pcv)
+{
+  return !isChromaEnabled(pcv.chrFormat) ? 1 : (pcv.multiBlock422 ? MAX_NUM_TBLOCKS : MAX_NUM_COMPONENT);
+}
 
 #endif
 

@@ -58,7 +58,7 @@ const std::array<Mv, DMVR_AREA> InterPrediction::m_dmvrSearchOffsets = {
 // ====================================================================================================================
 
 InterPrediction::InterPrediction()
-  : m_currChromaFormat(NUM_CHROMA_FORMAT)
+  : m_currChromaFormat(ChromaFormat::UNDEFINED)
   , m_maxCompIDToPred(MAX_NUM_COMPONENT)
   , m_pcRdCost(nullptr)
   , m_storedMv(nullptr)
@@ -164,18 +164,18 @@ void InterPrediction::destroy()
   m_IBCBuffer.destroy();
 }
 
-void InterPrediction::init( RdCost* pcRdCost, ChromaFormat chromaFormatIDC, const int ctuSize )
+void InterPrediction::init(RdCost* pcRdCost, ChromaFormat chromaFormatIdc, const int ctuSize)
 {
   m_pcRdCost = pcRdCost;
 
 
   // if it has been initialised before, but the chroma format has changed, release the memory and start again.
-  if( m_acYuvPred[REF_PIC_LIST_0][COMPONENT_Y] != nullptr && m_currChromaFormat != chromaFormatIDC )
+  if (m_acYuvPred[REF_PIC_LIST_0][COMPONENT_Y] != nullptr && m_currChromaFormat != chromaFormatIdc)
   {
     destroy();
   }
 
-  m_currChromaFormat = chromaFormatIDC;
+  m_currChromaFormat = chromaFormatIdc;
   if( m_acYuvPred[REF_PIC_LIST_0][COMPONENT_Y] == nullptr ) // check if first is null (in which case, nothing initialised yet)
   {
     for( uint32_t c = 0; c < MAX_NUM_COMPONENT; c++ )
@@ -200,11 +200,11 @@ void InterPrediction::init( RdCost* pcRdCost, ChromaFormat chromaFormatIDC, cons
       }
     }
 
-    m_geoPartBuf[0].create(UnitArea(chromaFormatIDC, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
-    m_geoPartBuf[1].create(UnitArea(chromaFormatIDC, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
-    m_colorTransResiBuf[0].create(UnitArea(chromaFormatIDC, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
-    m_colorTransResiBuf[1].create(UnitArea(chromaFormatIDC, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
-    m_colorTransResiBuf[2].create(UnitArea(chromaFormatIDC, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
+    m_geoPartBuf[0].create(UnitArea(chromaFormatIdc, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
+    m_geoPartBuf[1].create(UnitArea(chromaFormatIdc, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
+    m_colorTransResiBuf[0].create(UnitArea(chromaFormatIdc, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
+    m_colorTransResiBuf[1].create(UnitArea(chromaFormatIdc, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
+    m_colorTransResiBuf[2].create(UnitArea(chromaFormatIdc, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
 
     m_gradX0 = (Pel*)xMalloc(Pel, BIO_TEMP_BUFFER_SIZE);
     m_gradY0 = (Pel*)xMalloc(Pel, BIO_TEMP_BUFFER_SIZE);
@@ -246,7 +246,7 @@ void InterPrediction::init( RdCost* pcRdCost, ChromaFormat chromaFormatIDC, cons
   if (m_IBCBuffer.bufs.empty())
   {
     m_IBCBufferWidth = IBC_BUFFER_SIZE / ctuSize;
-    m_IBCBuffer.create(UnitArea(chromaFormatIDC, Area(0, 0, m_IBCBufferWidth, ctuSize)));
+    m_IBCBuffer.create(UnitArea(chromaFormatIdc, Area(0, 0, m_IBCBufferWidth, ctuSize)));
   }
 }
 
@@ -585,9 +585,11 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
     CHECK(CU::isIBC(*pu.cu) && pu.refIdx[refList] != IBC_REF_IDX, "Invalid reference index for ibc mode");
     CHECK((CU::isInter(*pu.cu) && pu.refIdx[refList] >= slice.getNumRefIdx(eRefPicList)), "Invalid reference index");
 
-    PelUnitBuf pcMbBuf = ( pu.chromaFormat == CHROMA_400 ?
-                           PelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[refList][0], pcYuvPred.Y())) :
-                           PelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[refList][0], pcYuvPred.Y()), PelBuf(m_acYuvPred[refList][1], pcYuvPred.Cb()), PelBuf(m_acYuvPred[refList][2], pcYuvPred.Cr())) );
+    PelUnitBuf pcMbBuf =
+      (!isChromaEnabled(pu.chromaFormat) ? PelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[refList][0], pcYuvPred.Y()))
+                                         : PelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[refList][0], pcYuvPred.Y()),
+                                                      PelBuf(m_acYuvPred[refList][1], pcYuvPred.Cb()),
+                                                      PelBuf(m_acYuvPred[refList][2], pcYuvPred.Cr())));
 
     if (pu.refIdx[0] >= 0 && pu.refIdx[1] >= 0)
     {
@@ -613,12 +615,16 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
       }
     }
   }
-  CPelUnitBuf srcPred0 = ( pu.chromaFormat == CHROMA_400 ?
-                           CPelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[0][0], pcYuvPred.Y())) :
-                           CPelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[0][0], pcYuvPred.Y()), PelBuf(m_acYuvPred[0][1], pcYuvPred.Cb()), PelBuf(m_acYuvPred[0][2], pcYuvPred.Cr())) );
-  CPelUnitBuf srcPred1 = ( pu.chromaFormat == CHROMA_400 ?
-                           CPelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[1][0], pcYuvPred.Y())) :
-                           CPelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[1][0], pcYuvPred.Y()), PelBuf(m_acYuvPred[1][1], pcYuvPred.Cb()), PelBuf(m_acYuvPred[1][2], pcYuvPred.Cr())) );
+  CPelUnitBuf srcPred0 =
+    (!isChromaEnabled(pu.chromaFormat)
+       ? CPelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[0][0], pcYuvPred.Y()))
+       : CPelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[0][0], pcYuvPred.Y()),
+                     PelBuf(m_acYuvPred[0][1], pcYuvPred.Cb()), PelBuf(m_acYuvPred[0][2], pcYuvPred.Cr())));
+  CPelUnitBuf srcPred1 =
+    (!isChromaEnabled(pu.chromaFormat)
+       ? CPelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[1][0], pcYuvPred.Y()))
+       : CPelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[1][0], pcYuvPred.Y()),
+                     PelBuf(m_acYuvPred[1][1], pcYuvPred.Cb()), PelBuf(m_acYuvPred[1][2], pcYuvPred.Cr())));
   const bool lumaOnly   = luma && !chroma;
   const bool chromaOnly = !luma && chroma;
   if (!pu.cu->geoFlag && (!dmvrApplied) && (!bioApplied) && pps.getWPBiPred() && slice.getSliceType() == B_SLICE
@@ -898,7 +904,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 
   bool enableProfTmp = compID == COMPONENT_Y && !ph.getProfDisabledFlag() && !isRefScaled && !m_skipProf;
 
-  if (compID == COMPONENT_Y || genChromaMv || chFmt == CHROMA_444)
+  if (compID == COMPONENT_Y || genChromaMv || chFmt == ChromaFormat::_444)
   {
     const Mv &mvLT = _mv[0];
     const Mv &mvRT = _mv[1];
@@ -1029,7 +1035,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 
       const ptrdiff_t idx = hLuma / AFFINE_SUBBLOCK_SIZE * MVBUFFER_SIZE + wLuma / AFFINE_SUBBLOCK_SIZE;
 
-      if (compID == COMPONENT_Y || chFmt == CHROMA_444)
+      if (compID == COMPONENT_Y || chFmt == ChromaFormat::_444)
       {
         curMv = m_storedMv[idx];
       }
@@ -1786,7 +1792,7 @@ void InterPrediction::xDmvrInitialMc(const PredictionUnit &pu, const ClpRngs &cl
     Pel      *srcBufPtr      = m_yuvRefBufDmvr[l].bufs[COMPONENT_Y].bufAt(leftPixelExtra, leftPixelExtra);
     const ptrdiff_t srcBufStride   = m_yuvRefBufDmvr[l].bufs[COMPONENT_Y].stride;
 
-    PelUnitBuf dstBuf(CHROMA_400, m_dmvrInitialPred[l]);
+    PelUnitBuf dstBuf(ChromaFormat::_400, m_dmvrInitialPred[l]);
 
     xPredInterBlk(COMPONENT_Y, pu, pu.cu->slice->getRefPic(l, pu.refIdx[l])->unscaledPic, mergeMv, dstBuf, true,
                   clpRngs.comp[COMPONENT_Y], false, false, pu.cu->slice->getScalingRatio(l, pu.refIdx[l]), true,
@@ -1862,7 +1868,7 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
     // point mc buffer to centre point to avoid multiplication to reach each iteration to the begining
     m_dmvrInitialPred[l] = PelBuf(m_yuvPredTempDmvr[l], dx + DMVR_SPAN - 1, dy + DMVR_SPAN - 1);
 
-    m_yuvRefBufDmvr[l] = pu.chromaFormat == CHROMA_400
+    m_yuvRefBufDmvr[l] = !isChromaEnabled(pu.chromaFormat)
                            ? PelUnitBuf(pu.chromaFormat, PelBuf(m_refSamplesDmvr[l][COMPONENT_Y], pcYuvDst.Y()))
                            : PelUnitBuf(pu.chromaFormat, PelBuf(m_refSamplesDmvr[l][COMPONENT_Y], pcYuvDst.Y()),
                                         PelBuf(m_refSamplesDmvr[l][COMPONENT_Cb], pcYuvDst.Cb()),
@@ -1870,7 +1876,7 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
     m_yuvRefBufDmvr[l] = m_yuvRefBufDmvr[l].subBuf(UnitAreaRelative(pu, subPu));
     // stride is set in xDmvrPrefetch()
 
-    srcPred[l] = pu.chromaFormat == CHROMA_400
+    srcPred[l] = !isChromaEnabled(pu.chromaFormat)
                    ? PelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[l][COMPONENT_Y], pcYuvDst.Y()))
                    : PelUnitBuf(pu.chromaFormat, PelBuf(m_acYuvPred[l][COMPONENT_Y], pcYuvDst.Y()),
                                 PelBuf(m_acYuvPred[l][COMPONENT_Cb], pcYuvDst.Cb()),
@@ -2035,15 +2041,17 @@ void InterPrediction::xIntraBlockCopy(PredictionUnit &pu, PelUnitBuf &predBuf, c
   }
 }
 
-void InterPrediction::resetIBCBuffer(const ChromaFormat chromaFormatIDC, const int ctuSize)
+void InterPrediction::resetIBCBuffer(const ChromaFormat chromaFormatIdc, const int ctuSize)
 {
-  const UnitArea area = UnitArea(chromaFormatIDC, Area(0, 0, m_IBCBufferWidth, ctuSize));
+  const UnitArea area = UnitArea(chromaFormatIdc, Area(0, 0, m_IBCBufferWidth, ctuSize));
   m_IBCBuffer.getBuf(area).fill(-1);
 }
 
-void InterPrediction::resetVPDUforIBC(const ChromaFormat chromaFormatIDC, const int ctuSize, const int vSize, const int xPos, const int yPos)
+void InterPrediction::resetVPDUforIBC(const ChromaFormat chromaFormatIdc, const int ctuSize, const int vSize,
+                                      const int xPos, const int yPos)
 {
-  const UnitArea area = UnitArea(chromaFormatIDC, Area(xPos & (m_IBCBufferWidth - 1), yPos & (ctuSize - 1), vSize, vSize));
+  const UnitArea area =
+    UnitArea(chromaFormatIdc, Area(xPos & (m_IBCBufferWidth - 1), yPos & (ctuSize - 1), vSize, vSize));
   m_IBCBuffer.getBuf(area).fill(-1);
 }
 

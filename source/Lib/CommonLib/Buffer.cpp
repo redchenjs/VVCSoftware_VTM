@@ -874,7 +874,7 @@ void PelStorage::swap( PelStorage& other )
 
 void PelStorage::destroy()
 {
-  chromaFormat = NUM_CHROMA_FORMAT;
+  chromaFormat = ChromaFormat::UNDEFINED;
   for( uint32_t i = 0; i < MAX_NUM_COMPONENT; i++ )
   {
     if( m_origin[i] )

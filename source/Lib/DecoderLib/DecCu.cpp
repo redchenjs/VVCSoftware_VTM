@@ -72,13 +72,13 @@ void DecCu::init( TrQuant* pcTrQuant, IntraPrediction* pcIntra, InterPrediction*
   m_pcInterPred     = pcInter;
 }
 
-void DecCu::initDecCuReshaper  (Reshape* pcReshape, ChromaFormat chromaFormatIDC)
+void DecCu::initDecCuReshaper(Reshape* pcReshape, ChromaFormat chromaFormatIdc)
 {
   m_pcReshape = pcReshape;
   if (m_tmpStorageCtu == nullptr)
   {
     m_tmpStorageCtu = new PelStorage;
-    m_tmpStorageCtu->create(UnitArea(chromaFormatIDC, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
+    m_tmpStorageCtu->create(UnitArea(chromaFormatIdc, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
   }
 
 }
@@ -98,7 +98,7 @@ void DecCu::destoryDecCuReshaprBuf()
 
 void DecCu::decompressCtu( CodingStructure& cs, const UnitArea& ctuArea )
 {
-  const int maxNumChannelType = cs.pcv->chrFormat != CHROMA_400 && CS::isDualITree( cs ) ? 2 : 1;
+  const int maxNumChannelType = isChromaEnabled(cs.pcv->chrFormat) && CS::isDualITree(cs) ? 2 : 1;
 
   if (cs.resetIBCBuffer)
   {
@@ -458,21 +458,14 @@ void DecCu::xReconIntraQT( CodingUnit &cu )
       {
         xReconPLT(cu, COMPONENT_Y, 1);
       }
-      if (cu.chromaFormat != CHROMA_400 && (cu.chType == ChannelType::CHROMA))
+      if (isChromaEnabled(cu.chromaFormat) && cu.chType == ChannelType::CHROMA)
       {
         xReconPLT(cu, COMPONENT_Cb, 2);
       }
     }
     else
     {
-      if( cu.chromaFormat != CHROMA_400 )
-      {
-        xReconPLT(cu, COMPONENT_Y, 3);
-      }
-      else
-      {
-        xReconPLT(cu, COMPONENT_Y, 1);
-      }
+      xReconPLT(cu, COMPONENT_Y, getNumberValidComponents(cu.chromaFormat));
     }
     return;
   }

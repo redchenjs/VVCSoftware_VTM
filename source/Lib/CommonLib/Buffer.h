@@ -746,7 +746,7 @@ struct UnitBuf
   ChromaFormat chromaFormat;
   UnitBufBuffers bufs;
 
-  UnitBuf() : chromaFormat( NUM_CHROMA_FORMAT ) { }
+  UnitBuf() : chromaFormat(ChromaFormat::UNDEFINED) {}
   UnitBuf( const ChromaFormat &_chromaFormat, const UnitBufBuffers&  _bufs ) : chromaFormat( _chromaFormat ), bufs( _bufs ) { }
   UnitBuf( const ChromaFormat &_chromaFormat,       UnitBufBuffers&& _bufs ) : chromaFormat( _chromaFormat ), bufs( std::forward<UnitBufBuffers>( _bufs ) ) { }
   UnitBuf( const ChromaFormat &_chromaFormat, const AreaBuf<T>  &blkY ) : chromaFormat( _chromaFormat ), bufs{ blkY } { }
@@ -1030,14 +1030,14 @@ struct PelStorage : public PelUnitBuf
 
   PelUnitBuf getBuf(const UnitArea &unit)
   {
-    return (chromaFormat == CHROMA_400)
+    return !isChromaEnabled(chromaFormat)
              ? PelUnitBuf(chromaFormat, getBuf(unit.Y()))
              : PelUnitBuf(chromaFormat, getBuf(unit.Y()), getBuf(unit.Cb()), getBuf(unit.Cr()));
   }
 
   const CPelUnitBuf getBuf(const UnitArea &unit) const
   {
-    return (chromaFormat == CHROMA_400)
+    return !isChromaEnabled(chromaFormat)
              ? CPelUnitBuf(chromaFormat, getBuf(unit.Y()))
              : CPelUnitBuf(chromaFormat, getBuf(unit.Y()), getBuf(unit.Cb()), getBuf(unit.Cr()));
   }

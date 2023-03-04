@@ -1057,7 +1057,7 @@ void  DecLib::xCreateUnavailablePicture( const PPS *pps, const int iUnavailableP
   cFillPic->cs->vps = m_parameterSetManager.getVPS(sps->getVPSId());
   cFillPic->cs->create(cFillPic->cs->sps->getChromaFormatIdc(), Area(0, 0, cFillPic->cs->pps->getPicWidthInLumaSamples(), cFillPic->cs->pps->getPicHeightInLumaSamples()), true, (bool)(cFillPic->cs->sps->getPLTMode()));
   cFillPic->allocateNewSlice();
-  cFillPic->m_chromaFormatIDC = sps->getChromaFormatIdc();
+  cFillPic->m_chromaFormatIdc = sps->getChromaFormatIdc();
   cFillPic->m_bitDepths = sps->getBitDepths();
 
   cFillPic->slices[0]->initSlice();
@@ -1759,7 +1759,7 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
         CHECK( aps->getTemporalId() > pSlice->getTLayer(), "TemporalId shall be less than or equal to the TemporalId of the coded slice NAL unit" );
         //ToDO: APS NAL unit containing the APS RBSP shall have nuh_layer_id either equal to the nuh_layer_id of a coded slice NAL unit that referrs it, or equal to the nuh_layer_id of a direct dependent layer of the layer containing a coded slice NAL unit that referrs it.
 
-        CHECK(sps->getChromaFormatIdc() == CHROMA_400 && aps->chromaPresentFlag,
+        CHECK(!isChromaEnabled(sps->getChromaFormatIdc()) && aps->chromaPresentFlag,
               "When ChromaArrayType is equal to 0, the value of aps_chroma_present_flag of an ApsType::ALF shall be "
               "equal to 0");
 
@@ -1866,7 +1866,7 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
         THROW("LMCS APS activation failed!");
       }
 
-      CHECK(sps->getChromaFormatIdc() == CHROMA_400 && lmcsAPS->chromaPresentFlag,
+      CHECK(!isChromaEnabled(sps->getChromaFormatIdc()) && lmcsAPS->chromaPresentFlag,
             "When ChromaArrayType is equal to 0, the value of aps_chroma_present_flag of an ApsType::LMCS shall be "
             "equal to 0");
 
@@ -1893,8 +1893,11 @@ void activateAPS(PicHeader* picHeader, Slice* pSlice, ParameterSetManager& param
         THROW( "SCALING LIST APS activation failed!" );
       }
 
-      CHECK( (sps->getChromaFormatIdc() == CHROMA_400 && scalingListAPS->chromaPresentFlag) || (sps->getChromaFormatIdc() != CHROMA_400 && !scalingListAPS->chromaPresentFlag),
-        "The value of aps_chroma_present_flag of the APS NAL unit having aps_params_type equal to SCALING_APS and adaptation_parameter_set_id equal to ph_scaling_list_aps_id shall be equal to ChromaArrayType  = =  0 ? 0 : 1" );
+      CHECK((!isChromaEnabled(sps->getChromaFormatIdc()) && scalingListAPS->chromaPresentFlag)
+              || (isChromaEnabled(sps->getChromaFormatIdc()) && !scalingListAPS->chromaPresentFlag),
+            "The value of aps_chroma_present_flag of the APS NAL unit having aps_params_type equal to SCALING_APS and "
+            "adaptation_parameter_set_id equal to ph_scaling_list_aps_id shall be equal to ChromaArrayType  = =  0 ? 0 "
+            ": 1");
 
       CHECK( scalingListAPS->getTemporalId() > pSlice->getTLayer(), "TemporalId shall be less than or equal to the TemporalId of the coded slice NAL unit" );
       //ToDO: APS NAL unit containing the APS RBSP shall have nuh_layer_id either equal to the nuh_layer_id of a coded slice NAL unit that referrs it, or equal to the nuh_layer_id of a direct dependent layer of the layer containing a coded slice NAL unit that referrs it.
@@ -2298,13 +2301,13 @@ void DecLib::xCheckParameterSetConstraints(const int layerId)
           "sps_bitdepth_minus8 shall be less than or equal to the value of vps_ols_dpb_bitdepth_minus8[ i ]");
   }
 
-  static std::unordered_map<int, int> m_layerChromaFormat;
+  static std::unordered_map<int, ChromaFormat> m_layerChromaFormat;
   static std::unordered_map<int, int> m_layerBitDepth;
 
   if (vps != nullptr && vps->getMaxLayers() > 1)
   {
     int curLayerIdx = vps->getGeneralLayerIdx(layerId);
-    int curLayerChromaFormat = sps->getChromaFormatIdc();
+    ChromaFormat curLayerChromaFormat = sps->getChromaFormatIdc();
     int curLayerBitDepth     = sps->getBitDepth(ChannelType::LUMA);
 
     if( slice->isClvssPu() && m_bFirstSliceInPicture )
@@ -2322,7 +2325,7 @@ void DecLib::xCheckParameterSetConstraints(const int layerId)
     {
       if (vps->getDirectRefLayerFlag(curLayerIdx, i))
       {
-        int refLayerChromaFormat = m_layerChromaFormat[i];
+        ChromaFormat refLayerChromaFormat = m_layerChromaFormat[i];
         CHECK(curLayerChromaFormat != refLayerChromaFormat, "The chroma formats of the current layer and the reference layer are different");
         int refLayerBitDepth = m_layerBitDepth[i];
         CHECK(curLayerBitDepth != refLayerBitDepth, "The bit-depth of the current layer and the reference layer are different");

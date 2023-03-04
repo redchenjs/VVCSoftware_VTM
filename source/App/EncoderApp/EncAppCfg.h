@@ -141,7 +141,7 @@ protected:
   bool      m_gciPresentFlag;
   bool      m_bIntraOnlyConstraintFlag;
   uint32_t  m_maxBitDepthConstraintIdc;
-  int       m_maxChromaFormatConstraintIdc;
+  ChromaFormat m_maxChromaFormatConstraintIdc;
   bool      m_allLayersIndependentConstraintFlag;
   bool      m_noMrlConstraintFlag;
   bool      m_noIspConstraintFlag;
@@ -449,8 +449,7 @@ protected:
   bool      m_highPrecisionOffsetsEnabledFlag;
 
   //coding tools (chroma format)
-  ChromaFormat m_chromaFormatIDC;
-
+  ChromaFormat m_chromaFormatIdc;
 
   // coding tool (SAO)
   bool      m_useSao;
