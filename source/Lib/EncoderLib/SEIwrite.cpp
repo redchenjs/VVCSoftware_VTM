@@ -1803,10 +1803,26 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
 
     xWriteUvlc(sei.m_outOrderIdc, "nnpfc_out_order_idc");
+#if JVET_AC0344_NNPFC_PATCH
+    xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
+#endif
     xWriteFlag(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");
+#if JVET_AC0344_NNPFC_PATCH
+    if (sei.m_constantPatchSizeFlag)
+    {
+#endif
     xWriteUvlc(sei.m_patchWidthMinus1, "nnpfc_patch_width_minus1");
     xWriteUvlc(sei.m_patchHeightMinus1, "nnpfc_patch_height_minus1");
+#if JVET_AC0344_NNPFC_PATCH
+    }
+    else
+    {
+      xWriteUvlc(sei.m_extendedPatchWidthCdDeltaMinus1, "extended_nnpfc_patch_width_cd_delta_minus1");
+      xWriteUvlc(sei.m_extendedPatchHeightCdDeltaMinus1, "extended_nnpfc_patch_height_cd_delta_minus1");
+    }
+#else
     xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
+#endif
     xWriteUvlc(sei.m_paddingType, "nnpfc_padding_type");
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {

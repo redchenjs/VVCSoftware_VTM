@@ -1440,6 +1440,13 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     sei->m_constantPatchSizeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(filterIdx);
     sei->m_patchWidthMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchWidthMinus1(filterIdx);
     sei->m_patchHeightMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchHeightMinus1(filterIdx);
+#if JVET_AC0344_NNPFC_PATCH
+    if (sei->m_constantPatchSizeFlag == 0)
+    {
+      sei->m_extendedPatchWidthCdDeltaMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1(filterIdx);
+      sei->m_extendedPatchHeightCdDeltaMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1(filterIdx);
+    }
+#endif
     sei->m_overlap = m_pcCfg->getNNPostFilterSEICharacteristicsOverlap(filterIdx);
     sei->m_paddingType = m_pcCfg->getNNPostFilterSEICharacteristicsPaddingType(filterIdx);
     sei->m_lumaPadding = m_pcCfg->getNNPostFilterSEICharacteristicsLumaPadding(filterIdx);
