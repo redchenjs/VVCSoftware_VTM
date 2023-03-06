@@ -2363,18 +2363,18 @@ void SEIReader::xParseSEIScalabilityDimensionInfo(SEIScalabilityDimensionInfo& s
     }
     for (int i = 0; i <= sei.m_sdiMaxLayersMinus1; i++)
     {
-      sei.m_sdiLayerId.resize(sei.m_sdiViewIdLenMinus1 + 1);
+      sei.m_sdiLayerId.resize(sei.m_sdiMaxLayersMinus1 + 1);
       sei_read_code( pDecodedMessageOutputStream, 6, val, "sdi_layer_id" ); sei.m_sdiLayerId[i] = val;
       if (sei.m_sdiMultiviewInfoFlag)
       {
-        sei.m_sdiViewIdVal.resize(sei.m_sdiViewIdLenMinus1 + 1);
+        sei.m_sdiViewIdVal.resize(sei.m_sdiMaxLayersMinus1 + 1);
         sei_read_code( pDecodedMessageOutputStream, sei.m_sdiViewIdLenMinus1 + 1, val, "sdi_view_id_val" ); sei.m_sdiViewIdVal[i] = val;
       }
       if (sei.m_sdiAuxiliaryInfoFlag)
       {
-        sei.m_sdiAuxId.resize(sei.m_sdiViewIdLenMinus1 + 1);
-        sei.m_sdiNumAssociatedPrimaryLayersMinus1.resize(sei.m_sdiViewIdLenMinus1 + 1);
-        sei.m_sdiAssociatedPrimaryLayerIdx.resize(sei.m_sdiViewIdLenMinus1 + 1);
+        sei.m_sdiAuxId.resize(sei.m_sdiMaxLayersMinus1 + 1);
+        sei.m_sdiNumAssociatedPrimaryLayersMinus1.resize(sei.m_sdiMaxLayersMinus1 + 1);
+        sei.m_sdiAssociatedPrimaryLayerIdx.resize(sei.m_sdiMaxLayersMinus1 + 1);
         sei_read_code( pDecodedMessageOutputStream, 8, val, "sdi_aux_id" ); sei.m_sdiAuxId[i] = val;
         if (sei.m_sdiAuxId[i] > 0)
         {
