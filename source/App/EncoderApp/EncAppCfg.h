@@ -781,16 +781,20 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
 
   bool                  m_nnPostFilterSEIActivationEnabled;
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  uint32_t              m_nnPostFilterSEIActivationTargetId;
+#else
   uint32_t              m_nnPostFilterSEIActivationId;
+#endif
   #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   #else
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[MAX_NUM_NN_POST_FILTERS];
   #endif
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
-  #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
-  #endif
+#endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
 

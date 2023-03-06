@@ -1281,7 +1281,7 @@ void EncApp::xInitLibCfg( int layerIdx )
       m_cEncLib.setNNPostFilterSEICharacteristicsUriTag                  ( m_nnPostFilterSEICharacteristicsUriTag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsUri                     ( m_nnPostFilterSEICharacteristicsUri[i], i);
     }
-    if (m_cEncLib.getNNPostFilterSEICharacteristicsModeIdc(i) == 1)
+    if (m_cEncLib.getNNPostFilterSEICharacteristicsModeIdc(i) == POST_FILTER_MODE::ISO_IEC_15938_17)
     {
       m_cEncLib.setNNPostFilterSEICharacteristicsPayloadFilename(m_nnPostFilterSEICharacteristicsPayloadFilename[i], i);
     }
@@ -1295,7 +1295,11 @@ void EncApp::xInitLibCfg( int layerIdx )
     }
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  m_cEncLib.setNnPostFilterSEIActivationTargetId(m_nnPostFilterSEIActivationTargetId);
+#else
   m_cEncLib.setNnPostFilterSEIActivationId                       (m_nnPostFilterSEIActivationId);
+#endif
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );
   m_cEncLib.setEntryPointPresentFlag                             ( m_entryPointPresentFlag );
   m_cEncLib.setTMVPModeId                                        ( m_TMVPModeId );
@@ -1856,6 +1860,13 @@ bool EncApp::encode()
 
   return keepDoing;
 }
+
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+void EncApp::applyNnPostFilter()
+{
+  m_cEncLib.applyNnPostFilter();
+}
+#endif
 
 // ====================================================================================================================
 // Protected member functions
