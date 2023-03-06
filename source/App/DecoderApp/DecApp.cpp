@@ -837,6 +837,10 @@ uint32_t DecApp::decode()
     writeGMFAOutput(featureCounterFinal, dummy, m_GMFAFile, true);
   }
 #endif
+
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  m_cDecLib.applyNnPostFilter();
+#endif
   
   xFlushOutput( pcListPic );
 

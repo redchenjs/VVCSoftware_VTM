@@ -747,7 +747,11 @@ protected:
 #endif
 
   bool                    m_nnPostFilterSEIActivationEnabled;
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  uint32_t                m_nnPostFilterSEIActivationTargetId;
+#else
   uint32_t                m_nnPostFilterSEIActivationId;
+#endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
 
@@ -2027,8 +2031,13 @@ public:
 #endif
   void        setNnPostFilterSEIActivationEnabled(bool enabledFlag)                                                     { m_nnPostFilterSEIActivationEnabled = enabledFlag; }
   bool        getNnPostFilterSEIActivationEnabled() const                                                               { return m_nnPostFilterSEIActivationEnabled; }
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  void        setNnPostFilterSEIActivationTargetId(uint32_t targetId)                                                   { m_nnPostFilterSEIActivationTargetId = targetId; }
+  uint32_t    getNnPostFilterSEIActivationTargetId() const                                                              { return m_nnPostFilterSEIActivationTargetId; }
+#else
   void        setNnPostFilterSEIActivationId(uint32_t id)                                                               { m_nnPostFilterSEIActivationId = id; }
   uint32_t    getNnPostFilterSEIActivationId() const                                                                    { return m_nnPostFilterSEIActivationId; }
+#endif
   void setNnPostFilterSEIActivationCancelFlag(bool cancelFlag)                                                          { m_nnPostFilterSEIActivationCancelFlag = cancelFlag; }
   bool getNnPostFilterSEIActivationCancelFlag() const                                                                   { return m_nnPostFilterSEIActivationCancelFlag;}
   void setNnPostFilterSEIActivationPersistenceFlag(bool persistenceFlag)                                                          { m_nnPostFilterSEIActivationPersistenceFlag = persistenceFlag; }

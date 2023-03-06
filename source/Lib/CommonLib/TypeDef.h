@@ -64,6 +64,8 @@
 #define JVET_AC0061_TENSOR_BITDEPTH                       1
 #define JVET_AC0062_CONSTRAINT_CHECK                      1
 #define JVET_AC0344_NNPFC_PATCH                           1
+#define JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING  1
+
 
 
 //########### place macros to be be kept below this line ###############

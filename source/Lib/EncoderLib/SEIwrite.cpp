@@ -1749,7 +1749,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
 #else
-    if (sei.m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING) 
+    if (sei.m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING)
 #endif
     {
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
@@ -1860,7 +1860,11 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 
 void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei)
 {
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  xWriteUvlc(sei.m_targetId, "nnpfa_target_id");
+#else
   xWriteUvlc(sei.m_id, "nnpfa_id");
+#endif
   xWriteFlag(sei.m_cancelFlag, "nnpfa_cancel_flag");
   if(!sei.m_cancelFlag)
   {

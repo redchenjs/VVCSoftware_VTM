@@ -739,6 +739,17 @@ void DecLib::executeLoopFilters()
   m_pcPic->cs->slice->stopProcessingTimer();
 }
 
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+void DecLib::applyNnPostFilter()
+{
+  if(m_cListPic.empty())
+  {
+    return;
+  }
+  m_nnPostFiltering.filterPictures(m_cListPic);
+}
+#endif
+
 void DecLib::finishPictureLight(int& poc, PicList*& rpcListPic )
 {
   Slice*  pcSlice = m_pcPic->cs->slice;

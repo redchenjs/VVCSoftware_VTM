@@ -548,3 +548,637 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
     return "Unknown";
   }
 }
+
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei)
+{
+  m_siiEnabled = sei.m_siiEnabled;
+  m_siiNumUnitsInShutterInterval = sei.m_siiNumUnitsInShutterInterval;
+  m_siiTimeScale = sei.m_siiTimeScale;
+  m_siiMaxSubLayersMinus1 = sei.m_siiMaxSubLayersMinus1;
+  m_siiFixedSIwithinCLVS = sei.m_siiFixedSIwithinCLVS;
+  m_siiSubLayerNumUnitsInSI = sei.m_siiSubLayerNumUnitsInSI;
+}
+
+SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
+{
+  m_posEnabled = sei.m_posEnabled;
+  m_posPayloadType = sei.m_posPayloadType;
+  m_posProcessingOrder = sei.m_posProcessingOrder;
+#if JVET_AC0058_SEI
+  m_posPrefixByte = sei.m_posPrefixByte;
+#else
+  m_posNumofSeiMessages = sei.m_posNumofSeiMessages;
+#endif
+}
+
+SEIEquirectangularProjection::SEIEquirectangularProjection(const SEIEquirectangularProjection& sei)
+{
+  m_erpCancelFlag = sei.m_erpCancelFlag;
+  m_erpPersistenceFlag = sei.m_erpPersistenceFlag;
+  m_erpGuardBandFlag = sei.m_erpGuardBandFlag;
+  m_erpGuardBandType = sei.m_erpGuardBandType;
+  m_erpLeftGuardBandWidth = sei.m_erpLeftGuardBandWidth;
+  m_erpRightGuardBandWidth = sei.m_erpRightGuardBandWidth;
+}
+
+SEISphereRotation::SEISphereRotation(const SEISphereRotation& sei)
+{
+  m_sphereRotationCancelFlag = sei.m_sphereRotationCancelFlag;
+  m_sphereRotationPersistenceFlag = sei.m_sphereRotationPersistenceFlag;
+  m_sphereRotationYaw = sei.m_sphereRotationYaw;
+  m_sphereRotationPitch = sei.m_sphereRotationPitch;
+  m_sphereRotationRoll = sei.m_sphereRotationRoll;
+}
+
+SEIOmniViewport::SEIOmniViewport(const SEIOmniViewport& sei)
+{
+  m_omniViewportId = sei.m_omniViewportId;
+  m_omniViewportCancelFlag = sei.m_omniViewportCancelFlag;
+  m_omniViewportPersistenceFlag = sei.m_omniViewportPersistenceFlag;
+  m_omniViewportCntMinus1 = sei.m_omniViewportCntMinus1;
+  m_omniViewportRegions = sei.m_omniViewportRegions;
+  for(unsigned region = 0; region < m_omniViewportRegions.size(); region++)
+  {
+    m_omniViewportRegions[region].azimuthCentre = sei.m_omniViewportRegions[region].azimuthCentre;
+    m_omniViewportRegions[region].elevationCentre = sei.m_omniViewportRegions[region].elevationCentre;
+    m_omniViewportRegions[region].tiltCentre = sei.m_omniViewportRegions[region].tiltCentre;
+    m_omniViewportRegions[region].horRange = sei.m_omniViewportRegions[region].horRange;
+    m_omniViewportRegions[region].verRange = sei.m_omniViewportRegions[region].verRange;
+  }
+}
+
+SEIRegionWisePacking::SEIRegionWisePacking(const SEIRegionWisePacking& sei)
+{
+  m_rwpCancelFlag = sei.m_rwpCancelFlag;
+  m_rwpPersistenceFlag = sei.m_rwpPersistenceFlag;
+  m_constituentPictureMatchingFlag = sei.m_constituentPictureMatchingFlag;
+  m_numPackedRegions = sei.m_numPackedRegions;
+  m_projPictureWidth = sei.m_projPictureWidth;
+  m_projPictureHeight = sei.m_projPictureHeight;
+  m_packedPictureWidth = sei.m_packedPictureWidth;
+  m_packedPictureHeight = sei.m_packedPictureHeight;
+  m_rwpTransformType = sei.m_rwpTransformType;
+  m_rwpGuardBandFlag = sei.m_rwpGuardBandFlag;
+  m_projRegionWidth = sei.m_projRegionWidth;
+  m_projRegionHeight = sei.m_projRegionHeight;
+  m_rwpProjRegionTop = sei.m_rwpProjRegionTop;
+  m_projRegionLeft = sei.m_projRegionLeft;
+  m_packedRegionWidth = sei.m_packedRegionWidth;
+  m_packedRegionHeight = sei.m_packedRegionHeight;
+  m_packedRegionTop = sei.m_packedRegionTop;
+  m_packedRegionLeft = sei.m_packedRegionLeft;
+  m_rwpLeftGuardBandWidth = sei.m_rwpLeftGuardBandWidth;
+  m_rwpRightGuardBandWidth = sei.m_rwpRightGuardBandWidth;
+  m_rwpTopGuardBandHeight = sei.m_rwpTopGuardBandHeight;
+  m_rwpBottomGuardBandHeight = sei.m_rwpBottomGuardBandHeight;
+  m_rwpGuardBandNotUsedForPredFlag = sei.m_rwpGuardBandNotUsedForPredFlag;
+  m_rwpGuardBandType = sei.m_rwpGuardBandType;
+}
+
+SEIGeneralizedCubemapProjection::SEIGeneralizedCubemapProjection(const SEIGeneralizedCubemapProjection& sei)
+{
+  m_gcmpCancelFlag = sei.m_gcmpCancelFlag;
+  m_gcmpPersistenceFlag = sei.m_gcmpPersistenceFlag;
+  m_gcmpPackingType = sei.m_gcmpPackingType;
+  m_gcmpMappingFunctionType = sei.m_gcmpMappingFunctionType;
+  m_gcmpFaceIndex = sei.m_gcmpFaceIndex;
+  m_gcmpFaceRotation = sei.m_gcmpFaceRotation;
+  m_gcmpFunctionCoeffU = sei.m_gcmpFunctionCoeffU;
+  m_gcmpFunctionUAffectedByVFlag = sei.m_gcmpFunctionUAffectedByVFlag;
+  m_gcmpFunctionCoeffV = sei.m_gcmpFunctionCoeffV;
+  m_gcmpFunctionVAffectedByUFlag = sei.m_gcmpFunctionVAffectedByUFlag;
+  m_gcmpGuardBandFlag = sei.m_gcmpGuardBandFlag;
+  m_gcmpGuardBandType = sei.m_gcmpGuardBandType;
+  m_gcmpGuardBandBoundaryExteriorFlag = sei.m_gcmpGuardBandBoundaryExteriorFlag;
+  m_gcmpGuardBandSamplesMinus1 = sei.m_gcmpGuardBandSamplesMinus1;
+}
+
+SEIScalabilityDimensionInfo::SEIScalabilityDimensionInfo(const SEIScalabilityDimensionInfo& sei)
+{
+  m_sdiNumViews = sei.m_sdiNumViews;
+  m_sdiMaxLayersMinus1 = sei.m_sdiMaxLayersMinus1;
+  m_sdiMultiviewInfoFlag = sei.m_sdiMultiviewInfoFlag;
+  m_sdiAuxiliaryInfoFlag = sei.m_sdiAuxiliaryInfoFlag;
+  m_sdiViewIdLenMinus1 = sei.m_sdiViewIdLenMinus1;
+  m_sdiLayerId = sei.m_sdiLayerId;
+  m_sdiViewIdVal = sei.m_sdiViewIdVal;
+  m_sdiAuxId = sei.m_sdiAuxId;
+  m_sdiNumAssociatedPrimaryLayersMinus1 = sei.m_sdiNumAssociatedPrimaryLayersMinus1;
+  m_sdiAssociatedPrimaryLayerIdx = sei.m_sdiAssociatedPrimaryLayerIdx;
+}
+
+SEIMultiviewAcquisitionInfo::SEIMultiviewAcquisitionInfo(const SEIMultiviewAcquisitionInfo& sei)
+{
+  m_maiIntrinsicParamFlag = sei.m_maiIntrinsicParamFlag;
+  m_maiExtrinsicParamFlag = sei.m_maiExtrinsicParamFlag;
+  m_maiNumViewsMinus1 = sei.m_maiNumViewsMinus1;
+  m_maiIntrinsicParamsEqualFlag = sei.m_maiIntrinsicParamsEqualFlag;
+  m_maiPrecFocalLength = sei.m_maiPrecFocalLength;
+  m_maiPrecPrincipalPoint = sei.m_maiPrecPrincipalPoint;
+  m_maiPrecSkewFactor = sei.m_maiPrecSkewFactor;
+  m_maiSignFocalLengthX = sei.m_maiSignFocalLengthX;
+  m_maiExponentFocalLengthX = sei.m_maiExponentFocalLengthX;
+  m_maiMantissaFocalLengthX = sei.m_maiMantissaFocalLengthX;
+  m_maiSignFocalLengthY = sei.m_maiSignFocalLengthY;
+  m_maiExponentFocalLengthY = sei.m_maiExponentFocalLengthY;
+  m_maiMantissaFocalLengthY = sei.m_maiMantissaFocalLengthY;
+  m_maiSignPrincipalPointX = sei.m_maiSignPrincipalPointX;
+  m_maiExponentPrincipalPointX = sei.m_maiExponentPrincipalPointX;
+  m_maiMantissaPrincipalPointX = sei.m_maiMantissaPrincipalPointX;
+  m_maiSignPrincipalPointY = sei.m_maiSignPrincipalPointY;
+  m_maiExponentPrincipalPointY = sei.m_maiExponentPrincipalPointY;
+  m_maiMantissaPrincipalPointY = sei.m_maiMantissaPrincipalPointY;
+  m_maiSignSkewFactor = sei.m_maiSignSkewFactor;
+  m_maiExponentSkewFactor = sei.m_maiExponentSkewFactor;
+  m_maiMantissaSkewFactor = sei.m_maiMantissaSkewFactor;
+  m_maiPrecRotationParam = sei.m_maiPrecRotationParam;
+  m_maiPrecTranslationParam = sei.m_maiPrecTranslationParam;
+  m_maiSignR = sei.m_maiSignR;
+  m_maiExponentR = sei.m_maiExponentR;
+  m_maiMantissaR = sei.m_maiMantissaR;
+  m_maiSignT = sei.m_maiSignT;
+  m_maiExponentT = sei.m_maiExponentT;
+  m_maiMantissaT = sei.m_maiMantissaT;
+}
+
+SEIMultiviewViewPosition::SEIMultiviewViewPosition(const SEIMultiviewViewPosition& sei)
+{
+  m_mvpNumViewsMinus1 = sei.m_mvpNumViewsMinus1;
+  m_mvpViewPosition = sei.m_mvpViewPosition;
+}
+
+SEIAlphaChannelInfo::SEIAlphaChannelInfo(const SEIAlphaChannelInfo& sei)
+{
+  m_aciCancelFlag = sei.m_aciCancelFlag;
+  m_aciUseIdc = sei.m_aciUseIdc;
+  m_aciBitDepthMinus8 = sei.m_aciBitDepthMinus8;
+  m_aciTransparentValue = sei.m_aciTransparentValue;
+  m_aciOpaqueValue = sei.m_aciOpaqueValue;
+  m_aciIncrFlag = sei.m_aciIncrFlag;
+  m_aciClipFlag = sei.m_aciClipFlag;
+  m_aciClipTypeFlag = sei.m_aciClipTypeFlag;
+}
+
+SEIDepthRepresentationInfo::SEIDepthRepresentationInfo(const SEIDepthRepresentationInfo& sei)
+{
+  m_driZNearFlag = sei.m_driZNearFlag;
+  m_driZFarFlag = sei.m_driZFarFlag;
+  m_driDMinFlag = sei.m_driDMinFlag;
+  m_driDMaxFlag = sei.m_driDMaxFlag;
+  m_driZNear = sei.m_driZNear;
+  m_driZFar = sei.m_driZFar;
+  m_driDMin = sei.m_driDMin;
+  m_driDMax = sei.m_driDMax;
+  m_driDepthRepresentationType = sei.m_driDepthRepresentationType;
+  m_driDisparityRefViewId = sei.m_driDisparityRefViewId;
+  m_driDepthNonlinearRepresentationNumMinus1 = sei.m_driDepthNonlinearRepresentationNumMinus1;
+  m_driDepthNonlinearRepresentationModel = sei.m_driDepthNonlinearRepresentationModel;
+}
+
+SEISampleAspectRatioInfo::SEISampleAspectRatioInfo(const SEISampleAspectRatioInfo& sei)
+{
+  m_sariCancelFlag = sei.m_sariCancelFlag;
+  m_sariPersistenceFlag = sei.m_sariPersistenceFlag;
+  m_sariAspectRatioIdc = sei.m_sariAspectRatioIdc;
+  m_sariSarWidth = sei.m_sariSarWidth;
+  m_sariSarHeight = sei.m_sariSarHeight;
+}
+
+SEIPhaseIndication::SEIPhaseIndication(const SEIPhaseIndication& sei)
+{
+  m_horPhaseNum = sei.m_horPhaseNum;
+  m_horPhaseDenMinus1 = sei.m_horPhaseDenMinus1;
+  m_verPhaseNum = sei.m_verPhaseNum;
+  m_verPhaseDenMinus1 = sei.m_verPhaseDenMinus1;
+}
+
+SEIuserDataUnregistered::SEIuserDataUnregistered(const SEIuserDataUnregistered& sei)
+{
+  std::memcpy(uuid_iso_iec_11578, sei.uuid_iso_iec_11578, sizeof(sei.uuid_iso_iec_11578));
+  userDataLength = sei.userDataLength;
+  if (nullptr != userData)
+  {
+    userData = new uint8_t(*sei.userData);
+  }
+}
+
+SEIDecodedPictureHash::SEIDecodedPictureHash(const SEIDecodedPictureHash& sei)
+{
+  method = sei.method;
+  singleCompFlag = sei.singleCompFlag;
+  m_pictureHash = sei.m_pictureHash;
+}
+
+SEIBufferingPeriod::SEIBufferingPeriod(const SEIBufferingPeriod& sei)
+{
+  m_bpNalCpbParamsPresentFlag = sei.m_bpNalCpbParamsPresentFlag;
+  m_bpVclCpbParamsPresentFlag = sei.m_bpVclCpbParamsPresentFlag;
+  m_initialCpbRemovalDelayLength = sei.m_initialCpbRemovalDelayLength;
+  m_cpbRemovalDelayLength = sei.m_cpbRemovalDelayLength;
+  m_dpbOutputDelayLength = sei.m_dpbOutputDelayLength;
+  m_bpCpbCnt = sei.m_bpCpbCnt;
+  m_duCpbRemovalDelayIncrementLength = sei.m_duCpbRemovalDelayIncrementLength;
+  m_dpbOutputDelayDuLength = sei.m_dpbOutputDelayDuLength;
+  std::memcpy(m_initialCpbRemovalDelay, sei.m_initialCpbRemovalDelay, sizeof(sei.m_initialCpbRemovalDelay));
+  std::memcpy(m_initialCpbRemovalOffset, sei.m_initialCpbRemovalOffset, sizeof(sei.m_initialCpbRemovalOffset));
+  m_concatenationFlag = sei.m_concatenationFlag;
+  m_auCpbRemovalDelayDelta = sei.m_auCpbRemovalDelayDelta;
+  m_cpbRemovalDelayDeltasPresentFlag = sei.m_cpbRemovalDelayDeltasPresentFlag;
+  m_numCpbRemovalDelayDeltas = sei.m_numCpbRemovalDelayDeltas;
+  m_bpMaxSubLayers = sei.m_bpMaxSubLayers;
+  std::memcpy(m_cpbRemovalDelayDelta, sei.m_cpbRemovalDelayDelta, sizeof(sei.m_cpbRemovalDelayDelta));
+  m_bpDecodingUnitHrdParamsPresentFlag = sei.m_bpDecodingUnitHrdParamsPresentFlag;
+  m_decodingUnitCpbParamsInPicTimingSeiFlag = sei.m_decodingUnitCpbParamsInPicTimingSeiFlag;
+  m_decodingUnitDpbDuParamsInPicTimingSeiFlag = sei.m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
+  m_sublayerInitialCpbRemovalDelayPresentFlag = sei.m_sublayerInitialCpbRemovalDelayPresentFlag;
+  m_additionalConcatenationInfoPresentFlag = sei.m_additionalConcatenationInfoPresentFlag;
+  m_maxInitialRemovalDelayForConcatenation = sei.m_maxInitialRemovalDelayForConcatenation;
+  m_sublayerDpbOutputOffsetsPresentFlag = sei.m_sublayerDpbOutputOffsetsPresentFlag;
+  std::memcpy(m_dpbOutputTidOffset, sei.m_dpbOutputTidOffset, sizeof(sei.m_dpbOutputTidOffset));
+  m_altCpbParamsPresentFlag = sei.m_altCpbParamsPresentFlag;
+  m_useAltCpbParamsFlag = sei.m_useAltCpbParamsFlag;
+}
+
+SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
+{
+  std::memcpy(m_ptSubLayerDelaysPresentFlag, sei.m_ptSubLayerDelaysPresentFlag, sizeof(sei.m_ptSubLayerDelaysPresentFlag));
+  std::memcpy(m_cpbRemovalDelayDeltaEnabledFlag, sei.m_cpbRemovalDelayDeltaEnabledFlag, sizeof(sei.m_cpbRemovalDelayDeltaEnabledFlag));
+  std::memcpy(m_cpbRemovalDelayDeltaIdx, sei.m_cpbRemovalDelayDeltaIdx, sizeof(sei.m_cpbRemovalDelayDeltaIdx));
+  std::memcpy(m_auCpbRemovalDelay, sei.m_auCpbRemovalDelay, sizeof(sei.m_auCpbRemovalDelay));
+  m_picDpbOutputDelay = sei.m_picDpbOutputDelay;
+  m_picDpbOutputDuDelay = sei.m_picDpbOutputDuDelay;
+  m_numDecodingUnitsMinus1 = sei.m_numDecodingUnitsMinus1;
+  m_duCommonCpbRemovalDelayFlag = sei.m_duCommonCpbRemovalDelayFlag;
+  std::memcpy(m_duCommonCpbRemovalDelayMinus1, sei.m_duCommonCpbRemovalDelayMinus1, sizeof(sei.m_duCommonCpbRemovalDelayMinus1));
+  m_numNalusInDuMinus1 = sei.m_numNalusInDuMinus1;
+  m_duCpbRemovalDelayMinus1 = sei.m_duCpbRemovalDelayMinus1;
+  m_cpbAltTimingInfoPresentFlag = sei.m_cpbAltTimingInfoPresentFlag;
+  m_nalCpbAltInitialRemovalDelayDelta = sei.m_nalCpbAltInitialRemovalDelayDelta;
+  m_nalCpbAltInitialRemovalOffsetDelta = sei.m_nalCpbAltInitialRemovalOffsetDelta;
+  m_nalCpbDelayOffset = sei.m_nalCpbDelayOffset;
+  m_nalDpbDelayOffset = sei.m_nalDpbDelayOffset;
+  m_vclCpbAltInitialRemovalDelayDelta = sei.m_vclCpbAltInitialRemovalDelayDelta;
+  m_vclCpbAltInitialRemovalOffsetDelta = sei.m_vclCpbAltInitialRemovalOffsetDelta;
+  m_vclCpbDelayOffset = sei.m_vclCpbDelayOffset;
+  m_vclDpbDelayOffset = sei.m_vclDpbDelayOffset;
+  m_ptDisplayElementalPeriodsMinus1 = sei.m_ptDisplayElementalPeriodsMinus1;
+}
+
+SEIDecodingUnitInfo::SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei)
+{
+  m_decodingUnitIdx = sei.m_decodingUnitIdx;
+  std::memcpy(m_duiSubLayerDelaysPresentFlag, sei.m_duiSubLayerDelaysPresentFlag, sizeof(sei.m_duiSubLayerDelaysPresentFlag));
+  std::memcpy(m_duSptCpbRemovalDelayIncrement, sei.m_duSptCpbRemovalDelayIncrement, sizeof(sei.m_duSptCpbRemovalDelayIncrement));
+  m_dpbOutputDuDelayPresentFlag = sei.m_dpbOutputDuDelayPresentFlag;
+  m_picSptDpbOutputDuDelay = sei.m_picSptDpbOutputDuDelay;
+}
+
+SEIFrameFieldInfo::SEIFrameFieldInfo(const SEIFrameFieldInfo& sei)
+{
+  m_fieldPicFlag = sei.m_fieldPicFlag;
+  m_bottomFieldFlag = sei.m_bottomFieldFlag;
+  m_pairingIndicatedFlag = sei.m_pairingIndicatedFlag;
+  m_pairedWithNextFieldFlag = sei.m_pairedWithNextFieldFlag;
+  m_displayFieldsFromFrameFlag = sei.m_displayFieldsFromFrameFlag;
+  m_topFieldFirstFlag = sei.m_topFieldFirstFlag;
+  m_displayElementalPeriodsMinus1 = sei.m_displayElementalPeriodsMinus1;
+  m_sourceScanType = sei.m_sourceScanType;
+  m_duplicateFlag = sei.m_duplicateFlag;
+}
+
+SEIFramePacking::SEIFramePacking(const SEIFramePacking& sei)
+{
+  m_arrangementId = sei.m_arrangementId;
+  m_arrangementCancelFlag = sei.m_arrangementCancelFlag;
+  m_arrangementType = sei.m_arrangementType;
+  m_quincunxSamplingFlag = sei.m_quincunxSamplingFlag;
+  m_contentInterpretationType = sei.m_contentInterpretationType;
+  m_spatialFlippingFlag = sei.m_spatialFlippingFlag;
+  m_frame0FlippedFlag = sei.m_frame0FlippedFlag;
+  m_fieldViewsFlag = sei.m_fieldViewsFlag;
+  m_currentFrameIsFrame0Flag = sei.m_currentFrameIsFrame0Flag;
+  m_frame0SelfContainedFlag = sei.m_frame0SelfContainedFlag;
+  m_frame1SelfContainedFlag = sei.m_frame1SelfContainedFlag;
+  m_frame0GridPositionX = sei.m_frame0GridPositionX;
+  m_frame0GridPositionY = sei.m_frame0GridPositionY;
+  m_frame1GridPositionX = sei.m_frame1GridPositionX;
+  m_frame1GridPositionY = sei.m_frame1GridPositionY;
+  m_arrangementReservedByte = sei.m_arrangementReservedByte;
+  m_arrangementPersistenceFlag = sei.m_arrangementPersistenceFlag;
+  m_upsampledAspectRatio = sei.m_upsampledAspectRatio;
+}
+
+SEIDisplayOrientation::SEIDisplayOrientation(const SEIDisplayOrientation& sei)
+{
+  m_doCancelFlag = sei.m_doCancelFlag;
+  m_doPersistenceFlag = sei.m_doPersistenceFlag;
+  m_doTransformType = sei.m_doTransformType;
+}
+
+SEIGreenMetadataInfo::SEIGreenMetadataInfo(const SEIGreenMetadataInfo& sei)
+{
+  m_greenMetadataType = sei.m_greenMetadataType;
+  m_xsdSubpicNumberMinus1 = sei.m_xsdSubpicNumberMinus1;
+#if GREEN_METADATA_SEI_ENABLED
+  m_xsdSubPicIdc = sei.m_xsdSubPicIdc;
+#endif
+  m_xsdMetricValuePSNR = sei.m_xsdMetricValuePSNR;
+  m_xsdMetricValueSSIM = sei.m_xsdMetricValueSSIM;
+  m_xsdMetricValueWPSNR = sei.m_xsdMetricValueWPSNR;
+  m_xsdMetricValueWSPSNR = sei.m_xsdMetricValueWSPSNR;
+  m_xsdMetricTypePSNR = sei.m_xsdMetricTypePSNR;
+  m_xsdMetricTypeSSIM = sei.m_xsdMetricTypeSSIM;
+  m_xsdMetricTypeWPSNR = sei.m_xsdMetricTypeWPSNR;
+  m_xsdMetricTypeWSPSNR = sei.m_xsdMetricTypeWSPSNR;
+  m_greenMetadataGranularityType = sei.m_greenMetadataGranularityType;
+  m_greenMetadataExtendedRepresentation = sei.m_greenMetadataExtendedRepresentation;
+  m_periodType = sei.m_periodType;
+  m_numPictures = sei.m_numPictures;
+  m_numSeconds = sei.m_numSeconds;
+  m_greenComplexityMetrics.portionNonZeroBlocksArea = sei.m_greenComplexityMetrics.portionNonZeroBlocksArea;
+  m_greenComplexityMetrics.portionNonZero_4_8_16BlocksArea = sei.m_greenComplexityMetrics.portionNonZero_4_8_16BlocksArea;
+  m_greenComplexityMetrics.portionNonZero_32_64_128BlocksArea = sei.m_greenComplexityMetrics.portionNonZero_32_64_128BlocksArea;
+  m_greenComplexityMetrics.portionNonZero_256_512_1024BlocksArea = sei.m_greenComplexityMetrics.portionNonZero_256_512_1024BlocksArea;
+  m_greenComplexityMetrics.portionNonZero_2048_4096BlocksArea = sei.m_greenComplexityMetrics.portionNonZero_2048_4096BlocksArea;
+  m_greenComplexityMetrics.portionNonZeroTransformCoefficientsArea = sei.m_greenComplexityMetrics.portionNonZeroTransformCoefficientsArea;
+  m_greenComplexityMetrics.portionIntraPredictedBlocksArea = sei.m_greenComplexityMetrics.portionIntraPredictedBlocksArea;
+  m_greenComplexityMetrics.portionBdofBlocksArea = sei.m_greenComplexityMetrics.portionBdofBlocksArea;
+  m_greenComplexityMetrics.portionBiAndGpmPredictedBlocksArea = sei.m_greenComplexityMetrics.portionBiAndGpmPredictedBlocksArea;
+  m_greenComplexityMetrics.portionDeblockingInstances = sei.m_greenComplexityMetrics.portionDeblockingInstances;
+  m_greenComplexityMetrics.portionSaoInstances = sei.m_greenComplexityMetrics.portionSaoInstances;
+  m_greenComplexityMetrics.portionAlfInstances = sei.m_greenComplexityMetrics.portionAlfInstances;
+}
+
+SEIParameterSetsInclusionIndication::SEIParameterSetsInclusionIndication(const SEIParameterSetsInclusionIndication& sei)
+{
+  m_selfContainedClvsFlag = sei.m_selfContainedClvsFlag;
+}
+
+SEIMasteringDisplayColourVolume::SEIMasteringDisplayColourVolume(const SEIMasteringDisplayColourVolume& sei)
+{
+  values.colourVolumeSEIEnabled = sei.values.colourVolumeSEIEnabled;
+  values.maxLuminance = sei.values.maxLuminance;
+  values.minLuminance = sei.values.minLuminance;
+  std::memcpy(values.primaries, sei.values.primaries, sizeof(sei.values.primaries));
+  std::memcpy(values.whitePoint, sei.values.whitePoint, sizeof(sei.values.whitePoint));
+}
+
+SEIScalableNesting::SEIScalableNesting(const SEIScalableNesting& sei)
+{
+  m_snOlsFlag = sei.m_snOlsFlag;
+  m_snSubpicFlag = sei.m_snSubpicFlag;
+  m_snNumOlssMinus1 = sei.m_snNumOlssMinus1;
+  std::memcpy(m_snOlsIdxDeltaMinus1, sei.m_snOlsIdxDeltaMinus1, sizeof(sei.m_snOlsIdxDeltaMinus1));
+  std::memcpy(m_snOlsIdx, sei.m_snOlsIdx, sizeof(sei.m_snOlsIdx));
+  m_snAllLayersFlag = sei.m_snAllLayersFlag;
+  m_snNumLayersMinus1 = sei.m_snNumLayersMinus1;
+  std::memcpy(m_snLayerId, sei.m_snLayerId, sizeof(sei.m_snLayerId));
+  m_snNumSubpics = sei.m_snNumSubpics;
+  m_snSubpicIdLen = sei.m_snSubpicIdLen;
+  m_snSubpicId = sei.m_snSubpicId;
+  m_snNumSEIs = sei.m_snNumSEIs;
+  m_nestedSEIs = sei.m_nestedSEIs;
+}
+
+SEIAlternativeTransferCharacteristics::SEIAlternativeTransferCharacteristics(const SEIAlternativeTransferCharacteristics& sei)
+{
+  m_preferredTransferCharacteristics = sei.m_preferredTransferCharacteristics;
+}
+
+SEIUserDataRegistered::SEIUserDataRegistered(const SEIUserDataRegistered& sei)
+{
+  m_ituCountryCode = sei.m_ituCountryCode;
+  m_userData = sei.m_userData;
+}
+
+SEIFilmGrainCharacteristics::SEIFilmGrainCharacteristics(const SEIFilmGrainCharacteristics& sei)
+{
+  m_filmGrainCharacteristicsCancelFlag = sei.m_filmGrainCharacteristicsCancelFlag;
+  m_filmGrainModelId = sei.m_filmGrainModelId;
+  m_separateColourDescriptionPresentFlag = sei.m_separateColourDescriptionPresentFlag;
+  m_filmGrainBitDepthLumaMinus8 = sei.m_filmGrainBitDepthLumaMinus8;
+  m_filmGrainBitDepthChromaMinus8 = sei.m_filmGrainBitDepthChromaMinus8;
+  m_filmGrainFullRangeFlag = sei.m_filmGrainFullRangeFlag;
+  m_filmGrainColourPrimaries = sei.m_filmGrainColourPrimaries;
+  m_filmGrainTransferCharacteristics = sei.m_filmGrainTransferCharacteristics;
+  m_filmGrainMatrixCoeffs = sei.m_filmGrainMatrixCoeffs;
+  m_blendingModeId = sei.m_blendingModeId;
+  m_log2ScaleFactor = sei.m_log2ScaleFactor;
+  for (int i = 0; i < MAX_NUM_COMPONENT; i++)
+  {
+    m_compModel[i].presentFlag = sei.m_compModel[i].presentFlag;
+    m_compModel[i].numModelValues = sei.m_compModel[i].numModelValues;
+    m_compModel[i].numIntensityIntervals = sei.m_compModel[i].numIntensityIntervals;
+    m_compModel[i].intensityValues = sei.m_compModel[i].intensityValues;
+  }
+  m_filmGrainCharacteristicsPersistenceFlag = sei.m_filmGrainCharacteristicsPersistenceFlag;
+}
+
+SEIContentLightLevelInfo::SEIContentLightLevelInfo(const SEIContentLightLevelInfo& sei)
+{
+  m_maxContentLightLevel = sei.m_maxContentLightLevel;
+  m_maxPicAverageLightLevel = sei.m_maxPicAverageLightLevel;
+}
+
+SEIAmbientViewingEnvironment::SEIAmbientViewingEnvironment(const SEIAmbientViewingEnvironment& sei)
+{
+  m_ambientIlluminance = sei.m_ambientIlluminance;
+  m_ambientLightX = sei.m_ambientLightX;
+  m_ambientLightY = sei.m_ambientLightY;
+}
+
+SEIColourTransformInfo::SEIColourTransformInfo(const SEIColourTransformInfo& sei)
+{
+  m_id = sei.m_id;
+  m_signalInfoFlag = sei.m_signalInfoFlag;
+  m_fullRangeFlag = sei.m_fullRangeFlag;
+  m_primaries = sei.m_primaries;
+  m_transferFunction = sei.m_transferFunction;
+  m_matrixCoefs = sei.m_matrixCoefs;
+  m_crossComponentFlag = sei.m_crossComponentFlag;
+  m_crossComponentInferred = sei.m_crossComponentInferred;
+  m_numberChromaLutMinus1 = sei.m_numberChromaLutMinus1;
+  m_chromaOffset = sei.m_chromaOffset;
+  m_bitdepth = sei.m_bitdepth;
+  m_log2NumberOfPointsPerLut = sei.m_log2NumberOfPointsPerLut;
+  for (int i = 0; i < MAX_NUM_COMPONENT; i++)
+  {
+    m_lut[i].presentFlag = sei.m_lut[i].presentFlag;
+    m_lut[i].numLutValues = sei.m_lut[i].numLutValues;
+    m_lut[i].lutValues = sei.m_lut[i].lutValues;
+  }
+}
+
+SEIContentColourVolume::SEIContentColourVolume(const SEIContentColourVolume& sei)
+{
+  m_ccvCancelFlag = sei.m_ccvCancelFlag;
+  m_ccvPersistenceFlag = sei.m_ccvPersistenceFlag;
+  m_ccvPrimariesPresentFlag = sei.m_ccvPrimariesPresentFlag;
+  m_ccvMinLuminanceValuePresentFlag = sei.m_ccvMinLuminanceValuePresentFlag;
+  m_ccvMaxLuminanceValuePresentFlag = sei.m_ccvMaxLuminanceValuePresentFlag;
+  m_ccvAvgLuminanceValuePresentFlag = sei.m_ccvAvgLuminanceValuePresentFlag;
+  std::memcpy(m_ccvPrimariesX, sei.m_ccvPrimariesX, sizeof(sei.m_ccvPrimariesX));
+  std::memcpy(m_ccvPrimariesY, sei.m_ccvPrimariesY, sizeof(sei.m_ccvPrimariesY));
+  m_ccvMinLuminanceValue = sei.m_ccvMinLuminanceValue;
+  m_ccvMaxLuminanceValue = sei.m_ccvMaxLuminanceValue;
+  m_ccvAvgLuminanceValue = sei.m_ccvAvgLuminanceValue;
+}
+
+SEISubpicureLevelInfo::SEISubpicureLevelInfo(const SEISubpicureLevelInfo& sei)
+{
+  m_numRefLevels = sei.m_numRefLevels;
+  m_explicitFractionPresentFlag = sei.m_explicitFractionPresentFlag;
+  m_cbrConstraintFlag = sei.m_cbrConstraintFlag;
+  m_numSubpics = sei.m_numSubpics;
+  m_sliMaxSublayers = sei.m_sliMaxSublayers;
+  m_sliSublayerInfoPresentFlag = sei.m_sliSublayerInfoPresentFlag;
+  m_nonSubpicLayersFraction = sei.m_nonSubpicLayersFraction;
+  m_refLevelIdc = sei.m_refLevelIdc;
+  m_refLevelFraction = sei.m_refLevelFraction;
+}
+
+SEIManifest::SEIManifest(const SEIManifest& sei)
+{
+  m_manifestNumSeiMsgTypes = sei.m_manifestNumSeiMsgTypes;
+  m_manifestSeiPayloadType = sei.m_manifestSeiPayloadType;
+  m_manifestSeiDescription = sei.m_manifestSeiDescription;
+}
+
+SEIPrefixIndication::SEIPrefixIndication(const SEIPrefixIndication& sei)
+{
+  m_prefixSeiPayloadType = sei.m_prefixSeiPayloadType;
+  m_numSeiPrefixIndicationsMinus1 = sei.m_numSeiPrefixIndicationsMinus1;
+  m_numBitsInPrefixIndicationMinus1 = sei.m_numBitsInPrefixIndicationMinus1;
+  m_seiPrefixDataBit = sei.m_seiPrefixDataBit;
+  m_payload = sei.m_payload;
+}
+
+SEIExtendedDrapIndication::SEIExtendedDrapIndication(const SEIExtendedDrapIndication& sei)
+{
+  m_edrapIndicationRapIdMinus1 = sei.m_edrapIndicationRapIdMinus1;
+  m_edrapIndicationLeadingPicturesDecodableFlag = sei.m_edrapIndicationLeadingPicturesDecodableFlag;
+  m_edrapIndicationReservedZero12Bits = sei.m_edrapIndicationReservedZero12Bits;
+  m_edrapIndicationNumRefRapPicsMinus1 = sei.m_edrapIndicationNumRefRapPicsMinus1;
+  m_edrapIndicationRefRapId = sei.m_edrapIndicationRefRapId;
+}
+
+SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteristics(
+  const SEINeuralNetworkPostFilterCharacteristics& sei)
+{
+  m_id = sei.m_id;
+  m_modeIdc = sei.m_modeIdc;
+  m_purposeAndFormattingFlag = sei.m_purposeAndFormattingFlag;
+  m_purpose = sei.m_purpose;
+  m_outSubCFlag = sei.m_outSubCFlag;
+  m_outSubWidthC = sei.m_outSubWidthC;
+  m_outSubHeightC = sei.m_outSubHeightC;
+#if JVET_AC0154
+  m_outColourFormatIdc = sei.m_outColourFormatIdc;
+#endif
+  m_picWidthInLumaSamples = sei.m_picWidthInLumaSamples;
+  m_picHeightInLumaSamples = sei.m_picHeightInLumaSamples;
+#if JVET_AC0061_TENSOR_BITDEPTH
+  m_inpTensorBitDepthLumaMinus8 = sei.m_inpTensorBitDepthLumaMinus8;
+  m_inpTensorBitDepthChromaMinus8 = sei.m_inpTensorBitDepthChromaMinus8;
+  m_outTensorBitDepthLumaMinus8 = sei.m_outTensorBitDepthLumaMinus8;
+  m_outTensorBitDepthChromaMinus8 = sei.m_outTensorBitDepthChromaMinus8;
+#else
+  m_inpTensorBitDepthMinus8 = sei.m_inpTensorBitDepthMinus8;
+  m_outTensorBitDepthMinus8 = sei.m_outTensorBitDepthMinus8;
+#endif
+  m_componentLastFlag = sei.m_componentLastFlag;
+  m_inpFormatIdc = sei.m_inpFormatIdc;
+  m_auxInpIdc = sei.m_auxInpIdc;
+  m_sepColDescriptionFlag = sei.m_sepColDescriptionFlag;
+  m_colPrimaries = sei.m_colPrimaries;
+  m_transCharacteristics = sei.m_transCharacteristics;
+  m_matrixCoeffs = sei.m_matrixCoeffs;
+  m_inpOrderIdc = sei.m_inpOrderIdc;
+  m_outFormatIdc = sei.m_outFormatIdc;
+  m_outOrderIdc = sei.m_outOrderIdc;
+  m_constantPatchSizeFlag = sei.m_constantPatchSizeFlag;
+  m_patchWidthMinus1 = sei.m_patchWidthMinus1;
+  m_patchHeightMinus1 = sei.m_patchHeightMinus1;
+#if JVET_AC0344_NNPFC_PATCH
+  m_extendedPatchWidthCdDeltaMinus1 = sei.m_extendedPatchWidthCdDeltaMinus1;
+  m_extendedPatchHeightCdDeltaMinus1 = sei.m_extendedPatchHeightCdDeltaMinus1;
+#endif
+  m_overlap = sei.m_overlap;
+  m_paddingType = sei.m_paddingType;
+  m_lumaPadding = sei.m_lumaPadding;
+  m_cbPadding = sei.m_cbPadding;
+  m_crPadding = sei.m_crPadding;
+  m_payloadLength = sei.m_payloadLength;
+  if (nullptr != sei.m_payloadByte)
+  {
+    m_payloadByte = new char(*sei.m_payloadByte);
+  }
+  m_complexityInfoPresentFlag = sei.m_complexityInfoPresentFlag;
+  m_uriTag = sei.m_uriTag;
+  m_uri = sei.m_uri;
+  m_parameterTypeIdc = sei.m_parameterTypeIdc;
+  m_log2ParameterBitLengthMinus3 = sei.m_log2ParameterBitLengthMinus3;
+  m_numParametersIdc = sei.m_numParametersIdc;
+  m_numKmacOperationsIdc = sei.m_numKmacOperationsIdc;
+  m_totalKilobyteSize = sei.m_totalKilobyteSize;
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+  m_numberInputDecodedPicturesMinus1 = sei.m_numberInputDecodedPicturesMinus1;
+#else
+  m_numberInputDecodedPicturesMinus2 = sei.m_numberInputDecodedPicturesMinus2;
+#endif
+  m_numberInterpolatedPictures = sei.m_numberInterpolatedPictures;
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+  m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
+#endif
+}
+
+SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
+  const SEINeuralNetworkPostFilterActivation& sei)
+{
+  m_targetId = sei.m_targetId;
+  m_cancelFlag = sei.m_cancelFlag;
+  m_persistenceFlag = sei.m_persistenceFlag;
+}
+
+SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)
+{
+  m_filterHintCancelFlag = sei.m_filterHintCancelFlag;
+  m_filterHintPersistenceFlag = sei.m_filterHintPersistenceFlag;
+  m_filterHintSizeY = sei.m_filterHintSizeY;
+  m_filterHintSizeX = sei.m_filterHintSizeX;
+  m_filterHintType = sei.m_filterHintType;
+  m_filterHintChromaCoeffPresentFlag = sei.m_filterHintChromaCoeffPresentFlag;
+  m_filterHintValues = sei.m_filterHintValues;
+}
+
+SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t id)
+{
+  for (auto sei : seiList)
+  {
+    auto *nnpfcSEI = (SEINeuralNetworkPostFilterCharacteristics *) sei;
+    if (id == nnpfcSEI->m_id)
+    {
+      return nnpfcSEI;
+    }
+  }
+  return nullptr;
+}
+
+SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMessages &seiList)
+{
+  for (auto sei: seiList)
+  {
+    auto *nnpfcSEI = (SEINeuralNetworkPostFilterCharacteristics *) sei;
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+    if ((nnpfcSEI->m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
+#else
+    if (nnpfcSEI->m_purpose == 4)
+#endif
+    {
+      return nnpfcSEI;
+    }
+  }
+  return nullptr;
+}
+#endif
