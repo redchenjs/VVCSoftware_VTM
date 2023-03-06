@@ -1386,10 +1386,10 @@ void Slice::checkSubpicTypeConstraints(PicList& rcListPic, const ReferencePictur
       {
         int pocBits = getSPS()->getBitsForPOC();
         int pocMask = (1 << pocBits) - 1;
-        int ltrpPoc = pRPL0->getRefPicIdentifier(i) & pocMask;
+        int ltrpPoc = rpl->getRefPicIdentifier(i) & pocMask;
         if (rpl->getDeltaPocMSBPresentFlag(i))
         {
-          ltrpPoc += getPOC() - pRPL0->getDeltaPocMSBCycleLT(i) * (pocMask + 1) - (getPOC() & pocMask);
+          ltrpPoc += getPOC() - rpl->getDeltaPocMSBCycleLT(i) * (pocMask + 1) - (getPOC() & pocMask);
         }
         refPic    = xGetLongTermRefPic(rcListPic, ltrpPoc, rpl->getDeltaPocMSBPresentFlag(i), m_pcPic->layerId);
         refPicPOC = refPic->getPOC();
