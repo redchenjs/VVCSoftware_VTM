@@ -2808,7 +2808,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         }
       }
     }
-    if (pcSlice->isIntra())
+    if (pcSlice->isIRAP())
     {
       // in-case the previous intra not has been checked we need to put the new intra poc in another slot
       m_pcCfg->setUseHashMENextPOCToCheck(pcSlice->getPOC());
