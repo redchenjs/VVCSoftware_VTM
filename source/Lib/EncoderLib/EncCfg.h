@@ -361,7 +361,7 @@ protected:
   bool      m_Geo;
   bool      m_allowDisFracMMVD;
   bool      m_AffineAmvr;
-  bool      m_HashME;
+  bool      m_useHashMeInCurrentIntraPeriod;
   bool      m_HashMECfgEnable;
   int       m_HashMEPOC;
   bool      m_HashMEPOCchecked;
@@ -1474,8 +1474,8 @@ public:
   bool      getUseGeo                       ()         const { return m_Geo; }
   void      setAllowDisFracMMVD             ( bool b )       { m_allowDisFracMMVD = b;    }
   bool      getAllowDisFracMMVD             ()         const { return m_allowDisFracMMVD; }
-  void      setUseHashME                    ( bool b )       { m_HashME = b; }
-  bool      getUseHashME                    ()         const { return m_HashME; }
+  void      setUseHashME                    ( bool b )       { m_useHashMeInCurrentIntraPeriod = b; }
+  bool      getUseHashME                    ()         const { return m_useHashMeInCurrentIntraPeriod; }
   void      setUseHashMECfgEnable           (bool b) { m_HashMECfgEnable = b; }
   bool      getUseHashMECfgEnable           ()         const { return m_HashMECfgEnable; }
   void      setUseHashMEPOCToCheck          (int thePOCtoCheck) { m_HashMEPOC = thePOCtoCheck; }
