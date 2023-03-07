@@ -1424,7 +1424,6 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
   ChromaFormat chromaFormatIdc = sps.getChromaFormatIdc();
   bool ret = false;
 
-  static Window confFullResolution;
   static Window afterScaleWindowFullResolution;
 
   // decoder does not have information about upscaled picture scaling and conformance windows, store this information when full resolution picutre is encountered
@@ -1442,6 +1441,7 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
       upscaledPic.create(chromaFormatIdc,
                          Area(Position(), Size(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples())));
 
+      afterScaleWindowFullResolution = sps.getConformanceWindow();
       int curPicWidth = sps.getMaxPicWidthInLumaSamples()   - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowLeftOffset() + afterScaleWindowFullResolution.getWindowRightOffset() );
       int curPicHeight = sps.getMaxPicHeightInLumaSamples() - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowTopOffset()  + afterScaleWindowFullResolution.getWindowBottomOffset() );
 
@@ -1458,11 +1458,11 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
                               sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag(), rescaleForDisplay,
                               upscaleFilterForDisplay);
       ret = write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), upscaledPic, ipCSC,
-                  packedYuvOutputMode, confFullResolution.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
-                  confFullResolution.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIdc),
-                  confFullResolution.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc),
-                  confFullResolution.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIdc),
-                  ChromaFormat::UNDEFINED, clipToRec709, false);
+                  packedYuvOutputMode, afterScaleWindowFullResolution.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
+                  afterScaleWindowFullResolution.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIdc),
+                  afterScaleWindowFullResolution.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc),
+                  afterScaleWindowFullResolution.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIdc),
+                  ChromaFormat::UNDEFINED, clipToRec709);
     }
     else
     {
