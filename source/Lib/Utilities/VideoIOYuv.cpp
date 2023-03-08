@@ -1424,7 +1424,7 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
   ChromaFormat chromaFormatIdc = sps.getChromaFormatIdc();
   bool ret = false;
 
-  static Window afterScaleWindowFullResolution;
+  static Window afterScaleWindowFullResolution = sps.getConformanceWindow();
 
   // decoder does not have information about upscaled picture scaling and conformance windows, store this information when full resolution picutre is encountered
   if( sps.getMaxPicWidthInLumaSamples() == pps.getPicWidthInLumaSamples() && sps.getMaxPicHeightInLumaSamples() == pps.getPicHeightInLumaSamples() )
@@ -1441,7 +1441,6 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
       upscaledPic.create(chromaFormatIdc,
                          Area(Position(), Size(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples())));
 
-      afterScaleWindowFullResolution = sps.getConformanceWindow();
       int curPicWidth = sps.getMaxPicWidthInLumaSamples()   - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowLeftOffset() + afterScaleWindowFullResolution.getWindowRightOffset() );
       int curPicHeight = sps.getMaxPicHeightInLumaSamples() - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowTopOffset()  + afterScaleWindowFullResolution.getWindowBottomOffset() );
 
