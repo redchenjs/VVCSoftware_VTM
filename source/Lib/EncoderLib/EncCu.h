@@ -61,6 +61,7 @@
 class EncLib;
 class HLSWriter;
 class EncSlice;
+class EncGOP;
 
 // ====================================================================================================================
 // Class definition
@@ -255,6 +256,7 @@ private:
   RdCost*               m_pcRdCost;
   EncSlice*             m_pcSliceEncoder;
   DeblockingFilter*     m_deblockingFilter;
+  EncGOP*               m_pcGOPEncoder;
 
   CABACWriter*          m_CABACEstimator;
   RateCtrl*             m_pcRateCtrl;

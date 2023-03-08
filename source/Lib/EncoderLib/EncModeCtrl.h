@@ -295,6 +295,11 @@ protected:
 
   bool                  m_doPlt;
 
+  bool                  m_useHashMeInCurrentIntraPeriod;
+  int                   m_HashMEPOC;
+  bool                  m_HashMEPOCchecked;
+  int                   m_HashMEPOC2;
+
 public:
 
   virtual ~EncModeCtrl              () {}
@@ -322,6 +327,14 @@ public:
   void         setEarlySkipDetected ();
   void         setIsHashPerfectMatch( bool b ) { m_ComprCUCtxList.back().isHashPerfectMatch = b; }
   bool         getIsHashPerfectMatch() { return m_ComprCUCtxList.back().isHashPerfectMatch; }
+  void         setUseHashME(bool b) { m_useHashMeInCurrentIntraPeriod = b; }
+  bool         getUseHashME()                  const { return m_useHashMeInCurrentIntraPeriod; }
+  void         setUseHashMEPOCToCheck(int thePOCtoCheck) { m_HashMEPOC = thePOCtoCheck; }
+  int          getUseHashMEPOCToCheck() { return m_HashMEPOC; }
+  void         setUseHashMEPOCChecked(bool thePOCChecked) { m_HashMEPOCchecked = thePOCChecked; }
+  bool         getUseHashMEPOCChecked() { return m_HashMEPOCchecked; }
+  void         setUseHashMENextPOCToCheck(int thePOCtoCheck) { m_HashMEPOC2 = thePOCtoCheck; }
+  int          getUseHashMENextPOCToCheck() { return m_HashMEPOC2; }
   virtual void setBest              ( CodingStructure& cs );
   bool         anyMode              () const;
 

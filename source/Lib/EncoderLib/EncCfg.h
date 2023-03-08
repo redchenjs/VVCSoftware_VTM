@@ -363,9 +363,6 @@ protected:
   bool      m_AffineAmvr;
   bool      m_useHashMeInCurrentIntraPeriod;
   bool      m_HashMECfgEnable;
-  int       m_HashMEPOC;
-  bool      m_HashMEPOCchecked;
-  int       m_HashMEPOC2;
   bool      m_AffineAmvrEncOpt;
   bool      m_AffineAmvp;
   bool      m_DMVR;
@@ -1474,16 +1471,8 @@ public:
   bool      getUseGeo                       ()         const { return m_Geo; }
   void      setAllowDisFracMMVD             ( bool b )       { m_allowDisFracMMVD = b;    }
   bool      getAllowDisFracMMVD             ()         const { return m_allowDisFracMMVD; }
-  void      setUseHashME                    ( bool b )       { m_useHashMeInCurrentIntraPeriod = b; }
-  bool      getUseHashME                    ()         const { return m_useHashMeInCurrentIntraPeriod; }
   void      setUseHashMECfgEnable           (bool b) { m_HashMECfgEnable = b; }
   bool      getUseHashMECfgEnable           ()         const { return m_HashMECfgEnable; }
-  void      setUseHashMEPOCToCheck          (int thePOCtoCheck) { m_HashMEPOC = thePOCtoCheck; }
-  int       getUseHashMEPOCToCheck          () { return m_HashMEPOC; }
-  void      setUseHashMEPOCChecked          (bool thePOCChecked) { m_HashMEPOCchecked = thePOCChecked; }
-  bool      getUseHashMEPOCChecked          () { return m_HashMEPOCchecked; }
-  void      setUseHashMENextPOCToCheck      (int thePOCtoCheck) { m_HashMEPOC2 = thePOCtoCheck; }
-  int       getUseHashMENextPOCToCheck      () { return m_HashMEPOC2; }
   void      setUseAffineAmvr                ( bool b )       { m_AffineAmvr = b;    }
   bool      getUseAffineAmvr                ()         const { return m_AffineAmvr; }
   void      setUseAffineAmvrEncOpt          ( bool b )       { m_AffineAmvrEncOpt = b;    }
