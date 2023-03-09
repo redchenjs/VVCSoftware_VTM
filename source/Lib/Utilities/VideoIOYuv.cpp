@@ -1424,7 +1424,7 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
   ChromaFormat chromaFormatIdc = sps.getChromaFormatIdc();
   bool ret = false;
 
-  static Window afterScaleWindowFullResolution = sps.getConformanceWindow();
+  Window afterScaleWindowFullResolution = sps.getConformanceWindow();
 
   // decoder does not have information about upscaled picture scaling and conformance windows, store this information when full resolution picutre is encountered
   if( sps.getMaxPicWidthInLumaSamples() == pps.getPicWidthInLumaSamples() && sps.getMaxPicHeightInLumaSamples() == pps.getPicHeightInLumaSamples() )
