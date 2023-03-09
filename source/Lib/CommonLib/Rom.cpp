@@ -201,8 +201,7 @@ public:
     return rtn;
   }
 };
-const int8_t g_bcwLog2WeightBase       = 3;
-const int8_t g_bcwWeightBase           = (1 << g_bcwLog2WeightBase);
+
 const int8_t g_BcwWeights[BCW_NUM] = { -2, 3, 4, 5, 10 };
 const int8_t g_BcwSearchOrder[BCW_NUM] = { BCW_DEFAULT, BCW_DEFAULT - 2, BCW_DEFAULT + 2, BCW_DEFAULT - 1, BCW_DEFAULT + 1 };
 int8_t g_BcwCodingOrder[BCW_NUM];
@@ -212,7 +211,7 @@ int8_t getBcwWeight(uint8_t bcwIdx, uint8_t refFrameList)
 {
   // Weights for the model: p0 + w * (p1 - p0) = (1-w) * p0 + w * p1
   // Retuning  1-w for p0 or w for p1
-  return (refFrameList == REF_PIC_LIST_0 ? g_bcwWeightBase - g_BcwWeights[bcwIdx] : g_BcwWeights[bcwIdx]);
+  return (refFrameList == REF_PIC_LIST_0 ? BCW_WEIGHT_BASE - g_BcwWeights[bcwIdx] : g_BcwWeights[bcwIdx]);
 }
 
 void resetBcwCodingOrder(bool runDecoding, const CodingStructure &cs)

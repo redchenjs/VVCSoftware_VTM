@@ -185,8 +185,6 @@ extern const uint32_t g_scalingListId[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
 
 extern MsgLevel g_verbosity;
 
-extern const int8_t g_bcwLog2WeightBase;
-extern const int8_t g_bcwWeightBase;
 extern const int8_t g_BcwWeights[BCW_NUM];
 extern const int8_t g_BcwSearchOrder[BCW_NUM];
 extern       int8_t g_BcwCodingOrder[BCW_NUM];

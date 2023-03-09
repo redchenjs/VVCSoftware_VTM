@@ -226,80 +226,6 @@ void calcBlkGradientCore(int sx, int sy, int     *arraysGx2, int     *arraysGxGy
   }
 }
 
-#if ENABLE_SIMD_OPT_BCW
-void removeWeightHighFreq(int16_t *dst, ptrdiff_t dstStride, const int16_t *src, ptrdiff_t srcStride, int width,
-                          int height, int shift, int bcwWeight)
-{
-  const int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-
-  const int weight0 = normalizer << g_bcwLog2WeightBase;
-  const int weight1 = (g_bcwWeightBase - bcwWeight) * normalizer;
-
-#define REM_HF_INC  \
-  src += srcStride; \
-  dst += dstStride; \
-
-#define REM_HF_OP( ADDR )      dst[ADDR] =             (dst[ADDR]*weight0 - src[ADDR]*weight1 + (1<<15))>>16
-
-  SIZE_AWARE_PER_EL_OP(REM_HF_OP, REM_HF_INC);
-
-#undef REM_HF_INC
-#undef REM_HF_OP
-#undef REM_HF_OP_CLIP
-}
-
-void removeHighFreq(int16_t *dst, ptrdiff_t dstStride, const int16_t *src, ptrdiff_t srcStride, int width, int height)
-{
-#define REM_HF_INC  \
-  src += srcStride; \
-  dst += dstStride; \
-
-#define REM_HF_OP( ADDR )      dst[ADDR] =             2 * dst[ADDR] - src[ADDR]
-
-  SIZE_AWARE_PER_EL_OP(REM_HF_OP, REM_HF_INC);
-
-#undef REM_HF_INC
-#undef REM_HF_OP
-#undef REM_HF_OP_CLIP
-}
-#if RExt__HIGH_BIT_DEPTH_SUPPORT
-void removeWeightHighFreq_HBD(Pel *dst, ptrdiff_t dstStride, const Pel *src, ptrdiff_t srcStride, int width, int height,
-                              int shift, int bcwWeight)
-{
-  Intermediate_Int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-
-  Intermediate_Int weight0 = normalizer << g_bcwLog2WeightBase;
-  Intermediate_Int weight1 = (g_bcwWeightBase - bcwWeight) * normalizer;
-#define REM_HF_INC  \
-  src += srcStride; \
-  dst += dstStride; \
-
-#define REM_HF_OP( ADDR )      dst[ADDR] =             (Pel)((dst[ADDR]*weight0 - src[ADDR]*weight1 + (1<<15))>>16)
-
-  SIZE_AWARE_PER_EL_OP(REM_HF_OP, REM_HF_INC);
-
-#undef REM_HF_INC
-#undef REM_HF_OP
-#undef REM_HF_OP_CLIP
-}
-
-void removeHighFreq_HBD(Pel *dst, ptrdiff_t dstStride, const Pel *src, ptrdiff_t srcStride, int width, int height)
-{
-#define REM_HF_INC  \
-  src += srcStride; \
-  dst += dstStride; \
-
-#define REM_HF_OP( ADDR )      dst[ADDR] =             2 * dst[ADDR] - src[ADDR]
-
-  SIZE_AWARE_PER_EL_OP(REM_HF_OP, REM_HF_INC);
-
-#undef REM_HF_INC
-#undef REM_HF_OP
-#undef REM_HF_OP_CLIP
-}
-#endif
-#endif
-
 template<typename T>
 void reconstructCore(const T *src1, ptrdiff_t src1Stride, const T *src2, ptrdiff_t src2Stride, T *dest,
                      ptrdiff_t dstStride, int width, int height, const ClpRng &clpRng)
@@ -349,17 +275,10 @@ PelBufferOps::PelBufferOps()
   copyBuffer = copyBufferCore;
   padding = paddingCore;
 #if ENABLE_SIMD_OPT_BCW
-#if RExt__HIGH_BIT_DEPTH_SUPPORT
-  removeWeightHighFreq8 = removeWeightHighFreq_HBD;
-  removeWeightHighFreq4 = removeWeightHighFreq_HBD;
-  removeHighFreq8 = removeHighFreq_HBD;
-  removeHighFreq4 = removeHighFreq_HBD;
-#else
-  removeWeightHighFreq8 = removeWeightHighFreq;
-  removeWeightHighFreq4 = removeWeightHighFreq;
-  removeHighFreq8 = removeHighFreq;
-  removeHighFreq4 = removeHighFreq;
-#endif
+  removeWeightHighFreq8 = nullptr;
+  removeWeightHighFreq4 = nullptr;
+  removeHighFreq8       = nullptr;
+  removeHighFreq4       = nullptr;
 #endif
 
   profGradFilter = gradFilterCore <false>;
@@ -407,7 +326,7 @@ void AreaBuf<Pel>::addWeightedAvg(const AreaBuf<const Pel> &other1, const AreaBu
 {
   const int8_t w0 = getBcwWeight(bcwIdx, REF_PIC_LIST_0);
   const int8_t w1 = getBcwWeight(bcwIdx, REF_PIC_LIST_1);
-  const int8_t log2WeightBase = g_bcwLog2WeightBase;
+  const int8_t log2WeightBase = BCW_LOG2_WEIGHT_BASE;
 
   const Pel* src0 = other1.buf;
   const Pel* src2 = other2.buf;

@@ -11044,7 +11044,7 @@ double InterSearch::xGetMEDistortionWeight(uint8_t bcwIdx, RefPicList eRefPicLis
 {
   if( bcwIdx != BCW_DEFAULT )
   {
-    return fabs((double) getBcwWeight(bcwIdx, eRefPicList) / (double) g_bcwWeightBase);
+    return (double) abs(getBcwWeight(bcwIdx, eRefPicList)) / BCW_WEIGHT_BASE;
   }
   else
   {
