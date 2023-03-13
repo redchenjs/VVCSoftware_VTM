@@ -2724,7 +2724,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   bool         allOk;
   bool         bestBiPDistOk;
   bool         biPDistTempOk;
-  bool         uiCostTempOk;
+  bool         uiCostTempOk = false;
   bool         uiCostTempL0Ok[MAX_NUM_REF];
 
   bool         uiHevcCostOk;
