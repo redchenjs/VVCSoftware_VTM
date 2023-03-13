@@ -1744,7 +1744,7 @@ void xWeightedGeoBlk_HBD_SIMD(const PredictionUnit &pu, const uint32_t width, co
   const __m128i mmMin = _mm_set1_epi32(clpRng.min);
   const __m128i mmMax = _mm_set1_epi32(clpRng.max);
 
-  if (compIdx != COMPONENT_Y && pu.chromaFormat == CHROMA_420)
+  if (compIdx != COMPONENT_Y && pu.chromaFormat == ChromaFormat::_420)
   {
     stepY <<= 1;
   }
@@ -1802,7 +1802,7 @@ void xWeightedGeoBlk_HBD_SIMD(const PredictionUnit &pu, const uint32_t width, co
         __m256i s11 = _mm256_lddqu_si256((__m256i *) (src1 + x + 8));
 
         __m256i w0 = _mm256_lddqu_si256((__m256i *) (weight + x));
-        if (compIdx != COMPONENT_Y && pu.chromaFormat != CHROMA_444)
+        if (compIdx != COMPONENT_Y && pu.chromaFormat != ChromaFormat::_444)
         {
           const __m256i mask = _mm256_set_epi16(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1);
           __m256i w0p0, w0p1;
@@ -1878,7 +1878,7 @@ void xWeightedGeoBlk_HBD_SIMD(const PredictionUnit &pu, const uint32_t width, co
         __m128i s10 = _mm_lddqu_si128((__m128i *) (src1 + x));
         __m128i s11 = _mm_lddqu_si128((__m128i *) (src1 + x + 4));
         __m128i w0;
-        if (compIdx != COMPONENT_Y && pu.chromaFormat != CHROMA_444)
+        if (compIdx != COMPONENT_Y && pu.chromaFormat != ChromaFormat::_444)
         {
           const __m128i mask = _mm_set_epi16(0, 1, 0, 1, 0, 1, 0, 1);
           __m128i w0p0, w0p1;
@@ -2273,7 +2273,7 @@ void xWeightedGeoBlk_SSE(const PredictionUnit &pu, const uint32_t width, const u
   const __m128i mmMin = _mm_set1_epi16(clpRng.min);
   const __m128i mmMax = _mm_set1_epi16(clpRng.max);
 
-  if (compIdx != COMPONENT_Y && pu.chromaFormat == CHROMA_420)
+  if (compIdx != COMPONENT_Y && pu.chromaFormat == ChromaFormat::_420)
   {
     stepY *= 2;
   }
@@ -2325,7 +2325,7 @@ void xWeightedGeoBlk_SSE(const PredictionUnit &pu, const uint32_t width, const u
         __m256i s1 = _mm256_lddqu_si256((__m256i *) (src1 + x));
 
         __m256i w0 = _mm256_lddqu_si256((__m256i *) (weight + x));
-        if (compIdx != COMPONENT_Y &&  pu.chromaFormat != CHROMA_444)
+        if (compIdx != COMPONENT_Y && pu.chromaFormat != ChromaFormat::_444)
         {
           const __m256i mask = _mm256_set_epi16(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1);
           __m256i w0p0, w0p1;
@@ -2395,7 +2395,7 @@ void xWeightedGeoBlk_SSE(const PredictionUnit &pu, const uint32_t width, const u
         __m128i s0 = _mm_lddqu_si128((__m128i *) (src0 + x));
         __m128i s1 = _mm_lddqu_si128((__m128i *) (src1 + x));
         __m128i w0;
-        if (compIdx != COMPONENT_Y && pu.chromaFormat != CHROMA_444)
+        if (compIdx != COMPONENT_Y && pu.chromaFormat != ChromaFormat::_444)
         {
           const __m128i mask = _mm_set_epi16(0, 1, 0, 1, 0, 1, 0, 1);
           __m128i w0p0, w0p1;

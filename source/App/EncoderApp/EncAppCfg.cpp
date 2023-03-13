@@ -50,12 +50,11 @@
 #include "EncoderLib/RateCtrl.h"
 
 #include "CommonLib/dtrace_next.h"
-#include "CommonLib/ProfileLevelTier.h"
+#include "CommonLib/ProfileTierLevel.h"
 
 #define MACRO_TO_STRING_HELPER(val) #val
 #define MACRO_TO_STRING(val) MACRO_TO_STRING_HELPER(val)
 
-using namespace std;
 namespace po = df::program_options_lite;
 
 enum ExtendedProfileName   // this is used for determining profile strings, where multiple profiles map to a single
@@ -161,11 +160,20 @@ static inline ChromaFormat numberToChromaFormat(const int val)
 {
   switch (val)
   {
-    case 400: return CHROMA_400; break;
-    case 420: return CHROMA_420; break;
-    case 422: return CHROMA_422; break;
-    case 444: return CHROMA_444; break;
-    default:  return NUM_CHROMA_FORMAT;
+  case 400:
+    return ChromaFormat::_400;
+    break;
+  case 420:
+    return ChromaFormat::_420;
+    break;
+  case 422:
+    return ChromaFormat::_422;
+    break;
+  case 444:
+    return ChromaFormat::_444;
+    break;
+  default:
+    return ChromaFormat::UNDEFINED;
   }
 }
 
@@ -304,10 +312,9 @@ static std::string enumToString(P map[], uint32_t mapLen, const T val)
   return std::string();
 }
 
-template<typename T, typename P>
-static istream& readStrToEnum(P map[], uint32_t mapLen, istream &in, T &val)
+template<typename T, typename P> static std::istream &readStrToEnum(P map[], uint32_t mapLen, std::istream &in, T &val)
 {
-  string str;
+  std::string str;
   in >> str;
 
   for (uint32_t i = 0; i < mapLen; i++)
@@ -319,44 +326,42 @@ static istream& readStrToEnum(P map[], uint32_t mapLen, istream &in, T &val)
     }
   }
   /* not found */
-  in.setstate(ios::failbit);
+  in.setstate(std::ios::failbit);
 found:
   return in;
 }
 
 //inline to prevent compiler warnings for "unused static function"
 
-static inline istream& operator >> (istream &in, ExtendedProfileName &profile)
+static inline std::istream &operator>>(std::istream &in, ExtendedProfileName &profile)
 {
   return readStrToEnum(strToExtendedProfile, sizeof(strToExtendedProfile)/sizeof(*strToExtendedProfile), in, profile);
 }
 
 namespace Level
 {
-  static inline istream& operator >> (istream &in, Tier &tier)
+  static inline std::istream &operator>>(std::istream &in, Tier &tier)
   {
     return readStrToEnum(strToTier, sizeof(strToTier)/sizeof(*strToTier), in, tier);
   }
 
-  static inline istream& operator >> (istream &in, Name &level)
+  static inline std::istream &operator>>(std::istream &in, Name &level)
   {
     return readStrToEnum(strToLevel, sizeof(strToLevel)/sizeof(*strToLevel), in, level);
   }
 }
 
-static inline istream& operator >> (istream &in, CostMode &mode)
+static inline std::istream &operator>>(std::istream &in, CostMode &mode)
 {
   return readStrToEnum(strToCostMode, sizeof(strToCostMode)/sizeof(*strToCostMode), in, mode);
 }
 
-static inline istream& operator >> (istream &in, ScalingListMode &mode)
+static inline std::istream &operator>>(std::istream &in, ScalingListMode &mode)
 {
   return readStrToEnum(strToScalingListMode, sizeof(strToScalingListMode)/sizeof(*strToScalingListMode), in, mode);
 }
 
-
-template <class T>
-static inline istream& operator >> (std::istream &in, SMultiValueInput<T> &values)
+template<class T> static inline std::istream &operator>>(std::istream &in, SMultiValueInput<T> &values)
 {
   return values.readValues(in);
 }
@@ -377,14 +382,15 @@ T SMultiValueInput<T>::readValue(const char *&pStr, bool &bSuccess)
   return val;
 }
 
-template <class T>
-istream& SMultiValueInput<T>::readValues(std::istream &in)
+template<class T> std::istream &SMultiValueInput<T>::readValues(std::istream &in)
 {
   values.clear();
-  string str;
+  std::string str;
   while (!in.eof())
   {
-    string tmp; in >> tmp; str+=" " + tmp;
+    std::string tmp;
+    in >> tmp;
+    str += " " + tmp;
   }
   if (!str.empty())
   {
@@ -398,13 +404,13 @@ istream& SMultiValueInput<T>::readValues(std::istream &in)
       T val=readValue(pStr, bSuccess);
       if (!bSuccess)
       {
-        in.setstate(ios::failbit);
+        in.setstate(std::ios::failbit);
         break;
       }
 
       if (maxNumValuesIncl != 0 && values.size() >= maxNumValuesIncl)
       {
-        in.setstate(ios::failbit);
+        in.setstate(std::ios::failbit);
         break;
       }
       values.push_back(val);
@@ -419,13 +425,12 @@ istream& SMultiValueInput<T>::readValues(std::istream &in)
   }
   if (values.size() < minNumValuesIncl)
   {
-    in.setstate(ios::failbit);
+    in.setstate(std::ios::failbit);
   }
   return in;
 }
 
-template <class T>
-static inline istream& operator >> (std::istream &in, EncAppCfg::OptionalValue<T> &value)
+template<class T> static inline std::istream &operator>>(std::istream &in, EncAppCfg::OptionalValue<T> &value)
 {
   in >> std::ws;
   if (in.eof())
@@ -440,8 +445,7 @@ static inline istream& operator >> (std::istream &in, EncAppCfg::OptionalValue<T
   return in;
 }
 
-template <class T1, class T2>
-static inline istream& operator >> (std::istream& in, std::map<T1, T2>& map)
+template<class T1, class T2> static inline std::istream &operator>>(std::istream &in, std::map<T1, T2> &map)
 {
   T1 key;
   T2 value;
@@ -452,7 +456,7 @@ static inline istream& operator >> (std::istream& in, std::map<T1, T2>& map)
   }
   catch (...)
   {
-    in.setstate(ios::failbit);
+    in.setstate(std::ios::failbit);
   }
 
   map[key] = value;
@@ -560,7 +564,7 @@ static uint32_t getMaxSlicesByLevel( Level::Name level )
     \param  argv        array of arguments
     \retval             true when success
  */
-#if _MSC_VER > 1000
+#ifdef _MSC_VER
 // Disable optimizations to avoid long compile times
 #pragma optimize( "", off )
 #endif
@@ -571,13 +575,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   int tmpChromaFormat;
   int tmpInputChromaFormat;
   int tmpConstraintChromaFormat;
+  int tmpMaxChromaFormatConstraintIdc;
   int tmpWeightedPredictionMethod;
   int tmpFastInterSearchMode;
   int tmpMotionEstimationSearchMethod;
   int tmpDecodedPictureHashSEIMappedType;
   int tmpSubpicDecodedPictureHashMappedType;
-  string inputColourSpaceConvert;
-  string inputPathPrefix;
+
+  std::string         inputColourSpaceConvert;
+  std::string         inputPathPrefix;
   ExtendedProfileName extendedProfile;
 
   // Multi-value input fields:                                // minval, maxval (incl), min_entries, max_entries (incl) [, default values, number of default values]
@@ -706,7 +712,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosX       (0, std::numeric_limits<uint32_t>::max(), 0, 3);
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosY       (0, std::numeric_limits<uint32_t>::max(), 0, 3);
-
+#if JVET_AC0096
+  const int defaultRprSwitchingResolutionOrderList[12] = { 1, 0, 2, 0, 3, 0, 1, 0, 2, 0, 3, 0 };
+  const int defaultRprSwitchingQPOffsetOrderList[12] = { -2, 0, -4, 0, -6, 0, -2, 0, -4, 0, -6, 0 };
+  SMultiValueInput<int>  cfg_rprSwitchingResolutionOrderList(0, 3, 0, MAX_RPR_SWITCHING_ORDER_LIST_SIZE, defaultRprSwitchingResolutionOrderList, 12);
+  SMultiValueInput<int>  cfg_rprSwitchingQPOffsetOrderList(-MAX_QP, MAX_QP, 0, MAX_RPR_SWITCHING_ORDER_LIST_SIZE, defaultRprSwitchingQPOffsetOrderList, 12);
+#endif
   SMultiValueInput<uint32_t>  cfg_SubProfile(0, std::numeric_limits<uint8_t>::max(), 0,
                                             std::numeric_limits<uint8_t>::max());
   SMultiValueInput<uint32_t>  cfg_subPicCtuTopLeftX(0, std::numeric_limits<uint32_t>::max(), 0, MAX_NUM_SUB_PICS);
@@ -736,27 +747,30 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
 
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType     (0, 65535, 0, 256*2);
-#if JVET_AB0069_SEI_PROCESSING_ORDER
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
-#else
-  SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder (0, 255, 0, 256);
+
+#if JVET_AC0058_SEI
+  SMultiValueInput<uint16_t>   cfg_poSEINumofPrefixByte(0, 255, 0, 256);
+  SMultiValueInput<uint16_t>   cfg_poSEIPrefixByte     (0, 255, 0, 256);
 #endif
 
-#if JVET_AB0070_POST_FILTER_HINT
   SMultiValueInput<int32_t> cfg_postFilterHintSEIValues(INT32_MIN + 1, INT32_MAX, 1 * 1 * 1, 15 * 15 * 3);
-#endif
 
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
   std::vector<SMultiValueInput<uint32_t>>   cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList;
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+  std::vector<SMultiValueInput<bool>>   cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList;
+#endif
   for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; i++)
   {
     cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList.push_back(SMultiValueInput<uint32_t>(0, std::numeric_limits<uint32_t>::max(), 1, 0));
-  }
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+    cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList.push_back(SMultiValueInput<bool>(0, 1, 1, 0));
 #endif
+  }
 
 #if ENABLE_TRACING
-  string sTracingRule;
-  string sTracingFile;
+  std::string sTracingRule;
+  std::string sTracingFile;
   bool   bTracingChannelsList = false;
 #endif
 #if ENABLE_SIMD_OPT
@@ -773,18 +787,20 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("WarnUnknowParameter,w",                           warnUnknowParameter,                                  0, "warn for unknown configuration parameters instead of failing")
   ("isSDR",                                           sdr,                                              false, "compatibility")
 #if ENABLE_SIMD_OPT
-  ("SIMD",                                            ignore,                                      string(""), "SIMD extension to use (SCALAR, SSE41, SSE42, AVX, AVX2, AVX512), default: the highest supported extension\n")
+  ("SIMD",                                            ignore,                                      std::string(""), "SIMD extension to use (SCALAR, SSE41, SSE42, AVX, AVX2, AVX512), default: the highest supported extension\n")
 #endif
   // File, I/O and source parameters
-  ("InputFile,i",                                     m_inputFileName,                             string(""), "Original YUV input file name")
-  ("InputPathPrefix,-ipp",                            inputPathPrefix,                             string(""), "pathname to prepend to input filename")
-  ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
-  ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
+  ("InputFile,i",                                     m_inputFileName,                             std::string(""), "Original YUV input file name")
+  ("InputPathPrefix,-ipp",                            inputPathPrefix,                             std::string(""), "pathname to prepend to input filename")
+  ("BitstreamFile,b",                                 m_bitstreamFileName,                         std::string(""), "Bitstream output file name")
+  ("ReconFile,o",                                     m_reconFileName,                             std::string(""), "Reconstructed YUV output file name")
 #if JVET_Z0120_SII_SEI_PROCESSING
-  ("SEIShutterIntervalPreFilename,-sii",              m_shutterIntervalPreFileName, string(""), "File name of Pre-Filtering video. If empty, not output video\n")
+  ("SEIShutterIntervalPreFilename,-sii",              m_shutterIntervalPreFileName, std::string(""), "File name of Pre-Filtering video. If empty, not output video\n")
 #endif
   ("SourceWidth,-wdt",                                m_sourceWidth,                                       0, "Source picture width")
   ("SourceHeight,-hgt",                               m_sourceHeight,                                      0, "Source picture height")
+  ("SourceScalingRatioHor",                           m_sourceScalingRatioHor,                           1.0, "Source picture  horizontal scaling ratio")
+  ("SourceScalingRatioVer",                           m_sourceScalingRatioVer,                           1.0, "Source picture vertical scaling ratio")
   ("InputBitDepth",                                   m_inputBitDepth[ChannelType::LUMA],                   8, "Bit-depth of input file")
   ("OutputBitDepth",                                  m_outputBitDepth[ChannelType::LUMA],                  0, "Bit-depth of output file (default:InternalBitDepth)")
   ("MSBExtendedBitDepth",                             m_msbExtendedBitDepth[ChannelType::LUMA],             0, "bit depth of luma component after addition of MSBs of value 0 (used for synthesising High Dynamic Range source material). (default:InputBitDepth)")
@@ -796,7 +812,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("TSRCRicePresent",                                 m_tsrcRicePresentFlag,                            false, "Indicate that TSRC Rice information is present in slice header (not valid in V1 profiles)")
   ("ReverseLastSigCoeff",                             m_reverseLastSigCoeffEnabledFlag,                 false, "enable reverse last significant coefficient postion in RRC (not valid in V1 profiles)")
   ("HighPrecisionPredictionWeighting",                m_highPrecisionOffsetsEnabledFlag,                false, "Use high precision option for weighted prediction (not valid in V1 profiles)")
-  ("InputColourSpaceConvert",                         inputColourSpaceConvert,                     string(""), "Colour space conversion to apply to input video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(true))
+  ("InputColourSpaceConvert",                         inputColourSpaceConvert,                     std::string(""), "Colour space conversion to apply to input video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(true))
   ("SNRInternalColourSpace",                          m_snrInternalColourSpace,                         false, "If true, then no colour space conversion is applied prior to SNR, otherwise inverse of input is applied.")
   ("OutputInternalColourSpace",                       m_outputInternalColourSpace,                      false, "If true, then no colour space conversion is applied for reconstructed video, otherwise inverse of input is applied.")
   ("InputChromaFormat",                               tmpInputChromaFormat,                               420, "InputChromaFormatIDC")
@@ -824,8 +840,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ClipInputVideoToRec709Range",                     m_clipInputVideoToRec709Range,                   false, "If true then clip input video to the Rec. 709 Range on loading when InternalBitDepth is less than MSBExtendedBitDepth")
   ("ClipOutputVideoToRec709Range",                    m_clipOutputVideoToRec709Range,                  false, "If true then clip output video to the Rec. 709 Range on saving when OutputBitDepth is less than InternalBitDepth")
   ("PYUV",                                            m_packedYUVMode,                                  false, "If true then output 10-bit and 12-bit YUV data as 5-byte and 3-byte (respectively) packed YUV data. Ignored for interlaced output.")
-  ("SummaryOutFilename",                              m_summaryOutFilename,                          string(), "Filename to use for producing summary output file. If empty, do not produce a file.")
-  ("SummaryPicFilenameBase",                          m_summaryPicFilenameBase,                      string(), "Base filename to use for producing summary picture output files. The actual filenames used will have I.txt, P.txt and B.txt appended. If empty, do not produce a file.")
+  ("SummaryOutFilename",                              m_summaryOutFilename,                          std::string(), "Filename to use for producing summary output file. If empty, do not produce a file.")
+  ("SummaryPicFilenameBase",                          m_summaryPicFilenameBase,                      std::string(), "Base filename to use for producing summary picture output files. The actual filenames used will have I.txt, P.txt and B.txt appended. If empty, do not produce a file.")
   ("SummaryVerboseness",                              m_summaryVerboseness,                                0u, "Specifies the level of the verboseness of the text output")
   ("Verbosity,v",                                     m_verbosity,                               (int)VERBOSE, "Specifies the level of the verboseness")
 
@@ -858,7 +874,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIXSDMetricTypeWSPSNR",                          m_xsdMetricTypeWSPSNR,                             false, "Set to 'true' if WSSPSNR shall be signalled. ")
   ("SEIGreenMetadataExtendedRepresentation",          m_greenMetadataExtendedRepresentation,                 0, "Specifies whether reduced or extended set of complexity metrics is signelled. ")
   ("GMFA",                                            m_GMFA,                                            false, "Write output file for the Green-Metadata analyzer for decoder complexity metrics (JVET-P0085)\n")
-  ("GMFAFile",                                        m_GMFAFile,                                   string(""), "File for the Green Metadata Bit Stream Feature Analyzer output (JVET-P0085)\n")
+  ("GMFAFile",                                        m_GMFAFile,                                   std::string(""), "File for the Green Metadata Bit Stream Feature Analyzer output (JVET-P0085)\n")
 #endif
   //Field coding parameters
   ("FieldCoding",                                     m_isField,                                        false, "Signals if it's a field based coding")
@@ -882,7 +898,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("AllLayersIndependentConstraintFlag",              m_allLayersIndependentConstraintFlag,             false, "Indicate that all layers are independent")
   ("OnePictureOnlyConstraintFlag",                    m_onePictureOnlyConstraintFlag,                   false, "Value of general_intra_constraint_flag. Can only be used for single frame encodings. Will be set to true for still picture profiles")
   ("MaxBitDepthConstraintIdc",                        m_maxBitDepthConstraintIdc,                          16u, "Indicate that sps_bitdepth_minus8 plus 8 shall be in the range of 0 to m_maxBitDepthConstraintIdc")
-  ("MaxChromaFormatConstraintIdc",                    m_maxChromaFormatConstraintIdc,                        3, "Indicate that sps_chroma_format_idc shall be in the range of 0 to m_maxChromaFormatConstraintIdc")
+  ("MaxChromaFormatConstraintIdc",                    tmpMaxChromaFormatConstraintIdc,                        3, "Indicate that sps_chroma_format_idc shall be in the range of 0 to m_maxChromaFormatConstraintIdc")
   ("NoTrailConstraintFlag",                           m_noTrailConstraintFlag,                          false, "Indicate that TRAIL is deactivated")
   ("NoStsaConstraintFlag",                            m_noStsaConstraintFlag,                           false, "Indicate that STSA is deactivated")
   ("NoRaslConstraintFlag",                            m_noRaslConstraintFlag,                           false, "Indicate that RSAL is deactivated")
@@ -1068,6 +1084,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("IntraCMD",                                        m_intraCMD,                                          0u, "IntraChroma MD: 0: none, 1:fixed to default wPSNR weight")
   ("LCTUFast",                                        m_useFastLCTU,                                    false, "Fast methods for large CTU")
   ("FastMrg",                                         m_useFastMrg,                                     false, "Fast methods for inter merge")
+#if JVET_AC0139_UNIFIED_MERGE
+  ("MaxMergeRdCandNumTotal",                          m_maxMergeRdCandNumTotal,                            15, "Max total number of merge candidates in full RD checking")
+  ("MergeRdCandQuotaRegular",                         m_mergeRdCandQuotaRegular,            NUM_MRG_SATD_CAND, "Quota of regular merge candidates in full RD checking")
+  ("MergeRdCandQuotaRegularSmallBlk",                 m_mergeRdCandQuotaRegularSmallBlk,    NUM_MRG_SATD_CAND, "Quota of regular merge candidates in full RD checking for blocks < 64 luma samples")
+  ("MergeRdCandQuotaSubBlk",                          m_mergeRdCandQuotaSubBlk,         NUM_AFF_MRG_SATD_CAND, "Quota of sub-block merge candidates in full RD checking")
+  ("MergeRdCandQuotaCiip",                            m_mergeRdCandQuotaCiip,                               1, "Quota of CIIP merge candidates in full RD checking")
+  ("MergeRdCandQuotaGpm",                             m_mergeRdCandQuotaGpm,        GEO_MAX_TRY_WEIGHTED_SATD, "Quota of GPM merge candidates in full RD checking")
+#endif
   ("PBIntraFast",                                     m_usePbIntraFast,                                 false, "Fast assertion if the intra mode is probable")
   ("AMaxBT",                                          m_useAMaxBT,                                      false, "Adaptive maximal BT-size")
   ("E0023FastEnc",                                    m_e0023FastEnc,                                    true, "Fast encoding setting for QTBT (proposal E0023)")
@@ -1075,7 +1099,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("UseNonLinearAlfLuma",                             m_useNonLinearAlfLuma,                             true, "Non-linear adaptive loop filters for Luma Channel")
   ("UseNonLinearAlfChroma",                           m_useNonLinearAlfChroma,                           true, "Non-linear adaptive loop filters for Chroma Channels")
   ("MaxNumAlfAlternativesChroma",                     m_maxNumAlfAlternativesChroma,
-                                                                    (unsigned)MAX_NUM_ALF_ALTERNATIVES_CHROMA, std::string("Maximum number of alternative Chroma filters (1-") + std::to_string(MAX_NUM_ALF_ALTERNATIVES_CHROMA) + std::string (", inclusive)") )
+                                                                    (unsigned)ALF_MAX_NUM_ALTERNATIVES_CHROMA, std::string("Maximum number of alternative Chroma filters (1-") + std::to_string(ALF_MAX_NUM_ALTERNATIVES_CHROMA) + std::string (", inclusive)") )
   ("MRL",                                             m_MRL,                                            false,  "Enable MRL (multiple reference line intra prediction)")
   ("MIP",                                             m_MIP,                                             true,  "Enable MIP (matrix-based intra prediction)")
   ("FastMIP",                                         m_useFastMIP,                                     false,  "Fast encoder search for MIP (matrix-based intra prediction)")
@@ -1197,7 +1221,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("PerceptQPA,-qpa",                                 m_bUsePerceptQPA,                                 false, "perceptually motivated input-adaptive QP modification (default: 0 = off, ignored if -aq is set)")
   ("WPSNR,-wpsnr",                                    m_bUseWPSNR,                                      false, "output perceptually weighted peak SNR (WPSNR) instead of PSNR")
 #endif
-  ("dQPFile,m",                                       m_dQPFileName,                               string(""), "dQP file name")
+  ("dQPFile,m",                                       m_dQPFileName,                               std::string(""), "dQP file name")
   ("RDOQ",                                            m_useRDOQ,                                         true)
   ("RDOQTS",                                          m_useRDOQTS,                                       true)
   ("SelectiveRDOQ",                                   m_useSelectiveRDOQ,                               false, "Enable selective RDOQ")
@@ -1256,7 +1280,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("WaveFrontSynchro",                                m_entropyCodingSyncEnabledFlag,                   false, "0: entropy coding sync disabled; 1 entropy coding sync enabled")
   ("EntryPointsPresent",                              m_entryPointPresentFlag,                           true, "0: entry points is not present; 1 entry points may be present in slice header")
   ("ScalingList",                                     m_useScalingListId,                    SCALING_LIST_OFF, "0/off: no scaling list, 1/default: default scaling lists, 2/file: scaling lists specified in ScalingListFile")
-  ("ScalingListFile",                                 m_scalingListFileName,                       string(""), "Scaling list file name. Use an empty string to produce help.")
+  ("ScalingListFile",                                 m_scalingListFileName,                       std::string(""), "Scaling list file name. Use an empty string to produce help.")
   ("DisableScalingMatrixForLFNST",                    m_disableScalingMatrixForLfnstBlks,                true, "Disable scaling matrices, when enabled, for LFNST-coded blocks")
   ("DisableScalingMatrixForAlternativeColourSpace",   m_disableScalingMatrixForAlternativeColourSpace,  false, "Disable scaling matrices when the colour space is not equal to the designated colour space of scaling matrix")
   ("ScalingMatrixDesignatedColourSpace",              m_scalingMatrixDesignatedColourSpace,              true, "Indicates if the designated colour space of scaling matrices is equal to the original colour space")
@@ -1420,7 +1444,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISubpicLevelInfoRefLevels", cfg_sliRefLevels, cfg_sliRefLevels, "List of reference levels for Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoExplicitFraction", m_cfgSubpictureLevelInfoSEI.m_explicitFraction, false, "Enable sending of explicit fractions in Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoNumSubpics", m_cfgSubpictureLevelInfoSEI.m_numSubpictures, 1, "Number of subpictures for Subpicture Level Information SEI messages")
-("SEIAnnotatedRegionsFileRoot,-ar", m_arSEIFileRoot, string(""), "Annotated region SEI parameters root file name (wo num ext); only the file name base is to be added. Underscore and POC would be automatically addded to . E.g. \"-ar ar\" will search for files ar_0.txt, ar_1.txt, ...")
+("SEIAnnotatedRegionsFileRoot,-ar", m_arSEIFileRoot, std::string(""), "Annotated region SEI parameters root file name (wo num ext); only the file name base is to be added. Underscore and POC would be automatically addded to . E.g. \"-ar ar\" will search for files ar_0.txt, ar_1.txt, ...")
 ("SEISubpicLevelInfoMaxSublayers", m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers, 1, "Number of sublayers for Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoSublayerInfoPresentFlag", m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag, false, "Enable sending of level information for all sublayers in Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoRefLevelFractions", cfg_sliFractions, cfg_sliFractions, "List of subpicture level fractions for Subpicture Level Information SEI messages")
@@ -1448,8 +1472,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
 #if ENABLE_TRACING
 ("TraceChannelsList", bTracingChannelsList, false, "List all available tracing channels")
-("TraceRule", sTracingRule, string(""), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")")
-("TraceFile", sTracingFile, string(""), "Tracing file")
+("TraceRule", sTracingRule, std::string(""), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")")
+("TraceFile", sTracingFile, std::string(""), "Tracing file")
 #endif
 // film grain characteristics SEI
   ("SEIFGCEnabled",                                   m_fgcSEIEnabled,                                   false, "Control generation of the film grain characteristics SEI message")
@@ -1463,8 +1487,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIFGCCompModelPresentComp1",                     m_fgcSEICompModelPresent[1],                       false, "Specifies the presence of film grain modelling on colour component 1.")
   ("SEIFGCCompModelPresentComp2",                     m_fgcSEICompModelPresent[2],                       false, "Specifies the presence of film grain modelling on colour component 2.")
   ("SEIFGCAnalysisEnabled",                           m_fgcSEIAnalysisEnabled,                           false, "Control adaptive film grain parameter estimation - film grain analysis")
-  ("SEIFGCExternalMask",                              m_fgcSEIExternalMask,                       string( "" ), "Read external file with mask for film grain analysis. If empty string, use internally calculated mask.")
-  ("SEIFGCExternalDenoised",                          m_fgcSEIExternalDenoised,                   string( "" ), "Read external file with denoised sequence for film grain analysis. If empty string, use MCTF for denoising.")
+  ("SEIFGCExternalMask",                              m_fgcSEIExternalMask,                       std::string( "" ), "Read external file with mask for film grain analysis. If empty string, use internally calculated mask.")
+  ("SEIFGCExternalDenoised",                          m_fgcSEIExternalDenoised,                   std::string( "" ), "Read external file with denoised sequence for film grain analysis. If empty string, use MCTF for denoising.")
   ("SEIFGCTemporalFilterPastRefs",                    m_fgcSEITemporalFilterPastRefs,          TF_DEFAULT_REFS, "Number of past references for temporal prefilter")
   ("SEIFGCTemporalFilterFutureRefs",                  m_fgcSEITemporalFilterFutureRefs,        TF_DEFAULT_REFS, "Number of future references for temporal prefilter")
   ("SEIFGCTemporalFilterStrengthFrame*",              m_fgcSEITemporalFilterStrengths, std::map<int, double>(), "Strength for every * frame in FGC-specific temporal filter, where * is an integer.")
@@ -1599,8 +1623,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
-
-#if JVET_AB0070_POST_FILTER_HINT
+#if JVET_AC0058_SEI
+  ("SEIPONumofPrefixByte",                            cfg_poSEINumofPrefixByte,       cfg_poSEINumofPrefixByte, "List of number of prefix bytes")
+  ("SEIPOPrefixByte",                                 cfg_poSEIPrefixByte,                 cfg_poSEIPrefixByte, "List of prefix bytes")
+#endif
   ("SEIPostFilterHintEnabled",                        m_postFilterHintSEIEnabled,                        false, "Control generation of post-filter Hint SEI message")
   ("SEIPostFilterHintCancelFlag",                     m_postFilterHintSEICancelFlag,                     false, "Specifies the persistence of any previous post-filter Hint SEI message in output order")
   ("SEIPostFilterHintPersistenceFlag",                m_postFilterHintSEIPersistenceFlag,                false, "Specifies the persistence of the post-filter Hint SEI message for the current layer")
@@ -1609,21 +1635,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPostFilterHintType",                           m_postFilterHintSEIType,                              0u, "Specifies the type of the post-filter: 2D-FIR filter (0, default), 1D-FIR filters (1) or Cross-correlation matrix (0)")
   ("SEIPostFilterHintChromaCoeffPresentFlag",         m_postFilterHintSEIChromaCoeffPresentFlag,         false, "Specifies the presence of post-filter coefficients for chroma")
   ("SEIPostFilterHintValue",                          cfg_postFilterHintSEIValues, cfg_postFilterHintSEIValues, "Specifies post-filter coefficients or elements of a cross-correlation matrix")
-#endif
 
-#if JVET_T0056_SEI_MANIFEST
   //SEI manifest
   ("SEISEIManifestEnabled",                           m_SEIManifestSEIEnabled,                           false, "Controls if SEI Manifest SEI messages enabled")
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   //SEI prefix indication
   ("SEISEIPrefixIndicationEnabled",                   m_SEIPrefixIndicationSEIEnabled,                   false, "Controls if SEI Prefix Indications SEI messages enabled")
-#endif
 
-  ("DebugBitstream",                                  m_decodeBitstreams[0],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
+  ("DebugBitstream",                                  m_decodeBitstreams[0],             std::string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
   ("DebugPOC",                                        m_switchPOC,                                 -1, "If DebugBitstream is present, load frames up to this POC from this bitstream. Starting with DebugPOC, return to normal encoding." )
-  ("DecodeBitstream1",                                m_decodeBitstreams[0],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
-  ("DecodeBitstream2",                                m_decodeBitstreams[1],             string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
+  ("DecodeBitstream1",                                m_decodeBitstreams[0],             std::string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
+  ("DecodeBitstream2",                                m_decodeBitstreams[1],             std::string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
   ("SwitchPOC",                                       m_switchPOC,                                 -1, "If DebugBitstream is present, load frames up to this POC from this bitstream. Starting with DebugPOC, return to normal encoding." )
   ("SwitchDQP",                                       m_switchDQP,                                  0, "delta QP applied to picture with switchPOC and subsequent pictures." )
   ("FastForwardToPOC",                                m_fastForwardToPOC,                          -1, "Get to encoding the specified POC as soon as possible by skipping temporal layers irrelevant for the specified POC." )
@@ -1649,7 +1670,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "RPR",                                            m_rprEnabledFlag,                          true, "Reference Sample Resolution" )
   ("ScalingRatioHor",                                 m_scalingRatioHor,                          1.0, "Scaling ratio in hor direction")
   ("ScalingRatioVer",                                 m_scalingRatioVer,                          1.0, "Scaling ratio in ver direction")
-#if JVET_AB0080
   ("GOPBasedRPR",                                     m_gopBasedRPREnabledFlag,                 false, "Enables decision to encode pictures in GOP in full resolution or one of three downscaled resolutions(default is 1/2, 2/3 and 4/5 in both dimensions)")
   ("GOPBasedRPRQPTh",                                 m_gopBasedRPRQPThreshold,                    32, "QP threshold parameter that determines which QP GOP-based RPR is invoked for given by QP >= GOPBasedRPRQPTh")
   ("ScalingRatioHor2",                                m_scalingRatioHor2,                         1.5, "Scaling ratio in hor direction for GOP based RPR (2/3)")
@@ -1662,39 +1682,43 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("QpOffsetRPR",                                     m_qpOffsetRPR,                               -6, "QP offset for RPR (-6 for 1/2)")
   ("QpOffsetRPR2",                                    m_qpOffsetRPR2,                              -4, "QP offset for RPR2 (-4 for 2/3)")
   ("QpOffsetRPR3",                                    m_qpOffsetRPR3,                              -2, "QP offset for RPR3 (-2 for 4/5)")
-#if JVET_AB0080_CHROMA_QP_FIX
   ("QpOffsetChromaRPR",                               m_qpOffsetChromaRPR,                         -6, "QP offset for RPR (-6 for 0.5x)")
   ("QpOffsetChromaRPR2",                              m_qpOffsetChromaRPR2,                        -4, "QP offset for RPR2 (-4 for 2/3x)")
   ("QpOffsetChromaRPR3",                              m_qpOffsetChromaRPR3,                        -2, "QP offset for RPR3 (-2 for 4/5x)")
-#endif
+#if JVET_AC0096
+  ("RPRFunctionalityTesting",                         m_rprFunctionalityTestingEnabledFlag,      false, "Enables RPR functionality testing")
+  ("RPRSwitchingResolutionOrderList", cfg_rprSwitchingResolutionOrderList, cfg_rprSwitchingResolutionOrderList, "Order of resolutions for each segment in RPR functionality testing where 0,1,2,3 corresponds to full resolution,4/5,2/3 and 1/2")
+  ("RPRSwitchingQPOffsetOrderList", cfg_rprSwitchingQPOffsetOrderList, cfg_rprSwitchingQPOffsetOrderList, "Order of QP offset for each segment in RPR functionality testing, where the QP is modified according to the given offset")
+  ("RPRSwitchingSegmentSize",                         m_rprSwitchingSegmentSize,                    32, "Segment size with same resolution")
+  ("RPRSwitchingTime",                                m_rprSwitchingTime,                          0.0, "Segment switching time in seconds, when non-zero it defines the segment size according to frame rate (a multiple of 8)")
+  ("RPRPopulatePPSatIntra",                           m_rprPopulatePPSatIntraFlag,               false, "Populate all PPS which can be used in the sequence at the Intra, e.g. full-res, 4/5, 2/3 and 1/2")
 #endif
   ( "FractionNumFrames",                              m_fractionOfFrames,                         1.0, "Encode a fraction of the specified in FramesToBeEncoded frames" )
   ( "SwitchPocPeriod",                                m_switchPocPeriod,                            0, "Switch POC period for RPR" )
   ( "UpscaledOutput",                                 m_upscaledOutput,                             0, "Output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for RPR" )
-#if JVET_AB0081
   ("UpscaleFilterForDisplay",                         m_upscaleFilterForDisplay,                    1, "Filters used for upscaling reconstruction to full resolution (2: ECM 12-tap luma and 6-tap chroma MC filters, 1: Alternative 12-tap luma and 6-tap chroma filters, 0: VVC 8-tap luma and 4-tap chroma MC filters)")
-#endif
   ( "MaxLayers",                                      m_maxLayers,                                  1, "Max number of layers" )
   ( "EnableOperatingPointInformation",                m_OPIEnabled,                             false, "Enables writing of Operating Point Information (OPI)" )
   ( "MaxTemporalLayer",                               m_maxTemporalLayer,                         500, "Maximum temporal layer to be signalled in OPI" )
   ( "TargetOutputLayerSet",                           m_targetOlsIdx,                             500, "Target output layer set index to be signalled in OPI" )
+  ( "PrintRefLayerMetrics",                           m_refMetricsEnabled,                      false, "0 (default) do not print ref layer metrics, 1 = print ref layer metrics based on current layer source")
   ;
   opts.addOptions()
   ( "MaxSublayers",                                   m_maxSublayers,                               7, "Max number of Sublayers")
   ( "DefaultPtlDpbHrdMaxTidFlag",                     m_defaultPtlDpbHrdMaxTidFlag,              true, "specifies that the syntax elements vps_ptl_max_tid[ i ], vps_dpb_max_tid[ i ], and vps_hrd_max_tid[ i ] are not present and are inferred to be equal to the default value vps_max_sublayers_minus1")
   ( "AllIndependentLayersFlag",                       m_allIndependentLayersFlag,                true, "All layers are independent layer")
-  ("AllowablePredDirection",                          m_predDirectionArray, string(""),                "prediction directions allowed for i-th temporal layer")
+  ("AllowablePredDirection",                          m_predDirectionArray, std::string(""),                "prediction directions allowed for i-th temporal layer")
   ( "LayerId%d",                                      m_layerId,                    0, MAX_VPS_LAYERS, "Layer ID")
   ( "NumRefLayers%d",                                 m_numRefLayers,               0, MAX_VPS_LAYERS, "Number of direct reference layer index of i-th layer")
-  ( "RefLayerIdx%d",                                  m_refLayerIdxStr,    string(""), MAX_VPS_LAYERS, "Reference layer index(es)")
+  ( "RefLayerIdx%d",                                  m_refLayerIdxStr,    std::string(""), MAX_VPS_LAYERS, "Reference layer index(es)")
   ( "EachLayerIsAnOlsFlag",                           m_eachLayerIsAnOlsFlag,                    true, "Each layer is an OLS layer flag")
   ( "OlsModeIdc",                                     m_olsModeIdc,                                 0, "Output layer set mode")
   ( "NumOutputLayerSets",                             m_numOutputLayerSets,                         1, "Number of output layer sets")
-  ( "OlsOutputLayer%d",                               m_olsOutputLayerStr, string(""), MAX_VPS_LAYERS, "Output layer index of i-th OLS")
+  ( "OlsOutputLayer%d",                               m_olsOutputLayerStr, std::string(""), MAX_VPS_LAYERS, "Output layer index of i-th OLS")
   ( "NumPTLsInVPS",                                   m_numPtlsInVps,                               1, "Number of profile_tier_level structures in VPS" )
   ( "PtPresentInPTL%d",                               m_ptPresentInPtl,               0, MAX_NUM_OLSS, "Profile/Tier present in i-th PTL")
   ( "AvoidIntraInDepLayers",                          m_avoidIntraInDepLayer,                    true, "Replaces I pictures in dependent layers with B pictures" )
-  ( "MaxTidILRefPicsPlusOneLayerId%d",                m_maxTidILRefPicsPlus1Str, string(""), MAX_VPS_LAYERS, "Maximum temporal ID for inter-layer reference pictures plus 1 of i-th layer, 0 for IRAP only")
+  ( "MaxTidILRefPicsPlusOneLayerId%d",                m_maxTidILRefPicsPlus1Str, std::string(""), MAX_VPS_LAYERS, "Maximum temporal ID for inter-layer reference pictures plus 1 of i-th layer, 0 for IRAP only")
   ( "RPLofDepLayerInSH",                              m_rplOfDepLayerInSh,                      false, "define Reference picture lists in slice header instead of SPS for dependant layers")
     ;
 
@@ -1755,6 +1779,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     outSubWidthCFlag << "SEINNPostFilterCharacteristicsOutSubCFlag" << i;
     opts.addOptions()(outSubWidthCFlag.str(), m_nnPostFilterSEICharacteristicsOutSubCFlag[i], false, "Specifies output chroma format when upsampling");
 
+#if JVET_AC0154
+    std::ostringstream outColourFormatIdc;
+    outColourFormatIdc << "SEINNPostFilterCharacteristicsOutColourFormatIdc" << i;
+    opts.addOptions()(outColourFormatIdc.str(), m_nnPostFilterSEICharacteristicsOutColourFormatIdc[i], 1u, "Specifies output chroma format for colourization purpose");
+#endif
+
     std::ostringstream picWidthInLumaSamples;
     picWidthInLumaSamples << "SEINNPostFilterCharacteristicsPicWidthInLumaSamples" << i;
     opts.addOptions()(picWidthInLumaSamples.str(), m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], 0u, "Specifies the horizontal luma sample counts of the output picture in the Neural Network Post Filter Characteristics SEI message");
@@ -1763,6 +1793,23 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     picHeightInLumaSamples << "SEINNPostFilterCharacteristicsPicHeightInLumaSamples" << i;
     opts.addOptions()(picHeightInLumaSamples.str(), m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], 0u, "Specifies the vertical luma sample counts of the output picture in the Neural Network Post Filter Characteristics SEI message");
 
+#if JVET_AC0061_TENSOR_BITDEPTH
+    std::ostringstream inpTensorBitDepthLumaMinus8;
+    inpTensorBitDepthLumaMinus8 << "SEINNPostFilterCharacteristicsInpTensorBitDepthLumaMinusEight" << i;
+    opts.addOptions()(inpTensorBitDepthLumaMinus8.str(), m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[i], 0u, "Specifies the bit depth of the input tensor luma minus 8 in the Neural Network Post Filter Characteristics SEI message");
+
+    std::ostringstream inpTensorBitDepthChromaMinus8;
+    inpTensorBitDepthChromaMinus8 << "SEINNPostFilterCharacteristicsInpTensorBitDepthChromaMinusEight" << i;
+    opts.addOptions()(inpTensorBitDepthChromaMinus8.str(), m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[i], 0u, "Specifies the bit depth of the input tensor chroma minus 8 in the Neural Network Post Filter Characteristics SEI message");
+
+    std::ostringstream outTensorBitDepthLumaMinus8;
+    outTensorBitDepthLumaMinus8 << "SEINNPostFilterCharacteristicsOutTensorBitDepthLumaMinusEight" << i;
+    opts.addOptions()(outTensorBitDepthLumaMinus8.str(), m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[i], 0u, "Specifies the bit depth of the output tensor luma minus 8 in the Neural Network Post Filter Characteristics SEI message");
+
+    std::ostringstream outTensorBitDepthChromaMinus8;
+    outTensorBitDepthChromaMinus8 << "SEINNPostFilterCharacteristicsOutTensorBitDepthChromaMinusEight" << i;
+    opts.addOptions()(outTensorBitDepthChromaMinus8.str(), m_nnPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8[i], 0u, "Specifies the bit depth of the output tensor chroma minus 8 in the Neural Network Post Filter Characteristics SEI message");
+#else
     std::ostringstream inpTensorBitDepthMinus8;
     inpTensorBitDepthMinus8 << "SEINNPostFilterCharacteristicsInpTensorBitDepthMinus8" << i;
     opts.addOptions()(inpTensorBitDepthMinus8.str(), m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i], 0u, "Specifies the bit depth of the input tensor minus 8 in the Neural Network Post Filter Characteristics SEI message");
@@ -1770,21 +1817,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream outTensorBitDepthMinus8;
     outTensorBitDepthMinus8 << "SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8" << i;
     opts.addOptions()(outTensorBitDepthMinus8.str(), m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i], 0u, "Specifies the bit depth of the output tensor minus 8 in the Neural Network Post Filter Characteristics SEI message");
+#endif
 
     std::ostringstream componentLastFlag;
     componentLastFlag << "SEINNPostFilterCharacteristicsComponentLastFlag" << i;
     opts.addOptions()(componentLastFlag.str(), m_nnPostFilterSEICharacteristicsComponentLastFlag[i], false, "Specifies the channel component is located in the last dimension for the Neural Network Post Filter Characteristics SEI message");
 
 
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     std::ostringstream inpFormatIdc;
     inpFormatIdc << "SEINNPostFilterCharacteristicsInpFormatIdc" << i;
     opts.addOptions()(inpFormatIdc.str(), m_nnPostFilterSEICharacteristicsInpFormatIdc[i], 0u, "Specifies the method of converting an input sample in the the Neural Network Post Filter Characteristics SEI message");
-#else
-    std::ostringstream inpSampleIdc;
-    inpSampleIdc << "SEINNPostFilterCharacteristicsInpSampleIdc" << i;
-    opts.addOptions()(inpSampleIdc.str(), m_nnPostFilterSEICharacteristicsInpSampleIdc[i], 0u, "Specifies the method of converting an input sample in the the Neural Network Post Filter Characteristics SEI message");
-#endif
     std::ostringstream auxInpIdc;
     auxInpIdc << "SEINNPostFilterCharacteristicsAuxInpIdc" << i;
     opts.addOptions()(auxInpIdc.str(), m_nnPostFilterSEICharacteristicsAuxInpIdc[i], 0u, "Specifies the auxillary input index in the Nueral Network Post Filter Characteristics SEI message");
@@ -1808,15 +1850,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     inpOrderIdc << "SEINNPostFilterCharacteristicsInpOrderIdc" << i;
     opts.addOptions()(inpOrderIdc.str(), m_nnPostFilterSEICharacteristicsInpOrderIdc[i], 0u, "Specifies the method of ordering the input sample arrays in the Neural Network Post Filter Characteristics SEI message");
 
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     std::ostringstream outFormatIdc;
     outFormatIdc << "SEINNPostFilterCharacteristicsOutFormatIdc" << i;
     opts.addOptions()(outFormatIdc.str(), m_nnPostFilterSEICharacteristicsOutFormatIdc[i], 0u, "Specifies the method of converting an output sample in the the Neural Network Post Filter Characteristics SEI message");
-#else
-    std::ostringstream outSampleIdc;
-    outSampleIdc << "SEINNPostFilterCharacteristicsOutSampleIdc" << i;
-    opts.addOptions()(outSampleIdc.str(), m_nnPostFilterSEICharacteristicsOutSampleIdc[i], 0u, "Specifies the method of converting an output sample in the the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream outOrderIdc;
     outOrderIdc << "SEINNPostFilterCharacteristicsOutOrderIdc" << i;
@@ -1833,6 +1869,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream patchHeightMinus1;
     patchHeightMinus1 << "SEINNPostFilterCharacteristicsPatchHeightMinus1" << i;
     opts.addOptions()(patchHeightMinus1.str(), m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i], 0u, "Specifies the vertical sample counts of a patch in the Neural Network Post Filter Characteristics SEI message");
+
+#if JVET_AC0344_NNPFC_PATCH
+    std::ostringstream extendedPatchWidthCdDeltaMinus1;
+    extendedPatchWidthCdDeltaMinus1 << "SEINNPostFilterCharacteristicsExtendedPatchWidthCdDeltaMinus1" << i;
+    opts.addOptions()(extendedPatchWidthCdDeltaMinus1.str(), m_nnPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1[i], 0u, "Specifies the extended horizontal sample counts of a patch in the Neural Network Post Filter Characteristics SEI message");
+
+    std::ostringstream extendedPatchHeightCdDeltaMinus1;
+    extendedPatchHeightCdDeltaMinus1 << "SEINNPostFilterCharacteristicsExtendedPatchHeightCdDeltaMinus1" << i;
+    opts.addOptions()(extendedPatchHeightCdDeltaMinus1.str(), m_nnPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1[i], 0u, "Specifies the extended vertical sample counts of a patch in the Neural Network Post Filter Characteristics SEI message");
+#endif
 
     std::ostringstream overlap;
     overlap << "SEINNPostFilterCharacteristicsOverlap" << i;
@@ -1854,23 +1900,21 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     cbPadding << "SEINNPostFilterCharacteristicsCbPadding" << i;
     opts.addOptions()(cbPadding.str(), m_nnPostFilterSEICharacteristicsCbPadding[i], 0u, "Specifies the Cb padding when when the padding type is fixed padding ");
 
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
     std::ostringstream complexityInfoPresentFlag;
     complexityInfoPresentFlag << "SEINNPostFilterCharacteristicsComplexityInfoPresentFlag" << i;
     opts.addOptions()(complexityInfoPresentFlag.str(), m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[i], false, "Specifies the value of nnpfc_complexity_info_present_flag in the Neural Network Post Filter Characteristics SEI message");
-#else
-    std::ostringstream complexityIdc;
-    complexityIdc << "SEINNPostFilterCharacteristicsComplexityIdc" << i;
-    opts.addOptions()(complexityIdc.str(), m_nnPostFilterSEICharacteristicsComplexityIdc[i], 0u, "Specifies the value of nnpfc_complexity_idc in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream uriTag;
     uriTag << "SEINNPostFilterCharacteristicsUriTag" << i;
-    opts.addOptions()(uriTag.str(), m_nnPostFilterSEICharacteristicsUriTag[i], string(""), "Specifies the neural network uri tag in the Neural Network Post Filter Characteristics SEI message");
+    opts.addOptions()(
+      uriTag.str(), m_nnPostFilterSEICharacteristicsUriTag[i], std::string(""),
+      "Specifies the neural network uri tag in the Neural Network Post Filter Characteristics SEI message");
 
     std::ostringstream uri;
     uri << "SEINNPostFilterCharacteristicsUri" << i;
-    opts.addOptions()(uri.str(), m_nnPostFilterSEICharacteristicsUri[i], string(""), "Specifies the neural network information uri in the Neural Network Post Filter Characteristics SEI message");
+    opts.addOptions()(
+      uri.str(), m_nnPostFilterSEICharacteristicsUri[i], std::string(""),
+      "Specifies the neural network information uri in the Neural Network Post Filter Characteristics SEI message");
 
     std::ostringstream parameterTypeIdc;
     parameterTypeIdc << "SEINNPostFilterCharacteristicsParameterTypeIdc" << i;
@@ -1888,39 +1932,46 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     numKmacOperationsIdc << "SEINNPostFilterCharacteristicsNumKmacOperationsIdc" << i;
     opts.addOptions()(numKmacOperationsIdc.str(), m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i], 0u, "Specifies the maximum number of operations (KMAC) per pixel in the Neural Network Post Filter Characteristics SEI message");
 
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
     std::ostringstream totalKilobyteSize; 
     totalKilobyteSize << "SEINNPostFilterCharacteristicsTotalKilobyteSize" << i; 
     opts.addOptions()(totalKilobyteSize.str(), m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i], 0u, "Indicates the total size in kilobytes required to store the uncompressed NN parameters in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream payloadFilename;
     payloadFilename << "SEINNPostFilterCharacteristicsPayloadFilename" << i;
-    opts.addOptions()(payloadFilename.str(), m_nnPostFilterSEICharacteristicsPayloadFilename[i], string(""), "Specifies the NNR bitstream in the Neural Network Post Filter Characteristics SEI message");
+    opts.addOptions()(payloadFilename.str(), m_nnPostFilterSEICharacteristicsPayloadFilename[i], std::string(""),
+                      "Specifies the NNR bitstream in the Neural Network Post Filter Characteristics SEI message");
 
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
     std::ostringstream numberDecodedInputPics;
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+    numberDecodedInputPics << "SEINNPostFilterCharacteristicsNumberInputDecodedPicsMinusOne" << i;
+    opts.addOptions()(numberDecodedInputPics.str(), m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i], 0u, "Specifies the number of decoded output pictures used as input for the post processing filter");
+#else
     numberDecodedInputPics << "SEINNPostFilterCharacteristicsNumberInputDecodedPicsMinusTwo" << i;
     opts.addOptions()(numberDecodedInputPics.str(), m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], 0u, "Specifies the number of decoded output pictures used as input for the post processing filter");
-
+#endif
     std::ostringstream numberInterpolatedPics;
     numberInterpolatedPics << "SEINNPostFilterCharacteristicsNumberInterpolatedPics" << i;
     opts.addOptions()(numberInterpolatedPics.str(), cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], "Number of pictures to interpolate");
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+    std::ostringstream InputPicOutputFlag;
+    InputPicOutputFlag << "SEINNPostFilterCharacteristicsInputPicOutputFlag" << i;
+    opts.addOptions()(InputPicOutputFlag.str(), cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], "Indicates whether NNPF will generate a corresponding output picture for the input picture");
 #endif
 
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+    opts.addOptions()("SEINNPostFilterActivationTargetId", m_nnPostFilterSEIActivationTargetId, 0u, "Target id of the Neural Network Post Filter on current picture");
+#else
     opts.addOptions()("SEINNPostFilterActivationId", m_nnPostFilterSEIActivationId , 0u,        "Id of the Neural Network Post Filter on current picture");
-#if JVET_AB0050
+#endif
     opts.addOptions()("SEINNPostFilterActivationCancelFlag", m_nnPostFilterSEIActivationCancelFlag, false, "Control use of the target neural network post filter established by any previous NNPFA SEI message");
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
-#endif
   }
 
   po::setDefaults(opts);
   po::ErrorReporter err;
-  const list<const char*>& argv_unhandled = po::scanArgv(opts, argc, (const char**) argv, err);
+  const std::list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **) argv, err);
 
-#if JVET_AB0080
   if (m_gopBasedRPREnabledFlag)
   {
     m_upscaledOutput = 2;
@@ -1930,9 +1981,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_scalingRatioVer = 2.0;
     }
   }
-  m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag;
+#if JVET_AC0096
+  m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag || m_rprFunctionalityTestingEnabledFlag;
 #else
-  m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0;
+  m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag;
 #endif
   m_resChangeInClvsEnabled = m_resChangeInClvsEnabled && m_rprEnabledFlag;
 
@@ -2125,7 +2177,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
-  for (list<const char*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
+  for (std::list<const char *>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
   {
     msg( ERROR, "Unhandled argument ignored: `%s'\n", *it);
   }
@@ -2133,7 +2185,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   if (argc == 1 || do_help)
   {
     /* argc == 1: no options have been specified */
-    po::doHelp(cout, opts);
+    po::doHelp(std::cout, opts);
     return false;
   }
 
@@ -2152,6 +2204,19 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   /*
    * Set any derived parameters
    */
+
+  if ( m_sourceScalingRatioHor != 1.0 || m_sourceScalingRatioVer != 1.0 ) 
+  {
+    m_sourceWidthBeforeScale = m_sourceWidth;
+    m_sourceHeightBeforeScale = m_sourceHeight;
+    m_sourceWidth    = int(round(m_sourceWidth*m_sourceScalingRatioHor));
+    m_sourceHeight   = int(round(m_sourceHeight*m_sourceScalingRatioVer));
+  }
+  else 
+  {
+    m_sourceWidthBeforeScale = 0;
+    m_sourceHeightBeforeScale = 0;
+  }
 #if EXTENSION_360_VIDEO
   m_inputFileWidth = m_sourceWidth;
   m_inputFileHeight = m_sourceHeight;
@@ -2411,12 +2476,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
   m_inputChromaFormatIDC = numberToChromaFormat(tmpInputChromaFormat);
-  m_chromaFormatIDC = ((tmpChromaFormat == 0) ? (m_inputChromaFormatIDC) : (numberToChromaFormat(tmpChromaFormat)));
+  m_chromaFormatIdc = ((tmpChromaFormat == 0) ? (m_inputChromaFormatIDC) : (numberToChromaFormat(tmpChromaFormat)));
 #if EXTENSION_360_VIDEO
   m_ext360.processOptions(ext360CfgContext);
 #endif
 
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
   for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; ++i)
   {
     m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i] = cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i].values;
@@ -2424,25 +2488,41 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     {
       m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].push_back(0);
     }
+
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+    for(int j=0; j<m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size(); ++j)
+    {
+      CHECK(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i][j] > 63, "The value of nnpfc_interpolated_pics[i] shall be in the range of 0 to 63, inclusive");
+    }
+    CHECK(int(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size()) < int(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i]) - 1, "Number Interpolated Pictures List must be greater than number of decoder pictures list");
+#else
     CHECK(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size() < m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], "Number Interpolated Pictures List must be greater than number of decoder pictures list");
-  }
 #endif
+
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+    m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i].values;
+    if (m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i].size() == 0)
+    {
+      m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i].push_back(0);
+    }
+#endif
+  }
 
   if (isY4mFileExt(m_inputFileName))
   {
     int          width = 0, height = 0, frameRate = 0, inputBitDepth = 0;
-    ChromaFormat chromaFormat = CHROMA_420;
+    ChromaFormat chromaFormat = ChromaFormat::_420;
     VideoIOYuv   inputFile;
     inputFile.parseY4mFileHeader(m_inputFileName, width, height, frameRate, inputBitDepth, chromaFormat);
     if (width != m_sourceWidth || height != m_sourceHeight || frameRate != m_frameRate
-        || inputBitDepth != m_inputBitDepth[ChannelType::LUMA] || chromaFormat != m_chromaFormatIDC)
+        || inputBitDepth != m_inputBitDepth[ChannelType::LUMA] || chromaFormat != m_chromaFormatIdc)
     {
       msg(WARNING, "\nWarning: Y4M file info is different from input setting. Using the info from Y4M file\n");
       m_sourceWidth            = width;
       m_sourceHeight           = height;
       m_frameRate              = frameRate;
       m_inputBitDepth.fill(inputBitDepth);
-      m_chromaFormatIDC        = chromaFormat;
+      m_chromaFormatIdc        = chromaFormat;
       m_msbExtendedBitDepth    = m_inputBitDepth;
     }
   }
@@ -2505,7 +2585,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
   {
-    m_chromaFormatConstraint       = (tmpConstraintChromaFormat == 0) ? m_chromaFormatIDC : numberToChromaFormat(tmpConstraintChromaFormat);
+    m_chromaFormatConstraint =
+      (tmpConstraintChromaFormat == 0) ? m_chromaFormatIdc : numberToChromaFormat(tmpConstraintChromaFormat);
+    m_maxChromaFormatConstraintIdc = numberToChromaFormat(tmpMaxChromaFormatConstraintIdc);
+
     if (m_bitDepthConstraint == 0)
     {
       if (m_profile != Profile::NONE)
@@ -2523,13 +2606,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           "MaxBitDepthConstraint setting does not allow the specified luma bit depth to be coded.");
     CHECK(m_bitDepthConstraint < m_internalBitDepth[ChannelType::CHROMA],
           "MaxBitDepthConstraint setting does not allow the specified chroma bit depth to be coded.");
-    CHECK(m_chromaFormatConstraint < m_chromaFormatIDC, "MaxChromaFormatConstraint setting does not allow the specified chroma format to be coded.");
-    CHECK(m_chromaFormatConstraint >= NUM_CHROMA_FORMAT, "Bad value given for MaxChromaFormatConstraint setting.")
+    CHECK(m_chromaFormatConstraint < m_chromaFormatIdc,
+          "MaxChromaFormatConstraint setting does not allow the specified chroma format to be coded.");
+    CHECK(m_chromaFormatConstraint >= ChromaFormat::NUM, "Bad value given for MaxChromaFormatConstraint setting.")
     CHECK(m_bitDepthConstraint < 8 || m_bitDepthConstraint>16, "MaxBitDepthConstraint setting must be in the range 8 to 16 (inclusive)");
   }
 
   m_inputColourSpaceConvert = stringToInputColourSpaceConvert(inputColourSpaceConvert, true);
-  m_rgbFormat = (m_inputColourSpaceConvert == IPCOLOURSPACE_RGBtoGBR && m_chromaFormatIDC == CHROMA_444) ? true : false;
+  m_rgbFormat = m_inputColourSpaceConvert == IPCOLOURSPACE_RGBtoGBR && m_chromaFormatIdc == ChromaFormat::_444;
   if (m_profile == Profile::MAIN_12 || m_profile == Profile::MAIN_12_INTRA || m_profile == Profile::MAIN_12_STILL_PICTURE ||
       m_profile == Profile::MAIN_12_444 || m_profile == Profile::MAIN_12_444_INTRA || m_profile == Profile::MAIN_12_444_STILL_PICTURE ||
       m_profile == Profile::MAIN_16_444 || m_profile == Profile::MAIN_16_444_INTRA || m_profile == Profile::MAIN_16_444_STILL_PICTURE)
@@ -2576,11 +2660,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           m_sourcePadding[1] = m_confWinBottom << 1;
         }
       }
-      if (m_sourcePadding[0] % SPS::getWinUnitX(m_chromaFormatIDC) != 0)
+      if (m_sourcePadding[0] % SPS::getWinUnitX(m_chromaFormatIdc) != 0)
       {
         EXIT( "Error: picture width is not an integer multiple of the specified chroma subsampling");
       }
-      if (m_sourcePadding[1] % SPS::getWinUnitY(m_chromaFormatIDC) != 0)
+      if (m_sourcePadding[1] % SPS::getWinUnitY(m_chromaFormatIdc) != 0)
       {
         EXIT( "Error: picture height is not an integer multiple of the specified chroma subsampling");
       }
@@ -2625,16 +2709,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     for(int i = 0; i < m_numSubPics; i++)
     {
       CHECK((m_subPicCtuTopLeftX[i] * m_ctuSize)
-              >= (m_sourceWidth - m_confWinRight * SPS::getWinUnitX(m_chromaFormatIDC)),
+              >= (m_sourceWidth - m_confWinRight * SPS::getWinUnitX(m_chromaFormatIdc)),
             "No subpicture can be located completely outside of the conformance cropping window");
       CHECK(((m_subPicCtuTopLeftX[i] + m_subPicWidth[i]) * m_ctuSize)
-              <= (m_confWinLeft * SPS::getWinUnitX(m_chromaFormatIDC)),
+              <= (m_confWinLeft * SPS::getWinUnitX(m_chromaFormatIdc)),
             "No subpicture can be located completely outside of the conformance cropping window");
       CHECK((m_subPicCtuTopLeftY[i] * m_ctuSize)
-              >= (m_sourceHeight - m_confWinBottom * SPS::getWinUnitY(m_chromaFormatIDC)),
+              >= (m_sourceHeight - m_confWinBottom * SPS::getWinUnitY(m_chromaFormatIdc)),
             "No subpicture can be located completely outside of the conformance cropping window");
       CHECK(((m_subPicCtuTopLeftY[i] + m_subPicHeight[i]) * m_ctuSize)
-              <= (m_confWinTop * SPS::getWinUnitY(m_chromaFormatIDC)),
+              <= (m_confWinTop * SPS::getWinUnitY(m_chromaFormatIdc)),
             "No subpicture can be located completely outside of the conformance cropping window");
     }
   }
@@ -2700,7 +2784,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   CHECK(cfg_qpInValCb.values.size() != cfg_qpOutValCb.values.size(), "Chroma QP table for Cb is incomplete.");
   CHECK(cfg_qpInValCr.values.size() != cfg_qpOutValCr.values.size(), "Chroma QP table for Cr is incomplete.");
   CHECK(cfg_qpInValCbCr.values.size() != cfg_qpOutValCbCr.values.size(), "Chroma QP table for CbCr is incomplete.");
-  if (m_useIdentityTableForNon420Chroma && m_chromaFormatIDC != CHROMA_420)
+  if (m_useIdentityTableForNon420Chroma && m_chromaFormatIdc != ChromaFormat::_420)
   {
     m_chromaQpMappingTableParams.m_sameCQPTableForAllChromaFlag = true;
 
@@ -2789,7 +2873,31 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_cuChromaQpOffsetList[i].u.comp.jointCbCrOffset =
       cfg_cbCrQpOffsetList.values.size() ? cfg_cbCrQpOffsetList.values[i] : 0;
   }
-
+#if JVET_AC0096
+  if (m_rprFunctionalityTestingEnabledFlag)
+  {
+    m_upscaledOutput = 2;
+    if (m_scalingRatioHor == 1.0 && m_scalingRatioVer == 1.0)
+    {
+      m_scalingRatioHor = 2.0;
+      m_scalingRatioVer = 2.0;
+    }
+    CHECK(cfg_rprSwitchingResolutionOrderList.values.size() > MAX_RPR_SWITCHING_ORDER_LIST_SIZE, "Length of RPRSwitchingResolutionOrderList exceeds maximum length");
+    CHECK(cfg_rprSwitchingQPOffsetOrderList.values.size() > MAX_RPR_SWITCHING_ORDER_LIST_SIZE, "Length of RPRSwitchingQPOffsetOrderList exceeds maximum length");
+    CHECK(cfg_rprSwitchingResolutionOrderList.values.size() != cfg_rprSwitchingQPOffsetOrderList.values.size(), "RPRSwitchingResolutionOrderList and RPRSwitchingQPOffsetOrderList shall be the same size");
+    m_rprSwitchingListSize = (int)cfg_rprSwitchingResolutionOrderList.values.size();
+    for (int k = 0; k < m_rprSwitchingListSize; k++)
+    {
+      m_rprSwitchingResolutionOrderList[k] = cfg_rprSwitchingResolutionOrderList.values[k];
+      m_rprSwitchingQPOffsetOrderList[k] = cfg_rprSwitchingQPOffsetOrderList.values[k];
+    }
+    if (m_rprSwitchingTime != 0.0)
+    {
+      int segmentSize = 8 * int(((double)m_frameRate * m_rprSwitchingTime + 4) / 8);
+      m_rprSwitchingSegmentSize = segmentSize;
+    }
+  }
+#endif
   if ( m_LadfEnabed )
   {
     CHECK(m_ladfNumIntervals != cfg_ladfQpOffset.values.size(),
@@ -2804,7 +2912,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
-  if (m_chromaFormatIDC != CHROMA_420)
+  if (m_chromaFormatIdc != ChromaFormat::_420)
   {
     if (!m_horCollocatedChromaFlag)
     {
@@ -2889,7 +2997,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if ( m_alf )
   {
-    CHECK( m_maxNumAlfAlternativesChroma < 1 || m_maxNumAlfAlternativesChroma > MAX_NUM_ALF_ALTERNATIVES_CHROMA, std::string("The maximum number of ALF Chroma filter alternatives must be in the range (1-") + std::to_string(MAX_NUM_ALF_ALTERNATIVES_CHROMA) + std::string (", inclusive)") );
+    CHECK(m_maxNumAlfAlternativesChroma < 1 || m_maxNumAlfAlternativesChroma > ALF_MAX_NUM_ALTERNATIVES_CHROMA,
+          std::string("The maximum number of ALF Chroma filter alternatives must be in the range (1-")
+            + std::to_string(ALF_MAX_NUM_ALTERNATIVES_CHROMA) + std::string(", inclusive)"));
   }
 
   // reading external dQP description from file
@@ -3387,23 +3497,57 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if (m_poSEIEnabled)
   {
-#if JVET_AB0051
     assert(cfg_poSEIPayloadType.values.size() > 1);
-#else
-    assert(cfg_poSEIPayloadType.values.size() > 0);
-#endif
     assert(cfg_poSEIProcessingOrder.values.size() == cfg_poSEIPayloadType.values.size());
+#if JVET_AC0058_SEI
+    m_poSEIPayloadType.resize((uint32_t) cfg_poSEIPayloadType.values.size());
+    m_poSEIProcessingOrder.resize((uint32_t) cfg_poSEIPayloadType.values.size());
+    m_poSEIPrefixByte.resize((uint32_t) cfg_poSEIPayloadType.values.size());
+    uint16_t prefixByteIdx = 0;
+    for (uint32_t i = 0; i < (uint32_t) cfg_poSEIPayloadType.values.size(); i++)
+    {
+      m_poSEIPayloadType[i]     = cfg_poSEIPayloadType.values[i];
+      m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
+      if (m_poSEIPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
+      {
+        m_poSEIPrefixByte[i].resize(cfg_poSEINumofPrefixByte.values[i]);
+        for (uint32_t j = 0; j < cfg_poSEINumofPrefixByte.values[i]; j++)
+        {
+          m_poSEIPrefixByte[i][j] = (uint8_t) cfg_poSEIPrefixByte.values[prefixByteIdx++];
+        }
+      }
+      // Error check, to avoid same PayloadType and same prefix bytes when present with different PayloadOrder
+      for (uint32_t j = 0; j < i; j++)
+      {
+        auto payloadType = SEI::PayloadType(cfg_poSEIPayloadType.values[i]);
+        if (payloadType == SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
+        {
+          for (uint32_t j = 0; j < i; j++)
+          {
+            if (m_poSEIPayloadType[j] == m_poSEIPayloadType[i])
+            {
+              auto numofPrefixBytes = std::min(cfg_poSEINumofPrefixByte.values[i], cfg_poSEINumofPrefixByte.values[j]);
+              if (std::equal(m_poSEIPrefixByte[i].begin() + 1, m_poSEIPrefixByte[i].begin() + numofPrefixBytes - 1,
+                             m_poSEIPrefixByte[j].begin()))
+              {
+                assert(m_poSEIProcessingOrder[j] == m_poSEIProcessingOrder[i]);
+              }
+            }
+          }
+        }
+      }
+    }
+    // Error check, to avoid all SEI messages share the same PayloadOrder
+    assert(!std::equal(cfg_poSEIProcessingOrder.values.begin() + 1, cfg_poSEIProcessingOrder.values.end(),
+                       cfg_poSEIProcessingOrder.values.begin()));
+#else
     m_numofSEIMessages = (uint32_t)cfg_poSEIPayloadType.values.size();
     m_poSEIPayloadType.resize(m_numofSEIMessages);
     m_poSEIProcessingOrder.resize(m_numofSEIMessages);
     for (uint32_t i = 0; i < m_numofSEIMessages; i++)
     {
       m_poSEIPayloadType[i]  = cfg_poSEIPayloadType.values[i];
-#if JVET_AB0069_SEI_PROCESSING_ORDER
       m_poSEIProcessingOrder[i] = (uint16_t)cfg_poSEIProcessingOrder.values[i];
-#else
-      m_poSEIProcessingOrder[i] = (uint8_t)cfg_poSEIProcessingOrder.values[i];
-#endif
       //Error check, to avoid same PayloadType with different PayloadOrder
       for (uint32_t j = 0; j < i; j++)
       {
@@ -3413,11 +3557,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         }
       }
     }
+#endif
     assert(m_poSEIPayloadType.size() > 0);
     assert(m_poSEIProcessingOrder.size() == m_poSEIPayloadType.size());
   }
 
-#if JVET_AB0070_POST_FILTER_HINT
   if (m_postFilterHintSEIEnabled)
   {
     CHECK(cfg_postFilterHintSEIValues.values.size() <= 0, "The number of filter coefficient shall be greater than zero");
@@ -3429,7 +3573,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_postFilterHintValues[i] = cfg_postFilterHintSEIValues.values[i];
     }
   }
-#endif
 
   if( m_costMode == COST_LOSSLESS_CODING )
   {
@@ -3470,7 +3613,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   return true;
 }
-#if _MSC_VER > 1000
+#ifdef _MSC_VER
+// Restore optimizations
 #pragma optimize( "", on )
 #endif
 
@@ -3483,15 +3627,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
 int EncAppCfg::xAutoDetermineProfile()
 {
-  const int maxBitDepth = std::max(
-    m_internalBitDepth[ChannelType::LUMA],
-    m_internalBitDepth[m_chromaFormatIDC == ChromaFormat::CHROMA_400 ? ChannelType::LUMA : ChannelType::CHROMA]);
+  const int maxBitDepth =
+    std::max(m_internalBitDepth[ChannelType::LUMA], m_internalBitDepth[getLastChannel(m_chromaFormatIdc)]);
   m_profile=Profile::NONE;
 
-  switch (m_chromaFormatIDC)
+  switch (m_chromaFormatIdc)
   {
-  case ChromaFormat::CHROMA_400:
-  case ChromaFormat::CHROMA_420:
+  case ChromaFormat::_400:
+  case ChromaFormat::_420:
     if (maxBitDepth <= 10)
     {
       if (m_level == Level::LEVEL15_5 && m_framesToBeEncoded == 1)
@@ -3518,8 +3661,8 @@ int EncAppCfg::xAutoDetermineProfile()
     }
     break;
 
-  case ChromaFormat::CHROMA_422:
-  case ChromaFormat::CHROMA_444:
+  case ChromaFormat::_422:
+  case ChromaFormat::_444:
     if (maxBitDepth <= 10)
     {
       if (m_level == Level::LEVEL15_5 && m_framesToBeEncoded == 1)
@@ -3685,10 +3828,10 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara( (check_sps_range_extension_flag == 1) ,
                  "RExt tools (Extended Precision Processing, RRC Rice Extension, Persistent Rice Adaptation and TSRC Rice Extension) must be disabled for BitDepth is less than or equal to 10 (the value of sps_range_extension_flag shall be 0 when BitDepth is less than or equal to 10.)");
   }
-  xConfirmPara( m_chromaFormatIDC >= NUM_CHROMA_FORMAT,                                     "ChromaFormatIDC must be either 400, 420, 422 or 444" );
+  xConfirmPara(m_chromaFormatIdc >= ChromaFormat::NUM, "ChromaFormatIDC must be either 400, 420, 422 or 444");
   std::string sTempIPCSC="InputColourSpaceConvert must be empty, "+getListOfColourSpaceConverts(true);
   xConfirmPara( m_inputColourSpaceConvert >= NUMBER_INPUT_COLOUR_SPACE_CONVERSIONS,         sTempIPCSC.c_str() );
-  xConfirmPara(m_inputChromaFormatIDC >= NUM_CHROMA_FORMAT, "InputChromaFormatIDC must be either 400, 420, 422 or 444");
+  xConfirmPara(m_inputChromaFormatIDC >= ChromaFormat::NUM, "InputChromaFormatIDC must be either 400, 420, 422 or 444");
   xConfirmPara(m_frameRate <= 0, "Frame rate must be more than 1");
   xConfirmPara( m_framesToBeEncoded <= 0,                                                   "Total Number Of Frames encoded must be more than 0" );
   xConfirmPara( m_framesToBeEncoded < m_switchPOC,                                          "debug POC out of range" );
@@ -3799,7 +3942,7 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara( m_cbQpOffsetDualTree >  12,   "Max. Chroma Cb QP Offset for dual tree is  12" );
   xConfirmPara( m_crQpOffsetDualTree < -12,   "Min. Chroma Cr QP Offset for dual tree is -12" );
   xConfirmPara( m_crQpOffsetDualTree >  12,   "Max. Chroma Cr QP Offset for dual tree is  12" );
-  if (m_dualTree && (m_chromaFormatIDC == CHROMA_400))
+  if (m_dualTree && !isChromaEnabled(m_chromaFormatIdc))
   {
     msg( WARNING, "****************************************************************************\n");
     msg( WARNING, "** WARNING: --DualITree has been disabled because the chromaFormat is 400 **\n");
@@ -3830,14 +3973,14 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara(m_ccalfStrengthTarget < 0.0, "CCALFStrengthTarget is less than 0. Valid range is 0.0 <= CCALFStrengthTarget <= 1.0");
     xConfirmPara(m_ccalfStrengthTarget > 1.0, "CCALFStrengthTarget is greater than 1. Valid range is 0.0 <= CCALFStrengthTarget <= 1.0");
   }
-  if (m_ccalf && (m_chromaFormatIDC == CHROMA_400))
+  if (m_ccalf && !isChromaEnabled(m_chromaFormatIdc))
   {
     msg( WARNING, "****************************************************************************\n");
     msg( WARNING, "** WARNING: --CCALF has been disabled because the chromaFormat is 400     **\n");
     msg( WARNING, "****************************************************************************\n");
     m_ccalf = false;
   }
-  if (m_jointCbCrMode && (m_chromaFormatIDC == CHROMA_400))
+  if (m_jointCbCrMode && !isChromaEnabled(m_chromaFormatIdc))
   {
     msg( WARNING, "****************************************************************************\n");
     msg( WARNING, "** WARNING: --JointCbCr has been disabled because the chromaFormat is 400 **\n");
@@ -3871,9 +4014,9 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara((m_sourceWidth % minCuSize ) || (m_sourceHeight % minCuSize),              "Picture width or height is not a multiple of minCuSize");
   const int minDiff =
     (int) floorLog2(m_minQt[2])
-    - std::max(MIN_CU_LOG2, (int) m_log2MinCuSize - (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC));
+    - std::max(MIN_CU_LOG2, (int) m_log2MinCuSize - (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc));
   xConfirmPara( minDiff < 0 ,                                                               "Min Chroma QT size in I slices is smaller than Min Luma CU size even considering color format");
-  xConfirmPara((m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC))
+  xConfirmPara((m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc))
                  > std::min(64, (int) m_ctuSize),
                "Min Chroma QT size in I slices should be smaller than or equal to CTB size or CB size after implicit "
                "split of CTB");
@@ -3890,7 +4033,7 @@ bool EncAppCfg::xCheckParameter()
                "Maximum BT size for luma block in non I slice should be larger than minimum QT size");
   xConfirmPara(m_maxBt[1] > m_ctuSize,
                "Maximum BT size for luma block in non I slice should be smaller than or equal to CTUSize");
-  xConfirmPara(m_maxBt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
+  xConfirmPara(m_maxBt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc)),
                "Maximum BT size for chroma block in I slice should be larger than minimum QT size");
   xConfirmPara(m_maxBt[2] > m_ctuSize,
                "Maximum BT size for chroma block in I slice should be smaller than or equal to CTUSize");
@@ -3902,7 +4045,7 @@ bool EncAppCfg::xCheckParameter()
                "Maximum TT size for luma block in non I slice should be larger than minimum QT size");
   xConfirmPara(m_maxTt[1] > m_ctuSize,
                "Maximum TT size for luma block in non I slice should be smaller than or equal to CTUSize");
-  xConfirmPara(m_maxTt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
+  xConfirmPara(m_maxTt[2] < (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc)),
                "Maximum TT size for chroma block in I slice should be larger than minimum QT size");
   xConfirmPara(m_maxTt[2] > m_ctuSize,
                "Maximum TT size for chroma block in I slice should be smaller than or equal to CTUSize");
@@ -3917,9 +4060,9 @@ bool EncAppCfg::xCheckParameter()
   }
   if (m_uiMaxMTTHierarchyDepthIChroma == 0)
   {
-    xConfirmPara(m_maxBt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
+    xConfirmPara(m_maxBt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc)),
                  "MaxBTChromaISlice shall be equal to MinQTChromaISlice when MaxMTTHierarchyDepthISliceC is 0.");
-    xConfirmPara(m_maxTt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIDC)),
+    xConfirmPara(m_maxTt[2] != (m_minQt[2] << (int) getChannelTypeScaleX(ChannelType::CHROMA, m_chromaFormatIdc)),
                  "MaxTTChromaISlice shall be equal to MinQTChromaISlice when MaxMTTHierarchyDepthISliceC is 0.");
   }
   if (m_uiMaxMTTHierarchyDepth == 0)
@@ -3941,6 +4084,19 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara(m_maxNumAffineMergeCand < (m_sbTmvpEnableFlag ? 1 : 0),
                "MaxNumAffineMergeCand must be greater than 0 when SbTMVP is enabled");
   xConfirmPara( m_maxNumAffineMergeCand > AFFINE_MRG_MAX_NUM_CANDS, "MaxNumAffineMergeCand must be no more than AFFINE_MRG_MAX_NUM_CANDS." );
+#if JVET_AC0139_UNIFIED_MERGE
+  constexpr int maxCandNum = NUM_MRG_SATD_CAND + 1 + NUM_AFF_MRG_SATD_CAND + GEO_MAX_TRY_WEIGHTED_SATD;
+  // Note: maxCandNum=15 is an empirical value for the number of candidate in RD checking
+  // Limit maximum value of MaxMergeRdCandNumTotal to maxCandNum. Larger values are not expected to be beneficial
+  xConfirmPara( m_maxMergeRdCandNumTotal < 1 || m_maxMergeRdCandNumTotal > maxCandNum, 
+    "MaxMergeRdCandNumTotal must be between 1 and 15, inclusive");
+  xConfirmPara(m_mergeRdCandQuotaRegular < 0 || m_mergeRdCandQuotaRegular > maxCandNum
+    || m_mergeRdCandQuotaRegularSmallBlk < 0 || m_mergeRdCandQuotaRegularSmallBlk > maxCandNum
+    || m_mergeRdCandQuotaSubBlk < 0 || m_mergeRdCandQuotaSubBlk > maxCandNum
+    || m_mergeRdCandQuotaCiip < 0 || m_mergeRdCandQuotaCiip > maxCandNum
+    || m_mergeRdCandQuotaGpm < 0 || m_mergeRdCandQuotaGpm > maxCandNum,
+    "MaxMergeRdCandNumReguar, MaxMergeRdCandNumReguarSmallBlk, MaxMergeRdCandNumSubBlk, MaxMergeRdCandNumCiip, and MaxMergeRdCandNumGpm must be between 0 and 15, inclusive");
+#endif
   if ( m_Affine == 0 )
   {
     m_maxNumAffineMergeCand = m_sbTmvpEnableFlag ? 1 : 0;
@@ -3973,17 +4129,24 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara(m_ccalf, "CCALF cannot be enabled when ALF APS is disabled");
   }
 
-  xConfirmPara( m_sourceWidth  % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Picture width must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_sourceHeight % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Picture height must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_sourceWidth % SPS::getWinUnitX(m_chromaFormatIdc) != 0,
+               "Picture width must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_sourceHeight % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
+               "Picture height must be an integer multiple of the specified chroma subsampling");
 
-  xConfirmPara( m_sourcePadding[0] % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Horizontal padding must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_sourcePadding[1] % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Vertical padding must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_sourcePadding[0] % SPS::getWinUnitX(m_chromaFormatIdc) != 0,
+               "Horizontal padding must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_sourcePadding[1] % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
+               "Vertical padding must be an integer multiple of the specified chroma subsampling");
 
-  xConfirmPara( m_confWinLeft   % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Left conformance window offset must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_confWinRight  % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Right conformance window offset must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_confWinTop    % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Top conformance window offset must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara( m_confWinBottom % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Bottom conformance window offset must be an integer multiple of the specified chroma subsampling");
-
+  xConfirmPara(m_confWinLeft % SPS::getWinUnitX(m_chromaFormatIdc) != 0,
+               "Left conformance window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_confWinRight % SPS::getWinUnitX(m_chromaFormatIdc) != 0,
+               "Right conformance window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_confWinTop % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
+               "Top conformance window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_confWinBottom % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
+               "Bottom conformance window offset must be an integer multiple of the specified chroma subsampling");
 
   // max CU width and height should be power of 2
   uint32_t ui = m_maxCuWidth;
@@ -4291,11 +4454,11 @@ bool EncAppCfg::xCheckParameter()
         }
 
         m_RPLList0[m_gopSize + extraRPLs].m_numRefPics = newRefs0;
-        m_RPLList0[m_gopSize + extraRPLs].m_numRefPicsActive =
-          min(m_RPLList0[m_gopSize + extraRPLs].m_numRefPics, m_RPLList0[m_gopSize + extraRPLs].m_numRefPicsActive);
+        m_RPLList0[m_gopSize + extraRPLs].m_numRefPicsActive = std::min(
+          m_RPLList0[m_gopSize + extraRPLs].m_numRefPics, m_RPLList0[m_gopSize + extraRPLs].m_numRefPicsActive);
         m_RPLList1[m_gopSize + extraRPLs].m_numRefPics = newRefs1;
-        m_RPLList1[m_gopSize + extraRPLs].m_numRefPicsActive =
-          min(m_RPLList1[m_gopSize + extraRPLs].m_numRefPics, m_RPLList1[m_gopSize + extraRPLs].m_numRefPicsActive);
+        m_RPLList1[m_gopSize + extraRPLs].m_numRefPicsActive = std::min(
+          m_RPLList1[m_gopSize + extraRPLs].m_numRefPics, m_RPLList1[m_gopSize + extraRPLs].m_numRefPicsActive);
         curGOP = m_gopSize + extraRPLs;
         extraRPLs++;
       }
@@ -4738,8 +4901,14 @@ bool EncAppCfg::xCheckParameter()
   if( m_erpSEIEnabled && !m_erpSEICancelFlag )
   {
     xConfirmPara( m_erpSEIGuardBandType < 0 || m_erpSEIGuardBandType > 8, "SEIEquirectangularprojectionGuardBandType must be in the range of 0 to 7");
-    xConfirmPara( (m_chromaFormatIDC == CHROMA_420 || m_chromaFormatIDC == CHROMA_422) && (m_erpSEILeftGuardBandWidth%2 == 1), "SEIEquirectangularprojectionLeftGuardBandWidth must be an even number for 4:2:0 or 4:2:2 chroma format");
-    xConfirmPara( (m_chromaFormatIDC == CHROMA_420 || m_chromaFormatIDC == CHROMA_422) && (m_erpSEIRightGuardBandWidth%2 == 1), "SEIEquirectangularprojectionRightGuardBandWidth must be an even number for 4:2:0 or 4:2:2 chroma format");
+    xConfirmPara(
+      (m_chromaFormatIdc == ChromaFormat::_420 || m_chromaFormatIdc == ChromaFormat::_422)
+        && (m_erpSEILeftGuardBandWidth % 2 == 1),
+      "SEIEquirectangularprojectionLeftGuardBandWidth must be an even number for 4:2:0 or 4:2:2 chroma format");
+    xConfirmPara(
+      (m_chromaFormatIdc == ChromaFormat::_420 || m_chromaFormatIdc == ChromaFormat::_422)
+        && (m_erpSEIRightGuardBandWidth % 2 == 1),
+      "SEIEquirectangularprojectionRightGuardBandWidth must be an even number for 4:2:0 or 4:2:2 chroma format");
   }
 
   if( m_sphereRotationSEIEnabled && !m_sphereRotationSEICancelFlag )
@@ -4861,44 +5030,38 @@ bool EncAppCfg::xCheckParameter()
   {
     for (int i = 0; i < m_nnPostFilterSEICharacteristicsNumFilters; i++)
     {
-#if JVET_AB0049
       xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > MAX_NNPFC_ID, "SEINNPostFilterCharacteristicsId must be in the range of 0 to 2^32-2");
-#else
-      xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > (uint32_t)(((uint64_t)1 << 32) - 2), "SEINNPostFilterCharacteristicsId must be in the range of 0 to 2^32-2");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsModeIdc[i] > 255, "SEINNPostFilterCharacteristicsModeIdc must be in the range of 0 to 255");
-#if JVET_AB0049
       xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 1023, "SEINNPostFilterCharacteristicsPurpose must be in the range of 0 to 1023");
+    #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+      xConfirmPara(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 63, "SEINNPostFilterCharacteristicsNumberInputDecodedPicturesMinus1 must be in the range of 0 to 63");
+    #endif
+#if JVET_AC0061_TENSOR_BITDEPTH
+      xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[i] > 24, "SEINNPostFilterCharacteristicsInpTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[i] > 24, "SEINNPostFilterCharacteristicsInpTensorBitDepthChromaMinus8 must be in the range of 0 to 24");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[i] > 24, "SEINNPostFilterCharacteristicsOutTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8[i] > 24, "SEINNPostFilterCharacteristicsOutTensorBitDepthChromaMinus8 must be in the range of 0 to 24");
 #else
-      xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > (uint32_t)(((uint64_t)1 << 32) - 2), "SEINNPostFilterCharacteristicsPurpose must be in the range of 0 to 2^32-2");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsInpTensorBitDepthMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[i] > 24, "SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8 must be in the range of 0 to 24");
-#if M60678_BALLOT_COMMENTS_OF_FI_03
-      xConfirmPara(m_nnPostFilterSEICharacteristicsInpFormatIdc[i] > 255, "SEINNPostFilterCharacteristicsInpFormatIdc must be in the range of 0 to 255");
-#else
-      xConfirmPara(m_nnPostFilterSEICharacteristicsInpSampleIdc[i] > 255, "SEINNPostFilterCharacteristicsInpSampleIdc must be in the range of 0 to 255");
 #endif
+      xConfirmPara(m_nnPostFilterSEICharacteristicsInpFormatIdc[i] > 255, "SEINNPostFilterCharacteristicsInpFormatIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpOrderIdc[i] > 255, "SEINNPostFilterCharacteristicsInpOrderIdc must be in the range of  0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsColPrimaries[i] > 255, "m_nnPostFilterSEICharacteristicsColPrimaries must in the range 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsTransCharacteristics[i] > 255, "m_nnPostFilterSEICharacteristicsTransCharacteristics must in the range 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsMatrixCoeffs[i] > 255, "m_nnPostFilterSEICharacteristicsMatrixCoeffs must in the range 0 to 255");
-#if M60678_BALLOT_COMMENTS_OF_FI_03
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutFormatIdc[i] > 255, "SEINNPostFilterCharacteristicsOutFormatIdc must be in the range of 0 to 255");
-#else
-      xConfirmPara(m_nnPostFilterSEICharacteristicsOutSampleIdc[i] > 255, "SEINNPostFilterCharacteristicsOutSampleIdc must be in the range of 0 to 255");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutOrderIdc[i] > 255, "SEINNPostFilterCharacteristicsOutOrderIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i] > 32766, "SEINNPostFilterCharacteristicsPatchWidthMinus1 must be in the range of 0 to 32766");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i] > 32766, "SEINNPostFilterCharacteristicsPatchHeightMinus1 must be in the range of 0 to 32766");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOverlap[i] > 16383, "SEINNPostFilterCharacteristicsOverlap must be in the range of 0 to 16383");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPaddingType[i] > (1 << 4) - 1, "SEINNPostFilterPaddingType must be in the range of 0 to 2^4-1");
-#if !JVET_AB0135_NN_SEI_COMPLEXITY_MOD
-      xConfirmPara(m_nnPostFilterSEICharacteristicsComplexityIdc[i] > 255, "SEINNPostFilterCharacteristicsComplexityIdc must be in the range of 0 to 255");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i] > 3, "SEINNPostFilterCharacteristicsLog2ParameterBitLengthMinus3 must be in the range of 0 to 3");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumParametersIdc[i] > 52, "SEINNPostFilterCharacteristicsNumParametersIdc must be in the range of 0 to 52");
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
+#if JVET_AC0154
+      xConfirmPara(m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i] > (uint32_t) (((uint64_t) 1 << 32) - 2), "SEINNPostFilterCharacteristicsTotalKilobyteSize must be in the range of 0 to 2^32-2");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i] > (uint32_t) (((uint64_t) 1 << 32) - 2), "SEICharacteristicsNumKmacOperationsIdc must be in the range of 0 to 2^32-2");
+#else
       xConfirmPara(m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i] > (uint32_t) (((uint64_t) 1 << 32) - 1), "SEINNPostFilterCharacteristicsTotalKilobyteSize must be in the range of 0 to 2^32-1");
 #endif
     }
@@ -4906,11 +5069,11 @@ bool EncAppCfg::xCheckParameter()
 
   if (m_nnPostFilterSEIActivationEnabled)
   {
-  #if JVET_AB0049
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+    xConfirmPara(m_nnPostFilterSEIActivationTargetId > MAX_NNPFA_ID, "SEINNPostFilterActivationTargetId must be in the range of 0 to 2^32-2");
+#else
     xConfirmPara(m_nnPostFilterSEIActivationId > MAX_NNPFA_ID, "SEINNPostFilterActivationId must be in the range of 0 to 2^32-2");
-  #else
-    xConfirmPara(m_nnPostFilterSEIActivationId > (1 << 20) - 1, "SEINNPostFilterActivationId must be in the range of 0 to 2^20-1");
-  #endif
+#endif
   }
 
   if (m_phaseIndicationSEIEnabledFullResolution)
@@ -5269,10 +5432,10 @@ void EncAppCfg::xPrintParameter()
     msg(VERBOSE, "MmvdDisNum:%d ", m_MmvdDisNum);
     msg(VERBOSE, "JointCbCr:%d ", m_jointCbCrMode);
   }
-  m_useColorTrans = (m_chromaFormatIDC == CHROMA_444) ? m_useColorTrans : 0u;
-  msg(VERBOSE, "ACT:%d ", m_useColorTrans);
-    msg(VERBOSE, "PLT:%d ", m_PLTMode);
-    msg(VERBOSE, "IBC:%d ", m_IBCMode);
+  m_useColorTrans = m_chromaFormatIdc == ChromaFormat::_444 ? m_useColorTrans : false;
+  msg(VERBOSE, "ACT:%d ", m_useColorTrans ? 1 : 0);
+  msg(VERBOSE, "PLT:%d ", m_PLTMode);
+  msg(VERBOSE, "IBC:%d ", m_IBCMode);
   msg( VERBOSE, "HashME:%d ", m_HashME );
   msg( VERBOSE, "WrapAround:%d ", m_wrapAround);
   if( m_wrapAround )
@@ -5311,6 +5474,12 @@ void EncAppCfg::xPrintParameter()
   msg( VERBOSE, "\nFAST TOOL CFG: " );
   msg( VERBOSE, "LCTUFast:%d ", m_useFastLCTU );
   msg( VERBOSE, "FastMrg:%d ", m_useFastMrg );
+#if JVET_AC0139_UNIFIED_MERGE
+  msg( VERBOSE, "MaxMergeRdCandNumTotal:%d MergeRdCandQuotaRegular:%d MergeRdCandQuotaRegularSmallBlk:%d ", 
+    m_maxMergeRdCandNumTotal, m_mergeRdCandQuotaRegular, m_mergeRdCandQuotaRegularSmallBlk);
+  msg( VERBOSE, "MergeRdCandQuotaSubBlk:%d MergeRdCandQuotaCiip:%d MergeRdCandQuotaGpm:%d ",
+    m_mergeRdCandQuotaSubBlk, m_mergeRdCandQuotaCiip, m_mergeRdCandQuotaGpm);
+#endif
   msg( VERBOSE, "PBIntraFast:%d ", m_usePbIntraFast );
   if( m_ImvMode ) msg( VERBOSE, "IMV4PelFast:%d ", m_Imv4PelFast );
   if (m_mtsMode)
@@ -5332,12 +5501,28 @@ void EncAppCfg::xPrintParameter()
 
   if (m_resChangeInClvsEnabled)
   {
+#if !JVET_AC0096
     msg( VERBOSE, "RPR:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor, m_scalingRatioVer, m_switchPocPeriod );
-#if JVET_AB0080
+#endif
+#if JVET_AC0096
+    if (m_gopBasedRPREnabledFlag || m_rprFunctionalityTestingEnabledFlag)
+#else
     if (m_gopBasedRPREnabledFlag)
+#endif
     {
+#if JVET_AC0096
+      msg(VERBOSE, "RPR:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor, m_scalingRatioVer, m_rprFunctionalityTestingEnabledFlag ? m_rprSwitchingSegmentSize : m_gopSize);
+      msg(VERBOSE, "RPR2:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor2, m_scalingRatioVer2, m_rprFunctionalityTestingEnabledFlag ? m_rprSwitchingSegmentSize : m_gopSize);
+      msg(VERBOSE, "RPR3:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor3, m_scalingRatioVer3, m_rprFunctionalityTestingEnabledFlag ? m_rprSwitchingSegmentSize : m_gopSize);
+#else
       msg(VERBOSE, "RPR2:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor2, m_scalingRatioVer2, m_switchPocPeriod);
       msg(VERBOSE, "RPR3:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor3, m_scalingRatioVer3, m_switchPocPeriod);
+#endif
+    }
+#if JVET_AC0096
+    else
+    {
+      msg(VERBOSE, "RPR:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor, m_scalingRatioVer, m_switchPocPeriod);
     }
 #endif
   }

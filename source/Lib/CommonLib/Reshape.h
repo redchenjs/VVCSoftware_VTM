@@ -38,9 +38,7 @@
 #ifndef __RESHAPE__
 #define __RESHAPE__
 
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #include "CommonDef.h"
 #include "Rom.h"

@@ -58,6 +58,10 @@
 #include "EncAdaptiveLoopFilter.h"
 #include "RateCtrl.h"
 
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+#include "CommonLib/SEINeuralNetworkPostFiltering.h"
+#endif
+
 class EncLibCommon;
 
 //! \ingroup EncoderLib
@@ -134,17 +138,21 @@ private:
   bool                      m_GMFAFramewise;
   std::string   m_GMFAFile;
 #endif
+
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  SEINeuralNetworkPostFiltering m_nnPostFiltering;
+#endif
 public:
   SPS*                      getSPS( int spsId ) { return m_spsMap.getPS( spsId ); };
   APS**                     getApss() { return m_apss; }
   Ctx                       m_entropyCodingSyncContextState;      ///< leave in addition to vector for compatibility
   PLTBuf                    m_palettePredictorSyncState;
-  const RPLList*            getRPLList(bool b) const { return &m_rplLists[b]; }
-  RPLList*                  getRPLList(bool b) { return &m_rplLists[b]; }
-  uint32_t                  getNumRPL(bool b) const { return m_rplLists[b].getNumberOfReferencePictureLists(); }
-#if JVET_AB0080
+  const RPLList            *getRplList(RefPicList l) const { return &m_rplLists[l]; }
+  RPLList                  *getRplList(RefPicList l) { return &m_rplLists[l]; }
+  uint32_t                  getNumRpl(RefPicList l) const { return m_rplLists[l].getNumberOfReferencePictureLists(); }
   int                       m_gopRprPpsId;
-#endif
+  bool                      m_rprPPSCodedAfterIntraList[NUM_RPR_PPS]; // 4 resolutions, full, 5/6, 2/3 and 1/2
+  bool                      m_refLayerRescaledAvailable;
 protected:
   void  xGetNewPicBuffer  ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Picture*& rpcPic, int ppsId ); ///< get picture buffer which will be processed. If ppsId<0, then the ppsMap will be queried for the first match.
   void  xInitOPI(OPI& opi); ///< initialize Operating point Information (OPI) from encoder options
@@ -192,6 +200,8 @@ public:
   RdCost*                 getRdCost             ()              { return  &m_cRdCost;              }
   CtxPool                *getCtxCache() { return &m_ctxPool; }
   RateCtrl*               getRateCtrl           ()              { return  &m_cRateCtrl;            }
+  void                    setRefLayerRescaledAvailable(bool b)  { m_refLayerRescaledAvailable = b; }
+  bool                    isRefLayerRescaledAvailable() const   { return m_refLayerRescaledAvailable; }
 
 #if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct getFeatureCounter(){return m_featureCounter;}
@@ -213,6 +223,9 @@ public:
   ParameterSetMap<APS>                     *getApsMap(ApsType apsType) { return &m_apsMaps[apsType]; }
   EnumArray<ParameterSetMap<APS>, ApsType> *getApsMaps() { return &m_apsMaps; }
 
+  void                   setRprPPSCodedAfterIntra(int num, bool isCoded) { m_rprPPSCodedAfterIntraList[num] = isCoded; }
+  bool                   getRprPPSCodedAfterIntra(int num) { return m_rprPPSCodedAfterIntraList[num]; }
+
   bool                   getPltEnc()                      const { return   m_doPlt; }
   void                   checkPltStats( Picture* pic );
 #if JVET_O0756_CALCULATE_HDRMETRICS
@@ -227,9 +240,7 @@ public:
   bool encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYuvTrueOrg, PelStorage *pcPicYuvFilteredOrg,
                   PelStorage *pcPicYuvFilteredOrgForFG, const InputColourSpaceConversion snrCSC,
                   std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded
-#if JVET_AB0080
     , PelStorage** ppcPicYuvRPR
-#endif
   );
 
   bool encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded);
@@ -241,11 +252,16 @@ public:
   bool encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded,
               bool isTff);
 
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  void applyNnPostFilter();
+#endif
+
   void printSummary(bool isField)
   {
     m_cGOPEncoder.printOutSummary(m_codedPicCount, isField, m_printMSEBasedSequencePSNR, m_printSequenceMSE,
-                                  m_printMSSSIM, m_printHexPsnr, m_resChangeInClvsEnabled,
+                                  m_printMSSSIM, m_printHexPsnr, (m_resChangeInClvsEnabled || m_refLayerRescaledAvailable),
                                   m_spsMap.getFirstPS()->getBitDepths(), m_layerId);
+
   }
 
   int getLayerId() const { return m_layerId; }

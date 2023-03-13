@@ -67,7 +67,7 @@ private:
   int          m_outBitDepth           = 0;
   int          m_outFrameRate          = 0;
   int          m_outFrameScale         = 1;
-  ChromaFormat m_outChromaFormat       = CHROMA_420;
+  ChromaFormat m_outChromaFormat       = ChromaFormat::_420;
   bool         m_outY4m                = false;
 
 public:
@@ -91,20 +91,20 @@ public:
 
 
   // If fileFormat=NUM_CHROMA_FORMAT, use the format defined by pPicYuvTrueOrg
-  bool read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpaceConversion ipcsc, int aiPad[2],
-            ChromaFormat fileFormat   = NUM_CHROMA_FORMAT,
+  bool read(PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSpaceConversion ipcsc, int aiPad[2],
+            ChromaFormat fileFormat   = ChromaFormat::UNDEFINED,
             const bool   clipToRec709 = false);   ///< read one frame with padding parameter
 
   // If fileFormat=NUM_CHROMA_FORMAT, use the format defined by pPicYuv
-  bool write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf &pic, const InputColourSpaceConversion ipCSC,
+  bool write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf& pic, const InputColourSpaceConversion ipCSC,
              const bool packedYuvOutputMode, int confLeft = 0, int confRight = 0, int confTop = 0, int confBottom = 0,
-             ChromaFormat format = NUM_CHROMA_FORMAT, const bool clipToRec709 = false,
+             ChromaFormat format = ChromaFormat::UNDEFINED, const bool clipToRec709 = false,
              const bool subtractConfWindowOffsets = true);   ///< write one YUV frame with padding parameter
 
   // If fileFormat=NUM_CHROMA_FORMAT, use the format defined by pPicYuvTop and pPicYuvBottom
-  bool write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBot, const InputColourSpaceConversion ipCSC,
+  bool write(const CPelUnitBuf& picTop, const CPelUnitBuf& picBot, const InputColourSpaceConversion ipCSC,
              const bool packedYuvOutputMode, int confLeft = 0, int confRight = 0, int confTop = 0, int confBottom = 0,
-             ChromaFormat format = NUM_CHROMA_FORMAT, const bool isTff = false, const bool clipToRec709 = false);
+             ChromaFormat format = ChromaFormat::UNDEFINED, const bool isTff = false, const bool clipToRec709 = false);
 
   static void ColourSpaceConvert(const CPelUnitBuf &src, PelUnitBuf &dest, const InputColourSpaceConversion conversion, bool bIsForwards);
 
@@ -115,19 +115,11 @@ public:
   int   getBitdepthShift(ChannelType ch) { return m_bitdepthShift[ch]; }
   int   getFileBitdepth(ChannelType ch) { return m_fileBitdepth[ch]; }
 
-  bool writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
-#if !JVET_AB0081
+  bool writeUpscaledPicture(const SPS& sps, const PPS& pps, const CPelUnitBuf& pic,
                             const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
-                            int outputChoice = 0, ChromaFormat format = NUM_CHROMA_FORMAT,
-                            const bool clipToRec709 = false);   ///< write one upsaled YUV frame
-#else
-                            const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
-                            int outputChoice = 0, ChromaFormat format = NUM_CHROMA_FORMAT,
+                            int outputChoice = 0, ChromaFormat format = ChromaFormat::UNDEFINED,
                             const bool clipToRec709            = false,
                             int        upscaleFilterForDisplay = 1);   ///< write one upsaled YUV frame
-#endif
-
-
 };
 
 bool isY4mFileExt(const std::string &fileName);

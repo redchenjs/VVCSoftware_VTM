@@ -157,7 +157,7 @@ void IntraSearch::destroy()
     m_pSharedPredTransformSkip[ch] = nullptr;
   }
 
-  m_tmpStorageLCU.destroy();
+  m_tmpStorageCtu.destroy();
   m_colorTransResiBuf.destroy();
   m_isInitialized = false;
   if (m_indexError[0] != nullptr)
@@ -207,7 +207,7 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
   const ChromaFormat cform = pcEncCfg->getChromaFormatIdc();
 
   IntraPrediction::init(cform, pcEncCfg->getBitDepth(ChannelType::LUMA));
-  m_tmpStorageLCU.create(UnitArea(cform, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
+  m_tmpStorageCtu.create(UnitArea(cform, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
   m_colorTransResiBuf.create(UnitArea(cform, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
 
   for( uint32_t ch = 0; ch < MAX_NUM_TBLOCKS; ch++ )
@@ -242,13 +242,8 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
         m_pBestCS[width][height] = new CodingStructure(m_unitPool);
         m_pTempCS[width][height] = new CodingStructure(m_unitPool);
 
-#if GDR_ENABLED
-        m_pBestCS[width][height]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
-        m_pTempCS[width][height]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
-#else
         m_pBestCS[width][height]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode());
         m_pTempCS[width][height]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode());
-#endif
 
         m_pFullCS[width][height]  = new CodingStructure *[numLayersToAllocateFull];
         m_pSplitCS[width][height] = new CodingStructure *[numLayersToAllocateSplit];
@@ -257,21 +252,13 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
         {
           m_pFullCS[width][height][layer] = new CodingStructure(m_unitPool);
 
-#if GDR_ENABLED
-          m_pFullCS[width][height][layer]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
-#else
           m_pFullCS[width][height][layer]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode());
-#endif
         }
 
         for (uint32_t layer = 0; layer < numLayersToAllocateSplit; layer++)
         {
           m_pSplitCS[width][height][layer] = new CodingStructure(m_unitPool);
-#if GDR_ENABLED
-          m_pSplitCS[width][height][layer]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
-#else
           m_pSplitCS[width][height][layer]->create(m_pcEncCfg->getChromaFormatIdc(), Area(0, 0, gp_sizeIdxInfo->sizeFrom(width), gp_sizeIdxInfo->sizeFrom(height)), false, (bool)pcEncCfg->getPLTMode());
-#endif
         }
       }
       else
@@ -292,11 +279,7 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
   for (uint32_t depth = 0; depth < numSaveLayersToAllocate; depth++)
   {
     m_pSaveCS[depth] = new CodingStructure(m_unitPool);
-#if GDR_ENABLED
-    m_pSaveCS[depth]->create(UnitArea(cform, Area(0, 0, maxCUWidth, maxCUHeight)), false, (bool)pcEncCfg->getPLTMode(), pcEncCfg->getGdrEnabled());
-#else
     m_pSaveCS[depth]->create(UnitArea(cform, Area(0, 0, maxCUWidth, maxCUHeight)), false, (bool)pcEncCfg->getPLTMode());
-#endif
   }
 
   m_isInitialized = true;
@@ -441,14 +424,13 @@ int IntraSearch::getNumTopRecons(PredictionUnit &pu, int lumaDirMode, bool isChr
 bool IntraSearch::isValidIntraPredLuma(PredictionUnit &pu, int lumaDirMode)
 {
   bool isValid  = true;
-  PicHeader *ph = pu.cs->picHeader;
 
-  if (ph->getInGdrInterval())
+  if (pu.cs->picture->gdrParam.inGdrInterval)
   {
     int x = pu.Y().x;
 
     // count num of recons on the top
-    int virX             = ph->getVirtualBoundariesPosX(0);
+    int virX             = pu.cs->picture->gdrParam.verBoundary;
     int numOfTopRecons   = getNumTopRecons(pu, lumaDirMode, false);
 
     // check if recon is out of boundary
@@ -465,9 +447,8 @@ bool IntraSearch::isValidIntraPredChroma(PredictionUnit &pu, int lumaDirMode, in
 {
   bool isValid = true;
   CodingStructure *cs = pu.cs;
-  PicHeader       *ph = cs->picHeader;
 
-  if (ph->getInGdrInterval())
+  if (pu.cs->picture->gdrParam.inGdrInterval)
   {
     // note: chroma cordinate
     int cbX = pu.Cb().x;
@@ -484,7 +465,7 @@ bool IntraSearch::isValidIntraPredChroma(PredictionUnit &pu, int lumaDirMode, in
     int lumaH = cbH << chromaScaleY;
 
     int numOfTopRecons = lumaW;
-    int virX           = ph->getVirtualBoundariesPosX(0);
+    int virX           = pu.cs->picture->gdrParam.verBoundary;
 
     // count num of recons on the top
     switch (chromaDirMode)
@@ -606,7 +587,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
 
   auto &pu = *cu.firstPU;
 #if GDR_ENABLED
-  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && cs.picHeader->getInGdrInterval()
+  const bool isEncodeGdrClean = cs.sps->getGDREnabledFlag() && cs.pcv->isEncoder && cs.picture->gdrParam.inGdrInterval
                                 && cs.isClean(pu.Y().topRight(), ChannelType::LUMA);
 #endif
   bool validReturn = false;
@@ -668,7 +649,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
           if (cu.slice->getLmcsEnabledFlag() && m_pcReshape->getCTUFlag())
           {
             CompArea tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-            PelBuf   tmpOrg = m_tmpStorageLCU.getBuf(tmpArea);
+            PelBuf   tmpOrg = m_tmpStorageCtu.getBuf(tmpArea);
             tmpOrg.copyFrom(piOrg);
             tmpOrg.rspSignal(m_pcReshape->getFwdLUT());
             m_pcRdCost->setDistParam(distParamSad, tmpOrg, piPred, sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y,
@@ -1235,7 +1216,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
         {
           if (m_pcEncCfg->getUseFastISP())
           {
-            m_modeCtrl->setBestPredModeDCT2(bestPuMode.modeId);
+            m_modeCtrl->setBestPredModeDCT2(bestPuMode.modeId, bestPuMode.mipFlg);
           }
           if (!xSortISPCandList(bestCurrentCost, csBest->cost, bestPuMode))
           {
@@ -1840,7 +1821,7 @@ void IntraSearch::PLTSearch(CodingStructure &cs, Partitioner& partitioner, Compo
     {
       memset(cu.reuseflag[COMPONENT_Y], false, sizeof(bool) * MAXPLTPREDSIZE);
       compBeginTmp = COMPONENT_Y;
-      numCompTmp   = (cu.chromaFormat != CHROMA_400) ? 3 : 1;
+      numCompTmp   = getNumberValidComponents(cu.chromaFormat);
     }
     for (int curIdx = 0; curIdx < cu.curPLTSize[compBegin]; curIdx++)
     {
@@ -1952,8 +1933,9 @@ void IntraSearch::PLTSearch(CodingStructure &cs, Partitioner& partitioner, Compo
       if (compID == COMPONENT_Y && !(m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()))
       {
         const CompArea &areaY = cu.Y();
+
         CompArea tmpArea1(COMPONENT_Y, areaY.chromaFormat, Position(0, 0), areaY.size());
-        PelBuf   tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
+        PelBuf   tmpRecLuma = m_tmpStorageCtu.getBuf(tmpArea1);
         tmpRecLuma.copyFrom(reco);
         tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
         distortion += m_pcRdCost->getDistPart(org, tmpRecLuma, cs.sps->getBitDepth(toChannelType(compID)), compID,
@@ -2626,9 +2608,8 @@ void IntraSearch::derivePLTLossy(CodingStructure& cs, Partitioner& partitioner, 
 
       ComponentID tmpCompBegin = compBegin;
       int tmpNumComp = numComp;
-      if( cs.sps->getChromaFormatIdc() != CHROMA_444 &&
-          numComp == 3 &&
-         (x != ((x >> scaleX) << scaleX) || (y != ((y >> scaleY) << scaleY))) )
+      if (cs.sps->getChromaFormatIdc() != ChromaFormat::_444 && numComp == 3
+          && (x != ((x >> scaleX) << scaleX) || (y != ((y >> scaleY) << scaleY))))
       {
         tmpCompBegin = COMPONENT_Y;
         tmpNumComp   = 1;
@@ -2687,7 +2668,7 @@ void IntraSearch::derivePLTLossy(CodingStructure& cs, Partitioner& partitioner, 
     }
   }
 
-  if( cs.sps->getChromaFormatIdc() != CHROMA_444 && numComp == 3 )
+  if (cs.sps->getChromaFormatIdc() != ChromaFormat::_444 && numComp == 3)
   {
     for( int i = 0; i < idx; i++ )
     {
@@ -2764,7 +2745,8 @@ void IntraSearch::derivePLTLossy(CodingStructure& cs, Partitioner& partitioner, 
     {
       ComponentID tmpCompBegin = compBegin;
       int tmpNumComp = numComp;
-      if( cs.sps->getChromaFormatIdc() != CHROMA_444 && numComp == 3 && pelListSort[i].getCnt(COMPONENT_Cb) == 0 )
+      if (cs.sps->getChromaFormatIdc() != ChromaFormat::_444 && numComp == 3
+          && pelListSort[i].getCnt(COMPONENT_Cb) == 0)
       {
         tmpCompBegin = COMPONENT_Y;
         tmpNumComp   = 1;
@@ -2864,7 +2846,8 @@ void IntraSearch::derivePLTLossy(CodingStructure& cs, Partitioner& partitioner, 
       }
       if( !duplicate )
       {
-        if( cs.sps->getChromaFormatIdc() != CHROMA_444 && numComp == 3 && pelListSort[i].getCnt(COMPONENT_Cb) == 0 )
+        if (cs.sps->getChromaFormatIdc() != ChromaFormat::_444 && numComp == 3
+            && pelListSort[i].getCnt(COMPONENT_Cb) == 0)
         {
           if( best != -1 )
           {
@@ -3345,7 +3328,7 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
     if (slice.getLmcsEnabledFlag() && m_pcReshape->getCTUFlag() && compID == COMPONENT_Y)
     {
       CompArea      tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-      PelBuf tmpPred = m_tmpStorageLCU.getBuf(tmpArea);
+      PelBuf        tmpPred = m_tmpStorageCtu.getBuf(tmpArea);
       tmpPred.copyFrom(piPred);
       piResi.rspSignal(m_pcReshape->getFwdLUT());
       piResi.subtract(tmpPred);
@@ -3529,7 +3512,7 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
   if (slice.getLmcsEnabledFlag() && m_pcReshape->getCTUFlag() && compID == COMPONENT_Y)
   {
     CompArea      tmpArea(COMPONENT_Y, area.chromaFormat, Position(0,0), area.size());
-    PelBuf tmpPred = m_tmpStorageLCU.getBuf(tmpArea);
+    PelBuf        tmpPred = m_tmpStorageCtu.getBuf(tmpArea);
     tmpPred.copyFrom(piPred);
     piReco.reconstruct(tmpPred, piResi, cs.slice->clpRng(compID));
   }
@@ -3551,8 +3534,8 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
     const CPelBuf orgLuma = cs.getOrgBuf( cs.area.blocks[COMPONENT_Y] );
     if (compID == COMPONENT_Y  && !(m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()))
     {
-      CompArea      tmpArea1(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-      PelBuf tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
+      CompArea tmpArea1(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
+      PelBuf   tmpRecLuma = m_tmpStorageCtu.getBuf(tmpArea1);
       tmpRecLuma.copyFrom(piReco);
       tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
       dist += m_pcRdCost->getDistPart(piOrg, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID, DFunc::SSE_WTD,
@@ -4393,7 +4376,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
       if (slice.getLmcsEnabledFlag() && m_pcReshape->getCTUFlag() && compID == COMPONENT_Y)
       {
         CompArea tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-        PelBuf   tmpPred = m_tmpStorageLCU.getBuf(tmpArea);
+        PelBuf   tmpPred = m_tmpStorageCtu.getBuf(tmpArea);
         tmpPred.copyFrom(piPred);
         piResi.rspSignal(m_pcReshape->getFwdLUT());
         piResi.subtract(tmpPred);
@@ -4859,13 +4842,13 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
       piReco.reconstruct(piPred, piResi, cs.slice->clpRng(compID));
 
       if (m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled() || (m_pcEncCfg->getLmcs()
-        & slice.getLmcsEnabledFlag() && (m_pcReshape->getCTUFlag() || (isChroma(compID) && m_pcEncCfg->getReshapeIntraCMD()))))
+        && slice.getLmcsEnabledFlag() && (m_pcReshape->getCTUFlag() || (isChroma(compID) && m_pcEncCfg->getReshapeIntraCMD()))))
       {
         const CPelBuf orgLuma = csFull->getOrgBuf(csFull->area.blocks[COMPONENT_Y]);
         if (compID == COMPONENT_Y && !(m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()))
         {
-          CompArea      tmpArea1(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-          PelBuf tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
+          CompArea tmpArea1(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
+          PelBuf   tmpRecLuma = m_tmpStorageCtu.getBuf(tmpArea1);
           tmpRecLuma.copyFrom(piReco);
           tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
           totalDist += m_pcRdCost->getDistPart(piOrg, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
@@ -4975,14 +4958,14 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
             }
             piReco.reconstruct(piPred, piResi, cs.slice->clpRng(compID));
             if (m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()
-                || (m_pcEncCfg->getLmcs() & slice.getLmcsEnabledFlag()
+                || (m_pcEncCfg->getLmcs() && slice.getLmcsEnabledFlag()
                     && (m_pcReshape->getCTUFlag() || (isChroma(compID) && m_pcEncCfg->getReshapeIntraCMD()))))
             {
               const CPelBuf orgLuma = csFull->getOrgBuf(csFull->area.blocks[COMPONENT_Y]);
               if (compID == COMPONENT_Y && !(m_pcEncCfg->getLumaLevelToDeltaQPMapping().isEnabled()))
               {
                 CompArea tmpArea1(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
-                PelBuf   tmpRecLuma = m_tmpStorageLCU.getBuf(tmpArea1);
+                PelBuf   tmpRecLuma = m_tmpStorageCtu.getBuf(tmpArea1);
                 tmpRecLuma.copyFrom(piReco);
                 tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
                 distTmp += m_pcRdCost->getDistPart(piOrg, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
@@ -6306,10 +6289,10 @@ bool IntraSearch::updateISPStatusFromRelCU(double bestNonISPCostCurrCu, const Mo
     double costRatio           = bestNonISPCostCurrCu / bestNonISPCostRelCU;
     bool   bestModeCurrCuIsMip = bestNonISPModeCurrCu.mipFlg;
     bool   isSameTypeOfMode    = bestModeRelCuIsMip == bestModeCurrCuIsMip;
-    bool   bothModesAreAngular = bestNonISPModeCurrCu.modeId > DC_IDX && relatedCuIntraMode > DC_IDX;
+    bool   bothModesAreAngular = isSameTypeOfMode && !bestModeCurrCuIsMip && bestNonISPModeCurrCu.modeId > DC_IDX && relatedCuIntraMode > DC_IDX;
     bool   modesAreComparable =
       isSameTypeOfMode
-      && (bestModeCurrCuIsMip || bestNonISPModeCurrCu.modeId == relatedCuIntraMode
+      && (bestNonISPModeCurrCu.modeId == relatedCuIntraMode
           || (bothModesAreAngular && abs(relatedCuIntraMode - (int) bestNonISPModeCurrCu.modeId) <= 5));
 
     CHECK(!ispPredModeVal.valid, "Wrong ISP relCU status");

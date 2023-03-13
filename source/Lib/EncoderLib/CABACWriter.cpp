@@ -170,8 +170,9 @@ void CABACWriter::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
       }
       if (isChroma(ComponentID(compIdx)))
       {
-        uint8_t* ctbAlfFlag = cs.slice->getAlfEnabledFlag((ComponentID)compIdx) ? cs.slice->getPic()->getAlfCtuEnableFlag( compIdx ) : nullptr;
-        if( ctbAlfFlag && ctbAlfFlag[ctuRsAddr] )
+        AlfMode *alfModes =
+          cs.slice->getAlfEnabledFlag((ComponentID) compIdx) ? cs.slice->getPic()->getAlfModes(compIdx) : nullptr;
+        if (alfModes != nullptr && alfModes[ctuRsAddr] != AlfMode::OFF)
         {
           codeAlfCtuAlternative( cs, ctuRsAddr, compIdx );
         }
@@ -197,7 +198,7 @@ void CABACWriter::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
     }
   }
 
-  if ( CS::isDualITree(cs) && cs.pcv->chrFormat != CHROMA_400 && cs.pcv->maxCUWidth > 64 )
+  if (CS::isDualITree(cs) && isChromaEnabled(cs.pcv->chrFormat) && cs.pcv->maxCUWidth > 64)
   {
     CUCtx           chromaCuCtx(qps[ChannelType::CHROMA]);
     QTBTPartitioner chromaPartitioner;
@@ -210,7 +211,7 @@ void CABACWriter::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
   {
     coding_tree(cs, partitioner, cuCtx);
     qps[ChannelType::LUMA] = cuCtx.qp;
-    if( CS::isDualITree( cs ) && cs.pcv->chrFormat != CHROMA_400 )
+    if (CS::isDualITree(cs) && isChromaEnabled(cs.pcv->chrFormat))
     {
       CUCtx cuCtxChroma(qps[ChannelType::CHROMA]);
       partitioner.initCtu(area, ChannelType::CHROMA, *cs.slice);
@@ -242,7 +243,7 @@ void CABACWriter::sao( const Slice& slice, unsigned ctuRsAddr )
 
   const bool sliceSaoLumaFlag = slice.getSaoEnabledFlag(ChannelType::LUMA);
   const bool sliceSaoChromaFlag =
-    slice.getSaoEnabledFlag(ChannelType::CHROMA) && sps.getChromaFormatIdc() != CHROMA_400;
+    slice.getSaoEnabledFlag(ChannelType::CHROMA) && isChromaEnabled(sps.getChromaFormatIdc());
 
   if (!sliceSaoLumaFlag && !sliceSaoChromaFlag)
   {
@@ -684,21 +685,14 @@ void CABACWriter::coding_unit( const CodingUnit& cu, Partitioner& partitioner, C
       {
         cu_palette_info(cu, COMPONENT_Y, 1, cuCtx);
       }
-      if (cu.chromaFormat != CHROMA_400 && (partitioner.chType == ChannelType::CHROMA))
+      if (isChromaEnabled(cu.chromaFormat) && partitioner.chType == ChannelType::CHROMA)
       {
         cu_palette_info(cu, COMPONENT_Cb, 2, cuCtx);
       }
     }
     else
     {
-      if( cu.chromaFormat != CHROMA_400 )
-      {
-        cu_palette_info(cu, COMPONENT_Y, 3, cuCtx);
-      }
-      else
-      {
-        cu_palette_info(cu, COMPONENT_Y, 1, cuCtx);
-      }
+      cu_palette_info(cu, COMPONENT_Y, getNumberValidComponents(cu.chromaFormat), cuCtx);
     }
     end_of_ctu(cu, cuCtx);
     return;
@@ -1209,7 +1203,7 @@ void CABACWriter::intra_luma_pred_mode( const PredictionUnit& pu )
 
 void CABACWriter::intra_chroma_pred_modes( const CodingUnit& cu )
 {
-  if (cu.chromaFormat == CHROMA_400 || (cu.isSepTree() && isLuma(cu.chType)))
+  if (!isChromaEnabled(cu.chromaFormat) || (cu.isSepTree() && isLuma(cu.chType)))
   {
     return;
   }
@@ -1426,9 +1420,7 @@ void CABACWriter::end_of_ctu( const CodingUnit& cu, CUCtx& cuCtx )
 {
   const bool    isLastSubCUOfCtu  = CU::isLastSubCUOfCtu( cu );
 
-  if ( isLastSubCUOfCtu
-    && ( !cu.isSepTree() || cu.chromaFormat == CHROMA_400 || isChroma( cu.chType ) )
-      )
+  if (isLastSubCUOfCtu && (!cu.isSepTree() || !isChromaEnabled(cu.chromaFormat) || isChroma(cu.chType)))
   {
     cuCtx.isDQPCoded = ( cu.cs->pps->getUseDQP() && !cuCtx.isDQPCoded );
   }
@@ -2379,7 +2371,7 @@ void CABACWriter::transform_unit( const TransformUnit& tu, CUCtx& cuCtx, Partiti
   CHECK(tu.depth != trDepth, " transform unit should be not be futher partitioned");
 
   // cbf_cb & cbf_cr
-  if (area.chromaFormat != CHROMA_400)
+  if (isChromaEnabled(area.chromaFormat))
   {
     const bool chromaCbfISP = area.blocks[COMPONENT_Cb].valid() && cu.ispMode != ISPType::NONE;
     if (area.blocks[COMPONENT_Cb].valid() && (!cu.isSepTree() || partitioner.chType == ChannelType::CHROMA)
@@ -2461,7 +2453,7 @@ void CABACWriter::transform_unit( const TransformUnit& tu, CUCtx& cuCtx, Partiti
       }
     }
   }
-  bool        lumaOnly  = ( cu.chromaFormat == CHROMA_400 || !tu.blocks[COMPONENT_Cb].valid() );
+  bool        lumaOnly  = !isChromaEnabled(cu.chromaFormat) || !tu.blocks[COMPONENT_Cb].valid();
   bool        cbf[3]    = { TU::getCbf( tu, COMPONENT_Y ), chromaCbfs.Cb, chromaCbfs.Cr };
   bool        cbfLuma   = ( cbf[ COMPONENT_Y ] != 0 );
   bool        cbfChroma = false;
@@ -3372,11 +3364,11 @@ void CABACWriter::codeAlfCtuEnableFlag( CodingStructure& cs, uint32_t ctuRsAddr,
     const int leftCTUAddr  = leftAvail ? ctuRsAddr - 1 : -1;
     const int aboveCTUAddr = aboveAvail ? ctuRsAddr - frameWidthInCtus : -1;
 
-    uint8_t* ctbAlfFlag = cs.slice->getPic()->getAlfCtuEnableFlag( compIdx );
+    AlfMode *alfModes = cs.slice->getPic()->getAlfModes(compIdx);
     int ctx = 0;
-    ctx += leftCTUAddr > -1 ? ( ctbAlfFlag[leftCTUAddr] ? 1 : 0 ) : 0;
-    ctx += aboveCTUAddr > -1 ? ( ctbAlfFlag[aboveCTUAddr] ? 1 : 0 ) : 0;
-    m_binEncoder.encodeBin(ctbAlfFlag[ctuRsAddr], Ctx::ctbAlfFlag(compIdx * 3 + ctx));
+    ctx += leftCTUAddr > -1 ? (alfModes[leftCTUAddr] != AlfMode::OFF ? 1 : 0) : 0;
+    ctx += aboveCTUAddr > -1 ? (alfModes[aboveCTUAddr] != AlfMode::OFF ? 1 : 0) : 0;
+    m_binEncoder.encodeBin(alfModes[ctuRsAddr] != AlfMode::OFF, Ctx::alfCtbFlag(compIdx * 3 + ctx));
   }
 }
 
@@ -3464,43 +3456,41 @@ void CABACWriter::mip_pred_mode( const PredictionUnit& pu )
 
 void CABACWriter::codeAlfCtuFilterIndex(CodingStructure& cs, uint32_t ctuRsAddr, bool alfEnableLuma)
 {
-  if ( (!cs.sps->getALFEnabledFlag()) || (!alfEnableLuma))
+  if (!cs.sps->getALFEnabledFlag() || !alfEnableLuma)
   {
     return;
   }
 
-  uint8_t* ctbAlfFlag = cs.slice->getPic()->getAlfCtuEnableFlag(COMPONENT_Y);
-  if (!ctbAlfFlag[ctuRsAddr])
+  AlfMode *alfModes = cs.slice->getPic()->getAlfModes(COMPONENT_Y);
+
+  AlfMode m = alfModes[ctuRsAddr];
+  if (m == AlfMode::OFF)
   {
     return;
   }
 
-  short* alfCtbFilterIndex = cs.slice->getPic()->getAlfCtbFilterIndex();
-  const unsigned filterSetIdx = alfCtbFilterIndex[ctuRsAddr];
-  unsigned numAps = cs.slice->getNumAlfApsIdsLuma();
-  unsigned numAvailableFiltSets = numAps + NUM_FIXED_FILTER_SETS;
-  if (numAvailableFiltSets > NUM_FIXED_FILTER_SETS)
+  const int numAps = cs.slice->getNumAlfApsIdsLuma();
+
+  const bool alfUseApsFlag = !isAlfLumaFixed(m);
+
+  if (numAps > 0)
   {
-    int useTemporalFilt = (filterSetIdx >= NUM_FIXED_FILTER_SETS) ? 1 : 0;
-    m_binEncoder.encodeBin(useTemporalFilt, Ctx::AlfUseTemporalFilt());
-    if (useTemporalFilt)
+    m_binEncoder.encodeBin(alfUseApsFlag ? 1 : 0, Ctx::alfUseApsFlag());
+  }
+  if (alfUseApsFlag)
+  {
+    const uint32_t alfLumaPrevFilterIdx = m - AlfMode::LUMA0;
+    CHECK(alfLumaPrevFilterIdx >= numAps, "alfLumaPrevFilterIdx is too large");
+
+    if (numAps > 1)
     {
-      CHECK((filterSetIdx - NUM_FIXED_FILTER_SETS) >= (numAvailableFiltSets - NUM_FIXED_FILTER_SETS), "temporal non-latest set");
-      if (numAps > 1)
-      {
-        xWriteTruncBinCode(filterSetIdx - NUM_FIXED_FILTER_SETS, numAvailableFiltSets - NUM_FIXED_FILTER_SETS);
-      }
-    }
-    else
-    {
-      CHECK(filterSetIdx >= NUM_FIXED_FILTER_SETS, "fixed set larger than temporal");
-      xWriteTruncBinCode(filterSetIdx, NUM_FIXED_FILTER_SETS);
+      xWriteTruncBinCode(alfLumaPrevFilterIdx, numAps);
     }
   }
   else
   {
-    CHECK(filterSetIdx >= NUM_FIXED_FILTER_SETS, "fixed set numavail < num_fixed");
-    xWriteTruncBinCode(filterSetIdx, NUM_FIXED_FILTER_SETS);
+    const uint32_t alfLumaFixedFilterIdx = m - AlfMode::LUMA_FIXED0;
+    xWriteTruncBinCode(alfLumaFixedFilterIdx, ALF_NUM_FIXED_FILTER_SETS);
   }
 }
 
@@ -3526,11 +3516,11 @@ void CABACWriter::codeAlfCtuAlternatives( CodingStructure& cs, ComponentID compI
     return;
   }
   uint32_t numCTUs = cs.pcv->sizeInCtus;
-  uint8_t* ctbAlfFlag = cs.slice->getPic()->getAlfCtuEnableFlag( compID );
+  AlfMode *alfModes = cs.slice->getPic()->getAlfModes(compID);
 
   for( int ctuIdx = 0; ctuIdx < numCTUs; ctuIdx++ )
   {
-    if( ctbAlfFlag[ctuIdx] )
+    if (alfModes[ctuIdx] != AlfMode::OFF)
     {
       codeAlfCtuAlternative( cs, ctuIdx, compID, alfParam );
     }
@@ -3548,14 +3538,13 @@ void CABACWriter::codeAlfCtuAlternative( CodingStructure& cs, uint32_t ctuRsAddr
 
   if( alfParam || (cs.sps->getALFEnabledFlag() && cs.slice->getAlfEnabledFlag( (ComponentID)compIdx )) )
   {
-    uint8_t* ctbAlfFlag = cs.slice->getPic()->getAlfCtuEnableFlag( compIdx );
+    AlfMode *alfModes = cs.slice->getPic()->getAlfModes(compIdx);
 
-    if( ctbAlfFlag[ctuRsAddr] )
+    if (alfModes[ctuRsAddr] != AlfMode::OFF)
     {
       const int numAlts = alfParamRef.numAlternativesChroma;
-      uint8_t* ctbAlfAlternative = cs.slice->getPic()->getAlfCtuAlternativeData( compIdx );
-      unsigned numOnes = ctbAlfAlternative[ctuRsAddr];
-      assert( ctbAlfAlternative[ctuRsAddr] < numAlts );
+      const int numOnes = alfModes[ctuRsAddr] - AlfMode::CHROMA0;
+      CHECK(numOnes >= numAlts, "Invalid ALF mode");
       for( int i = 0; i < numOnes; ++i )
       {
         m_binEncoder.encodeBin(1, Ctx::ctbAlfAlternative(compIdx - 1));

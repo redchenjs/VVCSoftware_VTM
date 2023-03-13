@@ -85,7 +85,7 @@ public:
   CodingStructure *bestCS;
   Slice           *slice;
 
-  UnitScale        unitScale[MAX_NUM_COMPONENT];
+  std::array<UnitScale, MAX_NUM_COMPONENT> unitScale;
 
   int         baseQP;
   EnumArray<int, ChannelType> prevQP;
@@ -103,14 +103,8 @@ public:
 
   CodingStructure(XuPool &);
 
-#if GDR_ENABLED
-  bool isGdrEnabled() { return m_gdrEnabled; }
-  void create(const UnitArea &_unit, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabled = false);
-  void create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabeld = false);
-#else
   void create(const UnitArea &_unit, const bool isTopLayer, const bool isPLTused);
   void create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused);
-#endif
 
   void destroy();
   void releaseIntermediateData();
@@ -127,21 +121,18 @@ public:
   bool overlapDirty() const;
   bool dirtyCrossTTV() const;
   bool dirtyCrossBTV() const;
-#endif
 
-#if GDR_ENABLED
   bool isClean(const ChannelType effChType) const;
-  bool isClean(const Position &IntPos, RefPicList e, int refIdx) const;
-  bool isClean(const Position &IntPos, const Picture* const ref_pic) const;
-  bool isClean(const Position &IntPos, Mv FracMv) const;
-  bool isClean(const Position &IntPos, Mv FracMv, const Picture* const refPic) const;
-  bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, int isProf=0) const;
-  bool isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, bool ibc) const;
-  bool isClean(const Position &IntPos, const ChannelType effChType) const;
+  bool isClean(const Position &intPos, RefPicList e, int refIdx) const;
+  bool isClean(const Position &intPos, const Picture* const ref_pic) const;
+  bool isClean(const Position &intPos, const Mv &fracMv) const;
+  bool isClean(const Position &intPos, const Mv &fracMv, const Picture* const refPic) const;
+  bool isClean(const Position &intPos, const Mv &fracMv, RefPicList e, int refIdx, bool isSubPu = false) const;
+  bool isClean(const Position &intPos, const ChannelType effChType) const;
   bool isClean(const int x, const int y, const ChannelType effChType) const;
   bool isClean(const Area &area, const ChannelType effChType) const;
 
-  bool isSubPuClean(PredictionUnit &pu, const Mv *mv) const;
+  bool isSubPuClean(const PredictionUnit &pu, const Mv *mv) const;
 #endif
   void rebindPicBufs();
 
@@ -282,10 +273,6 @@ private:
 
   MotionInfo *m_motionBuf;
 
-#if GDR_ENABLED
-  bool m_gdrEnabled;
-#endif
-
 public:
   CodingStructure *bestParent;
   double        tmpColorSpaceCost;
@@ -375,8 +362,10 @@ private:
   inline const CPelUnitBuf   getBuf(const UnitArea &unit, const PictureType &type) const;
 };
 
-
-static inline uint32_t getNumberValidTBlocks(const PreCalcValues& pcv) { return (pcv.chrFormat==CHROMA_400) ? 1 : ( pcv.multiBlock422 ? MAX_NUM_TBLOCKS : MAX_NUM_COMPONENT ); }
+static inline uint32_t getNumberValidTBlocks(const PreCalcValues& pcv)
+{
+  return !isChromaEnabled(pcv.chrFormat) ? 1 : (pcv.multiBlock422 ? MAX_NUM_TBLOCKS : MAX_NUM_COMPONENT);
+}
 
 #endif
 

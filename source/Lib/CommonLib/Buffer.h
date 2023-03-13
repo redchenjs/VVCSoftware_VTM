@@ -93,9 +93,9 @@ struct PelBufferOps
   void (*padding)(Pel *dst, ptrdiff_t stride, int width, int height, int padSize);
 #if ENABLE_SIMD_OPT_BCW
   void (*removeWeightHighFreq8)(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
-                                int height, int shift, int bcwWeight);
+                                int height, int bcwWeight, const Pel minVal, const Pel maxVal);
   void (*removeWeightHighFreq4)(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
-                                int height, int shift, int bcwWeight);
+                                int height, int bcwWeight, const Pel minVal, const Pel maxVal);
   void (*removeHighFreq8)(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
                           int height);
   void (*removeHighFreq4)(Pel *src0, ptrdiff_t src0Stride, const Pel *src1, ptrdiff_t src1Stride, int width,
@@ -409,115 +409,85 @@ template<>
 void AreaBuf<Pel>::toLast( const ClpRng& clpRng );
 
 template<typename T>
-void AreaBuf<T>::removeWeightHighFreq(const AreaBuf<T>& other, const bool bClip, const ClpRng& clpRng, const int8_t bcwWeight)
+void AreaBuf<T>::removeWeightHighFreq(const AreaBuf<T> &other, const bool clampToNominalRange, const ClpRng &clpRng,
+                                      const int8_t bcwWeight)
 {
-  const int8_t bcwWeightOther = g_bcwWeightBase - bcwWeight;
-  const int8_t log2WeightBase = g_bcwLog2WeightBase;
+  const Pel *src        = other.buf;
+  const ptrdiff_t  srcStride = other.stride;
 
-  const Pel* src = other.buf;
-  const ptrdiff_t srcStride = other.stride;
-
-  Pel* dst = buf;
+  Pel *     dst        = buf;
   const ptrdiff_t dstStride = stride;
 
+  const Pel minVal = clampToNominalRange ? clpRng.min : 5 * clpRng.min - 4 * clpRng.max;
+  const Pel maxVal = clampToNominalRange ? clpRng.max : 5 * clpRng.max - 4 * clpRng.min;
+
 #if ENABLE_SIMD_OPT_BCW
-  if(!bClip)
+  if ((width & 7) == 0 && g_pelBufOP.removeWeightHighFreq8)
   {
-    if(!(width & 7))
-    {
-      g_pelBufOP.removeWeightHighFreq8(dst, dstStride, src, srcStride, width, height, 16, bcwWeight);
-    }
-    else if(!(width & 3))
-    {
-      g_pelBufOP.removeWeightHighFreq4(dst, dstStride, src, srcStride, width, height, 16, bcwWeight);
-    }
-    else
-    {
-      THROW("Not supported");
-    }
+    g_pelBufOP.removeWeightHighFreq8(dst, dstStride, src, srcStride, width, height, bcwWeight, minVal, maxVal);
+  }
+  else if ((width & 3) == 0 && g_pelBufOP.removeWeightHighFreq4)
+  {
+    g_pelBufOP.removeWeightHighFreq4(dst, dstStride, src, srcStride, width, height, bcwWeight, minVal, maxVal);
   }
   else
+#endif
   {
-#endif
-    Intermediate_Int normalizer = ((1 << 16) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
-    Intermediate_Int weight0 = normalizer << log2WeightBase;
-    Intermediate_Int weight1 = bcwWeightOther * normalizer;
-#define REM_HF_INC  \
-  src += srcStride; \
-  dst += dstStride; \
+    const int32_t w =
+      ((BCW_WEIGHT_BASE << BCW_INV_BITS) + (bcwWeight > 0 ? (bcwWeight >> 1) : -(bcwWeight >> 1))) / bcwWeight;
 
-#define REM_HF_OP_CLIP( ADDR ) dst[ADDR] = ClipPel<T>( T((dst[ADDR]*weight0 - src[ADDR]*weight1 + (1<<15))>>16), clpRng )
-#define REM_HF_OP( ADDR )      dst[ADDR] =             T((dst[ADDR]*weight0 - src[ADDR]*weight1 + (1<<15))>>16)
+#define REM_HF_INC                                                                                                     \
+  src += srcStride;                                                                                                    \
+  dst += dstStride;
 
-    if(bClip)
-    {
-      SIZE_AWARE_PER_EL_OP(REM_HF_OP_CLIP, REM_HF_INC);
-    }
-    else
-    {
-      SIZE_AWARE_PER_EL_OP(REM_HF_OP, REM_HF_INC);
-    }
-
-#undef REM_HF_INC
-#undef REM_HF_OP
+#define REM_HF_OP_CLIP(ADDR)                                                                                           \
+  dst[ADDR] =                                                                                                          \
+    Clip3<T>(minVal, maxVal, (((dst[ADDR] - src[ADDR]) * w + (1 << BCW_INV_BITS >> 1)) >> BCW_INV_BITS) + src[ADDR])
+    SIZE_AWARE_PER_EL_OP(REM_HF_OP_CLIP, REM_HF_INC);
 #undef REM_HF_OP_CLIP
-#if ENABLE_SIMD_OPT_BCW
+#undef REM_HF_INC
   }
-#endif
 }
 
 template<typename T>
-void AreaBuf<T>::removeHighFreq( const AreaBuf<T>& other, const bool bClip, const ClpRng& clpRng )
+void AreaBuf<T>::removeHighFreq(const AreaBuf<T> &other, const bool clampToNominalRange, const ClpRng &clpRng)
 {
-  const T*  src       = other.buf;
+  const T * src        = other.buf;
   const ptrdiff_t srcStride = other.stride;
 
-  T              *dst       = buf;
+  T *       dst        = buf;
   const ptrdiff_t dstStride = stride;
 
-#if ENABLE_SIMD_OPT_BCW
-  if (!bClip)
+#define REM_HF_INC                                                                                                     \
+  src += srcStride;                                                                                                    \
+  dst += dstStride;
+
+  if (!clampToNominalRange)
   {
-    if(!(width & 7))
+#if ENABLE_SIMD_OPT_BCW
+    if (!(width & 7) && g_pelBufOP.removeHighFreq8)
     {
       g_pelBufOP.removeHighFreq8(dst, dstStride, src, srcStride, width, height);
+      return;
     }
-    else if (!(width & 3))
+    else if (!(width & 3) && g_pelBufOP.removeHighFreq4)
     {
       g_pelBufOP.removeHighFreq4(dst, dstStride, src, srcStride, width, height);
+      return;
     }
-    else
-    {
-      THROW("Not supported");
-    }
-  }
-  else
-  {
 #endif
-
-#define REM_HF_INC  \
-  src += srcStride; \
-  dst += dstStride; \
-
-#define REM_HF_OP_CLIP( ADDR ) dst[ADDR] = ClipPel<T>( 2 * dst[ADDR] - src[ADDR], clpRng )
-#define REM_HF_OP( ADDR )      dst[ADDR] =             2 * dst[ADDR] - src[ADDR]
-
-  if( bClip )
-  {
-    SIZE_AWARE_PER_EL_OP( REM_HF_OP_CLIP, REM_HF_INC );
+#define REM_HF_OP(ADDR) dst[ADDR] = 2 * dst[ADDR] - src[ADDR]
+    SIZE_AWARE_PER_EL_OP(REM_HF_OP, REM_HF_INC);
   }
   else
   {
-    SIZE_AWARE_PER_EL_OP( REM_HF_OP,      REM_HF_INC );
+#define REM_HF_OP_CLIP(ADDR) dst[ADDR] = ClipPel<T>(2 * dst[ADDR] - src[ADDR], clpRng)
+    SIZE_AWARE_PER_EL_OP(REM_HF_OP_CLIP, REM_HF_INC);
   }
 
 #undef REM_HF_INC
 #undef REM_HF_OP
 #undef REM_HF_OP_CLIP
-
-#if ENABLE_SIMD_OPT_BCW
-  }
-#endif
 }
 
 
@@ -746,7 +716,7 @@ struct UnitBuf
   ChromaFormat chromaFormat;
   UnitBufBuffers bufs;
 
-  UnitBuf() : chromaFormat( NUM_CHROMA_FORMAT ) { }
+  UnitBuf() : chromaFormat(ChromaFormat::UNDEFINED) {}
   UnitBuf( const ChromaFormat &_chromaFormat, const UnitBufBuffers&  _bufs ) : chromaFormat( _chromaFormat ), bufs( _bufs ) { }
   UnitBuf( const ChromaFormat &_chromaFormat,       UnitBufBuffers&& _bufs ) : chromaFormat( _chromaFormat ), bufs( std::forward<UnitBufBuffers>( _bufs ) ) { }
   UnitBuf( const ChromaFormat &_chromaFormat, const AreaBuf<T>  &blkY ) : chromaFormat( _chromaFormat ), bufs{ blkY } { }
@@ -1030,14 +1000,14 @@ struct PelStorage : public PelUnitBuf
 
   PelUnitBuf getBuf(const UnitArea &unit)
   {
-    return (chromaFormat == CHROMA_400)
+    return !isChromaEnabled(chromaFormat)
              ? PelUnitBuf(chromaFormat, getBuf(unit.Y()))
              : PelUnitBuf(chromaFormat, getBuf(unit.Y()), getBuf(unit.Cb()), getBuf(unit.Cr()));
   }
 
   const CPelUnitBuf getBuf(const UnitArea &unit) const
   {
-    return (chromaFormat == CHROMA_400)
+    return !isChromaEnabled(chromaFormat)
              ? CPelUnitBuf(chromaFormat, getBuf(unit.Y()))
              : CPelUnitBuf(chromaFormat, getBuf(unit.Y()), getBuf(unit.Cb()), getBuf(unit.Cr()));
   }

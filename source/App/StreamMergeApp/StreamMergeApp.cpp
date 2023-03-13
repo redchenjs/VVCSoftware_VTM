@@ -47,8 +47,6 @@
 #include "CommonLib/CodingStatistics.h"
 #endif
 
-using namespace std;
-
 //! \ingroup DecoderApp
 //! \{
 
@@ -65,12 +63,8 @@ StreamMergeApp::StreamMergeApp()
 // Public member functions
 // ====================================================================================================================
 
-static void
-_byteStreamNALUnit(
-  SingleLayerStream& bs,
-  std::istream& istream,
-  vector<uint8_t>& nalUnit,
-  AnnexBStats& stats)
+static void _byteStreamNALUnit(SingleLayerStream &bs, std::istream &istream, std::vector<uint8_t> &nalUnit,
+                               AnnexBStats &stats)
 {
   /* At the beginning of the decoding process, the decoder initialises its
    * current position in the byte stream to the beginning of the byte stream.
@@ -186,12 +180,7 @@ _byteStreamNALUnit(
  * Returns false if EOF was reached (NB, nalunit data may be valid),
  *         otherwise true.
  */
-bool
-byteStreamNALUnit(
-  SingleLayerStream& bs,
-  std::istream& istream,
-  vector<uint8_t>& nalUnit,
-  AnnexBStats& stats)
+bool byteStreamNALUnit(SingleLayerStream &bs, std::istream &istream, std::vector<uint8_t> &nalUnit, AnnexBStats &stats)
 {
   bool eof = false;
   try
@@ -520,9 +509,9 @@ void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNal
     }
     msg(INFO, " with index %i", inNalu.m_nalUnitType);
     // Copy payload from input nalu to output nalu. Code copied from SubpicMergeApp::copyInputNaluToOutputNalu().
-    vector<uint8_t> &inFifo  = inNalu.getBitstream().getFifo();
-    vector<uint8_t> &outFifo = outNalu.m_bitstream.getFifo();
-    outFifo                  = vector<uint8_t>(inFifo.begin() + 2, inFifo.end());
+    std::vector<uint8_t> &inFifo  = inNalu.getBitstream().getFifo();
+    std::vector<uint8_t> &outFifo = outNalu.m_bitstream.getFifo();
+    outFifo                       = std::vector<uint8_t>(inFifo.begin() + 2, inFifo.end());
     break;
   }
   }
@@ -531,9 +520,9 @@ void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNal
 
 uint32_t StreamMergeApp::mergeStreams()
 {
-  ofstream outputStream(m_bitstreamFileNameOut, ifstream::out | ifstream::binary);
+  std::ofstream outputStream(m_bitstreamFileNameOut, std::ifstream::out | std::ifstream::binary);
 
-  vector<MergeLayer> *layers = new vector<MergeLayer>;
+  std::vector<MergeLayer> *layers = new std::vector<MergeLayer>;
   layers->resize(m_numInputStreams);
 
   // Prepare merge layers.
@@ -543,24 +532,24 @@ uint32_t StreamMergeApp::mergeStreams()
     layer.id          = i;
 
     // Open input file.
-    layer.fp = new ifstream();
-    layer.fp->open(m_bitstreamFileNameIn[i], ifstream::in | ifstream::binary);
+    layer.fp = new std::ifstream();
+    layer.fp->open(m_bitstreamFileNameIn[i], std::ifstream::in | std::ifstream::binary);
     if (!layer.fp->is_open())
     {
       EXIT("failed to open bitstream file " << m_bitstreamFileNameIn[i] << " for reading");
     }
     layer.fp->clear();
-    layer.fp->seekg(0, ios::beg);
+    layer.fp->seekg(0, std::ios::beg);
 
     // Prep other values.
     layer.bs = new InputByteStream(*(layer.fp));
 
-    VPS vps;
-    vps.setMaxLayers((uint32_t) layers->size());
-    vps.setLayerId(layer.id, layer.id);   // Layer ID is rewritten here.
-    layer.vpsIdMapping.insert({ vps.getVPSId(), 0 });
-    vps.setVPSId(0);
-    layer.psManager.storeVPS(&vps, std::vector<uint8_t>()); // Create VPS with default values (VTM slice header parser needs this)
+    VPS* vps = new VPS;
+    vps->setMaxLayers((uint32_t) layers->size());
+    vps->setLayerId(layer.id, layer.id);   // Layer ID is rewritten here.
+    layer.vpsIdMapping.insert({ vps->getVPSId(), 0 });
+    vps->setVPSId(0);
+    layer.psManager.storeVPS(vps, std::vector<uint8_t>()); // Create VPS with default values (VTM slice header parser needs this)
   }
 
   // Loop over layers until every one is entirely read.

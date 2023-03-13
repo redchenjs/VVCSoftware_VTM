@@ -238,7 +238,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   SEIs.clear();
   clearSliceBuffer();
 
-  const ChromaFormat chromaFormatIDC = sps.getChromaFormatIdc();
+  const ChromaFormat chromaFormatIdc = sps.getChromaFormatIdc();
   const int          width           = pps.getPicWidthInLumaSamples();
   const int          height          = pps.getPicHeightInLumaSamples();
 
@@ -250,11 +250,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   {
     cs      = new CodingStructure(g_xuPool);
     cs->sps = &sps;
-#if GDR_ENABLED
-    cs->create(chromaFormatIDC, Area(0, 0, width, height), true, (bool)sps.getPLTMode(), sps.getGDREnabledFlag());
-#else
-    cs->create(chromaFormatIDC, Area(0, 0, width, height), true, (bool) sps.getPLTMode());
-#endif
+    cs->create(chromaFormatIdc, Area(0, 0, width, height), true, (bool) sps.getPLTMode());
   }
 
   cs->vps = vps;
@@ -263,24 +259,8 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   cs->pps     = &pps;
   picHeader->setSPSId( sps.getSPSId() );
   picHeader->setPPSId( pps.getPPSId() );
-#if GDR_ENABLED
-  picHeader->setPic(this);
-
-  PicHeader *ph = new PicHeader;
-  ph->initPicHeader();
-  *ph = *picHeader;
-  ph->setPic(this);
-
-  if (cs->picHeader)
-  {
-    delete cs->picHeader;
-    cs->picHeader = nullptr;
-  }
-
-  cs->picHeader = ph;
-#else
   cs->picHeader = picHeader;
-#endif
+
   memcpy(cs->alfApss, alfApss, sizeof(cs->alfApss));
   cs->lmcsAps = lmcsAps;
   cs->scalinglistAps = scalingListAps;
@@ -289,7 +269,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   m_scalingWindow = pps.getScalingWindow();
   mixedNaluTypesInPicFlag = pps.getMixedNaluTypesInPicFlag();
   nonReferencePictureFlag = picHeader->getNonReferencePictureFlag();
-  m_chromaFormatIDC = sps.getChromaFormatIdc();
+  m_chromaFormatIdc       = sps.getChromaFormatIdc();
   m_bitDepths = sps.getBitDepths();
 
   if (m_spliceIdx == nullptr)
@@ -516,7 +496,6 @@ const TFilterCoeff DownsamplingFilterSRC[8][16][12] =
     }
 };
 
-#if JVET_AB0081
 const TFilterCoeff m_lumaFilter12_alt[16][12] =
 {
 { 0, 0, 0, 0, 0, 256, 0, 0, 0, 0, 0, 0, },
@@ -627,19 +606,14 @@ const TFilterCoeff m_chromaFilter6[32][6] =
     {1, -4, 15, 253, -11, 2},
     {0, -2, 7, 256, -6, 1},
 };
-#endif
 
 void Picture::sampleRateConv(const ScalingRatio scalingRatio, const int scaleX, const int scaleY,
                              const CPelBuf &beforeScale, const int beforeScaleLeftOffset,
                              const int beforeScaleTopOffset, const PelBuf &afterScale, const int afterScaleLeftOffset,
                              const int afterScaleTopOffset, const int bitDepth, const bool useLumaFilter,
                              const bool downsampling,
-#if !JVET_AB0081
-                             const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
-#else
                               const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag,
                               const bool rescaleForDisplay, const int upscaleFilterForDisplay
-#endif
 )
 {
   const Pel* orgSrc = beforeScale.buf;
@@ -662,7 +636,6 @@ void Picture::sampleRateConv(const ScalingRatio scalingRatio, const int scaleX, 
     return;
   }
 
-#if JVET_AB0081
   const TFilterCoeff* filterHor = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
   const TFilterCoeff* filterVer = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
   if (rescaleForDisplay)
@@ -673,10 +646,6 @@ void Picture::sampleRateConv(const ScalingRatio scalingRatio, const int scaleX, 
       filterVer = useLumaFilter ? (upscaleFilterForDisplay == 1 ? &m_lumaFilter12_alt[0][0] : &m_lumaFilter12[0][0]) : (upscaleFilterForDisplay == 1 ? &m_chromaFilter6_alt[0][0] : &m_chromaFilter6[0][0]);
     }
   }
-#else
-  const TFilterCoeff* filterHor = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
-  const TFilterCoeff* filterVer = useLumaFilter ? &InterpolationFilter::m_lumaFilter[0][0] : &InterpolationFilter::m_chromaFilter[0][0];
-#endif
   const int numFracPositions = useLumaFilter ? 15 : 31;
   const int numFracShift = useLumaFilter ? 4 : 5;
 
@@ -757,16 +726,11 @@ void Picture::sampleRateConv(const ScalingRatio scalingRatio, const int scaleX, 
     filterVer = &DownsamplingFilterSRC[verFilter][0][0];
   }
 
-#if JVET_AB0081
   int filterLengthsLuma[3] = { 8, 12, 12 };
   int filterLengthsChroma[3] = { 4, 6, 6 };
   int log2NormList[3] = { 12, 16, 16 };
   const int filterLength = downsampling ? 12 : (rescaleForDisplay ? (useLumaFilter ? filterLengthsLuma[upscaleFilterForDisplay] : filterLengthsChroma[upscaleFilterForDisplay]) : useLumaFilter ? NTAPS_LUMA : NTAPS_CHROMA);
   const int log2Norm = downsampling ? 14 : (rescaleForDisplay ? log2NormList[upscaleFilterForDisplay] : 12);
-#else
-  const int filterLength = downsampling ? 12 : ( useLumaFilter ? NTAPS_LUMA : NTAPS_CHROMA );
-  const int log2Norm = downsampling ? 14 : 12;
-#endif
   int *buf = new int[orgHeight * scaledWidth];
   int maxVal = ( 1 << bitDepth ) - 1;
 
@@ -828,39 +792,27 @@ void Picture::sampleRateConv(const ScalingRatio scalingRatio, const int scaleX, 
   delete[] buf;
 }
 
-void Picture::rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf &beforeScaling,
-                             const Window &scalingWindowBefore, const PelUnitBuf &afterScaling,
-                             const Window &scalingWindowAfter, const ChromaFormat chromaFormatIDC,
-                             const BitDepths &bitDepths, const bool useLumaFilter, const bool downsampling,
-#if !JVET_AB0081
-                             const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
-#else
-                              const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
-                              bool rescaleForDisplay, int upscaleFilterForDisplay
-#endif
-)
+void Picture::rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf& beforeScaling,
+                             const Window& scalingWindowBefore, const PelUnitBuf& afterScaling,
+                             const Window& scalingWindowAfter, const ChromaFormat chromaFormatIdc,
+                             const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
+                             const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
+                             bool rescaleForDisplay, int upscaleFilterForDisplay)
 {
-  for( int comp = 0; comp < ::getNumberValidComponents( chromaFormatIDC ); comp++ )
+  for (int comp = 0; comp < ::getNumberValidComponents(chromaFormatIdc); comp++)
   {
     ComponentID compID = ComponentID( comp );
     const CPelBuf& beforeScale = beforeScaling.get( compID );
     const PelBuf& afterScale = afterScaling.get( compID );
 
     sampleRateConv(
-      scalingRatio,
-      ::getComponentScaleX(compID, chromaFormatIDC), ::getComponentScaleY(compID, chromaFormatIDC),
-      beforeScale, scalingWindowBefore.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
-      scalingWindowBefore.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC), afterScale,
-      scalingWindowAfter.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIDC),
-      scalingWindowAfter.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIDC), bitDepths[toChannelType(compID)],
-      downsampling || useLumaFilter ? true : isLuma(compID), downsampling,
-#if !JVET_AB0081
-      isLuma(compID) ? 1 : horCollocatedChromaFlag, isLuma(compID) ? 1 : verCollocatedChromaFlag
-#else
-      isLuma(compID) ? 1 : horCollocatedChromaFlag, isLuma(compID) ? 1 : verCollocatedChromaFlag, rescaleForDisplay,
-      upscaleFilterForDisplay
-#endif
-    );
+      scalingRatio, ::getComponentScaleX(compID, chromaFormatIdc), ::getComponentScaleY(compID, chromaFormatIdc),
+      beforeScale, scalingWindowBefore.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
+      scalingWindowBefore.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc), afterScale,
+      scalingWindowAfter.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
+      scalingWindowAfter.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc), bitDepths[toChannelType(compID)],
+      downsampling || useLumaFilter ? true : isLuma(compID), downsampling, isLuma(compID) ? 1 : horCollocatedChromaFlag,
+      isLuma(compID) ? 1 : verCollocatedChromaFlag, rescaleForDisplay, upscaleFilterForDisplay);
   }
 }
 
@@ -1317,7 +1269,7 @@ const CPelBuf Picture::getBuf( const CompArea &blk, const PictureType &type ) co
 
 PelUnitBuf Picture::getBuf( const UnitArea &unit, const PictureType &type )
 {
-  if( chromaFormat == CHROMA_400 )
+  if (!isChromaEnabled(chromaFormat))
   {
     return PelUnitBuf( chromaFormat, getBuf( unit.Y(), type ) );
   }
@@ -1329,7 +1281,7 @@ PelUnitBuf Picture::getBuf( const UnitArea &unit, const PictureType &type )
 
 const CPelUnitBuf Picture::getBuf( const UnitArea &unit, const PictureType &type ) const
 {
-  if( chromaFormat == CHROMA_400 )
+  if (!isChromaEnabled(chromaFormat))
   {
     return CPelUnitBuf( chromaFormat, getBuf( unit.Y(), type ) );
   }
@@ -1532,8 +1484,8 @@ PelUnitBuf Picture::getDisplayBuf()
 #if JVET_Z0120_SII_SEI_PROCESSING
 void Picture::copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcPicYuvDst)
 {
-  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
-  int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+  const ChromaFormat chromaFormatIdc    = sps->getChromaFormatIdc();
+  int                numValidComponents = getNumberValidComponents(chromaFormatIdc);
 
   Pel *srcPxl, *dstPxl;
   ptrdiff_t srcStride;
@@ -1622,7 +1574,7 @@ Picture* Picture::findPrevPicPOC(Picture* pcPic, PicList* pcListPic)
 void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio)
 {
   const SPS *sps = pcPic->cs->sps;
-  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+  const ChromaFormat chromaFormatIdc = sps->getChromaFormatIdc();
 
   if ((pcPic->getPOC()) % blendingRatio != 0 || pcPic->getPOC() == 0)
     pcPic->getPostRecBuf().copyFrom(pcPic->getRecoBuf());
@@ -1649,7 +1601,7 @@ void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int ble
       PelUnitBuf* nextYuv = &nextTmp;
       PelUnitBuf* postYuv = &postTmp;
 
-      int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+      int numValidComponents = getNumberValidComponents(chromaFormatIdc);
       for (int chan = 0; chan < numValidComponents; chan++)
       {
         const ComponentID ch = ComponentID(chan);
@@ -1709,7 +1661,7 @@ void Picture::xOutputPostFilteredPic(Picture* pcPic, PicList* pcListPic, int ble
 void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blendingRatio, int intraPeriod)
 {
   const SPS *sps = pcPic->cs->sps;
-  const ChromaFormat chromaFormatIDC = sps->getChromaFormatIdc();
+  const ChromaFormat chromaFormatIdc = sps->getChromaFormatIdc();
 #if DISABLE_PRE_POST_FILTER_FOR_IDR_CRA
   if (pcPic->getPOC() == 0 ||
     (pcPic->getPOC() % intraPeriod == 0))
@@ -1724,7 +1676,7 @@ void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blen
     {
       PelStorage* currYuv = &pcPic->m_bufs[PIC_ORIGINAL];
       PelStorage* prevYuv = &prevPic->m_bufs[PIC_ORIGINAL];
-      int numValidComponents = getNumberValidComponents(chromaFormatIDC);
+      const int   numValidComponents = getNumberValidComponents(chromaFormatIdc);
       for (int chan = 0; chan < numValidComponents; chan++)
       {
         const ComponentID ch = ComponentID(chan);
@@ -1781,24 +1733,11 @@ void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blen
 
 void Picture::copyAlfData(const Picture &p)
 {
-  CHECK(p.m_alfCtbFilterIndex.size() != m_alfCtbFilterIndex.size(), "Size mismatch");
-
-  std::copy(p.m_alfCtbFilterIndex.begin(), p.m_alfCtbFilterIndex.end(), m_alfCtbFilterIndex.begin());
-
   for (int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++)
   {
-    CHECK(p.m_alfCtuEnableFlag[compIdx].size() != m_alfCtuEnableFlag[compIdx].size(), "Size mismatch");
+    CHECK(p.m_alfModes[compIdx].size() != m_alfModes[compIdx].size(), "Size mismatch");
 
-    std::copy(p.m_alfCtuEnableFlag[compIdx].begin(), p.m_alfCtuEnableFlag[compIdx].end(),
-              m_alfCtuEnableFlag[compIdx].begin());
-  }
-
-  for (int compIdx = COMPONENT_Cb; compIdx < MAX_NUM_COMPONENT; compIdx++)
-  {
-    CHECK(p.m_alfCtuAlternative[compIdx].size() != m_alfCtuAlternative[compIdx].size(), "Size mismatch");
-
-    std::copy(p.m_alfCtuAlternative[compIdx].begin(), p.m_alfCtuAlternative[compIdx].end(),
-              m_alfCtuAlternative[compIdx].begin());
+    std::copy(p.m_alfModes[compIdx].begin(), p.m_alfModes[compIdx].end(), m_alfModes[compIdx].begin());
   }
 }
 
@@ -1806,16 +1745,7 @@ void Picture::resizeAlfData(const int numEntries)
 {
   for (int compIdx = 0; compIdx < MAX_NUM_COMPONENT; compIdx++)
   {
-    m_alfCtuEnableFlag[compIdx].resize(numEntries);
-    std::fill(m_alfCtuEnableFlag[compIdx].begin(), m_alfCtuEnableFlag[compIdx].end(), 0);
-  }
-
-  m_alfCtbFilterIndex.resize(numEntries);
-  std::fill(m_alfCtbFilterIndex.begin(), m_alfCtbFilterIndex.end(), 0);
-
-  for (int compIdx = 1; compIdx < MAX_NUM_COMPONENT; compIdx++)
-  {
-    m_alfCtuAlternative[compIdx].resize(numEntries);
-    std::fill(m_alfCtuAlternative[compIdx].begin(), m_alfCtuAlternative[compIdx].end(), 0);
+    m_alfModes[compIdx].resize(numEntries);
+    std::fill(m_alfModes[compIdx].begin(), m_alfModes[compIdx].end(), AlfMode::OFF);
   }
 }

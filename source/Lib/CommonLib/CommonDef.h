@@ -42,31 +42,28 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include <cstdlib>
 
 #if GREEN_METADATA_SEI_ENABLED
 #include <fstream>
 #endif
 
+#ifdef _MSC_VER
+#if _MSC_VER < 1910
+#error "MS Visual Studio version not supported. Please upgrade to Visual Studio 2017 or higher (or use other compilers)"
+#endif
 
-#if _MSC_VER > 1000
+#include <intrin.h>
+
 // disable "signed and unsigned mismatch"
 #pragma warning( disable : 4018 )
 // disable bool coercion "performance warning"
 #pragma warning( disable : 4800 )
-#endif // _MSC_VER > 1000
+#endif
 
 #include "CommonSimdCfg.h"
 #include "TypeDef.h"
 #include "version.h"
-
-// MS Visual Studio before 2014 does not support required C++11 features
-#ifdef _MSC_VER
-#if _MSC_VER < 1900
-#error "MS Visual Studio version not supported. Please upgrade to Visual Studio 2015 or higher (or use other compilers)"
-#endif
-
-#include <intrin.h>
-#endif
 
 //! \ingroup CommonLib
 //! \{
@@ -93,7 +90,7 @@
 
 #ifdef __INTEL_COMPILER
 #define NVM_COMPILEDBY  "[ICC %d]", __INTEL_COMPILER
-#elif  _MSC_VER
+#elif defined _MSC_VER
 #define NVM_COMPILEDBY  "[VS %d]", _MSC_VER
 #endif
 
@@ -184,20 +181,7 @@ static constexpr int MAX_VPS_OLS_MODE_IDC =                             2;
 
 static constexpr int MAX_NUM_VPS = 16;
 static constexpr int MAX_NUM_SPS = 16;
-static constexpr int MAX_NUM_PPS = 64;
-static constexpr int MAX_NUM_APS(ApsType t)
-{
-  switch (t)
-  {
-  case ApsType::ALF:
-  case ApsType::SCALING_LIST:
-    return 8;
-  case ApsType::LMCS:
-    return 4;
-  default:
-    return 32;
-  }
-}
+static constexpr int MAX_NUM_PPS      = 64;
 static constexpr int NUM_APS_TYPE_LEN = 3;   // Currently APS Type has 3 bits
 static constexpr int MAX_NUM_APS_TYPE = 8;   // Currently APS Type has 3 bits so the max type is 8
 
@@ -206,7 +190,6 @@ static constexpr int MAX_NUM_NN_POST_FILTERS =                          8;
 static constexpr int MIP_MAX_WIDTH =                                   MAX_TB_SIZEY;
 static constexpr int MIP_MAX_HEIGHT =                                  MAX_TB_SIZEY;
 
-static constexpr int MAX_NUM_ALF_ALTERNATIVES_CHROMA =                  8;
 static constexpr int MAX_NUM_ALF_CLASSES         =                     25;
 static constexpr int MAX_NUM_ALF_LUMA_COEFF      =                     13;
 static constexpr int MAX_NUM_ALF_CHROMA_COEFF    =                      7;
@@ -217,9 +200,7 @@ static constexpr int MAX_NUM_CC_ALF_CHROMA_COEFF    =               8;
 static constexpr int CCALF_DYNAMIC_RANGE            =               6;
 static constexpr int CCALF_BITS_PER_COEFF_LEVEL     =               3;
 
-static constexpr int ALF_FIXED_FILTER_NUM  = 64;
-static constexpr int ALF_CTB_MAX_NUM_APS   = MAX_NUM_APS(ApsType::ALF);
-static constexpr int NUM_FIXED_FILTER_SETS = 16;
+static constexpr int ALF_FIXED_FILTER_NUM = 64;
 
 static constexpr int MAX_BDOF_APPLICATION_REGION =                     16;
 
@@ -403,9 +384,12 @@ static constexpr int BIO_TEMP_BUFFER_SIZE         =                     (MAX_CU_
 static constexpr int PROF_BORDER_EXT_W            =                     1;
 static constexpr int PROF_BORDER_EXT_H            =                     1;
 
-static constexpr int    BCW_NUM             = 5;             // the number of weight options
-static constexpr int    BCW_DEFAULT         = BCW_NUM / 2;   // Default weighting index representing for w=0.5
-static constexpr int    BCW_SIZE_CONSTRAINT = 256;           // disabling BCW if cu size is smaller than 256
+static constexpr int BCW_LOG2_WEIGHT_BASE = 3;
+static constexpr int BCW_WEIGHT_BASE      = 1 << BCW_LOG2_WEIGHT_BASE;
+static constexpr int BCW_NUM              = 5;             // the number of weight options
+static constexpr int BCW_DEFAULT          = BCW_NUM / 2;   // Default weighting index representing for w=0.5
+static constexpr int BCW_SIZE_CONSTRAINT  = 256;           // disabling Bcw if cu size is smaller than 256
+static constexpr int BCW_INV_BITS         = 16;
 static constexpr double BCW_COST_TH         = 1.05;
 
 static constexpr double AMVR_FAST_4PEL_TH = 1.06;
@@ -478,6 +462,9 @@ static constexpr int MAX_FILTER_SIZE     = NTAPS_LUMA > NTAPS_CHROMA ? NTAPS_LUM
 
 static constexpr int MAX_LADF_INTERVALS       =                         5; /// max number of luma adaptive deblocking filter qp offset intervals
 
+#if JVET_AC0096
+static constexpr int MAX_RPR_SWITCHING_ORDER_LIST_SIZE =               32; /// max number of pre-defined RPR switching segments
+#endif
 static constexpr int ATMVP_SUB_BLOCK_SIZE =                             3; ///< sub-block size for ATMVP
 static constexpr int GEO_MAX_NUM_UNI_CANDS =                            6;
 static constexpr int GEO_MAX_NUM_CANDS = GEO_MAX_NUM_UNI_CANDS * (GEO_MAX_NUM_UNI_CANDS - 1);
@@ -548,10 +535,10 @@ static constexpr int PLT_FAST_RATIO = 100;
 static constexpr int  EPBIN_WEIGHT_FACTOR =                           4;
 #endif
 static constexpr int ENC_PPS_ID_RPR =                                 3;
-#if JVET_AB0080
 static constexpr int ENC_PPS_ID_RPR2 = 5;
 static constexpr int ENC_PPS_ID_RPR3 = 7;
-#endif
+static constexpr int NUM_RPR_PPS = 4;
+static constexpr int RPR_PPS_ID[NUM_RPR_PPS] = { 0, ENC_PPS_ID_RPR3, ENC_PPS_ID_RPR2, ENC_PPS_ID_RPR };
 static constexpr int MAX_SCALING_RATIO =                              2;  // max downsampling ratio for RPR
 static constexpr ScalingRatio SCALE_1X = { 1 << ScalingRatio::BITS, 1 << ScalingRatio::BITS };   // scale ratio 1x
 
@@ -581,10 +568,8 @@ static constexpr int CBF_MASK_CBCR = CBF_MASK_CB | CBF_MASK_CR;
 // SEI and related constants
 // ====================================================================================================================
 
-#if JVET_AB0049
 static const uint32_t MAX_NNPFA_ID =                               0xfffffffe; // Maximum supported nnpfa_id
 static const uint32_t MAX_NNPFC_ID =                               0xfffffffe; // Maximum supported nnpfc_id
-#endif
 #if JVET_Z0120_SII_SEI_PROCESSING
 static constexpr double SII_PF_W2 =                                       0.6; // weight for current picture
 static constexpr double SII_PF_W1 =                                       0.4; // weight for previous picture , it must be equal to 1.0 - SII_PF_W2
@@ -645,51 +630,28 @@ inline void msg( MsgLevel level, const char* fmt, ... )
 
 template<typename T> bool isPowerOf2( const T val ) { return ( val & ( val - 1 ) ) == 0; }
 
-#define MEMORY_ALIGN_DEF_SIZE       32  // for use with avx2 (256 bit)
-#define CACHE_MEM_ALIGN_SIZE      1024
+constexpr size_t MEMORY_ALIGN_DEF_SIZE = 32;   // for use with avx2 (256 bit)
+constexpr size_t CACHE_MEM_ALIGN_SIZE  = 1024;
 
-#define ALIGNED_MALLOC              1   ///< use 32-bit aligned malloc/free
-
-#if ALIGNED_MALLOC
 #if JVET_J0090_MEMORY_BANDWITH_MEASURE
-void *cache_mem_align_malloc(int size, int align_size);
-void cache_mem_align_free(void *ptr);
-#define xMalloc(type, len)          cache_mem_align_malloc(sizeof(type) * len, CACHE_MEM_ALIGN_SIZE)
-#define xFree(ptr)                  cache_mem_align_free(ptr)
-#elif     ( _WIN32 && ( _MSC_VER > 1300 ) ) || defined (__MINGW64_VERSION_MAJOR)
-#define xMalloc( type, len )        _aligned_malloc( sizeof(type)*(len), MEMORY_ALIGN_DEF_SIZE )
-#define xFree( ptr )                _aligned_free  ( ptr )
-#elif defined (__MINGW32__)
-#define xMalloc( type, len )        __mingw_aligned_malloc( sizeof(type)*(len), MEMORY_ALIGN_DEF_SIZE )
-#define xFree( ptr )                __mingw_aligned_free( ptr )
+constexpr size_t MALLOC_ALIGN_SIZE = CACHE_MEM_ALIGN_SIZE;
 #else
-namespace detail {
-template<typename T>
-T* aligned_malloc(size_t len, size_t alignement) {
-  T *p = nullptr;
-  if( posix_memalign( (void**)&p, alignement, sizeof(T)*(len) ) )
-  {
-    THROW("posix_memalign failed");
-  }
-  return p;
-}
-}
-#define xMalloc( type, len )        detail::aligned_malloc<type>( len, MEMORY_ALIGN_DEF_SIZE )
-#define xFree( ptr )                free( ptr )
+constexpr size_t MALLOC_ALIGN_SIZE = MEMORY_ALIGN_DEF_SIZE;
 #endif
 
+#if defined _MSC_VER || defined __MINGW64_VERSION_MAJOR
+// Some compilers don't support std::aligned_alloc even though it is standardized
+#define xMalloc(type, len) _aligned_malloc(sizeof(type) * (len), MEMORY_ALIGN_DEF_SIZE)
+#define xFree(ptr) _aligned_free(ptr)
 #else
-#define xMalloc( type, len )        malloc   ( sizeof(type)*(len) )
-#define xFree( ptr )                free     ( ptr )
-#endif //#if ALIGNED_MALLOC
-
-#if defined _MSC_VER
-#define ALIGN_DATA(nBytes,v) __declspec(align(nBytes)) v
-#else
-//#elif defined linux
-#define ALIGN_DATA(nBytes,v) v __attribute__ ((aligned (nBytes)))
-//#else
-//#error unknown platform
+template<typename T> inline void* alignedAllocAdjustSize(size_t len)
+{
+  // std::aligned_alloc requires that the size parameter is an integral multiple of the alignment
+  const size_t numBytes = (sizeof(T) * len + MALLOC_ALIGN_SIZE - 1) & ~(MALLOC_ALIGN_SIZE - 1);
+  return std::aligned_alloc(MALLOC_ALIGN_SIZE, numBytes);
+}
+#define xMalloc(type, len) alignedAllocAdjustSize<type>(len)
+#define xFree(ptr) std::free(ptr)
 #endif
 
 #if defined(__GNUC__) && !defined(__clang__)

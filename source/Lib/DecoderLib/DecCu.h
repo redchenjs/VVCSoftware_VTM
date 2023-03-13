@@ -38,9 +38,7 @@
 #ifndef __DECCU__
 #define __DECCU__
 
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #include "CABACReader.h"
 
@@ -70,7 +68,7 @@ public:
   void  decompressCtu     ( CodingStructure& cs, const UnitArea& ctuArea );
   Reshape*          m_pcReshape;
   Reshape* getReshape     () { return m_pcReshape; }
-  void initDecCuReshaper  ( Reshape* pcReshape, ChromaFormat chromaFormatIDC) ;
+  void              initDecCuReshaper(Reshape* pcReshape, ChromaFormat chromaFormatIdc);
   void destoryDecCuReshaprBuf();
 
   /// reconstruct Ctu information
@@ -88,7 +86,8 @@ protected:
 
   void               xDeriveCuMvs(CodingUnit &cu);
   void xReconPLT          ( CodingUnit&      cu,       ComponentID compBegin, uint32_t numComp );
-  PelStorage        *m_tmpStorageLCU;
+  PelStorage        *m_tmpStorageCtu;
+
 private:
   TrQuant*          m_pcTrQuant;
   IntraPrediction*  m_pcIntraPred;

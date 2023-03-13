@@ -379,7 +379,7 @@ private:
   static_vector<double, FAST_UDI_MAX_RDMODE_NUM>   m_savedModeCostLFNST;
   static_vector<double, FAST_UDI_MAX_RDMODE_NUM>   m_savedHadListLFNST;
 
-  PelStorage      m_tmpStorageLCU;
+  PelStorage      m_tmpStorageCtu;
   PelStorage      m_colorTransResiBuf;
 
   std::vector<TransformUnit *> m_orgTUs;

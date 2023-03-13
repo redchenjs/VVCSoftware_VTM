@@ -768,7 +768,7 @@ const CtxSet ContextSetCfg::ImvFlag = ContextSetCfg::addCtxSet
   {   0,   5,   0,   0,   4, },
 });
 
-const CtxSet ContextSetCfg::ctbAlfFlag = ContextSetCfg::addCtxSet
+const CtxSet ContextSetCfg::alfCtbFlag = ContextSetCfg::addCtxSet
 ({
   {  33,  52,  46,  25,  61,  54,  25,  61,  54, },
   {  13,  23,  46,   4,  61,  54,  19,  46,  54, },
@@ -784,7 +784,7 @@ const CtxSet ContextSetCfg::ctbAlfAlternative = ContextSetCfg::addCtxSet
   {   0,   0, },
 });
 
-const CtxSet ContextSetCfg::AlfUseTemporalFilt = ContextSetCfg::addCtxSet
+const CtxSet ContextSetCfg::alfUseApsFlag = ContextSetCfg::addCtxSet
 ({
   {  46, },
   {  46, },
@@ -880,7 +880,8 @@ const unsigned ContextSetCfg::NumberOfContexts = (unsigned)ContextSetCfg::sm_Ini
 const CtxSet ContextSetCfg::Palette = { ContextSetCfg::RotationFlag, ContextSetCfg::RunTypeFlag, ContextSetCfg::IdxRunModel, ContextSetCfg::CopyRunModel };
 const CtxSet ContextSetCfg::Sao = { ContextSetCfg::SaoMergeFlag, ContextSetCfg::SaoTypeIdx };
 
-const CtxSet ContextSetCfg::Alf = { ContextSetCfg::ctbAlfFlag, ContextSetCfg::ctbAlfAlternative, ContextSetCfg::AlfUseTemporalFilt };
+const CtxSet ContextSetCfg::Alf = { ContextSetCfg::alfCtbFlag, ContextSetCfg::ctbAlfAlternative,
+                                    ContextSetCfg::alfUseApsFlag };
 
 const CtxSet ContextSetCfg::ctxPartition = { ContextSetCfg::SplitFlag, ContextSetCfg::SplitQtFlag,
                                              ContextSetCfg::SplitHvFlag, ContextSetCfg::Split12Flag,

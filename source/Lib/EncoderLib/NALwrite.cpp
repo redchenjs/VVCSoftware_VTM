@@ -39,14 +39,12 @@
 #include "CommonLib/BitStream.h"
 #include "NALwrite.h"
 
-using namespace std;
-
 //! \ingroup EncoderLib
 //! \{
 
 static const uint8_t emulation_prevention_three_byte = 3;
 
-void writeNalUnitHeader(ostream& out, OutputNALUnit& nalu)       // nal_unit_header()
+void writeNalUnitHeader(std::ostream &out, OutputNALUnit &nalu)   // nal_unit_header()
 {
   OutputBitstream bsNALUHeader;
   int forbiddenZero = 0;
@@ -65,7 +63,7 @@ void writeNalUnitHeader(ostream& out, OutputNALUnit& nalu)       // nal_unit_hea
  * write nalu to bytestream out, performing RBSP anti startcode
  * emulation as required.  nalu.m_RBSPayload must be byte aligned.
  */
-void writeNaluContent(ostream& out, OutputNALUnit& nalu)
+void writeNaluContent(std::ostream &out, OutputNALUnit &nalu)
 {
   /* write out rsbp_byte's, inserting any required
    * emulation_prevention_three_byte's */
@@ -87,13 +85,13 @@ void writeNaluContent(ostream& out, OutputNALUnit& nalu)
    *  - 0x00000302
    *  - 0x00000303
    */
-  vector<uint8_t> &rbsp = nalu.m_bitstream.getFifo();
+  std::vector<uint8_t> &rbsp = nalu.m_bitstream.getFifo();
 
-  vector<uint8_t> outputBuffer;
+  std::vector<uint8_t> outputBuffer;
   outputBuffer.resize(rbsp.size()*2+1); //there can never be enough emulation_prevention_three_bytes to require this much space
   std::size_t outputAmount = 0;
   int         zeroCount    = 0;
-  for (vector<uint8_t>::iterator it = rbsp.begin(); it != rbsp.end(); it++)
+  for (std::vector<uint8_t>::iterator it = rbsp.begin(); it != rbsp.end(); it++)
   {
     const uint8_t v=(*it);
     if (zeroCount==2 && v<=3)
@@ -125,7 +123,7 @@ void writeNaluContent(ostream& out, OutputNALUnit& nalu)
   out.write(reinterpret_cast<const char*>(&(*outputBuffer.begin())), outputAmount);
 }
 
-void writeNaluWithHeader(ostream& out, OutputNALUnit& nalu)
+void writeNaluWithHeader(std::ostream &out, OutputNALUnit &nalu)
 {
   writeNalUnitHeader(out, nalu);
   writeNaluContent(out, nalu);

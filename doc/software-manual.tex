@@ -205,7 +205,7 @@ fontsize=\footnotesize}
 \maketitle
 \begin{abstract}
 This document is a user manual describing usage of the VTM reference software
-for the VVC project. It applies to version 19.0 of the software.
+for the VVC project. It applies to version 19.1 of the software.
 \end{abstract}
 
 \tableofcontents
@@ -639,6 +639,16 @@ Specifies the output locally reconstructed video file. If more than one layer is
 Specifies the width and height of the input video in luma samples.
 \\
 
+
+\Option{SourceScalingRatioHor}%
+\Option{SourceScalingRatioVer} &
+\Default{1.0}%
+\Default{1.0} &
+Specifies a scaling ratio to apply in hor and vert direction to the pictures read from input video file.
+Note: The SourceWidth and SourceHeight are multiplied by these scaling factors. This option is useful for spatial scalability in a multi layer scenario to use enhancement layer source when base layer source is not available. 
+\\
+
+
 \Option{InputBitDepth}
  &
 %\ShortOption{\None} &
@@ -757,6 +767,13 @@ When 1, the Mean Square Error (MSE) values of the entire sequence will also be o
 \Default{false} &
 When 1, weighted PSNR (wPSNR) values of the entire sequence will also be output.
 \\
+
+\Option{PrintRefLayerMetrics} &
+%\ShortOption{\None} &
+\Default{false} &
+When 1, PSNR between current layer and the first reference layer (rescaled to the current layer size if needed) of the entire sequence will also be output. Only the first reference layer is processed for this metric.
+\\
+
 
 \Option{SummaryOutFilename} &
 %\ShortOption{\None} &
@@ -1001,6 +1018,44 @@ QP offset for chroma when encoding in reduced resolution with GOP based RPR ($2/
 %\ShortOption{\None} &
 \Default{-2} &
 QP offset for chroma when encoding in reduced resolution with GOP based RPR ($4/5$).
+\\
+
+\Option{RPRFunctionalityTesting} &
+%\ShortOption{\None} &
+\Default{false} &
+Enables testing of RPR functionality according to defined order of resolutions from full resolution or one of three downscaled resolutions (default is $1/2$, $2/3$ and $4/5$ in both dimensions).
+The order is defined in RPRSwitchingResolutionOrderList and QP settings in RPRSwitchingResolutionOrderList and number of frames for each resolution in
+RPRSwitchingSegmentSize or according to RPRSwitchingTime if thats non-zero.
+\\
+
+\Option{RPRSwitchingResolutionOrderList} &
+%\ShortOption{\None} &
+\Default{"1, 0, 2, 0, 3, 0, 1, 0, 2, 0, 3, 0"} &
+Order of resolutions for each segment for RPR functionality testing where 0,1,2,3 corresponds to full resolution,4/5,2/3 and 1/2.
+\\
+
+\Option{RPRSwitchingQPOffsetOrderList} &
+%\ShortOption{\None} &
+\Default{"-2, 0, -4, 0, -6, 0, -2, 0, -4, 0, -6, 0"} &
+Order of QP offset for each segment for RPR functionality testing, where the QP is modified according to the given offset.
+\\
+
+\Option{RPRSwitchingSegmentSize} &
+%\ShortOption{\None} &
+\Default{32} &
+Number of frames with same resolution for RPR functionality testing.
+\\
+
+\Option{RPRSwitchingTime} &
+%\ShortOption{\None} &
+\Default{0.0} &
+Segment switching time in seconds for RPR functionality testing, when non-zero it defines the segment size according to frame rate (multiple of 8).
+\\
+
+\Option{RPRPopulatePPSatIntra} &
+%\ShortOption{\None} &
+\Default{false} &
+Populate all PPS which can be used for RPR at the Intra, e.g. full-res, 4/5, 2/3 and 1/2.
 \\
 
 \Option{FractionNumFrames} &
@@ -2217,6 +2272,41 @@ The default value is 1.075 and the recommended setting value should be between 1
 The lower value has higher speedup and also has higher coding loss.
 \\
 
+\Option{MaxMergeRdCandNumTotal} &
+%\ShortOption{\None} &
+\Default{15} &
+Specifies the max total number of merge candidates in full RD checking. The actual total number for each CU is the minimum of MaxMergeRdCandNumTotal and the sum of applicable quota parameters.
+\\
+
+\Option{MergeRdCandQuotaRegular} &
+%\ShortOption{\None} &
+\Default{4} &
+Specifies the quota of regular merge candidates of blocks with 64 or more luma samples in full RD checking. 
+\\
+
+\Option{MergeRdCandQuotaRegularSmallBlk} &
+%\ShortOption{\None} &
+\Default{4} &
+Specifies the quota of regular merge candidates of blocks with less than 64 luma samples in full RD checking. 
+\\
+
+\Option{MergeRdCandQuotaSubBlk} &
+%\ShortOption{\None} &
+\Default{2} &
+Specifies the quota of sub-block merge candidates in full RD checking. 
+\\
+
+\OptionMergeRdCandQuotaCiip} &
+%\ShortOption{\None} &
+\Default{1} &
+Specifies the quota of CIIP merge candidates in full RD checking. 
+\\
+
+\Option{MergeRdCandQuotaGpm} &
+%\ShortOption{\None} &
+\Default{8} &
+Specifies the quota of GPM merge candidates in full RD checking. 
+\\
 
 \end{OptionTableNoShorthand}
 
@@ -5617,12 +5707,13 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   Specifies the purpose of the \emph{i}-th neural network post-filter.
   \par
   \begin{tabular}{cp{0.35\textwidth}}
-    0 & Unknown or unspecified \\
-    1 & Visual quality improvement \\
-    2 & Chroma upsampling from the 4:2:0 chroma format to the 4:2:2 or 4:4:4 chroma format, or from the 4:2:2 chroma format to the 4:4:4 chroma format \\
-    3 & Increasing the width or height of the cropped decoded output picture without changing the chroma format \\
-    4 & Increasing the width or height of the cropped decoded output picture and upsampling the chroma format \\
-    5 & Frame rate upsampling \\
+    0 & Determined by the application \\
+    (nnpfc\_purpose \& 0x01)  !=  0 & Visual quality improvement \\
+    (nnpfc\_purpose \& 0x02)  !=  0 & Chroma upsampling from the 4:2:0 chroma format to the 4:2:2 or 4:4:4 chroma format, or from the 4:2:2 chroma format to the 4:4:4 chroma format \\
+    (nnpfc\_purpose \& 0x04)  !=  0 & Resolution upsampling (increasing the width or height) \\
+    (nnpfc\_purpose \& 0x08)  !=  0 & Frame rate upsampling \\
+    (nnpfc\_purpose \& 0x10)  !=  0 & Bit depth upsampling \\
+    (nnpfc\_purpose \& 0x20)  !=  0 & Colourization \\
   \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsOutSubCFlag\emph{i}} &
@@ -5634,6 +5725,16 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
       false & outSubWidthC is equal to 2 and outSubHeightC is equal to 1 \\
     \end{tabular}
     \\
+  \\
+  \Option{SEINNPostFilterCharacteristicsOutColourFormatIdc\emph{i}} &
+  \Default{0} &
+  Specifies the colour format of the NNPF output.
+  \par
+  \begin{tabular}{cp{0.35\textwidth}}
+    1 & The colour format of the NNPF output is the 4:2:0 format \\
+    2 & The colour format of the NNPF output is the 4:2:2 format \\
+    3 & The colour format of the NNPF output is the 4:4:4 format \\
+  \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsPicWidthInLumaSamples\emph{i}} &
   \Default{0} &
@@ -5661,9 +5762,13 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
       1 & Unsigned integer value range of 0 to the bit depth indicated for the input tensor (see syntax element below).
     \end{tabular}
   \\
-  \Option{SEINNPostFilterCharacteristicsInpTensorBitDepthMinus8\emph{i}} &
+  \Option{SEINNPostFilterCharacteristicsInpTensorBitLumaDepthMinusEight\emph{i}} &
   \Default{0} &
-  Specifies the bit depth of the input tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_format_idc = 1.
+  Specifies the bit depth of the input luma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_format_idc = 1.
+  \\
+  \Option{SEINNPostFilterCharacteristicsInpTensorBitDepthChromaMinusEight\emph{i}} &
+  \Default{0} &
+  Specifies the bit depth of the input chroma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_format_idc = 1.
   \\
   \Option{SEINNPostFilterCharacteristicsAuxInpIdc\emph{i}} &
   \Default{0} &
@@ -5710,9 +5815,13 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
     1 & Unsigned integer numbers where the value range is 0 to $(1 << bitDepth) - 1$ inclusive.
   \end{tabular}
   \\
-  \Option{SEINNPostFilterCharacteristicsOutTensorBitDepthMinus8\emph{i}} &
+  \Option{SEINNPostFilterCharacteristicsOutTensorBitDepthLumaMinusEight\emph{i}} &
   \Default{0} &
-  Specifies the bit depth of the output tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_out_format_idc = 1.
+  Specifies the bit depth of the output luma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_out_format_idc = 1.
+  \\
+  \Option{SEINNPostFilterCharacteristicsOutTensorBitDepthChromaMinusEight\emph{i}} &
+  \Default{0} &
+  Specifies the bit depth of the output chroma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_out_format_idc = 1.
   \\
   \Option{SEINNPostFilterCharacteristicsOutOrderIdc\emph{i}} &
   \Default{0} &
@@ -5740,8 +5849,6 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \par
   \begin{tabular}{p{0.49\columnwidth}}
     When nnpfc_constant_patch_size_flag is true (non-zero), specifies the horizontal sample counts of the patch size required for the input to the \emph{i}-th neural network post-filter. \\
-    When nnpfc_constant_patch_size_flag is false, any positive integer multiple of ( nnpfc_patch_width_minus1 + 1 ) may be used as the horizontal sample counts of the patch size used for the input to the \emph{i}-th neural network post-filter. \\
-  \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsPatchHeightMinus1\emph{i}} &
   \Default{0} &
@@ -5749,7 +5856,22 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \par
   \begin{tabular}{p{0.49\columnwidth}}
     When nnpfc_constant_patch_size_flag is true (non-zero), specifies the vertical sample counts of the patch size required for the input to the \emph{i}-th neural network post-filter. \\
-    When nnpfc_constant_patch_size_flag is false, any positive integer multiple of ( nnpfc_patch_height_minus1 + 1 ) may be used as the vertical sample counts of the patch size used for the input to the \emph{i}-th neural network post-filter. \\
+  \end{tabular}
+  \\
+  \Option{SEINNPostFilterCharacteristicsExtendedPatchWidthCdDeltaMinus1\emph{i}} &
+  \Default{0} &
+  Specifies the extended patch width for the \emph{i}-th neural network post-filter.
+  \par
+  \begin{tabular}{p{0.49\columnwidth}}
+    When nnpfc_constant_patch_size_flag is false (zero),  nnpfc_extended_patch_width_cd_delta_minus1+1+2*nnpfc_overlap indicates a common divisor of the all allowed values of the width of an extended patch for the input to the \emph{i}-th neural network post-filter. \\
+  \end{tabular}
+  \\
+  \Option{SEINNPostFilterCharacteristicsExtendedPatchHeightCdDeltaMinus1\emph{i}} &
+  \Default{0} &
+  Specifies the extended patch height \emph{i}-th neural network post-filter.
+  \par
+  \begin{tabular}{p{0.49\columnwidth}}
+    When nnpfc_constant_patch_size_flag is false (zero),  nnpfc_extended_patch_height_cd_delta_minus1+1+2*nnpfc_overlap indicates a common divisor of the all allowed values of the height of an extended patch for the input to the \emph{i}-th neural network post-filter. \\
   \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsOverlap\emph{i}} &
@@ -5838,7 +5960,7 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{false} &
   Enables (true) or disables (false) the insertion of the neural network post-filter activation SEI message.
   \\
-  \Option{SEINNPostFilterActivationId} &
+  \Option{SEINNPostFilterActivationTargetId} &
   \Default{0} &
   Specifies the id of the neural network post-filter.
   \\
@@ -5903,6 +6025,14 @@ Enables (true) or disables (false) the insertion of processing order SEI message
 \Option{SEIPOPayLoadType\emph{i}} &
 \Default{0} &
 Specifies the value of payloadType for the \emph{i}-th SEI message for which information is provided in the SEI processing order SEI message.
+\\
+\Option{SEIPONumofPrefixByte\emph{i}} &
+\Default{0} &
+Specifies the number of prefix byte for the \emph{i}-th SEI message present in processing order SEI message.
+\\
+\Option{SEIPOPrefixByte\emph{i}} &
+\Default{0} &
+Specifies the \emph{i}-th prefix byte present in processing order SEI message.
 \\
 \Option{SEIPOProcessingOrder\emph{i}} &
 \Default{0} &

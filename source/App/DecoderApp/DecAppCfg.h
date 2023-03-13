@@ -38,9 +38,7 @@
 #ifndef __DECAPPCFG__
 #define __DECAPPCFG__
 
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #include "CommonLib/CommonDef.h"
 #include <vector>
@@ -97,9 +95,7 @@ protected:
   bool          m_GMFAFramewise;
 #endif
   int          m_upscaledOutput;                     ////< Output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for RPR.
-#if JVET_AB0081
   int          m_upscaleFilterForDisplay;
-#endif
   int           m_targetSubPicIdx;                    ///< Specify which subpicture shall be write to output, using subpicture index
 #if GDR_LEAK_TEST
   int           m_gdrPocRandomAccess;                   ///<

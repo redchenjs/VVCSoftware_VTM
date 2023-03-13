@@ -20,6 +20,8 @@ stages:
       - make realclean
       - make all
       - make realclean
+      - make release high-bitdepth=true
+      - make realclean
       - make linuxbuild enable-tracing=true
 
 build_macos:
@@ -36,6 +38,18 @@ build_ubuntu2204:
    extends: .build_template_linux
    tags:
       - ubuntu2204
+
+build_ubuntu2204-gcc12:
+   extends: .build_template
+   script:
+      - make realclean
+      - make all toolset=gcc-12
+      - make realclean
+      - make release high-bitdepth=true toolset=gcc-12
+      - make realclean
+      - make linuxbuild enable-tracing=true toolset=gcc-12
+   tags:
+      - ubuntu2204-gcc12
 
 build_vc191x:
    extends: .build_template

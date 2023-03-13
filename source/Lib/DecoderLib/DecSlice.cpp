@@ -298,17 +298,17 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
   featureCounter.baseQP[slice->getSliceQpBase()] ++;
   if (featureCounter.isYUV400 == -1)
   {
-    featureCounter.isYUV400 = sps->getChromaFormatIdc() == CHROMA_400 ? 1 : 0;
-    featureCounter.isYUV420 = sps->getChromaFormatIdc() == CHROMA_420 ? 1 : 0;
-    featureCounter.isYUV422 = sps->getChromaFormatIdc() == CHROMA_422 ? 1 : 0;
-    featureCounter.isYUV444 = sps->getChromaFormatIdc() == CHROMA_444 ? 1 : 0;
+    featureCounter.isYUV400 = sps->getChromaFormatIdc() == ChromaFormat::_400 ? 1 : 0;
+    featureCounter.isYUV420 = sps->getChromaFormatIdc() == ChromaFormat::_420 ? 1 : 0;
+    featureCounter.isYUV422 = sps->getChromaFormatIdc() == ChromaFormat::_422 ? 1 : 0;
+    featureCounter.isYUV444 = sps->getChromaFormatIdc() == ChromaFormat::_444 ? 1 : 0;
   }
   
   if (featureCounter.is8bit == -1)
   {
-    featureCounter.is8bit  = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 8) ? 1 : 0;
-    featureCounter.is10bit = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 10) ? 1 : 0;
-    featureCounter.is12bit = (sps->getBitDepth(CHANNEL_TYPE_LUMA) == 12) ? 1 : 0;
+    featureCounter.is8bit  = (sps->getBitDepth(ChannelType::LUMA) == 8) ? 1 : 0;
+    featureCounter.is10bit = (sps->getBitDepth(ChannelType::LUMA) == 10) ? 1 : 0;
+    featureCounter.is12bit = (sps->getBitDepth(ChannelType::LUMA) == 12) ? 1 : 0;
   }
   
   if (slice->getSliceType() == B_SLICE)

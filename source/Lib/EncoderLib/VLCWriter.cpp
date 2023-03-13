@@ -44,7 +44,7 @@
 #include "CommonLib/dtrace_next.h"
 #include "EncAdaptiveLoopFilter.h"
 #include "CommonLib/AdaptiveLoopFilter.h"
-#include "CommonLib/ProfileLevelTier.h"
+#include "CommonLib/ProfileTierLevel.h"
 
 //! \ingroup EncoderLib
 //! \{
@@ -227,7 +227,7 @@ void FDWriter::codeFD(OutputBitstream& bs, uint32_t &fdSize)
 
 void HLSWriter::xCodeRefPicList( const ReferencePictureList* rpl, bool isLongTermPresent, uint32_t ltLsbBitsCount, const bool isForbiddenZeroDeltaPoc, int rplIdx)
 {
-  uint32_t numRefPic = rpl->getNumberOfShorttermPictures() + rpl->getNumberOfLongtermPictures() + rpl->getNumberOfInterLayerPictures();
+  uint32_t numRefPic = rpl->getNumRefEntries();
   xWriteUvlc( numRefPic, "num_ref_entries[ listIdx ][ rplsIdx ]" );
 
   if (isLongTermPresent && numRefPic > 0 && rplIdx != -1)
@@ -374,7 +374,7 @@ void HLSWriter::codePPS( const PPS* pcPPS )
     {
       xWriteFlag(pcPPS->getSingleSlicePerSubPicFlag( ) ? 1 : 0, "pps_single_slice_per_subpic_flag");
     }
-    if (pcPPS->getRectSliceFlag() & !(pcPPS->getSingleSlicePerSubPicFlag()))
+    if (pcPPS->getRectSliceFlag() && !(pcPPS->getSingleSlicePerSubPicFlag()))
     {
       xWriteUvlc( pcPPS->getNumSlicesInPic( ) - 1, "pps_num_slices_in_pic_minus1" );
       if ((pcPPS->getNumSlicesInPic() - 1) > 1)
@@ -444,8 +444,8 @@ void HLSWriter::codePPS( const PPS* pcPPS )
   }
 
   xWriteFlag( pcPPS->getCabacInitPresentFlag() ? 1 : 0,   "pps_cabac_init_present_flag" );
-  xWriteUvlc( pcPPS->getNumRefIdxL0DefaultActive()-1,     "pps_num_ref_idx_default_active_minus1[0]");
-  xWriteUvlc( pcPPS->getNumRefIdxL1DefaultActive()-1,     "pps_num_ref_idx_default_active_minus1[1]");
+  xWriteUvlc(pcPPS->getNumRefIdxDefaultActive(REF_PIC_LIST_0) - 1, "pps_num_ref_idx_default_active_minus1[0]");
+  xWriteUvlc(pcPPS->getNumRefIdxDefaultActive(REF_PIC_LIST_1) - 1, "pps_num_ref_idx_default_active_minus1[1]");
   xWriteFlag( pcPPS->getRpl1IdxPresentFlag() ? 1 : 0,     "pps_rpl1_idx_present_flag");
   xWriteFlag( pcPPS->getUseWP() ? 1 : 0,  "pps_weighted_pred_flag" );   // Use of Weighting Prediction (P_SLICE)
   xWriteFlag( pcPPS->getWPBiPred() ? 1 : 0, "pps_weighted_bipred_flag" );  // Use of Weighting Bi-Prediction (B_SLICE)
@@ -592,7 +592,7 @@ void HLSWriter::codeAlfAps( APS* pcAPS )
   if (param.newFilterFlag[ChannelType::CHROMA])
   {
     xWriteFlag(param.nonLinearFlag[ChannelType::CHROMA], "alf_nonlinear_enable_flag_chroma");
-    if( MAX_NUM_ALF_ALTERNATIVES_CHROMA > 1 )
+    if constexpr (ALF_MAX_NUM_ALTERNATIVES_CHROMA > 1)
     {
       xWriteUvlc( param.numAlternativesChroma - 1, "alf_chroma_num_alts_minus1" );
     }
@@ -966,7 +966,7 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
     xWriteUvlc(floorLog2(pcSPS->getMaxBTSizeI()) - floorLog2(pcSPS->getMinQTSize(I_SLICE)), "sps_log2_diff_max_bt_min_qt_intra_slice_luma");
     xWriteUvlc(floorLog2(pcSPS->getMaxTTSizeI()) - floorLog2(pcSPS->getMinQTSize(I_SLICE)), "sps_log2_diff_max_tt_min_qt_intra_slice_luma");
   }
-  if( pcSPS->getChromaFormatIdc() != CHROMA_400 )
+  if (isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xWriteFlag(pcSPS->getUseDualITree(), "sps_qtbtt_dual_tree_intra_flag");
   }
@@ -1013,7 +1013,7 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
   }
   xWriteFlag(pcSPS->getUseLFNST() ? 1 : 0, "sps_lfnst_enabled_flag");
 
-  if (pcSPS->getChromaFormatIdc() != CHROMA_400)
+  if (isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xWriteFlag(pcSPS->getJointCbCrEnabledFlag(), "sps_joint_cbcr_enabled_flag");
     const ChromaQpMappingTable& chromaQpMappingTable = pcSPS->getChromaQpMappingTable();
@@ -1036,7 +1036,7 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
 
   xWriteFlag( pcSPS->getSAOEnabledFlag(),                                            "sps_sao_enabled_flag");
   xWriteFlag( pcSPS->getALFEnabledFlag(),                                            "sps_alf_enabled_flag" );
-  if (pcSPS->getALFEnabledFlag() && pcSPS->getChromaFormatIdc() != CHROMA_400)
+  if (pcSPS->getALFEnabledFlag() && isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xWriteFlag( pcSPS->getCCALFEnabledFlag(),                                            "sps_ccalf_enabled_flag" );
   }
@@ -1052,27 +1052,21 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
   xWriteFlag(pcSPS->getIDRRefParamListPresent() ? 1 : 0, "sps_idr_rpl_present_flag" );
   xWriteFlag(pcSPS->getRPL1CopyFromRPL0Flag() ? 1 : 0, "sps_rpl1_same_as_rpl0_flag");
 
-  const RPLList* rplList0 = pcSPS->getRPLList0();
-  const RPLList* rplList1 = pcSPS->getRPLList1();
-
-  //Write candidate for List0
-  uint32_t numberOfRPL = pcSPS->getNumRPL0();
-  xWriteUvlc(numberOfRPL, "sps_num_ref_pic_lists[0]");
-  for (int ii = 0; ii < numberOfRPL; ii++)
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
   {
-    const ReferencePictureList* rpl = rplList0->getReferencePictureList(ii);
-    xCodeRefPicList(rpl, pcSPS->getLongTermRefsPresent(), pcSPS->getBitsForPOC(), !pcSPS->getUseWP() && !pcSPS->getUseWPBiPred(), ii);
-  }
-
-  //Write candidate for List1
-  if (!pcSPS->getRPL1CopyFromRPL0Flag())
-  {
-    numberOfRPL = pcSPS->getNumRPL1();
-    xWriteUvlc(numberOfRPL, "sps_num_ref_pic_lists[1]");
-    for (int ii = 0; ii < numberOfRPL; ii++)
+    if (l == REF_PIC_LIST_1 && pcSPS->getRPL1CopyFromRPL0Flag())
     {
-      const ReferencePictureList* rpl = rplList1->getReferencePictureList(ii);
-      xCodeRefPicList(rpl, pcSPS->getLongTermRefsPresent(), pcSPS->getBitsForPOC(), !pcSPS->getUseWP() && !pcSPS->getUseWPBiPred(), ii);
+      continue;
+    }
+    const RPLList *rplList = pcSPS->getRplList(l);
+    const int      numRpl  = pcSPS->getNumRpl(l);
+    xWriteUvlc(numRpl, l == REF_PIC_LIST_0 ? "sps_num_ref_pic_lists[0]" : "sps_num_ref_pic_lists[1]");
+
+    for (int rplIdx = 0; rplIdx < numRpl; rplIdx++)
+    {
+      const ReferencePictureList *rpl = rplList->getReferencePictureList(rplIdx);
+      xCodeRefPicList(rpl, pcSPS->getLongTermRefsPresent(), pcSPS->getBitsForPOC(),
+                      !pcSPS->getUseWP() && !pcSPS->getUseWPBiPred(), rplIdx);
     }
   }
 
@@ -1146,11 +1140,11 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
   xWriteFlag( pcSPS->getUseISP() ? 1 : 0,                                             "sps_isp_enabled_flag");
   xWriteFlag( pcSPS->getUseMRL() ? 1 : 0,                                             "sps_mrl_enabled_flag");
   xWriteFlag( pcSPS->getUseMIP() ? 1 : 0,                                             "sps_mip_enabled_flag");
-  if( pcSPS->getChromaFormatIdc() != CHROMA_400)
+  if (isChromaEnabled(pcSPS->getChromaFormatIdc()))
   {
     xWriteFlag( pcSPS->getUseLMChroma() ? 1 : 0,                                      "sps_cclm_enabled_flag");
   }
-  if( pcSPS->getChromaFormatIdc() == CHROMA_420 )
+  if (pcSPS->getChromaFormatIdc() == ChromaFormat::_420)
   {
     xWriteFlag( pcSPS->getHorCollocatedChromaFlag() ? 1 : 0, "sps_chroma_horizontal_collocated_flag" );
     xWriteFlag( pcSPS->getVerCollocatedChromaFlag() ? 1 : 0, "sps_chroma_vertical_collocated_flag" );
@@ -1162,7 +1156,7 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
   }
   CHECK(pcSPS->getMaxNumMergeCand() > MRG_MAX_NUM_CANDS, "More merge candidates signalled than supported");
   xWriteFlag(pcSPS->getPLTMode() ? 1 : 0,                                                    "sps_palette_enabled_flag" );
-  if (pcSPS->getChromaFormatIdc() == CHROMA_444 && pcSPS->getLog2MaxTbSize() != 6)
+  if (pcSPS->getChromaFormatIdc() == ChromaFormat::_444 && pcSPS->getLog2MaxTbSize() != 6)
   {
     xWriteFlag(pcSPS->getUseColorTrans() ? 1 : 0, "sps_act_enabled_flag");
   }
@@ -1521,10 +1515,10 @@ void HLSWriter::codeVPS(const VPS* pcVPS)
 
       for( int j = ( pcVPS->m_sublayerDpbParamsPresentFlag ? 0 : pcVPS->m_dpbMaxTemporalId[i] ); j <= pcVPS->m_dpbMaxTemporalId[i]; j++ )
       {
-        CHECK(pcVPS->m_dpbParameters[i].m_maxDecPicBuffering[j] < 1, "MaxDecPicBuffering must be greater than 0");
-        xWriteUvlc(pcVPS->m_dpbParameters[i].m_maxDecPicBuffering[j] - 1, "dpb_max_dec_pic_buffering_minus1[i]");
-        xWriteUvlc( pcVPS->m_dpbParameters[i].m_maxNumReorderPics[j], "dpb_max_num_reorder_pics[i]" );
-        xWriteUvlc( pcVPS->m_dpbParameters[i].m_maxLatencyIncreasePlus1[j], "dpb_max_latency_increase_plus1[i]" );
+        CHECK(pcVPS->m_dpbParameters[i].maxDecPicBuffering[j] < 1, "MaxDecPicBuffering must be greater than 0");
+        xWriteUvlc(pcVPS->m_dpbParameters[i].maxDecPicBuffering[j] - 1, "dpb_max_dec_pic_buffering_minus1[i]");
+        xWriteUvlc( pcVPS->m_dpbParameters[i].maxNumReorderPics[j], "dpb_max_num_reorder_pics[i]" );
+        xWriteUvlc( pcVPS->m_dpbParameters[i].maxLatencyIncreasePlus1[j], "dpb_max_latency_increase_plus1[i]" );
       }
     }
 
@@ -1534,7 +1528,7 @@ void HLSWriter::codeVPS(const VPS* pcVPS)
       {
         xWriteUvlc( pcVPS->getOlsDpbPicSize( i ).width, "vps_ols_dpb_pic_width[i]" );
         xWriteUvlc( pcVPS->getOlsDpbPicSize( i ).height, "vps_ols_dpb_pic_height[i]" );
-        xWriteCode( pcVPS->m_olsDpbChromaFormatIdc[i], 2, "vps_ols_dpb_chroma_format[i]");
+        xWriteCode(to_underlying(pcVPS->m_olsDpbChromaFormatIdc[i]), 2, "vps_ols_dpb_chroma_format[i]");
         const Profile::Name profile = pcVPS->getProfileTierLevel(pcVPS->getOlsPtlIdx(i)).getProfileIdc();
         if (profile != Profile::NONE)
         {
@@ -1630,11 +1624,6 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
   {
     picHeader->setRecoveryPocCnt( -1 );
   }
-#if GDR_ENC_TRACE
-  printf("-gdr_pic_flag:%d\n", picHeader->getGdrPicFlag());
-  printf("-recovery_poc_cnt:%d\n", picHeader->getRecoveryPocCnt());
-  printf("-InGdrInterval:%d\n", picHeader->getInGdrInterval());
-#endif
   // PH extra bits are not written in the reference encoder
   // as these bits are reserved for future extensions
   // for( i = 0; i < NumExtraPhBits; i++ )
@@ -1666,7 +1655,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
         }
 
         const int alfChromaIdc = picHeader->getAlfEnabledFlag(COMPONENT_Cb) + picHeader->getAlfEnabledFlag(COMPONENT_Cr) * 2 ;
-        if (sps->getChromaFormatIdc() != CHROMA_400)
+        if (isChromaEnabled(sps->getChromaFormatIdc()))
         {
           xWriteCode(picHeader->getAlfEnabledFlag(COMPONENT_Cb), 1, "ph_alf_cb_enabled_flag");
           xWriteCode(picHeader->getAlfEnabledFlag(COMPONENT_Cr), 1, "ph_alf_cr_enabled_flag");
@@ -1715,7 +1704,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     if (picHeader->getLmcsEnabledFlag())
     {
       xWriteCode(picHeader->getLmcsAPSId(), 2, "ph_lmcs_aps_id");
-      if (sps->getChromaFormatIdc() != CHROMA_400)
+      if (isChromaEnabled(sps->getChromaFormatIdc()))
       {
         xWriteFlag(picHeader->getLmcsChromaResidualScaleFlag(), "ph_chroma_residual_scale_flag");
       }
@@ -1730,10 +1719,6 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     picHeader->setLmcsEnabledFlag(false);
     picHeader->setLmcsChromaResidualScaleFlag(false);
   }
-#if GDR_ENC_TRACE
-  printf("-pic_lmcs_enabled_flag:%d\n", picHeader->getLmcsEnabledFlag() ? 1 : 0);
-  printf("-pic_chroma_residual_scale_flag:%d\n", picHeader->getLmcsChromaResidualScaleFlag() ? 1 : 0);
-#endif
 
   // quantization scaling lists
   if( sps->getScalingListFlag() )
@@ -1872,63 +1857,68 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
   if (pps->getRplInfoInPhFlag())
   {
     // List0 and List1
-    for(int listIdx = 0; listIdx < 2; listIdx++)
+    for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
     {
-      if(sps->getNumRPL(listIdx) > 0 &&
-          (listIdx == 0 || (listIdx == 1 && pps->getRpl1IdxPresentFlag())))
+      const int  numRplsInSps = sps->getNumRpl(l);
+      const int  rplIdx       = picHeader->getRplIdx(l);
+      const bool rplSpsFlag   = rplIdx != -1;
+
+      if (numRplsInSps == 0)
       {
-        xWriteFlag(picHeader->getRPLIdx(listIdx) != -1 ? 1 : 0, "rpl_sps_flag[i]");
+        CHECK(rplSpsFlag, "rpl_sps_flag[1] will be infer to 0 and this is not what was expected");
       }
-      else if(sps->getNumRPL(listIdx) == 0)
+      else if (l == REF_PIC_LIST_0 || pps->getRpl1IdxPresentFlag())
       {
-        CHECK(picHeader->getRPLIdx(listIdx) != -1, "rpl_sps_flag[1] will be infer to 0 and this is not what was expected");
+        xWriteFlag(rplSpsFlag ? 1 : 0, "rpl_sps_flag[i]");
       }
-      else if(listIdx == 1)
+      else
       {
-        auto rplsSpsFlag0 = picHeader->getRPLIdx(0) != -1 ? 1 : 0;
-        auto rplsSpsFlag1 = picHeader->getRPLIdx(1) != -1 ? 1 : 0;
-        CHECK(rplsSpsFlag1 != rplsSpsFlag0, "rpl_sps_flag[1] will be infer to 0 and this is not what was expected");
+        bool rplSpsFlag0 = picHeader->getRplIdx(REF_PIC_LIST_0) != -1;
+        CHECK(rplSpsFlag != rplSpsFlag0, "rpl_sps_flag[1] will be infer to 0 and this is not what was expected");
       }
 
-      if(picHeader->getRPLIdx(listIdx) != -1)
+      if (rplSpsFlag)
       {
-        if(sps->getNumRPL(listIdx) > 1 &&
-            (listIdx == 0 || (listIdx == 1 && pps->getRpl1IdxPresentFlag())))
+        CHECK(rplIdx >= numRplsInSps, "rpl_idx is too large");
+
+        if (l == REF_PIC_LIST_0 || pps->getRpl1IdxPresentFlag())
         {
-          int numBits = ceilLog2(sps->getNumRPL( listIdx ));
-          xWriteCode(picHeader->getRPLIdx(listIdx), numBits, "rpl_idx[i]");
-        }
-        else if(sps->getNumRPL(listIdx) == 1)
-        {
-          CHECK(picHeader->getRPLIdx(listIdx) != 0, "RPL1Idx is not signalled but it is not equal to 0");
+          if (numRplsInSps > 1)
+          {
+            const int numBits = ceilLog2(numRplsInSps);
+            xWriteCode(rplIdx, numBits, "rpl_idx[i]");
+          }
         }
         else
         {
-          CHECK(picHeader->getRPL1idx() != picHeader->getRPL0idx(), "RPL1Idx is not signalled but it is not the same as RPL0Idx");
+          CHECK(rplIdx != picHeader->getRplIdx(REF_PIC_LIST_0),
+                "RPL1Idx is not signalled but it is not the same as RPL0Idx");
         }
       }
       // explicit RPL in picture header
       else
       {
-        xCodeRefPicList( picHeader->getRPL(listIdx), sps->getLongTermRefsPresent(), sps->getBitsForPOC(), !sps->getUseWP() && !sps->getUseWPBiPred(), -1);
+        xCodeRefPicList(picHeader->getRpl(l), sps->getLongTermRefsPresent(), sps->getBitsForPOC(),
+                        !sps->getUseWP() && !sps->getUseWPBiPred(), -1);
       }
 
       // POC MSB cycle signalling for LTRP
-      if (picHeader->getRPL(listIdx) && picHeader->getRPL(listIdx)->getNumberOfLongtermPictures())
+      const ReferencePictureList *rpl = picHeader->getRpl(l);
+
+      if (rpl != nullptr && rpl->getNumberOfLongtermPictures() > 0)
       {
-        for (int i = 0; i < picHeader->getRPL(listIdx)->getNumberOfLongtermPictures() + picHeader->getRPL(listIdx)->getNumberOfShorttermPictures(); i++)
+        for (int i = 0; i < rpl->getNumRefEntries(); i++)
         {
-          if (picHeader->getRPL(listIdx)->isRefPicLongterm(i))
+          if (rpl->isRefPicLongterm(i))
           {
-            if (picHeader->getRPL(listIdx)->getLtrpInSliceHeaderFlag())
+            if (rpl->getLtrpInSliceHeaderFlag())
             {
-              xWriteCode(picHeader->getRPL(listIdx)->getRefPicIdentifier(i), sps->getBitsForPOC(),
-                         "poc_lsb_lt[listIdx][rplsIdx][j]");
+              xWriteCode(rpl->getRefPicIdentifier(i), sps->getBitsForPOC(), "poc_lsb_lt[listIdx][rplsIdx][j]");
             }
-            xWriteFlag(picHeader->getRPL(listIdx)->getDeltaPocMSBPresentFlag(i) ? 1 : 0, "delta_poc_msb_present_flag[i][j]");
-            if (picHeader->getRPL(listIdx)->getDeltaPocMSBPresentFlag(i))
+            xWriteFlag(rpl->getDeltaPocMSBPresentFlag(i) ? 1 : 0, "delta_poc_msb_present_flag[i][j]");
+            if (rpl->getDeltaPocMSBPresentFlag(i))
             {
-              xWriteUvlc(picHeader->getRPL(listIdx)->getDeltaPocMSBCycleLT(i), "delta_poc_msb_cycle_lt[i][j]");
+              xWriteUvlc(rpl->getDeltaPocMSBCycleLT(i), "delta_poc_msb_cycle_lt[i][j]");
             }
           }
         }
@@ -2027,12 +2017,12 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
       xWriteFlag( picHeader->getEnableTMVPFlag(), "ph_temporal_mvp_enabled_flag" );
       if (picHeader->getEnableTMVPFlag() && pps->getRplInfoInPhFlag())
       {
-        if (picHeader->getRPL(1)->getNumRefEntries() > 0)
+        if (picHeader->getRpl(REF_PIC_LIST_1)->getNumRefEntries() > 0)
         {
           xWriteCode(picHeader->getPicColFromL0Flag(), 1, "ph_collocated_from_l0_flag");
         }
-        if ((picHeader->getPicColFromL0Flag() && picHeader->getRPL(0)->getNumRefEntries() > 1) ||
-          (!picHeader->getPicColFromL0Flag() && picHeader->getRPL(1)->getNumRefEntries() > 1))
+        if ((picHeader->getPicColFromL0Flag() && picHeader->getRpl(REF_PIC_LIST_0)->getNumRefEntries() > 1)
+            || (!picHeader->getPicColFromL0Flag() && picHeader->getRpl(REF_PIC_LIST_1)->getNumRefEntries() > 1))
         {
           xWriteUvlc(picHeader->getColRefIdx(), "ph_collocated_ref_idx");
         }
@@ -2065,13 +2055,14 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     }
 
     // mvd L1 zero flag
-    if (!pps->getRplInfoInPhFlag() || picHeader->getRPL(1)->getNumRefEntries() > 0)
+    if (!pps->getRplInfoInPhFlag() || picHeader->getRpl(REF_PIC_LIST_1)->getNumRefEntries() > 0)
     {
       xWriteFlag(picHeader->getMvdL1ZeroFlag(), "ph_mvd_l1_zero_flag");
     }
 
     // picture level BDOF disable flags
-    if (sps->getBdofControlPresentInPhFlag() && (!pps->getRplInfoInPhFlag() || picHeader->getRPL(1)->getNumRefEntries() > 0))
+    if (sps->getBdofControlPresentInPhFlag()
+        && (!pps->getRplInfoInPhFlag() || picHeader->getRpl(REF_PIC_LIST_1)->getNumRefEntries() > 0))
     {
       xWriteFlag(picHeader->getBdofDisabledFlag(), "ph_bdof_disabled_flag");
     }
@@ -2081,7 +2072,8 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     }
 
   // picture level DMVR disable flags
-    if (sps->getDmvrControlPresentInPhFlag() && (!pps->getRplInfoInPhFlag() || picHeader->getRPL(1)->getNumRefEntries() > 0))
+    if (sps->getDmvrControlPresentInPhFlag()
+        && (!pps->getRplInfoInPhFlag() || picHeader->getRpl(REF_PIC_LIST_1)->getNumRefEntries() > 0))
     {
       xWriteFlag(picHeader->getDmvrDisabledFlag(), "ph_dmvr_disabled_flag");
     }
@@ -2131,7 +2123,7 @@ void HLSWriter::codePictureHeader( PicHeader* picHeader, bool writeRbspTrailingB
     if (pps->getSaoInfoInPhFlag())
     {
       xWriteFlag(picHeader->getSaoEnabledFlag(ChannelType::LUMA), "ph_sao_luma_enabled_flag");
-      if (sps->getChromaFormatIdc() != CHROMA_400)
+      if (isChromaEnabled(sps->getChromaFormatIdc()))
       {
         xWriteFlag(picHeader->getSaoEnabledFlag(ChannelType::CHROMA), "ph_sao_chroma_enabled_flag");
       }
@@ -2232,6 +2224,13 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
   if (pcSlice->getPictureHeaderInSliceHeader())
   {
     codePictureHeader(picHeader, false);
+#if GDR_ENC_TRACE
+    printf("-gdr_pic_flag:%d\n", picHeader->getGdrPicFlag());
+    printf("-recovery_poc_cnt:%d\n", picHeader->getRecoveryPocCnt());
+    printf("-InGdrInterval:%d\n", pcSlice->getPic()->gdrParam.inGdrInterval);
+    printf("-pic_lmcs_enabled_flag:%d\n", picHeader->getLmcsEnabledFlag() ? 1 : 0);
+    printf("-pic_chroma_residual_scale_flag:%d\n", picHeader->getLmcsChromaResidualScaleFlag() ? 1 : 0);
+#endif
   }
 
   if (pcSlice->getSPS()->getSubPicInfoPresentFlag())
@@ -2343,112 +2342,106 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
   if( !pcSlice->getPPS()->getRplInfoInPhFlag() && (!pcSlice->getIdrPicFlag() || pcSlice->getSPS()->getIDRRefParamListPresent()))
   {
     // Write L0 related syntax elements
-    if (pcSlice->getSPS()->getNumRPL0() > 0)
+    const int numRplsInSps = pcSlice->getSPS()->getNumRpl(REF_PIC_LIST_0);
+    const int rplIdx       = pcSlice->getRplIdx(REF_PIC_LIST_0);
+
+    if (numRplsInSps > 0)
     {
-      xWriteFlag(pcSlice->getRPL0idx() != -1 ? 1 : 0, "ref_pic_list_sps_flag[0]");
+      xWriteFlag(rplIdx != -1 ? 1 : 0, "ref_pic_list_sps_flag[0]");
     }
-    if (pcSlice->getRPL0idx() != -1)
+    if (rplIdx != -1)
     {
-      if (pcSlice->getSPS()->getNumRPL0() > 1)
+      if (numRplsInSps > 1)
       {
-        int numBits = 0;
-        while ((1 << numBits) < pcSlice->getSPS()->getNumRPL0())
-        {
-          numBits++;
-        }
-        xWriteCode(pcSlice->getRPL0idx(), numBits, "ref_pic_list_idx[0]");
+        int numBits = ceilLog2(numRplsInSps);
+        xWriteCode(rplIdx, numBits, "ref_pic_list_idx[0]");
       }
     }
     else
     {   // write local RPL0
-      xCodeRefPicList(pcSlice->getRPL0(), pcSlice->getSPS()->getLongTermRefsPresent(),
+      xCodeRefPicList(pcSlice->getRpl(REF_PIC_LIST_0), pcSlice->getSPS()->getLongTermRefsPresent(),
                       pcSlice->getSPS()->getBitsForPOC(),
                       !pcSlice->getSPS()->getUseWP() && !pcSlice->getSPS()->getUseWPBiPred(), -1);
     }
     // Deal POC Msb cycle signalling for LTRP
-    if (pcSlice->getRPL0()->getNumberOfLongtermPictures())
+    if (pcSlice->getRpl(REF_PIC_LIST_0)->getNumberOfLongtermPictures())
     {
-      for (int i = 0;
-           i < pcSlice->getRPL0()->getNumberOfLongtermPictures() + pcSlice->getRPL0()->getNumberOfShorttermPictures();
-           i++)
+      for (int i = 0; i < pcSlice->getRpl(REF_PIC_LIST_0)->getNumRefEntries(); i++)
       {
-        if (pcSlice->getRPL0()->isRefPicLongterm(i))
+        if (pcSlice->getRpl(REF_PIC_LIST_0)->isRefPicLongterm(i))
         {
-          if (pcSlice->getRPL0()->getLtrpInSliceHeaderFlag())
+          if (pcSlice->getRpl(REF_PIC_LIST_0)->getLtrpInSliceHeaderFlag())
           {
-            xWriteCode(pcSlice->getRPL0()->getRefPicIdentifier(i), pcSlice->getSPS()->getBitsForPOC(),
+            xWriteCode(pcSlice->getRpl(REF_PIC_LIST_0)->getRefPicIdentifier(i), pcSlice->getSPS()->getBitsForPOC(),
                        "slice_poc_lsb_lt[listIdx][rplsIdx][j]");
           }
-          xWriteFlag(pcSlice->getRPL0()->getDeltaPocMSBPresentFlag(i) ? 1 : 0, "delta_poc_msb_present_flag[i][j]");
-          if (pcSlice->getRPL0()->getDeltaPocMSBPresentFlag(i))
+          xWriteFlag(pcSlice->getRpl(REF_PIC_LIST_0)->getDeltaPocMSBPresentFlag(i) ? 1 : 0,
+                     "delta_poc_msb_present_flag[i][j]");
+          if (pcSlice->getRpl(REF_PIC_LIST_0)->getDeltaPocMSBPresentFlag(i))
           {
-            xWriteUvlc(pcSlice->getRPL0()->getDeltaPocMSBCycleLT(i), "delta_poc_msb_cycle_lt[i][j]");
+            xWriteUvlc(pcSlice->getRpl(REF_PIC_LIST_0)->getDeltaPocMSBCycleLT(i), "delta_poc_msb_cycle_lt[i][j]");
           }
         }
       }
     }
 
     // Write L1 related syntax elements
-    if (pcSlice->getSPS()->getNumRPL1() > 0 && pcSlice->getPPS()->getRpl1IdxPresentFlag())
+    if (pcSlice->getSPS()->getNumRpl(REF_PIC_LIST_1) > 0 && pcSlice->getPPS()->getRpl1IdxPresentFlag())
     {
-      xWriteFlag(pcSlice->getRPL1idx() != -1 ? 1 : 0, "ref_pic_list_sps_flag[1]");
+      xWriteFlag(pcSlice->getRplIdx(REF_PIC_LIST_1) != -1 ? 1 : 0, "ref_pic_list_sps_flag[1]");
     }
-    else if (pcSlice->getSPS()->getNumRPL1() == 0)
+    else if (pcSlice->getSPS()->getNumRpl(REF_PIC_LIST_1) == 0)
     {
-      CHECK(pcSlice->getRPL1idx() != -1, "rpl_sps_flag[1] will be infer to 0 and this is not what was expected");
+      CHECK(pcSlice->getRplIdx(REF_PIC_LIST_1) != -1,
+            "rpl_sps_flag[1] will be infer to 0 and this is not what was expected");
     }
     else
     {
-      auto rplsSpsFlag0 = pcSlice->getRPL0idx() != -1 ? 1 : 0;
-      auto rplsSpsFlag1 = pcSlice->getRPL1idx() != -1 ? 1 : 0;
+      auto rplsSpsFlag0 = pcSlice->getRplIdx(REF_PIC_LIST_0) != -1 ? 1 : 0;
+      auto rplsSpsFlag1 = pcSlice->getRplIdx(REF_PIC_LIST_1) != -1 ? 1 : 0;
       CHECK(rplsSpsFlag1 != rplsSpsFlag0, "rpl_sps_flag[1] will be infer to 0 and this is not what was expected");
     }
 
-    if (pcSlice->getRPL1idx() != -1)
+    if (pcSlice->getRplIdx(REF_PIC_LIST_1) != -1)
     {
-      if (pcSlice->getSPS()->getNumRPL1() > 1 && pcSlice->getPPS()->getRpl1IdxPresentFlag())
+      if (pcSlice->getSPS()->getNumRpl(REF_PIC_LIST_1) > 1 && pcSlice->getPPS()->getRpl1IdxPresentFlag())
       {
-        int numBits = 0;
-        while ((1 << numBits) < pcSlice->getSPS()->getNumRPL1())
-        {
-          numBits++;
-        }
-        xWriteCode(pcSlice->getRPL1idx(), numBits, "ref_pic_list_idx[1]");
+        int numBits = ceilLog2(pcSlice->getSPS()->getNumRpl(REF_PIC_LIST_1));
+        xWriteCode(pcSlice->getRplIdx(REF_PIC_LIST_1), numBits, "ref_pic_list_idx[1]");
       }
-      else if (pcSlice->getSPS()->getNumRPL1() == 1)
+      else if (pcSlice->getSPS()->getNumRpl(REF_PIC_LIST_1) == 1)
       {
-        CHECK(pcSlice->getRPL1idx() != 0, "RPL1Idx is not signalled but it is not equal to 0");
+        CHECK(pcSlice->getRplIdx(REF_PIC_LIST_1) != 0, "RPL1Idx is not signalled but it is not equal to 0");
       }
       else
       {
-        CHECK(pcSlice->getRPL1idx() != pcSlice->getRPL0idx(),
+        CHECK(pcSlice->getRplIdx(REF_PIC_LIST_1) != pcSlice->getRplIdx(REF_PIC_LIST_0),
               "RPL1Idx is not signalled but it is not the same as RPL0Idx");
       }
     }
     else
     {   // write local RPL1
-      xCodeRefPicList(pcSlice->getRPL1(), pcSlice->getSPS()->getLongTermRefsPresent(),
+      xCodeRefPicList(pcSlice->getRpl(REF_PIC_LIST_1), pcSlice->getSPS()->getLongTermRefsPresent(),
                       pcSlice->getSPS()->getBitsForPOC(),
                       !pcSlice->getSPS()->getUseWP() && !pcSlice->getSPS()->getUseWPBiPred(), -1);
     }
     // Deal POC Msb cycle signalling for LTRP
-    if (pcSlice->getRPL1()->getNumberOfLongtermPictures())
+    if (pcSlice->getRpl(REF_PIC_LIST_1)->getNumberOfLongtermPictures())
     {
-      for (int i = 0;
-           i < pcSlice->getRPL1()->getNumberOfLongtermPictures() + pcSlice->getRPL1()->getNumberOfShorttermPictures();
-           i++)
+      for (int i = 0; i < pcSlice->getRpl(REF_PIC_LIST_1)->getNumRefEntries(); i++)
       {
-        if (pcSlice->getRPL1()->isRefPicLongterm(i))
+        if (pcSlice->getRpl(REF_PIC_LIST_1)->isRefPicLongterm(i))
         {
-          if (pcSlice->getRPL1()->getLtrpInSliceHeaderFlag())
+          if (pcSlice->getRpl(REF_PIC_LIST_1)->getLtrpInSliceHeaderFlag())
           {
-            xWriteCode(pcSlice->getRPL1()->getRefPicIdentifier(i), pcSlice->getSPS()->getBitsForPOC(),
+            xWriteCode(pcSlice->getRpl(REF_PIC_LIST_1)->getRefPicIdentifier(i), pcSlice->getSPS()->getBitsForPOC(),
                        "slice_poc_lsb_lt[listIdx][rplsIdx][j]");
           }
-          xWriteFlag(pcSlice->getRPL1()->getDeltaPocMSBPresentFlag(i) ? 1 : 0, "delta_poc_msb_present_flag[i][j]");
-          if (pcSlice->getRPL1()->getDeltaPocMSBPresentFlag(i))
+          xWriteFlag(pcSlice->getRpl(REF_PIC_LIST_1)->getDeltaPocMSBPresentFlag(i) ? 1 : 0,
+                     "delta_poc_msb_present_flag[i][j]");
+          if (pcSlice->getRpl(REF_PIC_LIST_1)->getDeltaPocMSBPresentFlag(i))
           {
-            xWriteUvlc(pcSlice->getRPL1()->getDeltaPocMSBCycleLT(i), "delta_poc_msb_cycle_lt[i][j]");
+            xWriteUvlc(pcSlice->getRpl(REF_PIC_LIST_1)->getDeltaPocMSBCycleLT(i), "delta_poc_msb_cycle_lt[i][j]");
           }
         }
       }
@@ -2460,18 +2453,18 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
   CHECK(pcSlice->isIntra() && pcSlice->getNumRefIdx(REF_PIC_LIST_0) > 0, "Bad number of refs");
   CHECK(!pcSlice->isInterB() && pcSlice->getNumRefIdx(REF_PIC_LIST_1) > 0, "Bad number of refs");
 
-  if ((!pcSlice->isIntra() && pcSlice->getRPL0()->getNumRefEntries() > 1)
-      || (pcSlice->isInterB() && pcSlice->getRPL1()->getNumRefEntries() > 1))
+  if ((!pcSlice->isIntra() && pcSlice->getRpl(REF_PIC_LIST_0)->getNumRefEntries() > 1)
+      || (pcSlice->isInterB() && pcSlice->getRpl(REF_PIC_LIST_1)->getNumRefEntries() > 1))
   {
-    const int defaultL0 =
-      std::min<int>(pcSlice->getRPL0()->getNumRefEntries(), pcSlice->getPPS()->getNumRefIdxL0DefaultActive());
+    const int defaultL0 = std::min(pcSlice->getRpl(REF_PIC_LIST_0)->getNumRefEntries(),
+                                   pcSlice->getPPS()->getNumRefIdxDefaultActive(REF_PIC_LIST_0));
 
     bool overrideFlag = pcSlice->getNumRefIdx(REF_PIC_LIST_0) != defaultL0;
 
     if (!overrideFlag && pcSlice->isInterB())
     {
-      const int defaultL1 =
-        std::min<int>(pcSlice->getRPL1()->getNumRefEntries(), pcSlice->getPPS()->getNumRefIdxL1DefaultActive());
+      const int defaultL1 = std::min(pcSlice->getRpl(REF_PIC_LIST_1)->getNumRefEntries(),
+                                     pcSlice->getPPS()->getNumRefIdxDefaultActive(REF_PIC_LIST_1));
 
       overrideFlag = pcSlice->getNumRefIdx(REF_PIC_LIST_1) != defaultL1;
     }
@@ -2479,12 +2472,12 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
     xWriteFlag(overrideFlag ? 1 : 0, "sh_num_ref_idx_active_override_flag");
     if (overrideFlag)
     {
-      if (pcSlice->getRPL0()->getNumRefEntries() > 1)
+      if (pcSlice->getRpl(REF_PIC_LIST_0)->getNumRefEntries() > 1)
       {
         xWriteUvlc(pcSlice->getNumRefIdx(REF_PIC_LIST_0) - 1, "sh_num_ref_idx_active_minus1[0]");
       }
 
-      if (pcSlice->isInterB() && pcSlice->getRPL1()->getNumRefEntries() > 1)
+      if (pcSlice->isInterB() && pcSlice->getRpl(REF_PIC_LIST_1)->getNumRefEntries() > 1)
       {
         xWriteUvlc(pcSlice->getNumRefIdx(REF_PIC_LIST_1) - 1, "sh_num_ref_idx_active_minus1[1]");
       }
@@ -2667,7 +2660,8 @@ void  HLSWriter::codeConstraintInfo  ( const ConstraintInfo* cinfo, const Profil
 
     /* picture format */
     xWriteCode(16 - cinfo->getMaxBitDepthConstraintIdc(), 4, "gci_sixteen_minus_max_bitdepth_constraint_idc");
-    xWriteCode(3 - cinfo->getMaxChromaFormatConstraintIdc(), 2, "gci_three_minus_max_chroma_format_constraint_idc");
+    xWriteCode(3 - to_underlying(cinfo->getMaxChromaFormatConstraintIdc()), 2,
+               "gci_three_minus_max_chroma_format_constraint_idc");
 
     /* NAL unit type related */
     xWriteFlag(cinfo->getNoMixedNaluTypesInPicConstraintFlag() ? 1 : 0, "gci_no_mixed_nalu_types_in_pic_constraint_flag");
@@ -2869,85 +2863,82 @@ void HLSWriter::xCodePredWeightTable( Slice* pcSlice )
   const ChromaFormat format                    = pcSlice->getSPS()->getChromaFormatIdc();
   const uint32_t     numberValidComponents     = getNumberValidComponents(format);
   const bool         hasChroma                 = isChromaEnabled(format);
-  const int          numLists                  = (pcSlice->getSliceType() == B_SLICE) ? 2 : 1;
-  bool               denomCoded                = false;
   uint32_t           totalSignalledWeightFlags = 0;
 
-  if ( (pcSlice->getSliceType()==P_SLICE && pcSlice->getPPS()->getUseWP()) || (pcSlice->getSliceType()==B_SLICE && pcSlice->getPPS()->getWPBiPred()) )
+  wp = pcSlice->getWpScaling(REF_PIC_LIST_0, 0);
+
+  xWriteUvlc(wp[COMPONENT_Y].log2WeightDenom, "luma_log2_weight_denom");
+
+  if (hasChroma)
   {
-    for (int listIdx = 0; listIdx < numLists; listIdx++)   // loop over l0 and l1 syntax elements
+    CHECK(wp[COMPONENT_Cb].log2WeightDenom != wp[COMPONENT_Cr].log2WeightDenom,
+          "Chroma blocks of different size not supported");
+    const int deltaDenom = (wp[COMPONENT_Cb].log2WeightDenom - wp[COMPONENT_Y].log2WeightDenom);
+    xWriteSvlc(deltaDenom, "delta_chroma_log2_weight_denom");
+  }
+
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
+  {
+    const bool l0 = l == REF_PIC_LIST_0;
+
+    if (!l0 && !pcSlice->isInterB())
     {
-      RefPicList eRefPicList = listIdx ? REF_PIC_LIST_1 : REF_PIC_LIST_0;
+      continue;
+    }
 
-      // NOTE: wp[].log2WeightDenom and wp[].presentFlag are actually per-channel-type settings.
+    // NOTE: wp[].log2WeightDenom and wp[].presentFlag are actually per-channel-type settings.
 
-      for (int refIdx = 0; refIdx < pcSlice->getNumRefIdx(eRefPicList); refIdx++)
+    for (int refIdx = 0; refIdx < pcSlice->getNumRefIdx(l); refIdx++)
+    {
+      wp = pcSlice->getWpScaling(l, refIdx);
+      xWriteFlag(wp[COMPONENT_Y].presentFlag, (l0 ? "luma_weight_l0_flag[i]" : "luma_weight_l1_flag[i]"));
+      totalSignalledWeightFlags += wp[COMPONENT_Y].presentFlag;
+    }
+    if (hasChroma)
+    {
+      for (int refIdx = 0; refIdx < pcSlice->getNumRefIdx(l); refIdx++)
       {
-        wp = pcSlice->getWpScaling(eRefPicList, refIdx);
-        if (!denomCoded)
-        {
-          int deltaDenom;
-          xWriteUvlc(wp[COMPONENT_Y].log2WeightDenom, "luma_log2_weight_denom");
+        wp = pcSlice->getWpScaling(l, refIdx);
+        CHECK(wp[COMPONENT_Cb].presentFlag != wp[COMPONENT_Cr].presentFlag,
+              "Inconsistent settings for chroma channels");
+        xWriteFlag(wp[COMPONENT_Cb].presentFlag, (l0 ? "chroma_weight_l0_flag[i]" : "chroma_weight_l1_flag[i]"));
+        totalSignalledWeightFlags += 2 * wp[COMPONENT_Cb].presentFlag;
+      }
+    }
 
-          if (hasChroma)
+    for (int refIdx = 0; refIdx < pcSlice->getNumRefIdx(l); refIdx++)
+    {
+      wp = pcSlice->getWpScaling(l, refIdx);
+      if (wp[COMPONENT_Y].presentFlag)
+      {
+        int deltaWeight = (wp[COMPONENT_Y].codedWeight - (1 << wp[COMPONENT_Y].log2WeightDenom));
+        xWriteSvlc(deltaWeight, (l0 ? "delta_luma_weight_l0[i]" : "delta_luma_weight_l1[i]"));
+        xWriteSvlc(wp[COMPONENT_Y].codedOffset, (l0 ? "luma_offset_l0[i]" : "luma_offset_l1[i]"));
+      }
+
+      if (hasChroma)
+      {
+        if (wp[COMPONENT_Cb].presentFlag)
+        {
+          for (int j = COMPONENT_Cb; j < numberValidComponents; j++)
           {
             CHECK(wp[COMPONENT_Cb].log2WeightDenom != wp[COMPONENT_Cr].log2WeightDenom,
                   "Chroma blocks of different size not supported");
-            deltaDenom = (wp[COMPONENT_Cb].log2WeightDenom - wp[COMPONENT_Y].log2WeightDenom);
-            xWriteSvlc(deltaDenom, "delta_chroma_log2_weight_denom");
-          }
-          denomCoded = true;
-        }
-        xWriteFlag(wp[COMPONENT_Y].presentFlag, listIdx == 0 ? "luma_weight_l0_flag[i]" : "luma_weight_l1_flag[i]");
-        totalSignalledWeightFlags += wp[COMPONENT_Y].presentFlag;
-      }
-      if (hasChroma)
-      {
-        for (int refIdx = 0; refIdx < pcSlice->getNumRefIdx(eRefPicList); refIdx++)
-        {
-          wp = pcSlice->getWpScaling(eRefPicList, refIdx);
-          CHECK(wp[COMPONENT_Cb].presentFlag != wp[COMPONENT_Cr].presentFlag,
-                "Inconsistent settings for chroma channels");
-          xWriteFlag(wp[COMPONENT_Cb].presentFlag,
-                     listIdx == 0 ? "chroma_weight_l0_flag[i]" : "chroma_weight_l1_flag[i]");
-          totalSignalledWeightFlags += 2 * wp[COMPONENT_Cb].presentFlag;
-        }
-      }
+            int deltaWeight = (wp[j].codedWeight - (1 << wp[COMPONENT_Cb].log2WeightDenom));
+            xWriteSvlc(deltaWeight, (l0 ? "delta_chroma_weight_l0[i]" : "delta_chroma_weight_l1[i]"));
 
-      for (int refIdx = 0; refIdx < pcSlice->getNumRefIdx(eRefPicList); refIdx++)
-      {
-        wp = pcSlice->getWpScaling(eRefPicList, refIdx);
-        if (wp[COMPONENT_Y].presentFlag)
-        {
-          int deltaWeight = (wp[COMPONENT_Y].codedWeight - (1 << wp[COMPONENT_Y].log2WeightDenom));
-          xWriteSvlc(deltaWeight, listIdx == 0 ? "delta_luma_weight_l0[i]" : "delta_luma_weight_l1[i]");
-          xWriteSvlc(wp[COMPONENT_Y].codedOffset, listIdx == 0 ? "luma_offset_l0[i]" : "luma_offset_l1[i]");
-        }
-
-        if (hasChroma)
-        {
-          if (wp[COMPONENT_Cb].presentFlag)
-          {
-            for ( int j = COMPONENT_Cb ; j < numberValidComponents ; j++ )
-            {
-              CHECK(wp[COMPONENT_Cb].log2WeightDenom != wp[COMPONENT_Cr].log2WeightDenom,
-                    "Chroma blocks of different size not supported");
-              int deltaWeight = (wp[j].codedWeight - (1 << wp[COMPONENT_Cb].log2WeightDenom));
-              xWriteSvlc(deltaWeight, listIdx == 0 ? "delta_chroma_weight_l0[i]" : "delta_chroma_weight_l1[i]");
-
-              int range        = pcSlice->getSPS()->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag()
-                                   ? (1 << pcSlice->getSPS()->getBitDepth(ChannelType::CHROMA)) / 2
-                                   : 128;
-              int pred         = (range - ((range * wp[j].codedWeight) >> (wp[j].log2WeightDenom)));
-              int deltaChroma  = (wp[j].codedOffset - pred);
-              xWriteSvlc(deltaChroma, listIdx == 0 ? "delta_chroma_offset_l0[i]" : "delta_chroma_offset_l1[i]");
-            }
+            int range       = pcSlice->getSPS()->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag()
+                                ? (1 << pcSlice->getSPS()->getBitDepth(ChannelType::CHROMA)) / 2
+                                : 128;
+            int pred        = (range - ((range * wp[j].codedWeight) >> (wp[j].log2WeightDenom)));
+            int deltaChroma = (wp[j].codedOffset - pred);
+            xWriteSvlc(deltaChroma, (l0 ? "delta_chroma_offset_l0[i]" : "delta_chroma_offset_l1[i]"));
           }
         }
       }
     }
-    CHECK(totalSignalledWeightFlags > 24, "Too many signalled weight flags");
   }
+  CHECK(totalSignalledWeightFlags > 24, "Too many signalled weight flags");
 }
 
 void HLSWriter::xCodePredWeightTable(PicHeader *picHeader, const PPS *pps, const SPS *sps)
@@ -2956,56 +2947,57 @@ void HLSWriter::xCodePredWeightTable(PicHeader *picHeader, const PPS *pps, const
   const ChromaFormat format                      = sps->getChromaFormatIdc();
   const uint32_t     numberValidComponents       = getNumberValidComponents(format);
   const bool         chroma                      = isChromaEnabled(format);
-  bool               denomCoded                  = false;
   uint32_t           totalSignalledWeightFlags   = 0;
 
-  uint32_t numLxWeights                          = picHeader->getNumL0Weights();
-  bool     moreSyntaxToBeParsed                  = true;
-  for (int numRef = 0; numRef < NUM_REF_PIC_LIST_01 && moreSyntaxToBeParsed; numRef++)   // loop over l0 and l1 syntax elements
+  wp = picHeader->getWpScaling(REF_PIC_LIST_0, 0);
+  xWriteUvlc(wp[COMPONENT_Y].log2WeightDenom, "luma_log2_weight_denom");
+
+  if (chroma)
   {
-    RefPicList refPicList = (numRef ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
-    // NOTE: wp[].log2WeightDenom and wp[].presentFlag are actually per-channel-type settings.
+    CHECK(wp[COMPONENT_Cb].log2WeightDenom != wp[COMPONENT_Cr].log2WeightDenom,
+          "Chroma blocks of different size not supported");
+    const int deltaDenom = (wp[COMPONENT_Cb].log2WeightDenom - wp[COMPONENT_Y].log2WeightDenom);
+    xWriteSvlc(deltaDenom, "delta_chroma_log2_weight_denom");
+  }
+
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
+  {
+    const bool l0 = l == REF_PIC_LIST_0;
+
+    int numLxWeights = 0;
+    if (l0 || pps->getWPBiPred())
+    {
+      numLxWeights = picHeader->getNumWeights(l);
+      xWriteUvlc(numLxWeights, (l0 ? "num_l0_weights" : "num_l1_weights"));
+    }
 
     for (int refIdx = 0; refIdx < numLxWeights; refIdx++)
     {
-      wp = picHeader->getWpScaling(refPicList, refIdx);
-      if (!denomCoded)
-      {
-        int deltaDenom;
-        xWriteUvlc(wp[COMPONENT_Y].log2WeightDenom, "luma_log2_weight_denom");
-
-        if (chroma)
-        {
-          CHECK(wp[COMPONENT_Cb].log2WeightDenom != wp[COMPONENT_Cr].log2WeightDenom,
-                "Chroma blocks of different size not supported");
-          deltaDenom = (wp[COMPONENT_Cb].log2WeightDenom - wp[COMPONENT_Y].log2WeightDenom);
-          xWriteSvlc(deltaDenom, "delta_chroma_log2_weight_denom");
-        }
-        denomCoded = true;
-      }
-      xWriteFlag(wp[COMPONENT_Y].presentFlag, numRef == 0 ? "luma_weight_l0_flag[i]" : "luma_weight_l1_flag[i]");
+      wp = picHeader->getWpScaling(l, refIdx);
+      xWriteFlag(wp[COMPONENT_Y].presentFlag, (l0 ? "luma_weight_l0_flag[i]" : "luma_weight_l1_flag[i]"));
       totalSignalledWeightFlags += wp[COMPONENT_Y].presentFlag;
     }
+
     if (chroma)
     {
       for (int refIdx = 0; refIdx < numLxWeights; refIdx++)
       {
-        wp = picHeader->getWpScaling(refPicList, refIdx);
+        wp = picHeader->getWpScaling(l, refIdx);
         CHECK(wp[COMPONENT_Cb].presentFlag != wp[COMPONENT_Cr].presentFlag,
               "Inconsistent settings for chroma channels");
-        xWriteFlag(wp[COMPONENT_Cb].presentFlag, numRef == 0 ? "chroma_weight_l0_flag[i]" : "chroma_weight_l1_flag[i]");
+        xWriteFlag(wp[COMPONENT_Cb].presentFlag, (l0 ? "chroma_weight_l0_flag[i]" : "chroma_weight_l1_flag[i]"));
         totalSignalledWeightFlags += 2 * wp[COMPONENT_Cb].presentFlag;
       }
     }
 
     for (int refIdx = 0; refIdx < numLxWeights; refIdx++)
     {
-      wp = picHeader->getWpScaling(refPicList, refIdx);
+      wp = picHeader->getWpScaling(l, refIdx);
       if (wp[COMPONENT_Y].presentFlag)
       {
         int deltaWeight = (wp[COMPONENT_Y].codedWeight - (1 << wp[COMPONENT_Y].log2WeightDenom));
-        xWriteSvlc(deltaWeight, numRef == 0 ? "delta_luma_weight_l0[i]" : "delta_luma_weight_l1[i]");
-        xWriteSvlc(wp[COMPONENT_Y].codedOffset, numRef == 0 ? "luma_offset_l0[i]" : "luma_offset_l1[i]");
+        xWriteSvlc(deltaWeight, (l0 ? "delta_luma_weight_l0[i]" : "delta_luma_weight_l1[i]"));
+        xWriteSvlc(wp[COMPONENT_Y].codedOffset, (l0 ? "luma_offset_l0[i]" : "luma_offset_l1[i]"));
       }
 
       if (chroma)
@@ -3017,32 +3009,20 @@ void HLSWriter::xCodePredWeightTable(PicHeader *picHeader, const PPS *pps, const
             CHECK(wp[COMPONENT_Cb].log2WeightDenom != wp[COMPONENT_Cr].log2WeightDenom,
                   "Chroma blocks of different size not supported");
             int deltaWeight = (wp[j].codedWeight - (1 << wp[COMPONENT_Cb].log2WeightDenom));
-            xWriteSvlc(deltaWeight, numRef == 0 ? "delta_chroma_weight_l0[i]" : "delta_chroma_weight_l1[i]");
+            xWriteSvlc(deltaWeight, (l0 ? "delta_chroma_weight_l0[i]" : "delta_chroma_weight_l1[i]"));
 
             int range       = sps->getSpsRangeExtension().getHighPrecisionOffsetsEnabledFlag()
                                 ? (1 << sps->getBitDepth(ChannelType::CHROMA)) / 2
                                 : 128;
             int pred        = (range - ((range * wp[j].codedWeight) >> (wp[j].log2WeightDenom)));
             int deltaChroma = (wp[j].codedOffset - pred);
-            xWriteSvlc(deltaChroma, numRef == 0 ? "delta_chroma_offset_l0[i]" : "delta_chroma_offset_l1[i]");
+            xWriteSvlc(deltaChroma, (l0 ? "delta_chroma_offset_l0[i]" : "delta_chroma_offset_l1[i]"));
           }
         }
       }
     }
-    if (numRef == 0)
-    {
-      numLxWeights         = picHeader->getNumL1Weights();
-      if (pps->getWPBiPred() == 0)
-      {
-        numLxWeights = 0;
-      }
-      else if (picHeader->getRPL(1)->getNumRefEntries() > 0)
-      {
-        xWriteUvlc(numLxWeights, "num_l1_weights");
-      }
-      moreSyntaxToBeParsed = (numLxWeights == 0) ? false : true;
-    }
   }
+
   CHECK(totalSignalledWeightFlags > 24, "Too many signalled weight flags");
 }
 

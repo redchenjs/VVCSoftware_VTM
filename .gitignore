@@ -15,3 +15,5 @@ deploy
 *.pyc
 /out/
 /doc/_minted-software-manual/
+/.idea/
+/cmake-build-*/

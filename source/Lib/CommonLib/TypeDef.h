@@ -55,25 +55,18 @@
 // clang-format off
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AB0051                                       1 // JVET-AB0051: Modification of SEI processing order SEI message
-#define JVET_AB0049                                       1 // JVET-AB0049: Modification of NNPFC
-#define JVET_AB0050                                       1 // JVET-AB0050: Add two flags for NNPFA
-#define JVET_T0056_SEI_MANIFEST                           1 // JVET-T0056: SEI manifest SEI message
-#define JVET_T0056_SEI_PREFIX_INDICATION                  1 // JVET-T0056: SEI prefix indication SEI message
-#define JVET_AB0069_SEI_PROCESSING_ORDER                  1 // JVET-AB0069: SEI processing order SEI message update
-#define JVET_AB0135_NN_SEI_COMPLEXITY_MOD                 1 // JVET-AB0135: Modification of comlexity parameters in NN characteristics SEI message
-#define JVET_AB0080                                       1 // GOP-based RPR encoder control
-#if JVET_AB0080
-#define JVET_AB0080_CHROMA_QP_FIX                         1 // fix to align chroma QP changes with luma QP changes
-#endif
-#define JVET_AB0081                                       1 // JVET-AB0081: Increased length of filters used for upscaling reconstructed pictures in VTM
-#define JVET_AB0058_NN_FRAME_RATE_UPSAMPLING              1 // JVET-AB0058: Allow for signalling nn frame rate upsampling
 
-#define JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC 1
-#define JVET_AB0072                                      1 //Green-MPEG SEI Messaging (JVET-AB0072)
-#define M60678_BALLOT_COMMENTS_OF_FI_03                  1 // m60678: Ballot comments of FI_03
+#define JVET_AC0139_UNIFIED_MERGE                         1
+#define JVET_AC0096                                       1
+#define JVET_AC0058_SEI                                   1
+#define JVET_AC0154                                       1
+#define JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE             1 
+#define JVET_AC0061_TENSOR_BITDEPTH                       1
+#define JVET_AC0062_CONSTRAINT_CHECK                      1
+#define JVET_AC0344_NNPFC_PATCH                           1
+#define JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING  1
 
-#define JVET_AB0070_POST_FILTER_HINT                      1 // JVET-AB0070: post-filter hint SEI
+
 
 //########### place macros to be be kept below this line ###############
 
@@ -84,7 +77,6 @@
 #define GDR_ENC_TRACE  0
 #define GDR_DEC_TRACE  0
 #endif
-
 
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
 
@@ -144,10 +136,8 @@
 
 #define KEEP_PRED_AND_RESI_SIGNALS                        0
 
-#if JVET_AB0072
 #ifndef GREEN_METADATA_SEI_ENABLED
 #define GREEN_METADATA_SEI_ENABLED 0 //JVET-AB0072: Analyser for the Green Metadata SEI
-#endif
 #endif
 
 // ====================================================================================================================
@@ -434,14 +424,15 @@ enum SliceType
   NUMBER_OF_SLICE_TYPES = 3
 };
 
-/// chroma formats (according to how the monochrome or the color planes are intended to be coded)
-enum ChromaFormat
+// chroma formats (according to how the monochrome or the color planes are intended to be coded)
+enum class ChromaFormat : uint8_t
 {
-  CHROMA_400        = 0,
-  CHROMA_420        = 1,
-  CHROMA_422        = 2,
-  CHROMA_444        = 3,
-  NUM_CHROMA_FORMAT = 4
+  _400 = 0,
+  _420,
+  _422,
+  _444,
+  NUM,
+  UNDEFINED = NUM
 };
 
 enum class ChannelType : uint8_t
@@ -509,13 +500,6 @@ enum MATRIX_COEFFICIENTS // Table E.5 (Matrix coefficients)
   MATRIX_COEFFICIENTS_YCGCO                         = 8,
   MATRIX_COEFFICIENTS_BT2020_NON_CONSTANT_LUMINANCE = 9,
   MATRIX_COEFFICIENTS_BT2020_CONSTANT_LUMINANCE     = 10,
-};
-
-enum DeblockEdgeDir
-{
-  EDGE_VER     = 0,
-  EDGE_HOR     = 1,
-  NUM_EDGE_DIR = 2
 };
 
 /// supported prediction type
@@ -786,7 +770,18 @@ enum NNPC_PaddingType
   FIXED_PADDING = 4
 };
 
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
+#if JVET_AC0154
+enum NNPC_PurposeType
+{
+  UNKONWN                    = 0,
+  VISUAL_QUALITY_IMPROVEMENT = 1,
+  CHROMA_UPSAMPLING          = 2,
+  RESOLUTION_UPSAMPLING      = 4,
+  FRAME_RATE_UPSAMPLING      = 8,
+  BIT_DEPTH_UPSAMPLING       = 16,
+  COLOURIZATION              = 32
+};
+#else
 enum NNPC_PurposeType
 {
   UNKONWN = 0,
@@ -794,7 +789,7 @@ enum NNPC_PurposeType
   CHROMA_UPSAMPLING = 2,
   INCREASE_PICT_DIMENSION_WITHOUT_CHROMA_UPSAMPLING = 3,
   INCREASE_PICT_DIMENSION_WITH_CHROMA_UPSMAPLING = 4,
-  FRANE_RATE_UPSAMPLING = 5
+  FRAME_RATE_UPSAMPLING = 5
 };
 #endif
 
@@ -958,6 +953,38 @@ enum class MergeType : uint8_t
   IBC,
   NUM
 };
+
+static constexpr int MAX_NUM_APS(ApsType t)
+{
+  switch (t)
+  {
+  case ApsType::ALF:
+  case ApsType::SCALING_LIST:
+    return 8;
+  case ApsType::LMCS:
+    return 4;
+  default:
+    return 32;
+  }
+}
+
+static constexpr int ALF_NUM_FIXED_FILTER_SETS       = 16;
+static constexpr int ALF_CTB_MAX_NUM_APS             = MAX_NUM_APS(ApsType::ALF);
+static constexpr int ALF_MAX_NUM_ALTERNATIVES_CHROMA = 8;
+
+enum class AlfMode : int8_t
+{
+  OFF         = -1,
+  LUMA_FIXED0 = 0,
+  LUMA0       = LUMA_FIXED0 + ALF_NUM_FIXED_FILTER_SETS,
+  CHROMA0     = LUMA0 + ALF_CTB_MAX_NUM_APS,
+  NUM         = CHROMA0 + ALF_MAX_NUM_ALTERNATIVES_CHROMA
+};
+
+inline AlfMode operator+(AlfMode i, int j) { return static_cast<AlfMode>(to_underlying(i) + j); }
+inline int     operator-(AlfMode i, AlfMode j) { return to_underlying(i) - to_underlying(j); }
+
+inline bool isAlfLumaFixed(AlfMode m) { return m >= AlfMode::LUMA_FIXED0 && m < AlfMode::LUMA0; }
 
 //////////////////////////////////////////////////////////////////////////
 // Encoder modes to try out
@@ -1184,7 +1211,7 @@ public:
 public:
   bool sigChroma( ChromaFormat chromaFormat ) const
   {
-    if( chromaFormat == CHROMA_400 )
+    if (chromaFormat == ChromaFormat::_400)
     {
       return false;
     }

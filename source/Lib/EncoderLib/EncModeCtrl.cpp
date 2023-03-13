@@ -49,8 +49,6 @@
 
 #include <cmath>
 
-using namespace std;
-
 static constexpr double UNSET_IMV_COST = MAX_DOUBLE * 0.125;   // Some large, unique value
 
 void EncModeCtrl::init( EncCfg *pCfg, RateCtrl *pRateCtrl, RdCost* pRdCost )
@@ -168,17 +166,18 @@ void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& c
 
 int EncModeCtrl::xComputeDQP( const CodingStructure &cs, const Partitioner &partitioner )
 {
-  Picture* picture    = cs.picture;
-  unsigned uiAQDepth  = std::min( partitioner.currSubdiv/2, ( uint32_t ) picture->aqlayer.size() - 1 );
-  AQpLayer* pcAQLayer = picture->aqlayer[uiAQDepth];
+  const Picture *picture = cs.picture;
 
-  double dMaxQScale   = pow( 2.0, m_pcEncCfg->getQPAdaptationRange() / 6.0 );
-  double dAvgAct      = pcAQLayer->getAvgActivity();
-  double dCUAct       = pcAQLayer->getActivity( cs.area.Y().topLeft() );
-  double dNormAct     = ( dMaxQScale*dCUAct + dAvgAct ) / ( dCUAct + dMaxQScale*dAvgAct );
-  double dQpOffset    = log( dNormAct ) / log( 2.0 ) * 6.0;
-  int    iQpOffset    = int( floor( dQpOffset + 0.49999 ) );
-  return iQpOffset;
+  const unsigned  aqDepth = std::min(partitioner.currSubdiv / 2, (uint32_t) picture->aqlayer.size() - 1);
+  const AQpLayer *aqLayer = picture->aqlayer[aqDepth];
+
+  const double maxQpScale   = pow(2.0, m_pcEncCfg->getQPAdaptationRange() / 6.0);
+  const double avgActivity  = aqLayer->getAvgActivity();
+  const double cuActivity   = aqLayer->getActivity(cs.area.Y().topLeft());
+  const double normActivity = (maxQpScale * cuActivity + avgActivity) / (cuActivity + maxQpScale * avgActivity);
+  const double qpOffset     = std::log2(normActivity) * 6.0;
+
+  return int(floor(qpOffset + 0.49999));
 }
 
 
@@ -322,7 +321,7 @@ int EncModeCtrl::calculateLumaDQPsmooth(const CPelBuf& rcOrg, int baseQP, double
     }
     if (diff < thr)
     {
-      qp = max(limit, min(0, (int)(scale*(double)baseQP + offset)));
+      qp = std::max(limit, std::min(0, (int) (scale * (double) baseQP + offset)));
     }
   }
   return qp;
@@ -1359,33 +1358,41 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
       // add inter modes
       if( m_pcEncCfg->getUseEarlySkipDetection() )
       {
+#if !JVET_AC0139_UNIFIED_MERGE
         if( cs.sps->getUseGeo() && cs.slice->isInterB() )
         {
-          m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_GEO, ETO_STANDARD, qp } );
+          m_ComprCUCtxList.back().testModes.push_back({ ETM_MERGE_GEO, ETO_STANDARD, qp });
         }
+#endif
         m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_SKIP,  ETO_STANDARD, qp } );
+#if !JVET_AC0139_UNIFIED_MERGE
         if (cs.sps->getUseAffine() || (cs.sps->getSbTMVPEnabledFlag() && cs.slice->getPicHeader()->getEnableTMVPFlag()))
         {
           m_ComprCUCtxList.back().testModes.push_back( { ETM_AFFINE,    ETO_STANDARD, qp } );
         }
+#endif
         m_ComprCUCtxList.back().testModes.push_back( { ETM_INTER_ME,    ETO_STANDARD, qp } );
       }
       else
       {
         m_ComprCUCtxList.back().testModes.push_back( { ETM_INTER_ME,    ETO_STANDARD, qp } );
+#if !JVET_AC0139_UNIFIED_MERGE
         if( cs.sps->getUseGeo() && cs.slice->isInterB() )
         {
           m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_GEO, ETO_STANDARD, qp } );
         }
+#endif
         m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_SKIP,  ETO_STANDARD, qp } );
+#if !JVET_AC0139_UNIFIED_MERGE
         if (cs.sps->getUseAffine() || (cs.sps->getSbTMVPEnabledFlag() && cs.slice->getPicHeader()->getEnableTMVPFlag()))
         {
           m_ComprCUCtxList.back().testModes.push_back( { ETM_AFFINE,    ETO_STANDARD, qp } );
         }
+#endif
       }
       if (m_pcEncCfg->getUseHashME())
       {
-        int minSize = min(cs.area.lwidth(), cs.area.lheight());
+        int minSize = std::min(cs.area.lwidth(), cs.area.lheight());
         if (minSize < 128 && minSize >= 4)
         {
           m_ComprCUCtxList.back().testModes.push_back({ ETM_HASH_INTER, ETO_STANDARD, qp });
@@ -2105,7 +2112,6 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
   xExtractFeatures( encTestmode, *tempCS );
 
   ComprCUCtx& cuECtx = m_ComprCUCtxList.back();
-
 
   if(      encTestmode.type == ETM_SPLIT_BT_H )
   {

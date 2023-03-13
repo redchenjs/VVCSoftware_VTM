@@ -95,6 +95,10 @@ protected:
   uint32_t      m_temporalSubsampleRatio;                         ///< temporal subsample ratio, 2 means code every two frames
   int       m_sourceWidth;                                   ///< source width in pixel
   int       m_sourceHeight;                                  ///< source height in pixel (when interlaced = field height)
+  double    m_sourceScalingRatioHor;                          ////< source scaling ratio Horizontal
+  double    m_sourceScalingRatioVer;                          ////< source scaling ratio Vertical
+  int       m_sourceWidthBeforeScale;                         ///< source width in pixel before applying source scaling ratio Horizontal 
+  int       m_sourceHeightBeforeScale;                        ///< source height in pixel before applying source scaling ratio Vertical (when interlaced = field height)
 #if EXTENSION_360_VIDEO
   int       m_inputFileWidth;                                 ///< width of image in input file  (this is equivalent to sourceWidth,  if sourceWidth  is not subsequently altered due to padding)
   int       m_inputFileHeight;                                ///< height of image in input file (this is equivalent to sourceHeight, if sourceHeight is not subsequently altered due to padding)
@@ -137,7 +141,7 @@ protected:
   bool      m_gciPresentFlag;
   bool      m_bIntraOnlyConstraintFlag;
   uint32_t  m_maxBitDepthConstraintIdc;
-  int       m_maxChromaFormatConstraintIdc;
+  ChromaFormat m_maxChromaFormatConstraintIdc;
   bool      m_allLayersIndependentConstraintFlag;
   bool      m_noMrlConstraintFlag;
   bool      m_noIspConstraintFlag;
@@ -415,6 +419,14 @@ protected:
   bool      m_usePbIntraFast;
   bool      m_useAMaxBT;
   bool      m_useFastMrg;
+#if JVET_AC0139_UNIFIED_MERGE
+  int       m_maxMergeRdCandNumTotal;
+  int       m_mergeRdCandQuotaRegular;
+  int       m_mergeRdCandQuotaRegularSmallBlk;
+  int       m_mergeRdCandQuotaSubBlk;
+  int       m_mergeRdCandQuotaCiip;
+  int       m_mergeRdCandQuotaGpm;
+#endif
   bool      m_e0023FastEnc;
   bool      m_contentBasedFastQtbt;
   bool      m_useNonLinearAlfLuma;
@@ -437,8 +449,7 @@ protected:
   bool      m_highPrecisionOffsetsEnabledFlag;
 
   //coding tools (chroma format)
-  ChromaFormat m_chromaFormatIDC;
-
+  ChromaFormat m_chromaFormatIdc;
 
   // coding tool (SAO)
   bool      m_useSao;
@@ -723,73 +734,80 @@ protected:
   bool                  m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AC0154
+  uint32_t              m_nnPostFilterSEICharacteristicsOutColourFormatIdc[MAX_NUM_NN_POST_FILTERS];
+#endif
   uint32_t              m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AC0061_TENSOR_BITDEPTH
+  uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
+#else
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
-  bool                  m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
-#if M60678_BALLOT_COMMENTS_OF_FI_03
-  uint32_t              m_nnPostFilterSEICharacteristicsInpFormatIdc[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t              m_nnPostFilterSEICharacteristicsInpSampleIdc[MAX_NUM_NN_POST_FILTERS];
 #endif
+  bool                  m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsInpFormatIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsColPrimaries[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsTransCharacteristics[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsMatrixCoeffs[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsInpOrderIdc[MAX_NUM_NN_POST_FILTERS];
-#if M60678_BALLOT_COMMENTS_OF_FI_03
   uint32_t              m_nnPostFilterSEICharacteristicsOutFormatIdc[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t              m_nnPostFilterSEICharacteristicsOutSampleIdc[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsOutOrderIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPatchWidthMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AC0344_NNPFC_PATCH
+  uint32_t              m_nnPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1[MAX_NUM_NN_POST_FILTERS];
+#endif
   uint32_t              m_nnPostFilterSEICharacteristicsOverlap[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPaddingType[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsLumaPadding[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsCbPadding[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsCrPadding[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   bool                  m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t              m_nnPostFilterSEICharacteristicsComplexityIdc[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::string           m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsNumParametersIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
   uint32_t              m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
-#endif
 
   bool                  m_nnPostFilterSEIActivationEnabled;
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  uint32_t              m_nnPostFilterSEIActivationTargetId;
+#else
   uint32_t              m_nnPostFilterSEIActivationId;
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
-  uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[MAX_NUM_NN_POST_FILTERS];
-  std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
 #endif
-#if JVET_AB0050
+  #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+  uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
+  #else
+  uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[MAX_NUM_NN_POST_FILTERS];
+  #endif
+  std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+  std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
+#endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
-#endif
 
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
-#if JVET_AB0069_SEI_PROCESSING_ORDER
   std::vector<uint16_t>  m_poSEIProcessingOrder;
+#if JVET_AC0058_SEI
+  std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
 #else
-  std::vector<uint8_t>  m_poSEIProcessingOrder;
+  uint32_t m_numofSEIMessages;
 #endif
-  uint32_t              m_numofSEIMessages;
 
-#if JVET_AB0070_POST_FILTER_HINT
+
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
   bool                 m_postFilterHintSEIPersistenceFlag;
@@ -798,7 +816,6 @@ protected:
   uint32_t             m_postFilterHintSEIType;
   bool                 m_postFilterHintSEIChromaCoeffPresentFlag;
   std::vector<int32_t> m_postFilterHintValues;
-#endif
 
   bool                  m_constrainedRaslEncoding;
 
@@ -809,12 +826,8 @@ protected:
   int                   m_sariSarWidth;
   int                   m_sariSarHeight;
 
-#if JVET_T0056_SEI_MANIFEST
   bool      m_SEIManifestSEIEnabled;
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   bool      m_SEIPrefixIndicationSEIEnabled;
-#endif 
   bool                  m_phaseIndicationSEIEnabledFullResolution;
   int                   m_piHorPhaseNumFullResolution;
   int                   m_piHorPhaseDenMinus1FullResolution;
@@ -957,7 +970,6 @@ protected:
   bool        m_rprEnabledFlag;
   double      m_scalingRatioHor;
   double      m_scalingRatioVer;
-#if JVET_AB0080
   bool        m_gopBasedRPREnabledFlag;
   int         m_gopBasedRPRQPThreshold;
   double      m_scalingRatioHor2;
@@ -970,19 +982,24 @@ protected:
   int         m_qpOffsetRPR;
   int         m_qpOffsetRPR2;
   int         m_qpOffsetRPR3;
-#if JVET_AB0080_CHROMA_QP_FIX
   int         m_qpOffsetChromaRPR;
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
-#endif
+#if JVET_AC0096
+  int         m_rprSwitchingResolutionOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
+  int         m_rprSwitchingQPOffsetOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
+  int         m_rprSwitchingListSize;
+  bool        m_rprFunctionalityTestingEnabledFlag;
+  bool        m_rprPopulatePPSatIntraFlag;
+  int         m_rprSwitchingSegmentSize;
+  double      m_rprSwitchingTime;
 #endif
   bool        m_resChangeInClvsEnabled;
+  bool        m_refMetricsEnabled;
   double      m_fractionOfFrames;                             ///< encode a fraction of the frames as specified in FramesToBeEncoded
   int         m_switchPocPeriod;
   int         m_upscaledOutput;                               ////< Output upscaled (2), decoded cropped but in full resolution buffer (1) or decoded cropped (0, default) picture for RPR.
-#if JVET_AB0081
   int         m_upscaleFilterForDisplay;
-#endif
   bool        m_craAPSreset;
   bool        m_rprRASLtoolSwitch;
   bool        m_avoidIntraInDepLayer;

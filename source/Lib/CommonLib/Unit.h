@@ -122,7 +122,7 @@ inline Size recalcSize( const ChromaFormat _cf, const ChannelType srcCHt, const 
 
 struct CompArea : public Area
 {
-  CompArea() : Area(), chromaFormat(NUM_CHROMA_FORMAT), compID(MAX_NUM_TBLOCKS)                                                                                                                                 { }
+  CompArea() : Area(), chromaFormat(ChromaFormat::UNDEFINED), compID(MAX_NUM_TBLOCKS) {}
   CompArea(const ComponentID _compID, const ChromaFormat _cf, const Area &_area, const bool isLuma = false)                                          : Area(_area),          chromaFormat(_cf), compID(_compID) { if (isLuma) xRecalcLumaToChroma(); }
   CompArea(const ComponentID _compID, const ChromaFormat _cf, const Position& _pos, const Size& _size, const bool isLuma = false)                    : Area(_pos, _size),    chromaFormat(_cf), compID(_compID) { if (isLuma) xRecalcLumaToChroma(); }
   CompArea(const ComponentID _compID, const ChromaFormat _cf, const uint32_t _x, const uint32_t _y, const uint32_t _w, const uint32_t _h, const bool isLuma = false) : Area(_x, _y, _w, _h), chromaFormat(_cf), compID(_compID) { if (isLuma) xRecalcLumaToChroma(); }
@@ -144,7 +144,10 @@ struct CompArea : public Area
   Position bottomLeftComp (const ComponentID _compID) const { return recalcPosition(chromaFormat, compID, _compID, { x                        , (PosType) (y + height - 1 )}); }
   Position bottomRightComp(const ComponentID _compID) const { return recalcPosition(chromaFormat, compID, _compID, { (PosType) (x + width - 1), (PosType) (y + height - 1 )}); }
 
-  bool valid() const { return chromaFormat < NUM_CHROMA_FORMAT && compID < MAX_NUM_TBLOCKS && width != 0 && height != 0; }
+  bool valid() const
+  {
+    return chromaFormat != ChromaFormat::UNDEFINED && compID < MAX_NUM_TBLOCKS && width != 0 && height != 0;
+  }
 
   const bool operator==(const CompArea &other) const
   {
@@ -183,7 +186,7 @@ struct UnitArea
   ChromaFormat chromaFormat;
   UnitBlocksType blocks;
 
-  UnitArea() : chromaFormat(NUM_CHROMA_FORMAT) { }
+  UnitArea() : chromaFormat(ChromaFormat::UNDEFINED) {}
   UnitArea(const ChromaFormat _chromaFormat);
   UnitArea(const ChromaFormat _chromaFormat, const Area &area);
   UnitArea(const ChromaFormat _chromaFormat, const CompArea  &blkY);
@@ -245,7 +248,7 @@ struct UnitArea
   const PosType   lx() const { return Y().x; }           /*! luma x-pos */
   const PosType   ly() const { return Y().y; }           /*! luma y-pos */
 
-  bool valid() const { return chromaFormat != NUM_CHROMA_FORMAT && blocks.size() > 0; }
+  bool valid() const { return chromaFormat != ChromaFormat::UNDEFINED && blocks.size() > 0; }
 };
 
 inline UnitArea clipArea(const UnitArea &area, const UnitArea &boundingBox)
@@ -454,6 +457,8 @@ struct PredictionUnit : public UnitArea, public IntraPredictionData, public Inte
   const MotionInfo& getMotionInfo( const Position& pos ) const;
   MotionBuf         getMotionBuf();
   CMotionBuf        getMotionBuf() const;
+
+  bool isAffineBlock() const {return cu->affine && mergeType != MergeType::SUBPU_ATMVP;}
 };
 
 // ---------------------------------------------------------------------------
@@ -520,7 +525,7 @@ private:
 #include <iterator>
 
 template<typename T>
-class UnitIterator : public std::iterator<std::forward_iterator_tag, T>
+class UnitIterator
 {
 private:
   T* m_punit;

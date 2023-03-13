@@ -187,6 +187,7 @@ private:
     int8_t betaOffsetDiv2;
     int8_t tcOffsetDiv2;
   } m_deblockParam[MAX_ENCODER_DEBLOCKING_QUALITY_LAYERS];
+  PelStorage*             m_pcRefLayerRescaledPicYuv;
 
   // members needed for adaptive max BT size
   struct BlkStat

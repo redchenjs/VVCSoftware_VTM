@@ -88,21 +88,15 @@ public:
   bool initSEIAnnotatedRegions(SEIAnnotatedRegions *sei, int currPOC);
   void initSEIColourTransformInfo(SEIColourTransformInfo* sei);
   void readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *seiAnnoRegion, bool &failed);
-#if JVET_T0056_SEI_MANIFEST
   void initSEISEIManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessage);
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   void initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei);
-#endif
 
   void initSEIMultiviewViewPosition(SEIMultiviewViewPosition *sei);
   void initSEIShutterIntervalInfo(SEIShutterIntervalInfo *sei);
   void initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx);
   void initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei);
   void initSEIProcessingOrderInfo(SEIProcessingOrderInfo *sei);
-#if JVET_AB0070_POST_FILTER_HINT
   void initSEIPostFilterHint(SEIPostFilterHint *sei);
-#endif
 #if GREEN_METADATA_SEI_ENABLED
   void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);
 #endif

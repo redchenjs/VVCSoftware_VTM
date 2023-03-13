@@ -531,32 +531,48 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
                                                   : m_pcCfg->getGOPEntry(gopId).m_CbQPoffset;
     int        crQP   = bUseIntraOrPeriodicOffset ? m_pcCfg->getSliceChromaOffsetQpIntraOrPeriodic(true)
                                                   : m_pcCfg->getGOPEntry(gopId).m_CrQPoffset;
-#if JVET_AB0080_CHROMA_QP_FIX
     // adjust chroma QP such that it corresponds to the luma QP change when encoding in reduced resolution
+#if JVET_AC0096
+    if (m_pcCfg->getGOPBasedRPREnabledFlag() || m_pcCfg->getRprFunctionalityTestingEnabledFlag())
+#else
     if (m_pcCfg->getGOPBasedRPREnabledFlag())
+#endif
     {
       auto mappedQpDelta = [&](ComponentID c, int qpOffset) -> int {
         const int mappedQpBefore = rpcSlice->getSPS()->getMappedChromaQpValue(c, qp - qpOffset);
         const int mappedQpAfter = rpcSlice->getSPS()->getMappedChromaQpValue(c, qp);
         return mappedQpBefore - mappedQpAfter + qpOffset;
       };
-      if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR) // ScalingRatioHor/ScalingRatioVer
+#if JVET_AC0096
+      if (m_pcCfg->getRprFunctionalityTestingEnabledFlag())
       {
-        cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR());
-        crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR());
+        int currPoc = rpcSlice->getPOC() + m_pcCfg->getFrameSkip();
+        int rprSegment = m_pcCfg->getRprSwitchingSegment(currPoc);
+        cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getRprSwitchingQPOffsetOrderList(rprSegment));
+        crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getRprSwitchingQPOffsetOrderList(rprSegment));
       }
-      else if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2) // ScalingRatioHor2/ScalingRatioVer2
+      else
       {
-        cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR2());
-        crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR2());
-      }
-      else if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3) // ScalingRatioHor3/ScalingRatioVer3
-      {
-        cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR3());
-        crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR3());
-      }
-    }
 #endif
+        if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR) // ScalingRatioHor/ScalingRatioVer
+        {
+          cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR());
+          crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR());
+        }
+        else if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2) // ScalingRatioHor2/ScalingRatioVer2
+        {
+          cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR2());
+          crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR2());
+        }
+        else if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3) // ScalingRatioHor3/ScalingRatioVer3
+        {
+          cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR3());
+          crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR3());
+        }
+#if JVET_AC0096
+      }
+#endif
+    }
     int cbCrQP = (cbQP + crQP) >> 1; // use floor of average chroma QP offset for joint-Cb/Cr coding
 
     cbQP = Clip3( -12, 12, cbQP + rpcSlice->getPPS()->getQpOffset(COMPONENT_Cb) ) - rpcSlice->getPPS()->getQpOffset(COMPONENT_Cb);
@@ -747,7 +763,8 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
 
     pcPic->cs->picHeader->setGdrPicFlag(false);
     pcPic->cs->picHeader->setRecoveryPocCnt(0);
-    pcPic->cs->picHeader->setInGdrInterval(false);
+
+    pcPic->gdrParam.inGdrInterval = false;
 
     pcPic->cs->picHeader->setVirtualBoundariesPresentFlag(false);
 
@@ -769,7 +786,8 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
     // for none gdr period pictures
     if ((curPoc < gdrPocStart) || isOutGdrInterval)
     {
-      pcPic->cs->picHeader->setInGdrInterval(false);
+      pcPic->gdrParam.inGdrInterval = false;
+      pcPic->gdrParam.verBoundary = -1;
       pcPic->cs->picHeader->setVirtualBoundariesPresentFlag(false);
 
       pcPic->cs->picHeader->setNumHorVirtualBoundaries(0);
@@ -784,11 +802,11 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
     {
       if (curPoc == recoveryPicPoc)
       {
-        pcPic->cs->picHeader->setInGdrInterval(false);
+        pcPic->gdrParam.inGdrInterval = false;
       }
       else
       {
-        pcPic->cs->picHeader->setInGdrInterval(true);
+        pcPic->gdrParam.inGdrInterval = true;
       }
 
       pcPic->cs->picHeader->setVirtualBoundariesPresentFlag(true);
@@ -838,6 +856,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
       }
 
       pcPic->cs->picHeader->setVirtualBoundariesPosX(endGdrX, 0);
+      pcPic->gdrParam.verBoundary = endGdrX;
 
 #if GDR_ENC_TRACE
       printf("\n");

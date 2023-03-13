@@ -38,9 +38,7 @@
 #ifndef __SEIFILMGRAINAPPCFG__
 #define __SEIFILMGRAINAPPCFG__
 
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #include "CommonLib/CommonDef.h"
 #include <vector>

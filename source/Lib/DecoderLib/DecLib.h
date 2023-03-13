@@ -54,6 +54,9 @@
 #include "CommonLib/SEI.h"
 #include "CommonLib/Unit.h"
 #include "CommonLib/Reshape.h"
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+#include "CommonLib/SEINeuralNetworkPostFiltering.h"
+#endif
 
 class InputNALUnit;
 
@@ -80,6 +83,8 @@ private:
   int                     m_pocCRA[MAX_VPS_LAYERS];             ///< POC number of the previous CRA picture
   CheckCRAFlags           m_checkCRAFlags[MAX_VPS_LAYERS];
   int                     m_latestDRAPPOC;
+  int                     m_latestEDRAPPOC;
+  bool                    m_latestEDRAPIndicationLeadingPicturesDecodableFlag;
   int                     m_associatedIRAPDecodingOrderNumber[MAX_VPS_LAYERS]; ///< Decoding order number of the previous IRAP picture
   int                     m_decodingOrderCounter;
   int                     m_puCounter;
@@ -222,11 +227,19 @@ private:
   int                     m_maxDecSliceAddrInSubPic;
   int                     m_clsVPSid;
 
+#if GDR_ENABLED
+  int m_lastGdrPoc;
+  int m_lastGdrRecoveryPocCnt;
+#endif
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  SEINeuralNetworkPostFiltering m_nnPostFiltering;
+#endif
+
 public:
   int                     m_targetSubPicIdx;
 
   DCI*                    m_dci;
-  EnumArray<ParameterSetMap<APS>, ApsType> *m_apsMapEnc;
+  EnumArray<ParameterSetMap<APS>, ApsType> *m_apsMapEnc = nullptr;
 #if GDR_LEAK_TEST
 public:
   int                     m_gdrPocRandomAccess;
@@ -271,6 +284,13 @@ public:
   void  setDecoded360SEIMessageFileName(std::string &Dump360SeiFileName) { m_decoded360SeiDumpFileName = Dump360SeiFileName; }
 #endif
   uint32_t  getNumberOfChecksumErrorsDetected() const { return m_numberOfChecksumErrorsDetected; }
+
+#if GDR_ENABLED
+  void setLastGdrPoc(int poc) { m_lastGdrPoc = poc;  }
+  int  getLastGdrPoc()        { return m_lastGdrPoc; }
+  void setLastGdrRecoveryPocCnt(int recoveryPocCnt) { m_lastGdrRecoveryPocCnt = recoveryPocCnt; }
+  int  getLastGdrRecoveryPocCnt()                     { return m_lastGdrRecoveryPocCnt; }
+#endif
 
   int  getDebugCTU( )               const { return m_debugCTU; }
   void setDebugCTU( int debugCTU )        { m_debugCTU = debugCTU; }
@@ -344,6 +364,10 @@ public:
 #if JVET_Z0120_SII_SEI_PROCESSING
   bool  getShutterFilterFlag()        const { return m_ShutterFilterEnable; }
   void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
+#endif
+
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  void applyNnPostFilter();
 #endif
 
 

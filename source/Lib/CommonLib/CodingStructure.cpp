@@ -45,14 +45,6 @@
 
 XuPool g_xuPool = XuPool();
 
-const UnitScale UnitScaleArray[NUM_CHROMA_FORMAT][MAX_NUM_COMPONENT] =
-{
-  { {2,2}, {0,0}, {0,0} },  // 4:0:0
-  { {2,2}, {1,1}, {1,1} },  // 4:2:0
-  { {2,2}, {1,2}, {1,2} },  // 4:2:2
-  { {2,2}, {2,2}, {2,2} }   // 4:4:4
-};
-
 // ---------------------------------------------------------------------------
 // coding structure method definitions
 // ---------------------------------------------------------------------------
@@ -85,9 +77,7 @@ CodingStructure::CodingStructure(XuPool &xuPool)
   m_isDecomp.fill(nullptr);
 
   m_motionBuf     = nullptr;
-#if GDR_ENABLED
   picHeader = nullptr;
-#endif
 
   features.resize( NUM_ENC_FEATURES );
   treeType = TREE_D;
@@ -108,15 +98,6 @@ void CodingStructure::destroy()
   m_orgr.destroy();
 
   destroyCoeffs();
-
-#if GDR_ENABLED
-  if (picHeader && m_gdrEnabled)
-  {
-    delete picHeader;
-  }
-
-  picHeader = nullptr;
-#endif
 
   for (auto &ptr: m_isDecomp)
   {
@@ -158,7 +139,7 @@ void CodingStructure::releaseIntermediateData()
 }
 
 #if GDR_ENABLED
-bool CodingStructure::containRefresh(int begX, int endX) const
+bool CodingStructure::containRefresh(const int begX, const int endX) const
 {
   if (begX == endX)
   {
@@ -168,15 +149,10 @@ bool CodingStructure::containRefresh(int begX, int endX) const
   const Area csArea      = area.Y();
   const Area refreshArea = Area(begX, area.ly(), endX - begX, std::min(slice->getPPS()->getPicHeightInLumaSamples(), area.lheight()));
 
-  if (csArea.contains(refreshArea))
-  {
-    return true;
-  }
-
-  return false;
+  return csArea.contains(refreshArea);
 }
 
-bool CodingStructure::overlapRefresh(int begX, int endX) const
+bool CodingStructure::overlapRefresh(const int begX, const int endX) const
 {
   if (begX == endX)
   {
@@ -186,12 +162,7 @@ bool CodingStructure::overlapRefresh(int begX, int endX) const
   const Area csArea = area.Y();
   const Area refreshArea = Area(begX, area.ly(), endX - begX, area.lheight());
 
-  if (csArea.overlap(refreshArea))
-  {
-    return true;
-  }
-
-  return false;
+  return csArea.overlaps(refreshArea);
 }
 
 bool CodingStructure::overlapRefresh() const
@@ -199,12 +170,10 @@ bool CodingStructure::overlapRefresh() const
   const int  csX     = area.lx();
   const int  csWidth = area.lwidth();
 
-  bool ret = overlapRefresh(csX, csX + csWidth);
-
-  return ret;
+  return overlapRefresh(csX, csX + csWidth);
 }
 
-bool CodingStructure::withinRefresh(int begX, int endX) const
+bool CodingStructure::withinRefresh(const int begX, const int endX) const
 {
   if (begX == endX)
   {
@@ -214,15 +183,10 @@ bool CodingStructure::withinRefresh(int begX, int endX) const
   const Area csArea = area.Y();
   const Area refreshArea = Area(begX, area.ly(), endX - begX, area.lheight());
 
-  if (refreshArea.contains(csArea))
-  {
-    return true;
-  }
-
-  return false;
+  return refreshArea.contains(csArea);
 }
 
-bool CodingStructure::refreshCrossTTV(int begX, int endX) const
+bool CodingStructure::refreshCrossTTV(const int begX, const int endX) const
 {
   const int  csX = area.lx();
   const int  csY = area.ly();
@@ -235,21 +199,14 @@ bool CodingStructure::refreshCrossTTV(int begX, int endX) const
   const Area csArea1 = Area(csX + (csWidth >> 2),                  csY, csWidth >> 1, csHeight);
   const Area csArea2 = Area(csX + (csWidth >> 2) + (csWidth >> 1), csY, csWidth >> 2, csHeight);
 
-  bool overlap0 = csArea0.overlap(refreshArea);
-  bool overlap1 = csArea1.overlap(refreshArea);
-  bool overlap2 = csArea2.overlap(refreshArea);
+  const bool overlap0 = csArea0.overlaps(refreshArea);
+  const bool overlap1 = csArea1.overlaps(refreshArea);
+  const bool overlap2 = csArea2.overlaps(refreshArea);
 
-  int sum = (overlap0 ? 1 : 0) + (overlap1 ? 1 : 0) + (overlap2 ? 1 : 0);
-
-  if (0 < sum)
-  {
-    return true;
-  }
-
-  return false;
+  return overlap0 || overlap1 || overlap2;
 }
 
-bool CodingStructure::refreshCrossBTV(int begX, int endX) const
+bool CodingStructure::refreshCrossBTV(const int begX, const int endX) const
 {
   const int  csX = area.lx();
   const int  csY = area.ly();
@@ -261,17 +218,10 @@ bool CodingStructure::refreshCrossBTV(int begX, int endX) const
   const Area csArea0 = Area(csX,                  csY, (csWidth >> 1), csHeight);
   const Area csArea1 = Area(csX + (csWidth >> 1), csY, (csWidth >> 1), csHeight);
 
-  bool overlap0 = csArea0.overlap(refreshArea);
-  bool overlap1 = csArea1.overlap(refreshArea);
+  const bool overlap0 = csArea0.overlaps(refreshArea);
+  const bool overlap1 = csArea1.overlaps(refreshArea);
 
-  int sum = (overlap0 ? 1 : 0) + (overlap1 ? 1 : 0);
-
-  if (0 < sum)
-  {
-    return true;
-  }
-
-  return false;
+  return overlap0 || overlap1;
 }
 
 bool CodingStructure::overlapDirty() const
@@ -300,14 +250,9 @@ bool CodingStructure::dirtyCrossTTV() const
   const bool clean1 = isClean(csArea1, ChannelType::LUMA);
   const bool clean2 = isClean(csArea2, ChannelType::LUMA);
 
-  bool allclean = clean0 && clean1 && clean2;
+  const bool allclean = clean0 && clean1 && clean2;
 
-  if (allclean)
-  {
-    return false;
-  }
-
-  return true;
+  return !allclean;
 }
 
 bool CodingStructure::dirtyCrossBTV() const
@@ -323,21 +268,12 @@ bool CodingStructure::dirtyCrossBTV() const
   const bool clean0 = isClean(csArea0, ChannelType::LUMA);
   const bool clean1 = isClean(csArea1, ChannelType::LUMA);
 
-  bool allclean = clean0 && clean1;
+  const bool allclean = clean0 && clean1;
 
-  if (allclean)
-  {
-    return false;
-  }
-
-  return true;
+  return !allclean;
 }
-#endif
 
-
-
-#if GDR_ENABLED
-bool CodingStructure::isClean(const Position &IntPos, Mv FracMv) const
+bool CodingStructure::isClean(const Position &intPos, const Mv &fracMv) const
 {
   /*
     1. non gdr picture --> false;
@@ -352,48 +288,35 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv) const
     return false;
   }
 
-  PicHeader     *curPh = curPic->cs->picHeader;
-  if (!curPh)
-  {
-    return false;
-  }
-  bool isCurGdrPicture = curPh->getInGdrInterval();
+  const bool isCurGdrPicture = curPic->gdrParam.inGdrInterval;
 
   if (isCurGdrPicture)
   {
     const int lumaPixelAway = 4;
     const int chromaPixelAway = 5;
 
-    const int iMvShift = MV_FRACTIONAL_BITS_INTERNAL;
-    const int iMvLumaFrac = (1 << iMvShift);
-    const int iMvChromaFrac = (iMvLumaFrac << 1);
+    const int mvShift = MV_FRACTIONAL_BITS_INTERNAL;
+    const int mvLumaFrac = (1 << mvShift);
+    const int mvChromaFrac = (mvLumaFrac << 1);
 
-    const bool isIntLumaMv = (FracMv.getHor() % iMvLumaFrac) == 0;
-    const bool isIntChromaMv = (FracMv.getHor() % iMvChromaFrac) == 0;
+    const bool isIntLumaMv = (fracMv.getHor() % mvLumaFrac) == 0;
+    const bool isIntChromaMv = (fracMv.getHor() % mvChromaFrac) == 0;
 
-    const int scaledEndX = curPh->getVirtualBoundariesPosX(0) << iMvShift;
+    const int scaledEndX = curPic->gdrParam.verBoundary << mvShift;
 
-
-    const Position OrigFracPos = Position(IntPos.x << iMvShift, IntPos.y << iMvShift);
-    const int lastLumaPos = ((OrigFracPos.x / iMvLumaFrac)   * iMvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << iMvShift));
-    const int lastChromaPos = ((OrigFracPos.x / iMvChromaFrac) * iMvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << iMvShift));
+    const Position origFracPos = Position(intPos.x << mvShift, intPos.y << mvShift);
+    const int lastLumaPos = ((origFracPos.x / mvLumaFrac)   * mvLumaFrac) + fracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
+    const int lastChromaPos = ((origFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
 
     const int lastPelPos = std::max(lastLumaPos, lastChromaPos);
 
-    if (lastPelPos < scaledEndX)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return (lastPelPos < scaledEndX);
   }
 
   return true;
 }
 
-bool CodingStructure::isClean(const Position &IntPos, const Mv FracMv, const Picture *const refPic) const
+bool CodingStructure::isClean(const Position &intPos, const Mv &fracMv, const Picture *const refPic) const
 {
   /*
     1. non gdr picture --> false;
@@ -406,66 +329,40 @@ bool CodingStructure::isClean(const Position &IntPos, const Mv FracMv, const Pic
     return false;
   }
 
-  if (!refPic->cs)
-  {
-    return false;
-  }
-
-  PicHeader *refPh = refPic->cs->picHeader;
-  if (!refPh)
-  {
-    return false;
-  }
-
-  bool isRefGdrPicture = refPh->getInGdrInterval();
+  const bool isRefGdrPicture = refPic->gdrParam.inGdrInterval;
 
   if (isRefGdrPicture)
   {
     const int lumaPixelAway = 4;
     const int chromaPixelAway = 5;
 
-    const int iMvShift = MV_FRACTIONAL_BITS_INTERNAL;
-    const int iMvLumaFrac = (1 << iMvShift);
-    const int iMvChromaFrac = (iMvLumaFrac << 1);
+    const int mvShift = MV_FRACTIONAL_BITS_INTERNAL;
+    const int mvLumaFrac = (1 << mvShift);
+    const int mvChromaFrac = (mvLumaFrac << 1);
 
-    const bool isIntLumaMv = (FracMv.getHor() % iMvLumaFrac) == 0;
-    const bool isIntChromaMv = (FracMv.getHor() % iMvChromaFrac) == 0;
+    const bool isIntLumaMv = (fracMv.getHor() % mvLumaFrac) == 0;
+    const bool isIntChromaMv = (fracMv.getHor() % mvChromaFrac) == 0;
 
-    const int  scaledEndX = refPh->getVirtualBoundariesPosX(0) << iMvShift;
+    const int  scaledEndX = refPic->gdrParam.verBoundary << mvShift;
 
-    const Position OrigFracPos = Position((IntPos.x) << iMvShift, IntPos.y << iMvShift);
-    const int lastLumaPos = ((OrigFracPos.x / iMvLumaFrac)   * iMvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << iMvShift));
-    const int lastChromaPos = ((OrigFracPos.x / iMvChromaFrac) * iMvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << iMvShift));
+    const Position origFracPos = Position((intPos.x) << mvShift, intPos.y << mvShift);
+    const int lastLumaPos = ((origFracPos.x / mvLumaFrac)   * mvLumaFrac) + fracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << mvShift));
+    const int lastChromaPos = ((origFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift));
 
     const int lastPelPos = std::max(lastLumaPos, lastChromaPos);
 
-    if (lastPelPos < scaledEndX)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return (lastPelPos < scaledEndX);
   }
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    const bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
-    if (isCurGdrPicture)
-    {
-      return false;
-    }
-    else
-    {
-      return true;
-    }
+    return !isCurGdrPicture;
   }
 }
 
-
-bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, int isProf) const
+bool CodingStructure::isClean(const Position &intPos, const Mv &fracMv, RefPicList e, int refIdx, bool isSubPu) const
 {
   /*
     1. non gdr picture --> false;
@@ -478,169 +375,49 @@ bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, RefPicList e, i
     return false;
   }
 
-  const Picture* const refPic = slice->getRefPic(e, refIdx);
-  const bool isExceedNumRef = (refIdx < slice->getNumRefIdx(e)) ? false : true;
+  const Picture* refPic = (refIdx == IBC_REF_IDX) ? slice->getPic() : slice->getRefPic(e, refIdx);
+  const bool isExceedNumRef = isSubPu && (refIdx >= slice->getNumRefIdx(e));
 
   if (!refPic || isExceedNumRef)
   {
     return false;
   }
 
-  if (!refPic->cs)
-  {
-    return false;
-  }
-
-  PicHeader *refPh = refPic->cs->picHeader;
-
-  if (!refPh)
-  {
-    return false;
-  }
-
-  bool isRefGdrPicture = refPh->getInGdrInterval();
+  const bool isRefGdrPicture = refPic->gdrParam.inGdrInterval;
 
   if (isRefGdrPicture)
   {
-    const int lumaPixelAway   = 4 + (isProf << 0);
-    const int chromaPixelAway = 4 + (isProf << 1);
+    const int lumaPixelAway   = 4 + (isSubPu? 1 : 0);
+    const int chromaPixelAway = 4 + (isSubPu? 2 : 0);
 
-    const int iMvShift      = MV_FRACTIONAL_BITS_INTERNAL;
-    const int iMvLumaFrac   = (1 << iMvShift);
-    const int iMvChromaFrac = (iMvLumaFrac << 1);
+    const int mvShift      = MV_FRACTIONAL_BITS_INTERNAL;
+    const int mvLumaFrac   = (1 << mvShift);
+    const int mvChromaFrac = (mvLumaFrac << 1);
 
-    const bool isIntLumaMv      = (FracMv.getHor() % iMvLumaFrac  ) == 0;
-    const bool isIntChromaMv    = isProf ? false : (FracMv.getHor() % iMvChromaFrac) == 0;
+    const bool isIntLumaMv      = (fracMv.getHor() % mvLumaFrac  ) == 0;
+    const bool isIntChromaMv    = isSubPu ? false : (fracMv.getHor() % mvChromaFrac) == 0;
 
-    const int  scaledEndX      = refPh->getVirtualBoundariesPosX(0) << iMvShift;
+    const int  scaledEndX       = refPic->gdrParam.verBoundary << mvShift;
 
 
-    const Position OrigFracPos  = Position((IntPos.x) << iMvShift, IntPos.y << iMvShift);
-    const int lastLumaPos     = ((OrigFracPos.x / iMvLumaFrac)   * iMvLumaFrac)   + FracMv.getHor() + (isIntLumaMv   ? 0 : (lumaPixelAway   << iMvShift));
-    const int lastChromaPos   = ((OrigFracPos.x / iMvChromaFrac) * iMvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << iMvShift)) ;
+    const Position origFracPos = Position((intPos.x) << mvShift, intPos.y << mvShift);
+    const int lastLumaPos      = ((origFracPos.x / mvLumaFrac)   * mvLumaFrac)   + fracMv.getHor() + (isIntLumaMv   ? 0 : (lumaPixelAway   << mvShift));
+    const int lastChromaPos    = ((origFracPos.x / mvChromaFrac) * mvChromaFrac) + fracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << mvShift)) ;
 
     const int lastPelPos    = std::max(lastLumaPos, lastChromaPos);
 
-    if (lastPelPos < scaledEndX)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return (lastPelPos < scaledEndX);
   }
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    const bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
-    if (isCurGdrPicture)
-    {
-      return false;
-    }
-    else
-    {
-      return true;
-    }
+    return !isCurGdrPicture;
   }
 }
 
-bool CodingStructure::isClean(const Position &IntPos, Mv FracMv, RefPicList e, int refIdx, bool ibc) const
-{
-  /*
-    1. non gdr picture --> false;
-    2. gdr picture
-         pos in clean area -> true
-         pos in dirty area -> false
-  */
-  if (refIdx < 0) return false;
-
-  Picture*   refPic;
-  PicHeader *refPh;
-
-  if (refIdx == IBC_REF_IDX)
-  {
-    refPic = slice->getPic();
-  }
-  else
-  {
-    refPic = slice->getRefPic(e, refIdx);
-  }
-
-  if (!refPic)
-  {
-    return false;
-  }
-
-  if (refIdx == IBC_REF_IDX)
-  {
-    refPh = picHeader;
-  }
-  else
-  {
-    if (refPic->cs)
-    {
-      return false;
-    }
-
-    refPh = refPic->cs->picHeader;
-  }
-
-  if (!refPh)
-  {
-    return false;
-  }
-
-  bool isRefGdrPicture = refPh->getInGdrInterval();
-
-  if (isRefGdrPicture)
-  {
-    const int lumaPixelAway = 4;
-    const int chromaPixelAway = 5;
-
-    const int iMvShift = MV_FRACTIONAL_BITS_INTERNAL;
-    const int iMvLumaFrac = (1 << iMvShift);
-    const int iMvChromaFrac = (iMvLumaFrac << 1);
-
-    const bool isIntLumaMv = (FracMv.getHor() % iMvLumaFrac) == 0;
-    const bool isIntChromaMv = (FracMv.getHor() % iMvChromaFrac) == 0;
-
-    const int  scaledEndX = refPh->getVirtualBoundariesPosX(0) << iMvShift;
-
-    const Position OrigFracPos = Position((IntPos.x) << iMvShift, IntPos.y << iMvShift);
-    const int lastLumaPos = ((OrigFracPos.x / iMvLumaFrac)   * iMvLumaFrac) + FracMv.getHor() + (isIntLumaMv ? 0 : (lumaPixelAway << iMvShift));
-    const int lastChromaPos = ((OrigFracPos.x / iMvChromaFrac) * iMvChromaFrac) + FracMv.getHor() + (isIntChromaMv ? 0 : (chromaPixelAway << iMvShift));
-
-    const int lastPelPos = std::max(lastLumaPos, lastChromaPos);
-
-    if (lastPelPos < scaledEndX)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-  else
-  {
-    // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
-
-    if (isCurGdrPicture)
-    {
-      return false;
-    }
-    else
-    {
-      return true;
-    }
-  }
-}
-
-
-bool CodingStructure::isClean(const Position &IntPos, RefPicList e, int refIdx) const
+bool CodingStructure::isClean(const Position &intPos, RefPicList e, int refIdx) const
 {
   /*
     1. non gdr picture --> false;
@@ -655,83 +432,44 @@ bool CodingStructure::isClean(const Position &IntPos, RefPicList e, int refIdx) 
     return false;
   }
 
-  PicHeader     *refPh = refPic->cs->picHeader;
-  if (!refPh)
-  {
-    return false;
-  }
-  bool isRefGdrPicture = refPh->getInGdrInterval();
+  const bool isRefGdrPicture = refPic->gdrParam.inGdrInterval;
 
   if (isRefGdrPicture)
   {
-    if (IntPos.x < refPh->getVirtualBoundariesPosX(0))
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return (intPos.x < refPic->gdrParam.verBoundary);
   }
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    const bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
-    if (isCurGdrPicture)
-    {
-      return false;
-    }
-    else
-    {
-      return true;
-    }
+    return !isCurGdrPicture;
   }
 }
 
-bool CodingStructure::isClean(const Position &IntPos, const Picture* const refPic) const
+bool CodingStructure::isClean(const Position &intPos, const Picture* const refPic) const
 {
   if (!refPic)
   {
     return false;
   }
 
-  PicHeader     *refPh = refPic->cs->picHeader;
-  if (!refPh)
-  {
-    return false;
-  }
-
-  bool isRefGdrPicture = refPh->getInGdrInterval();
+  const bool isRefGdrPicture = refPic->gdrParam.inGdrInterval;
 
   if (isRefGdrPicture)
   {
-    if (IntPos.x < refPh->getVirtualBoundariesPosX(0))
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return (intPos.x < refPic->gdrParam.verBoundary);
   }
   else
   {
     // refPic is normal picture
-    bool isCurGdrPicture = (slice->getPicHeader()->getNumVerVirtualBoundaries() > 0);
+    const bool isCurGdrPicture = slice->getPic()->gdrParam.inGdrInterval;
 
-    if (isCurGdrPicture)
-    {
-      return false;
-    }
-    else
-    {
-      return true;
-    }
+    return !isCurGdrPicture;
   }
 }
 
-bool CodingStructure::isClean(const int Intx, const int Inty, const ChannelType effChType) const
+bool CodingStructure::isClean(const int x, const int y, const ChannelType effChType) const
 {
   /*
     1. non gdr picture --> false;
@@ -739,36 +477,20 @@ bool CodingStructure::isClean(const int Intx, const int Inty, const ChannelType 
          pos in clean area -> true
          pos in dirty area -> false
   */
-  PicHeader     *curPh = picHeader;
-  if (!curPh)
-  {
-    return false;
-  }
 
-  bool isCurGdrPicture = curPh->getInGdrInterval();
+  const bool isCurGdrPicture = picture->gdrParam.inGdrInterval;
   if (isCurGdrPicture)
   {
-    int virboundary_endx = curPh->getVirtualBoundariesPosX(0);
-
-    virboundary_endx = virboundary_endx >> to_underlying(effChType);
-    if (Intx < virboundary_endx)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    const int verBoundaryForChannelType = picture->gdrParam.verBoundary >> to_underlying(effChType);
+    return (x < verBoundaryForChannelType);
   }
 
   return true;
 }
 
-bool CodingStructure::isClean(const Position &IntPos, const ChannelType effChType) const
+bool CodingStructure::isClean(const Position &intPos, const ChannelType effChType) const
 {
-  bool ret = isClean(IntPos.x, IntPos.y, effChType);
-
-  return ret;
+  return isClean(intPos.x, intPos.y, effChType);
 }
 
 bool CodingStructure::isClean(const Area &area, const ChannelType effChType) const
@@ -788,36 +510,34 @@ bool CodingStructure::isClean(const Area &area, const ChannelType effChType) con
 
 bool CodingStructure::isClean(const ChannelType effChType) const
 {
-  bool ret = isClean(area.Y(), effChType);
-
-  return ret;
+  return isClean(area.Y(), effChType);
 }
 
-bool CodingStructure::isSubPuClean(PredictionUnit &pu, const Mv *mv) const
+bool CodingStructure::isSubPuClean(const PredictionUnit &pu, const Mv *mv) const
 {
-  MotionBuf mb = pu.getMotionBuf();
+  const CMotionBuf mb = pu.getMotionBuf();
 
   if (pu.cu->affine)
   {
-    Position puPos = pu.Y().pos();
-    Size subPuSize = Size(4, 4);
+    const Position puPos = pu.Y().pos();
+    const Size subPuSize = Size(4, 4);
 
-    int isProf = 1;
+    const bool isSubPu = true;
 
     for (int y = 0; y < mb.height; y++)
     {
       for (int x = 0; x < mb.width; x++)
       {
 
-        MotionInfo mi = mb.at(x, y);
-        Position subPuPos  = Position{puPos.x + (x << 2), puPos.y + (y << 2)};
-        Area     subPuArea = Area(subPuPos, subPuSize);
-        Position subPuTR   = subPuArea.topRight();
+        const MotionInfo mi = mb.at(x, y);
+        const Position subPuPos  = Position{puPos.x + (x << 2), puPos.y + (y << 2)};
+        const Area     subPuArea = Area(subPuPos, subPuSize);
+        const Position subPuTR   = subPuArea.topRight();
 
         // check if SubPu with L0 is Out of boundary
         if (mi.refIdx[0] >= 0)
         {
-          if (!isClean(subPuTR, mi.mv[0], REF_PIC_LIST_0, mi.refIdx[0], isProf))
+          if (!isClean(subPuTR, mi.mv[0], REF_PIC_LIST_0, mi.refIdx[0], isSubPu))
           {
             return false;
           }
@@ -826,7 +546,7 @@ bool CodingStructure::isSubPuClean(PredictionUnit &pu, const Mv *mv) const
         // check if SubPu wiht L1 is Out of boundary
         if (mi.refIdx[1] >= 0)
         {
-          if (!isClean(subPuTR, mi.mv[1], REF_PIC_LIST_1, mi.refIdx[1], isProf))
+          if (!isClean(subPuTR, mi.mv[1], REF_PIC_LIST_1, mi.refIdx[1], isSubPu))
           {
             return false;
           }
@@ -900,7 +620,9 @@ void CodingStructure::setDecomp(const UnitArea &_area, const bool _isCoded /*= t
 
 const int CodingStructure::signalModeCons( const PartSplit split, Partitioner &partitioner, const ModeType modeTypeParent ) const
 {
-  if (CS::isDualITree(*this) || modeTypeParent != MODE_TYPE_ALL || partitioner.currArea().chromaFormat == CHROMA_444 || partitioner.currArea().chromaFormat == CHROMA_400 )
+  if (CS::isDualITree(*this) || modeTypeParent != MODE_TYPE_ALL
+      || partitioner.currArea().chromaFormat == ChromaFormat::_444
+      || !isChromaEnabled(partitioner.currArea().chromaFormat))
   {
     return LDT_MODE_TYPE_INHERIT;
   }
@@ -1558,7 +1280,7 @@ cTUTraverser CodingStructure::traverseTUs( const UnitArea& unit, const ChannelTy
 
 void CodingStructure::allocateVectorsAtPicLevel()
 {
-  const int  twice = ( !pcv->ISingleTree && slice->isIRAP() && pcv->chrFormat != CHROMA_400 ) ? 2 : 1;
+  const int  twice     = !pcv->ISingleTree && slice->isIRAP() && isChromaEnabled(pcv->chrFormat) ? 2 : 1;
   size_t     allocSize = twice * unitScale[COMPONENT_Y].scale(area.blocks[COMPONENT_Y].size()).area();
 
   cus.reserve( allocSize );
@@ -1566,16 +1288,8 @@ void CodingStructure::allocateVectorsAtPicLevel()
   tus.reserve( allocSize );
 }
 
-#if GDR_ENABLED
-void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabled)
-#else
 void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused)
-#endif
 {
-#if GDR_ENABLED
-  m_gdrEnabled = isGdrEnabled;
-#endif
-
   createInternals(UnitArea(_chromaFormat, _area), isTopLayer, isPLTused);
 
   if (isTopLayer)
@@ -1583,44 +1297,20 @@ void CodingStructure::create(const ChromaFormat &_chromaFormat, const Area& _are
     return;
   }
 
-#if GDR_ENABLED
-  if (m_gdrEnabled)
-  {
-    picHeader = new PicHeader();
-    picHeader->initPicHeader();
-  }
-#endif
-
   m_reco.create( area );
   m_pred.create( area );
   m_resi.create( area );
   m_orgr.create( area );
 }
 
-#if GDR_ENABLED
-void CodingStructure::create(const UnitArea& _unit, const bool isTopLayer, const bool isPLTused, const bool isGdrEnabled)
-#else
 void CodingStructure::create(const UnitArea& _unit, const bool isTopLayer, const bool isPLTused)
-#endif
 {
-#if GDR_ENABLED
-  m_gdrEnabled = isGdrEnabled;
-#endif
-
   createInternals(_unit, isTopLayer, isPLTused);
 
   if (isTopLayer)
   {
     return;
   }
-
-#if GDR_ENABLED
-  if (m_gdrEnabled)
-  {
-    picHeader = new PicHeader();
-    picHeader->initPicHeader();
-  }
-#endif
 
   m_reco.create( area );
   m_pred.create( area );
@@ -1632,7 +1322,14 @@ void CodingStructure::createInternals(const UnitArea& _unit, const bool isTopLay
 {
   area = _unit;
 
-  memcpy( unitScale, UnitScaleArray[area.chromaFormat], sizeof( unitScale ) );
+  for (int i = 0; i < unitScale.size(); i++)
+  {
+    const auto c       = ComponentID(i);
+    const bool present = isLuma(c) || isChromaEnabled(area.chromaFormat);
+    const int  scaleX  = present ? 2 >> getComponentScaleX(c, area.chromaFormat) : 0;
+    const int  scaleY  = present ? 2 >> getComponentScaleY(c, area.chromaFormat) : 0;
+    unitScale[i]       = UnitScale(scaleX, scaleY);
+  }
 
   picture = nullptr;
   parent  = nullptr;
@@ -1894,23 +1591,7 @@ void CodingStructure::initSubStructure( CodingStructure& subStruct, const Channe
   subStruct.sps       = sps;
   subStruct.vps       = vps;
   subStruct.pps       = pps;
-#if GDR_ENABLED
-  if (m_gdrEnabled)
-  {
-    if (!subStruct.picHeader)
-    {
-      subStruct.picHeader = new PicHeader;
-      subStruct.picHeader->initPicHeader();
-    }
-    *subStruct.picHeader = *picHeader;
-  }
-  else
-  {
-    subStruct.picHeader = picHeader;
-  }
-#else
   subStruct.picHeader = picHeader;
-#endif
 
   memcpy(subStruct.alfApss, alfApss, sizeof(alfApss));
 
@@ -2408,7 +2089,7 @@ const CPelBuf CodingStructure::getBuf( const CompArea &blk, const PictureType &t
 PelUnitBuf CodingStructure::getBuf( const UnitArea &unit, const PictureType &type )
 {
   // no parent fetching for buffers
-  if( area.chromaFormat == CHROMA_400 )
+  if (!isChromaEnabled(area.chromaFormat))
   {
     return PelUnitBuf( area.chromaFormat, getBuf( unit.Y(), type ) );
   }
@@ -2421,7 +2102,7 @@ PelUnitBuf CodingStructure::getBuf( const UnitArea &unit, const PictureType &typ
 const CPelUnitBuf CodingStructure::getBuf( const UnitArea &unit, const PictureType &type ) const
 {
   // no parent fetching for buffers
-  if( area.chromaFormat == CHROMA_400 )
+  if (!isChromaEnabled(area.chromaFormat))
   {
     return CPelUnitBuf( area.chromaFormat, getBuf( unit.Y(), type ) );
   }

@@ -99,10 +99,10 @@ private:
   int                    m_numEncoded;
   PelStorage*            m_trueOrgPic;
   PelStorage*            m_orgPic;
+  PelStorage*            m_trueOrgPicBeforeScale;
+  PelStorage*            m_orgPicBeforeScale;
   PelStorage*            m_filteredOrgPic;
-#if JVET_AB0080
   PelStorage*            m_rprPic[2];
-#endif
 #if EXTENSION_360_VIDEO
   TExt360AppEncTop*      m_ext360;
 #endif
@@ -123,6 +123,9 @@ public:
   void  destroyLib();
   bool  encodePrep( bool& eos );
   bool  encode();                               ///< main encoding function
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  void applyNnPostFilter();
+#endif
 
   void  outputAU( const AccessUnit& au );
 
@@ -130,7 +133,7 @@ public:
   std::chrono::duration<long long, std::ratio<1, 1000000000>> getMetricTime() const { return m_metricTime; };
 #endif
   VPS * getVPS() { return m_cEncLib.getVPS(); }
-  int   getChromaFormatIDC() const { return m_cEncLib.getChromaFormatIdc(); }
+  ChromaFormat getChromaFormatIDC() const { return m_cEncLib.getChromaFormatIdc(); }
   int   getBitDepth() const { return m_cEncLib.getBitDepth(ChannelType::LUMA); }
   bool  getALFEnabled() { return m_cEncLib.getUseALF(); }
   int   getMaxNumALFAPS() { return m_cEncLib.getMaxNumALFAPS(); }
@@ -141,6 +144,9 @@ public:
   uint32_t getTotalNumberOfBytes() {return m_totalBytes;}
   FeatureCounterStruct getFeatureCounter(){return m_cEncLib.getFeatureCounter();}
   void      featureToFile(std::ofstream& featureFile,int feature[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1], std::string featureName);
+#endif
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  bool getNNPostFilterEnabled() { return m_cEncLib.getNNPostFilterSEICharacteristicsEnabled() || m_cEncLib.getNnPostFilterSEIActivationEnabled(); }
 #endif
 };// END CLASS DEFINITION EncApp
 

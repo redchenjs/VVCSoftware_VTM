@@ -41,12 +41,8 @@
 //! \ingroup EncoderLib
 //! \{
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &hrd, const uint32_t temporalId,
                                      int SEIPrefixIndicationIdx)
-#else
-void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &hrd, const uint32_t temporalId)
-#endif
 {
   const SEIBufferingPeriod *bp = nullptr;
   switch (sei.payloadType())
@@ -84,11 +80,7 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIEdrapIndication(*static_cast<const SEIExtendedDrapIndication *>(&sei));
     break;
   case SEI::PayloadType::FRAME_PACKING:
-#if JVET_T0056_SEI_PREFIX_INDICATION
     xWriteSEIFramePacking(*static_cast<const SEIFramePacking *>(&sei), SEIPrefixIndicationIdx);
-#else
-    xWriteSEIFramePacking(*static_cast<const SEIFramePacking *>(&sei));
-#endif
     break;
 #if GREEN_METADATA_SEI_ENABLED
   case SEI::PayloadType::GREEN_METADATA:
@@ -108,37 +100,21 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIAlternativeTransferCharacteristics(*static_cast<const SEIAlternativeTransferCharacteristics *>(&sei));
     break;
   case SEI::PayloadType::EQUIRECTANGULAR_PROJECTION:
-#if JVET_T0056_SEI_PREFIX_INDICATION
     xWriteSEIEquirectangularProjection(*static_cast<const SEIEquirectangularProjection *>(&sei),
                                        SEIPrefixIndicationIdx);
-#else
-    xWriteSEIEquirectangularProjection(*static_cast<const SEIEquirectangularProjection *>(&sei));
-#endif
     break;
   case SEI::PayloadType::SPHERE_ROTATION:
-#if JVET_T0056_SEI_PREFIX_INDICATION
     xWriteSEISphereRotation(*static_cast<const SEISphereRotation *>(&sei), SEIPrefixIndicationIdx);
-#else
-    xWriteSEISphereRotation(*static_cast<const SEISphereRotation *>(&sei));
-#endif
     break;
   case SEI::PayloadType::OMNI_VIEWPORT:
     xWriteSEIOmniViewport(*static_cast<const SEIOmniViewport *>(&sei));
     break;
   case SEI::PayloadType::REGION_WISE_PACKING:
-#if JVET_T0056_SEI_PREFIX_INDICATION
     xWriteSEIRegionWisePacking(*static_cast<const SEIRegionWisePacking *>(&sei), SEIPrefixIndicationIdx);
-#else
-    xWriteSEIRegionWisePacking(*static_cast<const SEIRegionWisePacking *>(&sei));
-#endif
     break;
   case SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION:
-#if JVET_T0056_SEI_PREFIX_INDICATION
     xWriteSEIGeneralizedCubemapProjection(*static_cast<const SEIGeneralizedCubemapProjection *>(&sei),
                                           SEIPrefixIndicationIdx);
-#else
-    xWriteSEIGeneralizedCubemapProjection(*static_cast<const SEIGeneralizedCubemapProjection *>(&sei));
-#endif
     break;
   case SEI::PayloadType::SCALABILITY_DIMENSION_INFO:
     xWriteSEIScalabilityDimensionInfo(*static_cast<const SEIScalabilityDimensionInfo *>(&sei));
@@ -185,18 +161,14 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::ANNOTATED_REGIONS:
     xWriteSEIAnnotatedRegions(*static_cast<const SEIAnnotatedRegions *>(&sei));
     break;
-#if JVET_T0056_SEI_MANIFEST
   case SEI::PayloadType::SEI_MANIFEST:
     CHECK((SEIPrefixIndicationIdx), "wrong SEI prefix indication message");
     xWriteSEISEIManifest(*static_cast<const SEIManifest *>(&sei));
     break;
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   case SEI::PayloadType::SEI_PREFIX_INDICATION:
     CHECK((SEIPrefixIndicationIdx), "wrong SEI prefix indication message");
     xWriteSEISEIPrefixIndication(bs, *static_cast<const SEIPrefixIndication *>(&sei), hrd, temporalId);
     break;
-#endif
   case SEI::PayloadType::CONSTRAINED_RASL_ENCODING:
     xWriteSEIConstrainedRaslIndication(*static_cast<const SEIConstrainedRaslIndication *>(&sei));
     break;
@@ -213,21 +185,17 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::SEI_PROCESSING_ORDER:
     xWriteSEIProcessingOrder(*static_cast<const SEIProcessingOrderInfo *>(&sei));
     break;
-#if JVET_AB0070_POST_FILTER_HINT
   case SEI::PayloadType::POST_FILTER_HINT:
     xWriteSEIPostFilterHint(*static_cast<const SEIPostFilterHint *>(&sei));
     break;
-#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
   }
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (SEIPrefixIndicationIdx)
   {
     return;
   }
-#endif
   xWriteByteAlign();
 }
 
@@ -674,13 +642,8 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
   writeSEImessages(bs, sei.m_nestedSEIs, m_nestingHrd, true, 0);
 }
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking &sei, int SEIPrefixIndicationIdx)
-#else
-void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking &sei)
-#endif
 {
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (SEIPrefixIndicationIdx)
   {
     int numBits = 0;
@@ -695,7 +658,6 @@ void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking &sei)
     }
     xWriteCode(numBits - 1, 16, "num_bits_in_prefix_indication_minus1");
   }
-#endif 
 
   xWriteUvlc( sei.m_arrangementId,                  "fp_arrangement_id" );
   xWriteFlag( sei.m_arrangementCancelFlag,          "fp_arrangement_cancel_flag" );
@@ -703,12 +665,10 @@ void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking &sei)
   if( sei.m_arrangementCancelFlag == 0 )
   {
     xWriteCode( sei.m_arrangementType, 7,           "fp_arrangement_type" );
-#if JVET_T0056_SEI_PREFIX_INDICATION
     if (SEIPrefixIndicationIdx)
     {
       return;
     }
-#endif
     xWriteFlag( sei.m_quincunxSamplingFlag,         "fp_quincunx_sampling_flag" );
     xWriteCode( sei.m_contentInterpretationType, 6, "fp_content_interpretation_type" );
     xWriteFlag( sei.m_spatialFlippingFlag,          "fp_spatial_flipping_flag" );
@@ -770,7 +730,6 @@ void SEIWriter::xWriteSEIMasteringDisplayColourVolume(const SEIMasteringDisplayC
   xWriteCode( sei.values.minLuminance,     32,  "mdcv_min_display_mastering_luminance" );
 }
 
-#if JVET_T0056_SEI_MANIFEST
 void SEIWriter::xWriteSEISEIManifest(const SEIManifest &sei)
 {
   xWriteCode(sei.m_manifestNumSeiMsgTypes, 16, "manifest_num_sei_msg_types");
@@ -780,9 +739,7 @@ void SEIWriter::xWriteSEISEIManifest(const SEIManifest &sei)
     xWriteCode(sei.m_manifestSeiDescription[i], 8, "manifest_sei_description");
   }
 }
-#endif  
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 //SEI prefix indication
 void SEIWriter::xWriteSEISEIPrefixIndication(OutputBitstream &bs, const SEIPrefixIndication &sei, HRD &hrd, const uint32_t temporalId)
 {
@@ -807,7 +764,6 @@ void SEIWriter::xWriteSEIPrefixIndicationByteAlign() {
   } 
 }
 // ~SEI prefix indication
-#endif
 
 void SEIWriter::xWriteSEIAnnotatedRegions(const SEIAnnotatedRegions &sei)
 {
@@ -921,13 +877,8 @@ void SEIWriter::xWriteSEIAlternativeTransferCharacteristics(const SEIAlternative
   xWriteCode(sei.m_preferredTransferCharacteristics, 8, "preferred_transfer_characteristics");
 }
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 void SEIWriter::xWriteSEIEquirectangularProjection(const SEIEquirectangularProjection &sei, int SEIPrefixIndicationIdx)
-#else
-void SEIWriter::xWriteSEIEquirectangularProjection(const SEIEquirectangularProjection &sei)
-#endif
 {
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (SEIPrefixIndicationIdx)
   {
     int numBits = 5;
@@ -937,7 +888,6 @@ void SEIWriter::xWriteSEIEquirectangularProjection(const SEIEquirectangularProje
     }   
     xWriteCode(numBits - 1, 16, "num_bits_in_prefix_indication_minus1");
   }
-#endif
 
   xWriteFlag( sei.m_erpCancelFlag, "erp_cancel_flag" );
   if( !sei.m_erpCancelFlag )
@@ -954,13 +904,8 @@ void SEIWriter::xWriteSEIEquirectangularProjection(const SEIEquirectangularProje
   }
 }
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 void SEIWriter::xWriteSEISphereRotation(const SEISphereRotation &sei, int SEIPrefixIndicationIdx)
-#else
-void SEIWriter::xWriteSEISphereRotation(const SEISphereRotation &sei)
-#endif
 {
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (SEIPrefixIndicationIdx)
   {
     if (sei.m_sphereRotationCancelFlag)
@@ -974,13 +919,11 @@ void SEIWriter::xWriteSEISphereRotation(const SEISphereRotation &sei)
     int numBits = 8;
     xWriteCode(numBits - 1,                        16, "num_bits_in_prefix_indication_minus1");
   }
-#endif
   xWriteFlag( sei.m_sphereRotationCancelFlag,           "sphere_rotation_cancel_flag" );
   if( !sei.m_sphereRotationCancelFlag )
   {
     xWriteFlag( sei.m_sphereRotationPersistenceFlag,    "sphere_rotation_persistence_flag" );
     xWriteCode( 0,                                   6, "sphere_rotation_reserved_zero_6bits" );
-#if JVET_T0056_SEI_PREFIX_INDICATION
     if (SEIPrefixIndicationIdx >= 2)
     {
       xWriteSEIPrefixIndicationByteAlign();
@@ -990,7 +933,6 @@ void SEIWriter::xWriteSEISphereRotation(const SEISphereRotation &sei)
       xWriteFlag(sei.m_sphereRotationPersistenceFlag, "sphere_rotation_persistence_flag");
       xWriteCode(0, 6, "sphere_rotation_reserved_zero_6bits");
     }
-#endif
     xWriteSCode(sei.m_sphereRotationYaw,            32, "sphere_rotation_yaw" );
     xWriteSCode(sei.m_sphereRotationPitch,          32, "sphere_rotation_pitch" );
     xWriteSCode(sei.m_sphereRotationRoll,           32, "sphere_rotation_roll" );
@@ -1018,13 +960,8 @@ void SEIWriter::xWriteSEIOmniViewport(const SEIOmniViewport &sei)
   }
 }
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 void SEIWriter::xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei, int SEIPrefixIndicationIdx)
-#else
-void SEIWriter::xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei)
-#endif
 {
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (SEIPrefixIndicationIdx)
   {
     xWriteCode(0, 8, "num_sei_prefix_indications_minus1");
@@ -1035,7 +972,6 @@ void SEIWriter::xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei)
     }
     xWriteCode(numBits - 1,                                       16,       "num_bits_in_prefix_indication_minus1");
   }
-#endif
   xWriteFlag( sei.m_rwpCancelFlag,                                           "rwp_cancel_flag" );
   if(!sei.m_rwpCancelFlag)
   {
@@ -1047,13 +983,11 @@ void SEIWriter::xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei)
     xWriteCode( (uint32_t)sei.m_projPictureHeight,                32,        "rwp_proj_picture_height" );
     xWriteCode( (uint32_t)sei.m_packedPictureWidth,               16,        "rwp_packed_picture_width" );
     xWriteCode( (uint32_t)sei.m_packedPictureHeight,              16,        "rwp_packed_picture_height" );
-#if JVET_T0056_SEI_PREFIX_INDICATION
     if (SEIPrefixIndicationIdx)
     {
       // don't write full message
       return;
     }
-#endif
     for( int i=0; i < sei.m_numPackedRegions; i++ )
     {
       xWriteCode( 0, 4,                                                      "rwp_reserved_zero_4bits" );
@@ -1084,14 +1018,9 @@ void SEIWriter::xWriteSEIRegionWisePacking(const SEIRegionWisePacking &sei)
   }
 }
 
-#if JVET_T0056_SEI_PREFIX_INDICATION
 void SEIWriter::xWriteSEIGeneralizedCubemapProjection(const SEIGeneralizedCubemapProjection &sei,
                                                       int                                    SEIPrefixIndicationIdx)
-#else
-void SEIWriter::xWriteSEIGeneralizedCubemapProjection(const SEIGeneralizedCubemapProjection &sei)
-#endif
 {
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (SEIPrefixIndicationIdx)
   {
     int numBits = 1;
@@ -1101,7 +1030,6 @@ void SEIWriter::xWriteSEIGeneralizedCubemapProjection(const SEIGeneralizedCubema
     }
     xWriteCode(numBits - 1, 16, "num_bits_in_prefix_indication_minus1");
   }
-#endif 
 
   xWriteFlag( sei.m_gcmpCancelFlag,                           "gcmp_cancel_flag" );
   if (!sei.m_gcmpCancelFlag)
@@ -1109,12 +1037,10 @@ void SEIWriter::xWriteSEIGeneralizedCubemapProjection(const SEIGeneralizedCubema
     xWriteFlag( sei.m_gcmpPersistenceFlag,                    "gcmp_persistence_flag" );
     xWriteCode( sei.m_gcmpPackingType,                     3, "gcmp_packing_type" );
     xWriteCode( sei.m_gcmpMappingFunctionType,             2, "gcmp_mapping_function_type" );
-#if JVET_T0056_SEI_PREFIX_INDICATION
     if (SEIPrefixIndicationIdx == 1)
     {
       return;
     }
-#endif
     int numFace = sei.m_gcmpPackingType == 4 || sei.m_gcmpPackingType == 5 ? 5 : 6;
     for (int i = 0; i < numFace; i++)
     {
@@ -1627,18 +1553,30 @@ void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
 
 void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
 {
-#if JVET_AB0051
+#if JVET_AC0058_SEI
+  CHECK(sei.m_posPayloadType.size() < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
+  for (uint32_t i = 0; i < sei.m_posPayloadType.size(); i++)
+  {
+    xWriteCode(sei.m_posPayloadType[i], 16, "po_sei_payload_type[i]");
+
+    if (sei.m_posPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
+    {
+      xWriteCode((uint32_t)sei.m_posPrefixByte[i].size(), 8, "po_num_t35_byte[i]");
+      for (uint32_t j = 0; j < sei.m_posPrefixByte[i].size(); j++)
+      {
+        xWriteCode(sei.m_posPrefixByte[i][j], 8, "po_t35_byte[i][j]");
+      }
+      xWriteCode(sei.m_posProcessingOrder[i], 16, "po_sei_processing_order[i]");
+    }
+  }
+#else
   CHECK(sei.m_posNumofSeiMessages < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
-#endif
   for (uint32_t i=0; i < sei.m_posNumofSeiMessages; i++)
   {
-    xWriteCode(sei.m_posPayloadType[i], 16, "sei_payloadType[i]");
-#if JVET_AB0069_SEI_PROCESSING_ORDER
-    xWriteCode(sei.m_posProcessingOrder[i], 16, "sei_processingOrder[i]");
-#else
-    xWriteCode(sei.m_posProcessingOrder[i], 8, "sei_processingOrder[i]");
-#endif
+    xWriteCode(sei.m_posPayloadType[i], 16, "po_sei_payload_type[i]");
+    xWriteCode(sei.m_posProcessingOrder[i], 16, "po_sei_processing_order[i]");
   }
+#endif
 }
 
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)
@@ -1760,9 +1698,11 @@ void SEIWriter::xWriteSEIGreenMetadataInfo(const SEIGreenMetadataInfo& sei)
 
 void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics &sei)
 {
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+  xWriteCode(sei.m_purpose, 16, "nnpfc_purpose");
+#endif
   xWriteUvlc(sei.m_id, "nnpfc_id");
   xWriteUvlc(sei.m_modeIdc, "nnpfc_mode_idc");
-#if JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
   if (sei.m_modeIdc == POST_FILTER_MODE::URI)
   {
     while (!isByteAligned())
@@ -1772,47 +1712,75 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     xWriteString(sei.m_uriTag, "nnpfc_uri_tag");
     xWriteString(sei.m_uri, "nnpfc_uri");
   }
-#endif
   xWriteFlag(sei.m_purposeAndFormattingFlag, "nnpfc_purpose_and_formatting_flag");
   if (sei.m_purposeAndFormattingFlag)
   {
+#if !JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     xWriteUvlc(sei.m_purpose, "nnpfc_purpose");
+#endif
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+    xWriteUvlc(sei.m_numberInputDecodedPicturesMinus1, "nnpfc_number_of_input_pictures_minus1");
+#endif
 
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+    if((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
+#else
     if(sei.m_purpose == 2 || sei.m_purpose == 4)
+#endif
     {
       xWriteFlag(sei.m_outSubCFlag, "nnpfc_out_sub_c_flag");
     }
+#if JVET_AC0154
+    if((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
+    {
+      xWriteCode(uint32_t(sei.m_outColourFormatIdc), 2, "nnpfc_out_colour_format_idc");
+    }
+#endif
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+    if((sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
+#else
     if(sei.m_purpose == 3 || sei.m_purpose == 4)
+#endif
     {
       xWriteUvlc(sei.m_picWidthInLumaSamples, "nnpfc_pic_width_in_luma_samples");
       xWriteUvlc(sei.m_picHeightInLumaSamples, "nnpfc_pic_height_in_luma_samples");
     }
-#if JVET_AB0058_NN_FRAME_RATE_UPSAMPLING
-    if (sei.m_purpose == NNPC_PurposeType::CHROMA_UPSAMPLING) 
+
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+    if((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
+#else
+    if (sei.m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING)
+#endif
     {
+#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+      for (int i = 0; i < sei.m_numberInputDecodedPicturesMinus1; ++i)
+      {
+        xWriteUvlc(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");
+      }
+      for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; ++i)
+      {
+        xWriteFlag(sei.m_inputPicOutputFlag[i], "nnpfc_input_pic_output_flag");
+      }
+#else
       xWriteUvlc(sei.m_numberInputDecodedPicturesMinus2, "nnpfc_number_of_input_pictures_minus2");
       for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus2; ++i)
       {
         xWriteUvlc(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");
       }
-    }
 #endif
+    }
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");
     if (sei.m_inpFormatIdc == 1)
     {
-      xWriteUvlc(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
-    }
+#if JVET_AC0061_TENSOR_BITDEPTH
+      xWriteUvlc(sei.m_inpTensorBitDepthLumaMinus8, "nnpfc_inp_tensor_bitdepth_luma_minus8");
+      xWriteUvlc(sei.m_inpTensorBitDepthChromaMinus8, "nnpfc_inp_tensor_bitdepth_chroma_minus8");
 #else
-    xWriteUvlc(sei.m_inpSampleIdc, "nnpfc_inp_sample_idc");
-
-    if(sei.m_inpSampleIdc == 4)
-    {
       xWriteUvlc(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
-    }
 #endif
+    }
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
     xWriteFlag(sei.m_sepColDescriptionFlag, "nnpfc_sep_col_desc_flag");
@@ -1823,26 +1791,38 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteCode(sei.m_transCharacteristics, 8, "nnpfc_trans_characteristics");
       xWriteCode(sei.m_matrixCoeffs, 8, "nnpfc_matrix_coeffs");
     }
-#if M60678_BALLOT_COMMENTS_OF_FI_03
     xWriteUvlc(sei.m_outFormatIdc, "nnpfc_out_format_idc");
     if (sei.m_outFormatIdc == 1)
     {
-      xWriteUvlc(sei.m_outTensorBitDepthMinus8, "nnpfc_out_tensor_bitdepth_minus8");
-    }
+#if JVET_AC0061_TENSOR_BITDEPTH
+      xWriteUvlc(sei.m_outTensorBitDepthLumaMinus8, "nnpfc_out_tensor_bitdepth_luma_minus8");
+      xWriteUvlc(sei.m_outTensorBitDepthChromaMinus8, "nnpfc_out_tensor_bitdepth_chroma_minus8");
 #else
-    xWriteUvlc(sei.m_outSampleIdc, "nnpfc_out_sample_idc");
-
-    if(sei.m_outSampleIdc == 4)
-    {
       xWriteUvlc(sei.m_outTensorBitDepthMinus8, "nnpfc_out_tensor_bitdepth_minus8");
-    }
 #endif
+    }
 
     xWriteUvlc(sei.m_outOrderIdc, "nnpfc_out_order_idc");
+#if JVET_AC0344_NNPFC_PATCH
+    xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
+#endif
     xWriteFlag(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");
+#if JVET_AC0344_NNPFC_PATCH
+    if (sei.m_constantPatchSizeFlag)
+    {
+#endif
     xWriteUvlc(sei.m_patchWidthMinus1, "nnpfc_patch_width_minus1");
     xWriteUvlc(sei.m_patchHeightMinus1, "nnpfc_patch_height_minus1");
+#if JVET_AC0344_NNPFC_PATCH
+    }
+    else
+    {
+      xWriteUvlc(sei.m_extendedPatchWidthCdDeltaMinus1, "extended_nnpfc_patch_width_cd_delta_minus1");
+      xWriteUvlc(sei.m_extendedPatchHeightCdDeltaMinus1, "extended_nnpfc_patch_height_cd_delta_minus1");
+    }
+#else
     xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
+#endif
     xWriteUvlc(sei.m_paddingType, "nnpfc_padding_type");
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
@@ -1851,7 +1831,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_crPadding, "nnpfc_cr_padding_val");
     }
 
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
     xWriteFlag(sei.m_complexityInfoPresentFlag, "nnpfc_complexity_info_present_flag");
     if (sei.m_complexityInfoPresentFlag)
     {
@@ -1865,25 +1844,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_totalKilobyteSize, "nnpfc_total_kilobyte_size");
     }
   }
-#else
-    xWriteUvlc(sei.m_complexityIdc, "nnpfc_complexity_idc");
-    if(sei.m_complexityIdc > 0)
-    {
-      xWriteNNPFCComplexityElement(sei);
-    }
-  }
-#endif
-#if !JVET_AB0047_MOVE_GATED_SYNTAX_OF_NNPFC_URIS_AFTER_NNPFC_MODEIDC
-  if (sei.m_modeIdc == POST_FILTER_MODE::URI)
-  {
-    while (!isByteAligned())
-    {
-      xWriteFlag(0, "nnpfc_reserved_zero_bit");
-    }
-    xWriteString(sei.m_uriTag, "nnpfc_uri_tag");
-    xWriteString(sei.m_uri, "nnpfc_uri");
-  }
-#endif
   if (sei.m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
   {
     while (!isByteAligned())
@@ -1897,38 +1857,21 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
   }
 }
 
-#if !JVET_AB0135_NN_SEI_COMPLEXITY_MOD
-void SEIWriter::xWriteNNPFCComplexityElement(const SEINeuralNetworkPostFilterCharacteristics &sei)
-{
-  if(sei.m_complexityIdc == 1)
-  {
-    xWriteCode(sei.m_parameterTypeIdc, 2, "nnpfc_parameter_type_idc");
-    if (sei.m_parameterTypeIdc != 2)
-    {
-      xWriteCode(sei.m_log2ParameterBitLengthMinus3, 2, "nnpfc_log2_parameter_bit_length_minus3");
-  }
-    xWriteCode(sei.m_numParametersIdc, 6, "nnpfc_num_parameters_idc");
-    xWriteUvlc(sei.m_numKmacOperationsIdc, "nnpfc_num_kmac_operations_idc");
-#if JVET_AB0135_NN_SEI_COMPLEXITY_MOD
-    xWriteUvlc(sei.m_totalKilobyteSize, "nnpfc_total_kilobyte_size");
-#endif
-  }
-}
-#endif
 
 void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei)
 {
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  xWriteUvlc(sei.m_targetId, "nnpfa_target_id");
+#else
   xWriteUvlc(sei.m_id, "nnpfa_id");
-#if JVET_AB0050
+#endif
   xWriteFlag(sei.m_cancelFlag, "nnpfa_cancel_flag");
   if(!sei.m_cancelFlag)
   {
     xWriteFlag(sei.m_persistenceFlag, "nnpfa_persistence_flag");
   }
-#endif
 }
 
-#if JVET_AB0070_POST_FILTER_HINT
 void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
 {
   xWriteFlag(sei.m_filterHintCancelFlag, "filter_hint_cancel_flag");
@@ -1947,5 +1890,4 @@ void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
     }
   }
 }
-#endif
 //! \}

@@ -55,11 +55,9 @@
 #include "CommonLib/UnitTools.h"
 #include "CommonLib/dtrace_codingstruct.h"
 #include "CommonLib/dtrace_buffer.h"
-#include "CommonLib/ProfileLevelTier.h"
+#include "CommonLib/ProfileTierLevel.h"
 
 #include "DecoderLib/DecLib.h"
-
-using namespace std;
 
 //! \ingroup EncoderLib
 //! \{
@@ -102,6 +100,7 @@ EncGOP::EncGOP()
   }
   ::memset(m_associatedIRAPPOC, 0, sizeof(m_associatedIRAPPOC));
   m_pcDeblockingTempPicYuv = nullptr;
+  m_pcRefLayerRescaledPicYuv = nullptr;
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
   m_ppcFrameOrg             = nullptr;
@@ -194,6 +193,13 @@ void  EncGOP::destroy()
   {
     m_fgAnalyzer.destroy();
   }
+  if (m_pcRefLayerRescaledPicYuv)
+  {
+    m_pcRefLayerRescaledPicYuv->destroy();
+    delete m_pcRefLayerRescaledPicYuv;
+    m_pcRefLayerRescaledPicYuv= nullptr;
+  }
+
 }
 
 void EncGOP::init ( EncLib* pcEncLib )
@@ -382,7 +388,7 @@ int EncGOP::xWriteAPS( AccessUnit &accessUnit, APS *aps, const int layerId, cons
 #if GDR_ENC_TRACE
   if (aps)
   {
-    printf("-aps ty:%d id:%d\n", aps->getAPSType(), aps->getAPSId());
+    printf("-aps ty:%d id:%d\n", to_underlying(aps->getAPSType()), aps->getAPSId());
   }
 #endif
 
@@ -421,7 +427,45 @@ int EncGOP::xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool
 
   if( newPPS ) // Note this assumes that all changes to the PPS are made at the EncLib level prior to picture creation (EncLib::xGetNewPicBuffer).
   {
+#if JVET_AC0096
+    if (m_pcEncLib->getRprPopulatePPSatIntraFlag())
+    {
+      if (slice->isIntra())
+      {
+        actualTotalBits += xWritePPS(accessUnit, slice->getPPS(), m_pcEncLib->getLayerId());
+        for (int nr = 0; nr < NUM_RPR_PPS; nr++)
+        {
+          if (slice->getPPS()->getPPSId() != RPR_PPS_ID[nr])
+          {
+            const PPS* pPPS = m_pcEncLib->getPPS(RPR_PPS_ID[nr]);
+            actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
+          }
+        }
+      }
+      else
+      {
+        bool isRprPPS = false;
+        for (int nr = 0; nr < NUM_RPR_PPS; nr++)
+        {
+          if (slice->getPPS()->getPPSId() == RPR_PPS_ID[nr])
+          {
+            isRprPPS = true;
+          }
+        }
+        if (!isRprPPS)
+        {
+          const PPS* pPPS = m_pcEncLib->getPPS(0);
+          actualTotalBits += xWritePPS(accessUnit, pPPS, m_pcEncLib->getLayerId());
+        }
+      }
+    }
+    else
+    {
+      actualTotalBits += xWritePPS(accessUnit, slice->getPPS(), m_pcEncLib->getLayerId());
+    }
+#else
     actualTotalBits += xWritePPS( accessUnit, slice->getPPS(), m_pcEncLib->getLayerId() );
+#endif
   }
 
   return actualTotalBits;
@@ -551,7 +595,6 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
 #endif
   // The case that a specific SEI is not present is handled in xWriteSEI (empty list)
 
-#if JVET_T0056_SEI_MANIFEST
   // When SEI Manifest SEI message is present in an SEI NAL unit, the SEI Manifest SEI message shall be the first SEI
   // message in the SEI NAL unit (D3.45 in ISO/IEC 23008-2).
   if (m_pcCfg->getSEIManifestSEIEnabled())
@@ -561,8 +604,6 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
     xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
     xClearSEIs(currentMessages, !testWrite);
   }
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (m_pcCfg->getSEIPrefixIndicationSEIEnabled())
   {
     //There may be multiple SEI prefix indication messages at the same time
@@ -570,7 +611,6 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
     xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
     xClearSEIs(currentMessages, !testWrite);
   }
-#endif 
 
   // Buffering period SEI must always be following active parameter sets
   currentMessages = extractSeisByType(localMessages, SEI::PayloadType::BUFFERING_PERIOD);
@@ -846,7 +886,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     seiMessages.push_back(seiCTI);
   }
 
-#if JVET_T0056_SEI_MANIFEST
   // Make sure that sei_manifest and sei_prefix are the last two initialized sei_msg, otherwise it will cause these two
   // Sei messages to not be able to enter all SEI messages
   if (m_pcCfg->getSEIManifestSEIEnabled())
@@ -855,8 +894,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     m_seiEncoder.initSEISEIManifest(seiSEIManifest, seiMessages);
     seiMessages.push_back(seiSEIManifest);
   }
-#endif
-#if JVET_T0056_SEI_PREFIX_INDICATION
   if (m_pcCfg->getSEIPrefixIndicationSEIEnabled())
   {
     int numSeiPrefixMsg = 0;
@@ -880,7 +917,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
       numSeiPrefixMsg--;
     }
   }
-#endif
 
   if (m_pcCfg->getConstrainedRaslencoding())
   {
@@ -996,7 +1032,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     seiMessages.push_back(nnpfActivationSEI);
   }
 
-#if JVET_AB0070_POST_FILTER_HINT
   if (m_pcCfg->getPostFilterHintSEIEnabled())
   {
     SEIPostFilterHint *postFilterHintSEI = new SEIPostFilterHint;
@@ -1004,7 +1039,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     m_seiEncoder.initSEIPostFilterHint(postFilterHintSEI);
     seiMessages.push_back(postFilterHintSEI);
   }
-#endif
 }
 
 void EncGOP::xCreatePhaseIndicationSEIMessages(SEIMessages& seiMessages, Slice* slice, int ppsId)
@@ -1454,15 +1488,15 @@ void EncGOP::xUpdateDuInfoSEI(SEIMessages &duInfoSeiMessages, SEIPictureTiming *
 }
 
 static void
-validateMinCrRequirements(const ProfileLevelTierFeatures &plt, std::size_t numBytesInVclNalUnits, const Picture *pPic, const EncCfg *pCfg)
+validateMinCrRequirements(const ProfileTierLevelFeatures &plt, std::size_t numBytesInVclNalUnits, const Picture *pPic, const EncCfg *pCfg)
 {
   //  numBytesInVclNalUnits shall be less than or equal to
   //     FormatCapabilityFactor * MaxLumaSr * framePeriod / MinCr,
   //     ( = FormatCapabilityFactor * MaxLumaSr / (MinCr * frameRate),
-  if (plt.getLevelTierFeatures() && plt.getProfileFeatures() && plt.getLevelTierFeatures()->level!=Level::LEVEL15_5)
+  if (plt.getTierLevelFeatures() && plt.getProfileFeatures() && plt.getTierLevelFeatures()->level!=Level::LEVEL15_5)
   {
     const uint32_t formatCapabilityFactorx1000 = plt.getProfileFeatures()->formatCapabilityFactorx1000;
-    const uint64_t maxLumaSr = plt.getLevelTierFeatures()->maxLumaSr;
+    const uint64_t maxLumaSr = plt.getTierLevelFeatures()->maxLumaSr;
     const uint32_t frameRate = pCfg->getFrameRate();
     const double   minCr = plt.getMinCr();
     const double   denominator = (minCr * frameRate * 1000);
@@ -1480,14 +1514,14 @@ validateMinCrRequirements(const ProfileLevelTierFeatures &plt, std::size_t numBy
 }
 
 static void
-validateMinCrRequirements(const ProfileLevelTierFeatures &plt, std::size_t numBytesInVclNalUnits, const Slice *pSlice, const EncCfg *pCfg, const SEISubpicureLevelInfo &seiSubpic, const int subPicIdx, const int layerId)
+validateMinCrRequirements(const ProfileTierLevelFeatures &plt, std::size_t numBytesInVclNalUnits, const Slice *pSlice, const EncCfg *pCfg, const SEISubpicureLevelInfo &seiSubpic, const int subPicIdx, const int layerId)
 {
-  if (plt.getLevelTierFeatures() && plt.getProfileFeatures())
+  if (plt.getTierLevelFeatures() && plt.getProfileFeatures())
   {
     if (plt.getTier() == Level::Tier::MAIN)
     {
       const uint32_t formatCapabilityFactorx1000 = plt.getProfileFeatures()->formatCapabilityFactorx1000;
-      const uint64_t maxLumaSr = plt.getLevelTierFeatures()->maxLumaSr;
+      const uint64_t maxLumaSr = plt.getTierLevelFeatures()->maxLumaSr;
       const double   denomx1000x256 = (256 * plt.getMinCr() * pCfg->getFrameRate() * 1000 * 256);
 
       for (int i = 0; i < seiSubpic.m_numRefLevels; i++)
@@ -1520,7 +1554,7 @@ cabac_zero_word_padding(const Slice *const pcSlice,
                         const std::size_t numZeroWordsAlreadyInserted,
                               std::ostringstream &nalUnitData,
                         const bool cabacZeroWordPaddingEnabled,
-                        const ProfileLevelTierFeatures &plt)
+                        const ProfileTierLevelFeatures &plt)
 {
   const SPS &sps=*(pcSlice->getSPS());
   const ChromaFormat format = sps.getChromaFormatIdc();
@@ -1919,8 +1953,8 @@ void EncGOP::xPicInitHashME( Picture *pic, const PPS *pps, PicList &rcListPic )
         {
           Pel* picSrc = refPic->getOrigBuf().get(COMPONENT_Y).buf;
           ptrdiff_t stridePic = refPic->getOrigBuf().get(COMPONENT_Y).stride;
-          int picWidth = pps->getPicWidthInLumaSamples();
-          int picHeight = pps->getPicHeightInLumaSamples();
+          int picWidth = refPic->lwidth();
+          int picHeight = refPic->lheight();
           int blockSize = 4;
           int allNum = 0;
           int simpleNum = 0;
@@ -2051,14 +2085,14 @@ void EncGOP::xPicInitRateControl(int &estimatedBits, int gopId, double &lambda, 
       m_pcRateCtrl->getRCPic()->setTargetBits( bits );
     }
 
-    list<EncRCPic*> listPreviousPicture = m_pcRateCtrl->getPicList();
+    std::list<EncRCPic *> listPreviousPicture = m_pcRateCtrl->getPicList();
     m_pcRateCtrl->getRCPic()->getLCUInitTargetBits();
     lambda  = m_pcRateCtrl->getRCPic()->estimatePicLambda( listPreviousPicture, slice->isIRAP());
     sliceQP = m_pcRateCtrl->getRCPic()->estimatePicQP( lambda, listPreviousPicture );
   }
   else    // normal case
   {
-    list<EncRCPic*> listPreviousPicture = m_pcRateCtrl->getPicList();
+    std::list<EncRCPic *> listPreviousPicture = m_pcRateCtrl->getPicList();
     lambda  = m_pcRateCtrl->getRCPic()->estimatePicLambda( listPreviousPicture, slice->isIRAP());
     sliceQP = m_pcRateCtrl->getRCPic()->estimatePicQP( lambda, listPreviousPicture );
   }
@@ -2172,7 +2206,7 @@ void EncGOP::xPicInitLMCS(Picture *pic, PicHeader *picHeader, Slice *slice)
     picHeader->setLmcsChromaResidualScaleFlag(m_pcReshaper->getSliceReshaperInfo().getSliceReshapeChromaAdj() == 1);
 
 #if GDR_ENABLED
-    if (slice->getSPS()->getGDREnabledFlag() && picHeader->getInGdrInterval())
+    if (slice->getSPS()->getGDREnabledFlag() && slice->getPic()->gdrParam.inGdrInterval)
     {
       picHeader->setLmcsChromaResidualScaleFlag(false);
     }
@@ -2232,8 +2266,8 @@ void EncGOP::computeSignalling(Picture* pcPic, Slice* pcSlice) const
     uint32_t freq[128] = {};
     static const int offsetRLSCP = 15; // Equivalent to 2.5 bits
     for (ComponentID compID = COMPONENT_Y;
-                     compID <= (pcPic->chromaFormat == CHROMA_400 ? COMPONENT_Y : COMPONENT_Cr);
-                     compID = ComponentID(compID + 1))
+         compID <= (!isChromaEnabled(pcPic->chromaFormat) ? COMPONENT_Y : COMPONENT_Cr);
+         compID = ComponentID(compID + 1))
     {
       int bitDepth = pcPic->cs->sps->getBitDepth(toChannelType(compID));
       int qpBase = offsetRLSCP + 4 - (bitDepth - 8) * 6;
@@ -2334,7 +2368,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
   if( isField && picIdInGOP == 0 )
   {
-    for (int gopId = 0; gopId < max(2, m_iGopSize); gopId++)
+    for (int gopId = 0; gopId < std::max(2, m_iGopSize); gopId++)
     {
       m_pcCfg->setEncodedFlag(gopId, false);
     }
@@ -2433,10 +2467,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     const int picHeight = pcPic->cs->pps->getPicHeightInLumaSamples();
     const int maxCUWidth = pcPic->cs->sps->getMaxCUWidth();
     const int maxCUHeight = pcPic->cs->sps->getMaxCUHeight();
-    const ChromaFormat chromaFormatIDC = pcPic->cs->sps->getChromaFormatIdc();
+    const ChromaFormat chromaFormatIdc = pcPic->cs->sps->getChromaFormatIdc();
     const int maxTotalCUDepth = floorLog2(maxCUWidth) - pcPic->cs->sps->getLog2MinCodingBlockSize();
 
-    m_pcSliceEncoder->create( picWidth, picHeight, chromaFormatIDC, maxCUWidth, maxCUHeight, maxTotalCUDepth );
+    m_pcSliceEncoder->create(picWidth, picHeight, chromaFormatIdc, maxCUWidth, maxCUHeight, maxTotalCUDepth);
 
     pcPic->createTempBuffers( pcPic->cs->pps->pcv->maxCUWidth );
     pcPic->cs->createCoeffs((bool)pcPic->cs->sps->getPLTMode());
@@ -2446,8 +2480,15 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     pcPic->allocateNewSlice();
     m_pcSliceEncoder->setSliceSegmentIdx(0);
 
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+    const NalUnitType naluType = getNalUnitType(pocCurr, m_iLastIDR, isField);
+    pcPic->setPictureType(naluType);
+    m_pcSliceEncoder->initEncSlice(pcPic, pocLast, pocCurr, gopId, pcSlice, isField, isEncodeLtRef,
+                                   m_pcEncLib->getLayerId(), naluType);
+#else
     m_pcSliceEncoder->initEncSlice(pcPic, pocLast, pocCurr, gopId, pcSlice, isField, isEncodeLtRef,
                                    m_pcEncLib->getLayerId(), getNalUnitType(pocCurr, m_iLastIDR, isField));
+#endif
 
     DTRACE_UPDATE( g_trace_ctx, ( std::make_pair( "poc", pocCurr ) ) );
     DTRACE_UPDATE( g_trace_ctx, ( std::make_pair( "final", 0 ) ) );
@@ -2647,73 +2688,65 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       }
     }
 
-    if (pcSlice->checkThatAllRefPicsAreAvailable(rcListPic, pcSlice->getRPL0(), 0, false) != 0 || pcSlice->checkThatAllRefPicsAreAvailable(rcListPic, pcSlice->getRPL1(), 1, false) != 0 ||
-        (m_pcEncLib->getDependentRAPIndicationSEIEnabled() && !pcSlice->isIRAP() && ( pcSlice->isDRAP() || !pcSlice->isPOCInRefPicList(pcSlice->getRPL0(), pcSlice->getAssociatedIRAPPOC())) ) ||
-        (m_pcEncLib->getEdrapIndicationSEIEnabled() && !pcSlice->isIRAP() && ( pcSlice->getEdrapRapId() > 0 || !pcSlice->isPOCInRefPicList(pcSlice->getRPL0(), pcSlice->getAssociatedIRAPPOC()) ) )
-      || (((pcSlice->isIRAP() && m_pcEncLib->getAvoidIntraInDepLayer()) || (!pcSlice->isIRAP() && m_pcEncLib->getRplOfDepLayerInSh())) && pcSlice->getPic()->cs->vps && m_pcEncLib->getNumRefLayers(pcSlice->getPic()->cs->vps->getGeneralLayerIdx(m_pcEncLib->getLayerId())))
-      )
+    if (pcSlice->checkThatAllRefPicsAreAvailable(rcListPic, pcSlice->getRpl(REF_PIC_LIST_0), 0, false) != 0
+        || pcSlice->checkThatAllRefPicsAreAvailable(rcListPic, pcSlice->getRpl(REF_PIC_LIST_1), 1, false) != 0
+        || (m_pcEncLib->getDependentRAPIndicationSEIEnabled() && !pcSlice->isIRAP()
+            && (pcSlice->isDRAP()
+                || !pcSlice->isPOCInRefPicList(pcSlice->getRpl(REF_PIC_LIST_0), pcSlice->getAssociatedIRAPPOC())))
+        || (m_pcEncLib->getEdrapIndicationSEIEnabled() && !pcSlice->isIRAP()
+            && (pcSlice->getEdrapRapId() > 0
+                || !pcSlice->isPOCInRefPicList(pcSlice->getRpl(REF_PIC_LIST_0), pcSlice->getAssociatedIRAPPOC())))
+        || (((pcSlice->isIRAP() && m_pcEncLib->getAvoidIntraInDepLayer())
+             || (!pcSlice->isIRAP() && m_pcEncLib->getRplOfDepLayerInSh()))
+            && pcSlice->getPic()->cs->vps
+            && m_pcEncLib->getNumRefLayers(pcSlice->getPic()->cs->vps->getGeneralLayerIdx(m_pcEncLib->getLayerId()))))
     {
-      xCreateExplicitReferencePictureSetFromReference( pcSlice, rcListPic, pcSlice->getRPL0(), pcSlice->getRPL1() );
+      xCreateExplicitReferencePictureSetFromReference(pcSlice, rcListPic, pcSlice->getRpl(REF_PIC_LIST_0),
+                                                      pcSlice->getRpl(REF_PIC_LIST_1));
     }
 
-    pcSlice->applyReferencePictureListBasedMarking( rcListPic, pcSlice->getRPL0(), pcSlice->getRPL1(), pcSlice->getPic()->layerId, *(pcSlice->getPPS()));
+    pcSlice->applyReferencePictureListBasedMarking(rcListPic, pcSlice->getRpl(REF_PIC_LIST_0),
+                                                   pcSlice->getRpl(REF_PIC_LIST_1), pcSlice->getPic()->layerId,
+                                                   *(pcSlice->getPPS()));
 
-    if(pcSlice->getTLayer() > 0
-      && !(pcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_RADL     // Check if not a leading picture
-        || pcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_RASL)
-        )
+    if (pcSlice->getTLayer() > 0 && !pcSlice->isLeadingPic())
     {
       if (pcSlice->isStepwiseTemporalLayerSwitchingPointCandidate(rcListPic))
       {
         bool isSTSA=true;
 
-        for(int ii=0;(ii<m_pcCfg->getGOPSize() && isSTSA==true);ii++)
+        for (int ii = 0; ii < m_pcCfg->getGOPSize() && isSTSA; ii++)
         {
           int lTid = m_pcCfg->getRPLEntry(0, ii).m_temporalId;
 
           if (lTid == pcSlice->getTLayer())
           {
-            const ReferencePictureList* rpl0 = m_pcEncLib->getRplOfDepLayerInSh()? m_pcEncLib->getRPLList(0)->getReferencePictureList(ii): pcSlice->getSPS()->getRPLList0()->getReferencePictureList(ii);
-            for (int jj = 0; jj < pcSlice->getRPL0()->getNumberOfActivePictures(); jj++)
+            for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
             {
-              int tPoc = pcSlice->getPOC() + rpl0->getRefPicIdentifier(jj);
-              int kk = 0;
-              for (kk = 0; kk<m_pcCfg->getGOPSize(); kk++)
+              const ReferencePictureList *rpl = m_pcEncLib->getRplOfDepLayerInSh()
+                                                  ? m_pcEncLib->getRplList(l)->getReferencePictureList(ii)
+                                                  : pcSlice->getSPS()->getRplList(l)->getReferencePictureList(ii);
+              for (int jj = 0; jj < pcSlice->getRpl(l)->getNumberOfActivePictures(); jj++)
               {
-                if (m_pcCfg->getRPLEntry(0, kk).m_POC == tPoc)
+                // What about long-term and inter-layer?
+                int tPoc = pcSlice->getPOC() + rpl->getRefPicIdentifier(jj);
+                for (int kk = 0; kk < m_pcCfg->getGOPSize(); kk++)
                 {
-                  break;
+                  if (m_pcCfg->getRPLEntry(0, kk).m_POC == tPoc)
+                  {
+                    int tTid = m_pcCfg->getRPLEntry(0, kk).m_temporalId;
+                    if (tTid >= pcSlice->getTLayer())
+                    {
+                      isSTSA = false;
+                      break;
+                    }
+                  }
                 }
-              }
-              int tTid = m_pcCfg->getRPLEntry(0, kk).m_temporalId;
-              if (tTid >= pcSlice->getTLayer())
-              {
-                isSTSA = false;
-                break;
-              }
-            }
-            const ReferencePictureList* rpl1 = m_pcEncLib->getRplOfDepLayerInSh()? m_pcEncLib->getRPLList(1)->getReferencePictureList(ii): pcSlice->getSPS()->getRPLList1()->getReferencePictureList(ii);
-            for (int jj = 0; jj < pcSlice->getRPL1()->getNumberOfActivePictures(); jj++)
-            {
-              int tPoc = pcSlice->getPOC() + rpl1->getRefPicIdentifier(jj);
-              int kk = 0;
-              for (kk = 0; kk<m_pcCfg->getGOPSize(); kk++)
-              {
-                if (m_pcCfg->getRPLEntry(1, kk).m_POC == tPoc)
-                {
-                  break;
-                }
-              }
-              int tTid = m_pcCfg->getRPLEntry(1, kk).m_temporalId;
-              if (tTid >= pcSlice->getTLayer())
-              {
-                isSTSA = false;
-                break;
               }
             }
           }
         }
-        if(isSTSA==true)
+        if (isSTSA)
         {
           pcSlice->setNalUnitType(NAL_UNIT_CODED_SLICE_STSA);
         }
@@ -2724,17 +2757,19 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     {
       pcSlice->setNumRefIdx(REF_PIC_LIST_0, (pcSlice->isIntra())
                                               ? 0
-                                              : min(m_pcCfg->getRPLEntry(0, gopId).m_numRefPicsActive + 1,
-                                                    pcSlice->getRPL0()->getNumberOfActivePictures()));
+                                              : std::min(m_pcCfg->getRPLEntry(0, gopId).m_numRefPicsActive + 1,
+                                                    pcSlice->getRpl(REF_PIC_LIST_0)->getNumberOfActivePictures()));
       pcSlice->setNumRefIdx(REF_PIC_LIST_1, (!pcSlice->isInterB())
                                               ? 0
-                                              : min(m_pcCfg->getRPLEntry(1, gopId).m_numRefPicsActive + 1,
-                                                    pcSlice->getRPL1()->getNumberOfActivePictures()));
+                                              : std::min(m_pcCfg->getRPLEntry(1, gopId).m_numRefPicsActive + 1,
+                                                    pcSlice->getRpl(REF_PIC_LIST_1)->getNumberOfActivePictures()));
     }
     else
     {
-      pcSlice->setNumRefIdx(REF_PIC_LIST_0, (pcSlice->isIntra()) ? 0 : pcSlice->getRPL0()->getNumberOfActivePictures());
-      pcSlice->setNumRefIdx(REF_PIC_LIST_1, (!pcSlice->isInterB()) ? 0 : pcSlice->getRPL1()->getNumberOfActivePictures());
+      pcSlice->setNumRefIdx(REF_PIC_LIST_0,
+                            (pcSlice->isIntra()) ? 0 : pcSlice->getRpl(REF_PIC_LIST_0)->getNumberOfActivePictures());
+      pcSlice->setNumRefIdx(REF_PIC_LIST_1,
+                            (!pcSlice->isInterB()) ? 0 : pcSlice->getRpl(REF_PIC_LIST_1)->getNumberOfActivePictures());
     }
     if (m_pcCfg->getUseCompositeRef() && getPrepareLTRef())
     {
@@ -2989,14 +3024,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       }
     }
 
-#if GDR_ENABLED
-    PicHeader *picHeader = new PicHeader;
-    *picHeader = *pcPic->cs->picHeader;
-    pcSlice->scaleRefPicList(scaledRefPic, picHeader, m_pcEncLib->getApss(), picHeader->getLmcsAPS(), picHeader->getScalingListAPS(), false);
-    picHeader = pcPic->cs->picHeader;
-#else
     pcSlice->scaleRefPicList( scaledRefPic, pcPic->cs->picHeader, m_pcEncLib->getApss(), picHeader->getLmcsAPS(), picHeader->getScalingListAPS(), false );
-#endif
 
     // set adaptive search range for non-intra-slices
     if (m_pcCfg->getUseASR() && !pcSlice->isIntra())
@@ -3166,8 +3194,15 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     if (pcSlice->getPPS()->getSliceChromaQpFlag() && CS::isDualITree (*pcSlice->getPic()->cs))
 #endif
     {
-#if JVET_AB0080_CHROMA_QP_FIX
-      if (!(pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR || pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2 || pcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3))
+      bool isRprPPS = false;
+      for (int nr = 0; nr < NUM_RPR_PPS; nr++)
+      {
+        if ((pcSlice->getPPS()->getPPSId() == RPR_PPS_ID[nr]) && (RPR_PPS_ID[nr] != 0))
+        {
+          isRprPPS = true;
+        }
+      }
+      if (!isRprPPS)
       {
         // overwrite chroma qp offset for dual tree
         pcSlice->setSliceChromaQpDelta(COMPONENT_Cb, m_pcCfg->getChromaCbQpOffsetDualTree());
@@ -3178,16 +3213,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         }
         m_pcSliceEncoder->setUpLambda(pcSlice, pcSlice->getLambdas()[0], pcSlice->getSliceQp());
       }
-#else
-      // overwrite chroma qp offset for dual tree
-      pcSlice->setSliceChromaQpDelta(COMPONENT_Cb, m_pcCfg->getChromaCbQpOffsetDualTree());
-      pcSlice->setSliceChromaQpDelta(COMPONENT_Cr, m_pcCfg->getChromaCrQpOffsetDualTree());
-      if (pcSlice->getSPS()->getJointCbCrEnabledFlag())
-      {
-        pcSlice->setSliceChromaQpDelta(JOINT_CbCr, m_pcCfg->getChromaCbCrQpOffsetDualTree());
-      }
-      m_pcSliceEncoder->setUpLambda(pcSlice, pcSlice->getLambdas()[0], pcSlice->getSliceQp());
-#endif
     }
 
     xPicInitLMCS(pcPic, picHeader, pcSlice);
@@ -3416,17 +3441,17 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       m_featureCounter.baseQP[pcPic->getLossyQPValue()] ++;
       if (m_featureCounter.isYUV420 == -1)
       {
-        m_featureCounter.isYUV400 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_400 ? 1 : 0;
-        m_featureCounter.isYUV420 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_420 ? 1 : 0;
-        m_featureCounter.isYUV422 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_422 ? 1 : 0;
-        m_featureCounter.isYUV444 = pcSlice->getSPS()->getChromaFormatIdc() == CHROMA_444 ? 1 : 0;
+        m_featureCounter.isYUV400 = pcSlice->getSPS()->getChromaFormatIdc() == ChromaFormat::_400 ? 1 : 0;
+        m_featureCounter.isYUV420 = pcSlice->getSPS()->getChromaFormatIdc() == ChromaFormat::_420 ? 1 : 0;
+        m_featureCounter.isYUV422 = pcSlice->getSPS()->getChromaFormatIdc() == ChromaFormat::_422 ? 1 : 0;
+        m_featureCounter.isYUV444 = pcSlice->getSPS()->getChromaFormatIdc() == ChromaFormat::_444 ? 1 : 0;
       }
   
       if (m_featureCounter.is8bit == -1)
       {
-        m_featureCounter.is8bit  = (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) == 8) ? 1 : 0;
-        m_featureCounter.is10bit = (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) == 10) ? 1 : 0;
-        m_featureCounter.is12bit = (pcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) == 12) ? 1 : 0;
+        m_featureCounter.is8bit  = (pcSlice->getSPS()->getBitDepth(ChannelType::LUMA) == 8) ? 1 : 0;
+        m_featureCounter.is10bit = (pcSlice->getSPS()->getBitDepth(ChannelType::LUMA) == 10) ? 1 : 0;
+        m_featureCounter.is12bit = (pcSlice->getSPS()->getBitDepth(ChannelType::LUMA) == 12) ? 1 : 0;
       }
   
   
@@ -3462,7 +3487,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         picHeader->setLmcsEnabledFlag(true);
 #if GDR_ENABLED
-        if (cs.sps->getGDREnabledFlag() && picHeader->getInGdrInterval())
+        if (cs.sps->getGDREnabledFlag() && pcPic->gdrParam.inGdrInterval)
         {
           picHeader->setLmcsChromaResidualScaleFlag(false);
         }
@@ -3508,7 +3533,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         const uint32_t log2SaoOffsetScaleChroma =
           (uint32_t) std::max(0, pcSlice->getSPS()->getBitDepth(ChannelType::CHROMA) - MAX_SAO_TRUNCATED_BITDEPTH);
 
-        m_pcSAO->create( picWidth, picHeight, chromaFormatIDC, maxCUWidth, maxCUHeight, maxTotalCUDepth, log2SaoOffsetScaleLuma, log2SaoOffsetScaleChroma );
+        m_pcSAO->create(picWidth, picHeight, chromaFormatIdc, maxCUWidth, maxCUHeight, maxTotalCUDepth,
+                        log2SaoOffsetScaleLuma, log2SaoOffsetScaleChroma);
         m_pcSAO->destroyEncData();
         m_pcSAO->createEncData( m_pcCfg->getSaoCtuBoundary(), numCtuInFrame );
         m_pcSAO->setReshaper( m_pcReshaper );
@@ -3595,7 +3621,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       if( pcSlice->getSPS()->getALFEnabledFlag() )
       {
         m_pcALF->destroy();
-        m_pcALF->create( m_pcCfg, picWidth, picHeight, chromaFormatIDC, maxCUWidth, maxCUHeight, maxTotalCUDepth, m_pcCfg->getBitDepth(), m_pcCfg->getInputBitDepth() );
+        m_pcALF->create(m_pcCfg, picWidth, picHeight, chromaFormatIdc, maxCUWidth, maxCUHeight, maxTotalCUDepth,
+                        m_pcCfg->getBitDepth(), m_pcCfg->getInputBitDepth());
 
         for (int s = 0; s < numSliceSegments; s++)
         {
@@ -3819,6 +3846,38 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
       // it is assumed that layerIdx equal to 0 is always present
       bool newPPS = m_pcEncLib->PPSNeedsWriting(pcSlice->getPPS()->getPPSId());
+      if (m_pcEncLib->getRprFunctionalityTestingEnabledFlag() || m_pcEncLib->getGOPBasedRPREnabledFlag())
+      {
+        if (newPPS)
+        {
+          m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(pcSlice->getPPS()->getPPSId()), true);
+        }
+        // here a PPS needs to be encoded for an inter picture if PPS is different from any RPR PPS written after and including the intra
+        if ((m_pcEncLib->getRprFunctionalityTestingEnabledFlag() && (pcSlice->getPOC() % m_pcEncLib->getRprSwitchingSegmentSize()) == 0) ||
+          (m_pcEncLib->getGOPBasedRPREnabledFlag() && (pcSlice->getPOC() % m_pcEncLib->getGOPSize()) == 0))
+        {
+          if (pcSlice->isIntra())
+          {
+            for (int nr = 0; nr < NUM_RPR_PPS; nr++)
+            {
+              // at intra all PPS coded after Intra is reset except the current one
+              if (pcSlice->getPPS()->getPPSId() != RPR_PPS_ID[nr])
+              {
+                m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(RPR_PPS_ID[nr]), false);
+              }
+            }
+          }
+          else
+          {
+            if (!m_pcEncLib->getRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(pcSlice->getPPS()->getPPSId())))
+            {
+              // here a forced coding of a pps is enabled
+              newPPS = true;
+              m_pcEncLib->setRprPPSCodedAfterIntra(m_pcEncLib->getRprResolutionIndex(pcSlice->getPPS()->getPPSId()), true);
+            }
+          }
+        }
+      }
       actualTotalBits += xWriteParameterSets(accessUnit, pcSlice, writePS, layerIdx, newPPS);
 
       if (writePS)
@@ -3851,7 +3910,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 #endif
         if (writeAPS)
         {
-          aps->chromaPresentFlag = pcSlice->getSPS()->getChromaFormatIdc() != CHROMA_400;
+          aps->chromaPresentFlag = isChromaEnabled(pcSlice->getSPS()->getChromaFormatIdc());
           actualTotalBits += xWriteAPS( accessUnit, aps, m_pcEncLib->getLayerId(), true );
           apsMapLmcs->clearChangedFlag(apsId);
 #if GDR_ENABLED
@@ -3880,7 +3939,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 #endif
         if( writeAPS )
         {
-          aps->chromaPresentFlag = pcSlice->getSPS()->getChromaFormatIdc() != CHROMA_400;
+          aps->chromaPresentFlag = isChromaEnabled(pcSlice->getSPS()->getChromaFormatIdc());
           actualTotalBits += xWriteAPS( accessUnit, aps, m_pcEncLib->getLayerId(), true );
           apsMapSl->clearChangedFlag(apsId);
 #if GDR_ENABLED
@@ -3927,7 +3986,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 #endif
           if (writeAPS )
           {
-            aps->chromaPresentFlag = pcSlice->getSPS()->getChromaFormatIdc() != CHROMA_400;
+            aps->chromaPresentFlag = isChromaEnabled(pcSlice->getSPS()->getChromaFormatIdc());
             actualTotalBits += xWriteAPS( accessUnit, aps, m_pcEncLib->getLayerId(), true );
             apsMapAlf->clearChangedFlag(apsId);
 #if GDR_ENABLED
@@ -3966,10 +4025,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         }
         m_pcSliceEncoder->setSliceSegmentIdx(sliceSegmentIdxCount);
 
-        *pcSlice->getRPL0() = *pcPic->slices[0]->getRPL0();
-        *pcSlice->getRPL1() = *pcPic->slices[0]->getRPL1();
-        pcSlice->setRPL0idx(pcPic->slices[0]->getRPL0idx());
-        pcSlice->setRPL1idx(pcPic->slices[0]->getRPL1idx());
+        *pcSlice->getRpl(REF_PIC_LIST_0) = *pcPic->slices[0]->getRpl(REF_PIC_LIST_0);
+        *pcSlice->getRpl(REF_PIC_LIST_1) = *pcPic->slices[0]->getRpl(REF_PIC_LIST_1);
+        pcSlice->setRplIdx(REF_PIC_LIST_0, pcPic->slices[0]->getRplIdx(REF_PIC_LIST_0));
+        pcSlice->setRplIdx(REF_PIC_LIST_1, pcPic->slices[0]->getRplIdx(REF_PIC_LIST_1));
 
         picHeader->setNoOutputBeforeRecoveryFlag( false );
         if (pcSlice->isIRAP())
@@ -3996,10 +4055,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           // code RPL in picture header or slice headers
           if( !m_pcCfg->getSliceLevelRpl() && (!pcSlice->getIdrPicFlag() || pcSlice->getSPS()->getIDRRefParamListPresent()) )
           {
-            picHeader->setRPL0idx(pcSlice->getRPL0idx());
-            picHeader->setRPL1idx(pcSlice->getRPL1idx());
-            *picHeader->getRPL0() = *pcSlice->getRPL0();
-            *picHeader->getRPL1() = *pcSlice->getRPL1();
+            picHeader->setRplIdx(REF_PIC_LIST_0, pcSlice->getRplIdx(REF_PIC_LIST_0));
+            picHeader->setRplIdx(REF_PIC_LIST_1, pcSlice->getRplIdx(REF_PIC_LIST_1));
+            *picHeader->getRpl(REF_PIC_LIST_0) = *pcSlice->getRpl(REF_PIC_LIST_0);
+            *picHeader->getRpl(REF_PIC_LIST_1) = *pcSlice->getRpl(REF_PIC_LIST_1);
           }
 
           // code DBLK in picture header or slice headers
@@ -4046,8 +4105,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           if (!m_pcCfg->getSliceLevelWp())
           {
             picHeader->setWpScaling(pcSlice->getWpScalingAll());
-            picHeader->setNumL0Weights(pcSlice->getNumRefIdx(REF_PIC_LIST_0));
-            picHeader->setNumL0Weights(pcSlice->getNumRefIdx(REF_PIC_LIST_1));
+            picHeader->setNumWeights(REF_PIC_LIST_0, pcSlice->getNumRefIdx(REF_PIC_LIST_0));
+            picHeader->setNumWeights(REF_PIC_LIST_1, pcSlice->getNumRefIdx(REF_PIC_LIST_1));
           }
 
           pcPic->cs->picHeader->setPic(pcPic);
@@ -4056,6 +4115,13 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           {
             pcSlice->setPictureHeaderInSliceHeader(false);
             actualTotalBits += xWritePicHeader(accessUnit, pcPic->cs->picHeader);
+#if GDR_ENC_TRACE
+            printf("-gdr_pic_flag:%d\n", picHeader->getGdrPicFlag());
+            printf("-recovery_poc_cnt:%d\n", picHeader->getRecoveryPocCnt());
+            printf("-InGdrInterval:%d\n", pcPic->gdrParam.inGdrInterval);
+            printf("-pic_lmcs_enabled_flag:%d\n", picHeader->getLmcsEnabledFlag() ? 1 : 0);
+            printf("-pic_chroma_residual_scale_flag:%d\n", picHeader->getLmcsChromaResidualScaleFlag() ? 1 : 0);
+#endif
           }
           else
           {
@@ -4162,27 +4228,27 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         if (pcSlice->isLastSliceInSubpic())
         {
           // Check picture level encoding constraints/requirements
-          ProfileLevelTierFeatures profileLevelTierFeatures;
-          profileLevelTierFeatures.extractPTLInformation(*(pcSlice->getSPS()));
+          ProfileTierLevelFeatures profileTierLevelFeatures;
+          profileTierLevelFeatures.extractPTLInformation(*(pcSlice->getSPS()));
           const SEIMessages &subPictureLevelInfoSEIs =
             getSeisByType(leadingSeiMessages, SEI::PayloadType::SUBPICTURE_LEVEL_INFO);
           if (!subPictureLevelInfoSEIs.empty())
           {
             const SEISubpicureLevelInfo& seiSubpic = static_cast<const SEISubpicureLevelInfo&>(*subPictureLevelInfoSEIs.front());
-            validateMinCrRequirements(profileLevelTierFeatures, subPicStats[subpicIdx].numBytesInVclNalUnits, pcSlice, m_pcCfg, seiSubpic, subpicIdx, m_pcEncLib->getLayerId());
+            validateMinCrRequirements(profileTierLevelFeatures, subPicStats[subpicIdx].numBytesInVclNalUnits, pcSlice, m_pcCfg, seiSubpic, subpicIdx, m_pcEncLib->getLayerId());
           }
           sumZeroWords += cabac_zero_word_padding(pcSlice, pcPic, subPicStats[subpicIdx].numBinsWritten, subPicStats[subpicIdx].numBytesInVclNalUnits, 0,
-                                                  accessUnit.back()->m_nalUnitData, m_pcCfg->getCabacZeroWordPaddingEnabled(), profileLevelTierFeatures);
+                                                  accessUnit.back()->m_nalUnitData, m_pcCfg->getCabacZeroWordPaddingEnabled(), profileTierLevelFeatures);
         }
       } // end iteration over slices
 
       {
         // Check picture level encoding constraints/requirements
-        ProfileLevelTierFeatures profileLevelTierFeatures;
-        profileLevelTierFeatures.extractPTLInformation(*(pcSlice->getSPS()));
-        validateMinCrRequirements(profileLevelTierFeatures, numBytesInVclNalUnits, pcPic, m_pcCfg);
+        ProfileTierLevelFeatures profileTierLevelFeatures;
+        profileTierLevelFeatures.extractPTLInformation(*(pcSlice->getSPS()));
+        validateMinCrRequirements(profileTierLevelFeatures, numBytesInVclNalUnits, pcPic, m_pcCfg);
         // cabac_zero_words processing
-        cabac_zero_word_padding(pcSlice, pcPic, binCountsInNalUnits, numBytesInVclNalUnits, sumZeroWords, accessUnit.back()->m_nalUnitData, m_pcCfg->getCabacZeroWordPaddingEnabled(), profileLevelTierFeatures);
+        cabac_zero_word_padding(pcSlice, pcPic, binCountsInNalUnits, numBytesInVclNalUnits, sumZeroWords, accessUnit.back()->m_nalUnitData, m_pcCfg->getCabacZeroWordPaddingEnabled(), profileTierLevelFeatures);
       }
 
       //-- For time output for each slice
@@ -4192,7 +4258,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       std::string digestStr;
 #if GDR_ENABLED
       // note : generate hash sei only for non-gdr pictures
-      bool genHash = !(m_pcCfg->getGdrNoHash() && pcSlice->getPicHeader()->getInGdrInterval());
+      bool genHash = !(m_pcCfg->getGdrNoHash() && pcSlice->getPic()->gdrParam.inGdrInterval);
       if (m_pcCfg->getDecodedPictureHashSEIType() != HashType::NONE && genHash)
 #else
       if (m_pcCfg->getDecodedPictureHashSEIType() != HashType::NONE)
@@ -4309,7 +4375,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       xWriteTrailingSEIMessages(trailingSeiMessages, accessUnit, pcSlice->getTLayer());
 
 #if GDR_ENABLED
-      if (!(m_pcCfg->getGdrNoHash() && pcSlice->getPicHeader()->getInGdrInterval()))
+      if (!(m_pcCfg->getGdrNoHash() && pcSlice->getPic()->gdrParam.inGdrInterval))
       {
         printHash(m_pcCfg->getDecodedPictureHashSEIType(), digestStr);
       }
@@ -4361,6 +4427,26 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         std::vector<int> targetLayers;
         xCreateScalableNestingSEI(leadingSeiMessages, nestedSeiMessages, targetOLS, targetLayers, subpicIDs, maxSubpicIdInPic);
       }
+
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+      SEIMessages seiMessages = getSeisByType(leadingSeiMessages, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
+      for (auto it = seiMessages.cbegin(); it != seiMessages.cend(); it++)
+      {
+        pcPic->SEIs.push_back(new SEINeuralNetworkPostFilterCharacteristics(*(SEINeuralNetworkPostFilterCharacteristics*) *it));
+      }
+
+      seiMessages = getSeisByType(leadingSeiMessages, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
+      for (auto it = seiMessages.cbegin(); it != seiMessages.cend(); it++)
+      {
+        pcPic->SEIs.push_back(new SEINeuralNetworkPostFilterActivation(*(SEINeuralNetworkPostFilterActivation*) *it));
+      }
+
+      seiMessages = getSeisByType(leadingSeiMessages, SEI::PayloadType::FRAME_PACKING);
+      for (auto it = seiMessages.cbegin(); it != seiMessages.cend(); it++)
+      {
+        pcPic->SEIs.push_back(new SEIFramePacking(*(SEIFramePacking*) *it));
+      }
+#endif
 
       double seiBits = (double)xWriteLeadingSEIMessages( leadingSeiMessages, duInfoSeiMessages, accessUnit, pcSlice->getTLayer(), pcSlice->getSPS(), duData );
       m_gcAnalyzeAll.addBits(seiBits);
@@ -5001,12 +5087,51 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     const PPS* pps = m_pcEncLib->getPPS(0);
     CU::getRprScaling(&sps, pps, pcPic, scalingRatio);
 
-#if JVET_AB0081
     bool rescaleForDisplay = true;
     Picture::rescalePicture(scalingRatio, picC, pcPic->getScalingWindow(), upscaledRec, pps->getScalingWindow(), format, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag(), rescaleForDisplay, m_pcCfg->getUpscaleFilerForDisplay());
-#else
-    Picture::rescalePicture( scalingRatio, picC, pcPic->getScalingWindow(), upscaledRec, pps->getScalingWindow(), format, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag() );
-#endif
+  }
+
+  Picture* picRefLayer = nullptr;
+  if (m_pcEncLib->isRefLayerMetricsEnabled())
+  {
+    const VPS* vps = pcPic->cs->vps;
+    if (vps && m_pcEncLib->getNumRefLayers(vps->getGeneralLayerIdx(pcPic->layerId)) > 0)
+    {
+      int layerIdx = vps->getGeneralLayerIdx(pcPic->layerId);
+      int refLayerId = vps->getLayerId(vps->getDirectRefLayerIdx(layerIdx,0));
+
+      for (Picture* p: *m_pcEncLib->getListPic())
+      {
+        if (p->layerId == refLayerId  && p->poc == pcPic->poc)
+        {
+          picRefLayer = p;
+          break;
+        }
+      }
+      if (picRefLayer) 
+      {
+        const CPelUnitBuf& pub1 = org;
+        const CPelUnitBuf& pub0 = picRefLayer->getRecoBuf();
+        Window& wScaling0 = picRefLayer->getScalingWindow();
+        Window& wScaling1 = pcPic->getScalingWindow();
+        int w0 = pub0.get(COMPONENT_Y).width - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( wScaling0.getWindowLeftOffset() + wScaling0.getWindowRightOffset() );
+        int h0 = pub0.get(COMPONENT_Y).height - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( wScaling0.getWindowTopOffset()  + wScaling0.getWindowBottomOffset() );
+        int w1 = pub1.get(COMPONENT_Y).width - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( wScaling1.getWindowLeftOffset() + wScaling1.getWindowRightOffset() );
+        int h1 = pub1.get(COMPONENT_Y).height - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( wScaling1.getWindowTopOffset()  + wScaling1.getWindowBottomOffset() );
+        int xScale = ((w0 << ScalingRatio::BITS) + (w1 >> 1)) / w1;
+        int yScale = ((h0 << ScalingRatio::BITS) + ( h1 >> 1 )) / h1;
+        ScalingRatio scalingRatio = { xScale, yScale };          
+      
+        if (m_pcRefLayerRescaledPicYuv == nullptr)
+        {
+          m_pcRefLayerRescaledPicYuv = new PelStorage();
+          m_pcRefLayerRescaledPicYuv->create(pub1.chromaFormat, Area(Position(), pub1.get(COMPONENT_Y)));
+        }
+
+        Picture::rescalePicture( scalingRatio, pub0, wScaling0, *m_pcRefLayerRescaledPicYuv, wScaling1, format, sps.getBitDepths(), false, false, sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag() );
+        m_pcEncLib->setRefLayerRescaledAvailable(true);
+      }
+    }
   }
 
   for (int comp = 0; comp < ::getNumberValidComponents(formatD); comp++)
@@ -5082,6 +5207,17 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 
       upscaledPSNR[comp] = upscaledSSD ? 10.0 * log10( (double)maxval * maxval * upscaledWidth * upscaledHeight / (double)upscaledSSD ) : 999.99;
     }
+    else if (picRefLayer)
+    {
+      const CPelBuf& p = m_pcRefLayerRescaledPicYuv->get(compID);
+      const CPelBuf& o = org.get(compID);
+#if ENABLE_QPA
+      const uint64_t upscaledSSD = xFindDistortionPlane(p, o, useWPSNR ? bitDepth : 0, ::getComponentScaleX(compID, format), ::getComponentScaleY(compID, format));
+#else
+      const uint64_t upscaledSSD = xFindDistortionPlane(p, o, 0);
+#endif
+      upscaledPSNR[comp] = upscaledSSD ? 10.0 * log10((double) fRefValue / (double) upscaledSSD) : 999.99;
+     }
   }
 
 #if EXTENSION_360_VIDEO
@@ -5224,9 +5360,8 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
       uint64_t xPsnr[MAX_NUM_COMPONENT];
       for (int i = 0; i < MAX_NUM_COMPONENT; i++)
       {
-        copy(reinterpret_cast<uint8_t *>(&dPSNR[i]),
-             reinterpret_cast<uint8_t *>(&dPSNR[i]) + sizeof(dPSNR[i]),
-             reinterpret_cast<uint8_t *>(&xPsnr[i]));
+        std::copy(reinterpret_cast<uint8_t *>(&dPSNR[i]), reinterpret_cast<uint8_t *>(&dPSNR[i]) + sizeof(dPSNR[i]),
+                  reinterpret_cast<uint8_t *>(&xPsnr[i]));
       }
       msg(NOTICE, " [xY %16" PRIx64 " xU %16" PRIx64 " xV %16" PRIx64 "]", xPsnr[COMPONENT_Y], xPsnr[COMPONENT_Cb], xPsnr[COMPONENT_Cr]);
 
@@ -5254,9 +5389,9 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
         uint64_t xPsnrWeighted[MAX_NUM_COMPONENT];
         for (int i = 0; i < MAX_NUM_COMPONENT; i++)
         {
-          copy(reinterpret_cast<uint8_t *>(&dPSNRWeighted[i]),
-               reinterpret_cast<uint8_t *>(&dPSNRWeighted[i]) + sizeof(dPSNRWeighted[i]),
-               reinterpret_cast<uint8_t *>(&xPsnrWeighted[i]));
+          std::copy(reinterpret_cast<uint8_t *>(&dPSNRWeighted[i]),
+                    reinterpret_cast<uint8_t *>(&dPSNRWeighted[i]) + sizeof(dPSNRWeighted[i]),
+                    reinterpret_cast<uint8_t *>(&xPsnrWeighted[i]));
         }
         msg(NOTICE, " [xWY %16" PRIx64 " xWU %16" PRIx64 " xWV %16" PRIx64 "]", xPsnrWeighted[COMPONENT_Y], xPsnrWeighted[COMPONENT_Cb], xPsnrWeighted[COMPONENT_Cr]);
       }
@@ -5273,9 +5408,8 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
           int64_t xdeltaE[MAX_NUM_COMPONENT];
           for (int i = 0; i < 1; i++)
           {
-            copy(reinterpret_cast<uint8_t *>(&deltaE[i]),
-                 reinterpret_cast<uint8_t *>(&deltaE[i]) + sizeof(deltaE[i]),
-                 reinterpret_cast<uint8_t *>(&xdeltaE[i]));
+            std::copy_n(reinterpret_cast<uint8_t*>(&deltaE[i]), sizeof(deltaE[i]),
+                        reinterpret_cast<uint8_t*>(&xdeltaE[i]));
           }
           msg(NOTICE, " [xDeltaE%d %16" PRIx64 "]", (int)m_pcCfg->getWhitePointDeltaE(i), xdeltaE[0]);
         }
@@ -5289,9 +5423,8 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
           int64_t xpsnrL[MAX_NUM_COMPONENT];
           for (int i = 0; i < 1; i++)
           {
-            copy(reinterpret_cast<uint8_t *>(&psnrL[i]),
-                 reinterpret_cast<uint8_t *>(&psnrL[i]) + sizeof(psnrL[i]),
-                 reinterpret_cast<uint8_t *>(&xpsnrL[i]));
+            std::copy_n(reinterpret_cast<uint8_t*>(&psnrL[i]), sizeof(psnrL[i]),
+                        reinterpret_cast<uint8_t*>(&xpsnrL[i]));
           }
 
           msg(NOTICE, " [xPSNRL%d %16" PRIx64 "]", (int) m_pcCfg->getWhitePointDeltaE(i), xpsnrL[0]);
@@ -5347,6 +5480,11 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     {
       msg( NOTICE, " [Y2 %6.4lf dB  U2 %6.4lf dB  V2 %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr] );
     }
+    else if (m_pcEncLib->isRefLayerRescaledAvailable())
+    {
+      msg(NOTICE, " [Y2 %6.4lf dB  U2 %6.4lf dB  V2 %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr]);
+    } 
+
   }
   else if( g_verbosity >= INFO )
   {
@@ -5674,7 +5812,7 @@ void EncGOP::xCalculateHDRMetrics( Picture* pcPic, double deltaE[hdrtoolslib::NB
 
   ChromaFormat chFmt =  pcPic->chromaFormat;
 
-  if (chFmt != CHROMA_444)
+  if (chFmt != ChromaFormat::_444)
   {
     m_pcConvertFormat->process(m_ppcFrameOrg[1], m_ppcFrameOrg[0]);
     m_pcConvertFormat->process(m_ppcFrameRec[1], m_ppcFrameRec[0]);
@@ -5718,7 +5856,7 @@ void EncGOP::copyBuftoFrame( Picture* pcPic )
   uint16_t* vOrg = m_ppcFrameOrg[0]->m_ui16Comp[hdrtoolslib::Cr_COMP];
   uint16_t* vRec = m_ppcFrameRec[0]->m_ui16Comp[hdrtoolslib::Cr_COMP];
 
-  if (chFmt == CHROMA_444)
+  if (chFmt == ChromaFormat::_444)
   {
     yOrg = m_ppcFrameOrg[1]->m_ui16Comp[hdrtoolslib::Y_COMP];
     yRec = m_ppcFrameRec[1]->m_ui16Comp[hdrtoolslib::Y_COMP];
@@ -5737,7 +5875,7 @@ void EncGOP::copyBuftoFrame( Picture* pcPic )
     }
   }
 
-  if (chFmt != CHROMA_444)
+  if (chFmt != ChromaFormat::_444)
   {
     height >>= 1;
     width  >>= 1;
@@ -6202,8 +6340,8 @@ void EncGOP::arrangeCompositeReference(Slice* pcSlice, PicList& rcListPic, int p
         {
           if (minCtuCost[i].cost > minCtuCost[i + 1].cost)
           {
-            swap(minCtuCost[i].cost, minCtuCost[i + 1].cost);
-            swap(minCtuCost[i].ctuIdx, minCtuCost[i + 1].ctuIdx);
+            std::swap(minCtuCost[i].cost, minCtuCost[i + 1].cost);
+            std::swap(minCtuCost[i].ctuIdx, minCtuCost[i + 1].ctuIdx);
           }
         }
         // 2) compare the current cost with the largest cost
@@ -6625,410 +6763,241 @@ bool EncGOP::xCheckMaxTidILRefPics(int layerIdx, Picture* refPic, bool currentPi
 
 void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicList& rcListPic, const ReferencePictureList *rpl0, const ReferencePictureList *rpl1 )
 {
-  Picture* rpcPic;
-  int pocCycle = 0;
+  const int pocCycle = 1 << slice->getSPS()->getBitsForPOC();
 
-  Picture* pic = slice->getPic();
-  const VPS* vps = slice->getPic()->cs->vps;
-  int layerIdx = vps == nullptr ? 0 : vps->getGeneralLayerIdx( pic->layerId );
-  bool isIntraLayerPredAllowed = (vps->getIndependentLayerFlag(layerIdx) || (vps->getPredDirection(slice->getTLayer()) != 1))
-    && (!slice->isIRAP() || (m_pcEncLib->getAvoidIntraInDepLayer() && layerIdx));
-  bool isInterLayerPredAllowed = !vps->getIndependentLayerFlag(layerIdx) && (vps->getPredDirection(slice->getTLayer()) != 2);
+  const bool interLayerPresent = slice->getSPS()->getInterLayerPresentFlag();
 
-  ReferencePictureList        localRPL0(slice->getSPS()->getInterLayerPresentFlag());
-  ReferencePictureList *const pLocalRPL0 = &localRPL0;
+  Picture   *curPic   = slice->getPic();
+  const VPS *vps      = curPic->cs->vps;
+  int        layerIdx = vps->getGeneralLayerIdx(curPic->layerId);
 
-  uint32_t numOfSTRPL0 = 0;
-  uint32_t numOfLTRPL0 = 0;
-  uint32_t numOfILRPL0 = 0;
-  uint32_t numOfRefPic = rpl0->getNumberOfShorttermPictures() + rpl0->getNumberOfLongtermPictures() + rpl0->getNumberOfInterLayerPictures();
-  uint32_t refPicIdxL0 = 0;
+  const bool isIntraLayerPredAllowed =
+    (vps->getIndependentLayerFlag(layerIdx) || vps->getPredDirection(slice->getTLayer()) != 1)
+    && (!slice->isIRAP() || (m_pcEncLib->getAvoidIntraInDepLayer() && layerIdx != 0));
+  const bool isInterLayerPredAllowed =
+    !vps->getIndependentLayerFlag(layerIdx) && vps->getPredDirection(slice->getTLayer()) != 2;
 
-  static_vector<int, MAX_NUM_REF_PICS> higherTLayerRefs;
+  ReferencePictureList localRpl[NUM_REF_PIC_LIST_01] = { ReferencePictureList(interLayerPresent),
+                                                         ReferencePictureList(interLayerPresent) };
 
-  higherTLayerRefs.resize(0);
-  static_vector<int, MAX_NUM_REF_PICS> inactiveRefs;
-  inactiveRefs.resize(0);
-  if (isIntraLayerPredAllowed)
+  uint32_t numStrp[NUM_REF_PIC_LIST_01] = { 0, 0 };
+  uint32_t numLtrp[NUM_REF_PIC_LIST_01] = { 0, 0 };
+  uint32_t numIlrp[NUM_REF_PIC_LIST_01] = { 0, 0 };
+  uint32_t num[NUM_REF_PIC_LIST_01]     = { 0, 0 };
+
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
   {
-    for (int ii = 0; ii < numOfRefPic; ii++)
+    static_vector<int, MAX_NUM_REF_PICS> higherTLayerRefs;
+    static_vector<int, MAX_NUM_REF_PICS> inactiveRefs;
+
+    const ReferencePictureList *rpl = l == REF_PIC_LIST_0 ? rpl0 : rpl1;
+
+    if (isIntraLayerPredAllowed)
     {
-      // loop through all pictures in the reference picture buffer
-      PicList::iterator iterPic = rcListPic.begin();
-
-      bool isAvailable  = false;
-      bool hasHigherTId = false;
-
-      if (!rpl0->isInterLayerRefPic(ii))
+      for (int ii = 0; ii < rpl->getNumRefEntries(); ii++)
       {
-        pocCycle = 1 << (slice->getSPS()->getBitsForPOC());
-        while (iterPic != rcListPic.end())
+        if (!rpl->isInterLayerRefPic(ii))
         {
-          rpcPic = *(iterPic++);
-
-          if (rpcPic->layerId == pic->layerId)
+          for (const auto &pic: rcListPic)
           {
-            hasHigherTId = rpcPic->temporalId > pic->temporalId;
-            if (!rpl0->isRefPicLongterm(ii) && rpcPic->referenced
-              && rpcPic->getPOC() == slice->getPOC() + rpl0->getRefPicIdentifier(ii)
-              && !slice->isPocRestrictedByDRAP(rpcPic->getPOC(), rpcPic->precedingDRAP)
-              && !slice->isPocRestrictedByEdrap(rpcPic->getPOC()))
+            if (pic->layerId == curPic->layerId && pic->referenced
+                && !slice->isPocRestrictedByDRAP(pic->getPOC(), pic->precedingDRAP)
+                && !slice->isPocRestrictedByEdrap(pic->getPOC()))
             {
-              isAvailable = true;
-              break;
-            }
-            else if (rpl0->isRefPicLongterm(ii) && rpcPic->referenced && (rpcPic->getPOC() & (pocCycle - 1)) == rpl0->getRefPicIdentifier(ii) && !slice->isPocRestrictedByDRAP(rpcPic->getPOC(), rpcPic->precedingDRAP)
-              && !slice->isPocRestrictedByEdrap(rpcPic->getPOC()))
-            {
-              isAvailable = true;
-              break;
-            }
-          }
-        }
-
-        if (isAvailable)
-        {
-          if (slice->isIRAP())
-          {
-            inactiveRefs.push_back(ii);
-          }
-          else if (hasHigherTId)
-          {
-            higherTLayerRefs.push_back(ii);
-          }
-          else if (refPicIdxL0 >= rpl0->getNumberOfActivePictures() - rpl0->getNumberOfInterLayerPictures() && layerIdx && vps && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
-          {
-            inactiveRefs.push_back(ii);
-          }
-          else
-          {
-            pLocalRPL0->setRefPicIdentifier(refPicIdxL0, rpl0->getRefPicIdentifier(ii), rpl0->isRefPicLongterm(ii), false,
-              NOT_VALID);
-            refPicIdxL0++;
-            numOfSTRPL0 = numOfSTRPL0 + ((rpl0->isRefPicLongterm(ii)) ? 0 : 1);
-            numOfLTRPL0 += (rpl0->isRefPicLongterm(ii) && !rpl0->isInterLayerRefPic(ii)) ? 1 : 0;
-          }
-        }
-      }
-    }
-  }
-
-  // inter-layer reference pictures are added to the end of the reference picture list
-  if (layerIdx && vps && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
-  {
-    numOfRefPic = rpl0->getNumberOfInterLayerPictures() ? rpl0->getNumberOfInterLayerPictures() : m_pcEncLib->getNumRefLayers( layerIdx );
-
-    for( int ii = 0; ii < numOfRefPic; ii++ )
-    {
-      // loop through all pictures in the reference picture buffer
-      PicList::iterator iterPic = rcListPic.begin();
-
-      while( iterPic != rcListPic.end() && ii < numOfRefPic )
-      {
-        rpcPic = *( iterPic++ );
-        int refLayerIdx = vps->getGeneralLayerIdx( rpcPic->layerId );
-        if (rpcPic->referenced && rpcPic->getPOC() == pic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
-            && xCheckMaxTidILRefPics(layerIdx, rpcPic, slice->isIRAP()))
-        {
-          pLocalRPL0->setRefPicIdentifier( refPicIdxL0, 0, true, true, vps->getInterLayerRefIdc( layerIdx, refLayerIdx ) );
-          refPicIdxL0++;
-          numOfILRPL0++;
-          ii++;
-        }
-      }
-    }
-  }
-  // now add inactive refs
-  for (int i = 0; i < inactiveRefs.size(); i++)
-  {
-    const int ii = inactiveRefs[i];
-    pLocalRPL0->setRefPicIdentifier(refPicIdxL0, rpl0->getRefPicIdentifier(ii), rpl0->isRefPicLongterm(ii), false,
-      NOT_VALID);
-    refPicIdxL0++;
-    numOfSTRPL0 = numOfSTRPL0 + ((rpl0->isRefPicLongterm(ii)) ? 0 : 1);
-    numOfLTRPL0 += (rpl0->isRefPicLongterm(ii) && !rpl0->isInterLayerRefPic(ii)) ? 1 : 0;
-  }
-
-  if( slice->getEnableDRAPSEI() )
-  {
-    pLocalRPL0->setNumberOfShorttermPictures( numOfSTRPL0 );
-    pLocalRPL0->setNumberOfLongtermPictures( numOfLTRPL0 );
-    pLocalRPL0->setNumberOfInterLayerPictures( numOfILRPL0 );
-
-    if( !slice->isIRAP() && !slice->isPOCInRefPicList( pLocalRPL0, slice->getAssociatedIRAPPOC() ) )
-    {
-      if( slice->getUseLTforDRAP() && !slice->isPOCInRefPicList( rpl1, slice->getAssociatedIRAPPOC() ) )
-      {
-        // Adding associated IRAP as longterm picture
-        pLocalRPL0->setRefPicIdentifier( refPicIdxL0, slice->getAssociatedIRAPPOC(), true, false, 0 );
-        refPicIdxL0++;
-        numOfLTRPL0++;
-      }
-      else
-      {
-        // Adding associated IRAP as shortterm picture
-        pLocalRPL0->setRefPicIdentifier(refPicIdxL0, slice->getAssociatedIRAPPOC() - slice->getPOC(), false, false, 0);
-        refPicIdxL0++;
-        numOfSTRPL0++;
-      }
-    }
-  }
-  if( slice->getEnableEdrapSEI() )
-  {
-    pLocalRPL0->setNumberOfShorttermPictures( numOfSTRPL0 );
-    pLocalRPL0->setNumberOfLongtermPictures( numOfLTRPL0 );
-    pLocalRPL0->setNumberOfInterLayerPictures( numOfILRPL0 );
-
-    for (int i = 0; i < slice->getEdrapNumRefRapPics(); i++)
-    {
-      int refPoc = slice->getEdrapRefRapId(i) == 0 ? slice->getAssociatedIRAPPOC() : slice->getEdrapRefRapId(i) * m_pcEncLib->getEdrapPeriod();
-      if( slice->isPOCInRefPicList( pLocalRPL0, refPoc ) )
-      {
-        continue;
-      }
-      if( slice->getUseLTforEdrap() && !slice->isPOCInRefPicList( rpl1, refPoc ) )
-      {
-        // Added as longterm picture
-        pLocalRPL0->setRefPicIdentifier( refPicIdxL0, refPoc, true, false, 0 );
-        refPicIdxL0++;
-        numOfLTRPL0++;
-      }
-      else
-      {
-        // Added as shortterm picture
-        pLocalRPL0->setRefPicIdentifier(refPicIdxL0, refPoc - slice->getPOC(), false, false, 0);
-        refPicIdxL0++;
-        numOfSTRPL0++;
-      }
-    }
-  }
-
-  // now add higher TId refs
-  for (int i = 0; i < higherTLayerRefs.size(); i++)
-  {
-    const int ii = higherTLayerRefs[i];
-    pLocalRPL0->setRefPicIdentifier(refPicIdxL0, rpl0->getRefPicIdentifier(ii), rpl0->isRefPicLongterm(ii), false,
-                                    NOT_VALID);
-    refPicIdxL0++;
-    numOfSTRPL0 = numOfSTRPL0 + ((rpl0->isRefPicLongterm(ii)) ? 0 : 1);
-    numOfLTRPL0 += (rpl0->isRefPicLongterm(ii) && !rpl0->isInterLayerRefPic(ii)) ? 1 : 0;
-  }
-
-  ReferencePictureList        localRPL1(slice->getSPS()->getInterLayerPresentFlag());
-  ReferencePictureList *const pLocalRPL1 = &localRPL1;
-
-  uint32_t numOfSTRPL1 = 0;
-  uint32_t numOfLTRPL1 = 0;
-  uint32_t numOfILRPL1 = 0;
-  numOfRefPic = rpl1->getNumberOfShorttermPictures() + rpl1->getNumberOfLongtermPictures() + rpl1->getNumberOfInterLayerPictures();
-  uint32_t refPicIdxL1 = 0;
-
-  higherTLayerRefs.resize(0);
-  inactiveRefs.resize(0);
-  if (isIntraLayerPredAllowed)
-  {
-    for (int ii = 0; ii < numOfRefPic; ii++)
-    {
-      // loop through all pictures in the reference picture buffer
-      if (!rpl1->isInterLayerRefPic(ii))
-      {
-        PicList::iterator iterPic = rcListPic.begin();
-
-        bool isAvailable = false;
-        bool hasHigherTId = false;
-        pocCycle = 1 << (slice->getSPS()->getBitsForPOC());
-        while (iterPic != rcListPic.end())
-        {
-          rpcPic = *(iterPic++);
-          if (rpcPic->layerId == pic->layerId)
-          {
-            hasHigherTId = rpcPic->temporalId > pic->temporalId;
-            if (!rpl1->isRefPicLongterm(ii) && rpcPic->referenced
-              && rpcPic->getPOC() == slice->getPOC() + rpl1->getRefPicIdentifier(ii)
-              && !slice->isPocRestrictedByDRAP(rpcPic->getPOC(), rpcPic->precedingDRAP)
-              && !slice->isPocRestrictedByEdrap(rpcPic->getPOC()))
-            {
-              isAvailable = true;
-              break;
-            }
-            else if (rpl1->isRefPicLongterm(ii) && rpcPic->referenced && (rpcPic->getPOC() & (pocCycle - 1)) == rpl1->getRefPicIdentifier(ii) && !slice->isPocRestrictedByDRAP(rpcPic->getPOC(), rpcPic->precedingDRAP) && !slice->isPocRestrictedByEdrap(rpcPic->getPOC()))
-            {
-              isAvailable = true;
-              break;
+              const bool isAvailable = !rpl->isRefPicLongterm(ii)
+                                         ? pic->getPOC() == slice->getPOC() + rpl->getRefPicIdentifier(ii)
+                                         : (pic->getPOC() & (pocCycle - 1)) == rpl->getRefPicIdentifier(ii);
+              if (isAvailable)
+              {
+                if (slice->isIRAP())
+                {
+                  inactiveRefs.push_back(ii);
+                }
+                else if (pic->temporalId > curPic->temporalId)
+                {
+                  higherTLayerRefs.push_back(ii);
+                }
+                else if (num[l] >= rpl->getNumberOfActivePictures() - rpl->getNumberOfInterLayerPictures()
+                         && layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag()
+                         && isInterLayerPredAllowed)
+                {
+                  inactiveRefs.push_back(ii);
+                }
+                else
+                {
+                  localRpl[l].setRefPicIdentifier(num[l], rpl->getRefPicIdentifier(ii), rpl->isRefPicLongterm(ii),
+                                                  false, NOT_VALID);
+                  num[l]++;
+                  numStrp[l] += rpl->isRefPicLongterm(ii) ? 0 : 1;
+                  numLtrp[l] += rpl->isRefPicLongterm(ii) && !rpl->isInterLayerRefPic(ii) ? 1 : 0;
+                }
+                break;
+              }
             }
           }
         }
-
-        if (isAvailable)
-        {
-          if (slice->isIRAP())
-          {
-            inactiveRefs.push_back(ii);
-          }
-          else if (hasHigherTId)
-          {
-            higherTLayerRefs.push_back(ii);
-          }
-          else if (refPicIdxL1 >= rpl1->getNumberOfActivePictures() - rpl1->getNumberOfInterLayerPictures() && layerIdx && vps && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
-          {
-            inactiveRefs.push_back(ii);
-          }
-          else
-          {
-            pLocalRPL1->setRefPicIdentifier(refPicIdxL1, rpl1->getRefPicIdentifier(ii), rpl1->isRefPicLongterm(ii), false,
-              NOT_VALID);
-            refPicIdxL1++;
-            numOfSTRPL1 = numOfSTRPL1 + ((rpl1->isRefPicLongterm(ii)) ? 0 : 1);
-            numOfLTRPL1 += (rpl1->isRefPicLongterm(ii) && !rpl1->isInterLayerRefPic(ii)) ? 1 : 0;
-          }
-        }
       }
     }
-  }
 
-
-  // inter-layer reference pictures are added to the end of the reference picture list
-  if (layerIdx && vps && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
-  {
-    numOfRefPic = rpl1->getNumberOfInterLayerPictures() ? rpl1->getNumberOfInterLayerPictures() : m_pcEncLib->getNumRefLayers( layerIdx );
-
-    for( int ii = 0; ii < numOfRefPic; ii++ )
+    // inter-layer reference pictures are added to the end of the reference picture list
+    if (layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
     {
-      // loop through all pictures in the reference picture buffer
-      PicList::iterator iterPic = rcListPic.begin();
-
-      while( iterPic != rcListPic.end() && ii < numOfRefPic )
+      for (const auto &pic: rcListPic)
       {
-        rpcPic = *( iterPic++ );
-        int refLayerIdx = vps->getGeneralLayerIdx( rpcPic->layerId );
-        if (rpcPic->referenced && rpcPic->getPOC() == pic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
-            && xCheckMaxTidILRefPics( layerIdx, rpcPic, slice->isIRAP()))
+        int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
+        if (pic->referenced && pic->getPOC() == curPic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
+            && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
         {
-          pLocalRPL1->setRefPicIdentifier( refPicIdxL1, 0, true, true, vps->getInterLayerRefIdc( layerIdx, refLayerIdx ) );
-          refPicIdxL1++;
-          numOfILRPL1++;
-          ii++;
+          localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
+          num[l]++;
+          numIlrp[l]++;
         }
       }
     }
-  }
 
-  for (int i = 0; i < inactiveRefs.size(); i++)
-  {
-    const int ii = inactiveRefs[i];
-    pLocalRPL1->setRefPicIdentifier(refPicIdxL1, rpl1->getRefPicIdentifier(ii), rpl1->isRefPicLongterm(ii), false,
-                                    NOT_VALID);
-    refPicIdxL1++;
-    numOfSTRPL1 = numOfSTRPL1 + ((rpl1->isRefPicLongterm(ii)) ? 0 : 1);
-    numOfLTRPL1 += (rpl1->isRefPicLongterm(ii) && !rpl1->isInterLayerRefPic(ii)) ? 1 : 0;
-  }
-  // now add higher TId refs
-  for (int i = 0; i < higherTLayerRefs.size(); i++)
-  {
-    const int ii = higherTLayerRefs[i];
-    pLocalRPL1->setRefPicIdentifier(refPicIdxL1, rpl1->getRefPicIdentifier(ii), rpl1->isRefPicLongterm(ii), false,
-                                    NOT_VALID);
-    refPicIdxL1++;
-    numOfSTRPL1 = numOfSTRPL1 + ((rpl1->isRefPicLongterm(ii)) ? 0 : 1);
-    numOfLTRPL1 += (rpl1->isRefPicLongterm(ii) && !rpl1->isInterLayerRefPic(ii)) ? 1 : 0;
-  }
-
-  //Copy from L1 if we have less than active ref pic
-  int numOfNeedToFill = rpl0->getNumberOfActivePictures() - rpl0->getNumberOfInterLayerPictures() - (numOfLTRPL0 + numOfSTRPL0);
-  bool isDisallowMixedRefPic = ( slice->getSPS()->getAllActiveRplEntriesHasSameSignFlag() ) ? true : false;
-  int originalL0StrpNum = numOfSTRPL0;
-  int originalL0LtrpNum = numOfLTRPL0;
-  int originalL0IlrpNum = numOfILRPL0;
-
-  for( int ii = 0; numOfNeedToFill > 0 && ii < ( numOfLTRPL1 + numOfSTRPL1 + numOfILRPL1 ); ii++ )
-  {
-    if( ii <= ( numOfLTRPL1 + numOfSTRPL1 + numOfILRPL1 - 1 ) )
+    // now add inactive refs
+    for (const int i: inactiveRefs)
     {
-      //Make sure this copy is not already in L0
+      localRpl[l].setRefPicIdentifier(num[l], rpl->getRefPicIdentifier(i), rpl->isRefPicLongterm(i), false, NOT_VALID);
+      num[l]++;
+      numStrp[l] += rpl->isRefPicLongterm(i) ? 0 : 1;
+      numLtrp[l] += rpl->isRefPicLongterm(i) && !rpl->isInterLayerRefPic(i) ? 1 : 0;
+    }
+
+    if (slice->getEnableDRAPSEI() && l == REF_PIC_LIST_0)
+    {
+      localRpl[l].setNumberOfShorttermPictures(numStrp[l]);
+      localRpl[l].setNumberOfLongtermPictures(numLtrp[l]);
+      localRpl[l].setNumberOfInterLayerPictures(numIlrp[l]);
+
+      if (!slice->isIRAP() && !slice->isPOCInRefPicList(&localRpl[l], slice->getAssociatedIRAPPOC()))
+      {
+        if (slice->getUseLTforDRAP() && !slice->isPOCInRefPicList(rpl1, slice->getAssociatedIRAPPOC()))
+        {
+          // Adding associated IRAP as longterm picture
+          localRpl[l].setRefPicIdentifier(num[l], slice->getAssociatedIRAPPOC(), true, false, 0);
+          num[l]++;
+          numLtrp[l]++;
+        }
+        else
+        {
+          // Adding associated IRAP as shortterm picture
+          localRpl[l].setRefPicIdentifier(num[l], slice->getAssociatedIRAPPOC() - slice->getPOC(), false, false, 0);
+          num[l]++;
+          numStrp[l]++;
+        }
+      }
+    }
+    if (slice->getEnableEdrapSEI() && l == REF_PIC_LIST_0)
+    {
+      localRpl[l].setNumberOfShorttermPictures(numStrp[l]);
+      localRpl[l].setNumberOfLongtermPictures(numLtrp[l]);
+      localRpl[l].setNumberOfInterLayerPictures(numIlrp[l]);
+
+      for (int i = 0; i < slice->getEdrapNumRefRapPics(); i++)
+      {
+        int refPoc = slice->getEdrapRefRapId(i) == 0 ? slice->getAssociatedIRAPPOC()
+                                                     : slice->getEdrapRefRapId(i) * m_pcEncLib->getEdrapPeriod();
+        if (slice->isPOCInRefPicList(&localRpl[l], refPoc))
+        {
+          continue;
+        }
+        if (slice->getUseLTforEdrap() && !slice->isPOCInRefPicList(rpl1, refPoc))
+        {
+          // Added as longterm picture
+          localRpl[l].setRefPicIdentifier(num[l], refPoc, true, false, 0);
+          num[l]++;
+          numLtrp[l]++;
+        }
+        else
+        {
+          // Added as shortterm picture
+          localRpl[l].setRefPicIdentifier(num[l], refPoc - slice->getPOC(), false, false, 0);
+          num[l]++;
+          numStrp[l]++;
+        }
+      }
+    }
+
+    // now add higher TId refs
+    for (const int i: higherTLayerRefs)
+    {
+      localRpl[l].setRefPicIdentifier(num[l], rpl->getRefPicIdentifier(i), rpl->isRefPicLongterm(i), false, NOT_VALID);
+      num[l]++;
+      numStrp[l] += rpl->isRefPicLongterm(i) ? 0 : 1;
+      numLtrp[l] += rpl->isRefPicLongterm(i) && !rpl->isInterLayerRefPic(i) ? 1 : 0;
+    }
+  }
+
+  uint32_t numPrev[NUM_REF_PIC_LIST_01] = { num[REF_PIC_LIST_0], num[REF_PIC_LIST_1] };
+
+  // Copy from other list if we have fewer than active ref pics
+
+  bool isDisallowMixedRefPic = slice->getSPS()->getAllActiveRplEntriesHasSameSignFlag();
+
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
+  {
+    const ReferencePictureList *rpl = l == REF_PIC_LIST_0 ? rpl0 : rpl1;
+    const auto                  k   = l == REF_PIC_LIST_0 ? REF_PIC_LIST_1 : REF_PIC_LIST_0;
+
+    int numOfNeedToFill = rpl->getNumberOfActivePictures() - num[l];
+
+    for (int ii = 0; numOfNeedToFill > 0 && ii < numPrev[k]; ii++)
+    {
+      const int  identifier   = localRpl[k].getRefPicIdentifier(ii);
+      const bool isLongTerm   = localRpl[k].isRefPicLongterm(ii);
+      const bool isInterLayer = localRpl[k].isInterLayerRefPic(ii);
+
+      // Make sure this copy is not already present
       bool canIncludeThis = true;
-      for( int jj = 0; jj < refPicIdxL0; jj++ )
+      for (int jj = 0; jj < num[l]; jj++)
       {
-        if( ( pLocalRPL1->getRefPicIdentifier( ii ) == pLocalRPL0->getRefPicIdentifier( jj ) ) && ( pLocalRPL1->isRefPicLongterm( ii ) == pLocalRPL0->isRefPicLongterm( jj ) ) && pLocalRPL1->getInterLayerRefPicIdx( ii ) == pLocalRPL0->getInterLayerRefPicIdx( jj ) )
+        if (identifier == localRpl[l].getRefPicIdentifier(jj) && isLongTerm == localRpl[l].isRefPicLongterm(jj)
+            && isInterLayer == localRpl[l].isInterLayerRefPic(jj))
         {
           canIncludeThis = false;
+          break;
         }
 
-        bool sameSign = ( pLocalRPL1->getRefPicIdentifier( ii ) > 0 ) == ( pLocalRPL0->getRefPicIdentifier( 0 ) > 0 );
-
-        if( isDisallowMixedRefPic && canIncludeThis && !pLocalRPL1->isRefPicLongterm( ii ) && !sameSign )
+        if (isDisallowMixedRefPic && !isLongTerm && !localRpl[l].isRefPicLongterm(jj))
         {
-          canIncludeThis = false;
+          const bool sameSign = (identifier ^ localRpl[l].getRefPicIdentifier(jj)) >= 0;
+          if (!sameSign)
+          {
+            canIncludeThis = false;
+            break;
+          }
         }
       }
       if( canIncludeThis )
       {
-        pLocalRPL0->setRefPicIdentifier( refPicIdxL0, pLocalRPL1->getRefPicIdentifier( ii ), pLocalRPL1->isRefPicLongterm( ii ), pLocalRPL1->isInterLayerRefPic( ii ), pLocalRPL1->getInterLayerRefPicIdx( ii ) );
-        refPicIdxL0++;
-        numOfSTRPL0 = numOfSTRPL0 + ( ( pLocalRPL1->isRefPicLongterm( ii ) ) ? 0 : 1 );
-        numOfLTRPL0 += ( pLocalRPL1->isRefPicLongterm( ii ) && !pLocalRPL1->isInterLayerRefPic( ii ) ) ? 1 : 0;
-        numOfILRPL0 += pLocalRPL1->isInterLayerRefPic( ii ) ? 1 : 0;
+        localRpl[l].setRefPicIdentifier(num[l], identifier, isLongTerm, isInterLayer,
+                                        localRpl[k].getInterLayerRefPicIdx(ii));
+        num[l]++;
+        numStrp[l] += isLongTerm ? 0 : 1;
+        numLtrp[l] += isLongTerm && !isInterLayer ? 1 : 0;
+        numIlrp[l] += isInterLayer ? 1 : 0;
         numOfNeedToFill--;
       }
     }
+    localRpl[l].setNumberOfLongtermPictures(numLtrp[l]);
+    localRpl[l].setNumberOfShorttermPictures(numStrp[l]);
+    localRpl[l].setNumberOfInterLayerPictures(numIlrp[l]);
+    const int numPics = slice->isIRAP() ? 0 : numLtrp[l] + numStrp[l];
+
+    localRpl[l].setNumberOfActivePictures(
+      std::min<int>(numPics, rpl->getNumberOfActivePictures() - rpl->getNumberOfInterLayerPictures()) + numIlrp[l]);
+    localRpl[l].setLtrpInSliceHeaderFlag(1);
+    slice->setRplIdx(l, -1);
+    *slice->getRpl(l) = localRpl[l];
   }
-  pLocalRPL0->setNumberOfLongtermPictures( numOfLTRPL0 );
-  pLocalRPL0->setNumberOfShorttermPictures( numOfSTRPL0 );
-  pLocalRPL0->setNumberOfInterLayerPictures( numOfILRPL0 );
-  int numPics = (slice->isIRAP()) ? 0 : numOfLTRPL0 + numOfSTRPL0;
 
-  pLocalRPL0->setNumberOfActivePictures((numPics < (rpl0->getNumberOfActivePictures() - rpl0->getNumberOfInterLayerPictures()) ? numPics : (rpl0->getNumberOfActivePictures() - rpl0->getNumberOfInterLayerPictures())) + numOfILRPL0);
-  pLocalRPL0->setLtrpInSliceHeaderFlag( 1 );
-  slice->setRPL0idx( -1 );
-  *slice->getRPL0() = localRPL0;
-
-  //Copy from L0 if we have less than active ref pic
-  numOfNeedToFill = rpl1->getNumberOfActivePictures() - rpl1->getNumberOfInterLayerPictures() - (numOfLTRPL1 + numOfSTRPL1);
-
-  for( int ii = 0; numOfNeedToFill > 0 && ii < ( pLocalRPL0->getNumberOfLongtermPictures() + pLocalRPL0->getNumberOfShorttermPictures() + pLocalRPL0->getNumberOfInterLayerPictures() ); ii++ )
-  {
-    if( ii <= ( originalL0StrpNum + originalL0LtrpNum + originalL0IlrpNum - 1 ) )
-    {
-      //Make sure this copy is not already in L0
-      bool canIncludeThis = true;
-      for( int jj = 0; jj < refPicIdxL1; jj++ )
-      {
-        if( ( pLocalRPL0->getRefPicIdentifier( ii ) == pLocalRPL1->getRefPicIdentifier( jj ) ) && ( pLocalRPL0->isRefPicLongterm( ii ) == pLocalRPL1->isRefPicLongterm( jj ) ) && pLocalRPL0->getInterLayerRefPicIdx( ii ) == pLocalRPL1->getInterLayerRefPicIdx( jj ) )
-        {
-          canIncludeThis = false;
-        }
-
-        bool sameSign = ( pLocalRPL0->getRefPicIdentifier( ii ) > 0 ) == ( pLocalRPL1->getRefPicIdentifier( 0 ) > 0 );
-
-        if( isDisallowMixedRefPic && canIncludeThis && !pLocalRPL0->isRefPicLongterm( ii ) && !sameSign )
-        {
-          canIncludeThis = false;
-        }
-      }
-      if( canIncludeThis )
-      {
-        pLocalRPL1->setRefPicIdentifier( refPicIdxL1, pLocalRPL0->getRefPicIdentifier( ii ), pLocalRPL0->isRefPicLongterm( ii ), pLocalRPL0->isInterLayerRefPic( ii ), pLocalRPL0->getInterLayerRefPicIdx( ii ) );
-        refPicIdxL1++;
-        numOfSTRPL1 = numOfSTRPL1 + ( ( pLocalRPL0->isRefPicLongterm( ii ) ) ? 0 : 1 );
-        numOfLTRPL1 += ( pLocalRPL0->isRefPicLongterm( ii ) && !pLocalRPL0->isInterLayerRefPic( ii ) ) ? 1 : 0;
-        numOfILRPL1 += pLocalRPL0->isInterLayerRefPic( ii ) ? 1 : 0;
-        numOfNeedToFill--;
-      }
-    }
-  }
-  pLocalRPL1->setNumberOfLongtermPictures( numOfLTRPL1 );
-  pLocalRPL1->setNumberOfShorttermPictures( numOfSTRPL1 );
-  pLocalRPL1->setNumberOfInterLayerPictures( numOfILRPL1 );
-  numPics = (slice->isIRAP()) ? 0 : numOfLTRPL1 + numOfSTRPL1;
-
-  pLocalRPL1->setNumberOfActivePictures((numPics < (rpl1->getNumberOfActivePictures() - rpl1->getNumberOfInterLayerPictures()) ? numPics : (rpl1->getNumberOfActivePictures() - rpl1->getNumberOfInterLayerPictures())) + numOfILRPL1);
-  pLocalRPL1->setLtrpInSliceHeaderFlag( 1 );
-  slice->setRPL1idx( -1 );
-  *slice->getRPL1() = localRPL1;
-  // To ensure that any picture in the RefRapIds has been included in the refrence list.
+  // Ensure that all pictures in the RefRapIds are included in a reference list.
   for (int i = 0; i < slice->getEdrapNumRefRapPics(); i++)
   {
     int refPoc = slice->getEdrapRefRapId(i) == 0 ? slice->getAssociatedIRAPPOC() : slice->getEdrapRefRapId(i) * m_pcEncLib->getEdrapPeriod();
-    if (!slice->isPOCInRefPicList( pLocalRPL0, refPoc ) && !slice->isPOCInRefPicList( pLocalRPL1, refPoc ))
+    if (!slice->isPOCInRefPicList(&localRpl[REF_PIC_LIST_0], refPoc)
+        && !slice->isPOCInRefPicList(&localRpl[REF_PIC_LIST_1], refPoc))
     {
       slice->deleteEdrapRefRapIds(i);
     }

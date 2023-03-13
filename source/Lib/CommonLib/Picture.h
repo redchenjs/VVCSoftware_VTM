@@ -59,6 +59,14 @@ typedef std::list<SEI*> SEIMessages;
 
 #define M_BUFS(JID,PID) m_bufs[PID]
 
+#if GDR_ENABLED
+struct GdrPicParam
+{
+  bool inGdrInterval = false;
+  int  verBoundary   = -1;
+};
+#endif
+
 struct Picture : public UnitArea
 {
   uint32_t margin;
@@ -85,6 +93,10 @@ struct Picture : public UnitArea
   PelStorage*              m_invColourTransfBuf;
   void              createColourTransfProcessor(bool firstPictureInSequence, SEIColourTransformApply* ctiCharacteristics, PelStorage* ctiBuf, int width, int height, ChromaFormat fmt, int bitDepth);
   PelUnitBuf        getDisplayBuf();
+
+#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
+  SEIMessages m_nnpfcActivated;
+#endif
 
 #if JVET_Z0120_SII_SEI_PROCESSING
   void copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcPicYuvDst);
@@ -175,25 +187,16 @@ struct Picture : public UnitArea
                                const int beforeScaleLeftOffset, const int beforeScaleTopOffset, const PelBuf &afterScale,
                                const int afterScaleLeftOffset, const int afterScaleTopOffset, const int bitDepth,
                                const bool useLumaFilter, const bool downsampling,
-#if !JVET_AB0081
-                             const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag
-#else
                               const bool horCollocatedPositionFlag, const bool verCollocatedPositionFlag,
                               const bool rescaleForDisplay, const int upscaleFilterForDisplay
-#endif
   );
 
-  static void rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf &beforeScaling,
-                             const Window &scalingWindowBefore, const PelUnitBuf &afterScaling,
-                             const Window &scalingWindowAfter, const ChromaFormat chromaFormatIDC,
-                             const BitDepths &bitDepths, const bool useLumaFilter, const bool downsampling,
-#if !JVET_AB0081
-                             const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag
-#else
-                              const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
-                              bool rescaleForDisplay = false, int upscaleFilterForDisplay = 0
-#endif
-  );
+  static void rescalePicture(const ScalingRatio scalingRatio, const CPelUnitBuf& beforeScaling,
+                             const Window& scalingWindowBefore, const PelUnitBuf& afterScaling,
+                             const Window& scalingWindowAfter, const ChromaFormat chromaFormatIdc,
+                             const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
+                             const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag,
+                             bool rescaleForDisplay = false, int upscaleFilterForDisplay = 0);
 
 private:
   Window        m_conformanceWindow;
@@ -264,6 +267,9 @@ public:
   void               addPictureToHashMapForInter();
 
   CodingStructure*   cs;
+#if GDR_ENABLED
+  GdrPicParam        gdrParam;
+#endif
   std::deque<Slice*> slices;
   SEIMessages        SEIs;
 
@@ -288,7 +294,7 @@ public:
   MCTSInfo     mctsInfo;
   std::vector<AQpLayer*> aqlayer;
 
-  ChromaFormat m_chromaFormatIDC;
+  ChromaFormat m_chromaFormatIdc;
   BitDepths    m_bitDepths;
 
 #if !KEEP_PRED_AND_RESI_SIGNALS
@@ -296,9 +302,7 @@ private:
   UnitArea m_ctuArea;
 #endif
 
-  std::vector<uint8_t> m_alfCtuEnableFlag[MAX_NUM_COMPONENT];
-  std::vector<short>   m_alfCtbFilterIndex;
-  std::vector<uint8_t> m_alfCtuAlternative[MAX_NUM_COMPONENT];
+  std::vector<AlfMode> m_alfModes[MAX_NUM_COMPONENT];
 
   std::vector<SAOBlkParam> m_sao[2];
 
@@ -318,9 +322,7 @@ public:
   void copyAlfData(const Picture &p);
   void resizeAlfData(int numEntries);
 
-  uint8_t *getAlfCtuEnableFlag(int compIdx) { return m_alfCtuEnableFlag[compIdx].data(); }
-  short   *getAlfCtbFilterIndex() { return m_alfCtbFilterIndex.data(); }
-  uint8_t *getAlfCtuAlternativeData(int compIdx) { return m_alfCtuAlternative[compIdx].data(); }
+  AlfMode *getAlfModes(int compIdx) { return m_alfModes[compIdx].data(); }
 };
 
 int calcAndPrintHashStatus(const CPelUnitBuf& pic, const class SEIDecodedPictureHash* pictureHashSEI, const BitDepths &bitDepths, const MsgLevel msgl);
