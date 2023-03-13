@@ -3477,7 +3477,9 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
     numMergeSatdCand += m_pcEncCfg->getMergeRdCandQuotaCiip();
   }
 
-  if (sps.getMaxNumAffineMergeCand() > 0 && pu->lwidth() >= 8 && pu->lheight() >= 8)
+  if (sps.getMaxNumAffineMergeCand() > 0 && pu->lwidth() >= 8 && pu->lheight() >= 8
+    && (sps.getUseAffine() || (sps.getSbTMVPEnabledFlag() && tempCS->picHeader->getEnableTMVPFlag()))
+    )
   {
     PU::getAffineMergeCand(*pu, affineMergeCtx);
     numMergeSatdCand += std::min(m_pcEncCfg->getMergeRdCandQuotaSubBlk(), affineMergeCtx.numValidMergeCand);
