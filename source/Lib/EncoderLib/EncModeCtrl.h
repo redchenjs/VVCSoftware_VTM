@@ -719,6 +719,7 @@ void forceQTonlyMode()
   }
 }
 
+#if !JVET_AC0139_UNIFIED_MERGE
 const char* printType(EncTestModeType type)
 {
   char *ret;
@@ -761,6 +762,7 @@ void printMode()
   }
   printf("]\n");
 }
+#endif
 #endif
 
 protected:
