@@ -1947,7 +1947,7 @@ void EncGOP::xPicInitHashME( Picture *pic, const PPS *pps, PicList &rcListPic )
 
     if (refPic->poc != pic->poc && refPic->referenced)
     {
-      bool validPOC = ((refPic->getPOC() == m_modeCtrl->getUseHashMEPOCToCheck()) && !m_modeCtrl->getUseHashMEPOCChecked() && (pic->poc >= m_modeCtrl->getUseHashMEPOCToCheck()));
+      bool validPOC = ((refPic->getPOC() == m_modeCtrl->getUseHashMEPOCToCheck()) && !m_modeCtrl->getUseHashMEPOCChecked());
       if (!refPic->getHashMap()->isInitial() || validPOC)
       {
         if (validPOC)
@@ -2797,6 +2797,14 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
     if (m_modeCtrl->getUseHashMEPOCChecked())
     {
+      if ((m_modeCtrl->getUseHashMEPOCToCheck() != m_modeCtrl->getUseHashMENextPOCToCheck()) && !m_modeCtrl->getUseHashME())
+      {
+        // if first intra disables hashME also check second intra
+        m_modeCtrl->setUseHashMEPOCChecked(false);
+        m_modeCtrl->setUseHashMEPOCToCheck(m_modeCtrl->getUseHashMENextPOCToCheck());
+        m_modeCtrl->setUseHashME(m_pcCfg->getUseHashMECfgEnable()); // initialize hashME for next intra picture
+      }
+
       if (pcPic->getPOC() > m_modeCtrl->getUseHashMENextPOCToCheck())
       {
         if (m_modeCtrl->getUseHashMEPOCToCheck() != m_modeCtrl->getUseHashMENextPOCToCheck())
