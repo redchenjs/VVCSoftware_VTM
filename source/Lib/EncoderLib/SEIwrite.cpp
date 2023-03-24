@@ -1712,7 +1712,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     xWriteString(sei.m_uriTag, "nnpfc_uri_tag");
     xWriteString(sei.m_uri, "nnpfc_uri");
   }
-  xWriteFlag(sei.m_propertyPresentFlag, "nnpfc_purpose_and_formatting_flag");
+  xWriteFlag(sei.m_propertyPresentFlag, "nnpfc_property_present_flag");
   if (sei.m_propertyPresentFlag)
   {
 #if !JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE

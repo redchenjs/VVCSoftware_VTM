@@ -2717,7 +2717,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei.m_uri = val2;
   }
 
-  sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_purpose_and_formatting_flag");
+  sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_property_present_flag");
   sei.m_propertyPresentFlag = val;
 
   if (sei.m_propertyPresentFlag)
