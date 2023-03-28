@@ -1068,7 +1068,7 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
 {
   m_id = sei.m_id;
   m_modeIdc = sei.m_modeIdc;
-  m_purposeAndFormattingFlag = sei.m_purposeAndFormattingFlag;
+  m_propertyPresentFlag = sei.m_propertyPresentFlag;
   m_purpose = sei.m_purpose;
   m_outSubCFlag = sei.m_outSubCFlag;
   m_outSubWidthC = sei.m_outSubWidthC;
