@@ -1322,8 +1322,8 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     sei->m_uriTag = m_pcCfg->getNNPostFilterSEICharacteristicsUriTag(filterIdx);
     sei->m_uri    = m_pcCfg->getNNPostFilterSEICharacteristicsUri(filterIdx);
   }
-  sei->m_purposeAndFormattingFlag = m_pcCfg->getNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(filterIdx);
-  if (sei->m_purposeAndFormattingFlag)
+  sei->m_propertyPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsPropertyPresentFlag(filterIdx);
+  if (sei->m_propertyPresentFlag)
   {
 #if !JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     sei->m_purpose = m_pcCfg->getNNPostFilterSEICharacteristicsPurpose(filterIdx);

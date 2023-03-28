@@ -1184,8 +1184,8 @@ void EncApp::xInitLibCfg( int layerIdx )
   {
     m_cEncLib.setNNPostFilterSEICharacteristicsId                      (m_nnPostFilterSEICharacteristicsId[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsModeIdc                 (m_nnPostFilterSEICharacteristicsModeIdc[i], i);
-    m_cEncLib.setNNPostFilterSEICharacteristicsPurposeAndFormattingFlag( m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[i], i);
-    if (m_cEncLib.getNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(i))
+    m_cEncLib.setNNPostFilterSEICharacteristicsPropertyPresentFlag( m_nnPostFilterSEICharacteristicsPropertyPresentFlag[i], i);
+    if (m_cEncLib.getNNPostFilterSEICharacteristicsPropertyPresentFlag(i))
     {
       m_cEncLib.setNNPostFilterSEICharacteristicsPurpose                 (m_nnPostFilterSEICharacteristicsPurpose[i], i);
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE

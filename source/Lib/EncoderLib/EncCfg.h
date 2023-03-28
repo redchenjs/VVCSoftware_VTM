@@ -688,7 +688,7 @@ protected:
   int                     m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t                m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
-  bool                    m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[MAX_NUM_NN_POST_FILTERS];
+  bool                    m_nnPostFilterSEICharacteristicsPropertyPresentFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
 #if JVET_AC0154
@@ -1911,8 +1911,8 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsId(int filterIdx) const                                                  { return m_nnPostFilterSEICharacteristicsId[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsModeIdc(uint32_t idc, int filterIdx)                                     { m_nnPostFilterSEICharacteristicsModeIdc[filterIdx] = idc; }
   uint32_t    getNNPostFilterSEICharacteristicsModeIdc(int filterIdx) const                                             { return m_nnPostFilterSEICharacteristicsModeIdc[filterIdx]; }
-  void        setNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(bool purposeAndFormattingFlag, int filterIdx)   { m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[filterIdx] = purposeAndFormattingFlag; }
-  bool        getNNPostFilterSEICharacteristicsPurposeAndFormattingFlag(int filterIdx) const                            { return m_nnPostFilterSEICharacteristicsPurposeAndFormattingFlag[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsPropertyPresentFlag(bool propertyPresentFlag, int filterIdx)   { m_nnPostFilterSEICharacteristicsPropertyPresentFlag[filterIdx] = propertyPresentFlag; }
+  bool        getNNPostFilterSEICharacteristicsPropertyPresentFlag(int filterIdx) const                            { return m_nnPostFilterSEICharacteristicsPropertyPresentFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsPurpose(uint32_t purpose, int filterIdx)                                 { m_nnPostFilterSEICharacteristicsPurpose[filterIdx] = purpose; }
   uint32_t    getNNPostFilterSEICharacteristicsPurpose(int filterIdx) const                                             { return m_nnPostFilterSEICharacteristicsPurpose[filterIdx]; }
 

@@ -1299,7 +1299,7 @@ public:
   SEINeuralNetworkPostFilterCharacteristics()
     : m_id(0)
     , m_modeIdc(0)
-    , m_purposeAndFormattingFlag(false)
+    , m_propertyPresentFlag(false)
     , m_purpose(0)
     , m_outSubCFlag(0)
     , m_outSubWidthC(1)
@@ -1365,7 +1365,7 @@ public:
 
   uint32_t       m_id;
   uint32_t       m_modeIdc;
-  bool           m_purposeAndFormattingFlag;
+  bool           m_propertyPresentFlag;
   uint32_t       m_purpose;
   bool           m_outSubCFlag;
   uint8_t        m_outSubWidthC;
