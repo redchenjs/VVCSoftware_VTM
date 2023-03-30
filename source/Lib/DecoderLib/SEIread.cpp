@@ -219,6 +219,38 @@ void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitTy
   }
 }
 
+#if JVET_AC0353_NNPFC_BASE_FLAG
+bool SEIReader::xCheckNnpfcSeiMsg(uint32_t seiId, bool baseFlag, const std::vector<int> nnpfcValueList)
+{
+  if (baseFlag)
+  {
+    //Check if this is a new filter or a repetition of an existing base flag
+    for (auto val : nnpfcValueList)
+    {
+      if (val == seiId)
+      {
+        //The filter is a repetition.
+        return false;
+      }
+    }
+  }
+  else
+  {
+    bool filterHasPresent = false;
+    for(auto val : nnpfcValueList)
+    {
+      if (val == seiId)
+      {
+        filterHasPresent = true;
+        break;
+      }
+    }
+    CHECK(!filterHasPresent, "Cannot have update filter without base filter already present!")
+  }
+  return true;
+}
+#endif
+
 bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream)
 {
 #if ENABLE_TRACING
@@ -444,8 +476,14 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics &) *sei, payloadSize, sps,
                                            pDecodedMessageOutputStream);
         
-        
+#if JVET_AC0353_NNPFC_BASE_FLAG
+      if (xCheckNnpfcSeiMsg( ((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id, ((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_baseFlag, nnpfcValues) )
+      {
+        nnpfcValues.push_back(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id);
+      }
+#else               
       nnpfcValues.push_back(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id);
+#endif
       break;
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
       sei = new SEINeuralNetworkPostFilterActivation;
@@ -2722,6 +2760,10 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
   if (sei.m_propertyPresentFlag)
   {
+#if JVET_AC0353_NNPFC_BASE_FLAG
+    sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_base_flag");
+    sei.m_baseFlag = val;
+#endif
 #if !JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_purpose");
     sei.m_purpose = val;

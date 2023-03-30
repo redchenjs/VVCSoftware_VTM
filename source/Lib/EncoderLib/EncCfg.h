@@ -689,6 +689,9 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsPropertyPresentFlag[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AC0353_NNPFC_BASE_FLAG
+  bool                    m_nnPostFilterSEICharacteristicsBaseFlag[MAX_NUM_NN_POST_FILTERS];
+#endif
   uint32_t                m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
 #if JVET_AC0154
@@ -1913,6 +1916,10 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsModeIdc(int filterIdx) const                                             { return m_nnPostFilterSEICharacteristicsModeIdc[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsPropertyPresentFlag(bool propertyPresentFlag, int filterIdx)   { m_nnPostFilterSEICharacteristicsPropertyPresentFlag[filterIdx] = propertyPresentFlag; }
   bool        getNNPostFilterSEICharacteristicsPropertyPresentFlag(int filterIdx) const                            { return m_nnPostFilterSEICharacteristicsPropertyPresentFlag[filterIdx]; }
+#if JVET_AC0353_NNPFC_BASE_FLAG
+  void        setNNPostFilterSEICharacteristicsBaseFlag(bool baseFlag, int filterIdx)                                   { m_nnPostFilterSEICharacteristicsBaseFlag[filterIdx] = baseFlag; }
+  bool        getNNPostFilterSEICharacteristicsBaseFlag(int filterIdx) const                                            { return m_nnPostFilterSEICharacteristicsBaseFlag[filterIdx]; }
+#endif
   void        setNNPostFilterSEICharacteristicsPurpose(uint32_t purpose, int filterIdx)                                 { m_nnPostFilterSEICharacteristicsPurpose[filterIdx] = purpose; }
   uint32_t    getNNPostFilterSEICharacteristicsPurpose(int filterIdx) const                                             { return m_nnPostFilterSEICharacteristicsPurpose[filterIdx]; }
 

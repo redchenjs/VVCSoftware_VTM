@@ -63,6 +63,9 @@ public:
   std::vector<int> nnpfcValues;
   
 protected:
+#if JVET_AC0353_NNPFC_BASE_FLAG
+  bool xCheckNnpfcSeiMsg                      (uint32_t seiId,                        bool baseFlag,                            const std::vector<int> nnpfcValueList);
+#endif
   bool xReadSEImessage                        (SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIFillerPayload                 (SEIFillerPayload &sei,                 uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIuserDataUnregistered          (SEIuserDataUnregistered &sei,          uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);

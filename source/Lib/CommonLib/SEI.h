@@ -1301,6 +1301,9 @@ public:
     , m_modeIdc(0)
     , m_propertyPresentFlag(false)
     , m_purpose(0)
+#if JVET_AC0353_NNPFC_BASE_FLAG
+    , m_baseFlag(false)
+#endif
     , m_outSubCFlag(0)
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
@@ -1367,6 +1370,9 @@ public:
   uint32_t       m_modeIdc;
   bool           m_propertyPresentFlag;
   uint32_t       m_purpose;
+#if JVET_AC0353_NNPFC_BASE_FLAG
+  bool           m_baseFlag;
+#endif
   bool           m_outSubCFlag;
   uint8_t        m_outSubWidthC;
   uint8_t        m_outSubHeightC;

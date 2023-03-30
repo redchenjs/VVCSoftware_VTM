@@ -1187,6 +1187,22 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setNNPostFilterSEICharacteristicsPropertyPresentFlag( m_nnPostFilterSEICharacteristicsPropertyPresentFlag[i], i);
     if (m_cEncLib.getNNPostFilterSEICharacteristicsPropertyPresentFlag(i))
     {
+#if JVET_AC0353_NNPFC_BASE_FLAG
+      m_cEncLib.setNNPostFilterSEICharacteristicsBaseFlag                (m_nnPostFilterSEICharacteristicsBaseFlag[i], i);
+      if (!m_nnPostFilterSEICharacteristicsBaseFlag[i])
+      {
+        bool baseFilterExist = false;
+        for (int j = i - 1; j >= 0; j--)
+        {
+          if (m_cEncLib.getNNPostFilterSEICharacteristicsId(i) == m_cEncLib.getNNPostFilterSEICharacteristicsId(j))
+          {
+            baseFilterExist = true;
+            break;
+          }
+        }
+        CHECK(!baseFilterExist, "No base filter found! Cannot have an update filter without base filter.")
+      }
+#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsPurpose                 (m_nnPostFilterSEICharacteristicsPurpose[i], i);
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
