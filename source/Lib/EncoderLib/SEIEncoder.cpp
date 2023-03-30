@@ -1325,6 +1325,9 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
   sei->m_propertyPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsPropertyPresentFlag(filterIdx);
   if (sei->m_propertyPresentFlag)
   {
+#if JVET_AC0353_NNPFC_BASE_FLAG
+    sei->m_baseFlag = m_pcCfg->getNNPostFilterSEICharacteristicsBaseFlag(filterIdx);
+#endif
 #if !JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     sei->m_purpose = m_pcCfg->getNNPostFilterSEICharacteristicsPurpose(filterIdx);
 #endif
