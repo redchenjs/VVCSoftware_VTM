@@ -486,7 +486,7 @@ private:
 
   bool              m_generalHrdParametersPresentFlag;
   GeneralHrdParams  m_generalHrdParams;
-  OlsHrdParams      m_olsHrdParams;
+  OlsHrdParams      m_olsHrdParams[8];
 
   bool              m_fieldSeqFlag;
   bool              m_vuiParametersPresentFlag;
@@ -844,8 +844,8 @@ public:
   void                    setGeneralHrdParametersPresentFlag(bool b) { m_generalHrdParametersPresentFlag = b; }
   GeneralHrdParams*       getGeneralHrdParameters()                  { return &m_generalHrdParams; }
   const GeneralHrdParams* getGeneralHrdParameters() const            { return &m_generalHrdParams; }
-  OlsHrdParams*           getOlsHrdParameters()                      { return &m_olsHrdParams; }
-  const OlsHrdParams*     getOlsHrdParameters() const                { return &m_olsHrdParams; }
+  OlsHrdParams*           getOlsHrdParameters()                      { return &m_olsHrdParams[0]; }
+  const OlsHrdParams*     getOlsHrdParameters() const                { return &m_olsHrdParams[0]; }
 
   bool                    getFieldSeqFlag() const             { return m_fieldSeqFlag; }
   void                    setFieldSeqFlag(bool i)             { m_fieldSeqFlag = i; }
