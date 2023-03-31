@@ -1424,8 +1424,7 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
   ChromaFormat chromaFormatIdc = sps.getChromaFormatIdc();
   bool ret = false;
 
-  static Window confFullResolution;
-  static Window afterScaleWindowFullResolution;
+  Window afterScaleWindowFullResolution = sps.getConformanceWindow();
 
   // decoder does not have information about upscaled picture scaling and conformance windows, store this information when full resolution picutre is encountered
   if( sps.getMaxPicWidthInLumaSamples() == pps.getPicWidthInLumaSamples() && sps.getMaxPicHeightInLumaSamples() == pps.getPicHeightInLumaSamples() )
@@ -1458,11 +1457,11 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
                               sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag(), rescaleForDisplay,
                               upscaleFilterForDisplay);
       ret = write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), upscaledPic, ipCSC,
-                  packedYuvOutputMode, confFullResolution.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
-                  confFullResolution.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIdc),
-                  confFullResolution.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc),
-                  confFullResolution.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIdc),
-                  ChromaFormat::UNDEFINED, clipToRec709, false);
+                  packedYuvOutputMode, afterScaleWindowFullResolution.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
+                  afterScaleWindowFullResolution.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIdc),
+                  afterScaleWindowFullResolution.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc),
+                  afterScaleWindowFullResolution.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIdc),
+                  ChromaFormat::UNDEFINED, clipToRec709);
     }
     else
     {
