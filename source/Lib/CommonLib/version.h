@@ -1,3 +1,3 @@
 #if ! defined( VTM_VERSION )
-#define VTM_VERSION "19.2"
+#define VTM_VERSION "20.0rc1"
 #endif
