@@ -61,3 +61,14 @@ build_vc192x:
    tags:
       - vc192x
 
+build_software-manual:
+   extends: .build_template
+   script:
+      - cd doc
+      - make clean
+      - make
+   artifacts:
+    paths:
+      - doc/software-manual.pdf
+   tags:
+      - pdflatex
