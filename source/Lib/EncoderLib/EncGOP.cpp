@@ -1935,7 +1935,7 @@ void trySkipOrDecodePicture(bool &decPic, bool &encPic, const EncCfg &cfg, Pictu
 
 void EncGOP::xPicInitHashME( Picture *pic, const PPS *pps, PicList &rcListPic )
 {
-  if (! m_pcCfg->getUseHashME())
+  if (!m_modeCtrl->getUseHashME())
   {
     return;
   }
@@ -1947,10 +1947,12 @@ void EncGOP::xPicInitHashME( Picture *pic, const PPS *pps, PicList &rcListPic )
 
     if (refPic->poc != pic->poc && refPic->referenced)
     {
-      if (!refPic->getHashMap()->isInitial())
+      bool validPOC = ((refPic->getPOC() == m_modeCtrl->getUseHashMEPOCToCheck()) && !m_modeCtrl->getUseHashMEPOCChecked());
+      if (!refPic->getHashMap()->isInitial() || validPOC)
       {
-        if (refPic->getPOC() == 0)
+        if (validPOC)
         {
+          m_modeCtrl->setUseHashMEPOCChecked(true);
           Pel* picSrc = refPic->getOrigBuf().get(COMPONENT_Y).buf;
           ptrdiff_t stridePic = refPic->getOrigBuf().get(COMPONENT_Y).stride;
           int picWidth = refPic->lwidth();
@@ -1995,7 +1997,7 @@ void EncGOP::xPicInitHashME( Picture *pic, const PPS *pps, PicList &rcListPic )
 
           if (simpleNum < 0.3*allNum)
           {
-            m_pcCfg->setUseHashME(false);
+            m_modeCtrl->setUseHashME(false);
             break;
           }
         }
@@ -2793,6 +2795,32 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       CU::checkConformanceILRP(pcSlice);
     }
 
+    if (m_modeCtrl->getUseHashMEPOCChecked())
+    {
+      if ((m_modeCtrl->getUseHashMEPOCToCheck() != m_modeCtrl->getUseHashMENextPOCToCheck()) && !m_modeCtrl->getUseHashME())
+      {
+        // if first intra disables hashME also check second intra
+        m_modeCtrl->setUseHashMEPOCChecked(false);
+        m_modeCtrl->setUseHashMEPOCToCheck(m_modeCtrl->getUseHashMENextPOCToCheck());
+        m_modeCtrl->setUseHashME(m_pcCfg->getUseHashMECfgEnable()); // initialize hashME for next intra picture
+      }
+
+      if (pcPic->getPOC() > m_modeCtrl->getUseHashMENextPOCToCheck())
+      {
+        if (m_modeCtrl->getUseHashMEPOCToCheck() != m_modeCtrl->getUseHashMENextPOCToCheck())
+        {
+          // now can we move the new intra poc in slot 2 to the active slot
+          m_modeCtrl->setUseHashMEPOCToCheck(m_modeCtrl->getUseHashMENextPOCToCheck());
+          m_modeCtrl->setUseHashMEPOCChecked(false);
+          m_modeCtrl->setUseHashME(m_pcCfg->getUseHashMECfgEnable()); // initialize hashME for next intra picture
+        }
+      }
+    }
+    if (pcSlice->isIRAP())
+    {
+      // in-case the previous intra not has been checked we need to put the new intra poc in another slot
+      m_modeCtrl->setUseHashMENextPOCToCheck(pcSlice->getPOC());
+    }
     xPicInitHashME( pcPic, pcSlice->getPPS(), rcListPic );
 
     if (m_pcCfg->getUseAMaxBT())

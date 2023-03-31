@@ -62,6 +62,10 @@ void EncModeCtrl::init( EncCfg *pCfg, RateCtrl *pRateCtrl, RdCost* pRdCost )
 
   initLumaDeltaQpLUT();
 #endif
+  m_useHashMeInCurrentIntraPeriod = m_pcEncCfg->getUseHashMECfgEnable();
+  m_HashMEPOC = 0;
+  m_HashMEPOCchecked = false;
+  m_HashMEPOC2 = 0;
 }
 
 bool EncModeCtrl::tryModeMaster( const EncTestMode& encTestmode, const CodingStructure &cs, Partitioner& partitioner )
@@ -1390,7 +1394,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
         }
 #endif
       }
-      if (m_pcEncCfg->getUseHashME())
+      if (getUseHashME())
       {
         int minSize = std::min(cs.area.lwidth(), cs.area.lheight());
         if (minSize < 128 && minSize >= 4)

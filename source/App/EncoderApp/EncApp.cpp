@@ -770,8 +770,7 @@ void EncApp::xInitLibCfg( int layerIdx )
 #endif
   m_cEncLib.setUseCiip                                        ( m_ciip );
   m_cEncLib.setUseGeo                                            ( m_Geo );
-  m_cEncLib.setUseHashME                                         ( m_HashME );
-
+  m_cEncLib.setUseHashMECfgEnable                                (m_HashME);
   m_cEncLib.setAllowDisFracMMVD                                  ( m_allowDisFracMMVD );
   m_cEncLib.setUseAffineAmvr                                     ( m_AffineAmvr );
   m_cEncLib.setUseAffineAmvrEncOpt                               ( m_AffineAmvrEncOpt );

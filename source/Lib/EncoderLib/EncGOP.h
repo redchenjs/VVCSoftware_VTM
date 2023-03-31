@@ -140,6 +140,7 @@ private:
   EncCfg*                 m_pcCfg;
   EncSlice*               m_pcSliceEncoder;
   PicList*                m_pcListPic;
+  EncModeCtrl*            m_modeCtrl;
 
   HLSWriter*              m_HLSWriter;
   DeblockingFilter       *m_pcLoopFilter;
@@ -260,6 +261,7 @@ public:
   bool      getPrepareLTRef() { return m_isPrepareLTRef; }
   void      setLastLTRefPoc(int iLastLTRefPoc) { m_lastLTRefPoc = iLastLTRefPoc; }
   int       getLastLTRefPoc() const { return m_lastLTRefPoc; }
+  void      setModeCtrl(EncModeCtrl* modeCtrl) { m_modeCtrl = modeCtrl; }
 
 #if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct getFeatureCounter(){return m_featureCounter;}

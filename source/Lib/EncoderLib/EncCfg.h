@@ -361,7 +361,8 @@ protected:
   bool      m_Geo;
   bool      m_allowDisFracMMVD;
   bool      m_AffineAmvr;
-  bool      m_HashME;
+  bool      m_useHashMeInCurrentIntraPeriod;
+  bool      m_HashMECfgEnable;
   bool      m_AffineAmvrEncOpt;
   bool      m_AffineAmvp;
   bool      m_DMVR;
@@ -1473,8 +1474,8 @@ public:
   bool      getUseGeo                       ()         const { return m_Geo; }
   void      setAllowDisFracMMVD             ( bool b )       { m_allowDisFracMMVD = b;    }
   bool      getAllowDisFracMMVD             ()         const { return m_allowDisFracMMVD; }
-  void      setUseHashME                    ( bool b )       { m_HashME = b; }
-  bool      getUseHashME                    ()         const { return m_HashME; }
+  void      setUseHashMECfgEnable           (bool b) { m_HashMECfgEnable = b; }
+  bool      getUseHashMECfgEnable           ()         const { return m_HashMECfgEnable; }
   void      setUseAffineAmvr                ( bool b )       { m_AffineAmvr = b;    }
   bool      getUseAffineAmvr                ()         const { return m_AffineAmvr; }
   void      setUseAffineAmvrEncOpt          ( bool b )       { m_AffineAmvrEncOpt = b;    }

@@ -241,6 +241,9 @@ void EncCu::init( EncLib* pcEncLib, const SPS& sps )
   m_pcInterSearch->setModeCtrl( m_modeCtrl );
   m_modeCtrl->setInterSearch(m_pcInterSearch);
   m_pcIntraSearch->setModeCtrl( m_modeCtrl );
+
+  m_pcGOPEncoder = pcEncLib->getGOPEncoder();
+  m_pcGOPEncoder->setModeCtrl( m_modeCtrl );
 }
 
 // ====================================================================================================================
