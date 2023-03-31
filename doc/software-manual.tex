@@ -116,6 +116,39 @@ fontsize=\footnotesize}
 	\end{longtable}
 }
 
+\newenvironment{OptionTableNoShorthandLongParameter}[2]{%
+	\scriptsize
+	\def\arraystretch{1.8}
+	\clearOptions
+	\begin{longtable}{l<{\makecell[tl]{\optOption}}%
+	                  c<{\makecell[tc]{\optDefault}}%
+	                  >{\def\arraystretch{1.0}}p{0.35\textwidth}<{\clearOptions}}
+	\caption{#1} \label{#2} \\
+	\hspace*{12em}&\hspace*{8em}&\kill
+	\hline
+	 \thead{Option} &
+	 \thead{Default} &
+	 \thead{Description} \\
+	\hline
+	\endfirsthead
+	\caption[]{#1 (Continued)} \\
+	\hspace*{12em}&\hspace*{8em}&\kill
+	\hline
+	 \thead{Option} &
+	 \thead{Default} &
+	 \thead{Description} \\
+	\hline
+	\endhead
+	 \multicolumn{3}{r}{Continued...}\\
+	 \hline
+	\endfoot
+	 \hline
+	\endlastfoot
+}{%
+	\hline
+	\end{longtable}
+}
+
 \newenvironment{SEIListTable}[1]{%
 	\scriptsize
 	\def\arraystretch{1.8}
@@ -2296,7 +2329,7 @@ Specifies the quota of regular merge candidates of blocks with less than 64 luma
 Specifies the quota of sub-block merge candidates in full RD checking. 
 \\
 
-\OptionMergeRdCandQuotaCiip} &
+\Option{MergeRdCandQuotaCiip} &
 %\ShortOption{\None} &
 \Default{1} &
 Specifies the quota of CIIP merge candidates in full RD checking. 
@@ -5673,7 +5706,7 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
 \\
 \end{OptionTableNoShorthand}
 
-\begin{OptionTableNoShorthand}{Neural network post-filter characteristics}{tab:sei-nn-post-filter-characteristics}
+\begin{OptionTableNoShorthandLongParameter}{Neural network post-filter characteristics}{tab:sei-nn-post-filter-characteristics}
   \Option{SEINNPostFilterCharacteristicsEnabled} &
   \Default{false} &
   Enables (true) or disables (false) the insertion of the neural network post-filter characteristics SEI message.
@@ -5710,7 +5743,7 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the purpose of the \emph{i}-th neural network post-filter.
   \par
-  \begin{tabular}{cp{0.35\textwidth}}
+  \begin{tabular}{cp{0.14\textwidth}}
     0 & Determined by the application \\
     (nnpfc\_purpose \& 0x01)  !=  0 & Visual quality improvement \\
     (nnpfc\_purpose \& 0x02)  !=  0 & Chroma upsampling from the 4:2:0 chroma format to the 4:2:2 or 4:4:4 chroma format, or from the 4:2:2 chroma format to the 4:4:4 chroma format \\
@@ -5724,7 +5757,7 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{false} &
   Specifies the values of outSubWidthC and outSubHeightC
   \par
-    \begin{tabular}{cp{0.35\textwidth}}
+    \begin{tabular}{cp{0.28\textwidth}}
       true & outSubWidthC is equal to 1 and outSubHeightC is equal to 1 \\
       false & outSubWidthC is equal to 2 and outSubHeightC is equal to 1 \\
     \end{tabular}
@@ -5734,7 +5767,7 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the colour format of the NNPF output.
   \par
-  \begin{tabular}{cp{0.35\textwidth}}
+  \begin{tabular}{cp{0.3\textwidth}}
     1 & The colour format of the NNPF output is the 4:2:0 format \\
     2 & The colour format of the NNPF output is the 4:2:2 format \\
     3 & The colour format of the NNPF output is the 4:4:4 format \\
@@ -5752,7 +5785,7 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{false} &
   Specifies, for the \emph{i}-th neural network post-filter, the location of the channel component in the input and output tensors.
   \par
-  \begin{tabular}{cp{0.35\textwidth}}
+  \begin{tabular}{cp{0.28\textwidth}}
     true & Specifies that the last dimension in the input tensor to the \emph{i}-th neural network post-filter and the output tensor outputTensor resulting from the \emph{i}-th neural network post-filter is used for the channel. \\
     false & Specifies that the second dimension in the input tensor to the \emph{i}-th neural network post-filter and the output tensor resulting from the \emph{i}-th neural network post-filter is used for the channel. \\
   \end{tabular}
@@ -5761,18 +5794,18 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the method of converting a sample value of the decoded picture to an input value to the \emph{i}-th neural network post-filter.
   \par
-    \begin{tabular}{cp{0.35\textwidth}}
+    \begin{tabular}{cp{0.3\textwidth}}
       0 & Real numbers where the value range is 0 to 1, inclusive. \\
       1 & Unsigned integer value range of 0 to the bit depth indicated for the input tensor (see syntax element below).
     \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsInpTensorBitLumaDepthMinusEight\emph{i}} &
   \Default{0} &
-  Specifies the bit depth of the input luma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_format_idc = 1.
+  Specifies the bit depth of the input luma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_format_idc is equal to 1.
   \\
   \Option{SEINNPostFilterCharacteristicsInpTensorBitDepthChromaMinusEight\emph{i}} &
   \Default{0} &
-  Specifies the bit depth of the input chroma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_format_idc = 1.
+  Specifies the bit depth of the input chroma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_inp_format_idc is equal to 1.
   \\
   \Option{SEINNPostFilterCharacteristicsAuxInpIdc\emph{i}} &
   \Default{0} &
@@ -5782,10 +5815,9 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{false} &
   Specifies that the colour primaries, transfer characteristics, and matrix coefficients of the picture that results from the neural-network post filtering may be different than for the input to the filter.
   \par
-  \begin{tabular}{p{0.49\columnwidth}}
-    When true (non-zero) the syntax elements nnpfc_colour_primaries, nnpfc_transfer_characteristic, and nnpfc_matrix_coeffs specify the colour primaries, transfer characteristics, and matrix coefficients of the picture that results from the neural-network post filtering. \\
-    When false the syntax elements nnpfc_colour_primaries, nnpfc_transfer_chracteristics, and nnpfc_matrix_coeffs are assumed to be the same as the input to the filter. \\
-  \end{tabular}
+    When true (non-zero) the syntax elements nnpfc_colour_primaries, nnpfc_transfer_characteristic, and nnpfc_matrix_coeffs specify the colour primaries, transfer characteristics, and matrix coefficients of the picture that results from the neural-network post filtering.
+  \par
+    When false the syntax elements nnpfc_colour_primaries, nnpfc_transfer_chracteristics, and nnpfc_matrix_coeffs are assumed to be the same as the input to the filter.
   \\
   \Option{SEINNPostFilterCharacteristicsColPrimaries\emph{i}} &
   \Default{0} &
@@ -5803,7 +5835,7 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the method of ordering the input sample arrays for the \emph{i}-th neural network post-filter.
   \par
-  \begin{tabular}{cp{0.35\textwidth}}
+  \begin{tabular}{cp{0.3\textwidth}}
     0 & Only the luma matrix is present in the input tensor, thus the number of channels is 1 \\
     1 & Only the chroma matrices are present in the input tensor, thus the number of channels is 2 \\
     2 & The luma and chroma matrices are present in the input tensor, thus the number of channels is 3 \\
@@ -5814,24 +5846,24 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the sample values output by the \emph{i}-th neural network post-filter.
   \par
-  \begin{tabular}{cp{0.35\textwidth}}
+  \begin{tabular}{cp{0.30\textwidth}}
     0 & Real numbers where the value range is 0 to 1, inclusive. \\
     1 & Unsigned integer numbers where the value range is 0 to $(1 << bitDepth) - 1$ inclusive.
   \end{tabular}
   \\
   \Option{SEINNPostFilterCharacteristicsOutTensorBitDepthLumaMinusEight\emph{i}} &
   \Default{0} &
-  Specifies the bit depth of the output luma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_out_format_idc = 1.
+  Specifies the bit depth of the output luma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_out_format_idc is equal to 1.
   \\
   \Option{SEINNPostFilterCharacteristicsOutTensorBitDepthChromaMinusEight\emph{i}} &
   \Default{0} &
-  Specifies the bit depth of the output chroma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_out_format_idc = 1.
+  Specifies the bit depth of the output chroma tensor - 8 for the \emph{i}-th neural network post-filter, when nnpfc_out_format_idc is equal to 1.
   \\
   \Option{SEINNPostFilterCharacteristicsOutOrderIdc\emph{i}} &
   \Default{0} &
   Specifies the method of ordering the output sample arrays for the \emph{i}-th neural network post-filter.
   \par
-  \begin{tabular}{cp{0.35\textwidth}}
+  \begin{tabular}{cp{0.3\textwidth}}
     0 & Only the luma matrix is present in the input tensor, thus the number of channels is 1 \\
     1 & Only the chroma matrices are present in the input tensor, thus the number of channels is 2 \\
     2 & The luma and chroma matrices are present in the input tensor, thus the number of channels is 3 \\
@@ -5842,41 +5874,33 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{false} &
   Specifies nnpfc_constant_patch_size_flag of the \emph{i}-th neural network post-filter.
   \par
-  \begin{tabular}{p{0.49\columnwidth}}
-    When true (non-zero) specifies that the \emph{i}-th neural network post-filter accepts exactly the patch size indicated by nnpfc_patch_width_minus1 and nnpfc_patch_height_minus1 as input. \\
-    When false specifies that the \emph{i}-th neural network post-filter accepts any patch size that is a positive integer multiple of the patch size indicated by nnpfc_patch_width_minus1 and nnpfc_patch_height_minus1 as input. \\
-  \end{tabular}
+    When true (non-zero) specifies that the \emph{i}-th neural network post-filter accepts exactly the patch size indicated by nnpfc_patch_width_minus1 and nnpfc_patch_height_minus1 as input.
+  \par
+    When false specifies that the \emph{i}-th neural network post-filter accepts any patch size that is a positive integer multiple of the patch size indicated by nnpfc_patch_width_minus1 and nnpfc_patch_height_minus1 as input.
   \\
   \Option{SEINNPostFilterCharacteristicsPatchWidthMinus1\emph{i}} &
   \Default{0} &
   Specifies the horizontal sample counts of a patch for the \emph{i}-th neural network post-filter.
   \par
-  \begin{tabular}{p{0.49\columnwidth}}
-    When nnpfc_constant_patch_size_flag is true (non-zero), specifies the horizontal sample counts of the patch size required for the input to the \emph{i}-th neural network post-filter. \\
+    When nnpfc_constant_patch_size_flag is true (non-zero), specifies the horizontal sample counts of the patch size required for the input to the \emph{i}-th neural network post-filter.
   \\
   \Option{SEINNPostFilterCharacteristicsPatchHeightMinus1\emph{i}} &
   \Default{0} &
   Specifies the vertical sample counts of a patch for the \emph{i}-th neural network post-filter.
   \par
-  \begin{tabular}{p{0.49\columnwidth}}
-    When nnpfc_constant_patch_size_flag is true (non-zero), specifies the vertical sample counts of the patch size required for the input to the \emph{i}-th neural network post-filter. \\
-  \end{tabular}
+    When nnpfc_constant_patch_size_flag is true (non-zero), specifies the vertical sample counts of the patch size required for the input to the \emph{i}-th neural network post-filter.
   \\
   \Option{SEINNPostFilterCharacteristicsExtendedPatchWidthCdDeltaMinus1\emph{i}} &
   \Default{0} &
   Specifies the extended patch width for the \emph{i}-th neural network post-filter.
   \par
-  \begin{tabular}{p{0.49\columnwidth}}
-    When nnpfc_constant_patch_size_flag is false (zero),  nnpfc_extended_patch_width_cd_delta_minus1+1+2*nnpfc_overlap indicates a common divisor of the all allowed values of the width of an extended patch for the input to the \emph{i}-th neural network post-filter. \\
-  \end{tabular}
+    When nnpfc_constant_patch_size_flag is false (zero),  nnpfc_extended_patch_width_cd_delta_minus1+1+2*nnpfc_overlap indicates a common divisor of the all allowed values of the width of an extended patch for the input to the \emph{i}-th neural network post-filter.
   \\
   \Option{SEINNPostFilterCharacteristicsExtendedPatchHeightCdDeltaMinus1\emph{i}} &
   \Default{0} &
   Specifies the extended patch height \emph{i}-th neural network post-filter.
   \par
-  \begin{tabular}{p{0.49\columnwidth}}
-    When nnpfc_constant_patch_size_flag is false (zero),  nnpfc_extended_patch_height_cd_delta_minus1+1+2*nnpfc_overlap indicates a common divisor of the all allowed values of the height of an extended patch for the input to the \emph{i}-th neural network post-filter. \\
-  \end{tabular}
+    When nnpfc_constant_patch_size_flag is false (zero),  nnpfc_extended_patch_height_cd_delta_minus1+1+2*nnpfc_overlap indicates a common divisor of the all allowed values of the height of an extended patch for the input to the \emph{i}-th neural network post-filter.
   \\
   \Option{SEINNPostFilterCharacteristicsOverlap\emph{i}} &
   \Default{0} &
@@ -5886,7 +5910,7 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the process of padding when referencing sample locations outside the boundaries of the cropped decoded output picture  for the \emph{i}-th neural network post-filter.
   \par
-  \begin{tabular}{cp{0.35\textwidth}}
+  \begin{tabular}{cp{0.3\textwidth}}
     0 & zero padding \\
     1 & replication padding \\
     2 & reflection padding \\
@@ -5914,7 +5938,7 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the nnpfc_parameter_type_idc of the \emph{i}-th neural network post-filter.
   \par
-  \begin{tabular}{cp{0.35\textwidth}}
+  \begin{tabular}{cp{0.3\textwidth}}
     0 & Indicates that the \emph{i}-th neural network post-filter uses only integer parameters \\
     1 & Indicates that the \emph{i}-th neural network post-filter may use floating point or integer parameters \\
     2 & Indicates that the \emph{i}-th neural network post-filter may use binary parameters \\
@@ -5961,9 +5985,9 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{false} &
   Indicates whether the i-th neural network post filter generates a corresponding output picture for the i-th input picture. 
   \\
-\end{OptionTableNoShorthand}
+\end{OptionTableNoShorthandLongParameter}
 
-\begin{OptionTableNoShorthand}{Neural network post-filter characteristics}{tab:sei-nn-post-filter-activation}
+\begin{OptionTableNoShorthand}{Neural network post-filter activation}{tab:sei-nn-post-filter-activation}
   \Option{SEINNPostFilterActivationEnabled} &
   \Default{false} &
   Enables (true) or disables (false) the insertion of the neural network post-filter activation SEI message.
