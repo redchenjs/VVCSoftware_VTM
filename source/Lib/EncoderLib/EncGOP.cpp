@@ -3024,6 +3024,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       }
     }
 
+    if (!pcSlice->getSPS()->getUseAffine())
+    {
+      picHeader->setMaxNumAffineMergeCand((pcSlice->getSPS()->getSbTMVPEnabledFlag() && picHeader->getEnableTMVPFlag()) ? 1 : 0);
+    }
+
     pcSlice->scaleRefPicList( scaledRefPic, pcPic->cs->picHeader, m_pcEncLib->getApss(), picHeader->getLmcsAPS(), picHeader->getScalingListAPS(), false );
 
     // set adaptive search range for non-intra-slices

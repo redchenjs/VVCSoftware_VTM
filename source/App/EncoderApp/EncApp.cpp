@@ -1328,10 +1328,8 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setUseScalingListId                                  ( m_useScalingListId  );
   m_cEncLib.setScalingListFileName                               ( m_scalingListFileName );
   m_cEncLib.setDisableScalingMatrixForLfnstBlks                  ( m_disableScalingMatrixForLfnstBlks);
-  if ( m_cEncLib.getUseColorTrans() && m_cEncLib.getUseScalingListId() )
-  {
-    m_cEncLib.setDisableScalingMatrixForAlternativeColourSpace(m_disableScalingMatrixForAlternativeColourSpace);
-  }
+  m_cEncLib.setDisableScalingMatrixForAlternativeColourSpace(m_disableScalingMatrixForAlternativeColourSpace);
+
   if ( m_cEncLib.getDisableScalingMatrixForAlternativeColourSpace() )
   {
     m_cEncLib.setScalingMatrixDesignatedColourSpace(m_scalingMatrixDesignatedColourSpace);
@@ -1619,7 +1617,7 @@ void EncApp::createLib( const int layerIdx )
     m_filteredOrgPicForFG = new PelStorage;
     m_filteredOrgPicForFG->create( unitArea );
   }
-  if ( m_cEncLib.getBIM() )
+  if ( m_bimEnabled )
   {
     std::map<int, int*> adaptQPmap;
     m_cEncLib.setAdaptQPmap(adaptQPmap);

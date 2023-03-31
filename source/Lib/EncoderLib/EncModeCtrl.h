@@ -58,8 +58,10 @@ enum EncTestModeType
   ETM_HASH_INTER,
   ETM_MERGE_SKIP,
   ETM_INTER_ME,
+#if !JVET_AC0139_UNIFIED_MERGE
   ETM_AFFINE,
   ETM_MERGE_GEO,
+#endif
   ETM_INTRA,
   ETM_PALETTE,
   ETM_SPLIT_QT,
@@ -171,8 +173,10 @@ inline bool isModeInter( const EncTestMode& encTestmode ) // perhaps remove
 {
   return (   encTestmode.type == ETM_INTER_ME
           || encTestmode.type == ETM_MERGE_SKIP
+#if !JVET_AC0139_UNIFIED_MERGE
           || encTestmode.type == ETM_AFFINE
           || encTestmode.type == ETM_MERGE_GEO
+#endif
           || encTestmode.type == ETM_HASH_INTER
          );
 }
@@ -482,6 +486,7 @@ void removeInterME()
   }
 }
 
+#if !JVET_AC0139_UNIFIED_MERGE
 void removeAffine()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
@@ -511,6 +516,7 @@ void removeMergeGeo()
     }
   }
 }
+#endif
 
 void removeIntra()
 {
@@ -534,9 +540,15 @@ bool anyPredModeLeft()
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
+#if JVET_AC0139_UNIFIED_MERGE
+    if (etm.type == ETM_HASH_INTER || etm.type == ETM_MERGE_SKIP || etm.type == ETM_INTER_ME 
+        || etm.type == ETM_INTRA || etm.type == ETM_PALETTE || etm.type == ETM_IBC
+        || etm.type == ETM_IBC_MERGE)
+#else
     if (etm.type == ETM_HASH_INTER || etm.type == ETM_MERGE_SKIP || etm.type == ETM_INTER_ME || etm.type == ETM_AFFINE
         || etm.type == ETM_MERGE_GEO || etm.type == ETM_INTRA || etm.type == ETM_PALETTE || etm.type == ETM_IBC
         || etm.type == ETM_IBC_MERGE)
+#endif
     {
       return true;
     }
@@ -707,6 +719,7 @@ void forceQTonlyMode()
   }
 }
 
+#if !JVET_AC0139_UNIFIED_MERGE
 const char* printType(EncTestModeType type)
 {
   char *ret;
@@ -749,6 +762,7 @@ void printMode()
   }
   printf("]\n");
 }
+#endif
 #endif
 
 protected:
