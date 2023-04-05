@@ -2593,7 +2593,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     m_chromaFormatConstraint =
       (tmpConstraintChromaFormat == 0) ? m_chromaFormatIdc : numberToChromaFormat(tmpConstraintChromaFormat);
-    m_maxChromaFormatConstraintIdc = numberToChromaFormat(tmpMaxChromaFormatConstraintIdc);
+    m_maxChromaFormatConstraintIdc = static_cast<ChromaFormat>(tmpMaxChromaFormatConstraintIdc);
 
     if (m_bitDepthConstraint == 0)
     {
