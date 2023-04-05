@@ -960,7 +960,7 @@ public:
   void      setScalingMatrixDesignatedColourSpaceFlag(bool b)             { m_scalingMatrixDesignatedColourSpaceFlag = b; }
   bool      getScalingMatrixDesignatedColourSpaceFlag() const             { return m_scalingMatrixDesignatedColourSpaceFlag; }
 
-  static int getWinUnitX(ChromaFormat cf) { return 1 << getChannelTypeScaleX(ChannelType::CHROMA, cf); }
+  static int getWinUnitX(ChromaFormat cf) { return isChromaEnabled(cf) ? 1 << getChannelTypeScaleX(ChannelType::CHROMA, cf) : 1; }
   static int getWinUnitY(ChromaFormat cf) { return 1 << getChannelTypeScaleY(ChannelType::CHROMA, cf); }
 };
 
