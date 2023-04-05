@@ -49,6 +49,9 @@
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
 #include "HDRLib/inc/DistortionMetric.H"
+#ifdef UNDEFINED
+#undef UNDEFINED
+#endif
 #endif
 
 struct GOPEntry
