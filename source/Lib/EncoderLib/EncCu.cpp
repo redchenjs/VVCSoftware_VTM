@@ -3661,7 +3661,7 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
       }
 #else
       xEncodeInterResidual(tempCS, bestCS, partitioner, encTestMode, noResidualPass,
-        noResidualPass == 0 ? &candHasNoResidual[mrgHadIdx] : nullptr);
+        noResidualPass == 0 ? &mergeItem->noResidual : nullptr);
 #endif
 
       if (m_pcEncCfg->getUseFastDecisionForMerge() && !bestIsSkip && !pu->ciipFlag)
