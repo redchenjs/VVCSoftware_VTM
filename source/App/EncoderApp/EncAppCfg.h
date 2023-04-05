@@ -54,6 +54,9 @@ static inline std::istream& operator >> (std::istream &in, std::map<T1, T2> &map
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
 #include "HDRLib/inc/DistortionMetric.H"
+#ifdef UNDEFINED
+#undef UNDEFINED
+#endif
 #endif
 namespace po = df::program_options_lite;
 

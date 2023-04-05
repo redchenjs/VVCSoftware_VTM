@@ -69,6 +69,9 @@
 #include "HDRLib/inc/ColorTransform.H"
 #include "HDRLib/inc/TransferFunction.H"
 #include "HDRLib/inc/DistortionMetricDeltaE.H"
+#ifdef UNDEFINED
+#undef UNDEFINED
+#endif
 #include <chrono>
 #endif
 
