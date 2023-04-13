@@ -2418,10 +2418,10 @@ void SEIReader::xParseSEIMultiviewAcquisitionInfo(SEIMultiviewAcquisitionInfo& s
   sei_read_flag( pDecodedMessageOutputStream, val, "intrinsic_param_flag" ); sei.m_maiIntrinsicParamFlag = (val == 1);
   sei_read_flag( pDecodedMessageOutputStream, val, "extrinsic_param_flag" ); sei.m_maiExtrinsicParamFlag = (val == 1);
   sei_read_uvlc( pDecodedMessageOutputStream, val, "num_views_minus1"     ); sei.m_maiNumViewsMinus1     =  val      ;
-  sei.resizeArrays( );
   if( sei.m_maiIntrinsicParamFlag )
   {
     sei_read_flag( pDecodedMessageOutputStream, val, "intrinsic_params_equal_flag" ); sei.m_maiIntrinsicParamsEqualFlag = (val == 1);
+    sei.resizeArrays( );
     sei_read_uvlc( pDecodedMessageOutputStream, val, "prec_focal_length"           ); sei.m_maiPrecFocalLength          =  val      ;
     sei_read_uvlc( pDecodedMessageOutputStream, val, "prec_principal_point"        ); sei.m_maiPrecPrincipalPoint       =  val      ;
     sei_read_uvlc( pDecodedMessageOutputStream, val, "prec_skew_factor"            ); sei.m_maiPrecSkewFactor           =  val      ;
@@ -2430,19 +2430,59 @@ void SEIReader::xParseSEIMultiviewAcquisitionInfo(SEIMultiviewAcquisitionInfo& s
     {
       sei_read_flag( pDecodedMessageOutputStream,                                         val, "sign_focal_length_x"        ); sei.m_maiSignFocalLengthX       [i] = (val == 1);
       sei_read_code( pDecodedMessageOutputStream, 6,                                      val, "exponent_focal_length_x"    ); sei.m_maiExponentFocalLengthX   [i] =  val      ;
-      sei_read_code( pDecodedMessageOutputStream, sei.getMantissaFocalLengthXLen   ( i ), val, "mantissa_focal_length_x"    ); sei.m_maiMantissaFocalLengthX   [i] =  val      ;
+      if (sei.getMantissaFocalLengthXLen( i ) != 0)
+      {
+        sei_read_code( pDecodedMessageOutputStream, sei.getMantissaFocalLengthXLen( i ),  val, "mantissa_focal_length_x" );
+        sei.m_maiMantissaFocalLengthX[i] = val;
+      }
+      else
+      {
+        sei.m_maiMantissaFocalLengthX[i] = 0;
+      }
       sei_read_flag( pDecodedMessageOutputStream,                                         val, "sign_focal_length_y"        ); sei.m_maiSignFocalLengthY       [i] = (val == 1);
       sei_read_code( pDecodedMessageOutputStream, 6,                                      val, "exponent_focal_length_y"    ); sei.m_maiExponentFocalLengthY   [i] =  val      ;
-      sei_read_code( pDecodedMessageOutputStream, sei.getMantissaFocalLengthYLen   ( i ), val, "mantissa_focal_length_y"    ); sei.m_maiMantissaFocalLengthY   [i] =  val      ;
+      if (sei.getMantissaFocalLengthYLen( i ) != 0)
+      {
+        sei_read_code( pDecodedMessageOutputStream, sei.getMantissaFocalLengthYLen( i ),  val, "mantissa_focal_length_y");
+        sei.m_maiMantissaFocalLengthY[i] = val;
+      }
+      else
+      {
+        sei.m_maiMantissaFocalLengthY [i] = 0;
+      }
       sei_read_flag( pDecodedMessageOutputStream,                                         val, "sign_principal_point_x"     ); sei.m_maiSignPrincipalPointX    [i] = (val == 1);
       sei_read_code( pDecodedMessageOutputStream, 6,                                      val, "exponent_principal_point_x" ); sei.m_maiExponentPrincipalPointX[i] =  val      ;
-      sei_read_code( pDecodedMessageOutputStream, sei.getMantissaPrincipalPointXLen( i ), val, "mantissa_principal_point_x" ); sei.m_maiMantissaPrincipalPointX[i] =  val      ;
+      if (sei.getMantissaPrincipalPointXLen( i ) != 0)
+      {
+        sei_read_code( pDecodedMessageOutputStream, sei.getMantissaPrincipalPointXLen( i ), val, "mantissa_principal_point_x" );
+        sei.m_maiMantissaPrincipalPointX[i] = val;
+      }
+      else
+      {
+        sei.m_maiMantissaPrincipalPointX[i] = 0;
+      }
       sei_read_flag( pDecodedMessageOutputStream,                                         val, "sign_principal_point_y"     ); sei.m_maiSignPrincipalPointY    [i] = (val == 1);
       sei_read_code( pDecodedMessageOutputStream, 6,                                      val, "exponent_principal_point_y" ); sei.m_maiExponentPrincipalPointY[i] =  val      ;
-      sei_read_code( pDecodedMessageOutputStream, sei.getMantissaPrincipalPointYLen( i ), val, "mantissa_principal_point_y" ); sei.m_maiMantissaPrincipalPointY[i] =  val      ;
+      if (sei.getMantissaPrincipalPointYLen( i ) != 0)
+      {
+        sei_read_code( pDecodedMessageOutputStream, sei.getMantissaPrincipalPointYLen( i ), val, "mantissa_principal_point_y" );
+        sei.m_maiMantissaPrincipalPointY[i] = val;
+      }
+      else
+      {
+        sei.m_maiMantissaPrincipalPointY[i] = 0;
+      }
       sei_read_flag( pDecodedMessageOutputStream,                                         val, "sign_skew_factor"           ); sei.m_maiSignSkewFactor         [i] = (val == 1);
       sei_read_code( pDecodedMessageOutputStream, 6,                                      val, "exponent_skew_factor"       ); sei.m_maiExponentSkewFactor     [i] =  val      ;
-      sei_read_code( pDecodedMessageOutputStream, sei.getMantissaSkewFactorLen     ( i ), val, "mantissa_skew_factor"       ); sei.m_maiMantissaSkewFactor     [i] =  val      ;
+      if (sei.getMantissaSkewFactorLen( i ) != 0)
+      {
+        sei_read_code( pDecodedMessageOutputStream, sei.getMantissaSkewFactorLen( i ),    val, "mantissa_skew_factor" );
+        sei.m_maiMantissaSkewFactor[i] = val;
+      }
+      else
+      {
+        sei.m_maiMantissaSkewFactor[i] = 0;
+      }
     }
   }
   if( sei.m_maiExtrinsicParamFlag )
@@ -2458,11 +2498,27 @@ void SEIReader::xParseSEIMultiviewAcquisitionInfo(SEIMultiviewAcquisitionInfo& s
         {
           sei_read_flag( pDecodedMessageOutputStream,                                 val, "sign_r"     ); sei.m_maiSignR    [i][j][k] = (val == 1);
           sei_read_code( pDecodedMessageOutputStream, 6,                              val, "exponent_r" ); sei.m_maiExponentR[i][j][k] =  val      ;
-          sei_read_code( pDecodedMessageOutputStream, sei.getMantissaRLen( i, j, k ), val, "mantissa_r" ); sei.m_maiMantissaR[i][j][k] =  val      ;
+          if (sei.getMantissaRLen( i, j, k ) != 0)
+          {
+            sei_read_code( pDecodedMessageOutputStream, sei.getMantissaRLen( i, j, k ), val, "mantissa_r" );
+            sei.m_maiMantissaR[i][j][k] = val;
+          }
+          else
+          {
+            sei.m_maiMantissaR[i][j][k] = 0;
+          }
         }
         sei_read_flag( pDecodedMessageOutputStream,                              val, "sign_t"     ); sei.m_maiSignT    [i][j] = (val == 1);
         sei_read_code( pDecodedMessageOutputStream, 6,                           val, "exponent_t" ); sei.m_maiExponentT[i][j] =  val      ;
-        sei_read_code( pDecodedMessageOutputStream, sei.getMantissaTLen( i, j ), val, "mantissa_t" ); sei.m_maiMantissaT[i][j] =  val      ;
+        if (sei.getMantissaTLen( i, j ) != 0)
+        {
+          sei_read_code( pDecodedMessageOutputStream, sei.getMantissaTLen( i, j ), val, "mantissa_t" );
+          sei.m_maiMantissaT[i][j] = val;
+        }
+        else
+        {
+          sei.m_maiMantissaT[i][j] = 0;
+        }
       }
     }
   }
