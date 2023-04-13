@@ -121,13 +121,13 @@ static inline void output_sei_message_header(SEI &sei, std::ostream *pDecodedMes
  * unmarshal a single SEI message from bitstream bs
  */
  // note: for independent parsing no parameter set should not be required here
-bool SEIReader::parseSEImessage(InputBitstream* bs, SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream)
+SEIMessages::iterator SEIReader::parseSEImessage(InputBitstream* bs, SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream)
 {
   SEIMessages   seiListInCurNalu;
   setBitstream(bs);
   CHECK(m_pcBitstream->getNumBitsUntilByteAligned(), "Bitstream not aligned");
 
-  bool atLeastOneSeiMessageRead = false;
+  SEIMessages::iterator newSEI = seis.end();
 
   do
   {
@@ -135,7 +135,10 @@ bool SEIReader::parseSEImessage(InputBitstream* bs, SEIMessages& seis, const Nal
     if (seiMessageRead)
     {
       seiListInCurNalu.push_back(seis.back());
-      atLeastOneSeiMessageRead = true;
+      if (newSEI == seis.end())
+      {
+        newSEI = --seis.end();
+      }
     }
     /* SEI messages are an integer number of bytes, something has failed
     * in the parsing if bitstream not byte-aligned */
@@ -152,7 +155,7 @@ bool SEIReader::parseSEImessage(InputBitstream* bs, SEIMessages& seis, const Nal
 
   xReadRbspTrailingBits();
 
-  return atLeastOneSeiMessageRead;
+  return newSEI;
 }
 
 void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream *bs, const NalUnitType nalUnitType,
