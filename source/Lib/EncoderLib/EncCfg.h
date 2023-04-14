@@ -176,6 +176,7 @@ protected:
   bool      m_printSequenceMSE;
   bool      m_printMSSSIM;
   bool      m_printWPSNR;
+  bool      m_printHighPrecEncTime = false;
   bool      m_cabacZeroWordPaddingEnabled;
 #if JVET_Z0120_SII_SEI_PROCESSING
   bool      m_ShutterFilterEnable;                          ///< enable Pre-Filtering with Shutter Interval SEI
@@ -1244,6 +1245,9 @@ public:
 
   bool      getPrintWPSNR                   ()         const { return m_printWPSNR;               }
   void      setPrintWPSNR                   (bool value)     { m_printWPSNR = value;              }
+
+  bool getPrintHighPrecEncTime() const { return m_printHighPrecEncTime; }
+  void setPrintHightPrecEncTime(bool val) { m_printHighPrecEncTime = val; }
 
   bool      getCabacZeroWordPaddingEnabled()           const { return m_cabacZeroWordPaddingEnabled;  }
   void      setCabacZeroWordPaddingEnabled(bool value)       { m_cabacZeroWordPaddingEnabled = value; }

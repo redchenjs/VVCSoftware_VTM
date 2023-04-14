@@ -136,6 +136,7 @@ protected:
   bool      m_printSequenceMSE;
   bool      m_printMSSSIM;
   bool      m_printWPSNR;
+  bool      m_printHighPrecEncTime = false;
   bool      m_cabacZeroWordPaddingEnabled;
   bool      m_clipInputVideoToRec709Range;
   bool      m_clipOutputVideoToRec709Range;

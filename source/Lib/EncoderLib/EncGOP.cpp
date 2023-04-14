@@ -5465,7 +5465,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
       }
     }
 #endif
-    msg( NOTICE, " [ET %5.0f ]", dEncTime );
+    msg(NOTICE, m_pcCfg->getPrintHighPrecEncTime() ? " [ET %6.3f ]" : " [ET %5.0f ]", dEncTime);
 
     // msg( SOME, " [WP %d]", pcSlice->getUseWeightedPrediction());
 
