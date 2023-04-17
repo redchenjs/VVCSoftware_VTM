@@ -254,6 +254,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPrintSequenceMSE                                  ( m_printSequenceMSE);
   m_cEncLib.setPrintMSSSIM                                       ( m_printMSSSIM );
   m_cEncLib.setPrintWPSNR                                        ( m_printWPSNR );
+  m_cEncLib.setPrintHightPrecEncTime(m_printHighPrecEncTime);
   m_cEncLib.setCabacZeroWordPaddingEnabled                       ( m_cabacZeroWordPaddingEnabled );
 
   m_cEncLib.setFrameRate(m_frameRate);
