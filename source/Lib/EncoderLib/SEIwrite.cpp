@@ -202,14 +202,12 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
 /**
  * marshal all SEI messages in provided list into one bitstream bs
  */
-uint32_t SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList, HRD &hrd, bool isNested, const uint32_t temporalId)
+void SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList, HRD &hrd, bool isNested, const uint32_t temporalId)
 {
 #if ENABLE_TRACING
   if (g_HLSTraceEnable)
     xTraceSEIHeader();
 #endif
-
-  uint32_t numBits = 0;
 
   OutputBitstream bs_count;
 
@@ -231,8 +229,6 @@ uint32_t SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &sei
     uint32_t payload_data_num_bits = bs_count.getNumberOfWrittenBits();
     CHECK(0 != payload_data_num_bits % 8, "Invalid number of payload data bits");
 
-    numBits += payload_data_num_bits;
-
     setBitstream(&bs);
     uint32_t payloadType = to_underlying((*sei)->payloadType());
     for (; payloadType >= 0xff; payloadType -= 0xff)
@@ -240,8 +236,6 @@ uint32_t SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &sei
       xWriteCode(0xff, 8, "payload_type");
     }
     xWriteCode(payloadType, 8, "payload_type");
-
-    numBits += 8;
 
     uint32_t payloadSize = payload_data_num_bits/8;
     for (; payloadSize >= 0xff; payloadSize -= 0xff)
@@ -264,8 +258,6 @@ uint32_t SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &sei
   {
     xWriteRbspTrailingBits();
   }
-
-  return numBits;
 }
 
 /**

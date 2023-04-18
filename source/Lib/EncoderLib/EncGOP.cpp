@@ -535,27 +535,23 @@ void EncGOP::xWriteSEI (NalUnitType naluType, SEIMessages& seiMessages, AccessUn
   auPos++;
 }
 
-uint32_t EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId)
+void EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId)
 {
   // don't do anything, if we get an empty list
   if (seiMessages.empty())
   {
-    return 0;
+    return;
   }
-
-  uint32_t numBits = 0;
 
   for (SEIMessages::const_iterator sei = seiMessages.begin(); sei!=seiMessages.end(); sei++ )
   {
     SEIMessages tmpMessages;
     tmpMessages.push_back(*sei);
     OutputNALUnit nalu( naluType, m_pcEncLib->getLayerId(), temporalId );
-    numBits += m_seiWriter.writeSEImessages(nalu.m_bitstream, tmpMessages, *m_HRD, false, temporalId);
+    m_seiWriter.writeSEImessages(nalu.m_bitstream, tmpMessages, *m_HRD, false, temporalId);
     auPos = accessUnit.insert(auPos, new NALUnitEBSP(nalu));
     auPos++;
   }
-
-  return numBits;
 }
 
 void EncGOP::xClearSEIs(SEIMessages& seiMessages, bool deleteMessages)
@@ -571,7 +567,7 @@ void EncGOP::xClearSEIs(SEIMessages& seiMessages, bool deleteMessages)
 }
 
 // write SEI messages as separate NAL units ordered
-uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, bool testWrite)
+void EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, bool testWrite)
 {
   AccessUnit::iterator itNalu = accessUnit.begin();
 
@@ -649,18 +645,16 @@ uint32_t EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages&
 
 
   // And finally everything else one by one
-  uint32_t numBits = xWriteSEISeparately(NAL_UNIT_PREFIX_SEI, localMessages, accessUnit, itNalu, temporalId);
+  xWriteSEISeparately(NAL_UNIT_PREFIX_SEI, localMessages, accessUnit, itNalu, temporalId);
   xClearSEIs(localMessages, !testWrite);
 
   if (!testWrite)
   {
     seiMessages.clear();
   }
-
-  return numBits;
 }
 
-uint32_t EncGOP::xWriteLeadingSEIMessages (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, const SPS *sps, std::deque<DUData> &duData)
+void EncGOP::xWriteLeadingSEIMessages (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, const SPS *sps, std::deque<DUData> &duData)
 {
   AccessUnit testAU;
   SEIMessages picTimingSEIs = getSeisByType(seiMessages, SEI::PayloadType::PICTURE_TIMING);
@@ -674,7 +668,7 @@ uint32_t EncGOP::xWriteLeadingSEIMessages (SEIMessages& seiMessages, SEIMessages
   xUpdateTimingSEI(picTiming, duData, sps);
   xUpdateDuInfoSEI(duInfoSeiMessages, picTiming, sps->getMaxTLayers());
   // actual writing
-  return xWriteLeadingSEIOrdered(seiMessages, duInfoSeiMessages, accessUnit, temporalId, false);
+  xWriteLeadingSEIOrdered(seiMessages, duInfoSeiMessages, accessUnit, temporalId, false);
 
   // testAU will automatically be cleaned up when losing scope
 }
@@ -4481,8 +4475,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       }
 #endif
 
-      double seiBits = (double)xWriteLeadingSEIMessages( leadingSeiMessages, duInfoSeiMessages, accessUnit, pcSlice->getTLayer(), pcSlice->getSPS(), duData );
-      m_gcAnalyzeAll.addBits(seiBits);
+      xWriteLeadingSEIMessages( leadingSeiMessages, duInfoSeiMessages, accessUnit, pcSlice->getTLayer(), pcSlice->getSPS(), duData );
       xWriteDuSEIMessages( duInfoSeiMessages, accessUnit, pcSlice->getTLayer(), duData );
 
       m_AUWriterIf->outputAU( accessUnit );
