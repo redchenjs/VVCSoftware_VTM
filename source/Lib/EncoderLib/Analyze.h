@@ -80,11 +80,6 @@ public:
   virtual ~Analyze()  {}
   Analyze() { clear(); }
 
-  void addBits(double bits)
-  {
-    m_dAddBits += bits;
-  }
-
   void addResult(const double psnr[MAX_NUM_COMPONENT], double bits, const double mseYuvFrame[MAX_NUM_COMPONENT],
                  const double upscaledPSNR[MAX_NUM_COMPONENT], const double msssim[MAX_NUM_COMPONENT],
                  bool isEncodeLtRef)
