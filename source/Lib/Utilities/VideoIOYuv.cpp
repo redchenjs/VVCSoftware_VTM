@@ -1085,7 +1085,7 @@ bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpac
     const bool processComponent = (size_t)compID < picOrg.bufs.size();
     Pel* const dst = processComponent ? picOrg.get(compID).bufAt(0,0) : nullptr;
 #if EXTENSION_360_VIDEO
-    const uint32_t stride444 = (uint32_t)picOrg.get(compID).stride;
+    const ptrdiff_t stride444 = picOrg.get(compID).stride;
 #endif
     if (!readPlane(dst, m_cHandle, is16bit, stride444, width444, height444, pad_h444, pad_v444, compID,
                    picOrg.chromaFormat, format, m_fileBitdepth[chType]))
