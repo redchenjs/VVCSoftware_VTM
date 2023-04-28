@@ -799,7 +799,7 @@ void BestEncInfoCache::init( const Slice &slice )
               {
                 if (m_bestEncInfo[x][y][wIdx][hIdx] != nullptr)
                 {
-                  m_bestEncInfo[x][y][wIdx][hIdx]->cu.qp = 0;
+                  m_bestEncInfo[x][y][wIdx][hIdx]->cu.qp = -128;
                 }
               }
             }
