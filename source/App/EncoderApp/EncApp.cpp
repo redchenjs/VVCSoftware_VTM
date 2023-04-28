@@ -161,12 +161,6 @@ void EncApp::xInitLibCfg( int layerIdx )
 
   if (vps.getMaxLayers() > 1)
   {
-    if (!m_multiLayerEnabledFlag)
-    {
-      printf ("Warning: more than one layer in OLS while ptl_multi_layer_enabled_flag is equal to 0, setting ptl_multi_layer_enabled_flag to 1. Set MultiLayerEnabledFlag=1 to avoid this warning.\n");
-      m_multiLayerEnabledFlag = 1;
-    }
-
     if (vps.getAllIndependentLayersFlag())
     {
       vps.setEachLayerIsAnOlsFlag(m_eachLayerIsAnOlsFlag);
