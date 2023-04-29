@@ -265,7 +265,7 @@ uint32_t SEIMultiviewAcquisitionInfo::xGetSyntaxElementLen( int expo, int prec, 
 
   assert( val >= 0 );
   const uint64_t MAX_VAL = (1llu << len) - 1;
-  CHECK( val <= MAX_VAL, "Value is too big" );
+  CHECK( val > MAX_VAL, "Value is too big" );
   return len;
 }
 
