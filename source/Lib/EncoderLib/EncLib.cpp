@@ -2250,7 +2250,7 @@ void EncLib::xInitRPL(SPS &sps)
   {
     if (getNumRefLayers(layerIdx) > 0)
     {
-      for (int refLayerIdx = 0; refLayerIdx < getNumRefLayers(layerIdx); refLayerIdx++)
+      for (int refLayerIdx = 0; refLayerIdx < layerIdx; refLayerIdx++)
       {
         if (getVPS()->getDirectRefLayerFlag(layerIdx, refLayerIdx))
         {
