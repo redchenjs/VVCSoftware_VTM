@@ -281,10 +281,10 @@ public:
   const Window&      getScalingWindow()                                        const { return  m_scalingWindow; }
   bool               isRefScaled( const PPS* pps ) const                             { return  unscaledPic->getPicWidthInLumaSamples()    != pps->getPicWidthInLumaSamples()                ||
                                                                                                unscaledPic->getPicHeightInLumaSamples()   != pps->getPicHeightInLumaSamples()               ||
-                                                                                               getScalingWindow().getWindowLeftOffset()   != pps->getScalingWindow().getWindowLeftOffset()  ||
-                                                                                               getScalingWindow().getWindowRightOffset()  != pps->getScalingWindow().getWindowRightOffset() ||
-                                                                                               getScalingWindow().getWindowTopOffset()    != pps->getScalingWindow().getWindowTopOffset()   ||
-                                                                                               getScalingWindow().getWindowBottomOffset() != pps->getScalingWindow().getWindowBottomOffset(); }
+                                                                                               unscaledPic->getScalingWindow().getWindowLeftOffset()   != pps->getScalingWindow().getWindowLeftOffset()  ||
+                                                                                               unscaledPic->getScalingWindow().getWindowRightOffset()  != pps->getScalingWindow().getWindowRightOffset() ||
+                                                                                               unscaledPic->getScalingWindow().getWindowTopOffset()    != pps->getScalingWindow().getWindowTopOffset()   ||
+                                                                                               unscaledPic->getScalingWindow().getWindowBottomOffset() != pps->getScalingWindow().getWindowBottomOffset(); }
   bool               isWrapAroundEnabled( const PPS* pps ) const                     { return  pps->getWrapAroundEnabledFlag() && !isRefScaled( pps ); }
 
   void         allocateNewSlice();
