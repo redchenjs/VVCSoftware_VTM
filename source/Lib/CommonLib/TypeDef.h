@@ -56,6 +56,7 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
+#define JVET_AD0169_SMALL_SCALE_DOWNSAMPLING              1 // JVET-AD0169: Downsampling filters in range 1.1 to 1.35 based on Kaiser(7) windowed sinc
 
 
 //########### place macros to be be kept below this line ###############
