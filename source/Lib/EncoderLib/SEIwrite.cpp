@@ -1545,7 +1545,6 @@ void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
 
 void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
 {
-#if JVET_AC0058_SEI
   CHECK(sei.m_posPayloadType.size() < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
   for (uint32_t i = 0; i < sei.m_posPayloadType.size(); i++)
   {
@@ -1561,14 +1560,6 @@ void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
       xWriteCode(sei.m_posProcessingOrder[i], 16, "po_sei_processing_order[i]");
     }
   }
-#else
-  CHECK(sei.m_posNumofSeiMessages < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
-  for (uint32_t i=0; i < sei.m_posNumofSeiMessages; i++)
-  {
-    xWriteCode(sei.m_posPayloadType[i], 16, "po_sei_payload_type[i]");
-    xWriteCode(sei.m_posProcessingOrder[i], 16, "po_sei_processing_order[i]");
-  }
-#endif
 }
 
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)

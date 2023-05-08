@@ -566,11 +566,7 @@ SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei
   m_posEnabled = sei.m_posEnabled;
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;
-#if JVET_AC0058_SEI
   m_posPrefixByte = sei.m_posPrefixByte;
-#else
-  m_posNumofSeiMessages = sei.m_posNumofSeiMessages;
-#endif
 }
 
 SEIEquirectangularProjection::SEIEquirectangularProjection(const SEIEquirectangularProjection& sei)

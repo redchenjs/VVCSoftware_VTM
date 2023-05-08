@@ -56,7 +56,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AC0058_SEI                                   1
 #define JVET_AC0154                                       1
 #define JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE             1 
 #define JVET_AC0061_TENSOR_BITDEPTH                       1

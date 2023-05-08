@@ -747,10 +747,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType     (0, 65535, 0, 256*2);
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
 
-#if JVET_AC0058_SEI
   SMultiValueInput<uint16_t>   cfg_poSEINumofPrefixByte(0, 255, 0, 256);
   SMultiValueInput<uint16_t>   cfg_poSEIPrefixByte     (0, 255, 0, 256);
-#endif
 
   SMultiValueInput<int32_t> cfg_postFilterHintSEIValues(INT32_MIN + 1, INT32_MAX, 1 * 1 * 1, 15 * 15 * 3);
 
@@ -1620,10 +1618,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
-#if JVET_AC0058_SEI
   ("SEIPONumofPrefixByte",                            cfg_poSEINumofPrefixByte,       cfg_poSEINumofPrefixByte, "List of number of prefix bytes")
   ("SEIPOPrefixByte",                                 cfg_poSEIPrefixByte,                 cfg_poSEIPrefixByte, "List of prefix bytes")
-#endif
   ("SEIPostFilterHintEnabled",                        m_postFilterHintSEIEnabled,                        false, "Control generation of post-filter Hint SEI message")
   ("SEIPostFilterHintCancelFlag",                     m_postFilterHintSEICancelFlag,                     false, "Specifies the persistence of any previous post-filter Hint SEI message in output order")
   ("SEIPostFilterHintPersistenceFlag",                m_postFilterHintSEIPersistenceFlag,                false, "Specifies the persistence of the post-filter Hint SEI message for the current layer")
@@ -3494,7 +3490,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     assert(cfg_poSEIPayloadType.values.size() > 1);
     assert(cfg_poSEIProcessingOrder.values.size() == cfg_poSEIPayloadType.values.size());
-#if JVET_AC0058_SEI
     m_poSEIPayloadType.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEIProcessingOrder.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEIPrefixByte.resize((uint32_t) cfg_poSEIPayloadType.values.size());
@@ -3535,24 +3530,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     // Error check, to avoid all SEI messages share the same PayloadOrder
     assert(!std::equal(cfg_poSEIProcessingOrder.values.begin() + 1, cfg_poSEIProcessingOrder.values.end(),
                        cfg_poSEIProcessingOrder.values.begin()));
-#else
-    m_numofSEIMessages = (uint32_t)cfg_poSEIPayloadType.values.size();
-    m_poSEIPayloadType.resize(m_numofSEIMessages);
-    m_poSEIProcessingOrder.resize(m_numofSEIMessages);
-    for (uint32_t i = 0; i < m_numofSEIMessages; i++)
-    {
-      m_poSEIPayloadType[i]  = cfg_poSEIPayloadType.values[i];
-      m_poSEIProcessingOrder[i] = (uint16_t)cfg_poSEIProcessingOrder.values[i];
-      //Error check, to avoid same PayloadType with different PayloadOrder
-      for (uint32_t j = 0; j < i; j++)
-      {
-        if (m_poSEIPayloadType[j] == m_poSEIPayloadType[i])
-        {
-          assert(m_poSEIProcessingOrder[j]== m_poSEIProcessingOrder[i]);
-        }
-      }
-    }
-#endif
     assert(m_poSEIPayloadType.size() > 0);
     assert(m_poSEIProcessingOrder.size() == m_poSEIPayloadType.size());
   }

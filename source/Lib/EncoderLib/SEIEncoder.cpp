@@ -612,7 +612,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   assert(seiProcessingOrderInfo != nullptr);
 
 
-#if JVET_AC0058_SEI
   seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
   seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
@@ -626,18 +625,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
       seiProcessingOrderInfo->m_posPrefixByte[i] = m_pcCfg->getPoSEIPrefixByte(i);
     }
   }
-#else  
-  uint32_t numSEIMessages = m_pcCfg->getPoSEINumofSeiMessages();
-  seiProcessingOrderInfo->m_posNumofSeiMessages = numSEIMessages;
-  seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
-  seiProcessingOrderInfo->m_posPayloadType.resize(numSEIMessages);
-  seiProcessingOrderInfo->m_posProcessingOrder.resize(numSEIMessages);
-  for (uint32_t i = 0; i < numSEIMessages; i++) 
-  {
-    seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
-    seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
-  }
-#endif
 }
 
 void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
