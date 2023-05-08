@@ -423,14 +423,12 @@ protected:
   bool      m_usePbIntraFast;
   bool      m_useAMaxBT;
   bool      m_useFastMrg;
-#if JVET_AC0139_UNIFIED_MERGE
   int       m_maxMergeRdCandNumTotal;
   int       m_mergeRdCandQuotaRegular;
   int       m_mergeRdCandQuotaRegularSmallBlk;
   int       m_mergeRdCandQuotaSubBlk;
   int       m_mergeRdCandQuotaCiip;
   int       m_mergeRdCandQuotaGpm;
-#endif
   bool      m_e0023FastEnc;
   bool      m_contentBasedFastQtbt;
   bool      m_useNonLinearAlfLuma;
@@ -736,25 +734,16 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsPropertyPresentFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AC0353_NNPFC_BASE_FLAG
   bool                  m_nnPostFilterSEICharacteristicsBaseFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AC0154
   uint32_t              m_nnPostFilterSEICharacteristicsOutColourFormatIdc[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AC0061_TENSOR_BITDEPTH
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
-  uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
-#endif
   bool                  m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsInpFormatIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
@@ -768,10 +757,8 @@ protected:
   bool                  m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPatchWidthMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AC0344_NNPFC_PATCH
   uint32_t              m_nnPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsOverlap[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPaddingType[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsLumaPadding[MAX_NUM_NN_POST_FILTERS];
@@ -788,31 +775,17 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
 
   bool                  m_nnPostFilterSEIActivationEnabled;
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   uint32_t              m_nnPostFilterSEIActivationTargetId;
-#else
-  uint32_t              m_nnPostFilterSEIActivationId;
-#endif
-  #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
-  #else
-  uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[MAX_NUM_NN_POST_FILTERS];
-  #endif
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
 
   bool                  m_poSEIEnabled;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
-#if JVET_AC0058_SEI
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
-#else
-  uint32_t m_numofSEIMessages;
-#endif
 
 
   bool                 m_postFilterHintSEIEnabled;
@@ -992,7 +965,6 @@ protected:
   int         m_qpOffsetChromaRPR;
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
-#if JVET_AC0096
   int         m_rprSwitchingResolutionOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
   int         m_rprSwitchingQPOffsetOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
   int         m_rprSwitchingListSize;
@@ -1000,7 +972,6 @@ protected:
   bool        m_rprPopulatePPSatIntraFlag;
   int         m_rprSwitchingSegmentSize;
   double      m_rprSwitchingTime;
-#endif
   bool        m_resChangeInClvsEnabled;
   bool        m_refMetricsEnabled;
   double      m_fractionOfFrames;                             ///< encode a fraction of the frames as specified in FramesToBeEncoded

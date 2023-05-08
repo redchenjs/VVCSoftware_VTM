@@ -88,11 +88,7 @@ public:
   void          getMmvdDeltaMv(const Slice& slice, const MmvdIdx candIdx, Mv deltaMv[NUM_REF_PIC_LIST_01]) const;
   bool          mmvdUseAltHpelIf[MmvdIdx::BASE_MV_NUM];
   bool          useAltHpelIf      [ MRG_MAX_NUM_CANDS ];
-#if JVET_AC0139_UNIFIED_MERGE
   void setMergeInfo( PredictionUnit& pu, int candIdx ) const;
-#else
-  void setMergeInfo( PredictionUnit& pu, int candIdx );
-#endif
 };
 
 class AffineMergeCtx

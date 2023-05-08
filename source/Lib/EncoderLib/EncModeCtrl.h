@@ -58,10 +58,6 @@ enum EncTestModeType
   ETM_HASH_INTER,
   ETM_MERGE_SKIP,
   ETM_INTER_ME,
-#if !JVET_AC0139_UNIFIED_MERGE
-  ETM_AFFINE,
-  ETM_MERGE_GEO,
-#endif
   ETM_INTRA,
   ETM_PALETTE,
   ETM_SPLIT_QT,
@@ -173,10 +169,6 @@ inline bool isModeInter( const EncTestMode& encTestmode ) // perhaps remove
 {
   return (   encTestmode.type == ETM_INTER_ME
           || encTestmode.type == ETM_MERGE_SKIP
-#if !JVET_AC0139_UNIFIED_MERGE
-          || encTestmode.type == ETM_AFFINE
-          || encTestmode.type == ETM_MERGE_GEO
-#endif
           || encTestmode.type == ETM_HASH_INTER
          );
 }
@@ -499,37 +491,6 @@ void removeInterME()
   }
 }
 
-#if !JVET_AC0139_UNIFIED_MERGE
-void removeAffine()
-{
-  int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++)
-  {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    if (etm.type == ETM_AFFINE)
-    {
-      m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
-      j--;
-      n--;
-    }
-  }
-}
-
-void removeMergeGeo()
-{
-  int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++)
-  {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    if (etm.type == ETM_MERGE_GEO)
-    {
-      m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
-      j--;
-      n--;
-    }
-  }
-}
-#endif
 
 void removeIntra()
 {
@@ -553,15 +514,9 @@ bool anyPredModeLeft()
   {
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
-#if JVET_AC0139_UNIFIED_MERGE
     if (etm.type == ETM_HASH_INTER || etm.type == ETM_MERGE_SKIP || etm.type == ETM_INTER_ME 
         || etm.type == ETM_INTRA || etm.type == ETM_PALETTE || etm.type == ETM_IBC
         || etm.type == ETM_IBC_MERGE)
-#else
-    if (etm.type == ETM_HASH_INTER || etm.type == ETM_MERGE_SKIP || etm.type == ETM_INTER_ME || etm.type == ETM_AFFINE
-        || etm.type == ETM_MERGE_GEO || etm.type == ETM_INTRA || etm.type == ETM_PALETTE || etm.type == ETM_IBC
-        || etm.type == ETM_IBC_MERGE)
-#endif
     {
       return true;
     }
@@ -732,50 +687,6 @@ void forceQTonlyMode()
   }
 }
 
-#if !JVET_AC0139_UNIFIED_MERGE
-const char* printType(EncTestModeType type)
-{
-  char *ret;
-
-  switch (type) {
-  case  0: ret = strdup("Hash"); break;
-  case  1: ret = strdup("Mkip"); break;
-  case  2: ret = strdup("Inter"); break;
-  case  3: ret = strdup("Affi"); break;
-  case  4: ret = strdup("Tria"); break;
-  case  5: ret = strdup("Intra"); break;
-  case  6: ret = strdup("Palet"); break;
-
-  case  7: ret = strdup("QT"); break;
-  case  8: ret = strdup("BTH"); break;
-  case  9: ret = strdup("BTV"); break;
-  case 10: ret = strdup("TTH"); break;
-  case 11: ret = strdup("TTV"); break;
-  case 12: ret = strdup("|"); break;
-  case 13: ret = strdup("CACHE"); break;
-  case 14: ret = strdup("IMV"); break;
-  case 15: ret = strdup("IBC"); break;
-  case 16: ret = strdup("IBCM"); break;
-  default:
-    ret = strdup("INVALID");
-  }
-
-  return ret;
-}
-
-void printMode()
-{
-  // remove all inter or split to force make intra
-  int n = (int)m_ComprCUCtxList.back().testModes.size();
-  printf("-:[");
-  for (int j = 0; j < n; j++)
-  {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-    printf(" %s", printType(etm.type));
-  }
-  printf("]\n");
-}
-#endif
 #endif
 
 protected:

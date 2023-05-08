@@ -612,7 +612,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   assert(seiProcessingOrderInfo != nullptr);
 
 
-#if JVET_AC0058_SEI
   seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
   seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
@@ -626,18 +625,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
       seiProcessingOrderInfo->m_posPrefixByte[i] = m_pcCfg->getPoSEIPrefixByte(i);
     }
   }
-#else  
-  uint32_t numSEIMessages = m_pcCfg->getPoSEINumofSeiMessages();
-  seiProcessingOrderInfo->m_posNumofSeiMessages = numSEIMessages;
-  seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
-  seiProcessingOrderInfo->m_posPayloadType.resize(numSEIMessages);
-  seiProcessingOrderInfo->m_posProcessingOrder.resize(numSEIMessages);
-  for (uint32_t i = 0; i < numSEIMessages; i++) 
-  {
-    seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
-    seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
-  }
-#endif
 }
 
 void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
@@ -1312,9 +1299,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
 {
   CHECK(!(m_isInitialized), "Unspecified error");
   CHECK(!(sei != nullptr), "Unspecified error");
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   sei->m_purpose = m_pcCfg->getNNPostFilterSEICharacteristicsPurpose(filterIdx);
-#endif
   sei->m_id = m_pcCfg->getNNPostFilterSEICharacteristicsId(filterIdx);
   sei->m_modeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsModeIdc(filterIdx);
   if (sei->m_modeIdc == POST_FILTER_MODE::URI)
@@ -1325,39 +1310,20 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
   sei->m_propertyPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsPropertyPresentFlag(filterIdx);
   if (sei->m_propertyPresentFlag)
   {
-#if JVET_AC0353_NNPFC_BASE_FLAG
     sei->m_baseFlag = m_pcCfg->getNNPostFilterSEICharacteristicsBaseFlag(filterIdx);
-#endif
-#if !JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    sei->m_purpose = m_pcCfg->getNNPostFilterSEICharacteristicsPurpose(filterIdx);
-#endif
 
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     sei->m_numberInputDecodedPicturesMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1(filterIdx);
-#endif
-#if JVET_AC0062_CONSTRAINT_CHECK
     CHECK(sei->m_numberInputDecodedPicturesMinus1 > 63, "m_numberInputDecodedPicturesMinus1 shall be in the range of 0 to 63");
-#endif
 
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
-#else
-    if(sei->m_purpose == 2 || sei->m_purpose == 4)
-#endif
     {
       sei->m_outSubCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubCFlag(filterIdx);
     }
-#if JVET_AC0154
     if((sei->m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
     {
       sei->m_outColourFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutColourFormatIdc(filterIdx);
     }
-#endif
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei->m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
-#else
-    if(sei->m_purpose == 3 || sei->m_purpose == 4)
-#endif
     {
       sei->m_picWidthInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(filterIdx);
       sei->m_picHeightInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightInLumaSamples(filterIdx);
@@ -1392,32 +1358,19 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       CHECK(!(sei->m_picWidthInLumaSamples >= croppedWidth && sei->m_picWidthInLumaSamples <= croppedWidth * 16 - 1), "m_picWidthInLumaSamples shall be in the range of croppedWidth to croppedWidth * 16 - 1");
       CHECK(!(sei->m_picHeightInLumaSamples >= croppedHeight && sei->m_picHeightInLumaSamples <= croppedHeight * 16 - 1), "m_picHeightInLumaSamples shall be in the range of croppedHeight to croppedHeight * 16 - 1");
     }
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei->m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
-#else
-    if (sei->m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING)
-#endif
     {
-#if !JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-      sei->m_numberInputDecodedPicturesMinus2 = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2(filterIdx);
-#endif
       sei->m_numberInterpolatedPictures = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInterpolatedPictures(filterIdx);
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       sei->m_inputPicOutputFlag = m_pcCfg->getNNPostFilterSEICharacteristicsInputPicOutputFlag(filterIdx);
       CHECK(sei->m_numberInputDecodedPicturesMinus1 <= 0, "If nnpfc_purpose is FRAME_RATE_UPSAMPLING, m_numberInputDecodedPicturesMinus1 shall be greater than 0");
-#endif
     }
 
     sei->m_componentLastFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComponentLastFlag(filterIdx);
     sei->m_inpFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpFormatIdc(filterIdx);
     if (sei->m_inpFormatIdc == 1)
     {
-#if JVET_AC0061_TENSOR_BITDEPTH
       sei->m_inpTensorBitDepthLumaMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8(filterIdx);
       sei->m_inpTensorBitDepthChromaMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8(filterIdx);
-#else
-      sei->m_outTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(filterIdx);
-#endif
     }
 
     sei->m_inpOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpOrderIdc(filterIdx);
@@ -1433,24 +1386,18 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     sei->m_outFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutFormatIdc(filterIdx);
     if (sei->m_outFormatIdc == 1)
     {
-#if JVET_AC0061_TENSOR_BITDEPTH
       sei->m_outTensorBitDepthLumaMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8(filterIdx);
       sei->m_outTensorBitDepthChromaMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8(filterIdx);
-#else
-      sei->m_outTensorBitDepthMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthMinus8(filterIdx);
-#endif
     }
     sei->m_outOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutOrderIdc(filterIdx);
     sei->m_constantPatchSizeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(filterIdx);
     sei->m_patchWidthMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchWidthMinus1(filterIdx);
     sei->m_patchHeightMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchHeightMinus1(filterIdx);
-#if JVET_AC0344_NNPFC_PATCH
     if (sei->m_constantPatchSizeFlag == 0)
     {
       sei->m_extendedPatchWidthCdDeltaMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1(filterIdx);
       sei->m_extendedPatchHeightCdDeltaMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1(filterIdx);
     }
-#endif
     sei->m_overlap = m_pcCfg->getNNPostFilterSEICharacteristicsOverlap(filterIdx);
     sei->m_paddingType = m_pcCfg->getNNPostFilterSEICharacteristicsPaddingType(filterIdx);
     sei->m_lumaPadding = m_pcCfg->getNNPostFilterSEICharacteristicsLumaPadding(filterIdx);
@@ -1467,11 +1414,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_totalKilobyteSize = m_pcCfg->getNNPostFilterSEICharacteristicsTotalKilobyteSize(filterIdx);
     }
   }
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   if (sei->m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
-#else
-  if (sei->m_modeIdc == 1)
-#endif
   {
     const std::string payloadFilename = m_pcCfg->getNNPostFilterSEICharacteristicsPayloadFilename(filterIdx);
     std::ifstream     bitstreamFile(payloadFilename.c_str(), std::ifstream::in | std::ifstream::binary);
@@ -1494,11 +1437,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
 {
   CHECK(!(m_isInitialized), "Unspecified error");
   CHECK(!(sei != nullptr), "Unspecified error");
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   sei->m_targetId = m_pcCfg->getNnPostFilterSEIActivationTargetId();
-#else
-  sei->m_id = m_pcCfg->getNnPostFilterSEIActivationId();
-#endif
   sei->m_cancelFlag  = m_pcCfg->getNnPostFilterSEIActivationCancelFlag();
   if(!sei->m_cancelFlag)
   {

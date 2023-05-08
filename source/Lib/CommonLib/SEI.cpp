@@ -550,7 +550,6 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
   }
 }
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
 SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei)
 {
   m_siiEnabled = sei.m_siiEnabled;
@@ -566,11 +565,7 @@ SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei
   m_posEnabled = sei.m_posEnabled;
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;
-#if JVET_AC0058_SEI
   m_posPrefixByte = sei.m_posPrefixByte;
-#else
-  m_posNumofSeiMessages = sei.m_posNumofSeiMessages;
-#endif
 }
 
 SEIEquirectangularProjection::SEIEquirectangularProjection(const SEIEquirectangularProjection& sei)
@@ -1074,20 +1069,13 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_outSubCFlag = sei.m_outSubCFlag;
   m_outSubWidthC = sei.m_outSubWidthC;
   m_outSubHeightC = sei.m_outSubHeightC;
-#if JVET_AC0154
   m_outColourFormatIdc = sei.m_outColourFormatIdc;
-#endif
   m_picWidthInLumaSamples = sei.m_picWidthInLumaSamples;
   m_picHeightInLumaSamples = sei.m_picHeightInLumaSamples;
-#if JVET_AC0061_TENSOR_BITDEPTH
   m_inpTensorBitDepthLumaMinus8 = sei.m_inpTensorBitDepthLumaMinus8;
   m_inpTensorBitDepthChromaMinus8 = sei.m_inpTensorBitDepthChromaMinus8;
   m_outTensorBitDepthLumaMinus8 = sei.m_outTensorBitDepthLumaMinus8;
   m_outTensorBitDepthChromaMinus8 = sei.m_outTensorBitDepthChromaMinus8;
-#else
-  m_inpTensorBitDepthMinus8 = sei.m_inpTensorBitDepthMinus8;
-  m_outTensorBitDepthMinus8 = sei.m_outTensorBitDepthMinus8;
-#endif
   m_componentLastFlag = sei.m_componentLastFlag;
   m_inpFormatIdc = sei.m_inpFormatIdc;
   m_auxInpIdc = sei.m_auxInpIdc;
@@ -1101,10 +1089,8 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_constantPatchSizeFlag = sei.m_constantPatchSizeFlag;
   m_patchWidthMinus1 = sei.m_patchWidthMinus1;
   m_patchHeightMinus1 = sei.m_patchHeightMinus1;
-#if JVET_AC0344_NNPFC_PATCH
   m_extendedPatchWidthCdDeltaMinus1 = sei.m_extendedPatchWidthCdDeltaMinus1;
   m_extendedPatchHeightCdDeltaMinus1 = sei.m_extendedPatchHeightCdDeltaMinus1;
-#endif
   m_overlap = sei.m_overlap;
   m_paddingType = sei.m_paddingType;
   m_lumaPadding = sei.m_lumaPadding;
@@ -1123,15 +1109,9 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_numParametersIdc = sei.m_numParametersIdc;
   m_numKmacOperationsIdc = sei.m_numKmacOperationsIdc;
   m_totalKilobyteSize = sei.m_totalKilobyteSize;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   m_numberInputDecodedPicturesMinus1 = sei.m_numberInputDecodedPicturesMinus1;
-#else
-  m_numberInputDecodedPicturesMinus2 = sei.m_numberInputDecodedPicturesMinus2;
-#endif
   m_numberInterpolatedPictures = sei.m_numberInterpolatedPictures;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
-#endif
 }
 
 SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
@@ -1171,15 +1151,10 @@ SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMess
   for (auto sei: seiList)
   {
     auto *nnpfcSEI = (SEINeuralNetworkPostFilterCharacteristics *) sei;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if ((nnpfcSEI->m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
-#else
-    if (nnpfcSEI->m_purpose == 4)
-#endif
     {
       return nnpfcSEI;
     }
   }
   return nullptr;
 }
-#endif

@@ -123,9 +123,7 @@ public:
   void  destroyLib();
   bool  encodePrep( bool& eos );
   bool  encode();                               ///< main encoding function
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   void applyNnPostFilter();
-#endif
 
   void  outputAU( const AccessUnit& au );
 
@@ -145,9 +143,7 @@ public:
   FeatureCounterStruct getFeatureCounter(){return m_cEncLib.getFeatureCounter();}
   void      featureToFile(std::ofstream& featureFile,int feature[MAX_CU_DEPTH+1][MAX_CU_DEPTH+1], std::string featureName);
 #endif
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   bool getNNPostFilterEnabled() { return m_cEncLib.getNNPostFilterSEICharacteristicsEnabled() || m_cEncLib.getNnPostFilterSEIActivationEnabled(); }
-#endif
 };// END CLASS DEFINITION EncApp
 
 //! \}

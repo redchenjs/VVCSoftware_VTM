@@ -462,9 +462,7 @@ static constexpr int MAX_FILTER_SIZE     = NTAPS_LUMA > NTAPS_CHROMA ? NTAPS_LUM
 
 static constexpr int MAX_LADF_INTERVALS       =                         5; /// max number of luma adaptive deblocking filter qp offset intervals
 
-#if JVET_AC0096
 static constexpr int MAX_RPR_SWITCHING_ORDER_LIST_SIZE =               32; /// max number of pre-defined RPR switching segments
-#endif
 static constexpr int ATMVP_SUB_BLOCK_SIZE =                             3; ///< sub-block size for ATMVP
 static constexpr int GEO_MAX_NUM_UNI_CANDS =                            6;
 static constexpr int GEO_MAX_NUM_CANDS = GEO_MAX_NUM_UNI_CANDS * (GEO_MAX_NUM_UNI_CANDS - 1);

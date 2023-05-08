@@ -318,7 +318,6 @@ int main(int argc, char* argv[])
       }
     }
   }
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   for( auto & encApp : pcEncApp )
   {
     if (encApp->getNNPostFilterEnabled())
@@ -326,7 +325,6 @@ int main(int argc, char* argv[])
       encApp->applyNnPostFilter();
     }
   }
-#endif
   // ending time
   clock_t endClock = clock();
   auto endTime = std::chrono::steady_clock::now();
