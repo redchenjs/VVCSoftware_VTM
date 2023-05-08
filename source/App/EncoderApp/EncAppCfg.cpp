@@ -753,15 +753,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<int32_t> cfg_postFilterHintSEIValues(INT32_MIN + 1, INT32_MAX, 1 * 1 * 1, 15 * 15 * 3);
 
   std::vector<SMultiValueInput<uint32_t>>   cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   std::vector<SMultiValueInput<bool>>   cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList;
-#endif
   for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; i++)
   {
     cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList.push_back(SMultiValueInput<uint32_t>(0, std::numeric_limits<uint32_t>::max(), 1, 0));
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList.push_back(SMultiValueInput<bool>(0, 1, 1, 0));
-#endif
   }
 
 #if ENABLE_TRACING
@@ -1937,21 +1933,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
                       "Specifies the NNR bitstream in the Neural Network Post Filter Characteristics SEI message");
 
     std::ostringstream numberDecodedInputPics;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     numberDecodedInputPics << "SEINNPFCNumberInputDecodedPicsMinusOne" << i;
     opts.addOptions()(numberDecodedInputPics.str(), m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i], 0u, "Specifies the number of decoded output pictures used as input for the post processing filter");
-#else
-    numberDecodedInputPics << "SEINNPFCNumberInputDecodedPicsMinusTwo" << i;
-    opts.addOptions()(numberDecodedInputPics.str(), m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], 0u, "Specifies the number of decoded output pictures used as input for the post processing filter");
-#endif
     std::ostringstream numberInterpolatedPics;
     numberInterpolatedPics << "SEINNPFCNumberInterpolatedPics" << i;
     opts.addOptions()(numberInterpolatedPics.str(), cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], "Number of pictures to interpolate");
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     std::ostringstream InputPicOutputFlag;
     InputPicOutputFlag << "SEINNPFCInputPicOutputFlag" << i;
     opts.addOptions()(InputPicOutputFlag.str(), cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], "Indicates whether NNPF will generate a corresponding output picture for the input picture");
-#endif
 
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
 #if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
@@ -2480,23 +2469,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].push_back(0);
     }
 
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     for(int j=0; j<m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size(); ++j)
     {
       CHECK(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i][j] > 63, "The value of nnpfc_interpolated_pics[i] shall be in the range of 0 to 63, inclusive");
     }
     CHECK(int(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size()) < int(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i]) - 1, "Number Interpolated Pictures List must be greater than number of decoder pictures list");
-#else
-    CHECK(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size() < m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], "Number Interpolated Pictures List must be greater than number of decoder pictures list");
-#endif
 
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i].values;
     if (m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i].size() == 0)
     {
       m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i].push_back(0);
     }
-#endif
   }
 
   if (isY4mFileExt(m_inputFileName))
@@ -5001,9 +4984,7 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > MAX_NNPFC_ID, "SEINNPFCId must be in the range of 0 to 2^32-2");
       xConfirmPara(m_nnPostFilterSEICharacteristicsModeIdc[i] > 255, "SEINNPFCModeIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 1023, "SEINNPFCPurpose must be in the range of 0 to 1023");
-    #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 63, "SEINNPFCNumberInputDecodedPicturesMinus1 must be in the range of 0 to 63");
-    #endif
 #if JVET_AC0061_TENSOR_BITDEPTH
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthChromaMinus8 must be in the range of 0 to 24");

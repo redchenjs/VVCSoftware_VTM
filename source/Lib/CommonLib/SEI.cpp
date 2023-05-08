@@ -1117,15 +1117,9 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_numParametersIdc = sei.m_numParametersIdc;
   m_numKmacOperationsIdc = sei.m_numKmacOperationsIdc;
   m_totalKilobyteSize = sei.m_totalKilobyteSize;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   m_numberInputDecodedPicturesMinus1 = sei.m_numberInputDecodedPicturesMinus1;
-#else
-  m_numberInputDecodedPicturesMinus2 = sei.m_numberInputDecodedPicturesMinus2;
-#endif
   m_numberInterpolatedPictures = sei.m_numberInterpolatedPictures;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
-#endif
 }
 
 SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
@@ -1165,11 +1159,7 @@ SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMess
   for (auto sei: seiList)
   {
     auto *nnpfcSEI = (SEINeuralNetworkPostFilterCharacteristics *) sei;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if ((nnpfcSEI->m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
-#else
-    if (nnpfcSEI->m_purpose == 4)
-#endif
     {
       return nnpfcSEI;
     }

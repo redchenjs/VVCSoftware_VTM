@@ -1414,15 +1414,9 @@ public:
   uint32_t       m_numParametersIdc;
   uint32_t       m_numKmacOperationsIdc;
   uint32_t       m_totalKilobyteSize;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   uint32_t       m_numberInputDecodedPicturesMinus1;
-#else
-  uint32_t       m_numberInputDecodedPicturesMinus2;
-#endif
   std::vector<uint32_t> m_numberInterpolatedPictures;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   std::vector<bool> m_inputPicOutputFlag;
-#endif
 };
 
 class SEINeuralNetworkPostFilterActivation : public SEI

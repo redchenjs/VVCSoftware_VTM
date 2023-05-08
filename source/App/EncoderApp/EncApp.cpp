@@ -1198,11 +1198,7 @@ void EncApp::xInitLibCfg( int layerIdx )
       }
 #endif
       m_cEncLib.setNNPostFilterSEICharacteristicsPurpose                 (m_nnPostFilterSEICharacteristicsPurpose[i], i);
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
-#else
-      if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 2  || m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 4)
-#endif
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsOutSubCFlag(m_nnPostFilterSEICharacteristicsOutSubCFlag[i], i);
       }
@@ -1210,30 +1206,16 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsOutColourFormatIdc(ChromaFormat(m_nnPostFilterSEICharacteristicsOutColourFormatIdc[i]), i);
       }
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
-#else
-      if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 3  || m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 4)
-#endif
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthInLumaSamples   (m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightInLumaSamples  (m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], i);
       }
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
-#else
-      if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 5)
-#endif
       {
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i], i);
-#else
-        m_cEncLib.setNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[i], i);
-#endif
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInterpolatedPictures( m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i], i);
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
         m_cEncLib.setNNPostFilterSEICharacteristicsInputPicOutputFlag( m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i], i);
-#endif    
       }
       m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsInpFormatIdc            (m_nnPostFilterSEICharacteristicsInpFormatIdc[i], i);

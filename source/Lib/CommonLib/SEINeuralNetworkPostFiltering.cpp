@@ -112,11 +112,7 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
     for (auto sei : currCodedPic->m_nnpfcActivated)
     {
       auto currNnpfc = (SEINeuralNetworkPostFilterCharacteristics*) sei;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       bool pictureRateUpsamplingFlag = (currNnpfc->m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0;
-#else
-      bool pictureRateUpsamplingFlag = currNnpfc->m_purpose == 5;
-#endif
       if (pictureRateUpsamplingFlag)
       {
         uint32_t sourceWidth = pps->getPicWidthInLumaSamples()
@@ -159,11 +155,7 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
   Picture* currCodedPic, const SEINeuralNetworkPostFilterCharacteristics* frameRateUpsamplingNnpfc,
   uint32_t sourceWidth, uint32_t sourceHeight, uint32_t croppedWidth, uint32_t croppedHeight)
 {
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   uint32_t numInputPics = frameRateUpsamplingNnpfc->m_numberInputDecodedPicturesMinus1 + 1;
-#else
-  int numInputPics = frameRateUpsamplingNnpfc->m_numberInputDecodedPicturesMinus2 + 2;
-#endif
 
   std::vector<uint32_t> inputPicPoc(numInputPics, 0);
   uint32_t currPicPOC = currCodedPic->getPOC();
@@ -204,11 +196,7 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
         for (auto sei : inputPic->m_nnpfcActivated)
         {
           const auto *inputNnpfc = (SEINeuralNetworkPostFilterCharacteristics*)sei;
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
           if ((inputNnpfc->m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
-#else
-          if (nnpfc->m_purpose == 4)
-#endif
           {
             CHECK(inputNnpfc->m_picWidthInLumaSamples != croppedWidth || inputNnpfc->m_picHeightInLumaSamples != croppedHeight, "Input picture shall have a super resolution NNPF activated");
             inputPicUsesNnpfResolutionAdaptation = true;
