@@ -2856,13 +2856,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_outSubHeightC = 1;
       }
     }
-#if !JVET_AC0154
-    else
-    {
-      sei.m_outSubWidthC  = subWidthC;
-      sei.m_outSubHeightC = subHeightC;
-    }
-#endif
 
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     CHECK(((subWidthC == 1) && (subHeightC == 1)) && ((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0),
@@ -2872,7 +2865,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
           "If SubWidthC is equal to 1 and SubHeightC is equal to 1, nnpfc_purpose shall not be equal to 2 or 4");
 #endif
 
-#if JVET_AC0154
     if((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
     {
       CHECK(((chromaFormatIdc != ChromaFormat::_400) || (sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0),
@@ -2892,7 +2884,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_outSubWidthC  = subWidthC;
       sei.m_outSubHeightC = subHeightC;
     }
-#endif
 
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
@@ -2920,7 +2911,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_numberInputDecodedPicturesMinus2 = val;
       sei.m_numberInterpolatedPictures.resize(sei.m_numberInputDecodedPicturesMinus2 + 1);
 #endif
-#if JVET_AC0154
       bool allZeroFlag = false;
       for (int i = 0; i < sei.m_numberInterpolatedPictures.size(); i++)
       {
@@ -2932,13 +2922,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         }
       }
       CHECK(!allZeroFlag, "At least one value of nnpfc_interpolated_pics[i] shall be greater than 0");
-#else
-      for (int i = 0; i < sei.m_numberInterpolatedPictures.size(); i++)
-      {
-        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_interpolated_pictures");
-        sei.m_numberInterpolatedPictures[i] = val;
-      }
-#endif
 
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
       for (int i = 0; i <= sei.m_numberInterpolatedPictures.size(); i++)

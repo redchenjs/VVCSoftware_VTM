@@ -1303,9 +1303,7 @@ public:
     , m_outSubCFlag(0)
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
-#if JVET_AC0154
     , m_outColourFormatIdc(ChromaFormat::_420)
-#endif
     , m_picWidthInLumaSamples(0)
     , m_picHeightInLumaSamples(0)
 #if JVET_AC0061_TENSOR_BITDEPTH
@@ -1372,9 +1370,7 @@ public:
   bool           m_outSubCFlag;
   uint8_t        m_outSubWidthC;
   uint8_t        m_outSubHeightC;
-  #if JVET_AC0154
   ChromaFormat   m_outColourFormatIdc;
-  #endif
   uint32_t       m_picWidthInLumaSamples;
   uint32_t       m_picHeightInLumaSamples;
 #if JVET_AC0061_TENSOR_BITDEPTH

@@ -1776,11 +1776,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     outSubWidthCFlag << "SEINNPFCOutSubCFlag" << i;
     opts.addOptions()(outSubWidthCFlag.str(), m_nnPostFilterSEICharacteristicsOutSubCFlag[i], false, "Specifies output chroma format when upsampling");
 
-#if JVET_AC0154
     std::ostringstream outColourFormatIdc;
     outColourFormatIdc << "SEINNPFCOutColourFormatIdc" << i;
     opts.addOptions()(outColourFormatIdc.str(), m_nnPostFilterSEICharacteristicsOutColourFormatIdc[i], 1u, "Specifies output chroma format for colourization purpose");
-#endif
 
     std::ostringstream picWidthInLumaSamples;
     picWidthInLumaSamples << "SEINNPFCPicWidthInLumaSamples" << i;
@@ -5028,12 +5026,8 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsPaddingType[i] > (1 << 4) - 1, "SEINNPostFilterPaddingType must be in the range of 0 to 2^4-1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsLog2ParameterBitLengthMinus3[i] > 3, "SEINNPFCLog2ParameterBitLengthMinus3 must be in the range of 0 to 3");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumParametersIdc[i] > 52, "SEINNPFCNumParametersIdc must be in the range of 0 to 52");
-#if JVET_AC0154
       xConfirmPara(m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i] > (uint32_t) (((uint64_t) 1 << 32) - 2), "SEINNPFCTotalKilobyteSize must be in the range of 0 to 2^32-2");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i] > (uint32_t) (((uint64_t) 1 << 32) - 2), "SEICharacteristicsNumKmacOperationsIdc must be in the range of 0 to 2^32-2");
-#else
-      xConfirmPara(m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i] > (uint32_t) (((uint64_t) 1 << 32) - 1), "SEINNPFCTotalKilobyteSize must be in the range of 0 to 2^32-1");
-#endif
     }
   }
 

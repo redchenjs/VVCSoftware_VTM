@@ -1070,9 +1070,7 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_outSubCFlag = sei.m_outSubCFlag;
   m_outSubWidthC = sei.m_outSubWidthC;
   m_outSubHeightC = sei.m_outSubHeightC;
-#if JVET_AC0154
   m_outColourFormatIdc = sei.m_outColourFormatIdc;
-#endif
   m_picWidthInLumaSamples = sei.m_picWidthInLumaSamples;
   m_picHeightInLumaSamples = sei.m_picHeightInLumaSamples;
 #if JVET_AC0061_TENSOR_BITDEPTH

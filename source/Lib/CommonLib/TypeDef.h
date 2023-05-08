@@ -56,7 +56,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AC0154                                       1
 #define JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE             1 
 #define JVET_AC0061_TENSOR_BITDEPTH                       1
 #define JVET_AC0062_CONSTRAINT_CHECK                      1
@@ -767,7 +766,6 @@ enum NNPC_PaddingType
   FIXED_PADDING = 4
 };
 
-#if JVET_AC0154
 enum NNPC_PurposeType
 {
   UNKONWN                    = 0,
@@ -778,17 +776,6 @@ enum NNPC_PurposeType
   BIT_DEPTH_UPSAMPLING       = 16,
   COLOURIZATION              = 32
 };
-#else
-enum NNPC_PurposeType
-{
-  UNKONWN = 0,
-  VISUAL_QUALITY_IMPROVEMENT = 1,
-  CHROMA_UPSAMPLING = 2,
-  INCREASE_PICT_DIMENSION_WITHOUT_CHROMA_UPSAMPLING = 3,
-  INCREASE_PICT_DIMENSION_WITH_CHROMA_UPSMAPLING = 4,
-  FRAME_RATE_UPSAMPLING = 5
-};
-#endif
 
 enum POST_FILTER_MODE
 {

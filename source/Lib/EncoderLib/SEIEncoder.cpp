@@ -1334,12 +1334,10 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_outSubCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubCFlag(filterIdx);
     }
-#if JVET_AC0154
     if((sei->m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
     {
       sei->m_outColourFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutColourFormatIdc(filterIdx);
     }
-#endif
 #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
     if((sei->m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
 #else
