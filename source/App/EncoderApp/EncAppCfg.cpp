@@ -1758,11 +1758,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     propertyPresentFlag << "SEINNPFCPropertyPresentFlag" << i;
     opts.addOptions()(propertyPresentFlag.str(), m_nnPostFilterSEICharacteristicsPropertyPresentFlag[i], false, "Specifies whether the filter purpose, input formatting, output formatting and complexity are present in the Neural Network Post Filter Characteristics SEI message");
 
-#if JVET_AC0353_NNPFC_BASE_FLAG
     std::ostringstream nnpfcBaseFlag;
     nnpfcBaseFlag << "SEINNPFCBaseFlag" << i;
     opts.addOptions()(nnpfcBaseFlag.str(), m_nnPostFilterSEICharacteristicsBaseFlag[i], false, "Specifies whether the filter is a base filter or not");
-#endif
 
     std::ostringstream purpose;
     purpose << "SEINNPFCPurpose" << i;

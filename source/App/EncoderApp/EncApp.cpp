@@ -1181,7 +1181,6 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setNNPostFilterSEICharacteristicsPropertyPresentFlag( m_nnPostFilterSEICharacteristicsPropertyPresentFlag[i], i);
     if (m_cEncLib.getNNPostFilterSEICharacteristicsPropertyPresentFlag(i))
     {
-#if JVET_AC0353_NNPFC_BASE_FLAG
       m_cEncLib.setNNPostFilterSEICharacteristicsBaseFlag                (m_nnPostFilterSEICharacteristicsBaseFlag[i], i);
       if (!m_nnPostFilterSEICharacteristicsBaseFlag[i])
       {
@@ -1196,7 +1195,6 @@ void EncApp::xInitLibCfg( int layerIdx )
         }
         CHECK(!baseFilterExist, "No base filter found! Cannot have an update filter without base filter.")
       }
-#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsPurpose                 (m_nnPostFilterSEICharacteristicsPurpose[i], i);
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
       {

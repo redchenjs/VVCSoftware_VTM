@@ -1696,9 +1696,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
   xWriteFlag(sei.m_propertyPresentFlag, "nnpfc_property_present_flag");
   if (sei.m_propertyPresentFlag)
   {
-#if JVET_AC0353_NNPFC_BASE_FLAG
     xWriteFlag(sei.m_baseFlag, "nnpfc_base_flag");
-#endif
     xWriteUvlc(sei.m_numberInputDecodedPicturesMinus1, "nnpfc_number_of_input_pictures_minus1");
 
     if((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
