@@ -1306,15 +1306,10 @@ public:
     , m_outColourFormatIdc(ChromaFormat::_420)
     , m_picWidthInLumaSamples(0)
     , m_picHeightInLumaSamples(0)
-#if JVET_AC0061_TENSOR_BITDEPTH
     , m_inpTensorBitDepthLumaMinus8(0)
     , m_inpTensorBitDepthChromaMinus8(0)
     , m_outTensorBitDepthLumaMinus8(0)
     , m_outTensorBitDepthChromaMinus8(0)
-#else
-    , m_inpTensorBitDepthMinus8(0)
-    , m_outTensorBitDepthMinus8(0)
-#endif
     , m_componentLastFlag(false)
     , m_inpFormatIdc(0)
     , m_auxInpIdc(0)
@@ -1373,15 +1368,10 @@ public:
   ChromaFormat   m_outColourFormatIdc;
   uint32_t       m_picWidthInLumaSamples;
   uint32_t       m_picHeightInLumaSamples;
-#if JVET_AC0061_TENSOR_BITDEPTH
   uint32_t       m_inpTensorBitDepthLumaMinus8;
   uint32_t       m_inpTensorBitDepthChromaMinus8;
   uint32_t       m_outTensorBitDepthLumaMinus8;
   uint32_t       m_outTensorBitDepthChromaMinus8;
-#else
-  uint32_t       m_inpTensorBitDepthMinus8;
-  uint32_t       m_outTensorBitDepthMinus8;
-#endif
   bool           m_componentLastFlag;
   uint32_t       m_inpFormatIdc;
   uint32_t m_auxInpIdc;

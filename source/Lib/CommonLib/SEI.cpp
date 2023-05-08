@@ -1073,15 +1073,10 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_outColourFormatIdc = sei.m_outColourFormatIdc;
   m_picWidthInLumaSamples = sei.m_picWidthInLumaSamples;
   m_picHeightInLumaSamples = sei.m_picHeightInLumaSamples;
-#if JVET_AC0061_TENSOR_BITDEPTH
   m_inpTensorBitDepthLumaMinus8 = sei.m_inpTensorBitDepthLumaMinus8;
   m_inpTensorBitDepthChromaMinus8 = sei.m_inpTensorBitDepthChromaMinus8;
   m_outTensorBitDepthLumaMinus8 = sei.m_outTensorBitDepthLumaMinus8;
   m_outTensorBitDepthChromaMinus8 = sei.m_outTensorBitDepthChromaMinus8;
-#else
-  m_inpTensorBitDepthMinus8 = sei.m_inpTensorBitDepthMinus8;
-  m_outTensorBitDepthMinus8 = sei.m_outTensorBitDepthMinus8;
-#endif
   m_componentLastFlag = sei.m_componentLastFlag;
   m_inpFormatIdc = sei.m_inpFormatIdc;
   m_auxInpIdc = sei.m_auxInpIdc;
