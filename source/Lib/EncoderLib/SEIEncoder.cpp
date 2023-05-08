@@ -1315,9 +1315,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
 #endif
 
     sei->m_numberInputDecodedPicturesMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1(filterIdx);
-#if JVET_AC0062_CONSTRAINT_CHECK
     CHECK(sei->m_numberInputDecodedPicturesMinus1 > 63, "m_numberInputDecodedPicturesMinus1 shall be in the range of 0 to 63");
-#endif
 
     if((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
     {
