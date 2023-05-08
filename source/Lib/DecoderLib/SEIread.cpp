@@ -2944,18 +2944,13 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei.m_outOrderIdc = val;
     CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)  && (sei.m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 3.")
 
-#if JVET_AC0344_NNPFC_PATCH
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_overlap");
     sei.m_overlap = val;
-#endif
 
-#if JVET_AC0344_NNPFC_PATCH
     if (sei.m_constantPatchSizeFlag)
     {
-#endif
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_constant_patch_size_flag");
     sei.m_constantPatchSizeFlag = val;
-#if JVET_AC0344_NNPFC_PATCH
     }
     else
     {
@@ -2965,10 +2960,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_extended_patch_height_cd_delta_minus1");
       sei.m_extendedPatchHeightCdDeltaMinus1 = val;
     }
-#else
-    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_overlap");
-    sei.m_overlap = val;
-#endif
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_patch_width_minus1");
     sei.m_patchWidthMinus1 = val;
 

@@ -1090,10 +1090,8 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_constantPatchSizeFlag = sei.m_constantPatchSizeFlag;
   m_patchWidthMinus1 = sei.m_patchWidthMinus1;
   m_patchHeightMinus1 = sei.m_patchHeightMinus1;
-#if JVET_AC0344_NNPFC_PATCH
   m_extendedPatchWidthCdDeltaMinus1 = sei.m_extendedPatchWidthCdDeltaMinus1;
   m_extendedPatchHeightCdDeltaMinus1 = sei.m_extendedPatchHeightCdDeltaMinus1;
-#endif
   m_overlap = sei.m_overlap;
   m_paddingType = sei.m_paddingType;
   m_lumaPadding = sei.m_lumaPadding;

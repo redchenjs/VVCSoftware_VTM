@@ -1323,10 +1323,8 @@ public:
     , m_constantPatchSizeFlag(false)
     , m_patchWidthMinus1(0)
     , m_patchHeightMinus1(0)
-#if JVET_AC0344_NNPFC_PATCH
     , m_extendedPatchWidthCdDeltaMinus1(0)
     , m_extendedPatchHeightCdDeltaMinus1(0)
-#endif
     , m_overlap(0)
     , m_paddingType(0)
     , m_lumaPadding(0)
@@ -1385,10 +1383,8 @@ public:
   bool           m_constantPatchSizeFlag;
   uint32_t       m_patchWidthMinus1;
   uint32_t       m_patchHeightMinus1;
-#if JVET_AC0344_NNPFC_PATCH
   uint32_t       m_extendedPatchWidthCdDeltaMinus1;
   uint32_t       m_extendedPatchHeightCdDeltaMinus1;
-#endif
   uint32_t       m_overlap;
   uint32_t       m_paddingType;
   uint32_t       m_lumaPadding;
