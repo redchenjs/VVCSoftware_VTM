@@ -274,11 +274,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPsnrThresholdRPR                                  (m_psnrThresholdRPR, m_psnrThresholdRPR2, m_psnrThresholdRPR3);
   m_cEncLib.setQpOffsetRPR                                       (m_qpOffsetRPR, m_qpOffsetRPR2, m_qpOffsetRPR3);
   m_cEncLib.setQpOffsetChromaRPR                                 (m_qpOffsetChromaRPR, m_qpOffsetChromaRPR2, m_qpOffsetChromaRPR3);
-#if JVET_AC0096
   m_cEncLib.setRprFunctionalityTestingEnabledFlag                (m_rprFunctionalityTestingEnabledFlag);
   m_cEncLib.setRprSwitchingSegmentSize                           (m_rprSwitchingSegmentSize);
   m_cEncLib.setRprPopulatePPSatIntraFlag                         (m_rprPopulatePPSatIntraFlag);
-#endif
   m_cEncLib.setRprEnabled                                        (m_rprEnabledFlag);
   m_cEncLib.setResChangeInClvsEnabled                            ( m_resChangeInClvsEnabled );
   m_cEncLib.setSwitchPocPeriod                                   ( m_switchPocPeriod );
@@ -758,7 +756,6 @@ void EncApp::xInitLibCfg( int layerIdx )
       m_cEncLib.setLadfIntervalLowerBound(m_ladfIntervalLowerBound[k], k);
     }
   }
-#if JVET_AC0096
   if (m_rprFunctionalityTestingEnabledFlag)
   {
     for (int k = 0; k < m_rprSwitchingListSize; k++)
@@ -768,7 +765,6 @@ void EncApp::xInitLibCfg( int layerIdx )
     }
     m_cEncLib.setRprSwitchingListSize(m_rprSwitchingListSize);
   }
-#endif
   m_cEncLib.setUseCiip                                        ( m_ciip );
   m_cEncLib.setUseGeo                                            ( m_Geo );
   m_cEncLib.setUseHashMECfgEnable                                (m_HashME);
@@ -1928,11 +1924,7 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         const int layerId = getVPS() ? getVPS()->getGeneralLayerIdx(m_cEncLib.getLayerId()) : 0;
         const SPS& sps = *m_cEncLib.getSPS(layerId);
         int ppsID = layerId;
-#if JVET_AC0096
         if ((m_gopBasedRPREnabledFlag && (m_cEncLib.getBaseQP() >= m_cEncLib.getGOPBasedRPRQPThreshold())) || m_rprFunctionalityTestingEnabledFlag)
-#else
-        if (m_gopBasedRPREnabledFlag  && (m_cEncLib.getBaseQP() >= m_cEncLib.getGOPBasedRPRQPThreshold()))
-#endif
         {
           const PPS& pps1 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR);
           const PPS& pps2 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR2);

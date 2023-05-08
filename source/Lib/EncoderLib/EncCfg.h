@@ -1044,7 +1044,6 @@ protected:
   int         m_qpOffsetChromaRPR;
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
-#if JVET_AC0096
   int         m_rprSwitchingResolutionOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
   int         m_rprSwitchingQPOffsetOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
   int         m_rprSwitchingListSize;
@@ -1052,7 +1051,6 @@ protected:
   bool        m_rprPopulatePPSatIntraFlag;
   int         m_rprSwitchingSegmentSize;
   double      m_rprSwitchingTime;
-#endif
   bool        m_rprEnabledFlag;
   bool        m_resChangeInClvsEnabled;
   int         m_switchPocPeriod;
@@ -2846,7 +2844,6 @@ public:
   int         getQpOffsetChromaRPR()                                  const { return m_qpOffsetChromaRPR; }
   int         getQpOffsetChromaRPR2()                                 const { return m_qpOffsetChromaRPR2; }
   int         getQpOffsetChromaRPR3()                                 const { return m_qpOffsetChromaRPR3; }
-#if JVET_AC0096
   bool      getRprFunctionalityTestingEnabledFlag()                   const { return m_rprFunctionalityTestingEnabledFlag; }
   void      setRprFunctionalityTestingEnabledFlag(bool flag)          { m_rprFunctionalityTestingEnabledFlag = flag; }
   bool      getRprPopulatePPSatIntraFlag()                            const { return m_rprPopulatePPSatIntraFlag; }
@@ -2873,7 +2870,6 @@ public:
                                                                               }
                                                                               return num;
                                                                              }
-#endif
   void        setResChangeInClvsEnabled(bool b)                      { m_resChangeInClvsEnabled = b; }
   bool        isResChangeInClvsEnabled()                        const { return m_resChangeInClvsEnabled; }
   void        setRefLayerMetricsEnabled(bool b)                      { m_refLayerMetricsEnabled = b; } 

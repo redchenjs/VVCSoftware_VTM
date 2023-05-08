@@ -427,7 +427,6 @@ int EncGOP::xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool
 
   if( newPPS ) // Note this assumes that all changes to the PPS are made at the EncLib level prior to picture creation (EncLib::xGetNewPicBuffer).
   {
-#if JVET_AC0096
     if (m_pcEncLib->getRprPopulatePPSatIntraFlag())
     {
       if (slice->isIntra())
@@ -463,9 +462,6 @@ int EncGOP::xWriteParameterSets(AccessUnit &accessUnit, Slice *slice, const bool
     {
       actualTotalBits += xWritePPS(accessUnit, slice->getPPS(), m_pcEncLib->getLayerId());
     }
-#else
-    actualTotalBits += xWritePPS( accessUnit, slice->getPPS(), m_pcEncLib->getLayerId() );
-#endif
   }
 
   return actualTotalBits;
