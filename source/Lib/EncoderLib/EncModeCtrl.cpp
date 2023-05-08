@@ -1362,37 +1362,13 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
       // add inter modes
       if( m_pcEncCfg->getUseEarlySkipDetection() )
       {
-#if !JVET_AC0139_UNIFIED_MERGE
-        if( cs.sps->getUseGeo() && cs.slice->isInterB() )
-        {
-          m_ComprCUCtxList.back().testModes.push_back({ ETM_MERGE_GEO, ETO_STANDARD, qp });
-        }
-#endif
         m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_SKIP,  ETO_STANDARD, qp } );
-#if !JVET_AC0139_UNIFIED_MERGE
-        if (cs.sps->getUseAffine() || (cs.sps->getSbTMVPEnabledFlag() && cs.slice->getPicHeader()->getEnableTMVPFlag()))
-        {
-          m_ComprCUCtxList.back().testModes.push_back( { ETM_AFFINE,    ETO_STANDARD, qp } );
-        }
-#endif
         m_ComprCUCtxList.back().testModes.push_back( { ETM_INTER_ME,    ETO_STANDARD, qp } );
       }
       else
       {
         m_ComprCUCtxList.back().testModes.push_back( { ETM_INTER_ME,    ETO_STANDARD, qp } );
-#if !JVET_AC0139_UNIFIED_MERGE
-        if( cs.sps->getUseGeo() && cs.slice->isInterB() )
-        {
-          m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_GEO, ETO_STANDARD, qp } );
-        }
-#endif
         m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_SKIP,  ETO_STANDARD, qp } );
-#if !JVET_AC0139_UNIFIED_MERGE
-        if (cs.sps->getUseAffine() || (cs.sps->getSbTMVPEnabledFlag() && cs.slice->getPicHeader()->getEnableTMVPFlag()))
-        {
-          m_ComprCUCtxList.back().testModes.push_back( { ETM_AFFINE,    ETO_STANDARD, qp } );
-        }
-#endif
       }
       if (getUseHashME())
       {
@@ -1425,11 +1401,7 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
   ComprCUCtx& cuECtx = m_ComprCUCtxList.back();
 
   // Fast checks, partitioning depended
-#if JVET_AC0139_UNIFIED_MERGE
   if (cuECtx.isHashPerfectMatch && encTestmode.type != ETM_MERGE_SKIP && encTestmode.type != ETM_INTER_ME)
-#else
-  if (cuECtx.isHashPerfectMatch && encTestmode.type != ETM_MERGE_SKIP && encTestmode.type != ETM_INTER_ME && encTestmode.type != ETM_AFFINE && encTestmode.type != ETM_MERGE_GEO)
-#endif
   {
     return false;
   }
@@ -1654,19 +1626,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
       }
     }
 
-#if !JVET_AC0139_UNIFIED_MERGE
-    if ( encTestmode.type == ETM_AFFINE && relatedCU.isIntra )
-    {
-      return false;
-    }
-    if( encTestmode.type == ETM_MERGE_GEO && ( partitioner.currArea().lwidth() < GEO_MIN_CU_SIZE || partitioner.currArea().lheight() < GEO_MIN_CU_SIZE
-                                            || partitioner.currArea().lwidth() > GEO_MAX_CU_SIZE || partitioner.currArea().lheight() > GEO_MAX_CU_SIZE
-                                            || partitioner.currArea().lwidth() >= 8 * partitioner.currArea().lheight()
-                                            || partitioner.currArea().lheight() >= 8 * partitioner.currArea().lwidth() ) )
-    {
-      return false;
-    }
-#endif
     return true;
   }
   else if( isModeSplit( encTestmode ) )

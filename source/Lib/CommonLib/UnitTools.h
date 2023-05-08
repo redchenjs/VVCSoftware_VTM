@@ -178,9 +178,7 @@ namespace PU
   bool addAffineMVPCandUnscaled       ( const PredictionUnit &pu, const RefPicList &refPicList, const int &refIdx, const Position &pos, const MvpDir &dir, AffineAMVPInfo &affiAmvpInfo );
   bool isBipredRestriction            (const PredictionUnit &pu);
   void spanMotionInfo                 (      PredictionUnit &pu, const MergeCtx &mrgCtx = MergeCtx() );
-#if JVET_AC0139_UNIFIED_MERGE
   void spanMotionInfo                 (      PredictionUnit &pu, const MotionBuf& subPuMvpMiBuf);
-#endif
   void applyImv(PredictionUnit &pu, MergeCtx &mrgCtx, InterPrediction *interPred = nullptr);
 #if GDR_ENABLED
   void getAffineControlPointCand(const PredictionUnit& pu, MotionInfo mi[4], bool isAvailable[4], int verIdx[4], int8_t bcwIdx, int modelIdx, int verNum, AffineMergeCtx& affMrgCtx, bool isEncodeGdrClean, bool modelSolid[6]);

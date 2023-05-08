@@ -2264,11 +2264,7 @@ bool InterPrediction::xPredInterBlkRPR(const ScalingRatio scalingRatio, const PP
   return scaled;
 }
 
-#if JVET_AC0139_UNIFIED_MERGE
 void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx ) const
-#else
-void MergeCtx::setMergeInfo( PredictionUnit& pu, int candIdx )
-#endif
 {
   CHECK( candIdx >= numValidMergeCand, "Merge candidate does not exist" );
   pu.regularMergeFlag        = !(pu.ciipFlag || pu.cu->geoFlag);
