@@ -550,7 +550,6 @@ const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
   }
 }
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
 SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei)
 {
   m_siiEnabled = sei.m_siiEnabled;
@@ -1159,4 +1158,3 @@ SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMess
   }
   return nullptr;
 }
-#endif

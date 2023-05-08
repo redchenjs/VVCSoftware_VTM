@@ -58,9 +58,7 @@
 #include "EncAdaptiveLoopFilter.h"
 #include "RateCtrl.h"
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
 #include "CommonLib/SEINeuralNetworkPostFiltering.h"
-#endif
 
 class EncLibCommon;
 
@@ -139,9 +137,7 @@ private:
   std::string   m_GMFAFile;
 #endif
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   SEINeuralNetworkPostFiltering m_nnPostFiltering;
-#endif
 public:
   SPS*                      getSPS( int spsId ) { return m_spsMap.getPS( spsId ); };
   APS**                     getApss() { return m_apss; }
@@ -252,9 +248,7 @@ public:
   bool encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded,
               bool isTff);
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   void applyNnPostFilter();
-#endif
 
   void printSummary(bool isField)
   {

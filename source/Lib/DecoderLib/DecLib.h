@@ -54,9 +54,7 @@
 #include "CommonLib/SEI.h"
 #include "CommonLib/Unit.h"
 #include "CommonLib/Reshape.h"
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
 #include "CommonLib/SEINeuralNetworkPostFiltering.h"
-#endif
 
 class InputNALUnit;
 
@@ -231,9 +229,7 @@ private:
   int m_lastGdrPoc;
   int m_lastGdrRecoveryPocCnt;
 #endif
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   SEINeuralNetworkPostFiltering m_nnPostFiltering;
-#endif
 
 public:
   int                     m_targetSubPicIdx;
@@ -366,9 +362,7 @@ public:
   void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
 #endif
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   void applyNnPostFilter();
-#endif
 
 
 protected:

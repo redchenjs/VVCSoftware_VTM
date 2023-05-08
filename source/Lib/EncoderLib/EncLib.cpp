@@ -1090,7 +1090,6 @@ bool EncLib::encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBu
   return false;
 }
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
 void EncLib::applyNnPostFilter()
 {
   if(m_cListPic.empty())
@@ -1099,7 +1098,6 @@ void EncLib::applyNnPostFilter()
   }
   m_nnPostFiltering.filterPictures(m_cListPic);
 }
-#endif
 
 // ====================================================================================================================
 // Protected member functions

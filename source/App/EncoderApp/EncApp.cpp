@@ -1275,11 +1275,7 @@ void EncApp::xInitLibCfg( int layerIdx )
     }
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   m_cEncLib.setNnPostFilterSEIActivationTargetId(m_nnPostFilterSEIActivationTargetId);
-#else
-  m_cEncLib.setNnPostFilterSEIActivationId                       (m_nnPostFilterSEIActivationId);
-#endif
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );
   m_cEncLib.setEntryPointPresentFlag                             ( m_entryPointPresentFlag );
   m_cEncLib.setTMVPModeId                                        ( m_TMVPModeId );
@@ -1835,12 +1831,10 @@ bool EncApp::encode()
   return keepDoing;
 }
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
 void EncApp::applyNnPostFilter()
 {
   m_cEncLib.applyNnPostFilter();
 }
-#endif
 
 // ====================================================================================================================
 // Protected member functions

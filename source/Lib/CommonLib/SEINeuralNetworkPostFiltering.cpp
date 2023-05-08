@@ -37,7 +37,6 @@
 
 #include "SEINeuralNetworkPostFiltering.h"
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
 
 SEINeuralNetworkPostFiltering::SEINeuralNetworkPostFiltering()
 : m_picList()
@@ -208,4 +207,3 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
     }
   }
 }
-#endif

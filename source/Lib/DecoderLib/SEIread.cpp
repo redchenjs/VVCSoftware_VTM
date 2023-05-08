@@ -3017,10 +3017,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     }
 
     int payloadBytesRemaining = getBitstream()->getNumBitsLeft() / 8;
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
     sei.m_payloadLength = payloadBytesRemaining;
     sei.m_payloadByte = new char[sei.m_payloadLength];
-#endif
     int code;
 
     std::string filename = "payloadByte" + std::to_string(sei.m_id) + ".nnr";
@@ -3030,9 +3028,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     for (int i = 0; i < payloadBytesRemaining; i++)
     {
       sei_read_scode ( pDecodedMessageOutputStream, 8, code, "nnpfc_payload_byte[i]");
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
       sei.m_payloadByte[i] = (char)code;
-#endif
       outFile.write((char*)&code, 1);
     }
     outFile.close();
@@ -3044,15 +3040,9 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
   uint32_t val;
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_target_id" );
   sei.m_targetId =val;
   CHECK((sei.m_targetId >= 256 && sei.m_targetId <= 511) || (sei.m_targetId >= (1<<31) && sei.m_targetId <= MAX_NNPFA_ID), "Reserved nnpfa_target_id value, shall ignore the SEI message");
-#else
-  sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_id" );
-  sei.m_id =val;
-  CHECK((sei.m_id >= 256 && sei.m_id <= 511) || (sei.m_id >= (1<<31) && sei.m_id <= MAX_NNPFA_ID), "Reserved nnpfa_id value, shall ignore the SEI message");
-#endif
   sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_cancel_flag" );
   sei.m_cancelFlag = val;
 
