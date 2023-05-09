@@ -1320,6 +1320,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setSiiSEISubLayerNumUnitsInSI(m_siiSEISubLayerNumUnitsInSI);
 
   m_cEncLib.setPoSEIEnabled                                      (m_poSEIEnabled);
+#if JVET_AD0386_SEI
+  m_cEncLib.setPoSEIPrefixFlag                                   (m_poSEIPrefixFlag);
+#endif
   m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
   m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
