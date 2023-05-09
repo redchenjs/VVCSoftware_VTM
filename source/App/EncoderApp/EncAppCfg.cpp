@@ -3522,12 +3522,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       // Error check, to avoid same PayloadType and same prefix bytes when present with different PayloadOrder
       for (uint32_t j = 0; j < i; j++)
       {
-        auto payloadType = SEI::PayloadType(cfg_poSEIPayloadType.values[i]);
 #if JVET_AD0386_SEI
         if (m_poSEIPrefixFlag[i])
         {
             if ((m_poSEIPayloadType[j] == m_poSEIPayloadType[i]) && m_poSEIPrefixFlag[j])
 #else
+        auto payloadType = SEI::PayloadType(cfg_poSEIPayloadType.values[i]);
         if (payloadType == SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
         {
           for (uint32_t j = 0; j < i; j++)

@@ -563,6 +563,9 @@ SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
 {
   m_posEnabled = sei.m_posEnabled;
+#if JVET_AD0386_SEI
+  m_posPrefixFlag = sei.m_posPrefixFlag;
+#endif
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;
   m_posPrefixByte = sei.m_posPrefixByte;
