@@ -744,7 +744,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
 #if JVET_AD0386_SEI
-  SMultiValueInput<bool>       cfg_poSEIPrefixFlag(0, 1, 0, 1);
+  SMultiValueInput<bool>       cfg_poSEIPrefixFlag(false, true, 0, 1);
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType(0, 32768, 0, 256 * 2);
 #else
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType     (0, 65535, 0, 256*2);
@@ -3496,7 +3496,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::SEI_PROCESSING_ORDER
         )
       {
-        assert(m_poSEIPrefixFlag[i] == 0);
+        assert(!m_poSEIPrefixFlag[i]);
       }
 #endif
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
