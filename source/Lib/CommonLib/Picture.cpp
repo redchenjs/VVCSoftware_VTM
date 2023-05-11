@@ -364,7 +364,7 @@ const TFilterCoeff DownsamplingFilterSRC[8][16][12] =
       {   0,   0,   0,   1,  -5,  16, 125, -12,   3,   0,   0,   0 },
       {   0,   0,   0,   0,  -2,   7, 127,  -6,   2,   0,   0,   0 }
     },
-    { // D = 1.5
+    { // Kaiser(7)-windowed sinc ratio 1.35
 #if JVET_AD0169_SMALL_SCALE_DOWNSAMPLING
       {   0,   0,   4, -14,  27,  94,  27, -14,   4,   0,   0,   0 },
       {   0,   0,   4, -13,  21,  94,  32, -14,   3,   1,   0,   0 },
