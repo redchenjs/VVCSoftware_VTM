@@ -2939,10 +2939,16 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_overlap");
     sei.m_overlap = val;
 
-    if (sei.m_constantPatchSizeFlag)
-    {
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_constant_patch_size_flag");
     sei.m_constantPatchSizeFlag = val;
+
+    if (sei.m_constantPatchSizeFlag)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_patch_width_minus1");
+      sei.m_patchWidthMinus1 = val;
+
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_patch_height_minus1");
+      sei.m_patchHeightMinus1 = val;
     }
     else
     {
@@ -2952,14 +2958,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_extended_patch_height_cd_delta_minus1");
       sei.m_extendedPatchHeightCdDeltaMinus1 = val;
     }
-    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_patch_width_minus1");
-    sei.m_patchWidthMinus1 = val;
-
-    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_patch_height_minus1");
-    sei.m_patchHeightMinus1 = val;
-
-    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_overlap");
-    sei.m_overlap = val;
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_padding_type");
     sei.m_paddingType = val;
