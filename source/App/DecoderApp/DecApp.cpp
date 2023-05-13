@@ -36,6 +36,7 @@
 */
 
 #include <list>
+#include <numeric>
 #include <vector>
 #include <stdio.h>
 #include <fcntl.h>
@@ -50,13 +51,6 @@
 
 //! \ingroup DecoderApp
 //! \{
-
-static int calcGcd(int a, int b)
-{
-  // assume that a >= b
-  return b == 0 ? a : calcGcd(b, a % b);
-}
-
 
 // ====================================================================================================================
 // Constructor / destructor / initialization / destroy
@@ -461,9 +455,8 @@ uint32_t DecApp::decode()
             if (isY4mFileExt(reconFileName))
             {
               const auto sps        = pcListPic->front()->cs->sps;
-            int        frameRate  = 50;
-              int        frameScale = 1;
-              if(sps->getGeneralHrdParametersPresentFlag())
+              Fraction   frameRate  = { 50, 1 };
+              if (sps->getGeneralHrdParametersPresentFlag())
               {
                 const auto hrd                 = sps->getGeneralHrdParameters();
                 const auto olsHrdParam         = sps->getOlsHrdParameters()[sps->getMaxTLayers() - 1];
@@ -474,13 +467,14 @@ uint32_t DecApp::decode()
                 }
                 else
                 {
-                  msg(WARNING, "\nWarning: No fixed picture rate info is found in the bitstream, best guess is used.\n");
+                  msg(WARNING,
+                      "\nWarning: No fixed picture rate info is found in the bitstream, best guess is used.\n");
                 }
-                frameRate  = hrd->getTimeScale() * elementDurationInTc;
-                frameScale = hrd->getNumUnitsInTick();
-                int gcd    = calcGcd(std::max(frameRate, frameScale), std::min(frameRate, frameScale));
-                frameRate /= gcd;
-                frameScale /= gcd;
+                frameRate.num = hrd->getTimeScale() * elementDurationInTc;
+                frameRate.den = hrd->getNumUnitsInTick();
+                const int gcd = std::gcd(frameRate.num, frameRate.den);
+                frameRate.num /= gcd;
+                frameRate.den /= gcd;
               }
               else
               {
@@ -492,9 +486,8 @@ uint32_t DecApp::decode()
               const auto sy = SPS::getWinUnitY(sps->getChromaFormatIdc());
               const int picWidth = pps->getPicWidthInLumaSamples() - (confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
               const int picHeight = pps->getPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
-              m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(picWidth, picHeight, frameRate, frameScale,
-                                                                         layerOutputBitDepth[ChannelType::LUMA],
-                                                                         sps->getChromaFormatIdc());
+              m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(
+                picWidth, picHeight, frameRate, layerOutputBitDepth[ChannelType::LUMA], sps->getChromaFormatIdc());
             }
             m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].open(reconFileName, true, layerOutputBitDepth,
                                                            layerOutputBitDepth, bitDepths);   // write mode

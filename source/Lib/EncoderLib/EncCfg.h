@@ -155,7 +155,7 @@ class EncCfg
 {
 protected:
   //==== File I/O ========
-  int       m_frameRate;
+  Fraction  m_frameRate;
   int       m_frameSkip;
   uint32_t  m_temporalSubsampleRatio;
   int       m_sourceWidth;
@@ -1182,7 +1182,7 @@ public:
   bool      getNoReverseLastSigCoeffConstraintFlag() const { return m_noReverseLastSigCoeffConstraintFlag; }
   void      setNoReverseLastSigCoeffConstraintFlag(bool val) { m_noReverseLastSigCoeffConstraintFlag = val; }
 
-  void      setFrameRate(int i) { m_frameRate = i; }
+  void      setFrameRate(const Fraction& fr) { m_frameRate = fr; }
   void      setFrameSkip(uint32_t i) { m_frameSkip = i; }
   void      setTemporalSubsampleRatio       ( uint32_t  i )      { m_temporalSubsampleRatio = i; }
   void      setSourceWidth                  ( int   i )      { m_sourceWidth = i; }
@@ -1669,7 +1669,7 @@ public:
 #endif
 
   //====== Sequence ========
-  int           getFrameRate() const { return m_frameRate; }
+  const Fraction& getFrameRate() const { return m_frameRate; }
   uint32_t      getFrameSkip() const { return m_frameSkip; }
   uint32_t      getTemporalSubsampleRatio       () const     { return  m_temporalSubsampleRatio; }
   int       getSourceWidth                  () const     { return  m_sourceWidth; }

@@ -118,9 +118,10 @@ void EncLib::create( const int layerId )
   }
   if ( m_RCEnableRateControl )
   {
-    m_cRateCtrl.init(m_framesToBeEncoded, m_RCTargetBitrate,
-                     (int) ((double) m_frameRate / m_temporalSubsampleRatio + 0.5), m_gopSize, m_intraPeriod,
-                     m_sourceWidth, m_sourceHeight, m_maxCUWidth, m_maxCUHeight, getBitDepth(ChannelType::LUMA),
+    Fraction frameRate = m_frameRate;
+    frameRate.den *= m_temporalSubsampleRatio;
+    m_cRateCtrl.init(m_framesToBeEncoded, m_RCTargetBitrate, frameRate, m_gopSize, m_intraPeriod, m_sourceWidth,
+                     m_sourceHeight, m_maxCUWidth, m_maxCUHeight, getBitDepth(ChannelType::LUMA),
                      m_RCKeepHierarchicalBit, m_RCUseLCUSeparateModel, m_GOPList);
   }
 
@@ -1635,6 +1636,11 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setChromaQpMappingTableFromParams(m_chromaQpMappingTableParams, sps.getQpBDOffset(ChannelType::CHROMA));
   sps.deriveChromaQPMappingTables();
 
+  if (m_hrdParametersPresentFlag)
+  {
+    sps.setGeneralHrdParametersPresentFlag(true);
+    xInitHrdParameters(sps);
+  }
   if( getPictureTimingSEIEnabled() || getDecodingUnitInfoSEIEnabled() || getCpbSaturationEnabled() )
   {
     xInitHrdParameters(sps);

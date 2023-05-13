@@ -65,8 +65,7 @@ private:
   int          m_outPicWidth           = 0;
   int          m_outPicHeight          = 0;
   int          m_outBitDepth           = 0;
-  int          m_outFrameRate          = 0;
-  int          m_outFrameScale         = 1;
+  Fraction     m_outFrameRate;
   ChromaFormat m_outChromaFormat       = ChromaFormat::_420;
   bool         m_outY4m                = false;
 
@@ -74,9 +73,9 @@ public:
   VideoIOYuv()           {}
   virtual ~VideoIOYuv()  {}
 
-  void parseY4mFileHeader(const std::string &fileName, int &width, int &height, int &frameRate, int &bitDepth,
-                          ChromaFormat &chromaFormat);
-  void setOutputY4mInfo(int width, int height, int frameRate, int frameScale, int bitDepth, ChromaFormat chromaFormat);
+  void parseY4mFileHeader(const std::string& fileName, int& width, int& height, Fraction& frameRate, int& bitDepth,
+                          ChromaFormat& chromaFormat);
+  void setOutputY4mInfo(int width, int height, const Fraction& frameRate, int bitDepth, ChromaFormat chromaFormat);
   void writeY4mFileHeader();
   void open(const std::string &fileName, bool bWriteMode, const BitDepths &fileBitDepth,
             const BitDepths &MSBExtendedBitDepth,

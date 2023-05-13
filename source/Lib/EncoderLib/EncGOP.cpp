@@ -1487,9 +1487,9 @@ validateMinCrRequirements(const ProfileTierLevelFeatures &plt, std::size_t numBy
   {
     const uint32_t formatCapabilityFactorx1000 = plt.getProfileFeatures()->formatCapabilityFactorx1000;
     const uint64_t maxLumaSr = plt.getTierLevelFeatures()->maxLumaSr;
-    const uint32_t frameRate = pCfg->getFrameRate();
+    const double   frameRate                   = pCfg->getFrameRate().getFloatVal();
     const double   minCr = plt.getMinCr();
-    const double   denominator = (minCr * frameRate * 1000);
+    const double   denominator                 = minCr * frameRate * 1000;
     if (denominator!=0)
     {
       const double   threshold =(formatCapabilityFactorx1000 * maxLumaSr) / (denominator);
@@ -1512,7 +1512,7 @@ validateMinCrRequirements(const ProfileTierLevelFeatures &plt, std::size_t numBy
     {
       const uint32_t formatCapabilityFactorx1000 = plt.getProfileFeatures()->formatCapabilityFactorx1000;
       const uint64_t maxLumaSr = plt.getTierLevelFeatures()->maxLumaSr;
-      const double   denomx1000x256 = (256 * plt.getMinCr() * pCfg->getFrameRate() * 1000 * 256);
+      const double   denomx1000x256 = 256 * plt.getMinCr() * pCfg->getFrameRate().getFloatVal() * 1000 * 256;
 
       for (int i = 0; i < seiSubpic.m_numRefLevels; i++)
       {
@@ -2549,7 +2549,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       setNewestBgPOC(pocCurr);
       setLastLTRefPoc(pocCurr);
     }
-    else if (m_pcCfg->getUseCompositeRef() && getLastLTRefPoc() >= 0 && getEncodedLTRef()==false && !getPicBg()->getSpliceFull() && (pocCurr - getLastLTRefPoc()) > (m_pcCfg->getFrameRate() * 2))
+    else if (m_pcCfg->getUseCompositeRef() && getLastLTRefPoc() >= 0 && getEncodedLTRef() == false
+             && !getPicBg()->getSpliceFull() && pocCurr - getLastLTRefPoc() > m_pcCfg->getFrameRate().getFloatVal() * 2)
     {
       setUseLTRef(false);
       setPrepareLTRef(false);
@@ -3824,7 +3825,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
     if (m_pcCfg->getFilmGrainAnalysisEnabled())
     {
-      int  filteredFrame    = m_pcCfg->getIntraPeriod() < 1 ? 2 * m_pcCfg->getFrameRate() : m_pcCfg->getIntraPeriod();
+      int  filteredFrame    = m_pcCfg->getIntraPeriod() < 1
+                                ? static_cast<int>(2 * m_pcCfg->getFrameRate().getFloatVal() + 0.5)
+                                : m_pcCfg->getIntraPeriod();
       bool readyToAnalyze   = pcPic->getPOC() % filteredFrame
                                 ? false
                                 : true;   // either it is mctf denoising or external source for film grain analysis. note:
@@ -4330,8 +4333,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         seiGreenMetadataInfo->m_greenMetadataGranularityType = m_pcCfg->getSEIGreenMetadataGranularityType();
         seiGreenMetadataInfo->m_greenMetadataExtendedRepresentation = m_pcCfg->getSEIGreenMetadataExtendedRepresentation();
         int64_t codedFrames = m_featureCounter.iSlices + m_featureCounter.bSlices + m_featureCounter.pSlices;
-        int numberFrames = seiGreenMetadataInfo->m_numSeconds * m_pcCfg->getFrameRate();
-    
+        int     numberFrames =
+          static_cast<int>(seiGreenMetadataInfo->m_numSeconds * m_pcCfg->getFrameRate().getFloatVal() + 0.5);
+
         if (seiGreenMetadataInfo->m_greenMetadataType == 0)
         {
           switch (m_pcCfg->getSEIGreenMetadataPeriodType()) // Period type
@@ -4356,7 +4360,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
             seiGreenMetadataInfo->m_numSeconds = m_pcCfg->getSEIGreenMetadataPeriodNumSeconds();
             if( ((codedFrames% numberFrames) == 0) || (codedFrames == m_pcCfg->getFramesToBeEncoded()))
             {
-              seiGreenMetadataInfo->m_numSeconds = int(floor(double(codedFrames)/double(m_pcCfg->getFrameRate())));
+              seiGreenMetadataInfo->m_numSeconds = int(floor(codedFrames / m_pcCfg->getFrameRate().getFloatVal()));
               xCalculateGreenComplexityMetrics(m_featureCounter, m_featureCounterReference, seiGreenMetadataInfo);
               m_seiEncoder.initSEIGreenMetadataInfo(seiGreenMetadataInfo,  m_featureCounter, m_SEIGreenQualityMetrics,m_SEIGreenComplexityMetrics);
               leadingSeiMessages.push_back(seiGreenMetadataInfo);
@@ -4524,7 +4528,9 @@ void EncGOP::printOutSummary(uint32_t numAllPicCoded, bool isField, const bool p
     CHECK(!(numAllPicCoded == m_gcAnalyzeAll.getNumPic()), "Unspecified error");
   }
 
-  const double picRate = m_pcCfg->getFrameRate() * (isField ? 2.0 : 1.0) / m_pcCfg->getTemporalSubsampleRatio();
+  Fraction picRate = m_pcCfg->getFrameRate();
+  picRate.num *= isField ? 2 : 1;
+  picRate.den *= m_pcCfg->getTemporalSubsampleRatio();
 
   m_gcAnalyzeAll.setFrameRate(picRate);
   m_gcAnalyzeI.setFrameRate(picRate);
@@ -4607,7 +4613,9 @@ void EncGOP::printOutSummary(uint32_t numAllPicCoded, bool isField, const bool p
   if(isField)
   {
     //-- interlaced summary
-    m_gcAnalyzeAllField.setFrameRate(m_pcCfg->getFrameRate() / (double) m_pcCfg->getTemporalSubsampleRatio());
+    Fraction frameRate = m_pcCfg->getFrameRate();
+    frameRate.den *= m_pcCfg->getTemporalSubsampleRatio();
+    m_gcAnalyzeAllField.setFrameRate(frameRate);
     m_gcAnalyzeAllField.setBits(m_gcAnalyzeAll.getBits());
     // prior to the above statement, the interlace analyser does not contain the correct total number of bits.
     id="a";
@@ -5645,7 +5653,8 @@ void EncGOP::xCalculateGreenComplexityMetrics( FeatureCounterStruct featureCount
   seiGreenMetadataInfo->m_greenComplexityMetrics.portionSaoInstances = int(floor( 255.0 * numSaoFilteredBlocks / totalNum4BlocksInPeriod));
   seiGreenMetadataInfo->m_greenComplexityMetrics.portionAlfInstances = int(floor( 255.0 * numAlfFilteredBlocks / totalNum4BlocksInPeriod));
   seiGreenMetadataInfo->m_numPictures = int(featureCounterDifference.iSlices + featureCounterDifference.bSlices +featureCounterDifference.pSlices);
-  seiGreenMetadataInfo->m_numSeconds = int(floor(double(seiGreenMetadataInfo->m_numPictures) / double(m_pcCfg->getFrameRate())));
+  seiGreenMetadataInfo->m_numSeconds =
+    int(floor(seiGreenMetadataInfo->m_numPictures / m_pcCfg->getFrameRateScale().getFloatVal()));
 }
 #endif
 

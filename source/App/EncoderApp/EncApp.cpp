@@ -1298,15 +1298,18 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setDepQuantEnabledFlag                               ( m_depQuantEnabledFlag);
   m_cEncLib.setSignDataHidingEnabledFlag                         ( m_signDataHidingEnabledFlag);
   m_cEncLib.setUseRateCtrl                                       ( m_RCEnableRateControl );
-  m_cEncLib.setTargetBitrate                                     ( m_RCTargetBitrate );
-  m_cEncLib.setKeepHierBit                                       ( m_RCKeepHierarchicalBit );
-  m_cEncLib.setLCULevelRC                                        ( m_RCLCULevelRC );
-  m_cEncLib.setUseLCUSeparateModel                               ( m_RCUseLCUSeparateModel );
-  m_cEncLib.setInitialQP                                         ( m_RCInitialQP );
-  m_cEncLib.setForceIntraQP                                      ( m_RCForceIntraQP );
-  m_cEncLib.setCpbSaturationEnabled                              ( m_RCCpbSaturationEnabled );
-  m_cEncLib.setCpbSize                                           ( m_RCCpbSize );
-  m_cEncLib.setInitialCpbFullness                                ( m_RCInitialCpbFullness );
+  if (m_RCEnableRateControl)
+  {
+    m_cEncLib.setTargetBitrate(m_RCTargetBitrate);
+    m_cEncLib.setKeepHierBit(m_RCKeepHierarchicalBit);
+    m_cEncLib.setLCULevelRC(m_RCLCULevelRC);
+    m_cEncLib.setUseLCUSeparateModel(m_RCUseLCUSeparateModel);
+    m_cEncLib.setInitialQP(m_RCInitialQP);
+    m_cEncLib.setForceIntraQP(m_RCForceIntraQP);
+    m_cEncLib.setCpbSaturationEnabled(m_RCCpbSaturationEnabled);
+    m_cEncLib.setCpbSize(m_RCCpbSize);
+    m_cEncLib.setInitialCpbFullness(m_RCInitialCpbFullness);
+  }
   m_cEncLib.setCostMode                                          ( m_costMode );
   m_cEncLib.setTSRCdisableLL                                     ( m_TSRCdisableLL );
   m_cEncLib.setUseRecalculateQPAccordingToLambda                 ( m_recalculateQPAccordingToLambda );
@@ -1488,7 +1491,7 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
       const auto sx = SPS::getWinUnitX(m_chromaFormatIdc);
       const auto sy = SPS::getWinUnitY(m_chromaFormatIdc);
       m_cVideoIOYuvReconFile.setOutputY4mInfo(m_sourceWidth - (m_confWinLeft + m_confWinRight) * sx,
-                                              m_sourceHeight - (m_confWinTop + m_confWinBottom) * sy, m_frameRate, 1,
+                                              m_sourceHeight - (m_confWinTop + m_confWinBottom) * sy, m_frameRate,
                                               m_internalBitDepth[ChannelType::LUMA], m_chromaFormatIdc);
     }
     m_cVideoIOYuvReconFile.open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, m_internalBitDepth );  // write mode
@@ -1584,6 +1587,12 @@ void EncApp::createLib( const int layerIdx )
     {
       EXIT( "Failed to open bitstream file " << m_bitstreamFileName.c_str() << " for writing\n" );
     }
+  }
+
+  if (isY4mFileExt(m_inputFileName))
+  {
+    // Force signalling of HRD parameters to carry frame rate information
+    m_hrdParametersPresentFlag = true;
   }
 
   // initialize internal class & member variables and VPS
@@ -1980,7 +1989,7 @@ void EncApp::rateStatsAccum(const AccessUnit& au, const std::vector<uint32_t>& a
 
 void EncApp::printRateSummary()
 {
-  double time = (double) m_frameRcvd / m_frameRate * m_temporalSubsampleRatio;
+  double time = (double) m_frameRcvd / m_frameRate.getFloatVal() * m_temporalSubsampleRatio;
   msg( DETAILS,"Bytes written to file: %u (%.3f kbps)\n", m_totalBytes, 0.008 * m_totalBytes / time );
   if (m_summaryVerboseness > 0)
   {

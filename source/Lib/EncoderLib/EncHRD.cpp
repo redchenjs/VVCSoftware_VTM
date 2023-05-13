@@ -31,6 +31,8 @@
 * THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <numeric>
+
 #include "EncHRD.h"
 
 
@@ -55,53 +57,39 @@ int EncHRD::xCalcScale(int x)
 
 void EncHRD::initHRDParameters(EncCfg* encCfg)
 {
-  bool useSubCpbParams = encCfg->getNoPicPartitionFlag() == false;
-  int  bitRate = encCfg->getTargetBitrate();
-  int cpbSize = encCfg->getCpbSize();
-  CHECK(!(cpbSize != 0), "Unspecified error");  // CPB size may not be equal to zero. ToDo: have a better default and check for level constraints
   if (!encCfg->getHrdParametersPresentFlag() && !encCfg->getCpbSaturationEnabled())
   {
     return;
   }
 
-  switch (encCfg->getFrameRate())
-  {
-  case 24:
-    m_generalHrdParams.setNumUnitsInTick(1125000);    m_generalHrdParams.setTimeScale(27000000);
-    break;
-  case 25:
-    m_generalHrdParams.setNumUnitsInTick(1080000);    m_generalHrdParams.setTimeScale(27000000);
-    break;
-  case 30:
-    m_generalHrdParams.setNumUnitsInTick(900900);     m_generalHrdParams.setTimeScale(27000000);
-    break;
-  case 50:
-    m_generalHrdParams.setNumUnitsInTick(540000);     m_generalHrdParams.setTimeScale(27000000);
-    break;
-  case 60:
-    m_generalHrdParams.setNumUnitsInTick(450450);     m_generalHrdParams.setTimeScale(27000000);
-    break;
-  default:
-    m_generalHrdParams.setNumUnitsInTick(1001);       m_generalHrdParams.setTimeScale(60000);
-    break;
-  }
+  int numUnitsInTick = encCfg->getFrameRate().den * encCfg->getTemporalSubsampleRatio();
+  int timeScale      = encCfg->getFrameRate().num;
 
-  if (encCfg->getTemporalSubsampleRatio() > 1)
+  constexpr int DEFAULT_TICKS = 27000000;   // Default 27 Mhz clock
+  if (numUnitsInTick < timeScale && std::gcd(DEFAULT_TICKS, timeScale) == timeScale)
   {
-    uint32_t temporalSubsampleRatio = encCfg->getTemporalSubsampleRatio();
-    if (double(m_generalHrdParams.getNumUnitsInTick()) * temporalSubsampleRatio > std::numeric_limits<uint32_t>::max())
-    {
-      m_generalHrdParams.setTimeScale(m_generalHrdParams.getTimeScale() / temporalSubsampleRatio);
-    }
-    else
-    {
-      m_generalHrdParams.setNumUnitsInTick(m_generalHrdParams.getNumUnitsInTick() * temporalSubsampleRatio);
-    }
+    // Use default clock if >1 fps and no loss of precision
+    numUnitsInTick *= DEFAULT_TICKS / timeScale;
+    timeScale = DEFAULT_TICKS;
   }
-  bool rateCnt = (bitRate > 0);
+  m_generalHrdParams.setNumUnitsInTick(numUnitsInTick);
+  m_generalHrdParams.setTimeScale(timeScale);
 
+  const int bitRate = encCfg->getTargetBitrate();
+
+  const bool rateCnt = (bitRate > 0);
   m_generalHrdParams.setGeneralNalHrdParametersPresentFlag(rateCnt);
   m_generalHrdParams.setGeneralVclHrdParametersPresentFlag(rateCnt);
+
+  if (!rateCnt)
+  {
+    return;
+  }
+
+  int cpbSize = encCfg->getCpbSize();
+  CHECK(!(cpbSize != 0), "Unspecified error");   // CPB size may not be equal to zero. ToDo: have a better default and
+                                                 // check for level constraints
+  bool useSubCpbParams = encCfg->getNoPicPartitionFlag() == false;
 
   m_generalHrdParams.setGeneralSamePicTimingInAllOlsFlag(encCfg->getSamePicTimingInAllOLS());
   useSubCpbParams &= (m_generalHrdParams.getGeneralNalHrdParametersPresentFlag() || m_generalHrdParams.getGeneralVclHrdParametersPresentFlag());
@@ -176,4 +164,3 @@ void EncHRD::initHRDParameters(EncCfg* encCfg)
     }
   }
 }
-
