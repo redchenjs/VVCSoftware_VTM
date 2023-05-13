@@ -772,6 +772,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   bool sdr = false;
 
+  int chromaSampleLocType;
+  int chromaSampleLocTypeTopField;
+  int chromaSampleLocTypeBottomField;
+
   // clang-format off
   po::Options opts;
   opts.addOptions()
@@ -1333,9 +1337,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("NonPackedSourceConstraintFlag",                   m_nonPackedConstraintFlag,                        false, "Indicate that source does not contain frame packing")
   ("NonProjectedConstraintFlag",                      m_nonProjectedConstraintFlag,                     false, "Indicate that the bitstream contains projection SEI messages")
   ("ChromaLocInfoPresent",                            m_chromaLocInfoPresentFlag,                       false, "Signals whether chroma_sample_loc_type_top_field and chroma_sample_loc_type_bottom_field are present")
-  ("ChromaSampleLocTypeTopField",                     m_chromaSampleLocTypeTopField,                        0, "Specifies the location of chroma samples for top field")
-  ("ChromaSampleLocTypeBottomField",                  m_chromaSampleLocTypeBottomField,                     0, "Specifies the location of chroma samples for bottom field")
-  ("ChromaSampleLocType",                             m_chromaSampleLocType,                                0, "Specifies the location of chroma samples for progressive content")
+  ("ChromaSampleLocTypeTopField",                     chromaSampleLocTypeTopField,    static_cast<int>(Chroma420LocType::UNSPECIFIED), "Specifies the location of chroma samples for top field")
+  ("ChromaSampleLocTypeBottomField",                  chromaSampleLocTypeBottomField, static_cast<int>(Chroma420LocType::UNSPECIFIED), "Specifies the location of chroma samples for bottom field")
+  ("ChromaSampleLocType",                             chromaSampleLocType,            static_cast<int>(Chroma420LocType::UNSPECIFIED), "Specifies the location of chroma samples for progressive content")
   ("OverscanInfoPresent",                             m_overscanInfoPresentFlag,                        false, "Indicates whether conformant decoded pictures are suitable for display using overscan\n")
   ("OverscanAppropriate",                             m_overscanAppropriateFlag,                        false, "Indicates whether conformant decoded pictures are suitable for display using overscan\n")
   ("VideoFullRange",                                  m_videoFullRangeFlag,                             false, "Indicates the black level and range of luma and chroma signals");
@@ -2470,6 +2474,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
+  // TODO: check whether values are within valid range
+  m_chromaSampleLocType            = static_cast<Chroma420LocType>(chromaSampleLocType);
+  m_chromaSampleLocTypeTopField    = static_cast<Chroma420LocType>(chromaSampleLocTypeTopField);
+  m_chromaSampleLocTypeBottomField = static_cast<Chroma420LocType>(chromaSampleLocTypeBottomField);
+
   if (isY4mFileExt(m_inputFileName))
   {
     int          width          = 0;
@@ -2477,10 +2486,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     Fraction     frameRate;
     int          inputBitDepth  = 0;
     ChromaFormat chromaFormat = ChromaFormat::_420;
+    Chroma420LocType locType        = Chroma420LocType::UNSPECIFIED;
+
     VideoIOYuv   inputFile;
-    inputFile.parseY4mFileHeader(m_inputFileName, width, height, frameRate, inputBitDepth, chromaFormat);
+    inputFile.parseY4mFileHeader(m_inputFileName, width, height, frameRate, inputBitDepth, chromaFormat, locType);
     if (width != m_sourceWidth || height != m_sourceHeight || frameRate != m_frameRate
-        || inputBitDepth != m_inputBitDepth[ChannelType::LUMA] || chromaFormat != m_chromaFormatIdc)
+        || inputBitDepth != m_inputBitDepth[ChannelType::LUMA] || chromaFormat != m_chromaFormatIdc
+        || locType != m_chromaSampleLocType)
     {
       msg(WARNING, "\nWarning: Y4M file info is different from input setting. Using the info from Y4M file\n");
       m_sourceWidth            = width;
@@ -2489,6 +2501,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_inputBitDepth.fill(inputBitDepth);
       m_chromaFormatIdc        = chromaFormat;
       m_msbExtendedBitDepth    = m_inputBitDepth;
+      m_chromaSampleLocType    = locType;
+    }
+
+    m_progressiveSourceFlag = true;   // TODO: update when processing of interlaced y4m files is supported
+    if (m_chromaFormatIdc == ChromaFormat::_420 && m_chromaSampleLocType != Chroma420LocType::UNSPECIFIED)
+    {
+      m_chromaLocInfoPresentFlag = true;
+      m_vuiParametersPresentFlag = true;
     }
   }
 

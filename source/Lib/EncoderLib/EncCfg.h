@@ -947,9 +947,9 @@ protected:
   bool      m_progressiveSourceFlag;                          ///< Indicates if the content is progressive
   bool      m_interlacedSourceFlag;                           ///< Indicates if the content is interlaced
   bool      m_chromaLocInfoPresentFlag;                       ///< Signals whether chroma_sample_loc_type_top_field and chroma_sample_loc_type_bottom_field are present
-  int       m_chromaSampleLocTypeTopField;                    ///< Specifies the location of chroma samples for top field
-  int       m_chromaSampleLocTypeBottomField;                 ///< Specifies the location of chroma samples for bottom field
-  int       m_chromaSampleLocType;                            ///< Specifies the location of chroma samples for progressive content
+  Chroma420LocType m_chromaSampleLocTypeTopField;      // Specifies the location of chroma samples for top field
+  Chroma420LocType m_chromaSampleLocTypeBottomField;   // Specifies the location of chroma samples for bottom field
+  Chroma420LocType m_chromaSampleLocType;   // Specifies the location of chroma samples for progressive content
   bool      m_overscanInfoPresentFlag;                        ///< Signals whether overscan_appropriate_flag is present
   bool      m_overscanAppropriateFlag;                        ///< Indicates whether conformant decoded pictures are suitable for display using overscan
   bool      m_videoFullRangeFlag;                             ///< Indicates the black level and range of luma and chroma signals
@@ -2635,12 +2635,12 @@ public:
   void         setMatrixCoefficients(int i)                          { m_matrixCoefficients = i; }
   bool         getChromaLocInfoPresentFlag()                         { return m_chromaLocInfoPresentFlag; }
   void         setChromaLocInfoPresentFlag(bool i)                   { m_chromaLocInfoPresentFlag = i; }
-  int          getChromaSampleLocTypeTopField()                      { return m_chromaSampleLocTypeTopField; }
-  void         setChromaSampleLocTypeTopField(int i)                 { m_chromaSampleLocTypeTopField = i; }
-  int          getChromaSampleLocTypeBottomField()                   { return m_chromaSampleLocTypeBottomField; }
-  void         setChromaSampleLocTypeBottomField(int i)              { m_chromaSampleLocTypeBottomField = i; }
-  int          getChromaSampleLocType()                              { return m_chromaSampleLocType; }
-  void         setChromaSampleLocType(int i)                         { m_chromaSampleLocType = i; }
+  Chroma420LocType getChromaSampleLocTypeTopField() { return m_chromaSampleLocTypeTopField; }
+  void             setChromaSampleLocTypeTopField(Chroma420LocType val) { m_chromaSampleLocTypeTopField = val; }
+  Chroma420LocType getChromaSampleLocTypeBottomField() { return m_chromaSampleLocTypeBottomField; }
+  void             setChromaSampleLocTypeBottomField(Chroma420LocType val) { m_chromaSampleLocTypeBottomField = val; }
+  Chroma420LocType getChromaSampleLocType() { return m_chromaSampleLocType; }
+  void             setChromaSampleLocType(Chroma420LocType val) { m_chromaSampleLocType = val; }
   bool         getOverscanInfoPresentFlag()                          { return m_overscanInfoPresentFlag; }
   void         setOverscanInfoPresentFlag(bool i)                    { m_overscanInfoPresentFlag = i; }
   bool         getOverscanAppropriateFlag()                          { return m_overscanAppropriateFlag; }

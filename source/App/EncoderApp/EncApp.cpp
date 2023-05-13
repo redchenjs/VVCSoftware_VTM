@@ -1490,9 +1490,9 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
     {
       const auto sx = SPS::getWinUnitX(m_chromaFormatIdc);
       const auto sy = SPS::getWinUnitY(m_chromaFormatIdc);
-      m_cVideoIOYuvReconFile.setOutputY4mInfo(m_sourceWidth - (m_confWinLeft + m_confWinRight) * sx,
-                                              m_sourceHeight - (m_confWinTop + m_confWinBottom) * sy, m_frameRate,
-                                              m_internalBitDepth[ChannelType::LUMA], m_chromaFormatIdc);
+      m_cVideoIOYuvReconFile.setOutputY4mInfo(
+        m_sourceWidth - (m_confWinLeft + m_confWinRight) * sx, m_sourceHeight - (m_confWinTop + m_confWinBottom) * sy,
+        m_frameRate, m_internalBitDepth[ChannelType::LUMA], m_chromaFormatIdc, m_chromaSampleLocType);
     }
     m_cVideoIOYuvReconFile.open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, m_internalBitDepth );  // write mode
   }

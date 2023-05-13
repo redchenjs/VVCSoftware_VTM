@@ -1156,12 +1156,19 @@ void  HLSyntaxReader::parseVUI(VUI* pcVUI, SPS *pcSPS)
   {
     if(pcVUI->getProgressiveSourceFlag() && !pcVUI->getInterlacedSourceFlag())
     {
-      xReadUvlc(   symbol, "vui_chroma_sample_loc_type" );        pcVUI->setChromaSampleLocType(symbol);
+      xReadUvlc(symbol, "vui_chroma_sample_loc_type");
+      CHECK(symbol >= to_underlying(Chroma420LocType::NUM), "vui_chroma_sample_loc_type out of range");
+      pcVUI->setChromaSampleLocType(static_cast<Chroma420LocType>(symbol));
     }
     else
     {
-      xReadUvlc(   symbol, "vui_chroma_sample_loc_type_top_field" );        pcVUI->setChromaSampleLocTypeTopField(symbol);
-      xReadUvlc(   symbol, "vui_chroma_sample_loc_type_bottom_field" );     pcVUI->setChromaSampleLocTypeBottomField(symbol);
+      xReadUvlc(symbol, "vui_chroma_sample_loc_type_top_field");
+      CHECK(symbol >= to_underlying(Chroma420LocType::NUM), "vui_chroma_sample_loc_type_top_field out of range");
+      pcVUI->setChromaSampleLocTypeTopField(static_cast<Chroma420LocType>(symbol));
+
+      xReadUvlc(symbol, "vui_chroma_sample_loc_type_bottom_field");
+      CHECK(symbol >= to_underlying(Chroma420LocType::NUM), "vui_chroma_sample_loc_type_bottom_field out of range");
+      pcVUI->setChromaSampleLocTypeBottomField(static_cast<Chroma420LocType>(symbol));
     }
   }
 

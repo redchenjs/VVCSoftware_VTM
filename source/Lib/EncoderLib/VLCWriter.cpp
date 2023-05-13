@@ -728,12 +728,12 @@ void HLSWriter::codeVUI( const VUI *pcVUI, const SPS* pcSPS )
   {
     if(pcVUI->getProgressiveSourceFlag() && !pcVUI->getInterlacedSourceFlag())
     {
-      xWriteUvlc(pcVUI->getChromaSampleLocType(),         "vui_chroma_sample_loc_type");
+      xWriteUvlc(to_underlying(pcVUI->getChromaSampleLocType()), "vui_chroma_sample_loc_type");
     }
     else
     {
-      xWriteUvlc(pcVUI->getChromaSampleLocTypeTopField(),         "vui_chroma_sample_loc_type_top_field");
-      xWriteUvlc(pcVUI->getChromaSampleLocTypeBottomField(),      "vui_chroma_sample_loc_type_bottom_field");
+      xWriteUvlc(to_underlying(pcVUI->getChromaSampleLocTypeTopField()), "vui_chroma_sample_loc_type_top_field");
+      xWriteUvlc(to_underlying(pcVUI->getChromaSampleLocTypeBottomField()), "vui_chroma_sample_loc_type_bottom_field");
     }
   }
   if(!isByteAligned())

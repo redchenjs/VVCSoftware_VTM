@@ -426,6 +426,18 @@ enum class ChromaFormat : uint8_t
   UNDEFINED = NUM
 };
 
+enum class Chroma420LocType : uint8_t
+{
+  LEFT,
+  CENTER,
+  TOP_LEFT,
+  TOP,
+  BOTTOM_LEFT,
+  BOTTOM,
+  UNSPECIFIED,
+  NUM,
+};
+
 enum class ChannelType : uint8_t
 {
   LUMA   = 0,

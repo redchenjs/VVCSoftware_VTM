@@ -487,7 +487,8 @@ uint32_t DecApp::decode()
               const int picWidth = pps->getPicWidthInLumaSamples() - (confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
               const int picHeight = pps->getPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
               m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(
-                picWidth, picHeight, frameRate, layerOutputBitDepth[ChannelType::LUMA], sps->getChromaFormatIdc());
+                picWidth, picHeight, frameRate, layerOutputBitDepth[ChannelType::LUMA], sps->getChromaFormatIdc(),
+                sps->getVuiParameters()->getChromaSampleLocType());
             }
             m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].open(reconFileName, true, layerOutputBitDepth,
                                                            layerOutputBitDepth, bitDepths);   // write mode
