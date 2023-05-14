@@ -99,7 +99,8 @@ public:
   ~EncRCSeq();
 
 public:
-  void create(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel, bool useLCUSeparateModel, int adaptiveBit);
+  void create(int totalFrames, int targetBitrate, const Fraction& frameRate, int GOPSize, int intraPeriod, int picWidth,
+              int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel, bool useLCUSeparateModel, int adaptiveBit);
   void destroy();
   void initBitsRatio( int bitsRatio[] );
   void initGOPID2Level( int GOPID2Level[] );
@@ -111,7 +112,7 @@ public:
 public:
   int  getTotalFrames()                 { return m_totalFrames; }
   int  getTargetRate()                  { return m_targetRate; }
-  int  getFrameRate()                   { return m_frameRate; }
+  const Fraction& getFrameRate() const { return m_frameRate; }
   int  getGOPSize()                     { return m_GOPSize; }
   int  getIntraPeriod()                 { return m_intraPeriod; }
   int  getPicWidth()                    { return m_picWidth; }
@@ -154,7 +155,7 @@ public:
 private:
   int m_totalFrames;
   int m_targetRate;
-  int m_frameRate;
+  Fraction m_frameRate;
   int m_GOPSize;
   int m_intraPeriod;
   int m_picWidth;
@@ -325,7 +326,9 @@ public:
   ~RateCtrl();
 
 public:
-  void init(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits, bool useLCUSeparateModel, GOPEntry GOPList[MAX_GOP]);
+  void init(int totalFrames, int targetBitrate, const Fraction& frameRate, int GOPSize, int intraPeriod, int picWidth,
+            int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits, bool useLCUSeparateModel,
+            GOPEntry GOPList[MAX_GOP]);
   void destroy();
   void initRCPic( int frameLevel );
   void initRCGOP( int numberOfPictures );
@@ -355,7 +358,8 @@ public:
   uint32_t       getCpbSize()               { return m_cpbSize;        }
   uint32_t       getBufferingRate()         { return m_bufferingRate;  }
   int        updateCpbState(int actualBits);
-  void       initHrdParam(const GeneralHrdParams* generalHrd, const OlsHrdParams* olsHrd, int iFrameRate, double fInitialCpbFullness);
+  void initHrdParam(const GeneralHrdParams* generalHrd, const OlsHrdParams* olsHrd, const Fraction& frameRate,
+                    double fInitialCpbFullness);
 
 private:
   EncRCSeq* m_encRCSeq;

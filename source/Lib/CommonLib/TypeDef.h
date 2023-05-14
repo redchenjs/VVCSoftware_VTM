@@ -777,6 +777,18 @@ enum POST_FILTER_MODE
   URI = 1
 };
 
+struct Fraction
+{
+  int num = 0;
+  int den = 1;
+
+  int    getIntValRound() const { return (num + den / 2) / den; }
+  double getFloatVal() const { return static_cast<double>(num) / den; }
+};
+
+inline bool operator==(const Fraction& a, const Fraction& b) { return a.num == b.num && a.den == b.den; }
+inline bool operator!=(const Fraction& a, const Fraction& b) { return !(a == b); }
+
 #define NUM_SAO_BO_CLASSES_LOG2  5
 #define NUM_SAO_BO_CLASSES       (1<<NUM_SAO_BO_CLASSES_LOG2)
 

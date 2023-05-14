@@ -768,6 +768,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #if ENABLE_SIMD_OPT
   std::string ignore;
 #endif
+  std::string frameRate;
 
   bool sdr = false;
 
@@ -826,7 +827,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ConfWinBottom",                                   m_confWinBottom,                                      0, "Bottom offset for window conformance mode 3")
   ("AccessUnitDelimiter",                             m_AccessUnitDelimiter,                            false, "Enable Access Unit Delimiter NALUs")
   ("EnablePictureHeaderInSliceHeader",                m_enablePictureHeaderInSliceHeader,                true, "Enable Picture Header in Slice Header")
-  ("FrameRate,-fr",                                   m_frameRate,                                         0, "Frame rate")
+  ("FrameRate,-fr",                                   frameRate,                            std::to_string(0), "Frame rate")
   ("FrameSkip,-fs",                                   m_frameSkip,                                         0u, "Number of frames to skip at start of input YUV")
   ("TemporalSubsampleRatio,-ts",                      m_temporalSubsampleRatio,                            1u, "Temporal sub-sample ratio when reading input YUV")
   ("FramesToBeEncoded,f",                             m_framesToBeEncoded,                                  0, "Number of frames to be encoded (default=all)")
@@ -1961,6 +1962,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_rprRASLtoolSwitch      = false;
   }
 
+  const size_t columnPos = frameRate.find_first_of(':');
+
+  m_frameRate.num = std::stoi(frameRate.substr(0, columnPos));
+  m_frameRate.den = columnPos == frameRate.length() ? 1 : std::stoi(frameRate.substr(columnPos + 1));
+
   if( m_fractionOfFrames != 1.0 )
   {
     m_framesToBeEncoded = int( m_framesToBeEncoded * m_fractionOfFrames );
@@ -1968,7 +1974,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if (m_resChangeInClvsEnabled && !m_switchPocPeriod)
   {
-    m_switchPocPeriod = m_frameRate / 2 / m_gopSize * m_gopSize;
+    m_switchPocPeriod = m_frameRate.getIntValRound() / 2 / m_gopSize * m_gopSize;
   }
 
   //Check the given value of intra period and decoding refresh type. If intra period is -1, set decoding refresh type to be equal to 0. And vice versa
@@ -2032,12 +2038,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
     if (m_gdrPeriod < 0)
     {
-      m_gdrPeriod = m_frameRate * 2;
+      m_gdrPeriod = m_frameRate.getIntValRound() * 2;
     }
 
     if (m_gdrInterval < 0)
     {
-      m_gdrInterval = m_frameRate;
+      m_gdrInterval = m_frameRate.getIntValRound();
     }
 
     if (m_gdrPocStart < 0)
@@ -2047,8 +2053,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
     if (m_intraPeriod == -1)
     {
-      m_frameRate = (m_frameRate == 0) ? 30 : m_frameRate;
-      if (m_gdrPocStart % m_frameRate != 0)
+      m_frameRate = (m_frameRate.num == 0) ? Fraction{ 30, 1 } : m_frameRate;
+      if (m_gdrPocStart % m_frameRate.getIntValRound() != 0)
       {
         m_intraPeriod = -1;
       }
@@ -2466,7 +2472,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if (isY4mFileExt(m_inputFileName))
   {
-    int          width = 0, height = 0, frameRate = 0, inputBitDepth = 0;
+    int          width          = 0;
+    int          height         = 0;
+    Fraction     frameRate;
+    int          inputBitDepth  = 0;
     ChromaFormat chromaFormat = ChromaFormat::_420;
     VideoIOYuv   inputFile;
     inputFile.parseY4mFileHeader(m_inputFileName, width, height, frameRate, inputBitDepth, chromaFormat);
@@ -2848,7 +2857,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
     if (m_rprSwitchingTime != 0.0)
     {
-      int segmentSize = 8 * int(((double)m_frameRate * m_rprSwitchingTime + 4) / 8);
+      const int segmentSize     = 8 * int(m_frameRate.getFloatVal() * m_rprSwitchingTime / 8 + 0.5);
       m_rprSwitchingSegmentSize = segmentSize;
     }
   }
@@ -3031,7 +3040,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     if (m_fgcSEIAnalysisEnabled && m_fgcSEITemporalFilterStrengths.empty())
     {
       // By default: in random-acces = filter RAPs, in all-intra = filter every frame, otherwise = filter every 2s
-      int filteredFrame                              = m_intraPeriod < 1 ? 2 * m_frameRate : m_intraPeriod;
+      int filteredFrame = m_intraPeriod < 1 ? 2 * m_frameRate.getIntValRound() : m_intraPeriod;
       m_fgcSEITemporalFilterStrengths[filteredFrame] = 1.5;
     }
     uint32_t numModelCtr;
@@ -3317,9 +3326,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
   m_reshapeCW.binCW.resize(3);
-  m_reshapeCW.rspFps     = m_frameRate;
+  m_reshapeCW.rspFps     = m_frameRate.getIntValRound();
   m_reshapeCW.rspPicSize = m_sourceWidth*m_sourceHeight;
-  m_reshapeCW.rspFpsToIp = std::max(16, 16 * (int) (round((double) m_frameRate / 16.0)));
+  m_reshapeCW.rspFpsToIp = std::max(16, 16 * (int) (round(m_frameRate.getFloatVal() / 16.0)));
   m_reshapeCW.rspBaseQP = m_iQP;
   m_reshapeCW.updateCtrl = m_updateCtrl;
   m_reshapeCW.adpOption = m_adpOption;
@@ -3399,7 +3408,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
                                 (blending_ratio * m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1]))
     {
       m_ShutterFilterEnable = true;
-      double  fpsHFR        = (double) m_frameRate;
+      double  fpsHFR        = m_frameRate.getFloatVal();
       int32_t i;
       bool    checkEqualValuesOfSFR = true;
       bool    checkSubLayerSI       = false;
@@ -3767,7 +3776,7 @@ bool EncAppCfg::xCheckParameter()
   std::string sTempIPCSC="InputColourSpaceConvert must be empty, "+getListOfColourSpaceConverts(true);
   xConfirmPara( m_inputColourSpaceConvert >= NUMBER_INPUT_COLOUR_SPACE_CONVERSIONS,         sTempIPCSC.c_str() );
   xConfirmPara(m_inputChromaFormatIDC >= ChromaFormat::NUM, "InputChromaFormatIDC must be either 400, 420, 422 or 444");
-  xConfirmPara(m_frameRate <= 0, "Frame rate must be more than 1");
+  xConfirmPara(m_frameRate.getFloatVal() <= 0, "Frame rate cannot be 0 or less");
   xConfirmPara( m_framesToBeEncoded <= 0,                                                   "Total Number Of Frames encoded must be more than 0" );
   xConfirmPara( m_framesToBeEncoded < m_switchPOC,                                          "debug POC out of range" );
 
@@ -5090,9 +5099,9 @@ void EncAppCfg::xPrintParameter()
   }
 #endif
   msg(DETAILS, "Real     Format                        : %dx%d %gHz\n", m_sourceWidth - m_confWinLeft - m_confWinRight,
-      m_sourceHeight - m_confWinTop - m_confWinBottom, (double) m_frameRate / m_temporalSubsampleRatio);
+      m_sourceHeight - m_confWinTop - m_confWinBottom, m_frameRate.getFloatVal() / m_temporalSubsampleRatio);
   msg(DETAILS, "Internal Format                        : %dx%d %gHz\n", m_sourceWidth, m_sourceHeight,
-      (double) m_frameRate / m_temporalSubsampleRatio);
+      m_frameRate.getFloatVal() / m_temporalSubsampleRatio);
   msg( DETAILS, "Sequence PSNR output                   : %s\n", ( m_printMSEBasedSequencePSNR ? "Linear average, MSE-based" : "Linear average only" ) );
   msg( DETAILS, "Hexadecimal PSNR output                : %s\n", ( m_printHexPsnr ? "Enabled" : "Disabled" ) );
   msg( DETAILS, "Sequence MSE output                    : %s\n", ( m_printSequenceMSE ? "Enabled" : "Disabled" ) );
