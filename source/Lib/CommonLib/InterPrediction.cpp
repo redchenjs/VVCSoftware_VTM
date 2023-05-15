@@ -1941,9 +1941,9 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
           const Pel* piOrg = m_dmvrInitialPred[theRef].buf;
 
           piOrg += blkStride; // start from the second row
-          for (int row = 1; row < 16; row++)
+          for (int row = 1; row < DMVR_SUBCU_HEIGHT; row++)
           {
-            for (int col = 1; col < 16; col++)
+            for (int col = 1; col < DMVR_SUBCU_WIDTH; col++)
             {
               int horAct = std::abs(piOrg[col] - piOrg[col - 1]);
               int verAct = std::abs(piOrg[col] - piOrg[col - blkStride]);
@@ -2027,7 +2027,7 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
           const Pel* piOrg = subPredBuf.bufs[COMPONENT_Y].buf;
           for (int row = 0; row < 1; row++)
           {
-            for (int col = 0; col < 16; col++)
+            for (int col = 0; col < DMVR_SUBCU_WIDTH; col++)
             {
               int verAct = std::abs(piOrg[col] - piOrg[col - blkStride]);
               blkSumAct += verAct;
@@ -2052,7 +2052,7 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
           const ptrdiff_t  blkStride = pcYuvDst.bufs[COMPONENT_Y].stride;
           const Pel* piOrg = subPredBuf.bufs[COMPONENT_Y].buf;
           // check boundary diff left
-          for (int row = 0; row < 16; row++)
+          for (int row = 0; row < DMVR_SUBCU_HEIGHT; row++)
           {
             for (int col = 0; col < 1; col++)
             {
@@ -2091,7 +2091,7 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
 #if JVET_AD0045
   if (xDmvrGetEncoderCheckFlag())
   {
-    pu.dmvrBAD = riskArtifact;
+    pu.dmvrImpreciseMv = riskArtifact;
   }
 #endif
   JVET_J0090_SET_CACHE_ENABLE(true);
