@@ -3467,10 +3467,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if (m_poSEIEnabled)
   {
+#if !JVET_AD0386_SEI
     assert(cfg_poSEIPayloadType.values.size() > 1);
     assert(cfg_poSEIProcessingOrder.values.size() == cfg_poSEIPayloadType.values.size());
-#if JVET_AD0386_SEI
-    assert(cfg_poSEIPrefixFlag.values.size() > 1);
+#else
+    CHECK(cfg_poSEIPayloadType.values.size() <= 1, "there should be at least 2 SEIPOPayLoadType");
+    CHECK(cfg_poSEIProcessingOrder.values.size() != cfg_poSEIPayloadType.values.size(), "the number of SEIPOPayLoadType should be equal to the number of SEIPOProcessingOrder");
+    CHECK(cfg_poSEIPrefixFlag.values.size() <= 1, "there should be at least 2 SEIPOPrefixFlag");
     m_poSEIPrefixFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
 #endif
     m_poSEIPayloadType.resize((uint32_t) cfg_poSEIPayloadType.values.size());
@@ -3496,17 +3499,18 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::SEI_PROCESSING_ORDER
         )
       {
-        assert(!m_poSEIPrefixFlag[i]);
+        CHECK(m_poSEIPrefixFlag[i] == true, "The value of po_sei_prefix_flag shall be equal to 0 when po_sei_payload_type is equal to 137, 144, 147, 148, 179, 180, 200, 201, 208, and 213");
       }
 #endif
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
 #if JVET_AD0386_SEI
       if (m_poSEIPrefixFlag[i])
+      {
 #else
       if (m_poSEIPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
-#endif
       {
         assert(cfg_poSEINumofPrefixByte.values[i] > 0);
+#endif
         m_poSEIPrefixByte[i].resize(cfg_poSEINumofPrefixByte.values[i]);
         for (uint32_t j = 0; j < cfg_poSEINumofPrefixByte.values[i]; j++)
         {
@@ -3539,7 +3543,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
               if (std::equal(m_poSEIPrefixByte[i].begin() + 1, m_poSEIPrefixByte[i].begin() + numofPrefixBytes - 1,
                              m_poSEIPrefixByte[j].begin()))
               {
+#if JVET_AD0386_SEI
+                CHECK(m_poSEIProcessingOrder[j] != m_poSEIProcessingOrder[i], "multiple SEI messages with the same po_sei_payload_type and prefix content present when present shall have the same value of po_sei_processing_order");
+#else
                 assert(m_poSEIProcessingOrder[j] == m_poSEIProcessingOrder[i]);
+#endif
               }
             }
 #if !JVET_AD0386_SEI
@@ -3551,17 +3559,19 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         {
           if (m_poSEIPayloadType[j] == m_poSEIPayloadType[i])
           {
-            assert(m_poSEIProcessingOrder[j] == m_poSEIProcessingOrder[i]);
+            CHECK(m_poSEIProcessingOrder[j] != m_poSEIProcessingOrder[i], "multiple SEI messages with the same po_sei_payload_type without prefix content shall have the same value of po_sei_processing_order");
           }
         }
 #endif
       }
     }
+#if !JVET_AD0386_SEI // error check already done above
     // Error check, to avoid all SEI messages share the same PayloadOrder
     assert(!std::equal(cfg_poSEIProcessingOrder.values.begin() + 1, cfg_poSEIProcessingOrder.values.end(),
                        cfg_poSEIProcessingOrder.values.begin()));
     assert(m_poSEIPayloadType.size() > 0);
     assert(m_poSEIProcessingOrder.size() == m_poSEIPayloadType.size());
+#endif
   }
 
   if (m_postFilterHintSEIEnabled)
