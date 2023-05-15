@@ -354,8 +354,8 @@ protected:
   bool      m_PROF;
   bool      m_BIO;
   int       m_LMChroma;
-  bool      m_horCollocatedChromaFlag;
-  bool      m_verCollocatedChromaFlag;
+  int                   m_horCollocatedChromaFlag;
+  int                   m_verCollocatedChromaFlag;
 
   int       m_mtsMode;                                        ///< XZ: Multiple Transform Set
   int       m_MTSIntraMaxCand;                                ///< XZ: Number of additional candidates to test
