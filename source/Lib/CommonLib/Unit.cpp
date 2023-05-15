@@ -580,6 +580,9 @@ void PredictionUnit::initData()
   {
     mvdL0SubPu[i].setZero();
   }
+#if JVET_AD0045
+  dmvrBAD = false;
+#endif
   for (uint32_t i = 0; i < NUM_REF_PIC_LIST_01; i++)
   {
     mvpIdx[i] = MAX_UCHAR;
@@ -632,7 +635,9 @@ PredictionUnit& PredictionUnit::operator=(const InterPredictionData& predData)
   {
     mvdL0SubPu[i] = predData.mvdL0SubPu[i];
   }
-
+#if JVET_AD0045
+  dmvrBAD = predData.dmvrBAD;
+#endif
   for (uint32_t i = 0; i < NUM_REF_PIC_LIST_01; i++)
   {
     mvpIdx[i]   = predData.mvpIdx[i];
@@ -676,7 +681,9 @@ PredictionUnit& PredictionUnit::operator=( const PredictionUnit& other )
   {
     mvdL0SubPu[i] = other.mvdL0SubPu[i];
   }
-
+#if JVET_AD0045
+  dmvrBAD = other.dmvrBAD;
+#endif
   for (uint32_t i = 0; i < NUM_REF_PIC_LIST_01; i++)
   {
     mvpIdx[i]   = other.mvpIdx[i];

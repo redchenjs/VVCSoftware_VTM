@@ -68,6 +68,9 @@ InterPrediction::InterPrediction()
   , m_gradY1(nullptr)
   , m_IBCBufferWidth(0)
 {
+#if JVET_AD0045
+  dmvrEnableEncoderCheck = false;
+#endif
   for( uint32_t ch = 0; ch < MAX_NUM_COMPONENT; ch++ )
   {
     for( uint32_t refList = 0; refList < NUM_REF_PIC_LIST_01; refList++ )
@@ -1883,13 +1886,39 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
                                 PelBuf(m_acYuvPred[l][COMPONENT_Cr], pcYuvDst.Cr()));
     srcPred[l] = srcPred[l].subBuf(UnitAreaRelative(pu, subPu));
   }
+#if JVET_AD0045
+  int xx = -1;
+  int yy = -1;
+  static const int ACTIVITY_TH[MAX_QP + 1] =
+  {
+    0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 9, 9, 10, 10, 11, 12, 13, 13, 14, 15, 16, 17, 18, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32, 33, 34, 36, 36, 36, 36, 37, 37, 37, 37, 37, 37
+  };
+  int spatActivity[2];
+  bool riskArtifact = false;
+  int boundaryDiffHorEdge;
+  int boundaryDiffVerEdge;
+  int xmax = pu.lumaSize().width / DMVR_SUBCU_WIDTH;
+  int mvThreshold = 28; // subblock motion difference threshold
+  int spatActivityThreshold = ACTIVITY_TH[pu.cu->qp];
+  int boundaryDiffThreshold = 10; //subblock boundary activity threshold
+  if ((pu.cu->slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR) && pu.cu->slice->getSPS()->getGOPBasedRPREnabledFlag()) // corresponds to encoding in 1/2 reduced resolution when GOP based RPR is used
+  {
+    boundaryDiffThreshold = 5;
+  }
+#endif
 
   int subPuIdx = 0;
 
   for (int yStart = 0; yStart < pu.lumaSize().height; yStart += dy)
   {
+#if JVET_AD0045
+    yy++;
+#endif
     for (int xStart = 0; xStart < pu.lumaSize().width; xStart += dx)
     {
+#if JVET_AD0045
+      xx++;
+#endif
       const int x = puPos.x + xStart;
       const int y = puPos.y + yStart;
 
@@ -1900,6 +1929,36 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
       xDmvrPrefetch(subPu, true);
 
       xDmvrInitialMc(subPu, clpRngs);
+#if JVET_AD0045
+      if (xDmvrGetEncoderCheckFlag())
+      {
+        for (int theRef = 0; theRef < 2; theRef++)
+        {
+          int blkSumAct = 0;
+          int numSample = 0;
+
+          const ptrdiff_t blkStride = m_dmvrInitialPred[theRef].stride;
+          const Pel* piOrg = m_dmvrInitialPred[theRef].buf;
+
+          piOrg += blkStride; // start from the second row
+          for (int row = 1; row < 16; row++)
+          {
+            for (int col = 1; col < 16; col++)
+            {
+              int horAct = std::abs(piOrg[col] - piOrg[col - 1]);
+              int verAct = std::abs(piOrg[col] - piOrg[col - blkStride]);
+
+              blkSumAct += horAct;
+              blkSumAct += verAct;
+              numSample++;
+            }
+            piOrg += blkStride;
+          }
+          int avgSampleAct = int((double)blkSumAct / numSample);
+          spatActivity[theRef] = avgSampleAct;
+        }
+      }
+#endif
 
       std::array<DmvrDist, DMVR_AREA> sads;
       sads.fill(UNDEFINED_DMVR_DIST);
@@ -1955,10 +2014,86 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
       xWeightedAverage(subPu, srcPred[REF_PIC_LIST_0], srcPred[REF_PIC_LIST_1], subPredBuf,
                        subPu.cu->slice->getSPS()->getBitDepths(), subPu.cu->slice->clpRngs(), applyBdofSubPu, false,
                        false, nullptr);
+#if JVET_AD0045
+      if (xDmvrGetEncoderCheckFlag())
+      {
+        // check boundary diff above
+        if (yy != 0) // omit check for block boundary
+        {
+          int blkSumAct = 0;
+          int numSample = 0;
 
+          const ptrdiff_t blkStride = pcYuvDst.bufs[COMPONENT_Y].stride;
+          const Pel* piOrg = subPredBuf.bufs[COMPONENT_Y].buf;
+          for (int row = 0; row < 1; row++)
+          {
+            for (int col = 0; col < 16; col++)
+            {
+              int verAct = std::abs(piOrg[col] - piOrg[col - blkStride]);
+              blkSumAct += verAct;
+              numSample++;
+            }
+            piOrg += blkStride;
+          }
+          int avgSampleAct = int((double)blkSumAct / numSample);
+          boundaryDiffHorEdge = avgSampleAct;
+        }
+        else
+        {
+          boundaryDiffHorEdge = 0;
+        }
+        // check boundary diff left
+        // vertical edge
+        if (xx != 0) // omit check for block boundary
+        {
+          int blkSumAct = 0;
+          int numSample = 0;
+
+          const ptrdiff_t  blkStride = pcYuvDst.bufs[COMPONENT_Y].stride;
+          const Pel* piOrg = subPredBuf.bufs[COMPONENT_Y].buf;
+          // check boundary diff left
+          for (int row = 0; row < 16; row++)
+          {
+            for (int col = 0; col < 1; col++)
+            {
+              int horAct = std::abs(piOrg[col] - piOrg[col - 1]);
+              blkSumAct += horAct;
+              numSample++;
+            }
+            piOrg += blkStride;
+          }
+          int avgSampleAct = int((double)blkSumAct / numSample);
+          boundaryDiffVerEdge = avgSampleAct;
+        }
+        else
+        {
+          boundaryDiffVerEdge = 0;
+        }
+        if (xx > 0 && yy > 0)
+        {
+          int theMvDiffX = abs(pu.mvdL0SubPu[xx + yy * xmax].getHor() - pu.mvdL0SubPu[xx - 1 + yy * xmax].getHor());
+          int theMvDiffY = abs(pu.mvdL0SubPu[xx + yy * xmax].getVer() - pu.mvdL0SubPu[xx - 1 + yy * xmax].getVer());
+          int theMvDiffX2 = abs(pu.mvdL0SubPu[xx + yy * xmax].getHor() - pu.mvdL0SubPu[xx + (yy - 1) * xmax].getHor());
+          int theMvDiffY2 = abs(pu.mvdL0SubPu[xx + yy * xmax].getVer() - pu.mvdL0SubPu[xx + (yy - 1) * xmax].getVer());
+          if ((theMvDiffX >= mvThreshold || theMvDiffY >= mvThreshold || theMvDiffX2 >= mvThreshold || theMvDiffY2 >= mvThreshold) && ((spatActivity[0] < spatActivityThreshold) || (spatActivity[1] < spatActivityThreshold)) && ((boundaryDiffVerEdge > boundaryDiffThreshold) || (boundaryDiffHorEdge > boundaryDiffThreshold)))
+          {
+            riskArtifact = true;
+          }
+        }
+      }
+#endif
       subPuIdx++;
     }
+#if JVET_AD0045
+    xx = -1;
+#endif
   }
+#if JVET_AD0045
+  if (xDmvrGetEncoderCheckFlag())
+  {
+    pu.dmvrBAD = riskArtifact;
+  }
+#endif
   JVET_J0090_SET_CACHE_ENABLE(true);
 }
 

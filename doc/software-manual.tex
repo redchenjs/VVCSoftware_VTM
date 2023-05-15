@@ -2120,6 +2120,25 @@ Specifies the number of MMVD distance entries used from the distance table at en
 \Default{1} &
 Enables or disables the merge mode with combined inter merge and intra prediction (CIIP).
 \\
+
+\Option{DMVREncMvSelect} &
+%\ShortOption{\None} &
+\Default{0} &
+Enable method for encoder control of decoder side motion derivation (DMVR) to avoid selection of MVs that are more likely to give subjective artifacts. Only applies for blocks equal to or greater than 64x64. Enabled by default when GOP based RPR is used.
+\\
+
+\Option{DMVREncMvSelectBaseQpTh} &
+%\ShortOption{\None} &
+\Default{33} &
+QP threshold parameter that determines which QP the encoder control for DMVR (DMVREncMvSelect) is invoked for given by $QP >= DMVREncMvSelectBaseQpTh$.
+\\
+
+\Option{DMVREncMvSelectDisableHighestTemporalLayer} &
+%\ShortOption{\None} &
+\Default{1} &
+Disable encoder control of DMVR (DMVREncMvSelect) for highest temporal layer unless frame rate is equal or lower than 30 Hz.
+\\
+
 \end{OptionTableNoShorthand}
 
 
@@ -6176,6 +6195,12 @@ Defines the maximum temporal layer to be decoded. If -1, then all layers are dec
 \Default{\NotSet} &
 Specifies the targetDecLayerIdSet file name. The file would contain white-space separated LayerId values of the layers that are to be decoded.
 Omitting the parameter, or using a value of -1 in the file decodes all layers.
+\\
+
+\Option{UpscaledOutput} &
+%\ShortOption{\None} &
+\Default{0} &
+Picture output options: output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for reference picture resampling.
 \\
 
 \Option{UpscaleFilterForDisplay} &

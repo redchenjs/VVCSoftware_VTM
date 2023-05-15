@@ -1056,6 +1056,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "IBCHashSearchMaxCand",                           m_IBCHashSearchMaxCand,                            256u, "Max candidates for hash based IBC search")
   ( "IBCHashSearchRange4SmallBlk",                    m_IBCHashSearchRange4SmallBlk,                     256u, "Small block search range in based IBC search")
   ( "IBCFastMethod",                                  m_IBCFastMethod,                                     6u, "Fast methods for IBC")
+#if JVET_AD0045
+  ("DMVREncMvSelect",                                 m_dmvrEncSelect,                                  false, "Enable method for avoiding select MVs that are more likely to give subjective artifacts")
+  ("DMVREncMvSelectBaseQpTh",                         m_dmvrEncSelectBaseQpTh,                             33, "Base QP Threshold for enabling the DMVR MV selection")
+  ("DMVREncMvSelectDisableHighestTemporalLayer",      m_dmvrEncSelectDisableHighestTemporalLayer,        true, "Disable DMVR encoder control for highest temporal layer unless frame rate is less or equal to 30Hz")
+#endif
 
   ("WrapAround",                                      m_wrapAround,                                     false, "Enable horizontal wrap-around motion compensation for inter prediction (0:off, 1:on)  [default: off]")
   ("WrapAroundOffset",                                m_wrapAroundOffset,                                  0u, "Offset in luma samples used for computing the horizontal wrap-around position")
@@ -1947,6 +1952,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_scalingRatioHor = 2.0;
       m_scalingRatioVer = 2.0;
     }
+#if JVET_AD0045
+    // enable dmvr encoder selection
+    m_dmvrEncSelect = true;
+#endif
   }
   m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag || m_rprFunctionalityTestingEnabledFlag;
   m_resChangeInClvsEnabled = m_resChangeInClvsEnabled && m_rprEnabledFlag;
