@@ -2194,6 +2194,9 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
   // As CIIP may be reset to regular merge when no residuals, dmvrL0mvd cannot be put into mergeItem
   Mv dmvrL0Mvd[MRG_MAX_NUM_CANDS][MAX_NUM_SUBCU_DMVR];
   const int   numDmvrMvd = getDmvrMvdNum(*pu);
+#if JVET_AD0045
+  bool dmvrImpreciseMv[MRG_MAX_NUM_CANDS] = { 0,0,0,0,0,0};
+#endif
   const double sqrtLambdaForFirstPass = m_pcRdCost->getMotionLambda() * FRAC_BITS_SCALE;
 
   const UnitArea localUnitArea(tempCS->area.chromaFormat, Area(0, 0, tempCS->area.Y().width, tempCS->area.Y().height));
@@ -2245,9 +2248,13 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
   // the third arguments to setDistParam is dummy and will be updated before being used
   m_pcRdCost->setDistParam(distParam, tempCS->getOrgBuf().Y(), tempCS->getOrgBuf().Y(), sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y, bUseHadamard);
 
+#if JVET_AD0045
+  addRegularCandsToPruningList(mergeCtx, localUnitArea, sqrtLambdaForFirstPass, ctxStart, numDmvrMvd, dmvrL0Mvd, dmvrImpreciseMv, mrgPredBufNoCiip,
+    mrgPredBufNoMvRefine, distParam, pu);
+#else
   addRegularCandsToPruningList(mergeCtx, localUnitArea, sqrtLambdaForFirstPass, ctxStart, numDmvrMvd, dmvrL0Mvd, mrgPredBufNoCiip,
     mrgPredBufNoMvRefine, distParam, pu);
-
+#endif
   // CIIP needs to be checked right after regular merge as the checking is based on the best 4 regular merge cand in the mergeItemList
   if (isIntrainterEnabled)
   {
@@ -2302,6 +2309,9 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
       }
 
       pu = getPuForInterPrediction(tempCS);
+#if JVET_AD0045
+      pu->dmvrImpreciseMv = false;
+#endif
       partitioner.setCUData(*pu->cu);
       const bool resetCiip2Regular = mergeItem->exportMergeInfo(*pu, forceNoResidual);
 
@@ -2358,8 +2368,15 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
       {
         CHECK(mergeItem->mergeIdx >= MRG_MAX_NUM_CANDS, "Wrong DMVR flag");
         std::copy_n(dmvrL0Mvd[mergeItem->mergeIdx], numDmvrMvd, pu->mvdL0SubPu);
+#if JVET_AD0045
+        pu->dmvrImpreciseMv = dmvrImpreciseMv[mergeItem->mergeIdx];
+        if (pu->dmvrImpreciseMv)
+        {
+          tempCS->initStructData(encTestMode.qp);
+          continue;
+        }
+#endif
       }
-
       if (!pu->cu->mmvdSkip && !pu->ciipFlag && !pu->cu->affine && !pu->cu->geoFlag && noResidualPass != 0)
       {
         CHECK(mergeItem->mergeIdx >= mergeCtx.numValidMergeCand, "out of normal merge");
@@ -2944,12 +2961,31 @@ void EncCu::checkEarlySkip(const CodingStructure* bestCS, const Partitioner &par
 }
 
 template <size_t N>
+#if JVET_AD0045
+void EncCu::addRegularCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& localUnitArea, double sqrtLambdaForFirstPassIntra,
+  const TempCtx& ctxStart, int numDmvrMvd, Mv dmvrL0Mvd[MRG_MAX_NUM_CANDS][MAX_NUM_SUBCU_DMVR], bool dmvrImpreciseMv[MRG_MAX_NUM_CANDS],
+  PelUnitBufVector<N>& mrgPredBufNoCiip, PelUnitBufVector<N>& mrgPredBufNoMvRefine, DistParam& distParam, PredictionUnit* pu)
+#else
 void EncCu::addRegularCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& localUnitArea, double sqrtLambdaForFirstPassIntra,
   const TempCtx& ctxStart, int numDmvrMvd, Mv dmvrL0Mvd[MRG_MAX_NUM_CANDS][MAX_NUM_SUBCU_DMVR],
   PelUnitBufVector<N>& mrgPredBufNoCiip, PelUnitBufVector<N>& mrgPredBufNoMvRefine, DistParam& distParam, PredictionUnit* pu)
+#endif
 {
+#if JVET_AD0045
+  bool enableVisualCheck = false;
+  if (((m_pcEncCfg->getFrameRate().getFloatVal() <= DMVR_ENC_SELECT_FRAME_RATE_THR) || !(m_pcEncCfg->getDMVREncMvSelectDisableHighestTemporalLayer() && (pu->cu->slice->getTLayer() == (pu->cu->slice->getSPS()->getMaxTLayers() - 1))))
+    && m_pcEncCfg->getDMVREncMvSelection()
+    && (pu->lumaSize().width >= DMVR_ENC_SELECT_SIZE_THR && pu->lumaSize().height >= DMVR_ENC_SELECT_SIZE_THR))
+  {
+    enableVisualCheck = true; // only set this to true when cfg, size, tid, framerate all fulfilled
+  }
+  m_pcInterSearch->xDmvrSetEncoderCheckFlag(enableVisualCheck);
+#endif
   for (uint32_t uiMergeCand = 0; uiMergeCand < mergeCtx.numValidMergeCand; uiMergeCand++)
   {
+#if JVET_AD0045
+    pu->dmvrImpreciseMv = false;
+#endif
     MergeItem* regularMerge = m_mergeItemList.allocateNewMergeItem();
     regularMerge->importMergeInfo(mergeCtx, uiMergeCand, MergeItem::MergeItemType::REGULAR, *pu);
     auto dstBuf = regularMerge->getPredBuf(localUnitArea);
@@ -2962,9 +2998,19 @@ void EncCu::addRegularCandsToPruningList(const MergeCtx& mergeCtx, const UnitAre
     if (PU::checkDMVRCondition(*pu))
     {
       std::copy_n(pu->mvdL0SubPu, numDmvrMvd, dmvrL0Mvd[regularMerge->mergeIdx]);
+#if JVET_AD0045
+      dmvrImpreciseMv[regularMerge->mergeIdx] = enableVisualCheck ? pu->dmvrImpreciseMv : false;
+      if (enableVisualCheck && pu->dmvrImpreciseMv)
+      {
+        regularMerge->cost = MAX_DOUBLE;
+      }
+#endif
     }
     m_mergeItemList.insertMergeItemToList(regularMerge);
   }
+#if JVET_AD0045
+  m_pcInterSearch->xDmvrSetEncoderCheckFlag(false);
+#endif
 }
 
 template <size_t N>

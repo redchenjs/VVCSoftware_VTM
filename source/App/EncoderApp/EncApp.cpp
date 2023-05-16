@@ -786,6 +786,17 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setIBCHashSearchMaxCand                              ( m_IBCHashSearchMaxCand );
   m_cEncLib.setIBCHashSearchRange4SmallBlk                       ( m_IBCHashSearchRange4SmallBlk );
   m_cEncLib.setIBCFastMethod                                     ( m_IBCFastMethod );
+#if JVET_AD0045
+  if (m_dmvrEncSelect && (m_iQP >= m_dmvrEncSelectBaseQpTh))
+  {
+    m_cEncLib.setDMVREncMvSelection(true);
+  }
+  else
+  {
+    m_cEncLib.setDMVREncMvSelection(false);
+  }
+  m_cEncLib.setDMVREncMvSelectDisableHighestTemporalLayer(m_dmvrEncSelectDisableHighestTemporalLayer);
+#endif
 
   m_cEncLib.setUseWrapAround                                     ( m_wrapAround );
   m_cEncLib.setWrapAroundOffset                                  ( m_wrapAroundOffset );

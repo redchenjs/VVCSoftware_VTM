@@ -535,7 +535,8 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
     if (m_pcCfg->getGOPBasedRPREnabledFlag() || m_pcCfg->getRprFunctionalityTestingEnabledFlag())
     {
       auto mappedQpDelta = [&](ComponentID c, int qpOffset) -> int {
-        const int mappedQpBefore = rpcSlice->getSPS()->getMappedChromaQpValue(c, qp - qpOffset);
+        int lumaQpBefore = Clip3(-rpcSlice->getSPS()->getQpBDOffset(ChannelType::LUMA), MAX_QP, qp - qpOffset);
+        const int mappedQpBefore = rpcSlice->getSPS()->getMappedChromaQpValue(c, lumaQpBefore);
         const int mappedQpAfter = rpcSlice->getSPS()->getMappedChromaQpValue(c, qp);
         return mappedQpBefore - mappedQpAfter + qpOffset;
       };
