@@ -176,7 +176,9 @@ void VideoIOYuv::open(const std::string &fileName, bool bWriteMode, const BitDep
         Fraction     dummyFrameRate;
         int          dummyBitDepth     = 0;
         ChromaFormat dummyChromaFormat = ChromaFormat::_420;
-        parseY4mFileHeader(fileName, dummyWidth, dummyHeight, dummyFrameRate, dummyBitDepth, dummyChromaFormat);
+        Chroma420LocType dummyLocType      = Chroma420LocType::UNSPECIFIED;
+        parseY4mFileHeader(fileName, dummyWidth, dummyHeight, dummyFrameRate, dummyBitDepth, dummyChromaFormat,
+                           dummyLocType);
       }
     }
     m_cHandle.open(fileName.c_str(), std::ios::binary | std::ios::in);
@@ -195,8 +197,42 @@ void VideoIOYuv::open(const std::string &fileName, bool bWriteMode, const BitDep
   return;
 }
 
+struct Y4mChromaFormat
+{
+  char             name[16];
+  int              bitDepth;
+  ChromaFormat     chromaFormat;
+  Chroma420LocType locType;
+};
+
+static const std::array y4mChromaFormats = {
+  Y4mChromaFormat{ "mono9", 9, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "mono10", 10, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "mono12", 12, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "mono", 8, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
+
+  Y4mChromaFormat{ "420jpeg", 8, ChromaFormat::_420, Chroma420LocType::CENTER },
+  Y4mChromaFormat{ "420mpeg2", 8, ChromaFormat::_420, Chroma420LocType::LEFT },
+  Y4mChromaFormat{ "420paldv", 8, ChromaFormat::_420, Chroma420LocType::TOP_LEFT },
+
+  Y4mChromaFormat{ "420p9", 9, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "420p10", 10, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "420p12", 12, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "420", 8, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
+
+  Y4mChromaFormat{ "422p9", 9, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "422p10", 10, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "422p12", 12, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "422", 8, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
+
+  Y4mChromaFormat{ "444p9", 9, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "444p10", 10, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "444p12", 12, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
+  Y4mChromaFormat{ "444", 8, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
+};
+
 void VideoIOYuv::parseY4mFileHeader(const std::string& fileName, int& width, int& height, Fraction& frameRate,
-                                    int& bitDepth, ChromaFormat& chromaFormat)
+                                    int& bitDepth, ChromaFormat& chromaFormat, Chroma420LocType& locType)
 {
   m_cHandle.open(fileName.c_str(), std::ios::binary | std::ios::in);
   CHECK(m_cHandle.fail(), "File open failed.")
@@ -218,44 +254,21 @@ void VideoIOYuv::parseY4mFileHeader(const std::string& fileName, int& width, int
   // parse Y4M header info
   for (int i = Y4M_SIGNATURE_LENGTH; i < m_inY4mFileHeaderLength; i++)
   {
-    int numerator = 0, denominator = 0, pos = 0;
+    int numerator = 0, denominator = 0;
     switch (header[i])
     {
     case 'W': sscanf(header + i + 1, "%d", &width); break;
     case 'H': sscanf(header + i + 1, "%d", &height); break;
     case 'C':
-      if (strncmp(&header[i + 1], "mono", 4) == 0)
+      for (const auto& cf: y4mChromaFormats)
       {
-        chromaFormat = ChromaFormat::_400;
-        pos          = i + 5;
-      }
-      else if (strncmp(&header[i + 1], "420", 3) == 0)
-      {
-        chromaFormat = ChromaFormat::_420;
-        pos          = i + 4;
-        if (strncmp(&header[pos], "jpeg", 4) == 0)
+        if (strncmp(&header[i + 1], cf.name, strlen(cf.name)) == 0)
         {
-          pos += 4;
+          chromaFormat = cf.chromaFormat;
+          locType      = cf.locType;
+          bitDepth     = cf.bitDepth;
+          break;
         }
-        else if (strncmp(&header[pos], "paldv", 5) == 0)
-        {
-          pos += 5;
-        }
-      }
-      else if (strncmp(&header[i + 1], "422", 3) == 0)
-      {
-        chromaFormat = ChromaFormat::_422;
-        pos          = i + 4;
-      }
-      else if (strncmp(&header[i + 1], "444", 3) == 0)
-      {
-        chromaFormat = ChromaFormat::_444;
-        pos          = i + 4;
-      }
-      bitDepth = 8;
-      if (header[pos] == 'p')
-      {
-        sscanf(&header[pos + 1], "%d", &bitDepth);
       }
       break;
     case 'F':
@@ -281,13 +294,14 @@ void VideoIOYuv::parseY4mFileHeader(const std::string& fileName, int& width, int
 }
 
 void VideoIOYuv::setOutputY4mInfo(int width, int height, const Fraction& frameRate, int bitDepth,
-                                  ChromaFormat chromaFormat)
+                                  ChromaFormat chromaFormat, Chroma420LocType locType)
 {
   m_outPicWidth     = width;
   m_outPicHeight    = height;
   m_outBitDepth     = bitDepth;
   m_outFrameRate    = frameRate;
   m_outChromaFormat = chromaFormat;
+  m_outLocType      = locType;
 }
 
 void VideoIOYuv::writeY4mFileHeader()
@@ -299,26 +313,32 @@ void VideoIOYuv::writeY4mFileHeader()
   header += "H" + std::to_string(m_outPicHeight) + " ";
   header += "F" + std::to_string(m_outFrameRate.num) + ":" + std::to_string(m_outFrameRate.den) + " ";
   header += "Ip A0:0 ";
-  switch (m_outChromaFormat)
+  header += "C";
+  bool found = false;
+  for (const auto& cf: y4mChromaFormats)
   {
-  case ChromaFormat::_400:
-    header += "Cmono";
-    break;
-  case ChromaFormat::_420:
-    header += "C420";
-    break;
-  case ChromaFormat::_422:
-    header += "C422";
-    break;
-  case ChromaFormat::_444:
-    header += "C444";
-    break;
-  default: CHECK(true, "Unknow chroma format");
+    if (m_outBitDepth == cf.bitDepth && m_outChromaFormat == cf.chromaFormat && m_outLocType == cf.locType)
+    {
+      header += cf.name;
+      found = true;
+      break;
+    }
   }
-  if (m_outBitDepth > 8)
+  if (!found)
   {
-    header += "p" + std::to_string(m_outBitDepth);
+    for (const auto& cf: y4mChromaFormats)
+    {
+      if (m_outBitDepth == cf.bitDepth && m_outChromaFormat == cf.chromaFormat
+          && Chroma420LocType::UNSPECIFIED == cf.locType)
+      {
+        header += cf.name;
+        found = true;
+        msg(WARNING, "Value for chroma sample location unsupported by y4m. Signalling unspecified location.");
+        break;
+      }
+    }
   }
+  CHECK(!found, "Format unsupported by y4m");
   header += "\n";
   // not write extension/comment
 

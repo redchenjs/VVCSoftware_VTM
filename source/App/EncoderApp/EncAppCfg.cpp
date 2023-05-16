@@ -776,6 +776,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   bool sdr = false;
 
+  int chromaSampleLocType;
+  int chromaSampleLocTypeTopField;
+  int chromaSampleLocTypeBottomField;
+
   // clang-format off
   po::Options opts;
   opts.addOptions()
@@ -1014,10 +1018,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("LMChroma",                                        m_LMChroma,                                           1, " LMChroma prediction "
                                                                                                                "\t0:  Disable LMChroma\n"
                                                                                                                "\t1:  Enable LMChroma\n")
-  ("HorCollocatedChroma",                             m_horCollocatedChromaFlag,                         true, "Specifies location of a chroma sample relatively to the luma sample in horizontal direction in the reference picture resampling\n"
+  ("HorCollocatedChroma",                             m_horCollocatedChromaFlag,                           -1, "Specifies location of a chroma sample relatively to the luma sample in horizontal direction in the reference picture resampling\n"
+                                                                                                               "\t-1: set according to chroma location type (default)\n"
                                                                                                                "\t0:  horizontally shifted by 0.5 units of luma samples\n"
-                                                                                                               "\t1:  collocated (default)\n")
-  ("VerCollocatedChroma",                             m_verCollocatedChromaFlag,                        false, "Specifies location of a chroma sample relatively to the luma sample in vertical direction in the cross-component linear model intra prediction and the reference picture resampling\n"
+                                                                                                               "\t1:  collocated\n")
+  ("VerCollocatedChroma",                             m_verCollocatedChromaFlag,                           -1, "Specifies location of a chroma sample relatively to the luma sample in vertical direction in the cross-component linear model intra prediction and the reference picture resampling\n"
+                                                                                                               "\t-1: set according to chroma location type (default)\n"
                                                                                                                "\t0:  horizontally co-sited, vertically shifted by 0.5 units of luma samples\n"
                                                                                                                "\t1:  collocated\n")
   ("MTS",                                             m_mtsMode,                                            0, "Multiple Transform Set (MTS)\n"
@@ -1337,9 +1343,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("NonPackedSourceConstraintFlag",                   m_nonPackedConstraintFlag,                        false, "Indicate that source does not contain frame packing")
   ("NonProjectedConstraintFlag",                      m_nonProjectedConstraintFlag,                     false, "Indicate that the bitstream contains projection SEI messages")
   ("ChromaLocInfoPresent",                            m_chromaLocInfoPresentFlag,                       false, "Signals whether chroma_sample_loc_type_top_field and chroma_sample_loc_type_bottom_field are present")
-  ("ChromaSampleLocTypeTopField",                     m_chromaSampleLocTypeTopField,                        0, "Specifies the location of chroma samples for top field")
-  ("ChromaSampleLocTypeBottomField",                  m_chromaSampleLocTypeBottomField,                     0, "Specifies the location of chroma samples for bottom field")
-  ("ChromaSampleLocType",                             m_chromaSampleLocType,                                0, "Specifies the location of chroma samples for progressive content")
+  ("ChromaSampleLocTypeTopField",                     chromaSampleLocTypeTopField,    static_cast<int>(Chroma420LocType::UNSPECIFIED), "Specifies the location of chroma samples for top field")
+  ("ChromaSampleLocTypeBottomField",                  chromaSampleLocTypeBottomField, static_cast<int>(Chroma420LocType::UNSPECIFIED), "Specifies the location of chroma samples for bottom field")
+  ("ChromaSampleLocType",                             chromaSampleLocType,            static_cast<int>(Chroma420LocType::UNSPECIFIED), "Specifies the location of chroma samples for progressive content")
   ("OverscanInfoPresent",                             m_overscanInfoPresentFlag,                        false, "Indicates whether conformant decoded pictures are suitable for display using overscan\n")
   ("OverscanAppropriate",                             m_overscanAppropriateFlag,                        false, "Indicates whether conformant decoded pictures are suitable for display using overscan\n")
   ("VideoFullRange",                                  m_videoFullRangeFlag,                             false, "Indicates the black level and range of luma and chroma signals");
@@ -2477,6 +2483,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
+  // TODO: check whether values are within valid range
+  m_chromaSampleLocType            = static_cast<Chroma420LocType>(chromaSampleLocType);
+  m_chromaSampleLocTypeTopField    = static_cast<Chroma420LocType>(chromaSampleLocTypeTopField);
+  m_chromaSampleLocTypeBottomField = static_cast<Chroma420LocType>(chromaSampleLocTypeBottomField);
+
   if (isY4mFileExt(m_inputFileName))
   {
     int          width          = 0;
@@ -2484,10 +2495,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     Fraction     frameRate;
     int          inputBitDepth  = 0;
     ChromaFormat chromaFormat = ChromaFormat::_420;
+    Chroma420LocType locType        = Chroma420LocType::UNSPECIFIED;
+
     VideoIOYuv   inputFile;
-    inputFile.parseY4mFileHeader(m_inputFileName, width, height, frameRate, inputBitDepth, chromaFormat);
+    inputFile.parseY4mFileHeader(m_inputFileName, width, height, frameRate, inputBitDepth, chromaFormat, locType);
     if (width != m_sourceWidth || height != m_sourceHeight || frameRate != m_frameRate
-        || inputBitDepth != m_inputBitDepth[ChannelType::LUMA] || chromaFormat != m_chromaFormatIdc)
+        || inputBitDepth != m_inputBitDepth[ChannelType::LUMA] || chromaFormat != m_chromaFormatIdc
+        || locType != m_chromaSampleLocType)
     {
       msg(WARNING, "\nWarning: Y4M file info is different from input setting. Using the info from Y4M file\n");
       m_sourceWidth            = width;
@@ -2496,6 +2510,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_inputBitDepth.fill(inputBitDepth);
       m_chromaFormatIdc        = chromaFormat;
       m_msbExtendedBitDepth    = m_inputBitDepth;
+      m_chromaSampleLocType    = locType;
+    }
+
+    m_progressiveSourceFlag = true;   // TODO: update when processing of interlaced y4m files is supported
+    if (m_chromaFormatIdc == ChromaFormat::_420 && m_chromaSampleLocType != Chroma420LocType::UNSPECIFIED)
+    {
+      m_chromaLocInfoPresentFlag = true;
+      m_vuiParametersPresentFlag = true;
     }
   }
 
@@ -2884,17 +2906,58 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if (m_chromaFormatIdc != ChromaFormat::_420)
   {
-    if (!m_horCollocatedChromaFlag)
+    if (m_horCollocatedChromaFlag != 1)
     {
-      msg(WARNING, "\nWARNING: HorCollocatedChroma is forced to 1 for chroma formats other than 4:2:0\n");
-      m_horCollocatedChromaFlag = true;
+      if (m_horCollocatedChromaFlag == 0)
+      {
+        msg(WARNING, "WARNING: HorCollocatedChroma forced to 1 (chroma format is not 4:2:0)\n");
+      }
+      m_horCollocatedChromaFlag = 1;
     }
-    if (!m_verCollocatedChromaFlag)
+    if (m_verCollocatedChromaFlag != 1)
     {
-      msg(WARNING, "\nWARNING: VerCollocatedChroma is forced to 1 for chroma formats other than 4:2:0\n");
-      m_verCollocatedChromaFlag = true;
+      if (m_verCollocatedChromaFlag == 0)
+      {
+        msg(WARNING, "WARNING: VerCollocatedChroma is forced to 1 (chroma format is not 4:2:0)\n");
+      }
+      m_verCollocatedChromaFlag = 1;
     }
   }
+  else
+  {
+    if (m_horCollocatedChromaFlag == -1)
+    {
+      if (m_chromaSampleLocType != Chroma420LocType::UNSPECIFIED)
+      {
+        m_horCollocatedChromaFlag = m_chromaSampleLocType == Chroma420LocType::LEFT
+                                        || m_chromaSampleLocType == Chroma420LocType::TOP_LEFT
+                                        || m_chromaSampleLocType == Chroma420LocType::BOTTOM_LEFT
+                                      ? 1
+                                      : 0;
+      }
+      else
+      {
+        m_horCollocatedChromaFlag = 1;
+      }
+    }
+
+    if (m_verCollocatedChromaFlag == -1)
+    {
+      if (m_chromaSampleLocType != Chroma420LocType::UNSPECIFIED)
+      {
+        m_verCollocatedChromaFlag =
+          m_chromaSampleLocType == Chroma420LocType::TOP_LEFT || m_chromaSampleLocType == Chroma420LocType::TOP ? 1 : 0;
+      }
+      else
+      {
+        m_verCollocatedChromaFlag = 0;
+      }
+    }
+  }
+
+  CHECK(m_verCollocatedChromaFlag != 0 && m_verCollocatedChromaFlag != 1, "m_verCollocatedChromaFlag should be 0 or 1");
+  CHECK(m_horCollocatedChromaFlag != 0 && m_horCollocatedChromaFlag != 1, "m_horCollocatedChromaFlag should be 0 or 1");
+
 #if JVET_O0756_CONFIG_HDRMETRICS && !JVET_O0756_CALCULATE_HDRMETRICS
   if ( m_calculateHdrMetrics == true)
   {

@@ -3524,23 +3524,30 @@ Enables or disables the use of adaptive color transform (ACT).
 
 \Option{HorCollocatedChroma} &
 %\ShortOption{\None} &
-\Default{true} &
-Specifies location of a chroma sample relatively to the luma sample in horizontal direction in the reference picture resampling.
+\Default{-1} &
+Specifies location of top-left chroma sample relative to top-left luma sample in horizontal direction for reference picture resampling.
+For chroma formats other than 4:2:0, the value defaults to 1.
+When ChromaSampleLocType is equal to 6 (unspecified) and HorCollocatedChroma is equal to -1, the value defaults to 1.
 \par
 \begin{tabular}{cp{0.45\textwidth}}
-	0 & horizontally shifted by 0.5 units of luma samples.\\
-	1 & collocated (default). \\
+	-1 & value based on ChromaSampleLocType (default)\\
+	0 & horizontally shifted by 0.5 units of luma samples\\
+	1 & collocated \\
 \end{tabular}
 \\
 
 \Option{VerCollocatedChroma} &
 %\ShortOption{\None} &
-\Default{false} &
-Specifies location of a chroma sample relatively to the luma sample in vertical direction in the cross-component linear model intra prediction and the reference picture resampling.
+\Default{-1} &
+Specifies location of top-left chroma sample relative to top-left luma sample in vertical direction for cross-component linear model (CCLM)
+intra prediction and for reference picture resampling.
+For chroma formats other than 4:2:0, the value defaults to 1.
+When ChromaSampleLocType is equal to 6 (unspecified) and VerCollocatedChroma is equal to -1, the value defaults to 0.
 \par
 \begin{tabular}{cp{0.45\textwidth}}
-	0 & vertically shifted by 0.5 units of luma samples (default).\\
-	1 & collocated. \\
+	-1 & value based on ChromaSampleLocType (default)\\
+	0 & vertically shifted by 0.5 units of luma samples\\
+	1 & collocated\\
 \end{tabular}
 \\
 
@@ -3800,15 +3807,19 @@ Specifies the value of general_non_projected_constraint_flag
 \\
 \Option{ChromaLocInfoPresent} &
 \Default{false} &
-Signals whether chroma_sample_loc_type_top_field and chroma_sample_loc_type_bottom_field are present.
+Signals whether chroma_sample_loc_type_top_field, chroma_sample_loc_type_bottom_field and chroma_sample_loc_type are present.
 \\
 \Option{ChromaSampleLocTypeTopField} &
-\Default{0} &
+\Default{6 (Unspecified)} &
 Specifies the location of chroma samples for top field.
 \\
 \Option{ChromaSampleLocTypeBottomField} &
-\Default{0} &
+\Default{6 (Unspecified)} &
 Specifies the location of chroma samples for bottom field.
+\\
+\Option{ChromaSampleLocType} &
+\Default{6 (Unspecified)} &
+Specifies the location of chroma samples for frame.
 \\
 \end{OptionTableNoShorthand}
 

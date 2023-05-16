@@ -733,8 +733,8 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPROF                                              ( m_PROF );
   m_cEncLib.setBIO                                               (m_BIO);
   m_cEncLib.setUseLMChroma                                       ( m_LMChroma );
-  m_cEncLib.setHorCollocatedChromaFlag                           ( m_horCollocatedChromaFlag );
-  m_cEncLib.setVerCollocatedChromaFlag                           ( m_verCollocatedChromaFlag );
+  m_cEncLib.setHorCollocatedChromaFlag(m_horCollocatedChromaFlag != 0);
+  m_cEncLib.setVerCollocatedChromaFlag(m_verCollocatedChromaFlag != 0);
   m_cEncLib.setExplicitMtsIntraEnabled((m_mtsMode & 1) != 0);
   m_cEncLib.setExplicitMtsInterEnabled((m_mtsMode & 2) != 0);
   m_cEncLib.setMTSIntraMaxCand                                   ( m_MTSIntraMaxCand );
@@ -1493,9 +1493,9 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
     {
       const auto sx = SPS::getWinUnitX(m_chromaFormatIdc);
       const auto sy = SPS::getWinUnitY(m_chromaFormatIdc);
-      m_cVideoIOYuvReconFile.setOutputY4mInfo(m_sourceWidth - (m_confWinLeft + m_confWinRight) * sx,
-                                              m_sourceHeight - (m_confWinTop + m_confWinBottom) * sy, m_frameRate,
-                                              m_internalBitDepth[ChannelType::LUMA], m_chromaFormatIdc);
+      m_cVideoIOYuvReconFile.setOutputY4mInfo(
+        m_sourceWidth - (m_confWinLeft + m_confWinRight) * sx, m_sourceHeight - (m_confWinTop + m_confWinBottom) * sy,
+        m_frameRate, m_internalBitDepth[ChannelType::LUMA], m_chromaFormatIdc, m_chromaSampleLocType);
     }
     m_cVideoIOYuvReconFile.open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, m_internalBitDepth );  // write mode
   }
@@ -1734,7 +1734,9 @@ bool EncApp::encodePrep( bool& eos )
     
     bool downsampling = (m_sourceWidthBeforeScale > m_sourceWidth) || (m_sourceHeightBeforeScale > m_sourceHeight);
     bool useLumaFilter = downsampling;
-    Picture::rescalePicture(scalingRatio, *m_orgPicBeforeScale, Window(), *m_orgPic, conformanceWindow1, m_inputChromaFormatIDC , m_internalBitDepth,useLumaFilter,downsampling,m_horCollocatedChromaFlag,m_verCollocatedChromaFlag );
+    Picture::rescalePicture(scalingRatio, *m_orgPicBeforeScale, Window(), *m_orgPic, conformanceWindow1,
+                            m_inputChromaFormatIDC, m_internalBitDepth, useLumaFilter, downsampling,
+                            m_horCollocatedChromaFlag != 0, m_verCollocatedChromaFlag != 0);
     m_trueOrgPic->copyFrom(*m_orgPic);
   }
   else

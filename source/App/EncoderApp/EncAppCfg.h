@@ -354,8 +354,8 @@ protected:
   bool      m_PROF;
   bool      m_BIO;
   int       m_LMChroma;
-  bool      m_horCollocatedChromaFlag;
-  bool      m_verCollocatedChromaFlag;
+  int                   m_horCollocatedChromaFlag;
+  int                   m_verCollocatedChromaFlag;
 
   int       m_mtsMode;                                        ///< XZ: Multiple Transform Set
   int       m_MTSIntraMaxCand;                                ///< XZ: Number of additional candidates to test
@@ -880,9 +880,9 @@ protected:
   bool      m_progressiveSourceFlag;                          ///< Indicates if the content is progressive
   bool      m_interlacedSourceFlag;                           ///< Indicates if the content is interlaced
   bool      m_chromaLocInfoPresentFlag;                       ///< Signals whether chroma_sample_loc_type_top_field and chroma_sample_loc_type_bottom_field are present
-  int       m_chromaSampleLocTypeTopField;                    ///< Specifies the location of chroma samples for top field
-  int       m_chromaSampleLocTypeBottomField;                 ///< Specifies the location of chroma samples for bottom field
-  int       m_chromaSampleLocType;                            ///< Specifies the location of chroma samples for progressive content
+  Chroma420LocType m_chromaSampleLocTypeTopField;      // Specifies the location of chroma samples for top field
+  Chroma420LocType m_chromaSampleLocTypeBottomField;   // Specifies the location of chroma samples for bottom field
+  Chroma420LocType m_chromaSampleLocType;   // Specifies the location of chroma samples for progressive content
   bool      m_overscanInfoPresentFlag;                        ///< Signals whether overscan_appropriate_flag is present
   bool      m_overscanAppropriateFlag;                        ///< Indicates whether conformant decoded pictures are suitable for display using overscan
   bool      m_videoFullRangeFlag;                             ///< Indicates the black level and range of luma and chroma signals
