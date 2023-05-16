@@ -56,6 +56,8 @@
 class DecApp : public DecAppCfg
 {
 private:
+  static constexpr auto DEFAULT_FRAME_RATE = Fraction{ 50, 1 };
+
   // class interface
   DecLib          m_cDecLib;                     ///< decoder class
   std::unordered_map<int, VideoIOYuv>      m_cVideoIOYuvReconFile;        ///< reconstruction YUV class

@@ -1243,6 +1243,17 @@ public:
   void            setGOPSize(int i) { m_gopSize = i; }
   void      setGopList(const GOPEntry GOPList[MAX_GOP]) { for (int i = 0; i < MAX_GOP; i++) m_GOPList[i] = GOPList[i]; }
   const GOPEntry &getGOPEntry               ( int   i ) const { return m_GOPList[i]; }
+
+  int getNumFramesInTemporalLayer(const int tId) const
+  {
+    int n = 0;
+    for (int i = 0; i < m_gopSize; i++)
+    {
+      n += tId >= m_GOPList[i].m_temporalId ? 1 : 0;
+    }
+    return n;
+  }
+
   void      setRPLList0(const RPLEntry RPLList[MAX_GOP])
   {
     m_numRPLList0 = 0;

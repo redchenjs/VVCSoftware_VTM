@@ -783,7 +783,9 @@ void HLSWriter::codeOlsHrdParameters(const GeneralHrdParams * generalHrd, const 
     }
     if (hrd->getFixedPicRateWithinCvsFlag())
     {
-      xWriteUvlc(hrd->getElementDurationInTcMinus1(), "elemental_duration_in_tc_minus1");
+      const uint32_t elementDurationInTc = hrd->getElementDurationInTc();
+      CHECK(elementDurationInTc < 1 || elementDurationInTc > 2048, "elementDurationInTc is out of range");
+      xWriteUvlc(elementDurationInTc - 1, "elemental_duration_in_tc_minus1");
     }
     else if ( (generalHrd->getGeneralNalHrdParametersPresentFlag() || generalHrd->getGeneralVclHrdParametersPresentFlag()) && generalHrd->getHrdCpbCntMinus1() == 0)
     {

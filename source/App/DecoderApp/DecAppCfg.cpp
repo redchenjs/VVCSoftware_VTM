@@ -87,7 +87,7 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
   ("OutputBitDepth,d",          m_outputBitDepth[ChannelType::LUMA],   0,          "bit depth of YUV output luma component (default: use 0 for native depth)")
   ("OutputBitDepthC,d",         m_outputBitDepth[ChannelType::CHROMA], 0,          "bit depth of YUV output chroma component (default: use luma output bit-depth)")
   ("OutputColourSpaceConvert",  outputColourSpaceConvert,              std::string(""), "Colour space conversion to apply to input 444 video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(false))
-  ("MaxTemporalLayer,t",        m_iMaxTemporalLayer,                   500,        "Maximum Temporal Layer to be decoded. -1 to decode all layers")
+  ("MaxTemporalLayer,t",        m_maxTemporalLayer,                    TL_UNDEFINED, "Maximum Temporal Layer to be decoded. -1 to decode all layers")
   ("TargetOutputLayerSet,p",    m_targetOlsIdx,                        500,        "Target output layer set index")
 #if JVET_Z0120_SII_SEI_PROCESSING
   ("SEIShutterIntervalPostFilename,-sii", m_shutterIntervalPostFileName, std::string(""), "Post Filtering with Shutter Interval SEI. If empty, no filtering is applied (ignore SEI message)\n")
@@ -235,14 +235,13 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
       msg( ERROR, "File %s could not be opened. Using all LayerIds as default.\n", cfg_TargetDecLayerIdSetFile.c_str() );
     }
   }
-  if (m_iMaxTemporalLayer != 500)
+
+  m_mTidExternalSet = m_maxTemporalLayer != TL_UNDEFINED;
+  if (!m_mTidExternalSet)
   {
-    m_mTidExternalSet = true;
+    m_maxTemporalLayer = TL_INFINITY;
   }
-  else
-  {
-    m_iMaxTemporalLayer = -1;
-  }
+
   if ( m_targetOlsIdx != 500)
   {
     m_tOlsIdxTidExternalSet = true;
@@ -256,32 +255,30 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
 }
 
 DecAppCfg::DecAppCfg()
-: m_bitstreamFileName()
-, m_reconFileName()
-, m_oplFilename()
+  : m_bitstreamFileName()
+  , m_reconFileName()
+  , m_oplFilename()
 
-, m_iSkipFrame(0)
-// m_outputBitDepth array initialised below
-, m_outputColourSpaceConvert(IPCOLOURSPACE_UNCHANGED)
-, m_targetOlsIdx(0)
-, m_iMaxTemporalLayer(-1)
-, m_mTidExternalSet(false)
-, m_tOlsIdxTidExternalSet(false)
-, m_decodedPictureHashSEIEnabled(0)
-, m_decodedNoDisplaySEIEnabled(false)
-, m_colourRemapSEIFileName()
-, m_SEICTIFileName()
-, m_SEIFGSFileName()
-, m_annotatedRegionsSEIFileName()
-, m_targetDecLayerIdSet()
-, m_outputDecodedSEIMessagesFilename()
+  , m_iSkipFrame(0)
+  // m_outputBitDepth array initialised below
+  , m_outputColourSpaceConvert(IPCOLOURSPACE_UNCHANGED)
+  , m_targetOlsIdx(0)
+  , m_tOlsIdxTidExternalSet(false)
+  , m_decodedPictureHashSEIEnabled(0)
+  , m_decodedNoDisplaySEIEnabled(false)
+  , m_colourRemapSEIFileName()
+  , m_SEICTIFileName()
+  , m_SEIFGSFileName()
+  , m_annotatedRegionsSEIFileName()
+  , m_targetDecLayerIdSet()
+  , m_outputDecodedSEIMessagesFilename()
 #if JVET_S0257_DUMP_360SEI_MESSAGE
-, m_outputDecoded360SEIMessagesFilename()
+  , m_outputDecoded360SEIMessagesFilename()
 #endif
-, m_clipOutputVideoToRec709Range(false)
-, m_packedYUVMode(false)
-, m_statMode(0)
-, m_mctsCheck(false)
+  , m_clipOutputVideoToRec709Range(false)
+  , m_packedYUVMode(false)
+  , m_statMode(0)
+  , m_mctsCheck(false)
 {
   m_outputBitDepth.fill(0);
 }

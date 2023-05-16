@@ -34,10 +34,6 @@
 #include "HRD.h"
 
 OlsHrdParams::OlsHrdParams()
-  : m_fixedPicRateGeneralFlag(false)
-  , m_fixedPicRateWithinCvsFlag(false)
-  , m_elementDurationInTcMinus1(0)
-  , m_lowDelayHrdFlag(false)
 {
   for (int i=0;i<MAX_CPB_CNT;i++)
   {
