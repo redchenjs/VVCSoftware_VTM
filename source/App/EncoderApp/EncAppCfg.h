@@ -62,6 +62,8 @@ namespace po = df::program_options_lite;
 
 #include <sstream>
 #include <vector>
+#include <optional>
+
 //! \ingroup EncoderApp
 //! \{
 
@@ -72,15 +74,6 @@ namespace po = df::program_options_lite;
 /// encoder configuration class
 class EncAppCfg
 {
-public:
-  template <class T>
-  struct OptionalValue
-  {
-    bool bPresent;
-    T    value;
-    OptionalValue() : bPresent(false), value() { }
-  };
-
 protected:
   // file I/O
   std::string m_inputFileName;                                ///< source file name
@@ -265,7 +258,8 @@ protected:
   bool      m_disableFastDecisionTT;                         ///< flag for disabling fast decision for TT from BT
 
   // coding quality
-  OptionalValue<uint32_t> m_qpIncrementAtSourceFrame;             ///< Optional source frame number at which all subsequent frames are to use an increased internal QP.
+  std::optional<uint32_t> m_qpIncrementAtSourceFrame;   // Optional source frame number at which all subsequent frames
+                                                        // are to use an increased internal QP.
   int       m_iQP;                                            ///< QP value of key-picture (integer)
   bool      m_useIdentityTableForNon420Chroma;
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
@@ -1062,8 +1056,7 @@ public:
   void  create    ();                                         ///< create option handling class
   void  destroy   ();                                         ///< destroy option handling class
   bool  parseCfg  ( int argc, char* argv[] );                ///< parse configuration file to fill member variables
-
-};// END CLASS DEFINITION EncAppCfg
+};
 
 //! \}
 

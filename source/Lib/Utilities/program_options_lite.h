@@ -35,16 +35,32 @@
 #include <string>
 #include <list>
 #include <map>
+#include <vector>
+#include <optional>
 
 #define JVET_O0549_ENCODER_ONLY_FILTER_POL 1 // JVET-O0549: Encoder-only GOP-based temporal filter. Program Options Lite related changes.
-
-#include <vector>
 
 #ifndef __PROGRAM_OPTIONS_LITE__
 #define __PROGRAM_OPTIONS_LITE__
 
 //! \ingroup TAppCommon
 //! \{
+
+template<class T> inline std::istream& operator>>(std::istream& in, std::optional<T>& value)
+{
+  in >> std::ws;
+  if (in.eof())
+  {
+    value = std::nullopt;
+  }
+  else
+  {
+    T tmp;
+    in >> tmp;
+    value = tmp;
+  }
+  return in;
+}
 
 template <class T>
 struct SMultiValueInput
