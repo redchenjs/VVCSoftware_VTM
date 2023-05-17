@@ -94,7 +94,6 @@ namespace df
         }
         else
         {
-#if JVET_O0549_ENCODER_ONLY_FILTER_POL
           if (opt_name.size() > 0 && opt_name.back() == '*')
           {
             std::string prefix_name = opt_name.substr(0, opt_name.size() - 1);
@@ -106,10 +105,6 @@ namespace df
             names->opt_long.push_back(opt_name);
             opt_long_map[opt_name].push_back(names);
           }
-#else
-          names->opt_long.push_back(opt_name);
-          opt_long_map[opt_name].push_back(names);
-#endif
         }
         opt_start += opt_end + 1;
       }
@@ -162,12 +157,10 @@ namespace df
       {
         out << "--" << entry.opt_long.front();
       }
-#if JVET_O0549_ENCODER_ONLY_FILTER_POL
       else if (!entry.opt_prefix.empty())
       {
       out << "--" << entry.opt_prefix.front() << "*";
       }
-#endif
     }
 
     /* format the help text */
@@ -286,9 +279,7 @@ namespace df
     bool OptionWriter::storePair(bool allow_long, bool allow_short, const std::string &name, const std::string &value)
     {
       bool found = false;
-#if JVET_O0549_ENCODER_ONLY_FILTER_POL
       std::string val = value;
-#endif
       Options::NamesMap::iterator opt_it;
       if (allow_long)
       {
@@ -308,7 +299,6 @@ namespace df
           found = true;
         }
       }
-#if JVET_O0549_ENCODER_ONLY_FILTER_POL
       bool allow_prefix = allow_long;
       if (allow_prefix && !found)
       {
@@ -324,18 +314,13 @@ namespace df
           }
         }
       }
-#endif
       if (!found)
       {
         error_reporter.error(where())
           << "Unknown option `" << name << "' (value:`" << value << "')\n";
         return false;
       }
-#if JVET_O0549_ENCODER_ONLY_FILTER_POL
       setOptions((*opt_it).second, val, error_reporter);
-#else
-      setOptions((*opt_it).second, value, error_reporter);
-#endif
       return true;
     }
 

@@ -38,8 +38,6 @@
 #include <vector>
 #include <optional>
 
-#define JVET_O0549_ENCODER_ONLY_FILTER_POL 1 // JVET-O0549: Encoder-only GOP-based temporal filter. Program Options Lite related changes.
-
 #ifndef __PROGRAM_OPTIONS_LITE__
 #define __PROGRAM_OPTIONS_LITE__
 
