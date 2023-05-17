@@ -434,17 +434,20 @@ void Slice::constructRefPicList(PicList& rcListPic)
 
   for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
   {
-    const uint32_t numOfActiveRef = getNumRefIdx(l);
+    const uint32_t              numActiveRefs = getNumRefIdx(l);
+    const ReferencePictureList* rpl           = getRpl(l);
 
-    for (int ii = 0; ii < m_rpl[l].getNumRefEntries(); ii++)
+    for (int refIdx = 0; refIdx < rpl->getNumRefEntries(); refIdx++)
     {
-      Picture *refPic = nullptr;
+      Picture*   refPic      = nullptr;
+      const bool isActiveRef = refIdx < numActiveRefs;
+      bool       isLongTerm  = false;
 
-      if (m_rpl[l].isInterLayerRefPic(ii))
+      if (rpl->isInterLayerRefPic(refIdx))
       {
         const VPS *vps = m_pcPic->cs->vps;
 
-        const int interLayerIdx = m_rpl[l].getInterLayerRefPicIdx(ii);
+        const int interLayerIdx = rpl->getInterLayerRefPicIdx(refIdx);
         CHECK(interLayerIdx == NOT_VALID, "Wrong ILRP index");
 
         const int layerIdx   = vps->getGeneralLayerIdx(m_pcPic->layerId);
@@ -452,33 +455,38 @@ void Slice::constructRefPicList(PicList& rcListPic)
 
         refPic = xGetRefPic(rcListPic, getPOC(), refLayerId);
 
-        refPic->longTerm = true;
+        isLongTerm = true;
       }
-      else if (!m_rpl[l].isRefPicLongterm(ii))
+      else if (!rpl->isRefPicLongterm(refIdx))
       {
-        refPic = xGetRefPic(rcListPic, getPOC() + m_rpl[l].getRefPicIdentifier(ii), m_pcPic->layerId);
-
-        refPic->longTerm = false;
+        refPic = xGetRefPic(rcListPic, getPOC() + rpl->getRefPicIdentifier(refIdx), m_pcPic->layerId);
       }
       else
       {
         const int  pocBits   = getSPS()->getBitsForPOC();
         const int  pocMask   = (1 << pocBits) - 1;
-        int        ltrpPoc   = m_rpl[l].getRefPicIdentifier(ii) & pocMask;
-        const bool pocHasMsb = m_rpl[l].getDeltaPocMSBPresentFlag(ii);
+        int        ltrpPoc   = rpl->getRefPicIdentifier(refIdx) & pocMask;
+        const bool pocHasMsb = rpl->getDeltaPocMSBPresentFlag(refIdx);
         if (pocHasMsb)
         {
-          ltrpPoc += (getPOC() & ~pocMask) - m_rpl[l].getDeltaPocMSBCycleLT(ii) * (pocMask + 1);
+          ltrpPoc += (getPOC() & ~pocMask) - rpl->getDeltaPocMSBCycleLT(refIdx) * (pocMask + 1);
         }
         refPic = xGetLongTermRefPicCandidate(rcListPic, ltrpPoc, pocHasMsb, m_pcPic->layerId);
 
-        refPic->longTerm = true;
+        isLongTerm = true;
       }
-      if (ii < numOfActiveRef)
+
+      // NOTE: refPic may be null if inactive reference picture is not be in DPB
+      if (refPic != nullptr)
       {
+        refPic->longTerm = isLongTerm;
+      }
+      if (isActiveRef)
+      {
+        CHECK(refPic == nullptr, "Active reference picture not found");
         refPic->extendPicBorder(getPPS());
-        m_apcRefPicList[l][ii]     = refPic;
-        m_bIsUsedAsLongTerm[l][ii] = refPic->longTerm;
+        m_apcRefPicList[l][refIdx]     = refPic;
+        m_bIsUsedAsLongTerm[l][refIdx] = refPic->longTerm;
       }
     }
   }
