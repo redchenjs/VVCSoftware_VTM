@@ -2965,8 +2965,8 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   //Reset POC MSB when CRA or GDR has NoOutputBeforeRecoveryFlag equal to 1
   if (!pps->getMixedNaluTypesInPicFlag() && (m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR) && m_lastNoOutputBeforeRecoveryFlag[nalu.m_nuhLayerId])
   {
-    int iMaxPOClsb = 1 << sps->getBitsForPOC();
-    m_apcSlicePilot->setPOC( m_apcSlicePilot->getPOC() & (iMaxPOClsb - 1) );
+    int maxPocLsb = 1 << sps->getBitsForPOC();
+    m_apcSlicePilot->setPOC(m_apcSlicePilot->getPOC() & (maxPocLsb - 1));
     m_lastPOCNoOutputPriorPics = m_apcSlicePilot->getPOC();
     xUpdatePreviousTid0POC(m_apcSlicePilot);
   }
