@@ -1256,7 +1256,10 @@ void HLSyntaxReader::parseOlsHrdParameters(GeneralHrdParams * generalHrd, OlsHrd
 
     if (hrd->getFixedPicRateWithinCvsFlag())
     {
-      xReadUvlc(symbol, "elemental_duration_in_tc_minus1");             hrd->setElementDurationInTcMinus1(symbol);
+      xReadUvlc(symbol, "elemental_duration_in_tc_minus1");
+      CHECK(symbol > 2047, "elemental_duration_in_tc_minus1 is too large (> 2047)");
+
+      hrd->setElementDurationInTc(symbol + 1);
     }
     else if((generalHrd->getGeneralNalHrdParametersPresentFlag() || generalHrd->getGeneralVclHrdParametersPresentFlag()) && generalHrd->getHrdCpbCntMinus1() == 0)
     {
@@ -1289,8 +1292,8 @@ void HLSyntaxReader::parseOlsHrdParameters(GeneralHrdParams * generalHrd, OlsHrd
     hrdTemp->setFixedPicRateGeneralFlag(tempFlag);
     tempFlag = hrdHighestTLayer->getFixedPicRateWithinCvsFlag();
     hrdTemp->setFixedPicRateWithinCvsFlag(tempFlag);
-    uint32_t tempElementDurationInTcMinus1 = hrdHighestTLayer->getElementDurationInTcMinus1();
-    hrdTemp->setElementDurationInTcMinus1(tempElementDurationInTcMinus1);
+    uint32_t tempElementDurationInTc = hrdHighestTLayer->getElementDurationInTc();
+    hrdTemp->setElementDurationInTc(tempElementDurationInTc);
     for (int nalOrVcl = 0; nalOrVcl < 2; nalOrVcl++)
     {
       if (((nalOrVcl == 0) && (generalHrd->getGeneralNalHrdParametersPresentFlag())) || ((nalOrVcl == 1) && (generalHrd->getGeneralVclHrdParametersPresentFlag())))

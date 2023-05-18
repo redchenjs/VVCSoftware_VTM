@@ -76,91 +76,92 @@ void EncHRD::initHRDParameters(EncCfg* encCfg)
   m_generalHrdParams.setTimeScale(timeScale);
 
   const int bitRate = encCfg->getTargetBitrate();
+  const int cpbSize = encCfg->getCpbSize();
 
   const bool rateCnt = (bitRate > 0);
   m_generalHrdParams.setGeneralNalHrdParametersPresentFlag(rateCnt);
   m_generalHrdParams.setGeneralVclHrdParametersPresentFlag(rateCnt);
 
-  if (!rateCnt)
+  if (rateCnt)
   {
-    return;
+    CHECK(!(cpbSize != 0), "Unspecified error");   // CPB size may not be equal to zero. ToDo: have a better default and
+    // check for level constraints
+    bool useSubCpbParams = encCfg->getNoPicPartitionFlag() == false;
+
+    m_generalHrdParams.setGeneralSamePicTimingInAllOlsFlag(encCfg->getSamePicTimingInAllOLS());
+    useSubCpbParams &= (m_generalHrdParams.getGeneralNalHrdParametersPresentFlag()
+                        || m_generalHrdParams.getGeneralVclHrdParametersPresentFlag());
+    m_generalHrdParams.setGeneralDecodingUnitHrdParamsPresentFlag(useSubCpbParams);
+
+    if (m_generalHrdParams.getGeneralDecodingUnitHrdParamsPresentFlag())
+    {
+      m_generalHrdParams.setTickDivisorMinus2(100 - 2);
+    }
+
+    if (xCalcScale(bitRate) <= 6)
+    {
+      m_generalHrdParams.setBitRateScale(0);
+    }
+    else
+    {
+      m_generalHrdParams.setBitRateScale(xCalcScale(bitRate) - 6);
+    }
+
+    if (xCalcScale(cpbSize) <= 4)
+    {
+      m_generalHrdParams.setCpbSizeScale(0);
+    }
+    else
+    {
+      m_generalHrdParams.setCpbSizeScale(xCalcScale(cpbSize) - 4);
+    }
+
+    m_generalHrdParams.setCpbSizeDuScale(6);   // in units of 2^( 4 + 6 ) = 1,024 bit
+    m_generalHrdParams.setHrdCpbCntMinus1(0);
   }
-
-  int cpbSize = encCfg->getCpbSize();
-  CHECK(!(cpbSize != 0), "Unspecified error");   // CPB size may not be equal to zero. ToDo: have a better default and
-                                                 // check for level constraints
-  bool useSubCpbParams = encCfg->getNoPicPartitionFlag() == false;
-
-  m_generalHrdParams.setGeneralSamePicTimingInAllOlsFlag(encCfg->getSamePicTimingInAllOLS());
-  useSubCpbParams &= (m_generalHrdParams.getGeneralNalHrdParametersPresentFlag() || m_generalHrdParams.getGeneralVclHrdParametersPresentFlag());
-  m_generalHrdParams.setGeneralDecodingUnitHrdParamsPresentFlag(useSubCpbParams);
-
-  if (m_generalHrdParams.getGeneralDecodingUnitHrdParamsPresentFlag())
-  {
-    m_generalHrdParams.setTickDivisorMinus2(100 - 2);
-  }
-
-  if (xCalcScale(bitRate) <= 6)
-  {
-    m_generalHrdParams.setBitRateScale(0);
-  }
-  else
-  {
-    m_generalHrdParams.setBitRateScale(xCalcScale(bitRate) - 6);
-  }
-
-  if (xCalcScale(cpbSize) <= 4)
-  {
-    m_generalHrdParams.setCpbSizeScale(0);
-  }
-  else
-  {
-    m_generalHrdParams.setCpbSizeScale(xCalcScale(cpbSize) - 4);
-  }
-
-  m_generalHrdParams.setCpbSizeDuScale(6);                                     // in units of 2^( 4 + 6 ) = 1,024 bit
-  m_generalHrdParams.setHrdCpbCntMinus1(0);
-
 
   // Note: parameters for all temporal layers are initialized with the same values
-  int i, j;
-  uint32_t bitrateValue, cpbSizeValue;
-  uint32_t duCpbSizeValue;
-  uint32_t duBitRateValue = 0;
   OlsHrdParams* olsHrdParams = getOlsHrdParametersAddr();
 
-  for (i = 0; i < MAX_TLAYER; i++)
+  for (int i = 0; i < MAX_TLAYER; i++)
   {
-    olsHrdParams[i].setFixedPicRateGeneralFlag(1);
-    olsHrdParams[i].setFixedPicRateWithinCvsFlag(1);
-    olsHrdParams[i].setElementDurationInTcMinus1(0);
-    olsHrdParams[i].setLowDelayHrdFlag(0);
+    olsHrdParams[i].setFixedPicRateGeneralFlag(true);
+    olsHrdParams[i].setFixedPicRateWithinCvsFlag(true);
+    const int numFramesInSublayer = encCfg->getNumFramesInTemporalLayer(i);
+    const int duration            = numFramesInSublayer > 0 ? encCfg->getGOPSize() / numFramesInSublayer : 1;
+    olsHrdParams[i].setElementDurationInTc(duration);
+    olsHrdParams[i].setLowDelayHrdFlag(false);
 
-    //! \todo check for possible PTL violations
-    // BitRate[ i ] = ( bit_rate_value_minus1[ i ] + 1 ) * 2^( 6 + bit_rate_scale )
-    bitrateValue = bitRate / (1 << (6 + m_generalHrdParams.getBitRateScale()));      // bitRate is in bits, so it needs to be scaled down
-                                                                              // CpbSize[ i ] = ( cpb_size_value_minus1[ i ] + 1 ) * 2^( 4 + cpb_size_scale )
-    cpbSizeValue = cpbSize / (1 << (4 + m_generalHrdParams.getCpbSizeScale()));      // using bitRate results in 1 second CPB size
-
-
-                                                                              // DU CPB size could be smaller (i.e. bitrateValue / number of DUs), but we don't know
-                                                                              // in how many DUs the slice segment settings will result
-    duCpbSizeValue = bitrateValue;
-    duBitRateValue = cpbSizeValue;
-
-    for (j = 0; j < (m_generalHrdParams.getHrdCpbCntMinus1() + 1); j++)
+    if (rateCnt)
     {
-      olsHrdParams[i].setBitRateValueMinus1(j, 0, (bitrateValue - 1));
-      olsHrdParams[i].setCpbSizeValueMinus1(j, 0, (cpbSizeValue - 1));
-      olsHrdParams[i].setDuCpbSizeValueMinus1(j, 0, (duCpbSizeValue - 1));
-      olsHrdParams[i].setDuBitRateValueMinus1(j, 0, (duBitRateValue - 1));
-      olsHrdParams[i].setCbrFlag(j, 0, false);
+      //! \todo check for possible PTL violations
+      // BitRate[ i ] = ( bit_rate_value_minus1[ i ] + 1 ) * 2^( 6 + bit_rate_scale )
+      const uint32_t bitrateValue =
+        bitRate / (1 << (6 + m_generalHrdParams.getBitRateScale()));   // bitRate is in bits, so it needs to be scaled
+                                                                       // down CpbSize[ i ] = ( cpb_size_value_minus1[ i
+                                                                       // ] + 1 ) * 2^( 4 + cpb_size_scale )
+      const uint32_t cpbSizeValue =
+        cpbSize / (1 << (4 + m_generalHrdParams.getCpbSizeScale()));   // using bitRate results in 1 second CPB size
 
-      olsHrdParams[i].setBitRateValueMinus1(j, 1, (bitrateValue - 1));
-      olsHrdParams[i].setCpbSizeValueMinus1(j, 1, (cpbSizeValue - 1));
-      olsHrdParams[i].setDuCpbSizeValueMinus1(j, 1, (duCpbSizeValue - 1));
-      olsHrdParams[i].setDuBitRateValueMinus1(j, 1, (duBitRateValue - 1));
-      olsHrdParams[i].setCbrFlag(j, 1, false);
+      // DU CPB size could be smaller (i.e. bitrateValue / number of DUs), but we don't know
+      // in how many DUs the slice segment settings will result
+      const uint32_t duCpbSizeValue = bitrateValue;
+      const uint32_t duBitRateValue = cpbSizeValue;
+
+      for (int j = 0; j < (m_generalHrdParams.getHrdCpbCntMinus1() + 1); j++)
+      {
+        olsHrdParams[i].setBitRateValueMinus1(j, 0, bitrateValue - 1);
+        olsHrdParams[i].setCpbSizeValueMinus1(j, 0, cpbSizeValue - 1);
+        olsHrdParams[i].setDuCpbSizeValueMinus1(j, 0, duCpbSizeValue - 1);
+        olsHrdParams[i].setDuBitRateValueMinus1(j, 0, duBitRateValue - 1);
+        olsHrdParams[i].setCbrFlag(j, 0, false);
+
+        olsHrdParams[i].setBitRateValueMinus1(j, 1, bitrateValue - 1);
+        olsHrdParams[i].setCpbSizeValueMinus1(j, 1, cpbSizeValue - 1);
+        olsHrdParams[i].setDuCpbSizeValueMinus1(j, 1, duCpbSizeValue - 1);
+        olsHrdParams[i].setDuBitRateValueMinus1(j, 1, duBitRateValue - 1);
+        olsHrdParams[i].setCbrFlag(j, 1, false);
+      }
     }
   }
 }

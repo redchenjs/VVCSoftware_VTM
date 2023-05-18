@@ -249,9 +249,9 @@ uint32_t DecApp::decode()
         }
 
         // parse NAL unit syntax if within target decoding layer
-        if( ( m_iMaxTemporalLayer < 0 || nalu.m_temporalId <= m_iMaxTemporalLayer ) && xIsNaluWithinTargetDecLayerIdSet( &nalu ) )
+        if ((m_maxTemporalLayer == TL_INFINITY || nalu.m_temporalId <= m_maxTemporalLayer)
+            && xIsNaluWithinTargetDecLayerIdSet(&nalu))
         {
-          CHECK(nalu.m_temporalId > m_iMaxTemporalLayer, "bitstream shall not include any NAL unit with TemporalId greater than HighestTid");
           if (m_targetDecLayerIdSet.size())
           {
             CHECK(std::find(m_targetDecLayerIdSet.begin(), m_targetDecLayerIdSet.end(), nalu.m_nuhLayerId) == m_targetDecLayerIdSet.end(), "bitstream shall not contain any other layers than included in the OLS with OlsIdx");
@@ -307,7 +307,7 @@ uint32_t DecApp::decode()
           {
             if (!m_cDecLib.getHTidExternalSetFlag() && m_cDecLib.getOPI()->getHtidInfoPresentFlag())
             {
-              m_iMaxTemporalLayer = m_cDecLib.getOPI()->getOpiHtidPlus1()-1;
+              m_maxTemporalLayer = m_cDecLib.getOPI()->getOpiHtidPlus1() - 1;
             }
             m_cDecLib.setHTidOpiSetFlag(m_cDecLib.getOPI()->getHtidInfoPresentFlag());
           }
@@ -436,42 +436,50 @@ uint32_t DecApp::decode()
 
         if (!m_reconFileName.empty() && !m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].isOpen())
         {
+          const auto  vps           = m_cDecLib.getVPS();
           std::string reconFileName = m_reconFileName;
-          if (m_reconFileName.compare("/dev/null") && m_cDecLib.getVPS() != nullptr && m_cDecLib.getVPS()->getMaxLayers() > 1 && xIsNaluWithinTargetOutputLayerIdSet(&nalu))
+
+          if (m_reconFileName.compare("/dev/null") && vps != nullptr && vps->getMaxLayers() > 1
+              && xIsNaluWithinTargetOutputLayerIdSet(&nalu))
           {
-            size_t      pos         = reconFileName.find_last_of('.');
-            std::string layerString = std::string(".layer") + std::to_string(nalu.m_nuhLayerId);
-            if (pos != std::string::npos)
-            {
-              reconFileName.insert(pos, layerString);
-            }
-            else
-            {
-              reconFileName.append(layerString);
-            }
+            const size_t      pos         = reconFileName.find_last_of('.');
+            const std::string layerString = std::string(".layer") + std::to_string(nalu.m_nuhLayerId);
+
+            reconFileName.insert(pos, layerString);
           }
-          if ((m_cDecLib.getVPS() != nullptr && (m_cDecLib.getVPS()->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet(&nalu))) || m_cDecLib.getVPS() == nullptr)
+
+          if (vps == nullptr || vps->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet(&nalu))
           {
             if (isY4mFileExt(reconFileName))
             {
               const auto sps        = pcListPic->front()->cs->sps;
-              Fraction   frameRate  = { 50, 1 };
-              if (sps->getGeneralHrdParametersPresentFlag())
+              Fraction   frameRate  = DEFAULT_FRAME_RATE;
+
+              const bool useSpsData = sps->getGeneralHrdParametersPresentFlag();
+              if (useSpsData || (vps != nullptr && vps->getVPSGeneralHrdParamsPresentFlag()))
               {
-                const auto hrd                 = sps->getGeneralHrdParameters();
-                const auto olsHrdParam         = sps->getOlsHrdParameters()[sps->getMaxTLayers() - 1];
-                int        elementDurationInTc = 1;
+                const GeneralHrdParams* hrd =
+                  useSpsData ? sps->getGeneralHrdParameters() : vps->getGeneralHrdParameters();
+
+                const int tLayer = m_maxTemporalLayer == TL_INFINITY
+                                     ? (useSpsData ? sps->getMaxTLayers() - 1 : vps->getMaxSubLayers() - 1)
+                                     : m_maxTemporalLayer;
+
+                const OlsHrdParams& olsHrdParam =
+                  (useSpsData ? sps->getOlsHrdParameters() : vps->getOlsHrdParameters(vps->m_targetOlsIdx))[tLayer];
+
+                int elementDurationInTc = 1;
                 if (olsHrdParam.getFixedPicRateWithinCvsFlag())
                 {
-                  elementDurationInTc = olsHrdParam.getElementDurationInTcMinus1() + 1;
+                  elementDurationInTc = olsHrdParam.getElementDurationInTc();
                 }
                 else
                 {
                   msg(WARNING,
                       "\nWarning: No fixed picture rate info is found in the bitstream, best guess is used.\n");
                 }
-                frameRate.num = hrd->getTimeScale() * elementDurationInTc;
-                frameRate.den = hrd->getNumUnitsInTick();
+                frameRate.num = hrd->getTimeScale();
+                frameRate.den = hrd->getNumUnitsInTick() * elementDurationInTc;
                 const int gcd = std::gcd(frameRate.num, frameRate.den);
                 frameRate.num /= gcd;
                 frameRate.den /= gcd;
@@ -973,17 +981,17 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
   if( referredVPS == nullptr || referredVPS->m_numLayersInOls[referredVPS->m_targetOlsIdx] == 1 )
   {
     const SPS* activeSPS = (pcListPic->front()->cs->sps);
-    const int temporalId = (m_iMaxTemporalLayer == -1 || m_iMaxTemporalLayer >= activeSPS->getMaxTLayers())
-      ? activeSPS->getMaxTLayers() - 1
-      : m_iMaxTemporalLayer;
+    const int  temporalId = (m_maxTemporalLayer == TL_INFINITY || m_maxTemporalLayer >= activeSPS->getMaxTLayers())
+                              ? activeSPS->getMaxTLayers() - 1
+                              : m_maxTemporalLayer;
     maxNumReorderPicsHighestTid = activeSPS->getMaxNumReorderPics( temporalId );
     maxDecPicBufferingHighestTid = activeSPS->getMaxDecPicBuffering( temporalId );
   }
   else
   {
-    const int temporalId = (m_iMaxTemporalLayer == -1 || m_iMaxTemporalLayer >= referredVPS->getMaxSubLayers())
-      ? referredVPS->getMaxSubLayers() - 1
-      : m_iMaxTemporalLayer;
+    const int temporalId = (m_maxTemporalLayer == TL_INFINITY || m_maxTemporalLayer >= referredVPS->getMaxSubLayers())
+                             ? referredVPS->getMaxSubLayers() - 1
+                             : m_maxTemporalLayer;
     maxNumReorderPicsHighestTid = referredVPS->getMaxNumReorderPics( temporalId );
     maxDecPicBufferingHighestTid = referredVPS->getMaxDecPicBuffering( temporalId );
   }

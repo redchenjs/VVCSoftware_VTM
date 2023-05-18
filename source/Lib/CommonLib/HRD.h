@@ -40,16 +40,17 @@
 class OlsHrdParams
 {
 private:
-  bool     m_fixedPicRateGeneralFlag;
-  bool     m_fixedPicRateWithinCvsFlag;
-  uint32_t m_elementDurationInTcMinus1;
-  bool     m_lowDelayHrdFlag;
+  bool     m_fixedPicRateGeneralFlag   = false;
+  bool     m_fixedPicRateWithinCvsFlag = false;
+  bool     m_lowDelayHrdFlag           = false;
+  uint32_t m_elementDurationInTc       = 1;
 
   uint32_t m_bitRateValueMinus1[MAX_CPB_CNT][2];
   uint32_t m_cpbSizeValueMinus1[MAX_CPB_CNT][2];
   uint32_t m_ducpbSizeValueMinus1[MAX_CPB_CNT][2];
   uint32_t m_duBitRateValueMinus1[MAX_CPB_CNT][2];
   bool     m_cbrFlag[MAX_CPB_CNT][2];
+
 public:
   OlsHrdParams();
   virtual ~OlsHrdParams();
@@ -58,8 +59,8 @@ public:
   bool      getFixedPicRateGeneralFlag() const { return m_fixedPicRateGeneralFlag; }
   void      setFixedPicRateWithinCvsFlag(bool flag) { m_fixedPicRateWithinCvsFlag = flag; }
   bool      getFixedPicRateWithinCvsFlag() const { return m_fixedPicRateWithinCvsFlag; }
-  void      setElementDurationInTcMinus1(uint32_t value) { m_elementDurationInTcMinus1 = value; }
-  uint32_t  getElementDurationInTcMinus1() const { return m_elementDurationInTcMinus1; }
+  void      setElementDurationInTc(uint32_t value) { m_elementDurationInTc = value; }
+  uint32_t  getElementDurationInTc() const { return m_elementDurationInTc; }
   void      setLowDelayHrdFlag(bool flag) { m_lowDelayHrdFlag = flag; }
   bool      getLowDelayHrdFlag() const { return m_lowDelayHrdFlag; }
   void      setBitRateValueMinus1(int cpbcnt, int nalOrVcl, uint32_t value) { m_bitRateValueMinus1[cpbcnt][nalOrVcl] = value; }

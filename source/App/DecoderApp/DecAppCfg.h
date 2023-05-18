@@ -54,6 +54,9 @@
 class DecAppCfg
 {
 protected:
+  static constexpr int TL_INFINITY  = -1;   // All temporal layers
+  static constexpr int TL_UNDEFINED = MAX_INT;
+
   std::string   m_bitstreamFileName;                    ///< input bitstream file name
   std::string   m_reconFileName;                        ///< output reconstruction file name
 
@@ -65,8 +68,9 @@ protected:
   InputColourSpaceConversion m_outputColourSpaceConvert;
   int           m_targetOlsIdx;                       ///< target output layer set
   std::vector<int> m_targetOutputLayerIdSet;          ///< set of LayerIds to be outputted
-  int           m_iMaxTemporalLayer;                  ///< maximum temporal layer to be decoded
-  bool          m_mTidExternalSet;                    ///< maximum temporal layer set externally
+
+  int           m_maxTemporalLayer = TL_INFINITY;     // maximum temporal layer to be decoded
+  bool          m_mTidExternalSet  = false;           // maximum temporal layer set externally
   bool          m_tOlsIdxTidExternalSet;              ///< target output layer set index externally set
   int           m_decodedPictureHashSEIEnabled;       ///< Checksum(3)/CRC(2)/MD5(1)/disable(0) acting on decoded picture hash SEI message
   bool          m_decodedNoDisplaySEIEnabled;         ///< Enable(true)/disable(false) writing only pictures that get displayed based on the no display SEI message
