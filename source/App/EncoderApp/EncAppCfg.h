@@ -58,7 +58,7 @@ static inline std::istream& operator >> (std::istream &in, std::map<T1, T2> &map
 #undef UNDEFINED
 #endif
 #endif
-namespace po = df::program_options_lite;
+namespace po = ProgramOptionsLite;
 
 #include <sstream>
 #include <vector>

@@ -47,11 +47,10 @@
 #include "Utilities/program_options_lite.h"
 #include "SubpicMergeApp.h"
 
+namespace po = ProgramOptionsLite;
 
-namespace po = df::program_options_lite;
-
- //! \ingroup SubpicMergeApp
- //! \{
+//! \ingroup SubpicMergeApp
+//! \{
 
 
 /**
