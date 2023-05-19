@@ -177,7 +177,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
     sps0.setLongTermRefsPresent(true);
   }
 
-  if (m_RCCpbSaturationEnabled)
+  if (m_rcCpbSaturationEnabled)
   {
     m_cRateCtrl.initHrdParam(sps0.getGeneralHrdParameters(), sps0.getOlsHrdParameters(), m_frameRate,
                              m_RCInitialCpbFullness);

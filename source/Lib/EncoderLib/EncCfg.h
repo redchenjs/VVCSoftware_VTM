@@ -901,6 +901,7 @@ protected:
   uint32_t      m_maxNumIBCMergeCand;                 ///< Max number of IBC merge candidates
   ScalingListMode m_useScalingListId;             ///< Using quantization matrix i.e. 0=off, 1=default, 2=file.
   std::string m_scalingListFileName;              ///< quantization matrix file name
+
   bool      m_disableScalingMatrixForAlternativeColourSpace;
   bool      m_scalingMatrixDesignatedColourSpace;
   bool      m_sliceLevelRpl;                      ///< code reference picture lists in slice headers rather than picture header
@@ -928,8 +929,8 @@ protected:
   bool      m_RCUseLCUSeparateModel;
   int       m_RCInitialQP;
   bool      m_RCForceIntraQP;
-  bool      m_RCCpbSaturationEnabled;
-  uint32_t      m_RCCpbSize;
+  bool      m_rcCpbSaturationEnabled = false;
+  uint32_t  m_RCCpbSize;
   double    m_RCInitialCpbFullness;
   CostMode  m_costMode;                                       ///< The cost function to use, primarily when considering lossless coding.
   bool      m_TSRCdisableLL;                                  ///< Disable TSRC for lossless
@@ -2593,9 +2594,10 @@ public:
   void         setInitialQP           ( int QP )                     { m_RCInitialQP = QP;             }
   bool         getForceIntraQP        ()                             { return m_RCForceIntraQP;        }
   void         setForceIntraQP        ( bool b )                     { m_RCForceIntraQP = b;           }
-  bool         getCpbSaturationEnabled()                             { return m_RCCpbSaturationEnabled;}
-  void         setCpbSaturationEnabled( bool b )                     { m_RCCpbSaturationEnabled = b;   }
-  uint32_t         getCpbSize             ()                             { return m_RCCpbSize;}
+
+  bool         getCpbSaturationEnabled() { return m_rcCpbSaturationEnabled; }
+  void         setCpbSaturationEnabled(bool b) { m_rcCpbSaturationEnabled = b; }
+  uint32_t     getCpbSize() { return m_RCCpbSize; }
   void         setCpbSize             ( uint32_t ui )                    { m_RCCpbSize = ui;   }
   double       getInitialCpbFullness  ()                             { return m_RCInitialCpbFullness;  }
   void         setInitialCpbFullness  (double f)                     { m_RCInitialCpbFullness = f;     }

@@ -851,9 +851,10 @@ protected:
   bool      m_RCUseLCUSeparateModel;              ///< use separate R-lambda model at LCU level                        NOTE: code-tidy - rename to m_RCUseCtuSeparateModel
   int       m_RCInitialQP;                        ///< inital QP for rate control
   bool      m_RCForceIntraQP;                     ///< force all intra picture to use initial QP or not
-  bool      m_RCCpbSaturationEnabled;             ///< enable target bits saturation to avoid CPB overflow and underflow
-  uint32_t      m_RCCpbSize;                          ///< CPB size
+  bool      m_rcCpbSaturationEnabled;             // enable target bits saturation to avoid CPB overflow and underflow
+  uint32_t  m_RCCpbSize;                          ///< CPB size
   double    m_RCInitialCpbFullness;               ///< initial CPB fullness
+
   ScalingListMode m_useScalingListId;                         ///< using quantization matrix
   std::string m_scalingListFileName;                          ///< quantization matrix file name
   bool      m_disableScalingMatrixForLfnstBlks;

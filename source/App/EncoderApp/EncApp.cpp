@@ -1317,7 +1317,7 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setUseLCUSeparateModel(m_RCUseLCUSeparateModel);
     m_cEncLib.setInitialQP(m_RCInitialQP);
     m_cEncLib.setForceIntraQP(m_RCForceIntraQP);
-    m_cEncLib.setCpbSaturationEnabled(m_RCCpbSaturationEnabled);
+    m_cEncLib.setCpbSaturationEnabled(m_rcCpbSaturationEnabled);
     m_cEncLib.setCpbSize(m_RCCpbSize);
     m_cEncLib.setInitialCpbFullness(m_RCInitialCpbFullness);
   }
