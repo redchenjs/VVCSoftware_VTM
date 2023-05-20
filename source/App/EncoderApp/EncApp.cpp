@@ -1308,18 +1308,18 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setRprRASLtoolSwitch                                 ( m_rprRASLtoolSwitch );
   m_cEncLib.setDepQuantEnabledFlag                               ( m_depQuantEnabledFlag);
   m_cEncLib.setSignDataHidingEnabledFlag                         ( m_signDataHidingEnabledFlag);
-  m_cEncLib.setUseRateCtrl                                       ( m_RCEnableRateControl );
-  if (m_RCEnableRateControl)
+  m_cEncLib.setUseRateCtrl(m_rcEnableRateControl);
+  if (m_rcEnableRateControl)
   {
-    m_cEncLib.setTargetBitrate(m_RCTargetBitrate);
-    m_cEncLib.setKeepHierBit(m_RCKeepHierarchicalBit);
-    m_cEncLib.setLCULevelRC(m_RCLCULevelRC);
-    m_cEncLib.setUseLCUSeparateModel(m_RCUseLCUSeparateModel);
-    m_cEncLib.setInitialQP(m_RCInitialQP);
-    m_cEncLib.setForceIntraQP(m_RCForceIntraQP);
-    m_cEncLib.setCpbSaturationEnabled(m_RCCpbSaturationEnabled);
-    m_cEncLib.setCpbSize(m_RCCpbSize);
-    m_cEncLib.setInitialCpbFullness(m_RCInitialCpbFullness);
+    m_cEncLib.setTargetBitrate(m_rcTargetBitrate);
+    m_cEncLib.setKeepHierBit(m_rcKeepHierarchicalBit);
+    m_cEncLib.setLCULevelRC(m_rcCtuLevelRateControl);
+    m_cEncLib.setUseLCUSeparateModel(m_rcUseCtuSeparateModel);
+    m_cEncLib.setInitialQP(m_rcInitialQp);
+    m_cEncLib.setForceIntraQP(m_rcForceIntraQp);
+    m_cEncLib.setCpbSaturationEnabled(m_rcCpbSaturationEnabled);
+    m_cEncLib.setCpbSize(m_rcCpbSize);
+    m_cEncLib.setInitialCpbFullness(m_rcInitialCpbFullness);
   }
   m_cEncLib.setCostMode                                          ( m_costMode );
   m_cEncLib.setTSRCdisableLL                                     ( m_TSRCdisableLL );

@@ -844,16 +844,20 @@ protected:
   int       m_TMVPModeId;
   bool      m_depQuantEnabledFlag;
   bool      m_signDataHidingEnabledFlag;
-  bool      m_RCEnableRateControl;                ///< enable rate control or not
-  int       m_RCTargetBitrate;                    ///< target bitrate when rate control is enabled
-  int       m_RCKeepHierarchicalBit;              ///< 0: equal bit allocation; 1: fixed ratio bit allocation; 2: adaptive ratio bit allocation
-  bool      m_RCLCULevelRC;                       ///< true: LCU level rate control; false: picture level rate control NOTE: code-tidy - rename to m_RCCtuLevelRC
-  bool      m_RCUseLCUSeparateModel;              ///< use separate R-lambda model at LCU level                        NOTE: code-tidy - rename to m_RCUseCtuSeparateModel
-  int       m_RCInitialQP;                        ///< inital QP for rate control
-  bool      m_RCForceIntraQP;                     ///< force all intra picture to use initial QP or not
-  bool      m_RCCpbSaturationEnabled;             ///< enable target bits saturation to avoid CPB overflow and underflow
-  uint32_t      m_RCCpbSize;                          ///< CPB size
-  double    m_RCInitialCpbFullness;               ///< initial CPB fullness
+
+  // Rate control
+  bool     m_rcEnableRateControl;      // enable rate control or not
+  int      m_rcTargetBitrate;          // target bitrate when rate control is enabled
+  int      m_rcKeepHierarchicalBit;    // 0: equal bit allocation; 1: fixed ratio bit allocation; 2: adaptive ratio bit
+                                       // allocation
+  bool     m_rcCtuLevelRateControl;    // true: CTU level rate control; false: picture level rate control
+  bool     m_rcUseCtuSeparateModel;    // use separate R-lambda model at CTU level
+  int      m_rcInitialQp;              // inital QP for rate control
+  bool     m_rcForceIntraQp;           // force all intra picture to use initial QP or not
+  bool     m_rcCpbSaturationEnabled;   // enable target bits saturation to avoid CPB overflow and underflow
+  uint32_t m_rcCpbSize;                // CPB size
+  double   m_rcInitialCpbFullness;     // initial CPB fullness
+
   ScalingListMode m_useScalingListId;                         ///< using quantization matrix
   std::string m_scalingListFileName;                          ///< quantization matrix file name
   bool      m_disableScalingMatrixForLfnstBlks;
