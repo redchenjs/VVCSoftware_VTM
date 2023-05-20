@@ -55,7 +55,7 @@
 #define MACRO_TO_STRING_HELPER(val) #val
 #define MACRO_TO_STRING(val) MACRO_TO_STRING_HELPER(val)
 
-namespace po = df::program_options_lite;
+namespace po = ProgramOptionsLite;
 
 enum ExtendedProfileName   // this is used for determining profile strings, where multiple profiles map to a single
                            // profile idc with various constraint flag combinations

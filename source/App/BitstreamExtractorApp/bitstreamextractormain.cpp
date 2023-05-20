@@ -54,10 +54,10 @@ int main(int argc, char* argv[])
   fprintf( stdout, NVM_BITS );
 #if ENABLE_SIMD_OPT
   std::string SIMD;
-  df::program_options_lite::Options optsSimd;
+  ProgramOptionsLite::Options optsSimd;
   optsSimd.addOptions()( "SIMD", SIMD, std::string( "" ), "" );
-  df::program_options_lite::SilentReporter err;
-  df::program_options_lite::scanArgv( optsSimd, argc, ( const char** ) argv, err );
+  ProgramOptionsLite::SilentReporter err;
+  ProgramOptionsLite::scanArgv(optsSimd, argc, (const char**) argv, err);
   fprintf( stdout, "[SIMD=%s] ", read_x86_extension( SIMD ) );
 #endif
 #if ENABLE_TRACING

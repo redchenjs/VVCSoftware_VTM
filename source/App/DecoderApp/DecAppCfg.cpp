@@ -44,7 +44,7 @@
 #include "CommonLib/ChromaFormat.h"
 #include "CommonLib/dtrace_next.h"
 
-namespace po = df::program_options_lite;
+namespace po = ProgramOptionsLite;
 
 //! \ingroup DecoderApp
 //! \{
