@@ -922,16 +922,16 @@ protected:
   uint32_t  m_PPSMaxNumMergeCandMinusMaxNumGeoCandPlus1;
   bool      m_DepQuantEnabledFlag;
   bool      m_SignDataHidingEnabledFlag;
-  bool      m_RCEnableRateControl;
-  int       m_RCTargetBitrate;
-  int       m_RCKeepHierarchicalBit;
-  bool      m_RCLCULevelRC;
-  bool      m_RCUseLCUSeparateModel;
-  int       m_RCInitialQP;
-  bool      m_RCForceIntraQP;
+  bool      m_rcEnableRateControl = false;
+  int       m_rcTargetBitrate;
+  int       m_rcKeepHierarchicalBit;
+  bool      m_rcCtuLevelRateControl;
+  bool      m_rcUseCtuSeparateModel;
+  int       m_rcInitialQp;
+  bool      m_rcForceIntraQp;
   bool      m_rcCpbSaturationEnabled = false;
-  uint32_t  m_RCCpbSize;
-  double    m_RCInitialCpbFullness;
+  uint32_t  m_rcCpbSize;
+  double    m_rcInitialCpbFullness;
   CostMode  m_costMode;                                       ///< The cost function to use, primarily when considering lossless coding.
   bool      m_TSRCdisableLL;                                  ///< Disable TSRC for lossless
 
@@ -2580,27 +2580,28 @@ public:
   bool         getDepQuantEnabledFlag()                              { return m_DepQuantEnabledFlag; }
   void         setSignDataHidingEnabledFlag( bool b )                { m_SignDataHidingEnabledFlag = b;    }
   bool         getSignDataHidingEnabledFlag()                        { return m_SignDataHidingEnabledFlag; }
-  bool         getUseRateCtrl         () const                       { return m_RCEnableRateControl;   }
-  void         setUseRateCtrl         ( bool b )                     { m_RCEnableRateControl = b;      }
-  int          getTargetBitrate       ()                             { return m_RCTargetBitrate;       }
-  void         setTargetBitrate       ( int bitrate )                { m_RCTargetBitrate  = bitrate;   }
-  int          getKeepHierBit         ()                             { return m_RCKeepHierarchicalBit; }
-  void         setKeepHierBit         ( int i )                      { m_RCKeepHierarchicalBit = i;    }
-  bool         getLCULevelRC          ()                             { return m_RCLCULevelRC; }
-  void         setLCULevelRC          ( bool b )                     { m_RCLCULevelRC = b; }
-  bool         getUseLCUSeparateModel ()                             { return m_RCUseLCUSeparateModel; }
-  void         setUseLCUSeparateModel ( bool b )                     { m_RCUseLCUSeparateModel = b;    }
-  int          getInitialQP           ()                             { return m_RCInitialQP;           }
-  void         setInitialQP           ( int QP )                     { m_RCInitialQP = QP;             }
-  bool         getForceIntraQP        ()                             { return m_RCForceIntraQP;        }
-  void         setForceIntraQP        ( bool b )                     { m_RCForceIntraQP = b;           }
+
+  bool getUseRateCtrl() const { return m_rcEnableRateControl; }
+  void setUseRateCtrl(bool b) { m_rcEnableRateControl = b; }
+  int  getTargetBitrate() const { return m_rcTargetBitrate; }
+  void setTargetBitrate(int bitrate) { m_rcTargetBitrate = bitrate; }
+  int  getKeepHierBit() const { return m_rcKeepHierarchicalBit; }
+  void setKeepHierBit(int i) { m_rcKeepHierarchicalBit = i; }
+  bool getLCULevelRC() const { return m_rcCtuLevelRateControl; }
+  void setLCULevelRC(bool b) { m_rcCtuLevelRateControl = b; }
+  bool getUseLCUSeparateModel() const { return m_rcUseCtuSeparateModel; }
+  void setUseLCUSeparateModel(bool b) { m_rcUseCtuSeparateModel = b; }
+  int  getInitialQP() const { return m_rcInitialQp; }
+  void setInitialQP(int QP) { m_rcInitialQp = QP; }
+  bool getForceIntraQP() const { return m_rcForceIntraQp; }
+  void setForceIntraQP(bool b) { m_rcForceIntraQp = b; }
 
   bool         getCpbSaturationEnabled() { return m_rcCpbSaturationEnabled; }
   void         setCpbSaturationEnabled(bool b) { m_rcCpbSaturationEnabled = b; }
-  uint32_t     getCpbSize() { return m_RCCpbSize; }
-  void         setCpbSize             ( uint32_t ui )                    { m_RCCpbSize = ui;   }
-  double       getInitialCpbFullness  ()                             { return m_RCInitialCpbFullness;  }
-  void         setInitialCpbFullness  (double f)                     { m_RCInitialCpbFullness = f;     }
+  uint32_t     getCpbSize() { return m_rcCpbSize; }
+  void         setCpbSize(uint32_t ui) { m_rcCpbSize = ui; }
+  double       getInitialCpbFullness() { return m_rcInitialCpbFullness; }
+  void         setInitialCpbFullness(double f) { m_rcInitialCpbFullness = f; }
   CostMode     getCostMode( ) const                                  { return m_costMode; }
   void         setCostMode(CostMode m )                              { m_costMode = m; }
   bool         getTSRCdisableLL       ()                             { return m_TSRCdisableLL;         }

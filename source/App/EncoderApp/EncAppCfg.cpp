@@ -1304,16 +1304,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ECU",                                             m_bUseEarlyCU,                                    false, "Early CU setting")
   ("FDM",                                             m_useFastDecisionForMerge,                         true, "Fast decision for Merge RD Cost")
   ("ESD",                                             m_useEarlySkipDetection,                          false, "Early SKIP detection setting")
-  ( "RateControl",                                    m_RCEnableRateControl,                            false, "Rate control: enable rate control" )
-  ( "TargetBitrate",                                  m_RCTargetBitrate,                                    0, "Rate control: target bit-rate" )
-  ( "KeepHierarchicalBit",                            m_RCKeepHierarchicalBit,                              0, "Rate control: 0: equal bit allocation; 1: fixed ratio bit allocation; 2: adaptive ratio bit allocation" )
-  ( "LCULevelRateControl",                            m_RCLCULevelRC,                                    true, "Rate control: true: CTU level RC; false: picture level RC" )
-  ( "RCLCUSeparateModel",                             m_RCUseLCUSeparateModel,                           true, "Rate control: use CTU level separate R-lambda model" )
-  ( "InitialQP",                                      m_RCInitialQP,                                        0, "Rate control: initial QP" )
-  ( "RCForceIntraQP",                                 m_RCForceIntraQP,                                 false, "Rate control: force intra QP to be equal to initial QP" )
+  ( "RateControl",                                    m_rcEnableRateControl,                            false, "Rate control: enable rate control" )
+  ( "TargetBitrate",                                  m_rcTargetBitrate,                                    0, "Rate control: target bit-rate" )
+  ( "KeepHierarchicalBit",                            m_rcKeepHierarchicalBit,                              0, "Rate control: 0: equal bit allocation; 1: fixed ratio bit allocation; 2: adaptive ratio bit allocation" )
+  ( "LCULevelRateControl",                            m_rcCtuLevelRateControl,                                    true, "Rate control: true: CTU level RC; false: picture level RC" )
+  ( "RCLCUSeparateModel",                             m_rcUseCtuSeparateModel,                           true, "Rate control: use CTU level separate R-lambda model" )
+  ( "InitialQP",                                      m_rcInitialQp,                                        0, "Rate control: initial QP" )
+  ( "RCForceIntraQP",                                 m_rcForceIntraQp,                                 false, "Rate control: force intra QP to be equal to initial QP" )
   ( "RCCpbSaturation",                                m_rcCpbSaturationEnabled,                         false, "Rate control: enable target bits saturation to avoid CPB overflow and underflow" )
-  ( "RCCpbSize",                                      m_RCCpbSize,                                         0u, "Rate control: CPB size" )
-  ( "RCInitialCpbFullness",                           m_RCInitialCpbFullness,                             0.9, "Rate control: initial CPB fullness" )
+  ( "RCCpbSize",                                      m_rcCpbSize,                                         0u, "Rate control: CPB size" )
+  ( "RCInitialCpbFullness",                           m_rcInitialCpbFullness,                             0.9, "Rate control: initial CPB fullness" )
   ("CostMode",                                        m_costMode,                         COST_STANDARD_LOSSY, "Use alternative cost functions: choose between 'lossy', 'sequence_level_lossless', 'lossless' (which forces QP to " MACRO_TO_STRING(LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP) ") and 'mixed_lossless_lossy' (which used QP'=" MACRO_TO_STRING(LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP_PRIME) " for pre-estimates of transquant-bypass blocks).")
   ("TSRCdisableLL",                                   m_TSRCdisableLL,                                   true, "Disable TSRC for lossless coding" )
   ("RecalculateQPAccordingToLambda",                  m_recalculateQPAccordingToLambda,                 false, "Recalculate QP values according to lambda values. Do not suggest to be enabled in all intra case")
@@ -3931,7 +3931,8 @@ bool EncAppCfg::xCheckParameter()
     m_pictureTimingSEIEnabled = false;
   }
 
-  xConfirmPara( m_bufferingPeriodSEIEnabled == true && m_RCCpbSize == 0,  "RCCpbSize must be greater than zero, when buffering period SEI is enabled" );
+  xConfirmPara(m_bufferingPeriodSEIEnabled && m_rcCpbSize == 0,
+               "RCCpbSize must be greater than zero, when buffering period SEI is enabled");
 
   xConfirmPara (m_log2MaxTransformSkipBlockSize < 2, "Transform Skip Log2 Max Size must be at least 2 (4x4)");
 
@@ -3962,7 +3963,8 @@ bool EncAppCfg::xCheckParameter()
 #endif
 #if SHARP_LUMA_DELTA_QP
   xConfirmPara( m_lumaLevelToDeltaQPMapping.mode && m_uiDeltaQpRD > 0,                      "Luma-level-based Delta QP cannot be used together with slice level multiple-QP optimization\n" );
-  xConfirmPara( m_lumaLevelToDeltaQPMapping.mode && m_RCEnableRateControl,                  "Luma-level-based Delta QP cannot be used together with rate control\n" );
+  xConfirmPara(m_lumaLevelToDeltaQPMapping.mode && m_rcEnableRateControl,
+               "Luma-level-based Delta QP cannot be used together with rate control\n");
 #endif
   if (m_lumaLevelToDeltaQPMapping.mode && m_lmcsEnabled)
   {
@@ -4932,22 +4934,23 @@ bool EncAppCfg::xCheckParameter()
 
   xConfirmPara( m_sariAspectRatioIdc < 0 || m_sariAspectRatioIdc > 255, "SEISARISampleAspectRatioIdc must be in the range of 0 to 255");
 
-  if ( m_RCEnableRateControl )
+  if (m_rcEnableRateControl)
   {
-    if ( m_RCForceIntraQP )
+    if (m_rcForceIntraQp)
     {
-      if ( m_RCInitialQP == 0 )
+      if (m_rcInitialQp == 0)
       {
         msg( WARNING, "\nInitial QP for rate control is not specified. Reset not to use force intra QP!" );
-        m_RCForceIntraQP = false;
+        m_rcForceIntraQp = false;
       }
     }
     xConfirmPara( m_uiDeltaQpRD > 0, "Rate control cannot be used together with slice level multiple-QP optimization!\n" );
     if (m_rcCpbSaturationEnabled && m_level != Level::NONE && m_profile != Profile::NONE)
     {
       uint32_t uiLevelIdx = (m_level / 16) * 4 + (uint32_t)((m_level % 16) / 3);
-      xConfirmPara(m_RCCpbSize > g_uiMaxCpbSize[m_levelTier][uiLevelIdx], "RCCpbSize should be smaller than or equal to Max CPB size according to tier and level");
-      xConfirmPara(m_RCInitialCpbFullness > 1, "RCInitialCpbFullness should be smaller than or equal to 1");
+      xConfirmPara(m_rcCpbSize > g_uiMaxCpbSize[m_levelTier][uiLevelIdx],
+                   "RCCpbSize should be smaller than or equal to Max CPB size according to tier and level");
+      xConfirmPara(m_rcInitialCpbFullness > 1, "RCInitialCpbFullness should be smaller than or equal to 1");
     }
   }
   else
@@ -5349,22 +5352,22 @@ void EncAppCfg::xPrintParameter()
     default:                                msg( DETAILS, "Cost function:                         : Unknown\n"); break;
   }
 
-  msg( DETAILS, "RateControl                            : %d\n", m_RCEnableRateControl );
+  msg(DETAILS, "RateControl                            : %d\n", m_rcEnableRateControl);
   msg( DETAILS, "WeightedPredMethod                     : %d\n", int(m_weightedPredictionMethod));
 
-  if(m_RCEnableRateControl)
+  if (m_rcEnableRateControl)
   {
-    msg( DETAILS, "TargetBitrate                          : %d\n", m_RCTargetBitrate );
-    msg( DETAILS, "KeepHierarchicalBit                    : %d\n", m_RCKeepHierarchicalBit );
-    msg( DETAILS, "LCULevelRC                             : %d\n", m_RCLCULevelRC );
-    msg( DETAILS, "UseLCUSeparateModel                    : %d\n", m_RCUseLCUSeparateModel );
-    msg( DETAILS, "InitialQP                              : %d\n", m_RCInitialQP );
-    msg( DETAILS, "ForceIntraQP                           : %d\n", m_RCForceIntraQP );
+    msg(DETAILS, "TargetBitrate                          : %d\n", m_rcTargetBitrate);
+    msg(DETAILS, "KeepHierarchicalBit                    : %d\n", m_rcKeepHierarchicalBit);
+    msg(DETAILS, "LCULevelRC                             : %d\n", m_rcCtuLevelRateControl);
+    msg(DETAILS, "UseLCUSeparateModel                    : %d\n", m_rcUseCtuSeparateModel);
+    msg(DETAILS, "InitialQP                              : %d\n", m_rcInitialQp);
+    msg(DETAILS, "ForceIntraQP                           : %d\n", m_rcForceIntraQp);
     msg(DETAILS, "CpbSaturation                          : %d\n", m_rcCpbSaturationEnabled);
     if (m_rcCpbSaturationEnabled)
     {
-      msg( DETAILS, "CpbSize                                : %d\n", m_RCCpbSize);
-      msg( DETAILS, "InitalCpbFullness                      : %.2f\n", m_RCInitialCpbFullness);
+      msg(DETAILS, "CpbSize                                : %d\n", m_rcCpbSize);
+      msg(DETAILS, "InitalCpbFullness                      : %.2f\n", m_rcInitialCpbFullness);
     }
   }
 

@@ -116,13 +116,13 @@ void EncLib::create( const int layerId )
     m_cReshaper.createEnc(getSourceWidth(), getSourceHeight(), m_maxCUWidth, m_maxCUHeight,
                           m_bitDepth[ChannelType::LUMA]);
   }
-  if ( m_RCEnableRateControl )
+  if (m_rcEnableRateControl)
   {
     Fraction frameRate = m_frameRate;
     frameRate.den *= m_temporalSubsampleRatio;
-    m_cRateCtrl.init(m_framesToBeEncoded, m_RCTargetBitrate, frameRate, m_gopSize, m_intraPeriod, m_sourceWidth,
+    m_cRateCtrl.init(m_framesToBeEncoded, m_rcTargetBitrate, frameRate, m_gopSize, m_intraPeriod, m_sourceWidth,
                      m_sourceHeight, m_maxCUWidth, m_maxCUHeight, getBitDepth(ChannelType::LUMA),
-                     m_RCKeepHierarchicalBit, m_RCUseLCUSeparateModel, m_GOPList);
+                     m_rcKeepHierarchicalBit, m_rcUseCtuSeparateModel, m_GOPList);
   }
 
 }
@@ -180,7 +180,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
   if (m_rcCpbSaturationEnabled)
   {
     m_cRateCtrl.initHrdParam(sps0.getGeneralHrdParameters(), sps0.getOlsHrdParameters(), m_frameRate,
-                             m_RCInitialCpbFullness);
+                             m_rcInitialCpbFullness);
   }
   m_cRdCost.setCostMode ( m_costMode );
 
@@ -643,7 +643,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
     {
       AQpPreanalyzer::preanalyze( picCurr );
     }
-    if( m_RCEnableRateControl )
+    if (m_rcEnableRateControl)
     {
       m_cRateCtrl.initRCGOP(m_receivedPicCount);
     }
@@ -658,7 +658,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
     this->setFeatureCounter(m_cGOPEncoder.getFeatureCounter());
 #endif
     m_cGOPEncoder.setEncodedLTRef( true );
-    if( m_RCEnableRateControl )
+    if (m_rcEnableRateControl)
     {
       m_cRateCtrl.destroyRCGOP();
     }
@@ -895,7 +895,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
     return true;
   }
 
-  if( m_RCEnableRateControl )
+  if (m_rcEnableRateControl)
   {
     m_cRateCtrl.initRCGOP(m_receivedPicCount);
   }
@@ -938,7 +938,7 @@ bool EncLib::encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBu
   m_metricTime = m_cGOPEncoder.getMetricTime();
 #endif
 
-  if( m_RCEnableRateControl )
+  if (m_rcEnableRateControl)
   {
     m_cRateCtrl.destroyRCGOP();
   }
@@ -1809,7 +1809,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     useDeltaQp = false;
   }
 
-  pps.setUseDQP(m_RCEnableRateControl || useDeltaQp);
+  pps.setUseDQP(m_rcEnableRateControl || useDeltaQp);
 
   if ( m_cuChromaQpOffsetList.size() > 0 )
   {
@@ -2149,7 +2149,7 @@ void EncLib::xInitPicHeader(PicHeader &picHeader, const SPS &sps, const PPS &pps
     useDeltaQp = false;
   }
 
-  if( m_RCEnableRateControl )
+  if (m_rcEnableRateControl)
   {
     picHeader.setCuQpDeltaSubdivIntra( 0 );
     picHeader.setCuQpDeltaSubdivInter( 0 );
