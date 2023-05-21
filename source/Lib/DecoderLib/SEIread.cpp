@@ -2832,8 +2832,33 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       subHeightC = 1;
     }
 
-      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_number_of_input_pictures_minus1");
-      sei.m_numberInputDecodedPicturesMinus1 = val;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_number_of_input_pictures_minus1");
+    sei.m_numberInputDecodedPicturesMinus1 = val;
+
+#if JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
+    sei.m_inputPicOutputFlag.clear();
+    if (sei.m_numberInputDecodedPicturesMinus1 > 0)
+    {
+      bool atLeastOne = false;
+      for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; i++)
+      {
+        sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_input_pic_output_flag");
+        sei.m_inputPicOutputFlag.push_back((bool)val);
+        if (sei.m_inputPicOutputFlag[i])
+        {
+          atLeastOne = true;
+        }
+      }
+      if ((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) == 0)
+      {
+        CHECK(!atLeastOne, "When picRateUpsamplingFlag is equal to 0 and nnpfc_num_input_pics_minus1 is greater than 0, at least one value of nnpfc_input_pic_output_flag[i] shall be greater than 0");
+      }
+    }
+    else
+    {
+      sei.m_inputPicOutputFlag.push_back(true);
+    }
+#endif
 
     if((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
     {
@@ -2902,11 +2927,13 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       }
       CHECK(!allZeroFlag, "At least one value of nnpfc_interpolated_pics[i] shall be greater than 0");
 
+#if !JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
       for (int i = 0; i <= sei.m_numberInterpolatedPictures.size(); i++)
       {
         sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_input_pic_output_flag");
         sei.m_inputPicOutputFlag[i] = val;
       }
+#endif
     }
 
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");

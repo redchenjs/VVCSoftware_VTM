@@ -2471,10 +2471,21 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     CHECK(int(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size()) < int(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i]) - 1, "Number Interpolated Pictures List must be greater than number of decoder pictures list");
 
     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i].values;
+#if JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
+    if (m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] == 0)
+    {
+      m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = {1};
+    }
+    else
+    {
+      CHECK(int(m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i].size()) < int(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i]) + 1, "Number of input picture output flags cannot be less than number of input decoded pictures");
+    }
+#else
     if (m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i].size() == 0)
     {
       m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i].push_back(0);
     }
+#endif
   }
 
   // TODO: check whether values are within valid range

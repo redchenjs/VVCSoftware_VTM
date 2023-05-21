@@ -61,6 +61,7 @@
 #define JVET_AD0169_SMALL_SCALE_DOWNSAMPLING              1 // JVET-AD0169: Downsampling filters in range 1.1 to 1.35 based on Kaiser(7) windowed sinc
 #define JVET_AD0386_SEI   1 // Extend the latest SEI processing order SEI message to enable signalling of prefix information for any type of SEI messages
 
+#define JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG           1
 
 //########### place macros to be be kept below this line ###############
 
