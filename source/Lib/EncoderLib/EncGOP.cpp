@@ -5085,7 +5085,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   if (conversion != IPCOLOURSPACE_UNCHANGED)
   {
     interm.create(pic.chromaFormat, Area(Position(), pic.Y()));
-    VideoIOYuv::ColourSpaceConvert(pic, interm, conversion, false);
+    VideoIOYuv::colourSpaceConvert(pic, interm, conversion, false);
   }
 
   const CPelUnitBuf& picC = (conversion == IPCOLOURSPACE_UNCHANGED) ? pic : interm;
@@ -5958,7 +5958,7 @@ void EncGOP::xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture* 
     {
       PelUnitBuf& reconField= (acPicRecFields[fieldNum]);
       cscd[fieldNum].create( reconField.chromaFormat, Area( Position(), reconField.Y()) );
-      VideoIOYuv::ColourSpaceConvert(reconField, cscd[fieldNum], conversion, false);
+      VideoIOYuv::colourSpaceConvert(reconField, cscd[fieldNum], conversion, false);
       acPicRecFields[fieldNum]=cscd[fieldNum];
     }
   }
