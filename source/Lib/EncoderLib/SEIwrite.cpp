@@ -1706,6 +1706,9 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       {
         xWriteFlag(sei.m_inputPicOutputFlag[i], "nnpfc_input_pic_output_flag");
       }
+#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
+      xWriteFlag(sei.m_absentInputPicZeroFlag, "nnpfc_absent_input_pic_zero_flag");
+#endif
     }
 #endif
 

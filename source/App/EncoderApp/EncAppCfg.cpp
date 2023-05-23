@@ -1931,6 +1931,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream InputPicOutputFlag;
     InputPicOutputFlag << "SEINNPFCInputPicOutputFlag" << i;
     opts.addOptions()(InputPicOutputFlag.str(), cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], "Indicates whether NNPF will generate a corresponding output picture for the input picture");
+#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
+    std::ostringstream absentInputPicZeroFlag;
+    absentInputPicZeroFlag << "SEINNPFCAbsentInputPicZeroFlag" << i;
+    opts.addOptions()(absentInputPicZeroFlag.str(), m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[i], false, "Specifies the value of nnpfc_absent_input_pic_zero_flag in the Neural Network Post Filter Characteristics SEI message");
+#endif
 
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
     opts.addOptions()("SEINNPostFilterActivationTargetId", m_nnPostFilterSEIActivationTargetId, 0u, "Target id of the Neural Network Post Filter on current picture");

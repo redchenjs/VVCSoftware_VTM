@@ -65,6 +65,8 @@
 
 #define JVET_AD0067_SWAP_SYNTAX                           1 // Swap the two syntax elements: nnpfc_auxiliary_inp_idc and nnpfc_inp_order_idc
 
+#define JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG      1
+
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
