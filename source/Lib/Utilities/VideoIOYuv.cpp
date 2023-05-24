@@ -31,10 +31,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** \file     VideoIOYuv.cpp
-    \brief    YUV file I/O class
-*/
-
 #include <cstdlib>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -46,13 +42,50 @@
 #include "VideoIOYuv.h"
 #include "CommonLib/Unit.h"
 
-#define FLIP_PIC 0
+namespace Y4M
+{
+constexpr int  SIGNATURE_LENGTH                      = 10;
+constexpr char SIGNATURE[SIGNATURE_LENGTH + 1]       = "YUV4MPEG2 ";
+constexpr int  MAX_HEADER_LENGTH                     = 255;
+constexpr int  FRAME_HEADER_LENGTH                   = 6;
+constexpr char FRAME_HEADER[FRAME_HEADER_LENGTH + 1] = "FRAME\n";
 
-constexpr int Y4M_SIGNATURE_LENGTH    = 10;
-const char    y4mSignature[]          = "YUV4MPEG2 ";
-constexpr int Y4M_MAX_HEADER_LENGTH   = 128;
-constexpr int Y4M_FRAME_HEADER_LENGTH = 6;   // basic Y4m frame header, "FRAME" + '\n'
-const char    y4mFrameHeader[]        = "FRAME\n";
+struct SamplingFormat
+{
+  char             name[16];
+  int              bitDepth;
+  ChromaFormat     chromaFormat;
+  Chroma420LocType locType;
+};
+
+static const std::array samplingFormats = {
+  SamplingFormat{ "mono9", 9, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "mono10", 10, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "mono12", 12, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "mono", 8, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
+
+  SamplingFormat{ "420jpeg", 8, ChromaFormat::_420, Chroma420LocType::CENTER },
+  SamplingFormat{ "420mpeg2", 8, ChromaFormat::_420, Chroma420LocType::LEFT },
+  SamplingFormat{ "420paldv", 8, ChromaFormat::_420, Chroma420LocType::TOP_LEFT },
+
+  SamplingFormat{ "420p9", 9, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "420p10", 10, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "420p12", 12, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "420", 8, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
+
+  SamplingFormat{ "422p9", 9, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "422p10", 10, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "422p12", 12, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "422", 8, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
+
+  SamplingFormat{ "444p9", 9, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "444p10", 10, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "444p12", 12, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
+  SamplingFormat{ "444", 8, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
+};
+};   // namespace Y4M
+
+constexpr int MAX_FILE_BIT_DEPTH = 16;
 
 // ====================================================================================================================
 // Local Functions
@@ -112,35 +145,19 @@ static void scalePlane( PelBuf& areaBuf, const int shiftbits, const Pel minval, 
 // Public member functions
 // ====================================================================================================================
 
-/**
- * Open file for reading/writing Y'CbCr frames.
- *
- * Frames read/written have bitdepth fileBitDepth, and are automatically
- * formatted as 8 or 16 bit word values (see VideoIOYuv::write()).
- *
- * Image data read or written is converted to/from internalBitDepth
- * (See scalePlane(), VideoIOYuv::read() and VideoIOYuv::write() for
- * further details).
- *
- * \param pchFile          file name string
- * \param bWriteMode       file open mode: true=write, false=read
- * \param fileBitDepth     bit-depth array of input/output file data.
- * \param MSBExtendedBitDepth
- * \param internalBitDepth bit-depth array to scale image data to/from when reading/writing.
- */
-void VideoIOYuv::open(const std::string &fileName, bool bWriteMode, const BitDepths &fileBitDepth,
-                      const BitDepths &MSBExtendedBitDepth, const BitDepths &internalBitDepth)
+void VideoIOYuv::open(const std::string& fileName, bool writeMode, const BitDepths& fileBitDepth,
+                      const BitDepths& msbExtendedBitDepth, const BitDepths& internalBitDepth)
 {
   //NOTE: files cannot have bit depth greater than 16
   for (const auto chType: { ChannelType::LUMA, ChannelType::CHROMA })
   {
-    m_fileBitdepth[chType]        = std::min<uint32_t>(fileBitDepth[chType], 16);
-    m_msbExtendedBitDepth[chType] = MSBExtendedBitDepth[chType];
+    m_fileBitdepth[chType]        = std::min<uint32_t>(fileBitDepth[chType], MAX_FILE_BIT_DEPTH);
+    m_msbExtendedBitDepth[chType] = msbExtendedBitDepth[chType];
     m_bitdepthShift[chType]       = internalBitDepth[chType] - m_msbExtendedBitDepth[chType];
 
-    if (m_fileBitdepth[chType] > 16)
+    if (fileBitDepth[chType] > MAX_FILE_BIT_DEPTH)
     {
-      if (bWriteMode)
+      if (writeMode)
       {
         std::cerr << "\nWARNING: Cannot write a yuv file of bit depth greater than 16 - output will be right-shifted down to 16-bit precision\n" << std::endl;
       }
@@ -151,11 +168,11 @@ void VideoIOYuv::open(const std::string &fileName, bool bWriteMode, const BitDep
     }
   }
 
-  if ( bWriteMode )
+  if (writeMode)
   {
-    m_cHandle.open(fileName.c_str(), std::ios::binary | std::ios::out);
+    m_fileStream.open(fileName.c_str(), std::ios::binary | std::ios::out);
 
-    if( m_cHandle.fail() )
+    if (m_fileStream.fail())
     {
       EXIT( "Failed to write reconstructed YUV file: " << fileName.c_str() );
     }
@@ -181,68 +198,32 @@ void VideoIOYuv::open(const std::string &fileName, bool bWriteMode, const BitDep
                            dummyLocType);
       }
     }
-    m_cHandle.open(fileName.c_str(), std::ios::binary | std::ios::in);
+    m_fileStream.open(fileName.c_str(), std::ios::binary | std::ios::in);
 
-    if( m_cHandle.fail() )
+    if (m_fileStream.fail())
     {
       EXIT( "Failed to open input YUV file: " << fileName.c_str() );
     }
 
     if (m_inY4mFileHeaderLength)
     {
-      m_cHandle.seekg(m_inY4mFileHeaderLength, std::ios::cur);
+      m_fileStream.seekg(m_inY4mFileHeaderLength, std::ios::cur);
     }
   }
-
-  return;
 }
-
-struct Y4mChromaFormat
-{
-  char             name[16];
-  int              bitDepth;
-  ChromaFormat     chromaFormat;
-  Chroma420LocType locType;
-};
-
-static const std::array y4mChromaFormats = {
-  Y4mChromaFormat{ "mono9", 9, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "mono10", 10, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "mono12", 12, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "mono", 8, ChromaFormat::_400, Chroma420LocType::UNSPECIFIED },
-
-  Y4mChromaFormat{ "420jpeg", 8, ChromaFormat::_420, Chroma420LocType::CENTER },
-  Y4mChromaFormat{ "420mpeg2", 8, ChromaFormat::_420, Chroma420LocType::LEFT },
-  Y4mChromaFormat{ "420paldv", 8, ChromaFormat::_420, Chroma420LocType::TOP_LEFT },
-
-  Y4mChromaFormat{ "420p9", 9, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "420p10", 10, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "420p12", 12, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "420", 8, ChromaFormat::_420, Chroma420LocType::UNSPECIFIED },
-
-  Y4mChromaFormat{ "422p9", 9, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "422p10", 10, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "422p12", 12, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "422", 8, ChromaFormat::_422, Chroma420LocType::UNSPECIFIED },
-
-  Y4mChromaFormat{ "444p9", 9, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "444p10", 10, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "444p12", 12, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
-  Y4mChromaFormat{ "444", 8, ChromaFormat::_444, Chroma420LocType::UNSPECIFIED },
-};
 
 void VideoIOYuv::parseY4mFileHeader(const std::string& fileName, int& width, int& height, Fraction& frameRate,
                                     int& bitDepth, ChromaFormat& chromaFormat, Chroma420LocType& locType)
 {
-  m_cHandle.open(fileName.c_str(), std::ios::binary | std::ios::in);
-  CHECK(m_cHandle.fail(), "File open failed.")
+  m_fileStream.open(fileName.c_str(), std::ios::binary | std::ios::in);
+  CHECK(m_fileStream.fail(), "File open failed.")
 
-  char header[Y4M_MAX_HEADER_LENGTH];
-  m_cHandle.read(header, sizeof(header));
-  CHECK(strncmp(header, y4mSignature, Y4M_SIGNATURE_LENGTH), "The input is not a Y4M file!");
+  char header[Y4M::MAX_HEADER_LENGTH];
+  m_fileStream.read(header, sizeof(header));
+  CHECK(strncmp(header, Y4M::SIGNATURE, Y4M::SIGNATURE_LENGTH), "The input is not a Y4M file!");
 
   // locate the end of the header
-  for (int i = Y4M_SIGNATURE_LENGTH + 1; i < Y4M_MAX_HEADER_LENGTH; i++)
+  for (int i = Y4M::SIGNATURE_LENGTH + 1; i < Y4M::MAX_HEADER_LENGTH; i++)
   {
     if (header[i] == '\n')
     {
@@ -252,7 +233,7 @@ void VideoIOYuv::parseY4mFileHeader(const std::string& fileName, int& width, int
     }
   }
   // parse Y4M header info
-  for (int i = Y4M_SIGNATURE_LENGTH; i < m_inY4mFileHeaderLength; i++)
+  for (int i = Y4M::SIGNATURE_LENGTH; i < m_inY4mFileHeaderLength; i++)
   {
     int numerator = 0, denominator = 0;
     switch (header[i])
@@ -260,7 +241,7 @@ void VideoIOYuv::parseY4mFileHeader(const std::string& fileName, int& width, int
     case 'W': sscanf(header + i + 1, "%d", &width); break;
     case 'H': sscanf(header + i + 1, "%d", &height); break;
     case 'C':
-      for (const auto& cf: y4mChromaFormats)
+      for (const auto& cf: Y4M::samplingFormats)
       {
         if (strncmp(&header[i + 1], cf.name, strlen(cf.name)) == 0)
         {
@@ -290,7 +271,7 @@ void VideoIOYuv::parseY4mFileHeader(const std::string& fileName, int& width, int
     i = (int) (strchr(header + i + 1, ' ') - header);
   }
 
-  m_cHandle.close();
+  m_fileStream.close();
 }
 
 void VideoIOYuv::setOutputY4mInfo(int width, int height, const Fraction& frameRate, int bitDepth,
@@ -308,14 +289,14 @@ void VideoIOYuv::writeY4mFileHeader()
 {
   CHECK(m_outPicWidth == 0 || m_outPicHeight == 0 || m_outBitDepth == 0 || m_outFrameRate.num == 0,
         "Output Y4M file into has not been set");
-  std::string header = y4mSignature;
+  std::string header = Y4M::SIGNATURE;
   header += "W" + std::to_string(m_outPicWidth) + " ";
   header += "H" + std::to_string(m_outPicHeight) + " ";
   header += "F" + std::to_string(m_outFrameRate.num) + ":" + std::to_string(m_outFrameRate.den) + " ";
   header += "Ip A0:0 ";
   header += "C";
   bool found = false;
-  for (const auto& cf: y4mChromaFormats)
+  for (const auto& cf: Y4M::samplingFormats)
   {
     if (m_outBitDepth == cf.bitDepth && m_outChromaFormat == cf.chromaFormat && m_outLocType == cf.locType)
     {
@@ -326,7 +307,7 @@ void VideoIOYuv::writeY4mFileHeader()
   }
   if (!found)
   {
-    for (const auto& cf: y4mChromaFormats)
+    for (const auto& cf: Y4M::samplingFormats)
     {
       if (m_outBitDepth == cf.bitDepth && m_outChromaFormat == cf.chromaFormat
           && Chroma420LocType::UNSPECIFIED == cf.locType)
@@ -342,23 +323,14 @@ void VideoIOYuv::writeY4mFileHeader()
   header += "\n";
   // not write extension/comment
 
-  m_cHandle.write(header.c_str(), header.length());
+  m_fileStream.write(header.c_str(), header.length());
 }
 
-void VideoIOYuv::close()
-{
-  m_cHandle.close();
-}
+void VideoIOYuv::close() { m_fileStream.close(); }
 
-bool VideoIOYuv::isEof()
-{
-  return m_cHandle.eof();
-}
+bool VideoIOYuv::isEof() { return m_fileStream.eof(); }
 
-bool VideoIOYuv::isFail()
-{
-  return m_cHandle.fail();
-}
+bool VideoIOYuv::isFail() { return m_fileStream.fail(); }
 
 /**
  * Skip numFrames in input.
@@ -394,26 +366,26 @@ void VideoIOYuv::skipFrames(uint32_t numFrames, uint32_t width, uint32_t height,
   //------------------
   if (m_inY4mFileHeaderLength)
   {
-    frameSize += Y4M_FRAME_HEADER_LENGTH;
+    frameSize += Y4M::FRAME_HEADER_LENGTH;
   }
 
   const std::streamoff offset = frameSize * numFrames;
 
   /* attempt to seek */
-  if (!!m_cHandle.seekg(offset, std::ios::cur))
+  if (!!m_fileStream.seekg(offset, std::ios::cur))
   {
     return; /* success */
   }
-  m_cHandle.clear();
+  m_fileStream.clear();
 
   /* fall back to consuming the input */
   char buf[512];
-  const std::streamoff offset_mod_bufsize = offset % sizeof(buf);
-  for (std::streamoff i = 0; i < offset - offset_mod_bufsize; i += sizeof(buf))
+  const std::streamoff offsetModeBufsize = offset % sizeof(buf);
+  for (std::streamoff i = 0; i < offset - offsetModeBufsize; i += sizeof(buf))
   {
-    m_cHandle.read(buf, sizeof(buf));
+    m_fileStream.read(buf, sizeof(buf));
   }
-  m_cHandle.read(buf, offset_mod_bufsize);
+  m_fileStream.read(buf, offsetModeBufsize);
 }
 
 /**
@@ -439,30 +411,30 @@ static bool readPlane(Pel *dst, std::istream &fd, bool is16bit, ptrdiff_t stride
                       uint32_t height444, uint32_t pad_x444, uint32_t pad_y444, const ComponentID compID,
                       const ChromaFormat destFormat, const ChromaFormat fileFormat, const uint32_t fileBitDepth)
 {
-  const uint32_t csx_file =getComponentScaleX(compID, fileFormat);
-  const uint32_t csy_file =getComponentScaleY(compID, fileFormat);
-  const uint32_t csx_dest =getComponentScaleX(compID, destFormat);
-  const uint32_t csy_dest =getComponentScaleY(compID, destFormat);
+  const uint32_t csxFile = getComponentScaleX(compID, fileFormat);
+  const uint32_t csyFile = getComponentScaleY(compID, fileFormat);
+  const uint32_t csxDest = getComponentScaleX(compID, destFormat);
+  const uint32_t csyDest = getComponentScaleY(compID, destFormat);
 
-  const uint32_t width_dest       = width444 >>csx_dest;
-  const uint32_t height_dest      = height444>>csy_dest;
-  const uint32_t pad_x_dest       = pad_x444>>csx_dest;
-  const uint32_t pad_y_dest       = pad_y444>>csy_dest;
+  const uint32_t widthDest  = width444 >> csxDest;
+  const uint32_t heightDest = height444 >> csyDest;
+  const uint32_t padDestX   = pad_x444 >> csxDest;
+  const uint32_t padDestY   = pad_y444 >> csyDest;
 #if EXTENSION_360_VIDEO
-  const ptrdiff_t stride_dest = stride444;
+  const ptrdiff_t strideDest = stride444;
 #else
-  const ptrdiff_t stride_dest = stride444 >> csx_dest;
+  const ptrdiff_t strideDest  = stride444 >> csxDest;
 #endif
-  const uint32_t full_width_dest  = width_dest+pad_x_dest;
-  const uint32_t full_height_dest = height_dest+pad_y_dest;
+  const uint32_t fullWidthDest  = widthDest + padDestX;
+  const uint32_t fullHeightDest = heightDest + padDestY;
 
-  const uint32_t stride_file      = (width444 * (is16bit ? 2 : 1)) >> csx_file;
-  std::vector<uint8_t> bufVec(stride_file);
+  const uint32_t       strideFile = (width444 * (is16bit ? 2 : 1)) >> csxFile;
+  std::vector<uint8_t> bufVec(strideFile);
   uint8_t *buf=&(bufVec[0]);
 
-  Pel  *pDstPad              = dst + stride_dest * height_dest;
+  Pel*            pDstPad              = dst + strideDest * heightDest;
   Pel  *pDstBuf              = dst;
-  const ptrdiff_t dstbuf_stride        = stride_dest;
+  const ptrdiff_t dstBufStride         = strideDest;
 
   if (compID != COMPONENT_Y && (!isChromaEnabled(fileFormat) || !isChromaEnabled(destFormat)))
   {
@@ -470,9 +442,9 @@ static bool readPlane(Pel *dst, std::istream &fd, bool is16bit, ptrdiff_t stride
     {
       // set chrominance data to mid-range: (1<<(fileBitDepth-1))
       const Pel value=Pel(1<<(fileBitDepth-1));
-      for (uint32_t y = 0; y < full_height_dest; y++, pDstBuf+= dstbuf_stride)
+      for (uint32_t y = 0; y < fullHeightDest; y++, pDstBuf += dstBufStride)
       {
-        for (uint32_t x = 0; x < full_width_dest; x++)
+        for (uint32_t x = 0; x < fullWidthDest; x++)
         {
           pDstBuf[x] = value;
         }
@@ -481,8 +453,8 @@ static bool readPlane(Pel *dst, std::istream &fd, bool is16bit, ptrdiff_t stride
 
     if (isChromaEnabled(fileFormat))
     {
-      const uint32_t height_file      = height444>>csy_file;
-      fd.seekg(height_file * stride_file, std::ios::cur);
+      const uint32_t heightFile = height444 >> csyFile;
+      fd.seekg(heightFile * strideFile, std::ios::cur);
       if (fd.eof() || fd.fail() )
       {
         return false;
@@ -491,37 +463,37 @@ static bool readPlane(Pel *dst, std::istream &fd, bool is16bit, ptrdiff_t stride
   }
   else
   {
-    const uint32_t mask_y_file=(1<<csy_file)-1;
-    const uint32_t mask_y_dest=(1<<csy_dest)-1;
+    const uint32_t maskFileY = (1 << csyFile) - 1;
+    const uint32_t maskDestY = (1 << csyDest) - 1;
     for(uint32_t y444=0; y444<height444; y444++)
     {
-      if ((y444&mask_y_file)==0)
+      if ((y444 & maskFileY) == 0)
       {
         // read a new line
-        fd.read(reinterpret_cast<char*>(buf), stride_file);
+        fd.read(reinterpret_cast<char*>(buf), strideFile);
         if (fd.eof() || fd.fail() )
         {
           return false;
         }
       }
 
-      if ((y444&mask_y_dest)==0)
+      if ((y444 & maskDestY) == 0)
       {
         // process current destination line
-        if (csx_file < csx_dest)
+        if (csxFile < csxDest)
         {
           // eg file is 444, dest is 422.
-          const uint32_t sx=csx_dest-csx_file;
+          const uint32_t sx = csxDest - csxFile;
           if (!is16bit)
           {
-            for (uint32_t x = 0; x < width_dest; x++)
+            for (uint32_t x = 0; x < widthDest; x++)
             {
               pDstBuf[x] = buf[x<<sx];
             }
           }
           else
           {
-            for (uint32_t x = 0; x < width_dest; x++)
+            for (uint32_t x = 0; x < widthDest; x++)
             {
               pDstBuf[x] = Pel(buf[(x<<sx)*2+0]) | (Pel(buf[(x<<sx)*2+1])<<8);
             }
@@ -530,17 +502,17 @@ static bool readPlane(Pel *dst, std::istream &fd, bool is16bit, ptrdiff_t stride
         else
         {
           // eg file is 422, dest is 444.
-          const uint32_t sx=csx_file-csx_dest;
+          const uint32_t sx = csxFile - csxDest;
           if (!is16bit)
           {
-            for (uint32_t x = 0; x < width_dest; x++)
+            for (uint32_t x = 0; x < widthDest; x++)
             {
               pDstBuf[x] = buf[x>>sx];
             }
           }
           else
           {
-            for (uint32_t x = 0; x < width_dest; x++)
+            for (uint32_t x = 0; x < widthDest; x++)
             {
               pDstBuf[x] = Pel(buf[(x>>sx)*2+0]) | (Pel(buf[(x>>sx)*2+1])<<8);
             }
@@ -548,22 +520,22 @@ static bool readPlane(Pel *dst, std::istream &fd, bool is16bit, ptrdiff_t stride
         }
 
         // process right hand side padding
-        const Pel val=dst[width_dest-1];
-        for (uint32_t x = width_dest; x < full_width_dest; x++)
+        const Pel val = dst[widthDest - 1];
+        for (uint32_t x = widthDest; x < fullWidthDest; x++)
         {
           pDstBuf[x] = val;
         }
 
-        pDstBuf+= dstbuf_stride;
+        pDstBuf += dstBufStride;
       }
     }
 
     // process lower padding
-    for (uint32_t y = height_dest; y < full_height_dest; y++, pDstPad+=stride_dest)
+    for (uint32_t y = heightDest; y < fullHeightDest; y++, pDstPad += strideDest)
     {
-      for (uint32_t x = 0; x < full_width_dest; x++)
+      for (uint32_t x = 0; x < fullWidthDest; x++)
       {
-        pDstPad[x] = (pDstPad - stride_dest)[x];
+        pDstPad[x] = (pDstPad - strideDest)[x];
       }
     }
   }
@@ -618,47 +590,49 @@ static bool verifyPlane(Pel *dst, ptrdiff_t stride444, uint32_t width444, uint32
  * @param fileBitDepth component bit depth in file
  * @return true for success, false in case of error
  */
-static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, const Pel *src, const bool is16bit,
-                       const ptrdiff_t stride_src, uint32_t width444, uint32_t height444, const ComponentID compID,
+static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream& fd, const Pel* src, const bool is16bit,
+                       const ptrdiff_t strideSrc, uint32_t width444, uint32_t height444, const ComponentID compID,
                        const ChromaFormat srcFormat, const ChromaFormat fileFormat, const uint32_t fileBitDepth,
                        const uint32_t packedYUVOutputMode = 0)
 {
-  const uint32_t csx_file =getComponentScaleX(compID, fileFormat);
-  const uint32_t csy_file =getComponentScaleY(compID, fileFormat);
-  const uint32_t csx_src  =getComponentScaleX(compID, srcFormat);
-  const uint32_t csy_src  =getComponentScaleY(compID, srcFormat);
+  const uint32_t csxFile = getComponentScaleX(compID, fileFormat);
+  const uint32_t csyFile = getComponentScaleY(compID, fileFormat);
+  const uint32_t csxSrc  = getComponentScaleX(compID, srcFormat);
+  const uint32_t csySrc  = getComponentScaleY(compID, srcFormat);
 
-  const uint32_t width_file  = width444  >> csx_file;
-  const uint32_t height_file = height444 >> csy_file;
-  const bool     writePYUV   = (packedYUVOutputMode > 0) && (fileBitDepth == 10 || fileBitDepth == 12) && ((width_file & (1 + (fileBitDepth & 3))) == 0);
+  const uint32_t widthFile  = width444 >> csxFile;
+  const uint32_t heightFile = height444 >> csyFile;
+  const bool     writePYUV  = (packedYUVOutputMode > 0) && (fileBitDepth == 10 || fileBitDepth == 12)
+                         && ((widthFile & (1 + (fileBitDepth & 3))) == 0);
 
-  CHECK( csx_file != csx_src, "Not supported" );
-  const uint32_t stride_file = writePYUV ? ( orgWidth * fileBitDepth ) >> ( csx_file + 3 ) : ( orgWidth * ( is16bit ? 2 : 1 ) ) >> csx_file;
+  CHECK(csxFile != csxSrc, "Not supported");
+  const uint32_t strideFile =
+    writePYUV ? (orgWidth * fileBitDepth) >> (csxFile + 3) : (orgWidth * (is16bit ? 2 : 1)) >> csxFile;
 
-  std::vector<uint8_t> bufVec(stride_file);
+  std::vector<uint8_t> bufVec(strideFile);
   uint8_t *buf=&(bufVec[0]);
 
   const Pel *pSrcBuf         = src;
-  const ptrdiff_t srcbuf_stride   = stride_src;
+  const ptrdiff_t srcBufStride    = strideSrc;
 
   if (writePYUV)
   {
-    const uint32_t mask_y_file = (1 << csy_file) - 1;
-    const uint32_t mask_y_src  = (1 << csy_src ) - 1;
-    const uint32_t widthS_file = width_file >> (fileBitDepth == 12 ? 1 : 2);
+    const uint32_t maskFileY  = (1 << csyFile) - 1;
+    const uint32_t maskSrcY   = (1 << csySrc) - 1;
+    const uint32_t widthFileS = widthFile >> (fileBitDepth == 12 ? 1 : 2);
 
     for (uint32_t y444 = 0; y444 < height444; y444++)
     {
-      if ((y444 & mask_y_file) == 0)  // write a new line to file
+      if ((y444 & maskFileY) == 0)   // write a new line to file
       {
-        if (csx_file < csx_src)
+        if (csxFile < csxSrc)
         {
           // eg file is 444, source is 422.
-          const uint32_t sx = csx_src - csx_file;
+          const uint32_t sx = csxSrc - csxFile;
 
           if (fileBitDepth == 10)  // write 4 values into 5 bytes
           {
-            for (uint32_t x = 0; x < widthS_file; x++)
+            for (uint32_t x = 0; x < widthFileS; x++)
             {
               const uint32_t src0 = pSrcBuf[(4*x  ) >> sx];
               const uint32_t src1 = pSrcBuf[(4*x+1) >> sx];
@@ -674,7 +648,7 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, 
           }
           else if (fileBitDepth == 12) //...2 values into 3 bytes
           {
-            for (uint32_t x = 0; x < widthS_file; x++)
+            for (uint32_t x = 0; x < widthFileS; x++)
             {
               const uint32_t src0 = pSrcBuf[(2*x  ) >> sx];
               const uint32_t src1 = pSrcBuf[(2*x+1) >> sx];
@@ -688,11 +662,11 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, 
         else
         {
           // eg file is 422, source is 444.
-          const uint32_t sx = csx_file - csx_src;
+          const uint32_t sx = csxFile - csxSrc;
 
           if (fileBitDepth == 10)  // write 4 values into 5 bytes
           {
-            for (uint32_t x = 0; x < widthS_file; x++)
+            for (uint32_t x = 0; x < widthFileS; x++)
             {
               const uint32_t src0 = pSrcBuf[(4*x  ) << sx];
               const uint32_t src1 = pSrcBuf[(4*x+1) << sx];
@@ -708,7 +682,7 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, 
           }
           else if (fileBitDepth == 12) //...2 values into 3 bytes
           {
-            for (uint32_t x = 0; x < widthS_file; x++)
+            for (uint32_t x = 0; x < widthFileS; x++)
             {
               const uint32_t src0 = pSrcBuf[(2*x  ) << sx];
               const uint32_t src1 = pSrcBuf[(2*x+1) << sx];
@@ -720,16 +694,16 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, 
           }
         }
 
-        fd.write (reinterpret_cast<const char*>(buf), stride_file);
+        fd.write(reinterpret_cast<const char*>(buf), strideFile);
         if (fd.eof() || fd.fail())
         {
           return false;
         }
       }
 
-      if ((y444 & mask_y_src) == 0)
+      if ((y444 & maskSrcY) == 0)
       {
-        pSrcBuf += srcbuf_stride;
+        pSrcBuf += srcBufStride;
       }
     }
 
@@ -738,20 +712,20 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, 
     {
       for (uint32_t y444 = height444; y444 < orgHeight; y444++)
       {
-        if ((y444 & mask_y_file) == 0) // if this is chroma, determine whether to skip every other row
+        if ((y444 & maskFileY) == 0)   // if this is chroma, determine whether to skip every other row
         {
-          memset (reinterpret_cast<char*>(buf), 0, stride_file);
+          memset(reinterpret_cast<char*>(buf), 0, strideFile);
 
-          fd.write (reinterpret_cast<const char*>(buf), stride_file);
+          fd.write(reinterpret_cast<const char*>(buf), strideFile);
           if (fd.eof() || fd.fail())
           {
             return false;
           }
         }
 
-        if ((y444 & mask_y_src) == 0)
+        if ((y444 & maskSrcY) == 0)
         {
-          pSrcBuf += srcbuf_stride;
+          pSrcBuf += srcBufStride;
         }
       }
     }
@@ -763,12 +737,12 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, 
       {
         const uint32_t value = 1 << (fileBitDepth - 1);
 
-        for (uint32_t y = 0; y < height_file; y++)
+        for (uint32_t y = 0; y < heightFile; y++)
         {
           if (!is16bit)
           {
             uint8_t val(value);
-            for (uint32_t x = 0; x < width_file; x++)
+            for (uint32_t x = 0; x < widthFile; x++)
             {
               buf[x] = val;
             }
@@ -776,14 +750,14 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, 
           else
           {
             uint16_t val(value);
-            for (uint32_t x = 0; x < width_file; x++)
+            for (uint32_t x = 0; x < widthFile; x++)
             {
               buf[2 * x]     = (val >> 0) & 0xff;
               buf[2 * x + 1] = (val >> 8) & 0xff;
             }
           }
 
-          fd.write(reinterpret_cast<const char*>(buf), stride_file);
+          fd.write(reinterpret_cast<const char*>(buf), strideFile);
           if (fd.eof() || fd.fail())
           {
             return false;
@@ -793,28 +767,28 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, 
   }
   else
   {
-    const uint32_t mask_y_file = (1 << csy_file) - 1;
-    const uint32_t mask_y_src  = (1 << csy_src ) - 1;
+    const uint32_t maskFileY = (1 << csyFile) - 1;
+    const uint32_t maskSrcY  = (1 << csySrc) - 1;
 
     for (uint32_t y444 = 0; y444 < height444; y444++)
     {
-      if ((y444 & mask_y_file) == 0)
+      if ((y444 & maskFileY) == 0)
       {
         // write a new line
-        if (csx_file < csx_src)
+        if (csxFile < csxSrc)
         {
           // eg file is 444, source is 422.
-          const uint32_t sx = csx_src - csx_file;
+          const uint32_t sx = csxSrc - csxFile;
           if (!is16bit)
           {
-            for (uint32_t x = 0; x < width_file; x++)
+            for (uint32_t x = 0; x < widthFile; x++)
             {
               buf[x] = (uint8_t)(pSrcBuf[x>>sx]);
             }
           }
           else
           {
-            for (uint32_t x = 0; x < width_file; x++)
+            for (uint32_t x = 0; x < widthFile; x++)
             {
               buf[2*x  ] = (pSrcBuf[x>>sx]>>0) & 0xff;
               buf[2*x+1] = (pSrcBuf[x>>sx]>>8) & 0xff;
@@ -824,17 +798,17 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, 
         else
         {
           // eg file is 422, source is 444.
-          const uint32_t sx = csx_file - csx_src;
+          const uint32_t sx = csxFile - csxSrc;
           if (!is16bit)
           {
-            for (uint32_t x = 0; x < width_file; x++)
+            for (uint32_t x = 0; x < widthFile; x++)
             {
               buf[x] = (uint8_t)(pSrcBuf[x<<sx]);
             }
           }
           else
           {
-            for (uint32_t x = 0; x < width_file; x++)
+            for (uint32_t x = 0; x < widthFile; x++)
             {
               buf[2*x  ] = (pSrcBuf[x<<sx]>>0) & 0xff;
               buf[2*x+1] = (pSrcBuf[x<<sx]>>8) & 0xff;
@@ -842,49 +816,49 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, 
           }
         }
 
-        fd.write (reinterpret_cast<const char*>(buf), stride_file);
+        fd.write(reinterpret_cast<const char*>(buf), strideFile);
         if (fd.eof() || fd.fail())
         {
           return false;
         }
       }
 
-      if ((y444 & mask_y_src) == 0)
+      if ((y444 & maskSrcY) == 0)
       {
-        pSrcBuf += srcbuf_stride;
+        pSrcBuf += srcBufStride;
       }
     }
 
     // here height444 and orgHeight are luma heights
     for( uint32_t y444 = height444; y444 < orgHeight; y444++ )
     {
-      if( ( y444 & mask_y_file ) == 0 ) // if this is chroma, determine whether to skip every other row
+      if ((y444 & maskFileY) == 0)   // if this is chroma, determine whether to skip every other row
       {
         if( !is16bit )
         {
-          for( uint32_t x = 0; x < ( orgWidth >> csx_file ); x++ )
+          for (uint32_t x = 0; x < (orgWidth >> csxFile); x++)
           {
             buf[x] = 0;
           }
         }
         else
         {
-          for( uint32_t x = 0; x < ( orgWidth >> csx_file ); x++ )
+          for (uint32_t x = 0; x < (orgWidth >> csxFile); x++)
           {
             buf[2 * x] = 0;
             buf[2 * x + 1] = 0;
           }
         }
-        fd.write( reinterpret_cast<const char*>( buf ), stride_file );
+        fd.write(reinterpret_cast<const char*>(buf), strideFile);
         if( fd.eof() || fd.fail() )
         {
           return false;
         }
       }
 
-      if( ( y444 & mask_y_src ) == 0 )
+      if ((y444 & maskSrcY) == 0)
       {
-        pSrcBuf += srcbuf_stride;
+        pSrcBuf += srcBufStride;
       }
     }
 
@@ -892,22 +866,24 @@ static bool writePlane(uint32_t orgWidth, uint32_t orgHeight, std::ostream &fd, 
   return true;
 }
 
-static bool writeField(std::ostream &fd, const Pel *top, const Pel *bottom, const bool is16bit,
-                       const ptrdiff_t stride_src, uint32_t width444, uint32_t height444, const ComponentID compID,
+static bool writeField(std::ostream& fd, const Pel* top, const Pel* bottom, const bool is16bit,
+                       const ptrdiff_t strideSrc, uint32_t width444, uint32_t height444, const ComponentID compID,
                        const ChromaFormat srcFormat, const ChromaFormat fileFormat, const uint32_t fileBitDepth,
                        const bool isTff, const uint32_t packedYUVOutputMode = 0)
 {
-  const uint32_t csx_file =getComponentScaleX(compID, fileFormat);
-  const uint32_t csy_file =getComponentScaleY(compID, fileFormat);
-  const uint32_t csx_src  =getComponentScaleX(compID, srcFormat);
-  const uint32_t csy_src  =getComponentScaleY(compID, srcFormat);
+  const uint32_t csxFile = getComponentScaleX(compID, fileFormat);
+  const uint32_t csyFile = getComponentScaleY(compID, fileFormat);
+  const uint32_t csxSrc  = getComponentScaleX(compID, srcFormat);
+  const uint32_t csySrc  = getComponentScaleY(compID, srcFormat);
 
-  const uint32_t width_file  = width444  >> csx_file;
-  const uint32_t height_file = height444 >> csy_file;
-  const bool     writePYUV   = (packedYUVOutputMode > 0) && (fileBitDepth == 10 || fileBitDepth == 12) && ((width_file & (1 + (fileBitDepth & 3))) == 0);
-  const uint32_t stride_file = writePYUV ? (width444 * fileBitDepth) >> (csx_file + 3) : (width444 * (is16bit ? 2 : 1)) >> csx_file;
+  const uint32_t widthFile  = width444 >> csxFile;
+  const uint32_t heightFile = height444 >> csyFile;
+  const bool     writePYUV  = (packedYUVOutputMode > 0) && (fileBitDepth == 10 || fileBitDepth == 12)
+                         && ((widthFile & (1 + (fileBitDepth & 3))) == 0);
+  const uint32_t strideFile =
+    writePYUV ? (width444 * fileBitDepth) >> (csxFile + 3) : (width444 * (is16bit ? 2 : 1)) >> csxFile;
 
-  std::vector<uint8_t> bufVec(stride_file * 2);
+  std::vector<uint8_t> bufVec(strideFile * 2);
   uint8_t *buf=&(bufVec[0]);
 
   if (writePYUV)
@@ -921,16 +897,16 @@ static bool writeField(std::ostream &fd, const Pel *top, const Pel *bottom, cons
       {
         const uint32_t value = 1 << (fileBitDepth - 1);
 
-        for (uint32_t y = 0; y < height_file; y++)
+        for (uint32_t y = 0; y < heightFile; y++)
         {
           for (uint32_t field = 0; field < 2; field++)
           {
-            uint8_t* fieldBuffer = buf + (field * stride_file);
+            uint8_t* fieldBuffer = buf + (field * strideFile);
 
             if (!is16bit)
             {
               uint8_t val(value);
-              for (uint32_t x = 0; x < width_file; x++)
+              for (uint32_t x = 0; x < widthFile; x++)
               {
                 fieldBuffer[x] = val;
               }
@@ -938,7 +914,7 @@ static bool writeField(std::ostream &fd, const Pel *top, const Pel *bottom, cons
             else
             {
               uint16_t val(value);
-              for (uint32_t x = 0; x < width_file; x++)
+              for (uint32_t x = 0; x < widthFile; x++)
               {
                 fieldBuffer[2 * x]     = (val >> 0) & 0xff;
                 fieldBuffer[2 * x + 1] = (val >> 8) & 0xff;
@@ -946,7 +922,7 @@ static bool writeField(std::ostream &fd, const Pel *top, const Pel *bottom, cons
             }
           }
 
-          fd.write(reinterpret_cast<const char*>(buf), (stride_file * 2));
+          fd.write(reinterpret_cast<const char*>(buf), (strideFile * 2));
           if (fd.eof() || fd.fail())
           {
             return false;
@@ -956,32 +932,32 @@ static bool writeField(std::ostream &fd, const Pel *top, const Pel *bottom, cons
   }
   else
   {
-    const uint32_t mask_y_file=(1<<csy_file)-1;
-    const uint32_t mask_y_src =(1<<csy_src )-1;
+    const uint32_t maskFileY = (1 << csyFile) - 1;
+    const uint32_t maskSrcY  = (1 << csySrc) - 1;
     for(uint32_t y444=0; y444<height444; y444++)
     {
-      if ((y444&mask_y_file)==0)
+      if ((y444 & maskFileY) == 0)
       {
         for (uint32_t field = 0; field < 2; field++)
         {
-          uint8_t *fieldBuffer = buf + (field * stride_file);
+          uint8_t*   fieldBuffer = buf + (field * strideFile);
           const Pel *src     = (((field == 0) && isTff) || ((field == 1) && (!isTff))) ? top : bottom;
 
           // write a new line
-          if (csx_file < csx_src)
+          if (csxFile < csxSrc)
           {
             // eg file is 444, source is 422.
-            const uint32_t sx=csx_src-csx_file;
+            const uint32_t sx = csxSrc - csxFile;
             if (!is16bit)
             {
-              for (uint32_t x = 0; x < width_file; x++)
+              for (uint32_t x = 0; x < widthFile; x++)
               {
                 fieldBuffer[x] = (uint8_t)(src[x>>sx]);
               }
             }
             else
             {
-              for (uint32_t x = 0; x < width_file; x++)
+              for (uint32_t x = 0; x < widthFile; x++)
               {
                 fieldBuffer[2*x  ] = (src[x>>sx]>>0) & 0xff;
                 fieldBuffer[2*x+1] = (src[x>>sx]>>8) & 0xff;
@@ -991,17 +967,17 @@ static bool writeField(std::ostream &fd, const Pel *top, const Pel *bottom, cons
           else
           {
             // eg file is 422, src is 444.
-            const uint32_t sx=csx_file-csx_src;
+            const uint32_t sx = csxFile - csxSrc;
             if (!is16bit)
             {
-              for (uint32_t x = 0; x < width_file; x++)
+              for (uint32_t x = 0; x < widthFile; x++)
               {
                 fieldBuffer[x] = (uint8_t)(src[x<<sx]);
               }
             }
             else
             {
-              for (uint32_t x = 0; x < width_file; x++)
+              for (uint32_t x = 0; x < widthFile; x++)
               {
                 fieldBuffer[2*x  ] = (src[x<<sx]>>0) & 0xff;
                 fieldBuffer[2*x+1] = (src[x<<sx]>>8) & 0xff;
@@ -1010,17 +986,17 @@ static bool writeField(std::ostream &fd, const Pel *top, const Pel *bottom, cons
           }
         }
 
-        fd.write(reinterpret_cast<const char*>(buf), (stride_file * 2));
+        fd.write(reinterpret_cast<const char*>(buf), (strideFile * 2));
         if (fd.eof() || fd.fail() )
         {
           return false;
         }
       }
 
-      if ((y444&mask_y_src)==0)
+      if ((y444 & maskSrcY) == 0)
       {
-        top    += stride_src;
-        bottom += stride_src;
+        top += strideSrc;
+        bottom += strideSrc;
       }
 
     }
@@ -1040,11 +1016,11 @@ static bool writeField(std::ostream &fd, const Pel *top, const Pel *bottom, cons
  * @param pPicYuvUser      input picture YUV buffer class pointer
  * @param pPicYuvTrueOrg
  * @param ipcsc
- * @param aiPad            source padding size, aiPad[0] = horizontal, aiPad[1] = vertical
+ * @param pad            source padding size, pad[0] = horizontal, pad[1] = vertical
  * @param format           chroma format
  * @return true for success, false in case of error
  */
-bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpaceConversion ipcsc, int aiPad[2],
+bool VideoIOYuv::read(PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSpaceConversion ipcsc, int pad[2],
                       ChromaFormat format, const bool clipToRec709)
 {
   // check end-of-file
@@ -1070,13 +1046,13 @@ bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpac
 
   if (m_inY4mFileHeaderLength)
   {
-    char frameHeader[Y4M_FRAME_HEADER_LENGTH+1];
-    m_cHandle.read(frameHeader, Y4M_FRAME_HEADER_LENGTH);
-    if (m_cHandle.eof() || m_cHandle.fail())
+    char frameHeader[Y4M::FRAME_HEADER_LENGTH + 1];
+    m_fileStream.read(frameHeader, Y4M::FRAME_HEADER_LENGTH);
+    if (m_fileStream.eof() || m_fileStream.fail())
     {
       return false;
     }
-    CHECK(strncmp(frameHeader, y4mFrameHeader, Y4M_FRAME_HEADER_LENGTH), "Wrong Y4M frame header!");
+    CHECK(strncmp(frameHeader, Y4M::FRAME_HEADER, Y4M::FRAME_HEADER_LENGTH), "Wrong Y4M frame header!");
   }
 
   const PelBuf areaBufY = picOrg.get(COMPONENT_Y);
@@ -1084,34 +1060,34 @@ bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpac
   const ptrdiff_t stride444 = areaBufY.stride;
 #endif
   // compute actual YUV width & height excluding padding size
-  const uint32_t pad_h444       = aiPad[0];
-  const uint32_t pad_v444       = aiPad[1];
+  const uint32_t padH444 = pad[0];
+  const uint32_t padV444 = pad[1];
 
-  const uint32_t width_full444  = areaBufY.width;
-  const uint32_t height_full444 = areaBufY.height;
+  const uint32_t widthFull444  = areaBufY.width;
+  const uint32_t heightFull444 = areaBufY.height;
 
-  const uint32_t width444       = width_full444 - pad_h444;
-  const uint32_t height444      = height_full444 - pad_v444;
+  const uint32_t width444  = widthFull444 - padH444;
+  const uint32_t height444 = heightFull444 - padV444;
 
   for( uint32_t comp=0; comp < ::getNumberValidComponents(format); comp++)
   {
     const ComponentID compID = ComponentID(comp);
     const ChannelType chType=toChannelType(compID);
 
-    const int desired_bitdepth = m_msbExtendedBitDepth[chType] + m_bitdepthShift[chType];
+    const int desiredBitDepth = m_msbExtendedBitDepth[chType] + m_bitdepthShift[chType];
 
     const bool rec709Compliance =
       (clipToRec709)
       && (m_bitdepthShift[chType] < 0
-          && desired_bitdepth >= 8); /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
-    const Pel  minval = rec709Compliance ? ((1 << (desired_bitdepth - 8))) : 0;
-    const Pel  maxval = rec709Compliance ? ((0xff << (desired_bitdepth - 8)) - 1) : (1 << desired_bitdepth) - 1;
+          && desiredBitDepth >= 8); /* ITU-R BT.709 compliant clipping for converting say 10b to 8b */
+    const Pel  minval           = rec709Compliance ? ((1 << (desiredBitDepth - 8))) : 0;
+    const Pel  maxval           = rec709Compliance ? ((0xff << (desiredBitDepth - 8)) - 1) : (1 << desiredBitDepth) - 1;
     const bool processComponent = (size_t)compID < picOrg.bufs.size();
     Pel* const dst = processComponent ? picOrg.get(compID).bufAt(0,0) : nullptr;
 #if EXTENSION_360_VIDEO
     const ptrdiff_t stride444 = picOrg.get(compID).stride;
 #endif
-    if (!readPlane(dst, m_cHandle, is16bit, stride444, width444, height444, pad_h444, pad_v444, compID,
+    if (!readPlane(dst, m_fileStream, is16bit, stride444, width444, height444, padH444, padV444, compID,
                    picOrg.chromaFormat, format, m_fileBitdepth[chType]))
     {
       return false;
@@ -1119,7 +1095,7 @@ bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpac
 
     if (processComponent)
     {
-      if (!verifyPlane(dst, stride444, width444, height444, pad_h444, pad_v444, compID, picOrg.chromaFormat,
+      if (!verifyPlane(dst, stride444, width444, height444, padH444, padV444, compID, picOrg.chromaFormat,
                        m_fileBitdepth[chType]))
       {
          EXIT("Source image contains values outside the specified bit range!");
@@ -1136,10 +1112,10 @@ bool VideoIOYuv::read(PelUnitBuf &pic, PelUnitBuf &picOrg, const InputColourSpac
 
 #if EXTENSION_360_VIDEO
   if (pic.chromaFormat != ChromaFormat::NUM)
-    ColourSpaceConvert(picOrg, pic, ipcsc, true);
-#else
-  ColourSpaceConvert( picOrg, pic, ipcsc, true);
 #endif
+  {
+    colourSpaceConvert(picOrg, pic, ipcsc, true);
+  }
 
   picOrg.copyFrom(pic);
 
@@ -1170,7 +1146,7 @@ bool VideoIOYuv::write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf 
   if (ipCSC!=IPCOLOURSPACE_UNCHANGED)
   {
     interm.create( pic.chromaFormat, Area( Position(), pic.Y()) );
-    ColourSpaceConvert(pic, interm, ipCSC, false);
+    colourSpaceConvert(pic, interm, ipCSC, false);
   }
 
   const CPelUnitBuf& picC = (ipCSC==IPCOLOURSPACE_UNCHANGED) ? pic : interm;
@@ -1241,7 +1217,7 @@ bool VideoIOYuv::write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf 
 
   if (m_outY4m)
   {
-    m_cHandle.write(y4mFrameHeader, Y4M_FRAME_HEADER_LENGTH);
+    m_fileStream.write(Y4M::FRAME_HEADER, Y4M::FRAME_HEADER_LENGTH);
   }
 
   for(uint32_t comp=0; retval && comp < ::getNumberValidComponents(format); comp++)
@@ -1252,7 +1228,7 @@ bool VideoIOYuv::write(uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf 
     const uint32_t    csy         = ::getComponentScaleY(compID, format);
     const CPelBuf     area        = picO.get(compID);
     const ptrdiff_t   planeOffset = (confLeft >> csx) + (confTop >> csy) * area.stride;
-    if (!writePlane(orgWidth, orgHeight, m_cHandle, area.bufAt(0, 0) + planeOffset, is16bit, area.stride, width444,
+    if (!writePlane(orgWidth, orgHeight, m_fileStream, area.bufAt(0, 0) + planeOffset, is16bit, area.stride, width444,
                     height444, compID, picO.chromaFormat, format, m_fileBitdepth[ch], packedYuvOutputMode ? 1 : 0))
     {
       retval = false;
@@ -1273,8 +1249,8 @@ bool VideoIOYuv::write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBottom, 
   {
     intermTop   .create( picTop.   chromaFormat, Area( Position(), picTop.   Y()) );
     intermBottom.create( picBottom.chromaFormat, Area( Position(), picBottom.Y()) );
-    ColourSpaceConvert( picTop,    intermTop, ipCSC, false);
-    ColourSpaceConvert( picBottom, intermBottom, ipCSC, false);
+    colourSpaceConvert(picTop, intermTop, ipCSC, false);
+    colourSpaceConvert(picBottom, intermBottom, ipCSC, false);
   }
   const CPelUnitBuf& picTopC    = (ipCSC==IPCOLOURSPACE_UNCHANGED) ? picTop    : intermTop;
   const CPelUnitBuf& picBottomC = (ipCSC==IPCOLOURSPACE_UNCHANGED) ? picBottom : intermBottom;
@@ -1366,7 +1342,7 @@ bool VideoIOYuv::write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBottom, 
       + (confTop >> csy)
           * areaTop.stride;   // offset is for entire frame - round up for top field and down for bottom field
 
-    if (!writeField(m_cHandle, (areaTop.bufAt(0, 0) + planeOffset), (areaBottom.bufAt(0, 0) + planeOffset), is16bit,
+    if (!writeField(m_fileStream, (areaTop.bufAt(0, 0) + planeOffset), (areaBottom.bufAt(0, 0) + planeOffset), is16bit,
                     areaTop.stride, width444, height444, compID, dstChrFormat, format, m_fileBitdepth[ch], isTff,
                     packedYuvOutputMode ? 1 : 0))
     {
@@ -1379,7 +1355,8 @@ bool VideoIOYuv::write(const CPelUnitBuf &picTop, const CPelUnitBuf &picBottom, 
 
 
 // static member
-void VideoIOYuv::ColourSpaceConvert(const CPelUnitBuf &src, PelUnitBuf &dest, const InputColourSpaceConversion conversion, bool bIsForwards)
+void VideoIOYuv::colourSpaceConvert(const CPelUnitBuf& src, PelUnitBuf& dest,
+                                    const InputColourSpaceConversion conversion, bool isForwards)
 {
   const ChromaFormat  format       = src.chromaFormat;
   const uint32_t          numValidComp = ::getNumberValidComponents(format);
@@ -1396,7 +1373,7 @@ void VideoIOYuv::ColourSpaceConvert(const CPelUnitBuf &src, PelUnitBuf &dest, co
       {
         for(uint32_t comp=0; comp<numValidComp; comp++)
         {
-          dest.get( ComponentID(comp) ).copyFrom( src.get( ComponentID(bIsForwards?0:comp) ) );
+          dest.get(ComponentID(comp)).copyFrom(src.get(ComponentID(isForwards ? 0 : comp)));
         }
       }
       break;
@@ -1423,7 +1400,7 @@ void VideoIOYuv::ColourSpaceConvert(const CPelUnitBuf &src, PelUnitBuf &dest, co
           const ComponentID compIDsrc=ComponentID((comp+1)%numValidComp);
           const ComponentID compIDdst=ComponentID(comp);
 
-          dest.get( bIsForwards?compIDdst:compIDsrc ).copyFrom( src.get( bIsForwards?compIDsrc:compIDdst ) );
+          dest.get(isForwards ? compIDdst : compIDsrc).copyFrom(src.get(isForwards ? compIDsrc : compIDdst));
         }
       }
       break;
