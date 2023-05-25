@@ -2949,10 +2949,17 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_chroma_minus8");
       sei.m_inpTensorBitDepthChromaMinus8 = val;
     }
+#if JVET_AD0067_SWAP_SYNTAX
+    sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
+    sei.m_auxInpIdc = val;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
+    sei.m_inpOrderIdc = val;
+#else
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
     sei.m_auxInpIdc = val;
+#endif
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
     sei.m_sepColDescriptionFlag = val;
 
