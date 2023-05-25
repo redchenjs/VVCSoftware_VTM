@@ -1972,7 +1972,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   const size_t columnPos = frameRate.find_first_of(':');
 
   m_frameRate.num = std::stoi(frameRate.substr(0, columnPos));
-  m_frameRate.den = columnPos == frameRate.length() ? 1 : std::stoi(frameRate.substr(columnPos + 1));
+  m_frameRate.den = columnPos == std::string::npos ? 1 : std::stoi(frameRate.substr(columnPos + 1));
 
   if( m_fractionOfFrames != 1.0 )
   {
