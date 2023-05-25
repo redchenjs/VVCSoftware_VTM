@@ -520,9 +520,9 @@ static bool readPlane(Pel *dst, std::istream &fd, bool is16bit, ptrdiff_t stride
         }
 
         // process right hand side padding
-        for (uint32_t x = width_dest; x < full_width_dest; x++)
+        for (uint32_t x = widthDest; x < fullWidthDest; x++)
         {
-          pDstBuf[x] = pDstBuf[width_dest-1];
+          pDstBuf[x] = pDstBuf[widthDest-1];
         }
 
         pDstBuf += dstBufStride;
