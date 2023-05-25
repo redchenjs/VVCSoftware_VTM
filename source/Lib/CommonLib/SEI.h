@@ -1310,6 +1310,9 @@ public:
   uint32_t       m_numberInputDecodedPicturesMinus1;
   std::vector<uint32_t> m_numberInterpolatedPictures;
   std::vector<bool> m_inputPicOutputFlag;
+#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
+  bool           m_absentInputPicZeroFlag;
+#endif
 };
 
 class SEINeuralNetworkPostFilterActivation : public SEI

@@ -1325,6 +1325,10 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     sei->m_inputPicOutputFlag = m_pcCfg->getNNPostFilterSEICharacteristicsInputPicOutputFlag(filterIdx);
 #endif
 
+#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
+    sei->m_absentInputPicZeroFlag = m_pcCfg->getNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(filterIdx);
+#endif
+
     if((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
     {
       sei->m_outSubCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubCFlag(filterIdx);
