@@ -1778,6 +1778,31 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     outColourFormatIdc << "SEINNPFCOutColourFormatIdc" << i;
     opts.addOptions()(outColourFormatIdc.str(), m_nnPostFilterSEICharacteristicsOutColourFormatIdc[i], 1u, "Specifies output chroma format for colourization purpose");
 
+#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
+    std::ostringstream picWidthNum;
+    picWidthNum << "SEINNPFCPicWidthNumerator" << i;
+    opts.addOptions()(picWidthNum.str(), m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[i], 0u, "Specifies the numerator of output picture width resulting from applying the Neural Network Post Filter Characteristics SEI message");
+    m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[i]--;
+    CHECK(m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[i] <= 0, "Output picture width numerator cannot be equal to or less than 0")
+
+    std::ostringstream picWidthDenom;
+    picWidthDenom << "SEINNPFCPicWidthDenominator" << i;
+    opts.addOptions()(picWidthDenom.str(), m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[i], 0u, "Specifies the denominator of output picture width resulting from applying the Neural Network Post Filter Characteristics SEI message");
+    m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[i]--;
+    CHECK(m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[i] <= 0, "Output picture width denominator cannot be equal to or less than 0")
+
+    std::ostringstream picHeightNum;
+    picHeightNum << "SEINNPFCPicHeightNumerator" << i;
+    opts.addOptions()(picHeightNum.str(), m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[i], 0u, "Specifies the numerator of output picture height resulting from applying the Neural Network Post Filter Characteristics SEI message");
+    m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[i]--;
+    CHECK(m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[i] <= 0, "Output picture height numerator cannot be equal to or less than 0")
+
+    std::ostringstream picHeightDenom;
+    picHeightDenom << "SEINNPFCPicWidthDenominator" << i;
+    opts.addOptions()(picHeightDenom.str(), m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[i], 0u, "Specifies the denominator of output picture height resulting from applying the Neural Network Post Filter Characteristics SEI message");
+    m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[i]--;
+    CHECK(m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[i] <= 0, "Output picture height denominator cannot be equal to or less than 0")
+#else
     std::ostringstream picWidthInLumaSamples;
     picWidthInLumaSamples << "SEINNPFCPicWidthInLumaSamples" << i;
     opts.addOptions()(picWidthInLumaSamples.str(), m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], 0u, "Specifies the horizontal luma sample counts of the output picture in the Neural Network Post Filter Characteristics SEI message");
@@ -1785,6 +1810,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream picHeightInLumaSamples;
     picHeightInLumaSamples << "SEINNPFCPicHeightInLumaSamples" << i;
     opts.addOptions()(picHeightInLumaSamples.str(), m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], 0u, "Specifies the vertical luma sample counts of the output picture in the Neural Network Post Filter Characteristics SEI message");
+#endif
 
     std::ostringstream inpTensorBitDepthLumaMinus8;
     inpTensorBitDepthLumaMinus8 << "SEINNPFCInpTensorBitDepthLumaMinusEight" << i;

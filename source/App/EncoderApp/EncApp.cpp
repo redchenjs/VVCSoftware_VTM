@@ -1215,11 +1215,21 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsOutColourFormatIdc(ChromaFormat(m_nnPostFilterSEICharacteristicsOutColourFormatIdc[i]), i);
       }
+#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
+      if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthNumeratorMinus1     (m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthDenominatorMinus1   (m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightNumeratorMinus1     (m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightDenominatorMinus1   (m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[i], i);
+      }
+#else
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthInLumaSamples   (m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightInLumaSamples  (m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], i);
       }
+#endif
 #if JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
       m_cEncLib.setNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i], i);
       if (m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 0)
