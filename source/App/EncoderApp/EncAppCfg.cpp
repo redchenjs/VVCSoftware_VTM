@@ -1782,26 +1782,27 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream picWidthNum;
     picWidthNum << "SEINNPFCPicWidthNumerator" << i;
     opts.addOptions()(picWidthNum.str(), m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[i], 0u, "Specifies the numerator of output picture width resulting from applying the Neural Network Post Filter Characteristics SEI message");
-    m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[i]--;
     CHECK(m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[i] <= 0, "Output picture width numerator cannot be equal to or less than 0")
+    m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[i]--;
 
     std::ostringstream picWidthDenom;
     picWidthDenom << "SEINNPFCPicWidthDenominator" << i;
     opts.addOptions()(picWidthDenom.str(), m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[i], 0u, "Specifies the denominator of output picture width resulting from applying the Neural Network Post Filter Characteristics SEI message");
-    m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[i]--;
     CHECK(m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[i] <= 0, "Output picture width denominator cannot be equal to or less than 0")
+    m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[i]--;
 
     std::ostringstream picHeightNum;
     picHeightNum << "SEINNPFCPicHeightNumerator" << i;
     opts.addOptions()(picHeightNum.str(), m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[i], 0u, "Specifies the numerator of output picture height resulting from applying the Neural Network Post Filter Characteristics SEI message");
+    CHECK(m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[i] <= 0, "Output picture height numerator cannot be equal to or less than 0")
     m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[i]--;
     CHECK(m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[i] <= 0, "Output picture height numerator cannot be equal to or less than 0")
 
     std::ostringstream picHeightDenom;
     picHeightDenom << "SEINNPFCPicWidthDenominator" << i;
     opts.addOptions()(picHeightDenom.str(), m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[i], 0u, "Specifies the denominator of output picture height resulting from applying the Neural Network Post Filter Characteristics SEI message");
-    m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[i]--;
     CHECK(m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[i] <= 0, "Output picture height denominator cannot be equal to or less than 0")
+    m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[i]--;
 #else
     std::ostringstream picWidthInLumaSamples;
     picWidthInLumaSamples << "SEINNPFCPicWidthInLumaSamples" << i;
