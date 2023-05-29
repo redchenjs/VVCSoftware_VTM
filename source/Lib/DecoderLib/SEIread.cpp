@@ -2999,7 +2999,14 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_chroma_minus8");
       sei.m_outTensorBitDepthChromaMinus8 = val; 
     }
-
+    
+#if JVET_AD0067_INCLUDE_SYNTAX
+    if (sei.m_sepColDescriptionFlag & (sei.m_outFormatIdc == 1))
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_full_range_flag");
+      sei.m_fullRangeFlag = val;
+    }
+#endif
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
     sei.m_outOrderIdc = val;
     CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)  && (sei.m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 3.")

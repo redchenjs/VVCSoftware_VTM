@@ -1845,6 +1845,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     sepColDescriptionFlag << "SEINNPFCSepColDescriptionFlag" << i;
     opts.addOptions()(sepColDescriptionFlag.str(), m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[i], false, "Specifies the presence of seperate color descriptions in the Nueral Network Post Filter Characteristics SEI message");
 
+#if JVET_AD0067_INCLUDE_SYNTAX
+    std::ostringstream fullRangeFlag;
+    fullRangeFlag << "SEINNPFCFullRangeFlag" << i;
+    opts.addOptions()(fullRangeFlag.str(), m_nnPostFilterSEICharacteristicsFullRangeFlag[i], false, "Specifies scaling and offset values applied in association with the matrix coefficients as specified by nnpfc_matrix_coeff.");
+#endif
+  
     std::ostringstream colPrimaries;
     colPrimaries << "SEINNPFCColPrimaries" << i;
     opts.addOptions()(colPrimaries.str(), m_nnPostFilterSEICharacteristicsColPrimaries[i], 0u, "Specifies color primaries in the Nueral Network Post Filter Characteristics SEI message");

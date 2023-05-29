@@ -1231,6 +1231,9 @@ public:
     , m_inpFormatIdc(0)
     , m_auxInpIdc(0)
     , m_sepColDescriptionFlag(false)
+#if JVET_AD0067_INCLUDE_SYNTAX
+    , m_fullRangeFlag(false)
+#endif
     , m_colPrimaries(0)
     , m_transCharacteristics(0)
     , m_matrixCoeffs(0)
@@ -1293,6 +1296,9 @@ public:
   uint32_t       m_inpFormatIdc;
   uint32_t m_auxInpIdc;
   bool     m_sepColDescriptionFlag;
+#if JVET_AD0067_INCLUDE_SYNTAX
+  bool           m_fullRangeFlag;
+#endif
   uint8_t  m_colPrimaries;
   uint8_t  m_transCharacteristics;
   uint8_t  m_matrixCoeffs;

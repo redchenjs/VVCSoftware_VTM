@@ -5831,6 +5831,12 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \par
     When false the syntax elements nnpfc_colour_primaries, nnpfc_transfer_chracteristics, and nnpfc_matrix_coeffs are assumed to be the same as the input to the filter.
   \\
+  \Option{SEINNPFCFullRangeFlag\emph{i}} & 
+  \Default{false} &
+  Specifies scaling and offset values applied in association with the matrix coefficients as specified by nnpfc_matrix_coeff.
+  \par
+    Semantics of nnpfc_full_range_flag are as specified for the VideoFullRangeFlag parameter in Rec. ITU-T H.273 | ISO/IEC 23091-2
+  \\
   \Option{SEINNPFCColPrimaries\emph{i}} &
   \Default{0} &
   Specifies the colour primaries of the picture resulting from applying the neural-network post-filter specified in the SEI message, rather than the colour primaries used for the CLVS.
