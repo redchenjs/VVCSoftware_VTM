@@ -1339,8 +1339,15 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     }
     if((sei->m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
     {
+#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
+      sei->m_picWidthNumeratorMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthNumeratorMinus1(filterIdx);
+      sei->m_picWidthDenominatorMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthDenominatorMinus1(filterIdx);
+      sei->m_picHeightNumeratorMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightNumeratorMinus1(filterIdx);
+      sei->m_picHeightDenominatorMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightDenominatorMinus1(filterIdx);
+#else
       sei->m_picWidthInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(filterIdx);
       sei->m_picHeightInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightInLumaSamples(filterIdx);
+#endif
       int confWinLeftOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowLeftOffset();
       int confWinTopOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowTopOffset();
       int confWinRightOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowRightOffset();
@@ -1369,8 +1376,16 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       
       int croppedWidth = ppsPicWidthInLumaSample - subWidthC * (confWinRightOffset + confWinLeftOffset);
       int croppedHeight = ppsPicHeightInLumaSample - subHeightC * (confWinBottomOffset + confWinTopOffset);
+#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
+      int outputPicWidth = (int)ceil(((double)croppedWidth * (sei->m_picWidthNumeratorMinus1 + 1)) / (sei->m_picWidthDenominatorMinus1 + 1));
+      int outputPicHeight = (int)ceil(((double)croppedHeight * (sei->m_picHeightNumeratorMinus1 + 1)) / (sei->m_picHeightDenominatorMinus1 + 1));
+
+      CHECK(!(outputPicWidth >= croppedWidth && outputPicWidth <= croppedWidth * 16), "output picture width in luma samples shall be in the range of croppedWidth to croppedWidth * 16");
+      CHECK(!(outputPicHeight >= croppedHeight && outputPicHeight <= croppedHeight * 16), "output picture height in luma samples shall be in the range of croppedHeight to croppedHeight * 16");
+#else
       CHECK(!(sei->m_picWidthInLumaSamples >= croppedWidth && sei->m_picWidthInLumaSamples <= croppedWidth * 16 - 1), "m_picWidthInLumaSamples shall be in the range of croppedWidth to croppedWidth * 16 - 1");
       CHECK(!(sei->m_picHeightInLumaSamples >= croppedHeight && sei->m_picHeightInLumaSamples <= croppedHeight * 16 - 1), "m_picHeightInLumaSamples shall be in the range of croppedHeight to croppedHeight * 16 - 1");
+#endif
     }
     if((sei->m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
     {

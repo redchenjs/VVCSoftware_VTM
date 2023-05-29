@@ -737,8 +737,15 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutColourFormatIdc[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
+  uint32_t              m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[MAX_NUM_NN_POST_FILTERS];
+#else
   uint32_t              m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
+#endif
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];

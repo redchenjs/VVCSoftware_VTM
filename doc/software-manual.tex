@@ -5777,13 +5777,21 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
     3 & The colour format of the NNPF output is the 4:4:4 format \\
   \end{tabular}
   \\
-  \Option{SEINNPFCPicWidthInLumaSamples\emph{i}} &
-  \Default{0} &
-  Specifies the horizontal luma sample counts of the output picture for the \emph{i}-th neural network post-filter.
+  \Option{SEINNPFCPicWidthNumerator\emph{i}} &
+  \Default{1} &
+  Specifies the output picture width numerator (relative to the input picture size) for the \emph{i}-th neural network post-filter.
   \\
-  \Option{SEINNPFCPicHeightInLumaSamples\emph{i}} &
-  \Default{0} &
-  Specifies the vertical luma sample counts of the output picture for the \emph{i}-th neural network post-filter.
+  \Option{SEINNPFCPicWidthDenominator\emph{i}} &
+  \Default{1} &
+  Specifies the output picture width denominator (relative to the input picture size) for the \emph{i}-th neural network post-filter.
+  \\
+  \Option{SEINNPFCPicHeightNumerator\emph{i}} &
+  \Default{1} &
+  Specifies the output picture height numerator (relative to the input picture size) for the \emph{i}-th neural network post-filter.
+  \\
+  \Option{SEINNPFCPicHeightDenominator\emph{i}} &
+  \Default{1} &
+  Specifies the output picture height denominator (relative to the input picture size) for the \emph{i}-th neural network post-filter.
   \\
   \Option{SEINNPFCComponentLastFlag\emph{i}} &
   \Default{false} &
