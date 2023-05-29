@@ -1420,6 +1420,12 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_outTensorBitDepthLumaMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8(filterIdx);
       sei->m_outTensorBitDepthChromaMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8(filterIdx);
     }
+#if JVET_AD0067_INCLUDE_SYNTAX
+    if (sei->m_sepColDescriptionFlag && (sei->m_outFormatIdc == 1))
+    {
+      sei->m_fullRangeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsFullRangeFlag(filterIdx);
+    }
+#endif
     sei->m_outOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutOrderIdc(filterIdx);
     sei->m_constantPatchSizeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(filterIdx);
     sei->m_patchWidthMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchWidthMinus1(filterIdx);

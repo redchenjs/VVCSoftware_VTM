@@ -1775,6 +1775,12 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_outTensorBitDepthLumaMinus8, "nnpfc_out_tensor_bitdepth_luma_minus8");
       xWriteUvlc(sei.m_outTensorBitDepthChromaMinus8, "nnpfc_out_tensor_bitdepth_chroma_minus8");
     }
+#if JVET_AD0067_INCLUDE_SYNTAX
+    if (sei.m_sepColDescriptionFlag && (sei.m_outFormatIdc == 1))
+    {
+      xWriteFlag(sei.m_fullRangeFlag, "nnpfc_full_range_flag");
+    }
+#endif
 
     xWriteUvlc(sei.m_outOrderIdc, "nnpfc_out_order_idc");
     xWriteUvlc(sei.m_overlap, "nnpfc_overlap");

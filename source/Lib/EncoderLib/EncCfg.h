@@ -719,6 +719,9 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsInpFormatIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AD0067_INCLUDE_SYNTAX
+  bool                    m_nnPostFilterSEICharacteristicsFullRangeFlag[MAX_NUM_NN_POST_FILTERS];
+#endif
   uint32_t                m_nnPostFilterSEICharacteristicsColPrimaries[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsTransCharacteristics[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsMatrixCoeffs[MAX_NUM_NN_POST_FILTERS];
@@ -1979,6 +1982,16 @@ public:
   {
     return m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[filterIdx];
   }
+#if JVET_AD0067_INCLUDE_SYNTAX
+  void setNNPostFilterSEICharacteristicsFullRangeFlag(bool fullRangeFlag, int filterIdx)
+  {
+    m_nnPostFilterSEICharacteristicsFullRangeFlag[filterIdx] = fullRangeFlag;
+  }
+  bool getNNPostFilterSEICharacteristicsFullRangeFlag(int filterIdx) const
+  {
+    return m_nnPostFilterSEICharacteristicsFullRangeFlag[filterIdx];
+  }
+#endif
   void        setNNPostFilterSEICharacteristicsColPrimaries(uint32_t colPrimaries, int filterIdx)                       { m_nnPostFilterSEICharacteristicsColPrimaries[filterIdx] = colPrimaries; }
   uint32_t    getNNPostFilterSEICharacteristicsColPrimaries(int filterIdx) const                                        { return m_nnPostFilterSEICharacteristicsColPrimaries[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsTransCharacteristics(uint32_t transCharacteristics, int filterIdx)       { m_nnPostFilterSEICharacteristicsTransCharacteristics[filterIdx] = transCharacteristics; }
