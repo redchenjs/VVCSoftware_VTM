@@ -8366,7 +8366,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
 #if GDR_ENABLED
   bool uiCostBestOk = true;
   bool uiCostTempOk = true;
-  bool costTempOk = true;
+  // bool costTempOk = true;
 
   bool allOk = true;
 #endif
@@ -8692,7 +8692,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
       mvpIdx = bestMvpIdx;
     }
   }
-
+/*
   auto checkCPMVRdCost = [&](Mv ctrlPtMv[3])
   {
 #if GDR_ENABLED
@@ -8915,7 +8915,7 @@ void InterSearch::xAffineMotionEstimation(PredictionUnit &pu, PelUnitBuf &origBu
   acMvSolid[1] = aamvpi.mvSolidRT[mvpIdx];
   acMvSolid[2] = aamvpi.mvSolidLB[mvpIdx];
 #endif
-
+*/
   ruiBits = uiBitsBest;
   ruiCost = uiCostBest;
   DTRACE( g_trace_ctx, D_COMMON, " (%d) uiBitsBest=%d, uiCostBest=%d\n", DTRACE_GET_COUNTER(g_trace_ctx,D_COMMON), uiBitsBest, uiCostBest );
