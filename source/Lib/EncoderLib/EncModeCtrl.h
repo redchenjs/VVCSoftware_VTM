@@ -809,6 +809,7 @@ class BestEncInfoCache
 private:
 
   unsigned            m_numWidths, m_numHeights;
+  int                 m_sliceQp = -128;
   const Slice        *m_slice_bencinf;
   BestEncodingInfo ***m_bestEncInfo[MAX_CU_SIZE >> MIN_CU_LOG2][MAX_CU_SIZE >> MIN_CU_LOG2];
   TCoeff             *m_pCoeff;

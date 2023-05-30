@@ -784,6 +784,30 @@ void BestEncInfoCache::init( const Slice &slice )
 
   if (isInitialized)
   {
+    if (slice.getSliceQp() != m_sliceQp)
+    {
+      const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+      for (unsigned x = 0; x < numPos; x++)
+      {
+        for (unsigned y = 0; y < numPos; y++)
+        {
+          for (int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++)
+          {
+            if (m_bestEncInfo[x][y][wIdx] != nullptr)
+            {
+              for (int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++)
+              {
+                if (m_bestEncInfo[x][y][wIdx][hIdx] != nullptr)
+                {
+                  m_bestEncInfo[x][y][wIdx][hIdx]->cu.qp = -128;
+                }
+              }
+            }
+          }
+        }
+      }
+      m_sliceQp = slice.getSliceQp();
+    }
     return;
   }
 
