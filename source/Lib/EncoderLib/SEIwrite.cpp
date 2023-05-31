@@ -1750,7 +1750,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");
 #if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
-    xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
+    xWriteUvlc(sei.m_auxInpIdc, "nnpfc_auxiliary_inp_idc");
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
 #endif
     if (sei.m_inpFormatIdc == 1)
