@@ -67,6 +67,8 @@
 
 #define JVET_AD0067_SWAP_SYNTAX                           1 // Swap the two syntax elements: nnpfc_auxiliary_inp_idc and nnpfc_inp_order_idc
 
+#define JVET_AD0056_MOVE_NNPFC_BASE_FLAG                  1
+
 #define JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG      1
 
 #define JVET_AD0141_NNPFA_NONOUTPUTPIC                    1 //Check that NNPFA is present in pic that is not a non-output picture
