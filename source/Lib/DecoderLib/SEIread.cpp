@@ -3078,7 +3078,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     for (uint32_t i = 0; i < val; i++)
     {
       uint32_t val2;
-      sei_read_code(pDecodedMessageOutputStream, 1, val2, "nnpfc_reserved_metadata_extension "); // Decoders shall ignore the presence and value of nnpfc_reserved_metadata_extension
+      sei_read_code(pDecodedMessageOutputStream, 1, val2, "nnpfc_reserved_metadata_extension"); // Decoders shall ignore the presence and value of nnpfc_reserved_metadata_extension
     }
 #endif
   }
