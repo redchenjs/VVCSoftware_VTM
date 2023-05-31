@@ -2958,13 +2958,34 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_format_idc");
     sei.m_inpFormatIdc = val;
 
+#if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
+    sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
+    sei.m_auxInpIdc = val;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
+    sei.m_inpOrderIdc = val;
+#endif
+
     if (sei.m_inpFormatIdc == 1)
     {
+#if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
+      if (sei.m_inpOrderIdc != 1)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_luma_minus8");
+        sei.m_inpTensorBitDepthLumaMinus8 = val;
+      }
+      if (sei.m_inpOrderIdc != 0)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_chroma_minus8");
+        sei.m_inpTensorBitDepthChromaMinus8 = val;
+      }
+#else
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_luma_minus8");
       sei.m_inpTensorBitDepthLumaMinus8 = val;
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_chroma_minus8");
       sei.m_inpTensorBitDepthChromaMinus8 = val;
+#endif
     }
+#if !JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
 #if JVET_AD0067_SWAP_SYNTAX
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
     sei.m_auxInpIdc = val;
@@ -2975,6 +2996,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei.m_inpOrderIdc = val;
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
     sei.m_auxInpIdc = val;
+#endif
 #endif
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
     sei.m_sepColDescriptionFlag = val;
@@ -2992,12 +3014,31 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_format_idc");
     sei.m_outFormatIdc = val;
 
+#if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
+    sei.m_outOrderIdc = val;
+    CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)  && (sei.m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 3.")
+#endif
+
     if (sei.m_outFormatIdc == 1)
     {
+#if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
+      if (sei.m_outOrderIdc != 1)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_luma_minus8");
+        sei.m_outTensorBitDepthLumaMinus8 = val;
+      }
+      if (sei.m_outOrderIdc != 0)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_chroma_minus8");
+        sei.m_outTensorBitDepthChromaMinus8 = val; 
+      }
+#else
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_luma_minus8");
       sei.m_outTensorBitDepthLumaMinus8 = val;
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_chroma_minus8");
       sei.m_outTensorBitDepthChromaMinus8 = val; 
+#endif
     }
     
 #if JVET_AD0067_INCLUDE_SYNTAX
@@ -3007,9 +3048,11 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_fullRangeFlag = val;
     }
 #endif
+#if !JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
     sei.m_outOrderIdc = val;
     CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)  && (sei.m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 3.")
+#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_overlap");
     sei.m_overlap = val;
