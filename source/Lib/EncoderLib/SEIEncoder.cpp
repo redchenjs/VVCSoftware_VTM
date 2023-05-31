@@ -1386,6 +1386,33 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       CHECK(!(sei->m_picWidthInLumaSamples >= croppedWidth && sei->m_picWidthInLumaSamples <= croppedWidth * 16 - 1), "m_picWidthInLumaSamples shall be in the range of croppedWidth to croppedWidth * 16 - 1");
       CHECK(!(sei->m_picHeightInLumaSamples >= croppedHeight && sei->m_picHeightInLumaSamples <= croppedHeight * 16 - 1), "m_picHeightInLumaSamples shall be in the range of croppedHeight to croppedHeight * 16 - 1");
 #endif
+
+#if JVET_AD0056_PIC_WIDTH_HEIGHT_CONTRAINTS
+      uint8_t      outSubWidthC  = subWidthC;
+      uint8_t      outSubHeightC = subHeightC;
+      if ((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
+      {
+        if (sei->m_outSubCFlag)
+        {
+          outSubWidthC  = 1;
+          outSubHeightC = 1;
+        }
+        else
+        {
+          outSubWidthC  = 2;
+          outSubHeightC = 1;
+        }
+      }
+      else if ((sei->m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
+      {
+        CHECK(sei->m_outColourFormatIdc == ChromaFormat::_400, "The value of nnpfc_out_colour_format_idc shall not be equal to 0");
+        outSubWidthC  = SPS::getWinUnitX(sei->m_outColourFormatIdc);
+        outSubHeightC = SPS::getWinUnitY(sei->m_outColourFormatIdc);
+      }
+
+      CHECK((outputPicWidth  % outSubWidthC)  != 0, "The value of nnpfcOutputPicWidth % outSubWidthC shall be equal to 0");
+      CHECK((outputPicHeight % outSubHeightC) != 0, "The value of nnpfcOutputPicHeight % outSubHeightC shall be equal to 0");
+#endif
     }
     if((sei->m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
     {
