@@ -2959,10 +2959,12 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei.m_inpFormatIdc = val;
 
 #if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
-    sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
+    sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_auxiliary_inp_idc");
     sei.m_auxInpIdc = val;
+    CHECK(val > 1, "The value of nnpfc_auxiliary_inp_idc shall be in the range of 0 to 1");
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
+    CHECK(val > 3, "The value of nnpfc_inp_order_idc shall be in the range of 0 to 3");
 #endif
 
     if (sei.m_inpFormatIdc == 1)
@@ -2970,13 +2972,15 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
       if (sei.m_inpOrderIdc != 1)
       {
-        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_luma_minus8");
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_luma_bitdepth_minus8");
         sei.m_inpTensorBitDepthLumaMinus8 = val;
+        CHECK(val > 24, "The value of nnpfc_inp_tensor_luma_bitdepth_minus8 shall be in the range of 0 to 24");
       }
       if (sei.m_inpOrderIdc != 0)
       {
-        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_chroma_minus8");
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_chroma_bitdepth_minus8");
         sei.m_inpTensorBitDepthChromaMinus8 = val;
+        CHECK(val > 24, "The value of nnpfc_inp_tensor_chroma_bitdepth_minus8 shall be in the range of 0 to 24");
       }
 #else
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_luma_minus8");
@@ -3025,13 +3029,15 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
       if (sei.m_outOrderIdc != 1)
       {
-        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_luma_minus8");
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_luma_bitdepth_minus8");
         sei.m_outTensorBitDepthLumaMinus8 = val;
+        CHECK(val > 24, "The value of nnpfc_out_tensor_luma_bitdepth_minus8 shall be in the range of 0 to 24");
       }
       if (sei.m_outOrderIdc != 0)
       {
-        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_chroma_minus8");
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_chroma_bitdepth_minus8");
         sei.m_outTensorBitDepthChromaMinus8 = val; 
+        CHECK(val > 24, "The value of nnpfc_out_tensor_chroma_bitdepth_minus8 shall be in the range of 0 to 24");
       }
 #else
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_luma_minus8");
