@@ -3074,7 +3074,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
 #if JVET_AD0056_NNPFC_METADATA_EXTENSION
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_metadata_extension_num_bits");
-    CHECK (val > 2048, "Values of nnpfc_metadata_extension_num_bits greater than 2 048 shall not be present in bitstreams");
+    CHECK (val > 2048, "Values of nnpfc_metadata_extension_num_bits greater than 2048 shall not be present in bitstreams");
     for (uint32_t i = 0; i < val; i++)
     {
       uint32_t val2;
