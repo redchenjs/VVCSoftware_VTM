@@ -2930,6 +2930,9 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_picWidthInLumaSamples = val;
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_height_in_luma_samples");
       sei.m_picHeightInLumaSamples = val;
+#if JVET_AD0091
+      CHECK(!(sei->m_picWidthInLumaSamples >= croppedWidth && sei->m_picWidthInLumaSamples <= croppedWidth * 16), "m_picWidthInLumaSamples shall be in the range of croppedWidth to croppedWidth * 16");
+      CHECK(!(sei->m_picHeightInLumaSamples >= croppedHeight && sei->m_picHeightInLumaSamples <= croppedHeight * 16), "m_picHeightInLumaSamples shall be in the range of croppedHeight to croppedHeight * 16");
 #endif
     }
 
@@ -3123,6 +3126,9 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_padding_type");
     sei.m_paddingType = val;
+#if JVET_AD0091
+  CHECK(sei.m_paddingType >= 5 && sei.m_targetId <= 15, "Reserved nnpfc_padding_type value, shall ignore the SEI message");
+#endif
 
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {

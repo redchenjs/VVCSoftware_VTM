@@ -85,6 +85,7 @@
 
 #define JVET_AD0056_MOVE_COLOUR_DESC_FLAG                 1 // Move nnpfc_separate_colour_description_present_flag and associated flags and add conformance checks
 
+#define JVET_AD0091                                       1
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
