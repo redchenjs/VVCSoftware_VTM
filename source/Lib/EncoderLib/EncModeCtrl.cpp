@@ -2124,7 +2124,7 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
   }
   else if( encTestmode.type == ETM_INTRA )
   {
-    const CodingUnit cu = *tempCS->getCU( partitioner.chType );
+    const CodingUnit& cu = *tempCS->getCU( partitioner.chType );
 
     if( !cu.mtsFlag )
     {
