@@ -738,10 +738,10 @@ protected:
   bool                  m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutColourFormatIdc[MAX_NUM_NN_POST_FILTERS];
 #if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
-  uint32_t              m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[MAX_NUM_NN_POST_FILTERS];
-  uint32_t              m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[MAX_NUM_NN_POST_FILTERS];
-  uint32_t              m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[MAX_NUM_NN_POST_FILTERS];
-  uint32_t              m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicWidthNumerator[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicWidthDenominator[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicHeightNumerator[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicHeightDenominator[MAX_NUM_NN_POST_FILTERS];
 #else
   uint32_t              m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];

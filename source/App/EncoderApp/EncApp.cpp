@@ -1218,10 +1218,10 @@ void EncApp::xInitLibCfg( int layerIdx )
 #if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
       {
-        m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthNumeratorMinus1     (m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[i], i);
-        m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthDenominatorMinus1   (m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[i], i);
-        m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightNumeratorMinus1     (m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[i], i);
-        m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightDenominatorMinus1   (m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthNumeratorMinus1     (m_nnPostFilterSEICharacteristicsPicWidthNumerator[i] - 1, i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsPicWidthDenominatorMinus1   (m_nnPostFilterSEICharacteristicsPicWidthDenominator[i] - 1, i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightNumeratorMinus1     (m_nnPostFilterSEICharacteristicsPicHeightNumerator[i] - 1, i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightDenominatorMinus1   (m_nnPostFilterSEICharacteristicsPicHeightDenominator[i] - 1, i);
       }
 #else
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
