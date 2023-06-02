@@ -44,7 +44,6 @@
 #include "SEI.h"
 #include "PictureParameterSet.h"
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
 #include <map>
 
 typedef std::vector<Picture*> PicVector;
@@ -68,5 +67,4 @@ public:
     uint32_t sourceWidth, uint32_t sourceHeight, uint32_t croppedWidth, uint32_t croppedHeight);
 };
 
-#endif
 #endif

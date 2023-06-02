@@ -51,7 +51,7 @@ public:
   SEIWriter() {};
   virtual ~SEIWriter() {};
 
-  uint32_t writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList, HRD &hrd, bool isNested, const uint32_t temporalId);
+  void writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList, HRD &hrd, bool isNested, const uint32_t temporalId);
 
 protected:
   void xWriteSEIuserDataUnregistered(const SEIuserDataUnregistered &sei);

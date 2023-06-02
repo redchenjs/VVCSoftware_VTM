@@ -4035,7 +4035,6 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx &mrgCtx, c
   return true;
 }
 
-#if JVET_AC0139_UNIFIED_MERGE
 void PU::spanMotionInfo(PredictionUnit &pu, const MergeCtx &mrgCtx)
 {
   spanMotionInfo(pu, mrgCtx.subPuMvpMiBuf);
@@ -4043,10 +4042,6 @@ void PU::spanMotionInfo(PredictionUnit &pu, const MergeCtx &mrgCtx)
 
 void PU::spanMotionInfo(PredictionUnit &pu, const MotionBuf& subPuMvpMiBuf)
 {
-#else
-void PU::spanMotionInfo( PredictionUnit &pu, const MergeCtx &mrgCtx )
-{
-#endif
   MotionBuf mb = pu.getMotionBuf();
 
   if (!pu.mergeFlag || pu.mergeType == MergeType::DEFAULT_N || pu.mergeType == MergeType::IBC)
@@ -4102,13 +4097,8 @@ void PU::spanMotionInfo( PredictionUnit &pu, const MergeCtx &mrgCtx )
   }
   else if (pu.mergeType == MergeType::SUBPU_ATMVP)
   {
-#if JVET_AC0139_UNIFIED_MERGE
     CHECK(subPuMvpMiBuf.area() == 0 || !subPuMvpMiBuf.buf, "Buffer not initialized");
     mb.copyFrom(subPuMvpMiBuf);
-#else
-    CHECK(mrgCtx.subPuMvpMiBuf.area() == 0 || !mrgCtx.subPuMvpMiBuf.buf, "Buffer not initialized");
-    mb.copyFrom(mrgCtx.subPuMvpMiBuf);
-#endif
   }
   else
   {

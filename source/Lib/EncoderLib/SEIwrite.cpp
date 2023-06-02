@@ -202,14 +202,12 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
 /**
  * marshal all SEI messages in provided list into one bitstream bs
  */
-uint32_t SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList, HRD &hrd, bool isNested, const uint32_t temporalId)
+void SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList, HRD &hrd, bool isNested, const uint32_t temporalId)
 {
 #if ENABLE_TRACING
   if (g_HLSTraceEnable)
     xTraceSEIHeader();
 #endif
-
-  uint32_t numBits = 0;
 
   OutputBitstream bs_count;
 
@@ -231,8 +229,6 @@ uint32_t SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &sei
     uint32_t payload_data_num_bits = bs_count.getNumberOfWrittenBits();
     CHECK(0 != payload_data_num_bits % 8, "Invalid number of payload data bits");
 
-    numBits += payload_data_num_bits;
-
     setBitstream(&bs);
     uint32_t payloadType = to_underlying((*sei)->payloadType());
     for (; payloadType >= 0xff; payloadType -= 0xff)
@@ -240,8 +236,6 @@ uint32_t SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &sei
       xWriteCode(0xff, 8, "payload_type");
     }
     xWriteCode(payloadType, 8, "payload_type");
-
-    numBits += 8;
 
     uint32_t payloadSize = payload_data_num_bits/8;
     for (; payloadSize >= 0xff; payloadSize -= 0xff)
@@ -264,8 +258,6 @@ uint32_t SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &sei
   {
     xWriteRbspTrailingBits();
   }
-
-  return numBits;
 }
 
 /**
@@ -1553,7 +1545,6 @@ void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
 
 void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
 {
-#if JVET_AC0058_SEI
   CHECK(sei.m_posPayloadType.size() < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
   for (uint32_t i = 0; i < sei.m_posPayloadType.size(); i++)
   {
@@ -1569,14 +1560,6 @@ void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
       xWriteCode(sei.m_posProcessingOrder[i], 16, "po_sei_processing_order[i]");
     }
   }
-#else
-  CHECK(sei.m_posNumofSeiMessages < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
-  for (uint32_t i=0; i < sei.m_posNumofSeiMessages; i++)
-  {
-    xWriteCode(sei.m_posPayloadType[i], 16, "po_sei_payload_type[i]");
-    xWriteCode(sei.m_posProcessingOrder[i], 16, "po_sei_processing_order[i]");
-  }
-#endif
 }
 
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)
@@ -1698,9 +1681,7 @@ void SEIWriter::xWriteSEIGreenMetadataInfo(const SEIGreenMetadataInfo& sei)
 
 void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics &sei)
 {
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   xWriteCode(sei.m_purpose, 16, "nnpfc_purpose");
-#endif
   xWriteUvlc(sei.m_id, "nnpfc_id");
   xWriteUvlc(sei.m_modeIdc, "nnpfc_mode_idc");
   if (sei.m_modeIdc == POST_FILTER_MODE::URI)
@@ -1715,57 +1696,53 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
   xWriteFlag(sei.m_propertyPresentFlag, "nnpfc_property_present_flag");
   if (sei.m_propertyPresentFlag)
   {
-#if !JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    xWriteUvlc(sei.m_purpose, "nnpfc_purpose");
-#endif
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
+    xWriteFlag(sei.m_baseFlag, "nnpfc_base_flag");
     xWriteUvlc(sei.m_numberInputDecodedPicturesMinus1, "nnpfc_number_of_input_pictures_minus1");
-#endif
 
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    if((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
-#else
-    if(sei.m_purpose == 2 || sei.m_purpose == 4)
-#endif
+#if JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
+    if (sei.m_numberInputDecodedPicturesMinus1 > 0)
     {
-      xWriteFlag(sei.m_outSubCFlag, "nnpfc_out_sub_c_flag");
-    }
-#if JVET_AC0154
-    if((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
-    {
-      xWriteCode(uint32_t(sei.m_outColourFormatIdc), 2, "nnpfc_out_colour_format_idc");
-    }
-#endif
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    if((sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
-#else
-    if(sei.m_purpose == 3 || sei.m_purpose == 4)
-#endif
-    {
-      xWriteUvlc(sei.m_picWidthInLumaSamples, "nnpfc_pic_width_in_luma_samples");
-      xWriteUvlc(sei.m_picHeightInLumaSamples, "nnpfc_pic_height_in_luma_samples");
-    }
-
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-    if((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
-#else
-    if (sei.m_purpose == NNPC_PurposeType::FRAME_RATE_UPSAMPLING)
-#endif
-    {
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
-      for (int i = 0; i < sei.m_numberInputDecodedPicturesMinus1; ++i)
-      {
-        xWriteUvlc(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");
-      }
       for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; ++i)
       {
         xWriteFlag(sei.m_inputPicOutputFlag[i], "nnpfc_input_pic_output_flag");
       }
+#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
+      xWriteFlag(sei.m_absentInputPicZeroFlag, "nnpfc_absent_input_pic_zero_flag");
+#endif
+    }
+#endif
+
+    if((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
+    {
+      xWriteFlag(sei.m_outSubCFlag, "nnpfc_out_sub_c_flag");
+    }
+    if((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
+    {
+      xWriteCode(uint32_t(sei.m_outColourFormatIdc), 2, "nnpfc_out_colour_format_idc");
+    }
+    if((sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
+    {
+#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
+      xWriteUvlc(sei.m_picWidthNumeratorMinus1, "nnpfc_pic_width_num_minus1");
+      xWriteUvlc(sei.m_picWidthDenominatorMinus1, "nnpfc_pic_width_denom_minus1");
+      xWriteUvlc(sei.m_picHeightNumeratorMinus1, "nnpfc_pic_height_num_minus1");
+      xWriteUvlc(sei.m_picHeightDenominatorMinus1, "nnpfc_pic_height_denom_minus1");
 #else
-      xWriteUvlc(sei.m_numberInputDecodedPicturesMinus2, "nnpfc_number_of_input_pictures_minus2");
-      for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus2; ++i)
+      xWriteUvlc(sei.m_picWidthInLumaSamples, "nnpfc_pic_width_in_luma_samples");
+      xWriteUvlc(sei.m_picHeightInLumaSamples, "nnpfc_pic_height_in_luma_samples");
+#endif
+    }
+
+    if((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
+    {
+      for (int i = 0; i < sei.m_numberInputDecodedPicturesMinus1; ++i)
       {
         xWriteUvlc(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");
+      }
+#if !JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
+      for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; ++i)
+      {
+        xWriteFlag(sei.m_inputPicOutputFlag[i], "nnpfc_input_pic_output_flag");
       }
 #endif
     }
@@ -1774,15 +1751,16 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");
     if (sei.m_inpFormatIdc == 1)
     {
-#if JVET_AC0061_TENSOR_BITDEPTH
       xWriteUvlc(sei.m_inpTensorBitDepthLumaMinus8, "nnpfc_inp_tensor_bitdepth_luma_minus8");
       xWriteUvlc(sei.m_inpTensorBitDepthChromaMinus8, "nnpfc_inp_tensor_bitdepth_chroma_minus8");
-#else
-      xWriteUvlc(sei.m_inpTensorBitDepthMinus8, "nnpfc_inp_tensor_bitdepth_minus8");
-#endif
     }
+#if JVET_AD0067_SWAP_SYNTAX
+    xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
+    xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
+#else
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
+#endif
     xWriteFlag(sei.m_sepColDescriptionFlag, "nnpfc_sep_col_desc_flag");
 
     if (sei.m_sepColDescriptionFlag)
@@ -1794,35 +1772,29 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     xWriteUvlc(sei.m_outFormatIdc, "nnpfc_out_format_idc");
     if (sei.m_outFormatIdc == 1)
     {
-#if JVET_AC0061_TENSOR_BITDEPTH
       xWriteUvlc(sei.m_outTensorBitDepthLumaMinus8, "nnpfc_out_tensor_bitdepth_luma_minus8");
       xWriteUvlc(sei.m_outTensorBitDepthChromaMinus8, "nnpfc_out_tensor_bitdepth_chroma_minus8");
-#else
-      xWriteUvlc(sei.m_outTensorBitDepthMinus8, "nnpfc_out_tensor_bitdepth_minus8");
-#endif
     }
+#if JVET_AD0067_INCLUDE_SYNTAX
+    if (sei.m_sepColDescriptionFlag && (sei.m_outFormatIdc == 1))
+    {
+      xWriteFlag(sei.m_fullRangeFlag, "nnpfc_full_range_flag");
+    }
+#endif
 
     xWriteUvlc(sei.m_outOrderIdc, "nnpfc_out_order_idc");
-#if JVET_AC0344_NNPFC_PATCH
     xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
-#endif
     xWriteFlag(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");
-#if JVET_AC0344_NNPFC_PATCH
     if (sei.m_constantPatchSizeFlag)
     {
-#endif
     xWriteUvlc(sei.m_patchWidthMinus1, "nnpfc_patch_width_minus1");
     xWriteUvlc(sei.m_patchHeightMinus1, "nnpfc_patch_height_minus1");
-#if JVET_AC0344_NNPFC_PATCH
     }
     else
     {
       xWriteUvlc(sei.m_extendedPatchWidthCdDeltaMinus1, "extended_nnpfc_patch_width_cd_delta_minus1");
       xWriteUvlc(sei.m_extendedPatchHeightCdDeltaMinus1, "extended_nnpfc_patch_height_cd_delta_minus1");
     }
-#else
-    xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
-#endif
     xWriteUvlc(sei.m_paddingType, "nnpfc_padding_type");
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
@@ -1860,11 +1832,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 
 void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei)
 {
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   xWriteUvlc(sei.m_targetId, "nnpfa_target_id");
-#else
-  xWriteUvlc(sei.m_id, "nnpfa_id");
-#endif
   xWriteFlag(sei.m_cancelFlag, "nnpfa_cancel_flag");
   if(!sei.m_cancelFlag)
   {

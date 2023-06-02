@@ -46,7 +46,6 @@ EncRCSeq::EncRCSeq()
 {
   m_totalFrames         = 0;
   m_targetRate          = 0;
-  m_frameRate           = 0;
   m_targetBits          = 0;
   m_GOPSize             = 0;
   m_intraPeriod         = 0;
@@ -75,7 +74,9 @@ EncRCSeq::~EncRCSeq()
   destroy();
 }
 
-void EncRCSeq::create(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel, bool useLCUSeparateModel, int adaptiveBit)
+void EncRCSeq::create(int totalFrames, int targetBitrate, const Fraction& frameRate, int GOPSize, int intraPeriod,
+                      int picWidth, int picHeight, int LCUWidth, int LCUHeight, int numberOfLevel,
+                      bool useLCUSeparateModel, int adaptiveBit)
 {
   destroy();
   m_totalFrames         = totalFrames;
@@ -91,8 +92,9 @@ void EncRCSeq::create(int totalFrames, int targetBitrate, int frameRate, int GOP
   m_useLCUSeparateModel = useLCUSeparateModel;
 
   m_numberOfPixel   = m_picWidth * m_picHeight;
-  m_targetBits      = (int64_t)m_totalFrames * (int64_t)m_targetRate / (int64_t)m_frameRate;
-  m_seqTargetBpp = (double)m_targetRate / (double)m_frameRate / (double)m_numberOfPixel;
+  m_targetBits =
+    (int64_t) m_totalFrames * (int64_t) m_targetRate * (int64_t) m_frameRate.den / (int64_t) m_frameRate.num;
+  m_seqTargetBpp = (double) m_targetRate / m_frameRate.getFloatVal() / (double) m_numberOfPixel;
   if ( m_seqTargetBpp < 0.03 )
   {
     m_alphaUpdate = 0.01;
@@ -1451,7 +1453,9 @@ void RateCtrl::destroy()
   }
 }
 
-void RateCtrl::init(int totalFrames, int targetBitrate, int frameRate, int GOPSize, int intraPeriod, int picWidth, int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits, bool useLCUSeparateModel, GOPEntry  GOPList[MAX_GOP])
+void RateCtrl::init(int totalFrames, int targetBitrate, const Fraction& frameRate, int GOPSize, int intraPeriod,
+                    int picWidth, int picHeight, int LCUWidth, int LCUHeight, int bitDepth, int keepHierBits,
+                    bool useLCUSeparateModel, GOPEntry GOPList[MAX_GOP])
 {
   destroy();
 
@@ -1488,7 +1492,7 @@ void RateCtrl::init(int totalFrames, int targetBitrate, int frameRate, int GOPSi
 
   if ( keepHierBits > 0 )
   {
-    double bpp = (double)( targetBitrate / (double)( frameRate*picWidth*picHeight ) );
+    double bpp = (double) (targetBitrate / (frameRate.getFloatVal() * picWidth * picHeight));
     if ( GOPSize == 4 && isLowdelay )
     {
       if ( bpp > 0.2 )
@@ -1896,7 +1900,7 @@ void RateCtrl::init(int totalFrames, int targetBitrate, int frameRate, int GOPSi
   m_CpbSaturationEnabled = false;
   m_cpbSize              = targetBitrate;
   m_cpbState             = (uint32_t)(m_cpbSize*0.5f);
-  m_bufferingRate        = (int)(targetBitrate / frameRate);
+  m_bufferingRate        = (int) (targetBitrate * frameRate.den / frameRate.num);
 
   delete[] bitsRatio;
   delete[] GOPID2Level;
@@ -1934,12 +1938,14 @@ int  RateCtrl::updateCpbState(int actualBits)
   return cpbState;
 }
 
-void RateCtrl::initHrdParam(const GeneralHrdParams* generalHrd, const OlsHrdParams* olsHrd, int iFrameRate, double fInitialCpbFullness)
+void RateCtrl::initHrdParam(const GeneralHrdParams* generalHrd, const OlsHrdParams* olsHrd, const Fraction& frameRate,
+                            double fInitialCpbFullness)
 {
   m_CpbSaturationEnabled = true;
   m_cpbSize = (olsHrd->getCpbSizeValueMinus1(0, 0) + 1) << (4 + generalHrd->getCpbSizeScale());
   m_cpbState = (uint32_t)(m_cpbSize*fInitialCpbFullness);
-  m_bufferingRate = (uint32_t)(((olsHrd->getBitRateValueMinus1(0, 0) + 1) << (6 + generalHrd->getBitRateScale())) / iFrameRate);
+  m_bufferingRate = (uint32_t) (((olsHrd->getBitRateValueMinus1(0, 0) + 1) << (6 + generalHrd->getBitRateScale()))
+                                * frameRate.den / frameRate.num);
   msg(NOTICE, "\nHRD - [Initial CPB state %6d] [CPB Size %6d] [Buffering Rate %6d]\n", m_cpbState, m_cpbSize, m_bufferingRate);
 }
 

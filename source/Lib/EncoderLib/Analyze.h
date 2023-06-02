@@ -63,7 +63,7 @@ private:
 
   double m_dPSNRSum[MAX_NUM_COMPONENT];
   double m_dAddBits;
-  double m_frameRate;
+  Fraction m_frameRate;
   double m_mseYuvFrame[MAX_NUM_COMPONENT];   // sum of MSEs
   double m_upscaledPSNR[MAX_NUM_COMPONENT];
   double m_msssim[MAX_NUM_COMPONENT];
@@ -79,11 +79,6 @@ private:
 public:
   virtual ~Analyze()  {}
   Analyze() { clear(); }
-
-  void addBits(double bits)
-  {
-    m_dAddBits += bits;
-  }
 
   void addResult(const double psnr[MAX_NUM_COMPONENT], double bits, const double mseYuvFrame[MAX_NUM_COMPONENT],
                  const double upscaledPSNR[MAX_NUM_COMPONENT], const double msssim[MAX_NUM_COMPONENT],
@@ -129,7 +124,7 @@ public:
   }
 #endif
 
-  void setFrameRate(double frameRate) { m_frameRate = frameRate; }
+  void setFrameRate(const Fraction& frameRate) { m_frameRate = frameRate; }
   void clear()
   {
     m_dAddBits = 0;
@@ -209,7 +204,7 @@ public:
       return y;
     };
 
-    double fps   = m_frameRate;
+    double fps   = m_frameRate.getFloatVal();
     double scale = fps / 1000 / (double) m_picCount;
 
     double mseBasedSNR[MAX_NUM_COMPONENT];
@@ -332,7 +327,7 @@ public:
   {
     FILE* pFile = fopen (sFilename.c_str(), "at");
 
-    double dFps     =   m_frameRate;
+    double dFps     = m_frameRate.getFloatVal();
     double dScale   = dFps / 1000 / (double) m_picCount;
     switch (chFmt)
     {

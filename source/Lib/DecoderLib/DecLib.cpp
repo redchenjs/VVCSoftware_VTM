@@ -739,7 +739,6 @@ void DecLib::executeLoopFilters()
   m_pcPic->cs->slice->stopProcessingTimer();
 }
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
 void DecLib::applyNnPostFilter()
 {
   if(m_cListPic.empty())
@@ -748,7 +747,6 @@ void DecLib::applyNnPostFilter()
   }
   m_nnPostFiltering.filterPictures(m_cListPic);
 }
-#endif
 
 void DecLib::finishPictureLight(int& poc, PicList*& rpcListPic )
 {
@@ -2512,13 +2510,13 @@ void DecLib::xParsePrefixSEImessages()
     m_accessUnitSeiTids.push_back(nalu.m_temporalId);
     const SPS *sps = m_parameterSetManager.getActiveSPS();
     const VPS *vps = m_parameterSetManager.getVPS(sps->getVPSId());
-    const bool seiMessageRead = m_seiReader.parseSEImessage( &(nalu.getBitstream()), m_SEIs, nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId, vps, sps, m_HRD, m_pDecodedSEIOutputStream );
+    SEIMessages::iterator newSEI = m_seiReader.parseSEImessage( &(nalu.getBitstream()), m_SEIs, nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId, vps, sps, m_HRD, m_pDecodedSEIOutputStream );
 #if JVET_S0257_DUMP_360SEI_MESSAGE
     m_seiCfgDump.write360SeiDump( m_decoded360SeiDumpFileName, m_SEIs, sps );
 #endif
-    if (seiMessageRead)
+    for (; newSEI != m_SEIs.end(); newSEI++)
     {
-      m_accessUnitSeiPayLoadTypes.push_back(std::tuple<NalUnitType, int, SEI::PayloadType>(nalu.m_nalUnitType, nalu.m_nuhLayerId, m_SEIs.back()->payloadType()));
+      m_accessUnitSeiPayLoadTypes.push_back(std::tuple<NalUnitType, int, SEI::PayloadType>(nalu.m_nalUnitType, nalu.m_nuhLayerId, (*newSEI)->payloadType()));
     }
     delete m_prefixSEINALUs.front();
     m_prefixSEINALUs.pop_front();
@@ -2967,8 +2965,8 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   //Reset POC MSB when CRA or GDR has NoOutputBeforeRecoveryFlag equal to 1
   if (!pps->getMixedNaluTypesInPicFlag() && (m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR) && m_lastNoOutputBeforeRecoveryFlag[nalu.m_nuhLayerId])
   {
-    int iMaxPOClsb = 1 << sps->getBitsForPOC();
-    m_apcSlicePilot->setPOC( m_apcSlicePilot->getPOC() & (iMaxPOClsb - 1) );
+    int maxPocLsb = 1 << sps->getBitsForPOC();
+    m_apcSlicePilot->setPOC(m_apcSlicePilot->getPOC() & (maxPocLsb - 1));
     m_lastPOCNoOutputPriorPics = m_apcSlicePilot->getPOC();
     xUpdatePreviousTid0POC(m_apcSlicePilot);
   }
@@ -3742,15 +3740,15 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
       m_accessUnitSeiTids.push_back(nalu.m_temporalId);
       const SPS *sps = m_parameterSetManager.getActiveSPS();
       const VPS *vps = m_parameterSetManager.getVPS(sps->getVPSId());
-      const bool seiMessageRead = m_seiReader.parseSEImessage(&(nalu.getBitstream()), m_pcPic->SEIs, nalu.m_nalUnitType, nalu.m_nuhLayerId,
+      SEIMessages::iterator newSEI = m_seiReader.parseSEImessage(&(nalu.getBitstream()), m_pcPic->SEIs, nalu.m_nalUnitType, nalu.m_nuhLayerId,
                                                               nalu.m_temporalId, vps, sps, m_HRD, m_pDecodedSEIOutputStream);
 #if JVET_S0257_DUMP_360SEI_MESSAGE
       m_seiCfgDump.write360SeiDump(m_decoded360SeiDumpFileName, m_pcPic->SEIs, sps);
 #endif
-      if (seiMessageRead)
+      for (;newSEI != m_pcPic->SEIs.end(); newSEI++)
       {
         m_accessUnitSeiPayLoadTypes.push_back(std::tuple<NalUnitType, int, SEI::PayloadType>(
-          nalu.m_nalUnitType, nalu.m_nuhLayerId, m_pcPic->SEIs.back()->payloadType()));
+          nalu.m_nalUnitType, nalu.m_nuhLayerId, (*newSEI)->payloadType()));
       }
     }
     else

@@ -62,7 +62,7 @@ enum CacheAddressMap
   MAX_NUM_CACHE_MODE
 };
 
-namespace po = df::program_options_lite;
+namespace po = ProgramOptionsLite;
 
 CacheModel::CacheModel()
 {

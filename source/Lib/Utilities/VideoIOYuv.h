@@ -55,8 +55,8 @@
 class VideoIOYuv
 {
 private:
-  std::fstream m_cHandle;                            ///< file handle
-  ///
+  std::fstream m_fileStream;   // file stream
+
   BitDepths m_fileBitdepth;          // bitdepth of input/output video file
   BitDepths m_msbExtendedBitDepth;   // bitdepth after addition of MSBs (with value 0)
   BitDepths m_bitdepthShift;         // number of bits to increase or decrease image by before/after write/read
@@ -65,22 +65,23 @@ private:
   int          m_outPicWidth           = 0;
   int          m_outPicHeight          = 0;
   int          m_outBitDepth           = 0;
-  int          m_outFrameRate          = 0;
-  int          m_outFrameScale         = 1;
+  Fraction     m_outFrameRate;
   ChromaFormat m_outChromaFormat       = ChromaFormat::_420;
+  Chroma420LocType m_outLocType            = Chroma420LocType::UNSPECIFIED;
   bool         m_outY4m                = false;
 
 public:
   VideoIOYuv()           {}
   virtual ~VideoIOYuv()  {}
 
-  void parseY4mFileHeader(const std::string &fileName, int &width, int &height, int &frameRate, int &bitDepth,
-                          ChromaFormat &chromaFormat);
-  void setOutputY4mInfo(int width, int height, int frameRate, int frameScale, int bitDepth, ChromaFormat chromaFormat);
+  void parseY4mFileHeader(const std::string& fileName, int& width, int& height, Fraction& frameRate, int& bitDepth,
+                          ChromaFormat& chromaFormat, Chroma420LocType& locType);
+  void setOutputY4mInfo(int width, int height, const Fraction& frameRate, int bitDepth, ChromaFormat chromaFormat,
+                        Chroma420LocType locType);
   void writeY4mFileHeader();
-  void open(const std::string &fileName, bool bWriteMode, const BitDepths &fileBitDepth,
-            const BitDepths &MSBExtendedBitDepth,
-            const BitDepths &internalBitDepth);                  ///< open or create file
+  void open(const std::string& fileName, bool writeMode, const BitDepths& fileBitDepth,
+            const BitDepths& msbExtendedBitDepth,
+            const BitDepths& internalBitDepth);                  ///< open or create file
   void close();                                                  ///< close file
 #if EXTENSION_360_VIDEO
   void skipFrames(int numFrames, uint32_t width, uint32_t height, ChromaFormat format);
@@ -91,7 +92,7 @@ public:
 
 
   // If fileFormat=NUM_CHROMA_FORMAT, use the format defined by pPicYuvTrueOrg
-  bool read(PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSpaceConversion ipcsc, int aiPad[2],
+  bool read(PelUnitBuf& pic, PelUnitBuf& picOrg, const InputColourSpaceConversion ipcsc, int pad[2],
             ChromaFormat fileFormat   = ChromaFormat::UNDEFINED,
             const bool   clipToRec709 = false);   ///< read one frame with padding parameter
 
@@ -106,11 +107,12 @@ public:
              const bool packedYuvOutputMode, int confLeft = 0, int confRight = 0, int confTop = 0, int confBottom = 0,
              ChromaFormat format = ChromaFormat::UNDEFINED, const bool isTff = false, const bool clipToRec709 = false);
 
-  static void ColourSpaceConvert(const CPelUnitBuf &src, PelUnitBuf &dest, const InputColourSpaceConversion conversion, bool bIsForwards);
+  static void colourSpaceConvert(const CPelUnitBuf& src, PelUnitBuf& dest, const InputColourSpaceConversion conversion,
+                                 bool isForwards);
 
   bool  isEof ();                                           ///< check for end-of-file
   bool  isFail();                                           ///< check for failure
-  bool  isOpen() { return m_cHandle.is_open(); }
+  bool  isOpen() { return m_fileStream.is_open(); }
   void  setBitdepthShift(ChannelType ch, int bd) { m_bitdepthShift[ch] = bd; }
   int   getBitdepthShift(ChannelType ch) { return m_bitdepthShift[ch]; }
   int   getFileBitdepth(ChannelType ch) { return m_fileBitdepth[ch]; }

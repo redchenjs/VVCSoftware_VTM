@@ -563,6 +563,7 @@ void EncAdaptiveLoopFilter::create(const EncCfg* encCfg, const int picWidth, con
   }
   m_filterControl         = new uint8_t[m_numCTUsInPic];
   m_bestFilterControl     = new uint8_t[m_numCTUsInPic];
+  m_bestFilterCount = 0;
   uint32_t area           = (picWidth >> getComponentScaleX(COMPONENT_Cb, chromaFormatIdc))
                   * (picHeight >> getComponentScaleY(COMPONENT_Cb, chromaFormatIdc));
   m_bufOrigin             = ( Pel* ) xMalloc( Pel, area );

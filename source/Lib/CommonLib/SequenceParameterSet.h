@@ -57,10 +57,10 @@ private:
   int  m_transferCharacteristics;
   int  m_matrixCoefficients;
   bool m_videoFullRangeFlag;
-  bool m_chromaLocInfoPresentFlag;
-  int  m_chromaSampleLocTypeTopField;
-  int  m_chromaSampleLocTypeBottomField;
-  int  m_chromaSampleLocType;
+  bool             m_chromaLocInfoPresentFlag       = false;
+  Chroma420LocType m_chromaSampleLocTypeTopField    = Chroma420LocType::UNSPECIFIED;
+  Chroma420LocType m_chromaSampleLocTypeBottomField = Chroma420LocType::UNSPECIFIED;
+  Chroma420LocType m_chromaSampleLocType            = Chroma420LocType::UNSPECIFIED;
 
 public:
   VUI()
@@ -80,10 +80,6 @@ public:
     , m_transferCharacteristics(2)
     , m_matrixCoefficients(2)
     , m_videoFullRangeFlag(false)
-    , m_chromaLocInfoPresentFlag(false)
-    , m_chromaSampleLocTypeTopField(6)
-    , m_chromaSampleLocTypeBottomField(6)
-    , m_chromaSampleLocType(6)
   {}
 
   virtual ~VUI() {}
@@ -131,14 +127,14 @@ public:
   bool getChromaLocInfoPresentFlag() const       { return m_chromaLocInfoPresentFlag; }
   void setChromaLocInfoPresentFlag(bool i)       { m_chromaLocInfoPresentFlag = i; }
 
-  int  getChromaSampleLocTypeTopField() const    { return m_chromaSampleLocTypeTopField; }
-  void setChromaSampleLocTypeTopField(int i)     { m_chromaSampleLocTypeTopField = i; }
+  Chroma420LocType getChromaSampleLocTypeTopField() const { return m_chromaSampleLocTypeTopField; }
+  void             setChromaSampleLocTypeTopField(Chroma420LocType val) { m_chromaSampleLocTypeTopField = val; }
 
-  int  getChromaSampleLocTypeBottomField() const { return m_chromaSampleLocTypeBottomField; }
-  void setChromaSampleLocTypeBottomField(int i)  { m_chromaSampleLocTypeBottomField = i; }
+  Chroma420LocType getChromaSampleLocTypeBottomField() const { return m_chromaSampleLocTypeBottomField; }
+  void             setChromaSampleLocTypeBottomField(Chroma420LocType val) { m_chromaSampleLocTypeBottomField = val; }
 
-  int  getChromaSampleLocType() const            { return m_chromaSampleLocType; }
-  void setChromaSampleLocType(int i)             { m_chromaSampleLocType = i; }
+  Chroma420LocType getChromaSampleLocType() const { return m_chromaSampleLocType; }
+  void             setChromaSampleLocType(Chroma420LocType val) { m_chromaSampleLocType = val; }
 
   bool getOverscanInfoPresentFlag() const        { return m_overscanInfoPresentFlag; }
   void setOverscanInfoPresentFlag(bool i)        { m_overscanInfoPresentFlag = i; }
@@ -486,7 +482,7 @@ private:
 
   bool              m_generalHrdParametersPresentFlag;
   GeneralHrdParams  m_generalHrdParams;
-  OlsHrdParams      m_olsHrdParams;
+  OlsHrdParams      m_olsHrdParams[8];
 
   bool              m_fieldSeqFlag;
   bool              m_vuiParametersPresentFlag;
@@ -844,8 +840,8 @@ public:
   void                    setGeneralHrdParametersPresentFlag(bool b) { m_generalHrdParametersPresentFlag = b; }
   GeneralHrdParams*       getGeneralHrdParameters()                  { return &m_generalHrdParams; }
   const GeneralHrdParams* getGeneralHrdParameters() const            { return &m_generalHrdParams; }
-  OlsHrdParams*           getOlsHrdParameters()                      { return &m_olsHrdParams; }
-  const OlsHrdParams*     getOlsHrdParameters() const                { return &m_olsHrdParams; }
+  OlsHrdParams*           getOlsHrdParameters()                      { return &m_olsHrdParams[0]; }
+  const OlsHrdParams*     getOlsHrdParameters() const                { return &m_olsHrdParams[0]; }
 
   bool                    getFieldSeqFlag() const             { return m_fieldSeqFlag; }
   void                    setFieldSeqFlag(bool i)             { m_fieldSeqFlag = i; }
@@ -960,7 +956,7 @@ public:
   void      setScalingMatrixDesignatedColourSpaceFlag(bool b)             { m_scalingMatrixDesignatedColourSpaceFlag = b; }
   bool      getScalingMatrixDesignatedColourSpaceFlag() const             { return m_scalingMatrixDesignatedColourSpaceFlag; }
 
-  static int getWinUnitX(ChromaFormat cf) { return 1 << getChannelTypeScaleX(ChannelType::CHROMA, cf); }
+  static int getWinUnitX(ChromaFormat cf) { return isChromaEnabled(cf) ? 1 << getChannelTypeScaleX(ChannelType::CHROMA, cf) : 1; }
   static int getWinUnitY(ChromaFormat cf) { return 1 << getChannelTypeScaleY(ChannelType::CHROMA, cf); }
 };
 

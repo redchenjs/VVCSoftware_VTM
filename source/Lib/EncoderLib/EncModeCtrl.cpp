@@ -62,6 +62,10 @@ void EncModeCtrl::init( EncCfg *pCfg, RateCtrl *pRateCtrl, RdCost* pRdCost )
 
   initLumaDeltaQpLUT();
 #endif
+  m_useHashMeInCurrentIntraPeriod = m_pcEncCfg->getUseHashMECfgEnable();
+  m_HashMEPOC = 0;
+  m_HashMEPOCchecked = false;
+  m_HashMEPOC2 = 0;
 }
 
 bool EncModeCtrl::tryModeMaster( const EncTestMode& encTestmode, const CodingStructure &cs, Partitioner& partitioner )
@@ -780,6 +784,30 @@ void BestEncInfoCache::init( const Slice &slice )
 
   if (isInitialized)
   {
+    if (slice.getSliceQp() != m_sliceQp)
+    {
+      const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+      for (unsigned x = 0; x < numPos; x++)
+      {
+        for (unsigned y = 0; y < numPos; y++)
+        {
+          for (int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++)
+          {
+            if (m_bestEncInfo[x][y][wIdx] != nullptr)
+            {
+              for (int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++)
+              {
+                if (m_bestEncInfo[x][y][wIdx][hIdx] != nullptr)
+                {
+                  m_bestEncInfo[x][y][wIdx][hIdx]->cu.qp = -128;
+                }
+              }
+            }
+          }
+        }
+      }
+      m_sliceQp = slice.getSliceQp();
+    }
     return;
   }
 
@@ -1358,39 +1386,15 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
       // add inter modes
       if( m_pcEncCfg->getUseEarlySkipDetection() )
       {
-#if !JVET_AC0139_UNIFIED_MERGE
-        if( cs.sps->getUseGeo() && cs.slice->isInterB() )
-        {
-          m_ComprCUCtxList.back().testModes.push_back({ ETM_MERGE_GEO, ETO_STANDARD, qp });
-        }
-#endif
         m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_SKIP,  ETO_STANDARD, qp } );
-#if !JVET_AC0139_UNIFIED_MERGE
-        if (cs.sps->getUseAffine() || (cs.sps->getSbTMVPEnabledFlag() && cs.slice->getPicHeader()->getEnableTMVPFlag()))
-        {
-          m_ComprCUCtxList.back().testModes.push_back( { ETM_AFFINE,    ETO_STANDARD, qp } );
-        }
-#endif
         m_ComprCUCtxList.back().testModes.push_back( { ETM_INTER_ME,    ETO_STANDARD, qp } );
       }
       else
       {
         m_ComprCUCtxList.back().testModes.push_back( { ETM_INTER_ME,    ETO_STANDARD, qp } );
-#if !JVET_AC0139_UNIFIED_MERGE
-        if( cs.sps->getUseGeo() && cs.slice->isInterB() )
-        {
-          m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_GEO, ETO_STANDARD, qp } );
-        }
-#endif
         m_ComprCUCtxList.back().testModes.push_back( { ETM_MERGE_SKIP,  ETO_STANDARD, qp } );
-#if !JVET_AC0139_UNIFIED_MERGE
-        if (cs.sps->getUseAffine() || (cs.sps->getSbTMVPEnabledFlag() && cs.slice->getPicHeader()->getEnableTMVPFlag()))
-        {
-          m_ComprCUCtxList.back().testModes.push_back( { ETM_AFFINE,    ETO_STANDARD, qp } );
-        }
-#endif
       }
-      if (m_pcEncCfg->getUseHashME())
+      if (getUseHashME())
       {
         int minSize = std::min(cs.area.lwidth(), cs.area.lheight());
         if (minSize < 128 && minSize >= 4)
@@ -1421,7 +1425,7 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
   ComprCUCtx& cuECtx = m_ComprCUCtxList.back();
 
   // Fast checks, partitioning depended
-  if (cuECtx.isHashPerfectMatch && encTestmode.type != ETM_MERGE_SKIP && encTestmode.type != ETM_INTER_ME && encTestmode.type != ETM_AFFINE && encTestmode.type != ETM_MERGE_GEO)
+  if (cuECtx.isHashPerfectMatch && encTestmode.type != ETM_MERGE_SKIP && encTestmode.type != ETM_INTER_ME)
   {
     return false;
   }
@@ -1646,17 +1650,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
       }
     }
 
-    if ( encTestmode.type == ETM_AFFINE && relatedCU.isIntra )
-    {
-      return false;
-    }
-    if( encTestmode.type == ETM_MERGE_GEO && ( partitioner.currArea().lwidth() < GEO_MIN_CU_SIZE || partitioner.currArea().lheight() < GEO_MIN_CU_SIZE
-                                            || partitioner.currArea().lwidth() > GEO_MAX_CU_SIZE || partitioner.currArea().lheight() > GEO_MAX_CU_SIZE
-                                            || partitioner.currArea().lwidth() >= 8 * partitioner.currArea().lheight()
-                                            || partitioner.currArea().lheight() >= 8 * partitioner.currArea().lwidth() ) )
-    {
-      return false;
-    }
     return true;
   }
   else if( isModeSplit( encTestmode ) )

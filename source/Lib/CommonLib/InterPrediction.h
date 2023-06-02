@@ -88,11 +88,7 @@ public:
   void          getMmvdDeltaMv(const Slice& slice, const MmvdIdx candIdx, Mv deltaMv[NUM_REF_PIC_LIST_01]) const;
   bool          mmvdUseAltHpelIf[MmvdIdx::BASE_MV_NUM];
   bool          useAltHpelIf      [ MRG_MAX_NUM_CANDS ];
-#if JVET_AC0139_UNIFIED_MERGE
   void setMergeInfo( PredictionUnit& pu, int candIdx ) const;
-#else
-  void setMergeInfo( PredictionUnit& pu, int candIdx );
-#endif
 };
 
 class AffineMergeCtx
@@ -277,7 +273,11 @@ public:
   using DmvrDist = int32_t;
 
   static constexpr DmvrDist UNDEFINED_DMVR_DIST = -1;
-
+#if JVET_AD0045
+  bool     dmvrEnableEncoderCheck;
+  void     xDmvrSetEncoderCheckFlag(bool enableFlag) { dmvrEnableEncoderCheck = enableFlag; }
+  bool     xDmvrGetEncoderCheckFlag() { return dmvrEnableEncoderCheck; }
+#endif
   void     xDmvrPrefetch(const PredictionUnit &pu, bool forLuma);
   void     xDmvrPad(const PredictionUnit &pu);
   void     xDmvrFinalMc(const PredictionUnit &pu, PelUnitBuf yuvSrc[NUM_REF_PIC_LIST_01], bool applyBdof,

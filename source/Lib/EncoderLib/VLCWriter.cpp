@@ -728,12 +728,12 @@ void HLSWriter::codeVUI( const VUI *pcVUI, const SPS* pcSPS )
   {
     if(pcVUI->getProgressiveSourceFlag() && !pcVUI->getInterlacedSourceFlag())
     {
-      xWriteUvlc(pcVUI->getChromaSampleLocType(),         "vui_chroma_sample_loc_type");
+      xWriteUvlc(to_underlying(pcVUI->getChromaSampleLocType()), "vui_chroma_sample_loc_type");
     }
     else
     {
-      xWriteUvlc(pcVUI->getChromaSampleLocTypeTopField(),         "vui_chroma_sample_loc_type_top_field");
-      xWriteUvlc(pcVUI->getChromaSampleLocTypeBottomField(),      "vui_chroma_sample_loc_type_bottom_field");
+      xWriteUvlc(to_underlying(pcVUI->getChromaSampleLocTypeTopField()), "vui_chroma_sample_loc_type_top_field");
+      xWriteUvlc(to_underlying(pcVUI->getChromaSampleLocTypeBottomField()), "vui_chroma_sample_loc_type_bottom_field");
     }
   }
   if(!isByteAligned())
@@ -783,7 +783,9 @@ void HLSWriter::codeOlsHrdParameters(const GeneralHrdParams * generalHrd, const 
     }
     if (hrd->getFixedPicRateWithinCvsFlag())
     {
-      xWriteUvlc(hrd->getElementDurationInTcMinus1(), "elemental_duration_in_tc_minus1");
+      const uint32_t elementDurationInTc = hrd->getElementDurationInTc();
+      CHECK(elementDurationInTc < 1 || elementDurationInTc > 2048, "elementDurationInTc is out of range");
+      xWriteUvlc(elementDurationInTc - 1, "elemental_duration_in_tc_minus1");
     }
     else if ( (generalHrd->getGeneralNalHrdParametersPresentFlag() || generalHrd->getGeneralVclHrdParametersPresentFlag()) && generalHrd->getHrdCpbCntMinus1() == 0)
     {

@@ -54,11 +54,16 @@ static inline std::istream& operator >> (std::istream &in, std::map<T1, T2> &map
 
 #if JVET_O0756_CALCULATE_HDRMETRICS
 #include "HDRLib/inc/DistortionMetric.H"
+#ifdef UNDEFINED
+#undef UNDEFINED
 #endif
-namespace po = df::program_options_lite;
+#endif
+namespace po = ProgramOptionsLite;
 
 #include <sstream>
 #include <vector>
+#include <optional>
+
 //! \ingroup EncoderApp
 //! \{
 
@@ -69,15 +74,6 @@ namespace po = df::program_options_lite;
 /// encoder configuration class
 class EncAppCfg
 {
-public:
-  template <class T>
-  struct OptionalValue
-  {
-    bool bPresent;
-    T    value;
-    OptionalValue() : bPresent(false), value() { }
-  };
-
 protected:
   // file I/O
   std::string m_inputFileName;                                ///< source file name
@@ -90,7 +86,7 @@ protected:
   double    m_dIntraQpFactor;                                 ///< Intra Q Factor. If negative, use a default equation: 0.57*(1.0 - Clip3( 0.0, 0.5, 0.05*(double)(isField ? (GopSize-1)/2 : GopSize-1) ))
 
   // source specification
-  int           m_frameRate;                                      ///< source frame-rates (Hz)
+  Fraction      m_frameRate;
   uint32_t      m_frameSkip;                                      ///< number of skipped frames from the beginning
   uint32_t      m_temporalSubsampleRatio;                         ///< temporal subsample ratio, 2 means code every two frames
   int       m_sourceWidth;                                   ///< source width in pixel
@@ -133,6 +129,7 @@ protected:
   bool      m_printSequenceMSE;
   bool      m_printMSSSIM;
   bool      m_printWPSNR;
+  bool      m_printHighPrecEncTime = false;
   bool      m_cabacZeroWordPaddingEnabled;
   bool      m_clipInputVideoToRec709Range;
   bool      m_clipOutputVideoToRec709Range;
@@ -261,7 +258,8 @@ protected:
   bool      m_disableFastDecisionTT;                         ///< flag for disabling fast decision for TT from BT
 
   // coding quality
-  OptionalValue<uint32_t> m_qpIncrementAtSourceFrame;             ///< Optional source frame number at which all subsequent frames are to use an increased internal QP.
+  std::optional<uint32_t> m_qpIncrementAtSourceFrame;   // Optional source frame number at which all subsequent frames
+                                                        // are to use an increased internal QP.
   int       m_iQP;                                            ///< QP value of key-picture (integer)
   bool      m_useIdentityTableForNon420Chroma;
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
@@ -350,8 +348,8 @@ protected:
   bool      m_PROF;
   bool      m_BIO;
   int       m_LMChroma;
-  bool      m_horCollocatedChromaFlag;
-  bool      m_verCollocatedChromaFlag;
+  int                   m_horCollocatedChromaFlag;
+  int                   m_verCollocatedChromaFlag;
 
   int       m_mtsMode;                                        ///< XZ: Multiple Transform Set
   int       m_MTSIntraMaxCand;                                ///< XZ: Number of additional candidates to test
@@ -391,6 +389,11 @@ protected:
   unsigned  m_IBCHashSearchMaxCand;
   unsigned  m_IBCHashSearchRange4SmallBlk;
   unsigned  m_IBCFastMethod;
+#if JVET_AD0045
+  bool      m_dmvrEncSelect;
+  int       m_dmvrEncSelectBaseQpTh;
+  bool      m_dmvrEncSelectDisableHighestTemporalLayer;
+#endif
 
   bool      m_wrapAround;
   unsigned  m_wrapAroundOffset;
@@ -419,14 +422,12 @@ protected:
   bool      m_usePbIntraFast;
   bool      m_useAMaxBT;
   bool      m_useFastMrg;
-#if JVET_AC0139_UNIFIED_MERGE
   int       m_maxMergeRdCandNumTotal;
   int       m_mergeRdCandQuotaRegular;
   int       m_mergeRdCandQuotaRegularSmallBlk;
   int       m_mergeRdCandQuotaSubBlk;
   int       m_mergeRdCandQuotaCiip;
   int       m_mergeRdCandQuotaGpm;
-#endif
   bool      m_e0023FastEnc;
   bool      m_contentBasedFastQtbt;
   bool      m_useNonLinearAlfLuma;
@@ -732,26 +733,30 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsPropertyPresentFlag[MAX_NUM_NN_POST_FILTERS];
+  bool                  m_nnPostFilterSEICharacteristicsBaseFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AC0154
   uint32_t              m_nnPostFilterSEICharacteristicsOutColourFormatIdc[MAX_NUM_NN_POST_FILTERS];
-#endif
+#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
+  uint32_t              m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[MAX_NUM_NN_POST_FILTERS];
+#else
   uint32_t              m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AC0061_TENSOR_BITDEPTH
+#endif
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
-  uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthMinus8[MAX_NUM_NN_POST_FILTERS];
-#endif
   bool                  m_nnPostFilterSEICharacteristicsComponentLastFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsInpFormatIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AD0067_INCLUDE_SYNTAX
+  bool                  m_nnPostFilterSEICharacteristicsFullRangeFlag[MAX_NUM_NN_POST_FILTERS];
+#endif
   uint32_t              m_nnPostFilterSEICharacteristicsColPrimaries[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsTransCharacteristics[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsMatrixCoeffs[MAX_NUM_NN_POST_FILTERS];
@@ -761,10 +766,8 @@ protected:
   bool                  m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPatchWidthMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AC0344_NNPFC_PATCH
   uint32_t              m_nnPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsExtendedPatchHeightCdDeltaMinus1[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsOverlap[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPaddingType[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsLumaPadding[MAX_NUM_NN_POST_FILTERS];
@@ -781,31 +784,23 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
 
   bool                  m_nnPostFilterSEIActivationEnabled;
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   uint32_t              m_nnPostFilterSEIActivationTargetId;
-#else
-  uint32_t              m_nnPostFilterSEIActivationId;
-#endif
-  #if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
-  #else
-  uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus2[MAX_NUM_NN_POST_FILTERS];
-  #endif
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
+  bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
 #endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
 
   bool                  m_poSEIEnabled;
+#if JVET_AD0386_SEI
+  std::vector<bool>     m_poSEIPrefixFlag;
+#endif
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
-#if JVET_AC0058_SEI
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
-#else
-  uint32_t m_numofSEIMessages;
-#endif
 
 
   bool                 m_postFilterHintSEIEnabled;
@@ -862,16 +857,20 @@ protected:
   int       m_TMVPModeId;
   bool      m_depQuantEnabledFlag;
   bool      m_signDataHidingEnabledFlag;
-  bool      m_RCEnableRateControl;                ///< enable rate control or not
-  int       m_RCTargetBitrate;                    ///< target bitrate when rate control is enabled
-  int       m_RCKeepHierarchicalBit;              ///< 0: equal bit allocation; 1: fixed ratio bit allocation; 2: adaptive ratio bit allocation
-  bool      m_RCLCULevelRC;                       ///< true: LCU level rate control; false: picture level rate control NOTE: code-tidy - rename to m_RCCtuLevelRC
-  bool      m_RCUseLCUSeparateModel;              ///< use separate R-lambda model at LCU level                        NOTE: code-tidy - rename to m_RCUseCtuSeparateModel
-  int       m_RCInitialQP;                        ///< inital QP for rate control
-  bool      m_RCForceIntraQP;                     ///< force all intra picture to use initial QP or not
-  bool      m_RCCpbSaturationEnabled;             ///< enable target bits saturation to avoid CPB overflow and underflow
-  uint32_t      m_RCCpbSize;                          ///< CPB size
-  double    m_RCInitialCpbFullness;               ///< initial CPB fullness
+
+  // Rate control
+  bool     m_rcEnableRateControl;      // enable rate control or not
+  int      m_rcTargetBitrate;          // target bitrate when rate control is enabled
+  int      m_rcKeepHierarchicalBit;    // 0: equal bit allocation; 1: fixed ratio bit allocation; 2: adaptive ratio bit
+                                       // allocation
+  bool     m_rcCtuLevelRateControl;    // true: CTU level rate control; false: picture level rate control
+  bool     m_rcUseCtuSeparateModel;    // use separate R-lambda model at CTU level
+  int      m_rcInitialQp;              // inital QP for rate control
+  bool     m_rcForceIntraQp;           // force all intra picture to use initial QP or not
+  bool     m_rcCpbSaturationEnabled;   // enable target bits saturation to avoid CPB overflow and underflow
+  uint32_t m_rcCpbSize;                // CPB size
+  double   m_rcInitialCpbFullness;     // initial CPB fullness
+
   ScalingListMode m_useScalingListId;                         ///< using quantization matrix
   std::string m_scalingListFileName;                          ///< quantization matrix file name
   bool      m_disableScalingMatrixForLfnstBlks;
@@ -897,9 +896,9 @@ protected:
   bool      m_progressiveSourceFlag;                          ///< Indicates if the content is progressive
   bool      m_interlacedSourceFlag;                           ///< Indicates if the content is interlaced
   bool      m_chromaLocInfoPresentFlag;                       ///< Signals whether chroma_sample_loc_type_top_field and chroma_sample_loc_type_bottom_field are present
-  int       m_chromaSampleLocTypeTopField;                    ///< Specifies the location of chroma samples for top field
-  int       m_chromaSampleLocTypeBottomField;                 ///< Specifies the location of chroma samples for bottom field
-  int       m_chromaSampleLocType;                            ///< Specifies the location of chroma samples for progressive content
+  Chroma420LocType m_chromaSampleLocTypeTopField;      // Specifies the location of chroma samples for top field
+  Chroma420LocType m_chromaSampleLocTypeBottomField;   // Specifies the location of chroma samples for bottom field
+  Chroma420LocType m_chromaSampleLocType;   // Specifies the location of chroma samples for progressive content
   bool      m_overscanInfoPresentFlag;                        ///< Signals whether overscan_appropriate_flag is present
   bool      m_overscanAppropriateFlag;                        ///< Indicates whether conformant decoded pictures are suitable for display using overscan
   bool      m_videoFullRangeFlag;                             ///< Indicates the black level and range of luma and chroma signals
@@ -985,7 +984,6 @@ protected:
   int         m_qpOffsetChromaRPR;
   int         m_qpOffsetChromaRPR2;
   int         m_qpOffsetChromaRPR3;
-#if JVET_AC0096
   int         m_rprSwitchingResolutionOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
   int         m_rprSwitchingQPOffsetOrderList[MAX_RPR_SWITCHING_ORDER_LIST_SIZE];
   int         m_rprSwitchingListSize;
@@ -993,7 +991,6 @@ protected:
   bool        m_rprPopulatePPSatIntraFlag;
   int         m_rprSwitchingSegmentSize;
   double      m_rprSwitchingTime;
-#endif
   bool        m_resChangeInClvsEnabled;
   bool        m_refMetricsEnabled;
   double      m_fractionOfFrames;                             ///< encode a fraction of the frames as specified in FramesToBeEncoded
@@ -1076,8 +1073,7 @@ public:
   void  create    ();                                         ///< create option handling class
   void  destroy   ();                                         ///< destroy option handling class
   bool  parseCfg  ( int argc, char* argv[] );                ///< parse configuration file to fill member variables
-
-};// END CLASS DEFINITION EncAppCfg
+};
 
 //! \}
 

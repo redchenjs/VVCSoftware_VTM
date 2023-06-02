@@ -54,7 +54,7 @@ class SEIReader: public VLCReader
 public:
   SEIReader() {};
   virtual ~SEIReader() {};
-  bool parseSEImessage(InputBitstream* bs, SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId,const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream);
+  SEIMessages::iterator parseSEImessage(InputBitstream* bs, SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId,const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream);
   void parseAndExtractSEIScalableNesting(InputBitstream *bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id,
                                          const VPS *vps, const SPS *sps, HRD &hrd, uint32_t payloadSize,
                                          std::vector<SeiPayload> *seiList);
@@ -63,6 +63,7 @@ public:
   std::vector<int> nnpfcValues;
   
 protected:
+  bool xCheckNnpfcSeiMsg                      (uint32_t seiId,                        bool baseFlag,                            const std::vector<int> nnpfcValueList);
   bool xReadSEImessage                        (SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIFillerPayload                 (SEIFillerPayload &sei,                 uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIuserDataUnregistered          (SEIuserDataUnregistered &sei,          uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);

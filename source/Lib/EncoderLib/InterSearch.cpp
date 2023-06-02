@@ -2724,7 +2724,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   bool         allOk;
   bool         bestBiPDistOk;
   bool         biPDistTempOk;
-  bool         uiCostTempOk;
+  bool         uiCostTempOk = false;
   bool         uiCostTempL0Ok[MAX_NUM_REF];
 
   bool         uiHevcCostOk;
@@ -5507,7 +5507,7 @@ void InterSearch::xTZSearch(const PredictionUnit &pu, RefPicList eRefPicList, in
     xSetSearchRange(pu, currBestMv, m_searchRange >> (bFastSettings ? 1 : 0), sr, cStruct);
 #endif
   }
-  if (m_pcEncCfg->getUseHashME() && (m_currRefPicList == 0 || pu.cu->slice->getList1IdxToList0Idx(m_currRefPicIndex) < 0))
+  if (m_modeCtrl->getUseHashME() && (m_currRefPicList == 0 || pu.cu->slice->getList1IdxToList0Idx(m_currRefPicIndex) < 0))
   {
     int minSize = std::min(pu.cu->lumaSize().width, pu.cu->lumaSize().height);
     if (minSize < 128 && minSize >= 4)
@@ -5810,7 +5810,7 @@ void InterSearch::xTZSearchSelective(const PredictionUnit &pu, RefPicList eRefPi
     xSetSearchRange(pu, currBestMv, m_searchRange, sr, cStruct);
 #endif
   }
-  if (m_pcEncCfg->getUseHashME() && (m_currRefPicList == 0 || pu.cu->slice->getList1IdxToList0Idx(m_currRefPicIndex) < 0))
+  if (m_modeCtrl->getUseHashME() && (m_currRefPicList == 0 || pu.cu->slice->getList1IdxToList0Idx(m_currRefPicIndex) < 0))
   {
     int minSize = std::min(pu.cu->lumaSize().width, pu.cu->lumaSize().height);
     if (minSize < 128 && minSize >= 4)

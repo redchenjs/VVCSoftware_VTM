@@ -44,7 +44,7 @@
 #include "CommonLib/dtrace_next.h"
 #endif
 
-namespace po = df::program_options_lite;
+namespace po = ProgramOptionsLite;
 
 //! \ingroup SEIFilmGrainApp
 //! \{

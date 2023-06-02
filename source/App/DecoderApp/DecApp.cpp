@@ -36,6 +36,7 @@
 */
 
 #include <list>
+#include <numeric>
 #include <vector>
 #include <stdio.h>
 #include <fcntl.h>
@@ -50,13 +51,6 @@
 
 //! \ingroup DecoderApp
 //! \{
-
-static int calcGcd(int a, int b)
-{
-  // assume that a >= b
-  return b == 0 ? a : calcGcd(b, a % b);
-}
-
 
 // ====================================================================================================================
 // Constructor / destructor / initialization / destroy
@@ -255,9 +249,9 @@ uint32_t DecApp::decode()
         }
 
         // parse NAL unit syntax if within target decoding layer
-        if( ( m_iMaxTemporalLayer < 0 || nalu.m_temporalId <= m_iMaxTemporalLayer ) && xIsNaluWithinTargetDecLayerIdSet( &nalu ) )
+        if ((m_maxTemporalLayer == TL_INFINITY || nalu.m_temporalId <= m_maxTemporalLayer)
+            && xIsNaluWithinTargetDecLayerIdSet(&nalu))
         {
-          CHECK(nalu.m_temporalId > m_iMaxTemporalLayer, "bitstream shall not include any NAL unit with TemporalId greater than HighestTid");
           if (m_targetDecLayerIdSet.size())
           {
             CHECK(std::find(m_targetDecLayerIdSet.begin(), m_targetDecLayerIdSet.end(), nalu.m_nuhLayerId) == m_targetDecLayerIdSet.end(), "bitstream shall not contain any other layers than included in the OLS with OlsIdx");
@@ -313,7 +307,7 @@ uint32_t DecApp::decode()
           {
             if (!m_cDecLib.getHTidExternalSetFlag() && m_cDecLib.getOPI()->getHtidInfoPresentFlag())
             {
-              m_iMaxTemporalLayer = m_cDecLib.getOPI()->getOpiHtidPlus1()-1;
+              m_maxTemporalLayer = m_cDecLib.getOPI()->getOpiHtidPlus1() - 1;
             }
             m_cDecLib.setHTidOpiSetFlag(m_cDecLib.getOPI()->getHtidInfoPresentFlag());
           }
@@ -442,45 +436,53 @@ uint32_t DecApp::decode()
 
         if (!m_reconFileName.empty() && !m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].isOpen())
         {
+          const auto  vps           = m_cDecLib.getVPS();
           std::string reconFileName = m_reconFileName;
-          if (m_reconFileName.compare("/dev/null") && m_cDecLib.getVPS() != nullptr && m_cDecLib.getVPS()->getMaxLayers() > 1 && xIsNaluWithinTargetOutputLayerIdSet(&nalu))
+
+          if (m_reconFileName.compare("/dev/null") && vps != nullptr && vps->getMaxLayers() > 1
+              && xIsNaluWithinTargetOutputLayerIdSet(&nalu))
           {
-            size_t      pos         = reconFileName.find_last_of('.');
-            std::string layerString = std::string(".layer") + std::to_string(nalu.m_nuhLayerId);
-            if (pos != std::string::npos)
-            {
-              reconFileName.insert(pos, layerString);
-            }
-            else
-            {
-              reconFileName.append(layerString);
-            }
+            const size_t      pos         = reconFileName.find_last_of('.');
+            const std::string layerString = std::string(".layer") + std::to_string(nalu.m_nuhLayerId);
+
+            reconFileName.insert(pos, layerString);
           }
-          if ((m_cDecLib.getVPS() != nullptr && (m_cDecLib.getVPS()->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet(&nalu))) || m_cDecLib.getVPS() == nullptr)
+
+          if (vps == nullptr || vps->getMaxLayers() == 1 || xIsNaluWithinTargetOutputLayerIdSet(&nalu))
           {
             if (isY4mFileExt(reconFileName))
             {
               const auto sps        = pcListPic->front()->cs->sps;
-            int        frameRate  = 50;
-              int        frameScale = 1;
-              if(sps->getGeneralHrdParametersPresentFlag())
+              Fraction   frameRate  = DEFAULT_FRAME_RATE;
+
+              const bool useSpsData = sps->getGeneralHrdParametersPresentFlag();
+              if (useSpsData || (vps != nullptr && vps->getVPSGeneralHrdParamsPresentFlag()))
               {
-                const auto hrd                 = sps->getGeneralHrdParameters();
-                const auto olsHrdParam         = sps->getOlsHrdParameters()[sps->getMaxTLayers() - 1];
-                int        elementDurationInTc = 1;
+                const GeneralHrdParams* hrd =
+                  useSpsData ? sps->getGeneralHrdParameters() : vps->getGeneralHrdParameters();
+
+                const int tLayer = m_maxTemporalLayer == TL_INFINITY
+                                     ? (useSpsData ? sps->getMaxTLayers() - 1 : vps->getMaxSubLayers() - 1)
+                                     : m_maxTemporalLayer;
+
+                const OlsHrdParams& olsHrdParam =
+                  (useSpsData ? sps->getOlsHrdParameters() : vps->getOlsHrdParameters(vps->m_targetOlsIdx))[tLayer];
+
+                int elementDurationInTc = 1;
                 if (olsHrdParam.getFixedPicRateWithinCvsFlag())
                 {
-                  elementDurationInTc = olsHrdParam.getElementDurationInTcMinus1() + 1;
+                  elementDurationInTc = olsHrdParam.getElementDurationInTc();
                 }
                 else
                 {
-                  msg(WARNING, "\nWarning: No fixed picture rate info is found in the bitstream, best guess is used.\n");
+                  msg(WARNING,
+                      "\nWarning: No fixed picture rate info is found in the bitstream, best guess is used.\n");
                 }
-                frameRate  = hrd->getTimeScale() * elementDurationInTc;
-                frameScale = hrd->getNumUnitsInTick();
-                int gcd    = calcGcd(std::max(frameRate, frameScale), std::min(frameRate, frameScale));
-                frameRate /= gcd;
-                frameScale /= gcd;
+                frameRate.num = hrd->getTimeScale();
+                frameRate.den = hrd->getNumUnitsInTick() * elementDurationInTc;
+                const int gcd = std::gcd(frameRate.num, frameRate.den);
+                frameRate.num /= gcd;
+                frameRate.den /= gcd;
               }
               else
               {
@@ -492,9 +494,9 @@ uint32_t DecApp::decode()
               const auto sy = SPS::getWinUnitY(sps->getChromaFormatIdc());
               const int picWidth = pps->getPicWidthInLumaSamples() - (confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
               const int picHeight = pps->getPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
-              m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(picWidth, picHeight, frameRate, frameScale,
-                                                                         layerOutputBitDepth[ChannelType::LUMA],
-                                                                         sps->getChromaFormatIdc());
+              m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(
+                picWidth, picHeight, frameRate, layerOutputBitDepth[ChannelType::LUMA], sps->getChromaFormatIdc(),
+                sps->getVuiParameters()->getChromaSampleLocType());
             }
             m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].open(reconFileName, true, layerOutputBitDepth,
                                                            layerOutputBitDepth, bitDepths);   // write mode
@@ -838,9 +840,7 @@ uint32_t DecApp::decode()
   }
 #endif
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   m_cDecLib.applyNnPostFilter();
-#endif
   
   xFlushOutput( pcListPic );
 
@@ -981,17 +981,17 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
   if( referredVPS == nullptr || referredVPS->m_numLayersInOls[referredVPS->m_targetOlsIdx] == 1 )
   {
     const SPS* activeSPS = (pcListPic->front()->cs->sps);
-    const int temporalId = (m_iMaxTemporalLayer == -1 || m_iMaxTemporalLayer >= activeSPS->getMaxTLayers())
-      ? activeSPS->getMaxTLayers() - 1
-      : m_iMaxTemporalLayer;
+    const int  temporalId = (m_maxTemporalLayer == TL_INFINITY || m_maxTemporalLayer >= activeSPS->getMaxTLayers())
+                              ? activeSPS->getMaxTLayers() - 1
+                              : m_maxTemporalLayer;
     maxNumReorderPicsHighestTid = activeSPS->getMaxNumReorderPics( temporalId );
     maxDecPicBufferingHighestTid = activeSPS->getMaxDecPicBuffering( temporalId );
   }
   else
   {
-    const int temporalId = (m_iMaxTemporalLayer == -1 || m_iMaxTemporalLayer >= referredVPS->getMaxSubLayers())
-      ? referredVPS->getMaxSubLayers() - 1
-      : m_iMaxTemporalLayer;
+    const int temporalId = (m_maxTemporalLayer == TL_INFINITY || m_maxTemporalLayer >= referredVPS->getMaxSubLayers())
+                             ? referredVPS->getMaxSubLayers() - 1
+                             : m_maxTemporalLayer;
     maxNumReorderPicsHighestTid = referredVPS->getMaxNumReorderPics( temporalId );
     maxDecPicBufferingHighestTid = referredVPS->getMaxDecPicBuffering( temporalId );
   }
@@ -1013,13 +1013,13 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
 
   iterPic = pcListPic->begin();
 
-  if (numPicsNotYetDisplayed>2)
+  if (numPicsNotYetDisplayed>=2)
   {
     iterPic++;
   }
 
   Picture* pcPic = *(iterPic);
-  if( numPicsNotYetDisplayed>2 && pcPic->fieldPic ) //Field Decoding
+  if( numPicsNotYetDisplayed>=2 && pcPic->fieldPic ) //Field Decoding
   {
     PicList::iterator endPic   = pcListPic->end();
     endPic--;
@@ -1028,12 +1028,25 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
     {
       Picture* pcPicTop = *(iterPic);
       iterPic++;
-      Picture* pcPicBottom = *(iterPic);
+      PicList::iterator iterPic2 = iterPic;
+      while (iterPic2 != pcListPic->end())
+      {
+        if ((*iterPic2)->layerId == pcPicTop->layerId && (*iterPic2)->fieldPic && (*iterPic2)->topField != pcPicTop->topField)
+        {
+          break;
+        }
+        iterPic2++;
+      }
+      if (iterPic2 == pcListPic->end())
+      {
+        continue;
+      }
+      
+      Picture* pcPicBottom = *(iterPic2);
 
       if ( pcPicTop->neededForOutput && pcPicBottom->neededForOutput &&
           (numPicsNotYetDisplayed >  maxNumReorderPicsHighestTid || dpbFullness > maxDecPicBufferingHighestTid) &&
-          (!(pcPicTop->getPOC()%2) && pcPicBottom->getPOC() == pcPicTop->getPOC()+1) &&
-          (pcPicTop->getPOC() == m_iPOCLastDisplay+1 || m_iPOCLastDisplay < 0))
+          pcPicBottom->getPOC() >= m_iPOCLastDisplay )
       {
         // write to file
         numPicsNotYetDisplayed = numPicsNotYetDisplayed-2;
@@ -1227,14 +1240,24 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
     {
       Picture *pcPicTop = *iterPic;
       iterPic++;
-      Picture *pcPicBottom = iterPic == endPic ? pcPicTop : *iterPic;
 
-      if( pcPicTop->layerId != layerId && layerId != NOT_VALID )
+      if (pcPicTop == nullptr || (pcPicTop->layerId != layerId && layerId != NOT_VALID))
       {
         continue;
       }
 
-      if ( pcPicTop->neededForOutput && pcPicBottom->neededForOutput && !(pcPicTop->getPOC()%2) && (pcPicBottom->getPOC() == pcPicTop->getPOC()+1) )
+      PicList::iterator iterPic2 = iterPic;
+      while (iterPic2 != endPic)
+      {
+        if ((*iterPic2) != nullptr && (*iterPic2)->layerId == pcPicTop->layerId && (*iterPic2)->fieldPic && (*iterPic2)->topField != pcPicTop->topField)
+        {
+          break;
+        }
+        iterPic2++;
+      }
+      Picture *pcPicBottom = iterPic2 == endPic ? nullptr : *iterPic2;
+
+      if (pcPicBottom != nullptr && pcPicTop->neededForOutput && pcPicBottom->neededForOutput)
       {
           // write to file
           if ( !m_reconFileName.empty() )
@@ -1275,8 +1298,7 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
         iterPic--;
         *iterPic = nullptr;
         iterPic++;
-        *iterPic = nullptr;
-        iterPic++;
+        *iterPic2 = nullptr;
       }
       else
       {

@@ -90,10 +90,10 @@ int main(int argc, char* argv[])
   fprintf( stdout, NVM_BITS );
 #if ENABLE_SIMD_OPT
   std::string SIMD;
-  df::program_options_lite::Options opts;
-  opts.addOptions()("SIMD", SIMD, std::string(""), "")("c", df::program_options_lite::parseConfigFile, "");
-  df::program_options_lite::SilentReporter err;
-  df::program_options_lite::scanArgv( opts, argc, ( const char** ) argv, err );
+  ProgramOptionsLite::Options opts;
+  opts.addOptions()("SIMD", SIMD, std::string(""), "")("c", ProgramOptionsLite::parseConfigFile, "");
+  ProgramOptionsLite::SilentReporter err;
+  ProgramOptionsLite::scanArgv(opts, argc, (const char**) argv, err);
   fprintf( stdout, "[SIMD=%s] ", read_x86_extension( SIMD ) );
 #endif
 #if ENABLE_TRACING
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
         return 1;
       }
     }
-    catch( df::program_options_lite::ParseFailure &e )
+    catch (ProgramOptionsLite::ParseFailure& e)
     {
       std::cerr << "Error parsing option \"" << e.arg << "\" with argument \"" << e.val << "\"." << std::endl;
       return 1;
@@ -318,7 +318,6 @@ int main(int argc, char* argv[])
       }
     }
   }
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   for( auto & encApp : pcEncApp )
   {
     if (encApp->getNNPostFilterEnabled())
@@ -326,7 +325,6 @@ int main(int argc, char* argv[])
       encApp->applyNnPostFilter();
     }
   }
-#endif
   // ending time
   clock_t endClock = clock();
   auto endTime = std::chrono::steady_clock::now();

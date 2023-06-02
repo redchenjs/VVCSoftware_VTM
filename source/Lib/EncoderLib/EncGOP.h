@@ -69,6 +69,9 @@
 #include "HDRLib/inc/ColorTransform.H"
 #include "HDRLib/inc/TransferFunction.H"
 #include "HDRLib/inc/DistortionMetricDeltaE.H"
+#ifdef UNDEFINED
+#undef UNDEFINED
+#endif
 #include <chrono>
 #endif
 
@@ -140,6 +143,7 @@ private:
   EncCfg*                 m_pcCfg;
   EncSlice*               m_pcSliceEncoder;
   PicList*                m_pcListPic;
+  EncModeCtrl*            m_modeCtrl;
 
   HLSWriter*              m_HLSWriter;
   DeblockingFilter       *m_pcLoopFilter;
@@ -260,6 +264,7 @@ public:
   bool      getPrepareLTRef() { return m_isPrepareLTRef; }
   void      setLastLTRefPoc(int iLastLTRefPoc) { m_lastLTRefPoc = iLastLTRefPoc; }
   int       getLastLTRefPoc() const { return m_lastLTRefPoc; }
+  void      setModeCtrl(EncModeCtrl* modeCtrl) { m_modeCtrl = modeCtrl; }
 
 #if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct getFeatureCounter(){return m_featureCounter;}
@@ -350,10 +355,10 @@ protected:
   void xUpdateDuInfoSEI(SEIMessages &duInfoSeiMessages, SEIPictureTiming *pictureTimingSEI, int maxSubLayers);
   void xCreateScalableNestingSEI(SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t>& subpicIDs, uint16_t maxSubpicIdInPic);
   void xWriteSEI (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId);
-  uint32_t xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId);
+  void xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId);
   void xClearSEIs(SEIMessages& seiMessages, bool deleteMessages);
-  uint32_t xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, bool testWrite);
-  uint32_t xWriteLeadingSEIMessages  (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, const SPS *sps, std::deque<DUData> &duData);
+  void xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, bool testWrite);
+  void xWriteLeadingSEIMessages  (SEIMessages& seiMessages, SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, const SPS *sps, std::deque<DUData> &duData);
   void xWriteTrailingSEIMessages (SEIMessages& seiMessages, AccessUnit &accessUnit, int temporalId);
   void xWriteDuSEIMessages       (SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, std::deque<DUData> &duData);
 

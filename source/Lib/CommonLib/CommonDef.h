@@ -416,6 +416,11 @@ static constexpr int DMVR_RANGE = 2;
 static constexpr int DMVR_SPAN  = 2 * DMVR_RANGE + 1;
 static constexpr int DMVR_AREA  = DMVR_SPAN * DMVR_SPAN;
 
+#if JVET_AD0045
+static constexpr int DMVR_ENC_SELECT_SIZE_THR = 64;
+static constexpr double DMVR_ENC_SELECT_FRAME_RATE_THR = 30.0;
+#endif
+
 //QTBT high level parameters
 //for I slice luma CTB configuration para.
 static constexpr int    MAX_BT_DEPTH  =                                 4;      ///<  <=7
@@ -462,9 +467,7 @@ static constexpr int MAX_FILTER_SIZE     = NTAPS_LUMA > NTAPS_CHROMA ? NTAPS_LUM
 
 static constexpr int MAX_LADF_INTERVALS       =                         5; /// max number of luma adaptive deblocking filter qp offset intervals
 
-#if JVET_AC0096
 static constexpr int MAX_RPR_SWITCHING_ORDER_LIST_SIZE =               32; /// max number of pre-defined RPR switching segments
-#endif
 static constexpr int ATMVP_SUB_BLOCK_SIZE =                             3; ///< sub-block size for ATMVP
 static constexpr int GEO_MAX_NUM_UNI_CANDS =                            6;
 static constexpr int GEO_MAX_NUM_CANDS = GEO_MAX_NUM_UNI_CANDS * (GEO_MAX_NUM_UNI_CANDS - 1);

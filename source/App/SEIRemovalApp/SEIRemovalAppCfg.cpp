@@ -41,7 +41,7 @@
 #include "SEIRemovalAppCfg.h"
 #include "Utilities/program_options_lite.h"
 
-namespace po = df::program_options_lite;
+namespace po = ProgramOptionsLite;
 
 //! \ingroup DecoderApp
 //! \{

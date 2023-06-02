@@ -61,6 +61,7 @@
 class EncLib;
 class HLSWriter;
 class EncSlice;
+class EncGOP;
 
 // ====================================================================================================================
 // Class definition
@@ -135,7 +136,6 @@ public:
   }
 };
 
-#if JVET_AC0139_UNIFIED_MERGE
 class MergeItem
 {
 private:
@@ -220,7 +220,6 @@ public:
   size_t        size() { return m_list.size(); }
 
 };
-#endif
 
 class EncCu
   : DecCu
@@ -255,14 +254,12 @@ private:
   RdCost*               m_pcRdCost;
   EncSlice*             m_pcSliceEncoder;
   DeblockingFilter*     m_deblockingFilter;
+  EncGOP*               m_pcGOPEncoder;
 
   CABACWriter*          m_CABACEstimator;
   RateCtrl*             m_pcRateCtrl;
   IbcHashMap            m_ibcHashMap;
   EncModeCtrl          *m_modeCtrl;
-#if !JVET_AC0139_UNIFIED_MERGE
-  std::array<PelStorage, GEO_MAX_TRY_WEIGHTED_SAD> m_geoWeightedBuffers;   // weighted prediction pixels
-#endif
 
   FastGeoCostList       m_geoCostList;
   double                m_AFFBestSATDCost;
@@ -287,9 +284,7 @@ private:
   double                m_sbtCostSave[2];
 
   GeoComboCostList m_comboList;
-#if JVET_AC0139_UNIFIED_MERGE
   MergeItemList         m_mergeItemList;
-#endif
 
 public:
   /// copy parameters from encoder class
@@ -342,26 +337,14 @@ protected:
   void xCheckChromaQPOffset   ( CodingStructure& cs, Partitioner& partitioner);
 
   void xCheckRDCostHashInter  ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode );
-#if !JVET_AC0139_UNIFIED_MERGE
-  void xCheckRDCostAffineMerge2Nx2N
-                              ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode );
-#endif
   void xCheckRDCostInter      ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode );
   bool xCheckRDCostInterAmvr(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm,
                              const EncTestMode &encTestMode, double &bestIntPelCost);
   void xEncodeDontSplit       ( CodingStructure &cs, Partitioner &partitioner);
 
-#if !JVET_AC0139_UNIFIED_MERGE
-  void xCheckRDCostMerge2Nx2N ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode );
-#endif
 
-#if JVET_AC0139_UNIFIED_MERGE
   void xCheckRDCostUnifiedMerge ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode );
-#endif
 
-#if !JVET_AC0139_UNIFIED_MERGE
-  void xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &pm, const EncTestMode& encTestMode);
-#endif
   void xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner,
                             const EncTestMode &encTestMode, int residualPass = 0, bool *bestHasNonResi = nullptr,
                             double *equBcwCost = nullptr);
@@ -385,7 +368,6 @@ protected:
   void xCheckPLT              ( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode );
 
   PredictionUnit* getPuForInterPrediction(CodingStructure* cs);
-#if JVET_AC0139_UNIFIED_MERGE
   unsigned int updateRdCheckingNum(double threshold, unsigned int numMergeSatdCand);
 
   void generateMergePrediction(const UnitArea& unitArea, MergeItem* mergeItem, PredictionUnit& pu, bool luma, bool chroma,
@@ -393,9 +375,15 @@ protected:
   double calcLumaCost4MergePrediction(const TempCtx& ctxStart, const PelUnitBuf& predBuf, double lambda, PredictionUnit& pu, DistParam& distParam);
 
   template <size_t N>
+#if JVET_AD0045
+  void addRegularCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& localUnitArea, double sqrtLambdaForFirstPassIntra,
+    const TempCtx& ctxStart, int numDmvrMvd, Mv dmvrL0Mvd[MRG_MAX_NUM_CANDS][MAX_NUM_SUBCU_DMVR], bool dmvrImpreciseMv[MRG_MAX_NUM_CANDS],
+    PelUnitBufVector<N>& mrgPredBufNoCiip, PelUnitBufVector<N>& mrgPredBufNoMvRefine, DistParam& distParam, PredictionUnit* pu);
+#else
   void addRegularCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& localUnitArea, double sqrtLambdaForFirstPassIntra,
     const TempCtx& ctxStart, int numDmvrMvd, Mv dmvrL0Mvd[MRG_MAX_NUM_CANDS][MAX_NUM_SUBCU_DMVR],
     PelUnitBufVector<N>& mrgPredBufNoCiip, PelUnitBufVector<N>& mrgPredBufNoMvRefine, DistParam& distParam, PredictionUnit* pu);
+#endif
   template <size_t N>
   void addCiipCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& localUnitArea, double sqrtLambdaForFirstPassIntra,
     const TempCtx& ctxStart, PelUnitBufVector<N>& mrgPredBufNoCiip, PelUnitBufVector<N>& mrgPredBufNoMvRefine, DistParam& distParam, PredictionUnit* pu);
@@ -410,10 +398,6 @@ protected:
   template<size_t N>
   bool prepareGpmComboList(const MergeCtx& mergeCtx, const UnitArea& localUnitArea, double sqrtLambdaForFirstPass,
     GeoComboCostList& comboList, PelUnitBufVector<N>& geoBuffer, PredictionUnit* pu);
-#else
-  template<size_t N>
-  unsigned int updateRdCheckingNum(double threshold, unsigned int numMergeSatdCand, static_vector<double, N>& costList);
-#endif
   void checkEarlySkip(const CodingStructure* bestCS, const Partitioner &partitioner);
 
 };

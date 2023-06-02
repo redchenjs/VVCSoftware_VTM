@@ -103,7 +103,7 @@ public:
   virtual ~HLSyntaxReader();
 
 protected:
-  void  copyRefPicList(SPS* pcSPS, ReferencePictureList* source_rpl, ReferencePictureList* dest_rpl);
+  void  copyRefPicList(SPS* pcSPS, ReferencePictureList* sourceRpl, ReferencePictureList* dest_rpl);
   void  parseRefPicList(SPS* pcSPS, ReferencePictureList* rpl, int rplIdx);
 
 public:
@@ -126,7 +126,7 @@ public:
   void  checkAlfNaluTidAndPicTid(Slice* pcSlice, PicHeader* picHeader, ParameterSetManager *parameterSetManager);
   void  parseSliceHeader    ( Slice* pcSlice, PicHeader* picHeader, ParameterSetManager *parameterSetManager, const int prevTid0POC, const int prevPicPOC );
   void  getSlicePoc ( Slice* pcSlice, PicHeader* picHeader, ParameterSetManager *parameterSetManager, const int prevTid0POC );
-  void  parseTerminatingBit ( uint32_t& ruiBit );
+  void  parseTerminatingBit(uint32_t& bit);
   void  parseRemainingBytes ( bool noTrailingBytesExpected );
 
   void  parsePredWeightTable( Slice* pcSlice, const SPS *sps );

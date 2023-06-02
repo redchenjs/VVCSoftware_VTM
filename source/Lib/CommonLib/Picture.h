@@ -94,9 +94,7 @@ struct Picture : public UnitArea
   void              createColourTransfProcessor(bool firstPictureInSequence, SEIColourTransformApply* ctiCharacteristics, PelStorage* ctiBuf, int width, int height, ChromaFormat fmt, int bitDepth);
   PelUnitBuf        getDisplayBuf();
 
-#if JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING
   SEIMessages m_nnpfcActivated;
-#endif
 
 #if JVET_Z0120_SII_SEI_PROCESSING
   void copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcPicYuvDst);
@@ -281,10 +279,10 @@ public:
   const Window&      getScalingWindow()                                        const { return  m_scalingWindow; }
   bool               isRefScaled( const PPS* pps ) const                             { return  unscaledPic->getPicWidthInLumaSamples()    != pps->getPicWidthInLumaSamples()                ||
                                                                                                unscaledPic->getPicHeightInLumaSamples()   != pps->getPicHeightInLumaSamples()               ||
-                                                                                               getScalingWindow().getWindowLeftOffset()   != pps->getScalingWindow().getWindowLeftOffset()  ||
-                                                                                               getScalingWindow().getWindowRightOffset()  != pps->getScalingWindow().getWindowRightOffset() ||
-                                                                                               getScalingWindow().getWindowTopOffset()    != pps->getScalingWindow().getWindowTopOffset()   ||
-                                                                                               getScalingWindow().getWindowBottomOffset() != pps->getScalingWindow().getWindowBottomOffset(); }
+                                                                                               unscaledPic->getScalingWindow().getWindowLeftOffset()   != pps->getScalingWindow().getWindowLeftOffset()  ||
+                                                                                               unscaledPic->getScalingWindow().getWindowRightOffset()  != pps->getScalingWindow().getWindowRightOffset() ||
+                                                                                               unscaledPic->getScalingWindow().getWindowTopOffset()    != pps->getScalingWindow().getWindowTopOffset()   ||
+                                                                                               unscaledPic->getScalingWindow().getWindowBottomOffset() != pps->getScalingWindow().getWindowBottomOffset(); }
   bool               isWrapAroundEnabled( const PPS* pps ) const                     { return  pps->getWrapAroundEnabledFlag() && !isRefScaled( pps ); }
 
   void         allocateNewSlice();

@@ -54,20 +54,22 @@
 
 // clang-format off
 
+#define JVET_AD0045                                       1  // encoder control for DMVR
+
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AC0139_UNIFIED_MERGE                         1
-#define JVET_AC0096                                       1
-#define JVET_AC0058_SEI                                   1
-#define JVET_AC0154                                       1
-#define JVET_AC0127_BIT_MASKING_NNPFC_PURPOSE             1 
-#define JVET_AC0061_TENSOR_BITDEPTH                       1
-#define JVET_AC0062_CONSTRAINT_CHECK                      1
-#define JVET_AC0344_NNPFC_PATCH                           1
-#define JVET_AC0074_USE_OF_NNPFC_FOR_PIC_RATE_UPSAMPLING  1
+#define JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE             1 // Replace signalling of output picture size with output size scaling ratio
 
+#define JVET_AD0169_SMALL_SCALE_DOWNSAMPLING              1 // JVET-AD0169: Downsampling filters in range 1.1 to 1.35 based on Kaiser(7) windowed sinc
+#define JVET_AD0386_SEI   1 // Extend the latest SEI processing order SEI message to enable signalling of prefix information for any type of SEI messages
 
+#define JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG           1
 
+#define JVET_AD0067_SWAP_SYNTAX                           1 // Swap the two syntax elements: nnpfc_auxiliary_inp_idc and nnpfc_inp_order_idc
+
+#define JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG      1
+
+#define JVET_AD0141_NNPFA_NONOUTPUTPIC                    1 //Check that NNPFA is present in pic that is not a non-output picture
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
@@ -85,6 +87,8 @@
 #define JVET_M0497_MATRIX_MULT                            0 // 0: Fast method; 1: Matrix multiplication
 
 #define APPLY_SBT_SL_ON_MTS                               1 // apply save & load fast algorithm on inter MTS when SBT is on
+
+#define JVET_AD0067_INCLUDE_SYNTAX                        1 // include nnpfc_full_range_flag syntax element in the nnpfc sei message when nnpfc_separate_colour_description_present_flag is equal to 1 and when nnpfc_out_format_idc is equal to 1.
 
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
@@ -435,6 +439,18 @@ enum class ChromaFormat : uint8_t
   UNDEFINED = NUM
 };
 
+enum class Chroma420LocType : uint8_t
+{
+  LEFT,
+  CENTER,
+  TOP_LEFT,
+  TOP,
+  BOTTOM_LEFT,
+  BOTTOM,
+  UNSPECIFIED,
+  NUM,
+};
+
 enum class ChannelType : uint8_t
 {
   LUMA   = 0,
@@ -770,7 +786,6 @@ enum NNPC_PaddingType
   FIXED_PADDING = 4
 };
 
-#if JVET_AC0154
 enum NNPC_PurposeType
 {
   UNKONWN                    = 0,
@@ -781,23 +796,24 @@ enum NNPC_PurposeType
   BIT_DEPTH_UPSAMPLING       = 16,
   COLOURIZATION              = 32
 };
-#else
-enum NNPC_PurposeType
-{
-  UNKONWN = 0,
-  VISUAL_QUALITY_IMPROVEMENT = 1,
-  CHROMA_UPSAMPLING = 2,
-  INCREASE_PICT_DIMENSION_WITHOUT_CHROMA_UPSAMPLING = 3,
-  INCREASE_PICT_DIMENSION_WITH_CHROMA_UPSMAPLING = 4,
-  FRAME_RATE_UPSAMPLING = 5
-};
-#endif
 
 enum POST_FILTER_MODE
 {
   ISO_IEC_15938_17 = 0,
   URI = 1
 };
+
+struct Fraction
+{
+  int num = 0;
+  int den = 1;
+
+  int    getIntValRound() const { return (num + den / 2) / den; }
+  double getFloatVal() const { return static_cast<double>(num) / den; }
+};
+
+inline bool operator==(const Fraction& a, const Fraction& b) { return a.num == b.num && a.den == b.den; }
+inline bool operator!=(const Fraction& a, const Fraction& b) { return !(a == b); }
 
 #define NUM_SAO_BO_CLASSES_LOG2  5
 #define NUM_SAO_BO_CLASSES       (1<<NUM_SAO_BO_CLASSES_LOG2)

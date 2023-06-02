@@ -183,27 +183,27 @@ const char * NALU_TYPE[] =
     "NAL_UNIT_UNSPECIFIED_31"
 };
 
-int calc_poc(int iPOClsb, int prevTid0POC, int getBitsForPOC, int nalu_type)
+int calcPoc(int pocLsb, int prevTid0POC, int getBitsForPOC, int nalu_type)
 {
-  int iPrevPOC = prevTid0POC;
-  int iMaxPOClsb = 1<< getBitsForPOC;
-  int iPrevPOClsb = iPrevPOC & (iMaxPOClsb - 1);
-  int iPrevPOCmsb = iPrevPOC-iPrevPOClsb;
-  int iPOCmsb;
-  if( ( iPOClsb  <  iPrevPOClsb ) && ( ( iPrevPOClsb - iPOClsb )  >=  ( iMaxPOClsb / 2 ) ) )
+  int prevPoc    = prevTid0POC;
+  int maxPocLsb  = 1 << getBitsForPOC;
+  int prevPocLsb = prevPoc & (maxPocLsb - 1);
+  int prevPocMsb = prevPoc - prevPocLsb;
+  int pocMsb;
+  if ((pocLsb < prevPocLsb) && ((prevPocLsb - pocLsb) >= (maxPocLsb / 2)))
   {
-    iPOCmsb = iPrevPOCmsb + iMaxPOClsb;
+    pocMsb = prevPocMsb + maxPocLsb;
   }
-  else if( (iPOClsb  >  iPrevPOClsb )  && ( (iPOClsb - iPrevPOClsb )  >  ( iMaxPOClsb / 2 ) ) )
+  else if ((pocLsb > prevPocLsb) && ((pocLsb - prevPocLsb) > (maxPocLsb / 2)))
   {
-    iPOCmsb = iPrevPOCmsb - iMaxPOClsb;
+    pocMsb = prevPocMsb - maxPocLsb;
   }
   else
   {
-    iPOCmsb = iPrevPOCmsb;
+    pocMsb = prevPocMsb;
   }
 
-  return iPOCmsb + iPOClsb;
+  return pocMsb + pocLsb;
 }
 
 std::vector<uint8_t> filter_segment(const std::vector<uint8_t> & v, int idx, int * poc_base, int * last_idr_poc)
@@ -220,7 +220,7 @@ std::vector<uint8_t> filter_segment(const std::vector<uint8_t> & v, int idx, int
   std::vector<uint8_t> out;
   out.reserve(v.size());
 
-  int bits_for_poc = 8;
+  int  bitsForPoc                   = 8;
   bool skip_next_sei = false;
   bool change_poc = false;
   bool first_idr_slice_after_ph_nal = false;
@@ -244,8 +244,8 @@ std::vector<uint8_t> filter_segment(const std::vector<uint8_t> & v, int idx, int
     printf ("NALU Type: %d (%s)\n", nalu_type, NALU_TYPE[nalu_type]);
 #endif
     int poc = -1;
-    int poc_lsb = -1;
-    int new_poc = -1;
+    int pocLsb = -1;
+    int newPoc = -1;
 
     HLSyntaxReader HLSReader;
     static ParameterSetManager parameterSetManager;
@@ -279,7 +279,7 @@ std::vector<uint8_t> filter_segment(const std::vector<uint8_t> & v, int idx, int
     if(nalu_type == NAL_UNIT_CODED_SLICE_IDR_W_RADL || nalu_type == NAL_UNIT_CODED_SLICE_IDR_N_LP)
     {
       poc = 0;
-      new_poc = *poc_base + poc;
+      newPoc = *poc_base + poc;
       if (first_idr_slice_after_ph_nal)
       {
         cnt[nalu_layerId]--;
@@ -305,26 +305,26 @@ std::vector<uint8_t> filter_segment(const std::vector<uint8_t> & v, int idx, int
         int num_bits_up_to_poc_lsb = parcatHLSReader.getBitstream()->getNumBitsRead();
         int offset = num_bits_up_to_poc_lsb;
 
-        int byte_offset = offset / 8;
-        int hi_bits = offset % 8;
-        uint16_t data = (nalu[byte_offset] << 8) | nalu[byte_offset + 1];
-        int low_bits = 16 - hi_bits - bits_for_poc;
-        poc_lsb = (data >> low_bits) & 0xff;
-        poc = poc_lsb; //calc_poc(poc_lsb, 0, bits_for_poc, nalu_type);
+        int      byteOffset = offset / 8;
+        int      hiBits     = offset % 8;
+        uint16_t data       = (nalu[byteOffset] << 8) | nalu[byteOffset + 1];
+        int      lowBits    = 16 - hiBits - bitsForPoc;
+        pocLsb              = (data >> lowBits) & 0xff;
+        poc                 = pocLsb;   // calcPoc(pocLsb, 0, bitsForPoc, nalu_type);
 
-        new_poc = poc + *poc_base;
+        newPoc                  = poc + *poc_base;
         // int picOrderCntLSB = (pcSlice->getPOC()-pcSlice->getLastIDR()+(1<<pcSlice->getSPS()->getBitsForPOC())) & ((1<<pcSlice->getSPS()->getBitsForPOC())-1);
-        unsigned picOrderCntLSB = (new_poc - *last_idr_poc + (1 << bits_for_poc)) & ((1 << bits_for_poc) - 1);
+        unsigned picOrderCntLSB = (newPoc - *last_idr_poc + (1 << bitsForPoc)) & ((1 << bitsForPoc) - 1);
 
-        int low = data & ((1 << low_bits) - 1);
-        int hi = data >> (16 - hi_bits);
-        data = (hi << (16 - hi_bits)) | (picOrderCntLSB << low_bits) | low;
+        int low = data & ((1 << lowBits) - 1);
+        int hi  = data >> (16 - hiBits);
+        data    = (hi << (16 - hiBits)) | (picOrderCntLSB << lowBits) | low;
 
-        nalu[byte_offset] = data >> 8;
-        nalu[byte_offset + 1] = data & 0xff;
+        nalu[byteOffset]     = data >> 8;
+        nalu[byteOffset + 1] = data & 0xff;
 
 #if ENABLE_TRACING
-        std::cout << "Changed poc " << poc << " to " << new_poc << std::endl;
+        std::cout << "Changed poc " << poc << " to " << newPoc << std::endl;
 #endif
         ++cnt[nalu_layerId];
         change_poc = false;
