@@ -1781,23 +1781,27 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
     std::ostringstream picWidthNum;
     picWidthNum << "SEINNPFCPicWidthNumerator" << i;
-    opts.addOptions()(picWidthNum.str(), m_nnPostFilterSEICharacteristicsPicWidthNumerator[i], 1u, "Specifies the numerator of output picture width resulting from applying the Neural Network Post Filter Characteristics SEI message");
-    CHECK(m_nnPostFilterSEICharacteristicsPicWidthNumerator[i] <= 0, "Output picture width numerator cannot be equal to or less than 0")
+    opts.addOptions()(picWidthNum.str(), m_nnPostFilterSEICharacteristicsPicWidthNumerator[i], 1u,
+                      "Specifies the numerator of output picture width resulting from applying the Neural Network Post "
+                      "Filter Characteristics SEI message");
 
     std::ostringstream picWidthDenom;
     picWidthDenom << "SEINNPFCPicWidthDenominator" << i;
-    opts.addOptions()(picWidthDenom.str(), m_nnPostFilterSEICharacteristicsPicWidthDenominator[i], 1u, "Specifies the denominator of output picture width resulting from applying the Neural Network Post Filter Characteristics SEI message");
-    CHECK(m_nnPostFilterSEICharacteristicsPicWidthDenominator[i] <= 0, "Output picture width denominator cannot be equal to or less than 0")
+    opts.addOptions()(picWidthDenom.str(), m_nnPostFilterSEICharacteristicsPicWidthDenominator[i], 1u,
+                      "Specifies the denominator of output picture width resulting from applying the Neural Network "
+                      "Post Filter Characteristics SEI message");
 
     std::ostringstream picHeightNum;
     picHeightNum << "SEINNPFCPicHeightNumerator" << i;
-    opts.addOptions()(picHeightNum.str(), m_nnPostFilterSEICharacteristicsPicHeightNumerator[i], 1u, "Specifies the numerator of output picture height resulting from applying the Neural Network Post Filter Characteristics SEI message");
-    CHECK(m_nnPostFilterSEICharacteristicsPicHeightNumerator[i] <= 0, "Output picture height numerator cannot be equal to or less than 0")
+    opts.addOptions()(picHeightNum.str(), m_nnPostFilterSEICharacteristicsPicHeightNumerator[i], 1u,
+                      "Specifies the numerator of output picture height resulting from applying the Neural Network "
+                      "Post Filter Characteristics SEI message");
 
     std::ostringstream picHeightDenom;
     picHeightDenom << "SEINNPFCPicWidthDenominator" << i;
-    opts.addOptions()(picHeightDenom.str(), m_nnPostFilterSEICharacteristicsPicHeightDenominator[i], 1u, "Specifies the denominator of output picture height resulting from applying the Neural Network Post Filter Characteristics SEI message");
-    CHECK(m_nnPostFilterSEICharacteristicsPicHeightDenominator[i] <= 0, "Output picture height denominator cannot be equal to or less than 0")
+    opts.addOptions()(picHeightDenom.str(), m_nnPostFilterSEICharacteristicsPicHeightDenominator[i], 1u,
+                      "Specifies the denominator of output picture height resulting from applying the Neural Network "
+                      "Post Filter Characteristics SEI message");
 #else
     std::ostringstream picWidthInLumaSamples;
     picWidthInLumaSamples << "SEINNPFCPicWidthInLumaSamples" << i;
@@ -5167,6 +5171,14 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumParametersIdc[i] > 52, "SEINNPFCNumParametersIdc must be in the range of 0 to 52");
       xConfirmPara(m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i] > (uint32_t) (((uint64_t) 1 << 32) - 2), "SEINNPFCTotalKilobyteSize must be in the range of 0 to 2^32-2");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumKmacOperationsIdc[i] > (uint32_t) (((uint64_t) 1 << 32) - 2), "SEICharacteristicsNumKmacOperationsIdc must be in the range of 0 to 2^32-2");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsPicWidthNumerator[i] <= 0,
+                   "Output picture width numerator cannot be equal to or less than 0");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsPicWidthDenominator[i] <= 0,
+                   "Output picture width denominator cannot be equal to or less than 0");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsPicHeightNumerator[i] <= 0,
+                   "Output picture height numerator cannot be equal to or less than 0");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsPicHeightDenominator[i] <= 0,
+                   "Output picture height denominator cannot be equal to or less than 0");
     }
   }
 
