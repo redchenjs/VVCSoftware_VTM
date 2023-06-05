@@ -1798,9 +1798,21 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     xWriteUvlc(sei.m_paddingType, "nnpfc_padding_type");
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
+#if JVET_AD0056_NNPFC_PADDING_SYNTAX_CONDITION
+      if (sei.m_inpOrderIdc != 1)
+      {
+        xWriteUvlc(sei.m_lumaPadding, "nnpfc_luma_padding_val");
+      }
+      if (sei.m_inpOrderIdc != 0)
+      {
+        xWriteUvlc(sei.m_cbPadding, "nnpfc_cb_padding_val");
+        xWriteUvlc(sei.m_crPadding, "nnpfc_cr_padding_val");
+      }
+#else
       xWriteUvlc(sei.m_lumaPadding, "nnpfc_luma_padding_val");
       xWriteUvlc(sei.m_cbPadding, "nnpfc_cb_padding_val");
       xWriteUvlc(sei.m_crPadding, "nnpfc_cr_padding_val");
+#endif
     }
 
     xWriteFlag(sei.m_complexityInfoPresentFlag, "nnpfc_complexity_info_present_flag");
