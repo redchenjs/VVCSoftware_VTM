@@ -46,6 +46,7 @@
 #include <set>
 #include <vector>
 #include <cstdarg>
+#include <cstdint>
 
 #if K0149_BLOCK_STATISTICS
 class CodingStructure;

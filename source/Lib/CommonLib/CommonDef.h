@@ -43,6 +43,7 @@
 #include <iomanip>
 #include <limits>
 #include <cstdlib>
+#include <cstdint>
 
 #if GREEN_METADATA_SEI_ENABLED
 #include <fstream>
