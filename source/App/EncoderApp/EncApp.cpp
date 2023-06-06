@@ -1188,11 +1188,16 @@ void EncApp::xInitLibCfg( int layerIdx )
   for (int i = 0; i < m_nnPostFilterSEICharacteristicsNumFilters; i++)
   {
     m_cEncLib.setNNPostFilterSEICharacteristicsId                      (m_nnPostFilterSEICharacteristicsId[i], i);
+#if JVET_AD0056_MOVE_NNPFC_BASE_FLAG
+    m_cEncLib.setNNPostFilterSEICharacteristicsBaseFlag                (m_nnPostFilterSEICharacteristicsBaseFlag[i], i);
+#endif
     m_cEncLib.setNNPostFilterSEICharacteristicsModeIdc                 (m_nnPostFilterSEICharacteristicsModeIdc[i], i);
     m_cEncLib.setNNPostFilterSEICharacteristicsPropertyPresentFlag( m_nnPostFilterSEICharacteristicsPropertyPresentFlag[i], i);
     if (m_cEncLib.getNNPostFilterSEICharacteristicsPropertyPresentFlag(i))
     {
+#if !JVET_AD0056_MOVE_NNPFC_BASE_FLAG
       m_cEncLib.setNNPostFilterSEICharacteristicsBaseFlag                (m_nnPostFilterSEICharacteristicsBaseFlag[i], i);
+#endif
       if (!m_nnPostFilterSEICharacteristicsBaseFlag[i])
       {
         bool baseFilterExist = false;
