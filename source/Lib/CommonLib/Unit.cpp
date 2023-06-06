@@ -209,39 +209,13 @@ void UnitArea::repositionTo(const UnitArea& unitArea)
   }
 }
 
-const UnitArea UnitArea::singleComp(const ComponentID compID) const
+UnitArea UnitArea::singleChan(const ChannelType chType) const
 {
   UnitArea ret(chromaFormat);
 
   for (const auto &blk : blocks)
   {
-    if (blk.compID == compID)
-    {
-      ret.blocks.push_back(blk);
-    }
-    else
-    {
-      ret.blocks.push_back(CompArea());
-    }
-  }
-
-  return ret;
-}
-
-const UnitArea UnitArea::singleChan(const ChannelType chType) const
-{
-  UnitArea ret(chromaFormat);
-
-  for (const auto &blk : blocks)
-  {
-    if (toChannelType(blk.compID) == chType)
-    {
-      ret.blocks.push_back(blk);
-    }
-    else
-    {
-      ret.blocks.push_back(CompArea());
-    }
+    ret.blocks.push_back(toChannelType(blk.compID) == chType ? blk : CompArea());
   }
 
   return ret;
