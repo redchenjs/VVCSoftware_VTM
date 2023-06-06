@@ -65,6 +65,8 @@
 
 #define JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG           1
 
+#define JVET_AD0056_NNPFC_PADDING_SYNTAX_CONDITION        1
+
 #define JVET_AD0067_SWAP_SYNTAX                           1 // Swap the two syntax elements: nnpfc_auxiliary_inp_idc and nnpfc_inp_order_idc
 
 #define JVET_AD0056_MOVE_NNPFC_BASE_FLAG                  1
