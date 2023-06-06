@@ -40,6 +40,7 @@
 #include <map>
 #include <vector>
 #include <optional>
+#include <cstdint>
 
 template<class T> inline std::istream& operator>>(std::istream& in, std::optional<T>& value)
 {
