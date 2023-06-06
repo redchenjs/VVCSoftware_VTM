@@ -71,6 +71,8 @@
 
 #define JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG      1
 
+#define JVET_AD0056_NNPFC_METADATA_EXTENSION              1
+
 #define JVET_AD0141_NNPFA_NONOUTPUTPIC                    1 //Check that NNPFA is present in pic that is not a non-output picture
 
 #define JVET_AD0056_PIC_WIDTH_HEIGHT_CONTRAINTS           1

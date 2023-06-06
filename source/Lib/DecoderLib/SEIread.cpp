@@ -3126,6 +3126,16 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_total_kilobyte_size");
         sei.m_totalKilobyteSize = val;
     }
+
+#if JVET_AD0056_NNPFC_METADATA_EXTENSION
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_metadata_extension_num_bits");  // nnpfc_metadata_extension_num_bits shall be equal to 0 in the current edition
+    CHECK (val > 2048, "Values of nnpfc_metadata_extension_num_bits greater than 2048 shall not be present in bitstreams");
+    for (uint32_t i = 0; i < val; i++)
+    {
+      uint32_t val2;
+      sei_read_code(pDecodedMessageOutputStream, 1, val2, "nnpfc_reserved_metadata_extension"); // Decoders shall ignore the presence and value of nnpfc_reserved_metadata_extension
+    }
+#endif
   }
 
   if (sei.m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
