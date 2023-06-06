@@ -239,8 +239,7 @@ struct UnitArea
   const Position& chromaPos () const { return Cb(); }
   const Size&     chromaSize() const { return Cb(); }
 
-  const UnitArea  singleComp(const ComponentID compID) const;
-  const UnitArea  singleChan(const ChannelType chType) const;
+  UnitArea singleChan(const ChannelType chType) const;
 
   const SizeType  lwidth()  const { return Y().width; }  /*! luma width  */
   const SizeType  lheight() const { return Y().height; } /*! luma height */
