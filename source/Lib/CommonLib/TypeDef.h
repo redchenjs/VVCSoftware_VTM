@@ -81,6 +81,8 @@
 
 #define JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC      1 // Move nnpfc_inp_order_idc and nnpfc_out_order_idc, and gate the bit depth syntax elements 
 
+#define JVET_AD0056_MOVE_COLOUR_DESC_FLAG                 1 // Move nnpfc_separate_colour_description_present_flag and associated flags and add conformance checks
+
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1

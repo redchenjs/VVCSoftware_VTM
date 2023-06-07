@@ -3008,6 +3008,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei.m_auxInpIdc = val;
 #endif
 #endif
+#if !JVET_AD0056_MOVE_COLOUR_DESC_FLAG
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
     sei.m_sepColDescriptionFlag = val;
 
@@ -3020,6 +3021,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_matrix_coeffs");
       sei.m_matrixCoeffs = val;
     }
+#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_format_idc");
     sei.m_outFormatIdc = val;
@@ -3053,6 +3055,28 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #endif
     }
     
+#if JVET_AD0056_MOVE_COLOUR_DESC_FLAG
+    sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
+    sei.m_sepColDescriptionFlag = val;
+
+    if (sei.m_sepColDescriptionFlag)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_col_primaries");
+      sei.m_colPrimaries = val;
+      sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_trans_characteristics");
+      sei.m_transCharacteristics = val;
+      if (sei.m_outFormatIdc == 1)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 8, val, "nnpfc_matrix_coeffs");
+        sei.m_matrixCoeffs = val;
+        CHECK(sei.m_matrixCoeffs == 0 && !(sei.m_outTensorBitDepthChromaMinus8 == sei.m_outTensorBitDepthLumaMinus8 && sei.m_outOrderIdc == 2 && sei.m_outSubHeightC == 1 && sei.m_outSubWidthC == 1),
+          "nnpfc_matrix_coeffs shall not be equal to 0 unless the following conditions are true: nnpfc_out_tensor_chroma_bitdepth_minus8 is equal to nnpfc_out_tensor_luma_bitdepth_minus8, nnpfc_out_order_idc is equal to 2, outSubHeightC is equal to 1, and outSubWidthC is equal to 1");
+        CHECK(sei.m_matrixCoeffs == 8 && !((sei.m_outTensorBitDepthChromaMinus8 == sei.m_outTensorBitDepthLumaMinus8) || (sei.m_outTensorBitDepthChromaMinus8 == (sei.m_outTensorBitDepthLumaMinus8 + 1) && sei.m_outOrderIdc == 2 && sei.m_outSubHeightC == 1 && sei.m_outSubWidthC == 1)),
+          "nnpfc_matrix_coeffs shall not be equal to 8 unless one of the following conditions is true: nnpfc_out_tensor_chroma_bitdepth_minus8 is equal to nnpfc_out_tensor_luma_bitdepth_minus8 or "
+          "nnpfc_out_tensor_chroma_bitdepth_minus8 is equal to nnpfc_out_tensor_luma_bitdepth_minus8 + 1, nnpfc_out_order_idc is equal to 2, outSubHeightC is equal to 1, and outSubWidthC is equal to 1");
+      }
+    }
+#endif
 #if JVET_AD0067_INCLUDE_SYNTAX
     if (sei.m_sepColDescriptionFlag & (sei.m_outFormatIdc == 1))
     {
