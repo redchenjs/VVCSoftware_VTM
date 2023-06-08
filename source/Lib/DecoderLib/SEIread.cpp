@@ -3011,25 +3011,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei.m_auxInpIdc = val;
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
-    CHECK((chromaFormatIdc != ChromaFormat::_420) && (sei.m_inpOrderIdc == 3), "When ChromaFormatIdc is not equal to 1, nnpfc_inp_order_idc shall not be equal to 3");
-    CHECK((chromaFormatIdc == ChromaFormat::_400) && (sei.m_inpOrderIdc != 0), "When ChromaFormatIdc is equal to 0, nnpfc_inp_order_idc shall be equal to 0");
-    CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) > 0) && (sei.m_inpOrderIdc == 0), "When NNPF purpose is chroma upsampling, nnpfc_inp_order_idc shall not be equal to 0");
-
-    if (sei.m_inpFormatIdc == 1)
-    {
-      if(sei.m_inpOrderIdc != 1)
-      {
-        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_luma_minus8");
-        sei.m_inpTensorBitDepthLumaMinus8 = val;
-      }
-      if(sei.m_inpOrderIdc != 0)
-      {
-        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_tensor_bitdepth_chroma_minus8");
-        sei.m_inpTensorBitDepthChromaMinus8 = val;
-      }
-    }
-#endif
 #else
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
@@ -3125,25 +3106,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #endif
 
 #if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
-    if (sei.m_outFormatIdc == 1)
-    {
-      if(sei.m_outOrderIdc != 1)
-      {
-        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_luma_minus8");
-        sei.m_outTensorBitDepthLumaMinus8 = val;
-      }
-      if(sei.m_outOrderIdc != 0)
-      {
-        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_tensor_bitdepth_chroma_minus8");
-        sei.m_outTensorBitDepthChromaMinus8 = val; 
-      }
-    }
-    if((sei.m_outFormatIdc == 1) && (sei.m_inpFormatIdc == 1) && (sei.m_outOrderIdc > 1) && (sei.m_inpOrderIdc > 1))
-    {
-      CHECK((sei.m_outTensorBitDepthLumaMinus8 > sei.m_inpTensorBitDepthLumaMinus8) && (sei.m_outTensorBitDepthChromaMinus8 <= sei.m_inpTensorBitDepthChromaMinus8), "When outTensorBitDepthLuma is greater than inpTensorBitDepthLuma, outTensorBitDepthChroma shall not be less than inpTensorBitDepthChroma");
-      CHECK((sei.m_outTensorBitDepthLumaMinus8 <= sei.m_inpTensorBitDepthLumaMinus8) && (sei.m_outTensorBitDepthChromaMinus8 > sei.m_inpTensorBitDepthChromaMinus8), "When outTensorBitDepthChroma is greater than inpTensorBitDepthChroma, outTensorBitDepthLuma shall not be less than inpTensorBitDepthLuma");
-    }
-
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_chroma_loc_info_present_flag");
     sei.m_chromaLocInfoPresentFlag = val;
     if(sei.m_chromaLocInfoPresentFlag)
