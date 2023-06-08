@@ -1344,26 +1344,11 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
 
 #if JVET_AD0056_MOVE_COLOUR_DESC_FLAG
     const ChromaFormat chromaFormatIdc = m_pcEncLib->getSPS(0)->getChromaFormatIdc();
-    uint8_t      subWidthC;
-    uint8_t      subHeightC;
-    if (chromaFormatIdc == ChromaFormat::_420)
-    {
-      subWidthC  = 2;
-      subHeightC = 2;
-    }
-    else if (chromaFormatIdc == ChromaFormat::_422)
-    {
-      subWidthC  = 2;
-      subHeightC = 1;
-    }
-    else
-    {
-      subWidthC  = 1;
-      subHeightC = 1;
-    }
+    uint8_t subWidthC     = SPS::getWinUnitX(chromaFormatIdc);
+    uint8_t subHeightC    = SPS::getWinUnitY(chromaFormatIdc);
 
-    uint8_t      outSubWidthC  = subWidthC;
-    uint8_t      outSubHeightC = subHeightC;
+    uint8_t outSubWidthC  = subWidthC;
+    uint8_t outSubHeightC = subHeightC;
     if ((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
     {
       if (sei->m_outSubCFlag)
