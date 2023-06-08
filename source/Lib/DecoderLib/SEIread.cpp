@@ -3098,6 +3098,14 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       }
     }
 #endif
+#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
+    if((sei.m_outFormatIdc == 1) && (sei.m_inpFormatIdc == 1) && (sei.m_outOrderIdc > 1) && (sei.m_inpOrderIdc > 1))
+    {
+      CHECK((sei.m_outTensorBitDepthLumaMinus8 > sei.m_inpTensorBitDepthLumaMinus8) && (sei.m_outTensorBitDepthChromaMinus8 <= sei.m_inpTensorBitDepthChromaMinus8), "When outTensorBitDepthLuma is greater than inpTensorBitDepthLuma, outTensorBitDepthChroma shall not be less than inpTensorBitDepthChroma");
+      CHECK((sei.m_outTensorBitDepthLumaMinus8 <= sei.m_inpTensorBitDepthLumaMinus8) && (sei.m_outTensorBitDepthChromaMinus8 > sei.m_inpTensorBitDepthChromaMinus8), "When outTensorBitDepthChroma is greater than inpTensorBitDepthChroma, outTensorBitDepthLuma shall not be less than inpTensorBitDepthLuma");
+    }
+#endif
+
 #if JVET_AD0067_INCLUDE_SYNTAX
     if (sei.m_sepColDescriptionFlag & (sei.m_outFormatIdc == 1))
     {
