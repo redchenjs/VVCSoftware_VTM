@@ -79,6 +79,8 @@
 
 #define JVET_AD0056_PIC_WIDTH_HEIGHT_CONTRAINTS           1
 
+#define JVET_AD0056_NNPFC_INP_OUT_ORDER_IDC_CONSTRAINTS   1
+
 #define JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC      1 // Move nnpfc_inp_order_idc and nnpfc_out_order_idc, and gate the bit depth syntax elements 
 
 //########### place macros to be be kept below this line ###############
