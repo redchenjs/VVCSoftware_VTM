@@ -2983,6 +2983,12 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)  && sei.m_inpOrderIdc == 0, "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_inp_order_idc shall not be equal to 0.");
 #endif
 
+#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
+    CHECK((chromaFormatIdc == ChromaFormat::_400) && (sei.m_inpOrderIdc != 0), "When ChromaFormatIdc is equal to 0, nnpfc_inp_order_idc shall be equal to 0");
+    CHECK((chromaFormatIdc != ChromaFormat::_420) && (sei.m_inpOrderIdc == 3), "When ChromaFormatIdc is not equal to 1, nnpfc_inp_order_idc shall not be equal to 3");
+    CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0) && (sei.m_inpOrderIdc == 0), "When chromaUpsamplingFlag is equal to 1, nnpfc_inp_order_idc shall not be equal to 0");
+#endif
+
     if (sei.m_inpFormatIdc == 1)
     {
 #if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
