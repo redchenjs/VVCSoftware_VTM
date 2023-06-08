@@ -1778,6 +1778,16 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 #if JVET_AD0067_SWAP_SYNTAX
     xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
+#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
+
+    if (sei.m_inpFormatIdc == 1)
+    {
+      if(sei.m_inpOrderIdc != 1)
+        xWriteUvlc(sei.m_inpTensorBitDepthLumaMinus8, "nnpfc_inp_tensor_bitdepth_luma_minus8");
+      if(sei.m_inpOrderIdc != 0)
+        xWriteUvlc(sei.m_inpTensorBitDepthChromaMinus8, "nnpfc_inp_tensor_bitdepth_chroma_minus8");
+    }
+#endif
 #else
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
