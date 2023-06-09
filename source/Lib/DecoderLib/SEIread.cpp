@@ -3132,6 +3132,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei.m_paddingType = val;
 #if JVET_AD0091
   CHECK((sei.m_paddingType >= 5) && (sei.m_paddingType <= 15), "Reserved nnpfc_padding_type value, shall ignore the SEI message");
+  CHECK(sei.m_paddingType > 15, "Values of nnpfc_padding_type greater than 15 shall not be present in bitstreams");
 #endif
 
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
