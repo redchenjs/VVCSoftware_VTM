@@ -3122,11 +3122,15 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_chroma_loc_info_present_flag");
     sei.m_chromaLocInfoPresentFlag = val;
+    CHECK((sei.m_outColourFormatIdc != ChromaFormat::_420) && (sei.m_chromaLocInfoPresentFlag != 0), "When nnpfc_out_colour_format_idc is not equal to 1, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0");
+    CHECK((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) && (sei.m_chromaLocInfoPresentFlag != 0),"When colourizationFlag is equal to 0, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0")
+    
     if(sei.m_chromaLocInfoPresentFlag)
     {
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_chroma_sample_loc_type_frame");
       sei.m_chromaSampleLocTypeFrame = static_cast<Chroma420LocType>(val);
     }
+    CHECK(sei.m_chromaSampleLocTypeFrame > Chroma420LocType::UNSPECIFIED, "The value of nnpfc_chroma_sample_loc_type_frame shall be in the range of 0 to 6, inclusive");
 #endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_overlap");
