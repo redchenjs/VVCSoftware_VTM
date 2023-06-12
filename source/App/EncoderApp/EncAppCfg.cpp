@@ -4435,6 +4435,8 @@ bool EncAppCfg::xCheckParameter()
       }
       else
       {
+        CHECK(m_gopSize + extraRPLs >= MAX_GOP, "Too many RPLs");
+
         //create a new RPLEntry for this frame containing all the reference pictures that were available (POC > 0)
         m_RPLList0[m_gopSize + extraRPLs] = m_RPLList0[curGOP];
         m_RPLList1[m_gopSize + extraRPLs] = m_RPLList1[curGOP];
