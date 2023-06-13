@@ -3075,7 +3075,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_outTensorBitDepthChromaMinus8 = val; 
 #endif
     }
-    
+
 #if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
     if((sei.m_outFormatIdc == 1) && (sei.m_inpFormatIdc == 1) && (sei.m_outOrderIdc > 1) && (sei.m_inpOrderIdc > 1))
     {
@@ -3123,8 +3123,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_chroma_loc_info_present_flag");
     sei.m_chromaLocInfoPresentFlag = val;
-    CHECK((sei.m_outColourFormatIdc != ChromaFormat::_420) && (sei.m_chromaLocInfoPresentFlag != 0), "When nnpfc_out_colour_format_idc is not equal to 1, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0");
-    CHECK((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) && (sei.m_chromaLocInfoPresentFlag != 0),"When colourizationFlag is equal to 0, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0")
+    CHECK((sei.m_outColourFormatIdc != ChromaFormat::_420) && sei.m_chromaLocInfoPresentFlag, "When nnpfc_out_colour_format_idc is not equal to 1, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0");
+    CHECK((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) && sei.m_chromaLocInfoPresentFlag,"When colourizationFlag is equal to 0, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0")
     
     if(sei.m_chromaLocInfoPresentFlag)
     {
