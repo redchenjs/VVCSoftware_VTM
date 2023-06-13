@@ -4313,11 +4313,11 @@ bool EncAppCfg::xCheckParameter()
   bool verifiedGOP=false;
   bool errorGOP=false;
   int checkGOP=1;
-  int numRefs = m_isField ? 2 : 1;
-  int refList[MAX_NUM_REF_PICS+1] = {0};
+  static_vector<int, MAX_NUM_REF_PICS + 1> refList;
+  refList.push_back(0);
   if(m_isField)
   {
-    refList[1] = 1;
+    refList.push_back(1);
   }
   bool isOK[MAX_GOP];
   for(int i=0; i<MAX_GOP; i++)
@@ -4375,9 +4375,9 @@ bool EncAppCfg::xCheckParameter()
   //start looping through frames in coding order until we can verify that the GOP structure is correct.
   while (!verifiedGOP && !errorGOP)
   {
-    int curGOP = (checkGOP - 1) % m_gopSize;
-    int curPOC = ((checkGOP - 1) / m_gopSize) * m_gopSize * multipleFactor + m_RPLList0[curGOP].m_POC;
-    if (m_RPLList0[curGOP].m_POC < 0 || m_RPLList1[curGOP].m_POC < 0)
+    int       rplIdx = (checkGOP - 1) % m_gopSize;
+    const int curPOC = ((checkGOP - 1) / m_gopSize) * m_gopSize * multipleFactor + m_RPLList0[rplIdx].m_POC;
+    if (m_RPLList0[rplIdx].m_POC < 0 || m_RPLList1[rplIdx].m_POC < 0)
     {
       msg(WARNING, "\nError: found fewer Reference Picture Sets than GOPSize\n");
       errorGOP = true;
@@ -4386,26 +4386,27 @@ bool EncAppCfg::xCheckParameter()
     {
       //check that all reference pictures are available, or have a POC < 0 meaning they might be available in the next GOP.
       bool beforeI = false;
-      for (int i = 0; i< m_RPLList0[curGOP].m_numRefPics; i++)
+      for (int i = 0; i < m_RPLList0[rplIdx].m_numRefPics; i++)
       {
-        int absPOC = curPOC - m_RPLList0[curGOP].m_deltaRefPics[i];
-        if (absPOC < 0)
+        const int refPoc = curPOC - m_RPLList0[rplIdx].m_deltaRefPics[i];
+        if (refPoc < 0)
         {
           beforeI = true;
         }
         else
         {
           bool found = false;
-          for (int j = 0; j<numRefs; j++)
+          for (const int poc: refList)
           {
-            if (refList[j] == absPOC)
+            if (poc == refPoc)
             {
               found = true;
               for (int k = 0; k < m_gopSize; k++)
               {
-                if (absPOC % (m_gopSize * multipleFactor) == m_RPLList0[k].m_POC % (m_gopSize * multipleFactor))
+                if (refPoc % (m_gopSize * multipleFactor) == m_RPLList0[k].m_POC % (m_gopSize * multipleFactor))
                 {
-                  if (m_RPLList0[k].m_temporalId == m_RPLList0[curGOP].m_temporalId)
+                  // TODO: check whether equal test is correct
+                  if (m_RPLList0[k].m_temporalId == m_RPLList0[rplIdx].m_temporalId)
                   {
                     m_RPLList0[k].m_refPic = true;
                   }
@@ -4415,7 +4416,8 @@ bool EncAppCfg::xCheckParameter()
           }
           if (!found)
           {
-            msg(WARNING, "\nError: ref pic %d is not available for GOP frame %d\n", m_RPLList0[curGOP].m_deltaRefPics[i], curGOP + 1);
+            msg(WARNING, "\nError: ref pic %d is not available for GOP frame %d\n",
+                m_RPLList0[rplIdx].m_deltaRefPics[i], rplIdx + 1);
             errorGOP = true;
           }
         }
@@ -4423,10 +4425,10 @@ bool EncAppCfg::xCheckParameter()
       if (!beforeI && !errorGOP)
       {
         //all ref frames were present
-        if (!isOK[curGOP])
+        if (!isOK[rplIdx])
         {
           numOK++;
-          isOK[curGOP] = true;
+          isOK[rplIdx] = true;
           if (numOK == m_gopSize)
           {
             verifiedGOP = true;
@@ -4435,84 +4437,82 @@ bool EncAppCfg::xCheckParameter()
       }
       else
       {
-        CHECK(m_gopSize + extraRPLs >= MAX_GOP, "Too many RPLs");
+        const int newRplIdx = m_gopSize + extraRPLs;
+        CHECK(newRplIdx >= MAX_GOP, "Too many RPLs");
 
         //create a new RPLEntry for this frame containing all the reference pictures that were available (POC > 0)
-        m_RPLList0[m_gopSize + extraRPLs] = m_RPLList0[curGOP];
-        m_RPLList1[m_gopSize + extraRPLs] = m_RPLList1[curGOP];
+        m_RPLList0[newRplIdx] = m_RPLList0[rplIdx];
+        m_RPLList1[newRplIdx] = m_RPLList1[rplIdx];
         int newRefs0 = 0;
-        for (int i = 0; i< m_RPLList0[curGOP].m_numRefPics; i++)
+        int newActiveRefs0    = 0;
+        for (int i = 0; i < m_RPLList0[rplIdx].m_numRefPics; i++)
         {
-          int absPOC = curPOC - m_RPLList0[curGOP].m_deltaRefPics[i];
-          if (absPOC >= 0)
+          const int refPoc = curPOC - m_RPLList0[rplIdx].m_deltaRefPics[i];
+          if (refPoc >= 0)
           {
-            m_RPLList0[m_gopSize + extraRPLs].m_deltaRefPics[newRefs0] = m_RPLList0[curGOP].m_deltaRefPics[i];
+            m_RPLList0[newRplIdx].m_deltaRefPics[newRefs0] = m_RPLList0[rplIdx].m_deltaRefPics[i];
             newRefs0++;
+            newActiveRefs0 += i < m_RPLList0[rplIdx].m_numRefPicsActive ? 1 : 0;
           }
         }
-        int numPrefRefs0 = m_RPLList0[curGOP].m_numRefPicsActive;
+        int numPrefActiveRefs0 = m_RPLList0[rplIdx].m_numRefPicsActive;
 
         int newRefs1 = 0;
-        for (int i = 0; i< m_RPLList1[curGOP].m_numRefPics; i++)
+        int newActiveRefs1 = 0;
+        for (int i = 0; i < m_RPLList1[rplIdx].m_numRefPics; i++)
         {
-          int absPOC = curPOC - m_RPLList1[curGOP].m_deltaRefPics[i];
-          if (absPOC >= 0)
+          const int refPoc = curPOC - m_RPLList1[rplIdx].m_deltaRefPics[i];
+          if (refPoc >= 0)
           {
-            m_RPLList1[m_gopSize + extraRPLs].m_deltaRefPics[newRefs1] = m_RPLList1[curGOP].m_deltaRefPics[i];
+            m_RPLList1[m_gopSize + extraRPLs].m_deltaRefPics[newRefs1] = m_RPLList1[rplIdx].m_deltaRefPics[i];
             newRefs1++;
+            newActiveRefs1 += i < m_RPLList1[rplIdx].m_numRefPicsActive ? 1 : 0;
           }
         }
-        int numPrefRefs1 = m_RPLList1[curGOP].m_numRefPicsActive;
+        int numPrefActiveRefs1 = m_RPLList1[rplIdx].m_numRefPicsActive;
 
         for (int offset = -1; offset>-checkGOP; offset--)
         {
           //step backwards in coding order and include any extra available pictures we might find useful to replace the ones with POC < 0.
           int offGOP = (checkGOP - 1 + offset) % m_gopSize;
           int offPOC = ((checkGOP - 1 + offset) / m_gopSize) * (m_gopSize * multipleFactor) + m_RPLList0[offGOP].m_POC;
-          if (offPOC >= 0 && m_RPLList0[offGOP].m_temporalId <= m_RPLList0[curGOP].m_temporalId)
+          if (offPOC >= 0 && m_RPLList0[offGOP].m_temporalId <= m_RPLList0[rplIdx].m_temporalId)
           {
-            bool newRef = false;
-            for (int i = 0; i<(newRefs0 + newRefs1); i++)
-            {
-              if (refList[i] == offPOC)
-              {
-                newRef = true;
-              }
-            }
+            bool      newRef      = std::find(refList.begin(), refList.end(), offPOC) != refList.end();
+            const int newDeltaPoc = curPOC - offPOC;
             for (int i = 0; i<newRefs0; i++)
             {
-              if (m_RPLList0[m_gopSize + extraRPLs].m_deltaRefPics[i] == curPOC - offPOC)
+              if (m_RPLList0[newRplIdx].m_deltaRefPics[i] == newDeltaPoc)
               {
                 newRef = false;
               }
             }
             if (newRef)
             {
-              int insertPoint = newRefs0;
+              int insertPoint = newActiveRefs0;
               //this picture can be added, find appropriate place in list and insert it.
-              if (m_RPLList0[offGOP].m_temporalId == m_RPLList0[curGOP].m_temporalId)
+              if (m_RPLList0[offGOP].m_temporalId == m_RPLList0[rplIdx].m_temporalId)
               {
                 m_RPLList0[offGOP].m_refPic = true;
               }
-              for (int j = 0; j<newRefs0; j++)
+              for (int j = 0; j < newActiveRefs0; j++)
               {
-                if (m_RPLList0[m_gopSize + extraRPLs].m_deltaRefPics[j] > curPOC - offPOC && curPOC - offPOC > 0)
+                if (m_RPLList0[newRplIdx].m_deltaRefPics[j] > newDeltaPoc && newDeltaPoc > 0)
                 {
                   insertPoint = j;
                   break;
                 }
               }
-              int prev = curPOC - offPOC;
-              for (int j = insertPoint; j<newRefs0 + 1; j++)
-              {
-                int newPrev = m_RPLList0[m_gopSize + extraRPLs].m_deltaRefPics[j];
-                m_RPLList0[m_gopSize + extraRPLs].m_deltaRefPics[j] = prev;
-                prev = newPrev;
-              }
+              int prev = newDeltaPoc;
               newRefs0++;
+              newActiveRefs0++;
+              for (int j = insertPoint; j < newRefs0; j++)
+              {
+                std::swap(prev, m_RPLList0[newRplIdx].m_deltaRefPics[j]);
+              }
             }
           }
-          if (newRefs0 >= numPrefRefs0)
+          if (newActiveRefs0 >= numPrefActiveRefs0)
           {
             break;
           }
@@ -4523,98 +4523,80 @@ bool EncAppCfg::xCheckParameter()
           //step backwards in coding order and include any extra available pictures we might find useful to replace the ones with POC < 0.
           int offGOP = (checkGOP - 1 + offset) % m_gopSize;
           int offPOC = ((checkGOP - 1 + offset) / m_gopSize) * (m_gopSize * multipleFactor) + m_RPLList1[offGOP].m_POC;
-          if (offPOC >= 0 && m_RPLList1[offGOP].m_temporalId <= m_RPLList1[curGOP].m_temporalId)
+          if (offPOC >= 0 && m_RPLList1[offGOP].m_temporalId <= m_RPLList1[rplIdx].m_temporalId)
           {
-            bool newRef = false;
-            for (int i = 0; i<(newRefs0 + newRefs1); i++)
-            {
-              if (refList[i] == offPOC)
-              {
-                newRef = true;
-              }
-            }
+            bool      newRef      = std::find(refList.begin(), refList.end(), offPOC) != refList.end();
+            const int newDeltaPoc = curPOC - offPOC;
             for (int i = 0; i<newRefs1; i++)
             {
-              if (m_RPLList1[m_gopSize + extraRPLs].m_deltaRefPics[i] == curPOC - offPOC)
+              if (m_RPLList1[newRplIdx].m_deltaRefPics[i] == newDeltaPoc)
               {
                 newRef = false;
               }
             }
             if (newRef)
             {
-              int insertPoint = newRefs1;
+              int insertPoint = newActiveRefs1;
               //this picture can be added, find appropriate place in list and insert it.
-              if (m_RPLList1[offGOP].m_temporalId == m_RPLList1[curGOP].m_temporalId)
+              if (m_RPLList1[offGOP].m_temporalId == m_RPLList1[rplIdx].m_temporalId)
               {
                 m_RPLList1[offGOP].m_refPic = true;
               }
-              for (int j = 0; j<newRefs1; j++)
+              for (int j = 0; j < newActiveRefs1; j++)
               {
-                if (m_RPLList1[m_gopSize + extraRPLs].m_deltaRefPics[j] > curPOC - offPOC && curPOC - offPOC > 0)
+                if (m_RPLList1[newRplIdx].m_deltaRefPics[j] > newDeltaPoc && newDeltaPoc > 0)
                 {
                   insertPoint = j;
                   break;
                 }
               }
-              int prev = curPOC - offPOC;
-              for (int j = insertPoint; j<newRefs1 + 1; j++)
-              {
-                int newPrev = m_RPLList1[m_gopSize + extraRPLs].m_deltaRefPics[j];
-                m_RPLList1[m_gopSize + extraRPLs].m_deltaRefPics[j] = prev;
-                prev = newPrev;
-              }
+              int prev = newDeltaPoc;
               newRefs1++;
+              newActiveRefs1++;
+              for (int j = insertPoint; j < newRefs1; j++)
+              {
+                std::swap(prev, m_RPLList1[newRplIdx].m_deltaRefPics[j]);
+              }
             }
           }
-          if (newRefs1 >= numPrefRefs1)
+          if (newActiveRefs1 >= numPrefActiveRefs1)
           {
             break;
           }
         }
 
-        m_RPLList0[m_gopSize + extraRPLs].m_numRefPics = newRefs0;
-        m_RPLList0[m_gopSize + extraRPLs].m_numRefPicsActive = std::min(
-          m_RPLList0[m_gopSize + extraRPLs].m_numRefPics, m_RPLList0[m_gopSize + extraRPLs].m_numRefPicsActive);
-        m_RPLList1[m_gopSize + extraRPLs].m_numRefPics = newRefs1;
-        m_RPLList1[m_gopSize + extraRPLs].m_numRefPicsActive = std::min(
-          m_RPLList1[m_gopSize + extraRPLs].m_numRefPics, m_RPLList1[m_gopSize + extraRPLs].m_numRefPicsActive);
-        curGOP = m_gopSize + extraRPLs;
+        m_RPLList0[newRplIdx].m_numRefPics       = newRefs0;
+        m_RPLList0[newRplIdx].m_numRefPicsActive = newActiveRefs0;
+        m_RPLList1[newRplIdx].m_numRefPics       = newRefs1;
+        m_RPLList1[newRplIdx].m_numRefPicsActive = newActiveRefs1;
+
+        rplIdx = newRplIdx;
         extraRPLs++;
       }
-      numRefs = 0;
-      for (int i = 0; i< m_RPLList0[curGOP].m_numRefPics; i++)
+
+      refList.clear();
+      for (int i = 0; i < m_RPLList0[rplIdx].m_numRefPics; i++)
       {
-        int absPOC = curPOC - m_RPLList0[curGOP].m_deltaRefPics[i];
-        hasFutureRef |= (m_RPLList0[curGOP].m_deltaRefPics[i] < 0);
-        if (absPOC >= 0)
+        const int refPoc = curPOC - m_RPLList0[rplIdx].m_deltaRefPics[i];
+        hasFutureRef |= (m_RPLList0[rplIdx].m_deltaRefPics[i] < 0);
+        if (refPoc >= 0)
         {
-          refList[numRefs] = absPOC;
-          numRefs++;
+          refList.push_back(refPoc);
         }
       }
-      for (int i = 0; i< m_RPLList1[curGOP].m_numRefPics; i++)
+      for (int i = 0; i < m_RPLList1[rplIdx].m_numRefPics; i++)
       {
-        int absPOC = curPOC - m_RPLList1[curGOP].m_deltaRefPics[i];
-        hasFutureRef |= (m_RPLList1[curGOP].m_deltaRefPics[i] < 0);
-        if (absPOC >= 0)
+        const int refPoc = curPOC - m_RPLList1[rplIdx].m_deltaRefPics[i];
+        hasFutureRef |= (m_RPLList1[rplIdx].m_deltaRefPics[i] < 0);
+        if (refPoc >= 0)
         {
-          bool alreadyExist = false;
-          for (int j = 0; !alreadyExist && j < numRefs; j++)
+          if (std::find(refList.begin(), refList.end(), refPoc) == refList.end())
           {
-            if (refList[j] == absPOC)
-            {
-              alreadyExist = true;
-            }
-          }
-          if (!alreadyExist)
-          {
-            refList[numRefs] = absPOC;
-            numRefs++;
+            refList.push_back(refPoc);
           }
         }
       }
-      refList[numRefs] = curPOC;
-      numRefs++;
+      refList.push_back(curPOC);
     }
     checkGOP++;
   }
