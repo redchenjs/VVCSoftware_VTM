@@ -1527,7 +1527,8 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     sei->m_overlap = m_pcCfg->getNNPostFilterSEICharacteristicsOverlap(filterIdx);
     sei->m_paddingType = m_pcCfg->getNNPostFilterSEICharacteristicsPaddingType(filterIdx);
 #if JVET_AD0091
-    CHECK(sei->m_paddingType >= 5, "Invalid nnpfc_padding_type value");
+    CHECK((sei->m_paddingType >= 5) && (sei->m_paddingType <= 15), "Reserved nnpfc_padding_type value, shall not be present in bitstreams conforming to this version of VTM");
+    CHECK(sei->m_paddingType > 15, "Invalid nnpfc_padding_type value");
 #endif
     sei->m_lumaPadding = m_pcCfg->getNNPostFilterSEICharacteristicsLumaPadding(filterIdx);
     sei->m_cbPadding = m_pcCfg->getNNPostFilterSEICharacteristicsCbPadding(filterIdx);
