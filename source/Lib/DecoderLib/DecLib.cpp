@@ -463,6 +463,7 @@ DecLib::DecLib()
   , m_clsVPSid(0)
 #if GDR_ENABLED
   , m_lastGdrPoc (-1)
+  , m_lastGdrRecoveryPocCnt(0)
 #endif
   , m_targetSubPicIdx(0)
   , m_dci(nullptr)
