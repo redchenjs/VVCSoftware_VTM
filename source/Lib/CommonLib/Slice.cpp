@@ -2188,6 +2188,7 @@ PicHeader::PicHeader()
   , m_cuChromaQpOffsetSubdivInter(0)
   , m_enableTMVPFlag(true)
   , m_picColFromL0Flag(true)
+  , m_colRefIdx(0)
   , m_mvdL1ZeroFlag(0)
   , m_maxNumAffineMergeCand(AFFINE_MRG_MAX_NUM_CANDS)
   , m_disFracMMVD(0)
@@ -2199,6 +2200,9 @@ PicHeader::PicHeader()
   , m_numAlfApsIdsLuma(0)
   , m_alfApsIdsLuma(0)
   , m_alfApsIdChroma(0)
+  , m_ccalfEnabledFlag{ false }
+  , m_ccalfCbApsId(-1)
+  , m_ccalfCrApsId(-1)
   , m_deblockingFilterOverrideFlag(0)
   , m_deblockingFilterDisable(0)
   , m_deblockingFilterBetaOffsetDiv2(0)
@@ -2271,6 +2275,7 @@ void PicHeader::initPicHeader()
   m_cuChromaQpOffsetSubdivInter                   = 0;
   m_enableTMVPFlag                                = true;
   m_picColFromL0Flag                              = true;
+  m_colRefIdx                                     = 0;
   m_mvdL1ZeroFlag                                 = 0;
   m_maxNumAffineMergeCand                         = AFFINE_MRG_MAX_NUM_CANDS;
   m_disFracMMVD                                   = 0;
@@ -2281,6 +2286,9 @@ void PicHeader::initPicHeader()
   m_qpDelta                                       = 0;
   m_numAlfApsIdsLuma                              = 0;
   m_alfApsIdChroma                                = 0;
+  memset(m_ccalfEnabledFlag,                        false,    sizeof(m_ccalfEnabledFlag));
+  m_ccalfCbApsId                                  = -1;
+  m_ccalfCrApsId                                  = -1;
   m_deblockingFilterOverrideFlag                  = 0;
   m_deblockingFilterDisable                       = 0;
   m_deblockingFilterBetaOffsetDiv2                = 0;
@@ -2378,6 +2386,10 @@ APS::~APS()
 }
 
 ScalingList::ScalingList()
+  : m_scalingListPredModeFlagIsCopy{ false }
+  , m_scalingListDC{ 0 }
+  , m_refMatrixId{ 0 } 
+  , m_scalingListPreditorModeFlag{ false }
 {
   m_chromaScalingListPresentFlag = true;
   for (uint32_t scalingListId = 0; scalingListId < 28; scalingListId++)
