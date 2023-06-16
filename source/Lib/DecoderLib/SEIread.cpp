@@ -3229,6 +3229,10 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
 
   if(!sei.m_cancelFlag)
   {
+#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
+    sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_target_base_flag" );
+    sei.m_targetBaseFlag = val;
+#endif
     sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_persistence_flag" );
     sei.m_persistenceFlag = val;
   }

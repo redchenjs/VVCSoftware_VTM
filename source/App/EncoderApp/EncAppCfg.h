@@ -792,6 +792,9 @@ protected:
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
 #endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;
+#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
+  bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
+#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
 
   bool                  m_poSEIEnabled;

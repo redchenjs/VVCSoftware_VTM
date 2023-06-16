@@ -757,6 +757,9 @@ protected:
   bool                    m_nnPostFilterSEIActivationEnabled;
   uint32_t                m_nnPostFilterSEIActivationTargetId;
   bool                    m_nnPostFilterSEIActivationCancelFlag;
+#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
+  bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
+#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
 
   // film grain characterstics sei
@@ -2065,6 +2068,10 @@ public:
   uint32_t    getNnPostFilterSEIActivationTargetId() const                                                              { return m_nnPostFilterSEIActivationTargetId; }
   void setNnPostFilterSEIActivationCancelFlag(bool cancelFlag)                                                          { m_nnPostFilterSEIActivationCancelFlag = cancelFlag; }
   bool getNnPostFilterSEIActivationCancelFlag() const                                                                   { return m_nnPostFilterSEIActivationCancelFlag;}
+#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
+  void setNnPostFilterSEIActivationTargetBaseFlag(bool targetBaseFlag)                                                  { m_nnPostFilterSEIActivationTargetBaseFlag = targetBaseFlag; }
+  bool getNnPostFilterSEIActivationTargetBaseFlag() const                                                               { return m_nnPostFilterSEIActivationTargetBaseFlag;}
+#endif
   void setNnPostFilterSEIActivationPersistenceFlag(bool persistenceFlag)                                                          { m_nnPostFilterSEIActivationPersistenceFlag = persistenceFlag; }
   bool getNnPostFilterSEIActivationPersistenceFlag() const                                                                   { return m_nnPostFilterSEIActivationPersistenceFlag;}
 
