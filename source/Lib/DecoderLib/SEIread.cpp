@@ -2925,6 +2925,13 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_picHeightNumeratorMinus1 = val;
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_pic_height_denominator_minus1");
       sei.m_picHeightDenominatorMinus1 = val;
+#if JVET_AD0091
+      int scaledHeightRatio = 16 * (sei.m_picHeightNumeratorMinus1 + 1) / (sei.m_picHeightDenominatorMinus1 + 1);
+      int scaledWidthRatio = 16 * (sei.m_picWidthNumeratorMinus1 + 1) / (sei.m_picWidthDenominatorMinus1 + 1);
+
+      CHECK((scaledHeightRatio < 1) && (scaledHeightRatio > 256), "The value range of heightRatio shall be in the range of 1/16 to 16, inclusive");
+      CHECK((scaledWidthRatio < 1) && (scaledWidthRatio > 256), "The value range of widthRatio shall be in the range of 1/16 to 16, inclusive");
+#endif
 #else
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_width_in_luma_samples");
       sei.m_picWidthInLumaSamples = val;
@@ -3123,6 +3130,14 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_padding_type");
     sei.m_paddingType = val;
+#if JVET_AD0091
+  if((sei.m_paddingType >= 5) && (sei.m_paddingType <= 15))
+  {
+    std::cout<<"Reserved nnpfc_padding_type value, shall ignore the SEI message"<<std::endl;
+    return;
+  }
+  CHECK(sei.m_paddingType > 15, "Values of nnpfc_padding_type greater than 15 shall not be present in bitstreams");
+#endif
 
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
