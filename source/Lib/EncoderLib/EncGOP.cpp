@@ -6812,11 +6812,11 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
   uint32_t numIlrp[NUM_REF_PIC_LIST_01] = { 0, 0 };
   uint32_t num[NUM_REF_PIC_LIST_01]     = { 0, 0 };
 
+  static_vector<int, MAX_NUM_REF_PICS> higherTLayerRefs[NUM_REF_PIC_LIST_01];
+  static_vector<int, MAX_NUM_REF_PICS> inactiveRefs[NUM_REF_PIC_LIST_01];
+
   for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
   {
-    static_vector<int, MAX_NUM_REF_PICS> higherTLayerRefs;
-    static_vector<int, MAX_NUM_REF_PICS> inactiveRefs;
-
     const ReferencePictureList *rpl = l == REF_PIC_LIST_0 ? rpl0 : rpl1;
 
     if (isIntraLayerPredAllowed)
@@ -6838,17 +6838,17 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
               {
                 if (slice->isIRAP())
                 {
-                  inactiveRefs.push_back(ii);
+                  inactiveRefs[l].push_back(ii);
                 }
                 else if (pic->temporalId > curPic->temporalId)
                 {
-                  higherTLayerRefs.push_back(ii);
+                  higherTLayerRefs[l].push_back(ii);
                 }
                 else if (num[l] >= rpl->getNumberOfActivePictures() - rpl->getNumberOfInterLayerPictures()
                          && layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag()
                          && isInterLayerPredAllowed)
                 {
-                  inactiveRefs.push_back(ii);
+                  inactiveRefs[l].push_back(ii);
                 }
                 else
                 {
@@ -6881,9 +6881,69 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
         }
       }
     }
+  }
+
+  uint32_t numPrev[NUM_REF_PIC_LIST_01] = { num[REF_PIC_LIST_0], num[REF_PIC_LIST_1] };
+
+  // Copy from other list if we have fewer than active ref pics
+
+  bool isDisallowMixedRefPic = slice->getSPS()->getAllActiveRplEntriesHasSameSignFlag();
+
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
+  {
+    const ReferencePictureList* rpl = l == REF_PIC_LIST_0 ? rpl0 : rpl1;
+    const auto                  k   = l == REF_PIC_LIST_0 ? REF_PIC_LIST_1 : REF_PIC_LIST_0;
+
+    int numOfNeedToFill = rpl->getNumberOfActivePictures() - num[l];
+
+    for (int ii = 0; numOfNeedToFill > 0 && ii < numPrev[k]; ii++)
+    {
+      const int  identifier   = localRpl[k].getRefPicIdentifier(ii);
+      const bool isLongTerm   = localRpl[k].isRefPicLongterm(ii);
+      const bool isInterLayer = localRpl[k].isInterLayerRefPic(ii);
+
+      // Make sure this copy is not already present
+      bool canIncludeThis = true;
+      for (int jj = 0; jj < num[l]; jj++)
+      {
+        if (identifier == localRpl[l].getRefPicIdentifier(jj) && isLongTerm == localRpl[l].isRefPicLongterm(jj)
+            && isInterLayer == localRpl[l].isInterLayerRefPic(jj))
+        {
+          canIncludeThis = false;
+          break;
+        }
+
+        if (isDisallowMixedRefPic && !isLongTerm && !localRpl[l].isRefPicLongterm(jj))
+        {
+          const bool sameSign = (identifier ^ localRpl[l].getRefPicIdentifier(jj)) >= 0;
+          if (!sameSign)
+          {
+            canIncludeThis = false;
+            break;
+          }
+        }
+      }
+      if (canIncludeThis)
+      {
+        localRpl[l].setRefPicIdentifier(num[l], identifier, isLongTerm, isInterLayer,
+                                        localRpl[k].getInterLayerRefPicIdx(ii));
+        num[l]++;
+        numStrp[l] += isLongTerm ? 0 : 1;
+        numLtrp[l] += isLongTerm && !isInterLayer ? 1 : 0;
+        numIlrp[l] += isInterLayer ? 1 : 0;
+        numOfNeedToFill--;
+      }
+    }
+  }
+
+  const uint32_t numValidRefs[NUM_REF_PIC_LIST_01] = { num[REF_PIC_LIST_0], num[REF_PIC_LIST_1] };
+
+  for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
+  {
+    const ReferencePictureList* rpl = l == REF_PIC_LIST_0 ? rpl0 : rpl1;
 
     // now add inactive refs
-    for (const int i: inactiveRefs)
+    for (const int i: inactiveRefs[l])
     {
       localRpl[l].setRefPicIdentifier(num[l], rpl->getRefPicIdentifier(i), rpl->isRefPicLongterm(i), false, NOT_VALID);
       num[l]++;
@@ -6947,7 +7007,7 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
     }
 
     // now add higher TId refs
-    for (const int i: higherTLayerRefs)
+    for (const int i: higherTLayerRefs[l])
     {
       localRpl[l].setRefPicIdentifier(num[l], rpl->getRefPicIdentifier(i), rpl->isRefPicLongterm(i), false, NOT_VALID);
       num[l]++;
@@ -6956,65 +7016,15 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
     }
   }
 
-  uint32_t numPrev[NUM_REF_PIC_LIST_01] = { num[REF_PIC_LIST_0], num[REF_PIC_LIST_1] };
-
-  // Copy from other list if we have fewer than active ref pics
-
-  bool isDisallowMixedRefPic = slice->getSPS()->getAllActiveRplEntriesHasSameSignFlag();
-
   for (const auto l: { REF_PIC_LIST_0, REF_PIC_LIST_1 })
   {
     const ReferencePictureList *rpl = l == REF_PIC_LIST_0 ? rpl0 : rpl1;
-    const auto                  k   = l == REF_PIC_LIST_0 ? REF_PIC_LIST_1 : REF_PIC_LIST_0;
 
-    int numOfNeedToFill = rpl->getNumberOfActivePictures() - num[l];
-
-    for (int ii = 0; numOfNeedToFill > 0 && ii < numPrev[k]; ii++)
-    {
-      const int  identifier   = localRpl[k].getRefPicIdentifier(ii);
-      const bool isLongTerm   = localRpl[k].isRefPicLongterm(ii);
-      const bool isInterLayer = localRpl[k].isInterLayerRefPic(ii);
-
-      // Make sure this copy is not already present
-      bool canIncludeThis = true;
-      for (int jj = 0; jj < num[l]; jj++)
-      {
-        if (identifier == localRpl[l].getRefPicIdentifier(jj) && isLongTerm == localRpl[l].isRefPicLongterm(jj)
-            && isInterLayer == localRpl[l].isInterLayerRefPic(jj))
-        {
-          canIncludeThis = false;
-          break;
-        }
-
-        if (isDisallowMixedRefPic && !isLongTerm && !localRpl[l].isRefPicLongterm(jj))
-        {
-          const bool sameSign = (identifier ^ localRpl[l].getRefPicIdentifier(jj)) >= 0;
-          if (!sameSign)
-          {
-            canIncludeThis = false;
-            break;
-          }
-        }
-      }
-      if( canIncludeThis )
-      {
-        localRpl[l].setRefPicIdentifier(num[l], identifier, isLongTerm, isInterLayer,
-                                        localRpl[k].getInterLayerRefPicIdx(ii));
-        num[l]++;
-        numStrp[l] += isLongTerm ? 0 : 1;
-        numLtrp[l] += isLongTerm && !isInterLayer ? 1 : 0;
-        numIlrp[l] += isInterLayer ? 1 : 0;
-        numOfNeedToFill--;
-      }
-    }
     localRpl[l].setNumberOfLongtermPictures(numLtrp[l]);
     localRpl[l].setNumberOfShorttermPictures(numStrp[l]);
     localRpl[l].setNumberOfInterLayerPictures(numIlrp[l]);
-    const int numPics = slice->isIRAP() ? 0 : numLtrp[l] + numStrp[l];
-
-    localRpl[l].setNumberOfActivePictures(
-      std::min<int>(numPics, rpl->getNumberOfActivePictures() - rpl->getNumberOfInterLayerPictures()) + numIlrp[l]);
-    localRpl[l].setLtrpInSliceHeaderFlag(1);
+    localRpl[l].setNumberOfActivePictures(std::min<int>(numValidRefs[l], rpl->getNumberOfActivePictures()));
+    localRpl[l].setLtrpInSliceHeaderFlag(true);
     slice->setRplIdx(l, -1);
     *slice->getRpl(l) = localRpl[l];
   }
