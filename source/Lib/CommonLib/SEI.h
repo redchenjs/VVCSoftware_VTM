@@ -1344,6 +1344,9 @@ public:
   SEINeuralNetworkPostFilterActivation()
     : m_targetId(0)
     , m_cancelFlag(false)
+#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
+    , m_targetBaseFlag(false)
+#endif
     , m_persistenceFlag(false)
   {}
   SEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation& sei);
@@ -1352,6 +1355,9 @@ public:
 
   uint32_t       m_targetId;
   bool           m_cancelFlag;
+#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
+  bool           m_targetBaseFlag;
+#endif
   bool           m_persistenceFlag;
 };
 
