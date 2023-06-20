@@ -2983,6 +2983,12 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)  && sei.m_inpOrderIdc == 0, "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_inp_order_idc shall not be equal to 0.");
 #endif
 
+#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
+    CHECK((chromaFormatIdc == ChromaFormat::_400) && (sei.m_inpOrderIdc != 0), "When ChromaFormatIdc is equal to 0, nnpfc_inp_order_idc shall be equal to 0");
+    CHECK((chromaFormatIdc != ChromaFormat::_420) && (sei.m_inpOrderIdc == 3), "When ChromaFormatIdc is not equal to 1, nnpfc_inp_order_idc shall not be equal to 3");
+    CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0) && (sei.m_inpOrderIdc == 0), "When chromaUpsamplingFlag is equal to 1, nnpfc_inp_order_idc shall not be equal to 0");
+#endif
+
     if (sei.m_inpFormatIdc == 1)
     {
 #if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
@@ -3069,7 +3075,15 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_outTensorBitDepthChromaMinus8 = val; 
 #endif
     }
-    
+
+#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
+    if((sei.m_outFormatIdc == 1) && (sei.m_inpFormatIdc == 1) && (sei.m_outOrderIdc > 1) && (sei.m_inpOrderIdc > 1))
+    {
+      CHECK((sei.m_outTensorBitDepthLumaMinus8 > sei.m_inpTensorBitDepthLumaMinus8) && (sei.m_outTensorBitDepthChromaMinus8 < sei.m_inpTensorBitDepthChromaMinus8), "When outTensorBitDepthLuma is greater than inpTensorBitDepthLuma, outTensorBitDepthChroma shall not be less than inpTensorBitDepthChroma");
+      CHECK((sei.m_outTensorBitDepthLumaMinus8 < sei.m_inpTensorBitDepthLumaMinus8) && (sei.m_outTensorBitDepthChromaMinus8 > sei.m_inpTensorBitDepthChromaMinus8), "When outTensorBitDepthChroma is greater than inpTensorBitDepthChroma, outTensorBitDepthLuma shall not be less than inpTensorBitDepthLuma");
+    }
+#endif
+
 #if JVET_AD0056_MOVE_COLOUR_DESC_FLAG
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
     sei.m_sepColDescriptionFlag = val;
@@ -3092,6 +3106,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       }
     }
 #endif
+
 #if JVET_AD0067_INCLUDE_SYNTAX
     if (sei.m_sepColDescriptionFlag & (sei.m_outFormatIdc == 1))
     {
@@ -3103,6 +3118,20 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
     sei.m_outOrderIdc = val;
     CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)  && (sei.m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 3.")
+#endif
+
+#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
+    sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_chroma_loc_info_present_flag");
+    sei.m_chromaLocInfoPresentFlag = val;
+    CHECK((sei.m_outColourFormatIdc != ChromaFormat::_420) && sei.m_chromaLocInfoPresentFlag, "When nnpfc_out_colour_format_idc is not equal to 1, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0");
+    CHECK((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) && sei.m_chromaLocInfoPresentFlag,"When colourizationFlag is equal to 0, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0")
+    
+    if(sei.m_chromaLocInfoPresentFlag)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_chroma_sample_loc_type_frame");
+      sei.m_chromaSampleLocTypeFrame = static_cast<Chroma420LocType>(val);
+    }
+    CHECK(sei.m_chromaSampleLocTypeFrame > Chroma420LocType::UNSPECIFIED, "The value of nnpfc_chroma_sample_loc_type_frame shall be in the range of 0 to 6, inclusive");
 #endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_overlap");

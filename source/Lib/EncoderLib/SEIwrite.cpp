@@ -1833,7 +1833,16 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteFlag(sei.m_fullRangeFlag, "nnpfc_full_range_flag");
     }
 #endif
+    
+#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
+    xWriteFlag(sei.m_chromaLocInfoPresentFlag, "nnpfc_chroma_loc_info_present_flag");
 
+    if(sei.m_chromaLocInfoPresentFlag)
+    {
+      xWriteUvlc(to_underlying(sei.m_chromaSampleLocTypeFrame), "nnpfc_chroma_sample_loc_type_frame");
+    }
+#endif
+    
 #if !JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
     xWriteUvlc(sei.m_outOrderIdc, "nnpfc_out_order_idc");
 #endif

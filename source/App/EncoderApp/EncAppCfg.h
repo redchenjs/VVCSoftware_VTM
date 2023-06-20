@@ -764,6 +764,10 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsOutFormatIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutOrderIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
+  bool                  m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t               m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[MAX_NUM_NN_POST_FILTERS];
+#endif
   uint32_t              m_nnPostFilterSEICharacteristicsPatchWidthMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1[MAX_NUM_NN_POST_FILTERS];

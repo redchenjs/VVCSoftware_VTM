@@ -5888,6 +5888,28 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
     3 & Four luma matrices, two chroma matrices, and a quantization parameter matrix are present in the input tensor, thus the number of channels is 7 \\
   \end{tabular}
   \\
+  \Option{SEINNPFCChromaLocInfoPresentFlag\emph{i}} &
+  \Default{false} &
+  Specifies nnpfc_chroma_loc_info_present_flag of the \emph{i}-th neural network post-filter.
+  \par
+    When true (non-zero) specifies the presence of the nnpfc_chroma_sample_loc_type_frame syntax element in the NNPFC SEI message.
+  \par
+    When false specifies the absence of the nnpfc_chroma_sample_loc_type_frame syntax element in the NNPFC SEI message.
+  \\
+  \Option{SEINNPFCChromaSampleLocTypeFrame\emph{i}} &
+  \Default{0} &
+  Specifies the location of chroma samples of the output pictures for the \emph{i}-th neural network post-filter.
+  \par
+  \begin{tabular}{cp{0.46\textwidth}}
+    0 & Left \\
+    1 & Center \\
+    2 & Top left \\
+    3 & Top \\
+    4 & Bottom left \\
+    5 & Bottom \\
+    6 & Unspecified \\
+  \end{tabular}
+  \\
   \Option{SEINNPFCConstantPatchSizeFlag\emph{i}} &
   \Default{false} &
   Specifies nnpfc_constant_patch_size_flag of the \emph{i}-th neural network post-filter.

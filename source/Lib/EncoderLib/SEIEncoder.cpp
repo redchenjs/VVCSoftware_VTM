@@ -1472,6 +1472,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     CHECK((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0 && sei->m_inpOrderIdc == 0, "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_inp_order_idc shall not be equal to 0");
 #endif
     sei->m_auxInpIdc             = m_pcCfg->getNNPostFilterSEICharacteristicsAuxInpIdc(filterIdx);
+
 #if !JVET_AD0056_MOVE_COLOUR_DESC_FLAG
     sei->m_sepColDescriptionFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSepColDescriptionFlag(filterIdx);
     if (sei->m_sepColDescriptionFlag)
@@ -1515,6 +1516,13 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
 #if JVET_AD0056_NNPFC_INP_OUT_ORDER_IDC_CONSTRAINTS
     CHECK((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0 && (sei->m_outOrderIdc == 0 || sei->m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0 or 3");
     CHECK((sei->m_purpose & NNPC_PurposeType::COLOURIZATION) != 0 && sei->m_outOrderIdc == 0, "When nnpfc_purpose & 0x20 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0");
+#endif
+#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
+      sei->m_chromaLocInfoPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsChromaLocInfoPresentFlag(filterIdx);
+      if(sei->m_chromaLocInfoPresentFlag)
+      {
+        sei->m_chromaSampleLocTypeFrame = m_pcCfg->getNNPostFilterSEICharacteristicsChromaSampleLocTypeFrame(filterIdx);;
+      }
 #endif
     sei->m_constantPatchSizeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(filterIdx);
     sei->m_patchWidthMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchWidthMinus1(filterIdx);
