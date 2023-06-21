@@ -4590,8 +4590,9 @@ void MergeItem::importMergeInfo(const MergeCtx& mergeCtx, int _mergeIdx, MergeIt
   mergeIdx = _mergeIdx;
   mergeItemType = _mergeItemType;
 
-  if (mergeItemType != MergeItemType::GPM)
+  if (mergeItemType != MergeItemType::GPM && mergeItemType != MergeItemType::MMVD)
   {
+    CHECK(mergeIdx >= MRG_MAX_NUM_CANDS, "Too large merge index");
     mvField[0][REF_PIC_LIST_0] = mergeCtx.mvFieldNeighbours[mergeIdx][REF_PIC_LIST_0];
     mvField[0][REF_PIC_LIST_1] = mergeCtx.mvFieldNeighbours[mergeIdx][REF_PIC_LIST_1];
     interDir = mergeCtx.interDirNeighbours[mergeIdx];
