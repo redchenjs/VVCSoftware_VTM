@@ -1327,6 +1327,13 @@ void EncApp::xInitLibCfg( int layerIdx )
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
   m_cEncLib.setNnPostFilterSEIActivationTargetId(m_nnPostFilterSEIActivationTargetId);
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+  m_cEncLib.setNnPostFilterSEIActivationCancelFlag               (m_nnPostFilterSEIActivationCancelFlag);
+  m_cEncLib.setNnPostFilterSEIActivationTargetBaseFlag           (m_nnPostFilterSEIActivationTargetBaseFlag);
+  m_cEncLib.setNnPostFilterSEIActivationPersistenceFlag          (m_nnPostFilterSEIActivationPersistenceFlag);
+  m_cEncLib.setNnPostFilterSEIActivationNumOutputEntries         (m_nnPostFilterSEIActivationNumOutputEntries);
+  m_cEncLib.setNnPostFilterSEIActivationOutputFlag               (m_nnPostFilterSEIActivationOutputFlag);
+#endif
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );
   m_cEncLib.setEntryPointPresentFlag                             ( m_entryPointPresentFlag );
   m_cEncLib.setTMVPModeId                                        ( m_TMVPModeId );

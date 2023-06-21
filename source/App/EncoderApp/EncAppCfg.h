@@ -800,6 +800,10 @@ protected:
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
 #endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+  uint32_t                m_nnPostFilterSEIActivationNumOutputEntries;
+  std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
+#endif
 
   bool                  m_poSEIEnabled;
 #if JVET_AD0386_SEI

@@ -765,6 +765,10 @@ protected:
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
 #endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+  uint32_t                m_nnPostFilterSEIActivationNumOutputEntries;
+  std::vector<bool>       m_nnPostFilterSEIActivationOutputflag;
+#endif
 
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
@@ -2084,6 +2088,12 @@ public:
 #endif
   void setNnPostFilterSEIActivationPersistenceFlag(bool persistenceFlag)                                                          { m_nnPostFilterSEIActivationPersistenceFlag = persistenceFlag; }
   bool getNnPostFilterSEIActivationPersistenceFlag() const                                                                   { return m_nnPostFilterSEIActivationPersistenceFlag;}
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+  void        setNnPostFilterSEIActivationNumOutputEntries(uint32_t value)                                              { m_nnPostFilterSEIActivationNumOutputEntries = value; }
+  uint32_t    getNnPostFilterSEIActivationNumOutputEntries() const                                                      { return m_nnPostFilterSEIActivationNumOutputEntries; }
+  void        setNnPostFilterSEIActivationOutputFlag(std::vector<bool> value)                                           { m_nnPostFilterSEIActivationOutputflag = value; }
+  const       std::vector<bool>& getNnPostFilterSEIActivationOutputFlag() const                                         { return m_nnPostFilterSEIActivationOutputflag; }
+#endif
 
   void  setBufferingPeriodSEIEnabled(bool b)                         { m_bufferingPeriodSEIEnabled = b; }
   bool  getBufferingPeriodSEIEnabled() const                         { return m_bufferingPeriodSEIEnabled; }

@@ -2843,6 +2843,9 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
 #if JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
     sei.m_inputPicOutputFlag.clear();
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+    sei.m_numInpPicsInOutputTensor = 0;
+#endif
     if (sei.m_numberInputDecodedPicturesMinus1 > 0)
     {
       bool atLeastOne = false;
@@ -2853,6 +2856,9 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         if (sei.m_inputPicOutputFlag[i])
         {
           atLeastOne = true;
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+          sei.m_numInpPicsInOutputTensor++;
+#endif
         }
       }
       if ((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) == 0)
@@ -2867,6 +2873,9 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     else
     {
       sei.m_inputPicOutputFlag.push_back(true);
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+      sei.m_numInpPicsInOutputTensor = 1;
+#endif
     }
 #endif
 
@@ -3283,6 +3292,16 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
 #endif
     sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_persistence_flag" );
     sei.m_persistenceFlag = val;
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+    sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_num_output_entries" );
+    sei.m_numOutputEntries = val;
+    sei.m_outputFlag.resize(sei.m_numOutputEntries);
+    for (uint32_t i = 0; i < sei.m_numOutputEntries; i++)
+    {
+      sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_output_flag" );
+      sei.m_outputFlag[i] = val;
+    }
+#endif
   }
 }
 

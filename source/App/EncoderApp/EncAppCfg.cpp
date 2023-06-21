@@ -748,6 +748,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList.push_back(SMultiValueInput<uint32_t>(0, std::numeric_limits<uint32_t>::max(), 1, 0));
     cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList.push_back(SMultiValueInput<bool>(0, 1, 1, 0));
   }
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+  SMultiValueInput<bool>       cfg_nnPostFilterSEIActivationOutputFlagList(0, 1, 1, 0);
+#endif
 
 #if ENABLE_TRACING
   std::string sTracingRule;
@@ -1986,6 +1989,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationTargetBaseFlag", m_nnPostFilterSEIActivationTargetBaseFlag, false, "Specifies that the target NNPF is the base NNPF");
 #endif
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+    opts.addOptions()("SEINNPostFilterActivationNumOutputEntries", m_nnPostFilterSEIActivationNumOutputEntries, 0u, "specifies the number of nnpfa_output_flag[i] syntax elements present in the NNPFA SEI message");
+    opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
+#endif
   }
 
   po::setDefaults(opts);
@@ -2537,6 +2544,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
 #endif
   }
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+  if (m_nnPostFilterSEIActivationNumOutputEntries > 0)
+  {
+    m_nnPostFilterSEIActivationOutputFlag = cfg_nnPostFilterSEIActivationOutputFlagList.values;
+    CHECK((uint32_t)m_nnPostFilterSEIActivationOutputFlag.size() != m_nnPostFilterSEIActivationNumOutputEntries, "SEINNPostFilterActivationNumOutputEntries does not match the number of entries in SEINNPostFilterActivationOutputFlag list");
+  }
+#endif
 
   // TODO: check whether values are within valid range
   m_chromaSampleLocType            = static_cast<Chroma420LocType>(chromaSampleLocType);

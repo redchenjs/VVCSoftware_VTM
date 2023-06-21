@@ -68,6 +68,9 @@ void SEINeuralNetworkPostFiltering::setPictureNnpfc(Picture* picture)
       {
         tmpIsNnpfActivatedForPic[nnpfa->m_targetId] = true;
       }
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+      CHECK(nnpfa->m_numOutputEntries > nnpfc->m_numInpPicsInOutputTensor, "The value of nnpfa_num_output_entries shall be in the range of 0 to NumInpPicsInOutputTensor");
+#endif
     }
   }
 

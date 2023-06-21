@@ -67,6 +67,8 @@
 
 #define JVET_AD0056_NNPFA_TARGET_ID_CONSTRAINT            1 // Remove redundant constraints on nnpfa_target_id
 
+#define JVET_AD0388_NNPFA_OUTPUT_FLAG                     1
+
 #define JVET_AD0056_NNPFC_PADDING_SYNTAX_CONDITION        1
 
 #define JVET_AD0067_SWAP_SYNTAX                           1 // Swap the two syntax elements: nnpfc_auxiliary_inp_idc and nnpfc_inp_order_idc

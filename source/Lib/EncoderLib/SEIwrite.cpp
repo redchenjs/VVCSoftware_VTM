@@ -1919,6 +1919,13 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
     xWriteFlag(sei.m_targetBaseFlag, "nnpfa_target_base_flag");
 #endif
     xWriteFlag(sei.m_persistenceFlag, "nnpfa_persistence_flag");
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+    xWriteUvlc(sei.m_numOutputEntries, "nnpfa_num_output_entries");
+    for (uint32_t i = 0; i < sei.m_numOutputEntries; i++)
+    {
+      xWriteFlag(sei.m_outputFlag[i], "nnpfa_output_flag");
+    }
+#endif
   }
 }
 
