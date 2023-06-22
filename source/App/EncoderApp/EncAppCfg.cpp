@@ -1990,7 +1990,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
 #if JVET_AD0388_NNPFA_OUTPUT_FLAG
-    opts.addOptions()("SEINNPostFilterActivationNumOutputEntries", m_nnPostFilterSEIActivationNumOutputEntries, 0u, "specifies the number of nnpfa_output_flag[i] syntax elements present in the NNPFA SEI message");
+    opts.addOptions()("SEINNPostFilterActivationNumOutputEntries", m_nnPostFilterSEIActivationNumOutputEntries, 0u, "Specifies the number of nnpfa_output_flag[i] syntax elements present in the NNPFA SEI message");
     opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
 #endif
   }
