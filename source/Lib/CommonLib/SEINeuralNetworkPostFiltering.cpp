@@ -102,15 +102,57 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
     }
 
     setPictureNnpfc(currCodedPic);
+#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
+    if (currCodedPic->m_nnpfcActivated.empty())
+    {
+      continue;
+    }
+#endif
 
     const SPS *sps = currCodedPic->slices[0]->getSPS();
     const PPS* pps = currCodedPic->slices[0]->getPPS();
     const int subWidthC  = SPS::getWinUnitX(sps->getChromaFormatIdc());
     const int subHeightC = SPS::getWinUnitY(sps->getChromaFormatIdc());
 
+#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
+    uint32_t sourceWidth = pps->getPicWidthInLumaSamples()
+                           - subWidthC
+                               * (pps->getConformanceWindow().getWindowLeftOffset()
+                                  + pps->getConformanceWindow().getWindowRightOffset());
+    uint32_t sourceHeight = pps->getPicHeightInLumaSamples()
+                            - subHeightC
+                                * (pps->getConformanceWindow().getWindowTopOffset()
+                                   + pps->getConformanceWindow().getWindowBottomOffset());
+
+    uint32_t croppedWidth;
+    uint32_t croppedHeight;
+
+    auto superResolutionNnpfc = getSuperResolutionNnpfc(currCodedPic->m_nnpfcActivated);
+
+    if (nullptr != superResolutionNnpfc)
+    {
+      croppedWidth  = superResolutionNnpfc->m_picWidthInLumaSamples;
+      croppedHeight = superResolutionNnpfc->m_picHeightInLumaSamples;
+    }
+    else
+    {
+      croppedWidth = pps->getPicWidthInLumaSamples()
+                     - subWidthC
+                         * (pps->getConformanceWindow().getWindowLeftOffset()
+                            + pps->getConformanceWindow().getWindowRightOffset());
+      croppedHeight = pps->getPicHeightInLumaSamples()
+                      - subHeightC
+                          * (pps->getConformanceWindow().getWindowTopOffset()
+                             + pps->getConformanceWindow().getWindowBottomOffset());
+    }
+#endif
+
     for (auto sei : currCodedPic->m_nnpfcActivated)
     {
       auto currNnpfc = (SEINeuralNetworkPostFilterCharacteristics*) sei;
+#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
+      checkInputPics(currCodedPic, currNnpfc, sourceWidth, sourceHeight, croppedWidth, croppedHeight);
+#else
       bool pictureRateUpsamplingFlag = (currNnpfc->m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0;
       if (pictureRateUpsamplingFlag)
       {
@@ -146,15 +188,26 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
         findFrameRateUpSamplingInputPics(currCodedPic, currNnpfc,
                                          sourceWidth, sourceHeight, croppedWidth, croppedHeight);
       }
+#endif
     }
   }
 }
 
+#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
+void SEINeuralNetworkPostFiltering::checkInputPics(
+  Picture* currCodedPic, const SEINeuralNetworkPostFilterCharacteristics* currNnpfc,
+  uint32_t sourceWidth, uint32_t sourceHeight, uint32_t croppedWidth, uint32_t croppedHeight)
+#else
 void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
   Picture* currCodedPic, const SEINeuralNetworkPostFilterCharacteristics* frameRateUpsamplingNnpfc,
   uint32_t sourceWidth, uint32_t sourceHeight, uint32_t croppedWidth, uint32_t croppedHeight)
+#endif
 {
+#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
+  uint32_t numInputPics = currNnpfc->m_numberInputDecodedPicturesMinus1 + 1;
+#else
   uint32_t numInputPics = frameRateUpsamplingNnpfc->m_numberInputDecodedPicturesMinus1 + 1;
+#endif
 
   std::vector<uint32_t> inputPicPoc(numInputPics, 0);
   uint32_t currPicPOC = currCodedPic->getPOC();
@@ -162,6 +215,20 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
 
   if (numInputPics > 1)
   {
+#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
+    bool fpCurrPicArrangementTypeIsFive = false;
+    bool fpCurrPicFrameIsFrame0Flag     = false;
+    if ((currNnpfc->m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
+    {
+      const SEIMessages currPicFramePacking = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::FRAME_PACKING);
+      if (!currPicFramePacking.empty())
+      {
+        const SEIFramePacking* seiFramePacking = (SEIFramePacking*) *(currPicFramePacking.begin());
+        fpCurrPicArrangementTypeIsFive = seiFramePacking->m_arrangementType == 5;
+        fpCurrPicFrameIsFrame0Flag = seiFramePacking->m_currentFrameIsFrame0Flag;
+      }
+    }
+#else
     SEIMessages currPicFramePacking = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::FRAME_PACKING);
     bool fpCurrPicArrangementTypeIsFive = false;
     bool fpCurrPicFrameIsFrame0Flag     = false;
@@ -171,12 +238,17 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
       fpCurrPicArrangementTypeIsFive = seiFramePacking->m_arrangementType == 5;
       fpCurrPicFrameIsFrame0Flag = seiFramePacking->m_currentFrameIsFrame0Flag;
     }
+#endif
 
     for (int i = 1; i < numInputPics; i++)
     {
       inputPicPoc[i]    = inputPicPoc[i - 1];
       Picture* inputPic = m_picList[i - 1];
+#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
+      if ((currNnpfc->m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0 && fpCurrPicArrangementTypeIsFive)
+#else
       if (fpCurrPicArrangementTypeIsFive)
+#endif
       {
         SEIMessages inputPicFramePacking = getSeisByType(inputPic->SEIs, SEI::PayloadType::FRAME_PACKING);
         if (!inputPicFramePacking.empty())
