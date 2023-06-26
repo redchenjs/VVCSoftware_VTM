@@ -1331,7 +1331,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setNnPostFilterSEIActivationCancelFlag               (m_nnPostFilterSEIActivationCancelFlag);
   m_cEncLib.setNnPostFilterSEIActivationTargetBaseFlag           (m_nnPostFilterSEIActivationTargetBaseFlag);
   m_cEncLib.setNnPostFilterSEIActivationPersistenceFlag          (m_nnPostFilterSEIActivationPersistenceFlag);
-  m_cEncLib.setNnPostFilterSEIActivationNumOutputEntries         (m_nnPostFilterSEIActivationNumOutputEntries);
   m_cEncLib.setNnPostFilterSEIActivationOutputFlag               (m_nnPostFilterSEIActivationOutputFlag);
 #endif
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );

@@ -3294,9 +3294,9 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
     sei.m_persistenceFlag = val;
 #if JVET_AD0388_NNPFA_OUTPUT_FLAG
     sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_num_output_entries" );
-    sei.m_numOutputEntries = val;
-    sei.m_outputFlag.resize(sei.m_numOutputEntries);
-    for (uint32_t i = 0; i < sei.m_numOutputEntries; i++)
+    uint32_t numOutputEntries = val;
+    sei.m_outputFlag.resize(numOutputEntries);
+    for (uint32_t i = 0; i < numOutputEntries; i++)
     {
       sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_output_flag" );
       sei.m_outputFlag[i] = val;

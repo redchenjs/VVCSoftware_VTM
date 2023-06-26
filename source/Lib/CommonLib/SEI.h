@@ -1354,9 +1354,6 @@ public:
     , m_targetBaseFlag(false)
 #endif
     , m_persistenceFlag(false)
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
-    , m_numOutputEntries(0)
-#endif
   {}
   SEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation& sei);
 
@@ -1369,7 +1366,6 @@ public:
 #endif
   bool           m_persistenceFlag;
 #if JVET_AD0388_NNPFA_OUTPUT_FLAG
-  uint32_t       m_numOutputEntries;
   std::vector<bool> m_outputFlag;
 #endif
 };

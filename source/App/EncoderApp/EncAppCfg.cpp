@@ -1990,8 +1990,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
 #if JVET_AD0388_NNPFA_OUTPUT_FLAG
-    opts.addOptions()("SEINNPostFilterActivationNumOutputEntries", m_nnPostFilterSEIActivationNumOutputEntries, 0u, "Specifies the number of nnpfa_output_flag[i] syntax elements present in the NNPFA SEI message");
-    opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
+    opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies a list indicating whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
 #endif
   }
 
@@ -2544,12 +2543,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
 #endif
   }
+
 #if JVET_AD0388_NNPFA_OUTPUT_FLAG
-  if (m_nnPostFilterSEIActivationNumOutputEntries > 0)
-  {
-    m_nnPostFilterSEIActivationOutputFlag = cfg_nnPostFilterSEIActivationOutputFlagList.values;
-    CHECK((uint32_t)m_nnPostFilterSEIActivationOutputFlag.size() != m_nnPostFilterSEIActivationNumOutputEntries, "SEINNPostFilterActivationNumOutputEntries does not match the number of entries in SEINNPostFilterActivationOutputFlag list");
-  }
+  m_nnPostFilterSEIActivationOutputFlag = cfg_nnPostFilterSEIActivationOutputFlagList.values;
 #endif
 
   // TODO: check whether values are within valid range

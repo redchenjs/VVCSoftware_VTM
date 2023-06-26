@@ -1136,7 +1136,6 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   m_targetBaseFlag = sei.m_targetBaseFlag;
 #endif
 #if JVET_AD0388_NNPFA_OUTPUT_FLAG
-  m_numOutputEntries = sei.m_numOutputEntries;
   m_outputFlag = sei.m_outputFlag;
 #endif
 }

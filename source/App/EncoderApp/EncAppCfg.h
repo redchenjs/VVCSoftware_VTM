@@ -801,7 +801,6 @@ protected:
 #endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
 #if JVET_AD0388_NNPFA_OUTPUT_FLAG
-  uint32_t                m_nnPostFilterSEIActivationNumOutputEntries;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
 #endif
 

@@ -1602,8 +1602,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
 #endif
     sei->m_persistenceFlag = m_pcCfg->getNnPostFilterSEIActivationPersistenceFlag();
 #if JVET_AD0388_NNPFA_OUTPUT_FLAG
-    sei->m_numOutputEntries = m_pcCfg->getNnPostFilterSEIActivationNumOutputEntries();
-    sei->m_outputFlag       = m_pcCfg->getNnPostFilterSEIActivationOutputFlag();
+    sei->m_outputFlag = m_pcCfg->getNnPostFilterSEIActivationOutputFlag();
 #endif
   }
 }
