@@ -56,7 +56,7 @@ private:
 
   std::map<uint32_t, bool> m_isNnpfActiveForCLVS;
 
-  void setPictureNnpfc(Picture* picture);
+  void setPicActivatedNnpfc(Picture* picture);
 
 public:
   SEINeuralNetworkPostFiltering();

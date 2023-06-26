@@ -142,6 +142,12 @@ void Picture::destroy()
   }
   SEIs.clear();
 
+  for (auto &nnpfc: m_nnpfcActivated)
+  {
+    delete nnpfc;
+  }
+  m_nnpfcActivated.clear();
+
   if (m_spliceIdx)
   {
     delete[] m_spliceIdx;

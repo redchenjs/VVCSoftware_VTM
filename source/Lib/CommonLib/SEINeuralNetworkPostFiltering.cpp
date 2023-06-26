@@ -44,7 +44,7 @@ SEINeuralNetworkPostFiltering::SEINeuralNetworkPostFiltering()
 
 }
 
-void SEINeuralNetworkPostFiltering::setPictureNnpfc(Picture* picture)
+void SEINeuralNetworkPostFiltering::setPicActivatedNnpfc(Picture* picture)
 {
   SEIMessages seiList = getSeisByType(picture->SEIs, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
   std::map<uint32_t, bool> tmpIsNnpfActivatedForPic;
@@ -82,7 +82,7 @@ void SEINeuralNetworkPostFiltering::setPictureNnpfc(Picture* picture)
     if (it.second)
     {
       auto nnpfc = getNnpfcWithGivenId(m_clvsNnpfcSEIs, it.first);
-      picture->SEIs.push_back(nnpfc);
+      picture->m_nnpfcActivated.push_back(new SEINeuralNetworkPostFilterCharacteristics(*nnpfc));
     }
   }
 }
@@ -101,7 +101,7 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
       m_isNnpfActiveForCLVS.clear();
     }
 
-    setPictureNnpfc(currCodedPic);
+    setPicActivatedNnpfc(currCodedPic);
 #if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
     if (currCodedPic->m_nnpfcActivated.empty())
     {

@@ -1109,10 +1109,7 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_cbPadding = sei.m_cbPadding;
   m_crPadding = sei.m_crPadding;
   m_payloadLength = sei.m_payloadLength;
-  if (nullptr != sei.m_payloadByte)
-  {
-    m_payloadByte = new char(*sei.m_payloadByte);
-  }
+  m_payloadByte = sei.m_payloadByte ? new char(*sei.m_payloadByte) : nullptr;
   m_complexityInfoPresentFlag = sei.m_complexityInfoPresentFlag;
   m_uriTag = sei.m_uriTag;
   m_uri = sei.m_uri;
