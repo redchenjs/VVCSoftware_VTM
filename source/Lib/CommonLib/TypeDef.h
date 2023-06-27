@@ -94,6 +94,8 @@
 
 #define JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS           1 // Multi-input pics to a NNPF shall have the same dimensions
 
+#define JVET_AD0057_UPDATE_SEI_LISTS                      1 // Update VclAssociatedSeiList and PicUnitRepConSeiList
+
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
