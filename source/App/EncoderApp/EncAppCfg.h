@@ -729,6 +729,9 @@ protected:
   EncCfgParam::CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
 
   bool                  m_nnPostFilterSEICharacteristicsEnabled;
+#if JVET_AD0057_NNPF_SUFFIX_SEI
+  bool                  m_nnPostFilterSEICharacteristicsSuffixFlag;
+#endif
   int                   m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t              m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
@@ -788,6 +791,9 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
 
   bool                  m_nnPostFilterSEIActivationEnabled;
+#if JVET_AD0057_NNPF_SUFFIX_SEI
+  bool                  m_nnPostFilterSEIActivationSuffixFlag;
+#endif
   uint32_t              m_nnPostFilterSEIActivationTargetId;
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];

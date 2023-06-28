@@ -542,6 +542,34 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIScalableNesting((SEIScalableNesting &) *sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
                                pDecodedMessageOutputStream);
       break;
+#if JVET_AD0057_NNPF_SUFFIX_SEI
+    case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
+      sei = new SEINeuralNetworkPostFilterCharacteristics;
+      xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics &) *sei, payloadSize, sps,
+        pDecodedMessageOutputStream);
+
+      if (xCheckNnpfcSeiMsg( ((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id, ((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_baseFlag, nnpfcValues) )
+      {
+        nnpfcValues.push_back(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id);
+      }
+      break;
+    case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
+      sei = new SEINeuralNetworkPostFilterActivation;
+      xParseSEINNPostFilterActivation((SEINeuralNetworkPostFilterActivation &) *sei, payloadSize,
+        pDecodedMessageOutputStream);
+      nnpfcProcessed = false;
+      CHECK(nnpfcValues.size() == 0, "At leaset one NNPFC SEI message should precede NNPFA")
+        for(int i=0; i<nnpfcValues.size(); ++i)
+        {
+          if(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id == nnpfcValues[i])
+          {
+            nnpfcProcessed = true;
+          }
+        }
+      CHECK(!nnpfcProcessed, "No NNPFC, no NNPFA")
+      nnpfcProcessed = false;
+      break;
+#endif
     case SEI::PayloadType::FILLER_PAYLOAD:
       sei = new SEIFillerPayload;
       xParseSEIFillerPayload((SEIFillerPayload &) *sei, payloadSize, pDecodedMessageOutputStream);

@@ -1747,6 +1747,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
   opts.addOptions()("SEINNPFCEnabled",  m_nnPostFilterSEICharacteristicsEnabled, false, "Control generation of the Neural Network Post Filter Characteristics SEI messages");
+#if JVET_AD0057_NNPF_SUFFIX_SEI
+  opts.addOptions()("SEINNPFCSuffixFlag",  m_nnPostFilterSEICharacteristicsSuffixFlag, false, "Code NNPFC SEI either as suffix (1) or prefix (0) SEI message");
+#endif
   opts.addOptions()( "SEINNPFCNumFilters",                                      m_nnPostFilterSEICharacteristicsNumFilters,                                  0, "Specifies the number of Neural Network Post Filter Characteristics SEI messages" );
   for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; i++)
   {
@@ -1980,6 +1983,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
 
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
+#if JVET_AD0057_NNPF_SUFFIX_SEI
+    opts.addOptions()("SEINNPostFilterActivationSuffixFlag",  m_nnPostFilterSEIActivationSuffixFlag, false, "Code NNPFA SEI either as suffix (1) or prefix (0) SEI message");
+#endif
     opts.addOptions()("SEINNPostFilterActivationTargetId", m_nnPostFilterSEIActivationTargetId, 0u, "Target id of the Neural Network Post Filter on current picture");
     opts.addOptions()("SEINNPostFilterActivationCancelFlag", m_nnPostFilterSEIActivationCancelFlag, false, "Control use of the target neural network post filter established by any previous NNPFA SEI message");
 #if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
