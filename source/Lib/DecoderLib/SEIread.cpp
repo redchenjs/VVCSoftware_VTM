@@ -1254,6 +1254,9 @@ void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, 
     SEI::PayloadType::FILLER_PAYLOAD,
     SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS,
     SEI::PayloadType::FRAME_PACKING,
+#if JVET_AD0057_UPDATE_SEI_LISTS
+    SEI::PayloadType::GREEN_METADATA,
+#endif
     SEI::PayloadType::PARAMETER_SETS_INCLUSION_INDICATION,
     SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME,
     SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO,
