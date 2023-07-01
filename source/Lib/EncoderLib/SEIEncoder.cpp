@@ -1333,6 +1333,24 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     sei->m_absentInputPicZeroFlag = m_pcCfg->getNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(filterIdx);
 #endif
 
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+    sei->m_numInpPicsInOutputTensor = 0;
+    if (sei->m_numberInputDecodedPicturesMinus1 > 0)
+    {
+      for (uint32_t i = 0; i <= sei->m_numberInputDecodedPicturesMinus1; i++)
+      {
+        if (sei->m_inputPicOutputFlag[i])
+        {
+          sei->m_numInpPicsInOutputTensor++;
+        }
+      }
+    }
+    else
+    {
+      sei->m_numInpPicsInOutputTensor = 1;
+    }
+#endif
+
     if((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
     {
       sei->m_outSubCFlag = m_pcCfg->getNNPostFilterSEICharacteristicsOutSubCFlag(filterIdx);
@@ -1583,6 +1601,9 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
     sei->m_targetBaseFlag = m_pcCfg->getNnPostFilterSEIActivationTargetBaseFlag();
 #endif
     sei->m_persistenceFlag = m_pcCfg->getNnPostFilterSEIActivationPersistenceFlag();
+#if JVET_AD0388_NNPFA_OUTPUT_FLAG
+    sei->m_outputFlag = m_pcCfg->getNnPostFilterSEIActivationOutputFlag();
+#endif
   }
 }
 
