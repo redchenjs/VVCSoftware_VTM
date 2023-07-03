@@ -1185,7 +1185,7 @@ void EncApp::xInitLibCfg( int layerIdx )
 #endif
   m_cEncLib.setNNPostFilterSEICharacteristicsEnabled             (m_nnPostFilterSEICharacteristicsEnabled);
 #if JVET_AD0057_NNPF_SUFFIX_SEI
-  m_cEncLib.setNNPostFilterSEICharacteristicsSuffixFlag          (m_nnPostFilterSEICharacteristicsSuffixFlag);
+  m_cEncLib.setNNPostFilterSEICharacteristicsUseSuffixSEI        (m_nnPostFilterSEICharacteristicsUseSuffixSEI);
 #endif
   m_cEncLib.setNNPostFilterSEICharacteristicsNumFilters          (m_nnPostFilterSEICharacteristicsNumFilters);
   for (int i = 0; i < m_nnPostFilterSEICharacteristicsNumFilters; i++)
@@ -1330,7 +1330,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
 #if JVET_AD0057_NNPF_SUFFIX_SEI
-  m_cEncLib.setNnPostFilterSEIActivationSuffixFlag               (m_nnPostFilterSEIActivationSuffixFlag);
+  m_cEncLib.setNnPostFilterSEIActivationUseSuffixSEI             (m_nnPostFilterSEIActivationUseSuffixSEI);
 #endif
   m_cEncLib.setNnPostFilterSEIActivationTargetId(m_nnPostFilterSEIActivationTargetId);
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );

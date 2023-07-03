@@ -920,7 +920,7 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     seiMessages.push_back(seiShutterInterval);
   }
 #if JVET_AD0057_NNPF_SUFFIX_SEI
-  if (m_pcCfg->getNNPostFilterSEICharacteristicsEnabled() && !m_pcCfg->getNNPostFilterSEICharacteristicsSuffixFlag())
+  if (m_pcCfg->getNNPostFilterSEICharacteristicsEnabled() && !m_pcCfg->getNNPostFilterSEICharacteristicsUseSuffixSEI())
   {
     xCreateNNPostFilterCharacteristicsSEIMessages(seiMessages);
   }
@@ -1023,7 +1023,7 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
   }
 
 #if JVET_AD0057_NNPF_SUFFIX_SEI
-  if (m_pcCfg->getNnPostFilterSEIActivationEnabled() && !m_pcCfg->getNnPostFilterSEIActivationSuffixFlag())
+  if (m_pcCfg->getNnPostFilterSEIActivationEnabled() && !m_pcCfg->getNnPostFilterSEIActivationUseSuffixSEI())
   {
     xCreateNNPostFilterActivationSEIMessage(seiMessages, slice);
   }
@@ -3950,7 +3950,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       }
 
 #if JVET_AD0057_NNPF_SUFFIX_SEI
-      if (writePS && m_pcCfg->getNNPostFilterSEICharacteristicsEnabled() && m_pcCfg->getNNPostFilterSEICharacteristicsSuffixFlag())
+      if (writePS && m_pcCfg->getNNPostFilterSEICharacteristicsEnabled() && m_pcCfg->getNNPostFilterSEICharacteristicsUseSuffixSEI())
       {
         // create NNPostFilterSEICharacteristics SEI as suffix SEI
         xCreateNNPostFilterCharacteristicsSEIMessages(trailingSeiMessages);
@@ -4074,7 +4074,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       xCreatePerPictureSEIMessages(gopId, leadingSeiMessages, nestedSeiMessages, pcSlice);
 
 #if JVET_AD0057_NNPF_SUFFIX_SEI
-      if (m_pcCfg->getNnPostFilterSEIActivationEnabled() && m_pcCfg->getNnPostFilterSEIActivationSuffixFlag())
+      if (m_pcCfg->getNnPostFilterSEIActivationEnabled() && m_pcCfg->getNnPostFilterSEIActivationUseSuffixSEI())
       {
         // create NeuralNetworkPostFilterActivation SEI as suffix SEI
         xCreateNNPostFilterActivationSEIMessage(trailingSeiMessages, pcSlice);

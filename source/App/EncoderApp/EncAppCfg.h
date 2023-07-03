@@ -730,7 +730,7 @@ protected:
 
   bool                  m_nnPostFilterSEICharacteristicsEnabled;
 #if JVET_AD0057_NNPF_SUFFIX_SEI
-  bool                  m_nnPostFilterSEICharacteristicsSuffixFlag;
+  bool                  m_nnPostFilterSEICharacteristicsUseSuffixSEI;
 #endif
   int                   m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t              m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
@@ -792,7 +792,7 @@ protected:
 
   bool                  m_nnPostFilterSEIActivationEnabled;
 #if JVET_AD0057_NNPF_SUFFIX_SEI
-  bool                  m_nnPostFilterSEIActivationSuffixFlag;
+  bool                  m_nnPostFilterSEIActivationUseSuffixSEI;
 #endif
   uint32_t              m_nnPostFilterSEIActivationTargetId;
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
