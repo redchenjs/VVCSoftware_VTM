@@ -1462,8 +1462,8 @@ void EncLib::xInitSPS( SPS& sps )
   bool scalingWindowResChanged = false;
   if (m_multiLayerEnabledFlag && m_vps->getMaxLayers() > 0) {
     const int minCuSize = std::max(8, 1 << m_log2MinCUSize);
-    int currPicScaledWidth = m_sourceWidth - SPS::getWinUnitX(m_chromaFormatIDC) * (m_scalingWindow.getWindowLeftOffset() + m_scalingWindow.getWindowRightOffset());
-    int currPicScaledHeight = m_sourceHeight - SPS::getWinUnitY( m_chromaFormatIDC) * (m_scalingWindow.getWindowTopOffset() + m_scalingWindow.getWindowBottomOffset());
+    int currPicScaledWidth = m_sourceWidth - SPS::getWinUnitX(m_chromaFormatIdc) * (m_scalingWindow.getWindowLeftOffset() + m_scalingWindow.getWindowRightOffset());
+    int currPicScaledHeight = m_sourceHeight - SPS::getWinUnitY( m_chromaFormatIdc) * (m_scalingWindow.getWindowTopOffset() + m_scalingWindow.getWindowBottomOffset());
 
     int refPicScaledWidth = currPicScaledWidth;
     int refPicScaledHeight = currPicScaledHeight;
@@ -1474,8 +1474,8 @@ void EncLib::xInitSPS( SPS& sps )
       for (int refLayerIdx = 0; refLayerIdx < layerIdx; refLayerIdx++) {
         if (m_vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)) {
           const PPS& refPPS = *getPPS(refLayerIdx);
-          int scaledWidth = refPPS.getPicWidthInLumaSamples() - SPS::getWinUnitX(m_chromaFormatIDC) * (refPPS.getScalingWindow().getWindowLeftOffset() + refPPS.getScalingWindow().getWindowRightOffset());
-          int scaledHeight = refPPS.getPicHeightInLumaSamples() - SPS::getWinUnitY( m_chromaFormatIDC) * (refPPS.getScalingWindow().getWindowTopOffset() + refPPS.getScalingWindow().getWindowBottomOffset());
+          int scaledWidth = refPPS.getPicWidthInLumaSamples() - SPS::getWinUnitX(m_chromaFormatIdc) * (refPPS.getScalingWindow().getWindowLeftOffset() + refPPS.getScalingWindow().getWindowRightOffset());
+          int scaledHeight = refPPS.getPicHeightInLumaSamples() - SPS::getWinUnitY( m_chromaFormatIdc) * (refPPS.getScalingWindow().getWindowTopOffset() + refPPS.getScalingWindow().getWindowBottomOffset());
           CHECK(currPicScaledWidth * 2 < scaledWidth, "CurrPicScalWinWidthL * 2 shall be greater than or equal to refPicScalWinWidthL");
           CHECK(currPicScaledHeight * 2 < scaledHeight, "CurrPicScalWinHeightL * 2 shall be greater than or equal to refPicScalWinHeightL");
           CHECK(currPicScaledWidth > scaledWidth * 8, "CurrPicScalWinWidthL shall be less than or equal to refPicScalWinWidthL * 8");

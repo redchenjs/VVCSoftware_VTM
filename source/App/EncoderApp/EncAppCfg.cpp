@@ -4296,10 +4296,10 @@ bool EncAppCfg::xCheckParameter()
                "Bottom conformance window offset must be an integer multiple of the specified chroma subsampling");
 #if SCALING_WINDOW_ENABLED
   xConfirmPara(m_explicitScalingWindowEnabled && (m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag), "ScalingWindow cannot be enabled when GOPBasedRPR is enabled");
-  xConfirmPara(m_scalWinLeft    % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Left scaling window offset must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara(m_scalWinRight   % SPS::getWinUnitX(m_chromaFormatIDC) != 0, "Right scaling window offset must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara(m_scalWinTop     % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Top scaling window offset must be an integer multiple of the specified chroma subsampling");
-  xConfirmPara(m_scalWinBottom  % SPS::getWinUnitY(m_chromaFormatIDC) != 0, "Bottom scaling window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_scalWinLeft    % SPS::getWinUnitX(m_chromaFormatIdc) != 0, "Left scaling window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_scalWinRight   % SPS::getWinUnitX(m_chromaFormatIdc) != 0, "Right scaling window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_scalWinTop     % SPS::getWinUnitY(m_chromaFormatIdc) != 0, "Top scaling window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_scalWinBottom  % SPS::getWinUnitY(m_chromaFormatIdc) != 0, "Bottom scaling window offset must be an integer multiple of the specified chroma subsampling");
   xConfirmPara((m_scalWinLeft < -m_sourceWidth * 15) || (m_scalWinLeft >= m_sourceWidth),
                "The values of SubWidthC * pps_scaling_win_left_offset shall be greater than or equal to -pps_pic_width_in_luma_samples * 15 and less than pps_pic_width_in_luma_samples");
   xConfirmPara((m_scalWinRight < -m_sourceWidth * 15) || (m_scalWinRight >= m_sourceWidth),
