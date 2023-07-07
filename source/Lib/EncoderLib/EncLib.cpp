@@ -197,6 +197,13 @@ void EncLib::init(AUWriterIf *auWriterIf)
     pps0.setConformanceWindow( m_conformanceWindow );
     pps0.setConformanceWindowFlag( m_conformanceWindow.getWindowEnabledFlag() );
   }
+#if SCALING_WINDOW_ENABLED
+  if (m_explicitScalingWindowEnabled)
+  {
+    pps0.setExplicitScalingWindowFlag(true);
+    pps0.setScalingWindow(m_scalingWindow);
+  }
+#endif
   if (!pps0.getExplicitScalingWindowFlag())
   {
     pps0.setScalingWindow(pps0.getConformanceWindow());
@@ -1451,6 +1458,64 @@ void EncLib::xInitSPS( SPS& sps )
 
   sps.setMaxPicWidthInLumaSamples( m_sourceWidth );
   sps.setMaxPicHeightInLumaSamples( m_sourceHeight );
+#if SCALING_WINDOW_ENABLED
+  bool scalingWindowResChanged = false;
+  if (m_multiLayerEnabledFlag && m_vps->getMaxLayers() > 0) {
+    const int minCuSize = std::max(8, 1 << m_log2MinCUSize);
+    int currPicScaledWidth = m_sourceWidth - SPS::getWinUnitX(m_chromaFormatIDC) * (m_scalingWindow.getWindowLeftOffset() + m_scalingWindow.getWindowRightOffset());
+    int currPicScaledHeight = m_sourceHeight - SPS::getWinUnitY( m_chromaFormatIDC) * (m_scalingWindow.getWindowTopOffset() + m_scalingWindow.getWindowBottomOffset());
+
+    int refPicScaledWidth = currPicScaledWidth;
+    int refPicScaledHeight = currPicScaledHeight;
+    const int layerIdx = m_vps->getGeneralLayerIdx(m_layerId);
+    if (getNumRefLayers(layerIdx) > 0) {
+      int dWidth = 0;
+      int dHeight = 0;
+      for (int refLayerIdx = 0; refLayerIdx < layerIdx; refLayerIdx++) {
+        if (m_vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)) {
+          const PPS& refPPS = *getPPS(refLayerIdx);
+          int scaledWidth = refPPS.getPicWidthInLumaSamples() - SPS::getWinUnitX(m_chromaFormatIDC) * (refPPS.getScalingWindow().getWindowLeftOffset() + refPPS.getScalingWindow().getWindowRightOffset());
+          int scaledHeight = refPPS.getPicHeightInLumaSamples() - SPS::getWinUnitY( m_chromaFormatIDC) * (refPPS.getScalingWindow().getWindowTopOffset() + refPPS.getScalingWindow().getWindowBottomOffset());
+          CHECK(currPicScaledWidth * 2 < scaledWidth, "CurrPicScalWinWidthL * 2 shall be greater than or equal to refPicScalWinWidthL");
+          CHECK(currPicScaledHeight * 2 < scaledHeight, "CurrPicScalWinHeightL * 2 shall be greater than or equal to refPicScalWinHeightL");
+          CHECK(currPicScaledWidth > scaledWidth * 8, "CurrPicScalWinWidthL shall be less than or equal to refPicScalWinWidthL * 8");
+          CHECK(currPicScaledHeight > scaledHeight * 8, "CurrPicScalWinHeightL shall be less than or equal to refPicScalWinHeightL * 8");
+
+          int dW = abs(scaledWidth - currPicScaledWidth);
+          int dH = abs(scaledHeight - currPicScaledHeight);
+          if (scaledWidth > currPicScaledWidth && dW > dWidth)
+          {
+            refPicScaledWidth = scaledWidth;  dWidth = dW;
+          }
+          if (scaledHeight > currPicScaledHeight && dH > dHeight)
+          {
+            refPicScaledHeight = scaledHeight;  dHeight = dH;
+          }
+        }
+      }
+    }
+
+    int maxPicWidth = std::max(m_sourceWidth, ((m_sourceWidth - minCuSize) * refPicScaledWidth + currPicScaledWidth - 1) / currPicScaledWidth);
+    int maxPicHeight = std::max(m_sourceHeight, ((m_sourceHeight - minCuSize) * refPicScaledHeight + currPicScaledHeight - 1) / currPicScaledHeight);
+    if (maxPicWidth % minCuSize)
+    {
+      maxPicWidth += ((maxPicWidth / minCuSize) + 1) * minCuSize - maxPicWidth;
+    }
+    if (maxPicHeight % minCuSize)
+    {
+      maxPicHeight += ((maxPicHeight / minCuSize) + 1) * minCuSize - maxPicHeight;
+    }
+    if (maxPicWidth > m_sourceWidth || maxPicHeight > m_sourceHeight)
+      scalingWindowResChanged = true;
+    CHECK((currPicScaledWidth * maxPicWidth) < refPicScaledWidth * (m_sourceWidth - minCuSize),
+          "(CurrPicScalWinWidthL * sps_pic_width_max_in_luma_samples) shall be greater than or equal to (refPicScalWinWidthL * (pps_pic_width_in_luma_samples - Max(8, MinCbSizeY)))");
+    CHECK((currPicScaledHeight * maxPicHeight) < refPicScaledHeight * (m_sourceHeight - minCuSize),
+          "(CurrPicScalWinHeightL * sps_pic_height_max_in_luma_samples) shall be greater than or equal to (refPicScalWinHeightL * (pps_pic_height_in_luma_samples -  Max(8, MinCbSizeY)))");
+    sps.setMaxPicWidthInLumaSamples(maxPicWidth);
+    sps.setMaxPicHeightInLumaSamples(maxPicHeight);
+  }
+#endif
+
   if (m_resChangeInClvsEnabled)
   {
     int maxPicWidth = std::max(m_sourceWidth, (int)((double)m_sourceWidth / m_scalingRatioHor + 0.5));
@@ -1738,8 +1803,13 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setInterLayerPresentFlag( m_layerId > 0 && m_vps->getMaxLayers() > 1 && !m_vps->getAllIndependentLayersFlag() && !m_vps->getIndependentLayerFlag( m_vps->getGeneralLayerIdx( m_layerId ) ) );
   CHECK( m_vps->getIndependentLayerFlag( m_vps->getGeneralLayerIdx( m_layerId ) ) && sps.getInterLayerPresentFlag(), " When vps_independent_layer_flag[GeneralLayerIdx[nuh_layer_id ]]  is equal to 1, the value of inter_layer_ref_pics_present_flag shall be equal to 0." );
 
+#if SCALING_WINDOW_ENABLED
+  sps.setResChangeInClvsEnabledFlag(m_resChangeInClvsEnabled || m_constrainedRaslEncoding || scalingWindowResChanged);
+  sps.setRprEnabledFlag(m_rprEnabledFlag || m_explicitScalingWindowEnabled || scalingWindowResChanged);
+#else
   sps.setResChangeInClvsEnabledFlag(m_resChangeInClvsEnabled || m_constrainedRaslEncoding);
   sps.setRprEnabledFlag(m_rprEnabledFlag);
+#endif
 #if JVET_AD0045
   sps.setGOPBasedRPREnabledFlag(m_gopBasedRPREnabledFlag);
 #endif

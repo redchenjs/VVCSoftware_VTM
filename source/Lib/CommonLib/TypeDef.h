@@ -148,6 +148,19 @@
 #define ENABLE_USER_DEFINED_WEIGHTS                       0 // User can specify weights for both current and previous picture, such that their sum = 1
 #endif
 
+#ifndef SCALING_WINDOW_ENABLED
+#define SCALING_WINDOW_ENABLED                            1
+#endif
+#ifndef NHK_20230407_1
+#define NHK_20230407_1                                    1   // bug fix
+#endif
+#ifndef NHK_20230407_2
+#define NHK_20230407_2                                    1   // fixed in VTM20.0
+#endif
+#ifndef NHK_20230418
+#define NHK_20230418                                      1   // bug fix
+#endif
+
 // clang-format on
 
 // ====================================================================================================================

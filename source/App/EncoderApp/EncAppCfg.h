@@ -111,6 +111,13 @@ protected:
   int       m_confWinRight;
   int       m_confWinTop;
   int       m_confWinBottom;
+#if SCALING_WINDOW_ENABLED
+  bool      m_explicitScalingWindowEnabled;
+  int       m_scalWinLeft;
+  int       m_scalWinRight;
+  int       m_scalWinTop;
+  int       m_scalWinBottom;
+#endif
   int       m_sourcePadding[2];                                       ///< number of padded pixels for width and height
   int       m_firstValidFrame;
   int       m_lastValidFrame;
