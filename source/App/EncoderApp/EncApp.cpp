@@ -1184,6 +1184,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setBlendingRatioSII(m_SII_BlendingRatio);
 #endif
   m_cEncLib.setNNPostFilterSEICharacteristicsEnabled             (m_nnPostFilterSEICharacteristicsEnabled);
+#if JVET_AD0057_NNPF_SUFFIX_SEI
+  m_cEncLib.setNNPostFilterSEICharacteristicsUseSuffixSEI        (m_nnPostFilterSEICharacteristicsUseSuffixSEI);
+#endif
   m_cEncLib.setNNPostFilterSEICharacteristicsNumFilters          (m_nnPostFilterSEICharacteristicsNumFilters);
   for (int i = 0; i < m_nnPostFilterSEICharacteristicsNumFilters; i++)
   {
@@ -1326,6 +1329,9 @@ void EncApp::xInitLibCfg( int layerIdx )
 #endif
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
+#if JVET_AD0057_NNPF_SUFFIX_SEI
+  m_cEncLib.setNnPostFilterSEIActivationUseSuffixSEI             (m_nnPostFilterSEIActivationUseSuffixSEI);
+#endif
   m_cEncLib.setNnPostFilterSEIActivationTargetId(m_nnPostFilterSEIActivationTargetId);
 #if JVET_AD0388_NNPFA_OUTPUT_FLAG
   m_cEncLib.setNnPostFilterSEIActivationCancelFlag               (m_nnPostFilterSEIActivationCancelFlag);
