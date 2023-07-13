@@ -1460,7 +1460,8 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setMaxPicHeightInLumaSamples( m_sourceHeight );
 #if SCALING_WINDOW_ENABLED
   bool scalingWindowResChanged = false;
-  if (m_multiLayerEnabledFlag && m_vps->getMaxLayers() > 0) {
+  if (m_multiLayerEnabledFlag && m_vps->getMaxLayers() > 0)
+  {
     const int minCuSize = std::max(8, 1 << m_log2MinCUSize);
     int currPicScaledWidth = m_sourceWidth - SPS::getWinUnitX(m_chromaFormatIdc) * (m_scalingWindow.getWindowLeftOffset() + m_scalingWindow.getWindowRightOffset());
     int currPicScaledHeight = m_sourceHeight - SPS::getWinUnitY( m_chromaFormatIdc) * (m_scalingWindow.getWindowTopOffset() + m_scalingWindow.getWindowBottomOffset());
@@ -1468,11 +1469,14 @@ void EncLib::xInitSPS( SPS& sps )
     int refPicScaledWidth = currPicScaledWidth;
     int refPicScaledHeight = currPicScaledHeight;
     const int layerIdx = m_vps->getGeneralLayerIdx(m_layerId);
-    if (getNumRefLayers(layerIdx) > 0) {
+    if (getNumRefLayers(layerIdx) > 0)
+    {
       int dWidth = 0;
       int dHeight = 0;
-      for (int refLayerIdx = 0; refLayerIdx < layerIdx; refLayerIdx++) {
-        if (m_vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)) {
+      for (int refLayerIdx = 0; refLayerIdx < layerIdx; refLayerIdx++)
+      {
+        if (m_vps->getDirectRefLayerFlag(layerIdx, refLayerIdx))
+        {
           const PPS& refPPS = *getPPS(refLayerIdx);
           int scaledWidth = refPPS.getPicWidthInLumaSamples() - SPS::getWinUnitX(m_chromaFormatIdc) * (refPPS.getScalingWindow().getWindowLeftOffset() + refPPS.getScalingWindow().getWindowRightOffset());
           int scaledHeight = refPPS.getPicHeightInLumaSamples() - SPS::getWinUnitY( m_chromaFormatIdc) * (refPPS.getScalingWindow().getWindowTopOffset() + refPPS.getScalingWindow().getWindowBottomOffset());
@@ -1483,14 +1487,10 @@ void EncLib::xInitSPS( SPS& sps )
 
           int dW = abs(scaledWidth - currPicScaledWidth);
           int dH = abs(scaledHeight - currPicScaledHeight);
-          if (scaledWidth > currPicScaledWidth && dW > dWidth)
-          {
-            refPicScaledWidth = scaledWidth;  dWidth = dW;
-          }
-          if (scaledHeight > currPicScaledHeight && dH > dHeight)
-          {
-            refPicScaledHeight = scaledHeight;  dHeight = dH;
-          }
+          refPicScaledWidth = std::max(refPicScaledWidth, scaledWidth);
+          refPicScaledHeight = std::max(refPicScaledHeight, scaledHeight);
+          dWidth = std::max(dWidth, dW);
+          dHeight = std::max(dHeight, dH);
         }
       }
     }
@@ -1499,11 +1499,11 @@ void EncLib::xInitSPS( SPS& sps )
     int maxPicHeight = std::max(m_sourceHeight, ((m_sourceHeight - minCuSize) * refPicScaledHeight + currPicScaledHeight - 1) / currPicScaledHeight);
     if (maxPicWidth % minCuSize)
     {
-      maxPicWidth += ((maxPicWidth / minCuSize) + 1) * minCuSize - maxPicWidth;
+      maxPicWidth = ((maxPicWidth / minCuSize) + 1) * minCuSize;
     }
     if (maxPicHeight % minCuSize)
     {
-      maxPicHeight += ((maxPicHeight / minCuSize) + 1) * minCuSize - maxPicHeight;
+      maxPicHeight = ((maxPicHeight / minCuSize) + 1) * minCuSize;
     }
     if (maxPicWidth > m_sourceWidth || maxPicHeight > m_sourceHeight)
       scalingWindowResChanged = true;
