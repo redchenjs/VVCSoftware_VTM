@@ -1471,8 +1471,6 @@ void EncLib::xInitSPS( SPS& sps )
     const int layerIdx = m_vps->getGeneralLayerIdx(m_layerId);
     if (getNumRefLayers(layerIdx) > 0)
     {
-      int dWidth = 0;
-      int dHeight = 0;
       for (int refLayerIdx = 0; refLayerIdx < layerIdx; refLayerIdx++)
       {
         if (m_vps->getDirectRefLayerFlag(layerIdx, refLayerIdx))
@@ -1485,12 +1483,8 @@ void EncLib::xInitSPS( SPS& sps )
           CHECK(currPicScaledWidth > scaledWidth * 8, "CurrPicScalWinWidthL shall be less than or equal to refPicScalWinWidthL * 8");
           CHECK(currPicScaledHeight > scaledHeight * 8, "CurrPicScalWinHeightL shall be less than or equal to refPicScalWinHeightL * 8");
 
-          int dW = abs(scaledWidth - currPicScaledWidth);
-          int dH = abs(scaledHeight - currPicScaledHeight);
           refPicScaledWidth = std::max(refPicScaledWidth, scaledWidth);
           refPicScaledHeight = std::max(refPicScaledHeight, scaledHeight);
-          dWidth = std::max(dWidth, dW);
-          dHeight = std::max(dHeight, dH);
         }
       }
     }
