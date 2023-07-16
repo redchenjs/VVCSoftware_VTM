@@ -1322,6 +1322,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("RecalculateQPAccordingToLambda",                  m_recalculateQPAccordingToLambda,                 false, "Recalculate QP values according to lambda values. Do not suggest to be enabled in all intra case")
   ("HrdParametersPresent,-hrd",                       m_hrdParametersPresentFlag,                       false, "Enable generation of hrd_parameters()")
   ("VuiParametersPresent,-vui",                       m_vuiParametersPresentFlag,                       false, "Enable generation of vui_parameters()")
+  ("WriteVuiHrdFromY4m",                              m_writeVuiHrdFromY4m,                              true, "Allow writing VUI and HRD information from input Y4M file")
   ("SamePicTimingInAllOLS",                           m_samePicTimingInAllOLS,                          true, "Indicates that the same picture timing SEI message is used in all OLS")
   ("AspectRatioInfoPresent",                          m_aspectRatioInfoPresentFlag,                     false, "Signals whether aspect_ratio_idc is present")
   ("AspectRatioIdc",                                  m_aspectRatioIdc,                                     0, "aspect_ratio_idc")
@@ -2581,11 +2582,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_inputBitDepth.fill(inputBitDepth);
       m_chromaFormatIdc        = chromaFormat;
       m_msbExtendedBitDepth    = m_inputBitDepth;
-      m_chromaSampleLocType    = locType;
+      if (m_writeVuiHrdFromY4m)
+      {
+        m_chromaSampleLocType    = locType;
+      }
     }
 
     m_progressiveSourceFlag = true;   // TODO: update when processing of interlaced y4m files is supported
-    if (m_chromaFormatIdc == ChromaFormat::_420 && m_chromaSampleLocType != Chroma420LocType::UNSPECIFIED)
+    if (m_chromaFormatIdc == ChromaFormat::_420 && m_chromaSampleLocType != Chroma420LocType::UNSPECIFIED
+      && m_writeVuiHrdFromY4m)
     {
       m_chromaLocInfoPresentFlag = true;
       m_vuiParametersPresentFlag = true;

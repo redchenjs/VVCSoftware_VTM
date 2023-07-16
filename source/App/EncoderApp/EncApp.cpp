@@ -1657,7 +1657,7 @@ void EncApp::createLib( const int layerIdx )
     }
   }
 
-  if (isY4mFileExt(m_inputFileName))
+  if (isY4mFileExt(m_inputFileName) && m_writeVuiHrdFromY4m)
   {
     // Force signalling of HRD parameters to carry frame rate information
     m_hrdParametersPresentFlag = true;

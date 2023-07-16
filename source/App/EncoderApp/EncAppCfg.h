@@ -900,6 +900,7 @@ protected:
   bool      m_DCIEnabled;                                     ///< enable Decoding Capability Information (DCI)
   bool      m_hrdParametersPresentFlag;                       ///< enable generation of HRD parameters
   bool      m_vuiParametersPresentFlag;                       ///< enable generation of VUI parameters
+  bool      m_writeVuiHrdFromY4m;                             ///< allow writing VUI and HRD information from input Y4M file
   bool      m_samePicTimingInAllOLS;                          ///< same picture timing SEI message is used in all OLS
   bool      m_aspectRatioInfoPresentFlag;                     ///< Signals whether aspect_ratio_idc is present
   int       m_aspectRatioIdc;                                 ///< aspect_ratio_idc
