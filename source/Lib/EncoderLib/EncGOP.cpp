@@ -7090,7 +7090,7 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
     localRpl[l].setNumberOfLongtermPictures(numLtrp[l]);
     localRpl[l].setNumberOfShorttermPictures(numStrp[l]);
     localRpl[l].setNumberOfInterLayerPictures(numIlrp[l]);
-    localRpl[l].setNumberOfActivePictures(std::min<int>(numValidRefs[l], rpl->getNumberOfActivePictures()));
+    localRpl[l].setNumberOfActivePictures(std::min<int>(numValidRefs[l], rpl->getNumberOfActivePictures() + (rpl->getNumberOfInterLayerPictures() > 0? 0: numIlrp[l])));
     localRpl[l].setLtrpInSliceHeaderFlag(true);
     slice->setRplIdx(l, -1);
     *slice->getRpl(l) = localRpl[l];
