@@ -2261,8 +2261,8 @@ void EncLib::xInitRPL(SPS &sps)
 
       if (!getRplOfDepLayerInSh())
       {
-        bool isIntraLayerPredAllowed = getVPS() ? ((getVPS()->getIndependentLayerFlag(layerIdx) || (getVPS()->getPredDirection(ge.m_temporalId) != 1)) && (ge.m_POC % m_intraPeriod) != 0) : true;
-        bool isInterLayerPredAllowed = getVPS() ? (!getVPS()->getIndependentLayerFlag(layerIdx) && (getVPS()->getPredDirection(ge.m_temporalId) != 2) && ((ge.m_POC % m_intraPeriod) != 0 || (getAvoidIntraInDepLayer() && layerIdx))) : false;
+        bool isIntraLayerPredAllowed = getVPS() ? ((getVPS()->getIndependentLayerFlag(layerIdx) || (getVPS()->getPredDirection(ge.m_temporalId) != 1)) && ((m_intraPeriod < 0 && ge.m_POC != 0) || (ge.m_POC % m_intraPeriod) != 0)) : true;
+        bool isInterLayerPredAllowed = getVPS() ? (!getVPS()->getIndependentLayerFlag(layerIdx) && (getVPS()->getPredDirection(ge.m_temporalId) != 2) && ((m_intraPeriod < 0 && ge.m_POC != 0) || ((ge.m_POC % m_intraPeriod) != 0) || (getAvoidIntraInDepLayer() && layerIdx))) : false;
 
         int numRefActive = 0;
         if (isIntraLayerPredAllowed)

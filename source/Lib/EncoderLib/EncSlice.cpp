@@ -460,7 +460,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   }
   else
   {
-    eSliceType = (pocLast == 0 || pocCurr == 0 || m_pcGOPEncoder->getGOPSize() == 0) ? I_SLICE : eSliceType;
+    eSliceType = (pocLast == 0 || pocCurr == 0 || m_pcGOPEncoder->getGOPSize() == 0) && (!useIlRef) ? I_SLICE : eSliceType;
   }
 
   rpcSlice->setHierPredLayerIdx(hierPredLayerIdx);
@@ -635,7 +635,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
     }
     else
     {
-      eSliceType = (pocLast == 0 || pocCurr == 0 || m_pcGOPEncoder->getGOPSize() == 0) ? I_SLICE : eSliceType;
+      eSliceType = (pocLast == 0 || pocCurr == 0 || m_pcGOPEncoder->getGOPSize() == 0) && (!useIlRef) ? I_SLICE : eSliceType;
     }
 
     rpcSlice->setSliceType        ( eSliceType );
