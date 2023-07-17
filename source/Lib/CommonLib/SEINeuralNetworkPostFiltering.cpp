@@ -283,13 +283,13 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
   }
 
 #if JVET_AD0054_NNPFC_INTERPOLATED_PICS_CONSTRAINT
-  bool fpCurrPicArrangementTypeIsFive = false;
-  bool fpCurrPicFrameIsFrame0Flag     = false;
+  bool fpCurrPicArrangementTypeIsTemporalInterleave = false;
+  bool fpCurrPicFrameIsFrame0Flag                   = false;
   const SEIMessages currPicFramePacking = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::FRAME_PACKING);
   if (!currPicFramePacking.empty())
   {
     const SEIFramePacking* seiFramePacking = (SEIFramePacking*) *(currPicFramePacking.begin());
-    fpCurrPicArrangementTypeIsFive = seiFramePacking->m_arrangementType == 5;
+    fpCurrPicArrangementTypeIsTemporalInterleave = seiFramePacking->m_arrangementType == 5;
     fpCurrPicFrameIsFrame0Flag = seiFramePacking->m_currentFrameIsFrame0Flag;
   }
 
@@ -323,7 +323,7 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
 
     bool isCurrPicLastInOutputOrder = lastPic != nullptr && currCodedPic == lastPic;
 
-    bool pictureRateUpsamplingFlag = (currNnpfc->m_purpose & 0x08) != 0;
+    bool pictureRateUpsamplingFlag = (currNnpfc->m_purpose & FRAME_RATE_UPSAMPLING) != 0;
     int greaterThan0count = 0;
     int numPostRoll = 0;
     if (pictureRateUpsamplingFlag)
@@ -368,8 +368,8 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
       {
         for (int i = j + 1; i <= (numInputPics - j - 1); i++)
         {
-          Picture *prevPic                     = nullptr;
-          Picture *prevPicWithFramePackingFive = nullptr;
+          Picture *prevPic                                   = nullptr;
+          Picture *prevPicWithTemporalInterleaveFramePacking = nullptr;
 
           for (auto pic : m_picList)
           {
@@ -379,7 +379,7 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
               {
                 prevPic = pic;
               }
-              if (prevPicWithFramePackingFive == nullptr || pic->getPOC() > prevPicWithFramePackingFive->getPOC())
+              if (prevPicWithTemporalInterleaveFramePacking == nullptr || pic->getPOC() > prevPicWithTemporalInterleaveFramePacking->getPOC())
               {
                 SEIMessages picFramePacking = getSeisByType(pic->SEIs, SEI::PayloadType::FRAME_PACKING);
                 if (!picFramePacking.empty())
@@ -387,26 +387,26 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
                   const SEIFramePacking* seiFramePacking = (SEIFramePacking*) *(picFramePacking.begin());
                   if (seiFramePacking->m_arrangementType == 5 && seiFramePacking->m_currentFrameIsFrame0Flag == fpCurrPicFrameIsFrame0Flag)
                   {
-                    prevPicWithFramePackingFive = pic;
+                    prevPicWithTemporalInterleaveFramePacking = pic;
                   }
                 }
               }
             }
           }
 
-          if (pictureRateUpsamplingFlag && fpCurrPicArrangementTypeIsFive && prevPicWithFramePackingFive != nullptr)
+          if (pictureRateUpsamplingFlag && fpCurrPicArrangementTypeIsTemporalInterleave && prevPicWithTemporalInterleaveFramePacking != nullptr)
           {
-            inputPic[i]         = prevPicWithFramePackingFive;
+            inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
             inputPresentFlag[i] = true;
           }
           else if (!pictureRateUpsamplingFlag && prevPic != nullptr)
           {
-            inputPic[i]         = prevPicWithFramePackingFive;
+            inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
             inputPresentFlag[i] = true;
           }
-          else if (!fpCurrPicArrangementTypeIsFive && prevPic != nullptr)
+          else if (!fpCurrPicArrangementTypeIsTemporalInterleave && prevPic != nullptr)
           {
-            inputPic[i]         = prevPicWithFramePackingFive;
+            inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
             inputPresentFlag[i] = true;
           }
           else
