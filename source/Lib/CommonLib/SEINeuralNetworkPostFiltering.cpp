@@ -281,4 +281,144 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
       }
     }
   }
+
+#if JVET_AD0054_NNPFC_INTERPOLATED_PICS_CONSTRAINT
+  bool fpCurrPicArrangementTypeIsTemporalInterleave = false;
+  bool fpCurrPicFrameIsFrame0Flag                   = false;
+  const SEIMessages currPicFramePacking = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::FRAME_PACKING);
+  if (!currPicFramePacking.empty())
+  {
+    const SEIFramePacking* seiFramePacking = (SEIFramePacking*) *(currPicFramePacking.begin());
+    fpCurrPicArrangementTypeIsTemporalInterleave = seiFramePacking->m_arrangementType == 5;
+    fpCurrPicFrameIsFrame0Flag = seiFramePacking->m_currentFrameIsFrame0Flag;
+  }
+
+  SEIMessages nnpfaList = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
+  SEINeuralNetworkPostFilterActivation* nnpfa = nullptr;
+
+  // Find nnpfa that activated current nnpfc
+  for (auto sei : nnpfaList)
+  {
+    auto nnpfaCand = (SEINeuralNetworkPostFilterActivation*) sei;
+    if (nnpfaCand->m_targetId == currNnpfc->m_id)
+    {
+      nnpfa = nnpfaCand;
+      break;
+    }
+  }
+
+  if (nnpfa != nullptr)
+  {
+    Picture *lastPic = nullptr;
+    for (auto pic : m_picList)
+    {
+      if (pic->layerId == currCodedPic->layerId)
+      {
+        if (lastPic == nullptr || (pic->getPOC() > lastPic->getPOC()))
+        {
+          lastPic = pic;
+        }
+      }
+    }
+
+    bool isCurrPicLastInOutputOrder = lastPic != nullptr && currCodedPic == lastPic;
+
+    bool pictureRateUpsamplingFlag = (currNnpfc->m_purpose & FRAME_RATE_UPSAMPLING) != 0;
+    int greaterThan0count = 0;
+    int numPostRoll = 0;
+    if (pictureRateUpsamplingFlag)
+    {
+      for (int i = 1; i < currNnpfc->m_numberInputDecodedPicturesMinus1; i++)
+      {
+        if (currNnpfc->m_numberInterpolatedPictures[i] > 0)
+        {
+          greaterThan0count++;
+          numPostRoll = i;
+        }
+      }
+    }
+
+    int numInferences;
+    if (pictureRateUpsamplingFlag && nnpfa->m_persistenceFlag && greaterThan0count == 1 && isCurrPicLastInOutputOrder)
+    {
+      numInferences = 1 + numPostRoll;
+    }
+    else
+    {
+      numInferences = 1;
+    }
+
+    for (int j = 0; j < numInferences; j++)
+    {
+      std::vector<Picture*> inputPic(numInputPics);
+      std::vector<bool> inputPresentFlag(numInputPics);
+
+      if (j > 0)
+      {
+        for (int k = 0; k <= (j - 1); k++)
+        {
+          inputPic[k] = currCodedPic;
+          inputPresentFlag[k] = false;
+        }
+      }
+      inputPic[j] = currCodedPic;
+      inputPresentFlag[j] = true;
+
+      if (numInputPics > 1)
+      {
+        for (int i = j + 1; i <= (numInputPics - j - 1); i++)
+        {
+          Picture *prevPic                                   = nullptr;
+          Picture *prevPicWithTemporalInterleaveFramePacking = nullptr;
+
+          for (auto pic : m_picList)
+          {
+            if (pic->layerId == currCodedPic->layerId && pic->getPOC() < inputPic[i - 1]->getPOC())
+            {
+              if (prevPic == nullptr || pic->getPOC() > prevPic->getPOC())
+              {
+                prevPic = pic;
+              }
+              if (prevPicWithTemporalInterleaveFramePacking == nullptr || pic->getPOC() > prevPicWithTemporalInterleaveFramePacking->getPOC())
+              {
+                SEIMessages picFramePacking = getSeisByType(pic->SEIs, SEI::PayloadType::FRAME_PACKING);
+                if (!picFramePacking.empty())
+                {
+                  const SEIFramePacking* seiFramePacking = (SEIFramePacking*) *(picFramePacking.begin());
+                  if (seiFramePacking->m_arrangementType == 5 && seiFramePacking->m_currentFrameIsFrame0Flag == fpCurrPicFrameIsFrame0Flag)
+                  {
+                    prevPicWithTemporalInterleaveFramePacking = pic;
+                  }
+                }
+              }
+            }
+          }
+
+          if (pictureRateUpsamplingFlag && fpCurrPicArrangementTypeIsTemporalInterleave && prevPicWithTemporalInterleaveFramePacking != nullptr)
+          {
+            inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
+            inputPresentFlag[i] = true;
+          }
+          else if (!pictureRateUpsamplingFlag && prevPic != nullptr)
+          {
+            inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
+            inputPresentFlag[i] = true;
+          }
+          else if (!fpCurrPicArrangementTypeIsTemporalInterleave && prevPic != nullptr)
+          {
+            inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
+            inputPresentFlag[i] = true;
+          }
+          else
+          {
+            inputPic[i]         = inputPic[i - 1];
+            inputPresentFlag[i] = false;
+            CHECK(currNnpfc->m_numberInterpolatedPictures[i] > 0, "It is a requirement of bitstream conformance that nnpfc_interpolated_pics[i - 1] shall not be greater than 0");
+          }
+        }
+      }
+    }
+  }
+#endif
+
 }
