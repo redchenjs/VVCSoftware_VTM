@@ -500,7 +500,7 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
                 const Area blkDst( xStart >> chromaScaleX, yStart >> chromaScaleY, w >> chromaScaleX, h >> chromaScaleY );
                 const int  altNum = m_modes[compIdx][ctuIdx] - AlfMode::CHROMA0;
                 m_filter5x5Blk(m_classifier, recYuv, buf, blkDst, blkSrc, compID, m_chromaCoeffFinal[altNum],
-                               m_chromaClippFinal[altNum], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
+                               m_chromaClipValsFinal[altNum], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
                                m_alfVBChmaPos);
 #if GREEN_METADATA_SEI_ENABLED
                 cs.m_featureCounter.alfChromaType5+= ((width >> chromaScaleX) * (height >> chromaScaleY) / 16) ;
@@ -566,7 +566,7 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
             cs.m_featureCounter.alfChromaPels += ((width >> chromaScaleX) * (height >> chromaScaleY)) ;
 #endif
             m_filter5x5Blk(m_classifier, recYuv, tmpYuv, blk, blk, compID, m_chromaCoeffFinal[altNum],
-                           m_chromaClippFinal[altNum], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
+                           m_chromaClipValsFinal[altNum], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
                            m_alfVBChmaPos);
           }
           if (cu->slice->m_ccAlfFilterParam.ccAlfFilterEnabled[compIdx - 1])
@@ -610,6 +610,7 @@ void AdaptiveLoopFilter::reconstructCoeffAPSs(CodingStructure& cs, bool luma, bo
       reconstructCoeff(alfParamTmp, ChannelType::LUMA, isRdo, true);
       memcpy(m_coeffApsLuma[i], m_coeffFinal, sizeof(m_coeffFinal));
       memcpy(m_clippApsLuma[i], m_clippFinal, sizeof(m_clippFinal));
+      memcpy(m_clipValsApsLuma[i], m_clipValsFinal, sizeof(m_clipValsFinal));
     }
   }
 
@@ -652,10 +653,12 @@ void AdaptiveLoopFilter::reconstructCoeff(AlfParam &alfParam, const ChannelType 
       {
         m_chromaCoeffFinal[altIdx][coeffIdx] = coeff[coeffIdx];
         const int clipIdx                    = alfParam.nonLinearFlag[channel] ? clipp[coeffIdx] : 0;
-        m_chromaClippFinal[altIdx][coeffIdx] = isRdo ? clipIdx : m_alfClippingValues[channel][clipIdx];
+        m_chromaClippFinal[altIdx][coeffIdx]    = clipIdx;
+        m_chromaClipValsFinal[altIdx][coeffIdx] = m_alfClippingValues[channel][clipIdx];
       }
       m_chromaCoeffFinal[altIdx][numCoeffMinus1] = factor;
-      m_chromaClippFinal[altIdx][numCoeffMinus1] = isRdo ? 0 : m_alfClippingValues[channel][0];
+      m_chromaClippFinal[altIdx][numCoeffMinus1]    = 0;
+      m_chromaClipValsFinal[altIdx][numCoeffMinus1] = m_alfClippingValues[channel][0];
       continue;
     }
     for( int classIdx = 0; classIdx < numClasses; classIdx++ )
@@ -668,15 +671,17 @@ void AdaptiveLoopFilter::reconstructCoeff(AlfParam &alfParam, const ChannelType 
         m_coeffFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx] = coeff[filterIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx];
       }
       m_coeffFinal[classIdx* MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1] = factor;
-      m_clippFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1] = isRdo ? 0 : m_alfClippingValues[channel][0];
+      m_clippFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1]    = 0;
+      m_clipValsFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1] = m_alfClippingValues[channel][0];
       for( int coeffIdx = 0; coeffIdx < numCoeffMinus1; ++coeffIdx )
       {
         int clipIdx = alfParam.nonLinearFlag[channel] ? clipp[filterIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx] : 0;
         CHECK(!(clipIdx >= 0 && clipIdx < MAX_ALF_NUM_CLIP_VALS), "Bad clip idx in ALF");
-        m_clippFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx] =
-          isRdo ? clipIdx : m_alfClippingValues[channel][clipIdx];
+        m_clippFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx]    = clipIdx;
+        m_clipValsFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + coeffIdx] = m_alfClippingValues[channel][clipIdx];
       }
-      m_clippFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1] = isRdo ? 0 : m_alfClippingValues[channel][0];
+      m_clippFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1]    = 0;
+      m_clipValsFinal[classIdx * MAX_NUM_ALF_LUMA_COEFF + numCoeffMinus1] = m_alfClippingValues[channel][0];
     }
   }
 }

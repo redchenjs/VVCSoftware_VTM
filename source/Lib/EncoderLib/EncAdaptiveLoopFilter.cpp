@@ -3220,7 +3220,7 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
                 const Area blkDst(xStart >> chromaScaleX, yStart >> chromaScaleY, w >> chromaScaleX, h >> chromaScaleY);
                 const int  altNum = m_modes[compID][ctuIdx] - AlfMode::CHROMA0;
                 m_filter5x5Blk(m_classifier, recBuf, buf, blkDst, blkSrc, compID, m_chromaCoeffFinal[altNum],
-                               m_chromaClippFinal[altNum], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
+                               m_chromaClipValsFinal[altNum], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
                                m_alfVBChmaPos);
 #if GREEN_METADATA_SEI_ENABLED
                 cs.m_featureCounter.alfChromaType5+= ((width >> chromaScaleX) * (height >> chromaScaleY) / 16);
@@ -3262,7 +3262,7 @@ void EncAdaptiveLoopFilter::alfReconstructor(CodingStructure& cs, const PelUnitB
             Area      blk(xPos >> chromaScaleX, yPos >> chromaScaleY, width >> chromaScaleX, height >> chromaScaleY);
             const int altNum = m_modes[compID][ctuIdx] - AlfMode::CHROMA0;
             m_filter5x5Blk(m_classifier, recBuf, recExtBuf, blk, blk, compID, m_chromaCoeffFinal[altNum],
-                           m_chromaClippFinal[altNum], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
+                           m_chromaClipValsFinal[altNum], m_clpRngs.comp[compIdx], cs, m_alfVBChmaCTUHeight,
                            m_alfVBChmaPos);
 #if GREEN_METADATA_SEI_ENABLED
             cs.m_featureCounter.alfChromaType5+= ((width >> chromaScaleX) * (height >> chromaScaleY) / 16) ;
