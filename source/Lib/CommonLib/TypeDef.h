@@ -66,7 +66,6 @@
 
 
 
-#define JVET_AD0056_MOVE_NNPFC_BASE_FLAG                  1
 
 #define JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG      1
 

@@ -2800,10 +2800,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
   sei.m_id = val;
   CHECK((sei.m_id >= 256 && sei.m_id <= 511) || (sei.m_id >= (1<<31) && sei.m_id <= MAX_NNPFC_ID), "Reserved nnpfc_id value, shall ignore the SEI message");
 
-#if JVET_AD0056_MOVE_NNPFC_BASE_FLAG
   sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_base_flag");
   sei.m_baseFlag = val;
-#endif
 
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfc_mode_idc" );
   sei.m_modeIdc = val;
@@ -2830,10 +2828,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
   if (sei.m_propertyPresentFlag)
   {
-#if !JVET_AD0056_MOVE_NNPFC_BASE_FLAG
-    sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_base_flag");
-    sei.m_baseFlag = val;
-#endif
     ChromaFormat chromaFormatIdc = sps->getChromaFormatIdc();
     uint8_t      subWidthC;
     uint8_t      subHeightC;
