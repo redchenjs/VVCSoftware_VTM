@@ -65,7 +65,6 @@
 
 
 
-#define JVET_AD0057_POSTFILTER_HINT_SEI_CONSTRAINT        1 // Disallow the post-filter hint SEI message to be present in both a prefix SEI NALU and a suffix SEI NALU in the same picture unit
 
 #define JVET_AD0056_MOVE_NNPFC_BASE_FLAG                  1
 

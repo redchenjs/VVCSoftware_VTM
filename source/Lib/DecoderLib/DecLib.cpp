@@ -1375,10 +1375,8 @@ void DecLib::checkSeiInPictureUnit()
 {
   std::vector<std::tuple<int, uint32_t, uint8_t*>> seiList;
 
-#if JVET_AD0057_POSTFILTER_HINT_SEI_CONSTRAINT
   bool prefixPostfilterHintSEI = false;
   bool suffixPostfilterHintSEI = false;
-#endif
 
   // payload types subject to constrained SEI repetition
 #if JVET_AD0057_UPDATE_SEI_LISTS
@@ -1418,7 +1416,6 @@ void DecLib::checkSeiInPictureUnit()
       }
       seiList.push_back(std::tuple<int, uint32_t, uint8_t*>(payloadType, payloadSize, payload));
 
-#if JVET_AD0057_POSTFILTER_HINT_SEI_CONSTRAINT
       if (SEI::PayloadType(payloadType) == SEI::PayloadType::POST_FILTER_HINT)
       {
         if (sei->m_nalUnitType == NalUnitType::NAL_UNIT_PREFIX_SEI)
@@ -1430,7 +1427,6 @@ void DecLib::checkSeiInPictureUnit()
           suffixPostfilterHintSEI = true;
         }
       }
-#endif
     }
     while (bs.getNumBitsLeft() > 8);
   }
@@ -1475,9 +1471,7 @@ void DecLib::checkSeiInPictureUnit()
     CHECK(count > 4, "There shall be less than or equal to 4 identical sei_payload( ) syntax structures within a picture unit.");
   }
 
-#if JVET_AD0057_POSTFILTER_HINT_SEI_CONSTRAINT
   CHECK(prefixPostfilterHintSEI && suffixPostfilterHintSEI, "Post-filter hint SEI message shall not be present in both a prefix SEI NALU and a suffix SEI NALU in the same picture unit")
-#endif
 
   // free SEI message list memory
   for (uint32_t i = 0; i < seiList.size(); i++)
