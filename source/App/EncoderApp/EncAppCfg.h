@@ -795,9 +795,7 @@ protected:
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEIActivationCancelFlag;
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
-#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
 

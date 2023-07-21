@@ -1882,9 +1882,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
   xWriteFlag(sei.m_cancelFlag, "nnpfa_cancel_flag");
   if(!sei.m_cancelFlag)
   {
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
     xWriteFlag(sei.m_targetBaseFlag, "nnpfa_target_base_flag");
-#endif
     xWriteFlag(sei.m_persistenceFlag, "nnpfa_persistence_flag");
     xWriteUvlc((uint32_t)sei.m_outputFlag.size(), "nnpfa_num_output_entries");
     for (uint32_t i = 0; i < (uint32_t)sei.m_outputFlag.size(); i++)

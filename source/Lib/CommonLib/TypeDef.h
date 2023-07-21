@@ -70,7 +70,6 @@
 
 
 
-#define JVET_AD0056_NNPFA_TARGET_BASE_FLAG                1
 
 #define JVET_AD0141_NNPFA_NONOUTPUTPIC                    1 //Check that NNPFA is present in pic that is not a non-output picture
 

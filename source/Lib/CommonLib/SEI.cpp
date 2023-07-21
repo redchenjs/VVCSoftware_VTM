@@ -1125,9 +1125,7 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   m_targetId = sei.m_targetId;
   m_cancelFlag = sei.m_cancelFlag;
   m_persistenceFlag = sei.m_persistenceFlag;
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
   m_targetBaseFlag = sei.m_targetBaseFlag;
-#endif
   m_outputFlag = sei.m_outputFlag;
 }
 
