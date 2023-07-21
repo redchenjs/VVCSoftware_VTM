@@ -280,7 +280,6 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
     }
   }
 
-#if JVET_AD0054_NNPFC_INTERPOLATED_PICS_CONSTRAINT
   bool fpCurrPicArrangementTypeIsTemporalInterleave = false;
   bool fpCurrPicFrameIsFrame0Flag                   = false;
   const SEIMessages currPicFramePacking = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::FRAME_PACKING);
@@ -417,6 +416,5 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
       }
     }
   }
-#endif
 
 }
