@@ -1762,13 +1762,8 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 #endif
     }
 #if !JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
-#if JVET_AD0067_SWAP_SYNTAX
     xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
-#else
-    xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
-    xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
-#endif
 #endif
 #if !JVET_AD0056_MOVE_COLOUR_DESC_FLAG
     xWriteFlag(sei.m_sepColDescriptionFlag, "nnpfc_sep_col_desc_flag");

@@ -3014,17 +3014,10 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #endif
     }
 #if !JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
-#if JVET_AD0067_SWAP_SYNTAX
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
     sei.m_auxInpIdc = val;
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
-#else
-    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
-    sei.m_inpOrderIdc = val;
-    sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_aux_inp_idc");
-    sei.m_auxInpIdc = val;
-#endif
 #endif
 #if !JVET_AD0056_MOVE_COLOUR_DESC_FLAG
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");

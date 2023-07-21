@@ -64,7 +64,6 @@
 
 
 
-#define JVET_AD0067_SWAP_SYNTAX                           1 // Swap the two syntax elements: nnpfc_auxiliary_inp_idc and nnpfc_inp_order_idc
 
 #define JVET_AD0057_POSTFILTER_HINT_SEI_CONSTRAINT        1 // Disallow the post-filter hint SEI message to be present in both a prefix SEI NALU and a suffix SEI NALU in the same picture unit
 
