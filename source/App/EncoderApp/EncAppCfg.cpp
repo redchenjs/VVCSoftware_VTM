@@ -5122,11 +5122,9 @@ bool EncAppCfg::xCheckParameter()
                    "Output picture height numerator cannot be equal to or less than 0");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPicHeightDenominator[i] <= 0,
                    "Output picture height denominator cannot be equal to or less than 0");
-#if JVET_AD0091
       xConfirmPara(m_nnPostFilterSEICharacteristicsLumaPadding[i] > ((1 << m_inputBitDepth[ChannelType::LUMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthLuma - 1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsCbPadding[i] > ((1 << m_inputBitDepth[ChannelType::CHROMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthChroma - 1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsCrPadding[i] > ((1 << m_inputBitDepth[ChannelType::CHROMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthChroma - 1");
-#endif
     }
   }
 
