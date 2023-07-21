@@ -1683,9 +1683,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 {
   xWriteCode(sei.m_purpose, 16, "nnpfc_purpose");
   xWriteUvlc(sei.m_id, "nnpfc_id");
-#if JVET_AD0056_MOVE_NNPFC_BASE_FLAG
   xWriteFlag(sei.m_baseFlag, "nnpfc_base_flag");
-#endif
   xWriteUvlc(sei.m_modeIdc, "nnpfc_mode_idc");
   if (sei.m_modeIdc == POST_FILTER_MODE::URI)
   {
@@ -1699,23 +1697,16 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
   xWriteFlag(sei.m_propertyPresentFlag, "nnpfc_property_present_flag");
   if (sei.m_propertyPresentFlag)
   {
-#if !JVET_AD0056_MOVE_NNPFC_BASE_FLAG
-    xWriteFlag(sei.m_baseFlag, "nnpfc_base_flag");
-#endif
     xWriteUvlc(sei.m_numberInputDecodedPicturesMinus1, "nnpfc_number_of_input_pictures_minus1");
 
-#if JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
     if (sei.m_numberInputDecodedPicturesMinus1 > 0)
     {
       for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; ++i)
       {
         xWriteFlag(sei.m_inputPicOutputFlag[i], "nnpfc_input_pic_output_flag");
       }
-#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
       xWriteFlag(sei.m_absentInputPicZeroFlag, "nnpfc_absent_input_pic_zero_flag");
-#endif
     }
-#endif
 
     if((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
     {
@@ -1727,15 +1718,10 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
     if((sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
     {
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
       xWriteUvlc(sei.m_picWidthNumeratorMinus1, "nnpfc_pic_width_num_minus1");
       xWriteUvlc(sei.m_picWidthDenominatorMinus1, "nnpfc_pic_width_denom_minus1");
       xWriteUvlc(sei.m_picHeightNumeratorMinus1, "nnpfc_pic_height_num_minus1");
       xWriteUvlc(sei.m_picHeightDenominatorMinus1, "nnpfc_pic_height_denom_minus1");
-#else
-      xWriteUvlc(sei.m_picWidthInLumaSamples, "nnpfc_pic_width_in_luma_samples");
-      xWriteUvlc(sei.m_picHeightInLumaSamples, "nnpfc_pic_height_in_luma_samples");
-#endif
     }
 
     if((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
@@ -1744,23 +1730,14 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       {
         xWriteUvlc(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");
       }
-#if !JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
-      for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; ++i)
-      {
-        xWriteFlag(sei.m_inputPicOutputFlag[i], "nnpfc_input_pic_output_flag");
-      }
-#endif
     }
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");
-#if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
     xWriteUvlc(sei.m_auxInpIdc, "nnpfc_auxiliary_inp_idc");
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
-#endif
     if (sei.m_inpFormatIdc == 1)
     {
-#if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
       if (sei.m_inpOrderIdc != 1)
       {
         xWriteUvlc(sei.m_inpTensorBitDepthLumaMinus8, "nnpfc_inp_tensor_luma_bitdepth_minus8");
@@ -1769,37 +1746,11 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       {
         xWriteUvlc(sei.m_inpTensorBitDepthChromaMinus8, "nnpfc_inp_tensor_chroma_bitdepth_minus8");
       }
-#else
-      xWriteUvlc(sei.m_inpTensorBitDepthLumaMinus8, "nnpfc_inp_tensor_bitdepth_luma_minus8");
-      xWriteUvlc(sei.m_inpTensorBitDepthChromaMinus8, "nnpfc_inp_tensor_bitdepth_chroma_minus8");
-#endif
     }
-#if !JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
-#if JVET_AD0067_SWAP_SYNTAX
-    xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
-    xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
-#else
-    xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
-    xWriteUvlc(sei.m_auxInpIdc, "nnpfc_aux_inp_idc");
-#endif
-#endif
-#if !JVET_AD0056_MOVE_COLOUR_DESC_FLAG
-    xWriteFlag(sei.m_sepColDescriptionFlag, "nnpfc_sep_col_desc_flag");
-
-    if (sei.m_sepColDescriptionFlag)
-    {
-      xWriteCode(sei.m_colPrimaries, 8, "nnpfc_col_primaries");
-      xWriteCode(sei.m_transCharacteristics, 8, "nnpfc_trans_characteristics");
-      xWriteCode(sei.m_matrixCoeffs, 8, "nnpfc_matrix_coeffs");
-    }
-#endif
     xWriteUvlc(sei.m_outFormatIdc, "nnpfc_out_format_idc");
-#if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
     xWriteUvlc(sei.m_outOrderIdc, "nnpfc_out_order_idc");
-#endif
     if (sei.m_outFormatIdc == 1)
     {
-#if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
       if (sei.m_outOrderIdc != 1)
       {
         xWriteUvlc(sei.m_outTensorBitDepthLumaMinus8, "nnpfc_out_tensor_luma_bitdepth_minus8");
@@ -1808,13 +1759,8 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       {
         xWriteUvlc(sei.m_outTensorBitDepthChromaMinus8, "nnpfc_out_tensor_chroma_bitdepth_minus8");
       }
-#else
-      xWriteUvlc(sei.m_outTensorBitDepthLumaMinus8, "nnpfc_out_tensor_bitdepth_luma_minus8");
-      xWriteUvlc(sei.m_outTensorBitDepthChromaMinus8, "nnpfc_out_tensor_bitdepth_chroma_minus8");
-#endif
     }
 
-#if JVET_AD0056_MOVE_COLOUR_DESC_FLAG
     xWriteFlag(sei.m_sepColDescriptionFlag, "nnpfc_sep_col_desc_flag");
 
     if (sei.m_sepColDescriptionFlag)
@@ -1826,7 +1772,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteCode(sei.m_matrixCoeffs, 8, "nnpfc_matrix_coeffs");
       }
     }
-#endif
 #if JVET_AD0067_INCLUDE_SYNTAX
     if (sei.m_sepColDescriptionFlag && (sei.m_outFormatIdc == 1))
     {
@@ -1834,18 +1779,13 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
 #endif
     
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
     xWriteFlag(sei.m_chromaLocInfoPresentFlag, "nnpfc_chroma_loc_info_present_flag");
 
     if(sei.m_chromaLocInfoPresentFlag)
     {
       xWriteUvlc(to_underlying(sei.m_chromaSampleLocTypeFrame), "nnpfc_chroma_sample_loc_type_frame");
     }
-#endif
     
-#if !JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
-    xWriteUvlc(sei.m_outOrderIdc, "nnpfc_out_order_idc");
-#endif
     xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
     xWriteFlag(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");
     if (sei.m_constantPatchSizeFlag)
@@ -1861,7 +1801,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     xWriteUvlc(sei.m_paddingType, "nnpfc_padding_type");
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
-#if JVET_AD0056_NNPFC_PADDING_SYNTAX_CONDITION
       if (sei.m_inpOrderIdc != 1)
       {
         xWriteUvlc(sei.m_lumaPadding, "nnpfc_luma_padding_val");
@@ -1871,11 +1810,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteUvlc(sei.m_cbPadding, "nnpfc_cb_padding_val");
         xWriteUvlc(sei.m_crPadding, "nnpfc_cr_padding_val");
       }
-#else
-      xWriteUvlc(sei.m_lumaPadding, "nnpfc_luma_padding_val");
-      xWriteUvlc(sei.m_cbPadding, "nnpfc_cb_padding_val");
-      xWriteUvlc(sei.m_crPadding, "nnpfc_cr_padding_val");
-#endif
     }
 
     xWriteFlag(sei.m_complexityInfoPresentFlag, "nnpfc_complexity_info_present_flag");
@@ -1891,9 +1825,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_totalKilobyteSize, "nnpfc_total_kilobyte_size");
     }
 
-#if JVET_AD0056_NNPFC_METADATA_EXTENSION
     xWriteUvlc(0, "nnpfc_metadata_extension_num_bits");  // nnpfc_metadata_extension_num_bits shall be equal to 0 in the current edition 
-#endif
   }
   if (sei.m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
   {
@@ -1915,17 +1847,13 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
   xWriteFlag(sei.m_cancelFlag, "nnpfa_cancel_flag");
   if(!sei.m_cancelFlag)
   {
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
     xWriteFlag(sei.m_targetBaseFlag, "nnpfa_target_base_flag");
-#endif
     xWriteFlag(sei.m_persistenceFlag, "nnpfa_persistence_flag");
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
     xWriteUvlc((uint32_t)sei.m_outputFlag.size(), "nnpfa_num_output_entries");
     for (uint32_t i = 0; i < (uint32_t)sei.m_outputFlag.size(); i++)
     {
       xWriteFlag(sei.m_outputFlag[i], "nnpfa_output_flag");
     }
-#endif
   }
 }
 

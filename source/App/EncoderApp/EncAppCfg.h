@@ -729,9 +729,7 @@ protected:
   EncCfgParam::CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
 
   bool                  m_nnPostFilterSEICharacteristicsEnabled;
-#if JVET_AD0057_NNPF_SUFFIX_SEI
   bool                  m_nnPostFilterSEICharacteristicsUseSuffixSEI;
-#endif
   int                   m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t              m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
@@ -740,15 +738,10 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutColourFormatIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
   uint32_t              m_nnPostFilterSEICharacteristicsPicWidthNumerator[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicWidthDenominator[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicHeightNumerator[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicHeightDenominator[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t              m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
-  uint32_t              m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
@@ -767,10 +760,8 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsOutFormatIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutOrderIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
   bool                  m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t               m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsPatchWidthMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1[MAX_NUM_NN_POST_FILTERS];
@@ -791,29 +782,19 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
 
   bool                  m_nnPostFilterSEIActivationEnabled;
-#if JVET_AD0057_NNPF_SUFFIX_SEI
   bool                  m_nnPostFilterSEIActivationUseSuffixSEI;
-#endif
   uint32_t              m_nnPostFilterSEIActivationTargetId;
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
-#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
-#endif
 
   bool                  m_poSEIEnabled;
-#if JVET_AD0386_SEI
   std::vector<bool>     m_poSEIPrefixFlag;
-#endif
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;

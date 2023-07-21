@@ -563,9 +563,7 @@ SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
 {
   m_posEnabled = sei.m_posEnabled;
-#if JVET_AD0386_SEI
   m_posPrefixFlag = sei.m_posPrefixFlag;
-#endif
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;
   m_posPrefixByte = sei.m_posPrefixByte;
@@ -1073,12 +1071,10 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_outSubWidthC = sei.m_outSubWidthC;
   m_outSubHeightC = sei.m_outSubHeightC;
   m_outColourFormatIdc = sei.m_outColourFormatIdc;
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
   m_picWidthNumeratorMinus1 = sei.m_picWidthNumeratorMinus1;
   m_picWidthDenominatorMinus1 = sei.m_picWidthDenominatorMinus1;
   m_picHeightNumeratorMinus1 = sei.m_picHeightNumeratorMinus1;
   m_picHeightDenominatorMinus1 = sei.m_picHeightDenominatorMinus1;
-#endif
   m_picWidthInLumaSamples = sei.m_picWidthInLumaSamples;
   m_picHeightInLumaSamples = sei.m_picHeightInLumaSamples;
   m_inpTensorBitDepthLumaMinus8 = sei.m_inpTensorBitDepthLumaMinus8;
@@ -1129,12 +1125,8 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   m_targetId = sei.m_targetId;
   m_cancelFlag = sei.m_cancelFlag;
   m_persistenceFlag = sei.m_persistenceFlag;
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
   m_targetBaseFlag = sei.m_targetBaseFlag;
-#endif
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
   m_outputFlag = sei.m_outputFlag;
-#endif
 }
 
 SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)

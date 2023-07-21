@@ -346,10 +346,8 @@ protected:
 
   void xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS *sps, const PPS *pps);
   void xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice);
-#if JVET_AD0057_NNPF_SUFFIX_SEI
   void xCreateNNPostFilterCharacteristicsSEIMessages(SEIMessages& seiMessages);
   void xCreateNNPostFilterActivationSEIMessage(SEIMessages& seiMessages, Slice* slice);
-#endif
   void xCreateFrameFieldInfoSEI (SEIMessages& seiMessages, Slice *slice, bool isField);
   void xCreatePhaseIndicationSEIMessages (SEIMessages& seiMessages, Slice* slice, int ppsId);
   void xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SEIMessages &nestedSeiMessages,

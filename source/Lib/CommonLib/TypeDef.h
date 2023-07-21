@@ -58,51 +58,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE             1 // Replace signalling of output picture size with output size scaling ratio
-
-#define JVET_AD0169_SMALL_SCALE_DOWNSAMPLING              1 // JVET-AD0169: Downsampling filters in range 1.1 to 1.35 based on Kaiser(7) windowed sinc
-#define JVET_AD0386_SEI   1 // Extend the latest SEI processing order SEI message to enable signalling of prefix information for any type of SEI messages
-
-#define JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG           1
-
-#define JVET_AD0056_NNPFA_TARGET_ID_CONSTRAINT            1 // Remove redundant constraints on nnpfa_target_id
-
-#define JVET_AD0388_NNPFA_OUTPUT_FLAG                     1
-
-#define JVET_AD0056_NNPFC_PADDING_SYNTAX_CONDITION        1
-
-#define JVET_AD0067_SWAP_SYNTAX                           1 // Swap the two syntax elements: nnpfc_auxiliary_inp_idc and nnpfc_inp_order_idc
-
-#define JVET_AD0057_POSTFILTER_HINT_SEI_CONSTRAINT        1 // Disallow the post-filter hint SEI message to be present in both a prefix SEI NALU and a suffix SEI NALU in the same picture unit
-
-#define JVET_AD0056_MOVE_NNPFC_BASE_FLAG                  1
-
-#define JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG      1
-
-#define JVET_AD0054_NNPFC_INTERPOLATED_PICS_CONSTRAINT    1
-
-#define JVET_AD0056_NNPFC_METADATA_EXTENSION              1
-
-#define JVET_AD0056_NNPFA_TARGET_BASE_FLAG                1
-
-#define JVET_AD0141_NNPFA_NONOUTPUTPIC                    1 //Check that NNPFA is present in pic that is not a non-output picture
-
-#define JVET_AD0056_PIC_WIDTH_HEIGHT_CONTRAINTS           1
-
-#define JVET_AD0056_NNPFC_INP_OUT_ORDER_IDC_CONSTRAINTS   1
-
-#define JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC      1 // Move nnpfc_inp_order_idc and nnpfc_out_order_idc, and gate the bit depth syntax elements 
-
-#define JVET_AD0056_MOVE_COLOUR_DESC_FLAG                 1 // Move nnpfc_separate_colour_description_present_flag and associated flags and add conformance checks
-
-#define JVET_AD0091                                       1
-#define JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC               1 // Add new SEI elements nnpfc_chroma_sample_loc_type_frame
-
-#define JVET_AD0057_NNPF_SUFFIX_SEI                       1 // Allow inclusion of NNPFC and NNPFA SEI messages in suffix SEI NAL units
-
-#define JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS           1 // Multi-input pics to a NNPF shall have the same dimensions
-
-#define JVET_AD0057_UPDATE_SEI_LISTS                      1 // Update VclAssociatedSeiList and PicUnitRepConSeiList
 
 //########### place macros to be be kept below this line ###############
 

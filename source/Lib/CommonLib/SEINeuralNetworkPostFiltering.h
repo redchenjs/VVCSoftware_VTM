@@ -62,15 +62,9 @@ public:
   SEINeuralNetworkPostFiltering();
 ~SEINeuralNetworkPostFiltering() = default;
   void filterPictures(PicList& picList);
-#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
   void checkInputPics(
     Picture* currCodedPic, const SEINeuralNetworkPostFilterCharacteristics* currNnpfc,
     uint32_t sourceWidth, uint32_t sourceHeight, uint32_t croppedWidth, uint32_t croppedHeight);
-#else
-  void findFrameRateUpSamplingInputPics(
-    Picture* currCodedPic, const SEINeuralNetworkPostFilterCharacteristics* frameRateUpsamplingNnpfc,
-    uint32_t sourceWidth, uint32_t sourceHeight, uint32_t croppedWidth, uint32_t croppedHeight);
-#endif
 };
 
 #endif

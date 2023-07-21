@@ -613,17 +613,13 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
 
 
   seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
-#if JVET_AD0386_SEI
   seiProcessingOrderInfo->m_posPrefixFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-#endif
   seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPrefixByte.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   for (uint32_t i = 0; i < m_pcCfg->getPoSEIPayloadTypeSize(); i++)
   {
-#if JVET_AD0386_SEI
     seiProcessingOrderInfo->m_posPrefixFlag[i] = m_pcCfg->getPoSEIPrefixFlag(i);
-#endif
     seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
     if (seiProcessingOrderInfo->m_posPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
@@ -1307,9 +1303,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
   CHECK(!(sei != nullptr), "Unspecified error");
   sei->m_purpose = m_pcCfg->getNNPostFilterSEICharacteristicsPurpose(filterIdx);
   sei->m_id = m_pcCfg->getNNPostFilterSEICharacteristicsId(filterIdx);
-#if JVET_AD0056_MOVE_NNPFC_BASE_FLAG
   sei->m_baseFlag = m_pcCfg->getNNPostFilterSEICharacteristicsBaseFlag(filterIdx);
-#endif
   sei->m_modeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsModeIdc(filterIdx);
   if (sei->m_modeIdc == POST_FILTER_MODE::URI)
   {
@@ -1319,21 +1313,13 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
   sei->m_propertyPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsPropertyPresentFlag(filterIdx);
   if (sei->m_propertyPresentFlag)
   {
-#if !JVET_AD0056_MOVE_NNPFC_BASE_FLAG
-    sei->m_baseFlag = m_pcCfg->getNNPostFilterSEICharacteristicsBaseFlag(filterIdx);
-#endif
     sei->m_numberInputDecodedPicturesMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1(filterIdx);
     CHECK(sei->m_numberInputDecodedPicturesMinus1 > 63, "m_numberInputDecodedPicturesMinus1 shall be in the range of 0 to 63");
 
-#if JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
     sei->m_inputPicOutputFlag = m_pcCfg->getNNPostFilterSEICharacteristicsInputPicOutputFlag(filterIdx);
-#endif
 
-#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
     sei->m_absentInputPicZeroFlag = m_pcCfg->getNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(filterIdx);
-#endif
 
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
     sei->m_numInpPicsInOutputTensor = 0;
     if (sei->m_numberInputDecodedPicturesMinus1 > 0)
     {
@@ -1349,7 +1335,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_numInpPicsInOutputTensor = 1;
     }
-#endif
 
     if((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
     {
@@ -1360,7 +1345,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_outColourFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutColourFormatIdc(filterIdx);
     }
 
-#if JVET_AD0056_MOVE_COLOUR_DESC_FLAG
     const ChromaFormat chromaFormatIdc = m_pcEncLib->getSPS(0)->getChromaFormatIdc();
     uint8_t subWidthC     = SPS::getWinUnitX(chromaFormatIdc);
     uint8_t subHeightC    = SPS::getWinUnitY(chromaFormatIdc);
@@ -1386,19 +1370,13 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       outSubWidthC  = SPS::getWinUnitX(sei->m_outColourFormatIdc);
       outSubHeightC = SPS::getWinUnitY(sei->m_outColourFormatIdc);
     }
-#endif
 
     if((sei->m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
     {
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
       sei->m_picWidthNumeratorMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthNumeratorMinus1(filterIdx);
       sei->m_picWidthDenominatorMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthDenominatorMinus1(filterIdx);
       sei->m_picHeightNumeratorMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightNumeratorMinus1(filterIdx);
       sei->m_picHeightDenominatorMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightDenominatorMinus1(filterIdx);
-#else
-      sei->m_picWidthInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(filterIdx);
-      sei->m_picHeightInLumaSamples = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightInLumaSamples(filterIdx);
-#endif
       int confWinLeftOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowLeftOffset();
       int confWinTopOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowTopOffset();
       int confWinRightOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowRightOffset();
@@ -1406,74 +1384,21 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       int ppsPicWidthInLumaSample  = m_pcEncLib->getPPS(0)->getPicWidthInLumaSamples();
       int ppsPicHeightInLumaSample = m_pcEncLib->getPPS(0)->getPicHeightInLumaSamples();
 
-#if !JVET_AD0056_MOVE_COLOUR_DESC_FLAG
-      const ChromaFormat chromaFormatIdc = m_pcEncLib->getSPS(0)->getChromaFormatIdc();
-      uint8_t      subWidthC;
-      uint8_t      subHeightC;
-      if (chromaFormatIdc == ChromaFormat::_420)
-      {
-        subWidthC  = 2;
-        subHeightC = 2;
-      }
-      else if (chromaFormatIdc == ChromaFormat::_422)
-      {
-        subWidthC  = 2;
-        subHeightC = 1;
-      }
-      else
-      {
-        subWidthC  = 1;
-        subHeightC = 1;
-      }
-#endif
       
       int croppedWidth = ppsPicWidthInLumaSample - subWidthC * (confWinRightOffset + confWinLeftOffset);
       int croppedHeight = ppsPicHeightInLumaSample - subHeightC * (confWinBottomOffset + confWinTopOffset);
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
       int outputPicWidth = (int)ceil(((double)croppedWidth * (sei->m_picWidthNumeratorMinus1 + 1)) / (sei->m_picWidthDenominatorMinus1 + 1));
       int outputPicHeight = (int)ceil(((double)croppedHeight * (sei->m_picHeightNumeratorMinus1 + 1)) / (sei->m_picHeightDenominatorMinus1 + 1));
 
       CHECK(!(outputPicWidth >= croppedWidth && outputPicWidth <= croppedWidth * 16), "output picture width in luma samples shall be in the range of croppedWidth to croppedWidth * 16");
       CHECK(!(outputPicHeight >= croppedHeight && outputPicHeight <= croppedHeight * 16), "output picture height in luma samples shall be in the range of croppedHeight to croppedHeight * 16");
-#else
-      CHECK(!(sei->m_picWidthInLumaSamples >= croppedWidth && sei->m_picWidthInLumaSamples <= croppedWidth * 16 - 1), "m_picWidthInLumaSamples shall be in the range of croppedWidth to croppedWidth * 16 - 1");
-      CHECK(!(sei->m_picHeightInLumaSamples >= croppedHeight && sei->m_picHeightInLumaSamples <= croppedHeight * 16 - 1), "m_picHeightInLumaSamples shall be in the range of croppedHeight to croppedHeight * 16 - 1");
-#endif
 
-#if JVET_AD0056_PIC_WIDTH_HEIGHT_CONTRAINTS
-#if !JVET_AD0056_MOVE_COLOUR_DESC_FLAG
-      uint8_t      outSubWidthC  = subWidthC;
-      uint8_t      outSubHeightC = subHeightC;
-      if ((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
-      {
-        if (sei->m_outSubCFlag)
-        {
-          outSubWidthC  = 1;
-          outSubHeightC = 1;
-        }
-        else
-        {
-          outSubWidthC  = 2;
-          outSubHeightC = 1;
-        }
-      }
-      else if ((sei->m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
-      {
-        CHECK(sei->m_outColourFormatIdc == ChromaFormat::_400, "The value of nnpfc_out_colour_format_idc shall not be equal to 0");
-        outSubWidthC  = SPS::getWinUnitX(sei->m_outColourFormatIdc);
-        outSubHeightC = SPS::getWinUnitY(sei->m_outColourFormatIdc);
-      }
-#endif
       CHECK((outputPicWidth  % outSubWidthC)  != 0, "The value of nnpfcOutputPicWidth % outSubWidthC shall be equal to 0");
       CHECK((outputPicHeight % outSubHeightC) != 0, "The value of nnpfcOutputPicHeight % outSubHeightC shall be equal to 0");
-#endif
     }
     if((sei->m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
     {
       sei->m_numberInterpolatedPictures = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInterpolatedPictures(filterIdx);
-#if !JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
-      sei->m_inputPicOutputFlag = m_pcCfg->getNNPostFilterSEICharacteristicsInputPicOutputFlag(filterIdx);
-#endif
       CHECK(sei->m_numberInputDecodedPicturesMinus1 <= 0, "If nnpfc_purpose is FRAME_RATE_UPSAMPLING, m_numberInputDecodedPicturesMinus1 shall be greater than 0");
     }
 
@@ -1486,20 +1411,9 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     }
 
     sei->m_inpOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpOrderIdc(filterIdx);
-#if JVET_AD0056_NNPFC_INP_OUT_ORDER_IDC_CONSTRAINTS
     CHECK((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0 && sei->m_inpOrderIdc == 0, "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_inp_order_idc shall not be equal to 0");
-#endif
     sei->m_auxInpIdc             = m_pcCfg->getNNPostFilterSEICharacteristicsAuxInpIdc(filterIdx);
 
-#if !JVET_AD0056_MOVE_COLOUR_DESC_FLAG
-    sei->m_sepColDescriptionFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSepColDescriptionFlag(filterIdx);
-    if (sei->m_sepColDescriptionFlag)
-    {
-      sei->m_colPrimaries         = m_pcCfg->getNNPostFilterSEICharacteristicsColPrimaries(filterIdx);
-      sei->m_transCharacteristics = m_pcCfg->getNNPostFilterSEICharacteristicsTransCharacteristics(filterIdx);
-      sei->m_matrixCoeffs         = m_pcCfg->getNNPostFilterSEICharacteristicsMatrixCoeffs(filterIdx);
-    }
-#endif
 
     sei->m_outFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutFormatIdc(filterIdx);
     if (sei->m_outFormatIdc == 1)
@@ -1507,7 +1421,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_outTensorBitDepthLumaMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8(filterIdx);
       sei->m_outTensorBitDepthChromaMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8(filterIdx);
     }
-#if JVET_AD0056_MOVE_COLOUR_DESC_FLAG
     sei->m_sepColDescriptionFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSepColDescriptionFlag(filterIdx);
     if (sei->m_sepColDescriptionFlag)
     {
@@ -1523,7 +1436,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
           "nnpfc_out_tensor_chroma_bitdepth_minus8 is equal to nnpfc_out_tensor_luma_bitdepth_minus8 + 1, nnpfc_out_order_idc is equal to 2, outSubHeightC is equal to 1, and outSubWidthC is equal to 1");
       }
     }
-#endif
 #if JVET_AD0067_INCLUDE_SYNTAX
     if (sei->m_sepColDescriptionFlag && (sei->m_outFormatIdc == 1))
     {
@@ -1531,17 +1443,13 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     }
 #endif
     sei->m_outOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutOrderIdc(filterIdx);
-#if JVET_AD0056_NNPFC_INP_OUT_ORDER_IDC_CONSTRAINTS
     CHECK((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0 && (sei->m_outOrderIdc == 0 || sei->m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0 or 3");
     CHECK((sei->m_purpose & NNPC_PurposeType::COLOURIZATION) != 0 && sei->m_outOrderIdc == 0, "When nnpfc_purpose & 0x20 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0");
-#endif
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
       sei->m_chromaLocInfoPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsChromaLocInfoPresentFlag(filterIdx);
       if(sei->m_chromaLocInfoPresentFlag)
       {
         sei->m_chromaSampleLocTypeFrame = m_pcCfg->getNNPostFilterSEICharacteristicsChromaSampleLocTypeFrame(filterIdx);;
       }
-#endif
     sei->m_constantPatchSizeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(filterIdx);
     sei->m_patchWidthMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchWidthMinus1(filterIdx);
     sei->m_patchHeightMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPatchHeightMinus1(filterIdx);
@@ -1552,10 +1460,8 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     }
     sei->m_overlap = m_pcCfg->getNNPostFilterSEICharacteristicsOverlap(filterIdx);
     sei->m_paddingType = m_pcCfg->getNNPostFilterSEICharacteristicsPaddingType(filterIdx);
-#if JVET_AD0091
     CHECK((sei->m_paddingType >= 5) && (sei->m_paddingType <= 15), "Reserved nnpfc_padding_type value, shall not be present in bitstreams conforming to this version of VTM");
     CHECK(sei->m_paddingType > 15, "Invalid nnpfc_padding_type value");
-#endif
     sei->m_lumaPadding = m_pcCfg->getNNPostFilterSEICharacteristicsLumaPadding(filterIdx);
     sei->m_cbPadding = m_pcCfg->getNNPostFilterSEICharacteristicsCbPadding(filterIdx);
     sei->m_crPadding = m_pcCfg->getNNPostFilterSEICharacteristicsCrPadding(filterIdx);
@@ -1597,13 +1503,9 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
   sei->m_cancelFlag  = m_pcCfg->getNnPostFilterSEIActivationCancelFlag();
   if(!sei->m_cancelFlag)
   {
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
     sei->m_targetBaseFlag = m_pcCfg->getNnPostFilterSEIActivationTargetBaseFlag();
-#endif
     sei->m_persistenceFlag = m_pcCfg->getNnPostFilterSEIActivationPersistenceFlag();
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
     sei->m_outputFlag = m_pcCfg->getNnPostFilterSEIActivationOutputFlag();
-#endif
   }
 }
 

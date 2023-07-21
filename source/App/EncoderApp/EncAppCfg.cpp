@@ -728,12 +728,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp1              (0, 65535,  0, 256 * 6);
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
-#if JVET_AD0386_SEI
   SMultiValueInput<bool>       cfg_poSEIPrefixFlag(false, true, 0, 1);
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType(0, 32768, 0, 256 * 2);
-#else
-  SMultiValueInput<uint16_t>   cfg_poSEIPayloadType     (0, 65535, 0, 256*2);
-#endif
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
 
   SMultiValueInput<uint16_t>   cfg_poSEINumofPrefixByte(0, 255, 0, 256);
@@ -748,9 +744,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList.push_back(SMultiValueInput<uint32_t>(0, std::numeric_limits<uint32_t>::max(), 1, 0));
     cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList.push_back(SMultiValueInput<bool>(0, 1, 1, 0));
   }
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
   SMultiValueInput<bool>       cfg_nnPostFilterSEIActivationOutputFlagList(0, 1, 1, 0);
-#endif
 
 #if ENABLE_TRACING
   std::string sTracingRule;
@@ -1617,9 +1611,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   
   //Processing order of SEI (pos)
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
-#if JVET_AD0386_SEI
   ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether po_num_prefix_bytes is present or not")
-#endif
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
   ("SEIPONumofPrefixByte",                            cfg_poSEINumofPrefixByte,       cfg_poSEINumofPrefixByte, "List of number of prefix bytes")
@@ -1751,9 +1743,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
   opts.addOptions()("SEINNPFCEnabled",  m_nnPostFilterSEICharacteristicsEnabled, false, "Control generation of the Neural Network Post Filter Characteristics SEI messages");
-#if JVET_AD0057_NNPF_SUFFIX_SEI
   opts.addOptions()("SEINNPFCUseSuffixSEI",  m_nnPostFilterSEICharacteristicsUseSuffixSEI, false, "Code NNPFC SEI either as suffix (1) or prefix (0) SEI message");
-#endif
   opts.addOptions()( "SEINNPFCNumFilters",                                      m_nnPostFilterSEICharacteristicsNumFilters,                                  0, "Specifies the number of Neural Network Post Filter Characteristics SEI messages" );
   for (int i = 0; i < MAX_NUM_NN_POST_FILTERS; i++)
   {
@@ -1785,7 +1775,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     outColourFormatIdc << "SEINNPFCOutColourFormatIdc" << i;
     opts.addOptions()(outColourFormatIdc.str(), m_nnPostFilterSEICharacteristicsOutColourFormatIdc[i], 1u, "Specifies output chroma format for colourization purpose");
 
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
     std::ostringstream picWidthNum;
     picWidthNum << "SEINNPFCPicWidthNumerator" << i;
     opts.addOptions()(picWidthNum.str(), m_nnPostFilterSEICharacteristicsPicWidthNumerator[i], 1u,
@@ -1809,15 +1798,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()(picHeightDenom.str(), m_nnPostFilterSEICharacteristicsPicHeightDenominator[i], 1u,
                       "Specifies the denominator of output picture height resulting from applying the Neural Network "
                       "Post Filter Characteristics SEI message");
-#else
-    std::ostringstream picWidthInLumaSamples;
-    picWidthInLumaSamples << "SEINNPFCPicWidthInLumaSamples" << i;
-    opts.addOptions()(picWidthInLumaSamples.str(), m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], 0u, "Specifies the horizontal luma sample counts of the output picture in the Neural Network Post Filter Characteristics SEI message");
-
-    std::ostringstream picHeightInLumaSamples;
-    picHeightInLumaSamples << "SEINNPFCPicHeightInLumaSamples" << i;
-    opts.addOptions()(picHeightInLumaSamples.str(), m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], 0u, "Specifies the vertical luma sample counts of the output picture in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream inpTensorBitDepthLumaMinus8;
     inpTensorBitDepthLumaMinus8 << "SEINNPFCInpTensorBitDepthLumaMinusEight" << i;
@@ -1884,7 +1864,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     constantPatchSizeFlag << "SEINNPFCConstantPatchSizeFlag" << i;
     opts.addOptions()(constantPatchSizeFlag.str(), m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[i], false, "Specifies the patch size flag in the the Neural Network Post Filter Characteristics SEI message");
     
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
     std::ostringstream chromaLocInfoPresentFlag;
     chromaLocInfoPresentFlag << "SEINNPFCChromaLocInfoPresentFlag" << i;
     opts.addOptions()(chromaLocInfoPresentFlag.str(), m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[i], false, "Specifies the chroma location information flag in the the Neural Network Post Filter Characteristics SEI message");
@@ -1892,7 +1871,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream chromaSampleLocTypeFrame;
     chromaSampleLocTypeFrame << "SEINNPFCChromaSampleLocTypeFrame" << i;
     opts.addOptions()(chromaSampleLocTypeFrame.str(), m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[i], 0u, "Specifies the method of ordering the output sample arrays in the Neural Network Post Filter Characteristics SEI message");
-#endif
     
     std::ostringstream patchWidthMinus1;
     patchWidthMinus1 << "SEINNPFCPatchWidthMinus1" << i;
@@ -1980,25 +1958,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream InputPicOutputFlag;
     InputPicOutputFlag << "SEINNPFCInputPicOutputFlag" << i;
     opts.addOptions()(InputPicOutputFlag.str(), cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], "Indicates whether NNPF will generate a corresponding output picture for the input picture");
-#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
     std::ostringstream absentInputPicZeroFlag;
     absentInputPicZeroFlag << "SEINNPFCAbsentInputPicZeroFlag" << i;
     opts.addOptions()(absentInputPicZeroFlag.str(), m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[i], false, "Specifies the value of nnpfc_absent_input_pic_zero_flag in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
-#if JVET_AD0057_NNPF_SUFFIX_SEI
     opts.addOptions()("SEINNPostFilterActivationUseSuffixSEI",  m_nnPostFilterSEIActivationUseSuffixSEI, false, "Code NNPFA SEI either as suffix (1) or prefix (0) SEI message");
-#endif
     opts.addOptions()("SEINNPostFilterActivationTargetId", m_nnPostFilterSEIActivationTargetId, 0u, "Target id of the Neural Network Post Filter on current picture");
     opts.addOptions()("SEINNPostFilterActivationCancelFlag", m_nnPostFilterSEIActivationCancelFlag, false, "Control use of the target neural network post filter established by any previous NNPFA SEI message");
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
     opts.addOptions()("SEINNPostFilterActivationTargetBaseFlag", m_nnPostFilterSEIActivationTargetBaseFlag, false, "Specifies that the target NNPF is the base NNPF");
-#endif
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
     opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies a list indicating whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
-#endif
   }
 
   po::setDefaults(opts);
@@ -2534,7 +2504,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     CHECK(int(m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i].size()) < int(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i]) - 1, "Number Interpolated Pictures List must be greater than number of decoder pictures list");
 
     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i].values;
-#if JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
     if (m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] == 0)
     {
       m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = {1};
@@ -2543,17 +2512,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     {
       CHECK(int(m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i].size()) < int(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i]) + 1, "Number of input picture output flags cannot be less than number of input decoded pictures");
     }
-#else
-    if (m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i].size() == 0)
-    {
-      m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i].push_back(0);
-    }
-#endif
   }
 
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
   m_nnPostFilterSEIActivationOutputFlag = cfg_nnPostFilterSEIActivationOutputFlagList.values;
-#endif
 
   // TODO: check whether values are within valid range
   m_chromaSampleLocType            = static_cast<Chroma420LocType>(chromaSampleLocType);
@@ -3606,26 +3567,18 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if (m_poSEIEnabled)
   {
-#if !JVET_AD0386_SEI
-    assert(cfg_poSEIPayloadType.values.size() > 1);
-    assert(cfg_poSEIProcessingOrder.values.size() == cfg_poSEIPayloadType.values.size());
-#else
     CHECK(cfg_poSEIPayloadType.values.size() <= 1, "there should be at least 2 SEIPOPayLoadType");
     CHECK(cfg_poSEIProcessingOrder.values.size() != cfg_poSEIPayloadType.values.size(), "the number of SEIPOPayLoadType should be equal to the number of SEIPOProcessingOrder");
     CHECK(cfg_poSEIPrefixFlag.values.size() <= 1, "there should be at least 2 SEIPOPrefixFlag");
     m_poSEIPrefixFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
-#endif
     m_poSEIPayloadType.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEIProcessingOrder.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEIPrefixByte.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     uint16_t prefixByteIdx = 0;
     for (uint32_t i = 0; i < (uint32_t) cfg_poSEIPayloadType.values.size(); i++)
     {
-#if JVET_AD0386_SEI
       m_poSEIPrefixFlag[i] =      cfg_poSEIPrefixFlag.values[i];
-#endif
       m_poSEIPayloadType[i]     = cfg_poSEIPayloadType.values[i];
-#if JVET_AD0386_SEI
       if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME ||
           m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO ||
           m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::ALTERNATIVE_TRANSFER_CHARACTERISTICS ||
@@ -3640,60 +3593,34 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       {
         CHECK(m_poSEIPrefixFlag[i] == true, "The value of po_sei_prefix_flag shall be equal to 0 when po_sei_payload_type is equal to 137, 144, 147, 148, 179, 180, 200, 201, 208, and 213");
       }
-#endif
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
-#if JVET_AD0386_SEI
       if (m_poSEIPrefixFlag[i])
       {
-#else
-      if (m_poSEIPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
-      {
-        assert(cfg_poSEINumofPrefixByte.values[i] > 0);
-#endif
         m_poSEIPrefixByte[i].resize(cfg_poSEINumofPrefixByte.values[i]);
         for (uint32_t j = 0; j < cfg_poSEINumofPrefixByte.values[i]; j++)
         {
           m_poSEIPrefixByte[i][j] = (uint8_t) cfg_poSEIPrefixByte.values[prefixByteIdx++];
         }
       }
-#if JVET_AD0386_SEI
       else
       {
         cfg_poSEINumofPrefixByte.values[i] = 0;
       }
-#endif
       // Error check, to avoid same PayloadType and same prefix bytes when present with different PayloadOrder
       for (uint32_t j = 0; j < i; j++)
       {
-#if JVET_AD0386_SEI
         if (m_poSEIPrefixFlag[i])
         {
             if ((m_poSEIPayloadType[j] == m_poSEIPayloadType[i]) && m_poSEIPrefixFlag[j])
-#else
-        auto payloadType = SEI::PayloadType(cfg_poSEIPayloadType.values[i]);
-        if (payloadType == SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
-        {
-          for (uint32_t j = 0; j < i; j++)
-          {
-            if (m_poSEIPayloadType[j] == m_poSEIPayloadType[i])
-#endif
             {
               auto numofPrefixBytes = std::min(cfg_poSEINumofPrefixByte.values[i], cfg_poSEINumofPrefixByte.values[j]);
               if (std::equal(m_poSEIPrefixByte[i].begin() + 1, m_poSEIPrefixByte[i].begin() + numofPrefixBytes - 1,
                              m_poSEIPrefixByte[j].begin()))
               {
-#if JVET_AD0386_SEI
                 CHECK(m_poSEIProcessingOrder[j] != m_poSEIProcessingOrder[i], "multiple SEI messages with the same po_sei_payload_type and prefix content present when present shall have the same value of po_sei_processing_order");
-#else
-                assert(m_poSEIProcessingOrder[j] == m_poSEIProcessingOrder[i]);
-#endif
               }
             }
-#if !JVET_AD0386_SEI
-          }
-#endif
         }
-#if JVET_AD0386_SEI
         else
         {
           if (m_poSEIPayloadType[j] == m_poSEIPayloadType[i])
@@ -3701,16 +3628,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
             CHECK(m_poSEIProcessingOrder[j] != m_poSEIProcessingOrder[i], "multiple SEI messages with the same po_sei_payload_type without prefix content shall have the same value of po_sei_processing_order");
           }
         }
-#endif
       }
     }
-#if !JVET_AD0386_SEI // error check already done above
-    // Error check, to avoid all SEI messages share the same PayloadOrder
-    assert(!std::equal(cfg_poSEIProcessingOrder.values.begin() + 1, cfg_poSEIProcessingOrder.values.end(),
-                       cfg_poSEIProcessingOrder.values.begin()));
-    assert(m_poSEIPayloadType.size() > 0);
-    assert(m_poSEIProcessingOrder.size() == m_poSEIPayloadType.size());
-#endif
   }
 
   if (m_postFilterHintSEIEnabled)
@@ -5197,11 +5116,9 @@ bool EncAppCfg::xCheckParameter()
                    "Output picture height numerator cannot be equal to or less than 0");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPicHeightDenominator[i] <= 0,
                    "Output picture height denominator cannot be equal to or less than 0");
-#if JVET_AD0091
       xConfirmPara(m_nnPostFilterSEICharacteristicsLumaPadding[i] > ((1 << m_inputBitDepth[ChannelType::LUMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthLuma - 1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsCbPadding[i] > ((1 << m_inputBitDepth[ChannelType::CHROMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthChroma - 1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsCrPadding[i] > ((1 << m_inputBitDepth[ChannelType::CHROMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthChroma - 1");
-#endif
     }
   }
 
