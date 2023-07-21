@@ -75,7 +75,6 @@
 
 
 
-#define JVET_AD0056_MOVE_COLOUR_DESC_FLAG                 1 // Move nnpfc_separate_colour_description_present_flag and associated flags and add conformance checks
 
 #define JVET_AD0091                                       1
 #define JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC               1 // Add new SEI elements nnpfc_chroma_sample_loc_type_frame

@@ -2994,20 +2994,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         CHECK(val > 24, "The value of nnpfc_inp_tensor_chroma_bitdepth_minus8 shall be in the range of 0 to 24");
       }
     }
-#if !JVET_AD0056_MOVE_COLOUR_DESC_FLAG
-    sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
-    sei.m_sepColDescriptionFlag = val;
-
-    if (sei.m_sepColDescriptionFlag)
-    {
-      sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_col_primaries");
-      sei.m_colPrimaries = val;
-      sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_trans_characteristics");
-      sei.m_transCharacteristics = val;
-      sei_read_code(pDecodedMessageOutputStream, 8, val,"nnpfc_matrix_coeffs");
-      sei.m_matrixCoeffs = val;
-    }
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_format_idc");
     sei.m_outFormatIdc = val;
@@ -3041,7 +3027,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     }
 #endif
 
-#if JVET_AD0056_MOVE_COLOUR_DESC_FLAG
     sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_sep_col_desc_flag");
     sei.m_sepColDescriptionFlag = val;
 
@@ -3062,7 +3047,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
           "nnpfc_out_tensor_chroma_bitdepth_minus8 is equal to nnpfc_out_tensor_luma_bitdepth_minus8 + 1, nnpfc_out_order_idc is equal to 2, outSubHeightC is equal to 1, and outSubWidthC is equal to 1");
       }
     }
-#endif
 
 #if JVET_AD0067_INCLUDE_SYNTAX
     if (sei.m_sepColDescriptionFlag & (sei.m_outFormatIdc == 1))
