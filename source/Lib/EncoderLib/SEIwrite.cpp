@@ -1704,7 +1704,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
 #endif
     xWriteUvlc(sei.m_numberInputDecodedPicturesMinus1, "nnpfc_number_of_input_pictures_minus1");
 
-#if JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
     if (sei.m_numberInputDecodedPicturesMinus1 > 0)
     {
       for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; ++i)
@@ -1715,7 +1714,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteFlag(sei.m_absentInputPicZeroFlag, "nnpfc_absent_input_pic_zero_flag");
 #endif
     }
-#endif
 
     if((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)
     {
@@ -1739,12 +1737,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       {
         xWriteUvlc(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");
       }
-#if !JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG
-      for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; ++i)
-      {
-        xWriteFlag(sei.m_inputPicOutputFlag[i], "nnpfc_input_pic_output_flag");
-      }
-#endif
     }
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
