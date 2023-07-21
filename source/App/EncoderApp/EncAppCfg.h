@@ -801,9 +801,7 @@ protected:
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
 #endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
-#endif
 
   bool                  m_poSEIEnabled;
   std::vector<bool>     m_poSEIPrefixFlag;

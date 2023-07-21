@@ -1255,9 +1255,7 @@ public:
     , m_numParametersIdc(0)
     , m_numKmacOperationsIdc(0)
     , m_totalKilobyteSize(0)
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
     , m_numInpPicsInOutputTensor(0)
-#endif
   {}
   SEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
 
@@ -1332,9 +1330,7 @@ public:
 #if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
   bool           m_absentInputPicZeroFlag;
 #endif
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
   uint32_t       m_numInpPicsInOutputTensor;
-#endif
 };
 
 class SEINeuralNetworkPostFilterActivation : public SEI
@@ -1359,9 +1355,7 @@ public:
   bool           m_targetBaseFlag;
 #endif
   bool           m_persistenceFlag;
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
   std::vector<bool> m_outputFlag;
-#endif
 };
 
 class SEIPostFilterHint : public SEI

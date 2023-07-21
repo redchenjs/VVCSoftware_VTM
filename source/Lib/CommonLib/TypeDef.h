@@ -62,7 +62,6 @@
 
 
 
-#define JVET_AD0388_NNPFA_OUTPUT_FLAG                     1
 
 #define JVET_AD0056_NNPFC_PADDING_SYNTAX_CONDITION        1
 
