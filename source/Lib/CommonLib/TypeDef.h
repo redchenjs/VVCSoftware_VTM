@@ -61,7 +61,6 @@
 
 
 
-#define JVET_AD0056_NNPFA_TARGET_ID_CONSTRAINT            1 // Remove redundant constraints on nnpfa_target_id
 
 #define JVET_AD0388_NNPFA_OUTPUT_FLAG                     1
 

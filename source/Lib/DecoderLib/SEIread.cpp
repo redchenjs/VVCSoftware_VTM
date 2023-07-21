@@ -3275,11 +3275,7 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
 
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_target_id" );
   sei.m_targetId =val;
-#if JVET_AD0056_NNPFA_TARGET_ID_CONSTRAINT
   CHECK(sei.m_targetId > MAX_NNPFA_ID, "The value of nnpfa_target_id shall be in the range of 0 to 2^32 - 2");
-#else
-  CHECK((sei.m_targetId >= 256 && sei.m_targetId <= 511) || (sei.m_targetId >= (1<<31) && sei.m_targetId <= MAX_NNPFA_ID), "Reserved nnpfa_target_id value, shall ignore the SEI message");
-#endif
   sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_cancel_flag" );
   sei.m_cancelFlag = val;
 
