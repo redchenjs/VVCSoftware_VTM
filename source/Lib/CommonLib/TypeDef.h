@@ -58,7 +58,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE             1 // Replace signalling of output picture size with output size scaling ratio
 
 #define JVET_AD0169_SMALL_SCALE_DOWNSAMPLING              1 // JVET-AD0169: Downsampling filters in range 1.1 to 1.35 based on Kaiser(7) windowed sinc
 #define JVET_AD0386_SEI   1 // Extend the latest SEI processing order SEI message to enable signalling of prefix information for any type of SEI messages

@@ -1727,15 +1727,10 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
     if((sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
     {
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
       xWriteUvlc(sei.m_picWidthNumeratorMinus1, "nnpfc_pic_width_num_minus1");
       xWriteUvlc(sei.m_picWidthDenominatorMinus1, "nnpfc_pic_width_denom_minus1");
       xWriteUvlc(sei.m_picHeightNumeratorMinus1, "nnpfc_pic_height_num_minus1");
       xWriteUvlc(sei.m_picHeightDenominatorMinus1, "nnpfc_pic_height_denom_minus1");
-#else
-      xWriteUvlc(sei.m_picWidthInLumaSamples, "nnpfc_pic_width_in_luma_samples");
-      xWriteUvlc(sei.m_picHeightInLumaSamples, "nnpfc_pic_height_in_luma_samples");
-#endif
     }
 
     if((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)

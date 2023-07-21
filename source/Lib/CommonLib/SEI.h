@@ -1215,12 +1215,10 @@ public:
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
     , m_outColourFormatIdc(ChromaFormat::_420)
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
     , m_picWidthNumeratorMinus1(0)
     , m_picWidthDenominatorMinus1(0)
     , m_picHeightNumeratorMinus1(0)
     , m_picHeightDenominatorMinus1(0)
-#endif
     , m_picWidthInLumaSamples(0)
     , m_picHeightInLumaSamples(0)
     , m_inpTensorBitDepthLumaMinus8(0)
@@ -1287,12 +1285,10 @@ public:
   bool           m_chromaLocInfoPresentFlag;
   Chroma420LocType m_chromaSampleLocTypeFrame;
 #endif
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
   uint32_t       m_picWidthNumeratorMinus1;
   uint32_t       m_picWidthDenominatorMinus1;
   uint32_t       m_picHeightNumeratorMinus1;
   uint32_t       m_picHeightDenominatorMinus1;
-#endif
   uint32_t       m_picWidthInLumaSamples;
   uint32_t       m_picHeightInLumaSamples;
   uint32_t       m_inpTensorBitDepthLumaMinus8;

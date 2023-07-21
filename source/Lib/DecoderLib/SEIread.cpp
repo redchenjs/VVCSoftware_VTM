@@ -2955,7 +2955,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     if((sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
     {
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_pic_width_num_minus1");
       sei.m_picWidthNumeratorMinus1 = val;
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_pic_width_denominator_minus1");
@@ -2971,12 +2970,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
       CHECK((scaledHeightRatio < 1) && (scaledHeightRatio > 256), "The value range of heightRatio shall be in the range of 1/16 to 16, inclusive");
       CHECK((scaledWidthRatio < 1) && (scaledWidthRatio > 256), "The value range of widthRatio shall be in the range of 1/16 to 16, inclusive");
-#endif
-#else
-      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_width_in_luma_samples");
-      sei.m_picWidthInLumaSamples = val;
-      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_pic_height_in_luma_samples");
-      sei.m_picHeightInLumaSamples = val;
 #endif
     }
 

@@ -1785,7 +1785,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     outColourFormatIdc << "SEINNPFCOutColourFormatIdc" << i;
     opts.addOptions()(outColourFormatIdc.str(), m_nnPostFilterSEICharacteristicsOutColourFormatIdc[i], 1u, "Specifies output chroma format for colourization purpose");
 
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
     std::ostringstream picWidthNum;
     picWidthNum << "SEINNPFCPicWidthNumerator" << i;
     opts.addOptions()(picWidthNum.str(), m_nnPostFilterSEICharacteristicsPicWidthNumerator[i], 1u,
@@ -1809,15 +1808,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()(picHeightDenom.str(), m_nnPostFilterSEICharacteristicsPicHeightDenominator[i], 1u,
                       "Specifies the denominator of output picture height resulting from applying the Neural Network "
                       "Post Filter Characteristics SEI message");
-#else
-    std::ostringstream picWidthInLumaSamples;
-    picWidthInLumaSamples << "SEINNPFCPicWidthInLumaSamples" << i;
-    opts.addOptions()(picWidthInLumaSamples.str(), m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[i], 0u, "Specifies the horizontal luma sample counts of the output picture in the Neural Network Post Filter Characteristics SEI message");
-
-    std::ostringstream picHeightInLumaSamples;
-    picHeightInLumaSamples << "SEINNPFCPicHeightInLumaSamples" << i;
-    opts.addOptions()(picHeightInLumaSamples.str(), m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[i], 0u, "Specifies the vertical luma sample counts of the output picture in the Neural Network Post Filter Characteristics SEI message");
-#endif
 
     std::ostringstream inpTensorBitDepthLumaMinus8;
     inpTensorBitDepthLumaMinus8 << "SEINNPFCInpTensorBitDepthLumaMinusEight" << i;

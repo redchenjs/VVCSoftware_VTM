@@ -1073,12 +1073,10 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_outSubWidthC = sei.m_outSubWidthC;
   m_outSubHeightC = sei.m_outSubHeightC;
   m_outColourFormatIdc = sei.m_outColourFormatIdc;
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
   m_picWidthNumeratorMinus1 = sei.m_picWidthNumeratorMinus1;
   m_picWidthDenominatorMinus1 = sei.m_picWidthDenominatorMinus1;
   m_picHeightNumeratorMinus1 = sei.m_picHeightNumeratorMinus1;
   m_picHeightDenominatorMinus1 = sei.m_picHeightDenominatorMinus1;
-#endif
   m_picWidthInLumaSamples = sei.m_picWidthInLumaSamples;
   m_picHeightInLumaSamples = sei.m_picHeightInLumaSamples;
   m_inpTensorBitDepthLumaMinus8 = sei.m_inpTensorBitDepthLumaMinus8;

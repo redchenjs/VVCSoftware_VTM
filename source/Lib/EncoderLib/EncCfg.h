@@ -709,15 +709,10 @@ protected:
   bool                    m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
   Chroma420LocType        m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[MAX_NUM_NN_POST_FILTERS];
 #endif
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
   uint32_t                m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t                m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
-  uint32_t                m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t                m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
@@ -1962,7 +1957,6 @@ public:
   bool        getNNPostFilterSEICharacteristicsOutSubCFlag(int filterIdx) const { return m_nnPostFilterSEICharacteristicsOutSubCFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsOutColourFormatIdc(ChromaFormat outColourFormatIdc, int filterIdx)     { m_nnPostFilterSEICharacteristicsOutColourFormatIdc[filterIdx] = outColourFormatIdc; }
   ChromaFormat getNNPostFilterSEICharacteristicsOutColourFormatIdc(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsOutColourFormatIdc[filterIdx]; }
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
   void        setNNPostFilterSEICharacteristicsPicWidthNumeratorMinus1(uint32_t widthNumMinus1, int filterIdx)           { m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[filterIdx] = widthNumMinus1; }
   uint32_t    getNNPostFilterSEICharacteristicsPicWidthNumeratorMinus1(int filterIdx) const                              { return m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsPicWidthDenominatorMinus1(uint32_t widthDenomMinus1, int filterIdx)       { m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[filterIdx] = widthDenomMinus1; }
@@ -1972,12 +1966,6 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsPicHeightNumeratorMinus1(int filterIdx) const                              { return m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsPicHeightDenominatorMinus1(uint32_t heightDenomMinus1, int filterIdx)       { m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[filterIdx] = heightDenomMinus1; }
   uint32_t    getNNPostFilterSEICharacteristicsPicHeightDenominatorMinus1(int filterIdx) const                            { return m_nnPostFilterSEICharacteristicsPicHeightDenominatorMinus1[filterIdx]; }
-#else
-  void        setNNPostFilterSEICharacteristicsPicWidthInLumaSamples(uint32_t picWidthInLumaSamples, int filterIdx)     { m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[filterIdx] = picWidthInLumaSamples; }
-  uint32_t    getNNPostFilterSEICharacteristicsPicWidthInLumaSamples(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[filterIdx]; }
-  void        setNNPostFilterSEICharacteristicsPicHeightInLumaSamples(uint32_t picHeightInLumaSamples, int filterIdx)   { m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[filterIdx] = picHeightInLumaSamples; }
-  uint32_t    getNNPostFilterSEICharacteristicsPicHeightInLumaSamples(int filterIdx) const                              { return m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[filterIdx]; }
-#endif
   void        setNNPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8(uint32_t inpTensorBitDepthLumaMinus8, int filterIdx)     { m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[filterIdx] = inpTensorBitDepthLumaMinus8; }
   uint32_t    getNNPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8(int filterIdx) const                                     { return m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8(uint32_t inpTensorBitDepthChromaMinus8, int filterIdx) { m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[filterIdx] = inpTensorBitDepthChromaMinus8; }
