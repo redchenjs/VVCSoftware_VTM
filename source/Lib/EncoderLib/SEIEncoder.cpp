@@ -1318,9 +1318,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
 
     sei->m_inputPicOutputFlag = m_pcCfg->getNNPostFilterSEICharacteristicsInputPicOutputFlag(filterIdx);
 
-#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
     sei->m_absentInputPicZeroFlag = m_pcCfg->getNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(filterIdx);
-#endif
 
     sei->m_numInpPicsInOutputTensor = 0;
     if (sei->m_numberInputDecodedPicturesMinus1 > 0)

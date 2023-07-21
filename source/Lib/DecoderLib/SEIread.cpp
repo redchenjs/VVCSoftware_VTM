@@ -2869,10 +2869,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       {
         CHECK(!atLeastOne, "When picRateUpsamplingFlag is equal to 0 and nnpfc_num_input_pics_minus1 is greater than 0, at least one value of nnpfc_input_pic_output_flag[i] shall be greater than 0");
       }
-#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_absent_input_pic_zero_flag");
       sei.m_absentInputPicZeroFlag = val;
-#endif
     }
     else
     {

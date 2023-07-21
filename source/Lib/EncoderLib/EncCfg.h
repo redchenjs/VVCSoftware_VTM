@@ -752,9 +752,7 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t>   m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
   std::vector<bool>       m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
   bool                    m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
 
   bool                    m_nnPostFilterSEIActivationEnabled;
 #if JVET_AD0057_NNPF_SUFFIX_SEI
@@ -2065,10 +2063,8 @@ public:
   const       std::vector<uint32_t>& getNNPostFilterSEICharacteristicsNumberInterpolatedPictures(int filterIdx)         { return m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsInputPicOutputFlag(std::vector<bool> value, int filterIdx)   { m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx] = value; }
   const       std::vector<bool>& getNNPostFilterSEICharacteristicsInputPicOutputFlag(int filterIdx)         { return m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx]; }
-#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
   void        setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(bool absentInputPicZeroFlag, int filterIdx)       { m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[filterIdx] = absentInputPicZeroFlag; }
   bool        getNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(int filterIdx) const                              { return m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[filterIdx]; }
-#endif
   void        setNnPostFilterSEIActivationEnabled(bool enabledFlag)                                                     { m_nnPostFilterSEIActivationEnabled = enabledFlag; }
   bool        getNnPostFilterSEIActivationEnabled() const                                                               { return m_nnPostFilterSEIActivationEnabled; }
 #if JVET_AD0057_NNPF_SUFFIX_SEI

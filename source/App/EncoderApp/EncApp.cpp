@@ -1234,9 +1234,7 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInterpolatedPictures( m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i], i);
       }
-#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
       m_cEncLib.setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag  (m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[i], i);
-#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsInpFormatIdc            (m_nnPostFilterSEICharacteristicsInpFormatIdc[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsInpFormatIdc(i) == 1)
