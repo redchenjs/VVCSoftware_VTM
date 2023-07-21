@@ -613,17 +613,13 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
 
 
   seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
-#if JVET_AD0386_SEI
   seiProcessingOrderInfo->m_posPrefixFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-#endif
   seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPrefixByte.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   for (uint32_t i = 0; i < m_pcCfg->getPoSEIPayloadTypeSize(); i++)
   {
-#if JVET_AD0386_SEI
     seiProcessingOrderInfo->m_posPrefixFlag[i] = m_pcCfg->getPoSEIPrefixFlag(i);
-#endif
     seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
     if (seiProcessingOrderInfo->m_posPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)

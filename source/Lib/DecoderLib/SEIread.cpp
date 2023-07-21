@@ -726,34 +726,18 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
   sei.m_posPrefixByte.resize(numMaxSeiMessages);
   for (i = 0, b = 0; b < payloadSize; i++, b += 4)
   {
-#if JVET_AD0386_SEI
     sei_read_flag(decodedMessageOutputStream, val, "po_sei_prefix_flag[i]");
     sei.m_posPrefixFlag[i] = val;
     sei_read_code(decodedMessageOutputStream, 15, val, "po_sei_payload_type[i]");
-#else
-    sei_read_code(decodedMessageOutputStream, 16, val, "po_sei_payload_type[i]");
-#endif
     sei.m_posPayloadType[i] = val;
-#if JVET_AD0386_SEI
     if (sei.m_posPrefixFlag[i])
-#else
-    if (sei.m_posPayloadType[i] == (uint16_t)SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
-#endif
     {
-#if JVET_AD0386_SEI
       sei_read_code(decodedMessageOutputStream, 8, val, "po_num_prefix_byte[i]");
-#else
-      sei_read_code(decodedMessageOutputStream, 8, val, "po_num_t35_byte[i]");
-#endif
       sei.m_posPrefixByte[i].resize(val);
       b ++;
       for (uint32_t j = 0; j < sei.m_posPrefixByte[i].size(); j++)
       {
-#if JVET_AD0386_SEI
         sei_read_code(decodedMessageOutputStream, 8, val, "po_prefix_byte[i][j]");
-#else
-        sei_read_code(decodedMessageOutputStream, 8, val, "po_t35_byte[i][j]");
-#endif
         sei.m_posPrefixByte[i][j] = val;
       }
       b += (uint32_t)sei.m_posPrefixByte[i].size();

@@ -59,7 +59,6 @@
 //########### place macros to be removed in next cycle below this line ###############
 
 
-#define JVET_AD0386_SEI   1 // Extend the latest SEI processing order SEI message to enable signalling of prefix information for any type of SEI messages
 
 #define JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG           1
 

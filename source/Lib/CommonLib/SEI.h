@@ -156,9 +156,7 @@ public:
   virtual ~SEIProcessingOrderInfo() {}
 
   bool                   m_posEnabled;
-#if JVET_AD0386_SEI
   std::vector<bool>      m_posPrefixFlag;
-#endif
   std::vector<uint16_t>  m_posPayloadType;
   std::vector<uint16_t>   m_posProcessingOrder;
   std::vector<std::vector<uint8_t>> m_posPrefixByte;

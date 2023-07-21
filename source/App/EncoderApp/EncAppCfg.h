@@ -806,9 +806,7 @@ protected:
 #endif
 
   bool                  m_poSEIEnabled;
-#if JVET_AD0386_SEI
   std::vector<bool>     m_poSEIPrefixFlag;
-#endif
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;

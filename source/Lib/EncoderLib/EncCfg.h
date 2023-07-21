@@ -896,9 +896,7 @@ protected:
   bool m_SEIPrefixIndicationSEIEnabled;
   //SEI message processing order
   bool                  m_poSEIEnabled;
-#if JVET_AD0386_SEI
   std::vector<bool>     m_poSEIPrefixFlag;
-#endif
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   //std::vector<uint16_t> m_poSEINumofPrefixByte;
@@ -2585,10 +2583,8 @@ public:
   //SEI messages processing order
   void     setPoSEIEnabled(bool b)                                   { m_poSEIEnabled = b; }
   bool     getPoSEIEnabled()                                         { return m_poSEIEnabled; }
-#if JVET_AD0386_SEI
   void     setPoSEIPrefixFlag(const std::vector<bool>& b)           { m_poSEIPrefixFlag = b; }
   bool     getPoSEIPrefixFlag(uint16_t idx)                   const { return m_poSEIPrefixFlag[idx]; }
-#endif
   void     setPoSEIPayloadType(const std::vector<uint16_t>& b)       { m_poSEIPayloadType = b; }
   uint16_t getPoSEIPayloadType(uint16_t idx)                   const { return m_poSEIPayloadType[idx]; }
   void     setPoSEIProcessingOrder(const std::vector<uint16_t>& b) { m_poSEIProcessingOrder = b; }
