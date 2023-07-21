@@ -1250,13 +1250,11 @@ void EncApp::xInitLibCfg( int layerIdx )
         m_cEncLib.setNNPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8(m_nnPostFilterSEICharacteristicsOutTensorBitDepthChromaMinus8[i], i);
       }
       m_cEncLib.setNNPostFilterSEICharacteristicsOutOrderIdc             (m_nnPostFilterSEICharacteristicsOutOrderIdc[i], i);
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
       m_cEncLib.setNNPostFilterSEICharacteristicsChromaLocInfoPresentFlag(m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[i], i);
       if(m_cEncLib.getNNPostFilterSEICharacteristicsChromaLocInfoPresentFlag(i))
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsChromaSampleLocTypeFrame(static_cast<Chroma420LocType>(m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[i]), i);
       }
-#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsConstantPatchSizeFlag   ( m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsPatchWidthMinus1        ( m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsPatchHeightMinus1       ( m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i], i);

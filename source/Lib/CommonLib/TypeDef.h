@@ -76,7 +76,6 @@
 
 
 
-#define JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC               1 // Add new SEI elements nnpfc_chroma_sample_loc_type_frame
 
 #define JVET_AD0057_NNPF_SUFFIX_SEI                       1 // Allow inclusion of NNPFC and NNPFA SEI messages in suffix SEI NAL units
 

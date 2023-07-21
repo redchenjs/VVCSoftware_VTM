@@ -1779,14 +1779,12 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
 #endif
     
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
     xWriteFlag(sei.m_chromaLocInfoPresentFlag, "nnpfc_chroma_loc_info_present_flag");
 
     if(sei.m_chromaLocInfoPresentFlag)
     {
       xWriteUvlc(to_underlying(sei.m_chromaSampleLocTypeFrame), "nnpfc_chroma_sample_loc_type_frame");
     }
-#endif
     
     xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
     xWriteFlag(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");

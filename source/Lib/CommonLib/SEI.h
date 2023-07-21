@@ -1277,10 +1277,8 @@ public:
   uint8_t        m_outSubWidthC;
   uint8_t        m_outSubHeightC;
   ChromaFormat   m_outColourFormatIdc;
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
   bool           m_chromaLocInfoPresentFlag;
   Chroma420LocType m_chromaSampleLocTypeFrame;
-#endif
   uint32_t       m_picWidthNumeratorMinus1;
   uint32_t       m_picWidthDenominatorMinus1;
   uint32_t       m_picHeightNumeratorMinus1;

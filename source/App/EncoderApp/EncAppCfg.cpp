@@ -1866,7 +1866,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     constantPatchSizeFlag << "SEINNPFCConstantPatchSizeFlag" << i;
     opts.addOptions()(constantPatchSizeFlag.str(), m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[i], false, "Specifies the patch size flag in the the Neural Network Post Filter Characteristics SEI message");
     
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
     std::ostringstream chromaLocInfoPresentFlag;
     chromaLocInfoPresentFlag << "SEINNPFCChromaLocInfoPresentFlag" << i;
     opts.addOptions()(chromaLocInfoPresentFlag.str(), m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[i], false, "Specifies the chroma location information flag in the the Neural Network Post Filter Characteristics SEI message");
@@ -1874,7 +1873,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream chromaSampleLocTypeFrame;
     chromaSampleLocTypeFrame << "SEINNPFCChromaSampleLocTypeFrame" << i;
     opts.addOptions()(chromaSampleLocTypeFrame.str(), m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[i], 0u, "Specifies the method of ordering the output sample arrays in the Neural Network Post Filter Characteristics SEI message");
-#endif
     
     std::ostringstream patchWidthMinus1;
     patchWidthMinus1 << "SEINNPFCPatchWidthMinus1" << i;

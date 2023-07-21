@@ -705,10 +705,8 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
   ChromaFormat            m_nnPostFilterSEICharacteristicsOutColourFormatIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
   bool                    m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
   Chroma420LocType        m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t                m_nnPostFilterSEICharacteristicsPicWidthNumeratorMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPicWidthDenominatorMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsPicHeightNumeratorMinus1[MAX_NUM_NN_POST_FILTERS];
@@ -2008,12 +2006,10 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsOutFormatIdc(int filterIdx) const                                        { return m_nnPostFilterSEICharacteristicsOutFormatIdc[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsOutOrderIdc(uint32_t outOrderIdc, int filterIdx)                         { m_nnPostFilterSEICharacteristicsOutOrderIdc[filterIdx] = outOrderIdc; }
   uint32_t    getNNPostFilterSEICharacteristicsOutOrderIdc(int filterIdx) const                                         { return m_nnPostFilterSEICharacteristicsOutOrderIdc[filterIdx]; }
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
   void        setNNPostFilterSEICharacteristicsChromaLocInfoPresentFlag(bool chromaLocInfoPresentFlag, int filterIdx)   { m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[filterIdx] = chromaLocInfoPresentFlag; }
   bool        getNNPostFilterSEICharacteristicsChromaLocInfoPresentFlag(int filterIdx) const                            { return m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsChromaSampleLocTypeFrame(Chroma420LocType chromaSampleLocTypeFrame, int filterIdx) {m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[filterIdx] = chromaSampleLocTypeFrame;}
   Chroma420LocType getNNPostFilterSEICharacteristicsChromaSampleLocTypeFrame(int filterIdx) const {return  m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[filterIdx];}
-#endif
   void        setNNPostFilterSEICharacteristicsConstantPatchSizeFlag(bool constantPatchSizeFlag, int filterIdx)         { m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[filterIdx] = constantPatchSizeFlag; }
   bool        getNNPostFilterSEICharacteristicsConstantPatchSizeFlag(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsPatchWidthMinus1(uint32_t patchWidthMinus1, int filterIdx)               { m_nnPostFilterSEICharacteristicsPatchWidthMinus1[filterIdx] = patchWidthMinus1; }
