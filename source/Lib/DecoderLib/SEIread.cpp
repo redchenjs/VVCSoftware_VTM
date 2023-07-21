@@ -2973,9 +2973,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     sei.m_inpOrderIdc = val;
     CHECK(val > 3, "The value of nnpfc_inp_order_idc shall be in the range of 0 to 3");
 #endif
-#if JVET_AD0056_NNPFC_INP_OUT_ORDER_IDC_CONSTRAINTS
     CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)  && sei.m_inpOrderIdc == 0, "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_inp_order_idc shall not be equal to 0.");
-#endif
 
 #if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
     CHECK((chromaFormatIdc == ChromaFormat::_400) && (sei.m_inpOrderIdc != 0), "When ChromaFormatIdc is equal to 0, nnpfc_inp_order_idc shall be equal to 0");
@@ -3032,12 +3030,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 #if JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
     sei.m_outOrderIdc = val;
-#if JVET_AD0056_NNPFC_INP_OUT_ORDER_IDC_CONSTRAINTS
     CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)  && (sei.m_outOrderIdc == 0 || sei.m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0 or 3.");
     CHECK(((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)  && sei.m_outOrderIdc == 0, "When nnpfc_purpose & 0x20 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0.");
-#else
-    CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0)  && (sei.m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 3.")
-#endif
 #endif
 
     if (sei.m_outFormatIdc == 1)
