@@ -79,7 +79,6 @@
 
 
 
-#define JVET_AD0057_UPDATE_SEI_LISTS                      1 // Update VclAssociatedSeiList and PicUnitRepConSeiList
 
 //########### place macros to be be kept below this line ###############
 

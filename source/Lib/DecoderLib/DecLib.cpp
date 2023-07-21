@@ -1362,11 +1362,7 @@ void DecLib::checkMultiSubpicNum(int olsIdx)
   }
 }
 
-#if JVET_AD0057_UPDATE_SEI_LISTS
 #define SEI_REPETITION_CONSTRAINT_LIST_SIZE  27
-#else
-#define SEI_REPETITION_CONSTRAINT_LIST_SIZE  21
-#endif
 
 /**
  - Count the number of identical SEI messages in the current picture
@@ -1379,11 +1375,7 @@ void DecLib::checkSeiInPictureUnit()
   bool suffixPostfilterHintSEI = false;
 
   // payload types subject to constrained SEI repetition
-#if JVET_AD0057_UPDATE_SEI_LISTS
   int picUnitRepConSeiList[SEI_REPETITION_CONSTRAINT_LIST_SIZE] = { 0, 1, 19, 22, 45, 56, 129, 132, 133, 137, 144, 145, 147, 148, 149, 150, 153, 154, 155, 156, 168, 203, 204, 205, 210, 211, 212};
-#else
-  int picUnitRepConSeiList[SEI_REPETITION_CONSTRAINT_LIST_SIZE] = { 0, 1, 19, 45, 129, 132, 133, 137, 144, 145, 147, 148, 149, 150, 153, 154, 155, 156, 168, 203, 204};
-#endif
 
   // extract SEI messages from NAL units
   for (auto &sei : m_pictureSeiNalus)
