@@ -919,22 +919,10 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     m_seiEncoder.initSEIShutterIntervalInfo(seiShutterInterval);
     seiMessages.push_back(seiShutterInterval);
   }
-#if JVET_AD0057_NNPF_SUFFIX_SEI
   if (m_pcCfg->getNNPostFilterSEICharacteristicsEnabled() && !m_pcCfg->getNNPostFilterSEICharacteristicsUseSuffixSEI())
   {
     xCreateNNPostFilterCharacteristicsSEIMessages(seiMessages);
   }
-#else
-  if (m_pcCfg->getNNPostFilterSEICharacteristicsEnabled())
-  {
-    for (int i = 0; i < m_pcCfg->getNNPostFilterSEICharacteristicsNumFilters(); i++)
-    {
-      SEINeuralNetworkPostFilterCharacteristics *seiNNPostFilterCharacteristics = new SEINeuralNetworkPostFilterCharacteristics;
-      m_seiEncoder.initSEINeuralNetworkPostFilterCharacteristics(seiNNPostFilterCharacteristics, i);
-      seiMessages.push_back(seiNNPostFilterCharacteristics);
-    }
-  }
-#endif
   if (m_pcCfg->getPoSEIEnabled())
   {
     SEIProcessingOrderInfo *seiProcessingOrder = new SEIProcessingOrderInfo;
@@ -1022,20 +1010,10 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     seiMessages.push_back(fgcSEI);
   }
 
-#if JVET_AD0057_NNPF_SUFFIX_SEI
   if (m_pcCfg->getNnPostFilterSEIActivationEnabled() && !m_pcCfg->getNnPostFilterSEIActivationUseSuffixSEI())
   {
     xCreateNNPostFilterActivationSEIMessage(seiMessages, slice);
   }
-#else
-  if (m_pcCfg->getNnPostFilterSEIActivationEnabled())
-  {
-    SEINeuralNetworkPostFilterActivation *nnpfActivationSEI = new SEINeuralNetworkPostFilterActivation;
-    m_seiEncoder.initSEINeuralNetworkPostFilterActivation(nnpfActivationSEI);
-    CHECK(!slice->getPicHeader()->getPicOutputFlag(), "NNPFA SEI Message cannot be associated with picture with ph_pic_output_flag equal to 0")
-    seiMessages.push_back(nnpfActivationSEI);
-  }
-#endif
 
   if (m_pcCfg->getPostFilterHintSEIEnabled())
   {
@@ -1046,7 +1024,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
   }
 }
 
-#if JVET_AD0057_NNPF_SUFFIX_SEI
 void EncGOP::xCreateNNPostFilterCharacteristicsSEIMessages(SEIMessages& seiMessages)
 {
   for (int i = 0; i < m_pcCfg->getNNPostFilterSEICharacteristicsNumFilters(); i++)
@@ -1064,7 +1041,6 @@ void EncGOP::xCreateNNPostFilterActivationSEIMessage(SEIMessages& seiMessages, S
   CHECK(!slice->getPicHeader()->getPicOutputFlag(), "NNPFA SEI Message cannot be associated with picture with ph_pic_output_flag equal to 0")
   seiMessages.push_back(nnpfActivationSEI);
 }
-#endif
 
 void EncGOP::xCreatePhaseIndicationSEIMessages(SEIMessages& seiMessages, Slice* slice, int ppsId)
 {
@@ -3945,13 +3921,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         m_seqFirst = false;
       }
 
-#if JVET_AD0057_NNPF_SUFFIX_SEI
       if (writePS && m_pcCfg->getNNPostFilterSEICharacteristicsEnabled() && m_pcCfg->getNNPostFilterSEICharacteristicsUseSuffixSEI())
       {
         // create NNPostFilterSEICharacteristics SEI as suffix SEI
         xCreateNNPostFilterCharacteristicsSEIMessages(trailingSeiMessages);
       }
-#endif
 
       //send LMCS APS when LMCSModel is updated. It can be updated even current slice does not enable reshaper.
       //For example, in RA, update is on intra slice, but intra slice may not use reshaper
@@ -4069,13 +4043,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       // create prefix SEI associated with a picture
       xCreatePerPictureSEIMessages(gopId, leadingSeiMessages, nestedSeiMessages, pcSlice);
 
-#if JVET_AD0057_NNPF_SUFFIX_SEI
       if (m_pcCfg->getNnPostFilterSEIActivationEnabled() && m_pcCfg->getNnPostFilterSEIActivationUseSuffixSEI())
       {
         // create NeuralNetworkPostFilterActivation SEI as suffix SEI
         xCreateNNPostFilterActivationSEIMessage(trailingSeiMessages, pcSlice);
       }
-#endif
 
       if (newPPS)
       {
@@ -4506,13 +4478,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         pcPic->SEIs.push_back(new SEINeuralNetworkPostFilterCharacteristics(*(SEINeuralNetworkPostFilterCharacteristics*) *it));
       }
 
-#if JVET_AD0057_NNPF_SUFFIX_SEI
       seiMessages = getSeisByType(trailingSeiMessages, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
       for (auto it = seiMessages.cbegin(); it != seiMessages.cend(); it++)
       {
         pcPic->SEIs.push_back(new SEINeuralNetworkPostFilterCharacteristics(*(SEINeuralNetworkPostFilterCharacteristics*) *it));
       }
-#endif
 
       seiMessages = getSeisByType(leadingSeiMessages, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
       for (auto it = seiMessages.cbegin(); it != seiMessages.cend(); it++)
@@ -4520,13 +4490,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         pcPic->SEIs.push_back(new SEINeuralNetworkPostFilterActivation(*(SEINeuralNetworkPostFilterActivation*) *it));
       }
 
-#if JVET_AD0057_NNPF_SUFFIX_SEI
       seiMessages = getSeisByType(trailingSeiMessages, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
       for (auto it = seiMessages.cbegin(); it != seiMessages.cend(); it++)
       {
         pcPic->SEIs.push_back(new SEINeuralNetworkPostFilterActivation(*(SEINeuralNetworkPostFilterActivation*) *it));
       }
-#endif
 
       seiMessages = getSeisByType(leadingSeiMessages, SEI::PayloadType::FRAME_PACKING);
       for (auto it = seiMessages.cbegin(); it != seiMessages.cend(); it++)

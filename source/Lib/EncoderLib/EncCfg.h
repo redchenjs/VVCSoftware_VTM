@@ -694,9 +694,7 @@ protected:
   std::vector<uint32_t>   m_siiSEISubLayerNumUnitsInSI;
 
   bool                    m_nnPostFilterSEICharacteristicsEnabled;
-#if JVET_AD0057_NNPF_SUFFIX_SEI
   bool                    m_nnPostFilterSEICharacteristicsUseSuffixSEI;
-#endif
   int                     m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t                m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
@@ -753,9 +751,7 @@ protected:
   bool                    m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
 
   bool                    m_nnPostFilterSEIActivationEnabled;
-#if JVET_AD0057_NNPF_SUFFIX_SEI
   bool                    m_nnPostFilterSEIActivationUseSuffixSEI;
-#endif
   uint32_t                m_nnPostFilterSEIActivationTargetId;
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
@@ -1926,10 +1922,8 @@ public:
 
   void        setNNPostFilterSEICharacteristicsEnabled(bool enabledFlag)                                                { m_nnPostFilterSEICharacteristicsEnabled = enabledFlag; }
   bool        getNNPostFilterSEICharacteristicsEnabled() const                                                          { return m_nnPostFilterSEICharacteristicsEnabled; }
-#if JVET_AD0057_NNPF_SUFFIX_SEI
   void        setNNPostFilterSEICharacteristicsUseSuffixSEI(bool suffixFlag)                                            { m_nnPostFilterSEICharacteristicsUseSuffixSEI = suffixFlag; }
   bool        getNNPostFilterSEICharacteristicsUseSuffixSEI() const                                                     { return m_nnPostFilterSEICharacteristicsUseSuffixSEI; }
-#endif
   void        setNNPostFilterSEICharacteristicsNumFilters(int numFilters)                                               { m_nnPostFilterSEICharacteristicsNumFilters = numFilters; }
   int         getNNPostFilterSEICharacteristicsNumFilters() const                                                       { return m_nnPostFilterSEICharacteristicsNumFilters; }
   void        setNNPostFilterSEICharacteristicsId(uint32_t id, int filterIdx)                                           { m_nnPostFilterSEICharacteristicsId[filterIdx] = id; }
@@ -2061,10 +2055,8 @@ public:
   bool        getNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(int filterIdx) const                              { return m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[filterIdx]; }
   void        setNnPostFilterSEIActivationEnabled(bool enabledFlag)                                                     { m_nnPostFilterSEIActivationEnabled = enabledFlag; }
   bool        getNnPostFilterSEIActivationEnabled() const                                                               { return m_nnPostFilterSEIActivationEnabled; }
-#if JVET_AD0057_NNPF_SUFFIX_SEI
   void        setNnPostFilterSEIActivationUseSuffixSEI(bool suffixFlag)                                                 { m_nnPostFilterSEIActivationUseSuffixSEI = suffixFlag; }
   bool        getNnPostFilterSEIActivationUseSuffixSEI() const                                                          { return m_nnPostFilterSEIActivationUseSuffixSEI; }
-#endif
   void        setNnPostFilterSEIActivationTargetId(uint32_t targetId)                                                   { m_nnPostFilterSEIActivationTargetId = targetId; }
   uint32_t    getNnPostFilterSEIActivationTargetId() const                                                              { return m_nnPostFilterSEIActivationTargetId; }
   void setNnPostFilterSEIActivationCancelFlag(bool cancelFlag)                                                          { m_nnPostFilterSEIActivationCancelFlag = cancelFlag; }

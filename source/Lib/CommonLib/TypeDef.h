@@ -77,7 +77,6 @@
 
 
 
-#define JVET_AD0057_NNPF_SUFFIX_SEI                       1 // Allow inclusion of NNPFC and NNPFA SEI messages in suffix SEI NAL units
 
 #define JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS           1 // Multi-input pics to a NNPF shall have the same dimensions
 

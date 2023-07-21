@@ -542,7 +542,6 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIScalableNesting((SEIScalableNesting &) *sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
                                pDecodedMessageOutputStream);
       break;
-#if JVET_AD0057_NNPF_SUFFIX_SEI
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
       sei = new SEINeuralNetworkPostFilterCharacteristics;
       xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics &) *sei, payloadSize, sps,
@@ -569,7 +568,6 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       CHECK(!nnpfcProcessed, "No NNPFC, no NNPFA")
       nnpfcProcessed = false;
       break;
-#endif
     case SEI::PayloadType::FILLER_PAYLOAD:
       sei = new SEIFillerPayload;
       xParseSEIFillerPayload((SEIFillerPayload &) *sei, payloadSize, pDecodedMessageOutputStream);
