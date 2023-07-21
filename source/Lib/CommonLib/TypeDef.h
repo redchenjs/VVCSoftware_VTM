@@ -69,7 +69,6 @@
 
 
 
-#define JVET_AD0056_NNPFC_METADATA_EXTENSION              1
 
 #define JVET_AD0056_NNPFA_TARGET_BASE_FLAG                1
 
