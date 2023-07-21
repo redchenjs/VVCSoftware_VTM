@@ -1032,9 +1032,7 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
   {
     SEINeuralNetworkPostFilterActivation *nnpfActivationSEI = new SEINeuralNetworkPostFilterActivation;
     m_seiEncoder.initSEINeuralNetworkPostFilterActivation(nnpfActivationSEI);
-#if JVET_AD0141_NNPFA_NONOUTPUTPIC
     CHECK(!slice->getPicHeader()->getPicOutputFlag(), "NNPFA SEI Message cannot be associated with picture with ph_pic_output_flag equal to 0")
-#endif
     seiMessages.push_back(nnpfActivationSEI);
   }
 #endif
@@ -1063,9 +1061,7 @@ void EncGOP::xCreateNNPostFilterActivationSEIMessage(SEIMessages& seiMessages, S
 {
   SEINeuralNetworkPostFilterActivation *nnpfActivationSEI = new SEINeuralNetworkPostFilterActivation;
   m_seiEncoder.initSEINeuralNetworkPostFilterActivation(nnpfActivationSEI);
-#if JVET_AD0141_NNPFA_NONOUTPUTPIC
   CHECK(!slice->getPicHeader()->getPicOutputFlag(), "NNPFA SEI Message cannot be associated with picture with ph_pic_output_flag equal to 0")
-#endif
   seiMessages.push_back(nnpfActivationSEI);
 }
 #endif
