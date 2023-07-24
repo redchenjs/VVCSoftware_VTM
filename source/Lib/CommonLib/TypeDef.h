@@ -992,6 +992,7 @@ inline int     operator-(AlfMode i, AlfMode j) { return to_underlying(i) - to_un
 inline bool isAlfLumaFixed(AlfMode m) { return m >= AlfMode::LUMA_FIXED0 && m < AlfMode::LUMA0; }
 
 using AlfCoeff = int16_t;
+using AlfBankIdx = uint8_t;
 
 //////////////////////////////////////////////////////////////////////////
 // Encoder modes to try out

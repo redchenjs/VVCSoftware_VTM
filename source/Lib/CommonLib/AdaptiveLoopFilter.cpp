@@ -660,7 +660,7 @@ void AdaptiveLoopFilter::reconstructCoeff(AlfParam &alfParam, const ChannelType 
     }
     for( int classIdx = 0; classIdx < numClasses; classIdx++ )
     {
-      int filterIdx = alfParam.filterCoeffDeltaIdx[classIdx];
+      AlfBankIdx filterIdx = alfParam.filterCoeffDeltaIdx[classIdx];
 
       CHECK(!(filterIdx >= 0 && filterIdx < alfParam.numLumaFilters), "Bad coeff delta idx in ALF");
       for (int coeffIdx = 0; coeffIdx < numCoeffMinus1; ++coeffIdx)

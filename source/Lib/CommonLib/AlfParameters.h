@@ -116,7 +116,7 @@ struct AlfParam
   int                          numAlternativesChroma;                                                  // alf_chroma_num_alts_minus_one + 1
   AlfCoeff chromaCoeff[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];   // alf_coeff_chroma[i]
   Pel   chromaClipp[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];   // alf_clipp_chroma[i]
-  short                        filterCoeffDeltaIdx[MAX_NUM_ALF_CLASSES];                // filter_coeff_delta[i]
+  AlfBankIdx filterCoeffDeltaIdx[MAX_NUM_ALF_CLASSES];                                 // filter_coeff_delta[i]
   bool                         alfLumaCoeffFlag[MAX_NUM_ALF_CLASSES];                   // alf_luma_coeff_flag[i]
   int                          numLumaFilters;                                          // number_of_filters_minus1 + 1
   bool                         alfLumaCoeffDeltaFlag;                                   // alf_luma_coeff_delta_flag

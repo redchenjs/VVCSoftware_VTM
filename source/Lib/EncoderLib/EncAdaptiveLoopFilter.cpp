@@ -1597,7 +1597,7 @@ double EncAdaptiveLoopFilter::mergeFiltersAndCost(
     }
   }
 
-  memcpy( alfParam.filterCoeffDeltaIdx, m_filterIndices[numFiltersBest - 1], sizeof( short ) * MAX_NUM_ALF_CLASSES );
+  memcpy(alfParam.filterCoeffDeltaIdx, m_filterIndices[numFiltersBest - 1], sizeof(AlfBankIdx) * MAX_NUM_ALF_CLASSES);
   coeffBitsFinal += getNonFilterCoeffRate(alfParam);
   return distReturn;
 }
@@ -1785,7 +1785,7 @@ int EncAdaptiveLoopFilter::lengthUvlc(int code)
 double EncAdaptiveLoopFilter::deriveFilterCoeffs(
   AlfCovariance* cov, AlfCovariance* covMerged,
   int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], AlfFilterShape& alfShape,
-  short* filterIndices, int numFilters, double errorTabForce0Coeff[MAX_NUM_ALF_CLASSES][2], AlfParam& alfParam)
+  AlfBankIdx* filterIndices, int numFilters, double errorTabForce0Coeff[MAX_NUM_ALF_CLASSES][2], AlfParam& alfParam)
 {
   double error = 0.0;
   AlfCovariance& tmpCov = covMerged[MAX_NUM_ALF_CLASSES];
@@ -1923,7 +1923,10 @@ void EncAdaptiveLoopFilter::roundFiltCoeffCCALF(AlfCoeff* filterCoeffQuant, doub
   }
 }
 
-void EncAdaptiveLoopFilter::mergeClasses( const AlfFilterShape& alfShape, AlfCovariance* cov, AlfCovariance* covMerged, int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], const int numClasses, short filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES] )
+void EncAdaptiveLoopFilter::mergeClasses(
+  const AlfFilterShape& alfShape, AlfCovariance* cov, AlfCovariance* covMerged,
+  int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], const int numClasses,
+  AlfBankIdx filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES])
 {
   int     tmpClip[MAX_NUM_ALF_LUMA_COEFF];
   int     bestMergeClip[MAX_NUM_ALF_LUMA_COEFF];
@@ -1934,7 +1937,7 @@ void EncAdaptiveLoopFilter::mergeClasses( const AlfFilterShape& alfShape, AlfCov
   uint8_t indexListTemp[MAX_NUM_ALF_CLASSES];
   int numRemaining = numClasses;
 
-  memset( filterIndices, 0, sizeof( short ) * MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_CLASSES );
+  std::fill_n(filterIndices[0], MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_CLASSES, 0);
 
   for( int i = 0; i < numClasses; i++ )
   {

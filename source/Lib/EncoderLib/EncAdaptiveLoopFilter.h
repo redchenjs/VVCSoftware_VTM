@@ -249,7 +249,7 @@ private:
   AlfCoeff**             m_filterCoeffSet;   // [lumaClassIdx/chromaAltIdx][coeffIdx]
   int**                  m_filterClippSet; // [lumaClassIdx/chromaAltIdx][coeffIdx]
   int**                  m_diffFilterCoeff;
-  short                  m_filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES];
+  AlfBankIdx             m_filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES];
 
   EnumArray<unsigned, ChannelType> m_bitsNewFilter;
 
@@ -336,11 +336,16 @@ private:
                           const ComponentID compID, const int yPos);
   void   calcCovarianceCcAlf(Pel ELocal[MAX_NUM_CC_ALF_CHROMA_COEFF][1], const Pel *rec, const ptrdiff_t stride,
                              const AlfFilterShape &shape, int vbDistance);
-  void   mergeClasses(const AlfFilterShape& alfShape, AlfCovariance* cov, AlfCovariance* covMerged, int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], const int numClasses, short filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES]);
+  void   mergeClasses(const AlfFilterShape& alfShape, AlfCovariance* cov, AlfCovariance* covMerged,
+                      int       clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF],
+                      const int numClasses, AlfBankIdx filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES]);
 
   double getFilterCoeffAndCost(CodingStructure &cs, double distUnfilter, ChannelType channel, bool bReCollectStat,
                                int shapeIdx, int &coeffBits, bool onlyFilterCost = false);
-  double deriveFilterCoeffs(AlfCovariance* cov, AlfCovariance* covMerged, int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], AlfFilterShape& alfShape, short* filterIndices, int numFilters, double errorTabForce0Coeff[MAX_NUM_ALF_CLASSES][2], AlfParam& alfParam);
+  double deriveFilterCoeffs(AlfCovariance* cov, AlfCovariance* covMerged,
+                            int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF],
+                            AlfFilterShape& alfShape, AlfBankIdx* filterIndices, int numFilters,
+                            double errorTabForce0Coeff[MAX_NUM_ALF_CLASSES][2], AlfParam& alfParam);
   int    deriveFilterCoefficientsPredictionMode(AlfFilterShape& alfShape, AlfCoeff** filterSet, int** filterCoeffDiff,
                                                 const int numFilters);
   double deriveCoeffQuant(int* filterClipp, AlfCoeff* filterCoeffQuant, const AlfCovariance& cov,
