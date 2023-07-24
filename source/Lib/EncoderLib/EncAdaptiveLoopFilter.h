@@ -247,8 +247,7 @@ private:
   double                 m_lambda[MAX_NUM_COMPONENT];
 
   AlfCoeff**             m_filterCoeffSet;   // [lumaClassIdx/chromaAltIdx][coeffIdx]
-  int**                  m_filterClippSet; // [lumaClassIdx/chromaAltIdx][coeffIdx]
-  int**                  m_diffFilterCoeff;
+  int**                  m_filterClippSet;   // [lumaClassIdx/chromaAltIdx][coeffIdx]
   AlfBankIdx             m_filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES];
 
   EnumArray<unsigned, ChannelType> m_bitsNewFilter;
@@ -346,8 +345,7 @@ private:
                             int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF],
                             AlfFilterShape& alfShape, AlfBankIdx* filterIndices, int numFilters,
                             double errorTabForce0Coeff[MAX_NUM_ALF_CLASSES][2], AlfParam& alfParam);
-  int    deriveFilterCoefficientsPredictionMode(AlfFilterShape& alfShape, AlfCoeff** filterSet, int** filterCoeffDiff,
-                                                const int numFilters);
+  int    deriveFilterCoefficientsPredictionMode(AlfFilterShape& alfShape, AlfCoeff** filterSet, const int numFilters);
   double deriveCoeffQuant(int* filterClipp, AlfCoeff* filterCoeffQuant, const AlfCovariance& cov,
                           const AlfFilterShape& shape, const int fractionalBits, const bool optimizeClip);
   double deriveCtbAlfEnableFlags(CodingStructure &cs, const int shapeIdx, ChannelType channel,

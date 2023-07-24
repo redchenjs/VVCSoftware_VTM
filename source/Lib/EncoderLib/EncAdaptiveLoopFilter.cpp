@@ -449,7 +449,6 @@ EncAdaptiveLoopFilter::EncAdaptiveLoopFilter()
   m_alfCovarianceFrame.fill(nullptr);
   m_filterCoeffSet = nullptr;
   m_filterClippSet = nullptr;
-  m_diffFilterCoeff = nullptr;
 
   m_alfCovarianceCcAlf[0] = nullptr;
   m_alfCovarianceCcAlf[1] = nullptr;
@@ -512,13 +511,11 @@ void EncAdaptiveLoopFilter::create(const EncCfg* encCfg, const int picWidth, con
 
   m_filterCoeffSet  = new AlfCoeff*[std::max(MAX_NUM_ALF_CLASSES, ALF_MAX_NUM_ALTERNATIVES_CHROMA)];
   m_filterClippSet  = new int*[std::max(MAX_NUM_ALF_CLASSES, ALF_MAX_NUM_ALTERNATIVES_CHROMA)];
-  m_diffFilterCoeff = new int*[MAX_NUM_ALF_CLASSES];
 
   for( int i = 0; i < MAX_NUM_ALF_CLASSES; i++ )
   {
     m_filterCoeffSet[i]  = new AlfCoeff[MAX_NUM_ALF_LUMA_COEFF];
-    m_filterClippSet[i] = new int[MAX_NUM_ALF_LUMA_COEFF];
-    m_diffFilterCoeff[i] = new int[MAX_NUM_ALF_LUMA_COEFF];
+    m_filterClippSet[i]  = new int[MAX_NUM_ALF_LUMA_COEFF];
   }
 
 
@@ -656,18 +653,6 @@ void EncAdaptiveLoopFilter::destroy()
     delete[] m_filterClippSet;
     m_filterClippSet = nullptr;
   }
-
-  if( m_diffFilterCoeff )
-  {
-    for( int i = 0; i < MAX_NUM_ALF_CLASSES; i++ )
-    {
-      delete[] m_diffFilterCoeff[i];
-      m_diffFilterCoeff[i] = nullptr;
-    }
-    delete[] m_diffFilterCoeff;
-    m_diffFilterCoeff = nullptr;
-  }
-
 
   delete[] m_ctbDistortionFixedFilter;
   m_ctbDistortionFixedFilter = nullptr;
@@ -1534,7 +1519,7 @@ double EncAdaptiveLoopFilter::mergeFiltersAndCost(
     dist = deriveFilterCoeffs(covFrame, covMerged, clipMerged, alfShape, m_filterIndices[numFilters - 1], numFilters, errorForce0CoeffTab, alfParam);
     // filter coeffs are stored in m_filterCoeffSet
     distForce0 = getDistForce0( alfShape, numFilters, errorForce0CoeffTab, codedVarBins );
-    coeffBits = deriveFilterCoefficientsPredictionMode( alfShape, m_filterCoeffSet, m_diffFilterCoeff, numFilters );
+    coeffBits       = deriveFilterCoefficientsPredictionMode(alfShape, m_filterCoeffSet, numFilters);
     coeffBitsForce0 = getCostFilterCoeffForce0( alfShape, m_filterCoeffSet, numFilters, codedVarBins );
 
     cost = dist + m_lambda[COMPONENT_Y] * coeffBits;
@@ -1554,7 +1539,7 @@ double EncAdaptiveLoopFilter::mergeFiltersAndCost(
   }
 
   dist = deriveFilterCoeffs( covFrame, covMerged, clipMerged, alfShape, m_filterIndices[numFiltersBest - 1], numFiltersBest, errorForce0CoeffTab, alfParam );
-  coeffBits = deriveFilterCoefficientsPredictionMode( alfShape, m_filterCoeffSet, m_diffFilterCoeff, numFiltersBest );
+  coeffBits       = deriveFilterCoefficientsPredictionMode(alfShape, m_filterCoeffSet, numFiltersBest);
   distForce0 = getDistForce0( alfShape, numFiltersBest, errorForce0CoeffTab, codedVarBins );
   coeffBitsForce0 = getCostFilterCoeffForce0( alfShape, m_filterCoeffSet, numFiltersBest, codedVarBins );
 
@@ -1662,7 +1647,7 @@ int EncAdaptiveLoopFilter::getCostFilterCoeffForce0(AlfFilterShape& alfShape, Al
 }
 
 int EncAdaptiveLoopFilter::deriveFilterCoefficientsPredictionMode(AlfFilterShape& alfShape, AlfCoeff** filterSet,
-                                                                  int** filterCoeffDiff, const int numFilters)
+                                                                  const int numFilters)
 {
   return (m_alfParamTemp.nonLinearFlag[ChannelType::LUMA] ? getCostFilterClipp(alfShape, filterSet, numFilters) : 0)
          + getCostFilterCoeff(alfShape, filterSet, numFilters);
