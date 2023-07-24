@@ -3140,7 +3140,7 @@ void HLSWriter::alfFilter( const AlfParam& alfParam, const bool isChroma, const 
 {
   AlfFilterShape alfShape(isChroma ? 5 : 7);
   const AlfCoeff* coeff      = isChroma ? alfParam.chromaCoeff[altIdx] : alfParam.lumaCoeff;
-  const Pel* clipp = isChroma ? alfParam.chromaClipp[altIdx] : alfParam.lumaClipp;
+  const AlfClipIdx* clipp      = isChroma ? alfParam.chromaClipp[altIdx] : alfParam.lumaClipp;
   const int numFilters = isChroma ? 1 : alfParam.numLumaFilters;
 
   // vlc for all

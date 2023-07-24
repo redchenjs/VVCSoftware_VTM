@@ -112,10 +112,10 @@ struct AlfParam
   bool                         enabledFlag[MAX_NUM_COMPONENT];                          // alf_slice_enable_flag, alf_chroma_idc
   EnumArray<bool, ChannelType> nonLinearFlag;
   AlfCoeff                     lumaCoeff[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];   // alf_coeff_luma_delta[i][j]
-  Pel                          lumaClipp[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF]; // alf_clipp_luma_[i][j]
+  AlfClipIdx                   lumaClipp[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];   // alf_clipp_luma_[i][j]
   int                          numAlternativesChroma;                                                  // alf_chroma_num_alts_minus_one + 1
   AlfCoeff chromaCoeff[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];   // alf_coeff_chroma[i]
-  Pel   chromaClipp[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];   // alf_clipp_chroma[i]
+  AlfClipIdx chromaClipp[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];   // alf_clipp_chroma[i]
   AlfBankIdx filterCoeffDeltaIdx[MAX_NUM_ALF_CLASSES];                                 // filter_coeff_delta[i]
   bool                         alfLumaCoeffFlag[MAX_NUM_ALF_CLASSES];                   // alf_luma_coeff_flag[i]
   int                          numLumaFilters;                                          // number_of_filters_minus1 + 1

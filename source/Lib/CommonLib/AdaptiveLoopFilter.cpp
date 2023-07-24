@@ -640,7 +640,7 @@ void AdaptiveLoopFilter::reconstructCoeff(AlfParam &alfParam, const ChannelType 
   {
     int numFilters = isLuma( channel ) ? alfParam.numLumaFilters : 1;
     AlfCoeff* coeff      = isLuma(channel) ? alfParam.lumaCoeff : alfParam.chromaCoeff[altIdx];
-    Pel* clipp = isLuma( channel ) ? alfParam.lumaClipp : alfParam.chromaClipp[altIdx];
+    AlfClipIdx* clipp      = isLuma(channel) ? alfParam.lumaClipp : alfParam.chromaClipp[altIdx];
 
     for( int filterIdx = 0; filterIdx < numFilters; filterIdx++ )
     {

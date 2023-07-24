@@ -993,6 +993,7 @@ inline bool isAlfLumaFixed(AlfMode m) { return m >= AlfMode::LUMA_FIXED0 && m < 
 
 using AlfCoeff = int16_t;
 using AlfBankIdx = uint8_t;
+using AlfClipIdx = uint8_t;
 
 //////////////////////////////////////////////////////////////////////////
 // Encoder modes to try out
