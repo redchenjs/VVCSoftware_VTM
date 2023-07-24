@@ -204,7 +204,7 @@ struct AlfCovariance
   double calculateError( const int *clip ) const;
   double calculateError( const int *clip, const double *coeff ) const { return calculateError(clip, coeff, numCoeff); }
   double calculateError( const int *clip, const double *coeff, const int numCoeff ) const;
-  double calcErrorForCoeffs(const int *clip, const int *coeff, const int numCoeff, const int fractionalBits) const;
+  double calcErrorForCoeffs(const int* clip, const AlfCoeff* coeff, const int numCoeff, const int fractionalBits) const;
   double calcErrorForCcAlfCoeffs(const int16_t *coeff, const int numCoeff, const int bitDepth) const;
 
   void getClipMax(const AlfFilterShape& alfShape, int *clip_max) const;
@@ -246,7 +246,7 @@ private:
   CtxPool               *m_ctxPool;
   double                 m_lambda[MAX_NUM_COMPONENT];
 
-  int**                  m_filterCoeffSet; // [lumaClassIdx/chromaAltIdx][coeffIdx]
+  AlfCoeff**             m_filterCoeffSet;   // [lumaClassIdx/chromaAltIdx][coeffIdx]
   int**                  m_filterClippSet; // [lumaClassIdx/chromaAltIdx][coeffIdx]
   int**                  m_diffFilterCoeff;
   short                  m_filterIndices[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES];
@@ -260,12 +260,12 @@ private:
   AlfMode                *m_indexTmp[MAX_NUM_COMPONENT];
   AlfParam               m_alfParamTempNL;
   int                    m_clipDefaultEnc[MAX_NUM_ALF_LUMA_COEFF];
-  int                    m_filterTmp[MAX_NUM_ALF_LUMA_COEFF];
+  AlfCoeff                m_filterTmp[MAX_NUM_ALF_LUMA_COEFF];
   int                    m_clipTmp[MAX_NUM_ALF_LUMA_COEFF];
 
   int m_apsIdCcAlfStart[2];
 
-  short                  m_bestFilterCoeffSet[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF];
+  AlfCoeff               m_bestFilterCoeffSet[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF];
   bool                   m_bestFilterIdxEnabled[MAX_NUM_CC_ALF_FILTERS];
   uint8_t                m_bestFilterCount;
   uint8_t*               m_trainingCovControl;
@@ -341,25 +341,27 @@ private:
   double getFilterCoeffAndCost(CodingStructure &cs, double distUnfilter, ChannelType channel, bool bReCollectStat,
                                int shapeIdx, int &coeffBits, bool onlyFilterCost = false);
   double deriveFilterCoeffs(AlfCovariance* cov, AlfCovariance* covMerged, int clipMerged[MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_CLASSES][MAX_NUM_ALF_LUMA_COEFF], AlfFilterShape& alfShape, short* filterIndices, int numFilters, double errorTabForce0Coeff[MAX_NUM_ALF_CLASSES][2], AlfParam& alfParam);
-  int    deriveFilterCoefficientsPredictionMode( AlfFilterShape& alfShape, int **filterSet, int** filterCoeffDiff, const int numFilters );
-  double deriveCoeffQuant(int *filterClipp, int *filterCoeffQuant, const AlfCovariance &cov,
-                          const AlfFilterShape &shape, const int fractionalBits, const bool optimizeClip);
+  int    deriveFilterCoefficientsPredictionMode(AlfFilterShape& alfShape, AlfCoeff** filterSet, int** filterCoeffDiff,
+                                                const int numFilters);
+  double deriveCoeffQuant(int* filterClipp, AlfCoeff* filterCoeffQuant, const AlfCovariance& cov,
+                          const AlfFilterShape& shape, const int fractionalBits, const bool optimizeClip);
   double deriveCtbAlfEnableFlags(CodingStructure &cs, const int shapeIdx, ChannelType channel,
 #if ENABLE_QPA
                                  const double chromaWeight,
 #endif
                                  const int numClasses, const int numCoeff, double &distUnfilter);
-  void   roundFiltCoeff( int *filterCoeffQuant, double *filterCoeff, const int numCoeff, const int factor );
-  void   roundFiltCoeffCCALF(int16_t *filterCoeffQuant, double *filterCoeff, const int numCoeff, int factor);
+  void roundFiltCoeff(AlfCoeff* filterCoeffQuant, double* filterCoeff, const int numCoeff, const AlfCoeff factor);
+  void roundFiltCoeffCCALF(AlfCoeff* filterCoeffQuant, double* filterCoeff, const int numCoeff, AlfCoeff factor);
 
   double getDistCoeffForce0( bool* codedVarBins, double errorForce0CoeffTab[MAX_NUM_ALF_CLASSES][2], int* bitsVarBin, int zeroBitsVarBin, const int numFilters);
   int    lengthUvlc( int uiCode );
   int    getNonFilterCoeffRate( AlfParam& alfParam );
 
-  int    getCostFilterCoeffForce0( AlfFilterShape& alfShape, int **pDiffQFilterCoeffIntPP, const int numFilters, bool* codedVarBins );
-  int    getCostFilterCoeff( AlfFilterShape& alfShape, int **pDiffQFilterCoeffIntPP, const int numFilters );
-  int    getCostFilterClipp( AlfFilterShape& alfShape, int **pDiffQFilterCoeffIntPP, const int numFilters );
-  int    lengthFilterCoeffs( AlfFilterShape& alfShape, const int numFilters, int **FilterCoeff );
+  int getCostFilterCoeffForce0(AlfFilterShape& alfShape, AlfCoeff** pDiffQFilterCoeffIntPP, const int numFilters,
+                               bool* codedVarBins);
+  int getCostFilterCoeff(AlfFilterShape& alfShape, AlfCoeff** pDiffQFilterCoeffIntPP, const int numFilters);
+  int getCostFilterClipp(AlfFilterShape& alfShape, AlfCoeff** pDiffQFilterCoeffIntPP, const int numFilters);
+  int lengthFilterCoeffs(AlfFilterShape& alfShape, const int numFilters, AlfCoeff** FilterCoeff);
   double getDistForce0( AlfFilterShape& alfShape, const int numFilters, double errorTabForce0Coeff[MAX_NUM_ALF_CLASSES][2], bool* codedVarBins );
   int    getChromaCoeffRate( AlfParam& alfParam, int altIdx );
 
@@ -374,8 +376,11 @@ private:
                    ChannelType channel);
   void initCtuAlternativeChroma(AlfMode *ctuAlts[MAX_NUM_COMPONENT]);
   int getMaxNumAlternativesChroma( );
-  int  getCoeffRateCcAlf(short chromaCoeff[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF], bool filterEnabled[MAX_NUM_CC_ALF_FILTERS], uint8_t filterCount, ComponentID compID);
-  void deriveCcAlfFilterCoeff( ComponentID compID, const PelUnitBuf& recYuv, const PelUnitBuf& recYuvExt, short filterCoeff[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF], const uint8_t filterIdx );
+  int  getCoeffRateCcAlf(AlfCoeff chromaCoeff[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF],
+                         bool filterEnabled[MAX_NUM_CC_ALF_FILTERS], uint8_t filterCount, ComponentID compID);
+  void deriveCcAlfFilterCoeff(ComponentID compID, const PelUnitBuf& recYuv, const PelUnitBuf& recYuvExt,
+                              AlfCoeff      filterCoeff[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF],
+                              const uint8_t filterIdx);
   void determineControlIdcValues(CodingStructure &cs, const ComponentID compID, const PelBuf *buf, const int ctuWidthC,
                                  const int ctuHeightC, const int picWidthC, const int picHeightC,
                                  double **unfilteredDistortion, uint64_t *trainingDistortion[MAX_NUM_CC_ALF_FILTERS],

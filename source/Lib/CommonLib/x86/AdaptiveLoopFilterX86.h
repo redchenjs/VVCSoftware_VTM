@@ -41,10 +41,10 @@
 #include <x86intrin.h>
 #endif
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-static void simdFilter5x5Blk_HBD(AlfClassifier **classifier, const PelUnitBuf &recDst, const CPelUnitBuf &recSrc,
-  const Area &blkDst, const Area &blk, const ComponentID compId, const short *filterSet,
-  const Pel *fClipSet, const ClpRng &clpRng, CodingStructure &cs, const int vbCTUHeight,
-  int vbPos)
+static void simdFilter5x5Blk_HBD(AlfClassifier** classifier, const PelUnitBuf& recDst, const CPelUnitBuf& recSrc,
+                                 const Area& blkDst, const Area& blk, const ComponentID compId,
+                                 const AlfCoeff* filterSet, const Pel* fClipSet, const ClpRng& clpRng,
+                                 CodingStructure& cs, const int vbCTUHeight, int vbPos)
 
 {
   CHECK((vbCTUHeight & (vbCTUHeight - 1)) != 0, "vbCTUHeight must be a power of 2");
@@ -412,10 +412,10 @@ static void simdDeriveClassificationBlk_HBD(AlfClassifier **classifier, int **la
 }
 
 #ifdef USE_AVX2
-static void simdFilter5x5Blk_HBD_AVX2(AlfClassifier **classifier, const PelUnitBuf &recDst, const CPelUnitBuf &recSrc,
-  const Area &blkDst, const Area &blk, const ComponentID compId, const short *filterSet,
-  const Pel *fClipSet, const ClpRng &clpRng, CodingStructure &cs, const int vbCTUHeight,
-  int vbPos)
+static void simdFilter5x5Blk_HBD_AVX2(AlfClassifier** classifier, const PelUnitBuf& recDst, const CPelUnitBuf& recSrc,
+                                      const Area& blkDst, const Area& blk, const ComponentID compId,
+                                      const AlfCoeff* filterSet, const Pel* fClipSet, const ClpRng& clpRng,
+                                      CodingStructure& cs, const int vbCTUHeight, int vbPos)
 
 {
   CHECK((vbCTUHeight & (vbCTUHeight - 1)) != 0, "vbCTUHeight must be a power of 2");
@@ -816,11 +816,11 @@ static void simdDeriveClassificationBlk(AlfClassifier **classifier, int **laplac
   }
 }
 
-template<X86_VEXT vext>
-static void simdFilter5x5Blk(AlfClassifier **classifier, const PelUnitBuf &recDst, const CPelUnitBuf &recSrc,
-  const Area &blkDst, const Area &blk, const ComponentID compId, const short *filterSet,
-  const Pel *fClipSet, const ClpRng &clpRng, CodingStructure &cs, const int vbCTUHeight,
-  int vbPos)
+template<X86_VEXT vext> static void simdFilter5x5Blk(AlfClassifier** classifier, const PelUnitBuf& recDst,
+                                                     const CPelUnitBuf& recSrc, const Area& blkDst, const Area& blk,
+                                                     const ComponentID compId, const AlfCoeff* filterSet,
+                                                     const Pel* fClipSet, const ClpRng& clpRng, CodingStructure& cs,
+                                                     const int vbCTUHeight, int vbPos)
 
 {
   CHECK((vbCTUHeight & (vbCTUHeight - 1)) != 0, "vbCTUHeight must be a power of 2");
@@ -1024,10 +1024,10 @@ static const uint32_t shuffleTab32[4][3][4] = {
   },
 };
 
-static void simdFilter7x7Blk_HBD(AlfClassifier **classifier, const PelUnitBuf &recDst, const CPelUnitBuf &recSrc,
-  const Area &blkDst, const Area &blk, const ComponentID compId, const short *filterSet,
-  const Pel *fClipSet, const ClpRng &clpRng, CodingStructure &cs, const int vbCTUHeight,
-  int vbPos)
+static void simdFilter7x7Blk_HBD(AlfClassifier** classifier, const PelUnitBuf& recDst, const CPelUnitBuf& recSrc,
+                                 const Area& blkDst, const Area& blk, const ComponentID compId,
+                                 const AlfCoeff* filterSet, const Pel* fClipSet, const ClpRng& clpRng,
+                                 CodingStructure& cs, const int vbCTUHeight, int vbPos)
 {
   CHECK((vbCTUHeight & (vbCTUHeight - 1)) != 0, "vbCTUHeight must be a power of 2");
   CHECK(isChroma(compId), "7x7 ALF filter is meant for luma only");
@@ -1250,10 +1250,10 @@ static void simdFilter7x7Blk_HBD(AlfClassifier **classifier, const PelUnitBuf &r
 }
 
 #ifdef USE_AVX2
-static void simdFilter7x7Blk_HBD_AVX2(AlfClassifier **classifier, const PelUnitBuf &recDst, const CPelUnitBuf &recSrc,
-  const Area &blkDst, const Area &blk, const ComponentID compId, const short *filterSet,
-  const Pel *fClipSet, const ClpRng &clpRng, CodingStructure &cs, const int vbCTUHeight,
-  int vbPos)
+static void simdFilter7x7Blk_HBD_AVX2(AlfClassifier** classifier, const PelUnitBuf& recDst, const CPelUnitBuf& recSrc,
+                                      const Area& blkDst, const Area& blk, const ComponentID compId,
+                                      const AlfCoeff* filterSet, const Pel* fClipSet, const ClpRng& clpRng,
+                                      CodingStructure& cs, const int vbCTUHeight, int vbPos)
 {
   CHECK((vbCTUHeight & (vbCTUHeight - 1)) != 0, "vbCTUHeight must be a power of 2");
   CHECK(isChroma(compId), "7x7 ALF filter is meant for luma only");
@@ -1477,11 +1477,11 @@ static void simdFilter7x7Blk_HBD_AVX2(AlfClassifier **classifier, const PelUnitB
 }
 #endif
 #else
-template<X86_VEXT vext>
-static void simdFilter7x7Blk(AlfClassifier **classifier, const PelUnitBuf &recDst, const CPelUnitBuf &recSrc,
-  const Area &blkDst, const Area &blk, const ComponentID compId, const short *filterSet,
-  const Pel *fClipSet, const ClpRng &clpRng, CodingStructure &cs, const int vbCTUHeight,
-  int vbPos)
+template<X86_VEXT vext> static void simdFilter7x7Blk(AlfClassifier** classifier, const PelUnitBuf& recDst,
+                                                     const CPelUnitBuf& recSrc, const Area& blkDst, const Area& blk,
+                                                     const ComponentID compId, const AlfCoeff* filterSet,
+                                                     const Pel* fClipSet, const ClpRng& clpRng, CodingStructure& cs,
+                                                     const int vbCTUHeight, int vbPos)
 {
   CHECK((vbCTUHeight & (vbCTUHeight - 1)) != 0, "vbCTUHeight must be a power of 2");
   CHECK(isChroma(compId), "7x7 ALF filter is meant for luma only");

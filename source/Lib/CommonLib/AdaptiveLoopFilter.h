@@ -92,35 +92,35 @@ public:
                                       const int vbCTUHeight, int vbPos);
   void deriveClassification( AlfClassifier** classifier, const CPelBuf& srcLuma, const Area& blkDst, const Area& blk );
   template<AlfFilterType filtTypeCcAlf>
-  static void filterBlkCcAlf(const PelBuf &dstBuf, const CPelUnitBuf &recSrc, const Area &blkDst, const Area &blkSrc,
-                             const ComponentID compId, const int16_t *filterCoeff, const ClpRngs &clpRngs,
-                             CodingStructure &cs, int vbCTUHeight, int vbPos);
+  static void filterBlkCcAlf(const PelBuf& dstBuf, const CPelUnitBuf& recSrc, const Area& blkDst, const Area& blkSrc,
+                             const ComponentID compId, const AlfCoeff* filterCoeff, const ClpRngs& clpRngs,
+                             CodingStructure& cs, int vbCTUHeight, int vbPos);
 
-  template<AlfFilterType filtType>
-  static void filterBlk(AlfClassifier **classifier, const PelUnitBuf &recDst, const CPelUnitBuf &recSrc,
-                        const Area &blkDst, const Area &blk, const ComponentID compId, const short *filterSet,
-                       const Pel *fClipSet, const ClpRng &clpRng, CodingStructure &cs, const int vbCTUHeight,
-                       int vbPos);
+  template<AlfFilterType filtType> static void filterBlk(AlfClassifier** classifier, const PelUnitBuf& recDst,
+                                                         const CPelUnitBuf& recSrc, const Area& blkDst, const Area& blk,
+                                                         const ComponentID compId, const AlfCoeff* filterSet,
+                                                         const Pel* fClipSet, const ClpRng& clpRng, CodingStructure& cs,
+                                                         const int vbCTUHeight, int vbPos);
   void (*m_deriveClassificationBlk)(AlfClassifier **classifier, int **laplacian[NUM_DIRECTIONS], const CPelBuf &srcLuma,
                                     const Area &blkDst, const Area &blk, const int shift, const int vbCTUHeight,
                                     int vbPos);
 
-  void (*m_filterCcAlf)(const PelBuf &dstBuf, const CPelUnitBuf &recSrc, const Area &blkDst, const Area &blkSrc,
-                        const ComponentID compId, const int16_t *filterCoeff, const ClpRngs &clpRngs,
-                        CodingStructure &cs, int vbCTUHeight, int vbPos);
-  void applyCcAlfFilter(CodingStructure &cs, ComponentID compID, const PelBuf &dstBuf, const PelUnitBuf &recYuvExt,
-                        uint8_t *   filterControl,
-                        const short filterSet[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF],
-                        const int   selectedFilterIdx);
+  void (*m_filterCcAlf)(const PelBuf& dstBuf, const CPelUnitBuf& recSrc, const Area& blkDst, const Area& blkSrc,
+                        const ComponentID compId, const AlfCoeff* filterCoeff, const ClpRngs& clpRngs,
+                        CodingStructure& cs, int vbCTUHeight, int vbPos);
+  void applyCcAlfFilter(CodingStructure& cs, ComponentID compID, const PelBuf& dstBuf, const PelUnitBuf& recYuvExt,
+                        uint8_t*       filterControl,
+                        const AlfCoeff filterSet[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF],
+                        const int      selectedFilterIdx);
   CcAlfFilterParam &getCcAlfFilterParam() { return m_ccAlfFilterParam; }
   uint8_t* getCcAlfControlIdc(const ComponentID compID)   { return m_ccAlfFilterControl[compID-1]; }
-  void (*m_filter5x5Blk)(AlfClassifier **classifier, const PelUnitBuf &recDst, const CPelUnitBuf &recSrc,
-                         const Area &blkDst, const Area &blk, const ComponentID compId, const short *filterSet,
-                         const Pel *fClipSet, const ClpRng &clpRng, CodingStructure &cs, const int vbCTUHeight,
+  void (*m_filter5x5Blk)(AlfClassifier** classifier, const PelUnitBuf& recDst, const CPelUnitBuf& recSrc,
+                         const Area& blkDst, const Area& blk, const ComponentID compId, const AlfCoeff* filterSet,
+                         const Pel* fClipSet, const ClpRng& clpRng, CodingStructure& cs, const int vbCTUHeight,
                          int vbPos);
-  void (*m_filter7x7Blk)(AlfClassifier **classifier, const PelUnitBuf &recDst, const CPelUnitBuf &recSrc,
-                         const Area &blkDst, const Area &blk, const ComponentID compId, const short *filterSet,
-                         const Pel *fClipSet, const ClpRng &clpRng, CodingStructure &cs, const int vbCTUHeight,
+  void (*m_filter7x7Blk)(AlfClassifier** classifier, const PelUnitBuf& recDst, const CPelUnitBuf& recSrc,
+                         const Area& blkDst, const Area& blk, const ComponentID compId, const AlfCoeff* filterSet,
+                         const Pel* fClipSet, const ClpRng& clpRng, CodingStructure& cs, const int vbCTUHeight,
                          int vbPos);
 
 #ifdef TARGET_SIMD_X86
@@ -135,20 +135,20 @@ protected:
   CcAlfFilterParam       m_ccAlfFilterParam;
   uint8_t*               m_ccAlfFilterControl[2] = { nullptr };
   static const int             m_classToFilterMapping[ALF_NUM_FIXED_FILTER_SETS][MAX_NUM_ALF_CLASSES];
-  static const int             m_fixedFilterSetCoeff[ALF_FIXED_FILTER_NUM][MAX_NUM_ALF_LUMA_COEFF];
-  short m_fixedFilterSetCoeffDec[ALF_NUM_FIXED_FILTER_SETS][MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];
-  short                        m_coeffApsLuma[ALF_CTB_MAX_NUM_APS][MAX_NUM_ALF_LUMA_COEFF * MAX_NUM_ALF_CLASSES];
+  static const AlfCoeff        m_fixedFilterSetCoeff[ALF_FIXED_FILTER_NUM][MAX_NUM_ALF_LUMA_COEFF];
+  AlfCoeff m_fixedFilterSetCoeffDec[ALF_NUM_FIXED_FILTER_SETS][MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];
+  AlfCoeff m_coeffApsLuma[ALF_CTB_MAX_NUM_APS][MAX_NUM_ALF_LUMA_COEFF * MAX_NUM_ALF_CLASSES];
   Pel                          m_clippApsLuma[ALF_CTB_MAX_NUM_APS][MAX_NUM_ALF_LUMA_COEFF * MAX_NUM_ALF_CLASSES];
   Pel                          m_clipDefault[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];
   bool                         m_created = false;
-  short                        m_chromaCoeffFinal[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];
   AlfParam*                    m_alfParamChroma;
   EnumArray<std::array<Pel, MAX_ALF_NUM_CLIP_VALS>, ChannelType> m_alfClippingValues;
   std::vector<AlfFilterShape>  m_filterShapesCcAlf[2];
   EnumArray<std::vector<AlfFilterShape>, ChannelType>            m_filterShapes;
   AlfClassifier**              m_classifier;
-  short                        m_coeffFinal[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];
+  AlfCoeff                     m_coeffFinal[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];
   Pel                          m_clippFinal[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];
+  AlfCoeff                     m_chromaCoeffFinal[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];
   Pel                          m_chromaClippFinal[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];
   int**                        m_laplacian[NUM_DIRECTIONS];
   int *                        m_laplacianPtr[NUM_DIRECTIONS][m_CLASSIFICATION_BLK_SIZE + 5];
@@ -174,7 +174,7 @@ protected:
   ChromaFormat                 m_chromaFormat;
   ClpRngs                      m_clpRngs;
 
-  short* getCoeffVals(AlfMode m)
+  AlfCoeff* getCoeffVals(AlfMode m)
   {
     return isAlfLumaFixed(m) ? m_fixedFilterSetCoeffDec[m - AlfMode::LUMA_FIXED0] : m_coeffApsLuma[m - AlfMode::LUMA0];
   }

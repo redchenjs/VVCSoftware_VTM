@@ -209,72 +209,39 @@ bool AdaptiveLoopFilter::isCrossedByVirtualBoundaries( const CodingStructure& cs
   return numHorVirBndry > 0 || numVerVirBndry > 0 || clipTop || clipBottom || clipLeft || clipRight || rasterSliceAlfPad;
 }
 
-const int AdaptiveLoopFilter::m_fixedFilterSetCoeff[ALF_FIXED_FILTER_NUM][MAX_NUM_ALF_LUMA_COEFF] =
-{
-  { 0,   0,   2,  -3,   1,  -4,   1,   7,  -1,   1,  -1,   5, 0 },
-  { 0,   0,   0,   0,   0,  -1,   0,   1,   0,   0,  -1,   2, 0 },
-  { 0,   0,   0,   0,   0,   0,   0,   1,   0,   0,   0,   0, 0 },
-  { 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  -1,   1, 0 },
-  { 2,   2,  -7,  -3,   0,  -5,  13,  22,  12,  -3,  -3,  17,  0 },
-  { -1,   0,   6,  -8,   1,  -5,   1,  23,   0,   2,  -5,  10,  0 },
-  { 0,   0,  -1,  -1,   0,  -1,   2,   1,   0,   0,  -1,   4, 0 },
-  { 0,   0,   3, -11,   1,   0,  -1,  35,   5,   2,  -9,   9,  0 },
-  { 0,   0,   8,  -8,  -2,  -7,   4,   4,   2,   1,  -1,  25,  0 },
-  { 0,   0,   1,  -1,   0,  -3,   1,   3,  -1,   1,  -1,   3, 0 },
-  { 0,   0,   3,  -3,   0,  -6,   5,  -1,   2,   1,  -4,  21,  0 },
-  { -7,   1,   5,   4,  -3,   5,  11,  13,  12,  -8,  11,  12,  0 },
-  { -5,  -3,   6,  -2,  -3,   8,  14,  15,   2,  -7,  11,  16,  0 },
-  { 2,  -1,  -6,  -5,  -2,  -2,  20,  14,  -4,   0,  -3,  25,  0 },
-  { 3,   1,  -8,  -4,   0,  -8,  22,   5,  -3,   2, -10,  29,  0 },
-  { 2,   1,  -7,  -1,   2, -11,  23,  -5,   0,   2, -10,  29,  0 },
-  { -6,  -3,   8,   9,  -4,   8,   9,   7,  14,  -2,   8,   9,  0 },
-  { 2,   1,  -4,  -7,   0,  -8,  17,  22,   1,  -1,  -4,  23,  0 },
-  { 3,   0,  -5,  -7,   0,  -7,  15,  18,  -5,   0,  -5,  27,  0 },
-  { 2,   0,   0,  -7,   1, -10,  13,  13,  -4,   2,  -7,  24,  0 },
-  { 3,   3, -13,   4,  -2,  -5,   9,  21,  25,  -2,  -3,  12,  0 },
-  { -5,  -2,   7,  -3,  -7,   9,   8,   9,  16,  -2,  15,  12,  0 },
-  { 0,  -1,   0,  -7,  -5,   4,  11,  11,   8,  -6,  12,  21,  0 },
-  { 3,  -2,  -3,  -8,  -4,  -1,  16,  15,  -2,  -3,   3,  26,  0 },
-  { 2,   1,  -5,  -4,  -1,  -8,  16,   4,  -2,   1,  -7,  33,  0 },
-  { 2,   1,  -4,  -2,   1, -10,  17,  -2,   0,   2, -11,  33,  0 },
-  { 1,  -2,   7, -15, -16,  10,   8,   8,  20,  11,  14,  11,  0 },
-  { 2,   2,   3, -13, -13,   4,   8,  12,   2,  -3,  16,  24,  0 },
-  { 1,   4,   0,  -7,  -8,  -4,   9,   9,  -2,  -2,   8,  29,  0 },
-  { 1,   1,   2,  -4,  -1,  -6,   6,   3,  -1,  -1,  -3,  30,  0 },
-  { -7,   3,   2,  10,  -2,   3,   7,  11,  19,  -7,   8,  10, 0 },
-  { 0,  -2,  -5,  -3,  -2,   4,  20,  15,  -1,  -3,  -1,  22,  0 },
-  { 3,  -1,  -8,  -4,  -1,  -4,  22,   8,  -4,   2,  -8,  28,  0 },
-  { 0,   3, -14,   3,   0,   1,  19,  17,   8,  -3,  -7,  20,  0 },
-  { 0,   2,  -1,  -8,   3,  -6,   5,  21,   1,   1,  -9,  13,  0 },
-  { -4,  -2,   8,  20,  -2,   2,   3,   5,  21,   4,   6,   1, 0 },
-  { 2,  -2,  -3,  -9,  -4,   2,  14,  16,   3,  -6,   8,  24,  0 },
-  { 2,   1,   5, -16,  -7,   2,   3,  11,  15,  -3,  11,  22,  0 },
-  { 1,   2,   3, -11,  -2,  -5,   4,   8,   9,  -3,  -2,  26,  0 },
-  { 0,  -1,  10,  -9,  -1,  -8,   2,   3,   4,   0,   0,  29,  0 },
-  { 1,   2,   0,  -5,   1,  -9,   9,   3,   0,   1,  -7,  20,  0 },
-  { -2,   8,  -6,  -4,   3,  -9,  -8,  45,  14,   2, -13,   7, 0 },
-  { 1,  -1,  16, -19,  -8,  -4,  -3,   2,  19,   0,   4,  30,  0 },
-  { 1,   1,  -3,   0,   2, -11,  15,  -5,   1,   2,  -9,  24,  0 },
-  { 0,   1,  -2,   0,   1,  -4,   4,   0,   0,   1,  -4,   7,  0 },
-  { 0,   1,   2,  -5,   1,  -6,   4,  10,  -2,   1,  -4,  10,  0 },
-  { 3,   0,  -3,  -6,  -2,  -6,  14,   8,  -1,  -1,  -3,  31,  0 },
-  { 0,   1,   0,  -2,   1,  -6,   5,   1,   0,   1,  -5,  13,  0 },
-  { 3,   1,   9, -19, -21,   9,   7,   6,  13,   5,  15,  21,  0 },
-  { 2,   4,   3, -12, -13,   1,   7,   8,   3,   0,  12,  26,  0 },
-  { 3,   1,  -8,  -2,   0,  -6,  18,   2,  -2,   3, -10,  23,  0 },
-  { 1,   1,  -4,  -1,   1,  -5,   8,   1,  -1,   2,  -5,  10,  0 },
-  { 0,   1,  -1,   0,   0,  -2,   2,   0,   0,   1,  -2,   3,  0 },
-  { 1,   1,  -2,  -7,   1,  -7,  14,  18,   0,   0,  -7,  21,  0 },
-  { 0,   1,   0,  -2,   0,  -7,   8,   1,  -2,   0,  -3,  24,  0 },
-  { 0,   1,   1,  -2,   2, -10,  10,   0,  -2,   1,  -7,  23,  0 },
-  { 0,   2,   2, -11,   2,  -4,  -3,  39,   7,   1, -10,   9,  0 },
-  { 1,   0,  13, -16,  -5,  -6,  -1,   8,   6,   0,   6,  29,  0 },
-  { 1,   3,   1,  -6,  -4,  -7,   9,   6,  -3,  -2,   3,  33,  0 },
-  { 4,   0, -17,  -1,  -1,   5,  26,   8,  -2,   3, -15,  30,  0 },
-  { 0,   1,  -2,   0,   2,  -8,  12,  -6,   1,   1,  -6,  16,  0 },
-  { 0,   0,   0,  -1,   1,  -4,   4,   0,   0,   0,  -3,  11,  0 },
-  { 0,   1,   2,  -8,   2,  -6,   5,  15,   0,   2,  -7,   9,  0 },
-  { 1,  -1,  12, -15,  -7,  -2,   3,   6,   6,  -1,   7,  30,  0 },
+const AlfCoeff AdaptiveLoopFilter::m_fixedFilterSetCoeff[ALF_FIXED_FILTER_NUM][MAX_NUM_ALF_LUMA_COEFF] = {
+  { 0, 0, 2, -3, 1, -4, 1, 7, -1, 1, -1, 5, 0 },       { 0, 0, 0, 0, 0, -1, 0, 1, 0, 0, -1, 2, 0 },
+  { 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },           { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1, 0 },
+  { 2, 2, -7, -3, 0, -5, 13, 22, 12, -3, -3, 17, 0 },  { -1, 0, 6, -8, 1, -5, 1, 23, 0, 2, -5, 10, 0 },
+  { 0, 0, -1, -1, 0, -1, 2, 1, 0, 0, -1, 4, 0 },       { 0, 0, 3, -11, 1, 0, -1, 35, 5, 2, -9, 9, 0 },
+  { 0, 0, 8, -8, -2, -7, 4, 4, 2, 1, -1, 25, 0 },      { 0, 0, 1, -1, 0, -3, 1, 3, -1, 1, -1, 3, 0 },
+  { 0, 0, 3, -3, 0, -6, 5, -1, 2, 1, -4, 21, 0 },      { -7, 1, 5, 4, -3, 5, 11, 13, 12, -8, 11, 12, 0 },
+  { -5, -3, 6, -2, -3, 8, 14, 15, 2, -7, 11, 16, 0 },  { 2, -1, -6, -5, -2, -2, 20, 14, -4, 0, -3, 25, 0 },
+  { 3, 1, -8, -4, 0, -8, 22, 5, -3, 2, -10, 29, 0 },   { 2, 1, -7, -1, 2, -11, 23, -5, 0, 2, -10, 29, 0 },
+  { -6, -3, 8, 9, -4, 8, 9, 7, 14, -2, 8, 9, 0 },      { 2, 1, -4, -7, 0, -8, 17, 22, 1, -1, -4, 23, 0 },
+  { 3, 0, -5, -7, 0, -7, 15, 18, -5, 0, -5, 27, 0 },   { 2, 0, 0, -7, 1, -10, 13, 13, -4, 2, -7, 24, 0 },
+  { 3, 3, -13, 4, -2, -5, 9, 21, 25, -2, -3, 12, 0 },  { -5, -2, 7, -3, -7, 9, 8, 9, 16, -2, 15, 12, 0 },
+  { 0, -1, 0, -7, -5, 4, 11, 11, 8, -6, 12, 21, 0 },   { 3, -2, -3, -8, -4, -1, 16, 15, -2, -3, 3, 26, 0 },
+  { 2, 1, -5, -4, -1, -8, 16, 4, -2, 1, -7, 33, 0 },   { 2, 1, -4, -2, 1, -10, 17, -2, 0, 2, -11, 33, 0 },
+  { 1, -2, 7, -15, -16, 10, 8, 8, 20, 11, 14, 11, 0 }, { 2, 2, 3, -13, -13, 4, 8, 12, 2, -3, 16, 24, 0 },
+  { 1, 4, 0, -7, -8, -4, 9, 9, -2, -2, 8, 29, 0 },     { 1, 1, 2, -4, -1, -6, 6, 3, -1, -1, -3, 30, 0 },
+  { -7, 3, 2, 10, -2, 3, 7, 11, 19, -7, 8, 10, 0 },    { 0, -2, -5, -3, -2, 4, 20, 15, -1, -3, -1, 22, 0 },
+  { 3, -1, -8, -4, -1, -4, 22, 8, -4, 2, -8, 28, 0 },  { 0, 3, -14, 3, 0, 1, 19, 17, 8, -3, -7, 20, 0 },
+  { 0, 2, -1, -8, 3, -6, 5, 21, 1, 1, -9, 13, 0 },     { -4, -2, 8, 20, -2, 2, 3, 5, 21, 4, 6, 1, 0 },
+  { 2, -2, -3, -9, -4, 2, 14, 16, 3, -6, 8, 24, 0 },   { 2, 1, 5, -16, -7, 2, 3, 11, 15, -3, 11, 22, 0 },
+  { 1, 2, 3, -11, -2, -5, 4, 8, 9, -3, -2, 26, 0 },    { 0, -1, 10, -9, -1, -8, 2, 3, 4, 0, 0, 29, 0 },
+  { 1, 2, 0, -5, 1, -9, 9, 3, 0, 1, -7, 20, 0 },       { -2, 8, -6, -4, 3, -9, -8, 45, 14, 2, -13, 7, 0 },
+  { 1, -1, 16, -19, -8, -4, -3, 2, 19, 0, 4, 30, 0 },  { 1, 1, -3, 0, 2, -11, 15, -5, 1, 2, -9, 24, 0 },
+  { 0, 1, -2, 0, 1, -4, 4, 0, 0, 1, -4, 7, 0 },        { 0, 1, 2, -5, 1, -6, 4, 10, -2, 1, -4, 10, 0 },
+  { 3, 0, -3, -6, -2, -6, 14, 8, -1, -1, -3, 31, 0 },  { 0, 1, 0, -2, 1, -6, 5, 1, 0, 1, -5, 13, 0 },
+  { 3, 1, 9, -19, -21, 9, 7, 6, 13, 5, 15, 21, 0 },    { 2, 4, 3, -12, -13, 1, 7, 8, 3, 0, 12, 26, 0 },
+  { 3, 1, -8, -2, 0, -6, 18, 2, -2, 3, -10, 23, 0 },   { 1, 1, -4, -1, 1, -5, 8, 1, -1, 2, -5, 10, 0 },
+  { 0, 1, -1, 0, 0, -2, 2, 0, 0, 1, -2, 3, 0 },        { 1, 1, -2, -7, 1, -7, 14, 18, 0, 0, -7, 21, 0 },
+  { 0, 1, 0, -2, 0, -7, 8, 1, -2, 0, -3, 24, 0 },      { 0, 1, 1, -2, 2, -10, 10, 0, -2, 1, -7, 23, 0 },
+  { 0, 2, 2, -11, 2, -4, -3, 39, 7, 1, -10, 9, 0 },    { 1, 0, 13, -16, -5, -6, -1, 8, 6, 0, 6, 29, 0 },
+  { 1, 3, 1, -6, -4, -7, 9, 6, -3, -2, 3, 33, 0 },     { 4, 0, -17, -1, -1, 5, 26, 8, -2, 3, -15, 30, 0 },
+  { 0, 1, -2, 0, 2, -8, 12, -6, 1, 1, -6, 16, 0 },     { 0, 0, 0, -1, 1, -4, 4, 0, 0, 0, -3, 11, 0 },
+  { 0, 1, 2, -8, 2, -6, 5, 15, 0, 2, -7, 9, 0 },       { 1, -1, 12, -15, -7, -2, 3, 6, 6, -1, 7, 30, 0 },
 };
 
 // clang-format off
@@ -299,10 +266,10 @@ const int AdaptiveLoopFilter::m_classToFilterMapping[ALF_NUM_FIXED_FILTER_SETS][
 };
 // clang-format on
 
-void AdaptiveLoopFilter::applyCcAlfFilter(CodingStructure &cs, ComponentID compID, const PelBuf &dstBuf,
-                                          const PelUnitBuf &recYuvExt, uint8_t *filterControl,
-                                          const short filterSet[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF],
-                                          const int   selectedFilterIdx)
+void AdaptiveLoopFilter::applyCcAlfFilter(CodingStructure& cs, ComponentID compID, const PelBuf& dstBuf,
+                                          const PelUnitBuf& recYuvExt, uint8_t* filterControl,
+                                          const AlfCoeff filterSet[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF],
+                                          const int      selectedFilterIdx)
 {
   bool clipTop = false, clipBottom = false, clipLeft = false, clipRight = false;
   int  numHorVirBndry = 0, numVerVirBndry = 0;
@@ -509,7 +476,7 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
               const Area blkDst( xStart, yStart, w, h );
               deriveClassification( m_classifier, buf.get(COMPONENT_Y), blkDst, blkSrc );
               const AlfMode m     = lumaModes[ctuIdx];
-              const short*  coeff = getCoeffVals(m);
+              const AlfCoeff* coeff = getCoeffVals(m);
               const Pel*    clip  = getClipVals(m);
 #if GREEN_METADATA_SEI_ENABLED
               cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
@@ -549,7 +516,7 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
                   const Area blkSrc(0, 0, w, h);
                   Area blkDst(xStart >> chromaScaleX, yStart >> chromaScaleY, w >> chromaScaleX, h >> chromaScaleY);
 
-                  const int16_t *filterCoeff = m_ccAlfFilterParam.ccAlfCoeff[compIdx - 1][filterIdx - 1];
+                  const AlfCoeff* filterCoeff = m_ccAlfFilterParam.ccAlfCoeff[compIdx - 1][filterIdx - 1];
 #if GREEN_METADATA_SEI_ENABLED
                   cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
                   cs.m_featureCounter.alfLumaPels += (width * height);
@@ -574,7 +541,7 @@ void AdaptiveLoopFilter::ALFProcess(CodingStructure& cs)
           Area blk( xPos, yPos, width, height );
           deriveClassification( m_classifier, tmpYuv.get( COMPONENT_Y ), blk, blk );
           const AlfMode m     = lumaModes[ctuIdx];
-          const short*  coeff = getCoeffVals(m);
+          const AlfCoeff* coeff = getCoeffVals(m);
           const Pel*    clip  = getClipVals(m);
 #if GREEN_METADATA_SEI_ENABLED
           cs.m_featureCounter.alfLumaType7+= (width * height / 16) ;
@@ -671,7 +638,7 @@ void AdaptiveLoopFilter::reconstructCoeff(AlfParam &alfParam, const ChannelType 
   for( int altIdx = 0; altIdx < numAlts; ++ altIdx )
   {
     int numFilters = isLuma( channel ) ? alfParam.numLumaFilters : 1;
-    short* coeff = isLuma( channel ) ? alfParam.lumaCoeff : alfParam.chromaCoeff[altIdx];
+    AlfCoeff* coeff      = isLuma(channel) ? alfParam.lumaCoeff : alfParam.chromaCoeff[altIdx];
     Pel* clipp = isLuma( channel ) ? alfParam.lumaClipp : alfParam.chromaClipp[altIdx];
 
     for( int filterIdx = 0; filterIdx < numFilters; filterIdx++ )
@@ -1075,10 +1042,10 @@ void AdaptiveLoopFilter::deriveClassificationBlk(AlfClassifier **classifier, int
 }
 
 template<AlfFilterType filtType>
-void AdaptiveLoopFilter::filterBlk(AlfClassifier **classifier, const PelUnitBuf &recDst, const CPelUnitBuf &recSrc,
-                                   const Area &blkDst, const Area &blk, const ComponentID compId,
-                                   const short *filterSet, const Pel *fClipSet, const ClpRng &clpRng,
-                                   CodingStructure &cs, const int vbCTUHeight, int vbPos)
+void AdaptiveLoopFilter::filterBlk(AlfClassifier** classifier, const PelUnitBuf& recDst, const CPelUnitBuf& recSrc,
+                                   const Area& blkDst, const Area& blk, const ComponentID compId,
+                                   const AlfCoeff* filterSet, const Pel* fClipSet, const ClpRng& clpRng,
+                                   CodingStructure& cs, const int vbCTUHeight, int vbPos)
 {
   CHECK((vbCTUHeight & (vbCTUHeight - 1)) != 0, "vbCTUHeight must be a power of 2");
 
@@ -1105,7 +1072,7 @@ void AdaptiveLoopFilter::filterBlk(AlfClassifier **classifier, const PelUnitBuf 
   const Pel *pImgYPad0, *pImgYPad1, *pImgYPad2, *pImgYPad3, *pImgYPad4, *pImgYPad5, *pImgYPad6;
   const Pel *pImg0, *pImg1, *pImg2, *pImg3, *pImg4, *pImg5, *pImg6;
 
-  const short *coef = filterSet;
+  const AlfCoeff* coef = filterSet;
   const Pel   *clip = fClipSet;
 
   const int shift  = COEFF_SCALE_BITS;
@@ -1307,9 +1274,9 @@ void AdaptiveLoopFilter::filterBlk(AlfClassifier **classifier, const PelUnitBuf 
 }
 
 template<AlfFilterType filtTypeCcAlf>
-void AdaptiveLoopFilter::filterBlkCcAlf(const PelBuf &dstBuf, const CPelUnitBuf &recSrc, const Area &blkDst,
-                                        const Area &blkSrc, const ComponentID compId, const int16_t *filterCoeff,
-                                        const ClpRngs &clpRngs, CodingStructure &cs, int vbCTUHeight, int vbPos)
+void AdaptiveLoopFilter::filterBlkCcAlf(const PelBuf& dstBuf, const CPelUnitBuf& recSrc, const Area& blkDst,
+                                        const Area& blkSrc, const ComponentID compId, const AlfCoeff* filterCoeff,
+                                        const ClpRngs& clpRngs, CodingStructure& cs, int vbCTUHeight, int vbPos)
 {
   CHECK(1 << floorLog2(vbCTUHeight) != vbCTUHeight, "Not a power of 2");
 

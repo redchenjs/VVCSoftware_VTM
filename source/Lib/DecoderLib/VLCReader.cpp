@@ -1032,7 +1032,7 @@ void HLSyntaxReader::parseAlfAps( APS* aps )
         ccAlfParam.ccAlfFilterIdxEnabled[ccIdx][filterIdx] = true;
         AlfFilterShape alfShape(size_CC_ALF);
 
-        short *coeff = ccAlfParam.ccAlfCoeff[ccIdx][filterIdx];
+        AlfCoeff* coeff = ccAlfParam.ccAlfCoeff[ccIdx][filterIdx];
         // Filter coefficients
         for (int i = 0; i < alfShape.numCoeff - 1; i++)
         {
@@ -5193,7 +5193,7 @@ void HLSyntaxReader::alfFilter( AlfParam& alfParam, const bool isChroma, const i
   // derive maxGolombIdx
   AlfFilterShape alfShape( isChroma ? 5 : 7 );
   const int numFilters = isChroma ? 1 : alfParam.numLumaFilters;
-  short* coeff = isChroma ? alfParam.chromaCoeff[altIdx] : alfParam.lumaCoeff;
+  AlfCoeff*      coeff      = isChroma ? alfParam.chromaCoeff[altIdx] : alfParam.lumaCoeff;
   Pel*   clipp = isChroma ? alfParam.chromaClipp[altIdx] : alfParam.lumaClipp;
 
   // Filter coefficients
