@@ -777,9 +777,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("InputPathPrefix,-ipp",                            inputPathPrefix,                             std::string(""), "pathname to prepend to input filename")
   ("BitstreamFile,b",                                 m_bitstreamFileName,                         std::string(""), "Bitstream output file name")
   ("ReconFile,o",                                     m_reconFileName,                             std::string(""), "Reconstructed YUV output file name")
-#if JVET_Z0120_SII_SEI_PROCESSING
   ("SEIShutterIntervalPreFilename,-sii",              m_shutterIntervalPreFileName, std::string(""), "File name of Pre-Filtering video. If empty, not output video\n")
-#endif
   ("SourceWidth,-wdt",                                m_sourceWidth,                                       0, "Source picture width")
   ("SourceHeight,-hgt",                               m_sourceHeight,                                      0, "Source picture height")
   ("SourceScalingRatioHor",                           m_sourceScalingRatioHor,                           1.0, "Source picture  horizontal scaling ratio")
@@ -3485,9 +3483,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif // ENABLE_QPA
 
 
-#if JVET_Z0120_SII_SEI_PROCESSING
   m_ShutterFilterEnable = false;
-#endif
   if (m_siiSEIEnabled)
   {
     assert(m_siiSEITimeScale >= 0 && m_siiSEITimeScale <= MAX_UINT);
@@ -3507,7 +3503,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_siiSEINumUnitsInShutterInterval = cfg_siiSEIInputNumUnitsInSI.values[0];
       assert(m_siiSEINumUnitsInShutterInterval >= 0 && m_siiSEINumUnitsInShutterInterval <= MAX_UINT);
     }
-#if JVET_Z0120_SII_SEI_PROCESSING
     uint32_t siiMaxSubLayersMinus1 = sii_max_sub_layers - 1;
     int blending_ratio = (m_siiSEISubLayerNumUnitsInSI[0] / m_siiSEISubLayerNumUnitsInSI[siiMaxSubLayersMinus1]);
 
@@ -3561,7 +3556,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     {
       printf("Warning: SII-processing is applied for multiple shutter intervals and number of LFR units should be 2 times of number of HFR units\n");
     }
-#endif
   }
 
 
@@ -5074,12 +5068,10 @@ bool EncAppCfg::xCheckParameter()
     }
   }
 
-#if JVET_Z0120_SII_SEI_PROCESSING
   if (m_siiSEIEnabled && m_ShutterFilterEnable)
   {
     xConfirmPara(m_maxTempLayer == 1 || m_maxDecPicBuffering[0] == 1,"Shutter Interval SEI message processing is disabled for single TempLayer and single frame in DPB\n");
   }
-#endif
 
   if (m_nnPostFilterSEICharacteristicsEnabled)
   {
@@ -5216,12 +5208,10 @@ void EncAppCfg::xPrintParameter()
   msg( DETAILS, "Input          File                    : %s\n", m_inputFileName.c_str() );
   msg( DETAILS, "Bitstream      File                    : %s\n", m_bitstreamFileName.c_str() );
   msg( DETAILS, "Reconstruction File                    : %s\n", m_reconFileName.c_str() );
-#if JVET_Z0120_SII_SEI_PROCESSING
   if (m_ShutterFilterEnable && !m_shutterIntervalPreFileName.empty())
   {
     msg(DETAILS,"SII Pre-processed File                 : %s\n", m_shutterIntervalPreFileName.c_str());
   }
-#endif
   msg(DETAILS, "Real     Format                        : %dx%d %gHz\n", m_sourceWidth - m_confWinLeft - m_confWinRight,
       m_sourceHeight - m_confWinTop - m_confWinBottom, m_frameRate.getFloatVal() / m_temporalSubsampleRatio);
   msg(DETAILS, "Internal Format                        : %dx%d %gHz\n", m_sourceWidth, m_sourceHeight,

@@ -150,11 +150,9 @@ uint32_t DecApp::decode()
 
   bool bPicSkipped = false;
 
-#if JVET_Z0120_SII_SEI_PROCESSING
   bool openedPostFile = false;
   setShutterFilterFlag(!m_shutterIntervalPostFileName.empty());   // not apply shutter interval SEI processing if filename is not specified.
   m_cDecLib.setShutterFilterFlag(getShutterFilterFlag());
-#endif
 
   bool isEosPresentInPu = false;
   bool isEosPresentInLastPu = false;
@@ -578,7 +576,6 @@ uint32_t DecApp::decode()
         xOutputAnnotatedRegions(pcListPic);
       }
 
-#if JVET_Z0120_SII_SEI_PROCESSING
       PicList::iterator iterPic = pcListPic->begin();
       Picture* pcPic = *(iterPic);
       SEIMessages       shutterIntervalInfo = getSeisByType(pcPic->SEIs, SEI::PayloadType::SHUTTER_INTERVAL_INFO);
@@ -744,7 +741,6 @@ uint32_t DecApp::decode()
           openedPostFile = true;
         }
       }
-#endif
 
       // write reconstruction to file
       if( bNewPicture )
@@ -844,12 +840,10 @@ uint32_t DecApp::decode()
   
   xFlushOutput( pcListPic );
 
-#if JVET_Z0120_SII_SEI_PROCESSING
   if (!m_shutterIntervalPostFileName.empty() && getShutterFilterFlag())
   {
     m_cTVideoIOYuvSIIPostFile.close();
   }
-#endif
 
   // get the number of checksum errors
   uint32_t nRet = m_cDecLib.getNumberOfChecksumErrorsDetected();
@@ -1157,7 +1151,6 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         }
 
 
-#if JVET_Z0120_SII_SEI_PROCESSING
         if (!m_shutterIntervalPostFileName.empty() && getShutterFilterFlag())
         {
           int blendingRatio = getBlendingRatio();
@@ -1176,7 +1169,6 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
                                           conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIdc),
                                           ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
         }
-#endif
 
         // Perform CTI on decoded frame and write to output CTI file
         if (!m_SEICTIFileName.empty())
@@ -1373,7 +1365,6 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             }
           }
 
-#if JVET_Z0120_SII_SEI_PROCESSING
           if (!m_shutterIntervalPostFileName.empty() && getShutterFilterFlag())
           {
             int blendingRatio = getBlendingRatio();
@@ -1392,7 +1383,6 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
                                             conf.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIdc),
                                             ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
           }
-#endif
 
           // Perform CTI on decoded frame and write to output CTI file
           if (!m_SEICTIFileName.empty())
@@ -1429,11 +1419,7 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
         }
         pcPic->neededForOutput = false;
       }
-#if JVET_Z0120_SII_SEI_PROCESSING
       if (pcPic != nullptr && (m_shutterIntervalPostFileName.empty() || !getShutterFilterFlag()))
-#else
-      if(pcPic != nullptr)
-#endif
       {
         pcPic->destroy();
         delete pcPic;

@@ -907,12 +907,10 @@ protected:
   uint32_t  m_siiSEINumUnitsInShutterInterval;
   uint32_t  m_siiSEITimeScale;
   std::vector<uint32_t>     m_siiSEISubLayerNumUnitsInSI;
-#if JVET_Z0120_SII_SEI_PROCESSING
   bool        m_ShutterFilterEnable;                          ///< enable Pre-Filtering with Shutter Interval SEI
   std::string m_shutterIntervalPreFileName;                   ///< output Pre-Filtering video
   int         m_SII_BlendingRatio;
   void        setBlendingRatioSII(int value) { m_SII_BlendingRatio = value; }
-#endif
 #if GREEN_METADATA_SEI_ENABLED
 public:
   std::string getGMFAFile ();

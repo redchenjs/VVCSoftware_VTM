@@ -630,14 +630,12 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
     picCurr->poc = m_pocLast - 1;
     m_pocLast -= 2;
 
-#if JVET_Z0120_SII_SEI_PROCESSING
     if (getShutterFilterFlag())
     {
       int blendingRatio = getBlendingRatioSII();
       picCurr->xOutputPreFilteredPic(picCurr, &m_cListPic, blendingRatio, m_intraPeriod);
       picCurr->copyToPic(sps, &picCurr->m_bufs[PIC_ORIGINAL], pcPicYuvOrg);
     }
-#endif
 
     if( getUseAdaptiveQP() )
     {
@@ -872,14 +870,12 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
 
     pcPicCurr->poc = m_pocLast;
 
-#if JVET_Z0120_SII_SEI_PROCESSING
     if (getShutterFilterFlag())
     {
       int blendingRatio = getBlendingRatioSII();
       pcPicCurr->xOutputPreFilteredPic(pcPicCurr, &m_cListPic, blendingRatio, m_intraPeriod);
       pcPicCurr->copyToPic(pSPS, &pcPicCurr->m_bufs[PIC_ORIGINAL], pcPicYuvOrg);
     }
-#endif
 
     // compute image characteristics
     if( getUseAdaptiveQP() )
@@ -1032,14 +1028,12 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYu
 
       pcField->topField = isTopField;                  // interlaced requirement
 
-#if JVET_Z0120_SII_SEI_PROCESSING
       if (getShutterFilterFlag())
       {
         int blendingRatio = getBlendingRatioSII();
         pcField->xOutputPreFilteredPic(pcField, &m_cListPic, blendingRatio, m_intraPeriod);
         pcField->copyToPic(pSPS, &pcField->m_bufs[PIC_ORIGINAL], pcPicYuvOrg);
       }
-#endif
 
       // compute image characteristics
       if( getUseAdaptiveQP() )
@@ -1166,14 +1160,9 @@ void EncLib::xGetNewPicBuffer ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Pict
   {
     rpcPic = new Picture;
     bool fgAnalysisEnabled = m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty();
-#if JVET_Z0120_SII_SEI_PROCESSING
     rpcPic->create(sps.getChromaFormatIdc(), Size(pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples()),
       sps.getMaxCUWidth(), sps.getMaxCUWidth() + PIC_MARGIN, false, m_layerId, getShutterFilterFlag(),
                    getGopBasedTemporalFilterEnabled(), fgAnalysisEnabled);
-#else
-    rpcPic->create( sps.getChromaFormatIdc(), Size( pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples() ), sps.getMaxCUWidth(), sps.getMaxCUWidth() + PIC_MARGIN, false, m_layerId, getGopBasedTemporalFilterEnabled()
-                   , fgAnalysisEnabled);
-#endif
 
     if (m_resChangeInClvsEnabled)
     {

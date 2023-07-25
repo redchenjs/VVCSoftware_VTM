@@ -64,7 +64,6 @@ private:
   std::unordered_map<int, VideoIOYuv>      m_videoIOYuvSEIFGSFile;       ///< reconstruction YUV with FGS class
   std::unordered_map<int, VideoIOYuv>      m_cVideoIOYuvSEICTIFile;       ///< reconstruction YUV with CTI class
 
-#if JVET_Z0120_SII_SEI_PROCESSING
   bool                                    m_ShutterFilterEnable;          ///< enable Post-processing with Shutter Interval SEI
   VideoIOYuv                              m_cTVideoIOYuvSIIPostFile;      ///< post-filtered YUV class
   int                                     m_SII_BlendingRatio;
@@ -78,7 +77,6 @@ private:
 
   std::map<uint32_t, IdrSiiInfo> m_activeSiiInfo;
 
-#endif
 
   // for output control
   int             m_iPOCLastDisplay;              ///< last POC in display order
@@ -101,12 +99,10 @@ public:
   virtual ~DecApp         ()  {}
 
   uint32_t  decode            (); ///< main decoding function
-#if JVET_Z0120_SII_SEI_PROCESSING
   bool  getShutterFilterFlag()        const { return m_ShutterFilterEnable; }
   void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
   int   getBlendingRatio()             const { return m_SII_BlendingRatio; }
   void  setBlendingRatio(int value) { m_SII_BlendingRatio = value; }
-#endif
 
 private:
   void  xCreateDecLib     (); ///< create internal classes

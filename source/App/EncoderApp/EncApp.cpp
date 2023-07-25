@@ -1179,10 +1179,8 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setDriSEIDisparityRefViewId                          (m_driSEIDisparityRefViewId);
   m_cEncLib.setDriSEINonlinearNumMinus1                          (m_driSEINonlinearNumMinus1);
   m_cEncLib.setDriSEINonlinearModel                              (m_driSEINonlinearModel);
-#if JVET_Z0120_SII_SEI_PROCESSING
   m_cEncLib.setShutterFilterFlag(m_ShutterFilterEnable);
   m_cEncLib.setBlendingRatioSII(m_SII_BlendingRatio);
-#endif
   m_cEncLib.setNNPostFilterSEICharacteristicsEnabled             (m_nnPostFilterSEICharacteristicsEnabled);
   m_cEncLib.setNNPostFilterSEICharacteristicsUseSuffixSEI        (m_nnPostFilterSEICharacteristicsUseSuffixSEI);
   m_cEncLib.setNNPostFilterSEICharacteristicsNumFilters          (m_nnPostFilterSEICharacteristicsNumFilters);
@@ -1532,12 +1530,10 @@ void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
     m_cVideoIOYuvReconFile.open( reconFileName, true, m_outputBitDepth, m_outputBitDepth, m_internalBitDepth );  // write mode
   }
 
-#if JVET_Z0120_SII_SEI_PROCESSING
   if (m_ShutterFilterEnable && !m_shutterIntervalPreFileName.empty())
   {
     m_cTVideoIOYuvSIIPreFile.open(m_shutterIntervalPreFileName, true, m_outputBitDepth, m_outputBitDepth, m_internalBitDepth);  // write mode
   }
-#endif
   // create the encoder
   m_cEncLib.create( layerId );
 
@@ -1553,12 +1549,10 @@ void EncApp::xDestroyLib()
   // Video I/O
   m_cVideoIOYuvInputFile.close();
   m_cVideoIOYuvReconFile.close();
-#if JVET_Z0120_SII_SEI_PROCESSING
   if (m_ShutterFilterEnable && !m_shutterIntervalPreFileName.empty())
   {
     m_cTVideoIOYuvSIIPreFile.close();
   }
-#endif
 
   // Neo Decoder
   m_cEncLib.destroy();
@@ -1818,7 +1812,6 @@ bool EncApp::encodePrep( bool& eos )
     );
   }
 
-#if JVET_Z0120_SII_SEI_PROCESSING
   if (m_ShutterFilterEnable && !m_shutterIntervalPreFileName.empty())
   {
     m_cTVideoIOYuvSIIPreFile.write(m_orgPic->get(COMPONENT_Y).width, m_orgPic->get(COMPONENT_Y).height, *m_orgPic,
@@ -1826,7 +1819,6 @@ bool EncApp::encodePrep( bool& eos )
                                    m_confWinTop, m_confWinBottom, ChromaFormat::UNDEFINED,
                                    m_clipOutputVideoToRec709Range);
   }
-#endif
 
   return keepDoing;
 }
