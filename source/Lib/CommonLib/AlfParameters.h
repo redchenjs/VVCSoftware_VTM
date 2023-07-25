@@ -111,12 +111,12 @@ struct AlfParam
 {
   bool                         enabledFlag[MAX_NUM_COMPONENT];                          // alf_slice_enable_flag, alf_chroma_idc
   EnumArray<bool, ChannelType> nonLinearFlag;
-  short                        lumaCoeff[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF]; // alf_coeff_luma_delta[i][j]
-  Pel                          lumaClipp[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF]; // alf_clipp_luma_[i][j]
+  AlfCoeff                     lumaCoeff[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];   // alf_coeff_luma_delta[i][j]
+  AlfClipIdx                   lumaClipp[MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF];   // alf_clipp_luma_[i][j]
   int                          numAlternativesChroma;                                                  // alf_chroma_num_alts_minus_one + 1
-  short chromaCoeff[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];   // alf_coeff_chroma[i]
-  Pel   chromaClipp[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];   // alf_clipp_chroma[i]
-  short                        filterCoeffDeltaIdx[MAX_NUM_ALF_CLASSES];                // filter_coeff_delta[i]
+  AlfCoeff chromaCoeff[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];   // alf_coeff_chroma[i]
+  AlfClipIdx chromaClipp[ALF_MAX_NUM_ALTERNATIVES_CHROMA][MAX_NUM_ALF_CHROMA_COEFF];   // alf_clipp_chroma[i]
+  AlfBankIdx filterCoeffDeltaIdx[MAX_NUM_ALF_CLASSES];                                 // filter_coeff_delta[i]
   bool                         alfLumaCoeffFlag[MAX_NUM_ALF_CLASSES];                   // alf_luma_coeff_flag[i]
   int                          numLumaFilters;                                          // number_of_filters_minus1 + 1
   bool                         alfLumaCoeffDeltaFlag;                                   // alf_luma_coeff_delta_flag
@@ -227,7 +227,7 @@ struct CcAlfFilterParam
   bool    ccAlfFilterEnabled[2];
   bool    ccAlfFilterIdxEnabled[2][MAX_NUM_CC_ALF_FILTERS];
   uint8_t ccAlfFilterCount[2];
-  short   ccAlfCoeff[2][MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF];
+  AlfCoeff ccAlfCoeff[2][MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF];
   int     newCcAlfFilter[2];
   int     numberValidComponents;
   CcAlfFilterParam()

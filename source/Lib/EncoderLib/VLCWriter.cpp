@@ -619,7 +619,7 @@ void HLSWriter::codeAlfAps( APS* pcAPS )
       {
         AlfFilterShape alfShape(size_CC_ALF);
 
-        const short *coeff = paramCcAlf.ccAlfCoeff[ccIdx][filterIdx];
+        const AlfCoeff* coeff = paramCcAlf.ccAlfCoeff[ccIdx][filterIdx];
         // Filter coefficients
         for (int i = 0; i < alfShape.numCoeff - 1; i++)
         {
@@ -3139,8 +3139,8 @@ bool HLSWriter::xFindMatchingLTRP(Slice* pcSlice, uint32_t *ltrpsIndex, int ltrp
 void HLSWriter::alfFilter( const AlfParam& alfParam, const bool isChroma, const int altIdx )
 {
   AlfFilterShape alfShape(isChroma ? 5 : 7);
-  const short* coeff = isChroma ? alfParam.chromaCoeff[altIdx] : alfParam.lumaCoeff;
-  const Pel* clipp = isChroma ? alfParam.chromaClipp[altIdx] : alfParam.lumaClipp;
+  const AlfCoeff* coeff      = isChroma ? alfParam.chromaCoeff[altIdx] : alfParam.lumaCoeff;
+  const AlfClipIdx* clipp      = isChroma ? alfParam.chromaClipp[altIdx] : alfParam.lumaClipp;
   const int numFilters = isChroma ? 1 : alfParam.numLumaFilters;
 
   // vlc for all
