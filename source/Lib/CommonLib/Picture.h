@@ -72,7 +72,9 @@ struct Picture : public UnitArea
   uint32_t margin;
   Picture();
 
-  void create(const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned margin, const bool bDecoder, const int layerId, const bool enablePostFilteringForHFR, const bool gopBasedTemporalFilterEnabled = false, const bool fgcSEIAnalysisEnabled = false);
+  void create(const bool useWrapAround, const ChromaFormat& _chromaFormat, const Size& size, const unsigned _maxCUSize,
+              const unsigned margin, const bool bDecoder, const int layerId, const bool enablePostFilteringForHFR,
+              const bool gopBasedTemporalFilterEnabled = false, const bool fgcSEIAnalysisEnabled = false);
   void destroy();
 
   void createTempBuffers( const unsigned _maxCUSize );

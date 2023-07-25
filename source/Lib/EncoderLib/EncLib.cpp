@@ -505,7 +505,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
   if (getUseCompositeRef())
   {
     Picture *picBg = new Picture;
-    picBg->create(sps0.getChromaFormatIdc(), Size(pps0.getPicWidthInLumaSamples(), pps0.getPicHeightInLumaSamples()),
+    picBg->create(sps0.getWrapAroundEnabledFlag(), sps0.getChromaFormatIdc(), Size(pps0.getPicWidthInLumaSamples(), pps0.getPicHeightInLumaSamples()),
                   sps0.getMaxCUWidth(), sps0.getMaxCUWidth() + 16, false, m_layerId,
                   getGopBasedTemporalFilterEnabled());
     picBg->getRecoBuf().fill(0);
@@ -514,7 +514,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
     picBg->createSpliceIdx(pps0.pcv->sizeInCtus);
     m_cGOPEncoder.setPicBg(picBg);
     Picture *picOrig = new Picture;
-    picOrig->create(sps0.getChromaFormatIdc(), Size(pps0.getPicWidthInLumaSamples(), pps0.getPicHeightInLumaSamples()),
+    picOrig->create(sps0.getWrapAroundEnabledFlag(), sps0.getChromaFormatIdc(), Size(pps0.getPicWidthInLumaSamples(), pps0.getPicHeightInLumaSamples()),
                     sps0.getMaxCUWidth(), sps0.getMaxCUWidth() + 16, false, m_layerId,
                     getGopBasedTemporalFilterEnabled());
     picOrig->getOrigBuf().fill(0);
@@ -1160,7 +1160,7 @@ void EncLib::xGetNewPicBuffer ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Pict
   {
     rpcPic = new Picture;
     bool fgAnalysisEnabled = m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty();
-    rpcPic->create(sps.getChromaFormatIdc(), Size(pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples()),
+    rpcPic->create(sps.getWrapAroundEnabledFlag(), sps.getChromaFormatIdc(), Size(pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples()),
       sps.getMaxCUWidth(), sps.getMaxCUWidth() + PIC_MARGIN, false, m_layerId, getShutterFilterFlag(),
                    getGopBasedTemporalFilterEnabled(), fgAnalysisEnabled);
 
