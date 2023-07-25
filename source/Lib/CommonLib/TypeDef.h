@@ -101,11 +101,8 @@
 #define JVET_O0756_CALCULATE_HDRMETRICS                   1
 #endif
 
-#define JVET_Z0120_SII_SEI_PROCESSING                     1 // This is an example illustration of using SII SEI messages for backwards-compatible HFR video
-#if JVET_Z0120_SII_SEI_PROCESSING
 #define DISABLE_PRE_POST_FILTER_FOR_IDR_CRA               1
 #define ENABLE_USER_DEFINED_WEIGHTS                       0 // User can specify weights for both current and previous picture, such that their sum = 1
-#endif
 
 // clang-format on
 

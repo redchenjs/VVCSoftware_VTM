@@ -77,11 +77,7 @@ Picture::Picture()
   m_grainBuf            = nullptr;
 }
 
-#if JVET_Z0120_SII_SEI_PROCESSING
 void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId, const bool enablePostFilteringForHFR, const bool gopBasedTemporalFilterEnabled, const bool fgcSEIAnalysisEnabled)
-#else
-void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId, const bool gopBasedTemporalFilterEnabled, const bool fgcSEIAnalysisEnabled )
-#endif
 {
   layerId = _layerId;
   UnitArea::operator=( UnitArea( _chromaFormat, Area( Position{ 0, 0 }, size ) ) );
@@ -90,12 +86,10 @@ void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const
   M_BUFS( 0, PIC_RECONSTRUCTION ).create( _chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE );
   M_BUFS( 0, PIC_RECON_WRAP ).create( _chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE );
 
-#if JVET_Z0120_SII_SEI_PROCESSING
   if (enablePostFilteringForHFR)
   {
     M_BUFS(0, PIC_YUV_POST_REC).create(_chromaFormat, a, _maxCUSize, margin, MEMORY_ALIGN_DEF_SIZE);
   }
-#endif
 
   if( !_decoder )
   {
@@ -230,10 +224,8 @@ const CPelUnitBuf Picture::getRecoBuf(const UnitArea &unit, bool wrap)     const
        PelUnitBuf Picture::getRecoBuf(bool wrap)                                 { return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION); }
 const CPelUnitBuf Picture::getRecoBuf(bool wrap)                           const { return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION); }
 
-#if JVET_Z0120_SII_SEI_PROCESSING
        PelUnitBuf Picture::getPostRecBuf()                           { return M_BUFS(scheduler.getSplitPicId(), PIC_YUV_POST_REC); }
 const CPelUnitBuf Picture::getPostRecBuf()                     const { return M_BUFS(scheduler.getSplitPicId(), PIC_YUV_POST_REC); }
-#endif
 
 void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHeader *picHeader, APS** alfApss, APS* lmcsAps, APS* scalingListAps )
 {
@@ -1487,7 +1479,6 @@ PelUnitBuf Picture::getDisplayBuf()
 }
 
 
-#if JVET_Z0120_SII_SEI_PROCESSING
 void Picture::copyToPic(const SPS *sps, PelStorage *pcPicYuvSrc, PelStorage *pcPicYuvDst)
 {
   const ChromaFormat chromaFormatIdc    = sps->getChromaFormatIdc();
@@ -1735,7 +1726,6 @@ void Picture::xOutputPreFilteredPic(Picture* pcPic, PicList* pcListPic, int blen
     }
   }
 }
-#endif
 
 void Picture::copyAlfData(const Picture &p)
 {

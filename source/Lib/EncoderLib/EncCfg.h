@@ -178,10 +178,8 @@ protected:
   bool      m_printWPSNR;
   bool      m_printHighPrecEncTime = false;
   bool      m_cabacZeroWordPaddingEnabled;
-#if JVET_Z0120_SII_SEI_PROCESSING
   bool      m_ShutterFilterEnable;                          ///< enable Pre-Filtering with Shutter Interval SEI
   int       m_SII_BlendingRatio;
-#endif
 
   bool      m_gciPresentFlag;
   bool      m_onePictureOnlyConstraintFlag;
@@ -1243,13 +1241,11 @@ public:
   bool      getCabacZeroWordPaddingEnabled()           const { return m_cabacZeroWordPaddingEnabled;  }
   void      setCabacZeroWordPaddingEnabled(bool value)       { m_cabacZeroWordPaddingEnabled = value; }
 
-#if JVET_Z0120_SII_SEI_PROCESSING
   bool      getShutterFilterFlag()              const { return m_ShutterFilterEnable; }
   void      setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
 
   int       getBlendingRatioSII()             const { return m_SII_BlendingRatio; }
   void      setBlendingRatioSII(int value) { m_SII_BlendingRatio = value; }
-#endif
 
   //====== Coding Structure ========
   void      setIntraPeriod                  (int   i)        { m_intraPeriod = i;                   }

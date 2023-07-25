@@ -71,9 +71,7 @@ private:
   EncLib            m_cEncLib;                    ///< encoder class
   VideoIOYuv        m_cVideoIOYuvInputFile;       ///< input YUV file
   VideoIOYuv        m_cVideoIOYuvReconFile;       ///< output reconstruction file
-#if JVET_Z0120_SII_SEI_PROCESSING
   VideoIOYuv        m_cTVideoIOYuvSIIPreFile;      ///< output pre-filtered file
-#endif
   int               m_frameRcvd;   ///< number of received frames
   uint32_t          m_essentialBytes;
   uint32_t          m_totalBytes;

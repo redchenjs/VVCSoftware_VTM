@@ -574,10 +574,8 @@ static constexpr int CBF_MASK_CBCR = CBF_MASK_CB | CBF_MASK_CR;
 
 static const uint32_t MAX_NNPFA_ID =                               0xfffffffe; // Maximum supported nnpfa_id
 static const uint32_t MAX_NNPFC_ID =                               0xfffffffe; // Maximum supported nnpfc_id
-#if JVET_Z0120_SII_SEI_PROCESSING
 static constexpr double SII_PF_W2 =                                       0.6; // weight for current picture
 static constexpr double SII_PF_W1 =                                       0.4; // weight for previous picture , it must be equal to 1.0 - SII_PF_W2
-#endif
 // ====================================================================================================================
 // Macro functions
 // ====================================================================================================================
