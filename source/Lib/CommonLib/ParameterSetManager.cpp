@@ -87,6 +87,7 @@ bool ParameterSetManager::activatePPS(int ppsId, bool isIRAP)
         if(vps)
         {
           m_activeVPSId = vpsId;
+          m_vpsMap.clearActive();
           m_vpsMap.setActive(vpsId);
         }
         else
