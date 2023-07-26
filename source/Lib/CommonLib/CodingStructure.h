@@ -268,7 +268,7 @@ private:
 
   TCoeff *m_coeffs [ MAX_NUM_COMPONENT ];
   Pel    *m_pcmbuf [ MAX_NUM_COMPONENT ];
-  EnumArray<bool *, ChannelType> m_runType;
+  EnumArray<PLTRunMode*, ChannelType> m_runType;
   int     m_offsets[ MAX_NUM_COMPONENT ];
 
   MotionInfo *m_motionBuf;

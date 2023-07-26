@@ -1093,7 +1093,7 @@ TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType c
 
   TCoeff *coeffs[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
   Pel    *pcmbuf[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
-  EnumArray<bool *, ChannelType> runType;
+  EnumArray<PLTRunMode*, ChannelType> runType;
 
   for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(area.chromaFormat); chType++)
   {
@@ -1534,7 +1534,7 @@ void CodingStructure::createCoeffs(const bool isPLTused)
     {
       unsigned _area = area.block(chType).area();
 
-      m_runType[chType] = _area > 0 ? (bool *) xMalloc(bool, _area) : nullptr;
+      m_runType[chType] = _area > 0 ? (PLTRunMode*) xMalloc(PLTRunMode, _area) : nullptr;
     }
   }
 }
