@@ -1779,7 +1779,14 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
 #endif
     
+#if JVET_AE0060_COND_SIG_INF 
+    if (sei.m_outOrderIdc != 0)
+    {   
+      xWriteFlag(sei.m_chromaLocInfoPresentFlag, "nnpfc_chroma_loc_info_present_flag");
+    }
+#else
     xWriteFlag(sei.m_chromaLocInfoPresentFlag, "nnpfc_chroma_loc_info_present_flag");
+#endif
 
     if(sei.m_chromaLocInfoPresentFlag)
     {

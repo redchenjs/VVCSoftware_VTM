@@ -3046,7 +3046,21 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     }
 #endif
 
-    sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_chroma_loc_info_present_flag");
+#if JVET_AE0060_COND_SIG_INF
+    if (sei.m_outOrderIdc != 0)
+    {
+      sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_chroma_loc_info_present_flag");
+      sei.m_chromaLocInfoPresentFlag = val;
+    }
+    else
+    {
+      sei.m_chromaLocInfoPresentFlag = 0;
+    }
+#else
+      sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_chroma_loc_info_present_flag");
+      sei.m_chromaLocInfoPresentFlag = val;
+#endif
+
     sei.m_chromaLocInfoPresentFlag = val;
     CHECK((sei.m_outColourFormatIdc != ChromaFormat::_420) && sei.m_chromaLocInfoPresentFlag, "When nnpfc_out_colour_format_idc is not equal to 1, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0");
     CHECK((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) && sei.m_chromaLocInfoPresentFlag,"When colourizationFlag is equal to 0, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0")
