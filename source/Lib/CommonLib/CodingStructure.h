@@ -264,9 +264,11 @@ private:
   PelStorage m_reco;
   PelStorage m_orgr;
 
-  TCoeff *m_coeffs [ MAX_NUM_COMPONENT ];
-  Pel    *m_pcmbuf [ MAX_NUM_COMPONENT ];
-  EnumArray<PLTRunMode*, ChannelType> m_runType;
+  std::vector<TCoeff> m_coeffs[MAX_NUM_COMPONENT];
+  std::vector<Pel>    m_pcmbuf[MAX_NUM_COMPONENT];
+
+  EnumArray<std::vector<PLTRunMode>, ChannelType> m_runType;
+
   int     m_offsets[ MAX_NUM_COMPONENT ];
 
   MotionInfo *m_motionBuf;
