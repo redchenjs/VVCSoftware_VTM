@@ -80,6 +80,8 @@
 
 #define JVET_AD0067_INCLUDE_SYNTAX                        1 // include nnpfc_full_range_flag syntax element in the nnpfc sei message when nnpfc_separate_colour_description_present_flag is equal to 1 and when nnpfc_out_format_idc is equal to 1.
 
+#define JVET_AE0057_MTT_ET                                1 // JVET-AE0057: MTT split modes early termination
+
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
 #define REUSE_CU_RESULTS_WITH_MULTIPLE_TUS                1
