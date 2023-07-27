@@ -1436,7 +1436,8 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
             || encTestmode.type == ETM_SPLIT_TT_H || encTestmode.type == ETM_SPLIT_TT_V)
         && partitioner.chType == ChannelType::LUMA)
     {
-      if (m_noSplitIntraRdCost > (120 - ((m_pcEncCfg->getBaseQP() - 22) * 4)) * 1000000)
+      int thresholdMTT = Clip3(0, MAX_INT, (120 - ((m_pcEncCfg->getBaseQP() - 22) * 4)) * 1000000);
+      if (m_noSplitIntraRdCost > thresholdMTT)
       {
         const PartSplit split = getPartSplit(encTestmode);
 

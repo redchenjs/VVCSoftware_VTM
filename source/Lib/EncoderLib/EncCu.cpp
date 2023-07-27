@@ -834,7 +834,7 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
       if (partitioner.currQtDepth == 1 && partitioner.currBtDepth == 0 && partitioner.currArea().lwidth() == 64
           && partitioner.currArea().lheight() == 64)
       {
-        if ((ChannelType(0) == ChannelType::LUMA)
+        if ((partitioner.chType == ChannelType::LUMA)
             && ((partitioner.currArea().Y().x + 63 < bestCS->picture->lwidth())
                 && (partitioner.currArea().Y().y + 63 < bestCS->picture->lheight())))
         {      
@@ -1218,7 +1218,7 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
       if (partitioner.currQtDepth == 1 && partitioner.currBtDepth == 0 && partitioner.currArea().lwidth() == 64
           && partitioner.currArea().lheight() == 64)
       {
-        if ((ChannelType(0) == ChannelType::LUMA)
+        if ((partitioner.chType == ChannelType::LUMA)
             && ((partitioner.currArea().Y().x + 63 < bestCS->picture->lwidth())
                 && (partitioner.currArea().Y().y + 63 < bestCS->picture->lheight())))
         {
