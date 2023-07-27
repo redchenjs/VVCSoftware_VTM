@@ -1803,6 +1803,14 @@ void InterPrediction::xDmvrInitialMc(const PredictionUnit &pu, const ClpRngs &cl
   }
 }
 
+#if JVET_AD0045
+static constexpr int ACTIVITY_TH[MAX_QP + 1] = {
+  0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  5,  5,  6,  6,
+  7,  7,  8,  9,  9,  10, 10, 11, 12, 13, 13, 14, 15, 16, 17, 18, 18, 19, 20, 21, 22, 23,
+  24, 25, 26, 27, 29, 30, 31, 32, 33, 34, 36, 36, 36, 36, 37, 37, 37, 37, 37, 37,
+};
+#endif
+
 void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, const ClpRngs &clpRngs,
                                    const bool applyBdof)
 {
@@ -1886,39 +1894,25 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
                                 PelBuf(m_acYuvPred[l][COMPONENT_Cr], pcYuvDst.Cr()));
     srcPred[l] = srcPred[l].subBuf(UnitAreaRelative(pu, subPu));
   }
+
 #if JVET_AD0045
-  int xx = -1;
-  int yy = -1;
-  static const int ACTIVITY_TH[MAX_QP + 1] =
-  {
-    0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 9, 9, 10, 10, 11, 12, 13, 13, 14, 15, 16, 17, 18, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32, 33, 34, 36, 36, 36, 36, 37, 37, 37, 37, 37, 37
-  };
-  int spatActivity[2];
-  bool riskArtifact = false;
-  int boundaryDiffHorEdge;
-  int boundaryDiffVerEdge;
-  int xmax = pu.lumaSize().width / DMVR_SUBCU_WIDTH;
-  int mvThreshold = 28; // subblock motion difference threshold
-  int spatActivityThreshold = ACTIVITY_TH[pu.cu->qp];
-  int boundaryDiffThreshold = 10; //subblock boundary activity threshold
-  if ((pu.cu->slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR) && pu.cu->slice->getSPS()->getGOPBasedRPREnabledFlag()) // corresponds to encoding in 1/2 reduced resolution when GOP based RPR is used
-  {
-    boundaryDiffThreshold = 5;
-  }
+  bool      riskArtifact          = false;
+  const int widthInSubPu          = pu.lumaSize().width / DMVR_SUBCU_WIDTH;
+  const int spatActivityThreshold = ACTIVITY_TH[std::max<int>(0, pu.cu->qp)];
+
+  // subblock boundary activity threshold
+  // corresponds to encoding in 1/2 reduced resolution when GOP based RPR is used
+  const int boundaryDiffThreshold =
+    pu.cu->slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR && pu.cu->slice->getSPS()->getGOPBasedRPREnabledFlag() ? 5
+                                                                                                                : 10;
 #endif
 
   int subPuIdx = 0;
 
   for (int yStart = 0; yStart < pu.lumaSize().height; yStart += dy)
   {
-#if JVET_AD0045
-    yy++;
-#endif
     for (int xStart = 0; xStart < pu.lumaSize().width; xStart += dx)
     {
-#if JVET_AD0045
-      xx++;
-#endif
       const int x = puPos.x + xStart;
       const int y = puPos.y + yStart;
 
@@ -1929,33 +1923,37 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
       xDmvrPrefetch(subPu, true);
 
       xDmvrInitialMc(subPu, clpRngs);
+
 #if JVET_AD0045
-      if (xDmvrGetEncoderCheckFlag())
+      bool checkDmvr = xDmvrGetEncoderCheckFlag() && xStart != 0 && yStart != 0;
+      if (checkDmvr)
       {
-        for (int theRef = 0; theRef < 2; theRef++)
+        checkDmvr = false;
+
+        CHECK(dx != DMVR_SUBCU_WIDTH, "bad subblock width");
+        CHECK(dy != DMVR_SUBCU_HEIGHT, "bad subblock height");
+
+        for (int listIdx = 0; listIdx < NUM_REF_PIC_LIST_01; listIdx++)
         {
           int blkSumAct = 0;
-          int numSample = 0;
 
-          const ptrdiff_t blkStride = m_dmvrInitialPred[theRef].stride;
-          const Pel* piOrg = m_dmvrInitialPred[theRef].buf;
+          const ptrdiff_t blkStride = m_dmvrInitialPred[listIdx].stride;
+          const Pel*      org       = m_dmvrInitialPred[listIdx].buf;
 
-          piOrg += blkStride; // start from the second row
           for (int row = 1; row < DMVR_SUBCU_HEIGHT; row++)
           {
             for (int col = 1; col < DMVR_SUBCU_WIDTH; col++)
             {
-              int horAct = std::abs(piOrg[col] - piOrg[col - 1]);
-              int verAct = std::abs(piOrg[col] - piOrg[col - blkStride]);
-
-              blkSumAct += horAct;
-              blkSumAct += verAct;
-              numSample++;
+              blkSumAct += std::abs(org[row * blkStride + col] - org[row * blkStride + col - 1]);
+              blkSumAct += std::abs(org[row * blkStride + col] - org[row * blkStride + col - blkStride]);
             }
-            piOrg += blkStride;
           }
-          int avgSampleAct = int((double)blkSumAct / numSample);
-          spatActivity[theRef] = avgSampleAct;
+
+          if (blkSumAct / ((DMVR_SUBCU_WIDTH - 1) * (DMVR_SUBCU_HEIGHT - 1)) < spatActivityThreshold)
+          {
+            checkDmvr = true;
+            break;
+          }
         }
       }
 #endif
@@ -2015,67 +2013,42 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
                        subPu.cu->slice->getSPS()->getBitDepths(), subPu.cu->slice->clpRngs(), applyBdofSubPu, false,
                        false, nullptr);
 #if JVET_AD0045
-      if (xDmvrGetEncoderCheckFlag())
+      if (checkDmvr)
       {
+        checkDmvr = false;
+
+        const ptrdiff_t blkStride = pcYuvDst.bufs[COMPONENT_Y].stride;
+        const Pel*      org       = subPredBuf.bufs[COMPONENT_Y].buf;
+
         // check boundary diff above
-        if (yy != 0) // omit check for block boundary
-        {
-          int blkSumAct = 0;
-          int numSample = 0;
+        int blkSumAct = 0;
 
-          const ptrdiff_t blkStride = pcYuvDst.bufs[COMPONENT_Y].stride;
-          const Pel* piOrg = subPredBuf.bufs[COMPONENT_Y].buf;
-          for (int row = 0; row < 1; row++)
-          {
-            for (int col = 0; col < DMVR_SUBCU_WIDTH; col++)
-            {
-              int verAct = std::abs(piOrg[col] - piOrg[col - blkStride]);
-              blkSumAct += verAct;
-              numSample++;
-            }
-            piOrg += blkStride;
-          }
-          int avgSampleAct = int((double)blkSumAct / numSample);
-          boundaryDiffHorEdge = avgSampleAct;
-        }
-        else
+        for (int col = 0; col < DMVR_SUBCU_WIDTH; col++)
         {
-          boundaryDiffHorEdge = 0;
+          blkSumAct += std::abs(org[col] - org[col - blkStride]);
         }
-        // check boundary diff left
-        // vertical edge
-        if (xx != 0) // omit check for block boundary
-        {
-          int blkSumAct = 0;
-          int numSample = 0;
+        checkDmvr = blkSumAct / DMVR_SUBCU_WIDTH > boundaryDiffThreshold;
 
-          const ptrdiff_t  blkStride = pcYuvDst.bufs[COMPONENT_Y].stride;
-          const Pel* piOrg = subPredBuf.bufs[COMPONENT_Y].buf;
+        if (!checkDmvr)
+        {
           // check boundary diff left
+          blkSumAct = 0;
+
           for (int row = 0; row < DMVR_SUBCU_HEIGHT; row++)
           {
-            for (int col = 0; col < 1; col++)
-            {
-              int horAct = std::abs(piOrg[col] - piOrg[col - 1]);
-              blkSumAct += horAct;
-              numSample++;
-            }
-            piOrg += blkStride;
+            blkSumAct += std::abs(org[row * blkStride] - org[row * blkStride - 1]);
           }
-          int avgSampleAct = int((double)blkSumAct / numSample);
-          boundaryDiffVerEdge = avgSampleAct;
+          checkDmvr = blkSumAct / DMVR_SUBCU_HEIGHT > boundaryDiffThreshold;
         }
-        else
+
+        if (checkDmvr)
         {
-          boundaryDiffVerEdge = 0;
-        }
-        if (xx > 0 && yy > 0)
-        {
-          int theMvDiffX = abs(pu.mvdL0SubPu[xx + yy * xmax].getHor() - pu.mvdL0SubPu[xx - 1 + yy * xmax].getHor());
-          int theMvDiffY = abs(pu.mvdL0SubPu[xx + yy * xmax].getVer() - pu.mvdL0SubPu[xx - 1 + yy * xmax].getVer());
-          int theMvDiffX2 = abs(pu.mvdL0SubPu[xx + yy * xmax].getHor() - pu.mvdL0SubPu[xx + (yy - 1) * xmax].getHor());
-          int theMvDiffY2 = abs(pu.mvdL0SubPu[xx + yy * xmax].getVer() - pu.mvdL0SubPu[xx + (yy - 1) * xmax].getVer());
-          if ((theMvDiffX >= mvThreshold || theMvDiffY >= mvThreshold || theMvDiffX2 >= mvThreshold || theMvDiffY2 >= mvThreshold) && ((spatActivity[0] < spatActivityThreshold) || (spatActivity[1] < spatActivityThreshold)) && ((boundaryDiffVerEdge > boundaryDiffThreshold) || (boundaryDiffHorEdge > boundaryDiffThreshold)))
+          constexpr int MV_THRESHOLD = 28;   // subblock motion difference threshold
+
+          if (abs(pu.mvdL0SubPu[subPuIdx].hor - pu.mvdL0SubPu[subPuIdx - 1].hor) >= MV_THRESHOLD
+              || abs(pu.mvdL0SubPu[subPuIdx].ver - pu.mvdL0SubPu[subPuIdx - 1].ver) >= MV_THRESHOLD
+              || abs(pu.mvdL0SubPu[subPuIdx].hor - pu.mvdL0SubPu[subPuIdx - widthInSubPu].hor) >= MV_THRESHOLD
+              || abs(pu.mvdL0SubPu[subPuIdx].ver - pu.mvdL0SubPu[subPuIdx - widthInSubPu].ver) >= MV_THRESHOLD)
           {
             riskArtifact = true;
           }
@@ -2084,9 +2057,6 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
 #endif
       subPuIdx++;
     }
-#if JVET_AD0045
-    xx = -1;
-#endif
   }
 #if JVET_AD0045
   if (xDmvrGetEncoderCheckFlag())
