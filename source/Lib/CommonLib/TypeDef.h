@@ -59,6 +59,7 @@
 //########### place macros to be removed in next cycle below this line ###############
 
 #define JVET_AE0060_COND_SIG_INF                          1 // signal nnpfc_chroma_loc_info_present_flag only when nnpfc_out_order_idc is not equal to 0 and infer nnpfc_chroma_loc_info_present_flag to be equal to 0 when not present.
+#define JVET_AE0057_MTT_ET                                1 // JVET-AE0057: MTT split modes early termination
 
 //########### place macros to be be kept below this line ###############
 

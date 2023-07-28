@@ -1424,6 +1424,37 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
 {
   ComprCUCtx& cuECtx = m_ComprCUCtxList.back();
 
+#if JVET_AE0057_MTT_ET
+  if (m_pcEncCfg->getUseMttSkip() && partitioner.currQtDepth == 1 && partitioner.currBtDepth == 0
+      && partitioner.currArea().lwidth() == 64
+      && partitioner.currArea().lheight() == 64)
+  {
+    if (((partitioner.currArea().Y().x + 63 < cs.picture->lwidth())
+         && (partitioner.currArea().Y().y + 63 < cs.picture->lheight()))
+
+        && (encTestmode.type == ETM_SPLIT_BT_H || encTestmode.type == ETM_SPLIT_BT_V
+            || encTestmode.type == ETM_SPLIT_TT_H || encTestmode.type == ETM_SPLIT_TT_V)
+        && partitioner.chType == ChannelType::LUMA)
+    {
+      int thresholdMTT = Clip3(0, MAX_INT, (120 - ((m_pcEncCfg->getBaseQP() - 22) * 4)) * 1000000);
+      if (m_noSplitIntraRdCost > thresholdMTT)
+      {
+        const PartSplit split = getPartSplit(encTestmode);
+
+        if (split == CU_HORZ_SPLIT)
+        {
+          cuECtx.set(DID_HORZ_SPLIT, false);
+        }
+        if (split == CU_VERT_SPLIT)
+        {
+          cuECtx.set(DID_VERT_SPLIT, false);
+        }
+        return false;
+      }
+    }
+  }
+#endif
+
   // Fast checks, partitioning depended
   if (cuECtx.isHashPerfectMatch && encTestmode.type != ETM_MERGE_SKIP && encTestmode.type != ETM_INTER_ME)
   {
