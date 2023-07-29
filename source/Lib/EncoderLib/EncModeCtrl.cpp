@@ -843,20 +843,20 @@ void BestEncInfoCache::init( const Slice &slice )
   m_pPcmBuf = new Pel   [numCoeff*MAX_NUM_TUS];
   if (slice.getSPS()->getPLTMode())
   {
-    m_runType   = new bool[numCoeff*MAX_NUM_TUS];
+    m_runType = new PLTRunMode[numCoeff * MAX_NUM_TUS];
   }
 #else
   m_pCoeff  = new TCoeff[numCoeff];
   m_pPcmBuf = new Pel   [numCoeff];
   if (slice.getSPS()->getPLTMode())
   {
-    m_runType   = new bool[numCoeff];
+    m_runType = new PLTRunMode[numCoeff];
   }
 #endif
 
   TCoeff *coeffPtr = m_pCoeff;
   Pel    *pcmPtr   = m_pPcmBuf;
-  bool   *runTypePtr   = m_runType;
+  PLTRunMode* runTypePtr = m_runType;
   m_dummyCS.pcv = m_slice_bencinf->getPPS()->pcv;
 
   for( unsigned x = 0; x < numPos; x++ )
@@ -871,7 +871,7 @@ void BestEncInfoCache::init( const Slice &slice )
           {
             TCoeff *coeff[MAX_NUM_TBLOCKS] = { 0, };
             Pel    *pcmbf[MAX_NUM_TBLOCKS] = { 0, };
-            EnumArray<bool *, ChannelType> runType;
+            EnumArray<PLTRunMode*, ChannelType> runType;
             runType.fill(nullptr);
 
 #if REUSE_CU_RESULTS_WITH_MULTIPLE_TUS

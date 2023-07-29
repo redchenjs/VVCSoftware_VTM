@@ -595,7 +595,7 @@ unsigned CtxAffineFlag( const CodingUnit& cu );
 unsigned CtxPredModeFlag( const CodingUnit& cu );
 unsigned CtxIBCFlag(const CodingUnit& cu);
 unsigned CtxMipFlag   ( const CodingUnit& cu );
-unsigned CtxPltCopyFlag( const unsigned prevRunType, const unsigned dist );
+unsigned CtxPltCopyFlag(PLTRunMode prevRunType, const unsigned dist);
 }
 
 #endif // __CONTEXTMODELLING__

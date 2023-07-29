@@ -1072,11 +1072,11 @@ struct ScalingRatio
   bool operator!=(const ScalingRatio &s) const { return x != s.x || y != s.y; }
 };
 
-enum PLTRunMode
+enum class PLTRunMode : uint8_t
 {
-  PLT_RUN_INDEX = 0,
-  PLT_RUN_COPY  = 1,
-  NUM_PLT_RUN   = 2
+  INDEX = 0,
+  COPY,
+  NUM
 };
 
 struct LutModel

@@ -758,7 +758,7 @@ void TransformUnit::initData()
   m_chromaResScaleInv = 0;
 }
 
-void TransformUnit::init(TCoeff **coeffs, Pel **pcmbuf, EnumArray<bool *, ChannelType> &runType)
+void TransformUnit::init(TCoeff** coeffs, Pel** pcmbuf, EnumArray<PLTRunMode*, ChannelType>& runType)
 {
   uint32_t numBlocks = getNumberValidTBlocks(*cs->pcv);
 
@@ -873,7 +873,7 @@ const CPLTtypeBuf TransformUnit::getrunType(const ChannelType id) const
 const CPLTescapeBuf TransformUnit::getescapeValue(const ComponentID id) const { return CPLTescapeBuf(m_coeffs[id], blocks[id]); }
 
       Pel*          TransformUnit::getPLTIndex   (const ComponentID id)       { return  m_pcmbuf[id];    }
-      bool         *TransformUnit::getRunTypes(const ChannelType id) { return m_runType[id]; }
+      PLTRunMode*   TransformUnit::getRunTypes(const ChannelType id) { return m_runType[id]; }
 
       void TransformUnit::checkTuNoResidual(unsigned idx)
       {

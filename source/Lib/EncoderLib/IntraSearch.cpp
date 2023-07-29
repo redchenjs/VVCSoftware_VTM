@@ -2132,12 +2132,12 @@ void IntraSearch::deriveIndexMap(CodingStructure &cs, Partitioner &partitioner, 
 
   int   total     = height*width;
   Pel  *runIndex = tu.getPLTIndex(compBegin);
-  bool *runType   = tu.getRunTypes(toChannelType(compBegin));
+  PLTRunMode* runType   = tu.getRunTypes(toChannelType(compBegin));
   m_scanOrder = g_scanOrder[SCAN_UNGROUPED][pltScanMode ? CoeffScanType::TRAV_VER : CoeffScanType::TRAV_HOR][gp_sizeIdxInfo->idxFrom(width)][gp_sizeIdxInfo->idxFrom(height)];
 // Trellis initialization
   for (int i = 0; i < 2; i++)
   {
-    memset(m_prevRunTypeRDOQ[i], 0, sizeof(Pel)*NUM_TRELLIS_STATE);
+    std::fill_n(m_prevRunTypeRDOQ[i], NUM_TRELLIS_STATE, PLTRunMode::INDEX);
     memset(m_prevRunPosRDOQ[i],  0, sizeof(int)*NUM_TRELLIS_STATE);
     memset(m_stateCostRDOQ[i],  0, sizeof (double)*NUM_TRELLIS_STATE);
   }
@@ -2150,13 +2150,13 @@ void IntraSearch::deriveIndexMap(CodingStructure &cs, Partitioner &partitioner, 
   BinFracBits fracBitsPltCopyFlagIndex[RUN_IDX_THRE + 1];
   for (int dist = 0; dist <= RUN_IDX_THRE; dist++)
   {
-    const unsigned  ctxId = DeriveCtx::CtxPltCopyFlag(PLT_RUN_INDEX, dist);
+    const unsigned ctxId           = DeriveCtx::CtxPltCopyFlag(PLTRunMode::INDEX, dist);
     fracBitsPltCopyFlagIndex[dist] = fracBits.getFracBitsArray(Ctx::IdxRunModel( ctxId ) );
   }
   BinFracBits fracBitsPltCopyFlagAbove[RUN_IDX_THRE + 1];
   for (int dist = 0; dist <= RUN_IDX_THRE; dist++)
   {
-    const unsigned  ctxId = DeriveCtx::CtxPltCopyFlag(PLT_RUN_COPY, dist);
+    const unsigned ctxId           = DeriveCtx::CtxPltCopyFlag(PLTRunMode::COPY, dist);
     fracBitsPltCopyFlagAbove[dist] = fracBits.getFracBitsArray(Ctx::CopyRunModel( ctxId ) );
   }
   const BinFracBits fracBitsPltRunType = fracBits.getFracBitsArray( Ctx::RunTypeFlag() );
@@ -2190,7 +2190,7 @@ void IntraSearch::deriveIndexMap(CodingStructure &cs, Partitioner &partitioner, 
     }
   }
 
-  bool    checkRunTable[MAX_CU_BLKSIZE_PLT * MAX_CU_BLKSIZE_PLT];
+  PLTRunMode checkRunTable[MAX_CU_BLKSIZE_PLT * MAX_CU_BLKSIZE_PLT];
   uint8_t checkIndexTable[MAX_CU_BLKSIZE_PLT*MAX_CU_BLKSIZE_PLT];
   uint8_t bestStateTable [MAX_CU_BLKSIZE_PLT*MAX_CU_BLKSIZE_PLT];
   uint8_t nextState = bestState;
@@ -2210,7 +2210,7 @@ void IntraSearch::deriveIndexMap(CodingStructure &cs, Partitioner &partitioner, 
     if ( nextState == 0 ) // same as the previous
     {
       checkRunTable[rasterPos] = checkRunTable[ m_scanOrder[i - 1].idx ];
-      if ( checkRunTable[rasterPos] == PLT_RUN_INDEX )
+      if (checkRunTable[rasterPos] == PLTRunMode::INDEX)
       {
         checkIndexTable[rasterPos] = checkIndexTable[m_scanOrder[i - 1].idx];
       }
@@ -2221,12 +2221,12 @@ void IntraSearch::deriveIndexMap(CodingStructure &cs, Partitioner &partitioner, 
     }
     else if (nextState == 1) // CopyAbove mode
     {
-      checkRunTable[rasterPos] = PLT_RUN_COPY;
+      checkRunTable[rasterPos]   = PLTRunMode::COPY;
       checkIndexTable[rasterPos] = checkIndexTable[abovePos];
     }
     else if (nextState == 2) // Index mode
     {
-      checkRunTable[rasterPos] = PLT_RUN_INDEX;
+      checkRunTable[rasterPos]   = PLTRunMode::INDEX;
       checkIndexTable[rasterPos] = m_minErrorIndexMap[rasterPos];
     }
   }
@@ -2297,8 +2297,8 @@ bool IntraSearch::deriveSubblockIndexMap(CodingStructure &cs, Partitioner &parti
       double    minRdCost          = MAX_DOUBLE;
       int       minState           = 0; // best prevState
       uint8_t   bestRunIndex       = 0;
-      bool      bestRunType        = 0;
-      bool      bestPrevCodedType  = 0;
+      auto      bestRunType        = PLTRunMode::INDEX;
+      auto      bestPrevCodedType  = PLTRunMode::INDEX;
       int       bestPrevCodedPos   = 0;
       if ( ( curState == 0 && curPos == 0 ) || ( curState == 1 && aboveScanPos < 0 ) ) // state not available
       {
@@ -2306,15 +2306,15 @@ bool IntraSearch::deriveSubblockIndexMap(CodingStructure &cs, Partitioner &parti
         continue;
       }
 
-      bool    runType  = 0;
+      PLTRunMode runType  = PLTRunMode::INDEX;
       uint8_t runIndex = 0;
       if ( curState == 1 ) // 2nd state: Copy_Above mode
       {
-        runType = PLT_RUN_COPY;
+        runType = PLTRunMode::COPY;
       }
       else if ( curState == 2 ) // 3rd state: Index mode
       {
-        runType = PLT_RUN_INDEX;
+        runType  = PLTRunMode::INDEX;
         runIndex = m_minErrorIndexMap[currRasterPos];
       }
 
@@ -2328,13 +2328,14 @@ bool IntraSearch::deriveSubblockIndexMap(CodingStructure &cs, Partitioner &parti
         if ( curState == 0 ) // 1st state: same as previous scanned sample
         {
           runType = m_runMapRDOQ[refId][stateID][prevScanPos];
-          runIndex = ( runType == PLT_RUN_INDEX ) ? m_indexMapRDOQ[refId][stateID][ prevScanPos ] : m_indexMapRDOQ[refId][stateID][ aboveScanPos ];
+          runIndex = (runType == PLTRunMode::INDEX) ? m_indexMapRDOQ[refId][stateID][prevScanPos]
+                                                    : m_indexMapRDOQ[refId][stateID][aboveScanPos];
         }
         else if ( curState == 1 ) // 2nd state: Copy_Above mode
         {
           runIndex = m_indexMapRDOQ[refId][stateID][aboveScanPos];
         }
-        bool    prevRunType   = m_runMapRDOQ[refId][stateID][prevScanPos];
+        PLTRunMode prevRunType   = m_runMapRDOQ[refId][stateID][prevScanPos];
         uint8_t prevRunIndex  = m_indexMapRDOQ[refId][stateID][prevScanPos];
         uint8_t aboveRunIndex = (aboveScanPos >= 0) ? m_indexMapRDOQ[refId][stateID][aboveScanPos] : 0;
         int      dist = curPos - m_prevRunPosRDOQ[refId][stateID] - 1;
@@ -2345,9 +2346,10 @@ bool IntraSearch::deriveSubblockIndexMap(CodingStructure &cs, Partitioner &parti
         }
 
 // Calculate Rd cost
-        bool prevCodedRunType = m_prevRunTypeRDOQ[refId][stateID];
+        PLTRunMode         prevCodedRunType = m_prevRunTypeRDOQ[refId][stateID];
         int  prevCodedPos     = m_prevRunPosRDOQ [refId][stateID];
-        const BinFracBits* fracBitsPt = (m_prevRunTypeRDOQ[refId][stateID] == PLT_RUN_INDEX) ? fracBitsPltIndexINDEX : fracBitsPltIndexCOPY;
+        const BinFracBits* fracBitsPt =
+          (m_prevRunTypeRDOQ[refId][stateID] == PLTRunMode::INDEX) ? fracBitsPltIndexINDEX : fracBitsPltIndexCOPY;
         rdCost += rateDistOptPLT(runType, runIndex, prevRunType, prevRunIndex, aboveRunIndex, prevCodedRunType, prevCodedPos, curPos, (pltScanMode == PLT_SCAN_HORTRAV) ? width : height, dist, indexMaxValue, fracBitsPt, fracBitsPltRunType);
         if (rdCost < minRdCost) // update minState ( minRdCost )
         {
@@ -2366,7 +2368,7 @@ bool IntraSearch::deriveSubblockIndexMap(CodingStructure &cs, Partitioner &parti
       m_statePtRDOQ[curState][currRasterPos] = minState;
       int buffer2update = std::min(buffersize, curPos);
       memcpy(m_indexMapRDOQ[1 - refId][curState], m_indexMapRDOQ[refId][minState], sizeof(uint8_t)*buffer2update);
-      memcpy(m_runMapRDOQ[1 - refId][curState], m_runMapRDOQ[refId][minState], sizeof(bool)*buffer2update);
+      std::copy_n(m_runMapRDOQ[refId][minState], buffer2update, m_runMapRDOQ[1 - refId][curState]);
       m_indexMapRDOQ[1 - refId][curState][currScanPos] = bestRunIndex;
       m_runMapRDOQ  [1 - refId][curState][currScanPos] = bestRunType;
     }
@@ -2385,17 +2387,17 @@ bool IntraSearch::deriveSubblockIndexMap(CodingStructure &cs, Partitioner &parti
   return 1;
 }
 
-double IntraSearch::rateDistOptPLT(bool runType, uint8_t runIndex, bool prevRunType, uint8_t prevRunIndex,
-                                   uint8_t aboveRunIndex, bool &prevCodedRunType, int &prevCodedPos, int scanPos,
-                                   uint32_t width, int dist, int indexMaxValue, const BinFracBits *IndexfracBits,
-                                   const BinFracBits &TypefracBits)
+double IntraSearch::rateDistOptPLT(PLTRunMode runType, uint8_t runIndex, PLTRunMode prevRunType, uint8_t prevRunIndex,
+                                   uint8_t aboveRunIndex, PLTRunMode& prevCodedRunType, int& prevCodedPos, int scanPos,
+                                   uint32_t width, int dist, int indexMaxValue, const BinFracBits* IndexfracBits,
+                                   const BinFracBits& TypefracBits)
 {
   double rdCost = 0.0;
-  bool identityFlag = !( (runType != prevRunType) || ( (runType == PLT_RUN_INDEX) && (runIndex != prevRunIndex) ) );
+  bool   identityFlag = !((runType != prevRunType) || ((runType == PLTRunMode::INDEX) && (runIndex != prevRunIndex)));
 
-  if ( ( !identityFlag && runType == PLT_RUN_INDEX ) || scanPos == 0 ) // encode index value
+  if ((!identityFlag && runType == PLTRunMode::INDEX) || scanPos == 0)   // encode index value
   {
-    uint8_t refIndex = (prevRunType == PLT_RUN_INDEX) ? prevRunIndex : aboveRunIndex;
+    uint8_t refIndex = (prevRunType == PLTRunMode::INDEX) ? prevRunIndex : aboveRunIndex;
     refIndex = (scanPos == 0) ? ( indexMaxValue + 1) : refIndex;
     if ( runIndex == refIndex )
     {
@@ -2409,9 +2411,9 @@ double IntraSearch::rateDistOptPLT(bool runType, uint8_t runIndex, bool prevRunT
   {
     rdCost += m_pcRdCost->getLambda()*( identityFlag ? (IndexfracBits[(dist < RUN_IDX_THRE) ? dist : RUN_IDX_THRE].intBits[1]) : (IndexfracBits[(dist < RUN_IDX_THRE) ? dist : RUN_IDX_THRE].intBits[0] ) );
   }
-  if ( !identityFlag && scanPos >= width && prevRunType != PLT_RUN_COPY )
+  if (!identityFlag && scanPos >= width && prevRunType != PLTRunMode::COPY)
   {
-    rdCost += m_pcRdCost->getLambda()*TypefracBits.intBits[runType];
+    rdCost += m_pcRdCost->getLambda() * TypefracBits.intBits[runType == PLTRunMode::INDEX ? 0 : 1];
   }
   if (!identityFlag || scanPos == 0)
   {

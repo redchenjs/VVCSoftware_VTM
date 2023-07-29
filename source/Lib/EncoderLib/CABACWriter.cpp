@@ -1500,7 +1500,7 @@ void CABACWriter::cu_palette_info(const CodingUnit& cu, ComponentID compBegin, u
   }
 
   uint32_t prevRunPos = 0;
-  unsigned prevRunType = 0;
+  auto     prevRunType = PLTRunMode::INDEX;
   for (int subSetId = 0; subSetId <= (total - 1) >> LOG2_PALETTE_CG_SIZE; subSetId++)
   {
     cuPaletteSubblockInfo(cu, compBegin, numComp, subSetId, prevRunPos, prevRunType);
@@ -1508,7 +1508,8 @@ void CABACWriter::cu_palette_info(const CodingUnit& cu, ComponentID compBegin, u
   CHECK(cu.curPLTSize[compBegin] > maxPltSize, " Current palette size is larger than maximum palette size");
 }
 
-void CABACWriter::cuPaletteSubblockInfo(const CodingUnit& cu, ComponentID compBegin, uint32_t numComp, int subSetId, uint32_t& prevRunPos, unsigned& prevRunType)
+void CABACWriter::cuPaletteSubblockInfo(const CodingUnit& cu, ComponentID compBegin, uint32_t numComp, int subSetId,
+                                        uint32_t& prevRunPos, PLTRunMode& prevRunType)
 {
   const SPS&      sps = *(cu.cs->sps);
   TransformUnit&  tu  = *cu.firstTU;
@@ -1541,10 +1542,11 @@ void CABACWriter::cuPaletteSubblockInfo(const CodingUnit& cu, ComponentID compBe
     uint32_t posyprev = (curPos == 0) ? 0 : m_scanOrder[curPos - 1].y;
     uint32_t posxprev = (curPos == 0) ? 0 : m_scanOrder[curPos - 1].x;
     // encode runCopyFlag
-    bool identityFlag = !((runType.at(posx, posy) != runType.at(posxprev, posyprev))
-      || ((runType.at(posx, posy) == PLT_RUN_INDEX) && (curPLTIdx.at(posx, posy) != curPLTIdx.at(posxprev, posyprev))));
+    bool     identityFlag = !((runType.at(posx, posy) != runType.at(posxprev, posyprev))
+                          || ((runType.at(posx, posy) == PLTRunMode::INDEX)
+                              && (curPLTIdx.at(posx, posy) != curPLTIdx.at(posxprev, posyprev))));
 
-    const CtxSet&   ctxSet = (prevRunType == PLT_RUN_INDEX)? Ctx::IdxRunModel: Ctx::CopyRunModel;
+    const CtxSet& ctxSet = (prevRunType == PLTRunMode::INDEX) ? Ctx::IdxRunModel : Ctx::CopyRunModel;
     if ( curPos > 0 )
     {
       int dist = curPos - prevRunPos - 1;
@@ -1560,15 +1562,15 @@ void CABACWriter::cuPaletteSubblockInfo(const CodingUnit& cu, ComponentID compBe
       prevRunType = runType.at(posx, posy);
       if (((posy == 0) && !cu.useRotation[compBegin]) || ((posx == 0) && cu.useRotation[compBegin]))
       {
-        assert(runType.at(posx, posy) == PLT_RUN_INDEX);
+        assert(runType.at(posx, posy) == PLTRunMode::INDEX);
       }
-      else if (curPos != 0 && runType.at(posxprev, posyprev) == PLT_RUN_COPY)
+      else if (curPos != 0 && runType.at(posxprev, posyprev) == PLTRunMode::COPY)
       {
-        assert(runType.at(posx, posy) == PLT_RUN_INDEX);
+        assert(runType.at(posx, posy) == PLTRunMode::INDEX);
       }
       else
       {
-        m_binEncoder.encodeBin(runType.at(posx, posy), Ctx::RunTypeFlag());
+        m_binEncoder.encodeBin(runType.at(posx, posy) != PLTRunMode::INDEX ? 1 : 0, Ctx::RunTypeFlag());
       }
       DTRACE(g_trace_ctx, D_SYNTAX, "plt_type_flag() bin=%d sp=%d\n", runType.at(posx, posy), curPos);
     }
@@ -1582,7 +1584,7 @@ void CABACWriter::cuPaletteSubblockInfo(const CodingUnit& cu, ComponentID compBe
     {
       uint32_t posy = m_scanOrder[curPos].y;
       uint32_t posx = m_scanOrder[curPos].x;
-      if ( runCopyFlag[curPos - minSubPos] == 0 && runType.at(posx, posy) == PLT_RUN_INDEX)
+      if (runCopyFlag[curPos - minSubPos] == 0 && runType.at(posx, posy) == PLTRunMode::INDEX)
       {
         writePLTIndex(cu, curPos, curPLTIdx, runType, indexMaxSize, compBegin);
         DTRACE(g_trace_ctx, D_SYNTAX, "plt_idx_idc() value=%d sp=%d\n", curPLTIdx.at(posx, posy), curPos);
@@ -1670,7 +1672,7 @@ Pel CABACWriter::writePLTIndex(const CodingUnit& cu, uint32_t idx, PelBuf& palet
   {
     uint32_t prevposy = m_scanOrder[idx - 1].y;
     uint32_t prevposx = m_scanOrder[idx - 1].x;
-    if (paletteRunType.at(prevposx, prevposy) == PLT_RUN_INDEX)
+    if (paletteRunType.at(prevposx, prevposy) == PLTRunMode::INDEX)
     {
       Pel leftLevel = paletteIdx.at(prevposx, prevposy); // left index
       if (leftLevel == cu.curPLTSize[compBegin]) // escape mode

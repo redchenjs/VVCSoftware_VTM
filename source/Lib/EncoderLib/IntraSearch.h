@@ -402,9 +402,9 @@ protected:
   double*         m_indexError[MAXPLTSIZE + 1];
   uint8_t*        m_minErrorIndexMap; // store the best index in terms of distortion for each pixel
   uint8_t         m_indexMapRDOQ   [2][NUM_TRELLIS_STATE][2 * MAX_CU_BLKSIZE_PLT];
-  bool            m_runMapRDOQ     [2][NUM_TRELLIS_STATE][2 * MAX_CU_BLKSIZE_PLT];
+  PLTRunMode      m_runMapRDOQ[2][NUM_TRELLIS_STATE][2 * MAX_CU_BLKSIZE_PLT];
   uint8_t*        m_statePtRDOQ    [NUM_TRELLIS_STATE];
-  bool            m_prevRunTypeRDOQ[2][NUM_TRELLIS_STATE];
+  PLTRunMode      m_prevRunTypeRDOQ[2][NUM_TRELLIS_STATE];
   int             m_prevRunPosRDOQ [2][NUM_TRELLIS_STATE];
   double          m_stateCostRDOQ  [2][NUM_TRELLIS_STATE];
 public:
@@ -489,7 +489,10 @@ protected:
   void     deriveIndexMap(CodingStructure &cs, Partitioner &partitioner, ComponentID compBegin, uint32_t numComp,
                           PLTScanMode pltScanMode, double &cost, bool *idxExist);
   bool     deriveSubblockIndexMap(CodingStructure& cs, Partitioner& partitioner, ComponentID compBegin, PLTScanMode pltScanMode, int minSubPos, int maxSubPos, const BinFracBits& fracBitsPltRunType, const BinFracBits* fracBitsPltIndexINDEX, const BinFracBits* fracBitsPltIndexCOPY, const double minCost, bool useRotate);
-  double   rateDistOptPLT         (bool RunType, uint8_t RunIndex, bool prevRunType, uint8_t prevRunIndex, uint8_t aboveRunIndex, bool& prevCodedRunType, int& prevCodedRunPos, int scanPos, uint32_t width, int dist, int indexMaxValue, const BinFracBits* IndexfracBits, const BinFracBits& TypefracBits);
+  double   rateDistOptPLT(PLTRunMode RunType, uint8_t RunIndex, PLTRunMode prevRunType, uint8_t prevRunIndex,
+                          uint8_t aboveRunIndex, PLTRunMode& prevCodedRunType, int& prevCodedRunPos, int scanPos,
+                          uint32_t width, int dist, int indexMaxValue, const BinFracBits* IndexfracBits,
+                          const BinFracBits& TypefracBits);
   uint32_t getTruncBinBits(uint32_t symbol, uint32_t numSymbols);
   uint32_t getEpExGolombNumBins   (uint32_t symbol, uint32_t count);
 
