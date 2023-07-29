@@ -67,6 +67,7 @@ private:
   double m_mseYuvFrame[MAX_NUM_COMPONENT];   // sum of MSEs
   double m_upscaledPSNR[MAX_NUM_COMPONENT];
   double m_msssim[MAX_NUM_COMPONENT];
+  double m_upscaledMsssim[MAX_NUM_COMPONENT];
 
 #if EXTENSION_360_VIDEO
   TExt360EncAnalyze m_ext360;
@@ -82,7 +83,7 @@ public:
 
   void addResult(const double psnr[MAX_NUM_COMPONENT], double bits, const double mseYuvFrame[MAX_NUM_COMPONENT],
                  const double upscaledPSNR[MAX_NUM_COMPONENT], const double msssim[MAX_NUM_COMPONENT],
-                 bool isEncodeLtRef)
+                 const double upscaledMsssim[MAX_NUM_COMPONENT], bool isEncodeLtRef)
   {
     m_dAddBits  += bits;
     if (isEncodeLtRef)
@@ -95,6 +96,7 @@ public:
       m_mseYuvFrame[i] += mseYuvFrame[i];
       m_upscaledPSNR[i] += upscaledPSNR[i];
       m_msssim[i] += msssim[i];
+      m_upscaledMsssim[i] += upscaledMsssim[i];
     }
 
     m_picCount++;
@@ -134,6 +136,7 @@ public:
       m_mseYuvFrame[i]  = 0;
       m_upscaledPSNR[i] = 0;
       m_msssim[i] = 0;
+      m_upscaledMsssim[i] = 0;
     }
     m_picCount = 0;
 #if EXTENSION_360_VIDEO
@@ -317,6 +320,9 @@ public:
       addField("Y-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Y] / (double) getNumPic());
       addField("U-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Cb] / (double) getNumPic(), withchroma);
       addField("V-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Cr] / (double) getNumPic(), withchroma);
+      addField("Y-MS-SSIM2  ", "%-11.7lf ", m_upscaledMsssim[COMPONENT_Y] / (double) getNumPic());
+      addField("U-MS-SSIM2  ", "%-11.7lf ", m_upscaledMsssim[COMPONENT_Cb] / (double) getNumPic(), withchroma);
+      addField("V-MS-SSIM2  ", "%-11.7lf ", m_upscaledMsssim[COMPONENT_Cr] / (double) getNumPic(), withchroma);
     }
     header=headeross.str();
     metrics=metricoss.str();
