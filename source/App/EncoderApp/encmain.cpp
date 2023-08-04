@@ -76,6 +76,33 @@ static void printMacroSettings()
   }
 }
 
+#if JVET_Z0150_MEMORY_USAGE_PRINT
+#ifdef __linux
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+
+int getProcStatusValue(const char* key)
+{
+  FILE* file = fopen("/proc/self/status", "r");
+  int result = -1;
+  char line[128];
+
+  int len = strlen(key);
+  while (fgets(line, 128, file) != nullptr)
+  {
+    if (strncmp(line, key, len) == 0)
+    {
+      result = atoi(line+len);
+      break;
+    }
+  }
+  fclose(file);
+  return result;
+}
+#endif
+#endif
+
 // ====================================================================================================================
 // Main function
 // ====================================================================================================================
@@ -325,6 +352,15 @@ int main(int argc, char* argv[])
       encApp->applyNnPostFilter();
     }
   }
+
+#if JVET_Z0150_MEMORY_USAGE_PRINT
+#ifdef __linux
+  int vm = getProcStatusValue("VmPeak:");
+  int rm = getProcStatusValue("VmHWM:");
+  printf("\nMemory Usage: VmPeak= %d KB ( %.1f GiB ),  VmHWM= %d KB ( %.1f GiB )\n", vm, (double)vm/(1024*1024), rm, (double)rm/(1024*1024));
+#endif
+#endif
+
   // ending time
   clock_t endClock = clock();
   auto endTime = std::chrono::steady_clock::now();
