@@ -1390,7 +1390,7 @@ public:
   template<class InputIt>
   iterator        insert( const_iterator _pos, InputIt first, InputIt last )
                                                 { const difference_type numEl = last - first;
-                                                  CHECKD( _size + numEl >= N, "capacity exceeded" );
+                                                  CHECKD( _size + numEl > N, "capacity exceeded" );
                                                   for( difference_type i = _size - 1; i >= _pos - _arr; i-- ) _arr[i + numEl] = _arr[i];
                                                   iterator it = const_cast<iterator>( _pos ); _size += numEl;
                                                   while( first != last ) *it++ = *first++;
@@ -1398,7 +1398,7 @@ public:
 
   iterator        insert( const_iterator _pos, size_t numEl, const T& val )
                                                 { //const difference_type numEl = last - first;
-                                                  CHECKD( _size + numEl >= N, "capacity exceeded" );
+                                                  CHECKD( _size + numEl > N, "capacity exceeded" );
                                                   for( difference_type i = _size - 1; i >= _pos - _arr; i-- ) _arr[i + numEl] = _arr[i];
                                                   iterator it = const_cast<iterator>( _pos ); _size += numEl;
                                                   for ( int k = 0; k < numEl; k++) *it++ = val;
