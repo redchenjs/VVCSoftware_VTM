@@ -238,8 +238,8 @@ private:
   const EncCfg*          m_encCfg;
   AlfCovariance***       m_alfCovariance[MAX_NUM_COMPONENT];          // [compIdx][shapeIdx][ctbAddr][classIdx]
   EnumArray<AlfCovariance **, ChannelType> m_alfCovarianceFrame;   // [CHANNEL][shapeIdx][lumaClassIdx/chromaAltIdx]
-  AlfCovariance***       m_alfCovarianceCcAlf[2];           // [compIdx-1][shapeIdx][filterIdx][ctbAddr]
-  AlfCovariance**        m_alfCovarianceFrameCcAlf[2];      // [compIdx-1][shapeIdx][filterIdx]
+  AlfCovariance**                          m_alfCovarianceCcAlf[2];        // [compIdx-1][shapeIdx][ctbAddr]
+  AlfCovariance*                           m_alfCovarianceFrameCcAlf[2];   // [compIdx-1][shapeIdx]
 
   //for RDO
   AlfParam               m_alfParamTemp;
@@ -332,8 +332,8 @@ private:
                      int vbCTUHeight, int vbPos);
   void calcCovariance(Pel ELocal[MAX_NUM_ALF_LUMA_COEFF][MAX_ALF_NUM_CLIP_VALS], const Pel *rec, const ptrdiff_t stride,
                       const AlfFilterShape &shape, const int transposeIdx, const ChannelType channel, int vbDistance);
-  void   deriveStatsForCcAlfFiltering(const PelUnitBuf &orgYuv, const PelUnitBuf &recYuv, const int compIdx,
-                                      const int maskStride, const uint8_t filterIdc, CodingStructure &cs);
+  void   deriveStatsForCcAlfFiltering(const PelUnitBuf& orgYuv, const PelUnitBuf& recYuv, const int compIdx,
+                                      const int maskStride, CodingStructure& cs);
   void   getBlkStatsCcAlf(AlfCovariance &alfCovariance, const AlfFilterShape &shape, const PelUnitBuf &orgYuv,
                           const PelUnitBuf &recYuv, const UnitArea &areaDst, const UnitArea &area,
                           const ComponentID compID, const int yPos);
