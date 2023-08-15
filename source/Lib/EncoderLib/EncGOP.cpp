@@ -5142,7 +5142,8 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 
     ScalingRatio scalingRatio;
     // it is assumed that full resolution picture PPS has ppsId 0
-    const PPS* pps = m_pcEncLib->getPPS(0);
+    const PPS* pps = m_pcEncLib->getPPS(pcPic->layerId);
+
     CU::getRprScaling(&sps, pps, pcPic, scalingRatio);
 
     bool rescaleForDisplay = true;

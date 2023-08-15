@@ -549,17 +549,17 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
       }
       else
       {
-        if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR) // ScalingRatioHor/ScalingRatioVer
+        if (rpcSlice->getPPS()->getPPSId() == (ENC_PPS_ID_RPR + rpcSlice->getNalUnitLayerId())) // ScalingRatioHor/ScalingRatioVer
         {
           cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR());
           crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR());
         }
-        else if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2) // ScalingRatioHor2/ScalingRatioVer2
+        if (rpcSlice->getPPS()->getPPSId() == (ENC_PPS_ID_RPR2 + rpcSlice->getNalUnitLayerId())) // ScalingRatioHor/ScalingRatioVer
         {
           cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR2());
           crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR2());
         }
-        else if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3) // ScalingRatioHor3/ScalingRatioVer3
+        if (rpcSlice->getPPS()->getPPSId() == (ENC_PPS_ID_RPR3 + rpcSlice->getNalUnitLayerId())) // ScalingRatioHor/ScalingRatioVer
         {
           cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR3());
           crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR3());

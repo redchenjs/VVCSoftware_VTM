@@ -79,6 +79,7 @@ private:
   uint32_t                  m_codedPicCount;                      ///< number of coded pictures
   PicList&                  m_cListPic;                           ///< dynamic list of pictures
   int                       m_layerId;
+  int                       m_gopRprPpsId;
 
   // encoder search
   InterSearch               m_cInterSearch;                       ///< encoder search class
@@ -146,7 +147,6 @@ public:
   const RPLList            *getRplList(RefPicList l) const { return &m_rplLists[l]; }
   RPLList                  *getRplList(RefPicList l) { return &m_rplLists[l]; }
   uint32_t                  getNumRpl(RefPicList l) const { return m_rplLists[l].getNumberOfReferencePictureLists(); }
-  int                       m_gopRprPpsId;
   bool                      m_rprPPSCodedAfterIntraList[NUM_RPR_PPS]; // 4 resolutions, full, 5/6, 2/3 and 1/2
   bool                      m_refLayerRescaledAvailable;
 protected:

@@ -1925,20 +1925,21 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         int ppsID = layerId;
         if ((m_gopBasedRPREnabledFlag && (m_cEncLib.getBaseQP() >= m_cEncLib.getGOPBasedRPRQPThreshold())) || m_rprFunctionalityTestingEnabledFlag)
         {
-          const PPS& pps1 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR);
-          const PPS& pps2 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR2);
-          const PPS& pps3 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR3);
+          const PPS& pps1 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR + layerId);
+          const PPS& pps2 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR2 + layerId);
+          const PPS& pps3 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR3 + layerId);
+
           if (pps1.getPicWidthInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).width && pps1.getPicHeightInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).height)
           {
-            ppsID = ENC_PPS_ID_RPR;
+            ppsID = ENC_PPS_ID_RPR + layerId;
           }
           else if (pps2.getPicWidthInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).width && pps2.getPicHeightInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).height)
           {
-            ppsID = ENC_PPS_ID_RPR2;
+            ppsID = ENC_PPS_ID_RPR2 + layerId;
           }
           else if (pps3.getPicWidthInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).width && pps3.getPicHeightInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).height)
           {
-            ppsID = ENC_PPS_ID_RPR3;
+            ppsID = ENC_PPS_ID_RPR3 + layerId;
           }
           else
           {
@@ -1947,7 +1948,7 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         }
         else
         {
-          ppsID = (sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) ? ENC_PPS_ID_RPR : layerId;
+          ppsID = (sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) ? (ENC_PPS_ID_RPR + layerId) : layerId;
         }
         const PPS& pps = *m_cEncLib.getPPS(ppsID);
         if( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() )
