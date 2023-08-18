@@ -2807,8 +2807,13 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     std::string val2;
     while (!isByteAligned())
     {
+#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
+      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_alignment_zero_bit");
+      CHECK(val != 0, "nnpfc_alignment_zero_bit not equal to zero");
+#else
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_reserved_zero_bit");
       CHECK(val != 0, "nnpfc_reserved_zero_bit not equal to zero");
+#endif
     }
 
     sei_read_string(pDecodedMessageOutputStream, val2, "nnpfc_uri_tag");
@@ -2853,7 +2858,11 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       bool atLeastOne = false;
       for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; i++)
       {
+#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
+        sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_input_pic_filtering_flag");
+#else
         sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_input_pic_output_flag");
+#endif
         sei.m_inputPicOutputFlag.push_back((bool)val);
         if (sei.m_inputPicOutputFlag[i])
         {
@@ -2863,7 +2872,11 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       }
       if ((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) == 0)
       {
+#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
+        CHECK(!atLeastOne, "When picRateUpsamplingFlag is equal to 0 and nnpfc_num_input_pics_minus1 is greater than 0, at least one value of nnpfc_input_pic_filtering_flag[i] shall be greater than 0");
+#else
         CHECK(!atLeastOne, "When picRateUpsamplingFlag is equal to 0 and nnpfc_num_input_pics_minus1 is greater than 0, at least one value of nnpfc_input_pic_output_flag[i] shall be greater than 0");
+#endif
       }
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_absent_input_pic_zero_flag");
       sei.m_absentInputPicZeroFlag = val;
@@ -3163,8 +3176,13 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
   {
     while (!isByteAligned())
     {
+#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
+      sei_read_flag( pDecodedMessageOutputStream,   val,    "nnpfc_alignment_zero_bit");
+      CHECK (val != 0, "nnpfc_alignment_zero_bit not equal to zero");
+#else
       sei_read_flag( pDecodedMessageOutputStream,   val,    "nnpfc_reserved_zero_bit");
       CHECK (val != 0, "nnpfc_reserved_zero_bit not equal to zero");
+#endif
     }
 
     int payloadBytesRemaining = getBitstream()->getNumBitsLeft() / 8;
@@ -3199,10 +3217,18 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
 
   if(!sei.m_cancelFlag)
   {
+#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
+    sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_persistence_flag" );
+    sei.m_persistenceFlag = val;
+    sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_target_base_flag" );
+    sei.m_targetBaseFlag = val;
+#else
     sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_target_base_flag" );
     sei.m_targetBaseFlag = val;
     sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_persistence_flag" );
     sei.m_persistenceFlag = val;
+#endif
+
     sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_num_output_entries" );
     uint32_t numOutputEntries = val;
     sei.m_outputFlag.resize(numOutputEntries);
