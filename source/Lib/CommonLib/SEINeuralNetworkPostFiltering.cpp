@@ -104,6 +104,20 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
         || picType == NAL_UNIT_CODED_SLICE_CRA || picType == NAL_UNIT_CODED_SLICE_GDR)
     {
       m_clvsNnpfcSEIs = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
+
+#if JVET_AE0142_NNPF_CONSTRAINT_BUGFIXES
+      for (std::list<SEI*>::iterator it = m_clvsNnpfcSEIs.begin(); it != m_clvsNnpfcSEIs.end(); it++)
+      {
+        SEINeuralNetworkPostFilterCharacteristics *nnpfcSEI = (SEINeuralNetworkPostFilterCharacteristics*)(*it);
+        for (std::list<SEI*>::iterator it2 = it; it2 != m_clvsNnpfcSEIs.end(); it2++)
+        {
+          SEINeuralNetworkPostFilterCharacteristics *nnpfcSEI2 = (SEINeuralNetworkPostFilterCharacteristics*)(*it2);
+
+          CHECK(nnpfcSEI->m_id == nnpfcSEI2->m_id && nnpfcSEI->m_purpose != nnpfcSEI2->m_purpose, "All NNPFC SEI messages with a particular value of nnpfc_id within a CLVS shall have the same value of nnpfc_purpose.");
+        }
+      }
+#endif
+
       m_isNnpfActiveForCLVS.clear();
     }
 
@@ -364,7 +378,11 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
           {
             inputPic[i]         = inputPic[i - 1];
             inputPresentFlag[i] = false;
+#if JVET_AE0142_NNPF_CONSTRAINT_BUGFIXES
+            CHECK( pictureRateUpsamplingFlag && currNnpfc->m_numberInterpolatedPictures[i - 1] > 0, "It is a requirement of bitstream conformance that when PictureRateUpsamplingFlag is equal to 1, nnpfc_interpolated_pics[i - 1] shall not be greater than 0");
+#else
             CHECK(currNnpfc->m_numberInterpolatedPictures[i] > 0, "It is a requirement of bitstream conformance that nnpfc_interpolated_pics[i - 1] shall not be greater than 0");
+#endif
           }
         }
       }
