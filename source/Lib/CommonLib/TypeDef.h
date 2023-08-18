@@ -65,6 +65,8 @@
 
 #define JVET_AE0141_NNPFC_BUGFIX_COLOURIZATION            1  // JVET-AE0141: Fix a bug in NNPFC SEI message for colourization
 
+#define JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT   1  // JVET_AE0135 item2: On NNPF picture rate upsampling constraint
+
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
