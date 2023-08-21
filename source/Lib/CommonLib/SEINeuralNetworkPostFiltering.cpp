@@ -72,6 +72,9 @@ void SEINeuralNetworkPostFiltering::setPicActivatedNnpfc(Picture* picture)
       else
       {
         tmpIsNnpfActivatedForPic[nnpfa->m_targetId] = true;
+#if JVET_AE0048_IMPLICIT_PERSISTENCE_CANCEL
+        m_isNnpfActiveForCLVS[nnpfa->m_targetId] = false;  // Cancel the persistence of an NNPFA SEI message with any subsequent NNPFA SEI message with the same nnpfa_target_id
+#endif
       }
       CHECK((uint32_t)nnpfa->m_outputFlag.size() > nnpfc->m_numInpPicsInOutputTensor, "The value of nnpfa_num_output_entries shall be in the range of 0 to NumInpPicsInOutputTensor");
     }
