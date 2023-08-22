@@ -2380,6 +2380,25 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
+  if ((m_maxLayers>2) && m_gopBasedRPREnabledFlag)
+  {
+    msg(ERROR, "*************************************************************************\n");
+    msg(ERROR, "* GOP based RPR is only implemented for max two layers *\n");
+    msg(ERROR, "*************************************************************************\n");
+    m_gopBasedRPREnabledFlag = false;
+    m_scalingRatioHor = 1.0;
+    m_scalingRatioVer = 1.0;
+    m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag || m_rprFunctionalityTestingEnabledFlag;
+  }
+  if ((m_maxLayers > 2) && m_rprFunctionalityTestingEnabledFlag)
+  {
+    msg(ERROR, "*************************************************************************\n");
+    msg(ERROR, "* RPR functionality testing is only implemented for max two layers *\n");
+    msg(ERROR, "*************************************************************************\n");
+    m_rprFunctionalityTestingEnabledFlag = false;
+    m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag || m_rprFunctionalityTestingEnabledFlag;
+  }
+
   if (m_costMode != COST_LOSSLESS_CODING && m_mixedLossyLossless)
   {
     m_mixedLossyLossless = 0;

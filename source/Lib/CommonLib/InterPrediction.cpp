@@ -1903,8 +1903,7 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
   // subblock boundary activity threshold
   // corresponds to encoding in 1/2 reduced resolution when GOP based RPR is used
   const int boundaryDiffThreshold =
-    pu.cu->slice->getPPS()->getPPSId() == ENC_PPS_ID_RPR && pu.cu->slice->getSPS()->getGOPBasedRPREnabledFlag() ? 5
-                                                                                                                : 10;
+    pu.cu->slice->getPPS()->getPPSId() == (ENC_PPS_ID_RPR + pu.cu->slice->getNalUnitLayerId()) && pu.cu->slice->getSPS()->getGOPBasedRPREnabledFlag() ? 5 : 10;
 #endif
 
   int subPuIdx = 0;
