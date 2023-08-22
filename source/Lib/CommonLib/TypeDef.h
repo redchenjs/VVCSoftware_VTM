@@ -67,6 +67,8 @@
 
 #define JVET_AE0141_NNPFC_BUGFIX_COLOURIZATION            1  // JVET-AE0141: Fix a bug in NNPFC SEI message for colourization
 
+#define JVET_AE0128_CONSTRAINT_UPDATE                     1  // JVET_AE0128 item 2: Update the constraint on when an NNPFC SEI message shall be a repetition of the first NNPFC SEI message in the CLVS
+
 #define JVET_AE0142_NNPF_CONSTRAINT_BUGFIXES              1  // JVET_AE0142 item 3 and item 4: Fix two bugs including an added condition and a nnpfc_purpose related constraint.
 
 #define JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT   1  // JVET_AE0135 item2: On NNPF picture rate upsampling constraint
