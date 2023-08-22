@@ -73,6 +73,8 @@
 
 #define JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT   1  // JVET_AE0135 item2: On NNPF picture rate upsampling constraint
 
+#define JVET_AE0048_ITEM_1_VALUE_RANGES                   1  // JVET-AE0048 item 1: Add missing value ranges for nnpfc_pic_width_num_minus1, nnpfc_pic_width_denom_minus1, nnpfc_pic_height_num_minus1, and nnpfc_pic_height_denom_minus1.
+
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
