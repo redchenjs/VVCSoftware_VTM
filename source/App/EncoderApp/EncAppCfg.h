@@ -111,7 +111,7 @@ protected:
   int       m_confWinRight;
   int       m_confWinTop;
   int       m_confWinBottom;
-#if SCALING_WINDOW_ENABLED
+#if JVET_AE0181_SCALING_WINDOW_ENABLED
   bool      m_explicitScalingWindowEnabled;
   int       m_scalWinLeft;
   int       m_scalWinRight;

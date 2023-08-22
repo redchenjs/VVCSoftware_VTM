@@ -821,7 +821,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ConfWinRight",                                    m_confWinRight,                                       0, "Right offset for window conformance mode 3")
   ("ConfWinTop",                                      m_confWinTop,                                         0, "Top offset for window conformance mode 3")
   ("ConfWinBottom",                                   m_confWinBottom,                                      0, "Bottom offset for window conformance mode 3")
-#if SCALING_WINDOW_ENABLED
+#if JVET_AE0181_SCALING_WINDOW_ENABLED
   ("ScalingWindow",                                   m_explicitScalingWindowEnabled,                   false, "Enable scaling window")
   ("ScalWinLeft,-swl",                                m_scalWinLeft,                                        0, "Left offset for scaling window")
   ("ScalWinRight,-swr",                               m_scalWinRight,                                       0, "Right offset for scaling window")
@@ -4294,7 +4294,7 @@ bool EncAppCfg::xCheckParameter()
                "Top conformance window offset must be an integer multiple of the specified chroma subsampling");
   xConfirmPara(m_confWinBottom % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
                "Bottom conformance window offset must be an integer multiple of the specified chroma subsampling");
-#if SCALING_WINDOW_ENABLED
+#if JVET_AE0181_SCALING_WINDOW_ENABLED
   xConfirmPara(m_explicitScalingWindowEnabled && (m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag), "ScalingWindow cannot be enabled when GOPBasedRPR is enabled");
   xConfirmPara(m_scalWinLeft    % SPS::getWinUnitX(m_chromaFormatIdc) != 0, "Left scaling window offset must be an integer multiple of the specified chroma subsampling");
   xConfirmPara(m_scalWinRight   % SPS::getWinUnitX(m_chromaFormatIdc) != 0, "Right scaling window offset must be an integer multiple of the specified chroma subsampling");

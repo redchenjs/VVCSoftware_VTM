@@ -266,7 +266,7 @@ void EncApp::xInitLibCfg( int layerIdx )
                                  m_confWinRight / SPS::getWinUnitX(m_inputChromaFormatIDC),
                                  m_confWinTop / SPS::getWinUnitY(m_inputChromaFormatIDC),
                                  m_confWinBottom / SPS::getWinUnitY(m_inputChromaFormatIDC));
-#if SCALING_WINDOW_ENABLED
+#if JVET_AE0181_SCALING_WINDOW_ENABLED
   m_cEncLib.setExplicitScalingWindowEnabled                      ( m_explicitScalingWindowEnabled );
   m_cEncLib.setScalingWindow                                     ( m_scalWinLeft / SPS::getWinUnitX( m_inputChromaFormatIDC ), m_scalWinRight / SPS::getWinUnitX( m_inputChromaFormatIDC ), m_scalWinTop / SPS::getWinUnitY( m_inputChromaFormatIDC ), m_scalWinBottom / SPS::getWinUnitY( m_inputChromaFormatIDC ) );
 #endif
@@ -1983,7 +1983,7 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         }
         else
         {
-#if SCALING_WINDOW_ENABLED
+#if JVET_AE0181_SCALING_WINDOW_ENABLED
           ppsID = ((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) && !m_explicitScalingWindowEnabled) ? m_resChangeInClvsEnabled ? ENC_PPS_ID_RPR : layerId : layerId;
 #else
           ppsID = (sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) ? ENC_PPS_ID_RPR : layerId;

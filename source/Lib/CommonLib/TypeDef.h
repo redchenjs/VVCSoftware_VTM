@@ -100,6 +100,8 @@
 
 #define JVET_AD0057_UPDATE_SEI_LISTS                      1 // Update VclAssociatedSeiList and PicUnitRepConSeiList
 
+#define JVET_AE0181_SCALING_WINDOW_ENABLED                            1
+
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
@@ -148,9 +150,6 @@
 #define ENABLE_USER_DEFINED_WEIGHTS                       0 // User can specify weights for both current and previous picture, such that their sum = 1
 #endif
 
-#ifndef SCALING_WINDOW_ENABLED
-#define SCALING_WINDOW_ENABLED                            1
-#endif
 
 // clang-format on
 
