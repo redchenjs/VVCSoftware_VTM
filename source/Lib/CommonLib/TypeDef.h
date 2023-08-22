@@ -62,6 +62,8 @@
 
 #define JVET_Z0150_MEMORY_USAGE_PRINT                     1 // JVET-Z0150: Print memory usage
 
+#define JVET_AE0048_IMPLICIT_PERSISTENCE_CANCEL           1 // JVET-AE0048 item 5: Cancel the persistence of an NNPFA SEI message with any subsequent NNPFA SEI message with the same nnpfa_target_id
+
 #define JVET_AE0060_COND_SIG_INF                          1 // signal nnpfc_chroma_loc_info_present_flag only when nnpfc_out_order_idc is not equal to 0 and infer nnpfc_chroma_loc_info_present_flag to be equal to 0 when not present.
 #define JVET_AE0057_MTT_ET                                1 // JVET-AE0057: MTT split modes early termination
 
