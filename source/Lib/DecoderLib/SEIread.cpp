@@ -262,7 +262,9 @@ bool SEIReader::xCheckNnpfcUpdatePresentSeiMsg(uint32_t seiId, const std::vector
     {
       count++;
       if (count == 2)
+      {
         return true;
+      }
     }
   }
   return false;
