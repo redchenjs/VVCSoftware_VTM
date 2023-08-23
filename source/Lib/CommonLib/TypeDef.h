@@ -58,47 +58,24 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE             1 // Replace signalling of output picture size with output size scaling ratio
+#define JVET_AE0126_NNPF_EDITORIAL_CHANGES                1  // JVET_AE0126: NNPF cleanup and editorial changes for VSEI include item 2, item 3, item 5, and item 7
 
-#define JVET_AD0169_SMALL_SCALE_DOWNSAMPLING              1 // JVET-AD0169: Downsampling filters in range 1.1 to 1.35 based on Kaiser(7) windowed sinc
-#define JVET_AD0386_SEI   1 // Extend the latest SEI processing order SEI message to enable signalling of prefix information for any type of SEI messages
+#define JVET_Z0150_MEMORY_USAGE_PRINT                     1 // JVET-Z0150: Print memory usage
 
-#define JVET_AD0056_NNPFC_INPUT_PIC_OUTPUT_FLAG           1
+#define JVET_AE0048_IMPLICIT_PERSISTENCE_CANCEL           1 // JVET-AE0048 item 5: Cancel the persistence of an NNPFA SEI message with any subsequent NNPFA SEI message with the same nnpfa_target_id
 
-#define JVET_AD0056_NNPFA_TARGET_ID_CONSTRAINT            1 // Remove redundant constraints on nnpfa_target_id
+#define JVET_AE0060_COND_SIG_INF                          1 // signal nnpfc_chroma_loc_info_present_flag only when nnpfc_out_order_idc is not equal to 0 and infer nnpfc_chroma_loc_info_present_flag to be equal to 0 when not present.
+#define JVET_AE0057_MTT_ET                                1 // JVET-AE0057: MTT split modes early termination
 
-#define JVET_AD0388_NNPFA_OUTPUT_FLAG                     1
+#define JVET_AE0141_NNPFC_BUGFIX_COLOURIZATION            1  // JVET-AE0141: Fix a bug in NNPFC SEI message for colourization
 
-#define JVET_AD0056_NNPFC_PADDING_SYNTAX_CONDITION        1
+#define JVET_AE0128_CONSTRAINT_UPDATE                     1  // JVET_AE0128 item 2: Update the constraint on when an NNPFC SEI message shall be a repetition of the first NNPFC SEI message in the CLVS
 
-#define JVET_AD0067_SWAP_SYNTAX                           1 // Swap the two syntax elements: nnpfc_auxiliary_inp_idc and nnpfc_inp_order_idc
+#define JVET_AE0142_NNPF_CONSTRAINT_BUGFIXES              1  // JVET_AE0142 item 3 and item 4: Fix two bugs including an added condition and a nnpfc_purpose related constraint.
 
-#define JVET_AD0057_POSTFILTER_HINT_SEI_CONSTRAINT        1 // Disallow the post-filter hint SEI message to be present in both a prefix SEI NALU and a suffix SEI NALU in the same picture unit
+#define JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT   1  // JVET_AE0135 item2: On NNPF picture rate upsampling constraint
 
-#define JVET_AD0056_MOVE_NNPFC_BASE_FLAG                  1
-
-#define JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG      1
-
-#define JVET_AD0056_NNPFC_METADATA_EXTENSION              1
-
-#define JVET_AD0056_NNPFA_TARGET_BASE_FLAG                1
-
-#define JVET_AD0141_NNPFA_NONOUTPUTPIC                    1 //Check that NNPFA is present in pic that is not a non-output picture
-
-#define JVET_AD0056_PIC_WIDTH_HEIGHT_CONTRAINTS           1
-
-#define JVET_AD0056_NNPFC_INP_OUT_ORDER_IDC_CONSTRAINTS   1
-
-#define JVET_AD0056_MOVE_NNPFC_INP_AND_OUT_ORDER_IDC      1 // Move nnpfc_inp_order_idc and nnpfc_out_order_idc, and gate the bit depth syntax elements 
-
-#define JVET_AD0056_MOVE_COLOUR_DESC_FLAG                 1 // Move nnpfc_separate_colour_description_present_flag and associated flags and add conformance checks
-
-#define JVET_AD0091                                       1
-#define JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC               1 // Add new SEI elements nnpfc_chroma_sample_loc_type_frame
-
-#define JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS           1 // Multi-input pics to a NNPF shall have the same dimensions
-
-#define JVET_AD0057_UPDATE_SEI_LISTS                      1 // Update VclAssociatedSeiList and PicUnitRepConSeiList
+#define JVET_AE0048_ITEM_1_VALUE_RANGES                   1  // JVET-AE0048 item 1: Add missing value ranges for nnpfc_pic_width_num_minus1, nnpfc_pic_width_denom_minus1, nnpfc_pic_height_num_minus1, and nnpfc_pic_height_denom_minus1.
 
 #define JVET_AE0181_SCALING_WINDOW_ENABLED                            1
 
@@ -144,11 +121,8 @@
 #define JVET_O0756_CALCULATE_HDRMETRICS                   1
 #endif
 
-#define JVET_Z0120_SII_SEI_PROCESSING                     1 // This is an example illustration of using SII SEI messages for backwards-compatible HFR video
-#if JVET_Z0120_SII_SEI_PROCESSING
 #define DISABLE_PRE_POST_FILTER_FOR_IDR_CRA               1
 #define ENABLE_USER_DEFINED_WEIGHTS                       0 // User can specify weights for both current and previous picture, such that their sum = 1
-#endif
 
 
 // clang-format on
@@ -1035,6 +1009,10 @@ inline int     operator-(AlfMode i, AlfMode j) { return to_underlying(i) - to_un
 
 inline bool isAlfLumaFixed(AlfMode m) { return m >= AlfMode::LUMA_FIXED0 && m < AlfMode::LUMA0; }
 
+using AlfCoeff = int16_t;
+using AlfBankIdx = uint8_t;
+using AlfClipIdx = uint8_t;
+
 //////////////////////////////////////////////////////////////////////////
 // Encoder modes to try out
 //////////////////////////////////////////////////////////////////////////
@@ -1113,11 +1091,11 @@ struct ScalingRatio
   bool operator!=(const ScalingRatio &s) const { return x != s.x || y != s.y; }
 };
 
-enum PLTRunMode
+enum class PLTRunMode : uint8_t
 {
-  PLT_RUN_INDEX = 0,
-  PLT_RUN_COPY  = 1,
-  NUM_PLT_RUN   = 2
+  INDEX = 0,
+  COPY,
+  NUM
 };
 
 struct LutModel
@@ -1429,7 +1407,7 @@ public:
   template<class InputIt>
   iterator        insert( const_iterator _pos, InputIt first, InputIt last )
                                                 { const difference_type numEl = last - first;
-                                                  CHECKD( _size + numEl >= N, "capacity exceeded" );
+                                                  CHECKD( _size + numEl > N, "capacity exceeded" );
                                                   for( difference_type i = _size - 1; i >= _pos - _arr; i-- ) _arr[i + numEl] = _arr[i];
                                                   iterator it = const_cast<iterator>( _pos ); _size += numEl;
                                                   while( first != last ) *it++ = *first++;
@@ -1437,7 +1415,7 @@ public:
 
   iterator        insert( const_iterator _pos, size_t numEl, const T& val )
                                                 { //const difference_type numEl = last - first;
-                                                  CHECKD( _size + numEl >= N, "capacity exceeded" );
+                                                  CHECKD( _size + numEl > N, "capacity exceeded" );
                                                   for( difference_type i = _size - 1; i >= _pos - _arr; i-- ) _arr[i + numEl] = _arr[i];
                                                   iterator it = const_cast<iterator>( _pos ); _size += numEl;
                                                   for ( int k = 0; k < numEl; k++) *it++ = val;

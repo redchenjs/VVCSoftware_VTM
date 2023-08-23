@@ -86,6 +86,8 @@ EncLib::EncLib(EncLibCommon *encLibCommon)
 
   m_layerId = NOT_VALID;
   m_picIdInGOP = NOT_VALID;
+  m_gopRprPpsId = 0;
+
 }
 
 EncLib::~EncLib()
@@ -214,7 +216,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
 
   if (m_resChangeInClvsEnabled)
   {
-    PPS &pps = *( m_ppsMap.allocatePS( ENC_PPS_ID_RPR ) );
+    PPS& pps = *(m_ppsMap.allocatePS(ENC_PPS_ID_RPR + m_layerId));
     Window& inputScalingWindow = pps0.getScalingWindow();
     int scaledWidth = int( ( pps0.getPicWidthInLumaSamples() - SPS::getWinUnitX( sps0.getChromaFormatIdc() ) * ( inputScalingWindow.getWindowLeftOffset() + inputScalingWindow.getWindowRightOffset() ) ) / m_scalingRatioHor );
     int minSizeUnit = std::max(8, 1 << sps0.getLog2MinCodingBlockSize());
@@ -293,7 +295,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
   }
   if (m_resChangeInClvsEnabled && ((m_gopBasedRPREnabledFlag && (m_iQP >= getGOPBasedRPRQPThreshold())) || m_rprFunctionalityTestingEnabledFlag))
   {
-    PPS& pps = *(m_ppsMap.allocatePS(ENC_PPS_ID_RPR2));
+    PPS& pps = *(m_ppsMap.allocatePS(ENC_PPS_ID_RPR2 + m_layerId));
     Window& inputScalingWindow = pps0.getScalingWindow();
     int scaledWidth = int((pps0.getPicWidthInLumaSamples() - SPS::getWinUnitX(sps0.getChromaFormatIdc()) * (inputScalingWindow.getWindowLeftOffset() + inputScalingWindow.getWindowRightOffset())) / m_scalingRatioHor2);
     int minSizeUnit = std::max(8, 1 << sps0.getLog2MinCodingBlockSize());
@@ -368,7 +370,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
   }
   if (m_resChangeInClvsEnabled && ((m_gopBasedRPREnabledFlag && (m_iQP >= getGOPBasedRPRQPThreshold())) || m_rprFunctionalityTestingEnabledFlag))
   {
-    PPS& pps = *(m_ppsMap.allocatePS(ENC_PPS_ID_RPR3));
+    PPS& pps = *(m_ppsMap.allocatePS(ENC_PPS_ID_RPR3 + m_layerId));
     Window& inputScalingWindow = pps0.getScalingWindow();
     int scaledWidth = int((pps0.getPicWidthInLumaSamples() - SPS::getWinUnitX(sps0.getChromaFormatIdc()) * (inputScalingWindow.getWindowLeftOffset() + inputScalingWindow.getWindowRightOffset())) / m_scalingRatioHor3);
     int minSizeUnit = std::max(8, 1 << sps0.getLog2MinCodingBlockSize());
@@ -507,12 +509,12 @@ void EncLib::init(AUWriterIf *auWriterIf)
   }
   if (m_resChangeInClvsEnabled)
   {
-    xInitScalingLists(sps0, *m_apsMaps[ApsType::SCALING_LIST].getPS(ENC_PPS_ID_RPR));
+    xInitScalingLists(sps0, *m_apsMaps[ApsType::SCALING_LIST].getPS(ENC_PPS_ID_RPR + m_layerId));
   }
   if (getUseCompositeRef())
   {
     Picture *picBg = new Picture;
-    picBg->create(sps0.getChromaFormatIdc(), Size(pps0.getPicWidthInLumaSamples(), pps0.getPicHeightInLumaSamples()),
+    picBg->create(sps0.getWrapAroundEnabledFlag(), sps0.getChromaFormatIdc(), Size(pps0.getPicWidthInLumaSamples(), pps0.getPicHeightInLumaSamples()),
                   sps0.getMaxCUWidth(), sps0.getMaxCUWidth() + 16, false, m_layerId,
                   getGopBasedTemporalFilterEnabled());
     picBg->getRecoBuf().fill(0);
@@ -521,7 +523,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
     picBg->createSpliceIdx(pps0.pcv->sizeInCtus);
     m_cGOPEncoder.setPicBg(picBg);
     Picture *picOrig = new Picture;
-    picOrig->create(sps0.getChromaFormatIdc(), Size(pps0.getPicWidthInLumaSamples(), pps0.getPicHeightInLumaSamples()),
+    picOrig->create(sps0.getWrapAroundEnabledFlag(), sps0.getChromaFormatIdc(), Size(pps0.getPicWidthInLumaSamples(), pps0.getPicHeightInLumaSamples()),
                     sps0.getMaxCUWidth(), sps0.getMaxCUWidth() + 16, false, m_layerId,
                     getGopBasedTemporalFilterEnabled());
     picOrig->getOrigBuf().fill(0);
@@ -620,9 +622,7 @@ void EncLib::deletePicBuffer()
 bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuvTrueOrg,
                         PelStorage *pcPicYuvFilteredOrg, PelStorage *pcPicYuvFilteredOrgForFG,
                         const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut,
-                        int &numEncoded
-  , PelStorage** ppcPicYuvRPR
-)
+                        int &numEncoded, PelStorage** ppcPicYuvRPR)
 {
   if (m_compositeRefEnabled && m_cGOPEncoder.getPicBg()->getSpliceFull() && m_pocLast >= 10 && m_receivedPicCount == 0
       && m_cGOPEncoder.getEncodedLTRef() == false)
@@ -637,14 +637,12 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
     picCurr->poc = m_pocLast - 1;
     m_pocLast -= 2;
 
-#if JVET_Z0120_SII_SEI_PROCESSING
     if (getShutterFilterFlag())
     {
       int blendingRatio = getBlendingRatioSII();
       picCurr->xOutputPreFilteredPic(picCurr, &m_cListPic, blendingRatio, m_intraPeriod);
       picCurr->copyToPic(sps, &picCurr->m_bufs[PIC_ORIGINAL], pcPicYuvOrg);
     }
-#endif
 
     if( getUseAdaptiveQP() )
     {
@@ -698,15 +696,16 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
         ScalingRatio downScalingRatio{ 32768, 32768 };
         ScalingRatio upScalingRatio{ 8192, 8192 };
 
-        const PPS* orgPPS = m_ppsMap.getPS(0);
+        const PPS* orgPPS = m_ppsMap.getPS(0 + m_layerId);
         const SPS* orgSPS = m_spsMap.getPS(orgPPS->getSPSId());
         const ChromaFormat chFormatIdc = orgSPS->getChromaFormatIdc();
 
-        const PPS* pTempPPS = m_ppsMap.getPS(ENC_PPS_ID_RPR);
+        const PPS* pTempPPS = m_ppsMap.getPS(ENC_PPS_ID_RPR + m_layerId);
         Picture::rescalePicture(downScalingRatio, *pcPicYuvOrg, orgPPS->getScalingWindow(), *ppcPicYuvRPR[1], pTempPPS->getScalingWindow(), chFormatIdc, orgSPS->getBitDepths(), true, true,
           orgSPS->getHorCollocatedChromaFlag(), orgSPS->getVerCollocatedChromaFlag());
         Picture::rescalePicture(upScalingRatio, *ppcPicYuvRPR[1], orgPPS->getScalingWindow(), *ppcPicYuvRPR[0], pTempPPS->getScalingWindow(), chFormatIdc, orgSPS->getBitDepths(), true, false,
           orgSPS->getHorCollocatedChromaFlag(), orgSPS->getVerCollocatedChromaFlag());
+
         // Calculate PSNR
         const  Pel* pSrc0 = pcPicYuvOrg->get(COMPONENT_Y).bufAt(0, 0);
         const  Pel* pSrc1 = ppcPicYuvRPR[0]->get(COMPONENT_Y).bufAt(0, 0);
@@ -732,23 +731,23 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
         const int qpBias = 37;
         if ((m_psnrThresholdRPR - (m_iQP - qpBias) * 0.5) < upscaledPSNR)
         {
-          ppsID = ENC_PPS_ID_RPR;
+          ppsID = ENC_PPS_ID_RPR + m_layerId;
         }
         else
         {
           if ((m_psnrThresholdRPR2 - (m_iQP - qpBias) * 0.5) < upscaledPSNR)
           {
-            ppsID = ENC_PPS_ID_RPR2;
+            ppsID = ENC_PPS_ID_RPR2 + m_layerId;
           }
           else
           {
             if ((m_psnrThresholdRPR3 - (m_iQP - qpBias) * 0.5) < upscaledPSNR)
             {
-              ppsID = ENC_PPS_ID_RPR3;
+              ppsID = ENC_PPS_ID_RPR3 + m_layerId;
             }
             else
             {
-              ppsID = 0;
+              ppsID = m_layerId;
             }
           }
         }
@@ -765,7 +764,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
       const int poc = m_pocLast + (m_compositeRefEnabled ? 2 : 1);
       if (poc % m_rprSwitchingSegmentSize == 0)
       {
-        ppsID = 0;
+        ppsID = m_layerId;
         bool  applyRpr = false;
         int currPoc = poc + m_frameSkip;
         int rprSegment = getRprSwitchingSegment(currPoc);
@@ -773,7 +772,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
         applyRpr = thePPSID != 0;
         if (applyRpr)
         {
-          ppsID = thePPSID;
+          ppsID = thePPSID + m_layerId;
         }
         m_gopRprPpsId = ppsID;
       }
@@ -788,14 +787,14 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
 
       if (poc / m_switchPocPeriod % 2)
       {
-        ppsID = ENC_PPS_ID_RPR;
+        ppsID = ENC_PPS_ID_RPR + m_layerId;
       }
       else
       {
-        ppsID = 0;
+        ppsID = m_layerId;
       }
     }
-    if( m_vps->getMaxLayers() > 1 )
+    if ((m_vps->getMaxLayers() > 1) && !((m_gopBasedRPREnabledFlag && (m_iQP >= getGOPBasedRPRQPThreshold())) || m_rprFunctionalityTestingEnabledFlag))
     {
       ppsID = m_vps->getGeneralLayerIdx( m_layerId );
     }
@@ -824,7 +823,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
 
       const ChromaFormat chromaFormatIdc = pSPS->getChromaFormatIdc();
 
-      const PPS *refPPS = m_ppsMap.getPS( 0 );
+      const PPS* refPPS = m_ppsMap.getPS(m_layerId);
       const Window& curScalingWindow = pPPS->getScalingWindow();
 
       const int curPicWidth = pPPS->getPicWidthInLumaSamples()
@@ -879,14 +878,12 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *cPicYuv
 
     pcPicCurr->poc = m_pocLast;
 
-#if JVET_Z0120_SII_SEI_PROCESSING
     if (getShutterFilterFlag())
     {
       int blendingRatio = getBlendingRatioSII();
       pcPicCurr->xOutputPreFilteredPic(pcPicCurr, &m_cListPic, blendingRatio, m_intraPeriod);
       pcPicCurr->copyToPic(pSPS, &pcPicCurr->m_bufs[PIC_ORIGINAL], pcPicYuvOrg);
     }
-#endif
 
     // compute image characteristics
     if( getUseAdaptiveQP() )
@@ -1039,14 +1036,12 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYu
 
       pcField->topField = isTopField;                  // interlaced requirement
 
-#if JVET_Z0120_SII_SEI_PROCESSING
       if (getShutterFilterFlag())
       {
         int blendingRatio = getBlendingRatioSII();
         pcField->xOutputPreFilteredPic(pcField, &m_cListPic, blendingRatio, m_intraPeriod);
         pcField->copyToPic(pSPS, &pcField->m_bufs[PIC_ORIGINAL], pcPicYuvOrg);
       }
-#endif
 
       // compute image characteristics
       if( getUseAdaptiveQP() )
@@ -1173,18 +1168,14 @@ void EncLib::xGetNewPicBuffer ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Pict
   {
     rpcPic = new Picture;
     bool fgAnalysisEnabled = m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty();
-#if JVET_Z0120_SII_SEI_PROCESSING
-    rpcPic->create(sps.getChromaFormatIdc(), Size(pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples()),
+    rpcPic->create(sps.getWrapAroundEnabledFlag(), sps.getChromaFormatIdc(), Size(pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples()),
       sps.getMaxCUWidth(), sps.getMaxCUWidth() + PIC_MARGIN, false, m_layerId, getShutterFilterFlag(),
                    getGopBasedTemporalFilterEnabled(), fgAnalysisEnabled);
-#else
-    rpcPic->create( sps.getChromaFormatIdc(), Size( pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples() ), sps.getMaxCUWidth(), sps.getMaxCUWidth() + PIC_MARGIN, false, m_layerId, getGopBasedTemporalFilterEnabled()
-                   , fgAnalysisEnabled);
-#endif
 
     if (m_resChangeInClvsEnabled)
     {
-      const PPS &pps0 = *m_ppsMap.getPS(0);
+      int thePPS = m_layerId;
+      const PPS& pps0 = *m_ppsMap.getPS(thePPS);
       rpcPic->M_BUFS(0, PIC_ORIGINAL_INPUT).create(sps.getChromaFormatIdc(), Area(Position(), Size(pps0.getPicWidthInLumaSamples(), pps0.getPicHeightInLumaSamples())));
       rpcPic->M_BUFS(0, PIC_TRUE_ORIGINAL_INPUT).create(sps.getChromaFormatIdc(), Area(Position(), Size(pps0.getPicWidthInLumaSamples(), pps0.getPicHeightInLumaSamples())));
       if (getGopBasedTemporalFilterEnabled())
@@ -1989,7 +1980,7 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     bool isRprPPS = false;
     for (int nr = 0; nr < NUM_RPR_PPS; nr++)
     {
-      if ((pps.getPPSId() == RPR_PPS_ID[nr]) && (RPR_PPS_ID[nr] != 0))
+      if ((pps.getPPSId() == RPR_PPS_ID[nr]) && (RPR_PPS_ID[nr] != m_layerId))
       {
         isRprPPS = true;
       }
@@ -2325,8 +2316,8 @@ void EncLib::xInitRPL(SPS &sps)
 
       if (!getRplOfDepLayerInSh())
       {
-        bool isIntraLayerPredAllowed = getVPS() ? ((getVPS()->getIndependentLayerFlag(layerIdx) || (getVPS()->getPredDirection(ge.m_temporalId) != 1)) && (ge.m_POC % m_intraPeriod) != 0) : true;
-        bool isInterLayerPredAllowed = getVPS() ? (!getVPS()->getIndependentLayerFlag(layerIdx) && (getVPS()->getPredDirection(ge.m_temporalId) != 2) && ((ge.m_POC % m_intraPeriod) != 0 || (getAvoidIntraInDepLayer() && layerIdx))) : false;
+        bool isIntraLayerPredAllowed = getVPS() ? ((getVPS()->getIndependentLayerFlag(layerIdx) || (getVPS()->getPredDirection(ge.m_temporalId) != 1)) && ((m_intraPeriod < 0 && ge.m_POC != 0) || (ge.m_POC % m_intraPeriod) != 0)) : true;
+        bool isInterLayerPredAllowed = getVPS() ? (!getVPS()->getIndependentLayerFlag(layerIdx) && (getVPS()->getPredDirection(ge.m_temporalId) != 2) && ((m_intraPeriod < 0 && ge.m_POC != 0) || ((ge.m_POC % m_intraPeriod) != 0) || (getAvoidIntraInDepLayer() && layerIdx))) : false;
 
         int numRefActive = 0;
         if (isIntraLayerPredAllowed)
@@ -2676,15 +2667,15 @@ int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
     }
     if (m_gopBasedRPREnabledFlag)
     {
-      if (pSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR)
+      if (pSlice->getPPS()->getPPSId() == (ENC_PPS_ID_RPR + pSlice->getNalUnitLayerId()))
       {
         qp += EncCfg::m_qpOffsetRPR;
       }
-      if (pSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2)
+      if (pSlice->getPPS()->getPPSId() == (ENC_PPS_ID_RPR2 + pSlice->getNalUnitLayerId()))
       {
         qp += EncCfg::m_qpOffsetRPR2;
       }
-      if (pSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3)
+      if (pSlice->getPPS()->getPPSId() == (ENC_PPS_ID_RPR3 + pSlice->getNalUnitLayerId()))
       {
         qp += EncCfg::m_qpOffsetRPR3;
       }

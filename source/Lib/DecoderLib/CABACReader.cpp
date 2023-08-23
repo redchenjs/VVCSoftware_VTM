@@ -1811,7 +1811,7 @@ void CABACReader::cu_palette_info(CodingUnit& cu, ComponentID compBegin, uint32_
 
   m_scanOrder = g_scanOrder[SCAN_UNGROUPED][(cu.useRotation[compBegin]) ? CoeffScanType::TRAV_VER : CoeffScanType::TRAV_HOR][gp_sizeIdxInfo->idxFrom(width)][gp_sizeIdxInfo->idxFrom(height)];
   uint32_t prevRunPos = 0;
-  unsigned prevRunType = 0;
+  auto     prevRunType = PLTRunMode::INDEX;
   for (int subSetId = 0; subSetId <= (total - 1) >> LOG2_PALETTE_CG_SIZE; subSetId++)
   {
     cuPaletteSubblockInfo(cu, compBegin, numComp, subSetId, prevRunPos, prevRunType);
@@ -1819,7 +1819,8 @@ void CABACReader::cu_palette_info(CodingUnit& cu, ComponentID compBegin, uint32_
   CHECK(cu.curPLTSize[compBegin] > maxPltSize, " Current palette size is larger than maximum palette size");
 }
 
-void CABACReader::cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, uint32_t numComp, int subSetId, uint32_t& prevRunPos, unsigned& prevRunType)
+void CABACReader::cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, uint32_t numComp, int subSetId,
+                                        uint32_t& prevRunPos, PLTRunMode& prevRunType)
 {
   const SPS&      sps = *(cu.cs->sps);
   TransformUnit&  tu = *cu.firstTU;
@@ -1852,7 +1853,7 @@ void CABACReader::cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, u
     uint32_t posxprev = (curPos == 0) ? 0 : m_scanOrder[curPos - 1].x;
     unsigned identityFlag = 1;
 
-    const CtxSet&   ctxSet = (prevRunType == PLT_RUN_INDEX) ? Ctx::IdxRunModel : Ctx::CopyRunModel;
+    const CtxSet& ctxSet = (prevRunType == PLTRunMode::INDEX) ? Ctx::IdxRunModel : Ctx::CopyRunModel;
     if (curPos > 0)
     {
       int dist = curPos - prevRunPos - 1;
@@ -1866,15 +1867,15 @@ void CABACReader::cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, u
     {
       if (((posy == 0) && !cu.useRotation[compBegin]) || ((posx == 0) && cu.useRotation[compBegin]))
       {
-        runType.at(posx, posy) = PLT_RUN_INDEX;
+        runType.at(posx, posy) = PLTRunMode::INDEX;
       }
-      else if (curPos != 0 && runType.at(posxprev, posyprev) == PLT_RUN_COPY)
+      else if (curPos != 0 && runType.at(posxprev, posyprev) == PLTRunMode::COPY)
       {
-        runType.at(posx, posy) = PLT_RUN_INDEX;
+        runType.at(posx, posy) = PLTRunMode::INDEX;
       }
       else
       {
-        runType.at(posx, posy) = (m_binDecoder.decodeBin(Ctx::RunTypeFlag()));
+        runType.at(posx, posy) = m_binDecoder.decodeBin(Ctx::RunTypeFlag()) ? PLTRunMode::COPY : PLTRunMode::INDEX;
       }
       DTRACE(g_trace_ctx, D_SYNTAX, "plt_type_flag() bin=%d sp=%d\n", runType.at(posx, posy), curPos);
       prevRunType = runType.at(posx, posy);
@@ -1907,13 +1908,13 @@ void CABACReader::cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, u
       uint32_t posx = m_scanOrder[curPos].x;
       uint32_t posyprev = (curPos == 0) ? 0 : m_scanOrder[curPos - 1].y;
       uint32_t posxprev = (curPos == 0) ? 0 : m_scanOrder[curPos - 1].x;
-      if ( runCopyFlag[curPos - minSubPos] == 0 && runType.at(posx, posy) == PLT_RUN_INDEX )
+      if (runCopyFlag[curPos - minSubPos] == 0 && runType.at(posx, posy) == PLTRunMode::INDEX)
       {
         xReadTruncBinCode(symbol, indexMaxSize - adjust);
         xAdjustPLTIndex(cu, symbol, curPos, curPLTIdx, runType, indexMaxSize, compBegin);
         DTRACE(g_trace_ctx, D_SYNTAX, "plt_idx_idc() value=%d sp=%d\n", curPLTIdx.at(posx, posy), curPos);
       }
-      else if (runType.at(posx, posy) == PLT_RUN_INDEX)
+      else if (runType.at(posx, posy) == PLTRunMode::INDEX)
       {
         curPLTIdx.at(posx, posy) = curPLTIdx.at(posxprev, posyprev);
       }
@@ -1931,8 +1932,8 @@ void CABACReader::cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, u
       uint32_t posx = m_scanOrder[curPos].x;
       uint32_t posyprev = (curPos == 0) ? 0 : m_scanOrder[curPos - 1].y;
       uint32_t posxprev = (curPos == 0) ? 0 : m_scanOrder[curPos - 1].x;
-      runType.at(posx, posy) = PLT_RUN_INDEX;
-      if (runCopyFlag[curPos - minSubPos] == 0 && runType.at(posx, posy) == PLT_RUN_INDEX)
+      runType.at(posx, posy) = PLTRunMode::INDEX;
+      if (runCopyFlag[curPos - minSubPos] == 0 && runType.at(posx, posy) == PLTRunMode::INDEX)
       {
         curPLTIdx.at(posx, posy) = 0;
       }
@@ -2023,7 +2024,7 @@ void CABACReader::xAdjustPLTIndex(CodingUnit& cu, Pel curLevel, uint32_t idx, Pe
   {
     uint32_t prevposy = m_scanOrder[idx - 1].y;
     uint32_t prevposx = m_scanOrder[idx - 1].x;
-    if (paletteRunType.at(prevposx, prevposy) == PLT_RUN_INDEX)
+    if (paletteRunType.at(prevposx, prevposy) == PLTRunMode::INDEX)
     {
       refLevel = paletteIdx.at(prevposx, prevposy);
       if (paletteIdx.at(prevposx, prevposy) == cu.curPLTSize[compBegin]) // escape

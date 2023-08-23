@@ -156,9 +156,7 @@ public:
   virtual ~SEIProcessingOrderInfo() {}
 
   bool                   m_posEnabled;
-#if JVET_AD0386_SEI
   std::vector<bool>      m_posPrefixFlag;
-#endif
   std::vector<uint16_t>  m_posPayloadType;
   std::vector<uint16_t>   m_posProcessingOrder;
   std::vector<std::vector<uint8_t>> m_posPrefixByte;
@@ -1215,12 +1213,10 @@ public:
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
     , m_outColourFormatIdc(ChromaFormat::_420)
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
     , m_picWidthNumeratorMinus1(0)
     , m_picWidthDenominatorMinus1(0)
     , m_picHeightNumeratorMinus1(0)
     , m_picHeightDenominatorMinus1(0)
-#endif
     , m_picWidthInLumaSamples(0)
     , m_picHeightInLumaSamples(0)
     , m_inpTensorBitDepthLumaMinus8(0)
@@ -1259,11 +1255,13 @@ public:
     , m_numParametersIdc(0)
     , m_numKmacOperationsIdc(0)
     , m_totalKilobyteSize(0)
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
     , m_numInpPicsInOutputTensor(0)
-#endif
   {}
   SEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
+
+#if JVET_AE0128_CONSTRAINT_UPDATE
+  bool operator == (const SEINeuralNetworkPostFilterCharacteristics& sei);
+#endif
 
   ~SEINeuralNetworkPostFilterCharacteristics() override
   {
@@ -1283,16 +1281,12 @@ public:
   uint8_t        m_outSubWidthC;
   uint8_t        m_outSubHeightC;
   ChromaFormat   m_outColourFormatIdc;
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
   bool           m_chromaLocInfoPresentFlag;
   Chroma420LocType m_chromaSampleLocTypeFrame;
-#endif
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
   uint32_t       m_picWidthNumeratorMinus1;
   uint32_t       m_picWidthDenominatorMinus1;
   uint32_t       m_picHeightNumeratorMinus1;
   uint32_t       m_picHeightDenominatorMinus1;
-#endif
   uint32_t       m_picWidthInLumaSamples;
   uint32_t       m_picHeightInLumaSamples;
   uint32_t       m_inpTensorBitDepthLumaMinus8;
@@ -1335,12 +1329,8 @@ public:
   uint32_t       m_numberInputDecodedPicturesMinus1;
   std::vector<uint32_t> m_numberInterpolatedPictures;
   std::vector<bool> m_inputPicOutputFlag;
-#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
   bool           m_absentInputPicZeroFlag;
-#endif
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
   uint32_t       m_numInpPicsInOutputTensor;
-#endif
 };
 
 class SEINeuralNetworkPostFilterActivation : public SEI
@@ -1350,9 +1340,7 @@ public:
   SEINeuralNetworkPostFilterActivation()
     : m_targetId(0)
     , m_cancelFlag(false)
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
     , m_targetBaseFlag(false)
-#endif
     , m_persistenceFlag(false)
   {}
   SEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation& sei);
@@ -1361,13 +1349,9 @@ public:
 
   uint32_t       m_targetId;
   bool           m_cancelFlag;
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
   bool           m_targetBaseFlag;
-#endif
   bool           m_persistenceFlag;
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
   std::vector<bool> m_outputFlag;
-#endif
 };
 
 class SEIPostFilterHint : public SEI

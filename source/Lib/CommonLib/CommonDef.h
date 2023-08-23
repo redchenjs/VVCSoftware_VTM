@@ -541,8 +541,9 @@ static constexpr int  EPBIN_WEIGHT_FACTOR =                           4;
 static constexpr int ENC_PPS_ID_RPR =                                 3;
 static constexpr int ENC_PPS_ID_RPR2 = 5;
 static constexpr int ENC_PPS_ID_RPR3 = 7;
-static constexpr int NUM_RPR_PPS = 4;
-static constexpr int RPR_PPS_ID[NUM_RPR_PPS] = { 0, ENC_PPS_ID_RPR3, ENC_PPS_ID_RPR2, ENC_PPS_ID_RPR };
+static constexpr int NUM_RPR_PPS = 8;
+static constexpr int RPR_PPS_ID[NUM_RPR_PPS] = { 0, ENC_PPS_ID_RPR3, ENC_PPS_ID_RPR2, ENC_PPS_ID_RPR, ENC_PPS_ID_RPR3+1, ENC_PPS_ID_RPR2+1, ENC_PPS_ID_RPR+1, 1 };
+
 static constexpr int MAX_SCALING_RATIO =                              2;  // max downsampling ratio for RPR
 static constexpr ScalingRatio SCALE_1X = { 1 << ScalingRatio::BITS, 1 << ScalingRatio::BITS };   // scale ratio 1x
 
@@ -574,10 +575,8 @@ static constexpr int CBF_MASK_CBCR = CBF_MASK_CB | CBF_MASK_CR;
 
 static const uint32_t MAX_NNPFA_ID =                               0xfffffffe; // Maximum supported nnpfa_id
 static const uint32_t MAX_NNPFC_ID =                               0xfffffffe; // Maximum supported nnpfc_id
-#if JVET_Z0120_SII_SEI_PROCESSING
 static constexpr double SII_PF_W2 =                                       0.6; // weight for current picture
 static constexpr double SII_PF_W1 =                                       0.4; // weight for previous picture , it must be equal to 1.0 - SII_PF_W2
-#endif
 // ====================================================================================================================
 // Macro functions
 // ====================================================================================================================

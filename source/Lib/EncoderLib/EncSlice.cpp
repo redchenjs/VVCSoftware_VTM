@@ -460,7 +460,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   }
   else
   {
-    eSliceType = (pocLast == 0 || pocCurr == 0 || m_pcGOPEncoder->getGOPSize() == 0) ? I_SLICE : eSliceType;
+    eSliceType = (pocLast == 0 || pocCurr == 0 || m_pcGOPEncoder->getGOPSize() == 0) && (!useIlRef) ? I_SLICE : eSliceType;
   }
 
   rpcSlice->setHierPredLayerIdx(hierPredLayerIdx);
@@ -549,17 +549,17 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
       }
       else
       {
-        if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR) // ScalingRatioHor/ScalingRatioVer
+        if (rpcSlice->getPPS()->getPPSId() == (ENC_PPS_ID_RPR + rpcSlice->getNalUnitLayerId())) // ScalingRatioHor/ScalingRatioVer
         {
           cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR());
           crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR());
         }
-        else if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR2) // ScalingRatioHor2/ScalingRatioVer2
+        if (rpcSlice->getPPS()->getPPSId() == (ENC_PPS_ID_RPR2 + rpcSlice->getNalUnitLayerId())) // ScalingRatioHor/ScalingRatioVer
         {
           cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR2());
           crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR2());
         }
-        else if (rpcSlice->getPPS()->getPPSId() == ENC_PPS_ID_RPR3) // ScalingRatioHor3/ScalingRatioVer3
+        if (rpcSlice->getPPS()->getPPSId() == (ENC_PPS_ID_RPR3 + rpcSlice->getNalUnitLayerId())) // ScalingRatioHor/ScalingRatioVer
         {
           cbQP += mappedQpDelta(COMPONENT_Cb, m_pcCfg->getQpOffsetChromaRPR3());
           crQP += mappedQpDelta(COMPONENT_Cr, m_pcCfg->getQpOffsetChromaRPR3());
@@ -635,7 +635,7 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
     }
     else
     {
-      eSliceType = (pocLast == 0 || pocCurr == 0 || m_pcGOPEncoder->getGOPSize() == 0) ? I_SLICE : eSliceType;
+      eSliceType = (pocLast == 0 || pocCurr == 0 || m_pcGOPEncoder->getGOPSize() == 0) && (!useIlRef) ? I_SLICE : eSliceType;
     }
 
     rpcSlice->setSliceType        ( eSliceType );

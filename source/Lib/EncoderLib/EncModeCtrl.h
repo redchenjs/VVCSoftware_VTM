@@ -296,6 +296,9 @@ protected:
   bool                  m_HashMEPOCchecked;
   int                   m_HashMEPOC2;
 
+#if JVET_AE0057_MTT_ET
+  double                m_noSplitIntraRdCost;
+#endif
 public:
 
   virtual ~EncModeCtrl              () {}
@@ -334,6 +337,9 @@ public:
   virtual void setBest              ( CodingStructure& cs );
   bool         anyMode              () const;
 
+#if JVET_AE0057_MTT_ET
+  void         setNoSplitIntraCost  (double cost) { m_noSplitIntraRdCost = cost; }
+#endif
   const ComprCUCtx& getComprCUCtx   () { CHECK( m_ComprCUCtxList.empty(), "Accessing empty list!"); return m_ComprCUCtxList.back(); }
 
 #if SHARP_LUMA_DELTA_QP
@@ -814,7 +820,7 @@ private:
   BestEncodingInfo ***m_bestEncInfo[MAX_CU_SIZE >> MIN_CU_LOG2][MAX_CU_SIZE >> MIN_CU_LOG2];
   TCoeff             *m_pCoeff;
   Pel                *m_pPcmBuf;
-  bool               *m_runType;
+  PLTRunMode*         m_runType;
   XuPool              m_dummyPool;
   CodingStructure     m_dummyCS;
 

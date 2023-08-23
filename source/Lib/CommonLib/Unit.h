@@ -491,7 +491,7 @@ struct TransformUnit : public UnitArea
   unsigned       idx;
   TransformUnit *next;
   TransformUnit *prev;
-  void           init(TCoeff **coeffs, Pel **pcmbuf, EnumArray<bool *, ChannelType> &runType);
+  void           init(TCoeff** coeffs, Pel** pcmbuf, EnumArray<PLTRunMode*, ChannelType>& runType);
 
   TransformUnit& operator=(const TransformUnit& other);
   void copyComponentFrom  (const TransformUnit& other, const ComponentID compID);
@@ -511,13 +511,13 @@ struct TransformUnit : public UnitArea
   PLTescapeBuf        getescapeValue(const ComponentID id);
   const CPLTescapeBuf getescapeValue(const ComponentID id) const;
   Pel                *getPLTIndex(const ComponentID id);
-  bool               *getRunTypes(const ChannelType id);
+  PLTRunMode*         getRunTypes(const ChannelType id);
 
 private:
   TCoeff *m_coeffs[MAX_NUM_TBLOCKS];
   Pel    *m_pcmbuf[MAX_NUM_TBLOCKS];
 
-  EnumArray<bool *, ChannelType> m_runType;
+  EnumArray<PLTRunMode*, ChannelType> m_runType;
 };
 
 // ---------------------------------------------------------------------------

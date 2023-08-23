@@ -63,9 +63,7 @@ enum PictureType
   PIC_ORIGINAL_INPUT,
   PIC_TRUE_ORIGINAL_INPUT,
   PIC_FILTERED_ORIGINAL_INPUT,
-#if JVET_Z0120_SII_SEI_PROCESSING
   PIC_YUV_POST_REC,
-#endif
   NUM_PIC_TYPES
 };
 extern XuPool g_xuPool;
@@ -266,9 +264,11 @@ private:
   PelStorage m_reco;
   PelStorage m_orgr;
 
-  TCoeff *m_coeffs [ MAX_NUM_COMPONENT ];
-  Pel    *m_pcmbuf [ MAX_NUM_COMPONENT ];
-  EnumArray<bool *, ChannelType> m_runType;
+  std::vector<TCoeff> m_coeffs[MAX_NUM_COMPONENT];
+  std::vector<Pel>    m_pcmbuf[MAX_NUM_COMPONENT];
+
+  EnumArray<std::vector<PLTRunMode>, ChannelType> m_runType;
+
   int     m_offsets[ MAX_NUM_COMPONENT ];
 
   MotionInfo *m_motionBuf;

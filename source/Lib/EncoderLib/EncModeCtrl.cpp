@@ -843,20 +843,20 @@ void BestEncInfoCache::init( const Slice &slice )
   m_pPcmBuf = new Pel   [numCoeff*MAX_NUM_TUS];
   if (slice.getSPS()->getPLTMode())
   {
-    m_runType   = new bool[numCoeff*MAX_NUM_TUS];
+    m_runType = new PLTRunMode[numCoeff * MAX_NUM_TUS];
   }
 #else
   m_pCoeff  = new TCoeff[numCoeff];
   m_pPcmBuf = new Pel   [numCoeff];
   if (slice.getSPS()->getPLTMode())
   {
-    m_runType   = new bool[numCoeff];
+    m_runType = new PLTRunMode[numCoeff];
   }
 #endif
 
   TCoeff *coeffPtr = m_pCoeff;
   Pel    *pcmPtr   = m_pPcmBuf;
-  bool   *runTypePtr   = m_runType;
+  PLTRunMode* runTypePtr = m_runType;
   m_dummyCS.pcv = m_slice_bencinf->getPPS()->pcv;
 
   for( unsigned x = 0; x < numPos; x++ )
@@ -871,7 +871,7 @@ void BestEncInfoCache::init( const Slice &slice )
           {
             TCoeff *coeff[MAX_NUM_TBLOCKS] = { 0, };
             Pel    *pcmbf[MAX_NUM_TBLOCKS] = { 0, };
-            EnumArray<bool *, ChannelType> runType;
+            EnumArray<PLTRunMode*, ChannelType> runType;
             runType.fill(nullptr);
 
 #if REUSE_CU_RESULTS_WITH_MULTIPLE_TUS
@@ -1423,6 +1423,37 @@ void EncModeCtrlMTnoRQT::finishCULevel( Partitioner &partitioner )
 bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingStructure &cs, Partitioner& partitioner )
 {
   ComprCUCtx& cuECtx = m_ComprCUCtxList.back();
+
+#if JVET_AE0057_MTT_ET
+  if (m_pcEncCfg->getUseMttSkip() && partitioner.currQtDepth == 1 && partitioner.currBtDepth == 0
+      && partitioner.currArea().lwidth() == 64
+      && partitioner.currArea().lheight() == 64)
+  {
+    if (((partitioner.currArea().Y().x + 63 < cs.picture->lwidth())
+         && (partitioner.currArea().Y().y + 63 < cs.picture->lheight()))
+
+        && (encTestmode.type == ETM_SPLIT_BT_H || encTestmode.type == ETM_SPLIT_BT_V
+            || encTestmode.type == ETM_SPLIT_TT_H || encTestmode.type == ETM_SPLIT_TT_V)
+        && partitioner.chType == ChannelType::LUMA)
+    {
+      int thresholdMTT = Clip3(0, MAX_INT, (120 - ((m_pcEncCfg->getBaseQP() - 22) * 4)) * 1000000);
+      if (m_noSplitIntraRdCost > thresholdMTT)
+      {
+        const PartSplit split = getPartSplit(encTestmode);
+
+        if (split == CU_HORZ_SPLIT)
+        {
+          cuECtx.set(DID_HORZ_SPLIT, false);
+        }
+        if (split == CU_VERT_SPLIT)
+        {
+          cuECtx.set(DID_VERT_SPLIT, false);
+        }
+        return false;
+      }
+    }
+  }
+#endif
 
   // Fast checks, partitioning depended
   if (cuECtx.isHashPerfectMatch && encTestmode.type != ETM_MERGE_SKIP && encTestmode.type != ETM_INTER_ME)

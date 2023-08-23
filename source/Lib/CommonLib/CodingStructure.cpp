@@ -65,12 +65,9 @@ CodingStructure::CodingStructure(XuPool &xuPool)
 {
   for( uint32_t i = 0; i < MAX_NUM_COMPONENT; i++ )
   {
-    m_coeffs[ i ] = nullptr;
-    m_pcmbuf[ i ] = nullptr;
     m_offsets[ i ] = 0;
   }
 
-  m_runType.fill(nullptr);
   m_cuIdx.fill(nullptr);
   m_puIdx.fill(nullptr);
   m_tuIdx.fill(nullptr);
@@ -1093,7 +1090,7 @@ TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType c
 
   TCoeff *coeffs[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
   Pel    *pcmbuf[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
-  EnumArray<bool *, ChannelType> runType;
+  EnumArray<PLTRunMode*, ChannelType> runType;
 
   for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(area.chromaFormat); chType++)
   {
@@ -1123,9 +1120,9 @@ TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType c
       AreaBuf<uint32_t>(idxPtr, scaledSelf.width, scaledBlk.size()).fill(idx);
     }
 
-    if (m_runType[chType] != nullptr)
+    if (!m_runType[chType].empty())
     {
-      runType[chType] = m_runType[chType] + m_offsets[getFirstComponentOfChannel(chType)];
+      runType[chType] = m_runType[chType].data() + m_offsets[getFirstComponentOfChannel(chType)];
     }
   }
 
@@ -1138,8 +1135,8 @@ TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType c
       continue;
     }
 
-    coeffs[i] = m_coeffs[i] + m_offsets[i];
-    pcmbuf[i] = m_pcmbuf[i] + m_offsets[i];
+    coeffs[i] = m_coeffs[i].data() + m_offsets[i];
+    pcmbuf[i] = m_pcmbuf[i].data() + m_offsets[i];
 
     unsigned areaSize = tu->blocks[i].area();
     m_offsets[i] += areaSize;
@@ -1524,8 +1521,8 @@ void CodingStructure::createCoeffs(const bool isPLTused)
   {
     unsigned _area = area.blocks[i].area();
 
-    m_coeffs[i] = _area > 0 ? ( TCoeff* ) xMalloc( TCoeff, _area ) : nullptr;
-    m_pcmbuf[i] = _area > 0 ? ( Pel*    ) xMalloc( Pel,    _area ) : nullptr;
+    m_coeffs[i].resize(_area);
+    m_pcmbuf[i].resize(_area);
   }
 
   if (isPLTused)
@@ -1534,7 +1531,7 @@ void CodingStructure::createCoeffs(const bool isPLTused)
     {
       unsigned _area = area.block(chType).area();
 
-      m_runType[chType] = _area > 0 ? (bool *) xMalloc(bool, _area) : nullptr;
+      m_runType[chType].resize(_area);
     }
   }
 }
@@ -1543,25 +1540,13 @@ void CodingStructure::destroyCoeffs()
 {
   for( uint32_t i = 0; i < MAX_NUM_COMPONENT; i++ )
   {
-    if (m_coeffs[i])
-    {
-      xFree(m_coeffs[i]);
-      m_coeffs[i] = nullptr;
-    }
-    if (m_pcmbuf[i])
-    {
-      xFree(m_pcmbuf[i]);
-      m_pcmbuf[i] = nullptr;
-    }
+    m_coeffs[i].clear();
+    m_pcmbuf[i].clear();
   }
 
   for (auto &ptr: m_runType)
   {
-    if (ptr != nullptr)
-    {
-      xFree(ptr);
-      ptr = nullptr;
-    }
+    ptr.clear();
   }
 }
 

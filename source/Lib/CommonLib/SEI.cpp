@@ -563,9 +563,7 @@ SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
 {
   m_posEnabled = sei.m_posEnabled;
-#if JVET_AD0386_SEI
   m_posPrefixFlag = sei.m_posPrefixFlag;
-#endif
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;
   m_posPrefixByte = sei.m_posPrefixByte;
@@ -1073,12 +1071,10 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_outSubWidthC = sei.m_outSubWidthC;
   m_outSubHeightC = sei.m_outSubHeightC;
   m_outColourFormatIdc = sei.m_outColourFormatIdc;
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
   m_picWidthNumeratorMinus1 = sei.m_picWidthNumeratorMinus1;
   m_picWidthDenominatorMinus1 = sei.m_picWidthDenominatorMinus1;
   m_picHeightNumeratorMinus1 = sei.m_picHeightNumeratorMinus1;
   m_picHeightDenominatorMinus1 = sei.m_picHeightDenominatorMinus1;
-#endif
   m_picWidthInLumaSamples = sei.m_picWidthInLumaSamples;
   m_picHeightInLumaSamples = sei.m_picHeightInLumaSamples;
   m_inpTensorBitDepthLumaMinus8 = sei.m_inpTensorBitDepthLumaMinus8;
@@ -1123,18 +1119,85 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
 }
 
+#if JVET_AE0128_CONSTRAINT_UPDATE
+bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetworkPostFilterCharacteristics& sei)
+{
+  bool result = 
+  m_id == sei.m_id &&
+  m_modeIdc == sei.m_modeIdc &&
+  m_propertyPresentFlag == sei.m_propertyPresentFlag &&
+  m_purpose == sei.m_purpose &&
+  m_outSubCFlag == sei.m_outSubCFlag &&
+  m_outSubWidthC == sei.m_outSubWidthC &&
+  m_outSubHeightC == sei.m_outSubHeightC &&
+  m_outColourFormatIdc == sei.m_outColourFormatIdc &&
+  m_picWidthNumeratorMinus1 == sei.m_picWidthNumeratorMinus1 &&
+  m_picWidthDenominatorMinus1 == sei.m_picWidthDenominatorMinus1 &&
+  m_picHeightNumeratorMinus1 == sei.m_picHeightNumeratorMinus1 &&
+  m_picHeightDenominatorMinus1 == sei.m_picHeightDenominatorMinus1 &&
+  m_picWidthInLumaSamples == sei.m_picWidthInLumaSamples &&
+  m_picHeightInLumaSamples == sei.m_picHeightInLumaSamples &&
+  m_inpTensorBitDepthLumaMinus8 == sei.m_inpTensorBitDepthLumaMinus8 &&
+  m_inpTensorBitDepthChromaMinus8 == sei.m_inpTensorBitDepthChromaMinus8 &&
+  m_outTensorBitDepthLumaMinus8 == sei.m_outTensorBitDepthLumaMinus8 &&
+  m_outTensorBitDepthChromaMinus8 == sei.m_outTensorBitDepthChromaMinus8 &&
+  m_componentLastFlag == sei.m_componentLastFlag &&
+  m_inpFormatIdc == sei.m_inpFormatIdc &&
+  m_auxInpIdc == sei.m_auxInpIdc &&
+  m_sepColDescriptionFlag == sei.m_sepColDescriptionFlag &&
+#if JVET_AD0067_INCLUDE_SYNTAX
+  m_fullRangeFlag == sei.m_fullRangeFlag &&
+#endif
+  m_colPrimaries == sei.m_colPrimaries &&
+  m_transCharacteristics == sei.m_transCharacteristics &&
+  m_matrixCoeffs == sei.m_matrixCoeffs &&
+  m_inpOrderIdc == sei.m_inpOrderIdc &&
+  m_outFormatIdc == sei.m_outFormatIdc &&
+  m_outOrderIdc == sei.m_outOrderIdc &&
+  m_constantPatchSizeFlag == sei.m_constantPatchSizeFlag &&
+  m_patchWidthMinus1 == sei.m_patchWidthMinus1 &&
+  m_patchHeightMinus1 == sei.m_patchHeightMinus1 &&
+  m_extendedPatchWidthCdDeltaMinus1 == sei.m_extendedPatchWidthCdDeltaMinus1 &&
+  m_extendedPatchHeightCdDeltaMinus1 == sei.m_extendedPatchHeightCdDeltaMinus1 &&
+  m_overlap == sei.m_overlap &&
+  m_paddingType == sei.m_paddingType &&
+  m_lumaPadding == sei.m_lumaPadding &&
+  m_cbPadding == sei.m_cbPadding &&
+  m_crPadding == sei.m_crPadding &&
+  m_complexityInfoPresentFlag == sei.m_complexityInfoPresentFlag &&
+  m_uriTag == sei.m_uriTag &&
+  m_uri == sei.m_uri &&
+  m_parameterTypeIdc == sei.m_parameterTypeIdc &&
+  m_log2ParameterBitLengthMinus3 == sei.m_log2ParameterBitLengthMinus3 &&
+  m_numParametersIdc == sei.m_numParametersIdc &&
+  m_numKmacOperationsIdc == sei.m_numKmacOperationsIdc &&
+  m_totalKilobyteSize == sei.m_totalKilobyteSize &&
+  m_numberInputDecodedPicturesMinus1 == sei.m_numberInputDecodedPicturesMinus1 &&
+  m_numberInterpolatedPictures == sei.m_numberInterpolatedPictures &&
+  m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
+  m_payloadLength == sei.m_payloadLength;
+
+  if (m_payloadByte && sei.m_payloadByte && m_payloadLength == sei.m_payloadLength)
+  {
+    result &= !std::strncmp(m_payloadByte, sei.m_payloadByte, m_payloadLength);
+  }
+  else if ((m_payloadByte && !sei.m_payloadByte) || (!m_payloadByte && sei.m_payloadByte))
+  {
+    result = false;
+  }
+
+  return result;
+}
+#endif
+
 SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   const SEINeuralNetworkPostFilterActivation& sei)
 {
   m_targetId = sei.m_targetId;
   m_cancelFlag = sei.m_cancelFlag;
   m_persistenceFlag = sei.m_persistenceFlag;
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
   m_targetBaseFlag = sei.m_targetBaseFlag;
-#endif
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
   m_outputFlag = sei.m_outputFlag;
-#endif
 }
 
 SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)

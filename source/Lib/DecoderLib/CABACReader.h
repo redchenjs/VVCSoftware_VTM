@@ -104,7 +104,8 @@ public:
   void        mip_pred_modes            ( CodingUnit&                   cu );
   void        mip_pred_mode             ( PredictionUnit&               pu );
   void        cu_palette_info           ( CodingUnit&                   cu,     ComponentID     compBegin, uint32_t numComp, CUCtx& cuCtx );
-  void        cuPaletteSubblockInfo     ( CodingUnit&                   cu,     ComponentID     compBegin, uint32_t numComp, int subSetId, uint32_t& prevRunPos, unsigned& prevRunType );
+  void        cuPaletteSubblockInfo(CodingUnit& cu, ComponentID compBegin, uint32_t numComp, int subSetId,
+                                    uint32_t& prevRunPos, PLTRunMode& prevRunType);
   // prediction unit (clause 7.3.8.6)
   void        prediction_unit           ( PredictionUnit&               pu );
   void        merge_flag                ( PredictionUnit&               pu );

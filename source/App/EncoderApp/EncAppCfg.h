@@ -425,6 +425,9 @@ protected:
   unsigned              m_maxCuHeight;                                     ///< max. CU height in pixel
   unsigned m_log2MinCuSize;                                   ///< min. CU size log2
 
+#if JVET_AE0057_MTT_ET
+  bool      m_useMttSkip;
+#endif
   bool      m_useFastLCTU;
   bool      m_usePbIntraFast;
   bool      m_useAMaxBT;
@@ -736,6 +739,7 @@ protected:
   EncCfgParam::CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
 
   bool                  m_nnPostFilterSEICharacteristicsEnabled;
+  bool                  m_nnPostFilterSEICharacteristicsUseSuffixSEI;
   int                   m_nnPostFilterSEICharacteristicsNumFilters;
   uint32_t              m_nnPostFilterSEICharacteristicsId[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsModeIdc[MAX_NUM_NN_POST_FILTERS];
@@ -744,15 +748,10 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsPurpose[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsOutSubCFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutColourFormatIdc[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AD0383_SCALING_RATIO_OUTPUT_SIZE
   uint32_t              m_nnPostFilterSEICharacteristicsPicWidthNumerator[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicWidthDenominator[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicHeightNumerator[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPicHeightDenominator[MAX_NUM_NN_POST_FILTERS];
-#else
-  uint32_t              m_nnPostFilterSEICharacteristicsPicWidthInLumaSamples[MAX_NUM_NN_POST_FILTERS];
-  uint32_t              m_nnPostFilterSEICharacteristicsPicHeightInLumaSamples[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[MAX_NUM_NN_POST_FILTERS];
@@ -771,10 +770,8 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsOutFormatIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsOutOrderIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsConstantPatchSizeFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AD0233_NNPFC_CHROMA_SAMPLE_LOC
   bool                  m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t               m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsPatchWidthMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsPatchHeightMinus1[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsExtendedPatchWidthCdDeltaMinus1[MAX_NUM_NN_POST_FILTERS];
@@ -795,26 +792,19 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
 
   bool                  m_nnPostFilterSEIActivationEnabled;
+  bool                  m_nnPostFilterSEIActivationUseSuffixSEI;
   uint32_t              m_nnPostFilterSEIActivationTargetId;
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AD0054_NNPFC_ABSENT_INPUT_PIC_ZERO_FLAG
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;
-#if JVET_AD0056_NNPFA_TARGET_BASE_FLAG
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
-#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
-#endif
 
   bool                  m_poSEIEnabled;
-#if JVET_AD0386_SEI
   std::vector<bool>     m_poSEIPrefixFlag;
-#endif
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
@@ -901,6 +891,7 @@ protected:
   bool      m_DCIEnabled;                                     ///< enable Decoding Capability Information (DCI)
   bool      m_hrdParametersPresentFlag;                       ///< enable generation of HRD parameters
   bool      m_vuiParametersPresentFlag;                       ///< enable generation of VUI parameters
+  bool      m_writeVuiHrdFromY4m;                             ///< allow writing VUI and HRD information from input Y4M file
   bool      m_samePicTimingInAllOLS;                          ///< same picture timing SEI message is used in all OLS
   bool      m_aspectRatioInfoPresentFlag;                     ///< Signals whether aspect_ratio_idc is present
   int       m_aspectRatioIdc;                                 ///< aspect_ratio_idc
@@ -926,12 +917,10 @@ protected:
   uint32_t  m_siiSEINumUnitsInShutterInterval;
   uint32_t  m_siiSEITimeScale;
   std::vector<uint32_t>     m_siiSEISubLayerNumUnitsInSI;
-#if JVET_Z0120_SII_SEI_PROCESSING
   bool        m_ShutterFilterEnable;                          ///< enable Pre-Filtering with Shutter Interval SEI
   std::string m_shutterIntervalPreFileName;                   ///< output Pre-Filtering video
   int         m_SII_BlendingRatio;
   void        setBlendingRatioSII(int value) { m_SII_BlendingRatio = value; }
-#endif
 #if GREEN_METADATA_SEI_ENABLED
 public:
   std::string getGMFAFile ();

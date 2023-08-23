@@ -379,9 +379,9 @@ unsigned DeriveCtx::CtxMipFlag( const CodingUnit& cu )
   return ctxId;
 }
 
-unsigned DeriveCtx::CtxPltCopyFlag( const unsigned prevRunType, const unsigned dist )
+unsigned DeriveCtx::CtxPltCopyFlag(const PLTRunMode prevRunType, const unsigned dist)
 {
-  uint8_t *ucCtxLut = (prevRunType == PLT_RUN_INDEX) ? g_paletteRunLeftLut : g_paletteRunTopLut;
+  uint8_t* ucCtxLut = (prevRunType == PLTRunMode::INDEX) ? g_paletteRunLeftLut : g_paletteRunTopLut;
   if ( dist <= RUN_IDX_THRE )
   {
     return ucCtxLut[dist];

@@ -35,6 +35,11 @@
    \brief    SEI NN post filtering (application) class
 */
 
+#include "CommonLib/CommonDef.h"
+#include <cmath>
+#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
+#include "CommonLib/SEI.h"
+#endif
 #include "SEINeuralNetworkPostFiltering.h"
 
 
@@ -67,10 +72,11 @@ void SEINeuralNetworkPostFiltering::setPicActivatedNnpfc(Picture* picture)
       else
       {
         tmpIsNnpfActivatedForPic[nnpfa->m_targetId] = true;
-      }
-#if JVET_AD0388_NNPFA_OUTPUT_FLAG
-      CHECK((uint32_t)nnpfa->m_outputFlag.size() > nnpfc->m_numInpPicsInOutputTensor, "The value of nnpfa_num_output_entries shall be in the range of 0 to NumInpPicsInOutputTensor");
+#if JVET_AE0048_IMPLICIT_PERSISTENCE_CANCEL
+        m_isNnpfActiveForCLVS[nnpfa->m_targetId] = false;  // Cancel the persistence of an NNPFA SEI message with any subsequent NNPFA SEI message with the same nnpfa_target_id
 #endif
+      }
+      CHECK((uint32_t)nnpfa->m_outputFlag.size() > nnpfc->m_numInpPicsInOutputTensor, "The value of nnpfa_num_output_entries shall be in the range of 0 to NumInpPicsInOutputTensor");
     }
   }
 
@@ -101,23 +107,38 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
         || picType == NAL_UNIT_CODED_SLICE_CRA || picType == NAL_UNIT_CODED_SLICE_GDR)
     {
       m_clvsNnpfcSEIs = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
+
+#if JVET_AE0128_CONSTRAINT_UPDATE || JVET_AE0142_NNPF_CONSTRAINT_BUGFIXES
+      for (std::list<SEI*>::iterator it = m_clvsNnpfcSEIs.begin(); it != m_clvsNnpfcSEIs.end(); it++)
+      {
+        SEINeuralNetworkPostFilterCharacteristics *nnpfcSEI = (SEINeuralNetworkPostFilterCharacteristics*)(*it);
+        for (std::list<SEI*>::iterator it2 = it; it2 != m_clvsNnpfcSEIs.end(); it2++)
+        {
+#if JVET_AE0128_CONSTRAINT_UPDATE
+          SEINeuralNetworkPostFilterCharacteristics *nnpfcSEI2 = (SEINeuralNetworkPostFilterCharacteristics*)(*it2);
+          CHECK(nnpfcSEI->m_id == nnpfcSEI2->m_id && nnpfcSEI->m_baseFlag && nnpfcSEI2->m_baseFlag && !(*nnpfcSEI == *nnpfcSEI2), "All NNPFC SEI messages in a CLVS that have a particular nnpfc_id value and nnpfc_base_flag equal to 1 shall have identical SEI payload content.");
+#endif
+#if JVET_AE0142_NNPF_CONSTRAINT_BUGFIXES
+          CHECK(nnpfcSEI->m_id == nnpfcSEI2->m_id && nnpfcSEI->m_purpose != nnpfcSEI2->m_purpose, "All NNPFC SEI messages with a particular value of nnpfc_id within a CLVS shall have the same value of nnpfc_purpose.");
+#endif
+        }
+      }
+#endif
+
       m_isNnpfActiveForCLVS.clear();
     }
 
     setPicActivatedNnpfc(currCodedPic);
-#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
     if (currCodedPic->m_nnpfcActivated.empty())
     {
       continue;
     }
-#endif
 
     const SPS *sps = currCodedPic->slices[0]->getSPS();
     const PPS* pps = currCodedPic->slices[0]->getPPS();
     const int subWidthC  = SPS::getWinUnitX(sps->getChromaFormatIdc());
     const int subHeightC = SPS::getWinUnitY(sps->getChromaFormatIdc());
 
-#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
     uint32_t sourceWidth = pps->getPicWidthInLumaSamples()
                            - subWidthC
                                * (pps->getConformanceWindow().getWindowLeftOffset()
@@ -136,6 +157,14 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
     {
       croppedWidth  = superResolutionNnpfc->m_picWidthInLumaSamples;
       croppedHeight = superResolutionNnpfc->m_picHeightInLumaSamples;
+
+#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
+      int outputPicWidth  = (int)ceil(((double) croppedWidth * (superResolutionNnpfc->m_picWidthNumeratorMinus1 + 1)) / (superResolutionNnpfc->m_picWidthDenominatorMinus1 + 1));
+      int outputPicHeight = (int)ceil(((double) croppedHeight * (superResolutionNnpfc->m_picHeightNumeratorMinus1 + 1)) / (superResolutionNnpfc->m_picHeightDenominatorMinus1 + 1));
+
+      CHECK(outputPicWidth == croppedWidth && outputPicHeight == croppedHeight, "When resolutionResamplingFlag is equal to 1, either nnpfcOutputPicWidth is not equal to CroppedWidth or nnpfcOutputPicHeight is not equal to CroppedHeight.");
+#endif
+
     }
     else
     {
@@ -148,69 +177,20 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
                           * (pps->getConformanceWindow().getWindowTopOffset()
                              + pps->getConformanceWindow().getWindowBottomOffset());
     }
-#endif
 
     for (auto sei : currCodedPic->m_nnpfcActivated)
     {
       auto currNnpfc = (SEINeuralNetworkPostFilterCharacteristics*) sei;
-#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
       checkInputPics(currCodedPic, currNnpfc, sourceWidth, sourceHeight, croppedWidth, croppedHeight);
-#else
-      bool pictureRateUpsamplingFlag = (currNnpfc->m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0;
-      if (pictureRateUpsamplingFlag)
-      {
-        uint32_t sourceWidth = pps->getPicWidthInLumaSamples()
-                               - subWidthC
-                                   * (pps->getConformanceWindow().getWindowLeftOffset()
-                                      + pps->getConformanceWindow().getWindowRightOffset());
-        uint32_t sourceHeight = pps->getPicHeightInLumaSamples()
-                                - subHeightC
-                                    * (pps->getConformanceWindow().getWindowTopOffset()
-                                       + pps->getConformanceWindow().getWindowBottomOffset());
-
-        uint32_t croppedWidth;
-        uint32_t croppedHeight;
-        auto *superResolutionNnpfc = getSuperResolutionNnpfc(currCodedPic->m_nnpfcActivated);
-        if (nullptr != superResolutionNnpfc)
-        {
-          croppedWidth  = superResolutionNnpfc->m_picWidthInLumaSamples;
-          croppedHeight = superResolutionNnpfc->m_picHeightInLumaSamples;
-        }
-        else
-        {
-          croppedWidth = pps->getPicWidthInLumaSamples()
-                         - subWidthC
-                             * (pps->getConformanceWindow().getWindowLeftOffset()
-                                + pps->getConformanceWindow().getWindowRightOffset());
-          croppedHeight = pps->getPicHeightInLumaSamples()
-                          - subHeightC
-                              * (pps->getConformanceWindow().getWindowTopOffset()
-                                 + pps->getConformanceWindow().getWindowBottomOffset());
-        }
-
-        findFrameRateUpSamplingInputPics(currCodedPic, currNnpfc,
-                                         sourceWidth, sourceHeight, croppedWidth, croppedHeight);
-      }
-#endif
     }
   }
 }
 
-#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
 void SEINeuralNetworkPostFiltering::checkInputPics(
   Picture* currCodedPic, const SEINeuralNetworkPostFilterCharacteristics* currNnpfc,
   uint32_t sourceWidth, uint32_t sourceHeight, uint32_t croppedWidth, uint32_t croppedHeight)
-#else
-void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
-  Picture* currCodedPic, const SEINeuralNetworkPostFilterCharacteristics* frameRateUpsamplingNnpfc,
-  uint32_t sourceWidth, uint32_t sourceHeight, uint32_t croppedWidth, uint32_t croppedHeight)
-#endif
 {
-#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
   uint32_t numInputPics = currNnpfc->m_numberInputDecodedPicturesMinus1 + 1;
-#else
-  uint32_t numInputPics = frameRateUpsamplingNnpfc->m_numberInputDecodedPicturesMinus1 + 1;
-#endif
 
   std::vector<uint32_t> inputPicPoc(numInputPics, 0);
   uint32_t currPicPOC = currCodedPic->getPOC();
@@ -218,7 +198,6 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
 
   if (numInputPics > 1)
   {
-#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
     bool fpCurrPicArrangementTypeIsFive = false;
     bool fpCurrPicFrameIsFrame0Flag     = false;
     if ((currNnpfc->m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
@@ -231,27 +210,12 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
         fpCurrPicFrameIsFrame0Flag = seiFramePacking->m_currentFrameIsFrame0Flag;
       }
     }
-#else
-    SEIMessages currPicFramePacking = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::FRAME_PACKING);
-    bool fpCurrPicArrangementTypeIsFive = false;
-    bool fpCurrPicFrameIsFrame0Flag     = false;
-    if (!currPicFramePacking.empty())
-    {
-      const SEIFramePacking* seiFramePacking = (SEIFramePacking*) *(currPicFramePacking.begin());
-      fpCurrPicArrangementTypeIsFive = seiFramePacking->m_arrangementType == 5;
-      fpCurrPicFrameIsFrame0Flag = seiFramePacking->m_currentFrameIsFrame0Flag;
-    }
-#endif
 
     for (int i = 1; i < numInputPics; i++)
     {
       inputPicPoc[i]    = inputPicPoc[i - 1];
       Picture* inputPic = m_picList[i - 1];
-#if JVET_AD0057_MULTI_INPUT_PIC_CONSTRAINTS
       if ((currNnpfc->m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0 && fpCurrPicArrangementTypeIsFive)
-#else
-      if (fpCurrPicArrangementTypeIsFive)
-#endif
       {
         SEIMessages inputPicFramePacking = getSeisByType(inputPic->SEIs, SEI::PayloadType::FRAME_PACKING);
         if (!inputPicFramePacking.empty())
@@ -281,4 +245,155 @@ void SEINeuralNetworkPostFiltering::findFrameRateUpSamplingInputPics(
       }
     }
   }
+
+  bool fpCurrPicArrangementTypeIsTemporalInterleave = false;
+  bool fpCurrPicFrameIsFrame0Flag                   = false;
+  const SEIMessages currPicFramePacking = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::FRAME_PACKING);
+  if (!currPicFramePacking.empty())
+  {
+    const SEIFramePacking* seiFramePacking = (SEIFramePacking*) *(currPicFramePacking.begin());
+    fpCurrPicArrangementTypeIsTemporalInterleave = seiFramePacking->m_arrangementType == 5;
+    fpCurrPicFrameIsFrame0Flag = seiFramePacking->m_currentFrameIsFrame0Flag;
+  }
+
+  SEIMessages nnpfaList = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
+  SEINeuralNetworkPostFilterActivation* nnpfa = nullptr;
+
+  // Find nnpfa that activated current nnpfc
+  for (auto sei : nnpfaList)
+  {
+    auto nnpfaCand = (SEINeuralNetworkPostFilterActivation*) sei;
+    if (nnpfaCand->m_targetId == currNnpfc->m_id)
+    {
+      nnpfa = nnpfaCand;
+      break;
+    }
+  }
+
+  if (nnpfa != nullptr)
+  {
+#if JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT
+    int numPicsCurrLayer = 0;
+#endif
+    Picture *lastPic = nullptr;
+    for (auto pic : m_picList)
+    {
+      if (pic->layerId == currCodedPic->layerId)
+      {
+#if JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT
+        ++numPicsCurrLayer;
+#endif
+        if (lastPic == nullptr || (pic->getPOC() > lastPic->getPOC()))
+        {
+          lastPic = pic;
+        }
+      }
+    }
+
+    bool isCurrPicLastInOutputOrder = lastPic != nullptr && currCodedPic == lastPic;
+
+    bool pictureRateUpsamplingFlag = (currNnpfc->m_purpose & FRAME_RATE_UPSAMPLING) != 0;
+    int greaterThan0count = 0;
+    int numPostRoll = 0;
+    if (pictureRateUpsamplingFlag)
+    {
+      for (int i = 1; i < currNnpfc->m_numberInputDecodedPicturesMinus1; i++)
+      {
+        if (currNnpfc->m_numberInterpolatedPictures[i] > 0)
+        {
+          greaterThan0count++;
+          numPostRoll = i;
+        }
+      }
+#if JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT
+      CHECK( numPicsCurrLayer > numInputPics && greaterThan0count > 1, "Disallow generating NNPF output pictures between any particular pair of consecutive input pictures more than once." );
+#endif
+    }
+
+    int numInferences;
+    if (pictureRateUpsamplingFlag && nnpfa->m_persistenceFlag && greaterThan0count == 1 && isCurrPicLastInOutputOrder)
+    {
+      numInferences = 1 + numPostRoll;
+    }
+    else
+    {
+      numInferences = 1;
+    }
+
+    for (int j = 0; j < numInferences; j++)
+    {
+      std::vector<Picture*> inputPic(numInputPics);
+      std::vector<bool> inputPresentFlag(numInputPics);
+
+      if (j > 0)
+      {
+        for (int k = 0; k <= (j - 1); k++)
+        {
+          inputPic[k] = currCodedPic;
+          inputPresentFlag[k] = false;
+        }
+      }
+      inputPic[j] = currCodedPic;
+      inputPresentFlag[j] = true;
+
+      if (numInputPics > 1)
+      {
+        for (int i = j + 1; i <= (numInputPics - j - 1); i++)
+        {
+          Picture *prevPic                                   = nullptr;
+          Picture *prevPicWithTemporalInterleaveFramePacking = nullptr;
+
+          for (auto pic : m_picList)
+          {
+            if (pic->layerId == currCodedPic->layerId && pic->getPOC() < inputPic[i - 1]->getPOC())
+            {
+              if (prevPic == nullptr || pic->getPOC() > prevPic->getPOC())
+              {
+                prevPic = pic;
+              }
+              if (prevPicWithTemporalInterleaveFramePacking == nullptr || pic->getPOC() > prevPicWithTemporalInterleaveFramePacking->getPOC())
+              {
+                SEIMessages picFramePacking = getSeisByType(pic->SEIs, SEI::PayloadType::FRAME_PACKING);
+                if (!picFramePacking.empty())
+                {
+                  const SEIFramePacking* seiFramePacking = (SEIFramePacking*) *(picFramePacking.begin());
+                  if (seiFramePacking->m_arrangementType == 5 && seiFramePacking->m_currentFrameIsFrame0Flag == fpCurrPicFrameIsFrame0Flag)
+                  {
+                    prevPicWithTemporalInterleaveFramePacking = pic;
+                  }
+                }
+              }
+            }
+          }
+
+          if (pictureRateUpsamplingFlag && fpCurrPicArrangementTypeIsTemporalInterleave && prevPicWithTemporalInterleaveFramePacking != nullptr)
+          {
+            inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
+            inputPresentFlag[i] = true;
+          }
+          else if (!pictureRateUpsamplingFlag && prevPic != nullptr)
+          {
+            inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
+            inputPresentFlag[i] = true;
+          }
+          else if (!fpCurrPicArrangementTypeIsTemporalInterleave && prevPic != nullptr)
+          {
+            inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
+            inputPresentFlag[i] = true;
+          }
+          else
+          {
+            inputPic[i]         = inputPic[i - 1];
+            inputPresentFlag[i] = false;
+#if JVET_AE0142_NNPF_CONSTRAINT_BUGFIXES
+            CHECK( pictureRateUpsamplingFlag && currNnpfc->m_numberInterpolatedPictures[i - 1] > 0, "It is a requirement of bitstream conformance that when PictureRateUpsamplingFlag is equal to 1, nnpfc_interpolated_pics[i - 1] shall not be greater than 0");
+#else
+            CHECK(currNnpfc->m_numberInterpolatedPictures[i] > 0, "It is a requirement of bitstream conformance that nnpfc_interpolated_pics[i - 1] shall not be greater than 0");
+#endif
+          }
+        }
+      }
+    }
+  }
+
 }

@@ -919,14 +919,9 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     m_seiEncoder.initSEIShutterIntervalInfo(seiShutterInterval);
     seiMessages.push_back(seiShutterInterval);
   }
-  if (m_pcCfg->getNNPostFilterSEICharacteristicsEnabled())
+  if (m_pcCfg->getNNPostFilterSEICharacteristicsEnabled() && !m_pcCfg->getNNPostFilterSEICharacteristicsUseSuffixSEI())
   {
-    for (int i = 0; i < m_pcCfg->getNNPostFilterSEICharacteristicsNumFilters(); i++)
-    {
-      SEINeuralNetworkPostFilterCharacteristics *seiNNPostFilterCharacteristics = new SEINeuralNetworkPostFilterCharacteristics;
-      m_seiEncoder.initSEINeuralNetworkPostFilterCharacteristics(seiNNPostFilterCharacteristics, i);
-      seiMessages.push_back(seiNNPostFilterCharacteristics);
-    }
+    xCreateNNPostFilterCharacteristicsSEIMessages(seiMessages);
   }
   if (m_pcCfg->getPoSEIEnabled())
   {
@@ -1015,14 +1010,9 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     seiMessages.push_back(fgcSEI);
   }
 
-  if (m_pcCfg->getNnPostFilterSEIActivationEnabled())
+  if (m_pcCfg->getNnPostFilterSEIActivationEnabled() && !m_pcCfg->getNnPostFilterSEIActivationUseSuffixSEI())
   {
-    SEINeuralNetworkPostFilterActivation *nnpfActivationSEI = new SEINeuralNetworkPostFilterActivation;
-    m_seiEncoder.initSEINeuralNetworkPostFilterActivation(nnpfActivationSEI);
-#if JVET_AD0141_NNPFA_NONOUTPUTPIC
-    CHECK(!slice->getPicHeader()->getPicOutputFlag(), "NNPFA SEI Message cannot be associated with picture with ph_pic_output_flag equal to 0")
-#endif
-    seiMessages.push_back(nnpfActivationSEI);
+    xCreateNNPostFilterActivationSEIMessage(seiMessages, slice);
   }
 
   if (m_pcCfg->getPostFilterHintSEIEnabled())
@@ -1032,6 +1022,24 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     m_seiEncoder.initSEIPostFilterHint(postFilterHintSEI);
     seiMessages.push_back(postFilterHintSEI);
   }
+}
+
+void EncGOP::xCreateNNPostFilterCharacteristicsSEIMessages(SEIMessages& seiMessages)
+{
+  for (int i = 0; i < m_pcCfg->getNNPostFilterSEICharacteristicsNumFilters(); i++)
+  {
+    SEINeuralNetworkPostFilterCharacteristics *seiNNPostFilterCharacteristics = new SEINeuralNetworkPostFilterCharacteristics;
+    m_seiEncoder.initSEINeuralNetworkPostFilterCharacteristics(seiNNPostFilterCharacteristics, i);
+    seiMessages.push_back(seiNNPostFilterCharacteristics);
+  }
+}
+
+void EncGOP::xCreateNNPostFilterActivationSEIMessage(SEIMessages& seiMessages, Slice* slice)
+{
+  SEINeuralNetworkPostFilterActivation *nnpfActivationSEI = new SEINeuralNetworkPostFilterActivation;
+  m_seiEncoder.initSEINeuralNetworkPostFilterActivation(nnpfActivationSEI);
+  CHECK(!slice->getPicHeader()->getPicOutputFlag(), "NNPFA SEI Message cannot be associated with picture with ph_pic_output_flag equal to 0")
+  seiMessages.push_back(nnpfActivationSEI);
 }
 
 void EncGOP::xCreatePhaseIndicationSEIMessages(SEIMessages& seiMessages, Slice* slice, int ppsId)
@@ -3913,6 +3921,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         m_seqFirst = false;
       }
 
+      if (writePS && m_pcCfg->getNNPostFilterSEICharacteristicsEnabled() && m_pcCfg->getNNPostFilterSEICharacteristicsUseSuffixSEI())
+      {
+        // create NNPostFilterSEICharacteristics SEI as suffix SEI
+        xCreateNNPostFilterCharacteristicsSEIMessages(trailingSeiMessages);
+      }
 
       //send LMCS APS when LMCSModel is updated. It can be updated even current slice does not enable reshaper.
       //For example, in RA, update is on intra slice, but intra slice may not use reshaper
@@ -4029,6 +4042,12 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       m_bufferingPeriodSEIPresentInAU = false;
       // create prefix SEI associated with a picture
       xCreatePerPictureSEIMessages(gopId, leadingSeiMessages, nestedSeiMessages, pcSlice);
+
+      if (m_pcCfg->getNnPostFilterSEIActivationEnabled() && m_pcCfg->getNnPostFilterSEIActivationUseSuffixSEI())
+      {
+        // create NeuralNetworkPostFilterActivation SEI as suffix SEI
+        xCreateNNPostFilterActivationSEIMessage(trailingSeiMessages, pcSlice);
+      }
 
       if (newPPS)
       {
@@ -4459,7 +4478,19 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         pcPic->SEIs.push_back(new SEINeuralNetworkPostFilterCharacteristics(*(SEINeuralNetworkPostFilterCharacteristics*) *it));
       }
 
+      seiMessages = getSeisByType(trailingSeiMessages, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
+      for (auto it = seiMessages.cbegin(); it != seiMessages.cend(); it++)
+      {
+        pcPic->SEIs.push_back(new SEINeuralNetworkPostFilterCharacteristics(*(SEINeuralNetworkPostFilterCharacteristics*) *it));
+      }
+
       seiMessages = getSeisByType(leadingSeiMessages, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
+      for (auto it = seiMessages.cbegin(); it != seiMessages.cend(); it++)
+      {
+        pcPic->SEIs.push_back(new SEINeuralNetworkPostFilterActivation(*(SEINeuralNetworkPostFilterActivation*) *it));
+      }
+
+      seiMessages = getSeisByType(trailingSeiMessages, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
       for (auto it = seiMessages.cbegin(); it != seiMessages.cend(); it++)
       {
         pcPic->SEIs.push_back(new SEINeuralNetworkPostFilterActivation(*(SEINeuralNetworkPostFilterActivation*) *it));
@@ -5064,6 +5095,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   double  MSEyuvframeWeighted[MAX_NUM_COMPONENT];
 #endif
   double  upscaledPSNR[MAX_NUM_COMPONENT];
+  double  upscaledMsssim[MAX_NUM_COMPONENT];
   for(int i=0; i<MAX_NUM_COMPONENT; i++)
   {
     dPSNR[i]=0.0;
@@ -5110,7 +5142,8 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 
     ScalingRatio scalingRatio;
     // it is assumed that full resolution picture PPS has ppsId 0
-    const PPS* pps = m_pcEncLib->getPPS(0);
+    const PPS* pps = m_pcEncLib->getPPS(pcPic->layerId);
+
     CU::getRprScaling(&sps, pps, pcPic, scalingRatio);
 
     bool rescaleForDisplay = true;
@@ -5232,6 +5265,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 #endif
 
       upscaledPSNR[comp] = upscaledSSD ? 10.0 * log10( (double)maxval * maxval * upscaledWidth * upscaledHeight / (double)upscaledSSD ) : 999.99;
+      upscaledMsssim[comp] = xCalculateMSSSIM (upscaledOrgPB.bufAt(0, 0), upscaledOrgPB.stride, upscaledRecPB.bufAt(0, 0), upscaledRecPB.stride, upscaledWidth, upscaledHeight, bitDepth);
     }
     else if (picRefLayer)
     {
@@ -5291,7 +5325,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   m_rvm.push_back(uibits);
 
   //===== add PSNR =====
-  m_gcAnalyzeAll.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, isEncodeLtRef);
+  m_gcAnalyzeAll.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, upscaledMsssim, isEncodeLtRef);
 #if EXTENSION_360_VIDEO
   m_ext360.addResult(m_gcAnalyzeAll);
 #endif
@@ -5303,7 +5337,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 #endif
   if (pcSlice->isIntra())
   {
-    m_gcAnalyzeI.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, isEncodeLtRef);
+    m_gcAnalyzeI.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, upscaledMsssim, isEncodeLtRef);
     *PSNR_Y = dPSNR[COMPONENT_Y];
 #if EXTENSION_360_VIDEO
     m_ext360.addResult(m_gcAnalyzeI);
@@ -5317,7 +5351,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   }
   if (pcSlice->isInterP())
   {
-    m_gcAnalyzeP.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, isEncodeLtRef);
+    m_gcAnalyzeP.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, upscaledMsssim, isEncodeLtRef);
     *PSNR_Y = dPSNR[COMPONENT_Y];
 #if EXTENSION_360_VIDEO
     m_ext360.addResult(m_gcAnalyzeP);
@@ -5331,7 +5365,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   }
   if (pcSlice->isInterB())
   {
-    m_gcAnalyzeB.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, isEncodeLtRef);
+    m_gcAnalyzeB.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, upscaledMsssim, isEncodeLtRef);
     *PSNR_Y = dPSNR[COMPONENT_Y];
 #if EXTENSION_360_VIDEO
     m_ext360.addResult(m_gcAnalyzeB);
@@ -5346,7 +5380,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 #if WCG_WPSNR
   if (useLumaWPSNR)
   {
-    m_gcAnalyzeWPSNR.addResult( dPSNRWeighted, (double)uibits, MSEyuvframeWeighted, upscaledPSNR, msssim, isEncodeLtRef );
+    m_gcAnalyzeWPSNR.addResult( dPSNRWeighted, (double)uibits, MSEyuvframeWeighted, upscaledPSNR, msssim, upscaledMsssim, isEncodeLtRef );
   }
 #endif
 
@@ -5505,6 +5539,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     if (m_pcEncLib->isResChangeInClvsEnabled())
     {
       msg( NOTICE, " [Y2 %6.4lf dB  U2 %6.4lf dB  V2 %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr] );
+      msg( NOTICE, " MS-SSIM2: [Y %6.4lf  U %6.4lf  V %6.4lf ]", upscaledMsssim[COMPONENT_Y], upscaledMsssim[COMPONENT_Cb], upscaledMsssim[COMPONENT_Cr] );
     }
     else if (m_pcEncLib->isRefLayerRescaledAvailable())
     {
@@ -6017,7 +6052,7 @@ void EncGOP::xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture* 
   uint32_t uibits = 0; // the number of bits for the pair is not calculated here - instead the overall total is used elsewhere.
 
   //===== add PSNR =====
-  m_gcAnalyzeAllField.addResult(dPSNR, (double) uibits, mseYuvFrame, mseYuvFrame, msssim, isEncodeLtRef);
+  m_gcAnalyzeAllField.addResult(dPSNR, (double) uibits, mseYuvFrame, mseYuvFrame, msssim, msssim, isEncodeLtRef);
 
   *PSNR_Y = dPSNR[COMPONENT_Y];
 
@@ -7023,7 +7058,7 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
     localRpl[l].setNumberOfLongtermPictures(numLtrp[l]);
     localRpl[l].setNumberOfShorttermPictures(numStrp[l]);
     localRpl[l].setNumberOfInterLayerPictures(numIlrp[l]);
-    localRpl[l].setNumberOfActivePictures(std::min<int>(numValidRefs[l], rpl->getNumberOfActivePictures()));
+    localRpl[l].setNumberOfActivePictures(std::min<int>(numValidRefs[l], rpl->getNumberOfActivePictures() + (rpl->getNumberOfInterLayerPictures() > 0? 0: numIlrp[l])));
     localRpl[l].setLtrpInSliceHeaderFlag(true);
     slice->setRplIdx(l, -1);
     *slice->getRpl(l) = localRpl[l];

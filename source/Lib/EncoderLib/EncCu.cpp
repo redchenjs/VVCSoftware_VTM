@@ -830,6 +830,19 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
       {
         xCheckRDCostIntra(tempCS, bestCS, partitioner, currTestMode, false);
       }
+#if JVET_AE0057_MTT_ET
+      if (partitioner.currQtDepth == 1 && partitioner.currBtDepth == 0 && partitioner.currArea().lwidth() == 64
+          && partitioner.currArea().lheight() == 64)
+      {
+        if ((partitioner.chType == ChannelType::LUMA)
+            && ((partitioner.currArea().Y().x + 63 < bestCS->picture->lwidth())
+                && (partitioner.currArea().Y().y + 63 < bestCS->picture->lheight())))
+        {      
+          m_modeCtrl->setNoSplitIntraCost(bestCS->cost);
+        }
+      }
+#endif
+
       splitRdCostBest[CTU_LEVEL] = bestCS->cost;
       tempCS->splitRdCostBest = splitRdCostBest;
     }
@@ -1201,6 +1214,18 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
       CodingStructure *tempSubCS = m_pTempCS[wIdx][hIdx];
       CodingStructure *bestSubCS = m_pBestCS[wIdx][hIdx];
 
+#if JVET_AE0057_MTT_ET
+      if (partitioner.currQtDepth == 1 && partitioner.currBtDepth == 0 && partitioner.currArea().lwidth() == 64
+          && partitioner.currArea().lheight() == 64)
+      {
+        if ((partitioner.chType == ChannelType::LUMA)
+            && ((partitioner.currArea().Y().x + 63 < bestCS->picture->lwidth())
+                && (partitioner.currArea().Y().y + 63 < bestCS->picture->lheight())))
+        {
+          m_modeCtrl->setNoSplitIntraCost(0.0);
+        }
+      }
+#endif 
       tempCS->initSubStructure( *tempSubCS, partitioner.chType, subCUArea, false );
       tempCS->initSubStructure( *bestSubCS, partitioner.chType, subCUArea, false );
       tempSubCS->bestParent = bestSubCS->bestParent = bestCS;
@@ -2972,13 +2997,13 @@ void EncCu::addRegularCandsToPruningList(const MergeCtx& mergeCtx, const UnitAre
 #endif
 {
 #if JVET_AD0045
-  bool enableVisualCheck = false;
-  if (((m_pcEncCfg->getFrameRate().getFloatVal() <= DMVR_ENC_SELECT_FRAME_RATE_THR) || !(m_pcEncCfg->getDMVREncMvSelectDisableHighestTemporalLayer() && (pu->cu->slice->getTLayer() == (pu->cu->slice->getSPS()->getMaxTLayers() - 1))))
-    && m_pcEncCfg->getDMVREncMvSelection()
-    && (pu->lumaSize().width >= DMVR_ENC_SELECT_SIZE_THR && pu->lumaSize().height >= DMVR_ENC_SELECT_SIZE_THR))
-  {
-    enableVisualCheck = true; // only set this to true when cfg, size, tid, framerate all fulfilled
-  }
+  // only set this to true when cfg, size, tid, framerate all fulfilled
+  const bool enableVisualCheck = (m_pcEncCfg->getFrameRate().getFloatVal() <= DMVR_ENC_SELECT_FRAME_RATE_THR
+                                  || !m_pcEncCfg->getDMVREncMvSelectDisableHighestTemporalLayer()
+                                  || pu->cu->slice->getTLayer() != pu->cu->slice->getSPS()->getMaxTLayers() - 1)
+                                 && m_pcEncCfg->getDMVREncMvSelection()
+                                 && pu->lumaSize().width >= DMVR_ENC_SELECT_SIZE_THR
+                                 && pu->lumaSize().height >= DMVR_ENC_SELECT_SIZE_THR;
   m_pcInterSearch->xDmvrSetEncoderCheckFlag(enableVisualCheck);
 #endif
   for (uint32_t uiMergeCand = 0; uiMergeCand < mergeCtx.numValidMergeCand; uiMergeCand++)
