@@ -81,7 +81,7 @@
 
 #define JVET_AE0049_REPEATED_INFERENCE_CONSTRAINT         1  // JVET-AE0049 item 2: Constrain the repeated inference to generate interpolated pictures up to the end of the bitstream to NNPFs that perform only picture rate upsampling
 
-#define JVET_AE0181_SCALING_WINDOW_ENABLED                            1
+#define JVET_AE0181_SCALING_WINDOW_ENABLED                1  // JVET-AE0181: Scaling window support
 
 //########### place macros to be be kept below this line ###############
 
