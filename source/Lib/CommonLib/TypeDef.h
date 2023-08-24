@@ -77,6 +77,10 @@
 
 #define JVET_AE0048_ITEM_1_VALUE_RANGES                   1  // JVET-AE0048 item 1: Add missing value ranges for nnpfc_pic_width_num_minus1, nnpfc_pic_width_denom_minus1, nnpfc_pic_height_num_minus1, and nnpfc_pic_height_denom_minus1.
 
+#define JVET_AE0048_ITEM_2_VALUE_RANGES                   1  // JVET_AE0048 item 2: Add missing value ranges for nnpfc_inp_format_idc and nnpfc_out_format_idc to be in the range of 0 to 255.
+
+#define JVET_AE0049_REPEATED_INFERENCE_CONSTRAINT         1  // JVET-AE0049 item 2: Constrain the repeated inference to generate interpolated pictures up to the end of the bitstream to NNPFs that perform only picture rate upsampling
+
 #define JVET_AE0181_SCALING_WINDOW_ENABLED                            1
 
 //########### place macros to be be kept below this line ###############
