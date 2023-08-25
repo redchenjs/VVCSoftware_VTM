@@ -62,16 +62,28 @@
 
 #define JVET_Z0150_MEMORY_USAGE_PRINT                     1 // JVET-Z0150: Print memory usage
 
+#define JVET_AE0048_IMPLICIT_PERSISTENCE_CANCEL           1 // JVET-AE0048 item 5: Cancel the persistence of an NNPFA SEI message with any subsequent NNPFA SEI message with the same nnpfa_target_id
+
 #define JVET_AE0060_COND_SIG_INF                          1 // signal nnpfc_chroma_loc_info_present_flag only when nnpfc_out_order_idc is not equal to 0 and infer nnpfc_chroma_loc_info_present_flag to be equal to 0 when not present.
 #define JVET_AE0057_MTT_ET                                1 // JVET-AE0057: MTT split modes early termination
 
 #define JVET_AE0141_NNPFC_BUGFIX_COLOURIZATION            1  // JVET-AE0141: Fix a bug in NNPFC SEI message for colourization
+
+#define JVET_AE0128_CONSTRAINT_UPDATE                     1  // JVET_AE0128 item 2: Update the constraint on when an NNPFC SEI message shall be a repetition of the first NNPFC SEI message in the CLVS
 
 #define JVET_AE0142_NNPF_CONSTRAINT_BUGFIXES              1  // JVET_AE0142 item 3 and item 4: Fix two bugs including an added condition and a nnpfc_purpose related constraint.
 
 #define JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT   1  // JVET_AE0135 item2: On NNPF picture rate upsampling constraint
 
 #define JVET_AE0189_NNPFA_ACTIVATE_NONBASE_CONSTRAINT     1  // JVET_AE0189 item 2: On NNPFA activing a non-base filter shall have earlier NNPFC base filter with the same ID constraint that is not a base filter
+
+#define JVET_AE0048_ITEM_1_VALUE_RANGES                   1  // JVET-AE0048 item 1: Add missing value ranges for nnpfc_pic_width_num_minus1, nnpfc_pic_width_denom_minus1, nnpfc_pic_height_num_minus1, and nnpfc_pic_height_denom_minus1.
+
+#define JVET_AE0048_ITEM_2_VALUE_RANGES                   1  // JVET_AE0048 item 2: Add missing value ranges for nnpfc_inp_format_idc and nnpfc_out_format_idc to be in the range of 0 to 255.
+
+#define JVET_AE0049_REPEATED_INFERENCE_CONSTRAINT         1  // JVET-AE0049 item 2: Constrain the repeated inference to generate interpolated pictures up to the end of the bitstream to NNPFs that perform only picture rate upsampling
+
+#define JVET_AE0181_SCALING_WINDOW_ENABLED                1  // JVET-AE0181: Scaling window support
 
 //########### place macros to be be kept below this line ###############
 
@@ -117,6 +129,7 @@
 
 #define DISABLE_PRE_POST_FILTER_FOR_IDR_CRA               1
 #define ENABLE_USER_DEFINED_WEIGHTS                       0 // User can specify weights for both current and previous picture, such that their sum = 1
+
 
 // clang-format on
 

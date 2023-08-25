@@ -813,6 +813,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ConfWinRight",                                    m_confWinRight,                                       0, "Right offset for window conformance mode 3")
   ("ConfWinTop",                                      m_confWinTop,                                         0, "Top offset for window conformance mode 3")
   ("ConfWinBottom",                                   m_confWinBottom,                                      0, "Bottom offset for window conformance mode 3")
+#if JVET_AE0181_SCALING_WINDOW_ENABLED
+  ("ScalingWindow",                                   m_explicitScalingWindowEnabled,                   false, "Enable scaling window")
+  ("ScalWinLeft,-swl",                                m_scalWinLeft,                                        0, "Left offset for scaling window")
+  ("ScalWinRight,-swr",                               m_scalWinRight,                                       0, "Right offset for scaling window")
+  ("ScalWinTop,-swt",                                 m_scalWinTop,                                         0, "Top offset for scaling window")
+  ("ScalWinBottom,-swb",                              m_scalWinBottom,                                      0, "Bottom offset for scaling window")
+#endif
   ("AccessUnitDelimiter",                             m_AccessUnitDelimiter,                            false, "Enable Access Unit Delimiter NALUs")
   ("EnablePictureHeaderInSliceHeader",                m_enablePictureHeaderInSliceHeader,                true, "Enable Picture Header in Slice Header")
   ("FrameRate,-fr",                                   frameRate,                            std::to_string(0), "Frame rate")
@@ -2378,6 +2385,25 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       CHECK((int)cfg_sliNonSubpicLayersFractions.values.size() != ( cfg_sliRefLevels.values.size() ),
         "when sliSublayerInfoPresentFlag = 0, the number  of non-subpicture level fractions must be equal to the numer of reference levels");
     }
+  }
+
+  if ((m_maxLayers>2) && m_gopBasedRPREnabledFlag)
+  {
+    msg(ERROR, "*************************************************************************\n");
+    msg(ERROR, "* GOP based RPR is only implemented for max two layers *\n");
+    msg(ERROR, "*************************************************************************\n");
+    m_gopBasedRPREnabledFlag = false;
+    m_scalingRatioHor = 1.0;
+    m_scalingRatioVer = 1.0;
+    m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag || m_rprFunctionalityTestingEnabledFlag;
+  }
+  if ((m_maxLayers > 2) && m_rprFunctionalityTestingEnabledFlag)
+  {
+    msg(ERROR, "*************************************************************************\n");
+    msg(ERROR, "* RPR functionality testing is only implemented for max two layers *\n");
+    msg(ERROR, "*************************************************************************\n");
+    m_rprFunctionalityTestingEnabledFlag = false;
+    m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag || m_rprFunctionalityTestingEnabledFlag;
   }
 
   if (m_costMode != COST_LOSSLESS_CODING && m_mixedLossyLossless)
@@ -4214,6 +4240,26 @@ bool EncAppCfg::xCheckParameter()
                "Top conformance window offset must be an integer multiple of the specified chroma subsampling");
   xConfirmPara(m_confWinBottom % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
                "Bottom conformance window offset must be an integer multiple of the specified chroma subsampling");
+#if JVET_AE0181_SCALING_WINDOW_ENABLED
+  xConfirmPara(m_explicitScalingWindowEnabled && (m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag), "ScalingWindow cannot be enabled when GOPBasedRPR is enabled");
+  xConfirmPara(m_scalWinLeft    % SPS::getWinUnitX(m_chromaFormatIdc) != 0, "Left scaling window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_scalWinRight   % SPS::getWinUnitX(m_chromaFormatIdc) != 0, "Right scaling window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_scalWinTop     % SPS::getWinUnitY(m_chromaFormatIdc) != 0, "Top scaling window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara(m_scalWinBottom  % SPS::getWinUnitY(m_chromaFormatIdc) != 0, "Bottom scaling window offset must be an integer multiple of the specified chroma subsampling");
+  xConfirmPara((m_scalWinLeft < -m_sourceWidth * 15) || (m_scalWinLeft >= m_sourceWidth),
+               "The values of SubWidthC * pps_scaling_win_left_offset shall be greater than or equal to -pps_pic_width_in_luma_samples * 15 and less than pps_pic_width_in_luma_samples");
+  xConfirmPara((m_scalWinRight < -m_sourceWidth * 15) || (m_scalWinRight >= m_sourceWidth),
+               "The values of SubWidthC * pps_scaling_win_right_offset shall be greater than or equal to -pps_pic_width_in_luma_samples * 15 and less than pps_pic_width_in_luma_samples");
+  xConfirmPara((m_scalWinTop < -m_sourceHeight * 15) || (m_scalWinTop >= m_sourceHeight),
+               "The values of SubHeightC * pps_scaling_win_top_offset shall be greater than or equal to -pps_pic_height_in_luma_samples * 15 and less than pps_pic_height_in_luma_samples");
+  xConfirmPara((m_scalWinBottom < -m_sourceHeight * 15) || (m_scalWinBottom >= m_sourceHeight),
+               "The values of SubHeightC * pps_scaling_win_bottom_offset shall be greater than or equal to -pps_pic_height_in_luma_samples * 15 and less than pps_pic_height_in_luma_samples");
+  xConfirmPara(((m_scalWinLeft+m_scalWinRight) < -m_sourceWidth * 15) || ((m_scalWinLeft+m_scalWinRight) >= m_sourceWidth),
+               "The values of SubWidthC * (pps_scaling_win_left_offset + pps_scaling_win_right_offset) shall be greater than or equal to -pps_pic_width_in_luma_samples * 15 and less than pps_pic_width_in_luma_samples");
+  xConfirmPara(((m_scalWinTop+m_scalWinBottom) < -m_sourceHeight * 15) || ((m_scalWinTop+m_scalWinBottom) >= m_sourceHeight),
+               "The values of SubHeightC * (pps_scaling_win_top_offset + pps_scaling_win_bottom_offset) shall be greater than or equal to -pps_pic_height_in_luma_samples * 15 and less than pps_pic_height_in_luma_samples");
+#endif
+
 
   // max CU width and height should be power of 2
   uint32_t ui = m_maxCuWidth;

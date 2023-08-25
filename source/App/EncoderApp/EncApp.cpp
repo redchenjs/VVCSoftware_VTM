@@ -266,6 +266,10 @@ void EncApp::xInitLibCfg( int layerIdx )
                                  m_confWinRight / SPS::getWinUnitX(m_inputChromaFormatIDC),
                                  m_confWinTop / SPS::getWinUnitY(m_inputChromaFormatIDC),
                                  m_confWinBottom / SPS::getWinUnitY(m_inputChromaFormatIDC));
+#if JVET_AE0181_SCALING_WINDOW_ENABLED
+  m_cEncLib.setExplicitScalingWindowEnabled                      ( m_explicitScalingWindowEnabled );
+  m_cEncLib.setScalingWindow                                     ( m_scalWinLeft / SPS::getWinUnitX( m_inputChromaFormatIDC ), m_scalWinRight / SPS::getWinUnitX( m_inputChromaFormatIDC ), m_scalWinTop / SPS::getWinUnitY( m_inputChromaFormatIDC ), m_scalWinBottom / SPS::getWinUnitY( m_inputChromaFormatIDC ) );
+#endif
   m_cEncLib.setScalingRatio                                      ( m_scalingRatioHor, m_scalingRatioVer );
   m_cEncLib.setGOPBasedRPREnabledFlag                            (m_gopBasedRPREnabledFlag);
   m_cEncLib.setGOPBasedRPRQPThreshold                            (m_gopBasedRPRQPThreshold);
@@ -1925,20 +1929,21 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         int ppsID = layerId;
         if ((m_gopBasedRPREnabledFlag && (m_cEncLib.getBaseQP() >= m_cEncLib.getGOPBasedRPRQPThreshold())) || m_rprFunctionalityTestingEnabledFlag)
         {
-          const PPS& pps1 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR);
-          const PPS& pps2 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR2);
-          const PPS& pps3 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR3);
+          const PPS& pps1 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR + layerId);
+          const PPS& pps2 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR2 + layerId);
+          const PPS& pps3 = *m_cEncLib.getPPS(ENC_PPS_ID_RPR3 + layerId);
+
           if (pps1.getPicWidthInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).width && pps1.getPicHeightInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).height)
           {
-            ppsID = ENC_PPS_ID_RPR;
+            ppsID = ENC_PPS_ID_RPR + layerId;
           }
           else if (pps2.getPicWidthInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).width && pps2.getPicHeightInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).height)
           {
-            ppsID = ENC_PPS_ID_RPR2;
+            ppsID = ENC_PPS_ID_RPR2 + layerId;
           }
           else if (pps3.getPicWidthInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).width && pps3.getPicHeightInLumaSamples() == pcPicYuvRec->get(COMPONENT_Y).height)
           {
-            ppsID = ENC_PPS_ID_RPR3;
+            ppsID = ENC_PPS_ID_RPR3 + layerId;
           }
           else
           {
@@ -1947,7 +1952,11 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         }
         else
         {
-          ppsID = (sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) ? ENC_PPS_ID_RPR : layerId;
+#if JVET_AE0181_SCALING_WINDOW_ENABLED
+          ppsID = ((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) && !m_explicitScalingWindowEnabled) ? m_resChangeInClvsEnabled ? (ENC_PPS_ID_RPR + layerId) : layerId : layerId;
+#else
+          ppsID = (sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) ? (ENC_PPS_ID_RPR + layerId) : layerId;
+#endif
         }
         const PPS& pps = *m_cEncLib.getPPS(ppsID);
         if( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() )
