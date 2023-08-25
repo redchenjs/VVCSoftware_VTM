@@ -252,6 +252,25 @@ bool SEIReader::xCheckNnpfcSeiMsg(uint32_t seiId, bool baseFlag, const std::vect
   return true;
 }
 
+#if JVET_AE0189_NNPFA_ACTIVATE_NONBASE_CONSTRAINT
+bool SEIReader::xCheckNnpfcUpdatePresentSeiMsg(uint32_t seiId, const std::vector<int> nnpfcValueList)
+{
+  int count = 0;
+  for (auto val : nnpfcValueList)
+  {
+    if (val == seiId)
+    {
+      count++;
+      if (count == 2)
+      {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+#endif
+
 bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream)
 {
 #if ENABLE_TRACING
@@ -492,7 +511,16 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       {
         if(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id == nnpfcValues[i])
         {
+#if JVET_AE0189_NNPFA_ACTIVATE_NONBASE_CONSTRAINT
+          //In the case that the NNPFA activates a non-base filter, only consider it process when we have NNPFC that updates the base filter present
+          if(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_baseFlag ||
+            (!((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_baseFlag && xCheckNnpfcUpdatePresentSeiMsg( ((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id, nnpfcValues)) )
+            {
+              nnpfcProcessed = true;
+            }
+#else
           nnpfcProcessed = true;
+#endif
         }
       }
       CHECK(!nnpfcProcessed, "No NNPFC, no NNPFA")

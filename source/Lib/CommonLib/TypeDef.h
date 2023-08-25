@@ -75,6 +75,8 @@
 
 #define JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT   1  // JVET_AE0135 item2: On NNPF picture rate upsampling constraint
 
+#define JVET_AE0189_NNPFA_ACTIVATE_NONBASE_CONSTRAINT     1  // JVET_AE0189 item 2: On NNPFA activing a non-base filter shall have earlier NNPFC base filter with the same ID constraint that is not a base filter
+
 #define JVET_AE0048_ITEM_1_VALUE_RANGES                   1  // JVET-AE0048 item 1: Add missing value ranges for nnpfc_pic_width_num_minus1, nnpfc_pic_width_denom_minus1, nnpfc_pic_height_num_minus1, and nnpfc_pic_height_denom_minus1.
 
 #define JVET_AE0048_ITEM_2_VALUE_RANGES                   1  // JVET_AE0048 item 2: Add missing value ranges for nnpfc_inp_format_idc and nnpfc_out_format_idc to be in the range of 0 to 255.
