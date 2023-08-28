@@ -760,6 +760,9 @@ protected:
   uint32_t                m_nnPostFilterSEIActivationTargetId;
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+  bool                    m_nnPostFilterSEIActivationNoPrevCLVSFlag;
+#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputflag;
 
@@ -2075,6 +2078,10 @@ public:
   bool getNnPostFilterSEIActivationCancelFlag() const                                                                   { return m_nnPostFilterSEIActivationCancelFlag;}
   void setNnPostFilterSEIActivationTargetBaseFlag(bool targetBaseFlag)                                                  { m_nnPostFilterSEIActivationTargetBaseFlag = targetBaseFlag; }
   bool getNnPostFilterSEIActivationTargetBaseFlag() const                                                               { return m_nnPostFilterSEIActivationTargetBaseFlag;}
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+  void setNnPostFilterSEIActivationNoPrevCLVSFlag(bool noPrevCLVSFlag)                                                  { m_nnPostFilterSEIActivationNoPrevCLVSFlag = noPrevCLVSFlag; }
+  bool getNnPostFilterSEIActivationNoPrevCLVSFlag() const                                                               { return m_nnPostFilterSEIActivationNoPrevCLVSFlag;}
+#endif
   void setNnPostFilterSEIActivationPersistenceFlag(bool persistenceFlag)                                                          { m_nnPostFilterSEIActivationPersistenceFlag = persistenceFlag; }
   bool getNnPostFilterSEIActivationPersistenceFlag() const                                                                   { return m_nnPostFilterSEIActivationPersistenceFlag;}
   uint32_t    getNnPostFilterSEIActivationNumOutputEntries() const                                                      { return (uint32_t)m_nnPostFilterSEIActivationOutputflag.size(); }

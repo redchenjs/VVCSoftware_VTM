@@ -1533,6 +1533,9 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
     sei->m_targetBaseFlag = m_pcCfg->getNnPostFilterSEIActivationTargetBaseFlag();
     sei->m_persistenceFlag = m_pcCfg->getNnPostFilterSEIActivationPersistenceFlag();
 #endif
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+    sei->m_noPrevCLVSFlag = m_pcCfg->getNnPostFilterSEIActivationNoPrevCLVSFlag();
+#endif
     sei->m_outputFlag = m_pcCfg->getNnPostFilterSEIActivationOutputFlag();
   }
 }

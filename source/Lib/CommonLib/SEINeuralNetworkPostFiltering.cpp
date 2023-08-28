@@ -99,12 +99,20 @@ void SEINeuralNetworkPostFiltering::setPicActivatedNnpfc(Picture* picture)
 void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
 {
   m_picList = PicVector(picList.begin(), picList.end());
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+  bool prevPicIsLastInClvs = true;
+#endif
   for (Picture* currCodedPic: m_picList)
   {
     const NalUnitType picType = currCodedPic->getPictureType();
 
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+    if (picType == NAL_UNIT_CODED_SLICE_IDR_N_LP || picType == NAL_UNIT_CODED_SLICE_IDR_W_RADL
+        || ((picType == NAL_UNIT_CODED_SLICE_CRA || picType == NAL_UNIT_CODED_SLICE_GDR) && prevPicIsLastInClvs))
+#else
     if (picType == NAL_UNIT_CODED_SLICE_IDR_N_LP || picType == NAL_UNIT_CODED_SLICE_IDR_W_RADL
         || picType == NAL_UNIT_CODED_SLICE_CRA || picType == NAL_UNIT_CODED_SLICE_GDR)
+#endif
     {
       m_clvsNnpfcSEIs = getSeisByType(currCodedPic->SEIs, SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
 
@@ -126,11 +134,21 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
 #endif
 
       m_isNnpfActiveForCLVS.clear();
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+      m_clvsPicList.clear();
+#endif
     }
+
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+    m_clvsPicList.push_back(currCodedPic);
+#endif
 
     setPicActivatedNnpfc(currCodedPic);
     if (currCodedPic->m_nnpfcActivated.empty())
     {
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+      prevPicIsLastInClvs = currCodedPic->isEosPresentInPic;
+#endif
       continue;
     }
 
@@ -183,6 +201,10 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
       auto currNnpfc = (SEINeuralNetworkPostFilterCharacteristics*) sei;
       checkInputPics(currCodedPic, currNnpfc, sourceWidth, sourceHeight, croppedWidth, croppedHeight);
     }
+
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+    prevPicIsLastInClvs = currCodedPic->isEosPresentInPic;
+#endif
   }
 }
 
@@ -370,6 +392,23 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
             }
           }
 
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+          if (pictureRateUpsamplingFlag && fpCurrPicArrangementTypeIsTemporalInterleave && prevPicWithTemporalInterleaveFramePacking != nullptr && (!nnpfa->m_noPrevCLVSFlag || isPicInCurrentClvs(prevPicWithTemporalInterleaveFramePacking)))
+          {
+            inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
+            inputPresentFlag[i] = true;
+          }
+          else if (!pictureRateUpsamplingFlag && prevPic != nullptr && (!nnpfa->m_noPrevCLVSFlag || isPicInCurrentClvs(prevPic)))
+          {
+            inputPic[i]         = prevPic;
+            inputPresentFlag[i] = true;
+          }
+          else if (!fpCurrPicArrangementTypeIsTemporalInterleave && prevPic != nullptr && (!nnpfa->m_noPrevCLVSFlag || isPicInCurrentClvs(prevPic)))
+          {
+            inputPic[i]         = prevPic;
+            inputPresentFlag[i] = true;
+          }
+#else
           if (pictureRateUpsamplingFlag && fpCurrPicArrangementTypeIsTemporalInterleave && prevPicWithTemporalInterleaveFramePacking != nullptr)
           {
             inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
@@ -385,6 +424,7 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
             inputPic[i]         = prevPicWithTemporalInterleaveFramePacking;
             inputPresentFlag[i] = true;
           }
+#endif
           else
           {
             inputPic[i]         = inputPic[i - 1];
@@ -401,3 +441,21 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
   }
 
 }
+
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+bool SEINeuralNetworkPostFiltering::isPicInCurrentClvs(Picture* pic)
+{
+  bool picInClvs = false;
+
+  for (auto p = m_clvsPicList.begin(); p != m_clvsPicList.end(); p++)
+  {
+    if (*p == pic)
+    {
+      picInClvs = true;
+      break;
+    }
+  }
+
+  return picInClvs;
+}
+#endif

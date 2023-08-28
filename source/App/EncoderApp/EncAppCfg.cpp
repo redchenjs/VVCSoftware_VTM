@@ -1975,6 +1975,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationTargetId", m_nnPostFilterSEIActivationTargetId, 0u, "Target id of the Neural Network Post Filter on current picture");
     opts.addOptions()("SEINNPostFilterActivationCancelFlag", m_nnPostFilterSEIActivationCancelFlag, false, "Control use of the target neural network post filter established by any previous NNPFA SEI message");
     opts.addOptions()("SEINNPostFilterActivationTargetBaseFlag", m_nnPostFilterSEIActivationTargetBaseFlag, false, "Specifies that the target NNPF is the base NNPF");
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+    opts.addOptions()("SEINNPostFilterActivationNoPrevCLVSFlag", m_nnPostFilterSEIActivationNoPrevCLVSFlag, false, "Specifies whether input pictures cannot (1) or can (0) originate from a previous CLVS");
+#endif
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
     opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies a list indicating whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
   }

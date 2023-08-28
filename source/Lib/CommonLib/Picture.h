@@ -249,6 +249,9 @@ public:
   std::vector<bool> m_lossylosslessSliceArray;
   bool interLayerRefPicFlag;
   bool mixedNaluTypesInPicFlag;
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+  bool isEosPresentInPic;
+#endif
 
   PelStorage m_bufs[NUM_PIC_TYPES];
   const Picture*           unscaledPic;
