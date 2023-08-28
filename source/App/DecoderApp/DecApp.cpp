@@ -340,6 +340,9 @@ uint32_t DecApp::decode()
       {
         isEosPresentInPu = true;
         m_newCLVS[nalu.m_nuhLayerId] = true;  //The presence of EOS means that the next picture is the beginning of new CLVS
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+        m_cDecLib.setEosPresentInPu(true);
+#endif
       }
       // within the current PU, only EOS and EOB are allowed to be sent after an EOS nal unit
       if(isEosPresentInPu)

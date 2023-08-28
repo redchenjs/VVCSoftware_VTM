@@ -800,6 +800,9 @@ protected:
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+  bool                    m_nnPostFilterSEIActivationNoPrevCLVSFlag;
+#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
 
