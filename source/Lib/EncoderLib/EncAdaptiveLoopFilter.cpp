@@ -60,11 +60,11 @@ void AlfCovariance::getClipMax(const AlfFilterShape& alfShape, AlfClipIdx* clip_
     clip_max[k] = 0;
 
     bool inc = true;
-    while( inc && clip_max[k]+1 < numBins && y[clip_max[k]+1][k] == y[clip_max[k]][k] )
+    while (inc && clip_max[k] + 1 < numBins && y(clip_max[k] + 1, k) == y(clip_max[k], k))
     {
       for( int l = 0; inc && l < numCoeff; ++l )
       {
-        if( E[clip_max[k]][0][k][l] != E[clip_max[k]+1][0][k][l] )
+        if (E(clip_max[k], 0, k, l) != E(clip_max[k] + 1, 0, k, l))
         {
           inc = false;
         }
@@ -83,11 +83,11 @@ void AlfCovariance::reduceClipCost(const AlfFilterShape& alfShape, AlfClipIdx* c
   for( int k = 0; k < numCoeff-1; ++k )
   {
     bool dec = true;
-    while( dec && clip[k] > 0 && y[clip[k]-1][k] == y[clip[k]][k] )
+    while (dec && clip[k] > 0 && y(clip[k] - 1, k) == y(clip[k], k))
     {
       for( int l = 0; dec && l < numCoeff; ++l )
       {
-        if( E[clip[k]][clip[l]][k][l] != E[clip[k]-1][clip[l]][k][l] )
+        if (E(clip[k], clip[l], k, l) != E(clip[k] - 1, clip[l], k, l))
         {
           dec = false;
         }
@@ -140,11 +140,12 @@ double AlfCovariance::optimizeFilter(const AlfFilterShape& alfShape, AlfClipIdx*
       if( clip[k] - step >= clip_max[k] )
       {
         clip[k] -= step;
-        ky[k] = y[clip[k]][k];
+        ky[k] = y(clip[k], k);
         for( int l = 0; l < size; l++ )
         {
-          kE[k][l] = E[clip[k]][clip[l]][k][l];
-          kE[l][k] = E[clip[l]][clip[k]][l][k];
+          const double val = E(clip[k], clip[l], k, l);
+          kE[k][l]         = val;
+          kE[l][k]         = val;
         }
 
         gnsSolveByChol( kE, ky, f, size );
@@ -161,11 +162,12 @@ double AlfCovariance::optimizeFilter(const AlfFilterShape& alfShape, AlfClipIdx*
       if( clip[k] + step < numBins )
       {
         clip[k] += step;
-        ky[k] = y[clip[k]][k];
+        ky[k] = y(clip[k], k);
         for( int l = 0; l < size; l++ )
         {
-          kE[k][l] = E[clip[k]][clip[l]][k][l];
-          kE[l][k] = E[clip[l]][clip[k]][l][k];
+          const double val = E(clip[k], clip[l], k, l);
+          kE[k][l]         = val;
+          kE[l][k]         = val;
         }
 
         gnsSolveByChol( kE, ky, f, size );
@@ -180,11 +182,12 @@ double AlfCovariance::optimizeFilter(const AlfFilterShape& alfShape, AlfClipIdx*
         clip[k] -= step;
 
       }
-      ky[k] = y[clip[k]][k];
+      ky[k] = y(clip[k], k);
       for( int l = 0; l < size; l++ )
       {
-        kE[k][l] = E[clip[k]][clip[l]][k][l];
-        kE[l][k] = E[clip[l]][clip[k]][l][k];
+        const double val = E(clip[k], clip[l], k, l);
+        kE[k][l]         = val;
+        kE[l][k]         = val;
       }
     }
 
@@ -192,11 +195,12 @@ double AlfCovariance::optimizeFilter(const AlfFilterShape& alfShape, AlfClipIdx*
     {
       err_best = err_min;
       clip[idx_min] += inc_min;
-      ky[idx_min] = y[clip[idx_min]][idx_min];
+      ky[idx_min] = y(clip[idx_min], idx_min);
       for( int l = 0; l < size; l++ )
       {
-        kE[idx_min][l] = E[clip[idx_min]][clip[l]][idx_min][l];
-        kE[l][idx_min] = E[clip[l]][clip[idx_min]][l][idx_min];
+        const double val = E(clip[idx_min], clip[l], idx_min, l);
+        kE[idx_min][l]   = val;
+        kE[l][idx_min]   = val;
       }
     }
     else
@@ -252,9 +256,9 @@ double AlfCovariance::calcErrorForCoeffs(const AlfClipIdx* clip, const AlfCoeff*
     for( int j = i + 1; j < numCoeff; j++ )
     {
       // E[j][i] = E[i][j], sum will be multiplied by 2 later
-      sum += E[clip[i]][clip[j]][i][j] * coeff[j];
+      sum += E(clip[i], clip[j], i, j) * coeff[j];
     }
-    error += ( ( E[clip[i]][clip[i]][i][i] * coeff[i] + sum * 2 ) / factor - 2 * y[clip[i]][i] ) * coeff[i];
+    error += ((E(clip[i], clip[i], i, i) * coeff[i] + sum * 2) / factor - 2 * y(clip[i], i)) * coeff[i];
   }
 
   return error / factor;
@@ -271,9 +275,9 @@ double AlfCovariance::calcErrorForCcAlfCoeffs(const int16_t *coeff, const int nu
     for (int j = i + 1; j < numCoeff; j++)
     {
       // E[j][i] = E[i][j], sum will be multiplied by 2 later
-      sum += E[0][0][i][j] * coeff[j];
+      sum += E(0, 0, i, j) * coeff[j];
     }
-    error += ((E[0][0][i][i] * coeff[i] + sum * 2) / factor - 2 * y[0][i]) * coeff[i];
+    error += ((E(0, 0, i, i) * coeff[i] + sum * 2) / factor - 2 * y(0, i)) * coeff[i];
   }
 
   return error / factor;
@@ -284,7 +288,7 @@ double AlfCovariance::calculateError(const AlfClipIdx* clip, const double* coeff
   double sum = 0;
   for( int i = 0; i < numCoeff; i++ )
   {
-    sum += coeff[i] * y[clip[i]][i];
+    sum += coeff[i] * y(clip[i], i);
   }
 
   return pixAcc - sum;
@@ -476,7 +480,7 @@ void EncAdaptiveLoopFilter::create(const EncCfg* encCfg, const int picWidth, con
       m_alfCovarianceFrame[chType][i] = new AlfCovariance[numClasses];
       for( int k = 0; k < numClasses; k++ )
       {
-        m_alfCovarianceFrame[chType][i][k].create(m_filterShapes[chType][i].numCoeff);
+        m_alfCovarianceFrame[chType][i][k].create(m_filterShapes[chType][i].numCoeff, ALF_NUM_CLIP_VALS[chType]);
       }
     }
   }
@@ -496,7 +500,7 @@ void EncAdaptiveLoopFilter::create(const EncCfg* encCfg, const int picWidth, con
         m_alfCovariance[compIdx][i][j] = new AlfCovariance[numClasses];
         for( int k = 0; k < numClasses; k++ )
         {
-          m_alfCovariance[compIdx][i][j][k].create(m_filterShapes[chType][i].numCoeff);
+          m_alfCovariance[compIdx][i][j][k].create(m_filterShapes[chType][i].numCoeff, ALF_NUM_CLIP_VALS[chType]);
         }
       }
     }
@@ -506,7 +510,8 @@ void EncAdaptiveLoopFilter::create(const EncCfg* encCfg, const int picWidth, con
   {
     for (int j = 0; j <= MAX_NUM_ALF_CLASSES + 1; j++)
     {
-      m_alfCovarianceMerged[i][j].create(m_filterShapes[ChannelType::LUMA][i].numCoeff);
+      m_alfCovarianceMerged[i][j].create(m_filterShapes[ChannelType::LUMA][i].numCoeff,
+                                         ALF_NUM_CLIP_VALS[ChannelType::LUMA]);
     }
   }
 
@@ -536,12 +541,12 @@ void EncAdaptiveLoopFilter::create(const EncCfg* encCfg, const int picWidth, con
     m_alfCovarianceFrameCcAlf[compIdx - 1] = new AlfCovariance[m_filterShapesCcAlf[compIdx - 1].size()];
     for( int i = 0; i != m_filterShapesCcAlf[compIdx-1].size(); i++ )
     {
-      m_alfCovarianceFrameCcAlf[compIdx - 1][i].create(m_filterShapesCcAlf[compIdx - 1][i].numCoeff);
+      m_alfCovarianceFrameCcAlf[compIdx - 1][i].create(m_filterShapesCcAlf[compIdx - 1][i].numCoeff, 1);
 
       m_alfCovarianceCcAlf[compIdx - 1][i] = new AlfCovariance[m_numCTUsInPic];
       for (int k = 0; k < m_numCTUsInPic; k++)
       {
-        m_alfCovarianceCcAlf[compIdx - 1][i][k].create(m_filterShapesCcAlf[compIdx - 1][i].numCoeff);
+        m_alfCovarianceCcAlf[compIdx - 1][i][k].create(m_filterShapesCcAlf[compIdx - 1][i].numCoeff, 1);
       }
     }
   }
@@ -2312,38 +2317,23 @@ void EncAdaptiveLoopFilter::getBlkStats(AlfCovariance *alfCovariance, const AlfF
         {
           const double we = weight * e[b0][k];
 
-          for (int b1 = 0; b1 < numBins; b1++)
+          for (int b1 = 0; b1 <= b0; b1++)
           {
-            for (int l = k; l < shape.numCoeff; l++)
+            const int maxl = b0 == b1 ? k + 1 : shape.numCoeff;
+
+            for (int l = 0; l < maxl; l++)
             {
-              alfCovariance[classIdx].E[b0][b1][k][l] += we * e[b1][l];
+              const ptrdiff_t oe = alfCovariance[classIdx].getOffsetEfast(b0, b1, k, l);
+              alfCovariance[classIdx].data[oe] += we * e[b1][l];
             }
           }
-          alfCovariance[classIdx].y[b0][k] += we * yLocal;
+          alfCovariance[classIdx].y(b0, k) += we * yLocal;
         }
       }
       alfCovariance[classIdx].pixAcc += weight * yLocal * yLocal;
     }
     org += orgStride;
     rec += recStride;
-  }
-
-  const int numClasses = classifier ? MAX_NUM_ALF_CLASSES : 1;
-  for (int classIdx = 0; classIdx < numClasses; classIdx++)
-  {
-    for (int k = 1; k < shape.numCoeff; k++)
-    {
-      for (int l = 0; l < k; l++)
-      {
-        for (int b0 = 0; b0 < numBins; b0++)
-        {
-          for (int b1 = 0; b1 < numBins; b1++)
-          {
-            alfCovariance[classIdx].E[b0][b1][k][l] = alfCovariance[classIdx].E[b1][b0][l][k];
-          }
-        }
-      }
-    }
   }
 }
 
@@ -3334,10 +3324,10 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilterCoeff(
 
   for (int k = 0; k < size; k++)
   {
-    ky[k] = m_alfCovarianceFrameCcAlf[compID - 1][0].y[0][k];
+    ky[k] = m_alfCovarianceFrameCcAlf[compID - 1][0].y(0, k);
     for (int l = 0; l < size; l++)
     {
-      kE[k][l] = m_alfCovarianceFrameCcAlf[compID - 1][0].E[0][0][k][l];
+      kE[k][l] = m_alfCovarianceFrameCcAlf[compID - 1][0].E(0, 0, k, l);
     }
   }
 
@@ -4108,11 +4098,12 @@ void EncAdaptiveLoopFilter::getBlkStatsCcAlf(AlfCovariance &alfCovariance, const
       {
         const double we = weight * e[k];
 
-        for( int l = k; l < (shape.numCoeff - 1); l++ )
+        for (int l = 0; l <= k; l++)
         {
-          alfCovariance.E[0][0][k][l] += we * e[l];
+          const ptrdiff_t oe = alfCovariance.getOffsetEfast(0, 0, k, l);
+          alfCovariance.data[oe] += we * e[l];
         }
-        alfCovariance.y[0][k] += we * yLocal;
+        alfCovariance.y(0, k) += we * yLocal;
       }
       alfCovariance.pixAcc += weight * yLocal * yLocal;
     }
@@ -4135,14 +4126,6 @@ void EncAdaptiveLoopFilter::getBlkStatsCcAlf(AlfCovariance &alfCovariance, const
           rec[srcCIdx] += (recStride[srcCIdx] << getComponentScaleY(compID, m_chromaFormat));
         }
       }
-    }
-  }
-
-  for (int k = 1; k < (MAX_NUM_CC_ALF_CHROMA_COEFF - 1); k++)
-  {
-    for (int l = 0; l < k; l++)
-    {
-      alfCovariance.E[0][0][k][l] = alfCovariance.E[0][0][l][k];
     }
   }
 }

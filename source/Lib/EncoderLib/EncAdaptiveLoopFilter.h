@@ -47,103 +47,136 @@
 struct AlfCovariance
 {
   static constexpr int MAX_ALF_NUM_CLIP_VALS = AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS;
+
   using TE = double[MAX_NUM_ALF_LUMA_COEFF][MAX_NUM_ALF_LUMA_COEFF];
   using Ty = double[MAX_NUM_ALF_LUMA_COEFF];
-  using TKE = TE[AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS][AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS];
-  using TKy = Ty[AdaptiveLoopFilter::MAX_ALF_NUM_CLIP_VALS];
+
+  std::vector<double> data;
+
+  ptrdiff_t offsetE;
+  ptrdiff_t stridey;
 
   int numCoeff;
-  int numBins;
-  TKy y;
-  TKE E;
+  int    numBins;
   double pixAcc;
+
+  size_t sizeY() const { return offsetE; }
+  size_t sizeE() const { return data.size() - offsetE; }
+
+  ptrdiff_t getOffsetY(ptrdiff_t i, ptrdiff_t j) const { return stridey * i + j; }
+
+  ptrdiff_t getOffsetEfast(ptrdiff_t i, ptrdiff_t j, ptrdiff_t k, ptrdiff_t l) const
+  {
+    const ptrdiff_t v0 = getOffsetY(i, k);
+    const ptrdiff_t v1 = getOffsetY(j, l);
+
+    assert(v1 <= v0);
+
+    return offsetE + (v0 * (v0 + 1) >> 1) + v1;
+  }
+
+  ptrdiff_t getOffsetE(ptrdiff_t i, ptrdiff_t j, ptrdiff_t k, ptrdiff_t l) const
+  {
+    const ptrdiff_t v0 = getOffsetY(i, k);
+    const ptrdiff_t v1 = getOffsetY(j, l);
+
+    return offsetE + (v1 <= v0 ? (v0 * (v0 + 1) >> 1) + v1 : (v1 * (v1 + 1) >> 1) + v0);
+  }
+
+  double&       y(ptrdiff_t i, ptrdiff_t j) { return data[getOffsetY(i, j)]; }
+  const double& y(ptrdiff_t i, ptrdiff_t j) const { return data[getOffsetY(i, j)]; }
+
+  double&       E(ptrdiff_t i, ptrdiff_t j, ptrdiff_t k, ptrdiff_t l) { return data[getOffsetE(i, j, k, l)]; }
+  const double& E(ptrdiff_t i, ptrdiff_t j, ptrdiff_t k, ptrdiff_t l) const { return data[getOffsetE(i, j, k, l)]; }
 
   AlfCovariance() {}
   ~AlfCovariance() {}
 
-  void create(int size, int _numBins = MAX_ALF_NUM_CLIP_VALS)
+  void create(int size, int _numBins)
   {
     numCoeff = size;
     numBins  = _numBins;
-    std::memset( y, 0, sizeof( y ) );
-    std::memset( E, 0, sizeof( E ) );
+    const int numCols = numCoeff * numBins;
+    stridey           = numCoeff;
+    offsetE           = stridey * numBins;
+    data.resize(offsetE + (numCols * (numCols + 1) >> 1));
+    std::fill(data.begin(), data.end(), 0.0);
   }
 
   void destroy()
   {
   }
 
-  void reset(int _numBins = -1)
+  void reset()
   {
-    if (_numBins > 0)
-    {
-      numBins = _numBins;
-    }
     pixAcc = 0;
-    std::memset( y, 0, sizeof( y ) );
-    std::memset( E, 0, sizeof( E ) );
+    std::fill(data.begin(), data.end(), 0.0);
+  }
+
+  void reset(int _numBins)
+  {
+    numBins = _numBins;
+    reset();
   }
 
   const AlfCovariance& operator=( const AlfCovariance& src )
   {
     numCoeff = src.numCoeff;
-    numBins = src.numBins;
-    std::memcpy( E, src.E, sizeof( E ) );
-    std::memcpy( y, src.y, sizeof( y ) );
-    pixAcc = src.pixAcc;
+    numBins  = src.numBins;
+    data     = src.data;
+    stridey  = src.stridey;
+    offsetE  = src.offsetE;
+    pixAcc   = src.pixAcc;
 
     return *this;
   }
+
+  bool sameSizeAs(const AlfCovariance& x) { return x.numCoeff == numCoeff && x.numBins == numBins; }
 
   void add( const AlfCovariance& lhs, const AlfCovariance& rhs )
   {
     numCoeff = lhs.numCoeff;
     numBins = lhs.numBins;
-    for( int b0 = 0; b0 < numBins; b0++ )
+    CHECK(!sameSizeAs(lhs), "AlfCovariance size mismatch");
+    CHECK(!sameSizeAs(rhs), "AlfCovariance size mismatch");
+
+    for (ptrdiff_t i = 0; i < data.size(); i++)
     {
-      for( int b1 = 0; b1 < numBins; b1++ )
-      {
-        for( int j = 0; j < numCoeff; j++ )
-        {
-          for( int i = 0; i < numCoeff; i++ )
-          {
-            E[b0][b1][j][i] = lhs.E[b0][b1][j][i] + rhs.E[b0][b1][j][i];
-          }
-        }
-      }
-    }
-    for( int b = 0; b < numBins; b++ )
-    {
-      for( int j = 0; j < numCoeff; j++ )
-      {
-        y[b][j] = lhs.y[b][j] + rhs.y[b][j];
-      }
+      data[i] = lhs.data[i] + rhs.data[i];
     }
     pixAcc = lhs.pixAcc + rhs.pixAcc;
   }
 
   const AlfCovariance& operator+= ( const AlfCovariance& src )
   {
-    for( int b0 = 0; b0 < numBins; b0++ )
+    CHECK(src.numCoeff != numCoeff, "AlfCovariance size mismatch");
+    // There may be a case where we accumulate only bin #0
+    CHECK(src.numBins != numBins && numBins != 1, "AlfCovariance size mismatch");
+
+    for (ptrdiff_t i = 0; i < sizeY(); i++)
     {
-      for( int b1 = 0; b1 < numBins; b1++ )
+      data[i] += src.data[i];
+    }
+
+    if (src.numBins != numBins)
+    {
+      // numBins == 1 (see CHECK above)
+      for (ptrdiff_t i = 0; i < numCoeff; i++)
       {
-        for( int j = 0; j < numCoeff; j++ )
+        for (ptrdiff_t j = 0; j <= i; j++)
         {
-          for( int i = 0; i < numCoeff; i++ )
-          {
-            E[b0][b1][j][i] += src.E[b0][b1][j][i];
-          }
+          data[getOffsetEfast(0, 0, i, j)] += src.data[src.getOffsetEfast(0, 0, i, j)];
         }
       }
     }
-    for( int b = 0; b < numBins; b++ )
+    else
     {
-      for( int j = 0; j < numCoeff; j++ )
+      for (ptrdiff_t i = 0; i < sizeE(); i++)
       {
-        y[b][j] += src.y[b][j];
+        data[offsetE + i] += src.data[src.offsetE + i];
       }
     }
+
     pixAcc += src.pixAcc;
 
     return *this;
@@ -151,26 +184,33 @@ struct AlfCovariance
 
   const AlfCovariance& operator-= ( const AlfCovariance& src )
   {
-    for( int b0 = 0; b0 < numBins; b0++ )
+    CHECK(src.numCoeff != numCoeff, "AlfCovariance size mismatch");
+    // There may be a case where we accumulate only bin #0
+    CHECK(src.numBins != numBins && numBins != 1, "AlfCovariance size mismatch");
+
+    for (ptrdiff_t i = 0; i < sizeY(); i++)
     {
-      for( int b1 = 0; b1 < numBins; b1++ )
+      data[i] -= src.data[i];
+    }
+    if (src.numBins != numBins)
+    {
+      // numBins == 1 (see CHECK above)
+      for (ptrdiff_t i = 0; i < numCoeff; i++)
       {
-        for( int j = 0; j < numCoeff; j++ )
+        for (ptrdiff_t j = 0; j <= i; j++)
         {
-          for( int i = 0; i < numCoeff; i++ )
-          {
-            E[b0][b1][j][i] -= src.E[b0][b1][j][i];
-          }
+          data[getOffsetEfast(0, 0, i, j)] -= src.data[src.getOffsetEfast(0, 0, i, j)];
         }
       }
     }
-    for( int b = 0; b < numBins; b++ )
+    else
     {
-      for( int j = 0; j < numCoeff; j++ )
+      for (ptrdiff_t i = 0; i < sizeE(); i++)
       {
-        y[b][j] -= src.y[b][j];
+        data[offsetE + i] -= src.data[src.offsetE + i];
       }
     }
+
     pixAcc -= src.pixAcc;
 
     return *this;
@@ -178,12 +218,15 @@ struct AlfCovariance
 
   void setEyFromClip(const AlfClipIdx* clip, TE _E, Ty _y, int size) const
   {
-    for (int k=0; k<size; k++)
+    CHECK(size != numCoeff, "AlfCovariance size mismatch");
+
+    for (ptrdiff_t k = 0; k < size; k++)
     {
-      _y[k] = y[clip[k]][k];
-      for (int l=0; l<size; l++)
+      _y[k] = y(clip[k], k);
+      // Upper triangular
+      for (ptrdiff_t l = k; l < size; l++)
       {
-        _E[k][l] = E[clip[k]][clip[l]][k][l];
+        _E[k][l] = E(clip[k], clip[l], k, l);
       }
     }
   }
