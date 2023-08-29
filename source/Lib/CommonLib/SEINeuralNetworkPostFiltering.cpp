@@ -364,7 +364,11 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
 
       if (numInputPics > 1)
       {
+#if JVET_AE0049_INDEX_RANGE
+        for (int i = j + 1; i <= (numInputPics - 1); i++)
+#else
         for (int i = j + 1; i <= (numInputPics - j - 1); i++)
+#endif
         {
           Picture *prevPic                                   = nullptr;
           Picture *prevPicWithTemporalInterleaveFramePacking = nullptr;
