@@ -1978,6 +1978,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
     opts.addOptions()("SEINNPostFilterActivationNoPrevCLVSFlag", m_nnPostFilterSEIActivationNoPrevCLVSFlag, false, "Specifies whether input pictures cannot (1) or can (0) originate from a previous CLVS");
 #endif
+#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
+    opts.addOptions()("SEINNPostFilterActivationNoFollCLVSFlag", m_nnPostFilterSEIActivationNoFollCLVSFlag, false, "Specifies whether input pictures cannot (1) or can (0) originate from a following CLVS");
+#endif
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
     opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies a list indicating whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
   }

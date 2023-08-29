@@ -1314,6 +1314,9 @@ void EncApp::xInitLibCfg( int layerIdx )
 #if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   m_cEncLib.setNnPostFilterSEIActivationNoPrevCLVSFlag           (m_nnPostFilterSEIActivationNoPrevCLVSFlag);
 #endif
+#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
+  m_cEncLib.setNnPostFilterSEIActivationNoFollCLVSFlag           (m_nnPostFilterSEIActivationNoFollCLVSFlag);
+#endif
   m_cEncLib.setNnPostFilterSEIActivationPersistenceFlag          (m_nnPostFilterSEIActivationPersistenceFlag);
   m_cEncLib.setNnPostFilterSEIActivationOutputFlag               (m_nnPostFilterSEIActivationOutputFlag);
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );

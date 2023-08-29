@@ -763,6 +763,9 @@ protected:
 #if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool                    m_nnPostFilterSEIActivationNoPrevCLVSFlag;
 #endif
+#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
+  bool                    m_nnPostFilterSEIActivationNoFollCLVSFlag;
+#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputflag;
 
@@ -2081,6 +2084,10 @@ public:
 #if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   void setNnPostFilterSEIActivationNoPrevCLVSFlag(bool noPrevCLVSFlag)                                                  { m_nnPostFilterSEIActivationNoPrevCLVSFlag = noPrevCLVSFlag; }
   bool getNnPostFilterSEIActivationNoPrevCLVSFlag() const                                                               { return m_nnPostFilterSEIActivationNoPrevCLVSFlag;}
+#endif
+#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
+  void setNnPostFilterSEIActivationNoFollCLVSFlag(bool noFollCLVSFlag)                                                  { m_nnPostFilterSEIActivationNoFollCLVSFlag = noFollCLVSFlag; }
+  bool getNnPostFilterSEIActivationNoFollCLVSFlag() const                                                               { return m_nnPostFilterSEIActivationNoFollCLVSFlag;}
 #endif
   void setNnPostFilterSEIActivationPersistenceFlag(bool persistenceFlag)                                                          { m_nnPostFilterSEIActivationPersistenceFlag = persistenceFlag; }
   bool getNnPostFilterSEIActivationPersistenceFlag() const                                                                   { return m_nnPostFilterSEIActivationPersistenceFlag;}

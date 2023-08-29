@@ -3273,6 +3273,13 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
     sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_no_prev_clvs_flag" );
     sei.m_noPrevCLVSFlag = val;
 #endif
+#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
+    if (sei.m_persistenceFlag)
+    {
+      sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_no_foll_clvs_flag" );
+      sei.m_noFollCLVSFlag = val;
+    }
+#endif
 
     sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_num_output_entries" );
     uint32_t numOutputEntries = val;

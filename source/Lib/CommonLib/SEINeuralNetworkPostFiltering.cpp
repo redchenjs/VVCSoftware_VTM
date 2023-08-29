@@ -134,14 +134,24 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
 #endif
 
       m_isNnpfActiveForCLVS.clear();
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG || JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
       m_clvsPicList.clear();
+      auto p = std::find(m_picList.begin(), m_picList.end(), currCodedPic);
+      m_clvsPicList.push_back(*p);
+      Picture* prevPic = *p++;
+      for (; p != m_picList.end(); p++)
+      {
+        const NalUnitType picTypeCurr = (*p)->getPictureType();
+        if (picTypeCurr == NAL_UNIT_CODED_SLICE_IDR_N_LP || picTypeCurr == NAL_UNIT_CODED_SLICE_IDR_W_RADL
+          || ((picTypeCurr == NAL_UNIT_CODED_SLICE_CRA || picTypeCurr == NAL_UNIT_CODED_SLICE_GDR) && prevPic->isEosPresentInPic))
+        {
+          break;
+        }
+        m_clvsPicList.push_back(*p);
+        Picture* prevPic = *p;
+      }
 #endif
     }
-
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
-    m_clvsPicList.push_back(currCodedPic);
-#endif
 
     setPicActivatedNnpfc(currCodedPic);
     if (currCodedPic->m_nnpfcActivated.empty())
@@ -332,9 +342,25 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
 #endif
     }
 
+#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
+    Picture* lastPicInClvsInOutputOrder = *m_clvsPicList.begin();
+    for (auto p = m_clvsPicList.begin(); p != m_clvsPicList.end(); p++)
+    {
+      if ((*p)->getPOC() > lastPicInClvsInOutputOrder->getPOC())
+      {
+        lastPicInClvsInOutputOrder = *p;
+      }
+    }
+#endif
+
     int numInferences;
 #if JVET_AE0049_REPEATED_INFERENCE_CONSTRAINT
+#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
+    if ( currNnpfc->m_purpose == FRAME_RATE_UPSAMPLING && nnpfa->m_persistenceFlag && greaterThan0count == 1
+      && (isCurrPicLastInOutputOrder || (currCodedPic == lastPicInClvsInOutputOrder && nnpfa->m_noFollCLVSFlag)) )
+#else
     if (currNnpfc->m_purpose == FRAME_RATE_UPSAMPLING && nnpfa->m_persistenceFlag && greaterThan0count == 1 && isCurrPicLastInOutputOrder)
+#endif
 #else
     if (pictureRateUpsamplingFlag && nnpfa->m_persistenceFlag && greaterThan0count == 1 && isCurrPicLastInOutputOrder)
 #endif
