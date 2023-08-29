@@ -148,7 +148,7 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
           break;
         }
         m_clvsPicList.push_back(*p);
-        Picture* prevPic = *p;
+        prevPic = *p;
       }
 #endif
     }
