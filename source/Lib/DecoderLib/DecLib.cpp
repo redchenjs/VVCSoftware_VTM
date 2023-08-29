@@ -1654,7 +1654,10 @@ void DecLib::checkSeiContentInAccessUnit()
 #if JVET_AE0049_NNPF_SAME_CONTENT_CONSTRAINT
       if (payloadType1 == SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION && payloadType2 == SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION)
       {
-        CHECK((xGetNnpfaId(payload1, payloadSize1) == xGetNnpfaId(payload2, payloadSize2)) && (payLoadLayerId1 == payLoadLayerId2) && (duiIdx1 == duiIdx2) && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with payloadType equal to 211 and the same nnpfa_target_id value that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
+        if ((xGetNnpfaId(payload1, payloadSize1) == xGetNnpfaId(payload2, payloadSize2)) && (payLoadLayerId1 == payLoadLayerId2) && (duiIdx1 == duiIdx2))
+        {
+          CHECK(!std::equal(payload1, payload1 + payloadSize1, payload2, payload2 + payloadSize2), "When there are multiple SEI messages with payloadType equal to 211 and the same nnpfa_target_id value that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
+        }
       }
 #endif
     }
