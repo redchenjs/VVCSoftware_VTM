@@ -1654,7 +1654,7 @@ void DecLib::checkSeiContentInAccessUnit()
 #if JVET_AE0049_NNPF_SAME_CONTENT_CONSTRAINT
       if (payloadType1 == SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION && payloadType2 == SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION)
       {
-        if ((xGetNnpfaId(payload1, payloadSize1) == xGetNnpfaId(payload2, payloadSize2)) && (payLoadLayerId1 == payLoadLayerId2) && (duiIdx1 == duiIdx2))
+        if ((xGetNnpfaTargetId(payload1, payloadSize1) == xGetNnpfaTargetId(payload2, payloadSize2)) && (payLoadLayerId1 == payLoadLayerId2) && (duiIdx1 == duiIdx2))
         {
           CHECK(!std::equal(payload1, payload1 + payloadSize1, payload2, payload2 + payloadSize2), "When there are multiple SEI messages with payloadType equal to 211 and the same nnpfa_target_id value that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
         }
@@ -3992,19 +3992,19 @@ void DecLib::xCheckMixedNalUnit(Slice* pcSlice, SPS *sps, InputNALUnit &nalu)
 }
 
 #if JVET_AE0049_NNPF_SAME_CONTENT_CONSTRAINT
-uint32_t DecLib::xGetNnpfaId(uint8_t* payload, uint32_t payloadSize)
+uint32_t DecLib::xGetNnpfaTargetId(uint8_t* payload, uint32_t payloadSize)
 {
-  uint32_t codeword = 0;
+  uint64_t codeword = 0;
   uint32_t numBytes;
-  for (numBytes = 0; numBytes < 4 && numBytes < payloadSize; numBytes++)
+  for (numBytes = 0; numBytes < 8 && numBytes < payloadSize; numBytes++)
   {
     codeword = (codeword << 8) | payload[numBytes];
   }
   uint32_t firstBitPos = numBytes * 8 - 1;
   uint32_t bitPos;
-  for (bitPos = firstBitPos; bitPos > 0 && !(codeword & (1 << bitPos)); bitPos--);
+  for (bitPos = firstBitPos; bitPos > 0 && !(codeword & ((uint64_t)1 << bitPos)); bitPos--);
   uint32_t cwLen = 2 * (firstBitPos - bitPos) + 1;
-  return codeword >> (numBytes * 8 - cwLen); // return coded ID
+  return (uint32_t)((codeword >> (numBytes * 8 - cwLen)) - 1); // return decoded ID
 }
 #endif
 
