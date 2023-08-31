@@ -68,7 +68,9 @@ public:
   void checkInputPics(
     Picture* currCodedPic, const SEINeuralNetworkPostFilterCharacteristics* currNnpfc,
     uint32_t sourceWidth, uint32_t sourceHeight, uint32_t croppedWidth, uint32_t croppedHeight);
+#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool isPicInCurrentClvs(Picture* pic);
+#endif
 };
 
 #endif

@@ -1876,6 +1876,12 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
 #if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
     xWriteFlag(sei.m_noPrevCLVSFlag, "nnpfa_no_prev_clvs_flag");
 #endif
+#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
+    if (sei.m_persistenceFlag)
+    {
+      xWriteFlag(sei.m_noFollCLVSFlag, "nnpfa_no_foll_clvs_flag");
+    }
+#endif
     xWriteUvlc((uint32_t)sei.m_outputFlag.size(), "nnpfa_num_output_entries");
     for (uint32_t i = 0; i < (uint32_t)sei.m_outputFlag.size(); i++)
     {

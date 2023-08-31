@@ -1200,6 +1200,9 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
 #if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   m_noPrevCLVSFlag = sei.m_noPrevCLVSFlag;
 #endif
+#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
+  m_noFollCLVSFlag = sei.m_noFollCLVSFlag;
+#endif
   m_outputFlag = sei.m_outputFlag;
 }
 
