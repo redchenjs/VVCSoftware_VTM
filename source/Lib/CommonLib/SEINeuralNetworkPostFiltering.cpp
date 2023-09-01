@@ -367,6 +367,37 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
     {
       numInferences = 1 + numPostRoll;
     }
+#if JVET_AE0134_END_REPEATED_INFERENCE
+    else if (!pictureRateUpsamplingFlag && numInputPics > 1 && nnpfa->m_persistenceFlag)
+    {
+      std::vector<int> inpIdx;
+      greaterThan0count = 0;
+      numPostRoll = 0;
+      for (int idx = 0; idx < numInputPics; idx++)
+      {
+        if (currNnpfc->m_inputPicOutputFlag[idx])
+        {
+          inpIdx.push_back(idx);
+        }
+      }
+      for (int idx = 0; idx < inpIdx.size(); idx++)
+      {
+        if (nnpfa->m_outputFlag[idx])
+        {
+          greaterThan0count++;
+          if (inpIdx[idx] > 0)
+          {
+            numPostRoll = inpIdx[idx];
+          }
+        }
+      }
+      numInferences = 1;
+      if ( greaterThan0count == 1 && (isCurrPicLastInOutputOrder || (currCodedPic == lastPicInClvsInOutputOrder && nnpfa->m_noFollCLVSFlag)) )
+      {
+        numInferences += numPostRoll;
+      }
+    }
+#endif
     else
     {
       numInferences = 1;
