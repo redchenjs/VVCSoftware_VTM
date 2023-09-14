@@ -1043,8 +1043,7 @@ void PU::getIBCMergeCandidates(const PredictionUnit& pu, MergeCtx& mrgCtx, const
     // GDR: zero mv(0,0)
     if (isEncodeGdrClean)
     {
-      mrgCtx.mvSolid[cnt][0]   = true && allCandSolidInAbove;
-      allCandSolidInAbove      = true && allCandSolidInAbove;
+      mrgCtx.mvSolid[cnt][0] = allCandSolidInAbove;
     }
 #endif
     if (mrgCandIdx == cnt)
