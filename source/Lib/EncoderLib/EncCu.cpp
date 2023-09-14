@@ -2507,9 +2507,8 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
 #endif
   }
 #if GDR_ENABLED
-  const bool isEncodeGdrClean = tempCS->sps->getGDREnabledFlag() && tempCS->pcv->isEncoder && tempCS->picture->gdrParam.inGdrInterval && gdrClean;
-  bool *MrgSolid = nullptr;
-  bool *MrgValid = nullptr;
+  const bool isEncodeGdrClean =
+    tempCS->sps->getGDREnabledFlag() && tempCS->pcv->isEncoder && tempCS->picture->gdrParam.inGdrInterval && gdrClean;
 #endif
 
   int candHasNoResidual[MRG_MAX_NUM_CANDS];
@@ -2519,15 +2518,12 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
   }
 
 #if GDR_ENABLED
+  std::array<bool, MRG_MAX_NUM_CANDS> MrgSolid;
+  std::array<bool, MRG_MAX_NUM_CANDS> MrgValid;
   if (isEncodeGdrClean)
   {
-    MrgSolid = new bool[MRG_MAX_NUM_CANDS];
-    MrgValid = new bool[MRG_MAX_NUM_CANDS];
-    for (int i = 0; i < MRG_MAX_NUM_CANDS; i++)
-    {
-      MrgSolid[i] = false;
-      MrgValid[i] = false;
-    }
+    MrgSolid.fill(false);
+    MrgValid.fill(false);
   }
 #endif
 
@@ -2771,13 +2767,6 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
   {
     xCalDebCost( *bestCS, partitioner );
   }
-#if GDR_ENABLED
-  if (isEncodeGdrClean)
-  {
-    delete[] MrgSolid;
-    delete[] MrgValid;
-  }
-#endif
 }
 
 PredictionUnit* EncCu::getPuForInterPrediction(CodingStructure* cs)
