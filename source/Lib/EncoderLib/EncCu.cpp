@@ -2524,15 +2524,10 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
   }
 #endif
 
-  bool                                        bestIsSkip = false;
-  unsigned                                    numMrgSATDCand = mergeCtx.numValidMergeCand;
-  static_vector<unsigned, MRG_MAX_NUM_CANDS>  rdModeList(MRG_MAX_NUM_CANDS);
-  for (unsigned i = 0; i < MRG_MAX_NUM_CANDS; i++)
-  {
-    rdModeList[i] = i;
-  }
+  bool bestIsSkip = false;
 
-  static_vector<double, MRG_MAX_NUM_CANDS> candCostList(MRG_MAX_NUM_CANDS, MAX_DOUBLE);
+  static_vector<int, MRG_MAX_NUM_CANDS>    rdModeList;
+  static_vector<double, MRG_MAX_NUM_CANDS> candCostList;
   // 1. Pass: get SATD-cost for selected candidates and reduce their count
   {
     const double sqrtLambdaForFirstPass = m_pcRdCost->getMotionLambda();
@@ -2574,8 +2569,7 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
     ptrdiff_t      refStride = refBuf.stride;
     const UnitArea localUnitArea(tempCS->area.chromaFormat,
                                  Area(0, 0, tempCS->area.Y().width, tempCS->area.Y().height));
-    int            numValidBv = mergeCtx.numValidMergeCand;
-    for (unsigned int mergeCand = 0; mergeCand < mergeCtx.numValidMergeCand; mergeCand++)
+    for (int mergeCand = 0; mergeCand < mergeCtx.numValidMergeCand; mergeCand++)
     {
       mergeCtx.setMergeInfo(pu, mergeCand);   // set bv info in merge mode
       const int cuPelX    = pu.lx();
@@ -2591,7 +2585,6 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
       if (!m_pcInterSearch->isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, xPred, yPred,
                                       ctuWidth))   // not valid bv derived
       {
-        numValidBv--;
         continue;
       }
       PU::spanMotionInfo(pu, mergeCtx);
@@ -2622,26 +2615,20 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
 
         if (!isSolidandValid)
         {
-          numValidBv--;
           continue;
         }
       }
 #endif
-      updateCandList(mergeCand, cost, rdModeList, candCostList, numMrgSATDCand);
+      updateCandList(mergeCand, cost, rdModeList, candCostList);
     }
 
     // Try to limit number of candidates using SATD-costs
-    if (numValidBv)
+    if (!candCostList.empty())
     {
-      numMrgSATDCand = numValidBv;
-      for (unsigned int i = 1; i < numValidBv; i++)
-      {
-        if (candCostList[i] > MRG_FAST_RATIO * candCostList[0])
-        {
-          numMrgSATDCand = i;
-          break;
-        }
-      }
+      // Keep only elements with a cost within MRG_FAST_RATIO times the lowest cost
+      const double th = MRG_FAST_RATIO * candCostList[0];
+      rdModeList.resize(std::distance(candCostList.begin(), std::find_if(candCostList.begin() + 1, candCostList.end(),
+                                                                         [th](double c) { return c > th; })));
     }
     else
     {
@@ -2661,9 +2648,8 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
   // 2. Pass: check candidates using full RD test
   for (unsigned int numResidualPass = 0; numResidualPass < iteration; numResidualPass++)
   {
-    for (unsigned int mrgHADIdx = 0; mrgHADIdx < numMrgSATDCand; mrgHADIdx++)
+    for (const int mergeCand: rdModeList)
     {
-      unsigned int mergeCand = rdModeList[mrgHADIdx];
       if (!(numResidualPass == 1 && candHasNoResidual[mergeCand]))
       {
         if (!(bestIsSkip && (numResidualPass == 0)))
