@@ -152,7 +152,7 @@ namespace PU
   const PredictionUnit &getCoLocatedLumaPU(const PredictionUnit &pu);
 
   void getInterMergeCandidates(const PredictionUnit &pu, MergeCtx &mrgCtx, int mmvdList, const int &mrgCandIdx = -1);
-  void getIBCMergeCandidates          (const PredictionUnit &pu, MergeCtx& mrgCtx, const int& mrgCandIdx = -1);
+  void getIBCMergeCandidates(const PredictionUnit& pu, MergeCtx& mrgCtx, const int mrgCandIdx);
   void getInterMMVDMergeCandidates(const PredictionUnit &pu, MergeCtx &mrgCtx);
   int getDistScaleFactor(const int &currPOC, const int &currRefPOC, const int &colPOC, const int &colRefPOC);
   bool isDiffMER                      (const Position &pos1, const Position &pos2, const unsigned plevel);

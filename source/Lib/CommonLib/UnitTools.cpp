@@ -920,8 +920,10 @@ bool PU::addMergeHmvpCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int
   return false;
 }
 
-void PU::getIBCMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const int& mrgCandIdx)
+void PU::getIBCMergeCandidates(const PredictionUnit& pu, MergeCtx& mrgCtx, const int mrgCandIdx)
 {
+  // fill list of candidates up to candidate number mrgCandIdx
+
   const CodingStructure &cs = *pu.cs;
   const uint32_t maxNumMergeCand = pu.cs->sps->getMaxNumIBCMergeCand();
 #if GDR_ENABLED

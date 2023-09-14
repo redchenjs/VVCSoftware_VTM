@@ -2499,7 +2499,8 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
     pu.mmvdMergeFlag = false;
     pu.regularMergeFlag = false;
     cu.geoFlag = false;
-    PU::getIBCMergeCandidates(pu, mergeCtx);
+
+    PU::getIBCMergeCandidates(pu, mergeCtx, IBC_MRG_MAX_NUM_CANDS);
 #if GDR_ENABLED
     gdrClean = tempCS->isClean(pu.Y().topRight(), ChannelType::LUMA);
 #endif
