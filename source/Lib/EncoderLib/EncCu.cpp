@@ -2511,11 +2511,8 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
     tempCS->sps->getGDREnabledFlag() && tempCS->pcv->isEncoder && tempCS->picture->gdrParam.inGdrInterval && gdrClean;
 #endif
 
-  int candHasNoResidual[MRG_MAX_NUM_CANDS];
-  for (unsigned int ui = 0; ui < mergeCtx.numValidMergeCand; ui++)
-  {
-    candHasNoResidual[ui] = 0;
-  }
+  std::array<bool, MRG_MAX_NUM_CANDS> candHasNoResidual;
+  candHasNoResidual.fill(false);   // TODO: this isn't set to any other value
 
 #if GDR_ENABLED
   std::array<bool, MRG_MAX_NUM_CANDS> MrgSolid;
@@ -2667,7 +2664,7 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
     for (unsigned int mrgHADIdx = 0; mrgHADIdx < numMrgSATDCand; mrgHADIdx++)
     {
       unsigned int mergeCand = rdModeList[mrgHADIdx];
-      if (!(numResidualPass == 1 && candHasNoResidual[mergeCand] == 1))
+      if (!(numResidualPass == 1 && candHasNoResidual[mergeCand]))
       {
         if (!(bestIsSkip && (numResidualPass == 0)))
         {
