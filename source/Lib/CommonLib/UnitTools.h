@@ -113,6 +113,8 @@ namespace CU
   uint32_t  getISPSplitDim            ( const int width, const int height, const PartSplit ispType );
   bool      allLumaCBFsAreZero        ( const CodingUnit& cu );
 
+  inline bool canUseIbc(const UnitArea& a) { return a.lwidth() <= IBC_MAX_CU_SIZE && a.lheight() <= IBC_MAX_CU_SIZE; }
+
   PUTraverser traversePUs             (      CodingUnit& cu);
   TUTraverser traverseTUs             (      CodingUnit& cu);
   cPUTraverser traversePUs            (const CodingUnit& cu);

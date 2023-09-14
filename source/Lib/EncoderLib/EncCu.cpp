@@ -2466,10 +2466,9 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
 {
   CHECK(partitioner.chType == ChannelType::CHROMA, "chroma IBC is derived");
 
-  // don't use IBC for large CUs
-  if (tempCS->area.lwidth() > IBC_MAX_CU_SIZE || tempCS->area.lheight() > IBC_MAX_CU_SIZE)
+  if (!CU::canUseIbc(tempCS->area))
   {
-    return;
+    return;   // don't use IBC for large CUs
   }
 
   const SPS &sps = *tempCS->sps;
@@ -3373,9 +3372,9 @@ bool EncCu::prepareGpmComboList(const MergeCtx& mergeCtx, const UnitArea& localU
 
 void EncCu::xCheckRDCostIBCMode(CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode)
 {
-  if (tempCS->area.lwidth() > IBC_MAX_CU_SIZE || tempCS->area.lheight() > IBC_MAX_CU_SIZE)
+  if (!CU::canUseIbc(tempCS->area))
   {
-    // disable IBC mode larger than 64x64
+    // skip IBC mode for blocks larger than 64x64
     return;
   }
 
