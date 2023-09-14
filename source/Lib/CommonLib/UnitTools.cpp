@@ -2075,25 +2075,16 @@ bool PU::getDerivedBV(PredictionUnit &pu, const Mv& currentMv, Mv& derivedMv)
  */
 void PU::fillIBCMvpCand(PredictionUnit &pu, AMVPInfo &amvpInfo)
 {
-  AMVPInfo *pInfo = &amvpInfo;
-
-  pInfo->numCand = 0;
-
   MergeCtx mergeCtx;
   PU::getIBCMergeCandidates(pu, mergeCtx, AMVP_MAX_NUM_CANDS - 1);
-  int candIdx = 0;
-  while (pInfo->numCand < AMVP_MAX_NUM_CANDS)
+
+  for (int candIdx = 0; candIdx < AMVP_MAX_NUM_CANDS; candIdx++)
   {
-    pInfo->mvCand[pInfo->numCand] = mergeCtx.mvFieldNeighbours[candIdx][0].mv;
-    ;
-    pInfo->numCand++;
-    candIdx++;
+    amvpInfo.mvCand[candIdx] = mergeCtx.mvFieldNeighbours[candIdx][0].mv;
+    amvpInfo.mvCand[candIdx].roundIbcPrecInternal2Amvr(pu.cu->imv);
   }
 
-  for (Mv &mv : pInfo->mvCand)
-  {
-    mv.roundIbcPrecInternal2Amvr(pu.cu->imv);
-  }
+  amvpInfo.numCand = AMVP_MAX_NUM_CANDS;
 }
 
 /** Constructs a list of candidates for AMVP (See specification, section "Derivation process for motion vector predictor
