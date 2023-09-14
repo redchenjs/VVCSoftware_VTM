@@ -958,16 +958,16 @@ void PU::getIBCMergeCandidates(const PredictionUnit& pu, MergeCtx& mrgCtx, const
   const Position posRT = pu.Y().topRight();
   const Position posLB = pu.Y().bottomLeft();
 
-  MotionInfo miAbove, miLeft, miAboveLeft, miAboveRight, miBelowLeft;
+  MotionInfo miDummy;   // to be used as reference for unavailable MotionInfo
+
+  const bool isGt4x4 = pu.lumaSize().area() > 16;
 
   //left
-  const PredictionUnit* puLeft = cs.getPURestricted(posLB.offset(-1, 0), pu, pu.chType);
-  bool isGt4x4 = pu.lwidth() * pu.lheight() > 16;
+  const PredictionUnit* puLeft        = cs.getPURestricted(posLB.offset(-1, 0), pu, pu.chType);
   const bool isAvailableA1 = puLeft && pu.cu != puLeft->cu && CU::isIBC(*puLeft->cu);
+  const MotionInfo&     miLeft        = isGt4x4 && isAvailableA1 ? puLeft->getMotionInfo(posLB.offset(-1, 0)) : miDummy;
   if (isGt4x4 && isAvailableA1)
   {
-    miLeft = puLeft->getMotionInfo(posLB.offset(-1, 0));
-
     // get Inter Dir
     mrgCtx.interDirNeighbours[cnt] = miLeft.interDir;
     // get Mv from Left
@@ -994,11 +994,10 @@ void PU::getIBCMergeCandidates(const PredictionUnit& pu, MergeCtx& mrgCtx, const
   // above
   const PredictionUnit *puAbove = cs.getPURestricted(posRT.offset(0, -1), pu, pu.chType);
   bool isAvailableB1 = puAbove && pu.cu != puAbove->cu && CU::isIBC(*puAbove->cu);
+  const MotionInfo&     miAbove = isGt4x4 && isAvailableB1 ? puAbove->getMotionInfo(posRT.offset(0, -1)) : miDummy;
   if (isGt4x4 && isAvailableB1)
   {
-    miAbove = puAbove->getMotionInfo(posRT.offset(0, -1));
-
-    if (!isAvailableA1 || (miAbove != miLeft))
+    if (!isAvailableA1 || miAbove != miLeft)
     {
       // get Inter Dir
       mrgCtx.interDirNeighbours[cnt] = miAbove.interDir;
@@ -1019,21 +1018,15 @@ void PU::getIBCMergeCandidates(const PredictionUnit& pu, MergeCtx& mrgCtx, const
     }
   }
 
-  // early termination
-  if (cnt == maxNumMergeCand)
-  {
-    return;
-  }
-
   if (cnt != maxNumMergeCand)
   {
 #if GDR_ENABLED
     bool allCandSolidInAbove = true;
-    bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
-                                  miAbove, true, isGt4x4, pu, allCandSolidInAbove);
+    const bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft,
+                                        isAvailableB1, miAbove, true, isGt4x4, pu, allCandSolidInAbove);
 #else
-    bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
-                                  miAbove, true, isGt4x4);
+    const bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft,
+                                        isAvailableB1, miAbove, true, isGt4x4);
 #endif
 
     if (found)
