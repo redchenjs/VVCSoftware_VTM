@@ -2590,12 +2590,12 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
       int                roiHeight = pu.lheight();
       const int          picWidth  = pu.cs->slice->getPPS()->getPicWidthInLumaSamples();
       const int          picHeight = pu.cs->slice->getPPS()->getPicHeightInLumaSamples();
-      const unsigned int lcuWidth  = pu.cs->slice->getSPS()->getMaxCUWidth();
+      const int ctuWidth  = pu.cs->slice->getSPS()->getMaxCUWidth();
       int                xPred     = pu.bv.getHor();
       int                yPred     = pu.bv.getVer();
 
-      if (!m_pcInterSearch->searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, xPred, yPred,
-                                     lcuWidth))   // not valid bv derived
+      if (!m_pcInterSearch->isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, xPred, yPred,
+                                      ctuWidth))   // not valid bv derived
       {
         numValidBv--;
         continue;

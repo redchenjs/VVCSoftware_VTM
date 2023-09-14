@@ -361,7 +361,8 @@ public:
   void storeAffineMotion(Mv acAffineMv[2][3], int16_t affineRefIdx[2], AffineModel affineType, int bcwIdx);
 #endif
 
-  bool searchBv(PredictionUnit& pu, int xPos, int yPos, int width, int height, int picWidth, int picHeight, int xBv, int yBv, int ctuSize);
+  bool isValidBv(PredictionUnit& pu, int xPos, int yPos, int width, int height, int picWidth, int picHeight, int xBv,
+                 int yBv, int ctuSize);
   void setClipMvInSubPic(bool flag) { m_clipMvInSubPic = flag; }
 protected:
 

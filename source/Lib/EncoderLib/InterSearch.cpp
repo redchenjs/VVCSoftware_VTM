@@ -1086,7 +1086,8 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
         && !((yPred < srTop) || (yPred > srBottom))
         && !((xPred < srLeft) || (xPred > srRight)))
       {
-        bool validCand = searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, xPred, yPred, lcuWidth);
+        bool validCand =
+          isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, xPred, yPred, lcuWidth);
 #if GDR_ENABLED
         if (isEncodeGdrClean)
         {
@@ -1113,7 +1114,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
     const int boundY = (0 - roiHeight - puPelOffsetY);
     for (int y = std::max(srchRngVerTop, 0 - cuPelY); y <= boundY; ++y)
     {
-      if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, 0, y, lcuWidth))
+      if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, 0, y, lcuWidth))
       {
         continue;
       }
@@ -1148,7 +1149,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
     const int boundX = std::max(srchRngHorLeft, -cuPelX);
     for (int x = 0 - roiWidth - puPelOffsetX; x >= boundX; --x)
     {
-      if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, 0, lcuWidth))
+      if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, 0, lcuWidth))
       {
         continue;
       }
@@ -1213,7 +1214,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
             continue;
           }
 
-          if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
+          if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
           {
             continue;
           }
@@ -1268,7 +1269,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
             continue;
           }
 
-          if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
+          if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
           {
             continue;
           }
@@ -1338,7 +1339,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
             continue;
           }
 
-          if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
+          if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
           {
             continue;
           }
@@ -1484,9 +1485,9 @@ void InterSearch::xIBCEstimation(PredictionUnit& pu, PelUnitBuf& origBuf,
         Position BvBR(cuPelX + iRoiWidth + xBv - 1, cuPelY + iRoiHeight + yBv - 1);
         validCand = validCand && cs.isClean(BvBR, ChannelType::LUMA);
       }
-      if (validCand && searchBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xBv, yBv, lcuWidth))
+      if (validCand && isValidBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xBv, yBv, lcuWidth))
 #else
-      if (searchBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xBv, yBv, lcuWidth))
+      if (isValidBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xBv, yBv, lcuWidth))
 #endif
       {
         buffered = true;
@@ -1528,9 +1529,10 @@ void InterSearch::xIBCEstimation(PredictionUnit& pu, PelUnitBuf& origBuf,
           Position BvBR(cuPelX + iRoiWidth + xPred - 1, cuPelY + iRoiHeight + yPred - 1);
           validCand = cs.isClean(BvBR, ChannelType::LUMA);
         }
-        if (validCand && searchBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xPred, yPred, lcuWidth))
+        if (validCand
+            && isValidBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xPred, yPred, lcuWidth))
 #else
-        if (searchBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xPred, yPred, lcuWidth))
+        if (isValidBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xPred, yPred, lcuWidth))
 #endif
         {
           Distortion sad = m_pcRdCost->getBvCostMultiplePreds(xPred, yPred, pu.cs->sps->getAMVREnabledFlag());
@@ -1802,7 +1804,8 @@ void InterSearch::xxIBCHashSearch(PredictionUnit& pu, Mv* mvPred, int numMvPred,
         Mv candMv;
         candMv.set(tmp.x, tmp.y);
 
-        if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, candMv.getHor(), candMv.getVer(), lcuWidth))
+        if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, candMv.getHor(), candMv.getVer(),
+                       lcuWidth))
         {
           continue;
         }
@@ -11378,7 +11381,8 @@ uint64_t InterSearch::xCalcPuMeBits(PredictionUnit& pu)
   return m_CABACEstimator->getEstFracBits();
 }
 
-bool InterSearch::searchBv(PredictionUnit& pu, int xPos, int yPos, int width, int height, int picWidth, int picHeight, int xBv, int yBv, int ctuSize)
+bool InterSearch::isValidBv(PredictionUnit& pu, int xPos, int yPos, int width, int height, int picWidth, int picHeight,
+                            int xBv, int yBv, int ctuSize)
 {
   const int ctuSizeLog2 = floorLog2(ctuSize);
 
