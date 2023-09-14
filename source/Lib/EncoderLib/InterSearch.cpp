@@ -11384,112 +11384,73 @@ uint64_t InterSearch::xCalcPuMeBits(PredictionUnit& pu)
 bool InterSearch::isValidBv(PredictionUnit& pu, int xPos, int yPos, int width, int height, int picWidth, int picHeight,
                             int xBv, int yBv, int ctuSize)
 {
+  const int refRightX  = xPos + xBv + width - 1;
+  const int refBottomY = yPos + yBv + height - 1;
+
+  // check whether bottom-right sample is definitely not yet reconstructed
+  if (refRightX >= xPos && refBottomY >= yPos)
+  {
+    return false;
+  }
+
   const int ctuSizeLog2 = floorLog2(ctuSize);
 
-  int refRightX = xPos + xBv + width - 1;
-  int refBottomY = yPos + yBv + height - 1;
+  const int refLeftX = xPos + xBv;
+  const int refTopY  = yPos + yBv;
 
-  int refLeftX = xPos + xBv;
-  int refTopY = yPos + yBv;
+  const int curCtuCol = xPos >> ctuSizeLog2;
+  const int curCtuRow = yPos >> ctuSizeLog2;
 
-  if ((xPos + xBv) < 0)
-  {
-    return false;
-  }
-  if (refRightX >= picWidth)
-  {
-    return false;
-  }
+  const int refTopCtuRow    = refTopY >> ctuSizeLog2;
+  const int refBottomCtuRow = refBottomY >> ctuSizeLog2;
+  const int refLeftCtuCol   = refLeftX >> ctuSizeLog2;
+  const int refRightCtuCol  = refRightX >> ctuSizeLog2;
 
-  if ((yPos + yBv) < 0)
-  {
-    return false;
-  }
-  if (refBottomY >= picHeight)
-  {
-    return false;
-  }
-  if ((xBv + width) > 0 && (yBv + height) > 0)
+  // check whether top or bottom is in different CTU row
+  if (curCtuRow != refTopCtuRow || curCtuRow != refBottomCtuRow)
   {
     return false;
   }
 
-  // Don't search the above CTU row
-  if (refTopY >> ctuSizeLog2 < yPos >> ctuSizeLog2)
+  // number of CTUs to the left that may be referenced. When CTU size is 128x128, this includes a CTU to the
+  // left that may be partially referenced
+  constexpr int IBC_REF_WINDOW_SIZE = 1 << (2 * 7);
+  const int     numLeftCTUs = std::min((IBC_REF_WINDOW_SIZE >> 2 * ctuSizeLog2) - (ctuSizeLog2 < 7 ? 1 : 0), curCtuCol);
+  if (refRightCtuCol > curCtuCol || refLeftCtuCol < curCtuCol - numLeftCTUs)
   {
     return false;
   }
 
-  // Don't search the below CTU row
-  if (refBottomY >> ctuSizeLog2 > yPos >> ctuSizeLog2)
+  // check whether in same tile
+  if (refLeftCtuCol != curCtuCol)
   {
-    return false;
-  }
-
-  unsigned curTileIdx = pu.cs->pps->getTileIdx(pu.lumaPos());
-  unsigned refTileIdx = pu.cs->pps->getTileIdx(Position(refLeftX, refTopY));
-  if (curTileIdx != refTileIdx)
-  {
-    return false;
-  }
-  refTileIdx = pu.cs->pps->getTileIdx(Position(refLeftX, refBottomY));
-  if (curTileIdx != refTileIdx)
-  {
-    return false;
-  }
-  refTileIdx = pu.cs->pps->getTileIdx(Position(refRightX, refTopY));
-  if (curTileIdx != refTileIdx)
-  {
-    return false;
-  }
-  refTileIdx = pu.cs->pps->getTileIdx(Position(refRightX, refBottomY));
-  if (curTileIdx != refTileIdx)
-  {
-    return false;
-  }
-
-  // in the same CTU line
-  int numLeftCTUs = (1 << ((7 - ctuSizeLog2) << 1)) - ((ctuSizeLog2 < 7) ? 1 : 0);
-  if ((refRightX >> ctuSizeLog2 <= xPos >> ctuSizeLog2) && (refLeftX >> ctuSizeLog2 >= (xPos >> ctuSizeLog2) - numLeftCTUs))
-  {
-
-    // in the same CTU, or left CTU
-    // if part of ref block is in the left CTU, some area can be referred from the not-yet updated local CTU buffer
-    if (((refLeftX >> ctuSizeLog2) == ((xPos >> ctuSizeLog2) - 1)) && (ctuSizeLog2 == 7))
+    const uint32_t curTileIdx = pu.cs->pps->getTileIdx(curCtuCol, curCtuRow);
+    const uint32_t refTileIdx = pu.cs->pps->getTileIdx(refLeftCtuCol, curCtuRow);
+    if (curTileIdx != refTileIdx)
     {
-      // ref block's collocated block in current CTU
-      const Position refPosCol = pu.Y().topLeft().offset(xBv + ctuSize, yBv);
-      int offset64x = (refPosCol.x >> (ctuSizeLog2 - 1)) << (ctuSizeLog2 - 1);
-      int offset64y = (refPosCol.y >> (ctuSizeLog2 - 1)) << (ctuSizeLog2 - 1);
-      const Position refPosCol64x64 = {offset64x, offset64y};
-      if (pu.cs->isDecomp(refPosCol64x64, toChannelType(COMPONENT_Y)))
-      {
-        return false;
-      }
-      if (refPosCol64x64 == pu.Y().topLeft())
-      {
-        return false;
-      }
+      return false;
     }
   }
-  else
+
+  // if part of ref block is in the left CTU, some area can be referred from the not-yet updated local CTU buffer
+  if (ctuSizeLog2 == 7 && refLeftCtuCol == curCtuCol - 1)
   {
-    return false;
+    // ref block's collocated block in current CTU
+    const Position refPosCol      = pu.Y().topLeft().offset(xBv + ctuSize, yBv);
+    const Position refPosCol64x64 = { refPosCol.x & ~63, refPosCol.y & ~63 };
+    if (pu.cs->isDecomp(refPosCol64x64, ChannelType::LUMA))
+    {
+      return false;
+    }
+    if (refPosCol64x64 == pu.Y().topLeft())
+    {
+      return false;
+    }
   }
 
   // in the same CTU, or valid area from left CTU. Check if the reference block is already coded
-  const Position refPosLT = pu.Y().topLeft().offset(xBv, yBv);
   const Position refPosBR = pu.Y().bottomRight().offset(xBv, yBv);
-  const ChannelType      chType = toChannelType(COMPONENT_Y);
-  if (!pu.cs->isDecomp(refPosBR, chType))
-  {
-    return false;
-  }
-  if (!pu.cs->isDecomp(refPosLT, chType))
-  {
-    return false;
-  }
-  return true;
+  return pu.cs->isDecomp(refPosBR, ChannelType::LUMA);
 }
 
 //! \}
