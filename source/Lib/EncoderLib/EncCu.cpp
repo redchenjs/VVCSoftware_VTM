@@ -2586,7 +2586,6 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
       {
         continue;
       }
-      PU::spanMotionInfo(pu, mergeCtx);
 
       distParam.cur.buf = refBuf.bufAt(xPred, yPred);
 
