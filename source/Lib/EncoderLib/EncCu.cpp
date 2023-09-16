@@ -2642,16 +2642,16 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
     tempCS->initStructData(encTestMode.qp);
   }
 
-  const unsigned int iteration = 2;
+  const int iteration = 2;
   m_bestModeUpdated = tempCS->useDbCost = bestCS->useDbCost = false;
   // 2. Pass: check candidates using full RD test
-  for (unsigned int numResidualPass = 0; numResidualPass < iteration; numResidualPass++)
+  for (int numResidualPass = 0; numResidualPass < iteration; numResidualPass++)
   {
     for (const int mergeCand: rdModeList)
     {
       if (!(numResidualPass == 1 && candHasNoResidual[mergeCand]))
       {
-        if (!(bestIsSkip && (numResidualPass == 0)))
+        if (!(bestIsSkip && numResidualPass == 0))
         {
           {
             // first get merge candidates
@@ -3338,25 +3338,24 @@ void EncCu::xCheckRDCostIBCMode(CodingStructure *&tempCS, CodingStructure *&best
   cu.qp          = encTestMode.qp;
   cu.imv         = 0;
   cu.sbtInfo     = 0;
+  cu.mmvdSkip    = false;
 
   CU::addPUs(cu);
 
   m_bestModeUpdated = tempCS->useDbCost = bestCS->useDbCost = false;
 
-  PredictionUnit &pu  = *cu.firstPU;
-  cu.mmvdSkip         = false;
+  PredictionUnit& pu               = *cu.firstPU;
   pu.mmvdMergeFlag    = false;
-  pu.regularMergeFlag = false;
-
+  pu.regularMergeFlag              = false;
   pu.intraDir[ChannelType::LUMA]   = DC_IDX;       // set intra pred for ibc block
   pu.intraDir[ChannelType::CHROMA] = PLANAR_IDX;   // set intra pred for ibc block
-
   pu.interDir               = 1;             // use list 0 for IBC mode
   pu.refIdx[REF_PIC_LIST_0] = IBC_REF_IDX;   // last idx in the list
-  bool bValid =
+
+  const bool isValid =
     m_pcInterSearch->predIBCSearch(cu, partitioner, m_ctuIbcSearchRangeX, m_ctuIbcSearchRangeY, m_ibcHashMap);
 
-  if (bValid)
+  if (isValid)
   {
     PU::spanMotionInfo(pu);
     const bool chroma = !pu.cu->isSepTree();
@@ -3391,7 +3390,7 @@ void EncCu::xCheckRDCostIBCMode(CodingStructure *&tempCS, CodingStructure *&best
 
     DTRACE_MODE_COST(*tempCS, m_pcRdCost->getLambda());
     xCheckBestMode(tempCS, bestCS, partitioner, encTestMode);
-  }   // bValid
+  }
   else
   {
     tempCS->dist         = 0;
