@@ -2543,32 +2543,31 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
     cu.qp          = encTestMode.qp;
     cu.mmvdSkip    = false;
     cu.geoFlag     = false;
-    DistParam       distParam;
-    const bool      bUseHadamard = !cu.slice->getDisableSATDForRD();
+
     PredictionUnit &pu           = tempCS->addPU(cu, partitioner.chType);   // tempCS->addPU(cu);
     pu.mmvdMergeFlag             = false;
     pu.regularMergeFlag          = false;
-    Picture *     refPic         = pu.cu->slice->getPic();
-    const CPelBuf refBuf         = refPic->getRecoBuf(pu.blocks[COMPONENT_Y]);
-    const Pel *   piRefSrch      = refBuf.buf;
+
+    const bool     useHadamard = !cu.slice->getDisableSATDForRD();
+    const Picture* refPic      = pu.cu->slice->getPic();
+    const CPelBuf  refBuf      = refPic->getRecoBuf(pu.blocks[COMPONENT_Y]);
+
+    CPelBuf origLuma = tempCS->getOrgBuf().Y();
     if (tempCS->slice->getLmcsEnabledFlag() && m_pcReshape->getCTUFlag())
     {
       const CompArea &area = cu.blocks[COMPONENT_Y];
       const CompArea  tmpArea(COMPONENT_Y, area.chromaFormat, Position(0, 0), area.size());
       PelBuf          tmpLuma = m_tmpStorageCtu->getBuf(tmpArea);
-      tmpLuma.copyFrom(tempCS->getOrgBuf().Y());
+      tmpLuma.copyFrom(origLuma);
       tmpLuma.rspSignal(m_pcReshape->getFwdLUT());
-      m_pcRdCost->setDistParam(distParam, tmpLuma, refBuf, sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y,
-                               bUseHadamard);
+      origLuma = tmpLuma;
     }
-    else
-    {
-      m_pcRdCost->setDistParam(distParam, tempCS->getOrgBuf().Y(), refBuf, sps.getBitDepth(ChannelType::LUMA),
-                               COMPONENT_Y, bUseHadamard);
-    }
-    ptrdiff_t      refStride = refBuf.stride;
-    const UnitArea localUnitArea(tempCS->area.chromaFormat,
-                                 Area(0, 0, tempCS->area.Y().width, tempCS->area.Y().height));
+
+    DistParam distParam;
+    m_pcRdCost->setDistParam(distParam, origLuma, refBuf, sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y, useHadamard);
+
+    const UnitArea localUnitArea(tempCS->area.chromaFormat, Area(0, 0, tempCS->area.lwidth(), tempCS->area.lheight()));
+
     for (int mergeCand = 0; mergeCand < mergeCtx.numValidMergeCand; mergeCand++)
     {
       mergeCtx.setMergeInfo(pu, mergeCand);   // set bv info in merge mode
@@ -2589,7 +2588,7 @@ void EncCu::xCheckRDCostIBCModeMerge2Nx2N(CodingStructure *&tempCS, CodingStruct
       }
       PU::spanMotionInfo(pu, mergeCtx);
 
-      distParam.cur.buf = piRefSrch + refStride * yPred + xPred;
+      distParam.cur.buf = refBuf.bufAt(xPred, yPred);
 
       const Distortion sad      = distParam.distFunc(distParam);
       const int        bitsCand = std::min<int>(mergeCand + 1, tempCS->sps->getMaxNumMergeCand() - 1);
