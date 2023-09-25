@@ -613,20 +613,97 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
 
 
   seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  seiProcessingOrderInfo->m_posNumMinus2        = m_pcCfg->getPoSEINumMinus2();
+  seiProcessingOrderInfo->m_posWrappingFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
+  seiProcessingOrderInfo->m_posImportanceFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
+  seiProcessingOrderInfo->m_posWrapSeiMessages.clear();
+#endif
   seiProcessingOrderInfo->m_posPrefixFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPrefixByte.resize(m_pcCfg->getPoSEIPayloadTypeSize());
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
+#else
   for (uint32_t i = 0; i < m_pcCfg->getPoSEIPayloadTypeSize(); i++)
+#endif
   {
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+    seiProcessingOrderInfo->m_posWrappingFlag[i] = m_pcCfg->getPoSEIWrappingFlag(i);
+    seiProcessingOrderInfo->m_posImportanceFlag[i] = m_pcCfg->getPoSEIImportanceFlag(i);
+#endif
     seiProcessingOrderInfo->m_posPrefixFlag[i] = m_pcCfg->getPoSEIPrefixFlag(i);
     seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+    if (seiProcessingOrderInfo->m_posPrefixFlag[i])
+#else
     if (seiProcessingOrderInfo->m_posPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
+#endif
     {
       seiProcessingOrderInfo->m_posPrefixByte[i] = m_pcCfg->getPoSEIPrefixByte(i);
     }
   }
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
+  {
+    if (seiProcessingOrderInfo->m_posWrappingFlag[i])
+    {
+      CHECK(!seiProcessingOrderInfo->checkWrappingSEIPayloadType(SEI::PayloadType(seiProcessingOrderInfo->m_posPayloadType[i])), "not support in sei processing order SEI");
+      switch (SEI::PayloadType(seiProcessingOrderInfo->m_posPayloadType[i]))
+      {
+      case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
+      {
+        SEIFilmGrainCharacteristics* seiFGC = new SEIFilmGrainCharacteristics;
+        initSEIFilmGrainCharacteristics(seiFGC);
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiFGC);
+        break;
+      }
+      case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
+      {
+        SEIContentLightLevelInfo* seiCCL = new SEIContentLightLevelInfo;
+        initSEIContentLightLevel(seiCCL);
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiCCL);
+        break;
+      }
+      case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
+      {
+        SEIContentColourVolume* seiCCV = new SEIContentColourVolume;
+        initSEIContentColourVolume(seiCCV);
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiCCV);
+        break;
+      }
+      case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
+      {
+        SEIColourTransformInfo* seiCTI = new SEIColourTransformInfo;
+        initSEIColourTransformInfo(seiCTI);
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiCTI);
+        break;
+      }
+      case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
+      {
+        SEINeuralNetworkPostFilterCharacteristics* seiNNPFC = new  SEINeuralNetworkPostFilterCharacteristics;
+        initSEINeuralNetworkPostFilterCharacteristics(seiNNPFC, 0);
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiNNPFC);
+        break;
+      }
+      case SEI::PayloadType::POST_FILTER_HINT:
+      {
+        SEIPostFilterHint* seiPFH = new SEIPostFilterHint;
+        initSEIPostFilterHint(seiPFH);
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiPFH);
+        break;
+      }
+      default:
+      {
+        msg(ERROR, "not support in sei processing order SEI\n");
+        exit(1);
+      }
+      }
+    }
+  }
+#endif
 }
 
 void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)

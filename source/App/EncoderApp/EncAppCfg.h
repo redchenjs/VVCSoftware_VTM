@@ -810,6 +810,11 @@ protected:
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
 
   bool                  m_poSEIEnabled;
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  uint32_t              m_poSEINumMinus2;
+  std::vector<bool>     m_poSEIWrappingFlag;
+  std::vector<bool>     m_poSEIImportanceFlag;
+#endif
   std::vector<bool>     m_poSEIPrefixFlag;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;

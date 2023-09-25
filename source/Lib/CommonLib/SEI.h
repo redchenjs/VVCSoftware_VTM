@@ -121,6 +121,12 @@ struct SeiPayload
   int              subpicId;
 };
 
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC 
+typedef std::list<SEI*> SEIMessages;
+SEIMessages getSeisByType(const SEIMessages& seiList, SEI::PayloadType seiType);
+SEIMessages extractSeisByType(SEIMessages& seiList, SEI::PayloadType seiType);
+void deleteSEIs(SEIMessages& seiList);
+#endif
 class SEIFillerPayload : public SEI
 {
 public:
@@ -153,13 +159,40 @@ public:
   PayloadType payloadType() const { return PayloadType::SEI_PROCESSING_ORDER; }
   SEIProcessingOrderInfo() {}
   SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei);
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  virtual ~SEIProcessingOrderInfo() { deleteSEIs(m_posWrapSeiMessages); }
+#else
   virtual ~SEIProcessingOrderInfo() {}
+#endif
 
   bool                   m_posEnabled;
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  uint32_t               m_posNumMinus2;
+  std::vector<bool>      m_posWrappingFlag;
+  std::vector<bool>      m_posImportanceFlag;
+#endif
   std::vector<bool>      m_posPrefixFlag;
   std::vector<uint16_t>  m_posPayloadType;
   std::vector<uint16_t>   m_posProcessingOrder;
   std::vector<std::vector<uint8_t>> m_posPrefixByte;
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  SEIMessages            m_posWrapSeiMessages;
+  static bool checkWrappingSEIPayloadType(SEI::PayloadType const payloadType)
+  {
+    switch (payloadType)
+    {
+    case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
+    case SEI::PayloadType::POST_FILTER_HINT:
+    case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
+    case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
+    case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
+    case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
+      return true;
+    default:
+      return false;
+    }
+  }
+#endif
 };
 
 class SEIEquirectangularProjection : public SEI
@@ -832,6 +865,7 @@ public:
   SEIMasteringDisplay values;
 };
 
+#if !JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC 
 typedef std::list<SEI*> SEIMessages;
 
 /// output a selection of SEI messages by payload type. Ownership stays in original message list.
@@ -842,6 +876,7 @@ SEIMessages extractSeisByType(SEIMessages &seiList, SEI::PayloadType seiType);
 
 /// delete list of SEI messages (freeing the referenced objects)
 void deleteSEIs (SEIMessages &seiList);
+#endif
 
 class SEIScalableNesting : public SEI
 {
