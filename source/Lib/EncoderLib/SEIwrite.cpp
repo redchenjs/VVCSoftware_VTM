@@ -1548,7 +1548,8 @@ void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
   CHECK(sei.m_posPayloadType.size() < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
   for (uint32_t i = 0; i < sei.m_posPayloadType.size(); i++)
   {
-    xWriteCode(sei.m_posPayloadType[i], 16, "po_sei_payload_type[i]");
+    xWriteFlag(sei.m_posPrefixFlag[i], "po_sei_prefix_flag[i]");
+    xWriteCode(sei.m_posPayloadType[i], 15, "po_sei_payload_type[i]");
 
     if (sei.m_posPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
     {
@@ -1557,8 +1558,8 @@ void SEIWriter::xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei)
       {
         xWriteCode(sei.m_posPrefixByte[i][j], 8, "po_t35_byte[i][j]");
       }
-      xWriteCode(sei.m_posProcessingOrder[i], 16, "po_sei_processing_order[i]");
     }
+    xWriteCode(sei.m_posProcessingOrder[i], 16, "po_sei_processing_order[i]");
   }
 }
 
