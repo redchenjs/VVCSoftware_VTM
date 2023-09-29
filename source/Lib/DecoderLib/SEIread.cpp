@@ -3125,8 +3125,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     {
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_chroma_sample_loc_type_frame");
       sei.m_chromaSampleLocTypeFrame = static_cast<Chroma420LocType>(val);
+      CHECK(sei.m_chromaSampleLocTypeFrame > Chroma420LocType::UNSPECIFIED, "The value of nnpfc_chroma_sample_loc_type_frame shall be in the range of 0 to 6, inclusive");
     }
-    CHECK(sei.m_chromaSampleLocTypeFrame > Chroma420LocType::UNSPECIFIED, "The value of nnpfc_chroma_sample_loc_type_frame shall be in the range of 0 to 6, inclusive");
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_overlap");
     sei.m_overlap = val;

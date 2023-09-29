@@ -5147,6 +5147,11 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsMatrixCoeffs[i] > 255, "m_nnPostFilterSEICharacteristicsMatrixCoeffs must in the range 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutFormatIdc[i] > 255, "SEINNPFCOutFormatIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutOrderIdc[i] > 255, "SEINNPFCOutOrderIdc must be in the range of 0 to 255");
+      if (m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[i])
+      {
+        xConfirmPara(m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[i] > (uint32_t) Chroma420LocType::UNSPECIFIED,
+                     "The value of nnpfc_chroma_sample_loc_type_frame shall be in the range of 0 to 6, inclusive");
+      }
       xConfirmPara(m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i] > 32766, "SEINNPFCPatchWidthMinus1 must be in the range of 0 to 32766");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i] > 32766, "SEINNPFCPatchHeightMinus1 must be in the range of 0 to 32766");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOverlap[i] > 16383, "SEINNPFCOverlap must be in the range of 0 to 16383");
