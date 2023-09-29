@@ -1633,8 +1633,7 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
   else if (encTestmode.type == ETM_IBC || encTestmode.type == ETM_IBC_MERGE)
   {
     // IBC MODES
-    return sps.getIBCFlag() && partitioner.currArea().lumaSize().width <= IBC_MAX_CU_SIZE
-           && partitioner.currArea().lumaSize().height <= IBC_MAX_CU_SIZE;
+    return sps.getIBCFlag() && CU::canUseIbc(partitioner.currArea());
   }
   else if( isModeInter( encTestmode ) )
   {
