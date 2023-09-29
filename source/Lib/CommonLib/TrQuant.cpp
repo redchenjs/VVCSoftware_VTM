@@ -963,7 +963,8 @@ void TrQuant::transformNxN(TransformUnit &tu, const ComponentID &compID, const Q
   int numTests = 0;
   for (auto &itC: trCosts)
   {
-    const bool testTr = itC.first <= (itC.second == 1 ? thrTS : thr) && numTests <= maxCand;
+    const bool isTS   = trModes.at(itC.second).first == MtsType::SKIP;
+    const bool testTr = itC.first <= (isTS ? thrTS : thr) && numTests <= maxCand;
 
     trModes.at(itC.second).second = testTr;
     numTests += testTr;
