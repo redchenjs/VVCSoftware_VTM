@@ -1946,7 +1946,7 @@ void EncGOP::xPicInitHashME( Picture *pic, const PPS *pps, PicList &rcListPic )
   {
     Picture* refPic = *(iterPic++);
 
-    if (refPic->poc != pic->poc && refPic->referenced)
+    if (refPic->reconstructed && refPic->referenced && refPic->poc != pic->poc && refPic->layerId == pic->layerId)
     {
       bool validPOC = ((refPic->getPOC() == m_modeCtrl->getUseHashMEPOCToCheck()) && !m_modeCtrl->getUseHashMEPOCChecked());
       if (!refPic->getHashMap()->isInitial() || validPOC)
