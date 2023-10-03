@@ -747,6 +747,7 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
   //Since each entry is at least 4 bytes (2 byte "sei_payloadType" + 2 byte "sei_payloadOrder"),
   //the maximum number of entry is payloadSize/4
   numMaxSeiMessages = payloadSize / 4;
+  sei.m_posPrefixFlag.resize(numMaxSeiMessages);
   sei.m_posPayloadType.resize(numMaxSeiMessages);
   sei.m_posProcessingOrder.resize(numMaxSeiMessages);
   sei.m_posPrefixByte.resize(numMaxSeiMessages);
