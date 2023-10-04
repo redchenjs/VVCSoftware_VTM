@@ -800,7 +800,7 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t p
     sei_read_flag(decodedMessageOutputStream, val, "po_sei_prefix_flag[i]");
     sei.m_posPrefixFlag[i] = val;
 #if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
-      sei_read_code(decodedMessageOutputStream, 13, val, "po_sei_payload_type[i]");
+    sei_read_code(decodedMessageOutputStream, 13, val, "po_sei_payload_type[i]");
 #else
     sei_read_code(decodedMessageOutputStream, 15, val, "po_sei_payload_type[i]");
 #endif
