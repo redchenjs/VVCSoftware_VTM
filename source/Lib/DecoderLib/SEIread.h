@@ -115,7 +115,11 @@ protected:
   void xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics& sei, uint32_t payloadSize, const SPS* sps, std::ostream* pDecodedMessageOutputStream);
   void xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActivation& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIPhaseIndication(SEIPhaseIndication& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  void xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream);
+#else
   void xParseSEIProcessingOrder               (SEIProcessingOrderInfo& sei, uint32_t payloadSize, std::ostream *decodedMessageOutputStream);
+#endif
   void xParseSEIPostFilterHint(SEIPostFilterHint &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);

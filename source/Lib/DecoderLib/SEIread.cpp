@@ -532,7 +532,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       break;
     case SEI::PayloadType::SEI_PROCESSING_ORDER:
       sei = new SEIProcessingOrderInfo;
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC 
+      xParseSEIProcessingOrder((SEIProcessingOrderInfo&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
+        pDecodedMessageOutputStream);
+#else
       xParseSEIProcessingOrder((SEIProcessingOrderInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
+#endif
       break;
     case SEI::PayloadType::POST_FILTER_HINT:
       sei = new SEIPostFilterHint;
@@ -738,44 +743,100 @@ void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t p
   }
 }
 
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream)
+#else
 void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t payloadSize, std::ostream *decodedMessageOutputStream)
+#endif
 {
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  uint32_t i;
+#else
   uint32_t i,b;
+#endif
   uint32_t numMaxSeiMessages, val;
   output_sei_message_header(sei, decodedMessageOutputStream, payloadSize);
 
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_num_minus2");
+  sei.m_posNumMinus2 = val;
+  numMaxSeiMessages = sei.m_posNumMinus2 + 2;
+#else
   //Since each entry is at least 4 bytes (2 byte "sei_payloadType" + 2 byte "sei_payloadOrder"),
   //the maximum number of entry is payloadSize/4
   numMaxSeiMessages = payloadSize / 4;
+#endif
   sei.m_posPrefixFlag.resize(numMaxSeiMessages);
   sei.m_posPayloadType.resize(numMaxSeiMessages);
   sei.m_posProcessingOrder.resize(numMaxSeiMessages);
   sei.m_posPrefixByte.resize(numMaxSeiMessages);
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  sei.m_posWrappingFlag.resize(numMaxSeiMessages);
+  sei.m_posImportanceFlag.resize(numMaxSeiMessages);
+  for (i = 0; i < numMaxSeiMessages; i++)
+#else
   for (i = 0, b = 0; b < payloadSize; i++, b += 4)
+#endif
   {
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+    sei_read_flag(decodedMessageOutputStream, val, "po_sei_wrapping_flag[i]");
+    sei.m_posWrappingFlag[i] = val;
+    sei_read_flag(decodedMessageOutputStream, val, "po_sei_importance_flag[i]");
+    sei.m_posImportanceFlag[i] = val;
+    if (sei.m_posWrappingFlag[i])
+    {
+      sei_read_code(decodedMessageOutputStream, 6, val, "po_sei_reserved_alignment_6bits");
+      SEIMessages tmpSEI;
+      const bool seiMessageRead = xReadSEImessage(tmpSEI, nalUnitType, nuhLayerId, 0, vps, sps, m_nestedHrd, decodedMessageOutputStream);
+      if (seiMessageRead)
+      {
+        sei.m_posWrapSeiMessages.push_back(tmpSEI.front());
+        tmpSEI.clear();
+      }
+    }
+    else
+    {
+#endif
     sei_read_flag(decodedMessageOutputStream, val, "po_sei_prefix_flag[i]");
     sei.m_posPrefixFlag[i] = val;
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+    sei_read_code(decodedMessageOutputStream, 13, val, "po_sei_payload_type[i]");
+#else
     sei_read_code(decodedMessageOutputStream, 15, val, "po_sei_payload_type[i]");
+#endif
     sei.m_posPayloadType[i] = val;
     if (sei.m_posPrefixFlag[i])
     {
       sei_read_code(decodedMessageOutputStream, 8, val, "po_num_prefix_byte[i]");
       sei.m_posPrefixByte[i].resize(val);
+#if !JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
       b ++;
+#endif
       for (uint32_t j = 0; j < sei.m_posPrefixByte[i].size(); j++)
       {
         sei_read_code(decodedMessageOutputStream, 8, val, "po_prefix_byte[i][j]");
         sei.m_posPrefixByte[i][j] = val;
       }
+#if !JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
       b += (uint32_t)sei.m_posPrefixByte[i].size();
+#endif
+      }
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
     }
+#endif
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+    sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_processing_order[i]");
+#else
     sei_read_code(decodedMessageOutputStream, 16, val, "po_sei_processing_order[i]");
+#endif
     sei.m_posProcessingOrder[i] = val;
   }
+#if !JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   // resize vectors to match the number of valid entries
   sei.m_posPayloadType.resize(i);
   sei.m_posProcessingOrder.resize(i);
   sei.m_posPrefixByte.resize(i);
+#endif
   CHECK(i<2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
 }
 

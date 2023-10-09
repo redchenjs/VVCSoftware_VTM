@@ -1365,6 +1365,11 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setSiiSEISubLayerNumUnitsInSI(m_siiSEISubLayerNumUnitsInSI);
 
   m_cEncLib.setPoSEIEnabled                                      (m_poSEIEnabled);
+#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
+  m_cEncLib.setPoSEIWrappingFlag                                 (m_poSEIWrappingFlag);
+  m_cEncLib.setPoSEIImportanceFlag                               (m_poSEIImportanceFlag);
+#endif
   m_cEncLib.setPoSEIPrefixFlag                                   (m_poSEIPrefixFlag);
   m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
