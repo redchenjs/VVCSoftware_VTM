@@ -932,6 +932,12 @@ static inline int ceilLog2(uint32_t x)
   return (x==0) ? -1 : floorLog2(x - 1) + 1;
 }
 
+template<class T> inline void free(std::vector<T>& v)
+{
+  // deallocate the memory used by vector data by swapping the vector with an empty one
+  std::vector<T>().swap(v);
+}
+
 //CASE-BREAK for breakpoints
 #if defined ( _MSC_VER ) && defined ( _DEBUG )
 #define _CASE(_x) if(_x)
