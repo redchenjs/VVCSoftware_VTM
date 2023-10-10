@@ -250,17 +250,13 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   const int          width           = pps.getPicWidthInLumaSamples();
   const int          height          = pps.getPicHeightInLumaSamples();
 
-  if( cs )
-  {
-    cs->initStructData();
-  }
-  else
+  if (cs == nullptr)
   {
     cs      = new CodingStructure(g_xuPool);
-    cs->sps = &sps;
     cs->create(chromaFormatIdc, Area(0, 0, width, height), true, (bool) sps.getPLTMode());
   }
 
+  cs->sps = &sps;
   cs->vps = vps;
   cs->picture = this;
   cs->slice   = nullptr;  // the slices for this picture have not been set at this point. update cs->slice after swapSliceObject()

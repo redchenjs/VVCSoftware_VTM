@@ -94,38 +94,61 @@ void CodingStructure::destroy()
   m_reco.destroy();
   m_orgr.destroy();
 
-  destroyCoeffs();
-
-  for (auto &ptr: m_isDecomp)
-  {
-    delete[] ptr;
-    ptr = nullptr;
-  }
-
-  for (auto &ptr: m_tuIdx)
-  {
-    delete[] ptr;
-    ptr = nullptr;
-  }
-
-  for (auto &ptr: m_puIdx)
-  {
-    delete[] ptr;
-    ptr = nullptr;
-  }
-
-  for (auto &ptr: m_cuIdx)
-  {
-    delete[] ptr;
-    ptr = nullptr;
-  }
+  destroyTemporaryCsData();
 
   delete[] m_motionBuf;
   m_motionBuf = nullptr;
+}
+
+void CodingStructure::destroyTemporaryCsData()
+{
+  destroyCoeffs();
+
+  for (auto &ptr : m_isDecomp)
+  {
+    delete[] ptr;
+    ptr = nullptr;
+  }
+
+  for (auto &ptr : m_tuIdx)
+  {
+    delete[] ptr;
+    ptr = nullptr;
+  }
+
+  for (auto &ptr : m_puIdx)
+  {
+    delete[] ptr;
+    ptr = nullptr;
+  }
+
+  for (auto &ptr : m_cuIdx)
+  {
+    delete[] ptr;
+    ptr = nullptr;
+  }
 
   m_tuPool.giveBack(tus);
   m_puPool.giveBack(pus);
   m_cuPool.giveBack(cus);
+  m_numTUs = 0;
+  m_numPUs = 0;
+  m_numCUs = 0;
+}
+
+void CodingStructure::createTemporaryCsData(bool isPLTused)
+{
+  createCoeffs(isPLTused);
+
+  for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(area.chromaFormat); chType++)
+  {
+    unsigned _area = unitScale[getFirstComponentOfChannel(chType)].scale(area.block(chType).size()).area();
+
+    m_cuIdx[chType] = _area > 0 ? new unsigned[_area] : nullptr;
+    m_puIdx[chType] = _area > 0 ? new unsigned[_area] : nullptr;
+    m_tuIdx[chType] = _area > 0 ? new unsigned[_area] : nullptr;
+    m_isDecomp[chType] = _area > 0 ? new bool[_area] : nullptr;
+  }
 }
 
 void CodingStructure::releaseIntermediateData()
@@ -1331,16 +1354,6 @@ void CodingStructure::createInternals(const UnitArea& _unit, const bool isTopLay
   picture = nullptr;
   parent  = nullptr;
 
-  for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(area.chromaFormat); chType++)
-  {
-    unsigned _area = unitScale[getFirstComponentOfChannel(chType)].scale(area.block(chType).size()).area();
-
-    m_cuIdx[chType]    = _area > 0 ? new unsigned[_area] : nullptr;
-    m_puIdx[chType]    = _area > 0 ? new unsigned[_area] : nullptr;
-    m_tuIdx[chType]    = _area > 0 ? new unsigned[_area] : nullptr;
-    m_isDecomp[chType] = _area > 0 ? new bool[_area] : nullptr;
-  }
-
   const int numComp = getNumberValidComponents(area.chromaFormat);
 
   for (int i = 0; i < numComp; i++)
@@ -1350,12 +1363,15 @@ void CodingStructure::createInternals(const UnitArea& _unit, const bool isTopLay
 
   if (!isTopLayer)
   {
-    createCoeffs(isPLTused);
+    createTemporaryCsData(isPLTused);
   }
 
   unsigned _lumaAreaScaled = g_miScaling.scale( area.lumaSize() ).area();
   m_motionBuf       = new MotionInfo[_lumaAreaScaled];
-  initStructData();
+  if (!isTopLayer)
+  {
+    initStructData();
+  }
 }
 
 void CodingStructure::addMiToLut(static_vector<MotionInfo, MAX_NUM_HMVP_CANDS> &lut, const MotionInfo &mi)

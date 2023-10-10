@@ -959,8 +959,7 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
   m_maxDecSliceAddrInSubPic = -1;
 
   m_pcPic->destroyTempBuffers();
-  m_pcPic->cs->destroyCoeffs();
-  m_pcPic->cs->releaseIntermediateData();
+  m_pcPic->cs->destroyTemporaryCsData();
 #if !GDR_ENABLED
   m_pcPic->cs->picHeader->initPicHeader();
 #endif
@@ -2058,7 +2057,8 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
                                          sps->getChromaFormatIdc(), sps->getBitDepth(ChannelType::LUMA));
     m_firstPictureInSequence = false;
     m_pcPic->createTempBuffers( m_pcPic->cs->pps->pcv->maxCUWidth );
-    m_pcPic->cs->createCoeffs((bool)m_pcPic->cs->sps->getPLTMode());
+    m_pcPic->cs->createTemporaryCsData((bool)m_pcPic->cs->sps->getPLTMode());
+    m_pcPic->cs->initStructData();
 
     m_pcPic->allocateNewSlice();
     // make the slice-pilot a real slice, and set up the slice-pilot for the next slice
