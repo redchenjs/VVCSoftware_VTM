@@ -57,6 +57,7 @@
 #include "EncReshape.h"
 #include "EncAdaptiveLoopFilter.h"
 #include "RateCtrl.h"
+#include "EncTemporalFilter.h"
 
 #include "CommonLib/SEINeuralNetworkPostFiltering.h"
 
@@ -137,7 +138,8 @@ private:
   bool                      m_GMFAFramewise;
   std::string   m_GMFAFile;
 #endif
-
+  EncTemporalFilter         m_temporalFilter;
+  EncTemporalFilter         m_temporalFilterForFG;
   SEINeuralNetworkPostFiltering m_nnPostFiltering;
 public:
   SPS*                      getSPS( int spsId ) { return m_spsMap.getPS( spsId ); };
@@ -219,6 +221,8 @@ public:
   ParameterSetMap<APS>                     *getApsMap(ApsType apsType) { return &m_apsMaps[apsType]; }
   EnumArray<ParameterSetMap<APS>, ApsType> *getApsMaps() { return &m_apsMaps; }
 
+  EncTemporalFilter&     getTemporalFilter() { return m_temporalFilter; }
+  EncTemporalFilter&     getTemporalFilterForFG() { return m_temporalFilterForFG; }
   void                   setRprPPSCodedAfterIntra(int num, bool isCoded) { m_rprPPSCodedAfterIntraList[num] = isCoded; }
   bool                   getRprPPSCodedAfterIntra(int num) { return m_rprPPSCodedAfterIntraList[num]; }
 
@@ -233,16 +237,13 @@ public:
 
   // encode several number of pictures until end-of-sequence
   // snrCSC used for SNR calculations. Picture in original colour space.
-  bool encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYuvTrueOrg, PelStorage *pcPicYuvFilteredOrg,
-                  PelStorage *pcPicYuvFilteredOrgForFG, const InputColourSpaceConversion snrCSC,
-                  std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded
-    , PelStorage** ppcPicYuvRPR
-  );
+  bool encodePrep(bool flush, PelStorage *pcPicYuvOrg, const InputColourSpaceConversion snrCSC,
+                  std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded, PelStorage** ppcPicYuvRPR);
 
   bool encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded);
 
-  bool encodePrep(bool flush, PelStorage *pcPicYuvOrg, PelStorage *pcPicYuvTrueOrg, PelStorage *pcPicYuvFilteredOrg,
-                  const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded,
+  bool encodePrep(bool flush, PelStorage *pcPicYuvOrg, const InputColourSpaceConversion snrCSC, 
+    std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded,
                   bool isTff);
 
   bool encode(const InputColourSpaceConversion snrCSC, std::list<PelUnitBuf *> &rcListPicYuvRecOut, int &numEncoded,

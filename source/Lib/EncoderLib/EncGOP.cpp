@@ -2475,7 +2475,46 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
     m_pcSliceEncoder->create(picWidth, picHeight, chromaFormatIdc, maxCUWidth, maxCUHeight, maxTotalCUDepth);
 
-    pcPic->createTempBuffers( pcPic->cs->pps->pcv->maxCUWidth );
+    const bool isCurrentFrameFiltered = m_pcCfg->getGopBasedTemporalFilterEnabled() || m_pcCfg->getBIM();
+    const bool isFgFiltered = m_pcCfg->getFilmGrainAnalysisEnabled() && m_pcCfg->getFilmGrainExternalDenoised().empty();
+    pcPic->createTempBuffers(pcPic->cs->pps->pcv->maxCUWidth, isCurrentFrameFiltered, m_pcEncLib->isResChangeInClvsEnabled(), false, isFgFiltered);
+    pcPic->getTrueOrigBuf().copyFrom(pcPic->getOrigBuf());
+    if (m_pcEncLib->isResChangeInClvsEnabled())
+    {
+      pcPic->M_BUFS(0, PIC_TRUE_ORIGINAL_INPUT).copyFrom(pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT));
+    }
+    if (isFgFiltered)
+    {
+      pcPic->M_BUFS(0, PIC_FILTERED_ORIGINAL_FG).copyFrom(pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT));
+      m_pcEncLib->getTemporalFilterForFG().filter(&pcPic->M_BUFS(0, PIC_FILTERED_ORIGINAL_FG), pocCurr);
+    }
+    if (isCurrentFrameFiltered)
+    {
+      if (m_pcEncLib->isResChangeInClvsEnabled())
+      {
+        m_pcEncLib->getTemporalFilter().filter(&pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT), pocCurr);
+
+        const Window& curScalingWindow = pcPic->getScalingWindow();
+        const SPS& sps = *pcPic->cs->sps;
+        const int curPicWidth = pcPic->M_BUFS(0, PIC_ORIGINAL).Y().width - SPS::getWinUnitX(sps.getChromaFormatIdc()) * (curScalingWindow.getWindowLeftOffset() + curScalingWindow.getWindowRightOffset());
+        const int curPicHeight = pcPic->M_BUFS(0, PIC_ORIGINAL).Y().height - SPS::getWinUnitY(sps.getChromaFormatIdc()) * (curScalingWindow.getWindowTopOffset() + curScalingWindow.getWindowBottomOffset());
+        const PPS* pps = m_pcEncLib->getPPS(0);
+        const Window& refScalingWindow = pps->getScalingWindow();
+        const int refPicWidth = pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT).Y().width - SPS::getWinUnitX(sps.getChromaFormatIdc()) * (refScalingWindow.getWindowLeftOffset() + refScalingWindow.getWindowRightOffset());
+        const int refPicHeight = pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT).Y().height - SPS::getWinUnitY(sps.getChromaFormatIdc()) * (refScalingWindow.getWindowTopOffset() + refScalingWindow.getWindowBottomOffset());
+        const int xScale = ((refPicWidth << ScalingRatio::BITS) + (curPicWidth >> 1)) / curPicWidth;
+        const int yScale = ((refPicHeight << ScalingRatio::BITS) + (curPicHeight >> 1)) / curPicHeight;
+        ScalingRatio scalingRatio = {xScale, yScale};
+        Picture::rescalePicture(scalingRatio, pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT), curScalingWindow, pcPic->M_BUFS(0, PIC_ORIGINAL), pps->getScalingWindow(), chromaFormatIdc, sps.getBitDepths(), true, true,
+          sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag());
+      }
+      else
+      {
+        m_pcEncLib->getTemporalFilter().filter(&pcPic->M_BUFS(0, PIC_ORIGINAL), pocCurr);
+      }
+      pcPic->getFilteredOrigBuf().copyFrom(pcPic->getOrigBuf());
+    }
+
     pcPic->cs->createTemporaryCsData((bool)pcPic->cs->sps->getPLTMode());
 
     //  Slice data initialization

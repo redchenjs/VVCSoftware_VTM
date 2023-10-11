@@ -2056,7 +2056,7 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
                                          pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(),
                                          sps->getChromaFormatIdc(), sps->getBitDepth(ChannelType::LUMA));
     m_firstPictureInSequence = false;
-    m_pcPic->createTempBuffers( m_pcPic->cs->pps->pcv->maxCUWidth );
+    m_pcPic->createTempBuffers( m_pcPic->cs->pps->pcv->maxCUWidth, false, false, true, false );
     m_pcPic->cs->createTemporaryCsData((bool)m_pcPic->cs->sps->getPLTMode());
     m_pcPic->cs->initStructData();
 
