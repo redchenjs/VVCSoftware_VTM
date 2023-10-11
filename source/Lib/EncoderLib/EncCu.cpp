@@ -97,7 +97,8 @@ void EncCu::create( EncCfg* encCfg )
       unsigned width  = gp_sizeIdxInfo->sizeFrom( w );
       unsigned height = gp_sizeIdxInfo->sizeFrom( h );
 
-      if( gp_sizeIdxInfo->isCuSize( width ) && gp_sizeIdxInfo->isCuSize( height ) )
+      if( gp_sizeIdxInfo->isCuSize( width ) && gp_sizeIdxInfo->isCuSize( height ) 
+        && width <= uiMaxWidth && height <= uiMaxHeight)
       {
         m_pTempCS[w][h] = new CodingStructure(m_unitPool);
         m_pBestCS[w][h] = new CodingStructure(m_unitPool);
