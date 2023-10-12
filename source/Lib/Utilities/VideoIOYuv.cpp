@@ -1419,32 +1419,42 @@ void VideoIOYuv::colourSpaceConvert(const CPelUnitBuf& src, PelUnitBuf& dest,
 bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPelUnitBuf &pic,
                                       const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
                                       int outputChoice, ChromaFormat format, const bool clipToRec709,
-                                      int upscaleFilterForDisplay)
+                                      int upscaleFilterForDisplay, int maxWidth, int maxHeight)
 {
   ChromaFormat chromaFormatIdc = sps.getChromaFormatIdc();
   bool ret = false;
 
   Window afterScaleWindowFullResolution = sps.getConformanceWindow();
+  // override SPS maxWidth/Height with user-provided parameters
+  if (!maxWidth || !outputChoice)
+  {
+  	  maxWidth = sps.getMaxPicWidthInLumaSamples();
+  }
+  if (!maxHeight || !outputChoice)
+  {
+  	  maxHeight = sps.getMaxPicHeightInLumaSamples();
+  }
+  // TODO: rescale the afterScaleWindowFullResolution ? Well no: we want to specify true final size
+  // TODO: ensure size is chroma aligned, depending on sps.getChromaFormatIdc()
 
   // decoder does not have information about upscaled picture scaling and conformance windows, store this information when full resolution picutre is encountered
-  if( sps.getMaxPicWidthInLumaSamples() == pps.getPicWidthInLumaSamples() && sps.getMaxPicHeightInLumaSamples() == pps.getPicHeightInLumaSamples() )
+  if( maxWidth == pps.getPicWidthInLumaSamples() && maxHeight == pps.getPicHeightInLumaSamples() )
   {
-    afterScaleWindowFullResolution = pps.getScalingWindow();
+  	//afterScaleWindowFullResolution = pps.getScalingWindow(); // TODO: check that
     afterScaleWindowFullResolution = pps.getConformanceWindow();
   }
 
-  if( outputChoice && ( sps.getMaxPicWidthInLumaSamples() != pic.get( COMPONENT_Y ).width || sps.getMaxPicHeightInLumaSamples() != pic.get( COMPONENT_Y ).height ) )
+  if( outputChoice && ( maxWidth != pic.get( COMPONENT_Y ).width || maxHeight != pic.get( COMPONENT_Y ).height ) )
   {
     if( outputChoice == 2 )
     {
       PelStorage upscaledPic;
-      upscaledPic.create(chromaFormatIdc,
-                         Area(Position(), Size(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples())));
+      upscaledPic.create(chromaFormatIdc, Area(Position(), Size(maxWidth, maxHeight)));
 
-      int curPicWidth = sps.getMaxPicWidthInLumaSamples()   - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowLeftOffset() + afterScaleWindowFullResolution.getWindowRightOffset() );
-      int curPicHeight = sps.getMaxPicHeightInLumaSamples() - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowTopOffset()  + afterScaleWindowFullResolution.getWindowBottomOffset() );
+      int curPicWidth = maxWidth   - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowLeftOffset() + afterScaleWindowFullResolution.getWindowRightOffset() );
+      int curPicHeight = maxHeight - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowTopOffset()  + afterScaleWindowFullResolution.getWindowBottomOffset() );
 
-      const Window& beforeScalingWindow = pps.getScalingWindow();
+      const Window& beforeScalingWindow = pps.getScalingWindow(); // TODO: not sure about that. Conformance instead, and apply scaling window to output ?
       int refPicWidth = pps.getPicWidthInLumaSamples()   - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( beforeScalingWindow.getWindowLeftOffset() + beforeScalingWindow.getWindowRightOffset() );
       int refPicHeight = pps.getPicHeightInLumaSamples() - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( beforeScalingWindow.getWindowTopOffset()  + beforeScalingWindow.getWindowBottomOffset() );
 
@@ -1456,7 +1466,7 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
                               afterScaleWindowFullResolution, chromaFormatIdc, sps.getBitDepths(), false, false,
                               sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag(), rescaleForDisplay,
                               upscaleFilterForDisplay);
-      ret = write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), upscaledPic, ipCSC,
+      ret = write(maxWidth, maxHeight, upscaledPic, ipCSC,
                   packedYuvOutputMode, afterScaleWindowFullResolution.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
                   afterScaleWindowFullResolution.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIdc),
                   afterScaleWindowFullResolution.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc),
@@ -1467,7 +1477,7 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
     {
       const Window &conf = pps.getConformanceWindow();
 
-      ret = write(sps.getMaxPicWidthInLumaSamples(), sps.getMaxPicHeightInLumaSamples(), pic, ipCSC,
+      ret = write(maxWidth, maxHeight, pic, ipCSC,
                   packedYuvOutputMode, conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
                   conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIdc),
                   conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc),

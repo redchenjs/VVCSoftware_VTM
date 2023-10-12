@@ -121,7 +121,7 @@ public:
                             const InputColourSpaceConversion ipCSC, const bool packedYuvOutputMode,
                             int outputChoice = 0, ChromaFormat format = ChromaFormat::UNDEFINED,
                             const bool clipToRec709            = false,
-                            int        upscaleFilterForDisplay = 1);   ///< write one upsaled YUV frame
+                            int        upscaleFilterForDisplay = 1, int maxWidth = 0, int maxHeight = 0 );   ///< write one upsaled YUV frame
 };
 
 bool isY4mFileExt(const std::string &fileName);
