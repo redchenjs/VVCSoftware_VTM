@@ -2485,7 +2485,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     }
     if (isFgFiltered)
     {
-      pcPic->M_BUFS(0, PIC_FILTERED_ORIGINAL_FG).copyFrom(pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT));
+      pcPic->M_BUFS(0, PIC_FILTERED_ORIGINAL_FG).copyFrom(pcPic->M_BUFS(0, PIC_ORIGINAL));
       m_pcEncLib->getTemporalFilterForFG().filter(&pcPic->M_BUFS(0, PIC_FILTERED_ORIGINAL_FG), pocCurr);
     }
     if (isCurrentFrameFiltered)
