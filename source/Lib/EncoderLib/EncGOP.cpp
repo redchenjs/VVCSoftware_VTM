@@ -2476,7 +2476,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     m_pcSliceEncoder->create(picWidth, picHeight, chromaFormatIdc, maxCUWidth, maxCUHeight, maxTotalCUDepth);
 
     pcPic->createTempBuffers( pcPic->cs->pps->pcv->maxCUWidth );
-    pcPic->cs->createCoeffs((bool)pcPic->cs->sps->getPLTMode());
+    pcPic->cs->createTemporaryCsData((bool)pcPic->cs->sps->getPLTMode());
 
     //  Slice data initialization
     pcPic->clearSliceBuffer();
@@ -4537,8 +4537,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     }
 
     pcPic->destroyTempBuffers();
-    pcPic->cs->destroyCoeffs();
-    pcPic->cs->releaseIntermediateData();
+    pcPic->cs->destroyTemporaryCsData();
   }   // gopId-loop
 
   delete pcBitstreamRedirect;

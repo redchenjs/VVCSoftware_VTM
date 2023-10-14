@@ -103,9 +103,11 @@ public:
 
   void create(const UnitArea &_unit, const bool isTopLayer, const bool isPLTused);
   void create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused);
+  void createTemporaryCsData(bool isPLTused);
 
   void destroy();
   void releaseIntermediateData();
+  void destroyTemporaryCsData();
 
 #if GDR_ENABLED
   bool containRefresh(int begX, int endX) const;
@@ -133,9 +135,6 @@ public:
   bool isSubPuClean(const PredictionUnit &pu, const Mv *mv) const;
 #endif
   void rebindPicBufs();
-
-  void createCoeffs(const bool isPLTused);
-  void destroyCoeffs();
 
   void allocateVectorsAtPicLevel();
 
@@ -222,6 +221,8 @@ public:
 
 
 private:
+  void createCoeffs(const bool isPLTused);
+  void destroyCoeffs();
   void createInternals(const UnitArea& _unit, const bool isTopLayer, const bool isPLTused);
 
 public:
