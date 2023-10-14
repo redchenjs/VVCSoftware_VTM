@@ -1540,13 +1540,13 @@ void CodingStructure::destroyCoeffs()
 {
   for( uint32_t i = 0; i < MAX_NUM_COMPONENT; i++ )
   {
-    m_coeffs[i].clear();
-    m_pcmbuf[i].clear();
+    free(m_coeffs[i]);
+    free(m_pcmbuf[i]);
   }
 
   for (auto &ptr: m_runType)
   {
-    ptr.clear();
+    free(ptr);
   }
 }
 
