@@ -331,9 +331,10 @@ int EncModeCtrl::calculateLumaDQPsmooth(const CPelBuf& rcOrg, int baseQP, double
   return qp;
 }
 
-void CacheBlkInfoCtrl::create()
+void CacheBlkInfoCtrl::create(int maxCuSize)
 {
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = maxCuSize >> MIN_CU_LOG2;
+  m_maxCuSize = maxCuSize;
 
   m_numWidths  = gp_sizeIdxInfo->numWidths();
   m_numHeights = gp_sizeIdxInfo->numHeights();
@@ -348,7 +349,7 @@ void CacheBlkInfoCtrl::create()
 
       for( int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++ )
       {
-        if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
+        if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= (maxCuSize >> MIN_CU_LOG2 ) ) )
         {
           m_codedCUInfo[x][y][wIdx] = nullptr;
           continue;
@@ -366,7 +367,7 @@ void CacheBlkInfoCtrl::create()
 
         for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ )
         {
-          if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
+          if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= (maxCuSize >> MIN_CU_LOG2 ) ) )
           {
             m_codedCUInfo[x][y][wIdx][hIdx] = nullptr;
             continue;
@@ -389,7 +390,7 @@ void CacheBlkInfoCtrl::create()
 
 void CacheBlkInfoCtrl::destroy()
 {
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = m_maxCuSize >> MIN_CU_LOG2;
 
   for( unsigned x = 0; x < numPos; x++ )
   {
@@ -418,7 +419,7 @@ void CacheBlkInfoCtrl::destroy()
 
 void CacheBlkInfoCtrl::init( const Slice &slice )
 {
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = m_maxCuSize >> MIN_CU_LOG2;
 
   for( unsigned x = 0; x < numPos; x++ )
   {
@@ -507,10 +508,11 @@ void SaveLoadEncInfoSbt::init( const Slice &slice )
   m_sliceSbt = &slice;
 }
 
-void SaveLoadEncInfoSbt::create()
+void SaveLoadEncInfoSbt::create(int maxCuSize)
 {
   int numSizeIdx = gp_sizeIdxInfo->idxFrom( SBT_MAX_SIZE ) - MIN_CU_LOG2 + 1;
-  int numPosIdx = MAX_CU_SIZE >> MIN_CU_LOG2;
+  int numPosIdx = maxCuSize >> MIN_CU_LOG2;
+  m_maxCuSize = maxCuSize;
 
   m_saveLoadSbt = new SaveLoadStructSbt***[numPosIdx];
 
@@ -531,7 +533,7 @@ void SaveLoadEncInfoSbt::create()
 void SaveLoadEncInfoSbt::destroy()
 {
   int numSizeIdx = gp_sizeIdxInfo->idxFrom( SBT_MAX_SIZE ) - MIN_CU_LOG2 + 1;
-  int numPosIdx = MAX_CU_SIZE >> MIN_CU_LOG2;
+  int numPosIdx = m_maxCuSize >> MIN_CU_LOG2;
 
   for( int xIdx = 0; xIdx < numPosIdx; xIdx++ )
   {
@@ -587,7 +589,7 @@ bool SaveLoadEncInfoSbt::saveBestSbt(const UnitArea &area, const uint32_t curPuS
 void SaveLoadEncInfoSbt::resetSaveloadSbt( int maxSbtSize )
 {
   int numSizeIdx = gp_sizeIdxInfo->idxFrom( maxSbtSize ) - MIN_CU_LOG2 + 1;
-  int numPosIdx = MAX_CU_SIZE >> MIN_CU_LOG2;
+  int numPosIdx = m_maxCuSize >> MIN_CU_LOG2;
 
   for( int xIdx = 0; xIdx < numPosIdx; xIdx++ )
   {
@@ -662,9 +664,10 @@ static bool isTheSameNbHood( const CodingUnit &cu, const CodingStructure& cs, co
   return true;
 }
 
-void BestEncInfoCache::create( const ChromaFormat chFmt )
+void BestEncInfoCache::create( const ChromaFormat chFmt, int maxCuSize)
 {
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = maxCuSize >> MIN_CU_LOG2;
+  m_maxCuSize = maxCuSize;
 
   m_numWidths  = gp_sizeIdxInfo->numWidths();
   m_numHeights = gp_sizeIdxInfo->numHeights();
@@ -679,7 +682,7 @@ void BestEncInfoCache::create( const ChromaFormat chFmt )
 
       for( int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++ )
       {
-        if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
+        if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= (m_maxCuSize >> MIN_CU_LOG2 ) ) )
         {
           m_bestEncInfo[x][y][wIdx] = nullptr;
           continue;
@@ -697,7 +700,7 @@ void BestEncInfoCache::create( const ChromaFormat chFmt )
 
         for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ )
         {
-          if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
+          if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= (m_maxCuSize >> MIN_CU_LOG2 ) ) )
           {
             m_bestEncInfo[x][y][wIdx][hIdx] = nullptr;
             continue;
@@ -740,7 +743,7 @@ void BestEncInfoCache::create( const ChromaFormat chFmt )
 
 void BestEncInfoCache::destroy()
 {
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = m_maxCuSize >> MIN_CU_LOG2;
 
   for( unsigned x = 0; x < numPos; x++ )
   {
@@ -786,7 +789,7 @@ void BestEncInfoCache::init( const Slice &slice )
   {
     if (slice.getSliceQp() != m_sliceQp)
     {
-      const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+      const unsigned numPos = m_maxCuSize >> MIN_CU_LOG2;
       for (unsigned x = 0; x < numPos; x++)
       {
         for (unsigned y = 0; y < numPos; y++)
@@ -811,7 +814,7 @@ void BestEncInfoCache::init( const Slice &slice )
     return;
   }
 
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = slice.getSPS()->getMaxCUWidth() >> MIN_CU_LOG2;
 
   m_numWidths  = gp_sizeIdxInfo->numWidths();
   m_numHeights = gp_sizeIdxInfo->numHeights();
@@ -1072,11 +1075,11 @@ void EncModeCtrlMTnoRQT::create( const EncCfg& cfg )
 #if GDR_ENABLED
   m_encCfg = cfg;
 #endif
-  CacheBlkInfoCtrl::create();
+  CacheBlkInfoCtrl::create(cfg.getCTUSize());
 #if REUSE_CU_RESULTS
-  BestEncInfoCache::create( cfg.getChromaFormatIdc() );
+  BestEncInfoCache::create( cfg.getChromaFormatIdc(), cfg.getCTUSize());
 #endif
-  SaveLoadEncInfoSbt::create();
+  SaveLoadEncInfoSbt::create(cfg.getCTUSize());
 }
 
 void EncModeCtrlMTnoRQT::destroy()
