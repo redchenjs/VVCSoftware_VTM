@@ -36,6 +36,7 @@
 */
 
 #include "EncTemporalFilter.h"
+#include "Utilities/VideoIOYuv.h"
 #include <math.h>
 
 
@@ -200,6 +201,13 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
       srcPic.origOffset = poc - currentFilePoc;
     }
 
+    const int numRefs = int(srcFrameInfo.size());
+    if (numRefs == 0)
+    {
+      yuvFrames.close();
+      return false;
+    }
+
     // filter
     PelStorage newOrgPic;
     newOrgPic.create(m_chromaFormatIdc, m_area, 0, m_padding);
@@ -214,7 +222,6 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
         overallStrength = strength;
       }
     }
-    const int numRefs = int(srcFrameInfo.size());
     if ( m_bimEnabled && ( numRefs > 0 ) )
     {
       const int bimFirstFrame = std::max(currentFilePoc - 2, firstFrame);

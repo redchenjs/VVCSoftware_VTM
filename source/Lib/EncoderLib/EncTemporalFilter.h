@@ -37,7 +37,7 @@
 
 #ifndef __TEMPORAL_FILTER__
 #define __TEMPORAL_FILTER__
-#include "EncLib.h"
+#include "CommonLib/Unit.h"
 #include "CommonLib/Buffer.h"
 #include <sstream>
 #include <map>

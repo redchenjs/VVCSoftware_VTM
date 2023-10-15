@@ -82,8 +82,7 @@ Picture::Picture()
 
 void Picture::create(const bool useWrapAround, const ChromaFormat& _chromaFormat, const Size& size,
                      const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId,
-                     const bool enablePostFilteringForHFR, const bool gopBasedTemporalFilterEnabled,
-                     const bool fgcSEIAnalysisEnabled)
+                     const bool enablePostFilteringForHFR)
 {
   layerId = _layerId;
   UnitArea::operator=( UnitArea( _chromaFormat, Area( Position{ 0, 0 }, size ) ) );
@@ -104,15 +103,6 @@ void Picture::create(const bool useWrapAround, const ChromaFormat& _chromaFormat
   if( !_decoder )
   {
     M_BUFS( 0, PIC_ORIGINAL ).    create( _chromaFormat, a );
-    M_BUFS( 0, PIC_TRUE_ORIGINAL ). create( _chromaFormat, a );
-    if(gopBasedTemporalFilterEnabled)
-    {
-      M_BUFS( 0, PIC_FILTERED_ORIGINAL ). create( _chromaFormat, a );
-    }
-    if ( fgcSEIAnalysisEnabled )
-    {
-      M_BUFS( 0, PIC_FILTERED_ORIGINAL_FG ).create( _chromaFormat, a );
-    }
   }
 #if !KEEP_PRED_AND_RESI_SIGNALS
   m_ctuArea = UnitArea( _chromaFormat, Area( Position{ 0, 0 }, Size( _maxCUSize, _maxCUSize ) ) );
@@ -161,7 +151,7 @@ void Picture::destroy()
   m_grainBuf           = nullptr;
 }
 
-void Picture::createTempBuffers( const unsigned _maxCUSize )
+void Picture::createTempBuffers( const unsigned _maxCUSize, bool useFilterFrame, bool resChange, bool decoder, bool isFgFiltered)
 {
 #if KEEP_PRED_AND_RESI_SIGNALS
   const Area a( Position{ 0, 0 }, lumaSize() );
@@ -171,6 +161,29 @@ void Picture::createTempBuffers( const unsigned _maxCUSize )
 
   M_BUFS( jId, PIC_PREDICTION                   ).create( chromaFormat, a,   _maxCUSize );
   M_BUFS( jId, PIC_RESIDUAL                     ).create( chromaFormat, a,   _maxCUSize );
+
+  if (!decoder)
+  {
+    const Area picArea(Position{ 0, 0 }, lumaSize());
+    M_BUFS(jId, PIC_TRUE_ORIGINAL).create(chromaFormat, picArea, _maxCUSize);
+    if (useFilterFrame)
+    {
+      M_BUFS(jId, PIC_FILTERED_ORIGINAL).create(chromaFormat, picArea, _maxCUSize);
+    }
+    if (resChange)
+    {
+      const Area aInput(Position{ 0, 0 }, Size(M_BUFS(jId, PIC_ORIGINAL_INPUT).Y().width, M_BUFS(jId, PIC_ORIGINAL_INPUT).Y().height));
+      M_BUFS(jId, PIC_TRUE_ORIGINAL_INPUT).create(chromaFormat, aInput, _maxCUSize);
+      if (useFilterFrame)
+      {
+        M_BUFS(jId, PIC_FILTERED_ORIGINAL_INPUT).create(chromaFormat, aInput, _maxCUSize);
+      }
+    }
+    if (isFgFiltered)
+    {
+      M_BUFS(jId, PIC_FILTERED_ORIGINAL_FG).create(chromaFormat, picArea, _maxCUSize);
+    }
+  }
 
   if (cs)
   {
@@ -182,7 +195,8 @@ void Picture::destroyTempBuffers()
 {
   for (uint32_t t = 0; t < NUM_PIC_TYPES; t++)
   {
-    if (t == PIC_RESIDUAL || t == PIC_PREDICTION)
+    if (t == PIC_RESIDUAL || t == PIC_PREDICTION
+      || t == PIC_FILTERED_ORIGINAL || t == PIC_TRUE_ORIGINAL || t == PIC_FILTERED_ORIGINAL_FG)
     {
       M_BUFS(0, t).destroy();
     }

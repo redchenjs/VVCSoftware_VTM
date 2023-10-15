@@ -1602,11 +1602,6 @@ void EncApp::createLib( const int layerIdx )
     m_orgPicBeforeScale->create( unitAreaPrescale );
     m_trueOrgPicBeforeScale->create( unitAreaPrescale );
   }
-  if ( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
-  {
-    m_filteredOrgPic = new PelStorage;
-    m_filteredOrgPic->create( unitArea );
-  }
   if (m_resChangeInClvsEnabled && m_gopBasedRPREnabledFlag)
   {
     UnitArea unitAreaRPR10(m_chromaFormatIdc, Area(0, 0, m_sourceWidth, sourceHeight));
@@ -1615,11 +1610,6 @@ void EncApp::createLib( const int layerIdx )
     m_rprPic[0]->create(unitAreaRPR10);
     m_rprPic[1] = new PelStorage;
     m_rprPic[1]->create(unitAreaRPR20);
-  }
-  if (m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty())
-  {
-    m_filteredOrgPicForFG = new PelStorage;
-    m_filteredOrgPicForFG->create( unitArea );
   }
   if ( m_bimEnabled )
   {
@@ -1656,7 +1646,7 @@ void EncApp::createLib( const int layerIdx )
 
   if( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
   {
-    m_temporalFilter.init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
+    m_cEncLib.getTemporalFilter().init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
                           sourceHeight, m_sourcePadding, m_clipInputVideoToRec709Range, m_inputFileName,
                           m_chromaFormatIdc, m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
                           m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs, m_firstValidFrame,
@@ -1665,7 +1655,7 @@ void EncApp::createLib( const int layerIdx )
   }
   if ( m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty() )
   {
-    m_temporalFilterForFG.init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
+    m_cEncLib.getTemporalFilterForFG().init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
                                sourceHeight, m_sourcePadding, m_clipInputVideoToRec709Range, m_inputFileName,
                                m_chromaFormatIdc, m_inputColourSpaceConvert, m_iQP, m_fgcSEITemporalFilterStrengths,
                                m_fgcSEITemporalFilterPastRefs, m_fgcSEITemporalFilterFutureRefs, m_firstValidFrame,
@@ -1716,11 +1706,6 @@ void EncApp::destroyLib()
       delete m_rprPic[i];
     }
   }
-  if ( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
-  {
-    m_filteredOrgPic->destroy();
-    delete m_filteredOrgPic;
-  }
   if ( m_bimEnabled )
   {
     auto map = m_cEncLib.getAdaptQPmap();
@@ -1729,12 +1714,6 @@ void EncApp::destroyLib()
       int *p = it->second;
       delete p;
     }
-  }
-  if (m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty())
-  {
-    m_filteredOrgPicForFG->destroy();
-    delete m_filteredOrgPicForFG;
-    m_filteredOrgPicForFG = nullptr;
   }
 #if EXTENSION_360_VIDEO
   delete m_ext360;
@@ -1790,17 +1769,6 @@ bool EncApp::encodePrep( bool& eos )
   }
 #endif
 
-  if (m_fgcSEIAnalysisEnabled && m_fgcSEIExternalDenoised.empty())
-  {
-    m_filteredOrgPicForFG->copyFrom(*m_orgPic);
-    m_temporalFilterForFG.filter(m_filteredOrgPicForFG, m_frameRcvd);
-  }
-  if ( m_gopBasedTemporalFilterEnabled || m_bimEnabled )
-  {
-    m_temporalFilter.filter(m_orgPic, m_frameRcvd);
-    m_filteredOrgPic->copyFrom(*m_orgPic);
-  }
-
   // increase number of received frames
   m_frameRcvd++;
 
@@ -1821,11 +1789,11 @@ bool EncApp::encodePrep( bool& eos )
   // call encoding function for one frame
   if( m_isField )
   {
-    keepDoing = m_cEncLib.encodePrep( eos, m_flush ? 0 : m_orgPic, m_flush ? 0 : m_trueOrgPic, m_flush ? 0 : m_filteredOrgPic, snrCSC, m_recBufList, m_numEncoded, m_isTopFieldFirst );
+    keepDoing = m_cEncLib.encodePrep( eos, m_flush ? 0 : m_orgPic, snrCSC, m_recBufList, m_numEncoded, m_isTopFieldFirst );
   }
   else
   {
-    keepDoing = m_cEncLib.encodePrep( eos, m_flush ? 0 : m_orgPic, m_flush ? 0 : m_trueOrgPic, m_flush ? 0 : m_filteredOrgPic, m_flush ? 0 : m_filteredOrgPicForFG, snrCSC, m_recBufList, m_numEncoded
+    keepDoing = m_cEncLib.encodePrep( eos, m_flush ? 0 : m_orgPic, snrCSC, m_recBufList, m_numEncoded
       , m_rprPic
     );
   }
