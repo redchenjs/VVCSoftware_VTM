@@ -53,6 +53,13 @@ struct FilterIdxCount
 bool compareCounts(FilterIdxCount a, FilterIdxCount b) { return a.count > b.count; }
 #endif
 
+inline double essentiallyEqual(double a, double b)
+{
+  constexpr double REL_EPSILON = 0x1p-20;   // 2^-20 or about 1e-6
+  constexpr double ABS_EPSILON = 0x1p-30;   // 2^-30 or about 1e-9
+  return std::abs(a - b) < std::max(ABS_EPSILON, REL_EPSILON * std::max(std::abs(a), std::abs(b)));
+}
+
 void AlfCovariance::getClipMax(const AlfFilterShape& alfShape, AlfClipIdx* clip_max) const
 {
   for( int k = 0; k < numCoeff-1; ++k )
@@ -60,11 +67,11 @@ void AlfCovariance::getClipMax(const AlfFilterShape& alfShape, AlfClipIdx* clip_
     clip_max[k] = 0;
 
     bool inc = true;
-    while (inc && clip_max[k] + 1 < numBins && y(clip_max[k] + 1, k) == y(clip_max[k], k))
+    while (inc && clip_max[k] + 1 < numBins && essentiallyEqual(y(clip_max[k] + 1, k), y(clip_max[k], k)))
     {
       for( int l = 0; inc && l < numCoeff; ++l )
       {
-        if (E(clip_max[k], 0, k, l) != E(clip_max[k] + 1, 0, k, l))
+        if (!essentiallyEqual(E(clip_max[k], 0, k, l), E(clip_max[k] + 1, 0, k, l)))
         {
           inc = false;
         }
@@ -83,11 +90,11 @@ void AlfCovariance::reduceClipCost(const AlfFilterShape& alfShape, AlfClipIdx* c
   for( int k = 0; k < numCoeff-1; ++k )
   {
     bool dec = true;
-    while (dec && clip[k] > 0 && y(clip[k] - 1, k) == y(clip[k], k))
+    while (dec && clip[k] > 0 && essentiallyEqual(y(clip[k] - 1, k), y(clip[k], k)))
     {
       for( int l = 0; dec && l < numCoeff; ++l )
       {
-        if (E(clip[k], clip[l], k, l) != E(clip[k] - 1, clip[l], k, l))
+        if (!essentiallyEqual(E(clip[k], clip[l], k, l), E(clip[k] - 1, clip[l], k, l)))
         {
           dec = false;
         }
