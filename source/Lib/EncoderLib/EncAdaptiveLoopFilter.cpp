@@ -1990,8 +1990,7 @@ void EncAdaptiveLoopFilter::mergeClasses(
     }
 
     covMerged[bestToMergeIdx1] += covMerged[bestToMergeIdx2];
-    std::copy_n(clipMerged[numRemaining - 1][0], MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF,
-                clipMerged[numRemaining - 2][0]);
+    std::copy_n(&clipMerged[numRemaining - 1][0][0], MAX_NUM_ALF_CLASSES * MAX_NUM_ALF_LUMA_COEFF, &clipMerged[numRemaining - 2][0][0]);
     std::copy_n(bestMergeClip, MAX_NUM_ALF_LUMA_COEFF, clipMerged[numRemaining - 2][bestToMergeIdx1]);
     err[bestToMergeIdx1] = bestMergeErr;
     availableClass[bestToMergeIdx2] = false;
