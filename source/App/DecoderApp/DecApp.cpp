@@ -493,9 +493,9 @@ uint32_t DecApp::decode()
               auto confWindow = pps->getConformanceWindow();
               const auto sx = SPS::getWinUnitX(sps->getChromaFormatIdc());
               const auto sy = SPS::getWinUnitY(sps->getChromaFormatIdc());
-              const int picWidth = m_upscaledOutput == 2 ? sps->getMaxPicWidthInLumaSamples() : pps->getPicWidthInLumaSamples() 
+              const int picWidth = (m_upscaledOutput == 2 ? sps->getMaxPicWidthInLumaSamples() : pps->getPicWidthInLumaSamples()) 
                 - (confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
-              const int picHeight = m_upscaledOutput == 2 ? sps->getMaxPicHeightInLumaSamples() : pps->getPicHeightInLumaSamples() 
+              const int picHeight = (m_upscaledOutput == 2 ? sps->getMaxPicHeightInLumaSamples() : pps->getPicHeightInLumaSamples())
                 - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
               m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(
                 picWidth, picHeight, frameRate, layerOutputBitDepth[ChannelType::LUMA], sps->getChromaFormatIdc(),
