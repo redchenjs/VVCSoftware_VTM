@@ -490,7 +490,7 @@ uint32_t DecApp::decode()
                 msg(WARNING, "\nWarning: No frame rate info found in the bitstream, default 50 fps is used.\n");
               }
               const auto pps = pcListPic->front()->cs->pps;
-              auto confWindow = pps->getConformanceWindow();
+              auto confWindow = sps->getConformanceWindow();
               const auto sx = SPS::getWinUnitX(sps->getChromaFormatIdc());
               const auto sy = SPS::getWinUnitY(sps->getChromaFormatIdc());
               const int picWidth = (m_upscaledOutput == 2 ? sps->getMaxPicWidthInLumaSamples() : pps->getPicWidthInLumaSamples()) 
