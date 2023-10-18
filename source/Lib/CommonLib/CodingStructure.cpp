@@ -982,7 +982,6 @@ CodingUnit& CodingStructure::addCU( const UnitArea &unit, const ChannelType chTy
   CodingUnit *cu = m_cuPool.get();
 
   cu->UnitArea::operator=( unit );
-  cu->initData();
   cu->cs        = this;
   cu->slice     = nullptr;
   cu->next      = nullptr;
@@ -990,6 +989,7 @@ CodingUnit& CodingStructure::addCU( const UnitArea &unit, const ChannelType chTy
   cu->lastPU    = nullptr;
   cu->firstTU   = nullptr;
   cu->lastTU    = nullptr;
+  cu->initData();
   cu->chType    = chType;
   cu->treeType = treeType;
   cu->modeType = modeType;

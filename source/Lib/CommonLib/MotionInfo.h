@@ -156,7 +156,7 @@ struct MotionInfo
   bool     useAltHpelIf;
   uint16_t sliceIdx;
   Mv       mv[NUM_REF_PIC_LIST_01];
-  int16_t  refIdx[NUM_REF_PIC_LIST_01];
+  int8_t   refIdx[NUM_REF_PIC_LIST_01];
   uint8_t  bcwIdx;
   Mv       bv;
 #if GDR_ENABLED
