@@ -300,10 +300,10 @@ void InterSearch::resetSavedAffineMotion()
 }
 
 #if GDR_ENABLED
-void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int16_t affineRefIdx[2],
+void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int8_t affineRefIdx[2],
                                     AffineModel affineType, int bcwIdx)
 #else
-void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], int16_t affineRefIdx[2], AffineModel affineType, int bcwIdx)
+void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], int8_t affineRefIdx[2], AffineModel affineType, int bcwIdx)
 #endif
 {
   if ((bcwIdx == BCW_DEFAULT || !m_affineMotion.affine6ParaAvail) && affineType == AffineModel::_6_PARAMS)
@@ -2744,7 +2744,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   int refIdx[NUM_REF_PIC_LIST_01] = {
     0, 0
   };   // If un-initialized, may cause SEGV in bi-directional prediction iterative stage.
-  int iRefIdxBi[NUM_REF_PIC_LIST_01] = { -1, -1 };
+  int8_t iRefIdxBi[NUM_REF_PIC_LIST_01] = { -1, -1 };
 
   uint32_t mbBits[3] = { 1, 1, 0 };
 

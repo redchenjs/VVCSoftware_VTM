@@ -287,21 +287,18 @@ CodingUnit& CodingUnit::operator=( const CodingUnit& other )
   ispMode           = other.ispMode;
   mipFlag           = other.mipFlag;
 
-  for (int idx = 0; idx < MAX_NUM_CHANNEL_TYPE; idx++)
-  {
-    curPLTSize[idx]   = other.curPLTSize[idx];
-    useEscape[idx]    = other.useEscape[idx];
-    useRotation[idx]  = other.useRotation[idx];
-    reusePLTSize[idx] = other.reusePLTSize[idx];
-    lastPLTSize[idx]  = other.lastPLTSize[idx];
-    if (slice->getSPS()->getPLTMode())
-    {
-      std::copy_n(other.reuseflag[idx], MAXPLTPREDSIZE, reuseflag[idx]);
-    }
-  }
-
   if (slice->getSPS()->getPLTMode())
   {
+    for (int idx = 0; idx < MAX_NUM_CHANNEL_TYPE; idx++)
+    {
+      curPLTSize[idx]   = other.curPLTSize[idx];
+      useEscape[idx]    = other.useEscape[idx];
+      useRotation[idx]  = other.useRotation[idx];
+      reusePLTSize[idx] = other.reusePLTSize[idx];
+      lastPLTSize[idx]  = other.lastPLTSize[idx];
+      std::copy_n(other.reuseflag[idx], MAXPLTPREDSIZE, reuseflag[idx]);
+    }
+
     for (int idx = 0; idx < MAX_NUM_COMPONENT; idx++)
     {
       std::copy_n(other.curPLT[idx], MAXPLTSIZE, curPLT[idx]);
@@ -347,19 +344,22 @@ void CodingUnit::initData()
   ispMode           = ISPType::NONE;
   mipFlag           = false;
 
-  for (int idx = 0; idx < MAX_NUM_CHANNEL_TYPE; idx++)
+  if (slice && slice->getSPS() && slice->getSPS()->getPLTMode())
   {
-    curPLTSize[idx]   = 0;
-    reusePLTSize[idx] = 0;
-    lastPLTSize[idx]  = 0;
-    useEscape[idx]    = false;
-    useRotation[idx]  = false;
-    std::fill_n(reuseflag[idx], MAXPLTPREDSIZE, false);
-  }
+    for (int idx = 0; idx < MAX_NUM_CHANNEL_TYPE; idx++)
+    {
+      curPLTSize[idx]   = 0;
+      reusePLTSize[idx] = 0;
+      lastPLTSize[idx]  = 0;
+      useEscape[idx]    = false;
+      useRotation[idx]  = false;
+      std::fill_n(reuseflag[idx], MAXPLTPREDSIZE, false);
+    }
 
-  for (int idx = 0; idx < MAX_NUM_COMPONENT; idx++)
-  {
-    std::fill_n(curPLT[idx], MAXPLTSIZE, 0);
+    for (int idx = 0; idx < MAX_NUM_COMPONENT; idx++)
+    {
+      std::fill_n(curPLT[idx], MAXPLTSIZE, 0);
+    }
   }
 
   treeType          = TREE_D;

@@ -121,8 +121,8 @@ struct AffineAMVPInfo
 /// class for motion vector with reference index
 struct MvField
 {
-  Mv    mv;
-  int16_t refIdx;
+  Mv     mv;
+  int8_t refIdx;
 
   MvField()                                    :            refIdx( NOT_VALID ) {}
   MvField(Mv const &cMv, const int _refIdx) : mv(cMv), refIdx(_refIdx) {}

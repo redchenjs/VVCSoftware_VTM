@@ -321,11 +321,11 @@ struct CodingUnit : public UnitArea
   uint8_t        imv;
   bool           rootCbf;
   uint8_t        sbtInfo;
-  uint32_t       tileIdx;
+  uint16_t       tileIdx;
   uint8_t        mtsFlag;
-  uint32_t       lfnstIdx;
+  uint8_t        lfnstIdx;
   uint8_t        bcwIdx;
-  int            refIdxBi[2];
+  int8_t         refIdxBi[2];
   bool           mipFlag;
 
   uint8_t        smvdMode;
@@ -411,7 +411,7 @@ struct InterPredictionData
   MvpType   mvpType[NUM_REF_PIC_LIST_01];
   Position  mvpPos[NUM_REF_PIC_LIST_01];
 #endif
-  int16_t   refIdx[NUM_REF_PIC_LIST_01];
+  int8_t    refIdx[NUM_REF_PIC_LIST_01];
   MergeType mergeType;
   Mv        mvdL0SubPu[MAX_NUM_SUBCU_DMVR];
 #if JVET_AD0045
