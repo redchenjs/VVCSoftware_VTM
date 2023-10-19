@@ -491,7 +491,7 @@ struct TransformUnit : public UnitArea
   unsigned       idx;
   TransformUnit *next;
   TransformUnit *prev;
-  void           init(TCoeff** coeffs, Pel** pcmbuf, EnumArray<PLTRunMode*, ChannelType>& runType);
+  void           init(TCoeff** coeffs, Pel** pltIdxBuf, EnumArray<PLTRunMode*, ChannelType>& runType);
 
   TransformUnit& operator=(const TransformUnit& other);
   void copyComponentFrom  (const TransformUnit& other, const ComponentID compID);
@@ -500,8 +500,6 @@ struct TransformUnit : public UnitArea
 
   CoeffBuf            getCoeffs(const ComponentID id);
   const CCoeffBuf     getCoeffs(const ComponentID id) const;
-  PelBuf              getPcmbuf(const ComponentID id);
-  const CPelBuf       getPcmbuf(const ComponentID id) const;
   int                 getChromaAdj() const;
   void                setChromaAdj(int i);
   PelBuf              getcurPLTIdx(const ComponentID id);
@@ -515,7 +513,7 @@ struct TransformUnit : public UnitArea
 
 private:
   TCoeff *m_coeffs[MAX_NUM_TBLOCKS];
-  Pel    *m_pcmbuf[MAX_NUM_TBLOCKS];
+  Pel    *m_pltIdxBuf[MAX_NUM_TBLOCKS];
 
   EnumArray<PLTRunMode*, ChannelType> m_runType;
 };

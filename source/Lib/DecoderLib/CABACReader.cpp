@@ -2614,13 +2614,17 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
     TransformUnit &tu = cs.addTU( CS::getArea( cs, area, partitioner.chType ), partitioner.chType );
     unsigned numBlocks = ::getNumberValidTBlocks( *cs.pcv );
     tu.checkTuNoResidual( partitioner.currPartIdx() );
+    const bool usePlt = cs.sps->getPLTMode();
 
     for( unsigned compID = COMPONENT_Y; compID < numBlocks; compID++ )
     {
       if( tu.blocks[compID].valid() )
       {
         tu.getCoeffs( ComponentID( compID ) ).fill( 0 );
-        tu.getPcmbuf( ComponentID( compID ) ).fill( 0 );
+        if (usePlt)
+        {
+          tu.getcurPLTIdx( ComponentID( compID ) ).fill( 0 );
+        }
       }
     }
     tu.depth = trDepth;

@@ -1112,7 +1112,7 @@ TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType c
   tu->idx  = idx;
 
   TCoeff *coeffs[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
-  Pel    *pcmbuf[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
+  Pel    *pltIdxBuf[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
   EnumArray<PLTRunMode*, ChannelType> runType;
 
   for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(area.chromaFormat); chType++)
@@ -1149,6 +1149,7 @@ TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType c
     }
   }
 
+  const bool usePlt = sps->getPLTMode();
   uint32_t numComp = ::getNumberValidComponents(area.chromaFormat);
 
   for (uint32_t i = 0; i < numComp; i++)
@@ -1159,12 +1160,15 @@ TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType c
     }
 
     coeffs[i] = m_coeffs[i].data() + m_offsets[i];
-    pcmbuf[i] = m_pcmbuf[i].data() + m_offsets[i];
+    if (usePlt)
+    {
+      pltIdxBuf[i] = m_pltIdxBuf[i].data() + m_offsets[i];
+    }
 
     unsigned areaSize = tu->blocks[i].area();
     m_offsets[i] += areaSize;
   }
-  tu->init(coeffs, pcmbuf, runType);
+  tu->init(coeffs, pltIdxBuf, runType);
 
   return *tu;
 }
@@ -1189,12 +1193,16 @@ void CodingStructure::addEmptyTUs( Partitioner &partitioner )
   {
     TransformUnit &tu = this->addTU( CS::getArea( *this, area, partitioner.chType ), partitioner.chType );
     unsigned numBlocks = ::getNumberValidTBlocks( *this->pcv );
+    const bool usePlt = sps->getPLTMode();
     for( unsigned compID = COMPONENT_Y; compID < numBlocks; compID++ )
     {
       if( tu.blocks[compID].valid() )
       {
         tu.getCoeffs( ComponentID( compID ) ).fill( 0 );
-        tu.getPcmbuf( ComponentID( compID ) ).fill( 0 );
+        if (usePlt)
+        {
+          tu.getcurPLTIdx( ComponentID( compID ) ).fill( 0 );
+        }
       }
     }
     tu.depth = trDepth;
@@ -1538,7 +1546,10 @@ void CodingStructure::createCoeffs(const bool isPLTused)
     unsigned _area = area.blocks[i].area();
 
     m_coeffs[i].resize(_area);
-    m_pcmbuf[i].resize(_area);
+    if (isPLTused)
+    {
+      m_pltIdxBuf[i].resize(_area);
+    }
   }
 
   if (isPLTused)
@@ -1557,7 +1568,7 @@ void CodingStructure::destroyCoeffs()
   for( uint32_t i = 0; i < MAX_NUM_COMPONENT; i++ )
   {
     free(m_coeffs[i]);
-    free(m_pcmbuf[i]);
+    free(m_pltIdxBuf[i]);
   }
 
   for (auto &ptr: m_runType)
