@@ -490,11 +490,21 @@ uint32_t DecApp::decode()
                 msg(WARNING, "\nWarning: No frame rate info found in the bitstream, default 50 fps is used.\n");
               }
               const auto pps = pcListPic->front()->cs->pps;
-              auto confWindow = pps->getConformanceWindow();
               const auto sx = SPS::getWinUnitX(sps->getChromaFormatIdc());
               const auto sy = SPS::getWinUnitY(sps->getChromaFormatIdc());
-              const int picWidth = pps->getPicWidthInLumaSamples() - (confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
-              const int picHeight = pps->getPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
+              int picWidth = 0, picHeight = 0;
+              if (m_upscaledOutput == 2)
+              {
+                auto confWindow = sps->getConformanceWindow();
+                picWidth = sps->getMaxPicWidthInLumaSamples() -(confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
+                picHeight = sps->getMaxPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
+              }
+              else
+              {
+                auto confWindow = pps->getConformanceWindow();
+                picWidth = pps->getPicWidthInLumaSamples() - (confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
+                picHeight = pps->getPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
+              }              
               m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(
                 picWidth, picHeight, frameRate, layerOutputBitDepth[ChannelType::LUMA], sps->getChromaFormatIdc(),
                 sps->getVuiParameters()->getChromaSampleLocType());
