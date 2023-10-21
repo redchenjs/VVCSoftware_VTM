@@ -266,9 +266,7 @@ public:
   void  updatePrevGDRInSameLayer();
   void  updatePrevIRAPAndGDRSubpic();
   bool  getGDRRecoveryPocReached()          { return ( m_pcPic->getPOC() >= m_prevGDRInSameLayerRecoveryPOC[m_pcPic->layerId] ); }
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   void  setEosPresentInPu(bool eosPresent)  { m_pcPic->isEosPresentInPic = eosPresent; }
-#endif
 
   bool  getNoOutputPriorPicsFlag () const   { return m_isNoOutputPriorPics; }
   void  setNoOutputPriorPicsFlag (bool val) { m_isNoOutputPriorPics = val; }

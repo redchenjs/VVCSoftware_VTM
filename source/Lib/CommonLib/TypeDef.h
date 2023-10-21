@@ -60,7 +60,6 @@
 
 
 
-#define JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG               1 // JVET-AE0050 item 1: Add nnpfa_no_prev_clvs_flag to the NNPFA SEI message
 
 #define JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG               1 // JVET-AE0050 item 2: Add nnpfa_no_foll_clvs_flag to the NNPFA SEI message
 

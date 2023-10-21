@@ -1309,9 +1309,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setNnPostFilterSEIActivationTargetId(m_nnPostFilterSEIActivationTargetId);
   m_cEncLib.setNnPostFilterSEIActivationCancelFlag               (m_nnPostFilterSEIActivationCancelFlag);
   m_cEncLib.setNnPostFilterSEIActivationTargetBaseFlag           (m_nnPostFilterSEIActivationTargetBaseFlag);
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   m_cEncLib.setNnPostFilterSEIActivationNoPrevCLVSFlag           (m_nnPostFilterSEIActivationNoPrevCLVSFlag);
-#endif
 #if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   m_cEncLib.setNnPostFilterSEIActivationNoFollCLVSFlag           (m_nnPostFilterSEIActivationNoFollCLVSFlag);
 #endif

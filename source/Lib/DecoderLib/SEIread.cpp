@@ -3260,10 +3260,8 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
     sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_target_base_flag" );
     sei.m_targetBaseFlag = val;
 
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
     sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_no_prev_clvs_flag" );
     sei.m_noPrevCLVSFlag = val;
-#endif
 #if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
     if (sei.m_persistenceFlag)
     {

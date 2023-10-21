@@ -1354,9 +1354,7 @@ public:
     : m_targetId(0)
     , m_cancelFlag(false)
     , m_targetBaseFlag(false)
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
     , m_noPrevCLVSFlag(false)
-#endif
 #if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
     , m_noFollCLVSFlag(false)
 #endif
@@ -1369,9 +1367,7 @@ public:
   uint32_t       m_targetId;
   bool           m_cancelFlag;
   bool           m_targetBaseFlag;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool           m_noPrevCLVSFlag;
-#endif
 #if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   bool           m_noFollCLVSFlag;
 #endif

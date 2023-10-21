@@ -758,9 +758,7 @@ protected:
   uint32_t                m_nnPostFilterSEIActivationTargetId;
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool                    m_nnPostFilterSEIActivationNoPrevCLVSFlag;
-#endif
 #if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   bool                    m_nnPostFilterSEIActivationNoFollCLVSFlag;
 #endif
@@ -2080,10 +2078,8 @@ public:
   bool getNnPostFilterSEIActivationCancelFlag() const                                                                   { return m_nnPostFilterSEIActivationCancelFlag;}
   void setNnPostFilterSEIActivationTargetBaseFlag(bool targetBaseFlag)                                                  { m_nnPostFilterSEIActivationTargetBaseFlag = targetBaseFlag; }
   bool getNnPostFilterSEIActivationTargetBaseFlag() const                                                               { return m_nnPostFilterSEIActivationTargetBaseFlag;}
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   void setNnPostFilterSEIActivationNoPrevCLVSFlag(bool noPrevCLVSFlag)                                                  { m_nnPostFilterSEIActivationNoPrevCLVSFlag = noPrevCLVSFlag; }
   bool getNnPostFilterSEIActivationNoPrevCLVSFlag() const                                                               { return m_nnPostFilterSEIActivationNoPrevCLVSFlag;}
-#endif
 #if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   void setNnPostFilterSEIActivationNoFollCLVSFlag(bool noFollCLVSFlag)                                                  { m_nnPostFilterSEIActivationNoFollCLVSFlag = noFollCLVSFlag; }
   bool getNnPostFilterSEIActivationNoFollCLVSFlag() const                                                               { return m_nnPostFilterSEIActivationNoFollCLVSFlag;}

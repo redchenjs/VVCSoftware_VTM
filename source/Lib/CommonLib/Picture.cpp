@@ -65,9 +65,7 @@ Picture::Picture()
   edrapRapId           = -1;
   m_colourTranfParams     = nullptr;
   nonReferencePictureFlag = false;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   isEosPresentInPic    = false;
-#endif
 
   m_prevQP.fill(-1);
   m_spliceIdx           = nullptr;
