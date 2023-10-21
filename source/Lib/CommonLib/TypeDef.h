@@ -58,7 +58,6 @@
 //########### place macros to be removed in next cycle below this line ###############
 
 
-#define JVET_Z0150_MEMORY_USAGE_PRINT                     1 // JVET-Z0150: Print memory usage
 
 #define JVET_AE0048_IMPLICIT_PERSISTENCE_CANCEL           1 // JVET-AE0048 item 5: Cancel the persistence of an NNPFA SEI message with any subsequent NNPFA SEI message with the same nnpfa_target_id
 
