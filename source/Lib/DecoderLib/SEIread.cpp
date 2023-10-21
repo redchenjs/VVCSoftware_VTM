@@ -2943,12 +2943,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     if((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
     {
-#if JVET_AE0141_NNPFC_BUGFIX_COLOURIZATION
       CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0), "When chromaUpsamplingFlag is not equal to 0, colourizationFlag shall be equal to 0");
-#else
-      CHECK(((chromaFormatIdc != ChromaFormat::_400) || (sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0),
-            "When ChromaFormatIdc or nnpfc_purpose & 0x02 is not equal to 0, nnpfc_purpose & 0x20 shall be equal to 0");
-#endif
 
       sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_out_colour_format_idc");
       sei.m_outColourFormatIdc = ChromaFormat(val);

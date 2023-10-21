@@ -63,7 +63,6 @@
 
 
 
-#define JVET_AE0141_NNPFC_BUGFIX_COLOURIZATION            1  // JVET-AE0141: Fix a bug in NNPFC SEI message for colourization
 
 #define JVET_AE0128_CONSTRAINT_UPDATE                     1  // JVET_AE0128 item 2: Update the constraint on when an NNPFC SEI message shall be a repetition of the first NNPFC SEI message in the CLVS
 
