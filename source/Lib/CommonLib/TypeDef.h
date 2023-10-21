@@ -57,7 +57,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AE0126_NNPF_EDITORIAL_CHANGES                1  // JVET_AE0126: NNPF cleanup and editorial changes for VSEI include item 2, item 3, item 5, and item 7
 
 #define JVET_Z0150_MEMORY_USAGE_PRINT                     1 // JVET-Z0150: Print memory usage
 

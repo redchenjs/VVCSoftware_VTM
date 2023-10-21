@@ -37,9 +37,7 @@
 
 #include "CommonLib/CommonDef.h"
 #include <cmath>
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
 #include "CommonLib/SEI.h"
-#endif
 #include "SEINeuralNetworkPostFiltering.h"
 
 
@@ -186,12 +184,10 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
       croppedWidth  = superResolutionNnpfc->m_picWidthInLumaSamples;
       croppedHeight = superResolutionNnpfc->m_picHeightInLumaSamples;
 
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
       int outputPicWidth  = (int)ceil(((double) croppedWidth * (superResolutionNnpfc->m_picWidthNumeratorMinus1 + 1)) / (superResolutionNnpfc->m_picWidthDenominatorMinus1 + 1));
       int outputPicHeight = (int)ceil(((double) croppedHeight * (superResolutionNnpfc->m_picHeightNumeratorMinus1 + 1)) / (superResolutionNnpfc->m_picHeightDenominatorMinus1 + 1));
 
       CHECK(outputPicWidth == croppedWidth && outputPicHeight == croppedHeight, "When resolutionResamplingFlag is equal to 1, either nnpfcOutputPicWidth is not equal to CroppedWidth or nnpfcOutputPicHeight is not equal to CroppedHeight.");
-#endif
 
     }
     else

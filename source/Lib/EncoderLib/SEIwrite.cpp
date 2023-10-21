@@ -1703,11 +1703,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
   {
     while (!isByteAligned())
     {
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
       xWriteFlag(0, "nnpfc_alignment_zero_bit");
-#else
-      xWriteFlag(0, "nnpfc_reserved_zero_bit");
-#endif
     }
     xWriteString(sei.m_uriTag, "nnpfc_uri_tag");
     xWriteString(sei.m_uri, "nnpfc_uri");
@@ -1721,11 +1717,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     {
       for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; ++i)
       {
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
         xWriteFlag(sei.m_inputPicOutputFlag[i], "nnpfc_input_pic_filtering_flag");
-#else
-        xWriteFlag(sei.m_inputPicOutputFlag[i], "nnpfc_input_pic_output_flag");
-#endif
       }
       xWriteFlag(sei.m_absentInputPicZeroFlag, "nnpfc_absent_input_pic_zero_flag");
     }
@@ -1860,11 +1852,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
   {
     while (!isByteAligned())
     {
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
       xWriteFlag(0, "nnpfc_alignment_zero_bit");
-#else
-      xWriteFlag(0, "nnpfc_reserved_zero_bit");
-#endif
     }
     for (long i = 0; i < sei.m_payloadLength; i++)
     {
@@ -1880,13 +1868,8 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
   xWriteFlag(sei.m_cancelFlag, "nnpfa_cancel_flag");
   if(!sei.m_cancelFlag)
   {
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
     xWriteFlag(sei.m_persistenceFlag, "nnpfa_persistence_flag");
     xWriteFlag(sei.m_targetBaseFlag, "nnpfa_target_base_flag");
-#else
-    xWriteFlag(sei.m_targetBaseFlag, "nnpfa_target_base_flag");
-    xWriteFlag(sei.m_persistenceFlag, "nnpfa_persistence_flag");
-#endif
 #if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
     xWriteFlag(sei.m_noPrevCLVSFlag, "nnpfa_no_prev_clvs_flag");
 #endif
