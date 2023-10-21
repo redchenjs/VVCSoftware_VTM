@@ -64,9 +64,7 @@ public:
   
 protected:
   bool xCheckNnpfcSeiMsg                      (uint32_t seiId,                        bool baseFlag,                            const std::vector<int> nnpfcValueList);
-#if JVET_AE0189_NNPFA_ACTIVATE_NONBASE_CONSTRAINT
   bool xCheckNnpfcUpdatePresentSeiMsg         (uint32_t seiId,                        const std::vector<int> nnpfcValueList);
-#endif
   bool xReadSEImessage                        (SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIFillerPayload                 (SEIFillerPayload &sei,                 uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIuserDataUnregistered          (SEIuserDataUnregistered &sei,          uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);

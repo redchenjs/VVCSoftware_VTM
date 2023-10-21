@@ -67,7 +67,6 @@
 
 
 
-#define JVET_AE0189_NNPFA_ACTIVATE_NONBASE_CONSTRAINT     1  // JVET_AE0189 item 2: On NNPFA activing a non-base filter shall have earlier NNPFC base filter with the same ID constraint that is not a base filter
 
 #define JVET_AE0048_ITEM_1_VALUE_RANGES                   1  // JVET-AE0048 item 1: Add missing value ranges for nnpfc_pic_width_num_minus1, nnpfc_pic_width_denom_minus1, nnpfc_pic_height_num_minus1, and nnpfc_pic_height_denom_minus1.
 
