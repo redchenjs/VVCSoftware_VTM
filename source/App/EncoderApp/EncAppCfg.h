@@ -799,9 +799,7 @@ protected:
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
   bool                    m_nnPostFilterSEIActivationNoPrevCLVSFlag;
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   bool                    m_nnPostFilterSEIActivationNoFollCLVSFlag;
-#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
 

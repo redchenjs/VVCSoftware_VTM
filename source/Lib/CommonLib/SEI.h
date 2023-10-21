@@ -1355,9 +1355,7 @@ public:
     , m_cancelFlag(false)
     , m_targetBaseFlag(false)
     , m_noPrevCLVSFlag(false)
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
     , m_noFollCLVSFlag(false)
-#endif
     , m_persistenceFlag(false)
   {}
   SEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation& sei);
@@ -1368,9 +1366,7 @@ public:
   bool           m_cancelFlag;
   bool           m_targetBaseFlag;
   bool           m_noPrevCLVSFlag;
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   bool           m_noFollCLVSFlag;
-#endif
   bool           m_persistenceFlag;
   std::vector<bool> m_outputFlag;
 };

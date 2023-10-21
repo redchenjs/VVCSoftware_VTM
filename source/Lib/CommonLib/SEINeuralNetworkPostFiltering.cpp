@@ -323,7 +323,6 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
 #endif
     }
 
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
     Picture* lastPicInClvsInOutputOrder = *m_clvsPicList.begin();
     for (auto p = m_clvsPicList.begin(); p != m_clvsPicList.end(); p++)
     {
@@ -332,16 +331,11 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
         lastPicInClvsInOutputOrder = *p;
       }
     }
-#endif
 
     int numInferences;
 #if JVET_AE0049_REPEATED_INFERENCE_CONSTRAINT
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
     if ( currNnpfc->m_purpose == FRAME_RATE_UPSAMPLING && nnpfa->m_persistenceFlag && greaterThan0count == 1
       && (isCurrPicLastInOutputOrder || (currCodedPic == lastPicInClvsInOutputOrder && nnpfa->m_noFollCLVSFlag)) )
-#else
-    if (currNnpfc->m_purpose == FRAME_RATE_UPSAMPLING && nnpfa->m_persistenceFlag && greaterThan0count == 1 && isCurrPicLastInOutputOrder)
-#endif
 #else
     if (pictureRateUpsamplingFlag && nnpfa->m_persistenceFlag && greaterThan0count == 1 && isCurrPicLastInOutputOrder)
 #endif
