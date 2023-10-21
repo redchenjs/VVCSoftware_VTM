@@ -728,10 +728,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp1              (0, 65535,  0, 256 * 6);
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   SMultiValueInput<bool>       cfg_poSEIWrappingFlag(false, true, 0, 256);
   SMultiValueInput<bool>       cfg_poSEIImportanceFlag(false, true, 0, 256);
-#endif
   SMultiValueInput<bool>       cfg_poSEIPrefixFlag(false, true, 0, 256);
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType(0, 32768, 0, 256 * 2);
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
@@ -1621,11 +1619,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   
   //Processing order of SEI (pos)
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
   ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,           cfg_poSEIWrappingFlag, "Specifies whether po_num_prefix_bytes is present or not")
   ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies whether po_num_prefix_bytes is present or not")
-#endif
   ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether po_num_prefix_bytes is present or not")
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
@@ -3604,29 +3600,21 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     CHECK(cfg_poSEIPayloadType.values.size() <= 1, "there should be at least 2 SEIPOPayLoadType");
     CHECK(cfg_poSEIProcessingOrder.values.size() != cfg_poSEIPayloadType.values.size(), "the number of SEIPOPayLoadType should be equal to the number of SEIPOProcessingOrder");
     CHECK(cfg_poSEIPrefixFlag.values.size() <= 1, "there should be at least 2 SEIPOPrefixFlag");
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
     CHECK(cfg_poSEIPayloadType.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOPayLoadType should be equal to the number of SEI messages");
     CHECK(cfg_poSEIWrappingFlag.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOWrappingFlag should be equal to the number of SEI messages");
     CHECK(cfg_poSEIImportanceFlag.values.size() != m_poSEINumMinus2 + 2, "the number of SEIImportanceFlag should be equal to the number of SEI messages");
     m_poSEIWrappingFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
     m_poSEIImportanceFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
-#endif
     m_poSEIPrefixFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
     m_poSEIPayloadType.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEIProcessingOrder.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEIPrefixByte.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     uint16_t prefixByteIdx = 0;
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
     for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
-#else
-    for (uint32_t i = 0; i < (uint32_t) cfg_poSEIPayloadType.values.size(); i++)
-#endif
     {
       m_poSEIPrefixFlag[i] =      cfg_poSEIPrefixFlag.values[i];
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
       m_poSEIWrappingFlag[i] = cfg_poSEIWrappingFlag.values[i];
       m_poSEIImportanceFlag[i] = cfg_poSEIImportanceFlag.values[i];
-#endif
       m_poSEIPayloadType[i]     = cfg_poSEIPayloadType.values[i];
       if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME ||
           m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO ||

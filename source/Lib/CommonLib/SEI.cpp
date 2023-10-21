@@ -563,12 +563,10 @@ SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
 {
   m_posEnabled = sei.m_posEnabled;
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   m_posNumMinus2 = sei.m_posNumMinus2;
   m_posWrappingFlag = sei.m_posWrappingFlag;
   m_posImportanceFlag = sei.m_posImportanceFlag;
   m_posWrapSeiMessages = sei.m_posWrapSeiMessages;
-#endif
   m_posPrefixFlag = sei.m_posPrefixFlag;
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;

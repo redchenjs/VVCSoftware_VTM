@@ -613,39 +613,26 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
 
 
   seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   seiProcessingOrderInfo->m_posNumMinus2        = m_pcCfg->getPoSEINumMinus2();
   seiProcessingOrderInfo->m_posWrappingFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posImportanceFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posWrapSeiMessages.clear();
-#endif
   seiProcessingOrderInfo->m_posPrefixFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPrefixByte.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
-#else
-  for (uint32_t i = 0; i < m_pcCfg->getPoSEIPayloadTypeSize(); i++)
-#endif
   {
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
     seiProcessingOrderInfo->m_posWrappingFlag[i] = m_pcCfg->getPoSEIWrappingFlag(i);
     seiProcessingOrderInfo->m_posImportanceFlag[i] = m_pcCfg->getPoSEIImportanceFlag(i);
-#endif
     seiProcessingOrderInfo->m_posPrefixFlag[i] = m_pcCfg->getPoSEIPrefixFlag(i);
     seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
     if (seiProcessingOrderInfo->m_posPrefixFlag[i])
-#else
-    if (seiProcessingOrderInfo->m_posPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
-#endif
     {
       seiProcessingOrderInfo->m_posPrefixByte[i] = m_pcCfg->getPoSEIPrefixByte(i);
     }
   }
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
   {
     if (seiProcessingOrderInfo->m_posWrappingFlag[i])
@@ -703,7 +690,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
       }
     }
   }
-#endif
 }
 
 void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
