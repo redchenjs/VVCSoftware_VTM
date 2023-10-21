@@ -71,7 +71,6 @@
 
 
 
-#define JVET_AE0049_REPEATED_INFERENCE_CONSTRAINT         1  // JVET-AE0049 item 2: Constrain the repeated inference to generate interpolated pictures up to the end of the bitstream to NNPFs that perform only picture rate upsampling
 
 #define JVET_AE0049_INDEX_RANGE                           1  // JVET-AE0049 item 3: Change the index range in input picture assignment for repeated inference at the end of a bitstream
 

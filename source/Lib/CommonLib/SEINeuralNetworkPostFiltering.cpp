@@ -321,12 +321,8 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
     }
 
     int numInferences;
-#if JVET_AE0049_REPEATED_INFERENCE_CONSTRAINT
     if ( currNnpfc->m_purpose == FRAME_RATE_UPSAMPLING && nnpfa->m_persistenceFlag && greaterThan0count == 1
       && (isCurrPicLastInOutputOrder || (currCodedPic == lastPicInClvsInOutputOrder && nnpfa->m_noFollCLVSFlag)) )
-#else
-    if (pictureRateUpsamplingFlag && nnpfa->m_persistenceFlag && greaterThan0count == 1 && isCurrPicLastInOutputOrder)
-#endif
     {
       numInferences = 1 + numPostRoll;
     }
