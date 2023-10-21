@@ -326,7 +326,6 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
     {
       numInferences = 1 + numPostRoll;
     }
-#if JVET_AE0134_END_REPEATED_INFERENCE
     else if (!pictureRateUpsamplingFlag && numInputPics > 1 && nnpfa->m_persistenceFlag)
     {
       std::vector<int> inpIdx;
@@ -356,7 +355,6 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
         numInferences += numPostRoll;
       }
     }
-#endif
     else
     {
       numInferences = 1;
