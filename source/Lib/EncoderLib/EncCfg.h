@@ -161,10 +161,8 @@ protected:
   int       m_sourceWidth;
   int       m_sourceHeight;
   Window    m_conformanceWindow;
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   bool      m_explicitScalingWindowEnabled;
   Window    m_scalingWindow;
-#endif
   int       m_sourcePadding[2];
   int       m_framesToBeEncoded;
   int       m_firstValidFrame;
@@ -1216,10 +1214,8 @@ public:
 
   Window   &getConformanceWindow()                           { return m_conformanceWindow; }
   void      setConformanceWindow (int confLeft, int confRight, int confTop, int confBottom ) { m_conformanceWindow.setWindow (confLeft, confRight, confTop, confBottom); }
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   void      setExplicitScalingWindowEnabled(bool enabled)    { m_explicitScalingWindowEnabled = enabled; }
   void      setScalingWindow (int scalingLeft, int scalingRight, int scalingTop, int scalingBottom ) { m_scalingWindow.setWindow (scalingLeft, scalingRight, scalingTop, scalingBottom); }
-#endif
 
   void      setFramesToBeEncoded            ( int   i )      { m_framesToBeEncoded = i; }
 

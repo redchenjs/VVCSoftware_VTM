@@ -199,13 +199,11 @@ void EncLib::init(AUWriterIf *auWriterIf)
     pps0.setConformanceWindow( m_conformanceWindow );
     pps0.setConformanceWindowFlag( m_conformanceWindow.getWindowEnabledFlag() );
   }
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   if (m_explicitScalingWindowEnabled)
   {
     pps0.setExplicitScalingWindowFlag(true);
     pps0.setScalingWindow(m_scalingWindow);
   }
-#endif
   if (!pps0.getExplicitScalingWindowFlag())
   {
     pps0.setScalingWindow(pps0.getConformanceWindow());
@@ -1391,7 +1389,6 @@ void EncLib::xInitSPS( SPS& sps )
 
   sps.setMaxPicWidthInLumaSamples( m_sourceWidth );
   sps.setMaxPicHeightInLumaSamples( m_sourceHeight );
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   bool scalingWindowResChanged = false;
   if (m_multiLayerEnabledFlag && m_vps->getMaxLayers() > 0)
   {
@@ -1441,7 +1438,6 @@ void EncLib::xInitSPS( SPS& sps )
     sps.setMaxPicWidthInLumaSamples(maxPicWidth);
     sps.setMaxPicHeightInLumaSamples(maxPicHeight);
   }
-#endif
 
   if (m_resChangeInClvsEnabled)
   {
@@ -1730,13 +1726,8 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setInterLayerPresentFlag( m_layerId > 0 && m_vps->getMaxLayers() > 1 && !m_vps->getAllIndependentLayersFlag() && !m_vps->getIndependentLayerFlag( m_vps->getGeneralLayerIdx( m_layerId ) ) );
   CHECK( m_vps->getIndependentLayerFlag( m_vps->getGeneralLayerIdx( m_layerId ) ) && sps.getInterLayerPresentFlag(), " When vps_independent_layer_flag[GeneralLayerIdx[nuh_layer_id ]]  is equal to 1, the value of inter_layer_ref_pics_present_flag shall be equal to 0." );
 
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   sps.setResChangeInClvsEnabledFlag(m_resChangeInClvsEnabled || m_constrainedRaslEncoding || scalingWindowResChanged);
   sps.setRprEnabledFlag(m_rprEnabledFlag || m_explicitScalingWindowEnabled || scalingWindowResChanged);
-#else
-  sps.setResChangeInClvsEnabledFlag(m_resChangeInClvsEnabled || m_constrainedRaslEncoding);
-  sps.setRprEnabledFlag(m_rprEnabledFlag);
-#endif
   sps.setGOPBasedRPREnabledFlag(m_gopBasedRPREnabledFlag);
   sps.setLog2ParallelMergeLevelMinus2( m_log2ParallelMergeLevelMinus2 );
 

@@ -73,7 +73,6 @@
 
 
 
-#define JVET_AE0181_SCALING_WINDOW_ENABLED                1  // JVET-AE0181: Scaling window support
 
 #define JVET_AE0134_END_REPEATED_INFERENCE                1  // JVET_AE0134 item 2: At the end of a bitstream or CLVS, add repeated inference of NNPF for creating pictures corresponding to input pictures
 
