@@ -1272,9 +1272,7 @@ public:
   {}
   SEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
 
-#if JVET_AE0128_CONSTRAINT_UPDATE
   bool operator == (const SEINeuralNetworkPostFilterCharacteristics& sei);
-#endif
 
   ~SEINeuralNetworkPostFilterCharacteristics() override
   {

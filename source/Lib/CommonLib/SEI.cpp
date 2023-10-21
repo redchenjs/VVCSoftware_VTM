@@ -1123,7 +1123,6 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
 }
 
-#if JVET_AE0128_CONSTRAINT_UPDATE
 bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetworkPostFilterCharacteristics& sei)
 {
   bool result = 
@@ -1192,7 +1191,6 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
 
   return result;
 }
-#endif
 
 SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   const SEINeuralNetworkPostFilterActivation& sei)

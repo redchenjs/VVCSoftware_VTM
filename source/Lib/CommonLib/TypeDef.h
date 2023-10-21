@@ -64,7 +64,6 @@
 
 
 
-#define JVET_AE0128_CONSTRAINT_UPDATE                     1  // JVET_AE0128 item 2: Update the constraint on when an NNPFC SEI message shall be a repetition of the first NNPFC SEI message in the CLVS
 
 #define JVET_AE0142_NNPF_CONSTRAINT_BUGFIXES              1  // JVET_AE0142 item 3 and item 4: Fix two bugs including an added condition and a nnpfc_purpose related constraint.
 
