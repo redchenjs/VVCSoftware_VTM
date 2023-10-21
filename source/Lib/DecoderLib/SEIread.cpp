@@ -2999,9 +2999,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_format_idc");
     sei.m_inpFormatIdc = val;
-#if JVET_AE0048_ITEM_2_VALUE_RANGES
     CHECK(sei.m_inpFormatIdc > 255, "The value of nnpfc_inp_format_idc shall be in the range of 0 to 255");
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_auxiliary_inp_idc");
     sei.m_auxInpIdc = val;
@@ -3033,9 +3031,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_format_idc");
     sei.m_outFormatIdc = val;
-#if JVET_AE0048_ITEM_2_VALUE_RANGES
     CHECK(sei.m_outFormatIdc > 255, "The value of nnpfc_out_format_idc shall be in the range of 0 to 255");
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
     sei.m_outOrderIdc = val;
