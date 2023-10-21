@@ -72,7 +72,6 @@
 
 
 
-#define JVET_AE0049_INDEX_RANGE                           1  // JVET-AE0049 item 3: Change the index range in input picture assignment for repeated inference at the end of a bitstream
 
 #define JVET_AE0181_SCALING_WINDOW_ENABLED                1  // JVET-AE0181: Scaling window support
 
