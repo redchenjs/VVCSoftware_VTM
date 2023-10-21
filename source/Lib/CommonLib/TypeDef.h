@@ -70,7 +70,6 @@
 
 
 
-#define JVET_AE0049_NNPF_SAME_CONTENT_CONSTRAINT          1  // JVET-AE0049 item 1: Update NNPF SEI identical content constraints
 
 #define JVET_AE0049_REPEATED_INFERENCE_CONSTRAINT         1  // JVET-AE0049 item 2: Constrain the repeated inference to generate interpolated pictures up to the end of the bitstream to NNPFs that perform only picture rate upsampling
 

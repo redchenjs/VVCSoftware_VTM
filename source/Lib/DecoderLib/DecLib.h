@@ -394,9 +394,7 @@ protected:
 
   void  xCheckNalUnitConstraintFlags( const ConstraintInfo *cInfo, uint32_t naluType );
   void     xCheckMixedNalUnit(Slice* pcSlice, SPS *sps, InputNALUnit &nalu);
-#if JVET_AE0049_NNPF_SAME_CONTENT_CONSTRAINT
   uint32_t xGetNnpfaTargetId(uint8_t* payload, uint32_t payloadSize);
-#endif
 };// END CLASS DEFINITION DecLib
 
 

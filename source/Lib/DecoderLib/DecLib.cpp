@@ -1650,7 +1650,6 @@ void DecLib::checkSeiContentInAccessUnit()
         }
         CHECK(payloadType1 == payloadType2 && sameLayer && (duiIdx1 == duiIdx2) && (subPicId1 == subPicId2)  && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
       }
-#if JVET_AE0049_NNPF_SAME_CONTENT_CONSTRAINT
       if (payloadType1 == SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION && payloadType2 == SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION)
       {
         if ((xGetNnpfaTargetId(payload1, payloadSize1) == xGetNnpfaTargetId(payload2, payloadSize2)) && (payLoadLayerId1 == payLoadLayerId2) && (duiIdx1 == duiIdx2))
@@ -1658,7 +1657,6 @@ void DecLib::checkSeiContentInAccessUnit()
           CHECK(!std::equal(payload1, payload1 + payloadSize1, payload2, payload2 + payloadSize2), "When there are multiple SEI messages with payloadType equal to 211 and the same nnpfa_target_id value that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
         }
       }
-#endif
     }
   }
 
@@ -3991,7 +3989,6 @@ void DecLib::xCheckMixedNalUnit(Slice* pcSlice, SPS *sps, InputNALUnit &nalu)
   }
 }
 
-#if JVET_AE0049_NNPF_SAME_CONTENT_CONSTRAINT
 uint32_t DecLib::xGetNnpfaTargetId(uint8_t* payload, uint32_t payloadSize)
 {
   uint64_t codeword = 0;
@@ -4006,7 +4003,6 @@ uint32_t DecLib::xGetNnpfaTargetId(uint8_t* payload, uint32_t payloadSize)
   uint32_t cwLen = 2 * (firstBitPos - bitPos) + 1;
   return (uint32_t)((codeword >> (numBytes * 8 - cwLen)) - 1); // return decoded ID
 }
-#endif
 
 /**
 - lookahead through next NAL units to determine if current NAL unit is the first NAL unit in a new picture
