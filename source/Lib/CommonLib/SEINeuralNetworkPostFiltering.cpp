@@ -279,17 +279,13 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
 
   if (nnpfa != nullptr)
   {
-#if JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT
     int numPicsCurrLayer = 0;
-#endif
     Picture *lastPic = nullptr;
     for (auto pic : m_picList)
     {
       if (pic->layerId == currCodedPic->layerId)
       {
-#if JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT
         ++numPicsCurrLayer;
-#endif
         if (lastPic == nullptr || (pic->getPOC() > lastPic->getPOC()))
         {
           lastPic = pic;
@@ -312,9 +308,7 @@ void SEINeuralNetworkPostFiltering::checkInputPics(
           numPostRoll = i;
         }
       }
-#if JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT
       CHECK( numPicsCurrLayer > numInputPics && greaterThan0count > 1, "Disallow generating NNPF output pictures between any particular pair of consecutive input pictures more than once." );
-#endif
     }
 
     Picture* lastPicInClvsInOutputOrder = *m_clvsPicList.begin();
