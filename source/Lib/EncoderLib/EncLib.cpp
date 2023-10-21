@@ -1737,9 +1737,7 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setResChangeInClvsEnabledFlag(m_resChangeInClvsEnabled || m_constrainedRaslEncoding);
   sps.setRprEnabledFlag(m_rprEnabledFlag);
 #endif
-#if JVET_AD0045
   sps.setGOPBasedRPREnabledFlag(m_gopBasedRPREnabledFlag);
-#endif
   sps.setLog2ParallelMergeLevelMinus2( m_log2ParallelMergeLevelMinus2 );
 
   CHECK(sps.getResChangeInClvsEnabledFlag() && sps.getVirtualBoundariesPresentFlag(), "when the value of sps_res_change_in_clvs_allowed_flag is equal to 1, the value of sps_virtual_boundaries_present_flag shall be equal to 0");

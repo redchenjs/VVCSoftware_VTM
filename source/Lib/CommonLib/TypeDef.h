@@ -54,7 +54,6 @@
 
 // clang-format off
 
-#define JVET_AD0045                                       1  // encoder control for DMVR
 
 //########### place macros to be removed in next cycle below this line ###############
 #define JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC            1  // JVET_AE0156: Wrapping and importance indication for SEI PO SEI message

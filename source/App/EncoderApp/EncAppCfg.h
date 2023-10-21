@@ -396,11 +396,9 @@ protected:
   unsigned  m_IBCHashSearchMaxCand;
   unsigned  m_IBCHashSearchRange4SmallBlk;
   unsigned  m_IBCFastMethod;
-#if JVET_AD0045
   bool      m_dmvrEncSelect;
   int       m_dmvrEncSelectBaseQpTh;
   bool      m_dmvrEncSelectDisableHighestTemporalLayer;
-#endif
 
   bool      m_wrapAround;
   unsigned  m_wrapAroundOffset;
