@@ -423,9 +423,7 @@ protected:
   unsigned              m_maxCuHeight;                                     ///< max. CU height in pixel
   unsigned m_log2MinCuSize;                                   ///< min. CU size log2
 
-#if JVET_AE0057_MTT_ET
   bool      m_useMttSkip;
-#endif
   bool      m_useFastLCTU;
   bool      m_usePbIntraFast;
   bool      m_useAMaxBT;

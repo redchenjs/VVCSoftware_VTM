@@ -62,7 +62,6 @@
 
 
 
-#define JVET_AE0057_MTT_ET                                1 // JVET-AE0057: MTT split modes early termination
 
 #define JVET_AE0141_NNPFC_BUGFIX_COLOURIZATION            1  // JVET-AE0141: Fix a bug in NNPFC SEI message for colourization
 

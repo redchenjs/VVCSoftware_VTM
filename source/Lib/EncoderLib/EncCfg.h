@@ -428,9 +428,7 @@ protected:
   int       m_fastAdaptCostPredMode;
   bool      m_disableFastDecisionTT;
   uint32_t  m_log2MaxTbSize;
-#if JVET_AE0057_MTT_ET
   bool      m_useMttSkip;
-#endif
 
   //====== Loop/Deblock Filter ========
   bool      m_deblockingFilterDisable;
@@ -1617,10 +1615,8 @@ public:
   void      setDisableFastDecisionTT        (bool i)         { m_disableFastDecisionTT = i; }
   bool      getDisableFastDecisionTT        () const         { return m_disableFastDecisionTT; }
 
-#if JVET_AE0057_MTT_ET
   void      setUseMttSkip                   (bool i)         { m_useMttSkip = i; }
   bool      getUseMttSkip                   () const         { return m_useMttSkip; }
-#endif    
  
   void      setLog2MaxTbSize                ( uint32_t  u )   { m_log2MaxTbSize = u; }
 

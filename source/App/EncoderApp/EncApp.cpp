@@ -867,9 +867,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setFastAdaptCostPredMode                             (m_fastAdaptCostPredMode);
   m_cEncLib.setDisableFastDecisionTT                             (m_disableFastDecisionTT);
 
-#if JVET_AE0057_MTT_ET 
   m_cEncLib.setUseMttSkip                                        (m_useMttSkip);
-#endif
   // set internal bit-depth and constants
   for (const auto channelType: { ChannelType::LUMA, ChannelType::CHROMA })
   {
