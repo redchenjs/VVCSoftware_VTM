@@ -59,7 +59,6 @@
 
 
 
-#define JVET_AE0048_IMPLICIT_PERSISTENCE_CANCEL           1 // JVET-AE0048 item 5: Cancel the persistence of an NNPFA SEI message with any subsequent NNPFA SEI message with the same nnpfa_target_id
 
 #define JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG               1 // JVET-AE0050 item 1: Add nnpfa_no_prev_clvs_flag to the NNPFA SEI message
 
