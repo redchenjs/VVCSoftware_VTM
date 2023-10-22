@@ -1427,7 +1427,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
 {
   ComprCUCtx& cuECtx = m_ComprCUCtxList.back();
 
-#if JVET_AE0057_MTT_ET
   if (m_pcEncCfg->getUseMttSkip() && partitioner.currQtDepth == 1 && partitioner.currBtDepth == 0
       && partitioner.currArea().lwidth() == 64
       && partitioner.currArea().lheight() == 64)
@@ -1456,7 +1455,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
       }
     }
   }
-#endif
 
   // Fast checks, partitioning depended
   if (cuECtx.isHashPerfectMatch && encTestmode.type != ETM_MERGE_SKIP && encTestmode.type != ETM_INTER_ME)

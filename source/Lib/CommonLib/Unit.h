@@ -414,9 +414,7 @@ struct InterPredictionData
   int16_t   refIdx[NUM_REF_PIC_LIST_01];
   MergeType mergeType;
   Mv        mvdL0SubPu[MAX_NUM_SUBCU_DMVR];
-#if JVET_AD0045
   bool      dmvrImpreciseMv;
-#endif
   Mv        mvdAffi [NUM_REF_PIC_LIST_01][3];
   Mv        mvAffi[NUM_REF_PIC_LIST_01][3];
 #if GDR_ENABLED

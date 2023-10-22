@@ -266,10 +266,8 @@ void EncApp::xInitLibCfg( int layerIdx )
                                  m_confWinRight / SPS::getWinUnitX(m_inputChromaFormatIDC),
                                  m_confWinTop / SPS::getWinUnitY(m_inputChromaFormatIDC),
                                  m_confWinBottom / SPS::getWinUnitY(m_inputChromaFormatIDC));
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   m_cEncLib.setExplicitScalingWindowEnabled                      ( m_explicitScalingWindowEnabled );
   m_cEncLib.setScalingWindow                                     ( m_scalWinLeft / SPS::getWinUnitX( m_inputChromaFormatIDC ), m_scalWinRight / SPS::getWinUnitX( m_inputChromaFormatIDC ), m_scalWinTop / SPS::getWinUnitY( m_inputChromaFormatIDC ), m_scalWinBottom / SPS::getWinUnitY( m_inputChromaFormatIDC ) );
-#endif
   m_cEncLib.setScalingRatio                                      ( m_scalingRatioHor, m_scalingRatioVer );
   m_cEncLib.setGOPBasedRPREnabledFlag                            (m_gopBasedRPREnabledFlag);
   m_cEncLib.setGOPBasedRPRQPThreshold                            (m_gopBasedRPRQPThreshold);
@@ -790,7 +788,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setIBCHashSearchMaxCand                              ( m_IBCHashSearchMaxCand );
   m_cEncLib.setIBCHashSearchRange4SmallBlk                       ( m_IBCHashSearchRange4SmallBlk );
   m_cEncLib.setIBCFastMethod                                     ( m_IBCFastMethod );
-#if JVET_AD0045
   if (m_dmvrEncSelect && (m_iQP >= m_dmvrEncSelectBaseQpTh))
   {
     m_cEncLib.setDMVREncMvSelection(true);
@@ -800,7 +797,6 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setDMVREncMvSelection(false);
   }
   m_cEncLib.setDMVREncMvSelectDisableHighestTemporalLayer(m_dmvrEncSelectDisableHighestTemporalLayer);
-#endif
 
   m_cEncLib.setUseWrapAround                                     ( m_wrapAround );
   m_cEncLib.setWrapAroundOffset                                  ( m_wrapAroundOffset );
@@ -869,9 +865,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setFastAdaptCostPredMode                             (m_fastAdaptCostPredMode);
   m_cEncLib.setDisableFastDecisionTT                             (m_disableFastDecisionTT);
 
-#if JVET_AE0057_MTT_ET 
   m_cEncLib.setUseMttSkip                                        (m_useMttSkip);
-#endif
   // set internal bit-depth and constants
   for (const auto channelType: { ChannelType::LUMA, ChannelType::CHROMA })
   {
@@ -1311,12 +1305,8 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setNnPostFilterSEIActivationTargetId(m_nnPostFilterSEIActivationTargetId);
   m_cEncLib.setNnPostFilterSEIActivationCancelFlag               (m_nnPostFilterSEIActivationCancelFlag);
   m_cEncLib.setNnPostFilterSEIActivationTargetBaseFlag           (m_nnPostFilterSEIActivationTargetBaseFlag);
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   m_cEncLib.setNnPostFilterSEIActivationNoPrevCLVSFlag           (m_nnPostFilterSEIActivationNoPrevCLVSFlag);
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   m_cEncLib.setNnPostFilterSEIActivationNoFollCLVSFlag           (m_nnPostFilterSEIActivationNoFollCLVSFlag);
-#endif
   m_cEncLib.setNnPostFilterSEIActivationPersistenceFlag          (m_nnPostFilterSEIActivationPersistenceFlag);
   m_cEncLib.setNnPostFilterSEIActivationOutputFlag               (m_nnPostFilterSEIActivationOutputFlag);
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );
@@ -1365,11 +1355,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setSiiSEISubLayerNumUnitsInSI(m_siiSEISubLayerNumUnitsInSI);
 
   m_cEncLib.setPoSEIEnabled                                      (m_poSEIEnabled);
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
   m_cEncLib.setPoSEIWrappingFlag                                 (m_poSEIWrappingFlag);
   m_cEncLib.setPoSEIImportanceFlag                               (m_poSEIImportanceFlag);
-#endif
   m_cEncLib.setPoSEIPrefixFlag                                   (m_poSEIPrefixFlag);
   m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
@@ -1931,11 +1919,7 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         }
         else
         {
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
           ppsID = ((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) && !m_explicitScalingWindowEnabled) ? m_resChangeInClvsEnabled ? (ENC_PPS_ID_RPR + layerId) : layerId : layerId;
-#else
-          ppsID = (sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) ? (ENC_PPS_ID_RPR + layerId) : layerId;
-#endif
         }
         const PPS& pps = *m_cEncLib.getPPS(ppsID);
         if( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() )

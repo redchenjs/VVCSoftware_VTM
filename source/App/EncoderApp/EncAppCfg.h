@@ -111,13 +111,11 @@ protected:
   int       m_confWinRight;
   int       m_confWinTop;
   int       m_confWinBottom;
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   bool      m_explicitScalingWindowEnabled;
   int       m_scalWinLeft;
   int       m_scalWinRight;
   int       m_scalWinTop;
   int       m_scalWinBottom;
-#endif
   int       m_sourcePadding[2];                                       ///< number of padded pixels for width and height
   int       m_firstValidFrame;
   int       m_lastValidFrame;
@@ -396,11 +394,9 @@ protected:
   unsigned  m_IBCHashSearchMaxCand;
   unsigned  m_IBCHashSearchRange4SmallBlk;
   unsigned  m_IBCFastMethod;
-#if JVET_AD0045
   bool      m_dmvrEncSelect;
   int       m_dmvrEncSelectBaseQpTh;
   bool      m_dmvrEncSelectDisableHighestTemporalLayer;
-#endif
 
   bool      m_wrapAround;
   unsigned  m_wrapAroundOffset;
@@ -425,9 +421,7 @@ protected:
   unsigned              m_maxCuHeight;                                     ///< max. CU height in pixel
   unsigned m_log2MinCuSize;                                   ///< min. CU size log2
 
-#if JVET_AE0057_MTT_ET
   bool      m_useMttSkip;
-#endif
   bool      m_useFastLCTU;
   bool      m_usePbIntraFast;
   bool      m_useAMaxBT;
@@ -800,21 +794,15 @@ protected:
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool                    m_nnPostFilterSEIActivationNoPrevCLVSFlag;
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   bool                    m_nnPostFilterSEIActivationNoFollCLVSFlag;
-#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
 
   bool                  m_poSEIEnabled;
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   uint32_t              m_poSEINumMinus2;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
-#endif
   std::vector<bool>     m_poSEIPrefixFlag;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;

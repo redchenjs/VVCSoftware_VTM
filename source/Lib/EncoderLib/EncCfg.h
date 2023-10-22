@@ -161,10 +161,8 @@ protected:
   int       m_sourceWidth;
   int       m_sourceHeight;
   Window    m_conformanceWindow;
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   bool      m_explicitScalingWindowEnabled;
   Window    m_scalingWindow;
-#endif
   int       m_sourcePadding[2];
   int       m_framesToBeEncoded;
   int       m_firstValidFrame;
@@ -385,12 +383,10 @@ protected:
   unsigned  m_IBCHashSearchMaxCand;
   unsigned  m_IBCHashSearchRange4SmallBlk;
   unsigned  m_IBCFastMethod;
-#if JVET_AD0045
   bool      m_dmvrEncSelect;
   int       m_dmvrEncSelectBaseQpTh;
   bool      m_dmvrEncSelectDisableHighestTemporalLayer;
   int       m_dmvrDisableTemporalLayers;
-#endif
 
   bool      m_wrapAround;
   unsigned  m_wrapAroundOffset;
@@ -430,9 +426,7 @@ protected:
   int       m_fastAdaptCostPredMode;
   bool      m_disableFastDecisionTT;
   uint32_t  m_log2MaxTbSize;
-#if JVET_AE0057_MTT_ET
   bool      m_useMttSkip;
-#endif
 
   //====== Loop/Deblock Filter ========
   bool      m_deblockingFilterDisable;
@@ -760,12 +754,8 @@ protected:
   uint32_t                m_nnPostFilterSEIActivationTargetId;
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool                    m_nnPostFilterSEIActivationNoPrevCLVSFlag;
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   bool                    m_nnPostFilterSEIActivationNoFollCLVSFlag;
-#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputflag;
 
@@ -895,11 +885,9 @@ protected:
   bool m_SEIPrefixIndicationSEIEnabled;
   //SEI message processing order
   bool                  m_poSEIEnabled;
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   uint32_t              m_poSEINumMinus2;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
-#endif
   std::vector<bool>     m_poSEIPrefixFlag;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
@@ -1226,10 +1214,8 @@ public:
 
   Window   &getConformanceWindow()                           { return m_conformanceWindow; }
   void      setConformanceWindow (int confLeft, int confRight, int confTop, int confBottom ) { m_conformanceWindow.setWindow (confLeft, confRight, confTop, confBottom); }
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   void      setExplicitScalingWindowEnabled(bool enabled)    { m_explicitScalingWindowEnabled = enabled; }
   void      setScalingWindow (int scalingLeft, int scalingRight, int scalingTop, int scalingBottom ) { m_scalingWindow.setWindow (scalingLeft, scalingRight, scalingTop, scalingBottom); }
-#endif
 
   void      setFramesToBeEncoded            ( int   i )      { m_framesToBeEncoded = i; }
 
@@ -1537,12 +1523,10 @@ public:
   unsigned  getIBCHashSearchRange4SmallBlk  ()         const { return m_IBCHashSearchRange4SmallBlk; }
   void      setIBCFastMethod                (unsigned n)     { m_IBCFastMethod = n; }
   unsigned  getIBCFastMethod                ()         const { return m_IBCFastMethod; }
-#if JVET_AD0045
   void      setDMVREncMvSelection(bool b) { m_dmvrEncSelect = b; }
   bool      getDMVREncMvSelection()         const { return m_dmvrEncSelect; }
   void      setDMVREncMvSelectDisableHighestTemporalLayer(bool b) { m_dmvrEncSelectDisableHighestTemporalLayer = b; }
   int       getDMVREncMvSelectDisableHighestTemporalLayer()         const { return m_dmvrEncSelectDisableHighestTemporalLayer; }
-#endif
 
   void      setUseWrapAround                ( bool b )       { m_wrapAround = b; }
   bool      getUseWrapAround                ()         const { return m_wrapAround; }
@@ -1627,10 +1611,8 @@ public:
   void      setDisableFastDecisionTT        (bool i)         { m_disableFastDecisionTT = i; }
   bool      getDisableFastDecisionTT        () const         { return m_disableFastDecisionTT; }
 
-#if JVET_AE0057_MTT_ET
   void      setUseMttSkip                   (bool i)         { m_useMttSkip = i; }
   bool      getUseMttSkip                   () const         { return m_useMttSkip; }
-#endif    
  
   void      setLog2MaxTbSize                ( uint32_t  u )   { m_log2MaxTbSize = u; }
 
@@ -2086,14 +2068,10 @@ public:
   bool getNnPostFilterSEIActivationCancelFlag() const                                                                   { return m_nnPostFilterSEIActivationCancelFlag;}
   void setNnPostFilterSEIActivationTargetBaseFlag(bool targetBaseFlag)                                                  { m_nnPostFilterSEIActivationTargetBaseFlag = targetBaseFlag; }
   bool getNnPostFilterSEIActivationTargetBaseFlag() const                                                               { return m_nnPostFilterSEIActivationTargetBaseFlag;}
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   void setNnPostFilterSEIActivationNoPrevCLVSFlag(bool noPrevCLVSFlag)                                                  { m_nnPostFilterSEIActivationNoPrevCLVSFlag = noPrevCLVSFlag; }
   bool getNnPostFilterSEIActivationNoPrevCLVSFlag() const                                                               { return m_nnPostFilterSEIActivationNoPrevCLVSFlag;}
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   void setNnPostFilterSEIActivationNoFollCLVSFlag(bool noFollCLVSFlag)                                                  { m_nnPostFilterSEIActivationNoFollCLVSFlag = noFollCLVSFlag; }
   bool getNnPostFilterSEIActivationNoFollCLVSFlag() const                                                               { return m_nnPostFilterSEIActivationNoFollCLVSFlag;}
-#endif
   void setNnPostFilterSEIActivationPersistenceFlag(bool persistenceFlag)                                                          { m_nnPostFilterSEIActivationPersistenceFlag = persistenceFlag; }
   bool getNnPostFilterSEIActivationPersistenceFlag() const                                                                   { return m_nnPostFilterSEIActivationPersistenceFlag;}
   uint32_t    getNnPostFilterSEIActivationNumOutputEntries() const                                                      { return (uint32_t)m_nnPostFilterSEIActivationOutputflag.size(); }
@@ -2590,14 +2568,12 @@ public:
   //SEI messages processing order
   void     setPoSEIEnabled(bool b)                                   { m_poSEIEnabled = b; }
   bool     getPoSEIEnabled()                                         { return m_poSEIEnabled; }
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   void     setPoSEINumMinus2(uint32_t i)                             { m_poSEINumMinus2 = i; }
   uint32_t getPoSEINumMinus2()                                       { return m_poSEINumMinus2; }
   void     setPoSEIWrappingFlag(const std::vector<bool>& b)          { m_poSEIWrappingFlag = b; }
   bool     getPoSEIWrappingFlag(uint16_t idx)                  const { return m_poSEIWrappingFlag[idx]; }
   void     setPoSEIImportanceFlag(const std::vector<bool>& b)        { m_poSEIImportanceFlag = b; }
   bool     getPoSEIImportanceFlag(uint16_t idx)                const { return m_poSEIImportanceFlag[idx]; }
-#endif
   void     setPoSEIPrefixFlag(const std::vector<bool>& b)           { m_poSEIPrefixFlag = b; }
   bool     getPoSEIPrefixFlag(uint16_t idx)                   const { return m_poSEIPrefixFlag[idx]; }
   void     setPoSEIPayloadType(const std::vector<uint16_t>& b)       { m_poSEIPayloadType = b; }

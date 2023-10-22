@@ -563,12 +563,10 @@ SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
 {
   m_posEnabled = sei.m_posEnabled;
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   m_posNumMinus2 = sei.m_posNumMinus2;
   m_posWrappingFlag = sei.m_posWrappingFlag;
   m_posImportanceFlag = sei.m_posImportanceFlag;
   m_posWrapSeiMessages = sei.m_posWrapSeiMessages;
-#endif
   m_posPrefixFlag = sei.m_posPrefixFlag;
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;
@@ -1125,7 +1123,6 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
 }
 
-#if JVET_AE0128_CONSTRAINT_UPDATE
 bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetworkPostFilterCharacteristics& sei)
 {
   bool result = 
@@ -1194,7 +1191,6 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
 
   return result;
 }
-#endif
 
 SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   const SEINeuralNetworkPostFilterActivation& sei)
@@ -1203,12 +1199,8 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   m_cancelFlag = sei.m_cancelFlag;
   m_persistenceFlag = sei.m_persistenceFlag;
   m_targetBaseFlag = sei.m_targetBaseFlag;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   m_noPrevCLVSFlag = sei.m_noPrevCLVSFlag;
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   m_noFollCLVSFlag = sei.m_noFollCLVSFlag;
-#endif
   m_outputFlag = sei.m_outputFlag;
 }
 

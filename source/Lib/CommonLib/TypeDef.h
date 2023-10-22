@@ -54,47 +54,26 @@
 
 // clang-format off
 
-#define JVET_AD0045                                       1  // encoder control for DMVR
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC            1  // JVET_AE0156: Wrapping and importance indication for SEI PO SEI message
 
-#define JVET_AE0126_NNPF_EDITORIAL_CHANGES                1  // JVET_AE0126: NNPF cleanup and editorial changes for VSEI include item 2, item 3, item 5, and item 7
 
-#define JVET_Z0150_MEMORY_USAGE_PRINT                     1 // JVET-Z0150: Print memory usage
 
-#define JVET_AE0048_IMPLICIT_PERSISTENCE_CANCEL           1 // JVET-AE0048 item 5: Cancel the persistence of an NNPFA SEI message with any subsequent NNPFA SEI message with the same nnpfa_target_id
 
-#define JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG               1 // JVET-AE0050 item 1: Add nnpfa_no_prev_clvs_flag to the NNPFA SEI message
 
-#define JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG               1 // JVET-AE0050 item 2: Add nnpfa_no_foll_clvs_flag to the NNPFA SEI message
 
-#define JVET_AE0060_COND_SIG_INF                          1 // signal nnpfc_chroma_loc_info_present_flag only when nnpfc_out_order_idc is not equal to 0 and infer nnpfc_chroma_loc_info_present_flag to be equal to 0 when not present.
-#define JVET_AE0057_MTT_ET                                1 // JVET-AE0057: MTT split modes early termination
 
-#define JVET_AE0141_NNPFC_BUGFIX_COLOURIZATION            1  // JVET-AE0141: Fix a bug in NNPFC SEI message for colourization
 
-#define JVET_AE0128_CONSTRAINT_UPDATE                     1  // JVET_AE0128 item 2: Update the constraint on when an NNPFC SEI message shall be a repetition of the first NNPFC SEI message in the CLVS
 
-#define JVET_AE0142_NNPF_CONSTRAINT_BUGFIXES              1  // JVET_AE0142 item 3 and item 4: Fix two bugs including an added condition and a nnpfc_purpose related constraint.
 
-#define JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT   1  // JVET_AE0135 item2: On NNPF picture rate upsampling constraint
 
-#define JVET_AE0189_NNPFA_ACTIVATE_NONBASE_CONSTRAINT     1  // JVET_AE0189 item 2: On NNPFA activing a non-base filter shall have earlier NNPFC base filter with the same ID constraint that is not a base filter
 
-#define JVET_AE0048_ITEM_1_VALUE_RANGES                   1  // JVET-AE0048 item 1: Add missing value ranges for nnpfc_pic_width_num_minus1, nnpfc_pic_width_denom_minus1, nnpfc_pic_height_num_minus1, and nnpfc_pic_height_denom_minus1.
 
-#define JVET_AE0048_ITEM_2_VALUE_RANGES                   1  // JVET_AE0048 item 2: Add missing value ranges for nnpfc_inp_format_idc and nnpfc_out_format_idc to be in the range of 0 to 255.
 
-#define JVET_AE0049_NNPF_SAME_CONTENT_CONSTRAINT          1  // JVET-AE0049 item 1: Update NNPF SEI identical content constraints
 
-#define JVET_AE0049_REPEATED_INFERENCE_CONSTRAINT         1  // JVET-AE0049 item 2: Constrain the repeated inference to generate interpolated pictures up to the end of the bitstream to NNPFs that perform only picture rate upsampling
 
-#define JVET_AE0049_INDEX_RANGE                           1  // JVET-AE0049 item 3: Change the index range in input picture assignment for repeated inference at the end of a bitstream
 
-#define JVET_AE0181_SCALING_WINDOW_ENABLED                1  // JVET-AE0181: Scaling window support
 
-#define JVET_AE0134_END_REPEATED_INFERENCE                1  // JVET_AE0134 item 2: At the end of a bitstream or CLVS, add repeated inference of NNPF for creating pictures corresponding to input pictures
 
 //########### place macros to be be kept below this line ###############
 

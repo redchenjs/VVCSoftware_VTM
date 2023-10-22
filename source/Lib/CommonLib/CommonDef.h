@@ -417,10 +417,8 @@ static constexpr int DMVR_RANGE = 2;
 static constexpr int DMVR_SPAN  = 2 * DMVR_RANGE + 1;
 static constexpr int DMVR_AREA  = DMVR_SPAN * DMVR_SPAN;
 
-#if JVET_AD0045
 static constexpr int DMVR_ENC_SELECT_SIZE_THR = 64;
 static constexpr double DMVR_ENC_SELECT_FRAME_RATE_THR = 30.0;
-#endif
 
 //QTBT high level parameters
 //for I slice luma CTB configuration para.
