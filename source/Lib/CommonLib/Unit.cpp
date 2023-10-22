@@ -344,7 +344,7 @@ void CodingUnit::initData()
   ispMode           = ISPType::NONE;
   mipFlag           = false;
 
-  if (slice && slice->getSPS() && slice->getSPS()->getPLTMode())
+  if (cs && cs->sps->getPLTMode())
   {
     for (int idx = 0; idx < MAX_NUM_CHANNEL_TYPE; idx++)
     {
