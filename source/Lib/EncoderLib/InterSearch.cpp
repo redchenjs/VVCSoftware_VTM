@@ -11424,8 +11424,8 @@ bool InterSearch::isValidBv(PredictionUnit& pu, int xPos, int yPos, int width, i
   // check whether in same tile
   if (refLeftCtuCol != curCtuCol)
   {
-    const uint32_t curTileIdx = pu.cs->pps->getTileIdx(curCtuCol, curCtuRow);
-    const uint32_t refTileIdx = pu.cs->pps->getTileIdx(refLeftCtuCol, curCtuRow);
+    const TileIdx curTileIdx = pu.cs->pps->getTileIdx(curCtuCol, curCtuRow);
+    const TileIdx refTileIdx = pu.cs->pps->getTileIdx(refLeftCtuCol, curCtuRow);
     if (curTileIdx != refTileIdx)
     {
       return false;

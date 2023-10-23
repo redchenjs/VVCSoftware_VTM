@@ -2144,7 +2144,7 @@ const CodingUnit* CodingStructure::getCURestricted( const Position &pos, const C
   }
 }
 
-const CodingUnit* CodingStructure::getCURestricted( const Position &pos, const Position curPos, const unsigned curSliceIdx, const unsigned curTileIdx, const ChannelType _chType ) const
+const CodingUnit* CodingStructure::getCURestricted( const Position &pos, const Position curPos, const unsigned curSliceIdx, const TileIdx curTileIdx, const ChannelType _chType ) const
 {
   const CodingUnit* cu = getCU( pos, _chType );
   const bool wavefrontsEnabled = this->slice->getSPS()->getEntropyCodingSyncEnabledFlag();

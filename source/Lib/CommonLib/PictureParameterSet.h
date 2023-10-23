@@ -103,8 +103,8 @@ public:
   uint32_t         getNumSlicesInTile( ) const          { return  m_numSlicesInTile;    }
   void             setSliceHeightInCtu( uint32_t u )    { m_sliceHeightInCtu = u;       }
   uint32_t         getSliceHeightInCtu( ) const         { return  m_sliceHeightInCtu;   }
-  void             setTileIdx( uint32_t u )             { m_tileIdx = u;                }
-  uint32_t         getTileIdx( ) const                  { return  m_tileIdx;            }
+  void             setTileIdx( TileIdx u )              { m_tileIdx = u;                }
+  TileIdx          getTileIdx( ) const                  { return  m_tileIdx;            }
 
 };
 
