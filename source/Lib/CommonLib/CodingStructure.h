@@ -266,7 +266,7 @@ private:
   PelStorage m_orgr;
 
   std::vector<TCoeff> m_coeffs[MAX_NUM_COMPONENT];
-  std::vector<Pel>    m_pcmbuf[MAX_NUM_COMPONENT];
+  std::vector<Pel>    m_pltIdxBuf[MAX_NUM_COMPONENT];
 
   EnumArray<std::vector<PLTRunMode>, ChannelType> m_runType;
 
