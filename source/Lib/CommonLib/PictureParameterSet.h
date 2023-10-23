@@ -288,8 +288,8 @@ private:
   std::vector<uint32_t> m_tileRowHeight;                // tile row heights in units of CTUs
   std::vector<uint32_t> m_tileColBd;                    // tile column left-boundaries in units of CTUs
   std::vector<uint32_t> m_tileRowBd;                    // tile row top-boundaries in units of CTUs
-  std::vector<uint32_t> m_ctuToTileCol;                 // mapping between CTU horizontal address and tile column index
-  std::vector<uint32_t> m_ctuToTileRow;                 // mapping between CTU vertical address and tile row index
+  std::vector<TileIdx> m_ctuToTileCol;                  // mapping between CTU horizontal address and tile column index
+  std::vector<TileIdx> m_ctuToTileRow;                  // mapping between CTU vertical address and tile row index
   bool             m_rectSliceFlag;                     // rectangular slice flag
   bool             m_singleSlicePerSubPicFlag;          // single slice per sub-picture flag
   std::vector<uint32_t> m_ctuToSubPicIdx;               // mapping between CTU and Sub-picture index
