@@ -589,7 +589,7 @@ uint32_t PPS::getSubPicIdxFromSubPicId(const uint32_t subPicId) const
 
 void PPS::initRasterSliceMap(const std::vector<uint32_t> &numTilesInSlice )
 {
-  uint32_t tileIdx = 0;
+  TileIdx tileIdx = 0;
   setNumSlicesInPic( (uint32_t) numTilesInSlice.size() );
 
   // allocate new memory for slice list

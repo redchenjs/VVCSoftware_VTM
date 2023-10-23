@@ -94,7 +94,7 @@ Area MCTSHelper::getTileArea( const CodingStructure* cs, const int ctuAddr )
   const int  maxCUWidth  = cs->pcv->maxCUWidth;
   const int  maxCUHeight = cs->pcv->maxCUHeight;
 
-  const uint32_t tileIdx = pps->getTileIdx( (uint32_t)ctuAddr );
+  const TileIdx tileIdx = pps->getTileIdx( (uint32_t)ctuAddr );
   const uint32_t tileX = tileIdx % pps->getNumTileColumns();
   const uint32_t tileY = tileIdx / pps->getNumTileColumns();
 
