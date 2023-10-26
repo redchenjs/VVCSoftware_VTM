@@ -739,6 +739,10 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
   uint32_t numMaxSeiMessages, val;
   output_sei_message_header(sei, decodedMessageOutputStream, payloadSize);
 
+#if JVET_AF0061_ADDITION_PO_ID
+  sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_id");
+  sei.m_posId = val;
+#endif
   sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_num_minus2");
   sei.m_posNumMinus2 = val;
   numMaxSeiMessages = sei.m_posNumMinus2 + 2;
