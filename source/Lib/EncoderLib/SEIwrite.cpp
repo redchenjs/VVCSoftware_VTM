@@ -1547,6 +1547,9 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
 {
   CHECK(sei.m_posPayloadType.size() < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
   SEIMessages wrapSEI;
+#if JVET_AF0061_ADDITION_PO_ID
+  xWriteCode(sei.m_posId, 8, "po_sei_id");
+#endif
   xWriteCode(sei.m_posNumMinus2, 8, "po_num_sei_message_minus2");
   for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
   {
