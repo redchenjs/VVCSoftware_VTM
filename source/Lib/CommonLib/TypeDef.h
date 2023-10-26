@@ -74,6 +74,7 @@
 
 
 
+#define JVET_AF0062_MOVE_PO_SEI_PREFIX_FLAG               1 // JVET-AF0062: Move po_sei_prefix_flag[ i ] from immediately before po_sei_payload_type[ i ] to be immediately after po_sei_payload_type[ i ] 
 
 //########### place macros to be be kept below this line ###############
 
