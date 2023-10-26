@@ -1560,8 +1560,13 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
     }
     else
     {
+#if JVET_AF0062_MOVE_PO_SEI_PREFIX_FLAG
+      xWriteCode(sei.m_posPayloadType[i], 13, "po_sei_payload_type[i]");
+      xWriteFlag(sei.m_posPrefixFlag[i], "po_sei_prefix_flag[i]");
+#else
       xWriteFlag(sei.m_posPrefixFlag[i], "po_sei_prefix_flag[i]");
       xWriteCode(sei.m_posPayloadType[i], 13, "po_sei_payload_type[i]");
+#endif
 
       if (sei.m_posPrefixFlag[i])
     {
