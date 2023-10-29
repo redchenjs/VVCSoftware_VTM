@@ -260,7 +260,7 @@ void CABACWriter::sao( const Slice& slice, unsigned ctuRsAddr )
   const Position pos(rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight);
 
   const unsigned curSliceIdx = slice.getIndependentSliceIdx();
-  const unsigned curTileIdx  = cs.pps->getTileIdx(pos);
+  const TileIdx  curTileIdx  = cs.pps->getTileIdx(pos);
 
   const bool leftMergeAvail =
     cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
@@ -3354,7 +3354,7 @@ void CABACWriter::codeAlfCtuEnableFlag( CodingStructure& cs, uint32_t ctuRsAddr,
     const Position pos(rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight);
 
     const uint32_t curSliceIdx = cs.slice->getIndependentSliceIdx();
-    const uint32_t curTileIdx  = cs.pps->getTileIdx(pos);
+    const TileIdx  curTileIdx  = cs.pps->getTileIdx(pos);
 
     const bool leftAvail =
       cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
@@ -3381,7 +3381,7 @@ void CABACWriter::codeCcAlfFilterControlIdc(uint8_t idcVal, CodingStructure &cs,
   CHECK(idcVal > filterCount, "Filter index is too large");
 
   const uint32_t curSliceIdx    = cs.slice->getIndependentSliceIdx();
-  const uint32_t curTileIdx     = cs.pps->getTileIdx( lumaPos );
+  const TileIdx  curTileIdx     = cs.pps->getTileIdx( lumaPos );
   Position       leftLumaPos    = lumaPos.offset(-(int)cs.pcv->maxCUWidth, 0);
   Position       aboveLumaPos   = lumaPos.offset(0, -(int)cs.pcv->maxCUWidth);
   bool leftAvail = cs.getCURestricted(leftLumaPos, lumaPos, curSliceIdx, curTileIdx, ChannelType::LUMA) ? true : false;

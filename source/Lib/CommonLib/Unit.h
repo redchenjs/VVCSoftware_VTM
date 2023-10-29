@@ -321,7 +321,7 @@ struct CodingUnit : public UnitArea
   uint8_t        imv;
   bool           rootCbf;
   uint8_t        sbtInfo;
-  uint16_t       tileIdx;
+  TileIdx        tileIdx;
   uint8_t        mtsFlag;
   uint8_t        lfnstIdx;
   uint8_t        bcwIdx;

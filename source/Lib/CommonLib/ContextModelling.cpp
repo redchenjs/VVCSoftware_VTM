@@ -157,7 +157,7 @@ unsigned DeriveCtx::CtxModeConsFlag( const CodingStructure& cs, Partitioner& par
   assert(isLuma(partitioner.chType));
   const Position pos         = partitioner.currArea().block(partitioner.chType);
   const unsigned curSliceIdx = cs.slice->getIndependentSliceIdx();
-  const unsigned curTileIdx = cs.pps->getTileIdx( partitioner.currArea().lumaPos() );
+  const TileIdx curTileIdx = cs.pps->getTileIdx( partitioner.currArea().lumaPos() );
 
   const CodingUnit* cuLeft = cs.getCURestricted( pos.offset( -1, 0 ), pos, curSliceIdx, curTileIdx, partitioner.chType );
   const CodingUnit* cuAbove = cs.getCURestricted( pos.offset( 0, -1 ), pos, curSliceIdx, curTileIdx, partitioner.chType );
@@ -171,7 +171,7 @@ void DeriveCtx::CtxSplit( const CodingStructure& cs, Partitioner& partitioner, u
 {
   const Position pos         = partitioner.currArea().block(partitioner.chType);
   const unsigned curSliceIdx = cs.slice->getIndependentSliceIdx();
-  const unsigned curTileIdx  = cs.pps->getTileIdx( partitioner.currArea().lumaPos() );
+  const TileIdx curTileIdx  = cs.pps->getTileIdx( partitioner.currArea().lumaPos() );
 
   // get left depth
   const CodingUnit* cuLeft = cs.getCURestricted( pos.offset( -1, 0 ), pos, curSliceIdx, curTileIdx, partitioner.chType );

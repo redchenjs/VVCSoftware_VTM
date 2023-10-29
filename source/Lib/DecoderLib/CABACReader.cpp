@@ -169,7 +169,7 @@ void CABACReader::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
     const Position pos(rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight);
 
     const uint32_t curSliceIdx = cs.slice->getIndependentSliceIdx();
-    const uint32_t curTileIdx  = cs.pps->getTileIdx(pos);
+    const TileIdx  curTileIdx  = cs.pps->getTileIdx(pos);
 
     const bool leftAvail =
       cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
@@ -302,7 +302,7 @@ void CABACReader::ccAlfFilterControlIdc(CodingStructure &cs, const ComponentID c
   const Position aboveLumaPos = lumaPos.offset(0, -(int) cs.pcv->maxCUWidth);
 
   const uint32_t curSliceIdx = cs.slice->getIndependentSliceIdx();
-  const uint32_t curTileIdx  = cs.pps->getTileIdx(lumaPos);
+  const TileIdx  curTileIdx  = cs.pps->getTileIdx(lumaPos);
 
   const bool leftAvail =
     cs.getCURestricted(leftLumaPos, lumaPos, curSliceIdx, curTileIdx, ChannelType::LUMA) != nullptr;
@@ -379,7 +379,7 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
 
   auto mergeType = SAOModeMergeTypes::NONE;
 
-  const unsigned curTileIdx = cs.pps->getTileIdx(pos);
+  const TileIdx curTileIdx = cs.pps->getTileIdx(pos);
 
   if (cs.getCURestricted(pos.offset(-(int) cs.pcv->maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA))
   {

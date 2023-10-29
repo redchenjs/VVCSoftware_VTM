@@ -263,24 +263,26 @@
 
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
 typedef       int             Pel;               ///< pixel type
-typedef       int64_t           TCoeff;            ///< transform coefficient
+typedef       int64_t         TCoeff;            ///< transform coefficient
 typedef       int             TMatrixCoeff;      ///< transform matrix coefficient
-typedef       int16_t           TFilterCoeff;      ///< filter coefficient
-typedef       int64_t           Intermediate_Int;  ///< used as intermediate value in calculations
-typedef       uint64_t          Intermediate_UInt; ///< used as intermediate value in calculations
+typedef       int16_t         TFilterCoeff;      ///< filter coefficient
+typedef       int64_t         Intermediate_Int;  ///< used as intermediate value in calculations
+typedef       uint64_t        Intermediate_UInt; ///< used as intermediate value in calculations
 #else
-typedef       int16_t           Pel;               ///< pixel type
+typedef       int16_t         Pel;               ///< pixel type
 typedef       int             TCoeff;            ///< transform coefficient
-typedef       int16_t           TMatrixCoeff;      ///< transform matrix coefficient
-typedef       int16_t           TFilterCoeff;      ///< filter coefficient
+typedef       int16_t         TMatrixCoeff;      ///< transform matrix coefficient
+typedef       int16_t         TFilterCoeff;      ///< filter coefficient
 typedef       int             Intermediate_Int;  ///< used as intermediate value in calculations
-typedef       uint32_t            Intermediate_UInt; ///< used as intermediate value in calculations
+typedef       uint32_t        Intermediate_UInt; ///< used as intermediate value in calculations
 #endif
 
-typedef       uint64_t          SplitSeries;       ///< used to encoded the splits that caused a particular CU size
-typedef       uint64_t          ModeTypeSeries;    ///< used to encoded the ModeType at different split depth
+typedef       uint64_t        SplitSeries;       ///< used to encoded the splits that caused a particular CU size
+typedef       uint64_t        ModeTypeSeries;    ///< used to encoded the ModeType at different split depth
 
 typedef       uint64_t        Distortion;        ///< distortion measurement
+
+using TileIdx = uint16_t;
 
 // ====================================================================================================================
 // Enumeration
