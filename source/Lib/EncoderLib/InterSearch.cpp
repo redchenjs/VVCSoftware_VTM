@@ -10683,6 +10683,7 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
   const UnitArea curUnitArea = partitioner.currArea();
   CodingStructure &saveCS = *m_pSaveCS[1];
   saveCS.pcv = cs.pcv;
+  saveCS.sps = cs.sps;
   saveCS.picture = cs.picture;
   saveCS.area.repositionTo(curUnitArea);
   saveCS.clearCUs();
