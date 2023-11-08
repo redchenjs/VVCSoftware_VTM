@@ -53,6 +53,7 @@
 #include "CommonDef.h"
 
 // clang-format off
+#define JVET_AF0122_ALF_LAMBDA_OPT                        1
 
 #define JVET_AD0045                                       1  // encoder control for DMVR
 
