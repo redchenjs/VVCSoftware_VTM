@@ -2611,6 +2611,10 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
   double costMin = MAX_DOUBLE;
   reconstructCoeffAPSs(cs, true, false, true);
 
+#if JVET_AF0122_ALF_LAMBDA_OPT
+  lumaNewAps = 0;
+#endif
+
   for (bool useNewFilter: { false, true })
   {
     if (useNewFilter && !alfParamNewFilters.enabledFlag[COMPONENT_Y])
@@ -2869,6 +2873,12 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
 
     if (alfParamNewFiltersBest.newFilterFlag[ChannelType::LUMA])
     {
+#if JVET_AF0122_ALF_LAMBDA_OPT
+      if (cs.slice->getSliceType() != I_SLICE)
+      {
+        lumaNewAps = 1;
+      }
+#endif      
       APS *newAPS = m_apsMap->getPS(newApsId);
       if (newAPS == nullptr)
       {
@@ -2931,6 +2941,31 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
       }
     }
 
+#if JVET_AF0122_ALF_LAMBDA_OPT
+    int chromaHisApsNums = 0;
+    for (int curApsId = 0; curApsId < ALF_CTB_MAX_NUM_APS; curApsId++)
+    {
+      if ((cs.slice->getPendingRasInit() || cs.slice->isIRAP()) && curApsId != newApsIdChroma)
+      {
+        continue;
+      }
+      APS *curAPS = m_apsMap->getPS(curApsId);
+
+      if (curApsId != newApsIdChroma && curAPS && curAPS->getTemporalId() <= cs.slice->getTLayer()
+          && curAPS->getLayerId() == cs.slice->getPic()->layerId
+          && curAPS->getAlfAPSParam().newFilterFlag[ChannelType::CHROMA])
+      {
+        chromaHisApsNums++;
+      }
+      else
+      {
+        continue;
+      }
+    }
+
+    double Lambda_Factor = getLambdaScale(cs, chromaHisApsNums, lumaNewAps);
+#endif    
+    
     for (int curApsId = m_encCfg->getALFAPSIDShift(); curApsId < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(); curApsId++)
     {
       const bool reuseExistingAPS = curApsId != newApsIdChroma;
@@ -2940,12 +2975,20 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
         continue;
       }
       APS *curAPS = m_apsMap->getPS(curApsId);
-
+#if JVET_AF0122_ALF_LAMBDA_OPT
+      double curCost = m_lambda[COMPONENT_Cb] * Lambda_Factor * 3;
+#else
       double curCost = m_lambda[COMPONENT_Cb] * 3;
+#endif
+      
       if (!reuseExistingAPS)
       {
         m_alfParamTemp = alfParamNewFilters;
+#if JVET_AF0122_ALF_LAMBDA_OPT
+        curCost += m_lambda[COMPONENT_Cb] * Lambda_Factor * m_bitsNewFilter[ChannelType::CHROMA];
+#else        
         curCost += m_lambda[COMPONENT_Cb] * m_bitsNewFilter[ChannelType::CHROMA];
+#endif        
       }
       else if (curAPS && curAPS->getTemporalId() <= cs.slice->getTLayer()
                && curAPS->getLayerId() == cs.slice->getPic()->layerId
@@ -2976,11 +3019,20 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
           // ctb flag
           m_CABACEstimator->codeAlfCtuEnableFlag(cs, ctbIdx, compId, &m_alfParamTemp);
           double rateOn = FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
+#if JVET_AF0122_ALF_LAMBDA_OPT
+#if ENABLE_QPA
+          const double ctuLambda = lambdaChromaWeight > 0.0 ? cs.picture->m_uEnerHpCtu[ctbIdx] / lambdaChromaWeight
+                                                            : m_lambda[compId] * Lambda_Factor;
+#else
+          const double ctuLambda = m_lambda[compId] * Lambda_Factor;
+#endif
+#else
 #if ENABLE_QPA
           const double ctuLambda =
             lambdaChromaWeight > 0.0 ? cs.picture->m_uEnerHpCtu[ctbIdx] / lambdaChromaWeight : m_lambda[compId];
 #else
           const double ctuLambda = m_lambda[compId];
+#endif
 #endif
           double dist        = MAX_DOUBLE;
           int    numAlts     = m_alfParamTemp.numAlternativesChroma;
@@ -3031,7 +3083,11 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
           m_CABACEstimator->resetBits();
           m_CABACEstimator->codeAlfCtuEnableFlag(cs, ctbIdx, compId, &m_alfParamTemp);
           // cost
+#if JVET_AF0122_ALF_LAMBDA_OPT
+          double costOff = distUnfilterCtu + m_lambda[compId] *Lambda_Factor * FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
+#else          
           double costOff = distUnfilterCtu + m_lambda[compId] * FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
+#endif          
           if (costOn < costOff)
           {
             m_CABACEstimator->getCtx()      = AlfCtx(ctxTempBest);
@@ -3681,7 +3737,12 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilter( CodingStructure& cs, ComponentID 
     unfilteredDistortion += (uint64_t) m_alfCovarianceCcAlf[compID - 1][0][ctbIdx].pixAcc;
   }
 
+#if JVET_AF0122_ALF_LAMBDA_OPT
+  double Lambda_Factor = getLambdaScale(cs, (int) (getAvailableCcAlfApsIds(cs, compID).size()), lumaNewAps);
+  double bestUnfilteredTotalCost = 1 * m_lambda[compID] * Lambda_Factor + unfilteredDistortion;   // 1 bit is for gating flag
+#else
   double bestUnfilteredTotalCost = 1 * m_lambda[compID] + unfilteredDistortion;   // 1 bit is for gating flag
+#endif
 
   bool             ccAlfFilterIdxEnabled[MAX_NUM_CC_ALF_FILTERS];
   AlfCoeff         ccAlfFilterCoeff[MAX_NUM_CC_ALF_FILTERS][MAX_NUM_CC_ALF_CHROMA_COEFF];
@@ -3817,7 +3878,11 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilter( CodingStructure& cs, ComponentID 
             // terminating bit/byte alignment bits)
           }
 
+#if JVET_AF0122_ALF_LAMBDA_OPT
+          double curTotalCost = curTotalRate * m_lambda[compID] * Lambda_Factor + curTotalDistortion;
+#else          
           double curTotalCost = curTotalRate * m_lambda[compID] + curTotalDistortion;
+#endif
 
           if (curTotalCost < prevTotalCost)
           {
