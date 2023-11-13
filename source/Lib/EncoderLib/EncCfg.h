@@ -409,7 +409,7 @@ protected:
   int       m_CSoffset;
   bool      m_encDbOpt;
 #if JVET_AF0122_ALF_LAMBDA_OPT
-  bool      m_encALOpt;
+  bool      m_encALFOpt;
 #endif  
   bool      m_useFastLCTU;
   bool      m_useFastMrg;
@@ -1581,8 +1581,8 @@ public:
   void      setUseEncDbOpt                  ( bool  n )          { m_encDbOpt = n; }
   bool      getUseEncDbOpt                  () const             { return m_encDbOpt; }
 #if JVET_AF0122_ALF_LAMBDA_OPT
-  void setUseEncALOpt(bool n) { m_encALOpt = n; }
-  bool getUseEncALOpt() const { return m_encALOpt; }
+  void setUseEncALFOpt(bool n) { m_encALFOpt = n; }
+  bool getUseEncALFOpt() const { return m_encALFOpt; }
 #endif
   
   void      setUseFastLCTU                  ( bool  n )      { m_useFastLCTU = n; }
