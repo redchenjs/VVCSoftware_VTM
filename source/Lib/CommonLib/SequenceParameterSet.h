@@ -496,7 +496,7 @@ private:
   bool              m_alfEnabledFlag;
   bool              m_ccalfEnabledFlag;
 #if JVET_AF0122_ALF_LAMBDA_OPT
-  bool              m_alOptEnabledFlag;
+  bool              m_alfOptEnabledFlag;
 #endif
   bool              m_wrapAroundEnabledFlag;
   bool              m_ibcFlag;
@@ -765,8 +765,8 @@ public:
   bool                    getALFEnabledFlag() const         { return m_alfEnabledFlag; }
 
 #if JVET_AF0122_ALF_LAMBDA_OPT
-  void                    setALOptEnabledFlag( bool b )     { m_alOptEnabledFlag = b; }
-  bool                    getALOptEnabledFlag() const       { return m_alOptEnabledFlag; }
+  void                    setALFOptEnabledFlag( bool b )     { m_alfOptEnabledFlag = b; }
+  bool                    getALFOptEnabledFlag() const       { return m_alfOptEnabledFlag; }
 #endif
 
   void                    setCCALFEnabledFlag(bool val)     { m_ccalfEnabledFlag = val; }
