@@ -9782,6 +9782,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
 
     CodingStructure &saveCS = *m_pSaveCS[0];
     saveCS.pcv     = cs.pcv;
+    saveCS.sps     = cs.sps;
     saveCS.picture = cs.picture;
     saveCS.area.repositionTo(currArea);
     saveCS.clearTUs();
