@@ -53,11 +53,12 @@
 #include "CommonDef.h"
 
 // clang-format off
-#define JVET_AF0122_ALF_LAMBDA_OPT                        1
 
 #define JVET_AD0045                                       1  // encoder control for DMVR
 
 //########### place macros to be removed in next cycle below this line ###############
+
+#define JVET_AF0122_ALF_LAMBDA_OPT                        1  // JVET-AF0122: Lagrange multiplier optimization for chroma ALF and CCALF
 
 #define JVET_AE0126_NNPF_EDITORIAL_CHANGES                1  // JVET_AE0126: NNPF cleanup and editorial changes for VSEI include item 2, item 3, item 5, and item 7
 
