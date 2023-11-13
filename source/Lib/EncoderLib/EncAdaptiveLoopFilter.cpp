@@ -2612,7 +2612,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
   reconstructCoeffAPSs(cs, true, false, true);
 
 #if JVET_AF0122_ALF_LAMBDA_OPT
-  lumaNewAps = 0;
+  m_lumaNewAps = 0;
 #endif
 
   for (bool useNewFilter: { false, true })
@@ -2876,7 +2876,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
 #if JVET_AF0122_ALF_LAMBDA_OPT
       if (cs.slice->getSliceType() != I_SLICE)
       {
-        lumaNewAps = 1;
+        m_lumaNewAps = 1;
       }
 #endif      
       APS *newAPS = m_apsMap->getPS(newApsId);
@@ -2963,7 +2963,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
       }
     }
 
-    double Lambda_Factor = getLambdaScale(cs, chromaHisApsNums, lumaNewAps);
+    setLambdaFactor(cs, chromaHisApsNums, m_lumaNewAps);
 #endif    
     
     for (int curApsId = m_encCfg->getALFAPSIDShift(); curApsId < m_encCfg->getALFAPSIDShift() + m_encCfg->getMaxNumALFAPS(); curApsId++)
@@ -2976,7 +2976,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
       }
       APS *curAPS = m_apsMap->getPS(curApsId);
 #if JVET_AF0122_ALF_LAMBDA_OPT
-      double curCost = m_lambda[COMPONENT_Cb] * Lambda_Factor * 3;
+      double curCost = m_lambda[COMPONENT_Cb] * m_lambdaFactor * 3;
 #else
       double curCost = m_lambda[COMPONENT_Cb] * 3;
 #endif
@@ -2985,7 +2985,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
       {
         m_alfParamTemp = alfParamNewFilters;
 #if JVET_AF0122_ALF_LAMBDA_OPT
-        curCost += m_lambda[COMPONENT_Cb] * Lambda_Factor * m_bitsNewFilter[ChannelType::CHROMA];
+        curCost += m_lambda[COMPONENT_Cb] * m_lambdaFactor * m_bitsNewFilter[ChannelType::CHROMA];
 #else        
         curCost += m_lambda[COMPONENT_Cb] * m_bitsNewFilter[ChannelType::CHROMA];
 #endif        
@@ -3022,9 +3022,9 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
 #if JVET_AF0122_ALF_LAMBDA_OPT
 #if ENABLE_QPA
           const double ctuLambda = lambdaChromaWeight > 0.0 ? cs.picture->m_uEnerHpCtu[ctbIdx] / lambdaChromaWeight
-                                                            : m_lambda[compId] * Lambda_Factor;
+                                                            : m_lambda[compId] * m_lambdaFactor;
 #else
-          const double ctuLambda = m_lambda[compId] * Lambda_Factor;
+          const double ctuLambda = m_lambda[compId] * m_lambdaFactor;
 #endif
 #else
 #if ENABLE_QPA
@@ -3084,7 +3084,7 @@ void  EncAdaptiveLoopFilter::alfEncoderCtb(CodingStructure& cs, AlfParam& alfPar
           m_CABACEstimator->codeAlfCtuEnableFlag(cs, ctbIdx, compId, &m_alfParamTemp);
           // cost
 #if JVET_AF0122_ALF_LAMBDA_OPT
-          double costOff = distUnfilterCtu + m_lambda[compId] *Lambda_Factor * FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
+          double costOff = distUnfilterCtu + m_lambda[compId] * m_lambdaFactor * FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
 #else          
           double costOff = distUnfilterCtu + m_lambda[compId] * FRAC_BITS_SCALE * m_CABACEstimator->getEstFracBits();
 #endif          
@@ -3738,8 +3738,8 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilter( CodingStructure& cs, ComponentID 
   }
 
 #if JVET_AF0122_ALF_LAMBDA_OPT
-  double Lambda_Factor = getLambdaScale(cs, (int) (getAvailableCcAlfApsIds(cs, compID).size()), lumaNewAps);
-  double bestUnfilteredTotalCost = 1 * m_lambda[compID] * Lambda_Factor + unfilteredDistortion;   // 1 bit is for gating flag
+  setLambdaFactor(cs, (int) (getAvailableCcAlfApsIds(cs, compID).size()), m_lumaNewAps);
+  double bestUnfilteredTotalCost = 1 * m_lambda[compID] * m_lambdaFactor + unfilteredDistortion;   // 1 bit is for gating flag
 #else
   double bestUnfilteredTotalCost = 1 * m_lambda[compID] + unfilteredDistortion;   // 1 bit is for gating flag
 #endif
@@ -3879,7 +3879,7 @@ void EncAdaptiveLoopFilter::deriveCcAlfFilter( CodingStructure& cs, ComponentID 
           }
 
 #if JVET_AF0122_ALF_LAMBDA_OPT
-          double curTotalCost = curTotalRate * m_lambda[compID] * Lambda_Factor + curTotalDistortion;
+          double curTotalCost = curTotalRate * m_lambda[compID] * m_lambdaFactor + curTotalDistortion;
 #else          
           double curTotalCost = curTotalRate * m_lambda[compID] + curTotalDistortion;
 #endif
