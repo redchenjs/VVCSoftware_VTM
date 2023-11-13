@@ -228,6 +228,7 @@ bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::strin
                     pcEncPic->copySAO(*pic, 1);
                   }
 
+                  pcEncPic->cs->initStructData();
                   pcEncPic->cs->copyStructure(*pic->cs, ChannelType::LUMA, true, true);
 
                   if (CS::isDualITree(*pcEncPic->cs))
