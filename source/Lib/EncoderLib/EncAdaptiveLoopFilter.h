@@ -350,9 +350,9 @@ public:
   void destroy();
   void setApsIdStart( int i) { m_apsIdStart = i; }
 #if JVET_AF0122_ALF_LAMBDA_OPT
-  int lumaNewAps;
-  double m_LambdaFactor;
-  double getLambdaScale( CodingStructure &cs, const int chromaHisApsNums, const int lumaNewAps){ return m_LambdaFactor = (cs.sps->getALOptEnabledFlag() && chromaHisApsNums < ALF_HISAPSNUM_LIMITED && cs.slice->getSliceType() != I_SLICE && lumaNewAps == 1) ? ALF_CHROMA_LAMBDA_SCALE_LOW : 1.0 ;};
+  bool m_lumaNewAps;
+  double m_lambdaFactor;
+  void setLambdaFactor( CodingStructure &cs, const int chromaHisApsNums, const bool m_lumaNewAps){ m_lambdaFactor = (cs.sps->getALOptEnabledFlag() && chromaHisApsNums < ALF_HISAPSNUM_LIMITED && cs.slice->getSliceType() != I_SLICE && m_lumaNewAps == 1) ? ALF_CHROMA_LAMBDA_SCALE_LOW : 1.0 ;};
 #endif
 
 private:
