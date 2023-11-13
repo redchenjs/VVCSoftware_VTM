@@ -205,7 +205,7 @@ fontsize=\footnotesize}
 \maketitle
 \begin{abstract}
 This document is a user manual describing usage of the VTM reference software
-for the VVC project. It applies to version 22.0 of the software.
+for the VVC project. It applies to version 22.1 of the software.
 \end{abstract}
 
 \tableofcontents
@@ -1836,7 +1836,7 @@ Defines the maximum CU size.
 Defines the minimum CU size in logarithm base 2.
 \\
 
-\Option{QuadtreeTULog2MaxSize} &
+\Option{Log2MaxTbSize} &
 %\ShortOption{\None} &
 \Default{6 \\ ($= \mathrm{log}_2(64)$)} &
 Defines the Maximum TU size in logarithm base 2.
@@ -1846,18 +1846,6 @@ Defines the Maximum TU size in logarithm base 2.
 %\ShortOption{\None} &
 \Default{2 \\ ($= \mathrm{log}_2(4)$)} &
 Defines the Minimum TU size in logarithm base 2.
-\\
-
-\Option{QuadtreeTUMaxDepthIntra} &
-%\ShortOption{\None} &
-\Default{1} &
-Defines the depth of the TU tree for intra CUs.
-\\
-
-\Option{QuadtreeTUMaxDepthInter} &
-%\ShortOption{\None} &
-\Default{2} &
-Defines the depth of the TU tree for inter CUs.
 \\
 
 \Option{MaxMTTHierarchyDepth} &
@@ -6152,6 +6140,22 @@ Specifies the Vertical Phase Denominator minus 1 of Phase Indication SEI message
 \Default{false} &
 Enables (true) or disables (false) the insertion of processing order SEI message.
 \\
+\Option{SEIPOId} &
+\Default{0} &
+Specifies the id of the SEI processing order SEI message.
+\\
+\Option{SEIPONumMinus2} &
+\Default{0} &
+Specifies the number of SEIs minus 2 in SEI processing order SEI message. 
+\\
+\Option{SEIPOWrappingFlag\emph{i}} &
+\Default{false} &
+Specifies whether the \emph{i}-th SEI message is (true) wrapped inside the SEI processing order SEI message or (false) present outside the SEI processing order SEI. For wrapped SEI, specifiy the SEI parameters after SEIPOPrefixByte
+\\
+\Option{SEIPOImportanceFlag\emph{i}} &
+\Default{false} &
+Specifies whether the \emph{i}-th SEI message is (true) important or (false) not.
+\\
 \Option{SEIPOPrefixFlag\emph{i}} &
 \Default{0} &
 Specifies the SEIPONumofPrefixByte is present for the \emph{i}-th SEI message for which information is provided in the SEI processing order SEI message.
@@ -6160,6 +6164,10 @@ Specifies the SEIPONumofPrefixByte is present for the \emph{i}-th SEI message fo
 \Default{0} &
 Specifies the value of payloadType for the \emph{i}-th SEI message for which information is provided in the SEI processing order SEI message.
 \\
+\Option{SEIPOProcessingOrder\emph{i}} &
+\Default{0} &
+Specifies the preferred order of processing any SEI message with payloadType equal to SEIPOPayLoadType\emph{i}.
+\\
 \Option{SEIPONumofPrefixByte\emph{i}} &
 \Default{0} &
 Specifies the number of prefix byte for the \emph{i}-th SEI message present in processing order SEI message.
@@ -6167,10 +6175,6 @@ Specifies the number of prefix byte for the \emph{i}-th SEI message present in p
 \Option{SEIPOPrefixByte\emph{i}} &
 \Default{0} &
 Specifies the \emph{i}-th prefix byte present in processing order SEI message.
-\\
-\Option{SEIPOProcessingOrder\emph{i}} &
-\Default{0} &
-Specifies the preferred order of processing any SEI message with payloadType equal to SEIPOPayLoadType\emph{i}.
 \\
 \end{OptionTableNoShorthand}
 

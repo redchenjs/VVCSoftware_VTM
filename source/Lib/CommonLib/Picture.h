@@ -73,11 +73,10 @@ struct Picture : public UnitArea
   Picture();
 
   void create(const bool useWrapAround, const ChromaFormat& _chromaFormat, const Size& size, const unsigned _maxCUSize,
-              const unsigned margin, const bool bDecoder, const int layerId, const bool enablePostFilteringForHFR,
-              const bool gopBasedTemporalFilterEnabled = false, const bool fgcSEIAnalysisEnabled = false);
+              const unsigned margin, const bool bDecoder, const int layerId, const bool enablePostFilteringForHFR);
   void destroy();
 
-  void createTempBuffers( const unsigned _maxCUSize );
+  void createTempBuffers( const unsigned _maxCUSize, bool useFilterFrame, bool resChange, bool decoder, bool isFgFiltered);
   void destroyTempBuffers();
 
   int                       m_padValue;
@@ -249,9 +248,7 @@ public:
   std::vector<bool> m_lossylosslessSliceArray;
   bool interLayerRefPicFlag;
   bool mixedNaluTypesInPicFlag;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool isEosPresentInPic;
-#endif
 
   PelStorage m_bufs[NUM_PIC_TYPES];
   const Picture*           unscaledPic;

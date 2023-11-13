@@ -107,7 +107,7 @@ protected:
   void xWriteByteAlign();
   void xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
   void xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei);
-  void xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei);
+  void xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessingOrderInfo& sei);
 #if GREEN_METADATA_SEI_ENABLED
   void xWriteSEIGreenMetadataInfo                 (const SEIGreenMetadataInfo &sei);
 #endif

@@ -300,10 +300,10 @@ void InterSearch::resetSavedAffineMotion()
 }
 
 #if GDR_ENABLED
-void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int16_t affineRefIdx[2],
+void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int8_t affineRefIdx[2],
                                     AffineModel affineType, int bcwIdx)
 #else
-void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], int16_t affineRefIdx[2], AffineModel affineType, int bcwIdx)
+void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], int8_t affineRefIdx[2], AffineModel affineType, int bcwIdx)
 #endif
 {
   if ((bcwIdx == BCW_DEFAULT || !m_affineMotion.affine6ParaAvail) && affineType == AffineModel::_6_PARAMS)
@@ -1086,7 +1086,8 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
         && !((yPred < srTop) || (yPred > srBottom))
         && !((xPred < srLeft) || (xPred > srRight)))
       {
-        bool validCand = searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, xPred, yPred, lcuWidth);
+        bool validCand =
+          isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, xPred, yPred, lcuWidth);
 #if GDR_ENABLED
         if (isEncodeGdrClean)
         {
@@ -1113,7 +1114,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
     const int boundY = (0 - roiHeight - puPelOffsetY);
     for (int y = std::max(srchRngVerTop, 0 - cuPelY); y <= boundY; ++y)
     {
-      if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, 0, y, lcuWidth))
+      if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, 0, y, lcuWidth))
       {
         continue;
       }
@@ -1148,7 +1149,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
     const int boundX = std::max(srchRngHorLeft, -cuPelX);
     for (int x = 0 - roiWidth - puPelOffsetX; x >= boundX; --x)
     {
-      if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, 0, lcuWidth))
+      if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, 0, lcuWidth))
       {
         continue;
       }
@@ -1213,7 +1214,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
             continue;
           }
 
-          if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
+          if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
           {
             continue;
           }
@@ -1268,7 +1269,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
             continue;
           }
 
-          if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
+          if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
           {
             continue;
           }
@@ -1338,7 +1339,7 @@ void InterSearch::xIntraPatternSearch(PredictionUnit& pu, IntTZSearchStruct&  cS
             continue;
           }
 
-          if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
+          if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, x, y, lcuWidth))
           {
             continue;
           }
@@ -1484,9 +1485,9 @@ void InterSearch::xIBCEstimation(PredictionUnit& pu, PelUnitBuf& origBuf,
         Position BvBR(cuPelX + iRoiWidth + xBv - 1, cuPelY + iRoiHeight + yBv - 1);
         validCand = validCand && cs.isClean(BvBR, ChannelType::LUMA);
       }
-      if (validCand && searchBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xBv, yBv, lcuWidth))
+      if (validCand && isValidBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xBv, yBv, lcuWidth))
 #else
-      if (searchBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xBv, yBv, lcuWidth))
+      if (isValidBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xBv, yBv, lcuWidth))
 #endif
       {
         buffered = true;
@@ -1528,9 +1529,10 @@ void InterSearch::xIBCEstimation(PredictionUnit& pu, PelUnitBuf& origBuf,
           Position BvBR(cuPelX + iRoiWidth + xPred - 1, cuPelY + iRoiHeight + yPred - 1);
           validCand = cs.isClean(BvBR, ChannelType::LUMA);
         }
-        if (validCand && searchBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xPred, yPred, lcuWidth))
+        if (validCand
+            && isValidBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xPred, yPred, lcuWidth))
 #else
-        if (searchBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xPred, yPred, lcuWidth))
+        if (isValidBv(pu, cuPelX, cuPelY, iRoiWidth, iRoiHeight, iPicWidth, iPicHeight, xPred, yPred, lcuWidth))
 #endif
         {
           Distortion sad = m_pcRdCost->getBvCostMultiplePreds(xPred, yPred, pu.cs->sps->getAMVREnabledFlag());
@@ -1802,7 +1804,8 @@ void InterSearch::xxIBCHashSearch(PredictionUnit& pu, Mv* mvPred, int numMvPred,
         Mv candMv;
         candMv.set(tmp.x, tmp.y);
 
-        if (!searchBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, candMv.getHor(), candMv.getVer(), lcuWidth))
+        if (!isValidBv(pu, cuPelX, cuPelY, roiWidth, roiHeight, picWidth, picHeight, candMv.getHor(), candMv.getVer(),
+                       lcuWidth))
         {
           continue;
         }
@@ -2741,7 +2744,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   int refIdx[NUM_REF_PIC_LIST_01] = {
     0, 0
   };   // If un-initialized, may cause SEGV in bi-directional prediction iterative stage.
-  int iRefIdxBi[NUM_REF_PIC_LIST_01] = { -1, -1 };
+  int8_t iRefIdxBi[NUM_REF_PIC_LIST_01] = { -1, -1 };
 
   uint32_t mbBits[3] = { 1, 1, 0 };
 
@@ -10680,6 +10683,7 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
   const UnitArea curUnitArea = partitioner.currArea();
   CodingStructure &saveCS = *m_pSaveCS[1];
   saveCS.pcv = cs.pcv;
+  saveCS.sps = cs.sps;
   saveCS.picture = cs.picture;
   saveCS.area.repositionTo(curUnitArea);
   saveCS.clearCUs();
@@ -11378,114 +11382,76 @@ uint64_t InterSearch::xCalcPuMeBits(PredictionUnit& pu)
   return m_CABACEstimator->getEstFracBits();
 }
 
-bool InterSearch::searchBv(PredictionUnit& pu, int xPos, int yPos, int width, int height, int picWidth, int picHeight, int xBv, int yBv, int ctuSize)
+bool InterSearch::isValidBv(PredictionUnit& pu, int xPos, int yPos, int width, int height, int picWidth, int picHeight,
+                            int xBv, int yBv, int ctuSize)
 {
+  const int refRightX  = xPos + xBv + width - 1;
+  const int refBottomY = yPos + yBv + height - 1;
+
+  // check whether bottom-right sample is definitely not yet reconstructed
+  if (refRightX >= xPos && refBottomY >= yPos)
+  {
+    return false;
+  }
+
   const int ctuSizeLog2 = floorLog2(ctuSize);
 
-  int refRightX = xPos + xBv + width - 1;
-  int refBottomY = yPos + yBv + height - 1;
+  const int refLeftX = xPos + xBv;
+  const int refTopY  = yPos + yBv;
 
-  int refLeftX = xPos + xBv;
-  int refTopY = yPos + yBv;
+  const int curCtuCol = xPos >> ctuSizeLog2;
+  const int curCtuRow = yPos >> ctuSizeLog2;
 
-  if ((xPos + xBv) < 0)
-  {
-    return false;
-  }
-  if (refRightX >= picWidth)
-  {
-    return false;
-  }
+  const int refTopCtuRow    = refTopY >> ctuSizeLog2;
+  const int refBottomCtuRow = refBottomY >> ctuSizeLog2;
+  const int refLeftCtuCol   = refLeftX >> ctuSizeLog2;
+  const int refRightCtuCol  = refRightX >> ctuSizeLog2;
 
-  if ((yPos + yBv) < 0)
-  {
-    return false;
-  }
-  if (refBottomY >= picHeight)
-  {
-    return false;
-  }
-  if ((xBv + width) > 0 && (yBv + height) > 0)
+  // check whether top or bottom is in different CTU row
+  if (curCtuRow != refTopCtuRow || curCtuRow != refBottomCtuRow)
   {
     return false;
   }
 
-  // Don't search the above CTU row
-  if (refTopY >> ctuSizeLog2 < yPos >> ctuSizeLog2)
+  // number of CTUs to the left that may be referenced. When CTU size is 128x128, this includes a CTU to the
+  // left that may be partially referenced
+  constexpr int IBC_REF_WINDOW_SIZE = 1 << (2 * 7);
+  const int     numLeftCTUs = std::min((IBC_REF_WINDOW_SIZE >> 2 * ctuSizeLog2) - (ctuSizeLog2 < 7 ? 1 : 0), curCtuCol);
+  if (refRightCtuCol > curCtuCol || refLeftCtuCol < curCtuCol - numLeftCTUs)
   {
     return false;
   }
 
-  // Don't search the below CTU row
-  if (refBottomY >> ctuSizeLog2 > yPos >> ctuSizeLog2)
+  // check whether in same tile
+  if (refLeftCtuCol != curCtuCol)
   {
-    return false;
-  }
-
-  unsigned curTileIdx = pu.cs->pps->getTileIdx(pu.lumaPos());
-  unsigned refTileIdx = pu.cs->pps->getTileIdx(Position(refLeftX, refTopY));
-  if (curTileIdx != refTileIdx)
-  {
-    return false;
-  }
-  refTileIdx = pu.cs->pps->getTileIdx(Position(refLeftX, refBottomY));
-  if (curTileIdx != refTileIdx)
-  {
-    return false;
-  }
-  refTileIdx = pu.cs->pps->getTileIdx(Position(refRightX, refTopY));
-  if (curTileIdx != refTileIdx)
-  {
-    return false;
-  }
-  refTileIdx = pu.cs->pps->getTileIdx(Position(refRightX, refBottomY));
-  if (curTileIdx != refTileIdx)
-  {
-    return false;
-  }
-
-  // in the same CTU line
-  int numLeftCTUs = (1 << ((7 - ctuSizeLog2) << 1)) - ((ctuSizeLog2 < 7) ? 1 : 0);
-  if ((refRightX >> ctuSizeLog2 <= xPos >> ctuSizeLog2) && (refLeftX >> ctuSizeLog2 >= (xPos >> ctuSizeLog2) - numLeftCTUs))
-  {
-
-    // in the same CTU, or left CTU
-    // if part of ref block is in the left CTU, some area can be referred from the not-yet updated local CTU buffer
-    if (((refLeftX >> ctuSizeLog2) == ((xPos >> ctuSizeLog2) - 1)) && (ctuSizeLog2 == 7))
+    const TileIdx curTileIdx = pu.cs->pps->getTileIdx(curCtuCol, curCtuRow);
+    const TileIdx refTileIdx = pu.cs->pps->getTileIdx(refLeftCtuCol, curCtuRow);
+    if (curTileIdx != refTileIdx)
     {
-      // ref block's collocated block in current CTU
-      const Position refPosCol = pu.Y().topLeft().offset(xBv + ctuSize, yBv);
-      int offset64x = (refPosCol.x >> (ctuSizeLog2 - 1)) << (ctuSizeLog2 - 1);
-      int offset64y = (refPosCol.y >> (ctuSizeLog2 - 1)) << (ctuSizeLog2 - 1);
-      const Position refPosCol64x64 = {offset64x, offset64y};
-      if (pu.cs->isDecomp(refPosCol64x64, toChannelType(COMPONENT_Y)))
-      {
-        return false;
-      }
-      if (refPosCol64x64 == pu.Y().topLeft())
-      {
-        return false;
-      }
+      return false;
     }
   }
-  else
+
+  // if part of ref block is in the left CTU, some area can be referred from the not-yet updated local CTU buffer
+  if (ctuSizeLog2 == 7 && refLeftCtuCol == curCtuCol - 1)
   {
-    return false;
+    // ref block's collocated block in current CTU
+    const Position refPosCol      = pu.Y().topLeft().offset(xBv + ctuSize, yBv);
+    const Position refPosCol64x64 = { refPosCol.x & ~63, refPosCol.y & ~63 };
+    if (pu.cs->isDecomp(refPosCol64x64, ChannelType::LUMA))
+    {
+      return false;
+    }
+    if (refPosCol64x64 == pu.Y().topLeft())
+    {
+      return false;
+    }
   }
 
   // in the same CTU, or valid area from left CTU. Check if the reference block is already coded
-  const Position refPosLT = pu.Y().topLeft().offset(xBv, yBv);
   const Position refPosBR = pu.Y().bottomRight().offset(xBv, yBv);
-  const ChannelType      chType = toChannelType(COMPONENT_Y);
-  if (!pu.cs->isDecomp(refPosBR, chType))
-  {
-    return false;
-  }
-  if (!pu.cs->isDecomp(refPosLT, chType))
-  {
-    return false;
-  }
-  return true;
+  return pu.cs->isDecomp(refPosBR, ChannelType::LUMA);
 }
 
 //! \}

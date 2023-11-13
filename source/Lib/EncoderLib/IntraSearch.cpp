@@ -102,7 +102,8 @@ void IntraSearch::destroy()
     {
       for( uint32_t height = 0; height < numHeights; height++ )
       {
-        if( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( width ) ) && gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( height ) ) )
+        if( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( width ) ) && gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( height ) ) 
+          && gp_sizeIdxInfo->sizeFrom(width) <= m_pcEncCfg->getMaxCUWidth() && gp_sizeIdxInfo->sizeFrom(height) <= m_pcEncCfg->getMaxCUHeight())
         {
           for (uint32_t layer = 0; layer < numLayersToAllocateSplit; layer++)
           {
@@ -207,12 +208,12 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
   const ChromaFormat cform = pcEncCfg->getChromaFormatIdc();
 
   IntraPrediction::init(cform, pcEncCfg->getBitDepth(ChannelType::LUMA));
-  m_tmpStorageCtu.create(UnitArea(cform, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
-  m_colorTransResiBuf.create(UnitArea(cform, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
+  m_tmpStorageCtu.create(UnitArea(cform, Area(0, 0, maxCUWidth, maxCUHeight)));
+  m_colorTransResiBuf.create(UnitArea(cform, Area(0, 0, maxCUWidth, maxCUHeight)));
 
   for( uint32_t ch = 0; ch < MAX_NUM_TBLOCKS; ch++ )
   {
-    m_pSharedPredTransformSkip[ch] = new Pel[MAX_CU_SIZE * MAX_CU_SIZE];
+    m_pSharedPredTransformSkip[ch] = new Pel[maxCUWidth * maxCUHeight];
   }
 
   const uint32_t numWidths  = gp_sizeIdxInfo->numWidths();
@@ -237,7 +238,8 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
 
     for( uint32_t height = 0; height < numHeights; height++ )
     {
-      if(  gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( width ) ) && gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( height ) ) )
+      if(  gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( width ) ) && gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( height ) ) 
+        && gp_sizeIdxInfo->sizeFrom(width) <= maxCUWidth && gp_sizeIdxInfo->sizeFrom(height) <= maxCUHeight)
       {
         m_pBestCS[width][height] = new CodingStructure(m_unitPool);
         m_pTempCS[width][height] = new CodingStructure(m_unitPool);
@@ -3960,6 +3962,7 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
     {
       saveCS.pcv     = cs.pcv;
       saveCS.picture = cs.picture;
+      saveCS.sps     = cs.sps;
       saveCS.area.repositionTo(cs.area);
       saveCS.clearTUs();
       tmpTU = &saveCS.addTU(currArea, partitioner.chType);
@@ -5136,6 +5139,7 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
     CodingStructure &saveCS = *m_pSaveCS[1];
     saveCS.pcv      = cs.pcv;
     saveCS.picture  = cs.picture;
+    saveCS.sps      = cs.sps;
     saveCS.area.repositionTo( cs.area );
     saveCS.initStructData( MAX_INT, true );
 
@@ -5144,7 +5148,6 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
       saveCS.clearCUs();
       CodingUnit& auxCU = saveCS.addCU( *currTU.cu, partitioner.chType );
       auxCU.ispMode = currTU.cu->ispMode;
-      saveCS.sps = currTU.cs->sps;
       saveCS.clearPUs();
       saveCS.addPU( *currTU.cu->firstPU, partitioner.chType );
     }

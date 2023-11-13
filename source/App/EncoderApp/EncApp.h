@@ -99,14 +99,10 @@ private:
   PelStorage*            m_orgPic;
   PelStorage*            m_trueOrgPicBeforeScale;
   PelStorage*            m_orgPicBeforeScale;
-  PelStorage*            m_filteredOrgPic;
   PelStorage*            m_rprPic[2];
 #if EXTENSION_360_VIDEO
   TExt360AppEncTop*      m_ext360;
 #endif
-  EncTemporalFilter      m_temporalFilter;
-  PelStorage*            m_filteredOrgPicForFG;
-  EncTemporalFilter      m_temporalFilterForFG;
   bool m_flush;
 #if GREEN_METADATA_SEI_ENABLED
   FeatureCounterStruct      m_featureCounter;

@@ -296,9 +296,7 @@ protected:
   bool                  m_HashMEPOCchecked;
   int                   m_HashMEPOC2;
 
-#if JVET_AE0057_MTT_ET
   double                m_noSplitIntraRdCost;
-#endif
 public:
 
   virtual ~EncModeCtrl              () {}
@@ -337,9 +335,7 @@ public:
   virtual void setBest              ( CodingStructure& cs );
   bool         anyMode              () const;
 
-#if JVET_AE0057_MTT_ET
   void         setNoSplitIntraCost  (double cost) { m_noSplitIntraRdCost = cost; }
-#endif
   const ComprCUCtx& getComprCUCtx   () { CHECK( m_ComprCUCtxList.empty(), "Accessing empty list!"); return m_ComprCUCtxList.back(); }
 
 #if SHARP_LUMA_DELTA_QP
@@ -717,12 +713,13 @@ class SaveLoadEncInfoSbt
 {
 protected:
   void init( const Slice &slice );
-  void create();
+  void create(int maxCuSize);
   void destroy();
 
 private:
   SaveLoadStructSbt ****m_saveLoadSbt;
   Slice const       *m_sliceSbt;
+  int m_maxCuSize;
 
 public:
   virtual  ~SaveLoadEncInfoSbt() { }
@@ -769,10 +766,11 @@ private:
   Slice const     *m_slice_chblk;
   // x in CTU, y in CTU, width, height
   CodedCUInfo   ***m_codedCUInfo[MAX_CU_SIZE >> MIN_CU_LOG2][MAX_CU_SIZE >> MIN_CU_LOG2];
+  int m_maxCuSize;
 
 protected:
 
-  void create   ();
+  void create   (int maxCuSize);
   void destroy  ();
   void init     ( const Slice &slice );
 
@@ -823,10 +821,11 @@ private:
   PLTRunMode*         m_runType;
   XuPool              m_dummyPool;
   CodingStructure     m_dummyCS;
+  int                 m_maxCuSize;
 
 protected:
 
-  void create   ( const ChromaFormat chFmt );
+  void create   ( const ChromaFormat chFmt, int maxCuSize);
   void destroy  ();
 
   bool setFromCs( const CodingStructure& cs, const Partitioner& partitioner );

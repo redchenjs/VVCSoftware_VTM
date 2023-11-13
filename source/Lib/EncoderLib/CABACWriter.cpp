@@ -260,7 +260,7 @@ void CABACWriter::sao( const Slice& slice, unsigned ctuRsAddr )
   const Position pos(rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight);
 
   const unsigned curSliceIdx = slice.getIndependentSliceIdx();
-  const unsigned curTileIdx  = cs.pps->getTileIdx(pos);
+  const TileIdx  curTileIdx  = cs.pps->getTileIdx(pos);
 
   const bool leftMergeAvail =
     cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
@@ -714,7 +714,7 @@ void CABACWriter::cu_skip_flag( const CodingUnit& cu )
 
   if ((cu.slice->isIntra() || cu.isConsIntra()) && cu.cs->slice->getSPS()->getIBCFlag())
   {
-    if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)   // disable IBC mode larger than 64x64
+    if (CU::canUseIbc(cu))   // disable IBC mode larger than 64x64
     {
       m_binEncoder.encodeBin((cu.skip), Ctx::SkipFlag(ctxId));
       DTRACE(g_trace_ctx, D_SYNTAX, "cu_skip_flag() ctx=%d skip=%d\n", ctxId, cu.skip ? 1 : 0);
@@ -735,7 +735,7 @@ void CABACWriter::cu_skip_flag( const CodingUnit& cu )
   if (cu.skip && cu.cs->slice->getSPS()->getIBCFlag())
   {
     // disable IBC mode larger than 64x64 and disable IBC when only allowing inter mode
-    if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE && !cu.isConsInter())
+    if (CU::canUseIbc(cu) && !cu.isConsInter())
     {
       if ( cu.lwidth() == 4 && cu.lheight() == 4 )
       {
@@ -760,7 +760,7 @@ void CABACWriter::pred_mode( const CodingUnit& cu )
 
     if ( cu.cs->slice->isIntra() || ( cu.lwidth() == 4 && cu.lheight() == 4 ) || cu.isConsIntra() )
     {
-      if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)
+      if (CU::canUseIbc(cu))
       {
         unsigned ctxidx = DeriveCtx::CtxIBCFlag(cu);
         m_binEncoder.encodeBin(CU::isIBC(cu), Ctx::IBCFlag(ctxidx));
@@ -786,7 +786,7 @@ void CABACWriter::pred_mode( const CodingUnit& cu )
       }
       else
       {
-        if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)   // disable IBC mode larger than 64x64
+        if (CU::canUseIbc(cu))   // disable IBC mode larger than 64x64
         {
           unsigned ctxidx = DeriveCtx::CtxIBCFlag(cu);
           m_binEncoder.encodeBin(CU::isIBC(cu), Ctx::IBCFlag(ctxidx));
@@ -3354,7 +3354,7 @@ void CABACWriter::codeAlfCtuEnableFlag( CodingStructure& cs, uint32_t ctuRsAddr,
     const Position pos(rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight);
 
     const uint32_t curSliceIdx = cs.slice->getIndependentSliceIdx();
-    const uint32_t curTileIdx  = cs.pps->getTileIdx(pos);
+    const TileIdx  curTileIdx  = cs.pps->getTileIdx(pos);
 
     const bool leftAvail =
       cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
@@ -3381,7 +3381,7 @@ void CABACWriter::codeCcAlfFilterControlIdc(uint8_t idcVal, CodingStructure &cs,
   CHECK(idcVal > filterCount, "Filter index is too large");
 
   const uint32_t curSliceIdx    = cs.slice->getIndependentSliceIdx();
-  const uint32_t curTileIdx     = cs.pps->getTileIdx( lumaPos );
+  const TileIdx  curTileIdx     = cs.pps->getTileIdx( lumaPos );
   Position       leftLumaPos    = lumaPos.offset(-(int)cs.pcv->maxCUWidth, 0);
   Position       aboveLumaPos   = lumaPos.offset(0, -(int)cs.pcv->maxCUWidth);
   bool leftAvail = cs.getCURestricted(leftLumaPos, lumaPos, curSliceIdx, curTileIdx, ChannelType::LUMA) ? true : false;

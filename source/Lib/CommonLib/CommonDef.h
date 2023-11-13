@@ -422,10 +422,8 @@ static constexpr int DMVR_RANGE = 2;
 static constexpr int DMVR_SPAN  = 2 * DMVR_RANGE + 1;
 static constexpr int DMVR_AREA  = DMVR_SPAN * DMVR_SPAN;
 
-#if JVET_AD0045
 static constexpr int DMVR_ENC_SELECT_SIZE_THR = 64;
 static constexpr double DMVR_ENC_SELECT_FRAME_RATE_THR = 30.0;
-#endif
 
 //QTBT high level parameters
 //for I slice luma CTB configuration para.
@@ -935,6 +933,12 @@ static inline int floorLog2(uint32_t x)
 static inline int ceilLog2(uint32_t x)
 {
   return (x==0) ? -1 : floorLog2(x - 1) + 1;
+}
+
+template<class T> inline void free(std::vector<T>& v)
+{
+  // deallocate the memory used by vector data by swapping the vector with an empty one
+  std::vector<T>().swap(v);
 }
 
 //CASE-BREAK for breakpoints

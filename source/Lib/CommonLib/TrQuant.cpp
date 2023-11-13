@@ -64,23 +64,6 @@ struct coeffGroupRDStats
   double d64SigCost_0;
 };
 
-using FwdTransList = std::array<FwdTrans *, NUM_TRANSFORM_MATRIX_SIZES>;
-using InvTransList = std::array<InvTrans *, NUM_TRANSFORM_MATRIX_SIZES>;
-
-static const EnumArray<FwdTransList, TransType> fastFwdTrans = { {
-  FwdTransList{ fastForwardDCT2_B2, fastForwardDCT2_B4, fastForwardDCT2_B8, fastForwardDCT2_B16, fastForwardDCT2_B32,
-                fastForwardDCT2_B64 },
-  FwdTransList{ nullptr, fastForwardDCT8_B4, fastForwardDCT8_B8, fastForwardDCT8_B16, fastForwardDCT8_B32, nullptr },
-  FwdTransList{ nullptr, fastForwardDST7_B4, fastForwardDST7_B8, fastForwardDST7_B16, fastForwardDST7_B32, nullptr },
-} };
-
-static const EnumArray<InvTransList, TransType> fastInvTrans = { {
-  InvTransList{ fastInverseDCT2_B2, fastInverseDCT2_B4, fastInverseDCT2_B8, fastInverseDCT2_B16, fastInverseDCT2_B32,
-                fastInverseDCT2_B64 },
-  InvTransList{ nullptr, fastInverseDCT8_B4, fastInverseDCT8_B8, fastInverseDCT8_B16, fastInverseDCT8_B32, nullptr },
-  InvTransList{ nullptr, fastInverseDST7_B4, fastInverseDST7_B8, fastInverseDST7_B16, fastInverseDST7_B32, nullptr },
-} };
-
 //! \ingroup CommonLib
 //! \{
 
@@ -236,6 +219,52 @@ void TrQuant::init( const Quant* otherQuant,
   {
     m_quant->init( uiMaxTrSize, bUseRDOQ, bUseRDOQTS, useSelectiveRDOQ );
   }
+
+  m_fwdTx[TransType::DCT2][0] = fastForwardDCT2_B2;
+  m_fwdTx[TransType::DCT2][1] = fastForwardDCT2_B4;
+  m_fwdTx[TransType::DCT2][2] = fastForwardDCT2_B8;
+  m_fwdTx[TransType::DCT2][3] = fastForwardDCT2_B16;
+  m_fwdTx[TransType::DCT2][4] = fastForwardDCT2_B32;
+  m_fwdTx[TransType::DCT2][5] = fastForwardDCT2_B64;
+
+  m_fwdTx[TransType::DCT8][0] = nullptr;
+  m_fwdTx[TransType::DCT8][1] = fastForwardDCT8_B4;
+  m_fwdTx[TransType::DCT8][2] = fastForwardDCT8_B8;
+  m_fwdTx[TransType::DCT8][3] = fastForwardDCT8_B16;
+  m_fwdTx[TransType::DCT8][4] = fastForwardDCT8_B32;
+  m_fwdTx[TransType::DCT8][5] = nullptr;
+
+  m_fwdTx[TransType::DST7][0] = nullptr;
+  m_fwdTx[TransType::DST7][1] = fastForwardDST7_B4;
+  m_fwdTx[TransType::DST7][2] = fastForwardDST7_B8;
+  m_fwdTx[TransType::DST7][3] = fastForwardDST7_B16;
+  m_fwdTx[TransType::DST7][4] = fastForwardDST7_B32;
+  m_fwdTx[TransType::DST7][5] = nullptr;
+
+  m_invTx[TransType::DCT2][0] = fastInverseDCT2_B2;
+  m_invTx[TransType::DCT2][1] = fastInverseDCT2_B4;
+  m_invTx[TransType::DCT2][2] = fastInverseDCT2_B8;
+  m_invTx[TransType::DCT2][3] = fastInverseDCT2_B16;
+  m_invTx[TransType::DCT2][4] = fastInverseDCT2_B32;
+  m_invTx[TransType::DCT2][5] = fastInverseDCT2_B64;
+
+  m_invTx[TransType::DCT8][0] = nullptr;
+  m_invTx[TransType::DCT8][1] = fastInverseDCT8_B4;
+  m_invTx[TransType::DCT8][2] = fastInverseDCT8_B8;
+  m_invTx[TransType::DCT8][3] = fastInverseDCT8_B16;
+  m_invTx[TransType::DCT8][4] = fastInverseDCT8_B32;
+  m_invTx[TransType::DCT8][5] = nullptr;
+
+  m_invTx[TransType::DST7][0] = nullptr;
+  m_invTx[TransType::DST7][1] = fastInverseDST7_B4;
+  m_invTx[TransType::DST7][2] = fastInverseDST7_B8;
+  m_invTx[TransType::DST7][3] = fastInverseDST7_B16;
+  m_invTx[TransType::DST7][4] = fastInverseDST7_B32;
+  m_invTx[TransType::DST7][5] = nullptr;
+
+#ifdef TARGET_SIMD_X86
+  initX86();
+#endif
 }
 
 void TrQuant::fwdLfnstNxN( TCoeff* src, TCoeff* dst, const uint32_t mode, const uint32_t index, const uint32_t size, int zeroOutSize )
@@ -781,22 +810,22 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
     CHECK( shift_2nd < 0, "Negative shift" );
     TCoeff *tmp = (TCoeff *) alloca(width * height * sizeof(TCoeff));
 
-    fastFwdTrans[trTypeHor][transformWidthIndex](block, tmp, shift_1st, height, 0, skipWidth);
-    fastFwdTrans[trTypeVer][transformHeightIndex](tmp, dstCoeff.buf, shift_2nd, width, skipWidth, skipHeight);
+    m_fwdTx[trTypeHor][transformWidthIndex](block, tmp, shift_1st, height, 0, skipWidth);
+    m_fwdTx[trTypeVer][transformHeightIndex](tmp, dstCoeff.buf, shift_2nd, width, skipWidth, skipHeight);
   }
   else if( height == 1 ) //1-D horizontal transform
   {
     const int      shift              = ((floorLog2(width )) + bitDepth + TRANSFORM_MATRIX_SHIFT) - maxLog2TrDynamicRange + COM16_C806_TRANS_PREC;
     CHECK( shift < 0, "Negative shift" );
     CHECKD( ( transformWidthIndex < 0 ), "There is a problem with the width." );
-    fastFwdTrans[trTypeHor][transformWidthIndex]( block, dstCoeff.buf, shift, 1, 0, skipWidth );
+    m_fwdTx[trTypeHor][transformWidthIndex](block, dstCoeff.buf, shift, 1, 0, skipWidth);
   }
   else   // if (width == 1) //1-D vertical transform
   {
     int shift = ( ( floorLog2(height) ) + bitDepth + TRANSFORM_MATRIX_SHIFT ) - maxLog2TrDynamicRange + COM16_C806_TRANS_PREC;
     CHECK( shift < 0, "Negative shift" );
     CHECKD( ( transformHeightIndex < 0 ), "There is a problem with the height." );
-    fastFwdTrans[trTypeVer][transformHeightIndex]( block, dstCoeff.buf, shift, 1, 0, skipHeight );
+    m_fwdTx[trTypeVer][transformHeightIndex](block, dstCoeff.buf, shift, 1, 0, skipHeight);
   }
 }
 
@@ -844,22 +873,23 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
     CHECK( shift_1st < 0, "Negative shift" );
     CHECK( shift_2nd < 0, "Negative shift" );
     TCoeff *tmp = ( TCoeff * ) alloca( width * height * sizeof( TCoeff ) );
-    fastInvTrans[trTypeVer][transformHeightIndex](pCoeff.buf, tmp, shift_1st, width, skipWidth, skipHeight, clipMinimum, clipMaximum);
-    fastInvTrans[trTypeHor][transformWidthIndex] (tmp,      block, shift_2nd, height,        0, skipWidth,  pelMinimum,  pelMaximum);
+    m_invTx[trTypeVer][transformHeightIndex](pCoeff.buf, tmp, shift_1st, width, skipWidth, skipHeight, clipMinimum,
+                                             clipMaximum);
+    m_invTx[trTypeHor][transformWidthIndex](tmp, block, shift_2nd, height, 0, skipWidth, pelMinimum, pelMaximum);
   }
   else if( width == 1 ) //1-D vertical transform
   {
     int shift = ( TRANSFORM_MATRIX_SHIFT + maxLog2TrDynamicRange - 1 ) - bitDepth + COM16_C806_TRANS_PREC;
     CHECK( shift < 0, "Negative shift" );
     CHECK( ( transformHeightIndex < 0 ), "There is a problem with the height." );
-    fastInvTrans[trTypeVer][transformHeightIndex]( pCoeff.buf, block, shift + 1, 1, 0, skipHeight, pelMinimum, pelMaximum );
+    m_invTx[trTypeVer][transformHeightIndex](pCoeff.buf, block, shift + 1, 1, 0, skipHeight, pelMinimum, pelMaximum);
   }
   else   // if(height == 1) //1-D horizontal transform
   {
     const int      shift              = ( TRANSFORM_MATRIX_SHIFT + maxLog2TrDynamicRange - 1 ) - bitDepth + COM16_C806_TRANS_PREC;
     CHECK( shift < 0, "Negative shift" );
     CHECK( ( transformWidthIndex < 0 ), "There is a problem with the width." );
-    fastInvTrans[trTypeHor][transformWidthIndex]( pCoeff.buf, block, shift + 1, 1, 0, skipWidth, pelMinimum, pelMaximum );
+    m_invTx[trTypeHor][transformWidthIndex](pCoeff.buf, block, shift + 1, 1, 0, skipWidth, pelMinimum, pelMaximum);
   }
 
   Pel *resiBuf    = pResidual.buf;
@@ -963,7 +993,8 @@ void TrQuant::transformNxN(TransformUnit &tu, const ComponentID &compID, const Q
   int numTests = 0;
   for (auto &itC: trCosts)
   {
-    const bool testTr = itC.first <= (itC.second == 1 ? thrTS : thr) && numTests <= maxCand;
+    const bool isTS   = trModes.at(itC.second).first == MtsType::SKIP;
+    const bool testTr = itC.first <= (isTS ? thrTS : thr) && numTests <= maxCand;
 
     trModes.at(itC.second).second = testTr;
     numTests += testTr;

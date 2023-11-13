@@ -68,9 +68,7 @@ InterPrediction::InterPrediction()
   , m_gradY1(nullptr)
   , m_IBCBufferWidth(0)
 {
-#if JVET_AD0045
   dmvrEnableEncoderCheck = false;
-#endif
   for( uint32_t ch = 0; ch < MAX_NUM_COMPONENT; ch++ )
   {
     for( uint32_t refList = 0; refList < NUM_REF_PIC_LIST_01; refList++ )
@@ -1803,13 +1801,11 @@ void InterPrediction::xDmvrInitialMc(const PredictionUnit &pu, const ClpRngs &cl
   }
 }
 
-#if JVET_AD0045
 static constexpr int ACTIVITY_TH[MAX_QP + 1] = {
   0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  5,  5,  6,  6,
   7,  7,  8,  9,  9,  10, 10, 11, 12, 13, 13, 14, 15, 16, 17, 18, 18, 19, 20, 21, 22, 23,
   24, 25, 26, 27, 29, 30, 31, 32, 33, 34, 36, 36, 36, 36, 37, 37, 37, 37, 37, 37,
 };
-#endif
 
 void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, const ClpRngs &clpRngs,
                                    const bool applyBdof)
@@ -1895,7 +1891,6 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
     srcPred[l] = srcPred[l].subBuf(UnitAreaRelative(pu, subPu));
   }
 
-#if JVET_AD0045
   bool      riskArtifact          = false;
   const int widthInSubPu          = pu.lumaSize().width / DMVR_SUBCU_WIDTH;
   const int spatActivityThreshold = ACTIVITY_TH[std::max<int>(0, pu.cu->qp)];
@@ -1904,7 +1899,6 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
   // corresponds to encoding in 1/2 reduced resolution when GOP based RPR is used
   const int boundaryDiffThreshold =
     pu.cu->slice->getPPS()->getPPSId() == (ENC_PPS_ID_RPR + pu.cu->slice->getNalUnitLayerId()) && pu.cu->slice->getSPS()->getGOPBasedRPREnabledFlag() ? 5 : 10;
-#endif
 
   int subPuIdx = 0;
 
@@ -1923,7 +1917,6 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
 
       xDmvrInitialMc(subPu, clpRngs);
 
-#if JVET_AD0045
       bool checkDmvr = xDmvrGetEncoderCheckFlag() && xStart != 0 && yStart != 0;
       if (checkDmvr)
       {
@@ -1955,7 +1948,6 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
           }
         }
       }
-#endif
 
       std::array<DmvrDist, DMVR_AREA> sads;
       sads.fill(UNDEFINED_DMVR_DIST);
@@ -2011,7 +2003,6 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
       xWeightedAverage(subPu, srcPred[REF_PIC_LIST_0], srcPred[REF_PIC_LIST_1], subPredBuf,
                        subPu.cu->slice->getSPS()->getBitDepths(), subPu.cu->slice->clpRngs(), applyBdofSubPu, false,
                        false, nullptr);
-#if JVET_AD0045
       if (checkDmvr)
       {
         checkDmvr = false;
@@ -2053,16 +2044,13 @@ void InterPrediction::xProcessDMVR(PredictionUnit &pu, PelUnitBuf &pcYuvDst, con
           }
         }
       }
-#endif
       subPuIdx++;
     }
   }
-#if JVET_AD0045
   if (xDmvrGetEncoderCheckFlag())
   {
     pu.dmvrImpreciseMv = riskArtifact;
   }
-#endif
   JVET_J0090_SET_CACHE_ENABLE(true);
 }
 

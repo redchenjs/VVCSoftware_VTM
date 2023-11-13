@@ -355,13 +355,14 @@ public:
   void resetSavedAffineMotion();
 
 #if GDR_ENABLED
-  void storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int16_t affineRefIdx[2],
+  void storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int8_t affineRefIdx[2],
                          AffineModel affineType, int bcwIdx);
 #else
-  void storeAffineMotion(Mv acAffineMv[2][3], int16_t affineRefIdx[2], AffineModel affineType, int bcwIdx);
+  void storeAffineMotion(Mv acAffineMv[2][3], int8_t affineRefIdx[2], AffineModel affineType, int bcwIdx);
 #endif
 
-  bool searchBv(PredictionUnit& pu, int xPos, int yPos, int width, int height, int picWidth, int picHeight, int xBv, int yBv, int ctuSize);
+  bool isValidBv(PredictionUnit& pu, int xPos, int yPos, int width, int height, int picWidth, int picHeight, int xBv,
+                 int yBv, int ctuSize);
   void setClipMvInSubPic(bool flag) { m_clipMvInSubPic = flag; }
 protected:
 

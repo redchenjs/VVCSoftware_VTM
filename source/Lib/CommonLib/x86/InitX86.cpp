@@ -186,5 +186,26 @@ void IbcHashMap::initIbcHashMapX86()
 }
 #endif
 
+void TrQuant::initX86()
+{
+  auto vext = read_x86_extension_flags();
+  switch (vext)
+  {
+  case AVX512:
+  case AVX2:
+    _initX86<AVX2>();
+    break;
+  case AVX:
+    _initX86<AVX>();
+    break;
+  case SSE42:
+  case SSE41:
+    _initX86<SSE41>();
+    break;
+  default:
+    break;
+  }
+}
+
 #endif
 

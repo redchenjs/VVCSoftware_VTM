@@ -182,7 +182,7 @@ void AdaptiveDepthPartitioner::setMaxMinDepth( unsigned& minDepth, unsigned& max
   unsigned          stdMaxDepth = ( floorLog2(cs.sps->getCTUSize()) - floorLog2(cs.sps->getMinQTSize( cs.slice->getSliceType(), chType )));
   const Position    pos         = currArea().block(chType).pos();
   const unsigned    curSliceIdx = cs.slice->getIndependentSliceIdx();
-  const unsigned    curTileIdx  = cs.pps->getTileIdx( currArea().lumaPos() );
+  const TileIdx     curTileIdx  = cs.pps->getTileIdx( currArea().lumaPos() );
 
   const CodingUnit* cuLeft        = cs.getCURestricted( pos.offset( -1,                               0 ), pos, curSliceIdx, curTileIdx, chType );
   const CodingUnit *cuBelowLeft =

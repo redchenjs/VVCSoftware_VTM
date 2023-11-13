@@ -103,9 +103,11 @@ public:
 
   void create(const UnitArea &_unit, const bool isTopLayer, const bool isPLTused);
   void create(const ChromaFormat &_chromaFormat, const Area& _area, const bool isTopLayer, const bool isPLTused);
+  void createTemporaryCsData(bool isPLTused);
 
   void destroy();
   void releaseIntermediateData();
+  void destroyTemporaryCsData();
 
 #if GDR_ENABLED
   bool containRefresh(int begX, int endX) const;
@@ -133,9 +135,6 @@ public:
   bool isSubPuClean(const PredictionUnit &pu, const Mv *mv) const;
 #endif
   void rebindPicBufs();
-
-  void createCoeffs(const bool isPLTused);
-  void destroyCoeffs();
 
   void allocateVectorsAtPicLevel();
 
@@ -165,7 +164,7 @@ public:
   PredictionUnit *getPU(const ChannelType _chType) { return getPU(area.block(_chType).pos(), _chType); }
   TransformUnit  *getTU(const ChannelType _chType) { return getTU(area.block(_chType).pos(), _chType); }
 
-  const CodingUnit     *getCURestricted(const Position &pos, const Position curPos, const unsigned curSliceIdx, const unsigned curTileIdx, const ChannelType _chType) const;
+  const CodingUnit     *getCURestricted(const Position &pos, const Position curPos, const unsigned curSliceIdx, const TileIdx curTileIdx, const ChannelType _chType) const;
   const CodingUnit     *getCURestricted(const Position &pos, const CodingUnit& curCu,                               const ChannelType _chType) const;
   const PredictionUnit *getPURestricted(const Position &pos, const PredictionUnit& curPu,                           const ChannelType _chType) const;
   const TransformUnit  *getTURestricted(const Position &pos, const TransformUnit& curTu,                            const ChannelType _chType) const;
@@ -222,6 +221,8 @@ public:
 
 
 private:
+  void createCoeffs(const bool isPLTused);
+  void destroyCoeffs();
   void createInternals(const UnitArea& _unit, const bool isTopLayer, const bool isPLTused);
 
 public:
@@ -265,7 +266,7 @@ private:
   PelStorage m_orgr;
 
   std::vector<TCoeff> m_coeffs[MAX_NUM_COMPONENT];
-  std::vector<Pel>    m_pcmbuf[MAX_NUM_COMPONENT];
+  std::vector<Pel>    m_pltIdxBuf[MAX_NUM_COMPONENT];
 
   EnumArray<std::vector<PLTRunMode>, ChannelType> m_runType;
 

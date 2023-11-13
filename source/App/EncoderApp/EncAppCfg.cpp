@@ -728,7 +728,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp1              (0, 65535,  0, 256 * 6);
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
-  SMultiValueInput<bool>       cfg_poSEIPrefixFlag(false, true, 0, 1);
+  SMultiValueInput<bool>       cfg_poSEIWrappingFlag(false, true, 0, 256);
+  SMultiValueInput<bool>       cfg_poSEIImportanceFlag(false, true, 0, 256);
+  SMultiValueInput<bool>       cfg_poSEIPrefixFlag(false, true, 0, 256);
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType(0, 32768, 0, 256 * 2);
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
 
@@ -813,13 +815,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ConfWinRight",                                    m_confWinRight,                                       0, "Right offset for window conformance mode 3")
   ("ConfWinTop",                                      m_confWinTop,                                         0, "Top offset for window conformance mode 3")
   ("ConfWinBottom",                                   m_confWinBottom,                                      0, "Bottom offset for window conformance mode 3")
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   ("ScalingWindow",                                   m_explicitScalingWindowEnabled,                   false, "Enable scaling window")
   ("ScalWinLeft,-swl",                                m_scalWinLeft,                                        0, "Left offset for scaling window")
   ("ScalWinRight,-swr",                               m_scalWinRight,                                       0, "Right offset for scaling window")
   ("ScalWinTop,-swt",                                 m_scalWinTop,                                         0, "Top offset for scaling window")
   ("ScalWinBottom,-swb",                              m_scalWinBottom,                                      0, "Bottom offset for scaling window")
-#endif
   ("AccessUnitDelimiter",                             m_AccessUnitDelimiter,                            false, "Enable Access Unit Delimiter NALUs")
   ("EnablePictureHeaderInSliceHeader",                m_enablePictureHeaderInSliceHeader,                true, "Enable Picture Header in Slice Header")
   ("FrameRate,-fr",                                   frameRate,                            std::to_string(0), "Frame rate")
@@ -1053,11 +1053,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "IBCHashSearchMaxCand",                           m_IBCHashSearchMaxCand,                            256u, "Max candidates for hash based IBC search")
   ( "IBCHashSearchRange4SmallBlk",                    m_IBCHashSearchRange4SmallBlk,                     256u, "Small block search range in based IBC search")
   ( "IBCFastMethod",                                  m_IBCFastMethod,                                     6u, "Fast methods for IBC")
-#if JVET_AD0045
   ("DMVREncMvSelect",                                 m_dmvrEncSelect,                                  false, "Enable method for avoiding select MVs that are more likely to give subjective artifacts")
   ("DMVREncMvSelectBaseQpTh",                         m_dmvrEncSelectBaseQpTh,                             33, "Base QP Threshold for enabling the DMVR MV selection")
   ("DMVREncMvSelectDisableHighestTemporalLayer",      m_dmvrEncSelectDisableHighestTemporalLayer,        true, "Disable DMVR encoder control for highest temporal layer unless frame rate is less or equal to 30Hz")
-#endif
 
   ("WrapAround",                                      m_wrapAround,                                     false, "Enable horizontal wrap-around motion compensation for inter prediction (0:off, 1:on)  [default: off]")
   ("WrapAroundOffset",                                m_wrapAroundOffset,                                  0u, "Offset in luma samples used for computing the horizontal wrap-around position")
@@ -1092,9 +1090,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("PBIntraFast",                                     m_usePbIntraFast,                                 false, "Fast assertion if the intra mode is probable")
   ("AMaxBT",                                          m_useAMaxBT,                                      false, "Adaptive maximal BT-size")
   ("E0023FastEnc",                                    m_e0023FastEnc,                                    true, "Fast encoding setting for QTBT (proposal E0023)")
-#if JVET_AE0057_MTT_ET
   ("MTTSkipping",                                     m_useMttSkip,                                     false, "MTT split modes early termination")
-#endif  
   ("ContentBasedFastQtbt",                            m_contentBasedFastQtbt,                           false, "Signal based QTBT speed-up")
   ("UseNonLinearAlfLuma",                             m_useNonLinearAlfLuma,                             true, "Non-linear adaptive loop filters for Luma Channel")
   ("UseNonLinearAlfChroma",                           m_useNonLinearAlfChroma,                           true, "Non-linear adaptive loop filters for Chroma Channels")
@@ -1622,6 +1618,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   
   //Processing order of SEI (pos)
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
+#if JVET_AF0061_ADDITION_PO_ID
+  ("SEIPOId",                                         m_poSEIId,                                            0u, "Specifies the id of the SEI processing order SEI message")
+#endif
+  ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
+  ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,           cfg_poSEIWrappingFlag, "Specifies whether po_num_prefix_bytes is present or not")
+  ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies whether po_num_prefix_bytes is present or not")
   ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether po_num_prefix_bytes is present or not")
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
@@ -1978,12 +1980,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationTargetId", m_nnPostFilterSEIActivationTargetId, 0u, "Target id of the Neural Network Post Filter on current picture");
     opts.addOptions()("SEINNPostFilterActivationCancelFlag", m_nnPostFilterSEIActivationCancelFlag, false, "Control use of the target neural network post filter established by any previous NNPFA SEI message");
     opts.addOptions()("SEINNPostFilterActivationTargetBaseFlag", m_nnPostFilterSEIActivationTargetBaseFlag, false, "Specifies that the target NNPF is the base NNPF");
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
     opts.addOptions()("SEINNPostFilterActivationNoPrevCLVSFlag", m_nnPostFilterSEIActivationNoPrevCLVSFlag, false, "Specifies whether input pictures cannot (1) or can (0) originate from a previous CLVS");
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
     opts.addOptions()("SEINNPostFilterActivationNoFollCLVSFlag", m_nnPostFilterSEIActivationNoFollCLVSFlag, false, "Specifies whether input pictures cannot (1) or can (0) originate from a following CLVS");
-#endif
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
     opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies a list indicating whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
   }
@@ -2000,10 +1998,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_scalingRatioHor = 2.0;
       m_scalingRatioVer = 2.0;
     }
-#if JVET_AD0045
     // enable dmvr encoder selection
     m_dmvrEncSelect = true;
-#endif
   }
   m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag || m_rprFunctionalityTestingEnabledFlag;
   m_resChangeInClvsEnabled = m_resChangeInClvsEnabled && m_rprEnabledFlag;
@@ -3602,14 +3598,21 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     CHECK(cfg_poSEIPayloadType.values.size() <= 1, "there should be at least 2 SEIPOPayLoadType");
     CHECK(cfg_poSEIProcessingOrder.values.size() != cfg_poSEIPayloadType.values.size(), "the number of SEIPOPayLoadType should be equal to the number of SEIPOProcessingOrder");
     CHECK(cfg_poSEIPrefixFlag.values.size() <= 1, "there should be at least 2 SEIPOPrefixFlag");
+    CHECK(cfg_poSEIPayloadType.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOPayLoadType should be equal to the number of SEI messages");
+    CHECK(cfg_poSEIWrappingFlag.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOWrappingFlag should be equal to the number of SEI messages");
+    CHECK(cfg_poSEIImportanceFlag.values.size() != m_poSEINumMinus2 + 2, "the number of SEIImportanceFlag should be equal to the number of SEI messages");
+    m_poSEIWrappingFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
+    m_poSEIImportanceFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
     m_poSEIPrefixFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
     m_poSEIPayloadType.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEIProcessingOrder.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEIPrefixByte.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     uint16_t prefixByteIdx = 0;
-    for (uint32_t i = 0; i < (uint32_t) cfg_poSEIPayloadType.values.size(); i++)
+    for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
     {
       m_poSEIPrefixFlag[i] =      cfg_poSEIPrefixFlag.values[i];
+      m_poSEIWrappingFlag[i] = cfg_poSEIWrappingFlag.values[i];
+      m_poSEIImportanceFlag[i] = cfg_poSEIImportanceFlag.values[i];
       m_poSEIPayloadType[i]     = cfg_poSEIPayloadType.values[i];
       if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME ||
           m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO ||
@@ -4249,7 +4252,6 @@ bool EncAppCfg::xCheckParameter()
                "Top conformance window offset must be an integer multiple of the specified chroma subsampling");
   xConfirmPara(m_confWinBottom % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
                "Bottom conformance window offset must be an integer multiple of the specified chroma subsampling");
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   xConfirmPara(m_explicitScalingWindowEnabled && (m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag), "ScalingWindow cannot be enabled when GOPBasedRPR is enabled");
   xConfirmPara(m_scalWinLeft    % SPS::getWinUnitX(m_chromaFormatIdc) != 0, "Left scaling window offset must be an integer multiple of the specified chroma subsampling");
   xConfirmPara(m_scalWinRight   % SPS::getWinUnitX(m_chromaFormatIdc) != 0, "Right scaling window offset must be an integer multiple of the specified chroma subsampling");
@@ -4267,7 +4269,6 @@ bool EncAppCfg::xCheckParameter()
                "The values of SubWidthC * (pps_scaling_win_left_offset + pps_scaling_win_right_offset) shall be greater than or equal to -pps_pic_width_in_luma_samples * 15 and less than pps_pic_width_in_luma_samples");
   xConfirmPara(((m_scalWinTop+m_scalWinBottom) < -m_sourceHeight * 15) || ((m_scalWinTop+m_scalWinBottom) >= m_sourceHeight),
                "The values of SubHeightC * (pps_scaling_win_top_offset + pps_scaling_win_bottom_offset) shall be greater than or equal to -pps_pic_height_in_luma_samples * 15 and less than pps_pic_height_in_luma_samples");
-#endif
 
 
   // max CU width and height should be power of 2
@@ -5150,6 +5151,11 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsMatrixCoeffs[i] > 255, "m_nnPostFilterSEICharacteristicsMatrixCoeffs must in the range 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutFormatIdc[i] > 255, "SEINNPFCOutFormatIdc must be in the range of 0 to 255");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutOrderIdc[i] > 255, "SEINNPFCOutOrderIdc must be in the range of 0 to 255");
+      if (m_nnPostFilterSEICharacteristicsChromaLocInfoPresentFlag[i])
+      {
+        xConfirmPara(m_nnPostFilterSEICharacteristicsChromaSampleLocTypeFrame[i] > (uint32_t) Chroma420LocType::UNSPECIFIED,
+                     "The value of nnpfc_chroma_sample_loc_type_frame shall be in the range of 0 to 6, inclusive");
+      }
       xConfirmPara(m_nnPostFilterSEICharacteristicsPatchWidthMinus1[i] > 32766, "SEINNPFCPatchWidthMinus1 must be in the range of 0 to 32766");
       xConfirmPara(m_nnPostFilterSEICharacteristicsPatchHeightMinus1[i] > 32766, "SEINNPFCPatchHeightMinus1 must be in the range of 0 to 32766");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOverlap[i] > 16383, "SEINNPFCOverlap must be in the range of 0 to 16383");

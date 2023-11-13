@@ -121,6 +121,10 @@ struct SeiPayload
   int              subpicId;
 };
 
+typedef std::list<SEI*> SEIMessages;
+SEIMessages getSeisByType(const SEIMessages& seiList, SEI::PayloadType seiType);
+SEIMessages extractSeisByType(SEIMessages& seiList, SEI::PayloadType seiType);
+void deleteSEIs(SEIMessages& seiList);
 class SEIFillerPayload : public SEI
 {
 public:
@@ -153,13 +157,35 @@ public:
   PayloadType payloadType() const { return PayloadType::SEI_PROCESSING_ORDER; }
   SEIProcessingOrderInfo() {}
   SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei);
-  virtual ~SEIProcessingOrderInfo() {}
+  virtual ~SEIProcessingOrderInfo() { deleteSEIs(m_posWrapSeiMessages); }
 
   bool                   m_posEnabled;
+#if JVET_AF0061_ADDITION_PO_ID
+  uint32_t               m_posId;
+#endif
+  uint32_t               m_posNumMinus2;
+  std::vector<bool>      m_posWrappingFlag;
+  std::vector<bool>      m_posImportanceFlag;
   std::vector<bool>      m_posPrefixFlag;
   std::vector<uint16_t>  m_posPayloadType;
   std::vector<uint16_t>   m_posProcessingOrder;
   std::vector<std::vector<uint8_t>> m_posPrefixByte;
+  SEIMessages            m_posWrapSeiMessages;
+  static bool checkWrappingSEIPayloadType(SEI::PayloadType const payloadType)
+  {
+    switch (payloadType)
+    {
+    case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
+    case SEI::PayloadType::POST_FILTER_HINT:
+    case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
+    case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
+    case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
+    case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
+      return true;
+    default:
+      return false;
+    }
+  }
 };
 
 class SEIEquirectangularProjection : public SEI
@@ -832,16 +858,6 @@ public:
   SEIMasteringDisplay values;
 };
 
-typedef std::list<SEI*> SEIMessages;
-
-/// output a selection of SEI messages by payload type. Ownership stays in original message list.
-SEIMessages getSeisByType(const SEIMessages &seiList, SEI::PayloadType seiType);
-
-/// remove a selection of SEI messages by payload type from the original list and return them in a new list.
-SEIMessages extractSeisByType(SEIMessages &seiList, SEI::PayloadType seiType);
-
-/// delete list of SEI messages (freeing the referenced objects)
-void deleteSEIs (SEIMessages &seiList);
 
 class SEIScalableNesting : public SEI
 {
@@ -1259,9 +1275,7 @@ public:
   {}
   SEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
 
-#if JVET_AE0128_CONSTRAINT_UPDATE
   bool operator == (const SEINeuralNetworkPostFilterCharacteristics& sei);
-#endif
 
   ~SEINeuralNetworkPostFilterCharacteristics() override
   {
@@ -1341,12 +1355,8 @@ public:
     : m_targetId(0)
     , m_cancelFlag(false)
     , m_targetBaseFlag(false)
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
     , m_noPrevCLVSFlag(false)
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
     , m_noFollCLVSFlag(false)
-#endif
     , m_persistenceFlag(false)
   {}
   SEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation& sei);
@@ -1356,12 +1366,8 @@ public:
   uint32_t       m_targetId;
   bool           m_cancelFlag;
   bool           m_targetBaseFlag;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool           m_noPrevCLVSFlag;
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   bool           m_noFollCLVSFlag;
-#endif
   bool           m_persistenceFlag;
   std::vector<bool> m_outputFlag;
 };

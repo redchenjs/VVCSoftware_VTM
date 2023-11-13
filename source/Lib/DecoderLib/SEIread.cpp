@@ -252,7 +252,6 @@ bool SEIReader::xCheckNnpfcSeiMsg(uint32_t seiId, bool baseFlag, const std::vect
   return true;
 }
 
-#if JVET_AE0189_NNPFA_ACTIVATE_NONBASE_CONSTRAINT
 bool SEIReader::xCheckNnpfcUpdatePresentSeiMsg(uint32_t seiId, const std::vector<int> nnpfcValueList)
 {
   int count = 0;
@@ -269,7 +268,6 @@ bool SEIReader::xCheckNnpfcUpdatePresentSeiMsg(uint32_t seiId, const std::vector
   }
   return false;
 }
-#endif
 
 bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, const uint32_t temporalId, const VPS *vps, const SPS *sps, HRD &hrd, std::ostream *pDecodedMessageOutputStream)
 {
@@ -511,16 +509,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       {
         if(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id == nnpfcValues[i])
         {
-#if JVET_AE0189_NNPFA_ACTIVATE_NONBASE_CONSTRAINT
           //In the case that the NNPFA activates a non-base filter, only consider it process when we have NNPFC that updates the base filter present
           if(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_baseFlag ||
             (!((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_baseFlag && xCheckNnpfcUpdatePresentSeiMsg( ((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id, nnpfcValues)) )
             {
               nnpfcProcessed = true;
             }
-#else
-          nnpfcProcessed = true;
-#endif
         }
       }
       CHECK(!nnpfcProcessed, "No NNPFC, no NNPFA")
@@ -532,7 +526,8 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       break;
     case SEI::PayloadType::SEI_PROCESSING_ORDER:
       sei = new SEIProcessingOrderInfo;
-      xParseSEIProcessingOrder((SEIProcessingOrderInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParseSEIProcessingOrder((SEIProcessingOrderInfo&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
+        pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::POST_FILTER_HINT:
       sei = new SEIPostFilterHint;
@@ -738,43 +733,69 @@ void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t p
   }
 }
 
-void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, uint32_t payloadSize, std::ostream *decodedMessageOutputStream)
+void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream)
 {
-  uint32_t i,b;
+  uint32_t i;
   uint32_t numMaxSeiMessages, val;
   output_sei_message_header(sei, decodedMessageOutputStream, payloadSize);
 
-  //Since each entry is at least 4 bytes (2 byte "sei_payloadType" + 2 byte "sei_payloadOrder"),
-  //the maximum number of entry is payloadSize/4
-  numMaxSeiMessages = payloadSize / 4;
+#if JVET_AF0061_ADDITION_PO_ID
+  sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_id");
+  sei.m_posId = val;
+#endif
+  sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_num_minus2");
+  sei.m_posNumMinus2 = val;
+  numMaxSeiMessages = sei.m_posNumMinus2 + 2;
+  sei.m_posPrefixFlag.resize(numMaxSeiMessages);
   sei.m_posPayloadType.resize(numMaxSeiMessages);
   sei.m_posProcessingOrder.resize(numMaxSeiMessages);
   sei.m_posPrefixByte.resize(numMaxSeiMessages);
-  for (i = 0, b = 0; b < payloadSize; i++, b += 4)
+  sei.m_posWrappingFlag.resize(numMaxSeiMessages);
+  sei.m_posImportanceFlag.resize(numMaxSeiMessages);
+  for (i = 0; i < numMaxSeiMessages; i++)
   {
+    sei_read_flag(decodedMessageOutputStream, val, "po_sei_wrapping_flag[i]");
+    sei.m_posWrappingFlag[i] = val;
+    sei_read_flag(decodedMessageOutputStream, val, "po_sei_importance_flag[i]");
+    sei.m_posImportanceFlag[i] = val;
+    if (sei.m_posWrappingFlag[i])
+    {
+      sei_read_code(decodedMessageOutputStream, 6, val, "po_sei_reserved_alignment_6bits");
+      SEIMessages tmpSEI;
+      const bool seiMessageRead = xReadSEImessage(tmpSEI, nalUnitType, nuhLayerId, 0, vps, sps, m_nestedHrd, decodedMessageOutputStream);
+      if (seiMessageRead)
+      {
+        sei.m_posWrapSeiMessages.push_back(tmpSEI.front());
+        tmpSEI.clear();
+      }
+    }
+    else
+    {
+#if JVET_AF0062_MOVE_PO_SEI_PREFIX_FLAG
+      sei_read_code(decodedMessageOutputStream, 13, val, "po_sei_payload_type[i]");
+      sei.m_posPayloadType[i] = val;
+      sei_read_flag(decodedMessageOutputStream, val, "po_sei_prefix_flag[i]");
+      sei.m_posPrefixFlag[i] = val;
+#else
     sei_read_flag(decodedMessageOutputStream, val, "po_sei_prefix_flag[i]");
     sei.m_posPrefixFlag[i] = val;
-    sei_read_code(decodedMessageOutputStream, 15, val, "po_sei_payload_type[i]");
+    sei_read_code(decodedMessageOutputStream, 13, val, "po_sei_payload_type[i]");
     sei.m_posPayloadType[i] = val;
+#endif
     if (sei.m_posPrefixFlag[i])
     {
       sei_read_code(decodedMessageOutputStream, 8, val, "po_num_prefix_byte[i]");
       sei.m_posPrefixByte[i].resize(val);
-      b ++;
       for (uint32_t j = 0; j < sei.m_posPrefixByte[i].size(); j++)
       {
         sei_read_code(decodedMessageOutputStream, 8, val, "po_prefix_byte[i][j]");
         sei.m_posPrefixByte[i][j] = val;
       }
-      b += (uint32_t)sei.m_posPrefixByte[i].size();
+      }
     }
-    sei_read_code(decodedMessageOutputStream, 16, val, "po_sei_processing_order[i]");
+    sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_processing_order[i]");
     sei.m_posProcessingOrder[i] = val;
   }
-  // resize vectors to match the number of valid entries
-  sei.m_posPayloadType.resize(i);
-  sei.m_posProcessingOrder.resize(i);
-  sei.m_posPrefixByte.resize(i);
   CHECK(i<2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
 }
 
@@ -2835,13 +2856,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     std::string val2;
     while (!isByteAligned())
     {
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_alignment_zero_bit");
       CHECK(val != 0, "nnpfc_alignment_zero_bit not equal to zero");
-#else
-      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_reserved_zero_bit");
-      CHECK(val != 0, "nnpfc_reserved_zero_bit not equal to zero");
-#endif
     }
 
     sei_read_string(pDecodedMessageOutputStream, val2, "nnpfc_uri_tag");
@@ -2886,11 +2902,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       bool atLeastOne = false;
       for (int i = 0; i <= sei.m_numberInputDecodedPicturesMinus1; i++)
       {
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
         sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_input_pic_filtering_flag");
-#else
-        sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_input_pic_output_flag");
-#endif
         sei.m_inputPicOutputFlag.push_back((bool)val);
         if (sei.m_inputPicOutputFlag[i])
         {
@@ -2900,11 +2912,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       }
       if ((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) == 0)
       {
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
         CHECK(!atLeastOne, "When picRateUpsamplingFlag is equal to 0 and nnpfc_num_input_pics_minus1 is greater than 0, at least one value of nnpfc_input_pic_filtering_flag[i] shall be greater than 0");
-#else
-        CHECK(!atLeastOne, "When picRateUpsamplingFlag is equal to 0 and nnpfc_num_input_pics_minus1 is greater than 0, at least one value of nnpfc_input_pic_output_flag[i] shall be greater than 0");
-#endif
       }
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_absent_input_pic_zero_flag");
       sei.m_absentInputPicZeroFlag = val;
@@ -2940,12 +2948,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     if((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) != 0)
     {
-#if JVET_AE0141_NNPFC_BUGFIX_COLOURIZATION
       CHECK(((sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0), "When chromaUpsamplingFlag is not equal to 0, colourizationFlag shall be equal to 0");
-#else
-      CHECK(((chromaFormatIdc != ChromaFormat::_400) || (sei.m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0),
-            "When ChromaFormatIdc or nnpfc_purpose & 0x02 is not equal to 0, nnpfc_purpose & 0x20 shall be equal to 0");
-#endif
 
       sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_out_colour_format_idc");
       sei.m_outColourFormatIdc = ChromaFormat(val);
@@ -2973,12 +2976,10 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_picHeightNumeratorMinus1 = val;
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_pic_height_denominator_minus1");
       sei.m_picHeightDenominatorMinus1 = val;
-#if JVET_AE0048_ITEM_1_VALUE_RANGES
       CHECK(sei.m_picWidthNumeratorMinus1 > 65535, "nnpfc_pic_width_num_minus1 shall be in the range of 0 to 65535");
       CHECK(sei.m_picWidthDenominatorMinus1 > 65535, "nnpfc_pic_width_denom_minus1 shall be in the range of 0 to 65535");
       CHECK(sei.m_picHeightNumeratorMinus1 > 65535, "nnpfc_pic_height_num_minus1 shall be in the range of 0 to 65535");
       CHECK(sei.m_picHeightDenominatorMinus1 > 65535, "nnpfc_pic_height_denom_minus1 shall be in the range of 0 to 65535");
-#endif
       int scaledHeightRatio = 16 * (sei.m_picHeightNumeratorMinus1 + 1) / (sei.m_picHeightDenominatorMinus1 + 1);
       int scaledWidthRatio = 16 * (sei.m_picWidthNumeratorMinus1 + 1) / (sei.m_picWidthDenominatorMinus1 + 1);
 
@@ -3009,9 +3010,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_format_idc");
     sei.m_inpFormatIdc = val;
-#if JVET_AE0048_ITEM_2_VALUE_RANGES
     CHECK(sei.m_inpFormatIdc > 255, "The value of nnpfc_inp_format_idc shall be in the range of 0 to 255");
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_auxiliary_inp_idc");
     sei.m_auxInpIdc = val;
@@ -3043,9 +3042,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_format_idc");
     sei.m_outFormatIdc = val;
-#if JVET_AE0048_ITEM_2_VALUE_RANGES
     CHECK(sei.m_outFormatIdc > 255, "The value of nnpfc_out_format_idc shall be in the range of 0 to 255");
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_out_order_idc");
     sei.m_outOrderIdc = val;
@@ -3103,7 +3100,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     }
 #endif
 
-#if JVET_AE0060_COND_SIG_INF
     if (sei.m_outOrderIdc != 0)
     {
       sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_chroma_loc_info_present_flag");
@@ -3113,10 +3109,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     {
       sei.m_chromaLocInfoPresentFlag = 0;
     }
-#else
-      sei_read_flag(pDecodedMessageOutputStream,val,"nnpfc_chroma_loc_info_present_flag");
-      sei.m_chromaLocInfoPresentFlag = val;
-#endif
 
     CHECK((sei.m_outColourFormatIdc != ChromaFormat::_420) && sei.m_chromaLocInfoPresentFlag, "When nnpfc_out_colour_format_idc is not equal to 1, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0");
     CHECK((sei.m_purpose & NNPC_PurposeType::COLOURIZATION) && sei.m_chromaLocInfoPresentFlag,"When colourizationFlag is equal to 0, the value of nnpfc_chroma_loc_info_present_flag shall be equal to 0")
@@ -3125,8 +3117,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
     {
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_chroma_sample_loc_type_frame");
       sei.m_chromaSampleLocTypeFrame = static_cast<Chroma420LocType>(val);
+      CHECK(sei.m_chromaSampleLocTypeFrame > Chroma420LocType::UNSPECIFIED, "The value of nnpfc_chroma_sample_loc_type_frame shall be in the range of 0 to 6, inclusive");
     }
-    CHECK(sei.m_chromaSampleLocTypeFrame > Chroma420LocType::UNSPECIFIED, "The value of nnpfc_chroma_sample_loc_type_frame shall be in the range of 0 to 6, inclusive");
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_overlap");
     sei.m_overlap = val;
@@ -3216,13 +3208,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
   {
     while (!isByteAligned())
     {
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
       sei_read_flag( pDecodedMessageOutputStream,   val,    "nnpfc_alignment_zero_bit");
       CHECK (val != 0, "nnpfc_alignment_zero_bit not equal to zero");
-#else
-      sei_read_flag( pDecodedMessageOutputStream,   val,    "nnpfc_reserved_zero_bit");
-      CHECK (val != 0, "nnpfc_reserved_zero_bit not equal to zero");
-#endif
     }
 
     int payloadBytesRemaining = getBitstream()->getNumBitsLeft() / 8;
@@ -3257,29 +3244,18 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
 
   if(!sei.m_cancelFlag)
   {
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
     sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_persistence_flag" );
     sei.m_persistenceFlag = val;
     sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_target_base_flag" );
     sei.m_targetBaseFlag = val;
-#else
-    sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_target_base_flag" );
-    sei.m_targetBaseFlag = val;
-    sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_persistence_flag" );
-    sei.m_persistenceFlag = val;
-#endif
 
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
     sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_no_prev_clvs_flag" );
     sei.m_noPrevCLVSFlag = val;
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
     if (sei.m_persistenceFlag)
     {
       sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_no_foll_clvs_flag" );
       sei.m_noFollCLVSFlag = val;
     }
-#endif
 
     sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfa_num_output_entries" );
     uint32_t numOutputEntries = val;

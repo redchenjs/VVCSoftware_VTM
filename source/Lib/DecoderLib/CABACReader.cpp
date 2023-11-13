@@ -169,7 +169,7 @@ void CABACReader::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
     const Position pos(rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight);
 
     const uint32_t curSliceIdx = cs.slice->getIndependentSliceIdx();
-    const uint32_t curTileIdx  = cs.pps->getTileIdx(pos);
+    const TileIdx  curTileIdx  = cs.pps->getTileIdx(pos);
 
     const bool leftAvail =
       cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
@@ -302,7 +302,7 @@ void CABACReader::ccAlfFilterControlIdc(CodingStructure &cs, const ComponentID c
   const Position aboveLumaPos = lumaPos.offset(0, -(int) cs.pcv->maxCUWidth);
 
   const uint32_t curSliceIdx = cs.slice->getIndependentSliceIdx();
-  const uint32_t curTileIdx  = cs.pps->getTileIdx(lumaPos);
+  const TileIdx  curTileIdx  = cs.pps->getTileIdx(lumaPos);
 
   const bool leftAvail =
     cs.getCURestricted(leftLumaPos, lumaPos, curSliceIdx, curTileIdx, ChannelType::LUMA) != nullptr;
@@ -379,7 +379,7 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
 
   auto mergeType = SAOModeMergeTypes::NONE;
 
-  const unsigned curTileIdx = cs.pps->getTileIdx(pos);
+  const TileIdx curTileIdx = cs.pps->getTileIdx(pos);
 
   if (cs.getCURestricted(pos.offset(-(int) cs.pcv->maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA))
   {
@@ -944,7 +944,7 @@ void CABACReader::cu_skip_flag( CodingUnit& cu )
     cu.rootCbf = false;
     cu.predMode = MODE_INTRA;
     cu.mmvdSkip = false;
-    if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)   // disable IBC mode larger than 64x64
+    if (CU::canUseIbc(cu))
     {
       unsigned ctxId = DeriveCtx::CtxSkipFlag(cu);
       unsigned skip  = m_binDecoder.decodeBin(Ctx::SkipFlag(ctxId));
@@ -975,7 +975,7 @@ void CABACReader::cu_skip_flag( CodingUnit& cu )
   if (skip && cu.cs->slice->getSPS()->getIBCFlag())
   {
     // disable IBC mode larger than 64x64 and disable IBC when only allowing inter mode
-    if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE && !cu.isConsInter())
+    if (CU::canUseIbc(cu) && !cu.isConsInter())
     {
       if ( cu.lwidth() == 4 && cu.lheight() == 4 )
       {
@@ -1113,7 +1113,7 @@ void CABACReader::pred_mode( CodingUnit& cu )
     if ( cu.cs->slice->isIntra() || ( cu.lwidth() == 4 && cu.lheight() == 4 ) || cu.isConsIntra() )
     {
       cu.predMode = MODE_INTRA;
-      if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)   // disable IBC mode larger than 64x64
+      if (CU::canUseIbc(cu))   // disable IBC mode larger than 64x64
       {
         unsigned ctxidx = DeriveCtx::CtxIBCFlag(cu);
         if (m_binDecoder.decodeBin(Ctx::IBCFlag(ctxidx)))
@@ -1145,7 +1145,7 @@ void CABACReader::pred_mode( CodingUnit& cu )
       else
       {
         cu.predMode = MODE_INTER;
-        if (cu.lwidth() <= IBC_MAX_CU_SIZE && cu.lheight() <= IBC_MAX_CU_SIZE)   // disable IBC mode larger than 64x64
+        if (CU::canUseIbc(cu))   // disable IBC mode larger than 64x64
         {
           unsigned ctxidx = DeriveCtx::CtxIBCFlag(cu);
           if (m_binDecoder.decodeBin(Ctx::IBCFlag(ctxidx)))
@@ -2614,13 +2614,17 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
     TransformUnit &tu = cs.addTU( CS::getArea( cs, area, partitioner.chType ), partitioner.chType );
     unsigned numBlocks = ::getNumberValidTBlocks( *cs.pcv );
     tu.checkTuNoResidual( partitioner.currPartIdx() );
+    const bool usePlt = cs.sps->getPLTMode();
 
     for( unsigned compID = COMPONENT_Y; compID < numBlocks; compID++ )
     {
       if( tu.blocks[compID].valid() )
       {
         tu.getCoeffs( ComponentID( compID ) ).fill( 0 );
-        tu.getPcmbuf( ComponentID( compID ) ).fill( 0 );
+        if (usePlt)
+        {
+          tu.getcurPLTIdx( ComponentID( compID ) ).fill( 0 );
+        }
       }
     }
     tu.depth = trDepth;

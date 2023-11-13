@@ -920,8 +920,10 @@ bool PU::addMergeHmvpCand(const CodingStructure &cs, MergeCtx &mrgCtx, const int
   return false;
 }
 
-void PU::getIBCMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const int& mrgCandIdx)
+void PU::getIBCMergeCandidates(const PredictionUnit& pu, MergeCtx& mrgCtx, const int mrgCandIdx)
 {
+  // fill list of candidates up to candidate number mrgCandIdx
+
   const CodingStructure &cs = *pu.cs;
   const uint32_t maxNumMergeCand = pu.cs->sps->getMaxNumIBCMergeCand();
 #if GDR_ENABLED
@@ -956,16 +958,16 @@ void PU::getIBCMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const
   const Position posRT = pu.Y().topRight();
   const Position posLB = pu.Y().bottomLeft();
 
-  MotionInfo miAbove, miLeft, miAboveLeft, miAboveRight, miBelowLeft;
+  MotionInfo miDummy;   // to be used as reference for unavailable MotionInfo
+
+  const bool isGt4x4 = pu.lumaSize().area() > 16;
 
   //left
-  const PredictionUnit* puLeft = cs.getPURestricted(posLB.offset(-1, 0), pu, pu.chType);
-  bool isGt4x4 = pu.lwidth() * pu.lheight() > 16;
+  const PredictionUnit* puLeft        = cs.getPURestricted(posLB.offset(-1, 0), pu, pu.chType);
   const bool isAvailableA1 = puLeft && pu.cu != puLeft->cu && CU::isIBC(*puLeft->cu);
+  const MotionInfo&     miLeft        = isGt4x4 && isAvailableA1 ? puLeft->getMotionInfo(posLB.offset(-1, 0)) : miDummy;
   if (isGt4x4 && isAvailableA1)
   {
-    miLeft = puLeft->getMotionInfo(posLB.offset(-1, 0));
-
     // get Inter Dir
     mrgCtx.interDirNeighbours[cnt] = miLeft.interDir;
     // get Mv from Left
@@ -992,11 +994,10 @@ void PU::getIBCMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const
   // above
   const PredictionUnit *puAbove = cs.getPURestricted(posRT.offset(0, -1), pu, pu.chType);
   bool isAvailableB1 = puAbove && pu.cu != puAbove->cu && CU::isIBC(*puAbove->cu);
+  const MotionInfo&     miAbove = isGt4x4 && isAvailableB1 ? puAbove->getMotionInfo(posRT.offset(0, -1)) : miDummy;
   if (isGt4x4 && isAvailableB1)
   {
-    miAbove = puAbove->getMotionInfo(posRT.offset(0, -1));
-
-    if (!isAvailableA1 || (miAbove != miLeft))
+    if (!isAvailableA1 || miAbove != miLeft)
     {
       // get Inter Dir
       mrgCtx.interDirNeighbours[cnt] = miAbove.interDir;
@@ -1017,21 +1018,15 @@ void PU::getIBCMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const
     }
   }
 
-  // early termination
-  if (cnt == maxNumMergeCand)
-  {
-    return;
-  }
-
   if (cnt != maxNumMergeCand)
   {
 #if GDR_ENABLED
     bool allCandSolidInAbove = true;
-    bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
-                                  miAbove, true, isGt4x4, pu, allCandSolidInAbove);
+    const bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft,
+                                        isAvailableB1, miAbove, true, isGt4x4, pu, allCandSolidInAbove);
 #else
-    bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft, isAvailableB1,
-                                  miAbove, true, isGt4x4);
+    const bool found = addMergeHmvpCand(cs, mrgCtx, mrgCandIdx, maxNumMergeCand, cnt, isAvailableA1, miLeft,
+                                        isAvailableB1, miAbove, true, isGt4x4);
 #endif
 
     if (found)
@@ -1048,8 +1043,7 @@ void PU::getIBCMergeCandidates(const PredictionUnit &pu, MergeCtx& mrgCtx, const
     // GDR: zero mv(0,0)
     if (isEncodeGdrClean)
     {
-      mrgCtx.mvSolid[cnt][0]   = true && allCandSolidInAbove;
-      allCandSolidInAbove      = true && allCandSolidInAbove;
+      mrgCtx.mvSolid[cnt][0] = allCandSolidInAbove;
     }
 #endif
     if (mrgCandIdx == cnt)
@@ -2075,25 +2069,16 @@ bool PU::getDerivedBV(PredictionUnit &pu, const Mv& currentMv, Mv& derivedMv)
  */
 void PU::fillIBCMvpCand(PredictionUnit &pu, AMVPInfo &amvpInfo)
 {
-  AMVPInfo *pInfo = &amvpInfo;
-
-  pInfo->numCand = 0;
-
   MergeCtx mergeCtx;
   PU::getIBCMergeCandidates(pu, mergeCtx, AMVP_MAX_NUM_CANDS - 1);
-  int candIdx = 0;
-  while (pInfo->numCand < AMVP_MAX_NUM_CANDS)
+
+  for (int candIdx = 0; candIdx < AMVP_MAX_NUM_CANDS; candIdx++)
   {
-    pInfo->mvCand[pInfo->numCand] = mergeCtx.mvFieldNeighbours[candIdx][0].mv;
-    ;
-    pInfo->numCand++;
-    candIdx++;
+    amvpInfo.mvCand[candIdx] = mergeCtx.mvFieldNeighbours[candIdx][0].mv;
+    amvpInfo.mvCand[candIdx].roundIbcPrecInternal2Amvr(pu.cu->imv);
   }
 
-  for (Mv &mv : pInfo->mvCand)
-  {
-    mv.roundIbcPrecInternal2Amvr(pu.cu->imv);
-  }
+  amvpInfo.numCand = AMVP_MAX_NUM_CANDS;
 }
 
 /** Constructs a list of candidates for AMVP (See specification, section "Derivation process for motion vector predictor

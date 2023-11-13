@@ -121,8 +121,8 @@ struct AffineAMVPInfo
 /// class for motion vector with reference index
 struct MvField
 {
-  Mv    mv;
-  int16_t refIdx;
+  Mv     mv;
+  int8_t refIdx;
 
   MvField()                                    :            refIdx( NOT_VALID ) {}
   MvField(Mv const &cMv, const int _refIdx) : mv(cMv), refIdx(_refIdx) {}
@@ -156,7 +156,7 @@ struct MotionInfo
   bool     useAltHpelIf;
   uint16_t sliceIdx;
   Mv       mv[NUM_REF_PIC_LIST_01];
-  int16_t  refIdx[NUM_REF_PIC_LIST_01];
+  int8_t   refIdx[NUM_REF_PIC_LIST_01];
   uint8_t  bcwIdx;
   Mv       bv;
 #if GDR_ENABLED
