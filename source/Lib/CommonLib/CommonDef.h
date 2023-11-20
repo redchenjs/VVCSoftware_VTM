@@ -590,8 +590,6 @@ struct ClpRng
 struct ClpRngs
 {
   ClpRng comp[MAX_NUM_COMPONENT]; ///< the bit depth as indicated in the SPS
-  bool used;
-  bool chroma;
 };
 
 template <typename T> inline T Clip3 (const T minVal, const T maxVal, const T a) { return std::min<T> (std::max<T> (minVal, a) , maxVal); }  ///< general min/max clip
