@@ -539,7 +539,6 @@ protected:
 
   bool      m_bFastUDIUseMPMEnabled;
   bool      m_bFastMEForGenBLowDelayEnabled;
-  bool      m_bUseBLambdaForNonKeyLowDelayPictures;
   bool      m_gopBasedTemporalFilterEnabled;
   bool      m_bimEnabled;
   std::map<int, int*> m_adaptQPmap;
@@ -1802,7 +1801,6 @@ public:
   void      setUseEarlySkipDetection        ( bool  b )     { m_useEarlySkipDetection = b; }
   void      setFastUDIUseMPMEnabled         ( bool  b )     { m_bFastUDIUseMPMEnabled = b; }
   void      setFastMEForGenBLowDelayEnabled ( bool  b )     { m_bFastMEForGenBLowDelayEnabled = b; }
-  void      setUseBLambdaForNonKeyLowDelayPictures ( bool b ) { m_bUseBLambdaForNonKeyLowDelayPictures = b; }
 
   void                 setdQPs(FrameDeltaQps &v) { m_frameDeltaQps = v; }
   const FrameDeltaQps &getdQPs() const { return m_frameDeltaQps; }
@@ -1823,7 +1821,6 @@ public:
   bool      getUseEarlySkipDetection        () const{ return m_useEarlySkipDetection; }
   bool      getFastUDIUseMPMEnabled         ()      { return m_bFastUDIUseMPMEnabled; }
   bool      getFastMEForGenBLowDelayEnabled ()      { return m_bFastMEForGenBLowDelayEnabled; }
-  bool      getUseBLambdaForNonKeyLowDelayPictures () { return m_bUseBLambdaForNonKeyLowDelayPictures; }
 
   void setGopBasedTemporalFilterEnabled(const bool b) { m_gopBasedTemporalFilterEnabled = b; }
   bool getGopBasedTemporalFilterEnabled() const { return m_gopBasedTemporalFilterEnabled; }
