@@ -160,8 +160,6 @@ struct AreaBuf : public Size
 
   void transposedFrom       ( const AreaBuf<const T> &other );
 
-  void toLast               ( const ClpRng& clpRng );
-
   void rspSignal            ( std::vector<Pel>& pLUT );
   void scaleSignal          ( const int scale, const bool dir , const ClpRng& clpRng);
   void applyLumaCTI(std::vector<Pel>& pLUTY);
@@ -398,15 +396,6 @@ void AreaBuf<T>::linearTransform( const int scale, const int shift, const int of
 
 template<>
 void AreaBuf<Pel>::linearTransform( const int scale, const int shift, const int offset, bool bClip, const ClpRng& clpRng );
-
-template<typename T>
-void AreaBuf<T>::toLast( const ClpRng& clpRng )
-{
-  THROW( "Type not supported" );
-}
-
-template<>
-void AreaBuf<Pel>::toLast( const ClpRng& clpRng );
 
 template<typename T>
 void AreaBuf<T>::removeWeightHighFreq(const AreaBuf<T> &other, const bool clampToNominalRange, const ClpRng &clpRng,
