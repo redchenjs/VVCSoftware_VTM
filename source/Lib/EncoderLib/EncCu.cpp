@@ -2871,6 +2871,8 @@ double EncCu::calcLumaCost4MergePrediction(const TempCtx& ctxStart, const PelUni
 
 unsigned int EncCu::updateRdCheckingNum(double threshold, unsigned int numMergeSatdCand)
 {
+  numMergeSatdCand = std::min(numMergeSatdCand, (unsigned int) m_mergeItemList.size());
+
   for (uint32_t i = 0; i < numMergeSatdCand; i++)
   {
     const auto mergeItem = m_mergeItemList.getMergeItemInList(i);
