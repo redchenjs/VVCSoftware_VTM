@@ -808,6 +808,9 @@ protected:
   std::vector<bool>     m_poSEIPrefixFlag;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
+#if JVET_AF0310_PO_NESTING
+  std::vector<uint16_t>  m_poSEINumOfPrefixBits;
+#endif
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
 
 

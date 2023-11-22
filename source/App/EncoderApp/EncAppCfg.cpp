@@ -734,7 +734,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType(0, 32768, 0, 256 * 2);
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
 
+#if JVET_AF0310_PO_NESTING
+  SMultiValueInput<uint16_t>   cfg_poSEINumofPrefixBits(0, 255, 0, 256);
+#else
   SMultiValueInput<uint16_t>   cfg_poSEINumofPrefixByte(0, 255, 0, 256);
+#endif
   SMultiValueInput<uint16_t>   cfg_poSEIPrefixByte     (0, 255, 0, 256);
 
   SMultiValueInput<int32_t> cfg_postFilterHintSEIValues(INT32_MIN + 1, INT32_MAX, 1 * 1 * 1, 15 * 15 * 3);
@@ -1618,12 +1622,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPOId",                                         m_poSEIId,                                            0u, "Specifies the id of the SEI processing order SEI message")
 #endif
   ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
-  ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,           cfg_poSEIWrappingFlag, "Specifies whether po_num_prefix_bytes is present or not")
-  ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies whether po_num_prefix_bytes is present or not")
-  ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether po_num_prefix_bytes is present or not")
+  ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,             cfg_poSEIWrappingFlag, "Specifies whether a correspoding processing-order-nested SEI message exists or not")
+  ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies degree of importance for the SEI messages")
+  ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether SEI message prefix is present or not")
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
+#if JVET_AF0310_PO_NESTING
+  ("SEIPONumofPrefixBits",                            cfg_poSEINumofPrefixBits,       cfg_poSEINumofPrefixBits, "List of number of prefix bits")
+#else
   ("SEIPONumofPrefixByte",                            cfg_poSEINumofPrefixByte,       cfg_poSEINumofPrefixByte, "List of number of prefix bytes")
+#endif
   ("SEIPOPrefixByte",                                 cfg_poSEIPrefixByte,                 cfg_poSEIPrefixByte, "List of prefix bytes")
   ("SEIPostFilterHintEnabled",                        m_postFilterHintSEIEnabled,                        false, "Control generation of post-filter Hint SEI message")
   ("SEIPostFilterHintCancelFlag",                     m_postFilterHintSEICancelFlag,                     false, "Specifies the persistence of any previous post-filter Hint SEI message in output order")
@@ -3602,6 +3610,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_poSEIPrefixFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
     m_poSEIPayloadType.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEIProcessingOrder.resize((uint32_t) cfg_poSEIPayloadType.values.size());
+#if JVET_AF0310_PO_NESTING
+    m_poSEINumOfPrefixBits.resize((uint32_t) cfg_poSEINumofPrefixBits.values.size());
+#endif
     m_poSEIPrefixByte.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     uint16_t prefixByteIdx = 0;
     for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
@@ -3627,15 +3638,26 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
       if (m_poSEIPrefixFlag[i])
       {
+#if JVET_AF0310_PO_NESTING
+        m_poSEINumOfPrefixBits[i] = cfg_poSEINumofPrefixBits.values[i];
+        m_poSEIPrefixByte[i].resize((cfg_poSEINumofPrefixBits.values[i] + 7) >> 3);
+        for (uint32_t j = 0; j < (uint32_t)m_poSEIPrefixByte[i].size(); j++)
+#else
         m_poSEIPrefixByte[i].resize(cfg_poSEINumofPrefixByte.values[i]);
         for (uint32_t j = 0; j < cfg_poSEINumofPrefixByte.values[i]; j++)
+#endif
         {
           m_poSEIPrefixByte[i][j] = (uint8_t) cfg_poSEIPrefixByte.values[prefixByteIdx++];
         }
       }
       else
       {
+#if JVET_AF0310_PO_NESTING
+        cfg_poSEINumofPrefixBits.values[i] = 0;
+        m_poSEINumOfPrefixBits[i] = 0;
+#else
         cfg_poSEINumofPrefixByte.values[i] = 0;
+#endif
       }
       // Error check, to avoid same PayloadType and same prefix bytes when present with different PayloadOrder
       for (uint32_t j = 0; j < i; j++)
@@ -3644,7 +3666,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         {
             if ((m_poSEIPayloadType[j] == m_poSEIPayloadType[i]) && m_poSEIPrefixFlag[j])
             {
+#if JVET_AF0310_PO_NESTING
+              auto numofPrefixBytes = std::min((cfg_poSEINumofPrefixBits.values[i] + 7) >> 3, (cfg_poSEINumofPrefixBits.values[j] + 7) >> 3);
+#else
               auto numofPrefixBytes = std::min(cfg_poSEINumofPrefixByte.values[i], cfg_poSEINumofPrefixByte.values[j]);
+#endif
               if (std::equal(m_poSEIPrefixByte[i].begin() + 1, m_poSEIPrefixByte[i].begin() + numofPrefixBytes - 1,
                              m_poSEIPrefixByte[j].begin()))
               {
