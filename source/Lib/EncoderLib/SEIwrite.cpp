@@ -1630,9 +1630,7 @@ void SEIWriter::xWriteSEIProcessingOrderNesting(OutputBitstream& bs, const SEIPr
   xWriteCode(sei.m_ponNumSeisMinus1, 8, "pon_num_seis_minus1");
   for (int i = 0; i <= sei.m_ponNumSeisMinus1; i++)
   {
-#if JVET_AF0310_PO_NESTING
     CHECK((i > 0) && (sei.m_ponProcessingOrder[i] < sei.m_ponProcessingOrder[i-1]) , "When i is greater than 0, pon_processing_order[i] shall be greater than or equal to pon_processing_order[i-1]");
-#endif
     xWriteCode(sei.m_ponProcessingOrder[i], 8, "pon_processing_order[i]");
     wrapSEI = getSeisByType(sei.m_ponWrapSeiMessages, SEI::PayloadType(sei.m_ponPayloadType[i]));
     writeSEImessages(bs, wrapSEI, m_nestingHrd, true, 0);

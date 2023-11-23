@@ -852,6 +852,7 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
 #endif
 }
 
+#if JVET_AF0310_PO_NESTING
 void SEIReader::xParseSEIProcessingOrderNesting(SEIProcessingOrderNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream)
 {
   uint32_t val, ponNumPoIdsMinus1;
@@ -874,9 +875,7 @@ void SEIReader::xParseSEIProcessingOrderNesting(SEIProcessingOrderNesting& sei, 
   {
     sei_read_code(decodedMessageOutputStream, 8, val, "pon_processing_order[i]");
     sei.m_ponProcessingOrder.push_back((uint8_t)val);
-#if JVET_AF0310_PO_NESTING
     CHECK((i > 0) && (sei.m_ponProcessingOrder[i] < sei.m_ponProcessingOrder[i-1]) , "When i is greater than 0, pon_processing_order[i] shall be greater than or equal to pon_processing_order[i-1]");
-#endif
     SEIMessages tmpSEI;
     const bool seiMessageRead = xReadSEImessage(tmpSEI, nalUnitType, nuhLayerId, 0, vps, sps, m_nestedHrd, decodedMessageOutputStream);
     if (seiMessageRead)
@@ -886,6 +885,7 @@ void SEIReader::xParseSEIProcessingOrderNesting(SEIProcessingOrderNesting& sei, 
     }
   }
 }
+#endif
 
 /**
  * parse bitstream bs and unpack a decoded picture hash SEI message
