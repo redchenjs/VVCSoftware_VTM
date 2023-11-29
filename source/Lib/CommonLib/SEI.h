@@ -1229,6 +1229,8 @@ public:
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
     , m_outColourFormatIdc(ChromaFormat::_420)
+    , m_chromaLocInfoPresentFlag(false)
+    , m_chromaSampleLocTypeFrame(Chroma420LocType::UNSPECIFIED)
     , m_picWidthNumeratorMinus1(0)
     , m_picWidthDenominatorMinus1(0)
     , m_picHeightNumeratorMinus1(0)
@@ -1271,6 +1273,8 @@ public:
     , m_numParametersIdc(0)
     , m_numKmacOperationsIdc(0)
     , m_totalKilobyteSize(0)
+    , m_numberInputDecodedPicturesMinus1(0)
+    , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
   {}
   SEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
