@@ -31,9 +31,12 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "../CommonDef.h"
+
+#ifdef TARGET_SIMD_X86
+
 #include <immintrin.h>
 #include "CommonDefX86.h"
-#include "../CommonDef.h"
 #include "../Rom.h"
 #include "../TrQuant.h"
 
@@ -494,3 +497,5 @@ template<X86_VEXT vext> void TrQuant::_initX86()
 }
 
 template void TrQuant::_initX86<SIMDX86>();
+
+#endif
