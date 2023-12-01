@@ -137,7 +137,7 @@ EncGOP::~EncGOP()
   if( !m_pcCfg->getDecodeBitstream(0).empty() || !m_pcCfg->getDecodeBitstream(1).empty() )
   {
     // reset potential decoder resources
-    tryDecodePicture(nullptr, 0, std::string(""));
+    tryDecodePicture(nullptr, 0, std::string(""), -1);
   }
 #if JVET_O0756_CALCULATE_HDRMETRICS
   delete [] m_ppcFrameOrg;
@@ -1818,14 +1818,21 @@ void trySkipOrDecodePicture(bool &decPic, bool &encPic, const EncCfg &cfg, Pictu
   // check if we should decode a leading bitstream
   if( !cfg.getDecodeBitstream( 0 ).empty() )
   {
-    static bool bDecode1stPart = true; /* TODO: MT */
-    if( bDecode1stPart )
+    static bool firstTime = true;
+    static bool doDecode1stPart[MAX_VPS_LAYERS] ; /* TODO: MT */
+    const int layerIdx = (pcPic->cs->vps == nullptr) ? 0 : pcPic->cs->vps->getGeneralLayerIdx(pcPic->layerId);
+    if (firstTime)
+    {
+      firstTime = false;
+      std::fill_n(doDecode1stPart, MAX_VPS_LAYERS, true);
+    }
+    if(doDecode1stPart[layerIdx])
     {
       if( cfg.getForceDecodeBitstream1() )
       {
-        if( ( bDecode1stPart = tryDecodePicture( pcPic, pcPic->getPOC(), cfg.getDecodeBitstream( 0 ), apsMap, false ) ) )
+        if( (doDecode1stPart[layerIdx] = tryDecodePicture( pcPic, pcPic->getPOC(), cfg.getDecodeBitstream( 0 ), layerIdx, apsMap, false ) ) )
         {
-          decPic = bDecode1stPart;
+          decPic = doDecode1stPart[layerIdx];
         }
       }
       else
@@ -1833,23 +1840,23 @@ void trySkipOrDecodePicture(bool &decPic, bool &encPic, const EncCfg &cfg, Pictu
         // update decode decision
         bool dbgCTU = cfg.getDebugCTU() != -1 && cfg.getSwitchPOC() == pcPic->getPOC();
 
-        if( ( bDecode1stPart = ( cfg.getSwitchPOC() != pcPic->getPOC() ) || dbgCTU ) && ( bDecode1stPart = tryDecodePicture( pcPic, pcPic->getPOC(), cfg.getDecodeBitstream( 0 ), apsMap, false, cfg.getDebugCTU(), cfg.getSwitchPOC() ) ) )
+        if( (doDecode1stPart[layerIdx] = ( cfg.getSwitchPOC() != pcPic->getPOC() ) || dbgCTU ) && (doDecode1stPart[layerIdx] = tryDecodePicture( pcPic, pcPic->getPOC(), cfg.getDecodeBitstream( 0 ), layerIdx, apsMap, false, cfg.getDebugCTU(), cfg.getSwitchPOC() ) ) )
         {
           if( dbgCTU )
           {
             encPic = true;
             decPic = false;
-            bDecode1stPart = false;
+            doDecode1stPart[layerIdx] = false;
 
             return;
           }
-          decPic = bDecode1stPart;
+          decPic = doDecode1stPart[layerIdx];
           return;
         }
         else if( pcPic->getPOC() )
         {
           // reset decoder if used and not required any further
-          tryDecodePicture(nullptr, 0, std::string(""));
+          tryDecodePicture(nullptr, 0, std::string(""), layerIdx);
         }
       }
     }
@@ -1872,12 +1879,13 @@ void trySkipOrDecodePicture(bool &decPic, bool &encPic, const EncCfg &cfg, Pictu
     bool bDecode2ndPart = (pcPic->getPOC() >= iRestartIntraPOC);
     int expectedPoc = pcPic->getPOC();
     Slice slice0;
+    const int layerIdx = (pcPic->cs->vps == nullptr) ? 0 : pcPic->cs->vps->getGeneralLayerIdx(pcPic->layerId);
     if ( cfg.getBs2ModPOCAndType() )
     {
       expectedPoc = pcPic->getPOC() - iRestartIntraPOC;
       slice0.copySliceInfo( pcPic->slices[ 0 ], false );
     }
-    if( bDecode2ndPart && (bDecode2ndPart = tryDecodePicture( pcPic, expectedPoc, cfg.getDecodeBitstream(1), apsMap, true )) )
+    if( bDecode2ndPart && (bDecode2ndPart = tryDecodePicture( pcPic, expectedPoc, cfg.getDecodeBitstream(1), layerIdx, apsMap, true )) )
     {
       decPic = bDecode2ndPart;
       if ( cfg.getBs2ModPOCAndType() )
