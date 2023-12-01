@@ -1584,6 +1584,9 @@ void EncLib::xInitSPS( SPS& sps )
   }
   sps.setALFEnabledFlag( m_alf );
   sps.setCCALFEnabledFlag( m_ccalf );
+#if JVET_AF0122_ALF_LAMBDA_OPT
+  sps.setALFOptEnabledFlag(m_encALFOpt);
+#endif
   sps.setFieldSeqFlag(m_fieldSeqFlag);
   sps.setVuiParametersPresentFlag(getVuiParametersPresentFlag());
 

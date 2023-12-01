@@ -203,6 +203,11 @@ static constexpr int CCALF_BITS_PER_COEFF_LEVEL     =               3;
 
 static constexpr int ALF_FIXED_FILTER_NUM = 64;
 
+#if JVET_AF0122_ALF_LAMBDA_OPT
+static constexpr double ALF_CHROMA_LAMBDA_SCALE_LOW = 0.4;
+static constexpr int ALF_HISAPSNUM_LIMITED = 4;
+#endif
+
 static constexpr int MAX_BDOF_APPLICATION_REGION =                     16;
 
 static constexpr int MAX_CPB_CNT =                                     32; ///< Upper bound of (cpb_cnt_minus1 + 1)

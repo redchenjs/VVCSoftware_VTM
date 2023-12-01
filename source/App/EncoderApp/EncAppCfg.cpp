@@ -1067,6 +1067,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("VirtualBoundariesPosX",                           cfg_virtualBoundariesPosX,    cfg_virtualBoundariesPosX, "Locations of the vertical virtual boundaries in units of luma samples")
   ("VirtualBoundariesPosY",                           cfg_virtualBoundariesPosY,    cfg_virtualBoundariesPosY, "Locations of the horizontal virtual boundaries in units of luma samples")
   ("EncDbOpt",                                        m_encDbOpt,                                       false, "Encoder optimization with deblocking filter")
+#if JVET_AF0122_ALF_LAMBDA_OPT
+  ("AlfLambdaOpt",                                    m_encALFOpt,                                      false, "Encoder optimization with adaptive loop filter")
+#endif
   ("LMCSEnable",                                      m_lmcsEnabled,                                    false, "Enable LMCS (luma mapping with chroma scaling")
   ("LMCSSignalType",                                  m_reshapeSignalType,                                 0u, "Input signal type: 0:SDR, 1:HDR-PQ, 2:HDR-HLG")
   ("LMCSUpdateCtrl",                                  m_updateCtrl,                                         0, "LMCS model update control: 0:RA, 1:AI, 2:LDB/LDP")
@@ -5573,6 +5576,9 @@ void EncAppCfg::xPrintParameter()
     msg(VERBOSE, "MRL:%d ", m_MRL);
     msg(VERBOSE, "MIP:%d ", m_MIP);
     msg(VERBOSE, "EncDbOpt:%d ", m_encDbOpt);
+#if JVET_AF0122_ALF_LAMBDA_OPT
+    msg(VERBOSE, "AlfLambdaOpt:%d ", m_encALFOpt);
+#endif
   msg( VERBOSE, "\nFAST TOOL CFG: " );
   msg( VERBOSE, "LCTUFast:%d ", m_useFastLCTU );
   msg( VERBOSE, "FastMrg:%d ", m_useFastMrg );

@@ -417,6 +417,9 @@ protected:
   uint32_t  m_initialCW;
   int       m_CSoffset;
   bool      m_encDbOpt;
+#if JVET_AF0122_ALF_LAMBDA_OPT
+  bool      m_encALFOpt;
+#endif
   unsigned              m_maxCuWidth;                                      ///< max. CU width in pixel
   unsigned              m_maxCuHeight;                                     ///< max. CU height in pixel
   unsigned m_log2MinCuSize;                                   ///< min. CU size log2

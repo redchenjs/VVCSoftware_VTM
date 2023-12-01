@@ -404,6 +404,9 @@ protected:
   ReshapeCW m_reshapeCW;
   int       m_CSoffset;
   bool      m_encDbOpt;
+#if JVET_AF0122_ALF_LAMBDA_OPT
+  bool      m_encALFOpt;
+#endif  
   bool      m_useFastLCTU;
   bool      m_useFastMrg;
   int       m_maxMergeRdCandNumTotal;
@@ -1568,7 +1571,11 @@ public:
   int       getLog2MinCodingBlockSize       () const         { return m_log2MinCUSize;}
   void      setUseEncDbOpt                  ( bool  n )          { m_encDbOpt = n; }
   bool      getUseEncDbOpt                  () const             { return m_encDbOpt; }
-
+#if JVET_AF0122_ALF_LAMBDA_OPT
+  void      setUseAlfLambdaOpt              (bool n)         { m_encALFOpt = n; }
+  bool      getUseAlfLambdaOpt              () const         { return m_encALFOpt; }
+#endif
+  
   void      setUseFastLCTU                  ( bool  n )      { m_useFastLCTU = n; }
   bool      getUseFastLCTU                  () const         { return m_useFastLCTU; }
   void      setUseFastMerge                 ( bool  n )      { m_useFastMrg = n; }
