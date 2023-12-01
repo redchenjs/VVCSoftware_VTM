@@ -62,8 +62,8 @@ class InputNALUnit;
 //! \{
 
 bool tryDecodePicture(Picture *pcPic, const int expectedPoc, const std::string &bitstreamFileName,
-                      EnumArray<ParameterSetMap<APS>, ApsType> *apsMap = nullptr, bool bDecodeUntilPocFound = false,
-                      int debugCTU = -1, int debugPOC = -1);
+                      const int layerIdx, EnumArray<ParameterSetMap<APS>, ApsType> *apsMap = nullptr, 
+                      bool bDecodeUntilPocFound = false, int debugCTU = -1, int debugPOC = -1);
 // Class definition
 // ====================================================================================================================
 
@@ -360,7 +360,7 @@ public:
   void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
 
   void applyNnPostFilter();
-
+  void setPrevPicPOC(const int prevPicPoc) { m_prevPicPOC  = prevPicPoc;}
 
 protected:
   void  xUpdateRasInit(Slice* slice);

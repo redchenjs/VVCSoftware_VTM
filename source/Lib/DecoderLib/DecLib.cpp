@@ -59,18 +59,18 @@
 #endif
 
 bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::string &bitstreamFileName,
-                      EnumArray<ParameterSetMap<APS>, ApsType> *apsMap, bool bDecodeUntilPocFound, int debugCTU,
-                      int debugPOC)
+                      const int layerIdx, EnumArray<ParameterSetMap<APS>, ApsType> *apsMap, 
+                      bool bDecodeUntilPocFound, int debugCTU, int debugPOC)
 {
   int      poc;
   PicList *pcListPic = nullptr;
 
-  static bool bFirstCall      = true;             /* TODO: MT */
+  static bool layerInitialized[MAX_VPS_LAYERS];             /* TODO: MT */
   static bool loopFiltered[MAX_VPS_LAYERS] = { false };            /* TODO: MT */
   static int  iPOCLastDisplay = -MAX_INT;         /* TODO: MT */
 
-  static std::ifstream* bitstreamFile = nullptr;  /* TODO: MT */
-  static InputByteStream* bytestream  = nullptr;  /* TODO: MT */
+  static std::ifstream* bitstreamFile[MAX_VPS_LAYERS] = { nullptr };  /* TODO: MT */
+  static InputByteStream* bytestream[MAX_VPS_LAYERS] = { nullptr };  /* TODO: MT */
   bool bRet = false;
 
   // create & initialize internal classes
@@ -78,12 +78,8 @@ bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::strin
 
   if( pcEncPic )
   {
-    if( bFirstCall )
+    if(pcDecLib == nullptr)
     {
-      bitstreamFile = new std::ifstream( bitstreamFileName.c_str(), std::ifstream::in | std::ifstream::binary );
-      bytestream    = new InputByteStream( *bitstreamFile );
-
-      CHECK( !*bitstreamFile, "failed to open bitstream file " << bitstreamFileName.c_str() << " for reading" ) ;
       // create decoder class
       pcDecLib = new DecLib;
       pcDecLib->create();
@@ -95,32 +91,45 @@ bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::strin
 #endif
       );
 
-      pcDecLib->setDebugCTU( debugCTU );
-      pcDecLib->setDebugPOC( debugPOC );
       pcDecLib->setDecodedPictureHashSEIEnabled( true );
       pcDecLib->setAPSMapEnc( apsMap );
+    }
+    pcDecLib->setDebugCTU( debugCTU );
+    pcDecLib->setDebugPOC( debugPOC );
 
-      bFirstCall = false;
+    if(!layerInitialized[layerIdx])
+    {
+      bitstreamFile[layerIdx] = new std::ifstream( bitstreamFileName.c_str(), std::ifstream::in | std::ifstream::binary );
+      bytestream[layerIdx] = new InputByteStream( *bitstreamFile[layerIdx]);
+
+      CHECK( !*bitstreamFile[layerIdx], "failed to open bitstream file " << bitstreamFileName.c_str() << " for reading" ) ;
+
+      layerInitialized[layerIdx] = true;
       msg( INFO, "start to decode %s \n", bitstreamFileName.c_str() );
+    }
+    if (layerIdx > 0 && pcEncPic->cs->vps->getIndependentLayerFlag(layerIdx) != 1)
+    {
+      pcDecLib->setPrevPicPOC(pcEncPic->poc);
     }
 
     bool goOn = true;
+    int lastDecodedLayerId = 0;
+    bool decodedSliceInAU = false;
 
     // main decoder loop
-    while( !!*bitstreamFile && goOn )
+    while( !!*bitstreamFile[layerIdx] && goOn )
     {
       InputNALUnit nalu;
       nalu.m_nalUnitType = NAL_UNIT_INVALID;
 
       // determine if next NAL unit will be the first one from a new picture
-      bool bNewPicture = pcDecLib->isNewPicture( bitstreamFile,  bytestream );
-      bool bNewAccessUnit = bNewPicture && pcDecLib->isNewAccessUnit( bNewPicture, bitstreamFile,  bytestream );
-      bNewPicture = bNewPicture && bNewAccessUnit;
+      bool bNewPicture = pcDecLib->isNewPicture( bitstreamFile[layerIdx],  bytestream[layerIdx]);
+      bool bNewAccessUnit = bNewPicture && decodedSliceInAU && pcDecLib->isNewAccessUnit( bNewPicture, bitstreamFile[layerIdx],  bytestream[layerIdx]);
 
       if( !bNewPicture )
       {
         AnnexBStats stats = AnnexBStats();
-        byteStreamNALUnit(*bytestream, nalu.getBitstream().getFifo(), stats);
+        byteStreamNALUnit(*bytestream[layerIdx], nalu.getBitstream().getFifo(), stats);
 
         // call actual decoding function
         if (nalu.getBitstream().getFifo().empty())
@@ -136,14 +145,33 @@ bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::strin
         {
           read(nalu);
           int iSkipFrame = 0;
-
-          pcDecLib->decode(nalu, iSkipFrame, iPOCLastDisplay, 0);
+          if (nalu.m_nuhLayerId == pcEncPic->layerId
+            || (layerInitialized[nalu.m_nuhLayerId] == false && nalu.m_nuhLayerId < pcEncPic->layerId))
+          {
+            EnumArray<ParameterSetMap<APS>, ApsType>* saved_apsMapEnc = nullptr;
+            if (!layerInitialized[nalu.m_nuhLayerId])
+            {
+              saved_apsMapEnc = pcDecLib->m_apsMapEnc;
+              pcDecLib->setAPSMapEnc(nullptr);
+            }
+            pcDecLib->decode(nalu, iSkipFrame, iPOCLastDisplay, 0);
+            if (saved_apsMapEnc != nullptr)
+            {
+              pcDecLib->setAPSMapEnc(saved_apsMapEnc);
+            }
+          }
+          if (nalu.isSlice())
+          {
+            decodedSliceInAU = true;
+          }
         }
+        lastDecodedLayerId = nalu.m_nuhLayerId;
       }
 
-      if ((bNewPicture || !*bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS) && !pcDecLib->getFirstSliceInSequence(nalu.m_nuhLayerId))
+
+      if ((bNewPicture || !*bitstreamFile[layerIdx] || nalu.m_nalUnitType == NAL_UNIT_EOS) && !pcDecLib->getFirstSliceInSequence(lastDecodedLayerId))
       {
-        if (!loopFiltered[nalu.m_nuhLayerId] || *bitstreamFile)
+        if (!loopFiltered[lastDecodedLayerId] || *bitstreamFile[layerIdx])
         {
           pcDecLib->finishPictureLight( poc, pcListPic );
 
@@ -151,7 +179,7 @@ bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::strin
           {
             for( auto & pic : *pcListPic )
             {
-              if( pic->poc == poc && (!bDecodeUntilPocFound || expectedPoc == poc ) )
+              if( pic->poc == poc && pic->layerId == pcEncPic->layerId && (!bDecodeUntilPocFound || expectedPoc == poc ) )
               {
                 CHECK( pcEncPic->slices.size() == 0, "at least one slice should be available" );
 
@@ -228,6 +256,7 @@ bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::strin
                     pcEncPic->copySAO(*pic, 1);
                   }
 
+                  pcEncPic->cs->initStructData();
                   pcEncPic->cs->copyStructure(*pic->cs, ChannelType::LUMA, true, true);
 
                   if (CS::isDualITree(*pcEncPic->cs))
@@ -331,22 +360,26 @@ bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::strin
           pcDecLib->updatePrevIRAPAndGDRSubpic();
           // LMCS APS will be assigned later in LMCS initialization step
           pcEncPic->cs->picHeader->setLmcsAPS( nullptr );
-          if( bitstreamFile )
+          if (bitstreamFile[layerIdx])
           {
             pcDecLib->resetAccessUnitNals();
             pcDecLib->resetAccessUnitApsNals();
           }
         }
-        loopFiltered[nalu.m_nuhLayerId] = (nalu.m_nalUnitType == NAL_UNIT_EOS);
+        loopFiltered[lastDecodedLayerId] = (nalu.m_nalUnitType == NAL_UNIT_EOS);
         if( nalu.m_nalUnitType == NAL_UNIT_EOS )
         {
-          pcDecLib->setFirstSliceInSequence(true, nalu.m_nuhLayerId);
+          pcDecLib->setFirstSliceInSequence(true, lastDecodedLayerId);
         }
 
       }
-      else if ((bNewPicture || !*bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS) && pcDecLib->getFirstSliceInSequence(nalu.m_nuhLayerId))
+      else if ((bNewPicture || !*bitstreamFile[layerIdx] || nalu.m_nalUnitType == NAL_UNIT_EOS) && pcDecLib->getFirstSliceInSequence(lastDecodedLayerId))
       {
         pcDecLib->setFirstSliceInPicture( true );
+      }
+      if (bNewAccessUnit)
+      {
+        decodedSliceInAU = false;
       }
     }
   }
@@ -354,30 +387,57 @@ bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::strin
   if( !bRet )
   {
     CHECK( bDecodeUntilPocFound, " decoding failed - check decodeBitstream2 parameter File: " << bitstreamFileName.c_str() );
-    if( pcDecLib )
+    bool destroyAll = false;
+    if (layerIdx < 0)
     {
-      pcDecLib->destroy();
-      pcDecLib->deletePicBuffer();
-      delete pcDecLib;
-      pcDecLib = nullptr;
+      std::fill_n(layerInitialized, MAX_VPS_LAYERS, false);
+      std::fill_n(loopFiltered, MAX_VPS_LAYERS, false);
+      iPOCLastDisplay = -MAX_INT;
+      for (int i = 0; i < MAX_VPS_LAYERS; i++)
+      {
+        if (bytestream[i])
+        {
+          delete bytestream[i];
+          bytestream[i] = nullptr;
+        }
+        if (bitstreamFile[i])
+        {
+          delete bitstreamFile[i];
+          bitstreamFile[i] = nullptr;
+        }
+      }
+      destroyAll = true;
     }
-    bFirstCall   = true;
-    for (int i = 0; i < MAX_VPS_LAYERS; i++)
+    else
     {
-      loopFiltered[i] = false;
+      layerInitialized[layerIdx] = false;
+      loopFiltered[layerIdx] = false;
+      if (bytestream[layerIdx])
+      {
+        delete bytestream[layerIdx];
+        bytestream[layerIdx] = nullptr;
+      }
+      if (bitstreamFile[layerIdx])
+      {
+        delete bitstreamFile[layerIdx];
+        bitstreamFile[layerIdx] = nullptr;
+      }
+      if (std::find(layerInitialized, layerInitialized + MAX_VPS_LAYERS, true) == layerInitialized + MAX_VPS_LAYERS)
+      {
+        destroyAll = true;
+      }
     }
-    iPOCLastDisplay = -MAX_INT;
 
-    if( bytestream )
+    if (destroyAll)
     {
-      delete bytestream;
-      bytestream = nullptr;
-    }
-
-    if( bitstreamFile )
-    {
-      delete bitstreamFile;
-      bitstreamFile = nullptr;
+      if (pcDecLib)
+      {
+        pcDecLib->destroy();
+        pcDecLib->deletePicBuffer();
+        delete pcDecLib;
+        pcDecLib = nullptr;
+      }
+      iPOCLastDisplay = -MAX_INT;
     }
   }
 
