@@ -185,6 +185,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::SEI_PROCESSING_ORDER:
     xWriteSEIProcessingOrder(bs, *static_cast<const SEIProcessingOrderInfo*>(&sei));
     break;
+#if JVET_AF0310_PO_NESTING
+  case SEI::PayloadType::SEI_PROCESSING_ORDER_NESTING:
+    xWriteSEIProcessingOrderNesting(bs, *static_cast<const SEIProcessingOrderNesting*>(&sei));
+    break;
+#endif
   case SEI::PayloadType::POST_FILTER_HINT:
     xWriteSEIPostFilterHint(*static_cast<const SEIPostFilterHint *>(&sei));
     break;
@@ -1555,6 +1560,7 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
   {
     xWriteFlag(sei.m_posWrappingFlag[i], "po_sei_wrapping_flag[i]");
     xWriteFlag(sei.m_posImportanceFlag[i], "po_sei_importance_flag[i]");
+#if !JVET_AF0310_PO_NESTING
     if (sei.m_posWrappingFlag[i])
     {
       xWriteCode(0, 6, "spo_sei_reserved_zero_6bits");
@@ -1563,6 +1569,7 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
     }
     else
     {
+#endif
 #if JVET_AF0062_MOVE_PO_SEI_PREFIX_FLAG
       xWriteCode(sei.m_posPayloadType[i], 13, "po_sei_payload_type[i]");
       xWriteFlag(sei.m_posPrefixFlag[i], "po_sei_prefix_flag[i]");
@@ -1571,6 +1578,7 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
       xWriteCode(sei.m_posPayloadType[i], 13, "po_sei_payload_type[i]");
 #endif
 
+#if !JVET_AF0310_PO_NESTING
       if (sei.m_posPrefixFlag[i])
     {
       xWriteCode((uint32_t)sei.m_posPrefixByte[i].size(), 8, "po_num_t35_byte[i]");
@@ -1580,9 +1588,55 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
       }
     }
     }
+#endif
+#if JVET_AF0310_PO_NESTING
+    CHECK((i > 0) && (sei.m_posProcessingOrder[i] < sei.m_posProcessingOrder[i-1]) , "For i greater than 0, po_sei_processing_order[i] shall be greater than or equal to po_sei_processing_order[i-1]");
+#endif
     xWriteCode(sei.m_posProcessingOrder[i], 8, "po_sei_processing_order[i]");
   }
+
+#if JVET_AF0310_PO_NESTING
+  for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
+  {
+    if (sei.m_posPrefixFlag[i])
+    {
+      xWriteCode(sei.m_posNumBitsInPrefix[i], 8, "po_num_bits_in_prefix_indication_minus1[i]");
+      for (uint32_t j = 0; j < sei.m_posNumBitsInPrefix[i]; j += 8)
+      {
+        uint32_t numBits = (sei.m_posNumBitsInPrefix[i] - j) < 8 ? (sei.m_posNumBitsInPrefix[i] - j) : 8;
+        for (int k = (int)numBits - 1; k >= 0; k--)
+        {
+          xWriteCode((sei.m_posPrefixByte[i][j>>3] >> k) & 1, 1, "po_sei_prefix_data_bit[i][j]");
+        }
+      }
+      while (!isByteAligned())
+      {
+        xWriteCode(1, 1, "po_byte_alignment_bit_equal_to_one");
+      }
+    }
+  }
+#endif
 }
+
+#if JVET_AF0310_PO_NESTING
+void SEIWriter::xWriteSEIProcessingOrderNesting(OutputBitstream& bs, const SEIProcessingOrderNesting& sei)
+{
+  SEIMessages wrapSEI;
+  xWriteCode((uint32_t)(sei.m_ponTargetPoId.size() - 1), 8, "pon_num_po_ids_minus1");
+  for (int i = 0; i < (int)sei.m_ponTargetPoId.size(); i++)
+  {
+    xWriteCode(sei.m_ponTargetPoId[i], 8, "pon_target_po_id[i]");
+  }
+  xWriteCode(sei.m_ponNumSeisMinus1, 8, "pon_num_seis_minus1");
+  for (int i = 0; i <= sei.m_ponNumSeisMinus1; i++)
+  {
+    CHECK((i > 0) && (sei.m_ponProcessingOrder[i] < sei.m_ponProcessingOrder[i-1]) , "When i is greater than 0, pon_processing_order[i] shall be greater than or equal to pon_processing_order[i-1]");
+    xWriteCode(sei.m_ponProcessingOrder[i], 8, "pon_processing_order[i]");
+    wrapSEI = getSeisByType(sei.m_ponWrapSeiMessages, SEI::PayloadType(sei.m_ponPayloadType[i]));
+    writeSEImessages(bs, wrapSEI, m_nestingHrd, true, 0);
+  }
+}
+#endif
 
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)
 {
