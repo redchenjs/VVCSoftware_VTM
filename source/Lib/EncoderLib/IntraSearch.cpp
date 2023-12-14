@@ -1456,6 +1456,7 @@ void IntraSearch::estIntraPredChromaQT( CodingUnit &cu, Partitioner &partitioner
       CodingStructure &saveCS = *m_pSaveCS[0];
       saveCS.pcv      = cs.pcv;
       saveCS.picture  = cs.picture;
+      saveCS.sps      = cs.sps;
       saveCS.area.repositionTo( cs.area );
       saveCS.clearTUs();
 
@@ -1491,7 +1492,6 @@ void IntraSearch::estIntraPredChromaQT( CodingUnit &cu, Partitioner &partitioner
       {
         CodingUnit& auxCU = saveCS.addCU( cu, partitioner.chType );
         auxCU.ispMode = cu.ispMode;
-        saveCS.sps = cu.cs->sps;
         saveCS.addPU( *cu.firstPU, partitioner.chType );
       }
 
@@ -4474,6 +4474,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
     {
       saveLumaCS.pcv = csFull->pcv;
       saveLumaCS.picture = csFull->picture;
+      saveLumaCS.sps = csFull->sps;
       saveLumaCS.area.repositionTo(csFull->area);
       saveLumaCS.clearTUs();
       tmpTU = &saveLumaCS.addTU(currArea, partitioner.chType);
@@ -4697,6 +4698,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
     CodingStructure &saveChromaCS = *m_pSaveCS[1];
     saveChromaCS.pcv = csFull->pcv;
     saveChromaCS.picture = csFull->picture;
+    saveChromaCS.sps = csFull->sps;
     saveChromaCS.area.repositionTo(csFull->area);
     saveChromaCS.initStructData(MAX_INT, true);
     tmpTU = &saveChromaCS.addTU(currArea, partitioner.chType);
