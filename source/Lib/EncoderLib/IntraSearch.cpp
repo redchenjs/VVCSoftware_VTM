@@ -4474,6 +4474,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
     {
       saveLumaCS.pcv = csFull->pcv;
       saveLumaCS.picture = csFull->picture;
+      saveLumaCS.sps = csFull->sps;
       saveLumaCS.area.repositionTo(csFull->area);
       saveLumaCS.clearTUs();
       tmpTU = &saveLumaCS.addTU(currArea, partitioner.chType);
@@ -4697,6 +4698,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
     CodingStructure &saveChromaCS = *m_pSaveCS[1];
     saveChromaCS.pcv = csFull->pcv;
     saveChromaCS.picture = csFull->picture;
+    saveChromaCS.sps = csFull->sps;
     saveChromaCS.area.repositionTo(csFull->area);
     saveChromaCS.initStructData(MAX_INT, true);
     tmpTU = &saveChromaCS.addTU(currArea, partitioner.chType);
