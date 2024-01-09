@@ -85,7 +85,7 @@ endif()
 bb_enable_warnings( msvc warnings-as-errors "/wd4996" )
 
 # enable sse4.1 build for all source files for gcc and clang
-if( UNIX OR MINGW )
+if( (UNIX OR MINGW) AND NOT (CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64") )
   add_compile_options( "-msse4.1" )
 endif()
 
