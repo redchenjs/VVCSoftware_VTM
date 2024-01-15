@@ -276,7 +276,6 @@ void AdaptiveLoopFilter::applyCcAlfFilter(CodingStructure& cs, ComponentID compI
   int  horVirBndryPos[] = { 0, 0, 0 };
   int  verVirBndryPos[] = { 0, 0, 0 };
 
-  int ctuIdx = 0;
   for( int yPos = 0; yPos < m_picHeight; yPos += m_maxCUHeight )
   {
     for( int xPos = 0; xPos < m_picWidth; xPos += m_maxCUWidth )
@@ -368,7 +367,6 @@ void AdaptiveLoopFilter::applyCcAlfFilter(CodingStructure& cs, ComponentID compI
 #endif
         }
       }
-      ctuIdx++;
     }
   }
 }

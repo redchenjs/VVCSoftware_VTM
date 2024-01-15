@@ -573,7 +573,6 @@ uint32_t BitstreamExtractorApp::decode()
   bitstreamFileIn.clear();
   bitstreamFileIn.seekg( 0, std::ios::beg );
 
-  int unitCnt = 0;
   bool lastSliceWritten= false;   // stores status of previous slice for associated filler data NAL units
 
   VPS *vpsIdZero = new VPS();
@@ -886,7 +885,6 @@ uint32_t BitstreamExtractorApp::decode()
       {
         m_prevPicPOC = slice.getPOC();
       }
-      unitCnt++;
 
       if( writeInpuNalUnitToStream )
       {
