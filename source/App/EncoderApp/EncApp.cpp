@@ -689,7 +689,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setUseRDOQ                                           ( m_useRDOQ     );
   m_cEncLib.setUseRDOQTS                                         ( m_useRDOQTS   );
   m_cEncLib.setUseSelectiveRDOQ                                  ( m_useSelectiveRDOQ );
-  m_cEncLib.setRDpenalty                                         ( m_rdPenalty );
   m_cEncLib.setCTUSize(m_ctuSize);
   m_cEncLib.setSubPicInfoPresentFlag                             ( m_subPicInfoPresentFlag );
   if(m_subPicInfoPresentFlag)

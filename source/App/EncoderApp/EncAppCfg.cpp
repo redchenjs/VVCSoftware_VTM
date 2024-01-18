@@ -1225,7 +1225,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("RDOQ",                                            m_useRDOQ,                                         true)
   ("RDOQTS",                                          m_useRDOQTS,                                       true)
   ("SelectiveRDOQ",                                   m_useSelectiveRDOQ,                               false, "Enable selective RDOQ")
-  ("RDpenalty",                                       m_rdPenalty,                                          0, "RD-penalty for 32x32 TU for intra in non-intra slices. 0:disabled  1:RD-penalty  2:maximum RD-penalty")
 
   // Deblocking filter parameters
   ("DeblockingFilterDisable",                         m_deblockingFilterDisable,                        false)
@@ -5470,7 +5469,6 @@ void EncAppCfg::xPrintParameter()
   msg( VERBOSE, "HAD:%d ", m_bUseHADME                          );
   msg( VERBOSE, "RDQ:%d ", m_useRDOQ                            );
   msg( VERBOSE, "RDQTS:%d ", m_useRDOQTS                        );
-  msg( VERBOSE, "RDpenalty:%d ", m_rdPenalty                    );
 #if SHARP_LUMA_DELTA_QP
   msg( VERBOSE, "LQP:%d ", m_lumaLevelToDeltaQPMapping.mode     );
 #endif

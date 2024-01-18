@@ -503,7 +503,6 @@ protected:
   bool      m_useRDOQ;
   bool      m_useRDOQTS;
   bool      m_useSelectiveRDOQ;
-  uint32_t      m_rdPenalty;
   FastInterSearchMode m_fastInterSearchMode;
   bool      m_bUseEarlyCU;
   bool      m_useFastDecisionForMerge;
@@ -1805,7 +1804,6 @@ public:
   void      setUseRDOQ                      ( bool  b )     { m_useRDOQ    = b; }
   void      setUseRDOQTS                    ( bool  b )     { m_useRDOQTS  = b; }
   void      setUseSelectiveRDOQ             ( bool b )      { m_useSelectiveRDOQ = b; }
-  void      setRDpenalty                    ( uint32_t  u )     { m_rdPenalty  = u; }
   void      setFastInterSearchMode          ( FastInterSearchMode m ) { m_fastInterSearchMode = m; }
   void      setUseEarlyCU                   ( bool  b )     { m_bUseEarlyCU = b; }
   void      setUseFastDecisionForMerge      ( bool  b )     { m_useFastDecisionForMerge = b; }
@@ -1825,7 +1823,6 @@ public:
   bool      getUseRDOQ                      ()      { return m_useRDOQ;    }
   bool      getUseRDOQTS                    ()      { return m_useRDOQTS;  }
   bool      getUseSelectiveRDOQ             ()      { return m_useSelectiveRDOQ; }
-  int       getRDpenalty                    ()      { return m_rdPenalty;  }
   FastInterSearchMode getFastInterSearchMode() const{ return m_fastInterSearchMode;  }
   bool      getUseEarlyCU                   () const{ return m_bUseEarlyCU; }
   bool      getUseFastDecisionForMerge      () const{ return m_useFastDecisionForMerge; }
