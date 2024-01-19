@@ -762,8 +762,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
   std::string frameRate;
 
-  bool sdr = false;
-
   int chromaSampleLocType;
   int chromaSampleLocTypeTopField;
   int chromaSampleLocTypeBottomField;
@@ -774,7 +772,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("help",                                            do_help,                                          false, "this help text")
   ("c",    po::parseConfigFile, "configuration file name")
   ("WarnUnknowParameter,w",                           warnUnknowParameter,                                  0, "warn for unknown configuration parameters instead of failing")
-  ("isSDR",                                           sdr,                                              false, "compatibility")
 #if ENABLE_SIMD_OPT
   ("SIMD",                                            ignore,                                      std::string(""), "SIMD extension to use (SCALAR, SSE41, SSE42, AVX, AVX2, AVX512), default: the highest supported extension\n")
 #endif
