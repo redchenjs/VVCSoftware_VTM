@@ -485,7 +485,6 @@ protected:
   bool      m_useRDOQ;                                       ///< flag for using RD optimized quantization
   bool      m_useRDOQTS;                                     ///< flag for using RD optimized quantization for transform skip
   bool      m_useSelectiveRDOQ;                               ///< flag for using selective RDOQ
-  int       m_rdPenalty;                                      ///< RD-penalty for 32x32 TU for intra in non-intra slices (0: no RD-penalty, 1: RD-penalty, 2: maximum RD-penalty)
   bool      m_bDisableIntraPUsInInterSlices;                  ///< Flag for disabling intra predicted PUs in inter slices.
   MESearchMethod m_motionEstimationSearchMethod;
   bool      m_bRestrictMESampling;                            ///< Restrict sampling for the Selective ME
