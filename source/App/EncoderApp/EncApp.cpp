@@ -170,7 +170,7 @@ void EncApp::xInitLibCfg( int layerIdx )
       }
       else
       {
-        vps.setNumOutputLayerSets(m_numOutputLayerSets);
+        vps.setNumOutputLayerSets(vps.getMaxLayers());
       }
     }
     if (!vps.getEachLayerIsAnOlsFlag())
@@ -210,16 +210,16 @@ void EncApp::xInitLibCfg( int layerIdx )
     }
     vps.setPtlMaxTemporalId                                      (i, vps.getMaxSubLayers() - 1);
   }
-  if (vps.getNumPtls() == vps.getNumOutputLayerSets())
+  if (vps.getNumPtls() == vps.getTotalNumOLSs())
   {
-    for (int i = 0; i < vps.getNumOutputLayerSets(); i++)
+    for (int i = 0; i < vps.getTotalNumOLSs(); i++)
     {
       vps.setOlsPtlIdx                                             (i, i);
     }
   }
   else
   {
-    for (int i = 0; i < vps.getNumOutputLayerSets(); i++)
+    for (int i = 0; i < vps.getTotalNumOLSs(); i++)
     {
       vps.setOlsPtlIdx                                             (i, m_olsPtlIdx[i]);
     }
