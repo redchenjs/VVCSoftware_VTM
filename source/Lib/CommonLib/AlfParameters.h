@@ -168,7 +168,7 @@ struct AlfParam
     {
       return false;
     }
-    if (nonLinearFlag == other.nonLinearFlag)
+    if (nonLinearFlag != other.nonLinearFlag)
     {
       return false;
     }
@@ -196,7 +196,7 @@ struct AlfParam
     {
       return false;
     }
-    if (newFilterFlag == other.newFilterFlag)
+    if (newFilterFlag != other.newFilterFlag)
     {
       return false;
     }
