@@ -605,73 +605,74 @@ public:
   virtual ~SEIDependentRAPIndication() { }
 };
 
+enum class HrdType
+{
+  NAL,
+  VCL,
+  NUM
+};
 
 class SEIBufferingPeriod : public SEI
 {
 public:
+  struct CpbEntry
+  {
+    uint32_t delay;
+    uint32_t offset;
+  };
+
   PayloadType payloadType() const { return PayloadType::BUFFERING_PERIOD; }
-  void copyTo (SEIBufferingPeriod& target) const;
+  void        copyTo(SEIBufferingPeriod& target) const;
 
   SEIBufferingPeriod()
-  : m_bpNalCpbParamsPresentFlag (false)
-  , m_bpVclCpbParamsPresentFlag (false)
-  , m_initialCpbRemovalDelayLength (0)
-  , m_cpbRemovalDelayLength (0)
-  , m_dpbOutputDelayLength (0)
-  , m_bpCpbCnt(0)
-  , m_duCpbRemovalDelayIncrementLength (0)
-  , m_dpbOutputDelayDuLength (0)
-  , m_cpbRemovalDelayDeltasPresentFlag (false)
-  , m_numCpbRemovalDelayDeltas (0)
-  , m_bpMaxSubLayers (0)
-  , m_bpDecodingUnitHrdParamsPresentFlag (false)
-  , m_decodingUnitCpbParamsInPicTimingSeiFlag (false)
-  , m_decodingUnitDpbDuParamsInPicTimingSeiFlag(false)
-    , m_sublayerInitialCpbRemovalDelayPresentFlag(false)
-    , m_additionalConcatenationInfoPresentFlag (false)
-    , m_maxInitialRemovalDelayForConcatenation (0)
-    , m_sublayerDpbOutputOffsetsPresentFlag (false)
-    , m_altCpbParamsPresentFlag (false)
-    , m_useAltCpbParamsFlag (false)
   {
-    ::memset(m_initialCpbRemovalDelay, 0, sizeof(m_initialCpbRemovalDelay));
-    ::memset(m_initialCpbRemovalOffset, 0, sizeof(m_initialCpbRemovalOffset));
-    ::memset(m_cpbRemovalDelayDelta, 0, sizeof(m_cpbRemovalDelayDelta));
-    ::memset(m_dpbOutputTidOffset, 0, sizeof(m_dpbOutputTidOffset));
+    hasHrdParams.fill(false);
+
+    for (auto hrdType: { HrdType::NAL, HrdType::VCL })
+    {
+      for (int sublayerIdx = 0; sublayerIdx < MAX_TLAYER; sublayerIdx++)
+      {
+        initialCpbRemoval[hrdType][sublayerIdx].fill({ 0, 0 });
+      }
+    }
+
+    cpbRemovalDelayDeltaVals.clear();
+    dpbOutputTidOffset.fill(0);
   }
+
   SEIBufferingPeriod(const SEIBufferingPeriod& sei);
   virtual ~SEIBufferingPeriod() {}
 
-  void      setDuCpbRemovalDelayIncrementLength( uint32_t value )        { m_duCpbRemovalDelayIncrementLength = value;        }
-  uint32_t  getDuCpbRemovalDelayIncrementLength( ) const                 { return m_duCpbRemovalDelayIncrementLength;         }
-  void      setDpbOutputDelayDuLength( uint32_t value )                  { m_dpbOutputDelayDuLength = value;                  }
-  uint32_t  getDpbOutputDelayDuLength( ) const                           { return m_dpbOutputDelayDuLength;                   }
-  bool m_bpNalCpbParamsPresentFlag;
-  bool m_bpVclCpbParamsPresentFlag;
-  uint32_t m_initialCpbRemovalDelayLength;
-  uint32_t m_cpbRemovalDelayLength;
-  uint32_t m_dpbOutputDelayLength;
-  int      m_bpCpbCnt;
-  uint32_t m_duCpbRemovalDelayIncrementLength;
-  uint32_t m_dpbOutputDelayDuLength;
-  uint32_t m_initialCpbRemovalDelay         [MAX_TLAYER][MAX_CPB_CNT][2];
-  uint32_t m_initialCpbRemovalOffset        [MAX_TLAYER][MAX_CPB_CNT][2];
-  bool m_concatenationFlag;
-  uint32_t m_auCpbRemovalDelayDelta;
-  bool m_cpbRemovalDelayDeltasPresentFlag;
-  int  m_numCpbRemovalDelayDeltas;
-  int  m_bpMaxSubLayers;
-  uint32_t m_cpbRemovalDelayDelta    [16];
-  bool m_bpDecodingUnitHrdParamsPresentFlag;
-  bool m_decodingUnitCpbParamsInPicTimingSeiFlag;
-  bool m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
-  bool m_sublayerInitialCpbRemovalDelayPresentFlag;
-  bool     m_additionalConcatenationInfoPresentFlag;
-  uint32_t m_maxInitialRemovalDelayForConcatenation;
-  bool     m_sublayerDpbOutputOffsetsPresentFlag;
-  uint32_t m_dpbOutputTidOffset      [MAX_TLAYER];
-  bool     m_altCpbParamsPresentFlag;
-  bool     m_useAltCpbParamsFlag;
+  EnumArray<bool, HrdType> hasHrdParams;
+
+  bool concatenation                     = false;
+  bool hasDuHrdParams                    = false;
+  bool duCpbParamsInPicTimingSei         = false;
+  bool duDpbParamsInPicTimingSei         = false;
+  bool hasSublayerInitialCpbRemovalDelay = false;
+  bool hasAdditionalConcatenationInfo    = false;
+  bool hasSublayerDpbOutputOffsets       = false;
+  bool hasAltCpbParams                   = false;
+  bool useAltCpbParams                   = false;
+
+  uint32_t cpbInitialRemovalDelayLength           = 0;
+  uint32_t cpbRemovalDelayLength                  = 0;
+  uint32_t dpbOutputDelayLength                   = 0;
+  uint32_t cpbCount                               = 0;
+  uint32_t duCpbRemovalDelayIncrementLength       = 0;
+  uint32_t dpbOutputDelayDuLength                 = 0;
+  uint32_t cpbRemovalDelayDelta                   = 0;
+  uint32_t maxInitialRemovalDelayForConcatenation = 0;
+  int      maxSublayers                           = 0;
+
+  EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialCpbRemoval;
+
+  static_vector<uint32_t, 16> cpbRemovalDelayDeltaVals;
+
+  bool     hasCpbRemovalDelayDeltas() const { return !cpbRemovalDelayDeltaVals.empty(); }
+  uint32_t numCpbRemovalDelayDeltas() const { return static_cast<uint32_t>(cpbRemovalDelayDeltaVals.size()); }
+
+  std::array<uint32_t, MAX_TLAYER> dpbOutputTidOffset;
 };
 
 class SEIPictureTiming : public SEI

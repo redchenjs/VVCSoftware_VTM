@@ -2754,10 +2754,10 @@ void DecLib::xCheckDUISEIMessages(SEIMessages &prefixSEIs)
   {
     bool duDelayFlag = false;
 
-    SEIBufferingPeriod *bp = (SEIBufferingPeriod *) BPSEIs.front();
-    if (bp->m_bpDecodingUnitHrdParamsPresentFlag)
+    auto* bp = reinterpret_cast<SEIBufferingPeriod*>(BPSEIs.front());
+    if (bp->hasDuHrdParams)
     {
-      if (!bp->m_decodingUnitDpbDuParamsInPicTimingSeiFlag)
+      if (!bp->duDpbParamsInPicTimingSei)
       {
         if (DUISEIs.empty())
         {
