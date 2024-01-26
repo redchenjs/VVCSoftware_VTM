@@ -633,6 +633,7 @@ public:
       for (int sublayerIdx = 0; sublayerIdx < MAX_TLAYER; sublayerIdx++)
       {
         initialCpbRemoval[hrdType][sublayerIdx].fill({ 0, 0 });
+        initialAltCpbRemoval[hrdType][sublayerIdx].fill({ 0, 0 });
       }
     }
 
@@ -666,6 +667,7 @@ public:
   int      maxSublayers                           = 0;
 
   EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialCpbRemoval;
+  EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialAltCpbRemoval;
 
   static_vector<uint32_t, 16> cpbRemovalDelayDeltaVals;
 

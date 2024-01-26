@@ -422,6 +422,16 @@ void SEIWriter::xWriteSEIBufferingPeriod(const SEIBufferingPeriod& sei)
           xWriteCode(sei.initialCpbRemoval[hrdType][i][j].offset, sei.cpbInitialRemovalDelayLength,
                      hrdType == HrdType::NAL ? "bp_nal_initial_cpb_removal_offset[i][j]"
                                              : "bp_vcl_initial_cpb_removal_offset[i][j]");
+
+          if (sei.hasDuHrdParams)
+          {
+            xWriteCode(sei.initialAltCpbRemoval[hrdType][i][j].delay, sei.cpbInitialRemovalDelayLength,
+                       hrdType == HrdType::NAL ? "bp_nal_alt_initial_cpb_removal_delay[i][j]"
+                                               : "bp_vcl_alt_initial_cpb_removal_delay[i][j]");
+            xWriteCode(sei.initialAltCpbRemoval[hrdType][i][j].offset, sei.cpbInitialRemovalDelayLength,
+                       hrdType == HrdType::NAL ? "bp_nal_alt_initial_cpb_removal_offset[i][j]"
+                                               : "bp_vcl_alt_initial_cpb_removal_offset[i][j]");
+          }
         }
       }
     }
