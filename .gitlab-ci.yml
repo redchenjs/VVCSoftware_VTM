@@ -29,6 +29,11 @@ build_macos:
    tags:
       - macos
 
+build_macos_arm:
+   extends: .build_template
+   tags:
+      - macos-arm
+
 build_ubuntu2004:
    extends: .build_template_linux
    tags:
