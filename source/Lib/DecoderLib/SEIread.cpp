@@ -1658,6 +1658,18 @@ void SEIReader::xParseSEIBufferingPeriod(SEIBufferingPeriod& bp, uint32_t payloa
                         hrdType == HrdType::NAL ? "bp_nal_initial_cpb_removal_offset[i][j]"
                                                 : "bp_vcl_initial_cpb_removal_offset[i][j]");
           bp.initialCpbRemoval[hrdType][sublayerIdx][j].offset = code;
+
+          if (bp.hasDuHrdParams)
+          {
+            sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, code,
+                          hrdType == HrdType::NAL ? "bp_nal_initial_alt_cpb_removal_delay[i][j]"
+                                                  : "bp_vcl_initial_alt_cpb_removal_delay[i][j]");
+            bp.initialAltCpbRemoval[hrdType][sublayerIdx][j].delay = code;
+            sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, code,
+                          hrdType == HrdType::NAL ? "bp_nal_initial_alt_cpb_removal_offset[i][j]"
+                                                  : "bp_vcl_initial_alt_cpb_removal_offset[i][j]");
+            bp.initialAltCpbRemoval[hrdType][sublayerIdx][j].offset = code;
+          }
         }
       }
     }
