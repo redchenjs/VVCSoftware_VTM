@@ -679,7 +679,7 @@ void EncGOP::xWriteTrailingSEIMessages (SEIMessages& seiMessages, AccessUnit &ac
 
 void EncGOP::xWriteDuSEIMessages (SEIMessages& duInfoSeiMessages, AccessUnit &accessUnit, int temporalId, std::deque<DUData> &duData)
 {
-  if( m_pcCfg->getDecodingUnitInfoSEIEnabled() && m_HRD->getBufferingPeriodSEI()->m_decodingUnitCpbParamsInPicTimingSeiFlag )
+  if (m_pcCfg->getDecodingUnitInfoSEIEnabled() && m_HRD->getBufferingPeriodSEI()->duCpbParamsInPicTimingSei)
   {
     int naluIdx = 0;
     AccessUnit::iterator nalu = accessUnit.begin();
@@ -945,7 +945,7 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     slice->getNalUnitLayerId()==slice->getVPS()->getLayerId(0) &&
   (slice->getSPS()->getGeneralHrdParametersPresentFlag()))
   {
-    SEIBufferingPeriod *bufferingPeriodSEI = new SEIBufferingPeriod();
+    auto                bufferingPeriodSEI = new SEIBufferingPeriod;
     const bool          noLeadingPictures =
       slice->getNalUnitType() != NAL_UNIT_CODED_SLICE_IDR_W_RADL && slice->getNalUnitType() != NAL_UNIT_CODED_SLICE_CRA;
     m_seiEncoder.initSEIBufferingPeriod(bufferingPeriodSEI,noLeadingPictures);
@@ -955,7 +955,7 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
 
     if (m_pcCfg->getScalableNestingSEIEnabled())
     {
-      SEIBufferingPeriod *bufferingPeriodSEIcopy = new SEIBufferingPeriod();
+      auto bufferingPeriodSEIcopy = new SEIBufferingPeriod;
       bufferingPeriodSEI->copyTo(*bufferingPeriodSEIcopy);
       nestedSeiMessages.push_back(bufferingPeriodSEIcopy);
     }
@@ -1126,7 +1126,7 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
       const uint32_t maxNumSubLayers = slice->getSPS()->getMaxTLayers();
       pictureTimingSEI->m_duCpbRemovalDelayMinus1.resize( numDU * maxNumSubLayers );
     }
-    const uint32_t cpbRemovalDelayLegth = m_HRD->getBufferingPeriodSEI()->m_cpbRemovalDelayLength;
+    const uint32_t cpbRemovalDelayLegth = m_HRD->getBufferingPeriodSEI()->cpbRemovalDelayLength;
     const uint32_t maxNumSubLayers = slice->getSPS()->getMaxTLayers();
     pictureTimingSEI->m_auCpbRemovalDelay[maxNumSubLayers-1] = std::min<int>(std::max<int>(1, m_totalCoded[maxNumSubLayers-1] - m_lastBPSEI[maxNumSubLayers-1]), static_cast<int>(pow(2, static_cast<double>(cpbRemovalDelayLegth)))); // Syntax element signalled as minus, hence the .
     CHECK( (m_totalCoded[maxNumSubLayers-1] - m_lastBPSEI[maxNumSubLayers-1]) > pow(2, static_cast<double>(cpbRemovalDelayLegth)), " cpbRemovalDelayLegth too small for m_auCpbRemovalDelay[pt_max_sub_layers_minus1] at picture timing SEI " );
@@ -1145,7 +1145,8 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
       }
       else
       {
-        pictureTimingSEI->m_cpbRemovalDelayDeltaEnabledFlag[i] = m_HRD->getBufferingPeriodSEI()->m_cpbRemovalDelayDeltasPresentFlag;
+        pictureTimingSEI->m_cpbRemovalDelayDeltaEnabledFlag[i] =
+          m_HRD->getBufferingPeriodSEI()->hasCpbRemovalDelayDeltas();
       }
       if( pictureTimingSEI->m_cpbRemovalDelayDeltaEnabledFlag[i] )
       {
@@ -1473,7 +1474,7 @@ void EncGOP::xUpdateTimingSEI(SEIPictureTiming *pictureTimingSEI, std::deque<DUD
   }
 }
 
-void EncGOP::xUpdateDuInfoSEI(SEIMessages &duInfoSeiMessages, SEIPictureTiming *pictureTimingSEI, int maxSubLayers)
+void EncGOP::xUpdateDuInfoSEI(SEIMessages& duInfoSeiMessages, SEIPictureTiming* pictureTimingSEI, int maxSublayers)
 {
   if (duInfoSeiMessages.empty() || (pictureTimingSEI == nullptr))
   {
@@ -1486,10 +1487,11 @@ void EncGOP::xUpdateDuInfoSEI(SEIMessages &duInfoSeiMessages, SEIPictureTiming *
   {
     SEIDecodingUnitInfo *duInfoSEI = (SEIDecodingUnitInfo*) (*du);
     duInfoSEI->m_decodingUnitIdx = i;
-    for ( int j = 0; j < maxSubLayers; j++ )
+    for (int j = 0; j < maxSublayers; j++)
     {
       duInfoSEI->m_duiSubLayerDelaysPresentFlag[j] = pictureTimingSEI->m_ptSubLayerDelaysPresentFlag[j];
-      duInfoSEI->m_duSptCpbRemovalDelayIncrement[j] = pictureTimingSEI->m_duCpbRemovalDelayMinus1[i*maxSubLayers+j] + 1;
+      duInfoSEI->m_duSptCpbRemovalDelayIncrement[j] =
+        pictureTimingSEI->m_duCpbRemovalDelayMinus1[i * maxSublayers + j] + 1;
     }
     duInfoSEI->m_dpbOutputDuDelayPresentFlag = false;
     i++;

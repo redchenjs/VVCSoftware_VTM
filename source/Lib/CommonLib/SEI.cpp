@@ -96,34 +96,7 @@ void deleteSEIs (SEIMessages &seiList)
   seiList.clear();
 }
 
-void SEIBufferingPeriod::copyTo (SEIBufferingPeriod& target) const
-{
-  target.m_bpNalCpbParamsPresentFlag = m_bpNalCpbParamsPresentFlag;
-  target.m_bpVclCpbParamsPresentFlag = m_bpVclCpbParamsPresentFlag;
-  target.m_initialCpbRemovalDelayLength = m_initialCpbRemovalDelayLength;
-  target.m_cpbRemovalDelayLength = m_cpbRemovalDelayLength;
-  target.m_dpbOutputDelayLength = m_dpbOutputDelayLength;
-  target.m_duCpbRemovalDelayIncrementLength = m_duCpbRemovalDelayIncrementLength;
-  target.m_dpbOutputDelayDuLength = m_dpbOutputDelayDuLength;
-  target.m_concatenationFlag = m_concatenationFlag;
-  target.m_auCpbRemovalDelayDelta = m_auCpbRemovalDelayDelta;
-  target.m_cpbRemovalDelayDeltasPresentFlag =  m_cpbRemovalDelayDeltasPresentFlag;
-  target.m_numCpbRemovalDelayDeltas = m_numCpbRemovalDelayDeltas;
-  target.m_bpMaxSubLayers = m_bpMaxSubLayers;
-  ::memcpy(target.m_initialCpbRemovalDelay, m_initialCpbRemovalDelay, sizeof(m_initialCpbRemovalDelay));
-  ::memcpy(target.m_initialCpbRemovalOffset, m_initialCpbRemovalOffset, sizeof(m_initialCpbRemovalOffset));
-  ::memcpy(target.m_cpbRemovalDelayDelta, m_cpbRemovalDelayDelta, sizeof(m_cpbRemovalDelayDelta));
-  target.m_bpCpbCnt = m_bpCpbCnt;
-  target.m_bpDecodingUnitHrdParamsPresentFlag = m_bpDecodingUnitHrdParamsPresentFlag;
-  target.m_decodingUnitCpbParamsInPicTimingSeiFlag = m_decodingUnitCpbParamsInPicTimingSeiFlag;
-  target.m_decodingUnitDpbDuParamsInPicTimingSeiFlag = m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
-  target.m_sublayerInitialCpbRemovalDelayPresentFlag = m_sublayerInitialCpbRemovalDelayPresentFlag;
-  target.m_concatenationFlag = m_concatenationFlag;
-  target.m_maxInitialRemovalDelayForConcatenation = m_maxInitialRemovalDelayForConcatenation;
-  target.m_sublayerDpbOutputOffsetsPresentFlag = m_sublayerDpbOutputOffsetsPresentFlag;
-  ::memcpy(target.m_dpbOutputTidOffset, m_dpbOutputTidOffset, sizeof(m_dpbOutputTidOffset));
-  target.m_altCpbParamsPresentFlag = m_altCpbParamsPresentFlag;
-}
+void SEIBufferingPeriod::copyTo(SEIBufferingPeriod& target) const { target = *this; }
 
 void SEIPictureTiming::copyTo (SEIPictureTiming& target) const
 {
@@ -787,35 +760,7 @@ SEIDecodedPictureHash::SEIDecodedPictureHash(const SEIDecodedPictureHash& sei)
   m_pictureHash = sei.m_pictureHash;
 }
 
-SEIBufferingPeriod::SEIBufferingPeriod(const SEIBufferingPeriod& sei)
-{
-  m_bpNalCpbParamsPresentFlag = sei.m_bpNalCpbParamsPresentFlag;
-  m_bpVclCpbParamsPresentFlag = sei.m_bpVclCpbParamsPresentFlag;
-  m_initialCpbRemovalDelayLength = sei.m_initialCpbRemovalDelayLength;
-  m_cpbRemovalDelayLength = sei.m_cpbRemovalDelayLength;
-  m_dpbOutputDelayLength = sei.m_dpbOutputDelayLength;
-  m_bpCpbCnt = sei.m_bpCpbCnt;
-  m_duCpbRemovalDelayIncrementLength = sei.m_duCpbRemovalDelayIncrementLength;
-  m_dpbOutputDelayDuLength = sei.m_dpbOutputDelayDuLength;
-  std::memcpy(m_initialCpbRemovalDelay, sei.m_initialCpbRemovalDelay, sizeof(sei.m_initialCpbRemovalDelay));
-  std::memcpy(m_initialCpbRemovalOffset, sei.m_initialCpbRemovalOffset, sizeof(sei.m_initialCpbRemovalOffset));
-  m_concatenationFlag = sei.m_concatenationFlag;
-  m_auCpbRemovalDelayDelta = sei.m_auCpbRemovalDelayDelta;
-  m_cpbRemovalDelayDeltasPresentFlag = sei.m_cpbRemovalDelayDeltasPresentFlag;
-  m_numCpbRemovalDelayDeltas = sei.m_numCpbRemovalDelayDeltas;
-  m_bpMaxSubLayers = sei.m_bpMaxSubLayers;
-  std::memcpy(m_cpbRemovalDelayDelta, sei.m_cpbRemovalDelayDelta, sizeof(sei.m_cpbRemovalDelayDelta));
-  m_bpDecodingUnitHrdParamsPresentFlag = sei.m_bpDecodingUnitHrdParamsPresentFlag;
-  m_decodingUnitCpbParamsInPicTimingSeiFlag = sei.m_decodingUnitCpbParamsInPicTimingSeiFlag;
-  m_decodingUnitDpbDuParamsInPicTimingSeiFlag = sei.m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
-  m_sublayerInitialCpbRemovalDelayPresentFlag = sei.m_sublayerInitialCpbRemovalDelayPresentFlag;
-  m_additionalConcatenationInfoPresentFlag = sei.m_additionalConcatenationInfoPresentFlag;
-  m_maxInitialRemovalDelayForConcatenation = sei.m_maxInitialRemovalDelayForConcatenation;
-  m_sublayerDpbOutputOffsetsPresentFlag = sei.m_sublayerDpbOutputOffsetsPresentFlag;
-  std::memcpy(m_dpbOutputTidOffset, sei.m_dpbOutputTidOffset, sizeof(sei.m_dpbOutputTidOffset));
-  m_altCpbParamsPresentFlag = sei.m_altCpbParamsPresentFlag;
-  m_useAltCpbParamsFlag = sei.m_useAltCpbParamsFlag;
-}
+SEIBufferingPeriod::SEIBufferingPeriod(const SEIBufferingPeriod& sei) = default;
 
 SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
 {

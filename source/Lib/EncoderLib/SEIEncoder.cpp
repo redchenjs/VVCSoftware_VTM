@@ -80,36 +80,37 @@ void SEIEncoder::initSEIParameterSetsInclusionIndication(SEIParameterSetsInclusi
   seiParameterSetsInclusionIndication->m_selfContainedClvsFlag = m_pcCfg->getSelfContainedClvsFlag();
 }
 
-void SEIEncoder::initSEIBufferingPeriod(SEIBufferingPeriod *bufferingPeriodSEI, bool noLeadingPictures)
+void SEIEncoder::initSEIBufferingPeriod(SEIBufferingPeriod* bp, bool noLeadingPictures)
 {
   CHECK(!(m_isInitialized), "bufferingPeriodSEI already initialized");
-  CHECK(!(bufferingPeriodSEI != nullptr), "Need a bufferingPeriodSEI for initialization (got nullptr)");
+  CHECK(bp == nullptr, "Need a bufferingPeriodSEI for initialization (got nullptr)");
 
-  uint32_t uiInitialCpbRemovalDelay = (90000/2);                      // 0.5 sec
-  bufferingPeriodSEI->m_bpNalCpbParamsPresentFlag = true;
-  bufferingPeriodSEI->m_bpVclCpbParamsPresentFlag = true;
-  bufferingPeriodSEI->m_bpMaxSubLayers = m_pcCfg->getMaxTempLayer() ;
-  bufferingPeriodSEI->m_bpCpbCnt = 1;
-  for(int i=0; i < bufferingPeriodSEI->m_bpMaxSubLayers; i++)
+  const uint32_t initialCpbRemovalDelay = (90000 / 2);   // 0.5 sec
+  bp->maxSublayers                      = m_pcCfg->getMaxTempLayer();
+  bp->cpbCount                          = 1;
+
+  for (auto hrdType: { HrdType::NAL, HrdType::VCL })
   {
-    for(int j=0; j < bufferingPeriodSEI->m_bpCpbCnt; j++)
+    bp->hasHrdParams[hrdType] = true;
+    for (int sublayerIdx = 0; sublayerIdx < bp->maxSublayers; sublayerIdx++)
     {
-      bufferingPeriodSEI->m_initialCpbRemovalDelay[i][j][0] = uiInitialCpbRemovalDelay;
-      bufferingPeriodSEI->m_initialCpbRemovalDelay[i][j][1] = uiInitialCpbRemovalDelay;
-      bufferingPeriodSEI->m_initialCpbRemovalOffset[i][j][0] = uiInitialCpbRemovalDelay;
-      bufferingPeriodSEI->m_initialCpbRemovalOffset[i][j][1] = uiInitialCpbRemovalDelay;
+      for (int j = 0; j < bp->cpbCount; j++)
+      {
+        bp->initialCpbRemoval[hrdType][sublayerIdx][j] = { initialCpbRemovalDelay, initialCpbRemovalDelay };
+      }
     }
   }
+
   // We don't set concatenation_flag here. max_initial_removal_delay_for_concatenation depends on the usage scenario.
   // The parameters could be added to config file, but as long as the initialisation of generic buffering parameters is
   // not controllable, it does not seem to make sense to provide settings for these.
-  bufferingPeriodSEI->m_concatenationFlag = false;
-  bufferingPeriodSEI->m_maxInitialRemovalDelayForConcatenation = uiInitialCpbRemovalDelay;
+  bp->concatenation                          = false;
+  bp->maxInitialRemovalDelayForConcatenation = initialCpbRemovalDelay;
 
-  bufferingPeriodSEI->m_bpDecodingUnitHrdParamsPresentFlag = m_pcCfg->getNoPicPartitionFlag() == false;
-  bufferingPeriodSEI->m_decodingUnitCpbParamsInPicTimingSeiFlag = !m_pcCfg->getDecodingUnitInfoSEIEnabled();
+  bp->hasDuHrdParams            = m_pcCfg->getNoPicPartitionFlag() == false;
+  bp->duCpbParamsInPicTimingSei = !m_pcCfg->getDecodingUnitInfoSEIEnabled();
 
-  bufferingPeriodSEI->m_initialCpbRemovalDelayLength = 16;                  // assuming 0.5 sec, log2( 90,000 * 0.5 ) = 16-bit
+  bp->cpbInitialRemovalDelayLength = 16;   // assuming 0.5 sec, log2( 90,000 * 0.5 ) = 16-bit
   // Note: The following parameters require some knowledge about the GOP structure.
   //       Using getIntraPeriod() should be avoided though, because it assumes certain GOP
   //       properties, which are only valid in CTC.
@@ -117,98 +118,71 @@ void SEIEncoder::initSEIBufferingPeriod(SEIBufferingPeriod *bufferingPeriodSEI, 
   bool isRandomAccess  = m_pcCfg->getIntraPeriod() > 0;
   if( isRandomAccess )
   {
-    bufferingPeriodSEI->m_cpbRemovalDelayLength = 6;                        // 32 = 2^5 (plus 1)
-    bufferingPeriodSEI->m_dpbOutputDelayLength =  6;                        // 32 + 3 = 2^6
+    bp->cpbRemovalDelayLength = 6;   // 32 = 2^5 (plus 1)
+    bp->dpbOutputDelayLength  = 6;   // 32 + 3 = 2^6
   }
   else
   {
-    bufferingPeriodSEI->m_cpbRemovalDelayLength = 9;                        // max. 2^10
-    bufferingPeriodSEI->m_dpbOutputDelayLength =  9;                        // max. 2^10
+    bp->cpbRemovalDelayLength = 9;   // max. 2^10
+    bp->dpbOutputDelayLength  = 9;   // max. 2^10
   }
-  bufferingPeriodSEI->m_duCpbRemovalDelayIncrementLength = 7;               // ceil( log2( tick_divisor_minus2 + 2 ) )
-  bufferingPeriodSEI->m_dpbOutputDelayDuLength = bufferingPeriodSEI->m_dpbOutputDelayLength + bufferingPeriodSEI->m_duCpbRemovalDelayIncrementLength;
+  bp->duCpbRemovalDelayIncrementLength = 7;   // ceil( log2( tick_divisor_minus2 + 2 ) )
+  bp->dpbOutputDelayDuLength           = bp->dpbOutputDelayLength + bp->duCpbRemovalDelayIncrementLength;
   //for the concatenation, it can be set to one during splicing.
-  bufferingPeriodSEI->m_concatenationFlag = 0;
+  bp->concatenation                    = 0;
   //since the temporal layer HRDParameters is not ready, we assumed it is fixed
-  bufferingPeriodSEI->m_auCpbRemovalDelayDelta = 1;
-  bufferingPeriodSEI->m_cpbRemovalDelayDeltasPresentFlag = m_pcCfg->getBpDeltasGOPStructure() ;
-  if (bufferingPeriodSEI->m_cpbRemovalDelayDeltasPresentFlag)
+  bp->cpbRemovalDelayDelta             = 1;
+
+  if (m_pcCfg->getBpDeltasGOPStructure())
   {
     switch (m_pcCfg->getGOPSize())
     {
-      case 8:
+    case 8:
+      if (noLeadingPictures)
       {
-        if (noLeadingPictures)
-        {
-          bufferingPeriodSEI->m_numCpbRemovalDelayDeltas         = 5;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[0]          = 1;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[1]          = 2;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[2]          = 3;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[3]          = 6;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[4]          = 7;
-        }
-        else
-        {
-          bufferingPeriodSEI->m_numCpbRemovalDelayDeltas         = 3;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[0]          = 1;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[1]          = 2;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[2]          = 3;
-        }
+        bp->cpbRemovalDelayDeltaVals = { 1, 2, 3, 6, 7 };
       }
-        break;
-      case 16:
+      else
       {
-        if (noLeadingPictures)
-        {
-          bufferingPeriodSEI->m_numCpbRemovalDelayDeltas         = 9;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[0]          = 1;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[1]          = 2;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[2]          = 3;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[3]          = 4;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[4]          = 6;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[5]          = 7;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[6]          = 9;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[7]          = 14;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[8]          = 15;
-        }
-        else
-        {
-          bufferingPeriodSEI->m_numCpbRemovalDelayDeltas         = 5;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[0]          = 1;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[1]          = 2;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[2]          = 3;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[3]          = 6;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[4]          = 7;
-        }
+        bp->cpbRemovalDelayDeltaVals = { 1, 2, 3 };
       }
-        break;
-      default:
+      break;
+    case 16:
+      if (noLeadingPictures)
       {
-        THROW("m_cpbRemovalDelayDelta not applicable for the GOP size");
+        bp->cpbRemovalDelayDeltaVals = { 1, 2, 3, 4, 6, 7, 9, 14, 15 };
       }
-        break;
+      else
+      {
+        bp->cpbRemovalDelayDeltaVals = { 1, 2, 3, 6, 7 };
+      }
+      break;
+    default:
+      THROW("cpbRemovalDelayDelta not applicable for the GOP size");
+      break;
     }
   }
-  bufferingPeriodSEI->m_sublayerDpbOutputOffsetsPresentFlag = true;
-  for(int i = 0; i < bufferingPeriodSEI->m_bpMaxSubLayers; i++)
+  else
   {
-    bufferingPeriodSEI->m_dpbOutputTidOffset[i] = m_pcCfg->getMaxNumReorderPics(i) * static_cast<int>(pow(2, static_cast<double>(bufferingPeriodSEI->m_bpMaxSubLayers-1-i)));
-    if(bufferingPeriodSEI->m_dpbOutputTidOffset[i] >= m_pcCfg->getMaxNumReorderPics(bufferingPeriodSEI->m_bpMaxSubLayers-1))
-    {
-      bufferingPeriodSEI->m_dpbOutputTidOffset[i] -= m_pcCfg->getMaxNumReorderPics(bufferingPeriodSEI->m_bpMaxSubLayers-1);
-    }
-    else
-    {
-      bufferingPeriodSEI->m_dpbOutputTidOffset[i] = 0;
-    }
+    bp->cpbRemovalDelayDeltaVals.clear();
+  }
+
+  bp->hasSublayerDpbOutputOffsets = true;
+  const uint32_t lastSublayer     = bp->maxSublayers - 1;
+  for (int sublayerIdx = 0; sublayerIdx <= lastSublayer; sublayerIdx++)
+  {
+    bp->dpbOutputTidOffset[sublayerIdx] =
+      std::max<int>(m_pcCfg->getMaxNumReorderPics(sublayerIdx) * (1 << (lastSublayer - sublayerIdx))
+                      - m_pcCfg->getMaxNumReorderPics(lastSublayer),
+                    0);
   }
   // A commercial encoder should track the buffer state for all layers and sub-layers
   // to ensure CPB conformance. Such tracking is required for calculating alternative
   // CPB parameters.
   // Unfortunately VTM does not have such tracking. Thus we cannot encode alternative
   // CPB parameters here.
-  bufferingPeriodSEI->m_altCpbParamsPresentFlag = false;
-  bufferingPeriodSEI->m_useAltCpbParamsFlag = false;
+  bp->hasAltCpbParams = false;
+  bp->useAltCpbParams = false;
 }
 
 void SEIEncoder::initSEIErp(SEIEquirectangularProjection* seiEquirectangularProjection)
