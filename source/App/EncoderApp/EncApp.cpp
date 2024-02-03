@@ -168,6 +168,10 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         vps.setOlsModeIdc(2); // When vps_all_independent_layers_flag is equal to 1 and vps_each_layer_is_an_ols_flag is equal to 0, the value of vps_ols_mode_idc is inferred to be equal to 2
       }
+      else
+      {
+        vps.setNumOutputLayerSets(vps.getMaxLayers());
+      }
     }
     if (!vps.getEachLayerIsAnOlsFlag())
     {
@@ -206,9 +210,19 @@ void EncApp::xInitLibCfg( int layerIdx )
     }
     vps.setPtlMaxTemporalId                                      (i, vps.getMaxSubLayers() - 1);
   }
-  for (int i = 0; i < vps.getNumOutputLayerSets(); i++)
+  if (vps.getNumPtls() == vps.getTotalNumOLSs())
   {
-    vps.setOlsPtlIdx                                             (i, m_olsPtlIdx[i]);
+    for (int i = 0; i < vps.getTotalNumOLSs(); i++)
+    {
+      vps.setOlsPtlIdx                                             (i, i);
+    }
+  }
+  else
+  {
+    for (int i = 0; i < vps.getTotalNumOLSs(); i++)
+    {
+      vps.setOlsPtlIdx                                             (i, m_olsPtlIdx[i]);
+    }
   }
 
   ProfileTierLevel ptl;
@@ -233,9 +247,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   {
     ptl.setLevelIdc                                          ( m_levelPtl[layerIdx] );
   }
-  CHECK(layerIdx >= vps.getNumPtls(),
+  CHECK(vps.getOlsPtlIdx(layerIdx) >= vps.getNumPtls(),
         "Insufficient number of Profile/Tier/Level entries in VPS. Consider increasing NumPTLsInVPS");
-  vps.setProfileTierLevel(layerIdx, ptl);
+  vps.setProfileTierLevel(vps.getOlsPtlIdx(layerIdx), ptl);
 
   vps.setVPSExtensionFlag                                        ( false );
   m_cEncLib.setProfile                                           ( m_profile);
