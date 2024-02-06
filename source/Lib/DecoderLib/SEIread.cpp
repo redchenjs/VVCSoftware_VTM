@@ -3333,7 +3333,32 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_metadata_extension_num_bits");  // nnpfc_metadata_extension_num_bits shall be equal to 0 in the current edition
     CHECK (val > 2048, "Values of nnpfc_metadata_extension_num_bits greater than 2048 shall not be present in bitstreams");
-    for (uint32_t i = 0; i < val; i++)
+   
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+    uint32_t bitsUsed = 0;
+    sei.m_metadataExtensionNumBits = val;
+
+    if ( sei.m_metadataExtensionNumBits > 0 ) 
+    {
+      if ( sei.m_purpose == 0 )
+      {
+        sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_application_purpose_tag_uri_present_flag");
+        bitsUsed++;
+        sei.m_applicationPurposeTagUriPresentFlag = val;
+        if ( sei.m_applicationPurposeTagUriPresentFlag )
+        { 
+          std::string val2;
+          sei_read_string(pDecodedMessageOutputStream, val2, "nnpfc_application_purpose_tag_uri");
+          bitsUsed++;
+          sei.m_applicationPurposeTagUri = val2;
+        }
+      }
+    }
+
+     for (uint32_t i = 0; i < sei.m_metadataExtensionNumBits - bitsUsed; i++)
+#else
+     for (uint32_t i = 0; i < val; i++)
+#endif
     {
       uint32_t val2;
       sei_read_code(pDecodedMessageOutputStream, 1, val2, "nnpfc_reserved_metadata_extension"); // Decoders shall ignore the presence and value of nnpfc_reserved_metadata_extension

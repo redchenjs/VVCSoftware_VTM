@@ -65,6 +65,8 @@
 
 #define JVET_AF0310_PO_NESTING                            1
 
+#define JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING 1 // JVET-AF2032: Conditionally signal application tag URI presence flag and tag URI in the NNPFC metadata extension
+
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
@@ -109,7 +111,6 @@
 
 #define DISABLE_PRE_POST_FILTER_FOR_IDR_CRA               1
 #define ENABLE_USER_DEFINED_WEIGHTS                       0 // User can specify weights for both current and previous picture, such that their sum = 1
-
 
 // clang-format on
 
