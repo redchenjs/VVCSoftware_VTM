@@ -3349,7 +3349,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         { 
           std::string val2;
           sei_read_string(pDecodedMessageOutputStream, val2, "nnpfc_application_purpose_tag_uri");
-          bitsUsed += (val2.length() + 1);
+          bitsUsed += (static_cast<uint32_t>(val2.length()) + 1);
           sei.m_applicationPurposeTagUri = val2;
         }
       }
