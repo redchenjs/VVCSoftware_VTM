@@ -485,7 +485,7 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
   xWriteCode(sei.dpbOutputDelay, bp.dpbOutputDelayLength, "pt_dpb_output_delay");
   if (bp.hasAltCpbParams)
   {
-    xWriteFlag(sei.hasAltTimingInfo, "cpb_alt_timing_info_present_flag");
+    xWriteFlag(sei.hasAltTimingInfo, "pt_cpb_alt_timing_info_present_flag");
     if (sei.hasAltTimingInfo)
     {
       if (bp.hasHrdParams[HrdType::NAL])
@@ -495,12 +495,12 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
           for (int j = 0; j < bp.cpbCount; j++)
           {
             xWriteCode(sei.initialAltCpbRemovalDelta[HrdType::NAL][i][j].delay, bp.cpbInitialRemovalDelayLength,
-                       "nal_cpb_alt_initial_cpb_removal_delay_delta[ i ][ j ]");
+                       "pt_nal_cpb_alt_initial_removal_delay_delta[ i ][ j ]");
             xWriteCode(sei.initialAltCpbRemovalDelta[HrdType::NAL][i][j].offset, bp.cpbInitialRemovalDelayLength,
-                       "nal_cpb_alt_initial_cpb_removal_offset_delta[ i ][ j ]");
+                       "pt_nal_cpb_alt_initial_removal_offset_delta[ i ][ j ]");
           }
-          xWriteCode(sei.m_nalCpbDelayOffset[i], bp.cpbRemovalDelayLength, "nal_cpb_delay_offset[ i ]");
-          xWriteCode(sei.m_nalDpbDelayOffset[i], bp.dpbOutputDelayLength, "nal_dpb_delay_offset[ i ]");
+          xWriteCode(sei.nalCpbDelayOffset[i], bp.cpbRemovalDelayLength, "pt_nal_cpb_delay_offset[ i ]");
+          xWriteCode(sei.nalDpbDelayOffset[i], bp.dpbOutputDelayLength, "pt_nal_dpb_delay_offset[ i ]");
         }
       }
 
