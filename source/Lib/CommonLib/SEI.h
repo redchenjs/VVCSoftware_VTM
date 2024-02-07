@@ -894,7 +894,7 @@ class SEIScalableNesting : public SEI
 public:
   PayloadType payloadType() const { return PayloadType::SCALABLE_NESTING; }
 
-  SEIScalableNesting() : m_snAllLayersFlag(false), m_snNumLayersMinus1(0), m_snSubpicIdLen(0)
+  SEIScalableNesting() : m_snAllLayersFlag(false), m_snNumLayersMinus1(0)
   {
     olsIdx.clear();
     subpicId.clear();
@@ -914,7 +914,7 @@ public:
   uint32_t  m_snNumLayersMinus1;                    //value valid if m_nestingOlsFlag == 0 and m_nestingAllLayersFlag == 0
   uint8_t m_snLayerId[MAX_NESTING_NUM_LAYER];   // value valid if m_nestingOlsFlag == 0 and m_nestingAllLayersFlag == 0.
                                                 // This can e.g. be a static array of 64 uint8_t values
-  uint8_t   m_snSubpicIdLen;
+  uint8_t   subpicIdLen = 0;
 
   SEIMessages m_nestedSEIs;
 };

@@ -641,10 +641,11 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
   if (!sei.subpicId.empty())
   {
     xWriteUvlc((uint32_t) sei.subpicId.size() - 1, "sn_num_subpics_minus1");
-    xWriteUvlc( sei.m_snSubpicIdLen - 1, "sn_subpic_id_len_minus1");
+    CHECK(sei.subpicIdLen <= 1, "subpicIdLen must be at least 1");
+    xWriteUvlc(sei.subpicIdLen - 1, "sn_subpic_id_len_minus1");
     for (uint32_t i = 0; i < sei.subpicId.size(); i++)
     {
-      xWriteCode(sei.subpicId[i], sei.m_snSubpicIdLen, "sn_subpic_id[i]");
+      xWriteCode(sei.subpicId[i], sei.subpicIdLen, "sn_subpic_id[i]");
     }
   }
 

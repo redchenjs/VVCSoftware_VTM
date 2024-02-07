@@ -837,7 +837,7 @@ SEIScalableNesting::SEIScalableNesting(const SEIScalableNesting& sei)
   m_snAllLayersFlag = sei.m_snAllLayersFlag;
   m_snNumLayersMinus1 = sei.m_snNumLayersMinus1;
   std::memcpy(m_snLayerId, sei.m_snLayerId, sizeof(sei.m_snLayerId));
-  m_snSubpicIdLen = sei.m_snSubpicIdLen;
+  subpicIdLen     = sei.subpicIdLen;
   subpicId        = sei.subpicId;
   m_nestedSEIs = sei.m_nestedSEIs;
 }

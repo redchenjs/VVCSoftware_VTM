@@ -1008,11 +1008,12 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
     sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_subpics_minus1");
     sei.subpicId.resize(symbol + 1);
 
-    sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_subpic_id_len_minus1"); sei.m_snSubpicIdLen = symbol + 1;
+    sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_subpic_id_len_minus1");
+    sei.subpicIdLen = symbol + 1;
 
     for (uint32_t i = 0; i < sei.subpicId.size(); i++)
     {
-      sei_read_code(decodedMessageOutputStream, sei.m_snSubpicIdLen, symbol, "sn_subpic_id[i]");
+      sei_read_code(decodedMessageOutputStream, sei.subpicIdLen, symbol, "sn_subpic_id[i]");
       sei.subpicId[i] = symbol;
     }
   }
@@ -1267,11 +1268,11 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
     sei.subpicId.resize(symbol + 1);
 
     sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_subpic_id_len_minus1");
-    sei.m_snSubpicIdLen = symbol + 1;
+    sei.subpicIdLen = symbol + 1;
 
     for (uint32_t i = 0; i < sei.subpicId.size(); i++)
     {
-      sei_read_code(decodedMessageOutputStream, sei.m_snSubpicIdLen, symbol, "sn_subpic_id[i]");
+      sei_read_code(decodedMessageOutputStream, sei.subpicIdLen, symbol, "sn_subpic_id[i]");
       sei.subpicId[i] = symbol;
     }
   }
