@@ -455,29 +455,23 @@ void SEIEncoder::initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, 
   CHECK(!(scalableNestingSEI != nullptr), "No Scalable Nesting SEI object passed");
   CHECK (targetOLSs.size() > 0 && targetLayers.size() > 0, "Scalable Nesting SEI can apply to either OLS or layer(s), not both");
 
-  scalableNestingSEI->m_snOlsFlag = (targetOLSs.size() > 0) ? 1 : 0;  // If the nested SEI messages are picture buffering SEI messages, picture timing SEI messages or sub-picture timing SEI messages, nesting_ols_flag shall be equal to 1, by default case
-  if (scalableNestingSEI->m_snOlsFlag)
+  scalableNestingSEI->olsIdx.resize(targetOLSs.size());
+  // If the nested SEI messages are picture buffering SEI messages, picture timing SEI messages or
+  // sub-picture timing SEI messages, nesting_ols_flag shall be equal to 1, by default case
+  if (scalableNestingSEI->olsIdx.size() > 0)
   {
-    scalableNestingSEI->m_snNumOlssMinus1 =  (uint32_t) targetOLSs.size() - 1;
     // initialize absolute indexes
-    for (int i = 0; i <= scalableNestingSEI->m_snNumOlssMinus1; i++)
-    {
-      scalableNestingSEI->m_snOlsIdx[i] = targetOLSs[i];
-    }
-    // calculate delta indexes from absolute ones
-    for (int i = 0; i <= scalableNestingSEI->m_snNumOlssMinus1; i++)
+    for (int i = 0; i < scalableNestingSEI->olsIdx.size(); i++)
     {
       if (i == 0)
       {
-        CHECK (scalableNestingSEI->m_snOlsIdx[i] < 0, "OLS indexes must be  equal to or greater than 0");
-        // no "-1" operation for the first index although the name implies one
-        scalableNestingSEI->m_snOlsIdxDeltaMinus1[i] = scalableNestingSEI->m_snOlsIdx[i];
+        CHECK(targetOLSs[i] < 0, "OLS indexes must be  equal to or greater than 0");
       }
       else
       {
-        CHECK (scalableNestingSEI->m_snOlsIdx[i] <= scalableNestingSEI->m_snOlsIdx[i - 1], "OLS indexes must be in ascending order");
-        scalableNestingSEI->m_snOlsIdxDeltaMinus1[i] = scalableNestingSEI->m_snOlsIdx[i] - scalableNestingSEI->m_snOlsIdx[i - 1] - 1;
+        CHECK(targetOLSs[i] <= targetOLSs[i - 1], "OLS indexes must be in ascending order");
       }
+      scalableNestingSEI->olsIdx[i] = targetOLSs[i];
     }
   }
   else

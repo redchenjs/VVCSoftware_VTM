@@ -453,7 +453,7 @@ bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit
     if (std::find(sei->m_snSubpicId.begin(), sei->m_snSubpicId.end(), subpicId) != sei->m_snSubpicId.end())
     {
       // C.7 step 7.c
-      if (sei->m_snOlsFlag || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
+      if (!sei->olsIdx.empty() || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
       {
         // applies to target subpicture -> extract
         OutputNALUnit outNalu( nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId );
@@ -813,23 +813,17 @@ uint32_t BitstreamExtractorApp::decode()
             if (sei->payloadType() == SEI::PayloadType::SCALABLE_NESTING)
             {
               SEIScalableNesting *seiNesting = (SEIScalableNesting *)sei;
-              if (seiNesting->m_snOlsFlag == 1)
+              if (!seiNesting->olsIdx.empty())
               {
-                bool targetOlsIdxInNestingAppliedOls = false;
-                for (uint32_t i = 0; i <= seiNesting->m_snNumOlssMinus1; i++)
-                {
-                  if (seiNesting->m_snOlsIdx[i] == m_targetOlsIdx)
-                  {
-                    targetOlsIdxInNestingAppliedOls = true;
-                    break;
-                  }
-                }
+                bool targetOlsIdxInNestingAppliedOls =
+                  std::find(seiNesting->olsIdx.begin(), seiNesting->olsIdx.end(), m_targetOlsIdx)
+                  != seiNesting->olsIdx.end();
                 writeInpuNalUnitToStream &= targetOlsIdxInNestingAppliedOls;
               }
               // C.6 step 9.c
               if (writeInpuNalUnitToStream && !targetOlsIncludeAllVclLayers && !seiNesting->m_snSubpicFlag)
               {
-                if (seiNesting->m_snOlsFlag || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
+                if (!seiNesting->olsIdx.empty() || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
                 {
                   OutputNALUnit outNalu(nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId);
                   m_seiWriter.writeSEImessages(outNalu.m_bitstream, seiNesting->m_nestedSEIs, m_hrd, false,

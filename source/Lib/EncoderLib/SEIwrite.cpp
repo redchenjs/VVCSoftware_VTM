@@ -614,14 +614,16 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
 {
   CHECK (sei.m_nestedSEIs.size()<1, "There must be at lease one SEI message nested in the scalable nesting SEI.")
 
-  xWriteFlag(sei.m_snOlsFlag, "sn_ols_flag");
+  xWriteFlag(!sei.olsIdx.empty() ? 1 : 0, "sn_ols_flag");
   xWriteFlag(sei.m_snSubpicFlag, "sn_subpic_flag");
-  if (sei.m_snOlsFlag)
+  if (!sei.olsIdx.empty())
   {
-    xWriteUvlc(sei.m_snNumOlssMinus1, "sn_num_olss_minus1");
-    for (uint32_t i = 0; i <= sei.m_snNumOlssMinus1; i++)
+    xWriteUvlc((uint32_t) sei.olsIdx.size(), "sn_num_olss_minus1");
+    for (uint32_t i = 0; i < sei.olsIdx.size(); i++)
     {
-      xWriteUvlc(sei.m_snOlsIdxDeltaMinus1[i], "sn_ols_idx_delta_minus1[i]");
+      const uint32_t pred = i == 0 ? 0 : sei.olsIdx[i - 1] + 1;
+      CHECK(sei.olsIdx[i] < pred, "sn_ols_idx_delta_minus1 cannot be negative");
+      xWriteUvlc(sei.olsIdx[i] - pred, "sn_ols_idx_delta_minus1[i]");
     }
   }
   else

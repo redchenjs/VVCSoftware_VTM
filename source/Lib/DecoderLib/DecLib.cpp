@@ -2604,10 +2604,10 @@ void DecLib::xParsePrefixSEImessages()
     {
       AccessUnitNestedSliSeiInfo sliSeiInfo;
       sliSeiInfo.m_nestedSliPresent = true;
-      sliSeiInfo.m_numOlssNestedSli = nestedSei->m_snNumOlssMinus1 + 1;
-      for (uint32_t olsIdxNestedSei = 0; olsIdxNestedSei <= nestedSei->m_snNumOlssMinus1; olsIdxNestedSei++)
+      sliSeiInfo.m_numOlssNestedSli = (uint32_t) nestedSei->olsIdx.size();
+      for (size_t i = 0; i < nestedSei->olsIdx.size(); i++)
       {
-        sliSeiInfo.m_olsIdxNestedSLI[olsIdxNestedSei] = nestedSei->m_snOlsIdx[olsIdxNestedSei];
+        sliSeiInfo.m_olsIdxNestedSLI[i] = nestedSei->olsIdx[i];
       }
       m_accessUnitNestedSliSeiInfo.push_back(sliSeiInfo);
     }
