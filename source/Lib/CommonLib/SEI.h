@@ -712,7 +712,7 @@ public:
   bool                               duCommonCpbRemovalDelay;
   uint32_t                           duCommonCpbRemovalDelayIncrement[MAX_TLAYER];
   std::vector<uint32_t>              numNalusInDu;
-  std::vector<uint32_t> m_duCpbRemovalDelayMinus1;
+  std::vector<uint32_t>              duCpbRemovalDelayIncrement;
   bool                               hasAltTimingInfo;
 
   EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialAltCpbRemovalDelta;
