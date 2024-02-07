@@ -724,10 +724,9 @@ public:
 
   EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialAltCpbRemovalDelta;
 
-  std::vector<uint32_t>              nalCpbDelayOffset;
-  std::vector<uint32_t>              nalDpbDelayOffset;
-  std::vector<uint32_t>              vclCpbDelayOffset;
-  std::vector<uint32_t>              vclDpbDelayOffset;
+  EnumArray<std::array<uint32_t, MAX_TLAYER>, HrdType> cpbDelayOffset;
+  EnumArray<std::array<uint32_t, MAX_TLAYER>, HrdType> dpbDelayOffset;
+
   int m_ptDisplayElementalPeriodsMinus1;
 };
 
