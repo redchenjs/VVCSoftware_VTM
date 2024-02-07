@@ -528,8 +528,9 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
   }
   if (bp.hasDuHrdParams && bp.duCpbParamsInPicTimingSei)
   {
-    xWriteUvlc( sei.m_numDecodingUnitsMinus1, "num_decoding_units_minus1" );
-    if (sei.m_numDecodingUnitsMinus1 > 0)
+    CHECK(sei.numDecodingUnits < 1, "numDecodingUnits must be at least 1");
+    xWriteUvlc(sei.numDecodingUnits - 1, "pt_num_decoding_units_minus1");
+    if (sei.numDecodingUnits > 1)
     {
       xWriteFlag( sei.m_duCommonCpbRemovalDelayFlag, "du_commmon_cpb_removal_delay_flag" );
       if( sei.m_duCommonCpbRemovalDelayFlag )
@@ -543,10 +544,10 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
           }
         }
       }
-      for( int i = 0; i <= sei.m_numDecodingUnitsMinus1; i ++ )
+      for (int i = 0; i < sei.numDecodingUnits; i++)
       {
         xWriteUvlc( sei.m_numNalusInDuMinus1[i], "num_nalus_in_du_minus1[i]" );
-        if( !sei.m_duCommonCpbRemovalDelayFlag && i < sei.m_numDecodingUnitsMinus1 )
+        if (!sei.m_duCommonCpbRemovalDelayFlag && i < sei.numDecodingUnits - 1)
         {
           for (int j = temporalId; j < bp.maxSublayers; j++)
           {

@@ -1821,11 +1821,11 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
   if (bp.hasDuHrdParams && bp.duCpbParamsInPicTimingSei)
   {
     sei_read_uvlc( pDecodedMessageOutputStream, symbol, "num_decoding_units_minus1" );
-    pt.m_numDecodingUnitsMinus1 = symbol;
-    pt.m_numNalusInDuMinus1.resize(pt.m_numDecodingUnitsMinus1 + 1);
-    pt.m_duCpbRemovalDelayMinus1.resize((pt.m_numDecodingUnitsMinus1 + 1) * bp.maxSublayers);
+    pt.numDecodingUnits = symbol + 1;
+    pt.m_numNalusInDuMinus1.resize(pt.numDecodingUnits);
+    pt.m_duCpbRemovalDelayMinus1.resize(pt.numDecodingUnits * bp.maxSublayers);
 
-    if (pt.m_numDecodingUnitsMinus1 > 0)
+    if (pt.numDecodingUnits > 1)
     {
       sei_read_flag( pDecodedMessageOutputStream, symbol, "du_common_cpb_removal_delay_flag" );
       pt.m_duCommonCpbRemovalDelayFlag = symbol;
@@ -1841,11 +1841,11 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
           }
         }
       }
-      for (int i = 0; i <= pt.m_numDecodingUnitsMinus1; i++)
+      for (int i = 0; i < pt.numDecodingUnits; i++)
       {
         sei_read_uvlc( pDecodedMessageOutputStream, symbol, "num_nalus_in_du_minus1[i]" );
         pt.m_numNalusInDuMinus1[i] = symbol;
-        if (!pt.m_duCommonCpbRemovalDelayFlag && i < pt.m_numDecodingUnitsMinus1)
+        if (!pt.m_duCommonCpbRemovalDelayFlag && i < pt.numDecodingUnits - 1)
         {
           for (int j = temporalId; j < bp.maxSublayers; j++)
           {

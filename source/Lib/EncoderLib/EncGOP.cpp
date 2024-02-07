@@ -1120,7 +1120,7 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
     if( hrd->getGeneralDecodingUnitHrdParamsPresentFlag() )
     {
       const uint32_t numDU                            = (uint32_t) duData.size();
-      pictureTimingSEI->m_numDecodingUnitsMinus1     = ( numDU - 1 );
+      pictureTimingSEI->numDecodingUnits              = numDU;
       pictureTimingSEI->m_duCommonCpbRemovalDelayFlag = false;
       pictureTimingSEI->m_numNalusInDuMinus1.resize( numDU );
       const uint32_t maxNumSubLayers = slice->getSPS()->getMaxTLayers();
@@ -1344,7 +1344,7 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
 
     if( m_pcCfg->getDecodingUnitInfoSEIEnabled() && hrd->getGeneralDecodingUnitHrdParamsPresentFlag() )
     {
-      for( int i = 0; i < ( pictureTimingSEI->m_numDecodingUnitsMinus1 + 1 ); i ++ )
+      for (int i = 0; i < pictureTimingSEI->numDecodingUnits; i++)
       {
         SEIDecodingUnitInfo *duInfoSEI = new SEIDecodingUnitInfo();
         duInfoSEI->m_decodingUnitIdx = i;
@@ -1414,7 +1414,7 @@ void EncGOP::xUpdateTimingSEI(SEIPictureTiming *pictureTimingSEI, std::deque<DUD
     int i;
     uint64_t ui64Tmp;
     uint32_t uiPrev = 0;
-    uint32_t numDU = ( pictureTimingSEI->m_numDecodingUnitsMinus1 + 1 );
+    uint32_t               numDU                    = pictureTimingSEI->numDecodingUnits;
     std::vector<uint32_t> &rDuCpbRemovalDelayMinus1 = pictureTimingSEI->m_duCpbRemovalDelayMinus1;
     uint32_t maxDiff = ( hrd->getTickDivisorMinus2() + 2 ) - 1;
 
