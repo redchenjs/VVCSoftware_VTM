@@ -2721,7 +2721,8 @@ void SEIReader::xParseSEISubpictureLevelInfo(SEISubpictureLevelInfo& sei, uint32
   sei_read_code(pDecodedMessageOutputStream, 3, val, "sli_num_ref_levels_minus1");
   const uint32_t numRefLevels = val + 1;
 
-  sei_read_flag( pDecodedMessageOutputStream,       val,    "sli_cbr_constraint_flag" );              sei.m_cbrConstraintFlag = val;
+  sei_read_flag(pDecodedMessageOutputStream, val, "sli_cbr_constraint_flag");
+  sei.cbrConstraint = val != 0;
   sei_read_flag(pDecodedMessageOutputStream, val, "sli_explicit_fraction_present_flag");
   const bool explicitFractionPresentFlag = val != 0;
 

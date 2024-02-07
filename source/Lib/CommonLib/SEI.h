@@ -1064,11 +1064,11 @@ class SEISubpictureLevelInfo : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::SUBPICTURE_LEVEL_INFO; }
-  SEISubpictureLevelInfo() : m_cbrConstraintFlag(false), m_sliSublayerInfoPresentFlag(false) {}
+  SEISubpictureLevelInfo() : cbrConstraint(false), m_sliSublayerInfoPresentFlag(false) {}
   SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei);
   virtual ~SEISubpictureLevelInfo() {}
 
-  bool m_cbrConstraintFlag;
+  bool cbrConstraint = false;
   bool m_sliSublayerInfoPresentFlag;
 
   int&               nonSubpicLayerFraction(int i, int k) { return data[k][i].nonSubpicLayersFraction; }

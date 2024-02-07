@@ -1331,7 +1331,7 @@ void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
 {
   CHECK(sei.numRefLevels() < 1, "SEISubpictureLevelInfo: numRefLevels must be greater than zero");
   xWriteCode(sei.numRefLevels() - 1, 3, "sli_num_ref_levels_minus1");
-  xWriteFlag(           sei.m_cbrConstraintFlag,                              "sli_cbr_constraint_flag");
+  xWriteFlag(sei.cbrConstraint ? 1 : 0, "sli_cbr_constraint_flag");
   xWriteFlag(sei.explicitFractionPresentFlag(), "sli_explicit_fraction_present_flag");
   if (sei.explicitFractionPresentFlag())
   {
