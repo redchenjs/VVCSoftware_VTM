@@ -1782,8 +1782,8 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
 
       if (bp.hasHrdParams[HrdType::VCL])
       {
-        pt.m_vclCpbDelayOffset.resize(bp.maxSublayers, 0);
-        pt.m_vclDpbDelayOffset.resize(bp.maxSublayers, 0);
+        pt.vclCpbDelayOffset.resize(bp.maxSublayers, 0);
+        pt.vclDpbDelayOffset.resize(bp.maxSublayers, 0);
         for (int i = (bp.hasSublayerInitialCpbRemovalDelay ? 0 : bp.maxSublayers - 1); i < bp.maxSublayers; ++i)
         {
           for (int j = 0; j < bp.cpbCount; j++)
@@ -1795,9 +1795,9 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
                           "vcl_cpb_alt_initial_cpb_removal_offset_delta[ i ][ j ]");
             pt.initialAltCpbRemovalDelta[HrdType::VCL][i][j].offset = symbol;
           }
-          sei_read_code(pDecodedMessageOutputStream, bp.cpbRemovalDelayLength, pt.m_vclCpbDelayOffset[i],
+          sei_read_code(pDecodedMessageOutputStream, bp.cpbRemovalDelayLength, pt.vclCpbDelayOffset[i],
                         "vcl_cpb_delay_offset[ i ]");
-          sei_read_code(pDecodedMessageOutputStream, bp.dpbOutputDelayLength, pt.m_vclDpbDelayOffset[i],
+          sei_read_code(pDecodedMessageOutputStream, bp.dpbOutputDelayLength, pt.vclDpbDelayOffset[i],
                         "vcl_dpb_delay_offset[ i ]");
         }
       }
@@ -1809,8 +1809,8 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
     pt.nalCpbDelayOffset.resize(bp.maxSublayers, 0);
     pt.nalDpbDelayOffset.resize(bp.maxSublayers, 0);
 
-    pt.m_vclCpbDelayOffset.resize(bp.maxSublayers, 0);
-    pt.m_vclDpbDelayOffset.resize(bp.maxSublayers, 0);
+    pt.vclCpbDelayOffset.resize(bp.maxSublayers, 0);
+    pt.vclDpbDelayOffset.resize(bp.maxSublayers, 0);
   }
 
   if (bp.hasDuHrdParams && bp.duDpbParamsInPicTimingSei)

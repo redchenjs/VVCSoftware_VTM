@@ -719,8 +719,8 @@ public:
 
   std::vector<uint32_t>              nalCpbDelayOffset;
   std::vector<uint32_t>              nalDpbDelayOffset;
-  std::vector<uint32_t>              m_vclCpbDelayOffset;
-  std::vector<uint32_t>              m_vclDpbDelayOffset;
+  std::vector<uint32_t>              vclCpbDelayOffset;
+  std::vector<uint32_t>              vclDpbDelayOffset;
   int m_ptDisplayElementalPeriodsMinus1;
 };
 

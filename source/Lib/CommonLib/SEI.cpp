@@ -116,8 +116,8 @@ void SEIPictureTiming::copyTo (SEIPictureTiming& target) const
   target.initialAltCpbRemovalDelta            = initialAltCpbRemovalDelta;
   target.nalCpbDelayOffset                    = nalCpbDelayOffset;
   target.nalCpbDelayOffset                    = nalCpbDelayOffset;
-  target.m_vclCpbDelayOffset = m_vclCpbDelayOffset;
-  target.m_vclCpbDelayOffset = m_vclCpbDelayOffset;
+  target.vclCpbDelayOffset                    = vclCpbDelayOffset;
+  target.vclCpbDelayOffset                    = vclCpbDelayOffset;
 }
 
 bool SEIScalabilityDimensionInfo::isSDISameContent(SEIScalabilityDimensionInfo* sdiB)
@@ -776,8 +776,8 @@ SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
   initialAltCpbRemovalDelta            = sei.initialAltCpbRemovalDelta;
   nalCpbDelayOffset                    = sei.nalCpbDelayOffset;
   nalDpbDelayOffset                    = sei.nalDpbDelayOffset;
-  m_vclCpbDelayOffset = sei.m_vclCpbDelayOffset;
-  m_vclDpbDelayOffset = sei.m_vclDpbDelayOffset;
+  vclCpbDelayOffset                    = sei.vclCpbDelayOffset;
+  vclDpbDelayOffset                    = sei.vclDpbDelayOffset;
   m_ptDisplayElementalPeriodsMinus1 = sei.m_ptDisplayElementalPeriodsMinus1;
 }
 

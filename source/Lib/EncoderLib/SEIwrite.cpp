@@ -511,12 +511,12 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
           for (int j = 0; j < bp.cpbCount; j++)
           {
             xWriteCode(sei.initialAltCpbRemovalDelta[HrdType::VCL][i][j].delay, bp.cpbInitialRemovalDelayLength,
-                       "vcl_cpb_alt_initial_cpb_removal_delay_delta[ i ][ j ]");
+                       "pt_vcl_cpb_alt_initial_removal_delay_delta[ i ][ j ]");
             xWriteCode(sei.initialAltCpbRemovalDelta[HrdType::VCL][i][j].offset, bp.cpbInitialRemovalDelayLength,
-                       "vcl_cpb_alt_initial_cpb_removal_offset_delta[ i ][ j ]");
+                       "pt_vcl_cpb_alt_initial_removal_offset_delta[ i ][ j ]");
           }
-          xWriteCode(sei.m_vclCpbDelayOffset[i], bp.cpbRemovalDelayLength, "vcl_cpb_delay_offset[ i ]");
-          xWriteCode(sei.m_vclDpbDelayOffset[i], bp.dpbOutputDelayLength, "vcl_dpb_delay_offset[ i ]");
+          xWriteCode(sei.vclCpbDelayOffset[i], bp.cpbRemovalDelayLength, "pt_vcl_cpb_delay_offset[ i ]");
+          xWriteCode(sei.vclDpbDelayOffset[i], bp.dpbOutputDelayLength, "pt_vcl_dpb_delay_offset[ i ]");
         }
       }
     }
