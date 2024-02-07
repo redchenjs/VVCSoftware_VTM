@@ -993,15 +993,21 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
   else
   {
     sei_read_flag(decodedMessageOutputStream, symbol, "sn_all_layers_flag");
-    sei.allLayersFlag = symbol != 0;
-    if (!sei.allLayersFlag)
+    const bool allLayersFlag = symbol != 0;
+    if (!allLayersFlag)
     {
-      sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_layers_minus1"); sei.m_snNumLayersMinus1 = symbol;
-      sei.m_snLayerId[0] = nuhLayerId;
-      for (uint32_t i = 1; i <= sei.m_snNumLayersMinus1; i++)
+      sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_layers_minus1");
+      sei.layerId.resize(symbol + 1);
+      sei.layerId[0] = nuhLayerId;
+      for (uint32_t i = 1; i < sei.layerId.size(); i++)
       {
-        sei_read_code(decodedMessageOutputStream, 6, symbol, "sn_layer_id[i]"); sei.m_snLayerId[i] = symbol;
+        sei_read_code(decodedMessageOutputStream, 6, symbol, "sn_layer_id[i]");
+        sei.layerId[i] = symbol;
       }
+    }
+    else
+    {
+      sei.layerId.clear();
     }
   }
   if (hasSubpicId)
@@ -1253,15 +1259,21 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
   else
   {
     sei_read_flag(decodedMessageOutputStream, symbol, "sn_all_layers_flag");
-    sei.allLayersFlag = symbol != 0;
-    if (!sei.allLayersFlag)
+    const bool allLayersFlag = symbol != 0;
+    if (!allLayersFlag)
     {
-      sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_layers_minus1"); sei.m_snNumLayersMinus1 = symbol;
-      sei.m_snLayerId[0] = nuhLayerId;
-      for (uint32_t i = 1; i <= sei.m_snNumLayersMinus1; i++)
+      sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_layers_minus1");
+      sei.layerId.resize(symbol + 1);
+      sei.layerId[0] = nuhLayerId;
+      for (uint32_t i = 1; i < sei.layerId.size(); i++)
       {
-        sei_read_code(decodedMessageOutputStream, 6, symbol, "sn_layer_id[i]"); sei.m_snLayerId[i] = symbol;
+        sei_read_code(decodedMessageOutputStream, 6, symbol, "sn_layer_id[i]");
+        sei.layerId[i] = symbol;
       }
+    }
+    else
+    {
+      sei.layerId.clear();
     }
   }
   if (hasSubpicId)
@@ -1360,7 +1372,7 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
         }
       }
     }
-    else if (sei.allLayersFlag)
+    else if (sei.allLayersFlag())
     {
       for (uint32_t k = 0; k < numSubPics; k++)
       {
@@ -1380,20 +1392,20 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
     }
     else
     {
-      for (uint32_t j = 0; j <= sei.m_snNumLayersMinus1; j++)
+      for (uint32_t j = 0; j < sei.layerId.size(); j++)
       {
         for (uint32_t k = 0; k < numSubPics; k++)
         {
           if (j == 0 && k == 0)
           {
-            seiList->push_back(SeiPayload{ payloadType, sei.m_snLayerId[j], false, payloadSize, payload, duiIdx,
+            seiList->push_back(SeiPayload{ payloadType, sei.layerId[j], false, payloadSize, payload, duiIdx,
                                            !sei.subpicId.empty() ? sei.subpicId[k] : 0 });
           }
           else
           {
             uint8_t *payloadTemp = new uint8_t[payloadSize];
             memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-            seiList->push_back(SeiPayload{ payloadType, sei.m_snLayerId[j], false, payloadSize, payloadTemp, duiIdx,
+            seiList->push_back(SeiPayload{ payloadType, sei.layerId[j], false, payloadSize, payloadTemp, duiIdx,
                                            !sei.subpicId.empty() ? sei.subpicId[k] : 0 });
           }
         }

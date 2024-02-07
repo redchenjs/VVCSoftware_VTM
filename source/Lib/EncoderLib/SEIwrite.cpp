@@ -628,13 +628,13 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
   }
   else
   {
-    xWriteFlag(sei.allLayersFlag ? 1 : 0, "sn_all_layers_flag");
-    if (!sei.allLayersFlag)
+    xWriteFlag(sei.allLayersFlag() ? 1 : 0, "sn_all_layers_flag");
+    if (!sei.allLayersFlag())
     {
-      xWriteUvlc(sei.m_snNumLayersMinus1, "sn_num_layers_minus1");
-      for (uint32_t i = 1; i <= sei.m_snNumLayersMinus1; i++)
+      xWriteUvlc((uint32_t) sei.layerId.size() - 1, "sn_num_layers_minus1");
+      for (uint32_t i = 1; i < sei.layerId.size(); i++)
       {
-        xWriteCode(sei.m_snLayerId[i], 6, "sn_layer_id");
+        xWriteCode(sei.layerId[i], 6, "sn_layer_id");
       }
     }
   }

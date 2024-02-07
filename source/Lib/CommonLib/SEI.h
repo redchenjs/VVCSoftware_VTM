@@ -894,7 +894,7 @@ class SEIScalableNesting : public SEI
 public:
   PayloadType payloadType() const { return PayloadType::SCALABLE_NESTING; }
 
-  SEIScalableNesting() : m_snNumLayersMinus1(0)
+  SEIScalableNesting()
   {
     olsIdx.clear();
     subpicId.clear();
@@ -906,15 +906,15 @@ public:
     deleteSEIs(m_nestedSEIs);
   }
 
+  uint8_t subpicIdLen = 0;
+
   static_vector<uint32_t, MAX_NESTING_NUM_LAYER> olsIdx;
 
   std::vector<uint16_t> subpicId;
 
-  bool      allLayersFlag = false;                  // value valid if m_nestingOlsFlag == 0
-  uint32_t  m_snNumLayersMinus1;                    //value valid if m_nestingOlsFlag == 0 and m_nestingAllLayersFlag == 0
-  uint8_t m_snLayerId[MAX_NESTING_NUM_LAYER];   // value valid if m_nestingOlsFlag == 0 and m_nestingAllLayersFlag == 0.
-                                                // This can e.g. be a static array of 64 uint8_t values
-  uint8_t   subpicIdLen = 0;
+  static_vector<uint8_t, MAX_NESTING_NUM_LAYER> layerId;
+
+  bool allLayersFlag() const { return layerId.empty(); }
 
   SEIMessages m_nestedSEIs;
 };

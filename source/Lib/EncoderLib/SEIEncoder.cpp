@@ -476,11 +476,10 @@ void SEIEncoder::initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, 
   }
   else
   {
-    scalableNestingSEI->allLayersFlag       = false;   // nesting is not applied to all layers
-    scalableNestingSEI->m_snNumLayersMinus1 = (uint32_t) targetLayers.size() - 1;  //nesting_num_layers_minus1
-    for (int i=0; i <= scalableNestingSEI->m_snNumLayersMinus1; i++ )
+    scalableNestingSEI->layerId.resize(targetLayers.size());
+    for (int i = 0; i < scalableNestingSEI->layerId.size(); i++)
     {
-      scalableNestingSEI->m_snLayerId[i] = targetLayers[i];
+      scalableNestingSEI->layerId[i] = targetLayers[i];
     }
   }
   if (!subpictureIDs.empty())
