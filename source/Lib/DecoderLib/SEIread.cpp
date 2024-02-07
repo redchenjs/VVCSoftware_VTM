@@ -1854,7 +1854,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
     }
   }
   sei_read_code( pDecodedMessageOutputStream, 8, symbol,    "pt_display_elemental_periods_minus1" );
-  pt.m_ptDisplayElementalPeriodsMinus1 = symbol;
+  pt.displayElementalPeriods = symbol + 1;
 }
 
 void SEIReader::xParseSEIAnnotatedRegions(SEIAnnotatedRegions& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)

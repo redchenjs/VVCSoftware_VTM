@@ -688,7 +688,7 @@ public:
     , dpbOutputDuDelay(0)
     , duCommonCpbRemovalDelay(false)
     , hasAltTimingInfo(false)
-    , m_ptDisplayElementalPeriodsMinus1(0)
+    , displayElementalPeriods(0)
   {
     ::memset(hasSublayerDelays, 0, sizeof(hasSublayerDelays));
     ::memset(duCommonCpbRemovalDelayIncrement, 0, sizeof(duCommonCpbRemovalDelayIncrement));
@@ -727,7 +727,7 @@ public:
   EnumArray<std::array<uint32_t, MAX_TLAYER>, HrdType> cpbDelayOffset;
   EnumArray<std::array<uint32_t, MAX_TLAYER>, HrdType> dpbDelayOffset;
 
-  int m_ptDisplayElementalPeriodsMinus1;
+  int displayElementalPeriods;
 };
 
 class SEIDecodingUnitInfo : public SEI

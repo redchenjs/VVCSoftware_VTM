@@ -774,7 +774,7 @@ SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
   initialAltCpbRemovalDelta            = sei.initialAltCpbRemovalDelta;
   cpbDelayOffset                       = sei.cpbDelayOffset;
   dpbDelayOffset                       = sei.dpbDelayOffset;
-  m_ptDisplayElementalPeriodsMinus1 = sei.m_ptDisplayElementalPeriodsMinus1;
+  displayElementalPeriods              = sei.displayElementalPeriods;
 }
 
 SEIDecodingUnitInfo::SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei)

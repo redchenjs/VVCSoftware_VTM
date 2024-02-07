@@ -565,7 +565,8 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
       }
     }
   }
-  xWriteCode( sei.m_ptDisplayElementalPeriodsMinus1, 8,       "pt_display_elemental_periods_minus1" );
+  CHECK(sei.displayElementalPeriods < 1, "displayElementalPeriods must be at least 1");
+  xWriteCode(sei.displayElementalPeriods - 1, 8, "pt_display_elemental_periods_minus1");
 }
 
 void SEIWriter::xWriteSEIFrameFieldInfo(const SEIFrameFieldInfo& sei)
