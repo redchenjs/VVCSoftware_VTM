@@ -684,12 +684,12 @@ public:
   void copyTo (SEIPictureTiming& target) const;
 
   SEIPictureTiming()
-  : m_picDpbOutputDelay (0)
-  , m_picDpbOutputDuDelay (0)
-  , m_numDecodingUnitsMinus1 (0)
-  , m_duCommonCpbRemovalDelayFlag (false)
-  , m_cpbAltTimingInfoPresentFlag (false)
-  , m_ptDisplayElementalPeriodsMinus1(0)
+    : dpbOutputDelay(0)
+    , m_picDpbOutputDuDelay(0)
+    , m_numDecodingUnitsMinus1(0)
+    , m_duCommonCpbRemovalDelayFlag(false)
+    , m_cpbAltTimingInfoPresentFlag(false)
+    , m_ptDisplayElementalPeriodsMinus1(0)
   {
     ::memset(hasSublayerDelays, 0, sizeof(hasSublayerDelays));
     ::memset(m_duCommonCpbRemovalDelayMinus1, 0, sizeof(m_duCommonCpbRemovalDelayMinus1));
@@ -706,7 +706,7 @@ public:
   bool                               cpbRemovalDelayDeltaEnabled[MAX_TLAYER];
   uint32_t                           cpbRemovalDelayDeltaIdx[MAX_TLAYER];
   uint32_t                           cpbRemovalDelay[MAX_TLAYER];
-  uint32_t  m_picDpbOutputDelay;
+  uint32_t                           dpbOutputDelay;
   uint32_t  m_picDpbOutputDuDelay;
   uint32_t  m_numDecodingUnitsMinus1;
   bool  m_duCommonCpbRemovalDelayFlag;

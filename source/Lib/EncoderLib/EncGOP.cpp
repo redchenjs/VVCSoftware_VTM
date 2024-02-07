@@ -1308,14 +1308,15 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
               " cpbRemovalDelayLegth too small for cpbRemovalDelay[i] at picture timing SEI ");
       }
     }
-    pictureTimingSEI->m_picDpbOutputDelay = slice->getSPS()->getMaxNumReorderPics(slice->getSPS()->getMaxTLayers()-1) + slice->getPOC() - m_totalCoded[maxNumSubLayers-1];
+    pictureTimingSEI->dpbOutputDelay = slice->getSPS()->getMaxNumReorderPics(slice->getSPS()->getMaxTLayers() - 1)
+                                       + slice->getPOC() - m_totalCoded[maxNumSubLayers - 1];
     if (m_pcCfg->getEfficientFieldIRAPEnabled() && irapGopId > 0 && irapGopId < m_iGopSize)
     {
       // if pictures have been swapped there is likely one more picture delay on their tid. Very rough approximation
-      pictureTimingSEI->m_picDpbOutputDelay ++;
+      pictureTimingSEI->dpbOutputDelay++;
     }
     int factor = hrd->getTickDivisorMinus2() + 2;
-    pictureTimingSEI->m_picDpbOutputDuDelay = factor * pictureTimingSEI->m_picDpbOutputDelay;
+    pictureTimingSEI->m_picDpbOutputDuDelay = factor * pictureTimingSEI->dpbOutputDelay;
     if (m_bufferingPeriodSEIPresentInAU)
     {
       for( int i = temporalId ; i < maxNumSubLayers ; i ++ )

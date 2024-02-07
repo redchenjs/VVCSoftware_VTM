@@ -1750,7 +1750,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
     }
   }
   sei_read_code(pDecodedMessageOutputStream, bp.dpbOutputDelayLength, symbol, "pt_dpb_output_delay");
-  pt.m_picDpbOutputDelay = symbol;
+  pt.dpbOutputDelay = symbol;
 
   if (bp.hasAltCpbParams)
   {
