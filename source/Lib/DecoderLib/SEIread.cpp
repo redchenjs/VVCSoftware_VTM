@@ -445,8 +445,8 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIDepthRepresentationInfo((SEIDepthRepresentationInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::SUBPICTURE_LEVEL_INFO:
-      sei = new SEISubpicureLevelInfo;
-      xParseSEISubpictureLevelInfo((SEISubpicureLevelInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
+      sei = new SEISubpictureLevelInfo;
+      xParseSEISubpictureLevelInfo((SEISubpictureLevelInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
       sei = new SEISampleAspectRatioInfo;
@@ -2713,7 +2713,8 @@ void SEIReader::xParseSEIDepthRepInfoElement(double& f,std::ostream *pDecodedMes
   }
 }
 
-void SEIReader::xParseSEISubpictureLevelInfo(SEISubpicureLevelInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+void SEIReader::xParseSEISubpictureLevelInfo(SEISubpictureLevelInfo& sei, uint32_t payloadSize,
+                                             std::ostream* pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
   uint32_t val;

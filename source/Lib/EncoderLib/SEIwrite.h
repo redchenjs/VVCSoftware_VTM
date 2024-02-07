@@ -83,7 +83,7 @@ protected:
   void xWriteSEIAlphaChannelInfo                  (const SEIAlphaChannelInfo& sei);
   void xWriteSEIDepthRepresentationInfo           (const SEIDepthRepresentationInfo& sei);
   void xWriteSEIDepthRepInfoElement               (double f);
-  void xWriteSEISubpictureLevelInfo               (const SEISubpicureLevelInfo &sei);
+  void xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei);
   void xWriteSEISampleAspectRatioInfo             (const SEISampleAspectRatioInfo &sei);
   void xWriteSEIPhaseIndication                   (const SEIPhaseIndication&sei);
   void xWriteSEIConstrainedRaslIndication         (const SEIConstrainedRaslIndication &sei);

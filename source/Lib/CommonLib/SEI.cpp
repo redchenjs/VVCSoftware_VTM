@@ -917,7 +917,7 @@ SEIContentColourVolume::SEIContentColourVolume(const SEIContentColourVolume& sei
   m_ccvAvgLuminanceValue = sei.m_ccvAvgLuminanceValue;
 }
 
-SEISubpicureLevelInfo::SEISubpicureLevelInfo(const SEISubpicureLevelInfo& sei)
+SEISubpictureLevelInfo::SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
 {
   m_numRefLevels = sei.m_numRefLevels;
   m_explicitFractionPresentFlag = sei.m_explicitFractionPresentFlag;

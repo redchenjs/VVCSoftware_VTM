@@ -150,7 +150,7 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIColourTransformInfo(*static_cast<const SEIColourTransformInfo *>(&sei));
     break;
   case SEI::PayloadType::SUBPICTURE_LEVEL_INFO:
-    xWriteSEISubpictureLevelInfo(*static_cast<const SEISubpicureLevelInfo *>(&sei));
+    xWriteSEISubpictureLevelInfo(*static_cast<const SEISubpictureLevelInfo*>(&sei));
     break;
   case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
     xWriteSEISampleAspectRatioInfo(*static_cast<const SEISampleAspectRatioInfo *>(&sei));
@@ -1327,13 +1327,15 @@ void SEIWriter::xWriteSEIDepthRepInfoElement( double f )
   xWriteCode( x_mantissa, x_mantissa_len ,     "da_mantissa" );
 };
 
-void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpicureLevelInfo &sei)
+void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
 {
-  CHECK(sei.m_numRefLevels < 1, "SEISubpicureLevelInfo: numRefLevels must be greater than zero");
-  CHECK(sei.m_numRefLevels != (int)sei.m_refLevelIdc.size(), "SEISubpicureLevelInfo: numRefLevels must be equal to the number of levels");
+  CHECK(sei.m_numRefLevels < 1, "SEISubpictureLevelInfo: numRefLevels must be greater than zero");
+  CHECK(sei.m_numRefLevels != (int) sei.m_refLevelIdc.size(),
+        "SEISubpictureLevelInfo: numRefLevels must be equal to the number of levels");
   if (sei.m_explicitFractionPresentFlag)
   {
-    CHECK(sei.m_numRefLevels != (int)sei.m_refLevelFraction.size(), "SEISubpicureLevelInfo: numRefLevels must be equal to the number of fractions");
+    CHECK(sei.m_numRefLevels != (int) sei.m_refLevelFraction.size(),
+          "SEISubpictureLevelInfo: numRefLevels must be equal to the number of fractions");
   }
   xWriteCode( (uint32_t)sei.m_numRefLevels - 1, 3,                            "sli_num_ref_levels_minus1");
   xWriteFlag(           sei.m_cbrConstraintFlag,                              "sli_cbr_constraint_flag");
@@ -1357,7 +1359,8 @@ void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpicureLevelInfo &sei)
       xWriteCode((uint32_t)sei.m_refLevelIdc[i][k], 8, "sli_ref_level_idc[i][k]");
       if (sei.m_explicitFractionPresentFlag)
       {
-        CHECK(sei.m_numSubpics != (int)sei.m_refLevelFraction[i].size(), "SEISubpicureLevelInfo: number of fractions differs from number of subpictures");
+        CHECK(sei.m_numSubpics != (int) sei.m_refLevelFraction[i].size(),
+              "SEISubpictureLevelInfo: number of fractions differs from number of subpictures");
         for (int j = 0; j < sei.m_numSubpics; j++)
         {
           xWriteCode((uint32_t)sei.m_refLevelFraction[i][j][k], 8, "sli_ref_level_fraction_minus1[i][j][k]");

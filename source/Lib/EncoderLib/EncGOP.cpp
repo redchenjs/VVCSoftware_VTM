@@ -773,7 +773,7 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
   }
   if (m_pcCfg->getSubpicureLevelInfoSEICfg().m_enabled)
   {
-    SEISubpicureLevelInfo *seiSubpicureLevelInfo = new SEISubpicureLevelInfo;
+    SEISubpictureLevelInfo* seiSubpicureLevelInfo = new SEISubpictureLevelInfo;
     m_seiEncoder.initSEISubpictureLevelInfo(seiSubpicureLevelInfo, sps);
     seiMessages.push_back(seiSubpicureLevelInfo);
   }
@@ -1519,8 +1519,9 @@ validateMinCrRequirements(const ProfileTierLevelFeatures &plt, std::size_t numBy
   }
 }
 
-static void
-validateMinCrRequirements(const ProfileTierLevelFeatures &plt, std::size_t numBytesInVclNalUnits, const Slice *pSlice, const EncCfg *pCfg, const SEISubpicureLevelInfo &seiSubpic, const int subPicIdx, const int layerId)
+static void validateMinCrRequirements(const ProfileTierLevelFeatures& plt, std::size_t numBytesInVclNalUnits,
+                                      const Slice* pSlice, const EncCfg* pCfg, const SEISubpictureLevelInfo& seiSubpic,
+                                      const int subPicIdx, const int layerId)
 {
   if (plt.getTierLevelFeatures() && plt.getProfileFeatures())
   {
@@ -4329,7 +4330,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
             getSeisByType(leadingSeiMessages, SEI::PayloadType::SUBPICTURE_LEVEL_INFO);
           if (!subPictureLevelInfoSEIs.empty())
           {
-            const SEISubpicureLevelInfo& seiSubpic = static_cast<const SEISubpicureLevelInfo&>(*subPictureLevelInfoSEIs.front());
+            const SEISubpictureLevelInfo& seiSubpic =
+              static_cast<const SEISubpictureLevelInfo&>(*subPictureLevelInfoSEIs.front());
             validateMinCrRequirements(profileTierLevelFeatures, subPicStats[subpicIdx].numBytesInVclNalUnits, pcSlice, m_pcCfg, seiSubpic, subpicIdx, m_pcEncLib->getLayerId());
           }
           sumZeroWords += cabac_zero_word_padding(pcSlice, pcPic, subPicStats[subpicIdx].numBinsWritten, subPicStats[subpicIdx].numBytesInVclNalUnits, 0,

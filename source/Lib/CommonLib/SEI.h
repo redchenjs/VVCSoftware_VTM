@@ -1060,21 +1060,20 @@ public:
 
 #endif
 
-
-class SEISubpicureLevelInfo : public SEI
+class SEISubpictureLevelInfo : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::SUBPICTURE_LEVEL_INFO; }
-  SEISubpicureLevelInfo()
-  : m_numRefLevels(0)
-  , m_explicitFractionPresentFlag (false)
-  , m_cbrConstraintFlag (false)
-  , m_numSubpics(0)
-  , m_sliMaxSublayers(1)
-  , m_sliSublayerInfoPresentFlag(false)
+  SEISubpictureLevelInfo()
+    : m_numRefLevels(0)
+    , m_explicitFractionPresentFlag(false)
+    , m_cbrConstraintFlag(false)
+    , m_numSubpics(0)
+    , m_sliMaxSublayers(1)
+    , m_sliSublayerInfoPresentFlag(false)
   {}
-  SEISubpicureLevelInfo(const SEISubpicureLevelInfo& sei);
-  virtual ~SEISubpicureLevelInfo() {}
+  SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei);
+  virtual ~SEISubpictureLevelInfo() {}
 
   int       m_numRefLevels;
   bool      m_explicitFractionPresentFlag;

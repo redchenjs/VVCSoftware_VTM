@@ -1281,7 +1281,7 @@ void SEIEncoder::initSEIColourTransformInfo(SEIColourTransformInfo* seiCTI)
   seiCTI->m_log2NumberOfPointsPerLut = floorLog2(seiCTI->m_lut[0].numLutValues - 1);
 }
 
-void SEIEncoder::initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SPS *sps)
+void SEIEncoder::initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sei, const SPS* sps)
 {
   const EncCfgParam::CfgSEISubpictureLevel &cfgSubPicLevel = m_pcCfg->getSubpicureLevelInfoSEICfg();
 
