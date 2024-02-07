@@ -106,7 +106,7 @@ void SEIPictureTiming::copyTo (SEIPictureTiming& target) const
   ::memcpy(target.cpbRemovalDelayDeltaEnabled, cpbRemovalDelayDeltaEnabled, sizeof(cpbRemovalDelayDeltaEnabled));
   ::memcpy(target.cpbRemovalDelayDeltaIdx, cpbRemovalDelayDeltaIdx, sizeof(cpbRemovalDelayDeltaIdx));
   target.dpbOutputDelay                = dpbOutputDelay;
-  target.m_picDpbOutputDuDelay = m_picDpbOutputDuDelay;
+  target.dpbOutputDuDelay              = dpbOutputDuDelay;
   target.m_numDecodingUnitsMinus1 = m_numDecodingUnitsMinus1;
   target.m_duCommonCpbRemovalDelayFlag = m_duCommonCpbRemovalDelayFlag;
 
@@ -766,7 +766,7 @@ SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
   std::memcpy(cpbRemovalDelayDeltaIdx, sei.cpbRemovalDelayDeltaIdx, sizeof(sei.cpbRemovalDelayDeltaIdx));
   std::memcpy(cpbRemovalDelay, sei.cpbRemovalDelay, sizeof(sei.cpbRemovalDelay));
   dpbOutputDelay                = sei.dpbOutputDelay;
-  m_picDpbOutputDuDelay = sei.m_picDpbOutputDuDelay;
+  dpbOutputDuDelay              = sei.dpbOutputDuDelay;
   m_numDecodingUnitsMinus1 = sei.m_numDecodingUnitsMinus1;
   m_duCommonCpbRemovalDelayFlag = sei.m_duCommonCpbRemovalDelayFlag;
   std::memcpy(m_duCommonCpbRemovalDelayMinus1, sei.m_duCommonCpbRemovalDelayMinus1, sizeof(sei.m_duCommonCpbRemovalDelayMinus1));

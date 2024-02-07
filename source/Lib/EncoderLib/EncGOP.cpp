@@ -1316,7 +1316,7 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
       pictureTimingSEI->dpbOutputDelay++;
     }
     int factor = hrd->getTickDivisorMinus2() + 2;
-    pictureTimingSEI->m_picDpbOutputDuDelay = factor * pictureTimingSEI->dpbOutputDelay;
+    pictureTimingSEI->dpbOutputDuDelay = factor * pictureTimingSEI->dpbOutputDelay;
     if (m_bufferingPeriodSEIPresentInAU)
     {
       for( int i = temporalId ; i < maxNumSubLayers ; i ++ )

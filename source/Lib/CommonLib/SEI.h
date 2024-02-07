@@ -685,7 +685,7 @@ public:
 
   SEIPictureTiming()
     : dpbOutputDelay(0)
-    , m_picDpbOutputDuDelay(0)
+    , dpbOutputDuDelay(0)
     , m_numDecodingUnitsMinus1(0)
     , m_duCommonCpbRemovalDelayFlag(false)
     , hasAltTimingInfo(false)
@@ -707,7 +707,7 @@ public:
   uint32_t                           cpbRemovalDelayDeltaIdx[MAX_TLAYER];
   uint32_t                           cpbRemovalDelay[MAX_TLAYER];
   uint32_t                           dpbOutputDelay;
-  uint32_t  m_picDpbOutputDuDelay;
+  uint32_t                           dpbOutputDuDelay;
   uint32_t  m_numDecodingUnitsMinus1;
   bool  m_duCommonCpbRemovalDelayFlag;
   uint32_t  m_duCommonCpbRemovalDelayMinus1[MAX_TLAYER];

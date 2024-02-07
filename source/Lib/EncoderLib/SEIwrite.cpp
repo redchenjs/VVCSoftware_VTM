@@ -524,7 +524,7 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
 
   if (bp.hasDuHrdParams && bp.duDpbParamsInPicTimingSei)
   {
-    xWriteCode(sei.m_picDpbOutputDuDelay, bp.dpbOutputDelayDuLength, "pic_dpb_output_du_delay");
+    xWriteCode(sei.dpbOutputDuDelay, bp.dpbOutputDelayDuLength, "pt_dpb_output_du_delay");
   }
   if (bp.hasDuHrdParams && bp.duCpbParamsInPicTimingSei)
   {

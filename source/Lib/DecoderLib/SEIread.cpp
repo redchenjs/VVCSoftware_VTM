@@ -1816,7 +1816,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
   if (bp.hasDuHrdParams && bp.duDpbParamsInPicTimingSei)
   {
     sei_read_code(pDecodedMessageOutputStream, bp.dpbOutputDelayDuLength, symbol, "pic_dpb_output_du_delay");
-    pt.m_picDpbOutputDuDelay = symbol;
+    pt.dpbOutputDuDelay = symbol;
   }
   if (bp.hasDuHrdParams && bp.duCpbParamsInPicTimingSei)
   {
