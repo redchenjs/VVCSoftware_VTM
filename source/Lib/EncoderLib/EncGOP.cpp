@@ -1122,7 +1122,7 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
       const uint32_t numDU                            = (uint32_t) duData.size();
       pictureTimingSEI->numDecodingUnits              = numDU;
       pictureTimingSEI->duCommonCpbRemovalDelay       = false;
-      pictureTimingSEI->m_numNalusInDuMinus1.resize( numDU );
+      pictureTimingSEI->numNalusInDu.resize(numDU);
       const uint32_t maxNumSubLayers = slice->getSPS()->getMaxTLayers();
       pictureTimingSEI->m_duCpbRemovalDelayMinus1.resize( numDU * maxNumSubLayers );
     }
@@ -1426,7 +1426,8 @@ void EncGOP::xUpdateTimingSEI(SEIPictureTiming *pictureTimingSEI, std::deque<DUD
 
     for( i = 0; i < numDU; i ++ )
     {
-      pictureTimingSEI->m_numNalusInDuMinus1[ i ]       = ( i == 0 ) ? ( duData[i].accumNalsDU - 1 ) : ( duData[i].accumNalsDU- duData[i-1].accumNalsDU - 1 );
+      pictureTimingSEI->numNalusInDu[i] =
+        (i == 0) ? duData[i].accumNalsDU : duData[i].accumNalsDU - duData[i - 1].accumNalsDU;
     }
 
     if( numDU == 1 )

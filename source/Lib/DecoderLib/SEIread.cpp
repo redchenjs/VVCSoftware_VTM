@@ -1822,7 +1822,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
   {
     sei_read_uvlc( pDecodedMessageOutputStream, symbol, "num_decoding_units_minus1" );
     pt.numDecodingUnits = symbol + 1;
-    pt.m_numNalusInDuMinus1.resize(pt.numDecodingUnits);
+    pt.numNalusInDu.resize(pt.numDecodingUnits);
     pt.m_duCpbRemovalDelayMinus1.resize(pt.numDecodingUnits * bp.maxSublayers);
 
     if (pt.numDecodingUnits > 1)
@@ -1844,7 +1844,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
       for (int i = 0; i < pt.numDecodingUnits; i++)
       {
         sei_read_uvlc( pDecodedMessageOutputStream, symbol, "num_nalus_in_du_minus1[i]" );
-        pt.m_numNalusInDuMinus1[i] = symbol;
+        pt.numNalusInDu[i] = symbol + 1;
         if (!pt.duCommonCpbRemovalDelay && i < pt.numDecodingUnits - 1)
         {
           for (int j = temporalId; j < bp.maxSublayers; j++)

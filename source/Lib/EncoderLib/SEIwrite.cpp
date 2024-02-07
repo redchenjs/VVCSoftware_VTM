@@ -548,7 +548,8 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
       }
       for (int i = 0; i < sei.numDecodingUnits; i++)
       {
-        xWriteUvlc( sei.m_numNalusInDuMinus1[i], "num_nalus_in_du_minus1[i]" );
+        CHECK(sei.numNalusInDu[i] < 1, "numNalusInDu[i] must be at least 1");
+        xWriteUvlc(sei.numNalusInDu[i] - 1, "pt_num_nalus_in_du_minus1[i]");
         if (!sei.duCommonCpbRemovalDelay && i < sei.numDecodingUnits - 1)
         {
           for (int j = temporalId; j < bp.maxSublayers; j++)

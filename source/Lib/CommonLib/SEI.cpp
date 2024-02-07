@@ -111,7 +111,7 @@ void SEIPictureTiming::copyTo (SEIPictureTiming& target) const
   target.numDecodingUnits              = numDecodingUnits;
   target.duCommonCpbRemovalDelay       = duCommonCpbRemovalDelay;
 
-  target.m_numNalusInDuMinus1 = m_numNalusInDuMinus1;
+  target.numNalusInDu                         = numNalusInDu;
   target.m_duCpbRemovalDelayMinus1 = m_duCpbRemovalDelayMinus1;
   target.hasAltTimingInfo                     = hasAltTimingInfo;
   target.initialAltCpbRemovalDelta            = initialAltCpbRemovalDelta;
@@ -772,7 +772,7 @@ SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
   duCommonCpbRemovalDelay       = sei.duCommonCpbRemovalDelay;
   std::memcpy(duCommonCpbRemovalDelayIncrement, sei.duCommonCpbRemovalDelayIncrement,
               sizeof(sei.duCommonCpbRemovalDelayIncrement));
-  m_numNalusInDuMinus1 = sei.m_numNalusInDuMinus1;
+  numNalusInDu                         = sei.numNalusInDu;
   m_duCpbRemovalDelayMinus1 = sei.m_duCpbRemovalDelayMinus1;
   hasAltTimingInfo                     = sei.hasAltTimingInfo;
   initialAltCpbRemovalDelta            = sei.initialAltCpbRemovalDelta;

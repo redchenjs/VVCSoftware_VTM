@@ -711,7 +711,7 @@ public:
   uint32_t                           numDecodingUnits;
   bool                               duCommonCpbRemovalDelay;
   uint32_t                           duCommonCpbRemovalDelayIncrement[MAX_TLAYER];
-  std::vector<uint32_t> m_numNalusInDuMinus1;
+  std::vector<uint32_t>              numNalusInDu;
   std::vector<uint32_t> m_duCpbRemovalDelayMinus1;
   bool                               hasAltTimingInfo;
 
