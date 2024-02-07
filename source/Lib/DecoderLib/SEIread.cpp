@@ -1516,11 +1516,11 @@ void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& dui, uint32_t pay
       {
         sei_read_code(pDecodedMessageOutputStream, bp.duCpbRemovalDelayIncrementLength, val,
                       "dui_du_cpb_removal_delay_increment[i]");
-        dui.m_duSptCpbRemovalDelayIncrement[i] = val;
+        dui.duCpbRemovalDelayIncrement[i] = val;
       }
       else
       {
-        dui.m_duSptCpbRemovalDelayIncrement[i] = 0;
+        dui.duCpbRemovalDelayIncrement[i] = 0;
       }
     }
   }
@@ -1528,7 +1528,7 @@ void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& dui, uint32_t pay
   {
     for (int i = temporalId; i < bp.maxSublayers - 1; i++)
     {
-      dui.m_duSptCpbRemovalDelayIncrement[i] = 0;
+      dui.duCpbRemovalDelayIncrement[i] = 0;
     }
   }
 

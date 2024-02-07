@@ -331,7 +331,7 @@ void SEIWriter::xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& dui, const 
       }
       if (dui.hasSublayerDelays[i])
       {
-        xWriteCode(dui.m_duSptCpbRemovalDelayIncrement[i], bp.duCpbRemovalDelayIncrementLength,
+        xWriteCode(dui.duCpbRemovalDelayIncrement[i], bp.duCpbRemovalDelayIncrementLength,
                    "dui_du_cpb_removal_delay_increment[i]");
       }
     }
