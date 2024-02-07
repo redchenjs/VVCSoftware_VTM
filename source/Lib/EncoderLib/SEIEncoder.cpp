@@ -485,9 +485,7 @@ void SEIEncoder::initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, 
   }
   if (!subpictureIDs.empty())
   {
-    scalableNestingSEI->m_snSubpicFlag = 1;
-    scalableNestingSEI->m_snNumSubpics = (uint32_t) subpictureIDs.size();
-    scalableNestingSEI->m_snSubpicId   = subpictureIDs;
+    scalableNestingSEI->subpicId        = subpictureIDs;
     scalableNestingSEI->m_snSubpicIdLen = std::max(1, ceilLog2(maxSubpicIdInPic + 1));
     CHECK ( scalableNestingSEI->m_snSubpicIdLen > 16, "Subpicture ID too large. Length must be <= 16 bits");
   }

@@ -445,12 +445,12 @@ bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit
     // check, if the scalable nesting SEI applies to the target subpicture
     SEIScalableNesting *sei = (SEIScalableNesting*) scalableNestingSEIs.front();
 
-    if (sei->m_snSubpicFlag == 0)
+    if (sei->subpicId.empty())
     {
       // does not apply to a subpicture -> remove
       return false;
     }
-    if (std::find(sei->m_snSubpicId.begin(), sei->m_snSubpicId.end(), subpicId) != sei->m_snSubpicId.end())
+    if (std::find(sei->subpicId.begin(), sei->subpicId.end(), subpicId) != sei->subpicId.end())
     {
       // C.7 step 7.c
       if (!sei->olsIdx.empty() || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
@@ -821,7 +821,7 @@ uint32_t BitstreamExtractorApp::decode()
                 writeInpuNalUnitToStream &= targetOlsIdxInNestingAppliedOls;
               }
               // C.6 step 9.c
-              if (writeInpuNalUnitToStream && !targetOlsIncludeAllVclLayers && !seiNesting->m_snSubpicFlag)
+              if (writeInpuNalUnitToStream && !targetOlsIncludeAllVclLayers && seiNesting->subpicId.empty())
               {
                 if (!seiNesting->olsIdx.empty() || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
                 {

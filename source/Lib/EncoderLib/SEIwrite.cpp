@@ -615,7 +615,7 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
   CHECK (sei.m_nestedSEIs.size()<1, "There must be at lease one SEI message nested in the scalable nesting SEI.")
 
   xWriteFlag(!sei.olsIdx.empty() ? 1 : 0, "sn_ols_flag");
-  xWriteFlag(sei.m_snSubpicFlag, "sn_subpic_flag");
+  xWriteFlag(!sei.subpicId.empty() ? 1 : 0, "sn_subpic_flag");
   if (!sei.olsIdx.empty())
   {
     xWriteUvlc((uint32_t) sei.olsIdx.size(), "sn_num_olss_minus1");
@@ -638,14 +638,13 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
       }
     }
   }
-  if (sei.m_snSubpicFlag)
+  if (!sei.subpicId.empty())
   {
-    xWriteUvlc( sei.m_snNumSubpics - 1, "sn_num_subpics_minus1");
-    CHECK(sei.m_snSubpicIdLen < 1, "sn_subpic_id_len_minus1 must be >= 0");
+    xWriteUvlc((uint32_t) sei.subpicId.size() - 1, "sn_num_subpics_minus1");
     xWriteUvlc( sei.m_snSubpicIdLen - 1, "sn_subpic_id_len_minus1");
-    for (uint32_t i = 0; i < sei.m_snNumSubpics; i++)
+    for (uint32_t i = 0; i < sei.subpicId.size(); i++)
     {
-      xWriteCode(sei.m_snSubpicId[i], sei.m_snSubpicIdLen, "sn_subpic_id[i]");
+      xWriteCode(sei.subpicId[i], sei.m_snSubpicIdLen, "sn_subpic_id[i]");
     }
   }
 

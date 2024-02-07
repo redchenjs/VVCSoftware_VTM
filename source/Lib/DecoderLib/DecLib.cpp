@@ -931,9 +931,9 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
     for (auto seiIt : scalableNestingSeis)
     {
       SEIScalableNesting *nestingSei = dynamic_cast<SEIScalableNesting*>(seiIt);
-      if (nestingSei->m_snSubpicFlag)
+      if (!nestingSei->subpicId.empty())
       {
-        uint32_t subpicId = nestingSei->m_snSubpicId.front();
+        uint32_t    subpicId = nestingSei->subpicId.front();
         SEIMessages nestedPictureHashes =
           getSeisByType(nestingSei->m_nestedSEIs, SEI::PayloadType::DECODED_PICTURE_HASH);
         for (auto decPicHash : nestedPictureHashes)

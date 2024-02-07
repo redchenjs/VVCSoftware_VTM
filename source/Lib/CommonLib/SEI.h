@@ -894,15 +894,10 @@ class SEIScalableNesting : public SEI
 public:
   PayloadType payloadType() const { return PayloadType::SCALABLE_NESTING; }
 
-  SEIScalableNesting()
-    : m_snSubpicFlag(false)
-    , m_snAllLayersFlag(false)
-    , m_snNumLayersMinus1(0)
-    , m_snNumSubpics(1)
-    , m_snSubpicIdLen(0)
-    , m_snNumSEIs(0)
+  SEIScalableNesting() : m_snAllLayersFlag(false), m_snNumLayersMinus1(0), m_snSubpicIdLen(0), m_snNumSEIs(0)
   {
     olsIdx.clear();
+    subpicId.clear();
   }
   SEIScalableNesting(const SEIScalableNesting& sei);
 
@@ -911,16 +906,15 @@ public:
     deleteSEIs(m_nestedSEIs);
   }
 
-  bool      m_snSubpicFlag;
-
   static_vector<uint32_t, MAX_NESTING_NUM_LAYER> olsIdx;
+
+  std::vector<uint16_t> subpicId;
 
   bool      m_snAllLayersFlag;                      //value valid if m_nestingOlsFlag == 0
   uint32_t  m_snNumLayersMinus1;                    //value valid if m_nestingOlsFlag == 0 and m_nestingAllLayersFlag == 0
-  uint8_t   m_snLayerId[MAX_NESTING_NUM_LAYER];     //value valid if m_nestingOlsFlag == 0 and m_nestingAllLayersFlag == 0. This can e.g. be a static array of 64 uint8_t values
-  uint32_t  m_snNumSubpics;
-  uint8_t   m_snSubpicIdLen;
-  std::vector<uint16_t> m_snSubpicId;
+  uint8_t m_snLayerId[MAX_NESTING_NUM_LAYER];   // value valid if m_nestingOlsFlag == 0 and m_nestingAllLayersFlag == 0.
+                                                // This can e.g. be a static array of 64 uint8_t values
+  uint8_t m_snSubpicIdLen;
   uint32_t  m_snNumSEIs;
 
   SEIMessages m_nestedSEIs;
