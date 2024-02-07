@@ -1760,13 +1760,6 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
     {
       if (bp.hasHrdParams[HrdType::NAL])
       {
-        pt.m_nalCpbAltInitialRemovalDelayDelta.resize(bp.maxSublayers);
-        pt.m_nalCpbAltInitialRemovalOffsetDelta.resize(bp.maxSublayers);
-        for (int i = 0; i < bp.maxSublayers; ++i)
-        {
-          pt.m_nalCpbAltInitialRemovalDelayDelta[i].resize(bp.cpbCount, 0);
-          pt.m_nalCpbAltInitialRemovalOffsetDelta[i].resize(bp.cpbCount, 0);
-        }
         pt.m_nalCpbDelayOffset.resize(bp.maxSublayers, 0);
         pt.m_nalDpbDelayOffset.resize(bp.maxSublayers, 0);
         for (int i = (bp.hasSublayerInitialCpbRemovalDelay ? 0 : bp.maxSublayers - 1); i < bp.maxSublayers; ++i)
@@ -1775,10 +1768,10 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
           {
             sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, symbol,
                           "nal_cpb_alt_initial_cpb_removal_delay_delta[ i ][ j ]");
-            pt.m_nalCpbAltInitialRemovalDelayDelta[i][j] = symbol;
+            pt.initialAltCpbRemovalDelta[HrdType::NAL][i][j].delay = symbol;
             sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, symbol,
                           "nal_cpb_alt_initial_cpb_removal_offset_delta[ i ][ j ]");
-            pt.m_nalCpbAltInitialRemovalOffsetDelta[i][j] = symbol;
+            pt.initialAltCpbRemovalDelta[HrdType::NAL][i][j].offset = symbol;
           }
           sei_read_code(pDecodedMessageOutputStream, bp.cpbRemovalDelayLength, pt.m_nalCpbDelayOffset[i],
                         "nal_cpb_delay_offset[ i ]");
@@ -1789,13 +1782,6 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
 
       if (bp.hasHrdParams[HrdType::VCL])
       {
-        pt.m_vclCpbAltInitialRemovalDelayDelta.resize(bp.maxSublayers);
-        pt.m_vclCpbAltInitialRemovalOffsetDelta.resize(bp.maxSublayers);
-        for (int i = 0; i < bp.maxSublayers; ++i)
-        {
-          pt.m_vclCpbAltInitialRemovalDelayDelta[i].resize(bp.cpbCount, 0);
-          pt.m_vclCpbAltInitialRemovalOffsetDelta[i].resize(bp.cpbCount, 0);
-        }
         pt.m_vclCpbDelayOffset.resize(bp.maxSublayers, 0);
         pt.m_vclDpbDelayOffset.resize(bp.maxSublayers, 0);
         for (int i = (bp.hasSublayerInitialCpbRemovalDelay ? 0 : bp.maxSublayers - 1); i < bp.maxSublayers; ++i)
@@ -1804,10 +1790,10 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
           {
             sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, symbol,
                           "vcl_cpb_alt_initial_cpb_removal_delay_delta[ i ][ j ]");
-            pt.m_vclCpbAltInitialRemovalDelayDelta[i][j] = symbol;
+            pt.initialAltCpbRemovalDelta[HrdType::VCL][i][j].delay = symbol;
             sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, symbol,
                           "vcl_cpb_alt_initial_cpb_removal_offset_delta[ i ][ j ]");
-            pt.m_vclCpbAltInitialRemovalOffsetDelta[i][j] = symbol;
+            pt.initialAltCpbRemovalDelta[HrdType::VCL][i][j].offset = symbol;
           }
           sei_read_code(pDecodedMessageOutputStream, bp.cpbRemovalDelayLength, pt.m_vclCpbDelayOffset[i],
                         "vcl_cpb_delay_offset[ i ]");
@@ -1820,25 +1806,11 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
   else
   {
     pt.hasAltTimingInfo = false;
-    pt.m_nalCpbAltInitialRemovalDelayDelta.resize(bp.maxSublayers);
-    pt.m_nalCpbAltInitialRemovalOffsetDelta.resize(bp.maxSublayers);
     pt.m_nalCpbDelayOffset.resize(bp.maxSublayers, 0);
     pt.m_nalDpbDelayOffset.resize(bp.maxSublayers, 0);
-    for (int i = (bp.hasSublayerInitialCpbRemovalDelay ? 0 : bp.maxSublayers - 1); i < bp.maxSublayers; ++i)
-    {
-      pt.m_nalCpbAltInitialRemovalDelayDelta[i].resize(bp.cpbCount, 0);
-      pt.m_nalCpbAltInitialRemovalOffsetDelta[i].resize(bp.cpbCount, 0);
-    }
 
-    pt.m_vclCpbAltInitialRemovalDelayDelta.resize(bp.maxSublayers);
-    pt.m_vclCpbAltInitialRemovalOffsetDelta.resize(bp.maxSublayers);
     pt.m_vclCpbDelayOffset.resize(bp.maxSublayers, 0);
     pt.m_vclDpbDelayOffset.resize(bp.maxSublayers, 0);
-    for (int i = (bp.hasSublayerInitialCpbRemovalDelay ? 0 : bp.maxSublayers - 1); i < bp.maxSublayers; ++i)
-    {
-      pt.m_vclCpbAltInitialRemovalDelayDelta[i].resize(bp.cpbCount, 0);
-      pt.m_vclCpbAltInitialRemovalOffsetDelta[i].resize(bp.cpbCount, 0);
-    }
   }
 
   if (bp.hasDuHrdParams && bp.duDpbParamsInPicTimingSei)

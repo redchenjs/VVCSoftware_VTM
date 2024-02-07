@@ -612,15 +612,15 @@ enum class HrdType
   NUM
 };
 
+struct CpbEntry
+{
+  uint32_t delay;
+  uint32_t offset;
+};
+
 class SEIBufferingPeriod : public SEI
 {
 public:
-  struct CpbEntry
-  {
-    uint32_t delay;
-    uint32_t offset;
-  };
-
   PayloadType payloadType() const { return PayloadType::BUFFERING_PERIOD; }
   void        copyTo(SEIBufferingPeriod& target) const;
 
@@ -714,12 +714,11 @@ public:
   std::vector<uint32_t> m_numNalusInDuMinus1;
   std::vector<uint32_t> m_duCpbRemovalDelayMinus1;
   bool                               hasAltTimingInfo;
-  std::vector<std::vector<uint32_t>> m_nalCpbAltInitialRemovalDelayDelta;
-  std::vector<std::vector<uint32_t>> m_nalCpbAltInitialRemovalOffsetDelta;
+
+  EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialAltCpbRemovalDelta;
+
   std::vector<uint32_t>              m_nalCpbDelayOffset;
   std::vector<uint32_t>              m_nalDpbDelayOffset;
-  std::vector<std::vector<uint32_t>> m_vclCpbAltInitialRemovalDelayDelta;
-  std::vector<std::vector<uint32_t>> m_vclCpbAltInitialRemovalOffsetDelta;
   std::vector<uint32_t>              m_vclCpbDelayOffset;
   std::vector<uint32_t>              m_vclDpbDelayOffset;
   int m_ptDisplayElementalPeriodsMinus1;

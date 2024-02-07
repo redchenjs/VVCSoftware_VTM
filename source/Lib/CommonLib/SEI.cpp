@@ -113,12 +113,9 @@ void SEIPictureTiming::copyTo (SEIPictureTiming& target) const
   target.m_numNalusInDuMinus1 = m_numNalusInDuMinus1;
   target.m_duCpbRemovalDelayMinus1 = m_duCpbRemovalDelayMinus1;
   target.hasAltTimingInfo                     = hasAltTimingInfo;
-  target.m_nalCpbAltInitialRemovalDelayDelta  = m_nalCpbAltInitialRemovalDelayDelta;
-  target.m_nalCpbAltInitialRemovalOffsetDelta = m_nalCpbAltInitialRemovalOffsetDelta;
+  target.initialAltCpbRemovalDelta            = initialAltCpbRemovalDelta;
   target.m_nalCpbDelayOffset = m_nalCpbDelayOffset;
-  target.m_nalCpbDelayOffset = m_nalCpbDelayOffset;
-  target.m_vclCpbAltInitialRemovalDelayDelta  = m_vclCpbAltInitialRemovalDelayDelta;
-  target.m_vclCpbAltInitialRemovalOffsetDelta = m_vclCpbAltInitialRemovalOffsetDelta;
+  target.m_nalCpbDelayOffset                  = m_nalCpbDelayOffset;
   target.m_vclCpbDelayOffset = m_vclCpbDelayOffset;
   target.m_vclCpbDelayOffset = m_vclCpbDelayOffset;
 }
@@ -776,12 +773,9 @@ SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
   m_numNalusInDuMinus1 = sei.m_numNalusInDuMinus1;
   m_duCpbRemovalDelayMinus1 = sei.m_duCpbRemovalDelayMinus1;
   hasAltTimingInfo                     = sei.hasAltTimingInfo;
-  m_nalCpbAltInitialRemovalDelayDelta = sei.m_nalCpbAltInitialRemovalDelayDelta;
-  m_nalCpbAltInitialRemovalOffsetDelta = sei.m_nalCpbAltInitialRemovalOffsetDelta;
+  initialAltCpbRemovalDelta            = sei.initialAltCpbRemovalDelta;
   m_nalCpbDelayOffset = sei.m_nalCpbDelayOffset;
-  m_nalDpbDelayOffset = sei.m_nalDpbDelayOffset;
-  m_vclCpbAltInitialRemovalDelayDelta = sei.m_vclCpbAltInitialRemovalDelayDelta;
-  m_vclCpbAltInitialRemovalOffsetDelta = sei.m_vclCpbAltInitialRemovalOffsetDelta;
+  m_nalDpbDelayOffset                  = sei.m_nalDpbDelayOffset;
   m_vclCpbDelayOffset = sei.m_vclCpbDelayOffset;
   m_vclDpbDelayOffset = sei.m_vclDpbDelayOffset;
   m_ptDisplayElementalPeriodsMinus1 = sei.m_ptDisplayElementalPeriodsMinus1;
