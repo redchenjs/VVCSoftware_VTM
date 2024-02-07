@@ -681,7 +681,7 @@ class SEIPictureTiming : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::PICTURE_TIMING; }
-  void copyTo (SEIPictureTiming& target) const;
+  void        copyTo(SEIPictureTiming& target) const;
 
   SEIPictureTiming()
   {
@@ -692,9 +692,7 @@ public:
     cpbRemovalDelay.fill(0);
   }
   SEIPictureTiming(const SEIPictureTiming& sei);
-  virtual ~SEIPictureTiming()
-  {
-  }
+  virtual ~SEIPictureTiming() {}
 
   std::array<bool, MAX_TLAYER> hasSublayerDelays;
   std::array<bool, MAX_TLAYER> cpbRemovalDelayDeltaEnabled;
