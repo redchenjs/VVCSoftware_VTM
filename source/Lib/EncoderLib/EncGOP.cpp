@@ -1121,7 +1121,7 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
     {
       const uint32_t numDU                            = (uint32_t) duData.size();
       pictureTimingSEI->numDecodingUnits              = numDU;
-      pictureTimingSEI->m_duCommonCpbRemovalDelayFlag = false;
+      pictureTimingSEI->duCommonCpbRemovalDelay       = false;
       pictureTimingSEI->m_numNalusInDuMinus1.resize( numDU );
       const uint32_t maxNumSubLayers = slice->getSPS()->getMaxTLayers();
       pictureTimingSEI->m_duCpbRemovalDelayMinus1.resize( numDU * maxNumSubLayers );

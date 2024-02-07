@@ -687,7 +687,7 @@ public:
     : dpbOutputDelay(0)
     , dpbOutputDuDelay(0)
     , numDecodingUnits(0)
-    , m_duCommonCpbRemovalDelayFlag(false)
+    , duCommonCpbRemovalDelay(false)
     , hasAltTimingInfo(false)
     , m_ptDisplayElementalPeriodsMinus1(0)
   {
@@ -709,7 +709,7 @@ public:
   uint32_t                           dpbOutputDelay;
   uint32_t                           dpbOutputDuDelay;
   uint32_t                           numDecodingUnits;
-  bool  m_duCommonCpbRemovalDelayFlag;
+  bool                               duCommonCpbRemovalDelay;
   uint32_t  m_duCommonCpbRemovalDelayMinus1[MAX_TLAYER];
   std::vector<uint32_t> m_numNalusInDuMinus1;
   std::vector<uint32_t> m_duCpbRemovalDelayMinus1;
