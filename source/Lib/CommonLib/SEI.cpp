@@ -919,7 +919,6 @@ SEIContentColourVolume::SEIContentColourVolume(const SEIContentColourVolume& sei
 
 SEISubpictureLevelInfo::SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
 {
-  m_numRefLevels = sei.m_numRefLevels;
   m_explicitFractionPresentFlag = sei.m_explicitFractionPresentFlag;
   m_cbrConstraintFlag = sei.m_cbrConstraintFlag;
   m_numSubpics = sei.m_numSubpics;

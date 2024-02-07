@@ -1531,7 +1531,7 @@ static void validateMinCrRequirements(const ProfileTierLevelFeatures& plt, std::
       const uint64_t maxLumaSr = plt.getTierLevelFeatures()->maxLumaSr;
       const double   denomx1000x256 = 256 * plt.getMinCr() * pCfg->getFrameRate().getFloatVal() * 1000 * 256;
 
-      for (int i = 0; i < seiSubpic.m_numRefLevels; i++)
+      for (int i = 0; i < seiSubpic.numRefLevels(); i++)
       {
         Level::Name level = seiSubpic.m_refLevelIdc[i][layerId];
         if (level != Level::LEVEL15_5)

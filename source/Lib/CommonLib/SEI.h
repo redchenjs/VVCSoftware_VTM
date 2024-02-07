@@ -1065,8 +1065,7 @@ class SEISubpictureLevelInfo : public SEI
 public:
   PayloadType payloadType() const { return PayloadType::SUBPICTURE_LEVEL_INFO; }
   SEISubpictureLevelInfo()
-    : m_numRefLevels(0)
-    , m_explicitFractionPresentFlag(false)
+    : m_explicitFractionPresentFlag(false)
     , m_cbrConstraintFlag(false)
     , m_numSubpics(0)
     , m_sliMaxSublayers(1)
@@ -1075,7 +1074,6 @@ public:
   SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei);
   virtual ~SEISubpictureLevelInfo() {}
 
-  int       m_numRefLevels;
   bool      m_explicitFractionPresentFlag;
   bool      m_cbrConstraintFlag;
   int       m_numSubpics;
@@ -1084,6 +1082,14 @@ public:
   std::vector<std::vector<int>>              m_nonSubpicLayersFraction;
   std::vector<std::vector<Level::Name>>      m_refLevelIdc;
   std::vector<std::vector<std::vector<int>>> m_refLevelFraction;
+
+  void setNumRefLevels(const size_t n)
+  {
+    m_refLevelIdc.resize(n);
+    m_nonSubpicLayersFraction.resize(n);
+    m_refLevelFraction.resize(n);
+  }
+  uint32_t numRefLevels() const { return (uint32_t) m_refLevelIdc.size(); }
 };
 
 class SEIManifest : public SEI

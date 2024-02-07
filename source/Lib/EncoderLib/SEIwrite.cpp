@@ -1329,15 +1329,8 @@ void SEIWriter::xWriteSEIDepthRepInfoElement( double f )
 
 void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
 {
-  CHECK(sei.m_numRefLevels < 1, "SEISubpictureLevelInfo: numRefLevels must be greater than zero");
-  CHECK(sei.m_numRefLevels != (int) sei.m_refLevelIdc.size(),
-        "SEISubpictureLevelInfo: numRefLevels must be equal to the number of levels");
-  if (sei.m_explicitFractionPresentFlag)
-  {
-    CHECK(sei.m_numRefLevels != (int) sei.m_refLevelFraction.size(),
-          "SEISubpictureLevelInfo: numRefLevels must be equal to the number of fractions");
-  }
-  xWriteCode( (uint32_t)sei.m_numRefLevels - 1, 3,                            "sli_num_ref_levels_minus1");
+  CHECK(sei.numRefLevels() < 1, "SEISubpictureLevelInfo: numRefLevels must be greater than zero");
+  xWriteCode((uint32_t) sei.numRefLevels() - 1, 3, "sli_num_ref_levels_minus1");
   xWriteFlag(           sei.m_cbrConstraintFlag,                              "sli_cbr_constraint_flag");
   xWriteFlag(           sei.m_explicitFractionPresentFlag,                    "sli_explicit_fraction_present_flag");
   if (sei.m_explicitFractionPresentFlag)
@@ -1353,7 +1346,7 @@ void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
 
   for (int k = sei.m_sliSublayerInfoPresentFlag ? 0 : sei.m_sliMaxSublayers - 1; k < sei.m_sliMaxSublayers; k++)
   {
-    for (int i = 0; i < sei.m_numRefLevels; i++)
+    for (int i = 0; i < sei.numRefLevels(); i++)
     {
       xWriteCode((uint32_t)sei.m_nonSubpicLayersFraction[i][k], 8, "sli_non_subpic_layers_fraction[i][k]");
       xWriteCode((uint32_t)sei.m_refLevelIdc[i][k], 8, "sli_ref_level_idc[i][k]");
