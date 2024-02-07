@@ -1327,34 +1327,34 @@ void SEIWriter::xWriteSEIDepthRepInfoElement( double f )
   xWriteCode( x_mantissa, x_mantissa_len ,     "da_mantissa" );
 };
 
-void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
+void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sli)
 {
-  CHECK(sei.numRefLevels() < 1, "SEISubpictureLevelInfo: numRefLevels must be greater than zero");
-  xWriteCode(sei.numRefLevels() - 1, 3, "sli_num_ref_levels_minus1");
-  xWriteFlag(sei.cbrConstraint ? 1 : 0, "sli_cbr_constraint_flag");
-  xWriteFlag(sei.explicitFractionPresentFlag(), "sli_explicit_fraction_present_flag");
-  if (sei.explicitFractionPresentFlag())
+  CHECK(sli.numRefLevels() < 1, "SEISubpictureLevelInfo: numRefLevels must be greater than zero");
+  xWriteCode(sli.numRefLevels() - 1, 3, "sli_num_ref_levels_minus1");
+  xWriteFlag(sli.cbrConstraint ? 1 : 0, "sli_cbr_constraint_flag");
+  xWriteFlag(sli.explicitFractionPresentFlag() ? 1 : 0, "sli_explicit_fraction_present_flag");
+  if (sli.explicitFractionPresentFlag())
   {
-    xWriteUvlc(sei.numSubpics() - 1, "sli_num_subpics_minus1");
-    xWriteCode(sei.maxSublayers() - 1, 3, "sli_max_sublayers_minus1");
-    xWriteFlag(sei.hasSublayerInfo ? 1 : 0, "sli_sublayer_info_present_flag");
+    xWriteUvlc(sli.numSubpics() - 1, "sli_num_subpics_minus1");
+    xWriteCode(sli.maxSublayers() - 1, 3, "sli_max_sublayers_minus1");
+    xWriteFlag(sli.hasSublayerInfo ? 1 : 0, "sli_sublayer_info_present_flag");
     while (!isByteAligned())
     {
-      xWriteFlag(       0,                                                    "sli_alignment_zero_bit");
+      xWriteFlag(0, "sli_alignment_zero_bit");
     }
   }
 
-  for (int k = sei.hasSublayerInfo ? 0 : sei.maxSublayers() - 1; k < sei.maxSublayers(); k++)
+  for (int k = sli.hasSublayerInfo ? 0 : sli.maxSublayers() - 1; k < sli.maxSublayers(); k++)
   {
-    for (int i = 0; i < sei.numRefLevels(); i++)
+    for (int i = 0; i < sli.numRefLevels(); i++)
     {
-      xWriteCode((uint32_t) sei.nonSubpicLayerFraction(i, k), 8, "sli_non_subpic_layers_fraction[i][k]");
-      xWriteCode((uint32_t) sei.refLevelIdc(i, k), 8, "sli_ref_level_idc[i][k]");
-      if (sei.explicitFractionPresentFlag())
+      xWriteCode(sli.nonSubpicLayerFraction(i, k), 8, "sli_non_subpic_layers_fraction[i][k]");
+      xWriteCode(sli.refLevelIdc(i, k), 8, "sli_ref_level_idc[i][k]");
+      if (sli.explicitFractionPresentFlag())
       {
-        for (int j = 0; j < sei.numSubpics(); j++)
+        for (int j = 0; j < sli.numSubpics(); j++)
         {
-          xWriteCode((uint32_t) sei.refLevelFraction(i, j, k), 8, "sli_ref_level_fraction_minus1[i][j][k]");
+          xWriteCode(sli.refLevelFraction(i, j, k), 8, "sli_ref_level_fraction_minus1[i][j][k]");
         }
       }
     }

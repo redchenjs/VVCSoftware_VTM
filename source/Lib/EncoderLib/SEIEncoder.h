@@ -75,7 +75,7 @@ public:
   void initSEIOmniViewport(SEIOmniViewport *sei);
   void initSEIRegionWisePacking(SEIRegionWisePacking *sei);
   void initSEIGcmp(SEIGeneralizedCubemapProjection *sei);
-  void initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sei, const SPS* sps);
+  void initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sli, const SPS* sps);
   void initSEISampleAspectRatioInfo(SEISampleAspectRatioInfo *sei);
   void initSEIPhaseIndication(SEIPhaseIndication* sei, int ppsId);
   void initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *sei);

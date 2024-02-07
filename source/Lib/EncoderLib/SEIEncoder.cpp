@@ -1281,11 +1281,11 @@ void SEIEncoder::initSEIColourTransformInfo(SEIColourTransformInfo* seiCTI)
   seiCTI->m_log2NumberOfPointsPerLut = floorLog2(seiCTI->m_lut[0].numLutValues - 1);
 }
 
-void SEIEncoder::initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sei, const SPS* sps)
+void SEIEncoder::initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sli, const SPS* sps)
 {
   const EncCfgParam::CfgSEISubpictureLevel &cfgSubPicLevel = m_pcCfg->getSubpicureLevelInfoSEICfg();
 
-  sei->hasSublayerInfo = cfgSubPicLevel.hasSublayerInfo;
+  sli->hasSublayerInfo = cfgSubPicLevel.hasSublayerInfo;
 
   const size_t maxSublayers = cfgSubPicLevel.m_sliMaxSublayers;
   const size_t numRefLevels = cfgSubPicLevel.hasSublayerInfo
@@ -1295,30 +1295,30 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sei, const S
 
   const bool explicitFractionPresentFlag = cfgSubPicLevel.m_explicitFraction;
 
-  sei->resize(numRefLevels, maxSublayers, explicitFractionPresentFlag, numSubpics);
+  sli->resize(numRefLevels, maxSublayers, explicitFractionPresentFlag, numSubpics);
 
   // set sei parameters according to the configured values
-  for (int sublayer = sei->hasSublayerInfo ? 0 : sei->maxSublayers() - 1, cnta = 0, cntb = 0;
-       sublayer < sei->maxSublayers(); sublayer++)
+  for (int sublayer = sli->hasSublayerInfo ? 0 : sli->maxSublayers() - 1, cnta = 0, cntb = 0;
+       sublayer < sli->maxSublayers(); sublayer++)
   {
-    for (int level = 0; level < sei->numRefLevels(); level++)
+    for (int level = 0; level < sli->numRefLevels(); level++)
     {
-      sei->nonSubpicLayerFraction(level, sublayer) = cfgSubPicLevel.m_nonSubpicLayersFraction[cnta];
-      sei->refLevelIdc(level, sublayer)            = cfgSubPicLevel.m_refLevels[cnta++];
-      if (sei->explicitFractionPresentFlag())
+      sli->nonSubpicLayerFraction(level, sublayer) = cfgSubPicLevel.m_nonSubpicLayersFraction[cnta];
+      sli->refLevelIdc(level, sublayer)            = cfgSubPicLevel.m_refLevels[cnta++];
+      if (sli->explicitFractionPresentFlag())
       {
-        for (int subpic = 0; subpic < sei->numSubpics(); subpic++)
+        for (int subpic = 0; subpic < sli->numSubpics(); subpic++)
         {
-          sei->refLevelFraction(level, subpic, sublayer) = cfgSubPicLevel.m_fractions[cntb++];
+          sli->refLevelFraction(level, subpic, sublayer) = cfgSubPicLevel.m_fractions[cntb++];
         }
       }
     }
   }
 
   // update the inference of m_refLevelIdc[][] and m_refLevelFraction[][][]
-  if (!sei->hasSublayerInfo)
+  if (!sli->hasSublayerInfo)
   {
-    sei->fillSublayers();
+    sli->fillSublayers();
   }
 }
 

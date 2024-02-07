@@ -101,7 +101,7 @@ protected:
   void xParseSEIAlphaChannelInfo              (SEIAlphaChannelInfo& sei,              uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIDepthRepresentationInfo       (SEIDepthRepresentationInfo& sei,       uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIDepthRepInfoElement           (double &f,std::ostream *pDecodedMessageOutputStream);
-  void xParseSEISubpictureLevelInfo(SEISubpictureLevelInfo& sei, uint32_t payloadSize,
+  void xParseSEISubpictureLevelInfo(SEISubpictureLevelInfo& sli, uint32_t payloadSize,
                                     std::ostream* pDecodedMessageOutputStream);
   void xParseSEISampleAspectRatioInfo         (SEISampleAspectRatioInfo& sei,         uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIUserDataRegistered            (SEIUserDataRegistered& sei,            uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);

@@ -917,12 +917,7 @@ SEIContentColourVolume::SEIContentColourVolume(const SEIContentColourVolume& sei
   m_ccvAvgLuminanceValue = sei.m_ccvAvgLuminanceValue;
 }
 
-SEISubpictureLevelInfo::SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
-{
-  cbrConstraint                = sei.cbrConstraint;
-  hasSublayerInfo              = sei.hasSublayerInfo;
-  data                         = sei.data;
-}
+SEISubpictureLevelInfo::SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sli) = default;
 
 SEIManifest::SEIManifest(const SEIManifest& sei)
 {
