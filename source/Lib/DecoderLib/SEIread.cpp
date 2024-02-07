@@ -1723,13 +1723,13 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
       if (bp.hasCpbRemovalDelayDeltas())
       {
         sei_read_flag(pDecodedMessageOutputStream, symbol, "pt_cpb_removal_delay_delta_enabled_flag[i]");
-        pt.m_cpbRemovalDelayDeltaEnabledFlag[i] = (symbol == 1);
+        pt.cpbRemovalDelayDeltaEnabled[i] = (symbol == 1);
       }
       else
       {
-        pt.m_cpbRemovalDelayDeltaEnabledFlag[i] = false;
+        pt.cpbRemovalDelayDeltaEnabled[i] = false;
       }
-      if (pt.m_cpbRemovalDelayDeltaEnabledFlag[i])
+      if (pt.cpbRemovalDelayDeltaEnabled[i])
       {
         if (bp.numCpbRemovalDelayDeltas() > 1)
         {

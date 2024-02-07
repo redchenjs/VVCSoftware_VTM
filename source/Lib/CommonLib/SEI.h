@@ -693,7 +693,7 @@ public:
   {
     ::memset(hasSublayerDelays, 0, sizeof(hasSublayerDelays));
     ::memset(m_duCommonCpbRemovalDelayMinus1, 0, sizeof(m_duCommonCpbRemovalDelayMinus1));
-    ::memset(m_cpbRemovalDelayDeltaEnabledFlag, 0, sizeof(m_cpbRemovalDelayDeltaEnabledFlag));
+    ::memset(cpbRemovalDelayDeltaEnabled, 0, sizeof(cpbRemovalDelayDeltaEnabled));
     ::memset(m_cpbRemovalDelayDeltaIdx, 0, sizeof(m_cpbRemovalDelayDeltaIdx));
     ::memset(cpbRemovalDelay, 0, sizeof(cpbRemovalDelay));
   }
@@ -703,7 +703,7 @@ public:
   }
 
   bool                               hasSublayerDelays[MAX_TLAYER];
-  bool  m_cpbRemovalDelayDeltaEnabledFlag[MAX_TLAYER];
+  bool                               cpbRemovalDelayDeltaEnabled[MAX_TLAYER];
   uint32_t  m_cpbRemovalDelayDeltaIdx[MAX_TLAYER];
   uint32_t                           cpbRemovalDelay[MAX_TLAYER];
   uint32_t  m_picDpbOutputDelay;

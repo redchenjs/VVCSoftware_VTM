@@ -466,9 +466,9 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
     {
       if (bp.hasCpbRemovalDelayDeltas())
       {
-        xWriteFlag(sei.m_cpbRemovalDelayDeltaEnabledFlag[i], "pt_cpb_removal_delay_delta_enabled_flag[i]");
+        xWriteFlag(sei.cpbRemovalDelayDeltaEnabled[i], "pt_cpb_removal_delay_delta_enabled_flag[i]");
       }
-      if (sei.m_cpbRemovalDelayDeltaEnabledFlag[i])
+      if (sei.cpbRemovalDelayDeltaEnabled[i])
       {
         if (bp.numCpbRemovalDelayDeltas() > 1)
         {

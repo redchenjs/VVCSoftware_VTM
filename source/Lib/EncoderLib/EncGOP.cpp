@@ -1146,14 +1146,13 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
       pictureTimingSEI->hasSublayerDelays[i] = true;
       if( ((m_rapWithLeading == true) && (indexWithinGOP == 0)) || (m_totalCoded[maxNumSubLayers - 1] == 0) || m_bufferingPeriodSEIPresentInAU || (slice->getPOC() + m_pcCfg->getGOPSize()) > m_pcCfg->getFramesToBeEncoded() )
       {
-        pictureTimingSEI->m_cpbRemovalDelayDeltaEnabledFlag[i] = false;
+        pictureTimingSEI->cpbRemovalDelayDeltaEnabled[i] = false;
       }
       else
       {
-        pictureTimingSEI->m_cpbRemovalDelayDeltaEnabledFlag[i] =
-          m_HRD->getBufferingPeriodSEI()->hasCpbRemovalDelayDeltas();
+        pictureTimingSEI->cpbRemovalDelayDeltaEnabled[i] = m_HRD->getBufferingPeriodSEI()->hasCpbRemovalDelayDeltas();
       }
-      if( pictureTimingSEI->m_cpbRemovalDelayDeltaEnabledFlag[i] )
+      if (pictureTimingSEI->cpbRemovalDelayDeltaEnabled[i])
       {
         if( m_rapWithLeading == false )
         {
