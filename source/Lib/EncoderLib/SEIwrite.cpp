@@ -539,8 +539,10 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
         {
           if (sei.hasSublayerDelays[i])
           {
-            xWriteCode(sei.m_duCommonCpbRemovalDelayMinus1[i], bp.duCpbRemovalDelayIncrementLength,
-                       "du_common_cpb_removal_delay_increment_minus1[i]");
+            CHECK(sei.duCommonCpbRemovalDelayIncrement[i] < 1,
+                  "duCommonCpbRemovalDelayIncrement[i] must be at least 1");
+            xWriteCode(sei.duCommonCpbRemovalDelayIncrement[i] - 1, bp.duCpbRemovalDelayIncrementLength,
+                       "pt_du_common_cpb_removal_delay_increment_minus1[i]");
           }
         }
       }

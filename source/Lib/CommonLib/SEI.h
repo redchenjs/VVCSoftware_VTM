@@ -692,7 +692,7 @@ public:
     , m_ptDisplayElementalPeriodsMinus1(0)
   {
     ::memset(hasSublayerDelays, 0, sizeof(hasSublayerDelays));
-    ::memset(m_duCommonCpbRemovalDelayMinus1, 0, sizeof(m_duCommonCpbRemovalDelayMinus1));
+    ::memset(duCommonCpbRemovalDelayIncrement, 0, sizeof(duCommonCpbRemovalDelayIncrement));
     ::memset(cpbRemovalDelayDeltaEnabled, 0, sizeof(cpbRemovalDelayDeltaEnabled));
     ::memset(cpbRemovalDelayDeltaIdx, 0, sizeof(cpbRemovalDelayDeltaIdx));
     ::memset(cpbRemovalDelay, 0, sizeof(cpbRemovalDelay));
@@ -710,7 +710,7 @@ public:
   uint32_t                           dpbOutputDuDelay;
   uint32_t                           numDecodingUnits;
   bool                               duCommonCpbRemovalDelay;
-  uint32_t  m_duCommonCpbRemovalDelayMinus1[MAX_TLAYER];
+  uint32_t                           duCommonCpbRemovalDelayIncrement[MAX_TLAYER];
   std::vector<uint32_t> m_numNalusInDuMinus1;
   std::vector<uint32_t> m_duCpbRemovalDelayMinus1;
   bool                               hasAltTimingInfo;

@@ -1837,7 +1837,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
           {
             sei_read_code(pDecodedMessageOutputStream, bp.duCpbRemovalDelayIncrementLength, symbol,
                           "du_common_cpb_removal_delay_increment_minus1[i]");
-            pt.m_duCommonCpbRemovalDelayMinus1[i] = symbol;
+            pt.duCommonCpbRemovalDelayIncrement[i] = symbol + 1;
           }
         }
       }
