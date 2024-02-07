@@ -1927,6 +1927,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream complexityInfoPresentFlag;
     complexityInfoPresentFlag << "SEINNPFCComplexityInfoPresentFlag" << i;
     opts.addOptions()(complexityInfoPresentFlag.str(), m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[i], false, "Specifies the value of nnpfc_complexity_info_present_flag in the Neural Network Post Filter Characteristics SEI message");
+
 #if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
     std::ostringstream metadataExtensionNumBits;
     metadataExtensionNumBits << "SEINNPFCMetadataExtensionNumBits" << i;

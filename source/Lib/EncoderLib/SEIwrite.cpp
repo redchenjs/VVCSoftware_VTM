@@ -1925,6 +1925,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_numKmacOperationsIdc, "nnpfc_num_kmac_operations_idc");
       xWriteUvlc(sei.m_totalKilobyteSize, "nnpfc_total_kilobyte_size");
     }
+    
 #if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
     xWriteUvlc(sei.m_metadataExtensionNumBits, "nnpfc_metadata_extension_num_bits"); 
     if (sei.m_metadataExtensionNumBits > 0)

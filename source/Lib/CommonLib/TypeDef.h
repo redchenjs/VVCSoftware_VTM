@@ -112,6 +112,7 @@
 #define DISABLE_PRE_POST_FILTER_FOR_IDR_CRA               1
 #define ENABLE_USER_DEFINED_WEIGHTS                       0 // User can specify weights for both current and previous picture, such that their sum = 1
 
+
 // clang-format on
 
 // ====================================================================================================================
