@@ -739,14 +739,7 @@ SEIBufferingPeriod::SEIBufferingPeriod(const SEIBufferingPeriod& sei) = default;
 
 SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei) = default;
 
-SEIDecodingUnitInfo::SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei)
-{
-  decodingUnitIdx = sei.decodingUnitIdx;
-  hasSublayerDelays = sei.hasSublayerDelays;
-  duCpbRemovalDelayIncrement    = sei.duCpbRemovalDelayIncrement;
-  hasDpbOutputDuDelay           = sei.hasDpbOutputDuDelay;
-  dpbOutputDuDelay              = sei.dpbOutputDuDelay;
-}
+SEIDecodingUnitInfo::SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei) = default;
 
 SEIFrameFieldInfo::SEIFrameFieldInfo(const SEIFrameFieldInfo& sei)
 {

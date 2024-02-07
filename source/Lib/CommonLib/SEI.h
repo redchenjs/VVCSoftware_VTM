@@ -736,13 +736,14 @@ public:
   }
   SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei);
   virtual ~SEIDecodingUnitInfo() {}
-  int  decodingUnitIdx = 0;
+
+  bool hasDpbOutputDuDelay = false;
+
+  int decodingUnitIdx  = 0;
+  int dpbOutputDuDelay = -1;
 
   std::array<bool, MAX_TLAYER> hasSublayerDelays;
   std::array<uint32_t, MAX_TLAYER> duCpbRemovalDelayIncrement;
-
-  bool hasDpbOutputDuDelay = false;
-  int  dpbOutputDuDelay    = -1;
 };
 
 
