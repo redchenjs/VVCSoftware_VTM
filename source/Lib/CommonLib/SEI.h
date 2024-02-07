@@ -729,7 +729,7 @@ class SEIDecodingUnitInfo : public SEI
 public:
   PayloadType payloadType() const { return PayloadType::DECODING_UNIT_INFO; }
 
-  SEIDecodingUnitInfo() : m_picSptDpbOutputDuDelay(-1)
+  SEIDecodingUnitInfo()
   {
     hasSublayerDelays.fill(false);
     duCpbRemovalDelayIncrement.fill(0);
@@ -742,7 +742,7 @@ public:
   std::array<uint32_t, MAX_TLAYER> duCpbRemovalDelayIncrement;
 
   bool hasDpbOutputDuDelay = false;
-  int m_picSptDpbOutputDuDelay;
+  int  dpbOutputDuDelay    = -1;
 };
 
 

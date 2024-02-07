@@ -343,7 +343,7 @@ void SEIWriter::xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& dui, const 
 
   if (dui.hasDpbOutputDuDelay)
   {
-    xWriteCode(dui.m_picSptDpbOutputDuDelay, bp.dpbOutputDelayDuLength, "dui_dpb_output_du_delay");
+    xWriteCode(dui.dpbOutputDuDelay, bp.dpbOutputDelayDuLength, "dui_dpb_output_du_delay");
   }
 }
 

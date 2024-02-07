@@ -2766,13 +2766,13 @@ void DecLib::xCheckDUISEIMessages(SEIMessages &prefixSEIs)
         for (auto it = DUISEIs.cbegin(); it != DUISEIs.cend(); ++it)
         {
           const SEIDecodingUnitInfo *dui = (const SEIDecodingUnitInfo *) *it;
-          if (dui->m_picSptDpbOutputDuDelay != -1)
+          if (dui->dpbOutputDuDelay != -1)
           {
             duDelayFlag = true;
             break;
           }
         }
-        CHECK(duDelayFlag == false, "At least one DUI SEI should have dui->m_picSptDpbOutputDuDelay not equal to -1")
+        CHECK(duDelayFlag == false, "At least one DUI SEI should have dui->dpbOutputDuDelay not equal to -1")
       }
     }
   }

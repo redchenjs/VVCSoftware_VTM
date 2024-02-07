@@ -745,7 +745,7 @@ SEIDecodingUnitInfo::SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei)
   hasSublayerDelays = sei.hasSublayerDelays;
   duCpbRemovalDelayIncrement    = sei.duCpbRemovalDelayIncrement;
   hasDpbOutputDuDelay           = sei.hasDpbOutputDuDelay;
-  m_picSptDpbOutputDuDelay = sei.m_picSptDpbOutputDuDelay;
+  dpbOutputDuDelay              = sei.dpbOutputDuDelay;
 }
 
 SEIFrameFieldInfo::SEIFrameFieldInfo(const SEIFrameFieldInfo& sei)

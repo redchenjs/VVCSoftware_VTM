@@ -1544,9 +1544,9 @@ void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& dui, uint32_t pay
   if (dui.hasDpbOutputDuDelay)
   {
     sei_read_code(pDecodedMessageOutputStream, bp.dpbOutputDelayDuLength, val, "dui_dpb_output_du_delay");
-    CHECK(dui.m_picSptDpbOutputDuDelay != -1 && dui.m_picSptDpbOutputDuDelay != val,
-          "When signaled m_picSptDpbOutputDuDelay value must be same for DUs");
-    dui.m_picSptDpbOutputDuDelay = val;
+    CHECK(dui.dpbOutputDuDelay != -1 && dui.dpbOutputDuDelay != val,
+          "When signaled dpbOutputDuDelay value must be same for DUs");
+    dui.dpbOutputDuDelay = val;
   }
 }
 
