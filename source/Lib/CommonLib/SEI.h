@@ -686,7 +686,6 @@ public:
   SEIPictureTiming()
     : dpbOutputDelay(0)
     , dpbOutputDuDelay(0)
-    , numDecodingUnits(0)
     , duCommonCpbRemovalDelay(false)
     , hasAltTimingInfo(false)
     , m_ptDisplayElementalPeriodsMinus1(0)
@@ -708,12 +707,18 @@ public:
   uint32_t                           cpbRemovalDelay[MAX_TLAYER];
   uint32_t                           dpbOutputDelay;
   uint32_t                           dpbOutputDuDelay;
-  uint32_t                           numDecodingUnits;
   bool                               duCommonCpbRemovalDelay;
   uint32_t                           duCommonCpbRemovalDelayIncrement[MAX_TLAYER];
   std::vector<uint32_t>              numNalusInDu;
 
   std::vector<std::array<uint32_t, MAX_TLAYER>> duCpbRemovalDelayIncrement;
+
+  void setNumDecodingUnits(const size_t n)
+  {
+    numNalusInDu.resize(n);
+    duCpbRemovalDelayIncrement.resize(n);
+  }
+  uint32_t getNumDecodingUnits() const { return static_cast<uint32_t>(numNalusInDu.size()); }
 
   bool                               hasAltTimingInfo;
 

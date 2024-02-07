@@ -528,9 +528,9 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
   }
   if (bp.hasDuHrdParams && bp.duCpbParamsInPicTimingSei)
   {
-    CHECK(sei.numDecodingUnits < 1, "numDecodingUnits must be at least 1");
-    xWriteUvlc(sei.numDecodingUnits - 1, "pt_num_decoding_units_minus1");
-    if (sei.numDecodingUnits > 1)
+    CHECK(sei.getNumDecodingUnits() < 1, "there must be at least one DU");
+    xWriteUvlc(sei.getNumDecodingUnits() - 1, "pt_num_decoding_units_minus1");
+    if (sei.getNumDecodingUnits() > 1)
     {
       xWriteFlag(sei.duCommonCpbRemovalDelay, "pt_du_common_cpb_removal_delay_flag");
       if (sei.duCommonCpbRemovalDelay)
@@ -546,11 +546,11 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
           }
         }
       }
-      for (int i = 0; i < sei.numDecodingUnits; i++)
+      for (int i = 0; i < sei.getNumDecodingUnits(); i++)
       {
         CHECK(sei.numNalusInDu[i] < 1, "numNalusInDu[i] must be at least 1");
         xWriteUvlc(sei.numNalusInDu[i] - 1, "pt_num_nalus_in_du_minus1[i]");
-        if (!sei.duCommonCpbRemovalDelay && i < sei.numDecodingUnits - 1)
+        if (!sei.duCommonCpbRemovalDelay && i < sei.getNumDecodingUnits() - 1)
         {
           for (int j = temporalId; j < bp.maxSublayers; j++)
           {
