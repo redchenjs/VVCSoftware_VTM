@@ -100,12 +100,11 @@ void SEIBufferingPeriod::copyTo(SEIBufferingPeriod& target) const { target = *th
 
 void SEIPictureTiming::copyTo (SEIPictureTiming& target) const
 {
-  ::memcpy(target.cpbRemovalDelay, cpbRemovalDelay, sizeof(cpbRemovalDelay));
+  target.cpbRemovalDelay                  = cpbRemovalDelay;
   target.hasSublayerDelays = hasSublayerDelays;
-  ::memcpy(target.duCommonCpbRemovalDelayIncrement, duCommonCpbRemovalDelayIncrement,
-           sizeof(duCommonCpbRemovalDelayIncrement));
+  target.duCommonCpbRemovalDelayIncrement = duCommonCpbRemovalDelayIncrement;
   target.cpbRemovalDelayDeltaEnabled = cpbRemovalDelayDeltaEnabled;
-  ::memcpy(target.cpbRemovalDelayDeltaIdx, cpbRemovalDelayDeltaIdx, sizeof(cpbRemovalDelayDeltaIdx));
+  target.cpbRemovalDelayDeltaIdx          = cpbRemovalDelayDeltaIdx;
   target.dpbOutputDelay                = dpbOutputDelay;
   target.dpbOutputDuDelay              = dpbOutputDuDelay;
   target.duCommonCpbRemovalDelay       = duCommonCpbRemovalDelay;
@@ -761,13 +760,12 @@ SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
 {
   hasSublayerDelays           = sei.hasSublayerDelays;
   cpbRemovalDelayDeltaEnabled = sei.cpbRemovalDelayDeltaEnabled;
-  std::memcpy(cpbRemovalDelayDeltaIdx, sei.cpbRemovalDelayDeltaIdx, sizeof(sei.cpbRemovalDelayDeltaIdx));
-  std::memcpy(cpbRemovalDelay, sei.cpbRemovalDelay, sizeof(sei.cpbRemovalDelay));
+  cpbRemovalDelayDeltaIdx              = sei.cpbRemovalDelayDeltaIdx;
+  cpbRemovalDelay                      = sei.cpbRemovalDelay;
   dpbOutputDelay                = sei.dpbOutputDelay;
   dpbOutputDuDelay              = sei.dpbOutputDuDelay;
   duCommonCpbRemovalDelay       = sei.duCommonCpbRemovalDelay;
-  std::memcpy(duCommonCpbRemovalDelayIncrement, sei.duCommonCpbRemovalDelayIncrement,
-              sizeof(sei.duCommonCpbRemovalDelayIncrement));
+  duCommonCpbRemovalDelayIncrement     = sei.duCommonCpbRemovalDelayIncrement;
   numNalusInDu                         = sei.numNalusInDu;
   duCpbRemovalDelayIncrement           = sei.duCpbRemovalDelayIncrement;
   hasAltTimingInfo                     = sei.hasAltTimingInfo;

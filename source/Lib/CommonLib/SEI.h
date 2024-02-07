@@ -687,9 +687,9 @@ public:
   {
     hasSublayerDelays.fill(false);
     cpbRemovalDelayDeltaEnabled.fill(false);
-    ::memset(duCommonCpbRemovalDelayIncrement, 0, sizeof(duCommonCpbRemovalDelayIncrement));
-    ::memset(cpbRemovalDelayDeltaIdx, 0, sizeof(cpbRemovalDelayDeltaIdx));
-    ::memset(cpbRemovalDelay, 0, sizeof(cpbRemovalDelay));
+    duCommonCpbRemovalDelayIncrement.fill(0);
+    cpbRemovalDelayDeltaIdx.fill(0);
+    cpbRemovalDelay.fill(0);
   }
   SEIPictureTiming(const SEIPictureTiming& sei);
   virtual ~SEIPictureTiming()
@@ -703,9 +703,9 @@ public:
   bool hasAltTimingInfo             = false;
   bool delayForConcatenationEnsured = false;
 
-  uint32_t cpbRemovalDelayDeltaIdx[MAX_TLAYER];
-  uint32_t cpbRemovalDelay[MAX_TLAYER];
-  uint32_t duCommonCpbRemovalDelayIncrement[MAX_TLAYER];
+  std::array<uint32_t, MAX_TLAYER> cpbRemovalDelayDeltaIdx;
+  std::array<uint32_t, MAX_TLAYER> cpbRemovalDelay;
+  std::array<uint32_t, MAX_TLAYER> duCommonCpbRemovalDelayIncrement;
 
   uint32_t dpbOutputDelay          = 0;
   uint32_t dpbOutputDuDelay        = 0;
