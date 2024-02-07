@@ -610,46 +610,46 @@ void SEIWriter::xWriteSEIEdrapIndication(const SEIExtendedDrapIndication& sei)
   }
 }
 
-void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableNesting& sei)
+void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableNesting& sn)
 {
-  CHECK (sei.m_nestedSEIs.size()<1, "There must be at lease one SEI message nested in the scalable nesting SEI.")
+  CHECK(sn.m_nestedSEIs.size() < 1, "There must be at lease one SEI message nested in the scalable nesting SEI.")
 
-  xWriteFlag(!sei.olsIdx.empty() ? 1 : 0, "sn_ols_flag");
-  xWriteFlag(!sei.subpicId.empty() ? 1 : 0, "sn_subpic_flag");
-  if (!sei.olsIdx.empty())
+  xWriteFlag(!sn.olsIdx.empty() ? 1 : 0, "sn_ols_flag");
+  xWriteFlag(!sn.subpicId.empty() ? 1 : 0, "sn_subpic_flag");
+  if (!sn.olsIdx.empty())
   {
-    xWriteUvlc((uint32_t) sei.olsIdx.size(), "sn_num_olss_minus1");
-    for (uint32_t i = 0; i < sei.olsIdx.size(); i++)
+    xWriteUvlc((uint32_t) sn.olsIdx.size() - 1, "sn_num_olss_minus1");
+    for (uint32_t i = 0; i < sn.olsIdx.size(); i++)
     {
-      const uint32_t pred = i == 0 ? 0 : sei.olsIdx[i - 1] + 1;
-      CHECK(sei.olsIdx[i] < pred, "sn_ols_idx_delta_minus1 cannot be negative");
-      xWriteUvlc(sei.olsIdx[i] - pred, "sn_ols_idx_delta_minus1[i]");
+      const uint32_t pred = i == 0 ? 0 : sn.olsIdx[i - 1] + 1;
+      CHECK(sn.olsIdx[i] < pred, "sn_ols_idx_delta_minus1 cannot be negative");
+      xWriteUvlc(sn.olsIdx[i] - pred, "sn_ols_idx_delta_minus1[i]");
     }
   }
   else
   {
-    xWriteFlag(sei.allLayersFlag() ? 1 : 0, "sn_all_layers_flag");
-    if (!sei.allLayersFlag())
+    xWriteFlag(sn.allLayersFlag() ? 1 : 0, "sn_all_layers_flag");
+    if (!sn.allLayersFlag())
     {
-      xWriteUvlc((uint32_t) sei.layerId.size() - 1, "sn_num_layers_minus1");
-      for (uint32_t i = 1; i < sei.layerId.size(); i++)
+      xWriteUvlc((uint32_t) sn.layerId.size() - 1, "sn_num_layers_minus1");
+      for (uint32_t i = 1; i < sn.layerId.size(); i++)
       {
-        xWriteCode(sei.layerId[i], 6, "sn_layer_id");
+        xWriteCode(sn.layerId[i], 6, "sn_layer_id");
       }
     }
   }
-  if (!sei.subpicId.empty())
+  if (!sn.subpicId.empty())
   {
-    xWriteUvlc((uint32_t) sei.subpicId.size() - 1, "sn_num_subpics_minus1");
-    CHECK(sei.subpicIdLen <= 1, "subpicIdLen must be at least 1");
-    xWriteUvlc(sei.subpicIdLen - 1, "sn_subpic_id_len_minus1");
-    for (uint32_t i = 0; i < sei.subpicId.size(); i++)
+    xWriteUvlc((uint32_t) sn.subpicId.size() - 1, "sn_num_subpics_minus1");
+    CHECK(sn.subpicIdLen <= 1, "subpicIdLen must be at least 1");
+    xWriteUvlc(sn.subpicIdLen - 1, "sn_subpic_id_len_minus1");
+    for (uint32_t i = 0; i < sn.subpicId.size(); i++)
     {
-      xWriteCode(sei.subpicId[i], sei.subpicIdLen, "sn_subpic_id[i]");
+      xWriteCode(sn.subpicId[i], sn.subpicIdLen, "sn_subpic_id[i]");
     }
   }
 
-  xWriteUvlc( (uint32_t)sei.m_nestedSEIs.size() - 1, "sn_num_seis_minus1");
+  xWriteUvlc((uint32_t) sn.m_nestedSEIs.size() - 1, "sn_num_seis_minus1");
 
   // byte alignment
   while (m_pcBitIf->getNumberOfWrittenBits() % 8 != 0)
@@ -657,7 +657,7 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
     xWriteFlag(0, "sn_zero_bit");
   }
 
-  SEIMessages bufferingPeriod = getSeisByType(sei.m_nestedSEIs, SEI::PayloadType::BUFFERING_PERIOD);
+  SEIMessages bufferingPeriod = getSeisByType(sn.m_nestedSEIs, SEI::PayloadType::BUFFERING_PERIOD);
   if (!bufferingPeriod.empty())
   {
     SEIBufferingPeriod *bp = (SEIBufferingPeriod*)bufferingPeriod.front();
@@ -665,7 +665,7 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
   }
 
   // write nested SEI messages
-  writeSEImessages(bs, sei.m_nestedSEIs, m_nestingHrd, true, 0);
+  writeSEImessages(bs, sn.m_nestedSEIs, m_nestingHrd, true, 0);
 }
 
 void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking &sei, int SEIPrefixIndicationIdx)

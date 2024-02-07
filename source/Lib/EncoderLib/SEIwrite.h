@@ -63,7 +63,7 @@ protected:
   void xWriteSEIFrameFieldInfo(const SEIFrameFieldInfo& sei);
   void xWriteSEIDependentRAPIndication(const SEIDependentRAPIndication& sei);
   void xWriteSEIEdrapIndication(const SEIExtendedDrapIndication& sei);
-  void xWriteSEIScalableNesting(OutputBitstream &bs, const SEIScalableNesting &sei);
+  void xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableNesting& sn);
   void xWriteSEIFramePacking(const SEIFramePacking &sei, int SEIPrefixIndicationIdx = 0);
   void xWriteSEIDisplayOrientation(const SEIDisplayOrientation& sei);
   void xWriteSEIParameterSetsInclusionIndication(const SEIParameterSetsInclusionIndication& sei);

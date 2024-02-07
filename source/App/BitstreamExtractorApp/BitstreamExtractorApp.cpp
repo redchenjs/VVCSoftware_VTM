@@ -443,21 +443,21 @@ bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit
     CHECK ( scalableNestingSEIs.size() > 1, "There shall be only one Scalable Nesting SEI in one NAL unit" );
     CHECK ( scalableNestingSEIs.size() != SEIs.size(), "Scalable Nesting SEI shall not be in the same NAL unit as other SEIs" );
     // check, if the scalable nesting SEI applies to the target subpicture
-    SEIScalableNesting *sei = (SEIScalableNesting*) scalableNestingSEIs.front();
+    auto sn = (SEIScalableNesting*) scalableNestingSEIs.front();
 
-    if (sei->subpicId.empty())
+    if (sn->subpicId.empty())
     {
       // does not apply to a subpicture -> remove
       return false;
     }
-    if (std::find(sei->subpicId.begin(), sei->subpicId.end(), subpicId) != sei->subpicId.end())
+    if (std::find(sn->subpicId.begin(), sn->subpicId.end(), subpicId) != sn->subpicId.end())
     {
       // C.7 step 7.c
-      if (!sei->olsIdx.empty() || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
+      if (!sn->olsIdx.empty() || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
       {
         // applies to target subpicture -> extract
         OutputNALUnit outNalu( nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId );
-        m_seiWriter.writeSEImessages(outNalu.m_bitstream, sei->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
+        m_seiWriter.writeSEImessages(outNalu.m_bitstream, sn->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
         NALUnitEBSP naluWithHeader(outNalu);
         writeAnnexBNalUnit(out, naluWithHeader, true);
         return false;
@@ -812,22 +812,20 @@ uint32_t BitstreamExtractorApp::decode()
             // remove unqualified scalable nesting SEI
             if (sei->payloadType() == SEI::PayloadType::SCALABLE_NESTING)
             {
-              SEIScalableNesting *seiNesting = (SEIScalableNesting *)sei;
-              if (!seiNesting->olsIdx.empty())
+              auto sn = (SEIScalableNesting*) sei;
+              if (!sn->olsIdx.empty())
               {
                 bool targetOlsIdxInNestingAppliedOls =
-                  std::find(seiNesting->olsIdx.begin(), seiNesting->olsIdx.end(), m_targetOlsIdx)
-                  != seiNesting->olsIdx.end();
+                  std::find(sn->olsIdx.begin(), sn->olsIdx.end(), m_targetOlsIdx) != sn->olsIdx.end();
                 writeInpuNalUnitToStream &= targetOlsIdxInNestingAppliedOls;
               }
               // C.6 step 9.c
-              if (writeInpuNalUnitToStream && !targetOlsIncludeAllVclLayers && seiNesting->subpicId.empty())
+              if (writeInpuNalUnitToStream && !targetOlsIncludeAllVclLayers && sn->subpicId.empty())
               {
-                if (!seiNesting->olsIdx.empty() || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
+                if (!sn->olsIdx.empty() || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
                 {
                   OutputNALUnit outNalu(nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId);
-                  m_seiWriter.writeSEImessages(outNalu.m_bitstream, seiNesting->m_nestedSEIs, m_hrd, false,
-                                               nalu.m_temporalId);
+                  m_seiWriter.writeSEImessages(outNalu.m_bitstream, sn->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
                   NALUnitEBSP naluWithHeader(outNalu);
                   writeAnnexBNalUnit(bitstreamFileOut, naluWithHeader, true);
                   writeInpuNalUnitToStream = false;

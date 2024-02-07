@@ -75,11 +75,14 @@ protected:
                                 std::ostream* pDecodedMessageOutputStream);
   void xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSize, const uint32_t temporalId,
                               const SEIBufferingPeriod& bp, std::ostream* pDecodedMessageOutputStream);
-  void xParseSEIScalableNesting               (SEIScalableNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD &hrd, std::ostream* decodedMessageOutputStream);
-  void xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId,
-                                      uint32_t payloadSize, const VPS *vps, const SPS *sps, HRD &hrd,
-                                      std::ostream *decodedMessageOutputStream, std::vector<SeiPayload> *seiList);
-  void xCheckScalableNestingConstraints       (const SEIScalableNesting& sei, const NalUnitType nalUnitType, const GeneralHrdParams* generalHrd);
+  void xParseSEIScalableNesting(SEIScalableNesting& sn, const NalUnitType nalUnitType, const uint32_t nuhLayerId,
+                                uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd,
+                                std::ostream* decodedMessageOutputStream);
+  void xParseSEIScalableNestingBinary(SEIScalableNesting& sn, const NalUnitType nalUnitType, const uint32_t nuhLayerId,
+                                      uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd,
+                                      std::ostream* decodedMessageOutputStream, std::vector<SeiPayload>* seiList);
+  void xCheckScalableNestingConstraints(const SEIScalableNesting& sn, const NalUnitType nalUnitType,
+                                        const GeneralHrdParams* generalHrd);
   void xParseSEIFrameFieldinfo                (SEIFrameFieldInfo& sei,                uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIGreenMetadataInfo             (SEIGreenMetadataInfo& sei,             uint32_t payLoadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIDependentRAPIndication        (SEIDependentRAPIndication& sei,        uint32_t payLoadSize,                     std::ostream *pDecodedMessageOutputStream);

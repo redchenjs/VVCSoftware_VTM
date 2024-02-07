@@ -930,12 +930,11 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
     SEIMessages scalableNestingSeis = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::SCALABLE_NESTING);
     for (auto seiIt : scalableNestingSeis)
     {
-      SEIScalableNesting *nestingSei = dynamic_cast<SEIScalableNesting*>(seiIt);
-      if (!nestingSei->subpicId.empty())
+      SEIScalableNesting* sn = dynamic_cast<SEIScalableNesting*>(seiIt);
+      if (!sn->subpicId.empty())
       {
-        uint32_t    subpicId = nestingSei->subpicId.front();
-        SEIMessages nestedPictureHashes =
-          getSeisByType(nestingSei->m_nestedSEIs, SEI::PayloadType::DECODED_PICTURE_HASH);
+        uint32_t    subpicId            = sn->subpicId.front();
+        SEIMessages nestedPictureHashes = getSeisByType(sn->m_nestedSEIs, SEI::PayloadType::DECODED_PICTURE_HASH);
         for (auto decPicHash : nestedPictureHashes)
         {
           const SubPic& subpic = pcSlice->getPPS()->getSubPic(subpicId);
@@ -2598,16 +2597,16 @@ void DecLib::xParsePrefixSEImessages()
   SEIMessages scalableNestingSEIs = getSeisByType(m_SEIs, SEI::PayloadType::SCALABLE_NESTING);
   if (scalableNestingSEIs.size())
   {
-    SEIScalableNesting *nestedSei = (SEIScalableNesting*)scalableNestingSEIs.front();
-    SEIMessages         nestedSliSei = getSeisByType(nestedSei->m_nestedSEIs, SEI::PayloadType::SUBPICTURE_LEVEL_INFO);
+    SEIScalableNesting* sn           = (SEIScalableNesting*) scalableNestingSEIs.front();
+    SEIMessages         nestedSliSei = getSeisByType(sn->m_nestedSEIs, SEI::PayloadType::SUBPICTURE_LEVEL_INFO);
     if (nestedSliSei.size() > 0)
     {
       AccessUnitNestedSliSeiInfo sliSeiInfo;
       sliSeiInfo.m_nestedSliPresent = true;
-      sliSeiInfo.m_numOlssNestedSli = (uint32_t) nestedSei->olsIdx.size();
-      for (size_t i = 0; i < nestedSei->olsIdx.size(); i++)
+      sliSeiInfo.m_numOlssNestedSli = (uint32_t) sn->olsIdx.size();
+      for (size_t i = 0; i < sn->olsIdx.size(); i++)
       {
-        sliSeiInfo.m_olsIdxNestedSLI[i] = nestedSei->olsIdx[i];
+        sliSeiInfo.m_olsIdxNestedSLI[i] = sn->olsIdx[i];
       }
       m_accessUnitNestedSliSeiInfo.push_back(sliSeiInfo);
     }

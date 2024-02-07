@@ -449,19 +449,21 @@ void SEIEncoder::initSEIPhaseIndication(SEIPhaseIndication* seiPhaseIndication, 
 //! Note: The SEI message structures input into this function will become part of the scalable nesting SEI and will be
 //!       automatically freed, when the nesting SEI is disposed.
 //  either targetOLS or targetLayer should be active, call with empty vector for the inactive mode
-void SEIEncoder::initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, SEIMessages &nestedSEIs, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t> &subpictureIDs, uint16_t maxSubpicIdInPic)
+void SEIEncoder::initSEIScalableNesting(SEIScalableNesting* sn, SEIMessages& nestedSEIs,
+                                        const std::vector<int>& targetOLSs, const std::vector<int>& targetLayers,
+                                        const std::vector<uint16_t>& subpictureIDs, uint16_t maxSubpicIdInPic)
 {
   CHECK(!(m_isInitialized), "Scalable Nesting SEI already initialized ");
-  CHECK(!(scalableNestingSEI != nullptr), "No Scalable Nesting SEI object passed");
+  CHECK(!(sn != nullptr), "No Scalable Nesting SEI object passed");
   CHECK (targetOLSs.size() > 0 && targetLayers.size() > 0, "Scalable Nesting SEI can apply to either OLS or layer(s), not both");
 
-  scalableNestingSEI->olsIdx.resize(targetOLSs.size());
+  sn->olsIdx.resize(targetOLSs.size());
   // If the nested SEI messages are picture buffering SEI messages, picture timing SEI messages or
   // sub-picture timing SEI messages, nesting_ols_flag shall be equal to 1, by default case
-  if (scalableNestingSEI->olsIdx.size() > 0)
+  if (sn->olsIdx.size() > 0)
   {
     // initialize absolute indexes
-    for (int i = 0; i < scalableNestingSEI->olsIdx.size(); i++)
+    for (int i = 0; i < sn->olsIdx.size(); i++)
     {
       if (i == 0)
       {
@@ -471,27 +473,27 @@ void SEIEncoder::initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, 
       {
         CHECK(targetOLSs[i] <= targetOLSs[i - 1], "OLS indexes must be in ascending order");
       }
-      scalableNestingSEI->olsIdx[i] = targetOLSs[i];
+      sn->olsIdx[i] = targetOLSs[i];
     }
   }
   else
   {
-    scalableNestingSEI->layerId.resize(targetLayers.size());
-    for (int i = 0; i < scalableNestingSEI->layerId.size(); i++)
+    sn->layerId.resize(targetLayers.size());
+    for (int i = 0; i < sn->layerId.size(); i++)
     {
-      scalableNestingSEI->layerId[i] = targetLayers[i];
+      sn->layerId[i] = targetLayers[i];
     }
   }
   if (!subpictureIDs.empty())
   {
-    scalableNestingSEI->subpicId    = subpictureIDs;
-    scalableNestingSEI->subpicIdLen = std::max(1, ceilLog2(maxSubpicIdInPic + 1));
-    CHECK(scalableNestingSEI->subpicIdLen > 16, "Subpicture ID too large. Length must be <= 16 bits");
+    sn->subpicId    = subpictureIDs;
+    sn->subpicIdLen = std::max(1, ceilLog2(maxSubpicIdInPic + 1));
+    CHECK(sn->subpicIdLen > 16, "Subpicture ID too large. Length must be <= 16 bits");
   }
-  scalableNestingSEI->m_nestedSEIs.clear();
-  for (SEIMessages::iterator it = nestedSEIs.begin(); it != nestedSEIs.end(); it++)
+  sn->m_nestedSEIs.clear();
+  for (auto& sei: nestedSEIs)
   {
-    scalableNestingSEI->m_nestedSEIs.push_back((*it));
+    sn->m_nestedSEIs.push_back(sei);
   }
 }
 

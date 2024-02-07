@@ -1074,9 +1074,9 @@ void EncGOP::xCreateScalableNestingSEI(SEIMessages& seiMessages, SEIMessages& ne
     SEI* sei = nestedSeiMessages.front();
     nestedSeiMessages.pop_front();
     tmpMessages.push_back(sei);
-    SEIScalableNesting *nestingSEI = new SEIScalableNesting();
-    m_seiEncoder.initSEIScalableNesting(nestingSEI, tmpMessages, targetOLSs, targetLayers, subpicIDs, maxSubpicIdInPic);
-    seiMessages.push_back(nestingSEI);
+    auto sn = new SEIScalableNesting();
+    m_seiEncoder.initSEIScalableNesting(sn, tmpMessages, targetOLSs, targetLayers, subpicIDs, maxSubpicIdInPic);
+    seiMessages.push_back(sn);
     tmpMessages.clear();
   }
 }

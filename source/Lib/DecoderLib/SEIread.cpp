@@ -953,11 +953,13 @@ void SEIReader::xParseSEIDecodedPictureHash(SEIDecodedPictureHash& sei, uint32_t
   }
 }
 
-void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD &hrd, std::ostream* decodedMessageOutputStream)
+void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sn, const NalUnitType nalUnitType,
+                                         const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps,
+                                         const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream)
 {
   uint32_t symbol;
   SEIMessages seis;
-  output_sei_message_header(sei, decodedMessageOutputStream, payloadSize);
+  output_sei_message_header(sn, decodedMessageOutputStream, payloadSize);
 
   sei_read_flag(decodedMessageOutputStream, symbol, "sn_ols_flag");
   const bool hasOldIdx = symbol != 0;
@@ -968,19 +970,19 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
   if (hasOldIdx)
   {
     sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_olss_minus1");
-    sei.olsIdx.resize(symbol + 1);
+    sn.olsIdx.resize(symbol + 1);
 
-    for (uint32_t i = 0; i <= sei.olsIdx.size(); i++)
+    for (uint32_t i = 0; i < sn.olsIdx.size(); i++)
     {
-      const uint32_t pred = i == 0 ? 0 : sei.olsIdx[i - 1] + 1;
+      const uint32_t pred = i == 0 ? 0 : sn.olsIdx[i - 1] + 1;
 
       sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_ols_idx_delta_minus1[i]");
-      sei.olsIdx[i] = pred + symbol;
+      sn.olsIdx[i] = pred + symbol;
     }
     if (vps && vps->getVPSId() != 0)
     {
       uint32_t lowestLayerId = std::numeric_limits<uint32_t>::max();
-      for (uint32_t olsIdx: sei.olsIdx)
+      for (uint32_t olsIdx: sn.olsIdx)
       {
         for (int layerIdx = 0; layerIdx < vps->getNumLayersInOls(olsIdx); layerIdx++)
         {
@@ -997,31 +999,31 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
     if (!allLayersFlag)
     {
       sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_layers_minus1");
-      sei.layerId.resize(symbol + 1);
-      sei.layerId[0] = nuhLayerId;
-      for (uint32_t i = 1; i < sei.layerId.size(); i++)
+      sn.layerId.resize(symbol + 1);
+      sn.layerId[0] = nuhLayerId;
+      for (uint32_t i = 1; i < sn.layerId.size(); i++)
       {
         sei_read_code(decodedMessageOutputStream, 6, symbol, "sn_layer_id[i]");
-        sei.layerId[i] = symbol;
+        sn.layerId[i] = symbol;
       }
     }
     else
     {
-      sei.layerId.clear();
+      sn.layerId.clear();
     }
   }
   if (hasSubpicId)
   {
     sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_subpics_minus1");
-    sei.subpicId.resize(symbol + 1);
+    sn.subpicId.resize(symbol + 1);
 
     sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_subpic_id_len_minus1");
-    sei.subpicIdLen = symbol + 1;
+    sn.subpicIdLen = symbol + 1;
 
-    for (uint32_t i = 0; i < sei.subpicId.size(); i++)
+    for (uint32_t i = 0; i < sn.subpicId.size(); i++)
     {
-      sei_read_code(decodedMessageOutputStream, sei.subpicIdLen, symbol, "sn_subpic_id[i]");
-      sei.subpicId[i] = symbol;
+      sei_read_code(decodedMessageOutputStream, sn.subpicIdLen, symbol, "sn_subpic_id[i]");
+      sn.subpicId[i] = symbol;
     }
   }
 
@@ -1052,7 +1054,7 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
           checkBPSyntaxElementLength(nonNestedBp, bp);
         }
       }
-      sei.m_nestedSEIs.push_back(tmpSEIs.front());
+      sn.m_nestedSEIs.push_back(tmpSEIs.front());
       tmpSEIs.clear();
     }
   }
@@ -1062,8 +1064,8 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
     : sps->getGeneralHrdParametersPresentFlag()
       ? sps->getGeneralHrdParameters()
       : nullptr;
-  
-  xCheckScalableNestingConstraints(sei, nalUnitType, generalHrd);
+
+  xCheckScalableNestingConstraints(sn, nalUnitType, generalHrd);
 
   if (decodedMessageOutputStream)
   {
@@ -1216,14 +1218,14 @@ void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t p
   }
 }
 
-void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const NalUnitType nalUnitType,
-                                               const uint32_t nuhLayerId, uint32_t payloadSize, const VPS *vps,
-                                               const SPS *sps, HRD &hrd, std::ostream *decodedMessageOutputStream,
-                                               std::vector<SeiPayload> *seiList)
+void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sn, const NalUnitType nalUnitType,
+                                               const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps,
+                                               const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream,
+                                               std::vector<SeiPayload>* seiList)
 {
   uint32_t symbol;
   SEIMessages seis;
-  output_sei_message_header(sei, decodedMessageOutputStream, payloadSize);
+  output_sei_message_header(sn, decodedMessageOutputStream, payloadSize);
 
   sei_read_flag(decodedMessageOutputStream, symbol, "sn_ols_flag");
   const bool hasOldIdx = symbol != 0;
@@ -1234,19 +1236,19 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
   if (hasOldIdx)
   {
     sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_olss_minus1");
-    sei.olsIdx.resize(symbol + 1);
+    sn.olsIdx.resize(symbol + 1);
 
-    for (uint32_t i = 0; i <= sei.olsIdx.size(); i++)
+    for (uint32_t i = 0; i < sn.olsIdx.size(); i++)
     {
-      const uint32_t pred = i == 0 ? 0 : sei.olsIdx[i - 1] + 1;
+      const uint32_t pred = i == 0 ? 0 : sn.olsIdx[i - 1] + 1;
 
       sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_ols_idx_delta_minus1[i]");
-      sei.olsIdx[i] = pred + symbol;
+      sn.olsIdx[i] = pred + symbol;
     }
     if (vps && vps->getVPSId() != 0)
     {
       uint32_t lowestLayerId = std::numeric_limits<uint32_t>::max();
-      for (uint32_t olsIdx: sei.olsIdx)
+      for (uint32_t olsIdx: sn.olsIdx)
       {
         for (int layerIdx = 0; layerIdx < vps->getNumLayersInOls(olsIdx); layerIdx++)
         {
@@ -1263,31 +1265,31 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
     if (!allLayersFlag)
     {
       sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_layers_minus1");
-      sei.layerId.resize(symbol + 1);
-      sei.layerId[0] = nuhLayerId;
-      for (uint32_t i = 1; i < sei.layerId.size(); i++)
+      sn.layerId.resize(symbol + 1);
+      sn.layerId[0] = nuhLayerId;
+      for (uint32_t i = 1; i < sn.layerId.size(); i++)
       {
         sei_read_code(decodedMessageOutputStream, 6, symbol, "sn_layer_id[i]");
-        sei.layerId[i] = symbol;
+        sn.layerId[i] = symbol;
       }
     }
     else
     {
-      sei.layerId.clear();
+      sn.layerId.clear();
     }
   }
   if (hasSubpicId)
   {
     sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_subpics_minus1");
-    sei.subpicId.resize(symbol + 1);
+    sn.subpicId.resize(symbol + 1);
 
     sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_subpic_id_len_minus1");
-    sei.subpicIdLen = symbol + 1;
+    sn.subpicIdLen = symbol + 1;
 
-    for (uint32_t i = 0; i < sei.subpicId.size(); i++)
+    for (uint32_t i = 0; i < sn.subpicId.size(); i++)
     {
-      sei_read_code(decodedMessageOutputStream, sei.subpicIdLen, symbol, "sn_subpic_id[i]");
-      sei.subpicId[i] = symbol;
+      sei_read_code(decodedMessageOutputStream, sn.subpicIdLen, symbol, "sn_subpic_id[i]");
+      sn.subpicId[i] = symbol;
     }
   }
 
@@ -1345,68 +1347,68 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
         setBitstream(bs);
       }
     }
-    const size_t numSubPics = std::max<size_t>(sei.subpicId.size(), 1);
+    const size_t numSubPics = std::max<size_t>(sn.subpicId.size(), 1);
     for (uint32_t j = 0; j < payloadSize; j++)
     {
       sei_read_code(nullptr, 8, val, "payload_content");
       payload[j] = (uint8_t)val;
     }
-    if (!sei.olsIdx.empty())
+    if (!sn.olsIdx.empty())
     {
-      for (uint32_t j = 0; j < sei.olsIdx.size(); j++)
+      for (uint32_t j = 0; j < sn.olsIdx.size(); j++)
       {
         for (uint32_t k = 0; k < numSubPics; k++)
         {
           if (j == 0 && k == 0)
           {
-              seiList->push_back(SeiPayload{ payloadType, sei.olsIdx[j], false, payloadSize, payload, duiIdx,
-                                             !sei.subpicId.empty() ? sei.subpicId[k] : 0 });
+              seiList->push_back(SeiPayload{ payloadType, sn.olsIdx[j], false, payloadSize, payload, duiIdx,
+                                             !sn.subpicId.empty() ? sn.subpicId[k] : 0 });
           }
           else
           {
             uint8_t *payloadTemp = new uint8_t[payloadSize];
             memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-            seiList->push_back(SeiPayload{ payloadType, sei.olsIdx[j], false, payloadSize, payloadTemp, duiIdx,
-                                           !sei.subpicId.empty() ? sei.subpicId[k] : 0 });
+            seiList->push_back(SeiPayload{ payloadType, sn.olsIdx[j], false, payloadSize, payloadTemp, duiIdx,
+                                           !sn.subpicId.empty() ? sn.subpicId[k] : 0 });
           }
         }
       }
     }
-    else if (sei.allLayersFlag())
+    else if (sn.allLayersFlag())
     {
       for (uint32_t k = 0; k < numSubPics; k++)
       {
         if (k == 0)
         {
           seiList->push_back(SeiPayload{ payloadType, nuhLayerId, true, payloadSize, payload, duiIdx,
-                                         !sei.subpicId.empty() ? sei.subpicId[k] : 0 });
+                                         !sn.subpicId.empty() ? sn.subpicId[k] : 0 });
         }
         else
         {
           uint8_t *payloadTemp = new uint8_t[payloadSize];
           memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
           seiList->push_back(
-            SeiPayload{ payloadType, nuhLayerId, true, payloadSize, payloadTemp, duiIdx, sei.subpicId[k] });
+            SeiPayload{ payloadType, nuhLayerId, true, payloadSize, payloadTemp, duiIdx, sn.subpicId[k] });
         }
       }
     }
     else
     {
-      for (uint32_t j = 0; j < sei.layerId.size(); j++)
+      for (uint32_t j = 0; j < sn.layerId.size(); j++)
       {
         for (uint32_t k = 0; k < numSubPics; k++)
         {
           if (j == 0 && k == 0)
           {
-            seiList->push_back(SeiPayload{ payloadType, sei.layerId[j], false, payloadSize, payload, duiIdx,
-                                           !sei.subpicId.empty() ? sei.subpicId[k] : 0 });
+            seiList->push_back(SeiPayload{ payloadType, sn.layerId[j], false, payloadSize, payload, duiIdx,
+                                           !sn.subpicId.empty() ? sn.subpicId[k] : 0 });
           }
           else
           {
             uint8_t *payloadTemp = new uint8_t[payloadSize];
             memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-            seiList->push_back(SeiPayload{ payloadType, sei.layerId[j], false, payloadSize, payloadTemp, duiIdx,
-                                           !sei.subpicId.empty() ? sei.subpicId[k] : 0 });
+            seiList->push_back(SeiPayload{ payloadType, sn.layerId[j], false, payloadSize, payloadTemp, duiIdx,
+                                           !sn.subpicId.empty() ? sn.subpicId[k] : 0 });
           }
         }
       }
@@ -1414,7 +1416,8 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
   }
 }
 
-void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, const NalUnitType nalUnitType, const GeneralHrdParams* generalHrd)
+void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sn, const NalUnitType nalUnitType,
+                                                 const GeneralHrdParams* generalHrd)
 {
   const std::vector<SEI::PayloadType> vclAssociatedSeiList{
     SEI::PayloadType::FILLER_PAYLOAD,
@@ -1444,7 +1447,7 @@ void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, 
   bool containBPorPTorDUIorSLI = false;
   bool containNoBPorPTorDUIorSLI = false;
 
-  for (auto nestedsei : sei.m_nestedSEIs)
+  for (auto nestedsei: sn.m_nestedSEIs)
   {
     CHECK(nestedsei->payloadType() == SEI::PayloadType::FILLER_PAYLOAD
             || nestedsei->payloadType() == SEI::PayloadType::SCALABLE_NESTING,
@@ -1467,11 +1470,11 @@ void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, 
       "When a scalable nesting SEI message contains an SEI message that has payloadType equal to decoded picture hash, "
       "the SEI NAL unit containing the scalable nesting SEI message shall have nal_unit_type equal to SUFFIX_SEI_NUT");
 
-    CHECK(nestedsei->payloadType() == SEI::PayloadType::DECODED_PICTURE_HASH && sei.subpicId.empty(),
+    CHECK(nestedsei->payloadType() == SEI::PayloadType::DECODED_PICTURE_HASH && sn.subpicId.empty(),
           "When the scalable nesting SEI message contains an SEI message that has payloadType equal to decoded picture "
           "hash, the value of sn_subpic_flag shall be equal to 1");
 
-    CHECK(nestedsei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO && !sei.subpicId.empty(),
+    CHECK(nestedsei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO && !sn.subpicId.empty(),
           "When the scalable nesting SEI message contains an SEI message that has payloadType equal to SLI, the value "
           "of sn_subpic_flag shall be equal to 0");
 
@@ -1482,7 +1485,7 @@ void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, 
 
     for (int i = 0; i < vclAssociatedSeiList.size(); i++)
     {
-      CHECK(nestedsei->payloadType() == vclAssociatedSeiList[i] && !sei.olsIdx.empty(),
+      CHECK(nestedsei->payloadType() == vclAssociatedSeiList[i] && !sn.olsIdx.empty(),
             "When the scalable nesting SEI message contains an SEI message that has payloadType equal to a value in "
             "vclAssociatedSeiList, the value of sn_ols_flag shall be equal to 0");
     }
@@ -1493,7 +1496,7 @@ void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, 
         || nestedsei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
     {
       containBPorPTorDUIorSLI = true;
-      CHECK(sei.olsIdx.empty(),
+      CHECK(sn.olsIdx.empty(),
             "When the scalable nesting SEI message contains an SEI message that has payloadType equal to BP, "
             "PT, or DUI, or SLI, the value of sn_ols_flag shall be equal to 1");
     }

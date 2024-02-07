@@ -831,14 +831,7 @@ SEIMasteringDisplayColourVolume::SEIMasteringDisplayColourVolume(const SEIMaster
   std::memcpy(values.whitePoint, sei.values.whitePoint, sizeof(sei.values.whitePoint));
 }
 
-SEIScalableNesting::SEIScalableNesting(const SEIScalableNesting& sei)
-{
-  olsIdx              = sei.olsIdx;
-  layerId             = sei.layerId;
-  subpicIdLen     = sei.subpicIdLen;
-  subpicId        = sei.subpicId;
-  m_nestedSEIs = sei.m_nestedSEIs;
-}
+SEIScalableNesting::SEIScalableNesting(const SEIScalableNesting& sei) = default;
 
 SEIAlternativeTransferCharacteristics::SEIAlternativeTransferCharacteristics(const SEIAlternativeTransferCharacteristics& sei)
 {
