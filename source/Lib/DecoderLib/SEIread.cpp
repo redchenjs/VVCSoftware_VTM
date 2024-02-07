@@ -1711,7 +1711,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& sei, uint32_t payloadSi
   uint32_t symbol;
   sei_read_code(pDecodedMessageOutputStream, bp.cpbRemovalDelayLength, symbol,
                 "pt_cpb_removal_delay_minus1[bp_max_sub_layers_minus1]");
-  sei.m_auCpbRemovalDelay[bp.maxSublayers - 1]           = symbol + 1;
+  sei.cpbRemovalDelay[bp.maxSublayers - 1]               = symbol + 1;
   sei.m_ptSubLayerDelaysPresentFlag[bp.maxSublayers - 1] = true;
   for (int i = temporalId; i < bp.maxSublayers - 1; i++)
   {
@@ -1744,7 +1744,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& sei, uint32_t payloadSi
       else
       {
         sei_read_code(pDecodedMessageOutputStream, bp.cpbRemovalDelayLength, symbol, "pt_cpb_removal_delay_minus1[i]");
-        sei.m_auCpbRemovalDelay[i] = symbol + 1;
+        sei.cpbRemovalDelay[i] = symbol + 1;
       }
     }
   }

@@ -695,7 +695,7 @@ public:
     ::memset(m_duCommonCpbRemovalDelayMinus1, 0, sizeof(m_duCommonCpbRemovalDelayMinus1));
     ::memset(m_cpbRemovalDelayDeltaEnabledFlag, 0, sizeof(m_cpbRemovalDelayDeltaEnabledFlag));
     ::memset(m_cpbRemovalDelayDeltaIdx, 0, sizeof(m_cpbRemovalDelayDeltaIdx));
-    ::memset(m_auCpbRemovalDelay, 0, sizeof(m_auCpbRemovalDelay));
+    ::memset(cpbRemovalDelay, 0, sizeof(cpbRemovalDelay));
   }
   SEIPictureTiming(const SEIPictureTiming& sei);
   virtual ~SEIPictureTiming()
@@ -706,7 +706,7 @@ public:
   bool  m_ptSubLayerDelaysPresentFlag[MAX_TLAYER];
   bool  m_cpbRemovalDelayDeltaEnabledFlag[MAX_TLAYER];
   uint32_t  m_cpbRemovalDelayDeltaIdx[MAX_TLAYER];
-  uint32_t  m_auCpbRemovalDelay[MAX_TLAYER];
+  uint32_t                           cpbRemovalDelay[MAX_TLAYER];
   uint32_t  m_picDpbOutputDelay;
   uint32_t  m_picDpbOutputDuDelay;
   uint32_t  m_numDecodingUnitsMinus1;

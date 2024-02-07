@@ -457,7 +457,7 @@ void SEIWriter::xWriteSEIBufferingPeriod(const SEIBufferingPeriod& sei)
 
 void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBufferingPeriod &bp, const uint32_t temporalId)
 {
-  xWriteCode(sei.m_auCpbRemovalDelay[bp.maxSublayers - 1] - 1, bp.cpbRemovalDelayLength,
+  xWriteCode(sei.cpbRemovalDelay[bp.maxSublayers - 1] - 1, bp.cpbRemovalDelayLength,
              "pt_cpb_removal_delay_minus1[bp_max_sub_layers_minus1]");
   for (int i = temporalId; i < bp.maxSublayers - 1; i++)
   {
@@ -478,7 +478,7 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
       }
       else
       {
-        xWriteCode(sei.m_auCpbRemovalDelay[i] - 1, bp.cpbRemovalDelayLength, "pt_cpb_removal_delay_minus1[i]");
+        xWriteCode(sei.cpbRemovalDelay[i] - 1, bp.cpbRemovalDelayLength, "pt_cpb_removal_delay_minus1[i]");
       }
     }
   }
