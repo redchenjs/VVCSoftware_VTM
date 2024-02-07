@@ -1122,15 +1122,13 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
       pt->setNumDecodingUnits(duData.size());
       pt->duCommonCpbRemovalDelay = false;
     }
-    const uint32_t cpbRemovalDelayLegth = m_HRD->getBufferingPeriodSEI()->cpbRemovalDelayLength;
+    const uint32_t cpbRemovalDelayLength = m_HRD->getBufferingPeriodSEI()->cpbRemovalDelayLength;
+    const uint32_t cpbMaxRemovalDelay    = 1 << cpbRemovalDelayLength;
     const uint32_t maxNumSubLayers = slice->getSPS()->getMaxTLayers();
-    pt->cpbRemovalDelay[maxNumSubLayers - 1] = std::min<int>(
-      std::max<int>(1, m_totalCoded[maxNumSubLayers - 1] - m_lastBPSEI[maxNumSubLayers - 1]),
-      static_cast<int>(
-        pow(2, static_cast<double>(cpbRemovalDelayLegth))));   // Syntax element signalled as minus, hence the .
-    CHECK((m_totalCoded[maxNumSubLayers - 1] - m_lastBPSEI[maxNumSubLayers - 1])
-            > pow(2, static_cast<double>(cpbRemovalDelayLegth)),
-          " cpbRemovalDelayLegth too small for cpbRemovalDelay[pt_max_sub_layers_minus1] at picture timing SEI ");
+    const int      cpbRemovalDelay       = m_totalCoded[maxNumSubLayers - 1] - m_lastBPSEI[maxNumSubLayers - 1];
+    CHECK(cpbRemovalDelay > cpbMaxRemovalDelay,
+          " cpbRemovalDelayLength too small for cpbRemovalDelay[pt_max_sub_layers_minus1] at picture timing SEI ");
+    pt->cpbRemovalDelay[maxNumSubLayers - 1] = std::max<int>(1, cpbRemovalDelay);
     const uint32_t temporalId = slice->getTLayer();
     if (maxNumSubLayers == 1)
     {
@@ -1295,13 +1293,10 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
       }
       else
       {
-        int scaledDistToBuffPeriod = (m_totalCoded[i] - m_lastBPSEI[i]) * static_cast<int>(pow(2, static_cast<double>(maxNumSubLayers - 1 - i)));
-        pt->cpbRemovalDelay[i] = std::min<int>(
-          std::max<int>(1, scaledDistToBuffPeriod),
-          static_cast<int>(
-            pow(2, static_cast<double>(cpbRemovalDelayLegth))));   // Syntax element signalled as minus, hence the .
-        CHECK((scaledDistToBuffPeriod) > pow(2, static_cast<double>(cpbRemovalDelayLegth)),
-              " cpbRemovalDelayLegth too small for cpbRemovalDelay[i] at picture timing SEI ");
+        const int scaledDistToBuffPeriod = (m_totalCoded[i] - m_lastBPSEI[i]) * (1 << (maxNumSubLayers - 1 - i));
+        CHECK(scaledDistToBuffPeriod > cpbMaxRemovalDelay,
+              " cpbRemovalDelayLength too small for cpbRemovalDelay[i] at picture timing SEI ");
+        pt->cpbRemovalDelay[i] = std::max<int>(1, scaledDistToBuffPeriod);
       }
     }
     pt->dpbOutputDelay = slice->getSPS()->getMaxNumReorderPics(slice->getSPS()->getMaxTLayers() - 1) + slice->getPOC()
