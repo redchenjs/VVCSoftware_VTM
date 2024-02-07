@@ -1755,46 +1755,31 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
   if (bp.hasAltCpbParams)
   {
     sei_read_flag(pDecodedMessageOutputStream, symbol, "pt_cpb_alt_timing_info_present_flag");
-    pt.hasAltTimingInfo = symbol;
+    pt.hasAltTimingInfo = symbol != 0;
     if (pt.hasAltTimingInfo)
     {
-      if (bp.hasHrdParams[HrdType::NAL])
+      for (auto hrdType: { HrdType::NAL, HrdType::VCL })
       {
-        for (int i = (bp.hasSublayerInitialCpbRemovalDelay ? 0 : bp.maxSublayers - 1); i < bp.maxSublayers; ++i)
+        if (bp.hasHrdParams[hrdType])
         {
-          for (int j = 0; j < bp.cpbCount; j++)
+          for (int i = (bp.hasSublayerInitialCpbRemovalDelay ? 0 : bp.maxSublayers - 1); i < bp.maxSublayers; ++i)
           {
-            sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, symbol,
-                          "nal_cpb_alt_initial_cpb_removal_delay_delta[ i ][ j ]");
-            pt.initialAltCpbRemovalDelta[HrdType::NAL][i][j].delay = symbol;
-            sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, symbol,
-                          "nal_cpb_alt_initial_cpb_removal_offset_delta[ i ][ j ]");
-            pt.initialAltCpbRemovalDelta[HrdType::NAL][i][j].offset = symbol;
+            for (int j = 0; j < bp.cpbCount; j++)
+            {
+              sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, symbol,
+                            hrdType == HrdType::NAL ? "pt_nal_cpb_alt_initial_removal_delay_delta[ i ][ j ]"
+                                                    : "pt_vcl_cpb_alt_initial_removal_delay_delta[ i ][ j ]");
+              pt.initialAltCpbRemovalDelta[hrdType][i][j].delay = symbol;
+              sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, symbol,
+                            hrdType == HrdType::NAL ? "pt_nal_cpb_alt_initial_removal_offset_delta[ i ][ j ]"
+                                                    : "pt_vcl_cpb_alt_initial_removal_offset_delta[ i ][ j ]");
+              pt.initialAltCpbRemovalDelta[hrdType][i][j].offset = symbol;
+            }
+            sei_read_code(pDecodedMessageOutputStream, bp.cpbRemovalDelayLength, pt.cpbDelayOffset[hrdType][i],
+                          hrdType == HrdType::NAL ? "pt_nal_cpb_delay_offset[ i ]" : "pt_vcl_cpb_delay_offset[ i ]");
+            sei_read_code(pDecodedMessageOutputStream, bp.dpbOutputDelayLength, pt.dpbDelayOffset[hrdType][i],
+                          hrdType == HrdType::NAL ? "pt_nal_dpb_delay_offset[ i ]" : "pt_vcl_dpb_delay_offset[ i ]");
           }
-          sei_read_code(pDecodedMessageOutputStream, bp.cpbRemovalDelayLength, pt.cpbDelayOffset[HrdType::NAL][i],
-                        "nal_cpb_delay_offset[ i ]");
-          sei_read_code(pDecodedMessageOutputStream, bp.dpbOutputDelayLength, pt.dpbDelayOffset[HrdType::NAL][i],
-                        "nal_dpb_delay_offset[ i ]");
-        }
-      }
-
-      if (bp.hasHrdParams[HrdType::VCL])
-      {
-        for (int i = (bp.hasSublayerInitialCpbRemovalDelay ? 0 : bp.maxSublayers - 1); i < bp.maxSublayers; ++i)
-        {
-          for (int j = 0; j < bp.cpbCount; j++)
-          {
-            sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, symbol,
-                          "vcl_cpb_alt_initial_cpb_removal_delay_delta[ i ][ j ]");
-            pt.initialAltCpbRemovalDelta[HrdType::VCL][i][j].delay = symbol;
-            sei_read_code(pDecodedMessageOutputStream, bp.cpbInitialRemovalDelayLength, symbol,
-                          "vcl_cpb_alt_initial_cpb_removal_offset_delta[ i ][ j ]");
-            pt.initialAltCpbRemovalDelta[HrdType::VCL][i][j].offset = symbol;
-          }
-          sei_read_code(pDecodedMessageOutputStream, bp.cpbRemovalDelayLength, pt.cpbDelayOffset[HrdType::VCL][i],
-                        "vcl_cpb_delay_offset[ i ]");
-          sei_read_code(pDecodedMessageOutputStream, bp.dpbOutputDelayLength, pt.dpbDelayOffset[HrdType::VCL][i],
-                        "vcl_dpb_delay_offset[ i ]");
         }
       }
     }

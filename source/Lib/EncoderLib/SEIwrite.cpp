@@ -489,35 +489,26 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& pt, const SEIBuff
     xWriteFlag(pt.hasAltTimingInfo, "pt_cpb_alt_timing_info_present_flag");
     if (pt.hasAltTimingInfo)
     {
-      if (bp.hasHrdParams[HrdType::NAL])
+      for (auto hrdType: { HrdType::NAL, HrdType::VCL })
       {
-        for (int i = (bp.hasSublayerInitialCpbRemovalDelay ? 0 : bp.maxSublayers - 1); i < bp.maxSublayers; ++i)
+        if (bp.hasHrdParams[hrdType])
         {
-          for (int j = 0; j < bp.cpbCount; j++)
+          for (int i = (bp.hasSublayerInitialCpbRemovalDelay ? 0 : bp.maxSublayers - 1); i < bp.maxSublayers; ++i)
           {
-            xWriteCode(pt.initialAltCpbRemovalDelta[HrdType::NAL][i][j].delay, bp.cpbInitialRemovalDelayLength,
-                       "pt_nal_cpb_alt_initial_removal_delay_delta[ i ][ j ]");
-            xWriteCode(pt.initialAltCpbRemovalDelta[HrdType::NAL][i][j].offset, bp.cpbInitialRemovalDelayLength,
-                       "pt_nal_cpb_alt_initial_removal_offset_delta[ i ][ j ]");
+            for (int j = 0; j < bp.cpbCount; j++)
+            {
+              xWriteCode(pt.initialAltCpbRemovalDelta[hrdType][i][j].delay, bp.cpbInitialRemovalDelayLength,
+                         hrdType == HrdType::NAL ? "pt_nal_cpb_alt_initial_removal_delay_delta[ i ][ j ]"
+                                                 : "pt_vcl_cpb_alt_initial_removal_delay_delta[ i ][ j ]");
+              xWriteCode(pt.initialAltCpbRemovalDelta[hrdType][i][j].offset, bp.cpbInitialRemovalDelayLength,
+                         hrdType == HrdType::NAL ? "pt_nal_cpb_alt_initial_removal_offset_delta[ i ][ j ]"
+                                                 : "pt_vcl_cpb_alt_initial_removal_offset_delta[ i ][ j ]");
+            }
+            xWriteCode(pt.cpbDelayOffset[hrdType][i], bp.cpbRemovalDelayLength,
+                       hrdType == HrdType::NAL ? "pt_nal_cpb_delay_offset[ i ]" : "pt_vcl_cpb_delay_offset[ i ]");
+            xWriteCode(pt.dpbDelayOffset[hrdType][i], bp.dpbOutputDelayLength,
+                       hrdType == HrdType::NAL ? "pt_nal_dpb_delay_offset[ i ]" : "pt_vcl_dpb_delay_offset[ i ]");
           }
-          xWriteCode(pt.cpbDelayOffset[HrdType::NAL][i], bp.cpbRemovalDelayLength, "pt_nal_cpb_delay_offset[ i ]");
-          xWriteCode(pt.dpbDelayOffset[HrdType::NAL][i], bp.dpbOutputDelayLength, "pt_nal_dpb_delay_offset[ i ]");
-        }
-      }
-
-      if (bp.hasHrdParams[HrdType::VCL])
-      {
-        for (int i = (bp.hasSublayerInitialCpbRemovalDelay ? 0 : bp.maxSublayers - 1); i < bp.maxSublayers; ++i)
-        {
-          for (int j = 0; j < bp.cpbCount; j++)
-          {
-            xWriteCode(pt.initialAltCpbRemovalDelta[HrdType::VCL][i][j].delay, bp.cpbInitialRemovalDelayLength,
-                       "pt_vcl_cpb_alt_initial_removal_delay_delta[ i ][ j ]");
-            xWriteCode(pt.initialAltCpbRemovalDelta[HrdType::VCL][i][j].offset, bp.cpbInitialRemovalDelayLength,
-                       "pt_vcl_cpb_alt_initial_removal_offset_delta[ i ][ j ]");
-          }
-          xWriteCode(pt.cpbDelayOffset[HrdType::VCL][i], bp.cpbRemovalDelayLength, "pt_vcl_cpb_delay_offset[ i ]");
-          xWriteCode(pt.dpbDelayOffset[HrdType::VCL][i], bp.dpbOutputDelayLength, "pt_vcl_dpb_delay_offset[ i ]");
         }
       }
     }
