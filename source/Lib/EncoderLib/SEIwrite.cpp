@@ -338,10 +338,10 @@ void SEIWriter::xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& dui, const 
   }
   if (!bp.duDpbParamsInPicTimingSei)
   {
-    xWriteFlag(dui.m_dpbOutputDuDelayPresentFlag, "dui_dpb_output_du_delay_present_flag");
+    xWriteFlag(dui.hasDpbOutputDuDelay, "dui_dpb_output_du_delay_present_flag");
   }
 
-  if (dui.m_dpbOutputDuDelayPresentFlag)
+  if (dui.hasDpbOutputDuDelay)
   {
     xWriteCode(dui.m_picSptDpbOutputDuDelay, bp.dpbOutputDelayDuLength, "dui_dpb_output_du_delay");
   }

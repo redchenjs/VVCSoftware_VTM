@@ -1336,12 +1336,12 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
     {
       for (int i = 0; i < pt->getNumDecodingUnits(); i++)
       {
-        SEIDecodingUnitInfo *duInfoSEI = new SEIDecodingUnitInfo();
-        duInfoSEI->decodingUnitIdx     = i;
-        duInfoSEI->duCpbRemovalDelayIncrement    = pt->duCpbRemovalDelayIncrement[i];
-        duInfoSEI->m_dpbOutputDuDelayPresentFlag = false;
+        SEIDecodingUnitInfo* dui        = new SEIDecodingUnitInfo();
+        dui->decodingUnitIdx            = i;
+        dui->duCpbRemovalDelayIncrement = pt->duCpbRemovalDelayIncrement[i];
+        dui->hasDpbOutputDuDelay        = false;
 
-        duInfoSeiMessages.push_back(duInfoSEI);
+        duInfoSeiMessages.push_back(dui);
       }
     }
 
@@ -1488,7 +1488,7 @@ void EncGOP::xUpdateDuInfoSEI(SEIMessages& duInfoSeiMessages, SEIPictureTiming* 
     dui->decodingUnitIdx               = i;
     dui->hasSublayerDelays             = pt->hasSublayerDelays;
     dui->duCpbRemovalDelayIncrement    = pt->duCpbRemovalDelayIncrement[i];
-    dui->m_dpbOutputDuDelayPresentFlag = false;
+    dui->hasDpbOutputDuDelay           = false;
     i++;
   }
 }

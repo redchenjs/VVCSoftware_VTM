@@ -1535,13 +1535,13 @@ void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& dui, uint32_t pay
   if (!bp.duDpbParamsInPicTimingSei)
   {
     sei_read_flag(pDecodedMessageOutputStream, val, "dui_dpb_output_du_delay_present_flag");
-    dui.m_dpbOutputDuDelayPresentFlag = (val != 0);
+    dui.hasDpbOutputDuDelay = (val != 0);
   }
   else
   {
-    dui.m_dpbOutputDuDelayPresentFlag = false;
+    dui.hasDpbOutputDuDelay = false;
   }
-  if (dui.m_dpbOutputDuDelayPresentFlag)
+  if (dui.hasDpbOutputDuDelay)
   {
     sei_read_code(pDecodedMessageOutputStream, bp.dpbOutputDelayDuLength, val, "dui_dpb_output_du_delay");
     CHECK(dui.m_picSptDpbOutputDuDelay != -1 && dui.m_picSptDpbOutputDuDelay != val,
