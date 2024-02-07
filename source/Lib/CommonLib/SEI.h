@@ -720,7 +720,8 @@ public:
   }
   uint32_t getNumDecodingUnits() const { return static_cast<uint32_t>(numNalusInDu.size()); }
 
-  bool                               hasAltTimingInfo;
+  bool hasAltTimingInfo;
+  bool delayForConcatenationEnsured;
 
   EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialAltCpbRemovalDelta;
 

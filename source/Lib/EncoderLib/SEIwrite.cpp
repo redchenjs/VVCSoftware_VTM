@@ -565,6 +565,12 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
       }
     }
   }
+
+  if (bp.hasAdditionalConcatenationInfo)
+  {
+    xWriteFlag(sei.delayForConcatenationEnsured ? 1 : 0, "pt_delay_for_concatenation_ensured_flag");
+  }
+
   CHECK(sei.displayElementalPeriods < 1, "displayElementalPeriods must be at least 1");
   xWriteCode(sei.displayElementalPeriods - 1, 8, "pt_display_elemental_periods_minus1");
 }

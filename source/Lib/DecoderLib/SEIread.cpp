@@ -1853,6 +1853,13 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
       pt.duCommonCpbRemovalDelay = 0;
     }
   }
+
+  if (bp.hasAdditionalConcatenationInfo)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, symbol, "pt_delay_for_concatenation_ensured_flag");
+    pt.delayForConcatenationEnsured = symbol != 0;
+  }
+
   sei_read_code( pDecodedMessageOutputStream, 8, symbol,    "pt_display_elemental_periods_minus1" );
   pt.displayElementalPeriods = symbol + 1;
 }
