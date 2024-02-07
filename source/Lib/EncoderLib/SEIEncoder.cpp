@@ -1296,12 +1296,7 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sei, const S
   // sei parameters initialization
   for (int level = 0; level < sei->numRefLevels(); level++)
   {
-    sei->m_nonSubpicLayersFraction[level].resize(sei->m_sliMaxSublayers);
-    sei->m_refLevelIdc[level].resize(sei->m_sliMaxSublayers);
-    for (int sublayer = 0; sublayer < sei->m_sliMaxSublayers; sublayer++)
-    {
-      sei->m_refLevelIdc[level][sublayer] = Level::LEVEL15_5;
-    }
+    sei->m_refLevelIdc[level].fill(Level::LEVEL15_5);
   }
   if (sei->m_explicitFractionPresentFlag)
   {
@@ -1310,11 +1305,7 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sei, const S
       sei->m_refLevelFraction[level].resize(sei->m_numSubpics);
       for (int subpic = 0; subpic < sei->m_numSubpics; subpic++)
       {
-        sei->m_refLevelFraction[level][subpic].resize(sei->m_sliMaxSublayers);
-        for (int sublayer = 0; sublayer < sei->m_sliMaxSublayers; sublayer++)
-        {
-          sei->m_refLevelFraction[level][subpic][sublayer] = 0;
-        }
+        sei->m_refLevelFraction[level][subpic].fill(0);
       }
     }
   }

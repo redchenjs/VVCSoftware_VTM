@@ -1533,7 +1533,7 @@ static void validateMinCrRequirements(const ProfileTierLevelFeatures& plt, std::
 
       for (int i = 0; i < seiSubpic.numRefLevels(); i++)
       {
-        Level::Name level = seiSubpic.m_refLevelIdc[i][layerId];
+        const Level::Name level = seiSubpic.m_refLevelIdc[i][layerId];
         if (level != Level::LEVEL15_5)
         {
           const int      nonSubpicLayersFraction = seiSubpic.m_nonSubpicLayersFraction[i][layerId];

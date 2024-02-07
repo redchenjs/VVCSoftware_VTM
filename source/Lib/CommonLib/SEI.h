@@ -1079,9 +1079,9 @@ public:
   int       m_numSubpics;
   int       m_sliMaxSublayers;
   bool      m_sliSublayerInfoPresentFlag;
-  std::vector<std::vector<int>>              m_nonSubpicLayersFraction;
-  std::vector<std::vector<Level::Name>>      m_refLevelIdc;
-  std::vector<std::vector<std::vector<int>>> m_refLevelFraction;
+  std::vector<std::array<int, MAX_TLAYER>>              m_nonSubpicLayersFraction;
+  std::vector<std::array<Level::Name, MAX_TLAYER>>      m_refLevelIdc;
+  std::vector<std::vector<std::array<int, MAX_TLAYER>>> m_refLevelFraction;
 
   void setNumRefLevels(const size_t n)
   {
