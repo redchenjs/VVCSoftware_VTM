@@ -1017,8 +1017,9 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
     }
   }
 
-  sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_seis_minus1"); sei.m_snNumSEIs = symbol + 1;
-  CHECK (sei.m_snNumSEIs > 64, "The value of sn_num_seis_minus1 shall be in the range of 0 to 63");
+  sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_seis_minus1");
+  const uint32_t numSeis = symbol + 1;
+  CHECK(numSeis > 64, "The value of sn_num_seis_minus1 shall be in the range of 0 to 63");
 
   // byte alignment
   while (m_pcBitstream->getNumBitsRead() % 8 != 0)
@@ -1027,7 +1028,7 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
   }
 
   // read nested SEI messages
-  for (int32_t i=0; i<sei.m_snNumSEIs; i++)
+  for (int32_t i = 0; i < numSeis; i++)
   {
     SEIMessages tmpSEIs;
     const bool seiMessageRead = xReadSEImessage(tmpSEIs, nalUnitType, nuhLayerId, 0, vps, sps, m_nestedHrd, decodedMessageOutputStream);
@@ -1275,8 +1276,10 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
     }
   }
 
-  sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_seis_minus1"); sei.m_snNumSEIs = symbol + 1;
-  CHECK (sei.m_snNumSEIs > 64, "The value of sn_num_seis_minus1 shall be in the range of 0 to 63");
+  sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_seis_minus1");
+  const uint32_t numSeis = symbol + 1;
+
+  CHECK(numSeis > 64, "The value of sn_num_seis_minus1 shall be in the range of 0 to 63");
 
   // byte alignment
   while (m_pcBitstream->getNumBitsRead() % 8 != 0)
@@ -1286,7 +1289,7 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
 
   // above codes are exactly same as those in xParseSEIScalableNesting()
   // read and save nested SEI messages in binary form
-  for (int32_t i=0; i<sei.m_snNumSEIs; i++)
+  for (int32_t i = 0; i < numSeis; i++)
   {
     int      payloadTypeVal = 0;
     uint32_t val = 0;
