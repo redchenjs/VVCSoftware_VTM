@@ -920,7 +920,7 @@ SEIContentColourVolume::SEIContentColourVolume(const SEIContentColourVolume& sei
 SEISubpictureLevelInfo::SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
 {
   cbrConstraint                = sei.cbrConstraint;
-  m_sliSublayerInfoPresentFlag = sei.m_sliSublayerInfoPresentFlag;
+  hasSublayerInfo              = sei.hasSublayerInfo;
   data                         = sei.data;
 }
 

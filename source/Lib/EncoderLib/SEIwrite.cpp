@@ -1337,14 +1337,14 @@ void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
   {
     xWriteUvlc(sei.numSubpics() - 1, "sli_num_subpics_minus1");
     xWriteCode(sei.maxSublayers() - 1, 3, "sli_max_sublayers_minus1");
-    xWriteFlag(           sei.m_sliSublayerInfoPresentFlag,                   "sli_sublayer_info_present_flag");
+    xWriteFlag(sei.hasSublayerInfo ? 1 : 0, "sli_sublayer_info_present_flag");
     while (!isByteAligned())
     {
       xWriteFlag(       0,                                                    "sli_alignment_zero_bit");
     }
   }
 
-  for (int k = sei.m_sliSublayerInfoPresentFlag ? 0 : sei.maxSublayers() - 1; k < sei.maxSublayers(); k++)
+  for (int k = sei.hasSublayerInfo ? 0 : sei.maxSublayers() - 1; k < sei.maxSublayers(); k++)
   {
     for (int i = 0; i < sei.numRefLevels(); i++)
     {

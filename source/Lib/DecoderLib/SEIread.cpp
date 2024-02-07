@@ -2734,7 +2734,8 @@ void SEIReader::xParseSEISubpictureLevelInfo(SEISubpictureLevelInfo& sei, uint32
     numSubpics = val + 1;
     sei_read_code(pDecodedMessageOutputStream, 3, val, "sli_max_sublayers_minus1");
     maxSublayers = val + 1;
-    sei_read_flag(pDecodedMessageOutputStream,      val,    "sli_sublayer_info_present_flag");        sei.m_sliSublayerInfoPresentFlag = val;
+    sei_read_flag(pDecodedMessageOutputStream, val, "sli_sublayer_info_present_flag");
+    sei.hasSublayerInfo = val;
     while (!isByteAligned())
     {
       sei_read_flag( pDecodedMessageOutputStream,   val,    "sli_alignment_zero_bit" );           CHECK (val != 0, "sli_alignment_zero_bit not equal to zero" );
@@ -2744,7 +2745,7 @@ void SEIReader::xParseSEISubpictureLevelInfo(SEISubpictureLevelInfo& sei, uint32
   sei.resize(numRefLevels, maxSublayers, explicitFractionPresentFlag, numSubpics);
 
   // parsing
-  for (int k = sei.m_sliSublayerInfoPresentFlag ? 0 : sei.maxSublayers() - 1; k < sei.maxSublayers(); k++)
+  for (int k = sei.hasSublayerInfo ? 0 : sei.maxSublayers() - 1; k < sei.maxSublayers(); k++)
   {
     for (int i = 0; i < sei.numRefLevels(); i++)
     {
@@ -2765,7 +2766,7 @@ void SEIReader::xParseSEISubpictureLevelInfo(SEISubpictureLevelInfo& sei, uint32
   }
 
   // update the inference of m_refLevelIdc[][] and m_refLevelFraction[][][]
-  if (!sei.m_sliSublayerInfoPresentFlag)
+  if (!sei.hasSublayerInfo)
   {
     sei.fillSublayers();
   }

@@ -1285,10 +1285,10 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sei, const S
 {
   const EncCfgParam::CfgSEISubpictureLevel &cfgSubPicLevel = m_pcCfg->getSubpicureLevelInfoSEICfg();
 
-  sei->m_sliSublayerInfoPresentFlag = cfgSubPicLevel.m_sliSublayerInfoPresentFlag;
+  sei->hasSublayerInfo = cfgSubPicLevel.hasSublayerInfo;
 
   const size_t maxSublayers = cfgSubPicLevel.m_sliMaxSublayers;
-  const size_t numRefLevels = cfgSubPicLevel.m_sliSublayerInfoPresentFlag
+  const size_t numRefLevels = cfgSubPicLevel.hasSublayerInfo
                                 ? cfgSubPicLevel.m_refLevels.size() / cfgSubPicLevel.m_sliMaxSublayers
                                 : cfgSubPicLevel.m_refLevels.size();
   const size_t numSubpics   = cfgSubPicLevel.m_numSubpictures;
@@ -1298,7 +1298,7 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sei, const S
   sei->resize(numRefLevels, maxSublayers, explicitFractionPresentFlag, numSubpics);
 
   // set sei parameters according to the configured values
-  for (int sublayer = sei->m_sliSublayerInfoPresentFlag ? 0 : sei->maxSublayers() - 1, cnta = 0, cntb = 0;
+  for (int sublayer = sei->hasSublayerInfo ? 0 : sei->maxSublayers() - 1, cnta = 0, cntb = 0;
        sublayer < sei->maxSublayers(); sublayer++)
   {
     for (int level = 0; level < sei->numRefLevels(); level++)
@@ -1316,7 +1316,7 @@ void SEIEncoder::initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sei, const S
   }
 
   // update the inference of m_refLevelIdc[][] and m_refLevelFraction[][][]
-  if (!sei->m_sliSublayerInfoPresentFlag)
+  if (!sei->hasSublayerInfo)
   {
     sei->fillSublayers();
   }
