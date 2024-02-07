@@ -1506,13 +1506,13 @@ void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& dui, uint32_t pay
       if (i < bp.maxSublayers - 1)
       {
         sei_read_flag(pDecodedMessageOutputStream, val, "dui_sublayer_delays_present_flag[i]");
-        dui.m_duiSubLayerDelaysPresentFlag[i] = val;
+        dui.hasSublayerDelays[i] = val != 0;
       }
       else
       {
-        dui.m_duiSubLayerDelaysPresentFlag[i] = 1;
+        dui.hasSublayerDelays[i] = true;
       }
-      if (dui.m_duiSubLayerDelaysPresentFlag[i])
+      if (dui.hasSublayerDelays[i])
       {
         sei_read_code(pDecodedMessageOutputStream, bp.duCpbRemovalDelayIncrementLength, val,
                       "dui_du_cpb_removal_delay_increment[i]");

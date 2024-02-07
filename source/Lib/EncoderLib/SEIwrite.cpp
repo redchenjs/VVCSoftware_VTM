@@ -327,9 +327,9 @@ void SEIWriter::xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& dui, const 
     {
       if (i < bp.maxSublayers - 1)
       {
-        xWriteFlag(dui.m_duiSubLayerDelaysPresentFlag[i], "dui_sublayer_delays_present_flag[i]");
+        xWriteFlag(dui.hasSublayerDelays[i] ? 1 : 0, "dui_sublayer_delays_present_flag[i]");
       }
-      if (dui.m_duiSubLayerDelaysPresentFlag[i])
+      if (dui.hasSublayerDelays[i])
       {
         xWriteCode(dui.m_duSptCpbRemovalDelayIncrement[i], bp.duCpbRemovalDelayIncrementLength,
                    "dui_du_cpb_removal_delay_increment[i]");
@@ -463,7 +463,7 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& pt, const SEIBuff
              "pt_cpb_removal_delay_minus1[bp_max_sub_layers_minus1]");
   for (int i = temporalId; i < bp.maxSublayers - 1; i++)
   {
-    xWriteFlag(pt.hasSublayerDelays[i], "pt_sublayer_delays_present_flag[i]");
+    xWriteFlag(pt.hasSublayerDelays[i] ? 1 : 0, "pt_sublayer_delays_present_flag[i]");
     if (pt.hasSublayerDelays[i])
     {
       if (bp.hasCpbRemovalDelayDeltas())

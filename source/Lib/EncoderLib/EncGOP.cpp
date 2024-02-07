@@ -1490,9 +1490,9 @@ void EncGOP::xUpdateDuInfoSEI(SEIMessages& duInfoSeiMessages, SEIPictureTiming* 
   {
     SEIDecodingUnitInfo *duInfoSEI = (SEIDecodingUnitInfo*) (*du);
     duInfoSEI->decodingUnitIdx     = i;
+    duInfoSEI->hasSublayerDelays   = pt->hasSublayerDelays;
     for (int j = 0; j < maxSublayers; j++)
     {
-      duInfoSEI->m_duiSubLayerDelaysPresentFlag[j]  = pt->hasSublayerDelays[j];
       duInfoSEI->m_duSptCpbRemovalDelayIncrement[j] = pt->duCpbRemovalDelayIncrement[i][j];
     }
     duInfoSEI->m_dpbOutputDuDelayPresentFlag = false;

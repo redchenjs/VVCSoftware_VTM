@@ -742,7 +742,7 @@ SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei) = default;
 SEIDecodingUnitInfo::SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei)
 {
   decodingUnitIdx = sei.decodingUnitIdx;
-  std::memcpy(m_duiSubLayerDelaysPresentFlag, sei.m_duiSubLayerDelaysPresentFlag, sizeof(sei.m_duiSubLayerDelaysPresentFlag));
+  hasSublayerDelays = sei.hasSublayerDelays;
   std::memcpy(m_duSptCpbRemovalDelayIncrement, sei.m_duSptCpbRemovalDelayIncrement, sizeof(sei.m_duSptCpbRemovalDelayIncrement));
   m_dpbOutputDuDelayPresentFlag = sei.m_dpbOutputDuDelayPresentFlag;
   m_picSptDpbOutputDuDelay = sei.m_picSptDpbOutputDuDelay;

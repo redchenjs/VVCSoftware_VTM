@@ -731,13 +731,13 @@ public:
 
   SEIDecodingUnitInfo() : m_dpbOutputDuDelayPresentFlag(false), m_picSptDpbOutputDuDelay(-1)
   {
-    ::memset(m_duiSubLayerDelaysPresentFlag, 0, sizeof(m_duiSubLayerDelaysPresentFlag));
+    hasSublayerDelays.fill(false);
     ::memset(m_duSptCpbRemovalDelayIncrement, 0, sizeof(m_duSptCpbRemovalDelayIncrement));
   }
   SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei);
   virtual ~SEIDecodingUnitInfo() {}
   int  decodingUnitIdx = 0;
-  bool m_duiSubLayerDelaysPresentFlag[MAX_TLAYER];
+  std::array<bool, MAX_TLAYER> hasSublayerDelays;
   int m_duSptCpbRemovalDelayIncrement[MAX_TLAYER];
   bool m_dpbOutputDuDelayPresentFlag;
   int m_picSptDpbOutputDuDelay;
