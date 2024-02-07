@@ -655,14 +655,14 @@ void EncGOP::xWriteLeadingSEIMessages (SEIMessages& seiMessages, SEIMessages& du
   AccessUnit testAU;
   SEIMessages picTimingSEIs = getSeisByType(seiMessages, SEI::PayloadType::PICTURE_TIMING);
   CHECK(!(picTimingSEIs.size() < 2), "Unspecified error");
-  SEIPictureTiming *picTiming = picTimingSEIs.empty() ? nullptr : (SEIPictureTiming *) picTimingSEIs.front();
+  SEIPictureTiming* pt = picTimingSEIs.empty() ? nullptr : (SEIPictureTiming*) picTimingSEIs.front();
 
   // test writing
   xWriteLeadingSEIOrdered(seiMessages, duInfoSeiMessages, testAU, temporalId, true);
   // update Timing and DU info SEI
   xUpdateDuData(testAU, duData);
-  xUpdateTimingSEI(picTiming, duData, sps);
-  xUpdateDuInfoSEI(duInfoSeiMessages, picTiming, sps->getMaxTLayers());
+  xUpdateTimingSEI(pt, duData, sps);
+  xUpdateDuInfoSEI(duInfoSeiMessages, pt, sps->getMaxTLayers());
   // actual writing
   xWriteLeadingSEIOrdered(seiMessages, duInfoSeiMessages, accessUnit, temporalId, false);
 
