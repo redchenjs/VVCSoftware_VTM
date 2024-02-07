@@ -1735,11 +1735,11 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
         {
           sei_read_code(pDecodedMessageOutputStream, ceilLog2(bp.numCpbRemovalDelayDeltas()), symbol,
                         "pt_cpb_removal_delay_delta_idx[i]");
-          pt.m_cpbRemovalDelayDeltaIdx[i] = symbol;
+          pt.cpbRemovalDelayDeltaIdx[i] = symbol;
         }
         else
         {
-          pt.m_cpbRemovalDelayDeltaIdx[i] = 0;
+          pt.cpbRemovalDelayDeltaIdx[i] = 0;
         }
       }
       else

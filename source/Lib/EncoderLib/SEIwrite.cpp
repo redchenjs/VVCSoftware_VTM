@@ -472,7 +472,7 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
       {
         if (bp.numCpbRemovalDelayDeltas() > 1)
         {
-          xWriteCode(sei.m_cpbRemovalDelayDeltaIdx[i], ceilLog2(bp.numCpbRemovalDelayDeltas()),
+          xWriteCode(sei.cpbRemovalDelayDeltaIdx[i], ceilLog2(bp.numCpbRemovalDelayDeltas()),
                      "pt_cpb_removal_delay_delta_idx[i]");
         }
       }

@@ -1162,27 +1162,27 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
             {
               if((indexWithinGOP == 1 && i == 2))
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 0;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 0;
               }
               else if((indexWithinGOP == 2 && i == 2) || (indexWithinGOP == 6 && i == 2))
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 1;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 1;
               }
               else if((indexWithinGOP == 1 && i == 1) || (indexWithinGOP == 3 && i == 2))
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 2;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 2;
               }
               else if(indexWithinGOP == 2 && i == 1)
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 3;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 3;
               }
               else if(indexWithinGOP == 1 && i == 0)
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 4;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 4;
               }
               else
               {
-                THROW("m_cpbRemovalDelayDeltaIdx not applicable for the sub-layer and GOP size");
+                THROW("cpbRemovalDelayDeltaIdx not applicable for the sub-layer and GOP size");
               }
             }
               break;
@@ -1190,49 +1190,49 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
             {
               if((indexWithinGOP == 1 && i == 3))
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 0;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 0;
               }
               else if((indexWithinGOP == 2 && i == 3) || (indexWithinGOP == 10 && i == 3) || (indexWithinGOP == 14 && i == 3))
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 1;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 1;
               }
               else if((indexWithinGOP == 1 && i == 2) || (indexWithinGOP == 3 && i == 3) || (indexWithinGOP == 7 && i == 3) || (indexWithinGOP == 11 && i == 3))
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 2;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 2;
               }
               else if(indexWithinGOP == 4 && i == 3)
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 3;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 3;
               }
               else if((indexWithinGOP == 2 && i == 2) || (indexWithinGOP == 10 && i == 2))
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 4;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 4;
               }
               else if(indexWithinGOP == 1 && i == 1)
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 5;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 5;
               }
               else if(indexWithinGOP == 3 && i == 2)
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 6;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 6;
               }
               else if(indexWithinGOP == 2 && i == 1)
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 7;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 7;
               }
               else if(indexWithinGOP == 1 && i == 0)
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 8;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 8;
               }
               else
               {
-                THROW("m_cpbRemovalDelayDeltaIdx not applicable for the sub-layer and GOP size");
+                THROW("cpbRemovalDelayDeltaIdx not applicable for the sub-layer and GOP size");
               }
             }
               break;
             default:
             {
-              THROW("m_cpbRemovalDelayDeltaIdx not supported for the current GOP size");
+              THROW("cpbRemovalDelayDeltaIdx not supported for the current GOP size");
             }
               break;
           }
@@ -1245,19 +1245,19 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
             {
               if((indexWithinGOP == 1 && i == 2) || (indexWithinGOP == 5 && i == 2))
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 0;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 0;
               }
               else if(indexWithinGOP == 2 && i == 2)
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 1;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 1;
               }
               else if(indexWithinGOP == 1 && i == 1)
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 2;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 2;
               }
               else
               {
-                THROW("m_cpbRemovalDelayDeltaIdx not applicable for the sub-layer and GOP size");
+                THROW("cpbRemovalDelayDeltaIdx not applicable for the sub-layer and GOP size");
               }
             }
               break;
@@ -1265,33 +1265,33 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
             {
               if((indexWithinGOP == 1 && i == 3) || (indexWithinGOP == 9 && i == 3) || (indexWithinGOP == 13 && i == 3))
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 0;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 0;
               }
               else if((indexWithinGOP == 2 && i == 3) || (indexWithinGOP == 6 && i == 3) || (indexWithinGOP == 10 && i == 3))
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 1;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 1;
               }
               else if((indexWithinGOP == 1 && i == 2) || (indexWithinGOP == 9 && i == 2) || (indexWithinGOP == 3 && i == 3))
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 2;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 2;
               }
               else if(indexWithinGOP == 2 && i == 2)
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 3;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 3;
               }
               else if(indexWithinGOP == 1 && i == 1)
               {
-                pictureTimingSEI->m_cpbRemovalDelayDeltaIdx[i] = 4;
+                pictureTimingSEI->cpbRemovalDelayDeltaIdx[i] = 4;
               }
               else
               {
-                THROW("m_cpbRemovalDelayDeltaIdx not applicable for the sub-layer and GOP size");
+                THROW("cpbRemovalDelayDeltaIdx not applicable for the sub-layer and GOP size");
               }
             }
               break;
             default:
             {
-              THROW("m_cpbRemovalDelayDeltaIdx not applicable for the sub-layer and GOP size");
+              THROW("cpbRemovalDelayDeltaIdx not applicable for the sub-layer and GOP size");
             }
               break;
           }
