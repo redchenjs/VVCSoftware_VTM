@@ -1491,12 +1491,13 @@ void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, 
   CHECK(containBPorPTorDUIorSLI && containNoBPorPTorDUIorSLI, "When a scalable nesting SEI message contains a BP, PT, DUI, or SLI SEI message, the scalable nesting SEI message shall not contain any other SEI message with payloadType not equal to BP, PT, DUI, or SLI");
 }
 
-void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& sei, uint32_t payloadSize, const SEIBufferingPeriod& bp, const uint32_t temporalId, std::ostream *pDecodedMessageOutputStream)
+void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& dui, uint32_t payloadSize, const SEIBufferingPeriod& bp,
+                                          const uint32_t temporalId, std::ostream* pDecodedMessageOutputStream)
 {
   uint32_t val;
-  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  output_sei_message_header(dui, pDecodedMessageOutputStream, payloadSize);
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dui_decoding_unit_idx");
-  sei.m_decodingUnitIdx = val;
+  dui.m_decodingUnitIdx = val;
 
   if (!bp.duCpbParamsInPicTimingSei)
   {
@@ -1505,21 +1506,21 @@ void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& sei, uint32_t pay
       if (i < bp.maxSublayers - 1)
       {
         sei_read_flag(pDecodedMessageOutputStream, val, "dui_sublayer_delays_present_flag[i]");
-        sei.m_duiSubLayerDelaysPresentFlag[i] = val;
+        dui.m_duiSubLayerDelaysPresentFlag[i] = val;
       }
       else
       {
-        sei.m_duiSubLayerDelaysPresentFlag[i] = 1;
+        dui.m_duiSubLayerDelaysPresentFlag[i] = 1;
       }
-      if( sei.m_duiSubLayerDelaysPresentFlag[i] )
+      if (dui.m_duiSubLayerDelaysPresentFlag[i])
       {
         sei_read_code(pDecodedMessageOutputStream, bp.duCpbRemovalDelayIncrementLength, val,
                       "dui_du_cpb_removal_delay_increment[i]");
-        sei.m_duSptCpbRemovalDelayIncrement[i] = val;
+        dui.m_duSptCpbRemovalDelayIncrement[i] = val;
       }
       else
       {
-        sei.m_duSptCpbRemovalDelayIncrement[i] = 0;
+        dui.m_duSptCpbRemovalDelayIncrement[i] = 0;
       }
     }
   }
@@ -1527,25 +1528,25 @@ void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& sei, uint32_t pay
   {
     for (int i = temporalId; i < bp.maxSublayers - 1; i++)
     {
-      sei.m_duSptCpbRemovalDelayIncrement[i] = 0;
+      dui.m_duSptCpbRemovalDelayIncrement[i] = 0;
     }
   }
 
   if (!bp.duDpbParamsInPicTimingSei)
   {
     sei_read_flag(pDecodedMessageOutputStream, val, "dui_dpb_output_du_delay_present_flag");
-    sei.m_dpbOutputDuDelayPresentFlag = (val != 0);
+    dui.m_dpbOutputDuDelayPresentFlag = (val != 0);
   }
   else
   {
-    sei.m_dpbOutputDuDelayPresentFlag = false;
+    dui.m_dpbOutputDuDelayPresentFlag = false;
   }
-  if(sei.m_dpbOutputDuDelayPresentFlag)
+  if (dui.m_dpbOutputDuDelayPresentFlag)
   {
     sei_read_code(pDecodedMessageOutputStream, bp.dpbOutputDelayDuLength, val, "dui_dpb_output_du_delay");
-    CHECK(sei.m_picSptDpbOutputDuDelay != -1 && sei.m_picSptDpbOutputDuDelay != val,
+    CHECK(dui.m_picSptDpbOutputDuDelay != -1 && dui.m_picSptDpbOutputDuDelay != val,
           "When signaled m_picSptDpbOutputDuDelay value must be same for DUs");
-    sei.m_picSptDpbOutputDuDelay = val;
+    dui.m_picSptDpbOutputDuDelay = val;
   }
 }
 
