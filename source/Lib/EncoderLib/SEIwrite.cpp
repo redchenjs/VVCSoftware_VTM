@@ -485,8 +485,8 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBuf
   xWriteCode(sei.dpbOutputDelay, bp.dpbOutputDelayLength, "pt_dpb_output_delay");
   if (bp.hasAltCpbParams)
   {
-    xWriteFlag( sei.m_cpbAltTimingInfoPresentFlag, "cpb_alt_timing_info_present_flag" );
-    if( sei.m_cpbAltTimingInfoPresentFlag )
+    xWriteFlag(sei.hasAltTimingInfo, "cpb_alt_timing_info_present_flag");
+    if (sei.hasAltTimingInfo)
     {
       if (bp.hasHrdParams[HrdType::NAL])
       {

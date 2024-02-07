@@ -688,7 +688,7 @@ public:
     , m_picDpbOutputDuDelay(0)
     , m_numDecodingUnitsMinus1(0)
     , m_duCommonCpbRemovalDelayFlag(false)
-    , m_cpbAltTimingInfoPresentFlag(false)
+    , hasAltTimingInfo(false)
     , m_ptDisplayElementalPeriodsMinus1(0)
   {
     ::memset(hasSublayerDelays, 0, sizeof(hasSublayerDelays));
@@ -713,7 +713,7 @@ public:
   uint32_t  m_duCommonCpbRemovalDelayMinus1[MAX_TLAYER];
   std::vector<uint32_t> m_numNalusInDuMinus1;
   std::vector<uint32_t> m_duCpbRemovalDelayMinus1;
-  bool     m_cpbAltTimingInfoPresentFlag;
+  bool                               hasAltTimingInfo;
   std::vector<std::vector<uint32_t>> m_nalCpbAltInitialRemovalDelayDelta;
   std::vector<std::vector<uint32_t>> m_nalCpbAltInitialRemovalOffsetDelta;
   std::vector<uint32_t>              m_nalCpbDelayOffset;

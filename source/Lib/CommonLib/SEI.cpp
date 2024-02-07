@@ -112,7 +112,7 @@ void SEIPictureTiming::copyTo (SEIPictureTiming& target) const
 
   target.m_numNalusInDuMinus1 = m_numNalusInDuMinus1;
   target.m_duCpbRemovalDelayMinus1 = m_duCpbRemovalDelayMinus1;
-  target.m_cpbAltTimingInfoPresentFlag = m_cpbAltTimingInfoPresentFlag;
+  target.hasAltTimingInfo                     = hasAltTimingInfo;
   target.m_nalCpbAltInitialRemovalDelayDelta  = m_nalCpbAltInitialRemovalDelayDelta;
   target.m_nalCpbAltInitialRemovalOffsetDelta = m_nalCpbAltInitialRemovalOffsetDelta;
   target.m_nalCpbDelayOffset = m_nalCpbDelayOffset;
@@ -775,7 +775,7 @@ SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
   std::memcpy(m_duCommonCpbRemovalDelayMinus1, sei.m_duCommonCpbRemovalDelayMinus1, sizeof(sei.m_duCommonCpbRemovalDelayMinus1));
   m_numNalusInDuMinus1 = sei.m_numNalusInDuMinus1;
   m_duCpbRemovalDelayMinus1 = sei.m_duCpbRemovalDelayMinus1;
-  m_cpbAltTimingInfoPresentFlag = sei.m_cpbAltTimingInfoPresentFlag;
+  hasAltTimingInfo                     = sei.hasAltTimingInfo;
   m_nalCpbAltInitialRemovalDelayDelta = sei.m_nalCpbAltInitialRemovalDelayDelta;
   m_nalCpbAltInitialRemovalOffsetDelta = sei.m_nalCpbAltInitialRemovalOffsetDelta;
   m_nalCpbDelayOffset = sei.m_nalCpbDelayOffset;

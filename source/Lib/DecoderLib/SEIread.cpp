@@ -1754,9 +1754,9 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
 
   if (bp.hasAltCpbParams)
   {
-    sei_read_flag(pDecodedMessageOutputStream, symbol, "cpb_alt_timing_info_present_flag");
-    pt.m_cpbAltTimingInfoPresentFlag = symbol;
-    if (pt.m_cpbAltTimingInfoPresentFlag)
+    sei_read_flag(pDecodedMessageOutputStream, symbol, "pt_cpb_alt_timing_info_present_flag");
+    pt.hasAltTimingInfo = symbol;
+    if (pt.hasAltTimingInfo)
     {
       if (bp.hasHrdParams[HrdType::NAL])
       {
@@ -1819,7 +1819,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
   }
   else
   {
-    pt.m_cpbAltTimingInfoPresentFlag = false;
+    pt.hasAltTimingInfo = false;
     pt.m_nalCpbAltInitialRemovalDelayDelta.resize(bp.maxSublayers);
     pt.m_nalCpbAltInitialRemovalOffsetDelta.resize(bp.maxSublayers);
     pt.m_nalCpbDelayOffset.resize(bp.maxSublayers, 0);
