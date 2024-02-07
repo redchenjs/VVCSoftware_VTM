@@ -1533,11 +1533,12 @@ static void validateMinCrRequirements(const ProfileTierLevelFeatures& plt, std::
 
       for (int i = 0; i < seiSubpic.numRefLevels(); i++)
       {
-        const Level::Name level = seiSubpic.m_refLevelIdc[i][layerId];
+        const Level::Name level = seiSubpic.refLevelIdc(i, layerId);
         if (level != Level::LEVEL15_5)
         {
-          const int      nonSubpicLayersFraction = seiSubpic.m_nonSubpicLayersFraction[i][layerId];
-          const int      refLevelFraction = seiSubpic.m_refLevelFraction[i][subPicIdx][layerId] + 1; //m_refLevelFraction is actually sli_ref_level_fraction_minus1
+          const int nonSubpicLayersFraction = seiSubpic.nonSubpicLayerFraction(i, layerId);
+          const int refLevelFraction        = seiSubpic.refLevelFraction(i, subPicIdx, layerId)
+                                       + 1;   // m_refLevelFraction is actually sli_ref_level_fraction_minus1
           const uint32_t olsRefLevelFractionx256 = nonSubpicLayersFraction * 256 + (256 - nonSubpicLayersFraction) * refLevelFraction;
 
           const double   threshold = formatCapabilityFactorx1000 * maxLumaSr * olsRefLevelFractionx256 / denomx1000x256;

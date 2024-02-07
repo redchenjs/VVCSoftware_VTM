@@ -1332,11 +1332,11 @@ void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
   CHECK(sei.numRefLevels() < 1, "SEISubpictureLevelInfo: numRefLevels must be greater than zero");
   xWriteCode(sei.numRefLevels() - 1, 3, "sli_num_ref_levels_minus1");
   xWriteFlag(           sei.m_cbrConstraintFlag,                              "sli_cbr_constraint_flag");
-  xWriteFlag(           sei.m_explicitFractionPresentFlag,                    "sli_explicit_fraction_present_flag");
-  if (sei.m_explicitFractionPresentFlag)
+  xWriteFlag(sei.explicitFractionPresentFlag(), "sli_explicit_fraction_present_flag");
+  if (sei.explicitFractionPresentFlag())
   {
-    xWriteUvlc(         sei.m_numSubpics -1 ,                                 "sli_num_subpics_minus1");
-    xWriteCode( (uint32_t)sei.m_sliMaxSublayers - 1, 3,                       "sli_max_sublayers_minus1");
+    xWriteUvlc(sei.numSubpics() - 1, "sli_num_subpics_minus1");
+    xWriteCode(sei.maxSublayers() - 1, 3, "sli_max_sublayers_minus1");
     xWriteFlag(           sei.m_sliSublayerInfoPresentFlag,                   "sli_sublayer_info_present_flag");
     while (!isByteAligned())
     {
@@ -1344,19 +1344,17 @@ void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
     }
   }
 
-  for (int k = sei.m_sliSublayerInfoPresentFlag ? 0 : sei.m_sliMaxSublayers - 1; k < sei.m_sliMaxSublayers; k++)
+  for (int k = sei.m_sliSublayerInfoPresentFlag ? 0 : sei.maxSublayers() - 1; k < sei.maxSublayers(); k++)
   {
     for (int i = 0; i < sei.numRefLevels(); i++)
     {
-      xWriteCode((uint32_t)sei.m_nonSubpicLayersFraction[i][k], 8, "sli_non_subpic_layers_fraction[i][k]");
-      xWriteCode((uint32_t)sei.m_refLevelIdc[i][k], 8, "sli_ref_level_idc[i][k]");
-      if (sei.m_explicitFractionPresentFlag)
+      xWriteCode((uint32_t) sei.nonSubpicLayerFraction(i, k), 8, "sli_non_subpic_layers_fraction[i][k]");
+      xWriteCode((uint32_t) sei.refLevelIdc(i, k), 8, "sli_ref_level_idc[i][k]");
+      if (sei.explicitFractionPresentFlag())
       {
-        CHECK(sei.m_numSubpics != (int) sei.m_refLevelFraction[i].size(),
-              "SEISubpictureLevelInfo: number of fractions differs from number of subpictures");
-        for (int j = 0; j < sei.m_numSubpics; j++)
+        for (int j = 0; j < sei.numSubpics(); j++)
         {
-          xWriteCode((uint32_t)sei.m_refLevelFraction[i][j][k], 8, "sli_ref_level_fraction_minus1[i][j][k]");
+          xWriteCode((uint32_t) sei.refLevelFraction(i, j, k), 8, "sli_ref_level_fraction_minus1[i][j][k]");
         }
       }
     }

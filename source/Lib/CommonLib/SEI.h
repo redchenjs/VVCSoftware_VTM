@@ -1064,32 +1064,82 @@ class SEISubpictureLevelInfo : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::SUBPICTURE_LEVEL_INFO; }
-  SEISubpictureLevelInfo()
-    : m_explicitFractionPresentFlag(false)
-    , m_cbrConstraintFlag(false)
-    , m_numSubpics(0)
-    , m_sliMaxSublayers(1)
-    , m_sliSublayerInfoPresentFlag(false)
-  {}
+  SEISubpictureLevelInfo() : m_cbrConstraintFlag(false), m_sliSublayerInfoPresentFlag(false) {}
   SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei);
   virtual ~SEISubpictureLevelInfo() {}
 
-  bool      m_explicitFractionPresentFlag;
-  bool      m_cbrConstraintFlag;
-  int       m_numSubpics;
-  int       m_sliMaxSublayers;
-  bool      m_sliSublayerInfoPresentFlag;
-  std::vector<std::array<int, MAX_TLAYER>>              m_nonSubpicLayersFraction;
-  std::vector<std::array<Level::Name, MAX_TLAYER>>      m_refLevelIdc;
-  std::vector<std::vector<std::array<int, MAX_TLAYER>>> m_refLevelFraction;
+  bool m_cbrConstraintFlag;
+  bool m_sliSublayerInfoPresentFlag;
 
-  void setNumRefLevels(const size_t n)
+  int&               nonSubpicLayerFraction(int i, int k) { return data[k][i].nonSubpicLayersFraction; }
+  const int&         nonSubpicLayerFraction(int i, int k) const { return data[k][i].nonSubpicLayersFraction; }
+  Level::Name&       refLevelIdc(int i, int k) { return data[k][i].refLevelIdc; }
+  const Level::Name& refLevelIdc(int i, int k) const { return data[k][i].refLevelIdc; }
+  int&               refLevelFraction(int i, int j, int k) { return data[k][i].refLevelFraction[j]; }
+  const int&         refLevelFraction(int i, int j, int k) const { return data[k][i].refLevelFraction[j]; }
+
+  void resize(size_t numRefLevels, size_t maxSublayers, bool explicitFractionPresentFlag, size_t numSubpics)
   {
-    m_refLevelIdc.resize(n);
-    m_nonSubpicLayersFraction.resize(n);
-    m_refLevelFraction.resize(n);
+    data.resize(maxSublayers);
+    for (auto& x: data)
+    {
+      x.resize(numRefLevels);
+
+      for (auto& y: x)
+      {
+        y.refLevelIdc             = Level::LEVEL15_5;
+        y.nonSubpicLayersFraction = 0;
+
+        if (explicitFractionPresentFlag)
+        {
+          y.refLevelFraction.resize(numSubpics);
+          std::fill(y.refLevelFraction.begin(), y.refLevelFraction.end(), 0);
+        }
+        else
+        {
+          y.refLevelFraction.clear();
+        }
+      }
+    }
   }
-  uint32_t numRefLevels() const { return (uint32_t) m_refLevelIdc.size(); }
+
+  uint32_t maxSublayers() const { return (uint32_t) data.size(); }
+  uint32_t numRefLevels() const { return (uint32_t) data.front().size(); }
+  uint32_t numSubpics() const
+  {
+    return hasExplicitFraction ? (uint32_t) data.front().front().refLevelFraction.size() : 1;
+  }
+  bool explicitFractionPresentFlag() const { return hasExplicitFraction; }
+
+  void fillSublayers()
+  {
+    for (int k = maxSublayers() - 2; k >= 0; k--)
+    {
+      for (int i = 0; i < numRefLevels(); i++)
+      {
+        nonSubpicLayerFraction(i, k) = nonSubpicLayerFraction(i, maxSublayers() - 1);
+        refLevelIdc(i, k)            = refLevelIdc(i, maxSublayers() - 1);
+        if (hasExplicitFraction)
+        {
+          for (int j = 0; j < numSubpics(); j++)
+          {
+            refLevelFraction(i, j, k) = refLevelFraction(i, j, maxSublayers() - 1);
+          }
+        }
+      }
+    }
+  }
+
+private:
+  struct Entry
+  {
+    int              nonSubpicLayersFraction;
+    Level::Name      refLevelIdc;
+    std::vector<int> refLevelFraction;
+  };
+
+  static_vector<std::vector<Entry>, MAX_TLAYER> data;
+  bool                                          hasExplicitFraction;
 };
 
 class SEIManifest : public SEI

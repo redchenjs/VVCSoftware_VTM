@@ -919,14 +919,9 @@ SEIContentColourVolume::SEIContentColourVolume(const SEIContentColourVolume& sei
 
 SEISubpictureLevelInfo::SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sei)
 {
-  m_explicitFractionPresentFlag = sei.m_explicitFractionPresentFlag;
-  m_cbrConstraintFlag = sei.m_cbrConstraintFlag;
-  m_numSubpics = sei.m_numSubpics;
-  m_sliMaxSublayers = sei.m_sliMaxSublayers;
+  m_cbrConstraintFlag          = sei.m_cbrConstraintFlag;
   m_sliSublayerInfoPresentFlag = sei.m_sliSublayerInfoPresentFlag;
-  m_nonSubpicLayersFraction = sei.m_nonSubpicLayersFraction;
-  m_refLevelIdc = sei.m_refLevelIdc;
-  m_refLevelFraction = sei.m_refLevelFraction;
+  data                         = sei.data;
 }
 
 SEIManifest::SEIManifest(const SEIManifest& sei)
