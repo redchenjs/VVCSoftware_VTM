@@ -629,7 +629,7 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
     xWriteFlag(sei.m_snAllLayersFlag, "sn_all_layers_flag");
     if (!sei.m_snAllLayersFlag)
     {
-      xWriteUvlc(sei.m_snNumLayersMinus1, "sn_num_layers");
+      xWriteUvlc(sei.m_snNumLayersMinus1, "sn_num_layers_minus1");
       for (uint32_t i = 1; i <= sei.m_snNumLayersMinus1; i++)
       {
         xWriteCode(sei.m_snLayerId[i], 6, "sn_layer_id");
