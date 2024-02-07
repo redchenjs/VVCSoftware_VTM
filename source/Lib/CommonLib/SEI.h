@@ -684,11 +684,6 @@ public:
   void copyTo (SEIPictureTiming& target) const;
 
   SEIPictureTiming()
-    : dpbOutputDelay(0)
-    , dpbOutputDuDelay(0)
-    , duCommonCpbRemovalDelay(false)
-    , hasAltTimingInfo(false)
-    , displayElementalPeriods(0)
   {
     ::memset(hasSublayerDelays, 0, sizeof(hasSublayerDelays));
     ::memset(duCommonCpbRemovalDelayIncrement, 0, sizeof(duCommonCpbRemovalDelayIncrement));
@@ -701,16 +696,22 @@ public:
   {
   }
 
-  bool                               hasSublayerDelays[MAX_TLAYER];
-  bool                               cpbRemovalDelayDeltaEnabled[MAX_TLAYER];
-  uint32_t                           cpbRemovalDelayDeltaIdx[MAX_TLAYER];
-  uint32_t                           cpbRemovalDelay[MAX_TLAYER];
-  uint32_t                           dpbOutputDelay;
-  uint32_t                           dpbOutputDuDelay;
-  bool                               duCommonCpbRemovalDelay;
-  uint32_t                           duCommonCpbRemovalDelayIncrement[MAX_TLAYER];
-  std::vector<uint32_t>              numNalusInDu;
+  bool hasSublayerDelays[MAX_TLAYER];
+  bool cpbRemovalDelayDeltaEnabled[MAX_TLAYER];
 
+  bool duCommonCpbRemovalDelay      = false;
+  bool hasAltTimingInfo             = false;
+  bool delayForConcatenationEnsured = false;
+
+  uint32_t cpbRemovalDelayDeltaIdx[MAX_TLAYER];
+  uint32_t cpbRemovalDelay[MAX_TLAYER];
+  uint32_t duCommonCpbRemovalDelayIncrement[MAX_TLAYER];
+
+  uint32_t dpbOutputDelay          = 0;
+  uint32_t dpbOutputDuDelay        = 0;
+  uint32_t displayElementalPeriods = 0;
+
+  std::vector<uint32_t>                         numNalusInDu;
   std::vector<std::array<uint32_t, MAX_TLAYER>> duCpbRemovalDelayIncrement;
 
   void setNumDecodingUnits(const size_t n)
@@ -720,15 +721,10 @@ public:
   }
   uint32_t getNumDecodingUnits() const { return static_cast<uint32_t>(numNalusInDu.size()); }
 
-  bool hasAltTimingInfo;
-  bool delayForConcatenationEnsured;
-
   EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialAltCpbRemovalDelta;
 
   EnumArray<std::array<uint32_t, MAX_TLAYER>, HrdType> cpbDelayOffset;
   EnumArray<std::array<uint32_t, MAX_TLAYER>, HrdType> dpbDelayOffset;
-
-  int displayElementalPeriods;
 };
 
 class SEIDecodingUnitInfo : public SEI
