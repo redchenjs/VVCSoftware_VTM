@@ -992,8 +992,9 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sei, const NalUnitT
   }
   else
   {
-    sei_read_flag(decodedMessageOutputStream, symbol, "sn_all_layers_flag"); sei.m_snAllLayersFlag = symbol;
-    if (!sei.m_snAllLayersFlag)
+    sei_read_flag(decodedMessageOutputStream, symbol, "sn_all_layers_flag");
+    sei.allLayersFlag = symbol != 0;
+    if (!sei.allLayersFlag)
     {
       sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_layers_minus1"); sei.m_snNumLayersMinus1 = symbol;
       sei.m_snLayerId[0] = nuhLayerId;
@@ -1251,8 +1252,9 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
   }
   else
   {
-    sei_read_flag(decodedMessageOutputStream, symbol, "sn_all_layers_flag"); sei.m_snAllLayersFlag = symbol;
-    if (!sei.m_snAllLayersFlag)
+    sei_read_flag(decodedMessageOutputStream, symbol, "sn_all_layers_flag");
+    sei.allLayersFlag = symbol != 0;
+    if (!sei.allLayersFlag)
     {
       sei_read_uvlc(decodedMessageOutputStream, symbol, "sn_num_layers_minus1"); sei.m_snNumLayersMinus1 = symbol;
       sei.m_snLayerId[0] = nuhLayerId;
@@ -1358,7 +1360,7 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
         }
       }
     }
-    else if (sei.m_snAllLayersFlag)
+    else if (sei.allLayersFlag)
     {
       for (uint32_t k = 0; k < numSubPics; k++)
       {

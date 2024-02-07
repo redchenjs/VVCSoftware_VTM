@@ -834,7 +834,7 @@ SEIMasteringDisplayColourVolume::SEIMasteringDisplayColourVolume(const SEIMaster
 SEIScalableNesting::SEIScalableNesting(const SEIScalableNesting& sei)
 {
   olsIdx              = sei.olsIdx;
-  m_snAllLayersFlag = sei.m_snAllLayersFlag;
+  allLayersFlag       = sei.allLayersFlag;
   m_snNumLayersMinus1 = sei.m_snNumLayersMinus1;
   std::memcpy(m_snLayerId, sei.m_snLayerId, sizeof(sei.m_snLayerId));
   subpicIdLen     = sei.subpicIdLen;
