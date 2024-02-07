@@ -1413,12 +1413,9 @@ void EncGOP::xUpdateTimingSEI(SEIPictureTiming* pt, std::deque<DUData>& duData, 
     uint32_t numDus                     = pt->getNumDecodingUnits();
     auto&    duCpbRemovalDelayIncrement = pt->duCpbRemovalDelayIncrement;
     uint32_t maxDiff = ( hrd->getTickDivisorMinus2() + 2 ) - 1;
+    const int maxNumSubLayers            = sps->getMaxTLayers();
 
-    int maxNumSubLayers = sps->getMaxTLayers();
-    for( int j = 0; j < maxNumSubLayers - 1; j++ )
-    {
-      pt->hasSublayerDelays[j] = false;
-    }
+    pt->hasSublayerDelays.fill(false);
 
     for (i = 0; i < numDus; i++)
     {

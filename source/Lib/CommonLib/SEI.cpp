@@ -101,10 +101,10 @@ void SEIBufferingPeriod::copyTo(SEIBufferingPeriod& target) const { target = *th
 void SEIPictureTiming::copyTo (SEIPictureTiming& target) const
 {
   ::memcpy(target.cpbRemovalDelay, cpbRemovalDelay, sizeof(cpbRemovalDelay));
-  ::memcpy(target.hasSublayerDelays, hasSublayerDelays, sizeof(hasSublayerDelays));
+  target.hasSublayerDelays = hasSublayerDelays;
   ::memcpy(target.duCommonCpbRemovalDelayIncrement, duCommonCpbRemovalDelayIncrement,
            sizeof(duCommonCpbRemovalDelayIncrement));
-  ::memcpy(target.cpbRemovalDelayDeltaEnabled, cpbRemovalDelayDeltaEnabled, sizeof(cpbRemovalDelayDeltaEnabled));
+  target.cpbRemovalDelayDeltaEnabled = cpbRemovalDelayDeltaEnabled;
   ::memcpy(target.cpbRemovalDelayDeltaIdx, cpbRemovalDelayDeltaIdx, sizeof(cpbRemovalDelayDeltaIdx));
   target.dpbOutputDelay                = dpbOutputDelay;
   target.dpbOutputDuDelay              = dpbOutputDuDelay;
@@ -759,8 +759,8 @@ SEIBufferingPeriod::SEIBufferingPeriod(const SEIBufferingPeriod& sei) = default;
 
 SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
 {
-  std::memcpy(hasSublayerDelays, sei.hasSublayerDelays, sizeof(sei.hasSublayerDelays));
-  std::memcpy(cpbRemovalDelayDeltaEnabled, sei.cpbRemovalDelayDeltaEnabled, sizeof(sei.cpbRemovalDelayDeltaEnabled));
+  hasSublayerDelays           = sei.hasSublayerDelays;
+  cpbRemovalDelayDeltaEnabled = sei.cpbRemovalDelayDeltaEnabled;
   std::memcpy(cpbRemovalDelayDeltaIdx, sei.cpbRemovalDelayDeltaIdx, sizeof(sei.cpbRemovalDelayDeltaIdx));
   std::memcpy(cpbRemovalDelay, sei.cpbRemovalDelay, sizeof(sei.cpbRemovalDelay));
   dpbOutputDelay                = sei.dpbOutputDelay;

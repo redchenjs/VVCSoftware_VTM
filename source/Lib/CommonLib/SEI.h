@@ -685,9 +685,9 @@ public:
 
   SEIPictureTiming()
   {
-    ::memset(hasSublayerDelays, 0, sizeof(hasSublayerDelays));
+    hasSublayerDelays.fill(false);
+    cpbRemovalDelayDeltaEnabled.fill(false);
     ::memset(duCommonCpbRemovalDelayIncrement, 0, sizeof(duCommonCpbRemovalDelayIncrement));
-    ::memset(cpbRemovalDelayDeltaEnabled, 0, sizeof(cpbRemovalDelayDeltaEnabled));
     ::memset(cpbRemovalDelayDeltaIdx, 0, sizeof(cpbRemovalDelayDeltaIdx));
     ::memset(cpbRemovalDelay, 0, sizeof(cpbRemovalDelay));
   }
@@ -696,8 +696,8 @@ public:
   {
   }
 
-  bool hasSublayerDelays[MAX_TLAYER];
-  bool cpbRemovalDelayDeltaEnabled[MAX_TLAYER];
+  std::array<bool, MAX_TLAYER> hasSublayerDelays;
+  std::array<bool, MAX_TLAYER> cpbRemovalDelayDeltaEnabled;
 
   bool duCommonCpbRemovalDelay      = false;
   bool hasAltTimingInfo             = false;

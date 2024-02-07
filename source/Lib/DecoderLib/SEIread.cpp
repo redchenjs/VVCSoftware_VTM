@@ -1712,8 +1712,8 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
   uint32_t symbol;
   sei_read_code(pDecodedMessageOutputStream, bp.cpbRemovalDelayLength, symbol,
                 "pt_cpb_removal_delay_minus1[bp_max_sub_layers_minus1]");
-  pt.cpbRemovalDelay[bp.maxSublayers - 1]               = symbol + 1;
-  pt.hasSublayerDelays[bp.maxSublayers - 1]             = true;
+  pt.cpbRemovalDelay[bp.maxSublayers - 1]   = symbol + 1;
+  pt.hasSublayerDelays[bp.maxSublayers - 1] = true;
   for (int i = temporalId; i < bp.maxSublayers - 1; i++)
   {
     sei_read_flag(pDecodedMessageOutputStream, symbol, "pt_sublayer_delays_present_flag[i]");
@@ -1723,7 +1723,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
       if (bp.hasCpbRemovalDelayDeltas())
       {
         sei_read_flag(pDecodedMessageOutputStream, symbol, "pt_cpb_removal_delay_delta_enabled_flag[i]");
-        pt.cpbRemovalDelayDeltaEnabled[i] = (symbol == 1);
+        pt.cpbRemovalDelayDeltaEnabled[i] = symbol != 0;
       }
       else
       {
