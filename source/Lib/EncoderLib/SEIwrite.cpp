@@ -320,7 +320,7 @@ void SEIWriter::xWriteSEIDecodedPictureHash(const SEIDecodedPictureHash& sei)
 void SEIWriter::xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& dui, const SEIBufferingPeriod& bp,
                                           const uint32_t temporalId)
 {
-  xWriteUvlc(dui.m_decodingUnitIdx, "dui_decoding_unit_idx");
+  xWriteUvlc(dui.decodingUnitIdx, "dui_decoding_unit_idx");
   if (!bp.duCpbParamsInPicTimingSei)
   {
     for (int i = temporalId; i < bp.maxSublayers; i++)

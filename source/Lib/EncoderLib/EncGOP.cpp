@@ -1337,7 +1337,7 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
       for (int i = 0; i < pt->getNumDecodingUnits(); i++)
       {
         SEIDecodingUnitInfo *duInfoSEI = new SEIDecodingUnitInfo();
-        duInfoSEI->m_decodingUnitIdx = i;
+        duInfoSEI->decodingUnitIdx     = i;
         for( int j = temporalId; j <= maxNumSubLayers; j++ )
         {
           duInfoSEI->m_duSptCpbRemovalDelayIncrement[j] = pt->duCpbRemovalDelayIncrement[i][j];
@@ -1489,7 +1489,7 @@ void EncGOP::xUpdateDuInfoSEI(SEIMessages& duInfoSeiMessages, SEIPictureTiming* 
   for (SEIMessages::iterator du = duInfoSeiMessages.begin(); du!= duInfoSeiMessages.end(); du++)
   {
     SEIDecodingUnitInfo *duInfoSEI = (SEIDecodingUnitInfo*) (*du);
-    duInfoSEI->m_decodingUnitIdx = i;
+    duInfoSEI->decodingUnitIdx     = i;
     for (int j = 0; j < maxSublayers; j++)
     {
       duInfoSEI->m_duiSubLayerDelaysPresentFlag[j]  = pt->hasSublayerDelays[j];

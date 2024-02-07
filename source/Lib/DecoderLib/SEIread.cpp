@@ -215,7 +215,7 @@ void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitTy
     SEI *sei = nullptr;
     sei = new SEIDecodingUnitInfo;
     xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo &) *sei, payloadSize, *bp, nuh_layer_id, nullptr);
-    duiIdx = ((SEIDecodingUnitInfo&)*sei).m_decodingUnitIdx;
+    duiIdx = ((SEIDecodingUnitInfo&) *sei).decodingUnitIdx;
     delete sei;
     setBitstream(bs);
   }
@@ -1327,7 +1327,7 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
         SEI *sei = nullptr;
         sei = new SEIDecodingUnitInfo;
         xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo &) *sei, payloadSize, *bp, nuhLayerId, nullptr);
-        duiIdx = ((SEIDecodingUnitInfo&)*sei).m_decodingUnitIdx;
+        duiIdx = ((SEIDecodingUnitInfo&) *sei).decodingUnitIdx;
         delete sei;
         setBitstream(bs);
       }
@@ -1497,7 +1497,7 @@ void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& dui, uint32_t pay
   uint32_t val;
   output_sei_message_header(dui, pDecodedMessageOutputStream, payloadSize);
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dui_decoding_unit_idx");
-  dui.m_decodingUnitIdx = val;
+  dui.decodingUnitIdx = val;
 
   if (!bp.duCpbParamsInPicTimingSei)
   {

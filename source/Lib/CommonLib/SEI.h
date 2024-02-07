@@ -729,17 +729,14 @@ class SEIDecodingUnitInfo : public SEI
 public:
   PayloadType payloadType() const { return PayloadType::DECODING_UNIT_INFO; }
 
-  SEIDecodingUnitInfo()
-    : m_decodingUnitIdx(0)
-    , m_dpbOutputDuDelayPresentFlag(false)
-    , m_picSptDpbOutputDuDelay(-1)
+  SEIDecodingUnitInfo() : m_dpbOutputDuDelayPresentFlag(false), m_picSptDpbOutputDuDelay(-1)
   {
     ::memset(m_duiSubLayerDelaysPresentFlag, 0, sizeof(m_duiSubLayerDelaysPresentFlag));
     ::memset(m_duSptCpbRemovalDelayIncrement, 0, sizeof(m_duSptCpbRemovalDelayIncrement));
   }
   SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei);
   virtual ~SEIDecodingUnitInfo() {}
-  int m_decodingUnitIdx;
+  int  decodingUnitIdx = 0;
   bool m_duiSubLayerDelaysPresentFlag[MAX_TLAYER];
   int m_duSptCpbRemovalDelayIncrement[MAX_TLAYER];
   bool m_dpbOutputDuDelayPresentFlag;
