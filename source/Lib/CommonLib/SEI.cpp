@@ -98,24 +98,7 @@ void deleteSEIs (SEIMessages &seiList)
 
 void SEIBufferingPeriod::copyTo(SEIBufferingPeriod& target) const { target = *this; }
 
-void SEIPictureTiming::copyTo (SEIPictureTiming& target) const
-{
-  target.cpbRemovalDelay                  = cpbRemovalDelay;
-  target.hasSublayerDelays = hasSublayerDelays;
-  target.duCommonCpbRemovalDelayIncrement = duCommonCpbRemovalDelayIncrement;
-  target.cpbRemovalDelayDeltaEnabled = cpbRemovalDelayDeltaEnabled;
-  target.cpbRemovalDelayDeltaIdx          = cpbRemovalDelayDeltaIdx;
-  target.dpbOutputDelay                = dpbOutputDelay;
-  target.dpbOutputDuDelay              = dpbOutputDuDelay;
-  target.duCommonCpbRemovalDelay       = duCommonCpbRemovalDelay;
-
-  target.numNalusInDu                         = numNalusInDu;
-  target.duCpbRemovalDelayIncrement           = duCpbRemovalDelayIncrement;
-  target.hasAltTimingInfo                     = hasAltTimingInfo;
-  target.initialAltCpbRemovalDelta            = initialAltCpbRemovalDelta;
-  target.cpbDelayOffset                       = cpbDelayOffset;
-  target.dpbDelayOffset                       = dpbDelayOffset;
-}
+void SEIPictureTiming::copyTo(SEIPictureTiming& target) const { target = *this; }
 
 bool SEIScalabilityDimensionInfo::isSDISameContent(SEIScalabilityDimensionInfo* sdiB)
 {
@@ -756,24 +739,7 @@ SEIDecodedPictureHash::SEIDecodedPictureHash(const SEIDecodedPictureHash& sei)
 
 SEIBufferingPeriod::SEIBufferingPeriod(const SEIBufferingPeriod& sei) = default;
 
-SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
-{
-  hasSublayerDelays           = sei.hasSublayerDelays;
-  cpbRemovalDelayDeltaEnabled = sei.cpbRemovalDelayDeltaEnabled;
-  cpbRemovalDelayDeltaIdx              = sei.cpbRemovalDelayDeltaIdx;
-  cpbRemovalDelay                      = sei.cpbRemovalDelay;
-  dpbOutputDelay                = sei.dpbOutputDelay;
-  dpbOutputDuDelay              = sei.dpbOutputDuDelay;
-  duCommonCpbRemovalDelay       = sei.duCommonCpbRemovalDelay;
-  duCommonCpbRemovalDelayIncrement     = sei.duCommonCpbRemovalDelayIncrement;
-  numNalusInDu                         = sei.numNalusInDu;
-  duCpbRemovalDelayIncrement           = sei.duCpbRemovalDelayIncrement;
-  hasAltTimingInfo                     = sei.hasAltTimingInfo;
-  initialAltCpbRemovalDelta            = sei.initialAltCpbRemovalDelta;
-  cpbDelayOffset                       = sei.cpbDelayOffset;
-  dpbDelayOffset                       = sei.dpbDelayOffset;
-  displayElementalPeriods              = sei.displayElementalPeriods;
-}
+SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei) = default;
 
 SEIDecodingUnitInfo::SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei)
 {

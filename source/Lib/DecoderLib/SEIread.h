@@ -72,7 +72,8 @@ protected:
   void xParseSEIDecodedPictureHash            (SEIDecodedPictureHash& sei,            uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIBufferingPeriod(SEIBufferingPeriod& bp, uint32_t payloadSize,
                                 std::ostream* pDecodedMessageOutputStream);
-  void xParseSEIPictureTiming                 (SEIPictureTiming& sei,                 uint32_t payloadSize, const uint32_t temporalId, const SEIBufferingPeriod& bp, std::ostream *pDecodedMessageOutputStream);
+  void xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSize, const uint32_t temporalId,
+                              const SEIBufferingPeriod& bp, std::ostream* pDecodedMessageOutputStream);
   void xParseSEIScalableNesting               (SEIScalableNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD &hrd, std::ostream* decodedMessageOutputStream);
   void xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId,
                                       uint32_t payloadSize, const VPS *vps, const SPS *sps, HRD &hrd,

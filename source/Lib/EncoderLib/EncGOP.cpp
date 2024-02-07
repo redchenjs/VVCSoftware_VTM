@@ -655,7 +655,7 @@ void EncGOP::xWriteLeadingSEIMessages (SEIMessages& seiMessages, SEIMessages& du
   AccessUnit testAU;
   SEIMessages picTimingSEIs = getSeisByType(seiMessages, SEI::PayloadType::PICTURE_TIMING);
   CHECK(!(picTimingSEIs.size() < 2), "Unspecified error");
-  SEIPictureTiming* pt = picTimingSEIs.empty() ? nullptr : (SEIPictureTiming*) picTimingSEIs.front();
+  auto pt = picTimingSEIs.empty() ? nullptr : (SEIPictureTiming*) picTimingSEIs.front();
 
   // test writing
   xWriteLeadingSEIOrdered(seiMessages, duInfoSeiMessages, testAU, temporalId, true);
@@ -1114,7 +1114,7 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
   // update decoding unit parameters
   if ((m_pcCfg->getPictureTimingSEIEnabled() || m_pcCfg->getDecodingUnitInfoSEIEnabled()) && slice->getNalUnitLayerId() == slice->getVPS()->getLayerId(0))
   {
-    SEIPictureTiming* pt = new SEIPictureTiming();
+    auto pt = new SEIPictureTiming();
 
     // DU parameters
     if( hrd->getGeneralDecodingUnitHrdParamsPresentFlag() )
@@ -1327,9 +1327,9 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
 
       if (m_pcCfg->getScalableNestingSEIEnabled() && !m_pcCfg->getSamePicTimingInAllOLS())
       {
-        SEIPictureTiming *pictureTimingSEIcopy = new SEIPictureTiming();
-        pt->copyTo(*pictureTimingSEIcopy);
-        nestedSeiMessages.push_back(pictureTimingSEIcopy);
+        auto ptCopy = new SEIPictureTiming();
+        pt->copyTo(*ptCopy);
+        nestedSeiMessages.push_back(ptCopy);
       }
     }
 

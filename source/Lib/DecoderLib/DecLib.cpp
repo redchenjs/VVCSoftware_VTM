@@ -2622,7 +2622,7 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
 
   if (!picTimingSEIs.empty() && !frameFieldSEIs.empty())
   {
-    SEIPictureTiming  *pt = (SEIPictureTiming*)  picTimingSEIs.front();
+    auto               pt = (SEIPictureTiming*) picTimingSEIs.front();
     SEIFrameFieldInfo *ff = (SEIFrameFieldInfo*) frameFieldSEIs.front();
     if (pt->displayElementalPeriods != ff->m_displayElementalPeriodsMinus1 + 1)
     {
