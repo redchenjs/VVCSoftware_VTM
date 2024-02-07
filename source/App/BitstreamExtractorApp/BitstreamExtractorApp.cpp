@@ -457,7 +457,7 @@ bool BitstreamExtractorApp::xCheckSEIsSubPicture(SEIMessages& SEIs, InputNALUnit
       {
         // applies to target subpicture -> extract
         OutputNALUnit outNalu( nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId );
-        m_seiWriter.writeSEImessages(outNalu.m_bitstream, sn->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
+        m_seiWriter.writeSEImessages(outNalu.m_bitstream, sn->nestedSeis, m_hrd, false, nalu.m_temporalId);
         NALUnitEBSP naluWithHeader(outNalu);
         writeAnnexBNalUnit(out, naluWithHeader, true);
         return false;
@@ -825,7 +825,7 @@ uint32_t BitstreamExtractorApp::decode()
                 if (!sn->olsIdx.empty() || vps->getNumLayersInOls(m_targetOlsIdx) == 1)
                 {
                   OutputNALUnit outNalu(nalu.m_nalUnitType, nalu.m_nuhLayerId, nalu.m_temporalId);
-                  m_seiWriter.writeSEImessages(outNalu.m_bitstream, sn->m_nestedSEIs, m_hrd, false, nalu.m_temporalId);
+                  m_seiWriter.writeSEImessages(outNalu.m_bitstream, sn->nestedSeis, m_hrd, false, nalu.m_temporalId);
                   NALUnitEBSP naluWithHeader(outNalu);
                   writeAnnexBNalUnit(bitstreamFileOut, naluWithHeader, true);
                   writeInpuNalUnitToStream = false;

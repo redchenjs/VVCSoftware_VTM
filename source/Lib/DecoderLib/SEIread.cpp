@@ -1054,7 +1054,7 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sn, const NalUnitTy
           checkBPSyntaxElementLength(nonNestedBp, bp);
         }
       }
-      sn.m_nestedSEIs.push_back(tmpSEIs.front());
+      sn.nestedSeis.push_back(tmpSEIs.front());
       tmpSEIs.clear();
     }
   }
@@ -1447,7 +1447,7 @@ void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sn, c
   bool containBPorPTorDUIorSLI = false;
   bool containNoBPorPTorDUIorSLI = false;
 
-  for (auto nestedsei: sn.m_nestedSEIs)
+  for (auto nestedsei: sn.nestedSeis)
   {
     CHECK(nestedsei->payloadType() == SEI::PayloadType::FILLER_PAYLOAD
             || nestedsei->payloadType() == SEI::PayloadType::SCALABLE_NESTING,

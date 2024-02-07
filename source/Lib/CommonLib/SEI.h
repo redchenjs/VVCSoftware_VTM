@@ -901,10 +901,7 @@ public:
   }
   SEIScalableNesting(const SEIScalableNesting& sei);
 
-  virtual ~SEIScalableNesting()
-  {
-    deleteSEIs(m_nestedSEIs);
-  }
+  virtual ~SEIScalableNesting() { deleteSEIs(nestedSeis); }
 
   uint8_t subpicIdLen = 0;
 
@@ -916,7 +913,7 @@ public:
 
   bool allLayersFlag() const { return layerId.empty(); }
 
-  SEIMessages m_nestedSEIs;
+  SEIMessages nestedSeis;
 };
 
 

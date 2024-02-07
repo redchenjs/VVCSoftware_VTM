@@ -612,7 +612,7 @@ void SEIWriter::xWriteSEIEdrapIndication(const SEIExtendedDrapIndication& sei)
 
 void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableNesting& sn)
 {
-  CHECK(sn.m_nestedSEIs.size() < 1, "There must be at lease one SEI message nested in the scalable nesting SEI.")
+  CHECK(sn.nestedSeis.size() < 1, "There must be at lease one SEI message nested in the scalable nesting SEI.")
 
   xWriteFlag(!sn.olsIdx.empty() ? 1 : 0, "sn_ols_flag");
   xWriteFlag(!sn.subpicId.empty() ? 1 : 0, "sn_subpic_flag");
@@ -649,7 +649,7 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
     }
   }
 
-  xWriteUvlc((uint32_t) sn.m_nestedSEIs.size() - 1, "sn_num_seis_minus1");
+  xWriteUvlc((uint32_t) sn.nestedSeis.size() - 1, "sn_num_seis_minus1");
 
   // byte alignment
   while (m_pcBitIf->getNumberOfWrittenBits() % 8 != 0)
@@ -657,7 +657,7 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
     xWriteFlag(0, "sn_zero_bit");
   }
 
-  SEIMessages bufferingPeriod = getSeisByType(sn.m_nestedSEIs, SEI::PayloadType::BUFFERING_PERIOD);
+  SEIMessages bufferingPeriod = getSeisByType(sn.nestedSeis, SEI::PayloadType::BUFFERING_PERIOD);
   if (!bufferingPeriod.empty())
   {
     SEIBufferingPeriod *bp = (SEIBufferingPeriod*)bufferingPeriod.front();
@@ -665,7 +665,7 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
   }
 
   // write nested SEI messages
-  writeSEImessages(bs, sn.m_nestedSEIs, m_nestingHrd, true, 0);
+  writeSEImessages(bs, sn.nestedSeis, m_nestingHrd, true, 0);
 }
 
 void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking &sei, int SEIPrefixIndicationIdx)

@@ -934,7 +934,7 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
       if (!sn->subpicId.empty())
       {
         uint32_t    subpicId            = sn->subpicId.front();
-        SEIMessages nestedPictureHashes = getSeisByType(sn->m_nestedSEIs, SEI::PayloadType::DECODED_PICTURE_HASH);
+        SEIMessages nestedPictureHashes = getSeisByType(sn->nestedSeis, SEI::PayloadType::DECODED_PICTURE_HASH);
         for (auto decPicHash : nestedPictureHashes)
         {
           const SubPic& subpic = pcSlice->getPPS()->getSubPic(subpicId);
@@ -2598,7 +2598,7 @@ void DecLib::xParsePrefixSEImessages()
   if (scalableNestingSEIs.size())
   {
     SEIScalableNesting* sn           = (SEIScalableNesting*) scalableNestingSEIs.front();
-    SEIMessages         nestedSliSei = getSeisByType(sn->m_nestedSEIs, SEI::PayloadType::SUBPICTURE_LEVEL_INFO);
+    SEIMessages         nestedSliSei = getSeisByType(sn->nestedSeis, SEI::PayloadType::SUBPICTURE_LEVEL_INFO);
     if (nestedSliSei.size() > 0)
     {
       AccessUnitNestedSliSeiInfo sliSeiInfo;
