@@ -1713,12 +1713,12 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
   sei_read_code(pDecodedMessageOutputStream, bp.cpbRemovalDelayLength, symbol,
                 "pt_cpb_removal_delay_minus1[bp_max_sub_layers_minus1]");
   pt.cpbRemovalDelay[bp.maxSublayers - 1]               = symbol + 1;
-  pt.m_ptSubLayerDelaysPresentFlag[bp.maxSublayers - 1] = true;
+  pt.hasSublayerDelays[bp.maxSublayers - 1]             = true;
   for (int i = temporalId; i < bp.maxSublayers - 1; i++)
   {
     sei_read_flag(pDecodedMessageOutputStream, symbol, "pt_sublayer_delays_present_flag[i]");
-    pt.m_ptSubLayerDelaysPresentFlag[i] = (symbol == 1);
-    if (pt.m_ptSubLayerDelaysPresentFlag[i])
+    pt.hasSublayerDelays[i] = symbol != 0;
+    if (pt.hasSublayerDelays[i])
     {
       if (bp.hasCpbRemovalDelayDeltas())
       {
@@ -1861,7 +1861,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
       {
         for (int i = temporalId; i < bp.maxSublayers; i++)
         {
-          if (pt.m_ptSubLayerDelaysPresentFlag[i])
+          if (pt.hasSublayerDelays[i])
           {
             sei_read_code(pDecodedMessageOutputStream, bp.duCpbRemovalDelayIncrementLength, symbol,
                           "du_common_cpb_removal_delay_increment_minus1[i]");
@@ -1877,7 +1877,7 @@ void SEIReader::xParseSEIPictureTiming(SEIPictureTiming& pt, uint32_t payloadSiz
         {
           for (int j = temporalId; j < bp.maxSublayers; j++)
           {
-            if (pt.m_ptSubLayerDelaysPresentFlag[j])
+            if (pt.hasSublayerDelays[j])
             {
               sei_read_code(pDecodedMessageOutputStream, bp.duCpbRemovalDelayIncrementLength, symbol,
                             "du_cpb_removal_delay_increment_minus1[i][j]");

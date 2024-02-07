@@ -691,7 +691,7 @@ public:
   , m_cpbAltTimingInfoPresentFlag (false)
   , m_ptDisplayElementalPeriodsMinus1(0)
   {
-    ::memset(m_ptSubLayerDelaysPresentFlag, 0, sizeof(m_ptSubLayerDelaysPresentFlag));
+    ::memset(hasSublayerDelays, 0, sizeof(hasSublayerDelays));
     ::memset(m_duCommonCpbRemovalDelayMinus1, 0, sizeof(m_duCommonCpbRemovalDelayMinus1));
     ::memset(m_cpbRemovalDelayDeltaEnabledFlag, 0, sizeof(m_cpbRemovalDelayDeltaEnabledFlag));
     ::memset(m_cpbRemovalDelayDeltaIdx, 0, sizeof(m_cpbRemovalDelayDeltaIdx));
@@ -702,8 +702,7 @@ public:
   {
   }
 
-
-  bool  m_ptSubLayerDelaysPresentFlag[MAX_TLAYER];
+  bool                               hasSublayerDelays[MAX_TLAYER];
   bool  m_cpbRemovalDelayDeltaEnabledFlag[MAX_TLAYER];
   uint32_t  m_cpbRemovalDelayDeltaIdx[MAX_TLAYER];
   uint32_t                           cpbRemovalDelay[MAX_TLAYER];
