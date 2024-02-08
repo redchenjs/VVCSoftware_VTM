@@ -221,8 +221,15 @@ public:
     return m_bufferingPeriodInitialized ? &m_bufferingPeriodSEI : nullptr;
   }
 
-  void                       setPictureTimingSEI(const SEIPictureTiming* pt)  { pt->copyTo(m_pictureTimingSEI); m_pictureTimingAvailable = true; }
-  const SEIPictureTiming*    getPictureTimingSEI() const                      { return m_pictureTimingAvailable ? &m_pictureTimingSEI : nullptr; }
+  void setPictureTimingSEI(const SEIPictureTiming* pt)
+  {
+    m_pictureTimingSEI = *pt;
+    m_pictureTimingAvailable = true;
+  }
+  const SEIPictureTiming* getPictureTimingSEI() const
+  {
+    return m_pictureTimingAvailable ? &m_pictureTimingSEI : nullptr;
+  }
 
 protected:
   GeneralHrdParams      m_generalHrdParams;

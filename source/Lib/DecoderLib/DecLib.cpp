@@ -2622,9 +2622,9 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
 
   if (!picTimingSEIs.empty() && !frameFieldSEIs.empty())
   {
-    SEIPictureTiming  *pt = (SEIPictureTiming*)  picTimingSEIs.front();
+    auto               pt = (SEIPictureTiming*) picTimingSEIs.front();
     SEIFrameFieldInfo *ff = (SEIFrameFieldInfo*) frameFieldSEIs.front();
-    if( pt->m_ptDisplayElementalPeriodsMinus1 != ff->m_displayElementalPeriodsMinus1 )
+    if (pt->displayElementalPeriods != ff->m_displayElementalPeriodsMinus1 + 1)
     {
       msg( WARNING, "Warning: ffi_display_elemental_periods_minus1 is different in picture timing and frame field information SEI messages!");
     }

@@ -58,7 +58,7 @@ protected:
   void xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei, const SEIBufferingPeriod& bp, const uint32_t temporalId);
   void xWriteSEIDecodedPictureHash(const SEIDecodedPictureHash& sei);
   void xWriteSEIBufferingPeriod(const SEIBufferingPeriod& sei);
-  void xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBufferingPeriod& bp, const uint32_t temporalId);
+  void xWriteSEIPictureTiming(const SEIPictureTiming& pt, const SEIBufferingPeriod& bp, const uint32_t temporalId);
   void xWriteSEIFrameFieldInfo(const SEIFrameFieldInfo& sei);
   void xWriteSEIDependentRAPIndication(const SEIDependentRAPIndication& sei);
   void xWriteSEIEdrapIndication(const SEIExtendedDrapIndication& sei);
