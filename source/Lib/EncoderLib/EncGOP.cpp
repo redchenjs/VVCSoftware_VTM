@@ -1327,8 +1327,7 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
 
       if (m_pcCfg->getScalableNestingSEIEnabled() && !m_pcCfg->getSamePicTimingInAllOLS())
       {
-        auto ptCopy = new SEIPictureTiming();
-        pt->copyTo(*ptCopy);
+        auto ptCopy = new SEIPictureTiming(*pt);
         nestedSeiMessages.push_back(ptCopy);
       }
     }

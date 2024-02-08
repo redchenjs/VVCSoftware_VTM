@@ -98,8 +98,6 @@ void deleteSEIs (SEIMessages &seiList)
 
 void SEIBufferingPeriod::copyTo(SEIBufferingPeriod& target) const { target = *this; }
 
-void SEIPictureTiming::copyTo(SEIPictureTiming& target) const { target = *this; }
-
 bool SEIScalabilityDimensionInfo::isSDISameContent(SEIScalabilityDimensionInfo* sdiB)
 {
   if (!sdiB)

@@ -681,7 +681,6 @@ class SEIPictureTiming : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::PICTURE_TIMING; }
-  void        copyTo(SEIPictureTiming& target) const;
 
   SEIPictureTiming()
   {

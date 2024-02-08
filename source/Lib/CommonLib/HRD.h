@@ -223,7 +223,7 @@ public:
 
   void setPictureTimingSEI(const SEIPictureTiming* pt)
   {
-    pt->copyTo(m_pictureTimingSEI);
+    m_pictureTimingSEI = *pt;
     m_pictureTimingAvailable = true;
   }
   const SEIPictureTiming* getPictureTimingSEI() const
