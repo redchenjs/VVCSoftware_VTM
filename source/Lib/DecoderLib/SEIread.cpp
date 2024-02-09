@@ -162,11 +162,9 @@ void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream *bs, const NalU
                                                   const uint32_t nuh_layer_id, const VPS *vps, const SPS *sps, HRD &hrd,
                                                   uint32_t payloadSize, std::vector<SeiPayload> *seiList)
 {
-  SEI *sei = nullptr;
-  sei = new SEIScalableNesting;
+  SEIScalableNesting sn;
   setBitstream(bs);
-  xParseSEIScalableNesting((SEIScalableNesting&) *sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd, nullptr,
-                           seiList);
+  xParseSEIScalableNesting(sn, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd, nullptr, seiList);
   int payloadBitsRemaining = getBitstream()->getNumBitsLeft();
   if (payloadBitsRemaining) /* more_data_in_payload() */
   {
@@ -198,7 +196,6 @@ void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream *bs, const NalU
       sei_read_flag( 0, dummy, "payload_bit_equal_to_zero"); payloadBitsRemaining--;
     }
   }
-  delete sei;
 }
 
 void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, HRD &hrd, uint32_t payloadSize, int& duiIdx)
@@ -357,10 +354,13 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
         break;
       }
     case SEI::PayloadType::SCALABLE_NESTING:
-      sei = new SEIScalableNesting;
-      xParseSEIScalableNesting((SEIScalableNesting&) *sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
-                               pDecodedMessageOutputStream, nullptr);
-      break;
+      {
+        auto sn = new SEIScalableNesting;
+        xParseSEIScalableNesting(*sn, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
+                                 pDecodedMessageOutputStream, nullptr);
+        sei = sn;
+        break;
+      }
     case SEI::PayloadType::FRAME_FIELD_INFO:
       sei = new SEIFrameFieldInfo;
       xParseSEIFrameFieldinfo((SEIFrameFieldInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -575,10 +575,13 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIDecodedPictureHash((SEIDecodedPictureHash &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::SCALABLE_NESTING:
-      sei = new SEIScalableNesting;
-      xParseSEIScalableNesting((SEIScalableNesting&) *sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
-                               pDecodedMessageOutputStream, nullptr);
-      break;
+      {
+        auto sn = new SEIScalableNesting;
+        xParseSEIScalableNesting(*sn, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
+                                 pDecodedMessageOutputStream, nullptr);
+        sei = sn;
+        break;
+      }
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
       sei = new SEINeuralNetworkPostFilterCharacteristics;
       xParseSEINNPostFilterCharacteristics((SEINeuralNetworkPostFilterCharacteristics &) *sei, payloadSize, sps,

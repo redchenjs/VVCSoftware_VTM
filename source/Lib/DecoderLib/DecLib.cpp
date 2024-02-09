@@ -927,10 +927,10 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
     }
     m_numberOfChecksumErrorsDetected += calcAndPrintHashStatus(((const Picture*) m_pcPic)->getRecoBuf(), hash, pcSlice->getSPS()->getBitDepths(), msgl);
 
-    SEIMessages scalableNestingSeis = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::SCALABLE_NESTING);
-    for (auto seiIt : scalableNestingSeis)
+    SEIMessages snList = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::SCALABLE_NESTING);
+    for (auto& sei: snList)
     {
-      auto sn = reinterpret_cast<SEIScalableNesting*>(seiIt);
+      auto sn = reinterpret_cast<SEIScalableNesting*>(sei);
       if (!sn->subpicId.empty())
       {
         const uint32_t subpicId = sn->subpicId.front();
@@ -2596,12 +2596,14 @@ void DecLib::xParsePrefixSEImessages()
     m_prefixSEINALUs.pop_front();
   }
   xCheckPrefixSEIMessages(m_SEIs);
-  SEIMessages scalableNestingSEIs = getSeisByType(m_SEIs, SEI::PayloadType::SCALABLE_NESTING);
-  if (scalableNestingSEIs.size())
+
+  SEIMessages snList = getSeisByType(m_SEIs, SEI::PayloadType::SCALABLE_NESTING);
+  if (!snList.empty())
   {
-    SEIScalableNesting* sn           = (SEIScalableNesting*) scalableNestingSEIs.front();
-    SEIMessages         nestedSliSei = getSeisByType(sn->nestedSeis, SEI::PayloadType::SUBPICTURE_LEVEL_INFO);
-    if (nestedSliSei.size() > 0)
+    auto sn = reinterpret_cast<SEIScalableNesting*>(snList.front());
+
+    SEIMessages sliList = getSeisByType(sn->nestedSeis, SEI::PayloadType::SUBPICTURE_LEVEL_INFO);
+    if (!sliList.empty())
     {
       AccessUnitNestedSliSeiInfo sliSeiInfo;
       sliSeiInfo.m_nestedSliPresent = true;
