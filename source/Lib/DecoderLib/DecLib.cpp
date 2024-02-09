@@ -930,17 +930,19 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
     SEIMessages scalableNestingSeis = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::SCALABLE_NESTING);
     for (auto seiIt : scalableNestingSeis)
     {
-      SEIScalableNesting* sn = dynamic_cast<SEIScalableNesting*>(seiIt);
+      auto sn = reinterpret_cast<SEIScalableNesting*>(seiIt);
       if (!sn->subpicId.empty())
       {
-        uint32_t    subpicId            = sn->subpicId.front();
+        const uint32_t subpicId = sn->subpicId.front();
+
         SEIMessages nestedPictureHashes = getSeisByType(sn->nestedSeis, SEI::PayloadType::DECODED_PICTURE_HASH);
         for (auto decPicHash : nestedPictureHashes)
         {
           const SubPic& subpic = pcSlice->getPPS()->getSubPic(subpicId);
           const UnitArea area = UnitArea(pcSlice->getSPS()->getChromaFormatIdc(), Area(subpic.getSubPicLeft(), subpic.getSubPicTop(), subpic.getSubPicWidthInLumaSample(), subpic.getSubPicHeightInLumaSample()));
           PelUnitBuf recoBuf = m_pcPic->cs->getRecoBuf(area);
-          m_numberOfChecksumErrorsDetected += calcAndPrintHashStatus(recoBuf, dynamic_cast<SEIDecodedPictureHash*>(decPicHash), pcSlice->getSPS()->getBitDepths(), msgl);
+          m_numberOfChecksumErrorsDetected += calcAndPrintHashStatus(
+            recoBuf, reinterpret_cast<SEIDecodedPictureHash*>(decPicHash), pcSlice->getSPS()->getBitDepths(), msgl);
         }
       }
     }

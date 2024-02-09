@@ -1070,7 +1070,8 @@ void SubpicMergeApp::generateMergedPic(ParameterSetManager &psManager, bool mixe
       const std::vector<uint16_t> subPicIds = { (uint16_t)subpicId };
       std::vector<int> targetOLS;
       std::vector<int> targetLayers = { (int)subpic.nalus[0].m_nuhLayerId };
-      auto                        sn           = new SEIScalableNesting();
+
+      auto sn = new SEIScalableNesting();
       seiEncoder.init(0, 0, 0);
       const uint16_t maxSubpicIdInPic =
         subPicIds.size() == 0 ? 0 : *std::max_element(subPicIds.begin(), subPicIds.end());

@@ -989,7 +989,8 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sn, const NalUnitTy
           lowestLayerId = std::min(lowestLayerId, vps->getLayerIdInOls(olsIdx, layerIdx));
         }
       }
-      CHECK(lowestLayerId!= nuhLayerId, "nuh_layer_id is not equal to the lowest layer among Olss that the scalable SEI applies");
+      CHECK(lowestLayerId != nuhLayerId,
+            "nuh_layer_id is not equal to the lowest layer among Olss that the scalable SEI applies");
     }
   }
   else
@@ -1038,7 +1039,7 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sn, const NalUnitTy
   }
 
   // read nested SEI messages
-  for (int32_t i = 0; i < numSeis; i++)
+  for (int i = 0; i < numSeis; i++)
   {
     SEIMessages tmpSEIs;
     const bool seiMessageRead = xReadSEImessage(tmpSEIs, nalUnitType, nuhLayerId, 0, vps, sps, m_nestedHrd, decodedMessageOutputStream);
@@ -1306,26 +1307,24 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sn, const Nal
 
   // above codes are exactly same as those in xParseSEIScalableNesting()
   // read and save nested SEI messages in binary form
-  for (int32_t i = 0; i < numSeis; i++)
+  for (int i = 0; i < numSeis; i++)
   {
-    int      payloadTypeVal = 0;
-    uint32_t val = 0;
+    uint32_t payloadTypeVal = 0;
     do
     {
-      sei_read_code(nullptr, 8, val, "payload_type");
-      payloadTypeVal += val;
-    } while (val==0xFF);
+      sei_read_code(nullptr, 8, symbol, "payload_type");
+      payloadTypeVal += symbol;
+    } while (symbol == 0xff);
 
-    auto payloadType = SEI::PayloadType(payloadTypeVal);
+    auto payloadType = static_cast<SEI::PayloadType>(payloadTypeVal);
 
     uint32_t payloadSize = 0;
     do
     {
-      sei_read_code(nullptr, 8, val, "payload_size");
-      payloadSize += val;
-    } while (val==0xFF);
+      sei_read_code(nullptr, 8, symbol, "payload_size");
+      payloadSize += symbol;
+    } while (symbol == 0xff);
 
-    uint8_t *payload = new uint8_t[payloadSize];
     int duiIdx = 0;
     if (SEI::PayloadType(payloadType) == SEI::PayloadType::DECODING_UNIT_INFO)
     {
@@ -1337,79 +1336,71 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting& sn, const Nal
       else
       {
         InputBitstream *bs = getBitstream();
-        InputBitstream bs2(*bs);
-        setBitstream(&bs2);
-        SEI *sei = nullptr;
-        sei = new SEIDecodingUnitInfo;
-        xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo &) *sei, payloadSize, *bp, nuhLayerId, nullptr);
-        duiIdx = ((SEIDecodingUnitInfo&) *sei).decodingUnitIdx;
-        delete sei;
+        InputBitstream  bsTmp(*bs);
+        setBitstream(&bsTmp);
+
+        SEIDecodingUnitInfo dui;
+        xParseSEIDecodingUnitInfo(dui, payloadSize, *bp, nuhLayerId, nullptr);
+        duiIdx = dui.decodingUnitIdx;
+
         setBitstream(bs);
       }
     }
-    const size_t numSubPics = std::max<size_t>(sn.subpicId.size(), 1);
+
+    auto payload = new uint8_t[payloadSize];
     for (uint32_t j = 0; j < payloadSize; j++)
     {
-      sei_read_code(nullptr, 8, val, "payload_content");
-      payload[j] = (uint8_t)val;
+      sei_read_code(nullptr, 8, symbol, "payload_content");
+      payload[j] = symbol;
     }
+
+    auto&&   subpicId    = !sn.subpicId.empty() ? sn.subpicId : std::vector<uint16_t>{ 0 };
+    uint8_t* payloadTemp = payload;
+
     if (!sn.olsIdx.empty())
     {
       for (uint32_t j = 0; j < sn.olsIdx.size(); j++)
       {
-        for (uint32_t k = 0; k < numSubPics; k++)
+        for (uint32_t k = 0; k < subpicId.size(); k++)
         {
-          if (j == 0 && k == 0)
+          if (j != 0 || k != 0)
           {
-              seiList->push_back(SeiPayload{ payloadType, sn.olsIdx[j], false, payloadSize, payload, duiIdx,
-                                             !sn.subpicId.empty() ? sn.subpicId[k] : 0 });
+            payloadTemp = new uint8_t[payloadSize];
+            std::copy_n(payload, payloadSize, payloadTemp);
           }
-          else
-          {
-            uint8_t *payloadTemp = new uint8_t[payloadSize];
-            memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-            seiList->push_back(SeiPayload{ payloadType, sn.olsIdx[j], false, payloadSize, payloadTemp, duiIdx,
-                                           !sn.subpicId.empty() ? sn.subpicId[k] : 0 });
-          }
+
+          seiList->push_back(
+            SeiPayload{ payloadType, sn.olsIdx[j], false, payloadSize, payloadTemp, duiIdx, subpicId[k] });
         }
       }
     }
     else if (sn.allLayersFlag())
     {
-      for (uint32_t k = 0; k < numSubPics; k++)
+      for (uint32_t k = 0; k < subpicId.size(); k++)
       {
-        if (k == 0)
+        if (k != 0)
         {
-          seiList->push_back(SeiPayload{ payloadType, nuhLayerId, true, payloadSize, payload, duiIdx,
-                                         !sn.subpicId.empty() ? sn.subpicId[k] : 0 });
+          payloadTemp = new uint8_t[payloadSize];
+          memcpy(payloadTemp, payload, payloadSize * sizeof(uint8_t));
         }
-        else
-        {
-          uint8_t *payloadTemp = new uint8_t[payloadSize];
-          memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-          seiList->push_back(
-            SeiPayload{ payloadType, nuhLayerId, true, payloadSize, payloadTemp, duiIdx, sn.subpicId[k] });
-        }
+
+        seiList->push_back(SeiPayload{ payloadType, nuhLayerId, true, payloadSize, payloadTemp, duiIdx, subpicId[k] });
       }
     }
     else
     {
       for (uint32_t j = 0; j < sn.layerId.size(); j++)
       {
-        for (uint32_t k = 0; k < numSubPics; k++)
+        for (uint32_t k = 0; k < subpicId.size(); k++)
         {
-          if (j == 0 && k == 0)
+          if (j != 0 || k != 0)
           {
-            seiList->push_back(SeiPayload{ payloadType, sn.layerId[j], false, payloadSize, payload, duiIdx,
-                                           !sn.subpicId.empty() ? sn.subpicId[k] : 0 });
+            payloadTemp = new uint8_t[payloadSize];
+            memcpy(payloadTemp, payload, payloadSize * sizeof(uint8_t));
           }
-          else
-          {
-            uint8_t *payloadTemp = new uint8_t[payloadSize];
-            memcpy(payloadTemp, payload, payloadSize *sizeof(uint8_t));
-            seiList->push_back(SeiPayload{ payloadType, sn.layerId[j], false, payloadSize, payloadTemp, duiIdx,
-                                           !sn.subpicId.empty() ? sn.subpicId[k] : 0 });
-          }
+
+          seiList->push_back(
+            SeiPayload{ payloadType, sn.layerId[j], false, payloadSize, payloadTemp, duiIdx, subpicId[k] });
         }
       }
     }
