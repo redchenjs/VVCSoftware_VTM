@@ -519,9 +519,9 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
           //In the case that the NNPFA activates a non-base filter, only consider it process when we have NNPFC that updates the base filter present
           if(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_baseFlag ||
             (!((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_baseFlag && xCheckNnpfcUpdatePresentSeiMsg( ((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id, nnpfcValues)) )
-            {
-              nnpfcProcessed = true;
-            }
+          {
+            nnpfcProcessed = true;
+          }
         }
       }
       CHECK(!nnpfcProcessed, "No NNPFC, no NNPFA")
@@ -595,13 +595,13 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
         pDecodedMessageOutputStream);
       nnpfcProcessed = false;
       CHECK(nnpfcValues.size() == 0, "At leaset one NNPFC SEI message should precede NNPFA")
-        for(int i=0; i<nnpfcValues.size(); ++i)
+      for (int i = 0; i < nnpfcValues.size(); ++i)
+      {
+        if (((SEINeuralNetworkPostFilterCharacteristics*) sei)->m_id == nnpfcValues[i])
         {
-          if(((SEINeuralNetworkPostFilterCharacteristics*)sei)->m_id == nnpfcValues[i])
-          {
-            nnpfcProcessed = true;
-          }
+          nnpfcProcessed = true;
         }
+      }
       CHECK(!nnpfcProcessed, "No NNPFC, no NNPFA")
       nnpfcProcessed = false;
       break;
@@ -809,15 +809,15 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     sei.m_posPayloadType[i] = val;
 #endif
 #if !JVET_AF0310_PO_NESTING
-    if (sei.m_posPrefixFlag[i])
-    {
-      sei_read_code(decodedMessageOutputStream, 8, val, "po_num_prefix_byte[i]");
-      sei.m_posPrefixByte[i].resize(val);
-      for (uint32_t j = 0; j < sei.m_posPrefixByte[i].size(); j++)
+      if (sei.m_posPrefixFlag[i])
       {
-        sei_read_code(decodedMessageOutputStream, 8, val, "po_prefix_byte[i][j]");
-        sei.m_posPrefixByte[i][j] = val;
-      }
+        sei_read_code(decodedMessageOutputStream, 8, val, "po_num_prefix_byte[i]");
+        sei.m_posPrefixByte[i].resize(val);
+        for (uint32_t j = 0; j < sei.m_posPrefixByte[i].size(); j++)
+        {
+          sei_read_code(decodedMessageOutputStream, 8, val, "po_prefix_byte[i][j]");
+          sei.m_posPrefixByte[i][j] = val;
+        }
       }
     }
 #endif
