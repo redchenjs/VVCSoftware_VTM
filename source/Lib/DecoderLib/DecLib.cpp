@@ -1623,7 +1623,7 @@ void DecLib::checkSeiContentInAccessUnit()
           int duiIdx = 0;
           if (payloadType == SEI::PayloadType::DECODING_UNIT_INFO)
           {
-            m_seiReader.getSEIDecodingUnitInfoDuiIdx(&bs, sei->m_nalUnitType, payloadLayerId, m_HRD, payloadSize, duiIdx);
+            m_seiReader.getSEIDecodingUnitInfoDuiIdx(&bs, payloadLayerId, m_HRD, payloadSize, duiIdx);
           }
           for (uint32_t i = 0; i < payloadSize; i++)
           {

@@ -58,7 +58,8 @@ public:
   void parseAndExtractSEIScalableNesting(InputBitstream *bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id,
                                          const VPS *vps, const SPS *sps, HRD &hrd, uint32_t payloadSize,
                                          std::vector<SeiPayload> *seiList);
-  void getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, HRD &hrd, uint32_t payloadSize, int& duiIdx);
+  void getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const uint32_t nuh_layer_id, HRD& hrd, uint32_t payloadSize,
+                                    int& duiIdx);
   bool nnpfcProcessed;
   std::vector<int> nnpfcValues;
   

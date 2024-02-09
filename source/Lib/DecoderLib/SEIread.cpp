@@ -198,22 +198,20 @@ void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream *bs, const NalU
   }
 }
 
-void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitType nalUnitType, const uint32_t nuh_layer_id, HRD &hrd, uint32_t payloadSize, int& duiIdx)
+void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const uint32_t nuhLayerId, HRD& hrd,
+                                             uint32_t payloadSize, int& duiIdx)
 {
   const SEIBufferingPeriod* bp = hrd.getBufferingPeriodSEI();
-  if (!bp)
+  if (bp != nullptr)
   {
-    // msg( WARNING, "Warning: Found Decoding unit information SEI message, but no active buffering period is available. Ignoring.");
-  }
-  else
-  {
-    InputBitstream bs2(*bs);
-    setBitstream(&bs2);
-    SEI *sei = nullptr;
-    sei = new SEIDecodingUnitInfo;
-    xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo &) *sei, payloadSize, *bp, nuh_layer_id, nullptr);
-    duiIdx = ((SEIDecodingUnitInfo&) *sei).decodingUnitIdx;
-    delete sei;
+    InputBitstream* bs = getBitstream();
+    InputBitstream  bsTmp(*bs);
+    setBitstream(&bsTmp);
+
+    SEIDecodingUnitInfo dui;
+    xParseSEIDecodingUnitInfo(dui, payloadSize, *bp, nuhLayerId, nullptr);
+    duiIdx = dui.decodingUnitIdx;
+
     setBitstream(bs);
   }
 }
@@ -1096,24 +1094,7 @@ void SEIReader::xParseSEIScalableNesting(SEIScalableNesting& sn, const NalUnitTy
       int duiIdx = 0;
       if (SEI::PayloadType(payloadType) == SEI::PayloadType::DECODING_UNIT_INFO)
       {
-        const SEIBufferingPeriod* bp = hrd.getBufferingPeriodSEI();
-        if (bp == nullptr)
-        {
-          // msg( WARNING, "Warning: Found Decoding unit information SEI message, but no active buffering period is
-          // available. Ignoring.");
-        }
-        else
-        {
-          InputBitstream* bs = getBitstream();
-          InputBitstream  bsTmp(*bs);
-          setBitstream(&bsTmp);
-
-          SEIDecodingUnitInfo dui;
-          xParseSEIDecodingUnitInfo(dui, payloadSize, *bp, nuhLayerId, nullptr);
-          duiIdx = dui.decodingUnitIdx;
-
-          setBitstream(bs);
-        }
+        getSEIDecodingUnitInfoDuiIdx(getBitstream(), nuhLayerId, hrd, payloadSize, duiIdx);
       }
 
       auto payload = new uint8_t[payloadSize];
