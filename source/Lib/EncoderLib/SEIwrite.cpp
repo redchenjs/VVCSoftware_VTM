@@ -317,33 +317,33 @@ void SEIWriter::xWriteSEIDecodedPictureHash(const SEIDecodedPictureHash& sei)
   }
 }
 
-
-void SEIWriter::xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei, const SEIBufferingPeriod& bp, const uint32_t temporalId)
+void SEIWriter::xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& dui, const SEIBufferingPeriod& bp,
+                                          const uint32_t temporalId)
 {
-  xWriteUvlc(sei.m_decodingUnitIdx, "dui_decoding_unit_idx");
+  xWriteUvlc(dui.decodingUnitIdx, "dui_decoding_unit_idx");
   if (!bp.duCpbParamsInPicTimingSei)
   {
     for (int i = temporalId; i < bp.maxSublayers; i++)
     {
       if (i < bp.maxSublayers - 1)
       {
-        xWriteFlag(sei.m_duiSubLayerDelaysPresentFlag[i], "dui_sublayer_delays_present_flag[i]");
+        xWriteFlag(dui.hasSublayerDelays[i] ? 1 : 0, "dui_sublayer_delays_present_flag[i]");
       }
-      if( sei.m_duiSubLayerDelaysPresentFlag[i] )
+      if (dui.hasSublayerDelays[i])
       {
-        xWriteCode(sei.m_duSptCpbRemovalDelayIncrement[i], bp.duCpbRemovalDelayIncrementLength,
+        xWriteCode(dui.duCpbRemovalDelayIncrement[i], bp.duCpbRemovalDelayIncrementLength,
                    "dui_du_cpb_removal_delay_increment[i]");
       }
     }
   }
   if (!bp.duDpbParamsInPicTimingSei)
   {
-    xWriteFlag(sei.m_dpbOutputDuDelayPresentFlag, "dui_dpb_output_du_delay_present_flag");
+    xWriteFlag(dui.hasDpbOutputDuDelay, "dui_dpb_output_du_delay_present_flag");
   }
 
-  if(sei.m_dpbOutputDuDelayPresentFlag)
+  if (dui.hasDpbOutputDuDelay)
   {
-    xWriteCode(sei.m_picSptDpbOutputDuDelay, bp.dpbOutputDelayDuLength, "dui_dpb_output_du_delay");
+    xWriteCode(dui.dpbOutputDuDelay, bp.dpbOutputDelayDuLength, "dui_dpb_output_du_delay");
   }
 }
 
@@ -463,7 +463,7 @@ void SEIWriter::xWriteSEIPictureTiming(const SEIPictureTiming& pt, const SEIBuff
              "pt_cpb_removal_delay_minus1[bp_max_sub_layers_minus1]");
   for (int i = temporalId; i < bp.maxSublayers - 1; i++)
   {
-    xWriteFlag(pt.hasSublayerDelays[i], "pt_sublayer_delays_present_flag[i]");
+    xWriteFlag(pt.hasSublayerDelays[i] ? 1 : 0, "pt_sublayer_delays_present_flag[i]");
     if (pt.hasSublayerDelays[i])
     {
       if (bp.hasCpbRemovalDelayDeltas())

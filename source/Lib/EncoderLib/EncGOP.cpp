@@ -662,7 +662,7 @@ void EncGOP::xWriteLeadingSEIMessages (SEIMessages& seiMessages, SEIMessages& du
   // update Timing and DU info SEI
   xUpdateDuData(testAU, duData);
   xUpdateTimingSEI(pt, duData, sps);
-  xUpdateDuInfoSEI(duInfoSeiMessages, pt, sps->getMaxTLayers());
+  xUpdateDuInfoSEI(duInfoSeiMessages, pt);
   // actual writing
   xWriteLeadingSEIOrdered(seiMessages, duInfoSeiMessages, accessUnit, temporalId, false);
 
@@ -1336,15 +1336,12 @@ void EncGOP::xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SE
     {
       for (int i = 0; i < pt->getNumDecodingUnits(); i++)
       {
-        SEIDecodingUnitInfo *duInfoSEI = new SEIDecodingUnitInfo();
-        duInfoSEI->m_decodingUnitIdx = i;
-        for( int j = temporalId; j <= maxNumSubLayers; j++ )
-        {
-          duInfoSEI->m_duSptCpbRemovalDelayIncrement[j] = pt->duCpbRemovalDelayIncrement[i][j];
-        }
-        duInfoSEI->m_dpbOutputDuDelayPresentFlag = false;
+        SEIDecodingUnitInfo* dui        = new SEIDecodingUnitInfo();
+        dui->decodingUnitIdx            = i;
+        dui->duCpbRemovalDelayIncrement = pt->duCpbRemovalDelayIncrement[i];
+        dui->hasDpbOutputDuDelay        = false;
 
-        duInfoSeiMessages.push_back(duInfoSEI);
+        duInfoSeiMessages.push_back(dui);
       }
     }
 
@@ -1477,25 +1474,21 @@ void EncGOP::xUpdateTimingSEI(SEIPictureTiming* pt, std::deque<DUData>& duData, 
   }
 }
 
-void EncGOP::xUpdateDuInfoSEI(SEIMessages& duInfoSeiMessages, SEIPictureTiming* pt, int maxSublayers)
+void EncGOP::xUpdateDuInfoSEI(SEIMessages& duInfoSeiMessages, SEIPictureTiming* pt)
 {
-  if (duInfoSeiMessages.empty() || (pt == nullptr))
+  if (pt == nullptr)
   {
     return;
   }
 
-  int i=0;
-
-  for (SEIMessages::iterator du = duInfoSeiMessages.begin(); du!= duInfoSeiMessages.end(); du++)
+  int i = 0;
+  for (auto sei: duInfoSeiMessages)
   {
-    SEIDecodingUnitInfo *duInfoSEI = (SEIDecodingUnitInfo*) (*du);
-    duInfoSEI->m_decodingUnitIdx = i;
-    for (int j = 0; j < maxSublayers; j++)
-    {
-      duInfoSEI->m_duiSubLayerDelaysPresentFlag[j]  = pt->hasSublayerDelays[j];
-      duInfoSEI->m_duSptCpbRemovalDelayIncrement[j] = pt->duCpbRemovalDelayIncrement[i][j];
-    }
-    duInfoSEI->m_dpbOutputDuDelayPresentFlag = false;
+    SEIDecodingUnitInfo* dui        = (SEIDecodingUnitInfo*) sei;
+    dui->decodingUnitIdx            = i;
+    dui->hasSublayerDelays          = pt->hasSublayerDelays;
+    dui->duCpbRemovalDelayIncrement = pt->duCpbRemovalDelayIncrement[i];
+    dui->hasDpbOutputDuDelay        = false;
     i++;
   }
 }

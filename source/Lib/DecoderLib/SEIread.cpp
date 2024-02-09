@@ -215,7 +215,7 @@ void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const NalUnitTy
     SEI *sei = nullptr;
     sei = new SEIDecodingUnitInfo;
     xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo &) *sei, payloadSize, *bp, nuh_layer_id, nullptr);
-    duiIdx = ((SEIDecodingUnitInfo&)*sei).m_decodingUnitIdx;
+    duiIdx = ((SEIDecodingUnitInfo&) *sei).decodingUnitIdx;
     delete sei;
     setBitstream(bs);
   }
@@ -1327,7 +1327,7 @@ void SEIReader::xParseSEIScalableNestingBinary(SEIScalableNesting &sei, const Na
         SEI *sei = nullptr;
         sei = new SEIDecodingUnitInfo;
         xParseSEIDecodingUnitInfo((SEIDecodingUnitInfo &) *sei, payloadSize, *bp, nuhLayerId, nullptr);
-        duiIdx = ((SEIDecodingUnitInfo&)*sei).m_decodingUnitIdx;
+        duiIdx = ((SEIDecodingUnitInfo&) *sei).decodingUnitIdx;
         delete sei;
         setBitstream(bs);
       }
@@ -1491,12 +1491,13 @@ void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sei, 
   CHECK(containBPorPTorDUIorSLI && containNoBPorPTorDUIorSLI, "When a scalable nesting SEI message contains a BP, PT, DUI, or SLI SEI message, the scalable nesting SEI message shall not contain any other SEI message with payloadType not equal to BP, PT, DUI, or SLI");
 }
 
-void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& sei, uint32_t payloadSize, const SEIBufferingPeriod& bp, const uint32_t temporalId, std::ostream *pDecodedMessageOutputStream)
+void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& dui, uint32_t payloadSize, const SEIBufferingPeriod& bp,
+                                          const uint32_t temporalId, std::ostream* pDecodedMessageOutputStream)
 {
   uint32_t val;
-  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  output_sei_message_header(dui, pDecodedMessageOutputStream, payloadSize);
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dui_decoding_unit_idx");
-  sei.m_decodingUnitIdx = val;
+  dui.decodingUnitIdx = val;
 
   if (!bp.duCpbParamsInPicTimingSei)
   {
@@ -1505,21 +1506,21 @@ void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& sei, uint32_t pay
       if (i < bp.maxSublayers - 1)
       {
         sei_read_flag(pDecodedMessageOutputStream, val, "dui_sublayer_delays_present_flag[i]");
-        sei.m_duiSubLayerDelaysPresentFlag[i] = val;
+        dui.hasSublayerDelays[i] = val != 0;
       }
       else
       {
-        sei.m_duiSubLayerDelaysPresentFlag[i] = 1;
+        dui.hasSublayerDelays[i] = true;
       }
-      if( sei.m_duiSubLayerDelaysPresentFlag[i] )
+      if (dui.hasSublayerDelays[i])
       {
         sei_read_code(pDecodedMessageOutputStream, bp.duCpbRemovalDelayIncrementLength, val,
                       "dui_du_cpb_removal_delay_increment[i]");
-        sei.m_duSptCpbRemovalDelayIncrement[i] = val;
+        dui.duCpbRemovalDelayIncrement[i] = val;
       }
       else
       {
-        sei.m_duSptCpbRemovalDelayIncrement[i] = 0;
+        dui.duCpbRemovalDelayIncrement[i] = 0;
       }
     }
   }
@@ -1527,25 +1528,25 @@ void SEIReader::xParseSEIDecodingUnitInfo(SEIDecodingUnitInfo& sei, uint32_t pay
   {
     for (int i = temporalId; i < bp.maxSublayers - 1; i++)
     {
-      sei.m_duSptCpbRemovalDelayIncrement[i] = 0;
+      dui.duCpbRemovalDelayIncrement[i] = 0;
     }
   }
 
   if (!bp.duDpbParamsInPicTimingSei)
   {
     sei_read_flag(pDecodedMessageOutputStream, val, "dui_dpb_output_du_delay_present_flag");
-    sei.m_dpbOutputDuDelayPresentFlag = (val != 0);
+    dui.hasDpbOutputDuDelay = (val != 0);
   }
   else
   {
-    sei.m_dpbOutputDuDelayPresentFlag = false;
+    dui.hasDpbOutputDuDelay = false;
   }
-  if(sei.m_dpbOutputDuDelayPresentFlag)
+  if (dui.hasDpbOutputDuDelay)
   {
     sei_read_code(pDecodedMessageOutputStream, bp.dpbOutputDelayDuLength, val, "dui_dpb_output_du_delay");
-    CHECK(sei.m_picSptDpbOutputDuDelay != -1 && sei.m_picSptDpbOutputDuDelay != val,
-          "When signaled m_picSptDpbOutputDuDelay value must be same for DUs");
-    sei.m_picSptDpbOutputDuDelay = val;
+    CHECK(dui.dpbOutputDuDelay != -1 && dui.dpbOutputDuDelay != val,
+          "When signaled dpbOutputDuDelay value must be same for DUs");
+    dui.dpbOutputDuDelay = val;
   }
 }
 
