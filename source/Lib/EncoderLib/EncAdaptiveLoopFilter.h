@@ -249,6 +249,11 @@ struct AlfCovariance
   {
     return calculateError(clip, coeff, numCoeff);
   }
+
+  void calcInitErrorForCoeffs(double *cAc, double *cA, double *bc, const AlfClipIdx *clip, const AlfCoeff *coeff, const int numCoeff, const int fractionalBits) const;
+  void updateErrorForCoeffsDelta(double *cAc, double *cA, double *bc, const AlfClipIdx *clip, const AlfCoeff *coeff, const int numCoeff, double delta, int modInd) const;
+  double calcErrorForCoeffsDelta(double cAc, double *cA, double bc, const AlfClipIdx *clip, const AlfCoeff *coeff, const int numCoeff, double delta, int modInd) const;
+
   double calculateError(const AlfClipIdx* clip, const double* coeff, const int numCoeff) const;
   double calcErrorForCoeffs(const AlfClipIdx* clip, const AlfCoeff* coeff, const int numCoeff,
                             const int fractionalBits) const;
