@@ -252,7 +252,7 @@ double AlfCovariance::optimizeFilter(const AlfFilterShape& alfShape, AlfClipIdx*
 
 void AlfCovariance::calcInitErrorForCoeffs(double *cAc, double *cA, double *bc,  const AlfClipIdx *clip, const AlfCoeff *coeff, const int numCoeff, const int fractionalBits ) const
 {
-  double factor = (double) (1 << fractionalBits );
+  const double factor = 1.0 / (1 << fractionalBits);
 
   *cAc = 0;
   *bc = 0;
@@ -269,20 +269,18 @@ void AlfCovariance::calcInitErrorForCoeffs(double *cAc, double *cA, double *bc, 
     *bc += 2*coeff[i] * y(clip[i],i);
   }
 
-  *cAc /= factor * factor;
+  *cAc *= factor * factor;
   for (ptrdiff_t i = 0; i < numCoeff; i++)   // diagonal
   {
-    cA[i] /= factor;
+    cA[i] *= factor;
   }
 
-  *bc /= factor;
+  *bc *= factor;
 }
 void AlfCovariance::updateErrorForCoeffsDelta(double *cAc, double *cA, double *bc,  const AlfClipIdx *clip, const AlfCoeff *coeff, const int numCoeff, double cDelta, int modInd  ) const
 {
-  int i;
-
   *cAc = (*cAc) + cDelta * cA[modInd] + cDelta * cDelta * E( clip[modInd], clip[modInd], modInd, modInd);
-  for (i = 0; i < numCoeff; i++) {
+  for (int i = 0; i < numCoeff; i++) {
     cA[i] += 2 * cDelta * E( clip[modInd], clip[i], modInd, i);
   }
   (*bc) = (*bc) + 2 * y(clip[modInd], modInd) * cDelta;
