@@ -3015,12 +3015,11 @@ void EncCu::addMmvdCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& 
 {
   pu->cu->mmvdSkip = true;
   pu->regularMergeFlag = true;
-  const int tempNum = (mergeCtx.numValidMergeCand > 1) ? MmvdIdx::ADD_NUM : MmvdIdx::ADD_NUM >> 1;
-  for (int mmvdMergeCand = 0; mmvdMergeCand < tempNum; mmvdMergeCand++)
+  for (int mmvdMergeCand = 0; mmvdMergeCand < MmvdIdx::ADD_NUM; mmvdMergeCand++)
   {
     MmvdIdx mmvdIdx;
     mmvdIdx.val = mmvdMergeCand;
-    if (mmvdIdx.pos.step >= m_pcEncCfg->getMmvdDisNum())
+    if (mmvdIdx.pos.step >= m_pcEncCfg->getMmvdDisNum() || mmvdIdx.pos.baseIdx >= mergeCtx.numValidMergeCand)
     {
       continue;
     }

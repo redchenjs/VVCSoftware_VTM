@@ -2048,6 +2048,7 @@ void CABACWriter::merge_idx( const PredictionUnit& pu )
     {
       numCandminus1 = int(pu.cs->sps->getMaxNumMergeCand()) - 1;
     }
+    CHECK(pu.mergeIdx > numCandminus1, "mergeIdx out of range");
     if (numCandminus1 > 0)
     {
       if (pu.mergeIdx == 0)
@@ -2078,10 +2079,11 @@ void CABACWriter::mmvd_merge_idx(const PredictionUnit& pu)
   const int mvdStep     = pu.mmvdMergeIdx.pos.step;
   const int mvdPosition = pu.mmvdMergeIdx.pos.position;
 
+  CHECK(mvdBaseIdx >= std::min<int>(pu.cs->sps->getMaxNumMergeCand(), MmvdIdx::BASE_MV_NUM), "MMVD base index out of range");
+
   if (pu.cs->sps->getMaxNumMergeCand() > 1)
   {
     static_assert(MmvdIdx::BASE_MV_NUM == 2, "");
-    assert(mvdBaseIdx < 2);
     m_binEncoder.encodeBin(mvdBaseIdx, Ctx::MmvdMergeIdx());
   }
   DTRACE(g_trace_ctx, D_SYNTAX, "base_mvp_idx() base_mvp_idx=%d\n", mvdBaseIdx);
