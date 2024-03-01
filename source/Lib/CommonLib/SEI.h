@@ -1304,6 +1304,9 @@ public:
     , m_numKmacOperationsIdc(0)
     , m_totalKilobyteSize(0)
     , m_numberInputDecodedPicturesMinus1(0)
+#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
+    , m_numberExtrapolatedPicturesMinus1(0)
+#endif
     , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
   {}
@@ -1376,6 +1379,9 @@ public:
   uint32_t       m_totalKilobyteSize;
   uint32_t       m_numberInputDecodedPicturesMinus1;
   std::vector<uint32_t> m_numberInterpolatedPictures;
+#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
+  uint32_t       m_numberExtrapolatedPicturesMinus1;
+#endif
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
   uint32_t       m_numInpPicsInOutputTensor;

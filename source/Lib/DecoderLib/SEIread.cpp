@@ -2930,9 +2930,13 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
   uint32_t val;
 
-    sei_read_code(pDecodedMessageOutputStream, 16, val, "nnpfc_purpose");
-    sei.m_purpose = val;
-    CHECK(sei.m_purpose >= 64 && sei.m_purpose <= 65535, "Reserved nnpfc_purpose value");
+  sei_read_code(pDecodedMessageOutputStream, 16, val, "nnpfc_purpose");
+  sei.m_purpose = val;
+#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
+  CHECK(sei.m_purpose >= 128 && sei.m_purpose <= 65535, "Reserved nnpfc_purpose value");
+#else
+  CHECK(sei.m_purpose >= 64 && sei.m_purpose <= 65535, "Reserved nnpfc_purpose value");
+#endif
 
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfc_id" );
   sei.m_id = val;
@@ -3095,8 +3099,15 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         }
       }
       CHECK(!allZeroFlag, "At least one value of nnpfc_interpolated_pics[i] shall be greater than 0");
-
     }
+
+#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
+    if ((sei.m_purpose & NNPC_PurposeType::TEMPORAL_EXTRAPOLATION) != 0)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_extrapolated_pics_minus1");
+      sei.m_numberExtrapolatedPicturesMinus1 = val;
+    }
+#endif
 
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");
     sei.m_componentLastFlag = val;
