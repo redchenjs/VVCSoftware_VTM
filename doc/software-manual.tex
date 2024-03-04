@@ -5977,6 +5977,22 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{false} &
   Specifies the nnpfc_complexity_present_flag of the \emph{i}-th neural network post-filter.
   \\
+  \Option{SEINNPFCMetadataExtensionNumBits\emph{i}} &
+  \Default{0} &
+  Specifies the length, in bits, of nnpfc_reserved_metadata_extension of the \emph{i}-th neural network post-filter.
+  \\
+  \Option{SEINNPFCAapplicationPurposeTagUriPresentFlag\emph{i}} &
+  \Default{false} &
+  Specifies the nnpfc_application_purpose_tag_uri_present_flag syntax element for the \emph{i}-th neural network post-filter.
+  \par
+    When true (non-zero) specifies the presence of the nnpfc_application_purpose_tag_uri syntax element in the NNPFC SEI message.
+  \par
+    When false specifies the absence of the nnpfc_application_purpose_tag_uri syntax element in the NNPFC SEI message.
+  \\
+  \Option{SEINNPFCApplicationPurposeTagUri\emph{i}} &
+  \Default{""} &
+  specifies a tag URI with syntax and semantics as specified in IETF RFC 4151 identifying the application determined purpose of the NNPF, when nnpfc_purpose is equal to 0 of the \emph{i}-th neural network post-filter.
+  \\
   \Option{SEINNPFCParameterTypeIdc\emph{i}} &
   \Default{0} &
   Specifies the nnpfc_parameter_type_idc of the \emph{i}-th neural network post-filter.
