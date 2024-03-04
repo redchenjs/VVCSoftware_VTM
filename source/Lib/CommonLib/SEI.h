@@ -612,15 +612,15 @@ enum class HrdType
   NUM
 };
 
+struct CpbEntry
+{
+  uint32_t delay;
+  uint32_t offset;
+};
+
 class SEIBufferingPeriod : public SEI
 {
 public:
-  struct CpbEntry
-  {
-    uint32_t delay;
-    uint32_t offset;
-  };
-
   PayloadType payloadType() const { return PayloadType::BUFFERING_PERIOD; }
   void        copyTo(SEIBufferingPeriod& target) const;
 
@@ -681,49 +681,47 @@ class SEIPictureTiming : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::PICTURE_TIMING; }
-  void copyTo (SEIPictureTiming& target) const;
 
   SEIPictureTiming()
-  : m_picDpbOutputDelay (0)
-  , m_picDpbOutputDuDelay (0)
-  , m_numDecodingUnitsMinus1 (0)
-  , m_duCommonCpbRemovalDelayFlag (false)
-  , m_cpbAltTimingInfoPresentFlag (false)
-  , m_ptDisplayElementalPeriodsMinus1(0)
   {
-    ::memset(m_ptSubLayerDelaysPresentFlag, 0, sizeof(m_ptSubLayerDelaysPresentFlag));
-    ::memset(m_duCommonCpbRemovalDelayMinus1, 0, sizeof(m_duCommonCpbRemovalDelayMinus1));
-    ::memset(m_cpbRemovalDelayDeltaEnabledFlag, 0, sizeof(m_cpbRemovalDelayDeltaEnabledFlag));
-    ::memset(m_cpbRemovalDelayDeltaIdx, 0, sizeof(m_cpbRemovalDelayDeltaIdx));
-    ::memset(m_auCpbRemovalDelay, 0, sizeof(m_auCpbRemovalDelay));
+    hasSublayerDelays.fill(false);
+    cpbRemovalDelayDeltaEnabled.fill(false);
+    duCommonCpbRemovalDelayIncrement.fill(0);
+    cpbRemovalDelayDeltaIdx.fill(0);
+    cpbRemovalDelay.fill(0);
   }
   SEIPictureTiming(const SEIPictureTiming& sei);
-  virtual ~SEIPictureTiming()
+  virtual ~SEIPictureTiming() {}
+
+  std::array<bool, MAX_TLAYER> hasSublayerDelays;
+  std::array<bool, MAX_TLAYER> cpbRemovalDelayDeltaEnabled;
+
+  bool duCommonCpbRemovalDelay      = false;
+  bool hasAltTimingInfo             = false;
+  bool delayForConcatenationEnsured = false;
+
+  std::array<uint32_t, MAX_TLAYER> cpbRemovalDelayDeltaIdx;
+  std::array<uint32_t, MAX_TLAYER> cpbRemovalDelay;
+  std::array<uint32_t, MAX_TLAYER> duCommonCpbRemovalDelayIncrement;
+
+  uint32_t dpbOutputDelay          = 0;
+  uint32_t dpbOutputDuDelay        = 0;
+  uint32_t displayElementalPeriods = 0;
+
+  std::vector<uint32_t>                         numNalusInDu;
+  std::vector<std::array<uint32_t, MAX_TLAYER>> duCpbRemovalDelayIncrement;
+
+  void setNumDecodingUnits(const size_t n)
   {
+    numNalusInDu.resize(n);
+    duCpbRemovalDelayIncrement.resize(n);
   }
+  uint32_t getNumDecodingUnits() const { return static_cast<uint32_t>(numNalusInDu.size()); }
 
+  EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialAltCpbRemovalDelta;
 
-  bool  m_ptSubLayerDelaysPresentFlag[MAX_TLAYER];
-  bool  m_cpbRemovalDelayDeltaEnabledFlag[MAX_TLAYER];
-  uint32_t  m_cpbRemovalDelayDeltaIdx[MAX_TLAYER];
-  uint32_t  m_auCpbRemovalDelay[MAX_TLAYER];
-  uint32_t  m_picDpbOutputDelay;
-  uint32_t  m_picDpbOutputDuDelay;
-  uint32_t  m_numDecodingUnitsMinus1;
-  bool  m_duCommonCpbRemovalDelayFlag;
-  uint32_t  m_duCommonCpbRemovalDelayMinus1[MAX_TLAYER];
-  std::vector<uint32_t> m_numNalusInDuMinus1;
-  std::vector<uint32_t> m_duCpbRemovalDelayMinus1;
-  bool     m_cpbAltTimingInfoPresentFlag;
-  std::vector<std::vector<uint32_t>> m_nalCpbAltInitialRemovalDelayDelta;
-  std::vector<std::vector<uint32_t>> m_nalCpbAltInitialRemovalOffsetDelta;
-  std::vector<uint32_t>              m_nalCpbDelayOffset;
-  std::vector<uint32_t>              m_nalDpbDelayOffset;
-  std::vector<std::vector<uint32_t>> m_vclCpbAltInitialRemovalDelayDelta;
-  std::vector<std::vector<uint32_t>> m_vclCpbAltInitialRemovalOffsetDelta;
-  std::vector<uint32_t>              m_vclCpbDelayOffset;
-  std::vector<uint32_t>              m_vclDpbDelayOffset;
-  int m_ptDisplayElementalPeriodsMinus1;
+  EnumArray<std::array<uint32_t, MAX_TLAYER>, HrdType> cpbDelayOffset;
+  EnumArray<std::array<uint32_t, MAX_TLAYER>, HrdType> dpbDelayOffset;
 };
 
 class SEIDecodingUnitInfo : public SEI
@@ -732,20 +730,20 @@ public:
   PayloadType payloadType() const { return PayloadType::DECODING_UNIT_INFO; }
 
   SEIDecodingUnitInfo()
-    : m_decodingUnitIdx(0)
-    , m_dpbOutputDuDelayPresentFlag(false)
-    , m_picSptDpbOutputDuDelay(-1)
   {
-    ::memset(m_duiSubLayerDelaysPresentFlag, 0, sizeof(m_duiSubLayerDelaysPresentFlag));
-    ::memset(m_duSptCpbRemovalDelayIncrement, 0, sizeof(m_duSptCpbRemovalDelayIncrement));
+    hasSublayerDelays.fill(false);
+    duCpbRemovalDelayIncrement.fill(0);
   }
   SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei);
   virtual ~SEIDecodingUnitInfo() {}
-  int m_decodingUnitIdx;
-  bool m_duiSubLayerDelaysPresentFlag[MAX_TLAYER];
-  int m_duSptCpbRemovalDelayIncrement[MAX_TLAYER];
-  bool m_dpbOutputDuDelayPresentFlag;
-  int m_picSptDpbOutputDuDelay;
+
+  bool hasDpbOutputDuDelay = false;
+
+  int decodingUnitIdx  = 0;
+  int dpbOutputDuDelay = -1;
+
+  std::array<bool, MAX_TLAYER> hasSublayerDelays;
+  std::array<uint32_t, MAX_TLAYER> duCpbRemovalDelayIncrement;
 };
 
 

@@ -98,31 +98,6 @@ void deleteSEIs (SEIMessages &seiList)
 
 void SEIBufferingPeriod::copyTo(SEIBufferingPeriod& target) const { target = *this; }
 
-void SEIPictureTiming::copyTo (SEIPictureTiming& target) const
-{
-  ::memcpy(target.m_auCpbRemovalDelay, m_auCpbRemovalDelay, sizeof(m_auCpbRemovalDelay));
-  ::memcpy(target.m_ptSubLayerDelaysPresentFlag, m_ptSubLayerDelaysPresentFlag, sizeof(m_ptSubLayerDelaysPresentFlag));
-  ::memcpy(target.m_duCommonCpbRemovalDelayMinus1, m_duCommonCpbRemovalDelayMinus1, sizeof(m_duCommonCpbRemovalDelayMinus1));
-  ::memcpy(target.m_cpbRemovalDelayDeltaEnabledFlag, m_cpbRemovalDelayDeltaEnabledFlag, sizeof(m_cpbRemovalDelayDeltaEnabledFlag));
-  ::memcpy(target.m_cpbRemovalDelayDeltaIdx, m_cpbRemovalDelayDeltaIdx, sizeof(m_cpbRemovalDelayDeltaIdx));
-  target.m_picDpbOutputDelay = m_picDpbOutputDelay;
-  target.m_picDpbOutputDuDelay = m_picDpbOutputDuDelay;
-  target.m_numDecodingUnitsMinus1 = m_numDecodingUnitsMinus1;
-  target.m_duCommonCpbRemovalDelayFlag = m_duCommonCpbRemovalDelayFlag;
-
-  target.m_numNalusInDuMinus1 = m_numNalusInDuMinus1;
-  target.m_duCpbRemovalDelayMinus1 = m_duCpbRemovalDelayMinus1;
-  target.m_cpbAltTimingInfoPresentFlag = m_cpbAltTimingInfoPresentFlag;
-  target.m_nalCpbAltInitialRemovalDelayDelta  = m_nalCpbAltInitialRemovalDelayDelta;
-  target.m_nalCpbAltInitialRemovalOffsetDelta = m_nalCpbAltInitialRemovalOffsetDelta;
-  target.m_nalCpbDelayOffset = m_nalCpbDelayOffset;
-  target.m_nalCpbDelayOffset = m_nalCpbDelayOffset;
-  target.m_vclCpbAltInitialRemovalDelayDelta  = m_vclCpbAltInitialRemovalDelayDelta;
-  target.m_vclCpbAltInitialRemovalOffsetDelta = m_vclCpbAltInitialRemovalOffsetDelta;
-  target.m_vclCpbDelayOffset = m_vclCpbDelayOffset;
-  target.m_vclCpbDelayOffset = m_vclCpbDelayOffset;
-}
-
 bool SEIScalabilityDimensionInfo::isSDISameContent(SEIScalabilityDimensionInfo* sdiB)
 {
   if (!sdiB)
@@ -762,39 +737,9 @@ SEIDecodedPictureHash::SEIDecodedPictureHash(const SEIDecodedPictureHash& sei)
 
 SEIBufferingPeriod::SEIBufferingPeriod(const SEIBufferingPeriod& sei) = default;
 
-SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
-{
-  std::memcpy(m_ptSubLayerDelaysPresentFlag, sei.m_ptSubLayerDelaysPresentFlag, sizeof(sei.m_ptSubLayerDelaysPresentFlag));
-  std::memcpy(m_cpbRemovalDelayDeltaEnabledFlag, sei.m_cpbRemovalDelayDeltaEnabledFlag, sizeof(sei.m_cpbRemovalDelayDeltaEnabledFlag));
-  std::memcpy(m_cpbRemovalDelayDeltaIdx, sei.m_cpbRemovalDelayDeltaIdx, sizeof(sei.m_cpbRemovalDelayDeltaIdx));
-  std::memcpy(m_auCpbRemovalDelay, sei.m_auCpbRemovalDelay, sizeof(sei.m_auCpbRemovalDelay));
-  m_picDpbOutputDelay = sei.m_picDpbOutputDelay;
-  m_picDpbOutputDuDelay = sei.m_picDpbOutputDuDelay;
-  m_numDecodingUnitsMinus1 = sei.m_numDecodingUnitsMinus1;
-  m_duCommonCpbRemovalDelayFlag = sei.m_duCommonCpbRemovalDelayFlag;
-  std::memcpy(m_duCommonCpbRemovalDelayMinus1, sei.m_duCommonCpbRemovalDelayMinus1, sizeof(sei.m_duCommonCpbRemovalDelayMinus1));
-  m_numNalusInDuMinus1 = sei.m_numNalusInDuMinus1;
-  m_duCpbRemovalDelayMinus1 = sei.m_duCpbRemovalDelayMinus1;
-  m_cpbAltTimingInfoPresentFlag = sei.m_cpbAltTimingInfoPresentFlag;
-  m_nalCpbAltInitialRemovalDelayDelta = sei.m_nalCpbAltInitialRemovalDelayDelta;
-  m_nalCpbAltInitialRemovalOffsetDelta = sei.m_nalCpbAltInitialRemovalOffsetDelta;
-  m_nalCpbDelayOffset = sei.m_nalCpbDelayOffset;
-  m_nalDpbDelayOffset = sei.m_nalDpbDelayOffset;
-  m_vclCpbAltInitialRemovalDelayDelta = sei.m_vclCpbAltInitialRemovalDelayDelta;
-  m_vclCpbAltInitialRemovalOffsetDelta = sei.m_vclCpbAltInitialRemovalOffsetDelta;
-  m_vclCpbDelayOffset = sei.m_vclCpbDelayOffset;
-  m_vclDpbDelayOffset = sei.m_vclDpbDelayOffset;
-  m_ptDisplayElementalPeriodsMinus1 = sei.m_ptDisplayElementalPeriodsMinus1;
-}
+SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei) = default;
 
-SEIDecodingUnitInfo::SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei)
-{
-  m_decodingUnitIdx = sei.m_decodingUnitIdx;
-  std::memcpy(m_duiSubLayerDelaysPresentFlag, sei.m_duiSubLayerDelaysPresentFlag, sizeof(sei.m_duiSubLayerDelaysPresentFlag));
-  std::memcpy(m_duSptCpbRemovalDelayIncrement, sei.m_duSptCpbRemovalDelayIncrement, sizeof(sei.m_duSptCpbRemovalDelayIncrement));
-  m_dpbOutputDuDelayPresentFlag = sei.m_dpbOutputDuDelayPresentFlag;
-  m_picSptDpbOutputDuDelay = sei.m_picSptDpbOutputDuDelay;
-}
+SEIDecodingUnitInfo::SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei) = default;
 
 SEIFrameFieldInfo::SEIFrameFieldInfo(const SEIFrameFieldInfo& sei)
 {

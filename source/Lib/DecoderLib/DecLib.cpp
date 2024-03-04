@@ -2622,9 +2622,9 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
 
   if (!picTimingSEIs.empty() && !frameFieldSEIs.empty())
   {
-    SEIPictureTiming  *pt = (SEIPictureTiming*)  picTimingSEIs.front();
+    auto               pt = (SEIPictureTiming*) picTimingSEIs.front();
     SEIFrameFieldInfo *ff = (SEIFrameFieldInfo*) frameFieldSEIs.front();
-    if( pt->m_ptDisplayElementalPeriodsMinus1 != ff->m_displayElementalPeriodsMinus1 )
+    if (pt->displayElementalPeriods != ff->m_displayElementalPeriodsMinus1 + 1)
     {
       msg( WARNING, "Warning: ffi_display_elemental_periods_minus1 is different in picture timing and frame field information SEI messages!");
     }
@@ -2766,13 +2766,13 @@ void DecLib::xCheckDUISEIMessages(SEIMessages &prefixSEIs)
         for (auto it = DUISEIs.cbegin(); it != DUISEIs.cend(); ++it)
         {
           const SEIDecodingUnitInfo *dui = (const SEIDecodingUnitInfo *) *it;
-          if (dui->m_picSptDpbOutputDuDelay != -1)
+          if (dui->dpbOutputDuDelay != -1)
           {
             duDelayFlag = true;
             break;
           }
         }
-        CHECK(duDelayFlag == false, "At least one DUI SEI should have dui->m_picSptDpbOutputDuDelay not equal to -1")
+        CHECK(duDelayFlag == false, "At least one DUI SEI should have dui->dpbOutputDuDelay not equal to -1")
       }
     }
   }
