@@ -5222,8 +5222,8 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
       {
         const CPelUnitBuf& pub1 = org;
         const CPelUnitBuf& pub0 = picRefLayer->getRecoBuf();
-        Window& wScaling0 = picRefLayer->getScalingWindow();
-        Window& wScaling1 = pcPic->getScalingWindow();
+        const Window&      wScaling0 = picRefLayer->getScalingWindow();
+        const Window&      wScaling1 = pcPic->getScalingWindow();
         int w0 = pub0.get(COMPONENT_Y).width - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( wScaling0.getWindowLeftOffset() + wScaling0.getWindowRightOffset() );
         int h0 = pub0.get(COMPONENT_Y).height - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( wScaling0.getWindowTopOffset()  + wScaling0.getWindowBottomOffset() );
         int w1 = pub1.get(COMPONENT_Y).width - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( wScaling1.getWindowLeftOffset() + wScaling1.getWindowRightOffset() );
@@ -5260,7 +5260,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     // get per picture padding from the conformance window, in this case if conformance window is set not equal to the padding then PSNR results may be inaccurate
     if (m_pcEncLib->isResChangeInClvsEnabled())
     {
-      Window& conf = pcPic->getConformanceWindow();
+      const Window& conf = pcPic->getConformanceWindow();
       padX = conf.getWindowRightOffset() * SPS::getWinUnitX( format );
       padY = conf.getWindowBottomOffset() * SPS::getWinUnitY( format );
     }

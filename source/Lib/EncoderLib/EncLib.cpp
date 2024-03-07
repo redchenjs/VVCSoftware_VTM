@@ -197,7 +197,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
   else
   {
     pps0.setConformanceWindow( m_conformanceWindow );
-    pps0.setConformanceWindowFlag( m_conformanceWindow.getWindowEnabledFlag() );
+    pps0.setConformanceWindowFlag(!m_conformanceWindow.isZero());
   }
   if (m_explicitScalingWindowEnabled)
   {
@@ -215,7 +215,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
   if (m_resChangeInClvsEnabled)
   {
     PPS& pps = *(m_ppsMap.allocatePS(ENC_PPS_ID_RPR + m_layerId));
-    Window& inputScalingWindow = pps0.getScalingWindow();
+    const Window& inputScalingWindow = pps0.getScalingWindow();
     int scaledWidth = int( ( pps0.getPicWidthInLumaSamples() - SPS::getWinUnitX( sps0.getChromaFormatIdc() ) * ( inputScalingWindow.getWindowLeftOffset() + inputScalingWindow.getWindowRightOffset() ) ) / m_scalingRatioHor );
     int minSizeUnit = std::max(8, 1 << sps0.getLog2MinCodingBlockSize());
     int temp = scaledWidth / minSizeUnit;
@@ -228,8 +228,8 @@ void EncLib::init(AUWriterIf *auWriterIf)
     pps.setPicWidthInLumaSamples( width );
     pps.setPicHeightInLumaSamples( height );
     pps.setSliceChromaQpFlag(true);
-    Window conformanceWindow;
-    conformanceWindow.setWindow( 0, ( width - scaledWidth ) / SPS::getWinUnitX( sps0.getChromaFormatIdc() ), 0, ( height - scaledHeight ) / SPS::getWinUnitY( sps0.getChromaFormatIdc() ) );
+    Window conformanceWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0,
+                             (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
     if (pps.getPicWidthInLumaSamples() == sps0.getMaxPicWidthInLumaSamples() && pps.getPicHeightInLumaSamples() == sps0.getMaxPicHeightInLumaSamples())
     {
       pps.setConformanceWindow( sps0.getConformanceWindow() );
@@ -238,13 +238,13 @@ void EncLib::init(AUWriterIf *auWriterIf)
     else
     {
       pps.setConformanceWindow( conformanceWindow );
-      pps.setConformanceWindowFlag( pps.getConformanceWindow().getWindowEnabledFlag() );
+      pps.setConformanceWindowFlag(!pps.getConformanceWindow().isZero());
     }
 
-    Window scalingWindow;
-    scalingWindow.setWindow( 0, ( width - scaledWidth ) / SPS::getWinUnitX( sps0.getChromaFormatIdc() ), 0, ( height - scaledHeight ) / SPS::getWinUnitY( sps0.getChromaFormatIdc() ) );
+    Window scalingWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0,
+                         (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
     pps.setScalingWindow( scalingWindow );
-    pps.setExplicitScalingWindowFlag(scalingWindow.getWindowEnabledFlag());
+    pps.setExplicitScalingWindowFlag(!scalingWindow.isZero());
 
     //register the width/height of the current pic into reference SPS
     if (!sps0.getPPSValidFlag(pps.getPPSId()))
@@ -308,8 +308,8 @@ void EncLib::init(AUWriterIf *auWriterIf)
     pps.setPicHeightInLumaSamples(height);
     pps.setSliceChromaQpFlag(true);
 
-    Window conformanceWindow;
-    conformanceWindow.setWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0, (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
+    Window conformanceWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0,
+                             (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
     if (pps.getPicWidthInLumaSamples() == sps0.getMaxPicWidthInLumaSamples() && pps.getPicHeightInLumaSamples() == sps0.getMaxPicHeightInLumaSamples())
     {
       pps.setConformanceWindow(sps0.getConformanceWindow());
@@ -318,11 +318,11 @@ void EncLib::init(AUWriterIf *auWriterIf)
     else
     {
       pps.setConformanceWindow(conformanceWindow);
-      pps.setConformanceWindowFlag(pps.getConformanceWindow().getWindowEnabledFlag());
+      pps.setConformanceWindowFlag(!pps.getConformanceWindow().isZero());
     }
 
-    Window scalingWindow;
-    scalingWindow.setWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0, (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
+    Window scalingWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0,
+                         (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
     pps.setScalingWindow(scalingWindow);
 
     //register the width/height of the current pic into reference SPS
@@ -383,8 +383,8 @@ void EncLib::init(AUWriterIf *auWriterIf)
     pps.setPicHeightInLumaSamples(height);
     pps.setSliceChromaQpFlag(true);
 
-    Window conformanceWindow;
-    conformanceWindow.setWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0, (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
+    Window conformanceWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0,
+                             (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
     if (pps.getPicWidthInLumaSamples() == sps0.getMaxPicWidthInLumaSamples() && pps.getPicHeightInLumaSamples() == sps0.getMaxPicHeightInLumaSamples())
     {
       pps.setConformanceWindow(sps0.getConformanceWindow());
@@ -393,11 +393,11 @@ void EncLib::init(AUWriterIf *auWriterIf)
     else
     {
       pps.setConformanceWindow(conformanceWindow);
-      pps.setConformanceWindowFlag(pps.getConformanceWindow().getWindowEnabledFlag());
+      pps.setConformanceWindowFlag(!pps.getConformanceWindow().isZero());
     }
 
-    Window scalingWindow;
-    scalingWindow.setWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0, (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
+    Window scalingWindow(0, (width - scaledWidth) / SPS::getWinUnitX(sps0.getChromaFormatIdc()), 0,
+                         (height - scaledHeight) / SPS::getWinUnitY(sps0.getChromaFormatIdc()));
     pps.setScalingWindow(scalingWindow);
 
     //register the width/height of the current pic into reference SPS
