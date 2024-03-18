@@ -250,6 +250,52 @@ double AlfCovariance::optimizeFilter(const AlfFilterShape& alfShape, AlfClipIdx*
   return err_best;
 }
 
+void AlfCovariance::calcInitErrorForCoeffs(double *cAc, double *cA, double *bc,  const AlfClipIdx *clip, const AlfCoeff *coeff, const int numCoeff, const int fractionalBits ) const
+{
+  const double factor = 1.0 / (1 << fractionalBits);
+
+  *cAc = 0;
+  *bc = 0;
+
+  for (ptrdiff_t i = 0; i < numCoeff; i++)   // diagonal
+  {
+    double sum = 0;
+    for (ptrdiff_t j = 0; j < numCoeff; j++)
+    {
+      sum += E(clip[i],clip[j],i,j) * coeff[j];
+    }
+    (*cAc) += sum * coeff[i];
+    cA[i] = 2*sum;
+    *bc += 2*coeff[i] * y(clip[i],i);
+  }
+
+  *cAc *= factor * factor;
+  for (ptrdiff_t i = 0; i < numCoeff; i++)   // diagonal
+  {
+    cA[i] *= factor;
+  }
+
+  *bc *= factor;
+}
+void AlfCovariance::updateErrorForCoeffsDelta(double *cAc, double *cA, double *bc,  const AlfClipIdx *clip, const AlfCoeff *coeff, const int numCoeff, double cDelta, int modInd  ) const
+{
+  *cAc = (*cAc) + cDelta * cA[modInd] + cDelta * cDelta * E( clip[modInd], clip[modInd], modInd, modInd);
+  for (int i = 0; i < numCoeff; i++) {
+    cA[i] += 2 * cDelta * E( clip[modInd], clip[i], modInd, i);
+  }
+  (*bc) = (*bc) + 2 * y(clip[modInd], modInd) * cDelta;
+}
+double AlfCovariance::calcErrorForCoeffsDelta(double cAc, double *cA, double bc,  const AlfClipIdx *clip, const AlfCoeff *coeff, const int numCoeff, double cDelta, int modInd ) const
+{
+  double error;
+  error = cAc - bc;
+  error += cDelta * cA[modInd];
+  error += cDelta * cDelta * E(clip[modInd],clip[modInd],modInd,modInd);
+  error -= 2 * y(clip[modInd],modInd) * cDelta;
+
+  return(error);
+}
+
 double AlfCovariance::calcErrorForCoeffs(const AlfClipIdx* clip, const AlfCoeff* coeff, const int numCoeff,
                                          const int fractionalBits) const
 {
@@ -1808,6 +1854,7 @@ double EncAdaptiveLoopFilter::deriveCoeffQuant(AlfClipIdx* filterClipp, AlfCoeff
 
   const int numCoeff = shape.numCoeff;
   double    filterCoeff[MAX_NUM_ALF_LUMA_COEFF];
+  double cAc, bc, coeffDelta, cA[MAX_NUM_ALF_LUMA_COEFF];
 
   cov.optimizeFilter( shape, filterClipp, filterCoeff, optimizeClip );
   roundFiltCoeff( filterCoeffQuant, filterCoeff, numCoeff, factor );
@@ -1825,6 +1872,7 @@ double EncAdaptiveLoopFilter::deriveCoeffQuant(AlfClipIdx* filterClipp, AlfCoeff
     modified = 0;
   }
   double errRef = cov.calcErrorForCoeffs(filterClipp, filterCoeffQuant, numCoeff, fractionalBits);
+  cov.calcInitErrorForCoeffs(&cAc, cA, &bc, filterClipp, filterCoeffQuant, numCoeff, fractionalBits);
   while( modified )
   {
     modified=0;
@@ -1832,6 +1880,7 @@ double EncAdaptiveLoopFilter::deriveCoeffQuant(AlfClipIdx* filterClipp, AlfCoeff
     {
       double errMin = MAX_DOUBLE;
       int minInd = -1;
+      coeffDelta = ( double )-sign / ( double )factor;
 
       for( int k = 0; k < numCoeff-1; k++ )
       {
@@ -1842,7 +1891,7 @@ double EncAdaptiveLoopFilter::deriveCoeffQuant(AlfClipIdx* filterClipp, AlfCoeff
 
         filterCoeffQuant[k] -= sign;
 
-        double error = cov.calcErrorForCoeffs(filterClipp, filterCoeffQuant, numCoeff, fractionalBits);
+        double error = cov.calcErrorForCoeffsDelta(cAc, cA, bc, filterClipp, filterCoeffQuant, numCoeff, coeffDelta, k);
         if( error < errMin )
         {
           errMin = error;
@@ -1855,6 +1904,7 @@ double EncAdaptiveLoopFilter::deriveCoeffQuant(AlfClipIdx* filterClipp, AlfCoeff
         filterCoeffQuant[minInd] -= sign;
         modified++;
         errRef = errMin;
+        cov.updateErrorForCoeffsDelta(&cAc, cA, &bc, filterClipp, filterCoeffQuant, numCoeff, coeffDelta, minInd);
       }
     }
   }
