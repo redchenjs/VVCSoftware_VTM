@@ -3661,6 +3661,10 @@ bool EncCu::xCheckRDCostInterAmvr(CodingStructure *&tempCS, CodingStructure *&be
     }
     else
     {
+      if (m_bestModeUpdated && bestCS->cost != MAX_DOUBLE)
+      {
+        xCalDebCost(*bestCS, partitioner);
+      }
       return false;
     }
 
@@ -3678,18 +3682,17 @@ bool EncCu::xCheckRDCostInterAmvr(CodingStructure *&tempCS, CodingStructure *&be
 
     if (!CU::hasSubCUNonZeroMVd(cu) && !CU::hasSubCUNonZeroAffineMVd(cu))
     {
-      if (m_modeCtrl->useModeResult(encTestModeBase, tempCS, partitioner))
-      {
-        std::swap(tempCS, bestCS);
-        // store temp best CI for next CU coding
-        m_CurrCtx->best = m_CABACEstimator->getCtx();
-      }
+      xCheckBestMode(tempCS, bestCS, partitioner, encTestModeBase);
       if (affineAmvrEnabledFlag)
       {
         continue;
       }
       else
       {
+        if (m_bestModeUpdated && bestCS->cost != MAX_DOUBLE)
+        {
+          xCalDebCost(*bestCS, partitioner);
+        }
         return false;
       }
     }
