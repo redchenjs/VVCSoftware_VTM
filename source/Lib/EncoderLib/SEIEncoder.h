@@ -66,7 +66,9 @@ public:
   void initSEIExtendedDrapIndication(SEIExtendedDrapIndication *sei);
   void initSEIBufferingPeriod(SEIBufferingPeriod *sei, bool noLeadingPictures);
   void initSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics *sei);
-  void initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, SEIMessages &nestedSEIs, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t> &subpictureIDs, uint16_t maxSubpicIdInPic);
+  void initSEIScalableNesting(SEIScalableNesting* sn, SEIMessages& nestedSEIs, const std::vector<int>& targetOLSs,
+                              const std::vector<int>& targetLayers, const std::vector<uint16_t>& subpictureIDs,
+                              uint16_t maxSubpicIdInPic);
   void initDecodedPictureHashSEI(SEIDecodedPictureHash *sei, PelUnitBuf& pic, std::string &rHashString, const BitDepths &bitDepths);
   void initSEIErp(SEIEquirectangularProjection *sei);
   void initSEISphereRotation(SEISphereRotation *sei);

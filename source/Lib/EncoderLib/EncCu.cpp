@@ -3015,12 +3015,11 @@ void EncCu::addMmvdCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& 
 {
   pu->cu->mmvdSkip = true;
   pu->regularMergeFlag = true;
-  const int tempNum = (mergeCtx.numValidMergeCand > 1) ? MmvdIdx::ADD_NUM : MmvdIdx::ADD_NUM >> 1;
-  for (int mmvdMergeCand = 0; mmvdMergeCand < tempNum; mmvdMergeCand++)
+  for (int mmvdMergeCand = 0; mmvdMergeCand < MmvdIdx::ADD_NUM; mmvdMergeCand++)
   {
     MmvdIdx mmvdIdx;
     mmvdIdx.val = mmvdMergeCand;
-    if (mmvdIdx.pos.step >= m_pcEncCfg->getMmvdDisNum())
+    if (mmvdIdx.pos.step >= m_pcEncCfg->getMmvdDisNum() || mmvdIdx.pos.baseIdx >= mergeCtx.numValidMergeCand)
     {
       continue;
     }
@@ -3662,6 +3661,10 @@ bool EncCu::xCheckRDCostInterAmvr(CodingStructure *&tempCS, CodingStructure *&be
     }
     else
     {
+      if (m_bestModeUpdated && bestCS->cost != MAX_DOUBLE)
+      {
+        xCalDebCost(*bestCS, partitioner);
+      }
       return false;
     }
 
@@ -3679,18 +3682,17 @@ bool EncCu::xCheckRDCostInterAmvr(CodingStructure *&tempCS, CodingStructure *&be
 
     if (!CU::hasSubCUNonZeroMVd(cu) && !CU::hasSubCUNonZeroAffineMVd(cu))
     {
-      if (m_modeCtrl->useModeResult(encTestModeBase, tempCS, partitioner))
-      {
-        std::swap(tempCS, bestCS);
-        // store temp best CI for next CU coding
-        m_CurrCtx->best = m_CABACEstimator->getCtx();
-      }
+      xCheckBestMode(tempCS, bestCS, partitioner, encTestModeBase);
       if (affineAmvrEnabledFlag)
       {
         continue;
       }
       else
       {
+        if (m_bestModeUpdated && bestCS->cost != MAX_DOUBLE)
+        {
+          xCalDebCost(*bestCS, partitioner);
+        }
         return false;
       }
     }

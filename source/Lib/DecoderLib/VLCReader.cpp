@@ -458,12 +458,7 @@ void HLSyntaxReader::parsePPS( PPS* pcPPS )
   }
   else
   {
-    Window &scalingWindow = pcPPS->getScalingWindow();
-    Window& conf = pcPPS->getConformanceWindow();
-    scalingWindow.setWindowLeftOffset( conf.getWindowLeftOffset() );
-    scalingWindow.setWindowRightOffset( conf.getWindowRightOffset() );
-    scalingWindow.setWindowTopOffset( conf.getWindowTopOffset() );
-    scalingWindow.setWindowBottomOffset( conf.getWindowBottomOffset() );
+    pcPPS->getScalingWindow() = pcPPS->getConformanceWindow();
   }
 
   xReadFlag( uiCode, "pps_output_flag_present_flag" );                    pcPPS->setOutputFlagPresentFlag( uiCode==1 );

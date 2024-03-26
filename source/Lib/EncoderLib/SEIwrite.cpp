@@ -610,44 +610,46 @@ void SEIWriter::xWriteSEIEdrapIndication(const SEIExtendedDrapIndication& sei)
   }
 }
 
-void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableNesting& sei)
+void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableNesting& sn)
 {
-  CHECK (sei.m_nestedSEIs.size()<1, "There must be at lease one SEI message nested in the scalable nesting SEI.")
+  CHECK(sn.nestedSeis.size() < 1, "There must be at lease one SEI message nested in the scalable nesting SEI.")
 
-  xWriteFlag(sei.m_snOlsFlag, "sn_ols_flag");
-  xWriteFlag(sei.m_snSubpicFlag, "sn_subpic_flag");
-  if (sei.m_snOlsFlag)
+  xWriteFlag(!sn.olsIdx.empty() ? 1 : 0, "sn_ols_flag");
+  xWriteFlag(!sn.subpicId.empty() ? 1 : 0, "sn_subpic_flag");
+  if (!sn.olsIdx.empty())
   {
-    xWriteUvlc(sei.m_snNumOlssMinus1, "sn_num_olss_minus1");
-    for (uint32_t i = 0; i <= sei.m_snNumOlssMinus1; i++)
+    xWriteUvlc((uint32_t) sn.olsIdx.size() - 1, "sn_num_olss_minus1");
+    for (uint32_t i = 0; i < sn.olsIdx.size(); i++)
     {
-      xWriteUvlc(sei.m_snOlsIdxDeltaMinus1[i], "sn_ols_idx_delta_minus1[i]");
+      const uint32_t pred = i == 0 ? 0 : sn.olsIdx[i - 1] + 1;
+      CHECK(sn.olsIdx[i] < pred, "sn_ols_idx_delta_minus1 cannot be negative");
+      xWriteUvlc(sn.olsIdx[i] - pred, "sn_ols_idx_delta_minus1[i]");
     }
   }
   else
   {
-    xWriteFlag(sei.m_snAllLayersFlag, "sn_all_layers_flag");
-    if (!sei.m_snAllLayersFlag)
+    xWriteFlag(sn.allLayersFlag() ? 1 : 0, "sn_all_layers_flag");
+    if (!sn.allLayersFlag())
     {
-      xWriteUvlc(sei.m_snNumLayersMinus1, "sn_num_layers");
-      for (uint32_t i = 1; i <= sei.m_snNumLayersMinus1; i++)
+      xWriteUvlc((uint32_t) sn.layerId.size() - 1, "sn_num_layers_minus1");
+      for (uint32_t i = 1; i < sn.layerId.size(); i++)
       {
-        xWriteCode(sei.m_snLayerId[i], 6, "sn_layer_id");
+        xWriteCode(sn.layerId[i], 6, "sn_layer_id");
       }
     }
   }
-  if (sei.m_snSubpicFlag)
+  if (!sn.subpicId.empty())
   {
-    xWriteUvlc( sei.m_snNumSubpics - 1, "sn_num_subpics_minus1");
-    CHECK(sei.m_snSubpicIdLen < 1, "sn_subpic_id_len_minus1 must be >= 0");
-    xWriteUvlc( sei.m_snSubpicIdLen - 1, "sn_subpic_id_len_minus1");
-    for (uint32_t i = 0; i < sei.m_snNumSubpics; i++)
+    xWriteUvlc((uint32_t) sn.subpicId.size() - 1, "sn_num_subpics_minus1");
+    CHECK(sn.subpicIdLen <= 1, "subpicIdLen must be at least 1");
+    xWriteUvlc(sn.subpicIdLen - 1, "sn_subpic_id_len_minus1");
+    for (uint32_t i = 0; i < sn.subpicId.size(); i++)
     {
-      xWriteCode(sei.m_snSubpicId[i], sei.m_snSubpicIdLen, "sn_subpic_id[i]");
+      xWriteCode(sn.subpicId[i], sn.subpicIdLen, "sn_subpic_id[i]");
     }
   }
 
-  xWriteUvlc( (uint32_t)sei.m_nestedSEIs.size() - 1, "sn_num_seis_minus1");
+  xWriteUvlc((uint32_t) sn.nestedSeis.size() - 1, "sn_num_seis_minus1");
 
   // byte alignment
   while (m_pcBitIf->getNumberOfWrittenBits() % 8 != 0)
@@ -655,7 +657,7 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
     xWriteFlag(0, "sn_zero_bit");
   }
 
-  SEIMessages bufferingPeriod = getSeisByType(sei.m_nestedSEIs, SEI::PayloadType::BUFFERING_PERIOD);
+  SEIMessages bufferingPeriod = getSeisByType(sn.nestedSeis, SEI::PayloadType::BUFFERING_PERIOD);
   if (!bufferingPeriod.empty())
   {
     SEIBufferingPeriod *bp = (SEIBufferingPeriod*)bufferingPeriod.front();
@@ -663,7 +665,7 @@ void SEIWriter::xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableN
   }
 
   // write nested SEI messages
-  writeSEImessages(bs, sei.m_nestedSEIs, m_nestingHrd, true, 0);
+  writeSEImessages(bs, sn.nestedSeis, m_nestingHrd, true, 0);
 }
 
 void SEIWriter::xWriteSEIFramePacking(const SEIFramePacking &sei, int SEIPrefixIndicationIdx)
@@ -1834,6 +1836,13 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteUvlc(sei.m_numberInterpolatedPictures[i], "nnpfc_interpolated_pictures");
       }
     }
+
+#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
+    if((sei.m_purpose & NNPC_PurposeType::TEMPORAL_EXTRAPOLATION) != 0)
+    {
+      xWriteUvlc(sei.m_numberExtrapolatedPicturesMinus1, "nnpfc_extrapolated_pics_minus1");
+    }
+#endif
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");

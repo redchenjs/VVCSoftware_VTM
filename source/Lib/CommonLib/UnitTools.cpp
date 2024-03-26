@@ -1681,19 +1681,16 @@ bool PU::checkDMVRCondition(const PredictionUnit& pu)
 {
   if (pu.cs->sps->getUseDMVR() && !pu.cs->picHeader->getDmvrDisabledFlag())
   {
-    const int refIdx0 = pu.refIdx[REF_PIC_LIST_0];
-    const int refIdx1 = pu.refIdx[REF_PIC_LIST_1];
-
-    const bool ref0IsScaled = refIdx0 < 0 || refIdx0 >= MAX_NUM_ACTIVE_REF
-                                ? false
-                                : pu.cu->slice->getRefPic(REF_PIC_LIST_0, refIdx0)->isRefScaled(pu.cs->pps);
-    const bool ref1IsScaled = refIdx1 < 0 || refIdx1 >= MAX_NUM_ACTIVE_REF
-                                ? false
-                                : pu.cu->slice->getRefPic(REF_PIC_LIST_1, refIdx1)->isRefScaled(pu.cs->pps);
+    auto isScaledRef = [&](RefPicList listIdx)
+    {
+      const int refIdx = pu.refIdx[listIdx];
+      return refIdx >= 0 && refIdx < MAX_NUM_ACTIVE_REF
+             && pu.cu->slice->getRefPic(listIdx, refIdx)->isRefScaled(pu.cs->pps);
+    };
 
     return pu.mergeFlag && pu.mergeType == MergeType::DEFAULT_N && !pu.ciipFlag && !pu.cu->affine && !pu.mmvdMergeFlag
-           && !pu.cu->mmvdSkip && PU::isSimpleSymmetricBiPred(pu) && PU::dmvrBdofSizeCheck(pu) && !ref0IsScaled
-           && !ref1IsScaled;
+           && !pu.cu->mmvdSkip && PU::isSimpleSymmetricBiPred(pu) && PU::dmvrBdofSizeCheck(pu)
+           && !isScaledRef(REF_PIC_LIST_0) && !isScaledRef(REF_PIC_LIST_1);
   }
   else
   {
