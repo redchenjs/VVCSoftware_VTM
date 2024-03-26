@@ -242,7 +242,7 @@ void BitstreamExtractorApp::xRewritePPS(PPS &targetPPS, const PPS &sourcePPS, co
   targetPPS.setPicWidthInLumaSamples(subPic.getSubPicWidthInLumaSample());
   targetPPS.setPicHeightInLumaSamples(subPic.getSubPicHeightInLumaSample());
   // todo: Conformance window (conf window rewriting is not needed per JVET-S0117)
-  if (sourcePPS.getScalingWindow().getWindowEnabledFlag())
+  if (!sourcePPS.getScalingWindow().isZero())
   {
   int subWidthC = SPS::getWinUnitX(sourceSPS.getChromaFormatIdc());
   int subHeightC = SPS::getWinUnitY(sourceSPS.getChromaFormatIdc());
@@ -252,8 +252,8 @@ void BitstreamExtractorApp::xRewritePPS(PPS &targetPPS, const PPS &sourcePPS, co
   int subpicScalWinTopOffset = sourcePPS.getScalingWindow().getWindowTopOffset() - (int)subPic.getSubPicCtuTopLeftY() * sourceSPS.getCTUSize() / subHeightC;
   int botSubpicBd = (subPic.getSubPicCtuTopLeftY() + subPic.getSubPicHeightInCTUs()) * sourceSPS.getCTUSize();
   int subpicScalWinBotOffset = botSubpicBd >= sourceSPS.getMaxPicHeightInLumaSamples() ? sourcePPS.getScalingWindow().getWindowBottomOffset() : sourcePPS.getScalingWindow().getWindowBottomOffset() - (int)(sourceSPS.getMaxPicHeightInLumaSamples() - botSubpicBd) / subHeightC;
-  Window scalingWindow;
-  scalingWindow.setWindow(subpicScalWinLeftOffset, subpicScalWinRightOffset, subpicScalWinTopOffset, subpicScalWinBotOffset);
+  Window scalingWindow(subpicScalWinLeftOffset, subpicScalWinRightOffset, subpicScalWinTopOffset,
+                       subpicScalWinBotOffset);
   targetPPS.setScalingWindow(scalingWindow);
   }
   // Tiles

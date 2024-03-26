@@ -1224,9 +1224,15 @@ public:
   void      setSourceHeight                 ( int   i )      { m_sourceHeight = i; }
 
   Window   &getConformanceWindow()                           { return m_conformanceWindow; }
-  void      setConformanceWindow (int confLeft, int confRight, int confTop, int confBottom ) { m_conformanceWindow.setWindow (confLeft, confRight, confTop, confBottom); }
+  void      setConformanceWindow(int confLeft, int confRight, int confTop, int confBottom)
+  {
+    m_conformanceWindow = Window(confLeft, confRight, confTop, confBottom);
+  }
   void      setExplicitScalingWindowEnabled(bool enabled)    { m_explicitScalingWindowEnabled = enabled; }
-  void      setScalingWindow (int scalingLeft, int scalingRight, int scalingTop, int scalingBottom ) { m_scalingWindow.setWindow (scalingLeft, scalingRight, scalingTop, scalingBottom); }
+  void      setScalingWindow(int scalingLeft, int scalingRight, int scalingTop, int scalingBottom)
+  {
+    m_scalingWindow = Window(scalingLeft, scalingRight, scalingTop, scalingBottom);
+  }
 
   void      setFramesToBeEncoded            ( int   i )      { m_framesToBeEncoded = i; }
 

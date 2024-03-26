@@ -1767,9 +1767,8 @@ bool EncApp::encodePrep( bool& eos )
     int xScale = ((w0 << ScalingRatio::BITS) + (w1 >> 1)) / w1;
     int yScale = ((h0 << ScalingRatio::BITS) + (h1 >> 1)) / h1;
     ScalingRatio scalingRatio = { xScale, yScale };
-    Window conformanceWindow1;
-    conformanceWindow1.setWindow(m_confWinLeft, m_confWinRight, m_confWinTop, m_confWinBottom);
-    
+    Window       conformanceWindow1(m_confWinLeft, m_confWinRight, m_confWinTop, m_confWinBottom);
+
     bool downsampling = (m_sourceWidthBeforeScale > m_sourceWidth) || (m_sourceHeightBeforeScale > m_sourceHeight);
     bool useLumaFilter = downsampling;
     Picture::rescalePicture(scalingRatio, *m_orgPicBeforeScale, Window(), *m_orgPic, conformanceWindow1,

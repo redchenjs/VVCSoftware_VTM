@@ -645,7 +645,8 @@ void SubpicMergeApp::generateMergedStreamPPSes(ParameterSetManager &psManager, s
   {
     for (auto ppsId : subpic.ppsIds)
     {
-      CHECK(subpic.psManager.getPPS(ppsId)->getScalingWindow().getWindowEnabledFlag(), "Scaling window in input streams not supported")
+      CHECK(!subpic.psManager.getPPS(ppsId)->getScalingWindow().isZero(),
+            "Scaling window in input streams not supported")
     }
   }
 
