@@ -305,7 +305,7 @@ void HLSWriter::codePPS( const PPS* pcPPS )
   xWriteUvlc( pcPPS->getPicWidthInLumaSamples(), "pps_pic_width_in_luma_samples" );
   xWriteUvlc( pcPPS->getPicHeightInLumaSamples(), "pps_pic_height_in_luma_samples" );
 
-  Window conf = pcPPS->getConformanceWindow();
+  const Window& conf = pcPPS->getConformanceWindow();
   xWriteFlag(pcPPS->getConformanceWindowFlag(), "pps_conformance_window_flag");
   if (pcPPS->getConformanceWindowFlag())
   {
@@ -314,7 +314,7 @@ void HLSWriter::codePPS( const PPS* pcPPS )
     xWriteUvlc(conf.getWindowTopOffset(), "pps_conf_win_top_offset");
     xWriteUvlc(conf.getWindowBottomOffset(), "pps_conf_win_bottom_offset");
   }
-  Window scalingWindow = pcPPS->getScalingWindow();
+  const Window& scalingWindow = pcPPS->getScalingWindow();
   xWriteFlag( pcPPS->getExplicitScalingWindowFlag(), "pps_scaling_window_explicit_signalling_flag");
   if ( pcPPS->getExplicitScalingWindowFlag() )
   {
@@ -858,9 +858,9 @@ void HLSWriter::codeSPS( const SPS* pcSPS )
 
   xWriteUvlc( pcSPS->getMaxPicWidthInLumaSamples(), "sps_pic_width_max_in_luma_samples" );
   xWriteUvlc( pcSPS->getMaxPicHeightInLumaSamples(), "sps_pic_height_max_in_luma_samples" );
-  Window conf = pcSPS->getConformanceWindow();
-  xWriteFlag(conf.getWindowEnabledFlag(), "sps_conformance_window_flag");
-  if (conf.getWindowEnabledFlag())
+  const Window& conf = pcSPS->getConformanceWindow();
+  xWriteFlag(!conf.isZero(), "sps_conformance_window_flag");
+  if (!conf.isZero())
   {
     xWriteUvlc(conf.getWindowLeftOffset(), "sps_conf_win_left_offset");
     xWriteUvlc(conf.getWindowRightOffset(), "sps_conf_win_right_offset");

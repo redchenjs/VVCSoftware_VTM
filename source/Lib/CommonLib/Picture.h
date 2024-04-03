@@ -271,12 +271,14 @@ public:
   const Window&      getConformanceWindow() const                                    { return  m_conformanceWindow; }
   Window&            getScalingWindow()                                              { return  m_scalingWindow; }
   const Window&      getScalingWindow()                                        const { return  m_scalingWindow; }
-  bool               isRefScaled( const PPS* pps ) const                             { return  unscaledPic->getPicWidthInLumaSamples()    != pps->getPicWidthInLumaSamples()                ||
-                                                                                               unscaledPic->getPicHeightInLumaSamples()   != pps->getPicHeightInLumaSamples()               ||
-                                                                                               unscaledPic->getScalingWindow().getWindowLeftOffset()   != pps->getScalingWindow().getWindowLeftOffset()  ||
-                                                                                               unscaledPic->getScalingWindow().getWindowRightOffset()  != pps->getScalingWindow().getWindowRightOffset() ||
-                                                                                               unscaledPic->getScalingWindow().getWindowTopOffset()    != pps->getScalingWindow().getWindowTopOffset()   ||
-                                                                                               unscaledPic->getScalingWindow().getWindowBottomOffset() != pps->getScalingWindow().getWindowBottomOffset(); }
+
+  bool isRefScaled(const PPS* pps) const
+  {
+    return unscaledPic->getPicWidthInLumaSamples() != pps->getPicWidthInLumaSamples()
+           || unscaledPic->getPicHeightInLumaSamples() != pps->getPicHeightInLumaSamples()
+           || unscaledPic->getScalingWindow() != pps->getScalingWindow();
+  }
+
   bool               isWrapAroundEnabled( const PPS* pps ) const                     { return  pps->getWrapAroundEnabledFlag() && !isRefScaled( pps ); }
 
   void         allocateNewSlice();

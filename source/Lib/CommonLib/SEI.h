@@ -895,36 +895,25 @@ public:
   PayloadType payloadType() const { return PayloadType::SCALABLE_NESTING; }
 
   SEIScalableNesting()
-  : m_snOlsFlag (false)
-  , m_snSubpicFlag (false)
-  , m_snNumOlssMinus1 (0)
-  , m_snAllLayersFlag (false)
-  , m_snNumLayersMinus1 (0)
-  , m_snNumSubpics (1)
-  , m_snSubpicIdLen (0)
-  , m_snNumSEIs(0)
-  {}
+  {
+    olsIdx.clear();
+    subpicId.clear();
+  }
   SEIScalableNesting(const SEIScalableNesting& sei);
 
-  virtual ~SEIScalableNesting()
-  {
-    deleteSEIs(m_nestedSEIs);
-  }
+  virtual ~SEIScalableNesting() { deleteSEIs(nestedSeis); }
 
-  bool      m_snOlsFlag;
-  bool      m_snSubpicFlag;
-  uint32_t  m_snNumOlssMinus1;
-  uint32_t  m_snOlsIdxDeltaMinus1[MAX_NESTING_NUM_LAYER];
-  uint32_t  m_snOlsIdx[MAX_NESTING_NUM_LAYER];
-  bool      m_snAllLayersFlag;                      //value valid if m_nestingOlsFlag == 0
-  uint32_t  m_snNumLayersMinus1;                    //value valid if m_nestingOlsFlag == 0 and m_nestingAllLayersFlag == 0
-  uint8_t   m_snLayerId[MAX_NESTING_NUM_LAYER];     //value valid if m_nestingOlsFlag == 0 and m_nestingAllLayersFlag == 0. This can e.g. be a static array of 64 uint8_t values
-  uint32_t  m_snNumSubpics;
-  uint8_t   m_snSubpicIdLen;
-  std::vector<uint16_t> m_snSubpicId;
-  uint32_t  m_snNumSEIs;
+  uint8_t subpicIdLen = 0;
 
-  SEIMessages m_nestedSEIs;
+  static_vector<uint32_t, MAX_NESTING_NUM_LAYER> olsIdx;
+
+  std::vector<uint16_t> subpicId;
+
+  static_vector<uint8_t, MAX_NESTING_NUM_LAYER> layerId;
+
+  bool allLayersFlag() const { return layerId.empty(); }
+
+  SEIMessages nestedSeis;
 };
 
 
@@ -1309,6 +1298,9 @@ public:
     , m_numKmacOperationsIdc(0)
     , m_totalKilobyteSize(0)
     , m_numberInputDecodedPicturesMinus1(0)
+#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
+    , m_numberExtrapolatedPicturesMinus1(0)
+#endif
     , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
   {}
@@ -1386,6 +1378,9 @@ public:
   uint32_t       m_totalKilobyteSize;
   uint32_t       m_numberInputDecodedPicturesMinus1;
   std::vector<uint32_t> m_numberInterpolatedPictures;
+#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
+  uint32_t       m_numberExtrapolatedPicturesMinus1;
+#endif
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
   uint32_t       m_numInpPicsInOutputTensor;

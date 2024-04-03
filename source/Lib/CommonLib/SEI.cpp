@@ -831,22 +831,7 @@ SEIMasteringDisplayColourVolume::SEIMasteringDisplayColourVolume(const SEIMaster
   std::memcpy(values.whitePoint, sei.values.whitePoint, sizeof(sei.values.whitePoint));
 }
 
-SEIScalableNesting::SEIScalableNesting(const SEIScalableNesting& sei)
-{
-  m_snOlsFlag = sei.m_snOlsFlag;
-  m_snSubpicFlag = sei.m_snSubpicFlag;
-  m_snNumOlssMinus1 = sei.m_snNumOlssMinus1;
-  std::memcpy(m_snOlsIdxDeltaMinus1, sei.m_snOlsIdxDeltaMinus1, sizeof(sei.m_snOlsIdxDeltaMinus1));
-  std::memcpy(m_snOlsIdx, sei.m_snOlsIdx, sizeof(sei.m_snOlsIdx));
-  m_snAllLayersFlag = sei.m_snAllLayersFlag;
-  m_snNumLayersMinus1 = sei.m_snNumLayersMinus1;
-  std::memcpy(m_snLayerId, sei.m_snLayerId, sizeof(sei.m_snLayerId));
-  m_snNumSubpics = sei.m_snNumSubpics;
-  m_snSubpicIdLen = sei.m_snSubpicIdLen;
-  m_snSubpicId = sei.m_snSubpicId;
-  m_snNumSEIs = sei.m_snNumSEIs;
-  m_nestedSEIs = sei.m_nestedSEIs;
-}
+SEIScalableNesting::SEIScalableNesting(const SEIScalableNesting& sei) = default;
 
 SEIAlternativeTransferCharacteristics::SEIAlternativeTransferCharacteristics(const SEIAlternativeTransferCharacteristics& sei)
 {
@@ -1031,6 +1016,9 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_totalKilobyteSize = sei.m_totalKilobyteSize;
   m_numberInputDecodedPicturesMinus1 = sei.m_numberInputDecodedPicturesMinus1;
   m_numberInterpolatedPictures = sei.m_numberInterpolatedPictures;
+#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
+  m_numberExtrapolatedPicturesMinus1 = sei.m_numberExtrapolatedPicturesMinus1;
+#endif
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
 }
 
@@ -1093,6 +1081,9 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_totalKilobyteSize == sei.m_totalKilobyteSize &&
   m_numberInputDecodedPicturesMinus1 == sei.m_numberInputDecodedPicturesMinus1 &&
   m_numberInterpolatedPictures == sei.m_numberInterpolatedPictures &&
+#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
+  m_numberExtrapolatedPicturesMinus1 == sei.m_numberExtrapolatedPicturesMinus1 &&
+#endif
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
   m_payloadLength == sei.m_payloadLength;
 
