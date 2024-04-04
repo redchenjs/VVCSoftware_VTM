@@ -65,6 +65,8 @@
 
 #define JVET_AF0310_PO_NESTING                            1
 
+#define JVET_AG0089_TEMPORAL_EXTRAPOLATION                1 // JVET-AG0089: AHG9: Temporal extrapolation purpose for the neural-network post-filter characteristics SEI message
+
 #define JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING 1 // JVET-AF2032: Conditionally signal application tag URI presence flag and tag URI in the NNPFC metadata extension
 
 //########### place macros to be be kept below this line ###############
