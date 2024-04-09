@@ -739,7 +739,6 @@ protected:
   std::string             m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
 #if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
-  uint32_t                m_nnPostFilterSEICharacteristicsMetadataExtensionNumBits[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[MAX_NUM_NN_POST_FILTERS];
   std::string             m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[MAX_NUM_NN_POST_FILTERS];
 #endif
@@ -2056,8 +2055,6 @@ public:
   void        setNNPostFilterSEICharacteristicsComplexityInfoPresentFlag(bool complexityInfoPresentFlag, int filterIdx) { m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[filterIdx] = complexityInfoPresentFlag; }
   bool        getNNPostFilterSEICharacteristicsComplexityInfoPresentFlag(int filterIdx) const                           { return m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[filterIdx]; }
 #if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
-  void        setNNPostFilterSEICharacteristicsMetadataExtensionNumBits(uint32_t metadataExtensionNumBits, int filterIdx) { m_nnPostFilterSEICharacteristicsMetadataExtensionNumBits[filterIdx] = metadataExtensionNumBits; }
-  uint32_t    getNNPostFilterSEICharacteristicsMetadatExtensionNumBits(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsMetadataExtensionNumBits[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag(bool applicationPurposeTagUriPresentFlag, int filterIdx) { m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[filterIdx] = applicationPurposeTagUriPresentFlag; }
   bool        getNNPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag(int filterIdx) const                 { return m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsApplicationPurposeTagUri(std::string applicationPurposeTagUri, int filterIdx) { m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[filterIdx] = applicationPurposeTagUri; }

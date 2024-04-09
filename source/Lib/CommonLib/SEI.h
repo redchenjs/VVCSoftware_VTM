@@ -1286,7 +1286,6 @@ public:
     , m_payloadByte(nullptr)
     , m_complexityInfoPresentFlag(false)
 #if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
-    , m_metadataExtensionNumBits(0)
     , m_applicationPurposeTagUriPresentFlag(false)
     , m_applicationPurposeTagUri("")
 #endif
@@ -1365,7 +1364,6 @@ public:
   char*          m_payloadByte;
   bool           m_complexityInfoPresentFlag;
 #if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
-  uint32_t       m_metadataExtensionNumBits;
   bool           m_applicationPurposeTagUriPresentFlag;
   std::string    m_applicationPurposeTagUri;
 #endif

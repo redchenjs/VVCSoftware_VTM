@@ -1003,7 +1003,6 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_payloadByte = sei.m_payloadByte ? new char(*sei.m_payloadByte) : nullptr;
   m_complexityInfoPresentFlag = sei.m_complexityInfoPresentFlag;
 #if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
-  m_metadataExtensionNumBits = sei.m_metadataExtensionNumBits;
   m_applicationPurposeTagUriPresentFlag = sei.m_applicationPurposeTagUriPresentFlag;
   m_applicationPurposeTagUri = sei.m_applicationPurposeTagUri;
 #endif
@@ -1068,7 +1067,6 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_crPadding == sei.m_crPadding &&
   m_complexityInfoPresentFlag == sei.m_complexityInfoPresentFlag &&
 #if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
-  m_metadataExtensionNumBits == sei.m_metadataExtensionNumBits &&
   m_applicationPurposeTagUriPresentFlag == sei.m_applicationPurposeTagUriPresentFlag &&
   m_applicationPurposeTagUri == sei.m_applicationPurposeTagUri &&
 #endif

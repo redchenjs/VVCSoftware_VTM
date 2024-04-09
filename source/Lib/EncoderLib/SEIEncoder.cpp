@@ -1581,16 +1581,12 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_totalKilobyteSize = m_pcCfg->getNNPostFilterSEICharacteristicsTotalKilobyteSize(filterIdx);
     }
 #if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
-    sei->m_metadataExtensionNumBits = m_pcCfg->getNNPostFilterSEICharacteristicsMetadatExtensionNumBits(filterIdx);
-    if (sei->m_metadataExtensionNumBits > 0)
+    if (sei->m_purpose == 0)
     {
-      if (sei->m_purpose)
+      sei->m_applicationPurposeTagUriPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag(filterIdx);
+      if (sei->m_applicationPurposeTagUriPresentFlag)
       {
-        sei->m_applicationPurposeTagUriPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag(filterIdx);
-        if (sei->m_applicationPurposeTagUriPresentFlag)
-        {
-          sei->m_applicationPurposeTagUri = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUri(filterIdx);
-        }
+        sei->m_applicationPurposeTagUri = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUri(filterIdx);
       }
     }
   #endif
