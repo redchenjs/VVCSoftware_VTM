@@ -1397,6 +1397,18 @@ void EncApp::xInitLibCfg( int layerIdx )
 
   m_cEncLib.setPoSEIEnabled                                      (m_poSEIEnabled);
   m_cEncLib.setPoSEIId                                           (m_poSEIId);
+
+#if JVET_AG2034_SPTI_SEI
+  m_cEncLib.setSptiSEIEnabled(m_sptiSEIEnabled);
+  if (m_sptiSEIEnabled)
+  {
+    m_cEncLib.setmSptiSEISourceTimingEqualsOutputTimingFlag(m_sptiSourceTimingEqualsOutputTimingFlag);
+    m_cEncLib.setmSptiSEISourceType(m_sptiSourceType);
+    m_cEncLib.setmSptiSEITimeScale(m_sptiTimeScale);
+    m_cEncLib.setmSptiSEINumUnitsInElementalInterval(m_sptiNumUnitsInElementalInterval);
+  }
+#endif
+
   m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
   m_cEncLib.setPoSEIWrappingFlag                                 (m_poSEIWrappingFlag);
   m_cEncLib.setPoSEIImportanceFlag                               (m_poSEIImportanceFlag);

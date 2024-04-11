@@ -104,6 +104,9 @@ public:
 #if JVET_AH2006_EOI_SEI
     ENCODER_OPTIMIZATION_INFO = 215,
 #endif 
+#if JVET_AG2034_SPTI_SEI
+    SOURCE_PICTURE_TIMING_INFO = 216,
+#endif
   };
 
   SEI() {}
@@ -155,6 +158,29 @@ public:
   std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
 };
 
+#if JVET_AG2034_SPTI_SEI
+class SEISourcePictureTimingInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::SOURCE_PICTURE_TIMING_INFO; }
+  SEISourcePictureTimingInfo() {}
+
+  SEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
+  virtual ~SEISourcePictureTimingInfo() {}
+
+  bool                  m_sptiSEIEnabled;
+  bool                  m_sptiSourceTimingEqualsOutputTimingFlag;
+  uint32_t              m_sptiSourceType;
+  uint32_t              m_sptiTimeScale;
+  uint32_t              m_sptiNumUnitsInElementalInterval;
+  bool                  m_sptiCancelFlag;
+  bool                  m_sptiPersistenceFlag;
+  bool                  m_sptiSourceTypePresentFlag;
+  uint32_t              m_sptiMaxSublayersMinus1;
+  std::vector<uint32_t> m_sptiSublayerIntervalScaleFactor;
+  std::vector<bool>     m_sptiSublayerSynthesizedPictureFlag;
+};
+#endif
 class SEIProcessingOrderInfo : public SEI
 {
 public:
