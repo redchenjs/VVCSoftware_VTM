@@ -445,8 +445,8 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIDepthRepresentationInfo((SEIDepthRepresentationInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::SUBPICTURE_LEVEL_INFO:
-      sei = new SEISubpicureLevelInfo;
-      xParseSEISubpictureLevelInfo((SEISubpicureLevelInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
+      sei = new SEISubpictureLevelInfo;
+      xParseSEISubpictureLevelInfo((SEISubpictureLevelInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
       sei = new SEISampleAspectRatioInfo;
@@ -2713,89 +2713,64 @@ void SEIReader::xParseSEIDepthRepInfoElement(double& f,std::ostream *pDecodedMes
   }
 }
 
-void SEIReader::xParseSEISubpictureLevelInfo(SEISubpicureLevelInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+void SEIReader::xParseSEISubpictureLevelInfo(SEISubpictureLevelInfo& sli, uint32_t payloadSize,
+                                             std::ostream* pDecodedMessageOutputStream)
 {
-  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  output_sei_message_header(sli, pDecodedMessageOutputStream, payloadSize);
   uint32_t val;
-  sei_read_code( pDecodedMessageOutputStream,   3,  val,    "sli_num_ref_levels_minus1" );            sei.m_numRefLevels  = val + 1;
-  sei_read_flag( pDecodedMessageOutputStream,       val,    "sli_cbr_constraint_flag" );              sei.m_cbrConstraintFlag = val;
-  sei_read_flag( pDecodedMessageOutputStream,       val,    "sli_explicit_fraction_present_flag" );   sei.m_explicitFractionPresentFlag = val;
-  if (sei.m_explicitFractionPresentFlag)
+  sei_read_code(pDecodedMessageOutputStream, 3, val, "sli_num_ref_levels_minus1");
+  const uint32_t numRefLevels = val + 1;
+
+  sei_read_flag(pDecodedMessageOutputStream, val, "sli_cbr_constraint_flag");
+  sli.cbrConstraint = val != 0;
+
+  sei_read_flag(pDecodedMessageOutputStream, val, "sli_explicit_fraction_present_flag");
+  const bool explicitFractionPresentFlag = val != 0;
+
+  uint32_t maxSublayers = 1;
+  uint32_t numSubpics   = 1;
+  if (explicitFractionPresentFlag)
   {
-    sei_read_uvlc(pDecodedMessageOutputStream,      val,    "sli_num_subpics_minus1");             sei.m_numSubpics = val + 1;
-    sei_read_code(pDecodedMessageOutputStream,  3,  val,    "sli_max_sublayers_minus1"  );            sei.m_sliMaxSublayers = val + 1;
-    sei_read_flag(pDecodedMessageOutputStream,      val,    "sli_sublayer_info_present_flag");        sei.m_sliSublayerInfoPresentFlag = val;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "sli_num_subpics_minus1");
+    numSubpics = val + 1;
+    sei_read_code(pDecodedMessageOutputStream, 3, val, "sli_max_sublayers_minus1");
+    maxSublayers = val + 1;
+    sei_read_flag(pDecodedMessageOutputStream, val, "sli_sublayer_info_present_flag");
+    sli.hasSublayerInfo = val != 0;
     while (!isByteAligned())
     {
-      sei_read_flag( pDecodedMessageOutputStream,   val,    "sli_alignment_zero_bit" );           CHECK (val != 0, "sli_alignment_zero_bit not equal to zero" );
+      sei_read_flag(pDecodedMessageOutputStream, val, "sli_alignment_zero_bit");
+      CHECK(val != 0, "sli_alignment_zero_bit not equal to zero");
     }
   }
 
-  sei.m_refLevelIdc.resize(sei.m_numRefLevels);
-  sei.m_nonSubpicLayersFraction.resize(sei.m_numRefLevels);
-  // sei parameters initialization
-  for (int i = 0; i < sei.m_numRefLevels; i++)
-  {
-    sei.m_nonSubpicLayersFraction[i].resize(sei.m_sliMaxSublayers);
-    sei.m_refLevelIdc[i].resize(sei.m_sliMaxSublayers);
-    for (int k = 0; k < sei.m_sliMaxSublayers; k++)
-    {
-      sei.m_refLevelIdc[i][k] = Level::LEVEL15_5;
-    }
-  }
-  if (sei.m_explicitFractionPresentFlag)
-  {
-    sei.m_refLevelFraction.resize(sei.m_numRefLevels);
-    for (int i = 0; i < sei.m_numRefLevels; i++)
-    {
-      sei.m_refLevelFraction[i].resize(sei.m_numSubpics);
-      for (int j = 0; j < sei.m_numSubpics; j++)
-      {
-        sei.m_refLevelFraction[i][j].resize(sei.m_sliMaxSublayers);
-        for (int k = 0; k < sei.m_sliMaxSublayers; k++)
-        {
-          sei.m_refLevelFraction[i][j][k] = 0;
-        }
-      }
-    }
-  }
+  sli.resize(numRefLevels, maxSublayers, explicitFractionPresentFlag, numSubpics);
 
   // parsing
-  for (int k = sei.m_sliSublayerInfoPresentFlag ? 0 : sei.m_sliMaxSublayers - 1; k < sei.m_sliMaxSublayers; k++)
+  for (int k = sli.hasSublayerInfo ? 0 : sli.maxSublayers() - 1; k < sli.maxSublayers(); k++)
   {
-    for (int i = 0; i < sei.m_numRefLevels; i++)
+    for (int i = 0; i < sli.numRefLevels(); i++)
     {
-      sei_read_code(pDecodedMessageOutputStream, 8, val, "sli_non_subpic_layers_fraction[i][k]");    sei.m_nonSubpicLayersFraction[i][k] = (Level::Name) val;
-      sei_read_code(pDecodedMessageOutputStream, 8, val, "sli_ref_level_idc[i][k]");                 sei.m_refLevelIdc[i][k] = (Level::Name) val;
+      sei_read_code(pDecodedMessageOutputStream, 8, val, "sli_non_subpic_layers_fraction[i][k]");
+      sli.nonSubpicLayerFraction(i, k) = (Level::Name) val;
+      sei_read_code(pDecodedMessageOutputStream, 8, val, "sli_ref_level_idc[i][k]");
+      sli.refLevelIdc(i, k) = (Level::Name) val;
 
-      if (sei.m_explicitFractionPresentFlag)
+      if (sli.explicitFractionPresentFlag())
       {
-        for (int j = 0; j < sei.m_numSubpics; j++)
+        for (int j = 0; j < sli.numSubpics(); j++)
         {
-          sei_read_code(pDecodedMessageOutputStream, 8, val, "sli_ref_level_fraction_minus1[i][j][k]");  sei.m_refLevelFraction[i][j][k] = val;
+          sei_read_code(pDecodedMessageOutputStream, 8, val, "sli_ref_level_fraction_minus1[i][j][k]");
+          sli.refLevelFraction(i, j, k) = val;
         }
       }
     }
   }
 
   // update the inference of m_refLevelIdc[][] and m_refLevelFraction[][][]
-  if (!sei.m_sliSublayerInfoPresentFlag)
+  if (!sli.hasSublayerInfo)
   {
-    for (int k = sei.m_sliMaxSublayers - 2; k >= 0; k--)
-    {
-      for (int i = 0; i < sei.m_numRefLevels; i++)
-      {
-        sei.m_nonSubpicLayersFraction[i][k] = sei.m_nonSubpicLayersFraction[i][sei.m_sliMaxSublayers - 1];
-        sei.m_refLevelIdc[i][k] = sei.m_refLevelIdc[i][sei.m_sliMaxSublayers - 1];
-        if (sei.m_explicitFractionPresentFlag)
-        {
-          for (int j = 0; j < sei.m_numSubpics; j++)
-          {
-            sei.m_refLevelFraction[i][j][k] = sei.m_refLevelFraction[i][j][sei.m_sliMaxSublayers - 1];
-          }
-        }
-      }
-    }
+    sli.fillSublayers();
   }
 }
 

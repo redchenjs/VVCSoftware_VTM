@@ -150,7 +150,7 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIColourTransformInfo(*static_cast<const SEIColourTransformInfo *>(&sei));
     break;
   case SEI::PayloadType::SUBPICTURE_LEVEL_INFO:
-    xWriteSEISubpictureLevelInfo(*static_cast<const SEISubpicureLevelInfo *>(&sei));
+    xWriteSEISubpictureLevelInfo(*static_cast<const SEISubpictureLevelInfo*>(&sei));
     break;
   case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
     xWriteSEISampleAspectRatioInfo(*static_cast<const SEISampleAspectRatioInfo *>(&sei));
@@ -1327,40 +1327,34 @@ void SEIWriter::xWriteSEIDepthRepInfoElement( double f )
   xWriteCode( x_mantissa, x_mantissa_len ,     "da_mantissa" );
 };
 
-void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpicureLevelInfo &sei)
+void SEIWriter::xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sli)
 {
-  CHECK(sei.m_numRefLevels < 1, "SEISubpicureLevelInfo: numRefLevels must be greater than zero");
-  CHECK(sei.m_numRefLevels != (int)sei.m_refLevelIdc.size(), "SEISubpicureLevelInfo: numRefLevels must be equal to the number of levels");
-  if (sei.m_explicitFractionPresentFlag)
+  CHECK(sli.numRefLevels() < 1, "SEISubpictureLevelInfo: numRefLevels must be greater than zero");
+  xWriteCode(sli.numRefLevels() - 1, 3, "sli_num_ref_levels_minus1");
+  xWriteFlag(sli.cbrConstraint ? 1 : 0, "sli_cbr_constraint_flag");
+  xWriteFlag(sli.explicitFractionPresentFlag() ? 1 : 0, "sli_explicit_fraction_present_flag");
+  if (sli.explicitFractionPresentFlag())
   {
-    CHECK(sei.m_numRefLevels != (int)sei.m_refLevelFraction.size(), "SEISubpicureLevelInfo: numRefLevels must be equal to the number of fractions");
-  }
-  xWriteCode( (uint32_t)sei.m_numRefLevels - 1, 3,                            "sli_num_ref_levels_minus1");
-  xWriteFlag(           sei.m_cbrConstraintFlag,                              "sli_cbr_constraint_flag");
-  xWriteFlag(           sei.m_explicitFractionPresentFlag,                    "sli_explicit_fraction_present_flag");
-  if (sei.m_explicitFractionPresentFlag)
-  {
-    xWriteUvlc(         sei.m_numSubpics -1 ,                                 "sli_num_subpics_minus1");
-    xWriteCode( (uint32_t)sei.m_sliMaxSublayers - 1, 3,                       "sli_max_sublayers_minus1");
-    xWriteFlag(           sei.m_sliSublayerInfoPresentFlag,                   "sli_sublayer_info_present_flag");
+    xWriteUvlc(sli.numSubpics() - 1, "sli_num_subpics_minus1");
+    xWriteCode(sli.maxSublayers() - 1, 3, "sli_max_sublayers_minus1");
+    xWriteFlag(sli.hasSublayerInfo ? 1 : 0, "sli_sublayer_info_present_flag");
     while (!isByteAligned())
     {
-      xWriteFlag(       0,                                                    "sli_alignment_zero_bit");
+      xWriteFlag(0, "sli_alignment_zero_bit");
     }
   }
 
-  for (int k = sei.m_sliSublayerInfoPresentFlag ? 0 : sei.m_sliMaxSublayers - 1; k < sei.m_sliMaxSublayers; k++)
+  for (int k = sli.hasSublayerInfo ? 0 : sli.maxSublayers() - 1; k < sli.maxSublayers(); k++)
   {
-    for (int i = 0; i < sei.m_numRefLevels; i++)
+    for (int i = 0; i < sli.numRefLevels(); i++)
     {
-      xWriteCode((uint32_t)sei.m_nonSubpicLayersFraction[i][k], 8, "sli_non_subpic_layers_fraction[i][k]");
-      xWriteCode((uint32_t)sei.m_refLevelIdc[i][k], 8, "sli_ref_level_idc[i][k]");
-      if (sei.m_explicitFractionPresentFlag)
+      xWriteCode(sli.nonSubpicLayerFraction(i, k), 8, "sli_non_subpic_layers_fraction[i][k]");
+      xWriteCode(sli.refLevelIdc(i, k), 8, "sli_ref_level_idc[i][k]");
+      if (sli.explicitFractionPresentFlag())
       {
-        CHECK(sei.m_numSubpics != (int)sei.m_refLevelFraction[i].size(), "SEISubpicureLevelInfo: number of fractions differs from number of subpictures");
-        for (int j = 0; j < sei.m_numSubpics; j++)
+        for (int j = 0; j < sli.numSubpics(); j++)
         {
-          xWriteCode((uint32_t)sei.m_refLevelFraction[i][j][k], 8, "sli_ref_level_fraction_minus1[i][j][k]");
+          xWriteCode(sli.refLevelFraction(i, j, k), 8, "sli_ref_level_fraction_minus1[i][j][k]");
         }
       }
     }

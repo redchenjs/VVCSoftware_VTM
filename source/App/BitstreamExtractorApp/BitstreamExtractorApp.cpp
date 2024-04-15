@@ -146,8 +146,8 @@ bool BitstreamExtractorApp::xCheckSEIFiller(SEIMessages SEIs, int targetSubPicId
   {
     if (sei->payloadType() == SEI::PayloadType::SUBPICTURE_LEVEL_INFO)
     {
-      SEISubpicureLevelInfo *seiSLI = (SEISubpicureLevelInfo *)sei;
-      if (!seiSLI->m_cbrConstraintFlag)
+      auto sli = (SEISubpictureLevelInfo*) sei;
+      if (!sli->cbrConstraint)
       {
         rmAllFillerInSubpicExt = true;
       }

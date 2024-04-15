@@ -917,18 +917,7 @@ SEIContentColourVolume::SEIContentColourVolume(const SEIContentColourVolume& sei
   m_ccvAvgLuminanceValue = sei.m_ccvAvgLuminanceValue;
 }
 
-SEISubpicureLevelInfo::SEISubpicureLevelInfo(const SEISubpicureLevelInfo& sei)
-{
-  m_numRefLevels = sei.m_numRefLevels;
-  m_explicitFractionPresentFlag = sei.m_explicitFractionPresentFlag;
-  m_cbrConstraintFlag = sei.m_cbrConstraintFlag;
-  m_numSubpics = sei.m_numSubpics;
-  m_sliMaxSublayers = sei.m_sliMaxSublayers;
-  m_sliSublayerInfoPresentFlag = sei.m_sliSublayerInfoPresentFlag;
-  m_nonSubpicLayersFraction = sei.m_nonSubpicLayersFraction;
-  m_refLevelIdc = sei.m_refLevelIdc;
-  m_refLevelFraction = sei.m_refLevelFraction;
-}
+SEISubpictureLevelInfo::SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sli) = default;
 
 SEIManifest::SEIManifest(const SEIManifest& sei)
 {

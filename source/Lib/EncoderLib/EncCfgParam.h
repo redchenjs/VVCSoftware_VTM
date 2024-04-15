@@ -56,13 +56,8 @@ public:
 class CfgSEISubpictureLevel
 {
 public:
-
   CfgSEISubpictureLevel()
-  : m_enabled (false)
-  , m_explicitFraction (false)
-  , m_numSubpictures (1)
-  , m_sliMaxSublayers(1)
-  , m_sliSublayerInfoPresentFlag (false)
+    : m_enabled(false), m_explicitFraction(false), m_numSubpictures(1), m_sliMaxSublayers(1), hasSublayerInfo(false)
   {}
 
   virtual ~CfgSEISubpictureLevel(){}
@@ -74,7 +69,7 @@ public:
   std::vector<int>          m_nonSubpicLayersFraction;
   std::vector<int>          m_fractions;
   int                       m_sliMaxSublayers;
-  bool                      m_sliSublayerInfoPresentFlag;
+  bool                      hasSublayerInfo;
 };
 
 }
