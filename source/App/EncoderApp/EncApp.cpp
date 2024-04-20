@@ -836,9 +836,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setLog2MinCodingBlockSize                            ( m_log2MinCuSize );
   m_cEncLib.setLog2MaxTbSize                                     ( m_log2MaxTbSize );
   m_cEncLib.setUseEncDbOpt(m_encDbOpt);
-#if JVET_AF0122_ALF_LAMBDA_OPT
   m_cEncLib.setUseAlfLambdaOpt(m_encALFOpt);
-#endif
   m_cEncLib.setUseFastLCTU                                       ( m_useFastLCTU );
   m_cEncLib.setFastInterSearchMode                               ( m_fastInterSearchMode );
   m_cEncLib.setUseEarlyCU                                        ( m_bUseEarlyCU  );

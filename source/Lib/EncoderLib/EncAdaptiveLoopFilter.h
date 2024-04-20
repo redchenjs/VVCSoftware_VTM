@@ -354,11 +354,9 @@ public:
               const BitDepths& internalBitDepth);
   void destroy();
   void setApsIdStart( int i) { m_apsIdStart = i; }
-#if JVET_AF0122_ALF_LAMBDA_OPT
   bool m_lumaNewAps;
   double m_lambdaFactor;
   void setLambdaFactor( CodingStructure &cs, const int chromaHisApsNums, const bool m_lumaNewAps){ m_lambdaFactor = (cs.sps->getALFOptEnabledFlag() && chromaHisApsNums < ALF_HISAPSNUM_LIMITED && cs.slice->getSliceType() != I_SLICE && m_lumaNewAps == 1) ? ALF_CHROMA_LAMBDA_SCALE_LOW : 1.0 ;};
-#endif
 
 private:
   void firstPass(CodingStructure &cs, AlfParam &alfParam, const PelUnitBuf &orgUnitBuf, const PelUnitBuf &recExtBuf,

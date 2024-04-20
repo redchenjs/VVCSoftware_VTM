@@ -57,7 +57,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AF0122_ALF_LAMBDA_OPT                        1  // JVET-AF0122: Lagrange multiplier optimization for chroma ALF and CCALF
 
 #define JVET_AF0061_ADDITION_PO_ID                        1 // JVET-AF0061, JVET-AF0174, JVET-AF0067, and JVET-AF0310: add po_id in the SEI processing order (SPO) SEI message
 
