@@ -100,9 +100,7 @@ public:
     PHASE_INDICATION                           = 212,
 
     SEI_PROCESSING_ORDER = 213,
-#if JVET_AF0310_PO_NESTING
     SEI_PROCESSING_ORDER_NESTING = 214,
-#endif
   };
 
   SEI() {}
@@ -160,11 +158,7 @@ public:
   PayloadType payloadType() const { return PayloadType::SEI_PROCESSING_ORDER; }
   SEIProcessingOrderInfo() {}
   SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei);
-#if JVET_AF0310_PO_NESTING
   virtual ~SEIProcessingOrderInfo() {}
-#else
-  virtual ~SEIProcessingOrderInfo() { deleteSEIs(m_posWrapSeiMessages); }
-#endif
 
   bool                   m_posEnabled;
   uint32_t               m_posId;
@@ -174,13 +168,8 @@ public:
   std::vector<bool>      m_posPrefixFlag;
   std::vector<uint16_t>  m_posPayloadType;
   std::vector<uint16_t>   m_posProcessingOrder;
-#if JVET_AF0310_PO_NESTING
   std::vector<uint16_t>  m_posNumBitsInPrefix;
-#endif
   std::vector<std::vector<uint8_t>> m_posPrefixByte;
-#if !JVET_AF0310_PO_NESTING
-  SEIMessages            m_posWrapSeiMessages;
-#endif
   static bool checkWrappingSEIPayloadType(SEI::PayloadType const payloadType)
   {
     switch (payloadType)
@@ -198,7 +187,6 @@ public:
   }
 };
 
-#if JVET_AF0310_PO_NESTING
 class SEIProcessingOrderNesting : public SEI
 {
 public:
@@ -213,7 +201,6 @@ public:
   SEIMessages            m_ponWrapSeiMessages;
   std::vector<uint16_t>  m_ponPayloadType;
 };
-#endif
 
 class SEIEquirectangularProjection : public SEI
 {
