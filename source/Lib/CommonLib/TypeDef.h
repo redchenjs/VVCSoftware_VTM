@@ -61,7 +61,6 @@
 
 
 
-#define JVET_AG0089_TEMPORAL_EXTRAPOLATION                1 // JVET-AG0089: AHG9: Temporal extrapolation purpose for the neural-network post-filter characteristics SEI message
 
 //########### place macros to be be kept below this line ###############
 
@@ -787,12 +786,8 @@ enum NNPC_PurposeType
   RESOLUTION_UPSAMPLING      = 4,
   FRAME_RATE_UPSAMPLING      = 8,
   BIT_DEPTH_UPSAMPLING       = 16,
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
   COLOURIZATION              = 32,
   TEMPORAL_EXTRAPOLATION     = 64
-#else
-  COLOURIZATION              = 32
-#endif
 };
 
 enum POST_FILTER_MODE

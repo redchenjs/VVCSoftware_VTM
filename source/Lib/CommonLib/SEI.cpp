@@ -993,9 +993,7 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_totalKilobyteSize = sei.m_totalKilobyteSize;
   m_numberInputDecodedPicturesMinus1 = sei.m_numberInputDecodedPicturesMinus1;
   m_numberInterpolatedPictures = sei.m_numberInterpolatedPictures;
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
   m_numberExtrapolatedPicturesMinus1 = sei.m_numberExtrapolatedPicturesMinus1;
-#endif
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
 }
 
@@ -1053,9 +1051,7 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_totalKilobyteSize == sei.m_totalKilobyteSize &&
   m_numberInputDecodedPicturesMinus1 == sei.m_numberInputDecodedPicturesMinus1 &&
   m_numberInterpolatedPictures == sei.m_numberInterpolatedPictures &&
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
   m_numberExtrapolatedPicturesMinus1 == sei.m_numberExtrapolatedPicturesMinus1 &&
-#endif
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
   m_payloadLength == sei.m_payloadLength;
 
