@@ -836,9 +836,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setLog2MinCodingBlockSize                            ( m_log2MinCuSize );
   m_cEncLib.setLog2MaxTbSize                                     ( m_log2MaxTbSize );
   m_cEncLib.setUseEncDbOpt(m_encDbOpt);
-#if JVET_AF0122_ALF_LAMBDA_OPT
   m_cEncLib.setUseAlfLambdaOpt(m_encALFOpt);
-#endif
   m_cEncLib.setUseFastLCTU                                       ( m_useFastLCTU );
   m_cEncLib.setFastInterSearchMode                               ( m_fastInterSearchMode );
   m_cEncLib.setUseEarlyCU                                        ( m_bUseEarlyCU  );
@@ -1246,12 +1244,10 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInterpolatedPictures( m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i], i);
       }
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::TEMPORAL_EXTRAPOLATION) != 0)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1( m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i], i);
       }
-#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag  (m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsInpFormatIdc            (m_nnPostFilterSEICharacteristicsInpFormatIdc[i], i);
@@ -1376,18 +1372,14 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setSiiSEISubLayerNumUnitsInSI(m_siiSEISubLayerNumUnitsInSI);
 
   m_cEncLib.setPoSEIEnabled                                      (m_poSEIEnabled);
-#if JVET_AF0061_ADDITION_PO_ID
   m_cEncLib.setPoSEIId                                           (m_poSEIId);
-#endif
   m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
   m_cEncLib.setPoSEIWrappingFlag                                 (m_poSEIWrappingFlag);
   m_cEncLib.setPoSEIImportanceFlag                               (m_poSEIImportanceFlag);
   m_cEncLib.setPoSEIPrefixFlag                                   (m_poSEIPrefixFlag);
   m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
-#if JVET_AF0310_PO_NESTING
   m_cEncLib.setPoSEINumOfPrefixBits                              (m_poSEINumOfPrefixBits);
-#endif
   m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
 
 

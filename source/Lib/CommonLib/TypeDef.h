@@ -57,15 +57,10 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AF0122_ALF_LAMBDA_OPT                        1  // JVET-AF0122: Lagrange multiplier optimization for chroma ALF and CCALF
 
-#define JVET_AF0061_ADDITION_PO_ID                        1 // JVET-AF0061, JVET-AF0174, JVET-AF0067, and JVET-AF0310: add po_id in the SEI processing order (SPO) SEI message
 
-#define JVET_AF0062_MOVE_PO_SEI_PREFIX_FLAG               1 // JVET-AF0062: Move po_sei_prefix_flag[ i ] from immediately before po_sei_payload_type[ i ] to be immediately after po_sei_payload_type[ i ] 
 
-#define JVET_AF0310_PO_NESTING                            1
 
-#define JVET_AG0089_TEMPORAL_EXTRAPOLATION                1 // JVET-AG0089: AHG9: Temporal extrapolation purpose for the neural-network post-filter characteristics SEI message
 
 //########### place macros to be be kept below this line ###############
 
@@ -791,12 +786,8 @@ enum NNPC_PurposeType
   RESOLUTION_UPSAMPLING      = 4,
   FRAME_RATE_UPSAMPLING      = 8,
   BIT_DEPTH_UPSAMPLING       = 16,
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
   COLOURIZATION              = 32,
   TEMPORAL_EXTRAPOLATION     = 64
-#else
-  COLOURIZATION              = 32
-#endif
 };
 
 enum POST_FILTER_MODE

@@ -511,22 +511,16 @@ SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
 {
   m_posEnabled = sei.m_posEnabled;
-#if JVET_AF0061_ADDITION_PO_ID
   m_posId = sei.m_posId;
-#endif
   m_posNumMinus2 = sei.m_posNumMinus2;
   m_posWrappingFlag = sei.m_posWrappingFlag;
   m_posImportanceFlag = sei.m_posImportanceFlag;
-#if !JVET_AF0310_PO_NESTING
-  m_posWrapSeiMessages = sei.m_posWrapSeiMessages;
-#endif
   m_posPrefixFlag = sei.m_posPrefixFlag;
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;
   m_posPrefixByte = sei.m_posPrefixByte;
 }
 
-#if JVET_AF0310_PO_NESTING
 SEIProcessingOrderNesting::SEIProcessingOrderNesting(const SEIProcessingOrderNesting& sei)
 {
   m_ponTargetPoId = sei.m_ponTargetPoId;
@@ -535,7 +529,6 @@ SEIProcessingOrderNesting::SEIProcessingOrderNesting(const SEIProcessingOrderNes
   m_ponWrapSeiMessages = sei.m_ponWrapSeiMessages;
   m_ponPayloadType = sei.m_ponPayloadType;
 }
-#endif
 
 SEIEquirectangularProjection::SEIEquirectangularProjection(const SEIEquirectangularProjection& sei)
 {
@@ -1000,9 +993,7 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_totalKilobyteSize = sei.m_totalKilobyteSize;
   m_numberInputDecodedPicturesMinus1 = sei.m_numberInputDecodedPicturesMinus1;
   m_numberInterpolatedPictures = sei.m_numberInterpolatedPictures;
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
   m_numberExtrapolatedPicturesMinus1 = sei.m_numberExtrapolatedPicturesMinus1;
-#endif
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
 }
 
@@ -1060,9 +1051,7 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_totalKilobyteSize == sei.m_totalKilobyteSize &&
   m_numberInputDecodedPicturesMinus1 == sei.m_numberInputDecodedPicturesMinus1 &&
   m_numberInterpolatedPictures == sei.m_numberInterpolatedPictures &&
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
   m_numberExtrapolatedPicturesMinus1 == sei.m_numberExtrapolatedPicturesMinus1 &&
-#endif
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
   m_payloadLength == sei.m_payloadLength;
 

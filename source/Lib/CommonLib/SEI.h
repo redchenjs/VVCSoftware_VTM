@@ -100,9 +100,7 @@ public:
     PHASE_INDICATION                           = 212,
 
     SEI_PROCESSING_ORDER = 213,
-#if JVET_AF0310_PO_NESTING
     SEI_PROCESSING_ORDER_NESTING = 214,
-#endif
   };
 
   SEI() {}
@@ -160,29 +158,18 @@ public:
   PayloadType payloadType() const { return PayloadType::SEI_PROCESSING_ORDER; }
   SEIProcessingOrderInfo() {}
   SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei);
-#if JVET_AF0310_PO_NESTING
   virtual ~SEIProcessingOrderInfo() {}
-#else
-  virtual ~SEIProcessingOrderInfo() { deleteSEIs(m_posWrapSeiMessages); }
-#endif
 
   bool                   m_posEnabled;
-#if JVET_AF0061_ADDITION_PO_ID
   uint32_t               m_posId;
-#endif
   uint32_t               m_posNumMinus2;
   std::vector<bool>      m_posWrappingFlag;
   std::vector<bool>      m_posImportanceFlag;
   std::vector<bool>      m_posPrefixFlag;
   std::vector<uint16_t>  m_posPayloadType;
   std::vector<uint16_t>   m_posProcessingOrder;
-#if JVET_AF0310_PO_NESTING
   std::vector<uint16_t>  m_posNumBitsInPrefix;
-#endif
   std::vector<std::vector<uint8_t>> m_posPrefixByte;
-#if !JVET_AF0310_PO_NESTING
-  SEIMessages            m_posWrapSeiMessages;
-#endif
   static bool checkWrappingSEIPayloadType(SEI::PayloadType const payloadType)
   {
     switch (payloadType)
@@ -200,7 +187,6 @@ public:
   }
 };
 
-#if JVET_AF0310_PO_NESTING
 class SEIProcessingOrderNesting : public SEI
 {
 public:
@@ -215,7 +201,6 @@ public:
   SEIMessages            m_ponWrapSeiMessages;
   std::vector<uint16_t>  m_ponPayloadType;
 };
-#endif
 
 class SEIEquirectangularProjection : public SEI
 {
@@ -1344,9 +1329,7 @@ public:
     , m_numKmacOperationsIdc(0)
     , m_totalKilobyteSize(0)
     , m_numberInputDecodedPicturesMinus1(0)
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
     , m_numberExtrapolatedPicturesMinus1(0)
-#endif
     , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
   {}
@@ -1419,9 +1402,7 @@ public:
   uint32_t       m_totalKilobyteSize;
   uint32_t       m_numberInputDecodedPicturesMinus1;
   std::vector<uint32_t> m_numberInterpolatedPictures;
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
   uint32_t       m_numberExtrapolatedPicturesMinus1;
-#endif
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
   uint32_t       m_numInpPicsInOutputTensor;

@@ -417,9 +417,7 @@ protected:
   uint32_t  m_initialCW;
   int       m_CSoffset;
   bool      m_encDbOpt;
-#if JVET_AF0122_ALF_LAMBDA_OPT
   bool      m_encALFOpt;
-#endif
   unsigned              m_maxCuWidth;                                      ///< max. CU width in pixel
   unsigned              m_maxCuHeight;                                     ///< max. CU height in pixel
   unsigned m_log2MinCuSize;                                   ///< min. CU size log2
@@ -791,9 +789,7 @@ protected:
   uint32_t              m_nnPostFilterSEIActivationTargetId;
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
   uint32_t              m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEIActivationCancelFlag;
@@ -804,18 +800,14 @@ protected:
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
 
   bool                  m_poSEIEnabled;
-#if JVET_AF0061_ADDITION_PO_ID
   uint32_t              m_poSEIId;
-#endif
   uint32_t              m_poSEINumMinus2;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
   std::vector<bool>     m_poSEIPrefixFlag;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
-#if JVET_AF0310_PO_NESTING
   std::vector<uint16_t>  m_poSEINumOfPrefixBits;
-#endif
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
 
 
