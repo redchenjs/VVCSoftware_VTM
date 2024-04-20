@@ -802,9 +802,7 @@ protected:
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
 
   bool                  m_poSEIEnabled;
-#if JVET_AF0061_ADDITION_PO_ID
   uint32_t              m_poSEIId;
-#endif
   uint32_t              m_poSEINumMinus2;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
