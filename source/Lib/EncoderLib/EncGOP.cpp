@@ -5741,7 +5741,7 @@ void EncGOP::xCalculateGreenComplexityMetrics( FeatureCounterStruct featureCount
   seiGreenMetadataInfo->m_greenComplexityMetrics.portionAlfInstances = int(floor( 255.0 * numAlfFilteredBlocks / totalNum4BlocksInPeriod));
   seiGreenMetadataInfo->m_numPictures = int(featureCounterDifference.iSlices + featureCounterDifference.bSlices +featureCounterDifference.pSlices);
   seiGreenMetadataInfo->m_numSeconds =
-    int(floor(seiGreenMetadataInfo->m_numPictures / m_pcCfg->getFrameRateScale().getFloatVal()));
+    int(floor(seiGreenMetadataInfo->m_numPictures / m_pcCfg->getFrameRate().getFloatVal()));
 }
 #endif
 
