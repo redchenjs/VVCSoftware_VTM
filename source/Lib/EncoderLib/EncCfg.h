@@ -745,7 +745,9 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t>   m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
   uint32_t                m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
+#endif
   std::vector<bool>       m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
 
@@ -2061,8 +2063,10 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1(int filterIdx) const                    { return m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsNumberInterpolatedPictures(std::vector<uint32_t> value, int filterIdx)   { m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[filterIdx] = value; }
   const       std::vector<uint32_t>& getNNPostFilterSEICharacteristicsNumberInterpolatedPictures(int filterIdx)         { return m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[filterIdx]; }
+#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
   void        setNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1(uint32_t value, int filterIdx)          { m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[filterIdx] = value; }
   uint32_t    getNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1(int filterIdx)                          { return m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[filterIdx]; }
+#endif
   void        setNNPostFilterSEICharacteristicsInputPicOutputFlag(std::vector<bool> value, int filterIdx)   { m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx] = value; }
   const       std::vector<bool>& getNNPostFilterSEICharacteristicsInputPicOutputFlag(int filterIdx)         { return m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(bool absentInputPicZeroFlag, int filterIdx)       { m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[filterIdx] = absentInputPicZeroFlag; }
