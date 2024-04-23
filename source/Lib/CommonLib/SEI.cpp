@@ -1054,17 +1054,6 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   m_outputFlag = sei.m_outputFlag;
 }
 
-SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)
-{
-  m_filterHintCancelFlag = sei.m_filterHintCancelFlag;
-  m_filterHintPersistenceFlag = sei.m_filterHintPersistenceFlag;
-  m_filterHintSizeY = sei.m_filterHintSizeY;
-  m_filterHintSizeX = sei.m_filterHintSizeX;
-  m_filterHintType = sei.m_filterHintType;
-  m_filterHintChromaCoeffPresentFlag = sei.m_filterHintChromaCoeffPresentFlag;
-  m_filterHintValues = sei.m_filterHintValues;
-}
-
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t id)
 {
   for (auto sei : seiList)

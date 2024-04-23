@@ -3932,7 +3932,6 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
    16 & Progressive refinement segment start     & (Not handled)\\
    17 & Progressive refinement segment end       & (Not handled)\\
    19 & Film grain characteristics               & Table \ref{tab:sei-film-grain} \\
-   22 & Post-filter hint                         & Table \ref{tab:sei-post-filter hint} \\
    23 & Tone mapping information                 & Table \ref{tab:sei-tone-mapping-info} \\
    45 & Frame packing arrangement                & Table \ref{tab:sei-frame-packing-arrangement} \\
    47 & Display orientation                      & Table \ref{tab:sei-display-orientation} \\
@@ -4173,44 +4172,6 @@ Specifies the component model values on colour component 1.
 \Option{SEIFGCCompModelValuesComp2} &
 \Default{0} &
 Specifies the component model values on colour component 2.
-\\
-\end{OptionTableNoShorthand}
-
-\begin{OptionTableNoShorthand}{Post-filter Hint SEI message encoder parameters}{tab:sei-post-filter hint}
-\Option{SEIPostFilterHintEnabled} &
-\Default{1} &
-Specifies whether post-filter hint SEI message to be generated or not.
-\\
-\Option{SEIPostFilterHintCancelFlag} &
-\Default{0} &
-Specifies whether this SEI message cancels the previous post-filter hint SEI message.
-\\
-\Option{SEIPostFilterHintPersistenceFlag} &
-\Default{0} &
-Specifies whether this SEI message applies to just one picture or sequence of pictures.
-\\
-\Option{SEIPostFilterHintSizeY} &
-\Default{1} &
-Specifies the vertical size of the coefficient matrix for the filters.
-\\
-\Option{SEIPostFilterHintSizeX} &
-\Default{1} &
-Specifies the horizontal size of the coefficient matrix for the filters.
-\\
-\Option{SEIPostFilterHintType} &
-\Default{0} &
-Specifies the type of the filters.
-\\
-\Option{SEIPostFilterHintChromaCoeffPresentFlag} &
-\Default{0} &
-Specifies whether filters for chroma components are present of not.
-\\
-\Option{SEIPostFilterHintValue} &
-\Default{\None} &
-Array of filter coefficients.
-The number of coefficients should be
-If SEIPostFilterHintChromaCoeffPresentFlag is 0 then SEIPostFilterHintSizeY * SEIPostFilterHintSizeY
-Else if SEIPostFilterHintChromaCoeffPresentFlag is 0 then SEIPostFilterHintSizeY * SEIPostFilterHintSizeY * 3
 \\
 \end{OptionTableNoShorthand}
 

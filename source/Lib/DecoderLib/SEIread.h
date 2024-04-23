@@ -118,7 +118,6 @@ protected:
   void xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics& sei, uint32_t payloadSize, const SPS* sps, std::ostream* pDecodedMessageOutputStream);
   void xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActivation& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIPhaseIndication(SEIPhaseIndication& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
-  void xParseSEIPostFilterHint(SEIPostFilterHint &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);
   void sei_read_code(std::ostream *pOS, uint32_t length, uint32_t &ruiCode, const char *pSymbolName);

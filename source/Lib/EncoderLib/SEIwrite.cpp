@@ -182,9 +182,6 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
     xWriteSEINeuralNetworkPostFilterActivation(*static_cast<const SEINeuralNetworkPostFilterActivation *>(&sei));
     break;
-  case SEI::PayloadType::POST_FILTER_HINT:
-    xWriteSEIPostFilterHint(*static_cast<const SEIPostFilterHint *>(&sei));
-    break;
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -1863,25 +1860,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
     for (uint32_t i = 0; i < (uint32_t)sei.m_outputFlag.size(); i++)
     {
       xWriteFlag(sei.m_outputFlag[i], "nnpfa_output_flag");
-    }
-  }
-}
-
-void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
-{
-  xWriteFlag(sei.m_filterHintCancelFlag, "filter_hint_cancel_flag");
-  if (sei.m_filterHintCancelFlag == false)
-  {
-    xWriteFlag(sei.m_filterHintPersistenceFlag, "filter_hint_persistence_flag");
-    xWriteUvlc(sei.m_filterHintSizeY, "filter_hint_size_y");
-    xWriteUvlc(sei.m_filterHintSizeX, "filter_hint_size_x");
-    xWriteCode(sei.m_filterHintType, 2, "filter_hint_type");
-    xWriteFlag(sei.m_filterHintChromaCoeffPresentFlag, "filter_hint_chroma_coeff_present_flag");
-
-    CHECK(!(sei.m_filterHintValues.size() == ((sei.m_filterHintChromaCoeffPresentFlag ? 3 : 1) * sei.m_filterHintSizeX * sei.m_filterHintSizeY)), "The number of filter coefficient shall match the matrix size and considering whether filters for chroma is present of not");
-    for (uint32_t i = 0; i < sei.m_filterHintValues.size(); i++)
-    {
-      xWriteSvlc(sei.m_filterHintValues[i], "filter_hint_value[][][]");
     }
   }
 }

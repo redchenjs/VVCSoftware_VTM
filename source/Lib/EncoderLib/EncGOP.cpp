@@ -1008,14 +1008,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
   {
     xCreateNNPostFilterActivationSEIMessage(seiMessages, slice);
   }
-
-  if (m_pcCfg->getPostFilterHintSEIEnabled())
-  {
-    SEIPostFilterHint *postFilterHintSEI = new SEIPostFilterHint;
-
-    m_seiEncoder.initSEIPostFilterHint(postFilterHintSEI);
-    seiMessages.push_back(postFilterHintSEI);
-  }
 }
 
 void EncGOP::xCreateNNPostFilterCharacteristicsSEIMessages(SEIMessages& seiMessages)

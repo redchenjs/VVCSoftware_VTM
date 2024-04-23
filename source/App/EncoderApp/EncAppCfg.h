@@ -798,15 +798,6 @@ protected:
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
 
-  bool                 m_postFilterHintSEIEnabled;
-  bool                 m_postFilterHintSEICancelFlag;
-  bool                 m_postFilterHintSEIPersistenceFlag;
-  uint32_t             m_postFilterHintSEISizeY;
-  uint32_t             m_postFilterHintSEISizeX;
-  uint32_t             m_postFilterHintSEIType;
-  bool                 m_postFilterHintSEIChromaCoeffPresentFlag;
-  std::vector<int32_t> m_postFilterHintValues;
-
   bool                  m_constrainedRaslEncoding;
 
   bool                  m_sampleAspectRatioInfoSEIEnabled;

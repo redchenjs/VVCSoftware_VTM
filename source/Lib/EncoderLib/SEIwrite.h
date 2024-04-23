@@ -111,7 +111,6 @@ protected:
 #if GREEN_METADATA_SEI_ENABLED
   void xWriteSEIGreenMetadataInfo                 (const SEIGreenMetadataInfo &sei);
 #endif
-  void xWriteSEIPostFilterHint(const SEIPostFilterHint &sei);
 protected:
   HRD m_nestingHrd;
 };
