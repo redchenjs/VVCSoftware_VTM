@@ -1958,11 +1958,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream numberInterpolatedPics;
     numberInterpolatedPics << "SEINNPFCNumberInterpolatedPics" << i;
     opts.addOptions()(numberInterpolatedPics.str(), cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], "Number of pictures to interpolate");
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
-    std::ostringstream numberExtrapolatedPicturesMinus1;
-    numberExtrapolatedPicturesMinus1 << "SEINNPFCNumberExtrapolatedPicsMinus1" << i; 
-    opts.addOptions()(numberExtrapolatedPicturesMinus1.str(), m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i], 0u, "Number of pictures to extrapolate");
-#endif
     std::ostringstream InputPicOutputFlag;
     InputPicOutputFlag << "SEINNPFCInputPicOutputFlag" << i;
     opts.addOptions()(InputPicOutputFlag.str(), cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], "Indicates whether NNPF will generate a corresponding output picture for the input picture");
@@ -5133,15 +5128,8 @@ bool EncAppCfg::xCheckParameter()
     {
       xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > MAX_NNPFC_ID, "SEINNPFCId must be in the range of 0 to 2^32-2");
       xConfirmPara(m_nnPostFilterSEICharacteristicsModeIdc[i] > 255, "SEINNPFCModeIdc must be in the range of 0 to 255");
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
-      xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 127, "SEINNPFCPurpose must be in the range of 0 to 127");
-#else
       xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 1023, "SEINNPFCPurpose must be in the range of 0 to 1023");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 63, "SEINNPFCNumberInputDecodedPicturesMinus1 must be in the range of 0 to 63");
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
-      xConfirmPara(m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i] > 62, "SEINNPFCNumberExtrapolatedPicsMinus1 must be in the range of 0 to 62");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthChromaMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[i] > 24, "SEINNPFCOutTensorBitDepthLumaMinus8 must be in the range of 0 to 24");

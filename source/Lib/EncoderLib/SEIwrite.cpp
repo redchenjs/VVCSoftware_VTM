@@ -1771,12 +1771,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       }
     }
 
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
-    if((sei.m_purpose & NNPC_PurposeType::TEMPORAL_EXTRAPOLATION) != 0)
-    {
-      xWriteUvlc(sei.m_numberExtrapolatedPicturesMinus1, "nnpfc_extrapolated_pics_minus1");
-    }
-#endif
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");

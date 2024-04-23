@@ -789,9 +789,6 @@ protected:
   uint32_t              m_nnPostFilterSEIActivationTargetId;
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AG0089_TEMPORAL_EXTRAPOLATION
-  uint32_t              m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEIActivationCancelFlag;
