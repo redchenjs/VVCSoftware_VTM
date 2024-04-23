@@ -885,7 +885,9 @@ protected:
   bool m_SEIPrefixIndicationSEIEnabled;
   //SEI message processing order
   bool                  m_poSEIEnabled;
+#if JVET_AF0061_ADDITION_PO_ID
   uint32_t              m_poSEIId;
+#endif
   uint32_t              m_poSEINumMinus2;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
@@ -2575,8 +2577,10 @@ public:
   //SEI messages processing order
   void     setPoSEIEnabled(bool b)                                   { m_poSEIEnabled = b; }
   bool     getPoSEIEnabled()                                         { return m_poSEIEnabled; }
+#if JVET_AF0061_ADDITION_PO_ID
   void     setPoSEIId(uint32_t i)                                    { m_poSEIId = i; }
   uint32_t getPoSEIId()                                              { return m_poSEIId; }
+#endif
   void     setPoSEINumMinus2(uint32_t i)                             { m_poSEINumMinus2 = i; }
   uint32_t getPoSEINumMinus2()                                       { return m_poSEINumMinus2; }
   void     setPoSEIWrappingFlag(const std::vector<bool>& b)          { m_poSEIWrappingFlag = b; }

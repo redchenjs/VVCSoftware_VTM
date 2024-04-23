@@ -58,6 +58,7 @@
 //########### place macros to be removed in next cycle below this line ###############
 
 
+#define JVET_AF0061_ADDITION_PO_ID                        1 // JVET-AF0061, JVET-AF0174, JVET-AF0067, and JVET-AF0310: add po_id in the SEI processing order (SPO) SEI message
 
 
 
