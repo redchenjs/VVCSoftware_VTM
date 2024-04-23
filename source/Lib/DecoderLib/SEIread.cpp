@@ -798,10 +798,17 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     else
     {
 #endif
+#if JVET_AF0062_MOVE_PO_SEI_PREFIX_FLAG
       sei_read_code(decodedMessageOutputStream, 13, val, "po_sei_payload_type[i]");
       sei.m_posPayloadType[i] = val;
       sei_read_flag(decodedMessageOutputStream, val, "po_sei_prefix_flag[i]");
       sei.m_posPrefixFlag[i] = val;
+#else
+    sei_read_flag(decodedMessageOutputStream, val, "po_sei_prefix_flag[i]");
+    sei.m_posPrefixFlag[i] = val;
+    sei_read_code(decodedMessageOutputStream, 13, val, "po_sei_payload_type[i]");
+    sei.m_posPayloadType[i] = val;
+#endif
 #if !JVET_AF0310_PO_NESTING
       if (sei.m_posPrefixFlag[i])
       {

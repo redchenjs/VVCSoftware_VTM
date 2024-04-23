@@ -60,6 +60,7 @@
 
 #define JVET_AF0061_ADDITION_PO_ID                        1 // JVET-AF0061, JVET-AF0174, JVET-AF0067, and JVET-AF0310: add po_id in the SEI processing order (SPO) SEI message
 
+#define JVET_AF0062_MOVE_PO_SEI_PREFIX_FLAG               1 // JVET-AF0062: Move po_sei_prefix_flag[ i ] from immediately before po_sei_payload_type[ i ] to be immediately after po_sei_payload_type[ i ] 
 
 #define JVET_AF0310_PO_NESTING                            1
 
