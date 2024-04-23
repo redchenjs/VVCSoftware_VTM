@@ -167,9 +167,6 @@ public:
 #endif
 
   bool                   m_posEnabled;
-#if JVET_AF0061_ADDITION_PO_ID
-  uint32_t               m_posId;
-#endif
   uint32_t               m_posNumMinus2;
   std::vector<bool>      m_posWrappingFlag;
   std::vector<bool>      m_posImportanceFlag;

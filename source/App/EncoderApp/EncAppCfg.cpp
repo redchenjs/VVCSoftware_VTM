@@ -1615,9 +1615,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   
   //Processing order of SEI (pos)
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
-#if JVET_AF0061_ADDITION_PO_ID
-  ("SEIPOId",                                         m_poSEIId,                                            0u, "Specifies the id of the SEI processing order SEI message")
-#endif
   ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
   ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,             cfg_poSEIWrappingFlag, "Specifies whether a correspoding processing-order-nested SEI message exists or not")
   ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies degree of importance for the SEI messages")
