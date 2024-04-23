@@ -925,17 +925,9 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
   }
   if (m_pcCfg->getPoSEIEnabled())
   {
-#if JVET_AF0310_PO_NESTING
-    SEIProcessingOrderInfo *seiProcessingOrder = new SEIProcessingOrderInfo;
-    SEIProcessingOrderNesting *seiProcessingOrderNesting = new SEIProcessingOrderNesting;
-    m_seiEncoder.initSEIProcessingOrderInfo(seiProcessingOrder, seiProcessingOrderNesting);
-    seiMessages.push_back(seiProcessingOrder);
-    seiMessages.push_back(seiProcessingOrderNesting);
-#else
     SEIProcessingOrderInfo *seiProcessingOrder = new SEIProcessingOrderInfo;
     m_seiEncoder.initSEIProcessingOrderInfo(seiProcessingOrder);
     seiMessages.push_back(seiProcessingOrder);
-#endif
   }
 }
 

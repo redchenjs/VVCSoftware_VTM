@@ -60,7 +60,6 @@
 
 
 
-#define JVET_AF0310_PO_NESTING                            1
 
 #define JVET_AG0089_TEMPORAL_EXTRAPOLATION                1 // JVET-AG0089: AHG9: Temporal extrapolation purpose for the neural-network post-filter characteristics SEI message
 

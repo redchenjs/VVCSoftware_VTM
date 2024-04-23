@@ -893,11 +893,7 @@ protected:
   std::vector<bool>     m_poSEIPrefixFlag;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
-#if JVET_AF0310_PO_NESTING
-  std::vector<uint16_t> m_poSEINumOfPrefixBits;
-#else
   //std::vector<uint16_t> m_poSEINumofPrefixByte;
-#endif
   std::vector<std::vector<uint8_t>>  m_poSEIPrefixByte;
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
@@ -2594,10 +2590,6 @@ public:
   uint16_t getPoSEIPayloadType(uint16_t idx)                   const { return m_poSEIPayloadType[idx]; }
   void     setPoSEIProcessingOrder(const std::vector<uint16_t>& b) { m_poSEIProcessingOrder = b; }
   uint16_t  getPoSEIProcessingOrder(uint16_t idx)              const { return m_poSEIProcessingOrder[idx]; }
-#if JVET_AF0310_PO_NESTING
-  void     setPoSEINumOfPrefixBits(const std::vector<uint16_t>& b)   { m_poSEINumOfPrefixBits = b; }
-  uint16_t getPoSEINumOfPrefixBits(uint16_t idx)               const { return m_poSEINumOfPrefixBits[idx]; }
-#endif
   uint32_t getPoSEIPayloadTypeSize()                           const { return (uint32_t)m_poSEIPayloadType.size(); }
   void     setPoSEIPrefixByte(const std::vector<std::vector<uint8_t>>& b) { m_poSEIPrefixByte = b; }
   std::vector<uint8_t>  getPoSEIPrefixByte(uint16_t idx)       const { return m_poSEIPrefixByte[idx]; }

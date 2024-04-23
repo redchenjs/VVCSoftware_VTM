@@ -1380,9 +1380,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPoSEIPrefixFlag                                   (m_poSEIPrefixFlag);
   m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
-#if JVET_AF0310_PO_NESTING
-  m_cEncLib.setPoSEINumOfPrefixBits                              (m_poSEINumOfPrefixBits);
-#endif
   m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
 
 
