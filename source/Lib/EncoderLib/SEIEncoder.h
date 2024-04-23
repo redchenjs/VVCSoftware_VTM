@@ -97,7 +97,6 @@ public:
   void initSEIShutterIntervalInfo(SEIShutterIntervalInfo *sei);
   void initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx);
   void initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei);
-  void initSEIProcessingOrderInfo(SEIProcessingOrderInfo *sei);
   void initSEIPostFilterHint(SEIPostFilterHint *sei);
 #if GREEN_METADATA_SEI_ENABLED
   void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);

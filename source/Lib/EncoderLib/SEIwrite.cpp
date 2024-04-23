@@ -182,9 +182,6 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
     xWriteSEINeuralNetworkPostFilterActivation(*static_cast<const SEINeuralNetworkPostFilterActivation *>(&sei));
     break;
-  case SEI::PayloadType::SEI_PROCESSING_ORDER:
-    xWriteSEIProcessingOrder(bs, *static_cast<const SEIProcessingOrderInfo*>(&sei));
-    break;
   case SEI::PayloadType::POST_FILTER_HINT:
     xWriteSEIPostFilterHint(*static_cast<const SEIPostFilterHint *>(&sei));
     break;
@@ -1565,41 +1562,6 @@ void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
     }
   }
 }
-
-void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessingOrderInfo& sei)
-{
-  CHECK(sei.m_posPayloadType.size() < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
-  SEIMessages wrapSEI;
-  xWriteCode(sei.m_posNumMinus2, 8, "po_num_sei_message_minus2");
-  for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
-  {
-    xWriteFlag(sei.m_posWrappingFlag[i], "po_sei_wrapping_flag[i]");
-    xWriteFlag(sei.m_posImportanceFlag[i], "po_sei_importance_flag[i]");
-    if (sei.m_posWrappingFlag[i])
-    {
-      xWriteCode(0, 6, "spo_sei_reserved_zero_6bits");
-      wrapSEI = getSeisByType(sei.m_posWrapSeiMessages, SEI::PayloadType(sei.m_posPayloadType[i]));
-      writeSEImessages(bs, wrapSEI, m_nestingHrd, true, 0);
-    }
-    else
-    {
-      xWriteFlag(sei.m_posPrefixFlag[i], "po_sei_prefix_flag[i]");
-      xWriteCode(sei.m_posPayloadType[i], 13, "po_sei_payload_type[i]");
-
-      if (sei.m_posPrefixFlag[i])
-    {
-      xWriteCode((uint32_t)sei.m_posPrefixByte[i].size(), 8, "po_num_t35_byte[i]");
-      for (uint32_t j = 0; j < sei.m_posPrefixByte[i].size(); j++)
-      {
-        xWriteCode(sei.m_posPrefixByte[i][j], 8, "po_t35_byte[i][j]");
-      }
-    }
-    }
-    xWriteCode(sei.m_posProcessingOrder[i], 8, "po_sei_processing_order[i]");
-  }
-
-}
-
 
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)
 {

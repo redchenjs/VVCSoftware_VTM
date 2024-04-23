@@ -98,8 +98,6 @@ public:
     NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS = 210,
     NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
     PHASE_INDICATION                           = 212,
-
-    SEI_PROCESSING_ORDER = 213,
   };
 
   SEI() {}
@@ -150,41 +148,6 @@ public:
   bool                  m_siiFixedSIwithinCLVS;
   std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
 };
-
-class SEIProcessingOrderInfo : public SEI
-{
-public:
-  PayloadType payloadType() const { return PayloadType::SEI_PROCESSING_ORDER; }
-  SEIProcessingOrderInfo() {}
-  SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei);
-  virtual ~SEIProcessingOrderInfo() { deleteSEIs(m_posWrapSeiMessages); }
-
-  bool                   m_posEnabled;
-  uint32_t               m_posNumMinus2;
-  std::vector<bool>      m_posWrappingFlag;
-  std::vector<bool>      m_posImportanceFlag;
-  std::vector<bool>      m_posPrefixFlag;
-  std::vector<uint16_t>  m_posPayloadType;
-  std::vector<uint16_t>   m_posProcessingOrder;
-  std::vector<std::vector<uint8_t>> m_posPrefixByte;
-  SEIMessages            m_posWrapSeiMessages;
-  static bool checkWrappingSEIPayloadType(SEI::PayloadType const payloadType)
-  {
-    switch (payloadType)
-    {
-    case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
-    case SEI::PayloadType::POST_FILTER_HINT:
-    case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
-    case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
-    case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
-    case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
-      return true;
-    default:
-      return false;
-    }
-  }
-};
-
 
 class SEIEquirectangularProjection : public SEI
 {

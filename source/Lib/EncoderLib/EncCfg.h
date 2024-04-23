@@ -882,16 +882,6 @@ protected:
 
   bool m_SEIManifestSEIEnabled;
   bool m_SEIPrefixIndicationSEIEnabled;
-  //SEI message processing order
-  bool                  m_poSEIEnabled;
-  uint32_t              m_poSEINumMinus2;
-  std::vector<bool>     m_poSEIWrappingFlag;
-  std::vector<bool>     m_poSEIImportanceFlag;
-  std::vector<bool>     m_poSEIPrefixFlag;
-  std::vector<uint16_t> m_poSEIPayloadType;
-  std::vector<uint16_t>  m_poSEIProcessingOrder;
-  //std::vector<uint16_t> m_poSEINumofPrefixByte;
-  std::vector<std::vector<uint8_t>>  m_poSEIPrefixByte;
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
   bool                 m_postFilterHintSEIPersistenceFlag;
@@ -2568,24 +2558,6 @@ public:
   void     setRprRASLtoolSwitch(bool b)                              { m_rprRASLtoolSwitch = b; }
   bool     getRprRASLtoolSwitch()                                    { return m_rprRASLtoolSwitch; }
 
-  //SEI messages processing order
-  void     setPoSEIEnabled(bool b)                                   { m_poSEIEnabled = b; }
-  bool     getPoSEIEnabled()                                         { return m_poSEIEnabled; }
-  void     setPoSEINumMinus2(uint32_t i)                             { m_poSEINumMinus2 = i; }
-  uint32_t getPoSEINumMinus2()                                       { return m_poSEINumMinus2; }
-  void     setPoSEIWrappingFlag(const std::vector<bool>& b)          { m_poSEIWrappingFlag = b; }
-  bool     getPoSEIWrappingFlag(uint16_t idx)                  const { return m_poSEIWrappingFlag[idx]; }
-  void     setPoSEIImportanceFlag(const std::vector<bool>& b)        { m_poSEIImportanceFlag = b; }
-  bool     getPoSEIImportanceFlag(uint16_t idx)                const { return m_poSEIImportanceFlag[idx]; }
-  void     setPoSEIPrefixFlag(const std::vector<bool>& b)           { m_poSEIPrefixFlag = b; }
-  bool     getPoSEIPrefixFlag(uint16_t idx)                   const { return m_poSEIPrefixFlag[idx]; }
-  void     setPoSEIPayloadType(const std::vector<uint16_t>& b)       { m_poSEIPayloadType = b; }
-  uint16_t getPoSEIPayloadType(uint16_t idx)                   const { return m_poSEIPayloadType[idx]; }
-  void     setPoSEIProcessingOrder(const std::vector<uint16_t>& b) { m_poSEIProcessingOrder = b; }
-  uint16_t  getPoSEIProcessingOrder(uint16_t idx)              const { return m_poSEIProcessingOrder[idx]; }
-  uint32_t getPoSEIPayloadTypeSize()                           const { return (uint32_t)m_poSEIPayloadType.size(); }
-  void     setPoSEIPrefixByte(const std::vector<std::vector<uint8_t>>& b) { m_poSEIPrefixByte = b; }
-  std::vector<uint8_t>  getPoSEIPrefixByte(uint16_t idx)       const { return m_poSEIPrefixByte[idx]; }
   void     setPostFilterHintSEIEnabled(bool b) { m_postFilterHintSEIEnabled = b; }
   bool     getPostFilterHintSEIEnabled() { return m_postFilterHintSEIEnabled; }
   void     setPostFilterHintSEICancelFlag(bool b) { m_postFilterHintSEICancelFlag = b; }

@@ -1367,17 +1367,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setSiiSEITimeScale(m_siiSEITimeScale);
   m_cEncLib.setSiiSEISubLayerNumUnitsInSI(m_siiSEISubLayerNumUnitsInSI);
 
-  m_cEncLib.setPoSEIEnabled                                      (m_poSEIEnabled);
-  m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
-  m_cEncLib.setPoSEIWrappingFlag                                 (m_poSEIWrappingFlag);
-  m_cEncLib.setPoSEIImportanceFlag                               (m_poSEIImportanceFlag);
-  m_cEncLib.setPoSEIPrefixFlag                                   (m_poSEIPrefixFlag);
-  m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
-  m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
-  m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
-
-
-
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
   m_cEncLib.setPostFilterHintSEICancelFlag(m_postFilterHintSEICancelFlag);
   m_cEncLib.setPostFilterHintSEIPersistenceFlag(m_postFilterHintSEIPersistenceFlag);

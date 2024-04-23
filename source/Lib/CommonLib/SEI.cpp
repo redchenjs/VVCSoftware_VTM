@@ -482,7 +482,6 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS, "Neural network post-filter characteristics" },
   { SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION, "Neural network post-filter activation" },
   { SEI::PayloadType::PHASE_INDICATION, "Phase Indication" },
-  { SEI::PayloadType::SEI_PROCESSING_ORDER, "SEI messages Processing order" },
 };
 
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
@@ -507,20 +506,6 @@ SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei
   m_siiFixedSIwithinCLVS = sei.m_siiFixedSIwithinCLVS;
   m_siiSubLayerNumUnitsInSI = sei.m_siiSubLayerNumUnitsInSI;
 }
-
-SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
-{
-  m_posEnabled = sei.m_posEnabled;
-  m_posNumMinus2 = sei.m_posNumMinus2;
-  m_posWrappingFlag = sei.m_posWrappingFlag;
-  m_posImportanceFlag = sei.m_posImportanceFlag;
-  m_posWrapSeiMessages = sei.m_posWrapSeiMessages;
-  m_posPrefixFlag = sei.m_posPrefixFlag;
-  m_posPayloadType = sei.m_posPayloadType;
-  m_posProcessingOrder = sei.m_posProcessingOrder;
-  m_posPrefixByte = sei.m_posPrefixByte;
-}
-
 
 SEIEquirectangularProjection::SEIEquirectangularProjection(const SEIEquirectangularProjection& sei)
 {

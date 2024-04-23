@@ -923,12 +923,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
   {
     xCreateNNPostFilterCharacteristicsSEIMessages(seiMessages);
   }
-  if (m_pcCfg->getPoSEIEnabled())
-  {
-    SEIProcessingOrderInfo *seiProcessingOrder = new SEIProcessingOrderInfo;
-    m_seiEncoder.initSEIProcessingOrderInfo(seiProcessingOrder);
-    seiMessages.push_back(seiProcessingOrder);
-  }
 }
 
 void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice)

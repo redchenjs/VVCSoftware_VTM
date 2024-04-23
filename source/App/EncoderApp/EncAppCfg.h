@@ -798,16 +798,6 @@ protected:
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
 
-  bool                  m_poSEIEnabled;
-  uint32_t              m_poSEINumMinus2;
-  std::vector<bool>     m_poSEIWrappingFlag;
-  std::vector<bool>     m_poSEIImportanceFlag;
-  std::vector<bool>     m_poSEIPrefixFlag;
-  std::vector<uint16_t> m_poSEIPayloadType;
-  std::vector<uint16_t>  m_poSEIProcessingOrder;
-  std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
-
-
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
   bool                 m_postFilterHintSEIPersistenceFlag;
