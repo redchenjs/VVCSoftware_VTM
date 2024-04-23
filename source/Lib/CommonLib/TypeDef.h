@@ -61,6 +61,7 @@
 #define JVET_AF0061_ADDITION_PO_ID                        1 // JVET-AF0061, JVET-AF0174, JVET-AF0067, and JVET-AF0310: add po_id in the SEI processing order (SPO) SEI message
 
 
+#define JVET_AF0310_PO_NESTING                            1
 
 #define JVET_AG0089_TEMPORAL_EXTRAPOLATION                1 // JVET-AG0089: AHG9: Temporal extrapolation purpose for the neural-network post-filter characteristics SEI message
 

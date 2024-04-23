@@ -517,12 +517,16 @@ SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei
   m_posNumMinus2 = sei.m_posNumMinus2;
   m_posWrappingFlag = sei.m_posWrappingFlag;
   m_posImportanceFlag = sei.m_posImportanceFlag;
+#if !JVET_AF0310_PO_NESTING
+  m_posWrapSeiMessages = sei.m_posWrapSeiMessages;
+#endif
   m_posPrefixFlag = sei.m_posPrefixFlag;
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;
   m_posPrefixByte = sei.m_posPrefixByte;
 }
 
+#if JVET_AF0310_PO_NESTING
 SEIProcessingOrderNesting::SEIProcessingOrderNesting(const SEIProcessingOrderNesting& sei)
 {
   m_ponTargetPoId = sei.m_ponTargetPoId;
@@ -531,6 +535,7 @@ SEIProcessingOrderNesting::SEIProcessingOrderNesting(const SEIProcessingOrderNes
   m_ponWrapSeiMessages = sei.m_ponWrapSeiMessages;
   m_ponPayloadType = sei.m_ponPayloadType;
 }
+#endif
 
 SEIEquirectangularProjection::SEIEquirectangularProjection(const SEIEquirectangularProjection& sei)
 {

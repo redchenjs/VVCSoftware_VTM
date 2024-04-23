@@ -573,7 +573,11 @@ void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIn
   }
 }
 
+#if JVET_AF0310_PO_NESTING
 void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting)
+#else
+void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo)
+#endif
 {
   assert(m_isInitialized);
   assert(seiProcessingOrderInfo != nullptr);
@@ -586,10 +590,15 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   seiProcessingOrderInfo->m_posNumMinus2        = m_pcCfg->getPoSEINumMinus2();
   seiProcessingOrderInfo->m_posWrappingFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posImportanceFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
+#if !JVET_AF0310_PO_NESTING
+  seiProcessingOrderInfo->m_posWrapSeiMessages.clear();
+#endif
   seiProcessingOrderInfo->m_posPrefixFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
+#if JVET_AF0310_PO_NESTING
   seiProcessingOrderInfo->m_posNumBitsInPrefix.resize(m_pcCfg->getPoSEIPayloadTypeSize());
+#endif
   seiProcessingOrderInfo->m_posPrefixByte.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
   {
@@ -598,68 +607,98 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
     seiProcessingOrderInfo->m_posPrefixFlag[i] = m_pcCfg->getPoSEIPrefixFlag(i);
     seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
+#if JVET_AF0310_PO_NESTING
     seiProcessingOrderInfo->m_posNumBitsInPrefix[i] = m_pcCfg->getPoSEINumOfPrefixBits(i);
+#endif
     if (seiProcessingOrderInfo->m_posPrefixFlag[i])
     {
       seiProcessingOrderInfo->m_posPrefixByte[i] = m_pcCfg->getPoSEIPrefixByte(i);
     }
   }
+#if JVET_AF0310_PO_NESTING
   seiProcessingOrderNesting->m_ponTargetPoId.clear();
   seiProcessingOrderNesting->m_ponPayloadType.clear();
   seiProcessingOrderNesting->m_ponProcessingOrder.clear();
   seiProcessingOrderNesting->m_ponWrapSeiMessages.clear();
   seiProcessingOrderNesting->m_ponTargetPoId.push_back((uint8_t)seiProcessingOrderInfo->m_posId);
   uint32_t ponNumSeis = 0;
+#endif
   for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
   {
     if (seiProcessingOrderInfo->m_posWrappingFlag[i])
     {
       CHECK(!seiProcessingOrderInfo->checkWrappingSEIPayloadType(SEI::PayloadType(seiProcessingOrderInfo->m_posPayloadType[i])), "not support in sei processing order SEI");
+#if JVET_AF0310_PO_NESTING
       seiProcessingOrderNesting->m_ponPayloadType.push_back(seiProcessingOrderInfo->m_posPayloadType[i]);
       seiProcessingOrderNesting->m_ponProcessingOrder.push_back((uint8_t)seiProcessingOrderInfo->m_posProcessingOrder[i]);
       ponNumSeis++;
+#endif
       switch (SEI::PayloadType(seiProcessingOrderInfo->m_posPayloadType[i]))
       {
       case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
       {
         SEIFilmGrainCharacteristics* seiFGC = new SEIFilmGrainCharacteristics;
         initSEIFilmGrainCharacteristics(seiFGC);
+#if JVET_AF0310_PO_NESTING
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiFGC);
+#else
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiFGC);
+#endif
         break;
       }
       case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
       {
         SEIContentLightLevelInfo* seiCCL = new SEIContentLightLevelInfo;
         initSEIContentLightLevel(seiCCL);
+#if JVET_AF0310_PO_NESTING
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiCCL);
+#else
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiCCL);
+#endif
         break;
       }
       case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
       {
         SEIContentColourVolume* seiCCV = new SEIContentColourVolume;
         initSEIContentColourVolume(seiCCV);
+#if JVET_AF0310_PO_NESTING
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiCCV);
+#else
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiCCV);
+#endif
         break;
       }
       case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
       {
         SEIColourTransformInfo* seiCTI = new SEIColourTransformInfo;
         initSEIColourTransformInfo(seiCTI);
+#if JVET_AF0310_PO_NESTING
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiCTI);
+#else
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiCTI);
+#endif
         break;
       }
       case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
       {
         SEINeuralNetworkPostFilterCharacteristics* seiNNPFC = new  SEINeuralNetworkPostFilterCharacteristics;
         initSEINeuralNetworkPostFilterCharacteristics(seiNNPFC, 0);
+#if JVET_AF0310_PO_NESTING
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiNNPFC);
+#else
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiNNPFC);
+#endif
         break;
       }
       case SEI::PayloadType::POST_FILTER_HINT:
       {
         SEIPostFilterHint* seiPFH = new SEIPostFilterHint;
         initSEIPostFilterHint(seiPFH);
+#if JVET_AF0310_PO_NESTING
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiPFH);
+#else
+        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiPFH);
+#endif
         break;
       }
       default:
@@ -670,8 +709,10 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
       }
     }
   }
+#if JVET_AF0310_PO_NESTING
   CHECK(ponNumSeis == 0, "Number of PO nested SEI messages must be greater than 0 ");
   seiProcessingOrderNesting->m_ponNumSeisMinus1 = ponNumSeis - 1;
+#endif
 }
 
 void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
