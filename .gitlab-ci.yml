@@ -9,6 +9,7 @@ stages:
    only:
       refs:
          - master
+         - 2nd-edition
          - merge_requests
       variables:
          - $CI_PROJECT_URL == 'https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM'
