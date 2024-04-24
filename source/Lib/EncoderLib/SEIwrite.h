@@ -108,12 +108,9 @@ protected:
   void xWriteByteAlign();
   void xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
   void xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei);
-  void xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessingOrderInfo& sei);
-  void xWriteSEIProcessingOrderNesting(OutputBitstream& bs, const SEIProcessingOrderNesting& sei);
 #if GREEN_METADATA_SEI_ENABLED
   void xWriteSEIGreenMetadataInfo                 (const SEIGreenMetadataInfo &sei);
 #endif
-  void xWriteSEIPostFilterHint(const SEIPostFilterHint &sei);
 protected:
   HRD m_nestingHrd;
 };

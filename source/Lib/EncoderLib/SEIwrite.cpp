@@ -182,15 +182,6 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
     xWriteSEINeuralNetworkPostFilterActivation(*static_cast<const SEINeuralNetworkPostFilterActivation *>(&sei));
     break;
-  case SEI::PayloadType::SEI_PROCESSING_ORDER:
-    xWriteSEIProcessingOrder(bs, *static_cast<const SEIProcessingOrderInfo*>(&sei));
-    break;
-  case SEI::PayloadType::SEI_PROCESSING_ORDER_NESTING:
-    xWriteSEIProcessingOrderNesting(bs, *static_cast<const SEIProcessingOrderNesting*>(&sei));
-    break;
-  case SEI::PayloadType::POST_FILTER_HINT:
-    xWriteSEIPostFilterHint(*static_cast<const SEIPostFilterHint *>(&sei));
-    break;
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -1569,62 +1560,6 @@ void SEIWriter::xWriteSEIShutterInterval(const SEIShutterIntervalInfo &sei)
   }
 }
 
-void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessingOrderInfo& sei)
-{
-  CHECK(sei.m_posPayloadType.size() < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
-  SEIMessages wrapSEI;
-  xWriteCode(sei.m_posId, 8, "po_sei_id");
-  xWriteCode(sei.m_posNumMinus2, 8, "po_num_sei_message_minus2");
-  for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
-  {
-    xWriteFlag(sei.m_posWrappingFlag[i], "po_sei_wrapping_flag[i]");
-    xWriteFlag(sei.m_posImportanceFlag[i], "po_sei_importance_flag[i]");
-      xWriteCode(sei.m_posPayloadType[i], 13, "po_sei_payload_type[i]");
-      xWriteFlag(sei.m_posPrefixFlag[i], "po_sei_prefix_flag[i]");
-
-    CHECK((i > 0) && (sei.m_posProcessingOrder[i] < sei.m_posProcessingOrder[i-1]) , "For i greater than 0, po_sei_processing_order[i] shall be greater than or equal to po_sei_processing_order[i-1]");
-    xWriteCode(sei.m_posProcessingOrder[i], 8, "po_sei_processing_order[i]");
-  }
-
-  for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
-  {
-    if (sei.m_posPrefixFlag[i])
-    {
-      xWriteCode(sei.m_posNumBitsInPrefix[i], 8, "po_num_bits_in_prefix_indication_minus1[i]");
-      for (uint32_t j = 0; j < sei.m_posNumBitsInPrefix[i]; j += 8)
-      {
-        uint32_t numBits = (sei.m_posNumBitsInPrefix[i] - j) < 8 ? (sei.m_posNumBitsInPrefix[i] - j) : 8;
-        for (int k = (int)numBits - 1; k >= 0; k--)
-        {
-          xWriteCode((sei.m_posPrefixByte[i][j>>3] >> k) & 1, 1, "po_sei_prefix_data_bit[i][j]");
-        }
-      }
-      while (!isByteAligned())
-      {
-        xWriteCode(1, 1, "po_byte_alignment_bit_equal_to_one");
-      }
-    }
-  }
-}
-
-void SEIWriter::xWriteSEIProcessingOrderNesting(OutputBitstream& bs, const SEIProcessingOrderNesting& sei)
-{
-  SEIMessages wrapSEI;
-  xWriteCode((uint32_t)(sei.m_ponTargetPoId.size() - 1), 8, "pon_num_po_ids_minus1");
-  for (int i = 0; i < (int)sei.m_ponTargetPoId.size(); i++)
-  {
-    xWriteCode(sei.m_ponTargetPoId[i], 8, "pon_target_po_id[i]");
-  }
-  xWriteCode(sei.m_ponNumSeisMinus1, 8, "pon_num_seis_minus1");
-  for (int i = 0; i <= sei.m_ponNumSeisMinus1; i++)
-  {
-    CHECK((i > 0) && (sei.m_ponProcessingOrder[i] < sei.m_ponProcessingOrder[i-1]) , "When i is greater than 0, pon_processing_order[i] shall be greater than or equal to pon_processing_order[i-1]");
-    xWriteCode(sei.m_ponProcessingOrder[i], 8, "pon_processing_order[i]");
-    wrapSEI = getSeisByType(sei.m_ponWrapSeiMessages, SEI::PayloadType(sei.m_ponPayloadType[i]));
-    writeSEImessages(bs, wrapSEI, m_nestingHrd, true, 0);
-  }
-}
-
 void SEIWriter::xWriteSEIConstrainedRaslIndication(const SEIConstrainedRaslIndication& /*sei*/)
 {
   // intentionally empty
@@ -1795,10 +1730,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       }
     }
 
-    if((sei.m_purpose & NNPC_PurposeType::TEMPORAL_EXTRAPOLATION) != 0)
-    {
-      xWriteUvlc(sei.m_numberExtrapolatedPicturesMinus1, "nnpfc_extrapolated_pics_minus1");
-    }
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");
@@ -1929,25 +1860,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
     for (uint32_t i = 0; i < (uint32_t)sei.m_outputFlag.size(); i++)
     {
       xWriteFlag(sei.m_outputFlag[i], "nnpfa_output_flag");
-    }
-  }
-}
-
-void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
-{
-  xWriteFlag(sei.m_filterHintCancelFlag, "filter_hint_cancel_flag");
-  if (sei.m_filterHintCancelFlag == false)
-  {
-    xWriteFlag(sei.m_filterHintPersistenceFlag, "filter_hint_persistence_flag");
-    xWriteUvlc(sei.m_filterHintSizeY, "filter_hint_size_y");
-    xWriteUvlc(sei.m_filterHintSizeX, "filter_hint_size_x");
-    xWriteCode(sei.m_filterHintType, 2, "filter_hint_type");
-    xWriteFlag(sei.m_filterHintChromaCoeffPresentFlag, "filter_hint_chroma_coeff_present_flag");
-
-    CHECK(!(sei.m_filterHintValues.size() == ((sei.m_filterHintChromaCoeffPresentFlag ? 3 : 1) * sei.m_filterHintSizeX * sei.m_filterHintSizeY)), "The number of filter coefficient shall match the matrix size and considering whether filters for chroma is present of not");
-    for (uint32_t i = 0; i < sei.m_filterHintValues.size(); i++)
-    {
-      xWriteSvlc(sei.m_filterHintValues[i], "filter_hint_value[][][]");
     }
   }
 }

@@ -1244,10 +1244,6 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInterpolatedPictures( m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i], i);
       }
-      if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::TEMPORAL_EXTRAPOLATION) != 0)
-      {
-        m_cEncLib.setNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1( m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i], i);
-      }
       m_cEncLib.setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag  (m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsInpFormatIdc            (m_nnPostFilterSEICharacteristicsInpFormatIdc[i], i);
@@ -1370,28 +1366,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setSiiSEINumUnitsInShutterInterval(m_siiSEINumUnitsInShutterInterval);
   m_cEncLib.setSiiSEITimeScale(m_siiSEITimeScale);
   m_cEncLib.setSiiSEISubLayerNumUnitsInSI(m_siiSEISubLayerNumUnitsInSI);
-
-  m_cEncLib.setPoSEIEnabled                                      (m_poSEIEnabled);
-  m_cEncLib.setPoSEIId                                           (m_poSEIId);
-  m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
-  m_cEncLib.setPoSEIWrappingFlag                                 (m_poSEIWrappingFlag);
-  m_cEncLib.setPoSEIImportanceFlag                               (m_poSEIImportanceFlag);
-  m_cEncLib.setPoSEIPrefixFlag                                   (m_poSEIPrefixFlag);
-  m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
-  m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
-  m_cEncLib.setPoSEINumOfPrefixBits                              (m_poSEINumOfPrefixBits);
-  m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
-
-
-
-  m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
-  m_cEncLib.setPostFilterHintSEICancelFlag(m_postFilterHintSEICancelFlag);
-  m_cEncLib.setPostFilterHintSEIPersistenceFlag(m_postFilterHintSEIPersistenceFlag);
-  m_cEncLib.setPostFilterHintSEISizeY(m_postFilterHintSEISizeY);
-  m_cEncLib.setPostFilterHintSEISizeX(m_postFilterHintSEISizeX);
-  m_cEncLib.setPostFilterHintSEIType(m_postFilterHintSEIType);
-  m_cEncLib.setPostFilterHintSEIChromaCoeffPresentFlag(m_postFilterHintSEIChromaCoeffPresentFlag);
-  m_cEncLib.setPostFilterHintSEIValues(m_postFilterHintValues);
 
   m_cEncLib.setVuiParametersPresentFlag                          ( m_vuiParametersPresentFlag );
   m_cEncLib.setSamePicTimingInAllOLS                             (m_samePicTimingInAllOLS);

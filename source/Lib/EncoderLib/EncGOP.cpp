@@ -923,14 +923,6 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
   {
     xCreateNNPostFilterCharacteristicsSEIMessages(seiMessages);
   }
-  if (m_pcCfg->getPoSEIEnabled())
-  {
-    SEIProcessingOrderInfo *seiProcessingOrder = new SEIProcessingOrderInfo;
-    SEIProcessingOrderNesting *seiProcessingOrderNesting = new SEIProcessingOrderNesting;
-    m_seiEncoder.initSEIProcessingOrderInfo(seiProcessingOrder, seiProcessingOrderNesting);
-    seiMessages.push_back(seiProcessingOrder);
-    seiMessages.push_back(seiProcessingOrderNesting);
-  }
 }
 
 void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice)
@@ -1015,14 +1007,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
   if (m_pcCfg->getNnPostFilterSEIActivationEnabled() && !m_pcCfg->getNnPostFilterSEIActivationUseSuffixSEI())
   {
     xCreateNNPostFilterActivationSEIMessage(seiMessages, slice);
-  }
-
-  if (m_pcCfg->getPostFilterHintSEIEnabled())
-  {
-    SEIPostFilterHint *postFilterHintSEI = new SEIPostFilterHint;
-
-    m_seiEncoder.initSEIPostFilterHint(postFilterHintSEI);
-    seiMessages.push_back(postFilterHintSEI);
   }
 }
 

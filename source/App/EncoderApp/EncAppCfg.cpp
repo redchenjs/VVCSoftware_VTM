@@ -728,16 +728,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp1              (0, 65535,  0, 256 * 6);
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
-  SMultiValueInput<bool>       cfg_poSEIWrappingFlag(false, true, 0, 256);
-  SMultiValueInput<bool>       cfg_poSEIImportanceFlag(false, true, 0, 256);
-  SMultiValueInput<bool>       cfg_poSEIPrefixFlag(false, true, 0, 256);
-  SMultiValueInput<uint16_t>   cfg_poSEIPayloadType(0, 32768, 0, 256 * 2);
-  SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
-
-  SMultiValueInput<uint16_t>   cfg_poSEINumofPrefixBits(0, 255, 0, 256);
-  SMultiValueInput<uint16_t>   cfg_poSEIPrefixByte     (0, 255, 0, 256);
-
-  SMultiValueInput<int32_t> cfg_postFilterHintSEIValues(INT32_MIN + 1, INT32_MAX, 1 * 1 * 1, 15 * 15 * 3);
 
   std::vector<SMultiValueInput<uint32_t>>   cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList;
   std::vector<SMultiValueInput<bool>>   cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList;
@@ -1609,26 +1599,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIDRINonlinearModel",                            cfg_driSEINonlinearModel,       cfg_driSEINonlinearModel, "List of the piece-wise linear segments for mapping of decoded luma sample values of an auxiliary picture to a scale that is uniformly quantized in terms of disparity in the depth representation information SEI message")
   ("SEIConstrainedRASL",                              m_constrainedRaslEncoding,                         false, "Control generation of constrained RASL encoding SEI message")
   
-  //Processing order of SEI (pos)
-  ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
-  ("SEIPOId",                                         m_poSEIId,                                            0u, "Specifies the id of the SEI processing order SEI message")
-  ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
-  ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,             cfg_poSEIWrappingFlag, "Specifies whether a correspoding processing-order-nested SEI message exists or not")
-  ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies degree of importance for the SEI messages")
-  ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether SEI message prefix is present or not")
-  ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
-  ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
-  ("SEIPONumofPrefixBits",                            cfg_poSEINumofPrefixBits,       cfg_poSEINumofPrefixBits, "List of number of prefix bits")
-  ("SEIPOPrefixByte",                                 cfg_poSEIPrefixByte,                 cfg_poSEIPrefixByte, "List of prefix bytes")
-  ("SEIPostFilterHintEnabled",                        m_postFilterHintSEIEnabled,                        false, "Control generation of post-filter Hint SEI message")
-  ("SEIPostFilterHintCancelFlag",                     m_postFilterHintSEICancelFlag,                     false, "Specifies the persistence of any previous post-filter Hint SEI message in output order")
-  ("SEIPostFilterHintPersistenceFlag",                m_postFilterHintSEIPersistenceFlag,                false, "Specifies the persistence of the post-filter Hint SEI message for the current layer")
-  ("SEIPostFilterHintSizeY",                          m_postFilterHintSEISizeY,                             1u, "Specifies the vertical size of the post-filter coefficient or correlation array")
-  ("SEIPostFilterHintSizeX",                          m_postFilterHintSEISizeX,                             1u, "Specifies the horizontal size of the post-filter coefficient or correlation array")
-  ("SEIPostFilterHintType",                           m_postFilterHintSEIType,                              0u, "Specifies the type of the post-filter: 2D-FIR filter (0, default), 1D-FIR filters (1) or Cross-correlation matrix (0)")
-  ("SEIPostFilterHintChromaCoeffPresentFlag",         m_postFilterHintSEIChromaCoeffPresentFlag,         false, "Specifies the presence of post-filter coefficients for chroma")
-  ("SEIPostFilterHintValue",                          cfg_postFilterHintSEIValues, cfg_postFilterHintSEIValues, "Specifies post-filter coefficients or elements of a cross-correlation matrix")
-
   //SEI manifest
   ("SEISEIManifestEnabled",                           m_SEIManifestSEIEnabled,                           false, "Controls if SEI Manifest SEI messages enabled")
   //SEI prefix indication
@@ -1959,9 +1929,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream numberInterpolatedPics;
     numberInterpolatedPics << "SEINNPFCNumberInterpolatedPics" << i;
     opts.addOptions()(numberInterpolatedPics.str(), cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], "Number of pictures to interpolate");
-    std::ostringstream numberExtrapolatedPicturesMinus1;
-    numberExtrapolatedPicturesMinus1 << "SEINNPFCNumberExtrapolatedPicsMinus1" << i; 
-    opts.addOptions()(numberExtrapolatedPicturesMinus1.str(), m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i], 0u, "Number of pictures to extrapolate");
     std::ostringstream InputPicOutputFlag;
     InputPicOutputFlag << "SEINNPFCInputPicOutputFlag" << i;
     opts.addOptions()(InputPicOutputFlag.str(), cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], "Indicates whether NNPF will generate a corresponding output picture for the input picture");
@@ -3587,95 +3554,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
 
-  if (m_poSEIEnabled)
-  {
-    CHECK(cfg_poSEIPayloadType.values.size() <= 1, "there should be at least 2 SEIPOPayLoadType");
-    CHECK(cfg_poSEIProcessingOrder.values.size() != cfg_poSEIPayloadType.values.size(), "the number of SEIPOPayLoadType should be equal to the number of SEIPOProcessingOrder");
-    CHECK(cfg_poSEIPrefixFlag.values.size() <= 1, "there should be at least 2 SEIPOPrefixFlag");
-    CHECK(cfg_poSEIPayloadType.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOPayLoadType should be equal to the number of SEI messages");
-    CHECK(cfg_poSEIWrappingFlag.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOWrappingFlag should be equal to the number of SEI messages");
-    CHECK(cfg_poSEIImportanceFlag.values.size() != m_poSEINumMinus2 + 2, "the number of SEIImportanceFlag should be equal to the number of SEI messages");
-    m_poSEIWrappingFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
-    m_poSEIImportanceFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
-    m_poSEIPrefixFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
-    m_poSEIPayloadType.resize((uint32_t) cfg_poSEIPayloadType.values.size());
-    m_poSEIProcessingOrder.resize((uint32_t) cfg_poSEIPayloadType.values.size());
-    m_poSEINumOfPrefixBits.resize((uint32_t) cfg_poSEINumofPrefixBits.values.size());
-    m_poSEIPrefixByte.resize((uint32_t) cfg_poSEIPayloadType.values.size());
-    uint16_t prefixByteIdx = 0;
-    for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
-    {
-      m_poSEIPrefixFlag[i] =      cfg_poSEIPrefixFlag.values[i];
-      m_poSEIWrappingFlag[i] = cfg_poSEIWrappingFlag.values[i];
-      m_poSEIImportanceFlag[i] = cfg_poSEIImportanceFlag.values[i];
-      m_poSEIPayloadType[i]     = cfg_poSEIPayloadType.values[i];
-      if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME ||
-          m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO ||
-          m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::ALTERNATIVE_TRANSFER_CHARACTERISTICS ||
-          m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::AMBIENT_VIEWING_ENVIRONMENT ||
-          m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::MULTIVIEW_ACQUISITION_INFO ||
-          m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::MULTIVIEW_VIEW_POSITION ||
-          m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::SEI_MANIFEST ||
-          m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::SEI_PREFIX_INDICATION ||
-          m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::VDI_SEI_ENVELOPE ||
-          m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::SEI_PROCESSING_ORDER
-        )
-      {
-        CHECK(m_poSEIPrefixFlag[i] == true, "The value of po_sei_prefix_flag shall be equal to 0 when po_sei_payload_type is equal to 137, 144, 147, 148, 179, 180, 200, 201, 208, and 213");
-      }
-      m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
-      if (m_poSEIPrefixFlag[i])
-      {
-        m_poSEINumOfPrefixBits[i] = cfg_poSEINumofPrefixBits.values[i];
-        m_poSEIPrefixByte[i].resize((cfg_poSEINumofPrefixBits.values[i] + 7) >> 3);
-        for (uint32_t j = 0; j < (uint32_t)m_poSEIPrefixByte[i].size(); j++)
-        {
-          m_poSEIPrefixByte[i][j] = (uint8_t) cfg_poSEIPrefixByte.values[prefixByteIdx++];
-        }
-      }
-      else
-      {
-        cfg_poSEINumofPrefixBits.values[i] = 0;
-        m_poSEINumOfPrefixBits[i] = 0;
-      }
-      // Error check, to avoid same PayloadType and same prefix bytes when present with different PayloadOrder
-      for (uint32_t j = 0; j < i; j++)
-      {
-        if (m_poSEIPrefixFlag[i])
-        {
-            if ((m_poSEIPayloadType[j] == m_poSEIPayloadType[i]) && m_poSEIPrefixFlag[j])
-            {
-              auto numofPrefixBytes = std::min((cfg_poSEINumofPrefixBits.values[i] + 7) >> 3, (cfg_poSEINumofPrefixBits.values[j] + 7) >> 3);
-              if (std::equal(m_poSEIPrefixByte[i].begin() + 1, m_poSEIPrefixByte[i].begin() + numofPrefixBytes - 1,
-                             m_poSEIPrefixByte[j].begin()))
-              {
-                CHECK(m_poSEIProcessingOrder[j] != m_poSEIProcessingOrder[i], "multiple SEI messages with the same po_sei_payload_type and prefix content present when present shall have the same value of po_sei_processing_order");
-              }
-            }
-        }
-        else
-        {
-          if (m_poSEIPayloadType[j] == m_poSEIPayloadType[i])
-          {
-            CHECK(m_poSEIProcessingOrder[j] != m_poSEIProcessingOrder[i], "multiple SEI messages with the same po_sei_payload_type without prefix content shall have the same value of po_sei_processing_order");
-          }
-        }
-      }
-    }
-  }
-
-  if (m_postFilterHintSEIEnabled)
-  {
-    CHECK(cfg_postFilterHintSEIValues.values.size() <= 0, "The number of filter coefficient shall be greater than zero");
-    CHECK(!(cfg_postFilterHintSEIValues.values.size() == ((m_postFilterHintSEIChromaCoeffPresentFlag ? 3 : 1) * m_postFilterHintSEISizeY * m_postFilterHintSEISizeX)), "The number of filter coefficient shall match the matrix size and considering whether filters for chroma is present of not");
-    m_postFilterHintValues.resize(cfg_postFilterHintSEIValues.values.size());
-
-    for (uint32_t i = 0; i < m_postFilterHintValues.size(); i++)
-    {
-      m_postFilterHintValues[i] = cfg_postFilterHintSEIValues.values[i];
-    }
-  }
-
   if( m_costMode == COST_LOSSLESS_CODING )
   {
     bool firstSliceLossless = false;
@@ -5135,9 +5013,8 @@ bool EncAppCfg::xCheckParameter()
     {
       xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > MAX_NNPFC_ID, "SEINNPFCId must be in the range of 0 to 2^32-2");
       xConfirmPara(m_nnPostFilterSEICharacteristicsModeIdc[i] > 255, "SEINNPFCModeIdc must be in the range of 0 to 255");
-      xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 127, "SEINNPFCPurpose must be in the range of 0 to 127");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 1023, "SEINNPFCPurpose must be in the range of 0 to 1023");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 63, "SEINNPFCNumberInputDecodedPicturesMinus1 must be in the range of 0 to 63");
-      xConfirmPara(m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i] > 62, "SEINNPFCNumberExtrapolatedPicsMinus1 must be in the range of 0 to 62");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthChromaMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[i] > 24, "SEINNPFCOutTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
@@ -5626,8 +5503,6 @@ void EncAppCfg::xPrintParameter()
   msg(VERBOSE, "SEI CTI:%d ", m_ctiSEIEnabled);
   msg(VERBOSE, "BIM:%d ", m_bimEnabled);
   msg(VERBOSE, "SEI FGC:%d ", m_fgcSEIEnabled);
-
-  msg(VERBOSE, "SEI processing Order:%d ", m_poSEIEnabled);
 
 #if EXTENSION_360_VIDEO
   m_ext360.outputConfigurationSummary();

@@ -529,20 +529,6 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIPhaseIndication;
       xParseSEIPhaseIndication((SEIPhaseIndication &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-    case SEI::PayloadType::SEI_PROCESSING_ORDER:
-      sei = new SEIProcessingOrderInfo;
-      xParseSEIProcessingOrder((SEIProcessingOrderInfo&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
-        pDecodedMessageOutputStream);
-      break;
-    case SEI::PayloadType::SEI_PROCESSING_ORDER_NESTING:
-      sei = new SEIProcessingOrderNesting;
-      xParseSEIProcessingOrderNesting((SEIProcessingOrderNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
-        pDecodedMessageOutputStream);
-      break;
-    case SEI::PayloadType::POST_FILTER_HINT:
-      sei = new SEIPostFilterHint;
-      xParseSEIPostFilterHint((SEIPostFilterHint &) *sei, payloadSize, pDecodedMessageOutputStream);
-      break;
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -607,11 +593,6 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
     case SEI::PayloadType::FILLER_PAYLOAD:
       sei = new SEIFillerPayload;
       xParseSEIFillerPayload((SEIFillerPayload &) *sei, payloadSize, pDecodedMessageOutputStream);
-      break;
-    case SEI::PayloadType::SEI_PROCESSING_ORDER_NESTING:
-      sei = new SEIProcessingOrderNesting;
-      xParseSEIProcessingOrderNesting((SEIProcessingOrderNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
-        pDecodedMessageOutputStream);
       break;
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
@@ -751,100 +732,6 @@ void SEIReader::xParseSEIShutterInterval(SEIShutterIntervalInfo& sei, uint32_t p
   }
 }
 
-void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream)
-{
-  uint32_t i;
-  uint32_t numMaxSeiMessages, val;
-  output_sei_message_header(sei, decodedMessageOutputStream, payloadSize);
-
-  sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_id");
-  sei.m_posId = val;
-  sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_num_minus2");
-  sei.m_posNumMinus2 = val;
-  numMaxSeiMessages = sei.m_posNumMinus2 + 2;
-  sei.m_posPrefixFlag.resize(numMaxSeiMessages);
-  sei.m_posPayloadType.resize(numMaxSeiMessages);
-  sei.m_posProcessingOrder.resize(numMaxSeiMessages);
-  sei.m_posNumBitsInPrefix.resize(numMaxSeiMessages);
-  sei.m_posPrefixByte.resize(numMaxSeiMessages);
-  sei.m_posWrappingFlag.resize(numMaxSeiMessages);
-  sei.m_posImportanceFlag.resize(numMaxSeiMessages);
-  for (i = 0; i < numMaxSeiMessages; i++)
-  {
-    sei_read_flag(decodedMessageOutputStream, val, "po_sei_wrapping_flag[i]");
-    sei.m_posWrappingFlag[i] = val;
-    sei_read_flag(decodedMessageOutputStream, val, "po_sei_importance_flag[i]");
-    sei.m_posImportanceFlag[i] = val;
-      sei_read_code(decodedMessageOutputStream, 13, val, "po_sei_payload_type[i]");
-      sei.m_posPayloadType[i] = val;
-      sei_read_flag(decodedMessageOutputStream, val, "po_sei_prefix_flag[i]");
-      sei.m_posPrefixFlag[i] = val;
-    sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_processing_order[i]");
-    sei.m_posProcessingOrder[i] = val;
-    CHECK((i > 0) && (sei.m_posProcessingOrder[i] < sei.m_posProcessingOrder[i-1]) , "For i greater than 0, po_sei_processing_order[i] shall be greater than or equal to po_sei_processing_order[i-1]");
-  }
-  CHECK(i<2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
-
-  for (i = 0; i < numMaxSeiMessages; i++)
-  {
-    sei.m_posNumBitsInPrefix[i] = 0;
-    sei.m_posPrefixByte[i].clear();
-    if (sei.m_posPrefixFlag[i])
-    {
-      sei_read_code(decodedMessageOutputStream, 8, val, "po_num_bits_in_prefix_indication_minus1[i]");
-      sei.m_posNumBitsInPrefix[i] = (uint16_t)val;
-      for (uint32_t j = 0; j < sei.m_posNumBitsInPrefix[i]; j += 8)
-      {
-        uint32_t numBits = (sei.m_posNumBitsInPrefix[i] - j) < 8 ? (sei.m_posNumBitsInPrefix[i] - j) : 8;
-        uint32_t prefixByte = 0;
-        for (uint32_t k = 0; k < numBits; k++)
-        {
-          sei_read_code(decodedMessageOutputStream, 1, val, "po_sei_prefix_data_bit[i][j]");
-          prefixByte = (prefixByte << 1) | val;
-        }
-        sei.m_posPrefixByte[i].push_back((uint8_t)prefixByte);
-      }
-      while (!isByteAligned())
-      {
-        sei_read_code(decodedMessageOutputStream, 1, val, "po_byte_alignment_bit_equal_to_one");
-        CHECK(val == 0, "po_byte_alignment_bit_equal_to_one has value of zero");
-      }
-    }
-  }
-}
-
-void SEIReader::xParseSEIProcessingOrderNesting(SEIProcessingOrderNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream)
-{
-  uint32_t val, ponNumPoIdsMinus1;
-
-  sei_read_code(decodedMessageOutputStream, 8, val, "pon_num_po_ids_minus1");
-  ponNumPoIdsMinus1 = val;
-
-  sei.m_ponTargetPoId.clear();
-  for (int i = 0; i <= ponNumPoIdsMinus1; i++)
-  {
-    sei_read_code(decodedMessageOutputStream, 8, val, "pon_target_po_id[i]");
-    sei.m_ponTargetPoId.push_back((uint8_t)val);
-  }
-
-  sei_read_code(decodedMessageOutputStream, 8, val, "pon_num_seis_minus1");
-  sei.m_ponNumSeisMinus1 = val;
-
-  sei.m_ponProcessingOrder.clear();
-  for (int i = 0; i <= sei.m_ponNumSeisMinus1; i++)
-  {
-    sei_read_code(decodedMessageOutputStream, 8, val, "pon_processing_order[i]");
-    sei.m_ponProcessingOrder.push_back((uint8_t)val);
-    CHECK((i > 0) && (sei.m_ponProcessingOrder[i] < sei.m_ponProcessingOrder[i-1]) , "When i is greater than 0, pon_processing_order[i] shall be greater than or equal to pon_processing_order[i-1]");
-    SEIMessages tmpSEI;
-    const bool seiMessageRead = xReadSEImessage(tmpSEI, nalUnitType, nuhLayerId, 0, vps, sps, m_nestedHrd, decodedMessageOutputStream);
-    if (seiMessageRead)
-    {
-      sei.m_ponWrapSeiMessages.push_back(tmpSEI.front());
-      tmpSEI.clear();
-    }
-  }
-}
 
 /**
  * parse bitstream bs and unpack a decoded picture hash SEI message
@@ -1282,8 +1169,6 @@ void SEIReader::xCheckScalableNestingConstraints(const SEIScalableNesting& sn, c
     SEI::PayloadType::OMNI_VIEWPORT,
     SEI::PayloadType::FRAME_FIELD_INFO,
     SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO,
-    SEI::PayloadType::SEI_PROCESSING_ORDER,
-    SEI::PayloadType::SEI_PROCESSING_ORDER_NESTING,
   };
 
   bool containBPorPTorDUIorSLI = false;
@@ -2769,7 +2654,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
   sei_read_code(pDecodedMessageOutputStream, 16, val, "nnpfc_purpose");
   sei.m_purpose = val;
-  CHECK(sei.m_purpose >= 128 && sei.m_purpose <= 65535, "Reserved nnpfc_purpose value");
+  CHECK(sei.m_purpose >= 64 && sei.m_purpose <= 65535, "Reserved nnpfc_purpose value");
 
   sei_read_uvlc( pDecodedMessageOutputStream, val, "nnpfc_id" );
   sei.m_id = val;
@@ -2934,11 +2819,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       CHECK(!allZeroFlag, "At least one value of nnpfc_interpolated_pics[i] shall be greater than 0");
     }
 
-    if ((sei.m_purpose & NNPC_PurposeType::TEMPORAL_EXTRAPOLATION) != 0)
-    {
-      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_extrapolated_pics_minus1");
-      sei.m_numberExtrapolatedPicturesMinus1 = val;
-    }
 
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");
     sei.m_componentLastFlag = val;
@@ -3219,36 +3099,6 @@ void SEIReader::xParseSEIPhaseIndication(SEIPhaseIndication& sei, uint32_t paylo
 
   CHECK(sei.m_horPhaseNum > sei.m_horPhaseDenMinus1 + 1, "The value of hor_phase_num shall be in the range of 0 to hor_phase_den_minus1 + 1, inclusive");
   CHECK(sei.m_verPhaseNum > sei.m_verPhaseDenMinus1 + 1, "The value of ver_phase_num shall be in the range of 0 to ver_phase_den_minus1 + 1, inclusive");
-}
-
-void SEIReader::xParseSEIPostFilterHint(SEIPostFilterHint &sei, uint32_t payloadSize,
-                                        std::ostream *pDecodedMessageOutputStream)
-{
-  uint32_t val;
-  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
-
-  sei_read_flag(pDecodedMessageOutputStream, val, "filter_hint_cancel_flag");
-  sei.m_filterHintCancelFlag = val;
-  if (sei.m_filterHintCancelFlag == false)
-  {
-    sei_read_flag(pDecodedMessageOutputStream, val, "filter_hint_persistence_flag");
-    sei.m_filterHintPersistenceFlag = val;
-    sei_read_uvlc(pDecodedMessageOutputStream, val, "filter_hint_size_y");
-    sei.m_filterHintSizeY = val;
-    sei_read_uvlc(pDecodedMessageOutputStream, val, "filter_hint_size_x");
-    sei.m_filterHintSizeX = val;
-    sei_read_code(pDecodedMessageOutputStream, 2, val, "filter_hint_type");
-    sei.m_filterHintType = val;
-    sei_read_flag(pDecodedMessageOutputStream, val, "filter_hint_chroma_coeff_present_flag");
-    sei.m_filterHintChromaCoeffPresentFlag = val;
-
-    sei.m_filterHintValues.resize((sei.m_filterHintChromaCoeffPresentFlag ? 3 : 1) * sei.m_filterHintSizeX
-                                  * sei.m_filterHintSizeY);
-    for (uint32_t i = 0; i < sei.m_filterHintValues.size(); i++)
-    {
-      sei_read_svlc(pDecodedMessageOutputStream, sei.m_filterHintValues[i], "filter_hint_value[][][]");
-    }
-  }
 }
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE

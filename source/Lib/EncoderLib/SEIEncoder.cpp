@@ -573,126 +573,6 @@ void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIn
   }
 }
 
-void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting)
-{
-  assert(m_isInitialized);
-  assert(seiProcessingOrderInfo != nullptr);
-
-
-  seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
-  seiProcessingOrderInfo->m_posId               = m_pcCfg->getPoSEIId();
-  seiProcessingOrderInfo->m_posNumMinus2        = m_pcCfg->getPoSEINumMinus2();
-  seiProcessingOrderInfo->m_posWrappingFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-  seiProcessingOrderInfo->m_posImportanceFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-  seiProcessingOrderInfo->m_posPrefixFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-  seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-  seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-  seiProcessingOrderInfo->m_posNumBitsInPrefix.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-  seiProcessingOrderInfo->m_posPrefixByte.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-  for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
-  {
-    seiProcessingOrderInfo->m_posWrappingFlag[i] = m_pcCfg->getPoSEIWrappingFlag(i);
-    seiProcessingOrderInfo->m_posImportanceFlag[i] = m_pcCfg->getPoSEIImportanceFlag(i);
-    seiProcessingOrderInfo->m_posPrefixFlag[i] = m_pcCfg->getPoSEIPrefixFlag(i);
-    seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
-    seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
-    seiProcessingOrderInfo->m_posNumBitsInPrefix[i] = m_pcCfg->getPoSEINumOfPrefixBits(i);
-    if (seiProcessingOrderInfo->m_posPrefixFlag[i])
-    {
-      seiProcessingOrderInfo->m_posPrefixByte[i] = m_pcCfg->getPoSEIPrefixByte(i);
-    }
-  }
-  seiProcessingOrderNesting->m_ponTargetPoId.clear();
-  seiProcessingOrderNesting->m_ponPayloadType.clear();
-  seiProcessingOrderNesting->m_ponProcessingOrder.clear();
-  seiProcessingOrderNesting->m_ponWrapSeiMessages.clear();
-  seiProcessingOrderNesting->m_ponTargetPoId.push_back((uint8_t)seiProcessingOrderInfo->m_posId);
-  uint32_t ponNumSeis = 0;
-  for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
-  {
-    if (seiProcessingOrderInfo->m_posWrappingFlag[i])
-    {
-      CHECK(!seiProcessingOrderInfo->checkWrappingSEIPayloadType(SEI::PayloadType(seiProcessingOrderInfo->m_posPayloadType[i])), "not support in sei processing order SEI");
-      seiProcessingOrderNesting->m_ponPayloadType.push_back(seiProcessingOrderInfo->m_posPayloadType[i]);
-      seiProcessingOrderNesting->m_ponProcessingOrder.push_back((uint8_t)seiProcessingOrderInfo->m_posProcessingOrder[i]);
-      ponNumSeis++;
-      switch (SEI::PayloadType(seiProcessingOrderInfo->m_posPayloadType[i]))
-      {
-      case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
-      {
-        SEIFilmGrainCharacteristics* seiFGC = new SEIFilmGrainCharacteristics;
-        initSEIFilmGrainCharacteristics(seiFGC);
-        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiFGC);
-        break;
-      }
-      case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
-      {
-        SEIContentLightLevelInfo* seiCCL = new SEIContentLightLevelInfo;
-        initSEIContentLightLevel(seiCCL);
-        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiCCL);
-        break;
-      }
-      case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
-      {
-        SEIContentColourVolume* seiCCV = new SEIContentColourVolume;
-        initSEIContentColourVolume(seiCCV);
-        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiCCV);
-        break;
-      }
-      case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
-      {
-        SEIColourTransformInfo* seiCTI = new SEIColourTransformInfo;
-        initSEIColourTransformInfo(seiCTI);
-        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiCTI);
-        break;
-      }
-      case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
-      {
-        SEINeuralNetworkPostFilterCharacteristics* seiNNPFC = new  SEINeuralNetworkPostFilterCharacteristics;
-        initSEINeuralNetworkPostFilterCharacteristics(seiNNPFC, 0);
-        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiNNPFC);
-        break;
-      }
-      case SEI::PayloadType::POST_FILTER_HINT:
-      {
-        SEIPostFilterHint* seiPFH = new SEIPostFilterHint;
-        initSEIPostFilterHint(seiPFH);
-        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiPFH);
-        break;
-      }
-      default:
-      {
-        msg(ERROR, "not support in sei processing order SEI\n");
-        exit(1);
-      }
-      }
-    }
-  }
-  CHECK(ponNumSeis == 0, "Number of PO nested SEI messages must be greater than 0 ");
-  seiProcessingOrderNesting->m_ponNumSeisMinus1 = ponNumSeis - 1;
-}
-
-void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
-{
-  CHECK(!m_isInitialized, "The post-filter hint SEI message needs to be initialized");
-  CHECK(seiPostFilterHint == nullptr, "Failed to get the handler to the SEI message");
-
-  seiPostFilterHint->m_filterHintCancelFlag             = m_pcCfg->getPostFilterHintSEICancelFlag();
-  seiPostFilterHint->m_filterHintPersistenceFlag        = m_pcCfg->getPostFilterHintSEIPersistenceFlag();
-  seiPostFilterHint->m_filterHintSizeY                  = m_pcCfg->getPostFilterHintSEISizeY();
-  seiPostFilterHint->m_filterHintSizeX                  = m_pcCfg->getPostFilterHintSEISizeX();
-  seiPostFilterHint->m_filterHintType                   = m_pcCfg->getPostFilterHintSEIType();
-  seiPostFilterHint->m_filterHintChromaCoeffPresentFlag = m_pcCfg->getPostFilterHintSEIChromaCoeffPresentFlag();
-
-  seiPostFilterHint->m_filterHintValues.resize((seiPostFilterHint->m_filterHintChromaCoeffPresentFlag ? 3 : 1)
-                                               * seiPostFilterHint->m_filterHintSizeY
-                                               * seiPostFilterHint->m_filterHintSizeX);
-  for (uint32_t i = 0; i < seiPostFilterHint->m_filterHintValues.size(); i++)
-  {
-    seiPostFilterHint->m_filterHintValues[i] = m_pcCfg->getPostFilterHintSEIValues(i);
-  }
-}
-
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned
                            bool         &failed,        /// used and updated
@@ -1411,10 +1291,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_numberInterpolatedPictures = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInterpolatedPictures(filterIdx);
       CHECK(sei->m_numberInputDecodedPicturesMinus1 <= 0, "If nnpfc_purpose is FRAME_RATE_UPSAMPLING, m_numberInputDecodedPicturesMinus1 shall be greater than 0");
-    }
-    if((sei->m_purpose & NNPC_PurposeType::TEMPORAL_EXTRAPOLATION) != 0)
-    {
-      sei->m_numberExtrapolatedPicturesMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1(filterIdx);
     }
 
     sei->m_componentLastFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComponentLastFlag(filterIdx);

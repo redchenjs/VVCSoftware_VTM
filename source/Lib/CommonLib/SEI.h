@@ -60,7 +60,6 @@ public:
     USER_DATA_REGISTERED_ITU_T_T35       = 4,
     USER_DATA_UNREGISTERED               = 5,
     FILM_GRAIN_CHARACTERISTICS           = 19,
-    POST_FILTER_HINT = 22,
     FRAME_PACKING                        = 45,
     DISPLAY_ORIENTATION                  = 47,
     GREEN_METADATA                       = 56,
@@ -87,20 +86,17 @@ public:
     MULTIVIEW_VIEW_POSITION              = 180,
     SEI_MANIFEST = 200,
     SEI_PREFIX_INDICATION = 201,
+    ANNOTATED_REGIONS                          = 202,
     SUBPICTURE_LEVEL_INFO                      = 203,
     SAMPLE_ASPECT_RATIO_INFO                   = 204,
-    ANNOTATED_REGIONS                          = 202,
-    SCALABILITY_DIMENSION_INFO                 = 205,
+    SHUTTER_INTERVAL_INFO                      = 205,
     EXTENDED_DRAP_INDICATION                   = 206,
     CONSTRAINED_RASL_ENCODING                  = 207,
-    VDI_SEI_ENVELOPE                           = 208,
-    SHUTTER_INTERVAL_INFO                      = 209,
+    SCALABILITY_DIMENSION_INFO                 = 208,
+    VDI_SEI_ENVELOPE                           = 209,
     NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS = 210,
     NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
     PHASE_INDICATION                           = 212,
-
-    SEI_PROCESSING_ORDER = 213,
-    SEI_PROCESSING_ORDER_NESTING = 214,
   };
 
   SEI() {}
@@ -150,56 +146,6 @@ public:
   unsigned              m_siiMaxSubLayersMinus1;
   bool                  m_siiFixedSIwithinCLVS;
   std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
-};
-
-class SEIProcessingOrderInfo : public SEI
-{
-public:
-  PayloadType payloadType() const { return PayloadType::SEI_PROCESSING_ORDER; }
-  SEIProcessingOrderInfo() {}
-  SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei);
-  virtual ~SEIProcessingOrderInfo() {}
-
-  bool                   m_posEnabled;
-  uint32_t               m_posId;
-  uint32_t               m_posNumMinus2;
-  std::vector<bool>      m_posWrappingFlag;
-  std::vector<bool>      m_posImportanceFlag;
-  std::vector<bool>      m_posPrefixFlag;
-  std::vector<uint16_t>  m_posPayloadType;
-  std::vector<uint16_t>   m_posProcessingOrder;
-  std::vector<uint16_t>  m_posNumBitsInPrefix;
-  std::vector<std::vector<uint8_t>> m_posPrefixByte;
-  static bool checkWrappingSEIPayloadType(SEI::PayloadType const payloadType)
-  {
-    switch (payloadType)
-    {
-    case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
-    case SEI::PayloadType::POST_FILTER_HINT:
-    case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
-    case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
-    case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
-    case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
-      return true;
-    default:
-      return false;
-    }
-  }
-};
-
-class SEIProcessingOrderNesting : public SEI
-{
-public:
-  PayloadType payloadType() const { return PayloadType::SEI_PROCESSING_ORDER_NESTING; }
-  SEIProcessingOrderNesting() {}
-  SEIProcessingOrderNesting(const SEIProcessingOrderNesting& sei);
-  virtual ~SEIProcessingOrderNesting() { deleteSEIs(m_ponWrapSeiMessages); }
-
-  std::vector<uint8_t>   m_ponTargetPoId;
-  uint32_t               m_ponNumSeisMinus1;
-  std::vector<uint8_t>   m_ponProcessingOrder;
-  SEIMessages            m_ponWrapSeiMessages;
-  std::vector<uint16_t>  m_ponPayloadType;
 };
 
 class SEIEquirectangularProjection : public SEI
@@ -1329,7 +1275,6 @@ public:
     , m_numKmacOperationsIdc(0)
     , m_totalKilobyteSize(0)
     , m_numberInputDecodedPicturesMinus1(0)
-    , m_numberExtrapolatedPicturesMinus1(0)
     , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
   {}
@@ -1402,7 +1347,6 @@ public:
   uint32_t       m_totalKilobyteSize;
   uint32_t       m_numberInputDecodedPicturesMinus1;
   std::vector<uint32_t> m_numberInterpolatedPictures;
-  uint32_t       m_numberExtrapolatedPicturesMinus1;
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
   uint32_t       m_numInpPicsInOutputTensor;
@@ -1431,24 +1375,6 @@ public:
   bool           m_noFollCLVSFlag;
   bool           m_persistenceFlag;
   std::vector<bool> m_outputFlag;
-};
-
-class SEIPostFilterHint : public SEI
-{
-public:
-  PayloadType payloadType() const { return PayloadType::POST_FILTER_HINT; }
-
-  SEIPostFilterHint() {}
-  SEIPostFilterHint(const SEIPostFilterHint& sei);
-  virtual ~SEIPostFilterHint() {}
-
-  bool             m_filterHintCancelFlag;
-  bool             m_filterHintPersistenceFlag;
-  uint32_t         m_filterHintSizeY;
-  uint32_t         m_filterHintSizeX;
-  uint32_t         m_filterHintType;
-  bool             m_filterHintChromaCoeffPresentFlag;
-  std::vector<int> m_filterHintValues;   // values stored in linear array, [ ( ( component * sizeY + y ) * SizeX ) + x ]
 };
 
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t nnpfaTargetId);

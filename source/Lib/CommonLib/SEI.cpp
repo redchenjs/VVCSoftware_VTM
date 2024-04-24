@@ -482,7 +482,6 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS, "Neural network post-filter characteristics" },
   { SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION, "Neural network post-filter activation" },
   { SEI::PayloadType::PHASE_INDICATION, "Phase Indication" },
-  { SEI::PayloadType::SEI_PROCESSING_ORDER, "SEI messages Processing order" },
 };
 
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
@@ -506,28 +505,6 @@ SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei
   m_siiMaxSubLayersMinus1 = sei.m_siiMaxSubLayersMinus1;
   m_siiFixedSIwithinCLVS = sei.m_siiFixedSIwithinCLVS;
   m_siiSubLayerNumUnitsInSI = sei.m_siiSubLayerNumUnitsInSI;
-}
-
-SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
-{
-  m_posEnabled = sei.m_posEnabled;
-  m_posId = sei.m_posId;
-  m_posNumMinus2 = sei.m_posNumMinus2;
-  m_posWrappingFlag = sei.m_posWrappingFlag;
-  m_posImportanceFlag = sei.m_posImportanceFlag;
-  m_posPrefixFlag = sei.m_posPrefixFlag;
-  m_posPayloadType = sei.m_posPayloadType;
-  m_posProcessingOrder = sei.m_posProcessingOrder;
-  m_posPrefixByte = sei.m_posPrefixByte;
-}
-
-SEIProcessingOrderNesting::SEIProcessingOrderNesting(const SEIProcessingOrderNesting& sei)
-{
-  m_ponTargetPoId = sei.m_ponTargetPoId;
-  m_ponNumSeisMinus1 = sei.m_ponNumSeisMinus1;
-  m_ponProcessingOrder = sei.m_ponProcessingOrder;
-  m_ponWrapSeiMessages = sei.m_ponWrapSeiMessages;
-  m_ponPayloadType = sei.m_ponPayloadType;
 }
 
 SEIEquirectangularProjection::SEIEquirectangularProjection(const SEIEquirectangularProjection& sei)
@@ -993,7 +970,6 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_totalKilobyteSize = sei.m_totalKilobyteSize;
   m_numberInputDecodedPicturesMinus1 = sei.m_numberInputDecodedPicturesMinus1;
   m_numberInterpolatedPictures = sei.m_numberInterpolatedPictures;
-  m_numberExtrapolatedPicturesMinus1 = sei.m_numberExtrapolatedPicturesMinus1;
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
 }
 
@@ -1051,7 +1027,6 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_totalKilobyteSize == sei.m_totalKilobyteSize &&
   m_numberInputDecodedPicturesMinus1 == sei.m_numberInputDecodedPicturesMinus1 &&
   m_numberInterpolatedPictures == sei.m_numberInterpolatedPictures &&
-  m_numberExtrapolatedPicturesMinus1 == sei.m_numberExtrapolatedPicturesMinus1 &&
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
   m_payloadLength == sei.m_payloadLength;
 
@@ -1077,17 +1052,6 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   m_noPrevCLVSFlag = sei.m_noPrevCLVSFlag;
   m_noFollCLVSFlag = sei.m_noFollCLVSFlag;
   m_outputFlag = sei.m_outputFlag;
-}
-
-SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)
-{
-  m_filterHintCancelFlag = sei.m_filterHintCancelFlag;
-  m_filterHintPersistenceFlag = sei.m_filterHintPersistenceFlag;
-  m_filterHintSizeY = sei.m_filterHintSizeY;
-  m_filterHintSizeX = sei.m_filterHintSizeX;
-  m_filterHintType = sei.m_filterHintType;
-  m_filterHintChromaCoeffPresentFlag = sei.m_filterHintChromaCoeffPresentFlag;
-  m_filterHintValues = sei.m_filterHintValues;
 }
 
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t id)

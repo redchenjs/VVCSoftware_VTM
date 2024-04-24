@@ -745,7 +745,6 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsTotalKilobyteSize[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t>   m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
-  uint32_t                m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<bool>       m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
 
@@ -883,25 +882,6 @@ protected:
 
   bool m_SEIManifestSEIEnabled;
   bool m_SEIPrefixIndicationSEIEnabled;
-  //SEI message processing order
-  bool                  m_poSEIEnabled;
-  uint32_t              m_poSEIId;
-  uint32_t              m_poSEINumMinus2;
-  std::vector<bool>     m_poSEIWrappingFlag;
-  std::vector<bool>     m_poSEIImportanceFlag;
-  std::vector<bool>     m_poSEIPrefixFlag;
-  std::vector<uint16_t> m_poSEIPayloadType;
-  std::vector<uint16_t>  m_poSEIProcessingOrder;
-  std::vector<uint16_t> m_poSEINumOfPrefixBits;
-  std::vector<std::vector<uint8_t>>  m_poSEIPrefixByte;
-  bool                 m_postFilterHintSEIEnabled;
-  bool                 m_postFilterHintSEICancelFlag;
-  bool                 m_postFilterHintSEIPersistenceFlag;
-  uint32_t             m_postFilterHintSEISizeY;
-  uint32_t             m_postFilterHintSEISizeX;
-  uint32_t             m_postFilterHintSEIType;
-  bool                 m_postFilterHintSEIChromaCoeffPresentFlag;
-  std::vector<int32_t> m_postFilterHintValues;
 
   bool      m_constrainedRaslEncoding;
 
@@ -2059,8 +2039,6 @@ public:
   uint32_t    getNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1(int filterIdx) const                    { return m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsNumberInterpolatedPictures(std::vector<uint32_t> value, int filterIdx)   { m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[filterIdx] = value; }
   const       std::vector<uint32_t>& getNNPostFilterSEICharacteristicsNumberInterpolatedPictures(int filterIdx)         { return m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[filterIdx]; }
-  void        setNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1(uint32_t value, int filterIdx)          { m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[filterIdx] = value; }
-  uint32_t    getNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1(int filterIdx)                          { return m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsInputPicOutputFlag(std::vector<bool> value, int filterIdx)   { m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx] = value; }
   const       std::vector<bool>& getNNPostFilterSEICharacteristicsInputPicOutputFlag(int filterIdx)         { return m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(bool absentInputPicZeroFlag, int filterIdx)       { m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[filterIdx] = absentInputPicZeroFlag; }
@@ -2571,45 +2549,6 @@ public:
   bool     getCraAPSreset()                                    const { return m_craAPSreset; }
   void     setRprRASLtoolSwitch(bool b)                              { m_rprRASLtoolSwitch = b; }
   bool     getRprRASLtoolSwitch()                                    { return m_rprRASLtoolSwitch; }
-
-  //SEI messages processing order
-  void     setPoSEIEnabled(bool b)                                   { m_poSEIEnabled = b; }
-  bool     getPoSEIEnabled()                                         { return m_poSEIEnabled; }
-  void     setPoSEIId(uint32_t i)                                    { m_poSEIId = i; }
-  uint32_t getPoSEIId()                                              { return m_poSEIId; }
-  void     setPoSEINumMinus2(uint32_t i)                             { m_poSEINumMinus2 = i; }
-  uint32_t getPoSEINumMinus2()                                       { return m_poSEINumMinus2; }
-  void     setPoSEIWrappingFlag(const std::vector<bool>& b)          { m_poSEIWrappingFlag = b; }
-  bool     getPoSEIWrappingFlag(uint16_t idx)                  const { return m_poSEIWrappingFlag[idx]; }
-  void     setPoSEIImportanceFlag(const std::vector<bool>& b)        { m_poSEIImportanceFlag = b; }
-  bool     getPoSEIImportanceFlag(uint16_t idx)                const { return m_poSEIImportanceFlag[idx]; }
-  void     setPoSEIPrefixFlag(const std::vector<bool>& b)           { m_poSEIPrefixFlag = b; }
-  bool     getPoSEIPrefixFlag(uint16_t idx)                   const { return m_poSEIPrefixFlag[idx]; }
-  void     setPoSEIPayloadType(const std::vector<uint16_t>& b)       { m_poSEIPayloadType = b; }
-  uint16_t getPoSEIPayloadType(uint16_t idx)                   const { return m_poSEIPayloadType[idx]; }
-  void     setPoSEIProcessingOrder(const std::vector<uint16_t>& b) { m_poSEIProcessingOrder = b; }
-  uint16_t  getPoSEIProcessingOrder(uint16_t idx)              const { return m_poSEIProcessingOrder[idx]; }
-  void     setPoSEINumOfPrefixBits(const std::vector<uint16_t>& b)   { m_poSEINumOfPrefixBits = b; }
-  uint16_t getPoSEINumOfPrefixBits(uint16_t idx)               const { return m_poSEINumOfPrefixBits[idx]; }
-  uint32_t getPoSEIPayloadTypeSize()                           const { return (uint32_t)m_poSEIPayloadType.size(); }
-  void     setPoSEIPrefixByte(const std::vector<std::vector<uint8_t>>& b) { m_poSEIPrefixByte = b; }
-  std::vector<uint8_t>  getPoSEIPrefixByte(uint16_t idx)       const { return m_poSEIPrefixByte[idx]; }
-  void     setPostFilterHintSEIEnabled(bool b) { m_postFilterHintSEIEnabled = b; }
-  bool     getPostFilterHintSEIEnabled() { return m_postFilterHintSEIEnabled; }
-  void     setPostFilterHintSEICancelFlag(bool b) { m_postFilterHintSEICancelFlag = b; }
-  bool     getPostFilterHintSEICancelFlag() { return m_postFilterHintSEICancelFlag; }
-  void     setPostFilterHintSEIPersistenceFlag(bool b) { m_postFilterHintSEIPersistenceFlag = b; }
-  bool     getPostFilterHintSEIPersistenceFlag() { return m_postFilterHintSEIPersistenceFlag; }
-  void     setPostFilterHintSEISizeY(uint32_t i) { m_postFilterHintSEISizeY = i; }
-  uint32_t getPostFilterHintSEISizeY() { return m_postFilterHintSEISizeY; }
-  void     setPostFilterHintSEISizeX(uint32_t i) { m_postFilterHintSEISizeX = i; }
-  uint32_t getPostFilterHintSEISizeX() { return m_postFilterHintSEISizeX; }
-  void     setPostFilterHintSEIType(uint32_t i) { m_postFilterHintSEIType = i; }
-  uint32_t getPostFilterHintSEIType() { return m_postFilterHintSEIType; }
-  void     setPostFilterHintSEIChromaCoeffPresentFlag(bool b) { m_postFilterHintSEIChromaCoeffPresentFlag = b; }
-  bool     getPostFilterHintSEIChromaCoeffPresentFlag() { return m_postFilterHintSEIChromaCoeffPresentFlag; }
-  void     setPostFilterHintSEIValues(const std::vector<int32_t> &b) { m_postFilterHintValues = b; }
-  int32_t  getPostFilterHintSEIValues(int32_t idx) const { return m_postFilterHintValues[idx]; }
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
   void         setWPBiPred            ( bool b )                     { m_useWeightedBiPred = b;    }
