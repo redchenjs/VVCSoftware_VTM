@@ -1410,53 +1410,92 @@ void DecLib::checkMultiSubpicNum(int olsIdx)
   }
 }
 
-#define SEI_REPETITION_CONSTRAINT_LIST_SIZE  27
-
-/**
- - Count the number of identical SEI messages in the current picture
- */
+// Check the number of identical SEI messages in the current picture
+// Section D.2.1 of VVC spec
 void DecLib::checkSeiInPictureUnit()
 {
-  std::vector<std::tuple<int, uint32_t, uint8_t*>> seiList;
+  std::vector<std::pair<SEI::PayloadType, std::vector<uint8_t>>> seiList;
 
   bool prefixPostfilterHintSEI = false;
   bool suffixPostfilterHintSEI = false;
 
   // payload types subject to constrained SEI repetition
-  int picUnitRepConSeiList[SEI_REPETITION_CONSTRAINT_LIST_SIZE] = { 0, 1, 19, 22, 45, 56, 129, 132, 133, 137, 144, 145, 147, 148, 149, 150, 153, 154, 155, 156, 168, 203, 204, 205, 210, 211, 212};
+  const std::set<SEI::PayloadType> picUnitRepConSeiList = {
+    SEI::PayloadType::BUFFERING_PERIOD,                             // 0,
+    SEI::PayloadType::PICTURE_TIMING,                               // 1
+    SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS,                   // 19
+    SEI::PayloadType::FRAME_PACKING,                                // 45
+    SEI::PayloadType::DISPLAY_ORIENTATION,                          // 47
+    SEI::PayloadType::GREEN_METADATA,                               // 56
+    SEI::PayloadType::PARAMETER_SETS_INCLUSION_INDICATION,          // 129
+    SEI::PayloadType::DECODED_PICTURE_HASH,                         // 132
+    SEI::PayloadType::SCALABLE_NESTING,                             // 133
+    SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME,              // 137
+    SEI::PayloadType::COLOUR_TRANSFORM_INFO,                        // 142
+    SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO,                     // 144
+    SEI::PayloadType::DEPENDENT_RAP_INDICATION,                     // 145
+    SEI::PayloadType::ALTERNATIVE_TRANSFER_CHARACTERISTICS,         // 147
+    SEI::PayloadType::AMBIENT_VIEWING_ENVIRONMENT,                  // 148
+    SEI::PayloadType::CONTENT_COLOUR_VOLUME,                        // 149
+    SEI::PayloadType::EQUIRECTANGULAR_PROJECTION,                   // 150
+    SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION,               // 153
+    SEI::PayloadType::SPHERE_ROTATION,                              // 154
+    SEI::PayloadType::REGION_WISE_PACKING,                          // 155
+    SEI::PayloadType::OMNI_VIEWPORT,                                // 156
+    SEI::PayloadType::FRAME_FIELD_INFO,                             // 168
+    SEI::PayloadType::DEPTH_REPRESENTATION_INFO,                    // 177
+    SEI::PayloadType::MULTIVIEW_ACQUISITION_INFO,                   // 179
+    SEI::PayloadType::MULTIVIEW_VIEW_POSITION,                      // 180
+    SEI::PayloadType::SEI_MANIFEST,                                 // 200
+    SEI::PayloadType::SEI_PREFIX_INDICATION,                        // 201
+    SEI::PayloadType::ANNOTATED_REGIONS,                            // 202
+    SEI::PayloadType::SUBPICTURE_LEVEL_INFO,                        // 203
+    SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO,                     // 204
+    SEI::PayloadType::SHUTTER_INTERVAL_INFO,                        // 205
+    SEI::PayloadType::EXTENDED_DRAP_INDICATION,                     // 206
+    SEI::PayloadType::CONSTRAINED_RASL_ENCODING,                    // 207
+    SEI::PayloadType::SCALABILITY_DIMENSION_INFO,                   // 208
+    SEI::PayloadType::VDI_SEI_ENVELOPE,                             // 209
+    SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS,   // 210
+    SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION,        // 211
+    SEI::PayloadType::PHASE_INDICATION,                             // 212
+  };
 
   // extract SEI messages from NAL units
   for (auto &sei : m_pictureSeiNalus)
   {
+    std::pair<SEI::PayloadType, std::vector<uint8_t>> data;
+
     InputBitstream bs = sei->getBitstream();
 
     do
     {
-      int payloadType = 0;
       uint32_t val = 0;
 
+      uint32_t payloadType = 0;
       do
       {
         bs.readByte(val);
         payloadType += val;
-      } while (val==0xFF);
+      } while (val == 0xFF);
+      data.first = SEI::PayloadType(payloadType);
 
       uint32_t payloadSize = 0;
       do
       {
         bs.readByte(val);
         payloadSize += val;
-      } while (val==0xFF);
+      } while (val == 0xFF);
 
-      uint8_t *payload = new uint8_t[payloadSize];
+      data.second.resize(payloadSize);
       for (uint32_t i = 0; i < payloadSize; i++)
       {
         bs.readByte(val);
-        payload[i] = (uint8_t)val;
+        data.second[i] = (uint8_t) val;
       }
-      seiList.push_back(std::tuple<int, uint32_t, uint8_t*>(payloadType, payloadSize, payload));
+      seiList.push_back(data);
 
-      if (SEI::PayloadType(payloadType) == SEI::PayloadType::POST_FILTER_HINT)
+      if (data.first == SEI::PayloadType::POST_FILTER_HINT)
       {
         if (sei->m_nalUnitType == NalUnitType::NAL_UNIT_PREFIX_SEI)
         {
@@ -1467,59 +1506,40 @@ void DecLib::checkSeiInPictureUnit()
           suffixPostfilterHintSEI = true;
         }
       }
-    }
-    while (bs.getNumBitsLeft() > 8);
+    } while (bs.getNumBitsLeft() > 8);
   }
 
   // count repeated messages in list
   for (uint32_t i = 0; i < seiList.size(); i++)
   {
-    int      k, count = 1;
-    int      payloadType1 = std::get<0>(seiList[i]);
-    uint32_t payloadSize1 = std::get<1>(seiList[i]);
-    uint8_t  *payload1    = std::get<2>(seiList[i]);
+    const SEI::PayloadType      payloadType1 = seiList[i].first;
+    const std::vector<uint8_t>& data1        = seiList[i].second;
 
     // only consider SEI payload types in the PicUnitRepConSeiList
-    for(k=0; k<SEI_REPETITION_CONSTRAINT_LIST_SIZE; k++)
+    if (picUnitRepConSeiList.count(payloadType1) == 1)
     {
-      if(payloadType1 == picUnitRepConSeiList[k])
-      {
-        break;
-      }
-    }
-    if(k >= SEI_REPETITION_CONSTRAINT_LIST_SIZE)
-    {
-      continue;
-    }
+      // compare current SEI message with remaining messages in the list
+      int count = 1;
 
-    // compare current SEI message with remaining messages in the list
-    for (uint32_t j = i+1; j < seiList.size(); j++)
-    {
-      int      payloadType2 = std::get<0>(seiList[j]);
-      uint32_t payloadSize2 = std::get<1>(seiList[j]);
-      uint8_t  *payload2    = std::get<2>(seiList[j]);
-
-      // check for identical SEI type, size, and payload
-      if(payloadType1 == payloadType2 && payloadSize1 == payloadSize2)
+      for (uint32_t j = i + 1; j < seiList.size(); j++)
       {
-        if(memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t)) == 0)
+        const SEI::PayloadType      payloadType2 = seiList[j].first;
+        const std::vector<uint8_t>& data2        = seiList[j].second;
+
+        // check for identical SEI type, size, and payload
+        if (payloadType1 == payloadType2 && data1 == data2)
         {
           count++;
         }
       }
+      CHECK(count > 4,
+            "There shall be less than or equal to 4 identical sei_payload( ) syntax structures within a picture unit.");
     }
-    CHECK(count > 4, "There shall be less than or equal to 4 identical sei_payload( ) syntax structures within a picture unit.");
   }
 
-  CHECK(prefixPostfilterHintSEI && suffixPostfilterHintSEI, "Post-filter hint SEI message shall not be present in both a prefix SEI NALU and a suffix SEI NALU in the same picture unit")
-
-  // free SEI message list memory
-  for (uint32_t i = 0; i < seiList.size(); i++)
-  {
-    uint8_t *payload = std::get<2>(seiList[i]);
-    delete[] payload;
-  }
-  seiList.clear();
+  CHECK(prefixPostfilterHintSEI && suffixPostfilterHintSEI,
+        "Post-filter hint SEI message shall not be present in both a prefix SEI NALU and a suffix SEI NALU in the same "
+        "picture unit")
 }
 
 /**
