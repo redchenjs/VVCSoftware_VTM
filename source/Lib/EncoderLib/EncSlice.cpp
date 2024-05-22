@@ -2278,6 +2278,7 @@ void EncSlice::estLamWt(Picture* pcPic)
     return;
   }
 
+  // fix QP for pre-encoding
   Slice* pcSlice = pcPic->slices[getSliceSegmentIdx()];
   double dQP = m_pcCfg->getQPForPicture(0, pcSlice);
   int    qp;
@@ -2290,7 +2291,7 @@ void EncSlice::estLamWt(Picture* pcPic)
   pre.create(m_chromaFormatIdc, m_area, 0);
 
   g_encMode = ENC_PRE;
-  compressSlice(pcPic, true, m_pcCfg->getFastDeltaQp());
+  compressSlice(pcPic, true, m_pcCfg->getFastDeltaQp());  // pre-encoding
   g_encMode = ENC_FULL;
   pcSlice->setSliceQp(m_qpCtu);
   setUpLambda(pcSlice, m_lambda, m_qpCtu);

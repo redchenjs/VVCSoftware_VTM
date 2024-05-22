@@ -1253,6 +1253,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
 #if JVET_AH0078_DPF
   if (m_pcEncCfg->getDPF() && g_encMode == ENC_PRE)
   {
+    // fix test modes for pre-encoding
     int width = m_currCsArea->lwidth();
     int heiht = m_currCsArea->lheight();
     int maxDepth = 2;
