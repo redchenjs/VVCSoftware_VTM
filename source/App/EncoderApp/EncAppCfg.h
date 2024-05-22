@@ -1013,6 +1013,11 @@ protected:
   int                   m_gopBasedTemporalFilterFutureRefs;
   std::map<int, double> m_gopBasedTemporalFilterStrengths;             ///< Filter strength per frame for the GOP-based Temporal Filter
   bool                  m_bimEnabled;
+#if JVET_AH0078_DPF
+  bool                  m_dpfEnabled;
+  int                   m_dpfKeyLen;
+  int                   m_dpfNonkeyLen;
+#endif
 
   int         m_maxLayers;
   int         m_targetOlsIdx;

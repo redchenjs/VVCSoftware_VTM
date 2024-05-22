@@ -545,6 +545,12 @@ protected:
   bool      m_noPicPartitionFlag;                             ///< no picture partitioning flag (single tile, single slice)
   bool      m_mixedLossyLossless;                             ///< enable mixed lossy/lossless coding
 
+#if JVET_AH0078_DPF
+  bool      m_dpfEnabled;
+  int       m_dpfKeyLen;
+  int       m_dpfNonkeyLen;
+#endif
+
   std::vector<uint16_t> m_sliceLosslessArray;                      ///< Slice lossless array
   std::vector<uint32_t> m_tileColumnWidth;                    ///< tile column widths in units of CTUs (last column width will be repeated uniformly to cover any remaining picture width)
   std::vector<uint32_t> m_tileRowHeight;                      ///< tile row heights in units of CTUs (last row height will be repeated uniformly to cover any remaining picture height)
@@ -1834,6 +1840,15 @@ public:
   void      setAdaptQPmap                   (std::map<int, int*> map) { m_adaptQPmap = map; }
   int*      getAdaptQPmap                   (int poc)                 { return m_adaptQPmap[poc]; }
   std::map<int, int*> *getAdaptQPmap        ()                        { return &m_adaptQPmap; }
+
+#if JVET_AH0078_DPF
+  void      setDPF                          (bool flag)               { m_dpfEnabled = flag; }
+  void      setDPFKeyLen                    (int i)                   { m_dpfKeyLen = i; }
+  void      setDPFNonkeyLen                 (int i)                   { m_dpfNonkeyLen = i; }
+  bool      getDPF()                                            const { return m_dpfEnabled; }
+  int       getDPFKeyLen()                                      const { return m_dpfKeyLen; }
+  int       getDPFNonkeyLen()                                   const { return m_dpfNonkeyLen; }
+#endif
 
   bool      getUseReconBasedCrossCPredictionEstimate ()                const { return m_reconBasedCrossCPredictionEstimate;  }
   void      setUseReconBasedCrossCPredictionEstimate (const bool value)      { m_reconBasedCrossCPredictionEstimate = value; }

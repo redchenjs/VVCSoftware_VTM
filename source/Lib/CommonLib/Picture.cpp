@@ -232,6 +232,9 @@ const CPelBuf     Picture::getFilteredOrigBuf(const CompArea &blk)  const { retu
 const CPelBuf     Picture::getPredBuf(const CompArea &blk)  const { return getBuf(blk,  PIC_PREDICTION); }
        PelUnitBuf Picture::getPredBuf(const UnitArea &unit)       { return getBuf(unit, PIC_PREDICTION); }
 const CPelUnitBuf Picture::getPredBuf(const UnitArea &unit) const { return getBuf(unit, PIC_PREDICTION); }
+#if JVET_AH0078_DPF
+const CPelUnitBuf Picture::getPredBuf()                     const { return M_BUFS(0, PIC_PREDICTION); }
+#endif
 
        PelBuf     Picture::getResiBuf(const CompArea &blk)        { return getBuf(blk,  PIC_RESIDUAL); }
 const CPelBuf     Picture::getResiBuf(const CompArea &blk)  const { return getBuf(blk,  PIC_RESIDUAL); }

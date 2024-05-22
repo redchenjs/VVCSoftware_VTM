@@ -1790,6 +1790,12 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
   {
     useDeltaQp = true;
   }
+#if JVET_AH0078_DPF
+  if (m_dpfEnabled)
+  {
+    useDeltaQp = true;
+  }
+#endif
 
   if (m_costMode==COST_SEQUENCE_LEVEL_LOSSLESS || m_costMode==COST_LOSSLESS_CODING)
   {

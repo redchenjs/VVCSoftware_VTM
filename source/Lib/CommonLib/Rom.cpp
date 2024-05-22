@@ -712,3 +712,7 @@ int8_t g_dis[GEO_NUM_ANGLES] = { 8,  8,  8,  8,  4,  4,  2,  1,  0, -1, -2, -4, 
 
 int8_t    g_angle2mirror[GEO_NUM_ANGLES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2 };
 //! \}
+
+#if JVET_AH0078_DPF
+int    g_encMode = ENC_FULL;
+#endif

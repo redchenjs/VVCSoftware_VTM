@@ -146,6 +146,20 @@ public:
   void    setEncCABACTableIdx (SliceType b)         { m_encCABACTableIdx = b; }
 private:
   double  xGetQPValueAccordingToLambda ( double lambda );
+
+#if JVET_AH0078_DPF
+private:
+  double*                 m_lambdaWeight;
+  double                  m_lambda;
+  int                     m_qpCtu;
+  PelStorage              pre;
+
+  void    setCTULambdaQp(TrQuant* pTrQuant, uint32_t ctuIdx, RdCost* pRdCost, Slice* pcSlice);
+  void    estLamWt(Picture* pcPic);
+
+public:
+  int     getQpCtu() const { return m_qpCtu; }
+#endif
 };
 
 //! \}

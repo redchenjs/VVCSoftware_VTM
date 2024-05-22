@@ -1216,6 +1216,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("RDOQ",                                            m_useRDOQ,                                         true)
   ("RDOQTS",                                          m_useRDOQTS,                                       true)
   ("SelectiveRDOQ",                                   m_useSelectiveRDOQ,                               false, "Enable selective RDOQ")
+#if JVET_AH0078_DPF
+  ("DPF",                                             m_dpfEnabled,                                     false, "Distortion Propagation Factor, CTU-Level Lagrange Multiplier and QP Adaptation")
+  ("DPFKeyLength",                                    m_dpfKeyLen,                                   8, "DPF Propagation Length for key frames")
+  ("DPFNonkeyLength",                                 m_dpfNonkeyLen,                                0, "DPF Propagation Length for non-key frames")
+#endif
 
   // Deblocking filter parameters
   ("DeblockingFilterDisable",                         m_deblockingFilterDisable,                        false)
@@ -5235,6 +5240,11 @@ bool EncAppCfg::xCheckParameter()
       m_gopBasedTemporalFilterPastRefs <= 0 && m_gopBasedTemporalFilterFutureRefs <= 0,
       "Either TemporalFilterPastRefs or TemporalFilterFutureRefs must be larger than 0 when Block Importance Mapping is enabled" );
   }
+#if JVET_AH0078_DPF
+  xConfirmPara(m_bimEnabled && m_dpfEnabled, "DPF is not compatible with BIM");
+  xConfirmPara(m_dpfKeyLen < 0, "DPF Key Length must be greater than or equal to 0");
+  xConfirmPara(m_dpfNonkeyLen < 0, "DPF Non-key Length must be greater than or equal to 0");
+#endif
 #if EXTENSION_360_VIDEO
   check_failed |= m_ext360.verifyParameters();
 #endif
@@ -5628,6 +5638,15 @@ void EncAppCfg::xPrintParameter()
   msg(VERBOSE, "SEI FGC:%d ", m_fgcSEIEnabled);
 
   msg(VERBOSE, "SEI processing Order:%d ", m_poSEIEnabled);
+
+#if JVET_AH0078_DPF
+  msg(VERBOSE, "DPF:%d ", m_dpfEnabled);
+  if (m_dpfEnabled)
+  {
+    msg(VERBOSE, "DPFKeyLength:%d ", m_dpfKeyLen);
+    msg(VERBOSE, "DPFNonkeyLength:%d ", m_dpfNonkeyLen);
+  }
+#endif
 
 #if EXTENSION_360_VIDEO
   m_ext360.outputConfigurationSummary();

@@ -1492,6 +1492,12 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setNumRefLayers                                       ( m_numRefLayers );
 
   m_cEncLib.setVPSParameters(m_cfgVPSParameters);
+
+#if JVET_AH0078_DPF
+  m_cEncLib.setDPF(m_dpfEnabled);
+  m_cEncLib.setDPFKeyLen(m_dpfKeyLen);
+  m_cEncLib.setDPFNonkeyLen(m_dpfNonkeyLen);
+#endif
 }
 
 void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )

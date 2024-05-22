@@ -123,6 +123,9 @@ struct Picture : public UnitArea
   const CPelBuf     getPredBuf(const CompArea &blk) const;
          PelUnitBuf getPredBuf(const UnitArea &unit);
   const CPelUnitBuf getPredBuf(const UnitArea &unit) const;
+#if JVET_AH0078_DPF
+  const CPelUnitBuf getPredBuf() const;
+#endif
 
          PelBuf     getResiBuf(const CompArea &blk);
   const CPelBuf     getResiBuf(const CompArea &blk) const;
