@@ -149,10 +149,13 @@ private:
 
 #if JVET_AH0078_DPF
 private:
-  double*                 m_lambdaWeight;
+  std::vector<double>     m_lambdaWeight;
   double                  m_lambda;
   int                     m_qpCtu;
   PelStorage              pre;
+  std::vector<double>     factorBlk;
+  int**                   pixelPredErr;
+  int**                   pixelRecDis;
 
   void    setCTULambdaQp(TrQuant* pTrQuant, uint32_t ctuIdx, RdCost* pRdCost, Slice* pcSlice);
   void    estLamWt(Picture* pcPic);

@@ -82,8 +82,28 @@ void EncSlice::destroy()
 #if JVET_AH0078_DPF
   if (m_pcCfg->getDPF())
   {
-    free(m_lambdaWeight);
-    m_lambdaWeight = nullptr;
+    m_lambdaWeight.clear();
+    const int height = m_pcCfg->getSourceHeight();
+    if (pixelRecDis)
+    {
+      for (int i = 0; i < height; i++)
+      {
+        delete[] pixelRecDis[i];
+        pixelRecDis[i] = nullptr;
+      }
+      delete[] pixelRecDis;
+      pixelRecDis = nullptr;
+    }
+    if (pixelPredErr)
+    {
+      for (int i = 0; i < height; i++)
+      {
+        delete[] pixelPredErr[i];
+        pixelPredErr[i] = nullptr;
+      }
+      delete[] pixelPredErr;
+      pixelPredErr = nullptr;
+    }
   }
 #endif
 }
@@ -109,19 +129,21 @@ void EncSlice::init( EncLib* pcEncLib, const SPS& sps )
   m_pcRateCtrl        = pcEncLib->getRateCtrl();
 
 #if JVET_AH0078_DPF
-  m_lambdaWeight = nullptr;
   if (m_pcCfg->getDPF())
   {
     const int sizeCu = m_pcCfg->getCTUSize();
-    const int m_sourceHeight = m_pcCfg->getSourceHeight();
-    const int m_sourceWidth = m_pcCfg->getSourceWidth();
-    const int numCuHeight = m_sourceHeight % sizeCu == 0 ? m_sourceHeight / sizeCu : m_sourceHeight / sizeCu + 1;
-    const int numCuWidth = m_sourceWidth % sizeCu == 0 ? m_sourceWidth / sizeCu : m_sourceWidth / sizeCu + 1;
+    const int height = m_pcCfg->getSourceHeight();
+    const int width = m_pcCfg->getSourceWidth();
+    const int numCuHeight = height % sizeCu == 0 ? height / sizeCu : height / sizeCu + 1;
+    const int numCuWidth = width % sizeCu == 0 ? width / sizeCu : width / sizeCu + 1;
     const int numCuPic = numCuHeight * numCuWidth;
-    m_lambdaWeight = (double*)calloc(numCuPic, sizeof(double));
-    for (int i = 0; i < numCuPic; i++)
+    m_lambdaWeight.assign(numCuPic, 1.0);
+    pixelPredErr = new int*[height];
+    pixelRecDis = new int*[height];
+    for (int i = 0; i < height; i++)
     {
-      m_lambdaWeight[i] = 1.0;
+      pixelPredErr[i] = new int[width];
+      pixelRecDis[i] = new int[width];
     }
   }
 #endif
@@ -2220,10 +2242,7 @@ void EncSlice::setCTULambdaQp(TrQuant* pTrQuant, uint32_t ctuIdx, RdCost* pRdCos
       pow(2.0, (estQP - qpc) / 3.0);   // takes into account of the chroma qp mapping and chroma qp Offset
     if (m_pcCfg->getDepQuantEnabledFlag())
     {
-      tmpWeight *= (m_pcCfg->getGOPSize() >= 8
-        ? pow(2.0, 0.1 / 3.0)
-        : pow(2.0, 0.2 / 3.0));   // increase chroma weight for dependent quantization (in
-                                  // order to reduce bit rate shift from chroma to luma)
+      tmpWeight *= (m_pcCfg->getGOPSize() >= 8 ? pow(2.0, 0.1 / 3.0) : pow(2.0, 0.2 / 3.0));   // increase chroma weight for dependent quantization (in order to reduce bit rate shift from chroma to luma)
     }
     m_pcRdCost->setDistortionWeight(compID, tmpWeight);
   }
@@ -2244,9 +2263,9 @@ void EncSlice::estLamWt(Picture* pcPic)
     return;
   }
 
-  int       iCurPOC = pcPic->getPOC();
-  int       iGOPSize = m_pcCfg->getGOPSize();
-  int       rPOC = iCurPOC % iGOPSize;
+  int       curPOC = pcPic->getPOC();
+  int       gopSize = m_pcCfg->getGOPSize();
+  int       rPOC = curPOC % gopSize;
   int       numPropa = 0;
   if (rPOC == 0)
   {
@@ -2280,11 +2299,11 @@ void EncSlice::estLamWt(Picture* pcPic)
 
   // fix QP for pre-encoding
   Slice* pcSlice = pcPic->slices[getSliceSegmentIdx()];
-  double dQP = m_pcCfg->getQPForPicture(0, pcSlice);
+  double oldQP = m_pcCfg->getQPForPicture(0, pcSlice);
   int    qp;
-  double dLambda = calculateLambda(pcSlice, 0, dQP, dQP, qp);
+  double lambda = calculateLambda(pcSlice, 0, oldQP, oldQP, qp);
   pcSlice->setSliceQp(qp);
-  setUpLambda(pcSlice, dLambda, qp);
+  setUpLambda(pcSlice, lambda, qp);
 
   const auto m_chromaFormatIdc = m_pcCfg->getChromaFormatIdc();
   const auto m_area = Area(0, 0, width, height);
@@ -2328,57 +2347,46 @@ void EncSlice::estLamWt(Picture* pcPic)
   const Pel* pRec = recPB.bufAt(0, 0);
   const Pel* pPre = prePB.bufAt(0, 0);
 
-  int** PixelPredErr;
-  int** PixelRecDis;
-  PixelPredErr = (int**)calloc(height, sizeof(int*));
-  PixelRecDis = (int**)calloc(height, sizeof(int*));
-  for (int i = 0; i < height; i++)
-  {
-    PixelPredErr[i] = (int*)calloc(width, sizeof(int));
-    PixelRecDis[i] = (int*)calloc(width, sizeof(int));
-  }
   for (int y = 0; y < height; y++)
   {
     for (int x = 0; x < width; x++)
     {
-      Intermediate_Int iErr = pOrg[x] - pPre[x];
-      Intermediate_Int iDis = pOrg[x] - pRec[x];
-      PixelPredErr[y][x] = iErr * iErr;
-      PixelRecDis[y][x] = iDis * iDis;
+      Intermediate_Int err = pOrg[x] - pPre[x];
+      Intermediate_Int dis = pOrg[x] - pRec[x];
+      pixelPredErr[y][x] = err * err;
+      pixelRecDis[y][x] = dis * dis;
     }
     pOrg += orgPB.stride;
     pPre += prePB.stride;
     pRec += recPB.stride;
   }
 
-  double* factorBlk = (double*)calloc(numBlkPic, sizeof(double));
+  factorBlk.assign(numBlkPic, 0);
   int     pHeightX_Blk = 0;
   int     pWidthY_Blk = 0;
 
-  for (int Bidx = 0; Bidx < numBlkPic; Bidx++)
+  for (int bIdx = 0; bIdx < numBlkPic; bIdx++)
   {
-    int Line = Bidx / numBlkWidth;
-    int k = 0;
-    int SumPixelRecDisBlk = 0;   // block coding distortion
-    int SumPixelPredErrBlk = 0;  // block MCP error
-    pHeightX_Blk = Line;
-    pWidthY_Blk = Bidx - Line * numBlkWidth;
+    int line = bIdx / numBlkWidth;
+    int sumPixelRecDisBlk = 0;   // block coding distortion
+    int sumPixelPredErrBlk = 0;  // block MCP error
+    pHeightX_Blk = line;
+    pWidthY_Blk = bIdx - line * numBlkWidth;
     for (int i = pHeightX_Blk * sizeBlk;
       i < (((pHeightX_Blk * sizeBlk + sizeBlk) <= height) ? (pHeightX_Blk * sizeBlk + sizeBlk) : height); i++)
     {
       for (int j = pWidthY_Blk * sizeBlk;
         j < (((pWidthY_Blk * sizeBlk + sizeBlk) <= width) ? (pWidthY_Blk * sizeBlk + sizeBlk) : width); j++)
       {
-        SumPixelRecDisBlk += PixelRecDis[i][j];
-        SumPixelPredErrBlk += PixelPredErr[i][j];
-        k++;
+        sumPixelRecDisBlk += pixelRecDis[i][j];
+        sumPixelPredErrBlk += pixelPredErr[i][j];
       }
     }
-    if (SumPixelPredErrBlk < 1)
+    if (sumPixelPredErrBlk < 1)
     {
-      SumPixelPredErrBlk = 1;
+      sumPixelPredErrBlk = 1;
     }
-    double ki = (double)SumPixelRecDisBlk / (double)SumPixelPredErrBlk;  // block DPF
+    double ki = (double)sumPixelRecDisBlk / (double)sumPixelPredErrBlk;  // block DPF
     if (ki > 1.0)
     {
       ki = 1.0;
@@ -2390,45 +2398,38 @@ void EncSlice::estLamWt(Picture* pcPic)
       multiKi = multiKi * ki;
       kiLenth = kiLenth + multiKi;
     }
-    factorBlk[Bidx] = 1.0 / (1.0 + kiLenth);  // block weight
+    factorBlk[bIdx] = 1.0 / (1.0 + kiLenth);  // block weight
   }
 
   double sumFactorBlk = 0;
-  for (int Bidx = 0; Bidx < numBlkPic; Bidx++)
+  for (int bIdx = 0; bIdx < numBlkPic; bIdx++)
   {
-    sumFactorBlk = sumFactorBlk + factorBlk[Bidx];
+    sumFactorBlk = sumFactorBlk + factorBlk[bIdx];
   }
   double aveFactorBlk = sumFactorBlk / (double)numBlkPic;
-  for (int Bidx = 0; Bidx < numBlkPic; Bidx++)
+  for (int bIdx = 0; bIdx < numBlkPic; bIdx++)
   {
-    factorBlk[Bidx] = factorBlk[Bidx] / aveFactorBlk;  // block weight with dividing by mean normalization
+    factorBlk[bIdx] = factorBlk[bIdx] / aveFactorBlk;  // block weight with dividing by mean normalization
   }
     
   const int numBlkCu = sizeCu / sizeBlk;
   for (int idxCu = 0; idxCu < numCuPic; idxCu++)
   {
-    double SumFact = 0;
+    double sumFact = 0;
     int    k = 0;
     for (int i = 0; i < numBlkPic; i++)
     {
       if (idxCu == numCuWidth * (i / (numBlkWidth * numBlkCu)) + (i % numBlkWidth) / numBlkCu)
       {
-        SumFact += factorBlk[i];
+        sumFact += factorBlk[i];
         k++;
       }
     }
-    double tWeight = SumFact / (double)k;
+    double tWeight = sumFact / (double)k;
     m_lambdaWeight[idxCu] = tWeight;  // CTU weight
   }
 
-  free(factorBlk);
-  for (int i = 0; i < height; i++)
-  {
-    free(PixelRecDis[i]);
-    free(PixelPredErr[i]);
-  }
-  free(PixelRecDis);
-  free(PixelPredErr);
+  factorBlk.clear();
   pre.destroy();
 }
 #endif
