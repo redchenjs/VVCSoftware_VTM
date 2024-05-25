@@ -1261,7 +1261,7 @@ enum RESHAPE_SIGNAL_TYPE
 };
 
 #if JVET_AH0078_DPF
-enum ENC_TYPE
+enum EncType
 {
   ENC_PRE = 0,
   ENC_FULL = 1,

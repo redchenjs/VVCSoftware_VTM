@@ -152,10 +152,10 @@ private:
   std::vector<double>     m_lambdaWeight;
   double                  m_lambda;
   int                     m_qpCtu;
-  PelStorage              pre;
-  std::vector<double>     factorBlk;
-  int**                   pixelPredErr;
-  int**                   pixelRecDis;
+  PelStorage              m_pre;
+  std::vector<double>     m_factorBlk;
+  int**                   m_pixelPredErr;
+  int**                   m_pixelRecDis;
 
   void    setCTULambdaQp(TrQuant* pTrQuant, uint32_t ctuIdx, RdCost* pRdCost, Slice* pcSlice);
   void    estLamWt(Picture* pcPic);

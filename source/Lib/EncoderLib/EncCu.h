@@ -286,6 +286,10 @@ private:
   GeoComboCostList m_comboList;
   MergeItemList         m_mergeItemList;
 
+#if JVET_AH0078_DPF
+  EncType*              m_encType;
+#endif
+
 public:
   /// copy parameters from encoder class
   void  init                ( EncLib* pcEncLib, const SPS& sps );
@@ -315,6 +319,10 @@ public:
   double getAFFBestSATDCost()              { return m_AFFBestSATDCost; }
   IbcHashMap& getIbcHashMap()              { return m_ibcHashMap;        }
   EncCfg*     getEncCfg()            const { return m_pcEncCfg;          }
+#if JVET_AH0078_DPF
+  EncType&    getEncType()           const { return *m_encType; }
+  void        setEncType(EncType &enctype) { m_encType = &enctype; }
+#endif
 
   EncCu();
   ~EncCu();

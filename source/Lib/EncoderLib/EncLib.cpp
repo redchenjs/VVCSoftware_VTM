@@ -88,6 +88,9 @@ EncLib::EncLib(EncLibCommon *encLibCommon)
   m_picIdInGOP = NOT_VALID;
   m_gopRprPpsId = 0;
 
+#if JVET_AH0078_DPF
+  m_encType = ENC_FULL;
+#endif
 }
 
 EncLib::~EncLib()

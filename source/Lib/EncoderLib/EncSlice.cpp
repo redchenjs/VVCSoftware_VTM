@@ -84,25 +84,25 @@ void EncSlice::destroy()
   {
     m_lambdaWeight.clear();
     const int height = m_pcCfg->getSourceHeight();
-    if (pixelRecDis)
+    if (m_pixelRecDis)
     {
       for (int i = 0; i < height; i++)
       {
-        delete[] pixelRecDis[i];
-        pixelRecDis[i] = nullptr;
+        delete[] m_pixelRecDis[i];
+        m_pixelRecDis[i] = nullptr;
       }
-      delete[] pixelRecDis;
-      pixelRecDis = nullptr;
+      delete[] m_pixelRecDis;
+      m_pixelRecDis = nullptr;
     }
-    if (pixelPredErr)
+    if (m_pixelPredErr)
     {
       for (int i = 0; i < height; i++)
       {
-        delete[] pixelPredErr[i];
-        pixelPredErr[i] = nullptr;
+        delete[] m_pixelPredErr[i];
+        m_pixelPredErr[i] = nullptr;
       }
-      delete[] pixelPredErr;
-      pixelPredErr = nullptr;
+      delete[] m_pixelPredErr;
+      m_pixelPredErr = nullptr;
     }
   }
 #endif
@@ -138,12 +138,12 @@ void EncSlice::init( EncLib* pcEncLib, const SPS& sps )
     const int numCuWidth = width % sizeCu == 0 ? width / sizeCu : width / sizeCu + 1;
     const int numCuPic = numCuHeight * numCuWidth;
     m_lambdaWeight.assign(numCuPic, 1.0);
-    pixelPredErr = new int*[height];
-    pixelRecDis = new int*[height];
+    m_pixelPredErr = new int*[height];
+    m_pixelRecDis = new int*[height];
     for (int i = 0; i < height; i++)
     {
-      pixelPredErr[i] = new int[width];
-      pixelRecDis[i] = new int[width];
+      m_pixelPredErr[i] = new int[width];
+      m_pixelRecDis[i] = new int[width];
     }
   }
 #endif
@@ -1930,7 +1930,7 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
     }
 #endif
 #if JVET_AH0078_DPF
-    if (m_pcCfg->getDPF() && g_encMode == ENC_FULL && !pcPic->slices[0]->isIntra())
+    if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_FULL && !pcPic->slices[0]->isIntra())
     {
       setCTULambdaQp(pTrQuant, ctuIdx, pRdCost, pcSlice);
     }
@@ -1978,7 +1978,7 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
     }
 
 #if JVET_AH0078_DPF
-    if (m_pcCfg->getDPF() && g_encMode == ENC_FULL && !pcPic->slices[0]->isIntra())
+    if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_FULL && !pcPic->slices[0]->isIntra())
     {
       pRdCost->setLambda(oldLambda, pcSlice->getSPS()->getBitDepths());
     }
@@ -2072,9 +2072,9 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
     }
 #if JVET_AH0078_DPF
     // merge clipped pred buffer
-    if (m_pcCfg->getDPF() && g_encMode == ENC_PRE)
+    if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_PRE)
     {
-      PelBuf& dstPreY = pre.get(COMPONENT_Y);
+      PelBuf& dstPreY = m_pre.get(COMPONENT_Y);
       PelBuf dstPrePB(dstPreY.bufAt(0, 0), dstPreY.stride, dstPreY.width, dstPreY.height);
       Pel* dstp = dstPrePB.bufAt(0, 0);
       const CPelUnitBuf& srcPre = pcPic->getPredBuf();
@@ -2307,11 +2307,11 @@ void EncSlice::estLamWt(Picture* pcPic)
 
   const auto m_chromaFormatIdc = m_pcCfg->getChromaFormatIdc();
   const auto m_area = Area(0, 0, width, height);
-  pre.create(m_chromaFormatIdc, m_area, 0);
+  m_pre.create(m_chromaFormatIdc, m_area, 0);
 
-  g_encMode = ENC_PRE;
+  m_pcLib->setEncType(ENC_PRE);
   compressSlice(pcPic, true, m_pcCfg->getFastDeltaQp());  // pre-encoding
-  g_encMode = ENC_FULL;
+  m_pcLib->setEncType(ENC_FULL);
   pcSlice->setSliceQp(m_qpCtu);
   setUpLambda(pcSlice, m_lambda, m_qpCtu);
 
@@ -2337,7 +2337,7 @@ void EncSlice::estLamWt(Picture* pcPic)
 
   const CPelBuf& orgY = org.get(COMPONENT_Y);
   const CPelBuf& recY = rec.get(COMPONENT_Y);
-  const CPelBuf& preY = pre.get(COMPONENT_Y);
+  const CPelBuf& preY = m_pre.get(COMPONENT_Y);
 
   const CPelBuf orgPB(orgY.bufAt(0, 0), orgY.stride, orgY.width, orgY.height);
   const CPelBuf recPB(recY.bufAt(0, 0), recY.stride, recY.width, recY.height);
@@ -2353,15 +2353,15 @@ void EncSlice::estLamWt(Picture* pcPic)
     {
       Intermediate_Int err = pOrg[x] - pPre[x];
       Intermediate_Int dis = pOrg[x] - pRec[x];
-      pixelPredErr[y][x] = err * err;
-      pixelRecDis[y][x] = dis * dis;
+      m_pixelPredErr[y][x] = err * err;
+      m_pixelRecDis[y][x] = dis * dis;
     }
     pOrg += orgPB.stride;
     pPre += prePB.stride;
     pRec += recPB.stride;
   }
 
-  factorBlk.assign(numBlkPic, 0);
+  m_factorBlk.assign(numBlkPic, 0);
   int     pHeightX_Blk = 0;
   int     pWidthY_Blk = 0;
 
@@ -2378,8 +2378,8 @@ void EncSlice::estLamWt(Picture* pcPic)
       for (int j = pWidthY_Blk * sizeBlk;
         j < (((pWidthY_Blk * sizeBlk + sizeBlk) <= width) ? (pWidthY_Blk * sizeBlk + sizeBlk) : width); j++)
       {
-        sumPixelRecDisBlk += pixelRecDis[i][j];
-        sumPixelPredErrBlk += pixelPredErr[i][j];
+        sumPixelRecDisBlk += m_pixelRecDis[i][j];
+        sumPixelPredErrBlk += m_pixelPredErr[i][j];
       }
     }
     if (sumPixelPredErrBlk < 1)
@@ -2398,18 +2398,18 @@ void EncSlice::estLamWt(Picture* pcPic)
       multiKi = multiKi * ki;
       kiLenth = kiLenth + multiKi;
     }
-    factorBlk[bIdx] = 1.0 / (1.0 + kiLenth);  // block weight
+    m_factorBlk[bIdx] = 1.0 / (1.0 + kiLenth);  // block weight
   }
 
   double sumFactorBlk = 0;
   for (int bIdx = 0; bIdx < numBlkPic; bIdx++)
   {
-    sumFactorBlk = sumFactorBlk + factorBlk[bIdx];
+    sumFactorBlk = sumFactorBlk + m_factorBlk[bIdx];
   }
   double aveFactorBlk = sumFactorBlk / (double)numBlkPic;
   for (int bIdx = 0; bIdx < numBlkPic; bIdx++)
   {
-    factorBlk[bIdx] = factorBlk[bIdx] / aveFactorBlk;  // block weight with dividing by mean normalization
+    m_factorBlk[bIdx] = m_factorBlk[bIdx] / aveFactorBlk;  // block weight with dividing by mean normalization
   }
     
   const int numBlkCu = sizeCu / sizeBlk;
@@ -2421,7 +2421,7 @@ void EncSlice::estLamWt(Picture* pcPic)
     {
       if (idxCu == numCuWidth * (i / (numBlkWidth * numBlkCu)) + (i % numBlkWidth) / numBlkCu)
       {
-        sumFact += factorBlk[i];
+        sumFact += m_factorBlk[i];
         k++;
       }
     }
@@ -2429,8 +2429,8 @@ void EncSlice::estLamWt(Picture* pcPic)
     m_lambdaWeight[idxCu] = tWeight;  // CTU weight
   }
 
-  factorBlk.clear();
-  pre.destroy();
+  m_factorBlk.clear();
+  m_pre.destroy();
 }
 #endif
 

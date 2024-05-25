@@ -299,7 +299,8 @@ protected:
   double                m_noSplitIntraRdCost;
 #if JVET_AH0078_DPF
   int                   m_qpCtu;
-  const UnitArea        *m_currCsArea;
+  const UnitArea*       m_currCsArea;
+  EncType*              m_encType;
 #endif
 
 public:
@@ -404,6 +405,8 @@ public:
 #if JVET_AH0078_DPF
   void setQpCtu                       ( int qp )                     { m_qpCtu = qp; }
   void setCurrCsArea                  ( const UnitArea &currCsArea ) { m_currCsArea = &currCsArea; }
+  EncType&    getEncType              ()                             { return *m_encType; }
+  void        setEncType              (EncType &enctype)             { m_encType = &enctype; }
 #endif
 
 #if GDR_ENABLED

@@ -227,8 +227,5 @@ extern int8_t    g_angle2mask         [GEO_NUM_ANGLES];
 extern int8_t    g_dis[GEO_NUM_ANGLES];
 extern int8_t    g_angle2mirror[GEO_NUM_ANGLES];
 
-#if JVET_AH0078_DPF
-extern int    g_encMode;
-#endif
 #endif  //__TCOMROM__
 
