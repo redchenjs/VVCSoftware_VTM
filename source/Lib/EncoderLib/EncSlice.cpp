@@ -131,13 +131,8 @@ void EncSlice::init( EncLib* pcEncLib, const SPS& sps )
 #if JVET_AH0078_DPF
   if (m_pcCfg->getDPF())
   {
-    const int sizeCu = m_pcCfg->getCTUSize();
     const int height = m_pcCfg->getSourceHeight();
     const int width = m_pcCfg->getSourceWidth();
-    const int numCuHeight = height % sizeCu == 0 ? height / sizeCu : height / sizeCu + 1;
-    const int numCuWidth = width % sizeCu == 0 ? width / sizeCu : width / sizeCu + 1;
-    const int numCuPic = numCuHeight * numCuWidth;
-    m_lambdaWeight.assign(numCuPic, 1.0);
     m_pixelPredErr = new int*[height];
     m_pixelRecDis = new int*[height];
     for (int i = 0; i < height; i++)
@@ -2071,26 +2066,17 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
       }
     }
 #if JVET_AH0078_DPF
-    // merge clipped pred buffer
     if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_PRE)
     {
-      PelBuf& dstPreY = m_pre.get(COMPONENT_Y);
-      PelBuf dstPrePB(dstPreY.bufAt(0, 0), dstPreY.stride, dstPreY.width, dstPreY.height);
-      Pel* dstp = dstPrePB.bufAt(0, 0);
-      const CPelUnitBuf& srcPre = pcPic->getPredBuf();
-      const CPelBuf& srcPreY = srcPre.get(COMPONENT_Y);
-      const CPelBuf srcPrePB(srcPreY.bufAt(0, 0), srcPreY.stride, srcPreY.width, srcPreY.height);;
-      const Pel* srcp = srcPrePB.bufAt(0, 0);
-      dstp += pos.y * dstPrePB.stride;
-      for (int y = 0; y < srcPreY.height && pos.y + y < dstPreY.height; y++)
-      {
-        for (int x = 0; x < srcPreY.width && pos.x + x < dstPreY.width; x++)
-        {
-          dstp[pos.x + x] = srcp[x];
-        }
-        dstp += dstPrePB.stride;
-        srcp += srcPrePB.stride;
-      }
+      // merge clipped pred buffer
+      const int width = m_pcCfg->getSourceWidth();
+      const int height = m_pcCfg->getSourceHeight();
+      const int clipWidth = std::min((int)pcv.maxCUWidth, width - pos.x);
+      const int clipHeight = std::min((int)pcv.maxCUHeight, height - pos.y);
+      const UnitArea clipArea(cs.area.chromaFormat, Area(pos.x, pos.y, clipWidth, clipHeight));
+      PelUnitBuf dstBuf = m_pre.subBuf(clipArea);
+      CPelUnitBuf srcBuf = pcPic->getPredBuf(clipArea);
+      dstBuf.copyFrom(srcBuf, true);
     }
 #endif
   }
@@ -2263,34 +2249,22 @@ void EncSlice::estLamWt(Picture* pcPic)
     return;
   }
 
-  int       curPOC = pcPic->getPOC();
-  int       gopSize = m_pcCfg->getGOPSize();
-  int       rPOC = curPOC % gopSize;
-  int       numPropa = 0;
-  if (rPOC == 0)
-  {
-    numPropa = m_pcCfg->getDPFKeyLen();
-  }
-  else
-  {
-    numPropa = m_pcCfg->getDPFNonkeyLen();
-  }
+  const int curPOC = pcPic->getPOC();
+  const int gopSize = m_pcCfg->getGOPSize();
+  const int rPOC = curPOC % gopSize;
+  const int numPropa = rPOC == 0 ? m_pcCfg->getDPFKeyLen() : m_pcCfg->getDPFNonkeyLen();
 
   const int width = m_pcCfg->getSourceWidth();
   const int height = m_pcCfg->getSourceHeight();
   const int sizeBlk = 32;
-  const int numBlkWidth = width % sizeBlk == 0 ? width / sizeBlk : width / sizeBlk + 1;
-  const int numBlkHeight = height % sizeBlk == 0 ? height / sizeBlk : height / sizeBlk + 1;
-  const int numBlkPic = numBlkWidth * numBlkHeight;
-
   const int sizeCu = m_pcCfg->getCTUSize();
-  const int numCuHeight = height % sizeCu == 0 ? height / sizeCu : height / sizeCu + 1;
-  const int numCuWidth = width % sizeCu == 0 ? width / sizeCu : width / sizeCu + 1;
-  const int numCuPic = numCuHeight * numCuWidth;
-  for (int idxCu = 0; idxCu < numCuPic; idxCu++)
-  {
-    m_lambdaWeight[idxCu] = 1.0;
-  }
+  const int numBlkWidth = (width + sizeBlk - 1) / sizeBlk;
+  const int numBlkHeight = (height + sizeBlk - 1) / sizeBlk;
+  const int numCuWidth = (width + sizeCu - 1) / sizeCu;
+  const int numCuHeight = (height + sizeCu - 1) / sizeCu;
+  const int numBlkPic = numBlkWidth * numBlkHeight;
+  const int numCuPic = numCuWidth * numCuHeight;
+  m_lambdaWeight.assign(numCuPic, 1.0);
 
   if (numPropa == 0)
   {
@@ -2339,26 +2313,15 @@ void EncSlice::estLamWt(Picture* pcPic)
   const CPelBuf& recY = rec.get(COMPONENT_Y);
   const CPelBuf& preY = m_pre.get(COMPONENT_Y);
 
-  const CPelBuf orgPB(orgY.bufAt(0, 0), orgY.stride, orgY.width, orgY.height);
-  const CPelBuf recPB(recY.bufAt(0, 0), recY.stride, recY.width, recY.height);
-  const CPelBuf prePB(preY.bufAt(0, 0), preY.stride, preY.width, preY.height);
-
-  const Pel* pOrg = orgPB.bufAt(0, 0);
-  const Pel* pRec = recPB.bufAt(0, 0);
-  const Pel* pPre = prePB.bufAt(0, 0);
-
   for (int y = 0; y < height; y++)
   {
     for (int x = 0; x < width; x++)
     {
-      Intermediate_Int err = pOrg[x] - pPre[x];
-      Intermediate_Int dis = pOrg[x] - pRec[x];
+      Intermediate_Int err = *orgY.bufAt(x, y) - *preY.bufAt(x, y);
+      Intermediate_Int dis = *orgY.bufAt(x, y) - *recY.bufAt(x, y);
       m_pixelPredErr[y][x] = err * err;
       m_pixelRecDis[y][x] = dis * dis;
     }
-    pOrg += orgPB.stride;
-    pPre += prePB.stride;
-    pRec += recPB.stride;
   }
 
   m_factorBlk.assign(numBlkPic, 0);
@@ -2372,11 +2335,9 @@ void EncSlice::estLamWt(Picture* pcPic)
     int sumPixelPredErrBlk = 0;  // block MCP error
     pHeightX_Blk = line;
     pWidthY_Blk = bIdx - line * numBlkWidth;
-    for (int i = pHeightX_Blk * sizeBlk;
-      i < (((pHeightX_Blk * sizeBlk + sizeBlk) <= height) ? (pHeightX_Blk * sizeBlk + sizeBlk) : height); i++)
+    for (int i = pHeightX_Blk * sizeBlk; i < std::min(pHeightX_Blk * sizeBlk + sizeBlk, height); i++)
     {
-      for (int j = pWidthY_Blk * sizeBlk;
-        j < (((pWidthY_Blk * sizeBlk + sizeBlk) <= width) ? (pWidthY_Blk * sizeBlk + sizeBlk) : width); j++)
+      for (int j = pWidthY_Blk * sizeBlk; j < std::min(pWidthY_Blk * sizeBlk + sizeBlk, width); j++)
       {
         sumPixelRecDisBlk += m_pixelRecDis[i][j];
         sumPixelPredErrBlk += m_pixelPredErr[i][j];
