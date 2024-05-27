@@ -320,7 +320,7 @@ public:
   IbcHashMap& getIbcHashMap()              { return m_ibcHashMap;        }
   EncCfg*     getEncCfg()            const { return m_pcEncCfg;          }
 #if JVET_AH0078_DPF
-  EncType&    getEncType()           const { return *m_encType; }
+  EncType&    getEncType()                 { return *m_encType; }
   void        setEncType(EncType &enctype) { m_encType = &enctype; }
 #endif
 

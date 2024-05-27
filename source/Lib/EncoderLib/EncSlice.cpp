@@ -2256,7 +2256,7 @@ void EncSlice::estLamWt(Picture* pcPic)
 
   const int width = m_pcCfg->getSourceWidth();
   const int height = m_pcCfg->getSourceHeight();
-  const int sizeBlk = 32;
+  const int sizeBlk = BLK_32;
   const int sizeCu = m_pcCfg->getCTUSize();
   const int numBlkWidth = (width + sizeBlk - 1) / sizeBlk;
   const int numBlkHeight = (height + sizeBlk - 1) / sizeBlk;

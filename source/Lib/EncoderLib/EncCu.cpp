@@ -3402,7 +3402,10 @@ void EncCu::xCheckRDCostInter( CodingStructure *&tempCS, CodingStructure *&bestC
 #if JVET_AH0078_DPF
   if (m_pcEncCfg->getDPF() && *m_encType == ENC_PRE)
   {
-    if (partitioner.currDepth < 2)
+    const int sizeCu = m_pcEncCfg->getCTUSize();
+    const int sizeBlk = BLK_32;
+    const int maxDepth = floorLog2(sizeCu / sizeBlk);
+    if (partitioner.currDepth < maxDepth)
     {
       return;
     }
