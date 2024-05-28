@@ -233,7 +233,7 @@ private:
   EncType                m_encType;
 
 public:
-  EncType&               getEncType()                { return m_encType; }
+  EncType                getEncType()          const { return m_encType; }
   void                   setEncType(EncType enctype) { m_encType = enctype; }
 #endif
 #if JVET_O0756_CALCULATE_HDRMETRICS

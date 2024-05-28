@@ -37,6 +37,9 @@
 
 #include "EncModeCtrl.h"
 
+#if JVET_AH0078_DPF
+#include "EncLib.h"
+#endif
 #include "AQp.h"
 #include "RateCtrl.h"
 
@@ -132,7 +135,8 @@ void EncModeCtrl::setBest( CodingStructure& cs )
 void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& cs, const Partitioner &partitioner, const int baseQP, const SPS& sps, const PPS& pps, const PartSplit splitMode )
 {
 #if JVET_AH0078_DPF
-  if (m_pcEncCfg->getDPF() && *m_encType == ENC_FULL && cs.slice->getSliceType() != I_SLICE)
+  const EncType encType = dynamic_cast<const EncLib*>(m_pcEncCfg)->getEncType();
+  if (m_pcEncCfg->getDPF() && encType == ENC_FULL && cs.slice->getSliceType() != I_SLICE)
   {
     minQP = m_qpCtu;
     maxQP = m_qpCtu;
@@ -1251,7 +1255,8 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
   //////////////////////////////////////////////////////////////////////////
   // Add unit split modes
 #if JVET_AH0078_DPF
-  if (m_pcEncCfg->getDPF() && *m_encType == ENC_PRE)
+  const EncType encType = dynamic_cast<const EncLib*>(m_pcEncCfg)->getEncType();
+  if (m_pcEncCfg->getDPF() && encType == ENC_PRE)
   {
     // fix test modes for pre-encoding
     int width = m_currCsArea->lwidth();

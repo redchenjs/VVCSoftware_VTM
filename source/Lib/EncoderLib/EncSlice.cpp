@@ -2301,7 +2301,7 @@ void EncSlice::estLamWt(Picture* pcPic)
         const uint32_t width = (xPos + pcv.maxCUWidth > pcv.lumaWidth) ? (pcv.lumaWidth - xPos) : pcv.maxCUWidth;
         const uint32_t height = (yPos + pcv.maxCUHeight > pcv.lumaHeight) ? (pcv.lumaHeight - yPos) : pcv.maxCUHeight;
         const UnitArea area(cs.area.chromaFormat, Area(xPos, yPos, width, height));
-        cs.getRecoBuf(area).get(COMPONENT_Y).rspSignal(m_pcGOPEncoder->getReshaper()->getInvLUT());
+        cs.getRecoBuf(area).get(COMPONENT_Y).rspSignal(m_pcLib->getReshaper()->getInvLUT());
       }
     }
   }

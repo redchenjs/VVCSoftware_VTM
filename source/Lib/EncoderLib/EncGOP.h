@@ -249,10 +249,6 @@ public:
 
   int   getGOPSize()          { return  m_iGopSize;  }
 
-#if JVET_AH0078_DPF
-  EncReshape* getReshaper()   { return m_pcReshaper; }
-#endif
-
   PicList*   getListPic()      { return m_pcListPic; }
   void      setPicBg(Picture* tmpPicBg) { m_picBg = tmpPicBg; }
   Picture*  getPicBg() const { return m_picBg; }

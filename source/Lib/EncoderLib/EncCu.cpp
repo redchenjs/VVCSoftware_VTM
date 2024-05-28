@@ -231,10 +231,6 @@ void EncCu::init( EncLib* pcEncLib, const SPS& sps )
 
   m_pcGOPEncoder = pcEncLib->getGOPEncoder();
   m_pcGOPEncoder->setModeCtrl( m_modeCtrl );
-
-#if JVET_AH0078_DPF
-  m_encType = &pcEncLib->getEncType();
-#endif
 }
 
 // ====================================================================================================================
@@ -546,7 +542,6 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
   {
     m_modeCtrl->setCurrCsArea(currCsArea);
     m_modeCtrl->setQpCtu(m_pcSliceEncoder->getQpCtu());
-    m_modeCtrl->setEncType(*m_encType);
   }
 #endif
   m_modeCtrl->initCULevel( partitioner, *tempCS );
@@ -3400,7 +3395,8 @@ void EncCu::xCheckRDCostIBCMode(CodingStructure *&tempCS, CodingStructure *&best
 void EncCu::xCheckRDCostInter( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode )
 {
 #if JVET_AH0078_DPF
-  if (m_pcEncCfg->getDPF() && *m_encType == ENC_PRE)
+  const EncType encType = dynamic_cast<EncLib*>(m_pcEncCfg)->getEncType();
+  if (m_pcEncCfg->getDPF() && encType == ENC_PRE)
   {
     const int sizeCu = m_pcEncCfg->getCTUSize();
     const int sizeBlk = BLK_32;
