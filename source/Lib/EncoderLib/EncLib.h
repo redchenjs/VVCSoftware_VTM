@@ -141,6 +141,9 @@ private:
   EncTemporalFilter         m_temporalFilter;
   EncTemporalFilter         m_temporalFilterForFG;
   SEINeuralNetworkPostFiltering m_nnPostFiltering;
+#if JVET_AH0078_DPF
+  EncType                   m_encType;
+#endif
 public:
   SPS*                      getSPS( int spsId ) { return m_spsMap.getPS( spsId ); };
   APS**                     getApss() { return m_apss; }
@@ -229,10 +232,6 @@ public:
   bool                   getPltEnc()                      const { return   m_doPlt; }
   void                   checkPltStats( Picture* pic );
 #if JVET_AH0078_DPF
-private:
-  EncType                m_encType;
-
-public:
   EncType                getEncType()          const { return m_encType; }
   void                   setEncType(EncType enctype) { m_encType = enctype; }
 #endif

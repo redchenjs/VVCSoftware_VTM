@@ -83,10 +83,9 @@ void EncSlice::destroy()
   if (m_pcCfg->getDPF())
   {
     m_lambdaWeight.clear();
-    const int height = m_pcCfg->getSourceHeight();
     if (m_pixelRecDis)
     {
-      for (int i = 0; i < height; i++)
+      for (int i = 0; i < m_maxPicHeight; i++)
       {
         delete[] m_pixelRecDis[i];
         m_pixelRecDis[i] = nullptr;
@@ -96,7 +95,7 @@ void EncSlice::destroy()
     }
     if (m_pixelPredErr)
     {
-      for (int i = 0; i < height; i++)
+      for (int i = 0; i < m_maxPicHeight; i++)
       {
         delete[] m_pixelPredErr[i];
         m_pixelPredErr[i] = nullptr;
@@ -131,14 +130,14 @@ void EncSlice::init( EncLib* pcEncLib, const SPS& sps )
 #if JVET_AH0078_DPF
   if (m_pcCfg->getDPF())
   {
-    const int height = m_pcCfg->getSourceHeight();
-    const int width = m_pcCfg->getSourceWidth();
-    m_pixelPredErr = new int*[height];
-    m_pixelRecDis = new int*[height];
-    for (int i = 0; i < height; i++)
+    m_maxPicHeight = sps.getMaxPicHeightInLumaSamples();
+    m_maxPicWidth = sps.getMaxPicWidthInLumaSamples();
+    m_pixelPredErr = new int*[m_maxPicHeight];
+    m_pixelRecDis = new int*[m_maxPicHeight];
+    for (int i = 0; i < m_maxPicHeight; i++)
     {
-      m_pixelPredErr[i] = new int[width];
-      m_pixelRecDis[i] = new int[width];
+      m_pixelPredErr[i] = new int[m_maxPicWidth];
+      m_pixelRecDis[i] = new int[m_maxPicWidth];
     }
   }
 #endif
@@ -1400,7 +1399,7 @@ void EncSlice::precompressSlice( Picture* pcPic )
 #if JVET_AH0078_DPF
   if (m_pcCfg->getDPF())
   {
-    estLamWt(pcPic);
+    setLambdaWeightByDPF(pcPic);
   }
 #endif
   // if deltaQP RD is not used, simply return
@@ -1927,7 +1926,7 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
 #if JVET_AH0078_DPF
     if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_FULL && !pcPic->slices[0]->isIntra())
     {
-      setCTULambdaQp(pTrQuant, ctuIdx, pRdCost, pcSlice);
+      setCTULambdaQpByWeight(ctuIdx, pTrQuant, pRdCost, pcSlice);
     }
 #endif
 
@@ -2069,8 +2068,8 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
     if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_PRE)
     {
       // merge clipped pred buffer
-      const int width = m_pcCfg->getSourceWidth();
-      const int height = m_pcCfg->getSourceHeight();
+      const int width = pcPic->getOrigBuf().Y().width;
+      const int height = pcPic->getOrigBuf().Y().height;
       const int clipWidth = std::min((int)pcv.maxCUWidth, width - pos.x);
       const int clipHeight = std::min((int)pcv.maxCUHeight, height - pos.y);
       const UnitArea clipArea(cs.area.chromaFormat, Area(pos.x, pos.y, clipWidth, clipHeight));
@@ -2210,10 +2209,10 @@ double EncSlice::xGetQPValueAccordingToLambda ( double lambda )
 }
 
 #if JVET_AH0078_DPF
-void EncSlice::setCTULambdaQp(TrQuant* pTrQuant, uint32_t ctuIdx, RdCost* pRdCost, Slice* pcSlice)
+void EncSlice::setCTULambdaQpByWeight(uint32_t ctuIdx, TrQuant* pTrQuant, RdCost* pRdCost, Slice* pcSlice)
 {
-  double lambdaCTU = m_lambda * m_lambdaWeight[ctuIdx];
-  int    estQP = (int)(4.3281 * log(lambdaCTU) + 2.1829 + 0.499999);
+  const double lambdaCTU = m_lambda * m_lambdaWeight[ctuIdx];
+  const int    estQP = (int)(4.3281 * log(lambdaCTU) + 2.1829 + 0.499999);  // fitted QP-lambda relationship
   m_qpCtu = estQP;
   pRdCost->setLambda(lambdaCTU, pcSlice->getSPS()->getBitDepths());
 #if WCG_EXT
@@ -2242,7 +2241,7 @@ void EncSlice::setCTULambdaQp(TrQuant* pTrQuant, uint32_t ctuIdx, RdCost* pRdCos
 #endif
 }
 
-void EncSlice::estLamWt(Picture* pcPic)
+void EncSlice::setLambdaWeightByDPF(Picture* pcPic)
 {
   if (pcPic->slices[0]->getSliceType() == I_SLICE)
   {
@@ -2254,8 +2253,8 @@ void EncSlice::estLamWt(Picture* pcPic)
   const int rPOC = curPOC % gopSize;
   const int numPropa = rPOC == 0 ? m_pcCfg->getDPFKeyLen() : m_pcCfg->getDPFNonkeyLen();
 
-  const int width = m_pcCfg->getSourceWidth();
-  const int height = m_pcCfg->getSourceHeight();
+  const int width = pcPic->getOrigBuf().Y().width;
+  const int height = pcPic->getOrigBuf().Y().height;
   const int sizeBlk = BLK_32;
   const int sizeCu = m_pcCfg->getCTUSize();
   const int numBlkWidth = (width + sizeBlk - 1) / sizeBlk;
@@ -2279,9 +2278,9 @@ void EncSlice::estLamWt(Picture* pcPic)
   pcSlice->setSliceQp(qp);
   setUpLambda(pcSlice, lambda, qp);
 
-  const auto m_chromaFormatIdc = m_pcCfg->getChromaFormatIdc();
-  const auto m_area = Area(0, 0, width, height);
-  m_pre.create(m_chromaFormatIdc, m_area, 0);
+  const auto chromaFormatIdc = m_pcCfg->getChromaFormatIdc();
+  const auto area = Area(0, 0, width, height);
+  m_pre.create(chromaFormatIdc, area, 0);
 
   m_pcLib->setEncType(ENC_PRE);
   compressSlice(pcPic, true, m_pcCfg->getFastDeltaQp());  // pre-encoding

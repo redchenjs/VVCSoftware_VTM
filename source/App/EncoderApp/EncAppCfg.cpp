@@ -3708,6 +3708,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   m_maxCuWidth = m_maxCuHeight = m_ctuSize;
 
+#if JVET_AH0078_DPF
+  CHECK(m_bimEnabled && m_dpfEnabled, "DPF is not compatible with BIM");
+  CHECK(m_dpfEnabled && m_resChangeInClvsEnabled, "DPF is not compatible with resolution change in CLVS");
+#endif
+
   // check validity of input parameters
   if( xCheckParameter() )
   {
@@ -5241,7 +5246,6 @@ bool EncAppCfg::xCheckParameter()
       "Either TemporalFilterPastRefs or TemporalFilterFutureRefs must be larger than 0 when Block Importance Mapping is enabled" );
   }
 #if JVET_AH0078_DPF
-  xConfirmPara(m_bimEnabled && m_dpfEnabled, "DPF is not compatible with BIM");
   xConfirmPara(m_dpfKeyLen < 0, "DPF Key Length must be greater than or equal to 0");
   xConfirmPara(m_dpfNonkeyLen < 0, "DPF Non-key Length must be greater than or equal to 0");
 #endif

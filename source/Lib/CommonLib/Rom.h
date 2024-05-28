@@ -226,6 +226,5 @@ extern int16_t   g_weightOffset       [GEO_NUM_PARTITION_MODE][GEO_NUM_CU_SIZE][
 extern int8_t    g_angle2mask         [GEO_NUM_ANGLES];
 extern int8_t    g_dis[GEO_NUM_ANGLES];
 extern int8_t    g_angle2mirror[GEO_NUM_ANGLES];
-
 #endif  //__TCOMROM__
 

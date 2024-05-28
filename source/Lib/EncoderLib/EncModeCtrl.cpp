@@ -1259,9 +1259,9 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
   if (m_pcEncCfg->getDPF() && encType == ENC_PRE)
   {
     // fix test modes for pre-encoding
-    int width = m_currCsArea->lwidth();
-    int heiht = m_currCsArea->lheight();
-    int sizeCu = m_pcEncCfg->getCTUSize();
+    const int width = m_currCsArea->lwidth();
+    const int heiht = m_currCsArea->lheight();
+    const int sizeCu = m_pcEncCfg->getCTUSize();
     int sizeBlk = BLK_32;
     int maxDepth = floorLog2(sizeCu / sizeBlk);
     while (width % sizeBlk != 0 || heiht % sizeBlk != 0)
@@ -1269,8 +1269,7 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
       maxDepth++;
       sizeBlk >>= 1;
     }
-    int depth = partitioner.currDepth;
-    if (depth < maxDepth)
+    if (partitioner.currDepth < maxDepth)
     {
       for (int qp = maxQP; qp >= minQP; qp--)
       {

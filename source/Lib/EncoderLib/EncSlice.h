@@ -156,9 +156,11 @@ private:
   std::vector<double>     m_factorBlk;
   int**                   m_pixelPredErr;
   int**                   m_pixelRecDis;
+  int                     m_maxPicWidth;
+  int                     m_maxPicHeight;
 
-  void    setCTULambdaQp(TrQuant* pTrQuant, uint32_t ctuIdx, RdCost* pRdCost, Slice* pcSlice);
-  void    estLamWt(Picture* pcPic);
+  void    setCTULambdaQpByWeight(uint32_t ctuIdx, TrQuant* pTrQuant, RdCost* pRdCost, Slice* pcSlice);
+  void    setLambdaWeightByDPF(Picture* pcPic);
 
 public:
   int     getQpCtu() const { return m_qpCtu; }
