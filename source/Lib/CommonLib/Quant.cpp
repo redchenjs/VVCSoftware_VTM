@@ -477,7 +477,7 @@ void Quant::dequant(const TransformUnit &tu,
       for( int n = 0; n < numSamplesInBlock; n++ )
       {
         const TCoeff           clipQCoef = TCoeff(Clip3<Intermediate_Int>(inputMinimum, inputMaximum, piQCoef[n]));
-        const Intermediate_Int iCoeffQ   = (Intermediate_Int(clipQCoef) * scale) * (1 << leftShift);
+        const Intermediate_Int iCoeffQ   = (Intermediate_Int(clipQCoef) * scale) * (Intermediate_Int(1) << leftShift);
 
         piCoef[n] = TCoeff(Clip3<Intermediate_Int>(transformMinimum,transformMaximum,iCoeffQ));
       }
