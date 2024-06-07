@@ -204,7 +204,6 @@ void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const uint32_t 
   const SEIBufferingPeriod* bp = hrd.getBufferingPeriodSEI();
   if (bp != nullptr)
   {
-    InputBitstream* bs = getBitstream();
     InputBitstream  bsTmp(*bs);
     setBitstream(&bsTmp);
 
