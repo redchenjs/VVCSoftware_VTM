@@ -5988,6 +5988,57 @@ Specifies the \emph{i}-th prefix byte present in processing order SEI message.
 \\
 \end{OptionTableNoShorthand}
 
+\begin{OptionTableNoShorthand}{Encoder optimization info SEI message encoder parameters}{tab:sei-encoder-optimization-info}
+\Option{SEIEOIEnabled} &
+\Default{1} &
+Specifies whether encoder optimization info SEI message to be generated or not.
+\\
+\Option{SEIEOICancelFlag} &
+\Default{0} &
+Specifies whether this SEI message cancels the previous encoder optimization info SEI message.
+\\
+\Option{SEIEOIPersistenceFlag} &
+\Default{1} &
+Specifies whether this SEI message applies to just one picture or sequence of pictures.
+\\
+\Option{SEIEOIForHumanViewingIdc} &
+\Default{1} &
+Specifies whether the optimized result is suitable for human viewing.
+\\
+\Option{SEIEOIForMachineAnalysiIdc} &
+\Default{1} &
+Specifies whether the optimized result is intended for machine task / analysis.
+\\
+\Option{SEIEOIType} &
+\Default{39} &
+Specifies the type of optimization(s).
+\\
+\Option{SEIEOIObjectBasedIdc} &
+\Default{1} &
+Specifies the value of object based indication.
+\\
+\Option{SEIEOITemporalResamplingTypeFlag} &
+\Default{1} &
+Specifies whether temporal resampling type optimization is enabled.
+\\
+\Option{SEIEOINumIntPics} &
+\Default{2} &
+Specifies the number of added picture between two pics when temporal resampling type optimization is enabled.
+\\
+\Option{SEIEOISpatialResamplingTypeFlag} &
+\Default{0} &
+Specifies whether spatial resampling type optimization is enabled.
+\\
+\Option{SEIEOIPrivacyProtectionTypeIdc} &
+\Default{3} &
+Specifies type of privacy protection optimization when applied.
+\\
+\Option{SEIEOIPrivacyProtectedInfoType} &
+\Default{3} &
+Specifies information on the of privacy protection optimization that is applied.
+\\
+\end{OptionTableNoShorthand}
+
 %\Option{SEITimeCode} &
 %\Default{false} &
 %When true, generate time code SEI messages.
