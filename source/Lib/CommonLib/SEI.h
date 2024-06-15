@@ -101,6 +101,9 @@ public:
 
     SEI_PROCESSING_ORDER = 213,
     SEI_PROCESSING_ORDER_NESTING = 214,
+#if JVET_AH2006_EOI_SEI
+    ENCODER_OPTIMIZATION_INFO = 215,
+#endif 
   };
 
   SEI() {}
@@ -1453,6 +1456,44 @@ public:
 
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t nnpfaTargetId);
 SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMessages &seiList);
+
+#if JVET_AH2006_EOI_SEI
+class SEIEncoderOptimizationInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::ENCODER_OPTIMIZATION_INFO; }
+  SEIEncoderOptimizationInfo()
+    : m_cancelFlag(false)
+    , m_persistenceFlag(false)
+    , m_forHumanViewingIdc(0)
+    , m_forMachineAnalysisIdc(0)
+    , m_type(0)
+    , m_objectBasedIdc(0)
+    , m_temporalResamplingTypeFlag(false)
+    , m_numIntPics(0)
+    , m_spatialResamplingTypeFlag(false)
+    , m_privacyProtectionTypeIdc(0)
+    , m_privacyProtectedInfoType(0)
+  {}
+  SEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo& sei);
+
+  virtual ~SEIEncoderOptimizationInfo() {}
+
+  bool     m_cancelFlag;
+  bool     m_persistenceFlag;
+  uint32_t m_forHumanViewingIdc;
+  uint32_t m_forMachineAnalysisIdc;
+  uint32_t m_type;
+  uint32_t m_objectBasedIdc;
+  bool     m_temporalResamplingTypeFlag;
+  uint32_t m_numIntPics;
+  bool     m_spatialResamplingTypeFlag;
+  uint32_t m_privacyProtectionTypeIdc;
+  uint32_t m_privacyProtectedInfoType;
+
+};
+
+#endif
 //! \}
 
 

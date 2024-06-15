@@ -542,6 +542,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIPostFilterHint;
       xParseSEIPostFilterHint((SEIPostFilterHint &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
+#if JVET_AH2006_EOI_SEI
+    case SEI::PayloadType::ENCODER_OPTIMIZATION_INFO:
+      sei = new SEIEncoderOptimizationInfo;
+      xParseSEIEncoderOptimizationInfo((SEIEncoderOptimizationInfo &)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -1837,6 +1843,53 @@ void SEIReader::xParseSEIAnnotatedRegions(SEIAnnotatedRegions& sei, uint32_t pay
     }
   }
 }
+
+#if JVET_AH2006_EOI_SEI
+void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
+{
+  uint32_t val;
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  sei_read_flag(pDecodedMessageOutputStream, val, "eoi_cancel_flag");
+  sei.m_cancelFlag = val;
+  if (!sei.m_cancelFlag)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "eoi_persistence_flag");
+    sei.m_persistenceFlag = val;
+    sei_read_code(pDecodedMessageOutputStream, 2, val, "eoi_for_human_viewing_idc");
+    sei.m_forHumanViewingIdc = val;
+    sei_read_code(pDecodedMessageOutputStream, 2, val, "eoi_for_machine_analysis_idc");
+    sei.m_forMachineAnalysisIdc = val;
+    sei_read_code(pDecodedMessageOutputStream, 16, val, "eoi_type");
+    sei.m_type = val;
+    if ((sei.m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) != 0)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "eoi_object_based_idc");
+      sei.m_objectBasedIdc = val;
+    }
+    if ((sei.m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "eoi_temporal_resampling_type_flag");
+      sei.m_temporalResamplingTypeFlag = val;
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "eoi_num_int_pics");
+      sei.m_numIntPics = val;
+    }
+
+    if ((sei.m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "eoi_spatial_resampling_type_flag");
+      sei.m_spatialResamplingTypeFlag = val;
+    }
+    
+    if ((sei.m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 4, val, "eoi_privacy_protection_type_idc");
+      sei.m_privacyProtectionTypeIdc = val;
+      sei_read_code(pDecodedMessageOutputStream, 8, val, "eoi_privacy_protected_info_type");
+      sei.m_privacyProtectedInfoType = val;
+    }
+  }
+}
+#endif 
 
 void SEIReader::xParseSEIFrameFieldinfo(SEIFrameFieldInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {

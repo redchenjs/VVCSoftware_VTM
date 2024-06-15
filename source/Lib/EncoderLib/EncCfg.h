@@ -759,6 +759,22 @@ protected:
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputflag;
 
+#if JVET_AH2006_EOI_SEI
+  // Encoder Optimization Information SEI
+  bool  m_eoiSEIEnabled;
+  bool  m_eoiSEICancelFlag;
+  bool  m_eoiSEIPersistenceFlag;
+  uint32_t  m_eoiSEIForHumanViewingIdc;
+  uint32_t  m_eoiSEIForMachineAnalysisIdc;
+  uint32_t m_eoiSEIType;
+  uint32_t m_eoiSEIObjectBasedIdc;
+  bool m_eoiSEITemporalResamplingTypeFlag;
+  uint32_t m_eoiSEINumIntPics;
+  bool m_eoiSEISpatialResamplingTypeFlag;
+  uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
+  uint32_t m_eoiSEIPrivacyProtectedInfoType;
+#endif 
+
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
   bool      m_fgcSEICancelFlag;
@@ -2326,6 +2342,32 @@ public:
   void  setSEIPreferredTransferCharacteristics(uint8_t v)              { m_preferredTransferCharacteristics = v;    }
   uint8_t getSEIPreferredTransferCharacteristics() const               { return m_preferredTransferCharacteristics; }
   const SEIMasteringDisplay &getMasteringDisplaySEI() const          { return m_masteringDisplay; }
+#if JVET_AH2006_EOI_SEI
+  void setEOISEIEnabled(bool enabledFlag) { m_eoiSEIEnabled = enabledFlag; }
+  bool getEOISEIEnabled() const { return m_eoiSEIEnabled; }
+  void setEOISEICancelFlag(bool cancelFlag) { m_eoiSEICancelFlag = cancelFlag; }
+  bool getEOISEICancelFlag() const { return m_eoiSEICancelFlag; }
+  void setEOISEIPersistenceFlag(bool persistenceFlag) { m_eoiSEIPersistenceFlag = persistenceFlag; }
+  bool getEOISEIPersistenceFlag() const { return m_eoiSEIPersistenceFlag; }
+  void setEOISEIForHumanViewingIdc(uint32_t forHumanViewingIdc) { m_eoiSEIForHumanViewingIdc = forHumanViewingIdc; }
+  uint32_t getEOISEIForHumanViewingIdc() const { return m_eoiSEIForHumanViewingIdc; }
+  void setEOISEIForMachineAnalysisIdc(uint32_t forMachineAnalysisIdc) { m_eoiSEIForMachineAnalysisIdc = forMachineAnalysisIdc; }
+  uint32_t getEOISEIForMachineAnalysisIdc() const { return m_eoiSEIForMachineAnalysisIdc; }
+  void setEOISEIType(uint32_t eoiType) { m_eoiSEIType = eoiType; }
+  uint32_t getEOISEIType() const { return m_eoiSEIType; }
+  void setEOISEIObjectBasedIdc(uint32_t objectBasedIdc) { m_eoiSEIObjectBasedIdc = objectBasedIdc; }
+  uint32_t getEOISEIObjectBasedIdc() const { return m_eoiSEIObjectBasedIdc; }
+  void setEOISEITemporalResamplingTypeFlag(bool temporalResamplingTypeFlag) { m_eoiSEITemporalResamplingTypeFlag = temporalResamplingTypeFlag; }
+  bool getEOISEITemporalResamplingTypeFlag() const { return m_eoiSEITemporalResamplingTypeFlag; }
+  void setEOISEINumIntPics(uint32_t numIntPics) { m_eoiSEINumIntPics = numIntPics; }
+  uint32_t getEOISEINumIntPics() const { return m_eoiSEINumIntPics; }
+  void setEOISEISpatialResamplingTypeFlag(bool spatialResamplingTypeFlag) { m_eoiSEISpatialResamplingTypeFlag = spatialResamplingTypeFlag; }
+  bool getEOISEISpatialResamplingTypeFlag() const { return m_eoiSEISpatialResamplingTypeFlag; }
+  void setEOISEIPrivacyProtectionTypeIdc(uint32_t privacyProtectionTypeIdc) { m_eoiSEIPrivacyProtectionTypeIdc = privacyProtectionTypeIdc; }
+  uint32_t getEOISEIPrivacyProtectionTypeIdc() const { return m_eoiSEIPrivacyProtectionTypeIdc; }
+  void setEOISEIPrivacyProtectedInfoType(uint32_t privacyProtectedInfoType) { m_eoiSEIPrivacyProtectedInfoType = privacyProtectedInfoType; }
+  uint32_t getEOISEIPrivacyProtectedInfoType() const { return m_eoiSEIPrivacyProtectedInfoType; }
+#endif 
   // film grain SEI
   void  setFilmGrainCharactersticsSEIEnabled (bool b)                { m_fgcSEIEnabled = b; }
   bool  getFilmGrainCharactersticsSEIEnabled()                       { return m_fgcSEIEnabled; }
