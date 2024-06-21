@@ -916,7 +916,7 @@ namespace DQIntern
     template<uint8_t numIPos>
     inline void updateState(const ScanInfo &scanInfo, const State *prevStates, const Decision &decision, const int baseLevel, const bool extRiceFlag);
     inline void updateStateEOS(const ScanInfo &scanInfo, const State *prevStates, const State *skipStates,
-                               const Decision &decision);
+                               const Decision &decision, const int baseLevel, const bool extRiceFlag);
 
     inline void init()
     {
@@ -1255,7 +1255,7 @@ namespace DQIntern
   }
 
   inline void State::updateStateEOS(const ScanInfo &scanInfo, const State *prevStates, const State *skipStates,
-                                    const Decision &decision)
+                                    const Decision &decision, const int baseLevel, const bool extRiceFlag)
   {
     m_rdCost = decision.rdCost;
     if( decision.prevId > -2 )
@@ -1264,31 +1264,76 @@ namespace DQIntern
       if( decision.prevId  >= 4 )
       {
         CHECK( decision.absLevel != 0, "cannot happen" );
-        prvState    = skipStates + ( decision.prevId - 4 );
-        m_numSigSbb = 0;
+        prvState     = skipStates + ( decision.prevId - 4 );
+        m_numSigSbb  = 0;
+        m_remRegBins = prvState->m_remRegBins;
         ::memset( m_absLevelsAndCtxInit, 0, 16*sizeof(uint8_t) );
       }
       else if( decision.prevId  >= 0 )
       {
-        prvState    = prevStates            +   decision.prevId;
-        m_numSigSbb = prvState->m_numSigSbb + !!decision.absLevel;
+        prvState      = prevStates            +   decision.prevId;
+        m_numSigSbb   = prvState->m_numSigSbb + !!decision.absLevel;
+        m_remRegBins  = prvState->m_remRegBins - 1;
+        m_remRegBins -= decision.absLevel < 2 ? (unsigned) decision.absLevel : 3;
         ::memcpy( m_absLevelsAndCtxInit, prvState->m_absLevelsAndCtxInit, 16*sizeof(uint8_t) );
       }
       else
       {
-        m_numSigSbb = 1;
+        m_numSigSbb           = 1;
+        int ctxBinSampleRatio = isLuma(scanInfo.chType) ? MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_LUMA
+                                                        : MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_CHROMA;
+        m_remRegBins          = (effWidth * effHeight * ctxBinSampleRatio) / 16;
+        m_remRegBins         -= decision.absLevel < 2 ? (unsigned) decision.absLevel : 3;
         ::memset( m_absLevelsAndCtxInit, 0, 16*sizeof(uint8_t) );
       }
       reinterpret_cast<uint8_t*>(m_absLevelsAndCtxInit)[ scanInfo.insidePos ] = (uint8_t)std::min<TCoeff>( 255, decision.absLevel );
 
       m_commonCtx.update( scanInfo, prvState, *this );
 
-      TCoeff  tinit   = m_absLevelsAndCtxInit[ 8 + scanInfo.nextInsidePos ];
-      TCoeff  sumNum  =   tinit        & 7;
-      TCoeff  sumAbs1 = ( tinit >> 3 ) & 31;
-      TCoeff  sumGt1  = sumAbs1        - sumNum;
-      m_sigFracBits   = m_sigFracBitsArray[ scanInfo.sigCtxOffsetNext + std::min<TCoeff>( (sumAbs1+1)>>1, 3 ) ];
-      m_coeffFracBits = m_gtxFracBitsArray[ scanInfo.gtxCtxOffsetNext + ( sumGt1  < 4 ? sumGt1  : 4 ) ];
+      if (m_remRegBins >= 4)
+      {
+        TCoeff  tinit   = m_absLevelsAndCtxInit[8 + scanInfo.nextInsidePos];
+        TCoeff  sumNum  =   tinit        & 7;
+        TCoeff  sumAbs1 = ( tinit >> 3 ) & 31;
+        TCoeff  sumGt1  = sumAbs1 - sumNum;
+        TCoeff  sumAbs  = tinit >> 8;
+        m_sigFracBits   = m_sigFracBitsArray[ scanInfo.sigCtxOffsetNext + std::min<TCoeff>( (sumAbs1+1)>>1, 3 ) ];
+        m_coeffFracBits = m_gtxFracBitsArray[ scanInfo.gtxCtxOffsetNext + ( sumGt1  < 4 ? sumGt1  : 4 ) ];
+
+        if (extRiceFlag)
+        {
+          unsigned currentShift = CoeffCodingContext::templateAbsCompare(sumAbs);
+          sumAbs                = sumAbs >> currentShift;
+          int sumAll            = std::max(std::min(31, (int) sumAbs - (int) baseLevel), 0);
+          m_goRicePar           = g_goRiceParsCoeff[sumAll];
+          m_goRicePar          += currentShift;
+        }
+        else
+        {
+          int sumAll  = std::max(std::min(31, (int) sumAbs - 4 * 5), 0);
+          m_goRicePar = g_goRiceParsCoeff[sumAll];
+        }
+      }
+      else
+      {
+        TCoeff tinit   = m_absLevelsAndCtxInit[8 + scanInfo.nextInsidePos];
+        TCoeff sumAbs  = tinit >> 8;
+
+        if (extRiceFlag)
+        {
+          unsigned currentShift = CoeffCodingContext::templateAbsCompare(sumAbs);
+          sumAbs                = sumAbs >> currentShift;
+          sumAbs                = std::min<TCoeff>(31, sumAbs);
+          m_goRicePar           = g_goRiceParsCoeff[sumAbs];
+          m_goRicePar          += currentShift;
+        }
+        else
+        {
+          sumAbs      = std::min<TCoeff>(31, sumAbs);
+          m_goRicePar = g_goRiceParsCoeff[sumAbs];
+        }
+        m_goRiceZero = g_goRicePosCoeff0(m_stateId, m_goRicePar);
+      }
     }
   }
 
@@ -1312,16 +1357,6 @@ namespace DQIntern
 
     const int       sigNSbb   = ( ( scanInfo.nextSbbRight ? sbbFlags[ scanInfo.nextSbbRight ] : false ) || ( scanInfo.nextSbbBelow ? sbbFlags[ scanInfo.nextSbbBelow ] : false ) ? 1 : 0 );
     currState.m_numSigSbb     = 0;
-    if (prevState)
-    {
-      currState.m_remRegBins = prevState->m_remRegBins;
-    }
-    else
-    {
-      int ctxBinSampleRatio  = isLuma(scanInfo.chType) ? MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_LUMA
-                                                       : MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_CHROMA;
-      currState.m_remRegBins = (currState.effWidth * currState.effHeight *ctxBinSampleRatio) / 16;
-    }
     currState.m_goRicePar     = 0;
     currState.m_refSbbCtxId   = currState.m_stateId;
     currState.m_sbbFracBits   = m_sbbFlagBits[ sigNSbb ];
@@ -1470,10 +1505,10 @@ namespace DQIntern
       if( scanInfo.eosbb )
       {
         m_commonCtx.swap();
-        m_currStates[0].updateStateEOS( scanInfo, m_prevStates, m_skipStates, decisions[0] );
-        m_currStates[1].updateStateEOS( scanInfo, m_prevStates, m_skipStates, decisions[1] );
-        m_currStates[2].updateStateEOS( scanInfo, m_prevStates, m_skipStates, decisions[2] );
-        m_currStates[3].updateStateEOS( scanInfo, m_prevStates, m_skipStates, decisions[3] );
+        m_currStates[0].updateStateEOS( scanInfo, m_prevStates, m_skipStates, decisions[0], m_baseLevel, m_extRiceRRCFlag );
+        m_currStates[1].updateStateEOS( scanInfo, m_prevStates, m_skipStates, decisions[1], m_baseLevel, m_extRiceRRCFlag );
+        m_currStates[2].updateStateEOS( scanInfo, m_prevStates, m_skipStates, decisions[2], m_baseLevel, m_extRiceRRCFlag );
+        m_currStates[3].updateStateEOS( scanInfo, m_prevStates, m_skipStates, decisions[3], m_baseLevel, m_extRiceRRCFlag );
         ::memcpy( decisions+4, decisions, 4*sizeof(Decision) );
       }
       else if( !zeroOut )
