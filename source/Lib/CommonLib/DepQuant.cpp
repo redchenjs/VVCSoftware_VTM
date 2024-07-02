@@ -1106,7 +1106,7 @@ namespace DQIntern
         m_refSbbCtxId   = -1;
         int ctxBinSampleRatio = isLuma(scanInfo.chType) ? MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_LUMA
                                                         : MAX_TU_LEVEL_CTX_CODED_BIN_CONSTRAINT_CHROMA;
-        m_remRegBins = (effWidth * effHeight *ctxBinSampleRatio) / 16 - (decision.absLevel < 2 ? (unsigned)decision.absLevel : 3);
+        m_remRegBins = (effWidth * effHeight * ctxBinSampleRatio) / 16 - (decision.absLevel < 2 ? (unsigned)decision.absLevel : 3);
         ::memset( m_absLevelsAndCtxInit, 0, 48*sizeof(uint8_t) );
       }
 
@@ -1274,7 +1274,7 @@ namespace DQIntern
         prvState      = prevStates            +   decision.prevId;
         m_numSigSbb   = prvState->m_numSigSbb + !!decision.absLevel;
         m_remRegBins  = prvState->m_remRegBins - 1;
-        m_remRegBins -= decision.absLevel < 2 ? (unsigned) decision.absLevel : 3;
+        m_remRegBins -= decision.absLevel < 2 ? (int) decision.absLevel : 3;
         ::memcpy( m_absLevelsAndCtxInit, prvState->m_absLevelsAndCtxInit, 16*sizeof(uint8_t) );
       }
       else
