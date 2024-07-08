@@ -3978,6 +3978,7 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   211 & Neural netowrk post-filter activation & Table \ref{tab:sei-nn-post-filter-activation} \\
   212 & Phase indication                         & Table \ref{tab:sei-phase-indication} \\
   213 & Processing order SEI messages            & Table \ref{tab:sei-processing order}\\
+  216 & Source Picture Timing Information        & Table \ref{tab:sei-source-picture-timing-info}\\
 \end{SEIListTable}
 %%
 %% SEI messages
@@ -6082,6 +6083,28 @@ Specifies type of information the of privacy protection optimization that is app
 \\
 \end{OptionTableNoShorthand}
 
+\begin{OptionTableNoShorthand}{Source picture timing information SEI message encoder parameters}{tab:sei-source-picture-timing-info}
+\Option{SEISourcePictureTimingInfo} &
+\Default{false} &
+Enables (true) or disables (false) the insertion of Source picture timing information SEI message.
+\\
+\Option{SEISPTISourceTimingEqualsOutputTimingFlag} &
+\Default{true} &
+Indicates the timing of source pictures is the same as the timing of corresponding decoded output pictures(true) or indicates the timing of source pictures might not be the same as the timing of corresponding decoded output pictures(false).
+\\
+\Option{SEISPTISourceType} &
+\Default{0} &
+Indicates the timing relationship between source pictures and corresponding decoded output pictures.
+\\
+\Option{SEISPTITimeScale} &
+\Default{27000000} &
+Specifies the number of time units that pass in one second.
+\\
+\Option{SEISPTINumUnitsInElementalInterval} &
+\Default{1080000} &
+Specifies the number of time units of a clock operating at the frequency spti_time_scale Hz that corresponds to the indicated elemental source picture interval of consecutive pictures in output order in the CLVS.
+\\
+\end{OptionTableNoShorthand}
 %\Option{SEITimeCode} &
 %\Default{false} &
 %When true, generate time code SEI messages.

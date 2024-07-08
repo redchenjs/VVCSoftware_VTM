@@ -572,7 +572,33 @@ void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIn
     }
   }
 }
+#if JVET_AG2034_SPTI_SEI
+void SEIEncoder::initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEISourcePictureTimingInfo)
+{
 
+  CHECK(!(m_isInitialized), "Source picture timing SEI already initialized");
+  CHECK(!(SEISourcePictureTimingInfo != nullptr), "Need a SEISourcePictureTimingInfo for initialization (got nullptr)");
+
+  SEISourcePictureTimingInfo->m_sptiSEIEnabled = m_pcCfg->getSptiSEIEnabled();
+  SEISourcePictureTimingInfo->m_sptiSourceTimingEqualsOutputTimingFlag =
+    m_pcCfg->getmSptiSEISourceTimingEqualsOutputTimingFlag();
+  SEISourcePictureTimingInfo->m_sptiSourceType                  = m_pcCfg->getmSptiSEISourceType();
+  SEISourcePictureTimingInfo->m_sptiTimeScale                   = m_pcCfg->getmSptiSEITimeScale();
+  SEISourcePictureTimingInfo->m_sptiNumUnitsInElementalInterval = m_pcCfg->getmSptiSEINumUnitsInElementalInterval();
+  SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1          = m_pcCfg->getMaxTempLayer() - 1;
+  SEISourcePictureTimingInfo->m_sptiCancelFlag                  = 0;
+  SEISourcePictureTimingInfo->m_sptiPersistenceFlag             = 1;
+  SEISourcePictureTimingInfo->m_sptiSourceTypePresentFlag = (SEISourcePictureTimingInfo->m_sptiSourceType == 0 ? 0 : 1);
+  SEISourcePictureTimingInfo->m_sptiSublayerSynthesizedPictureFlag =
+    std::vector<bool>(SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 + 1, 0);
+
+  for (int i = 0; i <= SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1; i++)
+  {
+    SEISourcePictureTimingInfo->m_sptiSublayerIntervalScaleFactor.push_back(
+      1 << (SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 - i));
+  }
+}
+#endif
 void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting)
 {
   assert(m_isInitialized);

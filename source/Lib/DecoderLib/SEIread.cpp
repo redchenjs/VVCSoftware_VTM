@@ -548,6 +548,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIEncoderOptimizationInfo((SEIEncoderOptimizationInfo &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
+#if JVET_AG2034_SPTI_SEI
+    case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
+      sei = new SEISourcePictureTimingInfo;
+      xParseSEISourcePictureTimingInfo((SEISourcePictureTimingInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -3331,6 +3337,57 @@ void SEIReader::xParseSEIPostFilterHint(SEIPostFilterHint &sei, uint32_t payload
     }
   }
 }
+
+#if JVET_AG2034_SPTI_SEI
+void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei, uint32_t payloadSize,
+                                                 std::ostream* pDecodedMessageOutputStream)
+{
+  uint32_t val;
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+
+  sei_read_flag(pDecodedMessageOutputStream, val, "spti_cancel_flag");
+  sei.m_sptiCancelFlag = val;
+
+  if (!sei.m_sptiCancelFlag)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "spti_persistence_flag");
+    sei.m_sptiPersistenceFlag = val;
+
+    sei_read_flag(pDecodedMessageOutputStream, val, "spti_source_timing_equals_output_timing_flag");
+    sei.m_sptiSourceTimingEqualsOutputTimingFlag = val;
+
+    if (!sei.m_sptiSourceTimingEqualsOutputTimingFlag)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "spti_source_type_present_flag");
+      sei.m_sptiSourceTypePresentFlag = val;
+
+      if (sei.m_sptiSourceTypePresentFlag)
+      {
+          sei_read_code(pDecodedMessageOutputStream, 16, val, "spti_source_type");
+          sei.m_sptiSourceType = val;
+      }
+      sei_read_code(pDecodedMessageOutputStream, 32, val, "spti_time_scale");
+      sei.m_sptiTimeScale = val;
+      sei_read_code(pDecodedMessageOutputStream, 32, val, "spti_num_units_in_elemental_interval");
+      sei.m_sptiNumUnitsInElementalInterval = val;
+
+      if (sei.m_sptiPersistenceFlag)
+      {
+          sei_read_code(pDecodedMessageOutputStream, 3, val, "spti_max_sublayers_minus_1");
+          sei.m_sptiMaxSublayersMinus1 = val;
+      }
+
+      for (int i = 0; i <= sei.m_sptiMaxSublayersMinus1; i++)
+      {
+          sei_read_uvlc(pDecodedMessageOutputStream, val, "spti_sublayer_interval_scale_factor");
+          sei.m_sptiSublayerIntervalScaleFactor.push_back(val);
+          sei_read_flag(pDecodedMessageOutputStream, val, "spti_sublayer_synthesized_picture_flag");
+          sei.m_sptiSublayerSynthesizedPictureFlag.push_back(val);
+      }
+    }
+  }
+}
+#endif
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE
 void SeiCfgFileDump::write360SeiDump (std::string decoded360MessageFileName, SEIMessages& seis, const SPS* sps)

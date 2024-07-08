@@ -196,6 +196,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIEncoderOptimizationInfo(*static_cast<const SEIEncoderOptimizationInfo *>(&sei));
     break;
 #endif 
+#if JVET_AG2034_SPTI_SEI
+  case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
+    xWriteSEISourcePictureTimingInfo(*static_cast<const SEISourcePictureTimingInfo*>(&sei));
+    break;
+#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -1977,7 +1982,6 @@ void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
     }
   }
 }
-
 #if JVET_AH2006_EOI_SEI
 void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo &sei)
 {
@@ -2008,6 +2012,42 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
     {
       xWriteCode(sei.m_privacyProtectionTypeIdc, 4, "eoi_privacy_protection_type_idc");
       xWriteCode(sei.m_privacyProtectedInfoType, 8, "eoi_privacy_protected_info_type");
+    }
+  }
+}
+#endif
+#if JVET_AG2034_SPTI_SEI
+void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei)
+{
+  xWriteFlag(sei.m_sptiCancelFlag, "spti_cancel_flag");
+
+  if (!sei.m_sptiCancelFlag)
+  {
+    xWriteFlag(sei.m_sptiPersistenceFlag, "spti_persistance_flag");
+    xWriteFlag(sei.m_sptiSourceTimingEqualsOutputTimingFlag, "spti_source_timing_equals_output_timing_flag");
+
+    if (!sei.m_sptiSourceTimingEqualsOutputTimingFlag)
+    {
+      xWriteFlag(sei.m_sptiSourceTypePresentFlag, "spti_source_type_present_flag");
+
+      if (sei.m_sptiSourceTypePresentFlag)
+      {
+        xWriteCode(sei.m_sptiSourceType, 16, "spti_source_type");
+      }
+
+      xWriteCode(sei.m_sptiTimeScale, 32, "spti_time_scale");
+      xWriteCode(sei.m_sptiNumUnitsInElementalInterval, 32, "spti_num_units_in_elemental_interval");
+
+      if (sei.m_sptiPersistenceFlag)
+      {
+        xWriteCode(sei.m_sptiMaxSublayersMinus1, 3, "spti_max_sublayers_minus_1");
+      }
+
+      for (int i = 0; i <= sei.m_sptiMaxSublayersMinus1; i++)
+      {
+        xWriteUvlc(sei.m_sptiSublayerIntervalScaleFactor[i], "spti_sublayer_interval_scale_factor");
+        xWriteFlag(sei.m_sptiSublayerSynthesizedPictureFlag[i], "spti_sublayer_synthesized_picture_flag");
+      }
     }
   }
 }
