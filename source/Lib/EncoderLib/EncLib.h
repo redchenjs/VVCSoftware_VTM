@@ -141,6 +141,9 @@ private:
   EncTemporalFilter         m_temporalFilter;
   EncTemporalFilter         m_temporalFilterForFG;
   SEINeuralNetworkPostFiltering m_nnPostFiltering;
+#if JVET_AH0078_DPF
+  EncType                   m_encType;
+#endif
 public:
   SPS*                      getSPS( int spsId ) { return m_spsMap.getPS( spsId ); };
   APS**                     getApss() { return m_apss; }
@@ -228,6 +231,10 @@ public:
 
   bool                   getPltEnc()                      const { return   m_doPlt; }
   void                   checkPltStats( Picture* pic );
+#if JVET_AH0078_DPF
+  EncType                getEncType()          const { return m_encType; }
+  void                   setEncType(EncType enctype) { m_encType = enctype; }
+#endif
 #if JVET_O0756_CALCULATE_HDRMETRICS
   std::chrono::duration<long long, std::ratio<1, 1000000000>> getMetricTime() const { return m_metricTime; };
 #endif

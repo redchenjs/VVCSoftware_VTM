@@ -37,6 +37,9 @@
 
 #include "EncModeCtrl.h"
 
+#if JVET_AH0078_DPF
+#include "EncLib.h"
+#endif
 #include "AQp.h"
 #include "RateCtrl.h"
 
@@ -131,6 +134,16 @@ void EncModeCtrl::setBest( CodingStructure& cs )
 
 void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& cs, const Partitioner &partitioner, const int baseQP, const SPS& sps, const PPS& pps, const PartSplit splitMode )
 {
+#if JVET_AH0078_DPF
+  const EncType encType = dynamic_cast<const EncLib*>(m_pcEncCfg)->getEncType();
+  if (m_pcEncCfg->getDPF() && encType == ENC_FULL && cs.slice->getSliceType() != I_SLICE)
+  {
+    minQP = m_qpCtu;
+    maxQP = m_qpCtu;
+    return;
+  }
+#endif
+
   if( m_pcEncCfg->getUseRateCtrl() )
   {
     minQP = m_pcRateCtrl->getRCQP();
@@ -1241,6 +1254,44 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
 
   //////////////////////////////////////////////////////////////////////////
   // Add unit split modes
+#if JVET_AH0078_DPF
+  const EncType encType = dynamic_cast<const EncLib*>(m_pcEncCfg)->getEncType();
+  if (m_pcEncCfg->getDPF() && encType == ENC_PRE)
+  {
+    // fix test modes for pre-encoding
+    const int width = m_currCsArea->lwidth();
+    const int heiht = m_currCsArea->lheight();
+    const int sizeCu = m_pcEncCfg->getCTUSize();
+    int sizeBlk = BLK_32;
+    int maxDepth = floorLog2(sizeCu / sizeBlk);
+    while (width % sizeBlk != 0 || heiht % sizeBlk != 0)
+    {
+      maxDepth++;
+      sizeBlk >>= 1;
+    }
+    if (partitioner.currDepth < maxDepth)
+    {
+      for (int qp = maxQP; qp >= minQP; qp--)
+      {
+        m_ComprCUCtxList.back().testModes.push_back({ ETM_SPLIT_QT, ETO_STANDARD, qp });
+      }
+    }
+    m_ComprCUCtxList.back().testModes.push_back({ ETM_POST_DONT_SPLIT });
+    xGetMinMaxQP(minQP, maxQP, cs, partitioner, baseQP, *cs.sps, *cs.pps, CU_DONT_SPLIT);
+    int  lowestQP = minQP;
+    for (int qpLoop = maxQP; qpLoop >= minQP; qpLoop--)
+    {
+      const int qp = std::max(qpLoop, lowestQP);
+      m_ComprCUCtxList.back().testModes.push_back({ ETM_INTER_ME, ETO_STANDARD, qp });
+    }
+    if (!tryModeMaster(m_ComprCUCtxList.back().testModes.back(), cs, partitioner))
+    {
+      nextMode(cs, partitioner);
+    }
+    m_ComprCUCtxList.back().lastTestMode = EncTestMode();
+    return;
+  }
+#endif
 
   if( !cuECtx.get<bool>( QT_BEFORE_BT ) )
   {

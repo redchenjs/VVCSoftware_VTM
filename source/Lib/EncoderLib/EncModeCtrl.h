@@ -297,6 +297,11 @@ protected:
   int                   m_HashMEPOC2;
 
   double                m_noSplitIntraRdCost;
+#if JVET_AH0078_DPF
+  int                   m_qpCtu;
+  const UnitArea*       m_currCsArea;
+#endif
+
 public:
 
   virtual ~EncModeCtrl              () {}
@@ -395,6 +400,11 @@ public:
     auto it = m_bimQPMap->find(poc);
     return (it == m_bimQPMap->end()) ? 0 : (*m_bimQPMap)[poc][ctuId];
   }
+
+#if JVET_AH0078_DPF
+  void setQpCtu                       ( int qp )                     { m_qpCtu = qp; }
+  void setCurrCsArea                  ( const UnitArea &currCsArea ) { m_currCsArea = &currCsArea; }
+#endif
 
 #if GDR_ENABLED
 void forceIntraMode()

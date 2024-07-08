@@ -146,6 +146,25 @@ public:
   void    setEncCABACTableIdx (SliceType b)         { m_encCABACTableIdx = b; }
 private:
   double  xGetQPValueAccordingToLambda ( double lambda );
+
+#if JVET_AH0078_DPF
+private:
+  std::vector<double>     m_lambdaWeight;
+  double                  m_lambda;
+  int                     m_qpCtu;
+  PelStorage              m_pre;
+  std::vector<double>     m_factorBlk;
+  int**                   m_pixelPredErr;
+  int**                   m_pixelRecDis;
+  int                     m_maxPicWidth;
+  int                     m_maxPicHeight;
+
+  void    setCTULambdaQpByWeight(uint32_t ctuIdx, TrQuant* pTrQuant, RdCost* pRdCost, Slice* pcSlice);
+  void    setLambdaWeightByDPF(Picture* pcPic);
+
+public:
+  int     getQpCtu() const { return m_qpCtu; }
+#endif
 };
 
 //! \}

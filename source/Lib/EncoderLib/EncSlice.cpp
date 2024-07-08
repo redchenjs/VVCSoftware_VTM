@@ -78,6 +78,33 @@ void EncSlice::destroy()
   m_vdRdPicLambda.clear();
   m_vdRdPicQp.clear();
   m_viRdPicQp.clear();
+
+#if JVET_AH0078_DPF
+  if (m_pcCfg->getDPF())
+  {
+    m_lambdaWeight.clear();
+    if (m_pixelRecDis)
+    {
+      for (int i = 0; i < m_maxPicHeight; i++)
+      {
+        delete[] m_pixelRecDis[i];
+        m_pixelRecDis[i] = nullptr;
+      }
+      delete[] m_pixelRecDis;
+      m_pixelRecDis = nullptr;
+    }
+    if (m_pixelPredErr)
+    {
+      for (int i = 0; i < m_maxPicHeight; i++)
+      {
+        delete[] m_pixelPredErr[i];
+        m_pixelPredErr[i] = nullptr;
+      }
+      delete[] m_pixelPredErr;
+      m_pixelPredErr = nullptr;
+    }
+  }
+#endif
 }
 
 void EncSlice::init( EncLib* pcEncLib, const SPS& sps )
@@ -99,6 +126,21 @@ void EncSlice::init( EncLib* pcEncLib, const SPS& sps )
   m_vdRdPicQp.resize(    m_pcCfg->getDeltaQpRD() * 2 + 1 );
   m_viRdPicQp.resize(    m_pcCfg->getDeltaQpRD() * 2 + 1 );
   m_pcRateCtrl        = pcEncLib->getRateCtrl();
+
+#if JVET_AH0078_DPF
+  if (m_pcCfg->getDPF())
+  {
+    m_maxPicHeight = sps.getMaxPicHeightInLumaSamples();
+    m_maxPicWidth = sps.getMaxPicWidthInLumaSamples();
+    m_pixelPredErr = new int*[m_maxPicHeight];
+    m_pixelRecDis = new int*[m_maxPicHeight];
+    for (int i = 0; i < m_maxPicHeight; i++)
+    {
+      m_pixelPredErr[i] = new int[m_maxPicWidth];
+      m_pixelRecDis[i] = new int[m_maxPicWidth];
+    }
+  }
+#endif
 }
 
 void EncSlice::setUpLambda(Slice *slice, const double dLambda, int qp)
@@ -593,6 +635,13 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   m_pcRdCost->setDistortionWeight (COMPONENT_Y, 1.0); // no chroma weighting for luma
 #endif
   setUpLambda(rpcSlice, dLambda, qp);
+#if JVET_AH0078_DPF
+  if (m_pcCfg->getDPF())
+  {
+    m_lambda = dLambda;
+    m_qpCtu = qp;
+  }
+#endif
 
 #if WCG_EXT
   // cost = Distortion + Lambda*R,
@@ -1347,6 +1396,12 @@ void EncSlice::setLosslessSlice(Picture* pcPic, bool islossless)
  */
 void EncSlice::precompressSlice( Picture* pcPic )
 {
+#if JVET_AH0078_DPF
+  if (m_pcCfg->getDPF())
+  {
+    setLambdaWeightByDPF(pcPic);
+  }
+#endif
   // if deltaQP RD is not used, simply return
   if ( m_pcCfg->getDeltaQpRD() == 0 )
   {
@@ -1868,6 +1923,12 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
       currQP.fill(adaptedQP);
     }
 #endif
+#if JVET_AH0078_DPF
+    if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_FULL && !pcPic->slices[0]->isIntra())
+    {
+      setCTULambdaQpByWeight(ctuIdx, pTrQuant, pRdCost, pcSlice);
+    }
+#endif
 
     bool updateBcwCodingOrder = cs.slice->getSliceType() == B_SLICE && ctuIdx == 0;
     if( updateBcwCodingOrder )
@@ -1909,6 +1970,13 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
       pEncLib->m_entropyCodingSyncContextState = pCABACWriter->getCtx();
       cs.storePrevPLT(pEncLib->m_palettePredictorSyncState);
     }
+
+#if JVET_AH0078_DPF
+    if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_FULL && !pcPic->slices[0]->isIntra())
+    {
+      pRdCost->setLambda(oldLambda, pcSlice->getSPS()->getBitDepths());
+    }
+#endif
 
     int actualBits = int(cs.fracBits >> SCALE_BITS);
     actualBits    -= (int)m_uiPicTotalBits;
@@ -1996,6 +2064,20 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
         }
       }
     }
+#if JVET_AH0078_DPF
+    if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_PRE)
+    {
+      // merge clipped pred buffer
+      const int width = pcPic->getOrigBuf().Y().width;
+      const int height = pcPic->getOrigBuf().Y().height;
+      const int clipWidth = std::min((int)pcv.maxCUWidth, width - pos.x);
+      const int clipHeight = std::min((int)pcv.maxCUHeight, height - pos.y);
+      const UnitArea clipArea(cs.area.chromaFormat, Area(pos.x, pos.y, clipWidth, clipHeight));
+      PelUnitBuf dstBuf = m_pre.subBuf(clipArea);
+      CPelUnitBuf srcBuf = pcPic->getPredBuf(clipArea);
+      dstBuf.copyFrom(srcBuf, true);
+    }
+#endif
   }
 }
 
@@ -2125,5 +2207,191 @@ double EncSlice::xGetQPValueAccordingToLambda ( double lambda )
 {
   return 4.2005*log(lambda) + 13.7122;
 }
+
+#if JVET_AH0078_DPF
+void EncSlice::setCTULambdaQpByWeight(uint32_t ctuIdx, TrQuant* pTrQuant, RdCost* pRdCost, Slice* pcSlice)
+{
+  const double lambdaCTU = m_lambda * m_lambdaWeight[ctuIdx];
+  const int    estQP = (int)(4.3281 * log(lambdaCTU) + 2.1829 + 0.499999);  // fitted QP-lambda relationship
+  m_qpCtu = estQP;
+  pRdCost->setLambda(lambdaCTU, pcSlice->getSPS()->getBitDepths());
+#if WCG_EXT
+  pRdCost->saveUnadjustedLambda();
+#endif
+  for (uint32_t compIdx = 1; compIdx < MAX_NUM_COMPONENT; compIdx++)
+  {
+    const ComponentID compID = ComponentID(compIdx);
+    int    chromaQPOffset = pcSlice->getPPS()->getQpOffset(compID) + pcSlice->getSliceChromaQpDelta(compID);
+    int    qpc = pcSlice->getSPS()->getMappedChromaQpValue(compID, estQP) + chromaQPOffset;
+    double tmpWeight =
+      pow(2.0, (estQP - qpc) / 3.0);   // takes into account of the chroma qp mapping and chroma qp Offset
+    if (m_pcCfg->getDepQuantEnabledFlag())
+    {
+      tmpWeight *= (m_pcCfg->getGOPSize() >= 8 ? pow(2.0, 0.1 / 3.0) : pow(2.0, 0.2 / 3.0));   // increase chroma weight for dependent quantization (in order to reduce bit rate shift from chroma to luma)
+    }
+    m_pcRdCost->setDistortionWeight(compID, tmpWeight);
+  }
+#if RDOQ_CHROMA_LAMBDA
+  const double lambdaArray[MAX_NUM_COMPONENT] = { lambdaCTU / m_pcRdCost->getDistortionWeight(COMPONENT_Y),
+                                                  lambdaCTU / m_pcRdCost->getDistortionWeight(COMPONENT_Cb),
+                                                  lambdaCTU / m_pcRdCost->getDistortionWeight(COMPONENT_Cr) };
+  pTrQuant->setLambdas(lambdaArray);
+#else
+  pTrQuant->setLambda(estLambda);
+#endif
+}
+
+void EncSlice::setLambdaWeightByDPF(Picture* pcPic)
+{
+  if (pcPic->slices[0]->getSliceType() == I_SLICE)
+  {
+    return;
+  }
+
+  const int curPOC = pcPic->getPOC();
+  const int gopSize = m_pcCfg->getGOPSize();
+  const int rPOC = curPOC % gopSize;
+  const int numPropa = rPOC == 0 ? m_pcCfg->getDPFKeyLen() : m_pcCfg->getDPFNonkeyLen();
+
+  const int width = pcPic->getOrigBuf().Y().width;
+  const int height = pcPic->getOrigBuf().Y().height;
+  const int sizeBlk = BLK_32;
+  const int sizeCu = m_pcCfg->getCTUSize();
+  const int numBlkWidth = (width + sizeBlk - 1) / sizeBlk;
+  const int numBlkHeight = (height + sizeBlk - 1) / sizeBlk;
+  const int numCuWidth = (width + sizeCu - 1) / sizeCu;
+  const int numCuHeight = (height + sizeCu - 1) / sizeCu;
+  const int numBlkPic = numBlkWidth * numBlkHeight;
+  const int numCuPic = numCuWidth * numCuHeight;
+  m_lambdaWeight.assign(numCuPic, 1.0);
+
+  if (numPropa == 0)
+  {
+    return;
+  }
+
+  // fix QP for pre-encoding
+  Slice* pcSlice = pcPic->slices[getSliceSegmentIdx()];
+  double oldQP = m_pcCfg->getQPForPicture(0, pcSlice);
+  int    qp;
+  double lambda = calculateLambda(pcSlice, 0, oldQP, oldQP, qp);
+  pcSlice->setSliceQp(qp);
+  setUpLambda(pcSlice, lambda, qp);
+
+  const auto chromaFormatIdc = m_pcCfg->getChromaFormatIdc();
+  const auto area = Area(0, 0, width, height);
+  m_pre.create(chromaFormatIdc, area, 0);
+
+  m_pcLib->setEncType(ENC_PRE);
+  compressSlice(pcPic, true, m_pcCfg->getFastDeltaQp());  // pre-encoding
+  m_pcLib->setEncType(ENC_FULL);
+  pcSlice->setSliceQp(m_qpCtu);
+  setUpLambda(pcSlice, m_lambda, m_qpCtu);
+
+  CodingStructure& cs = *pcPic->cs;
+  const PreCalcValues& pcv = *cs.pcv;
+  for (uint32_t yPos = 0; yPos < pcv.lumaHeight; yPos += pcv.maxCUHeight)
+  {
+    for (uint32_t xPos = 0; xPos < pcv.lumaWidth; xPos += pcv.maxCUWidth)
+    {
+      const CodingUnit* cu = cs.getCU(Position(xPos, yPos), ChannelType::LUMA);
+      if (cu->slice->getLmcsEnabledFlag())
+      {
+        const uint32_t width = (xPos + pcv.maxCUWidth > pcv.lumaWidth) ? (pcv.lumaWidth - xPos) : pcv.maxCUWidth;
+        const uint32_t height = (yPos + pcv.maxCUHeight > pcv.lumaHeight) ? (pcv.lumaHeight - yPos) : pcv.maxCUHeight;
+        const UnitArea area(cs.area.chromaFormat, Area(xPos, yPos, width, height));
+        cs.getRecoBuf(area).get(COMPONENT_Y).rspSignal(m_pcLib->getReshaper()->getInvLUT());
+      }
+    }
+  }
+
+  const CPelUnitBuf& org = pcPic->getTrueOrigBuf();
+  const CPelUnitBuf& rec = pcPic->getRecoBuf();
+
+  const CPelBuf& orgY = org.get(COMPONENT_Y);
+  const CPelBuf& recY = rec.get(COMPONENT_Y);
+  const CPelBuf& preY = m_pre.get(COMPONENT_Y);
+
+  for (int y = 0; y < height; y++)
+  {
+    for (int x = 0; x < width; x++)
+    {
+      Intermediate_Int err = *orgY.bufAt(x, y) - *preY.bufAt(x, y);
+      Intermediate_Int dis = *orgY.bufAt(x, y) - *recY.bufAt(x, y);
+      m_pixelPredErr[y][x] = err * err;
+      m_pixelRecDis[y][x] = dis * dis;
+    }
+  }
+
+  m_factorBlk.assign(numBlkPic, 0);
+  int     pHeightX_Blk = 0;
+  int     pWidthY_Blk = 0;
+
+  for (int bIdx = 0; bIdx < numBlkPic; bIdx++)
+  {
+    int line = bIdx / numBlkWidth;
+    int sumPixelRecDisBlk = 0;   // block coding distortion
+    int sumPixelPredErrBlk = 0;  // block MCP error
+    pHeightX_Blk = line;
+    pWidthY_Blk = bIdx - line * numBlkWidth;
+    for (int i = pHeightX_Blk * sizeBlk; i < std::min(pHeightX_Blk * sizeBlk + sizeBlk, height); i++)
+    {
+      for (int j = pWidthY_Blk * sizeBlk; j < std::min(pWidthY_Blk * sizeBlk + sizeBlk, width); j++)
+      {
+        sumPixelRecDisBlk += m_pixelRecDis[i][j];
+        sumPixelPredErrBlk += m_pixelPredErr[i][j];
+      }
+    }
+    if (sumPixelPredErrBlk < 1)
+    {
+      sumPixelPredErrBlk = 1;
+    }
+    double ki = (double)sumPixelRecDisBlk / (double)sumPixelPredErrBlk;  // block DPF
+    if (ki > 1.0)
+    {
+      ki = 1.0;
+    }
+    double    kiLenth = 0;  // block DPF with distortion propagation length
+    double    multiKi = 1;
+    for (int i = 0; i < numPropa; i++)
+    {
+      multiKi = multiKi * ki;
+      kiLenth = kiLenth + multiKi;
+    }
+    m_factorBlk[bIdx] = 1.0 / (1.0 + kiLenth);  // block weight
+  }
+
+  double sumFactorBlk = 0;
+  for (int bIdx = 0; bIdx < numBlkPic; bIdx++)
+  {
+    sumFactorBlk = sumFactorBlk + m_factorBlk[bIdx];
+  }
+  double aveFactorBlk = sumFactorBlk / (double)numBlkPic;
+  for (int bIdx = 0; bIdx < numBlkPic; bIdx++)
+  {
+    m_factorBlk[bIdx] = m_factorBlk[bIdx] / aveFactorBlk;  // block weight with dividing by mean normalization
+  }
+    
+  const int numBlkCu = sizeCu / sizeBlk;
+  for (int idxCu = 0; idxCu < numCuPic; idxCu++)
+  {
+    double sumFact = 0;
+    int    k = 0;
+    for (int i = 0; i < numBlkPic; i++)
+    {
+      if (idxCu == numCuWidth * (i / (numBlkWidth * numBlkCu)) + (i % numBlkWidth) / numBlkCu)
+      {
+        sumFact += m_factorBlk[i];
+        k++;
+      }
+    }
+    double tWeight = sumFact / (double)k;
+    m_lambdaWeight[idxCu] = tWeight;  // CTU weight
+  }
+
+  m_factorBlk.clear();
+  m_pre.destroy();
+}
+#endif
 
 //! \}

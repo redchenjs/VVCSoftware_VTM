@@ -2744,6 +2744,23 @@ CbCrQpOffsetList may be omitted whereas CbQpOffsetList and CrQpOffsetList are sp
 Note that when CbCrQpOffset and CbCrQpOffsetList values are all zero, pps_joint_cbcr_qp_offset_present_flag will be automatically set to zero.
 \\
 
+\Option{DPF} &
+%\ShortOption{\None} &
+\Default{false} &
+Enable CTU-level Lagrange multiplier and QP adaptation by estimating the Distortion Propagation Factor through pre-encoding.
+\\
+
+\Option{DPFKeyLength} &
+%\ShortOption{\None} &
+\Default{8} &
+Distortion propagation length for calculating the Distortion Propagation Factor of key frames.
+\\
+
+\Option{DPFNonKeyLength} &
+%\ShortOption{\None} &
+\Default{0} &
+Distortion propagation length for calculating the Distortion Propagation Factor of non-key frames.
+\\
 \end{OptionTableNoShorthand}
 
 

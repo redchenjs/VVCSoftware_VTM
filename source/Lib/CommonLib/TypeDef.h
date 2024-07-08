@@ -57,7 +57,7 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-
+#define JVET_AH0078_DPF                                   1 // JVET-AH0078: AhG10: Distortion Propagation Factor for VVC Low-Delay Configuration
 
 
 
@@ -1281,6 +1281,13 @@ enum RESHAPE_SIGNAL_TYPE
   RESHAPE_SIGNAL_NULL = 100,
 };
 
+#if JVET_AH0078_DPF
+enum EncType
+{
+  ENC_PRE = 0,
+  ENC_FULL = 1,
+};
+#endif
 
 // ---------------------------------------------------------------------------
 // exception class
