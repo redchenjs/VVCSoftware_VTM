@@ -1895,8 +1895,29 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_numKmacOperationsIdc, "nnpfc_num_kmac_operations_idc");
       xWriteUvlc(sei.m_totalKilobyteSize, "nnpfc_total_kilobyte_size");
     }
-
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+    uint32_t metadataExtensionNumBits = 0;
+    if (sei.m_purpose == 0)
+    {
+      metadataExtensionNumBits++;
+      if (sei.m_applicationPurposeTagUriPresentFlag)
+      {
+        metadataExtensionNumBits +=  (static_cast<uint32_t>(sei.m_applicationPurposeTagUri.length() + 1) * 8);
+      }
+      xWriteUvlc(metadataExtensionNumBits, "nnpfc_metadata_extension_num_bits");
+      xWriteFlag(sei.m_applicationPurposeTagUriPresentFlag, "nnpfc_application_purpose_tag_uri_present_flag");
+      if ( sei.m_applicationPurposeTagUriPresentFlag )
+      {
+        xWriteString(sei.m_applicationPurposeTagUri, "nnpfc_application_purpose_tag_uri"); 
+      }
+    }
+    else
+    {
+      xWriteUvlc(metadataExtensionNumBits, "nnpfc_metadata_extension_num_bits");  
+    }
+#else
     xWriteUvlc(0, "nnpfc_metadata_extension_num_bits");  // nnpfc_metadata_extension_num_bits shall be equal to 0 in the current edition 
+#endif
   }
   if (sei.m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
   {

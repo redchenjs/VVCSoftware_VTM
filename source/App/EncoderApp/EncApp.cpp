@@ -1295,6 +1295,16 @@ void EncApp::xInitLibCfg( int layerIdx )
         m_cEncLib.setNNPostFilterSEICharacteristicsTotalKilobyteSize       ( m_nnPostFilterSEICharacteristicsTotalKilobyteSize[i], i);
 
       }
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) == 0)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag (m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[i], i);
+        if (m_cEncLib.getNNPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag(i))
+        {
+          m_cEncLib.setNNPostFilterSEICharacteristicsApplicationPurposeTagUri(m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[i],i);
+        }
+      }
+#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsUriTag                  ( m_nnPostFilterSEICharacteristicsUriTag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsUri                     ( m_nnPostFilterSEICharacteristicsUri[i], i);
     }

@@ -1499,6 +1499,16 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_numKmacOperationsIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(filterIdx);
         sei->m_totalKilobyteSize = m_pcCfg->getNNPostFilterSEICharacteristicsTotalKilobyteSize(filterIdx);
     }
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+    if (sei->m_purpose == 0)
+    {
+      sei->m_applicationPurposeTagUriPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag(filterIdx);
+      if (sei->m_applicationPurposeTagUriPresentFlag)
+      {
+        sei->m_applicationPurposeTagUri = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUri(filterIdx);
+      }
+    }
+  #endif
   }
   if (sei->m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
   {

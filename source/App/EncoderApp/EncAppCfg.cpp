@@ -1916,6 +1916,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     complexityInfoPresentFlag << "SEINNPFCComplexityInfoPresentFlag" << i;
     opts.addOptions()(complexityInfoPresentFlag.str(), m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[i], false, "Specifies the value of nnpfc_complexity_info_present_flag in the Neural Network Post Filter Characteristics SEI message");
 
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+    std::ostringstream applicationPurposeTagUriPresentFlag;
+    applicationPurposeTagUriPresentFlag << "SEINNPFCApplicationPurposeTagUriPresentFlag" << i;
+    opts.addOptions()(applicationPurposeTagUriPresentFlag.str(), m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[i], false, "equal to 1 indicates that the nnpfc_application_purpose_tag_uri syntax element is present in this NNPFC SEI message. nnpfc_application_purpose_tag_uri_present_flag equal to 0 indicates that the nnpfc_application_purpose_tag_uri syntax element is not present in this NNPFC SEI message.");
+
+    std::ostringstream applicationPurposeTagUri;
+    applicationPurposeTagUri << "SEINNPFCApplicationPurposeTagUri" << i;
+    opts.addOptions()(applicationPurposeTagUri.str(), m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[i], std::string(""), "specifies a tag URI with syntax and semantics as specified in IETF RFC 4151 identifying the application determined purpose of the NNPF, when nnpfc_purpose is equal to 0.");
+#endif
+
     std::ostringstream uriTag;
     uriTag << "SEINNPFCUriTag" << i;
     opts.addOptions()(

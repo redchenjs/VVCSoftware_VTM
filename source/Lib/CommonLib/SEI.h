@@ -1321,6 +1321,10 @@ public:
     , m_crPadding(0)
     , m_payloadByte(nullptr)
     , m_complexityInfoPresentFlag(false)
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+    , m_applicationPurposeTagUriPresentFlag(false)
+    , m_applicationPurposeTagUri("")
+#endif
     , m_uriTag("")
     , m_uri("")
     , m_parameterTypeIdc(0)
@@ -1393,6 +1397,10 @@ public:
   uint64_t       m_payloadLength;
   char*          m_payloadByte;
   bool           m_complexityInfoPresentFlag;
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+  bool           m_applicationPurposeTagUriPresentFlag;
+  std::string    m_applicationPurposeTagUri;
+#endif
   std::string    m_uriTag;
   std::string    m_uri;
   uint32_t       m_parameterTypeIdc;

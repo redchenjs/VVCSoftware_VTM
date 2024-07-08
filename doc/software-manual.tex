@@ -5817,6 +5817,18 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   For the \emph{i}-th neural network post-filter, nnpfc_log2_parameter_bit_length_minus3 equal to 0, 1, 2, and 3 indicates that the neural network does not use parameters of bit length 
   greater than 8, 16, 32, and 64, respectively.
   \\
+  \Option{SEINNPFCAapplicationPurposeTagUriPresentFlag\emph{i}} &
+  \Default{false} &
+  Specifies the nnpfc_application_purpose_tag_uri_present_flag syntax element for the \emph{i}-th neural network post-filter.
+  \par
+    When true (non-zero) specifies the presence of the nnpfc_application_purpose_tag_uri syntax element in the NNPFC SEI message.
+  \par
+    When false specifies the absence of the nnpfc_application_purpose_tag_uri syntax element in the NNPFC SEI message.
+  \\
+  \Option{SEINNPFCApplicationPurposeTagUri\emph{i}} &
+  \Default{""} &
+  specifies a tag URI with syntax and semantics as specified in IETF RFC 4151 identifying the application determined purpose of the NNPF, when nnpfc_purpose is equal to 0 of the \emph{i}-th neural network post-filter.
+  \\
   \Option{SEINNPFCNumParametersIdc\emph{i}} &
   \Default{0} &
   Specifies the maximum number of neural network parameters for the \emph{i}-th neural network post-filter in units of a power of 2048. nnpfc_num_parameters_idc = 0 indicates that the maximum number of neural network 

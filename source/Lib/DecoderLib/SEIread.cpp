@@ -3129,6 +3129,34 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_totalKilobyteSize = val;
     }
 
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_metadata_extension_num_bits");
+    uint32_t metadataExtensionNumBits = val;
+    uint32_t numberExtensionBitsUsed = 0;
+    if ( metadataExtensionNumBits > 0 ) 
+    { 
+      CHECK (val > 4096, "Values of nnpfc_metadata_extension_num_bits greater than 4096 shall not be present in bitstreams");
+      if ( sei.m_purpose == 0 )
+      { 
+        sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_application_purpose_tag_uri_present_flag");
+        sei.m_applicationPurposeTagUriPresentFlag = val;
+        numberExtensionBitsUsed++;
+        if ( sei.m_applicationPurposeTagUriPresentFlag )
+        { 
+          std::string val2;
+          sei_read_string(pDecodedMessageOutputStream, val2, "nnpfc_application_purpose_tag_uri");
+          sei.m_applicationPurposeTagUri = val2;
+          numberExtensionBitsUsed += (static_cast<uint32_t>(sei.m_applicationPurposeTagUri.length() + 1) * 8);
+        }
+      }
+      uint32_t numberExtensionBitRemaining = metadataExtensionNumBits - numberExtensionBitsUsed;
+      for (uint32_t i = 0; i < numberExtensionBitRemaining; i++)
+      {
+        uint32_t val2;
+        sei_read_code(pDecodedMessageOutputStream, 1, val2, "nnpfc_reserved_metadata_extension");
+      } 
+    }
+#else
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_metadata_extension_num_bits");  // nnpfc_metadata_extension_num_bits shall be equal to 0 in the current edition
     CHECK (val > 2048, "Values of nnpfc_metadata_extension_num_bits greater than 2048 shall not be present in bitstreams");
     for (uint32_t i = 0; i < val; i++)
@@ -3136,6 +3164,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       uint32_t val2;
       sei_read_code(pDecodedMessageOutputStream, 1, val2, "nnpfc_reserved_metadata_extension"); // Decoders shall ignore the presence and value of nnpfc_reserved_metadata_extension
     }
+#endif
   }
 
   if (sei.m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)

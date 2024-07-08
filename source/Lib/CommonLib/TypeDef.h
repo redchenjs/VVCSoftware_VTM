@@ -62,6 +62,8 @@
 
 
 
+#define JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING 1 // JVET-AF2032: Conditionally signal application tag URI presence flag and tag URI in the NNPFC metadata extension
+
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
