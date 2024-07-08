@@ -191,6 +191,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::POST_FILTER_HINT:
     xWriteSEIPostFilterHint(*static_cast<const SEIPostFilterHint *>(&sei));
     break;
+#if JVET_AH2006_EOI_SEI
+  case SEI::PayloadType::ENCODER_OPTIMIZATION_INFO:
+    xWriteSEIEncoderOptimizationInfo(*static_cast<const SEIEncoderOptimizationInfo *>(&sei));
+    break;
+#endif 
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -1972,4 +1977,39 @@ void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
     }
   }
 }
+
+#if JVET_AH2006_EOI_SEI
+void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo &sei)
+{
+  xWriteFlag(sei.m_cancelFlag, "eoi_cancel_flag");
+  if (!sei.m_cancelFlag)
+  {
+    xWriteFlag(sei.m_persistenceFlag, "eoi_persistence_flag");
+    xWriteCode(sei.m_forHumanViewingIdc,2, "eoi_for_human_viewing_idc");
+    xWriteCode(sei.m_forMachineAnalysisIdc,2, "eoi_for_machine_analysis_idc");
+    xWriteCode(sei.m_type, 16, "eoi_type");
+
+    if ((sei.m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) != 0)
+    {
+      xWriteUvlc(sei.m_objectBasedIdc, "eoi_object_based_idc");
+
+    }
+    if ((sei.m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
+    {
+      xWriteFlag(sei.m_temporalResamplingTypeFlag, "eoi_temporal_resampling_type_flag");
+      xWriteUvlc(sei.m_numIntPics, "eoi_num_int_pics");
+
+    }
+    if ((sei.m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
+    {
+      xWriteFlag(sei.m_spatialResamplingTypeFlag, "eoi_spatial_resampling_type_flag");
+    }
+    if ((sei.m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
+    {
+      xWriteCode(sei.m_privacyProtectionTypeIdc, 4, "eoi_privacy_protection_type_idc");
+      xWriteCode(sei.m_privacyProtectedInfoType, 8, "eoi_privacy_protected_info_type");
+    }
+  }
+}
+#endif
 //! \}

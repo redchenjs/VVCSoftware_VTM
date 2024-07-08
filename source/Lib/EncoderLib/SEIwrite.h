@@ -114,6 +114,9 @@ protected:
   void xWriteSEIGreenMetadataInfo                 (const SEIGreenMetadataInfo &sei);
 #endif
   void xWriteSEIPostFilterHint(const SEIPostFilterHint &sei);
+#if JVET_AH2006_EOI_SEI
+  void xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo &sei);
+#endif
 protected:
   HRD m_nestingHrd;
 };

@@ -84,6 +84,8 @@
 
 #define JVET_AD0067_INCLUDE_SYNTAX                        1 // include nnpfc_full_range_flag syntax element in the nnpfc sei message when nnpfc_separate_colour_description_present_flag is equal to 1 and when nnpfc_out_format_idc is equal to 1.
 
+#define JVET_AH2006_EOI_SEI                               1 // Implementation of Encoder Optimizaion Information SEI message 
+
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
 #define REUSE_CU_RESULTS_WITH_MULTIPLE_TUS                1
@@ -770,6 +772,19 @@ enum SAOEOClasses
   SAO_CLASS_EO_FULL_PEAK   = 4,
   NUM_SAO_EO_CLASSES,
 };
+
+#if JVET_AH2006_EOI_SEI
+enum EOI_OptimizationType
+{
+  UNDEFINED = 0,
+  OBJECT_BASED_OPTIMIZATION = 1,
+  TEMPORAL_RESAMPLING = 2,
+  SPATIAL_RESAMPLING = 4,
+  TEMPORAL_QUALITY_OPTIMIZATION = 8,
+  SPATIAL_QUALITY_OPTIMIZATION = 16,
+  PRIVACY_PROTECTION_OPTIMIZATION = 32,
+};
+#endif 
 
 enum NNPC_PaddingType
 {

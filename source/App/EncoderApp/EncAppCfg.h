@@ -540,6 +540,21 @@ protected:
   int       m_selfContainedClvsFlag;
   int       m_preferredTransferCharacteristics;
 
+#if JVET_AH2006_EOI_SEI
+  bool  m_eoiSEIEnabled;
+  bool  m_eoiSEICancelFlag;
+  bool  m_eoiSEIPersistenceFlag;
+  uint32_t m_eoiSEIForHumanViewingIdc;
+  uint32_t m_eoiSEIForMachineAnalysisIdc;
+  uint32_t m_eoiSEIType;
+  uint32_t m_eoiSEIObjectBasedIdc;
+  bool m_eoiSEITemporalResamplingTypeFlag;
+  uint32_t m_eoiSEINumIntPics;
+  bool m_eoiSEISpatialResamplingTypeFlag;
+  uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
+  uint32_t m_eoiSEIPrivacyProtectedInfoType;
+#endif 
+
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
   bool      m_fgcSEICancelFlag;

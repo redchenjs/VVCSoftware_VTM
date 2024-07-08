@@ -1545,5 +1545,39 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
   }
 }
 
+#if JVET_AH2006_EOI_SEI
+void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
+{
+  CHECK(!(m_isInitialized), "Unspecified error");
+  CHECK(!(sei != nullptr), "Unspecified error");
+  sei->m_cancelFlag = m_pcCfg->getEOISEICancelFlag();
+  if (!sei->m_cancelFlag)
+  {
+    sei->m_persistenceFlag = m_pcCfg->getEOISEIPersistenceFlag();
+    sei->m_forHumanViewingIdc = m_pcCfg->getEOISEIForHumanViewingIdc();
+    sei->m_forMachineAnalysisIdc = m_pcCfg->getEOISEIForMachineAnalysisIdc();
+    CHECK(sei->m_forHumanViewingIdc ==1  && sei->m_forMachineAnalysisIdc ==1 , "the value of eoi_for_human_viewing_idc and eoi_for_machine_analysis_idc shall not be both equal to 1");
+    sei->m_type = m_pcCfg->getEOISEIType();
+    if ((sei->m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) != 0)
+    {
+      sei->m_objectBasedIdc = m_pcCfg->getEOISEIObjectBasedIdc();
+    }
+    if ((sei->m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
+    {
+      sei->m_temporalResamplingTypeFlag = m_pcCfg->getEOISEITemporalResamplingTypeFlag();
+      sei->m_numIntPics = m_pcCfg->getEOISEINumIntPics();
+    }
+    if ((sei->m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
+    {
+      sei->m_spatialResamplingTypeFlag = m_pcCfg->getEOISEISpatialResamplingTypeFlag();
+    }
+    if ((sei->m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
+    {
+      sei->m_privacyProtectionTypeIdc = m_pcCfg->getEOISEIPrivacyProtectionTypeIdc();
+      sei->m_privacyProtectedInfoType = m_pcCfg->getEOISEIPrivacyProtectedInfoType();
+    }
+  }
+}
+#endif
 
 //! \}

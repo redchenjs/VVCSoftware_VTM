@@ -1112,6 +1112,20 @@ void EncApp::xInitLibCfg( int layerIdx )
   {
     m_cEncLib.setCtiSEILut(m_ctiSEILut[i], i);
   }
+#if JVET_AH2006_EOI_SEI
+  m_cEncLib.setEOISEIEnabled(m_eoiSEIEnabled);
+  m_cEncLib.setEOISEICancelFlag(m_eoiSEICancelFlag);
+  m_cEncLib.setEOISEIPersistenceFlag(m_eoiSEIPersistenceFlag);
+  m_cEncLib.setEOISEIForHumanViewingIdc(m_eoiSEIForHumanViewingIdc);
+  m_cEncLib.setEOISEIForMachineAnalysisIdc(m_eoiSEIForMachineAnalysisIdc);
+  m_cEncLib.setEOISEIType(m_eoiSEIType);
+  m_cEncLib.setEOISEIObjectBasedIdc(m_eoiSEIObjectBasedIdc);
+  m_cEncLib.setEOISEITemporalResamplingTypeFlag(m_eoiSEITemporalResamplingTypeFlag);
+  m_cEncLib.setEOISEINumIntPics(m_eoiSEINumIntPics);
+  m_cEncLib.setEOISEISpatialResamplingTypeFlag(m_eoiSEISpatialResamplingTypeFlag);
+  m_cEncLib.setEOISEIPrivacyProtectionTypeIdc(m_eoiSEIPrivacyProtectionTypeIdc);
+  m_cEncLib.setEOISEIPrivacyProtectedInfoType(m_eoiSEIPrivacyProtectedInfoType);
+#endif
   // content colour volume SEI
   m_cEncLib.setCcvSEIEnabled                                     (m_ccvSEIEnabled);
   m_cEncLib.setCcvSEICancelFlag                                  (m_ccvSEICancelFlag);

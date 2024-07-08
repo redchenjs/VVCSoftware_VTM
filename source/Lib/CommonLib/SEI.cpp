@@ -1123,3 +1123,23 @@ SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMess
   }
   return nullptr;
 }
+
+#if JVET_AH2006_EOI_SEI
+SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
+  const SEIEncoderOptimizationInfo& sei)
+{
+  m_cancelFlag = sei.m_cancelFlag;
+  m_persistenceFlag = sei.m_persistenceFlag;
+  m_forHumanViewingIdc = sei.m_forHumanViewingIdc;
+  m_forMachineAnalysisIdc = sei.m_forMachineAnalysisIdc;
+  m_type = sei.m_type;
+  m_objectBasedIdc = sei.m_objectBasedIdc;
+  m_temporalResamplingTypeFlag = sei.m_temporalResamplingTypeFlag;
+  m_numIntPics = sei.m_numIntPics;
+  m_spatialResamplingTypeFlag = sei.m_spatialResamplingTypeFlag;
+  m_privacyProtectionTypeIdc = sei.m_privacyProtectionTypeIdc;
+  m_privacyProtectedInfoType = sei.m_privacyProtectedInfoType;
+
+}
+#endif
+
