@@ -2246,6 +2246,54 @@ void EncLib::xInitRPL(SPS &sps)
       // inter-layer reference picture is not signaled in SPS RPL, SPS is shared currently
       rpl->setNumberOfInterLayerPictures( 0 );
 
+#if EXPLICIT_ILRP
+      if (getExplicitILRP())
+      {
+        bool isIntraLayerPredAllowed = (getVPS() && !getRplOfDepLayerInSh()) ? ((m_intraPeriod < 0 && ge.m_POC != 0) || (ge.m_POC % m_intraPeriod) != 0) : true;
+        bool isInterLayerPredAllowed = (getVPS() && !getRplOfDepLayerInSh()) ? (!getVPS()->getIndependentLayerFlag(layerIdx) && ((m_intraPeriod < 0 && ge.m_POC != 0) || ((ge.m_POC % m_intraPeriod) != 0) || (getAvoidIntraInDepLayer() && layerIdx))) : false;
+        int numRefActive = 0;
+        int validNumILRef = 0;
+        for (int k = 0; k < ge.m_numRefPicsActive; k++)
+        {
+          if (ge.m_deltaRefPics[k]==0 && ge.m_layerRef[k]!=-1)
+          {
+            if(isInterLayerPredAllowed)
+            {
+              for (int refLayerIdx: refLayersIdx)
+              {
+                if (refLayerIdx == ge.m_layerRef[k])
+                {
+                  rpl->setRefPicIdentifier(numRefActive, 0, true, true, m_vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
+                  numRefActive++;
+                  validNumILRef++;
+                  break;
+                }
+              }
+            }
+          }
+          else if(isIntraLayerPredAllowed)
+          {
+            rpl->setRefPicIdentifier(numRefActive, -ge.m_deltaRefPics[k], 0, false, 0);
+            numRefActive++;
+          }
+        }
+        rpl->setNumberOfInterLayerPictures(validNumILRef);
+        rpl->setNumberOfActivePictures(numRefActive);
+        //Add non active intra layer ref pics
+        int numRefInactive = 0;
+        int inactiveStart = isIntraLayerPredAllowed ? ge.m_numRefPicsActive : 0;
+        for (int k = inactiveStart; k < ge.m_numRefPics; k++)
+        {
+          if (!(ge.m_deltaRefPics[k]==0 && ge.m_layerRef[k]!=-1))
+          {
+            rpl->setRefPicIdentifier(numRefActive+numRefInactive, -ge.m_deltaRefPics[k], 0, false, 0);
+            numRefInactive++;
+          }
+        }
+        rpl->setNumberOfShorttermPictures(numRefActive-validNumILRef+numRefInactive);
+      }
+      else{
+#endif
       if (!getRplOfDepLayerInSh())
       {
         bool isIntraLayerPredAllowed = getVPS() ? ((getVPS()->getIndependentLayerFlag(layerIdx) || (getVPS()->getPredDirection(ge.m_temporalId) != 1)) && ((m_intraPeriod < 0 && ge.m_POC != 0) || (ge.m_POC % m_intraPeriod) != 0)) : true;
@@ -2283,6 +2331,9 @@ void EncLib::xInitRPL(SPS &sps)
           rpl->setRefPicIdentifier(k, -ge.m_deltaRefPics[k], 0, false, 0);
         }
       }
+#if EXPLICIT_ILRP
+      }
+#endif
     }
   }
 

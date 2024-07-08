@@ -502,6 +502,10 @@ ordered as their intendend order in the L0.
 Note that any pictures not supplied in this list and in the list of L1 will be discarded and
 therefore not available as reference pictures later.
 
+When ExplicitILRP is true, a layer-specific GOP structure configuration can be provided (using the -li encoder
+parameter), in which inter-layer reference pictures are specified using a 0.x syntax, with 0 meaning
+zero POC difference, and x is the layer of the reference picture.
+
 \item[]\textbf{num_ref_pics_active_L1}: Number of reference pictures in lists L1
 that are used during coding.
 
@@ -516,6 +520,10 @@ kept, relative the POC of the current frame. The picture list shall be
 ordered as their intendend order in the L1.
 Note that any pictures not supplied in this list and in the list of L0 will be discarded and
 therefore not available as reference pictures later.
+
+When ExplicitILRP is true, the same syntax as the one described for L0 can be used to specify
+inter-layer reference pictures.
+
 
 For example, consider the coding structure of Figure~\ref{fig:gop-example}.
 This coding structure is of size 4. The pictures are listed in decoding
@@ -1712,6 +1720,15 @@ Specifies a list of values of the allowable prediction directions for dependent 
 1 & Only inter-layer predition is allowed for the speficied temporal layer. \\
 2 & Only intra-layer predition is allowed for the speficied temporal layer. \\
 \end{tabular}
+\\
+
+\Option{ExplicitILRP} &
+%\ShortOption{\None} &
+\Default{false} &
+Explicit specification of inter-layer reference pictures, using a layer-specific GOP structure (see section 3.1).
+When ExplicitILRP is true, AllowablePredDirection should not be used or left to default values (all zero), and
+inter-layer reference pictures are no longer inserted automatically.
+\par
 \\
 
 \Option{LayerId\emph{i}} &

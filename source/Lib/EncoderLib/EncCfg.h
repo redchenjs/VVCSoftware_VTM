@@ -82,6 +82,10 @@ struct GOPEntry
   int m_deltaRefPics1[MAX_NUM_REF_PICS];
   bool m_isEncoded;
   bool   m_ltrpInSliceHeaderFlag;
+#if EXPLICIT_ILRP
+  int m_layerRef0[MAX_VPS_LAYERS];
+  int m_layerRef1[MAX_VPS_LAYERS];
+#endif
   GOPEntry()
     : m_POC(-1)
     , m_QPOffset(0)
@@ -110,6 +114,10 @@ struct GOPEntry
   {
     ::memset(m_deltaRefPics0, 0, sizeof(m_deltaRefPics0));
     ::memset(m_deltaRefPics1, 0, sizeof(m_deltaRefPics1));
+#if EXPLICIT_ILRP
+    ::memset(m_layerRef0, -1, sizeof(m_layerRef0));
+    ::memset(m_layerRef1, -1, sizeof(m_layerRef1));
+#endif
   }
 };
 
@@ -124,6 +132,9 @@ struct RPLEntry
   int m_deltaRefPics[MAX_NUM_REF_PICS];
   bool m_isEncoded;
   bool   m_ltrpInSliceHeaderFlag;
+#if EXPLICIT_ILRP
+  int m_layerRef[MAX_NUM_REF_PICS];
+#endif
   RPLEntry()
     : m_POC(-1)
     , m_temporalId(0)
@@ -135,6 +146,9 @@ struct RPLEntry
     , m_ltrpInSliceHeaderFlag(false)
   {
     ::memset(m_deltaRefPics, 0, sizeof(m_deltaRefPics));
+#if EXPLICIT_ILRP
+    ::memset(m_layerRef, -1, sizeof(m_layerRef));
+#endif
   }
 };
 
@@ -1041,6 +1055,9 @@ protected:
   bool        m_craAPSreset;
   bool        m_rprRASLtoolSwitch;
   bool        m_refLayerMetricsEnabled;
+#if EXPLICIT_ILRP
+  bool        m_explicitILRP;
+#endif
   
 public:
   EncCfg()
@@ -2866,6 +2883,10 @@ public:
 
   void        setAvoidIntraInDepLayer(bool b)                        { m_avoidIntraInDepLayer = b; }
   bool        getAvoidIntraInDepLayer()                        const { return m_avoidIntraInDepLayer; }
+#if EXPLICIT_ILRP
+  void        setExplicitILRP(bool b)                        { m_explicitILRP = b; }
+  bool        getExplicitILRP()                        const { return m_explicitILRP; }
+#endif
 
   const EncCfgParam::CfgVPSParameters &getVPSParameters() const
   {
