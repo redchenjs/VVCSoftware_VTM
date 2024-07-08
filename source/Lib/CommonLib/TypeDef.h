@@ -70,6 +70,8 @@
 
 //########### place macros to be be kept below this line ###############
 
+#define EXPLICIT_ILRP 1
+
 #define GDR_ENABLED   1
 
 #if GDR_ENABLED
