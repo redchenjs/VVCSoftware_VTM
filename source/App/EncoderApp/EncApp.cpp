@@ -301,9 +301,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setFramesToBeEncoded                                 ( m_framesToBeEncoded );
   m_cEncLib.setValidFrames(m_firstValidFrame, m_lastValidFrame);
   m_cEncLib.setAvoidIntraInDepLayer                              ( m_avoidIntraInDepLayer );
-#if EXPLICIT_ILRP
   m_cEncLib.setExplicitILRP                                      ( m_explicitILRP );
-#endif
 
   m_cEncLib.setRefLayerMetricsEnabled(m_refMetricsEnabled);
   m_cEncLib.setRefLayerRescaledAvailable(false);
