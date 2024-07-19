@@ -93,6 +93,11 @@ public:
   void initSEISEIManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessage);
   void initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei);
 
+#if JVET_AI0153_OMI_SEI
+  void readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* seiObjMask, bool& failed);
+  bool initSEIObjectMaskInfos(SEIObjectMaskInfos* sei, int currPOC);
+#endif
+
 #if JVET_AG2034_SPTI_SEI
   void initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEISourcePictureTimingInfo);
 #endif

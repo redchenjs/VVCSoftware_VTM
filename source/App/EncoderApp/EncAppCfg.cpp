@@ -696,6 +696,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>        cfg_sdiSEIViewIdVal                (0, 63, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t>        cfg_sdiSEIAuxId                    (0, 255, 0, 63);
   SMultiValueInput<uint32_t>        cfg_sdiSEINumAssociatedPrimaryLayersMinus1 (0, 63, 0, 63);
+#if JVET_AI0153_OMI_SEI
+  SMultiValueInput<uint32_t>        cfg_sdiSEIAssociatedPrimaryLayerIdx(0, 63, 0, 63);
+#endif
   SMultiValueInput<bool>            cfg_maiSEISignFocalLengthX         (0, 1,   0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t>        cfg_maiSEIExponentFocalLengthX     (0, 63, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t>        cfg_maiSEIMantissaFocalLengthX     (0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
@@ -1467,6 +1470,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISubpicLevelInfoExplicitFraction", m_cfgSubpictureLevelInfoSEI.m_explicitFraction, false, "Enable sending of explicit fractions in Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoNumSubpics", m_cfgSubpictureLevelInfoSEI.m_numSubpictures, 1, "Number of subpictures for Subpicture Level Information SEI messages")
 ("SEIAnnotatedRegionsFileRoot,-ar", m_arSEIFileRoot, std::string(""), "Annotated region SEI parameters root file name (wo num ext); only the file name base is to be added. Underscore and POC would be automatically addded to . E.g. \"-ar ar\" will search for files ar_0.txt, ar_1.txt, ...")
+#if JVET_AI0153_OMI_SEI
+("SEIObjectMaskFileRoot,-omi", m_omiSEIFileRoot, std::string(""), "Object mask information SEI parameters root file name (wo num ext); only the file name base is to be added. Underscore and POC would be automatically added to . E.g. \"-omi omi\" will search for files omi_0.txt, omi_1.txt, ...")
+#endif
 ("SEISubpicLevelInfoMaxSublayers", m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers, 1, "Number of sublayers for Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoSublayerInfoPresentFlag", m_cfgSubpictureLevelInfoSEI.hasSublayerInfo, false, "Enable sending of level information for all sublayers in Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoRefLevelFractions", cfg_sliFractions, cfg_sliFractions, "List of subpicture level fractions for Subpicture Level Information SEI messages")
@@ -1613,6 +1619,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEISDIViewIdVal",                                 cfg_sdiSEIViewIdVal,        cfg_sdiSEIViewIdVal, "List of the view identifiers in the scalaibility dimension information SEI message")
   ("SEISDIAuxId",                                     cfg_sdiSEIAuxId,                cfg_sdiSEIAuxId, "List of the auxiliary identifiers in the scalaibility dimension information SEI message")
   ("SEISDINumAssociatedPrimaryLayersMinus1",          cfg_sdiSEINumAssociatedPrimaryLayersMinus1, cfg_sdiSEINumAssociatedPrimaryLayersMinus1, "List of the numbers of associated primary layers of i-th layer, which is an auxiliary layer.")
+#if JVET_AI0153_OMI_SEI
+  ("SEISDIAssociatedPrimaryLayerIdx",                 cfg_sdiSEIAssociatedPrimaryLayerIdx, cfg_sdiSEIAssociatedPrimaryLayerIdx, "List of the layer index of the j-th associated primary layer of the i-th layer, which is an auxiliary layer. It is a 1-d list and the number of the associated primary layer of the i-th auxiliary layer is indicated by cfg_sdiSEINumAssociatedPrimaryLayersMinus1 and cfg_sdiSEIAuxId.")
+#endif
   // multiview acquisition information SEI
   ("SEIMAIEnabled",                                   m_maiSEIEnabled,                                    false, "Control generation of multiview acquisition information SEI message")
   ("SEIMAIIntrinsicParamFlag",                        m_maiSEIIntrinsicParamFlag,                         false, "Specifies the presence of intrinsic camera parameters in the multiview acquisition information SEI message")
@@ -3514,6 +3523,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_sdiSEIViewIdVal.resize(m_sdiSEIMaxLayersMinus1 + 1);
       m_sdiSEIAuxId.resize(m_sdiSEIMaxLayersMinus1 + 1);
       m_sdiSEINumAssociatedPrimaryLayersMinus1.resize(m_sdiSEIMaxLayersMinus1 + 1);
+#if JVET_AI0153_OMI_SEI
+      uint32_t associatedPrimaryLayerIdxListCnt = 0;
+#endif
       for (int i = 0; i <= m_sdiSEIMaxLayersMinus1; i++)
       {
         m_sdiSEILayerId[i] = cfg_sdiSEILayerId.values[i];
@@ -3527,6 +3539,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           if (m_sdiSEIAuxId[i] > 0)
           {
             m_sdiSEINumAssociatedPrimaryLayersMinus1[i] = cfg_sdiSEINumAssociatedPrimaryLayersMinus1.values[i];
+#if JVET_AI0153_OMI_SEI
+            m_sdiSEIAssociatedPrimaryLayerIdx.resize(associatedPrimaryLayerIdxListCnt + m_sdiSEINumAssociatedPrimaryLayersMinus1[i] + 1);
+            for (uint32_t k = 0; k <= m_sdiSEINumAssociatedPrimaryLayersMinus1[i]; k++)
+            {
+              m_sdiSEIAssociatedPrimaryLayerIdx[associatedPrimaryLayerIdxListCnt + k] = cfg_sdiSEIAssociatedPrimaryLayerIdx.values[associatedPrimaryLayerIdxListCnt + k];
+            }
+            associatedPrimaryLayerIdxListCnt += (m_sdiSEINumAssociatedPrimaryLayersMinus1[i] + 1);
+#endif
           }
         }
       }
