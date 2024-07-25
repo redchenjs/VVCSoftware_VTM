@@ -1595,7 +1595,20 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
     }
     if ((sei->m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
     {
+#if JVET_AI0180
+      sei->m_origPicDimensionsFlag = m_pcCfg->getEOISEIOrigPicDimensionsFlag();
+      if (sei->m_origPicDimensionsFlag)
+      {
+        sei->m_origPicWidth  = m_pcCfg->getEOISEIOrigPicWidth();
+        sei->m_origPicHeight = m_pcCfg->getEOISEIOrigPicHeight();
+      }
+      else
+      {
+        sei->m_spatialResamplingTypeFlag = m_pcCfg->getEOISEISpatialResamplingTypeFlag();
+      }
+#else
       sei->m_spatialResamplingTypeFlag = m_pcCfg->getEOISEISpatialResamplingTypeFlag();
+#endif
     }
     if ((sei->m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
     {

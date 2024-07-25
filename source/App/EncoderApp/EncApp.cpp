@@ -1122,6 +1122,11 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setEOISEIObjectBasedIdc(m_eoiSEIObjectBasedIdc);
   m_cEncLib.setEOISEITemporalResamplingTypeFlag(m_eoiSEITemporalResamplingTypeFlag);
   m_cEncLib.setEOISEINumIntPics(m_eoiSEINumIntPics);
+#if JVET_AI0180
+  m_cEncLib.setEOISEIOrigPicDimensionsFlag(m_eoiSEIOrigPicDimensionsFlag);
+  m_cEncLib.setEOISEIOrigPicWidth(m_eoiSEIOrigPicWidth);
+  m_cEncLib.setEOISEIOrigPicHeight(m_eoiSEIOrigPicHeight);
+#endif
   m_cEncLib.setEOISEISpatialResamplingTypeFlag(m_eoiSEISpatialResamplingTypeFlag);
   m_cEncLib.setEOISEIPrivacyProtectionTypeIdc(m_eoiSEIPrivacyProtectionTypeIdc);
   m_cEncLib.setEOISEIPrivacyProtectedInfoType(m_eoiSEIPrivacyProtectedInfoType);

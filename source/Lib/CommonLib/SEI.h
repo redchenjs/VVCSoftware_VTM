@@ -1505,6 +1505,11 @@ public:
     , m_objectBasedIdc(0)
     , m_temporalResamplingTypeFlag(false)
     , m_numIntPics(0)
+ #if JVET_AI0180
+    , m_origPicDimensionsFlag(false)
+    , m_origPicWidth(0)
+    , m_origPicHeight(0)
+ #endif
     , m_spatialResamplingTypeFlag(false)
     , m_privacyProtectionTypeIdc(0)
     , m_privacyProtectedInfoType(0)
@@ -1521,6 +1526,11 @@ public:
   uint32_t m_objectBasedIdc;
   bool     m_temporalResamplingTypeFlag;
   uint32_t m_numIntPics;
+#if JVET_AI0180
+  bool     m_origPicDimensionsFlag;
+  uint32_t m_origPicWidth;
+  uint32_t m_origPicHeight;
+#endif
   bool     m_spatialResamplingTypeFlag;
   uint32_t m_privacyProtectionTypeIdc;
   uint32_t m_privacyProtectedInfoType;

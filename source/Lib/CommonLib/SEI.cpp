@@ -1149,6 +1149,11 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
   m_objectBasedIdc = sei.m_objectBasedIdc;
   m_temporalResamplingTypeFlag = sei.m_temporalResamplingTypeFlag;
   m_numIntPics = sei.m_numIntPics;
+#if JVET_AI0180
+  m_origPicDimensionsFlag = sei.m_origPicDimensionsFlag;
+  m_origPicWidth = sei.m_origPicWidth;
+  m_origPicHeight = sei.m_origPicHeight;
+#endif
   m_spatialResamplingTypeFlag = sei.m_spatialResamplingTypeFlag;
   m_privacyProtectionTypeIdc = sei.m_privacyProtectionTypeIdc;
   m_privacyProtectedInfoType = sei.m_privacyProtectedInfoType;

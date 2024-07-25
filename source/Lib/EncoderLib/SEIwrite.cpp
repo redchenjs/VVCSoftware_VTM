@@ -2006,7 +2006,20 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
     }
     if ((sei.m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
     {
+#if JVET_AI0180
+      xWriteFlag(sei.m_origPicDimensionsFlag, "eoi_orig_pic_dimensions_flag");
+      if (sei.m_origPicDimensionsFlag)
+      {
+        xWriteCode(sei.m_origPicWidth, 16, "eoi_orig_pic_width");
+        xWriteCode(sei.m_origPicHeight, 16, "eoi_orig_pic_height");
+      }
+      else
+      {
+        xWriteFlag(sei.m_spatialResamplingTypeFlag, "eoi_spatial_resampling_type_flag");
+      }
+#else
       xWriteFlag(sei.m_spatialResamplingTypeFlag, "eoi_spatial_resampling_type_flag");
+#endif
     }
     if ((sei.m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
     {

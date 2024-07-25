@@ -1882,8 +1882,25 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
 
     if ((sei.m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
     {
+#if JVET_AI0180
+      sei_read_flag(pDecodedMessageOutputStream, val, "eoi_orig_pic_dimensions_flag");
+      sei.m_origPicDimensionsFlag = val;
+      if (sei.m_origPicDimensionsFlag) 
+      {
+        sei_read_code(pDecodedMessageOutputStream, 16, val, "eoi_orig_pic_width");
+        sei.m_origPicWidth = val;
+        sei_read_code(pDecodedMessageOutputStream, 16, val, "eoi_orig_pic_height");
+        sei.m_origPicHeight = val;
+      }
+      else
+      {
+        sei_read_flag(pDecodedMessageOutputStream, val, "eoi_spatial_resampling_type_flag");
+        sei.m_spatialResamplingTypeFlag = val;
+      }
+#else
       sei_read_flag(pDecodedMessageOutputStream, val, "eoi_spatial_resampling_type_flag");
       sei.m_spatialResamplingTypeFlag = val;
+#endif
     }
     
     if ((sei.m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
