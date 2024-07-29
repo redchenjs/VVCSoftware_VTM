@@ -1600,19 +1600,22 @@ cabac_zero_word_padding(const Slice *const pcSlice,
       const std::size_t numberOfAdditionalBytesNeeded= std::max<std::size_t>(0, targetNumBytesInVclNalUnits - numBytesInVclNalUnits - numZeroWordsAlreadyInserted * 3);
       const std::size_t numberOfAdditionalCabacZeroWords=(numberOfAdditionalBytesNeeded+2)/3;
       const std::size_t numberOfAdditionalCabacZeroBytes=numberOfAdditionalCabacZeroWords*3;
-      if (cabacZeroWordPaddingEnabled)
+      if(numberOfAdditionalCabacZeroBytes > 0)
       {
-        std::vector<uint8_t> zeroBytesPadding(numberOfAdditionalCabacZeroBytes, uint8_t(0));
-        for(std::size_t i=0; i<numberOfAdditionalCabacZeroWords; i++)
+        if (cabacZeroWordPaddingEnabled)
         {
-          zeroBytesPadding[i*3+2]=3;  // 00 00 03
+          std::vector<uint8_t> zeroBytesPadding(numberOfAdditionalCabacZeroBytes, uint8_t(0));
+          for(std::size_t i=0; i<numberOfAdditionalCabacZeroWords; i++)
+          {
+            zeroBytesPadding[i*3+2]=3;  // 00 00 03
+          }
+          nalUnitData.write(reinterpret_cast<const char*>(&(zeroBytesPadding[0])), numberOfAdditionalCabacZeroBytes);
+          msg( NOTICE, "Adding %d bytes of padding\n", uint32_t( numberOfAdditionalCabacZeroWords * 3 ) );
         }
-        nalUnitData.write(reinterpret_cast<const char*>(&(zeroBytesPadding[0])), numberOfAdditionalCabacZeroBytes);
-        msg( NOTICE, "Adding %d bytes of padding\n", uint32_t( numberOfAdditionalCabacZeroWords * 3 ) );
-      }
-      else
-      {
-        msg( NOTICE, "Standard would normally require adding %d bytes of padding\n", uint32_t( numberOfAdditionalCabacZeroWords * 3 ) );
+        else
+        {
+          msg( NOTICE, "Standard would normally require adding %d bytes of padding\n", uint32_t( numberOfAdditionalCabacZeroWords * 3 ) );
+        }
       }
       return numberOfAdditionalCabacZeroWords;
     }
