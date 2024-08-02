@@ -1667,6 +1667,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   //Processing order of SEI (pos)
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
   ("SEIPOId",                                         m_poSEIId,                                            0u, "Specifies the id of the SEI processing order SEI message")
+#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
+  ("SEIPOForHumanViewingIdc",                         m_poSEIForHumanViewingIdc,                            0u, "Specifies the user viewing usage level of video resulting from processing chain specified by SPO SEI: optimal for human viewing (3), suitable (2), unsuitable (1), unknown (0, default)")
+  ("SEIPOForMachineAnalysisIdc",                      m_poSEIForMachineAnalysisIdc,                         0u, "Specifies the machine analysis usage level of video resulting from processing chain specified by SPO SEI: optimal for machine analysis (3), suitable (2), unsuitable (1), unknown (0, default)")
+#endif
   ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
 #if JVET_AI0073_BREADTH_FIRST_FLAG
   ("SEIPOBreadthFirstFlag",                           m_poSEIBreadthFirstFlag,                           false, "Specifies that breadth-first handling of processing chain is applied (1), or that either breadth-first or depth-first can be applied (0, default)")
@@ -1983,6 +1987,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream applicationPurposeTagUri;
     applicationPurposeTagUri << "SEINNPFCApplicationPurposeTagUri" << i;
     opts.addOptions()(applicationPurposeTagUri.str(), m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[i], std::string(""), "specifies a tag URI with syntax and semantics as specified in IETF RFC 4151 identifying the application determined purpose of the NNPF, when nnpfc_purpose is equal to 0.");
+#endif
+
+#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
+    std::ostringstream forHumanViewingIdc;
+    forHumanViewingIdc << "SEINNPFCForHumanViewingIdc" << i;
+    opts.addOptions()(forHumanViewingIdc.str(), m_nnPostFilterSEICharacteristicsForHumanViewingIdc[i], 0u, "Specifies the user viewing usage level of a neural-network post-filter: optimal for human viewing (3), suitable (2), unsuitable (1), unknown (0)");
+
+    std::ostringstream forMachineAnalysis;
+    forMachineAnalysis << "SEINNPFCForMachineAnalysisIdc" << i;
+    opts.addOptions()(forMachineAnalysis.str(), m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[i], 0u, "Specifies the machine analysis usage level of a neural-network post-filter: optimal for machine analysis (3), suitable (2), unsuitable (1), unknown (0)");
 #endif
 
     std::ostringstream uriTag;
@@ -5318,6 +5332,10 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsLumaPadding[i] > ((1 << m_inputBitDepth[ChannelType::LUMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthLuma - 1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsCbPadding[i] > ((1 << m_inputBitDepth[ChannelType::CHROMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthChroma - 1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsCrPadding[i] > ((1 << m_inputBitDepth[ChannelType::CHROMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthChroma - 1");
+#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
+      xConfirmPara(m_nnPostFilterSEICharacteristicsForHumanViewingIdc[i] > 3, "SEINNPFCForHumanViewingIdc must be in the range of 0 to 3");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[i] > 3, "SEINNPFCForMachineAnalysisIdc must be in the range of 0 to 3");
+#endif
     }
   }
 

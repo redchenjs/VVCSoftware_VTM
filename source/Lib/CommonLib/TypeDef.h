@@ -69,6 +69,8 @@
 
 #define JVET_AI0073_BREADTH_FIRST_FLAG 1 // Handling of a processing chain specified by an SPO SEI message
 
+#define JVET_AI0071_NNPFC_SPO_USAGE_IDCS 1  // Indication of the user viewing and/or machine analysis usage in the NNPFC and SPO SEI messages
+
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
