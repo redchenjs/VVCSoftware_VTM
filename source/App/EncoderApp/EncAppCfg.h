@@ -821,6 +821,9 @@ protected:
   bool                  m_poSEIEnabled;
   uint32_t              m_poSEIId;
   uint32_t              m_poSEINumMinus2;
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  bool                  m_poSEIBreadthFirstFlag;
+#endif
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
   std::vector<bool>     m_poSEIPrefixFlag;

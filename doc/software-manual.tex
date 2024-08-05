@@ -5988,6 +5988,10 @@ Specifies the id of the SEI processing order SEI message.
 \Default{0} &
 Specifies the number of SEIs minus 2 in SEI processing order SEI message. 
 \\
+\Option{SEIPOBreadthFirstFlag} &
+\Default{0} &
+Specifies that breadth-first handling of processing chain is applied (1), or that either breadth-first or depth-first can be applied (0, default).
+\\
 \Option{SEIPOWrappingFlag\emph{i}} &
 \Default{false} &
 Specifies whether the \emph{i}-th SEI message is (true) wrapped inside the SEI processing order SEI message or (false) present outside the SEI processing order SEI. For wrapped SEI, specifiy the SEI parameters after SEIPOPrefixByte

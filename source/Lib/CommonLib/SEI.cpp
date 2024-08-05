@@ -526,6 +526,9 @@ SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei
   m_posEnabled = sei.m_posEnabled;
   m_posId = sei.m_posId;
   m_posNumMinus2 = sei.m_posNumMinus2;
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  m_posBreadthFirstFlag = sei.m_posBreadthFirstFlag;
+#endif
   m_posWrappingFlag = sei.m_posWrappingFlag;
   m_posImportanceFlag = sei.m_posImportanceFlag;
   m_posPrefixFlag = sei.m_posPrefixFlag;
