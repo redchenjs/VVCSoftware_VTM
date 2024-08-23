@@ -2255,41 +2255,89 @@ void EncLib::xInitRPL(SPS &sps)
       // inter-layer reference picture is not signaled in SPS RPL, SPS is shared currently
       rpl->setNumberOfInterLayerPictures( 0 );
 
-      if (!getRplOfDepLayerInSh())
+      if (getExplicitILRP())
       {
-        bool isIntraLayerPredAllowed = getVPS() ? ((getVPS()->getIndependentLayerFlag(layerIdx) || (getVPS()->getPredDirection(ge.m_temporalId) != 1)) && ((m_intraPeriod < 0 && ge.m_POC != 0) || (ge.m_POC % m_intraPeriod) != 0)) : true;
-        bool isInterLayerPredAllowed = getVPS() ? (!getVPS()->getIndependentLayerFlag(layerIdx) && (getVPS()->getPredDirection(ge.m_temporalId) != 2) && ((m_intraPeriod < 0 && ge.m_POC != 0) || ((ge.m_POC % m_intraPeriod) != 0) || (getAvoidIntraInDepLayer() && layerIdx))) : false;
-
+        bool isIntraLayerPredAllowed = (getVPS() && !getRplOfDepLayerInSh()) ? ((m_intraPeriod < 0 && ge.m_POC != 0) || (ge.m_POC % m_intraPeriod) != 0) : true;
+        bool isInterLayerPredAllowed = (getVPS() && !getRplOfDepLayerInSh()) ? (!getVPS()->getIndependentLayerFlag(layerIdx) && ((m_intraPeriod < 0 && ge.m_POC != 0) || ((ge.m_POC % m_intraPeriod) != 0) || (getAvoidIntraInDepLayer() && layerIdx))) : false;
         int numRefActive = 0;
-        if (isIntraLayerPredAllowed)
-        {
-          for (int k = 0; k < ge.m_numRefPicsActive; k++)
-          {
-            rpl->setRefPicIdentifier(k, -ge.m_deltaRefPics[k], 0, false, 0);
-          }
-          numRefActive = ge.m_numRefPicsActive;
-        }
         int validNumILRef = 0;
-        if (isInterLayerPredAllowed)
+        for (int k = 0; k < ge.m_numRefPicsActive; k++)
         {
-          for (int refLayerIdx : refLayersIdx)
+          if (ge.m_deltaRefPics[k]==0 && ge.m_layerRef[k]!=-1)
           {
-            rpl->setRefPicIdentifier(numRefActive + validNumILRef, 0, true, true, m_vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
-            validNumILRef++;
+            if(isInterLayerPredAllowed)
+            {
+              for (int refLayerIdx: refLayersIdx)
+              {
+                if (refLayerIdx == ge.m_layerRef[k])
+                {
+                  rpl->setRefPicIdentifier(numRefActive, 0, true, true, m_vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
+                  numRefActive++;
+                  validNumILRef++;
+                  break;
+                }
+              }
+            }
           }
-          rpl->setNumberOfInterLayerPictures(validNumILRef);
-          rpl->setNumberOfActivePictures(numRefActive + validNumILRef);
+          else if(isIntraLayerPredAllowed)
+          {
+            rpl->setRefPicIdentifier(numRefActive, -ge.m_deltaRefPics[k], 0, false, 0);
+            numRefActive++;
+          }
         }
-        for (int k = numRefActive; k < ge.m_numRefPics; k++)
+        rpl->setNumberOfInterLayerPictures(validNumILRef);
+        rpl->setNumberOfActivePictures(numRefActive);
+        //Add non active intra layer ref pics
+        int numRefInactive = 0;
+        int inactiveStart = isIntraLayerPredAllowed ? ge.m_numRefPicsActive : 0;
+        for (int k = inactiveStart; k < ge.m_numRefPics; k++)
         {
-          rpl->setRefPicIdentifier(k + validNumILRef, -ge.m_deltaRefPics[k], 0, false, 0);
+          if (!(ge.m_deltaRefPics[k]==0 && ge.m_layerRef[k]!=-1))
+          {
+            rpl->setRefPicIdentifier(numRefActive+numRefInactive, -ge.m_deltaRefPics[k], 0, false, 0);
+            numRefInactive++;
+          }
         }
+        rpl->setNumberOfShorttermPictures(numRefActive-validNumILRef+numRefInactive);
       }
       else
       {
-        for (int k = 0; k < ge.m_numRefPics; k++)
+        if (!getRplOfDepLayerInSh())
         {
-          rpl->setRefPicIdentifier(k, -ge.m_deltaRefPics[k], 0, false, 0);
+          bool isIntraLayerPredAllowed = getVPS() ? ((getVPS()->getIndependentLayerFlag(layerIdx) || (getVPS()->getPredDirection(ge.m_temporalId) != 1)) && ((m_intraPeriod < 0 && ge.m_POC != 0) || (ge.m_POC % m_intraPeriod) != 0)) : true;
+          bool isInterLayerPredAllowed = getVPS() ? (!getVPS()->getIndependentLayerFlag(layerIdx) && (getVPS()->getPredDirection(ge.m_temporalId) != 2) && ((m_intraPeriod < 0 && ge.m_POC != 0) || ((ge.m_POC % m_intraPeriod) != 0) || (getAvoidIntraInDepLayer() && layerIdx))) : false;
+   
+          int numRefActive = 0;
+          if (isIntraLayerPredAllowed)
+          {
+            for (int k = 0; k < ge.m_numRefPicsActive; k++)
+            {
+              rpl->setRefPicIdentifier(k, -ge.m_deltaRefPics[k], 0, false, 0);
+            }
+            numRefActive = ge.m_numRefPicsActive;
+          }
+          int validNumILRef = 0;
+          if (isInterLayerPredAllowed)
+          {
+            for (int refLayerIdx : refLayersIdx)
+            {
+              rpl->setRefPicIdentifier(numRefActive + validNumILRef, 0, true, true, m_vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
+              validNumILRef++;
+            }
+            rpl->setNumberOfInterLayerPictures(validNumILRef);
+            rpl->setNumberOfActivePictures(numRefActive + validNumILRef);
+          }
+          for (int k = numRefActive; k < ge.m_numRefPics; k++)
+          {
+            rpl->setRefPicIdentifier(k + validNumILRef, -ge.m_deltaRefPics[k], 0, false, 0);
+          }
+        }
+        else
+        {
+          for (int k = 0; k < ge.m_numRefPics; k++)
+          {
+            rpl->setRefPicIdentifier(k, -ge.m_deltaRefPics[k], 0, false, 0);
+          }
         }
       }
     }

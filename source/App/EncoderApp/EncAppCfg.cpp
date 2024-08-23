@@ -138,15 +138,42 @@ std::istringstream &operator>>(std::istringstream &in, GOPEntry &entry)     //in
   in>>entry.m_temporalId;
   in >> entry.m_numRefPicsActive0;
   in >> entry.m_numRefPics0;
+
+  char c;
   for (int i = 0; i < entry.m_numRefPics0; i++)
   {
     in >> entry.m_deltaRefPics0[i];
+    if (in.rdbuf()->in_avail())
+    {
+      c = in.get();
+      if (c == '.')
+      {
+        in >> entry.m_layerRef0[i];
+      }
+      else
+      {
+        in.unget();
+      }
+    }
   }
   in >> entry.m_numRefPicsActive1;
   in >> entry.m_numRefPics1;
+
   for (int i = 0; i < entry.m_numRefPics1; i++)
   {
     in >> entry.m_deltaRefPics1[i];
+    if (in.rdbuf()->in_avail())
+    {
+      c = in.get();
+      if (c == '.')
+      {
+        in >> entry.m_layerRef1[i];
+      }
+      else
+      {
+        in.unget();
+      }
+    }
   }
 
   return in;
@@ -1739,6 +1766,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "AvoidIntraInDepLayers",                          m_avoidIntraInDepLayer,                    true, "Replaces I pictures in dependent layers with B pictures" )
   ( "MaxTidILRefPicsPlusOneLayerId%d",                m_maxTidILRefPicsPlus1Str, std::string(""), MAX_VPS_LAYERS, "Maximum temporal ID for inter-layer reference pictures plus 1 of i-th layer, 0 for IRAP only")
   ( "RPLofDepLayerInSH",                              m_rplOfDepLayerInSh,                      false, "define Reference picture lists in slice header instead of SPS for dependant layers")
+  ( "ExplicitILRP",                                   m_explicitILRP,                           false, "Explicitly define Inter-Layer Reference pictures in GOP entry")
     ;
 
   opts.addOptions()
@@ -2210,6 +2238,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_RPLList0[i].m_deltaRefPics[j] = m_GOPList[i].m_deltaRefPics0[j];
     for (int j = 0; j < m_GOPList[i].m_numRefPics1; j++)
       m_RPLList1[i].m_deltaRefPics[j] = m_GOPList[i].m_deltaRefPics1[j];
+    for (int j = 0; j < MAX_NUM_REF_PICS; j++)
+    {
+      m_RPLList0[i].m_layerRef[j]  = m_GOPList[i].m_layerRef0[j];
+      m_RPLList1[i].m_layerRef[j]  = m_GOPList[i].m_layerRef1[j];
+    }
   }
 
   if (m_compositeRefEnabled)
@@ -4410,7 +4443,35 @@ bool EncAppCfg::xCheckParameter()
 #endif
 
   xConfirmPara( m_maxSublayers < 1 || m_maxSublayers > 7, "MaxSublayers must be in range [1..7]" );
+  xConfirmPara( m_explicitILRP && m_allIndependentLayersFlag, "AllIndependentLayersFlag cannot be 1 when ExplicitILRP is enabled" );
+  if (m_explicitILRP)
+  {
+    for (int i = 0; i < m_predDirectionArray.size(); i++)
+    {
+      if (m_predDirectionArray[i] != ' ')
+      {
+        xConfirmPara( m_predDirectionArray[i] != '0', "AllowablePredDirection should be 0 for all temporal layers when ExplicitILRP is enabled" );
+      }
+    }
+  }
 
+  bool nonZeroDeltaPOC_ILRP = false;
+  bool usingExplicit_ILRP = false;
+
+  for (int i = 0; m_GOPList[i].m_POC != -1 && i < MAX_GOP; i++)
+  {
+    for (int j = 0; j < m_GOPList[i].m_numRefPics0; j++)
+    {
+      nonZeroDeltaPOC_ILRP |= m_RPLList0[i].m_layerRef[j] != -1 && m_RPLList0[i].m_deltaRefPics[j] != 0;
+      nonZeroDeltaPOC_ILRP |= m_RPLList1[i].m_layerRef[j] != -1 && m_RPLList1[i].m_deltaRefPics[j] != 0;
+      usingExplicit_ILRP |= m_RPLList0[i].m_layerRef[j] != -1 || m_RPLList1[i].m_layerRef[j] != -1;
+    }
+  }
+  xConfirmPara(nonZeroDeltaPOC_ILRP, "For ExplicitILRP, Inter-Layer Reference pictures can only have same POC as current frame (delta POC=0)");
+  if (!m_explicitILRP)
+  {
+    xConfirmPara(usingExplicit_ILRP, "Cannot specify inter-layer reference pictures in GOP entry when ExplicitILRP is disabled.");
+  }
 
   xConfirmPara( m_fastLocalDualTreeMode < 0 || m_fastLocalDualTreeMode > 2, "FastLocalDualTreeMode must be in range [0..2]" );
 
@@ -4459,6 +4520,10 @@ bool EncAppCfg::xCheckParameter()
                 }
               }
             }
+            if (curPOC == refPoc && m_RPLList0[rplIdx].m_layerRef[i]!=-1)
+            {
+              found = true;
+            }
           }
           if (!found)
           {
@@ -4497,6 +4562,7 @@ bool EncAppCfg::xCheckParameter()
           if (refPoc >= 0)
           {
             m_RPLList0[newRplIdx].m_deltaRefPics[newRefs0] = m_RPLList0[rplIdx].m_deltaRefPics[i];
+            m_RPLList0[newRplIdx].m_layerRef[newRefs0] = m_RPLList0[rplIdx].m_layerRef[i];
             newRefs0++;
             newActiveRefs0 += i < m_RPLList0[rplIdx].m_numRefPicsActive ? 1 : 0;
           }
@@ -4511,6 +4577,7 @@ bool EncAppCfg::xCheckParameter()
           if (refPoc >= 0)
           {
             m_RPLList1[m_gopSize + extraRPLs].m_deltaRefPics[newRefs1] = m_RPLList1[rplIdx].m_deltaRefPics[i];
+            m_RPLList1[m_gopSize + extraRPLs].m_layerRef[newRefs0] = m_RPLList1[rplIdx].m_layerRef[i];
             newRefs1++;
             newActiveRefs1 += i < m_RPLList1[rplIdx].m_numRefPicsActive ? 1 : 0;
           }
@@ -4550,11 +4617,13 @@ bool EncAppCfg::xCheckParameter()
                 }
               }
               int prev = newDeltaPoc;
+              int prevLayerRef = -1; // inserted picture should not be an inter-layer
               newRefs0++;
               newActiveRefs0++;
               for (int j = insertPoint; j < newRefs0; j++)
               {
                 std::swap(prev, m_RPLList0[newRplIdx].m_deltaRefPics[j]);
+                std::swap(prevLayerRef, m_RPLList0[newRplIdx].m_layerRef[j]);
               }
             }
           }
@@ -4597,11 +4666,13 @@ bool EncAppCfg::xCheckParameter()
                 }
               }
               int prev = newDeltaPoc;
+              int prevLayerRef = -1; // inserted picture should not be an inter-layer
               newRefs1++;
               newActiveRefs1++;
               for (int j = insertPoint; j < newRefs1; j++)
               {
                 std::swap(prev, m_RPLList1[newRplIdx].m_deltaRefPics[j]);
+                std::swap(prevLayerRef, m_RPLList1[newRplIdx].m_layerRef[j]);
               }
             }
           }
@@ -4666,9 +4737,18 @@ bool EncAppCfg::xCheckParameter()
   }
   for (int i = 0; i < m_gopSize; i++)
   {
+
     int numRefPic = m_RPLList0[i].m_numRefPics;
+    for (int tmp = 0; tmp < m_RPLList0[i].m_numRefPics; tmp++)
+    {
+      if (m_RPLList0[i].m_deltaRefPics[tmp]==0 && m_RPLList0[i].m_layerRef[tmp]!=-1)
+      {
+      	numRefPic--; //Inter-layer ref pic already in DPB for ref layer, do not count it for current layer.
+      }
+    }
     for (int tmp = 0; tmp < m_RPLList1[i].m_numRefPics; tmp++)
     {
+      if (m_RPLList1[i].m_deltaRefPics[tmp]==0 && m_RPLList1[i].m_layerRef[tmp]!=-1) continue; //Inter-layer ref pic already in DPB for ref layer, do not count it for current layer.
       bool notSame = true;
       for (int jj = 0; notSame && jj < m_RPLList0[i].m_numRefPics; jj++)
       {

@@ -1054,6 +1054,7 @@ protected:
   bool        m_defaultPtlDpbHrdMaxTidFlag;
   bool        m_allIndependentLayersFlag;
   std::string m_predDirectionArray;
+  bool        m_explicitILRP;
 
   int         m_numRefLayers[MAX_VPS_LAYERS];
   std::string m_refLayerIdxStr[MAX_VPS_LAYERS];
