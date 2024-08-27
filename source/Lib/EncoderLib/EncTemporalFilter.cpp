@@ -81,6 +81,8 @@ const int EncTemporalFilter::m_cuTreeThresh[4] =
 EncTemporalFilter::EncTemporalFilter()
   : m_frameSkip(0)
   , m_chromaFormatIdc(ChromaFormat::UNDEFINED)
+  , m_sourceWidthBeforeScale(0)
+  , m_sourceHeightBeforeScale(0)
   , m_sourceWidth(0)
   , m_sourceHeight(0)
   , m_QP(0)
@@ -91,6 +93,8 @@ EncTemporalFilter::EncTemporalFilter()
 void EncTemporalFilter::init(const int frameSkip, const BitDepths &inputBitDepth, const BitDepths &msbExtendedBitDepth,
                              const BitDepths &internalBitDepth, const int width, const int height, const int *pad,
                              const bool rec709, const std::string &filename, const ChromaFormat inputChromaFormatIDC,
+                             const int sourceWidthBeforeScale, const int sourceHeightBeforeScale,
+                             const int sourceHorCollocatedChromaFlag, const int sourceVerCollocatedChromaFlag, 
                              const InputColourSpaceConversion colorSpaceConv, const int qp,
                              const std::map<int, double> &temporalFilterStrengths, const int pastRefs,
                              const int futureRefs, const int firstValidFrame, const int lastValidFrame,
@@ -111,6 +115,10 @@ void EncTemporalFilter::init(const int frameSkip, const BitDepths &inputBitDepth
   m_clipInputVideoToRec709Range = rec709;
   m_inputFileName               = filename;
   m_chromaFormatIdc             = inputChromaFormatIDC;
+  m_sourceWidthBeforeScale = sourceWidthBeforeScale;
+  m_sourceHeightBeforeScale = sourceHeightBeforeScale;
+  m_sourceHorCollocatedChromaFlag = sourceHorCollocatedChromaFlag;
+  m_sourceVerCollocatedChromaFlag = sourceVerCollocatedChromaFlag;
   m_inputColourSpaceConvert = colorSpaceConv;
   m_area = Area(0, 0, width, height);
   m_QP   = qp;
@@ -155,7 +163,14 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
     const int  lastFrame      = std::min(currentFilePoc + m_futureRefs, m_lastValidFrame);
     VideoIOYuv yuvFrames;
     yuvFrames.open(m_inputFileName, false, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth);
-    yuvFrames.skipFrames(firstFrame, m_sourceWidth - m_pad[0], m_sourceHeight - m_pad[1], m_chromaFormatIdc);
+    if (m_sourceWidthBeforeScale != 0 && m_sourceHeightBeforeScale != 0)
+    {
+      yuvFrames.skipFrames(firstFrame, m_sourceWidthBeforeScale, m_sourceHeightBeforeScale, m_chromaFormatIdc);
+    }
+    else
+    {
+      yuvFrames.skipFrames(firstFrame, m_sourceWidth - m_pad[0], m_sourceHeight - m_pad[1], m_chromaFormatIdc);
+    }
 
     std::deque<TemporalFilterSourcePicInfo> srcFrameInfo;
 
@@ -177,7 +192,14 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
     {
       if (poc == currentFilePoc)
       { // hop over frame that will be filtered
-        yuvFrames.skipFrames(1, m_sourceWidth - m_pad[0], m_sourceHeight - m_pad[1], m_chromaFormatIdc);
+        if (m_sourceWidthBeforeScale != 0 && m_sourceHeightBeforeScale != 0)
+        {
+          yuvFrames.skipFrames(1, m_sourceWidthBeforeScale, m_sourceHeightBeforeScale, m_chromaFormatIdc);
+        }
+        else
+        {
+          yuvFrames.skipFrames(1, m_sourceWidth - m_pad[0], m_sourceHeight - m_pad[1], m_chromaFormatIdc);
+        }
         continue;
       }
       srcFrameInfo.push_back(TemporalFilterSourcePicInfo());
@@ -185,9 +207,41 @@ bool EncTemporalFilter::filter(PelStorage *orgPic, int receivedPoc)
 
       PelStorage dummyPicBufferTO; // Only used temporary in yuvFrames.read
       srcPic.picBuffer.create(m_chromaFormatIdc, m_area, 0, m_padding);
-      dummyPicBufferTO.create(m_chromaFormatIdc, m_area, 0, m_padding);
-      if (!yuvFrames.read(srcPic.picBuffer, dummyPicBufferTO, m_inputColourSpaceConvert, m_pad, m_chromaFormatIdc,
-                          m_clipInputVideoToRec709Range))
+      bool readOk = false;
+      if (m_sourceWidthBeforeScale != 0 && m_sourceHeightBeforeScale != 0)
+      {
+        Area areaPrescale(0, 0, m_sourceWidthBeforeScale, m_sourceHeightBeforeScale);
+        PelStorage m_orgPicBeforeScale;
+        m_orgPicBeforeScale.create(m_chromaFormatIdc, areaPrescale, 0, m_padding);
+        dummyPicBufferTO.create(m_chromaFormatIdc, areaPrescale, 0, m_padding);
+        readOk = yuvFrames.read(m_orgPicBeforeScale, dummyPicBufferTO, m_inputColourSpaceConvert, m_pad, m_chromaFormatIdc,
+          m_clipInputVideoToRec709Range);
+        if (readOk)
+        {
+          int w0 = m_sourceWidthBeforeScale;
+          int h0 = m_sourceHeightBeforeScale;
+          int w1 = m_sourceWidth - m_pad[0];
+          int h1 = m_sourceHeight - m_pad[1];
+          int xScale = ((w0 << ScalingRatio::BITS) + (w1 >> 1)) / w1;
+          int yScale = ((h0 << ScalingRatio::BITS) + (h1 >> 1)) / h1;
+          ScalingRatio scalingRatio = { xScale, yScale };
+          Window conformanceWindow1(0, m_pad[0] / SPS::getWinUnitX(m_chromaFormatIdc), 0, m_pad[1] / SPS::getWinUnitY(m_chromaFormatIdc));
+
+          bool downsampling = (m_sourceWidthBeforeScale > m_sourceWidth) || (m_sourceHeightBeforeScale > m_sourceHeight);
+          bool useLumaFilter = downsampling;
+          Picture::rescalePicture(scalingRatio, m_orgPicBeforeScale, Window(), srcPic.picBuffer, conformanceWindow1,
+            m_chromaFormatIdc, m_internalBitDepth, useLumaFilter, downsampling,
+            m_sourceHorCollocatedChromaFlag != 0, m_sourceVerCollocatedChromaFlag != 0);
+        }
+      }
+      else
+      {
+        dummyPicBufferTO.create(m_chromaFormatIdc, m_area, 0, m_padding);
+        readOk = yuvFrames.read(srcPic.picBuffer, dummyPicBufferTO, m_inputColourSpaceConvert, m_pad, m_chromaFormatIdc,
+          m_clipInputVideoToRec709Range);
+      }
+
+      if(!readOk)
       {
         // eof or read fail
         srcPic.picBuffer.destroy();
