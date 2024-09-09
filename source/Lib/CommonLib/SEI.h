@@ -580,9 +580,8 @@ public:
   PayloadType payloadType() const { return PayloadType::USER_DATA_UNREGISTERED; }
 
   SEIuserDataUnregistered()
-    : userData(nullptr)
     {}
-    SEIuserDataUnregistered(const SEIuserDataUnregistered& sei);
+  SEIuserDataUnregistered(const SEIuserDataUnregistered& sei);
 
   virtual ~SEIuserDataUnregistered()
   {
@@ -591,7 +590,7 @@ public:
 
   uint8_t uuid_iso_iec_11578[ISO_IEC_11578_LEN];
   uint32_t  userDataLength;
-  uint8_t *userData;
+  uint8_t *userData = nullptr;
 };
 
 class SEIDecodedPictureHash : public SEI
