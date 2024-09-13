@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -168,7 +168,7 @@ void PPS::resetTileSliceInfo()
 // initialize tile row/column sizes and boundaries
 void PPS::initTiles()
 {
-  int       colIdx, rowIdx;
+  TileIdx   colIdx, rowIdx;
   int       ctuX, ctuY;
 
   // check explicit tile column sizes
@@ -260,7 +260,7 @@ void PPS::initRectSlices()
 void PPS::initRectSliceMap(const SPS  *sps)
 {
   uint32_t  ctuY;
-  uint32_t  tileX, tileY;
+  TileIdx   tileX, tileY;
 
   if (sps)
   {
@@ -589,7 +589,7 @@ uint32_t PPS::getSubPicIdxFromSubPicId(const uint32_t subPicId) const
 
 void PPS::initRasterSliceMap(const std::vector<uint32_t> &numTilesInSlice )
 {
-  uint32_t tileIdx = 0;
+  TileIdx tileIdx = 0;
   setNumSlicesInPic( (uint32_t) numTilesInSlice.size() );
 
   // allocate new memory for slice list
@@ -601,10 +601,10 @@ void PPS::initRasterSliceMap(const std::vector<uint32_t> &numTilesInSlice )
     m_sliceMap[sliceIdx].initSliceMap();
     m_sliceMap[sliceIdx].setSliceID( tileIdx );
     m_sliceMap[sliceIdx].setNumTilesInSlice( numTilesInSlice[sliceIdx] );
-    for( uint32_t idx = 0; idx < numTilesInSlice[sliceIdx]; idx++ )
+    for( TileIdx idx = 0; idx < numTilesInSlice[sliceIdx]; idx++ )
     {
-      uint32_t tileX = tileIdx % getNumTileColumns();
-      uint32_t tileY = tileIdx / getNumTileColumns();
+      TileIdx tileX = tileIdx % getNumTileColumns();
+      TileIdx tileY = tileIdx / getNumTileColumns();
       CHECK(tileY >= getNumTileRows(), "Number of tiles in slice exceeds the remaining number of tiles in picture");
 
       m_sliceMap[sliceIdx].addCtusToSlice(getTileColumnBd(tileX), getTileColumnBd(tileX + 1),

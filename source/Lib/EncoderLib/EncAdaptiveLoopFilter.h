@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -249,6 +249,11 @@ struct AlfCovariance
   {
     return calculateError(clip, coeff, numCoeff);
   }
+
+  void calcInitErrorForCoeffs(double *cAc, double *cA, double *bc, const AlfClipIdx *clip, const AlfCoeff *coeff, const int numCoeff, const int fractionalBits) const;
+  void updateErrorForCoeffsDelta(double *cAc, double *cA, double *bc, const AlfClipIdx *clip, const AlfCoeff *coeff, const int numCoeff, double delta, int modInd) const;
+  double calcErrorForCoeffsDelta(double cAc, double *cA, double bc, const AlfClipIdx *clip, const AlfCoeff *coeff, const int numCoeff, double delta, int modInd) const;
+
   double calculateError(const AlfClipIdx* clip, const double* coeff, const int numCoeff) const;
   double calcErrorForCoeffs(const AlfClipIdx* clip, const AlfCoeff* coeff, const int numCoeff,
                             const int fractionalBits) const;
@@ -349,6 +354,9 @@ public:
               const BitDepths& internalBitDepth);
   void destroy();
   void setApsIdStart( int i) { m_apsIdStart = i; }
+  bool m_lumaNewAps;
+  double m_lambdaFactor;
+  void setLambdaFactor( CodingStructure &cs, const int chromaHisApsNums, const bool m_lumaNewAps){ m_lambdaFactor = (cs.sps->getALFOptEnabledFlag() && chromaHisApsNums < ALF_HISAPSNUM_LIMITED && cs.slice->getSliceType() != I_SLICE && m_lumaNewAps == 1) ? ALF_CHROMA_LAMBDA_SCALE_LOW : 1.0 ;};
 
 private:
   void firstPass(CodingStructure &cs, AlfParam &alfParam, const PelUnitBuf &orgUnitBuf, const PelUnitBuf &recExtBuf,

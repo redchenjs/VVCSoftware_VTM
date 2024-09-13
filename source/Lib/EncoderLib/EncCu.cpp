@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -97,7 +97,8 @@ void EncCu::create( EncCfg* encCfg )
       unsigned width  = gp_sizeIdxInfo->sizeFrom( w );
       unsigned height = gp_sizeIdxInfo->sizeFrom( h );
 
-      if( gp_sizeIdxInfo->isCuSize( width ) && gp_sizeIdxInfo->isCuSize( height ) )
+      if( gp_sizeIdxInfo->isCuSize( width ) && gp_sizeIdxInfo->isCuSize( height ) 
+        && width <= uiMaxWidth && height <= uiMaxHeight)
       {
         m_pTempCS[w][h] = new CodingStructure(m_unitPool);
         m_pBestCS[w][h] = new CodingStructure(m_unitPool);
@@ -536,6 +537,13 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
   const UnitArea currCsArea = clipArea( CS::getArea( *bestCS, bestCS->area, partitioner.chType ), *tempCS->picture );
 
   tempCS->splitRdCostBest = nullptr;
+#if JVET_AH0078_DPF
+  if (m_pcEncCfg->getDPF())
+  {
+    m_modeCtrl->setCurrCsArea(currCsArea);
+    m_modeCtrl->setQpCtu(m_pcSliceEncoder->getQpCtu());
+  }
+#endif
   m_modeCtrl->initCULevel( partitioner, *tempCS );
 #if GDR_ENABLED
   if (m_pcEncCfg->getGdrEnabled())
@@ -830,7 +838,6 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
       {
         xCheckRDCostIntra(tempCS, bestCS, partitioner, currTestMode, false);
       }
-#if JVET_AE0057_MTT_ET
       if (partitioner.currQtDepth == 1 && partitioner.currBtDepth == 0 && partitioner.currArea().lwidth() == 64
           && partitioner.currArea().lheight() == 64)
       {
@@ -841,7 +848,6 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
           m_modeCtrl->setNoSplitIntraCost(bestCS->cost);
         }
       }
-#endif
 
       splitRdCostBest[CTU_LEVEL] = bestCS->cost;
       tempCS->splitRdCostBest = splitRdCostBest;
@@ -1214,7 +1220,6 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
       CodingStructure *tempSubCS = m_pTempCS[wIdx][hIdx];
       CodingStructure *bestSubCS = m_pBestCS[wIdx][hIdx];
 
-#if JVET_AE0057_MTT_ET
       if (partitioner.currQtDepth == 1 && partitioner.currBtDepth == 0 && partitioner.currArea().lwidth() == 64
           && partitioner.currArea().lheight() == 64)
       {
@@ -1225,7 +1230,6 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
           m_modeCtrl->setNoSplitIntraCost(0.0);
         }
       }
-#endif 
       tempCS->initSubStructure( *tempSubCS, partitioner.chType, subCUArea, false );
       tempCS->initSubStructure( *bestSubCS, partitioner.chType, subCUArea, false );
       tempSubCS->bestParent = bestSubCS->bestParent = bestCS;
@@ -1251,7 +1255,18 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
       }
 
       bool keepResi = KEEP_PRED_AND_RESI_SIGNALS;
+#if JVET_AH0078_DPF
+      if (m_pcEncCfg->getDPF())
+      {
+        tempCS->useSubStructure(*bestSubCS, partitioner.chType, CS::getArea(*tempCS, subCUArea, partitioner.chType), true, true, keepResi, keepResi, true);
+      }
+      else
+      {
+        tempCS->useSubStructure(*bestSubCS, partitioner.chType, CS::getArea(*tempCS, subCUArea, partitioner.chType), KEEP_PRED_AND_RESI_SIGNALS, true, keepResi, keepResi, true);
+      }
+#else
       tempCS->useSubStructure( *bestSubCS, partitioner.chType, CS::getArea( *tempCS, subCUArea, partitioner.chType ), KEEP_PRED_AND_RESI_SIGNALS, true, keepResi, keepResi, true );
+#endif
 
       if( partitioner.currQgEnable() )
       {
@@ -2219,9 +2234,7 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
   // As CIIP may be reset to regular merge when no residuals, dmvrL0mvd cannot be put into mergeItem
   Mv dmvrL0Mvd[MRG_MAX_NUM_CANDS][MAX_NUM_SUBCU_DMVR];
   const int   numDmvrMvd = getDmvrMvdNum(*pu);
-#if JVET_AD0045
   bool dmvrImpreciseMv[MRG_MAX_NUM_CANDS] = { 0,0,0,0,0,0};
-#endif
   const double sqrtLambdaForFirstPass = m_pcRdCost->getMotionLambda() * FRAC_BITS_SCALE;
 
   const UnitArea localUnitArea(tempCS->area.chromaFormat, Area(0, 0, tempCS->area.Y().width, tempCS->area.Y().height));
@@ -2273,13 +2286,8 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
   // the third arguments to setDistParam is dummy and will be updated before being used
   m_pcRdCost->setDistParam(distParam, tempCS->getOrgBuf().Y(), tempCS->getOrgBuf().Y(), sps.getBitDepth(ChannelType::LUMA), COMPONENT_Y, bUseHadamard);
 
-#if JVET_AD0045
   addRegularCandsToPruningList(mergeCtx, localUnitArea, sqrtLambdaForFirstPass, ctxStart, numDmvrMvd, dmvrL0Mvd, dmvrImpreciseMv, mrgPredBufNoCiip,
     mrgPredBufNoMvRefine, distParam, pu);
-#else
-  addRegularCandsToPruningList(mergeCtx, localUnitArea, sqrtLambdaForFirstPass, ctxStart, numDmvrMvd, dmvrL0Mvd, mrgPredBufNoCiip,
-    mrgPredBufNoMvRefine, distParam, pu);
-#endif
   // CIIP needs to be checked right after regular merge as the checking is based on the best 4 regular merge cand in the mergeItemList
   if (isIntrainterEnabled)
   {
@@ -2334,9 +2342,7 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
       }
 
       pu = getPuForInterPrediction(tempCS);
-#if JVET_AD0045
       pu->dmvrImpreciseMv = false;
-#endif
       partitioner.setCUData(*pu->cu);
       const bool resetCiip2Regular = mergeItem->exportMergeInfo(*pu, forceNoResidual);
 
@@ -2393,14 +2399,12 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
       {
         CHECK(mergeItem->mergeIdx >= MRG_MAX_NUM_CANDS, "Wrong DMVR flag");
         std::copy_n(dmvrL0Mvd[mergeItem->mergeIdx], numDmvrMvd, pu->mvdL0SubPu);
-#if JVET_AD0045
         pu->dmvrImpreciseMv = dmvrImpreciseMv[mergeItem->mergeIdx];
         if (pu->dmvrImpreciseMv)
         {
           tempCS->initStructData(encTestMode.qp);
           continue;
         }
-#endif
       }
       if (!pu->cu->mmvdSkip && !pu->ciipFlag && !pu->cu->affine && !pu->cu->geoFlag && noResidualPass != 0)
       {
@@ -2885,6 +2889,8 @@ double EncCu::calcLumaCost4MergePrediction(const TempCtx& ctxStart, const PelUni
 
 unsigned int EncCu::updateRdCheckingNum(double threshold, unsigned int numMergeSatdCand)
 {
+  numMergeSatdCand = std::min(numMergeSatdCand, (unsigned int) m_mergeItemList.size());
+
   for (uint32_t i = 0; i < numMergeSatdCand; i++)
   {
     const auto mergeItem = m_mergeItemList.getMergeItemInList(i);
@@ -2929,17 +2935,10 @@ void EncCu::checkEarlySkip(const CodingStructure* bestCS, const Partitioner &par
 }
 
 template <size_t N>
-#if JVET_AD0045
 void EncCu::addRegularCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& localUnitArea, double sqrtLambdaForFirstPassIntra,
   const TempCtx& ctxStart, int numDmvrMvd, Mv dmvrL0Mvd[MRG_MAX_NUM_CANDS][MAX_NUM_SUBCU_DMVR], bool dmvrImpreciseMv[MRG_MAX_NUM_CANDS],
   PelUnitBufVector<N>& mrgPredBufNoCiip, PelUnitBufVector<N>& mrgPredBufNoMvRefine, DistParam& distParam, PredictionUnit* pu)
-#else
-void EncCu::addRegularCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& localUnitArea, double sqrtLambdaForFirstPassIntra,
-  const TempCtx& ctxStart, int numDmvrMvd, Mv dmvrL0Mvd[MRG_MAX_NUM_CANDS][MAX_NUM_SUBCU_DMVR],
-  PelUnitBufVector<N>& mrgPredBufNoCiip, PelUnitBufVector<N>& mrgPredBufNoMvRefine, DistParam& distParam, PredictionUnit* pu)
-#endif
 {
-#if JVET_AD0045
   // only set this to true when cfg, size, tid, framerate all fulfilled
   const bool enableVisualCheck = (m_pcEncCfg->getFrameRate().getFloatVal() <= DMVR_ENC_SELECT_FRAME_RATE_THR
                                   || !m_pcEncCfg->getDMVREncMvSelectDisableHighestTemporalLayer()
@@ -2948,12 +2947,9 @@ void EncCu::addRegularCandsToPruningList(const MergeCtx& mergeCtx, const UnitAre
                                  && pu->lumaSize().width >= DMVR_ENC_SELECT_SIZE_THR
                                  && pu->lumaSize().height >= DMVR_ENC_SELECT_SIZE_THR;
   m_pcInterSearch->xDmvrSetEncoderCheckFlag(enableVisualCheck);
-#endif
   for (uint32_t uiMergeCand = 0; uiMergeCand < mergeCtx.numValidMergeCand; uiMergeCand++)
   {
-#if JVET_AD0045
     pu->dmvrImpreciseMv = false;
-#endif
     MergeItem* regularMerge = m_mergeItemList.allocateNewMergeItem();
     regularMerge->importMergeInfo(mergeCtx, uiMergeCand, MergeItem::MergeItemType::REGULAR, *pu);
     auto dstBuf = regularMerge->getPredBuf(localUnitArea);
@@ -2966,19 +2962,15 @@ void EncCu::addRegularCandsToPruningList(const MergeCtx& mergeCtx, const UnitAre
     if (PU::checkDMVRCondition(*pu))
     {
       std::copy_n(pu->mvdL0SubPu, numDmvrMvd, dmvrL0Mvd[regularMerge->mergeIdx]);
-#if JVET_AD0045
       dmvrImpreciseMv[regularMerge->mergeIdx] = enableVisualCheck ? pu->dmvrImpreciseMv : false;
       if (enableVisualCheck && pu->dmvrImpreciseMv)
       {
         regularMerge->cost = MAX_DOUBLE;
       }
-#endif
     }
     m_mergeItemList.insertMergeItemToList(regularMerge);
   }
-#if JVET_AD0045
   m_pcInterSearch->xDmvrSetEncoderCheckFlag(false);
-#endif
 }
 
 template <size_t N>
@@ -3041,12 +3033,11 @@ void EncCu::addMmvdCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& 
 {
   pu->cu->mmvdSkip = true;
   pu->regularMergeFlag = true;
-  const int tempNum = (mergeCtx.numValidMergeCand > 1) ? MmvdIdx::ADD_NUM : MmvdIdx::ADD_NUM >> 1;
-  for (int mmvdMergeCand = 0; mmvdMergeCand < tempNum; mmvdMergeCand++)
+  for (int mmvdMergeCand = 0; mmvdMergeCand < MmvdIdx::ADD_NUM; mmvdMergeCand++)
   {
     MmvdIdx mmvdIdx;
     mmvdIdx.val = mmvdMergeCand;
-    if (mmvdIdx.pos.step >= m_pcEncCfg->getMmvdDisNum())
+    if (mmvdIdx.pos.step >= m_pcEncCfg->getMmvdDisNum() || mmvdIdx.pos.baseIdx >= mergeCtx.numValidMergeCand)
     {
       continue;
     }
@@ -3403,6 +3394,20 @@ void EncCu::xCheckRDCostIBCMode(CodingStructure *&tempCS, CodingStructure *&best
 
 void EncCu::xCheckRDCostInter( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode )
 {
+#if JVET_AH0078_DPF
+  const EncType encType = dynamic_cast<EncLib*>(m_pcEncCfg)->getEncType();
+  if (m_pcEncCfg->getDPF() && encType == ENC_PRE)
+  {
+    const int sizeCu = m_pcEncCfg->getCTUSize();
+    const int sizeBlk = BLK_32;
+    const int maxDepth = floorLog2(sizeCu / sizeBlk);
+    if (partitioner.currDepth < maxDepth)
+    {
+      return;
+    }
+  }
+#endif
+
   m_pcInterSearch->setAffineModeSelected(false);
 
   m_pcInterSearch->resetBufferedUniMotions();
@@ -3688,6 +3693,10 @@ bool EncCu::xCheckRDCostInterAmvr(CodingStructure *&tempCS, CodingStructure *&be
     }
     else
     {
+      if (m_bestModeUpdated && bestCS->cost != MAX_DOUBLE)
+      {
+        xCalDebCost(*bestCS, partitioner);
+      }
       return false;
     }
 
@@ -3705,18 +3714,17 @@ bool EncCu::xCheckRDCostInterAmvr(CodingStructure *&tempCS, CodingStructure *&be
 
     if (!CU::hasSubCUNonZeroMVd(cu) && !CU::hasSubCUNonZeroAffineMVd(cu))
     {
-      if (m_modeCtrl->useModeResult(encTestModeBase, tempCS, partitioner))
-      {
-        std::swap(tempCS, bestCS);
-        // store temp best CI for next CU coding
-        m_CurrCtx->best = m_CABACEstimator->getCtx();
-      }
+      xCheckBestMode(tempCS, bestCS, partitioner, encTestModeBase);
       if (affineAmvrEnabledFlag)
       {
         continue;
       }
       else
       {
+        if (m_bestModeUpdated && bestCS->cost != MAX_DOUBLE)
+        {
+          xCalDebCost(*bestCS, partitioner);
+        }
         return false;
       }
     }

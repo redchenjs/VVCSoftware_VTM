@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -309,7 +309,6 @@ void Slice::setDefaultClpRng( const SPS& sps )
   m_clpRngs.comp[COMPONENT_Cb].max = m_clpRngs.comp[COMPONENT_Cr].max = (1 << sps.getBitDepth(ChannelType::CHROMA)) - 1;
   m_clpRngs.comp[COMPONENT_Cb].bd = m_clpRngs.comp[COMPONENT_Cr].bd = sps.getBitDepth(ChannelType::CHROMA);
   m_clpRngs.comp[COMPONENT_Cb].n   = m_clpRngs.comp[COMPONENT_Cr].n   = 0;
-  m_clpRngs.used = m_clpRngs.chroma = false;
 }
 
 

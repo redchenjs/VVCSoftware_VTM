@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,9 @@
 
 #include "EncModeCtrl.h"
 
+#if JVET_AH0078_DPF
+#include "EncLib.h"
+#endif
 #include "AQp.h"
 #include "RateCtrl.h"
 
@@ -131,6 +134,16 @@ void EncModeCtrl::setBest( CodingStructure& cs )
 
 void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& cs, const Partitioner &partitioner, const int baseQP, const SPS& sps, const PPS& pps, const PartSplit splitMode )
 {
+#if JVET_AH0078_DPF
+  const EncType encType = dynamic_cast<const EncLib*>(m_pcEncCfg)->getEncType();
+  if (m_pcEncCfg->getDPF() && encType == ENC_FULL && cs.slice->getSliceType() != I_SLICE)
+  {
+    minQP = m_qpCtu;
+    maxQP = m_qpCtu;
+    return;
+  }
+#endif
+
   if( m_pcEncCfg->getUseRateCtrl() )
   {
     minQP = m_pcRateCtrl->getRCQP();
@@ -331,9 +344,10 @@ int EncModeCtrl::calculateLumaDQPsmooth(const CPelBuf& rcOrg, int baseQP, double
   return qp;
 }
 
-void CacheBlkInfoCtrl::create()
+void CacheBlkInfoCtrl::create(int maxCuSize)
 {
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = maxCuSize >> MIN_CU_LOG2;
+  m_maxCuSize = maxCuSize;
 
   m_numWidths  = gp_sizeIdxInfo->numWidths();
   m_numHeights = gp_sizeIdxInfo->numHeights();
@@ -348,7 +362,7 @@ void CacheBlkInfoCtrl::create()
 
       for( int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++ )
       {
-        if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
+        if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= (maxCuSize >> MIN_CU_LOG2 ) ) )
         {
           m_codedCUInfo[x][y][wIdx] = nullptr;
           continue;
@@ -366,7 +380,7 @@ void CacheBlkInfoCtrl::create()
 
         for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ )
         {
-          if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
+          if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= (maxCuSize >> MIN_CU_LOG2 ) ) )
           {
             m_codedCUInfo[x][y][wIdx][hIdx] = nullptr;
             continue;
@@ -389,7 +403,7 @@ void CacheBlkInfoCtrl::create()
 
 void CacheBlkInfoCtrl::destroy()
 {
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = m_maxCuSize >> MIN_CU_LOG2;
 
   for( unsigned x = 0; x < numPos; x++ )
   {
@@ -418,7 +432,7 @@ void CacheBlkInfoCtrl::destroy()
 
 void CacheBlkInfoCtrl::init( const Slice &slice )
 {
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = m_maxCuSize >> MIN_CU_LOG2;
 
   for( unsigned x = 0; x < numPos; x++ )
   {
@@ -507,10 +521,11 @@ void SaveLoadEncInfoSbt::init( const Slice &slice )
   m_sliceSbt = &slice;
 }
 
-void SaveLoadEncInfoSbt::create()
+void SaveLoadEncInfoSbt::create(int maxCuSize)
 {
   int numSizeIdx = gp_sizeIdxInfo->idxFrom( SBT_MAX_SIZE ) - MIN_CU_LOG2 + 1;
-  int numPosIdx = MAX_CU_SIZE >> MIN_CU_LOG2;
+  int numPosIdx = maxCuSize >> MIN_CU_LOG2;
+  m_maxCuSize = maxCuSize;
 
   m_saveLoadSbt = new SaveLoadStructSbt***[numPosIdx];
 
@@ -531,7 +546,7 @@ void SaveLoadEncInfoSbt::create()
 void SaveLoadEncInfoSbt::destroy()
 {
   int numSizeIdx = gp_sizeIdxInfo->idxFrom( SBT_MAX_SIZE ) - MIN_CU_LOG2 + 1;
-  int numPosIdx = MAX_CU_SIZE >> MIN_CU_LOG2;
+  int numPosIdx = m_maxCuSize >> MIN_CU_LOG2;
 
   for( int xIdx = 0; xIdx < numPosIdx; xIdx++ )
   {
@@ -587,7 +602,7 @@ bool SaveLoadEncInfoSbt::saveBestSbt(const UnitArea &area, const uint32_t curPuS
 void SaveLoadEncInfoSbt::resetSaveloadSbt( int maxSbtSize )
 {
   int numSizeIdx = gp_sizeIdxInfo->idxFrom( maxSbtSize ) - MIN_CU_LOG2 + 1;
-  int numPosIdx = MAX_CU_SIZE >> MIN_CU_LOG2;
+  int numPosIdx = m_maxCuSize >> MIN_CU_LOG2;
 
   for( int xIdx = 0; xIdx < numPosIdx; xIdx++ )
   {
@@ -662,9 +677,10 @@ static bool isTheSameNbHood( const CodingUnit &cu, const CodingStructure& cs, co
   return true;
 }
 
-void BestEncInfoCache::create( const ChromaFormat chFmt )
+void BestEncInfoCache::create( const ChromaFormat chFmt, int maxCuSize)
 {
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = maxCuSize >> MIN_CU_LOG2;
+  m_maxCuSize = maxCuSize;
 
   m_numWidths  = gp_sizeIdxInfo->numWidths();
   m_numHeights = gp_sizeIdxInfo->numHeights();
@@ -679,7 +695,7 @@ void BestEncInfoCache::create( const ChromaFormat chFmt )
 
       for( int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++ )
       {
-        if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
+        if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= (m_maxCuSize >> MIN_CU_LOG2 ) ) )
         {
           m_bestEncInfo[x][y][wIdx] = nullptr;
           continue;
@@ -697,7 +713,7 @@ void BestEncInfoCache::create( const ChromaFormat chFmt )
 
         for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ )
         {
-          if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) ) )
+          if( !( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= (m_maxCuSize >> MIN_CU_LOG2 ) ) )
           {
             m_bestEncInfo[x][y][wIdx][hIdx] = nullptr;
             continue;
@@ -740,7 +756,7 @@ void BestEncInfoCache::create( const ChromaFormat chFmt )
 
 void BestEncInfoCache::destroy()
 {
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = m_maxCuSize >> MIN_CU_LOG2;
 
   for( unsigned x = 0; x < numPos; x++ )
   {
@@ -786,7 +802,7 @@ void BestEncInfoCache::init( const Slice &slice )
   {
     if (slice.getSliceQp() != m_sliceQp)
     {
-      const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+      const unsigned numPos = m_maxCuSize >> MIN_CU_LOG2;
       for (unsigned x = 0; x < numPos; x++)
       {
         for (unsigned y = 0; y < numPos; y++)
@@ -811,7 +827,7 @@ void BestEncInfoCache::init( const Slice &slice )
     return;
   }
 
-  const unsigned numPos = MAX_CU_SIZE >> MIN_CU_LOG2;
+  const unsigned numPos = slice.getSPS()->getMaxCUWidth() >> MIN_CU_LOG2;
 
   m_numWidths  = gp_sizeIdxInfo->numWidths();
   m_numHeights = gp_sizeIdxInfo->numHeights();
@@ -1072,11 +1088,11 @@ void EncModeCtrlMTnoRQT::create( const EncCfg& cfg )
 #if GDR_ENABLED
   m_encCfg = cfg;
 #endif
-  CacheBlkInfoCtrl::create();
+  CacheBlkInfoCtrl::create(cfg.getCTUSize());
 #if REUSE_CU_RESULTS
-  BestEncInfoCache::create( cfg.getChromaFormatIdc() );
+  BestEncInfoCache::create( cfg.getChromaFormatIdc(), cfg.getCTUSize());
 #endif
-  SaveLoadEncInfoSbt::create();
+  SaveLoadEncInfoSbt::create(cfg.getCTUSize());
 }
 
 void EncModeCtrlMTnoRQT::destroy()
@@ -1238,6 +1254,44 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
 
   //////////////////////////////////////////////////////////////////////////
   // Add unit split modes
+#if JVET_AH0078_DPF
+  const EncType encType = dynamic_cast<const EncLib*>(m_pcEncCfg)->getEncType();
+  if (m_pcEncCfg->getDPF() && encType == ENC_PRE)
+  {
+    // fix test modes for pre-encoding
+    const int width = m_currCsArea->lwidth();
+    const int heiht = m_currCsArea->lheight();
+    const int sizeCu = m_pcEncCfg->getCTUSize();
+    int sizeBlk = BLK_32;
+    int maxDepth = floorLog2(sizeCu / sizeBlk);
+    while (width % sizeBlk != 0 || heiht % sizeBlk != 0)
+    {
+      maxDepth++;
+      sizeBlk >>= 1;
+    }
+    if (partitioner.currDepth < maxDepth)
+    {
+      for (int qp = maxQP; qp >= minQP; qp--)
+      {
+        m_ComprCUCtxList.back().testModes.push_back({ ETM_SPLIT_QT, ETO_STANDARD, qp });
+      }
+    }
+    m_ComprCUCtxList.back().testModes.push_back({ ETM_POST_DONT_SPLIT });
+    xGetMinMaxQP(minQP, maxQP, cs, partitioner, baseQP, *cs.sps, *cs.pps, CU_DONT_SPLIT);
+    int  lowestQP = minQP;
+    for (int qpLoop = maxQP; qpLoop >= minQP; qpLoop--)
+    {
+      const int qp = std::max(qpLoop, lowestQP);
+      m_ComprCUCtxList.back().testModes.push_back({ ETM_INTER_ME, ETO_STANDARD, qp });
+    }
+    if (!tryModeMaster(m_ComprCUCtxList.back().testModes.back(), cs, partitioner))
+    {
+      nextMode(cs, partitioner);
+    }
+    m_ComprCUCtxList.back().lastTestMode = EncTestMode();
+    return;
+  }
+#endif
 
   if( !cuECtx.get<bool>( QT_BEFORE_BT ) )
   {
@@ -1424,7 +1478,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
 {
   ComprCUCtx& cuECtx = m_ComprCUCtxList.back();
 
-#if JVET_AE0057_MTT_ET
   if (m_pcEncCfg->getUseMttSkip() && partitioner.currQtDepth == 1 && partitioner.currBtDepth == 0
       && partitioner.currArea().lwidth() == 64
       && partitioner.currArea().lheight() == 64)
@@ -1436,7 +1489,7 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
             || encTestmode.type == ETM_SPLIT_TT_H || encTestmode.type == ETM_SPLIT_TT_V)
         && partitioner.chType == ChannelType::LUMA)
     {
-      int thresholdMTT = Clip3(0, MAX_INT, (120 - ((m_pcEncCfg->getBaseQP() - 22) * 4)) * 1000000);
+      int thresholdMTT = Clip3(0, MAX_INT, (120 - ((m_pcEncCfg->getBaseQP() - 22) * 3)) * 1000000);
       if (m_noSplitIntraRdCost > thresholdMTT)
       {
         const PartSplit split = getPartSplit(encTestmode);
@@ -1453,7 +1506,6 @@ bool EncModeCtrlMTnoRQT::tryMode( const EncTestMode& encTestmode, const CodingSt
       }
     }
   }
-#endif
 
   // Fast checks, partitioning depended
   if (cuECtx.isHashPerfectMatch && encTestmode.type != ETM_MERGE_SKIP && encTestmode.type != ETM_INTER_ME)

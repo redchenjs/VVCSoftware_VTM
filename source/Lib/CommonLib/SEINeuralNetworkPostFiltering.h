@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,9 +52,7 @@ class SEINeuralNetworkPostFiltering
 {
 private:
   PicVector m_picList;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   PicVector m_clvsPicList;
-#endif
   SEIMessages m_clvsNnpfcSEIs;
 
   std::map<uint32_t, bool> m_isNnpfActiveForCLVS;
@@ -68,9 +66,7 @@ public:
   void checkInputPics(
     Picture* currCodedPic, const SEINeuralNetworkPostFilterCharacteristics* currNnpfc,
     uint32_t sourceWidth, uint32_t sourceHeight, uint32_t croppedWidth, uint32_t croppedHeight);
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool isPicInCurrentClvs(Picture* pic);
-#endif
 };
 
 #endif

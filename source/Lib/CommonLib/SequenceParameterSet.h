@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -229,38 +229,37 @@ public:
 class Window
 {
 private:
-  bool m_enabledFlag;
-  int  m_winLeftOffset;
-  int  m_winRightOffset;
-  int  m_winTopOffset;
-  int  m_winBottomOffset;
+  int m_leftOffset   = 0;
+  int m_rightOffset  = 0;
+  int m_topOffset    = 0;
+  int m_bottomOffset = 0;
+
 public:
-  Window()
-  : m_enabledFlag    (false)
-  , m_winLeftOffset  (0)
-  , m_winRightOffset (0)
-  , m_winTopOffset   (0)
-  , m_winBottomOffset(0)
-  { }
+  Window() = default;
+  Window(int offsetLeft, int offsetRight, int offsetTop, int offsetBottom)
+    : m_leftOffset(offsetLeft), m_rightOffset(offsetRight), m_topOffset(offsetTop), m_bottomOffset(offsetBottom)
+  {}
+  Window(const Window& w) = default;
 
-  bool getWindowEnabledFlag() const   { return m_enabledFlag;                          }
-  int  getWindowLeftOffset() const    { return m_enabledFlag ? m_winLeftOffset : 0;    }
-  void setWindowLeftOffset(int val)   { m_winLeftOffset = val; m_enabledFlag |=  (val!=0);   }
-  int  getWindowRightOffset() const   { return m_enabledFlag ? m_winRightOffset : 0;   }
-  void setWindowRightOffset(int val)  { m_winRightOffset = val; m_enabledFlag |= (val!=0);  }
-  int  getWindowTopOffset() const     { return m_enabledFlag ? m_winTopOffset : 0;     }
-  void setWindowTopOffset(int val)    { m_winTopOffset = val; m_enabledFlag |= (val!=0);    }
-  int  getWindowBottomOffset() const  { return m_enabledFlag ? m_winBottomOffset: 0;   }
-  void setWindowBottomOffset(int val) { m_winBottomOffset = val; m_enabledFlag |= (val!=0); }
-
-  void setWindow(int offsetLeft, int offsetRight, int offsetTop, int offsetBottom)
+  bool operator==(const Window& w) const
   {
-    m_enabledFlag     = (offsetLeft || offsetRight || offsetTop || offsetBottom);
-    m_winLeftOffset   = offsetLeft;
-    m_winRightOffset  = offsetRight;
-    m_winTopOffset    = offsetTop;
-    m_winBottomOffset = offsetBottom;
+    return m_leftOffset == w.m_leftOffset && m_rightOffset == w.m_rightOffset && m_topOffset == w.m_topOffset
+           && m_bottomOffset == w.m_bottomOffset;
   }
+
+  bool operator!=(const Window& w) const { return !(*this == w); }
+
+  bool isZero() const { return m_leftOffset == 0 && m_rightOffset == 0 && m_topOffset == 0 && m_bottomOffset == 0; }
+
+  int getWindowLeftOffset() const { return m_leftOffset; }
+  int getWindowRightOffset() const { return m_rightOffset; }
+  int getWindowTopOffset() const { return m_topOffset; }
+  int getWindowBottomOffset() const { return m_bottomOffset; }
+
+  void setWindowLeftOffset(int val) { m_leftOffset = val; }
+  void setWindowRightOffset(int val) { m_rightOffset = val; }
+  void setWindowTopOffset(int val) { m_topOffset = val; }
+  void setWindowBottomOffset(int val) { m_bottomOffset = val; }
 };
 
 struct ChromaQpMappingTableParams
@@ -495,6 +494,7 @@ private:
 
   bool              m_alfEnabledFlag;
   bool              m_ccalfEnabledFlag;
+  bool              m_alfOptEnabledFlag;
   bool              m_wrapAroundEnabledFlag;
   bool              m_ibcFlag;
   bool              m_useColorTrans;
@@ -760,6 +760,9 @@ public:
 
   void                    setALFEnabledFlag(bool val)       { m_alfEnabledFlag = val; }
   bool                    getALFEnabledFlag() const         { return m_alfEnabledFlag; }
+
+  void                    setALFOptEnabledFlag( bool b )     { m_alfOptEnabledFlag = b; }
+  bool                    getALFOptEnabledFlag() const       { return m_alfOptEnabledFlag; }
 
   void                    setCCALFEnabledFlag(bool val)     { m_ccalfEnabledFlag = val; }
   bool                    getCCALFEnabledFlag() const       { return m_ccalfEnabledFlag; }

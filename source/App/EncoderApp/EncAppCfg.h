@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -111,13 +111,11 @@ protected:
   int       m_confWinRight;
   int       m_confWinTop;
   int       m_confWinBottom;
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   bool      m_explicitScalingWindowEnabled;
   int       m_scalWinLeft;
   int       m_scalWinRight;
   int       m_scalWinTop;
   int       m_scalWinBottom;
-#endif
   int       m_sourcePadding[2];                                       ///< number of padded pixels for width and height
   int       m_firstValidFrame;
   int       m_lastValidFrame;
@@ -396,11 +394,9 @@ protected:
   unsigned  m_IBCHashSearchMaxCand;
   unsigned  m_IBCHashSearchRange4SmallBlk;
   unsigned  m_IBCFastMethod;
-#if JVET_AD0045
   bool      m_dmvrEncSelect;
   int       m_dmvrEncSelectBaseQpTh;
   bool      m_dmvrEncSelectDisableHighestTemporalLayer;
-#endif
 
   bool      m_wrapAround;
   unsigned  m_wrapAroundOffset;
@@ -421,13 +417,12 @@ protected:
   uint32_t  m_initialCW;
   int       m_CSoffset;
   bool      m_encDbOpt;
+  bool      m_encALFOpt;
   unsigned              m_maxCuWidth;                                      ///< max. CU width in pixel
   unsigned              m_maxCuHeight;                                     ///< max. CU height in pixel
   unsigned m_log2MinCuSize;                                   ///< min. CU size log2
 
-#if JVET_AE0057_MTT_ET
   bool      m_useMttSkip;
-#endif
   bool      m_useFastLCTU;
   bool      m_usePbIntraFast;
   bool      m_useAMaxBT;
@@ -488,7 +483,6 @@ protected:
   bool      m_useRDOQ;                                       ///< flag for using RD optimized quantization
   bool      m_useRDOQTS;                                     ///< flag for using RD optimized quantization for transform skip
   bool      m_useSelectiveRDOQ;                               ///< flag for using selective RDOQ
-  int       m_rdPenalty;                                      ///< RD-penalty for 32x32 TU for intra in non-intra slices (0: no RD-penalty, 1: RD-penalty, 2: maximum RD-penalty)
   bool      m_bDisableIntraPUsInInterSlices;                  ///< Flag for disabling intra predicted PUs in inter slices.
   MESearchMethod m_motionEstimationSearchMethod;
   bool      m_bRestrictMESampling;                            ///< Restrict sampling for the Selective ME
@@ -524,7 +518,6 @@ protected:
 
   bool      m_bFastUDIUseMPMEnabled;
   bool      m_bFastMEForGenBLowDelayEnabled;
-  bool      m_bUseBLambdaForNonKeyLowDelayPictures;
 
   HashType  m_decodedPictureHashSEIType;                      ///< Checksum mode for decoded picture hash SEI message
   HashType  m_subpicDecodedPictureHashType;
@@ -546,6 +539,21 @@ protected:
   bool      m_parameterSetsInclusionIndicationSEIEnabled;
   int       m_selfContainedClvsFlag;
   int       m_preferredTransferCharacteristics;
+
+#if JVET_AH2006_EOI_SEI
+  bool  m_eoiSEIEnabled;
+  bool  m_eoiSEICancelFlag;
+  bool  m_eoiSEIPersistenceFlag;
+  uint32_t m_eoiSEIForHumanViewingIdc;
+  uint32_t m_eoiSEIForMachineAnalysisIdc;
+  uint32_t m_eoiSEIType;
+  uint32_t m_eoiSEIObjectBasedIdc;
+  bool m_eoiSEITemporalResamplingTypeFlag;
+  uint32_t m_eoiSEINumIntPics;
+  bool m_eoiSEISpatialResamplingTypeFlag;
+  uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
+  uint32_t m_eoiSEIPrivacyProtectedInfoType;
+#endif 
 
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
@@ -783,6 +791,10 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsCrPadding[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING 
+  bool                  m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[MAX_NUM_NN_POST_FILTERS];
+  std::string           m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[MAX_NUM_NN_POST_FILTERS];
+#endif 
   std::string           m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
@@ -796,28 +808,25 @@ protected:
   uint32_t              m_nnPostFilterSEIActivationTargetId;
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool                    m_nnPostFilterSEIActivationNoPrevCLVSFlag;
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   bool                    m_nnPostFilterSEIActivationNoFollCLVSFlag;
-#endif
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
 
   bool                  m_poSEIEnabled;
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  uint32_t              m_poSEIId;
   uint32_t              m_poSEINumMinus2;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
-#endif
   std::vector<bool>     m_poSEIPrefixFlag;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
+  std::vector<uint16_t>  m_poSEINumOfPrefixBits;
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
 
 
@@ -932,6 +941,13 @@ protected:
   std::string m_shutterIntervalPreFileName;                   ///< output Pre-Filtering video
   int         m_SII_BlendingRatio;
   void        setBlendingRatioSII(int value) { m_SII_BlendingRatio = value; }
+#if JVET_AG2034_SPTI_SEI
+  bool     m_sptiSEIEnabled;
+  bool     m_sptiSourceTimingEqualsOutputTimingFlag;
+  uint32_t m_sptiSourceType;
+  uint32_t m_sptiTimeScale;
+  uint32_t m_sptiNumUnitsInElementalInterval;
+#endif
 #if GREEN_METADATA_SEI_ENABLED
 public:
   std::string getGMFAFile ();
@@ -1023,6 +1039,11 @@ protected:
   int                   m_gopBasedTemporalFilterFutureRefs;
   std::map<int, double> m_gopBasedTemporalFilterStrengths;             ///< Filter strength per frame for the GOP-based Temporal Filter
   bool                  m_bimEnabled;
+#if JVET_AH0078_DPF
+  bool                  m_dpfEnabled;
+  int                   m_dpfKeyLen;
+  int                   m_dpfNonkeyLen;
+#endif
 
   int         m_maxLayers;
   int         m_targetOlsIdx;
@@ -1033,6 +1054,7 @@ protected:
   bool        m_defaultPtlDpbHrdMaxTidFlag;
   bool        m_allIndependentLayersFlag;
   std::string m_predDirectionArray;
+  bool        m_explicitILRP;
 
   int         m_numRefLayers[MAX_VPS_LAYERS];
   std::string m_refLayerIdxStr[MAX_VPS_LAYERS];

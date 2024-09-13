@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,8 +62,8 @@ class InputNALUnit;
 //! \{
 
 bool tryDecodePicture(Picture *pcPic, const int expectedPoc, const std::string &bitstreamFileName,
-                      EnumArray<ParameterSetMap<APS>, ApsType> *apsMap = nullptr, bool bDecodeUntilPocFound = false,
-                      int debugCTU = -1, int debugPOC = -1);
+                      const int layerIdx, EnumArray<ParameterSetMap<APS>, ApsType> *apsMap = nullptr, 
+                      bool bDecodeUntilPocFound = false, int debugCTU = -1, int debugPOC = -1);
 // Class definition
 // ====================================================================================================================
 
@@ -266,9 +266,7 @@ public:
   void  updatePrevGDRInSameLayer();
   void  updatePrevIRAPAndGDRSubpic();
   bool  getGDRRecoveryPocReached()          { return ( m_pcPic->getPOC() >= m_prevGDRInSameLayerRecoveryPOC[m_pcPic->layerId] ); }
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   void  setEosPresentInPu(bool eosPresent)  { m_pcPic->isEosPresentInPic = eosPresent; }
-#endif
 
   bool  getNoOutputPriorPicsFlag () const   { return m_isNoOutputPriorPics; }
   void  setNoOutputPriorPicsFlag (bool val) { m_isNoOutputPriorPics = val; }
@@ -362,7 +360,7 @@ public:
   void  setShutterFilterFlag(bool value) { m_ShutterFilterEnable = value; }
 
   void applyNnPostFilter();
-
+  void setPrevPicPOC(const int prevPicPoc) { m_prevPicPOC  = prevPicPoc;}
 
 protected:
   void  xUpdateRasInit(Slice* slice);
@@ -396,9 +394,7 @@ protected:
 
   void  xCheckNalUnitConstraintFlags( const ConstraintInfo *cInfo, uint32_t naluType );
   void     xCheckMixedNalUnit(Slice* pcSlice, SPS *sps, InputNALUnit &nalu);
-#if JVET_AE0049_NNPF_SAME_CONTENT_CONSTRAINT
   uint32_t xGetNnpfaTargetId(uint8_t* payload, uint32_t payloadSize);
-#endif
 };// END CLASS DEFINITION DecLib
 
 

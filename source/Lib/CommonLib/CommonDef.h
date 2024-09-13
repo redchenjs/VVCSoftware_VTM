@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -202,6 +202,9 @@ static constexpr int CCALF_DYNAMIC_RANGE            =               6;
 static constexpr int CCALF_BITS_PER_COEFF_LEVEL     =               3;
 
 static constexpr int ALF_FIXED_FILTER_NUM = 64;
+
+static constexpr double ALF_CHROMA_LAMBDA_SCALE_LOW = 0.4;
+static constexpr int ALF_HISAPSNUM_LIMITED = 4;
 
 static constexpr int MAX_BDOF_APPLICATION_REGION =                     16;
 
@@ -417,10 +420,8 @@ static constexpr int DMVR_RANGE = 2;
 static constexpr int DMVR_SPAN  = 2 * DMVR_RANGE + 1;
 static constexpr int DMVR_AREA  = DMVR_SPAN * DMVR_SPAN;
 
-#if JVET_AD0045
 static constexpr int DMVR_ENC_SELECT_SIZE_THR = 64;
 static constexpr double DMVR_ENC_SELECT_FRAME_RATE_THR = 30.0;
-#endif
 
 //QTBT high level parameters
 //for I slice luma CTB configuration para.
@@ -592,8 +593,6 @@ struct ClpRng
 struct ClpRngs
 {
   ClpRng comp[MAX_NUM_COMPONENT]; ///< the bit depth as indicated in the SPS
-  bool used;
-  bool chroma;
 };
 
 template <typename T> inline T Clip3 (const T minVal, const T maxVal, const T a) { return std::min<T> (std::max<T> (minVal, a) , maxVal); }  ///< general min/max clip
@@ -930,6 +929,12 @@ static inline int floorLog2(uint32_t x)
 static inline int ceilLog2(uint32_t x)
 {
   return (x==0) ? -1 : floorLog2(x - 1) + 1;
+}
+
+template<class T> inline void free(std::vector<T>& v)
+{
+  // deallocate the memory used by vector data by swapping the vector with an empty one
+  std::vector<T>().swap(v);
 }
 
 //CASE-BREAK for breakpoints

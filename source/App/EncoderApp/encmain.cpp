@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,6 @@ static void printMacroSettings()
   }
 }
 
-#if JVET_Z0150_MEMORY_USAGE_PRINT
 #ifdef __linux
 #include <cstdlib>
 #include <cstdio>
@@ -100,7 +99,6 @@ int getProcStatusValue(const char* key)
   fclose(file);
   return result;
 }
-#endif
 #endif
 
 // ====================================================================================================================
@@ -353,12 +351,10 @@ int main(int argc, char* argv[])
     }
   }
 
-#if JVET_Z0150_MEMORY_USAGE_PRINT
 #ifdef __linux
   int vm = getProcStatusValue("VmPeak:");
   int rm = getProcStatusValue("VmHWM:");
   printf("\nMemory Usage: VmPeak= %d KB ( %.1f GiB ),  VmHWM= %d KB ( %.1f GiB )\n", vm, (double)vm/(1024*1024), rm, (double)rm/(1024*1024));
-#endif
 #endif
 
   // ending time

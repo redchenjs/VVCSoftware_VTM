@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2023, ITU/ISO/IEC
+* Copyright (c) 2010-2024, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -179,11 +179,11 @@ public:
 
 inline void checkBPSyntaxElementLength(const SEIBufferingPeriod* bp1, const SEIBufferingPeriod* bp2)
 {
-  CHECK(bp1->m_initialCpbRemovalDelayLength != bp2->m_initialCpbRemovalDelayLength ||
-        bp1->m_cpbRemovalDelayLength != bp2->m_cpbRemovalDelayLength ||
-        bp1->m_dpbOutputDelayLength != bp2->m_dpbOutputDelayLength ||
-        bp1->m_duCpbRemovalDelayIncrementLength != bp2->m_duCpbRemovalDelayIncrementLength ||
-        bp1->m_dpbOutputDelayDuLength != bp2->m_dpbOutputDelayDuLength,
+  CHECK(bp1->cpbInitialRemovalDelayLength != bp2->cpbInitialRemovalDelayLength
+          || bp1->cpbRemovalDelayLength != bp2->cpbRemovalDelayLength
+          || bp1->dpbOutputDelayLength != bp2->dpbOutputDelayLength
+          || bp1->duCpbRemovalDelayIncrementLength != bp2->duCpbRemovalDelayIncrementLength
+          || bp1->dpbOutputDelayDuLength != bp2->dpbOutputDelayDuLength,
         "All scalable-nested and non-scalable nested BP SEI messages in a CVS shall have the same value for "
         "each of the syntax elements bp_cpb_initial_removal_delay_length_minus1, bp_cpb_removal_delay_length_minus1, "
         "bp_dpb_output_delay_length_minus1, bp_du_cpb_removal_delay_increment_length_minus1, "
@@ -206,7 +206,7 @@ public:
   OlsHrdParams*          getOlsHrdParametersAddr() { return m_olsHrdParams; }
   const OlsHrdParams&    getOlsHrdParameters(int idx) const { return m_olsHrdParams[idx]; }
 
-  void                       setBufferingPeriodSEI(const SEIBufferingPeriod* bp)
+  void setBufferingPeriodSEI(const SEIBufferingPeriod* bp)
   {
     if (m_bufferingPeriodInitialized)
     {
@@ -216,10 +216,20 @@ public:
     m_bufferingPeriodInitialized = true;
   }
 
-  const SEIBufferingPeriod*  getBufferingPeriodSEI() const                        { return m_bufferingPeriodInitialized ? &m_bufferingPeriodSEI : nullptr; }
+  const SEIBufferingPeriod* getBufferingPeriodSEI() const
+  {
+    return m_bufferingPeriodInitialized ? &m_bufferingPeriodSEI : nullptr;
+  }
 
-  void                       setPictureTimingSEI(const SEIPictureTiming* pt)  { pt->copyTo(m_pictureTimingSEI); m_pictureTimingAvailable = true; }
-  const SEIPictureTiming*    getPictureTimingSEI() const                      { return m_pictureTimingAvailable ? &m_pictureTimingSEI : nullptr; }
+  void setPictureTimingSEI(const SEIPictureTiming* pt)
+  {
+    m_pictureTimingSEI = *pt;
+    m_pictureTimingAvailable = true;
+  }
+  const SEIPictureTiming* getPictureTimingSEI() const
+  {
+    return m_pictureTimingAvailable ? &m_pictureTimingSEI : nullptr;
+  }
 
 protected:
   GeneralHrdParams      m_generalHrdParams;

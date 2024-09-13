@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2023, ITU/ISO/IEC
+* Copyright (c) 2010-2024, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -458,12 +458,7 @@ void HLSyntaxReader::parsePPS( PPS* pcPPS )
   }
   else
   {
-    Window &scalingWindow = pcPPS->getScalingWindow();
-    Window& conf = pcPPS->getConformanceWindow();
-    scalingWindow.setWindowLeftOffset( conf.getWindowLeftOffset() );
-    scalingWindow.setWindowRightOffset( conf.getWindowRightOffset() );
-    scalingWindow.setWindowTopOffset( conf.getWindowTopOffset() );
-    scalingWindow.setWindowBottomOffset( conf.getWindowBottomOffset() );
+    pcPPS->getScalingWindow() = pcPPS->getConformanceWindow();
   }
 
   xReadFlag( uiCode, "pps_output_flag_present_flag" );                    pcPPS->setOutputFlagPresentFlag( uiCode==1 );

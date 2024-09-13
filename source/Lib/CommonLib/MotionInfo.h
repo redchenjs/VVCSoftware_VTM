@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -121,8 +121,8 @@ struct AffineAMVPInfo
 /// class for motion vector with reference index
 struct MvField
 {
-  Mv    mv;
-  int16_t refIdx;
+  Mv     mv;
+  int8_t refIdx;
 
   MvField()                                    :            refIdx( NOT_VALID ) {}
   MvField(Mv const &cMv, const int _refIdx) : mv(cMv), refIdx(_refIdx) {}
@@ -156,7 +156,7 @@ struct MotionInfo
   bool     useAltHpelIf;
   uint16_t sliceIdx;
   Mv       mv[NUM_REF_PIC_LIST_01];
-  int16_t  refIdx[NUM_REF_PIC_LIST_01];
+  int8_t   refIdx[NUM_REF_PIC_LIST_01];
   uint8_t  bcwIdx;
   Mv       bv;
 #if GDR_ENABLED

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -146,7 +146,7 @@ void DecSlice::decompressSlice( Slice* slice, InputBitstream* bitstream, int deb
     const unsigned  tileYPosInCtus  = slice->getPPS()->getTileRowBd( tileRowIdx );
     const unsigned  tileColWidth    = slice->getPPS()->getTileColumnWidth( tileColIdx );
     const unsigned  tileRowHeight   = slice->getPPS()->getTileRowHeight( tileRowIdx );
-    const unsigned  tileIdx         = slice->getPPS()->getTileIdx( ctuXPosInCtus, ctuYPosInCtus);
+    const TileIdx   tileIdx         = slice->getPPS()->getTileIdx( ctuXPosInCtus, ctuYPosInCtus);
     const unsigned  maxCUSize             = sps->getMaxCUWidth();
     Position pos( ctuXPosInCtus*maxCUSize, ctuYPosInCtus*maxCUSize) ;
     UnitArea ctuArea(cs.area.chromaFormat, Area( pos.x, pos.y, maxCUSize, maxCUSize ) );

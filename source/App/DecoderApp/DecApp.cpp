@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -340,9 +340,7 @@ uint32_t DecApp::decode()
       {
         isEosPresentInPu = true;
         m_newCLVS[nalu.m_nuhLayerId] = true;  //The presence of EOS means that the next picture is the beginning of new CLVS
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
         m_cDecLib.setEosPresentInPu(true);
-#endif
       }
       // within the current PU, only EOS and EOB are allowed to be sent after an EOS nal unit
       if(isEosPresentInPu)
@@ -490,11 +488,21 @@ uint32_t DecApp::decode()
                 msg(WARNING, "\nWarning: No frame rate info found in the bitstream, default 50 fps is used.\n");
               }
               const auto pps = pcListPic->front()->cs->pps;
-              auto confWindow = pps->getConformanceWindow();
               const auto sx = SPS::getWinUnitX(sps->getChromaFormatIdc());
               const auto sy = SPS::getWinUnitY(sps->getChromaFormatIdc());
-              const int picWidth = pps->getPicWidthInLumaSamples() - (confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
-              const int picHeight = pps->getPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
+              int picWidth = 0, picHeight = 0;
+              if (m_upscaledOutput == 2)
+              {
+                auto confWindow = sps->getConformanceWindow();
+                picWidth = sps->getMaxPicWidthInLumaSamples() -(confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
+                picHeight = sps->getMaxPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
+              }
+              else
+              {
+                auto confWindow = pps->getConformanceWindow();
+                picWidth = pps->getPicWidthInLumaSamples() - (confWindow.getWindowLeftOffset() + confWindow.getWindowRightOffset()) * sx;
+                picHeight = pps->getPicHeightInLumaSamples() - (confWindow.getWindowTopOffset() + confWindow.getWindowBottomOffset()) * sy;
+              }              
               m_cVideoIOYuvReconFile[nalu.m_nuhLayerId].setOutputY4mInfo(
                 picWidth, picHeight, frameRate, layerOutputBitDepth[ChannelType::LUMA], sps->getChromaFormatIdc(),
                 sps->getVuiParameters()->getChromaSampleLocType());

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -80,36 +80,37 @@ void SEIEncoder::initSEIParameterSetsInclusionIndication(SEIParameterSetsInclusi
   seiParameterSetsInclusionIndication->m_selfContainedClvsFlag = m_pcCfg->getSelfContainedClvsFlag();
 }
 
-void SEIEncoder::initSEIBufferingPeriod(SEIBufferingPeriod *bufferingPeriodSEI, bool noLeadingPictures)
+void SEIEncoder::initSEIBufferingPeriod(SEIBufferingPeriod* bp, bool noLeadingPictures)
 {
   CHECK(!(m_isInitialized), "bufferingPeriodSEI already initialized");
-  CHECK(!(bufferingPeriodSEI != nullptr), "Need a bufferingPeriodSEI for initialization (got nullptr)");
+  CHECK(bp == nullptr, "Need a bufferingPeriodSEI for initialization (got nullptr)");
 
-  uint32_t uiInitialCpbRemovalDelay = (90000/2);                      // 0.5 sec
-  bufferingPeriodSEI->m_bpNalCpbParamsPresentFlag = true;
-  bufferingPeriodSEI->m_bpVclCpbParamsPresentFlag = true;
-  bufferingPeriodSEI->m_bpMaxSubLayers = m_pcCfg->getMaxTempLayer() ;
-  bufferingPeriodSEI->m_bpCpbCnt = 1;
-  for(int i=0; i < bufferingPeriodSEI->m_bpMaxSubLayers; i++)
+  const uint32_t initialCpbRemovalDelay = (90000 / 2);   // 0.5 sec
+  bp->maxSublayers                      = m_pcCfg->getMaxTempLayer();
+  bp->cpbCount                          = 1;
+
+  for (auto hrdType: { HrdType::NAL, HrdType::VCL })
   {
-    for(int j=0; j < bufferingPeriodSEI->m_bpCpbCnt; j++)
+    bp->hasHrdParams[hrdType] = true;
+    for (int sublayerIdx = 0; sublayerIdx < bp->maxSublayers; sublayerIdx++)
     {
-      bufferingPeriodSEI->m_initialCpbRemovalDelay[i][j][0] = uiInitialCpbRemovalDelay;
-      bufferingPeriodSEI->m_initialCpbRemovalDelay[i][j][1] = uiInitialCpbRemovalDelay;
-      bufferingPeriodSEI->m_initialCpbRemovalOffset[i][j][0] = uiInitialCpbRemovalDelay;
-      bufferingPeriodSEI->m_initialCpbRemovalOffset[i][j][1] = uiInitialCpbRemovalDelay;
+      for (int j = 0; j < bp->cpbCount; j++)
+      {
+        bp->initialCpbRemoval[hrdType][sublayerIdx][j] = { initialCpbRemovalDelay, initialCpbRemovalDelay };
+      }
     }
   }
+
   // We don't set concatenation_flag here. max_initial_removal_delay_for_concatenation depends on the usage scenario.
   // The parameters could be added to config file, but as long as the initialisation of generic buffering parameters is
   // not controllable, it does not seem to make sense to provide settings for these.
-  bufferingPeriodSEI->m_concatenationFlag = false;
-  bufferingPeriodSEI->m_maxInitialRemovalDelayForConcatenation = uiInitialCpbRemovalDelay;
+  bp->concatenation                          = false;
+  bp->maxInitialRemovalDelayForConcatenation = initialCpbRemovalDelay;
 
-  bufferingPeriodSEI->m_bpDecodingUnitHrdParamsPresentFlag = m_pcCfg->getNoPicPartitionFlag() == false;
-  bufferingPeriodSEI->m_decodingUnitCpbParamsInPicTimingSeiFlag = !m_pcCfg->getDecodingUnitInfoSEIEnabled();
+  bp->hasDuHrdParams            = m_pcCfg->getNoPicPartitionFlag() == false;
+  bp->duCpbParamsInPicTimingSei = !m_pcCfg->getDecodingUnitInfoSEIEnabled();
 
-  bufferingPeriodSEI->m_initialCpbRemovalDelayLength = 16;                  // assuming 0.5 sec, log2( 90,000 * 0.5 ) = 16-bit
+  bp->cpbInitialRemovalDelayLength = 16;   // assuming 0.5 sec, log2( 90,000 * 0.5 ) = 16-bit
   // Note: The following parameters require some knowledge about the GOP structure.
   //       Using getIntraPeriod() should be avoided though, because it assumes certain GOP
   //       properties, which are only valid in CTC.
@@ -117,98 +118,71 @@ void SEIEncoder::initSEIBufferingPeriod(SEIBufferingPeriod *bufferingPeriodSEI, 
   bool isRandomAccess  = m_pcCfg->getIntraPeriod() > 0;
   if( isRandomAccess )
   {
-    bufferingPeriodSEI->m_cpbRemovalDelayLength = 6;                        // 32 = 2^5 (plus 1)
-    bufferingPeriodSEI->m_dpbOutputDelayLength =  6;                        // 32 + 3 = 2^6
+    bp->cpbRemovalDelayLength = 6;   // 32 = 2^5 (plus 1)
+    bp->dpbOutputDelayLength  = 6;   // 32 + 3 = 2^6
   }
   else
   {
-    bufferingPeriodSEI->m_cpbRemovalDelayLength = 9;                        // max. 2^10
-    bufferingPeriodSEI->m_dpbOutputDelayLength =  9;                        // max. 2^10
+    bp->cpbRemovalDelayLength = 9;   // max. 2^10
+    bp->dpbOutputDelayLength  = 9;   // max. 2^10
   }
-  bufferingPeriodSEI->m_duCpbRemovalDelayIncrementLength = 7;               // ceil( log2( tick_divisor_minus2 + 2 ) )
-  bufferingPeriodSEI->m_dpbOutputDelayDuLength = bufferingPeriodSEI->m_dpbOutputDelayLength + bufferingPeriodSEI->m_duCpbRemovalDelayIncrementLength;
+  bp->duCpbRemovalDelayIncrementLength = 7;   // ceil( log2( tick_divisor_minus2 + 2 ) )
+  bp->dpbOutputDelayDuLength           = bp->dpbOutputDelayLength + bp->duCpbRemovalDelayIncrementLength;
   //for the concatenation, it can be set to one during splicing.
-  bufferingPeriodSEI->m_concatenationFlag = 0;
+  bp->concatenation                    = 0;
   //since the temporal layer HRDParameters is not ready, we assumed it is fixed
-  bufferingPeriodSEI->m_auCpbRemovalDelayDelta = 1;
-  bufferingPeriodSEI->m_cpbRemovalDelayDeltasPresentFlag = m_pcCfg->getBpDeltasGOPStructure() ;
-  if (bufferingPeriodSEI->m_cpbRemovalDelayDeltasPresentFlag)
+  bp->cpbRemovalDelayDelta             = 1;
+
+  if (m_pcCfg->getBpDeltasGOPStructure())
   {
     switch (m_pcCfg->getGOPSize())
     {
-      case 8:
+    case 8:
+      if (noLeadingPictures)
       {
-        if (noLeadingPictures)
-        {
-          bufferingPeriodSEI->m_numCpbRemovalDelayDeltas         = 5;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[0]          = 1;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[1]          = 2;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[2]          = 3;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[3]          = 6;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[4]          = 7;
-        }
-        else
-        {
-          bufferingPeriodSEI->m_numCpbRemovalDelayDeltas         = 3;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[0]          = 1;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[1]          = 2;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[2]          = 3;
-        }
+        bp->cpbRemovalDelayDeltaVals = { 1, 2, 3, 6, 7 };
       }
-        break;
-      case 16:
+      else
       {
-        if (noLeadingPictures)
-        {
-          bufferingPeriodSEI->m_numCpbRemovalDelayDeltas         = 9;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[0]          = 1;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[1]          = 2;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[2]          = 3;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[3]          = 4;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[4]          = 6;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[5]          = 7;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[6]          = 9;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[7]          = 14;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[8]          = 15;
-        }
-        else
-        {
-          bufferingPeriodSEI->m_numCpbRemovalDelayDeltas         = 5;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[0]          = 1;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[1]          = 2;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[2]          = 3;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[3]          = 6;
-          bufferingPeriodSEI->m_cpbRemovalDelayDelta[4]          = 7;
-        }
+        bp->cpbRemovalDelayDeltaVals = { 1, 2, 3 };
       }
-        break;
-      default:
+      break;
+    case 16:
+      if (noLeadingPictures)
       {
-        THROW("m_cpbRemovalDelayDelta not applicable for the GOP size");
+        bp->cpbRemovalDelayDeltaVals = { 1, 2, 3, 4, 6, 7, 9, 14, 15 };
       }
-        break;
+      else
+      {
+        bp->cpbRemovalDelayDeltaVals = { 1, 2, 3, 6, 7 };
+      }
+      break;
+    default:
+      THROW("cpbRemovalDelayDelta not applicable for the GOP size");
+      break;
     }
   }
-  bufferingPeriodSEI->m_sublayerDpbOutputOffsetsPresentFlag = true;
-  for(int i = 0; i < bufferingPeriodSEI->m_bpMaxSubLayers; i++)
+  else
   {
-    bufferingPeriodSEI->m_dpbOutputTidOffset[i] = m_pcCfg->getMaxNumReorderPics(i) * static_cast<int>(pow(2, static_cast<double>(bufferingPeriodSEI->m_bpMaxSubLayers-1-i)));
-    if(bufferingPeriodSEI->m_dpbOutputTidOffset[i] >= m_pcCfg->getMaxNumReorderPics(bufferingPeriodSEI->m_bpMaxSubLayers-1))
-    {
-      bufferingPeriodSEI->m_dpbOutputTidOffset[i] -= m_pcCfg->getMaxNumReorderPics(bufferingPeriodSEI->m_bpMaxSubLayers-1);
-    }
-    else
-    {
-      bufferingPeriodSEI->m_dpbOutputTidOffset[i] = 0;
-    }
+    bp->cpbRemovalDelayDeltaVals.clear();
+  }
+
+  bp->hasSublayerDpbOutputOffsets = true;
+  const uint32_t lastSublayer     = bp->maxSublayers - 1;
+  for (int sublayerIdx = 0; sublayerIdx <= lastSublayer; sublayerIdx++)
+  {
+    bp->dpbOutputTidOffset[sublayerIdx] =
+      std::max<int>(m_pcCfg->getMaxNumReorderPics(sublayerIdx) * (1 << (lastSublayer - sublayerIdx))
+                      - m_pcCfg->getMaxNumReorderPics(lastSublayer),
+                    0);
   }
   // A commercial encoder should track the buffer state for all layers and sub-layers
   // to ensure CPB conformance. Such tracking is required for calculating alternative
   // CPB parameters.
   // Unfortunately VTM does not have such tracking. Thus we cannot encode alternative
   // CPB parameters here.
-  bufferingPeriodSEI->m_altCpbParamsPresentFlag = false;
-  bufferingPeriodSEI->m_useAltCpbParamsFlag = false;
+  bp->hasAltCpbParams = false;
+  bp->useAltCpbParams = false;
 }
 
 void SEIEncoder::initSEIErp(SEIEquirectangularProjection* seiEquirectangularProjection)
@@ -475,58 +449,51 @@ void SEIEncoder::initSEIPhaseIndication(SEIPhaseIndication* seiPhaseIndication, 
 //! Note: The SEI message structures input into this function will become part of the scalable nesting SEI and will be
 //!       automatically freed, when the nesting SEI is disposed.
 //  either targetOLS or targetLayer should be active, call with empty vector for the inactive mode
-void SEIEncoder::initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, SEIMessages &nestedSEIs, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t> &subpictureIDs, uint16_t maxSubpicIdInPic)
+void SEIEncoder::initSEIScalableNesting(SEIScalableNesting* sn, SEIMessages& nestedSEIs,
+                                        const std::vector<int>& targetOLSs, const std::vector<int>& targetLayers,
+                                        const std::vector<uint16_t>& subpictureIDs, uint16_t maxSubpicIdInPic)
 {
   CHECK(!(m_isInitialized), "Scalable Nesting SEI already initialized ");
-  CHECK(!(scalableNestingSEI != nullptr), "No Scalable Nesting SEI object passed");
+  CHECK(!(sn != nullptr), "No Scalable Nesting SEI object passed");
   CHECK (targetOLSs.size() > 0 && targetLayers.size() > 0, "Scalable Nesting SEI can apply to either OLS or layer(s), not both");
 
-  scalableNestingSEI->m_snOlsFlag = (targetOLSs.size() > 0) ? 1 : 0;  // If the nested SEI messages are picture buffering SEI messages, picture timing SEI messages or sub-picture timing SEI messages, nesting_ols_flag shall be equal to 1, by default case
-  if (scalableNestingSEI->m_snOlsFlag)
+  sn->olsIdx.resize(targetOLSs.size());
+  // If the nested SEI messages are picture buffering SEI messages, picture timing SEI messages or
+  // sub-picture timing SEI messages, nesting_ols_flag shall be equal to 1, by default case
+  if (sn->olsIdx.size() > 0)
   {
-    scalableNestingSEI->m_snNumOlssMinus1 =  (uint32_t) targetOLSs.size() - 1;
     // initialize absolute indexes
-    for (int i = 0; i <= scalableNestingSEI->m_snNumOlssMinus1; i++)
-    {
-      scalableNestingSEI->m_snOlsIdx[i] = targetOLSs[i];
-    }
-    // calculate delta indexes from absolute ones
-    for (int i = 0; i <= scalableNestingSEI->m_snNumOlssMinus1; i++)
+    for (int i = 0; i < sn->olsIdx.size(); i++)
     {
       if (i == 0)
       {
-        CHECK (scalableNestingSEI->m_snOlsIdx[i] < 0, "OLS indexes must be  equal to or greater than 0");
-        // no "-1" operation for the first index although the name implies one
-        scalableNestingSEI->m_snOlsIdxDeltaMinus1[i] = scalableNestingSEI->m_snOlsIdx[i];
+        CHECK(targetOLSs[i] < 0, "OLS indexes must be  equal to or greater than 0");
       }
       else
       {
-        CHECK (scalableNestingSEI->m_snOlsIdx[i] <= scalableNestingSEI->m_snOlsIdx[i - 1], "OLS indexes must be in ascending order");
-        scalableNestingSEI->m_snOlsIdxDeltaMinus1[i] = scalableNestingSEI->m_snOlsIdx[i] - scalableNestingSEI->m_snOlsIdx[i - 1] - 1;
+        CHECK(targetOLSs[i] <= targetOLSs[i - 1], "OLS indexes must be in ascending order");
       }
+      sn->olsIdx[i] = targetOLSs[i];
     }
   }
   else
   {
-    scalableNestingSEI->m_snAllLayersFlag = 0;                          // nesting is not applied to all layers
-    scalableNestingSEI->m_snNumLayersMinus1 = (uint32_t) targetLayers.size() - 1;  //nesting_num_layers_minus1
-    for (int i=0; i <= scalableNestingSEI->m_snNumLayersMinus1; i++ )
+    sn->layerId.resize(targetLayers.size());
+    for (int i = 0; i < sn->layerId.size(); i++)
     {
-      scalableNestingSEI->m_snLayerId[i] = targetLayers[i];
+      sn->layerId[i] = targetLayers[i];
     }
   }
   if (!subpictureIDs.empty())
   {
-    scalableNestingSEI->m_snSubpicFlag = 1;
-    scalableNestingSEI->m_snNumSubpics = (uint32_t) subpictureIDs.size();
-    scalableNestingSEI->m_snSubpicId   = subpictureIDs;
-    scalableNestingSEI->m_snSubpicIdLen = std::max(1, ceilLog2(maxSubpicIdInPic + 1));
-    CHECK ( scalableNestingSEI->m_snSubpicIdLen > 16, "Subpicture ID too large. Length must be <= 16 bits");
+    sn->subpicId    = subpictureIDs;
+    sn->subpicIdLen = std::max(1, ceilLog2(maxSubpicIdInPic + 1));
+    CHECK(sn->subpicIdLen > 16, "Subpicture ID too large. Length must be <= 16 bits");
   }
-  scalableNestingSEI->m_nestedSEIs.clear();
-  for (SEIMessages::iterator it = nestedSEIs.begin(); it != nestedSEIs.end(); it++)
+  sn->nestedSeis.clear();
+  for (auto& sei: nestedSEIs)
   {
-    scalableNestingSEI->m_nestedSEIs.push_back((*it));
+    sn->nestedSeis.push_back(sei);
   }
 }
 
@@ -605,94 +572,118 @@ void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIn
     }
   }
 }
+#if JVET_AG2034_SPTI_SEI
+void SEIEncoder::initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEISourcePictureTimingInfo)
+{
 
-void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo)
+  CHECK(!(m_isInitialized), "Source picture timing SEI already initialized");
+  CHECK(!(SEISourcePictureTimingInfo != nullptr), "Need a SEISourcePictureTimingInfo for initialization (got nullptr)");
+
+  SEISourcePictureTimingInfo->m_sptiSEIEnabled = m_pcCfg->getSptiSEIEnabled();
+  SEISourcePictureTimingInfo->m_sptiSourceTimingEqualsOutputTimingFlag =
+    m_pcCfg->getmSptiSEISourceTimingEqualsOutputTimingFlag();
+  SEISourcePictureTimingInfo->m_sptiSourceType                  = m_pcCfg->getmSptiSEISourceType();
+  SEISourcePictureTimingInfo->m_sptiTimeScale                   = m_pcCfg->getmSptiSEITimeScale();
+  SEISourcePictureTimingInfo->m_sptiNumUnitsInElementalInterval = m_pcCfg->getmSptiSEINumUnitsInElementalInterval();
+  SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1          = m_pcCfg->getMaxTempLayer() - 1;
+  SEISourcePictureTimingInfo->m_sptiCancelFlag                  = 0;
+  SEISourcePictureTimingInfo->m_sptiPersistenceFlag             = 1;
+  SEISourcePictureTimingInfo->m_sptiSourceTypePresentFlag = (SEISourcePictureTimingInfo->m_sptiSourceType == 0 ? 0 : 1);
+  SEISourcePictureTimingInfo->m_sptiSublayerSynthesizedPictureFlag =
+    std::vector<bool>(SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 + 1, 0);
+
+  for (int i = 0; i <= SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1; i++)
+  {
+    SEISourcePictureTimingInfo->m_sptiSublayerIntervalScaleFactor.push_back(
+      1 << (SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 - i));
+  }
+}
+#endif
+void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting)
 {
   assert(m_isInitialized);
   assert(seiProcessingOrderInfo != nullptr);
 
 
   seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  seiProcessingOrderInfo->m_posId               = m_pcCfg->getPoSEIId();
   seiProcessingOrderInfo->m_posNumMinus2        = m_pcCfg->getPoSEINumMinus2();
   seiProcessingOrderInfo->m_posWrappingFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posImportanceFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-  seiProcessingOrderInfo->m_posWrapSeiMessages.clear();
-#endif
   seiProcessingOrderInfo->m_posPrefixFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
+  seiProcessingOrderInfo->m_posNumBitsInPrefix.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPrefixByte.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
-#else
-  for (uint32_t i = 0; i < m_pcCfg->getPoSEIPayloadTypeSize(); i++)
-#endif
   {
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
     seiProcessingOrderInfo->m_posWrappingFlag[i] = m_pcCfg->getPoSEIWrappingFlag(i);
     seiProcessingOrderInfo->m_posImportanceFlag[i] = m_pcCfg->getPoSEIImportanceFlag(i);
-#endif
     seiProcessingOrderInfo->m_posPrefixFlag[i] = m_pcCfg->getPoSEIPrefixFlag(i);
     seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+    seiProcessingOrderInfo->m_posNumBitsInPrefix[i] = m_pcCfg->getPoSEINumOfPrefixBits(i);
     if (seiProcessingOrderInfo->m_posPrefixFlag[i])
-#else
-    if (seiProcessingOrderInfo->m_posPayloadType[i] == (uint16_t) SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35)
-#endif
     {
       seiProcessingOrderInfo->m_posPrefixByte[i] = m_pcCfg->getPoSEIPrefixByte(i);
     }
   }
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  seiProcessingOrderNesting->m_ponTargetPoId.clear();
+  seiProcessingOrderNesting->m_ponPayloadType.clear();
+  seiProcessingOrderNesting->m_ponProcessingOrder.clear();
+  seiProcessingOrderNesting->m_ponWrapSeiMessages.clear();
+  seiProcessingOrderNesting->m_ponTargetPoId.push_back((uint8_t)seiProcessingOrderInfo->m_posId);
+  uint32_t ponNumSeis = 0;
   for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
   {
     if (seiProcessingOrderInfo->m_posWrappingFlag[i])
     {
       CHECK(!seiProcessingOrderInfo->checkWrappingSEIPayloadType(SEI::PayloadType(seiProcessingOrderInfo->m_posPayloadType[i])), "not support in sei processing order SEI");
+      seiProcessingOrderNesting->m_ponPayloadType.push_back(seiProcessingOrderInfo->m_posPayloadType[i]);
+      seiProcessingOrderNesting->m_ponProcessingOrder.push_back((uint8_t)seiProcessingOrderInfo->m_posProcessingOrder[i]);
+      ponNumSeis++;
       switch (SEI::PayloadType(seiProcessingOrderInfo->m_posPayloadType[i]))
       {
       case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
       {
         SEIFilmGrainCharacteristics* seiFGC = new SEIFilmGrainCharacteristics;
         initSEIFilmGrainCharacteristics(seiFGC);
-        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiFGC);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiFGC);
         break;
       }
       case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
       {
         SEIContentLightLevelInfo* seiCCL = new SEIContentLightLevelInfo;
         initSEIContentLightLevel(seiCCL);
-        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiCCL);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiCCL);
         break;
       }
       case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
       {
         SEIContentColourVolume* seiCCV = new SEIContentColourVolume;
         initSEIContentColourVolume(seiCCV);
-        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiCCV);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiCCV);
         break;
       }
       case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
       {
         SEIColourTransformInfo* seiCTI = new SEIColourTransformInfo;
         initSEIColourTransformInfo(seiCTI);
-        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiCTI);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiCTI);
         break;
       }
       case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
       {
         SEINeuralNetworkPostFilterCharacteristics* seiNNPFC = new  SEINeuralNetworkPostFilterCharacteristics;
         initSEINeuralNetworkPostFilterCharacteristics(seiNNPFC, 0);
-        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiNNPFC);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiNNPFC);
         break;
       }
       case SEI::PayloadType::POST_FILTER_HINT:
       {
         SEIPostFilterHint* seiPFH = new SEIPostFilterHint;
         initSEIPostFilterHint(seiPFH);
-        seiProcessingOrderInfo->m_posWrapSeiMessages.push_back(seiPFH);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiPFH);
         break;
       }
       default:
@@ -703,7 +694,8 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
       }
     }
   }
-#endif
+  CHECK(ponNumSeis == 0, "Number of PO nested SEI messages must be greater than 0 ");
+  seiProcessingOrderNesting->m_ponNumSeisMinus1 = ponNumSeis - 1;
 }
 
 void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
@@ -1272,80 +1264,44 @@ void SEIEncoder::initSEIColourTransformInfo(SEIColourTransformInfo* seiCTI)
   seiCTI->m_log2NumberOfPointsPerLut = floorLog2(seiCTI->m_lut[0].numLutValues - 1);
 }
 
-void SEIEncoder::initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SPS *sps)
+void SEIEncoder::initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sli, const SPS* sps)
 {
   const EncCfgParam::CfgSEISubpictureLevel &cfgSubPicLevel = m_pcCfg->getSubpicureLevelInfoSEICfg();
 
-  sei->m_sliSublayerInfoPresentFlag = cfgSubPicLevel.m_sliSublayerInfoPresentFlag;
-  sei->m_sliMaxSublayers = cfgSubPicLevel.m_sliMaxSublayers;
-  sei->m_numRefLevels = cfgSubPicLevel.m_sliSublayerInfoPresentFlag ? (int)cfgSubPicLevel.m_refLevels.size() / cfgSubPicLevel.m_sliMaxSublayers : (int)cfgSubPicLevel.m_refLevels.size();
-  sei->m_numSubpics = cfgSubPicLevel.m_numSubpictures;
-  sei->m_explicitFractionPresentFlag = cfgSubPicLevel.m_explicitFraction;
+  sli->hasSublayerInfo = cfgSubPicLevel.hasSublayerInfo;
 
-  // sei parameters initialization
-  sei->m_nonSubpicLayersFraction.resize(sei->m_numRefLevels);
-  sei->m_refLevelIdc.resize(sei->m_numRefLevels);
-  for (int level = 0; level < sei->m_numRefLevels; level++)
-  {
-    sei->m_nonSubpicLayersFraction[level].resize(sei->m_sliMaxSublayers);
-    sei->m_refLevelIdc[level].resize(sei->m_sliMaxSublayers);
-    for (int sublayer = 0; sublayer < sei->m_sliMaxSublayers; sublayer++)
-    {
-      sei->m_refLevelIdc[level][sublayer] = Level::LEVEL15_5;
-    }
-  }
-  if (sei->m_explicitFractionPresentFlag)
-  {
-    sei->m_refLevelFraction.resize(sei->m_numRefLevels);
-    for (int level = 0; level < sei->m_numRefLevels; level++)
-    {
-      sei->m_refLevelFraction[level].resize(sei->m_numSubpics);
-      for (int subpic = 0; subpic < sei->m_numSubpics; subpic++)
-      {
-        sei->m_refLevelFraction[level][subpic].resize(sei->m_sliMaxSublayers);
-        for (int sublayer = 0; sublayer < sei->m_sliMaxSublayers; sublayer++)
-        {
-          sei->m_refLevelFraction[level][subpic][sublayer] = 0;
-        }
-      }
-    }
-  }
+  const size_t maxSublayers = cfgSubPicLevel.m_sliMaxSublayers;
+  const size_t numRefLevels = cfgSubPicLevel.hasSublayerInfo
+                                ? cfgSubPicLevel.m_refLevels.size() / cfgSubPicLevel.m_sliMaxSublayers
+                                : cfgSubPicLevel.m_refLevels.size();
+  const size_t numSubpics   = cfgSubPicLevel.m_numSubpictures;
+
+  const bool explicitFractionPresentFlag = cfgSubPicLevel.m_explicitFraction;
+
+  sli->resize(numRefLevels, maxSublayers, explicitFractionPresentFlag, numSubpics);
 
   // set sei parameters according to the configured values
-  for (int sublayer = sei->m_sliSublayerInfoPresentFlag ? 0 : sei->m_sliMaxSublayers - 1, cnta = 0, cntb = 0; sublayer < sei->m_sliMaxSublayers; sublayer++)
+  for (int sublayer = sli->hasSublayerInfo ? 0 : sli->maxSublayers() - 1, cnta = 0, cntb = 0;
+       sublayer < sli->maxSublayers(); sublayer++)
   {
-    for (int level = 0; level < sei->m_numRefLevels; level++)
+    for (int level = 0; level < sli->numRefLevels(); level++)
     {
-      sei->m_nonSubpicLayersFraction[level][sublayer] = cfgSubPicLevel.m_nonSubpicLayersFraction[cnta];
-      sei->m_refLevelIdc[level][sublayer] = cfgSubPicLevel.m_refLevels[cnta++];
-      if (sei->m_explicitFractionPresentFlag)
+      sli->nonSubpicLayerFraction(level, sublayer) = cfgSubPicLevel.m_nonSubpicLayersFraction[cnta];
+      sli->refLevelIdc(level, sublayer)            = cfgSubPicLevel.m_refLevels[cnta++];
+      if (sli->explicitFractionPresentFlag())
       {
-        for (int subpic = 0; subpic < sei->m_numSubpics; subpic++)
+        for (int subpic = 0; subpic < sli->numSubpics(); subpic++)
         {
-          sei->m_refLevelFraction[level][subpic][sublayer] = cfgSubPicLevel.m_fractions[cntb++];
+          sli->refLevelFraction(level, subpic, sublayer) = cfgSubPicLevel.m_fractions[cntb++];
         }
       }
     }
   }
 
   // update the inference of m_refLevelIdc[][] and m_refLevelFraction[][][]
-  if (!sei->m_sliSublayerInfoPresentFlag)
+  if (!sli->hasSublayerInfo)
   {
-    for (int sublayer = sei->m_sliMaxSublayers - 2; sublayer >= 0; sublayer--)
-    {
-      for (int level = 0; level < sei->m_numRefLevels; level++)
-      {
-        sei->m_nonSubpicLayersFraction[level][sublayer] = sei->m_nonSubpicLayersFraction[level][sei->m_sliMaxSublayers - 1];
-        sei->m_refLevelIdc[level][sublayer] = sei->m_refLevelIdc[level][sei->m_sliMaxSublayers - 1];
-        if (sei->m_explicitFractionPresentFlag)
-        {
-          for (int subpic = 0; subpic < sei->m_numSubpics; subpic++)
-          {
-            sei->m_refLevelFraction[level][subpic][sublayer] = sei->m_refLevelFraction[level][subpic][sei->m_sliMaxSublayers - 1];
-          }
-        }
-      }
-    }
+    sli->fillSublayers();
   }
 }
 
@@ -1454,12 +1410,10 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_picWidthDenominatorMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPicWidthDenominatorMinus1(filterIdx);
       sei->m_picHeightNumeratorMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightNumeratorMinus1(filterIdx);
       sei->m_picHeightDenominatorMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsPicHeightDenominatorMinus1(filterIdx);
-#if JVET_AE0048_ITEM_1_VALUE_RANGES
       CHECK(sei->m_picWidthNumeratorMinus1 > 65535, "nnpfc_pic_width_num_minus1 shall be in the range of 0 to 65535");
       CHECK(sei->m_picWidthDenominatorMinus1 > 65535, "nnpfc_pic_width_denom_minus1 shall be in the range of 0 to 65535");
       CHECK(sei->m_picHeightNumeratorMinus1 > 65535, "nnpfc_pic_height_num_minus1 shall be in the range of 0 to 65535");
       CHECK(sei->m_picHeightDenominatorMinus1 > 65535, "nnpfc_pic_height_denom_minus1 shall be in the range of 0 to 65535");
-#endif
       int confWinLeftOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowLeftOffset();
       int confWinTopOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowTopOffset();
       int confWinRightOffset = m_pcEncLib->getPPS(0)->getConformanceWindow().getWindowRightOffset();
@@ -1484,12 +1438,14 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_numberInterpolatedPictures = m_pcCfg->getNNPostFilterSEICharacteristicsNumberInterpolatedPictures(filterIdx);
       CHECK(sei->m_numberInputDecodedPicturesMinus1 <= 0, "If nnpfc_purpose is FRAME_RATE_UPSAMPLING, m_numberInputDecodedPicturesMinus1 shall be greater than 0");
     }
+    if((sei->m_purpose & NNPC_PurposeType::TEMPORAL_EXTRAPOLATION) != 0)
+    {
+      sei->m_numberExtrapolatedPicturesMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1(filterIdx);
+    }
 
     sei->m_componentLastFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComponentLastFlag(filterIdx);
     sei->m_inpFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpFormatIdc(filterIdx);
-#if JVET_AE0048_ITEM_2_VALUE_RANGES
     CHECK(sei->m_inpFormatIdc > 255, "The value of nnpfc_inp_format_idc shall be in the range of 0 to 255");
-#endif
     if (sei->m_inpFormatIdc == 1)
     {
       sei->m_inpTensorBitDepthLumaMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8(filterIdx);
@@ -1502,9 +1458,7 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
 
 
     sei->m_outFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutFormatIdc(filterIdx);
-#if JVET_AE0048_ITEM_2_VALUE_RANGES
     CHECK(sei->m_outFormatIdc > 255, "The value of nnpfc_out_format_idc shall be in the range of 0 to 255");
-#endif
     if (sei->m_outFormatIdc == 1)
     {
       sei->m_outTensorBitDepthLumaMinus8 = m_pcCfg->getNNPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8(filterIdx);
@@ -1534,7 +1488,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     sei->m_outOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutOrderIdc(filterIdx);
     CHECK((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0 && (sei->m_outOrderIdc == 0 || sei->m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0 or 3");
     CHECK((sei->m_purpose & NNPC_PurposeType::COLOURIZATION) != 0 && sei->m_outOrderIdc == 0, "When nnpfc_purpose & 0x20 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0");
-#if JVET_AE0060_COND_SIG_INF
     if(sei->m_outOrderIdc != 0)
     {
       sei->m_chromaLocInfoPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsChromaLocInfoPresentFlag(filterIdx);
@@ -1543,9 +1496,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_chromaLocInfoPresentFlag = 0;
     }
-#else
-        sei->m_chromaLocInfoPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsChromaLocInfoPresentFlag(filterIdx);
-#endif
       if(sei->m_chromaLocInfoPresentFlag)
       {
         sei->m_chromaSampleLocTypeFrame = m_pcCfg->getNNPostFilterSEICharacteristicsChromaSampleLocTypeFrame(filterIdx);;
@@ -1575,6 +1525,16 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_numKmacOperationsIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(filterIdx);
         sei->m_totalKilobyteSize = m_pcCfg->getNNPostFilterSEICharacteristicsTotalKilobyteSize(filterIdx);
     }
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+    if (sei->m_purpose == 0)
+    {
+      sei->m_applicationPurposeTagUriPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag(filterIdx);
+      if (sei->m_applicationPurposeTagUriPresentFlag)
+      {
+        sei->m_applicationPurposeTagUri = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUri(filterIdx);
+      }
+    }
+  #endif
   }
   if (sei->m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
   {
@@ -1603,22 +1563,47 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
   sei->m_cancelFlag  = m_pcCfg->getNnPostFilterSEIActivationCancelFlag();
   if(!sei->m_cancelFlag)
   {
-#if JVET_AE0126_NNPF_EDITORIAL_CHANGES
     sei->m_persistenceFlag = m_pcCfg->getNnPostFilterSEIActivationPersistenceFlag();
     sei->m_targetBaseFlag = m_pcCfg->getNnPostFilterSEIActivationTargetBaseFlag();
-#else
-    sei->m_targetBaseFlag = m_pcCfg->getNnPostFilterSEIActivationTargetBaseFlag();
-    sei->m_persistenceFlag = m_pcCfg->getNnPostFilterSEIActivationPersistenceFlag();
-#endif
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
     sei->m_noPrevCLVSFlag = m_pcCfg->getNnPostFilterSEIActivationNoPrevCLVSFlag();
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
     sei->m_noFollCLVSFlag = m_pcCfg->getNnPostFilterSEIActivationNoFollCLVSFlag();
-#endif
     sei->m_outputFlag = m_pcCfg->getNnPostFilterSEIActivationOutputFlag();
   }
 }
 
+#if JVET_AH2006_EOI_SEI
+void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
+{
+  CHECK(!(m_isInitialized), "Unspecified error");
+  CHECK(!(sei != nullptr), "Unspecified error");
+  sei->m_cancelFlag = m_pcCfg->getEOISEICancelFlag();
+  if (!sei->m_cancelFlag)
+  {
+    sei->m_persistenceFlag = m_pcCfg->getEOISEIPersistenceFlag();
+    sei->m_forHumanViewingIdc = m_pcCfg->getEOISEIForHumanViewingIdc();
+    sei->m_forMachineAnalysisIdc = m_pcCfg->getEOISEIForMachineAnalysisIdc();
+    CHECK(sei->m_forHumanViewingIdc ==1  && sei->m_forMachineAnalysisIdc ==1 , "the value of eoi_for_human_viewing_idc and eoi_for_machine_analysis_idc shall not be both equal to 1");
+    sei->m_type = m_pcCfg->getEOISEIType();
+    if ((sei->m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) != 0)
+    {
+      sei->m_objectBasedIdc = m_pcCfg->getEOISEIObjectBasedIdc();
+    }
+    if ((sei->m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
+    {
+      sei->m_temporalResamplingTypeFlag = m_pcCfg->getEOISEITemporalResamplingTypeFlag();
+      sei->m_numIntPics = m_pcCfg->getEOISEINumIntPics();
+    }
+    if ((sei->m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
+    {
+      sei->m_spatialResamplingTypeFlag = m_pcCfg->getEOISEISpatialResamplingTypeFlag();
+    }
+    if ((sei->m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
+    {
+      sei->m_privacyProtectionTypeIdc = m_pcCfg->getEOISEIPrivacyProtectionTypeIdc();
+      sei->m_privacyProtectedInfoType = m_pcCfg->getEOISEIPrivacyProtectedInfoType();
+    }
+  }
+}
+#endif
 
 //! \}

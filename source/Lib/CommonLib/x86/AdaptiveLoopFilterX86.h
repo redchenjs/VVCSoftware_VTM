@@ -370,9 +370,16 @@ static void simdDeriveClassificationBlk_HBD(AlfClassifier **classifier, int **la
       __m128i d1 = _mm_max_epi32(sumD0, sumD1);
       __m128i d0 = _mm_min_epi32(sumD0, sumD1);
 
-      __m128i a = _mm_xor_si128(_mm_mullo_epi32(d1, hv0), _mm_set1_epi32(0x80000000));
-      __m128i b = _mm_xor_si128(_mm_mullo_epi32(hv1, d0), _mm_set1_epi32(0x80000000));
-      __m128i dirIdx = _mm_cmpgt_epi32(a, b);
+      __m128i a0 = _mm_mul_epu32(d1, hv0);
+      __m128i b0 = _mm_mul_epu32(hv1, d0);
+      __m128i dirIdx0 = _mm_cmpgt_epi64(a0, b0); // SSE4.2
+
+      __m128i a1 = _mm_mul_epu32(_mm_srli_si128(d1, 4), _mm_srli_si128(hv0, 4));
+      __m128i b1 = _mm_mul_epu32(_mm_srli_si128(hv1, 4), _mm_srli_si128(d0, 4));
+      __m128i dirIdx1 = _mm_cmpgt_epi64(a1, b1); // SSE4.2
+
+      __m128i dirIdx = _mm_blend_epi16(dirIdx0, dirIdx1, 0xcc); // SSE4.1
+
       __m128i hvd1 = _mm_blendv_epi8(hv1, d1, dirIdx);
       __m128i hvd0 = _mm_blendv_epi8(hv0, d0, dirIdx);
 
@@ -1680,7 +1687,10 @@ template <X86_VEXT vext>
 void AdaptiveLoopFilter::_initAdaptiveLoopFilterX86()
 {
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
-  m_deriveClassificationBlk = simdDeriveClassificationBlk_HBD;
+  if (vext >= SSE42)
+  {
+    m_deriveClassificationBlk = simdDeriveClassificationBlk_HBD;
+  }
 #ifdef USE_AVX2
   if (vext >= AVX2)
   {

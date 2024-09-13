@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,47 +54,19 @@
 
 // clang-format off
 
-#define JVET_AD0045                                       1  // encoder control for DMVR
 
 //########### place macros to be removed in next cycle below this line ###############
-#define JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC            1  // JVET_AE0156: Wrapping and importance indication for SEI PO SEI message
 
-#define JVET_AE0126_NNPF_EDITORIAL_CHANGES                1  // JVET_AE0126: NNPF cleanup and editorial changes for VSEI include item 2, item 3, item 5, and item 7
+#define JVET_AH0078_DPF                                   1 // JVET-AH0078: AhG10: Distortion Propagation Factor for VVC Low-Delay Configuration
 
-#define JVET_Z0150_MEMORY_USAGE_PRINT                     1 // JVET-Z0150: Print memory usage
 
-#define JVET_AE0048_IMPLICIT_PERSISTENCE_CANCEL           1 // JVET-AE0048 item 5: Cancel the persistence of an NNPFA SEI message with any subsequent NNPFA SEI message with the same nnpfa_target_id
 
-#define JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG               1 // JVET-AE0050 item 1: Add nnpfa_no_prev_clvs_flag to the NNPFA SEI message
 
-#define JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG               1 // JVET-AE0050 item 2: Add nnpfa_no_foll_clvs_flag to the NNPFA SEI message
 
-#define JVET_AE0060_COND_SIG_INF                          1 // signal nnpfc_chroma_loc_info_present_flag only when nnpfc_out_order_idc is not equal to 0 and infer nnpfc_chroma_loc_info_present_flag to be equal to 0 when not present.
-#define JVET_AE0057_MTT_ET                                1 // JVET-AE0057: MTT split modes early termination
+#define JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING 1 // JVET-AF2032: Conditionally signal application tag URI presence flag and tag URI in the NNPFC metadata extension
 
-#define JVET_AE0141_NNPFC_BUGFIX_COLOURIZATION            1  // JVET-AE0141: Fix a bug in NNPFC SEI message for colourization
+#define JVET_AG2034_SPTI_SEI 1 //JVET-AE0079, JVET-AF0055, JVET-AF0069, JVET-AF0097, JVET-AG0191, JVET-AG0188 
 
-#define JVET_AE0128_CONSTRAINT_UPDATE                     1  // JVET_AE0128 item 2: Update the constraint on when an NNPFC SEI message shall be a repetition of the first NNPFC SEI message in the CLVS
-
-#define JVET_AE0142_NNPF_CONSTRAINT_BUGFIXES              1  // JVET_AE0142 item 3 and item 4: Fix two bugs including an added condition and a nnpfc_purpose related constraint.
-
-#define JVET_AE0135_NNPF_PIC_RATE_UPSAMPLING_CONSTRAINT   1  // JVET_AE0135 item2: On NNPF picture rate upsampling constraint
-
-#define JVET_AE0189_NNPFA_ACTIVATE_NONBASE_CONSTRAINT     1  // JVET_AE0189 item 2: On NNPFA activing a non-base filter shall have earlier NNPFC base filter with the same ID constraint that is not a base filter
-
-#define JVET_AE0048_ITEM_1_VALUE_RANGES                   1  // JVET-AE0048 item 1: Add missing value ranges for nnpfc_pic_width_num_minus1, nnpfc_pic_width_denom_minus1, nnpfc_pic_height_num_minus1, and nnpfc_pic_height_denom_minus1.
-
-#define JVET_AE0048_ITEM_2_VALUE_RANGES                   1  // JVET_AE0048 item 2: Add missing value ranges for nnpfc_inp_format_idc and nnpfc_out_format_idc to be in the range of 0 to 255.
-
-#define JVET_AE0049_NNPF_SAME_CONTENT_CONSTRAINT          1  // JVET-AE0049 item 1: Update NNPF SEI identical content constraints
-
-#define JVET_AE0049_REPEATED_INFERENCE_CONSTRAINT         1  // JVET-AE0049 item 2: Constrain the repeated inference to generate interpolated pictures up to the end of the bitstream to NNPFs that perform only picture rate upsampling
-
-#define JVET_AE0049_INDEX_RANGE                           1  // JVET-AE0049 item 3: Change the index range in input picture assignment for repeated inference at the end of a bitstream
-
-#define JVET_AE0181_SCALING_WINDOW_ENABLED                1  // JVET-AE0181: Scaling window support
-
-#define JVET_AE0134_END_REPEATED_INFERENCE                1  // JVET_AE0134 item 2: At the end of a bitstream or CLVS, add repeated inference of NNPF for creating pictures corresponding to input pictures
 
 //########### place macros to be be kept below this line ###############
 
@@ -115,6 +87,8 @@
 #define APPLY_SBT_SL_ON_MTS                               1 // apply save & load fast algorithm on inter MTS when SBT is on
 
 #define JVET_AD0067_INCLUDE_SYNTAX                        1 // include nnpfc_full_range_flag syntax element in the nnpfc sei message when nnpfc_separate_colour_description_present_flag is equal to 1 and when nnpfc_out_format_idc is equal to 1.
+
+#define JVET_AH2006_EOI_SEI                               1 // Implementation of Encoder Optimizaion Information SEI message 
 
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
@@ -282,24 +256,26 @@
 
 #if RExt__HIGH_BIT_DEPTH_SUPPORT
 typedef       int             Pel;               ///< pixel type
-typedef       int64_t           TCoeff;            ///< transform coefficient
+typedef       int64_t         TCoeff;            ///< transform coefficient
 typedef       int             TMatrixCoeff;      ///< transform matrix coefficient
-typedef       int16_t           TFilterCoeff;      ///< filter coefficient
-typedef       int64_t           Intermediate_Int;  ///< used as intermediate value in calculations
-typedef       uint64_t          Intermediate_UInt; ///< used as intermediate value in calculations
+typedef       int16_t         TFilterCoeff;      ///< filter coefficient
+typedef       int64_t         Intermediate_Int;  ///< used as intermediate value in calculations
+typedef       uint64_t        Intermediate_UInt; ///< used as intermediate value in calculations
 #else
-typedef       int16_t           Pel;               ///< pixel type
+typedef       int16_t         Pel;               ///< pixel type
 typedef       int             TCoeff;            ///< transform coefficient
-typedef       int16_t           TMatrixCoeff;      ///< transform matrix coefficient
-typedef       int16_t           TFilterCoeff;      ///< filter coefficient
+typedef       int16_t         TMatrixCoeff;      ///< transform matrix coefficient
+typedef       int16_t         TFilterCoeff;      ///< filter coefficient
 typedef       int             Intermediate_Int;  ///< used as intermediate value in calculations
-typedef       uint32_t            Intermediate_UInt; ///< used as intermediate value in calculations
+typedef       uint32_t        Intermediate_UInt; ///< used as intermediate value in calculations
 #endif
 
-typedef       uint64_t          SplitSeries;       ///< used to encoded the splits that caused a particular CU size
-typedef       uint64_t          ModeTypeSeries;    ///< used to encoded the ModeType at different split depth
+typedef       uint64_t        SplitSeries;       ///< used to encoded the splits that caused a particular CU size
+typedef       uint64_t        ModeTypeSeries;    ///< used to encoded the ModeType at different split depth
 
 typedef       uint64_t        Distortion;        ///< distortion measurement
+
+using TileIdx = uint16_t;
 
 // ====================================================================================================================
 // Enumeration
@@ -801,6 +777,19 @@ enum SAOEOClasses
   NUM_SAO_EO_CLASSES,
 };
 
+#if JVET_AH2006_EOI_SEI
+enum EOI_OptimizationType
+{
+  UNDEFINED = 0,
+  OBJECT_BASED_OPTIMIZATION = 1,
+  TEMPORAL_RESAMPLING = 2,
+  SPATIAL_RESAMPLING = 4,
+  TEMPORAL_QUALITY_OPTIMIZATION = 8,
+  SPATIAL_QUALITY_OPTIMIZATION = 16,
+  PRIVACY_PROTECTION_OPTIMIZATION = 32,
+};
+#endif 
+
 enum NNPC_PaddingType
 {
   ZERO_PADDING = 0,
@@ -818,7 +807,8 @@ enum NNPC_PurposeType
   RESOLUTION_UPSAMPLING      = 4,
   FRAME_RATE_UPSAMPLING      = 8,
   BIT_DEPTH_UPSAMPLING       = 16,
-  COLOURIZATION              = 32
+  COLOURIZATION              = 32,
+  TEMPORAL_EXTRAPOLATION     = 64
 };
 
 enum POST_FILTER_MODE
@@ -1291,6 +1281,13 @@ enum RESHAPE_SIGNAL_TYPE
   RESHAPE_SIGNAL_NULL = 100,
 };
 
+#if JVET_AH0078_DPF
+enum EncType
+{
+  ENC_PRE = 0,
+  ENC_FULL = 1,
+};
+#endif
 
 // ---------------------------------------------------------------------------
 // exception class
@@ -1375,6 +1372,8 @@ public:
     while( _src1 < _src2 ) _arr[ _size++ ] = *_src1++;
 
     CHECKD( _size > N, "capacity exceeded" );
+
+    return *this;
   }
 
   void resize( size_t N_ )                      { CHECKD( N_ > N, "capacity exceeded" ); while(_size < N_) _arr[ _size++ ] = T() ; _size = N_; }

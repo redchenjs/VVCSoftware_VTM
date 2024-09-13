@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -296,9 +296,12 @@ protected:
   bool                  m_HashMEPOCchecked;
   int                   m_HashMEPOC2;
 
-#if JVET_AE0057_MTT_ET
   double                m_noSplitIntraRdCost;
+#if JVET_AH0078_DPF
+  int                   m_qpCtu;
+  const UnitArea*       m_currCsArea;
 #endif
+
 public:
 
   virtual ~EncModeCtrl              () {}
@@ -337,9 +340,7 @@ public:
   virtual void setBest              ( CodingStructure& cs );
   bool         anyMode              () const;
 
-#if JVET_AE0057_MTT_ET
   void         setNoSplitIntraCost  (double cost) { m_noSplitIntraRdCost = cost; }
-#endif
   const ComprCUCtx& getComprCUCtx   () { CHECK( m_ComprCUCtxList.empty(), "Accessing empty list!"); return m_ComprCUCtxList.back(); }
 
 #if SHARP_LUMA_DELTA_QP
@@ -399,6 +400,11 @@ public:
     auto it = m_bimQPMap->find(poc);
     return (it == m_bimQPMap->end()) ? 0 : (*m_bimQPMap)[poc][ctuId];
   }
+
+#if JVET_AH0078_DPF
+  void setQpCtu                       ( int qp )                     { m_qpCtu = qp; }
+  void setCurrCsArea                  ( const UnitArea &currCsArea ) { m_currCsArea = &currCsArea; }
+#endif
 
 #if GDR_ENABLED
 void forceIntraMode()
@@ -717,12 +723,13 @@ class SaveLoadEncInfoSbt
 {
 protected:
   void init( const Slice &slice );
-  void create();
+  void create(int maxCuSize);
   void destroy();
 
 private:
   SaveLoadStructSbt ****m_saveLoadSbt;
   Slice const       *m_sliceSbt;
+  int m_maxCuSize;
 
 public:
   virtual  ~SaveLoadEncInfoSbt() { }
@@ -769,10 +776,11 @@ private:
   Slice const     *m_slice_chblk;
   // x in CTU, y in CTU, width, height
   CodedCUInfo   ***m_codedCUInfo[MAX_CU_SIZE >> MIN_CU_LOG2][MAX_CU_SIZE >> MIN_CU_LOG2];
+  int m_maxCuSize;
 
 protected:
 
-  void create   ();
+  void create   (int maxCuSize);
   void destroy  ();
   void init     ( const Slice &slice );
 
@@ -823,10 +831,11 @@ private:
   PLTRunMode*         m_runType;
   XuPool              m_dummyPool;
   CodingStructure     m_dummyCS;
+  int                 m_maxCuSize;
 
 protected:
 
-  void create   ( const ChromaFormat chFmt );
+  void create   ( const ChromaFormat chFmt, int maxCuSize);
   void destroy  ();
 
   bool setFromCs( const CodingStructure& cs, const Partitioner& partitioner );

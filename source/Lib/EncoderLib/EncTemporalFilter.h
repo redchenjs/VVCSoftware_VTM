@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2023, ITU/ISO/IEC
+* Copyright (c) 2010-2024, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@
 
 #ifndef __TEMPORAL_FILTER__
 #define __TEMPORAL_FILTER__
-#include "EncLib.h"
+#include "CommonLib/Unit.h"
 #include "CommonLib/Buffer.h"
 #include <sstream>
 #include <map>
@@ -110,6 +110,8 @@ public:
   void init(const int frameSkip, const BitDepths &inputBitDepth, const BitDepths &msbExtendedBitDepth,
             const BitDepths &internalBitDepth, const int width, const int height, const int *pad, const bool rec709,
             const std::string &filename, const ChromaFormat inputChroma,
+            const int sourceWidthBeforeScale, const int sourceHeightBeforeScale,
+            const int sourceHorCollocatedChromaFlag, const int sourceVerCollocatedChromaFlag,
             const InputColourSpaceConversion colorSpaceConv, const int qp,
             const std::map<int, double> &temporalFilterStrengths, const int pastRefs, const int futureRefs,
             const int firstValidFrame, const int lastValidFrame, const bool bMCTFenabled,
@@ -137,6 +139,10 @@ private:
   BitDepths m_internalBitDepth;
 
   ChromaFormat m_chromaFormatIdc;
+  int m_sourceWidthBeforeScale;
+  int m_sourceHeightBeforeScale;
+  int m_sourceHorCollocatedChromaFlag;
+  int m_sourceVerCollocatedChromaFlag;
   int m_sourceWidth;
   int m_sourceHeight;
   int m_QP;

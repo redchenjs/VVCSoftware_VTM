@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -86,6 +86,13 @@ public:
   bool     getTransposeFlag ( uint32_t intraMode  );
 
 protected:
+#ifdef TARGET_SIMD_X86
+  void                         initX86();
+  template<X86_VEXT vext> void _initX86();
+#endif
+
+  EnumArray<std::array<FwdTrans*, NUM_TRANSFORM_MATRIX_SIZES>, TransType> m_fwdTx;
+  EnumArray<std::array<InvTrans*, NUM_TRANSFORM_MATRIX_SIZES>, TransType> m_invTx;
 
   void xFwdLfnst( const TransformUnit &tu, const ComponentID compID, const bool loadTr = false );
   void xInvLfnst( const TransformUnit &tu, const ComponentID compID );

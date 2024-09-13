@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2023, ITU/ISO/IEC
+* Copyright (c) 2010-2024, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -94,38 +94,61 @@ void CodingStructure::destroy()
   m_reco.destroy();
   m_orgr.destroy();
 
-  destroyCoeffs();
-
-  for (auto &ptr: m_isDecomp)
-  {
-    delete[] ptr;
-    ptr = nullptr;
-  }
-
-  for (auto &ptr: m_tuIdx)
-  {
-    delete[] ptr;
-    ptr = nullptr;
-  }
-
-  for (auto &ptr: m_puIdx)
-  {
-    delete[] ptr;
-    ptr = nullptr;
-  }
-
-  for (auto &ptr: m_cuIdx)
-  {
-    delete[] ptr;
-    ptr = nullptr;
-  }
+  destroyTemporaryCsData();
 
   delete[] m_motionBuf;
   m_motionBuf = nullptr;
+}
+
+void CodingStructure::destroyTemporaryCsData()
+{
+  destroyCoeffs();
+
+  for (auto &ptr : m_isDecomp)
+  {
+    delete[] ptr;
+    ptr = nullptr;
+  }
+
+  for (auto &ptr : m_tuIdx)
+  {
+    delete[] ptr;
+    ptr = nullptr;
+  }
+
+  for (auto &ptr : m_puIdx)
+  {
+    delete[] ptr;
+    ptr = nullptr;
+  }
+
+  for (auto &ptr : m_cuIdx)
+  {
+    delete[] ptr;
+    ptr = nullptr;
+  }
 
   m_tuPool.giveBack(tus);
   m_puPool.giveBack(pus);
   m_cuPool.giveBack(cus);
+  m_numTUs = 0;
+  m_numPUs = 0;
+  m_numCUs = 0;
+}
+
+void CodingStructure::createTemporaryCsData(bool isPLTused)
+{
+  createCoeffs(isPLTused);
+
+  for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(area.chromaFormat); chType++)
+  {
+    unsigned _area = unitScale[getFirstComponentOfChannel(chType)].scale(area.block(chType).size()).area();
+
+    m_cuIdx[chType] = _area > 0 ? new unsigned[_area] : nullptr;
+    m_puIdx[chType] = _area > 0 ? new unsigned[_area] : nullptr;
+    m_tuIdx[chType] = _area > 0 ? new unsigned[_area] : nullptr;
+    m_isDecomp[chType] = _area > 0 ? new bool[_area] : nullptr;
+  }
 }
 
 void CodingStructure::releaseIntermediateData()
@@ -959,7 +982,6 @@ CodingUnit& CodingStructure::addCU( const UnitArea &unit, const ChannelType chTy
   CodingUnit *cu = m_cuPool.get();
 
   cu->UnitArea::operator=( unit );
-  cu->initData();
   cu->cs        = this;
   cu->slice     = nullptr;
   cu->next      = nullptr;
@@ -967,6 +989,7 @@ CodingUnit& CodingStructure::addCU( const UnitArea &unit, const ChannelType chTy
   cu->lastPU    = nullptr;
   cu->firstTU   = nullptr;
   cu->lastTU    = nullptr;
+  cu->initData();
   cu->chType    = chType;
   cu->treeType = treeType;
   cu->modeType = modeType;
@@ -1089,7 +1112,7 @@ TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType c
   tu->idx  = idx;
 
   TCoeff *coeffs[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
-  Pel    *pcmbuf[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
+  Pel    *pltIdxBuf[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
   EnumArray<PLTRunMode*, ChannelType> runType;
 
   for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(area.chromaFormat); chType++)
@@ -1126,6 +1149,7 @@ TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType c
     }
   }
 
+  const bool usePlt = sps->getPLTMode();
   uint32_t numComp = ::getNumberValidComponents(area.chromaFormat);
 
   for (uint32_t i = 0; i < numComp; i++)
@@ -1136,12 +1160,15 @@ TransformUnit& CodingStructure::addTU( const UnitArea &unit, const ChannelType c
     }
 
     coeffs[i] = m_coeffs[i].data() + m_offsets[i];
-    pcmbuf[i] = m_pcmbuf[i].data() + m_offsets[i];
+    if (usePlt)
+    {
+      pltIdxBuf[i] = m_pltIdxBuf[i].data() + m_offsets[i];
+    }
 
     unsigned areaSize = tu->blocks[i].area();
     m_offsets[i] += areaSize;
   }
-  tu->init(coeffs, pcmbuf, runType);
+  tu->init(coeffs, pltIdxBuf, runType);
 
   return *tu;
 }
@@ -1166,12 +1193,16 @@ void CodingStructure::addEmptyTUs( Partitioner &partitioner )
   {
     TransformUnit &tu = this->addTU( CS::getArea( *this, area, partitioner.chType ), partitioner.chType );
     unsigned numBlocks = ::getNumberValidTBlocks( *this->pcv );
+    const bool usePlt = sps->getPLTMode();
     for( unsigned compID = COMPONENT_Y; compID < numBlocks; compID++ )
     {
       if( tu.blocks[compID].valid() )
       {
         tu.getCoeffs( ComponentID( compID ) ).fill( 0 );
-        tu.getPcmbuf( ComponentID( compID ) ).fill( 0 );
+        if (usePlt)
+        {
+          tu.getcurPLTIdx( ComponentID( compID ) ).fill( 0 );
+        }
       }
     }
     tu.depth = trDepth;
@@ -1331,16 +1362,6 @@ void CodingStructure::createInternals(const UnitArea& _unit, const bool isTopLay
   picture = nullptr;
   parent  = nullptr;
 
-  for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(area.chromaFormat); chType++)
-  {
-    unsigned _area = unitScale[getFirstComponentOfChannel(chType)].scale(area.block(chType).size()).area();
-
-    m_cuIdx[chType]    = _area > 0 ? new unsigned[_area] : nullptr;
-    m_puIdx[chType]    = _area > 0 ? new unsigned[_area] : nullptr;
-    m_tuIdx[chType]    = _area > 0 ? new unsigned[_area] : nullptr;
-    m_isDecomp[chType] = _area > 0 ? new bool[_area] : nullptr;
-  }
-
   const int numComp = getNumberValidComponents(area.chromaFormat);
 
   for (int i = 0; i < numComp; i++)
@@ -1350,12 +1371,15 @@ void CodingStructure::createInternals(const UnitArea& _unit, const bool isTopLay
 
   if (!isTopLayer)
   {
-    createCoeffs(isPLTused);
+    createTemporaryCsData(isPLTused);
   }
 
   unsigned _lumaAreaScaled = g_miScaling.scale( area.lumaSize() ).area();
   m_motionBuf       = new MotionInfo[_lumaAreaScaled];
-  initStructData();
+  if (!isTopLayer)
+  {
+    initStructData();
+  }
 }
 
 void CodingStructure::addMiToLut(static_vector<MotionInfo, MAX_NUM_HMVP_CANDS> &lut, const MotionInfo &mi)
@@ -1522,7 +1546,10 @@ void CodingStructure::createCoeffs(const bool isPLTused)
     unsigned _area = area.blocks[i].area();
 
     m_coeffs[i].resize(_area);
-    m_pcmbuf[i].resize(_area);
+    if (isPLTused)
+    {
+      m_pltIdxBuf[i].resize(_area);
+    }
   }
 
   if (isPLTused)
@@ -1540,13 +1567,13 @@ void CodingStructure::destroyCoeffs()
 {
   for( uint32_t i = 0; i < MAX_NUM_COMPONENT; i++ )
   {
-    m_coeffs[i].clear();
-    m_pcmbuf[i].clear();
+    free(m_coeffs[i]);
+    free(m_pltIdxBuf[i]);
   }
 
   for (auto &ptr: m_runType)
   {
-    ptr.clear();
+    free(ptr);
   }
 }
 
@@ -2117,7 +2144,7 @@ const CodingUnit* CodingStructure::getCURestricted( const Position &pos, const C
   }
 }
 
-const CodingUnit* CodingStructure::getCURestricted( const Position &pos, const Position curPos, const unsigned curSliceIdx, const unsigned curTileIdx, const ChannelType _chType ) const
+const CodingUnit* CodingStructure::getCURestricted( const Position &pos, const Position curPos, const unsigned curSliceIdx, const TileIdx curTileIdx, const ChannelType _chType ) const
 {
   const CodingUnit* cu = getCU( pos, _chType );
   const bool wavefrontsEnabled = this->slice->getSPS()->getEntropyCodingSyncEnabledFlag();

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -300,10 +300,10 @@ void InterSearch::resetSavedAffineMotion()
 }
 
 #if GDR_ENABLED
-void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int16_t affineRefIdx[2],
+void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], bool acAffineMvSolid[2][3], int8_t affineRefIdx[2],
                                     AffineModel affineType, int bcwIdx)
 #else
-void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], int16_t affineRefIdx[2], AffineModel affineType, int bcwIdx)
+void InterSearch::storeAffineMotion(Mv acAffineMv[2][3], int8_t affineRefIdx[2], AffineModel affineType, int bcwIdx)
 #endif
 {
   if ((bcwIdx == BCW_DEFAULT || !m_affineMotion.affine6ParaAvail) && affineType == AffineModel::_6_PARAMS)
@@ -2744,7 +2744,7 @@ void InterSearch::predInterSearch(CodingUnit& cu, Partitioner& partitioner)
   int refIdx[NUM_REF_PIC_LIST_01] = {
     0, 0
   };   // If un-initialized, may cause SEGV in bi-directional prediction iterative stage.
-  int iRefIdxBi[NUM_REF_PIC_LIST_01] = { -1, -1 };
+  int8_t iRefIdxBi[NUM_REF_PIC_LIST_01] = { -1, -1 };
 
   uint32_t mbBits[3] = { 1, 1, 0 };
 
@@ -9782,6 +9782,7 @@ void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
 
     CodingStructure &saveCS = *m_pSaveCS[0];
     saveCS.pcv     = cs.pcv;
+    saveCS.sps     = cs.sps;
     saveCS.picture = cs.picture;
     saveCS.area.repositionTo(currArea);
     saveCS.clearTUs();
@@ -10683,6 +10684,7 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
   const UnitArea curUnitArea = partitioner.currArea();
   CodingStructure &saveCS = *m_pSaveCS[1];
   saveCS.pcv = cs.pcv;
+  saveCS.sps = cs.sps;
   saveCS.picture = cs.picture;
   saveCS.area.repositionTo(curUnitArea);
   saveCS.clearCUs();
@@ -11424,8 +11426,8 @@ bool InterSearch::isValidBv(PredictionUnit& pu, int xPos, int yPos, int width, i
   // check whether in same tile
   if (refLeftCtuCol != curCtuCol)
   {
-    const uint32_t curTileIdx = pu.cs->pps->getTileIdx(curCtuCol, curCtuRow);
-    const uint32_t refTileIdx = pu.cs->pps->getTileIdx(refLeftCtuCol, curCtuRow);
+    const TileIdx curTileIdx = pu.cs->pps->getTileIdx(curCtuCol, curCtuRow);
+    const TileIdx refTileIdx = pu.cs->pps->getTileIdx(refLeftCtuCol, curCtuRow);
     if (curTileIdx != refTileIdx)
     {
       return false;

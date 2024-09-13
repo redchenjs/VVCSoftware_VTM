@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,14 +55,15 @@ public:
 
 protected:
   void xWriteSEIuserDataUnregistered(const SEIuserDataUnregistered &sei);
-  void xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei, const SEIBufferingPeriod& bp, const uint32_t temporalId);
+  void xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& dui, const SEIBufferingPeriod& bp,
+                                 const uint32_t temporalId);
   void xWriteSEIDecodedPictureHash(const SEIDecodedPictureHash& sei);
   void xWriteSEIBufferingPeriod(const SEIBufferingPeriod& sei);
-  void xWriteSEIPictureTiming(const SEIPictureTiming& sei, const SEIBufferingPeriod& bp, const uint32_t temporalId);
+  void xWriteSEIPictureTiming(const SEIPictureTiming& pt, const SEIBufferingPeriod& bp, const uint32_t temporalId);
   void xWriteSEIFrameFieldInfo(const SEIFrameFieldInfo& sei);
   void xWriteSEIDependentRAPIndication(const SEIDependentRAPIndication& sei);
   void xWriteSEIEdrapIndication(const SEIExtendedDrapIndication& sei);
-  void xWriteSEIScalableNesting(OutputBitstream &bs, const SEIScalableNesting &sei);
+  void xWriteSEIScalableNesting(OutputBitstream& bs, const SEIScalableNesting& sn);
   void xWriteSEIFramePacking(const SEIFramePacking &sei, int SEIPrefixIndicationIdx = 0);
   void xWriteSEIDisplayOrientation(const SEIDisplayOrientation& sei);
   void xWriteSEIParameterSetsInclusionIndication(const SEIParameterSetsInclusionIndication& sei);
@@ -82,7 +83,7 @@ protected:
   void xWriteSEIAlphaChannelInfo                  (const SEIAlphaChannelInfo& sei);
   void xWriteSEIDepthRepresentationInfo           (const SEIDepthRepresentationInfo& sei);
   void xWriteSEIDepthRepInfoElement               (double f);
-  void xWriteSEISubpictureLevelInfo               (const SEISubpicureLevelInfo &sei);
+  void xWriteSEISubpictureLevelInfo(const SEISubpictureLevelInfo& sli);
   void xWriteSEISampleAspectRatioInfo             (const SEISampleAspectRatioInfo &sei);
   void xWriteSEIPhaseIndication                   (const SEIPhaseIndication&sei);
   void xWriteSEIConstrainedRaslIndication         (const SEIConstrainedRaslIndication &sei);
@@ -107,15 +108,19 @@ protected:
   void xWriteByteAlign();
   void xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
   void xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation &sei);
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   void xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessingOrderInfo& sei);
-#else
-  void xWriteSEIProcessingOrder(const SEIProcessingOrderInfo &sei);
-#endif
+  void xWriteSEIProcessingOrderNesting(OutputBitstream& bs, const SEIProcessingOrderNesting& sei);
 #if GREEN_METADATA_SEI_ENABLED
   void xWriteSEIGreenMetadataInfo                 (const SEIGreenMetadataInfo &sei);
 #endif
   void xWriteSEIPostFilterHint(const SEIPostFilterHint &sei);
+
+#if JVET_AH2006_EOI_SEI
+  void xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo &sei);
+#endif
+#if JVET_AG2034_SPTI_SEI
+  void xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
+#endif
 protected:
   HRD m_nestingHrd;
 };

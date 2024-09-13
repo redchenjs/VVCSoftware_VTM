@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2023, ITU/ISO/IEC
+* Copyright (c) 2010-2024, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -260,7 +260,7 @@ void CABACWriter::sao( const Slice& slice, unsigned ctuRsAddr )
   const Position pos(rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight);
 
   const unsigned curSliceIdx = slice.getIndependentSliceIdx();
-  const unsigned curTileIdx  = cs.pps->getTileIdx(pos);
+  const TileIdx  curTileIdx  = cs.pps->getTileIdx(pos);
 
   const bool leftMergeAvail =
     cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
@@ -2048,6 +2048,7 @@ void CABACWriter::merge_idx( const PredictionUnit& pu )
     {
       numCandminus1 = int(pu.cs->sps->getMaxNumMergeCand()) - 1;
     }
+    CHECK(pu.mergeIdx > numCandminus1, "mergeIdx out of range");
     if (numCandminus1 > 0)
     {
       if (pu.mergeIdx == 0)
@@ -2078,10 +2079,11 @@ void CABACWriter::mmvd_merge_idx(const PredictionUnit& pu)
   const int mvdStep     = pu.mmvdMergeIdx.pos.step;
   const int mvdPosition = pu.mmvdMergeIdx.pos.position;
 
+  CHECK(mvdBaseIdx >= std::min<int>(pu.cs->sps->getMaxNumMergeCand(), MmvdIdx::BASE_MV_NUM), "MMVD base index out of range");
+
   if (pu.cs->sps->getMaxNumMergeCand() > 1)
   {
     static_assert(MmvdIdx::BASE_MV_NUM == 2, "");
-    assert(mvdBaseIdx < 2);
     m_binEncoder.encodeBin(mvdBaseIdx, Ctx::MmvdMergeIdx());
   }
   DTRACE(g_trace_ctx, D_SYNTAX, "base_mvp_idx() base_mvp_idx=%d\n", mvdBaseIdx);
@@ -3354,7 +3356,7 @@ void CABACWriter::codeAlfCtuEnableFlag( CodingStructure& cs, uint32_t ctuRsAddr,
     const Position pos(rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight);
 
     const uint32_t curSliceIdx = cs.slice->getIndependentSliceIdx();
-    const uint32_t curTileIdx  = cs.pps->getTileIdx(pos);
+    const TileIdx  curTileIdx  = cs.pps->getTileIdx(pos);
 
     const bool leftAvail =
       cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
@@ -3381,7 +3383,7 @@ void CABACWriter::codeCcAlfFilterControlIdc(uint8_t idcVal, CodingStructure &cs,
   CHECK(idcVal > filterCount, "Filter index is too large");
 
   const uint32_t curSliceIdx    = cs.slice->getIndependentSliceIdx();
-  const uint32_t curTileIdx     = cs.pps->getTileIdx( lumaPos );
+  const TileIdx  curTileIdx     = cs.pps->getTileIdx( lumaPos );
   Position       leftLumaPos    = lumaPos.offset(-(int)cs.pcv->maxCUWidth, 0);
   Position       aboveLumaPos   = lumaPos.offset(0, -(int)cs.pcv->maxCUWidth);
   bool leftAvail = cs.getCURestricted(leftLumaPos, lumaPos, curSliceIdx, curTileIdx, ChannelType::LUMA) ? true : false;

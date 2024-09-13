@@ -205,7 +205,7 @@ fontsize=\footnotesize}
 \maketitle
 \begin{abstract}
 This document is a user manual describing usage of the VTM reference software
-for the VVC project. It applies to version 22.0 of the software.
+for the VVC project. It applies to version 23.4 of the software.
 \end{abstract}
 
 \tableofcontents
@@ -502,6 +502,10 @@ ordered as their intendend order in the L0.
 Note that any pictures not supplied in this list and in the list of L1 will be discarded and
 therefore not available as reference pictures later.
 
+When ExplicitILRP is true, a layer-specific GOP structure configuration can be provided (using the -li encoder
+parameter), in which inter-layer reference pictures are specified using a 0.x syntax, with 0 meaning
+zero POC difference, and x is the layer of the reference picture.
+
 \item[]\textbf{num_ref_pics_active_L1}: Number of reference pictures in lists L1
 that are used during coding.
 
@@ -516,6 +520,10 @@ kept, relative the POC of the current frame. The picture list shall be
 ordered as their intendend order in the L1.
 Note that any pictures not supplied in this list and in the list of L0 will be discarded and
 therefore not available as reference pictures later.
+
+When ExplicitILRP is true, the same syntax as the one described for L0 can be used to specify
+inter-layer reference pictures.
+
 
 For example, consider the coding structure of Figure~\ref{fig:gop-example}.
 This coding structure is of size 4. The pictures are listed in decoding
@@ -850,7 +858,7 @@ Enable scaling window.
 \Option{ScalWinRight (-swr)}%
 \Option{ScalWinTop (-swt)}%
 \Option{ScalWinBottom (-swb)} &
-\Default{0}
+\Default{0} &
 Specifies the horizontal and vertical offset for the scaling window. 
 Must be a multiple of the chroma resolution (e.g. a multiple of two for 4:2:0).
 \\
@@ -1714,6 +1722,15 @@ Specifies a list of values of the allowable prediction directions for dependent 
 \end{tabular}
 \\
 
+\Option{ExplicitILRP} &
+%\ShortOption{\None} &
+\Default{false} &
+Explicit specification of inter-layer reference pictures, using a layer-specific GOP structure (see section 3.1).
+When ExplicitILRP is true, AllowablePredDirection should not be used or left to default values (all zero), and
+inter-layer reference pictures are no longer inserted automatically.
+\par
+\\
+
 \Option{LayerId\emph{i}} &
 %\ShortOption{\None} &
 \Default{0} &
@@ -2232,19 +2249,6 @@ mode for one of the previous candidates.
 Picture width threshold for testing size-64 SBT in RDO (now for HD and above sequences).
 \\
 
-\Option{RDpenalty} &
-%\ShortOption{\None} &
-\Default{0} &
-RD-penalty for 32x32 TU for intra in non-intra slices.
-Enabling this parameter can reduce the visibility of CU boundaries in the coded picture.
-\par
-\begin{tabular}{cp{0.45\textwidth}}
- 0 & No RD-penalty \\
- 1 & RD-penalty \\
- 2 & Maximum RD-penalty (no 32x32 TU)\\
-\end{tabular}
-\\
-
 \Option{FastLocalDualTreeMode} &
 %\ShortOption{\None} &
 \Default{0} &
@@ -2757,6 +2761,23 @@ CbCrQpOffsetList may be omitted whereas CbQpOffsetList and CrQpOffsetList are sp
 Note that when CbCrQpOffset and CbCrQpOffsetList values are all zero, pps_joint_cbcr_qp_offset_present_flag will be automatically set to zero.
 \\
 
+\Option{DPF} &
+%\ShortOption{\None} &
+\Default{false} &
+Enable CTU-level Lagrange multiplier and QP adaptation by estimating the Distortion Propagation Factor through pre-encoding.
+\\
+
+\Option{DPFKeyLength} &
+%\ShortOption{\None} &
+\Default{8} &
+Distortion propagation length for calculating the Distortion Propagation Factor of key frames.
+\\
+
+\Option{DPFNonKeyLength} &
+%\ShortOption{\None} &
+\Default{0} &
+Distortion propagation length for calculating the Distortion Propagation Factor of non-key frames.
+\\
 \end{OptionTableNoShorthand}
 
 
@@ -3062,6 +3083,12 @@ Specifies the locations of the horizontal virtual boundaries in units of luma sa
 Enables or disables encoder-side deblocking optimization. When it is enabled, deblocking filter is applied during mode decision.
 \\
 
+\Option{AlfLambdaOpt}&
+%\ShortOption{\None}&
+\Default{false}&
+Enables or disables encoder-side optimization with adaptive loop filter. When it is enabled, lagrange multiplier optimization is applied for chroma ALF and CCALF.
+\\
+
 
 \end{OptionTableNoShorthand}
 
@@ -3168,12 +3195,6 @@ If enabled, adapt intra direction search, accounting for MPM
 %\ShortOption{\None} &
 \Default{true} &
 If enabled use a fast ME for generalised B Low Delay slices
-\\
-
-\Option{UseBLambdaForNonKeyLowDelayPictures} &
-%\ShortOption{\None} &
-\Default{true} &
-Enables use of B-Lambda for non-key low-delay pictures
 \\
 
 \Option{WeightedPredP (-wpP)} &
@@ -3946,7 +3967,6 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
    17 & Progressive refinement segment end       & (Not handled)\\
    19 & Film grain characteristics               & Table \ref{tab:sei-film-grain} \\
    22 & Post-filter hint                         & Table \ref{tab:sei-post-filter hint} \\
-   23 & Tone mapping information                 & Table \ref{tab:sei-tone-mapping-info} \\
    45 & Frame packing arrangement                & Table \ref{tab:sei-frame-packing-arrangement} \\
    47 & Display orientation                      & Table \ref{tab:sei-display-orientation} \\
    56 & Green Metadata                           & Table \ref{tab:sei-green-metadata} \\
@@ -3985,13 +4005,14 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   202 & Annotated regions information            & Table \ref{tab:sei-annotated-regions} \\  
   203 & Subpicture Level Information             & Table \ref{tab:sei-subpic-level} \\  
   204 & Sample Aspect Ratio Information          & Table \ref{tab:sei-sari} \\  
-  205 & Scalability Dimension Information        & Table \ref{tab:sei-sdi} \\
+  205 & Shutter Interval Information             & Table \ref{tab:sei-sii} \\
   207 & Constrained RASL encoding                & Table \ref{tab:sei-constrained-rasl-encoding} \\
-  209 & Shutter Interval Information             & Table \ref{tab:sei-sii} \\
+  208 & Scalability Dimension Information        & Table \ref{tab:sei-sdi} \\
   210 & Neural network post-filter characteristics & Table \ref{tab:sei-nn-post-filter-characteristics} \\
   211 & Neural netowrk post-filter activation & Table \ref{tab:sei-nn-post-filter-activation} \\
   212 & Phase indication                         & Table \ref{tab:sei-phase-indication} \\
   213 & Processing order SEI messages            & Table \ref{tab:sei-processing order}\\
+  216 & Source Picture Timing Information        & Table \ref{tab:sei-source-picture-timing-info}\\
 \end{SEIListTable}
 %%
 %% SEI messages
@@ -4227,180 +4248,6 @@ If SEIPostFilterHintChromaCoeffPresentFlag is 0 then SEIPostFilterHintSizeY * SE
 Else if SEIPostFilterHintChromaCoeffPresentFlag is 0 then SEIPostFilterHintSizeY * SEIPostFilterHintSizeY * 3
 \\
 \end{OptionTableNoShorthand}
-
-\begin{OptionTableNoShorthand}{Tone mapping information SEI message encoder parameters}{tab:sei-tone-mapping-info}
-\Option{SEIToneMappingInfo} &
-\Default{0} &
-Enables or disables the insertion of the Tone Mapping SEI message.
-\\
-\Option{SEIToneMapId} &
-\Default{0} &
-Specifies Id of Tone Mapping SEI message for a given session.
-\\
-\Option{SEIToneMapCancelFlag} &
-\Default{false} &
-Indicates that Tone Mapping SEI message cancels the persistance or follows.
-\\
-\Option{SEIToneMapPersistenceFlag} &
-\Default{true} &
-Specifies the persistence of the Tone Mapping SEI message.
-\\
-\Option{SEIToneMapCodedDataBitDepth} &
-\Default{8} &
-Specifies Coded Data BitDepth of Tone Mapping SEI messages.
-\\
-\Option{SEIToneMapTargetBitDepth} &
-\Default{8} &
-Specifies Output BitDepth of Tome mapping function.
-\\
-\Option{SEIToneMapModelId} &
-\Default{0} &
-Specifies Model utilized for mapping coded data into 
-target_bit_depth range.
-\par
-\begin{tabular}{cp{0.35\textwidth}}
-  0 & linear mapping with clipping \\
-  1 & sigmoidal mapping \\
-  2 & user-defined table mapping \\
-  3 & piece-wise linear mapping \\
-  4 & luminance dynamic range mapping \\
-\end{tabular}
-\\
-\Option{SEIToneMapMinValue} &
-\Default{0} &
-Specifies the minimum value in mode 0.
-\\
-\Option{SEIToneMapMaxValue} &
-\Default{1023} &
-Specifies the maxmum value in mode 0.
-\\
-\Option{SEIToneMapSigmoidMidpoint} &
-\Default{512} &
-Specifies the centre point in mode 1.
-\\
-\Option{SEIToneMapSigmoidWidth} &
-\Default{960} &
-Specifies the distance between 5% and 95% values of 
-the target_bit_depth in mode 1.
-\\
-\Option{SEIToneMapStartOfCodedInterval} &
-\Default{\None} &
-Array of user-defined mapping table. 
-Default table can be set to the following:
-\par
-\begin{tabular}{cp{0.35\textwidth}}
-0 12 24 36 48 60 72 84 96 108 120 132 144 156 168 180 
-\\
-192 192 196 204 208 216 220 228 232 240 248 252 260 264 
-\\
-272 276 284 292 292 296 300 304 308 312 320 324 328 332 
-\\
-336 344 348 352 356 360 368 372 376 380 384 388 396 400 
-\\
-404 408 412 420 424 428 432 436 444 444 444 448 452 456 
-\\
-460 464 468 472 476 476 480 484 488 492 496 500 504 508 
-\\
-508 512 516 520 524 528 532 536 540 540 544 548 552 556 
-\\
-560 564 568 572 572 576 580 584 588 592 596 600 604 604 
-\\
-608 612 616 620 624 628 632 636 636 640 644 648 652 656 
-\\
-660 664 668 672 672 672 676 680 680 684 688 692 692 696 
-\\
-700 704 704 708 712 716 716 720 724 724 728 732 736 736 
-\\
-740 744 748 748 752 756 760 760 764 768 768 772 776 780 
-\\
-780 784 788 792 792 796 800 804 804 808 812 812 816 820 
-\\
-824 824 828 832 836 836 840 844 848 848 852 856 860 860 
-\\
-860 864 864 868 872 872 876 880 880 884 884 888 892 892 
-\\
-896 900 900 904 908 908 912 912 916 920 920 924 928 928 
-\\
-932 936 936 940 940 944 948 948 952 956 956 960 964 964 
-\\
-968 968 972 976 976 980 984 984 988 992 992 996 996 1000 
-\\
-1004 1004 1008 1012 1012 1016 1020 1024
-\\
-\end{tabular}
-\\
-\Option{SEIToneMapNumPivots} &
-\Default{0} &
-Specifies the number of pivot points in mode 3.
-\\
-\Option{SEIToneMapCodedPivotValue} &
-\Default{\None} &
-Array of coded pivot point in mode 3.
-A suggested table is:
-\par
-\begin{tabular}{cp{0.45\textwidth}}
-64 128 256 512 768
-\end{tabular}
-\\
-\Option{SEIToneMapTargetPivotValue} &
-\Default{\None} &
-Array of target pivot point in mode 3.
-A suggested table is:
-\par
-\begin{tabular}{cp{0.45\textwidth}}
-48 73 111 168 215
-\end{tabular}
-\\
-\Option{SEIToneMap...} \Option{CameraIsoSpeedIdc} &
-\Default{0} &
-Indicates the camera ISO speed for daylight illumination.
-\\
-\Option{SEIToneMap...} \Option{CameraIsoSpeedValue} &
-\Default{400} &
-Specifies the camera ISO speed for daylight illumination of Extended_ISO.
-\\
-\Option{SEIToneMap...} \Option{ExposureIndexIdc} &
-\Default{0} &
-Indicates the exposure index setting of the camera.
-\\
-\Option{SEIToneMap...} \Option{ExposureIndexValue} &
-\Default{400} &
-Specifies the exposure index setting of the cameran of Extended_ISO.
-\\
-\Option{SEIToneMapExposure...} \Option{CompensationValueSignFlag} &
-\Default{0} &
-Specifies the sign of ExposureCompensationValue.
-\\
-\Option{SEIToneMapExposure...} \Option{CompensationValueNumerator} &
-\Default{0} &
-Specifies the numerator of ExposureCompensationValue.
-\\
-\Option{SEIToneMapExposure...} \Option{CompensationValueDenomIdc} &
-\Default{2} &
-Specifies the denominator of ExposureCompensationValue.
-\\
-\Option{SEIToneMapRef...} \Option{ScreenLuminanceWhite} &
-\Default{350} &
-Specifies reference screen brightness setting in units of candela per square metre.
-\\
-\Option{SEIToneMapExtended...} \Option{RangeWhiteLevel} &
-\Default{800} &
-Indicates the luminance dynamic range.
-\\
-\Option{SEIToneMapNominal...} \Option{BlackLevelLumaCodeValue} &
-\Default{16} &
-Specifies luma sample value of the nominal black level assigned decoded pictures.
-\\
-\Option{SEIToneMapNominal...} \Option{WhiteLevelLumaCodeValue} &
-\Default{235} &
-Specifies luma sample value of the nominal white level assigned decoded pictures.
-\\
-\Option{SEIToneMapExtended...} \Option{WhiteLevelLumaCodeValue} &
-\Default{300} &
-Specifies luma sample value of the extended dynamic range assigned decoded pictures.
-\\
-\end{OptionTableNoShorthand}
-
 
 
 \begin{OptionTableNoShorthand}{Frame packing arrangement SEI message encoder parameters}{tab:sei-frame-packing-arrangement}
@@ -6005,6 +5852,18 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   For the \emph{i}-th neural network post-filter, nnpfc_log2_parameter_bit_length_minus3 equal to 0, 1, 2, and 3 indicates that the neural network does not use parameters of bit length 
   greater than 8, 16, 32, and 64, respectively.
   \\
+  \Option{SEINNPFCAapplicationPurposeTagUriPresentFlag\emph{i}} &
+  \Default{false} &
+  Specifies the nnpfc_application_purpose_tag_uri_present_flag syntax element for the \emph{i}-th neural network post-filter.
+  \par
+    When true (non-zero) specifies the presence of the nnpfc_application_purpose_tag_uri syntax element in the NNPFC SEI message.
+  \par
+    When false specifies the absence of the nnpfc_application_purpose_tag_uri syntax element in the NNPFC SEI message.
+  \\
+  \Option{SEINNPFCApplicationPurposeTagUri\emph{i}} &
+  \Default{""} &
+  specifies a tag URI with syntax and semantics as specified in IETF RFC 4151 identifying the application determined purpose of the NNPF, when nnpfc_purpose is equal to 0 of the \emph{i}-th neural network post-filter.
+  \\
   \Option{SEINNPFCNumParametersIdc\emph{i}} &
   \Default{0} &
   Specifies the maximum number of neural network parameters for the \emph{i}-th neural network post-filter in units of a power of 2048. nnpfc_num_parameters_idc = 0 indicates that the maximum number of neural network 
@@ -6036,6 +5895,10 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Option{SEINNPFCNumberInterpolatedPics\emph{i}} &
   \Default{0} &
   Specifies a list, where the j-th entry in the list specifies interpolated pictures generated by the \emph{i}-th neural network post-filter between the j-th and (j+1)-th picture used as input for the post processing filter.
+  \\
+  \Option{SEINNPFCNumberExtrapolatedPicsMinus1\emph{i}} &
+  \Default{0} &
+  Specifies the number of extrapolated pictures minus 1 generated by the \emph{i}-th neural network post-filter.
   \\
   \Option{SEINNPFCInputPicOutputFlag\emph{i}} &
   \Default{false} &
@@ -6134,6 +5997,10 @@ Specifies the Vertical Phase Denominator minus 1 of Phase Indication SEI message
 \Default{false} &
 Enables (true) or disables (false) the insertion of processing order SEI message.
 \\
+\Option{SEIPOId} &
+\Default{0} &
+Specifies the id of the SEI processing order SEI message.
+\\
 \Option{SEIPONumMinus2} &
 \Default{0} &
 Specifies the number of SEIs minus 2 in SEI processing order SEI message. 
@@ -6158,9 +6025,9 @@ Specifies the value of payloadType for the \emph{i}-th SEI message for which inf
 \Default{0} &
 Specifies the preferred order of processing any SEI message with payloadType equal to SEIPOPayLoadType\emph{i}.
 \\
-\Option{SEIPONumofPrefixByte\emph{i}} &
+\Option{SEIPONumofPrefixBits\emph{i}} &
 \Default{0} &
-Specifies the number of prefix byte for the \emph{i}-th SEI message present in processing order SEI message.
+Specifies the number of prefix bits for the \emph{i}-th SEI message present in processing order SEI message.
 \\
 \Option{SEIPOPrefixByte\emph{i}} &
 \Default{0} &
@@ -6168,6 +6035,110 @@ Specifies the \emph{i}-th prefix byte present in processing order SEI message.
 \\
 \end{OptionTableNoShorthand}
 
+\begin{OptionTableNoShorthand}{Encoder optimization info SEI message encoder parameters}{tab:sei-encoder-optimization-info}
+\Option{SEIEOIEnabled} &
+\Default{1} &
+Specifies whether encoder optimization info SEI message to be generated or not.
+\\
+\Option{SEIEOICancelFlag} &
+\Default{0} &
+Specifies whether this SEI message cancels the previous encoder optimization info SEI message.
+\\
+\Option{SEIEOIPersistenceFlag} &
+\Default{1} &
+Specifies whether this SEI message applies to just one picture or sequence of pictures.
+\\
+\Option{SEIEOIForHumanViewingIdc} &
+\Default{1} &
+Specifies whether the optimized result is suitable for human viewing.
+\\
+\Option{SEIEOIForMachineAnalysiIdc} &
+\Default{1} &
+Specifies whether the optimized result is intended for machine task / analysis.
+\\
+\Option{SEIEOIType} &
+\Default{0} &
+Specifies the type of optimization(s).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+ 0 & Determined by the application \\
+ (SEIEOIType \& 0x01)  !=  0 & Object-based optimization. \\
+ (SEIEOIType \& 0x02)  !=  0 & Temporal resampling optimization. \\
+ (SEIEOIType \& 0x04)  !=  0 & Spatial resampling optimization. \\
+ (SEIEOIType \& 0x08)  !=  0 & Temporal quality optimization in a manner that quality fluctuates temporally. \\
+ (SEIEOIType \& 0x10)  !=  0 & Spatial quality optimization. \\
+ (SEIEOIType \& 0x20)  !=  0 & Privacy protection optimization. \\
+\end{tabular}
+\\
+\Option{SEIEOIObjectBasedIdc} &
+\Default{0} &
+Specifies the value of object based indication.
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+ 0 & Determined by the application \\
+ (SEIEOIObjectBasedIdc \& 0x01)  !=  0 & Areas outside the detected objects have been blurred prior to encoding. \\
+ (SEIEOIObjectBasedIdc \& 0x02)  !=  0 & Areas outside the detected objects have been encoded with coarser transform-domain quantization than the quantization used for the detected objects. \\
+ (SEIEOIObjectBasedIdc \& 0x04)  !=  0 & Areas outside the detected objects have been overwritten. For example, an encoding system can overwrite areas outside the detected objects with a constant sample value. \\
+\end{tabular}
+\\
+\Option{SEIEOITemporalResamplingTypeFlag} &
+\Default{1} &
+Specifies whether temporal resampling type optimization is enabled.
+\\
+\Option{SEIEOINumIntPics} &
+\Default{2} &
+Specifies the number of added picture between two pics when temporal resampling type optimization is enabled.
+\\
+\Option{SEIEOISpatialResamplingTypeFlag} &
+\Default{0} &
+Specifies whether spatial resampling type optimization is enabled.
+\\
+\Option{SEIEOIPrivacyProtectionTypeIdc} &
+\Default{0} &
+Specifies method of privacy protection optimization, when applied.
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+ 0 & Unknown or determined by the application \\
+ 1 & Blurring; personal information is blurred to make it unidentifiable. \\
+ 2 & Replacing; personal information is replaced with something different from the original to make it unidentifiable. \\
+ 3 & Masking; personal information is masked so that it cannot be identified. \\
+\end{tabular}
+\\
+\Option{SEIEOIPrivacyProtectedInfoType} &
+\Default{128} &
+Specifies type of information the of privacy protection optimization that is applied.
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+ 0 & Determined by the application \\
+ (SEIEOIPrivacyProtectedInfoType \& 0x01)  !=  0 & Information that identifies a person is protected. For example, the face of the person. \\
+ (SEIEOIPrivacyProtectedInfoType \& 0x02)  !=  0 & Information that can identify vehicles is protected. For example, the license plate of the vehicle. \\
+ (SEIEOIPrivacyProtectedInfoType \& 0x04)  !=  0 & Information that can infer locations is protected. For example text or images on signs. \\
+\end{tabular}
+\\
+\end{OptionTableNoShorthand}
+
+\begin{OptionTableNoShorthand}{Source picture timing information SEI message encoder parameters}{tab:sei-source-picture-timing-info}
+\Option{SEISourcePictureTimingInfo} &
+\Default{false} &
+Enables (true) or disables (false) the insertion of Source picture timing information SEI message.
+\\
+\Option{SEISPTISourceTimingEqualsOutputTimingFlag} &
+\Default{true} &
+Indicates the timing of source pictures is the same as the timing of corresponding decoded output pictures(true) or indicates the timing of source pictures might not be the same as the timing of corresponding decoded output pictures(false).
+\\
+\Option{SEISPTISourceType} &
+\Default{0} &
+Indicates the timing relationship between source pictures and corresponding decoded output pictures.
+\\
+\Option{SEISPTITimeScale} &
+\Default{27000000} &
+Specifies the number of time units that pass in one second.
+\\
+\Option{SEISPTINumUnitsInElementalInterval} &
+\Default{1080000} &
+Specifies the number of time units of a clock operating at the frequency spti_time_scale Hz that corresponds to the indicated elemental source picture interval of consecutive pictures in output order in the CLVS.
+\\
+\end{OptionTableNoShorthand}
 %\Option{SEITimeCode} &
 %\Default{false} &
 %When true, generate time code SEI messages.

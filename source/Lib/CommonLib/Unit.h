@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2023, ITU/ISO/IEC
+* Copyright (c) 2010-2024, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -321,11 +321,11 @@ struct CodingUnit : public UnitArea
   uint8_t        imv;
   bool           rootCbf;
   uint8_t        sbtInfo;
-  uint32_t       tileIdx;
+  TileIdx        tileIdx;
   uint8_t        mtsFlag;
-  uint32_t       lfnstIdx;
+  uint8_t        lfnstIdx;
   uint8_t        bcwIdx;
-  int            refIdxBi[2];
+  int8_t         refIdxBi[2];
   bool           mipFlag;
 
   uint8_t        smvdMode;
@@ -411,12 +411,10 @@ struct InterPredictionData
   MvpType   mvpType[NUM_REF_PIC_LIST_01];
   Position  mvpPos[NUM_REF_PIC_LIST_01];
 #endif
-  int16_t   refIdx[NUM_REF_PIC_LIST_01];
+  int8_t    refIdx[NUM_REF_PIC_LIST_01];
   MergeType mergeType;
   Mv        mvdL0SubPu[MAX_NUM_SUBCU_DMVR];
-#if JVET_AD0045
   bool      dmvrImpreciseMv;
-#endif
   Mv        mvdAffi [NUM_REF_PIC_LIST_01][3];
   Mv        mvAffi[NUM_REF_PIC_LIST_01][3];
 #if GDR_ENABLED
@@ -491,7 +489,7 @@ struct TransformUnit : public UnitArea
   unsigned       idx;
   TransformUnit *next;
   TransformUnit *prev;
-  void           init(TCoeff** coeffs, Pel** pcmbuf, EnumArray<PLTRunMode*, ChannelType>& runType);
+  void           init(TCoeff** coeffs, Pel** pltIdxBuf, EnumArray<PLTRunMode*, ChannelType>& runType);
 
   TransformUnit& operator=(const TransformUnit& other);
   void copyComponentFrom  (const TransformUnit& other, const ComponentID compID);
@@ -500,8 +498,6 @@ struct TransformUnit : public UnitArea
 
   CoeffBuf            getCoeffs(const ComponentID id);
   const CCoeffBuf     getCoeffs(const ComponentID id) const;
-  PelBuf              getPcmbuf(const ComponentID id);
-  const CPelBuf       getPcmbuf(const ComponentID id) const;
   int                 getChromaAdj() const;
   void                setChromaAdj(int i);
   PelBuf              getcurPLTIdx(const ComponentID id);
@@ -515,7 +511,7 @@ struct TransformUnit : public UnitArea
 
 private:
   TCoeff *m_coeffs[MAX_NUM_TBLOCKS];
-  Pel    *m_pcmbuf[MAX_NUM_TBLOCKS];
+  Pel    *m_pltIdxBuf[MAX_NUM_TBLOCKS];
 
   EnumArray<PLTRunMode*, ChannelType> m_runType;
 };

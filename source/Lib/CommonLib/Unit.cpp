@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2023, ITU/ISO/IEC
+* Copyright (c) 2010-2024, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -287,21 +287,18 @@ CodingUnit& CodingUnit::operator=( const CodingUnit& other )
   ispMode           = other.ispMode;
   mipFlag           = other.mipFlag;
 
-  for (int idx = 0; idx < MAX_NUM_CHANNEL_TYPE; idx++)
-  {
-    curPLTSize[idx]   = other.curPLTSize[idx];
-    useEscape[idx]    = other.useEscape[idx];
-    useRotation[idx]  = other.useRotation[idx];
-    reusePLTSize[idx] = other.reusePLTSize[idx];
-    lastPLTSize[idx]  = other.lastPLTSize[idx];
-    if (slice->getSPS()->getPLTMode())
-    {
-      std::copy_n(other.reuseflag[idx], MAXPLTPREDSIZE, reuseflag[idx]);
-    }
-  }
-
   if (slice->getSPS()->getPLTMode())
   {
+    for (int idx = 0; idx < MAX_NUM_CHANNEL_TYPE; idx++)
+    {
+      curPLTSize[idx]   = other.curPLTSize[idx];
+      useEscape[idx]    = other.useEscape[idx];
+      useRotation[idx]  = other.useRotation[idx];
+      reusePLTSize[idx] = other.reusePLTSize[idx];
+      lastPLTSize[idx]  = other.lastPLTSize[idx];
+      std::copy_n(other.reuseflag[idx], MAXPLTPREDSIZE, reuseflag[idx]);
+    }
+
     for (int idx = 0; idx < MAX_NUM_COMPONENT; idx++)
     {
       std::copy_n(other.curPLT[idx], MAXPLTSIZE, curPLT[idx]);
@@ -347,19 +344,22 @@ void CodingUnit::initData()
   ispMode           = ISPType::NONE;
   mipFlag           = false;
 
-  for (int idx = 0; idx < MAX_NUM_CHANNEL_TYPE; idx++)
+  if (cs && cs->sps->getPLTMode())
   {
-    curPLTSize[idx]   = 0;
-    reusePLTSize[idx] = 0;
-    lastPLTSize[idx]  = 0;
-    useEscape[idx]    = false;
-    useRotation[idx]  = false;
-    std::fill_n(reuseflag[idx], MAXPLTPREDSIZE, false);
-  }
+    for (int idx = 0; idx < MAX_NUM_CHANNEL_TYPE; idx++)
+    {
+      curPLTSize[idx]   = 0;
+      reusePLTSize[idx] = 0;
+      lastPLTSize[idx]  = 0;
+      useEscape[idx]    = false;
+      useRotation[idx]  = false;
+      std::fill_n(reuseflag[idx], MAXPLTPREDSIZE, false);
+    }
 
-  for (int idx = 0; idx < MAX_NUM_COMPONENT; idx++)
-  {
-    std::fill_n(curPLT[idx], MAXPLTSIZE, 0);
+    for (int idx = 0; idx < MAX_NUM_COMPONENT; idx++)
+    {
+      std::fill_n(curPLT[idx], MAXPLTSIZE, 0);
+    }
   }
 
   treeType          = TREE_D;
@@ -532,7 +532,6 @@ PredictionUnit::PredictionUnit(const ChromaFormat _chromaFormat, const Area &_ar
 
 void PredictionUnit::initData()
 {
-  // intra data - need this default initialization for PCM
   intraDir[ChannelType::LUMA]   = DC_IDX;
   intraDir[ChannelType::CHROMA] = PLANAR_IDX;
   mipTransposedFlag = false;
@@ -554,9 +553,7 @@ void PredictionUnit::initData()
   {
     mvdL0SubPu[i].setZero();
   }
-#if JVET_AD0045
   dmvrImpreciseMv = false;
-#endif
   for (uint32_t i = 0; i < NUM_REF_PIC_LIST_01; i++)
   {
     mvpIdx[i] = MAX_UCHAR;
@@ -609,9 +606,7 @@ PredictionUnit& PredictionUnit::operator=(const InterPredictionData& predData)
   {
     mvdL0SubPu[i] = predData.mvdL0SubPu[i];
   }
-#if JVET_AD0045
   dmvrImpreciseMv = predData.dmvrImpreciseMv;
-#endif
   for (uint32_t i = 0; i < NUM_REF_PIC_LIST_01; i++)
   {
     mvpIdx[i]   = predData.mvpIdx[i];
@@ -655,9 +650,7 @@ PredictionUnit& PredictionUnit::operator=( const PredictionUnit& other )
   {
     mvdL0SubPu[i] = other.mvdL0SubPu[i];
   }
-#if JVET_AD0045
   dmvrImpreciseMv = other.dmvrImpreciseMv;
-#endif
   for (uint32_t i = 0; i < NUM_REF_PIC_LIST_01; i++)
   {
     mvpIdx[i]   = other.mvpIdx[i];
@@ -723,7 +716,7 @@ TransformUnit::TransformUnit(const UnitArea &unit)
   for( unsigned i = 0; i < MAX_NUM_TBLOCKS; i++ )
   {
     m_coeffs[i] = nullptr;
-    m_pcmbuf[i] = nullptr;
+    m_pltIdxBuf[i] = nullptr;
   }
 
   m_runType.fill(nullptr);
@@ -737,7 +730,7 @@ TransformUnit::TransformUnit(const ChromaFormat _chromaFormat, const Area &_area
   for( unsigned i = 0; i < MAX_NUM_TBLOCKS; i++ )
   {
     m_coeffs[i] = nullptr;
-    m_pcmbuf[i] = nullptr;
+    m_pltIdxBuf[i] = nullptr;
   }
 
   m_runType.fill(nullptr);
@@ -758,14 +751,14 @@ void TransformUnit::initData()
   m_chromaResScaleInv = 0;
 }
 
-void TransformUnit::init(TCoeff** coeffs, Pel** pcmbuf, EnumArray<PLTRunMode*, ChannelType>& runType)
+void TransformUnit::init(TCoeff** coeffs, Pel** pltIdxBuf, EnumArray<PLTRunMode*, ChannelType>& runType)
 {
   uint32_t numBlocks = getNumberValidTBlocks(*cs->pcv);
 
   for (uint32_t i = 0; i < numBlocks; i++)
   {
     m_coeffs[i] = coeffs[i];
-    m_pcmbuf[i] = pcmbuf[i];
+    m_pltIdxBuf[i] = pltIdxBuf[i];
   }
 
   for (auto chType = ChannelType::LUMA; chType <= ::getLastChannel(cs->pcv->chrFormat); chType++)
@@ -791,9 +784,9 @@ TransformUnit& TransformUnit::operator=(const TransformUnit& other)
       std::copy_n(other.m_coeffs[i], area, m_coeffs[i]);
     }
 
-    if (m_pcmbuf[i] && other.m_pcmbuf[i] && m_pcmbuf[i] != other.m_pcmbuf[i])
+    if (cs->sps->getPLTMode() && m_pltIdxBuf[i] && other.m_pltIdxBuf[i] && m_pltIdxBuf[i] != other.m_pltIdxBuf[i])
     {
-      std::copy_n(other.m_pcmbuf[i], area, m_pcmbuf[i]);
+      std::copy_n(other.m_pltIdxBuf[i], area, m_pltIdxBuf[i]);
     }
 
     cbf[i]    = other.cbf[i];
@@ -832,9 +825,9 @@ void TransformUnit::copyComponentFrom(const TransformUnit& other, const Componen
     std::copy_n(other.m_coeffs[i], area, m_coeffs[i]);
   }
 
-  if (m_pcmbuf[i] && other.m_pcmbuf[i] && m_pcmbuf[i] != other.m_pcmbuf[i])
+  if (m_pltIdxBuf[i] && other.m_pltIdxBuf[i] && m_pltIdxBuf[i] != other.m_pltIdxBuf[i])
   {
-    std::copy_n(other.m_pcmbuf[i], area, m_pcmbuf[i]);
+    std::copy_n(other.m_pltIdxBuf[i], area, m_pltIdxBuf[i]);
   }
 
   const ChannelType chType = toChannelType(i);
@@ -857,11 +850,8 @@ void TransformUnit::copyComponentFrom(const TransformUnit& other, const Componen
        CoeffBuf TransformUnit::getCoeffs(const ComponentID id)       { return  CoeffBuf(m_coeffs[id], blocks[id]); }
 const CCoeffBuf TransformUnit::getCoeffs(const ComponentID id) const { return CCoeffBuf(m_coeffs[id], blocks[id]); }
 
-       PelBuf   TransformUnit::getPcmbuf(const ComponentID id)       { return  PelBuf  (m_pcmbuf[id], blocks[id]); }
-const CPelBuf   TransformUnit::getPcmbuf(const ComponentID id) const { return CPelBuf  (m_pcmbuf[id], blocks[id]); }
-
-       PelBuf       TransformUnit::getcurPLTIdx(const ComponentID id)         { return        PelBuf(m_pcmbuf[id], blocks[id]); }
-const CPelBuf       TransformUnit::getcurPLTIdx(const ComponentID id)   const { return       CPelBuf(m_pcmbuf[id], blocks[id]); }
+       PelBuf       TransformUnit::getcurPLTIdx(const ComponentID id)         { return        PelBuf(m_pltIdxBuf[id], blocks[id]); }
+const CPelBuf       TransformUnit::getcurPLTIdx(const ComponentID id)   const { return       CPelBuf(m_pltIdxBuf[id], blocks[id]); }
 
 PLTtypeBuf        TransformUnit::getrunType(const ChannelType id) { return PLTtypeBuf(m_runType[id], block(id)); }
 const CPLTtypeBuf TransformUnit::getrunType(const ChannelType id) const
@@ -872,7 +862,7 @@ const CPLTtypeBuf TransformUnit::getrunType(const ChannelType id) const
        PLTescapeBuf TransformUnit::getescapeValue(const ComponentID id)       { return  PLTescapeBuf(m_coeffs[id], blocks[id]); }
 const CPLTescapeBuf TransformUnit::getescapeValue(const ComponentID id) const { return CPLTescapeBuf(m_coeffs[id], blocks[id]); }
 
-      Pel*          TransformUnit::getPLTIndex   (const ComponentID id)       { return  m_pcmbuf[id];    }
+      Pel*          TransformUnit::getPLTIndex   (const ComponentID id)       { return  m_pltIdxBuf[id];    }
       PLTRunMode*   TransformUnit::getRunTypes(const ChannelType id) { return m_runType[id]; }
 
       void TransformUnit::checkTuNoResidual(unsigned idx)

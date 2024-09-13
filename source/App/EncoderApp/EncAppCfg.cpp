@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -138,15 +138,42 @@ std::istringstream &operator>>(std::istringstream &in, GOPEntry &entry)     //in
   in>>entry.m_temporalId;
   in >> entry.m_numRefPicsActive0;
   in >> entry.m_numRefPics0;
+
+  char c;
   for (int i = 0; i < entry.m_numRefPics0; i++)
   {
     in >> entry.m_deltaRefPics0[i];
+    if (in.rdbuf()->in_avail())
+    {
+      c = in.get();
+      if (c == '.')
+      {
+        in >> entry.m_layerRef0[i];
+      }
+      else
+      {
+        in.unget();
+      }
+    }
   }
   in >> entry.m_numRefPicsActive1;
   in >> entry.m_numRefPics1;
+
   for (int i = 0; i < entry.m_numRefPics1; i++)
   {
     in >> entry.m_deltaRefPics1[i];
+    if (in.rdbuf()->in_avail())
+    {
+      c = in.get();
+      if (c == '.')
+      {
+        in >> entry.m_layerRef1[i];
+      }
+      else
+      {
+        in.unget();
+      }
+    }
   }
 
   return in;
@@ -728,15 +755,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp1              (0, 65535,  0, 256 * 6);
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
   SMultiValueInput<bool>       cfg_poSEIWrappingFlag(false, true, 0, 256);
   SMultiValueInput<bool>       cfg_poSEIImportanceFlag(false, true, 0, 256);
-#endif
   SMultiValueInput<bool>       cfg_poSEIPrefixFlag(false, true, 0, 256);
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType(0, 32768, 0, 256 * 2);
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
 
-  SMultiValueInput<uint16_t>   cfg_poSEINumofPrefixByte(0, 255, 0, 256);
+  SMultiValueInput<uint16_t>   cfg_poSEINumofPrefixBits(0, 255, 0, 256);
   SMultiValueInput<uint16_t>   cfg_poSEIPrefixByte     (0, 255, 0, 256);
 
   SMultiValueInput<int32_t> cfg_postFilterHintSEIValues(INT32_MIN + 1, INT32_MAX, 1 * 1 * 1, 15 * 15 * 3);
@@ -760,8 +785,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
   std::string frameRate;
 
-  bool sdr = false;
-
   int chromaSampleLocType;
   int chromaSampleLocTypeTopField;
   int chromaSampleLocTypeBottomField;
@@ -772,7 +795,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("help",                                            do_help,                                          false, "this help text")
   ("c",    po::parseConfigFile, "configuration file name")
   ("WarnUnknowParameter,w",                           warnUnknowParameter,                                  0, "warn for unknown configuration parameters instead of failing")
-  ("isSDR",                                           sdr,                                              false, "compatibility")
 #if ENABLE_SIMD_OPT
   ("SIMD",                                            ignore,                                      std::string(""), "SIMD extension to use (SCALAR, SSE41, SSE42, AVX, AVX2, AVX512), default: the highest supported extension\n")
 #endif
@@ -817,13 +839,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ConfWinRight",                                    m_confWinRight,                                       0, "Right offset for window conformance mode 3")
   ("ConfWinTop",                                      m_confWinTop,                                         0, "Top offset for window conformance mode 3")
   ("ConfWinBottom",                                   m_confWinBottom,                                      0, "Bottom offset for window conformance mode 3")
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   ("ScalingWindow",                                   m_explicitScalingWindowEnabled,                   false, "Enable scaling window")
   ("ScalWinLeft,-swl",                                m_scalWinLeft,                                        0, "Left offset for scaling window")
   ("ScalWinRight,-swr",                               m_scalWinRight,                                       0, "Right offset for scaling window")
   ("ScalWinTop,-swt",                                 m_scalWinTop,                                         0, "Top offset for scaling window")
   ("ScalWinBottom,-swb",                              m_scalWinBottom,                                      0, "Bottom offset for scaling window")
-#endif
   ("AccessUnitDelimiter",                             m_AccessUnitDelimiter,                            false, "Enable Access Unit Delimiter NALUs")
   ("EnablePictureHeaderInSliceHeader",                m_enablePictureHeaderInSliceHeader,                true, "Enable Picture Header in Slice Header")
   ("FrameRate,-fr",                                   frameRate,                            std::to_string(0), "Frame rate")
@@ -1057,11 +1077,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "IBCHashSearchMaxCand",                           m_IBCHashSearchMaxCand,                            256u, "Max candidates for hash based IBC search")
   ( "IBCHashSearchRange4SmallBlk",                    m_IBCHashSearchRange4SmallBlk,                     256u, "Small block search range in based IBC search")
   ( "IBCFastMethod",                                  m_IBCFastMethod,                                     6u, "Fast methods for IBC")
-#if JVET_AD0045
   ("DMVREncMvSelect",                                 m_dmvrEncSelect,                                  false, "Enable method for avoiding select MVs that are more likely to give subjective artifacts")
   ("DMVREncMvSelectBaseQpTh",                         m_dmvrEncSelectBaseQpTh,                             33, "Base QP Threshold for enabling the DMVR MV selection")
   ("DMVREncMvSelectDisableHighestTemporalLayer",      m_dmvrEncSelectDisableHighestTemporalLayer,        true, "Disable DMVR encoder control for highest temporal layer unless frame rate is less or equal to 30Hz")
-#endif
 
   ("WrapAround",                                      m_wrapAround,                                     false, "Enable horizontal wrap-around motion compensation for inter prediction (0:off, 1:on)  [default: off]")
   ("WrapAroundOffset",                                m_wrapAroundOffset,                                  0u, "Offset in luma samples used for computing the horizontal wrap-around position")
@@ -1073,6 +1091,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("VirtualBoundariesPosX",                           cfg_virtualBoundariesPosX,    cfg_virtualBoundariesPosX, "Locations of the vertical virtual boundaries in units of luma samples")
   ("VirtualBoundariesPosY",                           cfg_virtualBoundariesPosY,    cfg_virtualBoundariesPosY, "Locations of the horizontal virtual boundaries in units of luma samples")
   ("EncDbOpt",                                        m_encDbOpt,                                       false, "Encoder optimization with deblocking filter")
+  ("AlfLambdaOpt",                                    m_encALFOpt,                                      false, "Encoder optimization with adaptive loop filter")
   ("LMCSEnable",                                      m_lmcsEnabled,                                    false, "Enable LMCS (luma mapping with chroma scaling")
   ("LMCSSignalType",                                  m_reshapeSignalType,                                 0u, "Input signal type: 0:SDR, 1:HDR-PQ, 2:HDR-HLG")
   ("LMCSUpdateCtrl",                                  m_updateCtrl,                                         0, "LMCS model update control: 0:RA, 1:AI, 2:LDB/LDP")
@@ -1093,9 +1112,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("PBIntraFast",                                     m_usePbIntraFast,                                 false, "Fast assertion if the intra mode is probable")
   ("AMaxBT",                                          m_useAMaxBT,                                      false, "Adaptive maximal BT-size")
   ("E0023FastEnc",                                    m_e0023FastEnc,                                    true, "Fast encoding setting for QTBT (proposal E0023)")
-#if JVET_AE0057_MTT_ET
   ("MTTSkipping",                                     m_useMttSkip,                                     false, "MTT split modes early termination")
-#endif  
   ("ContentBasedFastQtbt",                            m_contentBasedFastQtbt,                           false, "Signal based QTBT speed-up")
   ("UseNonLinearAlfLuma",                             m_useNonLinearAlfLuma,                             true, "Non-linear adaptive loop filters for Luma Channel")
   ("UseNonLinearAlfChroma",                           m_useNonLinearAlfChroma,                           true, "Non-linear adaptive loop filters for Chroma Channels")
@@ -1226,7 +1243,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("RDOQ",                                            m_useRDOQ,                                         true)
   ("RDOQTS",                                          m_useRDOQTS,                                       true)
   ("SelectiveRDOQ",                                   m_useSelectiveRDOQ,                               false, "Enable selective RDOQ")
-  ("RDpenalty",                                       m_rdPenalty,                                          0, "RD-penalty for 32x32 TU for intra in non-intra slices. 0:disabled  1:RD-penalty  2:maximum RD-penalty")
+#if JVET_AH0078_DPF
+  ("DPF",                                             m_dpfEnabled,                                     false, "Distortion Propagation Factor, CTU-Level Lagrange Multiplier and QP Adaptation")
+  ("DPFKeyLength",                                    m_dpfKeyLen,                                   8, "DPF Propagation Length for key frames")
+  ("DPFNonkeyLength",                                 m_dpfNonkeyLen,                                0, "DPF Propagation Length for non-key frames")
+#endif
 
   // Deblocking filter parameters
   ("DeblockingFilterDisable",                         m_deblockingFilterDisable,                        false)
@@ -1273,7 +1294,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("DisableLoopFilterAcrossSlices",                   m_disableLFCrossSliceBoundaryFlag,                false, "Loop filtering applied across slice boundaries or not (0: filter across slice boundaries 1: do not filter across slice boundaries)")
   ("FastUDIUseMPMEnabled",                            m_bFastUDIUseMPMEnabled,                           true, "If enabled, adapt intra direction search, accounting for MPM")
   ("FastMEForGenBLowDelayEnabled",                    m_bFastMEForGenBLowDelayEnabled,                   true, "If enabled use a fast ME for generalised B Low Delay slices")
-  ("UseBLambdaForNonKeyLowDelayPictures",             m_bUseBLambdaForNonKeyLowDelayPictures,            true, "Enables use of B-Lambda for non-key low-delay pictures")
   ("WeightedPredP,-wpP",                              m_useWeightedPred,                                false, "Use weighted prediction in P slices")
   ("WeightedPredB,-wpB",                              m_useWeightedBiPred,                              false, "Use weighted (bidirectional) prediction in B slices")
   ("WeightedPredMethod,-wpM",                         tmpWeightedPredictionMethod, int(WP_PER_PICTURE_WITH_SIMPLE_DC_COMBINED_COMPONENT), "Weighted prediction method")
@@ -1448,7 +1468,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISubpicLevelInfoNumSubpics", m_cfgSubpictureLevelInfoSEI.m_numSubpictures, 1, "Number of subpictures for Subpicture Level Information SEI messages")
 ("SEIAnnotatedRegionsFileRoot,-ar", m_arSEIFileRoot, std::string(""), "Annotated region SEI parameters root file name (wo num ext); only the file name base is to be added. Underscore and POC would be automatically addded to . E.g. \"-ar ar\" will search for files ar_0.txt, ar_1.txt, ...")
 ("SEISubpicLevelInfoMaxSublayers", m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers, 1, "Number of sublayers for Subpicture Level Information SEI messages")
-("SEISubpicLevelInfoSublayerInfoPresentFlag", m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag, false, "Enable sending of level information for all sublayers in Subpicture Level Information SEI messages")
+("SEISubpicLevelInfoSublayerInfoPresentFlag", m_cfgSubpictureLevelInfoSEI.hasSublayerInfo, false, "Enable sending of level information for all sublayers in Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoRefLevelFractions", cfg_sliFractions, cfg_sliFractions, "List of subpicture level fractions for Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoNonSubpicLayersFractions", cfg_sliNonSubpicLayersFractions, cfg_sliNonSubpicLayersFractions, "List of level fractions for non-subpicture layers in Subpicture Level Information SEI messages")
 ("SEISampleAspectRatioInfo", m_sampleAspectRatioInfoSEIEnabled, false, "Control generation of Sample Aspect Ratio Information SEI messages")
@@ -1472,11 +1492,34 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISiiTimeScale", m_siiSEITimeScale, 27000000u, "Specifies sii_time_scale")
 ("SEISiiInputNumUnitsInShutterInterval", cfg_siiSEIInputNumUnitsInSI, cfg_siiSEIInputNumUnitsInSI, "Specifies sub_layer_num_units_in_shutter_interval")
 
+#if JVET_AG2034_SPTI_SEI
+("SEISourcePictureTimingInfo", m_sptiSEIEnabled, false, "Controls if source picture timing information SEI message is enabled")
+("SEISPTISourceTimingEqualsOutputTimingFlag", m_sptiSourceTimingEqualsOutputTimingFlag, true, "Indicates the timing of source pictures is the same as the timing of corresponding decoded output pictures")
+("SEISPTISourceType", m_sptiSourceType, 0u, "Indicates the timing relationship between source pictures and corresponding decoded output pictures.")
+("SEISPTITimeScale", m_sptiTimeScale, 27000000u, "Specifies the number of time units that pass in one second.")
+("SEISPTINumUnitsInElementalInterval", m_sptiNumUnitsInElementalInterval, 1080000u, "Specifies the number of time units of a clock operating at the frequency spti_time_scale Hz that corresponds to the indicated elemental source picture interval of consecutive pictures in output order in the CLVS.")
+#endif
 #if ENABLE_TRACING
 ("TraceChannelsList", bTracingChannelsList, false, "List all available tracing channels")
 ("TraceRule", sTracingRule, std::string(""), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")")
 ("TraceFile", sTracingFile, std::string(""), "Tracing file")
 #endif
+
+#if JVET_AH2006_EOI_SEI
+("SEIEOIEnabled", m_eoiSEIEnabled, false, "Control use of the Encoder Optimization Information SEI")
+("SEIEOICancelFlag", m_eoiSEICancelFlag, false, "Specifies that the persistence of the previous applied optimization")
+("SEIEOIPersistenceFlag", m_eoiSEIPersistenceFlag, false, "Specifies the persistence of the optimization the current layer")
+("SEIEOIForHumanViewingIdc", m_eoiSEIForHumanViewingIdc, 0u, "Indicates the level of optimization for human viewing")
+("SEIEOIForMachineAnalysisIdc", m_eoiSEIForMachineAnalysisIdc, 0u, "Indicates the level of optimization for  machine analsysis")
+("SEIEOIType", m_eoiSEIType, 0u, "Indicates the types of optimization method")
+("SEIEOIObjectBasedIdc", m_eoiSEIObjectBasedIdc, 0u, "Indicates the type of object-based optimization")
+("SEIEOITemporalResamplingTypeFlag", m_eoiSEITemporalResamplingTypeFlag, false, "specifies the type of the temporal resampling optimization.")
+("SEIEOINumIntPics", m_eoiSEINumIntPics, 0u, "indicates that the count of pictures that the encoding system excluded or added between each pair of coded pictures in output order within the persistence of this SEI message is constant")
+("SEIEOISpatialResamplingTypeFlag", m_eoiSEISpatialResamplingTypeFlag, false, "specifies the type of the spatial resampling optimization.")
+("SEIEOIPrivacyProtectionTypeIdc", m_eoiSEIPrivacyProtectionTypeIdc, 0u, "indicates the type of privacy protection optimization")
+("SEIEOIPrivacyProtectedInfoType", m_eoiSEIPrivacyProtectedInfoType, 0u, "indicates the types of protected information")
+#endif 
+
 // film grain characteristics SEI
   ("SEIFGCEnabled",                                   m_fgcSEIEnabled,                                   false, "Control generation of the film grain characteristics SEI message")
   ("SEIFGCCancelFlag",                                m_fgcSEICancelFlag,                                 true, "Specifies the persistence of any previous film grain characteristics SEI message in output order.")
@@ -1623,15 +1666,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   
   //Processing order of SEI (pos)
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  ("SEIPOId",                                         m_poSEIId,                                            0u, "Specifies the id of the SEI processing order SEI message")
   ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
-  ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,           cfg_poSEIWrappingFlag, "Specifies whether po_num_prefix_bytes is present or not")
-  ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies whether po_num_prefix_bytes is present or not")
-#endif
-  ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether po_num_prefix_bytes is present or not")
+  ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,             cfg_poSEIWrappingFlag, "Specifies whether a correspoding processing-order-nested SEI message exists or not")
+  ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies degree of importance for the SEI messages")
+  ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether SEI message prefix is present or not")
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
-  ("SEIPONumofPrefixByte",                            cfg_poSEINumofPrefixByte,       cfg_poSEINumofPrefixByte, "List of number of prefix bytes")
+  ("SEIPONumofPrefixBits",                            cfg_poSEINumofPrefixBits,       cfg_poSEINumofPrefixBits, "List of number of prefix bits")
   ("SEIPOPrefixByte",                                 cfg_poSEIPrefixByte,                 cfg_poSEIPrefixByte, "List of prefix bytes")
   ("SEIPostFilterHintEnabled",                        m_postFilterHintSEIEnabled,                        false, "Control generation of post-filter Hint SEI message")
   ("SEIPostFilterHintCancelFlag",                     m_postFilterHintSEICancelFlag,                     false, "Specifies the persistence of any previous post-filter Hint SEI message in output order")
@@ -1724,6 +1766,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "AvoidIntraInDepLayers",                          m_avoidIntraInDepLayer,                    true, "Replaces I pictures in dependent layers with B pictures" )
   ( "MaxTidILRefPicsPlusOneLayerId%d",                m_maxTidILRefPicsPlus1Str, std::string(""), MAX_VPS_LAYERS, "Maximum temporal ID for inter-layer reference pictures plus 1 of i-th layer, 0 for IRAP only")
   ( "RPLofDepLayerInSH",                              m_rplOfDepLayerInSh,                      false, "define Reference picture lists in slice header instead of SPS for dependant layers")
+  ( "ExplicitILRP",                                   m_explicitILRP,                           false, "Explicitly define Inter-Layer Reference pictures in GOP entry")
     ;
 
   opts.addOptions()
@@ -1929,6 +1972,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     complexityInfoPresentFlag << "SEINNPFCComplexityInfoPresentFlag" << i;
     opts.addOptions()(complexityInfoPresentFlag.str(), m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[i], false, "Specifies the value of nnpfc_complexity_info_present_flag in the Neural Network Post Filter Characteristics SEI message");
 
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+    std::ostringstream applicationPurposeTagUriPresentFlag;
+    applicationPurposeTagUriPresentFlag << "SEINNPFCApplicationPurposeTagUriPresentFlag" << i;
+    opts.addOptions()(applicationPurposeTagUriPresentFlag.str(), m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[i], false, "equal to 1 indicates that the nnpfc_application_purpose_tag_uri syntax element is present in this NNPFC SEI message. nnpfc_application_purpose_tag_uri_present_flag equal to 0 indicates that the nnpfc_application_purpose_tag_uri syntax element is not present in this NNPFC SEI message.");
+
+    std::ostringstream applicationPurposeTagUri;
+    applicationPurposeTagUri << "SEINNPFCApplicationPurposeTagUri" << i;
+    opts.addOptions()(applicationPurposeTagUri.str(), m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[i], std::string(""), "specifies a tag URI with syntax and semantics as specified in IETF RFC 4151 identifying the application determined purpose of the NNPF, when nnpfc_purpose is equal to 0.");
+#endif
+
     std::ostringstream uriTag;
     uriTag << "SEINNPFCUriTag" << i;
     opts.addOptions()(
@@ -1972,6 +2025,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream numberInterpolatedPics;
     numberInterpolatedPics << "SEINNPFCNumberInterpolatedPics" << i;
     opts.addOptions()(numberInterpolatedPics.str(), cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], cfg_nnPostFilterSEICharacteristicsInterpolatedPicturesList[i], "Number of pictures to interpolate");
+    std::ostringstream numberExtrapolatedPicturesMinus1;
+    numberExtrapolatedPicturesMinus1 << "SEINNPFCNumberExtrapolatedPicsMinus1" << i; 
+    opts.addOptions()(numberExtrapolatedPicturesMinus1.str(), m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i], 0u, "Number of pictures to extrapolate");
     std::ostringstream InputPicOutputFlag;
     InputPicOutputFlag << "SEINNPFCInputPicOutputFlag" << i;
     opts.addOptions()(InputPicOutputFlag.str(), cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], "Indicates whether NNPF will generate a corresponding output picture for the input picture");
@@ -1984,12 +2040,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationTargetId", m_nnPostFilterSEIActivationTargetId, 0u, "Target id of the Neural Network Post Filter on current picture");
     opts.addOptions()("SEINNPostFilterActivationCancelFlag", m_nnPostFilterSEIActivationCancelFlag, false, "Control use of the target neural network post filter established by any previous NNPFA SEI message");
     opts.addOptions()("SEINNPostFilterActivationTargetBaseFlag", m_nnPostFilterSEIActivationTargetBaseFlag, false, "Specifies that the target NNPF is the base NNPF");
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
     opts.addOptions()("SEINNPostFilterActivationNoPrevCLVSFlag", m_nnPostFilterSEIActivationNoPrevCLVSFlag, false, "Specifies whether input pictures cannot (1) or can (0) originate from a previous CLVS");
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
     opts.addOptions()("SEINNPostFilterActivationNoFollCLVSFlag", m_nnPostFilterSEIActivationNoFollCLVSFlag, false, "Specifies whether input pictures cannot (1) or can (0) originate from a following CLVS");
-#endif
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
     opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies a list indicating whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
   }
@@ -2006,10 +2058,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_scalingRatioHor = 2.0;
       m_scalingRatioVer = 2.0;
     }
-#if JVET_AD0045
     // enable dmvr encoder selection
     m_dmvrEncSelect = true;
-#endif
   }
   m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag || m_rprFunctionalityTestingEnabledFlag;
   m_resChangeInClvsEnabled = m_resChangeInClvsEnabled && m_rprEnabledFlag;
@@ -2188,6 +2238,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_RPLList0[i].m_deltaRefPics[j] = m_GOPList[i].m_deltaRefPics0[j];
     for (int j = 0; j < m_GOPList[i].m_numRefPics1; j++)
       m_RPLList1[i].m_deltaRefPics[j] = m_GOPList[i].m_deltaRefPics1[j];
+    for (int j = 0; j < MAX_NUM_REF_PICS; j++)
+    {
+      m_RPLList0[i].m_layerRef[j]  = m_GOPList[i].m_layerRef0[j];
+      m_RPLList1[i].m_layerRef[j]  = m_GOPList[i].m_layerRef1[j];
+    }
   }
 
   if (m_compositeRefEnabled)
@@ -2371,7 +2426,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     CHECK (m_numSubPics != m_cfgSubpictureLevelInfoSEI.m_numSubpictures, "NumSubPics must be equal to SEISubpicLevelInfoNumSubpics" );
     CHECK (m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers != m_maxSublayers, "SEISubpicLevelInfoMaxSublayers must be equal to vps_max_sublayers");
-    if (m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag)
+    if (m_cfgSubpictureLevelInfoSEI.hasSublayerInfo)
     {
       CHECK(cfg_sliRefLevels.values.size() < m_maxSublayers, "when sliSublayerInfoPresentFlag = 1, the number of reference levels must be greater than or equal to sublayers");
     }
@@ -2379,7 +2434,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     {
       m_cfgSubpictureLevelInfoSEI.m_fractions = cfg_sliFractions.values;
       m_cfgSubpictureLevelInfoSEI.m_refLevels = cfg_sliRefLevels.values;
-      if (m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag)
+      if (m_cfgSubpictureLevelInfoSEI.hasSublayerInfo)
       {
         CHECK((int)cfg_sliRefLevels.values.size() / m_maxSublayers * m_cfgSubpictureLevelInfoSEI.m_numSubpictures * m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers != cfg_sliFractions.values.size(),
           "when sliSublayerInfoPresentFlag = 1, the number  of subpicture level fractions must be equal to the numer of subpictures times the number of reference levels times the number of sublayers");
@@ -2390,7 +2445,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
     m_cfgSubpictureLevelInfoSEI.m_nonSubpicLayersFraction = cfg_sliNonSubpicLayersFractions.values;
-    if (m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag)
+    if (m_cfgSubpictureLevelInfoSEI.hasSublayerInfo)
     {
       CHECK((int)cfg_sliNonSubpicLayersFractions.values.size() != ( cfg_sliRefLevels.values.size() * m_cfgSubpictureLevelInfoSEI.m_numSubpictures ),
         "when sliSublayerInfoPresentFlag = 1, the number  of non-subpicture level fractions must be equal to the numer of reference levels times the number of sublayers");
@@ -3608,29 +3663,22 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     CHECK(cfg_poSEIPayloadType.values.size() <= 1, "there should be at least 2 SEIPOPayLoadType");
     CHECK(cfg_poSEIProcessingOrder.values.size() != cfg_poSEIPayloadType.values.size(), "the number of SEIPOPayLoadType should be equal to the number of SEIPOProcessingOrder");
     CHECK(cfg_poSEIPrefixFlag.values.size() <= 1, "there should be at least 2 SEIPOPrefixFlag");
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
     CHECK(cfg_poSEIPayloadType.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOPayLoadType should be equal to the number of SEI messages");
     CHECK(cfg_poSEIWrappingFlag.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOWrappingFlag should be equal to the number of SEI messages");
     CHECK(cfg_poSEIImportanceFlag.values.size() != m_poSEINumMinus2 + 2, "the number of SEIImportanceFlag should be equal to the number of SEI messages");
     m_poSEIWrappingFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
     m_poSEIImportanceFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
-#endif
     m_poSEIPrefixFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
     m_poSEIPayloadType.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEIProcessingOrder.resize((uint32_t) cfg_poSEIPayloadType.values.size());
+    m_poSEINumOfPrefixBits.resize((uint32_t) cfg_poSEINumofPrefixBits.values.size());
     m_poSEIPrefixByte.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     uint16_t prefixByteIdx = 0;
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
     for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
-#else
-    for (uint32_t i = 0; i < (uint32_t) cfg_poSEIPayloadType.values.size(); i++)
-#endif
     {
       m_poSEIPrefixFlag[i] =      cfg_poSEIPrefixFlag.values[i];
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
       m_poSEIWrappingFlag[i] = cfg_poSEIWrappingFlag.values[i];
       m_poSEIImportanceFlag[i] = cfg_poSEIImportanceFlag.values[i];
-#endif
       m_poSEIPayloadType[i]     = cfg_poSEIPayloadType.values[i];
       if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME ||
           m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO ||
@@ -3649,15 +3697,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
       if (m_poSEIPrefixFlag[i])
       {
-        m_poSEIPrefixByte[i].resize(cfg_poSEINumofPrefixByte.values[i]);
-        for (uint32_t j = 0; j < cfg_poSEINumofPrefixByte.values[i]; j++)
+        m_poSEINumOfPrefixBits[i] = cfg_poSEINumofPrefixBits.values[i];
+        m_poSEIPrefixByte[i].resize((cfg_poSEINumofPrefixBits.values[i] + 7) >> 3);
+        for (uint32_t j = 0; j < (uint32_t)m_poSEIPrefixByte[i].size(); j++)
         {
           m_poSEIPrefixByte[i][j] = (uint8_t) cfg_poSEIPrefixByte.values[prefixByteIdx++];
         }
       }
       else
       {
-        cfg_poSEINumofPrefixByte.values[i] = 0;
+        cfg_poSEINumofPrefixBits.values[i] = 0;
+        m_poSEINumOfPrefixBits[i] = 0;
       }
       // Error check, to avoid same PayloadType and same prefix bytes when present with different PayloadOrder
       for (uint32_t j = 0; j < i; j++)
@@ -3666,7 +3716,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         {
             if ((m_poSEIPayloadType[j] == m_poSEIPayloadType[i]) && m_poSEIPrefixFlag[j])
             {
-              auto numofPrefixBytes = std::min(cfg_poSEINumofPrefixByte.values[i], cfg_poSEINumofPrefixByte.values[j]);
+              auto numofPrefixBytes = std::min((cfg_poSEINumofPrefixBits.values[i] + 7) >> 3, (cfg_poSEINumofPrefixBits.values[j] + 7) >> 3);
               if (std::equal(m_poSEIPrefixByte[i].begin() + 1, m_poSEIPrefixByte[i].begin() + numofPrefixBytes - 1,
                              m_poSEIPrefixByte[j].begin()))
               {
@@ -3723,6 +3773,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
   m_maxCuWidth = m_maxCuHeight = m_ctuSize;
+
+#if JVET_AH0078_DPF
+  CHECK(m_bimEnabled && m_dpfEnabled, "DPF is not compatible with BIM");
+  CHECK(m_dpfEnabled && m_resChangeInClvsEnabled, "DPF is not compatible with resolution change in CLVS");
+#endif
 
   // check validity of input parameters
   if( xCheckParameter() )
@@ -4270,7 +4325,6 @@ bool EncAppCfg::xCheckParameter()
                "Top conformance window offset must be an integer multiple of the specified chroma subsampling");
   xConfirmPara(m_confWinBottom % SPS::getWinUnitY(m_chromaFormatIdc) != 0,
                "Bottom conformance window offset must be an integer multiple of the specified chroma subsampling");
-#if JVET_AE0181_SCALING_WINDOW_ENABLED
   xConfirmPara(m_explicitScalingWindowEnabled && (m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag), "ScalingWindow cannot be enabled when GOPBasedRPR is enabled");
   xConfirmPara(m_scalWinLeft    % SPS::getWinUnitX(m_chromaFormatIdc) != 0, "Left scaling window offset must be an integer multiple of the specified chroma subsampling");
   xConfirmPara(m_scalWinRight   % SPS::getWinUnitX(m_chromaFormatIdc) != 0, "Right scaling window offset must be an integer multiple of the specified chroma subsampling");
@@ -4288,7 +4342,6 @@ bool EncAppCfg::xCheckParameter()
                "The values of SubWidthC * (pps_scaling_win_left_offset + pps_scaling_win_right_offset) shall be greater than or equal to -pps_pic_width_in_luma_samples * 15 and less than pps_pic_width_in_luma_samples");
   xConfirmPara(((m_scalWinTop+m_scalWinBottom) < -m_sourceHeight * 15) || ((m_scalWinTop+m_scalWinBottom) >= m_sourceHeight),
                "The values of SubHeightC * (pps_scaling_win_top_offset + pps_scaling_win_bottom_offset) shall be greater than or equal to -pps_pic_height_in_luma_samples * 15 and less than pps_pic_height_in_luma_samples");
-#endif
 
 
   // max CU width and height should be power of 2
@@ -4390,7 +4443,35 @@ bool EncAppCfg::xCheckParameter()
 #endif
 
   xConfirmPara( m_maxSublayers < 1 || m_maxSublayers > 7, "MaxSublayers must be in range [1..7]" );
+  xConfirmPara( m_explicitILRP && m_allIndependentLayersFlag, "AllIndependentLayersFlag cannot be 1 when ExplicitILRP is enabled" );
+  if (m_explicitILRP)
+  {
+    for (int i = 0; i < m_predDirectionArray.size(); i++)
+    {
+      if (m_predDirectionArray[i] != ' ')
+      {
+        xConfirmPara( m_predDirectionArray[i] != '0', "AllowablePredDirection should be 0 for all temporal layers when ExplicitILRP is enabled" );
+      }
+    }
+  }
 
+  bool nonZeroDeltaPOC_ILRP = false;
+  bool usingExplicit_ILRP = false;
+
+  for (int i = 0; m_GOPList[i].m_POC != -1 && i < MAX_GOP; i++)
+  {
+    for (int j = 0; j < m_GOPList[i].m_numRefPics0; j++)
+    {
+      nonZeroDeltaPOC_ILRP |= m_RPLList0[i].m_layerRef[j] != -1 && m_RPLList0[i].m_deltaRefPics[j] != 0;
+      nonZeroDeltaPOC_ILRP |= m_RPLList1[i].m_layerRef[j] != -1 && m_RPLList1[i].m_deltaRefPics[j] != 0;
+      usingExplicit_ILRP |= m_RPLList0[i].m_layerRef[j] != -1 || m_RPLList1[i].m_layerRef[j] != -1;
+    }
+  }
+  xConfirmPara(nonZeroDeltaPOC_ILRP, "For ExplicitILRP, Inter-Layer Reference pictures can only have same POC as current frame (delta POC=0)");
+  if (!m_explicitILRP)
+  {
+    xConfirmPara(usingExplicit_ILRP, "Cannot specify inter-layer reference pictures in GOP entry when ExplicitILRP is disabled.");
+  }
 
   xConfirmPara( m_fastLocalDualTreeMode < 0 || m_fastLocalDualTreeMode > 2, "FastLocalDualTreeMode must be in range [0..2]" );
 
@@ -4439,6 +4520,10 @@ bool EncAppCfg::xCheckParameter()
                 }
               }
             }
+            if (curPOC == refPoc && m_RPLList0[rplIdx].m_layerRef[i]!=-1)
+            {
+              found = true;
+            }
           }
           if (!found)
           {
@@ -4477,6 +4562,7 @@ bool EncAppCfg::xCheckParameter()
           if (refPoc >= 0)
           {
             m_RPLList0[newRplIdx].m_deltaRefPics[newRefs0] = m_RPLList0[rplIdx].m_deltaRefPics[i];
+            m_RPLList0[newRplIdx].m_layerRef[newRefs0] = m_RPLList0[rplIdx].m_layerRef[i];
             newRefs0++;
             newActiveRefs0 += i < m_RPLList0[rplIdx].m_numRefPicsActive ? 1 : 0;
           }
@@ -4491,6 +4577,7 @@ bool EncAppCfg::xCheckParameter()
           if (refPoc >= 0)
           {
             m_RPLList1[m_gopSize + extraRPLs].m_deltaRefPics[newRefs1] = m_RPLList1[rplIdx].m_deltaRefPics[i];
+            m_RPLList1[m_gopSize + extraRPLs].m_layerRef[newRefs0] = m_RPLList1[rplIdx].m_layerRef[i];
             newRefs1++;
             newActiveRefs1 += i < m_RPLList1[rplIdx].m_numRefPicsActive ? 1 : 0;
           }
@@ -4530,11 +4617,13 @@ bool EncAppCfg::xCheckParameter()
                 }
               }
               int prev = newDeltaPoc;
+              int prevLayerRef = -1; // inserted picture should not be an inter-layer
               newRefs0++;
               newActiveRefs0++;
               for (int j = insertPoint; j < newRefs0; j++)
               {
                 std::swap(prev, m_RPLList0[newRplIdx].m_deltaRefPics[j]);
+                std::swap(prevLayerRef, m_RPLList0[newRplIdx].m_layerRef[j]);
               }
             }
           }
@@ -4577,11 +4666,13 @@ bool EncAppCfg::xCheckParameter()
                 }
               }
               int prev = newDeltaPoc;
+              int prevLayerRef = -1; // inserted picture should not be an inter-layer
               newRefs1++;
               newActiveRefs1++;
               for (int j = insertPoint; j < newRefs1; j++)
               {
                 std::swap(prev, m_RPLList1[newRplIdx].m_deltaRefPics[j]);
+                std::swap(prevLayerRef, m_RPLList1[newRplIdx].m_layerRef[j]);
               }
             }
           }
@@ -4646,9 +4737,18 @@ bool EncAppCfg::xCheckParameter()
   }
   for (int i = 0; i < m_gopSize; i++)
   {
+
     int numRefPic = m_RPLList0[i].m_numRefPics;
+    for (int tmp = 0; tmp < m_RPLList0[i].m_numRefPics; tmp++)
+    {
+      if (m_RPLList0[i].m_deltaRefPics[tmp]==0 && m_RPLList0[i].m_layerRef[tmp]!=-1)
+      {
+      	numRefPic--; //Inter-layer ref pic already in DPB for ref layer, do not count it for current layer.
+      }
+    }
     for (int tmp = 0; tmp < m_RPLList1[i].m_numRefPics; tmp++)
     {
+      if (m_RPLList1[i].m_deltaRefPics[tmp]==0 && m_RPLList1[i].m_layerRef[tmp]!=-1) continue; //Inter-layer ref pic already in DPB for ref layer, do not count it for current layer.
       bool notSame = true;
       for (int jj = 0; notSame && jj < m_RPLList0[i].m_numRefPics; jj++)
       {
@@ -5158,8 +5258,9 @@ bool EncAppCfg::xCheckParameter()
     {
       xConfirmPara(m_nnPostFilterSEICharacteristicsId[i] > MAX_NNPFC_ID, "SEINNPFCId must be in the range of 0 to 2^32-2");
       xConfirmPara(m_nnPostFilterSEICharacteristicsModeIdc[i] > 255, "SEINNPFCModeIdc must be in the range of 0 to 255");
-      xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 1023, "SEINNPFCPurpose must be in the range of 0 to 1023");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 127, "SEINNPFCPurpose must be in the range of 0 to 127");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 63, "SEINNPFCNumberInputDecodedPicturesMinus1 must be in the range of 0 to 63");
+      xConfirmPara(m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i] > 62, "SEINNPFCNumberExtrapolatedPicsMinus1 must be in the range of 0 to 62");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthChromaMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[i] > 24, "SEINNPFCOutTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
@@ -5257,6 +5358,10 @@ bool EncAppCfg::xCheckParameter()
       m_gopBasedTemporalFilterPastRefs <= 0 && m_gopBasedTemporalFilterFutureRefs <= 0,
       "Either TemporalFilterPastRefs or TemporalFilterFutureRefs must be larger than 0 when Block Importance Mapping is enabled" );
   }
+#if JVET_AH0078_DPF
+  xConfirmPara(m_dpfKeyLen < 0, "DPF Key Length must be greater than or equal to 0");
+  xConfirmPara(m_dpfNonkeyLen < 0, "DPF Non-key Length must be greater than or equal to 0");
+#endif
 #if EXTENSION_360_VIDEO
   check_failed |= m_ext360.verifyParameters();
 #endif
@@ -5465,7 +5570,6 @@ void EncAppCfg::xPrintParameter()
   msg( VERBOSE, "HAD:%d ", m_bUseHADME                          );
   msg( VERBOSE, "RDQ:%d ", m_useRDOQ                            );
   msg( VERBOSE, "RDQTS:%d ", m_useRDOQTS                        );
-  msg( VERBOSE, "RDpenalty:%d ", m_rdPenalty                    );
 #if SHARP_LUMA_DELTA_QP
   msg( VERBOSE, "LQP:%d ", m_lumaLevelToDeltaQPMapping.mode     );
 #endif
@@ -5597,6 +5701,7 @@ void EncAppCfg::xPrintParameter()
     msg(VERBOSE, "MRL:%d ", m_MRL);
     msg(VERBOSE, "MIP:%d ", m_MIP);
     msg(VERBOSE, "EncDbOpt:%d ", m_encDbOpt);
+    msg(VERBOSE, "AlfLambdaOpt:%d ", m_encALFOpt);
   msg( VERBOSE, "\nFAST TOOL CFG: " );
   msg( VERBOSE, "LCTUFast:%d ", m_useFastLCTU );
   msg( VERBOSE, "FastMrg:%d ", m_useFastMrg );
@@ -5650,6 +5755,15 @@ void EncAppCfg::xPrintParameter()
   msg(VERBOSE, "SEI FGC:%d ", m_fgcSEIEnabled);
 
   msg(VERBOSE, "SEI processing Order:%d ", m_poSEIEnabled);
+
+#if JVET_AH0078_DPF
+  msg(VERBOSE, "DPF:%d ", m_dpfEnabled);
+  if (m_dpfEnabled)
+  {
+    msg(VERBOSE, "DPFKeyLength:%d ", m_dpfKeyLen);
+    msg(VERBOSE, "DPFNonkeyLength:%d ", m_dpfNonkeyLen);
+  }
+#endif
 
 #if EXTENSION_360_VIDEO
   m_ext360.outputConfigurationSummary();

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -96,59 +96,7 @@ void deleteSEIs (SEIMessages &seiList)
   seiList.clear();
 }
 
-void SEIBufferingPeriod::copyTo (SEIBufferingPeriod& target) const
-{
-  target.m_bpNalCpbParamsPresentFlag = m_bpNalCpbParamsPresentFlag;
-  target.m_bpVclCpbParamsPresentFlag = m_bpVclCpbParamsPresentFlag;
-  target.m_initialCpbRemovalDelayLength = m_initialCpbRemovalDelayLength;
-  target.m_cpbRemovalDelayLength = m_cpbRemovalDelayLength;
-  target.m_dpbOutputDelayLength = m_dpbOutputDelayLength;
-  target.m_duCpbRemovalDelayIncrementLength = m_duCpbRemovalDelayIncrementLength;
-  target.m_dpbOutputDelayDuLength = m_dpbOutputDelayDuLength;
-  target.m_concatenationFlag = m_concatenationFlag;
-  target.m_auCpbRemovalDelayDelta = m_auCpbRemovalDelayDelta;
-  target.m_cpbRemovalDelayDeltasPresentFlag =  m_cpbRemovalDelayDeltasPresentFlag;
-  target.m_numCpbRemovalDelayDeltas = m_numCpbRemovalDelayDeltas;
-  target.m_bpMaxSubLayers = m_bpMaxSubLayers;
-  ::memcpy(target.m_initialCpbRemovalDelay, m_initialCpbRemovalDelay, sizeof(m_initialCpbRemovalDelay));
-  ::memcpy(target.m_initialCpbRemovalOffset, m_initialCpbRemovalOffset, sizeof(m_initialCpbRemovalOffset));
-  ::memcpy(target.m_cpbRemovalDelayDelta, m_cpbRemovalDelayDelta, sizeof(m_cpbRemovalDelayDelta));
-  target.m_bpCpbCnt = m_bpCpbCnt;
-  target.m_bpDecodingUnitHrdParamsPresentFlag = m_bpDecodingUnitHrdParamsPresentFlag;
-  target.m_decodingUnitCpbParamsInPicTimingSeiFlag = m_decodingUnitCpbParamsInPicTimingSeiFlag;
-  target.m_decodingUnitDpbDuParamsInPicTimingSeiFlag = m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
-  target.m_sublayerInitialCpbRemovalDelayPresentFlag = m_sublayerInitialCpbRemovalDelayPresentFlag;
-  target.m_concatenationFlag = m_concatenationFlag;
-  target.m_maxInitialRemovalDelayForConcatenation = m_maxInitialRemovalDelayForConcatenation;
-  target.m_sublayerDpbOutputOffsetsPresentFlag = m_sublayerDpbOutputOffsetsPresentFlag;
-  ::memcpy(target.m_dpbOutputTidOffset, m_dpbOutputTidOffset, sizeof(m_dpbOutputTidOffset));
-  target.m_altCpbParamsPresentFlag = m_altCpbParamsPresentFlag;
-}
-
-void SEIPictureTiming::copyTo (SEIPictureTiming& target) const
-{
-  ::memcpy(target.m_auCpbRemovalDelay, m_auCpbRemovalDelay, sizeof(m_auCpbRemovalDelay));
-  ::memcpy(target.m_ptSubLayerDelaysPresentFlag, m_ptSubLayerDelaysPresentFlag, sizeof(m_ptSubLayerDelaysPresentFlag));
-  ::memcpy(target.m_duCommonCpbRemovalDelayMinus1, m_duCommonCpbRemovalDelayMinus1, sizeof(m_duCommonCpbRemovalDelayMinus1));
-  ::memcpy(target.m_cpbRemovalDelayDeltaEnabledFlag, m_cpbRemovalDelayDeltaEnabledFlag, sizeof(m_cpbRemovalDelayDeltaEnabledFlag));
-  ::memcpy(target.m_cpbRemovalDelayDeltaIdx, m_cpbRemovalDelayDeltaIdx, sizeof(m_cpbRemovalDelayDeltaIdx));
-  target.m_picDpbOutputDelay = m_picDpbOutputDelay;
-  target.m_picDpbOutputDuDelay = m_picDpbOutputDuDelay;
-  target.m_numDecodingUnitsMinus1 = m_numDecodingUnitsMinus1;
-  target.m_duCommonCpbRemovalDelayFlag = m_duCommonCpbRemovalDelayFlag;
-
-  target.m_numNalusInDuMinus1 = m_numNalusInDuMinus1;
-  target.m_duCpbRemovalDelayMinus1 = m_duCpbRemovalDelayMinus1;
-  target.m_cpbAltTimingInfoPresentFlag = m_cpbAltTimingInfoPresentFlag;
-  target.m_nalCpbAltInitialRemovalDelayDelta  = m_nalCpbAltInitialRemovalDelayDelta;
-  target.m_nalCpbAltInitialRemovalOffsetDelta = m_nalCpbAltInitialRemovalOffsetDelta;
-  target.m_nalCpbDelayOffset = m_nalCpbDelayOffset;
-  target.m_nalCpbDelayOffset = m_nalCpbDelayOffset;
-  target.m_vclCpbAltInitialRemovalDelayDelta  = m_vclCpbAltInitialRemovalDelayDelta;
-  target.m_vclCpbAltInitialRemovalOffsetDelta = m_vclCpbAltInitialRemovalOffsetDelta;
-  target.m_vclCpbDelayOffset = m_vclCpbDelayOffset;
-  target.m_vclCpbDelayOffset = m_vclCpbDelayOffset;
-}
+void SEIBufferingPeriod::copyTo(SEIBufferingPeriod& target) const { target = *this; }
 
 bool SEIScalabilityDimensionInfo::isSDISameContent(SEIScalabilityDimensionInfo* sdiB)
 {
@@ -535,6 +483,9 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION, "Neural network post-filter activation" },
   { SEI::PayloadType::PHASE_INDICATION, "Phase Indication" },
   { SEI::PayloadType::SEI_PROCESSING_ORDER, "SEI messages Processing order" },
+#if JVET_AG2034_SPTI_SEI
+  { SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO, "Source picture timing info" },
+#endif
 };
 
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
@@ -559,20 +510,37 @@ SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei
   m_siiFixedSIwithinCLVS = sei.m_siiFixedSIwithinCLVS;
   m_siiSubLayerNumUnitsInSI = sei.m_siiSubLayerNumUnitsInSI;
 }
+#if JVET_AG2034_SPTI_SEI
+SEISourcePictureTimingInfo::SEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei)
+{
+  m_sptiSEIEnabled                         = sei.m_sptiSEIEnabled;
+  m_sptiSourceTimingEqualsOutputTimingFlag = sei.m_sptiSourceTimingEqualsOutputTimingFlag;
+  m_sptiSourceType                         = sei.m_sptiSourceType;
+  m_sptiTimeScale                          = sei.m_sptiTimeScale;
+  m_sptiNumUnitsInElementalInterval        = sei.m_sptiNumUnitsInElementalInterval;
+}
+#endif
 
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
 {
   m_posEnabled = sei.m_posEnabled;
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  m_posId = sei.m_posId;
   m_posNumMinus2 = sei.m_posNumMinus2;
   m_posWrappingFlag = sei.m_posWrappingFlag;
   m_posImportanceFlag = sei.m_posImportanceFlag;
-  m_posWrapSeiMessages = sei.m_posWrapSeiMessages;
-#endif
   m_posPrefixFlag = sei.m_posPrefixFlag;
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;
   m_posPrefixByte = sei.m_posPrefixByte;
+}
+
+SEIProcessingOrderNesting::SEIProcessingOrderNesting(const SEIProcessingOrderNesting& sei)
+{
+  m_ponTargetPoId = sei.m_ponTargetPoId;
+  m_ponNumSeisMinus1 = sei.m_ponNumSeisMinus1;
+  m_ponProcessingOrder = sei.m_ponProcessingOrder;
+  m_ponWrapSeiMessages = sei.m_ponWrapSeiMessages;
+  m_ponPayloadType = sei.m_ponPayloadType;
 }
 
 SEIEquirectangularProjection::SEIEquirectangularProjection(const SEIEquirectangularProjection& sei)
@@ -773,69 +741,11 @@ SEIDecodedPictureHash::SEIDecodedPictureHash(const SEIDecodedPictureHash& sei)
   m_pictureHash = sei.m_pictureHash;
 }
 
-SEIBufferingPeriod::SEIBufferingPeriod(const SEIBufferingPeriod& sei)
-{
-  m_bpNalCpbParamsPresentFlag = sei.m_bpNalCpbParamsPresentFlag;
-  m_bpVclCpbParamsPresentFlag = sei.m_bpVclCpbParamsPresentFlag;
-  m_initialCpbRemovalDelayLength = sei.m_initialCpbRemovalDelayLength;
-  m_cpbRemovalDelayLength = sei.m_cpbRemovalDelayLength;
-  m_dpbOutputDelayLength = sei.m_dpbOutputDelayLength;
-  m_bpCpbCnt = sei.m_bpCpbCnt;
-  m_duCpbRemovalDelayIncrementLength = sei.m_duCpbRemovalDelayIncrementLength;
-  m_dpbOutputDelayDuLength = sei.m_dpbOutputDelayDuLength;
-  std::memcpy(m_initialCpbRemovalDelay, sei.m_initialCpbRemovalDelay, sizeof(sei.m_initialCpbRemovalDelay));
-  std::memcpy(m_initialCpbRemovalOffset, sei.m_initialCpbRemovalOffset, sizeof(sei.m_initialCpbRemovalOffset));
-  m_concatenationFlag = sei.m_concatenationFlag;
-  m_auCpbRemovalDelayDelta = sei.m_auCpbRemovalDelayDelta;
-  m_cpbRemovalDelayDeltasPresentFlag = sei.m_cpbRemovalDelayDeltasPresentFlag;
-  m_numCpbRemovalDelayDeltas = sei.m_numCpbRemovalDelayDeltas;
-  m_bpMaxSubLayers = sei.m_bpMaxSubLayers;
-  std::memcpy(m_cpbRemovalDelayDelta, sei.m_cpbRemovalDelayDelta, sizeof(sei.m_cpbRemovalDelayDelta));
-  m_bpDecodingUnitHrdParamsPresentFlag = sei.m_bpDecodingUnitHrdParamsPresentFlag;
-  m_decodingUnitCpbParamsInPicTimingSeiFlag = sei.m_decodingUnitCpbParamsInPicTimingSeiFlag;
-  m_decodingUnitDpbDuParamsInPicTimingSeiFlag = sei.m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
-  m_sublayerInitialCpbRemovalDelayPresentFlag = sei.m_sublayerInitialCpbRemovalDelayPresentFlag;
-  m_additionalConcatenationInfoPresentFlag = sei.m_additionalConcatenationInfoPresentFlag;
-  m_maxInitialRemovalDelayForConcatenation = sei.m_maxInitialRemovalDelayForConcatenation;
-  m_sublayerDpbOutputOffsetsPresentFlag = sei.m_sublayerDpbOutputOffsetsPresentFlag;
-  std::memcpy(m_dpbOutputTidOffset, sei.m_dpbOutputTidOffset, sizeof(sei.m_dpbOutputTidOffset));
-  m_altCpbParamsPresentFlag = sei.m_altCpbParamsPresentFlag;
-  m_useAltCpbParamsFlag = sei.m_useAltCpbParamsFlag;
-}
+SEIBufferingPeriod::SEIBufferingPeriod(const SEIBufferingPeriod& sei) = default;
 
-SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei)
-{
-  std::memcpy(m_ptSubLayerDelaysPresentFlag, sei.m_ptSubLayerDelaysPresentFlag, sizeof(sei.m_ptSubLayerDelaysPresentFlag));
-  std::memcpy(m_cpbRemovalDelayDeltaEnabledFlag, sei.m_cpbRemovalDelayDeltaEnabledFlag, sizeof(sei.m_cpbRemovalDelayDeltaEnabledFlag));
-  std::memcpy(m_cpbRemovalDelayDeltaIdx, sei.m_cpbRemovalDelayDeltaIdx, sizeof(sei.m_cpbRemovalDelayDeltaIdx));
-  std::memcpy(m_auCpbRemovalDelay, sei.m_auCpbRemovalDelay, sizeof(sei.m_auCpbRemovalDelay));
-  m_picDpbOutputDelay = sei.m_picDpbOutputDelay;
-  m_picDpbOutputDuDelay = sei.m_picDpbOutputDuDelay;
-  m_numDecodingUnitsMinus1 = sei.m_numDecodingUnitsMinus1;
-  m_duCommonCpbRemovalDelayFlag = sei.m_duCommonCpbRemovalDelayFlag;
-  std::memcpy(m_duCommonCpbRemovalDelayMinus1, sei.m_duCommonCpbRemovalDelayMinus1, sizeof(sei.m_duCommonCpbRemovalDelayMinus1));
-  m_numNalusInDuMinus1 = sei.m_numNalusInDuMinus1;
-  m_duCpbRemovalDelayMinus1 = sei.m_duCpbRemovalDelayMinus1;
-  m_cpbAltTimingInfoPresentFlag = sei.m_cpbAltTimingInfoPresentFlag;
-  m_nalCpbAltInitialRemovalDelayDelta = sei.m_nalCpbAltInitialRemovalDelayDelta;
-  m_nalCpbAltInitialRemovalOffsetDelta = sei.m_nalCpbAltInitialRemovalOffsetDelta;
-  m_nalCpbDelayOffset = sei.m_nalCpbDelayOffset;
-  m_nalDpbDelayOffset = sei.m_nalDpbDelayOffset;
-  m_vclCpbAltInitialRemovalDelayDelta = sei.m_vclCpbAltInitialRemovalDelayDelta;
-  m_vclCpbAltInitialRemovalOffsetDelta = sei.m_vclCpbAltInitialRemovalOffsetDelta;
-  m_vclCpbDelayOffset = sei.m_vclCpbDelayOffset;
-  m_vclDpbDelayOffset = sei.m_vclDpbDelayOffset;
-  m_ptDisplayElementalPeriodsMinus1 = sei.m_ptDisplayElementalPeriodsMinus1;
-}
+SEIPictureTiming::SEIPictureTiming(const SEIPictureTiming& sei) = default;
 
-SEIDecodingUnitInfo::SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei)
-{
-  m_decodingUnitIdx = sei.m_decodingUnitIdx;
-  std::memcpy(m_duiSubLayerDelaysPresentFlag, sei.m_duiSubLayerDelaysPresentFlag, sizeof(sei.m_duiSubLayerDelaysPresentFlag));
-  std::memcpy(m_duSptCpbRemovalDelayIncrement, sei.m_duSptCpbRemovalDelayIncrement, sizeof(sei.m_duSptCpbRemovalDelayIncrement));
-  m_dpbOutputDuDelayPresentFlag = sei.m_dpbOutputDuDelayPresentFlag;
-  m_picSptDpbOutputDuDelay = sei.m_picSptDpbOutputDuDelay;
-}
+SEIDecodingUnitInfo::SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei) = default;
 
 SEIFrameFieldInfo::SEIFrameFieldInfo(const SEIFrameFieldInfo& sei)
 {
@@ -927,22 +837,7 @@ SEIMasteringDisplayColourVolume::SEIMasteringDisplayColourVolume(const SEIMaster
   std::memcpy(values.whitePoint, sei.values.whitePoint, sizeof(sei.values.whitePoint));
 }
 
-SEIScalableNesting::SEIScalableNesting(const SEIScalableNesting& sei)
-{
-  m_snOlsFlag = sei.m_snOlsFlag;
-  m_snSubpicFlag = sei.m_snSubpicFlag;
-  m_snNumOlssMinus1 = sei.m_snNumOlssMinus1;
-  std::memcpy(m_snOlsIdxDeltaMinus1, sei.m_snOlsIdxDeltaMinus1, sizeof(sei.m_snOlsIdxDeltaMinus1));
-  std::memcpy(m_snOlsIdx, sei.m_snOlsIdx, sizeof(sei.m_snOlsIdx));
-  m_snAllLayersFlag = sei.m_snAllLayersFlag;
-  m_snNumLayersMinus1 = sei.m_snNumLayersMinus1;
-  std::memcpy(m_snLayerId, sei.m_snLayerId, sizeof(sei.m_snLayerId));
-  m_snNumSubpics = sei.m_snNumSubpics;
-  m_snSubpicIdLen = sei.m_snSubpicIdLen;
-  m_snSubpicId = sei.m_snSubpicId;
-  m_snNumSEIs = sei.m_snNumSEIs;
-  m_nestedSEIs = sei.m_nestedSEIs;
-}
+SEIScalableNesting::SEIScalableNesting(const SEIScalableNesting& sei) = default;
 
 SEIAlternativeTransferCharacteristics::SEIAlternativeTransferCharacteristics(const SEIAlternativeTransferCharacteristics& sei)
 {
@@ -1028,18 +923,7 @@ SEIContentColourVolume::SEIContentColourVolume(const SEIContentColourVolume& sei
   m_ccvAvgLuminanceValue = sei.m_ccvAvgLuminanceValue;
 }
 
-SEISubpicureLevelInfo::SEISubpicureLevelInfo(const SEISubpicureLevelInfo& sei)
-{
-  m_numRefLevels = sei.m_numRefLevels;
-  m_explicitFractionPresentFlag = sei.m_explicitFractionPresentFlag;
-  m_cbrConstraintFlag = sei.m_cbrConstraintFlag;
-  m_numSubpics = sei.m_numSubpics;
-  m_sliMaxSublayers = sei.m_sliMaxSublayers;
-  m_sliSublayerInfoPresentFlag = sei.m_sliSublayerInfoPresentFlag;
-  m_nonSubpicLayersFraction = sei.m_nonSubpicLayersFraction;
-  m_refLevelIdc = sei.m_refLevelIdc;
-  m_refLevelFraction = sei.m_refLevelFraction;
-}
+SEISubpictureLevelInfo::SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sli) = default;
 
 SEIManifest::SEIManifest(const SEIManifest& sei)
 {
@@ -1113,6 +997,10 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_payloadLength = sei.m_payloadLength;
   m_payloadByte = sei.m_payloadByte ? new char(*sei.m_payloadByte) : nullptr;
   m_complexityInfoPresentFlag = sei.m_complexityInfoPresentFlag;
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+  m_applicationPurposeTagUriPresentFlag = sei.m_applicationPurposeTagUriPresentFlag;
+  m_applicationPurposeTagUri = sei.m_applicationPurposeTagUri;
+#endif
   m_uriTag = sei.m_uriTag;
   m_uri = sei.m_uri;
   m_parameterTypeIdc = sei.m_parameterTypeIdc;
@@ -1122,10 +1010,10 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_totalKilobyteSize = sei.m_totalKilobyteSize;
   m_numberInputDecodedPicturesMinus1 = sei.m_numberInputDecodedPicturesMinus1;
   m_numberInterpolatedPictures = sei.m_numberInterpolatedPictures;
+  m_numberExtrapolatedPicturesMinus1 = sei.m_numberExtrapolatedPicturesMinus1;
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
 }
 
-#if JVET_AE0128_CONSTRAINT_UPDATE
 bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetworkPostFilterCharacteristics& sei)
 {
   bool result = 
@@ -1171,6 +1059,10 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_cbPadding == sei.m_cbPadding &&
   m_crPadding == sei.m_crPadding &&
   m_complexityInfoPresentFlag == sei.m_complexityInfoPresentFlag &&
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+  m_applicationPurposeTagUriPresentFlag == sei.m_applicationPurposeTagUriPresentFlag &&
+  m_applicationPurposeTagUri == sei.m_applicationPurposeTagUri &&
+#endif
   m_uriTag == sei.m_uriTag &&
   m_uri == sei.m_uri &&
   m_parameterTypeIdc == sei.m_parameterTypeIdc &&
@@ -1180,6 +1072,7 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_totalKilobyteSize == sei.m_totalKilobyteSize &&
   m_numberInputDecodedPicturesMinus1 == sei.m_numberInputDecodedPicturesMinus1 &&
   m_numberInterpolatedPictures == sei.m_numberInterpolatedPictures &&
+  m_numberExtrapolatedPicturesMinus1 == sei.m_numberExtrapolatedPicturesMinus1 &&
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
   m_payloadLength == sei.m_payloadLength;
 
@@ -1194,7 +1087,6 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
 
   return result;
 }
-#endif
 
 SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   const SEINeuralNetworkPostFilterActivation& sei)
@@ -1203,12 +1095,8 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   m_cancelFlag = sei.m_cancelFlag;
   m_persistenceFlag = sei.m_persistenceFlag;
   m_targetBaseFlag = sei.m_targetBaseFlag;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   m_noPrevCLVSFlag = sei.m_noPrevCLVSFlag;
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   m_noFollCLVSFlag = sei.m_noFollCLVSFlag;
-#endif
   m_outputFlag = sei.m_outputFlag;
 }
 
@@ -1248,3 +1136,23 @@ SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMess
   }
   return nullptr;
 }
+
+#if JVET_AH2006_EOI_SEI
+SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
+  const SEIEncoderOptimizationInfo& sei)
+{
+  m_cancelFlag = sei.m_cancelFlag;
+  m_persistenceFlag = sei.m_persistenceFlag;
+  m_forHumanViewingIdc = sei.m_forHumanViewingIdc;
+  m_forMachineAnalysisIdc = sei.m_forMachineAnalysisIdc;
+  m_type = sei.m_type;
+  m_objectBasedIdc = sei.m_objectBasedIdc;
+  m_temporalResamplingTypeFlag = sei.m_temporalResamplingTypeFlag;
+  m_numIntPics = sei.m_numIntPics;
+  m_spatialResamplingTypeFlag = sei.m_spatialResamplingTypeFlag;
+  m_privacyProtectionTypeIdc = sei.m_privacyProtectionTypeIdc;
+  m_privacyProtectedInfoType = sei.m_privacyProtectedInfoType;
+
+}
+#endif
+

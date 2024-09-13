@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -273,11 +273,9 @@ public:
   using DmvrDist = int32_t;
 
   static constexpr DmvrDist UNDEFINED_DMVR_DIST = -1;
-#if JVET_AD0045
   bool     dmvrEnableEncoderCheck;
   void     xDmvrSetEncoderCheckFlag(bool enableFlag) { dmvrEnableEncoderCheck = enableFlag; }
   bool     xDmvrGetEncoderCheckFlag() { return dmvrEnableEncoderCheck; }
-#endif
   void     xDmvrPrefetch(const PredictionUnit &pu, bool forLuma);
   void     xDmvrPad(const PredictionUnit &pu);
   void     xDmvrFinalMc(const PredictionUnit &pu, PelUnitBuf yuvSrc[NUM_REF_PIC_LIST_01], bool applyBdof,

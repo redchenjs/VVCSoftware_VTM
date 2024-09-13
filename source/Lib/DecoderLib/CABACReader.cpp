@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2023, ITU/ISO/IEC
+* Copyright (c) 2010-2024, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -169,7 +169,7 @@ void CABACReader::coding_tree_unit(CodingStructure &cs, const UnitArea &area, En
     const Position pos(rx * cs.pcv->maxCUWidth, ry * cs.pcv->maxCUHeight);
 
     const uint32_t curSliceIdx = cs.slice->getIndependentSliceIdx();
-    const uint32_t curTileIdx  = cs.pps->getTileIdx(pos);
+    const TileIdx  curTileIdx  = cs.pps->getTileIdx(pos);
 
     const bool leftAvail =
       cs.getCURestricted(pos.offset(-(int) pcv.maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA)
@@ -302,7 +302,7 @@ void CABACReader::ccAlfFilterControlIdc(CodingStructure &cs, const ComponentID c
   const Position aboveLumaPos = lumaPos.offset(0, -(int) cs.pcv->maxCUWidth);
 
   const uint32_t curSliceIdx = cs.slice->getIndependentSliceIdx();
-  const uint32_t curTileIdx  = cs.pps->getTileIdx(lumaPos);
+  const TileIdx  curTileIdx  = cs.pps->getTileIdx(lumaPos);
 
   const bool leftAvail =
     cs.getCURestricted(leftLumaPos, lumaPos, curSliceIdx, curTileIdx, ChannelType::LUMA) != nullptr;
@@ -379,7 +379,7 @@ void CABACReader::sao( CodingStructure& cs, unsigned ctuRsAddr )
 
   auto mergeType = SAOModeMergeTypes::NONE;
 
-  const unsigned curTileIdx = cs.pps->getTileIdx(pos);
+  const TileIdx curTileIdx = cs.pps->getTileIdx(pos);
 
   if (cs.getCURestricted(pos.offset(-(int) cs.pcv->maxCUWidth, 0), pos, curSliceIdx, curTileIdx, ChannelType::LUMA))
   {
@@ -2614,13 +2614,17 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
     TransformUnit &tu = cs.addTU( CS::getArea( cs, area, partitioner.chType ), partitioner.chType );
     unsigned numBlocks = ::getNumberValidTBlocks( *cs.pcv );
     tu.checkTuNoResidual( partitioner.currPartIdx() );
+    const bool usePlt = cs.sps->getPLTMode();
 
     for( unsigned compID = COMPONENT_Y; compID < numBlocks; compID++ )
     {
       if( tu.blocks[compID].valid() )
       {
         tu.getCoeffs( ComponentID( compID ) ).fill( 0 );
-        tu.getPcmbuf( ComponentID( compID ) ).fill( 0 );
+        if (usePlt)
+        {
+          tu.getcurPLTIdx( ComponentID( compID ) ).fill( 0 );
+        }
       }
     }
     tu.depth = trDepth;

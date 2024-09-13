@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 
 #if defined(__i386__) || defined(i386) || defined(__x86_64__) || defined(_M_X64) || defined (_WIN32) || defined (_MSC_VER)
 #define TARGET_SIMD_X86
-#elif defined (__ARM_NEON__)
+#elif defined (__ARM_NEON__) || defined(__ARM_NEON)
 #define TARGET_SIMD_ARM 1
 #else
 #error no simd target

@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2023, ITU/ISO/IEC
+* Copyright (c) 2010-2024, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -73,11 +73,10 @@ struct Picture : public UnitArea
   Picture();
 
   void create(const bool useWrapAround, const ChromaFormat& _chromaFormat, const Size& size, const unsigned _maxCUSize,
-              const unsigned margin, const bool bDecoder, const int layerId, const bool enablePostFilteringForHFR,
-              const bool gopBasedTemporalFilterEnabled = false, const bool fgcSEIAnalysisEnabled = false);
+              const unsigned margin, const bool bDecoder, const int layerId, const bool enablePostFilteringForHFR);
   void destroy();
 
-  void createTempBuffers( const unsigned _maxCUSize );
+  void createTempBuffers( const unsigned _maxCUSize, bool useFilterFrame, bool resChange, bool decoder, bool isFgFiltered);
   void destroyTempBuffers();
 
   int                       m_padValue;
@@ -249,9 +248,7 @@ public:
   std::vector<bool> m_lossylosslessSliceArray;
   bool interLayerRefPicFlag;
   bool mixedNaluTypesInPicFlag;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool isEosPresentInPic;
-#endif
 
   PelStorage m_bufs[NUM_PIC_TYPES];
   const Picture*           unscaledPic;
@@ -274,12 +271,14 @@ public:
   const Window&      getConformanceWindow() const                                    { return  m_conformanceWindow; }
   Window&            getScalingWindow()                                              { return  m_scalingWindow; }
   const Window&      getScalingWindow()                                        const { return  m_scalingWindow; }
-  bool               isRefScaled( const PPS* pps ) const                             { return  unscaledPic->getPicWidthInLumaSamples()    != pps->getPicWidthInLumaSamples()                ||
-                                                                                               unscaledPic->getPicHeightInLumaSamples()   != pps->getPicHeightInLumaSamples()               ||
-                                                                                               unscaledPic->getScalingWindow().getWindowLeftOffset()   != pps->getScalingWindow().getWindowLeftOffset()  ||
-                                                                                               unscaledPic->getScalingWindow().getWindowRightOffset()  != pps->getScalingWindow().getWindowRightOffset() ||
-                                                                                               unscaledPic->getScalingWindow().getWindowTopOffset()    != pps->getScalingWindow().getWindowTopOffset()   ||
-                                                                                               unscaledPic->getScalingWindow().getWindowBottomOffset() != pps->getScalingWindow().getWindowBottomOffset(); }
+
+  bool isRefScaled(const PPS* pps) const
+  {
+    return unscaledPic->getPicWidthInLumaSamples() != pps->getPicWidthInLumaSamples()
+           || unscaledPic->getPicHeightInLumaSamples() != pps->getPicHeightInLumaSamples()
+           || unscaledPic->getScalingWindow() != pps->getScalingWindow();
+  }
+
   bool               isWrapAroundEnabled( const PPS* pps ) const                     { return  pps->getWrapAroundEnabledFlag() && !isRefScaled( pps ); }
 
   void         allocateNewSlice();

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,14 +66,16 @@ public:
   void initSEIExtendedDrapIndication(SEIExtendedDrapIndication *sei);
   void initSEIBufferingPeriod(SEIBufferingPeriod *sei, bool noLeadingPictures);
   void initSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics *sei);
-  void initSEIScalableNesting(SEIScalableNesting *scalableNestingSEI, SEIMessages &nestedSEIs, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t> &subpictureIDs, uint16_t maxSubpicIdInPic);
+  void initSEIScalableNesting(SEIScalableNesting* sn, SEIMessages& nestedSEIs, const std::vector<int>& targetOLSs,
+                              const std::vector<int>& targetLayers, const std::vector<uint16_t>& subpictureIDs,
+                              uint16_t maxSubpicIdInPic);
   void initDecodedPictureHashSEI(SEIDecodedPictureHash *sei, PelUnitBuf& pic, std::string &rHashString, const BitDepths &bitDepths);
   void initSEIErp(SEIEquirectangularProjection *sei);
   void initSEISphereRotation(SEISphereRotation *sei);
   void initSEIOmniViewport(SEIOmniViewport *sei);
   void initSEIRegionWisePacking(SEIRegionWisePacking *sei);
   void initSEIGcmp(SEIGeneralizedCubemapProjection *sei);
-  void initSEISubpictureLevelInfo(SEISubpicureLevelInfo *sei, const SPS *sps);
+  void initSEISubpictureLevelInfo(SEISubpictureLevelInfo* sli, const SPS* sps);
   void initSEISampleAspectRatioInfo(SEISampleAspectRatioInfo *sei);
   void initSEIPhaseIndication(SEIPhaseIndication* sei, int ppsId);
   void initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *sei);
@@ -91,12 +93,18 @@ public:
   void initSEISEIManifest(SEIManifest *seiSeiManifest, const SEIMessages &seiMessage);
   void initSEISEIPrefixIndication(SEIPrefixIndication *seiSeiPrefixIndications, const SEI *sei);
 
+#if JVET_AG2034_SPTI_SEI
+  void initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEISourcePictureTimingInfo);
+#endif
   void initSEIMultiviewViewPosition(SEIMultiviewViewPosition *sei);
   void initSEIShutterIntervalInfo(SEIShutterIntervalInfo *sei);
   void initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx);
   void initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei);
-  void initSEIProcessingOrderInfo(SEIProcessingOrderInfo *sei);
+  void initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting);
   void initSEIPostFilterHint(SEIPostFilterHint *sei);
+#if JVET_AH2006_EOI_SEI
+  void initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei);
+#endif 
 #if GREEN_METADATA_SEI_ENABLED
   void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);
 #endif

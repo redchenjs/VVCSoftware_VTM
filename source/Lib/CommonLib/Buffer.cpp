@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2023, ITU/ISO/IEC
+* Copyright (c) 2010-2024, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -513,50 +513,6 @@ void AreaBuf<Pel>::addAvg( const AreaBuf<const Pel> &other1, const AreaBuf<const
 #undef ADD_AVG_INC
   }
 }
-
-template<>
-void AreaBuf<Pel>::toLast( const ClpRng& clpRng )
-{
-  Pel            *src       = buf;
-  const ptrdiff_t srcStride = stride;
-
-  const int clipbd   = clpRng.bd;
-  const int shiftNum = IF_INTERNAL_FRAC_BITS(clipbd);
-  const int offset   = (1 << (shiftNum - 1)) + IF_INTERNAL_OFFS;
-
-  if (width == 1)
-  {
-    THROW("Blocks of width = 1 not supported");
-  }
-  else if (width&2)
-  {
-    for ( int y = 0; y < height; y++ )
-    {
-      for (int x=0 ; x < width; x+=2 )
-      {
-        src[x + 0] = ClipPel( rightShift( ( src[x + 0] + offset ), shiftNum ), clpRng );
-        src[x + 1] = ClipPel( rightShift( ( src[x + 1] + offset ), shiftNum ), clpRng );
-      }
-      src += srcStride;
-    }
-  }
-  else
-  {
-    for ( int y = 0; y < height; y++ )
-    {
-      for (int x=0 ; x < width; x+=4 )
-      {
-        src[x + 0] = ClipPel( rightShift( ( src[x + 0] + offset ), shiftNum ), clpRng );
-        src[x + 1] = ClipPel( rightShift( ( src[x + 1] + offset ), shiftNum ), clpRng );
-        src[x + 2] = ClipPel( rightShift( ( src[x + 2] + offset ), shiftNum ), clpRng );
-        src[x + 3] = ClipPel( rightShift( ( src[x + 3] + offset ), shiftNum ), clpRng );
-
-      }
-      src += srcStride;
-    }
-  }
-}
-
 
 template<>
 void AreaBuf<Pel>::copyClip( const AreaBuf<const Pel> &src, const ClpRng& clpRng )

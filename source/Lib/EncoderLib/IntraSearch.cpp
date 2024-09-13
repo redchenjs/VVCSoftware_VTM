@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -102,7 +102,8 @@ void IntraSearch::destroy()
     {
       for( uint32_t height = 0; height < numHeights; height++ )
       {
-        if( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( width ) ) && gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( height ) ) )
+        if( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( width ) ) && gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( height ) ) 
+          && gp_sizeIdxInfo->sizeFrom(width) <= m_pcEncCfg->getMaxCUWidth() && gp_sizeIdxInfo->sizeFrom(height) <= m_pcEncCfg->getMaxCUHeight())
         {
           for (uint32_t layer = 0; layer < numLayersToAllocateSplit; layer++)
           {
@@ -207,12 +208,12 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
   const ChromaFormat cform = pcEncCfg->getChromaFormatIdc();
 
   IntraPrediction::init(cform, pcEncCfg->getBitDepth(ChannelType::LUMA));
-  m_tmpStorageCtu.create(UnitArea(cform, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
-  m_colorTransResiBuf.create(UnitArea(cform, Area(0, 0, MAX_CU_SIZE, MAX_CU_SIZE)));
+  m_tmpStorageCtu.create(UnitArea(cform, Area(0, 0, maxCUWidth, maxCUHeight)));
+  m_colorTransResiBuf.create(UnitArea(cform, Area(0, 0, maxCUWidth, maxCUHeight)));
 
   for( uint32_t ch = 0; ch < MAX_NUM_TBLOCKS; ch++ )
   {
-    m_pSharedPredTransformSkip[ch] = new Pel[MAX_CU_SIZE * MAX_CU_SIZE];
+    m_pSharedPredTransformSkip[ch] = new Pel[maxCUWidth * maxCUHeight];
   }
 
   const uint32_t numWidths  = gp_sizeIdxInfo->numWidths();
@@ -237,7 +238,8 @@ void IntraSearch::init(EncCfg *pcEncCfg, TrQuant *pcTrQuant, RdCost *pcRdCost, C
 
     for( uint32_t height = 0; height < numHeights; height++ )
     {
-      if(  gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( width ) ) && gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( height ) ) )
+      if(  gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( width ) ) && gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( height ) ) 
+        && gp_sizeIdxInfo->sizeFrom(width) <= maxCUWidth && gp_sizeIdxInfo->sizeFrom(height) <= maxCUHeight)
       {
         m_pBestCS[width][height] = new CodingStructure(m_unitPool);
         m_pTempCS[width][height] = new CodingStructure(m_unitPool);
@@ -1454,6 +1456,7 @@ void IntraSearch::estIntraPredChromaQT( CodingUnit &cu, Partitioner &partitioner
       CodingStructure &saveCS = *m_pSaveCS[0];
       saveCS.pcv      = cs.pcv;
       saveCS.picture  = cs.picture;
+      saveCS.sps      = cs.sps;
       saveCS.area.repositionTo( cs.area );
       saveCS.clearTUs();
 
@@ -1489,7 +1492,6 @@ void IntraSearch::estIntraPredChromaQT( CodingUnit &cu, Partitioner &partitioner
       {
         CodingUnit& auxCU = saveCS.addCU( cu, partitioner.chType );
         auxCU.ispMode = cu.ispMode;
-        saveCS.sps = cu.cs->sps;
         saveCS.addPU( *cu.firstPU, partitioner.chType );
       }
 
@@ -3960,6 +3962,7 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
     {
       saveCS.pcv     = cs.pcv;
       saveCS.picture = cs.picture;
+      saveCS.sps     = cs.sps;
       saveCS.area.repositionTo(cs.area);
       saveCS.clearTUs();
       tmpTU = &saveCS.addTU(currArea, partitioner.chType);
@@ -4471,6 +4474,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
     {
       saveLumaCS.pcv = csFull->pcv;
       saveLumaCS.picture = csFull->picture;
+      saveLumaCS.sps = csFull->sps;
       saveLumaCS.area.repositionTo(csFull->area);
       saveLumaCS.clearTUs();
       tmpTU = &saveLumaCS.addTU(currArea, partitioner.chType);
@@ -4694,6 +4698,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
     CodingStructure &saveChromaCS = *m_pSaveCS[1];
     saveChromaCS.pcv = csFull->pcv;
     saveChromaCS.picture = csFull->picture;
+    saveChromaCS.sps = csFull->sps;
     saveChromaCS.area.repositionTo(csFull->area);
     saveChromaCS.initStructData(MAX_INT, true);
     tmpTU = &saveChromaCS.addTU(currArea, partitioner.chType);
@@ -5136,6 +5141,7 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
     CodingStructure &saveCS = *m_pSaveCS[1];
     saveCS.pcv      = cs.pcv;
     saveCS.picture  = cs.picture;
+    saveCS.sps      = cs.sps;
     saveCS.area.repositionTo( cs.area );
     saveCS.initStructData( MAX_INT, true );
 
@@ -5144,7 +5150,6 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
       saveCS.clearCUs();
       CodingUnit& auxCU = saveCS.addCU( *currTU.cu, partitioner.chType );
       auxCU.ispMode = currTU.cu->ispMode;
-      saveCS.sps = currTU.cs->sps;
       saveCS.clearPUs();
       saveCS.addPU( *currTU.cu->firstPU, partitioner.chType );
     }

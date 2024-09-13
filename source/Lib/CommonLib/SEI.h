@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -87,19 +87,26 @@ public:
     MULTIVIEW_VIEW_POSITION              = 180,
     SEI_MANIFEST = 200,
     SEI_PREFIX_INDICATION = 201,
+    ANNOTATED_REGIONS                          = 202,
     SUBPICTURE_LEVEL_INFO                      = 203,
     SAMPLE_ASPECT_RATIO_INFO                   = 204,
-    ANNOTATED_REGIONS                          = 202,
-    SCALABILITY_DIMENSION_INFO                 = 205,
+    SHUTTER_INTERVAL_INFO                      = 205,
     EXTENDED_DRAP_INDICATION                   = 206,
     CONSTRAINED_RASL_ENCODING                  = 207,
-    VDI_SEI_ENVELOPE                           = 208,
-    SHUTTER_INTERVAL_INFO                      = 209,
+    SCALABILITY_DIMENSION_INFO                 = 208,
+    VDI_SEI_ENVELOPE                           = 209,
     NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS = 210,
     NEURAL_NETWORK_POST_FILTER_ACTIVATION      = 211,
     PHASE_INDICATION                           = 212,
 
     SEI_PROCESSING_ORDER = 213,
+    SEI_PROCESSING_ORDER_NESTING = 214,
+#if JVET_AH2006_EOI_SEI
+    ENCODER_OPTIMIZATION_INFO = 215,
+#endif 
+#if JVET_AG2034_SPTI_SEI
+    SOURCE_PICTURE_TIMING_INFO = 216,
+#endif
   };
 
   SEI() {}
@@ -121,12 +128,10 @@ struct SeiPayload
   int              subpicId;
 };
 
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC 
 typedef std::list<SEI*> SEIMessages;
 SEIMessages getSeisByType(const SEIMessages& seiList, SEI::PayloadType seiType);
 SEIMessages extractSeisByType(SEIMessages& seiList, SEI::PayloadType seiType);
 void deleteSEIs(SEIMessages& seiList);
-#endif
 class SEIFillerPayload : public SEI
 {
 public:
@@ -153,30 +158,47 @@ public:
   std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
 };
 
+#if JVET_AG2034_SPTI_SEI
+class SEISourcePictureTimingInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::SOURCE_PICTURE_TIMING_INFO; }
+  SEISourcePictureTimingInfo() {}
+
+  SEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
+  virtual ~SEISourcePictureTimingInfo() {}
+
+  bool                  m_sptiSEIEnabled;
+  bool                  m_sptiSourceTimingEqualsOutputTimingFlag;
+  uint32_t              m_sptiSourceType;
+  uint32_t              m_sptiTimeScale;
+  uint32_t              m_sptiNumUnitsInElementalInterval;
+  bool                  m_sptiCancelFlag;
+  bool                  m_sptiPersistenceFlag;
+  bool                  m_sptiSourceTypePresentFlag;
+  uint32_t              m_sptiMaxSublayersMinus1;
+  std::vector<uint32_t> m_sptiSublayerIntervalScaleFactor;
+  std::vector<bool>     m_sptiSublayerSynthesizedPictureFlag;
+};
+#endif
 class SEIProcessingOrderInfo : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::SEI_PROCESSING_ORDER; }
   SEIProcessingOrderInfo() {}
   SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei);
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
-  virtual ~SEIProcessingOrderInfo() { deleteSEIs(m_posWrapSeiMessages); }
-#else
   virtual ~SEIProcessingOrderInfo() {}
-#endif
 
   bool                   m_posEnabled;
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
+  uint32_t               m_posId;
   uint32_t               m_posNumMinus2;
   std::vector<bool>      m_posWrappingFlag;
   std::vector<bool>      m_posImportanceFlag;
-#endif
   std::vector<bool>      m_posPrefixFlag;
   std::vector<uint16_t>  m_posPayloadType;
   std::vector<uint16_t>   m_posProcessingOrder;
+  std::vector<uint16_t>  m_posNumBitsInPrefix;
   std::vector<std::vector<uint8_t>> m_posPrefixByte;
-#if JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC
-  SEIMessages            m_posWrapSeiMessages;
   static bool checkWrappingSEIPayloadType(SEI::PayloadType const payloadType)
   {
     switch (payloadType)
@@ -192,7 +214,21 @@ public:
       return false;
     }
   }
-#endif
+};
+
+class SEIProcessingOrderNesting : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::SEI_PROCESSING_ORDER_NESTING; }
+  SEIProcessingOrderNesting() {}
+  SEIProcessingOrderNesting(const SEIProcessingOrderNesting& sei);
+  virtual ~SEIProcessingOrderNesting() { deleteSEIs(m_ponWrapSeiMessages); }
+
+  std::vector<uint8_t>   m_ponTargetPoId;
+  uint32_t               m_ponNumSeisMinus1;
+  std::vector<uint8_t>   m_ponProcessingOrder;
+  SEIMessages            m_ponWrapSeiMessages;
+  std::vector<uint16_t>  m_ponPayloadType;
 };
 
 class SEIEquirectangularProjection : public SEI
@@ -544,9 +580,8 @@ public:
   PayloadType payloadType() const { return PayloadType::USER_DATA_UNREGISTERED; }
 
   SEIuserDataUnregistered()
-    : userData(nullptr)
     {}
-    SEIuserDataUnregistered(const SEIuserDataUnregistered& sei);
+  SEIuserDataUnregistered(const SEIuserDataUnregistered& sei);
 
   virtual ~SEIuserDataUnregistered()
   {
@@ -555,7 +590,7 @@ public:
 
   uint8_t uuid_iso_iec_11578[ISO_IEC_11578_LEN];
   uint32_t  userDataLength;
-  uint8_t *userData;
+  uint8_t *userData = nullptr;
 };
 
 class SEIDecodedPictureHash : public SEI
@@ -583,122 +618,123 @@ public:
   virtual ~SEIDependentRAPIndication() { }
 };
 
+enum class HrdType
+{
+  NAL,
+  VCL,
+  NUM
+};
+
+struct CpbEntry
+{
+  uint32_t delay;
+  uint32_t offset;
+};
 
 class SEIBufferingPeriod : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::BUFFERING_PERIOD; }
-  void copyTo (SEIBufferingPeriod& target) const;
+  void        copyTo(SEIBufferingPeriod& target) const;
 
   SEIBufferingPeriod()
-  : m_bpNalCpbParamsPresentFlag (false)
-  , m_bpVclCpbParamsPresentFlag (false)
-  , m_initialCpbRemovalDelayLength (0)
-  , m_cpbRemovalDelayLength (0)
-  , m_dpbOutputDelayLength (0)
-  , m_bpCpbCnt(0)
-  , m_duCpbRemovalDelayIncrementLength (0)
-  , m_dpbOutputDelayDuLength (0)
-  , m_cpbRemovalDelayDeltasPresentFlag (false)
-  , m_numCpbRemovalDelayDeltas (0)
-  , m_bpMaxSubLayers (0)
-  , m_bpDecodingUnitHrdParamsPresentFlag (false)
-  , m_decodingUnitCpbParamsInPicTimingSeiFlag (false)
-  , m_decodingUnitDpbDuParamsInPicTimingSeiFlag(false)
-    , m_sublayerInitialCpbRemovalDelayPresentFlag(false)
-    , m_additionalConcatenationInfoPresentFlag (false)
-    , m_maxInitialRemovalDelayForConcatenation (0)
-    , m_sublayerDpbOutputOffsetsPresentFlag (false)
-    , m_altCpbParamsPresentFlag (false)
-    , m_useAltCpbParamsFlag (false)
   {
-    ::memset(m_initialCpbRemovalDelay, 0, sizeof(m_initialCpbRemovalDelay));
-    ::memset(m_initialCpbRemovalOffset, 0, sizeof(m_initialCpbRemovalOffset));
-    ::memset(m_cpbRemovalDelayDelta, 0, sizeof(m_cpbRemovalDelayDelta));
-    ::memset(m_dpbOutputTidOffset, 0, sizeof(m_dpbOutputTidOffset));
+    hasHrdParams.fill(false);
+
+    for (auto hrdType: { HrdType::NAL, HrdType::VCL })
+    {
+      for (int sublayerIdx = 0; sublayerIdx < MAX_TLAYER; sublayerIdx++)
+      {
+        initialCpbRemoval[hrdType][sublayerIdx].fill({ 0, 0 });
+        initialAltCpbRemoval[hrdType][sublayerIdx].fill({ 0, 0 });
+      }
+    }
+
+    cpbRemovalDelayDeltaVals.clear();
+    dpbOutputTidOffset.fill(0);
   }
+
   SEIBufferingPeriod(const SEIBufferingPeriod& sei);
   virtual ~SEIBufferingPeriod() {}
 
-  void      setDuCpbRemovalDelayIncrementLength( uint32_t value )        { m_duCpbRemovalDelayIncrementLength = value;        }
-  uint32_t  getDuCpbRemovalDelayIncrementLength( ) const                 { return m_duCpbRemovalDelayIncrementLength;         }
-  void      setDpbOutputDelayDuLength( uint32_t value )                  { m_dpbOutputDelayDuLength = value;                  }
-  uint32_t  getDpbOutputDelayDuLength( ) const                           { return m_dpbOutputDelayDuLength;                   }
-  bool m_bpNalCpbParamsPresentFlag;
-  bool m_bpVclCpbParamsPresentFlag;
-  uint32_t m_initialCpbRemovalDelayLength;
-  uint32_t m_cpbRemovalDelayLength;
-  uint32_t m_dpbOutputDelayLength;
-  int      m_bpCpbCnt;
-  uint32_t m_duCpbRemovalDelayIncrementLength;
-  uint32_t m_dpbOutputDelayDuLength;
-  uint32_t m_initialCpbRemovalDelay         [MAX_TLAYER][MAX_CPB_CNT][2];
-  uint32_t m_initialCpbRemovalOffset        [MAX_TLAYER][MAX_CPB_CNT][2];
-  bool m_concatenationFlag;
-  uint32_t m_auCpbRemovalDelayDelta;
-  bool m_cpbRemovalDelayDeltasPresentFlag;
-  int  m_numCpbRemovalDelayDeltas;
-  int  m_bpMaxSubLayers;
-  uint32_t m_cpbRemovalDelayDelta    [16];
-  bool m_bpDecodingUnitHrdParamsPresentFlag;
-  bool m_decodingUnitCpbParamsInPicTimingSeiFlag;
-  bool m_decodingUnitDpbDuParamsInPicTimingSeiFlag;
-  bool m_sublayerInitialCpbRemovalDelayPresentFlag;
-  bool     m_additionalConcatenationInfoPresentFlag;
-  uint32_t m_maxInitialRemovalDelayForConcatenation;
-  bool     m_sublayerDpbOutputOffsetsPresentFlag;
-  uint32_t m_dpbOutputTidOffset      [MAX_TLAYER];
-  bool     m_altCpbParamsPresentFlag;
-  bool     m_useAltCpbParamsFlag;
+  EnumArray<bool, HrdType> hasHrdParams;
+
+  bool concatenation                     = false;
+  bool hasDuHrdParams                    = false;
+  bool duCpbParamsInPicTimingSei         = false;
+  bool duDpbParamsInPicTimingSei         = false;
+  bool hasSublayerInitialCpbRemovalDelay = false;
+  bool hasAdditionalConcatenationInfo    = false;
+  bool hasSublayerDpbOutputOffsets       = false;
+  bool hasAltCpbParams                   = false;
+  bool useAltCpbParams                   = false;
+
+  uint32_t cpbInitialRemovalDelayLength           = 0;
+  uint32_t cpbRemovalDelayLength                  = 0;
+  uint32_t dpbOutputDelayLength                   = 0;
+  uint32_t cpbCount                               = 0;
+  uint32_t duCpbRemovalDelayIncrementLength       = 0;
+  uint32_t dpbOutputDelayDuLength                 = 0;
+  uint32_t cpbRemovalDelayDelta                   = 0;
+  uint32_t maxInitialRemovalDelayForConcatenation = 0;
+  int      maxSublayers                           = 0;
+
+  EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialCpbRemoval;
+  EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialAltCpbRemoval;
+
+  static_vector<uint32_t, 16> cpbRemovalDelayDeltaVals;
+
+  bool     hasCpbRemovalDelayDeltas() const { return !cpbRemovalDelayDeltaVals.empty(); }
+  uint32_t numCpbRemovalDelayDeltas() const { return static_cast<uint32_t>(cpbRemovalDelayDeltaVals.size()); }
+
+  std::array<uint32_t, MAX_TLAYER> dpbOutputTidOffset;
 };
 
 class SEIPictureTiming : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::PICTURE_TIMING; }
-  void copyTo (SEIPictureTiming& target) const;
 
   SEIPictureTiming()
-  : m_picDpbOutputDelay (0)
-  , m_picDpbOutputDuDelay (0)
-  , m_numDecodingUnitsMinus1 (0)
-  , m_duCommonCpbRemovalDelayFlag (false)
-  , m_cpbAltTimingInfoPresentFlag (false)
-  , m_ptDisplayElementalPeriodsMinus1(0)
   {
-    ::memset(m_ptSubLayerDelaysPresentFlag, 0, sizeof(m_ptSubLayerDelaysPresentFlag));
-    ::memset(m_duCommonCpbRemovalDelayMinus1, 0, sizeof(m_duCommonCpbRemovalDelayMinus1));
-    ::memset(m_cpbRemovalDelayDeltaEnabledFlag, 0, sizeof(m_cpbRemovalDelayDeltaEnabledFlag));
-    ::memset(m_cpbRemovalDelayDeltaIdx, 0, sizeof(m_cpbRemovalDelayDeltaIdx));
-    ::memset(m_auCpbRemovalDelay, 0, sizeof(m_auCpbRemovalDelay));
+    hasSublayerDelays.fill(false);
+    cpbRemovalDelayDeltaEnabled.fill(false);
+    duCommonCpbRemovalDelayIncrement.fill(0);
+    cpbRemovalDelayDeltaIdx.fill(0);
+    cpbRemovalDelay.fill(0);
   }
   SEIPictureTiming(const SEIPictureTiming& sei);
-  virtual ~SEIPictureTiming()
+  virtual ~SEIPictureTiming() {}
+
+  std::array<bool, MAX_TLAYER> hasSublayerDelays;
+  std::array<bool, MAX_TLAYER> cpbRemovalDelayDeltaEnabled;
+
+  bool duCommonCpbRemovalDelay      = false;
+  bool hasAltTimingInfo             = false;
+  bool delayForConcatenationEnsured = false;
+
+  std::array<uint32_t, MAX_TLAYER> cpbRemovalDelayDeltaIdx;
+  std::array<uint32_t, MAX_TLAYER> cpbRemovalDelay;
+  std::array<uint32_t, MAX_TLAYER> duCommonCpbRemovalDelayIncrement;
+
+  uint32_t dpbOutputDelay          = 0;
+  uint32_t dpbOutputDuDelay        = 0;
+  uint32_t displayElementalPeriods = 0;
+
+  std::vector<uint32_t>                         numNalusInDu;
+  std::vector<std::array<uint32_t, MAX_TLAYER>> duCpbRemovalDelayIncrement;
+
+  void setNumDecodingUnits(const size_t n)
   {
+    numNalusInDu.resize(n);
+    duCpbRemovalDelayIncrement.resize(n);
   }
+  uint32_t getNumDecodingUnits() const { return static_cast<uint32_t>(numNalusInDu.size()); }
 
+  EnumArray<std::array<std::array<CpbEntry, MAX_CPB_CNT>, MAX_TLAYER>, HrdType> initialAltCpbRemovalDelta;
 
-  bool  m_ptSubLayerDelaysPresentFlag[MAX_TLAYER];
-  bool  m_cpbRemovalDelayDeltaEnabledFlag[MAX_TLAYER];
-  uint32_t  m_cpbRemovalDelayDeltaIdx[MAX_TLAYER];
-  uint32_t  m_auCpbRemovalDelay[MAX_TLAYER];
-  uint32_t  m_picDpbOutputDelay;
-  uint32_t  m_picDpbOutputDuDelay;
-  uint32_t  m_numDecodingUnitsMinus1;
-  bool  m_duCommonCpbRemovalDelayFlag;
-  uint32_t  m_duCommonCpbRemovalDelayMinus1[MAX_TLAYER];
-  std::vector<uint32_t> m_numNalusInDuMinus1;
-  std::vector<uint32_t> m_duCpbRemovalDelayMinus1;
-  bool     m_cpbAltTimingInfoPresentFlag;
-  std::vector<std::vector<uint32_t>> m_nalCpbAltInitialRemovalDelayDelta;
-  std::vector<std::vector<uint32_t>> m_nalCpbAltInitialRemovalOffsetDelta;
-  std::vector<uint32_t>              m_nalCpbDelayOffset;
-  std::vector<uint32_t>              m_nalDpbDelayOffset;
-  std::vector<std::vector<uint32_t>> m_vclCpbAltInitialRemovalDelayDelta;
-  std::vector<std::vector<uint32_t>> m_vclCpbAltInitialRemovalOffsetDelta;
-  std::vector<uint32_t>              m_vclCpbDelayOffset;
-  std::vector<uint32_t>              m_vclDpbDelayOffset;
-  int m_ptDisplayElementalPeriodsMinus1;
+  EnumArray<std::array<uint32_t, MAX_TLAYER>, HrdType> cpbDelayOffset;
+  EnumArray<std::array<uint32_t, MAX_TLAYER>, HrdType> dpbDelayOffset;
 };
 
 class SEIDecodingUnitInfo : public SEI
@@ -707,20 +743,20 @@ public:
   PayloadType payloadType() const { return PayloadType::DECODING_UNIT_INFO; }
 
   SEIDecodingUnitInfo()
-    : m_decodingUnitIdx(0)
-    , m_dpbOutputDuDelayPresentFlag(false)
-    , m_picSptDpbOutputDuDelay(-1)
   {
-    ::memset(m_duiSubLayerDelaysPresentFlag, 0, sizeof(m_duiSubLayerDelaysPresentFlag));
-    ::memset(m_duSptCpbRemovalDelayIncrement, 0, sizeof(m_duSptCpbRemovalDelayIncrement));
+    hasSublayerDelays.fill(false);
+    duCpbRemovalDelayIncrement.fill(0);
   }
   SEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei);
   virtual ~SEIDecodingUnitInfo() {}
-  int m_decodingUnitIdx;
-  bool m_duiSubLayerDelaysPresentFlag[MAX_TLAYER];
-  int m_duSptCpbRemovalDelayIncrement[MAX_TLAYER];
-  bool m_dpbOutputDuDelayPresentFlag;
-  int m_picSptDpbOutputDuDelay;
+
+  bool hasDpbOutputDuDelay = false;
+
+  int decodingUnitIdx  = 0;
+  int dpbOutputDuDelay = -1;
+
+  std::array<bool, MAX_TLAYER> hasSublayerDelays;
+  std::array<uint32_t, MAX_TLAYER> duCpbRemovalDelayIncrement;
 };
 
 
@@ -865,18 +901,6 @@ public:
   SEIMasteringDisplay values;
 };
 
-#if !JVET_AE0156_SEI_PO_WRAP_IMPORTANCE_IDC 
-typedef std::list<SEI*> SEIMessages;
-
-/// output a selection of SEI messages by payload type. Ownership stays in original message list.
-SEIMessages getSeisByType(const SEIMessages &seiList, SEI::PayloadType seiType);
-
-/// remove a selection of SEI messages by payload type from the original list and return them in a new list.
-SEIMessages extractSeisByType(SEIMessages &seiList, SEI::PayloadType seiType);
-
-/// delete list of SEI messages (freeing the referenced objects)
-void deleteSEIs (SEIMessages &seiList);
-#endif
 
 class SEIScalableNesting : public SEI
 {
@@ -884,36 +908,25 @@ public:
   PayloadType payloadType() const { return PayloadType::SCALABLE_NESTING; }
 
   SEIScalableNesting()
-  : m_snOlsFlag (false)
-  , m_snSubpicFlag (false)
-  , m_snNumOlssMinus1 (0)
-  , m_snAllLayersFlag (false)
-  , m_snNumLayersMinus1 (0)
-  , m_snNumSubpics (1)
-  , m_snSubpicIdLen (0)
-  , m_snNumSEIs(0)
-  {}
+  {
+    olsIdx.clear();
+    subpicId.clear();
+  }
   SEIScalableNesting(const SEIScalableNesting& sei);
 
-  virtual ~SEIScalableNesting()
-  {
-    deleteSEIs(m_nestedSEIs);
-  }
+  virtual ~SEIScalableNesting() { deleteSEIs(nestedSeis); }
 
-  bool      m_snOlsFlag;
-  bool      m_snSubpicFlag;
-  uint32_t  m_snNumOlssMinus1;
-  uint32_t  m_snOlsIdxDeltaMinus1[MAX_NESTING_NUM_LAYER];
-  uint32_t  m_snOlsIdx[MAX_NESTING_NUM_LAYER];
-  bool      m_snAllLayersFlag;                      //value valid if m_nestingOlsFlag == 0
-  uint32_t  m_snNumLayersMinus1;                    //value valid if m_nestingOlsFlag == 0 and m_nestingAllLayersFlag == 0
-  uint8_t   m_snLayerId[MAX_NESTING_NUM_LAYER];     //value valid if m_nestingOlsFlag == 0 and m_nestingAllLayersFlag == 0. This can e.g. be a static array of 64 uint8_t values
-  uint32_t  m_snNumSubpics;
-  uint8_t   m_snSubpicIdLen;
-  std::vector<uint16_t> m_snSubpicId;
-  uint32_t  m_snNumSEIs;
+  uint8_t subpicIdLen = 0;
 
-  SEIMessages m_nestedSEIs;
+  static_vector<uint32_t, MAX_NESTING_NUM_LAYER> olsIdx;
+
+  std::vector<uint16_t> subpicId;
+
+  static_vector<uint8_t, MAX_NESTING_NUM_LAYER> layerId;
+
+  bool allLayersFlag() const { return layerId.empty(); }
+
+  SEIMessages nestedSeis;
 };
 
 
@@ -1060,31 +1073,82 @@ public:
 
 #endif
 
-
-class SEISubpicureLevelInfo : public SEI
+class SEISubpictureLevelInfo : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::SUBPICTURE_LEVEL_INFO; }
-  SEISubpicureLevelInfo()
-  : m_numRefLevels(0)
-  , m_explicitFractionPresentFlag (false)
-  , m_cbrConstraintFlag (false)
-  , m_numSubpics(0)
-  , m_sliMaxSublayers(1)
-  , m_sliSublayerInfoPresentFlag(false)
-  {}
-  SEISubpicureLevelInfo(const SEISubpicureLevelInfo& sei);
-  virtual ~SEISubpicureLevelInfo() {}
+  SEISubpictureLevelInfo() {}
+  SEISubpictureLevelInfo(const SEISubpictureLevelInfo& sli);
+  virtual ~SEISubpictureLevelInfo() {}
 
-  int       m_numRefLevels;
-  bool      m_explicitFractionPresentFlag;
-  bool      m_cbrConstraintFlag;
-  int       m_numSubpics;
-  int       m_sliMaxSublayers;
-  bool      m_sliSublayerInfoPresentFlag;
-  std::vector<std::vector<int>>              m_nonSubpicLayersFraction;
-  std::vector<std::vector<Level::Name>>      m_refLevelIdc;
-  std::vector<std::vector<std::vector<int>>> m_refLevelFraction;
+  bool cbrConstraint = false;
+  bool hasSublayerInfo = false;
+
+  uint8_t&           nonSubpicLayerFraction(int i, int k) { return m_data[k][i].nonSubpicLayersFraction; }
+  const uint8_t&     nonSubpicLayerFraction(int i, int k) const { return m_data[k][i].nonSubpicLayersFraction; }
+  Level::Name&       refLevelIdc(int i, int k) { return m_data[k][i].refLevelIdc; }
+  const Level::Name& refLevelIdc(int i, int k) const { return m_data[k][i].refLevelIdc; }
+  uint8_t&           refLevelFraction(int i, int j, int k) { return m_data[k][i].refLevelFraction[j]; }
+  const uint8_t&     refLevelFraction(int i, int j, int k) const { return m_data[k][i].refLevelFraction[j]; }
+
+  void resize(size_t numRefLevels, size_t maxSublayers, bool explicitFractionPresentFlag, size_t numSubpics)
+  {
+    m_data.resize(maxSublayers);
+    for (auto& x: m_data)
+    {
+      x.resize(numRefLevels);
+
+      for (auto& y: x)
+      {
+        y.refLevelIdc             = Level::LEVEL15_5;
+        y.nonSubpicLayersFraction = 0;
+
+        if (explicitFractionPresentFlag)
+        {
+          y.refLevelFraction.resize(numSubpics);
+          std::fill(y.refLevelFraction.begin(), y.refLevelFraction.end(), 0);
+        }
+        else
+        {
+          y.refLevelFraction.clear();
+        }
+      }
+    }
+  }
+
+  uint32_t maxSublayers() const { return (uint32_t) m_data.size(); }
+  uint32_t numRefLevels() const { return (uint32_t) m_data.front().size(); }
+  uint32_t numSubpics() const { return std::max((uint32_t) m_data.front().front().refLevelFraction.size(), 1u); }
+  bool     explicitFractionPresentFlag() const { return m_data.front().front().refLevelFraction.size() != 0; }
+
+  void fillSublayers()
+  {
+    for (int k = maxSublayers() - 2; k >= 0; k--)
+    {
+      for (int i = 0; i < numRefLevels(); i++)
+      {
+        nonSubpicLayerFraction(i, k) = nonSubpicLayerFraction(i, maxSublayers() - 1);
+        refLevelIdc(i, k)            = refLevelIdc(i, maxSublayers() - 1);
+        if (explicitFractionPresentFlag())
+        {
+          for (int j = 0; j < numSubpics(); j++)
+          {
+            refLevelFraction(i, j, k) = refLevelFraction(i, j, maxSublayers() - 1);
+          }
+        }
+      }
+    }
+  }
+
+private:
+  struct Entry
+  {
+    uint8_t              nonSubpicLayersFraction;
+    Level::Name          refLevelIdc;
+    std::vector<uint8_t> refLevelFraction;
+  };
+
+  static_vector<std::vector<Entry>, MAX_TLAYER> m_data;
 };
 
 class SEIManifest : public SEI
@@ -1248,6 +1312,8 @@ public:
     , m_outSubWidthC(1)
     , m_outSubHeightC(1)
     , m_outColourFormatIdc(ChromaFormat::_420)
+    , m_chromaLocInfoPresentFlag(false)
+    , m_chromaSampleLocTypeFrame(Chroma420LocType::UNSPECIFIED)
     , m_picWidthNumeratorMinus1(0)
     , m_picWidthDenominatorMinus1(0)
     , m_picHeightNumeratorMinus1(0)
@@ -1283,6 +1349,10 @@ public:
     , m_crPadding(0)
     , m_payloadByte(nullptr)
     , m_complexityInfoPresentFlag(false)
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+    , m_applicationPurposeTagUriPresentFlag(false)
+    , m_applicationPurposeTagUri("")
+#endif
     , m_uriTag("")
     , m_uri("")
     , m_parameterTypeIdc(0)
@@ -1290,13 +1360,14 @@ public:
     , m_numParametersIdc(0)
     , m_numKmacOperationsIdc(0)
     , m_totalKilobyteSize(0)
+    , m_numberInputDecodedPicturesMinus1(0)
+    , m_numberExtrapolatedPicturesMinus1(0)
+    , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
   {}
   SEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
 
-#if JVET_AE0128_CONSTRAINT_UPDATE
   bool operator == (const SEINeuralNetworkPostFilterCharacteristics& sei);
-#endif
 
   ~SEINeuralNetworkPostFilterCharacteristics() override
   {
@@ -1354,6 +1425,10 @@ public:
   uint64_t       m_payloadLength;
   char*          m_payloadByte;
   bool           m_complexityInfoPresentFlag;
+#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
+  bool           m_applicationPurposeTagUriPresentFlag;
+  std::string    m_applicationPurposeTagUri;
+#endif
   std::string    m_uriTag;
   std::string    m_uri;
   uint32_t       m_parameterTypeIdc;
@@ -1363,6 +1438,7 @@ public:
   uint32_t       m_totalKilobyteSize;
   uint32_t       m_numberInputDecodedPicturesMinus1;
   std::vector<uint32_t> m_numberInterpolatedPictures;
+  uint32_t       m_numberExtrapolatedPicturesMinus1;
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
   uint32_t       m_numInpPicsInOutputTensor;
@@ -1376,12 +1452,8 @@ public:
     : m_targetId(0)
     , m_cancelFlag(false)
     , m_targetBaseFlag(false)
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
     , m_noPrevCLVSFlag(false)
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
     , m_noFollCLVSFlag(false)
-#endif
     , m_persistenceFlag(false)
   {}
   SEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation& sei);
@@ -1391,12 +1463,8 @@ public:
   uint32_t       m_targetId;
   bool           m_cancelFlag;
   bool           m_targetBaseFlag;
-#if JVET_AE0050_NNPFA_NO_PREV_CLVS_FLAG
   bool           m_noPrevCLVSFlag;
-#endif
-#if JVET_AE0050_NNPFA_NO_FOLL_CLVS_FLAG
   bool           m_noFollCLVSFlag;
-#endif
   bool           m_persistenceFlag;
   std::vector<bool> m_outputFlag;
 };
@@ -1421,6 +1489,44 @@ public:
 
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t nnpfaTargetId);
 SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMessages &seiList);
+
+#if JVET_AH2006_EOI_SEI
+class SEIEncoderOptimizationInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::ENCODER_OPTIMIZATION_INFO; }
+  SEIEncoderOptimizationInfo()
+    : m_cancelFlag(false)
+    , m_persistenceFlag(false)
+    , m_forHumanViewingIdc(0)
+    , m_forMachineAnalysisIdc(0)
+    , m_type(0)
+    , m_objectBasedIdc(0)
+    , m_temporalResamplingTypeFlag(false)
+    , m_numIntPics(0)
+    , m_spatialResamplingTypeFlag(false)
+    , m_privacyProtectionTypeIdc(0)
+    , m_privacyProtectedInfoType(0)
+  {}
+  SEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo& sei);
+
+  virtual ~SEIEncoderOptimizationInfo() {}
+
+  bool     m_cancelFlag;
+  bool     m_persistenceFlag;
+  uint32_t m_forHumanViewingIdc;
+  uint32_t m_forMachineAnalysisIdc;
+  uint32_t m_type;
+  uint32_t m_objectBasedIdc;
+  bool     m_temporalResamplingTypeFlag;
+  uint32_t m_numIntPics;
+  bool     m_spatialResamplingTypeFlag;
+  uint32_t m_privacyProtectionTypeIdc;
+  uint32_t m_privacyProtectedInfoType;
+
+};
+
+#endif
 //! \}
 
 

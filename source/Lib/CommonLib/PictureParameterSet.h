@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2023, ITU/ISO/IEC
+ * Copyright (c) 2010-2024, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -103,8 +103,8 @@ public:
   uint32_t         getNumSlicesInTile( ) const          { return  m_numSlicesInTile;    }
   void             setSliceHeightInCtu( uint32_t u )    { m_sliceHeightInCtu = u;       }
   uint32_t         getSliceHeightInCtu( ) const         { return  m_sliceHeightInCtu;   }
-  void             setTileIdx( uint32_t u )             { m_tileIdx = u;                }
-  uint32_t         getTileIdx( ) const                  { return  m_tileIdx;            }
+  void             setTileIdx( TileIdx u )              { m_tileIdx = u;                }
+  TileIdx          getTileIdx( ) const                  { return  m_tileIdx;            }
 
 };
 
@@ -288,8 +288,8 @@ private:
   std::vector<uint32_t> m_tileRowHeight;                // tile row heights in units of CTUs
   std::vector<uint32_t> m_tileColBd;                    // tile column left-boundaries in units of CTUs
   std::vector<uint32_t> m_tileRowBd;                    // tile row top-boundaries in units of CTUs
-  std::vector<uint32_t> m_ctuToTileCol;                 // mapping between CTU horizontal address and tile column index
-  std::vector<uint32_t> m_ctuToTileRow;                 // mapping between CTU vertical address and tile row index
+  std::vector<TileIdx> m_ctuToTileCol;                  // mapping between CTU horizontal address and tile column index
+  std::vector<TileIdx> m_ctuToTileRow;                  // mapping between CTU vertical address and tile row index
   bool             m_rectSliceFlag;                     // rectangular slice flag
   bool             m_singleSlicePerSubPicFlag;          // single slice per sub-picture flag
   std::vector<uint32_t> m_ctuToSubPicIdx;               // mapping between CTU and Sub-picture index
@@ -444,9 +444,9 @@ public:
   uint32_t               ctuToTileRowBd( int ctuY ) const                                 { return  getTileRowBd(ctuToTileRow( ctuY ));                                                                                     }
   bool                   ctuIsTileColBd( int ctuX ) const                                 { return  ctuX == ctuToTileColBd( ctuX );                                                                                         }
   bool                   ctuIsTileRowBd( int ctuY ) const                                 { return  ctuY == ctuToTileRowBd( ctuY );                                                                                         }
-  uint32_t               getTileIdx( uint32_t ctuX, uint32_t ctuY ) const                 { return (ctuToTileRow( ctuY ) * getNumTileColumns()) + ctuToTileCol( ctuX );                                                     }
-  uint32_t               getTileIdx( uint32_t ctuRsAddr) const                            { return getTileIdx( ctuRsAddr % m_picWidthInCtu,  ctuRsAddr / m_picWidthInCtu );                                                 }
-  uint32_t               getTileIdx( const Position& pos ) const                          { return getTileIdx( pos.x / m_ctuSize, pos.y / m_ctuSize );                                                                      }
+  TileIdx                getTileIdx( uint32_t ctuX, uint32_t ctuY ) const                 { return (ctuToTileRow( ctuY ) * getNumTileColumns()) + ctuToTileCol( ctuX );                                                     }
+  TileIdx                getTileIdx( uint32_t ctuRsAddr) const                            { return getTileIdx( ctuRsAddr % m_picWidthInCtu,  ctuRsAddr / m_picWidthInCtu );                                                 }
+  TileIdx                getTileIdx( const Position& pos ) const                          { return getTileIdx( pos.x / m_ctuSize, pos.y / m_ctuSize );                                                                      }
   void                   setRectSliceFlag( bool b )                                       { m_rectSliceFlag = b;                                                                                                            }
   bool                   getRectSliceFlag( ) const                                        { return  m_rectSliceFlag;                                                                                                        }
   void                   setSingleSlicePerSubPicFlag( bool b )                            { m_singleSlicePerSubPicFlag = b;                                                                                                 }
