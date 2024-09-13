@@ -1105,6 +1105,18 @@ POC period at which resolution is changed.
 Picture output options: output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for reference picture resampling. When GOPBasedRPR is true it will be set to 2.
 \\
 
+\Option{UpscaledOutputWidth} &
+%\ShortOption{\None} &
+\Default{0} &
+When non-zero and UpscaledOutput is non-zero, overrides SPS and specifies upscaled output width
+\\
+
+\Option{UpscaledOutputHeight} &
+%\ShortOption{\None} &
+\Default{0} &
+When non-zero and UpscaledOutput is non-zero, overrides SPS and specifies upscaled output height
+\\
+
 \Option{UpscaleFilterForDisplay} &
 %\ShortOption{\None} &
 \Default{1} &
@@ -6275,6 +6287,18 @@ Omitting the parameter, or using a value of -1 in the file decodes all layers.
 %\ShortOption{\None} &
 \Default{0} &
 Picture output options: output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for reference picture resampling.
+\\
+
+\Option{UpscaledOutputWidth} &
+%\ShortOption{\None} &
+\Default{0} &
+When non-zero and UpscaledOutput is non-zero, overrides SPS and specifies upscaled output width
+\\
+
+\Option{UpscaledOutputHeight} &
+%\ShortOption{\None} &
+\Default{0} &
+When non-zero and UpscaledOutput is non-zero, overrides SPS and specifies upscaled output height
 \\
 
 \Option{UpscaleFilterForDisplay} &

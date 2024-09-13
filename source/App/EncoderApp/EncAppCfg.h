@@ -1029,6 +1029,8 @@ protected:
   double      m_fractionOfFrames;                             ///< encode a fraction of the frames as specified in FramesToBeEncoded
   int         m_switchPocPeriod;
   int         m_upscaledOutput;                               ////< Output upscaled (2), decoded cropped but in full resolution buffer (1) or decoded cropped (0, default) picture for RPR.
+  int         m_upscaledOutputWidth;
+  int         m_upscaledOutputHeight;
   int         m_upscaleFilterForDisplay;
   bool        m_craAPSreset;
   bool        m_rprRASLtoolSwitch;

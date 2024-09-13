@@ -1987,11 +1987,12 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
           ppsID = ((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) && !m_explicitScalingWindowEnabled) ? m_resChangeInClvsEnabled ? (ENC_PPS_ID_RPR + layerId) : layerId : layerId;
         }
         const PPS& pps = *m_cEncLib.getPPS(ppsID);
-        if( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() )
+        if( (m_cEncLib.isResChangeInClvsEnabled() || m_upscaledOutputWidth || m_upscaledOutputHeight) && m_cEncLib.getUpscaledOutput() )
         {
           m_cVideoIOYuvReconFile.writeUpscaledPicture(sps, pps, *pcPicYuvRec, ipCSC, m_packedYUVMode,
                                                       m_cEncLib.getUpscaledOutput(), ChromaFormat::UNDEFINED,
-                                                      m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+                                                      m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay,
+                                                      m_upscaledOutputWidth, m_upscaledOutputHeight);
         }
         else
         {

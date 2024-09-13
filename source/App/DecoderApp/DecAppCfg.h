@@ -97,9 +97,9 @@ protected:
   bool          m_GMFAFramewise;
 #endif
   int           m_upscaledOutput;                     ////< Output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture.
+  int           m_upscaledOutputWidth;
+  int           m_upscaledOutputHeight;
   int           m_upscaleFilterForDisplay;
-  int           m_outputWidth;
-  int           m_outputHeight;
   int           m_targetSubPicIdx;                    ///< Specify which subpicture shall be write to output, using subpicture index
 #if GDR_LEAK_TEST
   int           m_gdrPocRandomAccess;                   ///<

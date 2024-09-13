@@ -1424,18 +1424,20 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
   ChromaFormat chromaFormatIdc = sps.getChromaFormatIdc();
   bool ret = false;
 
-  Window afterScaleWindowFullResolution = sps.getConformanceWindow();
+  Window afterScaleWindowFullResolution;
   // override SPS maxWidth/Height with user-provided parameters
   if (!maxWidth || !outputChoice)
   {
   	  maxWidth = sps.getMaxPicWidthInLumaSamples();
+  	  afterScaleWindowFullResolution.setWindowLeftOffset(sps.getConformanceWindow().getWindowLeftOffset());
+  	  afterScaleWindowFullResolution.setWindowRightOffset(sps.getConformanceWindow().getWindowRightOffset());
   }
   if (!maxHeight || !outputChoice)
   {
   	  maxHeight = sps.getMaxPicHeightInLumaSamples();
+  	  afterScaleWindowFullResolution.setWindowTopOffset(sps.getConformanceWindow().getWindowTopOffset());
+  	  afterScaleWindowFullResolution.setWindowBottomOffset(sps.getConformanceWindow().getWindowBottomOffset());
   }
-  // TODO: rescale the afterScaleWindowFullResolution ? Well no: we want to specify true final size
-  // TODO: ensure size is chroma aligned, depending on sps.getChromaFormatIdc()
 
   // decoder does not have information about upscaled picture scaling and conformance windows, store this information when full resolution picutre is encountered
   if( maxWidth == pps.getPicWidthInLumaSamples() && maxHeight == pps.getPicHeightInLumaSamples() )
