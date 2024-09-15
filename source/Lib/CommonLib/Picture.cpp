@@ -73,7 +73,6 @@ Picture::Picture()
   layerId = NOT_VALID;
   numSlices = 1;
   unscaledPic = nullptr;
-  m_isMctfFiltered      = false;
   m_grainCharacteristic = nullptr;
   m_grainBuf            = nullptr;
 }
