@@ -1651,8 +1651,8 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
       }
       else
       {
-        m_omiHeader.m_receivedSettingsOnce = true;
         m_omiHeader                        = seiObjectMaskInfo.m_hdr;   // copy the settings.
+        m_omiHeader.m_receivedSettingsOnce = true;
       }
     }
 
