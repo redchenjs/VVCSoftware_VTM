@@ -3968,12 +3968,12 @@ Distortion EncCu::getDistortionDb( CodingStructure &cs, CPelBuf org, CPelBuf rec
       tmpRecLuma.copyFrom( reco );
       tmpRecLuma.rspSignal( m_pcReshape->getInvLUT() );
       dist += m_pcRdCost->getDistPart(org, tmpRecLuma, cs.sps->getBitDepth(toChannelType(compID)), compID,
-                                      DFunc::SSE_WTD, &orgLuma);
+                                      DFuncWtd::SSE_WTD, orgLuma);
     }
     else
     {
-      dist += m_pcRdCost->getDistPart(org, reco, cs.sps->getBitDepth(toChannelType(compID)), compID, DFunc::SSE_WTD,
-                                      &orgLuma);
+      dist += m_pcRdCost->getDistPart(org, reco, cs.sps->getBitDepth(toChannelType(compID)), compID,
+                                      DFuncWtd::SSE_WTD, orgLuma);
     }
   }
   else if (m_pcEncCfg->getLmcs() && cs.slice->getLmcsEnabledFlag() && cs.slice->isIntra()) //intra slice
@@ -3990,8 +3990,8 @@ Distortion EncCu::getDistortionDb( CodingStructure &cs, CPelBuf org, CPelBuf rec
     {
       if ((isChroma(compID) && m_pcEncCfg->getReshapeIntraCMD()))
       {
-        dist += m_pcRdCost->getDistPart(org, reco, cs.sps->getBitDepth(toChannelType(compID)), compID, DFunc::SSE_WTD,
-                                        &orgLuma);
+        dist += m_pcRdCost->getDistPart(org, reco, cs.sps->getBitDepth(toChannelType(compID)), compID,
+                                        DFuncWtd::SSE_WTD, orgLuma);
       }
       else
       {
@@ -4453,12 +4453,12 @@ void EncCu::xReuseCachedResult( CodingStructure *&tempCS, CodingStructure *&best
             tmpRecLuma.copyFrom(reco);
             tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
             finalDistortion += m_pcRdCost->getDistPart(org, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
-                                                       DFunc::SSE_WTD, &orgLuma);
+                                                       DFuncWtd::SSE_WTD, orgLuma);
           }
           else
           {
             finalDistortion += m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID,
-                                                       DFunc::SSE_WTD, &orgLuma);
+                                                       DFuncWtd::SSE_WTD, orgLuma);
           }
         }
         else
