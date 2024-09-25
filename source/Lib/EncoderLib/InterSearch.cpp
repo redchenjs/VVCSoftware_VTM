@@ -10622,12 +10622,12 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
           tmpRecLuma.copyFrom(reco);
           tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
           distortion += m_pcRdCost->getDistPart(org, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
-                                                DFunc::SSE_WTD, &orgLuma);
+                                                DFuncWtd::SSE_WTD, orgLuma);
         }
         else
         {
           distortion += m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID,
-                                                DFunc::SSE_WTD, &orgLuma);
+                                                DFuncWtd::SSE_WTD, orgLuma);
         }
       }
       else
@@ -10968,12 +10968,12 @@ void InterSearch::encodeResAndCalcRdInterCU(CodingStructure &cs, Partitioner &pa
         tmpRecLuma.copyFrom(reco);
         tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
         finalDistortion += m_pcRdCost->getDistPart(org, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
-                                                   DFunc::SSE_WTD, &orgLuma);
+                                                   DFuncWtd::SSE_WTD, orgLuma);
       }
       else
       {
         finalDistortion +=
-          m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID, DFunc::SSE_WTD, &orgLuma);
+          m_pcRdCost->getDistPart(org, reco, sps.getBitDepth(toChannelType(compID)), compID, DFuncWtd::SSE_WTD, orgLuma);
       }
     }
     else
