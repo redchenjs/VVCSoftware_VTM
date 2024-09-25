@@ -776,8 +776,15 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
 
   sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_id");
   sei.m_posId = val;
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  sei_read_code(decodedMessageOutputStream, 7, val, "po_sei_num_minus2");
+  sei.m_posNumMinus2 = val;
+  sei_read_flag(decodedMessageOutputStream, val, "po_breadth_first_flag");
+  sei.m_posBreadthFirstFlag = val;
+#else
   sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_num_minus2");
   sei.m_posNumMinus2 = val;
+#endif
   numMaxSeiMessages = sei.m_posNumMinus2 + 2;
   sei.m_posPrefixFlag.resize(numMaxSeiMessages);
   sei.m_posPayloadType.resize(numMaxSeiMessages);

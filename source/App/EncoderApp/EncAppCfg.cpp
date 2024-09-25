@@ -1668,6 +1668,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
   ("SEIPOId",                                         m_poSEIId,                                            0u, "Specifies the id of the SEI processing order SEI message")
   ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  ("SEIPOBreadthFirstFlag",                           m_poSEIBreadthFirstFlag,                           false, "Specifies that breadth-first handling of processing chain is applied (1), or that either breadth-first or depth-first can be applied (0, default)")
+#endif
   ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,             cfg_poSEIWrappingFlag, "Specifies whether a correspoding processing-order-nested SEI message exists or not")
   ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies degree of importance for the SEI messages")
   ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether SEI message prefix is present or not")

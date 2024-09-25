@@ -926,6 +926,9 @@ protected:
   bool                  m_poSEIEnabled;
   uint32_t              m_poSEIId;
   uint32_t              m_poSEINumMinus2;
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  bool                  m_poSEIBreadthFirstFlag;
+#endif
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
   std::vector<bool>     m_poSEIPrefixFlag;
@@ -2682,6 +2685,10 @@ public:
   uint32_t getPoSEIId()                                              { return m_poSEIId; }
   void     setPoSEINumMinus2(uint32_t i)                             { m_poSEINumMinus2 = i; }
   uint32_t getPoSEINumMinus2()                                       { return m_poSEINumMinus2; }
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  void     setPoSEIBreadthFirstFlag(bool b)                          { m_poSEIBreadthFirstFlag = b; }
+  bool     getPoSEIBreadthFirstFlag()                                { return m_poSEIBreadthFirstFlag; }
+#endif
   void     setPoSEIWrappingFlag(const std::vector<bool>& b)          { m_poSEIWrappingFlag = b; }
   bool     getPoSEIWrappingFlag(uint16_t idx)                  const { return m_poSEIWrappingFlag[idx]; }
   void     setPoSEIImportanceFlag(const std::vector<bool>& b)        { m_poSEIImportanceFlag = b; }

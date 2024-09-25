@@ -1589,7 +1589,12 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
   CHECK(sei.m_posPayloadType.size() < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
   SEIMessages wrapSEI;
   xWriteCode(sei.m_posId, 8, "po_sei_id");
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  xWriteCode(sei.m_posNumMinus2, 7, "po_num_sei_message_minus2");
+  xWriteFlag(sei.m_posBreadthFirstFlag, "po_breadth_first_flag");
+#else
   xWriteCode(sei.m_posNumMinus2, 8, "po_num_sei_message_minus2");
+#endif
   for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
   {
     xWriteFlag(sei.m_posWrappingFlag[i], "po_sei_wrapping_flag[i]");

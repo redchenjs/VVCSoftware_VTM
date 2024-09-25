@@ -195,6 +195,9 @@ public:
   bool                   m_posEnabled;
   uint32_t               m_posId;
   uint32_t               m_posNumMinus2;
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  bool                   m_posBreadthFirstFlag;
+#endif
   std::vector<bool>      m_posWrappingFlag;
   std::vector<bool>      m_posImportanceFlag;
   std::vector<bool>      m_posPrefixFlag;
