@@ -105,6 +105,9 @@ public:
 #if JVET_AH2006_EOI_SEI
   void initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei);
 #endif 
+#if JVET_AH2006_TXTDESCRINFO_SEI
+  void initSEITextDescription(SEITextDescription *sei);
+#endif
 #if GREEN_METADATA_SEI_ENABLED
   void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);
 #endif
