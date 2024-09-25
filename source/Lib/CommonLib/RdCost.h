@@ -59,6 +59,10 @@ class EncCfg;
 
 using DistFunc = std::function<Distortion(const DistParam &)>;
 
+#if WCG_EXT
+class RdCost;
+using DistFuncWtd = std::function<Distortion(RdCost *, const DistParam &)>;
+#endif
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
@@ -71,6 +75,7 @@ public:
   CPelBuf               cur;
 #if WCG_EXT
   CPelBuf               orgLuma;
+  DistFuncWtd           distFuncWtd;
 #endif
   const Pel*            mask;
   ptrdiff_t             maskStride;
@@ -117,15 +122,16 @@ private:
   bool                    m_isLosslessRDCost;
 
 #if WCG_EXT
+  static EnumArray<DistFuncWtd, DFuncWtd> m_distortionFuncWtd;
   double                  m_dLambda_unadjusted; // TODO: check is necessary
   double                  m_distScaleUnadjusted;
 
-  static std::vector<int32_t> m_reshapeLumaLevelToWeightPLUT;   // scaled by MSE_WEIGHT_ONE
-  static std::vector<double>  m_lumaLevelToWeightPLUT;
+  std::vector<int32_t> m_reshapeLumaLevelToWeightPLUT;   // scaled by MSE_WEIGHT_ONE
+  std::vector<double>  m_lumaLevelToWeightPLUT;
 
-  static int32_t  m_chromaWeight;   // scaled by MSE_WEIGHT_ONE
-  static uint32_t m_signalType;
-  static int      m_lumaBD;
+  int32_t  m_chromaWeight = RESHAPE_SIGNAL_NULL;   // scaled by MSE_WEIGHT_ONE
+  uint32_t m_signalType = MSE_WEIGHT_ONE;
+  int      m_lumaBD = 10;
 
   ChromaFormat            m_cf;
 #endif
@@ -382,15 +388,15 @@ private:
   static Distortion xGetSSE16N        ( const DistParam& pcDtParam );
 
 #if WCG_EXT
-  static Distortion getWeightedMSE(int compIdx, const Pel org, const Pel cur, const uint32_t shift, const Pel orgLuma);
-  static Distortion xGetSSE_WTD       ( const DistParam& pcDtParam );
-  static Distortion xGetSSE2_WTD      ( const DistParam& pcDtParam );
-  static Distortion xGetSSE4_WTD      ( const DistParam& pcDtParam );
-  static Distortion xGetSSE8_WTD      ( const DistParam& pcDtParam );
-  static Distortion xGetSSE16_WTD     ( const DistParam& pcDtParam );
-  static Distortion xGetSSE32_WTD     ( const DistParam& pcDtParam );
-  static Distortion xGetSSE64_WTD     ( const DistParam& pcDtParam );
-  static Distortion xGetSSE16N_WTD    ( const DistParam& pcDtParam );
+  Distortion getWeightedMSE(int compIdx, const Pel org, const Pel cur, const uint32_t shift, const Pel orgLuma);
+  Distortion xGetSSE_WTD       ( const DistParam& pcDtParam );
+  Distortion xGetSSE2_WTD      ( const DistParam& pcDtParam );
+  Distortion xGetSSE4_WTD      ( const DistParam& pcDtParam );
+  Distortion xGetSSE8_WTD      ( const DistParam& pcDtParam );
+  Distortion xGetSSE16_WTD     ( const DistParam& pcDtParam );
+  Distortion xGetSSE32_WTD     ( const DistParam& pcDtParam );
+  Distortion xGetSSE64_WTD     ( const DistParam& pcDtParam );
+  Distortion xGetSSE16N_WTD    ( const DistParam& pcDtParam );
 #endif
 
   static Distortion xGetSAD           ( const DistParam& pcDtParam );
@@ -469,12 +475,11 @@ private:
 public:
 
 #if WCG_EXT
-  Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFunc distFunc,
-                         const CPelBuf *orgLuma = nullptr);
-#else
-  Distortion    getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
-                            DFunc distFunc);
+  Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFuncWtd distFuncWtd,
+                         const CPelBuf &orgLuma);
 #endif
+  Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
+                         DFunc distFunc);
 
   Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, const Pel *mask, int bitDepth,
                          const ComponentID compID, DFunc distFunc);

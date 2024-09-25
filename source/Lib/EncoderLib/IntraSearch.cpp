@@ -1941,12 +1941,12 @@ void IntraSearch::PLTSearch(CodingStructure &cs, Partitioner& partitioner, Compo
         tmpRecLuma.copyFrom(reco);
         tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
         distortion += m_pcRdCost->getDistPart(org, tmpRecLuma, cs.sps->getBitDepth(toChannelType(compID)), compID,
-                                              DFunc::SSE_WTD, &orgLuma);
+                                              DFuncWtd::SSE_WTD, orgLuma);
       }
       else
       {
         distortion += m_pcRdCost->getDistPart(org, reco, cs.sps->getBitDepth(toChannelType(compID)), compID,
-                                              DFunc::SSE_WTD, &orgLuma);
+                                              DFuncWtd::SSE_WTD, orgLuma);
       }
     }
     else
@@ -3542,15 +3542,15 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
       PelBuf   tmpRecLuma = m_tmpStorageCtu.getBuf(tmpArea1);
       tmpRecLuma.copyFrom(piReco);
       tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
-      dist += m_pcRdCost->getDistPart(piOrg, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID, DFunc::SSE_WTD,
-                                      &orgLuma);
+      dist += m_pcRdCost->getDistPart(piOrg, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID, DFuncWtd::SSE_WTD,
+                                      orgLuma);
     }
     else
     {
-      dist += m_pcRdCost->getDistPart(piOrg, piReco, bitDepth, compID, DFunc::SSE_WTD, &orgLuma);
+      dist += m_pcRdCost->getDistPart(piOrg, piReco, bitDepth, compID, DFuncWtd::SSE_WTD, orgLuma);
       if( jointCbCr )
       {
-        dist += m_pcRdCost->getDistPart(crOrg, crReco, bitDepth, COMPONENT_Cr, DFunc::SSE_WTD, &orgLuma);
+        dist += m_pcRdCost->getDistPart(crOrg, crReco, bitDepth, COMPONENT_Cr, DFuncWtd::SSE_WTD, orgLuma);
       }
     }
   }
@@ -4859,12 +4859,12 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
           tmpRecLuma.copyFrom(piReco);
           tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
           totalDist += m_pcRdCost->getDistPart(piOrg, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
-                                               DFunc::SSE_WTD, &orgLuma);
+                                               DFuncWtd::SSE_WTD, orgLuma);
         }
         else
         {
           totalDist += m_pcRdCost->getDistPart(piOrg, piReco, sps.getBitDepth(toChannelType(compID)), compID,
-                                               DFunc::SSE_WTD, &orgLuma);
+                                               DFuncWtd::SSE_WTD, orgLuma);
         }
       }
       else
@@ -4976,12 +4976,12 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
                 tmpRecLuma.copyFrom(piReco);
                 tmpRecLuma.rspSignal(m_pcReshape->getInvLUT());
                 distTmp += m_pcRdCost->getDistPart(piOrg, tmpRecLuma, sps.getBitDepth(toChannelType(compID)), compID,
-                                                   DFunc::SSE_WTD, &orgLuma);
+                                                   DFuncWtd::SSE_WTD, orgLuma);
               }
               else
               {
                 distTmp += m_pcRdCost->getDistPart(piOrg, piReco, sps.getBitDepth(toChannelType(compID)), compID,
-                                                   DFunc::SSE_WTD, &orgLuma);
+                                                   DFuncWtd::SSE_WTD, orgLuma);
               }
             }
             else
