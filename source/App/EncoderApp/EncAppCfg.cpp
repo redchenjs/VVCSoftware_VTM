@@ -2018,6 +2018,25 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies a list indicating whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
   }
 
+#if JVET_AH2006_TXTDESCRINFO_SEI
+  opts.addOptions()("SEITextDescriptionID", m_SEITextDescriptionID, 1u, "Identifier value of this text description information SEI message, must be in the range 1-16383");
+  opts.addOptions()("SEITextDescriptionCancelFlag", m_SEITextCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_id");
+  opts.addOptions()("SEITextDescriptionPersistenceFlag", m_SEITextPersistenceFlag, true, "Specifies the persistence of the text information description message for the current layer");
+  opts.addOptions()("SEITextDescriptionPurpose", m_SEITextDescriptionPurpose, 0u, "Indicates the purpose of the text description, must be in the range 0-5");
+  opts.addOptions()("SEITextDescriptionsNumStringsMinus1", m_SEITextNumStringsMinus1, 0u, "Indicates the number of entries plus 1 for txt_descr_string_lang[ i ] and txt_descr_string[ i ]");
+  m_SEITextDescriptionStringLang.resize(256);
+  m_SEITextDescriptionString.resize(256);
+  for (int i=0; i<256; i++)
+  {
+    std::ostringstream stringLang;
+    stringLang << "SEITextDescriptionStringLang" << i;
+    opts.addOptions()(stringLang.str(), m_SEITextDescriptionStringLang[0], std::string(""), "Specifies the i-th language of the txt_descr_string[ i ]");
+    std::ostringstream stringDesc;
+    stringDesc << "SEITextDescriptionString" << i;
+    opts.addOptions()(stringDesc.str(), m_SEITextDescriptionString[0], std::string(""), "Specifies the i-th text description information string");
+  }
+#endif
+
   po::setDefaults(opts);
   po::ErrorReporter err;
   const std::list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **) argv, err);
@@ -5246,6 +5265,12 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara(m_piVerPhaseDenMinus1ReducedResolution > 511, "m_piVerPhaseDenMinus1ReducedResolution must be in the range of 0 to 511, inclusive");
     xConfirmPara(m_piVerPhaseNumReducedResolution > m_piVerPhaseDenMinus1ReducedResolution + 1, "m_piVerPhaseNumReducedResolution must be in the range of 0 to m_piVerPhaseDenMinus1ReducedResolution + 1, inclusive");
   }
+
+#if JVET_AH2006_TXTDESCRINFO_SEI
+  xConfirmPara(m_SEITextDescriptionID < 1 && m_SEITextDescriptionID > 16383, "m_SEITextDescriptionID must be in the range of 1 to 16383, inclusive");
+  xConfirmPara(m_SEITextDescriptionPurpose > 5, "m_SEITextDescriptionPurpose must be in the range of 0 to 5, inclusive");
+  xConfirmPara(m_SEITextNumStringsMinus1 > 255, "m_SEITextNumStringsMinus1 must be in the range 0f 0 to 255, inclusive");
+#endif
 
   xConfirmPara(m_log2ParallelMergeLevel < 2, "Log2ParallelMergeLevel should be larger than or equal to 2");
   xConfirmPara(m_log2ParallelMergeLevel > m_ctuSize, "Log2ParallelMergeLevel should be less than or equal to CTU size");

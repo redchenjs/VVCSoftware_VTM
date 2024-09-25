@@ -1418,6 +1418,15 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPoSEINumOfPrefixBits                              (m_poSEINumOfPrefixBits);
   m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
 
+ #if JVET_AH2006_TXTDESCRINFO_SEI
+  m_cEncLib.setTextDescriptionSEIId(m_SEITextDescriptionID);
+  m_cEncLib.setTextSEICancelFlag(m_SEITextCancelFlag);
+  m_cEncLib.setTextSEIPersistenceFlag(m_SEITextPersistenceFlag);
+  m_cEncLib.setTextSEIPurpose(m_SEITextDescriptionPurpose);
+  m_cEncLib.setTextSEINumStringsMinus1(m_SEITextNumStringsMinus1);
+  m_cEncLib.setTextSEIDescriptionStringLang(m_SEITextDescriptionStringLang);
+  m_cEncLib.setTextSEIDescriptionString(m_SEITextDescriptionString);
+#endif
 
 
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);

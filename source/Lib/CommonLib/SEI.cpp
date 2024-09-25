@@ -1111,6 +1111,24 @@ SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)
   m_filterHintValues = sei.m_filterHintValues;
 }
 
+#if JVET_AH2006_TXTDESCRINFO_SEI
+  SEITextDescription::SEITextDescription(const SEITextDescription& sei)
+  {
+    m_textDescriptionID = sei.m_textDescriptionID;
+    m_textCancelFlag = sei.m_textCancelFlag;
+    m_textPersistenceFlag = sei.m_textPersistenceFlag;
+    m_textDescriptionPurpose = sei.m_textDescriptionPurpose;
+    m_textNumStringsMinus1 = sei.m_textNumStringsMinus1;
+    m_textDescriptionStringLang.resize(m_textNumStringsMinus1+1);
+    m_textDescriptionString.resize(m_textNumStringsMinus1+1);
+    for (int i=0; i<=m_textNumStringsMinus1; i++)
+    {
+      m_textDescriptionStringLang[i] = sei.m_textDescriptionStringLang[i];
+      m_textDescriptionString[i] = sei.m_textDescriptionString[i];
+    }
+  }
+#endif
+
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t id)
 {
   for (auto sei : seiList)

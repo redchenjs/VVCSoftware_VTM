@@ -6100,6 +6100,47 @@ Specifies type of information the of privacy protection optimization that is app
 \\
 \end{OptionTableNoShorthand}
 
+\begin{OptionTableNoShorthand}{Text description information}{tab:sei-text-description-information}
+\Option{SEITextDescriptionID} &
+\Default{1} &
+Specifies the identifier value of this text description SEI message, valid range is 1-16383.
+\\
+\Option{SEITextDescriptionCancelFlag} &
+\Default{true} &
+Indicates that the test description information SEI cancels the persistence of previous text description SEI with the same txt_desc_id.
+\\
+\Option{SEITextDescriptionPersistenceFlag} &
+\Default{true} &
+Specifies the persistence of the text information SEI message for the current layer.
+\\
+\Option{SEITextDescriptionPurpose} &
+\Default(0) &
+Indicates the purpose of the text description SEI message.
+\par
+  \begin{tabular}{cp{0.46\textwidth}}
+    0 & application defined \\
+    1 & copyright information \\
+    2 & ai marking information \\
+    3 & general comment information \\
+    4 & content advisory rating information conforming to US and Canadian rating region tables (RPT) \\
+    5 & tag uri for identifing bitstream \\
+    6..255 & reserved \\
+  \end{tabular}
+\\
+\Option{SEITextDescriptionsNumStringsMinus1} &
+\Default(0) &
+Specifies the number plus 1 of txt_description_string_lang and txt_description_string.
+\\
+\Option(SEITextDescriptionStringLang[i]) &
+\Default("") &
+Specifies the language of the txt_description_string[i]. The language shall be given by a language tag as defined by IETF RFC 5646, and the length of string shall be in the range 0-49.
+\\
+\Option(SEITextDescriptionString[i]) &
+\Default("") &
+Specifies the i-th text description information string whose value is interpreted as specified by the txt_description_purpose.
+\\
+\end{OptionTableNoShorthand}
+
 \begin{OptionTableNoShorthand}{Source picture timing information SEI message encoder parameters}{tab:sei-source-picture-timing-info}
 \Option{SEISourcePictureTimingInfo} &
 \Default{false} &

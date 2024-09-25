@@ -829,6 +829,15 @@ protected:
   std::vector<uint16_t>  m_poSEINumOfPrefixBits;
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
 
+  #if JVET_AH2006_TXTDESCRINFO_SEI
+  uint32_t                   m_SEITextDescriptionID;
+  bool                       m_SEITextCancelFlag;
+  bool                       m_SEITextPersistenceFlag;
+  uint32_t                   m_SEITextDescriptionPurpose;
+  uint32_t                   m_SEITextNumStringsMinus1;
+  std::vector<std::string>   m_SEITextDescriptionStringLang;
+  std::vector<std::string>   m_SEITextDescriptionString;
+  #endif
 
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;

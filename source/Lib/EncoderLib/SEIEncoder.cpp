@@ -686,6 +686,15 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiPFH);
         break;
       }
+#if JVET_AH2006_TXTDESCRINFO_SEI
+      case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
+      {
+        SEITextDescription *seiTextDescription = new SEITextDescription();
+        initSEITextDescription(seiTextDescription);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiTextDescription);
+        break;
+      }
+#endif
       default:
       {
         msg(ERROR, "not support in sei processing order SEI\n");
@@ -718,6 +727,26 @@ void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
     seiPostFilterHint->m_filterHintValues[i] = m_pcCfg->getPostFilterHintSEIValues(i);
   }
 }
+
+#if JVET_AH2006_TXTDESCRINFO_SEI
+void SEIEncoder::initSEITextDescription(SEITextDescription *seiTestDescrition)
+{
+  CHECK(!(m_isInitialized), "Text description information SEI already initialized");
+  CHECK(!(seiTestDescrition != nullptr), "Need a seiTtestDescribtion for initialization (got nullptr)");
+  seiTestDescrition->m_textDescriptionID = m_pcCfg->getTextDescriptionSEIId();
+  seiTestDescrition->m_textCancelFlag = m_pcCfg->getTextSEICancelFlag();
+  seiTestDescrition->m_textPersistenceFlag = m_pcCfg->getTextSEIPersistenceFlag();
+  seiTestDescrition->m_textDescriptionPurpose = m_pcCfg->getTextSEIPurpose();
+  seiTestDescrition->m_textNumStringsMinus1 = m_pcCfg->getTextSEINumStringsMinus1();
+  seiTestDescrition->m_textDescriptionStringLang.resize(seiTestDescrition->m_textNumStringsMinus1+1);
+  seiTestDescrition->m_textDescriptionString.resize(seiTestDescrition->m_textNumStringsMinus1+1);
+  for (int i=0; i<=seiTestDescrition->m_textNumStringsMinus1; i++)
+  {
+    seiTestDescrition->m_textDescriptionStringLang[i] = m_pcCfg->getTextSEIDescriptionStringLang(i);
+    seiTestDescrition->m_textDescriptionString[i] = m_pcCfg->getTextSEIDescriptionString(i);
+  }
+}
+#endif
 
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned

@@ -90,6 +90,8 @@
 
 #define JVET_AH2006_EOI_SEI                               1 // Implementation of Encoder Optimizaion Information SEI message 
 
+#define JVET_AH2006_TXTDESCRINFO_SEI                      1 // Text description information message 
+
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
 #define REUSE_CU_RESULTS_WITH_MULTIPLE_TUS                1
