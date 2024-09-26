@@ -80,7 +80,6 @@ struct Picture : public UnitArea
   void destroyTempBuffers();
 
   int                       m_padValue;
-  bool                      m_isMctfFiltered;
   SEIFilmGrainSynthesizer*  m_grainCharacteristic;
   PelStorage*               m_grainBuf;
   void              createGrainSynthesizer(bool firstPictureInSequence, SEIFilmGrainSynthesizer* grainCharacteristics, PelStorage* grainBuf, int width, int height, ChromaFormat fmt, int bitDepth);

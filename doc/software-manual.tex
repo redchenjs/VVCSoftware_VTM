@@ -502,6 +502,10 @@ ordered as their intendend order in the L0.
 Note that any pictures not supplied in this list and in the list of L1 will be discarded and
 therefore not available as reference pictures later.
 
+When ExplicitILRP is true, a layer-specific GOP structure configuration can be provided (using the -li encoder
+parameter), in which inter-layer reference pictures are specified using a 0.x syntax, with 0 meaning
+zero POC difference, and x is the layer of the reference picture.
+
 \item[]\textbf{num_ref_pics_active_L1}: Number of reference pictures in lists L1
 that are used during coding.
 
@@ -516,6 +520,10 @@ kept, relative the POC of the current frame. The picture list shall be
 ordered as their intendend order in the L1.
 Note that any pictures not supplied in this list and in the list of L0 will be discarded and
 therefore not available as reference pictures later.
+
+When ExplicitILRP is true, the same syntax as the one described for L0 can be used to specify
+inter-layer reference pictures.
+
 
 For example, consider the coding structure of Figure~\ref{fig:gop-example}.
 This coding structure is of size 4. The pictures are listed in decoding
@@ -1712,6 +1720,15 @@ Specifies a list of values of the allowable prediction directions for dependent 
 1 & Only inter-layer predition is allowed for the speficied temporal layer. \\
 2 & Only intra-layer predition is allowed for the speficied temporal layer. \\
 \end{tabular}
+\\
+
+\Option{ExplicitILRP} &
+%\ShortOption{\None} &
+\Default{false} &
+Explicit specification of inter-layer reference pictures, using a layer-specific GOP structure (see section 3.1).
+When ExplicitILRP is true, AllowablePredDirection should not be used or left to default values (all zero), and
+inter-layer reference pictures are no longer inserted automatically.
+\par
 \\
 
 \Option{LayerId\emph{i}} &
@@ -6006,6 +6023,10 @@ Specifies the id of the SEI processing order SEI message.
 \Default{0} &
 Specifies the number of SEIs minus 2 in SEI processing order SEI message. 
 \\
+\Option{SEIPOBreadthFirstFlag} &
+\Default{0} &
+Specifies that breadth-first handling of processing chain is applied (1), or that either breadth-first or depth-first can be applied (0, default).
+\\
 \Option{SEIPOWrappingFlag\emph{i}} &
 \Default{false} &
 Specifies whether the \emph{i}-th SEI message is (true) wrapped inside the SEI processing order SEI message or (false) present outside the SEI processing order SEI. For wrapped SEI, specifiy the SEI parameters after SEIPOPrefixByte
@@ -6115,6 +6136,47 @@ Specifies type of information the of privacy protection optimization that is app
  (SEIEOIPrivacyProtectedInfoType \& 0x02)  !=  0 & Information that can identify vehicles is protected. For example, the license plate of the vehicle. \\
  (SEIEOIPrivacyProtectedInfoType \& 0x04)  !=  0 & Information that can infer locations is protected. For example text or images on signs. \\
 \end{tabular}
+\\
+\end{OptionTableNoShorthand}
+
+\begin{OptionTableNoShorthand}{Text description information}{tab:sei-text-description-information}
+\Option{SEITextDescriptionID} &
+\Default{1} &
+Specifies the identifier value of this text description SEI message, valid range is 1-16383.
+\\
+\Option{SEITextDescriptionCancelFlag} &
+\Default{true} &
+Indicates that the test description information SEI cancels the persistence of previous text description SEI with the same txt_desc_id.
+\\
+\Option{SEITextDescriptionPersistenceFlag} &
+\Default{true} &
+Specifies the persistence of the text information SEI message for the current layer.
+\\
+\Option{SEITextDescriptionPurpose} &
+\Default(0) &
+Indicates the purpose of the text description SEI message.
+\par
+  \begin{tabular}{cp{0.46\textwidth}}
+    0 & application defined \\
+    1 & copyright information \\
+    2 & ai marking information \\
+    3 & general comment information \\
+    4 & content advisory rating information conforming to US and Canadian rating region tables (RPT) \\
+    5 & tag uri for identifing bitstream \\
+    6..255 & reserved \\
+  \end{tabular}
+\\
+\Option{SEITextDescriptionsNumStringsMinus1} &
+\Default(0) &
+Specifies the number plus 1 of txt_description_string_lang and txt_description_string.
+\\
+\Option(SEITextDescriptionStringLang[i]) &
+\Default("") &
+Specifies the language of the txt_description_string[i]. The language shall be given by a language tag as defined by IETF RFC 5646, and the length of string shall be in the range 0-49.
+\\
+\Option(SEITextDescriptionString[i]) &
+\Default("") &
+Specifies the i-th text description information string whose value is interpreted as specified by the txt_description_purpose.
 \\
 \end{OptionTableNoShorthand}
 

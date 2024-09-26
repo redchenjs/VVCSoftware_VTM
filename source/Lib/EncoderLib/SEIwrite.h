@@ -113,6 +113,9 @@ protected:
 #if GREEN_METADATA_SEI_ENABLED
   void xWriteSEIGreenMetadataInfo                 (const SEIGreenMetadataInfo &sei);
 #endif
+#if JVET_AH2006_TXTDESCRINFO_SEI
+  void xWriteSEITextDescription(const SEITextDescription &sei);
+#endif
   void xWriteSEIPostFilterHint(const SEIPostFilterHint &sei);
 
 #if JVET_AH2006_EOI_SEI

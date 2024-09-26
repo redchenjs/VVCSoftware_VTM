@@ -538,6 +538,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIProcessingOrderNesting((SEIProcessingOrderNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
         pDecodedMessageOutputStream);
       break;
+#if JVET_AH2006_TXTDESCRINFO_SEI
+    case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
+      sei = new SEITextDescription;
+      xParseSEITextDescription((SEITextDescription&)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     case SEI::PayloadType::POST_FILTER_HINT:
       sei = new SEIPostFilterHint;
       xParseSEIPostFilterHint((SEIPostFilterHint &) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -770,8 +776,15 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
 
   sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_id");
   sei.m_posId = val;
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  sei_read_code(decodedMessageOutputStream, 7, val, "po_sei_num_minus2");
+  sei.m_posNumMinus2 = val;
+  sei_read_flag(decodedMessageOutputStream, val, "po_breadth_first_flag");
+  sei.m_posBreadthFirstFlag = val;
+#else
   sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_num_minus2");
   sei.m_posNumMinus2 = val;
+#endif
   numMaxSeiMessages = sei.m_posNumMinus2 + 2;
   sei.m_posPrefixFlag.resize(numMaxSeiMessages);
   sei.m_posPayloadType.resize(numMaxSeiMessages);
@@ -3402,6 +3415,34 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
     }
   }
 }
+#endif
+
+#if JVET_AH2006_TXTDESCRINFO_SEI
+  void SEIReader::xParseSEITextDescription(SEITextDescription &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+  {
+    uint32_t val;
+    sei_read_code(pDecodedMessageOutputStream, 14, val, "txt_descr_id");
+    sei.m_textDescriptionID = val;
+    sei_read_flag(pDecodedMessageOutputStream, val, "txt_cancel_flag");
+    sei.m_textCancelFlag = val;
+    if (!sei.m_textCancelFlag)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "txt_persistence_flag");
+      sei.m_textPersistenceFlag = val;
+      sei_read_code(pDecodedMessageOutputStream, 8, val, "txt_descr_purpose");
+      sei.m_textDescriptionPurpose = val;
+      sei_read_code(pDecodedMessageOutputStream, 8, val, "txt_num_strings_minus1");
+      sei.m_textNumStringsMinus1 = val;
+      sei.m_textDescriptionStringLang.resize(sei.m_textNumStringsMinus1+1);
+      sei.m_textDescriptionString.resize(sei.m_textNumStringsMinus1+1);
+      for (int i=0; i<=sei.m_textNumStringsMinus1; i++)
+      {
+        sei_read_string(pDecodedMessageOutputStream, sei.m_textDescriptionStringLang[i], "txt_descr_string_lang[i]");
+        sei_read_string(pDecodedMessageOutputStream, sei.m_textDescriptionString[i], "txt_descr_string[i]");
+      }
+      
+    }
+  }
 #endif
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE

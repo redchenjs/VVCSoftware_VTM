@@ -6950,10 +6950,11 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
                 }
                 else if (num[l] >= rpl->getNumberOfActivePictures() - rpl->getNumberOfInterLayerPictures()
                          && layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag()
-                         && isInterLayerPredAllowed)
+                         && isInterLayerPredAllowed && !m_pcEncLib->getExplicitILRP())
                 {
                   inactiveRefs[l].push_back(ii);
                 }
+
                 else
                 {
                   localRpl[l].setRefPicIdentifier(num[l], rpl->getRefPicIdentifier(ii), rpl->isRefPicLongterm(ii),
@@ -6967,21 +6968,60 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
             }
           }
         }
+        else if (m_pcEncLib->getExplicitILRP() && layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
+        {
+          for (const auto &pic: rcListPic)
+          {
+            int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
+            if (refLayerIdx == rpl->getInterLayerRefPicIdx(ii) && pic->referenced && pic->getPOC() == curPic->getPOC()
+                && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx) && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
+            {
+              localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
+              num[l]++;
+              numIlrp[l]++;
+            }
+          }
+        }
       }
     }
 
-    // inter-layer reference pictures are added to the end of the reference picture list
-    if (layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
+    // AvoidIntraInDepLayer IRAPs in dependent layers are replaced with inter slices but may have empty L0 list (e.g. if no IL ref specified in config)
+    // In this case implicitly add an inter-layer ref to avoid inter slices with no ref
+    if (m_pcEncLib->getExplicitILRP())
     {
-      for (const auto &pic: rcListPic)
+      if(l==REF_PIC_LIST_0 && num[l]==0 && (slice->isIRAP() && m_pcEncLib->getAvoidIntraInDepLayer())
+        && m_pcEncLib->getNumRefLayers(layerIdx) && !vps->getAllIndependentLayersFlag())
       {
-        int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
-        if (pic->referenced && pic->getPOC() == curPic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
-            && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
+        for (const auto &pic: rcListPic)
         {
-          localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
-          num[l]++;
-          numIlrp[l]++;
+          int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
+          if (pic->referenced && pic->getPOC() == curPic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
+              && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
+          {
+            localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
+            num[l]++;
+            numIlrp[l]++;
+            msg(WARNING, "WARNING: inter slice at POC %d and LId %d has an ampty L0 list => Automatically adding inter-layer reference from LId %d\n", slice->getPOC(), curPic->layerId, pic->layerId);
+            break;//only add 1 Inter-layer ref pic automatically.
+          }
+        }
+      }
+    }
+    else
+    {
+      // inter-layer reference pictures are added to the end of the reference picture list
+      if (layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
+      {
+        for (const auto &pic: rcListPic)
+        {
+          int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
+          if (pic->referenced && pic->getPOC() == curPic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
+              && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
+          {
+            localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
+            num[l]++;
+            numIlrp[l]++;
+          }
         }
       }
     }
@@ -7005,6 +7045,10 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
       const int  identifier   = localRpl[k].getRefPicIdentifier(ii);
       const bool isLongTerm   = localRpl[k].isRefPicLongterm(ii);
       const bool isInterLayer = localRpl[k].isInterLayerRefPic(ii);
+      if (m_pcEncLib->getExplicitILRP() && isInterLayer)
+      {
+        continue;//do not implicitly add inter layer refs from other list if explicitILRP is enabled.
+      }
 
       // Make sure this copy is not already present
       bool canIncludeThis = true;

@@ -827,6 +827,9 @@ protected:
   bool                  m_poSEIEnabled;
   uint32_t              m_poSEIId;
   uint32_t              m_poSEINumMinus2;
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  bool                  m_poSEIBreadthFirstFlag;
+#endif
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
   std::vector<bool>     m_poSEIPrefixFlag;
@@ -835,6 +838,15 @@ protected:
   std::vector<uint16_t>  m_poSEINumOfPrefixBits;
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
 
+  #if JVET_AH2006_TXTDESCRINFO_SEI
+  uint32_t                   m_SEITextDescriptionID;
+  bool                       m_SEITextCancelFlag;
+  bool                       m_SEITextPersistenceFlag;
+  uint32_t                   m_SEITextDescriptionPurpose;
+  uint32_t                   m_SEITextNumStringsMinus1;
+  std::vector<std::string>   m_SEITextDescriptionStringLang;
+  std::vector<std::string>   m_SEITextDescriptionString;
+  #endif
 
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
@@ -1060,6 +1072,7 @@ protected:
   bool        m_defaultPtlDpbHrdMaxTidFlag;
   bool        m_allIndependentLayersFlag;
   std::string m_predDirectionArray;
+  bool        m_explicitILRP;
 
   int         m_numRefLayers[MAX_VPS_LAYERS];
   std::string m_refLayerIdxStr[MAX_VPS_LAYERS];

@@ -301,6 +301,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setFramesToBeEncoded                                 ( m_framesToBeEncoded );
   m_cEncLib.setValidFrames(m_firstValidFrame, m_lastValidFrame);
   m_cEncLib.setAvoidIntraInDepLayer                              ( m_avoidIntraInDepLayer );
+  m_cEncLib.setExplicitILRP                                      ( m_explicitILRP );
 
   m_cEncLib.setRefLayerMetricsEnabled(m_refMetricsEnabled);
   m_cEncLib.setRefLayerRescaledAvailable(false);
@@ -1419,6 +1420,9 @@ void EncApp::xInitLibCfg( int layerIdx )
 #endif
 
   m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  m_cEncLib.setPoSEIBreadthFirstFlag                             (m_poSEIBreadthFirstFlag);
+#endif
   m_cEncLib.setPoSEIWrappingFlag                                 (m_poSEIWrappingFlag);
   m_cEncLib.setPoSEIImportanceFlag                               (m_poSEIImportanceFlag);
   m_cEncLib.setPoSEIPrefixFlag                                   (m_poSEIPrefixFlag);
@@ -1427,6 +1431,15 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPoSEINumOfPrefixBits                              (m_poSEINumOfPrefixBits);
   m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
 
+ #if JVET_AH2006_TXTDESCRINFO_SEI
+  m_cEncLib.setTextDescriptionSEIId(m_SEITextDescriptionID);
+  m_cEncLib.setTextSEICancelFlag(m_SEITextCancelFlag);
+  m_cEncLib.setTextSEIPersistenceFlag(m_SEITextPersistenceFlag);
+  m_cEncLib.setTextSEIPurpose(m_SEITextDescriptionPurpose);
+  m_cEncLib.setTextSEINumStringsMinus1(m_SEITextNumStringsMinus1);
+  m_cEncLib.setTextSEIDescriptionStringLang(m_SEITextDescriptionStringLang);
+  m_cEncLib.setTextSEIDescriptionString(m_SEITextDescriptionString);
+#endif
 
 
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
@@ -1706,7 +1719,9 @@ void EncApp::createLib( const int layerIdx )
   {
     m_cEncLib.getTemporalFilter().init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
                           sourceHeight, m_sourcePadding, m_clipInputVideoToRec709Range, m_inputFileName,
-                          m_chromaFormatIdc, m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
+                          m_chromaFormatIdc, m_sourceWidthBeforeScale, m_sourceHeightBeforeScale,
+                          m_horCollocatedChromaFlag, m_verCollocatedChromaFlag,
+                          m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
                           m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs, m_firstValidFrame,
                           m_lastValidFrame, m_gopBasedTemporalFilterEnabled, m_cEncLib.getAdaptQPmap(),
                           m_cEncLib.getBIM(), m_ctuSize);
@@ -1715,7 +1730,9 @@ void EncApp::createLib( const int layerIdx )
   {
     m_cEncLib.getTemporalFilterForFG().init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
                                sourceHeight, m_sourcePadding, m_clipInputVideoToRec709Range, m_inputFileName,
-                               m_chromaFormatIdc, m_inputColourSpaceConvert, m_iQP, m_fgcSEITemporalFilterStrengths,
+                               m_chromaFormatIdc, m_sourceWidthBeforeScale, m_sourceHeightBeforeScale,
+                               m_horCollocatedChromaFlag, m_verCollocatedChromaFlag,
+                               m_inputColourSpaceConvert, m_iQP, m_fgcSEITemporalFilterStrengths,
                                m_fgcSEITemporalFilterPastRefs, m_fgcSEITemporalFilterFutureRefs, m_firstValidFrame,
                                m_lastValidFrame, true, m_cEncLib.getAdaptQPmap(), m_cEncLib.getBIM(), m_ctuSize);
   }
@@ -1805,12 +1822,12 @@ bool EncApp::encodePrep( bool& eos )
                                 m_clipInputVideoToRec709Range);
     int w0 = m_sourceWidthBeforeScale;
     int h0 = m_sourceHeightBeforeScale;
-    int w1 = m_orgPic->get(COMPONENT_Y).width - SPS::getWinUnitX(m_chromaFormatIdc) * (m_confWinLeft + m_confWinRight);
-    int h1 = m_orgPic->get(COMPONENT_Y).height - SPS::getWinUnitY(m_chromaFormatIdc) * (m_confWinTop + m_confWinBottom);
+    int w1 = m_orgPic->get(COMPONENT_Y).width - m_sourcePadding[0];
+    int h1 = m_orgPic->get(COMPONENT_Y).height - m_sourcePadding[1];
     int xScale = ((w0 << ScalingRatio::BITS) + (w1 >> 1)) / w1;
     int yScale = ((h0 << ScalingRatio::BITS) + (h1 >> 1)) / h1;
     ScalingRatio scalingRatio = { xScale, yScale };
-    Window       conformanceWindow1(m_confWinLeft, m_confWinRight, m_confWinTop, m_confWinBottom);
+    Window conformanceWindow1(0, m_sourcePadding[0] / SPS::getWinUnitX(m_inputChromaFormatIDC), 0, m_sourcePadding[1] / SPS::getWinUnitY(m_inputChromaFormatIDC));
 
     bool downsampling = (m_sourceWidthBeforeScale > m_sourceWidth) || (m_sourceHeightBeforeScale > m_sourceHeight);
     bool useLumaFilter = downsampling;

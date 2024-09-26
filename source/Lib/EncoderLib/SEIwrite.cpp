@@ -201,6 +201,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEISourcePictureTimingInfo(*static_cast<const SEISourcePictureTimingInfo*>(&sei));
     break;
 #endif
+#if JVET_AH2006_TXTDESCRINFO_SEI
+  case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
+    xWriteSEITextDescription(*static_cast<const SEITextDescription*>(&sei));
+    break;
+#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -1584,7 +1589,12 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
   CHECK(sei.m_posPayloadType.size() < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
   SEIMessages wrapSEI;
   xWriteCode(sei.m_posId, 8, "po_sei_id");
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  xWriteCode(sei.m_posNumMinus2, 7, "po_num_sei_message_minus2");
+  xWriteFlag(sei.m_posBreadthFirstFlag, "po_breadth_first_flag");
+#else
   xWriteCode(sei.m_posNumMinus2, 8, "po_num_sei_message_minus2");
+#endif
   for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
   {
     xWriteFlag(sei.m_posWrappingFlag[i], "po_sei_wrapping_flag[i]");
@@ -1973,6 +1983,28 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
     }
   }
 }
+
+#if JVET_AH2006_TXTDESCRINFO_SEI
+void SEIWriter::xWriteSEITextDescription(const SEITextDescription &sei)
+{
+  CHECK((sei.m_textDescriptionID < 1 || sei.m_textDescriptionID > 16383) , "text description id must be in the range 1-16383");
+  xWriteCode(sei.m_textDescriptionID, 14, "txt_descr_id");
+  xWriteFlag(sei.m_textCancelFlag, "txt_cancel_flag");
+  if (!sei.m_textCancelFlag) 
+  {
+    xWriteFlag(sei.m_textPersistenceFlag, "txt_persistence_flag");
+    CHECK(sei.m_textDescriptionPurpose>5, "txt_descr_purpose shall be in the range 0-5");
+    xWriteCode(sei.m_textDescriptionPurpose, 8, "txt_descr_purpose");
+    xWriteCode(sei.m_textNumStringsMinus1, 8, "txt_num_strings_minus1");
+    for (int i=0; i<=sei.m_textNumStringsMinus1; i++)
+    {
+      CHECK(sei.m_textDescriptionStringLang[i].length() > 49, "The length of the text description language string must be in the range 0-49");
+      xWriteString(sei.m_textDescriptionStringLang[i], "txt_descr_string_lang[i]");
+      xWriteString(sei.m_textDescriptionString[i], "txt_descr_string[i]");
+    }
+  }
+}
+#endif
 
 void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
 {

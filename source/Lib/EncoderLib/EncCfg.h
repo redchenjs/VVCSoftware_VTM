@@ -82,6 +82,8 @@ struct GOPEntry
   int m_deltaRefPics1[MAX_NUM_REF_PICS];
   bool m_isEncoded;
   bool   m_ltrpInSliceHeaderFlag;
+  int m_layerRef0[MAX_VPS_LAYERS];
+  int m_layerRef1[MAX_VPS_LAYERS];
   GOPEntry()
     : m_POC(-1)
     , m_QPOffset(0)
@@ -110,6 +112,8 @@ struct GOPEntry
   {
     ::memset(m_deltaRefPics0, 0, sizeof(m_deltaRefPics0));
     ::memset(m_deltaRefPics1, 0, sizeof(m_deltaRefPics1));
+    ::memset(m_layerRef0, -1, sizeof(m_layerRef0));
+    ::memset(m_layerRef1, -1, sizeof(m_layerRef1));
   }
 };
 
@@ -124,6 +128,7 @@ struct RPLEntry
   int m_deltaRefPics[MAX_NUM_REF_PICS];
   bool m_isEncoded;
   bool   m_ltrpInSliceHeaderFlag;
+  int m_layerRef[MAX_NUM_REF_PICS];
   RPLEntry()
     : m_POC(-1)
     , m_temporalId(0)
@@ -135,6 +140,7 @@ struct RPLEntry
     , m_ltrpInSliceHeaderFlag(false)
   {
     ::memset(m_deltaRefPics, 0, sizeof(m_deltaRefPics));
+    ::memset(m_layerRef, -1, sizeof(m_layerRef));
   }
 };
 
@@ -926,6 +932,9 @@ protected:
   bool                  m_poSEIEnabled;
   uint32_t              m_poSEIId;
   uint32_t              m_poSEINumMinus2;
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  bool                  m_poSEIBreadthFirstFlag;
+#endif
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
   std::vector<bool>     m_poSEIPrefixFlag;
@@ -941,6 +950,15 @@ protected:
   uint32_t             m_postFilterHintSEIType;
   bool                 m_postFilterHintSEIChromaCoeffPresentFlag;
   std::vector<int32_t> m_postFilterHintValues;
+#if JVET_AH2006_TXTDESCRINFO_SEI
+  uint16_t                 m_textDescriptionSEIId;
+  bool                     m_textSEICancelFlag;
+  bool                     m_textSEIPersistenceFlag;
+  uint8_t                  m_textSEIDescriptionPurpose;
+  uint8_t                  m_textSEINumStringsMinus1;
+  std::vector<std::string> m_textSEIDescriptionStringLang;
+  std::vector<std::string> m_textSEIDescriptionString;
+#endif
 
   bool      m_constrainedRaslEncoding;
 
@@ -1100,6 +1118,7 @@ protected:
   bool        m_craAPSreset;
   bool        m_rprRASLtoolSwitch;
   bool        m_refLayerMetricsEnabled;
+  bool        m_explicitILRP;
   
 public:
   EncCfg()
@@ -2682,6 +2701,10 @@ public:
   uint32_t getPoSEIId()                                              { return m_poSEIId; }
   void     setPoSEINumMinus2(uint32_t i)                             { m_poSEINumMinus2 = i; }
   uint32_t getPoSEINumMinus2()                                       { return m_poSEINumMinus2; }
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  void     setPoSEIBreadthFirstFlag(bool b)                          { m_poSEIBreadthFirstFlag = b; }
+  bool     getPoSEIBreadthFirstFlag()                                { return m_poSEIBreadthFirstFlag; }
+#endif
   void     setPoSEIWrappingFlag(const std::vector<bool>& b)          { m_poSEIWrappingFlag = b; }
   bool     getPoSEIWrappingFlag(uint16_t idx)                  const { return m_poSEIWrappingFlag[idx]; }
   void     setPoSEIImportanceFlag(const std::vector<bool>& b)        { m_poSEIImportanceFlag = b; }
@@ -2713,6 +2736,22 @@ public:
   bool     getPostFilterHintSEIChromaCoeffPresentFlag() { return m_postFilterHintSEIChromaCoeffPresentFlag; }
   void     setPostFilterHintSEIValues(const std::vector<int32_t> &b) { m_postFilterHintValues = b; }
   int32_t  getPostFilterHintSEIValues(int32_t idx) const { return m_postFilterHintValues[idx]; }
+#if JVET_AH2006_TXTDESCRINFO_SEI
+  void         setTextDescriptionSEIId(const uint16_t i) {m_textDescriptionSEIId = i;}
+  uint32_t     getTextDescriptionSEIId() {return m_textDescriptionSEIId;}
+  void         setTextSEICancelFlag(bool b) {m_textSEICancelFlag = b;}
+  bool         getTextSEICancelFlag() {return m_textSEICancelFlag;}
+  void         setTextSEIPersistenceFlag(bool b) {m_textSEIPersistenceFlag = b;}
+  bool         getTextSEIPersistenceFlag() {return m_textSEIPersistenceFlag;}
+  void         setTextSEIPurpose(uint8_t i) {m_textSEIDescriptionPurpose = i;}
+  uint32_t     getTextSEIPurpose() {return m_textSEIDescriptionPurpose;}
+  void         setTextSEINumStringsMinus1(uint8_t i) {m_textSEINumStringsMinus1 = i;}
+  uint32_t     getTextSEINumStringsMinus1() { return m_textSEINumStringsMinus1;}
+  void         setTextSEIDescriptionStringLang(const std::vector<std::string> b) {m_textSEIDescriptionStringLang = b;}
+  std::string  getTextSEIDescriptionStringLang(int idx) const {return m_textSEIDescriptionStringLang[idx];}
+  void         setTextSEIDescriptionString(const std::vector<std::string> b) {m_textSEIDescriptionString = b;}
+  std::string  getTextSEIDescriptionString(int idx) const {return m_textSEIDescriptionString[idx];}
+#endif
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
   void         setWPBiPred            ( bool b )                     { m_useWeightedBiPred = b;    }
@@ -3030,6 +3069,8 @@ public:
 
   void        setAvoidIntraInDepLayer(bool b)                        { m_avoidIntraInDepLayer = b; }
   bool        getAvoidIntraInDepLayer()                        const { return m_avoidIntraInDepLayer; }
+  void        setExplicitILRP(bool b)                        { m_explicitILRP = b; }
+  bool        getExplicitILRP()                        const { return m_explicitILRP; }
 
   const EncCfgParam::CfgVPSParameters &getVPSParameters() const
   {

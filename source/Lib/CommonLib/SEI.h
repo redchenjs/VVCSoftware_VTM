@@ -107,6 +107,9 @@ public:
 #if JVET_AG2034_SPTI_SEI
     SOURCE_PICTURE_TIMING_INFO = 216,
 #endif
+#if JVET_AH2006_TXTDESCRINFO_SEI
+    SEI_TEXT_DESCRIPTION                       = 219,
+#endif
   };
 
   SEI() {}
@@ -192,6 +195,9 @@ public:
   bool                   m_posEnabled;
   uint32_t               m_posId;
   uint32_t               m_posNumMinus2;
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  bool                   m_posBreadthFirstFlag;
+#endif
   std::vector<bool>      m_posWrappingFlag;
   std::vector<bool>      m_posImportanceFlag;
   std::vector<bool>      m_posPrefixFlag;
@@ -209,7 +215,10 @@ public:
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
     case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
     case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
-      return true;
+#if JVET_AH2006_TXTDESCRINFO_SEI
+    case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
+#endif
+     return true;
     default:
       return false;
     }
@@ -580,9 +589,8 @@ public:
   PayloadType payloadType() const { return PayloadType::USER_DATA_UNREGISTERED; }
 
   SEIuserDataUnregistered()
-    : userData(nullptr)
     {}
-    SEIuserDataUnregistered(const SEIuserDataUnregistered& sei);
+  SEIuserDataUnregistered(const SEIuserDataUnregistered& sei);
 
   virtual ~SEIuserDataUnregistered()
   {
@@ -591,7 +599,7 @@ public:
 
   uint8_t uuid_iso_iec_11578[ISO_IEC_11578_LEN];
   uint32_t  userDataLength;
-  uint8_t *userData;
+  uint8_t *userData = nullptr;
 };
 
 class SEIDecodedPictureHash : public SEI
@@ -1499,6 +1507,26 @@ public:
   bool             m_filterHintChromaCoeffPresentFlag;
   std::vector<int> m_filterHintValues;   // values stored in linear array, [ ( ( component * sizeY + y ) * SizeX ) + x ]
 };
+
+#if JVET_AH2006_TXTDESCRINFO_SEI
+class SEITextDescription : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::SEI_TEXT_DESCRIPTION; }
+
+  SEITextDescription() {}
+  SEITextDescription(const SEITextDescription& sei);
+  virtual ~SEITextDescription() {}
+
+  uint16_t                 m_textDescriptionID;
+  bool                     m_textCancelFlag;
+  bool                     m_textPersistenceFlag;
+  uint8_t                  m_textDescriptionPurpose;
+  uint8_t                  m_textNumStringsMinus1;
+  std::vector<std::string> m_textDescriptionStringLang;
+  std::vector<std::string> m_textDescriptionString;
+};
+#endif
 
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t nnpfaTargetId);
 SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMessages &seiList);

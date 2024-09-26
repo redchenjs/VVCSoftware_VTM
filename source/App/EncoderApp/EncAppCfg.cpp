@@ -138,15 +138,42 @@ std::istringstream &operator>>(std::istringstream &in, GOPEntry &entry)     //in
   in>>entry.m_temporalId;
   in >> entry.m_numRefPicsActive0;
   in >> entry.m_numRefPics0;
+
+  char c;
   for (int i = 0; i < entry.m_numRefPics0; i++)
   {
     in >> entry.m_deltaRefPics0[i];
+    if (in.rdbuf()->in_avail())
+    {
+      c = in.get();
+      if (c == '.')
+      {
+        in >> entry.m_layerRef0[i];
+      }
+      else
+      {
+        in.unget();
+      }
+    }
   }
   in >> entry.m_numRefPicsActive1;
   in >> entry.m_numRefPics1;
+
   for (int i = 0; i < entry.m_numRefPics1; i++)
   {
     in >> entry.m_deltaRefPics1[i];
+    if (in.rdbuf()->in_avail())
+    {
+      c = in.get();
+      if (c == '.')
+      {
+        in >> entry.m_layerRef1[i];
+      }
+      else
+      {
+        in.unget();
+      }
+    }
   }
 
   return in;
@@ -1641,6 +1668,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
   ("SEIPOId",                                         m_poSEIId,                                            0u, "Specifies the id of the SEI processing order SEI message")
   ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
+#if JVET_AI0073_BREADTH_FIRST_FLAG
+  ("SEIPOBreadthFirstFlag",                           m_poSEIBreadthFirstFlag,                           false, "Specifies that breadth-first handling of processing chain is applied (1), or that either breadth-first or depth-first can be applied (0, default)")
+#endif
   ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,             cfg_poSEIWrappingFlag, "Specifies whether a correspoding processing-order-nested SEI message exists or not")
   ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies degree of importance for the SEI messages")
   ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether SEI message prefix is present or not")
@@ -1739,6 +1769,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ( "AvoidIntraInDepLayers",                          m_avoidIntraInDepLayer,                    true, "Replaces I pictures in dependent layers with B pictures" )
   ( "MaxTidILRefPicsPlusOneLayerId%d",                m_maxTidILRefPicsPlus1Str, std::string(""), MAX_VPS_LAYERS, "Maximum temporal ID for inter-layer reference pictures plus 1 of i-th layer, 0 for IRAP only")
   ( "RPLofDepLayerInSH",                              m_rplOfDepLayerInSh,                      false, "define Reference picture lists in slice header instead of SPS for dependant layers")
+  ( "ExplicitILRP",                                   m_explicitILRP,                           false, "Explicitly define Inter-Layer Reference pictures in GOP entry")
     ;
 
   opts.addOptions()
@@ -2035,6 +2066,25 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies a list indicating whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
   }
 
+#if JVET_AH2006_TXTDESCRINFO_SEI
+  opts.addOptions()("SEITextDescriptionID", m_SEITextDescriptionID, 1u, "Identifier value of this text description information SEI message, must be in the range 1-16383");
+  opts.addOptions()("SEITextDescriptionCancelFlag", m_SEITextCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_id");
+  opts.addOptions()("SEITextDescriptionPersistenceFlag", m_SEITextPersistenceFlag, true, "Specifies the persistence of the text information description message for the current layer");
+  opts.addOptions()("SEITextDescriptionPurpose", m_SEITextDescriptionPurpose, 0u, "Indicates the purpose of the text description, must be in the range 0-5");
+  opts.addOptions()("SEITextDescriptionsNumStringsMinus1", m_SEITextNumStringsMinus1, 0u, "Indicates the number of entries plus 1 for txt_descr_string_lang[ i ] and txt_descr_string[ i ]");
+  m_SEITextDescriptionStringLang.resize(256);
+  m_SEITextDescriptionString.resize(256);
+  for (int i=0; i<256; i++)
+  {
+    std::ostringstream stringLang;
+    stringLang << "SEITextDescriptionStringLang" << i;
+    opts.addOptions()(stringLang.str(), m_SEITextDescriptionStringLang[0], std::string(""), "Specifies the i-th language of the txt_descr_string[ i ]");
+    std::ostringstream stringDesc;
+    stringDesc << "SEITextDescriptionString" << i;
+    opts.addOptions()(stringDesc.str(), m_SEITextDescriptionString[0], std::string(""), "Specifies the i-th text description information string");
+  }
+#endif
+
   po::setDefaults(opts);
   po::ErrorReporter err;
   const std::list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **) argv, err);
@@ -2227,6 +2277,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_RPLList0[i].m_deltaRefPics[j] = m_GOPList[i].m_deltaRefPics0[j];
     for (int j = 0; j < m_GOPList[i].m_numRefPics1; j++)
       m_RPLList1[i].m_deltaRefPics[j] = m_GOPList[i].m_deltaRefPics1[j];
+    for (int j = 0; j < MAX_NUM_REF_PICS; j++)
+    {
+      m_RPLList0[i].m_layerRef[j]  = m_GOPList[i].m_layerRef0[j];
+      m_RPLList1[i].m_layerRef[j]  = m_GOPList[i].m_layerRef1[j];
+    }
   }
 
   if (m_compositeRefEnabled)
@@ -4427,7 +4482,35 @@ bool EncAppCfg::xCheckParameter()
 #endif
 
   xConfirmPara( m_maxSublayers < 1 || m_maxSublayers > 7, "MaxSublayers must be in range [1..7]" );
+  xConfirmPara( m_explicitILRP && m_allIndependentLayersFlag, "AllIndependentLayersFlag cannot be 1 when ExplicitILRP is enabled" );
+  if (m_explicitILRP)
+  {
+    for (int i = 0; i < m_predDirectionArray.size(); i++)
+    {
+      if (m_predDirectionArray[i] != ' ')
+      {
+        xConfirmPara( m_predDirectionArray[i] != '0', "AllowablePredDirection should be 0 for all temporal layers when ExplicitILRP is enabled" );
+      }
+    }
+  }
 
+  bool nonZeroDeltaPOC_ILRP = false;
+  bool usingExplicit_ILRP = false;
+
+  for (int i = 0; m_GOPList[i].m_POC != -1 && i < MAX_GOP; i++)
+  {
+    for (int j = 0; j < m_GOPList[i].m_numRefPics0; j++)
+    {
+      nonZeroDeltaPOC_ILRP |= m_RPLList0[i].m_layerRef[j] != -1 && m_RPLList0[i].m_deltaRefPics[j] != 0;
+      nonZeroDeltaPOC_ILRP |= m_RPLList1[i].m_layerRef[j] != -1 && m_RPLList1[i].m_deltaRefPics[j] != 0;
+      usingExplicit_ILRP |= m_RPLList0[i].m_layerRef[j] != -1 || m_RPLList1[i].m_layerRef[j] != -1;
+    }
+  }
+  xConfirmPara(nonZeroDeltaPOC_ILRP, "For ExplicitILRP, Inter-Layer Reference pictures can only have same POC as current frame (delta POC=0)");
+  if (!m_explicitILRP)
+  {
+    xConfirmPara(usingExplicit_ILRP, "Cannot specify inter-layer reference pictures in GOP entry when ExplicitILRP is disabled.");
+  }
 
   xConfirmPara( m_fastLocalDualTreeMode < 0 || m_fastLocalDualTreeMode > 2, "FastLocalDualTreeMode must be in range [0..2]" );
 
@@ -4476,6 +4559,10 @@ bool EncAppCfg::xCheckParameter()
                 }
               }
             }
+            if (curPOC == refPoc && m_RPLList0[rplIdx].m_layerRef[i]!=-1)
+            {
+              found = true;
+            }
           }
           if (!found)
           {
@@ -4514,6 +4601,7 @@ bool EncAppCfg::xCheckParameter()
           if (refPoc >= 0)
           {
             m_RPLList0[newRplIdx].m_deltaRefPics[newRefs0] = m_RPLList0[rplIdx].m_deltaRefPics[i];
+            m_RPLList0[newRplIdx].m_layerRef[newRefs0] = m_RPLList0[rplIdx].m_layerRef[i];
             newRefs0++;
             newActiveRefs0 += i < m_RPLList0[rplIdx].m_numRefPicsActive ? 1 : 0;
           }
@@ -4528,6 +4616,7 @@ bool EncAppCfg::xCheckParameter()
           if (refPoc >= 0)
           {
             m_RPLList1[m_gopSize + extraRPLs].m_deltaRefPics[newRefs1] = m_RPLList1[rplIdx].m_deltaRefPics[i];
+            m_RPLList1[m_gopSize + extraRPLs].m_layerRef[newRefs0] = m_RPLList1[rplIdx].m_layerRef[i];
             newRefs1++;
             newActiveRefs1 += i < m_RPLList1[rplIdx].m_numRefPicsActive ? 1 : 0;
           }
@@ -4567,11 +4656,13 @@ bool EncAppCfg::xCheckParameter()
                 }
               }
               int prev = newDeltaPoc;
+              int prevLayerRef = -1; // inserted picture should not be an inter-layer
               newRefs0++;
               newActiveRefs0++;
               for (int j = insertPoint; j < newRefs0; j++)
               {
                 std::swap(prev, m_RPLList0[newRplIdx].m_deltaRefPics[j]);
+                std::swap(prevLayerRef, m_RPLList0[newRplIdx].m_layerRef[j]);
               }
             }
           }
@@ -4614,11 +4705,13 @@ bool EncAppCfg::xCheckParameter()
                 }
               }
               int prev = newDeltaPoc;
+              int prevLayerRef = -1; // inserted picture should not be an inter-layer
               newRefs1++;
               newActiveRefs1++;
               for (int j = insertPoint; j < newRefs1; j++)
               {
                 std::swap(prev, m_RPLList1[newRplIdx].m_deltaRefPics[j]);
+                std::swap(prevLayerRef, m_RPLList1[newRplIdx].m_layerRef[j]);
               }
             }
           }
@@ -4683,9 +4776,18 @@ bool EncAppCfg::xCheckParameter()
   }
   for (int i = 0; i < m_gopSize; i++)
   {
+
     int numRefPic = m_RPLList0[i].m_numRefPics;
+    for (int tmp = 0; tmp < m_RPLList0[i].m_numRefPics; tmp++)
+    {
+      if (m_RPLList0[i].m_deltaRefPics[tmp]==0 && m_RPLList0[i].m_layerRef[tmp]!=-1)
+      {
+      	numRefPic--; //Inter-layer ref pic already in DPB for ref layer, do not count it for current layer.
+      }
+    }
     for (int tmp = 0; tmp < m_RPLList1[i].m_numRefPics; tmp++)
     {
+      if (m_RPLList1[i].m_deltaRefPics[tmp]==0 && m_RPLList1[i].m_layerRef[tmp]!=-1) continue; //Inter-layer ref pic already in DPB for ref layer, do not count it for current layer.
       bool notSame = true;
       for (int jj = 0; notSame && jj < m_RPLList0[i].m_numRefPics; jj++)
       {
@@ -5273,6 +5375,12 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara(m_piVerPhaseDenMinus1ReducedResolution > 511, "m_piVerPhaseDenMinus1ReducedResolution must be in the range of 0 to 511, inclusive");
     xConfirmPara(m_piVerPhaseNumReducedResolution > m_piVerPhaseDenMinus1ReducedResolution + 1, "m_piVerPhaseNumReducedResolution must be in the range of 0 to m_piVerPhaseDenMinus1ReducedResolution + 1, inclusive");
   }
+
+#if JVET_AH2006_TXTDESCRINFO_SEI
+  xConfirmPara(m_SEITextDescriptionID < 1 && m_SEITextDescriptionID > 16383, "m_SEITextDescriptionID must be in the range of 1 to 16383, inclusive");
+  xConfirmPara(m_SEITextDescriptionPurpose > 5, "m_SEITextDescriptionPurpose must be in the range of 0 to 5, inclusive");
+  xConfirmPara(m_SEITextNumStringsMinus1 > 255, "m_SEITextNumStringsMinus1 must be in the range 0f 0 to 255, inclusive");
+#endif
 
   xConfirmPara(m_log2ParallelMergeLevel < 2, "Log2ParallelMergeLevel should be larger than or equal to 2");
   xConfirmPara(m_log2ParallelMergeLevel > m_ctuSize, "Log2ParallelMergeLevel should be less than or equal to CTU size");

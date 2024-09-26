@@ -67,6 +67,7 @@
 
 #define JVET_AG2034_SPTI_SEI 1 //JVET-AE0079, JVET-AF0055, JVET-AF0069, JVET-AF0097, JVET-AG0191, JVET-AG0188 
 
+#define JVET_AI0073_BREADTH_FIRST_FLAG 1 // Handling of a processing chain specified by an SPO SEI message
 
 //########### place macros to be be kept below this line ###############
 
@@ -91,6 +92,8 @@
 #define JVET_AH2006_EOI_SEI                               1 // Implementation of Encoder Optimizaion Information SEI message 
 
 #define NNPFC_SPATIAL_EXTRAPOLATION                       1 // Implementation of the spatial extrapolation purpose
+
+#define JVET_AH2006_TXTDESCRINFO_SEI                      1 // Text description information message 
 
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
@@ -615,16 +618,6 @@ enum class DFunc
   SAD_FULL_NBIT64,
   SAD_FULL_NBIT16N,
 
-  // Weighted SSE functions by size
-  SSE_WTD,
-  SSE2_WTD,
-  SSE4_WTD,
-  SSE8_WTD,
-  SSE16_WTD,
-  SSE32_WTD,
-  SSE64_WTD,
-  SSE16N_WTD,
-
   SAD_INTERMEDIATE_BITDEPTH,
 
   SAD_WITH_MASK,
@@ -642,6 +635,26 @@ static inline DFunc operator+(const DFunc &a, const DFuncDiff &b)
 {
   return static_cast<DFunc>(to_underlying(a) + to_underlying(b));
 }
+#if WCG_EXT
+enum class DFuncWtd
+{
+  // Weighted SSE functions by size
+  SSE_WTD,
+  SSE2_WTD,
+  SSE4_WTD,
+  SSE8_WTD,
+  SSE16_WTD,
+  SSE32_WTD,
+  SSE64_WTD,
+  SSE16N_WTD,
+
+  NUM
+};
+static inline DFuncWtd operator+(const DFuncWtd &a, const DFuncDiff &b)
+{
+  return static_cast<DFuncWtd>(to_underlying(a) + to_underlying(b));
+}
+#endif
 
 /// motion vector predictor direction used in AMVP
 enum MvpDir
