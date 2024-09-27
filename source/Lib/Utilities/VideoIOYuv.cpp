@@ -1424,8 +1424,9 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
   ChromaFormat chromaFormatIdc = sps.getChromaFormatIdc();
   bool ret = false;
 
-  Window afterScaleWindowFullResolution;
-  // override SPS maxWidth/Height with user-provided parameters
+  Window afterScaleWindowFullResolution; // initialized to zero
+  // keep zero window offsets when overriding SPS maxWidth/Height with user-provided parameters,
+  // otherwise get info from SPS
   if (!maxWidth || !outputChoice)
   {
   	  maxWidth = sps.getMaxPicWidthInLumaSamples();
@@ -1442,7 +1443,6 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
   // decoder does not have information about upscaled picture scaling and conformance windows, store this information when full resolution picutre is encountered
   if( maxWidth == pps.getPicWidthInLumaSamples() && maxHeight == pps.getPicHeightInLumaSamples() )
   {
-  	//afterScaleWindowFullResolution = pps.getScalingWindow(); // TODO: check that
     afterScaleWindowFullResolution = pps.getConformanceWindow();
   }
 
@@ -1456,7 +1456,7 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
       int curPicWidth = maxWidth   - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowLeftOffset() + afterScaleWindowFullResolution.getWindowRightOffset() );
       int curPicHeight = maxHeight - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowTopOffset()  + afterScaleWindowFullResolution.getWindowBottomOffset() );
 
-      const Window& beforeScalingWindow = pps.getScalingWindow(); // TODO: not sure about that. Conformance instead, and apply scaling window to output ?
+      const Window& beforeScalingWindow = pps.getConformanceWindow();
       int refPicWidth = pps.getPicWidthInLumaSamples()   - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( beforeScalingWindow.getWindowLeftOffset() + beforeScalingWindow.getWindowRightOffset() );
       int refPicHeight = pps.getPicHeightInLumaSamples() - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( beforeScalingWindow.getWindowTopOffset()  + beforeScalingWindow.getWindowBottomOffset() );
 
