@@ -1429,15 +1429,15 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
   // otherwise get info from SPS
   if (!maxWidth || !outputChoice)
   {
-  	  maxWidth = sps.getMaxPicWidthInLumaSamples();
-  	  afterScaleWindowFullResolution.setWindowLeftOffset(sps.getConformanceWindow().getWindowLeftOffset());
-  	  afterScaleWindowFullResolution.setWindowRightOffset(sps.getConformanceWindow().getWindowRightOffset());
+    maxWidth = sps.getMaxPicWidthInLumaSamples();
+    afterScaleWindowFullResolution.setWindowLeftOffset(sps.getConformanceWindow().getWindowLeftOffset());
+    afterScaleWindowFullResolution.setWindowRightOffset(sps.getConformanceWindow().getWindowRightOffset());
   }
   if (!maxHeight || !outputChoice)
   {
-  	  maxHeight = sps.getMaxPicHeightInLumaSamples();
-  	  afterScaleWindowFullResolution.setWindowTopOffset(sps.getConformanceWindow().getWindowTopOffset());
-  	  afterScaleWindowFullResolution.setWindowBottomOffset(sps.getConformanceWindow().getWindowBottomOffset());
+    maxHeight = sps.getMaxPicHeightInLumaSamples();
+    afterScaleWindowFullResolution.setWindowTopOffset(sps.getConformanceWindow().getWindowTopOffset());
+    afterScaleWindowFullResolution.setWindowBottomOffset(sps.getConformanceWindow().getWindowBottomOffset());
   }
 
   // decoder does not have information about upscaled picture scaling and conformance windows, store this information when full resolution picutre is encountered
