@@ -5876,6 +5876,14 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{""} &
   specifies a tag URI with syntax and semantics as specified in IETF RFC 4151 identifying the application determined purpose of the NNPF, when nnpfc_purpose is equal to 0 of the \emph{i}-th neural network post-filter.
   \\
+  \Option{SEINNPFCForHumanViewingIdc\emph{i}} &
+  \Default{0} &
+  Specifies the user viewing usage level for the \emph{i}-th neural network post-filter: optimal for human viewing (3), suitable (2), unsuitable (1), unknown (0).
+  \\
+  \Option{SEINNPFCForMachineAnalysisIdc\emph{i}} &
+  \Default{0} &
+  Specifies the machine analysis usage level for the \emph{i}-th neural network post-filter: optimal for machine analysis (3), suitable (2), unsuitable (1), unknown (0).
+  \\
   \Option{SEINNPFCNumParametersIdc\emph{i}} &
   \Default{0} &
   Specifies the maximum number of neural network parameters for the \emph{i}-th neural network post-filter in units of a power of 2048. nnpfc_num_parameters_idc = 0 indicates that the maximum number of neural network 
@@ -6012,6 +6020,14 @@ Enables (true) or disables (false) the insertion of processing order SEI message
 \Option{SEIPOId} &
 \Default{0} &
 Specifies the id of the SEI processing order SEI message.
+\\
+\Option{SEIPOForHumanViewingIdc} &
+\Default{0} &
+Specifies the user viewing usage level of video resulting from processing chain specified by SPO SEI: optimal for human viewing (3), suitable (2), unsuitable (1), unknown (0, default).
+\\
+\Option{SEIPOForMachineAnalysisIdc} &
+\Default{0} &
+Specifies the machine analysis usage level of video resulting from processing chain specified by SPO SEI: optimal for machine analysis (3), suitable (2), unsuitable (1), unknown (0, default).
 \\
 \Option{SEIPONumMinus2} &
 \Default{0} &

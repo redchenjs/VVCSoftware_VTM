@@ -1589,6 +1589,11 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
   CHECK(sei.m_posPayloadType.size() < 2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
   SEIMessages wrapSEI;
   xWriteCode(sei.m_posId, 8, "po_sei_id");
+#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
+  xWriteCode(sei.m_posForHumanViewingIdc, 2, "po_for_human_viewing_idc");
+  xWriteCode(sei.m_posForMachineAnalysisIdc, 2, "po_for_machine_analysis_idc");
+  xWriteCode(0, 4, "po_reserved_zero_4bits");
+#endif
 #if JVET_AI0073_BREADTH_FIRST_FLAG
   xWriteCode(sei.m_posNumMinus2, 7, "po_num_sei_message_minus2");
   xWriteFlag(sei.m_posBreadthFirstFlag, "po_breadth_first_flag");
@@ -1917,6 +1922,31 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     }
 #if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
     uint32_t metadataExtensionNumBits = 0;
+#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
+    if (sei.m_purpose == 0 || sei.m_forHumanViewingIdc != 0 || sei.m_forMachineAnalysisIdc != 0)
+    {
+      if (sei.m_purpose == 0)
+      {
+        metadataExtensionNumBits++;
+        if (sei.m_applicationPurposeTagUriPresentFlag)
+        {
+          metadataExtensionNumBits +=  (static_cast<uint32_t>(sei.m_applicationPurposeTagUri.length() + 1) * 8);
+        }
+      }
+      metadataExtensionNumBits += 4;  // nnpfc_for_human_viewing_idc and nnpfc_for_machine_analysis_idc bits
+      xWriteUvlc(metadataExtensionNumBits, "nnpfc_metadata_extension_num_bits");
+      if (sei.m_purpose == 0)
+      {
+        xWriteFlag(sei.m_applicationPurposeTagUriPresentFlag, "nnpfc_application_purpose_tag_uri_present_flag");
+        if ( sei.m_applicationPurposeTagUriPresentFlag )
+        {
+          xWriteString(sei.m_applicationPurposeTagUri, "nnpfc_application_purpose_tag_uri"); 
+        }
+      }
+      xWriteCode(sei.m_forHumanViewingIdc, 2, "nnpfc_for_human_viewing_idc");
+      xWriteCode(sei.m_forMachineAnalysisIdc, 2, "nnpfc_for_machine_analysis_idc");
+    }
+#else
     if (sei.m_purpose == 0)
     {
       metadataExtensionNumBits++;
@@ -1931,6 +1961,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteString(sei.m_applicationPurposeTagUri, "nnpfc_application_purpose_tag_uri"); 
       }
     }
+#endif
     else
     {
       xWriteUvlc(metadataExtensionNumBits, "nnpfc_metadata_extension_num_bits");  

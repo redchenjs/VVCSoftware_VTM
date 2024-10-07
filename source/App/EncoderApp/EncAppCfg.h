@@ -795,6 +795,10 @@ protected:
   bool                  m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[MAX_NUM_NN_POST_FILTERS];
 #endif 
+#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
+  uint32_t              m_nnPostFilterSEICharacteristicsForHumanViewingIdc[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[MAX_NUM_NN_POST_FILTERS];
+#endif
   std::string           m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
@@ -820,6 +824,10 @@ protected:
 
   bool                  m_poSEIEnabled;
   uint32_t              m_poSEIId;
+#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
+  uint32_t              m_poSEIForHumanViewingIdc;
+  uint32_t              m_poSEIForMachineAnalysisIdc;
+#endif
   uint32_t              m_poSEINumMinus2;
 #if JVET_AI0073_BREADTH_FIRST_FLAG
   bool                  m_poSEIBreadthFirstFlag;

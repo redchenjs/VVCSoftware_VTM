@@ -194,6 +194,10 @@ public:
 
   bool                   m_posEnabled;
   uint32_t               m_posId;
+#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
+  uint32_t               m_posForHumanViewingIdc;
+  uint32_t               m_posForMachineAnalysisIdc;
+#endif
   uint32_t               m_posNumMinus2;
 #if JVET_AI0073_BREADTH_FIRST_FLAG
   bool                   m_posBreadthFirstFlag;
@@ -1362,6 +1366,8 @@ public:
     , m_applicationPurposeTagUriPresentFlag(false)
     , m_applicationPurposeTagUri("")
 #endif
+    , m_forHumanViewingIdc(0)
+    , m_forMachineAnalysisIdc(0)
     , m_uriTag("")
     , m_uri("")
     , m_parameterTypeIdc(0)
@@ -1437,6 +1443,10 @@ public:
 #if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
   bool           m_applicationPurposeTagUriPresentFlag;
   std::string    m_applicationPurposeTagUri;
+#endif
+#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
+  uint32_t       m_forHumanViewingIdc;
+  uint32_t       m_forMachineAnalysisIdc;
 #endif
   std::string    m_uriTag;
   std::string    m_uri;
