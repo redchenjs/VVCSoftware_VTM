@@ -54,6 +54,7 @@
 
 // clang-format off
 
+#define JVET_AI0180   1   // JVET AI0180: "AHG9: Adding original source picture dimensions to EOI SEI"
 
 //########### place macros to be removed in next cycle below this line ###############
 

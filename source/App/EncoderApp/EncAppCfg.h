@@ -550,6 +550,11 @@ protected:
   uint32_t m_eoiSEIObjectBasedIdc;
   bool m_eoiSEITemporalResamplingTypeFlag;
   uint32_t m_eoiSEINumIntPics;
+#if JVET_AI0180
+  bool     m_eoiSEIOrigPicDimensionsFlag;
+  uint32_t m_eoiSEIOrigPicWidth;
+  uint32_t m_eoiSEIOrigPicHeight;
+#endif
   bool m_eoiSEISpatialResamplingTypeFlag;
   uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
