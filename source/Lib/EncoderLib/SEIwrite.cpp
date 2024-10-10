@@ -201,6 +201,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEISourcePictureTimingInfo(*static_cast<const SEISourcePictureTimingInfo*>(&sei));
     break;
 #endif
+#if JVET_AG0322_MODALITY_INFORMATION
+  case SEI::PayloadType::MODALITY_INFORMATION:
+    xWriteSEIModalityInfo(*static_cast<const SEIModalityInfo *>(&sei));
+    break;
+#endif 
 #if JVET_AH2006_TXTDESCRINFO_SEI
   case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
     xWriteSEITextDescription(*static_cast<const SEITextDescription*>(&sei));
@@ -2128,4 +2133,26 @@ void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInf
   }
 }
 #endif
+
+#if JVET_AG0322_MODALITY_INFORMATION
+void SEIWriter::xWriteSEIModalityInfo(const SEIModalityInfo& sei)
+{
+  xWriteFlag( sei.m_miCancelFlag,                                            "mi_modality_info_cancel_flag" );
+  if(!sei.m_miCancelFlag)
+  {
+    xWriteFlag( sei.m_miPersistenceFlag,                                     "mi_modality_info_persistence_flag" );
+    xWriteCode( (uint32_t)sei.m_miModalityType, 5,                           "mi_modality_type");
+    xWriteFlag( sei.m_miSpectrumRangePresentFlag,                            "mi_spectrum_range_present_flag" );
+    if (sei.m_miSpectrumRangePresentFlag)
+    {
+      xWriteCode( (uint32_t)sei.m_miMinWavelengthMantissa, 11,               "mi_min_wavelength_mantissa ");
+      xWriteCode( (uint32_t)sei.m_miMinWavelengthExponentPlus15, 5,          "mi_min_wavelength_exponent_plus15 ");
+      xWriteCode( (uint32_t)sei.m_miMaxWavelengthMantissa, 11,               "mi_max_wavelength_mantissa ");
+      xWriteCode( (uint32_t)sei.m_miMaxWavelengthExponentPlus15, 5,          "mi_max_wavelength_exponent_plus15 ");
+    }
+    xWriteUvlc(0, "mi_modality_type_extension_bits");   // mi_modality_type_extension_bits shall be equal to 0 in the current edition 
+  }
+}
+#endif 
+
 //! \}

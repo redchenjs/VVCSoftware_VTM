@@ -96,6 +96,8 @@
 
 #define JVET_AH2006_TXTDESCRINFO_SEI                      1 // Text description information message 
 
+#define JVET_AG0322_MODALITY_INFORMATION                  1 // Implementation of Modality Information SEI message 
+
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
 #define REUSE_CU_RESULTS_WITH_MULTIPLE_TUS                1

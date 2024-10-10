@@ -107,6 +107,9 @@ public:
 #if JVET_AG2034_SPTI_SEI
     SOURCE_PICTURE_TIMING_INFO = 216,
 #endif
+#if JVET_AG0322_MODALITY_INFORMATION
+    MODALITY_INFORMATION = 218,
+#endif
 #if JVET_AH2006_TXTDESCRINFO_SEI
     SEI_TEXT_DESCRIPTION                       = 219,
 #endif
@@ -1576,6 +1579,37 @@ public:
 };
 
 #endif
+
+#if JVET_AG0322_MODALITY_INFORMATION
+class SEIModalityInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::MODALITY_INFORMATION; }
+  SEIModalityInfo() 
+    : m_miCancelFlag(false)
+    , m_miPersistenceFlag(true)
+    , m_miModalityType(1)
+    , m_miSpectrumRangePresentFlag(false)
+    , m_miMinWavelengthMantissa(0)
+    , m_miMinWavelengthExponentPlus15(0)
+    , m_miMaxWavelengthMantissa(0)
+    , m_miMaxWavelengthExponentPlus15(0)
+  { }
+  SEIModalityInfo(const SEIModalityInfo& sei);
+
+  virtual ~SEIModalityInfo() { }
+
+  bool             m_miCancelFlag;
+  bool             m_miPersistenceFlag;
+  uint8_t          m_miModalityType;  
+  bool             m_miSpectrumRangePresentFlag; 
+  uint16_t         m_miMinWavelengthMantissa; 
+  uint8_t          m_miMinWavelengthExponentPlus15; 
+  uint16_t         m_miMaxWavelengthMantissa;  
+  uint8_t          m_miMaxWavelengthExponentPlus15;  
+};
+#endif
+
 //! \}
 
 

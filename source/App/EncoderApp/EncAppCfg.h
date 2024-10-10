@@ -560,6 +560,18 @@ protected:
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
 #endif 
 
+#if JVET_AG0322_MODALITY_INFORMATION
+  bool      m_miSEIEnabled;
+  bool      m_miCancelFlag;
+  bool      m_miPersistenceFlag;
+  int       m_miModalityType; 
+  bool      m_miSpectrumRangePresentFlag;
+  int       m_miMinWavelengthMantissa; 
+  int       m_miMinWavelengthExponentPlus15; 
+  int       m_miMaxWavelengthMantissa; 
+  int       m_miMaxWavelengthExponentPlus15; 
+#endif
+
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
   bool      m_fgcSEICancelFlag;
