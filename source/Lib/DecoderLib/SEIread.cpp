@@ -3438,25 +3438,43 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
   void SEIReader::xParseSEITextDescription(SEITextDescription &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
   {
     uint32_t val;
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+    sei_read_code(pDecodedMessageOutputStream, 8, val, "txt_descr_purpose");
+    sei.m_textDescriptionPurpose = val;
+#else
     sei_read_code(pDecodedMessageOutputStream, 14, val, "txt_descr_id");
     sei.m_textDescriptionID = val;
+#endif
     sei_read_flag(pDecodedMessageOutputStream, val, "txt_cancel_flag");
     sei.m_textCancelFlag = val;
     if (!sei.m_textCancelFlag)
     {
-      sei_read_flag(pDecodedMessageOutputStream, val, "txt_persistence_flag");
-      sei.m_textPersistenceFlag = val;
-      sei_read_code(pDecodedMessageOutputStream, 8, val, "txt_descr_purpose");
-      sei.m_textDescriptionPurpose = val;
-      sei_read_code(pDecodedMessageOutputStream, 8, val, "txt_num_strings_minus1");
-      sei.m_textNumStringsMinus1 = val;
-      sei.m_textDescriptionStringLang.resize(sei.m_textNumStringsMinus1+1);
-      sei.m_textDescriptionString.resize(sei.m_textNumStringsMinus1+1);
-      for (int i=0; i<=sei.m_textNumStringsMinus1; i++)
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+      sei_read_code(pDecodedMessageOutputStream, 13, val, "txt_descr_id");
+      sei.m_textDescriptionID = val;
+      sei_read_flag(pDecodedMessageOutputStream, val, "txt_id_cancel_flag");
+      sei.m_textIDCancelFlag = val;
+      if (!sei.m_textIDCancelFlag)
       {
-        sei_read_string(pDecodedMessageOutputStream, sei.m_textDescriptionStringLang[i], "txt_descr_string_lang[i]");
-        sei_read_string(pDecodedMessageOutputStream, sei.m_textDescriptionString[i], "txt_descr_string[i]");
+#endif
+        sei_read_flag(pDecodedMessageOutputStream, val, "txt_persistence_flag");
+        sei.m_textPersistenceFlag = val;
+#if !JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+        sei_read_code(pDecodedMessageOutputStream, 8, val, "txt_descr_purpose");
+        sei.m_textDescriptionPurpose = val;
+#endif
+        sei_read_code(pDecodedMessageOutputStream, 8, val, "txt_num_strings_minus1");
+        sei.m_textNumStringsMinus1 = val;
+        sei.m_textDescriptionStringLang.resize(sei.m_textNumStringsMinus1+1);
+        sei.m_textDescriptionString.resize(sei.m_textNumStringsMinus1+1);
+        for (int i=0; i<=sei.m_textNumStringsMinus1; i++)
+        {
+          sei_read_string(pDecodedMessageOutputStream, sei.m_textDescriptionStringLang[i], "txt_descr_string_lang[i]");
+          sei_read_string(pDecodedMessageOutputStream, sei.m_textDescriptionString[i], "txt_descr_string[i]");
+        }
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
       }
+#endif
       
     }
   }

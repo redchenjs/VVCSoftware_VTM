@@ -1518,6 +1518,9 @@ public:
 
   uint16_t                 m_textDescriptionID;
   bool                     m_textCancelFlag;
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+  bool                     m_textIDCancelFlag;
+#endif
   bool                     m_textPersistenceFlag;
   uint8_t                  m_textDescriptionPurpose;
   uint8_t                  m_textNumStringsMinus1;

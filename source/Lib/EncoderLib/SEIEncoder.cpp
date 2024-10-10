@@ -742,6 +742,9 @@ void SEIEncoder::initSEITextDescription(SEITextDescription *seiTestDescrition)
   CHECK(!(seiTestDescrition != nullptr), "Need a seiTtestDescribtion for initialization (got nullptr)");
   seiTestDescrition->m_textDescriptionID = m_pcCfg->getTextDescriptionSEIId();
   seiTestDescrition->m_textCancelFlag = m_pcCfg->getTextSEICancelFlag();
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+  seiTestDescrition->m_textIDCancelFlag = m_pcCfg->getTextSEIIDCancelFlag();
+#endif
   seiTestDescrition->m_textPersistenceFlag = m_pcCfg->getTextSEIPersistenceFlag();
   seiTestDescrition->m_textDescriptionPurpose = m_pcCfg->getTextSEIPurpose();
   seiTestDescrition->m_textNumStringsMinus1 = m_pcCfg->getTextSEINumStringsMinus1();
