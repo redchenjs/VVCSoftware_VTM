@@ -1268,6 +1268,15 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1( m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i], i);
       }
+#if NNPFC_SPATIAL_EXTRAPOLATION
+      if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset  (m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset (m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset   (m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i], i);
+      }
+#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag  (m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsInpFormatIdc            (m_nnPostFilterSEICharacteristicsInpFormatIdc[i], i);

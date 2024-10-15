@@ -90,6 +90,8 @@
 
 #define JVET_AH2006_EOI_SEI                               1 // Implementation of Encoder Optimizaion Information SEI message 
 
+#define NNPFC_SPATIAL_EXTRAPOLATION                       1 // Implementation of the spatial extrapolation purpose
+
 #define JVET_AH2006_TXTDESCRINFO_SEI                      1 // Text description information message 
 
 #define REUSE_CU_RESULTS                                  1
@@ -820,7 +822,10 @@ enum NNPC_PurposeType
   FRAME_RATE_UPSAMPLING      = 8,
   BIT_DEPTH_UPSAMPLING       = 16,
   COLOURIZATION              = 32,
-  TEMPORAL_EXTRAPOLATION     = 64
+  TEMPORAL_EXTRAPOLATION     = 64,
+#if NNPFC_SPATIAL_EXTRAPOLATION
+  SPATIAL_EXTRAPOLATION      = 128
+#endif
 };
 
 enum POST_FILTER_MODE
