@@ -1663,7 +1663,7 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
 void SEIEncoder::initSEIModalityInfo(SEIModalityInfo *seiMI)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(!(seiMI != nullptr), "Unspecified error");
+  CHECK((seiMI = nullptr), "Unspecified error");
   //  Set SEI message parameters read from command line options
   seiMI->m_miCancelFlag = m_pcCfg->getMiCancelFlag(); 
   if (!seiMI->m_miCancelFlag)
