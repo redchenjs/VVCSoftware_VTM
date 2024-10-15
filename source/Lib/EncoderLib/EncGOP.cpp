@@ -5313,7 +5313,13 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
       const uint64_t upscaledSSD = xFindDistortionPlane(p, o, 0);
 #endif
       upscaledPSNR[comp] = upscaledSSD ? 10.0 * log10((double) fRefValue / (double) upscaledSSD) : 999.99;
-     }
+      if (printMSSSIM)
+      {
+        const uint32_t upscaledWidth = o.width - ( m_pcEncLib->getSourcePadding( 0 ) >> ::getComponentScaleX( compID, format ) );
+        const uint32_t upscaledHeight = o.height - ( m_pcEncLib->getSourcePadding( 1 ) >> ( !!bPicIsField + ::getComponentScaleY( compID, format ) ) );
+        upscaledMsssim[comp] = xCalculateMSSSIM(o.bufAt(0, 0), o.stride, p.bufAt(0, 0), p.stride, upscaledWidth, upscaledHeight, bitDepth);
+      }
+    }
   }
 
 #if EXTENSION_360_VIDEO
@@ -5572,16 +5578,14 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
       }
       msg( NOTICE, "]" );
     }
-    if (m_pcEncLib->isResChangeInClvsEnabled())
+    if (m_pcEncLib->isResChangeInClvsEnabled() || m_pcEncLib->isRefLayerRescaledAvailable())
     {
       msg( NOTICE, " [Y2 %6.4lf dB  U2 %6.4lf dB  V2 %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr] );
-      msg( NOTICE, " MS-SSIM2: [Y %6.4lf  U %6.4lf  V %6.4lf ]", upscaledMsssim[COMPONENT_Y], upscaledMsssim[COMPONENT_Cb], upscaledMsssim[COMPONENT_Cr] );
+      if (printMSSSIM)
+      {
+        msg( NOTICE, " MS-SSIM2: [Y %1.6lf  U %1.6lf  V %1.6lf ]", upscaledMsssim[COMPONENT_Y], upscaledMsssim[COMPONENT_Cb], upscaledMsssim[COMPONENT_Cr] );
+      }
     }
-    else if (m_pcEncLib->isRefLayerRescaledAvailable())
-    {
-      msg(NOTICE, " [Y2 %6.4lf dB  U2 %6.4lf dB  V2 %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr]);
-    } 
-
   }
   else if( g_verbosity >= INFO )
   {
