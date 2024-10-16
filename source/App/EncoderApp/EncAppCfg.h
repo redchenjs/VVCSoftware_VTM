@@ -626,6 +626,9 @@ protected:
   std::vector<uint32_t>  m_sdiSEIViewIdVal;
   std::vector<uint32_t>  m_sdiSEIAuxId;
   std::vector<uint32_t>  m_sdiSEINumAssociatedPrimaryLayersMinus1;
+#if JVET_AI0153_OMI_SEI
+  std::vector<uint32_t>  m_sdiSEIAssociatedPrimaryLayerIdx;
+#endif
   // multiview acquisition information sei
   bool              m_maiSEIEnabled;
   bool              m_maiSEIIntrinsicParamFlag;
@@ -707,6 +710,9 @@ protected:
   std::vector<uint32_t> m_omniViewportSEIHorRange;
   std::vector<uint32_t> m_omniViewportSEIVerRange;
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
+#if JVET_AI0153_OMI_SEI
+  std::string           m_omiSEIFileRoot;   // Object mask information SEI - initialized from external file
+#endif
   bool                  m_rwpSEIEnabled;
   bool                  m_rwpSEIRwpCancelFlag;
   bool                  m_rwpSEIRwpPersistenceFlag;

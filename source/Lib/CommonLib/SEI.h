@@ -107,9 +107,13 @@ public:
 #if JVET_AG2034_SPTI_SEI
     SOURCE_PICTURE_TIMING_INFO = 216,
 #endif
+#if JVET_AI0153_OMI_SEI
+    OBJECT_MASK_INFO = 217,
+#endif
 #if JVET_AH2006_TXTDESCRINFO_SEI
     SEI_TEXT_DESCRIPTION                       = 219,
 #endif
+
   };
 
   SEI() {}
@@ -1274,6 +1278,60 @@ public:
   std::vector<std::pair<AnnotatedRegionObjectIndex, AnnotatedRegionObject> > m_annotatedRegions;
   std::vector<std::pair<AnnotatedRegionLabelIndex,  AnnotatedRegionLabel>  > m_annotatedLabels;
 };
+
+#if JVET_AI0153_OMI_SEI
+class SEIObjectMaskInfos : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::OBJECT_MASK_INFO; }
+  SEIObjectMaskInfos() {}
+  SEIObjectMaskInfos(const SEIObjectMaskInfos& sei) { copyFrom(sei); }
+  virtual ~SEIObjectMaskInfos() {}
+
+  void copyFrom(const SEIObjectMaskInfos& seiObjectMask) { (*this) = seiObjectMask; }
+
+  struct ObjectMaskInfo
+  {
+    ObjectMaskInfo() : maskCancel(false), maskBoundingBoxPresentFlag(false) {}
+    bool        maskCancel;
+    uint32_t    maskId;
+    uint32_t    auxSampleValue;
+    bool        maskBoundingBoxPresentFlag;
+    uint32_t    maskTop;
+    uint32_t    maskLeft;
+    uint32_t    maskWidth;
+    uint32_t    maskHeight;
+    uint32_t    maskConfidence;
+    uint32_t    maskDepth;
+    std::string maskLabel;
+  };
+
+  struct ObjectMaskInfoHeader
+  {
+    ObjectMaskInfoHeader() : m_cancelFlag(true), m_receivedSettingsOnce(false) {}
+    bool m_cancelFlag;
+    bool m_receivedSettingsOnce;   // used for decoder conformance checking. Other confidence flags must be unchanged
+                                  // once this flag is set.
+    bool m_persistenceFlag;
+    uint32_t    m_numAuxPicLayerMinus1;
+    uint32_t    m_maskIdLengthMinus1;
+    uint32_t    m_maskSampleValueLengthMinus8;
+    bool        m_maskConfidenceInfoPresentFlag;
+    uint32_t    m_maskConfidenceLengthMinus1;   // Only valid if m_maskConfidenceInfoPresentFlag
+    bool        m_maskDepthInfoPresentFlag;
+    uint32_t    m_maskDepthLengthMinus1;   // Only valid if m_maskDepthInfoPresentFlag
+    bool        m_maskLabelInfoPresentFlag;
+    bool        m_maskLabelLanguagePresentFlag;   // Only valid if m_maskLabelInfoPresentFlag
+    // SEIOmiBitEqualToZero
+    std::string m_maskLabelLanguage;   // Only valid if m_maskLabelLanguagePresentFlag
+  };
+
+  ObjectMaskInfoHeader        m_hdr;
+  std::vector<uint32_t>       m_maskPicUpdateFlag;
+  std::vector<uint32_t>       m_numMaskInPicUpdate;
+  std::vector<ObjectMaskInfo> m_objectMaskInfos;
+};
+#endif
 
 class SEIExtendedDrapIndication : public SEI
 {

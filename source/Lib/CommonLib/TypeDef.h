@@ -68,6 +68,8 @@
 
 #define JVET_AI0071_NNPFC_SPO_USAGE_IDCS 1  // Indication of the user viewing and/or machine analysis usage in the NNPFC and SPO SEI messages
 
+#define JVET_AI0153_OMI_SEI 1 // JVET-AI0153: OMI-SEI Implementation as JVET-AH0346
+
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1

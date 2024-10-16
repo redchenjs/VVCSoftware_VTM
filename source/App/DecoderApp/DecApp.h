@@ -90,6 +90,10 @@ private:
   std::map<uint32_t, SEIAnnotatedRegions::AnnotatedRegionObject> m_arObjects; ///< AR object pool
   std::map<uint32_t, std::string>                                m_arLabels; ///< AR label pool
 
+#if JVET_AI0153_OMI_SEI
+  SEIObjectMaskInfos::ObjectMaskInfoHeader m_omiHeader;   ///< OMI header
+#endif
+
 private:
   bool  xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit* nalu ) const; ///< check whether given Nalu is within targetDecLayerIdSet
   bool  xIsNaluWithinTargetOutputLayerIdSet( const InputNALUnit* nalu ) const; ///< check whether given Nalu is within targetOutputLayerIdSet
@@ -118,6 +122,9 @@ private:
 
   void  writeLineToOutputLog(Picture * pcPic);
   void xOutputAnnotatedRegions(PicList* pcListPic);
+#if JVET_AI0153_OMI_SEI
+  void xOutputObjectMaskInfos(Picture* pcPic);
+#endif
 };
 
 //! \}

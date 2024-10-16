@@ -1002,6 +1002,24 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     }
   }
 
+#if JVET_AI0153_OMI_SEI
+  if (!m_pcCfg->getObjectMaskInfoSEIFileRoot().empty())
+  {
+    // CHECK(!m_pcCfg->getSdiSEIEnabled(), "SDI-SEI has not enabled. (OMI-SEI depends on SDI-SEI)");
+    SEIObjectMaskInfos* seiObjectMaskInfo = new SEIObjectMaskInfos();
+    const bool          success           = m_seiEncoder.initSEIObjectMaskInfos(seiObjectMaskInfo, slice->getPOC());
+
+    if (success)
+    {
+      seiMessages.push_back(seiObjectMaskInfo);
+    }
+    else
+    {
+      delete seiObjectMaskInfo;
+    }
+  }
+#endif
+
   if (m_pcCfg->getFilmGrainCharactersticsSEIEnabled() && m_pcCfg->getFilmGrainCharactersticsSEIPerPictureSEI())
   {
     SEIFilmGrainCharacteristics *fgcSEI = new SEIFilmGrainCharacteristics;

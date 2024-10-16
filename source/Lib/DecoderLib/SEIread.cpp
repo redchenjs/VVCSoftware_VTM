@@ -382,6 +382,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIAnnotatedRegions;
       xParseSEIAnnotatedRegions((SEIAnnotatedRegions &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
+#if JVET_AI0153_OMI_SEI
+    case SEI::PayloadType::OBJECT_MASK_INFO:
+      sei = new SEIObjectMaskInfos;
+      xParseSEIObjectMaskInfos((SEIObjectMaskInfos&) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     case SEI::PayloadType::PARAMETER_SETS_INCLUSION_INDICATION:
       sei = new SEIParameterSetsInclusionIndication;
       xParseSEIParameterSetsInclusionIndication((SEIParameterSetsInclusionIndication &) *sei, payloadSize,
@@ -1869,6 +1875,141 @@ void SEIReader::xParseSEIAnnotatedRegions(SEIAnnotatedRegions& sei, uint32_t pay
     }
   }
 }
+
+#if JVET_AI0153_OMI_SEI
+void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
+{
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  uint32_t val;
+
+  sei_read_flag(pDecodedMessageOutputStream, val, "omi_cancel_flag");
+  sei.m_hdr.m_cancelFlag = val;
+  if (!sei.m_hdr.m_cancelFlag)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "omi_persistence_flag");
+    sei.m_hdr.m_persistenceFlag = val;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "omi_num_aux_pic_layer_minus1");
+    sei.m_hdr.m_numAuxPicLayerMinus1 = val;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "omi_mask_id_length_minus1");
+    sei.m_hdr.m_maskIdLengthMinus1 = val;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "omi_mask_sample_value_length_minus8");
+    sei.m_hdr.m_maskSampleValueLengthMinus8 = val;
+    sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_confidence_info_present_flag");
+    sei.m_hdr.m_maskConfidenceInfoPresentFlag = val;
+    if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 4, val, "omi_mask_confidence_length_minus1");
+      sei.m_hdr.m_maskConfidenceLengthMinus1 = val;
+    }
+    sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_depth_info_present_flag");
+    sei.m_hdr.m_maskDepthInfoPresentFlag = val;
+    if (sei.m_hdr.m_maskDepthInfoPresentFlag)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 4, val, "omi_mask_depth_length_minus1");
+      sei.m_hdr.m_maskDepthLengthMinus1 = val;
+    }
+    sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_label_info_present_flag");
+    sei.m_hdr.m_maskLabelInfoPresentFlag = val;
+    if (sei.m_hdr.m_maskLabelInfoPresentFlag)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_label_language_present_flag");
+      sei.m_hdr.m_maskLabelLanguagePresentFlag = val;
+      if (sei.m_hdr.m_maskLabelLanguagePresentFlag)
+      {
+        // byte alignment
+        while (!isByteAligned())
+        {
+          uint32_t code;
+          sei_read_flag(pDecodedMessageOutputStream, code, "omi_bit_equal_to_zero");
+          CHECK(code != 0, "non-zero value parsed for zero-bit");
+        }
+        sei.m_hdr.m_maskLabelLanguage.clear();
+        do
+        {
+          sei_read_code(pDecodedMessageOutputStream, 8, val, "omi_mask_lable_language");
+          if (val)
+          {
+            sei.m_hdr.m_maskLabelLanguage.push_back((char) val);
+          }
+        } while (val != '\0');
+        CHECK(sei.m_hdr.m_maskLabelLanguage.size() > 255, "label oversize");
+      }
+    }
+
+    sei.m_maskPicUpdateFlag.resize(sei.m_hdr.m_numAuxPicLayerMinus1 + 1);
+    sei.m_numMaskInPicUpdate.resize(sei.m_hdr.m_numAuxPicLayerMinus1 + 1);
+    for (uint32_t i = 0; i <= sei.m_hdr.m_numAuxPicLayerMinus1; i++)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_pic_update_flag[i]");
+      sei.m_maskPicUpdateFlag[i] = val;
+      if (sei.m_maskPicUpdateFlag[i])
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "omi_num_mask_in_pic_update[i]");
+        sei.m_numMaskInPicUpdate[i] = val;
+        for (uint32_t j = 0; j < sei.m_numMaskInPicUpdate[i]; j++)
+        {
+          SEIObjectMaskInfos::ObjectMaskInfo objMaskInfo;
+          sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskIdLengthMinus1 + 1, val, "omi_mask_id[i][j]");
+          objMaskInfo.maskId = val;
+          sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, val, "omi_aux_sample_value[i][j]");
+          objMaskInfo.auxSampleValue = val;
+          sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_cancel[i][j]");
+          objMaskInfo.maskCancel = val;
+          if (!objMaskInfo.maskCancel)
+          {
+            sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_bounding_box_present_flag[i][j]");
+            objMaskInfo.maskBoundingBoxPresentFlag = val;
+            if (objMaskInfo.maskBoundingBoxPresentFlag)
+            {
+              sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_top[i][j]");
+              objMaskInfo.maskTop = val;
+              sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_left[i][j]");
+              objMaskInfo.maskLeft = val;
+              sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_width[i][j]");
+              objMaskInfo.maskWidth = val;
+              sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_height[i][j]");
+              objMaskInfo.maskHeight = val;
+            }
+
+            if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
+            {
+              sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskConfidenceLengthMinus1 + 1, val, "omi_mask_confidence[i][j]");
+              objMaskInfo.maskConfidence = val;
+            }
+            if (sei.m_hdr.m_maskDepthInfoPresentFlag)
+            {
+              sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskDepthLengthMinus1 + 1, val, "omi_mask_depth[i][j]");
+              objMaskInfo.maskDepth = val;
+            }
+            // byte alignment
+            while (!isByteAligned())
+            {
+              uint32_t code;
+              sei_read_flag(pDecodedMessageOutputStream, code, "omi_bit_equal_to_zero");
+              CHECK(code != 0, "non-zero value parsed for zero-bit");
+            }
+            if (sei.m_hdr.m_maskLabelInfoPresentFlag)
+            {
+              objMaskInfo.maskLabel.clear();
+              do
+              {
+                sei_read_code(pDecodedMessageOutputStream, 8, val, "omi_mask_label[i][j][k]");
+                if (val)
+                {
+                  objMaskInfo.maskLabel.push_back((char) val);
+                }
+              } while (val != '\0');
+              CHECK(objMaskInfo.maskLabel.size() > 255, "label oversize");
+            }
+          }
+
+          sei.m_objectMaskInfos.push_back(objMaskInfo);
+        }
+      }
+    }
+  }
+}
+#endif
 
 #if JVET_AH2006_EOI_SEI
 void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
